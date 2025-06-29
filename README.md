@@ -39,7 +39,7 @@ A powerful, local-first trading journal plugin for Obsidian that helps traders t
 
 ## Support
 
-- **Documentation**: [Full Documentation](https://github.com/Cursivez/jouranlit-repo)
+- **Documentation**: [Full Documentation](https://github.com/Cursivez/journalit)
 - **Issues**: Report bugs or request features via GitHub Issues
 - **Community**: Join our trading community discussions
 
