@@ -17,7 +17,7 @@ A powerful, local-first trading journal plugin for Obsidian that helps traders t
 
 1. Install the [BRAT plugin](https://github.com/TfTHacker/obsidian42-brat) in Obsidian
 2. Open BRAT settings and click "Add Beta Plugin"
-3. Enter this repository URL: `Cursivez/journalit-plugin`
+3. Enter this repository URL: `Cursivez/journalit`
 4. Click "Add Plugin" and enable it in your plugin settings
 
 ### Method 2: Manual Installation
