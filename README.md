@@ -11,6 +11,8 @@ A powerful, local-first trading journal plugin for Obsidian that helps traders t
 - **Account Management**: Track multiple trading accounts
 - **Automated Trade Imports**: Sync with MetaTrader via FTP
 
+![image](https://github.com/user-attachments/assets/47aad6ac-4c8b-4dbe-b3ca-97337705dc48)
+
 ## Installation
 
 ### Method 1: BRAT (Recommended)
