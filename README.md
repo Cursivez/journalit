@@ -9,9 +9,7 @@ A powerful, local-first trading journal plugin for Obsidian that helps traders t
 - **Advanced Analytics**: Performance charts, drawdown analysis, and metrics
 - **Daily & Weekly Reviews**: Structured reflection and planning
 - **Account Management**: Track multiple trading accounts
-- **Automated Trade Imports**: Sync with MetaTrader via FTP
-
-![image](https://github.com/user-attachments/assets/47aad6ac-4c8b-4dbe-b3ca-97337705dc48)
+- **Backend Integration**: Sync with MetaTrader via FTP (optional)
 
 ## Installation
 
@@ -41,9 +39,13 @@ A powerful, local-first trading journal plugin for Obsidian that helps traders t
 
 ## Support
 
-- **Documentation**: [Full Documentation](https://github.com/Cursivez/journalit)
+- **Documentation**: [Full Documentation](https://github.com/Cursivez/jouranlit-repo)
 - **Issues**: Report bugs or request features via GitHub Issues
 - **Community**: Join our trading community discussions
+
+## License
+
+This plugin is proprietary software. The compiled plugin files are distributed for use with Obsidian, but the source code is not available under an open source license.
 
 ---
 
