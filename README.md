@@ -1,6 +1,6 @@
 # Journalit - Trading Journal Plugin for Obsidian
 
-A powerful, local-first trading journal plugin for Obsidian that helps traders track, analyze, and improve their trading performance.
+A powerful, local-first trading journal plugin for Obsidian that helps traders track, analyze, and improve their trading performance. (Closed Source)
 
 ## Features
 
