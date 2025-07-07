@@ -1,6 +1,6 @@
 # Journalit - Trading Journal Plugin for Obsidian
 
-A powerful, local-first trading journal plugin for Obsidian that helps traders track, analyze, and improve their trading performance. (Closed Source)
+A powerful, local-first trading journal plugin for Obsidian that helps traders track, analyze, and improve their trading performance.
 
 ## Features
 
@@ -15,12 +15,10 @@ A powerful, local-first trading journal plugin for Obsidian that helps traders t
 
 ### Method 1: BRAT (Recommended)
 
-1. Download and open [Obsidian](https://obsidian.md/download)
-2. Go to Settings → Community Plugins → Turn on community plugins
-3. Click Browse, search for "BRAT" and install the [BRAT plugin](https://github.com/TfTHacker/obsidian42-brat)
-4. Open BRAT settings and click "Add Beta Plugin"
-5. Enter this repository URL: `Cursivez/journalit` and select "Latest version"
-6. Click "Add Plugin" and enable it in your plugin settings
+1. Install the [BRAT plugin](https://github.com/TfTHacker/obsidian42-brat) in Obsidian
+2. Open BRAT settings and click "Add Beta Plugin"
+3. Enter this repository URL: `Cursivez/journalit`
+4. Click "Add Plugin" and enable it in your plugin settings
 
 ### Method 2: Manual Installation
 
