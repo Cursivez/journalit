@@ -13,6 +13,7 @@ A powerful, local-first trading journal plugin for Obsidian that helps traders t
 - **Daily & Weekly Reviews**: Structured reflection and planning
 - **Account Management**: Track multiple trading accounts
 - **Backend Integration**: Sync with MetaTrader via FTP (optional)
+![image](https://github.com/user-attachments/assets/4305b932-9f63-4202-ac91-b4985004b28b)
 
 ## Installation
 
