@@ -3,7 +3,7 @@
 ![Journalit Banner](https://github.com/user-attachments/assets/ab7232d4-1352-4658-a284-86029c0246f1)
 
 
-**A powerful, local-first trading journal plugin for Obsidian that helps traders track, analyze, and improve their trading performance.**
+**A powerful, local-first trading journal plugin for Obsidian that helps traders track, analyze, and improve their trading performance. (Closed Source)**
 
 [![Obsidian Plugin](https://img.shields.io/badge/Obsidian-Plugin-purple?logo=obsidian)](https://obsidian.md/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?logo=typescript&logoColor=white)](#)
