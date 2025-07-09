@@ -42,6 +42,11 @@
 
 ![Account Note](https://github.com/user-attachments/assets/f8bc3554-c7ee-4845-b4bb-31bd5ad34a1b)
 
+### Trade Log
+*View all your trades in our trade log*
+![Trade Log](https://github.com/user-attachments/assets/94d0c6ad-8252-42d2-acae-33e4ccf9446a)
+
+
 ## 🚀 Installation
 
 ### Method 1: BRAT (Recommended)
