@@ -2,30 +2,48 @@
 
 ![Journalit Banner](https://github.com/user-attachments/assets/ab7232d4-1352-4658-a284-86029c0246f1)
 
-
 **A powerful, local-first trading journal plugin for Obsidian that helps traders track, analyze, and improve their trading performance. (Closed Source)**
 
 [![Obsidian Plugin](https://img.shields.io/badge/Obsidian-Plugin-purple?logo=obsidian)](https://obsidian.md/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?logo=typescript&logoColor=white)](#)
 [![React](https://img.shields.io/badge/React-20232A?logo=react&logoColor=61DAFB)](#)
 
-[📖 Documentation](#features) • [🚀 Installation](#installation) • [💬 Support](#support)
+[📖 Features](#features) • [🚀 Installation](#installation) • [🔥 Beta Testing](#beta-testers-wanted) • [💬 Support](#support)
 
 </div>
 
 ---
 
-## ✨ Features
+## 🔥 Beta Testers Wanted
 
-- **🏠 Local-First**: All your data stays in your Obsidian vault
-- **📊 Comprehensive Trade Tracking**: Record trades with detailed metadata and rich context
-- **📈 Advanced Analytics**: Performance charts, drawdown analysis, and comprehensive metrics
-- **📝 Daily & Weekly Reviews**: Structured reflection and planning workflows
-- **💰 Account Management**: Track multiple trading accounts with transaction history
-- **🔄 Backend Integration**: Sync with MetaTrader via FTP (optional)
-- **🎯 Smart Onboarding**: Guided setup to get you started in under 60 seconds
+Currently seeking 100 serious traders for beta testing before our official launch.
 
-## 🖼️ Screenshots
+**Beta testers receive:**
+- Lifetime 50% discount when we launch
+- Direct input on feature development  
+- Early access to new features
+- Personal migration assistance for existing trading data
+
+**Requirements:**
+- Active trader with existing journal or notes
+- Willing to provide weekly feedback
+- Commit to 4+ weeks of testing
+
+**Ready to join?** Install via BRAT below and join our [Discord Server](https://discord.gg/AkSw3D9h8b)
+
+---
+
+## Features
+
+- **Local-First**: All your data stays in your Obsidian vault
+- **Comprehensive Trade Tracking**: Record trades with detailed metadata and rich context
+- **Advanced Analytics**: Performance charts, drawdown analysis, and comprehensive metrics
+- **Daily & Weekly Reviews**: Structured reflection and planning workflows
+- **Account Management**: Track multiple trading accounts with transaction history
+- **Backend Integration**: Sync with MetaTrader via FTP (optional)
+- **Smart Onboarding**: Guided setup to get you started in under 60 seconds
+
+## Screenshots
 
 ### Trading Dashboard
 *Comprehensive performance analytics with customizable widgets and metrics*
@@ -46,8 +64,7 @@
 *View all your trades in our trade log*
 ![Trade Log](https://github.com/user-attachments/assets/94d0c6ad-8252-42d2-acae-33e4ccf9446a)
 
-
-## 🚀 Installation
+## Installation
 
 ### Method 1: BRAT (Recommended)
 
@@ -68,22 +85,23 @@
 3. Place the downloaded files in the `journalit` folder
 4. Restart Obsidian and enable the plugin in **Settings → Community Plugins**
 
-## 🏁 Quick Start
+## Quick Start
 
 1. **Configure**: After installation, open **Settings → Journalit** to configure the plugin
 2. **First Trade**: Create your first trade note using the intuitive trade form
 3. **Daily Review**: Set up daily review cards for structured reflection and planning
 4. **Explore**: Dive into the dashboard for comprehensive performance analytics
-5. **Advanced**: Optionally set up MetaTrader sync for automated trade collection
+5. **MT5 Trade Sync**: Optionally set up MetaTrader sync for automated trade collection
+6. **Recommended**: Go into Settings → Editor → Display → Set "Properties in document" to **Hidden**
 
-## 💬 Support
+## Support
 
-- **📖 Documentation**: [Full Documentation](https://github.com/Cursivez/jouranlit-repo)
-- **🐛 Issues**: Report bugs or request features via [GitHub Issues](https://github.com/Cursivez/jouranlit-repo/issues)
-- **💬 Community**: Join our trading community discussions
-- **✉️ Contact**: Reach out for support and feature requests
+- **Documentation**: [Full Documentation](https://github.com/Cursivez/jouranlit-repo)
+- **Issues**: Report bugs or request features via [GitHub Issues](https://github.com/Cursivez/jouranlit-repo/issues)
+- **Community**: Join our [Discord Server](https://discord.gg/AkSw3D9h8b) for support and discussions
+- **Beta Testing**: Questions? Ask in our Discord #getting-started channel
 
-## 📄 License
+## License
 
 This plugin is proprietary software. The compiled plugin files are distributed for use with Obsidian, but the source code is not available under an open source license.
 
