@@ -14351,13 +14351,18 @@ ${k}
   background-color: var(--background-secondary-alt);
 }
 `;function jq(){let e="journalit-transaction-modal-styles";if(document.getElementById(e))return;let t=document.createElement("style");t.id=e,t.textContent=Dfe,document.head.appendChild(t)}function Lq(){let e=document.getElementById("journalit-transaction-modal-styles");e&&e.remove()}SE();Z.account={inject:Iq,remove:Fq};Z.transactionModal={inject:jq,remove:Lq};Z.accountLinkModal={inject:kE,remove:TE};Wn();var Pfe=`
-/* Trade Log View Container */
+/* Trade Log View Container 
+ * CRITICAL: All flex containers in the hierarchy must have min-height: 0
+ * to fix Firefox and other browser flexbox scrolling issues.
+ * See: https://stackoverflow.com/questions/36535656/using-flexbox-and-overflow-hidden-scroll-not-working-in-firefox
+ */
 .journalit-trade-log-view-container {
   height: 100%;
   overflow: hidden !important; /* Override ReactView inline styles */
   display: flex;
   flex-direction: column;
   padding: 0;
+  min-height: 0; /* Critical for flexbox scrolling */
 }
 
 /* Target the React root element to prevent it from scrolling */
@@ -14366,6 +14371,7 @@ ${k}
   overflow: visible;
   display: flex;
   flex-direction: column;
+  min-height: 0; /* Critical for flexbox scrolling */
 }
 
 /* Main Container */
@@ -14376,6 +14382,7 @@ ${k}
   background: var(--background-primary);
   color: var(--text-normal);
   overflow: hidden;
+  min-height: 0; /* Critical for flexbox scrolling */
 }
 
 /* Header */
@@ -14441,12 +14448,15 @@ ${k}
   -webkit-overflow-scrolling: touch;
   scroll-behavior: auto; /* Disable smooth scrolling for better performance */
   will-change: scroll-position;
+  /* Cross-browser flexbox scrolling fix */
+  contain: layout;
 }
 
 /* Ensure proper scrolling in trades view */
 .trade-log-content.trades-view {
   display: flex;
   flex-direction: column;
+  min-height: 0; /* Critical for flexbox scrolling */
 }
 
 /* Use native scrollbar for better performance */
@@ -14494,6 +14504,9 @@ ${k}
   padding: 8px 0;
   flex: 1 0 auto; /* Allow tree to grow but not shrink */
   contain: layout; /* Improve rendering performance */
+  min-height: 0; /* Critical for flexbox scrolling */
+  /* Force proper overflow behavior in all browsers */
+  overflow: visible;
 }
 
 /* Tree container for virtualized list */
@@ -14501,6 +14514,7 @@ ${k}
   flex: 1;
   overflow: hidden;
   position: relative;
+  min-height: 0; /* Critical for flexbox scrolling */
 }
 
 /* Node Styles */
