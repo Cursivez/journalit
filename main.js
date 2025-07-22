@@ -11190,15 +11190,15 @@ body .weekly-review-container .weekly-review-navigation .weekly-review-nav-butto
     width: 100vw;
     height: 100vh;
     background-color: rgba(0, 0, 0, 0.9);
-    z-index: 1000000;
+    z-index: 11000;
     display: flex;
     align-items: center;
     justify-content: center;
     animation: journalit-fade-in 0.3s ease-in-out;
-    backdrop-filter: blur(5px);
-    -webkit-backdrop-filter: blur(5px);
     cursor: pointer;
     pointer-events: auto !important;
+    /* Ensure this doesn't interfere with normal page flow */
+    contain: layout style paint;
   }
 
   /* Overlay UI Elements */
@@ -11209,7 +11209,9 @@ body .weekly-review-container .weekly-review-navigation .weekly-review-nav-butto
     width: 100vw;
     height: 100vh;
     pointer-events: none;
-    z-index: 1000001;
+    z-index: 11001;
+    /* Ensure this doesn't interfere with normal page flow */
+    contain: layout style paint;
   }
 
   .journalit-fullscreen-title {
@@ -11219,11 +11221,9 @@ body .weekly-review-container .weekly-review-navigation .weekly-review-nav-butto
     color: white;
     font-size: 16px;
     font-weight: 500;
-    background-color: rgba(0, 0, 0, 0.6);
+    background-color: rgba(0, 0, 0, 0.8);
     padding: 8px 12px;
     border-radius: 6px;
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
     pointer-events: auto;
   }
 
@@ -11233,7 +11233,7 @@ body .weekly-review-container .weekly-review-navigation .weekly-review-nav-butto
     right: 20px;
     width: 40px;
     height: 40px;
-    background-color: rgba(0, 0, 0, 0.6);
+    background-color: rgba(0, 0, 0, 0.8);
     color: white;
     border: none;
     border-radius: 50%;
@@ -11243,14 +11243,12 @@ body .weekly-review-container .weekly-review-navigation .weekly-review-nav-butto
     display: flex;
     align-items: center;
     justify-content: center;
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
     transition: all 0.2s ease;
     pointer-events: auto;
   }
 
   .journalit-fullscreen-close-btn:hover {
-    background-color: rgba(0, 0, 0, 0.8);
+    background-color: rgba(0, 0, 0, 1.0);
     transform: scale(1.1);
   }
 
@@ -11261,6 +11259,9 @@ body .weekly-review-container .weekly-review-navigation .weekly-review-nav-butto
     align-items: center;
     justify-content: center;
     overflow: hidden;
+    /* Ensure this doesn't interfere with normal page flow */
+    contain: layout style paint;
+    isolation: isolate;
   }
 
   /* Image Carousel Styles */
@@ -11396,6 +11397,9 @@ body .weekly-review-container .weekly-review-navigation .weekly-review-nav-butto
     align-items: center;
     justify-content: center;
     overflow: hidden;
+    /* Ensure this doesn't interfere with normal page flow */
+    contain: layout style paint;
+    isolation: isolate;
   }
 
   .journalit-fullscreen-image-wrapper {
@@ -11406,6 +11410,8 @@ body .weekly-review-container .weekly-review-navigation .weekly-review-nav-butto
     width: 100vw;
     height: 100vh;
     overflow: hidden;
+    /* Ensure this doesn't interfere with normal page flow */
+    contain: layout style paint;
   }
 
   .journalit-fullscreen-zoomable-image {
@@ -11427,7 +11433,7 @@ body .weekly-review-container .weekly-review-navigation .weekly-review-nav-butto
     transform: translateY(-50%);
     width: 45px;
     height: 45px;
-    background-color: rgba(0, 0, 0, 0.6);
+    background-color: rgba(0, 0, 0, 0.8);
     color: white;
     border: none;
     border-radius: 50%;
@@ -11439,13 +11445,11 @@ body .weekly-review-container .weekly-review-navigation .weekly-review-nav-butto
     display: flex;
     align-items: center;
     justify-content: center;
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
     opacity: 0.8;
   }
 
   .journalit-fullscreen-nav-btn:hover {
-    background-color: rgba(0, 0, 0, 0.8);
+    background-color: rgba(0, 0, 0, 1.0);
     transform: translateY(-50%) scale(1.1);
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
     opacity: 1;
@@ -11465,14 +11469,12 @@ body .weekly-review-container .weekly-review-navigation .weekly-review-nav-butto
     bottom: 20px;
     left: 50%;
     transform: translateX(-50%);
-    background-color: rgba(0, 0, 0, 0.6);
+    background-color: rgba(0, 0, 0, 0.8);
     color: white;
     padding: 8px 12px;
     border-radius: 20px;
     font-size: 12px;
     font-weight: 500;
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
     z-index: 10;
   }
 
@@ -11481,14 +11483,12 @@ body .weekly-review-container .weekly-review-navigation .weekly-review-nav-butto
     position: absolute;
     bottom: 20px;
     left: 20px;
-    background-color: rgba(0, 0, 0, 0.6);
+    background-color: rgba(0, 0, 0, 0.8);
     color: white;
     padding: 8px 12px;
     border-radius: 20px;
     font-size: 12px;
     font-weight: 500;
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
     z-index: 10;
     opacity: 0;
     transition: opacity 0.3s ease;
