@@ -2,11 +2,13 @@
 
 ![Journalit Banner](https://github.com/user-attachments/assets/ab7232d4-1352-4658-a284-86029c0246f1)
 
-**A powerful, local-first trading journal plugin for Obsidian that helps traders track, analyze, and improve their trading performance. (Closed Source)**
+**A powerful, local-first trading journal plugin for Obsidian that helps traders track, analyze, and improve their trading performance. Complete with trading templates and automated analytics. (Closed Source)**
 
 [![Obsidian Plugin](https://img.shields.io/badge/Obsidian-Plugin-purple?logo=obsidian)](https://obsidian.md/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?logo=typescript&logoColor=white)](#)
 [![React](https://img.shields.io/badge/React-20232A?logo=react&logoColor=61DAFB)](#)
+
+*Keywords: obsidian trading journal, trading plugin, trade tracker, obsidian trading template, trading analytics, MT5 sync*
 
 [📖 Features](#features) • [🚀 Installation](#installation) • [🔥 Beta Testing](#beta-testers-wanted) • [💬 Support](#support)
 
@@ -35,18 +37,28 @@ Currently seeking 100 serious traders for beta testing before our official launc
 
 ## Features
 
-- **Local-First**: All your data stays in your Obsidian vault
-- **Comprehensive Trade Tracking**: Record trades with detailed metadata and rich context
-- **Advanced Analytics**: Performance charts, drawdown analysis, and comprehensive metrics
-- **Daily & Weekly Reviews**: Structured reflection and planning workflows
-- **Account Management**: Track multiple trading accounts with transaction history
-- **Backend Integration**: Sync with MetaTrader via FTP (optional)
-- **Smart Onboarding**: Guided setup to get you started in under 60 seconds
+### Core Trading Journal Functionality
+- **Local-First Trading Journal**: All your trading data stays secure in your Obsidian vault
+- **Comprehensive Trade Tracking**: Record trades with detailed metadata, psychology notes, and rich context
+- **Trading Templates**: Pre-built templates for daily reviews, trade analysis, and market assessments
+- **Advanced Trading Analytics**: Performance charts, drawdown analysis, win rate metrics, and comprehensive trading statistics
+
+### Obsidian Integration
+- **Native Obsidian Plugin**: Seamlessly integrates with your existing Obsidian workflow
+- **Daily & Weekly Trading Reviews**: Structured reflection templates and planning workflows
+- **Account Management**: Track multiple trading accounts with transaction history and P&L tracking
+- **Trade Log & Journal**: Centralized view of all your trades with filtering and search capabilities
+
+### Advanced Features
+- **MetaTrader 5 Integration**: Sync trades automatically via FTP (MT5 trade sync)
+- **Smart Onboarding**: Guided setup to get your trading journal running in under 60 seconds
+- **Psychology Tracking**: Monitor trading emotions, mistakes, and behavioral patterns
+- **Customizable Dashboard**: Personalized trading analytics and performance widgets
 
 ## Screenshots
 
 ### Trading Dashboard
-*Comprehensive performance analytics with customizable widgets and metrics*
+*Comprehensive performance analytics with customizable widgets and trading metrics*
 
 ![Trading Dashboard](https://github.com/user-attachments/assets/47aad6ac-4c8b-4dbe-b3ca-97337705dc48)
 
@@ -56,12 +68,12 @@ Currently seeking 100 serious traders for beta testing before our official launc
 ![Account Dashboard](https://github.com/user-attachments/assets/4305b932-9f63-4202-ac91-b4985004b28b)
 
 ### Account Notes
-*Track your drawdowns, profit targets, and monthly costs for each account*
+*Track your drawdowns, profit targets, and monthly costs for each trading account*
 
 ![Account Note](https://github.com/user-attachments/assets/f8bc3554-c7ee-4845-b4bb-31bd5ad34a1b)
 
 ### Trade Log
-*View all your trades in our trade log*
+*Complete trading journal with all your trades in an organized, searchable format*
 ![Trade Log](https://github.com/user-attachments/assets/94d0c6ad-8252-42d2-acae-33e4ccf9446a)
 
 ## Installation
@@ -85,14 +97,23 @@ Currently seeking 100 serious traders for beta testing before our official launc
 3. Place the downloaded files in the `journalit` folder
 4. Restart Obsidian and enable the plugin in **Settings → Community Plugins**
 
-## Quick Start
+## Quick Start Guide
 
-1. **Configure**: After installation, open **Settings → Journalit** to configure the plugin
-2. **First Trade**: Create your first trade note using the intuitive trade form
-3. **Daily Review**: Set up daily review cards for structured reflection and planning
-4. **Explore**: Dive into the dashboard for comprehensive performance analytics
-5. **MT5 Trade Sync**: Optionally set up MetaTrader sync for automated trade collection
+1. **Configure**: After installation, open **Settings → Journalit** to configure your trading journal
+2. **First Trade**: Create your first trade entry using the intuitive trade form
+3. **Daily Review**: Set up daily trading review templates for structured reflection and planning
+4. **Trading Dashboard**: Explore the analytics dashboard for comprehensive performance metrics
+5. **MT5 Trade Sync**: Optionally set up MetaTrader 5 sync for automated trade collection
 6. **Recommended**: Go into Settings → Editor → Display → Set "Properties in document" to **Hidden**
+
+## Use Cases
+
+**Perfect for:**
+- Day traders using Obsidian who need structured trading templates
+- Swing traders wanting comprehensive trade analysis and journaling
+- Traders using MetaTrader 5 who want automated trade sync with Obsidian
+- Anyone looking for a local-first alternative to cloud-based trading journals
+- Obsidian users who want to consolidate their trading workflow in one place
 
 ## Support
 
@@ -111,6 +132,6 @@ This plugin is proprietary software. The compiled plugin files are distributed f
 
 **Built with ♥ for the trading community**
 
-*Transform your trading journal into a powerful analytics platform*
+*Transform your Obsidian vault into a powerful trading journal and analytics platform*
 
 </div>
