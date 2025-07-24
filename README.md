@@ -96,7 +96,7 @@ Currently seeking 100 serious traders for beta testing before our official launc
 
 ## Support
 
-- **Documentation**: [Full Documentation](https://github.com/Cursivez/jouranlit-repo)
+- **Documentation**: Full Documentation *coming soon*
 - **Issues**: Report bugs or request features via [GitHub Issues](https://github.com/Cursivez/jouranlit-repo/issues)
 - **Community**: Join our [Discord Server](https://discord.gg/AkSw3D9h8b) for support and discussions
 - **Beta Testing**: Questions? Ask in our Discord #getting-started channel
