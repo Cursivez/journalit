@@ -1,7 +1,7 @@
 {
 	"id": "journalit",
 	"name": "Journalit",
-	"version": "1.1.5-beta.3",
+	"version": "1.1.5-beta.4",
 	"minAppVersion": "0.15.0",
 	"description": "Local-first journaling plugin for traders with markdown support.",
 	"author": "Cursivez",
