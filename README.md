@@ -65,12 +65,12 @@ Currently seeking 100 serious traders for beta testing before our official launc
 ### Account Dashboard
 *Financial account management with AUM tracking and transaction history*
 
-![Account Dashboard](https://github.com/user-attachments/assets/4305b932-9f63-4202-ac91-b4985004b28b)
+![Account Dashboard](https://github.com/user-attachments/assets/10bea344-81da-465a-9ad6-55c1120c80ad)
 
-### Account Notes
+### Account Pages
 *Track your drawdowns, profit targets, and monthly costs for each trading account*
 
-![Account Note](https://github.com/user-attachments/assets/f8bc3554-c7ee-4845-b4bb-31bd5ad34a1b)
+![Account Pages](https://github.com/user-attachments/assets/e9630bc1-326e-4f1c-8e2f-40e7e022a642)
 
 ### Trade Log
 *Complete trading journal with all your trades in an organized, searchable format*
