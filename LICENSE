@@ -1,0 +1,17 @@
+Proprietary License
+
+Copyright (c) 2025 Journalit
+
+All rights reserved.
+
+This software and associated documentation files (the "Software") are
+proprietary and confidential. The compiled plugin files (main.js, manifest.json)
+may be used with Obsidian.md in accordance with the terms of service, but the
+source code is not available under an open source license.
+
+Redistribution of source code or compiled binaries without explicit permission
+is prohibited.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.

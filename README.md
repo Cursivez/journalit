@@ -14,6 +14,8 @@
 
 </div>
 
+> **Privacy First**: All your manual trades stay local in your vault. Optional MT5 sync connects to Journalit servers only for automated trade retrieval. [Read our Privacy Policy](PRIVACY.md)
+
 ---
 
 ## 🔥 Beta Testers Wanted
@@ -50,7 +52,7 @@ Currently seeking 100 serious traders for beta testing before our official launc
 - **Trade Log & Journal**: Centralized view of all your trades with filtering and search capabilities
 
 ### Advanced Features
-- **MetaTrader 5 Integration**: Sync trades automatically via FTP (MT5 trade sync)
+- **MetaTrader 5 Integration**: Automatically sync trades from MT5 via FTP (optional, requires internet connection). Manual trades always remain local. [Privacy details](PRIVACY.md)
 - **Smart Onboarding**: Guided setup to get your trading journal running in under 60 seconds
 - **Psychology Tracking**: Monitor trading emotions, mistakes, and behavioral patterns
 - **Customizable Dashboard**: Personalized trading analytics and performance widgets
@@ -91,7 +93,6 @@ Currently seeking 100 serious traders for beta testing before our official launc
 
 1. Download the latest release files:
    - `main.js`
-   - `main.css` 
    - `manifest.json`
 2. Create a folder called `journalit` in your `.obsidian/plugins/` directory
 3. Place the downloaded files in the `journalit` folder
@@ -118,9 +119,18 @@ Currently seeking 100 serious traders for beta testing before our official launc
 ## Support
 
 - **Documentation**: Full Documentation *coming soon*
-- **Issues**: Report bugs or request features via [GitHub Issues](https://github.com/Cursivez/jouranlit-repo/issues)
+- **Issues**: Report bugs or request features via [GitHub Issues](https://github.com/Cursivez/journalit/issues)
 - **Community**: Join our [Discord Server](https://discord.gg/AkSw3D9h8b) for support and discussions
 - **Beta Testing**: Questions? Ask in our Discord #getting-started channel
+
+## Privacy & Data
+
+Journalit is built with privacy in mind:
+- **Local-First**: Core features work entirely offline
+- **Network Usage**: Plugin makes network requests ONLY when you enable optional MT5 sync feature (connects to api.journalit.co and FTP servers for automated trade retrieval)
+- **No Manual Trade Collection**: Trades you create manually never leave your vault
+- **No Telemetry**: Plugin does not collect usage analytics or telemetry
+- **Transparent**: Full details in our [Privacy Policy](PRIVACY.md)
 
 ## License
 
