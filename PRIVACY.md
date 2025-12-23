@@ -1,6 +1,6 @@
 # Privacy Policy - Journalit
 
-**Last Updated**: 2025-09-30
+**Last Updated**: 2025-11-30
 
 ## Overview
 
@@ -24,9 +24,51 @@ The core functionality of Journalit operates **entirely locally** within your Ob
 
 ---
 
+## Local Data Storage
+
+### Plugin Settings
+**Location**: `.obsidian/plugins/journalit/data.json`
+
+Contains your preferences: currency, display name, date formats, custom fields, dashboard layout, and sync mappings. Never transmitted to any server.
+
+### Authentication Data (If Authenticated)
+**Location**: `.obsidian/plugins/journalit/auth.json` (encrypted)
+
+When you authenticate, the following is stored locally:
+- JWT access token (encrypted with AES-256-GCM)
+- User ID and email
+- Subscription tier
+
+**Security**: Tokens are encrypted with device-specific keys derived from your vault path and device information. Keys are non-transferable between devices.
+
+### Cache Data
+**Location**: `.journalit/cache/`
+
+Query results and indexes for performance optimization. Stays local, never transmitted.
+
+---
+
 ## Optional Network Features
 
-Journalit includes optional features that require network connectivity. Backend synchronization is **disabled by default** and must be explicitly enabled in plugin settings.
+Journalit includes optional features that require network connectivity. Backend synchronization is **disabled by default** and requires explicit authentication.
+
+### Authentication (Required for Sync Features)
+
+When you choose to authenticate:
+
+**What is Transmitted:**
+- Your email address (to receive a 6-digit verification code)
+- The verification code you enter (to complete authentication)
+
+**What is Returned:**
+- JWT token (42-day expiry for beta users)
+- User ID and subscription status
+
+**What is NOT Transmitted:**
+- Device fingerprints or hardware identifiers
+- Passwords (we use passwordless email verification)
+
+---
 
 ### MetaTrader 5 Sync (Optional)
 
@@ -34,24 +76,40 @@ When you enable MT5 sync in **Settings → Integration → Backend Integration**
 
 **What is Transmitted:**
 - **Only automatically synced trades** from your MetaTrader account
-- Trade data: symbol, entry/exit times, prices, position size, P&L
+- Trade data: symbol, entry/exit times, prices, position size, P&L, commission, swap, fees
 - Account information: MT5 account ID, display name
-- Vault identifier: A hashed, non-reversible identifier for sync coordination
+- Vault identifier: A SHA-256 hashed, non-reversible identifier for sync coordination
 
 **What is NOT Transmitted:**
 - Manual trades you create in Obsidian
 - Trade notes or analysis you write
+- Screenshots or attachments
 - File contents or vault structure
-- Personal information beyond account IDs
 
 **Infrastructure:**
-- Backend Server (HTTPS)
-- FTP Server (for retrieving MT5 trades)
-- Data transmission: Encrypted via HTTPS
+- Backend Server (HTTPS encrypted)
+- FTP Server (for MetaTrader report uploads)
 
 **Control:**
+- Requires explicit authentication via email verification
 - Enable/disable in **Settings → Integration → Backend Integration**
-- Default: **Enabled** (requires explicit authentication - no data syncs until you log in with email verification)
+
+---
+
+### CSV Import with AI Mapping (Optional)
+
+When importing CSV files, you may optionally use AI-assisted column mapping:
+
+**What is Transmitted:**
+- CSV column headers (e.g., "Date", "Symbol", "P/L")
+- First 3-5 sample rows of your CSV
+
+**What is NOT Transmitted:**
+- Full CSV file contents
+- Complete trade history
+
+**Control:**
+- This is opt-in per import - you can always map columns manually instead
 
 ---
 
@@ -59,15 +117,46 @@ When you enable MT5 sync in **Settings → Integration → Backend Integration**
 
 When backend integration is enabled, the plugin communicates with the following endpoints:
 
+**Authentication:**
+- `/auth/login` - Request email verification code
+- `/auth/verify` - Verify code and receive token
+- `/auth/validate` - Validate existing token
+
+**Sync Operations:**
 - `/api/v1/obsidian/register-vault` - Initial vault registration
 - `/api/v1/sync/ftp` - Trigger FTP synchronization
 - `/api/v1/trades` - Fetch trade data from backend
 - `/api/v1/mt-accounts` - MetaTrader account management
 - `/api/v1/obsidian/status` - Check synchronization status
 - `/api/v1/ftp-users` - FTP credential management
+- `/api/v1/csv/ai-analyze` - AI column mapping (optional)
 - `/api/v1/health` - Backend health check
 
-All API requests require JWT authentication via bearer token.
+All authenticated API requests use JWT tokens in the Authorization header.
+
+---
+
+## Server-Side Data Storage
+
+When you use sync features, the backend stores:
+
+### User Data
+- Email address
+- Username (derived from email)
+- Subscription tier and status
+- Account creation timestamp
+
+### Trading Data
+- Synced trades from MetaTrader (symbol, times, prices, P&L, fees)
+- MT account IDs and display names
+- Processing history (which reports have been synced)
+
+### Security Logs
+- FTP login attempts (IP address, timestamp, success/failure)
+- Used for security monitoring and abuse prevention
+
+### Data Isolation
+All user data is protected by PostgreSQL Row-Level Security (RLS). Each user can only access their own data.
 
 ---
 
@@ -75,19 +164,42 @@ All API requests require JWT authentication via bearer token.
 
 ### Encryption & Transport
 - All network communications use **HTTPS (TLS 1.2+)**
-- FTP credentials encrypted by Obsidian's built-in data storage
+- Authentication tokens encrypted locally with AES-256-GCM
+- FTP credentials stored in Obsidian's encrypted data storage
 - Vault identifier is hashed using SHA-256 (non-reversible)
 
-**FTP Credentials**: FTP credentials are automatically generated by the backend server when you enable MT5 sync. These credentials provide access only to your own MetaTrader reports and are isolated from other users through strict access controls.
+### Password Security
+- FTP credentials: bcrypt hashed on server
+- No plaintext passwords stored
 
-### Data Retention
-- **Synced Trades**: Stored on backend servers for sync functionality
-- **Account Mappings**: Stored until you disable MT5 sync
+---
 
-### Third-Party Access
-- **No data sharing** with third parties
-- **No advertising** or tracking networks
-- **No data sales** - your data is never monetized
+## Data Retention
+
+### Local Data
+- Stored indefinitely until you delete files or uninstall the plugin
+- You have full control over local data
+
+### Server Data
+- **Synced trades**: Stored for sync functionality until account deletion
+- **Account data**: Stored until account deletion
+- **FTP access logs**: Retained for security purposes, older entries periodically cleaned
+- **Authentication codes**: Expired codes deleted within 24 hours
+
+---
+
+## Third-Party Services
+
+### Email Delivery
+Verification codes are sent via email service provider:
+- Only your email address and verification code
+- Used solely for authentication
+
+### No Analytics or Tracking
+- No Google Analytics
+- No user behavior tracking
+- No advertising networks
+- No data sold to third parties
 
 ---
 
@@ -99,10 +211,28 @@ All API requests require JWT authentication via bearer token.
 
 ### Data Deletion
 - **Local Data**: Delete by removing the plugin or deleting files
-- **Backend Data**: Contact support@journalit.co to request deletion
+- **Backend Data**: Contact contact@journalit.co to request complete account deletion
+
+### Data Export
+- Local data: Already in your vault as markdown files
+- Backend data: Contact contact@journalit.co for data export
 
 ### Opt-Out
 - MT5 Sync: Disable in **Settings → Backend Integration**
+- Authentication: Log out to revoke token access
+- You can use the plugin 100% offline with no network features
+
+---
+
+## What We Do NOT Collect
+
+- Browsing history or clickstream data
+- Device identifiers or fingerprints (beyond what's used for local encryption)
+- Location data
+- Trading account passwords or API keys
+- Contents of your Obsidian vault
+- Your manual trades or personal notes
+- Usage analytics or telemetry
 
 ---
 
