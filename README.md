@@ -161,7 +161,7 @@ This plugin is proprietary software. The compiled plugin files are distributed f
 
 <div align="center">
 
-**Built for the trading community**
+**Built with ♥ for the trading community**
 
 *Transform your Obsidian vault into a powerful trading journal*
 
