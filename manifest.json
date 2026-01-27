@@ -1,9 +1,9 @@
 {
 	"id": "journalit",
 	"name": "Journalit",
-	"version": "1.6.3-beta.3",
+	"version": "1.6.3-beta.4",
 	"minAppVersion": "0.15.0",
-	"description": "Local-first journaling plugin for traders with markdown support. (Closed source)",
+	"description": "A local-first trading journal for Obsidian (Closed source)",
 	"author": "Cursivez",
 	"authorUrl": "https://github.com/Cursivez",
 	"fundingUrl": "https://github.com/sponsors/Cursivez",
