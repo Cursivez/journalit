@@ -17,7 +17,7 @@ A local-first trading journal for Obsidian (Closed source)
 
 </div>
 
-![Home View](https://github.com/user-attachments/assets/9ef0236f-686f-4511-a05f-925e51f1224a)
+![Home View](https://github.com/user-attachments/assets/7687e9a1-7bc0-47f5-bd63-d63cbe6553ef)
 
 ## Highlights
 
