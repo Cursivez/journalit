@@ -1,11 +1,10 @@
 {
 	"id": "journalit",
 	"name": "Journalit",
-	"version": "1.6.3-beta.6",
+	"version": "1.6.5",
 	"minAppVersion": "0.15.0",
 	"description": "A local-first trading journal for Obsidian (Closed source)",
 	"author": "Cursivez",
 	"authorUrl": "https://github.com/Cursivez",
-	"fundingUrl": "https://github.com/sponsors/Cursivez",
 	"isDesktopOnly": false
 }

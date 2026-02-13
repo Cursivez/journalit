@@ -26,11 +26,10 @@ A local-first trading journal for Obsidian (Closed source)
 - **Trading dashboard**: track performance and patterns at a glance.
 - **Account dashboard**: built for prop firm profit targets and drawdowns.
 - **Review system (V2)**: daily → yearly templates with a layout builder.
-- **CSV import**: built-in adapters + flexible mapping for other formats.
-- **MetaTrader 4/5 sync**: automated trade import via FTP.
+- **[CSV import](https://journalit.co/csv-import)**: built-in adapters + flexible mapping for other formats.
+- **[MetaTrader 4/5 sync](https://journalit.co/metatrader-trading-journal)**: automated trade import via FTP.
 
-<details>
-<summary>More screenshots</summary>
+## Screenshots
 
 ### Trading Dashboard
 
@@ -52,13 +51,12 @@ A local-first trading journal for Obsidian (Closed source)
 
 ### Account Dashboard
 
-![Account Dashboard](https://github.com/user-attachments/assets/10bea344-81da-465a-9ad6-55c1120c80ad)
+![Account Dashboard](https://github.com/user-attachments/assets/dbd1cd69-3f8b-4af8-883c-460dbfb8944b)
 
 ### Account Pages
 
-![Account Pages](https://github.com/user-attachments/assets/e9630bc1-326e-4f1c-8e2f-40e7e022a642)
+![Account Pages](https://github.com/user-attachments/assets/8eeb0f2d-a8d8-412e-bf23-cb21e3a0401b)
 
-</details>
 
 ## Supported brokers
 
@@ -73,6 +71,8 @@ Built-in CSV adapters:
 - [Hyperliquid](https://journalit.co/docs/broker-guides-hyperliquid)
 - [Sierra Chart](https://journalit.co/docs/broker-guides-sierrachart)
 - [MotiveWave](https://journalit.co/docs/broker-guides-motivewave)
+- [FX Replay](https://journalit.co/docs/broker-guides-fxreplay)
+- [ATAS](https://journalit.co/docs/broker-guides-atas)
 
 Missing your broker? Join [Discord](https://discord.gg/AkSw3D9h8b) and tell us what you want next.
 
@@ -92,6 +92,16 @@ Full install + troubleshooting: https://journalit.co/docs
 <summary>Search keywords</summary>
 
 Keywords: obsidian trading journal, trading plugin, trade tracker, obsidian trading template, trading analytics, MetaTrader, MT4 sync, MT5 sync, CSV import, prop firm, prop firms, funded account, profit target, trailing drawdown, max drawdown
+
+</details>
+
+<details>
+<summary>More resources</summary>
+
+- [How it works (local-first)](https://journalit.co/obsidian-trading-journal)
+- [CSV import overview](https://journalit.co/csv-import)
+- [MetaTrader sync overview](https://journalit.co/metatrader-trading-journal)
+- [Compare with other journals](https://journalit.co/compare)
 
 </details>
 
