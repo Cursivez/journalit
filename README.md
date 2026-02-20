@@ -57,7 +57,6 @@ A local-first trading journal for Obsidian (Closed source)
 
 ![Account Pages](https://github.com/user-attachments/assets/8eeb0f2d-a8d8-412e-bf23-cb21e3a0401b)
 
-
 ## Supported brokers
 
 Built-in CSV adapters:
@@ -73,6 +72,8 @@ Built-in CSV adapters:
 - [MotiveWave](https://journalit.co/docs/broker-guides-motivewave)
 - [FX Replay](https://journalit.co/docs/broker-guides-fxreplay)
 - [ATAS](https://journalit.co/docs/broker-guides-atas)
+- [Trading Technologies (TT)](https://journalit.co/docs/broker-guides-tradingtechnologies)
+- [Rithmic](https://journalit.co/docs/broker-guides-rithmic)
 
 Missing your broker? Join [Discord](https://discord.gg/AkSw3D9h8b) and tell us what you want next.
 
@@ -109,6 +110,6 @@ Keywords: obsidian trading journal, trading plugin, trade tracker, obsidian trad
 
 This plugin is proprietary software. The compiled plugin files are distributed for use with Obsidian, but the source code is not available under an open source license.
 
-* * *
+---
 
 [Docs](https://journalit.co/docs) | [Discord](https://discord.gg/AkSw3D9h8b) | [X.com](https://x.com/journalitco)
