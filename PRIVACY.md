@@ -61,7 +61,7 @@ When you choose to authenticate:
 - The verification code you enter (to complete authentication)
 
 **What is Returned:**
-- JWT token (42-day expiry for beta users)
+- JWT token (42-day expiry)
 - User ID and subscription status
 
 **What is NOT Transmitted:**

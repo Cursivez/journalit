@@ -59,7 +59,7 @@ A local-first trading journal for Obsidian (Closed source)
 
 ## Supported brokers
 
-Built-in CSV adapters:
+Built-in broker adapters:
 
 - [IBKR](https://journalit.co/docs/broker-guides-ibkr)
 - [Tradovate](https://journalit.co/docs/broker-guides-tradovate)
@@ -74,6 +74,7 @@ Built-in CSV adapters:
 - [ATAS](https://journalit.co/docs/broker-guides-atas)
 - [Trading Technologies (TT)](https://journalit.co/docs/broker-guides-tradingtechnologies)
 - [Rithmic](https://journalit.co/docs/broker-guides-rithmic)
+- [JDR Securities Limited](https://journalit.co/docs/broker-guides-jdr)
 
 Missing your broker? Join [Discord](https://discord.gg/AkSw3D9h8b) and tell us what you want next.
 
