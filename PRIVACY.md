@@ -113,6 +113,29 @@ When importing CSV files, you may optionally use AI-assisted column mapping:
 
 ---
 
+### Exchange-rate conversion (Optional)
+
+When multi-currency conversion is needed, Journalit may request exchange rates from a third-party exchange-rate service:
+
+**What is Transmitted:**
+- Base currency code needed for the exchange-rate lookup
+- Standard exchange-rate request parameters required to retrieve current rates
+
+**What is NOT Transmitted:**
+- Trade notes or journal text
+- Vault contents or file structure
+- Full trade history
+- Authentication tokens for Journalit services
+
+**Purpose:**
+- Convert multi-currency P&L and analytics into your selected base currency
+
+**Control:**
+- This happens only when exchange-rate-backed conversion is needed for multi-currency calculations
+- Cached rates are stored locally for performance and offline fallback
+
+---
+
 ## Network Endpoints
 
 When backend integration is enabled, the plugin communicates with the following endpoints:

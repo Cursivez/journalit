@@ -7,7 +7,7 @@
   style="max-width: 100%; height: auto;"
 />
 
-A local-first trading journal for Obsidian (Closed source)
+Local-first trading journal for Obsidian.
 
 [![Obsidian Plugin](https://img.shields.io/badge/Obsidian-Plugin-purple?style=flat-square&logo=obsidian)](https://obsidian.md/)
 [![Docs](https://img.shields.io/badge/docs-journalit.co-0B7285?style=flat-square&logo=readthedocs&logoColor=white)](https://journalit.co/docs)
@@ -19,6 +19,18 @@ A local-first trading journal for Obsidian (Closed source)
 
 ![Home View](https://github.com/user-attachments/assets/7687e9a1-7bc0-47f5-bd63-d63cbe6553ef)
 
+## Installation
+
+### BRAT
+
+1. Install [Obsidian](https://obsidian.md/download)
+2. Enable community plugins: **Settings → Community Plugins → Turn on community plugins**
+3. Install [BRAT](https://github.com/TfTHacker/obsidian42-brat)
+4. In BRAT settings, click **Add Beta Plugin**
+5. Enter: `Cursivez/journalit` (Latest version)
+
+Full install + troubleshooting: https://journalit.co/docs
+
 ## Highlights
 
 - **Local-first**: core journaling stays inside your Obsidian vault.
@@ -28,6 +40,15 @@ A local-first trading journal for Obsidian (Closed source)
 - **Review system (V2)**: daily → yearly templates with a layout builder.
 - **[CSV import](https://journalit.co/csv-import)**: built-in adapters + flexible mapping for other formats.
 - **[MetaTrader 4/5 sync](https://journalit.co/metatrader-trading-journal)**: automated trade import via FTP.
+
+## Important disclosures
+
+- **Local-first core**: core journaling works offline and stores your notes and trades inside your Obsidian vault.
+- **Account required for full access**: a Journalit account is required for authentication-backed and subscription-gated features.
+- **Paid features**: a paid Pro subscription is required for full access to Pro features such as MetaTrader sync and AI-assisted CSV mapping.
+- **Optional network use**: the plugin only uses Journalit network services when you choose to use network-backed features. Signing in contacts Journalit services for email verification, token validation, and subscription status. If you then use authenticated features such as MetaTrader sync or AI-assisted CSV mapping, the plugin also connects to the Journalit backend API for sync coordination, trade retrieval, and optional AI mapping, and MetaTrader sync uses Journalit-managed FTP infrastructure for report uploads. Journalit may also request exchange rates from a third-party exchange-rate service when multi-currency conversion is needed. These network-backed features are opt-in.
+- **Closed source**: the plugin is proprietary/closed-source software.
+- **Privacy details**: see [PRIVACY.md](PRIVACY.md) for data handling, retention, and infrastructure details.
 
 ## Screenshots
 
@@ -77,18 +98,6 @@ Built-in broker adapters:
 - [JDR Securities Limited](https://journalit.co/docs/broker-guides-jdr)
 
 Missing your broker? Join [Discord](https://discord.gg/AkSw3D9h8b) and tell us what you want next.
-
-## Installation
-
-### BRAT
-
-1. Install [Obsidian](https://obsidian.md/download)
-2. Enable community plugins: **Settings → Community Plugins → Turn on community plugins**
-3. Install [BRAT](https://github.com/TfTHacker/obsidian42-brat)
-4. In BRAT settings, click **Add Beta Plugin**
-5. Enter: `Cursivez/journalit` (Latest version)
-
-Full install + troubleshooting: https://journalit.co/docs
 
 <details>
 <summary>Search keywords</summary>

@@ -1,9 +1,9 @@
 {
 	"id": "journalit",
 	"name": "Journalit",
-	"version": "1.6.10",
-	"minAppVersion": "0.15.0",
-	"description": "A local-first trading journal for Obsidian (Closed source)",
+	"version": "1.6.11",
+	"minAppVersion": "1.12.4",
+	"description": "Trading journal with templates, trade tracking, imports, and reviews. (Closed source).",
 	"author": "Cursivez",
 	"authorUrl": "https://github.com/Cursivez",
 	"isDesktopOnly": false
