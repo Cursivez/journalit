@@ -1,7 +1,7 @@
 {
 	"id": "journalit",
 	"name": "Journalit",
-	"version": "1.6.11",
+	"version": "1.7.0",
 	"minAppVersion": "1.12.4",
 	"description": "Trading journal with templates, trade tracking, imports, and reviews. (Closed source).",
 	"author": "Cursivez",
