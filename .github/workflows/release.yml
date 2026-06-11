@@ -23,10 +23,7 @@ jobs:
           if [ -f "$changelog" ]; then
             cp "$changelog" "$notes_file"
           else
-            printf '# %s
-
-Release artifacts for Journalit %s.
-' "$tag" "$tag" > "$notes_file"
+            printf '# %s\n\nRelease artifacts for Journalit %s.\n' "$tag" "$tag" > "$notes_file"
           fi
           echo "NOTES_FILE=$notes_file" >> "$GITHUB_OUTPUT"
 
