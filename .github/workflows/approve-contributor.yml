@@ -1,0 +1,43 @@
+name: Approve Contributor
+
+on:
+  issue_comment:
+    types: [created]
+
+permissions:
+  contents: write
+  issues: read
+  pull-requests: read
+
+jobs:
+  approve:
+    if: github.event.comment.author_association == 'OWNER' || github.event.comment.author_association == 'MEMBER' || github.event.comment.author_association == 'COLLABORATOR'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Record approved contributor
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const body = context.payload.comment.body.trim().toLowerCase();
+            if (body !== 'lgtm' && body !== 'lgtmi') return;
+            const issue = context.payload.issue;
+            const user = issue.user.login;
+            const fs = require('fs');
+            const path = '.github/APPROVED_CONTRIBUTORS';
+            const existing = fs.existsSync(path) ? fs.readFileSync(path, 'utf8') : '';
+            const lines = existing.split(/\r?\n/).map(line => line.trim().toLowerCase());
+            if (!lines.includes(user.toLowerCase())) {
+              fs.appendFileSync(path, `${user}\n`);
+            }
+      - name: Commit approval
+        run: |
+          if git diff --quiet .github/APPROVED_CONTRIBUTORS; then
+            echo "No approval changes"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add .github/APPROVED_CONTRIBUTORS
+          git commit -m "chore: approve contributor"
+          git push

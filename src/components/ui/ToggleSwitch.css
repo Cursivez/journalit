@@ -1,0 +1,66 @@
+.toggle-switch-container {
+  position: relative;
+  display: inline-block;
+  width: 40px;
+  height: 24px;
+}
+
+
+.toggle-switch-input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+  position: absolute;
+}
+
+
+.toggle-switch-label {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: var(--background-modifier-border, #666);
+  transition: background-color 0.3s ease, box-shadow 0.3s ease;
+  border-radius: 34px;
+  overflow: hidden;
+}
+
+
+.toggle-switch-label .toggle-switch-button {
+  position: absolute;
+  height: 18px;
+  width: 18px;
+  left: 3px;
+  bottom: 3px;
+  background-color: var(--background-primary, #fff);
+  transition: transform 0.3s ease;
+  border-radius: 50%;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+
+.toggle-switch-input:checked + .toggle-switch-label {
+  background-color: var(--interactive-accent, #5E81AC);
+  box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.2);
+}
+
+
+.toggle-switch-input:checked + .toggle-switch-label .toggle-switch-button {
+  transform: translateX(16px);
+}
+
+
+.toggle-switch-input:focus + .toggle-switch-label {
+  box-shadow: 0 0 2px var(--interactive-accent, #5E81AC);
+}
+
+
+.toggle-switch-container.disabled {
+  opacity: 0.6;
+}
+
+.toggle-switch-container.disabled .toggle-switch-label {
+  cursor: not-allowed;
+}

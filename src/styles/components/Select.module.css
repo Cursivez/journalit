@@ -1,0 +1,106 @@
+.select option[value=""][disabled],
+.placeholder {
+  color: var(--color-muted);
+}
+
+
+.selectContainer {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+  width: 100%;
+}
+
+.label {
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+  color: var(--color-text);
+}
+
+.selectWrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+.select {
+  width: 100%;
+  border-radius: var(--border-radius-md);
+  border: 1px solid var(--color-border);
+  background-color: var(--color-background);
+  color: var(--color-text);
+  font-size: var(--font-size-sm);
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+  outline: none;
+  appearance: none;
+  padding-right: 30px; 
+  cursor: pointer;
+}
+
+.select:focus {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 2px rgba(var(--color-primary-rgb), 0.3);
+}
+
+.select:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+  background-color: var(--color-surface);
+}
+
+
+.selectWrapper::after {
+  content: '';
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 0;
+  height: 0;
+  border-left: 5px solid transparent;
+  border-right: 5px solid transparent;
+  border-top: 5px solid var(--color-text);
+  pointer-events: none;
+}
+
+
+.sm {
+  padding: var(--spacing-xs) var(--spacing-sm);
+  font-size: var(--font-size-xs);
+  height: 28px;
+}
+
+.md {
+  padding: var(--spacing-sm) var(--spacing-md);
+  font-size: var(--font-size-sm);
+  height: 36px;
+}
+
+.lg {
+  padding: var(--spacing-md) var(--spacing-lg);
+  font-size: var(--font-size-md);
+  height: 44px;
+}
+
+
+.error {
+  border-color: var(--color-error);
+}
+
+.error:focus {
+  border-color: var(--color-error);
+  box-shadow: 0 0 0 2px rgba(var(--color-error-rgb), 0.3);
+}
+
+.errorMessage {
+  font-size: var(--font-size-xs);
+  color: var(--color-error);
+  margin-top: 2px;
+}
+
+.helperText {
+  font-size: var(--font-size-xs);
+  color: var(--color-muted);
+  margin-top: 2px;
+}

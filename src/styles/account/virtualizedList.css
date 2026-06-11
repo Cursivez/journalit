@@ -1,0 +1,38 @@
+.virtualized-account-list {
+  
+  scroll-behavior: smooth;
+  
+  
+  scrollbar-width: thin;
+  scrollbar-color: var(--background-modifier-border) transparent;
+}
+
+
+.virtualized-account-list::-webkit-scrollbar {
+  width: 8px;
+}
+
+.virtualized-account-list::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.virtualized-account-list::-webkit-scrollbar-thumb {
+  background-color: var(--background-modifier-border);
+  border-radius: 4px;
+}
+
+.virtualized-account-list::-webkit-scrollbar-thumb:hover {
+  background-color: var(--background-modifier-border-hover);
+}
+
+
+.virtualized-account-list .account-card {
+  margin: 8px;
+  height: calc(100% - 16px);
+}
+
+
+.virtualized-account-list.loading {
+  opacity: 0.6;
+  pointer-events: none;
+}

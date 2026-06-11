@@ -1,0 +1,38 @@
+.account-linking-manager {
+  margin-top: 20px;
+}
+
+.account-linking-controls {
+  background: var(--background-secondary);
+  border-radius: 8px;
+  padding: 20px;
+  margin-top: 10px;
+}
+
+.account-linking-controls .setting-item {
+  margin-bottom: 15px;
+}
+
+.account-linking-controls .setting-item:last-child {
+  margin-bottom: 0;
+}
+
+.account-linking-controls .setting-item-control {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.account-linking-controls select {
+  flex: 1;
+  max-width: 250px;
+}
+
+.account-linking-warning {
+  background: var(--background-modifier-warning);
+  padding: 12px;
+  border-radius: 6px;
+  margin-top: 15px;
+  font-size: 0.9em;
+  color: var(--text-warning);
+}

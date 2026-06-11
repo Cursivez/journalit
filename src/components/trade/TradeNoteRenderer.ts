@@ -1,0 +1,624 @@
+
+
+import { App } from 'obsidian';
+import React from 'react';
+import { TradeNote } from './TradeNote';
+import { TradeFormData } from '../forms/trade/types';
+import { BaseComponentRenderer } from '../base/BaseComponentRenderer';
+import { normalizeStringArray } from '../../utils/dataUtils';
+import { parseDisplayText } from '../../utils/tagSchema';
+import { CustomFieldDefinition } from '../../types/customFields';
+import { TradeTemplate } from '../../types/reviewV2';
+import { TradeTemplateService } from '../../services/templates/TradeTemplateService';
+import { parseTradeDividendTransactions } from '../../utils/tradeUtils';
+import { normalizeTradeExecution } from '../../services/trade/core/TradeExecutionNormalization';
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return value !== null && typeof value === 'object';
+}
+
+export class TradeNoteRenderer extends BaseComponentRenderer {
+  private currentTemplateConfig: TradeTemplate | undefined;
+
+  constructor(app: App) {
+    super(app);
+  }
+
+  
+  public renderComponent(
+    container: HTMLElement,
+    data: Record<string, unknown>,
+    filePath: string,
+    viewId: string,
+    contextId?: string
+  ): void {
+    
+    const existingComponent = container.querySelector(
+      '.trade-note-container.trade-note-mounted'
+    );
+    if (existingComponent) {
+      return; 
+    }
+
+    this.renderTradeNote(container, data, filePath, viewId, contextId);
+  }
+
+  
+  public renderTradeNote(
+    container: HTMLElement,
+    frontmatter: Record<string, unknown>,
+    sourcePath: string,
+    viewId: string,
+    contextId?: string
+  ): void {
+    try {
+      
+
+      
+
+      
+      if (!container || !container.isConnected) {
+        return;
+      }
+
+      
+      
+      const rootId = contextId
+        ? `${sourcePath}-${viewId}-${contextId}`
+        : `${sourcePath}-${viewId}`;
+
+      
+      const tradeData = this.processTradeData(frontmatter);
+
+      
+      this.currentTemplateConfig = undefined;
+      if (
+        typeof frontmatter.templateId === 'string' &&
+        frontmatter.templateId
+      ) {
+        const plugin = this.app.plugins?.plugins?.['journalit'];
+        if (plugin) {
+          const tradeTemplateService = new TradeTemplateService(plugin);
+          this.currentTemplateConfig = tradeTemplateService.getTemplate(
+            frontmatter.templateId
+          );
+        }
+      }
+
+      
+      container.setAttribute('data-displaying-file', sourcePath);
+
+      
+      const leaf = this.findContainingLeaf(container);
+
+      
+
+      
+      const existingWrapper = container.querySelector(
+        '.journalit-trade-note-wrapper'
+      );
+      if (existingWrapper) {
+        
+        const existingTradeNote = existingWrapper.querySelector(
+          '.trade-note-mounted'
+        );
+        if (existingTradeNote) {
+          return; 
+        }
+        
+        existingWrapper.remove();
+      }
+
+      
+      let domLeafId: string | null = null;
+      if (leaf && leaf.view) {
+        const viewContainerEl = leaf.view.containerEl as HTMLElement;
+
+        
+        if (viewContainerEl && viewContainerEl.id) {
+          domLeafId = viewContainerEl.id;
+        }
+      }
+
+      
+      const existingRoot = this.reactRoots.get(rootId);
+      if (existingRoot && existingRoot.domContainer) {
+        
+        if (
+          existingRoot.domContainer.isConnected &&
+          existingRoot.domContainer.querySelector('.trade-note-mounted')
+        ) {
+          return; 
+        }
+      }
+
+      
+      container.empty();
+
+      
+      let rootContext = this.reactRoots.get(rootId);
+
+      
+      
+
+      
+      const needsNewRoot =
+        rootContext &&
+        
+        ((leaf && domLeafId && rootContext.leafId !== domLeafId) ||
+          
+          (contextId &&
+            rootContext.domContainer &&
+            rootContext.domContainer.getAttribute('data-context-id') !==
+              contextId));
+
+      if (needsNewRoot) {
+        
+        const contextSpecificRootId = contextId
+          ? `${sourcePath}-context-${contextId}`
+          : `${sourcePath}-${viewId}-${domLeafId}`;
+
+        rootContext = this.reactRoots.get(contextSpecificRootId);
+
+        if (!rootContext) {
+          
+          this.createReactRoot(
+            container,
+            contextSpecificRootId,
+            domLeafId || undefined,
+            contextId,
+            tradeData,
+            sourcePath
+          );
+          return;
+        }
+      }
+
+      if (!rootContext) {
+        
+        this.createReactRoot(
+          container,
+          rootId,
+          domLeafId || undefined,
+          contextId,
+          tradeData,
+          sourcePath
+        );
+      } else {
+        
+        const reactContainer = rootContext.domContainer;
+
+        
+        const isContainerValid = container.contains(reactContainer);
+
+        if (!isContainerValid) {
+          
+          this.createReactRoot(
+            container,
+            rootId,
+            domLeafId || undefined,
+            contextId,
+            tradeData,
+            sourcePath
+          );
+        } else {
+          
+          rootContext.root.render(
+            this.wrapWithSharedProviders(
+              this.createReactElement(tradeData, sourcePath),
+              this.getDisplayPolicyPrivacyModeOverride(tradeData)
+            )
+          );
+        }
+      }
+    } catch (error) {
+      console.error('[TradeNote] Error rendering trade note:', error);
+      container.setText(
+        'Error rendering trade note: ' +
+          (error instanceof Error ? error.message : String(error))
+      );
+    }
+  }
+
+  
+  protected getComponentClassName(): string {
+    return 'journalit-trade-view';
+  }
+
+  
+  protected getWrapperClassName(): string {
+    return 'journalit-trade-note-wrapper';
+  }
+
+  protected getDisplayPolicyPrivacyModeOverride(
+    data: unknown
+  ): boolean | undefined {
+    return isRecord(data) &&
+      (data.isBacktestTrade === true || data.type === 'backtest-trade')
+      ? false
+      : undefined;
+  }
+
+  
+  protected createReactElement(
+    data: Partial<TradeFormData>,
+    filePath: string,
+    _openNoteFn?: (path: string, createNewLeaf?: boolean) => void
+  ): React.ReactElement {
+    const handleEditClick = (tradeData: Partial<TradeFormData>) => {
+      
+      const plugin = this.app.plugins?.plugins?.['journalit'];
+      if (!plugin) {
+        console.error('Cannot access plugin instance for edit action');
+        return;
+      }
+
+      
+      if (plugin.openTradeFormInEditMode) {
+        
+        try {
+          const activeEl = document.activeElement as HTMLElement | null;
+          if (activeEl && typeof activeEl.blur === 'function') activeEl.blur();
+          const cm = document.querySelector('.cm-editor') as HTMLElement | null;
+          if (cm && typeof cm.blur === 'function') cm.blur();
+        } catch {
+          // intentional
+        }
+
+        
+        try {
+          requestAnimationFrame(() => {
+            setTimeout(() => {
+              try {
+                plugin.openTradeFormInEditMode(tradeData, filePath);
+              } catch (err) {
+                console.error('Failed to open trade form in edit mode:', err);
+              }
+            }, 0);
+          });
+        } catch {
+          
+          try {
+            plugin.openTradeFormInEditMode(tradeData, filePath);
+          } catch (e) {
+            console.error(e);
+          }
+        }
+      } else {
+        console.warn('Edit mode not available - plugin method missing');
+      }
+    };
+
+    const handleDataUpdate = async (updatedData: Partial<TradeFormData>) => {
+      
+      const plugin = this.app.plugins?.plugins?.['journalit'];
+      if (!plugin || !plugin.tradeService) {
+        console.error('Cannot access plugin instance for data update');
+        return;
+      }
+
+      try {
+        
+        
+        await plugin.tradeService.updateTrade(
+          updatedData,
+          filePath,
+          'user-input'
+        );
+      } catch (error) {
+        console.error('[TradeNote] Error updating trade data:', error);
+      }
+    };
+
+    return React.createElement(TradeNote, {
+      data: { ...data, filePath },
+      onEditClick: handleEditClick,
+      onDataUpdate: handleDataUpdate,
+    });
+  }
+
+  
+  public unmountTradeNote(
+    sourcePath: string,
+    viewId: string,
+    leafId?: string,
+    _contextId?: string
+  ): boolean {
+    return this.unmountComponent(sourcePath, viewId, leafId);
+  }
+
+  
+  public unmountAllTradeNotes(): void {
+    this.unmountAllComponents();
+  }
+
+  
+  public unmountLeafTradeNotes(leafId: string): void {
+    this.unmountLeafComponents(leafId);
+  }
+
+  
+  private processTradeData(
+    frontmatter: Record<string, unknown>
+  ): Partial<TradeFormData> {
+    
+    const tradeData = { ...frontmatter };
+
+    
+    if (frontmatter.images) {
+      // intentional
+    }
+
+    
+    if (frontmatter.images) {
+      tradeData.images = this.normalizeImagePaths(frontmatter.images);
+    }
+
+    
+    ['setupIds', 'setup', 'mistake', 'account', 'tags', 'customTags'].forEach(
+      (field) => {
+        if (tradeData[field]) {
+          if (!Array.isArray(tradeData[field])) {
+            if (
+              typeof tradeData[field] === 'string' &&
+              tradeData[field].startsWith('[') &&
+              tradeData[field].endsWith(']')
+            ) {
+              const arrayString = tradeData[field];
+              if (typeof arrayString === 'string') {
+                
+                
+                let parsedJsonArray: unknown[] | null = null;
+                try {
+                  const parsed = JSON.parse(arrayString);
+                  if (Array.isArray(parsed)) {
+                    parsedJsonArray = parsed;
+                  }
+                } catch {
+                  // intentional
+                }
+
+                if (parsedJsonArray) {
+                  tradeData[field] = parsedJsonArray;
+                } else {
+                  const trimmedStr = arrayString.slice(1, -1).trim();
+                  tradeData[field] = trimmedStr
+                    ? trimmedStr.split(',').map((item: string) => item.trim())
+                    : [];
+                }
+              }
+            } else {
+              
+              tradeData[field] = [tradeData[field]];
+            }
+          }
+        }
+      }
+    );
+
+    
+    ['setupIds', 'setup', 'mistake', 'account', 'tags', 'customTags'].forEach(
+      (field) => {
+        if (tradeData[field] !== undefined && tradeData[field] !== null) {
+          tradeData[field] = normalizeStringArray(tradeData[field]);
+        }
+      }
+    );
+
+    
+    if (tradeData.tags && Array.isArray(tradeData.tags)) {
+      tradeData.customTags = tradeData.tags;
+    }
+
+    const normalizedExecution = normalizeTradeExecution(frontmatter, {
+      deriveMissingExplicitness: true,
+    });
+    const totalEntrySize = normalizedExecution.entries.reduce(
+      (sum, entry) =>
+        entry.size !== null && entry.size > 0 ? sum + entry.size : sum,
+      0
+    );
+    const firstEntryPrice = normalizedExecution.entries.find(
+      (entry) => entry.price !== null
+    )?.price;
+
+    tradeData.entryPrice =
+      normalizedExecution.weightedEntryPrice ??
+      normalizedExecution.entryPrice ??
+      firstEntryPrice ??
+      0;
+    tradeData.exitPrice =
+      normalizedExecution.resolvedExitPrice ??
+      normalizedExecution.exitPrice ??
+      0;
+    tradeData.positionSize =
+      totalEntrySize > 0
+        ? totalEntrySize
+        : (normalizedExecution.positionSize ?? 0);
+    tradeData.useDirectPnLInput = normalizedExecution.useDirectPnLInput;
+    tradeData.hasExplicitExitPrice = normalizedExecution.hasExplicitExitPrice;
+
+    if (normalizedExecution.firstEntryTime) {
+      tradeData.entryTime = normalizedExecution.firstEntryTime;
+    }
+    if (normalizedExecution.lastExitTime) {
+      tradeData.exitTime = normalizedExecution.lastExitTime;
+    }
+
+    tradeData.entries = normalizedExecution.entries.map((entry) => ({
+      time: entry.time,
+      price: entry.price ?? 0,
+      size: entry.size ?? 0,
+      ...(entry.notional !== undefined ? { notional: entry.notional } : {}),
+    }));
+
+    tradeData.exits = normalizedExecution.exits.map((exit) => ({
+      time: exit.time,
+      price: exit.price ?? 0,
+      size: exit.size ?? 0,
+      ...(exit.notional !== undefined ? { notional: exit.notional } : {}),
+      ...(exit.hasExplicitPrice !== undefined
+        ? { hasExplicitPrice: exit.hasExplicitPrice }
+        : {}),
+    }));
+
+    const parsedDividends = parseTradeDividendTransactions(
+      frontmatter.dividends,
+      {
+        parseTime: (value) =>
+          typeof value === 'string' || value instanceof Date
+            ? new Date(value)
+            : null,
+      }
+    );
+    if (parsedDividends) {
+      tradeData.dividends = parsedDividends;
+    }
+
+    
+    ['entryTime', 'exitTime'].forEach((field) => {
+      if (tradeData[field] && typeof tradeData[field] === 'string') {
+        try {
+          tradeData[field] = new Date(tradeData[field]);
+        } catch (e) {
+          console.error(`[TradeNote] Failed to parse date: ${field}`, e);
+        }
+      }
+    });
+
+    
+    [
+      'entryPrice',
+      'exitPrice',
+      'positionSize',
+      'pnl',
+      'directPnL',
+      'riskAmount',
+      'stopLoss',
+    ].forEach((field) => {
+      if (
+        tradeData[field] !== undefined &&
+        typeof tradeData[field] !== 'number'
+      ) {
+        try {
+          tradeData[field] = parseFloat(String(tradeData[field]));
+        } catch (e) {
+          console.error(`[TradeNote] Failed to parse number: ${field}`, e);
+        }
+      }
+    });
+
+    
+    
+    if (tradeData.pnl !== undefined && tradeData.pnl !== null) {
+      tradeData.originalPnl = tradeData.pnl;
+    }
+
+    
+    ['useDirectPnLInput'].forEach((field) => {
+      if (
+        tradeData[field] !== undefined &&
+        typeof tradeData[field] !== 'boolean'
+      ) {
+        try {
+          tradeData[field] = Boolean(tradeData[field]);
+        } catch (e) {
+          console.error(`[TradeNote] Failed to parse boolean: ${field}`, e);
+        }
+      }
+    });
+
+    
+    if (typeof frontmatter.currency === 'string') {
+      tradeData.currency = frontmatter.currency;
+    }
+
+    
+    
+    
+    const thesisValue =
+      typeof frontmatter.thesis === 'string' ? frontmatter.thesis : undefined;
+    tradeData.thesis = parseDisplayText(thesisValue) || '';
+
+    const mtCommentValue =
+      typeof frontmatter.mtComment === 'string'
+        ? frontmatter.mtComment
+        : undefined;
+    const normalizedMTComment = parseDisplayText(mtCommentValue).trim();
+    if (normalizedMTComment) {
+      tradeData.mtComment = normalizedMTComment;
+    } else {
+      delete tradeData.mtComment;
+    }
+
+    
+    
+    
+    try {
+      const plugin = this.app.plugins?.plugins?.['journalit'];
+      if (plugin && plugin.customFieldsService) {
+        const customFieldDefinitions = plugin.customFieldsService.getFields();
+        const customFields: Record<string, unknown> = {};
+
+        
+        customFieldDefinitions.forEach((fieldDef: CustomFieldDefinition) => {
+          const fieldKey = fieldDef.fieldKey;
+          if (fieldKey && frontmatter[fieldKey] !== undefined) {
+            customFields[fieldDef.id] = frontmatter[fieldKey];
+          }
+        });
+
+        
+        if (Object.keys(customFields).length > 0) {
+          tradeData.customFields = customFields;
+        }
+      }
+    } catch (error) {
+      console.error('[TradeNote] Error reconstructing custom fields:', error);
+    }
+
+    return tradeData;
+  }
+
+  
+  private normalizeImagePaths(images: unknown): string[] {
+    if (!images) return [];
+
+    
+    if (Array.isArray(images)) {
+      return images
+        .map((img) => {
+          if (typeof img !== 'string') return String(img);
+          return img.replace(/['"`]/g, '').trim();
+        })
+        .filter(Boolean);
+    }
+
+    
+    if (
+      typeof images === 'string' &&
+      images.startsWith('[') &&
+      images.endsWith(']')
+    ) {
+      try {
+        const trimmedStr = images.slice(1, -1).trim();
+        if (!trimmedStr) return [];
+
+        return trimmedStr
+          .split(',')
+          .map((item) => item.trim().replace(/['"`]/g, ''))
+          .filter(Boolean);
+      } catch (e) {
+        console.error('[TradeNote] Failed to parse images string:', e);
+        return [images.replace(/['"`]/g, '').trim()];
+      }
+    }
+
+    
+    if (typeof images === 'string') {
+      return [images.replace(/['"`]/g, '').trim()];
+    }
+
+    return [];
+  }
+}

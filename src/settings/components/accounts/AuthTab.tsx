@@ -1,0 +1,405 @@
+
+
+import React, { useEffect, useRef, useState, useCallback } from 'react';
+import { Notice } from 'obsidian';
+import JournalitPlugin from '../../../main';
+import { Button } from '../../../components/ui/Button';
+import { DeviceFlowSignInModal } from '../../../components/auth/DeviceFlowSignInModal';
+import { SupportActions } from '../../../components/shared/SupportActions';
+import { BackendSecretStorage } from '../../../services/backend/BackendSecretStorage';
+import { SubscriptionTierService } from '../../../services/backend/SubscriptionTierService';
+import {
+  SupportErrorDetails,
+  buildSupportReport,
+  formatSupportErrorDetails,
+} from '../../../utils/supportReport';
+import { t } from '../../../lang/helpers';
+
+interface AuthTabProps {
+  plugin: JournalitPlugin;
+}
+
+function useAuthTabModel({ plugin }: AuthTabProps) {
+  const [isAuthenticated, setIsAuthenticated] = useState(() =>
+    BackendSecretStorage.hasAuthToken(plugin)
+  );
+  const [tier, setTier] = useState(
+    plugin.settings.backendIntegration?.subscriptionTier
+  );
+  const [userEmail, setUserEmail] = useState(
+    plugin.settings.backendIntegration?.userEmail
+  );
+  const [signOutError, setSignOutError] = useState<SupportErrorDetails | null>(
+    null
+  );
+  const [authError, setAuthError] = useState<SupportErrorDetails | null>(null);
+  const [signOutReportCopied, setSignOutReportCopied] = useState(false);
+  const signOutCopyTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null
+  );
+
+  useEffect(() => {
+    const handleSubscriptionChange = () => {
+      setIsAuthenticated(BackendSecretStorage.hasAuthToken(plugin));
+      setTier(plugin.settings.backendIntegration?.subscriptionTier);
+      setUserEmail(plugin.settings.backendIntegration?.userEmail);
+      setSignOutError(null);
+      setAuthError(null);
+      setSignOutReportCopied(false);
+    };
+
+    document.addEventListener(
+      'journalit:subscription-changed',
+      handleSubscriptionChange
+    );
+
+    return () => {
+      document.removeEventListener(
+        'journalit:subscription-changed',
+        handleSubscriptionChange
+      );
+    };
+  }, [plugin]);
+
+  useEffect(() => {
+    const handleAuthError = (event: Event) => {
+      const detail = (
+        event as CustomEvent<SupportErrorDetails & { occurrences?: number }>
+      ).detail;
+      if (!detail) {
+        return;
+      }
+
+      if ((detail.occurrences ?? 0) >= 2) {
+        setAuthError(detail);
+      } else {
+        setAuthError(null);
+      }
+      setSignOutReportCopied(false);
+    };
+
+    document.addEventListener('journalit:auth-error', handleAuthError);
+
+    return () => {
+      document.removeEventListener('journalit:auth-error', handleAuthError);
+    };
+  }, []);
+
+  
+  
+  useEffect(() => {
+    if (!isAuthenticated) {
+      return;
+    }
+
+    void new SubscriptionTierService(plugin).refreshTier('account tab open');
+  }, [isAuthenticated, plugin]);
+
+  useEffect(() => {
+    return () => {
+      if (signOutCopyTimerRef.current) {
+        clearTimeout(signOutCopyTimerRef.current);
+      }
+    };
+  }, []);
+
+  const buildSignOutReport = useCallback(() => {
+    const backendUrl =
+      plugin.settings.backendIntegration?.serverUrl || 'Unknown';
+    const pluginVersion = plugin.manifest?.version || 'Unknown';
+    const activeError = signOutError ?? authError;
+    const statusLine = signOutError
+      ? 'Status: Sign-out failed'
+      : 'Status: Session expired';
+    const details = activeError
+      ? formatSupportErrorDetails(activeError)
+      : ['Message: Unknown'];
+
+    return buildSupportReport('Journalit Auth Report', [
+      statusLine,
+      `User email: ${userEmail || 'Unknown'}`,
+      `Tier: ${tier || 'Unknown'}`,
+      `Backend URL: ${backendUrl}`,
+      `Plugin version: ${pluginVersion}`,
+      `Time: ${new Date().toISOString()}`,
+      '',
+      'Error Details',
+      ...details,
+    ]);
+  }, [authError, plugin, signOutError, tier, userEmail]);
+
+  const handleCopySignOutReport = useCallback(async () => {
+    const report = buildSignOutReport();
+
+    try {
+      await navigator.clipboard.writeText(report);
+      setSignOutReportCopied(true);
+
+      if (signOutCopyTimerRef.current) {
+        clearTimeout(signOutCopyTimerRef.current);
+      }
+
+      signOutCopyTimerRef.current = setTimeout(() => {
+        setSignOutReportCopied(false);
+      }, 2000);
+    } catch (_error) {
+      new Notice(t('library.error.copy-failed'));
+    }
+  }, [buildSignOutReport]);
+
+  const handleDeviceFlowSignIn = () => {
+    if (isAuthenticated) {
+      return;
+    }
+
+    const modal = new DeviceFlowSignInModal(
+      plugin.app,
+      plugin,
+      () => {
+        new Notice(t('notice.login-success'));
+      },
+      () => {
+        // intentional
+      }
+    );
+    modal.open();
+  };
+
+  const handleDeviceFlowSignOut = async () => {
+    try {
+      if (plugin.settings.backendIntegration) {
+        BackendSecretStorage.clearAuthToken(plugin);
+        plugin.settings.backendIntegration.userEmail = undefined;
+        plugin.settings.backendIntegration.subscriptionTier = undefined;
+        plugin.settings.backendIntegration.userId = '';
+        await plugin.saveSettings();
+      }
+      new Notice(t('notice.logout-success'));
+      setSignOutError(null);
+      setAuthError(null);
+      setSignOutReportCopied(false);
+
+      document.dispatchEvent(new CustomEvent('journalit:subscription-changed'));
+    } catch (error) {
+      console.error('[AuthTab] Sign-out failed:', error);
+      new Notice(t('notice.error.sign-out'));
+
+      const message =
+        error instanceof Error ? error.message : t('common.error');
+      setSignOutError({
+        message,
+        operation: 'sign out',
+        timestamp: new Date().toISOString(),
+      });
+    }
+  };
+
+  const getTierBadgeClass = (tierName?: string): string => {
+    switch (tierName?.toLowerCase()) {
+      case 'pro':
+      case 'premium':
+        return 'tier-pro';
+      case 'enterprise':
+        return 'tier-enterprise';
+      case 'free':
+        return 'tier-free';
+      default:
+        return 'tier-unknown';
+    }
+  };
+
+  const getTierLabel = (tierName?: string): string => {
+    if (!tierName) return '';
+    const normalized = tierName.toLowerCase();
+    if (normalized === 'pro' || normalized === 'premium') return 'PRO';
+    if (normalized === 'enterprise') return 'ENTERPRISE';
+    if (normalized === 'free') return 'FREE';
+    return tierName.charAt(0).toUpperCase() + tierName.slice(1);
+  };
+
+  const activeError = signOutError ?? authError;
+  const activeErrorTitle = signOutError
+    ? t('notice.error.sign-out')
+    : t('error.session-expired');
+
+  return {
+    isAuthenticated,
+    tier,
+    userEmail,
+    signOutReportCopied,
+    handleCopySignOutReport,
+    handleDeviceFlowSignIn,
+    handleDeviceFlowSignOut,
+    getTierBadgeClass,
+    getTierLabel,
+    activeError,
+    activeErrorTitle,
+  };
+}
+
+const AuthTabComponent: React.FC<AuthTabProps> = ({ plugin }) => {
+  const {
+    isAuthenticated,
+    tier,
+    userEmail,
+    signOutReportCopied,
+    handleCopySignOutReport,
+    handleDeviceFlowSignIn,
+    handleDeviceFlowSignOut,
+    getTierBadgeClass,
+    getTierLabel,
+    activeError,
+    activeErrorTitle,
+  } = useAuthTabModel({ plugin });
+
+  return (
+    <div className="trading-journal-settings-container">
+      <h3>{t('settings.auth.title')}</h3>
+
+      
+      <div className="account-profile-card">
+        <div className="account-info">
+          <div className="account-email-row">
+            <span className="account-email">
+              {isAuthenticated && userEmail
+                ? userEmail
+                : t('settings.auth.guest')}
+            </span>
+            {isAuthenticated && tier && (
+              <span className={`tier-badge ${getTierBadgeClass(tier)}`}>
+                {getTierLabel(tier)}
+              </span>
+            )}
+          </div>
+          <div
+            className={`account-status ${isAuthenticated ? 'online' : 'offline'}`}
+          >
+            {isAuthenticated
+              ? `● ${t('settings.auth.status-online')}`
+              : t('settings.auth.status-offline')}
+          </div>
+        </div>
+
+        
+        {isAuthenticated ? (
+          <Button
+            variant="danger"
+            onClick={handleDeviceFlowSignOut}
+            className="sign-out-inline"
+          >
+            {t('settings.auth.sign-out')}
+          </Button>
+        ) : (
+          <Button
+            variant="primary"
+            onClick={handleDeviceFlowSignIn}
+            className="sign-in-inline"
+          >
+            {t('settings.auth.sign-in-up')}
+          </Button>
+        )}
+      </div>
+
+      {activeError && (
+        <div className="auth-error-panel">
+          <div className="auth-error-title">{activeErrorTitle}</div>
+          <SupportActions
+            onCopy={handleCopySignOutReport}
+            copied={signOutReportCopied}
+            copyLabel={t('csv.errors.copy-report')}
+            copiedLabel={t('csv.errors.copied')}
+            discordLabel={t('button.discord')}
+            note={t('csv.results.discord-note')}
+            onDiscord={() =>
+              window.open('https://discord.gg/AkSw3D9h8b', '_blank')
+            }
+            actionsClassName="auth-error-actions"
+            helpClassName="auth-error-help"
+            helpContentClassName="auth-error-help-content"
+            noteIconClassName="auth-error-help-icon"
+            renderButton={({ variant, onClick, content }) => (
+              <Button variant={variant} size="small" onClick={onClick}>
+                {content}
+              </Button>
+            )}
+          />
+        </div>
+      )}
+
+      
+      {isAuthenticated && tier && (
+        <div className="account-section">
+          <div className="section-header-row">
+            <div className="section-header">{t('settings.auth.your-plan')}</div>
+            <a
+              href="https://journalit.co/dashboard"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="manage-subscription-link"
+            >
+              {t('settings.auth.manage-subscription')} →
+            </a>
+          </div>
+          <div className="plan-features-inline">
+            {(tier.toLowerCase() === 'pro' ||
+              tier.toLowerCase() === 'premium') && (
+              <>
+                <span className="feature-tag">
+                  {t('settings.auth.feature.csv-import')}
+                </span>
+                <span className="feature-tag">
+                  {t('settings.auth.feature.ai-mapping')}
+                </span>
+                <span className="feature-tag">
+                  {t('settings.auth.feature.metatrader-sync')}
+                </span>
+              </>
+            )}
+            {tier.toLowerCase() === 'free' && (
+              <>
+                <span className="feature-tag">
+                  {t('settings.auth.feature.basic-tracking')}
+                </span>
+                <span className="feature-tag">
+                  {t('settings.auth.feature.manual-entry')}
+                </span>
+                <span className="feature-tag">
+                  {t('settings.auth.feature.analytics-reviews')}
+                </span>
+                <span className="feature-tag feature-tag--locked">
+                  {t('settings.auth.feature.csv-import')}
+                </span>
+                <span className="feature-tag feature-tag--locked">
+                  {t('settings.auth.feature.ai-mapping')}
+                </span>
+                <span className="feature-tag feature-tag--locked">
+                  {t('settings.auth.feature.metatrader-sync')}
+                </span>
+              </>
+            )}
+            {tier.toLowerCase() === 'enterprise' && (
+              <>
+                <span className="feature-tag">
+                  {t('settings.auth.feature.csv-import')}
+                </span>
+                <span className="feature-tag">
+                  {t('settings.auth.feature.ai-mapping')}
+                </span>
+                <span className="feature-tag">
+                  {t('settings.auth.feature.metatrader-sync')}
+                </span>
+                <span className="feature-tag">
+                  {t('settings.auth.feature.priority-support')}
+                </span>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+AuthTabComponent.displayName = 'AuthTab';
+
+export const AuthTab: React.FC<AuthTabProps> = React.memo(AuthTabComponent);

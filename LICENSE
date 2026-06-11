@@ -1,16 +1,18 @@
-Proprietary License
+Proprietary Source-Available License
 
-Copyright (c) 2026 Journalit
+Copyright (C) 2026 by Cursivez
 
 All rights reserved.
 
 This software and associated documentation files (the "Software") are
-proprietary and confidential. The compiled plugin files (main.js, manifest.json)
-may be used with Obsidian.md in accordance with the terms of service, but the
-source code is not available under an open source license.
+proprietary. The source code is made available for transparency and Obsidian
+Community plugin review only. It is not available under an open source license.
 
-Redistribution of source code or compiled binaries without explicit permission
-is prohibited.
+The compiled plugin files (main.js, manifest.json, and styles.css) may be used
+with Obsidian.md in accordance with the applicable Journalit terms. The source
+code may be viewed for inspection and review, but copying, modifying,
+redistributing, sublicensing, selling, hosting, or creating derivative works from
+the Software is prohibited without explicit written permission from Cursivez.
 
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,

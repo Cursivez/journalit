@@ -1,0 +1,11 @@
+minimumReleaseAge: 10080
+engineStrict: true
+
+# pnpm v10 blocks dependency lifecycle scripts unless explicitly trusted.
+onlyBuiltDependencies:
+  - esbuild
+  - unrs-resolver
+
+peerDependencyRules:
+  allowedVersions:
+    obsidian: 1.12.3

@@ -1,0 +1,358 @@
+{
+  "1.7.8": {
+    "title": "Copy Trading & Better Imports",
+    "description": "Copy trading, better media support, new dashboard metrics, automatic commissions, and a lot of accuracy/UI fixes.",
+    "imageUrl": "https://github.com/user-attachments/assets/bc8b0bdd-1fe4-4681-b937-121648c074d5",
+    "features": [],
+    "content": "# **[1.7.8] - 2026/06/11**\nCopy trading, better media support, new dashboard metrics, automatic commissions, and a lot of accuracy/UI fixes.\n\n### **Account-Level Copy Trading**\n![Copy Account](https://github.com/user-attachments/assets/bc8b0bdd-1fe4-4681-b937-121648c074d5)\nTrack copied account performance without duplicating trade notes.\n- **Copy periods + multipliers** — Configure base accounts, copy multipliers, and historical copy periods\n*You can edit existing accounts to change to copy accounts or create new accounts as copy accounts*\n\n### **Excalidraw + Vault Media Support**\nAdd vault images, wikilinks, embeds, and Excalidraw drawings to trade media.\n\n### **Automatic Ticker Commissions**\nConfigure commission rules once per ticker/instrument and per account\n_Access via Settings → Customization → Tickers / Instruments_\n\n### **Dashboard Metric Improvements**\n- **Hourly Performance widget** — New dashboard chart showing P&L by hour of day\n- **MAE/MFE top metrics** — Optional heat and excursion stats for winners and losers\n- **Drawdown percent fix** — Drawdown percentages now use account capital/balance basis instead of peak realized P&L\n\n### **Quick Trade Imports + New Broker**\n- **Quick Trade Import flow** — Import your favourited broker into your account faster using the new modal\n*Access via `Ctrl+P \"Quick import\"` and/or set a hotkey for it*\n- **New broker format** - We now support TopStepX imports\n\n### **Trade Entry Quality of Life**\nNew trade forms now keep the date filled but leave time fields blank.\n_If left blank, Journalit saves the current time when you submit._\n\n### **More Fixes + Polish**\n- Account Breakdown now sorts accounts by PnL\n- Better Review widget headers, star styling, and Layout Builder wording\n- Trade Log, Home account filters, Key Events dropdowns, and loading skeletons got cleanup fixes\n- Account charts now have cleaner axis scaling, zero handling, and balance coloring\n- Minor UI alignment fixes across icons, badges, forms, calendar sidebar, Key Levels, and Trade Log controls"
+  },
+  "1.7.7": {
+    "title": "Weekly Reviews & Hotfixes",
+    "description": "Weekly review improvements, plus hotfixes for trade note loading, Review V2 syncing, and dashboard partial-exit metrics.",
+    "imageUrl": "https://github.com/user-attachments/assets/f6d87ebd-5be0-4c8a-a4fd-8e7b33cda2fd",
+    "features": [],
+    "content": "# **[1.7.7] - 2026/05/16**\nWeekly review improvements, plus hotfixes for trade note loading, Review V2 syncing, and dashboard partial-exit metrics.\n\n### **Weekly Review DRC Improvements**\n![Weekly DRC Review](https://github.com/user-attachments/assets/f6d87ebd-5be0-4c8a-a4fd-8e7b33cda2fd)\nReview weekday DRCs faster from your Weekly Review.\n- **Clickable DRC names** — The weekday DRC name now opens the related DRC, replacing the separate open button\n- **Mark reviewed from weekly review** — Mark or unmark each weekday DRC directly inside the weekly context widget\n- **Sticky headers** — Review actions stay available while reading longer DRC sections\n\n### **Fixes**\n- **Trade note loading** — Fixes trade notes opening as raw markdown/frontmatter instead of the Journalit trade UI\n- **Review widget sync** — Keeps goals, checklists, grades, and weekly key events synced across Reading view and Live Preview\n- **Nested DRC widgets** — Prevents recursive previous-day context widgets inside embedded DRC context sections\n- **Weekly DRC context placement** — Weekly DRC context now only renders in Weekly Review notes\n- **Review header layout** — Keeps the reviewed indicator aligned on narrow panes and mobile widths\n- **Dashboard partial exits** — Improves monthly Net P&L, Recent Trades, and Weekday Performance in exit-date mode\n"
+  },
+  "1.7.6": {
+    "title": "Review Context & Calendar Revamp",
+    "description": "Review context, calendar upgrades, account visibility, multi-currency reviews, and reliability fixes.",
+    "imageUrl": "https://github.com/user-attachments/assets/f1f11d9c-fb43-4614-b1bd-90dcf01da09a",
+    "features": [],
+    "content": "# **[1.7.6] - 2026/05/13**\nReview context, calendar upgrades, account visibility, multi-currency reviews, and reliability fixes.\n\n### **Revamped Calendar**\n![Calendar](https://github.com/user-attachments/assets/f1f11d9c-fb43-4614-b1bd-90dcf01da09a)\n- **Better navigation** — Navigate months from the header\n- **Review shortcuts** — Open month, quarter, and year reviews from headers\n- **Calendar sidebar** — Dedicated sidebar calendar view\n*`Ctrl + P` \"Open calendar sidebar\" to open*\n\n### **Review Context**\n![Inherited Context](https://github.com/user-attachments/assets/37de2d50-9119-453e-bb59-625b54aba597)\n- **Review fields** — Create review-only custom fields\n- **Inherited context** — Pull monthly/weekly context into DRCs\n*Access via the customisation tab in the settings*\n\n### **Review Improvements**\n![Daily Review](https://github.com/user-attachments/assets/9e652379-2365-4a12-bc21-666828395bd2)\n- **Add news from DRCs** — Add key events/news from the DRC\n- **Daily Reviews by Weekday** — Show selected DRC sections by weekday\n\n### **Review + Accounts**\n![Account breakdown](https://github.com/user-attachments/assets/8163d11c-eefb-4cc7-8cc3-28d83449e6d9)\n- **Account Breakdown widget** — Compare review performance by account\n- **Smarter review trade tables** — Cleaner account/date columns and tooltips\n- **Better chart tooltips** — Tooltips no longer clip inside Obsidian panes\n\n### **Multi-Currency Reviews**\n- **Converted aggregates** — Review charts/widgets use converted values\n- **Conversion warnings** — Unsupported currencies are excluded and shown in tooltips\n- **More coverage** — Conversion metadata on more P&L surfaces\n\n### **Add Tags in Trade Log**\n- **Batch Add Tags** — Apply tags to multiple selected trades at once\n\n### **More Fixes**\n- Recent Trades respect Exit Date\n- Review widgets scope correctly in exit-date mode\n- Calendar grouping handles exit dates/cutoffs better\n- Missed Trades empty state is more compact\n- Switching review templates no longer blanks notes\n- Review grade buttons no longer jump scroll position\n- Dashboard loading, scrolling, and resizing are smoother\n- Trade Log tree modes support horizontal scrolling\n- Account deletion is more reliable\n- Deleted account types no longer reappear in Account Dashboard\n- Break-even classification uses consistent balance lookup\n- MT accounts can be unlinked\n"
+  },
+  "1.7.5": {
+    "title": "Comparisons & Context",
+    "description": "Previous-period comparisons, previous DRC context, custom field improvements, and analytics fixes.",
+    "imageUrl": "https://github.com/user-attachments/assets/00215281-263a-494b-9095-a0ef48a2b359",
+    "features": [],
+    "content": "# **[1.7.5] - 2026/05/03**\nPrevious-period comparisons, previous DRC context, custom field improvements, and analytics fixes.\n\n### **Previous-Period Comparisons**\n![Prev compare](https://github.com/user-attachments/assets/00215281-263a-494b-9095-a0ef48a2b359)\nDashboard top metrics and review stats now show rows like `vs prev` and `past 30d`.\n- **Date-aware comparisons** — Week, month, quarter, and year compare elapsed time against the previous period\n\n### **Previous Trading Day Context Widget**\n![Prev DRC](https://github.com/user-attachments/assets/0082352e-f087-445f-9915-1856102b857d)\nAdd previous DRC context to Daily Review Checklist templates.\n_Access via Layout Builder → DRC templates → Previous Trading Day Context_\n- **Section selection** — Choose which previous DRC sections to show\n- **Trading-day aware** — Uses trading-day navigation and nearest-earlier fallback\n\n### **Custom Trade Fields UX**\n_Access via Settings → Customisation → Custom Trade Fields_\n- **Field reordering** — Control custom field order in the trade form\n- **Cleaner settings UI** — Cleaner hierarchy, empty states, editor layout, and actions\n- **Better Advanced tab** — Clearer ordering and setup path when empty\n\n### **More Accurate Trade Analytics**\nPartial exits now appear in exit-date analytics before the full trade is closed.\n- **Partial-exit P&L** — Realized partial exits now show in calendar, charts, and account analytics\n- **Trade Log Risk $ fix** — Risk $ derives from stop loss, entry, and size when no manual risk is stored\n\n### **Account Dashboard Fixes**\n- **EOD trailing drawdown** — Drawdown used now uses the active trailed floor\n- **Account type deletion** — Deleted account types no longer reappear\n\n### **Position Size Calculator Command**\nAssign your own Obsidian hotkey for the position size calculator.\n_Access via Obsidian Settings → Hotkeys → Journalit: Open position size calculator_\n\n### **Other fixes**\n- French and German translation quality\n- Home scrolling fix\n- Dashboard metric edit polish\n- Home weekly currency display\n- Sidebar currency search\n"
+  },
+  "1.7.4": {
+    "title": "Privacy Mode & Weekly Reviews",
+    "description": "Privacy Mode, full French/German translations, weekly review upgrades, and a batch of dashboard/layout fixes.",
+    "imageUrl": "https://github.com/user-attachments/assets/32916d9a-2acf-4e68-84c8-85332c29e6d2",
+    "features": [],
+    "content": "# **[1.7.4] - 2026/04/30**\nPrivacy Mode, full French/German translations, weekly review upgrades, and a batch of dashboard/layout fixes.\n\n### **Weekly Review Improvements**\n![Key Levels](https://github.com/user-attachments/assets/32916d9a-2acf-4e68-84c8-85332c29e6d2)\nMore planning tools for weekly review notes.\n- **Weekly Pre-Checklist** — Add a repeatable checklist to weekly reviews, with default checklist settings and per-review saved state\n- **Inherited Key Levels** — Monthly levels can flow into weekly reviews, and monthly/weekly levels can flow into DRCs\n- **Inline Key Level Editing** — Edit support and resistance levels directly inside review widgets\n- **Default Event Notes** — Save reusable notes for events like FOMC, CPI, or NFP and auto-fill them in weekly reviews\n\n### **Privacy Mode**\nHide sensitive trading and account values across Journalit.\n*Access via Settings → General → Data Management & Privacy → Privacy Mode*\n\n### **French + German Translations**\nJournalit now has complete French and German language coverage.\n\n### **Guide Improvements**\nInteractive onboarding guides now have Back navigation.\n\n### **More Fixes**\n- Trading Score excellent-state color no longer depends on your Obsidian accent color\n- CSV Import scroll behavior restored after view layout changes\n- Trade log columns polish\n- Dashboard + layout polish\n- Date selector spacing\n- CFD PnL rounding fix\n- Position Size risk decimals\n"
+  },
+  "1.7.3": {
+    "title": "Templates & Navigation",
+    "description": "Trade Log improvements, review template upgrades, navigation fixes, and dashboard polish.",
+    "features": [],
+    "content": "# **[1.7.3] - 2026/04/26**\nTrade Log improvements, review template upgrades, navigation fixes, and dashboard polish.\n\n### **Review Template Markdown Presets**\nAdd reusable text or questions to Markdown Zone widgets in Layout Builder.\n*Access via Layout Builder → Markdown Zone*\n\nPreset text now appears in newly created review notes, while existing answers are preserved when switching templates.\n\n### **Trade Log Price Move Column**\nSee how far each trade moved from entry to exit.\n\n### **Navigation Sidebar Recovery**\nAdded a dedicated command to reopen the Journalit navigation sidebar if it gets closed.\n*Access via command palette → Journalit: Open navigation sidebar*\n\n### **Navigation Behavior Fixes**\nMore predictable tab behavior across Journalit.\n- **Sidebar setting isolation** — Sidebar tab behavior now only affects sidebar-originated navigation\n- **Trade Log tab behavior** — Trades and review notes opened from Trade Log now open in new tabs as expected\n\n### **Dashboard Metric Polish**\nDashboard percentage values now display as lightweight inline context instead of pill-style badges.\n\n### **Home Quick Links Fix**\nWhen all Home quick links are hidden, the empty quick-links row is now hidden in normal mode while restore guidance remains available in Customise mode.\n"
+  },
+  "1.7.2": {
+    "title": "Trade Insights & Navigation",
+    "description": "Navigation, drawdown analytics, and trade journaling improvements, with major quality-of-life fixes across dashboard and filters.",
+    "imageUrl": "https://github.com/user-attachments/assets/c3187b34-ff76-45e7-a285-243d7781c684",
+    "features": [],
+    "content": "# **[1.7.2] - 2026/04/22**\nNavigation, drawdown analytics, and trade journaling improvements, with major quality-of-life fixes across dashboard and filters.\n\n### **Navigation Sidebar + Journalit search Bar**\n![Sidebar](https://github.com/user-attachments/assets/f5c2727d-f0e0-4643-a125-b89a63c2be7a)\n![Search Bar](https://github.com/user-attachments/assets/c3187b34-ff76-45e7-a285-243d7781c684)\n- **Journalit sidebar** - Customizable sidebar making it easier to navigate throughout the plugin.\n- **Search Bar** - Easily search for trades and review notes from the sidebar.\n\n### **New Drawdown Widgets & Metrics**\n![Drawdown widgets](https://github.com/user-attachments/assets/b0614747-647a-415d-ac76-1b0b0b086d0c)\n- **Long and Short Drawdown Charts** - Easily compare your long and short drawdown periods.\n- **More in-depth drawdpwn tooltips** - Drawdown charts now have more detailed tooltips.\n- **New Drawdown Metrics** - Added Drawdown Episodes, Time in drawdown, Avg recovery time, Longest Drawdown\n\n### **Exit Date Analytics for Swing Traders**\nChoose whether dashboard and home analytics use entry date or exit date for closed trades.\n\n### **Per-Trade Dividends**\nTrack multiple dividend events on a trade.\n\n### **Percentage-Based Break-Even Thresholds**\nClassify break-even using account-current-balance percentages.\n\n### **Live Balance Calibration**\nAdded a separate live balance adjustment so broker-reported balance can be matched without distorting deposits or withdrawals.\n\n### **Dashboard Percentage Metrics**\nAdded percentage context to dashboard Avg Win/Loss and Largest Win/Loss metrics.\n\n### **Account Trade-Type Filter**\nAdded regular/backtest filtering to the Account Dashboard.\n\n### **Contextual Onboarding Guides**\nAdded guided onboarding across the main Journalit views.\n*Even if you are a pretty experienced user, I recommend going through these quick guides. Maybe you'll find something new.*\n\n### **Fixes**\n- Exit size precision\n- Backtest trade naming\n- Quarterly filter\n- Max R accounts stop loss\n- MAE/MFE aligned\n"
+  },
+  "1.7.1": {
+    "title": "Review workflow upgrades",
+    "description": "Trade Log upgrades, review workflow improvements, dashboard insights, and under-the-hood trade reliability work.",
+    "imageUrl": "https://github.com/user-attachments/assets/d768c140-825a-47be-ac5c-65052eeb4e2b",
+    "features": [],
+    "content": "# **[1.7.1] - 2026/04/13**\nTrade Log upgrades, review workflow improvements, dashboard insights, and under-the-hood trade reliability work.\n\n### **Trade Log Upgrades**\nSee more context and performance data directly in Trade Log.\n- **Max R + Return % columns** — New columns for faster trade performance review\n- **MetaTrader comment column** — View broker comments directly in Trade Log\n- **Custom field tooltip polish** — Long custom field values no longer overflow tooltips\n\n### **Review Workflow Improvements**\n- **Added backtest review widgets** — Try out the new backtest trades widget in your review notes\n- **Improved Missed trades widget** — A lot more useful and informative\n- **Smarter review defaults** — Review stats now handle regular vs backtest trade types more cleanly by default\n- **Improved trade type filters** — Better trade type filter arrangement and clearer behavior across Trade Log, Home, Dashboard, and reviews\n\n### **New Trading Dashboard Metrics**\nAdded 2 new streak metrics for Best and Worst streaks\n\n### **Account Dashboard Withdrawal Details**\n- **Monthly withdrawal breakdown tooltip** — Hover to see monthly withdrawal details directly from the dashboard\n\n+ a lot of smaller fixes\n+ been working on quite a few performance improvements that should make things feel smoother\n"
+  },
+  "1.7.0": {
+    "title": "Custom Fields Everywhere",
+    "description": "Custom trade fields, Home account filtering and manual trade/import fixes",
+    "imageUrl": "https://github.com/user-attachments/assets/92948032-db3c-4f15-88ca-e99b79846a0d",
+    "features": [
+      "Custom Trade Fields Across the App",
+      "Trade Note Cleanup + Display Custom Fields",
+      "Home Account Filter",
+      "Trade Form + Currency Improvements",
+      "Import + Note Formatting Fixes"
+    ],
+    "content": "# **[1.7.0] - 2026/04/02**\nCustom trade fields, Home account filtering, manual trade/import fixes, and workflow hardening.\n\n## **Custom Trade Fields Across the App**\n![Custom Field Columns](https://github.com/user-attachments/assets/600c2dbb-500b-4a2f-bbc9-b605362c47cc)\nCustom fields are now much more useful.\n- **Trade Log custom fields** — Add custom columns to the trade log for your custom fields\n- **Custom field filtering** — Filter the Trade Log, Trading Dashboard and Review notes by custom field values\n*You can only filter `dropdown` and `multi-select` custom field types*\n*You can add your custom columns at the bottom of the Available Columns in the Trade Log Column Settings*\n\n## **Trade Note Cleanup + Display Custom Fields**\n- **Trade note custom fields section** — Trade notes now show custom fields in a cleaner dedicated section\n- **Cleaner trade note layout** — Remove the duplicated bottom trade details table while keeping key metrics and thesis visible\n*this is not the trade note revamp, that is still WIP*\n\n## **Home Account Filter**\n![Account Filter](https://github.com/user-attachments/assets/fd0a4ae9-4735-4677-900c-1ac354695c40)\nScope the full Home view to the accounts you actually want to see.\n\n## **Trade Form + Currency Improvements**\nManual trade entry is more reliable, especially around account and currency handling.\n- **Zero-account trade form UX** — Better behavior when no accounts exist yet, with fewer loading/state issues\n- **CFD-specific symbol currency support** — Manual trades now handle CFD currency tickers more accurately\n\n## **Import + Note Formatting Fixes**\nSeveral quality-of-life fixes improve CSV import flexibility and note correctness.\n- **Direct PnL imports without quantity** — Manual direct PnL CSV imports no longer require a quantity mapping\n- **Thesis formatting fix** — Multiline thesis content now saves and renders correctly without leaking YAML formatting markers into notes\n\n## **Settings + Event Reliability**\nA couple of correctness fixes tighten up settings and internal state updates.\n- **Customization reset fix** — Restore customization reset defaults and related widget processor cleanup\n- **Event settings cleanup** — More reliable persistence and cleanup when editing event settings"
+  },
+  "1.6.11": {
+    "title": "Obsidian hardening & trade switching fix",
+    "description": "Trade type switching fixes, Obsidian compatibility hardening, and public submission polish.",
+    "features": [],
+    "content": "# **[1.6.11] - 2026/03/25**\nTrade type switching fixes, Obsidian compatibility hardening, and public submission polish.\n\n### **Trade Type Switching Fixes**\nSwitch regular, missed, and backtest trades more reliably without notes disappearing or getting stuck in the wrong state.\n- **Cleaner type conversions** — Prevent stale frontmatter and inconsistent routing when switching between regular, missed, and backtest trades\n- **Immediate re-rendering** — Converted notes now refresh more reliably right after the type changes\n- **Trade log stability** — Avoid invisible or duplicated notes after cross-type edits\n\n### **Obsidian Compatibility Hardening**\nA broad pass to align more closely with Obsidian plugin expectations and improve day-to-day reliability.\n- **Safer note updates** — More editor-aware file mutation handling for active notes and safer background file changes\n- **View restoration improvements** — Preserve Journalit views across plugin reloads instead of detaching them\n- **UI consistency polish** — Reviewer-visible UI text and behavior have been cleaned up for better consistency\n\n### **More Fixes**\n- Recharts tooltip typings were stabilized\n"
+  },
+  "1.6.10": {
+    "title": "MetaTrader HTML Import + Risk Fixes",
+    "description": "MetaTrader HTML import support, more accurate risk handling for missed/backtest trades, and backend sync cleanup.",
+    "features": [],
+    "content": "# **[1.6.10] - 2026/03/19**\nMetaTrader HTML import support, more accurate risk handling for missed/backtest trades, and backend sync cleanup.\n\n### **JDR / MetaTrader HTML Import**\nImport MT4-style HTML statements from JDR / MetaTrader exports.\n*Access via CSV Import → Broker selector → JDR Securities Limited*\n\n### **Missed + Backtest Trade Risk Fixes**\nMore reliable risk and R-multiple handling for missed trades, backtests, and stop-loss-based calculations.\n\n### **Documentation Overhaul**\nThe docs have been completely overhauled for better readability and a cleaner overall design.\n*View them at https://journalit.co/docs*\n\n### Small fixes that improve consistency across the app.\n- **Formatting and currency polish**\n- **Backend Sync Cleanup**\n"
+  },
+  "1.6.9": {
+    "title": "Contract fixes & stability improvements",
+    "description": "Contract spec fixes, dashboard stability improvements, and safer trade sync behavior.",
+    "features": [
+      "CFD Contract Size + PnL Fixes",
+      "Trade Form Instrument Spec Improvements",
+      "Dashboard Layout Stability",
+      "Custom Field Validation Fix",
+      "Trade Sync Access Fixes"
+    ],
+    "content": "# **[1.6.9] - 2026/03/14**\nContract spec fixes, dashboard stability improvements, and safer trade sync behavior.\n\n## **CFD Contract Size + PnL Fixes**\nCFD trades now handle contract specs much more reliably across the trade form, saved instruments, and calculations.\n\n## **Trade Form Instrument Spec Improvements**\nInstrument settings are now more stable across futures, forex, and CFD workflows.\n\n## **Dashboard Layout Stability**\nThe dashboard widget grid is now more resilient to bad saved layout data.\n\n## **Custom Field Validation Fix**\nCustom dropdown and multiselect fields now handle numeric option values correctly.\n- **Numeric custom options supported** — Prevent valid numeric select values from being rejected in trade forms\n\n## **Trade Sync Access Fixes**\nAuto-sync behavior is now stricter and less noisy.\n\n+ some other more minor changes + fixes\n"
+  },
+  "1.6.8": {
+    "title": "Excel Import Upgrade & Analytics Enhancements",
+    "description": "Major CSV import upgrades, new review/dashboard analytics, and reliability fixes across trade workflows.",
+    "imageUrl": "https://github.com/user-attachments/assets/84166f8c-c4fd-4929-8f9f-3668f0c6fdf9",
+    "features": [
+      "Migrate your journals from Excel to Journalit!",
+      "Scalper Demon Tracker Workflow",
+      "Dashboard Analytics Expansion",
+      "Home + Settings Improvements",
+      "More Fixes"
+    ],
+    "content": "# **[1.6.8] - 2026/03/02**\nMajor CSV import upgrades, new review/dashboard analytics, and reliability fixes across trade workflows.\n\n## **Migrate your journals from Excel to Journalit!**\n*Access via CSV Import → upload `.xlsx` / `.xls` files*\n- **Custom Fields Mapping** - Map your imports to custom fields you created\n- **Direct PnL support** — Import PnL values directly when your export provides them\n- **Embedded image handling** — Review and attach images extracted from Excel exports\n- **Other fees mapping** — Map/import additional fee columns during manual import\n\n## **Scalper Demon Tracker Workflow**\nWorkflow support for tracking session mistakes with the new review tooling.\nUse the new session mistakes widget in your DRC.\n\n## **Dashboard Analytics Expansion**\nMore ways to analyse performance at a glance.\n![Weekday widget](https://github.com/user-attachments/assets/84166f8c-c4fd-4929-8f9f-3668f0c6fdf9)\n- **Weekday performance widget** — Analyse results by day of week with persistent metric toggle\n![Avg RR](https://github.com/user-attachments/assets/7b97e20a-9fe4-4282-8d7c-443c3b9d3040)\n- **Payoff + Avg RR metrics** — Added payoff and R-based average RR metrics to dashboard metrics\n\n## **Home + Settings Improvements**\nDaily workflow improvements for layout and planning.\n![Top Breakdown](https://github.com/user-attachments/assets/f03d948a-a788-491a-a5dd-85c2def367ae)\n- **Top Breakdown option** — Home Top Setups widget can now be configured as Top Breakdown. You can now see Top Setups, Asset Types, Tags, and/or Tickers\n- **Quick Links positioning** — Move the quick links buttons to the top or bottom of the home view. Click the gear icon in the top right and then click the arrow to move it.\n- **Recurring goals/checklist editing** — Inline edit + reorder controls for recurring goals and checklist items\n\n## **More Fixes**\n- Removed unintended browser title tooltips in key onboarding/settings areas for cleaner UX\n- ATAS commission reconciliation\n- Remember last-used broker/account choices in import flow\n- Stop-loss risk now respects asset-specific behavior in form + trade log\n- Prevent crash when option values are non-string\n"
+  },
+  "1.6.7": {
+    "title": "CSV Import Expansion + Accuracy Fixes",
+    "description": "New CSV import support, import accuracy fixes, and dashboard metric improvements.",
+    "features": [
+      "Trading Technologies (TT) CSV Import",
+      "Rithmic CSV Import",
+      "Import Accuracy Improvements",
+      "Account Growth Metrics Fix",
+      "Dashboard + Calendar Polish"
+    ],
+    "content": "# **1.6.7**\nNew CSV import support, import accuracy fixes, and dashboard metric improvements.\n\n## **Trading Technologies (TT) CSV Import**\nImport trades from Trading Technologies exports.\n*Access via CSV Import → Broker selector → Trading Technologies*\n\n## **Rithmic CSV Import**\nFirst-class support for Rithmic exports.\n*Access via CSV Import → Broker selector → Rithmic*\n\n## **Import Accuracy Improvements**\nMore reliable timestamps and symbol handling across brokers.\n- **Timezone-safe imports** — Prevent timezone-shifted timestamps when creating trades from imports\n- **FXReplay CME symbol fix** — Resolve CME symbol import failures and normalize futures parsing\n\n## **Account Growth Metrics Fix**\nMore accurate growth stats when you deposit/withdraw.\n\n## **Dashboard + Calendar Polish**\nSmall UI/analytics changes that improve day-to-day readability.\n- **Break-even styling** — Cleaner break-even visuals in the performance calendar\n- **Break-even range classification** — Correctly classifies trades within the break-even range in Trade Note + dashboard widgets\n\n## **More Fixes**\n- ATAS Journal imports now include execution commissions"
+  },
+  "1.6.6": {
+    "title": "Styling hotfix",
+    "description": "Account creating styling fix",
+    "features": ["Fixes"],
+    "content": "# **1.6.6**\nSmall hotfix release for account page stability.\n\n## **Fixes**\n- Fixed account modal field style scoping\n- Improved account page visual consistency\n\n@Update Alerts\n"
+  },
+  "1.6.5": {
+    "title": "Journalit is out of beta",
+    "description": "New import options, smoother first-run experience, and more accurate stats across the dashboard and home widgets.",
+    "imageUrl": "https://github.com/user-attachments/assets/b1d3918d-2e8f-44d6-8107-8c1fe3788acf",
+    "features": [
+      "Freemium model",
+      "Pricing (standard)",
+      "Installation and updates",
+      "XLSX / XLS Imports",
+      "Onboarding Revamp + Preview-First CSV Import"
+    ],
+    "content": "# **Journalit is out of beta (1.6.5)**\n\nThank you to everyone who has helped test Journalit over the past few months. Your bug reports, feedback, and feature ideas have made a real difference.\n\nJournalit is now out of beta, and paid plans are now available.\n\n## **Freemium model**\nAt launch, the following are Pro features:\n- **CSV import**\n- **Trade Sync** (MetaTrader 4 and MetaTrader 5)\n\nEverything else remains free, including manual trade entry, dashboards, review notes and templates, account management, and the trade log.\n\n## **Pricing (standard)**\n- **$18/month**\n- **$180/year**\n\n## **Installation and updates**\nJournalit will continue to be installed and updated via **BRAT** for now.\n\n---\n\n# **What’s new:**\nNew import options, smoother first-run experience, and more accurate stats across the dashboard and home widgets.\n\n## **XLSX / XLS Imports**\nImport broker exports without converting to CSV first.\n- **Excel support** - Upload `.xlsx` / `.xls` files directly in the trade importer\n\n## **Onboarding Revamp + Preview-First CSV Import**\nRedesigned the onboarding. `Ctrl + P` and search \"Replay Onboarding\" to view it\n\n## **Better Error UX + Support Reports**\nIf you have any import or sync errors, you can now easily copy a report and send it to #bugs\n\n## **Breakeven Win Rate + Home Widgets Accuracy**\nBreakeven trades are now handled consistently across the app.\n- **Win rate fix** - Breakevens no longer count in the win-rate denominator\n- **Streak fix** - Current streaks no longer break on breakeven trades\n- **Weekly summary visuals** - Breakeven days render as neutral (not “green days”)\n\n## **Support for themes**\nJournalit now adapts to your themes styling\n\n+ quite a bit of cleanup and fixes"
+  },
+  "1.6.3-beta.6": {
+    "title": "Sign-in Hotfix",
+    "description": "Hotfix for Obsidian mobile sign-in.",
+    "features": [],
+    "content": "# **1.6.3-beta.6**\nHotfix for Obsidian mobile sign-in.\n"
+  },
+  "1.6.3-beta.5": {
+    "title": "Trade Form Reliability + FX Replay Import",
+    "description": "Trade form improvements, FX Replay CSV import support, and a batch of stability fixes.",
+    "features": [
+      "FX Replay CSV Import (Analytics Export)",
+      "Trade Form Reliability",
+      "Fixes"
+    ],
+    "content": "# **1.6.3-beta.5**\nTrade form improvements, FX Replay CSV import support, and a batch of stability fixes.\n\n## **FX Replay CSV Import (Analytics Export)**\nAdded support for FX Replay CSV import\n*Access via CSV Import → Broker → FX Replay*\n\n## **Trade Form Reliability**\nA big pass on validation and submit flow to reduce “stuck” errors and improve UX.\n\n## **Fixes**\n- Backend authguards, avoids unauthenticated requests and stale UI state in the backend integration tab.\n- Fixes edge cases where trades could be incorrectly treated as open.\n- Fixed indexed trade queries sometimes returning non-arrays\n- Fixed duplicate widget codeblock processor registration errors on plugin reload\n+ more\n"
+  },
+  "1.6.3-beta.4": {
+    "title": "Hotfix: CSV Import & Rename Reliability",
+    "description": "CSV import improvements, account rename reliability, and stability fixes.",
+    "features": [
+      "FX Replay CSV Import",
+      "Account Rename Reliability",
+      "Open Trade Metrics Accuracy",
+      "Fixes"
+    ],
+    "content": "# **1.6.3-beta.4**\nCSV import improvements, account rename reliability, and stability fixes.\n\n## **FX Replay CSV Import**\nAdded FX Replay as a supported CSV import format\n*Access via CSV Import broker selector*\n\n## **Account Rename Reliability**\nRenaming accounts now updates metadata and views consistently\n\n## **Open Trade Metrics Accuracy**\nAccount metrics handle open trades more reliably\n\n## **Fixes**\n- Indexed trade queries consistently return arrays\n- Avoid duplicate codeblock registrations after reloads\n- Account rename UI refreshes across pages\n- Open trade detection no longer misclassifies missing frontmatter\n+ a few other smaller ones\n\n@Update Alerts\n"
+  },
+  "1.6.3-beta.3": {
+    "title": "Hotfix updates",
+    "description": "Image paths + Translations",
+    "features": ["Fixes"],
+    "content": "# **1.6.3-beta.3**\nHotfix updates.\n\n## **Fixes**\n- Fixed issue with image paths when creating trades\n- Translated review templates and polished Russian labels\n\n@Update Alerts\n"
+  },
+  "1.6.3-beta.2": {
+    "title": "Stability & Reconciliation Hotfix",
+    "description": "Stability fixes across review widgets, CSV imports, trade images, and IBKR reconciliation.",
+    "features": [
+      "Quarterly Folder Migration + Trade Images",
+      "Review V2 Image Widgets",
+      "IBKR Cross-CSV Reconciliation",
+      "Account Settings + Ordering",
+      "Recent Items Icons"
+    ],
+    "content": "# **1.6.3-beta.2**\nStability fixes across review widgets, CSV imports, trade images, and IBKR reconciliation.\n\n## **Quarterly Folder Migration + Trade Images**\nQuarterly trade media paths are safer and migration is rerunnable\n- **Quarterly media paths** - Uses quarterly folder paths for trade images\n- **Failure-safe uploads** - Keeps images intact if submit fails\n- **Rerunnable migration** - Merges legacy folders and surfaces skipped/error counts\n*Run the Quarterly Folder Migration command if needed*\n\n## **Review V2 Image Widgets**\nImage widgets now stay isolated per widget instance\n- **Stable widget IDs** - Assigns unique IDs to each `journalit-images` block\n\n## **IBKR Cross-CSV Reconciliation**\nIBKR imports now dedupe executions across overlapping CSVs\n\n## **Account Settings + Ordering**\n- **Zero balance support** - Allows initial balance to be zero\n- **Archived lock** - Keeps Archived accounts at the bottom\n- **Settings refresh** - Reorders update immediately after changes\n\n## **Recent Items Icons**\n- **Onboarding/layout tracking** - Tracks recent views correctly\n\n\n## **Translation Fixes**\nFixed some translation issues thanks to @ilt980_04400 \n\n+ quite a few other smaller fixes\n"
+  },
+  "1.6.3-beta.1": {
+    "title": "Multi‑Language Expansion + New Onboarding and Trade Enhancements",
+    "description": "Expanded language coverage, onboarding revamp, multi-currency upgrades, and new broker imports.",
+    "imageUrl": "https://github.com/user-attachments/assets/eff7a917-6f9a-4b21-85ca-6e364a71d2b5",
+    "features": [
+      "Expanded Language Support",
+      "Onboarding Revamp",
+      "Date/Time Selector Revamp",
+      "Per-Account Multi-Currency",
+      "New Broker Imports"
+    ],
+    "content": "# **1.6.3-beta.1**\nExpanded language coverage, onboarding revamp, multi-currency upgrades, and new broker imports.\n\n## **Expanded Language Support**\nFull Spanish, Russian, and Chinese (Simplified) coverage across the app\n*Simply change your Obsidian language settings to switch*\n\n## **Onboarding Revamp**\n![Onboarding](https://github.com/user-attachments/assets/eff7a917-6f9a-4b21-85ca-6e364a71d2b5)\nA full-page onboarding flow with stronger activation reliability\n- **OAuth login** - Sign in with Google, GitHub, or Discord\n*Old login is completely deprecated; update to the latest version to access*\n\n## **Date/Time Selector Revamp**\n![Date1](https://github.com/user-attachments/assets/2fe573cb-c966-45fa-bfdb-2aef8a418ada)\n![Date2](https://github.com/user-attachments/assets/54adbc5b-1d4c-402d-8342-6ad9e10c0a04)\nMore reliable date picking across the app\n- **Segmented typing** - Day/month/year/time fields respect your format\n- **Calendar overhaul** - Overall better calendar\n- **24 hour support** - Choose you time format preference\n\n## **Per-Account Multi-Currency**\n- **Account base currency** - Choose currency per account\n*Configure per account in Account settings*\n\n## **New Broker Imports**\nMore broker templates for CSV trade imports\n- **MotiveWave** \n- **SierraChart**\n- **IBKR improvements**\n\n## **Layout Builder & Preview Polish**\nSafer edits and richer preview context\n- **Widget tooltips** - Preview explanations inside the layout builder\n- **Unsaved changes guard** - Confirmation modals for deletes and exits\n\n## **Custom Week Starts**\nChoose how your weekly summaries align\n- **Week start control** - Set your preferred week start day\n\n## **Fixes**\n- Trade timeline now shows same-day trades correctly\n- TradeLog date format, duration alignment, and timezone issues resolved\n- Calendar time entry and date selection bugs fixed\n- Quarterly migration now handles prefixed image paths\n- Trade note array fields normalize consistently in frontmatter\n+ many more under the hood fixes and improvements\n"
+  },
+  "1.6.2-beta.1": {
+    "title": "Multi-Currency & MAE/MFE",
+    "description": "Multi-currency support, new trade metrics, and quality-of-life improvements.",
+    "imageUrl": "https://github.com/user-attachments/assets/e61a90ff-a11e-4764-9abe-05177a9145b7",
+    "features": [
+      "Multi-Currency Support",
+      "MAE/MFE Tracking",
+      "Position Size Dollar Input",
+      "Year Heatmap Selector",
+      "CSV Date Format Selector"
+    ],
+    "content": "# **1.6.2-beta.1**\nMulti-currency support, new trade metrics, and quality-of-life improvements.\n\n## **Multi-Currency Support**\n![Multi-Currency Support](https://github.com/user-attachments/assets/e61a90ff-a11e-4764-9abe-05177a9145b7)\nAutomatic currency conversion for multi-currency portfolios\n- **Unified P&L** - Trades in different currencies (USD, JPY, GBP, etc.) now convert to your display currency\n- **ECB exchange rates** - Real-time rates with 24-hour caching for accurate conversions\n- **Conversion transparency** - Tooltips show conversion dates, warnings for unsupported currencies\n- **IBKR enhanced** - Currency field now extracted from IBKR imports automatically\n*Configure your display currency in Settings to see converted totals across all charts and metrics*\n\n## **MAE/MFE Tracking**\n![MAE MFE columns](https://github.com/user-attachments/assets/553de95f-efa0-4ae9-8369-69853dc89689)\n- **Flexible input** - Enter values as dollar amounts or price levels based on your preference\n- **TradeLog columns** - Six new sortable columns for MAE/MFE analysis\n*Add MAE/MFE values when creating/editing trades to analyze your entry and exit timing*\n\n## **Position Size Dollar Input**\nEnter position sizes as investment amounts instead of quantities\n*Toggle dollar input mode in Settings*\n\n## **Year Heatmap Selector**\n![Year Heatmap Selector](https://github.com/user-attachments/assets/5c695c93-bcc6-402a-88a5-4def4af8080b)\n- **Year navigation** - Interactive selector to view any year's trading heatmap\n*Click the top right in the heatmap widget to browse previous years*\n\n## **CSV Date Format Selector**\nManually specify date formats during manual CSV import\n\n## **Fixes**\n- Fixed year-boundary issues in weekly calendar causing incorrect quarters and missing events\n- Fixed Trading Score widget incorrectly showing \"insufficient data\" at start of new year\n- Fixed streak calculations incorrectly counting open trades (0 PnL) as streak breakers\n- Fixed heatmap \"Last 3/6 Months\" views failing to cross year boundaries correctly\n- Fixed modal styling inconsistencies across different Obsidian themes\n- Dependency updates and under-the-hood improvements\n"
+  },
+  "1.6.1-beta.1": {
+    "title": "Trade Log Expansion & Exchange Support",
+    "description": "13 new columns, smarter CSV imports, Hyperliquid & Blofin support",
+    "imageUrl": "https://github.com/user-attachments/assets/2b561777-dab7-4c8a-93fe-1ceb3c3f54a7",
+    "features": [
+      "Trade Log Columns",
+      "CSV Import Redesign",
+      "Hyperliquid Support",
+      "Blofin Support",
+      "Account Date Warning"
+    ],
+    "content": "# **1.6.1-beta.1**\nExpanded trade analysis, streamlined CSV imports, and new exchange support.\n\n## **Trade Log Columns**\n![New Modal](https://github.com/user-attachments/assets/2cfa77f7-ce18-41ec-8fc2-b5401963abaf)\n![Available Columns](https://github.com/user-attachments/assets/2b561777-dab7-4c8a-93fe-1ceb3c3f54a7)\n13 new columns for comprehensive trade analysis\n- **Timing columns** - Entry Time, Exit Time, Close Date for precise timing analysis\n- **Price columns** - Weighted average Entry/Exit prices, Stop Loss level\n- **Risk columns** - SL Distance ($/%%), Risk $, R:R ratio\n- **Position columns** - Size $, Fees, Exchange\n- **Expanded mode** - Display tags, setups, and mistakes as pill badges\n*Access via settings in Trade Log - new two-panel modal with drag-to-reorder*\n\n## **CSV Import Redesign**\n![CSV Importer](https://github.com/user-attachments/assets/2868bf3d-aaa6-4917-bf89-e38182b92c7f)\nFaster workflow with preferences and favorites\n- **Radio selection** - Browse brokers and accounts at a glance\n- **Favorites** - Star your most-used broker and account for auto-selection\n- **Hide brokers** - Declutter the list by hiding unused brokers\n- **Asset type memory** - Remembers last asset type per broker\n*Archived accounts automatically hidden from selection*\n\n## **Hyperliquid Support**\nImport trades from Hyperliquid decentralized perpetuals exchange\n*Export from Hyperliquid Trade History tab (10k entry limit)*\n\n## **Blofin Support**\nImport trades from Blofin crypto exchange\n\n## **Account Date Warning**\nAutomatic detection of trades before account creation\nPrevents balance calculation issues from date mismatches\n\n## **Fixes**\n- Fixed backup spam - UI state now stored separately, backups throttled to 5-minute intervals\n- Fixed folder placement for trades and DRCs at year boundaries (W01-2026 disambiguation)\n- Fixed timezone bug causing wrong dates in review widgets for negative UTC timezones\n- Fixed review file creation - clicking DRC/Weekly/Monthly/Yearly in trade notes now auto-creates missing files\n- Fixed account type validation when deleted type is no longer available\n- Fixed deprecated layout items causing upgrade issues\n- Fixed chart padding below x-axis labels\n- Fixed account balance chart Y-axis to include drawdown levels\n"
+  },
+  "1.6.0-beta.1": {
+    "title": "Review V2 & Customizable Home View",
+    "description": "Major release introducing Review V2, customizable Home View, and extensive improvements across the board.",
+    "imageUrl": "https://github.com/user-attachments/assets/9ef0236f-686f-4511-a05f-925e51f1224a",
+    "features": [
+      "Review V2 System",
+      "Customizable Home View",
+      "TradingView Image Links",
+      "Partial Trade Visualization",
+      "Tags Filter"
+    ],
+    "content": "# **1.6.0-beta.1**\nMajor release introducing Review V2, customizable Home View, and extensive improvements across the board.\n\n## **Review V2 System**\n![ReviewV2 Preview](https://github.com/user-attachments/assets/48bcc59a-2b17-4478-98b3-dce8677cca47)\nComplete overhaul of the review note system with a template-based architecture\n- **Layout Builder** - Create custom review templates with live preview and drag-and-drop sections\n![Editor](https://github.com/user-attachments/assets/03f20e4b-37e7-43d9-94bf-fb444e43afbf)\n- **20+ Widgets**\n- **Quarterly and Yearly Reviews!** - Added a very detailed Yearly review template for end-of-year reflections\n- **Template sharing**\n- **[IMPORTANT] Migration Required** - Migrate from legacy review Notes\n\n## **Customizable Home View**\n![Home View Preview](https://github.com/user-attachments/assets/9ef0236f-686f-4511-a05f-925e51f1224a)\n- **Drag-and-drop widgets** - Position and resize widgets to your preference\n- **Position Size Calculator** - Built-in calculator with multi-asset and R:R ratio support\n- **Goals & Streaks** - Track progress on daily/weekly/monthly targets\n- **Embedded Notes** - Add any note from your vault directly to the home view\n- **Filter persistence** - Selected filters carry over between sessions\n*Access via the Layout Builder quicklink on the Home View*\n\n## **TradingView Image Links**\nEasily attach TradingView chart snapshots to your trades via image URLs (other image hosts supported too)\n\n## **Partial Trade Visualization** (Trade Log)\n- **Exit breakdown** \n- **Status indicators**\n\n## **Tags Filter**\nFilter trades by your custom tags\n\n## **ByBit Csv Import Support**\nImport your trade data from ByBit exchange\n\n## **QoL changes**\n- Human-readable hold times\n- New currencies\n- Image viewer improvements\n\n## **Fixes**\nbunch of bug fixes and performance improvements\n\nthis is a big one! looking forward to your feedback on Review V2 and the new Home View system.\n\nMerry Christmas and happy trading! 🎅\n"
+  },
+  "1.5.3-beta.1": {
+    "title": "New Widgets + Instrument Specs",
+    "description": "Instrument specifications, TradingView import, enhanced dashboard metrics, and critical bug fixes.",
+    "imageUrl": "https://github.com/user-attachments/assets/c745828e-165f-4b9d-b013-7353700272f4",
+    "features": [
+      "Add TradingView broker guide support",
+      "Add resource links to general settings tab header",
+      "Add resource links to release notes view header",
+      "Update broker guide links to Journalit documentation",
+      "Enhance release workflow with interactive automation"
+    ],
+    "content": "# **1.5.3-beta.1**\nInstrument specifications, TradingView import, enhanced dashboard metrics, and critical bug fixes.\n\n## **Global Instrument Specifications**\n![Global Specs](https://github.com/user-attachments/assets/f0f962e4-5e63-482c-9a65-b182a19debfd)\nDefine instrument parameters once and apply them automatically across all trades\n- **Automatic symbol normalization** - Applies to all manual and imported trades\n- **Symbol Mappings**\n*Access via Settings > Customisation > Tickers/Symbols*\n\n## **TradingView CSV Import**\nNative support for TradingView paper trading exports\n\n## **Dashboard Enhancements**\n![Dashboard Widgets](https://github.com/user-attachments/assets/c745828e-165f-4b9d-b013-7353700272f4)\nNew metrics and improved widget controls\n- **Avg win/loss hold time metrics**\n- **Period selectors**\n- **Rolling Win/Loss Ratio chart**\n\n## **Update Notification System**\nStay informed about new releases\n- **Release notes view** - Browse changelogs directly in the plugin *(CTRL + P, `View release notes`)*\n*Can be disabled at the bottom of the general settings tab*\n\n## **TradeLog Tags Column**\n![TradeLog Tags](https://github.com/user-attachments/assets/9ad8d467-110c-4148-9f80-f286385d18b2)\nDisplay custom user tags\n- **Tags column** - See your trade tags at a glance without opening trade details\n- **Legacy tag cleanup** - Removed auto generated tags. Please run **[Ctrl + P, `search for \"Clean\"`]** to remove legacy tags.\n\n## **Fixes**\n- Fixed critical P&L bugs: direction comparison, validation guards, error handling\n- Fixed IBKR CSV import: SELL-only filtering and chronological sorting\n- Fixed timezone bugs causing DRCs to show data from previous day\n- Fixed UTC timezone shift in creation date handling\n- Fixed account modal crashes from corrupted date data\n- Fixed tag normalization and frontmatter serialization issues\n- Fixed duplicate tags/mistakes with escaped quotes and tag paths\n- Fixed cache not refreshed on options change\n- Fixed trade note navigation to use NavigationManager\n+ many more under the hood improvements and code quality enhancements\n\nPlease make sure to run **[Ctrl + P, `search for \"Clean\"`]** to remove legacy tags.\n"
+  },
+  "1.5.2-beta.2": {
+    "title": "Quick Hotfix Update",
+    "description": "Bug fixes for daily goals, trade status detection, and TradeLog display",
+    "features": [
+      "Daily goals correctly carry over to next day",
+      "Trades with multiple entries but no exits show as OPEN",
+      "MISSED and BACKTEST trades display without needing filters",
+      "Default custom options can be removed properly",
+      "Thesis column alignment fixed in TradeLog"
+    ],
+    "content": "# **1.5.2-beta.2**\nQuick hotfix update\n\n## **Fixes**\n- Daily goals now correctly carry over to next day\n- Trades with multiple entries but no exits show as OPEN correctly\n- MISSED and BACKTEST trades now display in TradeLog without needing filters\n- Default custom options can now be removed properly\n- Thesis column alignment fixed in TradeLog\n"
+  },
+  "1.5.2-beta.1": {
+    "title": "Major Trade Log Overhaul",
+    "description": "Multi-select, enhanced filtering, and performance improvements",
+    "imageUrl": "https://github.com/user-attachments/assets/d8f1750e-8b7b-4db2-a487-8aff564d52e6",
+    "features": [
+      "Multi-select with batch operations toolbar",
+      "Column customization with drag-and-drop reordering",
+      "80-99% performance improvement",
+      "Advanced unified filter system",
+      "TradeZero CSV import support"
+    ],
+    "content": "# **1.5.2-beta.1**\nMajor Trade Log overhaul with multi-select, enhanced filtering, and performance improvements.\n\n## **MAJOR Trade Log Enchacements**\n![Trade Log](https://github.com/user-attachments/assets/d8f1750e-8b7b-4db2-a487-8aff564d52e6)\nComplete rebuild with modern features and dramatic performance gains\n![Multi-select](https://github.com/user-attachments/assets/1c2a3e56-375b-4e94-8142-0556543ebfbc)\n- **Multi-select** - Shift-click to select multiple trades, batch operations toolbar for bulk actions\n- **Batch Operation Toolbar** - Easily mark as reviewed, add setups, add mistakes or delete selected trades\n![Column Customisation](https://github.com/user-attachments/assets/fa8b2223-8f14-4572-8cdf-5454ba037f47)\n- **Column customization** - Choose which columns to display, reorder and resize to your preference\n- **Scroll persistence** - TradeLog remembers your scroll position when navigating away\n- **80-99% performance improvement** - Parallel cache refresh for lightning-fast data updates\n*Access column settings via TradeLog header controls, multi-select with shift-click*\n\n## **Advanced Filter System**\n![Advanced Filters](https://github.com/user-attachments/assets/04da4feb-3c11-4339-95a7-2d90d69725d3)\nUnified filtering interface with enhanced controls\n*Access via filter button in Dashboard and TradeLog headers*\n\n## **TradeZero CSV Import Support**\nImport trades directly from TradeZero broker\n\n## **Trade Form Protection**\n![Form Protection](https://github.com/user-attachments/assets/2c3c1347-1272-42ef-93e0-a996977f410c)\nPrevent accidental data loss with unsaved changes\n\n## **Fixes**\n- Fixed race condition in trade file creation causing data loss\n- Fixed performance calendar month labels overlaying sticky header\n- Fixed missing Direction field for option trades in frontmatter\n- Fixed duplicate images pasting into DRC and Weekly Review\n- Fixed trade status detection bugs for trades with multiple entries\n- Fixed focus loss in entry/exit rows during editing\n- Fixed accountMetadata data loss during settings reconstruction\n+ many more under the hood improvements and code quality enhancements\n"
+  },
+  "1.5.1-beta.2": {
+    "title": "Bug Fixes & Improvements",
+    "description": "Minor bug fixes and performance improvements",
+    "imageUrl": "https://github.com/user-attachments/assets/47aad6ac-4c8b-4dbe-b3ca-97337705dc48",
+    "features": [
+      "Fixed version comparison for build timestamps",
+      "Improved toast positioning in HomeView",
+      "Better error handling"
+    ]
+  },
+  "1.5.1-beta.1": {
+    "title": "Advanced Filtering System",
+    "description": "New filtering options across dashboard and TradeLog for better strategy analysis",
+    "imageUrl": "https://github.com/user-attachments/assets/0f58b43e-40d8-4b27-b293-7e3fd13fb2ef",
+    "features": [
+      "Setup filter for strategy analysis in dashboard",
+      "Account filtering in TradeLog",
+      "Trade rebates tracking for options trades",
+      "Copy trading P&L multiplier setting",
+      "Fixed multi-year monthly review backlinks",
+      "Fixed R-multiples calculation bugs"
+    ],
+    "content": "# 1.5.1-beta.1\n\nStability improvements, new filtering options, and enhanced trade management features.\n\n## Setup Filter\n\n![Dashboard Filter](https://github.com/user-attachments/assets/0f58b43e-40d8-4b27-b293-7e3fd13fb2ef)\n\nFilter trades by specific setups in the trading dashboard\n\n- Strategy analysis - Isolate performance by trade setup/strategy\n- Pattern recognition - See which setups perform best\n- Access via dashboard filter controls alongside Account and Ticker filters\n\n## Trade Rebates\n\nSupport for rebate tracking on options trades\n\n- Rebate field - Track credits received from brokers on options trades\n- Net cost calculation - Automatically factors rebates into P&L\n- Options-specific - Field restricted to options asset types only\n- Add rebates when editing trades to see accurate net P&L\n\n## Account Filtering in TradeLog\n\n![TradeLog Filter](https://github.com/user-attachments/assets/93b8208d-a2a6-4b66-8273-bdc5f470ebbb)\n\nFilter TradeLog view by specific accounts\n\n- Multi-account support - View trades from selected accounts only\n- Access via TradeLog header filter controls\n\n## Copy Trading PnL Multiplier\n\nSetting for copy trading account calculations\n\n- Accurate tracking - Properly calculate P&L for copy trading setups\n- Configure in Settings under General tab\n\n## Fixes\n\n- Fixed backlinks for multi-year monthly review collisions\n- Fixed account-related errors in account page\n- Fixed R-multiples calculation bugs in P&L calculations\n- Many more under the hood fixes and improvements\n\nPlanning on upgrading the trade log with a bunch more features.\n"
+  },
+  "1.5.0-beta.1": {
+    "title": "CSV Import, R-Multiples & Manual Drawdown",
+    "description": "Major update with CSV import system, R-multiple risk tracking, and manual trailing drawdown",
+    "imageUrl": "https://github.com/user-attachments/assets/5c272fb2-19c7-4db0-94c0-0fecf67281be",
+    "features": [
+      "CSV import system with IBKR and Tradovate adapters",
+      "Smart duplicate detection and AI-powered mapping",
+      "Manual trailing drawdown with snapshot system",
+      "R-multiple risk tracking with stop loss fields",
+      "Breakeven range configuration",
+      "Critical stability fixes for plugin reload and timezone issues"
+    ],
+    "content": "# 1.5.0-beta.1\n\nMajor update: CSV Import, R-Multiple tracking, and critical stability improvements.\n\n## CSV Import System\n\n![CSV Import](https://github.com/user-attachments/assets/5c272fb2-19c7-4db0-94c0-0fecf67281be)\n\nImport trades from any broker directly into your vault\n\n- Built-in broker adapters - IBKR and Tradovate support\n- Smart duplicate detection - Prevents re-importing via time/price matching\n- AI-powered mapping - Optional OpenAI assistance for custom formats\n\n![CSV Import Manual Mapping](https://github.com/user-attachments/assets/9466227d-f819-44cc-a505-fb04fbc019bb)\n\n- Manual mapping - Map any CSV for unsupported brokers\n- Template sharing - JTT codes enable community template distribution\n- Access via homepage `Customize -> restore hidden` or `Ctrl+P` search `CSV`\n\n## Manual Trailing Drawdown\n\n![Manual Drawdown Entry](https://github.com/user-attachments/assets/18c45c6e-52a5-438f-9402-632d1187faee)\n\n![Manual Drawdown Settings](https://github.com/user-attachments/assets/893c2b86-61d9-4fa1-abf9-01e9fe4aebb0)\n\n- Snapshot system - Log dated drawdown limits manually\n- Stepped chart - Visualize how limits change over time\n- Progress tracking - Auto-calculates remaining room and percentage used\n- Perfect for prop firms with live equity trailing drawdowns\n\n## R-Multiple Risk Tracking\n\n![R-Multiples & Breakeven Settings](https://github.com/user-attachments/assets/39c9a2cd-21b2-47f0-8432-8b66d353dc34)\n\nMeasure trades in risk units instead of currency\n\n- Stop Loss field - Auto-calculates risk from entry-to-stop distance\n- Manual override - Set custom risk amounts with preview\n- Default risk - Pre-fills from settings\n- Display toggle - View ALL metrics in R-multiples instead of currency\n\n## Breakeven Range\n\n- Define a range for breakeven instead of exact zero\n\n## Fixes\n\n- Fixed \"plugin gone away\" errors on reload\n- Fixed date mismatches for UTC-1 to UTC-12 timezones\n- Fixed TradeLog creating duplicate trades with random suffixes\n- Cross-platform workspace compatibility\n- Custom options persistence\n- Reviewed trades filtering\n- Plus more under the hood improvements\n"
+  },
+  "1.5.0": {
+    "title": "Major Performance Update",
+    "description": "Faster sync and improved UI responsiveness",
+    "features": [
+      "Trade sync optimization",
+      "UI performance improvements",
+      "Bug fixes"
+    ]
+  },
+  "1.4.2-beta.3": {
+    "title": "Hotfix: Folder Migration System",
+    "description": "Simplified folder location changes with manual file moving",
+    "features": [
+      "Removed automatic folder migration when changing Journalit folder location",
+      "Replaced with manual move of existing files",
+      "New trades automatically created in new folder location"
+    ],
+    "content": "# 1.4.2-beta.3\n\n## Hotfix: Folder Migration System\n\n- Removed automatic folder migration code when changing Journalit folder location in vault\n- Replaced with manual move of existing files\n- New trades will automatically be created in new folder location of choice\n"
+  },
+  "1.4.2-beta.2": {
+    "title": "Account Filtering & Custom Folder Location",
+    "description": "Complete account filtering across review components and customisable journal folder location",
+    "imageUrl": "https://github.com/user-attachments/assets/2afaafc4-ef96-4ec2-9fd0-81edd5fae72d",
+    "features": [
+      "Account filtering across DRC, Weekly, and Monthly reviews",
+      "Trade status filtering in Trade Log (open/closed/win/loss/breakeven)",
+      "Fast date/time input system (e.g., '280925 1104P')",
+      "Customisable homepage quick links with drag-and-drop",
+      "Custom journal folder location with migration system",
+      "Calendar timezone fixes and phantom trade count elimination"
+    ],
+    "content": "# 1.4.2-beta.2\n\nWorking on the CSV importer as one of my main focuses for now but will still be fixing bugs and adding feature requests along the way.\n\n## Review Notes Account Filtering\n\n![Review Notes Account Filter](https://github.com/user-attachments/assets/2afaafc4-ef96-4ec2-9fd0-81edd5fae72d)\n\n- Complete account filtering across all review components (DRC, Weekly Review, Monthly Review)\n- Smart cache management to prevent calculation conflicts and improve performance\n- Filter your data by specific accounts to get focused insights on individual trading strategies\n\n## Trade Log Updates\n\n![Trade Log Updates](https://github.com/user-attachments/assets/06be594f-30b8-4ebe-85e3-fc05561015b2)\n\n- Added trade status filtering with open/closed/win/loss/breakeven options in Trade Log\n- Added \"This Quarter\" time range filter button\n\n## Better Date/Time Input in Trade Form\n\n- Fast date/time input system with combined format support for quicker trade entry\n- Type `280925 1104P` to get 28/09/25 1104PM\n\n## Customisable Homepage Experience\n\n- Drag-and-drop customisable quick links for personalised navigation\n- Easily remove any of the homepage navigation buttons you don't want\n\n## Custom Journalit Folder Location\n\n- Customisable journal folder location with complete migration system\n- Safety enhancements to prevent data loss during folder changes\n- Centralised folder path management for better organisation\n- Take full control of where your trading journal data is stored within your vault\n\n## Calendar Fixes\n\n- Eliminated phantom trade counts that were inflating statistics\n- Resolved timezone date discrepancies between bar charts and calendar\n\n## Other Fixes & Improvements\n\n- Fixed Trade Log scrolling issues for datasets with ≤50 trades\n- Improved tick size formatting and reduced unnecessary refreshes\n- And more under the hood improvements\n"
+  },
+  "1.4.1-beta.1": {
+    "title": "Home View & Backtest Trading",
+    "description": "Complete drag-and-drop home page with widgets and backtest trade support",
+    "imageUrl": "https://github.com/user-attachments/assets/6a770114-42e2-4df6-ad89-71511ff02dbc",
+    "features": [
+      "Drag-and-drop home page with Recent Items and Trading Heatmap widgets",
+      "GitHub-style contributions heatmap for daily P&L performance",
+      "Backtest trade system with dedicated 'B' prefix file naming",
+      "Percentage-based commission tracking",
+      "2-minute trade sync speed",
+      "Privacy-first analytics with explicit consent"
+    ],
+    "content": "# 1.4.1-beta.1\n\n## Home View\n\n![Home Page](https://github.com/user-attachments/assets/6a770114-42e2-4df6-ad89-71511ff02dbc)\n\n- Complete drag-and-drop home page with 2 widgets (Recent Items, Trading Heatmap)\n- GitHub-style contributions heatmap showing daily P&L performance with interactive tooltips\n- Recent Items widget tracks your last 5 accessed files/views for quick navigation\n- Ability to set your username for the greeting used in the homepage in the settings\n- Ability to choose whether the home page loads every time you open Obsidian in the settings\n- Removed all the other ribbon icons and consolidated them into 1 for less noise\n- You can still access all the other pages from the home page, commands (Ctrl+P), or custom hotkeys\n\n## Trade Sync Enhancements\n\n- Trade sync should take MAXIMUM 2 minutes before they reach your trading vault now\n\n## Backtest Trade System\n\n![Backtest Trade Type](https://github.com/user-attachments/assets/bb80dea8-7808-4eec-82ee-e3cfe742b744)\n\n- Backtesting trade management with dedicated 'B' prefix file naming\n- Easily select this in our dropdown selector in the trade form\n\n## Enhanced Commission & Cost Tracking\n\n- Percentage-based commission option (0-100%) alongside existing fixed dollar amounts\n- Track your costs more accurately whether you pay fixed fees or percentage-based commissions\n\n## Privacy-First Analytics\n\n- Optional telemetry system with explicit user consent (disabled by default)\n- Help us improve the plugin while maintaining complete privacy over your trading data\n\n## Other Fixes & Improvements\n\n- Major performance optimizations\n- Enhanced error handling system with user-friendly notifications and better debugging\n- Added optional exit date/time fields for enhanced DirectPnL mode precision\n- Cleaned up frontmatter from not showing other asset type fields\n- Fixed options PNL calculations to follow contract pricing\n"
+  }
+}

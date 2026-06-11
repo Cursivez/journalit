@@ -38,16 +38,15 @@ Full install + troubleshooting: https://journalit.co/docs
 - **Trading dashboard**: track performance and patterns at a glance.
 - **Account dashboard**: built for prop firm profit targets and drawdowns.
 - **Review system (V2)**: daily → yearly templates with a layout builder.
-- **[CSV import](https://journalit.co/csv-import)**: built-in adapters + flexible mapping for other formats.
+- **[Trade Import](https://journalit.co/csv-import)**: backend-powered imports for CSV, spreadsheets, HTML, and broker statements.
 - **[MetaTrader 4/5 sync](https://journalit.co/metatrader-trading-journal)**: automated trade import via FTP.
 
 ## Important disclosures
 
 - **Local-first core**: core journaling works offline and stores your notes and trades inside your Obsidian vault.
 - **Account required for full access**: a Journalit account is required for authentication-backed and subscription-gated features.
-- **Paid features**: a paid Pro subscription is required for full access to Pro features such as MetaTrader sync and AI-assisted CSV mapping.
-- **Optional network use**: the plugin only uses Journalit network services when you choose to use network-backed features. Signing in contacts Journalit services for email verification, token validation, and subscription status. If you then use authenticated features such as MetaTrader sync or AI-assisted CSV mapping, the plugin also connects to the Journalit backend API for sync coordination, trade retrieval, and optional AI mapping, and MetaTrader sync uses Journalit-managed FTP infrastructure for report uploads. Journalit may also request exchange rates from a third-party exchange-rate service when multi-currency conversion is needed. These network-backed features are opt-in.
-- **Closed source**: the plugin is proprietary/closed-source software.
+- **Paid features**: a paid Pro subscription is required for full access to Pro features such as MetaTrader sync and Trade Import.
+- **Optional network use**: the plugin only uses Journalit network services when you choose to use network-backed features. Signing in contacts Journalit services for email verification, token validation, and subscription status. If you then use authenticated features such as MetaTrader sync or Trade Import, the plugin also connects to the Journalit backend API for sync coordination, trade retrieval, and optional Trade Import, and MetaTrader sync uses Journalit-managed FTP infrastructure for report uploads. Journalit may also request exchange rates from a third-party exchange-rate service when multi-currency conversion is needed. These network-backed features are opt-in.
 - **Privacy details**: see [PRIVACY.md](PRIVACY.md) for data handling, retention, and infrastructure details.
 
 ## Screenshots
@@ -66,9 +65,9 @@ Full install + troubleshooting: https://journalit.co/docs
 
 ![Trade Log](https://github.com/user-attachments/assets/84593d6b-9783-4df6-ad06-6201f101ffcd)
 
-### CSV Import
+### Trade Import
 
-![CSV Import](https://github.com/user-attachments/assets/85945f98-5e3f-4d95-9e7b-f8172a4c200a)
+![Trade Import](https://github.com/user-attachments/assets/85945f98-5e3f-4d95-9e7b-f8172a4c200a)
 
 ### Account Dashboard
 
@@ -80,7 +79,7 @@ Full install + troubleshooting: https://journalit.co/docs
 
 ## Supported brokers
 
-Built-in broker adapters:
+Supported broker import formats:
 
 - [IBKR](https://journalit.co/docs/broker-guides-ibkr)
 - [Tradovate](https://journalit.co/docs/broker-guides-tradovate)
@@ -102,7 +101,7 @@ Missing your broker? Join [Discord](https://discord.gg/AkSw3D9h8b) and tell us w
 <details>
 <summary>Search keywords</summary>
 
-Keywords: obsidian trading journal, trading plugin, trade tracker, obsidian trading template, trading analytics, MetaTrader, MT4 sync, MT5 sync, CSV import, prop firm, prop firms, funded account, profit target, trailing drawdown, max drawdown
+Keywords: obsidian trading journal, trading plugin, trade tracker, obsidian trading template, trading analytics, MetaTrader, MT4 sync, MT5 sync, Trade Import, prop firm, prop firms, funded account, profit target, trailing drawdown, max drawdown
 
 </details>
 
@@ -110,7 +109,7 @@ Keywords: obsidian trading journal, trading plugin, trade tracker, obsidian trad
 <summary>More resources</summary>
 
 - [How it works (local-first)](https://journalit.co/obsidian-trading-journal)
-- [CSV import overview](https://journalit.co/csv-import)
+- [Trade Import overview](https://journalit.co/csv-import)
 - [MetaTrader sync overview](https://journalit.co/metatrader-trading-journal)
 - [Compare with other journals](https://journalit.co/compare)
 

@@ -1,0 +1,206 @@
+.formContainer {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+  max-width: 800px;
+  margin: 0 auto;
+  padding: var(--spacing-md);
+}
+
+.formSection {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-md);
+  background-color: var(--color-background);
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius-md);
+}
+
+.sectionTitle {
+  font-size: var(--font-size-lg);
+  font-weight: 600;
+  color: var(--color-text);
+  margin-bottom: var(--spacing-xs);
+}
+
+.sectionDescription {
+  font-size: var(--font-size-sm);
+  color: var(--color-muted);
+  margin-bottom: var(--spacing-sm);
+}
+
+.twoColumnLayout {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--spacing-md);
+}
+
+@media (max-width: 600px) {
+  .twoColumnLayout {
+    grid-template-columns: 1fr;
+  }
+}
+
+.fieldRow {
+  display: flex;
+  flex-direction: row;
+  gap: var(--spacing-md);
+  margin-bottom: var(--spacing-sm);
+}
+
+.field {
+  flex: 1;
+  min-width: 0;
+}
+
+.formActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--spacing-md);
+  margin-top: var(--spacing-lg);
+}
+
+.formHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--spacing-md);
+}
+
+.formTitle {
+  font-size: var(--font-size-xl);
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.calculatedValue {
+  display: flex;
+  flex-direction: column;
+  padding: var(--spacing-sm);
+  background-color: var(--color-surface);
+  border-radius: var(--border-radius-md);
+  margin-bottom: var(--spacing-md);
+}
+
+.calculatedLabel {
+  font-size: var(--font-size-xs);
+  color: var(--color-muted);
+}
+
+.calculatedAmount {
+  font-size: var(--font-size-lg);
+  font-weight: 600;
+}
+
+.positive {
+  color: var(--color-success);
+}
+
+.negative {
+  color: var(--color-error);
+}
+
+.neutral {
+  color: var(--color-text);
+}
+
+.notesField {
+  min-height: 100px;
+}
+
+.tagContainer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-xs);
+  margin-top: var(--spacing-xs);
+}
+
+.tag {
+  display: inline-flex;
+  align-items: center;
+  padding: var(--spacing-xs) var(--spacing-sm);
+  background-color: var(--color-surface);
+  border-radius: var(--border-radius-sm);
+  font-size: var(--font-size-xs);
+  gap: var(--spacing-xs);
+}
+
+.removeTag {
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background-color: rgba(0, 0, 0, 0.1);
+}
+
+.attachmentsContainer {
+  margin-top: var(--spacing-sm);
+}
+
+.attachmentItem {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-xs) var(--spacing-sm);
+  background-color: var(--color-surface);
+  border-radius: var(--border-radius-sm);
+  margin-bottom: var(--spacing-xs);
+}
+
+.errorSummary {
+  background-color: rgba(var(--color-error-rgb), 0.1);
+  border: 1px solid var(--color-error);
+  color: var(--color-error);
+  padding: var(--spacing-md);
+  border-radius: var(--border-radius-md);
+  margin-bottom: var(--spacing-md);
+}
+
+
+.trade-form-tabs {
+  margin-bottom: var(--spacing-md);
+}
+
+.trade-form-tab-list {
+  display: flex;
+  border-bottom: 1px solid var(--background-modifier-border);
+  margin-bottom: var(--spacing-md);
+}
+
+.trade-form-tab {
+  padding: 12px 20px;
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: var(--font-ui-medium);
+  font-weight: 500;
+  transition: all 0.2s ease-in-out;
+  outline: none;
+  position: relative;
+}
+
+.trade-form-tab:hover {
+  color: var(--text-normal);
+  background-color: var(--background-modifier-hover);
+}
+
+.trade-form-tab:focus {
+  outline: 2px solid var(--text-accent);
+  outline-offset: 2px;
+}
+
+.trade-form-tab.trade-form-tab-active {
+  border-bottom-color: var(--text-accent);
+  color: var(--text-normal);
+  font-weight: 600;
+}
+
+.trade-form-tab.trade-form-tab-active:hover {
+  background-color: var(--background-modifier-hover);
+}

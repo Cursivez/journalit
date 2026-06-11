@@ -1,0 +1,17 @@
+name: Contribution or support request
+description: Use Discord first unless a maintainer asked you to open an issue here.
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Journalit uses Discord as the preferred support and feedback channel:
+        https://discord.gg/AkSw3D9h8b
+
+        Public GitHub issues may be closed automatically unless a maintainer has approved you or asked you to open one.
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: What happened or what are you requesting?
+    validations:
+      required: true

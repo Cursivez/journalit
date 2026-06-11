@@ -1,0 +1,298 @@
+
+
+import React, { useState, useEffect, useRef } from 'react';
+import { TFile } from 'obsidian';
+import { CheckCircle2, Circle } from '../../shared/icons/ObsidianIcon';
+import JournalitPlugin from '../../../main';
+import { InvalidContextMessage } from './InvalidContextMessage';
+import { MarkReviewedPreviewData } from '../../../types/reviewV2';
+import { formatDateDisplay, getUserDateFormat } from '../../../utils/dateUtils';
+import { eventBus } from '../../../services/events/EventBus';
+import { SkeletonBox, SkeletonCircle } from '../../shared';
+import { t } from '../../../lang/helpers';
+
+interface MarkReviewedWidgetProps {
+  filePath: string;
+  plugin: JournalitPlugin;
+  preview?: boolean;
+  previewData?: MarkReviewedPreviewData;
+}
+
+
+const SUPPORTED_TYPES = [
+  'drc',
+  'weekly-review',
+  'monthly-review',
+  'quarterly-review',
+  'yearly-review',
+];
+
+
+const MAX_FRONTMATTER_RETRIES = 5;
+const FRONTMATTER_RETRY_DELAY_MS = 150;
+
+export const MarkReviewedWidget: React.FC<MarkReviewedWidgetProps> = ({
+  filePath,
+  plugin,
+  preview,
+  previewData,
+}) => {
+  const [reviewed, setReviewed] = useState<boolean>(false);
+  const [reviewedAt, setReviewedAt] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [isValidContext, setIsValidContext] = useState(true);
+  const [noteType, setNoteType] = useState<string | null>(null);
+  const retryCountRef = useRef(0);
+
+  useEffect(() => {
+    
+    if (preview && previewData) {
+      setReviewed(previewData.reviewed);
+      setReviewedAt(previewData.reviewedAt ?? null);
+      setLoading(false);
+      setIsValidContext(true);
+      return;
+    }
+
+    retryCountRef.current = 0;
+    loadReviewStatus();
+
+    
+    const handleMetadataChange = (file: TFile) => {
+      if (file.path === filePath) {
+        loadReviewStatus();
+      }
+    };
+
+    plugin.app.metadataCache.on('changed', handleMetadataChange);
+
+    return () => {
+      plugin.app.metadataCache.off('changed', handleMetadataChange);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filePath, preview, previewData]);
+
+  const loadReviewStatus = async () => {
+    const file = plugin.app.vault.getAbstractFileByPath(filePath);
+    if (!(file instanceof TFile)) {
+      setIsValidContext(false);
+      setLoading(false);
+      return;
+    }
+
+    const cache = plugin.app.metadataCache.getFileCache(file);
+    const frontmatter = cache?.frontmatter;
+
+    if (!frontmatter) {
+      
+      if (retryCountRef.current < MAX_FRONTMATTER_RETRIES) {
+        retryCountRef.current++;
+        setTimeout(() => loadReviewStatus(), FRONTMATTER_RETRY_DELAY_MS);
+        return;
+      }
+      setIsValidContext(false);
+      setLoading(false);
+      return;
+    }
+
+    
+    const type = frontmatter.type;
+    if (!SUPPORTED_TYPES.includes(type)) {
+      setIsValidContext(false);
+      setLoading(false);
+      return;
+    }
+
+    setNoteType(type);
+
+    
+    
+    
+    if (type === 'drc') {
+      const eodReview = frontmatter.endOfDayReview || {};
+      setReviewed(eodReview.reviewed ?? false);
+      setReviewedAt(eodReview.reviewedAt ?? null);
+    } else {
+      setReviewed(frontmatter.reviewed ?? false);
+      setReviewedAt(frontmatter.reviewedAt ?? null);
+    }
+
+    setIsValidContext(true);
+    setLoading(false);
+  };
+
+  const toggleReviewStatus = async () => {
+    if (preview) return;
+
+    const file = plugin.app.vault.getAbstractFileByPath(filePath);
+    if (!(file instanceof TFile)) return;
+
+    const newReviewed = !reviewed;
+    const newReviewedAt = newReviewed ? new Date().toISOString() : null;
+
+    
+    setReviewed(newReviewed);
+    setReviewedAt(newReviewedAt);
+
+    try {
+      if (noteType === 'drc') {
+        
+        
+        const cache = plugin.app.metadataCache.getFileCache(file);
+        const currentEodReview = cache?.frontmatter?.endOfDayReview || {};
+        await plugin.drcService.updateDRCFrontmatter(
+          filePath,
+          {
+            endOfDayReview: {
+              ...currentEodReview,
+              reviewed: newReviewed,
+              reviewedAt: newReviewedAt,
+            },
+          },
+          'user-input'
+        );
+      } else if (noteType === 'weekly-review') {
+        
+        await plugin.weeklyReviewService.updateWeeklyReviewFrontmatter(
+          filePath,
+          {
+            reviewed: newReviewed,
+            reviewedAt: newReviewedAt,
+          }
+        );
+      } else if (noteType === 'monthly-review') {
+        
+        await plugin.monthlyReviewService.updateMonthlyReviewFrontmatter(
+          filePath,
+          {
+            reviewed: newReviewed,
+            reviewedAt: newReviewedAt,
+          }
+        );
+      } else if (noteType === 'quarterly-review') {
+        
+        const quarterlyService =
+          await plugin.serviceManager.getQuarterlyReviewService();
+        await quarterlyService.updateQuarterlyReviewFrontmatter(filePath, {
+          reviewed: newReviewed,
+          reviewedAt: newReviewedAt,
+        });
+      } else if (noteType === 'yearly-review') {
+        
+        const yearlyService =
+          await plugin.serviceManager.getYearlyReviewService();
+        await yearlyService.updateYearlyReviewFrontmatter(filePath, {
+          reviewed: newReviewed,
+          reviewedAt: newReviewedAt,
+        });
+      }
+
+      
+      const typeMap: Record<
+        string,
+        'drc' | 'weekly' | 'monthly' | 'quarterly' | 'yearly'
+      > = {
+        drc: 'drc',
+        'weekly-review': 'weekly',
+        'monthly-review': 'monthly',
+        'quarterly-review': 'quarterly',
+        'yearly-review': 'yearly',
+      };
+      const normalizedType = typeMap[noteType ?? 'drc'] ?? 'drc';
+      eventBus.publish('review:changed', {
+        action: 'updated',
+        type: normalizedType,
+        filePath,
+      });
+    } catch (error) {
+      console.error(
+        '[MarkReviewedWidget] Failed to update review status:',
+        error
+      );
+      
+      setReviewed(!newReviewed);
+      setReviewedAt(newReviewed ? null : reviewedAt);
+    }
+  };
+
+  const formatTimestamp = (timestamp: string): string => {
+    const dateFormat = getUserDateFormat();
+    const date = new Date(timestamp);
+    const dateStr = formatDateDisplay(date, dateFormat);
+    const timeStr = date.toLocaleTimeString(undefined, {
+      hour: 'numeric',
+      minute: '2-digit',
+    });
+    return `${dateStr} ${timeStr}`;
+  };
+
+  if (loading) {
+    
+    return (
+      <div className="journalit-reviewv2-mark-reviewed-banner">
+        <div className="journalit-u-flex journalit-u-items-center journalit-u-gap-8">
+          <SkeletonCircle size={18} />
+          <SkeletonBox width={100} height={14} borderRadius="4px" />
+        </div>
+        <SkeletonBox width={110} height={32} borderRadius="var(--radius-s)" />
+      </div>
+    );
+  }
+
+  if (!isValidContext) {
+    return (
+      <InvalidContextMessage
+        widgetType="Mark as Reviewed"
+        reason={t('widget.invalid-context.review-note')}
+      />
+    );
+  }
+
+  const buttonClassName = [
+    'journalit-reviewv2-mark-reviewed-button',
+    reviewed
+      ? 'journalit-reviewv2-mark-reviewed-button--reviewed'
+      : 'journalit-reviewv2-mark-reviewed-button--pending',
+    preview ? 'journalit-reviewv2-mark-reviewed-button--disabled' : '',
+  ]
+    .filter(Boolean)
+    .join(' ');
+
+  return (
+    <div className="journalit-reviewv2-mark-reviewed-banner">
+      <div className="journalit-reviewv2-mark-reviewed-status-row">
+        {reviewed ? (
+          <CheckCircle2
+            size={18}
+            className="journalit-reviewv2-mark-reviewed-icon journalit-reviewv2-mark-reviewed-icon--reviewed"
+          />
+        ) : (
+          <Circle
+            size={18}
+            className="journalit-reviewv2-mark-reviewed-icon journalit-reviewv2-mark-reviewed-icon--pending"
+          />
+        )}
+        <span className="journalit-reviewv2-mark-reviewed-status-text">
+          {reviewed
+            ? t('widget.mark-reviewed.status.reviewed')
+            : t('widget.mark-reviewed.status.pending')}
+        </span>
+        {reviewed && reviewedAt && (
+          <span className="journalit-reviewv2-mark-reviewed-timestamp">
+            {formatTimestamp(reviewedAt)}
+          </span>
+        )}
+      </div>
+
+      <button
+        onClick={toggleReviewStatus}
+        disabled={preview}
+        className={buttonClassName}
+      >
+        {reviewed
+          ? t('widget.mark-reviewed.button.undo')
+          : t('widget.mark-reviewed.button.mark')}
+      </button>
+    </div>
+  );
+};

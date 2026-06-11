@@ -1,0 +1,45 @@
+name: PR Gate
+
+on:
+  pull_request_target:
+    types: [opened, reopened, synchronize]
+
+permissions:
+  pull-requests: write
+  issues: write
+  contents: read
+
+jobs:
+  gate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Close pull requests from unapproved contributors
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const approvedPath = '.github/APPROVED_CONTRIBUTORS';
+            const approved = fs.existsSync(approvedPath)
+              ? fs.readFileSync(approvedPath, 'utf8')
+                  .split(/\r?\n/)
+                  .map(line => line.trim().toLowerCase())
+                  .filter(line => line && !line.startsWith('#'))
+              : [];
+            const pr = context.payload.pull_request;
+            const user = pr.user.login.toLowerCase();
+            const authorAssociation = pr.author_association;
+            const trusted = approved.includes(user) || ['OWNER', 'MEMBER', 'COLLABORATOR'].includes(authorAssociation);
+            if (trusted) return;
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: pr.number,
+              body: 'Thanks for the contribution. Journalit is public-source for transparency and Obsidian review, but the private repository remains the source of truth. Public pull requests are limited to approved contributors, so this PR is being closed automatically. Please use Discord first: https://discord.gg/AkSw3D9h8b.'
+            });
+            await github.rest.pulls.update({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: pr.number,
+              state: 'closed'
+            });

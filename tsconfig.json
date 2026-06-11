@@ -1,0 +1,71 @@
+{
+    "compilerOptions": {
+        // Incremental compilation for faster builds
+        "incremental": true,
+        "tsBuildInfoFile": ".cache/tsc/.tsbuildinfo",
+
+        // Base directory for resolving non-relative module names
+        "baseUrl": ".",
+
+        // Generate inline source maps for debugging
+        "inlineSourceMap": true,
+        "inlineSources": true,
+
+        // Use modern module system
+        "module": "ESNext",
+
+        // Target ES6 for good compatibility
+        "target": "ES6",
+
+        // Allow JavaScript files to be compiled
+        "allowJs": true,
+
+        // Enforce strict type checking
+        "noImplicitAny": true,
+
+        // Module resolution strategy
+        "moduleResolution": "node",
+        "resolveJsonModule": true,
+
+        // Import helpers from 'tslib'
+        "importHelpers": true,
+
+        // Better compatibility with bundlers
+        "isolatedModules": true,
+
+        // Enable strict null checks
+        "strictNullChecks": true,
+        
+        // JSX Support
+        "jsx": "react",
+        "esModuleInterop": true,
+
+        // Explicitly include Node.js global type definitions to silence IDE errors
+        "types": ["node"],
+
+        // Required libraries for compilation
+        "lib": [
+            "DOM",           // DOM APIs
+            "ES5",          // ES5 features
+            "ES6",          // ES6/ES2015 features
+            "ES7",          // ES7/ES2016 features
+            "ES2015",       // Additional ES2015 features
+            "ES2021",       // Modern JavaScript features
+            "DOM.Iterable"   // For iterables like NodeList
+        ],
+
+        "typeRoots": [
+            "./node_modules/@types",
+            "./types"
+        ]
+    },
+    // Files to include in compilation
+    "include": [
+        "**/*.ts",          // All TypeScript files
+        "**/*.tsx"          // All TypeScript JSX files
+    ],
+    "exclude": [
+        "tests/**/*",
+        "**/*.test.*"
+    ]
+}
