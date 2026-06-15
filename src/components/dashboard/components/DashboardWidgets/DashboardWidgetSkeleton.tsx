@@ -3,12 +3,7 @@
 import React, { memo, useLayoutEffect } from 'react';
 import { SkeletonBox } from '../../../shared/SkeletonBox';
 import { ChartSkeleton } from '../../../shared/ChartSkeleton';
-import {
-  injectDashboardWidgetSkeletonStyles,
-  removeDashboardWidgetSkeletonStyles,
-} from '../../../../styles/dashboard/dashboardWidgetSkeletonStyles';
 import { t } from '../../../../lang/helpers';
-import { ensureSkeletonStyles } from '../../../../styles/skeletonStyles';
 
 interface DashboardWidgetSkeletonProps {
   type:

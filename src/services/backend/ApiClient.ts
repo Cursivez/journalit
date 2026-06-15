@@ -1,5 +1,6 @@
 
 
+import { safeString } from '../../utils/safeString';
 import { requestUrl } from 'obsidian';
 import { ErrorHandler, ErrorContext } from '../../utils/errorHandler';
 import { ApiError } from '../../types/errors';
@@ -7,14 +8,102 @@ import { getPluginInstance } from '../../utils/pluginContext';
 
 const DEFAULT_BACKEND_SERVER_URL = 'https://api.journalit.co';
 
+function normalizeBackendServerUrl(value: unknown): string {
+  if (typeof value !== 'string' || value.trim().length === 0) {
+    return DEFAULT_BACKEND_SERVER_URL;
+  }
+
+  try {
+    const parsedUrl = new URL(value.trim());
+    if (parsedUrl.protocol !== 'https:' && parsedUrl.protocol !== 'http:') {
+      return DEFAULT_BACKEND_SERVER_URL;
+    }
+    parsedUrl.pathname = parsedUrl.pathname.replace(/\/+$|^$/, '');
+    parsedUrl.search = '';
+    parsedUrl.hash = '';
+    return parsedUrl.toString().replace(/\/$/, '');
+  } catch {
+    return DEFAULT_BACKEND_SERVER_URL;
+  }
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
+}
+
+function normalizeRequestHeaders(
+  headers: HeadersInit | undefined
+): Record<string, string> {
+  if (!headers) {
+    return {};
+  }
+
+  if (headers instanceof Headers) {
+    return Object.fromEntries(headers.entries());
+  }
+
+  if (Array.isArray(headers)) {
+    return Object.fromEntries(headers.map(([key, value]) => [key, value]));
+  }
+
+  return Object.fromEntries(
+    Object.entries(headers).map(([key, value]) => [key, String(value)])
+  );
+}
+
+function requestBodyToString(
+  body: BodyInit | null | undefined
+): string | undefined {
+  return typeof body === 'string' ? body : undefined;
+}
+
+function parseErrorContext(error: unknown, context: string): ErrorContext {
+  if (!isRecord(error)) {
+    return { operation: context };
+  }
+
+  const embeddedContext = error.context;
+  if (
+    isRecord(embeddedContext) &&
+    typeof embeddedContext.operation === 'string'
+  ) {
+    return {
+      operation: embeddedContext.operation,
+      endpoint:
+        typeof embeddedContext.endpoint === 'string'
+          ? embeddedContext.endpoint
+          : undefined,
+      statusCode:
+        typeof embeddedContext.statusCode === 'number'
+          ? embeddedContext.statusCode
+          : undefined,
+      responseBody: embeddedContext.responseBody,
+      responseHeaders: isRecord(embeddedContext.responseHeaders)
+        ? Object.fromEntries(
+            Object.entries(embeddedContext.responseHeaders).map(
+              ([key, value]) => [key, String(value)]
+            )
+          )
+        : undefined,
+    };
+  }
+
+  return {
+    operation: context,
+    endpoint: typeof error.endpoint === 'string' ? error.endpoint : undefined,
+    statusCode:
+      typeof error.statusCode === 'number' ? error.statusCode : undefined,
+  };
+}
+
 
 function getBackendServerUrl(): string {
   try {
     const plugin = getPluginInstance();
-    if (plugin?.settings?.backendIntegration?.serverUrl) {
-      return plugin.settings.backendIntegration.serverUrl;
-    }
-  } catch (_error) {
+    return normalizeBackendServerUrl(
+      plugin?.settings?.backendIntegration?.serverUrl
+    );
+  } catch {
     // intentional
   }
 
@@ -142,7 +231,7 @@ export class ApiClient {
   private static readonly AUTH_FAILURE_EVENT = 'journalit:auth-failed';
   
 
-  private static requestQueue: QueuedRequest<any>[] = [];
+  private static requestQueue: QueuedRequest<unknown>[] = [];
   private static activeRequests = 0;
   private static readonly MAX_CONCURRENT_REQUESTS = 3;
   private static readonly RATE_LIMIT_DELAY_MS = 200; 
@@ -156,7 +245,7 @@ export class ApiClient {
   
   private static responseCache = new Map<
     string,
-    { data: any; timestamp: number }
+    { data: unknown; timestamp: number }
   >();
   private static readonly CACHE_TTL_MS = 5 * 60 * 1000; 
 
@@ -237,12 +326,12 @@ export class ApiClient {
 
     
     const tempHeaders = {
-      ...options.headers,
+      ...normalizeRequestHeaders(options.headers),
       'x-endpoint': url,
     };
 
     
-    const authHeaders = this.getHeaders(tempHeaders as Record<string, string>);
+    const authHeaders = this.getHeaders(tempHeaders);
 
     
     const authenticatedOptions: RequestInit = {
@@ -270,7 +359,7 @@ export class ApiClient {
 
       
       if (!this.isProcessingQueue) {
-        this.processQueue();
+        void this.processQueue();
       }
     });
   }
@@ -289,7 +378,10 @@ export class ApiClient {
       const timeSinceLastRequest = now - this.lastRequestTime;
       if (timeSinceLastRequest < this.RATE_LIMIT_DELAY_MS) {
         await new Promise((resolve) =>
-          setTimeout(resolve, this.RATE_LIMIT_DELAY_MS - timeSinceLastRequest)
+          window.setTimeout(
+            resolve,
+            this.RATE_LIMIT_DELAY_MS - timeSinceLastRequest
+          )
         );
       }
 
@@ -300,11 +392,11 @@ export class ApiClient {
       this.lastRequestTime = Date.now();
 
       
-      this.executeRequest(request).finally(() => {
+      void this.executeRequest(request).finally(() => {
         this.activeRequests--;
         
         if (this.requestQueue.length > 0) {
-          this.processQueue();
+          void this.processQueue();
         }
       });
     }
@@ -319,9 +411,9 @@ export class ApiClient {
     try {
       const response = await requestUrl({
         url: request.url,
-        method: (request.options.method as string) || 'GET',
-        headers: request.options.headers as Record<string, string>,
-        body: request.options.body as string,
+        method: request.options.method || 'GET',
+        headers: normalizeRequestHeaders(request.options.headers),
+        body: requestBodyToString(request.options.body),
         throw: false,
       });
 
@@ -380,7 +472,7 @@ export class ApiClient {
 
           
           if (!request.suppressPremiumRequiredEvent) {
-            document.dispatchEvent(
+            window.dispatchEvent(
               new CustomEvent('journalit:premium-required', {
                 detail: {
                   operation: request.context,
@@ -397,7 +489,9 @@ export class ApiClient {
 
         
         const contentTypeHeader = getHeader(response.headers, 'content-type');
-        const responseBody = contentTypeHeader?.includes('application/json')
+        const responseBody: unknown = contentTypeHeader?.includes(
+          'application/json'
+        )
           ? response.json
           : null;
 
@@ -425,13 +519,16 @@ export class ApiClient {
       }
 
       
-      let data = null;
+      let data: T | null = null;
       const contentLengthHeader = getHeader(response.headers, 'content-length');
       if (response.status !== 204 && contentLengthHeader !== '0') {
         const contentType = getHeader(response.headers, 'content-type');
         if (contentType && contentType.includes('application/json')) {
           try {
-            data = response.json;
+            
+            
+            
+            data = response.json as T;
           } catch (jsonError) {
             
             console.warn(
@@ -484,7 +581,7 @@ export class ApiClient {
       
       if (
         request.retryCount < this.MAX_RETRY_ATTEMPTS &&
-        (error.name === 'TypeError' ||
+        ((error instanceof Error && error.name === 'TypeError') ||
           (error instanceof Error && error.message?.includes('fetch')))
       ) {
         await this.retryRequest(request);
@@ -503,14 +600,14 @@ export class ApiClient {
     const delay =
       this.RETRY_DELAY_BASE_MS * Math.pow(2, request.retryCount - 1);
 
-    await new Promise((resolve) => setTimeout(resolve, delay));
+    await new Promise((resolve) => window.setTimeout(resolve, delay));
 
     
     request.priority += 10; 
     this.requestQueue.unshift(request);
 
     if (!this.isProcessingQueue) {
-      this.processQueue();
+      void this.processQueue();
     }
   }
 
@@ -525,12 +622,14 @@ export class ApiClient {
       return null;
     }
 
+    
+    
     return cached.data as T;
   }
 
   
 
-  private static setCachedResponse(url: string, data: any): void {
+  private static setCachedResponse(url: string, data: unknown): void {
     this.responseCache.set(url, {
       data,
       timestamp: Date.now(),
@@ -551,16 +650,7 @@ export class ApiClient {
 
   
   private static handleError(error: unknown, context: string): null {
-    
-    const errorObj =
-      typeof error === 'object' && error !== null
-        ? (error as Record<string, unknown>)
-        : {};
-    const errorContext: ErrorContext = (errorObj.context as ErrorContext) || {
-      operation: context,
-      endpoint: errorObj.endpoint as string | undefined,
-      statusCode: errorObj.statusCode as number | undefined,
-    };
+    const errorContext = parseErrorContext(error, context);
 
     
     ErrorHandler.handleError(error, errorContext);
@@ -568,11 +658,15 @@ export class ApiClient {
   }
 
   private static dispatchAuthFailure(context: ErrorContext): void {
-    if (typeof document === 'undefined') {
+    if (typeof window.activeDocument === 'undefined') {
       return;
     }
 
-    document.dispatchEvent(
+    const event = new CustomEvent(this.AUTH_FAILURE_EVENT, {
+      detail: context,
+    });
+    window.dispatchEvent(event);
+    window.activeDocument.dispatchEvent(
       new CustomEvent(this.AUTH_FAILURE_EVENT, {
         detail: context,
       })
@@ -583,7 +677,7 @@ export class ApiClient {
   static async checkHealth(): Promise<boolean> {
     try {
       const response = await requestUrl({
-        url: `${getBackendServerUrl()}/api/v1/health`,
+        url: ApiClient.buildUrl('/api/v1/health'),
         method: 'GET',
         throw: false,
       });
@@ -596,13 +690,13 @@ export class ApiClient {
 
   
 
-  static buildUrl(path: string, params?: Record<string, any>): string {
-    const url = new URL(`${getBackendServerUrl()}${path}`);
+  static buildUrl(path: string, params?: Record<string, unknown>): string {
+    const url = new URL(path, `${getBackendServerUrl()}/`);
 
     if (params) {
       Object.entries(params).forEach(([key, value]) => {
         if (value !== undefined && value !== null) {
-          url.searchParams.append(key, String(value));
+          url.searchParams.append(key, safeString(value));
         }
       });
     }

@@ -8,12 +8,8 @@ import { TradeForm } from '.';
 import { TradeFormData } from './types';
 import { MissedTradeFormData } from '../../missedTrade/types';
 import { BacktestTradeFormData } from '../../../services/backtestTrade/BacktestTradeService';
+import type { TradeData } from '../../../services/trade/TradeService';
 
-import {
-  injectTradeFormStyles,
-  removeTradeFormStyles,
-} from '../../../styles/tradeFormStyles';
-import { ensureRadioOptionStyles } from '../../../styles/shared/radioOptionStyles';
 import { CurrencyProvider } from '../../../contexts/CurrencyContext';
 import { t } from '../../../lang/helpers';
 import { eventBus } from '../../../services/events';
@@ -22,6 +18,50 @@ import {
   hasTradeIdentityChanged,
   inferStoredTradeType,
 } from '../../../utils/tradeTypeRouting';
+
+type TradeFormSubmissionData = TradeFormData &
+  Record<string, unknown> & {
+    originalPnl?: number;
+  };
+
+const parseTradeStatus = (
+  value: string | undefined
+): TradeData['tradeStatus'] =>
+  value === 'OPEN' || value === 'CLOSED' ? value : undefined;
+
+const toRegularTradeData = (tradeData: TradeFormSubmissionData): TradeData => ({
+  ...tradeData,
+  tradeStatus: parseTradeStatus(tradeData.tradeStatus),
+  entries: tradeData.entries?.flatMap((entry) =>
+    entry.time instanceof Date &&
+    entry.price !== undefined &&
+    entry.size !== undefined
+      ? [
+          {
+            time: entry.time,
+            price: entry.price,
+            size: entry.size,
+            notional: entry.notional,
+          },
+        ]
+      : []
+  ),
+  exits: tradeData.exits?.flatMap((exit) =>
+    exit.time instanceof Date &&
+    exit.price !== undefined &&
+    exit.size !== undefined
+      ? [
+          {
+            time: exit.time,
+            price: exit.price,
+            size: exit.size,
+            notional: exit.notional,
+            hasExplicitPrice: exit.hasExplicitPrice,
+          },
+        ]
+      : []
+  ),
+});
 
 interface TradeFormModalProps {
   app: App;
@@ -64,7 +104,7 @@ export class TradeFormModal extends Modal {
     
     if (this.checkForUnsavedChanges && this.checkForUnsavedChanges()) {
       this.isConfirming = true;
-      this.showUnsavedChangesConfirmation()
+      void this.showUnsavedChangesConfirmation()
         .then((shouldClose) => {
           if (shouldClose) {
             super.close();
@@ -111,8 +151,8 @@ export class TradeFormModal extends Modal {
     
     
     try {
-      const activeEl = document.activeElement as HTMLElement | null;
-      if (activeEl && typeof activeEl.blur === 'function') activeEl.blur();
+      const activeEl = window.activeDocument.activeElement;
+      if (activeEl instanceof HTMLElement) activeEl.blur();
     } catch {
       // intentional
     }
@@ -260,7 +300,8 @@ function useTradeFormModalContentModel({
         currentSnapshot,
         nextSnapshot,
         plugin,
-        plugin.tradeService.sanitizeTickerForFilename.bind(plugin.tradeService)
+        (ticker: string) =>
+          plugin.tradeService.sanitizeTickerForFilename(ticker)
       )
     ) {
       return currentFilePathRef.current;
@@ -369,7 +410,7 @@ function useTradeFormModalContentModel({
           : formExits.length > 0
             ? formExits.some((exit) => exit.hasExplicitPrice === true)
             : undefined;
-      const tradeData: any = {
+      const tradeData: TradeFormSubmissionData = {
         entryTime: data.entryTime,
         exitTime: data.exitTime,
         entryPrice: data.entryPrice,
@@ -456,14 +497,22 @@ function useTradeFormModalContentModel({
 
         if (isMissedTrade) {
           const missedTradeService = await ensureMissedTradeService();
+          const missedTradeData: MissedTradeFormData = {
+            ...tradeData,
+            isMissedTrade: true,
+          };
           outPath = await missedTradeService.updateMissedTrade(
-            tradeData as MissedTradeFormData,
+            missedTradeData,
             workingFilePath
           );
         } else if (data.isBacktestTrade) {
           const backtestTradeService = await ensureBacktestTradeService();
+          const backtestTradeData: BacktestTradeFormData = {
+            ...tradeData,
+            isBacktestTrade: true,
+          };
           const success = await backtestTradeService.updateBacktestTrade(
-            tradeData as BacktestTradeFormData,
+            backtestTradeData,
             workingFilePath
           );
           outPath = success
@@ -471,7 +520,7 @@ function useTradeFormModalContentModel({
             : '';
         } else {
           outPath = await plugin.tradeService.updateTrade(
-            tradeData,
+            toRegularTradeData(tradeData),
             workingFilePath
           );
         }
@@ -507,8 +556,12 @@ function useTradeFormModalContentModel({
       } else {
         if (data.isBacktestTrade) {
           const backtestTradeService = await ensureBacktestTradeService();
+          const backtestTradeData: BacktestTradeFormData = {
+            ...tradeData,
+            isBacktestTrade: true,
+          };
           const file = await backtestTradeService.createBacktestTrade(
-            tradeData as BacktestTradeFormData,
+            backtestTradeData,
             {
               openFile: true,
               images: data.images,
@@ -519,14 +572,21 @@ function useTradeFormModalContentModel({
           outPath = file ? file.path : '';
         } else if (isMissedTrade) {
           const missedTradeService = await ensureMissedTradeService();
+          const missedTradeData: MissedTradeFormData = {
+            ...tradeData,
+            isMissedTrade: true,
+          };
           outPath = await missedTradeService.createMissedTrade(
-            tradeData as MissedTradeFormData,
+            missedTradeData,
             { deferPostCreateTasks: true }
           );
         } else {
-          outPath = await plugin.tradeService.createTrade(tradeData, {
-            deferPostCreateTasks: true,
-          });
+          outPath = await plugin.tradeService.createTrade(
+            toRegularTradeData(tradeData),
+            {
+              deferPostCreateTasks: true,
+            }
+          );
         }
         const tradeType = data.isBacktestTrade
           ? t('form.trade-type.backtest')

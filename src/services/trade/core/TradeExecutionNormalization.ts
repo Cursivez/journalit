@@ -9,6 +9,7 @@ export interface RawExecutionLegInput {
 
 import { calculateTradeDirectionPriceDiff } from './TradeDirection';
 import { parseTradeTimestampValue } from '../../../utils/dateUtils';
+import { safeString } from '../../../utils/safeString';
 
 export interface TradeExecutionNormalizationInput {
   entryPrice?: unknown;
@@ -299,7 +300,7 @@ function hasSizedExplicitExitPrice(exit: WeightedExitLeg): boolean {
 function hasExplicitPriceFlagKnown(exit: {
   hasExplicitPrice?: boolean;
 }): boolean {
-  return Object.prototype.hasOwnProperty.call(exit, 'hasExplicitPrice');
+  return 'hasExplicitPrice' in exit;
 }
 
 function getFirstExecutionTime(
@@ -360,7 +361,7 @@ function parseFiniteNumber(value: unknown): number | null {
     return null;
   }
 
-  const parsed = typeof value === 'number' ? value : Number(String(value));
+  const parsed = typeof value === 'number' ? value : Number(safeString(value));
   return Number.isFinite(parsed) ? parsed : null;
 }
 

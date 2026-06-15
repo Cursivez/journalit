@@ -143,7 +143,7 @@ const MetadataFieldsComponent: React.FC<MetadataFieldsProps> = ({
     }
 
     
-    handleImageUploaded(finalUrl);
+    void handleImageUploaded(finalUrl);
     setImageUrl('');
     setUrlError(null);
   }, [imageUrl, data.images, handleImageUploaded, sourcePath]);
@@ -194,7 +194,7 @@ const MetadataFieldsComponent: React.FC<MetadataFieldsProps> = ({
             <button
               type="button"
               className={`journalit-image-url-button${imageUrl.trim() ? ' is-active' : ''}`}
-              onClick={handleAddImageUrl}
+              onClick={() => void handleAddImageUrl()}
               disabled={!imageUrl.trim()}
             >
               {t('button.add')}

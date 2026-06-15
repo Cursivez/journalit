@@ -47,6 +47,15 @@ import { TradeLogService } from '../../../services/tradelog';
 import { remapAccountFilterFromAccountChange } from '../../shared/filters/remapSelectedAccounts';
 import { persistViewFilter } from '../../shared/filters/viewFilterPersistence';
 
+function frontmatterHeaderValueToString(value: unknown): string {
+  if (value === undefined || value === null) return '';
+  if (typeof value === 'string') return value;
+  if (typeof value === 'number' || typeof value === 'boolean')
+    return String(value);
+  if (value instanceof Date) return value.toISOString();
+  return JSON.stringify(value);
+}
+
 interface HeaderWidgetProps {
   filePath: string;
   plugin: JournalitPlugin;
@@ -77,6 +86,60 @@ const sanitizeCustomFieldFilters = (
   );
 };
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
+}
+
+function asRecord(value: unknown): Record<string, unknown> | undefined {
+  return isRecord(value) ? value : undefined;
+}
+
+function isHeaderDataType(value: unknown): value is HeaderData['type'] {
+  switch (value) {
+    case 'drc':
+    case 'weekly-review':
+    case 'monthly-review':
+    case 'quarterly-review':
+    case 'yearly-review':
+    case 'trade':
+      return true;
+    default:
+      return false;
+  }
+}
+
+function toDateInput(
+  value: unknown
+): Date | string | number | null | undefined {
+  return value instanceof Date ||
+    typeof value === 'string' ||
+    typeof value === 'number' ||
+    value === null ||
+    value === undefined
+    ? value
+    : undefined;
+}
+
+function getBooleanValue(
+  record: Record<string, unknown> | undefined,
+  key: string
+): boolean {
+  const value = record?.[key];
+  return typeof value === 'boolean' ? value : false;
+}
+
+function getStringValue(
+  record: Record<string, unknown> | undefined,
+  key: string
+): string | undefined {
+  const value = record?.[key];
+  return typeof value === 'string' ? value : undefined;
+}
+
+function parseHeaderDateValue(value: unknown): Date | null {
+  return parseLocalDateSafe(toDateInput(value));
+}
+
 export const getHeaderDateValue = (
   frontmatter: Record<string, unknown>
 ): unknown => {
@@ -94,12 +157,11 @@ export const getHeaderDateValue = (
 
   let earliest: { value: unknown; time: number } | null = null;
   for (const entry of frontmatter.entries) {
-    if (entry && typeof entry === 'object') {
-      const time = (entry as { time?: unknown }).time;
+    const entryRecord = asRecord(entry);
+    if (entryRecord) {
+      const time = entryRecord.time;
       if (time) {
-        const parsedDate = parseLocalDateSafe(
-          time as Date | string | number | null | undefined
-        );
+        const parsedDate = parseHeaderDateValue(time);
         const parsedTime = parsedDate?.getTime();
         if (parsedTime !== undefined && Number.isFinite(parsedTime)) {
           if (!earliest || parsedTime < earliest.time) {
@@ -146,7 +208,7 @@ export const HeaderWidget: React.FC<HeaderWidgetProps> = React.memo(
       () => plugin.customFieldsService?.getFields() || []
     );
     const retryCountRef = useRef(0);
-    const retryTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const retryTimeoutRef = useRef<number | null>(null);
 
     useEffect(() => {
       headerDataRef.current = headerData;
@@ -219,7 +281,7 @@ export const HeaderWidget: React.FC<HeaderWidgetProps> = React.memo(
       if (!(file instanceof TFile)) return;
 
       const cache = plugin.app.metadataCache.getFileCache(file);
-      const frontmatter = cache?.frontmatter;
+      const frontmatter = asRecord(cache?.frontmatter);
       if (!frontmatter) return;
 
       
@@ -230,15 +292,15 @@ export const HeaderWidget: React.FC<HeaderWidgetProps> = React.memo(
           'monthly-review',
           'quarterly-review',
           'yearly-review',
-        ].includes(frontmatter.type)
+        ].includes(String(frontmatter.type))
       )
         return;
 
       if (frontmatter.type === 'drc') {
-        const eodReview = frontmatter.endOfDayReview || {};
-        setReviewed(eodReview.reviewed ?? false);
+        const eodReview = asRecord(frontmatter.endOfDayReview);
+        setReviewed(getBooleanValue(eodReview, 'reviewed'));
       } else {
-        setReviewed(frontmatter.reviewed ?? false);
+        setReviewed(getBooleanValue(frontmatter, 'reviewed'));
       }
     }, [filePath, plugin]);
 
@@ -315,14 +377,18 @@ export const HeaderWidget: React.FC<HeaderWidgetProps> = React.memo(
         const weekStartDay = getWeekStartDaySetting(plugin);
         const weekNumber = getWeekNumberForDate(date, weekStartDay);
         
-        const week = frontmatter.week || `W${weekNumber}`;
+        const week = frontmatter.week
+          ? frontmatterHeaderValueToString(frontmatter.week)
+          : `W${weekNumber}`;
 
         
         
         
-        const year = frontmatter.year || date.getFullYear();
+        const year = frontmatter.year
+          ? frontmatterHeaderValueToString(frontmatter.year)
+          : date.getFullYear();
         const monthIndex = frontmatter.month
-          ? parseInt(String(frontmatter.month), 10) - 1
+          ? parseInt(frontmatterHeaderValueToString(frontmatter.month), 10) - 1
           : date.getMonth();
         const monthKey = `widget.header.month.${monthIndex}`;
         const monthName = hasTranslation(monthKey) ? t(monthKey) : monthKey;
@@ -450,10 +516,10 @@ export const HeaderWidget: React.FC<HeaderWidgetProps> = React.memo(
         if (retryCountRef.current < MAX_FRONTMATTER_RETRIES) {
           retryCountRef.current++;
           if (retryTimeoutRef.current !== null) {
-            clearTimeout(retryTimeoutRef.current);
+            window.clearTimeout(retryTimeoutRef.current);
           }
-          retryTimeoutRef.current = setTimeout(
-            () => loadHeaderData(),
+          retryTimeoutRef.current = window.setTimeout(
+            () => void loadHeaderData(),
             FRONTMATTER_RETRY_DELAY_MS
           );
           return;
@@ -468,15 +534,7 @@ export const HeaderWidget: React.FC<HeaderWidgetProps> = React.memo(
       }
 
       
-      const validTypes = [
-        'drc',
-        'weekly-review',
-        'monthly-review',
-        'quarterly-review',
-        'yearly-review',
-        'trade',
-      ];
-      if (!validTypes.includes(frontmatter.type)) {
+      if (!isHeaderDataType(frontmatter.type)) {
         logger.debug(
           '[HeaderWidget] Invalid type:',
           frontmatter.type,
@@ -502,9 +560,7 @@ export const HeaderWidget: React.FC<HeaderWidgetProps> = React.memo(
 
       
       
-      const date = parseLocalDateSafe(
-        dateStr as Date | string | number | null | undefined
-      );
+      const date = parseHeaderDateValue(dateStr);
       if (!date) {
         logger.debug('[HeaderWidget] Invalid date:', dateStr, 'for:', filePath);
         setLoading(false);
@@ -529,14 +585,20 @@ export const HeaderWidget: React.FC<HeaderWidgetProps> = React.memo(
           
           
           const quarter =
-            frontmatter.quarter || Math.ceil((date.getMonth() + 1) / 3);
-          const qYear = frontmatter.year || date.getFullYear();
+            typeof frontmatter.quarter === 'number'
+              ? frontmatter.quarter
+              : Math.ceil((date.getMonth() + 1) / 3);
+          const qYear =
+            typeof frontmatter.year === 'number' ||
+            typeof frontmatter.year === 'string'
+              ? frontmatter.year
+              : date.getFullYear();
           title = `Q${quarter} ${qYear}`;
           break;
         }
         case 'yearly-review':
           
-          title = `${frontmatter.year || date.getFullYear()}`;
+          title = `${typeof frontmatter.year === 'number' || typeof frontmatter.year === 'string' ? frontmatter.year : date.getFullYear()}`;
           break;
         case 'trade':
           title = formatTradeHeader(frontmatter, date);
@@ -566,13 +628,13 @@ export const HeaderWidget: React.FC<HeaderWidgetProps> = React.memo(
           'monthly-review',
           'quarterly-review',
           'yearly-review',
-        ].includes(frontmatter.type)
+        ].includes(String(frontmatter.type))
       ) {
         if (frontmatter.type === 'drc') {
-          const eodReview = frontmatter.endOfDayReview || {};
-          setReviewed(eodReview.reviewed ?? false);
+          const eodReview = asRecord(frontmatter.endOfDayReview);
+          setReviewed(getBooleanValue(eodReview, 'reviewed'));
         } else {
-          setReviewed(frontmatter.reviewed ?? false);
+          setReviewed(getBooleanValue(frontmatter, 'reviewed'));
         }
       }
 
@@ -593,7 +655,7 @@ export const HeaderWidget: React.FC<HeaderWidgetProps> = React.memo(
 
     useEffect(() => {
       retryCountRef.current = 0;
-      loadHeaderData();
+      void loadHeaderData();
 
       
       const handleMetadataChange = (file: TFile) => {
@@ -601,7 +663,7 @@ export const HeaderWidget: React.FC<HeaderWidgetProps> = React.memo(
           
           loadReviewedStatus();
           if (!headerDataRef.current) {
-            loadHeaderData();
+            void loadHeaderData();
           }
         }
       };
@@ -611,7 +673,7 @@ export const HeaderWidget: React.FC<HeaderWidgetProps> = React.memo(
       return () => {
         plugin.app.metadataCache.off('changed', handleMetadataChange);
         if (retryTimeoutRef.current !== null) {
-          clearTimeout(retryTimeoutRef.current);
+          window.clearTimeout(retryTimeoutRef.current);
           retryTimeoutRef.current = null;
         }
       };
@@ -640,7 +702,8 @@ export const HeaderWidget: React.FC<HeaderWidgetProps> = React.memo(
         if (headerData.type === 'drc') {
           
           const cache = plugin.app.metadataCache.getFileCache(file);
-          const currentEodReview = cache?.frontmatter?.endOfDayReview || {};
+          const currentEodReview =
+            asRecord(cache?.frontmatter?.endOfDayReview) ?? {};
           await plugin.drcService.updateDRCFrontmatter(
             filePath,
             {
@@ -852,27 +915,30 @@ export const HeaderWidget: React.FC<HeaderWidgetProps> = React.memo(
       const allTrades = await plugin.tradeService.getTradeData({
         fresh: false,
       });
-      const sameDayTrades = allTrades.filter((trade) => {
-        
-        if (!trade.entryTime) return false;
-        const tradeDate = new Date(trade.entryTime);
-        return (
-          tradeDate.getFullYear() === headerData!.date.getFullYear() &&
-          tradeDate.getMonth() === headerData!.date.getMonth() &&
-          tradeDate.getDate() === headerData!.date.getDate()
-        );
-      });
+      const sameDayTrades = allTrades
+        .map((trade) => asRecord(trade))
+        .filter((trade): trade is Record<string, unknown> => Boolean(trade))
+        .filter((trade) => {
+          
+          if (!trade.entryTime) return false;
+          const tradeDate = new Date(toDateInput(trade.entryTime) ?? 0);
+          return (
+            tradeDate.getFullYear() === headerData!.date.getFullYear() &&
+            tradeDate.getMonth() === headerData!.date.getMonth() &&
+            tradeDate.getDate() === headerData!.date.getDate()
+          );
+        });
 
       
       sameDayTrades.sort((a, b) => {
-        const dateA = new Date(a.entryTime || 0);
-        const dateB = new Date(b.entryTime || 0);
+        const dateA = new Date(toDateInput(a.entryTime) ?? 0);
+        const dateB = new Date(toDateInput(b.entryTime) ?? 0);
         return dateA.getTime() - dateB.getTime();
       });
 
       
       const currentIndex = sameDayTrades.findIndex(
-        (trade) => trade.filePath === filePath
+        (trade) => getStringValue(trade, 'filePath') === filePath
       );
       if (currentIndex === -1) return null;
 
@@ -882,7 +948,7 @@ export const HeaderWidget: React.FC<HeaderWidgetProps> = React.memo(
         return null;
       }
 
-      return sameDayTrades[targetIndex].filePath || null;
+      return getStringValue(sameDayTrades[targetIndex], 'filePath') || null;
     };
 
     const handleRelatedReviewClick = async (
@@ -1084,7 +1150,7 @@ export const HeaderWidget: React.FC<HeaderWidgetProps> = React.memo(
                   const path = plugin.weeklyReviewService.getWeeklyReviewPath(
                     headerData.date
                   );
-                  handleRelatedReviewClick(path, 'weekly');
+                  void handleRelatedReviewClick(path, 'weekly');
                 }}
               >
                 {t('widget.header.week', { number: String(weekNum) })}
@@ -1106,7 +1172,7 @@ export const HeaderWidget: React.FC<HeaderWidgetProps> = React.memo(
                     plugin.monthlyReviewService.getMonthlyReviewPath(
                       contextDate
                     );
-                  handleRelatedReviewClick(path, 'monthly');
+                  void handleRelatedReviewClick(path, 'monthly');
                 }}
               >
                 {monthName}
@@ -1133,7 +1199,7 @@ export const HeaderWidget: React.FC<HeaderWidgetProps> = React.memo(
                     plugin.monthlyReviewService.getMonthlyReviewPath(
                       contextDate
                     );
-                  handleRelatedReviewClick(path, 'monthly', contextDate);
+                  void handleRelatedReviewClick(path, 'monthly', contextDate);
                 }}
               >
                 {monthName}
@@ -1149,13 +1215,21 @@ export const HeaderWidget: React.FC<HeaderWidgetProps> = React.memo(
                   e.preventDefault();
                   e.currentTarget.click();
                 }}
-                onClick={async () => {
-                  if (preview) return;
-                  const quarterlyService =
-                    await plugin.serviceManager.getQuarterlyReviewService();
-                  const path =
-                    await quarterlyService.getQuarterlyReviewPath(contextDate);
-                  handleRelatedReviewClick(path, 'quarterly', contextDate);
+                onClick={() => {
+                  void (async () => {
+                    if (preview) return;
+                    const quarterlyService =
+                      await plugin.serviceManager.getQuarterlyReviewService();
+                    const path =
+                      await quarterlyService.getQuarterlyReviewPath(
+                        contextDate
+                      );
+                    void handleRelatedReviewClick(
+                      path,
+                      'quarterly',
+                      contextDate
+                    );
+                  })();
                 }}
               >
                 {quarterLabel}
@@ -1171,13 +1245,15 @@ export const HeaderWidget: React.FC<HeaderWidgetProps> = React.memo(
                   e.preventDefault();
                   e.currentTarget.click();
                 }}
-                onClick={async () => {
-                  if (preview) return;
-                  const yearlyService =
-                    await plugin.serviceManager.getYearlyReviewService();
-                  const path =
-                    await yearlyService.getYearlyReviewPath(contextDate);
-                  handleRelatedReviewClick(path, 'yearly', contextDate);
+                onClick={() => {
+                  void (async () => {
+                    if (preview) return;
+                    const yearlyService =
+                      await plugin.serviceManager.getYearlyReviewService();
+                    const path =
+                      await yearlyService.getYearlyReviewPath(contextDate);
+                    void handleRelatedReviewClick(path, 'yearly', contextDate);
+                  })();
                 }}
               >
                 {year}
@@ -1198,13 +1274,21 @@ export const HeaderWidget: React.FC<HeaderWidgetProps> = React.memo(
                   e.preventDefault();
                   e.currentTarget.click();
                 }}
-                onClick={async () => {
-                  if (preview) return;
-                  const quarterlyService =
-                    await plugin.serviceManager.getQuarterlyReviewService();
-                  const path =
-                    await quarterlyService.getQuarterlyReviewPath(contextDate);
-                  handleRelatedReviewClick(path, 'quarterly', contextDate);
+                onClick={() => {
+                  void (async () => {
+                    if (preview) return;
+                    const quarterlyService =
+                      await plugin.serviceManager.getQuarterlyReviewService();
+                    const path =
+                      await quarterlyService.getQuarterlyReviewPath(
+                        contextDate
+                      );
+                    void handleRelatedReviewClick(
+                      path,
+                      'quarterly',
+                      contextDate
+                    );
+                  })();
                 }}
               >
                 {quarterLabel}
@@ -1220,13 +1304,15 @@ export const HeaderWidget: React.FC<HeaderWidgetProps> = React.memo(
                   e.preventDefault();
                   e.currentTarget.click();
                 }}
-                onClick={async () => {
-                  if (preview) return;
-                  const yearlyService =
-                    await plugin.serviceManager.getYearlyReviewService();
-                  const path =
-                    await yearlyService.getYearlyReviewPath(contextDate);
-                  handleRelatedReviewClick(path, 'yearly', contextDate);
+                onClick={() => {
+                  void (async () => {
+                    if (preview) return;
+                    const yearlyService =
+                      await plugin.serviceManager.getYearlyReviewService();
+                    const path =
+                      await yearlyService.getYearlyReviewPath(contextDate);
+                    void handleRelatedReviewClick(path, 'yearly', contextDate);
+                  })();
                 }}
               >
                 {year}
@@ -1247,13 +1333,15 @@ export const HeaderWidget: React.FC<HeaderWidgetProps> = React.memo(
                   e.preventDefault();
                   e.currentTarget.click();
                 }}
-                onClick={async () => {
-                  if (preview) return;
-                  const yearlyService =
-                    await plugin.serviceManager.getYearlyReviewService();
-                  const path =
-                    await yearlyService.getYearlyReviewPath(contextDate);
-                  handleRelatedReviewClick(path, 'yearly', contextDate);
+                onClick={() => {
+                  void (async () => {
+                    if (preview) return;
+                    const yearlyService =
+                      await plugin.serviceManager.getYearlyReviewService();
+                    const path =
+                      await yearlyService.getYearlyReviewPath(contextDate);
+                    void handleRelatedReviewClick(path, 'yearly', contextDate);
+                  })();
                 }}
               >
                 {year}
@@ -1278,21 +1366,27 @@ export const HeaderWidget: React.FC<HeaderWidgetProps> = React.memo(
                       e.preventDefault();
                       e.currentTarget.click();
                     }}
-                    onClick={async () => {
-                      if (preview) return;
-                      const quarterlyService =
-                        await plugin.serviceManager.getQuarterlyReviewService();
-                      
-                      const quarterDate = new Date(
-                        contextDate.getFullYear(),
-                        (q - 1) * 3 + 1,
-                        15
-                      );
-                      const path =
-                        await quarterlyService.getQuarterlyReviewPath(
+                    onClick={() => {
+                      void (async () => {
+                        if (preview) return;
+                        const quarterlyService =
+                          await plugin.serviceManager.getQuarterlyReviewService();
+                        
+                        const quarterDate = new Date(
+                          contextDate.getFullYear(),
+                          (q - 1) * 3 + 1,
+                          15
+                        );
+                        const path =
+                          await quarterlyService.getQuarterlyReviewPath(
+                            quarterDate
+                          );
+                        void handleRelatedReviewClick(
+                          path,
+                          'quarterly',
                           quarterDate
                         );
-                      handleRelatedReviewClick(path, 'quarterly', quarterDate);
+                      })();
                     }}
                   >
                     {t('widget.header.quarter', { number: String(q) })}
@@ -1320,7 +1414,7 @@ export const HeaderWidget: React.FC<HeaderWidgetProps> = React.memo(
                   const path = plugin.drcService.getDRCNotePath(
                     headerData.date
                   );
-                  handleRelatedReviewClick(path, 'drc');
+                  void handleRelatedReviewClick(path, 'drc');
                 }}
               >
                 {t('widget.header.drc')}
@@ -1341,7 +1435,7 @@ export const HeaderWidget: React.FC<HeaderWidgetProps> = React.memo(
                   const path = plugin.weeklyReviewService.getWeeklyReviewPath(
                     headerData.date
                   );
-                  handleRelatedReviewClick(path, 'weekly');
+                  void handleRelatedReviewClick(path, 'weekly');
                 }}
               >
                 {t('widget.header.week', { number: String(weekNum) })}
@@ -1381,7 +1475,7 @@ export const HeaderWidget: React.FC<HeaderWidgetProps> = React.memo(
                     ? t('widget.header.aria.mark-not-reviewed')
                     : t('widget.header.aria.mark-reviewed')
                 }
-                onClick={toggleReviewedStatus}
+                onClick={() => void toggleReviewedStatus()}
               >
                 {reviewed ? (
                   <CheckCircle2
@@ -1409,7 +1503,7 @@ export const HeaderWidget: React.FC<HeaderWidgetProps> = React.memo(
             <button
               type="button"
               className="journalit-header-icon-button"
-              onClick={handleOpenFilterModal}
+              onClick={() => void handleOpenFilterModal()}
               disabled={preview}
               aria-label={
                 preview
@@ -1434,7 +1528,7 @@ export const HeaderWidget: React.FC<HeaderWidgetProps> = React.memo(
             <button
               type="button"
               className="journalit-header-icon-button"
-              onClick={handleSwitchTemplate}
+              onClick={() => void handleSwitchTemplate()}
               disabled={preview}
               aria-label={t('command.switch-template')}
             >
@@ -1451,7 +1545,9 @@ export const HeaderWidget: React.FC<HeaderWidgetProps> = React.memo(
               e.preventDefault();
               e.currentTarget.click();
             }}
-            onClick={() => !preview && handleNavigate(-1)}
+            onClick={() => {
+              if (!preview) void handleNavigate(-1);
+            }}
           >
             {t('widget.header.nav.prev')}
           </span>
@@ -1465,7 +1561,9 @@ export const HeaderWidget: React.FC<HeaderWidgetProps> = React.memo(
               e.preventDefault();
               e.currentTarget.click();
             }}
-            onClick={() => !preview && handleNavigate(1)}
+            onClick={() => {
+              if (!preview) void handleNavigate(1);
+            }}
           >
             {t('widget.header.nav.next')}
           </span>

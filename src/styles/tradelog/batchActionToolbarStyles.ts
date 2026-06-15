@@ -1,6 +1,6 @@
 
 
-const BATCH_ACTION_TOOLBAR_STYLES = `
+export const BATCH_ACTION_TOOLBAR_STYLES = `
   .batch-action-toolbar {
     display: flex;
     align-items: center;
@@ -268,11 +268,3 @@ const BATCH_ACTION_TOOLBAR_STYLES = `
     }
   }
 `;
-
-export function injectBatchActionToolbarStyles(): void {
-  return;
-}
-
-export function removeBatchActionToolbarStyles(): void {
-  return;
-}

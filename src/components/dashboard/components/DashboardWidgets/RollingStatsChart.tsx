@@ -259,8 +259,7 @@ export const RollingStatsChart = React.memo<BaseWidgetProps>(
             : undefined;
 
           
-          const activeCurrency =
-            (currencyOverride as typeof currency) || currency;
+          const activeCurrency = currencyOverride || currency;
 
           
           const allStats = calculateRollingWindowStats(
@@ -314,9 +313,7 @@ export const RollingStatsChart = React.memo<BaseWidgetProps>(
           const renderTooltip = (
             props: TooltipContentLike<RollingStatsDataPoint>
           ) => {
-            const data = props.payload?.[0]?.payload as
-              | RollingStatsDataPoint
-              | undefined;
+            const data = props.payload?.[0]?.payload;
 
             if (!props.active || !data) {
               return null;

@@ -1,8 +1,5 @@
 
-
-const ACCORDION_STYLE_ID = 'journalit-accordion-styles';
-
-const ACCORDION_STYLES = `
+export const ACCORDION_STYLES = `
   
   .journalit-settings-accordion {
     margin-bottom: 16px;
@@ -95,11 +92,3 @@ const ACCORDION_STYLES = `
     background-color: transparent;
   }
 `;
-
-function injectAccordionStyles(): void {
-  return;
-}
-
-export function ensureAccordionStyles(): void {
-  return;
-}

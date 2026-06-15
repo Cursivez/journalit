@@ -133,7 +133,7 @@ export const BottomSection: React.FC<BottomSectionProps> = ({
 
         
         
-        saveLayout(plugin, 'Default', newLayout);
+        void saveLayout(plugin, 'Default', newLayout);
 
         
         const newWidgets = activeWidgets.filter((id) => id !== widgetId);

@@ -90,7 +90,7 @@ const SyncingTradesGraphicComponent: React.FC = () => {
   );
   const [visibleTrades, setVisibleTrades] = useState<number[]>([]);
   const isMountedRef = useRef(true);
-  const timeoutsRef = useRef<NodeJS.Timeout[]>([]);
+  const timeoutsRef = useRef<number[]>([]);
 
   useEffect(() => {
     
@@ -109,7 +109,7 @@ const SyncingTradesGraphicComponent: React.FC = () => {
       delay: number
     ): Promise<void> => {
       return new Promise((resolve) => {
-        const timeoutId = setTimeout(() => {
+        const timeoutId = window.setTimeout(() => {
           if (isMountedRef.current) {
             callback();
             resolve();
@@ -144,16 +144,18 @@ const SyncingTradesGraphicComponent: React.FC = () => {
       
       if (!isMountedRef.current) return;
       await createTimeout(() => {
-        showTrades();
+        void showTrades();
       }, 10000);
     };
 
-    showTrades();
+    void showTrades();
 
     
     return () => {
       isMountedRef.current = false;
-      timeoutsRef.current.forEach((timeoutId) => clearTimeout(timeoutId));
+      timeoutsRef.current.forEach((timeoutId) =>
+        window.clearTimeout(timeoutId)
+      );
       timeoutsRef.current = [];
     };
   }, [prefersReducedMotion]);

@@ -191,7 +191,7 @@ export class ErrorHandler {
         now,
       ];
 
-      document.dispatchEvent(
+      window.activeDocument.dispatchEvent(
         new CustomEvent('journalit:auth-error', {
           detail: {
             message,

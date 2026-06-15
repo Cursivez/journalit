@@ -10,7 +10,13 @@ import { OptionType } from '../../../services/options/CustomOptionsService';
 import { Button } from '../../ui/Button';
 import { AccountType, DrawdownType } from '../../../services/account/types';
 import { eventBus } from '../../../services/events';
+import type { AccountCatalogEntry } from '../../../services/accountPage/types';
 import { useEventBus } from '../../../hooks/useEventBus';
+
+const getErrorMessage = (error: unknown): string =>
+  error instanceof Error ? error.message : String(error);
+
+type AccountTypeChangedDetails = Record<string, unknown>;
 
 interface AccountDashboardGuideBindings {
   onClose?: () => void;
@@ -304,7 +310,9 @@ function useAccountDashboardSettingsModel({
     } catch (error) {
       console.error('Error adding account type:', error);
       new Notice(
-        t('account.settings.notice.add-error', { error: error.message })
+        t('account.settings.notice.add-error', {
+          error: getErrorMessage(error),
+        })
       );
     } finally {
       setIsLoading(false);
@@ -337,8 +345,8 @@ function useAccountDashboardSettingsModel({
   }> => {
     try {
       
-      const allAccounts =
-        (await plugin.accountPageService?.getAccountCatalog()) || [];
+      const allAccounts: AccountCatalogEntry[] =
+        (await plugin.accountPageService?.getAccountCatalog()) ?? [];
 
       
       const affectedAccounts = allAccounts.filter(
@@ -359,10 +367,8 @@ function useAccountDashboardSettingsModel({
             )
           : false,
         inWithdrawalSettings: accountType
-          ? Object.prototype.hasOwnProperty.call(
-              dashboardSettings.includeWithdrawalsFromExcluded,
-              accountType.toLowerCase()
-            )
+          ? accountType.toLowerCase() in
+            dashboardSettings.includeWithdrawalsFromExcluded
           : false,
       };
 
@@ -489,7 +495,6 @@ function useAccountDashboardSettingsModel({
       setIsLoading(true);
 
       
-      
 
       if (deletionImpact && deletionImpact.affectedAccounts > 0) {
         new Notice(
@@ -605,7 +610,9 @@ function useAccountDashboardSettingsModel({
     } catch (error) {
       console.error('Error deleting account type:', error);
       new Notice(
-        t('account.settings.notice.delete-error', { error: error.message })
+        t('account.settings.notice.delete-error', {
+          error: getErrorMessage(error),
+        })
       );
     } finally {
       setIsLoading(false);
@@ -747,14 +754,16 @@ function useAccountDashboardSettingsModel({
       }
 
       
-      await new Promise((resolve) => setTimeout(resolve, 100));
+      await new Promise((resolve) => window.setTimeout(resolve, 100));
 
       
       onSave();
     } catch (error) {
       console.error('Error during migration and deletion:', error);
       new Notice(
-        t('account.settings.notice.migration-error', { error: error.message })
+        t('account.settings.notice.migration-error', {
+          error: getErrorMessage(error),
+        })
       );
     } finally {
       setIsLoading(false);
@@ -782,8 +791,8 @@ function useAccountDashboardSettingsModel({
   }> => {
     try {
       
-      const allAccounts =
-        (await plugin.accountPageService?.getAccountCatalog()) || [];
+      const allAccounts: AccountCatalogEntry[] =
+        (await plugin.accountPageService?.getAccountCatalog()) ?? [];
       const accountsToMigrate = allAccounts.filter(
         (account) =>
           account.accountType?.toLowerCase() === fromType.toLowerCase()
@@ -840,7 +849,7 @@ function useAccountDashboardSettingsModel({
           if (metadataKey) {
             
             accountSettings.accountMetadata[metadataKey].accountType =
-              finalTargetType as AccountType;
+              finalTargetType;
             accountSettings.accountMetadata[metadataKey].lastUpdated =
               new Date();
             migratedCount++;
@@ -852,12 +861,15 @@ function useAccountDashboardSettingsModel({
       }
 
       
-      
 
       return { success: true, migratedCount };
     } catch (error) {
       console.error('Error migrating accounts:', error);
-      return { success: false, migratedCount: 0, error: error.message };
+      return {
+        success: false,
+        migratedCount: 0,
+        error: getErrorMessage(error),
+      };
     }
   };
 
@@ -914,7 +926,9 @@ function useAccountDashboardSettingsModel({
     } catch (error) {
       console.error('Error saving account dashboard settings:', error);
       new Notice(
-        t('account.settings.notice.save-error', { error: error.message })
+        t('account.settings.notice.save-error', {
+          error: getErrorMessage(error),
+        })
       );
     } finally {
       setIsLoading(false);
@@ -926,7 +940,7 @@ function useAccountDashboardSettingsModel({
     action: 'added' | 'deleted' | 'migrated',
     accountType: string,
 
-    details?: any
+    details?: AccountTypeChangedDetails
   ) => {
     try {
       
@@ -954,7 +968,7 @@ function useAccountDashboardSettingsModel({
         await operation();
         return true;
       } catch (error) {
-        lastError = error;
+        lastError = error instanceof Error ? error : new Error(String(error));
         console.warn(
           `${operationName} failed (attempt ${attempt}/${maxRetries}):`,
           error
@@ -962,7 +976,9 @@ function useAccountDashboardSettingsModel({
 
         if (attempt < maxRetries) {
           
-          await new Promise((resolve) => setTimeout(resolve, attempt * 1000));
+          await new Promise((resolve) =>
+            window.setTimeout(resolve, attempt * 1000)
+          );
         }
       }
     }
@@ -1150,14 +1166,14 @@ function useAccountDashboardSettingsModel({
           <div className="delete-modal-actions">
             <Button
               variant="secondary"
-              onClick={handleCancelMigration}
+              onClick={() => void handleCancelMigration()}
               disabled={isLoading}
             >
               {t('button.cancel')}
             </Button>
             <Button
               variant="secondary"
-              onClick={handleConfirmMigration}
+              onClick={() => void handleConfirmMigration()}
               disabled={
                 isLoading ||
                 (migrationOption === 'reassign' && !migrationTargetType)
@@ -1258,14 +1274,14 @@ function useAccountDashboardSettingsModel({
               <>
                 <Button
                   variant="secondary"
-                  onClick={handleCancelDeleteAccountType}
+                  onClick={() => void handleCancelDeleteAccountType()}
                   disabled={isLoading}
                 >
                   {t('button.cancel')}
                 </Button>
                 <Button
                   variant="primary"
-                  onClick={handleStartMigration}
+                  onClick={() => void handleStartMigration()}
                   disabled={isLoading}
                 >
                   {t('account.settings.delete.button.setup-migration')}
@@ -1275,14 +1291,14 @@ function useAccountDashboardSettingsModel({
               <>
                 <Button
                   variant="secondary"
-                  onClick={handleCancelDeleteAccountType}
+                  onClick={() => void handleCancelDeleteAccountType()}
                   disabled={isLoading}
                 >
                   {t('button.cancel')}
                 </Button>
                 <Button
                   variant="primary"
-                  onClick={handleConfirmDeleteAccountType}
+                  onClick={() => void handleConfirmDeleteAccountType()}
                   disabled={isLoading}
                   className="delete-confirm-button"
                 >
@@ -1379,7 +1395,7 @@ function AvailableAccountTypesSection({
                         !isArchivedAccountType(type) && (
                           <button
                             className="account-type-delete-btn clickable-icon"
-                            onClick={() => handleDeleteAccountType(type)}
+                            onClick={() => void handleDeleteAccountType(type)}
                             aria-label={t(
                               'account.settings.section.available-types.delete-aria',
                               {
@@ -1413,7 +1429,7 @@ function AvailableAccountTypesSection({
                           e: React.KeyboardEvent<HTMLInputElement>
                         ) => {
                           if (e.key === 'Enter') {
-                            handleAddAccountType();
+                            void handleAddAccountType();
                           } else if (e.key === 'Escape') {
                             handleCancelAddAccountType();
                           }
@@ -1423,7 +1439,7 @@ function AvailableAccountTypesSection({
                       />
                       <div className="add-account-type-buttons">
                         <button
-                          onClick={handleAddAccountType}
+                          onClick={() => void handleAddAccountType()}
                           disabled={isLoading || !newTypeName.trim()}
                           className="add-account-type-confirm-btn"
                           aria-label={t('button.add')}
@@ -1431,7 +1447,7 @@ function AvailableAccountTypesSection({
                           {t('button.add')}
                         </button>
                         <button
-                          onClick={handleCancelAddAccountType}
+                          onClick={() => void handleCancelAddAccountType()}
                           disabled={isLoading}
                           className="add-account-type-cancel-btn"
                           aria-label={t('button.cancel')}
@@ -1442,7 +1458,7 @@ function AvailableAccountTypesSection({
                     </div>
                   ) : (
                     <button
-                      onClick={handleStartAddAccountType}
+                      onClick={() => void handleStartAddAccountType()}
                       disabled={isLoading}
                       className="add-account-type-btn clickable-icon"
                       aria-label={t(
@@ -1460,7 +1476,7 @@ function AvailableAccountTypesSection({
                   {t('account.settings.section.available-types.empty')}
                 </div>
                 <button
-                  onClick={handleStartAddAccountType}
+                  onClick={() => void handleStartAddAccountType()}
                   disabled={isLoading}
                   className="add-account-type-btn clickable-icon"
                   aria-label={t(
@@ -1490,7 +1506,68 @@ function DashboardInclusionSection({
     dashboardSettings,
     setDashboardSettings,
     formatAccountType,
+    isArchivedAccountType,
+    moveArchivedToEnd,
   } = model;
+
+  const currentOrder =
+    dashboardSettings.accountTypeOrder.length > 0
+      ? dashboardSettings.accountTypeOrder
+      : ['funded', 'evaluation', 'demo', 'archived'];
+  const normalizedOrder = currentOrder.map((type) => type.toLowerCase());
+  const orderWithArchived = normalizedOrder.includes('archived')
+    ? normalizedOrder
+    : [...normalizedOrder, 'archived'];
+  const allTypesLower = new Set([
+    ...customAccountTypes.map((type) => type.toLowerCase()),
+    ...orderWithArchived,
+  ]);
+  const labelMap = new Map<string, string>();
+  customAccountTypes.forEach((type) => labelMap.set(type.toLowerCase(), type));
+  orderWithArchived.forEach((typeKey) => {
+    if (!labelMap.has(typeKey)) {
+      labelMap.set(typeKey, formatAccountType(typeKey));
+    }
+  });
+  const orderedTypeKeys: string[] = [];
+  orderWithArchived.forEach((typeKey) => {
+    if (allTypesLower.has(typeKey)) {
+      orderedTypeKeys.push(typeKey);
+      allTypesLower.delete(typeKey);
+    }
+  });
+  allTypesLower.forEach((typeKey) => orderedTypeKeys.push(typeKey));
+  const orderedTypeKeysWithArchivedLast = moveArchivedToEnd(orderedTypeKeys);
+  const archivedIndex = orderedTypeKeysWithArchivedLast.findIndex((typeKey) =>
+    isArchivedAccountType(typeKey)
+  );
+  const lastMovableIndex =
+    archivedIndex === -1
+      ? orderedTypeKeysWithArchivedLast.length - 1
+      : archivedIndex - 1;
+
+  const moveType = (index: number, direction: 'up' | 'down') => {
+    const newOrder = [...orderedTypeKeysWithArchivedLast];
+    const newIndex = direction === 'up' ? index - 1 : index + 1;
+
+    if (newIndex < 0 || newIndex >= newOrder.length) return;
+    if (
+      isArchivedAccountType(newOrder[index]) ||
+      isArchivedAccountType(newOrder[newIndex])
+    ) {
+      return;
+    }
+
+    [newOrder[index], newOrder[newIndex]] = [
+      newOrder[newIndex],
+      newOrder[index],
+    ];
+
+    setDashboardSettings((currentSettings) => ({
+      ...currentSettings,
+      accountTypeOrder: moveArchivedToEnd(newOrder),
+    }));
+  };
 
   return (
     <>
@@ -1506,10 +1583,14 @@ function DashboardInclusionSection({
         </div>
         <div className="setting-item-control">
           <div className="account-types-settings-table">
-            {customAccountTypes.length > 0 ? (
+            {orderedTypeKeysWithArchivedLast.length > 0 ? (
               <div className="account-types-list">
-                {customAccountTypes.map((type) => {
-                  const lowerType = type.toLowerCase();
+                {orderedTypeKeysWithArchivedLast.map((lowerType, index) => {
+                  const canMoveUp =
+                    !isArchivedAccountType(lowerType) && index > 0;
+                  const canMoveDown =
+                    !isArchivedAccountType(lowerType) &&
+                    index < lastMovableIndex;
                   const isExcluded =
                     dashboardSettings.excludedAccountTypes.includes(lowerType);
                   const includeWithdrawals =
@@ -1518,9 +1599,11 @@ function DashboardInclusionSection({
                     ] || false;
 
                   return (
-                    <div key={type} className="account-type-setting-row">
+                    <div key={lowerType} className="account-type-setting-row">
                       <div className="account-type-name">
-                        {formatAccountType(type)}
+                        {formatAccountType(
+                          labelMap.get(lowerType) ?? lowerType
+                        )}
                       </div>
                       <div className="account-type-controls">
                         <label className="toggle-label">
@@ -1585,6 +1668,34 @@ function DashboardInclusionSection({
                             )}
                           </span>
                         </label>
+                        <div className="order-controls account-type-setting-order-controls">
+                          {!isArchivedAccountType(lowerType) && (
+                            <>
+                              <button
+                                type="button"
+                                className="order-button clickable-icon"
+                                disabled={!canMoveUp}
+                                onClick={() => moveType(index, 'up')}
+                                aria-label={t(
+                                  'account.settings.section.order.move-up'
+                                )}
+                              >
+                                ↑
+                              </button>
+                              <button
+                                type="button"
+                                className="order-button clickable-icon"
+                                disabled={!canMoveDown}
+                                onClick={() => moveType(index, 'down')}
+                                aria-label={t(
+                                  'account.settings.section.order.move-down'
+                                )}
+                              >
+                                ↓
+                              </button>
+                            </>
+                          )}
+                        </div>
                       </div>
                     </div>
                   );
@@ -1595,184 +1706,6 @@ function DashboardInclusionSection({
                 {t('account.settings.section.inclusion.empty')}
               </div>
             )}
-          </div>
-        </div>
-      </div>
-    </>
-  );
-}
-
-function DisplayOrderSection({
-  model,
-  registerTarget,
-}: {
-  model: AccountDashboardSettingsModel;
-  registerTarget?: (element: HTMLElement | null) => void;
-}) {
-  const {
-    customAccountTypes,
-    dashboardSettings,
-    setDashboardSettings,
-    formatAccountType,
-    isArchivedAccountType,
-    moveArchivedToEnd,
-  } = model;
-
-  return (
-    <>
-      
-      <div className="setting-item" ref={registerTarget}>
-        <div className="setting-item-info">
-          <div className="setting-item-name">
-            {t('account.settings.section.order.title')}
-          </div>
-          <div className="setting-item-description">
-            {t('account.settings.section.order.desc')}
-          </div>
-        </div>
-        <div className="setting-item-control">
-          <div className="account-type-order-container">
-            {(() => {
-              
-              const currentOrder =
-                dashboardSettings.accountTypeOrder.length > 0
-                  ? dashboardSettings.accountTypeOrder
-                  : ['funded', 'evaluation', 'demo', 'archived'];
-              const normalizedOrder = currentOrder.map((type) =>
-                type.toLowerCase()
-              );
-              const orderWithArchived = normalizedOrder.includes('archived')
-                ? normalizedOrder
-                : [...normalizedOrder, 'archived'];
-
-              
-              const allTypesLower = new Set([
-                ...customAccountTypes.map((t) => t.toLowerCase()),
-                ...orderWithArchived,
-              ]);
-
-              
-              const labelMap = new Map<string, string>();
-              customAccountTypes.forEach((type) =>
-                labelMap.set(type.toLowerCase(), type)
-              );
-              orderWithArchived.forEach((typeKey) => {
-                if (!labelMap.has(typeKey)) {
-                  labelMap.set(typeKey, formatAccountType(typeKey));
-                }
-              });
-
-              
-              const orderedTypeKeys: string[] = [];
-
-              
-              orderWithArchived.forEach((configType) => {
-                if (allTypesLower.has(configType)) {
-                  orderedTypeKeys.push(configType);
-                  allTypesLower.delete(configType);
-                }
-              });
-
-              
-              allTypesLower.forEach((typeKey) => {
-                orderedTypeKeys.push(typeKey);
-              });
-
-              const orderedTypeKeysWithArchivedLast =
-                moveArchivedToEnd(orderedTypeKeys);
-              const archivedIndex = orderedTypeKeysWithArchivedLast.findIndex(
-                (typeKey) => isArchivedAccountType(typeKey)
-              );
-              const lastMovableIndex =
-                archivedIndex === -1
-                  ? orderedTypeKeysWithArchivedLast.length - 1
-                  : archivedIndex - 1;
-
-              const moveType = (index: number, direction: 'up' | 'down') => {
-                const newOrder = [...orderedTypeKeysWithArchivedLast];
-                const newIndex = direction === 'up' ? index - 1 : index + 1;
-
-                if (newIndex < 0 || newIndex >= newOrder.length) {
-                  return;
-                }
-
-                if (
-                  isArchivedAccountType(newOrder[index]) ||
-                  isArchivedAccountType(newOrder[newIndex])
-                ) {
-                  return;
-                }
-
-                
-                [newOrder[index], newOrder[newIndex]] = [
-                  newOrder[newIndex],
-                  newOrder[index],
-                ];
-
-                
-                setDashboardSettings((currentSettings) => ({
-                  ...currentSettings,
-                  accountTypeOrder: moveArchivedToEnd(newOrder),
-                }));
-              };
-
-              return (
-                <div className="account-type-order-list">
-                  {orderedTypeKeysWithArchivedLast.length > 0 ? (
-                    <div className="order-list">
-                      {orderedTypeKeysWithArchivedLast.map((typeKey, index) => {
-                        const canMoveUp =
-                          !isArchivedAccountType(typeKey) && index > 0;
-                        const canMoveDown =
-                          !isArchivedAccountType(typeKey) &&
-                          index < lastMovableIndex;
-                        const label = formatAccountType(
-                          labelMap.get(typeKey) ?? typeKey
-                        );
-
-                        return (
-                          <div key={typeKey} className="order-list-item">
-                            <span className="type-name">{label}</span>
-                            <div className="order-controls">
-                              {!isArchivedAccountType(typeKey) && (
-                                <>
-                                  <button
-                                    type="button"
-                                    className="order-button clickable-icon"
-                                    disabled={!canMoveUp}
-                                    onClick={() => moveType(index, 'up')}
-                                    aria-label={t(
-                                      'account.settings.section.order.move-up'
-                                    )}
-                                  >
-                                    ↑
-                                  </button>
-                                  <button
-                                    type="button"
-                                    className="order-button clickable-icon"
-                                    disabled={!canMoveDown}
-                                    onClick={() => moveType(index, 'down')}
-                                    aria-label={t(
-                                      'account.settings.section.order.move-down'
-                                    )}
-                                  >
-                                    ↓
-                                  </button>
-                                </>
-                              )}
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  ) : (
-                    <div className="journalit-u-text-muted">
-                      {t('account.settings.section.order.empty')}
-                    </div>
-                  )}
-                </div>
-              );
-            })()}
           </div>
         </div>
       </div>
@@ -1794,22 +1727,22 @@ function SettingsModalActions({
       
       <div className="settings-modal-buttons">
         <Button
-          variant="primary"
-          onClick={handleSave}
-          disabled={isLoading}
-          className="save-settings-button"
-        >
-          {isLoading
-            ? t('account.settings.button.saving')
-            : t('account.settings.button.save')}
-        </Button>
-        <Button
           variant="secondary"
           onClick={onModalClose}
           disabled={isLoading}
           className="cancel-button"
         >
           {t('button.cancel')}
+        </Button>
+        <Button
+          variant="primary"
+          onClick={() => void handleSave()}
+          disabled={isLoading}
+          className="save-settings-button"
+        >
+          {isLoading
+            ? t('account.settings.button.saving')
+            : t('account.settings.button.save')}
         </Button>
       </div>
     </>
@@ -1842,11 +1775,6 @@ const AccountDashboardSettingsModalContent: React.FC<
       <DashboardInclusionSection
         model={model}
         registerTarget={guideBindings?.registerInclusionTarget}
-      />
-
-      <DisplayOrderSection
-        model={model}
-        registerTarget={guideBindings?.registerOrderTarget}
       />
 
       <SettingsModalActions model={model} onModalClose={onModalClose} />

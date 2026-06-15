@@ -2,7 +2,7 @@
 
 
 
-const IMAGE_STYLES = `
+export const IMAGE_STYLES = `
   
   .journalit-image-upload-wrapper {
     margin-bottom: 12px;
@@ -1026,13 +1026,3 @@ const IMAGE_STYLES = `
     }
   }
 `;
-
-
-export function injectImageStyles(): void {
-  return;
-}
-
-
-export function removeImageStyles(): void {
-  return;
-}

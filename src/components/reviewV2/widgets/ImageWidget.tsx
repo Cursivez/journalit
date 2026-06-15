@@ -30,13 +30,38 @@ const MAX_FRONTMATTER_RETRIES = 5;
 const FRONTMATTER_RETRY_DELAY_MS = 150;
 
 
-const SUPPORTED_TYPES = [
-  'drc',
-  'weekly-review',
-  'monthly-review',
-  'quarterly-review',
-  'yearly-review',
-];
+type SupportedImageNoteType =
+  | 'drc'
+  | 'weekly-review'
+  | 'monthly-review'
+  | 'quarterly-review'
+  | 'yearly-review';
+
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  Boolean(value) && typeof value === 'object' && !Array.isArray(value);
+
+const asRecord = (value: unknown): Record<string, unknown> | undefined =>
+  isRecord(value) ? value : undefined;
+
+const getSupportedImageNoteType = (
+  value: unknown
+): SupportedImageNoteType | null => {
+  switch (value) {
+    case 'drc':
+    case 'weekly-review':
+    case 'monthly-review':
+    case 'quarterly-review':
+    case 'yearly-review':
+      return value;
+    default:
+      return null;
+  }
+};
+
+const getStringField = (
+  record: Record<string, unknown>,
+  key: string
+): string => (typeof record[key] === 'string' ? record[key] : '');
 
 export interface ImageWidgetConfig {
   id?: string;
@@ -63,12 +88,7 @@ interface ImageWidgetProps {
 }
 
 interface NoteContext {
-  type:
-    | 'drc'
-    | 'weekly-review'
-    | 'monthly-review'
-    | 'quarterly-review'
-    | 'yearly-review';
+  type: SupportedImageNoteType;
   date: string;
 }
 
@@ -83,7 +103,7 @@ export const ImageWidget: React.FC<ImageWidgetProps> = React.memo(
     const contextId = codeblockContext?.id?.trim() || null;
     const widgetIdRef = useRef<string | null>(configId || contextId);
     const retryCountRef = useRef(0);
-    const retryTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const retryTimeoutRef = useRef<number | null>(null);
     const isValidContextRef = useRef(isValidContext);
     const sessionUploadedImagesRef = useRef(new Set<string>());
     const isLegacyOwner = codeblockContext?.isLegacyOwner ?? false;
@@ -112,12 +132,12 @@ export const ImageWidget: React.FC<ImageWidgetProps> = React.memo(
 
     useEffect(() => {
       retryCountRef.current = 0;
-      loadImages();
+      void loadImages();
 
       
       const handleMetadataChange = (file: TFile) => {
         if (file.path === filePath) {
-          loadImages();
+          void loadImages();
         }
       };
 
@@ -126,10 +146,10 @@ export const ImageWidget: React.FC<ImageWidgetProps> = React.memo(
       return () => {
         plugin.app.metadataCache.off('changed', handleMetadataChange);
         if (retryTimeoutRef.current) {
-          clearTimeout(retryTimeoutRef.current);
+          window.clearTimeout(retryTimeoutRef.current);
         }
       };
-      // eslint-disable-next-line react-hooks/exhaustive-deps
+      // eslint-disable-next-line react-hooks/exhaustive-deps -- retry loader is intentionally stable for the selected widget image state
     }, [filePath, preview, previewData]);
 
     useEffect(() => {
@@ -137,14 +157,14 @@ export const ImageWidget: React.FC<ImageWidgetProps> = React.memo(
 
       const unsubscribe = eventBus.subscribe('review:changed', (payload) => {
         if (payload.filePath === filePath) {
-          loadImages();
+          void loadImages();
         }
       });
 
       return () => {
         unsubscribe();
       };
-      // eslint-disable-next-line react-hooks/exhaustive-deps
+      // eslint-disable-next-line react-hooks/exhaustive-deps -- image refresh is driven by explicit widget identity changes
     }, [filePath, preview]);
 
     const normalizeImagesArray = useCallback((value: unknown): string[] => {
@@ -154,14 +174,12 @@ export const ImageWidget: React.FC<ImageWidgetProps> = React.memo(
 
     const normalizeImagesByWidget = useCallback(
       (value: unknown): Record<string, string[]> => {
-        if (!value || typeof value !== 'object' || Array.isArray(value)) {
+        if (!isRecord(value)) {
           return {};
         }
 
         const result: Record<string, string[]> = {};
-        for (const [key, entryValue] of Object.entries(
-          value as Record<string, unknown>
-        )) {
+        for (const [key, entryValue] of Object.entries(value)) {
           if (Array.isArray(entryValue)) {
             result[key] = entryValue.filter(
               (item): item is string => typeof item === 'string'
@@ -180,7 +198,7 @@ export const ImageWidget: React.FC<ImageWidgetProps> = React.memo(
       const file = plugin.app.vault.getAbstractFileByPath(filePath);
       if (!(file instanceof TFile)) return {};
       const cache = plugin.app.metadataCache.getFileCache(file);
-      const frontmatter = cache?.frontmatter;
+      const frontmatter = asRecord(cache?.frontmatter);
       return normalizeImagesByWidget(frontmatter?.imagesByWidget);
     }, [filePath, plugin, normalizeImagesByWidget]);
 
@@ -188,7 +206,7 @@ export const ImageWidget: React.FC<ImageWidgetProps> = React.memo(
       const file = plugin.app.vault.getAbstractFileByPath(filePath);
       if (!(file instanceof TFile)) return [];
       const cache = plugin.app.metadataCache.getFileCache(file);
-      const frontmatter = cache?.frontmatter;
+      const frontmatter = asRecord(cache?.frontmatter);
       return normalizeImagesArray(frontmatter?.images);
     }, [filePath, plugin, normalizeImagesArray]);
 
@@ -197,8 +215,9 @@ export const ImageWidget: React.FC<ImageWidgetProps> = React.memo(
       if (!(file instanceof TFile)) return;
 
       await plugin.app.fileManager.processFrontMatter(file, (frontmatter) => {
-        if (frontmatter.images !== undefined) {
-          delete frontmatter.images;
+        const record = asRecord(frontmatter) ?? {};
+        if (record.images !== undefined) {
+          delete record.images;
         }
       });
 
@@ -245,14 +264,17 @@ export const ImageWidget: React.FC<ImageWidgetProps> = React.memo(
       }
 
       const cache = plugin.app.metadataCache.getFileCache(file);
-      const frontmatter = cache?.frontmatter;
+      const frontmatter = asRecord(cache?.frontmatter);
 
-      if (!frontmatter || !SUPPORTED_TYPES.includes(frontmatter.type)) {
+      const noteType = frontmatter
+        ? getSupportedImageNoteType(frontmatter.type)
+        : null;
+      if (!frontmatter || !noteType) {
         
         if (retryCountRef.current < MAX_FRONTMATTER_RETRIES) {
           retryCountRef.current++;
-          retryTimeoutRef.current = setTimeout(
-            () => loadImages(),
+          retryTimeoutRef.current = window.setTimeout(
+            () => void loadImages(),
             FRONTMATTER_RETRY_DELAY_MS
           );
           return;
@@ -264,8 +286,8 @@ export const ImageWidget: React.FC<ImageWidgetProps> = React.memo(
 
       
       setNoteContext({
-        type: frontmatter.type,
-        date: frontmatter.date || '',
+        type: noteType,
+        date: getStringField(frontmatter, 'date'),
       });
 
       const imagesByWidget = normalizeImagesByWidget(
@@ -886,7 +908,7 @@ export const ImageWidget: React.FC<ImageWidgetProps> = React.memo(
                       className="journalit-stacked-image-delete"
                       onClick={(e) => {
                         e.stopPropagation();
-                        handleDeleteImage(index, imagePath);
+                        void handleDeleteImage(index, imagePath);
                       }}
                       aria-label={t('widget.images.delete')}
                     >

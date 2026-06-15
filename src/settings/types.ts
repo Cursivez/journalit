@@ -467,7 +467,7 @@ export interface AccountMetadata {
   
   name: string;
   
-  accountType: AccountType;
+  accountType: AccountType | string;
   
   createdDate: Date;
   
@@ -636,6 +636,12 @@ export type StaticTradeLogColumnId =
   | 'riskAmount'
   | 'rMultiple'
   | 'maxR'
+  | 'maePrice'
+  | 'mfePrice'
+  | 'mae'
+  | 'mfe'
+  | 'maePercent'
+  | 'mfePercent'
   
   | 'positionSize'
   | 'positionValue'
@@ -794,7 +800,7 @@ export interface JournalitSettings {
   >;
   
 
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 export const DEFAULT_DASHBOARD_LAYOUT: DashboardSettings['layouts'][string] = {

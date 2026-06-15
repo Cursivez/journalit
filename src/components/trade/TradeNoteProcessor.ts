@@ -21,10 +21,10 @@ export class TradeNoteProcessor extends BaseComponentProcessor {
   private unsubscribeTradeListener: Unsubscribe | null = null;
   private unsubscribeBacktestListener: Unsubscribe | null = null;
   private unsubscribeMissedListener: Unsubscribe | null = null;
-  private activeTradeRenderTimeout: NodeJS.Timeout | null = null;
+  private activeTradeRenderTimeout: number | null = null;
 
   
-  private observerTimeouts: Map<MutationObserver, NodeJS.Timeout> = new Map();
+  private observerTimeouts: Map<MutationObserver, number> = new Map();
   constructor(app: App, plugin: Plugin) {
     super(app, plugin, new TradeNoteRenderer(app));
 
@@ -40,10 +40,10 @@ export class TradeNoteProcessor extends BaseComponentProcessor {
       if (!activeFile || !this.isLikelyTradeCandidate(activeFile)) return;
 
       if (this.activeTradeRenderTimeout) {
-        clearTimeout(this.activeTradeRenderTimeout);
+        window.clearTimeout(this.activeTradeRenderTimeout);
       }
 
-      this.activeTradeRenderTimeout = setTimeout(() => {
+      this.activeTradeRenderTimeout = window.setTimeout(() => {
         this.activeTradeRenderTimeout = null;
         void this.renderActiveTradeNote();
       }, 300);
@@ -96,7 +96,7 @@ export class TradeNoteProcessor extends BaseComponentProcessor {
     
     const timeout = this.observerTimeouts.get(observer);
     if (timeout) {
-      clearTimeout(timeout);
+      window.clearTimeout(timeout);
       this.observerTimeouts.delete(observer);
     }
 
@@ -150,7 +150,7 @@ export class TradeNoteProcessor extends BaseComponentProcessor {
     
     
     
-    setTimeout(() => {
+    window.setTimeout(() => {
       const activeFile = this.app.workspace.getActiveFile();
       const activeView = this.app.workspace.getActiveViewOfType(MarkdownView);
       if (
@@ -165,7 +165,7 @@ export class TradeNoteProcessor extends BaseComponentProcessor {
     const renderAvailableEditors = (): number => {
       
       
-      const editors = document.querySelectorAll('.cm-editor');
+      const editors = window.activeDocument.querySelectorAll('.cm-editor');
       if (editors.length === 0) return 0;
 
       let renderedCount = 0;
@@ -185,8 +185,10 @@ export class TradeNoteProcessor extends BaseComponentProcessor {
         if (!containerEl) return;
 
         
-        const leaf = this.findContainingLeaf(containerEl as HTMLElement);
-        const leafViewEl = leaf?.view?.containerEl as HTMLElement;
+        const leaf = containerEl.instanceOf(HTMLElement)
+          ? this.findContainingLeaf(containerEl)
+          : null;
+        const leafViewEl = leaf?.view?.containerEl;
 
         
         const leafEl = metadataContainer.closest('.workspace-leaf');
@@ -253,15 +255,15 @@ export class TradeNoteProcessor extends BaseComponentProcessor {
         
         let tradeNoteElement = Array.from(
           editor.querySelectorAll(`.${componentClassName}`)
-        ).find((el) => {
-          const matchesFilePath =
-            el.getAttribute('data-file-path') === file.path;
-          return matchesFilePath;
-        }) as HTMLElement;
+        ).find(
+          (el): el is HTMLElement =>
+            el.instanceOf(HTMLElement) &&
+            el.getAttribute('data-file-path') === file.path
+        );
 
         
         if (!tradeNoteElement) {
-          tradeNoteElement = document.createElement('div');
+          tradeNoteElement = window.activeDocument.createElement('div');
           tradeNoteElement.className = componentClassName;
           tradeNoteElement.setAttribute('data-file-path', file.path);
           tradeNoteElement.setAttribute('data-view-id', viewId);
@@ -282,10 +284,10 @@ export class TradeNoteProcessor extends BaseComponentProcessor {
         }
 
         
-        setTimeout(() => {
+        window.setTimeout(() => {
           if (!tradeNoteElement.isConnected) return;
 
-          this.renderer.renderComponent(
+          void this.renderer.renderComponent(
             tradeNoteElement,
             frontmatter,
             file.path,
@@ -308,7 +310,7 @@ export class TradeNoteProcessor extends BaseComponentProcessor {
     
     renderAvailableEditors();
     [100, 300, 750].forEach((delayMs) => {
-      setTimeout(() => {
+      window.setTimeout(() => {
         renderAvailableEditors();
       }, delayMs);
     });
@@ -319,7 +321,7 @@ export class TradeNoteProcessor extends BaseComponentProcessor {
     }
 
     
-    const bodyEl = document.body;
+    const bodyEl = window.activeDocument.body;
 
     
     const observer = new MutationObserver(() => {
@@ -333,7 +335,7 @@ export class TradeNoteProcessor extends BaseComponentProcessor {
     observer.observe(bodyEl, { childList: true, subtree: true });
 
     
-    const timeout = setTimeout(() => {
+    const timeout = window.setTimeout(() => {
       this.disconnectObserverSafely(observer);
     }, 3000);
 
@@ -379,7 +381,7 @@ export class TradeNoteProcessor extends BaseComponentProcessor {
         processedFilePaths.add(file.path);
 
         
-        setTimeout(() => {
+        window.setTimeout(() => {
           this.invokeHandleFileOpenSafely(file, true);
         }, 300);
       } catch (error) {
@@ -398,13 +400,10 @@ export class TradeNoteProcessor extends BaseComponentProcessor {
 
   
   private removeTradeNoteForPath(filePath: string): void {
-    const componentClass = this.getComponentClassName();
-    const staleTradeNotes = document.querySelectorAll(
-      `.${componentClass}[data-file-path="${filePath}"]`
-    );
+    const staleTradeNotes = this.findTradeNoteElementsForPath(filePath);
 
     staleTradeNotes.forEach((element) => {
-      const container = element as HTMLElement;
+      const container = element;
       const viewId = container.getAttribute('data-view-id');
       const leafId = container.getAttribute('data-leaf-id');
       if (viewId) {
@@ -412,6 +411,31 @@ export class TradeNoteProcessor extends BaseComponentProcessor {
       }
       container.remove();
     });
+  }
+
+  private findTradeNoteElementsForPath(filePath: string): HTMLElement[] {
+    const componentClass = this.getComponentClassName();
+    const selector = `.${componentClass}[data-file-path="${filePath}"]`;
+    const documents = new Set<Document>();
+
+    this.app.workspace.iterateAllLeaves((leaf) => {
+      const ownerDocument = leaf.view?.containerEl?.ownerDocument;
+      if (ownerDocument) {
+        documents.add(ownerDocument);
+      }
+    });
+    documents.add(window.activeDocument);
+
+    const elements: HTMLElement[] = [];
+    documents.forEach((document) => {
+      document.querySelectorAll(selector).forEach((element) => {
+        if (element.instanceOf(HTMLElement)) {
+          elements.push(element);
+        }
+      });
+    });
+
+    return elements;
   }
 
   private setupTradeUpdateListener(): void {
@@ -482,18 +506,15 @@ export class TradeNoteProcessor extends BaseComponentProcessor {
       this.cleanupDuplicateComponents(file.path);
 
       
-      const componentClass = this.getComponentClassName();
-      const tradeNotes = document.querySelectorAll(
-        `.${componentClass}[data-file-path="${file.path}"]`
-      );
+      const tradeNotes = this.findTradeNoteElementsForPath(file.path);
 
       if (tradeNotes.length === 0) {
         await this.handleFileOpen(file, true);
         return;
       }
       
-      for (const element of Array.from(tradeNotes)) {
-        const container = element as HTMLElement;
+      for (const element of tradeNotes) {
+        const container = element;
         const viewId = container.getAttribute('data-view-id');
         const contextId =
           container.getAttribute('data-markdown-view-id') ||
@@ -508,7 +529,7 @@ export class TradeNoteProcessor extends BaseComponentProcessor {
 
           
           await new Promise<void>((resolve) => {
-            setTimeout(() => {
+            window.setTimeout(() => {
               try {
                 this.renderWithDeduplication({
                   file,
@@ -544,12 +565,12 @@ export class TradeNoteProcessor extends BaseComponentProcessor {
   
   public cleanup(): void {
     
-    for (const [_observer, timeout] of this.observerTimeouts) {
-      clearTimeout(timeout);
+    for (const [, timeout] of this.observerTimeouts) {
+      window.clearTimeout(timeout);
     }
     this.observerTimeouts.clear();
     if (this.activeTradeRenderTimeout) {
-      clearTimeout(this.activeTradeRenderTimeout);
+      window.clearTimeout(this.activeTradeRenderTimeout);
       this.activeTradeRenderTimeout = null;
     }
 
@@ -597,8 +618,10 @@ export class TradeNoteProcessor extends BaseComponentProcessor {
     }
 
     
-    const leaf = this.findContainingLeaf(containerEl as HTMLElement);
-    const leafViewEl = leaf?.view?.containerEl as HTMLElement;
+    const leaf = containerEl.instanceOf(HTMLElement)
+      ? this.findContainingLeaf(containerEl)
+      : null;
+    const leafViewEl = leaf?.view?.containerEl;
     const leafId = leafViewEl?.id || null;
 
     
@@ -617,16 +640,16 @@ export class TradeNoteProcessor extends BaseComponentProcessor {
         
         let componentElement = Array.from(
           containerEl.querySelectorAll(`.${componentClass}`)
-        ).find((el) => {
+        ).find((el): el is HTMLElement => {
           const matchesFilePath =
             el.getAttribute('data-file-path') === activeFile.path;
           const matchesLeafId =
             !leafId || el.getAttribute('data-leaf-id') === leafId;
-          return matchesFilePath && matchesLeafId;
-        }) as HTMLElement;
+          return el.instanceOf(HTMLElement) && matchesFilePath && matchesLeafId;
+        });
 
         if (!componentElement) {
-          componentElement = document.createElement('div');
+          componentElement = window.activeDocument.createElement('div');
           componentElement.className = componentClass;
           componentElement.setAttribute('data-file-path', activeFile.path);
           componentElement.setAttribute('data-view-id', viewId);
@@ -640,7 +663,7 @@ export class TradeNoteProcessor extends BaseComponentProcessor {
         }
 
         
-        this.renderer.renderComponent(
+        void this.renderer.renderComponent(
           componentElement,
           frontmatter,
           activeFile.path,
@@ -662,17 +685,22 @@ export class TradeNoteProcessor extends BaseComponentProcessor {
         
         let componentElement = Array.from(
           previewTarget.querySelectorAll(`.${componentClass}`)
-        ).find((el) => {
+        ).find((el): el is HTMLElement => {
           const matchesFilePath =
             el.getAttribute('data-file-path') === activeFile.path;
           const matchesViewId = el.getAttribute('data-view-id') === viewId;
           const matchesLeafId =
             !leafId || el.getAttribute('data-leaf-id') === leafId;
-          return matchesFilePath && matchesViewId && matchesLeafId;
-        }) as HTMLElement;
+          return (
+            el.instanceOf(HTMLElement) &&
+            matchesFilePath &&
+            matchesViewId &&
+            matchesLeafId
+          );
+        });
 
         if (!componentElement) {
-          componentElement = document.createElement('div');
+          componentElement = window.activeDocument.createElement('div');
           componentElement.className = componentClass;
           componentElement.setAttribute('data-file-path', activeFile.path);
           componentElement.setAttribute('data-view-id', viewId);
@@ -686,7 +714,7 @@ export class TradeNoteProcessor extends BaseComponentProcessor {
         }
 
         
-        this.renderer.renderComponent(
+        void this.renderer.renderComponent(
           componentElement,
           frontmatter,
           activeFile.path,

@@ -35,8 +35,6 @@ import {
 import { getTradingDay } from '../../../utils/tradingDayUtils';
 import { SkeletonBox } from '../../shared/SkeletonBox';
 import { SkeletonText } from '../../shared/SkeletonText';
-import { ensureSkeletonStyles } from '../../../styles/skeletonStyles';
-import { ensureHomeWidgetStyles } from '../../../styles/homeWidgetStyles';
 import { cssVars } from '../../../styles/inlineStylePolicy';
 import { useDisplayFormatter } from '../../../hooks/useDisplayPolicy';
 import { getSingleExplicitCurrency } from '../../../utils/currencyAggregation';
@@ -309,10 +307,7 @@ function useWeeklyMetrics(
       >[1] = {
         breakEvenRangeMin,
         breakEvenRangeMax,
-        breakEvenThresholdMode: breakEvenThresholdMode as
-          | 'fixed'
-          | 'percentage_current_balance'
-          | undefined,
+        breakEvenThresholdMode: breakEvenThresholdMode,
         breakEvenThresholdPercent,
       };
       const today = new Date();
@@ -860,11 +855,11 @@ const WeeklySummaryWidgetComponent: React.FC<WeeklySummaryWidgetProps> = ({
     <div
       role="button"
       tabIndex={0}
-      onClick={openWeeklyReview}
+      onClick={() => void openWeeklyReview()}
       onKeyDown={(e) => {
         if (e.key !== 'Enter' && e.key !== ' ') return;
         e.preventDefault();
-        openWeeklyReview();
+        void openWeeklyReview();
       }}
       className="journalit-home-weekly journalit-home-weekly--clickable"
     >

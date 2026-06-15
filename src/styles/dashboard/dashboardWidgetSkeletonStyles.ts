@@ -1,6 +1,6 @@
 
 
-const DASHBOARD_WIDGET_SKELETON_STYLES = `
+export const DASHBOARD_WIDGET_SKELETON_STYLES = `
 .dashboard-widget-skeleton {
   width: 100%;
   height: 100%;
@@ -55,12 +55,3 @@ const DASHBOARD_WIDGET_SKELETON_STYLES = `
 `;
 
 
-const referenceCount = 0;
-
-export function injectDashboardWidgetSkeletonStyles(): void {
-  return;
-}
-
-export function removeDashboardWidgetSkeletonStyles(): void {
-  return;
-}

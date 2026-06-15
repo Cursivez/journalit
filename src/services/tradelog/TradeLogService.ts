@@ -81,38 +81,92 @@ interface DateComponents {
 }
 
 
-type TradeLogData = PartialTradeFrontmatter & {
-  breakEvenAccountCurrentBalance?: number;
-  breakEvenAccountCurrentBalanceCurrency?: string;
-  breakEvenAccountCurrentBalanceTotal?: number;
-  breakEvenAccountCurrentBalanceTotalCurrency?: string;
-  
-  entryTime: Date | string;
-  
-  path?: string;
-  
-  _dateComponents?: DateComponents;
-  
-  hasExplicitExitPrice?: boolean;
-  
-  isMissedTrade?: boolean;
-  isBacktestTrade?: boolean;
-  
-  performanceIndicator?: 'best' | 'worst';
-  
-  isCopiedTrade?: boolean;
-  copiedFromAccount?: string;
-  copyMultiplier?: number;
-  copyAccountLookupKey?: string;
-  copyPnlAdjustment?: number;
-  copySourceFilePath?: string;
-  copiedTradeRowId?: string;
-  copiedToAccounts?: Array<{
-    account: string;
-    pnl: number;
-    multiplier: number;
-  }>;
-};
+
+function isTradeLogRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
+}
+
+function asTradeLogRecord(value: unknown): Record<string, unknown> | undefined {
+  return isTradeLogRecord(value) ? value : undefined;
+}
+
+function getStringValue(
+  record: Record<string, unknown>,
+  key: string
+): string | undefined {
+  const value = record[key];
+  return typeof value === 'string' ? value : undefined;
+}
+
+function getBooleanValue(
+  record: Record<string, unknown>,
+  key: string
+): boolean | undefined {
+  const value = record[key];
+  return typeof value === 'boolean' ? value : undefined;
+}
+
+function createMissedTradeLogData(
+  frontmatter: Record<string, unknown>,
+  filePath: string
+): TradeLogData | null {
+  const entryTimeValue = frontmatter.entryTime;
+  const entryTime =
+    entryTimeValue instanceof Date
+      ? entryTimeValue
+      : typeof entryTimeValue === 'string'
+        ? new Date(entryTimeValue)
+        : null;
+  if (!entryTime || Number.isNaN(entryTime.getTime())) {
+    return null;
+  }
+
+  return {
+    ...frontmatter,
+    entryTime,
+    filePath,
+    path: filePath,
+    type: 'missed-trade',
+    isMissedTrade: true,
+    instrument: getStringValue(frontmatter, 'instrument'),
+    direction: getStringValue(frontmatter, 'direction'),
+    thesis: getStringValue(frontmatter, 'thesis'),
+  };
+}
+
+type TradeLogData = PartialTradeFrontmatter &
+  Record<string, unknown> & {
+    breakEvenAccountCurrentBalance?: number;
+    breakEvenAccountCurrentBalanceCurrency?: string;
+    breakEvenAccountCurrentBalanceTotal?: number;
+    breakEvenAccountCurrentBalanceTotalCurrency?: string;
+    
+    entryTime: Date;
+    
+    path?: string;
+    
+    _dateComponents?: DateComponents;
+    
+    hasExplicitExitPrice?: boolean;
+    
+    isMissedTrade?: boolean;
+    isBacktestTrade?: boolean;
+    
+    performanceIndicator?: 'best' | 'worst';
+    
+    isCopiedTrade?: boolean;
+    copiedFromAccount?: string;
+    copyMultiplier?: number;
+    copyAccountLookupKey?: string;
+    copyPnlAdjustment?: number;
+    copySourceFilePath?: string;
+    copiedTradeRowId?: string;
+    copiedToAccounts?: Array<{
+      account: string;
+      pnl: number;
+      multiplier: number;
+    }>;
+  };
 
 
 type EnrichedTradeData = TradeLogData & {
@@ -159,9 +213,9 @@ function getTradeCustomFieldRawValue(
     return rootLevelValue;
   }
 
-  const nestedCustomFields = trade.customFields;
-  if (nestedCustomFields && typeof nestedCustomFields === 'object') {
-    return (nestedCustomFields as Record<string, unknown>)[field.id];
+  const nestedCustomFields = asTradeLogRecord(trade.customFields);
+  if (nestedCustomFields) {
+    return nestedCustomFields[field.id];
   }
 
   return undefined;
@@ -370,15 +424,17 @@ export class TradeLogService {
   ): Promise<TradeLogData[]> {
     
 
-    const allTrades = await this.tradeService.getTradeData();
+    const allTrades: unknown[] = await this.tradeService.getTradeData();
 
     
     
     
     
-    const relevantTrades = allTrades.filter((trade) =>
-      Boolean(trade.path || trade.filePath)
-    );
+    const relevantTrades = allTrades
+      .map((trade) => asTradeLogRecord(trade))
+      .filter((trade): trade is Record<string, unknown> =>
+        Boolean(trade && (trade.path || trade.filePath))
+      );
 
     const breakEvenThresholdMode =
       this.plugin.settings.trade.breakEvenThresholdMode ?? 'fixed';
@@ -392,11 +448,19 @@ export class TradeLogService {
     const tradesWithPaths = relevantTrades.flatMap((trade) => {
       const normalizedTrade: TradeLogData = {
         ...trade,
-        filePath: trade.path || trade.filePath,
+        entryTime:
+          trade.entryTime instanceof Date
+            ? trade.entryTime
+            : new Date(String(trade.entryTime)),
+        filePath:
+          getStringValue(trade, 'path') ?? getStringValue(trade, 'filePath'),
         
         isBacktestTrade:
-          trade.isBacktestTrade || trade.type === 'backtest-trade',
-        isMissedTrade: trade.isMissedTrade || trade.type === 'missed-trade',
+          getBooleanValue(trade, 'isBacktestTrade') ||
+          getStringValue(trade, 'type') === 'backtest-trade',
+        isMissedTrade:
+          getBooleanValue(trade, 'isMissedTrade') ||
+          getStringValue(trade, 'type') === 'missed-trade',
       };
 
       if (accountBalanceLookup) {
@@ -404,7 +468,7 @@ export class TradeLogService {
           normalizedTrade,
           getBreakEvenAccountBalanceFields(
             resolveBreakEvenAccountBalances(
-              normalizedTrade as unknown as Record<string, unknown>,
+              normalizedTrade,
               accountBalanceLookup,
               {
                 resolveAccountIdDisplayName: (accountId) =>
@@ -457,20 +521,20 @@ export class TradeLogService {
 
           for (const file of missedTradeFiles) {
             const cache = this.plugin.app.metadataCache.getFileCache(file);
-            const frontmatter = cache?.frontmatter;
+            const frontmatter = asTradeLogRecord(cache?.frontmatter);
 
             if (frontmatter && frontmatter.type === 'missed-trade') {
               if (!frontmatter.entryTime) {
                 continue;
               }
 
-              tradesWithPaths.push({
-                ...frontmatter,
-                entryTime: frontmatter.entryTime,
-                filePath: file.path,
-                isMissedTrade: true, 
-                path: file.path,
-              } as TradeLogData);
+              const missedTradeData = createMissedTradeLogData(
+                frontmatter,
+                file.path
+              );
+              if (missedTradeData) {
+                tradesWithPaths.push(missedTradeData);
+              }
             }
           }
         } catch (error) {
@@ -917,7 +981,7 @@ export class TradeLogService {
   private async buildFullHierarchy(
     trades: TradeLogData[]
   ): Promise<TimeNode[]> {
-    const yearMap = new Map<number, any[]>();
+    const yearMap = new Map<number, TradeLogData[]>();
 
     
     trades.forEach((trade) => {
@@ -956,7 +1020,7 @@ export class TradeLogService {
 
   
   private async buildYearNodes(trades: TradeLogData[]): Promise<TimeNode[]> {
-    const yearMap = new Map<number, any[]>();
+    const yearMap = new Map<number, TradeLogData[]>();
 
     trades.forEach((trade) => {
       const date = new Date(trade.entryTime);
@@ -1415,7 +1479,7 @@ export class TradeLogService {
 
   
   private async buildQuarterNodes(trades: TradeLogData[]): Promise<TimeNode[]> {
-    const quarterMap = new Map<string, any[]>();
+    const quarterMap = new Map<string, TradeLogData[]>();
 
     trades.forEach((trade) => {
       const date = new Date(trade.entryTime);
@@ -1453,7 +1517,7 @@ export class TradeLogService {
 
   
   private async buildMonthNodes(trades: TradeLogData[]): Promise<TimeNode[]> {
-    const monthMap = new Map<string, any[]>();
+    const monthMap = new Map<string, TradeLogData[]>();
 
     trades.forEach((trade) => {
       const date = new Date(trade.entryTime);
@@ -1489,7 +1553,7 @@ export class TradeLogService {
 
   
   private async buildWeekNodes(trades: TradeLogData[]): Promise<TimeNode[]> {
-    const weekMap = new Map<string, any[]>();
+    const weekMap = new Map<string, TradeLogData[]>();
 
     trades.forEach((trade) => {
       const date = new Date(trade.entryTime);
@@ -1533,7 +1597,7 @@ export class TradeLogService {
 
   
   private async buildDayNodes(trades: TradeLogData[]): Promise<TimeNode[]> {
-    const dayMap = new Map<string, any[]>();
+    const dayMap = new Map<string, TradeLogData[]>();
 
     trades.forEach((trade) => {
       const date = new Date(trade.entryTime);
@@ -1572,7 +1636,7 @@ export class TradeLogService {
   }
 
   private invalidateTradeDataCaches(): void {
-    this.tradeService.clearCache();
+    void this.tradeService.clearCache();
     this.clearCache();
   }
 
@@ -1661,7 +1725,8 @@ export class TradeLogService {
     let worstPnL = Infinity;
 
     trades.forEach((node: TimeNode) => {
-      const pnl = node.trade ? getEffectivePnL(node.trade) : 0;
+      const tradeRecord = asTradeLogRecord(node.trade);
+      const pnl = tradeRecord ? getEffectivePnL(tradeRecord) : 0;
 
       
       if (pnl > 0 && pnl > bestPnL) {
@@ -1679,26 +1744,33 @@ export class TradeLogService {
     
     if (trades.length === 1) {
       const trade = trades[0];
-      const pnl = trade.trade ? getEffectivePnL(trade.trade) : 0;
+      const tradeRecord = asTradeLogRecord(trade.trade);
+      const pnl = tradeRecord ? getEffectivePnL(tradeRecord) : 0;
       if (pnl > 0) {
-        if (trade.trade) trade.trade.performanceIndicator = 'best';
+        if (tradeRecord) tradeRecord.performanceIndicator = 'best';
       } else if (pnl < 0) {
-        if (trade.trade) trade.trade.performanceIndicator = 'worst';
+        if (tradeRecord) tradeRecord.performanceIndicator = 'worst';
       }
     } else {
       
       
-      if (best !== null && bestPnL > 0 && (best as TimeNode).trade) {
-        (best as TimeNode).trade.performanceIndicator = 'best';
+      const bestTrade = best
+        ? asTradeLogRecord((best as TimeNode).trade)
+        : undefined;
+      if (bestTrade && bestPnL > 0) {
+        bestTrade.performanceIndicator = 'best';
       }
       
       if (
         worst !== null &&
         worstPnL < 0 &&
         worst !== best &&
-        (worst as TimeNode).trade
+        asTradeLogRecord((worst as TimeNode).trade)
       ) {
-        (worst as TimeNode).trade.performanceIndicator = 'worst';
+        const worstTrade = asTradeLogRecord((worst as TimeNode).trade);
+        if (worstTrade) {
+          worstTrade.performanceIndicator = 'worst';
+        }
       }
     }
   }
@@ -1789,7 +1861,7 @@ export class TradeLogService {
 
       
       if ((i / batchSize) % 3 === 0 && i + batchSize < sortedTrades.length) {
-        await new Promise((resolve) => setTimeout(resolve, 0));
+        await new Promise((resolve) => window.setTimeout(resolve, 0));
       }
     }
 
@@ -1902,7 +1974,6 @@ export class TradeLogService {
 
     for (const weekNum of sortedWeeks) {
       const weekTrades = weekMap.get(weekNum)!;
-      const [_year] = monthId.split('-');
       weekNodes.push({
         type: 'week',
         id: `${monthId}-W${weekNum.toString().padStart(2, '0')}`,
@@ -2048,7 +2119,7 @@ export class TradeLogService {
 
       
       if (i % 200 === 0 && i + batchSize < sortedTrades.length) {
-        await new Promise((resolve) => setTimeout(resolve, 0));
+        await new Promise((resolve) => window.setTimeout(resolve, 0));
       }
     }
 

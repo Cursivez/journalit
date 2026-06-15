@@ -27,10 +27,17 @@ const POSITIVE_AUM_COLOR = 'var(--chart-positive, #43a047)';
 const NEGATIVE_AUM_COLOR = 'var(--chart-negative, #e53935)';
 let aumChartIdCounter = 0;
 
+interface AUMDotProps extends Omit<DotItemDotProps, 'payload'> {
+  payload?: AUMChartDataPoint;
+}
+
+const asAUMDotProps = (props: DotItemDotProps): AUMDotProps =>
+  props as AUMDotProps;
+
 
 interface CustomTooltipContentProps extends TooltipProps<number, string> {
   active?: boolean;
-  payload?: Array<{
+  payload?: ReadonlyArray<{
     value: number;
     name: string;
     dataKey: string;
@@ -39,6 +46,33 @@ interface CustomTooltipContentProps extends TooltipProps<number, string> {
   currency: CurrencyCode;
   displayRMultiples?: boolean;
 }
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
+}
+
+const isAUMTooltipPayloadEntry = (
+  value: unknown
+): value is NonNullable<CustomTooltipContentProps['payload']>[number] => {
+  if (!isRecord(value)) {
+    return false;
+  }
+
+  const entry = value;
+  return (
+    typeof entry.value === 'number' &&
+    typeof entry.name === 'string' &&
+    typeof entry.dataKey === 'string' &&
+    Boolean(entry.payload) &&
+    typeof entry.payload === 'object' &&
+    !Array.isArray(entry.payload)
+  );
+};
+
+const asAUMTooltipPayload = (
+  payload: readonly unknown[] | undefined
+): CustomTooltipContentProps['payload'] =>
+  payload?.filter(isAUMTooltipPayloadEntry);
 
 const CustomTooltip: React.FC<CustomTooltipContentProps> = ({
   active,
@@ -312,7 +346,7 @@ export const AUMChart: React.FC<AUMChartProps> = ({
           />
           <XAxis dataKey="date" tickMargin={8} tickLine={false} />
           <YAxis
-            tickFormatter={(value) =>
+            tickFormatter={(value: number) =>
               formatValue({
                 kind: 'balance',
                 value,
@@ -340,7 +374,8 @@ export const AUMChart: React.FC<AUMChartProps> = ({
           >
             {(tooltipProps) => (
               <CustomTooltip
-                {...(tooltipProps as any)}
+                active={tooltipProps.active}
+                payload={asAUMTooltipPayload(tooltipProps.payload)}
                 currency={currency}
                 displayRMultiples={false}
               />
@@ -377,7 +412,7 @@ export const AUMChart: React.FC<AUMChartProps> = ({
             strokeWidth={2.5}
             onAnimationEnd={() => setDotsReadyForSignature(dataSignature)}
             dot={(props: DotItemDotProps) => {
-              const { cx, cy, payload } = props;
+              const { cx, cy, payload } = asAUMDotProps(props);
               if (!payload || cx == null || cy == null)
                 return <circle cx={0} cy={0} r={0} opacity={0} />;
 

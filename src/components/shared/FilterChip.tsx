@@ -10,7 +10,7 @@ interface FilterChipProps {
   className?: string;
 }
 
-const FILTER_CHIP_STYLES = `
+export const FILTER_CHIP_STYLES = `
 .journalit-filter-chip {
   display: inline-flex;
   align-items: center;
@@ -64,16 +64,6 @@ const FILTER_CHIP_STYLES = `
   outline-offset: 1px;
 }
 `;
-
-const filterChipReferenceCount = 0;
-
-function injectFilterChipStyles(): void {
-  // intentional
-}
-
-export function removeFilterChipStyles(): void {
-  // intentional
-}
 
 
 export const FilterChip = memo<FilterChipProps>(

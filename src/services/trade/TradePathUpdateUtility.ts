@@ -15,6 +15,19 @@ interface UpdateStats {
   errors: string[];
 }
 
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  Boolean(value) && typeof value === 'object' && !Array.isArray(value);
+
+const asRecord = (value: unknown): Record<string, unknown> | undefined =>
+  isRecord(value) ? value : undefined;
+
+const asRecordArray = (value: unknown): Array<Record<string, unknown>> =>
+  Array.isArray(value)
+    ? value.filter((item): item is Record<string, unknown> =>
+        Boolean(asRecord(item))
+      )
+    : [];
+
 export class TradePathUpdateUtility {
   constructor(
     private app: App,
@@ -25,7 +38,7 @@ export class TradePathUpdateUtility {
   public getImageBasePaths(file: TFile, targetPath: string): Set<string> {
     const basePaths = new Set<string>();
     const cache = this.app.metadataCache.getFileCache(file);
-    const frontmatter = cache?.frontmatter;
+    const frontmatter = asRecord(cache?.frontmatter);
 
     if (!frontmatter) {
       return basePaths;
@@ -73,14 +86,9 @@ export class TradePathUpdateUtility {
     }
 
     
-    if (
-      frontmatter.imagesByWidget &&
-      typeof frontmatter.imagesByWidget === 'object' &&
-      !Array.isArray(frontmatter.imagesByWidget)
-    ) {
-      const widgetImages = Object.values(
-        frontmatter.imagesByWidget as Record<string, unknown>
-      );
+    const imagesByWidget = asRecord(frontmatter.imagesByWidget);
+    if (imagesByWidget) {
+      const widgetImages = Object.values(imagesByWidget);
       for (const images of widgetImages) {
         if (!Array.isArray(images)) continue;
         for (const img of images) {
@@ -96,43 +104,52 @@ export class TradePathUpdateUtility {
     
     if (frontmatter.type === 'drc') {
       
-      if (frontmatter.forecast && typeof frontmatter.forecast === 'object') {
-        for (const key of Object.keys(frontmatter.forecast)) {
+      const forecast = asRecord(frontmatter.forecast);
+      if (forecast) {
+        for (const key of Object.keys(forecast)) {
           if (key === 'bias' || key === 'levels' || key === 'keyLevels') {
             continue;
           }
 
-          const section = frontmatter.forecast[key];
+          const section = forecast[key];
 
-          if (key === 'customTimeframes' && typeof section === 'object') {
-            Object.values(section).forEach(checkSection);
-          } else {
-            checkSection(section);
+          const sectionRecord = asRecord(section);
+          if (key === 'customTimeframes' && sectionRecord) {
+            Object.values(sectionRecord).forEach((value) => {
+              const record = asRecord(value);
+              if (record) checkSection(record);
+            });
+          } else if (sectionRecord) {
+            checkSection(sectionRecord);
           }
         }
       }
 
       
-      if (frontmatter.endOfDayReview) {
-        checkSection(frontmatter.endOfDayReview);
+      const endOfDayReview = asRecord(frontmatter.endOfDayReview);
+      if (endOfDayReview) {
+        checkSection(endOfDayReview);
       }
 
       
-      if (frontmatter.missedTrades && Array.isArray(frontmatter.missedTrades)) {
-        frontmatter.missedTrades.forEach(checkSection);
-      }
+      asRecordArray(frontmatter.missedTrades).forEach(checkSection);
     }
 
     
     if (frontmatter.type === 'weekly-review') {
-      if (frontmatter.forecast && typeof frontmatter.forecast === 'object') {
-        for (const key of Object.keys(frontmatter.forecast)) {
-          const section = frontmatter.forecast[key];
+      const forecast = asRecord(frontmatter.forecast);
+      if (forecast) {
+        for (const key of Object.keys(forecast)) {
+          const section = forecast[key];
 
-          if (key === 'customTimeframes' && typeof section === 'object') {
-            Object.values(section).forEach(checkSection);
-          } else {
-            checkSection(section);
+          const sectionRecord = asRecord(section);
+          if (key === 'customTimeframes' && sectionRecord) {
+            Object.values(sectionRecord).forEach((value) => {
+              const record = asRecord(value);
+              if (record) checkSection(record);
+            });
+          } else if (sectionRecord) {
+            checkSection(sectionRecord);
           }
         }
       }
@@ -296,34 +313,33 @@ export class TradePathUpdateUtility {
           try {
             let pathsUpdated = false;
             await this.app.fileManager.processFrontMatter(file, (fm) => {
+              const fmRecord = asRecord(fm);
+              if (!fmRecord) return;
               const isLegacyTradePath =
                 file.path.startsWith(
                   `${this.tradeService.JOURNALIT_FOLDER}/`
-                ) && isTradeIdentityEligibleNote(fm, file.path);
+                ) && isTradeIdentityEligibleNote(fmRecord, file.path);
 
               if (isLegacyTradePath) {
-                ensureTradeIdentityFrontmatter(fm);
+                ensureTradeIdentityFrontmatter(fmRecord);
               }
 
-              if (Array.isArray(fm.images)) {
+              if (Array.isArray(fmRecord.images)) {
                 const result = this.updateImagesArrayForBasePaths(
-                  fm.images,
+                  fmRecord.images,
                   normalizedOldPaths,
                   normalizedNewPath
                 );
                 if (result.hasChanges) {
-                  fm.images = result.updated;
+                  fmRecord.images = result.updated;
                   pathsUpdated = true;
                 }
               }
 
-              if (
-                fm.imagesByWidget &&
-                typeof fm.imagesByWidget === 'object' &&
-                !Array.isArray(fm.imagesByWidget)
-              ) {
+              const imagesByWidget = asRecord(fmRecord.imagesByWidget);
+              if (imagesByWidget) {
                 for (const [widgetId, images] of Object.entries(
-                  fm.imagesByWidget as Record<string, unknown>
+                  imagesByWidget
                 )) {
                   if (!Array.isArray(images)) continue;
                   const result = this.updateImagesArrayForBasePaths(
@@ -332,15 +348,16 @@ export class TradePathUpdateUtility {
                     normalizedNewPath
                   );
                   if (result.hasChanges) {
-                    fm.imagesByWidget[widgetId] = result.updated;
+                    imagesByWidget[widgetId] = result.updated;
                     pathsUpdated = true;
                   }
                 }
               }
 
-              if (fm.type === 'drc') {
-                if (fm.forecast && typeof fm.forecast === 'object') {
-                  for (const key of Object.keys(fm.forecast)) {
+              if (fmRecord.type === 'drc') {
+                const forecast = asRecord(fmRecord.forecast);
+                if (forecast) {
+                  for (const key of Object.keys(forecast)) {
                     if (
                       key === 'bias' ||
                       key === 'levels' ||
@@ -349,23 +366,23 @@ export class TradePathUpdateUtility {
                       continue;
                     }
 
-                    const section = fm.forecast[key];
-                    if (
-                      key === 'customTimeframes' &&
-                      typeof section === 'object'
-                    ) {
-                      for (const customKey of Object.keys(section)) {
+                    const section = forecast[key];
+                    const sectionRecord = asRecord(section);
+                    if (key === 'customTimeframes' && sectionRecord) {
+                      for (const customKey of Object.keys(sectionRecord)) {
+                        const customRecord = asRecord(sectionRecord[customKey]);
+                        if (!customRecord) continue;
                         pathsUpdated =
                           this.updateForecastSectionForBasePaths(
-                            section[customKey],
+                            customRecord,
                             normalizedOldPaths,
                             normalizedNewPath
                           ) || pathsUpdated;
                       }
-                    } else {
+                    } else if (sectionRecord) {
                       pathsUpdated =
                         this.updateForecastSectionForBasePaths(
-                          section,
+                          sectionRecord,
                           normalizedOldPaths,
                           normalizedNewPath
                         ) || pathsUpdated;
@@ -373,55 +390,51 @@ export class TradePathUpdateUtility {
                   }
                 }
 
-                if (fm.endOfDayReview) {
+                const endOfDayReview = asRecord(fmRecord.endOfDayReview);
+                if (endOfDayReview) {
                   pathsUpdated =
                     this.updateForecastSectionForBasePaths(
-                      fm.endOfDayReview,
+                      endOfDayReview,
                       normalizedOldPaths,
                       normalizedNewPath
                     ) || pathsUpdated;
                 }
 
-                if (Array.isArray(fm.missedTrades)) {
-                  for (const trade of fm.missedTrades) {
-                    if (trade && typeof trade === 'object') {
-                      pathsUpdated =
-                        this.updateForecastSectionForBasePaths(
-                          trade,
-                          normalizedOldPaths,
-                          normalizedNewPath
-                        ) || pathsUpdated;
-                    }
-                  }
+                for (const trade of asRecordArray(fmRecord.missedTrades)) {
+                  pathsUpdated =
+                    this.updateForecastSectionForBasePaths(
+                      trade,
+                      normalizedOldPaths,
+                      normalizedNewPath
+                    ) || pathsUpdated;
                 }
               }
 
-              if (
-                fm.type === 'weekly-review' &&
-                fm.forecast &&
-                typeof fm.forecast === 'object'
-              ) {
-                for (const key of Object.keys(fm.forecast)) {
-                  const section = fm.forecast[key];
-                  if (
-                    key === 'customTimeframes' &&
-                    typeof section === 'object'
-                  ) {
-                    for (const customKey of Object.keys(section)) {
+              if (fmRecord.type === 'weekly-review') {
+                const forecast = asRecord(fmRecord.forecast);
+                if (forecast) {
+                  for (const key of Object.keys(forecast)) {
+                    const section = forecast[key];
+                    const sectionRecord = asRecord(section);
+                    if (key === 'customTimeframes' && sectionRecord) {
+                      for (const customKey of Object.keys(sectionRecord)) {
+                        const customRecord = asRecord(sectionRecord[customKey]);
+                        if (!customRecord) continue;
+                        pathsUpdated =
+                          this.updateForecastSectionForBasePaths(
+                            customRecord,
+                            normalizedOldPaths,
+                            normalizedNewPath
+                          ) || pathsUpdated;
+                      }
+                    } else if (sectionRecord) {
                       pathsUpdated =
                         this.updateForecastSectionForBasePaths(
-                          section[customKey],
+                          sectionRecord,
                           normalizedOldPaths,
                           normalizedNewPath
                         ) || pathsUpdated;
                     }
-                  } else {
-                    pathsUpdated =
-                      this.updateForecastSectionForBasePaths(
-                        section,
-                        normalizedOldPaths,
-                        normalizedNewPath
-                      ) || pathsUpdated;
                   }
                 }
               }
@@ -444,7 +457,7 @@ export class TradePathUpdateUtility {
       );
 
       if (i + BATCH_SIZE < filesWithImages.length) {
-        await new Promise((resolve) => setTimeout(resolve, BATCH_DELAY));
+        await new Promise((resolve) => window.setTimeout(resolve, BATCH_DELAY));
       }
     }
 
@@ -475,7 +488,9 @@ export class TradePathUpdateUtility {
     const filesWithImages: TFile[] = [];
     for (const file of allFiles) {
       const cache = this.app.metadataCache.getFileCache(file);
-      const frontmatter = cache?.frontmatter;
+      const frontmatter = cache?.frontmatter as
+        | Record<string, unknown>
+        | undefined;
 
       let hasOldPathImages = false;
 
@@ -497,7 +512,7 @@ export class TradePathUpdateUtility {
         !Array.isArray(frontmatter.imagesByWidget)
       ) {
         const widgetImages = Object.values(
-          frontmatter.imagesByWidget as Record<string, unknown>
+          asRecord(frontmatter.imagesByWidget) ?? {}
         );
         hasOldPathImages = widgetImages.some(
           (images) =>
@@ -521,38 +536,42 @@ export class TradePathUpdateUtility {
           return false;
         };
 
-        if (frontmatter.forecast && typeof frontmatter.forecast === 'object') {
+        const forecast = asRecord(frontmatter.forecast);
+        if (forecast) {
           
-          for (const key of Object.keys(frontmatter.forecast)) {
+          for (const key of Object.keys(forecast)) {
             
             if (key === 'bias' || key === 'levels' || key === 'keyLevels') {
               continue;
             }
 
-            const section = frontmatter.forecast[key];
+            const section = forecast[key];
 
             
-            if (key === 'customTimeframes' && typeof section === 'object') {
-              hasOldPathImages = Object.values(section).some(checkSection);
+            const sectionRecord = asRecord(section);
+            if (key === 'customTimeframes' && sectionRecord) {
+              hasOldPathImages = Object.values(sectionRecord).some((value) => {
+                const record = asRecord(value);
+                return record ? checkSection(record) : false;
+              });
             } else {
-              hasOldPathImages = checkSection(section);
+              hasOldPathImages = sectionRecord
+                ? checkSection(sectionRecord)
+                : false;
             }
 
             if (hasOldPathImages) break;
           }
         }
 
-        if (!hasOldPathImages && frontmatter.endOfDayReview) {
-          hasOldPathImages = checkSection(frontmatter.endOfDayReview);
+        const endOfDayReview = asRecord(frontmatter.endOfDayReview);
+        if (!hasOldPathImages && endOfDayReview) {
+          hasOldPathImages = checkSection(endOfDayReview);
         }
 
-        if (
-          !hasOldPathImages &&
-          frontmatter.missedTrades &&
-          Array.isArray(frontmatter.missedTrades)
-        ) {
-          hasOldPathImages = frontmatter.missedTrades.some((trade: any) =>
-            checkSection(trade)
+        if (!hasOldPathImages) {
+          hasOldPathImages = asRecordArray(frontmatter.missedTrades).some(
+            checkSection
           );
         }
       }
@@ -569,16 +588,23 @@ export class TradePathUpdateUtility {
           return false;
         };
 
-        if (frontmatter.forecast && typeof frontmatter.forecast === 'object') {
+        const forecast = asRecord(frontmatter.forecast);
+        if (forecast) {
           
-          for (const key of Object.keys(frontmatter.forecast)) {
-            const section = frontmatter.forecast[key];
+          for (const key of Object.keys(forecast)) {
+            const section = forecast[key];
 
             
-            if (key === 'customTimeframes' && typeof section === 'object') {
-              hasOldPathImages = Object.values(section).some(checkSection);
+            const sectionRecord = asRecord(section);
+            if (key === 'customTimeframes' && sectionRecord) {
+              hasOldPathImages = Object.values(sectionRecord).some((value) => {
+                const record = asRecord(value);
+                return record ? checkSection(record) : false;
+              });
             } else {
-              hasOldPathImages = checkSection(section);
+              hasOldPathImages = sectionRecord
+                ? checkSection(sectionRecord)
+                : false;
             }
 
             if (hasOldPathImages) break;
@@ -605,7 +631,9 @@ export class TradePathUpdateUtility {
         batch.map(async (file) => {
           try {
             const cache = this.app.metadataCache.getFileCache(file);
-            const frontmatter = cache?.frontmatter;
+            const frontmatter = cache?.frontmatter as
+              | Record<string, unknown>
+              | undefined;
 
             
             let hasTopLevelImages = false;
@@ -630,28 +658,27 @@ export class TradePathUpdateUtility {
             let pathsUpdated = false;
 
             await this.app.fileManager.processFrontMatter(file, (fm) => {
+              const fmRecord = asRecord(fm);
+              if (!fmRecord) return;
               const isLegacyTradePath =
                 file.path.startsWith(
                   `${this.tradeService.JOURNALIT_FOLDER}/`
-                ) && isTradeIdentityEligibleNote(fm, file.path);
+                ) && isTradeIdentityEligibleNote(fmRecord, file.path);
 
               if (isLegacyTradePath) {
-                ensureTradeIdentityFrontmatter(fm);
+                ensureTradeIdentityFrontmatter(fmRecord);
               }
 
               
               if (hasTopLevelImages) {
-                fm.images = topLevelUpdatedImages;
+                fmRecord.images = topLevelUpdatedImages;
                 pathsUpdated = true;
               }
 
-              if (
-                fm.imagesByWidget &&
-                typeof fm.imagesByWidget === 'object' &&
-                !Array.isArray(fm.imagesByWidget)
-              ) {
+              const imagesByWidget = asRecord(fmRecord.imagesByWidget);
+              if (imagesByWidget) {
                 for (const [widgetId, images] of Object.entries(
-                  fm.imagesByWidget as Record<string, unknown>
+                  imagesByWidget
                 )) {
                   if (!Array.isArray(images)) continue;
                   const result = this.updateImagesArray(
@@ -660,7 +687,7 @@ export class TradePathUpdateUtility {
                     normalizedNewPath
                   );
                   if (result.hasChanges) {
-                    fm.imagesByWidget[widgetId] = result.updated;
+                    imagesByWidget[widgetId] = result.updated;
                     pathsUpdated = true;
                   }
                 }
@@ -669,11 +696,9 @@ export class TradePathUpdateUtility {
               
               if (isDRC) {
                 let drcUpdated = false;
-
-                
-                if (fm.forecast && typeof fm.forecast === 'object') {
-                  for (const key of Object.keys(fm.forecast)) {
-                    
+                const forecast = asRecord(fmRecord.forecast);
+                if (forecast) {
+                  for (const key of Object.keys(forecast)) {
                     if (
                       key === 'bias' ||
                       key === 'levels' ||
@@ -681,18 +706,14 @@ export class TradePathUpdateUtility {
                     ) {
                       continue;
                     }
-
-                    const section = fm.forecast[key];
-
-                    
-                    if (
-                      key === 'customTimeframes' &&
-                      typeof section === 'object'
-                    ) {
-                      for (const customKey of Object.keys(section)) {
+                    const sectionRecord = asRecord(forecast[key]);
+                    if (key === 'customTimeframes' && sectionRecord) {
+                      for (const customKey of Object.keys(sectionRecord)) {
+                        const customRecord = asRecord(sectionRecord[customKey]);
                         if (
+                          customRecord &&
                           this.updateForecastSection(
-                            section[customKey],
+                            customRecord,
                             normalizedOldPath,
                             normalizedNewPath
                           )
@@ -700,49 +721,43 @@ export class TradePathUpdateUtility {
                           drcUpdated = true;
                         }
                       }
-                    } else {
-                      if (
-                        this.updateForecastSection(
-                          section,
-                          normalizedOldPath,
-                          normalizedNewPath
-                        )
-                      ) {
-                        drcUpdated = true;
-                      }
+                    } else if (
+                      sectionRecord &&
+                      this.updateForecastSection(
+                        sectionRecord,
+                        normalizedOldPath,
+                        normalizedNewPath
+                      )
+                    ) {
+                      drcUpdated = true;
                     }
                   }
                 }
 
-                
-                const endOfDayReview = fm.endOfDayReview;
-                const endOfDayReviewImages = endOfDayReview?.images;
-                if (endOfDayReviewImages) {
+                const endOfDayReview = asRecord(fmRecord.endOfDayReview);
+                if (endOfDayReview) {
                   const result = this.updateImagesArray(
-                    endOfDayReviewImages,
+                    Array.isArray(endOfDayReview.images)
+                      ? endOfDayReview.images
+                      : undefined,
                     normalizedOldPath,
                     normalizedNewPath
                   );
-                  if (result.hasChanges && endOfDayReview) {
+                  if (result.hasChanges) {
                     endOfDayReview.images = result.updated;
                     drcUpdated = true;
                   }
                 }
 
-                
-                if (fm.missedTrades && Array.isArray(fm.missedTrades)) {
-                  for (const trade of fm.missedTrades) {
-                    if (trade && typeof trade === 'object' && trade.images) {
-                      const result = this.updateImagesArray(
-                        trade.images,
-                        normalizedOldPath,
-                        normalizedNewPath
-                      );
-                      if (result.hasChanges) {
-                        trade.images = result.updated;
-                        drcUpdated = true;
-                      }
-                    }
+                for (const trade of asRecordArray(fmRecord.missedTrades)) {
+                  const result = this.updateImagesArray(
+                    Array.isArray(trade.images) ? trade.images : undefined,
+                    normalizedOldPath,
+                    normalizedNewPath
+                  );
+                  if (result.hasChanges) {
+                    trade.images = result.updated;
+                    drcUpdated = true;
                   }
                 }
 
@@ -754,21 +769,17 @@ export class TradePathUpdateUtility {
               
               if (isWeekly) {
                 let weeklyUpdated = false;
-
-                
-                if (fm.forecast && typeof fm.forecast === 'object') {
-                  for (const key of Object.keys(fm.forecast)) {
-                    const section = fm.forecast[key];
-
-                    
-                    if (
-                      key === 'customTimeframes' &&
-                      typeof section === 'object'
-                    ) {
-                      for (const customKey of Object.keys(section)) {
+                const forecast = asRecord(fmRecord.forecast);
+                if (forecast) {
+                  for (const key of Object.keys(forecast)) {
+                    const sectionRecord = asRecord(forecast[key]);
+                    if (key === 'customTimeframes' && sectionRecord) {
+                      for (const customKey of Object.keys(sectionRecord)) {
+                        const customRecord = asRecord(sectionRecord[customKey]);
                         if (
+                          customRecord &&
                           this.updateForecastSection(
-                            section[customKey],
+                            customRecord,
                             normalizedOldPath,
                             normalizedNewPath
                           )
@@ -776,16 +787,15 @@ export class TradePathUpdateUtility {
                           weeklyUpdated = true;
                         }
                       }
-                    } else {
-                      if (
-                        this.updateForecastSection(
-                          section,
-                          normalizedOldPath,
-                          normalizedNewPath
-                        )
-                      ) {
-                        weeklyUpdated = true;
-                      }
+                    } else if (
+                      sectionRecord &&
+                      this.updateForecastSection(
+                        sectionRecord,
+                        normalizedOldPath,
+                        normalizedNewPath
+                      )
+                    ) {
+                      weeklyUpdated = true;
                     }
                   }
                 }
@@ -822,7 +832,7 @@ export class TradePathUpdateUtility {
 
       
       if (i + BATCH_SIZE < filesWithImages.length) {
-        await new Promise((resolve) => setTimeout(resolve, BATCH_DELAY));
+        await new Promise((resolve) => window.setTimeout(resolve, BATCH_DELAY));
       }
     }
 
@@ -896,22 +906,31 @@ export class TradePathUpdateUtility {
 
   
   private updateForecastSectionWithQuarter(
-    section: any,
+    section: unknown,
     journalFolderPath: string
   ): boolean {
-    if (!section || typeof section !== 'object') {
+    if (!section || typeof section !== 'object' || Array.isArray(section)) {
+      return false;
+    }
+    const sectionRecord = asRecord(section);
+    if (!sectionRecord) {
       return false;
     }
 
     let hasChanges = false;
 
-    if (section.images) {
+    const images = Array.isArray(sectionRecord.images)
+      ? sectionRecord.images.filter(
+          (image): image is string => typeof image === 'string'
+        )
+      : undefined;
+    if (images) {
       const result = this.updateImagesArrayWithQuarter(
-        section.images,
+        images,
         journalFolderPath
       );
       if (result.hasChanges) {
-        section.images = result.updated;
+        sectionRecord.images = result.updated;
         hasChanges = true;
       }
     }
@@ -921,14 +940,22 @@ export class TradePathUpdateUtility {
 
   
   private sectionNeedsQuarterlyUpdate(
-    section: any,
+    section: unknown,
     journalFolderPath: string
   ): boolean {
-    if (!section?.images || !Array.isArray(section.images)) {
+    if (!section || typeof section !== 'object' || Array.isArray(section)) {
       return false;
     }
-    return section.images.some(
-      (img: any) =>
+    const sectionRecord = asRecord(section);
+    if (!sectionRecord || !Array.isArray(sectionRecord.images)) {
+      return false;
+    }
+    const images = sectionRecord.images;
+    if (!Array.isArray(images)) {
+      return false;
+    }
+    return images.some(
+      (img: unknown) =>
         typeof img === 'string' &&
         this.transformImagePathWithQuarter(img, journalFolderPath) !== null
     );
@@ -953,15 +980,17 @@ export class TradePathUpdateUtility {
     const filesNeedingUpdate: TFile[] = [];
     for (const file of allFiles) {
       const cache = this.app.metadataCache.getFileCache(file);
-      const frontmatter = cache?.frontmatter;
+      const frontmatter = cache?.frontmatter as
+        | Record<string, unknown>
+        | undefined;
       if (!frontmatter) continue;
 
       let needsUpdate = false;
 
       
-      if (frontmatter.images && Array.isArray(frontmatter.images)) {
+      if (Array.isArray(frontmatter.images)) {
         needsUpdate = frontmatter.images.some(
-          (img: any) =>
+          (img: unknown) =>
             typeof img === 'string' &&
             this.transformImagePathWithQuarter(img, journalFolderPath) !== null
         );
@@ -974,7 +1003,7 @@ export class TradePathUpdateUtility {
         !Array.isArray(frontmatter.imagesByWidget)
       ) {
         needsUpdate = Object.values(
-          frontmatter.imagesByWidget as Record<string, unknown>
+          asRecord(frontmatter.imagesByWidget) ?? {}
         ).some(
           (images) =>
             Array.isArray(images) &&
@@ -990,20 +1019,22 @@ export class TradePathUpdateUtility {
       
       if (!needsUpdate && frontmatter.type === 'drc') {
         
-        if (frontmatter.forecast && typeof frontmatter.forecast === 'object') {
-          for (const key of Object.keys(frontmatter.forecast)) {
+        const forecast = asRecord(frontmatter.forecast);
+        if (forecast) {
+          for (const key of Object.keys(forecast)) {
             if (key === 'bias' || key === 'levels' || key === 'keyLevels')
               continue;
 
-            const section = frontmatter.forecast[key];
+            const section = forecast[key];
 
-            if (key === 'customTimeframes' && typeof section === 'object') {
-              needsUpdate = Object.values(section).some((s) =>
-                this.sectionNeedsQuarterlyUpdate(s, journalFolderPath)
+            const sectionRecord = asRecord(section);
+            if (key === 'customTimeframes' && sectionRecord) {
+              needsUpdate = Object.values(sectionRecord).some((value) =>
+                this.sectionNeedsQuarterlyUpdate(value, journalFolderPath)
               );
             } else {
               needsUpdate = this.sectionNeedsQuarterlyUpdate(
-                section,
+                sectionRecord,
                 journalFolderPath
               );
             }
@@ -1012,19 +1043,16 @@ export class TradePathUpdateUtility {
           }
         }
 
-        if (!needsUpdate && frontmatter.endOfDayReview) {
+        const endOfDayReview = asRecord(frontmatter.endOfDayReview);
+        if (!needsUpdate && endOfDayReview) {
           needsUpdate = this.sectionNeedsQuarterlyUpdate(
-            frontmatter.endOfDayReview,
+            endOfDayReview,
             journalFolderPath
           );
         }
 
-        if (
-          !needsUpdate &&
-          frontmatter.missedTrades &&
-          Array.isArray(frontmatter.missedTrades)
-        ) {
-          needsUpdate = frontmatter.missedTrades.some((trade: any) =>
+        if (!needsUpdate) {
+          needsUpdate = asRecordArray(frontmatter.missedTrades).some((trade) =>
             this.sectionNeedsQuarterlyUpdate(trade, journalFolderPath)
           );
         }
@@ -1032,17 +1060,19 @@ export class TradePathUpdateUtility {
 
       
       if (!needsUpdate && frontmatter.type === 'weekly-review') {
-        if (frontmatter.forecast && typeof frontmatter.forecast === 'object') {
-          for (const key of Object.keys(frontmatter.forecast)) {
-            const section = frontmatter.forecast[key];
+        const forecast = asRecord(frontmatter.forecast);
+        if (forecast) {
+          for (const key of Object.keys(forecast)) {
+            const section = forecast[key];
 
-            if (key === 'customTimeframes' && typeof section === 'object') {
-              needsUpdate = Object.values(section).some((s) =>
-                this.sectionNeedsQuarterlyUpdate(s, journalFolderPath)
+            const sectionRecord = asRecord(section);
+            if (key === 'customTimeframes' && sectionRecord) {
+              needsUpdate = Object.values(sectionRecord).some((value) =>
+                this.sectionNeedsQuarterlyUpdate(value, journalFolderPath)
               );
             } else {
               needsUpdate = this.sectionNeedsQuarterlyUpdate(
-                section,
+                sectionRecord,
                 journalFolderPath
               );
             }
@@ -1073,34 +1103,32 @@ export class TradePathUpdateUtility {
             let pathsUpdated = false;
 
             await this.app.fileManager.processFrontMatter(file, (fm) => {
+              const fmRecord = asRecord(fm);
+              if (!fmRecord) return;
               const isLegacyTradePath =
                 file.path.startsWith(
                   `${this.tradeService.JOURNALIT_FOLDER}/`
-                ) && isTradeIdentityEligibleNote(fm, file.path);
+                ) && isTradeIdentityEligibleNote(fmRecord, file.path);
 
               if (isLegacyTradePath) {
-                ensureTradeIdentityFrontmatter(fm);
+                ensureTradeIdentityFrontmatter(fmRecord);
               }
 
-              
-              if (fm.images && Array.isArray(fm.images)) {
+              if (Array.isArray(fmRecord.images)) {
                 const result = this.updateImagesArrayWithQuarter(
-                  fm.images,
+                  fmRecord.images,
                   journalFolderPath
                 );
                 if (result.hasChanges) {
-                  fm.images = result.updated;
+                  fmRecord.images = result.updated;
                   pathsUpdated = true;
                 }
               }
 
-              if (
-                fm.imagesByWidget &&
-                typeof fm.imagesByWidget === 'object' &&
-                !Array.isArray(fm.imagesByWidget)
-              ) {
+              const imagesByWidget = asRecord(fmRecord.imagesByWidget);
+              if (imagesByWidget) {
                 for (const [widgetId, images] of Object.entries(
-                  fm.imagesByWidget as Record<string, unknown>
+                  imagesByWidget
                 )) {
                   if (!Array.isArray(images)) continue;
                   const result = this.updateImagesArrayWithQuarter(
@@ -1108,113 +1136,100 @@ export class TradePathUpdateUtility {
                     journalFolderPath
                   );
                   if (result.hasChanges) {
-                    fm.imagesByWidget[widgetId] = result.updated;
+                    imagesByWidget[widgetId] = result.updated;
                     pathsUpdated = true;
                   }
                 }
               }
 
-              
-              if (fm.type === 'drc') {
-                
-                if (fm.forecast && typeof fm.forecast === 'object') {
-                  for (const key of Object.keys(fm.forecast)) {
+              if (fmRecord.type === 'drc') {
+                const forecast = asRecord(fmRecord.forecast);
+                if (forecast) {
+                  for (const key of Object.keys(forecast)) {
                     if (
                       key === 'bias' ||
                       key === 'levels' ||
                       key === 'keyLevels'
                     )
                       continue;
-
-                    const section = fm.forecast[key];
-
-                    if (
-                      key === 'customTimeframes' &&
-                      typeof section === 'object'
-                    ) {
-                      for (const customKey of Object.keys(section)) {
+                    const sectionRecord = asRecord(forecast[key]);
+                    if (key === 'customTimeframes' && sectionRecord) {
+                      for (const customKey of Object.keys(sectionRecord)) {
+                        const customRecord = asRecord(sectionRecord[customKey]);
                         if (
+                          customRecord &&
                           this.updateForecastSectionWithQuarter(
-                            section[customKey],
+                            customRecord,
                             journalFolderPath
                           )
                         ) {
                           pathsUpdated = true;
                         }
                       }
-                    } else {
-                      if (
-                        this.updateForecastSectionWithQuarter(
-                          section,
-                          journalFolderPath
-                        )
-                      ) {
-                        pathsUpdated = true;
-                      }
+                    } else if (
+                      sectionRecord &&
+                      this.updateForecastSectionWithQuarter(
+                        sectionRecord,
+                        journalFolderPath
+                      )
+                    ) {
+                      pathsUpdated = true;
                     }
                   }
                 }
 
-                
-                const endOfDayReview = fm.endOfDayReview;
-                const endOfDayReviewImages = endOfDayReview?.images;
-                if (endOfDayReviewImages) {
+                const endOfDayReview = asRecord(fmRecord.endOfDayReview);
+                if (endOfDayReview) {
                   const result = this.updateImagesArrayWithQuarter(
-                    endOfDayReviewImages,
+                    Array.isArray(endOfDayReview.images)
+                      ? endOfDayReview.images
+                      : undefined,
                     journalFolderPath
                   );
-                  if (result.hasChanges && endOfDayReview) {
+                  if (result.hasChanges) {
                     endOfDayReview.images = result.updated;
                     pathsUpdated = true;
                   }
                 }
 
-                
-                if (fm.missedTrades && Array.isArray(fm.missedTrades)) {
-                  for (const trade of fm.missedTrades) {
-                    if (trade?.images) {
-                      const result = this.updateImagesArrayWithQuarter(
-                        trade.images,
-                        journalFolderPath
-                      );
-                      if (result.hasChanges) {
-                        trade.images = result.updated;
-                        pathsUpdated = true;
-                      }
-                    }
+                for (const trade of asRecordArray(fmRecord.missedTrades)) {
+                  const result = this.updateImagesArrayWithQuarter(
+                    Array.isArray(trade.images) ? trade.images : undefined,
+                    journalFolderPath
+                  );
+                  if (result.hasChanges) {
+                    trade.images = result.updated;
+                    pathsUpdated = true;
                   }
                 }
               }
 
-              
-              if (fm.type === 'weekly-review') {
-                if (fm.forecast && typeof fm.forecast === 'object') {
-                  for (const key of Object.keys(fm.forecast)) {
-                    const section = fm.forecast[key];
-
-                    if (
-                      key === 'customTimeframes' &&
-                      typeof section === 'object'
-                    ) {
-                      for (const customKey of Object.keys(section)) {
+              if (fmRecord.type === 'weekly-review') {
+                const forecast = asRecord(fmRecord.forecast);
+                if (forecast) {
+                  for (const key of Object.keys(forecast)) {
+                    const sectionRecord = asRecord(forecast[key]);
+                    if (key === 'customTimeframes' && sectionRecord) {
+                      for (const customKey of Object.keys(sectionRecord)) {
+                        const customRecord = asRecord(sectionRecord[customKey]);
                         if (
+                          customRecord &&
                           this.updateForecastSectionWithQuarter(
-                            section[customKey],
+                            customRecord,
                             journalFolderPath
                           )
                         ) {
                           pathsUpdated = true;
                         }
                       }
-                    } else {
-                      if (
-                        this.updateForecastSectionWithQuarter(
-                          section,
-                          journalFolderPath
-                        )
-                      ) {
-                        pathsUpdated = true;
-                      }
+                    } else if (
+                      sectionRecord &&
+                      this.updateForecastSectionWithQuarter(
+                        sectionRecord,
+                        journalFolderPath
+                      )
+                    ) {
+                      pathsUpdated = true;
                     }
                   }
                 }
@@ -1247,7 +1262,7 @@ export class TradePathUpdateUtility {
 
       
       if (i + BATCH_SIZE < filesNeedingUpdate.length) {
-        await new Promise((resolve) => setTimeout(resolve, BATCH_DELAY));
+        await new Promise((resolve) => window.setTimeout(resolve, BATCH_DELAY));
       }
     }
 

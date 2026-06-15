@@ -10,6 +10,66 @@ import {
   ViewGuideSession,
 } from './types';
 
+function asRecord(value: unknown): Record<string, unknown> | undefined {
+  return value && typeof value === 'object' && !Array.isArray(value)
+    ? Object.fromEntries(Object.entries(value))
+    : undefined;
+}
+
+function parsePersistedGuideState(value: unknown): PersistedGuideState | null {
+  const record = asRecord(value);
+  if (
+    !record ||
+    typeof record.guideId !== 'string' ||
+    typeof record.viewType !== 'string' ||
+    typeof record.guideVersion !== 'number' ||
+    typeof record.updatedAt !== 'number' ||
+    (record.status !== 'in_progress' &&
+      record.status !== 'skipped' &&
+      record.status !== 'completed')
+  ) {
+    return null;
+  }
+
+  return {
+    guideId: record.guideId,
+    viewType: record.viewType,
+    guideVersion: record.guideVersion,
+    status: record.status,
+    updatedAt: record.updatedAt,
+    currentStepId:
+      typeof record.currentStepId === 'string'
+        ? record.currentStepId
+        : undefined,
+  };
+}
+
+function parsePersistedViewGuideData(
+  value: unknown
+): PersistedViewGuideData | null {
+  const record = asRecord(value);
+  if (!record) {
+    return null;
+  }
+
+  const guidesRecord = asRecord(record.guides) ?? {};
+  const guides: Record<string, PersistedGuideState> = {};
+  for (const [guideId, guideState] of Object.entries(guidesRecord)) {
+    const parsed = parsePersistedGuideState(guideState);
+    if (parsed) {
+      guides[guideId] = parsed;
+    }
+  }
+
+  return {
+    schemaVersion:
+      typeof record.schemaVersion === 'number'
+        ? record.schemaVersion
+        : VIEW_GUIDE_SCHEMA_VERSION,
+    guides,
+  };
+}
+
 const VIEW_GUIDES_DATA_KEY = 'viewGuides';
 
 const createDefaultViewGuideData = (): PersistedViewGuideData => ({
@@ -435,13 +495,7 @@ export class ViewGuideService {
   }
 
   private getCurrentActiveLeaf(): WorkspaceLeaf | null {
-    return (
-      (
-        this.plugin.app.workspace as unknown as {
-          getMostRecentLeaf?: () => WorkspaceLeaf | null;
-        }
-      ).getMostRecentLeaf?.() ?? null
-    );
+    return this.plugin.app.workspace.getMostRecentLeaf();
   }
 
   private syncActiveLeafContext(leaf?: WorkspaceLeaf | null): void {
@@ -463,11 +517,7 @@ export class ViewGuideService {
   }
 
   private isLeafIdStillOpen(leafId: string, viewType: string): boolean {
-    const workspace = this.plugin.app.workspace as unknown as {
-      getLeavesOfType?: (type: string) => WorkspaceLeaf[];
-    };
-
-    const openLeaves = workspace.getLeavesOfType?.(viewType) || [];
+    const openLeaves = this.plugin.app.workspace.getLeavesOfType(viewType);
 
     return openLeaves.some((leaf) => this.getLeafId(leaf) === leafId);
   }
@@ -565,26 +615,13 @@ export class ViewGuideService {
 
   private async loadData(): Promise<void> {
     try {
-      const pluginData = (await this.plugin.loadData()) || {};
-      const persisted = pluginData?.localMeta?.[VIEW_GUIDES_DATA_KEY];
+      const pluginData = asRecord(await this.plugin.loadData()) ?? {};
+      const localMeta = asRecord(pluginData.localMeta);
+      const persisted = parsePersistedViewGuideData(
+        localMeta?.[VIEW_GUIDES_DATA_KEY]
+      );
 
-      if (!persisted || typeof persisted !== 'object') {
-        this.data = createDefaultViewGuideData();
-        return;
-      }
-
-      const guides =
-        persisted.guides && typeof persisted.guides === 'object'
-          ? persisted.guides
-          : {};
-
-      this.data = {
-        schemaVersion:
-          typeof persisted.schemaVersion === 'number'
-            ? persisted.schemaVersion
-            : VIEW_GUIDE_SCHEMA_VERSION,
-        guides,
-      };
+      this.data = persisted ?? createDefaultViewGuideData();
     } catch (error) {
       console.error('[ViewGuideService] Failed to load guide data:', error);
       this.data = createDefaultViewGuideData();
@@ -611,8 +648,8 @@ export class ViewGuideService {
         return;
       }
 
-      const pluginData = (await this.plugin.loadData()) || {};
-      const localMeta = pluginData.localMeta || {};
+      const pluginData = asRecord(await this.plugin.loadData()) ?? {};
+      const localMeta = asRecord(pluginData.localMeta) ?? {};
 
       localMeta[VIEW_GUIDES_DATA_KEY] = this.data;
 

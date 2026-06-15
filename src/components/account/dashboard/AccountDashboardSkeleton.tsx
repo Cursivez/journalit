@@ -4,12 +4,7 @@ import React, { memo, useLayoutEffect } from 'react';
 import { SkeletonText } from '../../shared/SkeletonText';
 import { SkeletonCircle } from '../../shared/SkeletonCircle';
 import { DashboardWidgetSkeleton } from '../../dashboard/components/DashboardWidgets/DashboardWidgetSkeleton';
-import {
-  injectAccountDashboardSkeletonStyles,
-  removeAccountDashboardSkeletonStyles,
-} from '../../../styles/account/accountDashboardSkeletonStyles';
 import { t } from '../../../lang/helpers';
-import { ensureSkeletonStyles } from '../../../styles/skeletonStyles';
 
 export const AccountDashboardSkeleton = memo(() => {
   useLayoutEffect(() => {

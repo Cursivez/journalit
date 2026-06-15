@@ -59,7 +59,55 @@ const ALLOWED_NOTE_TYPES = [
   'monthly-review',
   'quarterly-review',
   'yearly-review',
-];
+] as const;
+type AllowedNoteType = (typeof ALLOWED_NOTE_TYPES)[number];
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
+}
+
+function asRecord(value: unknown): Record<string, unknown> | undefined {
+  return isRecord(value) ? value : undefined;
+}
+
+function getAllowedNoteType(value: unknown): AllowedNoteType | null {
+  switch (value) {
+    case 'monthly-review':
+    case 'quarterly-review':
+    case 'yearly-review':
+      return value;
+    default:
+      return null;
+  }
+}
+
+function toDateInput(
+  value: unknown
+): Date | string | number | null | undefined {
+  return value instanceof Date ||
+    typeof value === 'string' ||
+    typeof value === 'number' ||
+    value === null ||
+    value === undefined
+    ? value
+    : undefined;
+}
+
+function getNumberValue(
+  record: Record<string, unknown>,
+  key: string
+): number | undefined {
+  const value = record[key];
+  return typeof value === 'number' ? value : undefined;
+}
+
+function parseRecordDate(
+  record: Record<string, unknown>,
+  key: string
+): Date | null {
+  const value = record[key];
+  return parseLocalDateSafe(toDateInput(value));
+}
 
 const DEFAULT_CONFIG: MentalGameWidgetConfig = {
   showRating: true,
@@ -80,7 +128,7 @@ export const MentalGameWidget: React.FC<MentalGameWidgetProps> = React.memo(
     const [weeks, setWeeks] = useState<WeeklyGamePerformance[]>([]);
     const [monthlyData, setMonthlyData] = useState<MonthlyGameData[]>([]);
     const [loading, setLoading] = useState(true);
-    const [noteType, setNoteType] = useState<string | null>(null);
+    const [noteType, setNoteType] = useState<AllowedNoteType | null>(null);
     const [currentPage, setCurrentPage] = useState(0);
     const retryCountRef = useRef(0);
 
@@ -88,9 +136,8 @@ export const MentalGameWidget: React.FC<MentalGameWidgetProps> = React.memo(
     const isYearlyView = noteType === 'yearly-review';
 
     
-    const displayData = isYearlyView ? monthlyData : weeks;
     const pageSize = mergedConfig.pageSize || 5;
-    const totalItems = displayData.length;
+    const totalItems = isYearlyView ? monthlyData.length : weeks.length;
     const totalPages = pageSize > 0 ? Math.ceil(totalItems / pageSize) : 1;
     const isPaginated = pageSize > 0 && totalItems > pageSize;
 
@@ -99,12 +146,25 @@ export const MentalGameWidget: React.FC<MentalGameWidgetProps> = React.memo(
       Math.max(0, totalPages - 1)
     );
 
-    
-    const paginatedData = useMemo(() => {
-      if (!isPaginated) return displayData;
+    const paginatedMonths = useMemo(() => {
+      if (!isYearlyView) return [];
+      if (!isPaginated) return monthlyData;
       const start = effectiveCurrentPage * pageSize;
-      return displayData.slice(start, start + pageSize);
-    }, [displayData, effectiveCurrentPage, pageSize, isPaginated]);
+      return monthlyData.slice(start, start + pageSize);
+    }, [
+      monthlyData,
+      effectiveCurrentPage,
+      pageSize,
+      isPaginated,
+      isYearlyView,
+    ]);
+
+    const paginatedWeeks = useMemo(() => {
+      if (isYearlyView) return [];
+      if (!isPaginated) return weeks;
+      const start = effectiveCurrentPage * pageSize;
+      return weeks.slice(start, start + pageSize);
+    }, [weeks, effectiveCurrentPage, pageSize, isPaginated, isYearlyView]);
 
     
     const goToPrevPage = useCallback(() => {
@@ -142,23 +202,26 @@ export const MentalGameWidget: React.FC<MentalGameWidgetProps> = React.memo(
           }
 
           const cache = plugin.app.metadataCache.getFileCache(file);
-          const frontmatter = cache?.frontmatter;
+          const frontmatter = asRecord(cache?.frontmatter);
           if (!frontmatter) {
             
             if (retryCountRef.current < MAX_FRONTMATTER_RETRIES) {
               retryCountRef.current++;
-              setTimeout(() => loadData(), FRONTMATTER_RETRY_DELAY_MS);
+              window.setTimeout(
+                () => void loadData(),
+                FRONTMATTER_RETRY_DELAY_MS
+              );
               return;
             }
             setLoading(false);
             return;
           }
 
-          const type = frontmatter.type || null;
+          const type = getAllowedNoteType(frontmatter.type);
           setNoteType(type);
 
           
-          if (!ALLOWED_NOTE_TYPES.includes(type)) {
+          if (!type) {
             setLoading(false);
             return;
           }
@@ -179,11 +242,11 @@ export const MentalGameWidget: React.FC<MentalGameWidgetProps> = React.memo(
           
           if (type === 'monthly-review') {
             
-            let year = frontmatter.year;
-            let month = frontmatter.month;
+            let year = getNumberValue(frontmatter, 'year');
+            let month = getNumberValue(frontmatter, 'month');
             if (!year || !month) {
               
-              const date = parseLocalDateSafe(frontmatter.date);
+              const date = parseRecordDate(frontmatter, 'date');
               if (date) {
                 year = date.getFullYear();
                 month = date.getMonth() + 1;
@@ -199,12 +262,8 @@ export const MentalGameWidget: React.FC<MentalGameWidgetProps> = React.memo(
           } else if (type === 'quarterly-review') {
             
             
-            const quarterStart = frontmatter.quarterStart
-              ? parseLocalDateSafe(frontmatter.quarterStart)
-              : null;
-            const quarterEnd = frontmatter.quarterEnd
-              ? parseLocalDateSafe(frontmatter.quarterEnd)
-              : null;
+            const quarterStart = parseRecordDate(frontmatter, 'quarterStart');
+            const quarterEnd = parseRecordDate(frontmatter, 'quarterEnd');
 
             const months: { year: number; month: number }[] = [];
             if (quarterStart && quarterEnd) {
@@ -218,7 +277,7 @@ export const MentalGameWidget: React.FC<MentalGameWidgetProps> = React.memo(
               }
             } else {
               
-              const date = parseLocalDateSafe(frontmatter.date);
+              const date = parseRecordDate(frontmatter, 'date');
               if (date) {
                 const quarter = Math.floor(date.getMonth() / 3);
                 const year = date.getFullYear();
@@ -244,10 +303,11 @@ export const MentalGameWidget: React.FC<MentalGameWidgetProps> = React.memo(
             setWeeks(allWeeks);
           } else if (type === 'yearly-review') {
             
-            const parsedDate = parseLocalDateSafe(frontmatter.date);
+            const parsedDate = parseRecordDate(frontmatter, 'date');
             const year =
-              frontmatter.year ||
-              (parsedDate?.getFullYear() ?? new Date().getFullYear());
+              getNumberValue(frontmatter, 'year') ??
+              parsedDate?.getFullYear() ??
+              new Date().getFullYear();
 
             const monthlyResults = await Promise.all(
               Array.from({ length: 12 }, (_unused, index) => {
@@ -292,12 +352,12 @@ export const MentalGameWidget: React.FC<MentalGameWidgetProps> = React.memo(
         }
       };
 
-      loadData();
+      void loadData();
 
       
       const handleMetadataChange = (file: TFile) => {
         if (file.path === filePath) {
-          loadData();
+          void loadData();
         }
       };
 
@@ -435,7 +495,7 @@ export const MentalGameWidget: React.FC<MentalGameWidgetProps> = React.memo(
       );
     }
 
-    if (displayData.length === 0) {
+    if (totalItems === 0) {
       const periodText =
         noteType === 'yearly-review'
           ? 'this year'
@@ -451,7 +511,6 @@ export const MentalGameWidget: React.FC<MentalGameWidgetProps> = React.memo(
 
     
     if (isYearlyView) {
-      const paginatedMonths = paginatedData as MonthlyGameData[];
       return renderWithHeader(
         <>
           <table className="journalit-reviewv2-table journalit-reviewv2-table--compact journalit-game-performance-table">
@@ -481,7 +540,7 @@ export const MentalGameWidget: React.FC<MentalGameWidgetProps> = React.memo(
                 <tr
                   key={`month-${monthData.month}`}
                   className="journalit-reviewv2-table-row journalit-reviewv2-table-row--interactive journalit-game-performance-row"
-                  onClick={() => openMonthlyReview(monthData)}
+                  onClick={() => void openMonthlyReview(monthData)}
                 >
                   <td className="journalit-reviewv2-table-cell journalit-reviewv2-table-cell--compact">
                     {monthData.monthName}
@@ -545,7 +604,6 @@ export const MentalGameWidget: React.FC<MentalGameWidgetProps> = React.memo(
     }
 
     
-    const paginatedWeeks = paginatedData as WeeklyGamePerformance[];
     return renderWithHeader(
       <>
         <table className="journalit-reviewv2-table journalit-reviewv2-table--compact journalit-game-performance-table">
@@ -577,7 +635,7 @@ export const MentalGameWidget: React.FC<MentalGameWidgetProps> = React.memo(
 
               return (
                 <tr
-                  key={`week-${week.weekNumber}-${week.weekStartDate}`}
+                  key={`week-${week.weekNumber}-${week.weekStartDate.toISOString()}`}
                   className={[
                     'journalit-reviewv2-table-row',
                     'journalit-reviewv2-table-row--interactive',
@@ -588,7 +646,9 @@ export const MentalGameWidget: React.FC<MentalGameWidgetProps> = React.memo(
                   ]
                     .filter(Boolean)
                     .join(' ')}
-                  onClick={() => hasWeeklyReview && openWeeklyReview(week)}
+                  onClick={() => {
+                    if (hasWeeklyReview) void openWeeklyReview(week);
+                  }}
                 >
                   <td className="journalit-reviewv2-table-cell journalit-reviewv2-table-cell--compact">
                     W{week.weekNumber}

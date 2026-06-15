@@ -32,10 +32,52 @@ const GOALS_FIELD_MAP: Record<ReviewType, { goals: string; status: string }> = {
   'yearly-review': { goals: 'yearlyGoals', status: 'yearlyGoalStatus' },
 };
 
+function isReviewType(value: string): value is ReviewType {
+  switch (value) {
+    case 'drc':
+    case 'weekly-review':
+    case 'monthly-review':
+    case 'quarterly-review':
+    case 'yearly-review':
+      return true;
+    default:
+      return false;
+  }
+}
 
-const SUPPORTED_TYPES: ReviewType[] = Object.keys(
-  GOALS_FIELD_MAP
-) as ReviewType[];
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  Boolean(value) && typeof value === 'object' && !Array.isArray(value);
+
+const getStringArray = (
+  record: Record<string, unknown>,
+  key: string
+): string[] => {
+  const value = record[key];
+  if (!Array.isArray(value)) return [];
+  const strings: string[] = [];
+  for (const item of value) {
+    if (typeof item === 'string') strings.push(item);
+  }
+  return strings;
+};
+
+const getBooleanRecord = (
+  record: Record<string, unknown>,
+  key: string
+): Record<string, boolean> => {
+  const value = record[key];
+  if (!isRecord(value)) {
+    return {};
+  }
+  const booleanRecord: Record<string, boolean> = {};
+  for (const itemKey in value) {
+    const itemValue = value[itemKey];
+    if (typeof itemValue === 'boolean') {
+      booleanRecord[itemKey] = itemValue;
+    }
+  }
+  return booleanRecord;
+};
 
 interface GoalItem {
   text: string;
@@ -74,7 +116,7 @@ export const GoalsWidget: React.FC<GoalsWidgetProps> = React.memo(
     const newGoalInputRef = useRef<HTMLInputElement>(null);
     const retryCountRef = useRef(0);
     const isValidContextRef = useRef(true);
-    const retryTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const retryTimeoutRef = useRef<number | null>(null);
 
     
     const loadGoals = useCallback(async () => {
@@ -89,15 +131,15 @@ export const GoalsWidget: React.FC<GoalsWidgetProps> = React.memo(
       const cache = plugin.app.metadataCache.getFileCache(file);
       const frontmatter = cache?.frontmatter;
 
-      if (!frontmatter) {
+      if (!isRecord(frontmatter)) {
         
         if (retryCountRef.current < MAX_FRONTMATTER_RETRIES) {
           retryCountRef.current++;
           if (retryTimeoutRef.current !== null) {
-            clearTimeout(retryTimeoutRef.current);
+            window.clearTimeout(retryTimeoutRef.current);
           }
-          retryTimeoutRef.current = setTimeout(
-            () => loadGoals(),
+          retryTimeoutRef.current = window.setTimeout(
+            () => void loadGoals(),
             FRONTMATTER_RETRY_DELAY_MS
           );
           return;
@@ -108,23 +150,21 @@ export const GoalsWidget: React.FC<GoalsWidgetProps> = React.memo(
         return;
       }
 
-      const type = frontmatter.type as string;
-      if (!SUPPORTED_TYPES.includes(type as ReviewType)) {
+      const type = typeof frontmatter.type === 'string' ? frontmatter.type : '';
+      if (!isReviewType(type)) {
         setIsValidContext(false);
         isValidContextRef.current = false;
         setLoading(false);
         return;
       }
 
-      
-      const validType = type as ReviewType;
+      const validType = type;
       setReviewType(validType);
       const fieldMap = GOALS_FIELD_MAP[validType];
 
       
-      const goalsArray: string[] = frontmatter[fieldMap.goals] || [];
-      const goalStatus: Record<string, boolean> =
-        frontmatter[fieldMap.status] || {};
+      const goalsArray = getStringArray(frontmatter, fieldMap.goals);
+      const goalStatus = getBooleanRecord(frontmatter, fieldMap.status);
 
       
       const goalItems: GoalItem[] = goalsArray.map((text, index) => ({
@@ -149,7 +189,7 @@ export const GoalsWidget: React.FC<GoalsWidgetProps> = React.memo(
       }
 
       retryCountRef.current = 0;
-      loadGoals();
+      void loadGoals();
 
       
       
@@ -157,7 +197,7 @@ export const GoalsWidget: React.FC<GoalsWidgetProps> = React.memo(
       
       const handleMetadataChange = (file: TFile) => {
         if (file.path === filePath) {
-          loadGoals();
+          void loadGoals();
         }
       };
 
@@ -166,7 +206,7 @@ export const GoalsWidget: React.FC<GoalsWidgetProps> = React.memo(
       return () => {
         plugin.app.metadataCache.off('changed', handleMetadataChange);
         if (retryTimeoutRef.current !== null) {
-          clearTimeout(retryTimeoutRef.current);
+          window.clearTimeout(retryTimeoutRef.current);
           retryTimeoutRef.current = null;
         }
       };
@@ -206,8 +246,10 @@ export const GoalsWidget: React.FC<GoalsWidgetProps> = React.memo(
         } else {
           
           await plugin.app.fileManager.processFrontMatter(file, (fm) => {
-            fm[fieldMap.goals] = goalsArray;
-            fm[fieldMap.status] = goalStatus;
+            if (!isRecord(fm)) return;
+            const frontmatter = fm;
+            frontmatter[fieldMap.goals] = goalsArray;
+            frontmatter[fieldMap.status] = goalStatus;
           });
         }
       } catch (error) {
@@ -278,7 +320,7 @@ export const GoalsWidget: React.FC<GoalsWidgetProps> = React.memo(
     const handleEditKeyDown = (e: React.KeyboardEvent) => {
       if (e.key === 'Enter') {
         e.preventDefault();
-        handleSaveEdit();
+        void handleSaveEdit();
       } else if (e.key === 'Escape') {
         handleCancelEdit();
       }
@@ -338,7 +380,7 @@ export const GoalsWidget: React.FC<GoalsWidgetProps> = React.memo(
     const handleNewGoalKeyDown = (e: React.KeyboardEvent) => {
       if (e.key === 'Enter') {
         e.preventDefault();
-        handleAddGoal();
+        void handleAddGoal();
       }
     };
 
@@ -455,7 +497,7 @@ export const GoalsWidget: React.FC<GoalsWidgetProps> = React.memo(
                 <input
                   type="checkbox"
                   checked={goal.checked}
-                  onChange={() => handleToggleGoal(index)}
+                  onChange={() => void handleToggleGoal(index)}
                   className="journalit-reviewv2-checkbox"
                 />
 
@@ -471,7 +513,7 @@ export const GoalsWidget: React.FC<GoalsWidgetProps> = React.memo(
                       className="journalit-reviewv2-edit-input"
                     />
                     <button
-                      onClick={handleSaveEdit}
+                      onClick={() => void handleSaveEdit()}
                       aria-label={t('button.save')}
                       className="journalit-reviewv2-action-button journalit-reviewv2-action-button--primary"
                     >
@@ -489,11 +531,11 @@ export const GoalsWidget: React.FC<GoalsWidgetProps> = React.memo(
                   <span
                     role="button"
                     tabIndex={0}
-                    onClick={() => handleToggleGoal(index)}
+                    onClick={() => void handleToggleGoal(index)}
                     onKeyDown={(e) => {
                       if (e.key !== 'Enter' && e.key !== ' ') return;
                       e.preventDefault();
-                      handleToggleGoal(index);
+                      void handleToggleGoal(index);
                     }}
                     className={`journalit-reviewv2-item-text ${
                       goal.checked
@@ -509,14 +551,14 @@ export const GoalsWidget: React.FC<GoalsWidgetProps> = React.memo(
                 {!preview && editingIndex !== index && (
                   <>
                     <button
-                      onClick={() => handleStartEdit(index)}
+                      onClick={() => void handleStartEdit(index)}
                       aria-label={t('widget.goals.aria.edit')}
                       className="journalit-reviewv2-icon-button"
                     >
                       {t('button.edit')}
                     </button>
                     <button
-                      onClick={() => handleDeleteGoal(index)}
+                      onClick={() => void handleDeleteGoal(index)}
                       aria-label={t('widget.goals.aria.delete')}
                       className="journalit-reviewv2-icon-button journalit-reviewv2-icon-button--delete"
                     >
@@ -549,7 +591,7 @@ export const GoalsWidget: React.FC<GoalsWidgetProps> = React.memo(
                   className="journalit-reviewv2-add-input"
                 />
                 <button
-                  onClick={handleAddGoal}
+                  onClick={() => void handleAddGoal()}
                   disabled={!newGoalText.trim()}
                   className="journalit-reviewv2-add-button"
                 >

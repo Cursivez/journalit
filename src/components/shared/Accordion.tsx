@@ -3,7 +3,6 @@
 import React, { useCallback, useEffect, useLayoutEffect } from 'react';
 import { useOptimizedAccordion } from '../../hooks/useOptimizedAccordion';
 import { cssVars } from '../../styles/inlineStylePolicy';
-import { ensureAccordionStyles } from '../../styles/accordionStyles';
 import { ChevronDown } from './icons/ObsidianIcon';
 
 interface AccordionProps {

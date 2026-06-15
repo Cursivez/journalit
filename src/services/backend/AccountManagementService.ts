@@ -10,6 +10,23 @@ import {
 import { eventBus } from '../events';
 import { normalizeAccountLookupKey } from '../trade/core/TradeAccountIdentity';
 
+interface ApiAccountInfo {
+  accountId?: string | number;
+  account_id?: string | number;
+  mt_account_id?: string | number;
+  displayName?: string;
+  display_name?: string;
+  brokerName?: string;
+  broker_name?: string;
+  firstSeen?: string;
+  first_seen?: string;
+  lastSeen?: string;
+  last_seen?: string;
+  status?: AccountInfo['status'];
+  ignoredAt?: string;
+  ignored_at?: string;
+}
+
 export class AccountManagementService {
   private plugin: JournalitPlugin;
 
@@ -281,11 +298,9 @@ export class AccountManagementService {
       const url = ApiClient.buildUrl('/api/v1/mt-accounts', {
         status: options?.status,
       });
-      const response = await ApiClient.makeRequest<{ accounts: AccountInfo[] }>(
-        url,
-        { method: 'GET' },
-        'fetch user accounts'
-      );
+      const response = await ApiClient.makeRequest<{
+        accounts: ApiAccountInfo[];
+      }>(url, { method: 'GET' }, 'fetch user accounts');
 
       if (!response) {
         return [];
@@ -294,20 +309,25 @@ export class AccountManagementService {
       
       const accounts = response.accounts || [];
 
-      const transformedAccounts = accounts.map((account: any) => ({
-        accountId: String(
-          account.accountId || account.account_id || account.mt_account_id || ''
-        ),
-        displayName:
-          account.displayName ||
-          account.display_name ||
-          `Account-${account.account_id || account.mt_account_id || 'Unknown'}`,
-        brokerName: account.brokerName || account.broker_name,
-        firstSeen: account.firstSeen || account.first_seen,
-        lastSeen: account.lastSeen || account.last_seen,
-        status: account.status,
-        ignoredAt: account.ignoredAt || account.ignored_at,
-      }));
+      const transformedAccounts = accounts.map(
+        (account): AccountInfo => ({
+          accountId: String(
+            account.accountId ||
+              account.account_id ||
+              account.mt_account_id ||
+              ''
+          ),
+          displayName:
+            account.displayName ||
+            account.display_name ||
+            `Account-${account.account_id || account.mt_account_id || 'Unknown'}`,
+          brokerName: account.brokerName || account.broker_name,
+          firstSeen: account.firstSeen || account.first_seen,
+          lastSeen: account.lastSeen || account.last_seen,
+          status: account.status,
+          ignoredAt: account.ignoredAt || account.ignored_at,
+        })
+      );
 
       return transformedAccounts;
     } catch (error) {
@@ -458,7 +478,7 @@ export class AccountManagementService {
     userId: string,
     limit: number = 100,
     offset: number = 0
-  ): Promise<any[]> {
+  ): Promise<unknown[]> {
     try {
       
       const url = ApiClient.buildUrl(
@@ -470,7 +490,7 @@ export class AccountManagementService {
       );
 
       const response = await ApiClient.makeRequest<{
-        trades: any[];
+        trades: unknown[];
         count: number;
         total_count: number;
       }>(url, { method: 'GET' }, 'fetch account trades');

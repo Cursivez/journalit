@@ -1,9 +1,5 @@
 
-
-const PATH_CHANGE_INSTRUCTION_MODAL_STYLE_ID =
-  'journalit-path-change-instruction-modal-styles';
-
-const PATH_CHANGE_INSTRUCTION_MODAL_STYLES = `
+export const PATH_CHANGE_INSTRUCTION_MODAL_STYLES = `
   .path-change-instruction-modal .path-change-instruction-content {
     font-family: var(--default-font);
     font-size: 14px;
@@ -152,13 +148,3 @@ const PATH_CHANGE_INSTRUCTION_MODAL_STYLES = `
     min-width: 120px;
   }
 `;
-
-const pathChangeInstructionModalStylesInjected = false;
-
-function injectPathChangeInstructionModalStyles(): void {
-  return;
-}
-
-export function ensurePathChangeInstructionModalStyles(): void {
-  return;
-}

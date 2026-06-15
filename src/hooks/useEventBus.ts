@@ -4,14 +4,18 @@ import { useEffect, useRef } from 'react';
 import { eventBus } from '../services/events';
 import type { EventName, EventMap, EventCallback } from '../services/events';
 
+type EventBusHandler<K extends EventName> = EventMap[K] extends void
+  ? EventCallback<K>
+  : EventCallback<K>;
+
 
 export function useEventBus<K extends EventName>(
   event: K,
-  handler: EventCallback<K>,
+  handler: EventBusHandler<K>,
   enabled: boolean = true
 ): void {
   
-  const savedHandler = useRef<EventCallback<K>>(handler);
+  const savedHandler = useRef<EventBusHandler<K>>(handler);
 
   
   useEffect(() => {
@@ -22,13 +26,9 @@ export function useEventBus<K extends EventName>(
     if (!enabled) return;
 
     
-    const eventHandler = ((payload: EventMap[K]) => {
-      if (payload !== undefined) {
-        (savedHandler.current as (p: EventMap[K]) => void)(payload);
-      } else {
-        (savedHandler.current as () => void)();
-      }
-    }) as EventCallback<K>;
+    const eventHandler: EventCallback<K> = (payload) => {
+      void savedHandler.current(payload);
+    };
 
     
     const unsubscribe = eventBus.subscribe(event, eventHandler);
@@ -41,10 +41,10 @@ export function useEventBus<K extends EventName>(
 
 export function useEventBusMultiple<K extends EventName>(
   events: K[],
-  handler: () => void,
+  handler: () => void | Promise<void>,
   enabled: boolean = true
 ): void {
-  const savedHandler = useRef<() => void>(handler);
+  const savedHandler = useRef<() => void | Promise<void>>(handler);
 
   useEffect(() => {
     savedHandler.current = handler;
@@ -54,12 +54,11 @@ export function useEventBusMultiple<K extends EventName>(
     if (!enabled) return;
 
     const unsubscribes: Array<() => void> = [];
+    const eventHandler = (): void => {
+      void savedHandler.current();
+    };
 
     for (const event of events) {
-      const eventHandler = (() => {
-        savedHandler.current();
-      }) as EventCallback<K>;
-
       unsubscribes.push(eventBus.subscribe(event, eventHandler));
     }
 

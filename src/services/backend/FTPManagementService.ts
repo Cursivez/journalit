@@ -10,6 +10,15 @@ import { FTPCredentials } from './types';
 import { ErrorHandler, ErrorContext } from '../../utils/errorHandler';
 import { BackendSecretStorage } from './BackendSecretStorage';
 
+interface FTPUserResponse {
+  user_id?: number;
+  username: string;
+  password?: string;
+  server?: string;
+  port?: number;
+  last_password_reset?: string;
+}
+
 export class FTPManagementService {
   private plugin: JournalitPlugin;
 
@@ -43,7 +52,7 @@ export class FTPManagementService {
       }
 
       const url = ApiClient.buildUrl(`/api/v1/ftp-users/${username}`);
-      const response = await ApiClient.makeRequest<any>(
+      const response = await ApiClient.makeRequest<FTPUserResponse>(
         url,
         { method: 'GET', headers },
         'get FTP credentials'
@@ -105,7 +114,7 @@ export class FTPManagementService {
       }
 
       const url = ApiClient.buildUrl('/api/v1/ftp-users/auto-create');
-      const response = await ApiClient.makeRequest<any>(
+      const response = await ApiClient.makeRequest<FTPUserResponse>(
         url,
         {
           method: 'POST',
@@ -166,7 +175,7 @@ export class FTPManagementService {
       }
 
       const url = ApiClient.buildUrl('/api/v1/ftp-users/auto-create');
-      const response = await ApiClient.makeRequest<any>(
+      const response = await ApiClient.makeRequest<FTPUserResponse>(
         url,
         {
           method: 'POST',
@@ -228,7 +237,7 @@ export class FTPManagementService {
       }
 
       const url = ApiClient.buildUrl('/api/v1/ftp-users/create');
-      const response = await ApiClient.makeRequest<any>(
+      const response = await ApiClient.makeRequest<FTPUserResponse>(
         url,
         {
           method: 'POST',
@@ -307,7 +316,7 @@ export class FTPManagementService {
       }
 
       const url = ApiClient.buildUrl(`/api/v1/ftp-users/${ftpUserId}/password`);
-      const response = await ApiClient.makeRequest<any>(
+      const response = await ApiClient.makeRequest<FTPUserResponse>(
         url,
         {
           method: 'PUT',

@@ -1,6 +1,6 @@
 
 
-const ACCOUNT_DASHBOARD_SKELETON_STYLES = `
+export const ACCOUNT_DASHBOARD_SKELETON_STYLES = `
 .journalit-account-dashboard .account-dashboard-skeleton {
   width: 100%;
   min-height: 100%;
@@ -101,11 +101,3 @@ const ACCOUNT_DASHBOARD_SKELETON_STYLES = `
   }
 }
 `;
-
-export function injectAccountDashboardSkeletonStyles(): void {
-  return;
-}
-
-export function removeAccountDashboardSkeletonStyles(): void {
-  return;
-}

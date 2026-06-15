@@ -6,7 +6,6 @@ import JournalitPlugin from '../../../main';
 import { DrawdownType } from '../../../services/account/types';
 import { SkeletonBox } from '../../shared/SkeletonBox';
 import { SkeletonText } from '../../shared/SkeletonText';
-import { ensureHomeWidgetStyles } from '../../../styles/homeWidgetStyles';
 import { cssVars } from '../../../styles/inlineStylePolicy';
 import { calculateDrawdownUsed as calculateDrawdownPercent } from '../../account/dashboard/utils';
 import { useHomeAccount } from '../context/HomeAccountContext';
@@ -197,7 +196,7 @@ const DrawdownMonitorWidgetComponent: React.FC<DrawdownMonitorWidgetProps> = ({
   
   const handleAccountClick = useCallback(
     (accountName: string) => {
-      plugin.viewManager.openAccountPageView(accountName);
+      void plugin.viewManager.openAccountPageView(accountName);
     },
     [plugin]
   );

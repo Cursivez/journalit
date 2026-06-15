@@ -1,4 +1,10 @@
 {
+  "1.7.9": {
+    "title": "Obsidian Plugin Submission",
+    "description": "Prepared Journalit for Obsidian plugin submission with a bunch of fixes, cleanup, and minor UI polish.",
+    "features": [],
+    "content": "# **[1.7.9] - 2026/06/15**\nPrepared Journalit for Obsidian plugin submission with a bunch of fixes, cleanup, and minor UI polish."
+  },
   "1.7.8": {
     "title": "Copy Trading & Better Imports",
     "description": "Copy trading, better media support, new dashboard metrics, automatic commissions, and a lot of accuracy/UI fixes.",

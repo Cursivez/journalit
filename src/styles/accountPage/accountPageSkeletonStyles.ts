@@ -1,6 +1,6 @@
 
 
-const ACCOUNT_PAGE_SKELETON_STYLES = `
+export const ACCOUNT_PAGE_SKELETON_STYLES = `
 .journalit-account-page-view .account-page-skeleton {
   width: 100%;
   flex: 1 1 0;
@@ -91,12 +91,3 @@ const ACCOUNT_PAGE_SKELETON_STYLES = `
 `;
 
 
-const referenceCount = 0;
-
-export function injectAccountPageSkeletonStyles(): void {
-  return;
-}
-
-export function removeAccountPageSkeletonStyles(): void {
-  return;
-}

@@ -118,7 +118,7 @@ class ImageService {
         error &&
         typeof error === 'object' &&
         'code' in error &&
-        error.code === 'ENOENT'
+        Reflect.get(error, 'code') === 'ENOENT'
       ) {
         logger.debug(
           `Image file already deleted or doesn't exist: ${imagePath}`
@@ -366,7 +366,7 @@ class ImageService {
             }
           }
         }
-      } catch (_err) {
+      } catch {
         // intentional
       }
 

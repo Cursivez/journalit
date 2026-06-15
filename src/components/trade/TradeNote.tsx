@@ -32,6 +32,35 @@ import {
   resolveBreakEvenAccountBalances,
 } from '../../services/trade/core/BreakEvenAccountBalance';
 
+const TRADE_NAV_CACHE_PREFIX = 'trade-nav-';
+
+const parseTradeNavigationCache = (
+  value: unknown
+): { trades: string[]; missedTrades: string[] } | null => {
+  if (Array.isArray(value)) {
+    return {
+      trades: value.filter((item): item is string => typeof item === 'string'),
+      missedTrades: [],
+    };
+  }
+
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    return null;
+  }
+
+  const record = Object.fromEntries(Object.entries(value));
+  return {
+    trades: Array.isArray(record.trades)
+      ? record.trades.filter((item): item is string => typeof item === 'string')
+      : [],
+    missedTrades: Array.isArray(record.missedTrades)
+      ? record.missedTrades.filter(
+          (item): item is string => typeof item === 'string'
+        )
+      : [],
+  };
+};
+
 interface TradeNoteProps {
   data: PartialTradeFrontmatter;
   onEditClick?: (data: TradeNoteProps['data']) => void;
@@ -110,7 +139,7 @@ export const TradeNote: React.FC<TradeNoteProps> = React.memo(
           const balanceLookup =
             await fetchBreakEvenAccountBalanceLookup(plugin);
           const resolution = resolveBreakEvenAccountBalances(
-            tradeAccountIdentityInput as unknown as Record<string, unknown>,
+            Object.fromEntries(Object.entries(tradeAccountIdentityInput)),
             balanceLookup,
             {
               resolveAccountIdDisplayName: (accountId) =>
@@ -123,7 +152,7 @@ export const TradeNote: React.FC<TradeNoteProps> = React.memo(
           if (!isMounted) return;
 
           setBreakEvenAccountCurrentBalance(resolution.singleBalance);
-        } catch (_error) {
+        } catch {
           if (isMounted) {
             setBreakEvenAccountCurrentBalance(undefined);
           }
@@ -179,9 +208,7 @@ export const TradeNote: React.FC<TradeNoteProps> = React.memo(
         const tradeTemplateService = new TradeTemplateService(plugin);
         
         if (data.templateId) {
-          const template = tradeTemplateService.getTemplate(
-            data.templateId as string
-          );
+          const template = tradeTemplateService.getTemplate(data.templateId);
           if (template) return template;
         }
         
@@ -196,7 +223,7 @@ export const TradeNote: React.FC<TradeNoteProps> = React.memo(
         console.error('[TradeNote] Error loading trade template:', error);
         return null;
       }
-      // eslint-disable-next-line react-hooks/exhaustive-deps
+      // eslint-disable-next-line react-hooks/exhaustive-deps -- initial data load is controlled by trade identity, not every derived dependency
     }, [plugin, data.templateId, templateRefreshKey]);
 
     
@@ -620,15 +647,14 @@ const TradeNavigationSection: React.FC<{
         action === 'updated' ||
         action === 'relocated'
       ) {
-        if (cacheKey) {
+        if (cacheKey && plugin) {
           
-          setTimeout(() => {
+          window.setTimeout(() => {
             
-            Object.keys(sessionStorage).forEach((key) => {
-              if (key.startsWith('trade-nav-')) {
-                sessionStorage.removeItem(key);
-              }
-            });
+            plugin.app.saveLocalStorage(
+              `${TRADE_NAV_CACHE_PREFIX}${cacheKey}`,
+              null
+            );
 
             
             setTrades([]);
@@ -639,7 +665,7 @@ const TradeNavigationSection: React.FC<{
         }
       }
     },
-    [cacheKey]
+    [cacheKey, plugin]
   );
 
   useEventBus('trade:changed', handleTradeDataChange);
@@ -654,29 +680,25 @@ const TradeNavigationSection: React.FC<{
     }
 
     let isMounted = true;
-    let fetchTimeoutId: ReturnType<typeof setTimeout> | null = null;
+    let fetchTimeoutId: number | null = null;
 
     const fetchTradesOnce = async () => {
       try {
         
-        const cachedTrades = sessionStorage.getItem(`trade-nav-${cacheKey}`);
+        const cachedTrades: unknown = plugin.app.loadLocalStorage(
+          `${TRADE_NAV_CACHE_PREFIX}${cacheKey}`
+        );
 
         if (cachedTrades) {
           
-          const parsedData = JSON.parse(cachedTrades);
+          const parsedData = parseTradeNavigationCache(cachedTrades);
           if (isMounted) {
-            
-            let tradePaths: string[] = [];
-            let missedTradePaths: string[] = [];
-
-            if (Array.isArray(parsedData)) {
-              
-              tradePaths = parsedData;
-            } else if (parsedData && typeof parsedData === 'object') {
-              
-              tradePaths = parsedData.trades || [];
-              missedTradePaths = parsedData.missedTrades || [];
+            if (!parsedData) {
+              return;
             }
+
+            const { trades: tradePaths, missedTrades: missedTradePaths } =
+              parsedData;
 
             
             const tradeFiles = tradePaths
@@ -714,7 +736,10 @@ const TradeNavigationSection: React.FC<{
                 missedTradeFiles.length === 0 &&
                 allCachedPaths.length > 0)
             ) {
-              sessionStorage.removeItem(`trade-nav-${cacheKey}`);
+              plugin.app.saveLocalStorage(
+                `${TRADE_NAV_CACHE_PREFIX}${cacheKey}`,
+                null
+              );
               
             } else {
               setTrades(tradeFiles);
@@ -728,62 +753,67 @@ const TradeNavigationSection: React.FC<{
         if (isLoading) return;
 
         
-        fetchTimeoutId = setTimeout(async () => {
-          try {
-            if (!isMounted) return;
-            setIsLoading(true);
-
-            
-            
-            const dayTrades = await plugin.tradeService.getTrades(
-              dateRange.startDate,
-              dateRange.endDate
-            );
-
-            
-            let dayMissedTrades: TFile[] = [];
+        fetchTimeoutId = window.setTimeout(() => {
+          void (async () => {
             try {
-              if (plugin.missedTradeService?.getMissedTrades) {
-                dayMissedTrades =
-                  await plugin.missedTradeService.getMissedTrades(
-                    dateRange.startDate,
-                    dateRange.endDate
-                  );
-              }
-            } catch (error) {
-              console.warn('[TradeNote] Failed to fetch missed trades:', error);
-            }
-
-            
-            if (isMounted) {
-              setTrades(dayTrades);
-              setMissedTrades(dayMissedTrades);
+              if (!isMounted) return;
+              setIsLoading(true);
 
               
+              
+              const dayTrades = await plugin.tradeService.getTrades(
+                dateRange.startDate,
+                dateRange.endDate
+              );
+
+              
+              let dayMissedTrades: TFile[] = [];
               try {
+                if (plugin.missedTradeService?.getMissedTrades) {
+                  dayMissedTrades =
+                    await plugin.missedTradeService.getMissedTrades(
+                      dateRange.startDate,
+                      dateRange.endDate
+                    );
+                }
+              } catch (error) {
+                console.warn(
+                  '[TradeNote] Failed to fetch missed trades:',
+                  error
+                );
+              }
+
+              
+              if (isMounted) {
+                setTrades(dayTrades);
+                setMissedTrades(dayMissedTrades);
+
                 
-                const tradePaths = dayTrades.map((file) => file.path);
-                const missedTradePaths = dayMissedTrades.map(
-                  (file) => file.path
-                );
-                sessionStorage.setItem(
-                  `trade-nav-${cacheKey}`,
-                  JSON.stringify({
-                    trades: tradePaths,
-                    missedTrades: missedTradePaths,
-                  })
-                );
-              } catch (cacheError) {
-                console.warn('Error caching trades:', cacheError);
+                try {
+                  
+                  const tradePaths = dayTrades.map((file) => file.path);
+                  const missedTradePaths = dayMissedTrades.map(
+                    (file) => file.path
+                  );
+                  plugin.app.saveLocalStorage(
+                    `${TRADE_NAV_CACHE_PREFIX}${cacheKey}`,
+                    {
+                      trades: tradePaths,
+                      missedTrades: missedTradePaths,
+                    }
+                  );
+                } catch (cacheError) {
+                  console.warn('Error caching trades:', cacheError);
+                }
+              }
+            } catch (error) {
+              console.error('Error fetching trades for day:', error);
+            } finally {
+              if (isMounted) {
+                setIsLoading(false);
               }
             }
-          } catch (error) {
-            console.error('Error fetching trades for day:', error);
-          } finally {
-            if (isMounted) {
-              setIsLoading(false);
-            }
-          }
+          })();
         }, 100); 
       } catch (error) {
         console.error('Error in trade fetch setup:', error);
@@ -793,13 +823,13 @@ const TradeNavigationSection: React.FC<{
       }
     };
 
-    fetchTradesOnce();
+    void fetchTradesOnce();
 
     
     return () => {
       isMounted = false;
       if (fetchTimeoutId) {
-        clearTimeout(fetchTimeoutId);
+        window.clearTimeout(fetchTimeoutId);
       }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps -- isLoading intentionally excluded: including it causes race condition where setIsLoading(true) triggers cleanup before async fetch completes
@@ -818,9 +848,9 @@ const TradeNavigationSection: React.FC<{
     (path: string, openInNewLeaf: boolean = false) => {
       try {
         if (plugin && plugin.openFile) {
-          plugin.openFile(path, openInNewLeaf);
+          void plugin.openFile(path, openInNewLeaf);
         } else if (plugin?.app) {
-          plugin.app.workspace.openLinkText(path, '', openInNewLeaf);
+          void plugin.app.workspace.openLinkText(path, '', openInNewLeaf);
         } else {
           console.error(
             'Cannot navigate: Plugin and App context not available.'

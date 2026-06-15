@@ -4,7 +4,7 @@ import React, { useState, useMemo, useCallback } from 'react';
 import { Input, ComboBox } from '../../../core';
 import { FormSection } from '../FormSection';
 import { TradeFormData, TradeFormErrors, TradeFormValue } from '../types';
-import { getApp } from '../../../../utils/obsidian';
+import { getPluginInstance } from '../../../../utils/pluginContext';
 import { CustomOptionsService, OptionType } from '../../../../services/options';
 import { useEventBus } from '../../../../hooks';
 import { t } from '../../../../lang/helpers';
@@ -12,6 +12,21 @@ import { t } from '../../../../lang/helpers';
 const EMPTY_ACCOUNT_OPTIONS: Array<{ id: string; name: string }> = [];
 const EMPTY_SETUP_OPTIONS: Array<{ id: string; name: string }> = [];
 const EMPTY_MISTAKE_OPTIONS: Array<{ id: string; name: string }> = [];
+
+function getOptionsService(): CustomOptionsService {
+  const plugin = getPluginInstance();
+  if (!plugin) {
+    throw new Error('Journalit plugin instance is unavailable.');
+  }
+
+  return plugin.optionsService ?? new CustomOptionsService(plugin);
+}
+
+function asStringArray(value: unknown): string[] {
+  return Array.isArray(value)
+    ? value.filter((item): item is string => typeof item === 'string')
+    : [];
+}
 
 interface CommonFieldsProps {
   
@@ -41,12 +56,7 @@ const CommonFieldsComponent: React.FC<CommonFieldsProps> = ({
   const [optionsVersion, setOptionsVersion] = useState(0);
 
   
-  const optionsService = useMemo(() => {
-    const plugin = getApp().plugins?.plugins?.['journalit'];
-    return plugin && plugin.optionsService
-      ? plugin.optionsService
-      : new CustomOptionsService(plugin);
-  }, []);
+  const optionsService = useMemo(() => getOptionsService(), []);
 
   
   const tagOptions = useMemo(() => {
@@ -90,11 +100,7 @@ const CommonFieldsComponent: React.FC<CommonFieldsProps> = ({
   
   const handleSaveTag = async (option: string) => {
     try {
-      
-      const plugin = getApp().plugins?.plugins?.['journalit'];
-      const optionsService = plugin
-        ? plugin.optionsService
-        : new CustomOptionsService(plugin);
+      const optionsService = getOptionsService();
       const added = await optionsService.addOption(OptionType.TAG, option);
       if (added) {
         
@@ -108,11 +114,7 @@ const CommonFieldsComponent: React.FC<CommonFieldsProps> = ({
   
   const handleSaveSetup = async (option: string) => {
     try {
-      
-      const plugin = getApp().plugins?.plugins?.['journalit'];
-      const optionsService = plugin
-        ? plugin.optionsService
-        : new CustomOptionsService(plugin);
+      const optionsService = getOptionsService();
       const added = await optionsService.addOption(OptionType.SETUP, option);
       if (added) {
         
@@ -126,11 +128,7 @@ const CommonFieldsComponent: React.FC<CommonFieldsProps> = ({
   
   const handleSaveMistake = async (option: string) => {
     try {
-      
-      const plugin = getApp().plugins?.plugins?.['journalit'];
-      const optionsService = plugin
-        ? plugin.optionsService
-        : new CustomOptionsService(plugin);
+      const optionsService = getOptionsService();
       const added = await optionsService.addOption(OptionType.MISTAKE, option);
       if (added) {
         
@@ -150,7 +148,7 @@ const CommonFieldsComponent: React.FC<CommonFieldsProps> = ({
           value={Array.isArray(data.setup) ? data.setup : []}
           onChange={(value) => {
             
-            const selectedValues = Array.isArray(value) ? value : [];
+            const selectedValues = asStringArray(value);
 
             
             onChange('setup', selectedValues);
@@ -169,7 +167,7 @@ const CommonFieldsComponent: React.FC<CommonFieldsProps> = ({
           value={Array.isArray(data.mistake) ? data.mistake : []}
           onChange={(value) => {
             
-            const selectedValues = Array.isArray(value) ? value : [];
+            const selectedValues = asStringArray(value);
 
             
             onChange('mistake', selectedValues);
@@ -190,7 +188,7 @@ const CommonFieldsComponent: React.FC<CommonFieldsProps> = ({
             
 
             
-            const selectedValues = Array.isArray(value) ? value : [];
+            const selectedValues = asStringArray(value);
 
             onChange('customTags', selectedValues);
           }}

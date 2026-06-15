@@ -4,6 +4,12 @@ import { Component } from 'obsidian';
 import JournalitPlugin from '../../main';
 import { ONBOARDING_VERSION, OnboardingData } from './types';
 
+function asRecord(value: unknown): Record<string, unknown> | undefined {
+  return value && typeof value === 'object' && !Array.isArray(value)
+    ? Object.fromEntries(Object.entries(value))
+    : undefined;
+}
+
 export class OnboardingService extends Component {
   private plugin: JournalitPlugin;
   private data: OnboardingData;
@@ -69,8 +75,9 @@ export class OnboardingService extends Component {
 
   private async loadData(): Promise<void> {
     try {
-      const pluginData = await this.plugin.loadData();
-      const persisted = pluginData?.localMeta?.onboarding;
+      const pluginData = asRecord(await this.plugin.loadData());
+      const localMeta = asRecord(pluginData?.localMeta);
+      const persisted = localMeta?.onboarding;
 
       if (persisted) {
         this.data = this.migrateData(persisted);
@@ -87,28 +94,31 @@ export class OnboardingService extends Component {
     }
   }
 
-  
-
-  private migrateData(oldData: any): OnboardingData {
+  private migrateData(oldData: unknown): OnboardingData {
+    const oldDataRecord = asRecord(oldData);
     const data: OnboardingData = this.getDefaultData();
 
-    if (typeof oldData.completed === 'boolean') {
-      data.completed = oldData.completed;
-    }
-    if (typeof oldData.completedAt === 'number') {
-      data.completedAt = oldData.completedAt;
+    if (!oldDataRecord) {
+      return data;
     }
 
-    if (typeof oldData.skipped === 'boolean') {
-      data.skipped = oldData.skipped;
+    if (typeof oldDataRecord.completed === 'boolean') {
+      data.completed = oldDataRecord.completed;
     }
-    if (typeof oldData.skippedAt === 'number') {
-      data.skippedAt = oldData.skippedAt;
+    if (typeof oldDataRecord.completedAt === 'number') {
+      data.completedAt = oldDataRecord.completedAt;
+    }
+
+    if (typeof oldDataRecord.skipped === 'boolean') {
+      data.skipped = oldDataRecord.skipped;
+    }
+    if (typeof oldDataRecord.skippedAt === 'number') {
+      data.skippedAt = oldDataRecord.skippedAt;
     }
 
     
-    if (typeof oldData.version === 'number') {
-      data.version = oldData.version;
+    if (typeof oldDataRecord.version === 'number') {
+      data.version = oldDataRecord.version;
     }
 
     return data;
@@ -125,8 +135,8 @@ export class OnboardingService extends Component {
       this.pendingSaveResolvers.push(resolve);
 
       
-      this.saveTimeout = window.setTimeout(async () => {
-        await this.performSave();
+      this.saveTimeout = window.setTimeout(() => {
+        void this.performSave();
       }, 100);
     });
   }
@@ -146,20 +156,18 @@ export class OnboardingService extends Component {
 
   private async performSave(): Promise<void> {
     if (this.isSaving) {
-      this.saveTimeout = window.setTimeout(() => this.performSave(), 50);
+      this.saveTimeout = window.setTimeout(() => void this.performSave(), 50);
       return;
     }
 
     this.isSaving = true;
 
     try {
-      const pluginData = (await this.plugin.loadData()) || {};
+      const pluginData = asRecord(await this.plugin.loadData()) ?? {};
+      const localMeta = asRecord(pluginData.localMeta) ?? {};
 
-      if (!pluginData.localMeta) {
-        pluginData.localMeta = {};
-      }
-
-      pluginData.localMeta.onboarding = this.data;
+      localMeta.onboarding = this.data;
+      pluginData.localMeta = localMeta;
 
       await this.plugin.saveData(pluginData);
     } catch (error) {
@@ -173,19 +181,17 @@ export class OnboardingService extends Component {
     }
   }
 
-  async onunload(): Promise<void> {
+  onunload(): void {
     if (this.saveTimeout !== null) {
       window.clearTimeout(this.saveTimeout);
       this.saveTimeout = null;
     }
 
-    try {
-      await this.performSave();
-    } catch (error) {
+    void this.performSave().catch((error: unknown) => {
       console.error(
         '[OnboardingService] Final save failed during unload:',
         error
       );
-    }
+    });
   }
 }

@@ -4,6 +4,49 @@ import { App, TFile, TAbstractFile } from 'obsidian';
 import { scheduleIdle } from '../../utils/deferredExecution';
 import type JournalitPlugin from '../../main';
 import { eventBus, type Unsubscribe } from '../events';
+import { safeString } from '../../utils/safeString';
+
+function asRecord(value: unknown): Record<string, unknown> | undefined {
+  return value && typeof value === 'object' && !Array.isArray(value)
+    ? Object.fromEntries(Object.entries(value))
+    : undefined;
+}
+
+interface SerializedIndexEntry {
+  path: string;
+  values: Record<string, unknown>;
+}
+
+interface SerializedIndex {
+  name: string;
+  entries: SerializedIndexEntry[];
+}
+
+function parseSerializedIndex(value: unknown): SerializedIndex | null {
+  const record = asRecord(value);
+  if (
+    !record ||
+    typeof record.name !== 'string' ||
+    !Array.isArray(record.entries)
+  ) {
+    return null;
+  }
+
+  const entries = record.entries
+    .map((entry) => {
+      const entryRecord = asRecord(entry);
+      if (!entryRecord || typeof entryRecord.path !== 'string') {
+        return null;
+      }
+      return {
+        path: entryRecord.path,
+        values: asRecord(entryRecord.values) ?? {},
+      };
+    })
+    .filter((entry): entry is SerializedIndexEntry => entry !== null);
+
+  return { name: record.name, entries };
+}
 
 
 export interface IndexConfig {
@@ -58,7 +101,7 @@ export class IndexManager {
   
   private saveIntervalId: number | null = null;
   
-  private dataExtractor: (file: TFile) => Promise<any>;
+  private dataExtractor: (file: TFile) => Promise<unknown>;
   
   private readonly BASE_FOLDER = '.journalit';
   
@@ -75,13 +118,15 @@ export class IndexManager {
   
   constructor(
     app: App,
-    dataExtractor: (file: TFile) => Promise<any>,
+    dataExtractor: (file: TFile) => Promise<unknown>,
     options: { persistIndexes?: boolean } = {}
   ) {
     this.app = app;
     this.dataExtractor = dataExtractor;
     this.persistIndexes = options.persistIndexes ?? true;
-    this.boundHandleFileChange = this.handleFileChange.bind(this);
+    this.boundHandleFileChange = (file: TAbstractFile) => {
+      this.handleFileChange(file);
+    };
 
     
   }
@@ -126,10 +171,7 @@ export class IndexManager {
     
     if (this.isInitialized && this.persistIndexes && !this.saveIntervalId) {
       this.saveIntervalId = this.plugin.registerInterval(
-        globalThis.setInterval(
-          () => this.saveIndexes(),
-          5 * 60 * 1000
-        ) as unknown as number
+        window.setInterval(() => void this.saveIndexes(), 5 * 60 * 1000)
       );
     }
   }
@@ -161,10 +203,7 @@ export class IndexManager {
       
       if (this.persistIndexes && this.plugin) {
         this.saveIntervalId = this.plugin.registerInterval(
-          globalThis.setInterval(
-            () => this.saveIndexes(),
-            5 * 60 * 1000
-          ) as unknown as number
+          window.setInterval(() => void this.saveIndexes(), 5 * 60 * 1000)
         );
       }
     } catch (error) {
@@ -183,7 +222,7 @@ export class IndexManager {
 
     
     if (!this.buildingIndexes.has(config.name)) {
-      this.buildIndex(config.name);
+      void this.buildIndex(config.name);
     }
   }
 
@@ -227,7 +266,7 @@ export class IndexManager {
   
   public queryIndex(
     indexName: string,
-    filters: Record<string, any> = {},
+    filters: Record<string, unknown> = {},
     options: {
       sort?: { field: string; direction: 'asc' | 'desc' };
       limit?: number;
@@ -248,7 +287,7 @@ export class IndexManager {
     if (this.dirtyIndexes.has(indexName)) {
       
       if (!this.buildingIndexes.has(indexName)) {
-        this.rebuildDirtyIndex(indexName);
+        void this.rebuildDirtyIndex(indexName);
       }
       return [];
     }
@@ -301,8 +340,8 @@ export class IndexManager {
         }
 
         
-        const ls = String(left);
-        const rs = String(right);
+        const ls = safeString(left);
+        const rs = safeString(right);
         return ls === rs ? 0 : ls < rs ? -1 : 1;
       };
 
@@ -347,7 +386,7 @@ export class IndexManager {
     const index = this.indexes.get(indexName);
     if (!index) return [];
 
-    const uniqueValuesSet = new Set<any>();
+    const uniqueValuesSet = new Set<unknown>();
 
     for (const entry of index) {
       const value = entry.values[field];
@@ -531,7 +570,7 @@ export class IndexManager {
 
           
           if (i % 5 === 0 && i > 0) {
-            await new Promise((resolve) => setTimeout(resolve, 10));
+            await new Promise((resolve) => window.setTimeout(resolve, 10));
           }
         }
       }
@@ -560,7 +599,7 @@ export class IndexManager {
 
       
       if (this.persistIndexes) {
-        this.saveIndexes();
+        void this.saveIndexes();
       }
     }
   }
@@ -579,7 +618,8 @@ export class IndexManager {
       if (!data) return;
 
       
-      const values: Record<string, any> = {};
+      const values: Record<string, unknown> = {};
+      const dataRecord = asRecord(data);
 
       for (const field of config.fields) {
         if (config.valueExtractor) {
@@ -587,10 +627,10 @@ export class IndexManager {
           values[field] = config.valueExtractor(data, field);
         } else if (config.includeNested) {
           
-          values[field] = this.getNestedValue(data, field);
+          values[field] = this.getNestedValue(dataRecord ?? {}, field);
         } else {
           
-          values[field] = data[field];
+          values[field] = dataRecord?.[field];
         }
       }
 
@@ -754,7 +794,7 @@ export class IndexManager {
 
         
         if (this.isDirty && this.persistIndexes) {
-          setTimeout(() => this.saveIndexes(), 2000);
+          window.setTimeout(() => void this.saveIndexes(), 2000);
         }
       } catch (error) {
         console.error(`Error handling file change for ${file.path}:`, error);
@@ -821,9 +861,11 @@ export class IndexManager {
       for (const filePath of files) {
         try {
           const content = await this.app.vault.adapter.read(filePath);
-          const serialized = JSON.parse(content);
+          const serialized = parseSerializedIndex(
+            JSON.parse(content) as unknown
+          );
 
-          if (!serialized.name || !Array.isArray(serialized.entries)) {
+          if (!serialized) {
             console.warn(`Invalid index file format: ${filePath}`);
             continue;
           }
@@ -884,7 +926,7 @@ export class IndexManager {
 
     
     if (this.persistIndexes && this.isDirty) {
-      this.saveIndexes();
+      void this.saveIndexes();
     }
 
     

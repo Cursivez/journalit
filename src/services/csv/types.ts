@@ -1,25 +1,6 @@
 
 
 
-export type BrokerType =
-  | 'IBKR'
-  | 'TRADOVATE'
-  | 'TOPSTEPX'
-  | 'TRADEZERO'
-  | 'TRADINGVIEW'
-  | 'BYBIT'
-  | 'BLOFIN'
-  | 'HYPERLIQUID'
-  | 'SIERRACHART'
-  | 'MOTIVEWAVE'
-  | 'FXREPLAY'
-  | 'ATAS'
-  | 'TRADINGTECHNOLOGIES'
-  | 'RITHMIC'
-  | 'JDR'
-  | 'MANUAL';
-
-
 
 const DATE_FORMAT_VALUES = [
   '', 
@@ -125,7 +106,7 @@ export interface LocalCSVTemplate {
   name: string;
 
   
-  broker_type: BrokerType | string;
+  broker_type: string;
 
   
   asset_type: 'stock' | 'options' | 'futures' | 'forex' | 'crypto';

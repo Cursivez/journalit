@@ -1,6 +1,7 @@
 
 
 import React from 'react';
+import { openExternalUrl } from '../../utils/externalLinks';
 
 interface ExternalLinkButtonProps {
   url: string;
@@ -15,7 +16,7 @@ export const ExternalLinkButton: React.FC<ExternalLinkButtonProps> = ({
 }) => {
   return (
     <button
-      onClick={() => window.open(url, '_blank')}
+      onClick={() => openExternalUrl(url)}
       className="journalit-external-link-button"
     >
       <span ref={iconRef} className="journalit-external-link-button__icon" />

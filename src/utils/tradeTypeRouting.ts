@@ -1,4 +1,5 @@
 import { getTradingDay } from './tradingDayUtils';
+import { safeString } from './safeString';
 
 type StoredTradeType = 'regular' | 'missed' | 'backtest';
 
@@ -65,7 +66,7 @@ export function normalizeTradeIdentityDate(
   }
 
   const parsedDate =
-    entryTime instanceof Date ? entryTime : new Date(String(entryTime));
+    entryTime instanceof Date ? entryTime : new Date(safeString(entryTime));
   if (Number.isNaN(parsedDate.getTime())) {
     return null;
   }

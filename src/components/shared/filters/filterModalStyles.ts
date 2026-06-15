@@ -1,6 +1,6 @@
 
 
-const FILTER_MODAL_STYLES = `
+export const FILTER_MODAL_STYLES = `
 .journalit-filter-modal .filter-modal-container {
   display: flex;
   flex-direction: column;
@@ -522,18 +522,3 @@ const FILTER_MODAL_STYLES = `
   font-size: 13px;
 }
 `;
-
-const filterModalStylesInjected = false;
-
-
-function injectFilterModalStyles(): void {
-  return;
-}
-
-
-export function removeFilterModalStyles(): void {
-  return;
-}
-
-
-export function ensureFilterModalStyles(): void {}

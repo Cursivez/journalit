@@ -4,6 +4,7 @@ import React, { useMemo } from 'react';
 import JournalitPlugin from '../../../main';
 import { isPnlContributingTrade } from '../../../utils/tradeStatusUtils';
 import { SharedPnLChart } from '../../charts/SharedPnLChart';
+import type { Trade } from '../../dashboard/utils/dataUtils';
 import { preparePnLChartData } from '../../../utils/chartUtils';
 import { TradesPreviewData } from '../../../types/reviewV2';
 import { useReviewTrades } from '../hooks/useReviewData';
@@ -12,6 +13,16 @@ import { t } from '../../../lang/helpers';
 import { cssVars } from '../../../styles/inlineStylePolicy';
 import { getSingleExplicitCurrency } from '../../../utils/currencyAggregation';
 import { CurrencyConversionInfo } from '../../shared/display/CurrencyConversionInfo';
+
+const asDirectionalTrades = (value: unknown): Trade[] =>
+  Array.isArray(value)
+    ? value.filter((item): item is Trade =>
+        Boolean(item && typeof item === 'object' && !Array.isArray(item))
+      )
+    : [];
+
+const normalizeDirectionValue = (value: unknown): string =>
+  typeof value === 'string' ? value.toLowerCase() : '';
 
 interface DirectionalPnLWidgetProps {
   filePath: string;
@@ -49,7 +60,9 @@ export const DirectionalPnLWidget: React.FC<DirectionalPnLWidgetProps> =
       } = useReviewTrades(filePath, plugin);
 
       
-      const trades = preview && previewData ? previewData.trades : cachedTrades;
+      const trades = asDirectionalTrades(
+        preview && previewData ? previewData.trades : cachedTrades
+      );
       const loading = preview ? false : cacheLoading;
 
       
@@ -113,9 +126,9 @@ export const DirectionalPnLWidget: React.FC<DirectionalPnLWidgetProps> =
       const currencyOverride = getSingleExplicitCurrency(trades);
       const getDirectionalConversionTrades = (direction: 'long' | 'short') => [
         ...(direction === 'long' ? longTrades : shortTrades),
-        ...((currencyConversion?.unconvertedTrades || []).filter(
-          (trade) => String(trade.direction || '').toLowerCase() === direction
-        ) as typeof trades),
+        ...asDirectionalTrades(currencyConversion?.unconvertedTrades).filter(
+          (trade) => normalizeDirectionValue(trade.direction) === direction
+        ),
       ];
 
       if (loading) {

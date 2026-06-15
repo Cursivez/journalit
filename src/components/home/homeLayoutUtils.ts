@@ -9,7 +9,11 @@ import {
 import { eventBus } from '../../services/events';
 
 
-let saveLayoutTimer: ReturnType<typeof setTimeout> | null = null;
+let saveLayoutTimer: number | null = null;
+
+const HOME_LAYOUT_BREAKPOINTS = ['lg', 'md', 'sm', 'xs', 'xxs'] as const;
+
+type HomeLayoutBreakpoint = (typeof HOME_LAYOUT_BREAKPOINTS)[number];
 
 
 export interface HomeLayout {
@@ -20,6 +24,15 @@ export interface HomeLayout {
   xxs: Layout[];
 }
 
+
+
+const cloneHomeLayout = (layout: HomeLayout): HomeLayout => ({
+  lg: layout.lg.map((item) => ({ ...item })),
+  md: layout.md.map((item) => ({ ...item })),
+  sm: layout.sm.map((item) => ({ ...item })),
+  xs: layout.xs.map((item) => ({ ...item })),
+  xxs: layout.xxs.map((item) => ({ ...item })),
+});
 
 interface HomeLayoutSettings {
   layouts: Record<string, HomeLayout>;
@@ -125,7 +138,7 @@ const getLayoutSettings = (plugin: JournalitPlugin): HomeLayoutSettings => {
 
   Object.entries(layouts).forEach(([name, layout]) => {
     if (!layout) {
-      migratedLayouts[name] = JSON.parse(JSON.stringify(DEFAULT_LAYOUT));
+      migratedLayouts[name] = cloneHomeLayout(DEFAULT_LAYOUT);
       return;
     }
 
@@ -170,7 +183,7 @@ const saveLayoutSettings = async (
     
     if (!plugin.app.workspace.layoutReady) {
       plugin.app.workspace.onLayoutReady(() => {
-        saveLayoutSettings(plugin, layoutSettings);
+        void saveLayoutSettings(plugin, layoutSettings);
       });
       return;
     }
@@ -234,7 +247,7 @@ export const getActiveLayout = (plugin: JournalitPlugin): HomeLayout => {
         xxs: validateLayoutItems(activeLayout.xxs || []),
       };
 
-      (async () => {
+      void (async () => {
         try {
           await saveLayout(plugin, activeLayoutName, fixedLayout);
         } catch (error) {
@@ -269,16 +282,18 @@ export const saveLayout = async (
   
   return new Promise((resolve, reject) => {
     if (saveLayoutTimer) {
-      clearTimeout(saveLayoutTimer);
+      window.clearTimeout(saveLayoutTimer);
     }
 
-    saveLayoutTimer = setTimeout(async () => {
-      try {
-        await saveLayoutInternal(plugin, name, layout);
-        resolve();
-      } catch (error) {
-        reject(error);
-      }
+    saveLayoutTimer = window.setTimeout(() => {
+      void (async () => {
+        try {
+          await saveLayoutInternal(plugin, name, layout);
+          resolve();
+        } catch (error) {
+          reject(error instanceof Error ? error : new Error(String(error)));
+        }
+      })();
     }, 300);
   });
 };
@@ -301,9 +316,11 @@ const saveLayoutInternal = async (
 
     
     const allWidgetIds = new Set<string>();
-    Object.values(layoutCopy).forEach((bpLayout) => {
-      bpLayout.forEach((item: Layout) => allWidgetIds.add(item.i));
-    });
+    for (const breakpoint of HOME_LAYOUT_BREAKPOINTS) {
+      layoutCopy[breakpoint].forEach((item: Layout) =>
+        allWidgetIds.add(item.i)
+      );
+    }
 
     const cols: Record<string, number> = {
       lg: 12,
@@ -314,7 +331,7 @@ const saveLayoutInternal = async (
     };
 
     const sourceItemsByWidgetId = new Map<string, Layout>();
-    for (const sourceBp of ['lg', 'md', 'sm', 'xs', 'xxs'] as const) {
+    for (const sourceBp of HOME_LAYOUT_BREAKPOINTS) {
       for (const item of layoutCopy[sourceBp] || []) {
         if (!sourceItemsByWidgetId.has(item.i)) {
           sourceItemsByWidgetId.set(item.i, item);
@@ -322,27 +339,26 @@ const saveLayoutInternal = async (
       }
     }
 
-    (Object.entries(layoutCopy) as [string, Layout[]][]).forEach(
-      ([bp, bpLayout]) => {
-        const bpWidgetIds = new Set(bpLayout.map((item: Layout) => item.i));
+    HOME_LAYOUT_BREAKPOINTS.forEach((bp: HomeLayoutBreakpoint) => {
+      const bpLayout = layoutCopy[bp];
+      const bpWidgetIds = new Set(bpLayout.map((item: Layout) => item.i));
 
-        allWidgetIds.forEach((widgetId) => {
-          if (!bpWidgetIds.has(widgetId)) {
-            const sourceItem = sourceItemsByWidgetId.get(widgetId);
+      allWidgetIds.forEach((widgetId) => {
+        if (!bpWidgetIds.has(widgetId)) {
+          const sourceItem = sourceItemsByWidgetId.get(widgetId);
 
-            if (sourceItem) {
-              bpLayout.push({
-                i: widgetId,
-                x: 0,
-                y: LAYOUT_BOTTOM_POSITION,
-                w: Math.min(sourceItem.w, cols[bp]),
-                h: sourceItem.h,
-              });
-            }
+          if (sourceItem) {
+            bpLayout.push({
+              i: widgetId,
+              x: 0,
+              y: LAYOUT_BOTTOM_POSITION,
+              w: Math.min(sourceItem.w, cols[bp]),
+              h: sourceItem.h,
+            });
           }
-        });
-      }
-    );
+        }
+      });
+    });
 
     
     const settings = getLayoutSettings(plugin);

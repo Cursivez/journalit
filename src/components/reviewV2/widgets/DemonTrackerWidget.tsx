@@ -8,10 +8,18 @@ import { InvalidContextMessage } from './InvalidContextMessage';
 import { SkeletonBox } from '../../shared';
 import type { DemonTrackerEntry } from '../../../services/monthly/types';
 import type { DemonTrackerWidgetConfig } from '../../../types/reviewV2';
+import type { PartialTradeFrontmatter } from '../../../types/TradeFrontmatter';
 import {
   aggregateDemonTrackerData,
   resolveDemonTrackerModes,
 } from './shared/demonTrackerAggregation';
+
+const asDemonTrades = (value: unknown): PartialTradeFrontmatter[] =>
+  Array.isArray(value)
+    ? value.filter((item): item is PartialTradeFrontmatter =>
+        Boolean(item && typeof item === 'object' && !Array.isArray(item))
+      )
+    : [];
 
 interface DemonTrackerWidgetProps {
   filePath: string;
@@ -89,11 +97,11 @@ export const DemonTrackerWidget: React.FC<DemonTrackerWidgetProps> = React.memo(
     const demons = useMemo(() => {
       
       if (preview && previewData) {
-        return previewData.demons;
+        return [...previewData.demons];
       }
 
       return aggregateDemonTrackerData({
-        trades,
+        trades: asDemonTrades(trades),
         sessionMistakesByTradingDay,
         countMode,
         sourceMode,

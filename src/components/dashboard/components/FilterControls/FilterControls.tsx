@@ -162,7 +162,7 @@ export const FilterControls = React.memo<FilterControlsProps>(
       };
 
       onFilterChange(mergedFilters);
-      saveLastUsedFilters(plugin, mergedFilters);
+      void saveLastUsedFilters(plugin, mergedFilters);
     }, [plugin, filters, onFilterChange, sanitizedCustomFieldFilters]);
 
     
@@ -175,7 +175,7 @@ export const FilterControls = React.memo<FilterControlsProps>(
           trade.accountNamesNormalized.length > 0
             ? trade.accountNamesNormalized
             : normalizeTradeAccountIdentity(
-                trade as unknown as Record<string, unknown>,
+                Object.fromEntries(Object.entries(trade)),
                 {
                   resolveAccountIdDisplayName: (accountId) =>
                     plugin?.settings?.backendIntegration?.accountMapping?.[
@@ -212,7 +212,7 @@ export const FilterControls = React.memo<FilterControlsProps>(
 
         
         if (plugin) {
-          saveLastUsedFilters(plugin, mergedFilters);
+          void saveLastUsedFilters(plugin, mergedFilters);
         }
       },
       [filters, onFilterChange, plugin, sanitizedCustomFieldFilters]
@@ -305,7 +305,7 @@ export const FilterControls = React.memo<FilterControlsProps>(
             ),
           };
           onFilterChange(mergedFilters);
-          saveLastUsedFilters(plugin, mergedFilters);
+          void saveLastUsedFilters(plugin, mergedFilters);
         },
         onClose: () => {},
       });
@@ -335,7 +335,7 @@ export const FilterControls = React.memo<FilterControlsProps>(
             <div className="journalit-dashboard-filter-actions">
               <div ref={registerFilterButtonTarget}>
                 <FilterButton
-                  onClick={handleOpenFilterModal}
+                  onClick={() => void handleOpenFilterModal()}
                   activeFilterCount={getActiveFilterCount()}
                 />
               </div>
@@ -387,7 +387,7 @@ export const FilterControls = React.memo<FilterControlsProps>(
             <div className="journalit-dashboard-filter-actions">
               <div ref={registerFilterButtonTarget}>
                 <FilterButton
-                  onClick={handleOpenFilterModal}
+                  onClick={() => void handleOpenFilterModal()}
                   activeFilterCount={getActiveFilterCount()}
                 />
               </div>

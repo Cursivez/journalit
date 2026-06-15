@@ -2,10 +2,19 @@
 
 import { App, TFile, parseYaml } from 'obsidian';
 
+const asRecord = (value: unknown): Record<string, unknown> | null =>
+  value && typeof value === 'object' && !Array.isArray(value)
+    ? Object.fromEntries(Object.entries(value))
+    : null;
+
 function cloneFrontmatter(
   frontmatter?: Record<string, unknown> | null
 ): Record<string, unknown> {
-  return frontmatter ? JSON.parse(JSON.stringify(frontmatter)) : {};
+  if (!frontmatter) {
+    return {};
+  }
+  const cloned: unknown = JSON.parse(JSON.stringify(frontmatter));
+  return asRecord(cloned) ?? {};
 }
 
 function parseFrontmatterFromContent(content: string): Record<string, unknown> {
@@ -15,10 +24,8 @@ function parseFrontmatterFromContent(content: string): Record<string, unknown> {
   }
 
   try {
-    const parsed = parseYaml(frontmatterMatch[1]);
-    return parsed && typeof parsed === 'object'
-      ? (parsed as Record<string, unknown>)
-      : {};
+    const parsed: unknown = parseYaml(frontmatterMatch[1]);
+    return asRecord(parsed) ?? {};
   } catch {
     return {};
   }
@@ -83,7 +90,7 @@ async function waitForMetadataCacheChanged(
         return;
       }
 
-      await new Promise((resolve) => setTimeout(resolve, 25));
+      await new Promise((resolve) => window.setTimeout(resolve, 25));
     }
   } finally {
     if (typeof metadataCache.off === 'function') {

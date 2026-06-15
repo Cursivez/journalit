@@ -1,6 +1,6 @@
 
 
-const SETTINGS_TAB_STYLES = `
+export const SETTINGS_TAB_STYLES = `
   
   .journalit-settings-wrapper,
   .journalit-settings .settings-tab-container {
@@ -2747,7 +2747,3 @@ const SETTINGS_TAB_STYLES = `
     border-top: 1px solid var(--background-modifier-border);
   }
 `;
-
-export function injectSettingsTabStyles(): void {
-  return;
-}

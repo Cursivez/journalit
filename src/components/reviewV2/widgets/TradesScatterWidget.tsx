@@ -3,6 +3,7 @@
 import React from 'react';
 import JournalitPlugin from '../../../main';
 import { WeeklyTradesChart } from '../../weekly/charts/WeeklyTradesChart';
+import type { Trade } from '../../dashboard/utils/dataUtils';
 import { TradesPreviewData } from '../../../types/reviewV2';
 import { useReviewTrades } from '../hooks/useReviewData';
 import { SkeletonBox } from '../../shared';
@@ -10,6 +11,13 @@ import { t } from '../../../lang/helpers';
 import { cssVars } from '../../../styles/inlineStylePolicy';
 import { getSingleExplicitCurrency } from '../../../utils/currencyAggregation';
 import { CurrencyConversionInfo } from '../../shared/display/CurrencyConversionInfo';
+
+const asScatterTrades = (value: unknown): Trade[] =>
+  Array.isArray(value)
+    ? value.filter((item): item is Trade =>
+        Boolean(item && typeof item === 'object' && !Array.isArray(item))
+      )
+    : [];
 
 interface TradesScatterWidgetConfig {
   height?: number;
@@ -40,7 +48,9 @@ export const TradesScatterWidget: React.FC<TradesScatterWidgetProps> = ({
   } = useReviewTrades(filePath, plugin);
 
   
-  const trades = preview && previewData ? previewData.trades : cachedTrades;
+  const trades = asScatterTrades(
+    preview && previewData ? previewData.trades : cachedTrades
+  );
   const loading = preview ? false : cacheLoading;
 
   const height = config.height ?? 300;

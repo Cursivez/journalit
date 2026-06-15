@@ -58,20 +58,82 @@ interface ReviewSearchResult {
   reviewed: boolean;
 }
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
+}
+
+function stringFrontmatterValue(
+  frontmatter: Record<string, unknown>,
+  key: string
+): string | undefined {
+  const value = frontmatter[key];
+  return typeof value === 'string' ? value : undefined;
+}
+
+function numberFrontmatterValue(
+  frontmatter: Record<string, unknown>,
+  key: string
+): number | undefined {
+  const value = frontmatter[key];
+  return typeof value === 'number' ? value : undefined;
+}
+
+function booleanFrontmatterValue(
+  frontmatter: Record<string, unknown>,
+  key: string
+): boolean | undefined {
+  const value = frontmatter[key];
+  return typeof value === 'boolean' ? value : undefined;
+}
+
+function isReviewType(
+  value: string
+): value is ReviewSearchResult['reviewType'] {
+  switch (value) {
+    case 'drc':
+    case 'weekly-review':
+    case 'monthly-review':
+    case 'quarterly-review':
+    case 'yearly-review':
+      return true;
+    default:
+      return false;
+  }
+}
+
+type SidebarTrade = Record<string, unknown> & {
+  path: string;
+  instrument?: string;
+  direction?: string;
+  optionType?: string;
+  assetType?: string;
+  tradeStatus?: string;
+  entryTime?: string | number | Date;
+  exitTime?: string | Date | null;
+  pnl?: number | null;
+  directPnL?: number | null;
+  currency?: string;
+  account?: string[] | string;
+  setup?: string[];
+  mistake?: string[] | string;
+  tags?: string[];
+  useDirectPnLInput?: boolean;
+  exits?: Array<Record<string, unknown>>;
+  entries?: Array<Record<string, unknown>>;
+  rMultiple?: number | null;
+  riskAmount?: number | null;
+  _originalPnlWasNull?: boolean;
+};
+
+const isSidebarTrade = (value: unknown): value is SidebarTrade =>
+  isRecord(value) && typeof value.path === 'string' && value.path.length > 0;
+
 type SearchResult = TradeSearchResult | ReviewSearchResult;
 
 interface ReviewSearchIndexEntry {
   normalizedSearchableText: string;
   searchableTokens: string[];
 }
-
-const REVIEW_TYPES = new Set([
-  'drc',
-  'weekly-review',
-  'monthly-review',
-  'quarterly-review',
-  'yearly-review',
-]);
 
 const REVIEW_ICONS: Record<string, ObsidianIconComponent> = {
   drc: Sun,
@@ -198,7 +260,7 @@ function getReviewDateInfo(
 ): string {
   switch (reviewType) {
     case 'drc': {
-      const dateStr = frontmatter.date as string | undefined;
+      const dateStr = stringFrontmatterValue(frontmatter, 'date');
       if (!dateStr) return '';
       const [y, m, d] = dateStr.split('-').map(Number);
       const parsed = new Date(y, m - 1, d);
@@ -211,10 +273,10 @@ function getReviewDateInfo(
       });
     }
     case 'weekly-review': {
-      const week = frontmatter.week as string | undefined;
-      const month = frontmatter.month as string | undefined;
-      const year = frontmatter.year as string | undefined;
-      const dateStr = frontmatter.date as string | undefined;
+      const week = stringFrontmatterValue(frontmatter, 'week');
+      const month = stringFrontmatterValue(frontmatter, 'month');
+      const year = stringFrontmatterValue(frontmatter, 'year');
+      const dateStr = stringFrontmatterValue(frontmatter, 'date');
       const weekNum = week ? String(week).replace(/^W/i, '') : '';
       const parts: string[] = [];
       if (weekNum) parts.push(`Week ${weekNum}`);
@@ -246,8 +308,8 @@ function getReviewDateInfo(
       return parts.join(' \u00B7 ');
     }
     case 'monthly-review': {
-      const monthNum = frontmatter.month as number | undefined;
-      const year = frontmatter.year as number | undefined;
+      const monthNum = numberFrontmatterValue(frontmatter, 'month');
+      const year = numberFrontmatterValue(frontmatter, 'year');
       const monthName =
         typeof monthNum === 'number' ? MONTH_NAMES[monthNum - 1] : '';
       if (monthName && year) return `${monthName} ${year}`;
@@ -255,17 +317,28 @@ function getReviewDateInfo(
       return monthName || '';
     }
     case 'quarterly-review': {
-      const quarter = frontmatter.quarter as number | undefined;
-      const year = frontmatter.year as number | undefined;
+      const quarter = numberFrontmatterValue(frontmatter, 'quarter');
+      const year = numberFrontmatterValue(frontmatter, 'year');
       if (quarter && year) return `Q${quarter} ${year} Review`;
       if (year) return `${year} Review`;
       return quarter ? `Q${quarter} Review` : '';
     }
     case 'yearly-review':
-      return frontmatter.year ? `${frontmatter.year} Review` : '';
+      return frontmatter.year
+        ? `${frontmatterValueToSearchString(frontmatter.year)} Review`
+        : '';
     default:
       return '';
   }
+}
+
+function frontmatterValueToSearchString(value: unknown): string {
+  if (value === undefined || value === null) return '';
+  if (typeof value === 'string') return value;
+  if (typeof value === 'number' || typeof value === 'boolean')
+    return String(value);
+  if (value instanceof Date) return value.toISOString();
+  return JSON.stringify(value);
 }
 
 function getDateSearchTerms(date: Date, includeWeekday: boolean): string[] {
@@ -314,8 +387,8 @@ function getReviewSearchableText(
   const parts: string[] = [dateInfo];
 
   if (frontmatter.date) {
-    parts.push(String(frontmatter.date));
-    const [y, m, d] = String(frontmatter.date)
+    parts.push(frontmatterValueToSearchString(frontmatter.date));
+    const [y, m, d] = frontmatterValueToSearchString(frontmatter.date)
       .split('-')
       .map((value) => parseInt(value, 10));
     const parsed = new Date(y, m - 1, d);
@@ -325,26 +398,30 @@ function getReviewSearchableText(
   }
 
   if (frontmatter.week) {
-    const weekRaw = String(frontmatter.week);
+    const weekRaw = frontmatterValueToSearchString(frontmatter.week);
     const weekNum = weekRaw.replace(/^W/i, '');
     parts.push(weekRaw, `week ${weekNum}`, `w${weekNum}`);
   }
 
   if (frontmatter.month) {
-    const monthNum = parseInt(String(frontmatter.month), 10);
+    const monthNum = parseInt(
+      frontmatterValueToSearchString(frontmatter.month),
+      10
+    );
     if (!isNaN(monthNum) && monthNum >= 1 && monthNum <= 12) {
       parts.push(
         MONTH_NAMES[monthNum - 1],
         MONTH_NAMES[monthNum - 1].slice(0, 3)
       );
     }
-    parts.push(String(frontmatter.month));
+    parts.push(frontmatterValueToSearchString(frontmatter.month));
   }
 
-  if (frontmatter.year) parts.push(String(frontmatter.year));
+  if (frontmatter.year)
+    parts.push(frontmatterValueToSearchString(frontmatter.year));
 
   if (frontmatter.quarter) {
-    const quarterValue = String(frontmatter.quarter);
+    const quarterValue = frontmatterValueToSearchString(frontmatter.quarter);
     parts.push(quarterValue, `q${quarterValue}`, `quarter ${quarterValue}`);
   }
 
@@ -598,7 +675,7 @@ const SidebarSearchResults: React.FC<SidebarSearchResultsProps> = ({
 
 const useSidebarSearchData = (plugin: JournalitPlugin) => {
   const [dataRefreshVersion, setDataRefreshVersion] = useState(0);
-  const tradesRef = useRef<any[]>([]);
+  const tradesRef = useRef<SidebarTrade[]>([]);
   const reviewsRef = useRef<ReviewSearchResult[]>([]);
   const tradeDateTokensRef = useRef<Map<string, string[]>>(new Map());
   const reviewSearchIndexRef = useRef<Map<string, ReviewSearchIndexEntry>>(
@@ -607,20 +684,22 @@ const useSidebarSearchData = (plugin: JournalitPlugin) => {
 
   const loadTrades = useCallback(async () => {
     try {
-      const allTrades = await plugin.tradeService.getTradeData();
-      const filteredTrades = allTrades.filter((trade: any) => {
-        if (typeof trade.path !== 'string' || trade.path.length === 0)
-          return false;
-        if (!plugin.app.vault.getAbstractFileByPath(trade.path)) return false;
-        const fm = plugin.app.metadataCache.getCache(trade.path)?.frontmatter;
-        if (fm?.type === 'missed-trade') return false;
-        if (MISSED_TRADE_PATH_RE.test(trade.path)) return false;
-        return true;
-      });
+      const allTrades = (await plugin.tradeService.getTradeData()) as unknown[];
+      const filteredTrades = allTrades.filter(
+        (trade): trade is SidebarTrade => {
+          if (!isSidebarTrade(trade)) return false;
+          if (!plugin.app.vault.getAbstractFileByPath(trade.path)) return false;
+          const fm = plugin.app.metadataCache.getCache(trade.path)
+            ?.frontmatter as Record<string, unknown> | undefined;
+          if (fm?.type === 'missed-trade') return false;
+          if (MISSED_TRADE_PATH_RE.test(trade.path)) return false;
+          return true;
+        }
+      );
 
       const tradeDateTokens = new Map<string, string[]>();
       for (const trade of filteredTrades) {
-        const entryDate = new Date(trade.entryTime);
+        const entryDate = new Date(trade.entryTime ?? 0);
         if (isNaN(entryDate.getTime())) {
           tradeDateTokens.set(trade.path, []);
           continue;
@@ -652,13 +731,19 @@ const useSidebarSearchData = (plugin: JournalitPlugin) => {
     for (const file of files) {
       const cache = plugin.app.metadataCache.getFileCache(file);
       const fm = cache?.frontmatter;
-      if (!fm || !REVIEW_TYPES.has(fm.type)) continue;
-      const reviewType = fm.type as ReviewSearchResult['reviewType'];
-      const eodReview = (fm.endOfDayReview as Record<string, unknown>) || {};
+      if (
+        !isRecord(fm) ||
+        typeof fm.type !== 'string' ||
+        !isReviewType(fm.type)
+      ) {
+        continue;
+      }
+      const reviewType = fm.type;
+      const eodReview = isRecord(fm.endOfDayReview) ? fm.endOfDayReview : {};
       const reviewed =
         reviewType === 'drc'
-          ? ((eodReview.reviewed as boolean) ?? false)
-          : ((fm.reviewed as boolean) ?? false);
+          ? (booleanFrontmatterValue(eodReview, 'reviewed') ?? false)
+          : (booleanFrontmatterValue(fm, 'reviewed') ?? false);
       const dateInfo = getReviewDateInfo(reviewType, fm);
       reviewResults.push({
         type: 'review',
@@ -711,7 +796,7 @@ const useSidebarSearchData = (plugin: JournalitPlugin) => {
 interface SidebarSearchExecutionContext {
   searchQuery: string;
   plugin: JournalitPlugin;
-  tradesRef: React.RefObject<any[]>;
+  tradesRef: React.RefObject<SidebarTrade[]>;
   reviewsRef: React.RefObject<ReviewSearchResult[]>;
   tradeDateTokensRef: React.RefObject<Map<string, string[]>>;
   reviewSearchIndexRef: React.RefObject<Map<string, ReviewSearchIndexEntry>>;
@@ -747,9 +832,8 @@ const performSidebarSearch = ({
   const breakEvenRangeMax = plugin.settings?.trade?.breakEvenRangeMax ?? 0;
 
   for (const trade of tradesRef.current) {
-    const frontmatter = plugin.app.metadataCache.getCache(
-      trade.path
-    )?.frontmatter;
+    const frontmatter = plugin.app.metadataCache.getCache(trade.path)
+      ?.frontmatter as Record<string, unknown> | undefined;
 
     const basename = trade.path
       ? trade.path.split('/').pop()?.replace(/\.md$/, '') || ''
@@ -765,11 +849,14 @@ const performSidebarSearch = ({
         : '';
     const tagsStr = Array.isArray(trade.tags) ? trade.tags.join(' ') : '';
 
-    const optionTypeRaw = String(
-      trade.optionType ||
-        frontmatter?.optionType ||
-        frontmatter?.optiontype ||
-        ''
+    const frontmatterOptionType =
+      typeof frontmatter?.optionType === 'string'
+        ? frontmatter.optionType
+        : typeof frontmatter?.optiontype === 'string'
+          ? frontmatter.optiontype
+          : '';
+    const optionTypeRaw = (
+      trade.optionType || frontmatterOptionType
     ).toLowerCase();
 
     const rawPnl = trade.useDirectPnLInput
@@ -918,7 +1005,11 @@ const performSidebarSearch = ({
         instrument: trade.instrument || '',
         direction: trade.direction || '',
         optionType: optionTypeRaw || undefined,
-        assetType: trade.assetType || frontmatter?.assetType || undefined,
+        assetType:
+          trade.assetType ||
+          (typeof frontmatter?.assetType === 'string'
+            ? frontmatter.assetType
+            : undefined),
         tradeStatus: trade.tradeStatus || '',
         isOpen,
         entryTime: trade.entryTime ? new Date(trade.entryTime) : new Date(),
@@ -1000,7 +1091,7 @@ export const SidebarSearch: React.FC<SidebarSearchProps> = ({
   const [results, setResults] = useState<SearchResult[]>([]);
   const [hasSearched, setHasSearched] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(-1);
-  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const debounceRef = useRef<number | null>(null);
   const queryRef = useRef('');
   const inputRef = useRef<HTMLInputElement | null>(null);
   const resultItemRefs = useRef<Array<HTMLDivElement | null>>([]);
@@ -1041,7 +1132,7 @@ export const SidebarSearch: React.FC<SidebarSearchProps> = ({
       onActiveChange(isActive);
 
       if (debounceRef.current) {
-        clearTimeout(debounceRef.current);
+        window.clearTimeout(debounceRef.current);
       }
 
       if (!isActive) {
@@ -1050,7 +1141,7 @@ export const SidebarSearch: React.FC<SidebarSearchProps> = ({
         return;
       }
 
-      debounceRef.current = setTimeout(() => {
+      debounceRef.current = window.setTimeout(() => {
         performSearch(trimmedValue);
       }, 220);
     },
@@ -1065,7 +1156,7 @@ export const SidebarSearch: React.FC<SidebarSearchProps> = ({
     setSelectedIndex(-1);
     onActiveChange(false);
     if (debounceRef.current) {
-      clearTimeout(debounceRef.current);
+      window.clearTimeout(debounceRef.current);
     }
   }, [onActiveChange]);
 
@@ -1088,7 +1179,7 @@ export const SidebarSearch: React.FC<SidebarSearchProps> = ({
   useEffect(() => {
     return () => {
       if (debounceRef.current) {
-        clearTimeout(debounceRef.current);
+        window.clearTimeout(debounceRef.current);
       }
     };
   }, []);

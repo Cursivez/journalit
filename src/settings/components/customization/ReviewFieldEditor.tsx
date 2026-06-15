@@ -21,13 +21,14 @@ import { Input } from '../../../components/core/Input';
 import { NumberInput } from '../../../components/core/NumberInput';
 import { Select } from '../../../components/core/Select';
 import { t } from '../../../lang/helpers';
+import { safeString } from '../../../utils/safeString';
 
 interface ReviewFieldEditorProps {
   field: CustomReviewFieldDefinition;
   isNewField: boolean;
-  onSave: (field: CustomReviewFieldDefinition) => void;
-  onCancel: () => void;
-  onDelete: (fieldId: string) => void;
+  onSave: (field: CustomReviewFieldDefinition) => void | Promise<void>;
+  onCancel: () => void | Promise<void>;
+  onDelete: (fieldId: string) => void | Promise<void>;
   generateUniqueKey: (label: string, excludeFieldId?: string) => string;
   validateLabel?: (label: string, excludeFieldId?: string) => string | null;
   groups: CustomReviewFieldGroup[];
@@ -101,6 +102,40 @@ const inheritanceModeOptions = REVIEW_FIELD_INHERITANCE_MODES.map((mode) => ({
   label: t(`settings.customization.review-fields.inheritance-mode.${mode}`),
 }));
 
+const parseCustomFieldType = (value: string): CustomFieldType | null => {
+  switch (value) {
+    case 'text':
+      return CustomFieldType.TEXT;
+    case 'number':
+      return CustomFieldType.NUMBER;
+    case 'dropdown':
+      return CustomFieldType.DROPDOWN;
+    case 'multiselect':
+      return CustomFieldType.MULTISELECT;
+    case 'date':
+      return CustomFieldType.DATE;
+    case 'datetime':
+      return CustomFieldType.DATETIME;
+    case 'time':
+      return CustomFieldType.TIME;
+    default:
+      return null;
+  }
+};
+
+const parseInheritanceMode = (
+  value: string
+): ReviewFieldInheritanceMode | null => {
+  switch (value) {
+    case 'inherit-only':
+    case 'local-only':
+    case 'inherit-and-local':
+      return value;
+    default:
+      return null;
+  }
+};
+
 function uniqueReviewTypes(
   values: ReviewFieldReviewType[]
 ): ReviewFieldReviewType[] {
@@ -125,13 +160,13 @@ interface ReviewFieldOptionsConfigProps {
   setNewOption: (value: string) => void;
   setOptionError: (value: string | null) => void;
   isDuplicateOption: (option: string) => boolean;
-  addOption: () => void;
-  removeOption: (index: number) => void;
-  moveOption: (index: number, direction: 'up' | 'down') => void;
+  addOption: () => void | Promise<void>;
+  removeOption: (index: number) => void | Promise<void>;
+  moveOption: (index: number, direction: 'up' | 'down') => void | Promise<void>;
   updateField: <K extends keyof CustomReviewFieldDefinition>(
     key: K,
     value: CustomReviewFieldDefinition[K]
-  ) => void;
+  ) => void | Promise<void>;
 }
 
 const ReviewFieldOptionsConfig: React.FC<ReviewFieldOptionsConfigProps> = ({
@@ -221,7 +256,7 @@ const ReviewFieldOptionsConfig: React.FC<ReviewFieldOptionsConfigProps> = ({
               if (event.key !== 'Enter') return;
               event.preventDefault();
               if (!newOption.trim() || optionError) return;
-              addOption();
+              void addOption();
             }}
             placeholder={t(
               'settings.customization.custom-fields.editor.add-option-placeholder'
@@ -307,7 +342,7 @@ const useReviewFieldEditorController = ({
     setEditingField((prev) => {
       const next = { ...prev, [key]: value };
       if (key === 'label' && isNewField) {
-        next.fieldKey = generateUniqueKey(String(value), prev.id);
+        next.fieldKey = generateUniqueKey(safeString(value), prev.id);
       }
       if (
         key === 'type' &&
@@ -400,9 +435,9 @@ const useReviewFieldEditorController = ({
     if (labelValidationError) return;
     const existingKey =
       editingField.fieldKey || labelToFieldKey(editingField.label);
-    const { required: _required, ...validation } =
-      editingField.validation || {};
-    onSave({
+    const validation = { ...(editingField.validation || {}) };
+    delete validation.required;
+    void onSave({
       ...editingField,
       fieldKey: existingKey || generateUniqueFieldKey(editingField.label),
       validation,
@@ -553,7 +588,12 @@ const ReviewFieldEditorComponent: React.FC<ReviewFieldEditorProps> = ({
           <Select
             options={fieldTypeOptions}
             value={editingField.type}
-            onChange={(value) => updateField('type', value as CustomFieldType)}
+            onChange={(value) => {
+              const type = parseCustomFieldType(value);
+              if (type) {
+                updateField('type', type);
+              }
+            }}
           />
         </div>
       </div>
@@ -716,8 +756,11 @@ interface ReviewFieldInheritanceSettingsProps {
     key: keyof CustomReviewFieldDefinition['scope'],
     type: ReviewFieldReviewType,
     checked: boolean
-  ) => void;
-  updateSourceList: (type: ReviewFieldReviewType, checked: boolean) => void;
+  ) => void | Promise<void>;
+  updateSourceList: (
+    type: ReviewFieldReviewType,
+    checked: boolean
+  ) => void | Promise<void>;
 }
 
 const ReviewFieldInheritanceSettings: React.FC<
@@ -767,15 +810,19 @@ const ReviewFieldInheritanceSettings: React.FC<
             <Select
               options={inheritanceModeOptions}
               value={editingField.inheritance.mode}
-              onChange={(value) =>
+              onChange={(value) => {
+                const mode = parseInheritanceMode(value);
+                if (!mode) {
+                  return;
+                }
                 setEditingField((prev) => ({
                   ...prev,
                   inheritance: {
                     ...prev.inheritance,
-                    mode: value as ReviewFieldInheritanceMode,
+                    mode,
                   },
-                }))
-              }
+                }));
+              }}
             />
           </div>
         </div>
@@ -796,7 +843,7 @@ const ReviewFieldInheritanceSettings: React.FC<
 interface ReviewFieldValidationSettingsProps {
   fieldType: CustomFieldType;
   validation: CustomReviewFieldDefinition['validation'];
-  onUpdateValidation: (key: string, value: unknown) => void;
+  onUpdateValidation: (key: string, value: unknown) => void | Promise<void>;
 }
 
 const ReviewFieldValidationSettings: React.FC<
@@ -862,9 +909,9 @@ interface ReviewFieldEditorActionsProps {
   isNewField: boolean;
   fieldId: string;
   labelValidationError: string | null;
-  onDelete: (fieldId: string) => void;
-  onCancel: () => void;
-  onSave: () => void;
+  onDelete: (fieldId: string) => void | Promise<void>;
+  onCancel: () => void | Promise<void>;
+  onSave: () => void | Promise<void>;
 }
 
 const ReviewFieldEditorActions: React.FC<ReviewFieldEditorActionsProps> = ({
@@ -879,7 +926,7 @@ const ReviewFieldEditorActions: React.FC<ReviewFieldEditorActionsProps> = ({
     {!isNewField && (
       <Button
         variant="danger"
-        onClick={() => onDelete(fieldId)}
+        onClick={() => void onDelete(fieldId)}
         className="custom-fields-delete-button"
       >
         {t('settings.customization.review-fields.editor.delete')}
@@ -905,7 +952,10 @@ interface ReviewTypeCheckboxesProps {
   description: string;
   selected: ReviewFieldReviewType[];
   options?: { type: ReviewFieldReviewType; label: string }[];
-  onToggle: (type: ReviewFieldReviewType, checked: boolean) => void;
+  onToggle: (
+    type: ReviewFieldReviewType,
+    checked: boolean
+  ) => void | Promise<void>;
 }
 
 const ReviewTypeCheckboxes: React.FC<ReviewTypeCheckboxesProps> = ({
@@ -926,7 +976,7 @@ const ReviewTypeCheckboxes: React.FC<ReviewTypeCheckboxesProps> = ({
           <input
             type="checkbox"
             checked={selected.includes(type)}
-            onChange={(event) => onToggle(type, event.target.checked)}
+            onChange={(event) => void onToggle(type, event.target.checked)}
             className="custom-fields-checkbox"
           />
           <span>{label}</span>
@@ -942,7 +992,7 @@ interface NumberSettingProps {
   value: number | undefined;
   min?: number;
   allowDecimal?: boolean;
-  onChange: (value: number | undefined) => void;
+  onChange: (value: number | undefined) => void | Promise<void>;
 }
 
 const NumberSetting: React.FC<NumberSettingProps> = ({
@@ -961,7 +1011,7 @@ const NumberSetting: React.FC<NumberSettingProps> = ({
     <div className="setting-item-control">
       <NumberInput
         value={value}
-        onChange={onChange}
+        onChange={(value) => void onChange(value)}
         min={min}
         allowDecimal={allowDecimal}
         className="custom-review-fields-number-input"
@@ -974,7 +1024,7 @@ interface CheckboxSettingProps {
   title: string;
   description: string;
   checked: boolean;
-  onChange: (checked: boolean) => void;
+  onChange: (checked: boolean) => void | Promise<void>;
 }
 
 const CheckboxSetting: React.FC<CheckboxSettingProps> = ({
@@ -992,7 +1042,7 @@ const CheckboxSetting: React.FC<CheckboxSettingProps> = ({
       <input
         type="checkbox"
         checked={checked}
-        onChange={(event) => onChange(event.target.checked)}
+        onChange={(event) => void onChange(event.target.checked)}
         className="custom-fields-checkbox"
       />
     </div>

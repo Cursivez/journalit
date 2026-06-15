@@ -96,7 +96,7 @@ const SortableQuickLinkButton: React.FC<{
           className="journalit-quick-link-handle"
         >
           <button
-            onClick={handleButtonClick}
+            onClick={() => void handleButtonClick()}
             disabled={isEditing}
             className="journalit-quick-link-button jl-quick-link-hover"
             style={cssVars({ '--link-color': quickLink.color })}
@@ -115,7 +115,7 @@ const SortableQuickLinkButton: React.FC<{
         {isEditing && (
           <button
             className="journalit-quick-link-remove"
-            onClick={handleRemoveClick}
+            onClick={(event) => void handleRemoveClick(event)}
             aria-label={t('home.quick-links.hide')}
             type="button"
           >
@@ -284,7 +284,7 @@ const QuickLinksRowComponent: React.FC<QuickLinksRowProps> = ({
               quickLink={quickLink}
               isEditing={isEditing}
               onRemove={handleRemoveQuickLink}
-              onClick={handleQuickLinkClick}
+              onClick={(quickLink) => void handleQuickLinkClick(quickLink)}
             />
           ))}
         </SortableContext>

@@ -19,17 +19,51 @@ interface MarkReviewedWidgetProps {
 }
 
 
-const SUPPORTED_TYPES = [
-  'drc',
-  'weekly-review',
-  'monthly-review',
-  'quarterly-review',
-  'yearly-review',
-];
+type SupportedReviewType =
+  | 'drc'
+  | 'weekly-review'
+  | 'monthly-review'
+  | 'quarterly-review'
+  | 'yearly-review';
 
 
 const MAX_FRONTMATTER_RETRIES = 5;
 const FRONTMATTER_RETRY_DELAY_MS = 150;
+
+function asRecord(value: unknown): Record<string, unknown> | undefined {
+  return value && typeof value === 'object' && !Array.isArray(value)
+    ? Object.fromEntries(Object.entries(value))
+    : undefined;
+}
+
+function getSupportedReviewType(value: unknown): SupportedReviewType | null {
+  switch (value) {
+    case 'drc':
+    case 'weekly-review':
+    case 'monthly-review':
+    case 'quarterly-review':
+    case 'yearly-review':
+      return value;
+    default:
+      return null;
+  }
+}
+
+function getBooleanValue(
+  record: Record<string, unknown> | undefined,
+  key: string
+): boolean {
+  const value = record?.[key];
+  return typeof value === 'boolean' ? value : false;
+}
+
+function getStringValue(
+  record: Record<string, unknown> | undefined,
+  key: string
+): string | null {
+  const value = record?.[key];
+  return typeof value === 'string' ? value : null;
+}
 
 export const MarkReviewedWidget: React.FC<MarkReviewedWidgetProps> = ({
   filePath,
@@ -41,7 +75,7 @@ export const MarkReviewedWidget: React.FC<MarkReviewedWidgetProps> = ({
   const [reviewedAt, setReviewedAt] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [isValidContext, setIsValidContext] = useState(true);
-  const [noteType, setNoteType] = useState<string | null>(null);
+  const [noteType, setNoteType] = useState<SupportedReviewType | null>(null);
   const retryCountRef = useRef(0);
 
   useEffect(() => {
@@ -55,12 +89,12 @@ export const MarkReviewedWidget: React.FC<MarkReviewedWidgetProps> = ({
     }
 
     retryCountRef.current = 0;
-    loadReviewStatus();
+    void loadReviewStatus();
 
     
     const handleMetadataChange = (file: TFile) => {
       if (file.path === filePath) {
-        loadReviewStatus();
+        void loadReviewStatus();
       }
     };
 
@@ -69,7 +103,7 @@ export const MarkReviewedWidget: React.FC<MarkReviewedWidgetProps> = ({
     return () => {
       plugin.app.metadataCache.off('changed', handleMetadataChange);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- status load is tied to file identity and avoids retry-loop dependency churn
   }, [filePath, preview, previewData]);
 
   const loadReviewStatus = async () => {
@@ -81,13 +115,16 @@ export const MarkReviewedWidget: React.FC<MarkReviewedWidgetProps> = ({
     }
 
     const cache = plugin.app.metadataCache.getFileCache(file);
-    const frontmatter = cache?.frontmatter;
+    const frontmatter = asRecord(cache?.frontmatter);
 
     if (!frontmatter) {
       
       if (retryCountRef.current < MAX_FRONTMATTER_RETRIES) {
         retryCountRef.current++;
-        setTimeout(() => loadReviewStatus(), FRONTMATTER_RETRY_DELAY_MS);
+        window.setTimeout(
+          () => void loadReviewStatus(),
+          FRONTMATTER_RETRY_DELAY_MS
+        );
         return;
       }
       setIsValidContext(false);
@@ -96,8 +133,8 @@ export const MarkReviewedWidget: React.FC<MarkReviewedWidgetProps> = ({
     }
 
     
-    const type = frontmatter.type;
-    if (!SUPPORTED_TYPES.includes(type)) {
+    const type = getSupportedReviewType(frontmatter.type);
+    if (!type) {
       setIsValidContext(false);
       setLoading(false);
       return;
@@ -109,12 +146,12 @@ export const MarkReviewedWidget: React.FC<MarkReviewedWidgetProps> = ({
     
     
     if (type === 'drc') {
-      const eodReview = frontmatter.endOfDayReview || {};
-      setReviewed(eodReview.reviewed ?? false);
-      setReviewedAt(eodReview.reviewedAt ?? null);
+      const eodReview = asRecord(frontmatter.endOfDayReview);
+      setReviewed(getBooleanValue(eodReview, 'reviewed'));
+      setReviewedAt(getStringValue(eodReview, 'reviewedAt'));
     } else {
-      setReviewed(frontmatter.reviewed ?? false);
-      setReviewedAt(frontmatter.reviewedAt ?? null);
+      setReviewed(getBooleanValue(frontmatter, 'reviewed'));
+      setReviewedAt(getStringValue(frontmatter, 'reviewedAt'));
     }
 
     setIsValidContext(true);
@@ -139,7 +176,8 @@ export const MarkReviewedWidget: React.FC<MarkReviewedWidgetProps> = ({
         
         
         const cache = plugin.app.metadataCache.getFileCache(file);
-        const currentEodReview = cache?.frontmatter?.endOfDayReview || {};
+        const currentEodReview =
+          asRecord(cache?.frontmatter?.endOfDayReview) ?? {};
         await plugin.drcService.updateDRCFrontmatter(
           filePath,
           {
@@ -285,7 +323,7 @@ export const MarkReviewedWidget: React.FC<MarkReviewedWidgetProps> = ({
       </div>
 
       <button
-        onClick={toggleReviewStatus}
+        onClick={() => void toggleReviewStatus()}
         disabled={preview}
         className={buttonClassName}
       >

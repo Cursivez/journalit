@@ -13,6 +13,7 @@ import { TradeTemplateService } from '../../services/templates/TradeTemplateServ
 import { Tooltip } from '../shared/Tooltip';
 import { eventBus, DefaultTemplateChangedPayload } from '../../services/events';
 import { t } from '../../lang/helpers';
+import type { TemplatesSettings } from '../../settings/types';
 import { showDeleteTemplateModal } from './UnsavedChangesModal';
 import {
   useGuideAction,
@@ -49,8 +50,8 @@ interface BuilderSidebarProps {
 interface SectionProps {
   title: string;
   isExpanded: boolean;
-  onToggle: () => void;
-  onAdd?: () => void;
+  onToggle: () => void | Promise<void>;
+  onAdd?: () => void | Promise<void>;
   children: React.ReactNode;
   disabled?: boolean;
   disabledMessage?: string;
@@ -68,14 +69,14 @@ const Section: React.FC<SectionProps> = ({
 }) => (
   <div className="template-builder-section">
     <div
-      onClick={onToggle}
+      onClick={() => void onToggle()}
       onKeyDown={(e) => {
         if (e.key !== 'Enter' && e.key !== ' ') {
           return;
         }
 
         e.preventDefault();
-        onToggle();
+        void onToggle();
       }}
       role="button"
       tabIndex={0}
@@ -102,7 +103,7 @@ const Section: React.FC<SectionProps> = ({
           <button
             onClick={(e) => {
               e.stopPropagation();
-              onAdd();
+              void onAdd();
             }}
             className="template-builder-section-add"
           >
@@ -137,13 +138,13 @@ const Section: React.FC<SectionProps> = ({
 
 
 interface TemplateItemProps {
-  template: ReviewTemplate;
+  template: ReviewTemplate | TradeTemplate;
   isSelected: boolean;
   isDefault: boolean;
-  onClick: () => void;
-  onSetDefault: () => void;
-  onDuplicate: () => void;
-  onDelete: () => void;
+  onClick: () => void | Promise<void>;
+  onSetDefault: () => void | Promise<void>;
+  onDuplicate: () => void | Promise<void>;
+  onDelete: () => void | Promise<void>;
   containerRef?: (element: HTMLDivElement | null) => void;
   defaultStarRef?: (element: HTMLButtonElement | null) => void;
   duplicateButtonRef?: (element: HTMLButtonElement | null) => void;
@@ -165,14 +166,14 @@ const TemplateItem: React.FC<TemplateItemProps> = ({
 }) => (
   <div
     ref={containerRef}
-    onClick={onClick}
+    onClick={() => void onClick()}
     onKeyDown={(e) => {
       if (e.key !== 'Enter' && e.key !== ' ') {
         return;
       }
 
       e.preventDefault();
-      onClick();
+      void onClick();
     }}
     role="button"
     tabIndex={0}
@@ -192,7 +193,7 @@ const TemplateItem: React.FC<TemplateItemProps> = ({
           type="button"
           onClick={(e) => {
             e.stopPropagation();
-            if (!isDefault) onSetDefault();
+            if (!isDefault) void onSetDefault();
           }}
           className={`sidebar-template-item-star${isDefault ? ' is-default' : ''}`}
           disabled={isDefault}
@@ -229,7 +230,7 @@ const TemplateItem: React.FC<TemplateItemProps> = ({
           ref={duplicateButtonRef}
           onClick={(e) => {
             e.stopPropagation();
-            onDuplicate();
+            void onDuplicate();
           }}
           className="template-item-action-button"
         >
@@ -251,7 +252,7 @@ const TemplateItem: React.FC<TemplateItemProps> = ({
           <button
             onClick={(e) => {
               e.stopPropagation();
-              onDelete();
+              void onDelete();
             }}
             className="template-item-action-button template-item-action-button--danger"
           >
@@ -422,13 +423,13 @@ function useBuilderSidebarModel({
     templateId: string,
     type: ReviewTemplateType
   ) => {
-    const keyMap: Record<string, string> = {
+    const keyMap = {
       drc: 'defaultDrc',
       weekly: 'defaultWeekly',
       monthly: 'defaultMonthly',
       quarterly: 'defaultQuarterly',
       yearly: 'defaultYearly',
-    };
+    } satisfies Record<ReviewTemplateType, keyof TemplatesSettings>;
     const key = keyMap[type];
 
     if (!plugin.settings.templates) {
@@ -442,13 +443,13 @@ function useBuilderSidebarModel({
       };
     }
 
-    plugin.settings.templates[key as keyof typeof plugin.settings.templates] =
-      templateId;
+    const templates = plugin.settings.templates;
+    templates[key] = templateId;
     await plugin.saveSettings();
     setDefaultIds((prev) => ({ ...prev, [type]: templateId }));
 
     eventBus.publish('default-template:changed', {
-      type: type as 'drc' | 'weekly' | 'monthly' | 'quarterly',
+      type,
       value: templateId,
     });
 
@@ -738,7 +739,7 @@ function useBuilderSidebarModel({
       return (
         <TemplateItem
           key={template.id}
-          template={template as unknown as ReviewTemplate}
+          template={template}
           isSelected={
             selection?.type === 'template' && selection.id === template.id
           }

@@ -1,6 +1,6 @@
 
 
-const ACCOUNT_WEIGHT_BAR_STYLES = `
+export const ACCOUNT_WEIGHT_BAR_STYLES = `
 
 
 
@@ -42,8 +42,8 @@ const ACCOUNT_WEIGHT_BAR_STYLES = `
 
 
 .account-weight-segment:hover {
-  opacity: 0.8 !important;
-  transform: scaleY(1.1) !important;
+  opacity: 0.8;
+  transform: scaleY(1.1);
   z-index: 2;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
 }
@@ -320,18 +320,3 @@ const ACCOUNT_WEIGHT_BAR_STYLES = `
   z-index: 10;
 }
 `;
-
-
-export function injectAccountWeightBarStyles(): void {
-  return;
-}
-
-
-export function removeAccountWeightBarStyles(): void {
-  return;
-}
-
-
-export function ensureAccountWeightBarStyles(): void {
-  return;
-}

@@ -26,7 +26,7 @@ interface DrawdownAnalyzableTrade {
   exitTime?: Date | string | null;
   pnl?: number | null;
   direction?: string | null;
-  tradeStatus?: 'OPEN' | 'CLOSED' | string;
+  tradeStatus?: string;
   useDirectPnLInput?: boolean;
   exits?: Array<{
     time?: Date | string | null;
@@ -175,6 +175,14 @@ interface ResolveDrawdownCapitalBasisOptions {
     DrawdownCapitalBasisAccountCapital
   >;
 }
+
+const getPositiveFiniteNumber = (value: unknown): number | null =>
+  typeof value === 'number' && Number.isFinite(value) && value > 0
+    ? value
+    : null;
+
+const getFiniteNumber = (value: unknown, fallback = 0): number =>
+  typeof value === 'number' && Number.isFinite(value) ? value : fallback;
 
 const EMPTY_SUMMARY_BASE = {
   totalClosedTrades: 0,
@@ -370,23 +378,25 @@ export const resolveDrawdownCapitalBasis = (
       return { type: 'none' };
     }
 
+    const accountCapitalAmount = getPositiveFiniteNumber(
+      accountCapital?.amount
+    );
+    const initialBalance = getPositiveFiniteNumber(metadata?.initialBalance);
+    const currentBalance = getPositiveFiniteNumber(metadata?.currentBalance);
     const resolvedBasis =
-      Number.isFinite(accountCapital?.amount) &&
-      (accountCapital?.amount ?? 0) > 0
+      accountCapitalAmount !== null
         ? {
-            amount: accountCapital?.amount as number,
+            amount: accountCapitalAmount,
             source: accountCapital?.source ?? 'currentCapital',
           }
-        : Number.isFinite(metadata?.initialBalance) &&
-            (metadata?.initialBalance ?? 0) > 0
+        : initialBalance !== null
           ? {
-              amount: metadata?.initialBalance as number,
+              amount: initialBalance,
               source: 'initialBalance' as const,
             }
-          : Number.isFinite(metadata?.currentBalance) &&
-              (metadata?.currentBalance ?? 0) > 0
+          : currentBalance !== null
             ? {
-                amount: metadata?.currentBalance as number,
+                amount: currentBalance,
                 source: 'currentCapital' as const,
               }
             : null;
@@ -916,7 +926,7 @@ export const analyzeDrawdown = <TTrade extends DrawdownAnalyzableTrade>(
   const episodes: DrawdownEpisode<TTrade>[] = [];
 
   sortedTrades.forEach(({ trade }, index) => {
-    const pnl = Number.isFinite(trade.pnl) ? (trade.pnl as number) : 0;
+    const pnl = getFiniteNumber(trade.pnl);
     cumulativeRealizedPnl += pnl;
 
     const effectiveRMultiple = calculateDrawdownRMultiple(

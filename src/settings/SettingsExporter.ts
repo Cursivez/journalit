@@ -5,7 +5,6 @@ import { Notice, Modal, App } from 'obsidian';
 import JournalitPlugin from '../main';
 import { JournalitSettings, DEFAULT_SETTINGS } from './types';
 import { t } from '../lang/helpers';
-import { ensureSettingsResetModalStyles } from './settingsResetModalStyles';
 import { BackendSecretStorage } from '../services/backend/BackendSecretStorage';
 
 export function redactSettingsSecretsForExport(value: unknown): unknown {
@@ -30,6 +29,28 @@ export function redactSettingsSecretsForExport(value: unknown): unknown {
   }
 
   return redacted;
+}
+
+interface SettingsImportFile {
+  _version?: string;
+  settings?: unknown;
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
+}
+
+function parseSettingsImport(content: string): SettingsImportFile {
+  const parsed: unknown = JSON.parse(content);
+  if (!isRecord(parsed)) return {};
+  return {
+    _version: typeof parsed._version === 'string' ? parsed._version : undefined,
+    settings: parsed.settings,
+  };
+}
+
+function cloneDefaultSettings(): JournalitSettings {
+  return structuredClone(DEFAULT_SETTINGS);
 }
 
 function removeLocalSecretNamespaceFromImport(value: unknown): unknown {
@@ -77,14 +98,14 @@ export class SettingsExporter {
       const blob = new Blob([content], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
 
-      const a = document.createElement('a');
+      const a = window.activeDocument.createElement('a');
       a.href = url;
       a.download = filename;
       try {
-        document.body.appendChild(a);
+        window.activeDocument.body.appendChild(a);
         a.click();
       } finally {
-        document.body.removeChild(a);
+        window.activeDocument.body.removeChild(a);
         URL.revokeObjectURL(url);
       }
 
@@ -99,7 +120,7 @@ export class SettingsExporter {
   async importSettings(file: File): Promise<boolean> {
     try {
       const content = await file.text();
-      const importData = JSON.parse(content);
+      const importData = parseSettingsImport(content);
 
       
       if (!importData.settings || typeof importData.settings !== 'object') {
@@ -116,9 +137,7 @@ export class SettingsExporter {
       
       const mergedSettings = this.deepMergeSettings(
         this.plugin.settings,
-        removeLocalSecretNamespaceFromImport(
-          importData.settings
-        ) as Partial<JournalitSettings>
+        removeLocalSecretNamespaceFromImport(importData.settings)
       );
 
       
@@ -129,13 +148,13 @@ export class SettingsExporter {
       await this.plugin.saveSettings();
 
       
-      document.dispatchEvent(
+      window.activeDocument.dispatchEvent(
         new CustomEvent('journalit-settings-updated', {
           detail: { source: 'SettingsExporter.import' },
         })
       );
 
-      const exportVersion = importData._version || 'unknown';
+      const exportVersion = importData._version ?? 'unknown';
       new Notice(
         t('notice.settings-imported', { version: exportVersion }),
         10000
@@ -180,11 +199,11 @@ export class SettingsExporter {
             
             BackendSecretStorage.clearAuthToken(this.plugin);
             BackendSecretStorage.clearFTPPassword(this.plugin);
-            this.plugin.settings = JSON.parse(JSON.stringify(DEFAULT_SETTINGS));
+            this.plugin.settings = cloneDefaultSettings();
             await this.plugin.saveSettings();
 
             
-            document.dispatchEvent(
+            window.activeDocument.dispatchEvent(
               new CustomEvent('journalit-settings-updated', {
                 detail: { source: 'SettingsExporter.reset' },
               })
@@ -225,9 +244,9 @@ export class SettingsExporter {
   }
 
   
-  
-
-  private isValidSettingsStructure(data: any): boolean {
+  private isValidSettingsStructure(
+    data: unknown
+  ): data is Partial<JournalitSettings> {
     if (!data || typeof data !== 'object') return false;
 
     
@@ -243,20 +262,19 @@ export class SettingsExporter {
   
   private deepMergeSettings(
     current: JournalitSettings,
-    imported: Partial<JournalitSettings>
+    imported: unknown
   ): JournalitSettings {
-    return this.deepMergeSettingsObject(
-      current as Record<string, unknown>,
-      imported as Record<string, unknown>
-    ) as JournalitSettings;
+    if (!this.isPlainObject(imported)) {
+      return current;
+    }
+    return this.deepMergeSettingsObject(current, imported);
   }
 
   private deepMergeSettingsObject(
-    current: Record<string, unknown>,
+    current: JournalitSettings,
     imported: Record<string, unknown>
-  ): Record<string, unknown> {
-    const merged = { ...current };
-
+  ): JournalitSettings {
+    const merged: JournalitSettings = { ...current };
     for (const key of Object.keys(imported)) {
       const currentValue = current[key];
       const importedValue = imported[key];
@@ -265,12 +283,28 @@ export class SettingsExporter {
         this.isPlainObject(importedValue) &&
         this.isPlainObject(currentValue)
       ) {
-        merged[key] = this.deepMergeSettingsObject(currentValue, importedValue);
+        merged[key] = this.deepMergeRecord(currentValue, importedValue);
       } else {
         merged[key] = importedValue;
       }
     }
 
+    return merged;
+  }
+
+  private deepMergeRecord(
+    current: Record<string, unknown>,
+    imported: Record<string, unknown>
+  ): Record<string, unknown> {
+    const merged: Record<string, unknown> = { ...current };
+    for (const key of Object.keys(imported)) {
+      const currentValue = current[key];
+      const importedValue = imported[key];
+      merged[key] =
+        this.isPlainObject(importedValue) && this.isPlainObject(currentValue)
+          ? this.deepMergeRecord(currentValue, importedValue)
+          : importedValue;
+    }
     return merged;
   }
 
@@ -281,13 +315,12 @@ export class SettingsExporter {
   
   openImportFilePicker(): Promise<File | null> {
     return new Promise((resolve) => {
-      const input = document.createElement('input');
+      const input = window.activeDocument.createElement('input');
       input.type = 'file';
       input.accept = '.json';
 
-      input.onchange = (e) => {
-        const file = (e.target as HTMLInputElement).files?.[0];
-        resolve(file || null);
+      input.onchange = () => {
+        resolve(input.files?.[0] ?? null);
       };
 
       input.oncancel = () => {
@@ -301,9 +334,12 @@ export class SettingsExporter {
 
 
 class ResetConfirmationModal extends Modal {
-  private onConfirm: (confirmed: boolean) => void;
+  private onConfirm: (confirmed: boolean) => void | Promise<void>;
 
-  constructor(app: App, onConfirm: (confirmed: boolean) => void) {
+  constructor(
+    app: App,
+    onConfirm: (confirmed: boolean) => void | Promise<void>
+  ) {
     super(app);
     this.titleEl.setText(t('settings.reset.modal.title'));
     this.onConfirm = onConfirm;
@@ -376,7 +412,7 @@ class ResetConfirmationModal extends Modal {
       cls: 'journalit-settings-reset-modal__button journalit-settings-reset-modal__button--secondary',
     });
     cancelBtn.addEventListener('click', () => {
-      this.onConfirm(false);
+      void this.onConfirm(false);
       this.close();
     });
 
@@ -385,7 +421,7 @@ class ResetConfirmationModal extends Modal {
       cls: 'journalit-settings-reset-modal__button journalit-settings-reset-modal__button--danger',
     });
     confirmBtn.addEventListener('click', () => {
-      this.onConfirm(true);
+      void this.onConfirm(true);
       this.close();
     });
   }
@@ -398,9 +434,9 @@ class ResetConfirmationModal extends Modal {
 
 
 class BackupFailedModal extends Modal {
-  private onConfirm: (proceed: boolean) => void;
+  private onConfirm: (proceed: boolean) => void | Promise<void>;
 
-  constructor(app: App, onConfirm: (proceed: boolean) => void) {
+  constructor(app: App, onConfirm: (proceed: boolean) => void | Promise<void>) {
     super(app);
     this.titleEl.setText(t('settings.reset.backup-failed.title'));
     this.onConfirm = onConfirm;
@@ -429,7 +465,7 @@ class BackupFailedModal extends Modal {
       text: t('button.cancel-reset'),
     });
     cancelButton.addEventListener('click', () => {
-      this.onConfirm(false);
+      void this.onConfirm(false);
       this.close();
     });
 
@@ -438,7 +474,7 @@ class BackupFailedModal extends Modal {
       cls: 'mod-warning',
     });
     proceedButton.addEventListener('click', () => {
-      this.onConfirm(true);
+      void this.onConfirm(true);
       this.close();
     });
   }

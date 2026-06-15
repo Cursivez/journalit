@@ -15,6 +15,34 @@ import { hasTranslation, t } from '../../lang/helpers';
 const EMPTY_EXISTING_ACCOUNTS: ExistingAccount[] = [];
 const EMPTY_AVAILABLE_ACCOUNT_TYPES: string[] = [];
 
+interface AccountCatalogEntry {
+  id?: string;
+  name?: string;
+}
+
+interface JournalitPluginServices {
+  accountPageService?: {
+    getAccountCatalog: () => Promise<AccountCatalogEntry[]>;
+  };
+  optionsService?: {
+    getOptions: (type: OptionType) => unknown;
+  };
+}
+
+function getJournalitPluginServices(): JournalitPluginServices | undefined {
+  const plugins = getApp().plugins?.plugins;
+  const plugin = plugins?.journalit;
+  return plugin && typeof plugin === 'object'
+    ? (plugin as JournalitPluginServices)
+    : undefined;
+}
+
+function asStringArray(value: unknown): string[] {
+  return Array.isArray(value)
+    ? value.filter((item): item is string => typeof item === 'string')
+    : [];
+}
+
 interface ExistingAccount {
   path: string;
   name: string;
@@ -28,7 +56,7 @@ interface AccountLinkModalProps {
     accountId: string,
     displayName: string,
     linkToExisting?: string,
-    accountType?: AccountType
+    accountType?: string
   ) => Promise<void>;
   onCancel: () => void;
 }
@@ -72,8 +100,8 @@ function getAccountTypeLabel(type: string): string {
 
 interface AccountTypeSelectProps {
   availableAccountTypes: string[];
-  selectedAccountType: AccountType;
-  onChange: (accountType: AccountType) => void;
+  selectedAccountType: string;
+  onChange: (accountType: string) => void;
 }
 
 function AccountTypeSelect({
@@ -89,7 +117,7 @@ function AccountTypeSelect({
       <select
         value={selectedAccountType}
         onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
-          onChange(e.target.value as AccountType)
+          onChange(e.target.value)
         }
         className="modal-select"
       >
@@ -110,11 +138,11 @@ interface LinkOptionsFormProps {
   linkOption: AccountLinkOption;
   customName: string;
   selectedAccount: string;
-  selectedAccountType: AccountType;
+  selectedAccountType: string;
   onLinkOptionChange: (newOption: AccountLinkOption) => void;
   onCustomNameChange: (customName: string) => void;
   onSelectedAccountChange: (selectedAccount: string) => void;
-  onSelectedAccountTypeChange: (selectedAccountType: AccountType) => void;
+  onSelectedAccountTypeChange: (selectedAccountType: string) => void;
 }
 
 function LinkOptionsForm({
@@ -251,9 +279,9 @@ const AccountLinkModal: React.FC<AccountLinkModalProps> = ({
   const userHasSelectedOptionRef = useRef(false);
   const [customName, setCustomName] = useState('');
   const [selectedAccount, setSelectedAccount] = useState('');
-  const [selectedAccountType, setSelectedAccountType] = useState<AccountType>(
+  const [selectedAccountType, setSelectedAccountType] = useState<string>(
     availableAccountTypes.length > 0
-      ? (availableAccountTypes[0] as AccountType)
+      ? availableAccountTypes[0]
       : AccountType.DEMO
   );
   const [isLoading, setIsLoading] = useState(false);
@@ -277,7 +305,7 @@ const AccountLinkModal: React.FC<AccountLinkModalProps> = ({
       availableAccountTypes.length > 0 &&
       !availableAccountTypes.includes(selectedAccountType)
     ) {
-      setSelectedAccountType(availableAccountTypes[0] as AccountType);
+      setSelectedAccountType(availableAccountTypes[0]);
     }
   }, [availableAccountTypes, selectedAccountType]);
 
@@ -296,7 +324,7 @@ const AccountLinkModal: React.FC<AccountLinkModalProps> = ({
     try {
       let displayName = '';
       let linkToExisting: string | undefined;
-      let accountType: AccountType | undefined;
+      let accountType: string | undefined;
 
       switch (linkOption) {
         case 'new':
@@ -393,11 +421,11 @@ export class AccountLinkModalWrapper extends Modal {
     accountId: string,
     displayName: string,
     linkToExisting?: string,
-    accountType?: AccountType
+    accountType?: string
   ) => Promise<void>;
   private onCancel: () => void;
   private existingAccounts: ExistingAccount[] = [];
-  private availableAccountTypes: AccountType[] = [];
+  private availableAccountTypes: string[] = [];
   private root: Root | null = null;
 
   constructor(
@@ -407,7 +435,7 @@ export class AccountLinkModalWrapper extends Modal {
       accountId: string,
       displayName: string,
       linkToExisting?: string,
-      accountType?: AccountType
+      accountType?: string
     ) => Promise<void>,
     onCancel: () => void
   ) {
@@ -426,10 +454,6 @@ export class AccountLinkModalWrapper extends Modal {
       this.loadExistingAccounts(),
       this.loadAvailableAccountTypes(),
     ]);
-
-    
-    const { injectAccountLinkModalStyles } =
-      await import('../../styles/account/accountLinkModalStyles');
 
     const rootDiv = contentEl.createDiv();
     const { createRoot } = await import('react-dom/client');
@@ -460,8 +484,8 @@ export class AccountLinkModalWrapper extends Modal {
   private async loadExistingAccounts() {
     try {
       
-      const plugin = getApp().plugins?.plugins?.['journalit'];
-      const accountPageService = plugin?.accountPageService;
+      const accountPageService =
+        getJournalitPluginServices()?.accountPageService;
 
       if (!accountPageService) {
         console.warn(
@@ -480,11 +504,11 @@ export class AccountLinkModalWrapper extends Modal {
       }
 
       this.existingAccounts = accounts.map((acc) => ({
-        path: acc.name,
+        path: acc.name ?? '',
         name:
-          acc.name ||
+          acc.name ??
           t('account.link-modal.default-name', {
-            id: acc.id || t('common.unknown'),
+            id: acc.id ?? t('common.unknown'),
           }),
       }));
     } catch (error) {
@@ -496,8 +520,7 @@ export class AccountLinkModalWrapper extends Modal {
   private async loadAvailableAccountTypes() {
     try {
       
-      const plugin = getApp().plugins?.plugins?.['journalit'];
-      const optionsService = plugin?.optionsService;
+      const optionsService = getJournalitPluginServices()?.optionsService;
 
       if (!optionsService) {
         console.warn(
@@ -513,13 +536,13 @@ export class AccountLinkModalWrapper extends Modal {
       }
 
       
-      const customAccountTypes = optionsService.getOptions(
-        OptionType.ACCOUNT_TYPE
+      const customAccountTypes = asStringArray(
+        optionsService.getOptions(OptionType.ACCOUNT_TYPE)
       );
 
       if (customAccountTypes && customAccountTypes.length > 0) {
         
-        this.availableAccountTypes = customAccountTypes as AccountType[];
+        this.availableAccountTypes = customAccountTypes;
       } else {
         
         console.warn(

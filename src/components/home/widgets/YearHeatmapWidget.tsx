@@ -8,7 +8,6 @@ import { useDashboardData } from '../../dashboard/context/DashboardDataContext';
 import { SkeletonBox } from '../../shared/SkeletonBox';
 import { SkeletonText } from '../../shared/SkeletonText';
 import { t } from '../../../lang/helpers';
-import { ensureHomeWidgetStyles } from '../../../styles/homeWidgetStyles';
 import { getTradeAnalyticsTradingDay } from '../../../utils/tradeAnalyticsDate';
 import {
   buildCurrencyConversionMetadata,
@@ -103,7 +102,7 @@ const YearHeatmapWidgetComponent: React.FC<YearHeatmapWidgetProps> = ({
     const container = containerRef.current;
     if (!container) return;
 
-    let debounceTimer: ReturnType<typeof setTimeout> | null = null;
+    let debounceTimer: number | null = null;
 
     const resizeObserver = new ResizeObserver((entries) => {
       for (const entry of entries) {
@@ -111,8 +110,8 @@ const YearHeatmapWidgetComponent: React.FC<YearHeatmapWidgetProps> = ({
         const newMaxWeeks = calculateMaxWeeks(width);
 
         
-        if (debounceTimer) clearTimeout(debounceTimer);
-        debounceTimer = setTimeout(() => {
+        if (debounceTimer) window.clearTimeout(debounceTimer);
+        debounceTimer = window.setTimeout(() => {
           setMaxWeeks(newMaxWeeks);
         }, 100);
       }
@@ -125,7 +124,7 @@ const YearHeatmapWidgetComponent: React.FC<YearHeatmapWidgetProps> = ({
     setMaxWeeks(calculateMaxWeeks(initialWidth));
 
     return () => {
-      if (debounceTimer) clearTimeout(debounceTimer);
+      if (debounceTimer) window.clearTimeout(debounceTimer);
       resizeObserver.disconnect();
     };
   }, []);
@@ -308,7 +307,11 @@ const YearHeatmapWidgetComponent: React.FC<YearHeatmapWidgetProps> = ({
         <ContributionsHeatmap
           trades={dashboardData?.trades || []}
           year={selectedYear}
-          onDayClick={allowReviewNavigation ? handleDayClick : undefined}
+          onDayClick={
+            allowReviewNavigation
+              ? (day) => void handleDayClick(day)
+              : undefined
+          }
           height="100%"
           maxWeeks={maxWeeks}
           

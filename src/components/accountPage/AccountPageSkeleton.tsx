@@ -4,12 +4,7 @@ import React, { memo, useLayoutEffect } from 'react';
 import { SkeletonBox } from '../shared/SkeletonBox';
 import { SkeletonText } from '../shared/SkeletonText';
 import { DashboardWidgetSkeleton } from '../dashboard/components/DashboardWidgets/DashboardWidgetSkeleton';
-import {
-  injectAccountPageSkeletonStyles,
-  removeAccountPageSkeletonStyles,
-} from '../../styles/accountPage/accountPageSkeletonStyles';
 import { t } from '../../lang/helpers';
-import { ensureSkeletonStyles } from '../../styles/skeletonStyles';
 
 export const AccountPageSkeleton = memo(() => {
   useLayoutEffect(() => {

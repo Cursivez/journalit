@@ -83,7 +83,7 @@ const getOwnerDocument = (
   chartRef: React.RefObject<HTMLElement | null>
 ): Document | null =>
   chartRef.current?.ownerDocument ??
-  (typeof document !== 'undefined' ? document : null);
+  (typeof window.activeDocument !== 'undefined' ? window.activeDocument : null);
 
 const getChartRect = (chartRoot: HTMLElement): DOMRect => {
   const rechartsWrapper =

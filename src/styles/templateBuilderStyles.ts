@@ -1,7 +1,7 @@
 
 
 
-const TEMPLATE_BUILDER_STYLES = `
+export const TEMPLATE_BUILDER_STYLES = `
 
 .journalit-template-builder-container {
   background: var(--background-primary);
@@ -2267,11 +2267,3 @@ const TEMPLATE_BUILDER_STYLES = `
 `;
 
 
-function injectTemplateBuilderStyles(): void {
-  return;
-}
-
-
-export function ensureTemplateBuilderStyles(): void {
-  return;
-}

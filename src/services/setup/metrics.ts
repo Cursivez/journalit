@@ -12,7 +12,21 @@ import {
 } from '../../utils/tradeStatusUtils';
 import { calculateDirectionalPriceDiff } from '../../utils/pnlCalculation';
 
-export interface Trade {
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
+}
+
+function stringArray(value: unknown): string[] {
+  return Array.isArray(value)
+    ? value.filter((item): item is string => typeof item === 'string')
+    : [];
+}
+
+function numberValue(value: unknown): number {
+  return typeof value === 'number' && Number.isFinite(value) ? value : 0;
+}
+
+export interface Trade extends Record<string, unknown> {
   exitPrice: number;
   entryPrice: number;
   positionSize: number;
@@ -21,7 +35,7 @@ export interface Trade {
   entryTime: string; 
   exitTime: string; 
   pnl?: number | null;
-  tradeStatus?: 'OPEN' | 'CLOSED' | string;
+  tradeStatus?: string;
   direction?: string;
   assetType?: string;
   useDirectPnLInput?: boolean;
@@ -44,6 +58,26 @@ export interface Trade {
     hasExplicitPrice?: boolean;
   }>;
   _originalPnlWasNull?: boolean;
+}
+
+function normalizeSetupMetricTrade(value: unknown): Trade | null {
+  if (!isRecord(value)) {
+    return null;
+  }
+
+  const setupIds = stringArray(value.setupIds);
+  const setup = stringArray(value.setup);
+
+  return {
+    ...value,
+    exitPrice: numberValue(value.exitPrice),
+    entryPrice: numberValue(value.entryPrice),
+    positionSize: numberValue(value.positionSize),
+    setupIds,
+    setup,
+    entryTime: typeof value.entryTime === 'string' ? value.entryTime : '',
+    exitTime: typeof value.exitTime === 'string' ? value.exitTime : '',
+  };
 }
 
 
@@ -88,16 +122,17 @@ export class SetupMetricsCalculator {
     if (typeof this.tradeService.getTradeData === 'function') {
       const tradeData = await this.tradeService.getTradeData();
       if (Array.isArray(tradeData)) {
-        const trades = tradeData as Trade[];
+        const trades = tradeData.flatMap((trade) => {
+          const normalizedTrade = normalizeSetupMetricTrade(trade);
+          return normalizedTrade ? [normalizedTrade] : [];
+        });
         return trades.filter((trade) => {
           const setupIds = Array.isArray(trade.setupIds)
             ? trade.setupIds
             : Array.isArray(trade.setup)
               ? trade.setup
               : [];
-          return (
-            setupIds.includes(setupId) && isPnlContributingTrade(trade as any)
-          );
+          return setupIds.includes(setupId) && isPnlContributingTrade(trade);
         });
       }
     }
@@ -298,23 +333,36 @@ export class SetupMetricsCalculator {
         }
         return acc;
       },
-      {} as Record<string, any>
+      {} as Record<string, unknown>
     );
 
     const normalizedExecution = normalizeTradeExecutionForAnalytics({
       ...frontmatter,
-      direction: frontmatter.direction || 'long',
+      direction:
+        typeof frontmatter.direction === 'string'
+          ? frontmatter.direction
+          : 'long',
     });
 
     return {
       exitPrice: normalizedExecution.exitPrice,
       entryPrice: normalizedExecution.entryPrice,
       positionSize: normalizedExecution.positionSize,
-      setupIds: frontmatter.setupIds || [],
+      setupIds: Array.isArray(frontmatter.setupIds)
+        ? frontmatter.setupIds.filter(
+            (item): item is string => typeof item === 'string'
+          )
+        : [],
       entryTime: normalizedExecution.entryTime.toISOString(),
       exitTime: normalizedExecution.exitTime.toISOString(),
-      direction: frontmatter.direction || 'long',
-      assetType: frontmatter.assetType,
+      direction:
+        typeof frontmatter.direction === 'string'
+          ? frontmatter.direction
+          : 'long',
+      assetType:
+        typeof frontmatter.assetType === 'string'
+          ? frontmatter.assetType
+          : undefined,
     };
   }
 }

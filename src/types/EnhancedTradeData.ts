@@ -7,7 +7,7 @@ import type { TradeId } from '../utils/tradeIdentity';
 
 export interface EnhancedTradeData extends AccountTradeData {
   
-  tradeStatus?: 'OPEN' | 'CLOSED' | string;
+  tradeStatus?: string;
 
   
   useDirectPnLInput?: boolean;

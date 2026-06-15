@@ -1,6 +1,6 @@
 
 
-const HOME_PAGE_STYLES = `
+export const HOME_PAGE_STYLES = `
   
   .journalit-home-page {
     width: 100%;
@@ -111,7 +111,7 @@ const HOME_PAGE_STYLES = `
     overflow: hidden;
   }
 
-  .journalit-home-period-option {
+  .journalit-home-page .journalit-home-period-option {
     display: flex;
     align-items: center;
     gap: 8px;
@@ -130,12 +130,12 @@ const HOME_PAGE_STYLES = `
     -webkit-appearance: none;
   }
 
-  .journalit-home-period-option:hover {
+  .journalit-home-page .journalit-home-period-option:hover {
     background: var(--background-modifier-hover) !important;
     background-color: var(--background-modifier-hover) !important;
   }
 
-  .journalit-home-period-option__label {
+  .journalit-home-page .journalit-home-period-option__label {
     flex: 1;
     min-width: 0;
     overflow: hidden;
@@ -143,7 +143,7 @@ const HOME_PAGE_STYLES = `
     white-space: nowrap;
   }
 
-  .journalit-home-period-option__check {
+  .journalit-home-page .journalit-home-period-option__check {
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -157,12 +157,14 @@ const HOME_PAGE_STYLES = `
     flex-shrink: 0;
   }
 
-  .journalit-home-period-option--active .journalit-home-period-option__check {
+  .journalit-home-page
+    .journalit-home-period-option--active
+    .journalit-home-period-option__check {
     background-color: var(--interactive-accent);
     border-color: var(--interactive-accent);
   }
 
-  .journalit-home-period-option--active {
+  .journalit-home-page .journalit-home-period-option--active {
     background: transparent !important;
     background-color: transparent !important;
   }
@@ -230,8 +232,8 @@ const HOME_PAGE_STYLES = `
     z-index: 100;
   }
 
-  .journalit-home-account-filter__option,
-  .journalit-home-trade-type-filter__option {
+  .journalit-home-account-filter .journalit-home-account-filter__option,
+  .journalit-home-trade-type-filter .journalit-home-trade-type-filter__option {
     display: flex;
     align-items: center;
     justify-content: flex-start;
@@ -252,21 +254,25 @@ const HOME_PAGE_STYLES = `
     transition: background-color 0.15s ease;
   }
 
-  .journalit-home-account-filter__option:hover,
-  .journalit-home-trade-type-filter__option:hover {
+  .journalit-home-account-filter .journalit-home-account-filter__option:hover,
+  .journalit-home-trade-type-filter
+    .journalit-home-trade-type-filter__option:hover {
     background: var(--background-modifier-hover) !important;
     background-color: var(--background-modifier-hover) !important;
   }
 
-  .journalit-home-account-filter__option--active,
-  .journalit-home-trade-type-filter__option--active {
+  .journalit-home-account-filter
+    .journalit-home-account-filter__option--active,
+  .journalit-home-trade-type-filter
+    .journalit-home-trade-type-filter__option--active {
     background: transparent !important;
     background-color: transparent !important;
     color: var(--text-normal) !important;
   }
 
-  .journalit-home-account-filter__option-label,
-  .journalit-home-trade-type-filter__option-label {
+  .journalit-home-account-filter .journalit-home-account-filter__option-label,
+  .journalit-home-trade-type-filter
+    .journalit-home-trade-type-filter__option-label {
     flex: 1;
     min-width: 0;
     overflow: hidden;
@@ -275,8 +281,9 @@ const HOME_PAGE_STYLES = `
     text-align: left;
   }
 
-  .journalit-home-account-filter__checkbox,
-  .journalit-home-trade-type-filter__checkbox {
+  .journalit-home-account-filter .journalit-home-account-filter__checkbox,
+  .journalit-home-trade-type-filter
+    .journalit-home-trade-type-filter__checkbox {
     width: 14px;
     height: 14px;
     display: inline-flex;
@@ -290,8 +297,10 @@ const HOME_PAGE_STYLES = `
     font-size: 10px;
   }
 
-  .journalit-home-account-filter__checkbox--checked,
-  .journalit-home-trade-type-filter__checkbox--checked {
+  .journalit-home-account-filter
+    .journalit-home-account-filter__checkbox--checked,
+  .journalit-home-trade-type-filter
+    .journalit-home-trade-type-filter__checkbox--checked {
     background-color: var(--interactive-accent);
     border-color: var(--interactive-accent);
   }
@@ -725,11 +734,3 @@ const HOME_PAGE_STYLES = `
     width: auto;
   }
 `;
-
-const homePageStylesInjected = false;
-
-function injectHomePageStyles(): void {
-  return;
-}
-
-export function ensureHomePageStyles(): void {}

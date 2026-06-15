@@ -29,10 +29,6 @@ import { t, tPlural } from '../../lang/helpers';
 import JournalitPlugin from '../../main';
 import { UPGRADE_URL } from '../../constants';
 import { useBackendProEntitlement } from '../../hooks/useBackendProEntitlement';
-import {
-  ensureCSVImportStyles,
-  removeCSVImportStyles,
-} from '../../styles/csvImportStyles';
 import { cssVars } from '../../styles/inlineStylePolicy';
 import { openExternalUrl } from '../../utils/externalLinks';
 import { DeviceFlowSignInModal } from '../auth/DeviceFlowSignInModal';
@@ -59,13 +55,39 @@ import type {
   TradeField,
 } from '../../services/csv/types';
 import { getDateFormatOptions, TRADE_FIELDS } from '../../services/csv/types';
-import { CustomFieldType } from '../../types/customFields';
+import { writeClipboardText } from '../../utils/clipboard';
 
 interface CSVImportProps {
   plugin: JournalitPlugin;
 }
 type AssetType = 'stock' | 'options' | 'futures' | 'forex' | 'crypto';
 type TradeImportWizardStep = 1 | 2 | 3;
+
+const TRADE_IMPORT_STEP_NUMBERS: TradeImportWizardStep[] = [1, 2, 3];
+const TRADE_FIELD_VALUES = new Set<string>(TRADE_FIELDS);
+
+const isAssetType = (value: unknown): value is AssetType =>
+  value === 'stock' ||
+  value === 'options' ||
+  value === 'futures' ||
+  value === 'forex' ||
+  value === 'crypto';
+
+const isManualImportMode = (value: unknown): value is ManualImportMode =>
+  value === 'price_based' || value === 'direct_pnl';
+
+const isTradeField = (value: unknown): value is TradeField =>
+  typeof value === 'string' && TRADE_FIELD_VALUES.has(value);
+
+const rememberedCsvAssetType = (
+  plugin: JournalitPlugin,
+  brokerId: string
+): AssetType | undefined => {
+  const value =
+    plugin.settings.csvLastAssetType?.[brokerId] ??
+    plugin.settings.csvLastAssetType?.__last;
+  return isAssetType(value) ? value : undefined;
+};
 
 interface DropdownOption {
   value: string;
@@ -163,8 +185,9 @@ const TradeImportDropdown: React.FC<{
     if (!isOpen) return;
     updateMenuPosition();
     const handlePointerDown = (event: PointerEvent) => {
-      const target = event.target as Node;
+      const target = event.target;
       if (
+        target instanceof Node &&
         !wrapperRef.current?.contains(target) &&
         !menuRef.current?.contains(target)
       ) {
@@ -177,34 +200,44 @@ const TradeImportDropdown: React.FC<{
       }
     };
     const handleScroll = (event: Event) => {
-      if (menuRef.current?.contains(event.target as Node)) return;
+      const target = event.target;
+      if (target instanceof Node && menuRef.current?.contains(target)) return;
       setIsOpen(false);
     };
     const handleReposition = () => updateMenuPosition();
     const handleWindowBlur = () => setIsOpen(false);
     const handleVisibilityChange = () => {
-      if (document.hidden) setIsOpen(false);
+      if (window.activeDocument.hidden) setIsOpen(false);
     };
     const monitor = window.setInterval(() => {
       if (
-        !document.hasFocus() ||
+        !window.activeDocument.hasFocus() ||
         !wrapperRef.current?.isConnected ||
         !wrapperRef.current.closest('.workspace-leaf.mod-active')
       ) {
         setIsOpen(false);
       }
     }, 150);
-    document.addEventListener('pointerdown', handlePointerDown);
-    document.addEventListener('keydown', handleKeyDown);
-    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.activeDocument.addEventListener('pointerdown', handlePointerDown);
+    window.activeDocument.addEventListener('keydown', handleKeyDown);
+    window.activeDocument.addEventListener(
+      'visibilitychange',
+      handleVisibilityChange
+    );
     window.addEventListener('pagehide', handleWindowBlur);
     window.addEventListener('resize', handleReposition);
     window.addEventListener('scroll', handleScroll, true);
     window.addEventListener('blur', handleWindowBlur);
     return () => {
-      document.removeEventListener('pointerdown', handlePointerDown);
-      document.removeEventListener('keydown', handleKeyDown);
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.activeDocument.removeEventListener(
+        'pointerdown',
+        handlePointerDown
+      );
+      window.activeDocument.removeEventListener('keydown', handleKeyDown);
+      window.activeDocument.removeEventListener(
+        'visibilitychange',
+        handleVisibilityChange
+      );
       window.clearInterval(monitor);
       window.removeEventListener('pagehide', handleWindowBlur);
       window.removeEventListener('resize', handleReposition);
@@ -256,7 +289,7 @@ const TradeImportDropdown: React.FC<{
               );
             })}
           </div>,
-          document.body
+          window.activeDocument.body
         )
       : null;
 
@@ -384,7 +417,7 @@ function isMultiColumnMappingField(
   return customFields.some(
     (customField) =>
       (customField.fieldKey || customField.id) === fieldKey &&
-      customField.type === CustomFieldType.MULTISELECT
+      customField.type === 'multiselect'
   );
 }
 
@@ -514,11 +547,6 @@ function updateColumnAssignment(
 export const CSVImport = memo<CSVImportProps>(({ plugin }) => {
   const { formatValue } = useDisplayFormatter();
 
-  useEffect(() => {
-    ensureCSVImportStyles();
-    return () => removeCSVImportStyles();
-  }, []);
-
   const backendTradeImportService = useMemo(
     () => new BackendTradeImportService(),
     []
@@ -548,9 +576,10 @@ export const CSVImport = memo<CSVImportProps>(({ plugin }) => {
     plugin.settings.csvFavoriteBroker ?? 'MANUAL'
   );
   const [assetType, setAssetType] = useState<AssetType>(
-    (plugin.settings.csvLastAssetType?.[
+    rememberedCsvAssetType(
+      plugin,
       plugin.settings.csvFavoriteBroker ?? 'MANUAL'
-    ] as AssetType | undefined) ?? 'stock'
+    ) ?? 'stock'
   );
   const [favoriteAccount, setFavoriteAccount] = useState(
     plugin.settings.csvFavoriteAccount ?? ''
@@ -632,8 +661,9 @@ export const CSVImport = memo<CSVImportProps>(({ plugin }) => {
       );
     }
     const handlePointerDown = (event: PointerEvent) => {
-      const target = event.target as Node;
+      const target = event.target;
       if (
+        target instanceof Node &&
         !templateActionsRef.current?.contains(target) &&
         !templateMenuRef.current?.contains(target)
       ) {
@@ -646,7 +676,9 @@ export const CSVImport = memo<CSVImportProps>(({ plugin }) => {
       }
     };
     const handleScroll = (event: Event) => {
-      if (templateMenuRef.current?.contains(event.target as Node)) return;
+      const target = event.target;
+      if (target instanceof Node && templateMenuRef.current?.contains(target))
+        return;
       setTemplateActionsOpen(false);
     };
     const handleReposition = () => {
@@ -657,28 +689,37 @@ export const CSVImport = memo<CSVImportProps>(({ plugin }) => {
     };
     const handleWindowBlur = () => setTemplateActionsOpen(false);
     const handleVisibilityChange = () => {
-      if (document.hidden) setTemplateActionsOpen(false);
+      if (window.activeDocument.hidden) setTemplateActionsOpen(false);
     };
     const monitor = window.setInterval(() => {
       if (
-        !document.hasFocus() ||
+        !window.activeDocument.hasFocus() ||
         !templateActionsRef.current?.isConnected ||
         !templateActionsRef.current.closest('.workspace-leaf.mod-active')
       ) {
         setTemplateActionsOpen(false);
       }
     }, 150);
-    document.addEventListener('pointerdown', handlePointerDown);
-    document.addEventListener('keydown', handleKeyDown);
-    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.activeDocument.addEventListener('pointerdown', handlePointerDown);
+    window.activeDocument.addEventListener('keydown', handleKeyDown);
+    window.activeDocument.addEventListener(
+      'visibilitychange',
+      handleVisibilityChange
+    );
     window.addEventListener('pagehide', handleWindowBlur);
     window.addEventListener('resize', handleReposition);
     window.addEventListener('scroll', handleScroll, true);
     window.addEventListener('blur', handleWindowBlur);
     return () => {
-      document.removeEventListener('pointerdown', handlePointerDown);
-      document.removeEventListener('keydown', handleKeyDown);
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.activeDocument.removeEventListener(
+        'pointerdown',
+        handlePointerDown
+      );
+      window.activeDocument.removeEventListener('keydown', handleKeyDown);
+      window.activeDocument.removeEventListener(
+        'visibilitychange',
+        handleVisibilityChange
+      );
       window.clearInterval(monitor);
       window.removeEventListener('pagehide', handleWindowBlur);
       window.removeEventListener('resize', handleReposition);
@@ -691,26 +732,33 @@ export const CSVImport = memo<CSVImportProps>(({ plugin }) => {
     const handleClickOutside = (event: MouseEvent) => {
       if (
         brokerDropdownRef.current &&
-        !brokerDropdownRef.current.contains(event.target as Node)
+        event.target instanceof Node &&
+        !brokerDropdownRef.current.contains(event.target)
       ) {
         setIsBrokerDropdownOpen(false);
       }
       if (
         accountDropdownRef.current &&
-        !accountDropdownRef.current.contains(event.target as Node)
+        event.target instanceof Node &&
+        !accountDropdownRef.current.contains(event.target)
       ) {
         setIsAccountDropdownOpen(false);
       }
       if (
         templateDropdownRef.current &&
-        !templateDropdownRef.current.contains(event.target as Node)
+        event.target instanceof Node &&
+        !templateDropdownRef.current.contains(event.target)
       ) {
         setIsTemplateDropdownOpen(false);
       }
     };
 
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    window.activeDocument.addEventListener('mousedown', handleClickOutside);
+    return () =>
+      window.activeDocument.removeEventListener(
+        'mousedown',
+        handleClickOutside
+      );
   }, []);
 
   useEffect(() => {
@@ -765,6 +813,7 @@ export const CSVImport = memo<CSVImportProps>(({ plugin }) => {
     t('trade-import.broker.manual');
   const brokerGuideUrl =
     broker === 'MANUAL' ? undefined : BROKER_GUIDE_URLS[broker];
+  const isManualBroker = broker === 'MANUAL';
   const isManualMappingFlow = broker === 'MANUAL' || selectedTemplateId !== '';
   const supportsManualMapping =
     isManualMappingFlow &&
@@ -777,6 +826,7 @@ export const CSVImport = memo<CSVImportProps>(({ plugin }) => {
   const failedPreviewRows = classified.filter(
     (item) => item.classification === 'failed'
   );
+  const hasPreviewMessages = renderedClassified.some((item) => item.message);
   const noImportablePreview = preview !== null && importablePreviewCount < 1;
   const acceptedExtensionList = selectedBrokerCapabilities
     ? capabilities?.fileTypes
@@ -856,9 +906,12 @@ export const CSVImport = memo<CSVImportProps>(({ plugin }) => {
 
     if (nextBroker !== broker) {
       setBroker(nextBroker);
-      const lastAssetType = plugin.settings.csvLastAssetType?.[nextBroker] as
-        | AssetType
-        | undefined;
+      if (nextBroker !== 'MANUAL') {
+        setSelectedTemplateId('');
+        setTemplateExportCode('');
+        setTemplateImportOpen(false);
+      }
+      const lastAssetType = rememberedCsvAssetType(plugin, nextBroker);
       if (lastAssetType) setAssetType(lastAssetType);
     }
   }, [
@@ -868,6 +921,7 @@ export const CSVImport = memo<CSVImportProps>(({ plugin }) => {
     plugin.settings.csvFavoriteBroker,
     favoriteTemplateId,
     plugin.settings.csvLastAssetType,
+    plugin,
   ]);
 
   const toggleFavoriteAccount = useCallback(
@@ -922,14 +976,17 @@ export const CSVImport = memo<CSVImportProps>(({ plugin }) => {
   const selectBroker = useCallback(
     (brokerId: string) => {
       setBroker(brokerId);
-      const lastAssetType = plugin.settings.csvLastAssetType?.[brokerId] as
-        | AssetType
-        | undefined;
+      if (brokerId !== 'MANUAL') {
+        setSelectedTemplateId('');
+        setTemplateExportCode('');
+        setTemplateImportOpen(false);
+      }
+      const lastAssetType = rememberedCsvAssetType(plugin, brokerId);
       if (lastAssetType) setAssetType(lastAssetType);
       setIsBrokerDropdownOpen(false);
       invalidateAnalysis();
     },
-    [invalidateAnalysis, plugin.settings.csvLastAssetType]
+    [invalidateAnalysis, plugin]
   );
 
   const selectAssetType = useCallback(
@@ -938,6 +995,7 @@ export const CSVImport = memo<CSVImportProps>(({ plugin }) => {
       plugin.settings.csvLastAssetType = {
         ...(plugin.settings.csvLastAssetType ?? {}),
         [broker]: nextAssetType,
+        __last: nextAssetType,
       };
       void plugin.saveSettings();
       invalidatePreview();
@@ -1082,7 +1140,7 @@ export const CSVImport = memo<CSVImportProps>(({ plugin }) => {
 
   const copyTemplateExportCode = useCallback(async () => {
     if (!templateExportCode) return;
-    await navigator.clipboard.writeText(templateExportCode);
+    await writeClipboardText(templateExportCode);
     setTemplateCopied(true);
   }, [templateExportCode]);
 
@@ -1269,7 +1327,10 @@ export const CSVImport = memo<CSVImportProps>(({ plugin }) => {
   const handleFileDragLeave = useCallback(
     (event: React.DragEvent<HTMLDivElement>) => {
       event.preventDefault();
-      if (!event.currentTarget.contains(event.relatedTarget as Node | null)) {
+      if (
+        !(event.relatedTarget instanceof Node) ||
+        !event.currentTarget.contains(event.relatedTarget)
+      ) {
         setIsDraggingFile(false);
       }
     },
@@ -1291,7 +1352,7 @@ export const CSVImport = memo<CSVImportProps>(({ plugin }) => {
       plugin.app,
       plugin,
       () => {
-        document.dispatchEvent(new Event('journalit:subscription-changed'));
+        window.dispatchEvent(new Event('journalit:subscription-changed'));
       },
       () => undefined
     );
@@ -1355,29 +1416,34 @@ export const CSVImport = memo<CSVImportProps>(({ plugin }) => {
   };
 
   if (!isAuthenticated) return renderGate('signin', handleSignIn);
-  if (!canUseTradeImport || isCheckingEntitlement)
-    return renderGate('upgrade', handleUpgrade);
+  if (isCheckingEntitlement && !canUseTradeImport) {
+    return (
+      <div className="journalit-csv-import journalit-trade-import-simple">
+        <div className="csv-import-header journalit-trade-import-simple-header">
+          <p>{t('backend.status.checking')}</p>
+        </div>
+      </div>
+    );
+  }
+  if (!canUseTradeImport) return renderGate('upgrade', handleUpgrade);
 
   const maxStep = importCompleted || preview ? 3 : analyse ? 2 : 1;
 
   return (
     <div className="journalit-csv-import journalit-trade-import-simple">
-      <div className="csv-import-header journalit-trade-import-simple-header">
-        <p>{t('trade-import.description')}</p>
-      </div>
-
       <div className="journalit-trade-import-stepper">
-        {[
-          t('trade-import.step.select'),
-          t('trade-import.step.analyse'),
-          t('trade-import.step.preview'),
-        ].map((label, index) => {
-          const stepNumber = index + 1;
+        {TRADE_IMPORT_STEP_NUMBERS.map((stepNumber) => {
+          const label =
+            stepNumber === 1
+              ? t('trade-import.step.select')
+              : stepNumber === 2
+                ? t('trade-import.step.analyse')
+                : t('trade-import.step.preview');
           return (
             <button
               type="button"
               disabled={stepNumber > maxStep || busy}
-              onClick={() => setActiveStep(stepNumber as TradeImportWizardStep)}
+              onClick={() => setActiveStep(stepNumber)}
               key={label}
               className={`journalit-trade-import-step ${maxStep >= stepNumber ? 'is-active' : ''} ${activeStep === stepNumber ? 'is-current' : ''}`}
             >
@@ -1529,6 +1595,32 @@ export const CSVImport = memo<CSVImportProps>(({ plugin }) => {
                   )}
                 </div>
               </label>
+              <label>
+                {t('trade-import.label.asset-type')}
+                <TradeImportDropdown
+                  label={t('trade-import.label.asset-type')}
+                  disabled={busy}
+                  value={assetType}
+                  options={[
+                    { value: 'stock', label: t('trade-import.asset.stock') },
+                    {
+                      value: 'options',
+                      label: t('trade-import.asset.options'),
+                    },
+                    {
+                      value: 'futures',
+                      label: t('trade-import.asset.futures'),
+                    },
+                    { value: 'forex', label: t('trade-import.asset.forex') },
+                    { value: 'crypto', label: t('trade-import.asset.crypto') },
+                  ]}
+                  onChange={(value) => {
+                    if (isAssetType(value)) {
+                      selectAssetType(value);
+                    }
+                  }}
+                />
+              </label>
             </div>
 
             <div
@@ -1536,10 +1628,10 @@ export const CSVImport = memo<CSVImportProps>(({ plugin }) => {
               role="button"
               tabIndex={busy ? -1 : 0}
               onClick={(event) => {
+                const target = event.target;
                 if (
-                  (event.target as HTMLElement).closest(
-                    '.journalit-trade-import-guide-link'
-                  )
+                  target instanceof Element &&
+                  target.closest('.journalit-trade-import-guide-link')
                 ) {
                   return;
                 }
@@ -1598,287 +1690,275 @@ export const CSVImport = memo<CSVImportProps>(({ plugin }) => {
               </div>
             </div>
 
-            <Accordion
-              title={t('trade-import.label.template')}
-              defaultExpanded={true}
-              className="journalit-trade-import-accordion"
-            >
-              <div className="journalit-trade-import-template-picker-row">
-                <label>
-                  {t('trade-import.label.template')}
+            {isManualBroker && (
+              <Accordion
+                title={t('trade-import.label.template')}
+                defaultExpanded={true}
+                className="journalit-trade-import-accordion"
+              >
+                <div className="journalit-trade-import-template-picker-row">
+                  <label>
+                    {t('trade-import.label.template')}
+                    <div
+                      className="journalit-home-period-wrapper journalit-trade-import-template-picker"
+                      ref={templateDropdownRef}
+                    >
+                      <button
+                        type="button"
+                        disabled={busy}
+                        onClick={() =>
+                          setIsTemplateDropdownOpen((isOpen) => !isOpen)
+                        }
+                        className="journalit-home-period-selector journalit-trade-import-template-trigger clickable-icon"
+                        aria-label={t('trade-import.label.template')}
+                      >
+                        <span>
+                          {selectedTemplateId
+                            ? localTemplateService.getTemplate(
+                                selectedTemplateId
+                              )?.name
+                            : t('trade-import.template.none')}
+                        </span>
+                        <ChevronDown
+                          size={14}
+                          className={`journalit-home-period-chevron${isTemplateDropdownOpen ? ' journalit-home-period-chevron--open' : ''}`}
+                        />
+                      </button>
+                      {isTemplateDropdownOpen && (
+                        <div className="journalit-home-period-menu journalit-trade-import-template-select-menu">
+                          <div
+                            className={`journalit-home-period-option journalit-trade-import-favorite-option${selectedTemplateId === '' ? ' journalit-home-period-option--active' : ''}`}
+                          >
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setSelectedTemplateId('');
+                                setColumnMappings({});
+                                setTemplateExportCode('');
+                                setIsTemplateDropdownOpen(false);
+                                invalidateAnalysis();
+                              }}
+                              className="journalit-trade-import-favorite-option__select"
+                            >
+                              <span
+                                className="journalit-home-period-option__check"
+                                aria-hidden="true"
+                              >
+                                {selectedTemplateId === '' ? '✓' : ''}
+                              </span>
+                              <span className="journalit-home-period-option__label">
+                                {t('trade-import.template.none')}
+                              </span>
+                            </button>
+                          </div>
+                          {templates.map((template) => {
+                            const isSelected =
+                              template.id === selectedTemplateId;
+                            return (
+                              <div
+                                key={template.id}
+                                className={`journalit-home-period-option journalit-trade-import-favorite-option${isSelected ? ' journalit-home-period-option--active' : ''}`}
+                              >
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    void applyTemplate(template);
+                                    setIsTemplateDropdownOpen(false);
+                                  }}
+                                  className="journalit-trade-import-favorite-option__select"
+                                >
+                                  <span
+                                    className="journalit-home-period-option__check"
+                                    aria-hidden="true"
+                                  >
+                                    {isSelected ? '✓' : ''}
+                                  </span>
+                                  <span className="journalit-home-period-option__label">
+                                    {template.name}
+                                  </span>
+                                </button>
+                                <button
+                                  type="button"
+                                  className={`journalit-trade-import-favorite-button${favoriteTemplateId === template.id ? ' is-favorite' : ''}`}
+                                  aria-label={
+                                    favoriteTemplateId === template.id
+                                      ? t(
+                                          'csv.account-selector.favorite.remove'
+                                        )
+                                      : t('csv.account-selector.favorite.set')
+                                  }
+                                  onClick={(event) => {
+                                    event.stopPropagation();
+                                    void toggleFavoriteTemplate(template.id);
+                                  }}
+                                >
+                                  <Star size={13} />
+                                </button>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  </label>
                   <div
-                    className="journalit-home-period-wrapper journalit-trade-import-template-picker"
-                    ref={templateDropdownRef}
+                    ref={templateActionsRef}
+                    className="journalit-trade-import-template-menu-wrapper"
                   >
                     <button
                       type="button"
+                      className="journalit-trade-import-template-menu-trigger"
                       disabled={busy}
+                      aria-label={t('trade-import.label.template-actions')}
                       onClick={() =>
-                        setIsTemplateDropdownOpen((isOpen) => !isOpen)
+                        setTemplateActionsOpen((isOpen) => !isOpen)
                       }
-                      className="journalit-home-period-selector journalit-trade-import-template-trigger clickable-icon"
-                      aria-label={t('trade-import.label.template')}
                     >
-                      <span>
-                        {selectedTemplateId
-                          ? localTemplateService.getTemplate(selectedTemplateId)
-                              ?.name
-                          : t('trade-import.template.none')}
-                      </span>
-                      <ChevronDown
-                        size={14}
-                        className={`journalit-home-period-chevron${isTemplateDropdownOpen ? ' journalit-home-period-chevron--open' : ''}`}
-                      />
+                      <MoreHorizontal size={16} />
                     </button>
-                    {isTemplateDropdownOpen && (
-                      <div className="journalit-home-period-menu journalit-trade-import-template-select-menu">
+                    {templateActionsOpen &&
+                      templateMenuPosition &&
+                      createPortal(
                         <div
-                          className={`journalit-home-period-option journalit-trade-import-favorite-option${selectedTemplateId === '' ? ' journalit-home-period-option--active' : ''}`}
+                          ref={templateMenuRef}
+                          className="journalit-trade-import-template-menu journalit-trade-import-template-menu--portal"
+                          style={cssVars({
+                            '--trade-import-menu-top': `${templateMenuPosition.top}px`,
+                            '--trade-import-menu-left': `${templateMenuPosition.left}px`,
+                            '--trade-import-menu-width': `${templateMenuPosition.width}px`,
+                            '--trade-import-menu-max-height': `${templateMenuPosition.maxHeight}px`,
+                          })}
                         >
                           <button
                             type="button"
                             onClick={() => {
-                              setSelectedTemplateId('');
-                              setColumnMappings({});
+                              setTemplateImportOpen(true);
                               setTemplateExportCode('');
-                              setIsTemplateDropdownOpen(false);
-                              invalidateAnalysis();
+                              setTemplateActionsOpen(false);
                             }}
-                            className="journalit-trade-import-favorite-option__select"
                           >
-                            <span
-                              className="journalit-home-period-option__check"
-                              aria-hidden="true"
-                            >
-                              {selectedTemplateId === '' ? '✓' : ''}
-                            </span>
-                            <span className="journalit-home-period-option__label">
-                              {t('trade-import.template.none')}
-                            </span>
+                            <Upload size={15} aria-hidden="true" />
+                            {t('csv.template-import.button.import')}
                           </button>
-                        </div>
-                        {templates.map((template) => {
-                          const isSelected = template.id === selectedTemplateId;
-                          return (
-                            <div
-                              key={template.id}
-                              className={`journalit-home-period-option journalit-trade-import-favorite-option${isSelected ? ' journalit-home-period-option--active' : ''}`}
-                            >
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  void applyTemplate(template);
-                                  setIsTemplateDropdownOpen(false);
-                                }}
-                                className="journalit-trade-import-favorite-option__select"
-                              >
-                                <span
-                                  className="journalit-home-period-option__check"
-                                  aria-hidden="true"
-                                >
-                                  {isSelected ? '✓' : ''}
-                                </span>
-                                <span className="journalit-home-period-option__label">
-                                  {template.name}
-                                </span>
-                              </button>
-                              <button
-                                type="button"
-                                className={`journalit-trade-import-favorite-button${favoriteTemplateId === template.id ? ' is-favorite' : ''}`}
-                                aria-label={
-                                  favoriteTemplateId === template.id
-                                    ? t('csv.account-selector.favorite.remove')
-                                    : t('csv.account-selector.favorite.set')
-                                }
-                                onClick={(event) => {
-                                  event.stopPropagation();
-                                  void toggleFavoriteTemplate(template.id);
-                                }}
-                              >
-                                <Star size={13} />
-                              </button>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    )}
-                  </div>
-                </label>
-                <div
-                  ref={templateActionsRef}
-                  className="journalit-trade-import-template-menu-wrapper"
-                >
-                  <button
-                    type="button"
-                    className="journalit-trade-import-template-menu-trigger"
-                    disabled={busy}
-                    aria-label={t('trade-import.label.template-actions')}
-                    onClick={() => setTemplateActionsOpen((isOpen) => !isOpen)}
-                  >
-                    <MoreHorizontal size={16} />
-                  </button>
-                  {templateActionsOpen &&
-                    templateMenuPosition &&
-                    createPortal(
-                      <div
-                        ref={templateMenuRef}
-                        className="journalit-trade-import-template-menu journalit-trade-import-template-menu--portal"
-                        style={cssVars({
-                          '--trade-import-menu-top': `${templateMenuPosition.top}px`,
-                          '--trade-import-menu-left': `${templateMenuPosition.left}px`,
-                          '--trade-import-menu-width': `${templateMenuPosition.width}px`,
-                          '--trade-import-menu-max-height': `${templateMenuPosition.maxHeight}px`,
-                        })}
-                      >
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setTemplateImportOpen(true);
-                            setTemplateExportCode('');
-                            setTemplateActionsOpen(false);
-                          }}
-                        >
-                          <Upload size={15} aria-hidden="true" />
-                          {t('csv.template-import.button.import')}
-                        </button>
-                        <button
-                          type="button"
-                          disabled={!selectedTemplateId}
-                          onClick={() => {
-                            exportSelectedTemplate();
-                            setTemplateActionsOpen(false);
-                          }}
-                        >
-                          <Download size={15} aria-hidden="true" />
-                          {t('csv.button.export-template')}
-                        </button>
-                        <button
-                          type="button"
-                          disabled={!selectedTemplateId}
-                          onClick={() => {
-                            setTemplateActionsOpen(false);
-                            void deleteSelectedTemplate();
-                          }}
-                        >
-                          <Trash2 size={15} aria-hidden="true" />
-                          {t('csv.button.delete-template')}
-                        </button>
-                      </div>,
-                      document.body
-                    )}
-                </div>
-              </div>
-              {templateImportOpen && (
-                <div className="journalit-trade-import-template-panel">
-                  <label>
-                    {t('csv.template-import.label.share-code')}
-                    <input
-                      type="text"
-                      disabled={busy}
-                      value={templateShareCode}
-                      onChange={(event) =>
-                        setTemplateShareCode(event.target.value)
-                      }
-                      placeholder={t(
-                        'csv.template-import.placeholder.share-code'
+                          <button
+                            type="button"
+                            disabled={!selectedTemplateId}
+                            onClick={() => {
+                              exportSelectedTemplate();
+                              setTemplateActionsOpen(false);
+                            }}
+                          >
+                            <Download size={15} aria-hidden="true" />
+                            {t('csv.button.export-template')}
+                          </button>
+                          <button
+                            type="button"
+                            disabled={!selectedTemplateId}
+                            onClick={() => {
+                              setTemplateActionsOpen(false);
+                              void deleteSelectedTemplate();
+                            }}
+                          >
+                            <Trash2 size={15} aria-hidden="true" />
+                            {t('csv.button.delete-template')}
+                          </button>
+                        </div>,
+                        window.activeDocument.body
                       )}
-                    />
-                  </label>
-                  <div className="journalit-trade-import-template-actions">
-                    <button
-                      disabled={!templateShareCode.trim() || busy}
-                      onClick={() => void importTemplate()}
-                    >
-                      {t('csv.template-import.button.import')}
-                    </button>
-                    <button
-                      disabled={busy}
-                      onClick={() => {
-                        setTemplateImportOpen(false);
-                        setTemplateShareCode('');
-                      }}
-                    >
-                      {t('button.cancel')}
-                    </button>
                   </div>
                 </div>
-              )}
-              {templateExportCode && (
-                <div className="journalit-trade-import-template-panel">
+                {templateImportOpen && (
+                  <div className="journalit-trade-import-template-panel">
+                    <label>
+                      {t('csv.template-import.label.share-code')}
+                      <input
+                        type="text"
+                        disabled={busy}
+                        value={templateShareCode}
+                        onChange={(event) =>
+                          setTemplateShareCode(event.target.value)
+                        }
+                        placeholder={t(
+                          'csv.template-import.placeholder.share-code'
+                        )}
+                      />
+                    </label>
+                    <div className="journalit-trade-import-template-actions">
+                      <button
+                        disabled={!templateShareCode.trim() || busy}
+                        onClick={() => void importTemplate()}
+                      >
+                        {t('csv.template-import.button.import')}
+                      </button>
+                      <button
+                        disabled={busy}
+                        onClick={() => {
+                          setTemplateImportOpen(false);
+                          setTemplateShareCode('');
+                        }}
+                      >
+                        {t('button.cancel')}
+                      </button>
+                    </div>
+                  </div>
+                )}
+                {templateExportCode && (
+                  <div className="journalit-trade-import-template-panel">
+                    <label>
+                      {t('csv.export-template.label.share-code')}
+                      <textarea readOnly value={templateExportCode} />
+                    </label>
+                    <button onClick={() => void copyTemplateExportCode()}>
+                      {templateCopied
+                        ? t('csv.export-template.button.copied')
+                        : t('csv.export-template.button.copy')}
+                    </button>
+                  </div>
+                )}
+                {supportsManualMapping && (
                   <label>
-                    {t('csv.export-template.label.share-code')}
-                    <textarea readOnly value={templateExportCode} />
-                  </label>
-                  <button onClick={() => void copyTemplateExportCode()}>
-                    {templateCopied
-                      ? t('csv.export-template.button.copied')
-                      : t('csv.export-template.button.copy')}
-                  </button>
-                </div>
-              )}
-              <label>
-                {t('trade-import.label.asset-type')}
-                <TradeImportDropdown
-                  label={t('trade-import.label.asset-type')}
-                  disabled={busy}
-                  value={assetType}
-                  options={[
-                    { value: 'stock', label: t('trade-import.asset.stock') },
-                    {
-                      value: 'options',
-                      label: t('trade-import.asset.options'),
-                    },
-                    {
-                      value: 'futures',
-                      label: t('trade-import.asset.futures'),
-                    },
-                    { value: 'forex', label: t('trade-import.asset.forex') },
-                    { value: 'crypto', label: t('trade-import.asset.crypto') },
-                  ]}
-                  onChange={(value) => selectAssetType(value as AssetType)}
-                />
-              </label>
-              {supportsManualMapping && (
-                <label>
-                  {t('trade-import.label.manual-mode')}
-                  <TradeImportDropdown
-                    label={t('trade-import.label.manual-mode')}
-                    disabled={busy}
-                    value={manualMode}
-                    options={[
-                      {
-                        value: 'price_based',
-                        label: t('trade-import.manual-mode.price-based'),
-                      },
-                      {
-                        value: 'direct_pnl',
-                        label: t('trade-import.manual-mode.direct-pnl'),
-                      },
-                    ]}
-                    onChange={(value) => {
-                      setManualMode(value as ManualImportMode);
-                      invalidatePreview();
-                    }}
-                  />
-                </label>
-              )}
-              {supportsManualMapping &&
-                selectedBrokerCapabilities?.supportsAiMapping &&
-                canUseAiMapping && (
-                  <label className="journalit-trade-import-ai-toggle">
-                    <input
-                      type="checkbox"
+                    {t('trade-import.label.manual-mode')}
+                    <TradeImportDropdown
+                      label={t('trade-import.label.manual-mode')}
                       disabled={busy}
-                      checked={aiMappingEnabled}
-                      onChange={(event) => {
-                        setAiMappingEnabled(event.target.checked);
-                        invalidateAnalysis();
+                      value={manualMode}
+                      options={[
+                        {
+                          value: 'price_based',
+                          label: t('trade-import.manual-mode.price-based'),
+                        },
+                        {
+                          value: 'direct_pnl',
+                          label: t('trade-import.manual-mode.direct-pnl'),
+                        },
+                      ]}
+                      onChange={(value) => {
+                        if (isManualImportMode(value)) {
+                          setManualMode(value);
+                          invalidatePreview();
+                        }
                       }}
                     />
-                    <span>{t('trade-import.label.ai-mapping')}</span>
                   </label>
                 )}
-            </Accordion>
+                {supportsManualMapping &&
+                  selectedBrokerCapabilities?.supportsAiMapping &&
+                  canUseAiMapping && (
+                    <label className="journalit-trade-import-ai-toggle">
+                      <input
+                        type="checkbox"
+                        disabled={busy}
+                        checked={aiMappingEnabled}
+                        onChange={(event) => {
+                          setAiMappingEnabled(event.target.checked);
+                          invalidateAnalysis();
+                        }}
+                      />
+                      <span>{t('trade-import.label.ai-mapping')}</span>
+                    </label>
+                  )}
+              </Accordion>
+            )}
 
             <Accordion
               title={t('trade-import.step.privacy')}
@@ -1900,7 +1980,7 @@ export const CSVImport = memo<CSVImportProps>(({ plugin }) => {
             <button
               className="journalit-trade-import-primary"
               disabled={!file || !capabilities || busy}
-              onClick={runAnalyse}
+              onClick={() => void runAnalyse()}
             >
               {t('trade-import.action.analyse')}
             </button>
@@ -2082,13 +2162,14 @@ export const CSVImport = memo<CSVImportProps>(({ plugin }) => {
                               <div className="csv-column-header">
                                 <div className="csv-column-name">
                                   <span>{header}</span>
-                                  {requiredFieldsForMode(manualMode).includes(
-                                    selectedField as TradeField
-                                  ) && (
-                                    <span className="csv-required-badge csv-required-badge--source">
-                                      {t('csv.mapper.required-badge')}
-                                    </span>
-                                  )}
+                                  {isTradeField(selectedField) &&
+                                    requiredFieldsForMode(manualMode).includes(
+                                      selectedField
+                                    ) && (
+                                      <span className="csv-required-badge csv-required-badge--source">
+                                        {t('csv.mapper.required-badge')}
+                                      </span>
+                                    )}
                                 </div>
                                 {sampleValue && (
                                   <div className="csv-column-sample">
@@ -2191,9 +2272,11 @@ export const CSVImport = memo<CSVImportProps>(({ plugin }) => {
                                 <div className="csv-field-category-list">
                                   {fields.map((field) => {
                                     const mapped = mappedFields.has(field);
-                                    const required = requiredFieldsForMode(
-                                      manualMode
-                                    ).includes(field as TradeField);
+                                    const required =
+                                      isTradeField(field) &&
+                                      requiredFieldsForMode(
+                                        manualMode
+                                      ).includes(field);
                                     return (
                                       <div
                                         key={field}
@@ -2252,7 +2335,7 @@ export const CSVImport = memo<CSVImportProps>(({ plugin }) => {
               <button
                 className="journalit-trade-import-primary"
                 disabled={!file || !capabilities || !analyse || busy}
-                onClick={runPreview}
+                onClick={() => void runPreview()}
               >
                 {t('trade-import.action.preview')}
               </button>
@@ -2588,7 +2671,9 @@ export const CSVImport = memo<CSVImportProps>(({ plugin }) => {
                         <th>{t('trade-import.table.direction')}</th>
                         <th>{t('trade-import.table.entry-time')}</th>
                         <th>{t('trade-import.table.quantity')}</th>
-                        <th>{t('trade-import.table.message')}</th>
+                        {hasPreviewMessages && (
+                          <th>{t('trade-import.table.message')}</th>
+                        )}
                       </tr>
                     </thead>
                     <tbody>
@@ -2601,7 +2686,7 @@ export const CSVImport = memo<CSVImportProps>(({ plugin }) => {
                           <td>{item.preview.direction}</td>
                           <td>{item.preview.entryTime}</td>
                           <td>{item.preview.quantity}</td>
-                          <td>{item.message ?? ''}</td>
+                          {hasPreviewMessages && <td>{item.message ?? ''}</td>}
                         </tr>
                       ))}
                     </tbody>
@@ -2619,7 +2704,7 @@ export const CSVImport = memo<CSVImportProps>(({ plugin }) => {
                     disabled={
                       busy || importCompleted || importablePreviewCount < 1
                     }
-                    onClick={confirmImport}
+                    onClick={() => void confirmImport()}
                   >
                     {t('trade-import.action.confirm')}
                   </button>

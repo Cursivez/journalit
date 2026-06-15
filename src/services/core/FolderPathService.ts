@@ -21,7 +21,7 @@ export class FolderPathService {
     this.unsubscribeSettings = eventBus.subscribe(
       'settings:changed',
       (payload) => {
-        this.onSettingsUpdated(payload);
+        void this.onSettingsUpdated(payload);
       }
     );
   }

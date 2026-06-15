@@ -31,7 +31,7 @@ export interface AccountTradeData {
   
   currency?: string;
   
-  tradeStatus?: 'OPEN' | 'CLOSED' | string;
+  tradeStatus?: string;
   
   useDirectPnLInput?: boolean;
   

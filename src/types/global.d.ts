@@ -1,3 +1,5 @@
+import type { Hotkey } from 'obsidian';
+
 
 
 declare global {
@@ -15,13 +17,10 @@ declare global {
     __obsidianStartTime?: number;
 
     
-    __isInjectingStyles?: boolean;
-
-    
-    __JOURNALIT_INJECT_DRC_STYLES?: () => void;
-
-    
     __dropdownClickHandlerAdded?: boolean;
+
+    
+    __dropdownClickHandlerDocument?: Document;
 
     
     __isHandlingComboBoxRemove?: boolean;
@@ -39,10 +38,10 @@ declare global {
     __REACT_ERROR_OVERLAY__?: boolean;
 
     
-    createRoot?: any;
+    createRoot?: unknown;
 
     
-    [key: string]: any; 
+    [key: string]: unknown; 
   }
 }
 
@@ -53,7 +52,7 @@ declare module 'obsidian' {
     plugins?: {
       
 
-      plugins: Record<string, any>;
+      plugins: Record<string, unknown>;
       
       enablePlugin(id: string): Promise<void>;
       

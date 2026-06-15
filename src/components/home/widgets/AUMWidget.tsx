@@ -14,7 +14,6 @@ import { useDisplayFormatter } from '../../../hooks/useDisplayPolicy';
 import { HomePeriod } from '../../../settings/types';
 import { SkeletonBox } from '../../shared/SkeletonBox';
 import { SkeletonText } from '../../shared/SkeletonText';
-import { ensureHomeWidgetStyles } from '../../../styles/homeWidgetStyles';
 import { t } from '../../../lang/helpers';
 import { useHomeAccountsData } from '../context/HomeAccountsDataContext';
 
@@ -185,7 +184,7 @@ const AUMWidgetComponent: React.FC<AUMWidgetProps> = ({ plugin }) => {
 
   
   const openAccountDashboard = useCallback(() => {
-    plugin.viewManager.openAccountDashboardView();
+    void plugin.viewManager.openAccountDashboardView();
   }, [plugin]);
 
   

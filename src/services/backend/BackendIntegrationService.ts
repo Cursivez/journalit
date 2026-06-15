@@ -62,6 +62,23 @@ import { formatTagForYAML } from '../../utils/tagSchema';
 const AUTO_CHECK_INTERVAL_MINUTES = 60;
 const ACCOUNT_DISPLAY_NAME_PREFIX_PATTERN = /Account-/;
 
+interface VaultRegistrationResponse {
+  vault_id?: string;
+  success?: boolean;
+  error?: string;
+}
+
+interface SimpleApiResult {
+  success?: boolean;
+  error?: string;
+}
+
+const getErrorMessage = (error: unknown): string =>
+  error instanceof Error ? error.message : String(error);
+
+const asUnknownArray = (value: unknown): unknown[] | null =>
+  Array.isArray(value) ? value : null;
+
 function findYamlSeparator(line: string): number {
   return line.search(/:/);
 }
@@ -132,13 +149,13 @@ export class BackendIntegrationService {
     this.totalTradesToSync = 0;
     this.tradesProcessedSoFar = 0;
     if (this.autoContinueTimeoutId !== null) {
-      clearTimeout(this.autoContinueTimeoutId);
+      window.clearTimeout(this.autoContinueTimeoutId);
       this.autoContinueTimeoutId = null;
     }
 
     if (hadAuthToken) {
       await this.plugin.saveSettings();
-      document.dispatchEvent(new CustomEvent('journalit:subscription-changed'));
+      window.dispatchEvent(new CustomEvent('journalit:subscription-changed'));
     }
 
     if (!this.authExpiredNoticeShown) {
@@ -171,7 +188,7 @@ export class BackendIntegrationService {
   }
   private totalTradesToSync: number = 0;
   private tradesProcessedSoFar: number = 0;
-  private autoContinueTimeoutId: NodeJS.Timeout | null = null;
+  private autoContinueTimeoutId: number | null = null;
 
   
   private tradeSyncService: TradeSyncService;
@@ -181,15 +198,16 @@ export class BackendIntegrationService {
   private folderPathService: FolderPathService;
 
   
-  private debouncedForceSync: typeof this.forceSync & {
+  private debouncedForceSync: ((
+    isAutoContinue?: boolean,
+    isAutomaticCheck?: boolean
+  ) => Promise<SyncResponse | null | undefined>) & {
     cancel: () => void;
-
-    flush: () => Promise<any>;
+    flush: () => Promise<SyncResponse | null | undefined>;
   };
-  private debouncedCheckForNewTrades: typeof this.checkForNewTrades & {
+  private debouncedCheckForNewTrades: (() => Promise<void | undefined>) & {
     cancel: () => void;
-
-    flush: () => Promise<any>;
+    flush: () => Promise<void | undefined>;
   };
 
   constructor(plugin: JournalitPlugin) {
@@ -225,7 +243,7 @@ export class BackendIntegrationService {
     );
 
     
-    this.tradeSyncService.loadSyncMapping();
+    void this.tradeSyncService.loadSyncMapping();
 
     
     this.fileWatcherService.setupFileWatcher();
@@ -233,21 +251,22 @@ export class BackendIntegrationService {
     
     
     this.debouncedForceSync = debounceAsync(
-      this.forceSync.bind(this),
+      (isAutoContinue?: boolean, isAutomaticCheck?: boolean) =>
+        this.forceSync(isAutoContinue, isAutomaticCheck),
       5000 
     );
 
     
     this.debouncedCheckForNewTrades = debounceAsync(
-      this.checkForNewTrades.bind(this),
+      () => this.checkForNewTrades(),
       30000 
     );
 
-    document.addEventListener(
+    window.addEventListener(
       'journalit:subscription-changed',
       this.handleSubscriptionChanged
     );
-    document.addEventListener('journalit:auth-failed', this.handleAuthFailed);
+    window.addEventListener('journalit:auth-failed', this.handleAuthFailed);
 
     this.reconcileAutoSyncState();
   }
@@ -370,7 +389,7 @@ export class BackendIntegrationService {
 
     const url = ApiClient.buildUrl('/api/v1/obsidian/register-vault');
 
-    const result = await ApiClient.makeRequest<any>(
+    const result = await ApiClient.makeRequest<VaultRegistrationResponse>(
       url,
       {
         method: 'POST',
@@ -407,7 +426,7 @@ export class BackendIntegrationService {
 
       
       if (this.autoContinueTimeoutId !== null) {
-        clearTimeout(this.autoContinueTimeoutId);
+        window.clearTimeout(this.autoContinueTimeoutId);
         this.autoContinueTimeoutId = null;
       }
 
@@ -432,7 +451,7 @@ export class BackendIntegrationService {
         this.totalTradesToSync = 0;
         this.tradesProcessedSoFar = 0;
         if (this.autoContinueTimeoutId !== null) {
-          clearTimeout(this.autoContinueTimeoutId);
+          window.clearTimeout(this.autoContinueTimeoutId);
           this.autoContinueTimeoutId = null;
         }
       } else {
@@ -457,7 +476,7 @@ export class BackendIntegrationService {
         this.totalTradesToSync = 0;
         this.tradesProcessedSoFar = 0;
         if (this.autoContinueTimeoutId !== null) {
-          clearTimeout(this.autoContinueTimeoutId);
+          window.clearTimeout(this.autoContinueTimeoutId);
           this.autoContinueTimeoutId = null;
         }
       } else if (isAutomaticCheck) {
@@ -496,7 +515,7 @@ export class BackendIntegrationService {
           }
           const ftpSyncUrl = ApiClient.buildUrl('/api/v1/sync/ftp');
 
-          const ftpSyncResult = await ApiClient.makeRequest<any>(
+          const ftpSyncResult = await ApiClient.makeRequest<SimpleApiResult>(
             ftpSyncUrl,
             {
               method: 'POST',
@@ -601,20 +620,8 @@ export class BackendIntegrationService {
                   useDirectPnLInput:
                     frontmatter.useDirectPnLInput === true ||
                     frontmatter.useDirectPnLInput === 'true',
-                  exits: Array.isArray(frontmatter.exits)
-                    ? (frontmatter.exits as Array<{
-                        time?: string;
-                        price?: number;
-                        size?: number;
-                      }>)
-                    : undefined,
-                  entries: Array.isArray(frontmatter.entries)
-                    ? (frontmatter.entries as Array<{
-                        time?: string;
-                        price?: number;
-                        size?: number;
-                      }>)
-                    : undefined,
+                  exits: normalizeExecutionEntries(frontmatter.exits),
+                  entries: normalizeExecutionEntries(frontmatter.entries),
                 });
                 const isNowClosed =
                   trade.status === 'CLOSED' &&
@@ -643,7 +650,7 @@ export class BackendIntegrationService {
 
         
         if (i + BATCH_SIZE < allTrades.length) {
-          await new Promise((resolve) => setTimeout(resolve, 0));
+          await new Promise((resolve) => window.setTimeout(resolve, 0));
         }
       }
 
@@ -746,7 +753,7 @@ export class BackendIntegrationService {
             action: 'create' | 'link' | 'default' | 'cancel';
             displayName?: string;
             linkToPath?: string;
-            accountType?: import('../account/types').AccountType;
+            accountType?: string;
           }>((resolve) => {
             const modal = new AccountLinkModalWrapper(
               this.plugin.app,
@@ -755,7 +762,7 @@ export class BackendIntegrationService {
                 accountId: string,
                 displayName: string,
                 linkToExisting?: string,
-                accountType?: import('../account/types').AccountType
+                accountType?: string
               ) => {
                 if (linkToExisting) {
                   resolve({ action: 'link', linkToPath: linkToExisting });
@@ -813,7 +820,7 @@ export class BackendIntegrationService {
                 ) || [];
               const defaultAccountType =
                 availableAccountTypes.length > 0
-                  ? (availableAccountTypes[0] as AccountType)
+                  ? availableAccountTypes[0]
                   : AccountType.DEMO;
 
               await this.plugin.accountPageService.updateAccountMetadata(
@@ -839,7 +846,7 @@ export class BackendIntegrationService {
                 error
               );
               errors.push(
-                `Failed to create account ${finalDisplayName}: ${error.message}`
+                `Failed to create account ${finalDisplayName}: ${getErrorMessage(error)}`
               );
             }
           }
@@ -873,7 +880,7 @@ export class BackendIntegrationService {
           }
         } catch (error) {
           errors.push(
-            `Failed to create file for trade ${trade.id}: ${error.message}`
+            `Failed to create file for trade ${trade.id}: ${getErrorMessage(error)}`
           );
           console.error(`Failed to create file for trade ${trade.id}:`, error);
         }
@@ -934,7 +941,9 @@ export class BackendIntegrationService {
             'Error recalculating account metrics after sync:',
             error
           );
-          errors.push(`Failed to recalculate metrics: ${error.message}`);
+          errors.push(
+            `Failed to recalculate metrics: ${getErrorMessage(error)}`
+          );
         }
       }
 
@@ -966,7 +975,7 @@ export class BackendIntegrationService {
         }
 
         
-        this.autoContinueTimeoutId = setTimeout(() => {
+        this.autoContinueTimeoutId = window.setTimeout(() => {
           
           const timeoutId = this.autoContinueTimeoutId;
           this.autoContinueTimeoutId = null;
@@ -1018,7 +1027,9 @@ export class BackendIntegrationService {
       return syncResponse;
     } catch (error) {
       console.error('Force sync failed:', error);
-      new Notice(t('backend.notice.sync-failed', { error: error.message }));
+      new Notice(
+        t('backend.notice.sync-failed', { error: getErrorMessage(error) })
+      );
 
       
       
@@ -1028,7 +1039,7 @@ export class BackendIntegrationService {
       this.totalTradesToSync = 0;
       this.tradesProcessedSoFar = 0;
       if (this.autoContinueTimeoutId !== null) {
-        clearTimeout(this.autoContinueTimeoutId);
+        window.clearTimeout(this.autoContinueTimeoutId);
         this.autoContinueTimeoutId = null;
       }
 
@@ -1084,22 +1095,22 @@ export class BackendIntegrationService {
   
   private startAutoSync(): void {
     if (this.syncIntervalId) {
-      globalThis.clearInterval(this.syncIntervalId);
+      window.clearInterval(this.syncIntervalId);
     }
 
     const intervalMs = AUTO_CHECK_INTERVAL_MINUTES * 60 * 1000;
     this.syncIntervalId = this.plugin.registerInterval(
-      globalThis.setInterval(() => {
+      window.setInterval(() => {
         
-        this.debouncedCheckForNewTrades();
-      }, intervalMs) as unknown as number
+        void this.debouncedCheckForNewTrades();
+      }, intervalMs)
     );
   }
 
   
   private stopAutoSync(): void {
     if (this.syncIntervalId) {
-      globalThis.clearInterval(this.syncIntervalId);
+      window.clearInterval(this.syncIntervalId);
       this.syncIntervalId = null;
     }
 
@@ -1178,15 +1189,18 @@ export class BackendIntegrationService {
     await this.plugin.app.fileManager.processFrontMatter(
       abstractFile,
       (frontmatter) => {
-        if (isTradeIdentityEligibleNote(frontmatter, abstractFile.path)) {
-          const identityResult = ensureTradeIdentityFrontmatter(frontmatter);
+        if (!isRecord(frontmatter)) return;
+        const frontmatterRecord = frontmatter;
+        if (isTradeIdentityEligibleNote(frontmatterRecord, abstractFile.path)) {
+          const identityResult =
+            ensureTradeIdentityFrontmatter(frontmatterRecord);
           frontmatterUpdated = frontmatterUpdated || identityResult.changed;
         }
         if (
-          isTradeIdentityEligibleNote(frontmatter, abstractFile.path) &&
-          !frontmatter.backendTradeId
+          isTradeIdentityEligibleNote(frontmatterRecord, abstractFile.path) &&
+          !frontmatterRecord.backendTradeId
         ) {
-          frontmatter.backendTradeId = backendTradeId;
+          frontmatterRecord.backendTradeId = backendTradeId;
           frontmatterUpdated = true;
         }
       }
@@ -1211,9 +1225,9 @@ export class BackendIntegrationService {
 
     if (typeof parseYaml === 'function') {
       try {
-        const parsed = parseYaml(frontmatterMatch[1]);
-        if (parsed && typeof parsed === 'object') {
-          return parsed as Record<string, unknown>;
+        const parsed: unknown = parseYaml(frontmatterMatch[1]);
+        if (isRecord(parsed)) {
+          return parsed;
         }
       } catch (error) {
         console.warn(
@@ -1324,7 +1338,7 @@ export class BackendIntegrationService {
 
     if (trimmed.startsWith('"') && trimmed.endsWith('"')) {
       try {
-        const parsed = JSON.parse(trimmed);
+        const parsed: unknown = JSON.parse(trimmed);
         if (typeof parsed === 'string') {
           return this.normalizeBackendMTComment(parsed);
         }
@@ -1978,12 +1992,14 @@ export class BackendIntegrationService {
       await this.plugin.app.fileManager.processFrontMatter(
         file,
         (frontmatter) => {
+          if (!isRecord(frontmatter)) return;
+          const frontmatterRecord = frontmatter;
           if (nextMTComment === undefined) {
-            delete frontmatter.mtComment;
+            delete frontmatterRecord.mtComment;
             return;
           }
 
-          frontmatter.mtComment = nextMTComment;
+          frontmatterRecord.mtComment = nextMTComment;
         }
       );
 
@@ -1996,7 +2012,10 @@ export class BackendIntegrationService {
       return 'updated';
     }
 
-    const existingTradeData = await tradeService.extractTradeData(file);
+    const existingTradeData = await extractCanonicalTradeData(
+      tradeService,
+      file
+    );
     if (!existingTradeData) {
       console.warn(
         `[BackendIntegrationService] Could not extract canonical trade data for mtComment sync: ${file.path}`
@@ -2089,7 +2108,7 @@ export class BackendIntegrationService {
     accountId: string,
     limit: number = 100,
     offset: number = 0
-  ): Promise<any[]> {
+  ): Promise<unknown[]> {
     const userId = this.settings.ftpUsername || this.getUserId();
     return this.accountManagementService.getAccountTrades(
       accountId,
@@ -2169,9 +2188,7 @@ export class BackendIntegrationService {
       return value;
     };
 
-    const currentAccount = Array.isArray(mutableRecord.account)
-      ? [...mutableRecord.account]
-      : null;
+    const currentAccount = asUnknownArray(mutableRecord.account);
 
     if (currentAccount) {
       const nextAccount = currentAccount.map((value: unknown) =>
@@ -2195,9 +2212,7 @@ export class BackendIntegrationService {
       }
     }
 
-    const currentTags = Array.isArray(mutableRecord.tags)
-      ? [...mutableRecord.tags]
-      : null;
+    const currentTags = asUnknownArray(mutableRecord.tags);
 
     if (currentTags) {
       const rewrittenTags = currentTags.map((value: unknown) => {
@@ -2263,12 +2278,14 @@ export class BackendIntegrationService {
     await this.plugin.app.fileManager.processFrontMatter(
       file,
       (frontmatter) => {
-        if (isTradeIdentityEligibleNote(frontmatter, file.path)) {
-          ensureTradeIdentityFrontmatter(frontmatter);
+        if (!isRecord(frontmatter)) return;
+        const frontmatterRecord = frontmatter;
+        if (isTradeIdentityEligibleNote(frontmatterRecord, file.path)) {
+          ensureTradeIdentityFrontmatter(frontmatterRecord);
         }
 
         const mutationResult = this.applyAccountRelinkToMutableRecord(
-          frontmatter as Record<string, unknown>,
+          frontmatterRecord,
           context
         );
         didUpdate = mutationResult.didUpdate;
@@ -2299,17 +2316,15 @@ export class BackendIntegrationService {
           continue;
         }
 
-        const getFileByPath = this.plugin.app.vault.getAbstractFileByPath.bind(
-          this.plugin.app.vault
-        );
-        let fileToRestore = getFileByPath(latestKnownPath);
+        const vault = this.plugin.app.vault;
+        let fileToRestore = vault.getAbstractFileByPath(latestKnownPath);
 
         if (!(fileToRestore instanceof TFile)) {
-          fileToRestore = getFileByPath(snapshot.updatedPath);
+          fileToRestore = vault.getAbstractFileByPath(snapshot.updatedPath);
         }
 
         if (!(fileToRestore instanceof TFile)) {
-          fileToRestore = getFileByPath(snapshot.originalPath);
+          fileToRestore = vault.getAbstractFileByPath(snapshot.originalPath);
         }
 
         if (!(fileToRestore instanceof TFile)) {
@@ -2603,13 +2618,19 @@ export class BackendIntegrationService {
             continue;
           }
 
-          let extractedTradeData = await tradeService.extractTradeData(file);
+          let extractedTradeData = await extractCanonicalTradeData(
+            tradeService,
+            file
+          );
 
           if (!extractedTradeData) {
             await forceMetadataCacheRefresh(this.plugin.app, file).catch(() => {
               // intentional
             });
-            extractedTradeData = await tradeService.extractTradeData(file);
+            extractedTradeData = await extractCanonicalTradeData(
+              tradeService,
+              file
+            );
           }
 
           if (!extractedTradeData) {
@@ -2627,7 +2648,7 @@ export class BackendIntegrationService {
             continue;
           }
 
-          const canonicalTradeData = extractedTradeData as TradeData;
+          const canonicalTradeData = extractedTradeData;
           const { didUpdate, nextTradeData } = this.buildRelinkTradeUpdate(
             canonicalTradeData,
             relinkContext
@@ -2726,7 +2747,7 @@ export class BackendIntegrationService {
 
   
   async requestForceSync(): Promise<SyncResponse | null> {
-    return this.debouncedForceSync();
+    return (await this.debouncedForceSync()) ?? null;
   }
 
   
@@ -2761,14 +2782,11 @@ export class BackendIntegrationService {
 
   
   cleanup(): void {
-    document.removeEventListener(
+    window.removeEventListener(
       'journalit:subscription-changed',
       this.handleSubscriptionChanged
     );
-    document.removeEventListener(
-      'journalit:auth-failed',
-      this.handleAuthFailed
-    );
+    window.removeEventListener('journalit:auth-failed', this.handleAuthFailed);
     this.stopAutoSync();
     this.fileWatcherService.clearProcessedFiles();
 
@@ -2781,7 +2799,7 @@ export class BackendIntegrationService {
 
     
     if (this.autoContinueTimeoutId !== null) {
-      clearTimeout(this.autoContinueTimeoutId);
+      window.clearTimeout(this.autoContinueTimeoutId);
       this.autoContinueTimeoutId = null;
     }
 
@@ -2790,4 +2808,56 @@ export class BackendIntegrationService {
     this.totalTradesToSync = 0;
     this.tradesProcessedSoFar = 0;
   }
+}
+
+function isTradeData(value: unknown): value is TradeData {
+  if (!isRecord(value)) {
+    return false;
+  }
+
+  return (
+    value.entryTime instanceof Date &&
+    typeof value.entryPrice === 'number' &&
+    typeof value.positionSize === 'number' &&
+    typeof value.direction === 'string' &&
+    Array.isArray(value.setupIds)
+  );
+}
+
+async function extractCanonicalTradeData(
+  tradeService: {
+    extractTradeData(file: TFile): Promise<Record<string, unknown> | null>;
+  },
+  file: TFile
+): Promise<TradeData | null> {
+  const extracted = await tradeService.extractTradeData(file);
+  return isTradeData(extracted) ? extracted : null;
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
+}
+
+function normalizeExecutionEntries(
+  value: unknown
+): Array<{ time?: string; price?: number; size?: number }> | undefined {
+  if (!Array.isArray(value)) {
+    return undefined;
+  }
+
+  const entries = value.flatMap((entry) => {
+    if (!isRecord(entry)) {
+      return [];
+    }
+
+    return [
+      {
+        time: typeof entry.time === 'string' ? entry.time : undefined,
+        price: typeof entry.price === 'number' ? entry.price : undefined,
+        size: typeof entry.size === 'number' ? entry.size : undefined,
+      },
+    ];
+  });
+
+  return entries.length > 0 ? entries : undefined;
 }

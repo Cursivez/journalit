@@ -71,6 +71,22 @@ function useFullscreenImageViewerModel({
     setZoomState(createInitialZoomState());
   }, [imagePath]);
 
+  const toggleZoom = useCallback(() => {
+    
+    if (zoomState.isPanning) return;
+
+    setZoomState((prev) => {
+      const newIsZoomed = !prev.isZoomed;
+      return {
+        ...prev,
+        isZoomed: newIsZoomed,
+        scale: newIsZoomed ? 2.0 : 1.0, 
+        panOffset: { x: 0, y: 0 }, 
+        isPanning: false,
+      };
+    });
+  }, [zoomState.isPanning]);
+
   
   const handleImageClick = useCallback(
     (e: React.MouseEvent) => {
@@ -83,21 +99,9 @@ function useFullscreenImageViewerModel({
         return;
       }
 
-      
-      if (zoomState.isPanning) return;
-
-      setZoomState((prev) => {
-        const newIsZoomed = !prev.isZoomed;
-        return {
-          ...prev,
-          isZoomed: newIsZoomed,
-          scale: newIsZoomed ? 2.0 : 1.0, 
-          panOffset: { x: 0, y: 0 }, 
-          isPanning: false,
-        };
-      });
+      toggleZoom();
     },
-    [zoomState.isPanning]
+    [toggleZoom]
   );
 
   
@@ -166,8 +170,9 @@ function useFullscreenImageViewerModel({
       }
     };
 
-    document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
+    window.activeDocument.addEventListener('keydown', handleKeyDown);
+    return () =>
+      window.activeDocument.removeEventListener('keydown', handleKeyDown);
   }, [handleNavigate]);
 
   
@@ -233,12 +238,24 @@ function useFullscreenImageViewerModel({
         handleGlobalMouseUpRef.current();
       };
 
-      document.addEventListener('mousemove', handleCurrentGlobalMouseMove);
-      document.addEventListener('mouseup', handleCurrentGlobalMouseUp);
+      window.activeDocument.addEventListener(
+        'mousemove',
+        handleCurrentGlobalMouseMove
+      );
+      window.activeDocument.addEventListener(
+        'mouseup',
+        handleCurrentGlobalMouseUp
+      );
 
       return () => {
-        document.removeEventListener('mousemove', handleCurrentGlobalMouseMove);
-        document.removeEventListener('mouseup', handleCurrentGlobalMouseUp);
+        window.activeDocument.removeEventListener(
+          'mousemove',
+          handleCurrentGlobalMouseMove
+        );
+        window.activeDocument.removeEventListener(
+          'mouseup',
+          handleCurrentGlobalMouseUp
+        );
       };
     }
   }, [zoomState.isPanning]);
@@ -404,6 +421,7 @@ function useFullscreenImageViewerModel({
     imageTransform,
     isPinching,
     handleImageClick,
+    toggleZoom,
     handlePanStart,
     handlePanEnd,
     handleNavigate,
@@ -474,6 +492,7 @@ function FullscreenImageElement({
     imageTransform,
     isPinching,
     handleImageClick,
+    toggleZoom,
     handlePanStart,
     handlePanEnd,
     handleTouchStart,
@@ -507,11 +526,7 @@ function FullscreenImageElement({
     e.preventDefault();
     e.stopPropagation();
 
-    if (zoomState.isPanning) {
-      return;
-    }
-
-    handleImageClick(e as unknown as React.MouseEvent);
+    toggleZoom();
   };
 
   if (isExcalidraw) {

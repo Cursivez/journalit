@@ -12,9 +12,8 @@ import {
 import { formatPnL } from '../../../utils/formatting';
 import { FastDateTimeInput } from '../../core';
 import { t } from '../../../lang/helpers';
-import { ensureAccountPageModalStyles } from '../../../styles/accountPage/accountPageModalStyles';
 
-const MANUAL_DRAWDOWN_MANAGER_STYLES = `
+export const MANUAL_DRAWDOWN_MANAGER_STYLES = `
         .edit-account-form .manual-drawdown-manager .save-accent {
           background-color: var(--interactive-accent) !important;
           color: var(--text-on-accent) !important;

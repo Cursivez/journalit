@@ -7,6 +7,8 @@ on:
 
 permissions:
   contents: write
+  id-token: write
+  attestations: write
 
 jobs:
   release:
@@ -27,12 +29,20 @@ jobs:
           fi
           echo "NOTES_FILE=$notes_file" >> "$GITHUB_OUTPUT"
 
+      - name: Attest release artifacts
+        uses: actions/attest-build-provenance@v2
+        with:
+          subject-path: |
+            main.js
+            manifest.json
+            styles.css
+
       - name: Create public release
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          tag="${GITHUB_REF#refs/tags/}"
-          gh release create "$tag" \
-            --title="$tag" \
-            --notes-file="${{ steps.notes.outputs.NOTES_FILE }}" \
-            main.js manifest.json styles.css
+        uses: softprops/action-gh-release@v2
+        with:
+          name: ${{ github.ref_name }}
+          body_path: ${{ steps.notes.outputs.NOTES_FILE }}
+          files: |
+            main.js
+            manifest.json
+            styles.css

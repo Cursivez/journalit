@@ -7,7 +7,6 @@ import { FolderOpen, ArrowRight, Info } from '../shared/icons/ObsidianIcon';
 import JournalitPlugin from '../../main';
 import { Button } from '../ui/Button';
 import { t } from '../../lang/helpers';
-import { ensurePathChangeInstructionModalStyles } from './pathChangeInstructionModalStyles';
 
 interface PathChangeInstructionModalProps {
   app: App;
@@ -15,7 +14,7 @@ interface PathChangeInstructionModalProps {
   oldPath: string;
   newPath: string;
   hasExistingTrades: boolean;
-  onConfirm: () => void;
+  onConfirm: () => void | Promise<void>;
   onCancel: () => void;
   onClose: () => void;
 }
@@ -70,7 +69,7 @@ const PathChangeInstructionComponent: React.FC<
   onClose,
 }) => {
   const handleConfirm = () => {
-    onConfirm();
+    void onConfirm();
     onClose();
   };
 
@@ -176,7 +175,7 @@ export function openPathChangeInstructionModal(
   oldPath: string,
   newPath: string,
   hasExistingTrades: boolean,
-  onConfirm: () => void,
+  onConfirm: () => void | Promise<void>,
   onCancel?: () => void
 ): void {
   const modal = new PathChangeInstructionModal({

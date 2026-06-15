@@ -68,6 +68,31 @@ interface TemplateEditorProps {
   onDirtyStateChange?: (isDirty: boolean) => void;
 }
 
+const parseReviewContextFieldsSelectionMode = (
+  value: string
+): ReviewContextFieldsSelectionMode => {
+  switch (value) {
+    case 'group':
+    case 'fields':
+      return value;
+    default:
+      return 'all';
+  }
+};
+
+const parseDemonTrackerCountMode = (value: string): DemonTrackerCountMode =>
+  value === 'per-trading-day' ? 'per-trading-day' : 'per-trade';
+
+const parseDemonTrackerSourceMode = (value: string): DemonTrackerSourceMode => {
+  switch (value) {
+    case 'session':
+    case 'combined':
+      return value;
+    default:
+      return 'trades';
+  }
+};
+
 
 
 
@@ -95,12 +120,22 @@ interface SortableWidgetItemProps {
   onRemove: (index: number) => void;
 }
 
+const cloneWidgetPlacements = (
+  widgets: WidgetPlacement[] | undefined
+): WidgetPlacement[] =>
+  widgets
+    ? widgets.map((widget) => ({
+        ...widget,
+        config: widget.config ? { ...widget.config } : undefined,
+      }))
+    : [];
+
 const parsePreviousContextHeadings = (
   config: { headings?: string; headingsJson?: string } | undefined
 ): string[] => {
   if (config?.headingsJson) {
     try {
-      const parsed = JSON.parse(config.headingsJson);
+      const parsed: unknown = JSON.parse(config.headingsJson);
       if (Array.isArray(parsed)) {
         return parsed.map((heading) =>
           typeof heading === 'string' ? heading.trim() : ''
@@ -123,11 +158,9 @@ const buildPreviousContextConfig = (
   headings: string[],
   fallbackMode: string
 ): Record<string, unknown> => {
-  const {
-    headings: _legacyHeadings,
-    headingsJson: _headingsJson,
-    ...rest
-  } = config ?? {};
+  const rest = { ...(config ?? {}) };
+  delete rest.headings;
+  delete rest.headingsJson;
   return {
     ...rest,
     headingsJson: serializePreviousContextHeadings(headings),
@@ -214,11 +247,9 @@ function useSortableWidgetItemContent({
     headings: string[],
     overrides: Record<string, unknown> = {}
   ): Record<string, unknown> => {
-    const {
-      headings: _legacyHeadings,
-      headingsJson: _headingsJson,
-      ...rest
-    } = widget.config ?? {};
+    const rest = { ...(widget.config ?? {}) };
+    delete rest.headings;
+    delete rest.headingsJson;
     return {
       ...rest,
       headingsJson: serializePreviousContextHeadings(headings),
@@ -551,8 +582,9 @@ function useSortableWidgetItemContent({
                 value={reviewContextSelectionMode}
                 onChange={(event) =>
                   updateReviewContextConfig({
-                    selectionMode: event.target
-                      .value as ReviewContextFieldsSelectionMode,
+                    selectionMode: parseReviewContextFieldsSelectionMode(
+                      event.target.value
+                    ),
                     groupId: undefined,
                     fieldIds: undefined,
                   })
@@ -957,7 +989,7 @@ function useSortableWidgetItemContent({
               onChange={(e) =>
                 onConfigChange(index, {
                   ...widget.config,
-                  countMode: e.target.value as DemonTrackerCountMode,
+                  countMode: parseDemonTrackerCountMode(e.target.value),
                 })
               }
               className="template-select template-select--compact"
@@ -980,7 +1012,7 @@ function useSortableWidgetItemContent({
               onChange={(e) =>
                 onConfigChange(index, {
                   ...widget.config,
-                  sourceMode: e.target.value as DemonTrackerSourceMode,
+                  sourceMode: parseDemonTrackerSourceMode(e.target.value),
                 })
               }
               className="template-select template-select--compact"
@@ -1056,7 +1088,7 @@ function useTemplateEditorModel({
     if (found) {
       setTemplate(found);
       setEditingName(found.name);
-      setEditingWidgets(JSON.parse(JSON.stringify(found.widgets || [])));
+      setEditingWidgets(cloneWidgetPlacements(found.widgets));
     }
   }, [templateService, templateId, templateType]);
 
@@ -1164,7 +1196,7 @@ function useTemplateEditorModel({
   const handleDiscard = useCallback(() => {
     if (template) {
       setEditingName(template.name);
-      setEditingWidgets(JSON.parse(JSON.stringify(template.widgets || [])));
+      setEditingWidgets(cloneWidgetPlacements(template.widgets));
     }
   }, [template]);
 
@@ -1198,9 +1230,10 @@ function useTemplateEditorModel({
         return;
       }
 
-      const duplicatedWidget: WidgetPlacement = JSON.parse(
-        JSON.stringify(sourceWidget)
-      );
+      const duplicatedWidget: WidgetPlacement = {
+        ...sourceWidget,
+        config: sourceWidget.config ? { ...sourceWidget.config } : undefined,
+      };
       if (duplicatedWidget.id) {
         duplicatedWidget.id = `${duplicatedWidget.type}-${generateUUID()}`;
       }
@@ -1449,7 +1482,7 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = (props) => {
           <SegmentedControl
             options={getViewModeOptions()}
             value={viewMode}
-            onChange={(v) => handleViewModeChange(v as ViewMode)}
+            onChange={(v) => handleViewModeChange(v)}
             size="small"
             getOptionRef={(value) =>
               value === 'editor' ? registerEditorModeButtonTarget : undefined
@@ -1500,14 +1533,14 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = (props) => {
                 </span>
                 <div className="template-unsaved-banner__actions">
                   <button
-                    onClick={handleDiscard}
+                    onClick={() => void handleDiscard()}
                     className="template-action-button template-action-button--neutral template-action-button--compact"
                   >
                     {t('button.discard')}
                   </button>
                   <button
                     ref={registerSaveButtonTarget}
-                    onClick={handleSave}
+                    onClick={() => void handleSave()}
                     className="template-action-button template-action-button--primary template-action-button--compact"
                   >
                     {t('button.save')}
@@ -1528,7 +1561,7 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = (props) => {
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' && canEdit && hasChanges) {
                     e.preventDefault();
-                    handleSave();
+                    void handleSave();
                   }
                 }}
                 disabled={!canEdit}
@@ -1548,14 +1581,14 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = (props) => {
                   <div className="template-editor-widget-actions">
                     <button
                       ref={registerWidgetLibraryDocsTarget}
-                      onClick={handleOpenWidgetLibraryDocs}
+                      onClick={() => void handleOpenWidgetLibraryDocs()}
                       className="template-action-button template-action-button--neutral template-action-button--compact"
                     >
                       {t('templateEditor.button.widget-library-docs')}
                     </button>
                     <button
                       ref={registerAddWidgetButtonTarget}
-                      onClick={handleAddWidget}
+                      onClick={() => void handleAddWidget()}
                       className="template-action-button template-action-button--secondary template-action-button--compact"
                     >
                       {t('templateEditor.button.add-widget')}

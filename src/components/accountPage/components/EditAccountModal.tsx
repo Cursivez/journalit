@@ -22,12 +22,15 @@ import {
   safeParseDateValue,
 } from '../../../utils/dateUtils';
 import { CurrencyProvider } from '../../../contexts/CurrencyContext';
-import { CurrencyCode, CURRENCY_CONFIGS } from '../../../utils/currencyConfig';
+import {
+  CurrencyCode,
+  CURRENCY_CONFIGS,
+  parseCuratedCurrencyCode,
+} from '../../../utils/currencyConfig';
 import { ManualDrawdownManager } from './ManualDrawdownManager';
 import { useEventBus } from '../../../hooks';
 import { eventBus } from '../../../services/events';
 import { t } from '../../../lang/helpers';
-import { ensureAccountPageModalStyles } from '../../../styles/accountPage/accountPageModalStyles';
 import {
   hasLiveBalanceAdjustment,
   parseLiveBalanceInput,
@@ -40,7 +43,7 @@ import {
   isAccountUsedAsActiveCopyBase,
 } from '../../../utils/accountCopyTrading';
 
-const EDIT_ACCOUNT_MODAL_STYLES = `
+export const EDIT_ACCOUNT_MODAL_STYLES = `
         .edit-account-form .manage-snapshots-button {
           padding: 8px 16px;
           background-color: var(--interactive-accent);
@@ -86,6 +89,14 @@ const DRAWDOWN_TYPE_OPTIONS: Array<{
   },
   { value: DrawdownType.MANUAL, labelKey: 'account.drawdown.manual' },
 ];
+
+const getErrorMessage = (error: unknown): string =>
+  error instanceof Error ? error.message : String(error);
+
+const profitTargetTypeFromSelect = (value: string): ProfitTargetType =>
+  value === 'percentage'
+    ? ProfitTargetType.PERCENTAGE
+    : ProfitTargetType.ABSOLUTE;
 
 interface EditAccountModalProps {
   app: App;
@@ -379,7 +390,7 @@ const AccountBalanceFields: React.FC<AccountBalanceFieldsProps> = ({
           <select
             value={editAccount.currency}
             onChange={(e: React.ChangeEvent<HTMLSelectElement>) => {
-              const currency = e.target.value as CurrencyCode;
+              const currency = parseCuratedCurrencyCode(e.target.value);
               setEditAccount((currentAccount) => ({
                 ...currentAccount,
                 currency,
@@ -623,7 +634,9 @@ const ProfitTargetSection: React.FC<ProfitTargetSectionProps> = ({
               <select
                 value={editAccount.profitTargetType}
                 onChange={(e: React.ChangeEvent<HTMLSelectElement>) => {
-                  const profitTargetType = e.target.value as ProfitTargetType;
+                  const profitTargetType = profitTargetTypeFromSelect(
+                    e.target.value
+                  );
                   setEditAccount((currentAccount) => ({
                     ...currentAccount,
                     profitTargetType,
@@ -1521,7 +1534,7 @@ const useEditAccountModalController = ({
       
       if (plugin.accountPageService) {
         const metadataUpdates = {
-          accountType: updateData.accountType as AccountType,
+          accountType: updateData.accountType,
           initialBalance: updateData.initialBalance,
           liveBalanceAdjustment: updateData.liveBalanceAdjustment,
           currency: updateData.currency,
@@ -1639,7 +1652,7 @@ const useEditAccountModalController = ({
     } catch (error) {
       console.error('Error updating account:', error);
       new Notice(
-        t('account.edit.error.update-failed', { error: error.message })
+        t('account.edit.error.update-failed', { error: getErrorMessage(error) })
       );
     }
   };
@@ -1731,8 +1744,8 @@ const useEditAccountModalController = ({
           await plugin.viewManager.closeAccountPageViews(account.name);
 
           
-          setTimeout(async () => {
-            await plugin.viewManager.navigateToAccountDashboard();
+          window.setTimeout(() => {
+            void plugin.viewManager.navigateToAccountDashboard();
           }, 200); 
         }
 
@@ -1749,7 +1762,7 @@ const useEditAccountModalController = ({
     } catch (error) {
       console.error('Error deleting account:', error);
       new Notice(
-        t('account.edit.error.delete-failed', { error: error.message })
+        t('account.edit.error.delete-failed', { error: getErrorMessage(error) })
       );
     } finally {
       setIsLoading(false);
@@ -1838,7 +1851,7 @@ const EditAccountModalContent: React.FC<
       <div className="edit-account-buttons">
         <Button
           variant="secondary"
-          onClick={handleDeleteAccount}
+          onClick={() => void handleDeleteAccount()}
           disabled={isLoading}
           className="delete-account-button delete-account-danger"
         >
@@ -1855,7 +1868,7 @@ const EditAccountModalContent: React.FC<
           </Button>
           <Button
             variant="primary"
-            onClick={handleSave}
+            onClick={() => void handleSave()}
             disabled={isLoading}
             className="save-account-button accent-button modal-save-accent"
           >

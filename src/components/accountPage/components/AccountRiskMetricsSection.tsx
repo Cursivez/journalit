@@ -15,6 +15,7 @@ import {
 import { useDisplayFormatter } from '../../../hooks/useDisplayPolicy';
 import { formatDateDisplay } from '../../../utils/dateUtils';
 import { useCurrency } from '../../../contexts/CurrencyContext';
+import { parseCuratedCurrencyCode } from '../../../utils/currencyConfig';
 import { usePlugin } from '../../../hooks/usePlugin';
 import { t } from '../../../lang/helpers';
 import { cssVars } from '../../../styles/inlineStylePolicy';
@@ -372,8 +373,7 @@ export const AccountRiskMetricsSection: React.FC = () => {
   const currency =
     accountPageData?.metrics.isMultiCurrency &&
     accountPageData?.metrics.conversionBaseCurrency
-      ? (accountPageData.metrics
-          .conversionBaseCurrency as typeof globalCurrency)
+      ? parseCuratedCurrencyCode(accountPageData.metrics.conversionBaseCurrency)
       : accountPageData?.account.currency || globalCurrency;
 
   if (isLoading || !accountPageData) {

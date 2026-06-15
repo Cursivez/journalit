@@ -1,21 +1,21 @@
 
 
-import { App, TFile, Notice } from 'obsidian';
+import { TFile, Notice, Plugin } from 'obsidian';
 import { t } from '../../lang/helpers';
 import type { ReviewTemplate } from '../../types/reviewV2';
 import { showTemplateSwitchWarning } from '../../components/modals/TemplateSwitchWarningModal';
 import { ReviewTemplateService } from './ReviewTemplateService';
 import { generateUUID } from '../../utils/uuid';
+import { safeString } from '../../utils/safeString';
+import type { JournalitSettings } from '../../settings/types';
 import {
   readFileContentForMutation,
   replaceFileContent,
 } from '../../utils/fileMutation';
 
-interface JournalitPluginInstance {
-  app: App;
-
-  settings: any;
-  saveSettings?: () => Promise<void>;
+interface JournalitPluginInstance extends Plugin {
+  settings: JournalitSettings;
+  saveSettings: () => Promise<void>;
 }
 
 interface ParsedWidget {
@@ -132,7 +132,7 @@ export class TemplateTransformationService {
   
   public generateNoteFromTemplate(
     template: ReviewTemplate,
-    frontmatter: Record<string, any>
+    frontmatter: Record<string, unknown>
   ): string {
     
     
@@ -175,7 +175,7 @@ export class TemplateTransformationService {
             
             if (value === undefined || value === null) continue;
             if (typeof value === 'object') continue;
-            widgetLines.push(`${key}: ${value}`);
+            widgetLines.push(`${key}: ${safeString(value)}`);
           }
         }
         widgetLines.push('```');
@@ -245,13 +245,11 @@ export class TemplateTransformationService {
       /^---\n[\s\S]*?^templateId:\s*([^\n]+)$/m
     );
     const templateId = templateIdMatch?.[1]?.trim();
-    if (!templateId || !this.plugin.saveSettings) {
+    if (!templateId) {
       return undefined;
     }
 
-    const templateService = new ReviewTemplateService(
-      this.plugin as ConstructorParameters<typeof ReviewTemplateService>[0]
-    );
+    const templateService = new ReviewTemplateService(this.plugin);
     return templateService.getTemplate(templateId);
   }
 
@@ -636,7 +634,7 @@ export class TemplateTransformationService {
             
             if (value === undefined || value === null) continue;
             if (typeof value === 'object') continue;
-            widgetLines.push(`${key}: ${value}`);
+            widgetLines.push(`${key}: ${safeString(value)}`);
           }
         }
         widgetLines.push('```');
@@ -696,10 +694,10 @@ export class TemplateTransformationService {
       if (value.includes(':') || value.includes('#') || value.includes('\n')) {
         return `${key}: "${value.replace(/"/g, '\\"')}"`;
       }
-      return `${key}: ${value}`;
+      return `${key}: ${safeString(value)}`;
     }
     if (typeof value === 'number' || typeof value === 'boolean') {
-      return `${key}: ${value}`;
+      return `${key}: ${safeString(value)}`;
     }
     if (Array.isArray(value)) {
       if (value.length === 0) return `${key}: []`;
@@ -708,6 +706,6 @@ export class TemplateTransformationService {
     if (typeof value === 'object') {
       return `${key}: ${JSON.stringify(value)}`;
     }
-    return `${key}: ${value}`;
+    return `${key}: ${safeString(value)}`;
   }
 }

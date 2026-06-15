@@ -25,12 +25,12 @@ export function useService<K extends ServiceName>(
 
   useEffect(() => {
     let mounted = true;
-    let timeoutId: NodeJS.Timeout | null = null;
+    let timeoutId: number | null = null;
 
     const loadService = async () => {
       if (!plugin) {
         
-        timeoutId = setTimeout(loadService, 100);
+        timeoutId = window.setTimeout(() => void loadService(), 100);
         return;
       }
 
@@ -63,12 +63,12 @@ export function useService<K extends ServiceName>(
       }
     };
 
-    loadService();
+    void loadService();
 
     return () => {
       mounted = false;
       if (timeoutId) {
-        clearTimeout(timeoutId);
+        window.clearTimeout(timeoutId);
       }
     };
   }, [plugin, serviceName]);

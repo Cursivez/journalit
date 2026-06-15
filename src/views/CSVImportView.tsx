@@ -6,7 +6,6 @@ import { ReactView } from './ReactView';
 import { RenderFunction } from './types';
 import JournalitPlugin from '../main';
 import { CSVImport } from '../components/csv/CSVImport';
-import { ensureCSVImportStyles } from '../styles/csvImportStyles';
 import { t } from '../lang/helpers';
 
 export const CSV_IMPORT_VIEW_TYPE = 'journalit-csv-import-view';

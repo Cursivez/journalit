@@ -5,7 +5,6 @@ import React from 'react';
 import { Root, createRoot } from 'react-dom/client';
 import { FilterModalProps } from './types';
 import { FilterModalContent } from './FilterModalContent';
-import { ensureFilterModalStyles } from './filterModalStyles';
 import { registerExternalGuideTarget } from '../../../guides/GuideRuntimeLayer';
 import { TRADE_LOG_FILTER_MODAL_TARGET_ID } from '../../../guides/tradeLogGuideIds';
 import { t } from '../../../lang/helpers';

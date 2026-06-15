@@ -10,7 +10,7 @@ import {
   TFile,
 } from 'obsidian';
 import { createRoot, Root } from 'react-dom/client';
-import { createElement } from 'react';
+import { createElement, type ReactElement } from 'react';
 import { replaceFileContent } from '../../utils/fileMutation';
 import type {
   ReviewContextFieldsWidgetConfig,
@@ -84,6 +84,36 @@ const WEEKLY_DRC_DAY_SCOPES = new Set([
 function findConfigSeparator(line: string): number {
   return line.search(/:/);
 }
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
+}
+
+function getRecordValue(value: unknown, key: string): unknown {
+  return isRecord(value) ? value[key] : undefined;
+}
+
+function getStringArrayValue(value: unknown): string[] {
+  if (!Array.isArray(value)) return [];
+  const strings: string[] = [];
+  for (const item of value) {
+    if (typeof item === 'string') strings.push(item);
+  }
+  return strings;
+}
+
+function parseReviewWidgetConfig(source: string): {
+  gradeScale?: 'letter' | 'numeric';
+} {
+  const parsed: unknown = JSON.parse(source);
+  if (!isRecord(parsed)) {
+    return {};
+  }
+
+  return parsed.gradeScale === 'letter' || parsed.gradeScale === 'numeric'
+    ? { gradeScale: parsed.gradeScale }
+    : {};
+}
 import type JournalitPlugin from '../../main';
 import { CurrencyProvider } from '../../contexts/CurrencyContext';
 import { DisplayPolicyProvider } from '../../contexts/DisplayPolicyContext';
@@ -93,7 +123,6 @@ const globallyRegisteredCodeblockProcessors = new Map<
   string,
   MarkdownPostProcessor
 >();
-import { ensureSkeletonStyles } from '../../styles/skeletonStyles';
 import { generateUUID } from '../../utils/uuid';
 import { forceMetadataCacheRefresh } from '../../utils/dataRefresh';
 import {
@@ -126,6 +155,48 @@ class ReactRenderChild extends MarkdownRenderChild {
   }
 }
 
+
+
+function isWeeklyDRCDayScope(
+  value: string
+): value is NonNullable<WeeklyDRCContextConfig['dayScope']> {
+  return WEEKLY_DRC_DAY_SCOPES.has(value);
+}
+
+function parseSetupPerformanceSortBy(
+  value: string
+): SetupPerformanceWidgetConfig['sortBy'] | undefined {
+  switch (value) {
+    case 'pnl':
+    case 'winRate':
+    case 'tradeCount':
+      return value;
+    default:
+      return undefined;
+  }
+}
+
+function parseDirectionalLayout(
+  value: string
+): 'stacked' | 'side-by-side' | undefined {
+  switch (value) {
+    case 'stacked':
+    case 'side-by-side':
+      return value;
+    default:
+      return undefined;
+  }
+}
+
+function parseImageLayout(value: string): 'carousel' | 'stacked' | undefined {
+  switch (value) {
+    case 'carousel':
+    case 'stacked':
+      return value;
+    default:
+      return undefined;
+  }
+}
 
 export class WidgetCodeblockProcessor {
   private plugin: JournalitPlugin;
@@ -296,7 +367,7 @@ export class WidgetCodeblockProcessor {
     source: string,
     filePath: string,
     codeblockContext?: ImageWidgetCodeblockContext
-  ): React.ReactElement {
+  ): ReactElement {
     
     if (widgetType === 'header') {
       return createElement(HeaderWidget, { filePath, plugin: this.plugin });
@@ -318,7 +389,7 @@ export class WidgetCodeblockProcessor {
       let config: { gradeScale?: 'letter' | 'numeric' } = {};
       try {
         if (source.trim()) {
-          config = JSON.parse(source);
+          config = parseReviewWidgetConfig(source);
         }
       } catch {
         
@@ -405,8 +476,8 @@ export class WidgetCodeblockProcessor {
             const value = line.substring(colonIndex + 1).trim();
             if (key === 'headings') config.headings = value;
             if (key === 'headingsJson') config.headingsJson = value;
-            if (key === 'dayScope' && WEEKLY_DRC_DAY_SCOPES.has(value)) {
-              config.dayScope = value as WeeklyDRCContextConfig['dayScope'];
+            if (key === 'dayScope' && isWeeklyDRCDayScope(value)) {
+              config.dayScope = value;
             }
             if (key === 'defaultExpanded') {
               config.defaultExpanded = value === 'true';
@@ -424,7 +495,7 @@ export class WidgetCodeblockProcessor {
     
     if (widgetType === 'stats') {
       
-      const config: Record<string, any> = {};
+      const config: Record<string, unknown> = {};
       try {
         if (source.trim()) {
           const lines = source.trim().split('\n');
@@ -521,7 +592,7 @@ export class WidgetCodeblockProcessor {
 
     
     if (widgetType === 'trades') {
-      const config: Record<string, any> = {};
+      const config: Record<string, unknown> = {};
       if (source.trim()) {
         const lines = source.trim().split('\n');
         for (const line of lines) {
@@ -544,7 +615,7 @@ export class WidgetCodeblockProcessor {
 
     
     if (widgetType === 'breakdown') {
-      const config: Record<string, any> = {};
+      const config: Record<string, unknown> = {};
       if (source.trim()) {
         const lines = source.trim().split('\n');
         for (const line of lines) {
@@ -558,7 +629,12 @@ export class WidgetCodeblockProcessor {
         }
       }
       
-      const period = config.period || 'daily';
+      const period =
+        config.period === 'weekly' ||
+        config.period === 'monthly' ||
+        config.period === 'quarterly'
+          ? config.period
+          : 'daily';
       return createElement(BreakdownTableWidget, {
         filePath,
         plugin: this.plugin,
@@ -580,8 +656,9 @@ export class WidgetCodeblockProcessor {
             if (key === 'showChart') config.showChart = value === 'true';
             if (key === 'showTable') config.showTable = value === 'true';
             if (key === 'topN') config.topN = parseInt(value, 10);
-            if (key === 'sortBy')
-              config.sortBy = value as 'pnl' | 'winRate' | 'tradeCount';
+            if (key === 'sortBy') {
+              config.sortBy = parseSetupPerformanceSortBy(value);
+            }
             if (key === 'height') config.height = parseInt(value, 10);
           }
         }
@@ -595,7 +672,7 @@ export class WidgetCodeblockProcessor {
 
     
     if (widgetType === 'best-worst') {
-      const config: Record<string, any> = {};
+      const config: Record<string, unknown> = {};
       if (source.trim()) {
         const lines = source.trim().split('\n');
         for (const line of lines) {
@@ -656,7 +733,7 @@ export class WidgetCodeblockProcessor {
 
     
     if (widgetType === 'trades-chart') {
-      const config: Record<string, any> = {};
+      const config: Record<string, unknown> = {};
       if (source.trim()) {
         const lines = source.trim().split('\n');
         for (const line of lines) {
@@ -724,8 +801,9 @@ export class WidgetCodeblockProcessor {
             if (key === 'showLong') config.showLong = value === 'true';
             if (key === 'showShort') config.showShort = value === 'true';
             if (key === 'height') config.height = parseInt(value, 10);
-            if (key === 'layout')
-              config.layout = value as 'stacked' | 'side-by-side';
+            if (key === 'layout') {
+              config.layout = parseDirectionalLayout(value);
+            }
           }
         }
       }
@@ -753,7 +831,7 @@ export class WidgetCodeblockProcessor {
             if (key === 'showShort') config.showShort = value === 'true';
             if (key === 'height') config.height = parseInt(value, 10);
             if (key === 'layout') {
-              config.layout = value as 'stacked' | 'side-by-side';
+              config.layout = parseDirectionalLayout(value);
             }
           }
         }
@@ -791,8 +869,9 @@ export class WidgetCodeblockProcessor {
             if (key === 'id') config.id = value;
             if (key === 'maxImages') config.maxImages = parseInt(value, 10);
             if (key === 'showUploader') config.showUploader = value === 'true';
-            if (key === 'layout')
-              config.layout = value as 'carousel' | 'stacked';
+            if (key === 'layout') {
+              config.layout = parseImageLayout(value);
+            }
           }
         }
       }
@@ -864,7 +943,7 @@ export class WidgetCodeblockProcessor {
 
     
     if (widgetType === 'backtest-trades') {
-      const config: Record<string, any> = {};
+      const config: Record<string, unknown> = {};
       if (source.trim()) {
         const lines = source.trim().split('\n');
         for (const line of lines) {
@@ -931,7 +1010,7 @@ export class WidgetCodeblockProcessor {
 
   private async waitForEditorUpdate(): Promise<void> {
     await new Promise<void>((resolve) => {
-      setTimeout(resolve, 0);
+      window.setTimeout(resolve, 0);
     });
   }
 
@@ -1017,17 +1096,20 @@ export class WidgetCodeblockProcessor {
     }
 
     const cache = this.plugin.app.metadataCache.getFileCache(file);
-    const legacyImages = Array.isArray(cache?.frontmatter?.images)
-      ? cache?.frontmatter?.images.filter(
+    const cacheFrontmatter: unknown = cache?.frontmatter;
+    const cachedLegacyImages = getRecordValue(cacheFrontmatter, 'images');
+    const legacyImages = Array.isArray(cachedLegacyImages)
+      ? cachedLegacyImages.filter(
           (item): item is string => typeof item === 'string'
         )
       : [];
-    const cachedImagesByWidget =
-      cache?.frontmatter?.imagesByWidget &&
-      typeof cache.frontmatter.imagesByWidget === 'object' &&
-      !Array.isArray(cache.frontmatter.imagesByWidget)
-        ? (cache.frontmatter.imagesByWidget as Record<string, unknown>)
-        : {};
+    const cachedImagesByWidgetSource = getRecordValue(
+      cacheFrontmatter,
+      'imagesByWidget'
+    );
+    const cachedImagesByWidget = isRecord(cachedImagesByWidgetSource)
+      ? cachedImagesByWidgetSource
+      : {};
     const cachedWidgetKeys = Object.keys(cachedImagesByWidget);
     const hasMatchingWidgetId = cachedWidgetKeys.some((key) =>
       blocks.some((block) => block.id === key)
@@ -1045,27 +1127,29 @@ export class WidgetCodeblockProcessor {
         if (legacyBucket.length > 0) {
           await this.plugin.app.fileManager.processFrontMatter(
             file,
-            (frontmatter) => {
-              const existingByWidget =
-                frontmatter.imagesByWidget &&
-                typeof frontmatter.imagesByWidget === 'object' &&
-                !Array.isArray(frontmatter.imagesByWidget)
-                  ? frontmatter.imagesByWidget
-                  : {};
-              const resolvedLegacyBucket = Array.isArray(
-                existingByWidget[legacyKey]
-              )
-                ? existingByWidget[legacyKey]
+            (frontmatter: unknown) => {
+              if (!isRecord(frontmatter)) return;
+              const existingByWidgetSource = frontmatter.imagesByWidget;
+              const existingByWidget = isRecord(existingByWidgetSource)
+                ? existingByWidgetSource
+                : {};
+              const existingLegacyBucket = existingByWidget[legacyKey];
+              const resolvedLegacyBucket = Array.isArray(existingLegacyBucket)
+                ? existingLegacyBucket.filter(
+                    (item): item is string => typeof item === 'string'
+                  )
                 : legacyBucket;
 
-              frontmatter.imagesByWidget = {
+              const nextImagesByWidget: Record<string, unknown> = {
                 ...existingByWidget,
                 [firstId]: resolvedLegacyBucket,
               };
 
               if (legacyKey !== firstId) {
-                delete frontmatter.imagesByWidget[legacyKey];
+                delete nextImagesByWidget[legacyKey];
               }
+
+              frontmatter.imagesByWidget = nextImagesByWidget;
             }
           );
 
@@ -1079,17 +1163,14 @@ export class WidgetCodeblockProcessor {
 
     await this.plugin.app.fileManager.processFrontMatter(
       file,
-      (frontmatter) => {
-        const existingByWidget =
-          frontmatter.imagesByWidget &&
-          typeof frontmatter.imagesByWidget === 'object' &&
-          !Array.isArray(frontmatter.imagesByWidget)
-            ? frontmatter.imagesByWidget
-            : {};
+      (frontmatter: unknown) => {
+        if (!isRecord(frontmatter)) return;
+        const existingByWidgetSource = frontmatter.imagesByWidget;
+        const existingByWidget = isRecord(existingByWidgetSource)
+          ? existingByWidgetSource
+          : {};
 
-        const existingImages = Array.isArray(existingByWidget[firstId])
-          ? existingByWidget[firstId]
-          : [];
+        const existingImages = getStringArrayValue(existingByWidget[firstId]);
 
         const seen = new Set<string>();
         const merged: string[] = [];
@@ -1344,7 +1425,7 @@ export class WidgetCodeblockProcessor {
     widgetType: ReviewWidgetType,
     source: string,
     filePath: string
-  ): React.ReactElement {
+  ): ReactElement {
     return createElement(
       'div',
       {
@@ -1387,7 +1468,7 @@ export class WidgetCodeblockProcessor {
   
   unregisterAll(): void {
     
-    for (const [_el, root] of this.roots.entries()) {
+    for (const [, root] of this.roots.entries()) {
       try {
         root.unmount();
       } catch {

@@ -9,7 +9,6 @@ import {
   useCallback,
   type SyntheticEvent,
 } from 'react';
-import { getApp } from '../../../../utils';
 import { normalizePath, TFile } from 'obsidian';
 import { CustomOptionsService, OptionType } from '../../../../services/options';
 import { imageService } from '../../../../services/image/ImageService';
@@ -47,6 +46,13 @@ const hasTradeLegValues = (leg: {
 }): boolean =>
   (leg.price !== undefined && leg.price !== null && leg.price !== 0) ||
   (leg.size !== undefined && leg.size !== null && leg.size !== 0);
+
+const completeTradeFormData = (
+  data: Partial<TradeFormData>
+): TradeFormData => ({
+  ...DEFAULT_TRADE_FORM_DATA,
+  ...data,
+});
 
 const withCurrentTimeForBlankTradeTimes = (
   data: Partial<TradeFormData>
@@ -125,6 +131,9 @@ export const useTradeForm = ({
   onCancel,
 }: UseTradeFormProps) => {
   const plugin = usePlugin();
+  if (!plugin) {
+    throw new Error('Journalit plugin context is required for trade form');
+  }
   
   const [formData, setFormData] = useState<Partial<TradeFormData>>(() => {
     
@@ -251,10 +260,12 @@ export const useTradeForm = ({
         
         if (Array.isArray(value)) {
           
-          (mergedData as Record<keyof TradeFormData, any>)[k] = [...value];
+          (mergedData as Record<keyof TradeFormData, unknown>)[k] = Array.from(
+            value as unknown[]
+          );
         } else {
           
-          (mergedData as Record<keyof TradeFormData, any>)[k] = value;
+          (mergedData as Record<keyof TradeFormData, unknown>)[k] = value;
         }
       });
 
@@ -266,8 +277,7 @@ export const useTradeForm = ({
 
     
     try {
-      const plugin = getApp().plugins?.plugins?.['journalit'];
-      if (plugin && plugin.settings.trade.useDirectPnLInput !== undefined) {
+      if (plugin.settings.trade.useDirectPnLInput !== undefined) {
         mergedData.useDirectPnLInput = plugin.settings.trade.useDirectPnLInput;
       }
     } catch (error) {
@@ -277,8 +287,7 @@ export const useTradeForm = ({
 
     
     try {
-      const plugin = getApp().plugins?.plugins?.['journalit'];
-      const lastAssetType = plugin?.uiStateManager?.getState()?.lastAssetType;
+      const lastAssetType = plugin.uiStateManager.getState().lastAssetType;
       if (lastAssetType && !mergedData.assetType) {
         
         mergedData.assetType = lastAssetType;
@@ -289,8 +298,7 @@ export const useTradeForm = ({
 
     
     try {
-      const plugin = getApp().plugins?.plugins?.['journalit'];
-      if (plugin && plugin.settings?.trade?.defaultRiskAmount) {
+      if (plugin.settings.trade.defaultRiskAmount) {
         const defaultRisk = plugin.settings.trade.defaultRiskAmount;
         if (defaultRisk > 0 && !mergedData.riskAmount) {
           mergedData.riskAmount = defaultRisk;
@@ -320,9 +328,7 @@ export const useTradeForm = ({
   const [errors, setErrors] = useState<TradeFormErrors>({});
 
   
-  const [_submissionErrors, setSubmissionErrors] = useState<TradeFormErrors>(
-    {}
-  );
+  const [, setSubmissionErrors] = useState<TradeFormErrors>({});
 
   
   const [formSubmitted, setFormSubmitted] = useState(false);
@@ -338,9 +344,6 @@ export const useTradeForm = ({
 
   
   const formRef = useRef<HTMLFormElement>(null);
-
-  
-  const _isProcessingPaste = useRef<boolean>(false);
 
   
   const [cleanupPerformed, setCleanupPerformed] = useState(false);
@@ -378,7 +381,7 @@ export const useTradeForm = ({
   }, [formData, formSubmitted, runValidation]);
 
   
-  const cleanupTemporaryImages = useCallback(async () => {
+  const cleanupPendingImages = useCallback(async () => {
     try {
       
       if (cleanupPerformed || pendingImagesRef.current.length === 0) {
@@ -399,7 +402,7 @@ export const useTradeForm = ({
       
       setTempImages([]);
     } catch (error) {
-      console.error('Failed to cleanup temporary images:', error);
+      console.error('Failed to clean up pending images:', error);
     }
   }, [cleanupPerformed]);
 
@@ -409,7 +412,7 @@ export const useTradeForm = ({
       if (!imagePath) return;
 
       
-      const isTemporary = tempImages.includes(imagePath);
+      const isNewlyAddedImage = tempImages.includes(imagePath);
 
       
       
@@ -424,7 +427,7 @@ export const useTradeForm = ({
         };
       });
 
-      if (isTemporary) {
+      if (isNewlyAddedImage) {
         
         try {
           await imageService.deleteImage(imagePath, true); 
@@ -432,7 +435,7 @@ export const useTradeForm = ({
         } catch (error) {
           
           logger.debug(
-            `Temporary image file deletion failed (may already be deleted): ${imagePath}`,
+            `Newly added image file deletion failed (may already be deleted): ${imagePath}`,
             error
           );
         }
@@ -465,9 +468,9 @@ export const useTradeForm = ({
         const isHandlingSync = field.toString().endsWith('Ids');
 
         if (field === 'setup' && !isHandlingSync) {
-          newData.setupIds = Array.isArray(value) ? [...value] : [];
+          newData.setupIds = Array.isArray(value) ? Array.from(value) : [];
         } else if (field === 'setupIds' && !isHandlingSync) {
-          newData.setup = Array.isArray(value) ? [...value] : [];
+          newData.setup = Array.isArray(value) ? Array.from(value) : [];
         }
 
         return newData;
@@ -498,26 +501,29 @@ export const useTradeForm = ({
     []
   );
 
-  const ensureFolderHierarchy = useCallback(async (folderPath: string) => {
-    const app = getApp();
-    const normalizedPath = normalizePath(folderPath);
-    const segments = normalizedPath.split('/').filter(Boolean);
-    let currentPath = '';
+  const ensureFolderHierarchy = useCallback(
+    async (folderPath: string) => {
+      const app = plugin.app;
+      const normalizedPath = normalizePath(folderPath);
+      const segments = normalizedPath.split('/').filter(Boolean);
+      let currentPath = '';
 
-    for (const segment of segments) {
-      currentPath = currentPath ? `${currentPath}/${segment}` : segment;
-      const resolvedPath = normalizePath(currentPath);
+      for (const segment of segments) {
+        currentPath = currentPath ? `${currentPath}/${segment}` : segment;
+        const resolvedPath = normalizePath(currentPath);
 
-      try {
-        const exists = await app.vault.adapter.exists(resolvedPath);
-        if (!exists) {
-          await app.vault.adapter.mkdir(resolvedPath);
+        try {
+          const exists = await app.vault.adapter.exists(resolvedPath);
+          if (!exists) {
+            await app.vault.adapter.mkdir(resolvedPath);
+          }
+        } catch (error) {
+          console.warn(`Failed to ensure folder ${resolvedPath}:`, error);
         }
-      } catch (error) {
-        console.warn(`Failed to ensure folder ${resolvedPath}:`, error);
       }
-    }
-  }, []);
+    },
+    [plugin.app]
+  );
 
   const isPersistedTradeUpload = useCallback(
     (imagePath: string): boolean => {
@@ -548,7 +554,7 @@ export const useTradeForm = ({
 
   const handleAddImage = async (file: File): Promise<string> => {
     try {
-      const pluginInstance = getApp().plugins?.plugins?.['journalit'] || plugin;
+      const pluginInstance = plugin;
       const tradeService = pluginInstance ? pluginInstance.tradeService : null;
 
       if (!tradeService) {
@@ -704,7 +710,9 @@ export const useTradeForm = ({
       return filePath;
     } catch (error) {
       console.error('Failed to upload image:', error);
-      throw new Error(`Failed to upload image: ${error.message}`);
+      throw new Error(
+        `Failed to upload image: ${error instanceof Error ? error.message : String(error)}`
+      );
     }
   };
 
@@ -781,8 +789,7 @@ export const useTradeForm = ({
         tempImages.length > 0
       ) {
         try {
-          const app = getApp();
-          const pluginInstance = app.plugins?.plugins?.['journalit'] || plugin;
+          const pluginInstance = plugin;
           const tradeService = pluginInstance?.tradeService;
 
           if (tradeService) {
@@ -901,7 +908,7 @@ export const useTradeForm = ({
               let finalPath = imagePath;
 
               if (!imagePath.startsWith(`${baseFolder}/`)) {
-                const file = app.vault.getAbstractFileByPath(imagePath);
+                const file = plugin.app.vault.getAbstractFileByPath(imagePath);
                 if (file && file instanceof TFile) {
                   const extensionIndex = file.name.lastIndexOf('.');
                   const extension =
@@ -914,7 +921,7 @@ export const useTradeForm = ({
                   const newPath = normalizePath(`${baseFolder}/${newFileName}`);
 
                   try {
-                    await app.vault.rename(file, newPath);
+                    await plugin.app.vault.rename(file, newPath);
                     finalPath = newPath;
                   } catch (error) {
                     console.warn(`Failed to move image ${imagePath}:`, error);
@@ -953,9 +960,7 @@ export const useTradeForm = ({
       let submitSucceeded = true;
 
       try {
-        const result = await onSubmit(
-          (dataToSubmit || formData) as TradeFormData
-        );
+        const result = await onSubmit(completeTradeFormData(dataToSubmit));
         submitSucceeded = result !== false;
       } catch (error) {
         console.error('Trade form submission failed:', error);
@@ -984,10 +989,8 @@ export const useTradeForm = ({
   const saveCustomOptions = async (data: Partial<TradeFormData>) => {
     try {
       
-      const plugin = getApp().plugins?.plugins?.['journalit'];
       const optionsService =
-        plugin?.optionsService ||
-        (plugin ? new CustomOptionsService(plugin) : null);
+        plugin.optionsService || new CustomOptionsService(plugin);
 
       
       if (!optionsService) {
@@ -1090,9 +1093,9 @@ export const useTradeForm = ({
   useEffect(() => {
     
     return () => {
-      cleanupTemporaryImages();
+      void cleanupPendingImages();
     };
-  }, [cleanupTemporaryImages]);
+  }, [cleanupPendingImages]);
 
   const handleCancel = () => {
     if (onCancel) onCancel();

@@ -1,7 +1,7 @@
 
 
 
-const folderBrowserCSS = `
+export const folderBrowserCSS = `
 
 
 
@@ -204,12 +204,3 @@ const folderBrowserCSS = `
   border-bottom-right-radius: 0;
 }
 `;
-
-
-function injectFolderBrowserStyles(): void {
-  return;
-}
-
-export function ensureFolderBrowserStyles(): void {
-  return;
-}

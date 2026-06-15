@@ -15,6 +15,29 @@ import {
   AccountMetrics,
 } from './types';
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
+}
+
+function asRecord(value: unknown): Record<string, unknown> | undefined {
+  return isRecord(value) ? value : undefined;
+}
+
+function toUnknownList(value: unknown): unknown[] {
+  return Array.isArray(value) ? value : [value];
+}
+
+function isExtractedTradeData(value: unknown): value is TradeData {
+  if (!isRecord(value)) return false;
+  return (
+    value.entryTime instanceof Date &&
+    typeof value.entryPrice === 'number' &&
+    typeof value.positionSize === 'number' &&
+    typeof value.direction === 'string' &&
+    Array.isArray(value.setupIds)
+  );
+}
+
 interface AccountTradeGroupingSnapshot {
   builtAt: number;
   accountNames: string[];
@@ -78,7 +101,10 @@ import { EnhancedTradeData } from '../../types/EnhancedTradeData';
 import { calculateEffectiveRMultiple } from '../../utils/formatting';
 import { eventBus, Unsubscribe } from '../events';
 import { ExchangeRateService } from '../exchangeRate';
-import { CurrencyCode } from '../../utils/currencyConfig';
+import {
+  CurrencyCode,
+  parseCuratedCurrencyCode,
+} from '../../utils/currencyConfig';
 import { inferStoredTradeType } from '../../utils/tradeTypeRouting';
 import { forceMetadataCacheRefresh } from '../../utils/dataRefresh';
 import {
@@ -127,6 +153,13 @@ export class AccountPageService extends CustomDataService {
   >();
   private exchangeRateService: ExchangeRateService | null = null;
   private accountSnapshotGeneration = 0;
+
+  private requirePlugin(): JournalitPlugin {
+    if (!this.plugin) {
+      throw new Error('Journalit plugin is not available');
+    }
+    return this.plugin;
+  }
 
   constructor(app: App, config: CustomDataServiceConfig = {}) {
     super(app, {
@@ -596,7 +629,7 @@ export class AccountPageService extends CustomDataService {
 
     await this.app.fileManager.processFrontMatter(file, (frontmatter) => {
       const mutationResult = this.applyAccountDeletionToMutableRecord(
-        frontmatter as Record<string, unknown>,
+        asRecord(frontmatter) ?? {},
         context
       );
       didUpdate = mutationResult.didUpdate;
@@ -616,9 +649,8 @@ export class AccountPageService extends CustomDataService {
             ? snapshot.fileRef.path
             : snapshot.updatedPath;
 
-        const getFileByPath = this.app.vault.getAbstractFileByPath.bind(
-          this.app.vault
-        );
+        const getFileByPath = (path: string) =>
+          this.app.vault.getAbstractFileByPath(path);
         let fileToRestore = getFileByPath(latestKnownPath);
 
         if (!(fileToRestore instanceof TFile)) {
@@ -831,7 +863,7 @@ export class AccountPageService extends CustomDataService {
       commission,
       adjustment,
     } = calculateCopiedTradePnL({
-      plugin: this.plugin as JournalitPlugin,
+      plugin: this.requirePlugin(),
       baseTrade: { ...baseTrade, copyBaseTradeKey },
       copyAccountName,
       copyAccountLookupKey,
@@ -934,8 +966,7 @@ export class AccountPageService extends CustomDataService {
       const canonicalAccountNamesByLookupKey = new Map<string, string>();
       const accountAliasIndex = new Map<string, Set<string>>();
 
-      for (const rawTrade of allTrades) {
-        const trade = rawTrade as Record<string, unknown>;
+      for (const trade of allTrades) {
         const storedTradeType = inferStoredTradeType({
           filePath:
             typeof trade.path === 'string'
@@ -1166,7 +1197,7 @@ export class AccountPageService extends CustomDataService {
         normalizeAccountLookupKey(metadataEntry.key) ===
           normalizeAccountLookupKey(canonicalAccountName);
       const displayAccountName = metadataKeyMatchesCanonical
-        ? metadataEntry!.key
+        ? metadataEntry.key
         : canonicalAccountName;
 
       if (accountTrades.length === 0 && !metadata) {
@@ -1216,8 +1247,9 @@ export class AccountPageService extends CustomDataService {
 
       const metrics = this.calculateAccountMetrics(
         pnlContributingTradesForMetrics,
-        (conversionResult?.baseCurrency as CurrencyCode | undefined) ||
-          metadata?.currency,
+        conversionResult?.baseCurrency
+          ? parseCuratedCurrencyCode(conversionResult.baseCurrency)
+          : metadata?.currency,
         accountCurrentBalanceForBreakEven
       );
 
@@ -1277,14 +1309,14 @@ export class AccountPageService extends CustomDataService {
 
   
 
-  private safeParseDate(dateValue: any): Date | null {
+  private safeParseDate(dateValue: unknown): Date | null {
     
     if (dateValue instanceof Date && !isNaN(dateValue.getTime())) {
       return dateValue;
     }
 
     
-    if (dateValue !== null && dateValue !== undefined && dateValue !== '') {
+    if (typeof dateValue === 'string' || typeof dateValue === 'number') {
       try {
         const parsed = new Date(dateValue);
         if (!isNaN(parsed.getTime())) {
@@ -1632,10 +1664,11 @@ export class AccountPageService extends CustomDataService {
     }
 
     const copyTradeAdjustments = this.plugin.settings.copyTradeAdjustments;
+    type CopyTradeAdjustment = { pnlAdjustment: number; note?: string };
     const copyTradeAdjustmentRollbacks: Array<{
       baseTradeKey: string;
-      previousOldAdjustment: unknown;
-      previousNewAdjustment: unknown;
+      previousOldAdjustment: CopyTradeAdjustment;
+      previousNewAdjustment: CopyTradeAdjustment | undefined;
     }> = [];
     if (copyTradeAdjustments) {
       for (const [baseTradeKey, accountAdjustments] of Object.entries(
@@ -1722,12 +1755,12 @@ export class AccountPageService extends CustomDataService {
           }
 
           accountAdjustments[oldLookupKeyForCopyPeriods] =
-            previousOldAdjustment as never;
+            previousOldAdjustment;
           if (previousNewAdjustment === undefined) {
             delete accountAdjustments[newLookupKeyForCopyAdjustments];
           } else {
             accountAdjustments[newLookupKeyForCopyAdjustments] =
-              previousNewAdjustment as never;
+              previousNewAdjustment;
           }
         }
       }
@@ -2091,7 +2124,7 @@ export class AccountPageService extends CustomDataService {
           defaultRiskAmount
         )
       )
-      .filter((r) => r !== undefined) as number[];
+      .filter((r) => r !== undefined);
     const avgWinRMultiple =
       winningTradesR.length > 0
         ? winningTradesR.reduce((sum, r) => sum + r, 0) / winningTradesR.length
@@ -2106,7 +2139,7 @@ export class AccountPageService extends CustomDataService {
           defaultRiskAmount
         )
       )
-      .filter((r) => r !== undefined) as number[];
+      .filter((r) => r !== undefined);
     const avgLossRMultiple =
       losingTradesR.length > 0
         ? losingTradesR.reduce((sum, r) => sum + Math.abs(r), 0) /
@@ -3269,14 +3302,15 @@ export class AccountPageService extends CustomDataService {
           continue;
         }
 
-        const frontmatter = this.app.metadataCache.getFileCache(file)
-          ?.frontmatter as Record<string, unknown> | undefined;
+        const frontmatter = asRecord(
+          this.app.metadataCache.getFileCache(file)?.frontmatter
+        );
         const values = [
           frontmatter?.account,
           frontmatter?.accounts,
           frontmatter?.accountId,
           frontmatter?.mtAccountId,
-        ].flatMap((value) => (Array.isArray(value) ? value : [value]));
+        ].flatMap(toUnknownList);
         const hasDeletedAccountFieldReference = values.some((value) => {
           const normalizedValue = this.normalizeFrontmatterScalarString(value);
           return Boolean(
@@ -3298,7 +3332,7 @@ export class AccountPageService extends CustomDataService {
         }
 
         const directBackendAccountValues = [frontmatter?.mtAccountId].flatMap(
-          (value) => (Array.isArray(value) ? value : [value])
+          toUnknownList
         );
         const backendTradeId = frontmatter?.backendTradeId;
         if (
@@ -3369,14 +3403,15 @@ export class AccountPageService extends CustomDataService {
 
       try {
         for (const trade of deletableTradeFiles) {
-          const frontmatterRecord =
-            this.app.metadataCache.getFileCache(trade)?.frontmatter;
+          const frontmatterRecord = asRecord(
+            this.app.metadataCache.getFileCache(trade)?.frontmatter
+          );
           const values = [
             frontmatterRecord?.account,
             frontmatterRecord?.accounts,
             frontmatterRecord?.accountId,
             frontmatterRecord?.mtAccountId,
-          ].flatMap((value) => (Array.isArray(value) ? value : [value]));
+          ].flatMap(toUnknownList);
           const accountTags = getAccountTags(frontmatterRecord);
           const hasDeletedAccountFieldReference = values.some((value) => {
             const normalizedValue =
@@ -3611,12 +3646,18 @@ export class AccountPageService extends CustomDataService {
           }
 
           let extractedTradeData = await tradeService.extractTradeData(trade);
+          if (!isExtractedTradeData(extractedTradeData)) {
+            extractedTradeData = null;
+          }
 
           if (!extractedTradeData) {
             await forceMetadataCacheRefresh(this.app, trade).catch(() => {
               // intentional
             });
             extractedTradeData = await tradeService.extractTradeData(trade);
+            if (!isExtractedTradeData(extractedTradeData)) {
+              extractedTradeData = null;
+            }
           }
 
           if (!extractedTradeData) {
@@ -3650,7 +3691,7 @@ export class AccountPageService extends CustomDataService {
             continue;
           }
 
-          const canonicalTradeData = extractedTradeData as TradeData;
+          const canonicalTradeData = extractedTradeData;
           const { didUpdate, nextTradeData } =
             this.buildAccountDeletionTradeUpdate(
               canonicalTradeData,

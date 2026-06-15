@@ -1,8 +1,6 @@
 
 
-
-
-const DRC_STYLES = `
+export const DRC_STYLES = `
   
   .drc-container {
     background-color: transparent; 
@@ -1812,13 +1810,3 @@ const DRC_STYLES = `
     color: var(--interactive-accent);
   }
 `;
-
-
-function injectDRCStyles(): void {
-  return;
-}
-
-
-export function ensureDRCStyles(): void {
-  return;
-}

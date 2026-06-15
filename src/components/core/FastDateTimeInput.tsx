@@ -28,6 +28,25 @@ import {
 import { parseStoredDateLikeValue } from '../../utils/customFieldPersistence';
 import { getPluginInstance } from '../../utils/pluginContext';
 
+function getFlatpickrDayDate(value: EventTarget | null): Date | undefined {
+  if (typeof value !== 'object' || value === null) return undefined;
+
+  const ownerDocument: unknown = Reflect.get(value, 'ownerDocument');
+  const defaultView: unknown =
+    typeof ownerDocument === 'object' && ownerDocument !== null
+      ? Reflect.get(ownerDocument, 'defaultView')
+      : undefined;
+  const HTMLElementConstructor: unknown =
+    typeof defaultView === 'object' && defaultView !== null
+      ? Reflect.get(defaultView, 'HTMLElement')
+      : undefined;
+  if (typeof HTMLElementConstructor !== 'function') return undefined;
+  if (!(value instanceof HTMLElementConstructor)) return undefined;
+
+  const dateObj: unknown = Reflect.get(value, 'dateObj');
+  return dateObj instanceof Date ? dateObj : undefined;
+}
+
 
 const flatpickrLocales: Record<string, CustomLocale> = {
   es: Spanish,
@@ -40,7 +59,6 @@ const flatpickrLocales: Record<string, CustomLocale> = {
   ko: Korean,
   ru: Russian,
 };
-import { ensureFlatpickrStyles } from '../../styles/flatpickrStyles';
 import { t, getCurrentLanguage } from '../../lang/helpers';
 
 
@@ -312,8 +330,8 @@ export const FastDateTimeInput: React.FC<FastDateTimeInputProps> = React.memo(
     
     const commitDateTimeSegments = useCallback(() => {
       
-      setTimeout(() => {
-        const activeEl = document.activeElement;
+      window.setTimeout(() => {
+        const activeEl = window.activeDocument.activeElement;
         const isStillInComponent = [
           dayRef,
           monthRef,
@@ -340,9 +358,9 @@ export const FastDateTimeInput: React.FC<FastDateTimeInputProps> = React.memo(
         }
 
         let wasHandledByButton = false; 
-        const tempInput = document.createElement('input');
+        const tempInput = window.activeDocument.createElement('input');
         tempInput.className = 'journalit-flatpickr-temp-input';
-        document.body.appendChild(tempInput);
+        window.activeDocument.body.appendChild(tempInput);
         tempInputRef.current = tempInput; 
 
         
@@ -369,7 +387,7 @@ export const FastDateTimeInput: React.FC<FastDateTimeInputProps> = React.memo(
               : 'Y-m-d',
           minDate: minDate,
           disableMobile: true,
-          appendTo: document.body,
+          appendTo: window.activeDocument.body,
           positionElement: calendarButtonRef.current ?? undefined,
           monthSelectorType: 'static',
 
@@ -472,14 +490,16 @@ export const FastDateTimeInput: React.FC<FastDateTimeInputProps> = React.memo(
             
             
             const handleDayClick = (e: Event) => {
-              const dayEl = e.currentTarget as HTMLElement & { dateObj?: Date };
+              const dayEl = e.currentTarget;
+              const dayDate = getFlatpickrDayDate(dayEl);
               if (
-                dayEl.dateObj &&
+                dayEl instanceof HTMLElement &&
+                dayDate &&
                 onChange &&
                 !dayEl.classList.contains('flatpickr-disabled')
               ) {
                 wasHandledByButton = true; 
-                const selectedDate = new Date(dayEl.dateObj);
+                const selectedDate = new Date(dayDate);
 
                 
                 
@@ -529,7 +549,7 @@ export const FastDateTimeInput: React.FC<FastDateTimeInputProps> = React.memo(
 
             
             const reattachHandlers = () => {
-              requestAnimationFrame(() => {
+              window.requestAnimationFrame(() => {
                 instance.calendarContainer
                   .querySelectorAll('.flatpickr-day')
                   .forEach((day: Element) => {
@@ -586,13 +606,13 @@ export const FastDateTimeInput: React.FC<FastDateTimeInputProps> = React.memo(
               instance.close();
             };
 
-            const clearBtn = document.createElement('button');
+            const clearBtn = window.activeDocument.createElement('button');
             clearBtn.type = 'button';
             clearBtn.textContent = t('datepicker.button.clear');
             clearBtn.className = 'flatpickr-button';
             clearBtn.addEventListener('click', clearBtnHandler);
 
-            const todayBtn = document.createElement('button');
+            const todayBtn = window.activeDocument.createElement('button');
             todayBtn.type = 'button';
             todayBtn.textContent = timeOnly
               ? t('datepicker.button.now')
@@ -607,12 +627,11 @@ export const FastDateTimeInput: React.FC<FastDateTimeInputProps> = React.memo(
             instance._todayBtnHandler = todayBtnHandler;
 
             
-            const timeContainer = instance.calendarContainer.querySelector(
-              '.flatpickr-time'
-            ) as HTMLElement;
-            if (timeContainer) {
+            const timeContainer =
+              instance.calendarContainer.querySelector('.flatpickr-time');
+            if (timeContainer instanceof HTMLElement) {
               
-              const timeContent = document.createElement('div');
+              const timeContent = window.activeDocument.createElement('div');
               timeContent.className = 'journalit-flatpickr-time-content';
 
               
@@ -627,7 +646,8 @@ export const FastDateTimeInput: React.FC<FastDateTimeInputProps> = React.memo(
               timeContainer.appendChild(todayBtn);
             } else {
               
-              const buttonContainer = document.createElement('div');
+              const buttonContainer =
+                window.activeDocument.createElement('div');
               buttonContainer.className =
                 'journalit-flatpickr-button-container';
               buttonContainer.appendChild(clearBtn);

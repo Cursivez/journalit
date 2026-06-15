@@ -14,7 +14,7 @@ interface CollapsibleSectionProps {
   className?: string;
 }
 
-const COLLAPSIBLE_SECTION_STYLES = `
+export const COLLAPSIBLE_SECTION_STYLES = `
 .journalit-collapsible-section {
   border: 1px solid var(--background-modifier-border);
   border-radius: 6px;
@@ -109,16 +109,6 @@ const COLLAPSIBLE_SECTION_STYLES = `
   }
 }
 `;
-
-const collapsibleSectionReferenceCount = 0;
-
-function injectCollapsibleSectionStyles(): void {
-  // intentional
-}
-
-export function removeCollapsibleSectionStyles(): void {
-  // intentional
-}
 
 
 export const CollapsibleSection = memo<CollapsibleSectionProps>(

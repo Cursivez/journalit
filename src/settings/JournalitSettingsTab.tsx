@@ -904,12 +904,12 @@ function setSettingsPath(
     return;
   }
 
-  let cursor = settings as unknown as Record<string, unknown>;
+  let cursor: object = settings;
   let currentPath = '';
 
   for (const part of parts) {
     currentPath = currentPath ? `${currentPath}.${part}` : part;
-    const next = cursor[part];
+    const next: unknown = Reflect.get(cursor, part);
 
     if (isRecord(next)) {
       cursor = next;
@@ -920,11 +920,11 @@ function setSettingsPath(
     const replacement = isRecord(defaultBranch)
       ? cloneRecord(defaultBranch)
       : {};
-    cursor[part] = replacement;
+    Reflect.set(cursor, part, replacement);
     cursor = replacement;
   }
 
-  cursor[last] = value;
+  Reflect.set(cursor, last, value);
 }
 
 function getDefaultSettingsPath(path: string): unknown {
@@ -977,13 +977,19 @@ function createNativeReactSettingsPage(
   })();
 }
 
+function isNativeSettingPageConstructor(
+  value: unknown
+): value is NativeSettingPageConstructor {
+  return typeof value === 'function' && 'prototype' in value;
+}
+
 function getNativeSettingPageConstructor(): NativeSettingPageConstructor {
-  const settingPageConstructor = Reflect.get(Obsidian, 'SettingPage');
-  if (typeof settingPageConstructor !== 'function') {
+  const settingPageConstructor: unknown = Reflect.get(Obsidian, 'SettingPage');
+  if (!isNativeSettingPageConstructor(settingPageConstructor)) {
     throw new Error('Obsidian SettingPage API is unavailable.');
   }
 
-  return settingPageConstructor as NativeSettingPageConstructor;
+  return settingPageConstructor;
 }
 
 function getNativeSettingPageContainer(page: NativeSettingPage): HTMLElement {
@@ -999,7 +1005,7 @@ function hideNativeSettingPageBase(
   page: NativeSettingPage,
   pageConstructor: NativeSettingPageConstructor
 ): void {
-  const hide = Reflect.get(pageConstructor.prototype, 'hide');
+  const hide: unknown = Reflect.get(pageConstructor.prototype, 'hide');
   if (typeof hide === 'function') {
     Reflect.apply(hide, page, []);
   }

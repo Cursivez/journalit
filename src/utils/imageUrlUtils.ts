@@ -73,6 +73,10 @@ export function isValidImageUrl(url: string): boolean {
   try {
     const parsed = new URL(url);
 
+    if (parsed.protocol === 'data:') {
+      return /^data:image\//i.test(url);
+    }
+
     
     if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
       return false;

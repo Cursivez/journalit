@@ -1,7 +1,6 @@
 
 
 import React, { useEffect } from 'react';
-import { ensureSharedComponentStyles } from '../../styles/sharedComponentStyles';
 import { cssVars } from '../../styles/inlineStylePolicy';
 import { t } from '../../lang/helpers';
 

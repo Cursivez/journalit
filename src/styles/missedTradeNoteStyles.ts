@@ -2,7 +2,7 @@
 
 
 
-const MISSED_TRADE_NOTE_STYLES = `
+export const MISSED_TRADE_NOTE_STYLES = `
   
 
   
@@ -11,8 +11,8 @@ const MISSED_TRADE_NOTE_STYLES = `
     margin: 0;
     border-bottom: none;
     padding: 0;
-    display: block !important;
-    width: 100% !important;
+    display: block;
+    width: 100%;
     z-index: 1;
     position: relative;
     box-sizing: border-box;
@@ -291,9 +291,3 @@ const MISSED_TRADE_NOTE_STYLES = `
 `;
 
 
-function injectMissedTradeNoteStyles(): void {
-  return;
-}
-
-
-export function ensureMissedTradeNoteStyles(): void {}

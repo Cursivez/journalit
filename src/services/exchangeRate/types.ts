@@ -79,8 +79,8 @@ type FrankfurterCurrency = (typeof FRANKFURTER_SUPPORTED_CURRENCIES)[number];
 export function isFrankfurterSupported(
   currency: string
 ): currency is FrankfurterCurrency {
-  return FRANKFURTER_SUPPORTED_CURRENCIES.includes(
-    currency as FrankfurterCurrency
+  return FRANKFURTER_SUPPORTED_CURRENCIES.some(
+    (supportedCurrency) => supportedCurrency === currency
   );
 }
 

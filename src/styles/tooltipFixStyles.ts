@@ -1,6 +1,6 @@
 
 
-const TOOLTIP_FIX_STYLES = `
+export const TOOLTIP_FIX_STYLES = `
   
   .journalit-icon-button,
   .journalit-button,
@@ -120,11 +120,3 @@ const TOOLTIP_FIX_STYLES = `
     outline: 2px solid green;
   }
 `;
-
-function injectTooltipFixStyles(): void {
-  return;
-}
-
-function removeTooltipFixStyles(): void {
-  return;
-}

@@ -12,13 +12,6 @@ import { t } from '../lang/helpers';
 import type JournalitPlugin from '../main';
 
 
-interface AccountPageState {
-  accountName: string;
-  isLoading?: boolean;
-  error?: string | null;
-}
-
-
 export const ACCOUNT_PAGE_VIEW_TYPE = 'journalit-account-page-view';
 
 
@@ -95,7 +88,10 @@ export class AccountPageView extends ReactView {
     await super.setState(state, result);
 
     if (state && typeof state === 'object' && 'accountName' in state) {
-      this.setAccountName((state as AccountPageState).accountName);
+      const accountName = Reflect.get(state, 'accountName');
+      if (typeof accountName === 'string') {
+        this.setAccountName(accountName);
+      }
     }
   }
 

@@ -1,7 +1,6 @@
 
 
 import {
-  AssetType,
   TradeFormData,
   TradeFormErrors,
   shouldShowTradeDividends,
@@ -346,7 +345,7 @@ export const validateTradeForm = (
   }
 
   
-  if (!data.direction && data.assetType !== AssetType.OPTIONS) {
+  if (!data.direction && data.assetType !== 'options') {
     errors.direction = t('trade.validation.direction-required');
   }
 
@@ -442,12 +441,12 @@ export const validateTradeForm = (
   
   if (data.assetType) {
     switch (data.assetType) {
-      case AssetType.STOCK:
+      case 'stock':
         
         
         break;
 
-      case AssetType.OPTIONS:
+      case 'options':
         
         if (!data.expirationDate) {
           errors.expirationDate = t(
@@ -468,26 +467,26 @@ export const validateTradeForm = (
         }
         break;
 
-      case AssetType.FUTURES:
+      case 'futures':
         
         if (data.dollarPerPoint === undefined || data.dollarPerPoint < 0.01) {
           errors.dollarPerPoint = t('trade.validation.dollars-per-point-min');
         }
         break;
 
-      case AssetType.FOREX:
+      case 'forex':
         
         if (data.lotSize !== undefined && data.lotSize < 0) {
           errors.lotSize = t('trade.validation.lot-size-nonnegative');
         }
         break;
 
-      case AssetType.CRYPTO:
+      case 'crypto':
         
         
         break;
 
-      case AssetType.CFD:
+      case 'cfd':
         
         if (data.contractSize !== undefined && data.contractSize <= 0) {
           errors.contractSize = t('trade.validation.contract-size-positive');
@@ -534,7 +533,7 @@ export const validateTradeForm = (
   
   if (data.rebate !== undefined && data.rebate !== null) {
     
-    if (data.assetType !== AssetType.OPTIONS) {
+    if (data.assetType !== 'options') {
       errors.rebate = t('trade.validation.rebate-options-only');
     } else {
       
@@ -635,16 +634,16 @@ const hasAuthoritativeStopLossRiskBasis = (
   }
 
   switch (data.assetType) {
-    case AssetType.OPTIONS:
+    case 'options':
       return !!(data.contractSize && data.contractSize > 0);
-    case AssetType.FUTURES:
+    case 'futures':
       return !!(data.dollarPerPoint && data.dollarPerPoint > 0);
-    case AssetType.FOREX:
+    case 'forex':
       return !!(
         (data.lotSize && data.lotSize > 0) ||
         (data.pipValue && data.pipValue > 0)
       );
-    case AssetType.CFD:
+    case 'cfd':
       return !!(data.contractSize && data.contractSize > 0);
     default:
       return true;
@@ -753,7 +752,7 @@ export const calculatePercentageReturn = (
 
   
   if (
-    data.assetType === AssetType.CFD &&
+    data.assetType === 'cfd' &&
     data.leverageRatio &&
     data.leverageRatio > 0
   ) {

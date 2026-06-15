@@ -13,15 +13,26 @@ export type WeekStartDaySetting =
 
 const DEFAULT_WEEK_START_DAY: WeekStartDaySetting = 'monday';
 
-const WEEK_START_DAYS: WeekStartDaySetting[] = [
-  'sunday',
-  'monday',
-  'tuesday',
-  'wednesday',
-  'thursday',
-  'friday',
-  'saturday',
-];
+function isWeekStartDaySetting(
+  value: string | undefined
+): value is WeekStartDaySetting {
+  switch (value) {
+    case 'sunday':
+    case 'monday':
+    case 'tuesday':
+    case 'wednesday':
+    case 'thursday':
+    case 'friday':
+    case 'saturday':
+      return true;
+    default:
+      return false;
+  }
+}
+
+function toDateConstructorValue(value: unknown): string | number | null {
+  return typeof value === 'string' || typeof value === 'number' ? value : null;
+}
 
 const WEEK_START_DAY_INDEX: Record<WeekStartDaySetting, number> = {
   sunday: 0,
@@ -34,7 +45,7 @@ const WEEK_START_DAY_INDEX: Record<WeekStartDaySetting, number> = {
 };
 
 const normalizeWeekStartDay = (weekStartDay?: string): WeekStartDaySetting => {
-  const isValid = WEEK_START_DAYS.includes(weekStartDay as WeekStartDaySetting);
+  const isValid = isWeekStartDaySetting(weekStartDay);
 
   if (weekStartDay !== undefined && !isValid) {
     console.warn(
@@ -42,9 +53,7 @@ const normalizeWeekStartDay = (weekStartDay?: string): WeekStartDaySetting => {
     );
   }
 
-  return isValid
-    ? (weekStartDay as WeekStartDaySetting)
-    : DEFAULT_WEEK_START_DAY;
+  return isValid ? weekStartDay : DEFAULT_WEEK_START_DAY;
 };
 
 
@@ -513,14 +522,17 @@ export function safeParseDateValue(dateValue: unknown): Date | null {
     return null;
   }
 
-  const localParsedDate = parseLocalDateSafe(dateValue as string | number);
+  const dateConstructorValue = toDateConstructorValue(dateValue);
+  if (dateConstructorValue === null) return null;
+
+  const localParsedDate = parseLocalDateSafe(dateConstructorValue);
   if (localParsedDate) {
     return localParsedDate;
   }
 
   
   try {
-    const parsed = new Date(dateValue as string | number);
+    const parsed = new Date(dateConstructorValue);
     if (!isNaN(parsed.getTime())) {
       return parsed;
     }
@@ -561,9 +573,12 @@ export function isValidDate(dateValue: unknown): boolean {
     return !isNaN(dateValue.getTime());
   }
 
+  const dateConstructorValue = toDateConstructorValue(dateValue);
+  if (dateConstructorValue === null) return false;
+
   
   try {
-    const parsed = new Date(dateValue as string | number);
+    const parsed = new Date(dateConstructorValue);
     return !isNaN(parsed.getTime());
   } catch {
     return false;

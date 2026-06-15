@@ -1,6 +1,12 @@
 
 
-import { useState, useCallback, useRef, useEffect } from 'react';
+import {
+  useState,
+  useCallback,
+  useRef,
+  useEffect,
+  type KeyboardEvent,
+} from 'react';
 
 interface AccordionConfig {
   duration: {
@@ -30,7 +36,7 @@ export const useOptimizedAccordion = (
 
   const contentRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-  const collapseTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const collapseTimeoutRef = useRef<number | null>(null);
 
   
   useEffect(() => {
@@ -41,7 +47,7 @@ export const useOptimizedAccordion = (
   useEffect(() => {
     return () => {
       if (collapseTimeoutRef.current) {
-        clearTimeout(collapseTimeoutRef.current);
+        window.clearTimeout(collapseTimeoutRef.current);
       }
     };
   }, []);
@@ -60,7 +66,7 @@ export const useOptimizedAccordion = (
       ) {
         setIsCollapsing(false);
         if (collapseTimeoutRef.current) {
-          clearTimeout(collapseTimeoutRef.current);
+          window.clearTimeout(collapseTimeoutRef.current);
           collapseTimeoutRef.current = null;
         }
       }
@@ -76,7 +82,7 @@ export const useOptimizedAccordion = (
   
   useEffect(() => {
     if (isExpanded && contentRef.current && !isCollapsing) {
-      requestAnimationFrame(() => {
+      window.requestAnimationFrame(() => {
         if (contentRef.current) {
           setContentHeight(contentRef.current.scrollHeight);
         }
@@ -89,13 +95,13 @@ export const useOptimizedAccordion = (
     if (!contentRef.current || !isExpanded || isCollapsing) return;
     if (typeof ResizeObserver === 'undefined') return;
 
-    let debounceTimeout: NodeJS.Timeout;
+    let debounceTimeout: number;
 
     const resizeObserver = new ResizeObserver((entries) => {
       if (isCollapsing) return;
 
-      clearTimeout(debounceTimeout);
-      debounceTimeout = setTimeout(() => {
+      window.clearTimeout(debounceTimeout);
+      debounceTimeout = window.setTimeout(() => {
         if (isCollapsing) return;
 
         for (const entry of entries) {
@@ -116,7 +122,7 @@ export const useOptimizedAccordion = (
     resizeObserver.observe(contentRef.current);
 
     return () => {
-      clearTimeout(debounceTimeout);
+      window.clearTimeout(debounceTimeout);
       resizeObserver.disconnect();
     };
   }, [isExpanded, isCollapsing]);
@@ -128,11 +134,11 @@ export const useOptimizedAccordion = (
         setIsCollapsing(true);
 
         if (collapseTimeoutRef.current) {
-          clearTimeout(collapseTimeoutRef.current);
+          window.clearTimeout(collapseTimeoutRef.current);
         }
 
         
-        collapseTimeoutRef.current = setTimeout(() => {
+        collapseTimeoutRef.current = window.setTimeout(() => {
           setIsCollapsing(false);
           collapseTimeoutRef.current = null;
         }, animationConfig.duration.close + 10);
@@ -140,7 +146,7 @@ export const useOptimizedAccordion = (
         
         setIsCollapsing(false);
         if (collapseTimeoutRef.current) {
-          clearTimeout(collapseTimeoutRef.current);
+          window.clearTimeout(collapseTimeoutRef.current);
           collapseTimeoutRef.current = null;
         }
       }
@@ -149,7 +155,7 @@ export const useOptimizedAccordion = (
   }, [animationConfig.duration.close]);
 
   const handleKeyDown = useCallback(
-    (e: React.KeyboardEvent) => {
+    (e: KeyboardEvent) => {
       if (e.key === 'Enter' || e.key === ' ') {
         e.preventDefault();
         toggleExpanded();
@@ -160,7 +166,7 @@ export const useOptimizedAccordion = (
 
   const remeasureContent = useCallback(() => {
     if (contentRef.current && isExpanded && !isCollapsing) {
-      requestAnimationFrame(() => {
+      window.requestAnimationFrame(() => {
         if (contentRef.current && !isCollapsing) {
           setContentHeight(contentRef.current.scrollHeight);
         }

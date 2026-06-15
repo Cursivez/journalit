@@ -1,6 +1,7 @@
 
 
 import { TooltipProps } from 'recharts';
+import type { ReactElement } from 'react';
 import type { CssVarKey } from '../../styles/inlineStylePolicy';
 import {
   PnLChartDataPoint,
@@ -23,9 +24,18 @@ export interface BaseChartProps {
   };
   
 
-  onChartClick?: (event: any) => void;
+  onChartClick?: (event: unknown) => void;
 
-  onPointClick?: (data: any, index: number) => void;
+  onPointClick?: (
+    data: (
+      | PnLChartDataPoint
+      | DrawdownChartDataPoint
+      | TradesChartDataPoint
+    ) & {
+      path?: string;
+    },
+    index: number
+  ) => void;
 }
 
 
@@ -40,7 +50,7 @@ interface AxisRangeProps {
 interface TooltipConfigProps {
   tooltipProps?: Partial<TooltipProps<number, string>>;
   showTooltip?: boolean;
-  customTooltip?: React.ReactElement;
+  customTooltip?: ReactElement;
   showAccountTooltip?: boolean;
 }
 

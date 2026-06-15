@@ -1,3 +1,4 @@
+import { getLanguage } from 'obsidian';
 
 
 import type { TranslationKey, Lang } from './locale/en';
@@ -65,27 +66,66 @@ const supportedLanguageCodes = new Set<string>([
 ]);
 
 const loadedLocales: Partial<Record<SupportedLanguageCode, Partial<Lang>>> = {};
-let englishLocale: Lang | null = null;
+let englishLocale: Partial<Lang> | null = null;
+
+const BASE64_ALPHABET =
+  'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
+const BASE64_VALUES = new Map(
+  Array.from(BASE64_ALPHABET, (char, index) => [char, index])
+);
 
 function base64ToBytes(base64: string): Uint8Array {
-  const binary = atob(base64);
-  const bytes = new Uint8Array(binary.length);
+  const output: number[] = [];
+  let buffer = 0;
+  let bits = 0;
 
-  for (let i = 0; i < binary.length; i++) {
-    bytes[i] = binary.charCodeAt(i);
+  for (const char of base64) {
+    if (char === '=') break;
+    const value = BASE64_VALUES.get(char);
+    if (value === undefined) continue;
+    buffer = (buffer << 6) | value;
+    bits += 6;
+    if (bits >= 8) {
+      bits -= 8;
+      output.push((buffer >> bits) & 0xff);
+    }
   }
 
-  return bytes;
+  return Uint8Array.from(output);
 }
 
-function unpackJson<T>(base64: string): T {
+function unpackJson(base64: string): unknown {
   const bytes = base64ToBytes(base64);
-  const json = strFromU8(inflateSync(bytes));
-  return JSON.parse(json) as T;
+  const inflateBytes: (data: Uint8Array) => Uint8Array = inflateSync;
+  const decodeText: (data: Uint8Array) => string = strFromU8;
+  const json = decodeText(inflateBytes(bytes));
+  const parsed: unknown = JSON.parse(json);
+  return parsed;
 }
 
-function parseEnglishLocale(): Lang {
-  return unpackJson<Lang>(englishPack);
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
+}
+
+function parseEnglishLocale(): Partial<Lang> {
+  const parsed = unpackJson(englishPack);
+  const locale: Partial<Lang> = {};
+  if (!isRecord(parsed)) {
+    return locale;
+  }
+
+  for (const [key, value] of Object.entries(parsed)) {
+    if (typeof value === 'string') {
+      Object.defineProperty(locale, key, {
+        value,
+        enumerable: true,
+        configurable: true,
+        writable: true,
+      });
+    }
+  }
+
+  return locale;
 }
 
 function parseLocalePack(
@@ -96,8 +136,15 @@ function parseLocalePack(
     return null;
   }
 
-  const values = unpackJson<Array<string | null>>(pack.data);
-  const englishKeys = Object.keys(getEnglishLocale()) as Array<keyof Lang>;
+  const parsedValues = unpackJson(pack.data);
+  if (!Array.isArray(parsedValues)) {
+    return null;
+  }
+  const values = parsedValues.filter(
+    (value): value is string | null =>
+      value === null || typeof value === 'string'
+  );
+  const englishKeys = getAllTranslationKeys();
   if (values.length !== localeBuildInfo.keyCount) {
     return null;
   }
@@ -113,7 +160,7 @@ function parseLocalePack(
   return locale;
 }
 
-function getEnglishLocale(): Lang {
+function getEnglishLocale(): Partial<Lang> {
   if (englishLocale) {
     return englishLocale;
   }
@@ -176,16 +223,10 @@ function normalizeLanguageCode(
 
 type LanguageStorage = Pick<Storage, 'getItem'>;
 
-function getWindowLocalStorage(): LanguageStorage | undefined {
-  if (typeof window === 'undefined') {
-    return undefined;
-  }
-
-  try {
-    return window.localStorage ?? undefined;
-  } catch {
-    return undefined;
-  }
+function getObsidianLanguageStorage(): LanguageStorage {
+  return {
+    getItem: (key: string) => (key === 'language' ? getLanguage() : null),
+  };
 }
 
 function readStorageItem(
@@ -211,7 +252,7 @@ function warnI18n(message: string): void {
 
 
 export function getCurrentLanguage(
-  storage: LanguageStorage | undefined = getWindowLocalStorage()
+  storage: LanguageStorage | undefined = getObsidianLanguageStorage()
 ): SupportedLanguageCode {
   const obsidianLang = readStorageItem(storage, 'language');
   return normalizeLanguageCode(obsidianLang);
@@ -229,16 +270,18 @@ function getLocale(): Partial<Lang> {
   }
 
   const compressedLocaleCode =
-    localeAliases[lang as keyof typeof localeAliases] ?? lang;
+    lang === 'pt'
+      ? localeAliases.pt
+      : lang === 'zh-CN'
+        ? localeAliases['zh-CN']
+        : lang;
 
   try {
     if (!(compressedLocaleCode in localePacks)) {
       return getEnglishLocale();
     }
 
-    const locale = parseLocalePack(
-      compressedLocaleCode as keyof typeof localePacks
-    );
+    const locale = parseLocalePack(compressedLocaleCode);
     if (!locale) {
       return getEnglishLocale();
     }
@@ -254,7 +297,7 @@ function getLocale(): Partial<Lang> {
 }
 
 function hasTranslationInLocale(locale: Partial<Lang>, key: string): boolean {
-  return Object.prototype.hasOwnProperty.call(locale, key);
+  return key in locale;
 }
 
 
@@ -266,7 +309,7 @@ export function t(
   const en = getEnglishLocale();
 
   
-  let translation = locale[key] || en[key];
+  let translation: string | undefined = locale[key] || en[key];
 
   
   if (!translation) {
@@ -276,10 +319,13 @@ export function t(
 
   
   if (params) {
-    translation = translation!.replace(/\{(\w+)\}/g, (match, paramKey) => {
-      const value = params[paramKey];
-      return value !== undefined ? value : match;
-    });
+    translation = translation.replace(
+      /\{(\w+)\}/g,
+      (match: string, paramKey: string) => {
+        const value = params[paramKey];
+        return value !== undefined ? value : match;
+      }
+    );
   }
 
   return translation;
@@ -339,15 +385,13 @@ function getPluralRules(lang: string): Intl.PluralRules {
 export function hasTranslation(key: string): key is TranslationKey {
   const locale = getLocale();
   const en = getEnglishLocale();
-  return (
-    hasTranslationInLocale(locale, key) ||
-    Object.prototype.hasOwnProperty.call(en, key)
-  );
+  return hasTranslationInLocale(locale, key) || key in en;
 }
 
 
 export function getAllTranslationKeys(): TranslationKey[] {
-  return Object.keys(getEnglishLocale()) as TranslationKey[];
+  const en = getEnglishLocale();
+  return Object.keys(en).filter((key): key is TranslationKey => key in en);
 }
 
 export type { TranslationKey };

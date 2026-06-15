@@ -118,9 +118,7 @@ export class SubscriptionTierService {
         backend.userEmail = entitlements.user.email;
         backend.userId = nextUserId;
         await this.plugin.saveSettings();
-        document.dispatchEvent(
-          new CustomEvent('journalit:subscription-changed')
-        );
+        window.dispatchEvent(new CustomEvent('journalit:subscription-changed'));
       }
       return {
         status: entitlements.subscription.isPro ? 'premium' : 'free',
@@ -136,7 +134,7 @@ export class SubscriptionTierService {
           backend.userId = '';
           await this.plugin.saveSettings();
 
-          document.dispatchEvent(
+          window.dispatchEvent(
             new CustomEvent('journalit:subscription-changed')
           );
 

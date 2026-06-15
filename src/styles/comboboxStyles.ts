@@ -1,7 +1,7 @@
 
 
 
-const comboboxCSS = `
+export const comboboxCSS = `
 
 
 
@@ -230,15 +230,3 @@ const comboboxCSS = `
   border-color: var(--text-error, #e53935);
 }
 `;
-
-export function injectComboBoxStyles(): void {
-  return;
-}
-
-export function removeComboBoxStyles(): void {
-  return;
-}
-
-export function ensureComboBoxStyles(): void {
-  return;
-}

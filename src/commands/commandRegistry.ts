@@ -11,6 +11,27 @@ import {
   isTradeIdentityEligibleNote,
 } from '../utils/tradeIdentity';
 import { t } from '../lang/helpers';
+import type { ReviewTemplate, TradeTemplate } from '../types/reviewV2';
+
+function asRecord(value: unknown): Record<string, unknown> | undefined {
+  return value && typeof value === 'object' && !Array.isArray(value)
+    ? Object.fromEntries(Object.entries(value))
+    : undefined;
+}
+
+interface MutableTradeTemplateFrontmatter {
+  [key: string]: unknown;
+  templateId?: string;
+  templateVersion?: string | number;
+}
+
+function getStringValue(
+  record: Record<string, unknown> | undefined,
+  key: string
+): string | undefined {
+  const value = record?.[key];
+  return typeof value === 'string' ? value : undefined;
+}
 
 
 export class CommandRegistry {
@@ -469,11 +490,9 @@ export class CommandRegistry {
           const cache = this.plugin.app.metadataCache.getFileCache(
             activeView.file
           );
-          const frontmatter = cache?.frontmatter;
-          const noteType = frontmatter?.type as string | undefined;
-          const currentTemplateId = frontmatter?.templateId as
-            | string
-            | undefined;
+          const frontmatter = asRecord(cache?.frontmatter);
+          const noteType = getStringValue(frontmatter, 'type');
+          const currentTemplateId = getStringValue(frontmatter, 'templateId');
 
           
           const [
@@ -486,7 +505,7 @@ export class CommandRegistry {
             import('../components/modals/TemplatePickerModal'),
           ]);
 
-          let templates: any[] = [];
+          let templates: Array<ReviewTemplate | TradeTemplate> = [];
           let title = t('template.switch-title');
           let defaultTemplateId: string | undefined;
 
@@ -590,14 +609,17 @@ export class CommandRegistry {
                 
                 await this.plugin.app.fileManager.processFrontMatter(
                   activeView.file!,
-                  (fm) => {
+                  (frontmatter: MutableTradeTemplateFrontmatter) => {
                     if (
-                      isTradeIdentityEligibleNote(fm, activeView.file!.path)
+                      isTradeIdentityEligibleNote(
+                        frontmatter,
+                        activeView.file!.path
+                      )
                     ) {
-                      ensureTradeIdentityFrontmatter(fm);
+                      ensureTradeIdentityFrontmatter(frontmatter);
                     }
-                    fm.templateId = template.id;
-                    fm.templateVersion = template.version;
+                    frontmatter.templateId = template.id;
+                    frontmatter.templateVersion = template.version;
                   }
                 );
 

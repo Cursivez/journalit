@@ -11,6 +11,7 @@ import { Component, MarkdownRenderer, TFile } from 'obsidian';
 import JournalitPlugin from '../../../main';
 import { parseLocalDateSafe } from '../../../utils/dateUtils';
 import { ImageCarousel } from '../../image/ImageCarousel';
+import { createSvgPlaceholderDataUri } from '../../../utils/placeholderImage';
 import type { PreviousTradingDayContextResult } from '../../../services/drc/DRCService';
 import { t } from '../../../lang/helpers';
 import { forceMetadataCacheRefresh } from '../../../utils/dataRefresh';
@@ -46,7 +47,7 @@ function parseHeadings(
 ): string[] {
   if (config?.headingsJson) {
     try {
-      const parsed = JSON.parse(config.headingsJson);
+      const parsed: unknown = JSON.parse(config.headingsJson);
       if (Array.isArray(parsed)) {
         return parsed
           .map((heading) => (typeof heading === 'string' ? heading.trim() : ''))
@@ -219,7 +220,7 @@ export const PreviousTradingDayContextWidget: React.FC<PreviousTradingDayContext
         }
       };
 
-      loadContext();
+      void loadContext();
       return () => {
         isMounted = false;
       };
@@ -243,7 +244,7 @@ export const PreviousTradingDayContextWidget: React.FC<PreviousTradingDayContext
           const component = new Component();
           component.load();
           componentRefs.current.push(component);
-          MarkdownRenderer.render(
+          void MarkdownRenderer.render(
             plugin.app,
             block.markdown,
             container,
@@ -268,7 +269,7 @@ export const PreviousTradingDayContextWidget: React.FC<PreviousTradingDayContext
       (event: React.KeyboardEvent<HTMLSpanElement>) => {
         if (event.key !== 'Enter' && event.key !== ' ') return;
         event.preventDefault();
-        openSourceDRC();
+        void openSourceDRC();
       },
       [openSourceDRC]
     );
@@ -325,7 +326,13 @@ export const PreviousTradingDayContextWidget: React.FC<PreviousTradingDayContext
             <div className="journalit-images-widget">
               <ImageCarousel
                 images={[
-                  'https://placehold.co/700x320/1a1a2e/eee?text=Previous+DRC+Chart',
+                  createSvgPlaceholderDataUri(
+                    700,
+                    320,
+                    '#1a1a2e',
+                    '#eeeeee',
+                    'Previous DRC Chart'
+                  ),
                 ]}
                 altPrefix={t(
                   'widget.previous-trading-day-context.image-alt-prefix'
@@ -389,8 +396,8 @@ export const PreviousTradingDayContextWidget: React.FC<PreviousTradingDayContext
             className="journalit-previous-drc-reference-link"
             role="link"
             tabIndex={0}
-            onClick={openSourceDRC}
-            onKeyDown={handleSourceHeaderKeyDown}
+            onClick={() => void openSourceDRC()}
+            onKeyDown={(event) => void handleSourceHeaderKeyDown(event)}
           >
             {t('widget.previous-trading-day-context.open-source')}
           </span>

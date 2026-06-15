@@ -51,10 +51,65 @@ import {
   calculateCopiedTradePnL,
   scaleCopiedTradeExecutionFields,
 } from '../../utils/copyTradePnL';
+import { safeString } from '../../utils/safeString';
 import {
   normalizeAccountLookupKey,
   normalizeTradeAccountIdentity,
 } from '../trade/core/TradeAccountIdentity';
+
+const asRecord = (value: unknown): Record<string, unknown> | undefined =>
+  value && typeof value === 'object' && !Array.isArray(value)
+    ? Object.fromEntries(Object.entries(value))
+    : undefined;
+
+const getStringValue = (
+  record: Record<string, unknown>,
+  key: string
+): string | undefined => {
+  const value = record[key];
+  return typeof value === 'string' ||
+    typeof value === 'number' ||
+    value instanceof Date
+    ? String(value)
+    : undefined;
+};
+
+const getNumberValue = (
+  record: Record<string, unknown>,
+  key: string
+): number | undefined => {
+  const value = record[key];
+  return typeof value === 'number' ? value : undefined;
+};
+
+const isReviewNoteType = (
+  value: unknown
+): value is CachedReviewData['noteType'] => {
+  switch (value) {
+    case 'drc':
+    case 'weekly-review':
+    case 'monthly-review':
+    case 'quarterly-review':
+    case 'yearly-review':
+    case 'trade':
+      return true;
+    default:
+      return false;
+  }
+};
+
+const isAutoPopulatedReviewNoteType = (value: unknown): boolean => {
+  switch (value) {
+    case 'drc':
+    case 'weekly-review':
+    case 'monthly-review':
+    case 'quarterly-review':
+    case 'yearly-review':
+      return true;
+    default:
+      return false;
+  }
+};
 
 
 export interface CachedReviewData {
@@ -76,13 +131,13 @@ export interface CachedReviewData {
   filters: UnifiedFilters;
   
 
-  allTrades?: any[];
+  allTrades?: unknown[];
   
 
-  analyticsBasisTrades?: any[];
+  analyticsBasisTrades?: unknown[];
   
 
-  trades: any[];
+  trades: unknown[];
   
   sessionMistakesByTradingDay: Record<string, string[]>;
   
@@ -169,17 +224,16 @@ function enrichTradeWithCustomFields(
     return trade;
   }
 
-  const frontmatter = app.metadataCache.getFileCache(file)?.frontmatter;
+  const frontmatter = asRecord(
+    app.metadataCache.getFileCache(file)?.frontmatter
+  );
   if (!frontmatter) {
     return trade;
   }
 
   const customFields = customFieldDefinitions.reduce<Record<string, unknown>>(
     (acc, field) => {
-      const nestedValue =
-        frontmatter.customFields && typeof frontmatter.customFields === 'object'
-          ? (frontmatter.customFields as Record<string, unknown>)[field.id]
-          : undefined;
+      const nestedValue = asRecord(frontmatter.customFields)?.[field.id];
       const rootValue =
         field.fieldKey && frontmatter[field.fieldKey] !== undefined
           ? frontmatter[field.fieldKey]
@@ -238,8 +292,7 @@ export class ReviewDataCache {
   private pendingFilterOverrides: Map<string, UnifiedFilters> = new Map();
 
   
-  private populateDebounceTimers: Map<string, ReturnType<typeof setTimeout>> =
-    new Map();
+  private populateDebounceTimers: Map<string, number> = new Map();
 
   
   private static readonly POPULATE_DEBOUNCE_MS = 150;
@@ -427,7 +480,7 @@ export class ReviewDataCache {
         continue;
       }
 
-      const copyBaseTradeKey = String(
+      const copyBaseTradeKey = safeString(
         baseTrade.path ?? baseTrade.tradeId ?? baseTrade.id ?? 'trade'
       );
       const {
@@ -452,7 +505,7 @@ export class ReviewDataCache {
           ? undefined
           : riskAmount * copyPeriod.multiplier;
 
-      const copiedTradeId = `${String(baseTrade.tradeId ?? baseTrade.id ?? baseTrade.path ?? 'trade')}::copy::${copyAccountLookupKey}`;
+      const copiedTradeId = `${safeString(baseTrade.tradeId ?? baseTrade.id ?? baseTrade.path ?? 'trade')}::copy::${copyAccountLookupKey}`;
 
       copiedTrades.push({
         ...baseTrade,
@@ -498,7 +551,7 @@ export class ReviewDataCache {
     if (!value) {
       return null;
     }
-    const date = value instanceof Date ? value : new Date(String(value));
+    const date = value instanceof Date ? value : new Date(safeString(value));
     return Number.isNaN(date.getTime()) ? null : date;
   }
 
@@ -655,8 +708,8 @@ export class ReviewDataCache {
 
     
     const handleMetadataChanged = (file: TFile) => {
-      const frontmatter =
-        this.app.metadataCache.getFileCache(file)?.frontmatter;
+      const frontmatter = this.app.metadataCache.getFileCache(file)
+        ?.frontmatter as Record<string, unknown> | undefined;
       if (frontmatter?.type === 'drc') {
         const newFingerprint = this.getDRCAggregationFingerprint(frontmatter);
         const previousFingerprint = this.drcAggregationFingerprintByFile.get(
@@ -747,22 +800,13 @@ export class ReviewDataCache {
 
       
       const cache = this.app.metadataCache.getFileCache(file);
-      const type = cache?.frontmatter?.type;
+      const type: unknown = cache?.frontmatter?.type;
 
-      if (
-        type &&
-        [
-          'drc',
-          'weekly-review',
-          'monthly-review',
-          'quarterly-review',
-          'yearly-review',
-        ].includes(type)
-      ) {
+      if (isAutoPopulatedReviewNoteType(type)) {
         
         if (!this.cache.has(file.path)) {
           this.log('Pre-populating on file open:', file.path);
-          this.populate(file.path);
+          void this.populate(file.path);
         }
       }
     };
@@ -775,7 +819,7 @@ export class ReviewDataCache {
   
   private startCleanupInterval(): void {
     
-    const intervalId = globalThis.setInterval(
+    const intervalId = window.setInterval(
       () => {
         this.cleanupStaleEntries();
       },
@@ -784,7 +828,7 @@ export class ReviewDataCache {
 
     
     this.eventCleanup.push(() => {
-      globalThis.clearInterval(intervalId);
+      window.clearInterval(intervalId);
     });
   }
 
@@ -876,13 +920,13 @@ export class ReviewDataCache {
     
     const existingTimer = this.populateDebounceTimers.get(filePath);
     if (existingTimer) {
-      clearTimeout(existingTimer);
+      window.clearTimeout(existingTimer);
     }
 
     
-    const timer = setTimeout(() => {
+    const timer = window.setTimeout(() => {
       this.populateDebounceTimers.delete(filePath);
-      this.populate(filePath);
+      void this.populate(filePath);
     }, ReviewDataCache.POPULATE_DEBOUNCE_MS);
 
     this.populateDebounceTimers.set(filePath, timer);
@@ -900,7 +944,9 @@ export class ReviewDataCache {
 
     
     const cache = this.app.metadataCache.getFileCache(file);
-    const frontmatter = cache?.frontmatter;
+    const frontmatter = cache?.frontmatter as
+      | Record<string, unknown>
+      | undefined;
 
     if (!frontmatter) {
       
@@ -909,27 +955,20 @@ export class ReviewDataCache {
     }
 
     
-    const validTypes = [
-      'drc',
-      'weekly-review',
-      'monthly-review',
-      'quarterly-review',
-      'yearly-review',
-      'trade',
-    ];
-    if (!validTypes.includes(frontmatter.type)) {
+    if (!isReviewNoteType(frontmatter.type)) {
       return;
     }
+    const noteType = frontmatter.type;
 
     
     const canonicalTrade =
-      frontmatter.type === 'trade'
+      noteType === 'trade'
         ? normalizeTradeExecutionForPeriodAnalytics(frontmatter)
         : null;
     const date = parseLocalDateSafe(
-      frontmatter.type === 'trade'
+      noteType === 'trade'
         ? canonicalTrade?.entryTime
-        : frontmatter.date
+        : getStringValue(frontmatter, 'date')
     );
 
     if (!date) {
@@ -940,7 +979,7 @@ export class ReviewDataCache {
     let start: Date, end: Date;
     let tradingDayStr: string | undefined;
 
-    if (frontmatter.type === 'drc') {
+    if (noteType === 'drc') {
       
       
       tradingDayStr = formatLocalDateString(date);
@@ -952,16 +991,16 @@ export class ReviewDataCache {
       const tradingDayRange = getTradingDayRange(tradingDayAnchor, this.plugin);
       start = tradingDayRange.start;
       end = new Date(tradingDayRange.end.getTime() - 1);
-    } else if (frontmatter.type === 'weekly-review') {
+    } else if (noteType === 'weekly-review') {
       
-      start = frontmatter.weekStart
-        ? (parseLocalDateSafe(frontmatter.weekStart) ?? date)
-        : date;
-      end = frontmatter.weekEnd
-        ? (parseLocalDateSafe(frontmatter.weekEnd) ??
+      const weekStart = getStringValue(frontmatter, 'weekStart');
+      const weekEnd = getStringValue(frontmatter, 'weekEnd');
+      start = weekStart ? (parseLocalDateSafe(weekStart) ?? date) : date;
+      end = weekEnd
+        ? (parseLocalDateSafe(weekEnd) ??
           new Date(start.getTime() + 7 * 24 * 60 * 60 * 1000))
         : new Date(start.getTime() + 7 * 24 * 60 * 60 * 1000);
-    } else if (frontmatter.type === 'monthly-review') {
+    } else if (noteType === 'monthly-review') {
       start = new Date(date.getFullYear(), date.getMonth(), 1);
       end = new Date(
         date.getFullYear(),
@@ -972,14 +1011,16 @@ export class ReviewDataCache {
         59,
         999
       );
-    } else if (frontmatter.type === 'quarterly-review') {
+    } else if (noteType === 'quarterly-review') {
       
       
-      const parsedQuarterStart = frontmatter.quarterStart
-        ? parseLocalDateSafe(frontmatter.quarterStart)
+      const quarterStart = getStringValue(frontmatter, 'quarterStart');
+      const quarterEnd = getStringValue(frontmatter, 'quarterEnd');
+      const parsedQuarterStart = quarterStart
+        ? parseLocalDateSafe(quarterStart)
         : null;
-      const parsedQuarterEnd = frontmatter.quarterEnd
-        ? parseLocalDateSafe(frontmatter.quarterEnd)
+      const parsedQuarterEnd = quarterEnd
+        ? parseLocalDateSafe(quarterEnd)
         : null;
       if (parsedQuarterStart && parsedQuarterEnd) {
         start = parsedQuarterStart;
@@ -992,22 +1033,20 @@ export class ReviewDataCache {
         start = new Date(date.getFullYear(), startMonth, 1);
         end = new Date(date.getFullYear(), startMonth + 3, 0, 23, 59, 59, 999);
       }
-    } else if (frontmatter.type === 'yearly-review') {
+    } else if (noteType === 'yearly-review') {
       
       
-      const parsedYearStart = frontmatter.yearStart
-        ? parseLocalDateSafe(frontmatter.yearStart)
-        : null;
-      const parsedYearEnd = frontmatter.yearEnd
-        ? parseLocalDateSafe(frontmatter.yearEnd)
-        : null;
+      const yearStart = getStringValue(frontmatter, 'yearStart');
+      const yearEnd = getStringValue(frontmatter, 'yearEnd');
+      const parsedYearStart = yearStart ? parseLocalDateSafe(yearStart) : null;
+      const parsedYearEnd = yearEnd ? parseLocalDateSafe(yearEnd) : null;
       if (parsedYearStart && parsedYearEnd) {
         start = parsedYearStart;
         end = parsedYearEnd;
         end.setHours(23, 59, 59, 999);
       } else {
         
-        const year = frontmatter.year || date.getFullYear();
+        const year = getNumberValue(frontmatter, 'year') ?? date.getFullYear();
         start = new Date(year, 0, 1, 0, 0, 0, 0);
         end = new Date(year, 11, 31, 23, 59, 59, 999);
       }
@@ -1026,18 +1065,21 @@ export class ReviewDataCache {
 
     
 
-    let trades: any[] = [];
+    let trades: Array<PartialTradeFrontmatter & Record<string, unknown>> = [];
 
-    let scopedTrades: any[] = [];
+    let scopedTrades: Array<PartialTradeFrontmatter & Record<string, unknown>> =
+      [];
 
-    let analyticsBasisTrades: any[] = [];
+    let analyticsBasisTrades: Array<
+      PartialTradeFrontmatter & Record<string, unknown>
+    > = [];
     let currencyConversion: CachedReviewData['currencyConversion'];
 
     if (this.plugin.tradeService) {
       try {
-        const allTrades = await this.plugin.tradeService.getTradeData({
+        const allTrades = (await this.plugin.tradeService.getTradeData({
           fresh: false,
-        });
+        })) as Array<PartialTradeFrontmatter & Record<string, unknown>>;
 
         const analyticsDateBasis = getAnalyticsDateBasis(this.plugin.settings);
 
@@ -1101,7 +1143,7 @@ export class ReviewDataCache {
         scopedTrades = trades.map((trade) =>
           enrichTradeWithCustomFields(
             {
-              ...(trade as PartialTradeFrontmatter & Record<string, unknown>),
+              ...trade,
               _analyticsRangeStart: start,
               _analyticsRangeEnd: end,
             },
@@ -1115,8 +1157,7 @@ export class ReviewDataCache {
             : analyticsBasisRawTrades.map((trade) =>
                 enrichTradeWithCustomFields(
                   {
-                    ...(trade as PartialTradeFrontmatter &
-                      Record<string, unknown>),
+                    ...trade,
                     _analyticsRangeStart: start,
                     _analyticsRangeEnd: end,
                   },
@@ -1151,7 +1192,7 @@ export class ReviewDataCache {
             analyticsDateBasis === 'entry'
               ? scopedTrades
               : this.attachBreakEvenAccountBalances(
-                  analyticsBasisTrades as Array<Record<string, unknown>>,
+                  analyticsBasisTrades,
                   accountBalanceLookup
                 );
         }
@@ -1161,14 +1202,17 @@ export class ReviewDataCache {
         
         const userCurrency = this.plugin?.settings?.general?.currency || 'USD';
         const currencyGrouped = aggregatePnLByCurrency(
-          scopedTrades,
+          scopedTrades as Array<Record<string, unknown>>,
           userCurrency
         );
         const originalScopedTrades = scopedTrades;
         const analyticsBasisCurrencyGrouped =
           analyticsDateBasis === 'entry'
             ? currencyGrouped
-            : aggregatePnLByCurrency(analyticsBasisTrades, userCurrency);
+            : aggregatePnLByCurrency(
+                analyticsBasisTrades as Array<Record<string, unknown>>,
+                userCurrency
+              );
 
         let successfulConversion:
           | {
@@ -1183,7 +1227,7 @@ export class ReviewDataCache {
 
         if (currencyGrouped.isMultiCurrency) {
           const conversionResult = await this.exchangeRateService.convertTrades(
-            scopedTrades,
+            scopedTrades as Array<Record<string, unknown>>,
             userCurrency
           );
 
@@ -1262,7 +1306,10 @@ export class ReviewDataCache {
           const filteredOriginalCurrencies = new Set<string>();
 
           for (const trade of filteredOriginalTrades) {
-            const originalCurrency = trade.currency || userCurrency;
+            const originalCurrency =
+              typeof trade.currency === 'string'
+                ? trade.currency
+                : userCurrency;
             filteredOriginalCurrencies.add(originalCurrency);
             originalByCurrency[originalCurrency] =
               (originalByCurrency[originalCurrency] || 0) +
@@ -1270,7 +1317,10 @@ export class ReviewDataCache {
           }
 
           for (const trade of pnlContributingTrades) {
-            const originalCurrency = trade.originalCurrency || userCurrency;
+            const originalCurrency =
+              typeof trade.originalCurrency === 'string'
+                ? trade.originalCurrency
+                : userCurrency;
             convertedByCurrency[originalCurrency] =
               (convertedByCurrency[originalCurrency] || 0) +
               getEffectivePnL(trade);
@@ -1285,11 +1335,18 @@ export class ReviewDataCache {
           );
           const unconvertedTrades = filteredOriginalTrades
             .filter((trade) =>
-              filteredUnconvertedCurrencySet.has(trade.currency || userCurrency)
+              filteredUnconvertedCurrencySet.has(
+                typeof trade.currency === 'string'
+                  ? trade.currency
+                  : userCurrency
+              )
             )
             .map((trade) => ({
               ...trade,
-              originalCurrency: trade.currency || userCurrency,
+              originalCurrency:
+                typeof trade.currency === 'string'
+                  ? trade.currency
+                  : userCurrency,
               originalPnlBeforeConversion: getEffectivePnL(trade),
               isUnconvertedCurrency: true,
             }));
@@ -1333,7 +1390,7 @@ export class ReviewDataCache {
     
     const entry: CachedReviewData = {
       frontmatter,
-      noteType: frontmatter.type,
+      noteType,
       dateRange: { start, end },
       tradingDayStr,
       filters,
@@ -1430,8 +1487,8 @@ export class ReviewDataCache {
 
     const files = this.app.vault.getMarkdownFiles();
     for (const file of files) {
-      const frontmatter =
-        this.app.metadataCache.getFileCache(file)?.frontmatter;
+      const frontmatter = this.app.metadataCache.getFileCache(file)
+        ?.frontmatter as Record<string, unknown> | undefined;
       if (!frontmatter || frontmatter.type !== 'drc') {
         continue;
       }
@@ -1536,7 +1593,7 @@ export class ReviewDataCache {
     filtersOverride?: UnifiedFilters
   ): Promise<void> {
     for (let i = 0; i < retries; i++) {
-      await new Promise((resolve) => setTimeout(resolve, delay));
+      await new Promise((resolve) => window.setTimeout(resolve, delay));
 
       const file = this.app.vault.getAbstractFileByPath(filePath);
       if (!(file instanceof TFile)) return;
@@ -1633,8 +1690,8 @@ export class ReviewDataCache {
       return;
     }
 
-    const frontmatter =
-      this.app.metadataCache.getFileCache(drcFile)?.frontmatter;
+    const frontmatter = this.app.metadataCache.getFileCache(drcFile)
+      ?.frontmatter as Record<string, unknown> | undefined;
     const rawDate = frontmatter?.date;
     if (typeof rawDate !== 'string') {
       this.invalidateAll();
@@ -1795,7 +1852,7 @@ export class ReviewDataCache {
   public destroy(): void {
     
     for (const timer of this.populateDebounceTimers.values()) {
-      clearTimeout(timer);
+      window.clearTimeout(timer);
     }
     this.populateDebounceTimers.clear();
 

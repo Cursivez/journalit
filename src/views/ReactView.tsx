@@ -6,7 +6,6 @@ import React, { StrictMode } from 'react';
 import { ReactViewConfig, RenderFunction } from './types';
 import { CurrencyProvider } from '../contexts/CurrencyContext';
 import { DisplayPolicyProvider } from '../contexts/DisplayPolicyContext';
-import { ensureReactViewStyles } from '../styles/reactViewStyles';
 import { getPluginInstance } from '../utils/pluginContext';
 import { GuideRuntimeLayer } from '../guides/GuideRuntimeLayer';
 
@@ -89,7 +88,10 @@ export abstract class ReactView extends ItemView {
       this.renderComponent();
 
       
-      document.addEventListener('theme-change', this._themeChangeHandler);
+      window.activeDocument.addEventListener(
+        'theme-change',
+        this._themeChangeHandler
+      );
       window.addEventListener(
         'journalit-currency-changed',
         this._currencyChangeHandler
@@ -118,9 +120,10 @@ export abstract class ReactView extends ItemView {
     }
 
     
+    const viewDocument = this.containerEl.ownerDocument;
     if (
-      !document.body.contains(this.containerEl) ||
-      !document.body.contains(this.rootEl)
+      !viewDocument.body.contains(this.containerEl) ||
+      !viewDocument.body.contains(this.rootEl)
     ) {
       
       return;
@@ -184,7 +187,10 @@ export abstract class ReactView extends ItemView {
     this.rootEl = null;
 
     
-    document.removeEventListener('theme-change', this._themeChangeHandler);
+    window.activeDocument.removeEventListener(
+      'theme-change',
+      this._themeChangeHandler
+    );
     window.removeEventListener(
       'journalit-currency-changed',
       this._currencyChangeHandler

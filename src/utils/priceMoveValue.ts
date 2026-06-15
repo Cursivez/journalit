@@ -1,3 +1,4 @@
+import { safeString } from './safeString';
 type PriceMoveValueInput = {
   assetType?: string;
   contractSize?: number;
@@ -9,7 +10,7 @@ type PriceMoveValueInput = {
 };
 
 function normalizeAssetType(assetType: unknown): string {
-  return String(assetType || '').toLowerCase();
+  return safeString(assetType).toLowerCase();
 }
 
 

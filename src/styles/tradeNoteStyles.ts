@@ -2,7 +2,7 @@
 
 
 
-const TRADE_NOTE_STYLES = `
+export const TRADE_NOTE_STYLES = `
   
 
   
@@ -1565,9 +1565,3 @@ const TRADE_NOTE_STYLES = `
 `;
 
 
-function injectTradeNoteStyles(): void {
-  return;
-}
-
-
-export function ensureTradeNoteStyles(): void {}

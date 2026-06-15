@@ -18,7 +18,6 @@ import {
 import JournalitPlugin from '../../../main';
 import { EmbeddedNoteConfig } from '../../../settings/types';
 import { SkeletonText } from '../../shared/SkeletonText';
-import { ensureHomeWidgetStyles } from '../../../styles/homeWidgetStyles';
 import { t } from '../../../lang/helpers';
 import {
   readFileContentForMutation,
@@ -108,7 +107,7 @@ export const EmbeddedNoteWidget = memo<EmbeddedNoteWidgetProps>(
 
     
     useEffect(() => {
-      loadContent();
+      void loadContent();
     }, [loadContent]);
 
     
@@ -118,7 +117,7 @@ export const EmbeddedNoteWidget = memo<EmbeddedNoteWidgetProps>(
 
       const handleModify = (file: TFile) => {
         if (file.path === filePath) {
-          loadContent();
+          void loadContent();
         }
       };
 
@@ -224,7 +223,7 @@ export const EmbeddedNoteWidget = memo<EmbeddedNoteWidgetProps>(
       container.empty();
 
       
-      MarkdownRenderer.render(
+      void MarkdownRenderer.render(
         plugin.app,
         content,
         container,
@@ -238,7 +237,7 @@ export const EmbeddedNoteWidget = memo<EmbeddedNoteWidgetProps>(
         handler: EventListener;
       }> = [];
 
-      const timeoutId = setTimeout(() => {
+      const timeoutId = window.setTimeout(() => {
         const checkboxes = container.querySelectorAll(
           'input.task-list-item-checkbox'
         );
@@ -248,7 +247,7 @@ export const EmbeddedNoteWidget = memo<EmbeddedNoteWidgetProps>(
           const handler: EventListener = (e) => {
             e.preventDefault();
             e.stopPropagation();
-            toggleCheckbox(index);
+            void toggleCheckbox(index);
           };
           checkbox.addEventListener('click', handler);
           checkboxHandlers.push({ checkbox, handler });
@@ -256,7 +255,7 @@ export const EmbeddedNoteWidget = memo<EmbeddedNoteWidgetProps>(
       }, 50);
 
       return () => {
-        clearTimeout(timeoutId);
+        window.clearTimeout(timeoutId);
         checkboxHandlers.forEach(({ checkbox, handler }) => {
           checkbox.removeEventListener('click', handler);
         });
@@ -347,11 +346,11 @@ export const EmbeddedNoteWidget = memo<EmbeddedNoteWidgetProps>(
                   key={file.path}
                   role="button"
                   tabIndex={0}
-                  onClick={() => handleSelectFile(file)}
+                  onClick={() => void handleSelectFile(file)}
                   onKeyDown={(e) => {
                     if (e.key !== 'Enter' && e.key !== ' ') return;
                     e.preventDefault();
-                    handleSelectFile(file);
+                    void handleSelectFile(file);
                   }}
                   className="jl-recent-item-hover journalit-home-embedded-note__file-item"
                 >
@@ -439,7 +438,9 @@ export const EmbeddedNoteWidget = memo<EmbeddedNoteWidgetProps>(
             className="journalit-home-widget__eyebrow journalit-home-embedded-note__header-label journalit-home-embedded-note__header-label--interactive"
             role="button"
             tabIndex={0}
-            onClick={() => filePath && plugin.openFile(filePath, true)}
+            onClick={() => {
+              if (filePath) void plugin.openFile(filePath, true);
+            }}
             onKeyDown={(e) => {
               if (e.key !== 'Enter' && e.key !== ' ') return;
               e.preventDefault();

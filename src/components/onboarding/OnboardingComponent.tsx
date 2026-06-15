@@ -1,7 +1,7 @@
 
 
 import React, { useEffect, useRef, useState } from 'react';
-import { Notice, Platform, type Hotkey } from 'obsidian';
+import { Notice, type Hotkey } from 'obsidian';
 import { useEventBus } from '../../hooks/useEventBus';
 import { t } from '../../lang/helpers';
 import { SETTINGS_TAB_IDS } from '../../settings/types';
@@ -11,6 +11,8 @@ import { ExploreStep } from './steps/ExploreStep';
 import { ChoosePathStep, type OnboardingPath } from './steps/ChoosePathStep';
 import { ContextualFinalStep } from './steps/ContextualFinalStep';
 import { ONBOARDING_VIEW_TYPE } from '../../views/OnboardingView';
+import { openExternalUrl } from '../../utils/externalLinks';
+import { writeClipboardText } from '../../utils/clipboard';
 
 type OnboardingViewStep =
   | 'welcome'
@@ -30,9 +32,7 @@ function useOnboardingModel(plugin: JournalitPlugin) {
     string | null
   >(null);
   const [manualDocsCopied, setManualDocsCopied] = useState(false);
-  const manualDocsCopyTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
-    null
-  );
+  const manualDocsCopyTimerRef = useRef<number | null>(null);
   const hotkeySearchIntervalRef = useRef<number | null>(null);
 
   const didAutoCompleteManual = useRef(false);
@@ -40,11 +40,11 @@ function useOnboardingModel(plugin: JournalitPlugin) {
   useEffect(() => {
     return () => {
       if (manualDocsCopyTimerRef.current) {
-        clearTimeout(manualDocsCopyTimerRef.current);
+        window.clearTimeout(manualDocsCopyTimerRef.current);
       }
 
       if (hotkeySearchIntervalRef.current) {
-        clearInterval(hotkeySearchIntervalRef.current);
+        window.clearInterval(hotkeySearchIntervalRef.current);
         hotkeySearchIntervalRef.current = null;
       }
     };
@@ -164,13 +164,13 @@ function useOnboardingModel(plugin: JournalitPlugin) {
     setManualDocsFallbackUrl(url);
 
     try {
-      await navigator.clipboard.writeText(url);
+      await writeClipboardText(url);
       setManualDocsCopied(true);
 
       if (manualDocsCopyTimerRef.current) {
-        clearTimeout(manualDocsCopyTimerRef.current);
+        window.clearTimeout(manualDocsCopyTimerRef.current);
       }
-      manualDocsCopyTimerRef.current = setTimeout(() => {
+      manualDocsCopyTimerRef.current = window.setTimeout(() => {
         setManualDocsCopied(false);
       }, 2000);
     } catch (error) {
@@ -184,44 +184,9 @@ function useOnboardingModel(plugin: JournalitPlugin) {
 
     setManualDocsFallbackUrl(null);
     setManualDocsCopied(false);
-
-    
-    if (Platform.isDesktopApp) {
-      try {
-        const electronShell = (
-          window as Window & {
-            require?: (module: string) => {
-              shell?: { openExternal: (targetUrl: string) => void };
-            };
-          }
-        ).require?.('electron')?.shell;
-
-        if (electronShell) {
-          electronShell.openExternal(url);
-          return;
-        }
-      } catch (error) {
-        console.warn(
-          '[Onboarding] Electron shell not available, falling back to window.open:',
-          error
-        );
-      }
-    }
-
-    try {
-      const newWindow = window.open(url, '_blank');
-
-      if (
-        !newWindow ||
-        newWindow.closed ||
-        typeof newWindow.closed === 'undefined'
-      ) {
-        await copyManualDocsUrl(url);
-      }
-    } catch (error) {
-      console.error('[Onboarding] Failed to open docs link:', error);
-      await copyManualDocsUrl(url);
-    }
+    openExternalUrl(url, ['journalit.co'], {
+      onPopupBlocked: copyManualDocsUrl,
+    });
   };
 
   const handleOpenDashboard = async () => {
@@ -402,10 +367,12 @@ function useOnboardingModel(plugin: JournalitPlugin) {
       hotkeySearchIntervalRef.current = window.setInterval(() => {
         attempts += 1;
 
-        const modal = document.querySelector('.modal.mod-settings');
+        const modal = window.activeDocument.querySelector(
+          '.modal.mod-settings'
+        );
         const inputs = modal
           ? Array.from(modal.querySelectorAll('input'))
-          : Array.from(document.querySelectorAll('input'));
+          : Array.from(window.activeDocument.querySelectorAll('input'));
 
         const searchInput = inputs.find((input) => {
           const placeholder = (

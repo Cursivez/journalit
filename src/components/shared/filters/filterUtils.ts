@@ -23,6 +23,12 @@ import {
 } from '../../../services/trade/core/TradeAccountIdentity';
 import { createTickerMatcher } from '../../../utils/tickerMatching';
 
+function asRecord(value: unknown): Record<string, unknown> | undefined {
+  return value && typeof value === 'object' && !Array.isArray(value)
+    ? Object.fromEntries(Object.entries(value))
+    : undefined;
+}
+
 function normalizeCustomFieldFilterValue(value: unknown): string | null {
   if (typeof value === 'string') {
     const trimmed = value.trim();
@@ -49,9 +55,9 @@ function getTradeCustomFieldRawValue(
     return rootLevelValue;
   }
 
-  const nestedCustomFields = trade.customFields;
-  if (nestedCustomFields && typeof nestedCustomFields === 'object') {
-    return (nestedCustomFields as Record<string, unknown>)[field.id];
+  const nestedCustomFields = asRecord(trade.customFields);
+  if (nestedCustomFields) {
+    return nestedCustomFields[field.id];
   }
 
   return undefined;
@@ -81,7 +87,7 @@ export function applyTradeFilters<T extends object>(
 
     filtered = filtered.filter((trade) => {
       const identity = normalizeTradeAccountIdentity(
-        trade as Record<string, unknown>,
+        Object.fromEntries(Object.entries(trade)),
         {
           resolveAccountIdDisplayName: options.resolveAccountIdDisplayName,
         }
@@ -249,7 +255,7 @@ export function applyTradeFilters<T extends object>(
       }, new Map());
 
     filtered = filtered.filter((trade) => {
-      const tradeRecord = trade as unknown as Record<string, unknown>;
+      const tradeRecord = Object.fromEntries(Object.entries(trade));
 
       return Object.entries(filters.customFieldFilters || {}).every(
         ([fieldId, selectedValues]) => {

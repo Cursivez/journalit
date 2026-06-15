@@ -19,6 +19,11 @@ import { t } from '../lang/helpers';
 const BACKUP_FILENAME = 'data.backup.json';
 
 
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
+}
+
 type PluginWithSettings = Plugin & {
   settings?: JournalitSettings;
 };
@@ -27,7 +32,7 @@ export class SettingsManager {
   private plugin: PluginWithSettings;
   private debouncedSave: (() => Promise<void>) & {
     cancel: () => void;
-    flush: () => Promise<any>;
+    flush: () => Promise<void | undefined>;
   };
 
   
@@ -51,7 +56,7 @@ export class SettingsManager {
 
   
   async loadSettings(): Promise<JournalitSettings> {
-    let data: any = null;
+    let data: unknown = null;
     let recoveredFromBackup = false;
 
     
@@ -93,8 +98,11 @@ export class SettingsManager {
     }
 
     
-    const settings = this.deepMergeSettings(DEFAULT_SETTINGS, data || {});
-    const migratedSettings = this.migrateLoadedSettings(settings, data || {});
+    const settings = this.deepMergeSettings(
+      DEFAULT_SETTINGS,
+      this.isLoadableSettingsObject(data) ? data : {}
+    );
+    const migratedSettings = this.migrateLoadedSettings(settings, data ?? {});
 
     if (migratedSettings) {
       try {
@@ -128,20 +136,15 @@ export class SettingsManager {
 
   private migrateLoadedSettings(
     settings: JournalitSettings,
-    rawData: any
+    rawData: unknown
   ): boolean {
     let migrated = false;
 
-    const rawTradeSettings =
-      rawData && typeof rawData === 'object' ? rawData.trade : undefined;
-    const rawCutoffTime =
-      rawTradeSettings && typeof rawTradeSettings === 'object'
-        ? rawTradeSettings.tradingDayCutoffTime
-        : undefined;
+    const rawRecord = isRecord(rawData) ? rawData : {};
+    const rawTradeSettings = isRecord(rawRecord.trade) ? rawRecord.trade : {};
+    const rawCutoffTime = rawTradeSettings.tradingDayCutoffTime;
     const cutoffMigrationVersion =
-      rawTradeSettings && typeof rawTradeSettings === 'object'
-        ? rawTradeSettings.tradingDayCutoffEndOfDayMigrationVersion
-        : undefined;
+      rawTradeSettings.tradingDayCutoffEndOfDayMigrationVersion;
 
     if (
       rawCutoffTime === '00:00' &&
@@ -157,7 +160,9 @@ export class SettingsManager {
   }
 
   
-  private isValidSettingsStructure(data: any): boolean {
+  private isValidSettingsStructure(
+    data: unknown
+  ): data is Partial<JournalitSettings> {
     
     if (!data || typeof data !== 'object') {
       return false;
@@ -171,6 +176,12 @@ export class SettingsManager {
     const hasReasonableKeys = Object.keys(data).length >= 5;
 
     return hasRequired && hasReasonableKeys;
+  }
+
+  private isLoadableSettingsObject(
+    data: unknown
+  ): data is Partial<JournalitSettings> {
+    return Boolean(data && typeof data === 'object' && !Array.isArray(data));
   }
 
   
@@ -260,9 +271,13 @@ export class SettingsManager {
   
   async updateLocalMetaSection(key: string, value: unknown): Promise<void> {
     return this.saveMutex.withLock(async () => {
-      const current = (await this.plugin.loadData()) || {};
+      const currentData: unknown = await this.plugin.loadData();
+      const current = isRecord(currentData) ? currentData : {};
+      const existingLocalMeta = isRecord(current.localMeta)
+        ? current.localMeta
+        : {};
       const localMeta = {
-        ...(current.localMeta || {}),
+        ...existingLocalMeta,
         [key]: value,
       };
 
@@ -284,7 +299,7 @@ export class SettingsManager {
   
   getDebouncedSave(): (() => Promise<void>) & {
     cancel: () => void;
-    flush: () => Promise<any>;
+    flush: () => Promise<void | undefined>;
   } {
     return this.debouncedSave;
   }
@@ -458,14 +473,11 @@ export class SettingsManager {
   
   private async createBackup(): Promise<void> {
     try {
-      const current = await this.plugin.loadData();
+      const currentData: unknown = await this.plugin.loadData();
+      const current = isRecord(currentData) ? currentData : null;
 
       
-      if (
-        current &&
-        typeof current === 'object' &&
-        Object.keys(current).length > 5
-      ) {
+      if (current && Object.keys(current).length > 5) {
         const backupPath = this.getBackupPath();
         await this.plugin.app.vault.adapter.write(
           backupPath,
@@ -491,7 +503,7 @@ export class SettingsManager {
       }
 
       const content = await this.plugin.app.vault.adapter.read(backupPath);
-      const data = JSON.parse(content);
+      const data: unknown = JSON.parse(content);
       logger.debug('SettingsManager: Backup loaded successfully');
       return data;
     } catch (error) {

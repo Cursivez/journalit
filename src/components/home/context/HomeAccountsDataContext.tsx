@@ -68,7 +68,7 @@ export const HomeAccountsDataProvider: React.FC<
       let retries = 0;
       while (!plugin.accountPageService && retries < 5) {
         if (!isMountedRef.current) return;
-        await new Promise((resolve) => setTimeout(resolve, 300));
+        await new Promise((resolve) => window.setTimeout(resolve, 300));
         retries++;
       }
 

@@ -8,7 +8,6 @@ import {
   RESERVED_FRONTMATTER_KEYS,
   labelToFieldKey,
   validateFieldLabel,
-  type CustomFieldTradeLogDropdownSortMode,
   type CustomFieldTradeLogMultiselectCollapsedDisplay,
 } from '../../../types/customFields';
 import { Button } from '../../../components/ui/Button';
@@ -18,12 +17,38 @@ import { Input } from '../../../components/core/Input';
 import { t } from '../../../lang/helpers';
 import { cssVars } from '../../../styles/inlineStylePolicy';
 
+const parseCustomFieldType = (value: string): CustomFieldType | null => {
+  switch (value) {
+    case 'text':
+      return CustomFieldType.TEXT;
+    case 'number':
+      return CustomFieldType.NUMBER;
+    case 'dropdown':
+      return CustomFieldType.DROPDOWN;
+    case 'multiselect':
+      return CustomFieldType.MULTISELECT;
+    case 'date':
+      return CustomFieldType.DATE;
+    case 'datetime':
+      return CustomFieldType.DATETIME;
+    case 'time':
+      return CustomFieldType.TIME;
+    default:
+      return null;
+  }
+};
+
+const parseMultiselectCollapsedDisplay = (
+  value: string
+): CustomFieldTradeLogMultiselectCollapsedDisplay =>
+  value === 'values' ? 'values' : 'count';
+
 interface FieldEditorProps {
   field: CustomFieldDefinition;
   isNewField: boolean;
-  onSave: (field: CustomFieldDefinition) => void;
-  onCancel: () => void;
-  onDelete: (fieldId: string) => void;
+  onSave: (field: CustomFieldDefinition) => void | Promise<void>;
+  onCancel: () => void | Promise<void>;
+  onDelete: (fieldId: string) => void | Promise<void>;
   generateUniqueKey: (label: string, excludeFieldId?: string) => string;
   validateLabel?: (label: string, excludeFieldId?: string) => string | null;
 }
@@ -64,7 +89,7 @@ interface FieldEditorTradeLogSettingsProps {
   handleFieldChange: (
     field: keyof CustomFieldDefinition,
     value: unknown
-  ) => void;
+  ) => void | Promise<void>;
   handleTradeLogChange: (
     field:
       | 'columnLabel'
@@ -72,7 +97,7 @@ interface FieldEditorTradeLogSettingsProps {
       | 'multiselectCollapsedDisplay'
       | 'dropdownSortMode',
     value: string | boolean | undefined
-  ) => void;
+  ) => void | Promise<void>;
 }
 
 const FieldEditorTradeLogSettings: React.FC<
@@ -139,7 +164,7 @@ const FieldEditorTradeLogSettings: React.FC<
             type="checkbox"
             checked={editingField.tradeLog?.displayAsCurrency || false}
             onChange={(e) =>
-              handleTradeLogChange('displayAsCurrency', e.target.checked)
+              void handleTradeLogChange('displayAsCurrency', e.target.checked)
             }
             className="custom-fields-checkbox"
           />
@@ -190,11 +215,7 @@ const FieldEditorTradeLogSettings: React.FC<
                 ),
               },
             ]}
-            value={
-              (editingField.tradeLog?.dropdownSortMode as
-                | CustomFieldTradeLogDropdownSortMode
-                | undefined) || 'disabled'
-            }
+            value={editingField.tradeLog?.dropdownSortMode || 'disabled'}
             onChange={(value) =>
               handleTradeLogChange(
                 'dropdownSortMode',
@@ -240,14 +261,12 @@ const FieldEditorTradeLogSettings: React.FC<
               },
             ]}
             value={
-              (editingField.tradeLog?.multiselectCollapsedDisplay as
-                | CustomFieldTradeLogMultiselectCollapsedDisplay
-                | undefined) || 'count'
+              editingField.tradeLog?.multiselectCollapsedDisplay || 'count'
             }
             onChange={(value) =>
               handleTradeLogChange(
                 'multiselectCollapsedDisplay',
-                value as CustomFieldTradeLogMultiselectCollapsedDisplay
+                parseMultiselectCollapsedDisplay(value)
               )
             }
           />
@@ -259,7 +278,10 @@ const FieldEditorTradeLogSettings: React.FC<
 
 interface FieldEditorValidationSettingsProps {
   editingField: CustomFieldDefinition;
-  handleValidationChange: (validationField: string, value: unknown) => void;
+  handleValidationChange: (
+    validationField: string,
+    value: unknown
+  ) => void | Promise<void>;
 }
 
 const FieldEditorValidationSettings: React.FC<
@@ -292,7 +314,9 @@ const FieldEditorValidationSettings: React.FC<
         <input
           type="checkbox"
           checked={editingField.validation?.required || false}
-          onChange={(e) => handleValidationChange('required', e.target.checked)}
+          onChange={(e) =>
+            void handleValidationChange('required', e.target.checked)
+          }
           className="custom-fields-checkbox"
         />
       </div>
@@ -414,12 +438,15 @@ interface FieldEditorOptionsConfigProps {
   setOptionError: (value: string | null) => void;
   isDuplicateOption: (option: string) => boolean;
   handleAddOption: () => void;
-  handleRemoveOption: (index: number) => void;
-  handleMoveOption: (index: number, direction: 'up' | 'down') => void;
+  handleRemoveOption: (index: number) => void | Promise<void>;
+  handleMoveOption: (
+    index: number,
+    direction: 'up' | 'down'
+  ) => void | Promise<void>;
   handleFieldChange: (
     field: keyof CustomFieldDefinition,
     value: unknown
-  ) => void;
+  ) => void | Promise<void>;
 }
 
 const FieldEditorOptionsConfig: React.FC<FieldEditorOptionsConfigProps> = ({
@@ -527,7 +554,7 @@ const FieldEditorOptionsConfig: React.FC<FieldEditorOptionsConfigProps> = ({
           <Button
             variant="primary"
             size="md"
-            onClick={handleAddOption}
+            onClick={() => void handleAddOption()}
             disabled={!newOption.trim() || !!optionError}
           >
             {t('button.add')}
@@ -556,7 +583,7 @@ const FieldEditorOptionsConfig: React.FC<FieldEditorOptionsConfigProps> = ({
             type="checkbox"
             checked={editingField.allowCreateOptions || false}
             onChange={(e) =>
-              handleFieldChange('allowCreateOptions', e.target.checked)
+              void handleFieldChange('allowCreateOptions', e.target.checked)
             }
             className="custom-fields-checkbox"
           />
@@ -569,9 +596,9 @@ const FieldEditorOptionsConfig: React.FC<FieldEditorOptionsConfigProps> = ({
 interface FieldEditorActionsProps {
   fieldId: string;
   labelValidationError: string | null;
-  onDelete: (fieldId: string) => void;
-  onCancel: () => void;
-  onSave: () => void;
+  onDelete: (fieldId: string) => void | Promise<void>;
+  onCancel: () => void | Promise<void>;
+  onSave: () => void | Promise<void>;
 }
 
 const FieldEditorActions: React.FC<FieldEditorActionsProps> = ({
@@ -584,7 +611,7 @@ const FieldEditorActions: React.FC<FieldEditorActionsProps> = ({
   <div className="setting-item custom-fields-editor-actions">
     <Button
       variant="danger"
-      onClick={() => onDelete(fieldId)}
+      onClick={() => void onDelete(fieldId)}
       className="custom-fields-delete-button"
     >
       {t('settings.customization.custom-fields.editor.delete')}
@@ -639,7 +666,9 @@ const useFieldEditorController = ({
         CustomFieldType.MULTISELECT,
       ];
 
-      if (typesWithoutValidation.includes(value as CustomFieldType)) {
+      const nextFieldType =
+        typeof value === 'string' ? parseCustomFieldType(value) : null;
+      if (nextFieldType && typesWithoutValidation.includes(nextFieldType)) {
         updatedField.validation = {};
       }
 
@@ -684,7 +713,7 @@ const useFieldEditorController = ({
     
     if (field === 'label' && isNewField) {
       updatedField.fieldKey = generateUniqueKey(
-        value as string,
+        typeof value === 'string' ? value : '',
         editingField.id
       );
     }
@@ -827,7 +856,7 @@ const useFieldEditorController = ({
       return;
     }
 
-    onSave(editingField);
+    void onSave(editingField);
   };
 
   const showValidationOptions = true; 
@@ -991,9 +1020,12 @@ const FieldEditorComponent: React.FC<FieldEditorProps> = ({
             options={fieldTypeOptions}
             value={editingField.type}
             aria-label={t('settings.customization.custom-fields.editor.type')}
-            onChange={(value) =>
-              handleFieldChange('type', value as CustomFieldType)
-            }
+            onChange={(value) => {
+              const fieldType = parseCustomFieldType(value);
+              if (fieldType) {
+                handleFieldChange('type', fieldType);
+              }
+            }}
           />
         </div>
       </div>

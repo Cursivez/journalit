@@ -17,6 +17,7 @@ import JournalitPlugin from '../../../main';
 import { ToggleSwitch } from '../../../components/ui';
 import { Button } from '../../../components/ui';
 import { LoadingSpinner } from '../../../components/shared/LoadingSpinner';
+import { openExternalUrl } from '../../../utils/externalLinks';
 import { Accordion } from '../../../components/shared/Accordion';
 import { StatusCards } from './StatusCards';
 import { t } from '../../../lang/helpers';
@@ -27,7 +28,11 @@ import {
 } from '../../../services/backend';
 import { ApiClient } from '../../../services/backend/ApiClient';
 import { BackendSecretStorage } from '../../../services/backend/BackendSecretStorage';
-import { DEFAULT_SETTINGS, AccountInfo } from '../../../settings/types';
+import {
+  DEFAULT_SETTINGS,
+  AccountInfo,
+  type BackendIntegrationSettings,
+} from '../../../settings/types';
 import { FTPCredentialsSection } from './FTPCredentialsSection';
 import { AccountLinkingManager } from './AccountLinkingManager';
 import { ErrorHandler } from '../../../utils/errorHandler';
@@ -39,6 +44,10 @@ import {
 } from '../../../utils/supportReport';
 import { SupportActions } from '../../../components/shared/SupportActions';
 import { backgroundIssuesStore } from '../../../services/diagnostics/BackgroundIssuesStore';
+import {
+  canWriteClipboardText,
+  writeClipboardText,
+} from '../../../utils/clipboard';
 
 interface BackendIntegrationTabProps {
   plugin: JournalitPlugin;
@@ -46,7 +55,7 @@ interface BackendIntegrationTabProps {
 
 function useBackendIntegrationTabModel(props: BackendIntegrationTabProps) {
   const { plugin } = props;
-  const settings =
+  const settings: BackendIntegrationSettings =
     plugin.settings.backendIntegration || DEFAULT_SETTINGS.backendIntegration!;
   const hasAuthToken = BackendSecretStorage.hasAuthToken(plugin);
 
@@ -68,9 +77,7 @@ function useBackendIntegrationTabModel(props: BackendIntegrationTabProps) {
   const lastAttemptedRef = useRef(0);
   const lastErrorNoticeRef = useRef(0);
   const integrationErrorPanelRef = useRef<HTMLDivElement | null>(null);
-  const integrationReportCopyTimerRef = useRef<ReturnType<
-    typeof setTimeout
-  > | null>(null);
+  const integrationReportCopyTimerRef = useRef<number | null>(null);
 
   const [ftpState, setFtpState] = useState({
     hasCredentials: false,
@@ -94,7 +101,7 @@ function useBackendIntegrationTabModel(props: BackendIntegrationTabProps) {
   useEffect(() => {
     return () => {
       if (integrationReportCopyTimerRef.current) {
-        clearTimeout(integrationReportCopyTimerRef.current);
+        window.clearTimeout(integrationReportCopyTimerRef.current);
       }
     };
   }, []);
@@ -159,12 +166,12 @@ function useBackendIntegrationTabModel(props: BackendIntegrationTabProps) {
       }
     };
 
-    initializeComponent();
+    void initializeComponent();
 
     return () => {
       mounted = false;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- initial backend status load should run once for the active plugin instance
   }, [plugin.serviceManager]);
 
   const checkConnectionStatus = useCallback(async () => {
@@ -198,9 +205,10 @@ function useBackendIntegrationTabModel(props: BackendIntegrationTabProps) {
       }
 
       plugin.settings.backendIntegration = {
+        ...DEFAULT_SETTINGS.backendIntegration!,
         ...plugin.settings.backendIntegration,
         [key]: value,
-      } as typeof plugin.settings.backendIntegration;
+      };
       await plugin.saveSettings();
 
       if (backendService) {
@@ -380,7 +388,7 @@ function useBackendIntegrationTabModel(props: BackendIntegrationTabProps) {
         }));
       }
     },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- account refresh is triggered by explicit account state changes
     [backendService, connectionState.status]
   );
 
@@ -392,9 +400,9 @@ function useBackendIntegrationTabModel(props: BackendIntegrationTabProps) {
       !accountState.isLoading &&
       Date.now() - lastAttemptedRef.current > 5000
     ) {
-      loadAccounts();
+      void loadAccounts();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- integration report refresh is intentionally decoupled from transient UI state
   }, [connectionState.status, backendService]);
 
   useEffect(() => {
@@ -810,18 +818,18 @@ function useBackendIntegrationTabModel(props: BackendIntegrationTabProps) {
 
   const handleCopyIntegrationReport = useCallback(async () => {
     try {
-      if (!navigator?.clipboard?.writeText) {
+      if (!canWriteClipboardText()) {
         throw new Error('Clipboard not supported');
       }
 
-      await navigator.clipboard.writeText(buildIntegrationErrorReport());
+      await writeClipboardText(buildIntegrationErrorReport());
       setIntegrationReportCopied(true);
 
       if (integrationReportCopyTimerRef.current) {
-        clearTimeout(integrationReportCopyTimerRef.current);
+        window.clearTimeout(integrationReportCopyTimerRef.current);
       }
 
-      integrationReportCopyTimerRef.current = setTimeout(() => {
+      integrationReportCopyTimerRef.current = window.setTimeout(() => {
         setIntegrationReportCopied(false);
       }, 2000);
     } catch (error) {
@@ -1025,7 +1033,7 @@ function BackendAccountsSection({
                     variant="danger"
                     size="sm"
                     className="mt-account-action-button"
-                    onClick={() => handleUnlinkMtAccount(account)}
+                    onClick={() => void handleUnlinkMtAccount(account)}
                   >
                     {t('backend.accounts.unlink')}
                   </Button>
@@ -1085,7 +1093,7 @@ function BackendAccountsSection({
                         variant="secondary"
                         size="sm"
                         className="mt-account-action-button"
-                        onClick={() => handleRelinkMtAccount(account)}
+                        onClick={() => void handleRelinkMtAccount(account)}
                       >
                         {t('backend.accounts.relink')}
                       </Button>
@@ -1229,7 +1237,7 @@ function BackendIntegrationErrorPanel({
                 discordLabel={t('button.discord')}
                 note={t('csv.results.discord-note')}
                 onDiscord={() =>
-                  window.open('https://discord.gg/AkSw3D9h8b', '_blank')
+                  openExternalUrl('https://discord.gg/AkSw3D9h8b')
                 }
                 actionsClassName="backend-integration__sync-error-actions"
                 helpClassName="backend-integration__sync-discord-help"
@@ -1352,7 +1360,7 @@ export const BackendIntegrationTab: React.FC<BackendIntegrationTabProps> = (
           <div className="setting-item-control">
             <Button
               variant="primary"
-              onClick={handleRegisterVault}
+              onClick={() => void handleRegisterVault()}
               disabled={connectionState.isSyncing || !backendService}
             >
               <div className="backend-integration__button-content">
@@ -1379,7 +1387,7 @@ export const BackendIntegrationTab: React.FC<BackendIntegrationTabProps> = (
             <div className="setting-item-control">
               <Button
                 variant="primary"
-                onClick={handleCreateFTPCredentials}
+                onClick={() => void handleCreateFTPCredentials()}
                 disabled={ftpState.isCreating || !backendService}
               >
                 <div className="backend-integration__button-content">

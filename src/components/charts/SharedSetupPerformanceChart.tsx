@@ -29,6 +29,18 @@ export interface SetupPerformanceDataPoint {
   profitFactor?: number; 
 }
 
+interface SetupBarShapeProps {
+  x?: number;
+  y?: number;
+  width?: number;
+  height?: number;
+  payload?: SetupPerformanceDataPoint;
+  stroke?: string;
+  strokeWidth?: string | number;
+  strokeOpacity?: string | number;
+  filter?: string;
+}
+
 
 interface SharedSetupPerformanceChartProps {
   data: SetupPerformanceDataPoint[];
@@ -267,7 +279,9 @@ export const SharedSetupPerformanceChart: React.FC<
             stroke: 'var(--background-modifier-border)',
             strokeOpacity: 0.5,
           }}
-          tickFormatter={(value) => truncateSetupName(value, maxLabelLength)}
+          tickFormatter={(value: string | number) =>
+            truncateSetupName(String(value), maxLabelLength)
+          }
           interval={0}
           angle={useAngledLabels ? -35 : 0}
           textAnchor={useAngledLabels ? 'end' : 'middle'}
@@ -300,7 +314,7 @@ export const SharedSetupPerformanceChart: React.FC<
         >
           {(tooltipProps) => (
             <CustomTooltip
-              {...(tooltipProps as any)}
+              {...(tooltipProps as TooltipProps<number, string>)}
               currencyOverride={currencyOverride}
             />
           )}
@@ -325,7 +339,7 @@ export const SharedSetupPerformanceChart: React.FC<
           }}
           
 
-          shape={(props: any) => {
+          shape={(props: SetupBarShapeProps) => {
             
             const isPositive = props.payload && props.payload.pnl >= 0;
             const fill = isPnlMasked

@@ -2,8 +2,9 @@
 
 import { setIcon } from 'obsidian';
 import { t } from '../../lang/helpers';
+import { openExternalUrl } from '../../utils/externalLinks';
 
-const UPDATE_TOAST_STYLES = `
+export const UPDATE_TOAST_STYLES = `
 .journalit-update-toast {
   background: var(--background-primary);
   border: 1px solid var(--background-modifier-border);
@@ -191,13 +192,8 @@ export class CustomUpdateToast {
   }
 
   private createContainer(): void {
-    this.containerEl = document.body.createDiv();
+    this.containerEl = window.activeDocument.body.createDiv();
     this.containerEl.addClass('journalit-update-toast');
-    this.injectStyles();
-  }
-
-  private injectStyles(): void {
-    // intentional
   }
 
   async show(options: ToastOptions): Promise<void> {
@@ -272,7 +268,7 @@ export class CustomUpdateToast {
     discordButton.appendText(t('button.discord'));
 
     discordButton.addEventListener('click', () => {
-      window.open('https://discord.gg/AkSw3D9h8b', '_blank');
+      openExternalUrl('https://discord.gg/AkSw3D9h8b');
     });
 
     
@@ -294,12 +290,12 @@ export class CustomUpdateToast {
 
     
     if (!this.containerEl!.parentElement) {
-      const parent = options.parentContainer || document.body;
+      const parent = options.parentContainer || window.activeDocument.body;
       parent.appendChild(this.containerEl!);
     }
 
     
-    requestAnimationFrame(() => {
+    window.requestAnimationFrame(() => {
       this.containerEl!.classList.add('journalit-update-toast--visible');
     });
   }
@@ -331,7 +327,7 @@ export class CustomUpdateToast {
 
     
     if (this.hideTimeoutId !== null) {
-      clearTimeout(this.hideTimeoutId);
+      window.clearTimeout(this.hideTimeoutId);
     }
 
     
@@ -345,7 +341,7 @@ export class CustomUpdateToast {
   cleanup(): void {
     
     if (this.hideTimeoutId !== null) {
-      clearTimeout(this.hideTimeoutId);
+      window.clearTimeout(this.hideTimeoutId);
       this.hideTimeoutId = null;
     }
 
@@ -354,32 +350,24 @@ export class CustomUpdateToast {
       this.containerEl.remove();
       this.containerEl = null;
     }
-
-    
-    const styleElement = document.getElementById(
-      'journalit-update-toast-styles'
-    );
-    if (styleElement) {
-      styleElement.remove();
-    }
   }
 
   private async loadImage(url: string): Promise<HTMLImageElement | null> {
     return new Promise((resolve) => {
       const img = new Image();
-      const timeout = setTimeout(() => {
+      const timeout = window.setTimeout(() => {
         img.src = '';
         resolve(null);
       }, 5000);
 
       img.onload = () => {
-        clearTimeout(timeout);
+        window.clearTimeout(timeout);
         resolve(img);
       };
 
       img.onerror = (error) => {
         console.error('[CustomUpdateToast] Image load error:', error);
-        clearTimeout(timeout);
+        window.clearTimeout(timeout);
         resolve(null);
       };
 

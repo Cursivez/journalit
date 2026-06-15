@@ -67,7 +67,9 @@ export function sanitizeString(
 }
 
 
-export function sanitizeObject<T extends Record<string, unknown>>(obj: T): T {
+export function sanitizeObject(
+  obj: Record<string, unknown>
+): Record<string, unknown> {
   const SENSITIVE_KEYS = new Set([
     'token',
     'access_token',
@@ -101,29 +103,29 @@ export function sanitizeObject<T extends Record<string, unknown>>(obj: T): T {
       continue;
     }
 
-    if (value && typeof value === 'object') {
-      out[key] = sanitizeObject(value as Record<string, unknown>);
+    if (value && typeof value === 'object' && !Array.isArray(value)) {
+      out[key] = sanitizeObject(Object.fromEntries(Object.entries(value)));
       continue;
     }
 
     out[key] = sanitize(value);
   }
 
-  return out as T;
+  return out;
 }
 
 
-export function sanitize<T>(value: T): T {
+export function sanitize(value: unknown): unknown {
   if (typeof value === 'string') {
-    return sanitizeString(value) as T;
+    return sanitizeString(value);
   }
 
   if (Array.isArray(value)) {
-    return value.map((item) => sanitize(item)) as unknown as T;
+    return value.map((item) => sanitize(item));
   }
 
   if (typeof value === 'object' && value !== null) {
-    return sanitizeObject(value as Record<string, unknown>) as unknown as T;
+    return sanitizeObject(Object.fromEntries(Object.entries(value)));
   }
 
   return value;

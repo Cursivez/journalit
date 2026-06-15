@@ -6,7 +6,7 @@ import { LossReviewData } from '../services/backend/types';
 
 export interface TradeFrontmatter extends TradeFormData {
   
-  tradeStatus?: 'OPEN' | 'CLOSED' | string;
+  tradeStatus?: string;
 
   
   _originalPnlWasNull?: boolean;

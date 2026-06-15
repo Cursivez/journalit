@@ -24,6 +24,16 @@ import {
 } from './combobox/comboBoxUtils';
 
 
+
+const isHTMLElement = (value: unknown): value is HTMLElement => {
+  if (typeof value !== 'object' || value === null) return false;
+
+  const ownerDocument = (value as { ownerDocument?: Document }).ownerDocument;
+  const HTMLElementConstructor =
+    ownerDocument?.defaultView?.HTMLElement ?? HTMLElement;
+  return value instanceof HTMLElementConstructor;
+};
+
 const CLASS_NAMES = {
   COMBOBOX_CONTAINER: 'combobox-container',
   INPUT_CONTAINER: 'input-container',
@@ -69,7 +79,7 @@ interface ComboBoxProps {
   optionType?: string;
 
   
-  onSaveOption?: (option: string) => void;
+  onSaveOption?: (option: string) => void | Promise<void>;
 
   
   required?: boolean;
@@ -188,9 +198,7 @@ function useComboBoxModel({
 
       if (isMulti) {
         
-        const currentValues = Array.isArray(value)
-          ? [...(value as string[])]
-          : [];
+        const currentValues = Array.isArray(value) ? [...value] : [];
 
         if (!currentValues.includes(trimmedValue)) {
           
@@ -203,7 +211,7 @@ function useComboBoxModel({
             isAddOption(selected) &&
             shouldSaveCustomOption(optionType, trimmedValue)
           ) {
-            onSaveOption(trimmedValue);
+            void onSaveOption(trimmedValue);
           }
 
           
@@ -217,7 +225,7 @@ function useComboBoxModel({
 
         
         if (inputRef.current) {
-          setTimeout(() => {
+          window.setTimeout(() => {
             if (inputRef.current) inputRef.current.focus();
           }, 0);
         }
@@ -231,7 +239,7 @@ function useComboBoxModel({
           isAddOption(selected) &&
           shouldSaveCustomOption(optionType, trimmedValue)
         ) {
-          onSaveOption(trimmedValue);
+          void onSaveOption(trimmedValue);
         }
 
         setInputValue(trimmedValue);
@@ -249,8 +257,9 @@ function useComboBoxModel({
   useEffect(() => {
     const handleOptionSelection = (e: MouseEvent) => {
       
-      const target = e.target as HTMLElement;
-      const isOption = target?.closest?.('[role="option"]');
+      const target = e.target;
+      if (!isHTMLElement(target)) return;
+      const isOption = target.closest('[role="option"]');
 
       const isInsideCombo = comboRef.current?.contains(target);
       const isInsideDropdown = dropdownRef.current?.contains(target);
@@ -275,7 +284,7 @@ function useComboBoxModel({
         handleSelect(actualValue);
 
         
-        setTimeout(() => {
+        window.setTimeout(() => {
           isSelectingOption.current = false;
 
           if (!isMulti) {
@@ -293,10 +302,18 @@ function useComboBoxModel({
     };
 
     
-    document.addEventListener('mousedown', handleOptionSelection, true);
+    window.activeDocument.addEventListener(
+      'mousedown',
+      handleOptionSelection,
+      true
+    );
 
     return () => {
-      document.removeEventListener('mousedown', handleOptionSelection, true);
+      window.activeDocument.removeEventListener(
+        'mousedown',
+        handleOptionSelection,
+        true
+      );
     };
   }, [isMulti, inputValue, handleSelect]);
 
@@ -310,16 +327,14 @@ function useComboBoxModel({
       isHandlingRemove.current = true;
 
       
-      const currentValues = Array.isArray(value)
-        ? [...(value as string[])]
-        : [];
+      const currentValues = Array.isArray(value) ? [...value] : [];
       const updatedValues = currentValues.filter((v) => v !== val);
 
       
       onChange(updatedValues);
 
       
-      setTimeout(() => {
+      window.setTimeout(() => {
         if (inputRef.current) inputRef.current.focus();
         isHandlingRemove.current = false;
       }, 50);
@@ -336,9 +351,10 @@ function useComboBoxModel({
       if (isHandlingRemove.current) return;
 
       
-      const target = e.target as HTMLElement;
-      const isClickingOption = target?.closest?.('[role="option"]');
-      const isClickingRemoveButton = target?.closest?.(
+      const target = e.target;
+      if (!isHTMLElement(target)) return;
+      const isClickingOption = target.closest('[role="option"]');
+      const isClickingRemoveButton = target.closest(
         '[data-remove-button="true"]'
       );
       const isClickingInsideCombo = comboRef.current?.contains(target);
@@ -371,9 +387,7 @@ function useComboBoxModel({
 
         if (valueToRemove) {
           
-          const currentValues = Array.isArray(value)
-            ? [...(value as string[])]
-            : [];
+          const currentValues = Array.isArray(value) ? [...value] : [];
           const updatedValues = currentValues.filter(
             (v) => v !== valueToRemove
           );
@@ -382,7 +396,7 @@ function useComboBoxModel({
           onChange(updatedValues);
 
           
-          setTimeout(() => {
+          window.setTimeout(() => {
             if (inputRef.current) inputRef.current.focus();
             isHandlingRemove.current = false;
           }, 50);
@@ -391,10 +405,18 @@ function useComboBoxModel({
     };
 
     
-    document.addEventListener('mousedown', handleOutsideClick, true);
+    window.activeDocument.addEventListener(
+      'mousedown',
+      handleOutsideClick,
+      true
+    );
 
     return () => {
-      document.removeEventListener('mousedown', handleOutsideClick, true);
+      window.activeDocument.removeEventListener(
+        'mousedown',
+        handleOutsideClick,
+        true
+      );
     };
   }, [isOpen, value, onChange]);
 
@@ -432,10 +454,14 @@ function useComboBoxModel({
       }
     };
 
-    document.addEventListener('keydown', handleEscapeKey, true);
+    window.activeDocument.addEventListener('keydown', handleEscapeKey, true);
 
     return () => {
-      document.removeEventListener('keydown', handleEscapeKey, true);
+      window.activeDocument.removeEventListener(
+        'keydown',
+        handleEscapeKey,
+        true
+      );
     };
   }, [isOpen]);
 
@@ -603,7 +629,7 @@ function useComboBoxModel({
 
     return (
       <div>
-        {(Array.isArray(value) ? (value as string[]) : []).map((val) => (
+        {(Array.isArray(value) ? value : []).map((val) => (
           <span key={val} className={CLASS_NAMES.SELECTED_ITEM}>
             {val}
             <button
@@ -648,13 +674,14 @@ function useComboBoxModel({
     (e: React.FocusEvent<HTMLInputElement>) => {
       if (isSelectingOption.current || isHandlingRemove.current) return;
 
+      const relatedTarget = e.relatedTarget;
       const isRemoveButton =
-        e.relatedTarget &&
-        (e.relatedTarget as HTMLElement)?.hasAttribute?.('data-remove-button');
+        isHTMLElement(relatedTarget) &&
+        relatedTarget.hasAttribute('data-remove-button');
       if (isRemoveButton) return;
 
-      if (!comboRef.current?.contains(e.relatedTarget as Node)) {
-        setTimeout(() => {
+      if (!relatedTarget || !comboRef.current?.contains(relatedTarget)) {
+        window.setTimeout(() => {
           if (!isSelectingOption.current && !isHandlingRemove.current) {
             setIsOpen(false);
           }
@@ -816,7 +843,7 @@ export const ComboBox: React.FC<ComboBoxProps> = (props) => {
 
         
         {portalDropdown && portalDropdownRect
-          ? createPortal(dropdownList, document.body)
+          ? createPortal(dropdownList, window.activeDocument.body)
           : dropdownList}
       </div>
 

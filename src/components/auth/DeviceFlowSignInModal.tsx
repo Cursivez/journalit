@@ -1,6 +1,6 @@
 
 
-import { Modal, App, Notice, Platform } from 'obsidian';
+import { Modal, App, Notice } from 'obsidian';
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { createRoot, Root } from 'react-dom/client';
 import { Button } from '../ui/Button';
@@ -16,10 +16,10 @@ import {
 } from '../../services/backend/DeviceFlowService';
 import { SupportActions } from '../shared/SupportActions';
 import { buildSupportReport } from '../../utils/supportReport';
-import { injectOnboardingViewStyles } from '../../styles/onboarding/onboardingViewStyles';
-import { injectDeviceFlowSignInModalStyles } from '../../styles/auth/deviceFlowSignInModalStyles';
 import { t } from '../../lang/helpers';
+import { openExternalUrl } from '../../utils/externalLinks';
 import { createDefaultBackendIntegrationSettings } from '../../settings/types';
+import { writeClipboardText } from '../../utils/clipboard';
 
 interface DeviceFlowSignInModalProps {
   plugin: JournalitPlugin;
@@ -71,11 +71,11 @@ function useDeviceFlowSignInModel({
   >(null);
   const [lastErrorDetails, setLastErrorDetails] =
     useState<ActivationErrorDetails | null>(null);
-  const pollTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const copyTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const copyUrlTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const reportCopyTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const successTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pollTimerRef = useRef<number | null>(null);
+  const copyTimerRef = useRef<number | null>(null);
+  const copyUrlTimerRef = useRef<number | null>(null);
+  const reportCopyTimerRef = useRef<number | null>(null);
+  const successTimerRef = useRef<number | null>(null);
   const isMountedRef = useRef(true);
 
   const buildErrorDetails = useCallback(
@@ -144,14 +144,14 @@ function useDeviceFlowSignInModel({
 
                 setStatus('success');
                 
-                document.dispatchEvent(
+                window.dispatchEvent(
                   new CustomEvent('journalit:subscription-changed')
                 );
                 
                 if (successTimerRef.current) {
-                  clearTimeout(successTimerRef.current);
+                  window.clearTimeout(successTimerRef.current);
                 }
-                successTimerRef.current = setTimeout(() => {
+                successTimerRef.current = window.setTimeout(() => {
                   if (isMountedRef.current) {
                     onSuccess();
                   }
@@ -175,8 +175,8 @@ function useDeviceFlowSignInModel({
               const retryAfterSeconds =
                 result.retryAfterSeconds ?? flowData.interval;
               setRetryIntervalSeconds(retryAfterSeconds);
-              pollTimerRef.current = setTimeout(
-                () => poll(),
+              pollTimerRef.current = window.setTimeout(
+                () => void poll(),
                 retryAfterSeconds * 1000
               );
               break;
@@ -236,7 +236,7 @@ function useDeviceFlowSignInModel({
       };
 
       
-      poll();
+      void poll();
     },
     [buildErrorDetails, onSuccess]
   );
@@ -293,30 +293,30 @@ function useDeviceFlowSignInModel({
   
   useEffect(() => {
     isMountedRef.current = true;
-    initializeDeviceFlow();
+    void initializeDeviceFlow();
 
     return () => {
       isMountedRef.current = false;
 
       
       if (pollTimerRef.current) {
-        clearTimeout(pollTimerRef.current);
+        window.clearTimeout(pollTimerRef.current);
       }
       
       if (copyTimerRef.current) {
-        clearTimeout(copyTimerRef.current);
+        window.clearTimeout(copyTimerRef.current);
       }
       
       if (successTimerRef.current) {
-        clearTimeout(successTimerRef.current);
+        window.clearTimeout(successTimerRef.current);
       }
       
       if (copyUrlTimerRef.current) {
-        clearTimeout(copyUrlTimerRef.current);
+        window.clearTimeout(copyUrlTimerRef.current);
       }
       
       if (reportCopyTimerRef.current) {
-        clearTimeout(reportCopyTimerRef.current);
+        window.clearTimeout(reportCopyTimerRef.current);
       }
     };
   }, [initializeDeviceFlow]);
@@ -390,7 +390,7 @@ function useDeviceFlowSignInModel({
     const report = buildActivationReport();
 
     try {
-      await navigator.clipboard.writeText(report);
+      await writeClipboardText(report);
 
       if (!isMountedRef.current) {
         return;
@@ -399,28 +399,31 @@ function useDeviceFlowSignInModel({
       setActivationReportCopied(true);
 
       if (reportCopyTimerRef.current) {
-        clearTimeout(reportCopyTimerRef.current);
+        window.clearTimeout(reportCopyTimerRef.current);
       }
-      reportCopyTimerRef.current = setTimeout(() => {
+      reportCopyTimerRef.current = window.setTimeout(() => {
         if (isMountedRef.current) {
           setActivationReportCopied(false);
         }
       }, 2000);
-    } catch (_error) {
+    } catch {
       new Notice(t('library.error.copy-failed'));
     }
   }, [buildActivationReport]);
 
   const handleCopyCode = async () => {
     try {
-      await navigator.clipboard.writeText(deviceCode);
+      await writeClipboardText(deviceCode);
       setCopySuccess(true);
       
       if (copyTimerRef.current) {
-        clearTimeout(copyTimerRef.current);
+        window.clearTimeout(copyTimerRef.current);
       }
-      copyTimerRef.current = setTimeout(() => setCopySuccess(false), 2000);
-    } catch (_error) {
+      copyTimerRef.current = window.setTimeout(
+        () => setCopySuccess(false),
+        2000
+      );
+    } catch {
       new Notice(t('onboarding.activation.notice.copy-code-failed'));
     }
   };
@@ -429,13 +432,13 @@ function useDeviceFlowSignInModel({
     setActivationUrlFallback(url);
 
     try {
-      await navigator.clipboard.writeText(url);
+      await writeClipboardText(url);
       setCopyUrlSuccess(true);
 
       if (copyUrlTimerRef.current) {
-        clearTimeout(copyUrlTimerRef.current);
+        window.clearTimeout(copyUrlTimerRef.current);
       }
-      copyUrlTimerRef.current = setTimeout(() => {
+      copyUrlTimerRef.current = window.setTimeout(() => {
         if (isMountedRef.current) {
           setCopyUrlSuccess(false);
         }
@@ -460,75 +463,9 @@ function useDeviceFlowSignInModel({
 
   const handleOpenBrowser = async () => {
     const url = verificationUri || 'https://journalit.co/activate';
-
-    
-    const ALLOWED_HOSTNAMES = ['journalit.co', 'api.journalit.co'];
-
-    let parsedUrl: URL;
-    try {
-      parsedUrl = new URL(url);
-    } catch {
-      console.error(
-        '[DeviceFlowSignIn] Invalid activation URL (failed to parse):',
-        url
-      );
-      new Notice(t('onboarding.activation.notice.invalid-url'), 5000);
-      return;
-    }
-
-    const validProtocol = parsedUrl.protocol === 'https:';
-    if (!validProtocol) {
-      console.error('[DeviceFlowSignIn] Invalid activation URL protocol:', url);
-      new Notice(t('onboarding.activation.notice.invalid-url'), 5000);
-      return;
-    }
-
-    
-    if (!ALLOWED_HOSTNAMES.includes(parsedUrl.hostname)) {
-      console.error('[DeviceFlowSignIn] Invalid activation URL hostname:', url);
-      new Notice(t('onboarding.activation.notice.invalid-url'), 5000);
-      return;
-    }
-
-    
-    if (Platform.isDesktopApp) {
-      try {
-        const electronShell = (
-          window as Window & {
-            require?: (module: string) => {
-              shell?: { openExternal: (targetUrl: string) => void };
-            };
-          }
-        ).require?.('electron')?.shell;
-        if (electronShell) {
-          electronShell.openExternal(url);
-          return;
-        }
-        throw new Error('Electron shell unavailable');
-      } catch (error) {
-        console.warn(
-          '[DeviceFlowSignIn] Electron shell not available, falling back to window.open:',
-          error
-        );
-      }
-    }
-
-    
-    try {
-      const newWindow = window.open(url, '_blank');
-
-      
-      if (
-        !newWindow ||
-        newWindow.closed ||
-        typeof newWindow.closed === 'undefined'
-      ) {
-        showActivationUrlFallback(url);
-      }
-    } catch (error) {
-      console.error('[DeviceFlowSignIn] Failed to open browser:', error);
-      showActivationUrlFallback(url);
-    }
+    openExternalUrl(url, ['journalit.co', 'api.journalit.co'], {
+      onPopupBlocked: showActivationUrlFallback,
+    });
   };
 
   return {
@@ -582,13 +519,6 @@ function DeviceFlowWaiting({ model }: { model: DeviceFlowSignInModel }) {
   return (
     <div className="activation-content">
       <div className="activation-left">
-        <div className="activation-header">
-          <h2>{t('onboarding.activation.title')}</h2>
-          <p className="activation-subtitle">
-            {t('onboarding.activation.subtitle')}
-          </p>
-        </div>
-
         <div className="device-code-container">
           <label className="device-code-label">
             {t('onboarding.activation.label.code')}
@@ -605,7 +535,7 @@ function DeviceFlowWaiting({ model }: { model: DeviceFlowSignInModel }) {
             >
               <button
                 className={`copy-button ${copySuccess ? 'copied' : ''}`}
-                onClick={handleCopyCode}
+                onClick={() => void handleCopyCode()}
                 disabled={!deviceCode}
                 type="button"
               >
@@ -646,7 +576,7 @@ function DeviceFlowWaiting({ model }: { model: DeviceFlowSignInModel }) {
           <Button
             variant="primary"
             size="large"
-            onClick={handleOpenBrowser}
+            onClick={() => void handleOpenBrowser()}
             disabled={!deviceCode || status === 'success'}
           >
             <ExternalLink size={18} className="button-icon-left" />
@@ -744,9 +674,7 @@ function DeviceFlowErrorState({
             copiedLabel={t('csv.errors.copied')}
             discordLabel={t('button.discord')}
             note={t('csv.results.discord-note')}
-            onDiscord={() =>
-              window.open('https://discord.gg/AkSw3D9h8b', '_blank')
-            }
+            onDiscord={() => openExternalUrl('https://discord.gg/AkSw3D9h8b')}
             actionsClassName="activation-error-actions"
             helpClassName="activation-error-help"
             helpContentClassName="activation-error-help-content"
@@ -817,6 +745,8 @@ export class DeviceFlowSignInModal extends Modal {
   }
 
   onOpen() {
+    this.titleEl.setText(t('onboarding.activation.title'));
+
     const { contentEl } = this;
     contentEl.empty();
     contentEl.addClass('device-activation-modal-container');

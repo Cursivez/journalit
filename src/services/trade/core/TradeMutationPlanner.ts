@@ -14,13 +14,13 @@ import {
   TradeMutationPlan,
 } from './types';
 
-export function planTradeMutation(params: {
+export function planTradeMutation<TData extends TradeMutationInput>(params: {
   mode: 'create' | 'update';
-  data: TradeMutationInput;
+  data: TData;
   defaultRiskAmount?: number;
   financialFieldsChanged?: boolean;
   existingPathContext?: ExistingTradePathContext;
-}): TradeMutationPlan {
+}): TradeMutationPlan<TData> {
   const validation = validateAndNormalizeTradeMutationInput(params.data, {
     allowClosedTradeWithoutExitTimeInDirectPnlMode: true,
   });

@@ -856,14 +856,14 @@ const zhTW: Partial<Lang> = {
   'widget.directional-drawdown.description':
     'Separate long and short closed-trade drawdown amount curves',
 
-  'widget.long-drawdown.name': 'Long Realized Drawdown',
+  'widget.long-drawdown.name': 'Long Drawdown',
   'widget.long-drawdown.description':
     'Closed-trade drawdown amount curve for long trades only',
-  'widget.short-drawdown.name': 'Short Realized Drawdown',
+  'widget.short-drawdown.name': 'Short Drawdown',
   'widget.short-drawdown.description':
     'Closed-trade drawdown amount curve for short trades only',
-  'widget.directional-drawdown.title.long': 'Long Realized Drawdown',
-  'widget.directional-drawdown.title.short': 'Short Realized Drawdown',
+  'widget.directional-drawdown.title.long': 'Long Drawdown',
+  'widget.directional-drawdown.title.short': 'Short Drawdown',
   'widget.directional-drawdown.empty.not-enough':
     'Not enough closed trades for directional analysis',
   'widget.directional-drawdown.empty.no-closed':
@@ -876,10 +876,10 @@ const zhTW: Partial<Lang> = {
   'widget.directionalDrawdownChart.description':
     'Displays separate long and short closed-trade drawdown amount curves',
 
-  'widget.longDrawdownChart.name': 'Long Realized Drawdown',
+  'widget.longDrawdownChart.name': 'Long Drawdown',
   'widget.longDrawdownChart.description':
     'Displays the closed-trade drawdown amount curve for long trades only',
-  'widget.shortDrawdownChart.name': 'Short Realized Drawdown',
+  'widget.shortDrawdownChart.name': 'Short Drawdown',
   'widget.shortDrawdownChart.description':
     'Displays the closed-trade drawdown amount curve for short trades only',
   'widget.drawdownStats.name': 'Realized Drawdown Stats',

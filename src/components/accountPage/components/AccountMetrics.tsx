@@ -3,6 +3,7 @@
 import React from 'react';
 import { useAccountPageData } from '../context/AccountPageDataContext';
 import { useCurrency } from '../../../contexts/CurrencyContext';
+import { parseCuratedCurrencyCode } from '../../../utils/currencyConfig';
 import { formatPnLWithCurrency } from '../../../utils/currencyAggregation';
 import { useDisplayFormatter } from '../../../hooks/useDisplayPolicy';
 import { t } from '../../../lang/helpers';
@@ -15,11 +16,7 @@ export const AccountMetrics: React.FC = () => {
   const registerMetricsSectionTarget = useGuideTarget(
     ACCOUNT_PAGE_METRICS_SECTION_TARGET_ID
   );
-  const {
-    accountPageData,
-    getMetrics,
-    getFilteredTrades: _getFilteredTrades,
-  } = useAccountPageData();
+  const { accountPageData, getMetrics } = useAccountPageData();
   const { currency: globalCurrency } = useCurrency();
 
   const metrics = getMetrics();
@@ -34,9 +31,11 @@ export const AccountMetrics: React.FC = () => {
   }
 
   
-  const effectiveCurrency = (metrics.conversionBaseCurrency ||
-    accountPageData?.account.currency ||
-    globalCurrency) as typeof globalCurrency;
+  const effectiveCurrency = parseCuratedCurrencyCode(
+    metrics.conversionBaseCurrency ||
+      accountPageData?.account.currency ||
+      globalCurrency
+  );
 
   const getMetricClass = (value: number): string => {
     if (value > 0) return 'positive';

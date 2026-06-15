@@ -10,7 +10,7 @@ export async function lazyLoad<T>(
 ): Promise<T> {
   try {
     
-    await new Promise((resolve) => setTimeout(resolve, 10));
+    await new Promise((resolve) => window.setTimeout(resolve, 10));
 
     
     const instance = factory();

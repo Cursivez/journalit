@@ -7,7 +7,7 @@ import { t, TranslationKey } from '../../lang/helpers';
 export interface NavigationButtonConfig {
   text: TranslationKey;
   action: () => Promise<void> | void;
-  icon?: 'left' | 'right' | 'none' | string;
+  icon?: string;
   disabled?: boolean;
 }
 
@@ -28,7 +28,7 @@ export const Navigation: React.FC<SharedNavigationProps> = ({
           <button
             key={`${button.text}-${button.icon ?? 'none'}`}
             className={`${className}-button`}
-            onClick={button.action}
+            onClick={() => void button.action()}
             disabled={button.disabled}
           >
             {button.icon &&

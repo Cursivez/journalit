@@ -13,7 +13,10 @@ import { cssVars, virtualItemStyle } from '../../../styles/inlineStylePolicy';
 
 interface VirtualizedAccountListProps {
   accounts: AccountData[];
-  openAccount: (accountName: string, accountData?: AccountData) => void;
+  openAccount: (
+    accountName: string,
+    accountData?: AccountData
+  ) => void | Promise<void>;
   itemHeight?: number;
   containerHeight?: number;
   overscan?: number;
@@ -83,7 +86,7 @@ export const VirtualizedAccountList: React.FC<VirtualizedAccountListProps> =
       
       const handleScroll = useCallback(() => {
         if (scrollElementRef.current) {
-          requestAnimationFrame(() => {
+          window.requestAnimationFrame(() => {
             if (scrollElementRef.current) {
               setScrollTop(scrollElementRef.current.scrollTop);
             }
@@ -159,7 +162,7 @@ export const VirtualizedAccountList: React.FC<VirtualizedAccountListProps> =
                     <AccountCard
                       key={account.id}
                       account={account}
-                      onClick={() => openAccount(account.name, account)}
+                      onClick={() => void openAccount(account.name, account)}
                     />
                   ))}
                 </div>

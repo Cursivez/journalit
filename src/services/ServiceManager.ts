@@ -25,7 +25,21 @@ import { MissedTradeService } from './missedTrade/MissedTradeService';
 import { BacktestTradeService } from './backtestTrade/BacktestTradeService';
 import { AccountPageService } from './accountPage';
 import { FolderPathService } from './core/FolderPathService';
-import { ServiceName, GetServiceType } from '../types/ServiceRegistry';
+import { ServiceName, ServiceRegistry } from '../types/ServiceRegistry';
+
+interface ServiceInitQueue {
+  setupService?: Promise<SetupService>;
+  drcService?: Promise<DRCService>;
+  weeklyReviewService?: Promise<WeeklyReviewService>;
+  missedTradeService?: Promise<MissedTradeService>;
+  backtestTradeService?: Promise<BacktestTradeService>;
+  monthlyReviewService?: Promise<MonthlyReviewService>;
+  quarterlyReviewService?: Promise<QuarterlyReviewService>;
+  yearlyReviewService?: Promise<YearlyReviewService>;
+  accountPageService?: Promise<AccountPageService>;
+  backendIntegrationService?: Promise<BackendIntegrationService>;
+  onboardingService?: Promise<OnboardingService>;
+}
 
 export class ServiceManager {
   private static instance: ServiceManager | null = null;
@@ -60,7 +74,7 @@ export class ServiceManager {
   private initializedServices: Set<string> = new Set();
 
   
-  private serviceInitQueue: Map<string, Promise<any>> = new Map();
+  private serviceInitQueue: ServiceInitQueue = {};
 
   private constructor(app: App, plugin: JournalitPlugin) {
     this.app = app;
@@ -78,47 +92,45 @@ export class ServiceManager {
   
   public async getServiceByName<K extends ServiceName>(
     serviceName: K
-  ): Promise<GetServiceType<K>> {
+  ): Promise<ServiceRegistry[K]>;
+  public async getServiceByName(
+    serviceName: ServiceName
+  ): Promise<ServiceRegistry[ServiceName]> {
     switch (serviceName) {
       case 'tradeService':
-        return (await this.getTradeService()) as GetServiceType<K>;
+        return this.getTradeService();
       case 'setupService':
-        return (await this.getSetupService()) as GetServiceType<K>;
+        return await this.getSetupService();
       case 'drcService':
-        return (await this.getDRCService()) as GetServiceType<K>;
+        return await this.getDRCService();
       case 'weeklyReviewService':
-        return (await this.getWeeklyReviewService()) as GetServiceType<K>;
+        return await this.getWeeklyReviewService();
       case 'monthlyReviewService':
-        return (await this.getMonthlyReviewService()) as GetServiceType<K>;
+        return await this.getMonthlyReviewService();
       case 'quarterlyReviewService':
-        return (await this.getQuarterlyReviewService()) as GetServiceType<K>;
+        return await this.getQuarterlyReviewService();
       case 'yearlyReviewService':
-        return (await this.getYearlyReviewService()) as GetServiceType<K>;
+        return await this.getYearlyReviewService();
       case 'optionsService':
-        return (await this.getOptionsService()) as GetServiceType<K>;
+        return await this.getOptionsService();
       case 'customFieldsService':
-        return (await this.getCustomFieldsService()) as GetServiceType<K>;
+        return this.getCustomFieldsService();
       case 'customReviewFieldsService':
-        return (await this.getCustomReviewFieldsService()) as GetServiceType<K>;
+        return this.getCustomReviewFieldsService();
       case 'reviewContextInheritanceService':
-        return (await this.getReviewContextInheritanceService()) as GetServiceType<K>;
+        return this.getReviewContextInheritanceService();
       case 'missedTradeService':
-        return (await this.getMissedTradeService()) as GetServiceType<K>;
+        return await this.getMissedTradeService();
       case 'backtestTradeService':
-        return (await this.getBacktestTradeService()) as GetServiceType<K>;
+        return await this.getBacktestTradeService();
       case 'accountPageService':
-        return (await this.getAccountPageService()) as GetServiceType<K>;
+        return await this.getAccountPageService();
       case 'backendIntegrationService':
-        return (await this.getBackendIntegrationService()) as GetServiceType<K>;
+        return await this.getBackendIntegrationService();
       case 'onboardingService':
-        return (await this.getOnboardingService()) as GetServiceType<K>;
+        return await this.getOnboardingService();
       case 'folderPathService':
-        return (await this.getFolderPathService()) as GetServiceType<K>;
-      default: {
-        
-        const _exhaustive: never = serviceName;
-        throw new Error(`Unknown service: ${_exhaustive}`);
-      }
+        return this.getFolderPathService();
     }
   }
 
@@ -202,7 +214,7 @@ export class ServiceManager {
     }
 
     
-    const existingPromise = this.serviceInitQueue.get('setupService');
+    const existingPromise = this.serviceInitQueue.setupService;
     if (existingPromise) {
       return existingPromise;
     }
@@ -221,13 +233,13 @@ export class ServiceManager {
 
       this._setupService = service;
       this.initializedServices.add('setupService');
-      this.serviceInitQueue.delete('setupService');
+      delete this.serviceInitQueue.setupService;
 
       return service;
     })();
 
     
-    this.serviceInitQueue.set('setupService', initPromise);
+    this.serviceInitQueue.setupService = initPromise;
 
     return initPromise;
   }
@@ -239,7 +251,7 @@ export class ServiceManager {
     }
 
     
-    const existingPromise = this.serviceInitQueue.get('drcService');
+    const existingPromise = this.serviceInitQueue.drcService;
     if (existingPromise) {
       return existingPromise;
     }
@@ -260,13 +272,13 @@ export class ServiceManager {
 
       this._drcService = service;
       this.initializedServices.add('drcService');
-      this.serviceInitQueue.delete('drcService');
+      delete this.serviceInitQueue.drcService;
 
       return service;
     })();
 
     
-    this.serviceInitQueue.set('drcService', initPromise);
+    this.serviceInitQueue.drcService = initPromise;
 
     return initPromise;
   }
@@ -278,7 +290,7 @@ export class ServiceManager {
     }
 
     
-    const existingPromise = this.serviceInitQueue.get('weeklyReviewService');
+    const existingPromise = this.serviceInitQueue.weeklyReviewService;
     if (existingPromise) {
       return existingPromise;
     }
@@ -296,13 +308,13 @@ export class ServiceManager {
 
       this._weeklyReviewService = service;
       this.initializedServices.add('weeklyReviewService');
-      this.serviceInitQueue.delete('weeklyReviewService');
+      delete this.serviceInitQueue.weeklyReviewService;
 
       return service;
     })();
 
     
-    this.serviceInitQueue.set('weeklyReviewService', initPromise);
+    this.serviceInitQueue.weeklyReviewService = initPromise;
 
     return initPromise;
   }
@@ -314,7 +326,7 @@ export class ServiceManager {
     }
 
     
-    const existingPromise = this.serviceInitQueue.get('missedTradeService');
+    const existingPromise = this.serviceInitQueue.missedTradeService;
     if (existingPromise) {
       return existingPromise;
     }
@@ -333,13 +345,13 @@ export class ServiceManager {
 
       this._missedTradeService = service;
       this.initializedServices.add('missedTradeService');
-      this.serviceInitQueue.delete('missedTradeService');
+      delete this.serviceInitQueue.missedTradeService;
 
       return service;
     })();
 
     
-    this.serviceInitQueue.set('missedTradeService', initPromise);
+    this.serviceInitQueue.missedTradeService = initPromise;
 
     return initPromise;
   }
@@ -351,7 +363,7 @@ export class ServiceManager {
     }
 
     
-    const existingPromise = this.serviceInitQueue.get('backtestTradeService');
+    const existingPromise = this.serviceInitQueue.backtestTradeService;
     if (existingPromise) {
       return existingPromise;
     }
@@ -370,13 +382,13 @@ export class ServiceManager {
 
       this._backtestTradeService = service;
       this.initializedServices.add('backtestTradeService');
-      this.serviceInitQueue.delete('backtestTradeService');
+      delete this.serviceInitQueue.backtestTradeService;
 
       return service;
     })();
 
     
-    this.serviceInitQueue.set('backtestTradeService', initPromise);
+    this.serviceInitQueue.backtestTradeService = initPromise;
 
     return initPromise;
   }
@@ -388,7 +400,7 @@ export class ServiceManager {
     }
 
     
-    const existingPromise = this.serviceInitQueue.get('monthlyReviewService');
+    const existingPromise = this.serviceInitQueue.monthlyReviewService;
     if (existingPromise) {
       return existingPromise;
     }
@@ -410,13 +422,13 @@ export class ServiceManager {
 
       this._monthlyReviewService = service;
       this.initializedServices.add('monthlyReviewService');
-      this.serviceInitQueue.delete('monthlyReviewService');
+      delete this.serviceInitQueue.monthlyReviewService;
 
       return service;
     })();
 
     
-    this.serviceInitQueue.set('monthlyReviewService', initPromise);
+    this.serviceInitQueue.monthlyReviewService = initPromise;
 
     return initPromise;
   }
@@ -428,7 +440,7 @@ export class ServiceManager {
     }
 
     
-    const existingPromise = this.serviceInitQueue.get('quarterlyReviewService');
+    const existingPromise = this.serviceInitQueue.quarterlyReviewService;
     if (existingPromise) {
       return existingPromise;
     }
@@ -450,13 +462,13 @@ export class ServiceManager {
 
       this._quarterlyReviewService = service;
       this.initializedServices.add('quarterlyReviewService');
-      this.serviceInitQueue.delete('quarterlyReviewService');
+      delete this.serviceInitQueue.quarterlyReviewService;
 
       return service;
     })();
 
     
-    this.serviceInitQueue.set('quarterlyReviewService', initPromise);
+    this.serviceInitQueue.quarterlyReviewService = initPromise;
 
     return initPromise;
   }
@@ -468,7 +480,7 @@ export class ServiceManager {
     }
 
     
-    const existingPromise = this.serviceInitQueue.get('yearlyReviewService');
+    const existingPromise = this.serviceInitQueue.yearlyReviewService;
     if (existingPromise) {
       return existingPromise;
     }
@@ -490,13 +502,13 @@ export class ServiceManager {
 
       this._yearlyReviewService = service;
       this.initializedServices.add('yearlyReviewService');
-      this.serviceInitQueue.delete('yearlyReviewService');
+      delete this.serviceInitQueue.yearlyReviewService;
 
       return service;
     })();
 
     
-    this.serviceInitQueue.set('yearlyReviewService', initPromise);
+    this.serviceInitQueue.yearlyReviewService = initPromise;
 
     return initPromise;
   }
@@ -553,7 +565,7 @@ export class ServiceManager {
 
   
   public isServiceInitializing(serviceName: string): boolean {
-    return this.serviceInitQueue.has(serviceName);
+    return serviceName in this.serviceInitQueue;
   }
 
   
@@ -565,7 +577,7 @@ export class ServiceManager {
     }
 
     
-    const existingPromise = this.serviceInitQueue.get('accountPageService');
+    const existingPromise = this.serviceInitQueue.accountPageService;
     if (existingPromise) {
       return existingPromise;
     }
@@ -584,13 +596,13 @@ export class ServiceManager {
 
       this._accountPageService = service;
       this.initializedServices.add('accountPageService');
-      this.serviceInitQueue.delete('accountPageService');
+      delete this.serviceInitQueue.accountPageService;
 
       return service;
     })();
 
     
-    this.serviceInitQueue.set('accountPageService', initPromise);
+    this.serviceInitQueue.accountPageService = initPromise;
 
     return initPromise;
   }
@@ -602,9 +614,7 @@ export class ServiceManager {
     }
 
     
-    const existingPromise = this.serviceInitQueue.get(
-      'backendIntegrationService'
-    );
+    const existingPromise = this.serviceInitQueue.backendIntegrationService;
     if (existingPromise) {
       return existingPromise;
     }
@@ -619,13 +629,13 @@ export class ServiceManager {
 
       this._backendIntegrationService = service;
       this.initializedServices.add('backendIntegrationService');
-      this.serviceInitQueue.delete('backendIntegrationService');
+      delete this.serviceInitQueue.backendIntegrationService;
 
       return service;
     })();
 
     
-    this.serviceInitQueue.set('backendIntegrationService', initPromise);
+    this.serviceInitQueue.backendIntegrationService = initPromise;
 
     return initPromise;
   }
@@ -637,7 +647,7 @@ export class ServiceManager {
     }
 
     
-    const existingPromise = this.serviceInitQueue.get('onboardingService');
+    const existingPromise = this.serviceInitQueue.onboardingService;
     if (existingPromise) {
       return existingPromise;
     }
@@ -654,13 +664,13 @@ export class ServiceManager {
 
       this._onboardingService = service;
       this.initializedServices.add('onboardingService');
-      this.serviceInitQueue.delete('onboardingService');
+      delete this.serviceInitQueue.onboardingService;
 
       return service;
     })();
 
     
-    this.serviceInitQueue.set('onboardingService', initPromise);
+    this.serviceInitQueue.onboardingService = initPromise;
 
     return initPromise;
   }
@@ -705,7 +715,7 @@ export class ServiceManager {
       });
 
       
-      scheduleSequence(initOperations, 100);
+      void scheduleSequence(initOperations, 100);
     });
   }
 
@@ -777,13 +787,13 @@ export class ServiceManager {
 
     
     if (this._onboardingService) {
-      this._onboardingService.onunload();
+      void this._onboardingService.onunload();
       this._onboardingService = null;
     }
 
     
     this.initializedServices.clear();
-    this.serviceInitQueue.clear();
+    this.serviceInitQueue = {};
     ServiceManager.instance = null;
   }
 }

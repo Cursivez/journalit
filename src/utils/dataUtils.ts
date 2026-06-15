@@ -2,32 +2,39 @@
 
 
 export function normalizeStringArray(value: unknown): string[] {
-  const values = Array.isArray(value)
-    ? value
-    : value === undefined || value === null
-      ? []
-      : [value];
+  const normalized: string[] = [];
+  const appendValue = (item: unknown): void => {
+    if (typeof item === 'string') {
+      normalized.push(item);
+      return;
+    }
+    if (typeof item === 'number') {
+      normalized.push(String(item));
+      return;
+    }
+    if (item && typeof item === 'object' && !Array.isArray(item)) {
+      const name: unknown = Reflect.get(item, 'name');
+      if (typeof name === 'string') {
+        normalized.push(name);
+        return;
+      }
+      const itemValue: unknown = Reflect.get(item, 'value');
+      if (typeof itemValue === 'string') {
+        normalized.push(itemValue);
+      }
+    }
+  };
 
-  return values
-    .map((item) => {
-      if (typeof item === 'string') {
-        return item;
-      }
-      if (typeof item === 'number') {
-        return String(item);
-      }
-      if (item && typeof item === 'object') {
-        const record = item as Record<string, unknown>;
-        if (typeof record.name === 'string') {
-          return record.name;
-        }
-        if (typeof record.value === 'string') {
-          return record.value;
-        }
-      }
-      return null;
-    })
-    .filter((item): item is string => typeof item === 'string')
+  if (Array.isArray(value)) {
+    for (let index = 0; index < value.length; index += 1) {
+      const item: unknown = value[index];
+      appendValue(item);
+    }
+  } else if (value !== undefined && value !== null) {
+    appendValue(value);
+  }
+
+  return normalized
     .map((item) => item.trim())
     .filter((item) => item.length > 0);
 }

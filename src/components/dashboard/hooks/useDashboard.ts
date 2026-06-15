@@ -16,6 +16,7 @@ import { usePlugin, useEventBus } from '../../../hooks';
 import {
   AVAILABLE_WIDGETS,
   normalizeDashboardWidgetIds,
+  type WidgetDefinition,
 } from '../components/BottomSection/types';
 import { AccountChangedPayload } from '../../../services/events/types';
 import { remapAccountFilterFromAccountChange } from '../../shared/filters/remapSelectedAccounts';
@@ -115,9 +116,14 @@ export const useDashboard = () => {
   
   useEffect(() => {
     
-    if (!document.querySelector('[data-dashboard-styles="true"]')) {
+    if (
+      !window.activeDocument.querySelector('[data-dashboard-styles="true"]')
+    ) {
       
-      document.documentElement.setAttribute('data-dashboard-styles', 'true');
+      window.activeDocument.documentElement.setAttribute(
+        'data-dashboard-styles',
+        'true'
+      );
     }
 
     
@@ -133,7 +139,7 @@ export const useDashboard = () => {
           );
 
           
-          requestAnimationFrame(() => {
+          window.requestAnimationFrame(() => {
             applyAllCalendarFixes();
           });
         }
@@ -142,7 +148,7 @@ export const useDashboard = () => {
       }
     };
 
-    initializeDashboard();
+    void initializeDashboard();
   }, [plugin, activeLayout]);
 
   
@@ -152,7 +158,7 @@ export const useDashboard = () => {
   useEffect(() => {
     
     if (plugin?.settings?.trade?.skipWeekends !== undefined) {
-      requestAnimationFrame(() => {
+      window.requestAnimationFrame(() => {
         applyAllCalendarFixes();
       });
     }
@@ -280,7 +286,7 @@ export const useDashboard = () => {
       xxs: 1,
     };
 
-    return (widgetId: string, bp: string, widgetDef: any) => {
+    return (widgetId: string, bp: string, widgetDef: WidgetDefinition) => {
       const maxCols = cols[bp];
       const scaledWidth = Math.min(widgetDef.defaultSize.w, maxCols);
 
@@ -311,14 +317,13 @@ export const useDashboard = () => {
         }
 
         
-        const breakpoints = ['lg', 'md', 'sm', 'xs', 'xxs'] as const;
-        const layoutItems = breakpoints.reduce(
-          (acc, bp) => {
-            acc[bp] = createValidLayoutItem(widgetId, bp, widgetDef);
-            return acc;
-          },
-          {} as Record<string, any>
-        );
+        const layoutItems = {
+          lg: createValidLayoutItem(widgetId, 'lg', widgetDef),
+          md: createValidLayoutItem(widgetId, 'md', widgetDef),
+          sm: createValidLayoutItem(widgetId, 'sm', widgetDef),
+          xs: createValidLayoutItem(widgetId, 'xs', widgetDef),
+          xxs: createValidLayoutItem(widgetId, 'xxs', widgetDef),
+        };
 
         
         const newLayout = {
@@ -333,7 +338,7 @@ export const useDashboard = () => {
         };
 
         
-        saveLayout(plugin, 'Default', newLayout);
+        void saveLayout(plugin, 'Default', newLayout);
 
         
         setActiveWidgets((prev) => [...prev, widgetId]);

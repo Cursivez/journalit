@@ -2,7 +2,13 @@
 
 import React from 'react';
 
-interface NoTooltipButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+interface NoTooltipButtonProps extends Omit<
+  React.ButtonHTMLAttributes<HTMLButtonElement>,
+  'onClick'
+> {
+  onClick?: (
+    event: React.MouseEvent<HTMLButtonElement>
+  ) => void | Promise<void>;
   label: string;
   className?: string;
   children: React.ReactNode;
@@ -13,6 +19,7 @@ export const NoTooltipButton: React.FC<NoTooltipButtonProps> = ({
   label,
   className = '',
   children,
+  onClick,
   ...props
 }) => {
   
@@ -30,6 +37,7 @@ export const NoTooltipButton: React.FC<NoTooltipButtonProps> = ({
       aria-label={label} 
       type="button"
       {...props}
+      onClick={onClick ? (event) => void onClick(event) : undefined}
     >
       {children}
     </button>

@@ -138,14 +138,14 @@ export const findBestWidgetPosition = (
           
           const w = widgetDef?.maxSize
             ? Math.max(
-                constraints.minW as number,
-                Math.min(existingWidget.w, constraints.maxW as number)
+                widgetDef.minSize.w,
+                Math.min(existingWidget.w, widgetDef.maxSize.w)
               )
             : existingWidget.w;
           const h = widgetDef?.maxSize
             ? Math.max(
-                constraints.minH as number,
-                Math.min(existingWidget.h, constraints.maxH as number)
+                widgetDef.minSize.h,
+                Math.min(existingWidget.h, widgetDef.maxSize.h)
               )
             : existingWidget.h;
           const result = {
@@ -223,7 +223,18 @@ const GRID_BREAKPOINTS: Record<BreakpointKey, number> = {
   xxs: 0,
 };
 
-const VALID_BREAKPOINTS: BreakpointKey[] = ['lg', 'md', 'sm', 'xs', 'xxs'];
+function isBreakpointKey(value: string): value is BreakpointKey {
+  switch (value) {
+    case 'lg':
+    case 'md':
+    case 'sm':
+    case 'xs':
+    case 'xxs':
+      return true;
+    default:
+      return false;
+  }
+}
 
 const calculateGridPixelHeight = (layout: Layout[]): number => {
   const rowCount = layout.reduce(
@@ -444,9 +455,7 @@ const useDashboardGridLayoutState = ({
   const [resizeLockedHeight, setResizeLockedHeight] = useState<number | null>(
     null
   );
-  const layoutSaveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
-    null
-  );
+  const layoutSaveTimeoutRef = useRef<number | null>(null);
   const latestLayoutChangeRef = useRef<{
     currentLayout: Layout[];
     allLayouts: { [key: string]: Layout[] };
@@ -463,8 +472,8 @@ const useDashboardGridLayoutState = ({
   >(null);
 
   const handleBreakpointChange = useCallback((breakpoint: string) => {
-    if (VALID_BREAKPOINTS.includes(breakpoint as BreakpointKey)) {
-      setCurrentBreakpoint(breakpoint as BreakpointKey);
+    if (isBreakpointKey(breakpoint)) {
+      setCurrentBreakpoint(breakpoint);
     }
   }, []);
 
@@ -731,7 +740,7 @@ const useDashboardGridLayoutState = ({
           const widgetDef = AVAILABLE_WIDGETS.find(
             (w: WidgetDefinition) => w.id === widgetId
           );
-          const maxCols = GRID_COLS[bp as BreakpointKey];
+          const maxCols = isBreakpointKey(bp) ? GRID_COLS[bp] : GRID_COLS.lg;
           const defaultWidth =
             bp === 'xxs' ? 1 : Math.min(widgetDef?.defaultSize.w || 6, maxCols);
           const defaultHeight =
@@ -796,7 +805,7 @@ const useDashboardGridLayoutState = ({
 
       
       const layoutChangedEvent = new CustomEvent('layout-changed');
-      document.dispatchEvent(layoutChangedEvent);
+      window.activeDocument.dispatchEvent(layoutChangedEvent);
 
       if (isEditing && plugin) {
         try {
@@ -879,7 +888,7 @@ const useDashboardGridLayoutState = ({
           };
 
           setLayouts(nextLayouts);
-          saveLayout(plugin, 'Default', newLayout);
+          void saveLayout(plugin, 'Default', newLayout);
         } catch (error) {
           console.error('Error saving layout in handleLayoutChange:', error);
         }
@@ -897,7 +906,7 @@ const useDashboardGridLayoutState = ({
     const { currentLayout, allLayouts } = latestLayoutChangeRef.current;
     latestLayoutChangeRef.current = null;
     if (layoutSaveTimeoutRef.current) {
-      clearTimeout(layoutSaveTimeoutRef.current);
+      window.clearTimeout(layoutSaveTimeoutRef.current);
       layoutSaveTimeoutRef.current = null;
     }
     persistLayoutChangeRef.current?.(currentLayout, allLayouts);
@@ -930,7 +939,7 @@ const useDashboardGridLayoutState = ({
   useEffect(() => {
     return () => {
       if (layoutSaveTimeoutRef.current) {
-        clearTimeout(layoutSaveTimeoutRef.current);
+        window.clearTimeout(layoutSaveTimeoutRef.current);
         layoutSaveTimeoutRef.current = null;
       }
       if (latestLayoutChangeRef.current) {
@@ -958,19 +967,29 @@ const useDashboardGridLayoutState = ({
     }
 
     if (layoutSaveTimeoutRef.current) {
-      clearTimeout(layoutSaveTimeoutRef.current);
+      window.clearTimeout(layoutSaveTimeoutRef.current);
     }
 
-    layoutSaveTimeoutRef.current = setTimeout(flushLayoutChange, 160);
+    layoutSaveTimeoutRef.current = window.setTimeout(flushLayoutChange, 160);
   };
 
   
   
   
   const validatedLayouts = useMemo(() => {
-    const validated: { [key: string]: Layout[] } = {};
+    const validated: Record<BreakpointKey, Layout[]> = {
+      lg: [],
+      md: [],
+      sm: [],
+      xs: [],
+      xxs: [],
+    };
 
     Object.entries(layouts).forEach(([breakpoint, layoutArray]) => {
+      if (!isBreakpointKey(breakpoint)) {
+        return;
+      }
+
       validated[breakpoint] = normalizeBottomSentinelRows(
         sanitizeBreakpointLayout(layoutArray),
         LAYOUT_BOTTOM_POSITION
@@ -988,16 +1007,16 @@ const useDashboardGridLayoutState = ({
 
     setStaticGridReady(false);
     let secondFrameId: number | null = null;
-    const firstFrameId = requestAnimationFrame(() => {
-      secondFrameId = requestAnimationFrame(() => {
+    const firstFrameId = window.requestAnimationFrame(() => {
+      secondFrameId = window.requestAnimationFrame(() => {
         setStaticGridReady(true);
       });
     });
 
     return () => {
-      cancelAnimationFrame(firstFrameId);
+      window.cancelAnimationFrame(firstFrameId);
       if (secondFrameId !== null) {
-        cancelAnimationFrame(secondFrameId);
+        window.cancelAnimationFrame(secondFrameId);
       }
     };
   }, [gridWidth, gridWidthMeasured, isEditing, layoutsReady]);
@@ -1011,7 +1030,7 @@ const useDashboardGridLayoutState = ({
   );
 
   const handleDragStop = useCallback(() => {
-    setTimeout(() => {
+    window.setTimeout(() => {
       finalizeLayoutChange({ applyDragSwap: true });
       activeDragItemIdRef.current = null;
       dragStartItemRef.current = null;
@@ -1029,12 +1048,14 @@ const useDashboardGridLayoutState = ({
   const handleResizeStop = useCallback(() => {
     setIsGridResizing(false);
     setResizeLockedHeight(null);
-    setTimeout(() => {
+    window.setTimeout(() => {
       finalizeLayoutChange({ applyDragSwap: false });
       isResizeActiveRef.current = false;
     }, 0);
-    requestAnimationFrame(() => {
-      document.dispatchEvent(new CustomEvent('journalit:chart-resize-resume'));
+    window.requestAnimationFrame(() => {
+      window.activeDocument.dispatchEvent(
+        new CustomEvent('journalit:chart-resize-resume')
+      );
     });
   }, [finalizeLayoutChange]);
 
@@ -1199,7 +1220,7 @@ export const GridLayout: React.FC<GridLayoutProps> = ({
         )}
         {!isEditing && staticGridReady && (
           <StaticWidgetGrid
-            layouts={validatedLayouts as Record<BreakpointKey, Layout[]>}
+            layouts={validatedLayouts}
             widgets={widgets}
             cols={GRID_COLS}
             rowHeight={GRID_ROW_HEIGHT}

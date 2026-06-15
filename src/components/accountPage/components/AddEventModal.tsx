@@ -17,7 +17,18 @@ import {
 } from '../../../contexts/CurrencyContext';
 import { t } from '../../../lang/helpers';
 import { FastDateTimeInput } from '../../core/FastDateTimeInput';
-import { ensureAccountPageModalStyles } from '../../../styles/accountPage/accountPageModalStyles';
+
+function isTransactionType(value: string): value is TransactionType {
+  return value === 'deposit' || value === 'withdrawal';
+}
+
+function transactionTypeFromSelect(value: string): TransactionType {
+  return isTransactionType(value) ? value : TransactionType.DEPOSIT;
+}
+
+function errorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
+}
 
 interface EventData {
   type: TransactionType;
@@ -189,7 +200,7 @@ const AddEventModalContent: React.FC<
     } catch (error: unknown) {
       console.error('Error adding transaction:', error);
       new Notice(
-        t('account.add-event.error.failed', { error: (error as Error).message })
+        t('account.add-event.error.failed', { error: errorMessage(error) })
       );
     } finally {
       setIsLoading(false);
@@ -233,7 +244,7 @@ const AddEventModalContent: React.FC<
               onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
                 setEventData((currentData) => ({
                   ...currentData,
-                  type: e.target.value as TransactionType,
+                  type: transactionTypeFromSelect(e.target.value),
                   description: '', 
                 }))
               }
@@ -353,6 +364,14 @@ const AddEventModalContent: React.FC<
         </div>
         <div className="button-group-right">
           <Button
+            variant="secondary"
+            onClick={onModalClose}
+            disabled={isLoading}
+            className="cancel-button"
+          >
+            {t('button.cancel')}
+          </Button>
+          <Button
             variant="primary"
             onClick={handleSave}
             disabled={isLoading}
@@ -361,14 +380,6 @@ const AddEventModalContent: React.FC<
             {isLoading
               ? t('account.add-event.button.adding')
               : t('account.add-event.button.add')}
-          </Button>
-          <Button
-            variant="secondary"
-            onClick={onModalClose}
-            disabled={isLoading}
-            className="cancel-button"
-          >
-            {t('button.cancel')}
           </Button>
         </div>
       </div>

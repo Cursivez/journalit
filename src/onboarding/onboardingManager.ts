@@ -25,7 +25,7 @@ export class OnboardingManager {
       await this.plugin.viewManager.openOnboardingView();
 
       
-      localStorage.setItem(ONBOARDING_SHOWN_KEY, 'true');
+      this.plugin.app.saveLocalStorage(ONBOARDING_SHOWN_KEY, true);
 
       return true;
     } catch (error) {
@@ -47,7 +47,8 @@ export class OnboardingManager {
       
       const ONBOARDING_SHOWN_KEY = `journalit-onboarding-ever-shown-${this.plugin.app.vault.getName()}`;
 
-      const hasOnboardingBeenShown = localStorage.getItem(ONBOARDING_SHOWN_KEY);
+      const hasOnboardingBeenShown: unknown =
+        this.plugin.app.loadLocalStorage(ONBOARDING_SHOWN_KEY);
 
       
       if (hasOnboardingBeenShown) {
@@ -61,7 +62,7 @@ export class OnboardingManager {
       
       
       if (!onboardingService.shouldShowOnboarding()) {
-        localStorage.setItem(ONBOARDING_SHOWN_KEY, 'true');
+        this.plugin.app.saveLocalStorage(ONBOARDING_SHOWN_KEY, true);
         return;
       }
 

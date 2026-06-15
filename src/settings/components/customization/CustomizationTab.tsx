@@ -29,34 +29,65 @@ export const CustomizationTab: React.FC<CustomizationTabProps> = ({
   useEffect(() => {
     const consumeCustomFieldsOpenRequest = () => {
       if (
-        window.sessionStorage.getItem(
-          'journalit:open-custom-fields-settings'
-        ) !== '1'
+        plugin.app.loadLocalStorage('journalit:open-custom-fields-settings') !==
+        '1'
       ) {
         return;
       }
 
-      window.sessionStorage.removeItem('journalit:open-custom-fields-settings');
+      plugin.app.saveLocalStorage(
+        'journalit:open-custom-fields-settings',
+        null
+      );
       setCustomFieldsExpanded(true);
-      requestAnimationFrame(() => {
-        document
+      window.requestAnimationFrame(() => {
+        window.activeDocument
           .querySelector('.custom-fields-manager')
           ?.scrollIntoView({ block: 'start' });
       });
     };
 
+    const consumeReviewFieldsOpenRequest = () => {
+      if (
+        plugin.app.loadLocalStorage('journalit:open-review-fields-settings') !==
+        '1'
+      ) {
+        return;
+      }
+
+      plugin.app.saveLocalStorage(
+        'journalit:open-review-fields-settings',
+        null
+      );
+      setReviewFieldsExpanded(true);
+      window.requestAnimationFrame(() => {
+        window.activeDocument
+          .querySelector('.review-fields-manager')
+          ?.scrollIntoView({ block: 'start' });
+      });
+    };
+
     consumeCustomFieldsOpenRequest();
+    consumeReviewFieldsOpenRequest();
     window.addEventListener(
       'journalit:open-custom-fields-settings',
       consumeCustomFieldsOpenRequest
+    );
+    window.addEventListener(
+      'journalit:open-review-fields-settings',
+      consumeReviewFieldsOpenRequest
     );
     return () => {
       window.removeEventListener(
         'journalit:open-custom-fields-settings',
         consumeCustomFieldsOpenRequest
       );
+      window.removeEventListener(
+        'journalit:open-review-fields-settings',
+        consumeReviewFieldsOpenRequest
+      );
     };
-  }, []);
+  }, [plugin]);
 
   return (
     <div className="journalit-settings-tab customization-settings">
@@ -79,17 +110,6 @@ export const CustomizationTab: React.FC<CustomizationTabProps> = ({
         defaultExpanded={false}
       >
         <CustomOptionsTab plugin={plugin} showSymbolMappings={true} />
-      </Accordion>
-
-      
-      <Accordion
-        title={t('settings.customization.account-types')}
-        defaultExpanded={false}
-      >
-        <CustomOptionsTab
-          plugin={plugin}
-          filterType={OptionType.ACCOUNT_TYPE}
-        />
       </Accordion>
 
       

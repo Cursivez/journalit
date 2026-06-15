@@ -7,7 +7,7 @@ import { t } from '../../../lang/helpers';
 
 interface TradeMetadataSectionProps {
   data: Partial<TradeFormData>;
-  onAccountClick: (accountIdOrName: string) => void;
+  onAccountClick: (accountIdOrName: string) => void | Promise<void>;
   config?: TradeTemplate['sections']['metadata'];
 }
 
@@ -61,7 +61,7 @@ export const TradeMetadataSection: React.FC<TradeMetadataSectionProps> = ({
                     key={account}
                     type="button"
                     className="account-tag"
-                    onClick={() => onAccountClick(account)}
+                    onClick={() => void onAccountClick(account)}
                   >
                     {account}
                   </button>

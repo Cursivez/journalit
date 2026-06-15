@@ -14,12 +14,29 @@ import {
   parseLocalDateSafe,
 } from '../../../utils/dateUtils';
 import { getTradingDayString } from '../../../utils/tradingDayUtils';
-import type { PartialTradeFrontmatter } from '../../../types/TradeFrontmatter';
 import { t } from '../../../lang/helpers';
 
 interface SessionMistakesPreviewData {
   mistakes: string[];
 }
+
+const asRecord = (value: unknown): Record<string, unknown> | undefined =>
+  value && typeof value === 'object' && !Array.isArray(value)
+    ? Object.fromEntries(Object.entries(value))
+    : undefined;
+
+interface SessionMistakeTradeRecord extends Record<string, unknown> {
+  entryTime: string | number | Date;
+  path: string;
+}
+
+const isSessionMistakeTradeRecord = (
+  value: Record<string, unknown>
+): value is SessionMistakeTradeRecord =>
+  typeof value.path === 'string' &&
+  (typeof value.entryTime === 'string' ||
+    typeof value.entryTime === 'number' ||
+    value.entryTime instanceof Date);
 
 interface SessionMistakesWidgetProps {
   filePath: string;
@@ -67,7 +84,7 @@ export const SessionMistakesWidget: React.FC<SessionMistakesWidgetProps> =
     const [isValidContext, setIsValidContext] = useState(true);
 
     const retryCountRef = useRef(0);
-    const retryTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const retryTimeoutRef = useRef<number | null>(null);
 
     const loadOptions = useCallback(() => {
       if (!plugin.optionsService) {
@@ -103,11 +120,11 @@ export const SessionMistakesWidget: React.FC<SessionMistakesWidgetProps> =
           retryCountRef.current++;
 
           if (retryTimeoutRef.current) {
-            clearTimeout(retryTimeoutRef.current);
+            window.clearTimeout(retryTimeoutRef.current);
           }
 
-          retryTimeoutRef.current = setTimeout(
-            () => loadSessionMistakes(),
+          retryTimeoutRef.current = window.setTimeout(
+            () => void loadSessionMistakes(),
             FRONTMATTER_RETRY_DELAY_MS
           );
           return;
@@ -140,12 +157,12 @@ export const SessionMistakesWidget: React.FC<SessionMistakesWidgetProps> =
     useEffect(() => {
       retryCountRef.current = 0;
       setLoading(true);
-      loadSessionMistakes();
+      void loadSessionMistakes();
       loadOptions();
 
       return () => {
         if (retryTimeoutRef.current) {
-          clearTimeout(retryTimeoutRef.current);
+          window.clearTimeout(retryTimeoutRef.current);
           retryTimeoutRef.current = null;
         }
       };
@@ -156,7 +173,7 @@ export const SessionMistakesWidget: React.FC<SessionMistakesWidgetProps> =
 
       const handleMetadataChanged = (file: TFile) => {
         if (file.path === filePath) {
-          loadSessionMistakes();
+          void loadSessionMistakes();
         }
       };
 
@@ -191,8 +208,9 @@ export const SessionMistakesWidget: React.FC<SessionMistakesWidgetProps> =
           const drcFile = plugin.app.vault.getAbstractFileByPath(filePath);
           if (!(drcFile instanceof TFile)) return;
 
-          const frontmatter =
-            plugin.app.metadataCache.getFileCache(drcFile)?.frontmatter;
+          const frontmatter = asRecord(
+            plugin.app.metadataCache.getFileCache(drcFile)?.frontmatter
+          );
           const rawDate = frontmatter?.date;
           if (typeof rawDate !== 'string') return;
 
@@ -204,13 +222,13 @@ export const SessionMistakesWidget: React.FC<SessionMistakesWidgetProps> =
           
           const targetTradingDay = formatLocalDateString(parsedDate);
 
-          const allTrades = (await plugin.tradeService.getTradeData({
+          const allTrades = await plugin.tradeService.getTradeData({
             fresh: false,
-          })) as Array<PartialTradeFrontmatter & { path?: string }>;
+          });
 
           const tradeFilePaths = allTrades
-            .filter((trade) => {
-              if (!trade.entryTime || typeof trade.path !== 'string') {
+            .filter((trade): trade is SessionMistakeTradeRecord => {
+              if (!isSessionMistakeTradeRecord(trade)) {
                 return false;
               }
 
@@ -223,7 +241,7 @@ export const SessionMistakesWidget: React.FC<SessionMistakesWidgetProps> =
                 getTradingDayString(entryDate, plugin) === targetTradingDay
               );
             })
-            .map((trade) => trade.path as string);
+            .map((trade) => trade.path);
 
           if (tradeFilePaths.length === 0) {
             return;
@@ -376,7 +394,7 @@ export const SessionMistakesWidget: React.FC<SessionMistakesWidgetProps> =
                 <ComboBox
                   options={mistakeOptions}
                   value={sessionMistakes}
-                  onChange={handleMistakesChange}
+                  onChange={(value) => void handleMistakesChange(value)}
                   allowCreate={true}
                   isMulti={true}
                   optionType={OptionType.MISTAKE}

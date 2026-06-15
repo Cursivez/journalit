@@ -93,7 +93,7 @@ export const AVAILABLE_WIDGETS: WidgetDefinition[] = [
   },
   {
     id: 'longDrawdownChart',
-    name: 'Long Realized Drawdown',
+    name: 'Long Drawdown',
     description: 'Closed-trade drawdown amount for long trades only',
     category: 'performance',
     minSize: { w: 4, h: 5 },
@@ -101,7 +101,7 @@ export const AVAILABLE_WIDGETS: WidgetDefinition[] = [
   },
   {
     id: 'shortDrawdownChart',
-    name: 'Short Realized Drawdown',
+    name: 'Short Drawdown',
     description: 'Closed-trade drawdown amount for short trades only',
     category: 'performance',
     minSize: { w: 4, h: 5 },

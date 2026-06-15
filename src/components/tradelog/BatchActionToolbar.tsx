@@ -18,15 +18,19 @@ import {
   X,
 } from '../shared/icons/ObsidianIcon';
 import { ComboBox } from '../core/ComboBox';
-import {
-  injectBatchActionToolbarStyles,
-  removeBatchActionToolbarStyles,
-} from '../../styles/tradelog/batchActionToolbarStyles';
 import { createRoot, Root } from 'react-dom/client';
 import JournalitPlugin from '../../main';
 import { OptionType } from '../../services/options';
 import { useEventBus } from '../../hooks/useEventBus';
 import { t, tPlural } from '../../lang/helpers';
+
+const asStringArray = (value: unknown): string[] =>
+  Array.isArray(value)
+    ? value.filter((item): item is string => typeof item === 'string')
+    : [];
+
+const getErrorMessage = (error: unknown): string =>
+  error instanceof Error ? error.message : String(error);
 
 interface BatchActionToolbarProps {
   selectedCount: number;
@@ -46,14 +50,14 @@ interface BatchActionToolbarProps {
 
 
 class DeleteConfirmationModal extends Modal {
-  private onConfirm: () => void;
+  private onConfirm: () => void | Promise<void>;
   private onCancel: () => void;
   private count: number;
 
   constructor(
     app: App,
     count: number,
-    onConfirm: () => void,
+    onConfirm: () => void | Promise<void>,
     onCancel: () => void
   ) {
     super(app);
@@ -90,7 +94,7 @@ class DeleteConfirmationModal extends Modal {
       cls: 'mod-warning',
     });
     deleteButton.onclick = () => {
-      this.onConfirm();
+      void this.onConfirm();
       this.close();
     };
   }
@@ -104,7 +108,7 @@ class DeleteConfirmationModal extends Modal {
 
 interface SetupsModalContentProps {
   setupOptions: string[];
-  onConfirm: (selected: string[]) => void;
+  onConfirm: (selected: string[]) => Promise<void>;
   onClose: () => void;
   onSaveOption: (option: string) => Promise<void>;
   plugin: JournalitPlugin;
@@ -156,7 +160,7 @@ const SetupsModalContent: React.FC<SetupsModalContentProps> = ({
           label={t('form.field.setup')}
           options={setupOptions}
           value={selectedSetups}
-          onChange={(value) => setSelectedSetups(value as string[])}
+          onChange={(value) => setSelectedSetups(asStringArray(value))}
           allowCreate={true}
           isMulti={true}
           placeholder={t('tradelog.batch.setups.placeholder')}
@@ -169,7 +173,7 @@ const SetupsModalContent: React.FC<SetupsModalContentProps> = ({
           {t('button.cancel')}
         </button>
         <button
-          onClick={handleConfirm}
+          onClick={() => void handleConfirm()}
           disabled={isLoading || selectedSetups.length === 0}
           className="primary"
         >
@@ -187,7 +191,7 @@ const SetupsModalContent: React.FC<SetupsModalContentProps> = ({
 
 class AddSetupsModal extends Modal {
   private setupOptions: string[];
-  private onConfirm: (setups: string[]) => void;
+  private onConfirm: (setups: string[]) => Promise<void>;
   private onModalClose: () => void;
   private onSaveOption: (option: string) => Promise<void>;
   private plugin: JournalitPlugin;
@@ -197,7 +201,7 @@ class AddSetupsModal extends Modal {
   constructor(
     app: App,
     setupOptions: string[],
-    onConfirm: (setups: string[]) => void,
+    onConfirm: (setups: string[]) => Promise<void>,
     onCancel: () => void,
     onSaveOption: (option: string) => Promise<void>,
     plugin: JournalitPlugin
@@ -247,7 +251,7 @@ class AddSetupsModal extends Modal {
 
 interface TagsModalContentProps {
   tagOptions: string[];
-  onConfirm: (selected: string[]) => void;
+  onConfirm: (selected: string[]) => Promise<void>;
   onClose: () => void;
   onSaveOption: (option: string) => Promise<void>;
   plugin: JournalitPlugin;
@@ -295,7 +299,7 @@ const TagsModalContent: React.FC<TagsModalContentProps> = ({
           label={t('form.field.custom-tags')}
           options={tagOptions}
           value={selectedTags}
-          onChange={(value) => setSelectedTags(value as string[])}
+          onChange={(value) => setSelectedTags(asStringArray(value))}
           allowCreate={true}
           isMulti={true}
           placeholder={t('tradelog.batch.tags.placeholder')}
@@ -308,7 +312,7 @@ const TagsModalContent: React.FC<TagsModalContentProps> = ({
           {t('button.cancel')}
         </button>
         <button
-          onClick={handleConfirm}
+          onClick={() => void handleConfirm()}
           disabled={isLoading || selectedTags.length === 0}
           className="primary"
         >
@@ -325,7 +329,7 @@ const TagsModalContent: React.FC<TagsModalContentProps> = ({
 
 class AddTagsModal extends Modal {
   private tagOptions: string[];
-  private onConfirm: (tags: string[]) => void;
+  private onConfirm: (tags: string[]) => Promise<void>;
   private onModalClose: () => void;
   private onSaveOption: (option: string) => Promise<void>;
   private plugin: JournalitPlugin;
@@ -335,7 +339,7 @@ class AddTagsModal extends Modal {
   constructor(
     app: App,
     tagOptions: string[],
-    onConfirm: (tags: string[]) => void,
+    onConfirm: (tags: string[]) => Promise<void>,
     onCancel: () => void,
     onSaveOption: (option: string) => Promise<void>,
     plugin: JournalitPlugin
@@ -380,7 +384,7 @@ class AddTagsModal extends Modal {
 
 interface MistakesModalContentProps {
   mistakeOptions: string[];
-  onConfirm: (selected: string[]) => void;
+  onConfirm: (selected: string[]) => Promise<void>;
   onClose: () => void;
   onSaveOption: (option: string) => Promise<void>;
   plugin: JournalitPlugin;
@@ -433,7 +437,7 @@ const MistakesModalContent: React.FC<MistakesModalContentProps> = ({
           label={t('form.field.mistake')}
           options={mistakeOptions}
           value={selectedMistakes}
-          onChange={(value) => setSelectedMistakes(value as string[])}
+          onChange={(value) => setSelectedMistakes(asStringArray(value))}
           allowCreate={true}
           isMulti={true}
           placeholder={t('tradelog.batch.mistakes.placeholder')}
@@ -446,7 +450,7 @@ const MistakesModalContent: React.FC<MistakesModalContentProps> = ({
           {t('button.cancel')}
         </button>
         <button
-          onClick={handleConfirm}
+          onClick={() => void handleConfirm()}
           disabled={isLoading || selectedMistakes.length === 0}
           className="primary"
         >
@@ -464,7 +468,7 @@ const MistakesModalContent: React.FC<MistakesModalContentProps> = ({
 
 class AddMistakesModal extends Modal {
   private mistakeOptions: string[];
-  private onConfirm: (mistakes: string[]) => void;
+  private onConfirm: (mistakes: string[]) => Promise<void>;
   private onModalClose: () => void;
   private onSaveOption: (option: string) => Promise<void>;
   private plugin: JournalitPlugin;
@@ -474,7 +478,7 @@ class AddMistakesModal extends Modal {
   constructor(
     app: App,
     mistakeOptions: string[],
-    onConfirm: (mistakes: string[]) => void,
+    onConfirm: (mistakes: string[]) => Promise<void>,
     onCancel: () => void,
     onSaveOption: (option: string) => Promise<void>,
     plugin: JournalitPlugin
@@ -616,7 +620,9 @@ export const BatchActionToolbar = memo<BatchActionToolbarProps>(
         await onMarkAsReviewed();
       } catch (error) {
         console.error('Error marking trades as reviewed:', error);
-        new Notice(t('notice.error.mark-reviewed', { error: error.message }));
+        new Notice(
+          t('notice.error.mark-reviewed', { error: getErrorMessage(error) })
+        );
       } finally {
         setIsLoading(false);
         setLoadingAction(null);
@@ -635,7 +641,9 @@ export const BatchActionToolbar = memo<BatchActionToolbarProps>(
             await onAddSetups(setups);
           } catch (error) {
             console.error('Error adding setups:', error);
-            new Notice(t('notice.error.add-setups', { error: error.message }));
+            new Notice(
+              t('notice.error.add-setups', { error: getErrorMessage(error) })
+            );
           } finally {
             setIsLoading(false);
             setLoadingAction(null);
@@ -663,7 +671,7 @@ export const BatchActionToolbar = memo<BatchActionToolbarProps>(
           } catch (error) {
             console.error('Error adding mistakes:', error);
             new Notice(
-              t('notice.error.add-mistakes', { error: error.message })
+              t('notice.error.add-mistakes', { error: getErrorMessage(error) })
             );
           } finally {
             setIsLoading(false);
@@ -690,7 +698,9 @@ export const BatchActionToolbar = memo<BatchActionToolbarProps>(
             await onAddTags(tags);
           } catch (error) {
             console.error('Error adding tags:', error);
-            new Notice(t('notice.error.add-tags', { error: error.message }));
+            new Notice(
+              t('notice.error.add-tags', { error: getErrorMessage(error) })
+            );
           } finally {
             setIsLoading(false);
             setLoadingAction(null);
@@ -718,7 +728,7 @@ export const BatchActionToolbar = memo<BatchActionToolbarProps>(
           } catch (error) {
             console.error('Error deleting trades:', error);
             new Notice(
-              t('notice.error.delete-trades', { error: error.message })
+              t('notice.error.delete-trades', { error: getErrorMessage(error) })
             );
           } finally {
             setIsLoading(false);
@@ -758,7 +768,7 @@ export const BatchActionToolbar = memo<BatchActionToolbarProps>(
         <div className="batch-action-toolbar-actions">
           <button
             className="batch-action-button"
-            onClick={handleMarkAsReviewed}
+            onClick={() => void handleMarkAsReviewed()}
             disabled={isLoading || selectedCount === 0}
             aria-label={t('button.mark-reviewed')}
           >
@@ -774,7 +784,7 @@ export const BatchActionToolbar = memo<BatchActionToolbarProps>(
 
           <button
             className="batch-action-button"
-            onClick={handleAddTags}
+            onClick={() => void handleAddTags()}
             disabled={isLoading || selectedCount === 0}
             aria-label={t('tradelog.batch.add-tags.aria')}
           >
@@ -790,7 +800,7 @@ export const BatchActionToolbar = memo<BatchActionToolbarProps>(
 
           <button
             className="batch-action-button"
-            onClick={handleAddSetups}
+            onClick={() => void handleAddSetups()}
             disabled={isLoading || selectedCount === 0}
             aria-label={t('tradelog.batch.add-setups.aria')}
           >
@@ -806,7 +816,7 @@ export const BatchActionToolbar = memo<BatchActionToolbarProps>(
 
           <button
             className="batch-action-button"
-            onClick={handleAddMistakes}
+            onClick={() => void handleAddMistakes()}
             disabled={isLoading || selectedCount === 0}
             aria-label={t('tradelog.batch.add-mistakes.aria')}
           >
@@ -822,7 +832,7 @@ export const BatchActionToolbar = memo<BatchActionToolbarProps>(
 
           <button
             className="batch-action-button batch-action-delete danger"
-            onClick={handleDelete}
+            onClick={() => void handleDelete()}
             disabled={isLoading || selectedCount === 0}
             aria-label={t('tradelog.batch.delete.aria')}
           >

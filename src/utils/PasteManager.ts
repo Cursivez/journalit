@@ -3,6 +3,7 @@
 import { Notice } from 'obsidian';
 import { t } from '../lang/helpers';
 import { ErrorHandler, ErrorContext } from './errorHandler';
+import { canReadClipboardItems, readClipboardItems } from './clipboard';
 
 
 export interface PasteContext {
@@ -74,11 +75,7 @@ export class PasteManager {
 
   
   public static isClipboardSupported(): boolean {
-    return (
-      typeof navigator !== 'undefined' &&
-      !!navigator.clipboard &&
-      !!navigator.clipboard.read
-    );
+    return typeof navigator !== 'undefined' && canReadClipboardItems();
   }
 
   
@@ -100,12 +97,9 @@ export class PasteManager {
 
     try {
       
-      const clipboardItems = await navigator.clipboard.read();
+      const clipboardItems = await readClipboardItems();
 
       if (!clipboardItems || clipboardItems.length === 0) {
-        const _context: ErrorContext = {
-          operation: 'clipboard content check',
-        };
         return {
           success: false,
           files: [],
@@ -144,7 +138,7 @@ export class PasteManager {
               });
 
               extractedFiles.push(file);
-            } catch (error) {
+            } catch (error: unknown) {
               console.error(
                 `Failed to extract ${format} from clipboard:`,
                 error
@@ -155,9 +149,6 @@ export class PasteManager {
       }
 
       if (extractedFiles.length === 0) {
-        const _context: ErrorContext = {
-          operation: 'clipboard image extraction',
-        };
         return {
           success: false,
           files: [],
@@ -169,17 +160,19 @@ export class PasteManager {
         success: true,
         files: extractedFiles,
       };
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Failed to read clipboard:', error);
 
       
       if (
-        error.name === 'NotAllowedError' ||
-        error.message.includes('permission')
+        error instanceof Error &&
+        (error.name === 'NotAllowedError' ||
+          error.message.includes('permission'))
       ) {
         const context: ErrorContext = {
           operation: 'clipboard permission request',
-          originalError: error,
+          originalError:
+            error instanceof Error ? error : new Error(String(error)),
         };
         return {
           success: false,
@@ -191,7 +184,8 @@ export class PasteManager {
 
       const context: ErrorContext = {
         operation: 'clipboard access',
-        originalError: error,
+        originalError:
+          error instanceof Error ? error : new Error(String(error)),
       };
       return {
         success: false,

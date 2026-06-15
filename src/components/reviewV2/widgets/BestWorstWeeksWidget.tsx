@@ -30,6 +30,35 @@ import { useEventBus } from '../../../hooks';
 import { SkeletonBox } from '../../shared';
 import { getBreakEvenBalanceForDisplayTrade } from './shared/breakEvenDisplayUtils';
 
+type ReviewBestWorstTrade = Record<string, unknown> & {
+  pnl?: number | null;
+  directPnL?: number | null;
+  useDirectPnLInput?: boolean;
+  dividends?: Array<{ amount?: number | null }>;
+  commission?: number | null;
+  swap?: number | null;
+  fees?: number | null;
+  rebate?: number | null;
+  tradeStatus?: string;
+  account?: string | string[];
+  currency?: string;
+  originalCurrency?: string;
+  originalPnlBeforeConversion?: number | null;
+  brokerBaseCurrency?: string;
+  rMultiple?: number;
+  riskAmount?: number;
+  breakEvenAccountCurrentBalance?: number;
+  breakEvenAccountCurrentBalanceTotal?: number;
+};
+
+function asReviewBestWorstTrades(value: unknown): ReviewBestWorstTrade[] {
+  return Array.isArray(value)
+    ? value.filter((item): item is ReviewBestWorstTrade =>
+        Boolean(item && typeof item === 'object' && !Array.isArray(item))
+      )
+    : [];
+}
+
 interface BestWorstWeeksWidgetProps {
   filePath: string;
   plugin: JournalitPlugin;
@@ -89,7 +118,9 @@ export const BestWorstWeeksWidget: React.FC<BestWorstWeeksWidgetProps> =
       } = useReviewTrades(filePath, plugin);
 
       
-      const trades = preview && previewData ? previewData.trades : cachedTrades;
+      const trades = asReviewBestWorstTrades(
+        preview && previewData ? previewData.trades : cachedTrades
+      );
       const loading = preview ? false : cacheLoading;
 
       
@@ -119,11 +150,13 @@ export const BestWorstWeeksWidget: React.FC<BestWorstWeeksWidgetProps> =
       const breakEvenRangeMax = plugin?.settings?.trade?.breakEvenRangeMax;
       
       const { bestWeek, worstWeek } = useMemo(() => {
-        const closedTrades = trades
-          .filter((t) => isPnlContributingTrade(t))
-          .flatMap((trade) =>
-            splitReviewTradeByRealizedPnlEvent(trade, plugin)
-          );
+        const closedTrades = asReviewBestWorstTrades(
+          trades
+            .filter((t) => isPnlContributingTrade(t))
+            .flatMap((trade) =>
+              splitReviewTradeByRealizedPnlEvent(trade, plugin)
+            )
+        );
 
         if (closedTrades.length === 0) {
           return { bestWeek: null, worstWeek: null };
@@ -492,7 +525,9 @@ export const BestWorstWeeksWidget: React.FC<BestWorstWeeksWidgetProps> =
               pnl={bestWeek ? formatWeekPnL(bestWeek) : ''}
               primaryText={bestWeek ? formatWeekName(bestWeek) : ''}
               metaItems={bestWeek ? buildMetaItems(bestWeek) : []}
-              onClick={bestWeek ? () => openWeeklyReview(bestWeek) : undefined}
+              onClick={
+                bestWeek ? () => void openWeeklyReview(bestWeek) : undefined
+              }
               currencyConversion={currencyConversion}
               conversionTrades={bestWeek?.trades}
             />
@@ -508,7 +543,7 @@ export const BestWorstWeeksWidget: React.FC<BestWorstWeeksWidgetProps> =
               primaryText={worstWeek ? formatWeekName(worstWeek) : ''}
               metaItems={worstWeek ? buildMetaItems(worstWeek) : []}
               onClick={
-                worstWeek ? () => openWeeklyReview(worstWeek) : undefined
+                worstWeek ? () => void openWeeklyReview(worstWeek) : undefined
               }
               currencyConversion={currencyConversion}
               conversionTrades={worstWeek?.trades}

@@ -22,7 +22,7 @@ interface RenderWithDeduplicationOptions {
   file: TFile;
   container: HTMLElement;
 
-  data: any;
+  data: unknown;
   viewId: string;
   contextId?: string;
   componentClassName?: string;
@@ -122,16 +122,16 @@ export abstract class BaseComponentProcessor {
 
   
   private registerMarkdownPostProcessor(): void {
-    this.plugin.registerMarkdownPostProcessor(
-      this.handleMarkdownPostProcessor.bind(this)
-    );
+    this.plugin.registerMarkdownPostProcessor((element, ctx) => {
+      void this.handleMarkdownPostProcessor(element, ctx);
+    });
   }
 
   
   private setupLayoutChangeHandler(): void {
     
     this.plugin.registerEvent(
-      this.app.workspace.on('layout-change', this.handleLayoutChange.bind(this))
+      this.app.workspace.on('layout-change', () => this.handleLayoutChange())
     );
 
     
@@ -161,7 +161,7 @@ export abstract class BaseComponentProcessor {
           this.clearFileRenderedStatus(file.path, mode);
 
           
-          setTimeout(() => {
+          window.setTimeout(() => {
             this.invokeHandleFileOpenSafely(file, true);
           }, 50);
         }
@@ -173,7 +173,7 @@ export abstract class BaseComponentProcessor {
       
       this.app.workspace.iterateAllLeaves((leaf) => {
         
-        const viewContainerEl = leaf.view?.containerEl as HTMLElement;
+        const viewContainerEl = leaf.view?.containerEl;
         if (viewContainerEl && viewContainerEl.id) {
           this.registeredLeaves.add(viewContainerEl.id);
         }
@@ -187,7 +187,7 @@ export abstract class BaseComponentProcessor {
     const currentLeafIds = new Set<string>();
     this.app.workspace.iterateAllLeaves((leaf) => {
       
-      const viewContainerEl = leaf.view?.containerEl as HTMLElement;
+      const viewContainerEl = leaf.view?.containerEl;
       if (viewContainerEl && viewContainerEl.id) {
         currentLeafIds.add(viewContainerEl.id);
 
@@ -310,8 +310,10 @@ export abstract class BaseComponentProcessor {
       const trueLeafId = leafEl?.id;
 
       
-      const leaf = this.findContainingLeaf(containerEl as HTMLElement);
-      const leafViewEl = leaf?.view?.containerEl as HTMLElement;
+      const leaf = containerEl.instanceOf(HTMLElement)
+        ? this.findContainingLeaf(containerEl)
+        : null;
+      const leafViewEl = leaf?.view?.containerEl;
       const leafId = trueLeafId || leafViewEl?.id || null;
 
       
@@ -332,14 +334,8 @@ export abstract class BaseComponentProcessor {
         if (isViewWithFile(view)) {
           
           activeFile = view.file ?? null;
-        } else if (
-          view &&
-          'getViewType' in view &&
-          view.getViewType() === 'markdown'
-        ) {
-          
-          const mdView = view as unknown as { file: TFile | null };
-          activeFile = mdView.file;
+        } else if (view && isViewWithTFile(view)) {
+          activeFile = view.file;
         }
 
         if (activeFile) {
@@ -417,7 +413,7 @@ export abstract class BaseComponentProcessor {
       });
 
       
-      const componentElement = document.createElement('div');
+      const componentElement = window.activeDocument.createElement('div');
       componentElement.className = this.getComponentClassName();
       componentElement.setAttribute('data-file-path', file.path);
       componentElement.setAttribute('data-view-id', viewId);
@@ -474,7 +470,7 @@ export abstract class BaseComponentProcessor {
   protected abstract getAdditionalDataForComponent(
     file: TFile,
     frontmatter: Record<string, unknown>
-  ): Promise<unknown | void> | void;
+  ): Promise<unknown> | void;
 
   
   protected abstract getWrapperClassName(): string;
@@ -497,7 +493,9 @@ export abstract class BaseComponentProcessor {
     const viewContent = element.closest('.view-content');
     if (viewContent) {
       
-      const siblings = Array.from(document.querySelectorAll('.view-content'));
+      const siblings = Array.from(
+        window.activeDocument.querySelectorAll('.view-content')
+      );
       const index = siblings.indexOf(viewContent);
       if (index >= 0) {
         return `view-content-${index}`;
@@ -508,7 +506,7 @@ export abstract class BaseComponentProcessor {
     const markdownView = element.closest('.markdown-preview-view');
     if (markdownView) {
       const siblings = Array.from(
-        document.querySelectorAll('.markdown-preview-view')
+        window.activeDocument.querySelectorAll('.markdown-preview-view')
       );
       const index = siblings.indexOf(markdownView);
       if (index >= 0) {
@@ -518,7 +516,9 @@ export abstract class BaseComponentProcessor {
 
     const editor = element.closest('.cm-editor');
     if (editor) {
-      const siblings = Array.from(document.querySelectorAll('.cm-editor'));
+      const siblings = Array.from(
+        window.activeDocument.querySelectorAll('.cm-editor')
+      );
       const index = siblings.indexOf(editor);
       if (index >= 0) {
         return `editor-${index}`;
@@ -564,7 +564,7 @@ export abstract class BaseComponentProcessor {
       const activeFile = this.app.workspace.getActiveFile();
       if (activeFile) {
         
-        setTimeout(() => {
+        window.setTimeout(() => {
           this.invokeHandleFileOpenSafely(activeFile, true);
         }, 100); 
       }
@@ -613,7 +613,7 @@ export abstract class BaseComponentProcessor {
     
     
     const anyProperlyRenderedComponent = Array.from(
-      document.querySelectorAll(`.${componentClassName}`)
+      window.activeDocument.querySelectorAll(`.${componentClassName}`)
     ).some((el) => {
       
       const elPath = el.getAttribute('data-file-path');
@@ -648,7 +648,7 @@ export abstract class BaseComponentProcessor {
     );
 
     
-    this.renderer.renderComponent(
+    void this.renderer.renderComponent(
       container,
       data,
       file.path,
@@ -675,7 +675,7 @@ export abstract class BaseComponentProcessor {
     const mountedClass = mountedClassName || 'component-mounted';
 
     
-    const existingElements = document.querySelectorAll(
+    const existingElements = window.activeDocument.querySelectorAll(
       `.${compClass}[data-file-path="${filePath}"]`
     );
 
@@ -699,7 +699,9 @@ export abstract class BaseComponentProcessor {
   ): number {
     const compClass = componentClassName || this.getComponentClassName();
     const existingComponents = Array.from(
-      document.querySelectorAll(`.${compClass}[data-file-path="${filePath}"]`)
+      window.activeDocument.querySelectorAll(
+        `.${compClass}[data-file-path="${filePath}"]`
+      )
     );
 
     let removed = 0;
@@ -733,7 +735,9 @@ export abstract class BaseComponentProcessor {
     
     
     const tagName = element.tagName.toLowerCase();
-    const allSimilarElements = Array.from(document.querySelectorAll(tagName));
+    const allSimilarElements = Array.from(
+      window.activeDocument.querySelectorAll(tagName)
+    );
 
     
     const elementIndex = allSimilarElements.indexOf(element);
@@ -749,7 +753,9 @@ export abstract class BaseComponentProcessor {
     }
 
     
-    const similarWithClass = Array.from(document.querySelectorAll(selector));
+    const similarWithClass = Array.from(
+      window.activeDocument.querySelectorAll(selector)
+    );
     const classIndex = similarWithClass.indexOf(element);
 
     
@@ -809,7 +815,7 @@ export abstract class BaseComponentProcessor {
 
       this.app.workspace.iterateAllLeaves((leaf) => {
         
-        const viewContainerEl = leaf.view?.containerEl as HTMLElement;
+        const viewContainerEl = leaf.view?.containerEl;
 
         if (viewContainerEl && viewContainerEl.id === leafId) {
           matchingLeaf = leaf;
@@ -980,14 +986,8 @@ export abstract class BaseComponentProcessor {
       if (view && isViewWithFile(view)) {
         
         leafFile = view.file ?? null;
-      } else if (
-        view &&
-        'getViewType' in view &&
-        view.getViewType() === 'markdown'
-      ) {
-        
-        const mdView = view as unknown as { file: TFile | null };
-        leafFile = mdView.file;
+      } else if (view && isViewWithTFile(view)) {
+        leafFile = view.file;
       }
 
       

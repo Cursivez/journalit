@@ -12,7 +12,7 @@ import { t } from '../../lang/helpers';
 interface TradeReviewProps {
   settings: LossReviewSettings;
   data: LossReviewData | undefined;
-  onUpdate: (data: LossReviewData) => void;
+  onUpdate: (data: LossReviewData) => void | Promise<void>;
   filePath?: string;
 }
 
@@ -373,7 +373,7 @@ export const TradeReview: React.FC<TradeReviewProps> = React.memo(
         
         setReviewData(updatedData);
         
-        onUpdate(updatedData);
+        void onUpdate(updatedData);
       },
       [onUpdate]
     );

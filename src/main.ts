@@ -9,6 +9,7 @@ import {
   SettingsTabId,
 } from './settings/types';
 import { TradeFormModal } from './components/forms/trade/TradeFormModal';
+import type { TradeFormData } from './components/forms/trade/types';
 import { TradeService } from './services/trade/TradeService';
 import { SetupService } from './services/setup/SetupService';
 import { DRCService } from './services/drc/DRCService';
@@ -54,40 +55,24 @@ import { GuideRegistry } from './guides/GuideRegistry';
 import { ViewGuideService } from './guides/ViewGuideService';
 import { mergeFreshTradeFormEditData } from './components/forms/trade/tradeFormEditData';
 
+
+const isCustomEvent = (event: Event): event is CustomEvent<unknown> =>
+  event instanceof CustomEvent;
+
 declare global {
   interface Window {
     __dropdownClickHandlerAdded?: boolean;
+    __dropdownClickHandlerDocument?: Document;
     __isHandlingComboBoxRemove?: boolean;
-    __isInjectingStyles?: boolean;
-    
-
-    __JOURNALIT_INJECT_DRC_STYLES?: any;
     __obsidianStartTime?: number;
     __REACT_ERROR_OVERLAY__?: boolean;
   }
 }
 
 
-if (window) {
-  
-  const allScripts = document.querySelectorAll('script');
-  allScripts.forEach((script) => {
-    
-    const content = script.textContent || '';
-    if (
-      content.includes('DROPDOWN_FIX') ||
-      content.includes('COMBOBOX') ||
-      content.includes('TRADEFORM')
-    ) {
-      script.remove();
-    }
-  });
-
-  
-  window.__dropdownClickHandlerAdded = false;
-  window.__isHandlingComboBoxRemove = false;
-  window.__isInjectingStyles = false;
-}
+window.__dropdownClickHandlerAdded = false;
+window.__dropdownClickHandlerDocument = undefined;
+window.__isHandlingComboBoxRemove = false;
 
 
 export default class JournalitPlugin extends Plugin {
@@ -194,6 +179,10 @@ export default class JournalitPlugin extends Plugin {
 
     
     this.cleanupManager = new PluginCleanupManager(this);
+    Object.defineProperty(this, 'onunload', {
+      configurable: true,
+      value: () => this.runUnloadCleanup(),
+    });
 
     
     this.pluginInitializer = new PluginInitializer(this);
@@ -216,9 +205,14 @@ export default class JournalitPlugin extends Plugin {
   private register402ErrorHandler(): void {
     const handler = (event: Event) => {
       
-      const customEvent = event as CustomEvent;
-      const detail = customEvent.detail as { operation?: string } | undefined;
-      const operation = detail?.operation ?? 'This feature';
+      const detail = isCustomEvent(event) ? event.detail : undefined;
+      const detailRecord: Record<string, unknown> | null =
+        detail && typeof detail === 'object' && !Array.isArray(detail)
+          ? Object.fromEntries(Object.entries(detail))
+          : null;
+      const operationValue = detailRecord?.operation;
+      const operation =
+        typeof operationValue === 'string' ? operationValue : 'This feature';
 
       
       import('./components/modals/UpgradeModal')
@@ -231,11 +225,11 @@ export default class JournalitPlugin extends Plugin {
         });
     };
 
-    document.addEventListener('journalit:premium-required', handler);
+    window.addEventListener('journalit:premium-required', handler);
 
     
     this.register(() => {
-      document.removeEventListener('journalit:premium-required', handler);
+      window.removeEventListener('journalit:premium-required', handler);
     });
   }
 
@@ -266,13 +260,18 @@ export default class JournalitPlugin extends Plugin {
   }
 
   
-  async onunload() {
-    try {
-      await this.cleanupManager.cleanup();
-    } catch (error) {
+  private async runUnloadCleanup(): Promise<void> {
+    await this.cleanupManager.cleanup().catch((error: unknown) => {
       console.error('Error during plugin cleanup:', error);
       
-    }
+    });
+  }
+
+  onunload() {
+    
+    
+    
+    void this.runUnloadCleanup();
   }
 
   
@@ -308,7 +307,7 @@ export default class JournalitPlugin extends Plugin {
   async openTradeFormInEditMode(
     
 
-    tradeData: any,
+    tradeData: Partial<TradeFormData>,
     filePath: string
   ): Promise<void> {
     try {
@@ -317,7 +316,9 @@ export default class JournalitPlugin extends Plugin {
       if (filePath && this.tradeService) {
         const file = this.app.vault.getAbstractFileByPath(filePath);
         if (file instanceof TFile) {
-          const freshTradeData = await this.tradeService.extractTradeData(file);
+          const freshTradeData = (await this.tradeService.extractTradeData(
+            file
+          )) as Partial<TradeFormData> | null;
           if (freshTradeData) {
             initialData = mergeFreshTradeFormEditData(
               tradeData,

@@ -36,7 +36,6 @@ import { SkeletonBox } from '../../shared';
 import { Tooltip } from '../../shared/Tooltip';
 import type { ImageNavigationContext } from '../../../types/image';
 import { TradesPreviewData } from '../../../types/reviewV2';
-import type { CachedReviewData } from '../../../services/reviewV2/ReviewDataCache';
 import { useReviewTrades } from '../hooks/useReviewData';
 import { t } from '../../../lang/helpers';
 import { classifyPnLWithBreakEvenSettings } from '../../../utils/breakEvenRange';
@@ -48,9 +47,56 @@ import {
 import { formatDateDisplay } from '../../../utils/dateUtils';
 import { getReviewTradeDate } from '../utils/reviewTradeDates';
 
-const calculateFallbackGrossPnL = (
-  trade: CachedReviewData['trades'][number]
-): number | null => {
+type ReviewTableTrade = Record<string, unknown> & {
+  id?: string | number;
+  path?: string;
+  filePath?: string;
+  entryTime?: string | Date;
+  exitTime?: string | Date | null;
+  entryPrice?: number;
+  exitPrice?: number;
+  positionSize?: number;
+  direction?: string;
+  side?: string;
+  assetType?: string;
+  optionType?: string;
+  instrument?: string;
+  ticker?: string;
+  images?: string[] | string;
+  currency?: string;
+  account?: string | string[];
+  accountId?: string;
+  accountRefs?: unknown[];
+  setup?: string[];
+  mistake?: string[];
+  tradeStatus?: string;
+  pnl?: number | null;
+  directPnL?: number | null;
+  _originalPnlWasNull?: boolean;
+  useDirectPnLInput?: boolean;
+  hasExplicitExitPrice?: boolean;
+  exits?: Array<{
+    time?: string | Date | null;
+    price?: number | null;
+    size?: number | null;
+  }>;
+  entries?: Array<{
+    time?: string | Date | null;
+    price?: number | null;
+    size?: number | null;
+  }>;
+  rMultiple?: number;
+  riskAmount?: number;
+};
+
+const asReviewTableTrades = (value: unknown): ReviewTableTrade[] =>
+  Array.isArray(value)
+    ? value.filter((item): item is ReviewTableTrade =>
+        Boolean(item && typeof item === 'object' && !Array.isArray(item))
+      )
+    : [];
+
+const calculateFallbackGrossPnL = (trade: ReviewTableTrade): number | null => {
   const entryPrice = getWeightedAverageEntryPrice(trade);
   const exitPrice = getResolvedWeightedAverageExitPrice(trade);
 
@@ -208,7 +254,7 @@ interface TradeTableWidgetProps {
   config?: TradeTableWidgetConfig;
   preview?: boolean;
   previewData?: TradesPreviewData;
-  tradesOverride?: CachedReviewData['trades'];
+  tradesOverride?: ReviewTableTrade[];
   loadingOverride?: boolean;
   emptyMessage?: string;
 }
@@ -282,7 +328,9 @@ export const TradeTableWidget: React.FC<TradeTableWidgetProps> = React.memo(
 
       const file = plugin.app.vault.getAbstractFileByPath(filePath);
       return file instanceof TFile
-        ? plugin.app.metadataCache.getFileCache(file)?.frontmatter
+        ? (plugin.app.metadataCache.getFileCache(file)?.frontmatter as
+            | Record<string, unknown>
+            | undefined)
         : null;
     }, [cachedNoteType, filePath, plugin.app, previewData?.noteType]);
     const effectiveNoteType =
@@ -295,9 +343,9 @@ export const TradeTableWidget: React.FC<TradeTableWidgetProps> = React.memo(
     const trades =
       tradesOverride !== undefined
         ? tradesOverride
-        : preview && previewData
-          ? previewData.trades
-          : cachedTrades;
+        : asReviewTableTrades(
+            preview && previewData ? previewData.trades : cachedTrades
+          );
     const loading =
       loadingOverride !== undefined
         ? loadingOverride
@@ -315,7 +363,7 @@ export const TradeTableWidget: React.FC<TradeTableWidgetProps> = React.memo(
     
     const openNote = useCallback(
       (path: string) => {
-        plugin.openFile(path, false);
+        void plugin.openFile(path, false);
       },
       [plugin]
     );
@@ -416,10 +464,11 @@ export const TradeTableWidget: React.FC<TradeTableWidgetProps> = React.memo(
 
     
     const sortedTrades = useMemo(() => {
-      return [...displayTrades].sort(
-        (a, b) =>
-          new Date(a.entryTime).getTime() - new Date(b.entryTime).getTime()
-      );
+      return [...displayTrades].sort((a, b) => {
+        const aTime = a.entryTime ?? 0;
+        const bTime = b.entryTime ?? 0;
+        return new Date(aTime).getTime() - new Date(bTime).getTime();
+      });
     }, [displayTrades]);
 
     const paginatedTrades = useMemo(() => {
@@ -766,7 +815,7 @@ export const TradeTableWidget: React.FC<TradeTableWidgetProps> = React.memo(
                     imagesArray = trade.images;
                   } else if (typeof trade.images === 'string') {
                     
-                    const parsedImages = JSON.parse(trade.images);
+                    const parsedImages: unknown = JSON.parse(trade.images);
                     
                     if (Array.isArray(parsedImages)) {
                       imagesArray = parsedImages.map((img) => String(img));

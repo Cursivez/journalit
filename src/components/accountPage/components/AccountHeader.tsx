@@ -16,6 +16,7 @@ import { IconButton } from '../../ui/IconButton';
 import { openEditAccountModal } from './EditAccountModal';
 import { openAddEventModal } from './AddEventModal';
 import { useCurrency } from '../../../contexts/CurrencyContext';
+import { parseCuratedCurrencyCode } from '../../../utils/currencyConfig';
 import { MoneyValue } from '../../shared/display';
 import { AccountTradeData } from '../../../services/accountPage/types';
 import { t, tPlural } from '../../../lang/helpers';
@@ -70,8 +71,7 @@ export const AccountHeader: React.FC = () => {
   const currency =
     accountPageData?.metrics.isMultiCurrency &&
     accountPageData?.metrics.conversionBaseCurrency
-      ? (accountPageData.metrics
-          .conversionBaseCurrency as typeof globalCurrency)
+      ? parseCuratedCurrencyCode(accountPageData.metrics.conversionBaseCurrency)
       : accountPageData?.account.currency || globalCurrency;
   const [isFixingDate, setIsFixingDate] = useState(false);
   const registerHeaderTarget = useGuideTarget(ACCOUNT_PAGE_HEADER_TARGET_ID);
@@ -173,7 +173,7 @@ export const AccountHeader: React.FC = () => {
       plugin.app,
       plugin,
       account,
-      refreshData 
+      () => void refreshData() 
     );
   };
 
@@ -182,7 +182,7 @@ export const AccountHeader: React.FC = () => {
       plugin.app,
       plugin,
       account.name,
-      refreshData 
+      () => void refreshData() 
     );
   };
 
@@ -225,7 +225,7 @@ export const AccountHeader: React.FC = () => {
           </div>
           <div ref={registerAddEventButtonTarget}>
             <IconButton
-              onClick={handleAddEvent}
+              onClick={() => void handleAddEvent()}
               variant="toolbar"
               className="add-event-btn"
               ariaLabel={t('account.header.add-event.aria')}
@@ -235,7 +235,7 @@ export const AccountHeader: React.FC = () => {
           </div>
           <div ref={registerEditAccountButtonTarget}>
             <IconButton
-              onClick={handleEditAccount}
+              onClick={() => void handleEditAccount()}
               variant="toolbar"
               className="edit-account-btn"
               ariaLabel={t('account.header.edit-account.aria')}
@@ -305,7 +305,7 @@ export const AccountHeader: React.FC = () => {
             </div>
           </div>
           <Button
-            onClick={handleFixCreatedDate}
+            onClick={() => void handleFixCreatedDate()}
             variant="secondary"
             size="sm"
             disabled={isFixingDate}

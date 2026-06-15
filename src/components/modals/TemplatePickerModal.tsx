@@ -6,7 +6,6 @@ import { createRoot, Root } from 'react-dom/client';
 import { Check, Lock, Star } from '../shared/icons/ObsidianIcon';
 import type { ReviewTemplate, TradeTemplate } from '../../types/reviewV2';
 import { Button } from '../ui/Button';
-import { ensureTemplatePickerModalStyles } from './templatePickerModalStyles';
 import { t } from '../../lang/helpers';
 
 type TemplateType = ReviewTemplate | TradeTemplate;
@@ -17,7 +16,7 @@ interface TemplatePickerModalProps {
   currentTemplateId?: string;
   defaultTemplateId?: string;
   title: string;
-  onSelect: (template: TemplateType) => void;
+  onSelect: (template: TemplateType) => void | Promise<void>;
   onClose: () => void;
 }
 
@@ -39,7 +38,7 @@ const TemplatePickerContent: React.FC<
 
   const handleSelect = useCallback(
     (template: TemplateType) => {
-      onSelect(template);
+      void onSelect(template);
       onModalClose();
     },
     [onSelect, onModalClose]
@@ -219,7 +218,7 @@ export function openTemplatePickerModal(
   templates: TemplateType[],
   currentTemplateId: string | undefined,
   title: string,
-  onSelect: (template: TemplateType) => void,
+  onSelect: (template: TemplateType) => void | Promise<void>,
   defaultTemplateId?: string
 ): void {
   const modal = new TemplatePickerModal({

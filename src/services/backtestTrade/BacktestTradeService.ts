@@ -18,6 +18,60 @@ import { mapCustomFieldsToFrontmatter } from '../../utils/customFieldPersistence
 import { buildTradeIdentityFields } from '../../utils/tradeIdentity';
 import { Mutex } from '../../utils/mutex';
 
+function getStringValue(record: Record<string, unknown>, key: string): string {
+  const value = record[key];
+  return typeof value === 'string' ? value : '';
+}
+
+function getNumberValue(record: Record<string, unknown>, key: string): number {
+  const value = record[key];
+  return typeof value === 'number' ? value : Number(value) || 0;
+}
+
+function getDateValue(record: Record<string, unknown>, key: string): Date {
+  const value = record[key];
+  if (value instanceof Date) return value;
+  if (typeof value === 'string' || typeof value === 'number') {
+    const parsed = new Date(value);
+    if (!Number.isNaN(parsed.getTime())) return parsed;
+  }
+  return new Date(0);
+}
+
+function getStringArray(
+  record: Record<string, unknown>,
+  key: string
+): string[] {
+  const value = record[key];
+  return Array.isArray(value)
+    ? value.filter((item): item is string => typeof item === 'string')
+    : [];
+}
+
+function createBacktestTradeData(
+  frontmatter: Record<string, unknown>,
+  filePath: string
+): BacktestTradeFormData {
+  return {
+    entryTime: getDateValue(frontmatter, 'entryTime'),
+    exitTime: getDateValue(frontmatter, 'exitTime'),
+    entryPrice: getNumberValue(frontmatter, 'entryPrice'),
+    exitPrice: getNumberValue(frontmatter, 'exitPrice'),
+    positionSize: getNumberValue(frontmatter, 'positionSize'),
+    direction: getStringValue(frontmatter, 'direction'),
+    instrument: getStringValue(frontmatter, 'instrument'),
+    assetType: getStringValue(frontmatter, 'assetType'),
+    setupIds: getStringArray(frontmatter, 'setupIds'),
+    setup: getStringArray(frontmatter, 'setup'),
+    mistake: getStringArray(frontmatter, 'mistake'),
+    account: getStringArray(frontmatter, 'account'),
+    tags: getStringArray(frontmatter, 'tags'),
+    pnl: getNumberValue(frontmatter, 'pnl'),
+    filePath,
+    isBacktestTrade: true,
+  };
+}
+
 
 export interface BacktestTradeFormData extends TradeFormData {
   
@@ -52,13 +106,7 @@ export class BacktestTradeService extends CustomDataService {
 
     this.setPlugin(plugin);
     this.folderPathService =
-      folderPathService ||
-      ({
-        journalFolderPath: '!Journalit',
-        getPath: (...segments: string[]) =>
-          normalizePath(['!Journalit', ...segments].join('/')),
-        isJournalPath: (path: string) => path.startsWith('!Journalit/'),
-      } as FolderPathService);
+      folderPathService || new FolderPathService(app, plugin);
   }
 
   
@@ -93,7 +141,7 @@ export class BacktestTradeService extends CustomDataService {
       images?: string[];
       deferPostCreateTasks?: boolean;
 
-      customFields?: Record<string, any>;
+      customFields?: Record<string, unknown>;
     } = {}
   ): Promise<TFile | null> {
     try {
@@ -153,7 +201,7 @@ export class BacktestTradeService extends CustomDataService {
           const identityFields = buildTradeIdentityFields(data);
 
           
-          const frontmatter: Record<string, any> = {
+          const frontmatter: Record<string, unknown> = {
             type: 'backtest-trade',
             tradeId: identityFields.tradeId,
             schemaVersion: identityFields.schemaVersion,
@@ -302,7 +350,7 @@ export class BacktestTradeService extends CustomDataService {
           };
 
           if (deferPostCreateTasks) {
-            setTimeout(() => {
+            window.setTimeout(() => {
               void runPostCreateTasks().catch((error) => {
                 console.error(
                   '[BacktestTradeService] Post-create tasks failed:',
@@ -324,7 +372,10 @@ export class BacktestTradeService extends CustomDataService {
           return file;
         } finally {
           
-          setTimeout(() => this.recentlyCreatedFiles.delete(filePath), 5000);
+          window.setTimeout(
+            () => this.recentlyCreatedFiles.delete(filePath),
+            5000
+          );
         }
       });
     } catch (error) {
@@ -354,7 +405,7 @@ export class BacktestTradeService extends CustomDataService {
       );
 
       
-      const frontmatter: Record<string, any> = {
+      const frontmatter: Record<string, unknown> = {
         type: 'backtest-trade',
         tradeId: identityFields.tradeId,
         schemaVersion: identityFields.schemaVersion,
@@ -496,7 +547,7 @@ export class BacktestTradeService extends CustomDataService {
     logger.debug('Handling backtest trade deletion:', filePath);
 
     
-    this.clearCache();
+    void this.clearCache();
 
     
     eventBus.publish('backtest-trade:changed', {
@@ -546,28 +597,30 @@ export class BacktestTradeService extends CustomDataService {
           try {
             
             const cache = this.app.metadataCache.getFileCache(file);
-            const frontmatter = cache?.frontmatter;
+            const frontmatter = cache?.frontmatter as
+              | Record<string, unknown>
+              | undefined;
 
             
             if (!frontmatter || frontmatter.type !== 'backtest-trade') continue;
 
             
             if (backtestTrades.length % 20 === 0) {
-              await new Promise((resolve) => setTimeout(resolve, 0));
+              await new Promise((resolve) => window.setTimeout(resolve, 0));
             }
 
             
-            if (frontmatter.entryTime) {
+            if (
+              typeof frontmatter.entryTime === 'string' ||
+              typeof frontmatter.entryTime === 'number' ||
+              frontmatter.entryTime instanceof Date
+            ) {
               const entryDate = new Date(frontmatter.entryTime);
               if (entryDate < startDate || entryDate > endDate) continue;
             }
 
             
-            const data = {
-              ...frontmatter,
-              filePath: file.path,
-              isBacktestTrade: true,
-            } as BacktestTradeFormData;
+            const data = createBacktestTradeData(frontmatter, file.path);
 
             backtestTrades.push(data);
           } catch (error) {
@@ -596,19 +649,24 @@ export class BacktestTradeService extends CustomDataService {
   async getBacktestTradeFiles(
     startDate: Date,
     endDate: Date
-  ): Promise<Array<{ file: TFile; data: any }>> {
+  ): Promise<Array<{ file: TFile; data: BacktestTradeFormData }>> {
     try {
       const results = await this.query(
         async () => {
           const files = this.getAllBacktestTradeFiles();
 
-          const backtestTradeFiles: Array<{ file: TFile; data: any }> = [];
+          const backtestTradeFiles: Array<{
+            file: TFile;
+            data: BacktestTradeFormData;
+          }> = [];
 
           for (const file of files) {
             try {
               
               const cache = this.app.metadataCache.getFileCache(file);
-              const frontmatter = cache?.frontmatter;
+              const frontmatter = cache?.frontmatter as
+                | Record<string, unknown>
+                | undefined;
 
               
               if (!frontmatter || frontmatter.type !== 'backtest-trade')
@@ -616,21 +674,21 @@ export class BacktestTradeService extends CustomDataService {
 
               
               if (backtestTradeFiles.length % 20 === 0) {
-                await new Promise((resolve) => setTimeout(resolve, 0));
+                await new Promise((resolve) => window.setTimeout(resolve, 0));
               }
 
               
-              if (frontmatter.entryTime) {
+              if (
+                typeof frontmatter.entryTime === 'string' ||
+                typeof frontmatter.entryTime === 'number' ||
+                frontmatter.entryTime instanceof Date
+              ) {
                 const entryDate = new Date(frontmatter.entryTime);
                 if (entryDate < startDate || entryDate > endDate) continue;
               }
 
               
-              const data = {
-                ...frontmatter,
-                filePath: file.path,
-                isBacktestTrade: true,
-              };
+              const data = createBacktestTradeData(frontmatter, file.path);
 
               backtestTradeFiles.push({ file, data });
             } catch (error) {
@@ -865,14 +923,20 @@ export class BacktestTradeService extends CustomDataService {
 
   
 
-  private formatDateForFrontmatter(date: any): string {
+  private formatDateForFrontmatter(date: unknown): string {
     try {
-      
+      if (
+        !(date instanceof Date) &&
+        typeof date !== 'string' &&
+        typeof date !== 'number'
+      ) {
+        return String(date);
+      }
       const dateObj = date instanceof Date ? date : new Date(date);
 
       
       if (isNaN(dateObj.getTime())) {
-        console.error(`Invalid date value: ${date}, returning as-is`);
+        console.error('Invalid date value, returning as-is:', date);
         
         return String(date);
       }
@@ -885,7 +949,7 @@ export class BacktestTradeService extends CustomDataService {
       const seconds = String(dateObj.getSeconds()).padStart(2, '0');
       return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}`;
     } catch (error) {
-      console.error(`Error formatting date: ${date}`, error);
+      console.error('Error formatting date:', date, error);
       
       return date instanceof Date ? date.toISOString() : String(date);
     }

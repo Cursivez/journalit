@@ -4,10 +4,6 @@ import { ReactView } from './ReactView';
 import { RenderFunction } from './types';
 import JournalitPlugin from '../main';
 import { NavigationSidebar } from '../components/navigation/NavigationSidebar';
-import {
-  ensureNavigationStyles,
-  injectNavigationStyles,
-} from '../styles/navigationStyles';
 import { t } from '../lang/helpers';
 
 export const NAVIGATION_VIEW_TYPE = 'journalit-navigation-view';

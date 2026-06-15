@@ -1,6 +1,6 @@
 
 
-const ASSET_FIELDS_STYLES = `
+export const ASSET_FIELDS_STYLES = `
     
     .trade-form-view-container .asset-loading-accounts {
       padding: 12px;
@@ -85,10 +85,3 @@ const ASSET_FIELDS_STYLES = `
 `;
 
 
-export const injectAssetFieldsStyles = (): void => {
-  return;
-};
-
-export const removeAssetFieldsStyles = (): void => {
-  return;
-};

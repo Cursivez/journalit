@@ -2,7 +2,6 @@
 
 import React, { memo, useEffect } from 'react';
 import { Tooltip } from '../Tooltip';
-import { injectBadgeStyles } from './badgeStyles';
 
 interface MistakesBadgeProps {
   items: string | string[] | undefined | null;

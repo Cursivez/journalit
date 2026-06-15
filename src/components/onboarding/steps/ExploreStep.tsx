@@ -16,14 +16,14 @@ import { Button } from '../../ui/Button';
 import { t } from '../../../lang/helpers';
 
 interface ExploreStepProps {
-  onBack: () => void;
-  onNext: () => void;
-  onOpenDashboard: () => void;
-  onOpenTradeLog: () => void;
-  onOpenAccounts: () => void;
-  onOpenLayoutBuilder: () => void;
-  onOpenCsv: () => void;
-  onOpenMetaTrader: () => void;
+  onBack: () => void | Promise<void>;
+  onNext: () => void | Promise<void>;
+  onOpenDashboard: () => void | Promise<void>;
+  onOpenTradeLog: () => void | Promise<void>;
+  onOpenAccounts: () => void | Promise<void>;
+  onOpenLayoutBuilder: () => void | Promise<void>;
+  onOpenCsv: () => void | Promise<void>;
+  onOpenMetaTrader: () => void | Promise<void>;
   onOpenManual: () => void | Promise<void>;
   manualLinkFallbackUrl?: string | null;
   manualLinkCopied?: boolean;
@@ -36,7 +36,7 @@ interface ExploreCard {
   description: string;
   icon: React.ReactNode;
   isPremium?: boolean;
-  onOpen: () => void;
+  onOpen: () => void | Promise<void>;
 }
 
 export const ExploreStep: React.FC<ExploreStepProps> = ({
@@ -106,11 +106,11 @@ export const ExploreStep: React.FC<ExploreStepProps> = ({
       className={`feature-card explore-feature-tile ${tile.isPremium ? 'premium' : ''}`}
       role="button"
       tabIndex={0}
-      onClick={tile.onOpen}
+      onClick={() => void tile.onOpen()}
       onKeyDown={(e) => {
         if (e.key !== 'Enter' && e.key !== ' ') return;
         e.preventDefault();
-        tile.onOpen();
+        void tile.onOpen();
       }}
     >
       <div className="explore-feature-icon">{tile.icon}</div>

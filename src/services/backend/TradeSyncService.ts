@@ -26,6 +26,27 @@ import { t } from '../../lang/helpers';
 import { getTradeIdentityNoteType } from '../../utils/tradeIdentity';
 import { normalizeTradeExecution } from '../trade/core/TradeExecutionNormalization';
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
+}
+
+function getStringValue(value: unknown, fallback = ''): string {
+  return typeof value === 'string' ? value : fallback;
+}
+
+function getOrCreateFrontmatterArray(
+  record: Record<string, unknown>,
+  key: string
+): unknown[] {
+  const current = record[key];
+  if (Array.isArray(current)) {
+    return current;
+  }
+  const next: unknown[] = [];
+  record[key] = next;
+  return next;
+}
+
 interface SyncTradeMatchIdentity {
   symbol: string;
   entryTime: Date;
@@ -428,7 +449,7 @@ export class TradeSyncService {
 
         
         if (batchIndex < batches.length - 1) {
-          await new Promise((resolve) => setTimeout(resolve, 10));
+          await new Promise((resolve) => window.setTimeout(resolve, 10));
         }
       }
 
@@ -512,7 +533,7 @@ export class TradeSyncService {
           `Mapping save verification failed on attempt ${attempt + 1}`
         );
       } catch (error) {
-        lastError = error;
+        lastError = error instanceof Error ? error : new Error(String(error));
         console.error(
           `Failed to save sync mapping on attempt ${attempt + 1}:`,
           error
@@ -521,7 +542,7 @@ export class TradeSyncService {
         
         if (attempt < MAX_RETRIES - 1) {
           await new Promise((resolve) =>
-            setTimeout(resolve, 100 * (attempt + 1))
+            window.setTimeout(resolve, 100 * (attempt + 1))
           );
         }
       }
@@ -551,10 +572,12 @@ export class TradeSyncService {
     let removedCount = 0;
     const invalidIds: number[] = [];
 
-    for (const [tradeId, filePath] of Object.entries(this.tradeSyncMapping)) {
+    for (const tradeIdText of Object.keys(this.tradeSyncMapping)) {
+      const tradeId = Number(tradeIdText);
+      const filePath = this.tradeSyncMapping[tradeId];
       const file = this.plugin.app.vault.getAbstractFileByPath(filePath);
       if (!file) {
-        invalidIds.push(Number(tradeId));
+        invalidIds.push(tradeId);
         removedCount++;
       }
     }
@@ -762,7 +785,7 @@ export class TradeSyncService {
 
       const frontmatter = frontmatterMatch[1];
 
-      const trade: any = {};
+      const trade: Record<string, unknown> = {};
 
       
       const lines = frontmatter.split('\n');
@@ -776,11 +799,13 @@ export class TradeSyncService {
           const itemValue = trimmedLine.substring(2).trim();
           if (MARKDOWN_OBJECT_ARRAY_FRONTMATTER_KEYS.has(currentArrayKey)) {
             currentArrayItem = {};
-            trade[currentArrayKey].push(currentArrayItem);
+            getOrCreateFrontmatterArray(trade, currentArrayKey).push(
+              currentArrayItem
+            );
             this.parseMarkdownFrontmatterProperty(currentArrayItem, itemValue);
           } else {
             currentArrayItem = null;
-            trade[currentArrayKey].push(
+            getOrCreateFrontmatterArray(trade, currentArrayKey).push(
               this.parseMarkdownScalarValue(currentArrayKey, itemValue)
             );
           }
@@ -890,11 +915,11 @@ export class TradeSyncService {
     value: unknown,
     filePath?: string
   ): TradeMetadata | null {
-    if (!value || typeof value !== 'object') {
+    if (!isRecord(value)) {
       return null;
     }
 
-    const trade = { ...(value as Record<string, unknown>) };
+    const trade = { ...value };
     const isValidSyncTrade = filePath
       ? this.isSyncTradeCandidate(trade, filePath)
       : trade.type === 'trade' || trade.type === 'backtest-trade';
@@ -915,7 +940,18 @@ export class TradeSyncService {
       trade.mtComment = trimmedComment.length > 0 ? trimmedComment : undefined;
     }
 
-    return trade as unknown as TradeMetadata;
+    return Object.assign(
+      {
+        type: String(trade.type),
+        entryTime: String(trade.entryTime),
+        entryPrice: String(trade.entryPrice),
+        positionSize: String(trade.positionSize),
+        direction: getStringValue(trade.direction),
+        instrument: getStringValue(trade.instrument),
+        assetType: getStringValue(trade.assetType),
+      },
+      trade
+    );
   }
 
   
@@ -986,7 +1022,7 @@ export class TradeSyncService {
     const TIME_TOLERANCE = 60000;
     const PRICE_TOLERANCE = 0.00001;
 
-    for (const [_key, cachedTrade] of this.tradeFileCache.entries()) {
+    for (const [, cachedTrade] of this.tradeFileCache.entries()) {
       if (
         cachedTrade.symbol === trade.symbol &&
         Math.abs(cachedTrade.volume - trade.volume) < 0.001

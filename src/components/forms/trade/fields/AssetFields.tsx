@@ -15,7 +15,6 @@ import {
   TradeFormData,
   TradeFormErrors,
   TradeFormValue,
-  AssetType,
   DEFAULT_TRADE_FORM_DATA,
 } from '../types';
 import {
@@ -26,7 +25,7 @@ import {
   calculateTotalCosts,
   resolveEffectiveRiskAmount,
 } from '../validation';
-import { getApp, formatPnL } from '../../../../utils';
+import { formatPnL } from '../../../../utils';
 import { formatCost } from '../../../../utils/formatting';
 import {
   getPartialExitInfo,
@@ -36,10 +35,6 @@ import { OptionType } from '../../../../services/options';
 import { getPluginInstance } from '../../../../utils/pluginContext';
 import { useCurrency } from '../../../../contexts/CurrencyContext';
 import { getCurrencyOptions } from '../../../../utils/currencyConfig';
-import {
-  injectAssetFieldsStyles,
-  removeAssetFieldsStyles,
-} from '../../../../styles/assetFieldsStyles';
 import { debounce } from '../../../../utils/debounce';
 import { calculateAssetAdjustedPriceMoveValue } from '../../../../utils/priceMoveValue';
 import { useEventBus } from '../../../../hooks';
@@ -59,6 +54,9 @@ import {
   RealizedPnlSummary,
   RealizedPnlSummaryProps,
 } from './RealizedPnlSummary';
+
+const parseCommissionType = (value: string): 'fixed' | 'percentage' =>
+  value === 'percentage' ? 'percentage' : 'fixed';
 
 const EMPTY_INSTRUMENTS: Array<{ id: string; name: string }> = [];
 
@@ -171,13 +169,13 @@ function TradingCostsSection({
               ]}
               value={data.commissionType || 'fixed'}
               onChange={(value) =>
-                onChange('commissionType', value as 'fixed' | 'percentage')
+                onChange('commissionType', parseCommissionType(value))
               }
             />
           </div>
         </div>
 
-        {data.assetType === AssetType.OPTIONS && (
+        {data.assetType === 'options' && (
           <div className="field">
             <NumberInput
               label={t('form.field.rebate')}
@@ -239,8 +237,8 @@ function RiskManagementSection({
   displayRMultiples,
   onChange,
 }: RiskManagementSectionProps) {
-  const plugin = getApp().plugins?.plugins?.['journalit'];
-  const maeMfeInputMode = plugin?.settings?.trade?.maeMfeInputMode;
+  const plugin = getPluginInstance();
+  const maeMfeInputMode = plugin?.settings.trade.maeMfeInputMode;
   const showPriceFields = maeMfeInputMode === 'price';
   const showDollarFields = maeMfeInputMode !== 'price';
   const isShort =
@@ -257,7 +255,7 @@ function RiskManagementSection({
             value={data.stopLoss}
             onChange={(value) => onChange('stopLoss', value)}
             error={errors.stopLoss}
-            precision={data.assetType === AssetType.FOREX ? 5 : 2}
+            precision={data.assetType === 'forex' ? 5 : 2}
             allowDecimal={true}
             placeholder={t('form.placeholder.stop-loss')}
           />
@@ -309,7 +307,7 @@ function RiskManagementSection({
               value={data.maePrice}
               onChange={(value) => onChange('maePrice', value)}
               error={errors.maePrice}
-              precision={data.assetType === AssetType.FOREX ? 5 : 2}
+              precision={data.assetType === 'forex' ? 5 : 2}
               allowDecimal={true}
               placeholder={
                 isShort ? 'Highest price reached' : 'Lowest price reached'
@@ -344,7 +342,7 @@ function RiskManagementSection({
               value={data.mfePrice}
               onChange={(value) => onChange('mfePrice', value)}
               error={errors.mfePrice}
-              precision={data.assetType === AssetType.FOREX ? 5 : 2}
+              precision={data.assetType === 'forex' ? 5 : 2}
               allowDecimal={true}
               placeholder={
                 isShort ? 'Lowest price reached' : 'Highest price reached'
@@ -421,22 +419,22 @@ function AssetSpecificFields({
 
   return (
     <div className="asset-specific-fields">
-      {data.assetType === AssetType.STOCK && (
+      {data.assetType === 'stock' && (
         <StockFields data={data} errors={errors} onChange={onChange} />
       )}
-      {data.assetType === AssetType.OPTIONS && (
+      {data.assetType === 'options' && (
         <OptionsFields data={data} errors={errors} onChange={onChange} />
       )}
-      {data.assetType === AssetType.FUTURES && (
+      {data.assetType === 'futures' && (
         <FuturesFields data={data} errors={errors} onChange={onChange} />
       )}
-      {data.assetType === AssetType.FOREX && (
+      {data.assetType === 'forex' && (
         <ForexFields data={data} errors={errors} onChange={onChange} />
       )}
-      {data.assetType === AssetType.CRYPTO && (
+      {data.assetType === 'crypto' && (
         <CryptoFields data={data} errors={errors} onChange={onChange} />
       )}
-      {data.assetType === AssetType.CFD && (
+      {data.assetType === 'cfd' && (
         <CFDFields data={data} errors={errors} onChange={onChange} />
       )}
     </div>
@@ -450,7 +448,7 @@ interface EntryExitSectionProps {
 }
 
 function DirectionField({ data, errors, onChange }: EntryExitSectionProps) {
-  if (data.assetType === AssetType.OPTIONS) return null;
+  if (data.assetType === 'options') return null;
 
   return (
     <div className="field">
@@ -494,12 +492,12 @@ function DirectionField({ data, errors, onChange }: EntryExitSectionProps) {
 
 function AssetTypeField({ data, errors, onChange }: EntryExitSectionProps) {
   const assetTypeOptions = [
-    { type: AssetType.STOCK, label: t('form.field.asset-type.stock') },
-    { type: AssetType.OPTIONS, label: t('form.field.asset-type.options') },
-    { type: AssetType.FUTURES, label: t('form.field.asset-type.futures') },
-    { type: AssetType.FOREX, label: t('form.field.asset-type.forex') },
-    { type: AssetType.CRYPTO, label: t('form.field.asset-type.crypto') },
-    { type: AssetType.CFD, label: t('form.field.asset-type.cfd') },
+    { type: 'stock', label: t('form.field.asset-type.stock') },
+    { type: 'options', label: t('form.field.asset-type.options') },
+    { type: 'futures', label: t('form.field.asset-type.futures') },
+    { type: 'forex', label: t('form.field.asset-type.forex') },
+    { type: 'crypto', label: t('form.field.asset-type.crypto') },
+    { type: 'cfd', label: t('form.field.asset-type.cfd') },
   ];
 
   return (
@@ -598,7 +596,7 @@ function useAssetFieldsModel({
     try {
       setIsLoadingAccounts(true);
 
-      const plugin = getApp().plugins?.plugins?.['journalit'];
+      const plugin = getPluginInstance();
       const accountPageService = plugin?.accountPageService;
       const tradeService = plugin?.tradeService;
       if (!accountPageService && !tradeService) {
@@ -623,7 +621,7 @@ function useAssetFieldsModel({
       ];
       const selectableAccountNames = filterActiveCopyAccounts(
         allAccountNames,
-        plugin?.settings?.account?.accountMetadata,
+        plugin?.settings.account?.accountMetadata,
         data.entryTime
       );
 
@@ -650,7 +648,7 @@ function useAssetFieldsModel({
   
   useEffect(() => {
     
-    loadAccountOptions();
+    void loadAccountOptions();
 
     const optionsService = getPluginInstance()?.optionsService;
 
@@ -1051,20 +1049,22 @@ function useAssetFieldsModel({
     const instrument = data.instrument;
 
     
-    const saveTimeout = setTimeout(async () => {
-      try {
-        await optionsService.setFuturesDataForInstrument(instrument, {
-          dollarPerPoint: data.dollarPerPoint,
-          tickSize: data.tickSize,
-          tickValue: data.tickValue,
-        });
-      } catch (error) {
-        console.error('Failed to save futures data for instrument:', error);
-      }
+    const saveTimeout = window.setTimeout(() => {
+      void (async () => {
+        try {
+          await optionsService.setFuturesDataForInstrument(instrument, {
+            dollarPerPoint: data.dollarPerPoint,
+            tickSize: data.tickSize,
+            tickValue: data.tickValue,
+          });
+        } catch (error) {
+          console.error('Failed to save futures data for instrument:', error);
+        }
+      })();
     }, 1000);
 
     
-    return () => clearTimeout(saveTimeout);
+    return () => window.clearTimeout(saveTimeout);
   }, [
     data.assetType,
     data.instrument,
@@ -1087,17 +1087,19 @@ function useAssetFieldsModel({
 
     const instrument = data.instrument;
 
-    const saveTimeout = setTimeout(async () => {
-      try {
-        await optionsService.setCfdDataForInstrument(instrument, {
-          contractSize: data.contractSize,
-        });
-      } catch (error) {
-        console.error('Failed to save CFD data for instrument:', error);
-      }
+    const saveTimeout = window.setTimeout(() => {
+      void (async () => {
+        try {
+          await optionsService.setCfdDataForInstrument(instrument, {
+            contractSize: data.contractSize,
+          });
+        } catch (error) {
+          console.error('Failed to save CFD data for instrument:', error);
+        }
+      })();
     }, 1000);
 
-    return () => clearTimeout(saveTimeout);
+    return () => window.clearTimeout(saveTimeout);
   }, [data.assetType, data.instrument, data.contractSize, data.filePath]);
 
   
@@ -1112,9 +1114,9 @@ function useAssetFieldsModel({
   useEffect(() => {}, []);
 
   
-  const plugin = getApp().plugins?.plugins?.['journalit'];
-  const displayRMultiples = plugin?.settings?.trade?.displayRMultiples ?? false;
-  const defaultRiskAmount = plugin?.settings?.trade?.defaultRiskAmount ?? 0;
+  const plugin = getPluginInstance();
+  const displayRMultiples = plugin?.settings.trade.displayRMultiples ?? false;
+  const defaultRiskAmount = plugin?.settings.trade.defaultRiskAmount ?? 0;
   const effectiveRiskAmount = useMemo(
     () => resolveEffectiveRiskAmount(data, defaultRiskAmount),
     [data, defaultRiskAmount]
@@ -1127,17 +1129,17 @@ function useAssetFieldsModel({
   
   const getInstrumentLabel = (): string => {
     switch (data.assetType) {
-      case AssetType.STOCK:
+      case 'stock':
         return t('form.field.instrument.ticker');
-      case AssetType.OPTIONS:
+      case 'options':
         return t('form.field.instrument.option-symbol');
-      case AssetType.FUTURES:
+      case 'futures':
         return t('form.field.instrument.future-symbol');
-      case AssetType.FOREX:
+      case 'forex':
         return t('form.field.instrument.forex-pair');
-      case AssetType.CRYPTO:
+      case 'crypto':
         return t('form.field.instrument.crypto-symbol');
-      case AssetType.CFD:
+      case 'cfd':
         return t('form.field.instrument.cfd-symbol');
       default:
         return t('form.field.instrument.ticker');
@@ -1253,7 +1255,7 @@ const AssetFieldsComponent: React.FC<AssetFieldsProps> = ({
                 <Button
                   variant="primary"
                   size="small"
-                  onClick={handleCreateAccount}
+                  onClick={() => void handleCreateAccount()}
                   className="trade-form-account-empty-state-button"
                 >
                   {t('form.account-empty-state.create-account')}
@@ -1280,7 +1282,7 @@ const AssetFieldsComponent: React.FC<AssetFieldsProps> = ({
         />
       </div>
 
-      {data.assetType === AssetType.CFD && (
+      {data.assetType === 'cfd' && (
         <div className="field">
           <Select
             label={t('settings.general.currency')}

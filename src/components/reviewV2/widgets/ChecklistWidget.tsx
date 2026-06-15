@@ -27,6 +27,47 @@ function getReviewItemKeys(items: ChecklistItem[]): string[] {
   });
 }
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
+}
+
+function getChecklistReviewType(
+  value: unknown
+): 'drc' | 'weekly-review' | null {
+  if (value === 'drc') return 'drc';
+  if (value === 'weekly-review') return 'weekly-review';
+  return null;
+}
+
+const getStringArray = (
+  record: Record<string, unknown>,
+  key: string
+): string[] => {
+  const value = record[key];
+  if (!Array.isArray(value)) return [];
+  const strings: string[] = [];
+  for (const item of value) {
+    if (typeof item === 'string') strings.push(item);
+  }
+  return strings;
+};
+
+const getBooleanRecord = (
+  record: Record<string, unknown>,
+  key: string
+): Record<string, boolean> => {
+  const value = record[key];
+  if (!isRecord(value)) return {};
+  const booleanRecord: Record<string, boolean> = {};
+  for (const itemKey in value) {
+    const itemValue = value[itemKey];
+    if (typeof itemValue === 'boolean') {
+      booleanRecord[itemKey] = itemValue;
+    }
+  }
+  return booleanRecord;
+};
+
 interface ChecklistWidgetProps {
   filePath: string;
   plugin: JournalitPlugin;
@@ -53,7 +94,7 @@ export const ChecklistWidget: React.FC<ChecklistWidgetProps> = React.memo(
     const newItemInputRef = useRef<HTMLInputElement>(null);
     const retryCountRef = useRef(0);
     const isValidContextRef = useRef(isValidContext);
-    const retryTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const retryTimeoutRef = useRef<number | null>(null);
 
     
     useEffect(() => {
@@ -71,14 +112,14 @@ export const ChecklistWidget: React.FC<ChecklistWidgetProps> = React.memo(
       const cache = plugin.app.metadataCache.getFileCache(file);
       const frontmatter = cache?.frontmatter;
 
-      if (!frontmatter) {
+      if (!isRecord(frontmatter)) {
         
         if (retryCountRef.current < MAX_FRONTMATTER_RETRIES) {
           retryCountRef.current++;
           if (retryTimeoutRef.current !== null) {
-            clearTimeout(retryTimeoutRef.current);
+            window.clearTimeout(retryTimeoutRef.current);
           }
-          retryTimeoutRef.current = setTimeout(() => {
+          retryTimeoutRef.current = window.setTimeout(() => {
             void loadChecklist();
           }, FRONTMATTER_RETRY_DELAY_MS);
           return;
@@ -88,18 +129,18 @@ export const ChecklistWidget: React.FC<ChecklistWidgetProps> = React.memo(
         return;
       }
 
-      if (frontmatter.type !== 'drc' && frontmatter.type !== 'weekly-review') {
+      const nextReviewType = getChecklistReviewType(frontmatter.type);
+      if (!nextReviewType) {
         setIsValidContext(false);
         setLoading(false);
         return;
       }
 
-      setReviewType(frontmatter.type);
+      setReviewType(nextReviewType);
 
       
-      const checklistItems: string[] = frontmatter.checklistItems || [];
-      const checklistStatus: Record<string, boolean> =
-        frontmatter.checklistStatus || {};
+      const checklistItems = getStringArray(frontmatter, 'checklistItems');
+      const checklistStatus = getBooleanRecord(frontmatter, 'checklistStatus');
 
       
       const checklistData: ChecklistItem[] = checklistItems.map(
@@ -142,7 +183,7 @@ export const ChecklistWidget: React.FC<ChecklistWidgetProps> = React.memo(
       return () => {
         plugin.app.metadataCache.off('changed', handleMetadataChange);
         if (retryTimeoutRef.current !== null) {
-          clearTimeout(retryTimeoutRef.current);
+          window.clearTimeout(retryTimeoutRef.current);
           retryTimeoutRef.current = null;
         }
       };
@@ -251,7 +292,7 @@ export const ChecklistWidget: React.FC<ChecklistWidgetProps> = React.memo(
     const handleEditKeyDown = (e: React.KeyboardEvent) => {
       if (e.key === 'Enter') {
         e.preventDefault();
-        handleSaveEdit();
+        void handleSaveEdit();
       } else if (e.key === 'Escape') {
         handleCancelEdit();
       }
@@ -294,7 +335,7 @@ export const ChecklistWidget: React.FC<ChecklistWidgetProps> = React.memo(
     const handleNewItemKeyDown = (e: React.KeyboardEvent) => {
       if (e.key === 'Enter') {
         e.preventDefault();
-        handleAddItem();
+        void handleAddItem();
       }
     };
 
@@ -386,7 +427,7 @@ export const ChecklistWidget: React.FC<ChecklistWidgetProps> = React.memo(
                 <input
                   type="checkbox"
                   checked={item.checked}
-                  onChange={() => handleToggleItem(index)}
+                  onChange={() => void handleToggleItem(index)}
                   disabled={preview}
                   className="journalit-reviewv2-checkbox"
                 />
@@ -403,14 +444,14 @@ export const ChecklistWidget: React.FC<ChecklistWidgetProps> = React.memo(
                       className="journalit-reviewv2-edit-input"
                     />
                     <button
-                      onClick={handleSaveEdit}
+                      onClick={() => void handleSaveEdit()}
                       aria-label={t('button.save')}
                       className="journalit-reviewv2-action-button journalit-reviewv2-action-button--primary"
                     >
                       {t('button.save')}
                     </button>
                     <button
-                      onClick={handleCancelEdit}
+                      onClick={() => void handleCancelEdit()}
                       aria-label={t('button.cancel')}
                       className="journalit-reviewv2-action-button journalit-reviewv2-action-button--secondary"
                     >
@@ -421,11 +462,11 @@ export const ChecklistWidget: React.FC<ChecklistWidgetProps> = React.memo(
                   <span
                     role="button"
                     tabIndex={0}
-                    onClick={() => handleToggleItem(index)}
+                    onClick={() => void handleToggleItem(index)}
                     onKeyDown={(e) => {
                       if (e.key !== 'Enter' && e.key !== ' ') return;
                       e.preventDefault();
-                      handleToggleItem(index);
+                      void handleToggleItem(index);
                     }}
                     className={`journalit-reviewv2-item-text ${
                       item.checked
@@ -441,14 +482,14 @@ export const ChecklistWidget: React.FC<ChecklistWidgetProps> = React.memo(
                 {!preview && editingIndex !== index && (
                   <>
                     <button
-                      onClick={() => handleStartEdit(index)}
+                      onClick={() => void handleStartEdit(index)}
                       aria-label={t('widget.checklist.edit-item')}
                       className="journalit-reviewv2-icon-button"
                     >
                       {t('button.edit')}
                     </button>
                     <button
-                      onClick={() => handleDeleteItem(index)}
+                      onClick={() => void handleDeleteItem(index)}
                       aria-label={t('widget.checklist.delete-item')}
                       className="journalit-reviewv2-icon-button journalit-reviewv2-icon-button--delete"
                     >
@@ -481,7 +522,7 @@ export const ChecklistWidget: React.FC<ChecklistWidgetProps> = React.memo(
                   className="journalit-reviewv2-add-input"
                 />
                 <button
-                  onClick={handleAddItem}
+                  onClick={() => void handleAddItem()}
                   disabled={!newItemText.trim()}
                   className="journalit-reviewv2-add-button"
                 >

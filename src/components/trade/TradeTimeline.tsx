@@ -19,6 +19,27 @@ interface TradeTimelineProps {
   isMissedTrades?: boolean;
 }
 
+const asRecord = (value: unknown): Record<string, unknown> | undefined =>
+  value && typeof value === 'object' && !Array.isArray(value)
+    ? Object.fromEntries(Object.entries(value))
+    : undefined;
+
+const getStringField = (
+  record: Record<string, unknown>,
+  key: string
+): string | undefined =>
+  typeof record[key] === 'string' ? record[key] : undefined;
+
+const getBooleanField = (
+  record: Record<string, unknown>,
+  key: string
+): boolean | undefined =>
+  typeof record[key] === 'boolean'
+    ? record[key]
+    : record[key] === 'true'
+      ? true
+      : undefined;
+
 interface TradeItem {
   file: TFile;
   ticker: string;
@@ -29,6 +50,87 @@ interface TradeItem {
   isBacktestTrade: boolean; 
   isOpen: boolean; 
 }
+
+const getTimelineItemToneClass = (item: TradeItem): string => {
+  if (item.isOpen) return 'open';
+  if (item.pnl > 0) return 'profit';
+  if (item.pnl < 0) return 'loss';
+  return '';
+};
+
+const getTimelineItemPrefix = (item: TradeItem): string =>
+  item.isMissedTrade ? 'M' : item.isBacktestTrade ? 'B' : 'T';
+
+const getTimelineItemTradeType = (item: TradeItem): string =>
+  item.isMissedTrade
+    ? t('timeline.trade-type.missed')
+    : item.isBacktestTrade
+      ? t('timeline.trade-type.backtest')
+      : t('timeline.trade-type.regular');
+
+const getTimelineItemStatusLabel = (item: TradeItem): string =>
+  item.isOpen
+    ? t('timeline.status.open')
+    : item.pnl > 0
+      ? t('timeline.status.profit')
+      : item.pnl < 0
+        ? t('timeline.status.loss')
+        : t('timeline.status.breakeven');
+
+interface TimelineTradeButtonProps {
+  item: TradeItem;
+  ticker: string;
+  onTradeClick?: (tradePath: string) => void;
+}
+
+const TimelineTradeButton: React.FC<TimelineTradeButtonProps> = ({
+  item,
+  ticker,
+  onTradeClick,
+}) => {
+  const prefix = getTimelineItemPrefix(item);
+  const className = `timeline-item ${item.isMissedTrade ? 'missed-trade' : ''} ${item.isBacktestTrade ? 'backtest-trade' : ''} ${getTimelineItemToneClass(item)} ${item.isActive ? 'active' : ''}`;
+
+  return (
+    <button
+      className={className}
+      disabled={!onTradeClick}
+      onClick={onTradeClick ? () => onTradeClick(item.file.path) : undefined}
+      aria-label={t('timeline.aria.trade-status', {
+        ticker,
+        tradeType: getTimelineItemTradeType(item),
+        tradeNumber: String(item.tradeNumber),
+        status: getTimelineItemStatusLabel(item),
+      })}
+    >
+      {prefix}
+      {item.tradeNumber}
+    </button>
+  );
+};
+
+const TimelineRow: React.FC<{
+  ticker: string;
+  items: TradeItem[];
+  isActiveTicker: boolean;
+  onTradeClick: (tradePath: string) => void;
+}> = ({ ticker, items, isActiveTicker, onTradeClick }) => (
+  <div className="trade-timeline">
+    <div className={`timeline-label ${isActiveTicker ? 'active-ticker' : ''}`}>
+      {ticker}:
+    </div>
+    <div className="timeline-items">
+      {items.map((item) => (
+        <TimelineTradeButton
+          key={item.file.path}
+          item={item}
+          ticker={ticker}
+          onTradeClick={onTradeClick}
+        />
+      ))}
+    </div>
+  </div>
+);
 
 export const getTradeTimelineDate = (
   frontmatter: Record<string, unknown> | undefined,
@@ -150,7 +252,7 @@ export const TradeTimeline: React.FC<TradeTimelineProps> = ({
         const app = plugin?.app;
         if (app?.metadataCache) {
           const cache = app.metadataCache.getFileCache(file);
-          const frontmatter = cache?.frontmatter;
+          const frontmatter = asRecord(cache?.frontmatter);
 
           if (frontmatter) {
             pnl = getEffectivePnL({
@@ -190,16 +292,22 @@ export const TradeTimeline: React.FC<TradeTimelineProps> = ({
 
             
             isOpen = isTradeOpenWithContext({
-              tradeStatus: frontmatter.tradeStatus,
-              exitTime: frontmatter.exitTime,
-              pnl: frontmatter.pnl,
-              useDirectPnLInput: frontmatter.useDirectPnLInput,
-              exits: frontmatter.exits,
-              entries: frontmatter.entries,
+              tradeStatus: getStringField(frontmatter, 'tradeStatus'),
+              exitTime: getStringField(frontmatter, 'exitTime'),
+              pnl:
+                typeof frontmatter.pnl === 'number'
+                  ? frontmatter.pnl
+                  : frontmatter.pnl !== undefined && frontmatter.pnl !== null
+                    ? Number(frontmatter.pnl)
+                    : undefined,
+              useDirectPnLInput: getBooleanField(
+                frontmatter,
+                'useDirectPnLInput'
+              ),
             });
           }
         }
-      } catch (_e) {
+      } catch {
         
         pnl = 0;
         isOpen = false;
@@ -245,42 +353,13 @@ export const TradeTimeline: React.FC<TradeTimelineProps> = ({
   if (sameDayTrades.length <= 1) {
     const singleTicker = tickers[0];
     const singleTrade = tradesByTicker[singleTicker][0];
-    const prefix = singleTrade.isMissedTrade
-      ? 'M'
-      : singleTrade.isBacktestTrade
-        ? 'B'
-        : 'T';
-    const tradeType = singleTrade.isMissedTrade
-      ? t('timeline.trade-type.missed')
-      : singleTrade.isBacktestTrade
-        ? t('timeline.trade-type.backtest')
-        : t('timeline.trade-type.regular');
-    const statusLabel = singleTrade.isOpen
-      ? t('timeline.status.open')
-      : singleTrade.pnl > 0
-        ? t('timeline.status.profit')
-        : singleTrade.pnl < 0
-          ? t('timeline.status.loss')
-          : t('timeline.status.breakeven');
 
     return (
       <div className="trade-timeline-container single-trade">
         <div className="trade-timeline">
           <div className="timeline-label active-ticker">{singleTicker}:</div>
           <div className="timeline-items">
-            <button
-              className={`timeline-item ${singleTrade.isMissedTrade ? 'missed-trade' : ''} ${singleTrade.isBacktestTrade ? 'backtest-trade' : ''} ${singleTrade.isOpen ? 'open' : singleTrade.pnl > 0 ? 'profit' : singleTrade.pnl < 0 ? 'loss' : ''} active`}
-              disabled
-              aria-label={t('timeline.aria.trade-status', {
-                ticker: singleTicker,
-                tradeType,
-                tradeNumber: String(singleTrade.tradeNumber),
-                status: statusLabel,
-              })}
-            >
-              {prefix}
-              {singleTrade.tradeNumber}
-            </button>
+            <TimelineTradeButton item={singleTrade} ticker={singleTicker} />
           </div>
         </div>
       </div>
@@ -302,55 +381,13 @@ export const TradeTimeline: React.FC<TradeTimelineProps> = ({
   return (
     <div className="trade-timeline-container">
       {sortedTickers.map((ticker) => (
-        <div key={ticker} className="trade-timeline">
-          <div
-            className={`timeline-label ${ticker === activeTicker ? 'active-ticker' : ''}`}
-          >
-            {ticker}:
-          </div>
-          <div className="timeline-items">
-            {tradesByTicker[ticker].map((item) => {
-              const prefix = item.isMissedTrade
-                ? 'M'
-                : item.isBacktestTrade
-                  ? 'B'
-                  : 'T';
-              const tradeType = item.isMissedTrade
-                ? t('timeline.trade-type.missed')
-                : item.isBacktestTrade
-                  ? t('timeline.trade-type.backtest')
-                  : t('timeline.trade-type.regular');
-              const statusLabel = item.isOpen
-                ? t('timeline.status.open')
-                : item.pnl > 0
-                  ? t('timeline.status.profit')
-                  : item.pnl < 0
-                    ? t('timeline.status.loss')
-                    : t('timeline.status.breakeven');
-
-              return (
-                <button
-                  key={item.file.path}
-                  className={`timeline-item 
-                    ${item.isMissedTrade ? 'missed-trade' : ''} 
-                    ${item.isBacktestTrade ? 'backtest-trade' : ''}
-                    ${item.isOpen ? 'open' : item.pnl > 0 ? 'profit' : item.pnl < 0 ? 'loss' : ''} 
-                    ${item.isActive ? 'active' : ''}`}
-                  onClick={() => onTradeClick(item.file.path)}
-                  aria-label={t('timeline.aria.trade-status', {
-                    ticker,
-                    tradeType,
-                    tradeNumber: String(item.tradeNumber),
-                    status: statusLabel,
-                  })}
-                >
-                  {prefix}
-                  {item.tradeNumber}
-                </button>
-              );
-            })}
-          </div>
-        </div>
+        <TimelineRow
+          key={ticker}
+          ticker={ticker}
+          items={tradesByTicker[ticker]}
+          isActiveTicker={ticker === activeTicker}
+          onTradeClick={onTradeClick}
+        />
       ))}
     </div>
   );

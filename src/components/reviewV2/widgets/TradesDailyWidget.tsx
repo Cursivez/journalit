@@ -29,6 +29,40 @@ import { CurrencyConversionInfo } from '../../shared/display/CurrencyConversionI
 import { getTradeAccountNames } from './shared/accountDisplay';
 import { formatAccountTooltipSummary } from './shared/accountTooltipSummary';
 
+type ReviewDailyTrade = Record<string, unknown> & {
+  tradeId?: string;
+  id?: string;
+  path?: string;
+  pnl?: number | null;
+  directPnL?: number | null;
+  useDirectPnLInput?: boolean;
+  dividends?: Array<{ amount?: number | null }>;
+  commission?: number | null;
+  swap?: number | null;
+  fees?: number | null;
+  rebate?: number | null;
+  tradeStatus?: string;
+  account?: string | string[];
+  currency?: string;
+  originalCurrency?: string;
+  brokerBaseCurrency?: string;
+  riskAmount?: number;
+  _analyticsRangeStart?: Date;
+  _analyticsRangeEnd?: Date;
+};
+
+function asReviewDailyTrades(value: unknown): ReviewDailyTrade[] {
+  return Array.isArray(value)
+    ? value.filter((item): item is ReviewDailyTrade =>
+        Boolean(item && typeof item === 'object' && !Array.isArray(item))
+      )
+    : [];
+}
+
+function getTradeKey(trade: ReviewDailyTrade, index: number): string {
+  return trade.tradeId ?? trade.id ?? trade.path ?? `trade-${index}`;
+}
+
 interface DailyPerformanceDataPoint {
   date: string;
   originalDate?: string;
@@ -69,7 +103,9 @@ export const TradesDailyWidget: React.FC<TradesDailyWidgetProps> = ({
   } = useReviewTrades(filePath, plugin);
 
   
-  const trades = preview && previewData ? previewData.trades : cachedTrades;
+  const trades = asReviewDailyTrades(
+    preview && previewData ? previewData.trades : cachedTrades
+  );
   const loading = preview ? false : cacheLoading;
 
   const height = config.height ?? 250;
@@ -101,12 +137,14 @@ export const TradesDailyWidget: React.FC<TradesDailyWidgetProps> = ({
         continue;
       }
 
-      const pnlEvents = realizedEvents.length
-        ? realizedEvents
-        : [{ tradingDay: analyticsDate as Date, pnl: getEffectivePnL(trade) }];
+      const pnlEvents =
+        realizedEvents.length > 0
+          ? realizedEvents
+          : analyticsDate
+            ? [{ tradingDay: analyticsDate, pnl: getEffectivePnL(trade) }]
+            : [];
       const accountCount = getAccountCount(trade);
-      const tradeKey =
-        trade.tradeId ?? trade.id ?? trade.path ?? `trade-${tradeIndex}`;
+      const tradeKey = getTradeKey(trade, tradeIndex);
 
       for (const event of pnlEvents) {
         if (
@@ -130,9 +168,7 @@ export const TradesDailyWidget: React.FC<TradesDailyWidgetProps> = ({
           accountCount,
           applyAccountCountMultiplier
         );
-        if (tradeKey) {
-          existing.tradeIds.add(tradeKey);
-        }
+        existing.tradeIds.add(tradeKey);
         for (const account of getTradeAccountNames(trade)) {
           existing.accounts.add(account);
         }

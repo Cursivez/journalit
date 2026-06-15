@@ -1784,6 +1784,7 @@ const de: Lang = {
   'chart.tooltip.accounts-list': '{accounts}',
   'chart.tooltip.more-accounts': '+{count} more',
   'chart.loading': 'Diagramm wird geladen...',
+  'chart.label.pnl': 'P&L',
   'chart.legend.entry': 'Einstieg',
   'chart.legend.exit': 'Ausstieg',
   'chart.legend.trade': 'Trade',
@@ -2188,9 +2189,8 @@ const de: Lang = {
   'account.settings.section.inclusion.desc':
     'Wählen Sie aus, welche Kontotypen in Dashboard-Berechnungen einbezogen werden sollen. Konfigurieren Sie außerdem, ob Abhebungen von jedem Kontotyp in die Gesamtabhebungsmetriken einbezogen werden.',
   'account.settings.section.inclusion.include-dashboard':
-    'In Dashboard einbinden',
-  'account.settings.section.inclusion.include-withdrawals':
-    'Berücksichtigen Sie Abhebungen',
+    'In Dashboard-Statistiken',
+  'account.settings.section.inclusion.include-withdrawals': 'Abhebungen',
   'account.settings.section.inclusion.empty':
     'Es sind keine Kontotypen zum Konfigurieren verfügbar.',
   'account.settings.section.order.title': 'Reihenfolge anzeigen',

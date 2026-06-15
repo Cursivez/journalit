@@ -76,13 +76,25 @@ const DAY_SCOPES: WeeklyDRCDayScope[] = [
   'saturday',
 ];
 
+const asRecord = (value: unknown): Record<string, unknown> | undefined =>
+  value && typeof value === 'object' && !Array.isArray(value)
+    ? Object.fromEntries(Object.entries(value))
+    : undefined;
+
+const parseFrontmatterDate = (value: unknown): Date | null =>
+  typeof value === 'string' ||
+  typeof value === 'number' ||
+  value instanceof Date
+    ? parseLocalDateSafe(value)
+    : null;
+
 const IMAGE_WIDGET_BLOCK_WITH_ID_PATTERN =
   /^[\t ]*```journalit-images[^\r\n]*\r?\n([\s\S]*?)^[\t ]*```[\t ]*$/gm;
 
 function parseHeadings(config: WeeklyDRCContextConfig | undefined): string[] {
   if (config?.headingsJson) {
     try {
-      const parsed = JSON.parse(config.headingsJson);
+      const parsed: unknown = JSON.parse(config.headingsJson);
       if (Array.isArray(parsed)) {
         return parsed
           .map((heading) => (typeof heading === 'string' ? heading.trim() : ''))
@@ -126,8 +138,9 @@ function getImagesForWidget(
   imagesByWidget: unknown,
   widgetId: string
 ): string[] {
-  if (!imagesByWidget || typeof imagesByWidget !== 'object') return [];
-  const images = (imagesByWidget as Record<string, unknown>)[widgetId];
+  const imageRecord = asRecord(imagesByWidget);
+  if (!imageRecord) return [];
+  const images = imageRecord[widgetId];
   if (!Array.isArray(images)) return [];
   return images.filter((image): image is string => typeof image === 'string');
 }
@@ -209,10 +222,10 @@ const MarkdownBlock: React.FC<{
         interactiveElement.setAttribute('aria-disabled', 'true');
         interactiveElement.tabIndex = -1;
         if (
-          interactiveElement instanceof HTMLInputElement ||
-          interactiveElement instanceof HTMLButtonElement ||
-          interactiveElement instanceof HTMLSelectElement ||
-          interactiveElement instanceof HTMLTextAreaElement
+          interactiveElement.instanceOf(HTMLInputElement) ||
+          interactiveElement.instanceOf(HTMLButtonElement) ||
+          interactiveElement.instanceOf(HTMLSelectElement) ||
+          interactiveElement.instanceOf(HTMLTextAreaElement)
         ) {
           interactiveElement.disabled = true;
         }
@@ -248,17 +261,21 @@ const MarkdownBlock: React.FC<{
 
 interface WeeklyDRCAccordionHeaderProps {
   canToggleReviewed: boolean;
-  handleOpenSourceKeyDown: (event: React.KeyboardEvent<HTMLElement>) => void;
+  handleOpenSourceKeyDown: (
+    event: React.KeyboardEvent<HTMLElement>
+  ) => void | Promise<void>;
   headerRef?: React.Ref<HTMLDivElement>;
   isOpen: boolean;
   isStickyClone?: boolean;
-  openSourceDRC: (event: React.MouseEvent<HTMLElement>) => void;
+  openSourceDRC: (event: React.MouseEvent<HTMLElement>) => void | Promise<void>;
   preview?: boolean;
   reviewed: boolean;
   setIsOpen: React.Dispatch<React.SetStateAction<boolean>>;
   stickyHeader: { left: number; top: number; width: number } | null;
   title: string;
-  toggleReviewed: (event: React.MouseEvent<HTMLButtonElement>) => void;
+  toggleReviewed: (
+    event: React.MouseEvent<HTMLButtonElement>
+  ) => void | Promise<void>;
 }
 
 function WeeklyDRCAccordionHeader({
@@ -326,8 +343,8 @@ function WeeklyDRCAccordionHeader({
           className="journalit-previous-drc-reference-date journalit-weekly-drc-reference-date-link"
           role="link"
           tabIndex={preview ? -1 : 0}
-          onClick={openSourceDRC}
-          onKeyDown={handleOpenSourceKeyDown}
+          onClick={(event) => void openSourceDRC(event)}
+          onKeyDown={(event) => void handleOpenSourceKeyDown(event)}
         >
           {title}
         </span>
@@ -339,7 +356,7 @@ function WeeklyDRCAccordionHeader({
             className={`journalit-weekly-drc-mark-reviewed-button ${reviewed ? 'journalit-weekly-drc-mark-reviewed-button--reviewed' : ''}`}
             type="button"
             disabled={!canToggleReviewed}
-            onClick={toggleReviewed}
+            onClick={(event) => void toggleReviewed(event)}
             onKeyDown={(event) => event.stopPropagation()}
             aria-pressed={reviewed}
           >
@@ -489,8 +506,10 @@ const WeeklyDRCDay: React.FC<{
 
     try {
       const currentEodReview =
-        plugin.app.metadataCache.getFileCache(file)?.frontmatter
-          ?.endOfDayReview || {};
+        asRecord(
+          asRecord(plugin.app.metadataCache.getFileCache(file)?.frontmatter)
+            ?.endOfDayReview
+        ) ?? {};
       await drcService.updateDRCFrontmatter(
         sourcePath,
         {
@@ -595,7 +614,7 @@ const WeeklyDRCDay: React.FC<{
             title={title}
             toggleReviewed={toggleReviewed}
           />,
-          document.body
+          window.activeDocument.body
         )}
       {isOpen && content}
     </article>
@@ -651,14 +670,15 @@ export const WeeklyDRCContextWidget: React.FC<WeeklyDRCContextWidgetProps> =
           }
 
           await forceMetadataCacheRefresh(plugin.app, file);
-          const frontmatter =
-            plugin.app.metadataCache.getFileCache(file)?.frontmatter;
+          const frontmatter = asRecord(
+            plugin.app.metadataCache.getFileCache(file)?.frontmatter
+          );
           if (frontmatter?.type !== 'weekly-review') {
             if (isMounted) setInvalidContext(true);
             return;
           }
 
-          const reviewDate = parseLocalDateSafe(frontmatter?.date);
+          const reviewDate = parseFrontmatterDate(frontmatter?.date);
           if (!reviewDate) {
             if (isMounted)
               setError(
@@ -706,8 +726,9 @@ export const WeeklyDRCContextWidget: React.FC<WeeklyDRCContextWidgetProps> =
               }
 
               await forceMetadataCacheRefresh(plugin.app, drcFile);
-              const drcFrontmatter =
-                plugin.app.metadataCache.getFileCache(drcFile)?.frontmatter;
+              const drcFrontmatter = asRecord(
+                plugin.app.metadataCache.getFileCache(drcFile)?.frontmatter
+              );
               const content = await plugin.app.vault.read(drcFile);
               const extractedSections = extractMarkdownSectionsByHeading(
                 content,
@@ -748,7 +769,8 @@ export const WeeklyDRCContextWidget: React.FC<WeeklyDRCContextWidgetProps> =
                 date,
                 dateKey,
                 sourcePath: drcFile.path,
-                reviewed: drcFrontmatter?.endOfDayReview?.reviewed === true,
+                reviewed:
+                  asRecord(drcFrontmatter?.endOfDayReview)?.reviewed === true,
                 sections,
               };
             })
@@ -766,7 +788,7 @@ export const WeeklyDRCContextWidget: React.FC<WeeklyDRCContextWidgetProps> =
         }
       };
 
-      load();
+      void load();
       return () => {
         isMounted = false;
       };

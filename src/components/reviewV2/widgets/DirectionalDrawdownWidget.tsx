@@ -3,6 +3,7 @@
 import React, { useMemo } from 'react';
 import JournalitPlugin from '../../../main';
 import { SharedDrawdownChart } from '../../charts/SharedDrawdownChart';
+import type { Trade } from '../../dashboard/utils/dataUtils';
 import {
   getDrawdownChartScaleValue,
   prepareDrawdownChartState,
@@ -20,6 +21,16 @@ import { CurrencyConversionInfo } from '../../shared/display/CurrencyConversionI
 import { isPnlContributingTrade } from '../../../utils/tradeStatusUtils';
 import { getReviewAnalyticsDateBasis } from '../utils/reviewTradeDates';
 import { resolveDrawdownCapitalBasis } from '../../../utils/drawdownAnalytics';
+
+const asDirectionalTrades = (value: unknown): Trade[] =>
+  Array.isArray(value)
+    ? value.filter((item): item is Trade =>
+        Boolean(item && typeof item === 'object' && !Array.isArray(item))
+      )
+    : [];
+
+const normalizeDirectionValue = (value: unknown): string =>
+  typeof value === 'string' ? value.toLowerCase() : '';
 
 interface DirectionalDrawdownWidgetProps {
   filePath: string;
@@ -57,7 +68,9 @@ export const DirectionalDrawdownWidget: React.FC<DirectionalDrawdownWidgetProps>
         filters,
       } = useReviewTrades(filePath, plugin);
 
-      const trades = preview && previewData ? previewData.trades : cachedTrades;
+      const trades = asDirectionalTrades(
+        preview && previewData ? previewData.trades : cachedTrades
+      );
       const loading = preview ? false : cacheLoading;
       const currencyOverride = getSingleExplicitCurrency(trades);
 
@@ -187,13 +200,13 @@ export const DirectionalDrawdownWidget: React.FC<DirectionalDrawdownWidgetProps>
       const longConversionTrades = [
         ...longTrades,
         ...unconvertedTrades.filter(
-          (trade) => String(trade.direction || '').toLowerCase() === 'long'
+          (trade) => normalizeDirectionValue(trade.direction) === 'long'
         ),
       ];
       const shortConversionTrades = [
         ...shortTrades,
         ...unconvertedTrades.filter(
-          (trade) => String(trade.direction || '').toLowerCase() === 'short'
+          (trade) => normalizeDirectionValue(trade.direction) === 'short'
         ),
       ];
 

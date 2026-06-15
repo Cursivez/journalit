@@ -11,8 +11,8 @@ export type OnboardingPath = 'manual' | 'csv' | 'mt';
 interface ChoosePathStepProps {
   selectedPath: OnboardingPath | null;
   onSelect: (path: OnboardingPath) => void;
-  onNext: () => void;
-  onBack: () => void;
+  onNext: () => void | Promise<void>;
+  onBack: () => void | Promise<void>;
 }
 
 interface PathOption {

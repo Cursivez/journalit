@@ -98,8 +98,10 @@ export interface ExistingTradePathContext {
   isMissedTrade?: boolean;
 }
 
-export interface TradeMutationPlan {
-  normalizedData: TradeMutationInput;
+export interface TradeMutationPlan<
+  TData extends TradeMutationInput = TradeMutationInput,
+> {
+  normalizedData: TData;
   isOpen: boolean;
   pnl: number | null;
   rMultiple: number | null;

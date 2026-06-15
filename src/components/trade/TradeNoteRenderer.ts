@@ -8,18 +8,64 @@ import { BaseComponentRenderer } from '../base/BaseComponentRenderer';
 import { normalizeStringArray } from '../../utils/dataUtils';
 import { parseDisplayText } from '../../utils/tagSchema';
 import { CustomFieldDefinition } from '../../types/customFields';
-import { TradeTemplate } from '../../types/reviewV2';
-import { TradeTemplateService } from '../../services/templates/TradeTemplateService';
 import { parseTradeDividendTransactions } from '../../utils/tradeUtils';
 import { normalizeTradeExecution } from '../../services/trade/core/TradeExecutionNormalization';
+import { safeString } from '../../utils/safeString';
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === 'object';
 }
 
-export class TradeNoteRenderer extends BaseComponentRenderer {
-  private currentTemplateConfig: TradeTemplate | undefined;
+function normalizeFrontmatterStringArray(value: unknown): string[] {
+  if (Array.isArray(value)) {
+    return normalizeStringArray(value);
+  }
 
+  if (!value || typeof value !== 'string') {
+    return [];
+  }
+
+  if (!value.startsWith('[') || !value.endsWith(']')) {
+    return [value];
+  }
+
+  try {
+    const parsed: unknown = JSON.parse(value);
+    if (Array.isArray(parsed)) {
+      return normalizeStringArray(parsed);
+    }
+  } catch {
+    // intentional
+  }
+
+  const trimmed = value.slice(1, -1).trim();
+  return trimmed ? trimmed.split(',').map((item) => item.trim()) : [];
+}
+
+interface JournalitPluginForTradeNote {
+  openTradeFormInEditMode?: (
+    data: Partial<TradeFormData>,
+    filePath: string
+  ) => void;
+  tradeService?: {
+    updateTrade: (
+      data: Partial<TradeFormData>,
+      filePath: string,
+      source?: string
+    ) => Promise<void>;
+  };
+  customFieldsService?: {
+    getFields: () => CustomFieldDefinition[];
+  };
+}
+
+function getJournalitPlugin(app: App): JournalitPluginForTradeNote | undefined {
+  const plugins = app.plugins?.plugins;
+  const plugin = plugins?.journalit;
+  return isRecord(plugin) ? (plugin as JournalitPluginForTradeNote) : undefined;
+}
+
+export class TradeNoteRenderer extends BaseComponentRenderer {
   constructor(app: App) {
     super(app);
   }
@@ -71,21 +117,6 @@ export class TradeNoteRenderer extends BaseComponentRenderer {
       const tradeData = this.processTradeData(frontmatter);
 
       
-      this.currentTemplateConfig = undefined;
-      if (
-        typeof frontmatter.templateId === 'string' &&
-        frontmatter.templateId
-      ) {
-        const plugin = this.app.plugins?.plugins?.['journalit'];
-        if (plugin) {
-          const tradeTemplateService = new TradeTemplateService(plugin);
-          this.currentTemplateConfig = tradeTemplateService.getTemplate(
-            frontmatter.templateId
-          );
-        }
-      }
-
-      
       container.setAttribute('data-displaying-file', sourcePath);
 
       
@@ -112,7 +143,7 @@ export class TradeNoteRenderer extends BaseComponentRenderer {
       
       let domLeafId: string | null = null;
       if (leaf && leaf.view) {
-        const viewContainerEl = leaf.view.containerEl as HTMLElement;
+        const viewContainerEl = leaf.view.containerEl;
 
         
         if (viewContainerEl && viewContainerEl.id) {
@@ -247,7 +278,7 @@ export class TradeNoteRenderer extends BaseComponentRenderer {
   ): React.ReactElement {
     const handleEditClick = (tradeData: Partial<TradeFormData>) => {
       
-      const plugin = this.app.plugins?.plugins?.['journalit'];
+      const plugin = getJournalitPlugin(this.app);
       if (!plugin) {
         console.error('Cannot access plugin instance for edit action');
         return;
@@ -257,20 +288,20 @@ export class TradeNoteRenderer extends BaseComponentRenderer {
       if (plugin.openTradeFormInEditMode) {
         
         try {
-          const activeEl = document.activeElement as HTMLElement | null;
-          if (activeEl && typeof activeEl.blur === 'function') activeEl.blur();
-          const cm = document.querySelector('.cm-editor') as HTMLElement | null;
-          if (cm && typeof cm.blur === 'function') cm.blur();
+          const activeEl = window.activeDocument.activeElement;
+          if (activeEl?.instanceOf(HTMLElement)) activeEl.blur();
+          const cm = window.activeDocument.querySelector('.cm-editor');
+          if (cm?.instanceOf(HTMLElement)) cm.blur();
         } catch {
           // intentional
         }
 
         
         try {
-          requestAnimationFrame(() => {
-            setTimeout(() => {
+          window.requestAnimationFrame(() => {
+            window.setTimeout(() => {
               try {
-                plugin.openTradeFormInEditMode(tradeData, filePath);
+                plugin.openTradeFormInEditMode?.(tradeData, filePath);
               } catch (err) {
                 console.error('Failed to open trade form in edit mode:', err);
               }
@@ -279,7 +310,7 @@ export class TradeNoteRenderer extends BaseComponentRenderer {
         } catch {
           
           try {
-            plugin.openTradeFormInEditMode(tradeData, filePath);
+            plugin.openTradeFormInEditMode?.(tradeData, filePath);
           } catch (e) {
             console.error(e);
           }
@@ -291,7 +322,7 @@ export class TradeNoteRenderer extends BaseComponentRenderer {
 
     const handleDataUpdate = async (updatedData: Partial<TradeFormData>) => {
       
-      const plugin = this.app.plugins?.plugins?.['journalit'];
+      const plugin = getJournalitPlugin(this.app);
       if (!plugin || !plugin.tradeService) {
         console.error('Cannot access plugin instance for data update');
         return;
@@ -312,8 +343,8 @@ export class TradeNoteRenderer extends BaseComponentRenderer {
 
     return React.createElement(TradeNote, {
       data: { ...data, filePath },
-      onEditClick: handleEditClick,
-      onDataUpdate: handleDataUpdate,
+      onEditClick: (nextData: typeof data) => void handleEditClick(nextData),
+      onDataUpdate: (nextData: typeof data) => void handleDataUpdate(nextData),
     });
   }
 
@@ -355,55 +386,18 @@ export class TradeNoteRenderer extends BaseComponentRenderer {
     }
 
     
-    ['setupIds', 'setup', 'mistake', 'account', 'tags', 'customTags'].forEach(
-      (field) => {
-        if (tradeData[field]) {
-          if (!Array.isArray(tradeData[field])) {
-            if (
-              typeof tradeData[field] === 'string' &&
-              tradeData[field].startsWith('[') &&
-              tradeData[field].endsWith(']')
-            ) {
-              const arrayString = tradeData[field];
-              if (typeof arrayString === 'string') {
-                
-                
-                let parsedJsonArray: unknown[] | null = null;
-                try {
-                  const parsed = JSON.parse(arrayString);
-                  if (Array.isArray(parsed)) {
-                    parsedJsonArray = parsed;
-                  }
-                } catch {
-                  // intentional
-                }
-
-                if (parsedJsonArray) {
-                  tradeData[field] = parsedJsonArray;
-                } else {
-                  const trimmedStr = arrayString.slice(1, -1).trim();
-                  tradeData[field] = trimmedStr
-                    ? trimmedStr.split(',').map((item: string) => item.trim())
-                    : [];
-                }
-              }
-            } else {
-              
-              tradeData[field] = [tradeData[field]];
-            }
-          }
-        }
-      }
-    );
-
-    
-    ['setupIds', 'setup', 'mistake', 'account', 'tags', 'customTags'].forEach(
-      (field) => {
-        if (tradeData[field] !== undefined && tradeData[field] !== null) {
-          tradeData[field] = normalizeStringArray(tradeData[field]);
-        }
-      }
-    );
+    for (const field of [
+      'setupIds',
+      'setup',
+      'mistake',
+      'account',
+      'tags',
+      'customTags',
+    ]) {
+      tradeData[field] = normalizeStringArray(
+        normalizeFrontmatterStringArray(tradeData[field])
+      );
+    }
 
     
     if (tradeData.tags && Array.isArray(tradeData.tags)) {
@@ -501,7 +495,7 @@ export class TradeNoteRenderer extends BaseComponentRenderer {
         typeof tradeData[field] !== 'number'
       ) {
         try {
-          tradeData[field] = parseFloat(String(tradeData[field]));
+          tradeData[field] = parseFloat(safeString(tradeData[field]));
         } catch (e) {
           console.error(`[TradeNote] Failed to parse number: ${field}`, e);
         }
@@ -555,8 +549,8 @@ export class TradeNoteRenderer extends BaseComponentRenderer {
     
     
     try {
-      const plugin = this.app.plugins?.plugins?.['journalit'];
-      if (plugin && plugin.customFieldsService) {
+      const plugin = getJournalitPlugin(this.app);
+      if (plugin?.customFieldsService) {
         const customFieldDefinitions = plugin.customFieldsService.getFields();
         const customFields: Record<string, unknown> = {};
 

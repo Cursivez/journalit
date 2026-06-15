@@ -7,7 +7,7 @@ interface ToggleSwitchProps {
   
   checked: boolean;
   
-  onChange: (checked: boolean) => void;
+  onChange: (checked: boolean) => void | Promise<void>;
   
   id?: string;
   
@@ -26,7 +26,7 @@ const ToggleSwitch: React.FC<ToggleSwitchProps> = ({
 }) => {
   const toggleSwitch = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!disabled) {
-      onChange(e.target.checked);
+      void onChange(e.target.checked);
     }
   };
 

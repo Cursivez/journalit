@@ -8,6 +8,7 @@ import {
   isTradeOpenWithContext,
 } from '../../utils/tradeStatusUtils';
 import { calculateDirectionalPriceDiff } from '../../utils/pnlCalculation';
+import { safeString } from '../../utils/safeString';
 
 type TradeMetricInput = {
   mae?: number;
@@ -29,7 +30,7 @@ type TradeMetricInput = {
   tickValue?: number;
   lotSize?: number;
   pipValue?: number;
-  tradeStatus?: 'OPEN' | 'CLOSED' | string;
+  tradeStatus?: string;
   exitTime?: Date | string | null;
   pnl?: number | null;
   useDirectPnLInput?: boolean;
@@ -46,8 +47,30 @@ type TradeMetricInput = {
   }>;
 };
 
+const toRiskCalculationInput = (
+  trade: TradeMetricInput
+): Partial<TradeFormData> => ({
+  assetType: trade.assetType,
+  entryPrice: trade.entryPrice,
+  positionSize: trade.positionSize,
+  entries: trade.entries
+    ?.filter(
+      (entry): entry is { price: number; size: number } =>
+        typeof entry.price === 'number' && typeof entry.size === 'number'
+    )
+    .map((entry) => ({ price: entry.price, size: entry.size })),
+  stopLoss: trade.stopLoss,
+  riskAmount: trade.riskAmount,
+  contractSize: trade.contractSize,
+  dollarPerPoint: trade.dollarPerPoint,
+  lotSize: trade.lotSize,
+  pipValue: trade.pipValue,
+  tickSize: trade.tickSize,
+  tickValue: trade.tickValue,
+});
+
 function normalizeAssetType(assetType: unknown): string {
-  return String(assetType || '').toLowerCase();
+  return safeString(assetType).toLowerCase();
 }
 
 export function getTradeMfeValue(
@@ -135,13 +158,12 @@ export function calculateTradeMaxR(
           assetType: normalizeAssetType(trade.assetType),
         } as TradeMetricInput);
 
-  const effectiveRiskAmountWithoutDefault =
-    normalizedTrade === undefined
-      ? undefined
-      : resolveEffectiveRiskAmount(
-          normalizedTrade as unknown as Partial<TradeFormData>,
-          undefined
-        );
+  const riskCalculationInput = normalizedTrade
+    ? toRiskCalculationInput(normalizedTrade)
+    : undefined;
+  const effectiveRiskAmountWithoutDefault = riskCalculationInput
+    ? resolveEffectiveRiskAmount(riskCalculationInput, undefined)
+    : undefined;
 
   const manualRiskAmount = normalizedTrade?.riskAmount;
   const hasExplicitManualRisk =
@@ -161,12 +183,9 @@ export function calculateTradeMaxR(
 
   const effectiveRiskAmount =
     effectiveRiskAmountWithoutDefault ??
-    (normalizedTrade === undefined
-      ? undefined
-      : resolveEffectiveRiskAmount(
-          normalizedTrade as unknown as Partial<TradeFormData>,
-          defaultRiskAmount
-        ));
+    (riskCalculationInput
+      ? resolveEffectiveRiskAmount(riskCalculationInput, defaultRiskAmount)
+      : undefined);
 
   if (
     mfeValue === undefined ||

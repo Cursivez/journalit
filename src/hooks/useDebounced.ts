@@ -7,12 +7,12 @@ export function useDebounced<T>(value: T, delay: number): T {
   const [debouncedValue, setDebouncedValue] = useState<T>(value);
 
   useEffect(() => {
-    const handler = setTimeout(() => {
+    const handler = window.setTimeout(() => {
       setDebouncedValue(value);
     }, delay);
 
     return () => {
-      clearTimeout(handler);
+      window.clearTimeout(handler);
     };
   }, [value, delay]);
 
@@ -20,7 +20,7 @@ export function useDebounced<T>(value: T, delay: number): T {
 }
 
 
-export function useDebouncedFunction<Args extends any[], Return>(
+export function useDebouncedFunction<Args extends unknown[], Return>(
   fn: (...args: Args) => Return,
   delay: number,
   options: {
@@ -28,7 +28,7 @@ export function useDebouncedFunction<Args extends any[], Return>(
     trailing?: boolean;
   } = { leading: false, trailing: true }
 ): (...args: Args) => void {
-  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const timeoutRef = useRef<number | null>(null);
   const lastCallTimeRef = useRef<number>(0);
   const lastArgsRef = useRef<Args | null>(null);
 
@@ -42,14 +42,14 @@ export function useDebouncedFunction<Args extends any[], Return>(
         (!lastCallTimeRef.current || now - lastCallTimeRef.current > delay);
 
       if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
+        window.clearTimeout(timeoutRef.current);
       }
 
       if (callNow) {
         lastCallTimeRef.current = now;
         fn(...args);
       } else if (options.trailing) {
-        timeoutRef.current = setTimeout(() => {
+        timeoutRef.current = window.setTimeout(() => {
           if (lastArgsRef.current) {
             lastCallTimeRef.current = Date.now();
             fn(...lastArgsRef.current);
@@ -64,7 +64,7 @@ export function useDebouncedFunction<Args extends any[], Return>(
   useEffect(() => {
     return () => {
       if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
+        window.clearTimeout(timeoutRef.current);
       }
     };
   }, []);

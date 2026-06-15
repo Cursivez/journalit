@@ -1,6 +1,6 @@
 
 
-const TRADE_LOG_MINI_HEADER_STYLES = `
+export const TRADE_LOG_MINI_HEADER_STYLES = `
 
 
 .trade-log-mini-header {
@@ -38,13 +38,3 @@ const TRADE_LOG_MINI_HEADER_STYLES = `
   text-align: center;
 }
 `;
-
-const refCount = 0;
-
-export function ensureTradeLogMiniHeaderStyles(): void {
-  return;
-}
-
-export function removeTradeLogMiniHeaderStyles(): void {
-  return;
-}

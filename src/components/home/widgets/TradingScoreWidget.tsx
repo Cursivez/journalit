@@ -22,12 +22,20 @@ import {
 } from '../../../utils/tradingScoreUtils';
 import { SkeletonBox } from '../../shared/SkeletonBox';
 import { SkeletonText } from '../../shared/SkeletonText';
-import { ensureHomeWidgetStyles } from '../../../styles/homeWidgetStyles';
 import { cssVars } from '../../../styles/inlineStylePolicy';
 import { t, tPlural } from '../../../lang/helpers';
 
 
 type TradingScoreWidgetProps = Record<string, never>;
+
+const AXIS_SCORE_KEYS: Array<keyof AxisScores> = [
+  'profitability',
+  'riskManagement',
+  'execution',
+  'consistency',
+  'returnConsistency',
+  'experience',
+];
 
 interface RadarDataPoint {
   axis: string;
@@ -274,66 +282,62 @@ const TradingScoreWidgetComponent: React.FC<TradingScoreWidgetProps> = () => {
 
         
         <div className="journalit-home-score__axis-list">
-          {(Object.keys(scoreResult.axisScores) as (keyof AxisScores)[]).map(
-            (axisKey) => {
-              const score = scoreResult.axisScores[axisKey];
-              const axisScoreClass = getScoreColorClass(score);
-              const weight = Math.round(AXIS_WEIGHTS[axisKey] * 100);
-              const isHovered = hoveredAxis === axisKey;
-              const axisName = t(
-                `widget.trading-score.axis.${axisKey}` as const
-              );
-              const axisDescription = t(
-                `widget.trading-score.axis.${axisKey}.desc` as const
-              );
+          {AXIS_SCORE_KEYS.map((axisKey) => {
+            const score = scoreResult.axisScores[axisKey];
+            const axisScoreClass = getScoreColorClass(score);
+            const weight = Math.round(AXIS_WEIGHTS[axisKey] * 100);
+            const isHovered = hoveredAxis === axisKey;
+            const axisName = t(`widget.trading-score.axis.${axisKey}` as const);
+            const axisDescription = t(
+              `widget.trading-score.axis.${axisKey}.desc` as const
+            );
 
-              return (
-                <div
-                  key={axisKey}
-                  className="journalit-home-score__axis-item"
-                  tabIndex={0}
-                  role="button"
-                  aria-label={t('widget.trading-score.axis-aria', {
-                    axis: axisName,
-                    score: String(score),
-                    weight: String(weight),
-                  })}
-                  onMouseEnter={() => setHoveredAxis(axisKey)}
-                  onMouseLeave={() => setHoveredAxis(null)}
-                  onFocus={() => setHoveredAxis(axisKey)}
-                  onBlur={() => setHoveredAxis(null)}
-                >
-                  <div className="journalit-home-score__axis-row">
-                    <span className="journalit-home-score__axis-name">
-                      {axisName}{' '}
-                      <span className="journalit-home-score__axis-weight">
-                        ({weight}%)
-                      </span>
+            return (
+              <div
+                key={axisKey}
+                className="journalit-home-score__axis-item"
+                tabIndex={0}
+                role="button"
+                aria-label={t('widget.trading-score.axis-aria', {
+                  axis: axisName,
+                  score: String(score),
+                  weight: String(weight),
+                })}
+                onMouseEnter={() => setHoveredAxis(axisKey)}
+                onMouseLeave={() => setHoveredAxis(null)}
+                onFocus={() => setHoveredAxis(axisKey)}
+                onBlur={() => setHoveredAxis(null)}
+              >
+                <div className="journalit-home-score__axis-row">
+                  <span className="journalit-home-score__axis-name">
+                    {axisName}{' '}
+                    <span className="journalit-home-score__axis-weight">
+                      ({weight}%)
                     </span>
-                    <span
-                      className={`journalit-home-score__axis-score ${axisScoreClass}`}
-                    >
-                      {score}
-                    </span>
-                  </div>
-                  <div className="journalit-home-score__axis-track">
-                    <div
-                      className={`journalit-home-score__axis-fill ${axisScoreClass}`}
-                      style={cssVars({
-                        '--journalit-home-score-axis-width': `${score}%`,
-                      })}
-                    />
-                  </div>
-                  
-                  {isHovered && (
-                    <div className="journalit-home-score__axis-tooltip">
-                      {axisDescription}
-                    </div>
-                  )}
+                  </span>
+                  <span
+                    className={`journalit-home-score__axis-score ${axisScoreClass}`}
+                  >
+                    {score}
+                  </span>
                 </div>
-              );
-            }
-          )}
+                <div className="journalit-home-score__axis-track">
+                  <div
+                    className={`journalit-home-score__axis-fill ${axisScoreClass}`}
+                    style={cssVars({
+                      '--journalit-home-score-axis-width': `${score}%`,
+                    })}
+                  />
+                </div>
+                
+                {isHovered && (
+                  <div className="journalit-home-score__axis-tooltip">
+                    {axisDescription}
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </div>
 
         
@@ -423,9 +427,7 @@ const TradingScoreWidgetComponent: React.FC<TradingScoreWidgetProps> = () => {
             />
             <RechartsPortalTooltip chartRef={chartRef}>
               {({ active, payload }: TooltipContentLike<RadarDataPoint>) => {
-                const data = payload?.[0]?.payload as
-                  | RadarDataPoint
-                  | undefined;
+                const data = payload?.[0]?.payload;
 
                 if (!active || !data) return null;
                 const scoreClass = getScoreColorClass(data.value);

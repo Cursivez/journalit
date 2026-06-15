@@ -8,7 +8,7 @@ import { HOME_VIEW_TYPE } from '../views/HomeView';
 import { t } from '../lang/helpers';
 import releasesData from '../../changelog/releases.json';
 
-const UPDATE_STATUS_BAR_STYLES = `
+export const UPDATE_STATUS_BAR_STYLES = `
 .journalit-update-status-bar {
   display: flex;
   align-items: center;
@@ -205,7 +205,7 @@ export class UpdateNotificationService {
         description: releaseInfo.description,
         imageUrl: releaseInfo.imageUrl,
         parentContainer: parentContainer, 
-        onViewReleaseNotes: () => this.openReleaseNotes(),
+        onViewReleaseNotes: () => void this.openReleaseNotes(),
         onDismiss: () => this.handleNotificationDismissed(),
       });
     } catch (error) {
@@ -328,9 +328,6 @@ export class UpdateNotificationService {
     this.plugin.registerDomEvent(this.statusBarItem, 'click', async () => {
       await this.openHomeViewAndShowToast(version);
     });
-
-    
-    this.injectStatusBarStyles();
   }
 
   
@@ -357,20 +354,22 @@ export class UpdateNotificationService {
       }
 
       if (homeLeaves.length > 0) {
-        workspace.revealLeaf(homeLeaves[0]);
+        void workspace.revealLeaf(homeLeaves[0]);
 
         
         if (this.openHomeViewTimeoutId !== null) {
-          clearTimeout(this.openHomeViewTimeoutId);
+          window.clearTimeout(this.openHomeViewTimeoutId);
         }
 
         
-        this.openHomeViewTimeoutId = window.setTimeout(async () => {
-          this.openHomeViewTimeoutId = null;
-          
-          this.removeStatusBarIndicator();
-          
-          await this.showUpdateNotification(version);
+        this.openHomeViewTimeoutId = window.setTimeout(() => {
+          void (async () => {
+            this.openHomeViewTimeoutId = null;
+            
+            this.removeStatusBarIndicator();
+            
+            await this.showUpdateNotification(version);
+          })();
         }, 200);
       }
     } catch (error) {
@@ -382,11 +381,6 @@ export class UpdateNotificationService {
         5000
       );
     }
-  }
-
-  
-  private injectStatusBarStyles(): void {
-    // intentional
   }
 
   
@@ -403,7 +397,7 @@ export class UpdateNotificationService {
         });
       }
 
-      workspace.revealLeaf(leaf);
+      void workspace.revealLeaf(leaf);
     } catch (error) {
       console.error(
         '[UpdateNotification] Failed to open release notes:',
@@ -422,7 +416,7 @@ export class UpdateNotificationService {
   cleanup(): void {
     
     if (this.openHomeViewTimeoutId !== null) {
-      clearTimeout(this.openHomeViewTimeoutId);
+      window.clearTimeout(this.openHomeViewTimeoutId);
       this.openHomeViewTimeoutId = null;
     }
 
@@ -433,13 +427,5 @@ export class UpdateNotificationService {
 
     
     this.removeStatusBarIndicator();
-
-    
-    const styleElement = document.getElementById(
-      'journalit-update-status-bar-styles'
-    );
-    if (styleElement) {
-      styleElement.remove();
-    }
   }
 }

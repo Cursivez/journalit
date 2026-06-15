@@ -122,6 +122,33 @@ const Input: React.FC<{
   );
 };
 
+const parseTradeReviewSectionType = (
+  value: string
+): TradeReviewSection['type'] | null => {
+  switch (value) {
+    case 'header':
+    case 'checkbox':
+    case 'textarea':
+    case 'checkboxList':
+      return value;
+    default:
+      return null;
+  }
+};
+
+const parseReviewVisibility = (
+  value: string
+): 'always' | 'losses-only' | 'never' | null => {
+  switch (value) {
+    case 'always':
+    case 'losses-only':
+    case 'never':
+      return value;
+    default:
+      return null;
+  }
+};
+
 
 const getSectionTypeLabel = (type: TradeReviewSection['type']) => {
   switch (type) {
@@ -319,9 +346,12 @@ const SortableSectionItem: React.FC<SortableSectionItemProps> = ({
                   label: t('template.editor.type.checkboxList'),
                 },
               ]}
-              onChange={(value) =>
-                handleTypeChange(value as TradeReviewSection['type'])
-              }
+              onChange={(value) => {
+                const type = parseTradeReviewSectionType(value);
+                if (type) {
+                  handleTypeChange(type);
+                }
+              }}
             />
           </div>
 
@@ -417,7 +447,7 @@ const SortableSectionItem: React.FC<SortableSectionItemProps> = ({
                 </div>
               ))}
               <button
-                onClick={handleAddItem}
+                onClick={() => void handleAddItem()}
                 className="template-action-button template-action-button--secondary template-action-button--compact"
               >
                 {t('template.editor.add-item')}
@@ -452,7 +482,7 @@ function useTradeTemplateEditorModel({
     if (loaded) {
       setTemplate(loaded);
       setEditingName(loaded.name);
-      setEditingSections(JSON.parse(JSON.stringify(loaded.sections)));
+      setEditingSections(structuredClone(loaded.sections));
     }
   }, [templateId, tradeTemplateService]);
 
@@ -513,7 +543,7 @@ function useTradeTemplateEditorModel({
   const handleDiscard = useCallback(() => {
     if (template) {
       setEditingName(template.name);
-      setEditingSections(JSON.parse(JSON.stringify(template.sections)));
+      setEditingSections(structuredClone(template.sections));
     }
   }, [template]);
 
@@ -755,11 +785,12 @@ function TradeReviewSettingsPanel({
                 label: t('template.editor.show-review.never'),
               },
             ]}
-            onChange={(value) =>
-              updateSection('review', {
-                show: value as 'always' | 'losses-only' | 'never',
-              })
-            }
+            onChange={(value) => {
+              const show = parseReviewVisibility(value);
+              if (show) {
+                updateSection('review', { show });
+              }
+            }}
             disabled={isBuiltIn}
           />
         </SectionRow>
@@ -970,13 +1001,13 @@ export const TradeTemplateEditor: React.FC<TradeTemplateEditorProps> = ({
               </span>
               <div className="template-unsaved-banner__actions">
                 <button
-                  onClick={handleDiscard}
+                  onClick={() => void handleDiscard()}
                   className="template-action-button template-action-button--neutral template-action-button--compact"
                 >
                   {t('button.discard')}
                 </button>
                 <button
-                  onClick={handleSave}
+                  onClick={() => void handleSave()}
                   className="template-action-button template-action-button--primary template-action-button--compact"
                 >
                   {t('button.save')}

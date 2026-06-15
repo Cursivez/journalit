@@ -10,6 +10,7 @@ import {
   CartesianGrid,
   ReferenceLine,
 } from 'recharts';
+import type { TooltipProps } from 'recharts';
 import { EmptyState } from '../shared/EmptyState';
 import {
   generateNiceAxis,
@@ -29,6 +30,46 @@ interface SharedTradesChartProps extends TradesChartProps {
   currencyOverride?: string;
 }
 
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  Boolean(value) && typeof value === 'object' && !Array.isArray(value);
+
+const isTradesChartDataPoint = (
+  value: unknown
+): value is TradesChartDataPoint =>
+  isRecord(value) &&
+  typeof value.tradeIndex === 'number' &&
+  typeof value.pnl === 'number' &&
+  typeof value.fill === 'string';
+
+const getTradesTooltipPayload = (
+  payload: readonly unknown[] | undefined
+): TradesChartTooltipProps['payload'] => {
+  if (!payload) return undefined;
+  return payload.flatMap((item) => {
+    if (!isRecord(item) || !isTradesChartDataPoint(item.payload)) {
+      return [];
+    }
+    return [{ payload: item.payload }];
+  });
+};
+
+type TradesChartTooltipProps = Partial<TooltipProps<number, string>> & {
+  payload?: Array<{ payload: TradesChartDataPoint }>;
+};
+
+interface TradesBarShapeProps {
+  x?: number;
+  y?: number;
+  width?: number;
+  height?: number;
+  payload?: TradesChartDataPoint;
+  index?: number;
+  stroke?: string;
+  strokeWidth?: string | number;
+  strokeOpacity?: string | number;
+  filter?: string;
+}
+
 const DEFAULT_MARGIN = { top: 6, right: 5, left: 0, bottom: 10 };
 const DEFAULT_TOOLTIP_PROPS = {};
 
@@ -36,7 +77,7 @@ const DEFAULT_TOOLTIP_PROPS = {};
 
 
 const renderTradesChartTooltip = (
-  props: any,
+  props: TradesChartTooltipProps,
   displayRMultiples?: boolean,
   currencyOverride?: string,
   showAccountTooltip?: boolean
@@ -55,8 +96,9 @@ const renderTradesChartTooltip = (
     : 'Unknown';
 
   return (
-    <ChartTooltip
-      {...props}
+    <ChartTooltip<TradesChartDataPoint>
+      active={props.active}
+      payload={props.payload}
       displayRMultiples={displayRMultiples}
       currencyOverride={currencyOverride}
       formatter={(data: TradesChartDataPoint) => ({
@@ -64,6 +106,7 @@ const renderTradesChartTooltip = (
           ? `${data.instrument} ${data.direction?.toLowerCase() === 'long' ? '↑' : '↓'}`
           : `Trade #${data.tradeIndex + 1}`,
         primaryValue: {
+          label: t('chart.label.pnl'),
           value: data.pnl,
           type: 'pnl',
           isPositive: data.pnl >= 0,
@@ -165,8 +208,7 @@ export const SharedTradesChart: React.FC<SharedTradesChartProps> = ({
 }) => {
   const chartRef = React.useRef<HTMLDivElement>(null);
   const { currency: globalCurrency } = useCurrency();
-  const currency =
-    (currencyOverride as typeof globalCurrency) || globalCurrency;
+  const currency = currencyOverride || globalCurrency;
   const plugin = usePlugin();
   const displayRMultiples = plugin?.settings?.trade?.displayRMultiples;
   const { formatValue, shouldMask } = useDisplayFormatter();
@@ -229,8 +271,6 @@ export const SharedTradesChart: React.FC<SharedTradesChartProps> = ({
     return generateNiceAxis(effectiveMin, effectiveMax, 6, true, true);
   }, [dataMin, dataMax, isPnlMasked, minValue, maxValue]);
 
-  const [_yAxisMin, _yAxisMax] = domain;
-
   
   const yAxisWidth = React.useMemo(() => {
     return calculateYAxisWidth(ticks, customTickFormatter);
@@ -245,7 +285,7 @@ export const SharedTradesChart: React.FC<SharedTradesChartProps> = ({
   const handleRectClick = (
     event: MouseEvent<SVGRectElement>,
 
-    payload: any,
+    payload: TradesChartDataPoint,
     index: number
   ) => {
     if (onPointClick) {
@@ -319,7 +359,10 @@ export const SharedTradesChart: React.FC<SharedTradesChartProps> = ({
               customTooltip
                 ? React.cloneElement(customTooltip, runtimeProps)
                 : renderTradesChartTooltip(
-                    runtimeProps,
+                    {
+                      ...runtimeProps,
+                      payload: getTradesTooltipPayload(runtimeProps.payload),
+                    },
                     displayRMultiples,
                     currencyOverride,
                     showAccountTooltip
@@ -352,12 +395,12 @@ export const SharedTradesChart: React.FC<SharedTradesChartProps> = ({
           }}
           
 
-          shape={(props: any) => {
+          shape={(props: TradesBarShapeProps) => {
             
             const { x, y, width, height } = props;
 
             
-            const pnlValue = props.payload?.pnl || 0;
+            const pnlValue = props.payload?.pnl ?? 0;
             const isPositive = pnlValue >= 0;
 
             
@@ -388,7 +431,7 @@ export const SharedTradesChart: React.FC<SharedTradesChartProps> = ({
                 ? [2, 2, 0, 0]
                 : [0, 0, 2, 2];
 
-            const index = props.index || 0;
+            const index = props.index ?? 0;
 
             
             return (
@@ -413,7 +456,11 @@ export const SharedTradesChart: React.FC<SharedTradesChartProps> = ({
                 
                 rx={radius[0]}
                 ry={radius[0]}
-                onClick={(e) => handleRectClick(e, props.payload, index)}
+                onClick={(e) => {
+                  if (props.payload) {
+                    handleRectClick(e, props.payload, index);
+                  }
+                }}
               />
             );
           }}

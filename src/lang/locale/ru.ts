@@ -2839,10 +2839,8 @@ const ru: Lang = {
     'Параметры включения в панель управления',
   'account.settings.section.inclusion.desc':
     'Выберите, какие типы счётов включить в расчёты панели управления. Также настройте, включаются ли выводы средств из каждого типа счёта в общие метрики выводов.',
-  'account.settings.section.inclusion.include-dashboard':
-    'Включить в панель управления',
-  'account.settings.section.inclusion.include-withdrawals':
-    'Включить выводы средств',
+  'account.settings.section.inclusion.include-dashboard': 'В статистике панели',
+  'account.settings.section.inclusion.include-withdrawals': 'Выводы средств',
   'account.settings.section.inclusion.empty':
     'Нет доступных типов счётов для настройки.',
   'account.settings.section.order.title': 'Порядок отображения',
@@ -4813,7 +4811,7 @@ const ru: Lang = {
   'metric.avgRecoveryTime.name': 'Avg Recovery Time',
   'metric.avgRecoveryTime.description':
     'Average time it takes closed-trade realized drawdowns to recover to a new high',
-  'metric.longestDrawdown.name': 'Longest Realized Drawdown',
+  'metric.longestDrawdown.name': 'Longest Drawdown',
   'metric.longestDrawdown.description':
     'Longest elapsed time spent in a realized drawdown episode',
   'metric.drawdownEpisodes.name': 'Drawdown Episodes',
@@ -5793,6 +5791,7 @@ const ru: Lang = {
   'chart.tooltip.accounts-list': '{accounts}',
   'chart.tooltip.more-accounts': '+{count} more',
   'chart.loading': 'Загрузка графика...',
+  'chart.label.pnl': 'P&L',
   'chart.legend.entry': 'Вход',
   'chart.legend.exit': 'Выход',
   'chart.legend.trade': 'Сделка',
@@ -6185,14 +6184,14 @@ const ru: Lang = {
   'widget.directional-drawdown.description':
     'Separate long and short closed-trade drawdown amount curves',
 
-  'widget.long-drawdown.name': 'Long Realized Drawdown',
+  'widget.long-drawdown.name': 'Long Drawdown',
   'widget.long-drawdown.description':
     'Closed-trade drawdown amount curve for long trades only',
-  'widget.short-drawdown.name': 'Short Realized Drawdown',
+  'widget.short-drawdown.name': 'Short Drawdown',
   'widget.short-drawdown.description':
     'Closed-trade drawdown amount curve for short trades only',
-  'widget.directional-drawdown.title.long': 'Long Realized Drawdown',
-  'widget.directional-drawdown.title.short': 'Short Realized Drawdown',
+  'widget.directional-drawdown.title.long': 'Long Drawdown',
+  'widget.directional-drawdown.title.short': 'Short Drawdown',
   'widget.directional-drawdown.empty.not-enough':
     'Not enough closed trades for directional analysis',
   'widget.directional-drawdown.empty.no-closed':
@@ -6205,10 +6204,10 @@ const ru: Lang = {
   'widget.directionalDrawdownChart.description':
     'Displays separate long and short closed-trade drawdown amount curves',
 
-  'widget.longDrawdownChart.name': 'Long Realized Drawdown',
+  'widget.longDrawdownChart.name': 'Long Drawdown',
   'widget.longDrawdownChart.description':
     'Displays the closed-trade drawdown amount curve for long trades only',
-  'widget.shortDrawdownChart.name': 'Short Realized Drawdown',
+  'widget.shortDrawdownChart.name': 'Short Drawdown',
   'widget.shortDrawdownChart.description':
     'Displays the closed-trade drawdown amount curve for short trades only',
   'widget.drawdownStats.name': 'Realized Drawdown Stats',

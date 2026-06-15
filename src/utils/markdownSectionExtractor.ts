@@ -102,9 +102,10 @@ function getOpeningFence(
   const match = stripped.line.match(OPENING_FENCE_PATTERN);
   if (!match) return null;
 
+  const fenceChar = match[1].startsWith('`') ? '`' : '~';
   const baseListIndent = matchingListIndent ?? 0;
   return {
-    fenceChar: match[1][0] as '`' | '~',
+    fenceChar,
     fenceLength: match[1].length,
     infoString: match[2].trim(),
     maxClosingIndent: baseListIndent + stripped.maxFenceIndent,

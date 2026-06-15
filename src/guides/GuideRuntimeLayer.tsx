@@ -12,7 +12,6 @@ import { createPortal } from 'react-dom';
 import { getPluginInstance } from '../utils/pluginContext';
 import { GuideDefinition, GuideStepDefinition } from './types';
 import { cssVars } from '../styles/inlineStylePolicy';
-import { ensureViewGuideStyles } from '../styles/viewGuideStyles';
 import { t } from '../lang/helpers';
 
 interface GuideRuntimeLayerProps {
@@ -799,7 +798,7 @@ export const GuideRuntimeLayer: React.FC<GuideRuntimeLayerProps> = ({
               </div>
             </div>
           </div>,
-          document.body
+          window.activeDocument.body
         )}
     </GuideRuntimeContext.Provider>
   );

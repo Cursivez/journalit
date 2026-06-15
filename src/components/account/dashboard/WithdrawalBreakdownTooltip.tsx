@@ -2,7 +2,7 @@ import React, { useMemo } from 'react';
 import { MonthlyWithdrawal } from './utils';
 import { useCurrency } from '../../../contexts/CurrencyContext';
 import { useDisplayFormatter } from '../../../hooks/useDisplayPolicy';
-import { t, TranslationKey } from '../../../lang/helpers';
+import { t } from '../../../lang/helpers';
 
 interface WithdrawalBreakdownTooltipProps {
   withdrawalsByMonth: MonthlyWithdrawal[];
@@ -46,7 +46,7 @@ export const WithdrawalBreakdownTooltip: React.FC<
               className="withdrawal-breakdown-row"
             >
               <span className="withdrawal-breakdown-month">
-                {t(m.monthName as TranslationKey)}
+                {t(m.monthName)}
               </span>
               <span className="withdrawal-breakdown-amount">
                 {formatValue({

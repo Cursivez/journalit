@@ -33,7 +33,6 @@ import {
   getEffectivePnL,
   isPnlContributingTrade,
 } from '../../utils/tradeStatusUtils';
-import { EnhancedTradeData } from '../../types/EnhancedTradeData';
 import { useCurrency } from '../../contexts/CurrencyContext';
 import { useDisplayFormatter } from '../../hooks/useDisplayPolicy';
 import { getDisplayPnL, getAccountCount } from '../../utils/pnlUtils';
@@ -342,15 +341,12 @@ export const PerformanceCalendar = memo<PerformanceCalendarProps>(
       }
 
       
-      const enhancedTrade = trade as EnhancedTradeData;
-
-      
-      if (enhancedTrade.isMissedTrade === true) {
+      if (trade.isMissedTrade === true) {
         return;
       }
 
       
-      if (enhancedTrade.isBacktestTrade === true) {
+      if (trade.isBacktestTrade === true) {
         return;
       }
 
@@ -361,12 +357,14 @@ export const PerformanceCalendar = memo<PerformanceCalendarProps>(
 
       const pnlEvents = realizedEvents.length
         ? realizedEvents
-        : [
-            {
-              tradingDay: tradeDate as Date,
-              pnl: getEffectivePnL(trade),
-            },
-          ];
+        : tradeDate
+          ? [
+              {
+                tradingDay: tradeDate,
+                pnl: getEffectivePnL(trade),
+              },
+            ]
+          : [];
       const useStoredRMultiple = pnlEvents.length === 1;
       const accountCount = getAccountCount(trade);
       const breakEvenBalanceForDisplay = applyAccountCountMultiplier
@@ -405,18 +403,20 @@ export const PerformanceCalendar = memo<PerformanceCalendarProps>(
           tradeCountByDate[dateKey]++;
         }
 
-        if (Number.isFinite(breakEvenBalanceForDisplay)) {
-          breakEvenBalancesByDate[dateKey].add(
-            breakEvenBalanceForDisplay as number
-          );
+        const resolvedBreakEvenBalance =
+          typeof breakEvenBalanceForDisplay === 'number' &&
+          Number.isFinite(breakEvenBalanceForDisplay)
+            ? breakEvenBalanceForDisplay
+            : undefined;
+
+        if (resolvedBreakEvenBalance !== undefined) {
+          breakEvenBalancesByDate[dateKey].add(resolvedBreakEvenBalance);
         }
 
         const displayOutcome = classifyPnLWithBreakEvenSettings(
           displayPnL,
           breakEvenSettings,
-          Number.isFinite(breakEvenBalanceForDisplay)
-            ? (breakEvenBalanceForDisplay as number)
-            : undefined
+          resolvedBreakEvenBalance
         );
         if (displayOutcome === 'unknown') {
           hasUnresolvedBreakEvenBalanceByDate[dateKey] = true;
@@ -558,7 +558,7 @@ export const PerformanceCalendar = memo<PerformanceCalendarProps>(
         onDayClick(date);
       } else if (plugin) {
         
-        plugin.drcService?.openDRC(date);
+        void plugin.drcService?.openDRC(date);
       }
     };
 
@@ -571,13 +571,13 @@ export const PerformanceCalendar = memo<PerformanceCalendarProps>(
         
         if (plugin.weeklyReviewService) {
           
-          plugin.weeklyReviewService.openWeeklyReview(date);
+          void plugin.weeklyReviewService.openWeeklyReview(date);
         } else if (plugin.drcService) {
           
           console.warn(
             'WeeklyReviewService not found, falling back to DRCService'
           );
-          plugin.drcService.openDRC(date);
+          void plugin.drcService.openDRC(date);
         }
       }
     };
@@ -623,7 +623,7 @@ export const PerformanceCalendar = memo<PerformanceCalendarProps>(
               <button
                 className="journalit-dashboard-calendar-header-link"
                 type="button"
-                onClick={handleMonthClick}
+                onClick={() => void handleMonthClick()}
               >
                 {monthNames[visibleMonth.getMonth()].slice(0, 3)}
               </button>{' '}
@@ -633,14 +633,14 @@ export const PerformanceCalendar = memo<PerformanceCalendarProps>(
               <button
                 className="journalit-dashboard-calendar-header-link"
                 type="button"
-                onClick={handleQuarterClick}
+                onClick={() => void handleQuarterClick()}
               >
                 Q{visibleQuarter}
               </button>{' '}
               <button
                 className="journalit-dashboard-calendar-header-link"
                 type="button"
-                onClick={handleYearClick}
+                onClick={() => void handleYearClick()}
               >
                 {visibleMonth.getFullYear()}
               </button>

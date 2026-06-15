@@ -1,6 +1,6 @@
 
 
-import React, { useLayoutEffect, memo } from 'react';
+import React, { memo } from 'react';
 import { Funnel } from './icons/ObsidianIcon';
 import { t } from '../../lang/helpers';
 
@@ -18,9 +18,6 @@ interface FilterButtonProps {
 
 export const FilterButton = memo<FilterButtonProps>(
   ({ onClick, activeFilterCount, className = '', disabled = false }) => {
-    
-    useLayoutEffect(() => {}, []);
-
     return (
       <div
         className={`journalit-filter-button-container ${
@@ -58,7 +55,7 @@ export const FilterButton = memo<FilterButtonProps>(
 FilterButton.displayName = 'FilterButton';
 
 
-const FILTER_BUTTON_STYLES = `
+export const FILTER_BUTTON_STYLES = `
   
   .journalit-filter-button-container {
     position: relative;
@@ -123,16 +120,3 @@ const FILTER_BUTTON_STYLES = `
     z-index: 1;
   }
 `;
-
-
-const filterButtonReferenceCount = 0;
-
-
-function injectFilterButtonStyles(): void {
-  // intentional
-}
-
-
-export function removeFilterButtonStyles(): void {
-  // intentional
-}

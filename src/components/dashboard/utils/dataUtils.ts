@@ -68,12 +68,38 @@ import { getAccountCapitalBasisLookup } from '../../../utils/accountCapitalBasis
 
 
 
-const createValidDate = (dateInput: any, fallback?: Date): Date => {
+const createValidDate = (dateInput: unknown, fallback?: Date): Date => {
   if (!dateInput) {
     return fallback || new Date();
   }
 
   return safeParseDateValue(dateInput) ?? fallback ?? new Date();
+};
+
+const formatScalarId = (value: unknown): string | null =>
+  typeof value === 'string' || typeof value === 'number' ? String(value) : null;
+
+const toRecord = (value: object): Record<string, unknown> =>
+  Object.fromEntries(Object.entries(value));
+
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  Boolean(value) && typeof value === 'object' && !Array.isArray(value);
+
+const getStringField = (
+  frontmatter: Record<string, unknown>,
+  key: string
+): string | undefined =>
+  typeof frontmatter[key] === 'string' ? frontmatter[key] : undefined;
+
+const getBooleanField = (
+  frontmatter: Record<string, unknown>,
+  key: string
+): boolean | undefined => {
+  const value = frontmatter[key];
+  if (typeof value === 'boolean') return value;
+  if (value === 'true') return true;
+  if (value === 'false') return false;
+  return undefined;
 };
 
 const hasDashboardEntryDate = (
@@ -85,15 +111,19 @@ const hasDashboardEntryDate = (
 
   return Boolean(
     Array.isArray(frontmatter.entries) &&
-    frontmatter.entries.some(
-      (entry) =>
-        entry && typeof entry === 'object' && (entry as { time?: unknown }).time
-    )
+    frontmatter.entries.some((entry) => isRecord(entry) && entry.time)
   );
 };
 
 const appendHash = (hash: number, value: unknown): number => {
-  const text = value === undefined || value === null ? '' : String(value);
+  const text =
+    value === undefined || value === null
+      ? ''
+      : typeof value === 'string' ||
+          typeof value === 'number' ||
+          typeof value === 'boolean'
+        ? String(value)
+        : JSON.stringify(value);
   let nextHash = hash;
 
   for (let i = 0; i < text.length; i++) {
@@ -259,8 +289,10 @@ class LRUCache<K, V> {
       this.cache.delete(key);
     } else if (this.cache.size >= this.maxSize) {
       
-      const firstKey = this.cache.keys().next().value;
-      this.cache.delete(firstKey);
+      const firstKey = Array.from(this.cache.keys())[0];
+      if (firstKey !== undefined) {
+        this.cache.delete(firstKey);
+      }
     }
     this.cache.set(key, value);
   }
@@ -280,7 +312,7 @@ class LRUCache<K, V> {
 
 
 
-const metricsCache = new LRUCache<string, any>(50);
+const metricsCache = new LRUCache<string, DashboardData['metrics']>(50);
 
 
 export const isTradeOpenInDashboard = (trade: Trade): boolean =>
@@ -305,7 +337,7 @@ export interface Trade {
   direction: string;
   pnl: number;
   directPnL?: number;
-  tradeStatus?: 'OPEN' | 'CLOSED' | string;
+  tradeStatus?: string;
   useDirectPnLInput?: boolean;
   dividends?: Array<{ time?: Date | string | null; amount?: number | null }>;
   rebate?: number;
@@ -396,7 +428,7 @@ export interface Trade {
 }
 
 
-const TRADE_PROPERTY_KEYS = new Set<keyof Trade>([
+const TRADE_PROPERTY_KEYS = new Set<string>([
   'path',
   'entryTime',
   'exitTime',
@@ -573,10 +605,13 @@ const fetchTradeData = async (
 
     const processTradeFile = async (file: TFile): Promise<Trade | null> => {
       try {
-        const cachedFrontmatter =
-          app.metadataCache.getFileCache(file)?.frontmatter;
+        const cachedFrontmatter = app.metadataCache.getFileCache(file)
+          ?.frontmatter as Record<string, unknown> | undefined;
         const frontmatter =
-          cachedFrontmatter ?? (await tradeService.readFrontmatter(file));
+          cachedFrontmatter ??
+          ((await tradeService.readFrontmatter(file)) as
+            | Record<string, unknown>
+            | undefined);
 
         if (!frontmatter || !hasDashboardEntryDate(frontmatter)) {
           return null;
@@ -608,7 +643,7 @@ const fetchTradeData = async (
         const trade: Trade = {
           path: file.path,
           ...normalizedExecution,
-          direction: frontmatter.direction,
+          direction: getStringField(frontmatter, 'direction') ?? '',
           pnl:
             frontmatter.pnl !== undefined && frontmatter.pnl !== null
               ? Number(frontmatter.pnl)
@@ -619,8 +654,8 @@ const fetchTradeData = async (
             Number.isFinite(Number(frontmatter.directPnL))
               ? Number(frontmatter.directPnL)
               : undefined,
-          tradeStatus: frontmatter.tradeStatus,
-          useDirectPnLInput: frontmatter.useDirectPnLInput,
+          tradeStatus: getStringField(frontmatter, 'tradeStatus'),
+          useDirectPnLInput: getBooleanField(frontmatter, 'useDirectPnLInput'),
           dividends: parseTradeDividendTransactions(frontmatter.dividends),
           rebate:
             frontmatter.rebate !== undefined && frontmatter.rebate !== null
@@ -629,7 +664,7 @@ const fetchTradeData = async (
           _originalPnlWasNull: originalPnlWasNull,
           _analyticsRangeStart: startDate,
           _analyticsRangeEnd: endDate,
-          instrument: frontmatter.instrument,
+          instrument: getStringField(frontmatter, 'instrument'),
           setup: normalizeStringArray(frontmatter.setup),
           mistake: normalizeStringArray(frontmatter.mistake),
           account: normalizeStringArray(frontmatter.account),
@@ -672,8 +707,8 @@ const fetchTradeData = async (
               : undefined,
           tags: normalizeStringArray(frontmatter.tags),
           customTags: normalizeStringArray(frontmatter.tags),
-          assetType: frontmatter.assetType,
-          optionType: frontmatter.optionType,
+          assetType: getStringField(frontmatter, 'assetType'),
+          optionType: getStringField(frontmatter, 'optionType'),
           stopLoss:
             frontmatter.stopLoss !== undefined
               ? Number(frontmatter.stopLoss)
@@ -714,7 +749,7 @@ const fetchTradeData = async (
             frontmatter.pipValue !== undefined
               ? Number(frontmatter.pipValue)
               : undefined,
-          currency: frontmatter.currency,
+          currency: getStringField(frontmatter, 'currency'),
           mae:
             frontmatter.mae !== undefined ? Number(frontmatter.mae) : undefined,
           mfe:
@@ -729,7 +764,7 @@ const fetchTradeData = async (
               : undefined,
           isMissedTrade: storedTradeType === 'missed',
           isBacktestTrade: storedTradeType === 'backtest',
-          reviewed: frontmatter.reviewed || false,
+          reviewed: getBooleanField(frontmatter, 'reviewed') ?? false,
           customFields:
             Object.keys(customFields).length > 0 ? customFields : undefined,
           ...Object.fromEntries(
@@ -738,7 +773,7 @@ const fetchTradeData = async (
                 (fieldDef) =>
                   fieldDef.fieldKey &&
                   frontmatter[fieldDef.fieldKey] !== undefined &&
-                  !TRADE_PROPERTY_KEYS.has(fieldDef.fieldKey as keyof Trade)
+                  !TRADE_PROPERTY_KEYS.has(fieldDef.fieldKey)
               )
               .map((fieldDef) => [
                 fieldDef.fieldKey,
@@ -747,13 +782,10 @@ const fetchTradeData = async (
           ),
         };
 
-        const accountIdentity = normalizeTradeAccountIdentity(
-          trade as unknown as Record<string, unknown>,
-          {
-            resolveAccountIdDisplayName: (accountId) =>
-              plugin?.settings?.backendIntegration?.accountMapping?.[accountId],
-          }
-        );
+        const accountIdentity = normalizeTradeAccountIdentity(toRecord(trade), {
+          resolveAccountIdDisplayName: (accountId) =>
+            plugin?.settings?.backendIntegration?.accountMapping?.[accountId],
+        });
 
         trade.accountRefs = accountIdentity.refs;
         trade.accountLookupKeys = accountIdentity.lookupKeys;
@@ -764,7 +796,7 @@ const fetchTradeData = async (
             trade,
             getBreakEvenAccountBalanceFields(
               resolveBreakEvenAccountBalances(
-                trade as unknown as Record<string, unknown>,
+                toRecord(trade),
                 accountBalanceLookup,
                 {
                   resolveAccountIdDisplayName: (accountId) =>
@@ -845,9 +877,7 @@ const createCopiedDashboardTrades = (
     return [];
   }
 
-  const baseIdentity = normalizeTradeAccountIdentity(
-    baseTrade as unknown as Record<string, unknown>
-  );
+  const baseIdentity = normalizeTradeAccountIdentity(toRecord(baseTrade));
   const baseAccountLookupKeys = new Set(baseIdentity.lookupKeys);
   if (baseAccountLookupKeys.size === 0) {
     return [];
@@ -1347,9 +1377,13 @@ export const calculateMetrics = (
       return undefined;
     }
 
-    const firstPercent = computedPercents[0] as number;
+    const firstPercent = computedPercents[0];
+    if (firstPercent === undefined) {
+      return undefined;
+    }
     const allMatch = computedPercents.every(
-      (percent) => Math.abs((percent as number) - firstPercent) < 0.0001
+      (percent) =>
+        percent !== undefined && Math.abs(percent - firstPercent) < 0.0001
     );
 
     return allMatch ? firstPercent : undefined;
@@ -1443,10 +1477,8 @@ export const calculateMetrics = (
 
   const getExcursionSourceKey = (trade: NormalizedMetricsTrade): string =>
     trade._dashboardExcursionSourceKey ??
-    trade.tradeId ??
-    (trade.backendTradeId !== undefined
-      ? String(trade.backendTradeId)
-      : null) ??
+    formatScalarId(trade.tradeId) ??
+    formatScalarId(trade.backendTradeId) ??
     trade.path;
 
   const collectExcursionValues = (

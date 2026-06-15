@@ -11,7 +11,13 @@ type ButtonVariant =
   | 'text';
 type ButtonSize = 'small' | 'medium' | 'large' | 'sm' | 'md' | 'lg';
 
-interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+interface ButtonProps extends Omit<
+  React.ButtonHTMLAttributes<HTMLButtonElement>,
+  'onClick'
+> {
+  onClick?: (
+    event: React.MouseEvent<HTMLButtonElement>
+  ) => void | Promise<void>;
   variant?: ButtonVariant;
   size?: ButtonSize;
   fullWidth?: boolean;
@@ -27,6 +33,7 @@ export const Button: React.FC<ButtonProps> = ({
   loading = false,
   className = '',
   children,
+  onClick,
   ...props
 }) => {
   
@@ -68,6 +75,7 @@ export const Button: React.FC<ButtonProps> = ({
       type={props.type || 'button'}
       disabled={loading || props.disabled}
       {...props}
+      onClick={onClick ? (event) => void onClick(event) : undefined}
     >
       {children}
     </button>

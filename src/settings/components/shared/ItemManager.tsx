@@ -35,6 +35,10 @@ function getDuplicateAwareItemKeys(items: string[]): string[] {
   });
 }
 
+function isMutableObject(value: unknown): value is object {
+  return value !== null && typeof value === 'object' && !Array.isArray(value);
+}
+
 function useItemManagerModel({
   plugin,
   items,
@@ -64,16 +68,24 @@ function useItemManagerModel({
     const parts = path.split('.');
     const settings = { ...plugin.settings };
 
-    let current: any = settings;
+    let current: object = settings;
 
     
     for (let i = 0; i < parts.length - 1; i++) {
-      if (!current[parts[i]]) current[parts[i]] = {};
-      current = current[parts[i]];
+      const key = parts[i];
+      const next: unknown = Reflect.get(current, key);
+      if (!isMutableObject(next)) {
+        const child = {};
+        Reflect.set(current, key, child);
+        current = child;
+        continue;
+      }
+
+      current = next;
     }
 
     
-    current[parts[parts.length - 1]] = value;
+    Reflect.set(current, parts[parts.length - 1], value);
 
     return settings;
   };

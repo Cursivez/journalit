@@ -15,17 +15,17 @@ import { t } from '../../../lang/helpers';
 interface StatusCardsProps {
   
   connectionStatus: 'connected' | 'disconnected' | 'unknown';
-  onRefreshConnection: () => void;
+  onRefreshConnection: () => void | Promise<void>;
 
   
   lastSyncTime?: string;
   syncCount: number;
   isSyncing: boolean;
-  onForceSync: () => void;
+  onForceSync: () => void | Promise<void>;
 
   
   accountCount: number;
-  onManageAccounts: () => void;
+  onManageAccounts: () => void | Promise<void>;
 }
 
 export const StatusCards: React.FC<StatusCardsProps> = ({
@@ -107,7 +107,10 @@ export const StatusCards: React.FC<StatusCardsProps> = ({
           </div>
         </div>
         <div className="status-card-actions">
-          <Button variant="secondary" onClick={onRefreshConnection}>
+          <Button
+            variant="secondary"
+            onClick={() => void onRefreshConnection()}
+          >
             <RefreshCw size={14} />
             {t('backend.cards.connection.refresh')}
           </Button>
@@ -137,7 +140,7 @@ export const StatusCards: React.FC<StatusCardsProps> = ({
         <div className="status-card-actions">
           <Button
             variant="primary"
-            onClick={onForceSync}
+            onClick={() => void onForceSync()}
             disabled={isSyncing || connectionStatus !== 'connected'}
           >
             {isSyncing ? (
@@ -177,7 +180,7 @@ export const StatusCards: React.FC<StatusCardsProps> = ({
         <div className="status-card-actions">
           <Button
             variant="secondary"
-            onClick={onManageAccounts}
+            onClick={() => void onManageAccounts()}
             disabled={connectionStatus !== 'connected'}
           >
             {t('backend.cards.accounts.manage')}

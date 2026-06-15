@@ -1,7 +1,7 @@
 
 
 
-const accountPageStylesCSS = `
+export const accountPageStylesCSS = `
 
 .journalit-account-page-view-container {
   height: 100%;
@@ -1152,6 +1152,79 @@ const accountPageStylesCSS = `
   min-width: 70px;
 }
 
+.edit-account-buttons .journalit-button,
+.create-account-buttons .journalit-button,
+.add-event-buttons .journalit-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  font-weight: 500;
+  box-shadow: none;
+  gap: 8px;
+  user-select: none;
+}
+
+.edit-account-buttons .journalit-button--primary,
+.create-account-buttons .journalit-button--primary,
+.add-event-buttons .journalit-button--primary {
+  background: var(--interactive-accent);
+  border-color: var(--interactive-accent);
+  color: var(--text-on-accent);
+}
+
+.edit-account-buttons .journalit-button--primary:hover:not(:disabled),
+.create-account-buttons .journalit-button--primary:hover:not(:disabled),
+.add-event-buttons .journalit-button--primary:hover:not(:disabled) {
+  background: var(--interactive-accent-hover);
+  border-color: var(--interactive-accent-hover);
+}
+
+.edit-account-buttons .journalit-button--secondary,
+.create-account-buttons .journalit-button--secondary,
+.add-event-buttons .journalit-button--secondary {
+  background: transparent;
+  border-color: var(--background-modifier-border);
+  color: var(--text-muted);
+}
+
+.edit-account-buttons .journalit-button--secondary:hover:not(:disabled),
+.create-account-buttons .journalit-button--secondary:hover:not(:disabled),
+.add-event-buttons .journalit-button--secondary:hover:not(:disabled) {
+  background: var(--background-modifier-hover);
+  color: var(--text-normal);
+}
+
+.edit-account-buttons .delete-account-danger.journalit-button {
+  background: var(--background-modifier-error);
+  border-color: var(--background-modifier-error);
+  color: var(--text-on-accent);
+}
+
+.edit-account-buttons .delete-account-danger.journalit-button:hover:not(:disabled) {
+  opacity: 0.9;
+}
+
+.edit-account-form .save-account-button:not(:disabled),
+.edit-account-form .delete-account-button:not(:disabled),
+.edit-account-form .cancel-button:not(:disabled),
+.create-account-buttons .create-account-button:not(:disabled),
+.create-account-buttons .cancel-button:not(:disabled),
+.add-event-buttons .add-event-button:not(:disabled),
+.add-event-buttons .cancel-button:not(:disabled) {
+  cursor: pointer;
+}
+
+.edit-account-form .save-account-button:disabled,
+.edit-account-form .delete-account-button:disabled,
+.edit-account-form .cancel-button:disabled,
+.create-account-buttons .create-account-button:disabled,
+.create-account-buttons .cancel-button:disabled,
+.add-event-buttons .add-event-button:disabled,
+.add-event-buttons .cancel-button:disabled {
+  cursor: not-allowed;
+}
+
 
 .journalit-modal-button-container {
   display: flex;
@@ -1884,7 +1957,11 @@ const accountPageStylesCSS = `
 }
 
 
-.account-dashboard-settings-modal-container .account-dashboard-settings-form .setting-item {
+.modal
+  .modal-content
+  .account-dashboard-settings-modal-container
+  .account-dashboard-settings-form
+  .setting-item {
   padding: 16px 16px 16px 20px !important;
   border-radius: 8px !important;
   background-color: var(--background-secondary) !important;
@@ -1892,17 +1969,29 @@ const accountPageStylesCSS = `
   box-sizing: border-box;
 }
 
-.account-dashboard-settings-modal-container .account-dashboard-settings-form .setting-item-info {
+.modal
+  .modal-content
+  .account-dashboard-settings-modal-container
+  .account-dashboard-settings-form
+  .setting-item-info {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
 }
 
-.account-dashboard-settings-modal-container .account-dashboard-settings-form .setting-item-name {
+.modal
+  .modal-content
+  .account-dashboard-settings-modal-container
+  .account-dashboard-settings-form
+  .setting-item-name {
   margin: 0 0 3px 0;
 }
 
-.account-dashboard-settings-modal-container .account-dashboard-settings-form .setting-item-description {
+.modal
+  .modal-content
+  .account-dashboard-settings-modal-container
+  .account-dashboard-settings-form
+  .setting-item-description {
   margin: 0 0 4px 0;
 }
 
@@ -2421,13 +2510,3 @@ const accountPageStylesCSS = `
 `;
 
 
-const accountPageStylesInjected = false;
-const accountPageStyleElement: HTMLStyleElement | null = null;
-
-
-function injectAccountPageStyles(): void {
-  return;
-}
-
-
-export function ensureAccountPageStyles(): void {}

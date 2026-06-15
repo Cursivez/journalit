@@ -23,7 +23,7 @@ import {
 import { hasTranslation, t } from '../../lang/helpers';
 import { cssVars } from '../../styles/inlineStylePolicy';
 
-const CONTRIBUTIONS_HEATMAP_STYLES = `
+export const CONTRIBUTIONS_HEATMAP_STYLES = `
 
         .contributions-heatmap {
           
@@ -868,7 +868,7 @@ const HeatmapTooltipPortal: React.FC<HeatmapTooltipPortalProps> = ({
           : `${tooltip.content.tradeCount} trade${tooltip.content.tradeCount === 1 ? '' : 's'}`}
       </div>
     </div>,
-    document.body
+    window.activeDocument.body
   );
 };
 
@@ -879,8 +879,8 @@ const useHeatmapTooltipState = () => {
     content: null,
   });
   const [isMounted, setIsMounted] = useState(false);
-  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const unmountTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const timeoutRef = useRef<number | null>(null);
+  const unmountTimeoutRef = useRef<number | null>(null);
   const tooltipRef = useRef<HTMLDivElement>(null);
   const rafRef = useRef<number | null>(null);
   const lastMouseMoveTime = useRef<number>(0);
@@ -900,10 +900,10 @@ const useHeatmapTooltipState = () => {
   const showTooltip = useCallback(
     (event: React.MouseEvent, day: DayData) => {
       if (unmountTimeoutRef.current) {
-        clearTimeout(unmountTimeoutRef.current);
+        window.clearTimeout(unmountTimeoutRef.current);
         unmountTimeoutRef.current = null;
       }
-      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+      if (timeoutRef.current) window.clearTimeout(timeoutRef.current);
 
       const dateStr = day.date.toLocaleDateString('en-US', {
         weekday: 'long',
@@ -928,7 +928,7 @@ const useHeatmapTooltipState = () => {
       });
       setIsMounted(true);
       lastCursorPosition.current = { x: event.clientX, y: event.clientY };
-      timeoutRef.current = setTimeout(() => {
+      timeoutRef.current = window.setTimeout(() => {
         const position = calculateTooltipPosition(event);
         setTooltip((prev) => ({ ...prev, isVisible: true, position }));
       }, 100);
@@ -938,17 +938,18 @@ const useHeatmapTooltipState = () => {
 
   const hideTooltip = useCallback(() => {
     if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current);
+      window.clearTimeout(timeoutRef.current);
       timeoutRef.current = null;
     }
     if (rafRef.current) {
-      cancelAnimationFrame(rafRef.current);
+      window.cancelAnimationFrame(rafRef.current);
       rafRef.current = null;
     }
     lastMouseEvent.current = null;
     setTooltip((prev) => ({ ...prev, isVisible: false }));
-    if (unmountTimeoutRef.current) clearTimeout(unmountTimeoutRef.current);
-    unmountTimeoutRef.current = setTimeout(() => {
+    if (unmountTimeoutRef.current)
+      window.clearTimeout(unmountTimeoutRef.current);
+    unmountTimeoutRef.current = window.setTimeout(() => {
       setIsMounted(false);
       unmountTimeoutRef.current = null;
     }, 200);
@@ -969,8 +970,8 @@ const useHeatmapTooltipState = () => {
       const timeSinceLastMove = now - lastMouseMoveTime.current;
       if (timeSinceLastMove < 32 && !pendingTooltipUpdate.current) {
         pendingTooltipUpdate.current = true;
-        if (rafRef.current) cancelAnimationFrame(rafRef.current);
-        rafRef.current = requestAnimationFrame(() => {
+        if (rafRef.current) window.cancelAnimationFrame(rafRef.current);
+        rafRef.current = window.requestAnimationFrame(() => {
           const position = calculateTooltipPosition(event);
           setTooltip((prev) => ({ ...prev, position }));
           lastMouseMoveTime.current = Date.now();
@@ -994,7 +995,7 @@ const useHeatmapTooltipState = () => {
 
   useLayoutEffect(() => {
     if (tooltip.isVisible && tooltipRef.current && lastMouseEvent.current) {
-      const recalcRAF = requestAnimationFrame(() => {
+      const recalcRAF = window.requestAnimationFrame(() => {
         if (tooltipRef.current && lastMouseEvent.current) {
           const newPosition = calculateTooltipPosition(lastMouseEvent.current);
           if (
@@ -1005,15 +1006,16 @@ const useHeatmapTooltipState = () => {
           }
         }
       });
-      return () => cancelAnimationFrame(recalcRAF);
+      return () => window.cancelAnimationFrame(recalcRAF);
     }
-  }, [tooltip.isVisible, calculateTooltipPosition]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [tooltip.isVisible, calculateTooltipPosition]); // eslint-disable-line react-hooks/exhaustive-deps -- tooltip visibility drives recalculation; position callback is memoized separately
 
   useEffect(() => {
     return () => {
-      if (timeoutRef.current) clearTimeout(timeoutRef.current);
-      if (unmountTimeoutRef.current) clearTimeout(unmountTimeoutRef.current);
-      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+      if (timeoutRef.current) window.clearTimeout(timeoutRef.current);
+      if (unmountTimeoutRef.current)
+        window.clearTimeout(unmountTimeoutRef.current);
+      if (rafRef.current) window.cancelAnimationFrame(rafRef.current);
     };
   }, []);
 

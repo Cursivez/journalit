@@ -144,14 +144,14 @@ const findBestWidgetPosition = (
         if (existingWidget) {
           const w = widgetDef?.maxSize
             ? Math.max(
-                constraints.minW as number,
-                Math.min(existingWidget.w, constraints.maxW as number)
+                widgetDef.minSize.w,
+                Math.min(existingWidget.w, widgetDef.maxSize.w)
               )
             : existingWidget.w;
           const h = widgetDef?.maxSize
             ? Math.max(
-                constraints.minH as number,
-                Math.min(existingWidget.h, constraints.maxH as number)
+                widgetDef.minSize.h,
+                Math.min(existingWidget.h, widgetDef.maxSize.h)
               )
             : existingWidget.h;
           const result = {
@@ -194,6 +194,25 @@ const findBestWidgetPosition = (
 
 
 type BreakpointKey = 'lg' | 'md' | 'sm' | 'xs' | 'xxs';
+
+function isBreakpointKey(value: string): value is BreakpointKey {
+  switch (value) {
+    case 'lg':
+    case 'md':
+    case 'sm':
+    case 'xs':
+    case 'xxs':
+      return true;
+    default:
+      return false;
+  }
+}
+
+function isWidgetRemoveEvent(
+  event: Event
+): event is CustomEvent<{ widgetId?: string }> {
+  return event instanceof CustomEvent;
+}
 
 
 const GRID_ROW_HEIGHT = SHARED_GRID_ROW_HEIGHT;
@@ -269,7 +288,7 @@ const validateLayoutsForGrid = (layouts: { [key: string]: Layout[] }) => {
 interface HomeGridLayoutProps {
   isEditing: boolean;
   widgets: string[];
-  onRemoveWidget: (widgetId: string) => void;
+  onRemoveWidget: (widgetId: string) => void | Promise<void>;
   tradeCount: number | null;
 }
 
@@ -331,7 +350,7 @@ const GridWidgetItem = memo<GridWidgetItemProps>(
           window.setTimeout(() => {
             void saveLayout(plugin, currentLayoutName, prunedLayout);
           }, 400);
-          document.dispatchEvent(
+          window.activeDocument.dispatchEvent(
             new CustomEvent('journalit-home-grid-remove-widget', {
               detail: { widgetId },
             })
@@ -616,7 +635,7 @@ const computeLayoutsFromSettings = (
     console.error('Error computing layouts:', error);
     const createDefaultLayoutItem = (widgetId: string, bp: string): Layout => {
       const widgetDef = getHomeWidgetById(widgetId);
-      const maxCols = GRID_COLS[bp as BreakpointKey];
+      const maxCols = isBreakpointKey(bp) ? GRID_COLS[bp] : GRID_COLS.lg;
       const defaultWidth =
         bp === 'xxs' ? 1 : Math.min(widgetDef?.defaultSize.w || 6, maxCols);
       const defaultHeight = widgetDef?.defaultSize.h || 4;
@@ -649,9 +668,7 @@ function useHomeGridLayoutPersistence({
   plugin: JournalitPlugin | null;
 }) {
   const [isGridResizing, setIsGridResizing] = useState(false);
-  const layoutSaveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
-    null
-  );
+  const layoutSaveTimeoutRef = useRef<number | null>(null);
   const latestLayoutChangeRef = useRef<{
     currentLayout: Layout[];
     allLayouts: { [key: string]: Layout[] };
@@ -682,7 +699,7 @@ function useHomeGridLayoutPersistence({
         ])
       );
 
-      document.dispatchEvent(new CustomEvent('layout-changed'));
+      window.activeDocument.dispatchEvent(new CustomEvent('layout-changed'));
 
       if (!isEditing || !plugin) return;
 
@@ -734,7 +751,7 @@ function useHomeGridLayoutPersistence({
           });
         });
 
-        saveLayout(plugin, 'Default', newLayout);
+        void saveLayout(plugin, 'Default', newLayout);
       } catch (error) {
         console.error('Error saving layout in handleLayoutChange:', error);
       }
@@ -751,7 +768,7 @@ function useHomeGridLayoutPersistence({
     const { currentLayout, allLayouts } = latestLayoutChangeRef.current;
     latestLayoutChangeRef.current = null;
     if (layoutSaveTimeoutRef.current) {
-      clearTimeout(layoutSaveTimeoutRef.current);
+      window.clearTimeout(layoutSaveTimeoutRef.current);
       layoutSaveTimeoutRef.current = null;
     }
     persistLayoutChangeRef.current?.(currentLayout, allLayouts);
@@ -784,7 +801,7 @@ function useHomeGridLayoutPersistence({
   useEffect(() => {
     return () => {
       if (layoutSaveTimeoutRef.current) {
-        clearTimeout(layoutSaveTimeoutRef.current);
+        window.clearTimeout(layoutSaveTimeoutRef.current);
         layoutSaveTimeoutRef.current = null;
       }
       if (latestLayoutChangeRef.current) {
@@ -802,10 +819,10 @@ function useHomeGridLayoutPersistence({
       if (activeDragItemIdRef.current || isResizeActiveRef.current) return;
 
       if (layoutSaveTimeoutRef.current) {
-        clearTimeout(layoutSaveTimeoutRef.current);
+        window.clearTimeout(layoutSaveTimeoutRef.current);
       }
 
-      layoutSaveTimeoutRef.current = setTimeout(flushLayoutChange, 160);
+      layoutSaveTimeoutRef.current = window.setTimeout(flushLayoutChange, 160);
     },
     [flushLayoutChange]
   );
@@ -819,7 +836,7 @@ function useHomeGridLayoutPersistence({
   );
 
   const handleDragStop = useCallback(() => {
-    setTimeout(() => {
+    window.setTimeout(() => {
       finalizeLayoutChange({ applyDragSwap: true });
       activeDragItemIdRef.current = null;
       dragStartItemRef.current = null;
@@ -833,12 +850,14 @@ function useHomeGridLayoutPersistence({
 
   const handleResizeStop = useCallback(() => {
     setIsGridResizing(false);
-    setTimeout(() => {
+    window.setTimeout(() => {
       finalizeLayoutChange({ applyDragSwap: false });
       isResizeActiveRef.current = false;
     }, 0);
-    requestAnimationFrame(() => {
-      document.dispatchEvent(new CustomEvent('journalit:chart-resize-resume'));
+    window.requestAnimationFrame(() => {
+      window.activeDocument.dispatchEvent(
+        new CustomEvent('journalit:chart-resize-resume')
+      );
     });
   }, [finalizeLayoutChange]);
 
@@ -903,9 +922,8 @@ const HomeGridLayoutBase: React.FC<HomeGridLayoutProps> = ({
   const handleWidthChange = useCallback(() => {}, []);
 
   const handleBreakpointChange = useCallback((breakpoint: string) => {
-    const validBreakpoints: BreakpointKey[] = ['lg', 'md', 'sm', 'xs', 'xxs'];
-    if (validBreakpoints.includes(breakpoint as BreakpointKey)) {
-      setCurrentBreakpoint(breakpoint as BreakpointKey);
+    if (isBreakpointKey(breakpoint)) {
+      setCurrentBreakpoint(breakpoint);
     }
   }, []);
 
@@ -947,25 +965,25 @@ const HomeGridLayoutBase: React.FC<HomeGridLayoutProps> = ({
         if (current.has(widgetId)) return current;
         return new Set([...current, widgetId]);
       });
-      window.setTimeout(() => onRemoveWidget(widgetId), 400);
+      window.setTimeout(() => void onRemoveWidget(widgetId), 400);
     },
     [onRemoveWidget]
   );
 
   useEffect(() => {
     const handleGridRemoveWidget = (event: Event) => {
-      const widgetId = (event as CustomEvent<{ widgetId?: string }>).detail
-        ?.widgetId;
+      if (!isWidgetRemoveEvent(event)) return;
+      const widgetId = event.detail?.widgetId;
       if (!widgetId) return;
       handleRemoveWidget(widgetId);
     };
 
-    document.addEventListener(
+    window.activeDocument.addEventListener(
       'journalit-home-grid-remove-widget',
       handleGridRemoveWidget
     );
     return () => {
-      document.removeEventListener(
+      window.activeDocument.removeEventListener(
         'journalit-home-grid-remove-widget',
         handleGridRemoveWidget
       );

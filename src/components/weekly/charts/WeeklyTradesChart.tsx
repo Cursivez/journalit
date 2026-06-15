@@ -1,9 +1,11 @@
 
 
 import React from 'react';
-import JournalitPlugin from '../../../main';
+import type JournalitPlugin from '../../../main';
 import { Trade } from '../../../components/dashboard/utils/dataUtils';
-import { SharedTradesChart, withChartData, ChartType } from '../../charts';
+import { SharedTradesChart } from '../../charts';
+import { prepareTradesChartData } from '../../../utils/chartUtils';
+import { usePlugin } from '../../../hooks/usePlugin';
 
 interface WeeklyTradesChartProps {
   trades: Trade[];
@@ -14,22 +16,19 @@ interface WeeklyTradesChartProps {
 }
 
 
-
-const EnhancedTradesChart = withChartData(SharedTradesChart, ChartType.TRADES);
-
-
 export const WeeklyTradesChart: React.FC<WeeklyTradesChartProps> = ({
   trades,
   height = 300,
   dateFormat,
   currencyOverride,
-  plugin,
 }) => {
+  const plugin = usePlugin();
+  const defaultRiskAmount = plugin?.settings?.trade?.defaultRiskAmount;
+  const chartData = prepareTradesChartData(trades, defaultRiskAmount, plugin);
+
   return (
-    <EnhancedTradesChart
-      trades={trades}
-      plugin={plugin}
-      dateFormat={dateFormat}
+    <SharedTradesChart
+      data={chartData}
       height={height}
       currencyOverride={currencyOverride}
       onPointClick={(data, _index) => {

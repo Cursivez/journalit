@@ -86,6 +86,7 @@ import {
 } from '../../utils/copyTradePnL';
 import { normalizeAccountLookupKey } from '../../services/trade/core/TradeAccountIdentity';
 import { eventBus } from '../../services/events';
+import { safeString } from '../../utils/safeString';
 
 
 type TradeWithPath = TradeFrontmatter & {
@@ -893,24 +894,21 @@ const TradeDetailsContent = memo<{
           }
 
           case CustomFieldType.DATE: {
-            const parsedDate = parseStoredDateLikeValue(
-              rawValue as string | Date | undefined
-            );
+            const parsedDate = parseStoredDateLikeValue(rawValue);
             const displayValue = parsedDate
               ? formatDateDisplay(parsedDate, plugin?.settings.trade.dateFormat)
-              : String(rawValue);
+              : safeString(rawValue);
 
             return renderSimpleValue(displayValue, 'trade-date');
           }
 
           case CustomFieldType.DATETIME: {
-            const parsedDateTime = parseStoredDateLikeValue(
-              rawValue as string | Date | undefined,
-              { includeTime: true }
-            );
+            const parsedDateTime = parseStoredDateLikeValue(rawValue, {
+              includeTime: true,
+            });
             const displayValue = parsedDateTime
               ? `${formatDateDisplay(parsedDateTime, plugin?.settings.trade.dateFormat)} ${formatCustomTimeValue(parsedDateTime)}`
-              : String(rawValue);
+              : safeString(rawValue);
 
             return renderSimpleValue(
               displayValue,
@@ -919,13 +917,12 @@ const TradeDetailsContent = memo<{
           }
 
           case CustomFieldType.TIME: {
-            const parsedTime = parseStoredDateLikeValue(
-              rawValue as string | Date | undefined,
-              { timeOnly: true }
-            );
+            const parsedTime = parseStoredDateLikeValue(rawValue, {
+              timeOnly: true,
+            });
             const displayValue = parsedTime
               ? formatCustomTimeValue(parsedTime)
-              : String(rawValue);
+              : safeString(rawValue);
 
             return renderSimpleValue(displayValue, 'trade-entry-time');
           }
@@ -933,7 +930,7 @@ const TradeDetailsContent = memo<{
           case CustomFieldType.DROPDOWN: {
             const displayValue =
               getCustomFieldDisplayValues(field, rawValue)[0] ||
-              String(rawValue);
+              safeString(rawValue);
             const showTooltip = shouldShowSimpleValueTooltip(displayValue);
             const content = (
               <span className="pill pill--tag">{displayValue}</span>
@@ -959,7 +956,7 @@ const TradeDetailsContent = memo<{
 
           case CustomFieldType.TEXT:
           default:
-            return renderSimpleValue(String(rawValue), 'trade-thesis');
+            return renderSimpleValue(safeString(rawValue), 'trade-thesis');
         }
       },
       [trade, isExpandedMode, plugin, currency, formatValue, isFeeMasked]
@@ -2404,7 +2401,7 @@ export const TradeDetailsRow = memo<TradeDetailsRowProps>(
               String(img).trim().replace(/['"`]/g, '')
             );
           } else if (typeof trade.images === 'string') {
-            const parsedImages = JSON.parse(trade.images);
+            const parsedImages: unknown = JSON.parse(trade.images);
             if (Array.isArray(parsedImages)) {
               imagesArray = parsedImages.map((img: unknown) =>
                 String(img).trim().replace(/['"`]/g, '')
@@ -2412,7 +2409,7 @@ export const TradeDetailsRow = memo<TradeDetailsRowProps>(
             }
           }
         }
-      } catch (_e) {
+      } catch {
         // intentional
       }
       return imagesArray;
@@ -2609,27 +2606,3 @@ export const TradeDetailsRow = memo<TradeDetailsRowProps>(
 );
 
 TradeDetailsRow.displayName = 'TradeDetailsRow';
-
-
-function _getTradePerformanceTooltip(trade: TradeWithPath): string {
-  const indicator =
-    trade.performanceIndicator === 'best'
-      ? t('common.best')
-      : t('common.worst');
-  const date = safeParseDateValue(trade.entryTime);
-
-  if (!date) {
-    return t('tradelog.tooltip.performance-trade', { indicator });
-  }
-
-  const dayStr = date.toLocaleDateString('en-US', {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-  });
-
-  return t('tradelog.tooltip.performance-trade-on', {
-    indicator,
-    date: dayStr,
-  });
-}

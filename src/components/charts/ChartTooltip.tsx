@@ -28,7 +28,7 @@ interface TooltipFormatterResult {
 
 
 interface ChartTooltipCustomProps<
-  TPayload extends Record<string, unknown> = Record<string, unknown>,
+  TPayload extends object = Record<string, unknown>,
 > {
   dateKey?: string;
   valueKey?: string;
@@ -40,12 +40,11 @@ interface ChartTooltipCustomProps<
 }
 
 
-type ChartTooltipProps<
-  TPayload extends Record<string, unknown> = Record<string, unknown>,
-> = Omit<Partial<TooltipProps<number, string>>, 'formatter'> &
-  ChartTooltipCustomProps<TPayload> & {
-    payload?: Array<{ payload: TPayload }>;
-  };
+type ChartTooltipProps<TPayload extends object = Record<string, unknown>> =
+  Omit<Partial<TooltipProps<number, string>>, 'formatter'> &
+    ChartTooltipCustomProps<TPayload> & {
+      payload?: Array<{ payload: TPayload }>;
+    };
 
 
 const getTooltipDisplayKind = (
@@ -134,129 +133,60 @@ const formatTooltipItemValue = (
   return String(item.value);
 };
 
+const getPayloadValue = (payload: object, key: string): unknown =>
+  Object.prototype.hasOwnProperty.call(payload, key)
+    ? Reflect.get(payload, key)
+    : undefined;
 
-export const ChartTooltip = React.memo<ChartTooltipProps>(
-  ({
-    active,
-    payload,
-    dateKey = 'date',
-    valueKey = 'pnl',
-    valueType = 'pnl',
-    additionalItems,
-    formatter,
-    displayRMultiples,
-    currencyOverride,
-  }) => {
-    const { currency: globalCurrency } = useCurrency();
-    const { formatValue, shouldMask } = useDisplayFormatter();
-    const currency = currencyOverride || globalCurrency;
 
-    if (!active || !payload || payload.length === 0) return null;
+function ChartTooltipComponent<
+  TPayload extends object = Record<string, unknown>,
+>({
+  active,
+  payload,
+  dateKey = 'date',
+  valueKey = 'pnl',
+  valueType = 'pnl',
+  additionalItems,
+  formatter,
+  displayRMultiples,
+  currencyOverride,
+}: ChartTooltipProps<TPayload>) {
+  const { currency: globalCurrency } = useCurrency();
+  const { formatValue, shouldMask } = useDisplayFormatter();
+  const currency = currencyOverride || globalCurrency;
 
-    const data = payload[0].payload;
+  if (!active || !payload || payload.length === 0) return null;
 
-    
-    if (formatter) {
-      const { title, primaryValue, items } = formatter(data);
+  const data = payload[0].payload;
 
-      const primaryKind = getTooltipDisplayKind(primaryValue.type);
-      const isPrimaryMasked = primaryKind ? shouldMask(primaryKind) : false;
-      const primaryClass = isPrimaryMasked
-        ? ''
-        : primaryValue.isPositive
-          ? TOOLTIP_CLASS_NAMES.positive
-          : primaryValue.isNegative
-            ? TOOLTIP_CLASS_NAMES.negative
-            : '';
+  
+  if (formatter) {
+    const { title, primaryValue, items } = formatter(data);
 
-      return (
-        <div className={TOOLTIP_CLASS_NAMES.container}>
-          <div className={TOOLTIP_CLASS_NAMES.date}>{title}</div>
-          <div className={`${TOOLTIP_CLASS_NAMES.value} ${primaryClass}`}>
-            {formatTooltipItemValue(
-              primaryValue,
-              currency,
-              formatValue,
-              shouldMask,
-              displayRMultiples
-            )}
-          </div>
-          {items?.map((item) => (
-            <div
-              key={`${item.label}-${item.value}-${item.rMultiple ?? 'no-r'}`}
-              className={`${TOOLTIP_CLASS_NAMES.info} ${getTooltipItemToneClass(
-                item,
-                shouldMask
-              )}`.trim()}
-            >
-              {item.label ? `${item.label}: ` : ''}
-              {formatTooltipItemValue(
-                item,
-                currency,
-                formatValue,
-                shouldMask,
-                displayRMultiples
-              )}
-            </div>
-          ))}
-        </div>
-      );
-    }
-
-    
-    const date = data[dateKey] as string | undefined;
-    const value = data[valueKey] as number;
-    const rMultiple = (data.cumulativeR ?? data.tradeR ?? data.rMultiple) as
-      | number
-      | undefined;
-    const isProfitable = valueType === 'pnl' ? value >= 0 : false;
-    const isNegative = valueType === 'drawdown' ? true : value < 0;
-
-    const valueKind =
-      valueType === 'pnl' || valueType === 'drawdown' ? valueType : null;
-    const isValueMasked = valueKind ? shouldMask(valueKind) : false;
-    const displayRMultiple =
-      displayRMultiples === false ? undefined : rMultiple;
-    const formattedValue =
-      valueKind && isValueMasked
-        ? formatValue({
-            kind: valueKind,
-            value,
-            currencyCode: currency,
-            rMultiple: displayRMultiple,
-          })
-        : valueType === 'pnl'
-          ? formatValue({
-              kind: 'pnl',
-              value,
-              currencyCode: currency,
-              rMultiple: displayRMultiple,
-            })
-          : formatTooltipValue(
-              value,
-              valueType,
-              currency,
-              displayRMultiples,
-              rMultiple
-            );
-    const valueClass = isValueMasked
+    const primaryKind = getTooltipDisplayKind(primaryValue.type);
+    const isPrimaryMasked = primaryKind ? shouldMask(primaryKind) : false;
+    const primaryClass = isPrimaryMasked
       ? ''
-      : isProfitable
+      : primaryValue.isPositive
         ? TOOLTIP_CLASS_NAMES.positive
-        : isNegative
+        : primaryValue.isNegative
           ? TOOLTIP_CLASS_NAMES.negative
           : '';
 
-    
-    const additionalItemsArray = additionalItems ? additionalItems(data) : [];
-
     return (
       <div className={TOOLTIP_CLASS_NAMES.container}>
-        <div className={TOOLTIP_CLASS_NAMES.date}>{date}</div>
-        <div className={`${TOOLTIP_CLASS_NAMES.value} ${valueClass}`}>
-          {formattedValue}
+        <div className={TOOLTIP_CLASS_NAMES.date}>{title}</div>
+        <div className={`${TOOLTIP_CLASS_NAMES.value} ${primaryClass}`}>
+          {formatTooltipItemValue(
+            primaryValue,
+            currency,
+            formatValue,
+            shouldMask,
+            displayRMultiples
+          )}
         </div>
-        {additionalItemsArray.map((item) => (
+        {items?.map((item) => (
           <div
             key={`${item.label}-${item.value}-${item.rMultiple ?? 'no-r'}`}
             className={`${TOOLTIP_CLASS_NAMES.info} ${getTooltipItemToneClass(
@@ -277,6 +207,83 @@ export const ChartTooltip = React.memo<ChartTooltipProps>(
       </div>
     );
   }
-);
 
-ChartTooltip.displayName = 'ChartTooltip';
+  
+  const dateValue = getPayloadValue(data, dateKey);
+  const date = typeof dateValue === 'string' ? dateValue : undefined;
+  const rawValue = getPayloadValue(data, valueKey);
+  const value = typeof rawValue === 'number' ? rawValue : 0;
+  const rawRMultiple =
+    getPayloadValue(data, 'cumulativeR') ??
+    getPayloadValue(data, 'tradeR') ??
+    getPayloadValue(data, 'rMultiple');
+  const rMultiple = typeof rawRMultiple === 'number' ? rawRMultiple : undefined;
+  const isProfitable = valueType === 'pnl' ? value >= 0 : false;
+  const isNegative = valueType === 'drawdown' ? true : value < 0;
+
+  const valueKind =
+    valueType === 'pnl' || valueType === 'drawdown' ? valueType : null;
+  const isValueMasked = valueKind ? shouldMask(valueKind) : false;
+  const displayRMultiple = displayRMultiples === false ? undefined : rMultiple;
+  const formattedValue =
+    valueKind && isValueMasked
+      ? formatValue({
+          kind: valueKind,
+          value,
+          currencyCode: currency,
+          rMultiple: displayRMultiple,
+        })
+      : valueType === 'pnl'
+        ? formatValue({
+            kind: 'pnl',
+            value,
+            currencyCode: currency,
+            rMultiple: displayRMultiple,
+          })
+        : formatTooltipValue(
+            value,
+            valueType,
+            currency,
+            displayRMultiples,
+            rMultiple
+          );
+  const valueClass = isValueMasked
+    ? ''
+    : isProfitable
+      ? TOOLTIP_CLASS_NAMES.positive
+      : isNegative
+        ? TOOLTIP_CLASS_NAMES.negative
+        : '';
+
+  
+  const additionalItemsArray = additionalItems ? additionalItems(data) : [];
+
+  return (
+    <div className={TOOLTIP_CLASS_NAMES.container}>
+      <div className={TOOLTIP_CLASS_NAMES.date}>{date}</div>
+      <div className={`${TOOLTIP_CLASS_NAMES.value} ${valueClass}`}>
+        {formattedValue}
+      </div>
+      {additionalItemsArray.map((item) => (
+        <div
+          key={`${item.label}-${item.value}-${item.rMultiple ?? 'no-r'}`}
+          className={`${TOOLTIP_CLASS_NAMES.info} ${getTooltipItemToneClass(
+            item,
+            shouldMask
+          )}`.trim()}
+        >
+          {item.label ? `${item.label}: ` : ''}
+          {formatTooltipItemValue(
+            item,
+            currency,
+            formatValue,
+            shouldMask,
+            displayRMultiples
+          )}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+export const ChartTooltip = ChartTooltipComponent;

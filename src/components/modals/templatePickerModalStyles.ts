@@ -1,6 +1,6 @@
 
 
-const TEMPLATE_PICKER_MODAL_STYLES = `
+export const TEMPLATE_PICKER_MODAL_STYLES = `
 
 .journalit-template-picker-modal .template-picker-container {
   display: flex;
@@ -153,13 +153,3 @@ const TEMPLATE_PICKER_MODAL_STYLES = `
   min-width: 80px;
 }
 `;
-
-const templatePickerModalStylesInjected = false;
-
-
-function injectTemplatePickerModalStyles(): void {
-  return;
-}
-
-
-export function ensureTemplatePickerModalStyles(): void {}

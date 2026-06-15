@@ -23,7 +23,7 @@ export class MissedTradeNoteProcessor extends BaseComponentProcessor {
   private unsubscribeBacktestTradeListener: Unsubscribe | null = null;
 
   
-  private observerTimeouts: Map<MutationObserver, NodeJS.Timeout> = new Map();
+  private observerTimeouts: Map<MutationObserver, number> = new Map();
 
   constructor(app: App, plugin: Plugin) {
     super(app, plugin, new MissedTradeNoteRenderer(app));
@@ -84,7 +84,7 @@ export class MissedTradeNoteProcessor extends BaseComponentProcessor {
     
     const timeout = this.observerTimeouts.get(observer);
     if (timeout) {
-      clearTimeout(timeout);
+      window.clearTimeout(timeout);
       this.observerTimeouts.delete(observer);
     }
 
@@ -145,13 +145,13 @@ export class MissedTradeNoteProcessor extends BaseComponentProcessor {
     }
 
     
-    const bodyEl = document.body;
+    const bodyEl = window.activeDocument.body;
 
     
     const observer = new MutationObserver((mutations, obs) => {
       
       
-      const editors = document.querySelectorAll('.cm-editor');
+      const editors = window.activeDocument.querySelectorAll('.cm-editor');
       if (editors.length === 0) return;
 
       
@@ -167,8 +167,10 @@ export class MissedTradeNoteProcessor extends BaseComponentProcessor {
         if (!containerEl) return;
 
         
-        const leaf = this.findContainingLeaf(containerEl as HTMLElement);
-        const leafViewEl = leaf?.view?.containerEl as HTMLElement;
+        const leaf = containerEl.instanceOf(HTMLElement)
+          ? this.findContainingLeaf(containerEl)
+          : null;
+        const leafViewEl = leaf?.view?.containerEl;
 
         
         const leafEl = metadataContainer.closest('.workspace-leaf');
@@ -234,15 +236,15 @@ export class MissedTradeNoteProcessor extends BaseComponentProcessor {
         
         let missedTradeNoteElement = Array.from(
           editor.querySelectorAll(`.${componentClassName}`)
-        ).find((el) => {
-          const matchesFilePath =
-            el.getAttribute('data-file-path') === file.path;
-          return matchesFilePath;
-        }) as HTMLElement;
+        ).find(
+          (el): el is HTMLElement =>
+            el.instanceOf(HTMLElement) &&
+            el.getAttribute('data-file-path') === file.path
+        );
 
         
         if (!missedTradeNoteElement) {
-          missedTradeNoteElement = document.createElement('div');
+          missedTradeNoteElement = window.activeDocument.createElement('div');
           missedTradeNoteElement.className = componentClassName;
           missedTradeNoteElement.classList.add('journalit-component-container');
           missedTradeNoteElement.setAttribute('data-file-path', file.path);
@@ -264,7 +266,7 @@ export class MissedTradeNoteProcessor extends BaseComponentProcessor {
         }
 
         
-        this.renderer.renderComponent(
+        void this.renderer.renderComponent(
           missedTradeNoteElement,
           frontmatter,
           file.path,
@@ -293,7 +295,7 @@ export class MissedTradeNoteProcessor extends BaseComponentProcessor {
     observer.observe(bodyEl, { childList: true, subtree: true });
 
     
-    const timeout = setTimeout(() => {
+    const timeout = window.setTimeout(() => {
       this.disconnectObserverSafely(observer);
     }, 3000);
 
@@ -345,7 +347,7 @@ export class MissedTradeNoteProcessor extends BaseComponentProcessor {
         processedFilePaths.add(file.path);
 
         
-        setTimeout(() => {
+        window.setTimeout(() => {
           this.invokeHandleFileOpenSafely(file, true);
         }, 300);
       } catch (error) {
@@ -365,12 +367,16 @@ export class MissedTradeNoteProcessor extends BaseComponentProcessor {
   
   private removeMissedTradeNoteForPath(filePath: string): void {
     const componentClass = this.getComponentClassName();
-    const staleMissedTradeNotes = document.querySelectorAll(
+    const staleMissedTradeNotes = window.activeDocument.querySelectorAll(
       `.${componentClass}[data-file-path="${filePath}"]`
     );
 
     staleMissedTradeNotes.forEach((element) => {
-      const container = element as HTMLElement;
+      if (!element.instanceOf(HTMLElement)) {
+        return;
+      }
+
+      const container = element;
       const viewId = container.getAttribute('data-view-id');
       const leafId = container.getAttribute('data-leaf-id');
       if (viewId) {
@@ -462,7 +468,7 @@ export class MissedTradeNoteProcessor extends BaseComponentProcessor {
 
       
       const componentClass = this.getComponentClassName();
-      const missedTradeNotes = document.querySelectorAll(
+      const missedTradeNotes = window.activeDocument.querySelectorAll(
         `.${componentClass}[data-file-path="${file.path}"]`
       );
 
@@ -479,10 +485,12 @@ export class MissedTradeNoteProcessor extends BaseComponentProcessor {
           missedTradeNoteEl.getAttribute('data-editor-id');
 
         if (viewId) {
+          if (!missedTradeNoteEl.instanceOf(HTMLElement)) {
+            continue;
+          }
+
           
-          (missedTradeNoteEl as HTMLElement).classList.add(
-            'jl-component-visible'
-          );
+          missedTradeNoteEl.classList.add('jl-component-visible');
 
           
           const existingWrappers = missedTradeNoteEl.querySelectorAll(
@@ -492,11 +500,11 @@ export class MissedTradeNoteProcessor extends BaseComponentProcessor {
 
           
           await new Promise<void>((resolve) =>
-            setTimeout(() => {
+            window.setTimeout(() => {
               try {
                 this.renderWithDeduplication({
                   file,
-                  container: missedTradeNoteEl as HTMLElement,
+                  container: missedTradeNoteEl,
                   data: frontmatter,
                   viewId,
                   contextId: contextId || undefined,
@@ -531,8 +539,8 @@ export class MissedTradeNoteProcessor extends BaseComponentProcessor {
   
   public cleanup(): void {
     
-    for (const [_observer, timeout] of this.observerTimeouts) {
-      clearTimeout(timeout);
+    for (const [, timeout] of this.observerTimeouts) {
+      window.clearTimeout(timeout);
     }
     this.observerTimeouts.clear();
 
@@ -587,8 +595,10 @@ export class MissedTradeNoteProcessor extends BaseComponentProcessor {
     }
 
     
-    const leaf = this.findContainingLeaf(containerEl as HTMLElement);
-    const leafViewEl = leaf?.view?.containerEl as HTMLElement;
+    const leaf = containerEl.instanceOf(HTMLElement)
+      ? this.findContainingLeaf(containerEl)
+      : null;
+    const leafViewEl = leaf?.view?.containerEl;
     const leafId = leafViewEl?.id || null;
 
     
@@ -607,17 +617,22 @@ export class MissedTradeNoteProcessor extends BaseComponentProcessor {
         
         let componentElement = Array.from(
           containerEl.querySelectorAll(`.${componentClass}`)
-        ).find((el) => {
+        ).find((el): el is HTMLElement => {
           const matchesFilePath =
             el.getAttribute('data-file-path') === activeFile.path;
           const matchesViewId = el.getAttribute('data-view-id') === viewId;
           const matchesLeafId =
             !leafId || el.getAttribute('data-leaf-id') === leafId;
-          return matchesFilePath && matchesViewId && matchesLeafId;
-        }) as HTMLElement;
+          return (
+            el.instanceOf(HTMLElement) &&
+            matchesFilePath &&
+            matchesViewId &&
+            matchesLeafId
+          );
+        });
 
         if (!componentElement) {
-          componentElement = document.createElement('div');
+          componentElement = window.activeDocument.createElement('div');
           componentElement.className = componentClass;
           componentElement.classList.add('journalit-component-container');
           componentElement.setAttribute('data-file-path', activeFile.path);
@@ -632,7 +647,7 @@ export class MissedTradeNoteProcessor extends BaseComponentProcessor {
         }
 
         
-        this.renderer.renderComponent(
+        void this.renderer.renderComponent(
           componentElement,
           frontmatter,
           activeFile.path,
@@ -654,17 +669,22 @@ export class MissedTradeNoteProcessor extends BaseComponentProcessor {
         
         let componentElement = Array.from(
           previewTarget.querySelectorAll(`.${componentClass}`)
-        ).find((el) => {
+        ).find((el): el is HTMLElement => {
           const matchesFilePath =
             el.getAttribute('data-file-path') === activeFile.path;
           const matchesViewId = el.getAttribute('data-view-id') === viewId;
           const matchesLeafId =
             !leafId || el.getAttribute('data-leaf-id') === leafId;
-          return matchesFilePath && matchesViewId && matchesLeafId;
-        }) as HTMLElement;
+          return (
+            el.instanceOf(HTMLElement) &&
+            matchesFilePath &&
+            matchesViewId &&
+            matchesLeafId
+          );
+        });
 
         if (!componentElement) {
-          componentElement = document.createElement('div');
+          componentElement = window.activeDocument.createElement('div');
           componentElement.className = componentClass;
           componentElement.classList.add('journalit-component-container');
           componentElement.setAttribute('data-file-path', activeFile.path);
@@ -679,7 +699,7 @@ export class MissedTradeNoteProcessor extends BaseComponentProcessor {
         }
 
         
-        this.renderer.renderComponent(
+        void this.renderer.renderComponent(
           componentElement,
           frontmatter,
           activeFile.path,

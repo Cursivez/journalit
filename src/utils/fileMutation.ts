@@ -17,7 +17,7 @@ function getActiveMarkdownViewForFile(
 }
 
 function deferToNextTick(): Promise<void> {
-  return new Promise((resolve) => globalThis.setTimeout(resolve, 0));
+  return new Promise((resolve) => window.setTimeout(resolve, 0));
 }
 
 function replaceEditorContent(view: MarkdownView, newContent: string): void {

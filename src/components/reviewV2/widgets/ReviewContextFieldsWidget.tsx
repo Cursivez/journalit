@@ -65,6 +65,14 @@ const FRONTMATTER_TYPE_TO_REVIEW_TYPE: Record<
 
 const SAVE_DEBOUNCE_MS = 500;
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
+}
+
+function asRecord(value: unknown): Record<string, unknown> | undefined {
+  return isRecord(value) ? value : undefined;
+}
+
 function isReviewNoteType(value: unknown): value is ReviewNoteFrontmatterType {
   return (
     value === 'drc' ||
@@ -113,13 +121,22 @@ function getReviewTypeSourceLabel(type: ReviewFieldReviewType): string {
   }
 }
 
+function reviewContextValueToString(value: unknown): string {
+  if (value === undefined || value === null) return '';
+  if (typeof value === 'string') return value;
+  if (typeof value === 'number' || typeof value === 'boolean')
+    return String(value);
+  if (value instanceof Date) return value.toISOString();
+  return JSON.stringify(value);
+}
+
 function formatReviewContextDisplayValue(value: unknown): string {
-  if (value === undefined || value === null) return t('common.none');
-  if (typeof value === 'string') return value.trim() || t('common.none');
-  if (Array.isArray(value)) {
-    return value.length > 0 ? value.map(String).join(', ') : t('common.none');
+  const displayValue = reviewContextValueToString(value).trim();
+  if (displayValue) return displayValue;
+  if (Array.isArray(value) && value.length > 0) {
+    return value.map(reviewContextValueToString).join(', ');
   }
-  return String(value);
+  return t('common.none');
 }
 
 function getTargetDateFromFrontmatter(
@@ -245,8 +262,9 @@ export const ReviewContextFieldsWidget: React.FC<ReviewContextFieldsWidgetProps>
         return;
       }
 
-      const frontmatter =
-        plugin.app.metadataCache.getFileCache(file)?.frontmatter;
+      const frontmatter = asRecord(
+        plugin.app.metadataCache.getFileCache(file)?.frontmatter
+      );
       const type = frontmatter?.type;
       if (!frontmatter || !isReviewNoteType(type)) {
         setIsValidContext(false);
@@ -401,13 +419,13 @@ export const ReviewContextFieldsWidget: React.FC<ReviewContextFieldsWidgetProps>
           await plugin.app.fileManager.processFrontMatter(
             file,
             (frontmatter) => {
-              frontmatter.reviewCustomFields =
-                mergeReviewCustomFieldsFrontmatter(
-                  frontmatter.reviewCustomFields,
-                  nextValues,
-                  fields,
-                  { includeClearedFields: true }
-                );
+              const record = asRecord(frontmatter) ?? {};
+              record.reviewCustomFields = mergeReviewCustomFieldsFrontmatter(
+                record.reviewCustomFields,
+                nextValues,
+                fields,
+                { includeClearedFields: true }
+              );
             }
           );
 
@@ -481,10 +499,7 @@ export const ReviewContextFieldsWidget: React.FC<ReviewContextFieldsWidgetProps>
     );
 
     const openReviewFieldSettings = useCallback(() => {
-      window.sessionStorage.setItem(
-        'journalit:open-review-fields-settings',
-        '1'
-      );
+      plugin.app.saveLocalStorage('journalit:open-review-fields-settings', '1');
       plugin.openSettingsToTab('customization');
       window.dispatchEvent(new Event('journalit:open-review-fields-settings'));
     }, [plugin]);
@@ -714,8 +729,12 @@ export const ReviewContextFieldsWidget: React.FC<ReviewContextFieldsWidgetProps>
                     hideEmpty={hideEmpty}
                     service={service}
                     errors={errors}
-                    onLocalChange={handleChange}
-                    onOpenSource={handleOpenSourceReview}
+                    onLocalChange={(field, value) =>
+                      void handleChange(field, value)
+                    }
+                    onOpenSource={(source) =>
+                      void handleOpenSourceReview(source)
+                    }
                     localSourceLabel={
                       reviewType
                         ? getReviewTypeSourceLabel(reviewType)
@@ -951,7 +970,7 @@ const ReviewContextFieldControl: React.FC<ReviewContextFieldControlProps> = ({
       return (
         <Input
           {...commonProps}
-          value={String(value ?? '')}
+          value={reviewContextValueToString(value)}
           multiline={field.display.compact !== true}
           rows={3}
         />
@@ -972,7 +991,7 @@ const ReviewContextFieldControl: React.FC<ReviewContextFieldControlProps> = ({
         return (
           <ComboBox
             {...commonProps}
-            value={String(value ?? '')}
+            value={reviewContextValueToString(value)}
             options={options}
             isMulti={false}
             allowCreate={true}
@@ -983,7 +1002,7 @@ const ReviewContextFieldControl: React.FC<ReviewContextFieldControlProps> = ({
       return (
         <Select
           {...commonProps}
-          value={String(value ?? '')}
+          value={reviewContextValueToString(value)}
           options={options.map((option) => ({ value: option, label: option }))}
         />
       );
@@ -991,7 +1010,9 @@ const ReviewContextFieldControl: React.FC<ReviewContextFieldControlProps> = ({
       return (
         <ComboBox
           {...commonProps}
-          value={Array.isArray(value) ? value.map(String) : []}
+          value={
+            Array.isArray(value) ? value.map(reviewContextValueToString) : []
+          }
           options={options}
           isMulti={true}
           allowCreate={field.allowCreateOptions || false}
@@ -1002,7 +1023,7 @@ const ReviewContextFieldControl: React.FC<ReviewContextFieldControlProps> = ({
       return (
         <FastDateTimeInput
           {...commonProps}
-          value={String(value ?? '')}
+          value={reviewContextValueToString(value)}
           includeTime={false}
         />
       );
@@ -1010,7 +1031,7 @@ const ReviewContextFieldControl: React.FC<ReviewContextFieldControlProps> = ({
       return (
         <FastDateTimeInput
           {...commonProps}
-          value={String(value ?? '')}
+          value={reviewContextValueToString(value)}
           includeTime={true}
         />
       );
@@ -1018,7 +1039,7 @@ const ReviewContextFieldControl: React.FC<ReviewContextFieldControlProps> = ({
       return (
         <FastDateTimeInput
           {...commonProps}
-          value={String(value ?? '')}
+          value={reviewContextValueToString(value)}
           timeOnly={true}
         />
       );

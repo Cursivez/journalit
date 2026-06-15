@@ -55,13 +55,13 @@ export const FullscreenPortal: React.FC<FullscreenPortalProps> = ({
 
     
 
-    let portalEl = document.getElementById(portalId);
+    let portalEl = window.activeDocument.getElementById(portalId);
 
     if (!portalEl) {
-      portalEl = document.createElement('div');
+      portalEl = window.activeDocument.createElement('div');
       portalEl.id = portalId;
       portalEl.className = 'journalit-fullscreen-portal-container';
-      document.body.appendChild(portalEl);
+      window.activeDocument.body.appendChild(portalEl);
     }
 
     setPortalContainer(portalEl);
@@ -80,18 +80,18 @@ export const FullscreenPortal: React.FC<FullscreenPortalProps> = ({
     };
 
     
-    document.addEventListener('keydown', handleKeyDown, true);
+    window.activeDocument.addEventListener('keydown', handleKeyDown, true);
 
     
     return () => {
-      document.removeEventListener('keydown', handleKeyDown, true);
+      window.activeDocument.removeEventListener('keydown', handleKeyDown, true);
 
       
       
       if (!isOpenRef.current && portalEl && portalEl.parentNode) {
-        setTimeout(() => {
+        window.setTimeout(() => {
           
-          const currentPortal = document.getElementById(portalId);
+          const currentPortal = window.activeDocument.getElementById(portalId);
           if (
             currentPortal &&
             currentPortal.parentNode &&

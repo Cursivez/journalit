@@ -80,6 +80,9 @@ interface UIState {
 }
 
 
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  value !== null && typeof value === 'object' && !Array.isArray(value);
+
 const DEFAULT_UI_STATE: UIState = {
   recentItems: [],
   gettingStartedDismissed: false,
@@ -122,12 +125,12 @@ export class UIStateManager {
       }
 
       const content = await this.plugin.app.vault.adapter.read(statePath);
-      const data = JSON.parse(content);
+      const data: unknown = JSON.parse(content);
 
       
       this.state = {
         ...DEFAULT_UI_STATE,
-        ...data,
+        ...(isRecord(data) ? data : {}),
       };
       this.loadedFromDisk = true;
 

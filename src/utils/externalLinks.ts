@@ -3,11 +3,21 @@
 import { Notice, Platform } from 'obsidian';
 import { t } from '../lang/helpers';
 
-const DEFAULT_ALLOWED_HOSTNAMES = ['journalit.co', 'api.journalit.co'];
+const DEFAULT_ALLOWED_HOSTNAMES = [
+  'journalit.co',
+  'api.journalit.co',
+  'discord.gg',
+  'github.com',
+];
+
+interface OpenExternalUrlOptions {
+  onPopupBlocked?: (url: string) => void | Promise<void>;
+}
 
 export function openExternalUrl(
   url: string,
-  allowedHostnames: string[] = DEFAULT_ALLOWED_HOSTNAMES
+  allowedHostnames: string[] = DEFAULT_ALLOWED_HOSTNAMES,
+  options: OpenExternalUrlOptions = {}
 ): void {
   let parsedUrl: URL;
 
@@ -58,16 +68,24 @@ export function openExternalUrl(
       newWindow.closed ||
       typeof newWindow.closed === 'undefined'
     ) {
+      if (options.onPopupBlocked) {
+        void options.onPopupBlocked(url);
+      } else {
+        new Notice(
+          t('onboarding.activation.notice.popup-blocked-manual', { url }),
+          5000
+        );
+      }
+    }
+  } catch (error) {
+    console.error('[ExternalLinks] Failed to open browser:', error);
+    if (options.onPopupBlocked) {
+      void options.onPopupBlocked(url);
+    } else {
       new Notice(
         t('onboarding.activation.notice.popup-blocked-manual', { url }),
         5000
       );
     }
-  } catch (error) {
-    console.error('[ExternalLinks] Failed to open browser:', error);
-    new Notice(
-      t('onboarding.activation.notice.popup-blocked-manual', { url }),
-      5000
-    );
   }
 }

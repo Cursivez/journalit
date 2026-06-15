@@ -395,7 +395,10 @@ export const DateRangeFilter: React.FC<DateRangeFilterProps> = ({
   
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      const target = event.target as Node;
+      const target = event.target;
+      if (!(target instanceof Node)) {
+        return;
+      }
 
       
       if (dateRangeContainerRef.current?.contains(target)) {
@@ -404,10 +407,7 @@ export const DateRangeFilter: React.FC<DateRangeFilterProps> = ({
 
       
       
-      const flatpickrCalendar = (target as Element).closest?.(
-        '.flatpickr-calendar'
-      );
-      if (flatpickrCalendar) {
+      if (target.instanceOf(Element) && target.closest('.flatpickr-calendar')) {
         return;
       }
 
@@ -419,12 +419,15 @@ export const DateRangeFilter: React.FC<DateRangeFilterProps> = ({
 
     
     if (isCustomDropdownOpen) {
-      document.addEventListener('mousedown', handleClickOutside);
+      window.activeDocument.addEventListener('mousedown', handleClickOutside);
     }
 
     
     return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
+      window.activeDocument.removeEventListener(
+        'mousedown',
+        handleClickOutside
+      );
     };
   }, [isCustomDropdownOpen]);
 

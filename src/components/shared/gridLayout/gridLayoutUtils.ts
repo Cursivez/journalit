@@ -146,24 +146,34 @@ export function validateLayoutsForGrid(
   return validatedLayouts;
 }
 
+function asRecord(value: unknown): Record<string, unknown> | null {
+  return value && typeof value === 'object' && !Array.isArray(value)
+    ? Object.fromEntries(Object.entries(value))
+    : null;
+}
+
+function finiteNumber(value: unknown, fallback: number): number {
+  return typeof value === 'number' && Number.isFinite(value) ? value : fallback;
+}
 
 
-export function sanitizeLayoutItem(item: any): Layout | null {
-  if (!item || typeof item !== 'object') return null;
+
+export function sanitizeLayoutItem(item: unknown): Layout | null {
+  const record = asRecord(item);
+  if (!record) return null;
+
+  const x = finiteNumber(record.x, 0);
+  const rawY = finiteNumber(record.y, 0);
+  const y = rawY === Infinity ? LAYOUT_BOTTOM_POSITION : rawY;
+  const rawW = finiteNumber(record.w, 1);
+  const rawH = finiteNumber(record.h, 1);
 
   return {
-    i: typeof item.i === 'string' ? item.i : 'unknown',
-    x: typeof item.x === 'number' && isFinite(item.x) ? item.x : 0,
-    y:
-      typeof item.y === 'number' && isFinite(item.y)
-        ? item.y === Infinity
-          ? LAYOUT_BOTTOM_POSITION
-          : item.y
-        : 0,
-    w:
-      typeof item.w === 'number' && isFinite(item.w) && item.w > 0 ? item.w : 1,
-    h:
-      typeof item.h === 'number' && isFinite(item.h) && item.h > 0 ? item.h : 1,
+    i: typeof record.i === 'string' ? record.i : 'unknown',
+    x,
+    y,
+    w: rawW > 0 ? rawW : 1,
+    h: rawH > 0 ? rawH : 1,
   };
 }
 

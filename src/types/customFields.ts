@@ -76,7 +76,7 @@ export interface CustomFieldsData {
 
 
 export interface CustomFieldValues {
-  [fieldId: string]: any; 
+  [fieldId: string]: unknown; 
 }
 
 
@@ -416,7 +416,15 @@ export function validateCustomFieldValue(
 
     case CustomFieldType.DATE:
     case CustomFieldType.DATETIME: {
-      const date = new Date(value as string | number | Date);
+      if (
+        typeof value !== 'string' &&
+        typeof value !== 'number' &&
+        !(value instanceof Date)
+      ) {
+        return t('validation.custom-field.date', { label: definition.label });
+      }
+
+      const date = new Date(value);
       if (isNaN(date.getTime())) {
         return t('validation.custom-field.date', { label: definition.label });
       }

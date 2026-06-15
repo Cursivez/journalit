@@ -20,6 +20,29 @@ import {
 } from './shared/accountDisplay';
 import { splitReviewTradeByRealizedPnlEvent } from '../utils/reviewTradeDates';
 
+interface AccountBreakdownTrade extends Record<string, unknown> {
+  tradeId?: string | number;
+  id?: string | number;
+  path?: string;
+  pnl?: number | null;
+  directPnL?: number | null;
+  useDirectPnLInput?: boolean;
+  dividends?: Array<{ amount?: number | null }>;
+  commission?: number | null;
+  swap?: number | null;
+  fees?: number | null;
+  rebate?: number | null;
+  account?: string | string[];
+  breakEvenAccountCurrentBalance?: number;
+}
+
+const asAccountBreakdownTrades = (value: unknown): AccountBreakdownTrade[] =>
+  Array.isArray(value)
+    ? value.filter((item): item is AccountBreakdownTrade =>
+        Boolean(item && typeof item === 'object' && !Array.isArray(item))
+      )
+    : [];
+
 interface AccountBreakdownWidgetProps {
   filePath: string;
   plugin: JournalitPlugin;
@@ -108,7 +131,9 @@ export const AccountBreakdownWidget: React.FC<AccountBreakdownWidgetProps> =
       filePath,
       plugin
     );
-    const trades = preview && previewData ? previewData.trades : cachedTrades;
+    const trades = asAccountBreakdownTrades(
+      preview && previewData ? previewData.trades : cachedTrades
+    );
     const loading = preview ? false : cacheLoading;
     const { formatValue, shouldMask } = useDisplayFormatter();
     const isPnlMasked = shouldMask('pnl');
@@ -130,7 +155,9 @@ export const AccountBreakdownWidget: React.FC<AccountBreakdownWidgetProps> =
         );
         const pnlScopedTrades = preview
           ? [sourceTrade]
-          : splitReviewTradeByRealizedPnlEvent(sourceTrade, plugin);
+          : asAccountBreakdownTrades(
+              splitReviewTradeByRealizedPnlEvent(sourceTrade, plugin)
+            );
 
         for (const trade of pnlScopedTrades) {
           const accountNames = getTradeAccountNames(trade);
@@ -138,10 +165,8 @@ export const AccountBreakdownWidget: React.FC<AccountBreakdownWidgetProps> =
             accountNames.length > 0 ? accountNames : [UNKNOWN_ACCOUNT_LABEL];
           const pnl = getEffectivePnL(trade);
           const breakEvenBalance =
-            typeof (trade as Record<string, unknown>)
-              .breakEvenAccountCurrentBalance === 'number'
-              ? ((trade as Record<string, unknown>)
-                  .breakEvenAccountCurrentBalance as number)
+            typeof trade.breakEvenAccountCurrentBalance === 'number'
+              ? trade.breakEvenAccountCurrentBalance
               : undefined;
 
           for (const account of accounts) {

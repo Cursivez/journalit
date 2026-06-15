@@ -30,6 +30,35 @@ import { t } from '../../../lang/helpers';
 import { classifyPnLWithBreakEvenSettings } from '../../../utils/breakEvenRange';
 import { getBreakEvenBalanceForDisplayTrade } from './shared/breakEvenDisplayUtils';
 
+type ReviewBestWorstTrade = Record<string, unknown> & {
+  pnl?: number | null;
+  directPnL?: number | null;
+  useDirectPnLInput?: boolean;
+  dividends?: Array<{ amount?: number | null }>;
+  commission?: number | null;
+  swap?: number | null;
+  fees?: number | null;
+  rebate?: number | null;
+  tradeStatus?: string;
+  account?: string | string[];
+  currency?: string;
+  originalCurrency?: string;
+  originalPnlBeforeConversion?: number | null;
+  brokerBaseCurrency?: string;
+  rMultiple?: number;
+  riskAmount?: number;
+  breakEvenAccountCurrentBalance?: number;
+  breakEvenAccountCurrentBalanceTotal?: number;
+};
+
+function asReviewBestWorstTrades(value: unknown): ReviewBestWorstTrade[] {
+  return Array.isArray(value)
+    ? value.filter((item): item is ReviewBestWorstTrade =>
+        Boolean(item && typeof item === 'object' && !Array.isArray(item))
+      )
+    : [];
+}
+
 interface BestWorstQuartersWidgetProps {
   filePath: string;
   plugin: JournalitPlugin;
@@ -88,7 +117,9 @@ export const BestWorstQuartersWidget: React.FC<BestWorstQuartersWidgetProps> =
       } = useReviewTrades(filePath, plugin);
 
       
-      const trades = preview && previewData ? previewData.trades : cachedTrades;
+      const trades = asReviewBestWorstTrades(
+        preview && previewData ? previewData.trades : cachedTrades
+      );
       const loading = preview ? false : cacheLoading;
 
       
@@ -120,11 +151,13 @@ export const BestWorstQuartersWidget: React.FC<BestWorstQuartersWidgetProps> =
       const breakEvenRangeMax = plugin?.settings?.trade?.breakEvenRangeMax;
       
       const { bestQuarter, worstQuarter } = useMemo(() => {
-        const closedTrades = trades
-          .filter((t) => isPnlContributingTrade(t))
-          .flatMap((trade) =>
-            splitReviewTradeByRealizedPnlEvent(trade, plugin)
-          );
+        const closedTrades = asReviewBestWorstTrades(
+          trades
+            .filter((t) => isPnlContributingTrade(t))
+            .flatMap((trade) =>
+              splitReviewTradeByRealizedPnlEvent(trade, plugin)
+            )
+        );
 
         if (closedTrades.length === 0) {
           return { bestQuarter: null, worstQuarter: null };
@@ -464,7 +497,9 @@ export const BestWorstQuartersWidget: React.FC<BestWorstQuartersWidgetProps> =
               primaryText={bestQuarter ? formatQuarterName(bestQuarter) : ''}
               metaItems={bestQuarter ? buildMetaItems(bestQuarter) : []}
               onClick={
-                bestQuarter ? () => openQuarterlyReview(bestQuarter) : undefined
+                bestQuarter
+                  ? () => void openQuarterlyReview(bestQuarter)
+                  : undefined
               }
               currencyConversion={currencyConversion}
               conversionTrades={bestQuarter?.trades}
@@ -491,7 +526,7 @@ export const BestWorstQuartersWidget: React.FC<BestWorstQuartersWidgetProps> =
               metaItems={worstQuarter ? buildMetaItems(worstQuarter) : []}
               onClick={
                 worstQuarter
-                  ? () => openQuarterlyReview(worstQuarter)
+                  ? () => void openQuarterlyReview(worstQuarter)
                   : undefined
               }
               currencyConversion={currencyConversion}

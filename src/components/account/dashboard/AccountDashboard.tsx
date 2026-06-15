@@ -127,9 +127,9 @@ const AccountDashboardGuideCoordinator: React.FC<{
 
 interface AccountDashboardHeaderProps {
   selectedTradeTypes: TradeType[];
-  onTradeTypeFilterChange: (tradeTypes: TradeType[]) => void;
-  onCreateAccount: () => void;
-  onOpenSettings: () => void;
+  onTradeTypeFilterChange: (tradeTypes: TradeType[]) => void | Promise<void>;
+  onCreateAccount: () => void | Promise<void>;
+  onOpenSettings: () => void | Promise<void>;
   registerTradeTypeFilterTarget: React.Ref<HTMLDivElement>;
   registerCreateButtonTarget: React.Ref<HTMLDivElement>;
   registerSettingsButtonTarget: React.Ref<HTMLDivElement>;
@@ -152,14 +152,14 @@ const AccountDashboardHeader: React.FC<AccountDashboardHeaderProps> = ({
       <div ref={registerTradeTypeFilterTarget}>
         <RegularBacktestTradeTypeFilter
           selectedTradeTypes={selectedTradeTypes}
-          onChange={onTradeTypeFilterChange}
+          onChange={(tradeTypes) => void onTradeTypeFilterChange(tradeTypes)}
           className="account-dashboard-trade-type-filter"
         />
       </div>
       <div ref={registerCreateButtonTarget}>
         <IconButton
           ariaLabel={t('account-dashboard.action.create')}
-          onClick={onCreateAccount}
+          onClick={() => void onCreateAccount()}
           variant="toolbar"
           className="create-account-button"
         >
@@ -169,7 +169,7 @@ const AccountDashboardHeader: React.FC<AccountDashboardHeaderProps> = ({
       <div ref={registerSettingsButtonTarget}>
         <IconButton
           ariaLabel={t('account-dashboard.action.settings')}
-          onClick={onOpenSettings}
+          onClick={() => void onOpenSettings()}
           variant="toolbar"
           className="settings-button"
         >
@@ -182,7 +182,7 @@ const AccountDashboardHeader: React.FC<AccountDashboardHeaderProps> = ({
 
 interface AccountDashboardEmptyStateProps {
   header: React.ReactNode;
-  onCreateAccount: () => void;
+  onCreateAccount: () => void | Promise<void>;
   registerEmptyStateTarget: React.Ref<HTMLDivElement>;
   registerCreateAccountButtonTarget: React.Ref<HTMLDivElement>;
 }
@@ -204,7 +204,7 @@ const AccountDashboardEmptyState: React.FC<AccountDashboardEmptyStateProps> = ({
         <div ref={registerCreateAccountButtonTarget}>
           <Button
             variant="primary"
-            onClick={onCreateAccount}
+            onClick={() => void onCreateAccount()}
             className="create-account-primary-button"
           >
             {t('account-dashboard.button.create-first')}
@@ -226,7 +226,7 @@ interface AccountDashboardMainContentProps {
   accountTypesToDisplay: string[];
   totalAUM: number;
   excludedTypes: string[];
-  openAccount: (accountName: string, accountData?: any) => Promise<void>;
+  openAccount: (accountName: string, accountData?: unknown) => Promise<void>;
   refreshTrigger: number;
   registerAumChartTarget: React.Ref<HTMLDivElement>;
   registerMetricsTarget: React.Ref<HTMLDivElement>;
@@ -373,7 +373,7 @@ const useAccountDashboardAccounts = (
   const [error, setError] = useState<string | null>(null);
   const retryAttemptsRef = useRef(0);
   const maxRetries = 5;
-  const retryTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const retryTimeoutRef = useRef<number | null>(null);
   const loadRequestSequenceRef = useRef(0);
   const hasLoadedAccountsRef = useRef(false);
 
@@ -401,8 +401,8 @@ const useAccountDashboardAccounts = (
             max: String(maxRetries),
           })
         );
-        retryTimeoutRef.current = setTimeout(
-          () => loadAccountsWithRetry(),
+        retryTimeoutRef.current = window.setTimeout(
+          () => void loadAccountsWithRetry(),
           delay
         );
         return;
@@ -437,10 +437,10 @@ const useAccountDashboardAccounts = (
   }, [plugin, selectedTradeTypes]);
 
   useEffect(() => {
-    loadAccountsWithRetry();
+    void loadAccountsWithRetry();
     return () => {
       if (retryTimeoutRef.current) {
-        clearTimeout(retryTimeoutRef.current);
+        window.clearTimeout(retryTimeoutRef.current);
         retryTimeoutRef.current = null;
       }
     };
@@ -575,7 +575,7 @@ const AccountDashboardComponent: React.FC<AccountDashboardProps> = ({
   const isActive = useLeafActive(leaf);
   const wasActiveRef = useRef(isActive);
   
-  const [searchTerm, _setSearchTerm] = useState('');
+  const [searchTerm] = useState('');
   const [selectedTradeTypes, setSelectedTradeTypes] = useState<TradeType[]>(
     () =>
       normalizeHomeTradeTypes(
@@ -604,7 +604,7 @@ const AccountDashboardComponent: React.FC<AccountDashboardProps> = ({
   );
 
   
-  const [_isPending, startTransition] = useTransition();
+  const [, startTransition] = useTransition();
   const deferredSearchTerm = useDeferredValue(searchTerm);
   const { accounts, isLoading, error, loadAccountsWithRetry } =
     useAccountDashboardAccounts(plugin, selectedTradeTypes);
@@ -618,7 +618,7 @@ const AccountDashboardComponent: React.FC<AccountDashboardProps> = ({
 
     
     startTransition(() => {
-      loadAccountsWithRetry();
+      void loadAccountsWithRetry();
     });
   }, [loadAccountsWithRetry, plugin.accountPageService]);
 
@@ -627,7 +627,7 @@ const AccountDashboardComponent: React.FC<AccountDashboardProps> = ({
 
   useEffect(() => {
     if (isActive && !wasActiveRef.current) {
-      handleAccountChanged();
+      void handleAccountChanged();
     }
     wasActiveRef.current = isActive;
   }, [handleAccountChanged, isActive]);
@@ -681,9 +681,9 @@ const AccountDashboardComponent: React.FC<AccountDashboardProps> = ({
 
   
   const openAccount = useCallback(
-    async (accountName: string, _accountData?: any) => {
+    async (accountName: string, _accountData?: AccountData) => {
       emitGuideAction(ACCOUNT_DASHBOARD_ACCOUNT_OPENED_ACTION_ID);
-      plugin.viewManager.openAccountPageView(accountName);
+      void plugin.viewManager.openAccountPageView(accountName);
     },
     [emitGuideAction, plugin.viewManager]
   );
@@ -692,7 +692,7 @@ const AccountDashboardComponent: React.FC<AccountDashboardProps> = ({
   const handleCreateAccount = useCallback(async () => {
     openCreateAccountModal(plugin.app, plugin, () => {
       
-      loadAccountsWithRetry();
+      void loadAccountsWithRetry();
     });
     emitGuideAction(ACCOUNT_DASHBOARD_CREATE_ACCOUNT_OPENED_ACTION_ID);
   }, [emitGuideAction, plugin, loadAccountsWithRetry]);
@@ -725,7 +725,7 @@ const AccountDashboardComponent: React.FC<AccountDashboardProps> = ({
         setRefreshTrigger((prev) => prev + 1);
 
         
-        loadAccountsWithRetry();
+        void loadAccountsWithRetry();
       },
       {
         onClose: () => {
@@ -760,8 +760,8 @@ const AccountDashboardComponent: React.FC<AccountDashboardProps> = ({
     <AccountDashboardHeader
       selectedTradeTypes={selectedTradeTypes}
       onTradeTypeFilterChange={handleTradeTypeFilterChange}
-      onCreateAccount={handleCreateAccount}
-      onOpenSettings={handleOpenSettings}
+      onCreateAccount={() => void handleCreateAccount()}
+      onOpenSettings={() => void handleOpenSettings()}
       registerTradeTypeFilterTarget={registerTradeTypeFilterTarget}
       registerCreateButtonTarget={registerCreateButtonTarget}
       registerSettingsButtonTarget={registerSettingsButtonTarget}
@@ -818,7 +818,7 @@ const AccountDashboardComponent: React.FC<AccountDashboardProps> = ({
         <div className="journalit-account-dashboard">
           <AccountDashboardEmptyState
             header={dashboardHeader}
-            onCreateAccount={handleCreateAccount}
+            onCreateAccount={() => void handleCreateAccount()}
             registerEmptyStateTarget={registerEmptyStateTarget}
             registerCreateAccountButtonTarget={
               registerCreateAccountButtonTarget

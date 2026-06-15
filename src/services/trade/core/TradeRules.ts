@@ -5,7 +5,7 @@ import {
   isTradeOpenWithContext,
 } from '../../../utils/tradeStatusUtils';
 import { normalizeTradeExecution } from './TradeExecutionNormalization';
-import { TradeExecutionInput, TradeMutationInput } from './types';
+import { TradeMutationInput } from './types';
 
 export function deriveTradeOpenState(data: TradeMutationInput): boolean {
   const contextualOpenState = isTradeOpenWithContext({
@@ -26,10 +26,12 @@ export function deriveTradeOpenState(data: TradeMutationInput): boolean {
   return contextualOpenState;
 }
 
-export function validateAndNormalizeTradeMutationInput(
-  input: TradeMutationInput,
+export function validateAndNormalizeTradeMutationInput<
+  TData extends TradeMutationInput,
+>(
+  input: TData,
   options?: { allowClosedTradeWithoutExitTimeInDirectPnlMode?: boolean }
-): { normalizedData: TradeMutationInput; isOpen: boolean } {
+): { normalizedData: TData; isOpen: boolean } {
   const normalizedData = { ...input };
 
   if (normalizedData.useDirectPnLInput) {
@@ -152,10 +154,8 @@ function synthesizeCanonicalExecutions(data: TradeMutationInput): void {
           {
             time: data.entryTime,
             price: data.entryPrice,
-            ...(data.positionSize !== undefined
-              ? { size: data.positionSize }
-              : {}),
-          } as TradeExecutionInput,
+            size: data.positionSize ?? 0,
+          },
         ]
       : [
           {
@@ -177,31 +177,29 @@ function synthesizeCanonicalExecutions(data: TradeMutationInput): void {
           {
             time: data.exitTime,
             price: data.exitPrice,
-            ...(data.positionSize !== undefined
-              ? { size: data.positionSize }
-              : {}),
+            size: data.positionSize ?? 0,
             ...(typeof data.hasExplicitExitPrice === 'boolean'
               ? { hasExplicitPrice: data.hasExplicitExitPrice }
               : {}),
-          } as TradeExecutionInput,
+          },
         ]
       : [
           {
             time: data.exitTime,
             price: data.exitPrice,
-            size: data.positionSize,
+            size: data.positionSize ?? 0,
             ...(typeof data.hasExplicitExitPrice === 'boolean'
               ? { hasExplicitPrice: data.hasExplicitExitPrice }
               : {}),
-          } as TradeExecutionInput,
+          },
         ];
   }
 }
 
-export function applyDefaultRiskAmount(
-  input: TradeMutationInput,
+export function applyDefaultRiskAmount<TData extends TradeMutationInput>(
+  input: TData,
   defaultRiskAmount?: number
-): TradeMutationInput {
+): TData {
   if (
     !input.skipDefaultRiskAmount &&
     input.riskAmount === undefined &&

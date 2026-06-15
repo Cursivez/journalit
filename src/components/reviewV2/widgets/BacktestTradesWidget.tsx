@@ -9,6 +9,13 @@ import {
 import type { TradesPreviewData } from '../../../types/reviewV2';
 import { t } from '../../../lang/helpers';
 
+const asObjectTrades = (value: unknown): Array<Record<string, unknown>> =>
+  Array.isArray(value)
+    ? value.filter((item): item is Record<string, unknown> =>
+        Boolean(item && typeof item === 'object' && !Array.isArray(item))
+      )
+    : [];
+
 interface BacktestTradesWidgetProps {
   filePath: string;
   plugin: JournalitPlugin;
@@ -23,7 +30,7 @@ export const BacktestTradesWidget: React.FC<BacktestTradesWidgetProps> =
 
     const backtestTrades = useMemo(() => {
       if (preview) {
-        return previewData?.trades ?? [];
+        return asObjectTrades(previewData?.trades);
       }
 
       if (!data?.allTrades || !data.filters) {
@@ -34,7 +41,7 @@ export const BacktestTradesWidget: React.FC<BacktestTradesWidgetProps> =
         plugin.customFieldsService?.getFields() || [];
 
       return applyTradeFilters(
-        data.allTrades,
+        asObjectTrades(data.allTrades),
         {
           ...data.filters,
           tradeTypes: ['backtest'],

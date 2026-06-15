@@ -2,7 +2,7 @@
 
 
 export function scheduleIdle(
-  fn: () => any,
+  fn: () => unknown,
   fallbackTimeoutMs: number = 200
 ): void {
   if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
@@ -14,7 +14,7 @@ export function scheduleIdle(
       }
     });
   } else {
-    setTimeout(() => {
+    window.setTimeout(() => {
       try {
         fn();
       } catch (error) {
@@ -26,7 +26,7 @@ export function scheduleIdle(
 
 
 export function scheduleSequence(
-  operations: Array<() => any>,
+  operations: Array<() => unknown>,
   delayBetweenMs: number = 100
 ): Promise<void> {
   return new Promise((resolve) => {
@@ -48,7 +48,7 @@ export function scheduleSequence(
         operation();
 
         if (index < operations.length) {
-          setTimeout(executeNext, delayBetweenMs);
+          window.setTimeout(executeNext, delayBetweenMs);
         } else {
           resolve();
         }
@@ -58,7 +58,7 @@ export function scheduleSequence(
           error
         );
         
-        setTimeout(executeNext, delayBetweenMs);
+        window.setTimeout(executeNext, delayBetweenMs);
       }
     }
 

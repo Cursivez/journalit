@@ -26,7 +26,10 @@ import {
 } from '../../../../utils/chartUtils';
 import { ChartBase } from '../../../charts/ChartBase';
 import { RechartsPortalTooltip } from '../../../charts/RechartsPortalTooltip';
-import { CurrencyCode } from '../../../../utils/currencyConfig';
+import {
+  CurrencyCode,
+  parseCuratedCurrencyCode,
+} from '../../../../utils/currencyConfig';
 import {
   getEffectivePnL,
   isPnlContributingTrade,
@@ -61,6 +64,17 @@ type TooltipContentLike<TData> = TooltipProps<number, string> & {
     payload?: TData;
   }>;
 };
+
+interface WeekdayBarShapeProps {
+  x?: number;
+  y?: number;
+  width?: number;
+  height?: number;
+  payload?: WeekdayPerformanceDataPoint;
+  stroke?: string;
+  strokeWidth?: string | number;
+  strokeOpacity?: string | number;
+}
 
 type WeekdayTooltipProps = TooltipContentLike<WeekdayPerformanceDataPoint> & {
   useRMultiples: boolean;
@@ -110,10 +124,42 @@ const buildTradeCountAxis = (maxTrades: number) => {
 const normalizeMetric = (
   value: string | undefined
 ): WeekdayPerformanceMetric => {
-  if (value && METRIC_OPTIONS.includes(value as WeekdayPerformanceMetric)) {
-    return value as WeekdayPerformanceMetric;
+  switch (value) {
+    case 'winRate':
+    case 'trades':
+      return value;
+    default:
+      return 'net';
   }
-  return 'net';
+};
+
+const getDashboardRealizedTradingDay = (trade: unknown): Date | undefined => {
+  if (
+    !trade ||
+    typeof trade !== 'object' ||
+    !('_dashboardRealizedTradingDay' in trade)
+  ) {
+    return undefined;
+  }
+  const value = trade._dashboardRealizedTradingDay;
+  return value instanceof Date ? value : undefined;
+};
+
+const isWeekdayTooltipContent = (
+  value: unknown
+): value is TooltipContentLike<WeekdayPerformanceDataPoint> => {
+  if (!value || typeof value !== 'object' || !('payload' in value)) {
+    return false;
+  }
+
+  const payloadValue = value.payload;
+  const payload = Array.isArray(payloadValue) ? payloadValue : [];
+  const firstPayload: unknown = payload[0];
+  return Boolean(
+    firstPayload &&
+    typeof firstPayload === 'object' &&
+    'payload' in firstPayload
+  );
 };
 
 const getMetricLabel = (metric: WeekdayPerformanceMetric): string => {
@@ -164,7 +210,7 @@ const WeekdayPerformanceTooltip: React.FC<WeekdayTooltipProps> = ({
   selectedMetric,
 }) => {
   const { formatValue, shouldMask } = useDisplayFormatter();
-  const data = payload?.[0]?.payload as WeekdayPerformanceDataPoint | undefined;
+  const data = payload?.[0]?.payload;
 
   if (!active || !data) return null;
 
@@ -311,7 +357,7 @@ export const WeekdayPerformanceChart = React.memo<BaseWidgetProps>(
             (data.metrics.isMultiCurrency
               ? data.metrics.conversionBaseCurrency
               : currency) || currency;
-          const currencyCode = activeCurrency as CurrencyCode;
+          const currencyCode = parseCuratedCurrencyCode(activeCurrency);
 
           const visibleDays = skipWeekends
             ? DAY_ORDER.filter((dayKey) => !WEEKEND_DAY_KEYS.has(dayKey))
@@ -347,8 +393,7 @@ export const WeekdayPerformanceChart = React.memo<BaseWidgetProps>(
             const events = [
               {
                 tradingDay:
-                  (trade as { _dashboardRealizedTradingDay?: Date })
-                    ._dashboardRealizedTradingDay ??
+                  getDashboardRealizedTradingDay(trade) ??
                   getTradeAnalyticsTradingDay(
                     trade,
                     analyticsDateBasis,
@@ -535,10 +580,8 @@ export const WeekdayPerformanceChart = React.memo<BaseWidgetProps>(
                     className="journalit-chart-widget__select"
                     value={selectedMetric}
                     onChange={(event) =>
-                      handleMetricChange(
-                        normalizeMetric(
-                          event.target.value
-                        ) as WeekdayPerformanceMetric
+                      void handleMetricChange(
+                        normalizeMetric(event.target.value)
                       )
                     }
                   >
@@ -615,14 +658,16 @@ export const WeekdayPerformanceChart = React.memo<BaseWidgetProps>(
                         stroke: 'var(--interactive-accent)',
                       }}
                     >
-                      {(props) => (
-                        <WeekdayPerformanceTooltip
-                          {...(props as any)}
-                          useRMultiples={useRMultiples}
-                          currencyCode={currencyCode}
-                          selectedMetric={selectedMetric}
-                        />
-                      )}
+                      {(props) =>
+                        isWeekdayTooltipContent(props) ? (
+                          <WeekdayPerformanceTooltip
+                            {...props}
+                            useRMultiples={useRMultiples}
+                            currencyCode={currencyCode}
+                            selectedMetric={selectedMetric}
+                          />
+                        ) : null
+                      }
                     </RechartsPortalTooltip>
 
                     <Bar
@@ -636,14 +681,14 @@ export const WeekdayPerformanceChart = React.memo<BaseWidgetProps>(
                       strokeWidth={0.8}
                       strokeOpacity={0.5}
                       radius={[2, 2, 0, 0]}
-                      shape={(props: any) => {
+                      shape={(props: WeekdayBarShapeProps) => {
                         const fill = (() => {
                           if (isSelectedMetricMasked) {
                             return 'var(--text-muted)';
                           }
 
                           if (selectedMetric === 'net') {
-                            return props.payload?.displayValue >= 0
+                            return (props.payload?.displayValue ?? 0) >= 0
                               ? 'var(--chart-positive)'
                               : 'var(--chart-negative)';
                           }
@@ -655,10 +700,10 @@ export const WeekdayPerformanceChart = React.memo<BaseWidgetProps>(
                           return 'var(--interactive-accent)';
                         })();
 
-                        const safeX = props.x || 0;
-                        const safeY = props.y || 0;
-                        const safeWidth = props.width || 0;
-                        const safeHeight = props.height || 0;
+                        const safeX = props.x ?? 0;
+                        const safeY = props.y ?? 0;
+                        const safeWidth = props.width ?? 0;
+                        const safeHeight = props.height ?? 0;
 
                         const adjustedHeight =
                           safeHeight < 0 ? Math.abs(safeHeight) : safeHeight;

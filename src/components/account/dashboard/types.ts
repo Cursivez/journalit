@@ -43,7 +43,10 @@ export interface DashboardMetricsProps {
 export interface AccountSectionProps {
   type: string;
   accounts: AccountData[];
-  openAccount: (accountName: string, accountData?: AccountData) => void;
+  openAccount: (
+    accountName: string,
+    accountData?: AccountData
+  ) => void | Promise<void>;
   totalAUM?: number; 
   excludedTypes?: string[]; 
 }
@@ -57,7 +60,10 @@ export interface AccountCardProps {
 
 export interface AccountSectionsProps {
   accountsByType: Record<string, AccountData[]>;
-  openAccount: (accountName: string, accountData?: AccountData) => void;
+  openAccount: (
+    accountName: string,
+    accountData?: AccountData
+  ) => void | Promise<void>;
   plugin: import('../../../main').default;
   refreshTrigger?: number;
   totalAUM?: number; 

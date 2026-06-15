@@ -2,7 +2,7 @@
 
 
 
-const SHARED_COMPONENT_STYLES = `
+export const SHARED_COMPONENT_STYLES = `
   .journalit-obsidian-icon {
     display: inline-flex;
     align-items: center;
@@ -1053,8 +1053,9 @@ const SHARED_COMPONENT_STYLES = `
     display: flex;
     align-items: center;
     justify-content: flex-start;
-    gap: 2px;
-    padding: 4px 8px;
+    flex-wrap: nowrap;
+    gap: 4px;
+    padding: 6px 10px;
     border: 1px solid var(--background-modifier-border);
     border-radius: 6px;
     background: var(--background-primary);
@@ -1073,9 +1074,9 @@ const SHARED_COMPONENT_STYLES = `
   }
 
   .journalit-fast-datetime__segment {
-    width: 40px;
-    min-width: 40px;
-    max-width: 40px;
+    width: 42px;
+    min-width: 42px;
+    max-width: 42px;
     padding: 6px 4px;
     text-align: center;
     border: 1px solid var(--background-modifier-border);
@@ -1090,8 +1091,9 @@ const SHARED_COMPONENT_STYLES = `
 
   .journalit-fast-datetime__separator {
     color: var(--text-muted);
-    padding: 0 2px;
+    padding: 0 1px;
     user-select: none;
+    flex: 0 0 auto;
   }
 
   .journalit-fast-datetime__separator--spacer {
@@ -1124,6 +1126,7 @@ const SHARED_COMPONENT_STYLES = `
     color: var(--text-muted);
     display: flex;
     align-items: center;
+    flex: 0 0 auto;
   }
 
   .journalit-fast-datetime__calendar-button:disabled {
@@ -1425,16 +1428,3 @@ const SHARED_COMPONENT_STYLES = `
     opacity: 1;
   }
 `;
-
-
-export function injectSharedComponentStyles(): void {
-  return;
-}
-
-
-export function removeSharedComponentStyles(): void {
-  return;
-}
-
-
-export function ensureSharedComponentStyles(): void {}

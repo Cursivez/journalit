@@ -36,6 +36,13 @@ import {
 
 type BreakdownTrade = Trade & { _reviewBreakdownDate?: Date };
 
+const asBreakdownTrades = (value: unknown): BreakdownTrade[] =>
+  Array.isArray(value)
+    ? value.filter((item): item is BreakdownTrade =>
+        Boolean(item && typeof item === 'object' && !Array.isArray(item))
+      )
+    : [];
+
 type BreakdownPeriod = 'daily' | 'weekly' | 'monthly' | 'quarterly';
 
 
@@ -98,7 +105,9 @@ export const BreakdownTableWidget: React.FC<BreakdownTableWidgetProps> =
       } = useReviewTrades(filePath, plugin);
 
       
-      const trades = preview && previewData ? previewData.trades : cachedTrades;
+      const trades = asBreakdownTrades(
+        preview && previewData ? previewData.trades : cachedTrades
+      );
       const loading = preview ? false : cacheLoading;
       const noteType = cachedNoteType || '';
 
@@ -168,11 +177,13 @@ export const BreakdownTableWidget: React.FC<BreakdownTableWidgetProps> =
       }, [preview, noteType, period]);
 
       const closedTrades = useMemo<BreakdownTrade[]>(() => {
-        return trades
-          .filter((t) => isPnlContributingTrade(t))
-          .flatMap((trade) =>
-            splitReviewTradeByRealizedPnlEvent(trade, plugin)
-          );
+        return asBreakdownTrades(
+          trades
+            .filter((t) => isPnlContributingTrade(t))
+            .flatMap((trade) =>
+              splitReviewTradeByRealizedPnlEvent(trade, plugin)
+            )
+        );
       }, [trades, plugin]);
 
       const getAnalyticsDate = useCallback(
@@ -1123,7 +1134,9 @@ export const BreakdownTableWidget: React.FC<BreakdownTableWidgetProps> =
                   <tr
                     key={day.rawDate.toISOString()}
                     className="weekly-review-trade-row journalit-reviewv2-table-row journalit-reviewv2-table-row--interactive"
-                    onClick={() => handleDayRowClick(day.drcPath, day.rawDate)}
+                    onClick={() =>
+                      void handleDayRowClick(day.drcPath, day.rawDate)
+                    }
                   >
                     {columns?.date && (
                       <td className="journalit-reviewv2-table-cell journalit-reviewv2-table-cell--compact journalit-reviewv2-col-date">
@@ -1221,7 +1234,7 @@ export const BreakdownTableWidget: React.FC<BreakdownTableWidgetProps> =
                     key={week.weeklyPath ?? week.firstDate.toISOString()}
                     className="weekly-review-trade-row journalit-reviewv2-table-row journalit-reviewv2-table-row--interactive"
                     onClick={() =>
-                      handleWeekRowClick(week.weeklyPath, week.firstDate)
+                      void handleWeekRowClick(week.weeklyPath, week.firstDate)
                     }
                   >
                     {columns?.date && (
@@ -1320,7 +1333,10 @@ export const BreakdownTableWidget: React.FC<BreakdownTableWidgetProps> =
                     key={month.monthlyPath ?? month.monthStart.toISOString()}
                     className="weekly-review-trade-row journalit-reviewv2-table-row journalit-reviewv2-table-row--interactive"
                     onClick={() =>
-                      handleMonthRowClick(month.monthlyPath, month.monthStart)
+                      void handleMonthRowClick(
+                        month.monthlyPath,
+                        month.monthStart
+                      )
                     }
                   >
                     {columns?.date && (
@@ -1422,7 +1438,7 @@ export const BreakdownTableWidget: React.FC<BreakdownTableWidgetProps> =
                     }
                     className="weekly-review-trade-row journalit-reviewv2-table-row journalit-reviewv2-table-row--interactive"
                     onClick={() =>
-                      handleQuarterRowClick(
+                      void handleQuarterRowClick(
                         quarter.quarterlyPath,
                         quarter.quarterStart
                       )

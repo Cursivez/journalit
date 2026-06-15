@@ -7,8 +7,8 @@ import type { PnLChartDataPoint } from '../../../utils/chartUtils';
 import { t } from '../../../lang/helpers';
 
 interface WelcomeStepProps {
-  onNext: () => void;
-  onSkip: () => void;
+  onNext: () => void | Promise<void>;
+  onSkip: () => void | Promise<void>;
 }
 
 export const WelcomeStep: React.FC<WelcomeStepProps> = ({ onNext, onSkip }) => {

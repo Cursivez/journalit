@@ -6,7 +6,7 @@ import React, {
   useRef,
   useState,
 } from 'react';
-import { App, Modal } from 'obsidian';
+import { App, Modal, Notice } from 'obsidian';
 import {
   Edit,
   Plus,
@@ -41,6 +41,33 @@ interface ReviewFieldsManagerProps {
   onRequestExpansion?: () => void;
   remeasureContent?: () => void;
 }
+
+const asRecord = (value: unknown): Record<string, unknown> | null =>
+  value && typeof value === 'object' && !Array.isArray(value)
+    ? Object.fromEntries(Object.entries(value))
+    : null;
+
+const isCustomReviewFieldDefinition = (
+  value: unknown
+): value is CustomReviewFieldDefinition => {
+  const record = asRecord(value);
+  return Boolean(
+    record &&
+    typeof record.id === 'string' &&
+    typeof record.label === 'string' &&
+    typeof record.fieldKey === 'string' &&
+    typeof record.type === 'string'
+  );
+};
+
+const isCustomReviewFieldGroup = (
+  value: unknown
+): value is CustomReviewFieldGroup => {
+  const record = asRecord(value);
+  return Boolean(
+    record && typeof record.id === 'string' && typeof record.name === 'string'
+  );
+};
 
 function createDefaultReviewFieldDefinition(
   existingKeys: string[],
@@ -77,9 +104,9 @@ function createDefaultReviewFieldDefinition(
 interface ReviewFieldEditorPanelProps {
   editingField: CustomReviewFieldDefinition;
   isAddingNew: boolean;
-  onSaveField: (field: CustomReviewFieldDefinition) => void;
-  onCancelEdit: () => void;
-  onDeleteField: (fieldId: string) => void;
+  onSaveField: (field: CustomReviewFieldDefinition) => void | Promise<void>;
+  onCancelEdit: () => void | Promise<void>;
+  onDeleteField: (fieldId: string) => void | Promise<void>;
   generateUniqueKeyForField: (label: string, excludeFieldId?: string) => string;
   validateLabelForField: (
     label: string,
@@ -90,8 +117,8 @@ interface ReviewFieldEditorPanelProps {
 
 interface ReviewFieldsDangerZoneProps {
   hasConfiguredItems: boolean;
-  onAddGroup: () => void;
-  onResetFields: () => void;
+  onAddGroup: () => void | Promise<void>;
+  onResetFields: () => void | Promise<void>;
 }
 
 const ReviewFieldEditorPanel: React.FC<ReviewFieldEditorPanelProps> = ({
@@ -183,22 +210,22 @@ const useReviewFieldsManagerController = ({
     useState<CustomReviewFieldGroup | null>(null);
   const [editingGroupName, setEditingGroupName] = useState('');
   const [isAddingNew, setIsAddingNew] = useState(false);
-  const remeasureTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const remeasureTimeoutRef = useRef<number | null>(null);
 
   const debouncedRemeasure = useCallback(() => {
     if (!remeasureContent) return;
     if (remeasureTimeoutRef.current) {
-      clearTimeout(remeasureTimeoutRef.current);
+      window.clearTimeout(remeasureTimeoutRef.current);
     }
-    remeasureTimeoutRef.current = setTimeout(() => {
-      requestAnimationFrame(() => remeasureContent());
+    remeasureTimeoutRef.current = window.setTimeout(() => {
+      window.requestAnimationFrame(() => remeasureContent());
     }, 16);
   }, [remeasureContent]);
 
   useEffect(() => {
     return () => {
       if (remeasureTimeoutRef.current) {
-        clearTimeout(remeasureTimeoutRef.current);
+        window.clearTimeout(remeasureTimeoutRef.current);
       }
     };
   }, []);
@@ -214,18 +241,14 @@ const useReviewFieldsManagerController = ({
     loadFields();
 
     const handleReviewFieldsChanged = (payload: unknown) => {
-      if (!payload || typeof payload !== 'object') return;
-      if (!('fields' in payload)) return;
+      const nextPayload = asRecord(payload);
+      if (!nextPayload || !('fields' in nextPayload)) return;
 
-      const nextPayload = payload as {
-        fields?: unknown;
-        groups?: unknown;
-      };
       if (Array.isArray(nextPayload.fields)) {
-        setFields(nextPayload.fields as CustomReviewFieldDefinition[]);
+        setFields(nextPayload.fields.filter(isCustomReviewFieldDefinition));
       }
       if (Array.isArray(nextPayload.groups)) {
-        setGroups(nextPayload.groups as CustomReviewFieldGroup[]);
+        setGroups(nextPayload.groups.filter(isCustomReviewFieldGroup));
       }
     };
 
@@ -298,7 +321,9 @@ const useReviewFieldsManagerController = ({
       debouncedRemeasure();
     } catch (error) {
       console.error('Failed to add custom review field group:', error);
-      alert(t('settings.customization.review-fields.groups.error.save-failed'));
+      new Notice(
+        t('settings.customization.review-fields.groups.error.save-failed')
+      );
     }
   };
 
@@ -324,7 +349,9 @@ const useReviewFieldsManagerController = ({
       debouncedRemeasure();
     } catch (error) {
       console.error('Failed to rename custom review field group:', error);
-      alert(t('settings.customization.review-fields.groups.error.save-failed'));
+      new Notice(
+        t('settings.customization.review-fields.groups.error.save-failed')
+      );
     }
   };
 
@@ -369,7 +396,7 @@ const useReviewFieldsManagerController = ({
 
       const labelValidation = validateLabelForField(field.label, field.id);
       if (labelValidation) {
-        alert(
+        new Notice(
           t('settings.customization.custom-fields.error.cannot-save', {
             error: labelValidation,
           })
@@ -379,7 +406,7 @@ const useReviewFieldsManagerController = ({
 
       const keyValidation = validateFieldKey(field.fieldKey);
       if (keyValidation) {
-        alert(
+        new Notice(
           t('settings.customization.custom-fields.error.cannot-save', {
             error: keyValidation,
           })
@@ -394,7 +421,7 @@ const useReviewFieldsManagerController = ({
             existingField.fieldKey || labelToFieldKey(existingField.label)
         );
       if (existingKeys.includes(field.fieldKey)) {
-        alert(
+        new Notice(
           t('settings.customization.custom-fields.error.cannot-save', {
             error: t(
               'settings.customization.custom-fields.error.duplicate-key'
@@ -419,7 +446,7 @@ const useReviewFieldsManagerController = ({
         debouncedRemeasure();
       } catch (error) {
         console.error('Failed to save custom review field:', error);
-        alert(t('settings.customization.review-fields.error.save-failed'));
+        new Notice(t('settings.customization.review-fields.error.save-failed'));
       }
     },
     [
@@ -669,7 +696,11 @@ export const ReviewFieldsManager: React.FC<ReviewFieldsManagerProps> = ({
             </div>
             <div className="custom-fields-list-header-actions">
               {!editingField && (
-                <Button variant="primary" size="sm" onClick={handleAddGroup}>
+                <Button
+                  variant="primary"
+                  size="sm"
+                  onClick={() => void handleAddGroup()}
+                >
                   {t('settings.customization.review-fields.groups.add-button')}
                 </Button>
               )}
@@ -766,14 +797,14 @@ export const ReviewFieldsManager: React.FC<ReviewFieldsManagerProps> = ({
                       <Button
                         variant="primary"
                         size="sm"
-                        onClick={handleSaveGroupName}
+                        onClick={() => void handleSaveGroupName()}
                       >
                         {t('button.save')}
                       </Button>
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={handleCancelGroupEdit}
+                        onClick={() => void handleCancelGroupEdit()}
                       >
                         {t('button.cancel')}
                       </Button>
@@ -895,7 +926,7 @@ class DeleteReviewFieldConfirmationModal extends Modal {
   constructor(
     app: App,
     private fieldLabel: string,
-    private onConfirm: () => void
+    private onConfirm: () => void | Promise<void>
   ) {
     super(app);
   }
@@ -919,7 +950,7 @@ class DeleteReviewFieldConfirmationModal extends Modal {
       .createEl('button', { text: t('button.delete'), cls: 'mod-warning' })
       .addEventListener('click', () => {
         this.close();
-        this.onConfirm();
+        void this.onConfirm();
       });
     buttonContainer
       .createEl('button', { text: t('button.cancel') })
@@ -935,7 +966,7 @@ class DeleteReviewFieldGroupConfirmationModal extends Modal {
   constructor(
     app: App,
     private groupName: string,
-    private onConfirm: () => void
+    private onConfirm: () => void | Promise<void>
   ) {
     super(app);
   }
@@ -959,7 +990,7 @@ class DeleteReviewFieldGroupConfirmationModal extends Modal {
       .createEl('button', { text: t('button.delete'), cls: 'mod-warning' })
       .addEventListener('click', () => {
         this.close();
-        this.onConfirm();
+        void this.onConfirm();
       });
     buttonContainer
       .createEl('button', { text: t('button.cancel') })
@@ -974,7 +1005,7 @@ class DeleteReviewFieldGroupConfirmationModal extends Modal {
 class ResetReviewFieldsConfirmationModal extends Modal {
   constructor(
     app: App,
-    private onConfirm: () => void
+    private onConfirm: () => void | Promise<void>
   ) {
     super(app);
   }
@@ -996,7 +1027,7 @@ class ResetReviewFieldsConfirmationModal extends Modal {
       .createEl('button', { text: t('button.delete-all'), cls: 'mod-warning' })
       .addEventListener('click', () => {
         this.close();
-        this.onConfirm();
+        void this.onConfirm();
       });
     buttonContainer
       .createEl('button', { text: t('button.cancel') })

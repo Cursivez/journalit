@@ -1,7 +1,12 @@
 
 
 import React from 'react';
-import { AlertTriangle, Info } from '../../../shared/icons/ObsidianIcon';
+import {
+  AlertTriangle,
+  ArrowDown,
+  ArrowUp,
+  Info,
+} from '../../../shared/icons/ObsidianIcon';
 import { Tooltip } from '../../../shared';
 import { t } from '../../../../lang/helpers';
 import type { StatDelta } from '../../../../utils/previousPeriodDelta';
@@ -19,6 +24,23 @@ interface MetricCardProps {
   previousDelta?: StatDelta;
 }
 
+const DeltaArrow: React.FC<{ direction: 'up' | 'down' }> = ({ direction }) => {
+  const ArrowIcon = direction === 'up' ? ArrowUp : ArrowDown;
+  return (
+    <ArrowIcon
+      className={[
+        'journalit-dashboard-metric-previous-delta-arrow',
+        direction === 'up'
+          ? 'journalit-dashboard-metric-previous-delta-arrow--up'
+          : 'journalit-dashboard-metric-previous-delta-arrow--down',
+      ].join(' ')}
+      size={12}
+      strokeWidth={3.5}
+      aria-hidden="true"
+    />
+  );
+};
+
 
 export const MetricCard: React.FC<MetricCardProps> = ({
   name,
@@ -32,6 +54,14 @@ export const MetricCard: React.FC<MetricCardProps> = ({
   hasWarning = false,
   previousDelta,
 }) => {
+  const valueSuffixDirection = valueSuffix?.startsWith('↑')
+    ? 'up'
+    : valueSuffix?.startsWith('↓')
+      ? 'down'
+      : undefined;
+  const valueSuffixWithoutArrow = valueSuffixDirection
+    ? valueSuffix?.slice(1).trimStart()
+    : valueSuffix;
   const toneClass =
     isPositive !== undefined ? (isPositive ? 'positive' : 'negative') : '';
   const suffixToneClass =
@@ -82,7 +112,10 @@ export const MetricCard: React.FC<MetricCardProps> = ({
               .filter(Boolean)
               .join(' ')}
           >
-            {valueSuffix}
+            {valueSuffixDirection && (
+              <DeltaArrow direction={valueSuffixDirection} />
+            )}
+            {valueSuffixWithoutArrow}
           </span>
         )}
       </div>
@@ -104,9 +137,7 @@ export const MetricCard: React.FC<MetricCardProps> = ({
               .join(' ')}
           >
             {previousDelta.direction !== 'flat' && (
-              <span className="journalit-dashboard-metric-previous-delta-arrow">
-                {previousDelta.direction === 'up' ? '↑' : '↓'}
-              </span>
+              <DeltaArrow direction={previousDelta.direction} />
             )}
             <span>{previousDelta.value}</span>
             <span className="journalit-dashboard-metric-previous-delta-suffix">

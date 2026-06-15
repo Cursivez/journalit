@@ -296,11 +296,11 @@ function useFlattenedTradeLogNodes({
     }
 
     setIsFlattening(true);
-    const timeoutIds = new Set<ReturnType<typeof setTimeout>>();
+    const timeoutIds = new Set<number>();
 
     const yieldToBrowser = () =>
       new Promise<void>((resolve) => {
-        const timeoutId = setTimeout(() => {
+        const timeoutId = window.setTimeout(() => {
           timeoutIds.delete(timeoutId);
           resolve();
         }, 0);
@@ -352,10 +352,10 @@ function useFlattenedTradeLogNodes({
       onTreeReady?.();
     };
 
-    flattenAsync();
+    void flattenAsync();
 
     return () => {
-      timeoutIds.forEach((timeoutId) => clearTimeout(timeoutId));
+      timeoutIds.forEach((timeoutId) => window.clearTimeout(timeoutId));
       timeoutIds.clear();
     };
   }, [nodes, expandedNodes, onTreeReady]);
@@ -394,8 +394,9 @@ function TradeLogTreeComponent({
 
         
         const headerHeight =
-          document.querySelector('.trade-log-headers')?.getBoundingClientRect()
-            ?.height || 60;
+          window.activeDocument
+            .querySelector('.trade-log-headers')
+            ?.getBoundingClientRect()?.height || 60;
         const availableHeight =
           rect.height || window.innerHeight - headerHeight - 100;
 
@@ -404,7 +405,7 @@ function TradeLogTreeComponent({
     };
 
     
-    const timer = setTimeout(updateHeight, 300);
+    const timer = window.setTimeout(updateHeight, 300);
 
     
     let resizeObserver: ResizeObserver | null = null;
@@ -417,7 +418,7 @@ function TradeLogTreeComponent({
     window.addEventListener('resize', updateHeight);
 
     return () => {
-      clearTimeout(timer);
+      window.clearTimeout(timer);
       window.removeEventListener('resize', updateHeight);
       if (resizeObserver) {
         resizeObserver.disconnect();
@@ -540,8 +541,8 @@ function TradeLogTreeComponent({
       }
     };
     
-    const id = requestAnimationFrame(restore);
-    return () => cancelAnimationFrame(id);
+    const id = window.requestAnimationFrame(restore);
+    return () => window.cancelAnimationFrame(id);
   }, [flattenedNodes, shouldVirtualize, requestedScrollOffset]);
 
   

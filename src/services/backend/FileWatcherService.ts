@@ -11,6 +11,34 @@ import { t } from '../../lang/helpers';
 import { isPnlContributingTrade } from '../../utils/tradeStatusUtils';
 import { backgroundIssuesStore } from '../diagnostics/BackgroundIssuesStore';
 
+function asRecord(value: unknown): Record<string, unknown> | undefined {
+  return value && typeof value === 'object' && !Array.isArray(value)
+    ? Object.fromEntries(Object.entries(value))
+    : undefined;
+}
+
+function getStringValue(
+  record: Record<string, unknown> | undefined,
+  key: string
+): string | undefined {
+  const value = record?.[key];
+  return typeof value === 'string' ? value : undefined;
+}
+
+function getStringArray(value: unknown): string[] {
+  return Array.isArray(value)
+    ? value.filter((item): item is string => typeof item === 'string')
+    : typeof value === 'string'
+      ? [value]
+      : [];
+}
+
+function numberOrUndefined(value: unknown): number | undefined {
+  if (value === undefined || value === null || value === '') return undefined;
+  const parsed = typeof value === 'number' ? value : Number(value);
+  return Number.isFinite(parsed) ? parsed : undefined;
+}
+
 export class FileWatcherService {
   private plugin: JournalitPlugin;
   private tradeSyncService: TradeSyncService;
@@ -56,7 +84,7 @@ export class FileWatcherService {
     this.plugin.registerEvent(
       this.plugin.app.vault.on('create', (file) => {
         if (file instanceof TFile && this.tradeSyncService.isTradeFile(file)) {
-          this.processNewTradeFile(file);
+          void this.processNewTradeFile(file);
         }
       })
     );
@@ -70,7 +98,7 @@ export class FileWatcherService {
           !this.lastProcessedFiles.has(file.path) &&
           !this.batchModifiedFiles.has(file.path)
         ) {
-          this.processNewTradeFile(file);
+          void this.processNewTradeFile(file);
         }
       })
     );
@@ -100,14 +128,14 @@ export class FileWatcherService {
             
             
             this.batchModifiedFiles.add(file.path);
-            setTimeout(() => {
+            window.setTimeout(() => {
               this.batchModifiedFiles.delete(file.path);
             }, 5_000);
             return;
           }
 
           if (this.tradeSyncService.isTradeFile(file)) {
-            this.processNewTradeFile(file);
+            void this.processNewTradeFile(file);
           }
         }
       })
@@ -132,50 +160,23 @@ export class FileWatcherService {
       
       
       const extractedTrade = this.plugin.tradeService?.extractTradeData
-        ? await this.plugin.tradeService.extractTradeData(file)
+        ? asRecord(await this.plugin.tradeService.extractTradeData(file))
         : null;
-      const parsedTrade = this.tradeSyncService.parseTradeFromMarkdown(
-        latestMarkdown,
-        file.path
+      const parsedTrade = asRecord(
+        this.tradeSyncService.parseTradeFromMarkdown(latestMarkdown, file.path)
       );
 
       const normalizedParsedTrade = parsedTrade
         ? (() => {
-            const rawParsedTrade = parsedTrade as unknown as Record<
-              string,
-              unknown
-            >;
+            const rawParsedTrade = asRecord(parsedTrade) ?? {};
             return {
-              ...parsedTrade,
-              pnl:
-                rawParsedTrade.pnl !== undefined && rawParsedTrade.pnl !== null
-                  ? Number(rawParsedTrade.pnl)
-                  : undefined,
-              directPnL:
-                rawParsedTrade.directPnL !== undefined &&
-                rawParsedTrade.directPnL !== null
-                  ? Number(rawParsedTrade.directPnL)
-                  : undefined,
-              commission:
-                rawParsedTrade.commission !== undefined &&
-                rawParsedTrade.commission !== null
-                  ? Number(rawParsedTrade.commission)
-                  : undefined,
-              fees:
-                rawParsedTrade.fees !== undefined &&
-                rawParsedTrade.fees !== null
-                  ? Number(rawParsedTrade.fees)
-                  : undefined,
-              swap:
-                rawParsedTrade.swap !== undefined &&
-                rawParsedTrade.swap !== null
-                  ? Number(rawParsedTrade.swap)
-                  : undefined,
-              rebate:
-                rawParsedTrade.rebate !== undefined &&
-                rawParsedTrade.rebate !== null
-                  ? Number(rawParsedTrade.rebate)
-                  : undefined,
+              ...rawParsedTrade,
+              pnl: numberOrUndefined(rawParsedTrade.pnl),
+              directPnL: numberOrUndefined(rawParsedTrade.directPnL),
+              commission: numberOrUndefined(rawParsedTrade.commission),
+              fees: numberOrUndefined(rawParsedTrade.fees),
+              swap: numberOrUndefined(rawParsedTrade.swap),
+              rebate: numberOrUndefined(rawParsedTrade.rebate),
               useDirectPnLInput:
                 rawParsedTrade.useDirectPnLInput === true ||
                 rawParsedTrade.useDirectPnLInput === 'true',
@@ -184,10 +185,10 @@ export class FileWatcherService {
         : null;
 
       const extractedTradeContributes = extractedTrade
-        ? isPnlContributingTrade(extractedTrade as any)
+        ? isPnlContributingTrade(extractedTrade)
         : false;
       const parsedTradeContributes = normalizedParsedTrade
-        ? isPnlContributingTrade(normalizedParsedTrade as any)
+        ? isPnlContributingTrade(normalizedParsedTrade)
         : false;
 
       const tradeForRefresh = parsedTradeContributes
@@ -197,6 +198,8 @@ export class FileWatcherService {
           : normalizedParsedTrade || extractedTrade;
       const tradeForNotification = normalizedParsedTrade || extractedTrade;
       const trade = tradeForRefresh || tradeForNotification;
+      const tradeForRefreshRecord = asRecord(tradeForRefresh);
+      const tradeForNotificationRecord = asRecord(tradeForNotification);
 
       if (trade) {
         
@@ -205,23 +208,18 @@ export class FileWatcherService {
         
         
         const isFromSync =
-          tradeForRefresh?.backendTradeId !== undefined ||
-          tradeForNotification?.backendTradeId !== undefined;
+          tradeForRefreshRecord?.backendTradeId !== undefined ||
+          tradeForNotificationRecord?.backendTradeId !== undefined;
 
         if (
           tradeForRefresh &&
           !isFromSync &&
-          isPnlContributingTrade(tradeForRefresh as any) &&
-          tradeForRefresh.account &&
+          isPnlContributingTrade(tradeForRefreshRecord ?? {}) &&
+          tradeForRefreshRecord?.account &&
           this.plugin.accountPageService
         ) {
           try {
-            let accounts = tradeForRefresh.account;
-
-            
-            if (!Array.isArray(accounts)) {
-              accounts = accounts ? [accounts] : [];
-            }
+            const accounts = getStringArray(tradeForRefreshRecord.account);
 
             
             if (
@@ -262,14 +260,16 @@ export class FileWatcherService {
         
         if (
           this.settings.showNewTradeNotifications &&
-          tradeForNotification?.instrument &&
-          tradeForNotification?.direction &&
+          getStringValue(tradeForNotificationRecord, 'instrument') &&
+          getStringValue(tradeForNotificationRecord, 'direction') &&
           !isFromSync
         ) {
           new Notice(
             t('notice.new-trade-created', {
-              instrument: tradeForNotification.instrument,
-              direction: tradeForNotification.direction,
+              instrument:
+                getStringValue(tradeForNotificationRecord, 'instrument') ?? '',
+              direction:
+                getStringValue(tradeForNotificationRecord, 'direction') ?? '',
             })
           );
         }
@@ -335,9 +335,9 @@ export class FileWatcherService {
     const CLEANUP_INTERVAL_MS = 60 * 60 * 1000; 
 
     this.plugin.registerInterval(
-      globalThis.setInterval(() => {
+      window.setInterval(() => {
         this.performCleanup();
-      }, CLEANUP_INTERVAL_MS) as unknown as number
+      }, CLEANUP_INTERVAL_MS)
     );
   }
 

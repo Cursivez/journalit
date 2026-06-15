@@ -6,7 +6,6 @@ import { ReactView } from './ReactView';
 import { RenderFunction } from './types';
 import JournalitPlugin from '../main';
 import TemplateBuilderRenderer from '../components/templateBuilder/TemplateBuilderRenderer';
-import { ensureTemplateBuilderStyles } from '../styles/templateBuilderStyles';
 import { t } from '../lang/helpers';
 
 export const TEMPLATE_BUILDER_VIEW_TYPE = 'journalit-template-builder-view';

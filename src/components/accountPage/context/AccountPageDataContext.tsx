@@ -252,7 +252,7 @@ const calculateFilteredAccountMetrics = (
         options.defaultRiskAmount
       )
     )
-    .filter((r) => r !== undefined) as number[];
+    .filter((r) => r !== undefined);
   const avgWinRMultiple =
     winningTradesR.length > 0
       ? winningTradesR.reduce((sum, r) => sum + r, 0) / winningTradesR.length
@@ -267,7 +267,7 @@ const calculateFilteredAccountMetrics = (
         options.defaultRiskAmount
       )
     )
-    .filter((r) => r !== undefined) as number[];
+    .filter((r) => r !== undefined);
   const avgLossRMultiple =
     losingTradesR.length > 0
       ? losingTradesR.reduce((sum, r) => sum + Math.abs(r), 0) /
@@ -547,7 +547,7 @@ export const AccountPageDataProvider: React.FC<
   
   React.useEffect(() => {
     if (accountName && accountPageService) {
-      refreshData();
+      void refreshData();
     }
   }, [accountName, accountPageService, refreshData]);
 

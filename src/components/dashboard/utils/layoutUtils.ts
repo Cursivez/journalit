@@ -11,7 +11,7 @@ import { AVAILABLE_METRICS } from '../components/TopSection/types';
 import { eventBus } from '../../../services/events';
 
 
-let saveLayoutTimer: ReturnType<typeof setTimeout> | null = null;
+let saveLayoutTimer: number | null = null;
 
 
 export interface DashboardLayout {
@@ -26,14 +26,38 @@ export interface DashboardLayout {
 }
 
 
+
+const cloneDashboardLayout = (layout: DashboardLayout): DashboardLayout => ({
+  topSection: [...layout.topSection],
+  bottomSection: {
+    lg: layout.bottomSection.lg.map((item) => ({ ...item })),
+    md: layout.bottomSection.md.map((item) => ({ ...item })),
+    sm: layout.bottomSection.sm.map((item) => ({ ...item })),
+    xs: layout.bottomSection.xs.map((item) => ({ ...item })),
+    xxs: layout.bottomSection.xxs.map((item) => ({ ...item })),
+  },
+});
+
 interface DashboardLayoutSettings {
   layouts: Record<string, DashboardLayout>;
   activeLayout: string;
 }
 
 
-const DEFAULT_LAYOUT: DashboardLayout =
-  DEFAULT_DASHBOARD_LAYOUT as DashboardLayout;
+const DEFAULT_LAYOUT: DashboardLayout = {
+  topSection: [...DEFAULT_DASHBOARD_LAYOUT.topSection],
+  bottomSection: {
+    lg: DEFAULT_DASHBOARD_LAYOUT.bottomSection.lg.map((item) => ({ ...item })),
+    md: DEFAULT_DASHBOARD_LAYOUT.bottomSection.md.map((item) => ({ ...item })),
+    sm: DEFAULT_DASHBOARD_LAYOUT.bottomSection.sm.map((item) => ({ ...item })),
+    xs: (DEFAULT_DASHBOARD_LAYOUT.bottomSection.xs ?? []).map((item) => ({
+      ...item,
+    })),
+    xxs: (DEFAULT_DASHBOARD_LAYOUT.bottomSection.xxs ?? []).map((item) => ({
+      ...item,
+    })),
+  },
+};
 
 
 const DEFAULT_LAYOUT_SETTINGS: DashboardLayoutSettings = {
@@ -62,14 +86,10 @@ const getLayoutSettings = (
     const migratedLayouts: Record<string, DashboardLayout> = {};
 
     
-    (
-      Object.entries(layouts) as Array<
-        [string, DashboardSettings['layouts'][string]]
-      >
-    ).forEach(([name, layout]) => {
+    Object.entries(layouts).forEach(([name, layout]) => {
       
       if (!layout?.bottomSection) {
-        migratedLayouts[name] = JSON.parse(JSON.stringify(DEFAULT_LAYOUT));
+        migratedLayouts[name] = cloneDashboardLayout(DEFAULT_LAYOUT);
         return;
       }
 
@@ -189,7 +209,7 @@ function validateLayoutItems(layoutItems: Layout[]): Layout[] {
       continue;
     }
 
-    const item = rawItem as Layout;
+    const item = rawItem;
 
     
     const normalizedItem: Layout = {
@@ -292,7 +312,7 @@ export const getActiveLayout = (plugin: JournalitPlugin): DashboardLayout => {
       };
 
       
-      (async () => {
+      void (async () => {
         try {
           await saveLayout(plugin, activeLayoutName, fixedLayout);
         } catch (error) {
@@ -352,16 +372,18 @@ export const saveLayout = async (
   
   return new Promise((resolve, reject) => {
     if (saveLayoutTimer) {
-      clearTimeout(saveLayoutTimer);
+      window.clearTimeout(saveLayoutTimer);
     }
 
-    saveLayoutTimer = setTimeout(async () => {
-      try {
-        await saveLayoutInternal(plugin, name, layout);
-        resolve();
-      } catch (error) {
-        reject(error);
-      }
+    saveLayoutTimer = window.setTimeout(() => {
+      void (async () => {
+        try {
+          await saveLayoutInternal(plugin, name, layout);
+          resolve();
+        } catch (error) {
+          reject(error instanceof Error ? error : new Error(String(error)));
+        }
+      })();
     }, 300);
   });
 };
@@ -414,29 +436,27 @@ const saveLayoutInternal = async (
     }
 
     
-    (Object.entries(layoutCopy.bottomSection) as [string, Layout[]][]).forEach(
-      ([bp, bpLayout]) => {
-        const bpWidgetIds = new Set(bpLayout.map((item: Layout) => item.i));
+    Object.entries(layoutCopy.bottomSection).forEach(([bp, bpLayout]) => {
+      const bpWidgetIds = new Set(bpLayout.map((item: Layout) => item.i));
 
-        
-        allWidgetIds.forEach((widgetId) => {
-          if (!bpWidgetIds.has(widgetId)) {
-            const sourceItem = sourceItemsByWidgetId.get(widgetId);
+      
+      allWidgetIds.forEach((widgetId) => {
+        if (!bpWidgetIds.has(widgetId)) {
+          const sourceItem = sourceItemsByWidgetId.get(widgetId);
 
-            if (sourceItem) {
-              
-              bpLayout.push({
-                i: widgetId,
-                x: 0,
-                y: LAYOUT_BOTTOM_POSITION, 
-                w: Math.min(sourceItem.w, cols[bp]), 
-                h: sourceItem.h, 
-              });
-            }
+          if (sourceItem) {
+            
+            bpLayout.push({
+              i: widgetId,
+              x: 0,
+              y: LAYOUT_BOTTOM_POSITION, 
+              w: Math.min(sourceItem.w, cols[bp]), 
+              h: sourceItem.h, 
+            });
           }
-        });
-      }
-    );
+        }
+      });
+    });
 
     
     settings.layouts[name] = layoutCopy;

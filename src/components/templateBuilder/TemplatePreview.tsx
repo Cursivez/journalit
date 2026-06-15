@@ -1,6 +1,7 @@
 
 
 import React, { useEffect } from 'react';
+import { createSvgPlaceholderDataUri } from '../../utils/placeholderImage';
 import {
   ReviewTemplate,
   WidgetPlacement,
@@ -8,7 +9,6 @@ import {
 } from '../../types/reviewV2';
 import { previewDataBundle } from '../../data/mockTemplateData';
 import JournalitPlugin from '../../main';
-import { ensureReviewV2Styles } from '../../styles/reviewV2Styles';
 import { t } from '../../lang/helpers';
 import { Tooltip } from '../shared/Tooltip';
 import {
@@ -55,7 +55,7 @@ import { BacktestTradesWidget } from '../reviewV2/widgets/BacktestTradesWidget';
 import { SessionMistakesWidget } from '../reviewV2/widgets/SessionMistakesWidget';
 import { PreviousTradingDayContextWidget } from '../reviewV2/widgets/PreviousTradingDayContextWidget';
 import { WeeklyDRCContextWidget } from '../reviewV2/widgets/WeeklyDRCContextWidget';
-const TEMPLATE_PREVIEW_WIDGET_HOVER_STYLES = `
+export const TEMPLATE_PREVIEW_WIDGET_HOVER_STYLES = `
           .journalit-template-builder-container .template-preview-widget {
             position: relative;
             border-radius: var(--radius-m);
@@ -525,8 +525,20 @@ function getWidgetPreviewContent({
           config={widget.config}
           previewData={{
             images: [
-              'https://placehold.co/400x300/1a1a2e/eee?text=Chart+Screenshot',
-              'https://placehold.co/400x300/16213e/eee?text=Trade+Setup',
+              createSvgPlaceholderDataUri(
+                400,
+                300,
+                '#1a1a2e',
+                '#eeeeee',
+                'Chart Screenshot'
+              ),
+              createSvgPlaceholderDataUri(
+                400,
+                300,
+                '#16213e',
+                '#eeeeee',
+                'Trade Setup'
+              ),
             ],
           }}
         />

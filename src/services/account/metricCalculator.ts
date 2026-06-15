@@ -9,6 +9,26 @@ import {
 import { TradeService } from '../trade/TradeService';
 import { calculateWinRateExcludingBreakeven } from '../../utils/breakEvenRange';
 
+interface AccountMetricTrade {
+  account?: string[];
+  pnl?: number | string | null;
+  rMultiple?: number | null;
+}
+
+function asAccountMetricTrades(value: unknown): AccountMetricTrade[] {
+  return Array.isArray(value)
+    ? value.filter((item): item is AccountMetricTrade =>
+        Boolean(item && typeof item === 'object' && !Array.isArray(item))
+      )
+    : [];
+}
+
+function getTradePnl(trade: AccountMetricTrade): number {
+  return typeof trade.pnl === 'string'
+    ? parseFloat(trade.pnl)
+    : Number(trade.pnl) || 0;
+}
+
 
 const accountMetricsCache = new Map<string, AccountMetrics>();
 
@@ -35,8 +55,10 @@ export function clearAccountMetricsCache(accountIdOrName?: string): void {
 const ensureCacheSize = () => {
   if (accountMetricsCache.size > MAX_CACHE_SIZE) {
     
-    const firstKey = accountMetricsCache.keys().next().value;
-    accountMetricsCache.delete(firstKey);
+    const firstKey = Array.from(accountMetricsCache.keys())[0];
+    if (firstKey !== undefined) {
+      accountMetricsCache.delete(firstKey);
+    }
   }
 };
 
@@ -54,7 +76,7 @@ export async function calculateAccountMetrics(
     }
 
     
-    const allTrades = await tradeService.getTradeData();
+    const allTrades = asAccountMetricTrades(await tradeService.getTradeData());
 
     
     if (!Array.isArray(allTrades)) {
@@ -73,9 +95,11 @@ export async function calculateAccountMetrics(
 
     
     const accountTrades = allTrades.filter((trade) => {
-      const tradeAccounts = [
-        ...(Array.isArray(trade.account) ? trade.account : []),
-      ];
+      const tradeAccounts = Array.isArray(trade.account)
+        ? trade.account.filter(
+            (account): account is string => typeof account === 'string'
+          )
+        : [];
 
       
       if (tradeAccounts.includes(searchId)) {
@@ -118,10 +142,7 @@ export async function calculateAccountMetrics(
     
     accountTrades.forEach((trade) => {
       
-      const pnl =
-        typeof trade.pnl === 'string'
-          ? parseFloat(trade.pnl)
-          : Number(trade.pnl) || 0;
+      const pnl = getTradePnl(trade);
 
       
       totalPnL += pnl;
@@ -196,7 +217,7 @@ export async function calculateAccountMetrics(
 
     
     const winningTradesWithR = accountTrades.filter(
-      (t) => (t.pnl ?? 0) > 0 && t.rMultiple !== undefined
+      (t) => getTradePnl(t) > 0 && t.rMultiple !== undefined
     );
     const avgWinRMultiple =
       winningTradesWithR.length > 0
@@ -205,7 +226,7 @@ export async function calculateAccountMetrics(
         : undefined;
 
     const losingTradesWithR = accountTrades.filter(
-      (t) => (t.pnl ?? 0) < 0 && t.rMultiple !== undefined
+      (t) => getTradePnl(t) < 0 && t.rMultiple !== undefined
     );
     const avgLossRMultiple =
       losingTradesWithR.length > 0

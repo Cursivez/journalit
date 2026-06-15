@@ -36,17 +36,28 @@ export const MultiSelectDropdownFilter: React.FC<MultiSelectDropdownFilterProps>
 
       useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
+          const target = event.target;
+          const ActiveDocumentNode = window.activeDocument.defaultView?.Node;
           if (
-            dropdownRef.current &&
-            !dropdownRef.current.contains(event.target as Node)
+            !dropdownRef.current ||
+            !ActiveDocumentNode ||
+            !(target instanceof ActiveDocumentNode)
           ) {
+            setIsOpen(false);
+            return;
+          }
+
+          if (!dropdownRef.current.contains(target)) {
             setIsOpen(false);
           }
         };
 
-        document.addEventListener('mousedown', handleClickOutside);
+        window.activeDocument.addEventListener('mousedown', handleClickOutside);
         return () => {
-          document.removeEventListener('mousedown', handleClickOutside);
+          window.activeDocument.removeEventListener(
+            'mousedown',
+            handleClickOutside
+          );
         };
       }, []);
 

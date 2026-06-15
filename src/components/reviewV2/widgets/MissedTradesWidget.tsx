@@ -18,7 +18,7 @@ const MAX_FRONTMATTER_RETRIES = 5;
 const FRONTMATTER_RETRY_DELAY_MS = 100;
 
 
-const SUPPORTED_TYPES = ['drc', 'weekly-review'];
+type SupportedMissedTradesNoteType = 'drc' | 'weekly-review';
 
 
 const DAYS_OF_WEEK = [
@@ -31,9 +31,44 @@ const DAYS_OF_WEEK = [
   'Sunday',
 ];
 
+const DAY_TRANSLATION_KEYS: Record<string, TranslationKey> = {
+  Monday: 'common.day.monday',
+  Tuesday: 'common.day.tuesday',
+  Wednesday: 'common.day.wednesday',
+  Thursday: 'common.day.thursday',
+  Friday: 'common.day.friday',
+  Saturday: 'common.day.saturday',
+  Sunday: 'common.day.sunday',
+};
+
 const MAX_VISIBLE_SETUPS = 2;
 const MAX_SETUP_LENGTH = 12;
 const SUMMARY_PREVIEW_LENGTH = 140;
+
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  Boolean(value) && typeof value === 'object' && !Array.isArray(value);
+
+const asRecord = (value: unknown): Record<string, unknown> | undefined =>
+  isRecord(value) ? value : undefined;
+
+const getSupportedNoteType = (
+  value: unknown
+): SupportedMissedTradesNoteType | null => {
+  switch (value) {
+    case 'drc':
+    case 'weekly-review':
+      return value;
+    default:
+      return null;
+  }
+};
+
+const parseFrontmatterDate = (value: unknown): Date | null =>
+  typeof value === 'string' ||
+  typeof value === 'number' ||
+  value instanceof Date
+    ? parseLocalDateSafe(value)
+    : null;
 
 
 type MissedTradesWidgetConfig = object;
@@ -333,12 +368,15 @@ export const MissedTradesWidget: React.FC<MissedTradesWidgetProps> = memo(
       }
 
       const cache = plugin.app.metadataCache.getFileCache(file);
-      const frontmatter = cache?.frontmatter;
+      const frontmatter = asRecord(cache?.frontmatter);
 
       if (!frontmatter) {
         if (retryCountRef.current < MAX_FRONTMATTER_RETRIES) {
           retryCountRef.current++;
-          setTimeout(() => loadMissedTrades(), FRONTMATTER_RETRY_DELAY_MS);
+          window.setTimeout(
+            () => void loadMissedTrades(),
+            FRONTMATTER_RETRY_DELAY_MS
+          );
           return;
         }
         setIsValidContext(false);
@@ -346,20 +384,20 @@ export const MissedTradesWidget: React.FC<MissedTradesWidgetProps> = memo(
         return;
       }
 
-      const type = frontmatter.type;
-      if (!SUPPORTED_TYPES.includes(type)) {
+      const type = getSupportedNoteType(frontmatter.type);
+      if (!type) {
         setIsValidContext(false);
         setLoading(false);
         return;
       }
 
-      setNoteType(type as 'drc' | 'weekly-review');
+      setNoteType(type);
 
       let startDate: Date;
       let endDate: Date;
 
       if (type === 'drc') {
-        const drcDate = parseLocalDateSafe(frontmatter.date);
+        const drcDate = parseFrontmatterDate(frontmatter.date);
         if (!drcDate) {
           setIsValidContext(false);
           setLoading(false);
@@ -373,8 +411,8 @@ export const MissedTradesWidget: React.FC<MissedTradesWidgetProps> = memo(
         endDate.setHours(23, 59, 59, 999);
       } else if (type === 'weekly-review') {
         if (frontmatter.weekStart && frontmatter.weekEnd) {
-          const parsedStart = parseLocalDateSafe(frontmatter.weekStart);
-          const parsedEnd = parseLocalDateSafe(frontmatter.weekEnd);
+          const parsedStart = parseFrontmatterDate(frontmatter.weekStart);
+          const parsedEnd = parseFrontmatterDate(frontmatter.weekEnd);
           if (!parsedStart || !parsedEnd) {
             setIsValidContext(false);
             setLoading(false);
@@ -385,7 +423,7 @@ export const MissedTradesWidget: React.FC<MissedTradesWidgetProps> = memo(
           endDate.setHours(23, 59, 59, 999);
           setNoteDate(startDate);
         } else {
-          const weekDate = parseLocalDateSafe(frontmatter.date);
+          const weekDate = parseFrontmatterDate(frontmatter.date);
           if (!weekDate) {
             setIsValidContext(false);
             setLoading(false);
@@ -449,18 +487,18 @@ export const MissedTradesWidget: React.FC<MissedTradesWidgetProps> = memo(
 
     useEffect(() => {
       retryCountRef.current = 0;
-      loadMissedTrades();
+      void loadMissedTrades();
     }, [loadMissedTrades]);
 
     const handleMissedTradeChanged = useCallback(() => {
-      loadMissedTrades();
+      void loadMissedTrades();
     }, [loadMissedTrades]);
 
     useEventBus('missed-trade:changed', handleMissedTradeChanged, !preview);
 
     const handleOpenMissedTrade = useCallback(
       (path: string) => {
-        plugin.app.workspace.openLinkText(path, '', true);
+        void plugin.app.workspace.openLinkText(path, '', true);
       },
       [plugin]
     );
@@ -488,7 +526,7 @@ export const MissedTradesWidget: React.FC<MissedTradesWidgetProps> = memo(
           });
           modal.open();
         } catch {
-          plugin.viewManager?.openTradeFormView(initialData);
+          void plugin.viewManager?.openTradeFormView(initialData);
         }
       } catch (error) {
         console.error('[MissedTradesWidget] Error opening trade form:', error);
@@ -631,7 +669,7 @@ export const MissedTradesWidget: React.FC<MissedTradesWidgetProps> = memo(
     ) => (
       <div key={dayName} className="journalit-reviewv2-missed-day">
         <div className="journalit-reviewv2-missed-day-title">
-          {t(`common.day.${dayName.toLowerCase()}` as TranslationKey)}
+          {t(DAY_TRANSLATION_KEYS[dayName] ?? 'common.day.monday')}
         </div>
         <div className="journalit-reviewv2-missed-day-list">
           {trades.map(renderMissedTradeCard)}
@@ -675,7 +713,7 @@ export const MissedTradesWidget: React.FC<MissedTradesWidgetProps> = memo(
             )}
             {!preview && noteType === 'drc' && (
               <button
-                onClick={handleCreateMissedTrade}
+                onClick={() => void handleCreateMissedTrade()}
                 className="journalit-reviewv2-missed-add"
                 aria-label={t('widget.missed-trades.add-aria')}
               >

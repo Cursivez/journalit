@@ -27,6 +27,18 @@ import {
 const DAILY_PERIODS = [10, 20, 30, 50] as const;
 type DailyPeriod = (typeof DAILY_PERIODS)[number];
 
+const parseDailyPeriod = (value: number): DailyPeriod | null => {
+  switch (value) {
+    case 10:
+    case 20:
+    case 30:
+    case 50:
+      return value;
+    default:
+      return null;
+  }
+};
+
 
 export const DailyPerformanceChart = React.memo<BaseWidgetProps>(
   ({ filters, dateFormat }) => {
@@ -72,12 +84,14 @@ export const DailyPerformanceChart = React.memo<BaseWidgetProps>(
 
               const pnlEvents = realizedEvents.length
                 ? realizedEvents
-                : [
-                    {
-                      tradingDay: tradeDate as Date,
-                      pnl: getEffectivePnL(trade),
-                    },
-                  ];
+                : tradeDate
+                  ? [
+                      {
+                        tradingDay: tradeDate,
+                        pnl: getEffectivePnL(trade),
+                      },
+                    ]
+                  : [];
               const useStoredRMultiple = pnlEvents.length === 1;
 
               for (const event of pnlEvents) {
@@ -178,9 +192,9 @@ export const DailyPerformanceChart = React.memo<BaseWidgetProps>(
                     )}
                     value={selectedPeriod}
                     onChange={(e) => {
-                      const value = Number(e.target.value);
-                      if (DAILY_PERIODS.includes(value as DailyPeriod)) {
-                        setSelectedPeriod(value as DailyPeriod);
+                      const period = parseDailyPeriod(Number(e.target.value));
+                      if (period) {
+                        setSelectedPeriod(period);
                       }
                     }}
                     className="journalit-dashboard-daily-performance-chart__select"

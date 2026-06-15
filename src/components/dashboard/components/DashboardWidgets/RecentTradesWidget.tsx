@@ -53,7 +53,7 @@ const formatDate = (date: Date, plugin: JournalitPlugin | null): string => {
       default:
         return date.toLocaleDateString();
     }
-  } catch (_err) {
+  } catch {
     
     return date.toLocaleDateString();
   }
@@ -73,7 +73,7 @@ export const RecentTradesWidget: React.FC<BaseWidgetProps> = ({ filters }) => {
   const openTradeNote = (tradePath: string) => {
     if (plugin) {
       
-      plugin.openFile(tradePath.split('#')[0] ?? tradePath, true);
+      void plugin.openFile(tradePath.split('#')[0] ?? tradePath, true);
     }
   };
 

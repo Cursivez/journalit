@@ -25,15 +25,35 @@ interface GridCompactor {
   compact(layout: LayoutItem[], cols: number): LayoutItem[];
 }
 
-export const ResponsiveGridLayout = (
-  ReactGridLayout as unknown as {
-    Responsive: React.ComponentType<Record<string, unknown>>;
-  }
-).Responsive;
+const reactGridLayoutModule = Object.fromEntries(
+  Object.entries(ReactGridLayout)
+);
 
-const reactGridVerticalCompactor = (
-  ReactGridLayout as unknown as { verticalCompactor: GridCompactor }
-).verticalCompactor;
+const isReactComponentType = (
+  value: unknown
+): value is React.ComponentType<Record<string, unknown>> =>
+  typeof value === 'function' ||
+  (typeof value === 'object' && value !== null && !Array.isArray(value));
+
+const isGridCompactor = (value: unknown): value is GridCompactor =>
+  Boolean(
+    value &&
+    typeof value === 'object' &&
+    !Array.isArray(value) &&
+    typeof Reflect.get(value, 'compact') === 'function'
+  );
+
+const responsiveGridLayout = reactGridLayoutModule.Responsive;
+if (!isReactComponentType(responsiveGridLayout)) {
+  throw new Error('react-grid-layout Responsive export is unavailable');
+}
+
+export const ResponsiveGridLayout = responsiveGridLayout;
+
+const reactGridVerticalCompactor = reactGridLayoutModule.verticalCompactor;
+if (!isGridCompactor(reactGridVerticalCompactor)) {
+  throw new Error('react-grid-layout verticalCompactor export is unavailable');
+}
 
 const collides = (a: LayoutItem, b: LayoutItem): boolean => {
   if (a.i === b.i) return false;

@@ -17,9 +17,7 @@ import {
 } from '../../../utils/tradeStatusUtils';
 import { SkeletonBox } from '../../shared/SkeletonBox';
 import { SkeletonText } from '../../shared/SkeletonText';
-import { ensureHomeWidgetStyles } from '../../../styles/homeWidgetStyles';
 import { cssVars } from '../../../styles/inlineStylePolicy';
-import { ensureSkeletonStyles } from '../../../styles/skeletonStyles';
 import { t } from '../../../lang/helpers';
 import { getTradeAnalyticsDate } from '../../../utils/tradeAnalyticsDate';
 
@@ -281,14 +279,10 @@ const BestHoursWidgetComponent: React.FC = () => {
   useEffect(() => {}, []);
 
   
-  const filteredTrades = useFilteredByPeriod(
-    dashboardData?.trades as Trade[] | undefined
-  );
+  const filteredTrades = useFilteredByPeriod(dashboardData?.trades);
   const pnlContributingTrades = useMemo(
     () =>
-      (filteredTrades || []).filter((trade) =>
-        isPnlContributingTrade(trade as Trade)
-      ),
+      (filteredTrades || []).filter((trade) => isPnlContributingTrade(trade)),
     [filteredTrades]
   );
 

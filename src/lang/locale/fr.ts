@@ -1789,6 +1789,7 @@ const fr: Lang = {
   'chart.tooltip.accounts-list': '{accounts}',
   'chart.tooltip.more-accounts': '+{count} more',
   'chart.loading': 'Chargement du graphique...',
+  'chart.label.pnl': 'P&L',
   'chart.legend.entry': 'Entrée',
   'chart.legend.exit': 'Sortie',
   'chart.legend.trade': 'Trade',
@@ -2194,9 +2195,8 @@ const fr: Lang = {
   'account.settings.section.inclusion.desc':
     'Choisissez les types de comptes à inclure dans les calculs du tableau de bord. Configurez également si les retraits de chaque type de compte sont inclus dans les mesures de retrait total.',
   'account.settings.section.inclusion.include-dashboard':
-    'Inclure dans le tableau de bord',
-  'account.settings.section.inclusion.include-withdrawals':
-    'Inclure les retraits',
+    'Dans les stats du tableau de bord',
+  'account.settings.section.inclusion.include-withdrawals': 'Retraits',
   'account.settings.section.inclusion.empty':
     'Aucun type de compte disponible à configurer.',
   'account.settings.section.order.title': "Ordre d'affichage",

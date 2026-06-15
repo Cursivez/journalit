@@ -8,7 +8,7 @@ import React, {
 } from 'react';
 import { FilterState } from '../../DashboardView';
 import { formatDuration } from '../../../../utils/formatting';
-import { CurrencyCode } from '../../../../utils/currencyConfig';
+import { parseCuratedCurrencyCode } from '../../../../utils/currencyConfig';
 import {
   formatGroupedPnL,
   formatPnLWithCurrency,
@@ -35,11 +35,6 @@ import { MetricCardSkeleton } from '../../../shared';
 import { useCurrency } from '../../../../contexts/CurrencyContext';
 import { useDisplayFormatter } from '../../../../hooks/useDisplayPolicy';
 import type { DisplayValueKind } from '../../../../services/display/DisplayPolicy';
-import {
-  injectMetricCardSkeletonStyles,
-  removeMetricCardSkeletonStyles,
-} from '../../../../styles/dashboard/metricCardSkeletonStyles';
-import { ensureSkeletonStyles } from '../../../../styles/skeletonStyles';
 import { eventBus, useEventBus } from '../../../../services/events';
 import { t } from '../../../../lang/helpers';
 import { dndKitStyle } from '../../../../styles/inlineStylePolicy';
@@ -102,6 +97,29 @@ const MAE_MFE_METRICS = new Set([
   'winnerMfeP90',
   'loserMfeP90',
 ]);
+
+function getDashboardMetricValue(
+  metrics: DashboardData['metrics'],
+  metric: string
+): number | undefined {
+  const metricKey = (() => {
+    switch (metric) {
+      case 'timeInDrawdown':
+        return 'percentTimeInDrawdownDays';
+      case 'avgRecoveryTime':
+        return 'averageRecoveryDurationDays';
+      case 'longestDrawdown':
+        return 'longestDrawdownDurationDays';
+      case 'drawdownEpisodes':
+        return 'drawdownEpisodeCount';
+      default:
+        return metric;
+    }
+  })();
+
+  const value = Object.entries(metrics).find(([key]) => key === metricKey)?.[1];
+  return typeof value === 'number' ? value : undefined;
+}
 
 function getMetricDeltaZeroThreshold(
   metric: string,
@@ -501,7 +519,7 @@ function useTopSectionModel({ filters }: Pick<TopSectionProps, 'filters'>) {
             };
 
             
-            saveLayout(plugin, 'Default', newLayout);
+            void saveLayout(plugin, 'Default', newLayout);
           } catch (error) {
             console.error('Error saving layout:', error);
           }
@@ -536,13 +554,17 @@ function useTopSectionModel({ filters }: Pick<TopSectionProps, 'filters'>) {
 
         
         
-        document
+        window.activeDocument
           .querySelectorAll('.journalit-dashboard-widget-remove')
           .forEach((el) => {
+            if (!el.instanceOf(HTMLElement)) {
+              return;
+            }
+
             
-            (el as HTMLElement).classList.add('jl-force-redraw');
-            setTimeout(() => {
-              (el as HTMLElement).classList.remove('jl-force-redraw');
+            el.classList.add('jl-force-redraw');
+            window.setTimeout(() => {
+              el.classList.remove('jl-force-redraw');
             }, 10);
           });
 
@@ -588,7 +610,7 @@ function useTopSectionModel({ filters }: Pick<TopSectionProps, 'filters'>) {
 
     const effectiveCurrency =
       data?.metrics.isMultiCurrency && data?.metrics.conversionBaseCurrency
-        ? (data.metrics.conversionBaseCurrency as CurrencyCode)
+        ? parseCuratedCurrencyCode(data.metrics.conversionBaseCurrency)
         : currency;
     const kind = getMetricDisplayKind(metric);
 
@@ -819,17 +841,11 @@ function useTopSectionModel({ filters }: Pick<TopSectionProps, 'filters'>) {
   const createMetricDelta = (metric: string, metricValue: number) => {
     if (!data || !comparisonData) return undefined;
 
-    const derivedMetricKeyMap = {
-      timeInDrawdown: 'percentTimeInDrawdownDays',
-      avgRecoveryTime: 'averageRecoveryDurationDays',
-      longestDrawdown: 'longestDrawdownDurationDays',
-      drawdownEpisodes: 'drawdownEpisodeCount',
-    } as const;
-    const metricKey =
-      derivedMetricKeyMap[metric as keyof typeof derivedMetricKeyMap] ??
-      (metric as keyof typeof data.metrics);
-    const rawComparisonValue = comparisonData.metrics[metricKey] as number;
-    if (!Number.isFinite(metricValue)) {
+    const rawComparisonValue = getDashboardMetricValue(
+      comparisonData.metrics,
+      metric
+    );
+    if (!Number.isFinite(metricValue) || rawComparisonValue === undefined) {
       return undefined;
     }
     const normalizedMetricValue =
@@ -936,12 +952,12 @@ function useTopSectionModel({ filters }: Pick<TopSectionProps, 'filters'>) {
       rMultipleDeltaValues?.current !== undefined &&
       rMultipleDeltaValues.comparison !== undefined;
     const deltaCurrentValue = usesMaxDrawdownPercentDelta
-      ? Math.abs(currentMaxDrawdownPercent as number)
+      ? Math.abs(currentMaxDrawdownPercent)
       : usesRMultipleDelta
         ? (rMultipleDeltaValues.current ?? normalizedMetricValue)
         : normalizedMetricValue;
     const deltaComparisonValue = usesMaxDrawdownPercentDelta
-      ? Math.abs(comparisonMaxDrawdownPercent as number)
+      ? Math.abs(comparisonMaxDrawdownPercent)
       : usesRMultipleDelta
         ? (rMultipleDeltaValues.comparison ?? comparisonValue)
         : comparisonValue;
@@ -1602,17 +1618,8 @@ export const TopSection: React.FC<TopSectionProps> = ({
                 id="topsection-metrics-container"
               >
                 {activeMetrics.map((metric) => {
-                  const derivedMetricKeyMap = {
-                    timeInDrawdown: 'percentTimeInDrawdownDays',
-                    avgRecoveryTime: 'averageRecoveryDurationDays',
-                    longestDrawdown: 'longestDrawdownDurationDays',
-                    drawdownEpisodes: 'drawdownEpisodeCount',
-                  } as const;
-                  const metricKey =
-                    derivedMetricKeyMap[
-                      metric as keyof typeof derivedMetricKeyMap
-                    ] ?? (metric as keyof typeof data.metrics);
-                  const metricValue = data.metrics[metricKey] as number;
+                  const metricValue =
+                    getDashboardMetricValue(data.metrics, metric) ?? 0;
                   const formattedValue = formatMetricValue(metric, metricValue);
 
                   const percentSuffix = formatMetricPercentSuffix(
@@ -1635,7 +1642,7 @@ export const TopSection: React.FC<TopSectionProps> = ({
                           : isPositiveMetric(metric, metricValue)
                       }
                       isEditing={isEditing}
-                      onRemove={handleRemoveMetric}
+                      onRemove={(metric) => void handleRemoveMetric(metric)}
                       
                       mainPart={getMainPart(
                         metric,

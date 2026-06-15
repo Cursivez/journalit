@@ -25,6 +25,35 @@ import { t, type TranslationKey } from '../../../lang/helpers';
 import { classifyPnLWithBreakEvenSettings } from '../../../utils/breakEvenRange';
 import { getBreakEvenBalanceForDisplayTrade } from './shared/breakEvenDisplayUtils';
 
+type ReviewBestWorstTrade = Record<string, unknown> & {
+  pnl?: number | null;
+  directPnL?: number | null;
+  useDirectPnLInput?: boolean;
+  dividends?: Array<{ amount?: number | null }>;
+  commission?: number | null;
+  swap?: number | null;
+  fees?: number | null;
+  rebate?: number | null;
+  tradeStatus?: string;
+  account?: string | string[];
+  currency?: string;
+  originalCurrency?: string;
+  originalPnlBeforeConversion?: number | null;
+  brokerBaseCurrency?: string;
+  rMultiple?: number;
+  riskAmount?: number;
+  breakEvenAccountCurrentBalance?: number;
+  breakEvenAccountCurrentBalanceTotal?: number;
+};
+
+function asReviewBestWorstTrades(value: unknown): ReviewBestWorstTrade[] {
+  return Array.isArray(value)
+    ? value.filter((item): item is ReviewBestWorstTrade =>
+        Boolean(item && typeof item === 'object' && !Array.isArray(item))
+      )
+    : [];
+}
+
 interface BestWorstMonthsWidgetProps {
   filePath: string;
   plugin: JournalitPlugin;
@@ -109,7 +138,9 @@ export const BestWorstMonthsWidget: React.FC<BestWorstMonthsWidgetProps> =
       } = useReviewTrades(filePath, plugin);
 
       
-      const trades = preview && previewData ? previewData.trades : cachedTrades;
+      const trades = asReviewBestWorstTrades(
+        preview && previewData ? previewData.trades : cachedTrades
+      );
       const loading = preview ? false : cacheLoading;
 
       
@@ -141,11 +172,13 @@ export const BestWorstMonthsWidget: React.FC<BestWorstMonthsWidgetProps> =
       const breakEvenRangeMax = plugin?.settings?.trade?.breakEvenRangeMax;
       
       const { bestMonth, worstMonth } = useMemo(() => {
-        const closedTrades = trades
-          .filter((t) => isPnlContributingTrade(t))
-          .flatMap((trade) =>
-            splitReviewTradeByRealizedPnlEvent(trade, plugin)
-          );
+        const closedTrades = asReviewBestWorstTrades(
+          trades
+            .filter((t) => isPnlContributingTrade(t))
+            .flatMap((trade) =>
+              splitReviewTradeByRealizedPnlEvent(trade, plugin)
+            )
+        );
 
         if (closedTrades.length === 0) {
           return { bestMonth: null, worstMonth: null };
@@ -483,7 +516,7 @@ export const BestWorstMonthsWidget: React.FC<BestWorstMonthsWidgetProps> =
               primaryText={bestMonth ? formatMonthName(bestMonth) : ''}
               metaItems={bestMonth ? buildMetaItems(bestMonth) : []}
               onClick={
-                bestMonth ? () => openMonthlyReview(bestMonth) : undefined
+                bestMonth ? () => void openMonthlyReview(bestMonth) : undefined
               }
               currencyConversion={currencyConversion}
               conversionTrades={bestMonth?.trades}
@@ -509,7 +542,9 @@ export const BestWorstMonthsWidget: React.FC<BestWorstMonthsWidgetProps> =
               primaryText={worstMonth ? formatMonthName(worstMonth) : ''}
               metaItems={worstMonth ? buildMetaItems(worstMonth) : []}
               onClick={
-                worstMonth ? () => openMonthlyReview(worstMonth) : undefined
+                worstMonth
+                  ? () => void openMonthlyReview(worstMonth)
+                  : undefined
               }
               currencyConversion={currencyConversion}
               conversionTrades={worstMonth?.trades}

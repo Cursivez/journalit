@@ -1,6 +1,6 @@
 
 
-const ONBOARDING_VIEW_STYLES = `
+export const ONBOARDING_VIEW_STYLES = `
   
   .journalit-onboarding-view-container button,
   .journalit-onboarding-view-container .feature-card,
@@ -2833,13 +2833,3 @@ const ONBOARDING_VIEW_STYLES = `
     color: var(--interactive-accent-hover);
   }
 `;
-
-export function injectOnboardingViewStyles(): void {
-  return;
-}
-
-export function removeOnboardingViewStyles(): void {
-  return;
-}
-
-export function ensureOnboardingViewStyles(): void {}

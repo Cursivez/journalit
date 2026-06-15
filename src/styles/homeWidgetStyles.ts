@@ -1,6 +1,6 @@
 
 
-const HOME_WIDGET_STYLES = `
+export const HOME_WIDGET_STYLES = `
   
   .journalit-home-widget__eyebrow {
     font-size: 11px;
@@ -2252,11 +2252,3 @@ const HOME_WIDGET_STYLES = `
     opacity: 0.5;
   }
 `;
-
-const homeWidgetStylesInjected = false;
-
-function injectHomeWidgetStyles(): void {
-  return;
-}
-
-export function ensureHomeWidgetStyles(): void {}

@@ -1,5 +1,5 @@
 
-const DASHBOARD_STYLES = `
+export const DASHBOARD_STYLES = `
   
   
   .workspace-leaf-content[data-type="journalit-dashboard-view"] {
@@ -445,7 +445,19 @@ const DASHBOARD_STYLES = `
   }
 
   .journalit-dashboard-metric-previous-delta-arrow {
-    font-weight: 700 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 12px !important;
+    height: 12px !important;
+    flex: 0 0 12px !important;
+    line-height: 1 !important;
+  }
+
+  .journalit-dashboard-metric-previous-delta-arrow svg {
+    width: 12px !important;
+    height: 12px !important;
+    stroke-width: 3.5 !important;
   }
 
   .journalit-dashboard-metric-previous-delta-suffix {
@@ -771,8 +783,8 @@ const DASHBOARD_STYLES = `
   }
 
   .journalit-dashboard-view .journalit-dashboard-date-range-inputs.journalit-dashboard-custom-date-dropdown {
-    width: fit-content !important;
-    max-width: none !important;
+    width: 300px !important;
+    max-width: min(300px, calc(100vw - 32px)) !important;
   }
 
   
@@ -808,12 +820,17 @@ const DASHBOARD_STYLES = `
   
   
   .journalit-date-picker-input {
-    width: fit-content !important;
+    width: max-content !important;
   }
   
   
   .journalit-date-picker-input > div {
-    width: fit-content !important;
+    width: max-content !important;
+  }
+
+  .journalit-date-picker-input .journalit-fast-datetime__container {
+    width: max-content !important;
+    flex-wrap: nowrap !important;
   }
 
   .journalit-date-picker-input .journalit-fast-datetime__container[data-date-only="true"] {
@@ -1082,7 +1099,11 @@ const DASHBOARD_STYLES = `
     font-size: 12px !important;
     font-weight: 500 !important;
     cursor: pointer !important;
-    transition: all 0.2s ease !important;
+    transition:
+      background-color 0.2s ease,
+      border-color 0.2s ease,
+      color 0.2s ease,
+      box-shadow 0.2s ease !important;
     white-space: nowrap !important;
     height: 28px !important;
     line-height: 1 !important;
@@ -1923,23 +1944,30 @@ const DASHBOARD_STYLES = `
     line-height: 1 !important;
   }
 
-  .journalit-dashboard-calendar-header-link {
-    all: unset !important;
+  .journalit-dashboard-calendar .journalit-dashboard-calendar-header-link {
+    appearance: none !important;
+    display: inline !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
     cursor: pointer !important;
     color: inherit !important;
     font: inherit !important;
     letter-spacing: inherit !important;
     text-transform: inherit !important;
+    line-height: inherit !important;
   }
 
-  .journalit-dashboard-calendar-header-link:hover {
+  .journalit-dashboard-calendar .journalit-dashboard-calendar-header-link:hover {
     color: var(--interactive-accent) !important;
-    text-decoration: underline !important;
-    text-decoration-thickness: 1px !important;
-    text-underline-offset: 2px !important;
+    background: transparent !important;
+    box-shadow: none !important;
   }
 
-  .journalit-dashboard-calendar-header-link:focus-visible {
+  .journalit-dashboard-calendar .journalit-dashboard-calendar-header-link:focus-visible {
     outline: 1px solid var(--interactive-accent) !important;
     outline-offset: 2px !important;
     border-radius: 2px !important;
@@ -1970,11 +1998,13 @@ const DASHBOARD_STYLES = `
     font-size: var(--font-ui-small) !important;
   }
 
-  .journalit-dashboard-calendar-nav-button {
+  .journalit-dashboard-calendar .journalit-dashboard-calendar-nav-button {
+    appearance: none !important;
     width: 24px !important;
     height: 100% !important;
     min-height: 24px !important;
     padding: 0 !important;
+    margin: 0 !important;
     border: 0 !important;
     border-radius: 999px !important;
     background: transparent !important;
@@ -1988,9 +2018,10 @@ const DASHBOARD_STYLES = `
     justify-content: center !important;
   }
 
-  .journalit-dashboard-calendar-nav-button:hover {
+  .journalit-dashboard-calendar .journalit-dashboard-calendar-nav-button:hover {
     background: transparent !important;
     color: var(--text-normal) !important;
+    box-shadow: none !important;
   }
 
   .journalit-dashboard-calendar-header {
@@ -2293,7 +2324,9 @@ const DASHBOARD_STYLES = `
   }
   
   
-  .journalit-dashboard-edit-mode-button {
+  .journalit-dashboard-view-container
+    .journalit-dashboard-filter-actions
+    .journalit-dashboard-edit-mode-button {
     display: inline-flex !important;
     align-items: center !important;
     justify-content: center !important;
@@ -2302,29 +2335,42 @@ const DASHBOARD_STYLES = `
     color: var(--text-normal) !important;
     border: 1px solid var(--background-modifier-border) !important;
     border-radius: 4px !important;
+    box-shadow: none !important;
     padding: 5px 10px !important;
     font-size: 12px !important;
     font-weight: 500 !important;
     cursor: pointer !important;
-    transition: all 0.2s ease !important;
+    transition:
+      background-color 0.2s ease,
+      border-color 0.2s ease,
+      color 0.2s ease,
+      box-shadow 0.2s ease !important;
     white-space: nowrap !important;
     height: 28px !important;
     line-height: 1 !important;
   }
   
-  .journalit-dashboard-edit-mode-button:hover {
+  .journalit-dashboard-view-container
+    .journalit-dashboard-filter-actions
+    .journalit-dashboard-edit-mode-button:hover {
     background-color: var(--background-modifier-hover) !important;
     border-color: var(--interactive-accent) !important;
+    box-shadow: none !important;
   }
   
-  .journalit-dashboard-edit-mode-button.active {
+  .journalit-dashboard-view-container
+    .journalit-dashboard-filter-actions
+    .journalit-dashboard-edit-mode-button.active {
     background-color: var(--interactive-accent) !important;
     color: var(--text-on-accent, white) !important;
     border-color: var(--interactive-accent) !important;
+    box-shadow: none !important;
   }
 
   
-  .journalit-dashboard-add-widget-button {
+  .journalit-dashboard-view-container
+    .journalit-dashboard-filter-actions
+    .journalit-dashboard-add-widget-button {
     display: flex !important;
     align-items: center !important;
     gap: 4px !important;
@@ -2332,28 +2378,39 @@ const DASHBOARD_STYLES = `
     color: var(--text-normal) !important;
     border: 1px solid var(--background-modifier-border) !important;
     border-radius: 4px !important;
+    box-shadow: none !important;
     padding: 5px 10px !important;
     font-size: 12px !important;
     font-weight: 500 !important;
     cursor: pointer !important;
-    transition: all 0.2s ease !important;
+    transition:
+      background-color 0.2s ease,
+      border-color 0.2s ease,
+      color 0.2s ease,
+      box-shadow 0.2s ease !important;
     white-space: nowrap !important;
     height: 28px !important;
     line-height: 1 !important;
   }
 
-  .journalit-dashboard-add-widget-button:hover {
+  .journalit-dashboard-view-container
+    .journalit-dashboard-filter-actions
+    .journalit-dashboard-add-widget-button:hover {
     background-color: var(--background-modifier-hover) !important;
     border-color: var(--interactive-accent) !important;
   }
 
-  .journalit-dashboard-add-widget-button--primary {
+  .journalit-dashboard-view-container
+    .journalit-dashboard-filter-actions
+    .journalit-dashboard-add-widget-button--primary {
     background-color: var(--interactive-accent) !important;
     color: var(--text-on-accent) !important;
     border-color: var(--interactive-accent) !important;
   }
 
-  .journalit-dashboard-add-widget-button--primary:hover {
+  .journalit-dashboard-view-container
+    .journalit-dashboard-filter-actions
+    .journalit-dashboard-add-widget-button--primary:hover {
     background-color: var(--interactive-accent-hover) !important;
     border-color: var(--interactive-accent-hover) !important;
   }
@@ -3177,31 +3234,8 @@ const DASHBOARD_STYLES = `
 `;
 
 
-import {
-  applyConsistentGridStructure,
-  applyCalendarCellStyling,
-  setupCalendarResizeObserver,
-} from '../components/dashboard/utils/calendarStyles';
-
-export function injectDashboardStyles(): void {
-  return;
-}
-
-export function removeDashboardStyles(): void {
-  return;
-}
-
-
-export function ensureDashboardStyles(): void {
-  return;
-}
-
-
 export function forceDashboardStyles(): void {
-  // intentional
-}
-
-
-function injectTransparencyStyles(): void {
   return;
 }
+
+

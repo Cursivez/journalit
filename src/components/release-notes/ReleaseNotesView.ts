@@ -5,7 +5,6 @@ import { WorkspaceLeaf } from 'obsidian';
 import { ReactView } from '../../views/ReactView';
 import { RenderFunction } from '../../views/types';
 import { ReleaseNotesRenderer } from './ReleaseNotesRenderer';
-import { ensureReleaseNotesStyles } from '../../styles/releaseNotesStyles';
 import { t } from '../../lang/helpers';
 
 export const RELEASE_NOTES_VIEW_TYPE = 'journalit-release-notes';

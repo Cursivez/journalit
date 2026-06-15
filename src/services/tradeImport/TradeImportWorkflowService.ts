@@ -13,6 +13,7 @@ import type {
   TradeImportPreviewResponse,
 } from './types';
 import { BackendTradeImportService } from './BackendTradeImportService';
+import { safeString } from '../../utils/safeString';
 
 export class TradeImportValidationError extends Error {
   constructor(message: string) {
@@ -214,6 +215,31 @@ const toBackendExecution = (execution: {
   size: execution.size,
 });
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
+}
+
+function isTradeData(value: unknown): value is TradeData {
+  return (
+    isRecord(value) &&
+    value.entryTime instanceof Date &&
+    typeof value.entryPrice === 'number' &&
+    typeof value.positionSize === 'number' &&
+    (typeof value.direction === 'string' || value.assetType === 'options')
+  );
+}
+
+async function getValidatedTradeData(
+  plugin: JournalitPlugin
+): Promise<TradeData[]> {
+  const trades = await plugin.tradeService.getTradeData();
+  return trades.filter(isTradeData).map((trade) => ({
+    ...trade,
+    direction: trade.direction || '',
+    setupIds: Array.isArray(trade.setupIds) ? trade.setupIds : [],
+  }));
+}
+
 function remainingOpenQuantity(trade: TradeData): number {
   const entrySize = (trade.entries ?? []).reduce(
     (sum, entry) => sum + Math.abs(entry.size),
@@ -245,7 +271,7 @@ async function existingOpenTrades(
   if (broker !== 'IBKR') return [];
 
   await plugin.tradeService.waitForTradeDataReady?.();
-  const trades = (await plugin.tradeService.getTradeData()) as TradeData[];
+  const trades = await getValidatedTradeData(plugin);
   return trades
     .filter(
       (trade) =>
@@ -295,7 +321,7 @@ async function hasPersistedPreviewTrade(
   plugin: JournalitPlugin,
   item: ClassifiedPreviewTrade
 ): Promise<boolean> {
-  const trades = (await plugin.tradeService.getTradeData()) as TradeData[];
+  const trades = await getValidatedTradeData(plugin);
   const identityValues = new Set([
     item.preview.csvImportId,
     ...item.preview.legacyCsvImportIds,
@@ -332,7 +358,7 @@ async function mergePreviewWithExistingTrade(
   previewTradeData: TradeData
 ): Promise<TradeData> {
   await plugin.tradeService.waitForTradeDataReady?.();
-  const trades = (await plugin.tradeService.getTradeData()) as TradeData[];
+  const trades = await getValidatedTradeData(plugin);
   const existing = trades.find(
     (trade) => typeof trade.path === 'string' && trade.path === existingPath
   );
@@ -376,7 +402,7 @@ async function mergePreviewWithExistingTrade(
     previewTradeData.csvImportId ?? existing.csvImportId;
   const legacyIdsToPreserve: string[] =
     existing.csvImportId && existing.csvImportId !== mergedCsvImportId
-      ? [String(existing.csvImportId)]
+      ? [safeString(existing.csvImportId)]
       : [];
   const mergedIdentityFields = {
     csvImportId: mergedCsvImportId,
@@ -662,7 +688,7 @@ export class TradeImportWorkflowService {
           });
         }
         written++;
-      } catch (_error) {
+      } catch {
         if (await hasPersistedPreviewTrade(this.plugin, item)) {
           written++;
         } else {

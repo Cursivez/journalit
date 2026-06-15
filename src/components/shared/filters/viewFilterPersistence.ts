@@ -1,12 +1,9 @@
-import type { FilterState } from '../../dashboard/DashboardView';
-import type { TradeLogFilters } from '../../../services/tradelog/types';
 import type { PersistedViewFilters } from '../../../settings/types';
 import {
   createDashboardFilters,
   createReviewFilters,
   createTradeLogFilters,
 } from '../../../settings/viewFiltersDefaults';
-import type { UnifiedFilters } from './types';
 
 type ViewFilterKey = keyof PersistedViewFilters;
 type ViewFilterByKey<K extends ViewFilterKey> = PersistedViewFilters[K];
@@ -37,13 +34,11 @@ export function persistViewFilter<K extends ViewFilterKey>(
     reviews: currentViewFilters?.reviews || DEFAULT_VIEW_FILTERS.reviews(),
   };
 
-  if (viewKey === 'dashboard') {
-    nextViewFilters.dashboard = filters as FilterState;
-  } else if (viewKey === 'tradelog') {
-    nextViewFilters.tradelog = filters as TradeLogFilters;
-  } else {
-    nextViewFilters.reviews = filters as UnifiedFilters;
-  }
+  const updatedViewFilters: PersistedViewFilters = {
+    ...nextViewFilters,
+    [viewKey]: filters,
+  };
 
-  void store.updateState({ viewFilters: nextViewFilters });
+  void store.updateState({ viewFilters: updatedViewFilters });
+  return;
 }

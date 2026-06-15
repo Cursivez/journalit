@@ -3,7 +3,7 @@
 
 import { TRADE_ACCOUNT_CELL_STYLES } from './shared/tradeAccountCellStyles';
 
-const REVIEW_V2_STYLES = `
+export const REVIEW_V2_STYLES = `
 ${TRADE_ACCOUNT_CELL_STYLES}
 
   
@@ -53,8 +53,11 @@ ${TRADE_ACCOUNT_CELL_STYLES}
 
   
   
-  [class*="cm-lang-journalit-"] .edit-block-button {
-    display: none !important;
+  .markdown-source-view.mod-cm6 .cm-content > .cm-preview-code-block.cm-embed-block[class*="cm-lang-journalit-"] > .edit-block-button,
+  .markdown-source-view.mod-cm6 .cm-content > .cm-preview-code-block.cm-embed-block[class*="cm-lang-journalit-"]:hover > .edit-block-button {
+    display: none;
+    opacity: 0;
+    pointer-events: none;
   }
 
   
@@ -3867,19 +3870,4 @@ ${TRADE_ACCOUNT_CELL_STYLES}
   .journalit-weekly-drc-day .journalit-previous-drc-rendered-markdown * {
     user-select: none;
   }
-
-  }
 `;
-
-
-export function injectReviewV2Styles(): void {
-  return;
-}
-
-
-export function removeReviewV2Styles(): void {
-  return;
-}
-
-
-export function ensureReviewV2Styles(): void {}

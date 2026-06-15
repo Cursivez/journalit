@@ -5,6 +5,14 @@ import { IndexManager, IndexConfig, IndexEntry } from './IndexManager';
 import { forceMetadataCacheRefresh } from '../../utils/dataRefresh';
 import type JournalitPlugin from '../../main';
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
+}
+
+function ensureRecord(value: unknown): Record<string, unknown> {
+  return isRecord(value) ? value : {};
+}
+
 
 export interface CustomDataServiceConfig {
   
@@ -27,6 +35,18 @@ export interface CustomDataServiceConfig {
 interface CacheEntry<T> {
   data: T;
   timestamp: number;
+}
+
+function isCacheEntry(value: unknown): value is CacheEntry<unknown> {
+  return (
+    isRecord(value) && 'data' in value && typeof value.timestamp === 'number'
+  );
+}
+
+function getErrorCode(error: unknown): string | undefined {
+  return isRecord(error) && typeof error.code === 'string'
+    ? error.code
+    : undefined;
 }
 
 
@@ -98,7 +118,8 @@ export class CustomDataService {
     this.isCacheInvalidated = false;
 
     
-    this.boundHandleFileChange = this.handleFileChange.bind(this);
+    this.boundHandleFileChange = (file: TAbstractFile) =>
+      this.handleFileChange(file);
 
     
     if (this.config.enableIndexing) {
@@ -106,7 +127,7 @@ export class CustomDataService {
     }
 
     
-    this.initializeService();
+    void this.initializeService();
   }
 
   
@@ -158,7 +179,7 @@ export class CustomDataService {
       CustomDataService.sharedIndexManager = this.indexManager;
 
       
-      this.indexManager.initialize();
+      void this.indexManager.initialize();
     }
 
     
@@ -218,6 +239,9 @@ export class CustomDataService {
       
       const pendingQuery = this.pendingQueries.get(namespacedKey);
       if (pendingQuery) {
+        
+        
+        
         return pendingQuery as Promise<T>;
       }
 
@@ -245,7 +269,7 @@ export class CustomDataService {
 
               
 
-              let result: any;
+              let result: unknown;
               if (entriesWithData.length === indexedResults.length) {
                 
                 result = indexedResults
@@ -289,6 +313,9 @@ export class CustomDataService {
                 this.isCacheInvalidated = false;
               }
 
+              
+              
+              
               return result as T;
             }
           } catch (indexError) {
@@ -337,8 +364,8 @@ export class CustomDataService {
 
   
   private getCached<T>(key: string, ttl: number): T | null {
-    const cached = this.cache.get(key) as CacheEntry<T> | undefined;
-    if (!cached) return null;
+    const cached = this.cache.get(key);
+    if (!isCacheEntry(cached)) return null;
 
     const { data, timestamp } = cached;
     const now = Date.now();
@@ -349,7 +376,9 @@ export class CustomDataService {
       return null;
     }
 
-    return data;
+    
+    
+    return data as T;
   }
 
   
@@ -381,12 +410,12 @@ export class CustomDataService {
       if (exists) {
         const content = await this.app.vault.adapter.read(cachePath);
         try {
-          const cached = JSON.parse(content) as Record<
-            string,
-            CacheEntry<unknown>
-          >;
+          const cached: unknown = JSON.parse(content);
+          if (!isRecord(cached)) return;
           Object.entries(cached).forEach(([key, value]) => {
-            this.cache.set(key, value);
+            if (isCacheEntry(value)) {
+              this.cache.set(key, value);
+            }
           });
         } catch (parseError) {
           console.warn(
@@ -671,7 +700,9 @@ export class CustomDataService {
   }
 
   
-  protected async readFrontmatter(file: TFile): Promise<Record<string, any>> {
+  protected async readFrontmatter(
+    file: TFile
+  ): Promise<Record<string, unknown>> {
     try {
       
       
@@ -679,7 +710,8 @@ export class CustomDataService {
 
       if (cache?.frontmatter) {
         
-        return JSON.parse(JSON.stringify(cache.frontmatter));
+        const cloned: unknown = JSON.parse(JSON.stringify(cache.frontmatter));
+        return isRecord(cloned) ? cloned : {};
       }
 
       
@@ -702,7 +734,7 @@ export class CustomDataService {
     } catch (error) {
       const isMissingFileError =
         (error instanceof Error && error.message.includes('ENOENT')) ||
-        (error as { code?: string } | null)?.code === 'ENOENT';
+        getErrorCode(error) === 'ENOENT';
 
       if (!isMissingFileError) {
         console.error(`Failed to parse frontmatter for ${file.path}:`, error);
@@ -712,12 +744,12 @@ export class CustomDataService {
   }
 
   
-  private parseYamlFrontmatter(yamlString: string): Record<string, any> {
-    const result: Record<string, any> = {};
+  private parseYamlFrontmatter(yamlString: string): Record<string, unknown> {
+    const result: Record<string, unknown> = {};
     let currentKey: string | null = null;
     let inSequence = false;
     let sequenceItems: unknown[] = [];
-    let currentSequenceItem: Record<string, any> | null = null;
+    let currentSequenceItem: Record<string, unknown> | null = null;
     let indentLevel = 0;
 
     
@@ -868,7 +900,7 @@ export class CustomDataService {
         }
 
         
-        result[currentKey][subKey.trim()] = subValue;
+        ensureRecord(result[currentKey])[subKey.trim()] = subValue;
       }
     }
 
@@ -900,8 +932,8 @@ export class CustomDataService {
   }
 
   
-  private simpleYamlParse(yamlString: string): Record<string, any> {
-    const parsed: Record<string, any> = {};
+  private simpleYamlParse(yamlString: string): Record<string, unknown> {
+    const parsed: Record<string, unknown> = {};
 
     yamlString.split('\n').forEach((line) => {
       
@@ -931,7 +963,7 @@ export class CustomDataService {
           if (typeof parsed[parentKey] !== 'object') {
             parsed[parentKey] = {};
           }
-          parsed[parentKey][key.trim()] = value;
+          ensureRecord(parsed[parentKey])[key.trim()] = value;
         }
       } else {
         parsed[key] = value;
@@ -944,16 +976,17 @@ export class CustomDataService {
   
   protected async updateFrontmatter(
     file: TFile,
-    data: Record<string, any>
+    data: Record<string, unknown>
   ): Promise<void> {
     await this.app.fileManager.processFrontMatter(file, (frontmatter) => {
+      const record = ensureRecord(frontmatter);
       Object.entries(data).forEach(([key, value]) => {
         if (value === undefined) {
-          delete frontmatter[key];
+          delete record[key];
           return;
         }
 
-        frontmatter[key] = value;
+        record[key] = value;
       });
     });
     

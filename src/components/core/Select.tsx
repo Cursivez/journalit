@@ -43,7 +43,7 @@ export const Select: React.FC<SelectProps> = ({
   
   const selectOption = (e: React.ChangeEvent<HTMLSelectElement>) => {
     if (onChange) {
-      onChange(e.target.value);
+      void onChange(e.target.value);
     }
 
     

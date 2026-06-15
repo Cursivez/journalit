@@ -57,9 +57,135 @@ function isTagOptionUpdateEligibleNote(
   );
 }
 
-type AccountSettingsRecord = {
-  accountTypeOrder?: string[];
-};
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
+}
+
+function asRecord(value: unknown): Record<string, unknown> | undefined {
+  return isRecord(value) ? value : undefined;
+}
+
+function normalizeNumberProperty(value: unknown): number | undefined {
+  return typeof value === 'number' ? value : undefined;
+}
+
+function normalizeFuturesData(
+  value: unknown
+): FuturesInstrumentData | undefined {
+  const record = asRecord(value);
+  if (!record) {
+    return undefined;
+  }
+
+  return {
+    dollarPerPoint: normalizeNumberProperty(record.dollarPerPoint),
+    tickSize: normalizeNumberProperty(record.tickSize),
+    tickValue: normalizeNumberProperty(record.tickValue),
+  };
+}
+
+function normalizeForexData(value: unknown): ForexInstrumentData | undefined {
+  const record = asRecord(value);
+  if (!record) {
+    return undefined;
+  }
+
+  return {
+    lotSize: normalizeNumberProperty(record.lotSize),
+    pipValue: normalizeNumberProperty(record.pipValue),
+    pipSize: normalizeNumberProperty(record.pipSize),
+  };
+}
+
+function normalizeCfdData(value: unknown): CfdInstrumentData | undefined {
+  const record = asRecord(value);
+  if (!record) {
+    return undefined;
+  }
+
+  return {
+    contractSize: normalizeNumberProperty(record.contractSize),
+  };
+}
+
+function normalizeCommissionRule(
+  value: unknown
+): InstrumentCommissionRule | undefined {
+  const record = asRecord(value);
+  if (!record) {
+    return undefined;
+  }
+
+  const method = record.method;
+  if (method !== 'perSide' && method !== 'roundTrip') {
+    return undefined;
+  }
+
+  return {
+    account: typeof record.account === 'string' ? record.account : undefined,
+    method,
+    entryCommission: normalizeNumberProperty(record.entryCommission),
+    exitCommission: normalizeNumberProperty(record.exitCommission),
+    roundTripCommission: normalizeNumberProperty(record.roundTripCommission),
+  };
+}
+
+function normalizeCommissionRules(
+  value: unknown
+): InstrumentCommissionRule[] | undefined {
+  if (!Array.isArray(value)) {
+    return undefined;
+  }
+
+  const rules = value
+    .map(normalizeCommissionRule)
+    .filter((rule): rule is InstrumentCommissionRule => Boolean(rule));
+  return rules.length > 0 ? rules : undefined;
+}
+
+function normalizeStringOptions(value: unknown): string[] {
+  return deduplicateOptions(
+    Array.isArray(value)
+      ? value.filter((item): item is string => typeof item === 'string')
+      : []
+  );
+}
+
+function normalizeInstrumentOptions(value: unknown): InstrumentData[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  if (typeof value[0] === 'string') {
+    return value
+      .filter((name): name is string => typeof name === 'string')
+      .map((name) => ({ name, assetType: 'stock' }));
+  }
+
+  return value
+    .map((item) => asRecord(item))
+    .filter((item): item is Record<string, unknown> => Boolean(item))
+    .flatMap((item) => {
+      const name = item.name;
+      if (typeof name !== 'string') {
+        return [];
+      }
+
+      return [
+        {
+          name,
+          assetType:
+            typeof item.assetType === 'string' ? item.assetType : 'stock',
+          currency:
+            typeof item.currency === 'string' ? item.currency : undefined,
+          commissionRules: normalizeCommissionRules(item.commissionRules),
+          futuresData: normalizeFuturesData(item.futuresData),
+          forexData: normalizeForexData(item.forexData),
+          cfdData: normalizeCfdData(item.cfdData),
+        },
+      ];
+    });
+}
 
 
 export enum OptionType {
@@ -129,6 +255,20 @@ export interface CustomOptionsData {
   [OptionType.EVENT]: EventOptionData[];
 }
 
+function cloneInstrumentOption(option: InstrumentData): InstrumentData {
+  return {
+    ...option,
+    commissionRules: option.commissionRules?.map((rule) => ({ ...rule })),
+    futuresData: option.futuresData ? { ...option.futuresData } : undefined,
+    forexData: option.forexData ? { ...option.forexData } : undefined,
+    cfdData: option.cfdData ? { ...option.cfdData } : undefined,
+  };
+}
+
+function cloneEventOption(option: EventOptionData): EventOptionData {
+  return { ...option };
+}
+
 
 export const DEFAULT_OPTIONS_DATA: CustomOptionsData = {
   [OptionType.INSTRUMENT]: [],
@@ -195,16 +335,16 @@ interface CustomOptionsServiceConfig {
 
 export class CustomOptionsService {
   private appendAccountTypeToDashboardOrder(accountType: string): void {
-    const accountSettings = this.plugin.settings?.account as
-      | AccountSettingsRecord
-      | undefined;
+    const accountSettings = asRecord(this.plugin.settings?.account);
 
     if (!accountSettings) {
       return;
     }
 
     const normalizedAccountType = accountType.toLowerCase();
-    const currentOrder = accountSettings.accountTypeOrder || [];
+    const currentOrder = normalizeStringOptions(
+      accountSettings.accountTypeOrder
+    );
 
     if (
       currentOrder.some((type) => type.toLowerCase() === normalizedAccountType)
@@ -230,11 +370,17 @@ export class CustomOptionsService {
     oldAccountType: string,
     newAccountType: string
   ): void {
-    const accountSettings = this.plugin.settings?.account as
-      | AccountSettingsRecord
-      | undefined;
+    const accountSettings = asRecord(this.plugin.settings?.account);
 
-    if (!accountSettings?.accountTypeOrder) {
+    if (!accountSettings) {
+      return;
+    }
+
+    const accountTypeOrder = normalizeStringOptions(
+      accountSettings.accountTypeOrder
+    );
+
+    if (accountTypeOrder.length === 0) {
       return;
     }
 
@@ -242,16 +388,14 @@ export class CustomOptionsService {
     const normalizedNewType = newAccountType.toLowerCase();
     let replaced = false;
 
-    accountSettings.accountTypeOrder = accountSettings.accountTypeOrder.map(
-      (type) => {
-        if (type.toLowerCase() !== normalizedOldType) {
-          return type;
-        }
-
-        replaced = true;
-        return normalizedNewType;
+    accountSettings.accountTypeOrder = accountTypeOrder.map((type) => {
+      if (type.toLowerCase() !== normalizedOldType) {
+        return type;
       }
-    );
+
+      replaced = true;
+      return normalizedNewType;
+    });
 
     if (!replaced) {
       this.appendAccountTypeToDashboardOrder(newAccountType);
@@ -259,16 +403,22 @@ export class CustomOptionsService {
   }
 
   private removeAccountTypeFromDashboardOrder(accountType: string): void {
-    const accountSettings = this.plugin.settings?.account as
-      | AccountSettingsRecord
-      | undefined;
+    const accountSettings = asRecord(this.plugin.settings?.account);
 
-    if (!accountSettings?.accountTypeOrder) {
+    if (!accountSettings) {
+      return;
+    }
+
+    const accountTypeOrder = normalizeStringOptions(
+      accountSettings.accountTypeOrder
+    );
+
+    if (accountTypeOrder.length === 0) {
       return;
     }
 
     const normalizedAccountType = accountType.toLowerCase();
-    accountSettings.accountTypeOrder = accountSettings.accountTypeOrder.filter(
+    accountSettings.accountTypeOrder = accountTypeOrder.filter(
       (type) => type.toLowerCase() !== normalizedAccountType
     );
   }
@@ -284,22 +434,18 @@ export class CustomOptionsService {
           return { name: eventOption, color: 'gray' };
         }
 
-        if (
-          typeof eventOption === 'object' &&
-          eventOption !== null &&
-          'name' in eventOption &&
-          typeof eventOption.name === 'string'
-        ) {
+        const eventOptionRecord = asRecord(eventOption);
+        if (eventOptionRecord && typeof eventOptionRecord.name === 'string') {
           const notes =
-            'notes' in eventOption && typeof eventOption.notes === 'string'
-              ? eventOption.notes
+            typeof eventOptionRecord.notes === 'string'
+              ? eventOptionRecord.notes
               : undefined;
 
           return {
-            name: eventOption.name,
+            name: eventOptionRecord.name,
             color:
-              'color' in eventOption && typeof eventOption.color === 'string'
-                ? eventOption.color
+              typeof eventOptionRecord.color === 'string'
+                ? eventOptionRecord.color
                 : 'gray',
             notes,
           };
@@ -326,10 +472,10 @@ export class CustomOptionsService {
     }
 
     
-    this.loadOptions();
+    void this.loadOptions();
 
     
-    this.initializeDefaultOptionsIfNeeded();
+    void this.initializeDefaultOptionsIfNeeded();
 
     
     this.cleanupCorruptedOptions().catch((error) => {
@@ -343,6 +489,38 @@ export class CustomOptionsService {
   
   private getOptionsKey(): string {
     return this.namespace ? `customOptions_${this.namespace}` : 'customOptions';
+  }
+
+  private applyLoadedOptions(rawOptions: unknown): void {
+    const loadedOptions = asRecord(rawOptions);
+    if (!loadedOptions) {
+      return;
+    }
+
+    this.options[OptionType.INSTRUMENT] = normalizeInstrumentOptions(
+      loadedOptions[OptionType.INSTRUMENT]
+    ).map((instrument) => ({
+      ...instrument,
+      currency: this.normalizeInstrumentCurrency(instrument.currency),
+    }));
+    this.options[OptionType.ACCOUNT] = normalizeStringOptions(
+      loadedOptions[OptionType.ACCOUNT]
+    );
+    this.options[OptionType.ACCOUNT_TYPE] = normalizeStringOptions(
+      loadedOptions[OptionType.ACCOUNT_TYPE]
+    );
+    this.options[OptionType.SETUP] = normalizeStringOptions(
+      loadedOptions[OptionType.SETUP]
+    );
+    this.options[OptionType.MISTAKE] = normalizeStringOptions(
+      loadedOptions[OptionType.MISTAKE]
+    );
+    this.options[OptionType.TAG] = normalizeStringOptions(
+      loadedOptions[OptionType.TAG]
+    );
+    this.options[OptionType.EVENT] = this.normalizeEventOptions(
+      loadedOptions[OptionType.EVENT]
+    );
   }
 
   
@@ -362,48 +540,7 @@ export class CustomOptionsService {
           ...DEFAULT_OPTIONS_DATA, 
           ...(storedOptions as Partial<CustomOptionsData>),
         };
-
-        
-        if (Array.isArray(loadedOptions[OptionType.INSTRUMENT])) {
-          
-          const firstItem = loadedOptions[OptionType.INSTRUMENT][0];
-          if (typeof firstItem === 'string') {
-            
-            this.options[OptionType.INSTRUMENT] = (
-              loadedOptions[OptionType.INSTRUMENT] as unknown as string[]
-            ).map((name) => ({ name, assetType: 'stock' })); 
-          } else {
-            
-            this.options[OptionType.INSTRUMENT] = loadedOptions[
-              OptionType.INSTRUMENT
-            ].map((instrument) => ({
-              ...instrument,
-              currency: this.normalizeInstrumentCurrency(instrument.currency),
-            }));
-          }
-        }
-
-        
-        this.options[OptionType.ACCOUNT] = deduplicateOptions(
-          loadedOptions[OptionType.ACCOUNT] || []
-        );
-        this.options[OptionType.ACCOUNT_TYPE] = deduplicateOptions(
-          loadedOptions[OptionType.ACCOUNT_TYPE] || []
-        );
-        this.options[OptionType.SETUP] = deduplicateOptions(
-          loadedOptions[OptionType.SETUP] || []
-        );
-        this.options[OptionType.MISTAKE] = deduplicateOptions(
-          loadedOptions[OptionType.MISTAKE] || []
-        );
-        this.options[OptionType.TAG] = deduplicateOptions(
-          loadedOptions[OptionType.TAG] || []
-        );
-
-        
-        this.options[OptionType.EVENT] = this.normalizeEventOptions(
-          loadedOptions[OptionType.EVENT]
-        );
+        this.applyLoadedOptions(loadedOptions);
       } else {
         
         const defaultStoredOptions = pluginInstance.settings?.customOptions;
@@ -421,48 +558,10 @@ export class CustomOptionsService {
 
           
           
-
-          
-          if (Array.isArray(loadedOptions[OptionType.INSTRUMENT])) {
-            const firstItem = loadedOptions[OptionType.INSTRUMENT][0];
-            if (typeof firstItem === 'string') {
-              this.options[OptionType.INSTRUMENT] = (
-                loadedOptions[OptionType.INSTRUMENT] as unknown as string[]
-              ).map((name) => ({ name, assetType: 'stock' }));
-            } else {
-              this.options[OptionType.INSTRUMENT] = loadedOptions[
-                OptionType.INSTRUMENT
-              ].map((instrument) => ({
-                ...instrument,
-                currency: this.normalizeInstrumentCurrency(instrument.currency),
-              }));
-            }
-          }
-
-          
-          this.options[OptionType.ACCOUNT] = deduplicateOptions(
-            loadedOptions[OptionType.ACCOUNT] || []
-          );
-          this.options[OptionType.ACCOUNT_TYPE] = deduplicateOptions(
-            loadedOptions[OptionType.ACCOUNT_TYPE] || []
-          );
-          this.options[OptionType.SETUP] = deduplicateOptions(
-            loadedOptions[OptionType.SETUP] || []
-          );
-          this.options[OptionType.MISTAKE] = deduplicateOptions(
-            loadedOptions[OptionType.MISTAKE] || []
-          );
-          this.options[OptionType.TAG] = deduplicateOptions(
-            loadedOptions[OptionType.TAG] || []
-          );
-
-          
-          this.options[OptionType.EVENT] = this.normalizeEventOptions(
-            loadedOptions[OptionType.EVENT]
-          );
+          this.applyLoadedOptions(loadedOptions);
         } else {
           
-          const savedData = await this.plugin.loadData();
+          const savedData = asRecord(await this.plugin.loadData());
           const legacyKey = this.namespace
             ? `customOptions_${this.namespace}`
             : 'customOptions';
@@ -471,50 +570,12 @@ export class CustomOptionsService {
             
             const loadedOptions = {
               ...DEFAULT_OPTIONS_DATA,
-              ...savedData[legacyKey],
+              ...(asRecord(savedData[legacyKey]) ?? {}),
             };
 
             
             
-
-            
-            if (Array.isArray(loadedOptions[OptionType.INSTRUMENT])) {
-              const firstItem = loadedOptions[OptionType.INSTRUMENT][0];
-              if (typeof firstItem === 'string') {
-                this.options[OptionType.INSTRUMENT] = (
-                  loadedOptions[OptionType.INSTRUMENT] as unknown as string[]
-                ).map((name) => ({ name, assetType: 'stock' }));
-              } else {
-                this.options[OptionType.INSTRUMENT] = loadedOptions[
-                  OptionType.INSTRUMENT
-                ].map((instrument) => ({
-                  ...instrument,
-                  currency: this.normalizeInstrumentCurrency(
-                    instrument.currency
-                  ),
-                }));
-              }
-            }
-
-            
-            this.options[OptionType.ACCOUNT] = deduplicateOptions(
-              loadedOptions[OptionType.ACCOUNT] || []
-            );
-            this.options[OptionType.ACCOUNT_TYPE] = deduplicateOptions(
-              loadedOptions[OptionType.ACCOUNT_TYPE] || []
-            );
-            this.options[OptionType.SETUP] = deduplicateOptions(
-              loadedOptions[OptionType.SETUP] || []
-            );
-            this.options[OptionType.MISTAKE] = deduplicateOptions(
-              loadedOptions[OptionType.MISTAKE] || []
-            );
-            this.options[OptionType.TAG] = deduplicateOptions(
-              loadedOptions[OptionType.TAG] || []
-            );
-            this.options[OptionType.EVENT] = this.normalizeEventOptions(
-              loadedOptions[OptionType.EVENT]
-            );
+            this.applyLoadedOptions(loadedOptions);
 
             
             if (pluginInstance.settings && pluginInstance.saveSettings) {
@@ -525,48 +586,11 @@ export class CustomOptionsService {
             
             const loadedOptions = {
               ...DEFAULT_OPTIONS_DATA,
-              ...savedData.customOptions,
+              ...(asRecord(savedData.customOptions) ?? {}),
             };
 
             
-            
-            if (Array.isArray(loadedOptions[OptionType.INSTRUMENT])) {
-              const firstItem = loadedOptions[OptionType.INSTRUMENT][0];
-              if (typeof firstItem === 'string') {
-                this.options[OptionType.INSTRUMENT] = (
-                  loadedOptions[OptionType.INSTRUMENT] as unknown as string[]
-                ).map((name) => ({ name, assetType: 'stock' }));
-              } else {
-                this.options[OptionType.INSTRUMENT] = loadedOptions[
-                  OptionType.INSTRUMENT
-                ].map((instrument) => ({
-                  ...instrument,
-                  currency: this.normalizeInstrumentCurrency(
-                    instrument.currency
-                  ),
-                }));
-              }
-            }
-
-            
-            this.options[OptionType.ACCOUNT] = deduplicateOptions(
-              loadedOptions[OptionType.ACCOUNT] || []
-            );
-            this.options[OptionType.ACCOUNT_TYPE] = deduplicateOptions(
-              loadedOptions[OptionType.ACCOUNT_TYPE] || []
-            );
-            this.options[OptionType.SETUP] = deduplicateOptions(
-              loadedOptions[OptionType.SETUP] || []
-            );
-            this.options[OptionType.MISTAKE] = deduplicateOptions(
-              loadedOptions[OptionType.MISTAKE] || []
-            );
-            this.options[OptionType.TAG] = deduplicateOptions(
-              loadedOptions[OptionType.TAG] || []
-            );
-            this.options[OptionType.EVENT] = this.normalizeEventOptions(
-              loadedOptions[OptionType.EVENT]
-            );
+            this.applyLoadedOptions(loadedOptions);
 
             
             if (pluginInstance.settings && pluginInstance.saveSettings) {
@@ -576,7 +600,7 @@ export class CustomOptionsService {
           } else {
             this.options = { ...DEFAULT_OPTIONS_DATA };
             
-            this.initializeDefaultOptionsIfNeeded();
+            void this.initializeDefaultOptionsIfNeeded();
 
             
             if (pluginInstance.settings && pluginInstance.saveSettings) {
@@ -613,7 +637,7 @@ export class CustomOptionsService {
       
       if (type === OptionType.INSTRUMENT) continue;
 
-      const options = this.options[type] as string[];
+      const options = this.options[type];
       const originalCount = options.length;
 
       
@@ -655,7 +679,7 @@ export class CustomOptionsService {
         );
 
         
-        const existingData = (await this.plugin.loadData()) || {};
+        const existingData = asRecord(await this.plugin.loadData()) ?? {};
 
         
         const updatedData = {
@@ -1326,7 +1350,7 @@ export class CustomOptionsService {
 
       
       
-      await new Promise((resolve) => setTimeout(resolve, 200));
+      await new Promise((resolve) => window.setTimeout(resolve, 200));
 
       
       this.notifyOptionsChanged();
@@ -1606,9 +1630,13 @@ export class CustomOptionsService {
     try {
       
       const files = this.getApp().vault.getMarkdownFiles();
+      const generalSettings = asRecord(this.plugin.settings?.general);
+      const configuredJournalFolderPath = generalSettings?.journalFolderPath;
       const journalFolderPath =
-        ((this.plugin.settings as { general?: { journalFolderPath?: string } })
-          .general?.journalFolderPath as string | undefined) || '!Journalit';
+        typeof configuredJournalFolderPath === 'string' &&
+        configuredJournalFolderPath.length > 0
+          ? configuredJournalFolderPath
+          : '!Journalit';
       const isJournalPath = (filePath: string): boolean => {
         const normalizedPath = filePath.replace(/\\/g, '/');
         const normalizedJournalFolder = journalFolderPath.replace(/\\/g, '/');
@@ -1684,17 +1712,17 @@ export class CustomOptionsService {
 
                   if (Array.isArray(keyEvents)) {
                     for (const entry of keyEvents) {
-                      if (
-                        entry &&
-                        typeof entry === 'object' &&
-                        'event' in entry
-                      ) {
-                        const eventValue = String(entry.event ?? '').trim();
+                      const entryRecord = asRecord(entry);
+                      if (entryRecord) {
+                        const eventValue =
+                          typeof entryRecord.event === 'string'
+                            ? entryRecord.event.trim()
+                            : '';
                         if (
                           eventValue &&
                           this.optionValueMatches(eventValue, oldValue)
                         ) {
-                          entry.event = newValue;
+                          entryRecord.event = newValue;
                           modified = true;
                         }
                       }
@@ -1712,7 +1740,8 @@ export class CustomOptionsService {
                 const value = frontmatter[propName];
                 if (Array.isArray(value)) {
                   let changed = false;
-                  const updatedValues = value.map((entry) => {
+                  const valueEntries = value as unknown[];
+                  const updatedValues = valueEntries.map((entry) => {
                     if (
                       typeof entry === 'string' &&
                       this.optionValueMatches(entry, oldValue)
@@ -1736,11 +1765,7 @@ export class CustomOptionsService {
               }
 
               if (type === OptionType.TAG) {
-                const hasLegacyCustomTags =
-                  Object.prototype.hasOwnProperty.call(
-                    frontmatter,
-                    'customTags'
-                  );
+                const hasLegacyCustomTags = 'customTags' in frontmatter;
 
                 if (hasLegacyCustomTags) {
                   frontmatter.tags = deduplicateOptions([
@@ -1799,7 +1824,7 @@ export class CustomOptionsService {
                 detail: { id: file.path },
               }
             );
-            document.dispatchEvent(event);
+            window.activeDocument.dispatchEvent(event);
 
             if (noteModified) {
               updatedCount++;
@@ -1940,29 +1965,25 @@ export class CustomOptionsService {
     return this.plugin.app;
   }
 
-  private getInitialOptionsForType(
-    type: OptionType
-  ): InstrumentData[] | string[] | EventOptionData[] {
-    switch (type) {
-      case OptionType.INSTRUMENT:
-        return JSON.parse(
-          JSON.stringify(INITIAL_DEFAULT_OPTIONS[OptionType.INSTRUMENT])
-        ) as InstrumentData[];
-      case OptionType.EVENT:
-        return JSON.parse(
-          JSON.stringify(INITIAL_DEFAULT_OPTIONS[OptionType.EVENT])
-        ) as EventOptionData[];
-      case OptionType.ACCOUNT:
-      case OptionType.ACCOUNT_TYPE:
-      case OptionType.SETUP:
-      case OptionType.MISTAKE:
-      case OptionType.TAG:
-        return JSON.parse(
-          JSON.stringify(INITIAL_DEFAULT_OPTIONS[type])
-        ) as string[];
-      default:
-        return [];
-    }
+  private getInitialInstrumentOptions(): InstrumentData[] {
+    return INITIAL_DEFAULT_OPTIONS[OptionType.INSTRUMENT].map(
+      cloneInstrumentOption
+    );
+  }
+
+  private getInitialEventOptions(): EventOptionData[] {
+    return INITIAL_DEFAULT_OPTIONS[OptionType.EVENT].map(cloneEventOption);
+  }
+
+  private getInitialStringOptionsForType(
+    type:
+      | OptionType.ACCOUNT
+      | OptionType.ACCOUNT_TYPE
+      | OptionType.SETUP
+      | OptionType.MISTAKE
+      | OptionType.TAG
+  ): string[] {
+    return [...INITIAL_DEFAULT_OPTIONS[type]];
   }
 
   
@@ -1980,7 +2001,7 @@ export class CustomOptionsService {
 
     
     
-    await new Promise((resolve) => setTimeout(resolve, 200));
+    await new Promise((resolve) => window.setTimeout(resolve, 200));
 
     
     this.notifyOptionsChanged();
@@ -1991,7 +2012,12 @@ export class CustomOptionsService {
   
   public async resetOptionsToDefaults(type: OptionType): Promise<boolean> {
     const currentOptions = this.options[type];
-    const defaultOptions = this.getInitialOptionsForType(type);
+    const defaultOptions =
+      type === OptionType.INSTRUMENT
+        ? this.getInitialInstrumentOptions()
+        : type === OptionType.EVENT
+          ? this.getInitialEventOptions()
+          : this.getInitialStringOptionsForType(type);
     const didChange =
       JSON.stringify(currentOptions) !== JSON.stringify(defaultOptions);
 
@@ -2002,17 +2028,17 @@ export class CustomOptionsService {
     switch (type) {
       case OptionType.INSTRUMENT:
         this.options[OptionType.INSTRUMENT] =
-          defaultOptions as InstrumentData[];
+          this.getInitialInstrumentOptions();
         break;
       case OptionType.EVENT:
-        this.options[OptionType.EVENT] = defaultOptions as EventOptionData[];
+        this.options[OptionType.EVENT] = this.getInitialEventOptions();
         break;
       case OptionType.ACCOUNT:
       case OptionType.ACCOUNT_TYPE:
       case OptionType.SETUP:
       case OptionType.MISTAKE:
       case OptionType.TAG:
-        this.options[type] = defaultOptions as string[];
+        this.options[type] = this.getInitialStringOptionsForType(type);
         break;
     }
 
@@ -2020,7 +2046,7 @@ export class CustomOptionsService {
 
     
     
-    await new Promise((resolve) => setTimeout(resolve, 200));
+    await new Promise((resolve) => window.setTimeout(resolve, 200));
 
     
     this.notifyOptionsChanged();
@@ -2031,33 +2057,25 @@ export class CustomOptionsService {
   
   public async resetAllOptions(): Promise<void> {
     this.options = {
-      [OptionType.INSTRUMENT]: this.getInitialOptionsForType(
-        OptionType.INSTRUMENT
-      ) as InstrumentData[],
-      [OptionType.ACCOUNT]: this.getInitialOptionsForType(
+      [OptionType.INSTRUMENT]: this.getInitialInstrumentOptions(),
+      [OptionType.ACCOUNT]: this.getInitialStringOptionsForType(
         OptionType.ACCOUNT
-      ) as string[],
-      [OptionType.ACCOUNT_TYPE]: this.getInitialOptionsForType(
+      ),
+      [OptionType.ACCOUNT_TYPE]: this.getInitialStringOptionsForType(
         OptionType.ACCOUNT_TYPE
-      ) as string[],
-      [OptionType.SETUP]: this.getInitialOptionsForType(
-        OptionType.SETUP
-      ) as string[],
-      [OptionType.MISTAKE]: this.getInitialOptionsForType(
+      ),
+      [OptionType.SETUP]: this.getInitialStringOptionsForType(OptionType.SETUP),
+      [OptionType.MISTAKE]: this.getInitialStringOptionsForType(
         OptionType.MISTAKE
-      ) as string[],
-      [OptionType.TAG]: this.getInitialOptionsForType(
-        OptionType.TAG
-      ) as string[],
-      [OptionType.EVENT]: this.getInitialOptionsForType(
-        OptionType.EVENT
-      ) as EventOptionData[],
+      ),
+      [OptionType.TAG]: this.getInitialStringOptionsForType(OptionType.TAG),
+      [OptionType.EVENT]: this.getInitialEventOptions(),
     };
     await this.saveOptions();
 
     
     
-    await new Promise((resolve) => setTimeout(resolve, 200));
+    await new Promise((resolve) => window.setTimeout(resolve, 200));
 
     
     this.notifyOptionsChanged();
@@ -2139,7 +2157,7 @@ export class CustomOptionsService {
             newlyInitializedTypes.push(type);
           } else {
             
-            const defaultOptions = INITIAL_DEFAULT_OPTIONS[type] as string[];
+            const defaultOptions = INITIAL_DEFAULT_OPTIONS[type];
             
             this.options[type] = [...this.options[type], ...defaultOptions];
             newlyInitializedTypes.push(type);

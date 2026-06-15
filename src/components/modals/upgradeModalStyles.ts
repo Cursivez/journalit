@@ -1,8 +1,5 @@
 
-
-const UPGRADE_MODAL_STYLE_ID = 'journalit-upgrade-modal-styles';
-
-const UPGRADE_MODAL_STYLES = `
+export const UPGRADE_MODAL_STYLES = `
   .upgrade-modal .upgrade-modal-content {
     font-family: var(--default-font);
     font-size: 14px;
@@ -84,13 +81,3 @@ const UPGRADE_MODAL_STYLES = `
     padding-top: 15px;
   }
 `;
-
-const upgradeModalStylesInjected = false;
-
-function injectUpgradeModalStyles(): void {
-  return;
-}
-
-export function ensureUpgradeModalStyles(): void {
-  return;
-}

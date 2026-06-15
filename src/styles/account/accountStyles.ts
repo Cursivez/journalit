@@ -1,6 +1,6 @@
 
 
-const ACCOUNT_STYLES = `
+export const ACCOUNT_STYLES = `
 
 .journalit-account-note {
   display: flex;
@@ -1095,15 +1095,15 @@ const ACCOUNT_STYLES = `
 
 .account-type-order-container {
   width: 100%;
-  max-width: 400px;
-  margin: 0 auto;
+  max-width: none;
+  margin: 0;
 }
 
 .account-type-order-list {
-  background-color: var(--background-primary);
-  border: 1px solid var(--background-modifier-border);
-  border-radius: 4px;
-  padding: 8px;
+  background-color: transparent;
+  border: 0;
+  border-radius: 0;
+  padding: 0;
 }
 
 .order-list {
@@ -1116,7 +1116,7 @@ const ACCOUNT_STYLES = `
   display: flex;
   align-items: center;
   padding: 8px 10px;
-  background-color: var(--background-secondary);
+  background-color: var(--background-primary);
   border: 1px solid var(--background-modifier-border);
   border-radius: 3px;
   transition: background-color 0.15s ease;
@@ -1188,6 +1188,59 @@ const ACCOUNT_STYLES = `
 .settings-modal-buttons .cancel-button {
   min-width: 60px;
   padding: 8px 12px;
+}
+
+.account-dashboard-settings-modal-container
+  .settings-modal-buttons
+  .journalit-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  font-weight: 500;
+  box-shadow: none;
+}
+
+.account-dashboard-settings-modal-container
+  .settings-modal-buttons
+  .journalit-button:not(:disabled) {
+  cursor: pointer;
+}
+
+.account-dashboard-settings-modal-container
+  .settings-modal-buttons
+  .journalit-button:disabled {
+  cursor: not-allowed;
+}
+
+.account-dashboard-settings-modal-container
+  .settings-modal-buttons
+  .journalit-button--primary {
+  background: var(--interactive-accent);
+  border-color: var(--interactive-accent);
+  color: var(--text-on-accent);
+}
+
+.account-dashboard-settings-modal-container
+  .settings-modal-buttons
+  .journalit-button--primary:hover:not(:disabled) {
+  background: var(--interactive-accent-hover);
+  border-color: var(--interactive-accent-hover);
+}
+
+.account-dashboard-settings-modal-container
+  .settings-modal-buttons
+  .journalit-button--secondary {
+  background: transparent;
+  border-color: var(--background-modifier-border);
+  color: var(--text-muted);
+}
+
+.account-dashboard-settings-modal-container
+  .settings-modal-buttons
+  .journalit-button--secondary:hover:not(:disabled) {
+  background: var(--background-modifier-hover);
+  color: var(--text-normal);
 }
 
 
@@ -2161,13 +2214,3 @@ const ACCOUNT_STYLES = `
 }
 
 `;
-
-
-export function injectAccountStyles(): void {
-  return;
-}
-
-
-export function removeAccountStyles(): void {
-  return;
-}

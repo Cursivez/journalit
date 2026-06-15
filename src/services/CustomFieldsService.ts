@@ -26,8 +26,55 @@ interface CustomFieldsServiceConfig {
   namespace?: string;
 }
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
+}
+
+function parseCustomFieldType(value: unknown): CustomFieldType | null {
+  switch (value) {
+    case CustomFieldType.TEXT:
+    case CustomFieldType.NUMBER:
+    case CustomFieldType.DROPDOWN:
+    case CustomFieldType.MULTISELECT:
+    case CustomFieldType.DATE:
+    case CustomFieldType.DATETIME:
+    case CustomFieldType.TIME:
+      return value;
+    default:
+      return null;
+  }
+}
+
 function normalizeCustomFieldLabel(label: string): string {
   return label.trim().toLowerCase();
+}
+
+function getSettingsValue(settings: JournalitSettings, key: string): unknown {
+  const settingsRecord: Record<string, unknown> = settings;
+  return settingsRecord[key];
+}
+
+function parseCustomFieldsImport(
+  jsonData: string
+): Record<string, unknown> | null {
+  const parseJson: (text: string) => unknown = JSON.parse;
+  const parsed = parseJson(jsonData);
+  return isRecord(parsed) ? parsed : null;
+}
+
+function parseFieldOptionsStorage(value: unknown): CustomFieldOptionsStorage {
+  if (!isRecord(value)) return {};
+  const storage: CustomFieldOptionsStorage = {};
+  for (const fieldId in value) {
+    const options = value[fieldId];
+    if (!Array.isArray(options)) continue;
+    const strings: string[] = [];
+    for (const option of options) {
+      if (typeof option === 'string') strings.push(option);
+    }
+    storage[fieldId] = strings;
+  }
+  return storage;
 }
 
 
@@ -76,33 +123,37 @@ export class CustomFieldsService {
       
       const pluginInstance = this.plugin;
 
-      if (pluginInstance.settings && pluginInstance.settings[fieldsKey]) {
+      const storedFieldsData = getSettingsValue(
+        pluginInstance.settings,
+        fieldsKey
+      );
+
+      if (isRecord(storedFieldsData)) {
         
         const loadedFields = {
           ...DEFAULT_CUSTOM_FIELDS_DATA,
-          ...pluginInstance.settings[fieldsKey],
+          ...storedFieldsData,
         };
 
         
-        this.fields.fields = (loadedFields.fields || [])
-          .filter((field: CustomFieldDefinition) =>
+        const fields = Array.isArray(loadedFields.fields)
+          ? loadedFields.fields
+          : [];
+        this.fields.fields = fields
+          .filter((field): field is CustomFieldDefinition =>
             this.isValidFieldDefinition(field)
           )
-          .map((field: CustomFieldDefinition) => ({
+          .map((field) => ({
             ...field,
             tradeLog: this.normalizeTradeLogSettings(
               field.tradeLog,
               field.type
             ),
           }))
-          .sort(
-            (a: CustomFieldDefinition, b: CustomFieldDefinition) =>
-              a.order - b.order
-          );
+          .sort((a, b) => a.order - b.order);
       } else if (
         !this.namespace &&
-        pluginInstance.settings &&
-        pluginInstance.settings.customTradeFields
+        isRecord(pluginInstance.settings.customTradeFields)
       ) {
         
         const loadedFields = {
@@ -110,21 +161,21 @@ export class CustomFieldsService {
           ...pluginInstance.settings.customTradeFields,
         };
 
-        this.fields.fields = (loadedFields.fields || [])
-          .filter((field: CustomFieldDefinition) =>
+        const fields = Array.isArray(loadedFields.fields)
+          ? loadedFields.fields
+          : [];
+        this.fields.fields = fields
+          .filter((field): field is CustomFieldDefinition =>
             this.isValidFieldDefinition(field)
           )
-          .map((field: CustomFieldDefinition) => ({
+          .map((field) => ({
             ...field,
             tradeLog: this.normalizeTradeLogSettings(
               field.tradeLog,
               field.type
             ),
           }))
-          .sort(
-            (a: CustomFieldDefinition, b: CustomFieldDefinition) =>
-              a.order - b.order
-          );
+          .sort((a, b) => a.order - b.order);
       }
     } catch (error) {
       ErrorHandler.logError(
@@ -138,14 +189,18 @@ export class CustomFieldsService {
 
   
 
-  private isValidFieldDefinition(field: any): field is CustomFieldDefinition {
+  private isValidFieldDefinition(
+    field: unknown
+  ): field is CustomFieldDefinition {
+    if (!isRecord(field)) {
+      return false;
+    }
+    const candidate = field;
     return (
-      field &&
-      typeof field.id === 'string' &&
-      typeof field.label === 'string' &&
-      typeof field.type === 'string' &&
-      Object.values(CustomFieldType).includes(field.type as CustomFieldType) &&
-      typeof field.order === 'number'
+      typeof candidate.id === 'string' &&
+      typeof candidate.label === 'string' &&
+      parseCustomFieldType(candidate.type) !== null &&
+      typeof candidate.order === 'number'
     );
   }
 
@@ -188,12 +243,9 @@ export class CustomFieldsService {
     if (
       fieldType === CustomFieldType.DROPDOWN &&
       typeof tradeLog.dropdownSortMode === 'string' &&
-      dropdownSortModes.includes(
-        tradeLog.dropdownSortMode as CustomFieldTradeLogDropdownSortMode
-      )
+      dropdownSortModes.includes(tradeLog.dropdownSortMode)
     ) {
-      normalized.dropdownSortMode =
-        tradeLog.dropdownSortMode as CustomFieldTradeLogDropdownSortMode;
+      normalized.dropdownSortMode = tradeLog.dropdownSortMode;
     }
 
     return Object.keys(normalized).length > 0 ? normalized : undefined;
@@ -259,8 +311,9 @@ export class CustomFieldsService {
         await pluginInstance.saveSettings();
       } else {
         
-        const existingData = (await this.plugin.loadData()) || {};
-        const updatedData = { ...existingData, [fieldsKey]: this.fields };
+        const existingData = (await this.plugin.loadData()) as unknown;
+        const existingRecord = isRecord(existingData) ? existingData : {};
+        const updatedData = { ...existingRecord, [fieldsKey]: this.fields };
         await this.plugin.saveData(updatedData);
       }
 
@@ -445,11 +498,8 @@ export class CustomFieldsService {
     }
 
     const existingField = this.fields.fields[fieldIndex];
-    const nextFieldType = updates.type || existingField.type;
-    const hasTradeLogUpdate = Object.prototype.hasOwnProperty.call(
-      updates,
-      'tradeLog'
-    );
+    const nextFieldType: CustomFieldType = updates.type ?? existingField.type;
+    const hasTradeLogUpdate = 'tradeLog' in updates;
 
     
     this.fields.fields[fieldIndex] = {
@@ -516,7 +566,7 @@ export class CustomFieldsService {
 
   
 
-  validateFieldValues(values: { [fieldId: string]: any }): {
+  validateFieldValues(values: { [fieldId: string]: unknown }): {
     [fieldId: string]: string;
   } {
     const errors: { [fieldId: string]: string } = {};
@@ -556,38 +606,41 @@ export class CustomFieldsService {
   
   async importFields(jsonData: string): Promise<void> {
     try {
-      const importedData = JSON.parse(jsonData) as CustomFieldsData;
+      const importedRecord = parseCustomFieldsImport(jsonData);
 
       
-      if (!importedData.fields || !Array.isArray(importedData.fields)) {
+      if (!importedRecord || !Array.isArray(importedRecord.fields)) {
         throw new Error('Invalid custom fields data format');
       }
+      const importedFields: unknown[] = importedRecord.fields;
 
       
-      const validFields = importedData.fields.filter((field) => {
-        if (!this.isValidFieldDefinition(field)) {
-          return false;
+      const validFields = importedFields.filter(
+        (field): field is CustomFieldDefinition => {
+          if (!this.isValidFieldDefinition(field)) {
+            return false;
+          }
+
+          
+          if (
+            field.validation?.pattern &&
+            !this.validateRegexPattern(field.validation.pattern)
+          ) {
+            console.warn(
+              `Skipping field "${field.label}" due to invalid or dangerous regex pattern: ${field.validation.pattern}`
+            );
+            return false;
+          }
+
+          return true;
         }
+      );
 
-        
-        if (
-          field.validation?.pattern &&
-          !this.validateRegexPattern(field.validation.pattern)
-        ) {
-          console.warn(
-            `Skipping field "${field.label}" due to invalid or dangerous regex pattern: ${field.validation.pattern}`
-          );
-          return false;
-        }
-
-        return true;
-      });
-
-      if (validFields.length !== importedData.fields.length) {
+      if (validFields.length !== importedFields.length) {
         new Notice(
           t('settings.customization.custom-fields.notice.import-summary', {
             validCount: String(validFields.length),
-            totalCount: String(importedData.fields.length),
+            totalCount: String(importedFields.length),
           })
         );
       }
@@ -628,12 +681,10 @@ export class CustomFieldsService {
     try {
       const optionsKey = this.getFieldOptionsKey();
       const pluginInstance = this.plugin;
+      const settingsRecord: Record<string, unknown> = pluginInstance.settings;
+      const savedOptions = settingsRecord[optionsKey];
 
-      if (pluginInstance.settings && pluginInstance.settings[optionsKey]) {
-        this.fieldOptions = { ...pluginInstance.settings[optionsKey] };
-      } else {
-        this.fieldOptions = {};
-      }
+      this.fieldOptions = parseFieldOptionsStorage(savedOptions);
     } catch (error) {
       ErrorHandler.logError(
         error,
@@ -655,9 +706,10 @@ export class CustomFieldsService {
         await pluginInstance.saveSettings();
       } else {
         
-        const existingData = (await this.plugin.loadData()) || {};
+        const existingData = (await this.plugin.loadData()) as unknown;
+        const existingRecord = isRecord(existingData) ? existingData : {};
         const updatedData = {
-          ...existingData,
+          ...existingRecord,
           [optionsKey]: this.fieldOptions,
         };
         await this.plugin.saveData(updatedData);

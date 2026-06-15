@@ -14,12 +14,12 @@ import {
   CustomFieldType,
 } from '../../../../types/customFields';
 
+type CustomFieldValue = unknown;
+
 interface CustomFieldRendererProps {
   field: CustomFieldDefinition;
-
-  value: any;
-
-  onChange: (value: any) => void;
+  value: CustomFieldValue;
+  onChange: (value: CustomFieldValue) => void;
   error?: string;
 }
 
@@ -37,7 +37,6 @@ const CustomFieldRenderer: React.FC<CustomFieldRendererProps> = ({
     validation,
     options,
     placeholder,
-    helperText: _helperText,
     allowCreateOptions,
   } = field;
 
@@ -94,29 +93,39 @@ const CustomFieldRenderer: React.FC<CustomFieldRendererProps> = ({
   const commonProps = useMemo(
     () => ({
       label,
-      value:
-        value ??
-        (type === CustomFieldType.MULTISELECT
-          ? []
-          : type === CustomFieldType.NUMBER
-            ? 0
-            : ''),
-      onChange,
       placeholder,
       error,
       required: validation?.required || false,
     }),
-    [label, value, type, onChange, placeholder, error, validation?.required]
+    [label, placeholder, error, validation?.required]
   );
+
+  const stringValue = typeof value === 'string' ? value : '';
+  const numberValue = typeof value === 'number' ? value : 0;
+  const stringListValue = Array.isArray(value)
+    ? value.filter((item): item is string => typeof item === 'string')
+    : [];
+  const dateValue =
+    typeof value === 'string' || value instanceof Date ? value : undefined;
 
   switch (type) {
     case CustomFieldType.TEXT:
-      return <Input {...commonProps} multiline={false} type="text" />;
+      return (
+        <Input
+          {...commonProps}
+          value={stringValue}
+          onChange={onChange}
+          multiline={false}
+          type="text"
+        />
+      );
 
     case CustomFieldType.NUMBER:
       return (
         <NumberInput
           {...commonProps}
+          value={numberValue}
+          onChange={onChange}
           allowDecimal={true}
           precision={2}
           min={validation?.min}
@@ -130,6 +139,8 @@ const CustomFieldRenderer: React.FC<CustomFieldRendererProps> = ({
         return (
           <ComboBox
             {...commonProps}
+            value={stringValue}
+            onChange={onChange}
             options={allOptions.map((opt) => opt.value)}
             isMulti={false}
             allowCreate={true}
@@ -137,13 +148,22 @@ const CustomFieldRenderer: React.FC<CustomFieldRendererProps> = ({
           />
         );
       } else {
-        return <Select {...commonProps} options={allOptions} />;
+        return (
+          <Select
+            {...commonProps}
+            value={stringValue}
+            onChange={onChange}
+            options={allOptions}
+          />
+        );
       }
 
     case CustomFieldType.MULTISELECT:
       return (
         <ComboBox
           {...commonProps}
+          value={stringListValue}
+          onChange={onChange}
           options={allOptions.map((opt) => opt.value)}
           isMulti={true}
           allowCreate={allowCreateOptions || false}
@@ -152,13 +172,34 @@ const CustomFieldRenderer: React.FC<CustomFieldRendererProps> = ({
       );
 
     case CustomFieldType.DATE:
-      return <FastDateTimeInput {...commonProps} includeTime={false} />;
+      return (
+        <FastDateTimeInput
+          {...commonProps}
+          value={dateValue}
+          onChange={onChange}
+          includeTime={false}
+        />
+      );
 
     case CustomFieldType.DATETIME:
-      return <FastDateTimeInput {...commonProps} includeTime={true} />;
+      return (
+        <FastDateTimeInput
+          {...commonProps}
+          value={dateValue}
+          onChange={onChange}
+          includeTime={true}
+        />
+      );
 
     case CustomFieldType.TIME:
-      return <FastDateTimeInput {...commonProps} timeOnly={true} />;
+      return (
+        <FastDateTimeInput
+          {...commonProps}
+          value={dateValue}
+          onChange={onChange}
+          timeOnly={true}
+        />
+      );
 
     default:
       return (
@@ -175,9 +216,9 @@ const EMPTY_CUSTOM_FIELD_ERRORS: { [fieldId: string]: string } = {};
 interface CustomFieldsRendererProps {
   fields: CustomFieldDefinition[];
 
-  values: { [fieldId: string]: any };
+  values: Record<string, CustomFieldValue>;
 
-  onChange: (fieldId: string, value: any) => void;
+  onChange: (fieldId: string, value: CustomFieldValue) => void;
   errors?: { [fieldId: string]: string };
 }
 
@@ -191,7 +232,7 @@ const CustomFieldsRendererComponent: React.FC<CustomFieldsRendererProps> = ({
   const openCustomFieldsSettings = (
     event: React.MouseEvent<HTMLButtonElement>
   ) => {
-    window.sessionStorage.setItem('journalit:open-custom-fields-settings', '1');
+    plugin?.app.saveLocalStorage('journalit:open-custom-fields-settings', '1');
     const modalEl = event.currentTarget.closest('.modal');
     const closeButton = modalEl?.querySelector<HTMLButtonElement>(
       '.modal-close-button'

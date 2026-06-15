@@ -50,7 +50,11 @@ export interface TimeNode {
   label: string;
   metrics: TradeLogMetrics;
   children?: TimeNode[];
-  trade?: any;
+  trade?: Record<string, unknown> & {
+    filePath?: string;
+    path?: string;
+    file?: { path?: string };
+  };
   expanded: boolean;
   dataLoaded: boolean;
   performanceIndicator?: 'best' | 'worst'; 

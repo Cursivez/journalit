@@ -47,7 +47,21 @@ Full install + troubleshooting: https://journalit.co/docs
 - **Account required for full access**: a Journalit account is required for authentication-backed and subscription-gated features.
 - **Paid features**: a paid Pro subscription is required for full access to Pro features such as MetaTrader sync and Trade Import.
 - **Optional network use**: the plugin only uses Journalit network services when you choose to use network-backed features. Signing in contacts Journalit services for email verification, token validation, and subscription status. If you then use authenticated features such as MetaTrader sync or Trade Import, the plugin also connects to the Journalit backend API for sync coordination, trade retrieval, and optional Trade Import, and MetaTrader sync uses Journalit-managed FTP infrastructure for report uploads. Journalit may also request exchange rates from a third-party exchange-rate service when multi-currency conversion is needed. These network-backed features are opt-in.
+- **Source available, proprietary license**: the plugin is proprietary software with reviewable source.
 - **Privacy details**: see [PRIVACY.md](PRIVACY.md) for data handling, retention, and infrastructure details.
+
+## Source review checks
+
+This public repository is a source-available mirror used for Obsidian review and user inspection. The main local verification commands are:
+
+```bash
+pnpm install --frozen-lockfile
+pnpm run lint
+pnpm run lint:review
+pnpm run build
+```
+
+`lint:review` mirrors additional Obsidian review categories and fails on new unaccepted findings. The remaining accepted findings are documented in that command's output.
 
 ## Screenshots
 
@@ -117,7 +131,7 @@ Keywords: obsidian trading journal, trading plugin, trade tracker, obsidian trad
 
 ## License
 
-This plugin is proprietary software. The compiled plugin files are distributed for use with Obsidian, but the source code is not available under an open source license.
+This plugin is source-available proprietary software. Source is published for Obsidian review and user inspection, but it is not licensed as open source. See LICENSE for permitted use.
 
 ---
 

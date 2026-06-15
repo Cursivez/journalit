@@ -8,7 +8,7 @@ import React, {
   useRef,
   startTransition,
 } from 'react';
-import { App, Modal } from 'obsidian';
+import { App, Modal, Notice } from 'obsidian';
 import { Edit } from '../../../components/shared/icons/ObsidianIcon';
 import JournalitPlugin from '../../../main';
 import { CustomFieldsService } from '../../../services/CustomFieldsService';
@@ -28,6 +28,22 @@ import { FieldEditor } from './FieldEditor';
 import { t, tPlural } from '../../../lang/helpers';
 import { cssVars } from '../../../styles/inlineStylePolicy';
 
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  value !== null && typeof value === 'object' && !Array.isArray(value);
+
+const isCustomFieldType = (value: unknown): value is CustomFieldType =>
+  Object.values<unknown>(CustomFieldType).includes(value);
+
+const isCustomFieldDefinition = (
+  value: unknown
+): value is CustomFieldDefinition =>
+  isRecord(value) &&
+  typeof value.id === 'string' &&
+  typeof value.label === 'string' &&
+  typeof value.fieldKey === 'string' &&
+  isCustomFieldType(value.type) &&
+  typeof value.order === 'number';
+
 interface CustomFieldsManagerProps {
   plugin: JournalitPlugin;
   onRequestExpansion?: () => void;
@@ -37,8 +53,8 @@ interface CustomFieldsManagerProps {
 interface FieldAccordionProps {
   field: CustomFieldDefinition;
   savedOptions: string[];
-  onDeleteOption: (fieldId: string, option: string) => void;
-  onClearAll: (fieldId: string, fieldLabel: string) => void;
+  onDeleteOption: (fieldId: string, option: string) => void | Promise<void>;
+  onClearAll: (fieldId: string, fieldLabel: string) => void | Promise<void>;
   initialExpanded?: boolean;
 }
 
@@ -175,10 +191,10 @@ function useCustomFieldsManagerModel(props: CustomFieldsManagerProps) {
   const [editingField, setEditingField] =
     useState<CustomFieldDefinition | null>(null);
   const [isAddingNew, setIsAddingNew] = useState(false);
-  const [_forceUpdate, setForceUpdate] = useState(0);
+  const [, setForceUpdate] = useState(0);
 
   
-  const remeasureTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const remeasureTimeoutRef = useRef<number | null>(null);
 
   
   const debouncedRemeasure = useCallback(() => {
@@ -186,12 +202,12 @@ function useCustomFieldsManagerModel(props: CustomFieldsManagerProps) {
 
     
     if (remeasureTimeoutRef.current) {
-      clearTimeout(remeasureTimeoutRef.current);
+      window.clearTimeout(remeasureTimeoutRef.current);
     }
 
     
-    remeasureTimeoutRef.current = setTimeout(() => {
-      requestAnimationFrame(() => {
+    remeasureTimeoutRef.current = window.setTimeout(() => {
+      window.requestAnimationFrame(() => {
         remeasureContent();
       });
     }, 16); 
@@ -201,7 +217,7 @@ function useCustomFieldsManagerModel(props: CustomFieldsManagerProps) {
   useEffect(() => {
     return () => {
       if (remeasureTimeoutRef.current) {
-        clearTimeout(remeasureTimeoutRef.current);
+        window.clearTimeout(remeasureTimeoutRef.current);
       }
     };
   }, []);
@@ -223,9 +239,9 @@ function useCustomFieldsManagerModel(props: CustomFieldsManagerProps) {
       if (!payload || typeof payload !== 'object') return;
       if (!('fields' in payload)) return;
 
-      const fields = (payload as { fields?: unknown }).fields;
-      if (Array.isArray(fields)) {
-        setFields(fields as CustomFieldDefinition[]);
+      const fields = payload.fields;
+      if (Array.isArray(fields) && fields.every(isCustomFieldDefinition)) {
+        setFields(fields);
       }
     };
 
@@ -306,7 +322,7 @@ function useCustomFieldsManagerModel(props: CustomFieldsManagerProps) {
 
       const labelValidation = validateLabelForField(field.label, field.id);
       if (labelValidation) {
-        alert(
+        new Notice(
           t('settings.customization.custom-fields.error.cannot-save', {
             error: labelValidation,
           })
@@ -317,7 +333,7 @@ function useCustomFieldsManagerModel(props: CustomFieldsManagerProps) {
       
       const keyValidation = validateFieldKey(field.fieldKey);
       if (keyValidation) {
-        alert(
+        new Notice(
           t('settings.customization.custom-fields.error.cannot-save', {
             error: keyValidation,
           })
@@ -331,7 +347,7 @@ function useCustomFieldsManagerModel(props: CustomFieldsManagerProps) {
         .map((f) => f.fieldKey || labelToFieldKey(f.label));
 
       if (existingKeys.includes(field.fieldKey)) {
-        alert(
+        new Notice(
           t('settings.customization.custom-fields.error.cannot-save', {
             error: t(
               'settings.customization.custom-fields.error.duplicate-key'
@@ -364,7 +380,7 @@ function useCustomFieldsManagerModel(props: CustomFieldsManagerProps) {
         debouncedRemeasure();
       } catch (error) {
         console.error('Failed to save field:', error);
-        alert(t('settings.customization.custom-fields.error.save-failed'));
+        new Notice(t('settings.customization.custom-fields.error.save-failed'));
       }
     },
     [
@@ -553,7 +569,11 @@ export const CustomFieldsManager: React.FC<CustomFieldsManagerProps> = (
             </div>
             <div className="custom-fields-list-header-actions">
               {!editingField && (
-                <Button variant="primary" size="sm" onClick={handleAddField}>
+                <Button
+                  variant="primary"
+                  size="sm"
+                  onClick={() => void handleAddField()}
+                >
                   {t('settings.customization.custom-fields.add-button')}
                 </Button>
               )}
@@ -678,7 +698,7 @@ export const CustomFieldsManager: React.FC<CustomFieldsManagerProps> = (
           </div>
           <div className="custom-fields-actions-buttons">
             {fields.length === 0 && (
-              <Button variant="primary" onClick={handleAddField}>
+              <Button variant="primary" onClick={() => void handleAddField()}>
                 {t('settings.customization.custom-fields.add-button')}
               </Button>
             )}
@@ -686,7 +706,7 @@ export const CustomFieldsManager: React.FC<CustomFieldsManagerProps> = (
             {fields.length > 0 && (
               <Button
                 variant="danger"
-                onClick={handleResetFields}
+                onClick={() => void handleResetFields()}
                 className="custom-fields-delete-all-button"
               >
                 {t('settings.customization.custom-fields.delete-all-button')}
@@ -704,7 +724,7 @@ class DeleteFieldConfirmationModal extends Modal {
   constructor(
     app: App,
     private fieldLabel: string,
-    private onConfirm: () => void
+    private onConfirm: () => void | Promise<void>
   ) {
     super(app);
   }
@@ -729,7 +749,7 @@ class DeleteFieldConfirmationModal extends Modal {
       .createEl('button', { text: t('button.delete'), cls: 'mod-warning' })
       .addEventListener('click', () => {
         this.close();
-        this.onConfirm();
+        void this.onConfirm();
       });
 
     buttonContainer
@@ -748,7 +768,7 @@ class DeleteFieldConfirmationModal extends Modal {
 class ResetFieldsConfirmationModal extends Modal {
   constructor(
     app: App,
-    private onConfirm: () => void
+    private onConfirm: () => void | Promise<void>
   ) {
     super(app);
   }
@@ -771,7 +791,7 @@ class ResetFieldsConfirmationModal extends Modal {
       .createEl('button', { text: t('button.delete-all'), cls: 'mod-warning' })
       .addEventListener('click', () => {
         this.close();
-        this.onConfirm();
+        void this.onConfirm();
       });
 
     buttonContainer
@@ -791,7 +811,7 @@ class DeleteOptionConfirmationModal extends Modal {
   constructor(
     app: App,
     private optionName: string,
-    private onConfirm: () => void
+    private onConfirm: () => void | Promise<void>
   ) {
     super(app);
   }
@@ -812,7 +832,7 @@ class DeleteOptionConfirmationModal extends Modal {
       .createEl('button', { text: t('button.delete'), cls: 'mod-warning' })
       .addEventListener('click', () => {
         this.close();
-        this.onConfirm();
+        void this.onConfirm();
       });
 
     buttonContainer
@@ -832,7 +852,7 @@ class ClearAllOptionsConfirmationModal extends Modal {
   constructor(
     app: App,
     private fieldLabel: string,
-    private onConfirm: () => void
+    private onConfirm: () => void | Promise<void>
   ) {
     super(app);
   }
@@ -857,7 +877,7 @@ class ClearAllOptionsConfirmationModal extends Modal {
       .createEl('button', { text: t('button.clear-all'), cls: 'mod-warning' })
       .addEventListener('click', () => {
         this.close();
-        this.onConfirm();
+        void this.onConfirm();
       });
 
     buttonContainer
@@ -909,7 +929,7 @@ const SavedCustomOptionsSection: React.FC<SavedCustomOptionsSectionProps> = ({
           onOptionsChanged();
         } catch (error) {
           console.error('Failed to delete option:', error);
-          alert(
+          new Notice(
             t('settings.customization.custom-fields.saved-options.delete-error')
           );
         }
@@ -928,7 +948,7 @@ const SavedCustomOptionsSection: React.FC<SavedCustomOptionsSectionProps> = ({
           onOptionsChanged();
         } catch (error) {
           console.error('Failed to clear all options:', error);
-          alert(
+          new Notice(
             t('settings.customization.custom-fields.saved-options.clear-error')
           );
         }

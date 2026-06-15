@@ -1,52 +1,48 @@
 
 
-type AnyFunction = (...args: any[]) => any;
 
-type AnyAsyncFunction = (...args: any[]) => Promise<any>;
-
-
-type DebouncedFunction<T extends AnyFunction> = {
-  (...args: Parameters<T>): ReturnType<T>;
+type DebouncedFunction<Args extends unknown[], Result> = {
+  (...args: Args): Result | undefined;
   cancel: () => void;
-  flush: () => ReturnType<T>;
+  flush: () => Result | undefined;
   pending: () => boolean;
 };
 
 
-type DebouncedAsyncFunction<T extends AnyAsyncFunction> = {
-  (...args: Parameters<T>): ReturnType<T>;
+type DebouncedAsyncFunction<Args extends unknown[], Result> = {
+  (...args: Args): Promise<Result | undefined>;
   cancel: () => void;
-  flush: () => Promise<Awaited<ReturnType<T>> | undefined>;
+  flush: () => Promise<Result | undefined>;
 };
 
 
-export function debounce<T extends AnyFunction>(
-  func: T,
+export function debounce<Args extends unknown[], Result>(
+  func: (this: unknown, ...args: Args) => Result,
   delay: number,
   options?: {
     leading?: boolean; 
     trailing?: boolean; 
     maxWait?: number; 
   }
-): DebouncedFunction<T> {
-  let timeoutId: ReturnType<typeof setTimeout> | null = null;
+): DebouncedFunction<Args, Result> {
+  let timeoutId: number | null = null;
   let lastCallTime: number | null = null;
   let lastInvokeTime = 0;
-  let lastArgs: Parameters<T> | null = null;
-  let thisContext: unknown = null;
-  let result: ReturnType<T> | undefined;
+  let lastArgs: Args | null = null;
+  let result: Result | undefined;
 
   const { leading = false, trailing = true, maxWait } = options || {};
 
-  const invokeFunc = (
-    thisArg: unknown,
-    time: number
-  ): ReturnType<T> | undefined => {
+  const invokeFunc = (thisArg: unknown, time: number): Result | undefined => {
     const args = lastArgs;
 
     lastArgs = null;
     lastInvokeTime = time;
-    result = func.apply(thisArg, args!) as ReturnType<T>;
+    if (!args) {
+      return result;
+    }
+
+    result = func(...args);
     return result;
   };
 
@@ -75,22 +71,22 @@ export function debounce<T extends AnyFunction>(
       : timeWaiting;
   }
 
-  function leadingEdge(thisArg: unknown, time: number) {
+  function leadingEdge(_thisArg: unknown, time: number) {
     
     lastInvokeTime = time;
     
-    timeoutId = setTimeout(timerExpired, delay);
+    timeoutId = window.setTimeout(timerExpired, delay);
     
-    return leading ? invokeFunc(thisArg, time) : result;
+    return leading ? invokeFunc(undefined, time) : result;
   }
 
-  function trailingEdge(thisArg: unknown, time: number) {
+  function trailingEdge(_thisArg: unknown, time: number) {
     timeoutId = null;
 
     
     
     if (trailing && lastArgs) {
-      return invokeFunc(thisArg, time);
+      return invokeFunc(undefined, time);
     }
     lastArgs = null;
     return result;
@@ -99,78 +95,71 @@ export function debounce<T extends AnyFunction>(
   function timerExpired() {
     const time = Date.now();
     if (shouldInvoke(time)) {
-      return trailingEdge(thisContext, time);
+      return trailingEdge(undefined, time);
     }
     
-    timeoutId = setTimeout(timerExpired, remainingWait(time));
+    timeoutId = window.setTimeout(timerExpired, remainingWait(time));
   }
 
   function cancel() {
     if (timeoutId !== null) {
-      clearTimeout(timeoutId);
+      window.clearTimeout(timeoutId);
     }
     lastInvokeTime = 0;
     lastArgs = lastCallTime = timeoutId = null;
-    thisContext = null;
   }
 
   function flush() {
-    return timeoutId === null ? result : trailingEdge(thisContext, Date.now());
+    return timeoutId === null ? result : trailingEdge(undefined, Date.now());
   }
 
   function pending() {
     return timeoutId !== null;
   }
 
-  function debounced(this: unknown, ...args: Parameters<T>) {
-    const time = Date.now();
-    const isInvoking = shouldInvoke(time);
+  const debounced: DebouncedFunction<Args, Result> = Object.assign(
+    function (this: unknown, ...args: Args): Result | undefined {
+      const time = Date.now();
+      const isInvoking = shouldInvoke(time);
 
-    lastArgs = args;
-    // eslint-disable-next-line @typescript-eslint/no-this-alias
-    thisContext = this;
-    lastCallTime = time;
+      lastArgs = args;
+      lastCallTime = time;
 
-    if (isInvoking) {
+      if (isInvoking) {
+        if (timeoutId === null) {
+          return leadingEdge(undefined, lastCallTime);
+        }
+        if (maxWait !== undefined) {
+          
+          timeoutId = window.setTimeout(timerExpired, delay);
+          return invokeFunc(undefined, lastCallTime);
+        }
+      }
       if (timeoutId === null) {
-        return leadingEdge(thisContext, lastCallTime);
+        timeoutId = window.setTimeout(timerExpired, delay);
       }
-      if (maxWait !== undefined) {
-        
-        timeoutId = setTimeout(timerExpired, delay);
-        return invokeFunc(thisContext, lastCallTime);
-      }
-    }
-    if (timeoutId === null) {
-      timeoutId = setTimeout(timerExpired, delay);
-    }
-    return result;
-  }
+      return result;
+    },
+    { cancel, flush, pending }
+  );
 
-  debounced.cancel = cancel;
-  debounced.flush = flush;
-  debounced.pending = pending;
-
-  return debounced as DebouncedFunction<T>;
+  return debounced;
 }
 
 
-export function debounceAsync<T extends AnyAsyncFunction>(
-  func: T,
+export function debounceAsync<Args extends unknown[], Result>(
+  func: (this: unknown, ...args: Args) => Promise<Result>,
   delay: number
-): DebouncedAsyncFunction<T> {
-  let timeoutId: ReturnType<typeof setTimeout> | null = null;
-  let pendingPromise: ReturnType<T> | null = null;
-  let resolvePromise:
-    | ((value: Awaited<ReturnType<T>> | undefined) => void)
-    | null = null;
+): DebouncedAsyncFunction<Args, Result> {
+  let timeoutId: number | null = null;
+  let pendingPromise: Promise<Result | undefined> | null = null;
+  let resolvePromise: ((value: Result | undefined) => void) | null = null;
   let rejectPromise: ((reason: unknown) => void) | null = null;
-  let lastArgs: Parameters<T> | null = null;
-  let thisContext: unknown = null;
+  let lastArgs: Args | null = null;
 
   function cancel() {
     if (timeoutId !== null) {
-      clearTimeout(timeoutId);
+      window.clearTimeout(timeoutId);
       timeoutId = null;
     }
     
@@ -182,18 +171,18 @@ export function debounceAsync<T extends AnyAsyncFunction>(
     }
   }
 
-  async function flush(): Promise<Awaited<ReturnType<T>> | undefined> {
+  async function flush(): Promise<Result | undefined> {
     if (timeoutId !== null) {
-      clearTimeout(timeoutId);
+      window.clearTimeout(timeoutId);
       timeoutId = null;
 
-      if (pendingPromise && thisContext !== null && lastArgs) {
+      if (pendingPromise && lastArgs) {
         try {
-          const result = await func.apply(thisContext, lastArgs);
+          const flushResult = await func(...lastArgs);
           if (resolvePromise) {
-            resolvePromise(result);
+            resolvePromise(flushResult);
           }
-          return result;
+          return flushResult;
         } catch (error) {
           if (rejectPromise) {
             rejectPromise(error);
@@ -205,39 +194,40 @@ export function debounceAsync<T extends AnyAsyncFunction>(
     return undefined;
   }
 
-  const debouncedAsync = function (
-    this: unknown,
-    ...args: Parameters<T>
-  ): ReturnType<T> {
-    lastArgs = args;
-    // eslint-disable-next-line @typescript-eslint/no-this-alias
-    thisContext = this;
+  const debouncedAsync: DebouncedAsyncFunction<Args, Result> = Object.assign(
+    function (this: unknown, ...args: Args): Promise<Result | undefined> {
+      lastArgs = args;
+      cancel();
 
-    cancel();
+      pendingPromise = new Promise<Result | undefined>((resolve, reject) => {
+        resolvePromise = resolve;
+        rejectPromise = reject;
 
-    pendingPromise = new Promise((resolve, reject) => {
-      resolvePromise = resolve;
-      rejectPromise = reject;
+        timeoutId = window.setTimeout(() => {
+          void (async () => {
+            try {
+              if (!lastArgs) {
+                resolve(undefined);
+                return;
+              }
 
-      timeoutId = setTimeout(async () => {
-        try {
-          const result = await func.apply(thisContext, lastArgs!);
-          resolve(result);
-        } catch (error) {
-          reject(error);
-        } finally {
-          timeoutId = null;
-          pendingPromise = null;
-          resolvePromise = rejectPromise = null;
-        }
-      }, delay);
-    }) as ReturnType<T>;
+              const debouncedResult = await func(...lastArgs);
+              resolve(debouncedResult);
+            } catch (error) {
+              reject(error instanceof Error ? error : new Error(String(error)));
+            } finally {
+              timeoutId = null;
+              pendingPromise = null;
+              resolvePromise = rejectPromise = null;
+            }
+          })();
+        }, delay);
+      });
 
-    return pendingPromise;
-  };
+      return pendingPromise;
+    },
+    { cancel, flush }
+  );
 
-  debouncedAsync.cancel = cancel;
-  debouncedAsync.flush = flush;
-
-  return debouncedAsync as DebouncedAsyncFunction<T>;
+  return debouncedAsync;
 }

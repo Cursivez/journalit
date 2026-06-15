@@ -15,34 +15,41 @@ interface StatusFilterProps {
   onChange: (statuses: TradeStatus[]) => void;
 }
 
-const getStatusOptions = () => [
+const CLOSED_STATUSES: TradeStatus[] = ['win', 'loss', 'breakeven'];
+const ALL_SELECTABLE_STATUSES: TradeStatus[] = ['open', ...CLOSED_STATUSES];
+
+const getStatusOptions = (): Array<{
+  value: TradeStatus;
+  label: string;
+  description: string;
+}> => [
   {
-    value: 'all' as TradeStatus,
+    value: 'all',
     label: t('tradelog.filter.all'),
     description: t('tradelog.filter.all.desc'),
   },
   {
-    value: 'open' as TradeStatus,
+    value: 'open',
     label: t('tradelog.filter.open'),
     description: t('tradelog.filter.open.desc'),
   },
   {
-    value: 'closed' as TradeStatus,
+    value: 'closed',
     label: t('tradelog.filter.closed'),
     description: t('tradelog.filter.closed.desc'),
   },
   {
-    value: 'win' as TradeStatus,
+    value: 'win',
     label: t('tradelog.filter.winners'),
     description: t('tradelog.filter.winners.desc'),
   },
   {
-    value: 'loss' as TradeStatus,
+    value: 'loss',
     label: t('tradelog.filter.losers'),
     description: t('tradelog.filter.losers.desc'),
   },
   {
-    value: 'breakeven' as TradeStatus,
+    value: 'breakeven',
     label: t('tradelog.filter.breakeven'),
     description: t('tradelog.filter.breakeven.desc'),
   },
@@ -59,15 +66,19 @@ export const StatusFilter: React.FC<StatusFilterProps> = React.memo(
       const handleClickOutside = (event: MouseEvent) => {
         if (
           dropdownRef.current &&
-          !dropdownRef.current.contains(event.target as Node)
+          event.target instanceof Node &&
+          !dropdownRef.current.contains(event.target)
         ) {
           setIsOpen(false);
         }
       };
 
-      document.addEventListener('mousedown', handleClickOutside);
+      window.activeDocument.addEventListener('mousedown', handleClickOutside);
       return () => {
-        document.removeEventListener('mousedown', handleClickOutside);
+        window.activeDocument.removeEventListener(
+          'mousedown',
+          handleClickOutside
+        );
       };
     }, []);
 
@@ -81,29 +92,28 @@ export const StatusFilter: React.FC<StatusFilterProps> = React.memo(
             onChange([]);
           } else {
             
-            onChange(['open', 'win', 'loss', 'breakeven']);
+            onChange(ALL_SELECTABLE_STATUSES);
           }
         } else if (status === 'closed') {
           
-          const closedStatuses = ['win', 'loss', 'breakeven'];
-          const hasAllClosed = closedStatuses.every((s) =>
-            selectedStatuses.includes(s as TradeStatus)
+          const hasAllClosed = CLOSED_STATUSES.every((s) =>
+            selectedStatuses.includes(s)
           );
 
           if (hasAllClosed) {
             
             onChange(
-              selectedStatuses.filter((s) => !closedStatuses.includes(s))
+              selectedStatuses.filter((s) => !CLOSED_STATUSES.includes(s))
             );
           } else {
             
             const newStatuses = [
               ...new Set([
                 ...selectedStatuses.filter((s) => s !== 'closed'),
-                ...closedStatuses,
+                ...CLOSED_STATUSES,
               ]),
             ];
-            onChange(newStatuses as TradeStatus[]);
+            onChange(newStatuses);
           }
         } else {
           
@@ -132,9 +142,8 @@ export const StatusFilter: React.FC<StatusFilterProps> = React.memo(
       }
 
       
-      const closedStatuses = ['win', 'loss', 'breakeven'];
-      const hasAllClosed = closedStatuses.every((s) =>
-        selectedStatuses.includes(s as TradeStatus)
+      const hasAllClosed = CLOSED_STATUSES.every((s) =>
+        selectedStatuses.includes(s)
       );
       if (hasAllClosed && selectedStatuses.length === 3) {
         return t('tradelog.filter.closed');
@@ -147,9 +156,8 @@ export const StatusFilter: React.FC<StatusFilterProps> = React.memo(
     const allStatusesSelected = selectedStatuses.length === 4; 
 
     
-    const closedStatuses = ['win', 'loss', 'breakeven'];
-    const closedSelected = closedStatuses.every((s) =>
-      selectedStatuses.includes(s as TradeStatus)
+    const closedSelected = CLOSED_STATUSES.every((s) =>
+      selectedStatuses.includes(s)
     );
 
     

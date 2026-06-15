@@ -14,7 +14,7 @@ import { eventBus } from '../../../services/events';
 interface AccountLinkingManagerProps {
   plugin: JournalitPlugin;
   accounts: AccountInfo[];
-  onAccountsUpdated: () => void;
+  onAccountsUpdated: () => void | Promise<void>;
   onErrorChange?: (details: SupportErrorDetails | null) => void;
 }
 
@@ -50,7 +50,7 @@ export const AccountLinkingManager: React.FC<AccountLinkingManagerProps> = ({
       }
     };
 
-    loadObsidianAccounts();
+    void loadObsidianAccounts();
   }, [plugin]);
 
   const handleRelinkAccount = async () => {
@@ -177,7 +177,7 @@ export const AccountLinkingManager: React.FC<AccountLinkingManagerProps> = ({
       setSelectedTargetAccount('');
 
       
-      onAccountsUpdated();
+      void onAccountsUpdated();
     } catch (error) {
       console.error('Failed to relink account:', error);
       const errorMessage =

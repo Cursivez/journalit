@@ -5,6 +5,7 @@ import { t } from '../../lang/helpers';
 import {
   DEFAULT_SCALPER_DEFAULTS,
   type JournalitSettings,
+  type TemplatesSettings,
 } from '../../settings/types';
 import { ReviewTemplate, ReviewTemplateType } from '../../types/reviewV2';
 import { generateUUID } from '../../utils/uuid';
@@ -809,13 +810,17 @@ export class ReviewTemplateService {
   
   public getDefaultTemplate(type: ReviewTemplateType): ReviewTemplate {
     
-    const settingsKey = {
+    const settingsKeyByType: Record<
+      ReviewTemplateType,
+      keyof TemplatesSettings
+    > = {
       drc: 'defaultDrc',
       weekly: 'defaultWeekly',
       monthly: 'defaultMonthly',
       quarterly: 'defaultQuarterly',
       yearly: 'defaultYearly',
-    }[type] as keyof NonNullable<typeof this.plugin.settings.templates>;
+    };
+    const settingsKey = settingsKeyByType[type];
 
     const userDefaultId = this.plugin.settings.templates?.[settingsKey];
 
@@ -1006,7 +1011,7 @@ export class ReviewTemplateService {
       createdAt: now,
       updatedAt: now,
       
-      widgets: JSON.parse(JSON.stringify(template.widgets)),
+      widgets: structuredClone(template.widgets),
     };
 
     this.templates.push(duplicatedTemplate);

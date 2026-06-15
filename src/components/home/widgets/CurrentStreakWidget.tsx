@@ -5,7 +5,6 @@ import { Flame, Snowflake, Minus } from '../../shared/icons/ObsidianIcon';
 import JournalitPlugin from '../../../main';
 import { t } from '../../../lang/helpers';
 import { getTradeAnalyticsDate } from '../../../utils/tradeAnalyticsDate';
-import { ensureHomeWidgetStyles } from '../../../styles/homeWidgetStyles';
 import { cssVars } from '../../../styles/inlineStylePolicy';
 import { useDashboardData } from '../../dashboard/context/DashboardDataContext';
 import {
@@ -61,9 +60,7 @@ const CurrentStreakWidgetComponent: React.FC<CurrentStreakWidgetProps> = ({
   useEffect(() => {}, []);
 
   
-  const filteredTrades = useFilteredByPeriod(
-    dashboardData?.trades as Trade[] | undefined
-  );
+  const filteredTrades = useFilteredByPeriod(dashboardData?.trades);
 
   
   

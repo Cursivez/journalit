@@ -64,25 +64,35 @@ function makeUniqueGroupName(
   return `${baseName} ${suffix}`;
 }
 
+function getOptionValue(value: unknown): string {
+  if (typeof value === 'string') return value.trim();
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return '';
+
+  const record = Object.fromEntries(Object.entries(value));
+  const optionValue: unknown = record.value;
+  return typeof optionValue === 'string' ? optionValue.trim() : '';
+}
+
+function isReviewFieldReviewType(
+  value: unknown
+): value is ReviewFieldReviewType {
+  switch (value) {
+    case 'drc':
+    case 'weekly':
+    case 'monthly':
+    case 'quarterly':
+    case 'yearly':
+      return true;
+    default:
+      return false;
+  }
+}
+
 function normalizeStringOptions(value: unknown): string[] {
   if (!Array.isArray(value)) return [];
 
   return [
-    ...new Set(
-      value
-        .map((option) => {
-          if (typeof option === 'string') return option.trim();
-          if (
-            option &&
-            typeof option === 'object' &&
-            typeof (option as { value?: unknown }).value === 'string'
-          ) {
-            return (option as { value: string }).value.trim();
-          }
-          return '';
-        })
-        .filter(Boolean)
-    ),
+    ...new Set(value.map((option) => getOptionValue(option)).filter(Boolean)),
   ];
 }
 
@@ -95,8 +105,10 @@ function normalizeReviewTypes(
     return [...fallback];
   }
 
-  const normalized = value.filter((entry): entry is ReviewFieldReviewType =>
-    allowedTypes.includes(entry as ReviewFieldReviewType)
+  const allowedTypeSet = new Set(allowedTypes);
+  const normalized = value.filter(
+    (entry): entry is ReviewFieldReviewType =>
+      isReviewFieldReviewType(entry) && allowedTypeSet.has(entry)
   );
 
   return normalized.length > 0 ? [...new Set(normalized)] : [...fallback];
@@ -106,7 +118,8 @@ function normalizeReviewFieldValidation(
   validation: CustomReviewFieldDefinition['validation']
 ): CustomReviewFieldDefinition['validation'] {
   if (!validation) return {};
-  const { required: _required, ...normalizedValidation } = validation;
+  const normalizedValidation = { ...validation };
+  delete normalizedValidation.required;
   return normalizedValidation;
 }
 

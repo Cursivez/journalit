@@ -9,10 +9,10 @@ interface ImageBaseProps {
 
 export interface ImageUploadProps extends ImageBaseProps {
   
-  onImageUploaded: (path: string) => void;
+  onImageUploaded: (path: string) => void | Promise<void>;
 
   
-  onMultipleImagesUploaded?: (paths: string[]) => void;
+  onMultipleImagesUploaded?: (paths: string[]) => void | Promise<void>;
 
   
   onError?: (error: Error) => void;
@@ -95,7 +95,7 @@ export interface ImageCarouselProps extends ImageBaseProps {
   enableDelete?: boolean;
 
   
-  onDeleteImage?: (index: number, path: string) => void;
+  onDeleteImage?: (index: number, path: string) => void | Promise<void>;
 
   
   enableFullscreen?: boolean;
@@ -116,7 +116,7 @@ export interface PasteEventData {
   context: {
     element: Element;
     contextType: string;
-    contextData?: Record<string, any>;
+    contextData?: Record<string, unknown>;
   };
 
   

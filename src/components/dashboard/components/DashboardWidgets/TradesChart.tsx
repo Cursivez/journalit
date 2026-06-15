@@ -14,6 +14,18 @@ import {
 const TRADE_LIMITS = [25, 50, 75, 100] as const;
 type TradeLimit = (typeof TRADE_LIMITS)[number];
 
+const parseTradeLimit = (value: number): TradeLimit | null => {
+  switch (value) {
+    case 25:
+    case 50:
+    case 75:
+    case 100:
+      return value;
+    default:
+      return null;
+  }
+};
+
 
 export const TradesChart: React.FC<BaseWidgetProps> = ({
   filters,
@@ -74,9 +86,9 @@ export const TradesChart: React.FC<BaseWidgetProps> = ({
                 <select
                   value={selectedLimit}
                   onChange={(e) => {
-                    const value = Number(e.target.value);
-                    if (TRADE_LIMITS.includes(value as TradeLimit)) {
-                      setSelectedLimit(value as TradeLimit);
+                    const limit = parseTradeLimit(Number(e.target.value));
+                    if (limit) {
+                      setSelectedLimit(limit);
                     }
                   }}
                   className="journalit-dashboard-trades-chart__select"

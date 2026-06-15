@@ -6,11 +6,9 @@ import {
   normalizeTradeAccountIdentity,
 } from '../../../services/trade/core/TradeAccountIdentity';
 
-const HOME_SUPPORTED_TRADE_TYPES: TradeType[] = ['regular', 'backtest'];
+type HomeTradeType = Extract<TradeType, 'regular' | 'backtest'>;
 
-type HomeTradeType = (typeof HOME_SUPPORTED_TRADE_TYPES)[number];
-
-interface HomeAccountTradeSnapshot {
+export interface HomeAccountTradeSnapshot {
   account?: string | string[];
   accountId?: string | number;
   accountRefs?: unknown;
@@ -23,9 +21,8 @@ interface HomeAccountTradeSnapshot {
 
 const isHomeSupportedTradeType = (
   tradeType: string
-): tradeType is HomeTradeType => {
-  return HOME_SUPPORTED_TRADE_TYPES.includes(tradeType as HomeTradeType);
-};
+): tradeType is HomeTradeType =>
+  tradeType === 'regular' || tradeType === 'backtest';
 
 export const normalizeHomeTradeTypes = (
   tradeTypes?: TradeType[]
@@ -121,7 +118,7 @@ export const collectAvailableHomeAccounts = (
     }
 
     const identity = normalizeTradeAccountIdentity(
-      trade as Record<string, unknown>,
+      { account: trade.account },
       {
         resolveAccountIdDisplayName: options?.resolveAccountIdDisplayName,
       }
@@ -179,7 +176,7 @@ export const remapHomeSelectedAccounts = (
     }
 
     const identity = normalizeTradeAccountIdentity(
-      trade as Record<string, unknown>,
+      { account: trade.account },
       {
         resolveAccountIdDisplayName: options?.resolveAccountIdDisplayName,
       }

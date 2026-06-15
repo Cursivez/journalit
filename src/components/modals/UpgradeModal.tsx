@@ -7,7 +7,6 @@ import { t } from '../../lang/helpers';
 import { UPGRADE_URL } from '../../constants';
 import { openExternalUrl } from '../../utils/externalLinks';
 import { Button } from '../ui/Button';
-import { ensureUpgradeModalStyles } from './upgradeModalStyles';
 
 interface UpgradeModalProps {
   app: App;

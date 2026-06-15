@@ -1,6 +1,6 @@
 
 
-const TRADE_FORM_STYLES = `
+export const TRADE_FORM_STYLES = `
   
   .trade-form-modal-container .modal-title {
     margin-bottom: 16px;
@@ -1138,11 +1138,3 @@ const TRADE_FORM_STYLES = `
     font-size: 14px !important;
   }
 `;
-
-export function injectTradeFormStyles(): void {
-  return;
-}
-
-export function removeTradeFormStyles(): void {
-  return;
-}

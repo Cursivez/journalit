@@ -1,6 +1,4 @@
-const VIEW_GUIDE_STYLE_ID = 'journalit-view-guide-styles';
-
-const VIEW_GUIDE_STYLES = `
+export const VIEW_GUIDE_STYLES = `
 .journalit-view-guide-overlay {
   position: fixed;
   inset: 0;
@@ -133,15 +131,3 @@ const VIEW_GUIDE_STYLES = `
   filter: brightness(1.03);
 }
 `;
-
-const injectViewGuideStyles = (): void => {
-  // intentional
-};
-
-export const removeViewGuideStyles = (): void => {
-  return;
-};
-
-export const ensureViewGuideStyles = (): void => {
-  return;
-};

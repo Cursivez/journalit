@@ -13,9 +13,7 @@ import {
 import { useEventBus } from '../../../hooks/useEventBus';
 import { SkeletonBox } from '../../shared/SkeletonBox';
 import { SkeletonText } from '../../shared/SkeletonText';
-import { ensureHomeWidgetStyles } from '../../../styles/homeWidgetStyles';
 import { cssVars } from '../../../styles/inlineStylePolicy';
-import { ensureSkeletonStyles } from '../../../styles/skeletonStyles';
 import { t, tPlural } from '../../../lang/helpers';
 
 interface UnreviewedTradesWidgetProps {
@@ -129,14 +127,14 @@ const UnreviewedTradesWidgetComponent: React.FC<
     return (
       <div
         className="journalit-home-unreviewed journalit-home-unreviewed--row journalit-home-unreviewed--clickable"
-        onClick={openTradeLog}
+        onClick={() => void openTradeLog()}
         onKeyDown={(e) => {
           if (e.key !== 'Enter' && e.key !== ' ') {
             return;
           }
 
           e.preventDefault();
-          openTradeLog();
+          void openTradeLog();
         }}
         role="button"
         tabIndex={0}
@@ -160,14 +158,14 @@ const UnreviewedTradesWidgetComponent: React.FC<
   return (
     <div
       className="journalit-home-unreviewed journalit-home-unreviewed--clickable"
-      onClick={openTradeLog}
+      onClick={() => void openTradeLog()}
       onKeyDown={(e) => {
         if (e.key !== 'Enter' && e.key !== ' ') {
           return;
         }
 
         e.preventDefault();
-        openTradeLog();
+        void openTradeLog();
       }}
       role="button"
       tabIndex={0}

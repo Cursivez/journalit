@@ -28,7 +28,26 @@ import {
 } from '../trade/core/TradeFrontmatterCodec';
 import { USER_OWNED_TRADE_CONTENT_MARKER } from '../trade/core/TradeNoteDocumentCodec';
 
+const getErrorMessage = (error: unknown): string =>
+  error instanceof Error ? error.message : String(error);
+
+const getErrorCode = (error: unknown): string | undefined =>
+  error && typeof error === 'object' && 'code' in error
+    ? String(error.code)
+    : undefined;
+
 const FILE_ALREADY_EXISTS_PATTERN = /already exists/;
+
+const parseTradeStatus = (value: unknown): 'OPEN' | 'CLOSED' | null => {
+  switch (value) {
+    case 'OPEN':
+    case 'CLOSED':
+      return value;
+    default:
+      return null;
+  }
+};
+
 const ACCOUNT_DISPLAY_NAME_PREFIX_PATTERN = /Account-/;
 
 export class TradeFileGenerator {
@@ -162,7 +181,7 @@ export class TradeFileGenerator {
 
           
           await new Promise((resolve) =>
-            setTimeout(resolve, 50 * (attempt + 1))
+            window.setTimeout(resolve, 50 * (attempt + 1))
           );
           continue;
         }
@@ -174,19 +193,16 @@ export class TradeFileGenerator {
         tempFile = null;
         return finalPath;
       } catch (error) {
-        lastError = error;
+        lastError = error instanceof Error ? error : new Error(String(error));
 
         
-        if (
-          error.message
-            ? FILE_ALREADY_EXISTS_PATTERN.test(error.message)
-            : false
-        ) {
+        const errorMessage = getErrorMessage(error);
+        if (FILE_ALREADY_EXISTS_PATTERN.test(errorMessage)) {
           console.warn(
             `Temp file collision on attempt ${attempt + 1}, retrying...`
           );
           await new Promise((resolve) =>
-            setTimeout(resolve, 50 * (attempt + 1))
+            window.setTimeout(resolve, 50 * (attempt + 1))
           );
           continue;
         }
@@ -201,10 +217,8 @@ export class TradeFileGenerator {
           } catch (cleanupError) {
             
             if (
-              cleanupError &&
-              typeof cleanupError === 'object' &&
-              'code' in cleanupError &&
-              cleanupError.code !== 'ENOENT'
+              getErrorCode(cleanupError) !== undefined &&
+              getErrorCode(cleanupError) !== 'ENOENT'
             ) {
               console.warn(
                 `Failed to cleanup temp file ${tempFile.path}:`,
@@ -342,13 +356,8 @@ export class TradeFileGenerator {
     const assetType = trade.assetType || this.determineAssetType(trade.symbol);
     logger.debug('[TradeFileGenerator] Final assetType used:', assetType);
 
-    const hasExplicitStatus =
-      trade.status === 'OPEN' || trade.status === 'CLOSED';
-    const tradeStatus: 'OPEN' | 'CLOSED' = hasExplicitStatus
-      ? (trade.status as 'OPEN' | 'CLOSED')
-      : trade.exit_time
-        ? 'CLOSED'
-        : 'OPEN';
+    const tradeStatus =
+      parseTradeStatus(trade.status) ?? (trade.exit_time ? 'CLOSED' : 'OPEN');
     const useDirectPnLInput =
       tradeStatus === 'OPEN' ? false : trade.useDirectPnLInput === true;
     const directPnLValue =
@@ -356,12 +365,15 @@ export class TradeFileGenerator {
       (useDirectPnLInput && trade.profit_loss !== undefined
         ? deriveRawDirectPnLFromStoredCombinedPnL({
             pnl: trade.profit_loss,
-            dividends: trade.dividends as any,
+            dividends: trade.dividends?.map((dividend) => ({
+              time: new Date(dividend.time),
+              amount: dividend.amount,
+            })),
             fees: trade.fees,
             swap: trade.swap,
             commission: trade.commission,
             rebate: trade.rebate,
-          } as any)
+          })
         : undefined);
     const normalizeStringList = (values: string[] | undefined): string[] => {
       if (!values?.length) {
@@ -407,7 +419,7 @@ export class TradeFileGenerator {
     const notes = trade.notes?.trim();
     const mtComment = trade.mt_comment?.trim() || undefined;
     const identityFields = buildTradeIdentityFields(
-      trade as unknown as Record<string, unknown>
+      Object.fromEntries(Object.entries(trade))
     );
 
     await ensureInstrumentOptionsExist(this.plugin, [
@@ -735,10 +747,8 @@ export class TradeFileGenerator {
           await this.plugin.app.vault.createFolder(currentPath);
         } catch (error) {
           
-          if (
-            !error.message ||
-            !FILE_ALREADY_EXISTS_PATTERN.test(error.message)
-          ) {
+          const errorMessage = getErrorMessage(error);
+          if (!FILE_ALREADY_EXISTS_PATTERN.test(errorMessage)) {
             throw error;
           }
         }

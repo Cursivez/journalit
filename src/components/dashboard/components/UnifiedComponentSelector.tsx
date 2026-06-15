@@ -18,15 +18,15 @@ import {
   DashboardLayout,
 } from '../utils/layoutUtils';
 import { eventBus } from '../../../services/events';
-import { t, TranslationKey } from '../../../lang/helpers';
+import { t } from '../../../lang/helpers';
 import { useGuideTarget } from '../../../guides/GuideRuntimeLayer';
 import { DASHBOARD_WIDGET_PICKER_TARGET_ID } from '../../../guides/dashboardGuideIds';
 
 interface UnifiedComponentSelectorProps {
   activeMetrics: string[];
   activeWidgets: string[];
-  onAddMetric: (metricId: string) => void;
-  onAddWidget: (widgetId: string) => void;
+  onAddMetric: (metricId: string) => void | Promise<void>;
+  onAddWidget: (widgetId: string) => void | Promise<void>;
   onClose: () => void;
 }
 
@@ -38,10 +38,13 @@ interface SelectorItemProps {
   item: SelectableItem;
   itemIndex: number;
   isSelected: boolean;
-  onAddMetric: (metric: MetricDefinition) => void;
-  onAddWidget: (widget: WidgetDefinition) => void;
+  onAddMetric: (metric: MetricDefinition) => void | Promise<void>;
+  onAddWidget: (widget: WidgetDefinition) => void | Promise<void>;
   onSelectIndex: (index: number) => void;
-  onItemKeyDown: (event: React.KeyboardEvent, action: () => void) => void;
+  onItemKeyDown: (
+    event: React.KeyboardEvent,
+    action: () => void | Promise<void>
+  ) => void;
 }
 
 const SelectorItem: React.FC<SelectorItemProps> = ({
@@ -54,14 +57,13 @@ const SelectorItem: React.FC<SelectorItemProps> = ({
   onItemKeyDown,
 }) => {
   const isMetric = item.type === 'metric';
-  const translationPrefix = isMetric ? 'metric' : 'widget';
   const action = () => {
     if (isMetric) {
-      onAddMetric(item.data);
+      void onAddMetric(item.data);
       return;
     }
 
-    onAddWidget(item.data);
+    void onAddWidget(item.data);
   };
 
   return (
@@ -81,12 +83,10 @@ const SelectorItem: React.FC<SelectorItemProps> = ({
       </div>
       <div className="journalit-shared-selector-body">
         <div className="journalit-shared-selector-item-title">
-          {t(`${translationPrefix}.${item.data.id}.name` as TranslationKey)}
+          {item.data.name}
         </div>
         <div className="journalit-shared-selector-item-description">
-          {t(
-            `${translationPrefix}.${item.data.id}.description` as TranslationKey
-          )}
+          {item.data.description}
         </div>
       </div>
     </div>
@@ -99,10 +99,13 @@ interface SelectorSectionProps {
   selectedIndex: number;
   spaced?: boolean;
   getItemIndex: (type: 'metric' | 'widget', id: string) => number;
-  onAddMetric: (metric: MetricDefinition) => void;
-  onAddWidget: (widget: WidgetDefinition) => void;
+  onAddMetric: (metric: MetricDefinition) => void | Promise<void>;
+  onAddWidget: (widget: WidgetDefinition) => void | Promise<void>;
   onSelectIndex: (index: number) => void;
-  onItemKeyDown: (event: React.KeyboardEvent, action: () => void) => void;
+  onItemKeyDown: (
+    event: React.KeyboardEvent,
+    action: () => void | Promise<void>
+  ) => void;
 }
 
 const SelectorSection: React.FC<SelectorSectionProps> = ({
@@ -160,8 +163,8 @@ function useSelectorKeyboardNavigation({
   selectableItems: SelectableItem[];
   selectedIndex: number;
   setSelectedIndex: React.Dispatch<React.SetStateAction<number>>;
-  handleAddMetric: (metric: MetricDefinition) => void;
-  handleAddWidget: (widget: WidgetDefinition) => void;
+  handleAddMetric: (metric: MetricDefinition) => void | Promise<void>;
+  handleAddWidget: (widget: WidgetDefinition) => void | Promise<void>;
 }) {
   const keyboardSelectionRef = useRef({
     onClose,
@@ -214,9 +217,9 @@ function useSelectorKeyboardNavigation({
             currentSelection.selectableItems[currentSelection.selectedIndex];
           if (item) {
             if (item.type === 'metric') {
-              currentSelection.handleAddMetric(item.data);
+              void currentSelection.handleAddMetric(item.data);
             } else {
-              currentSelection.handleAddWidget(item.data);
+              void currentSelection.handleAddWidget(item.data);
             }
           }
           break;
@@ -224,8 +227,9 @@ function useSelectorKeyboardNavigation({
       }
     };
 
-    document.addEventListener('keydown', handleKeyDown, true);
-    return () => document.removeEventListener('keydown', handleKeyDown, true);
+    window.activeDocument.addEventListener('keydown', handleKeyDown, true);
+    return () =>
+      window.activeDocument.removeEventListener('keydown', handleKeyDown, true);
   }, [setSelectedIndex]);
 }
 
@@ -298,7 +302,7 @@ const UnifiedComponentSelectorBase: React.FC<UnifiedComponentSelectorProps> = ({
           };
 
           await saveLayout(plugin, 'Default', newLayout);
-          onAddMetric(metric.id);
+          void onAddMetric(metric.id);
 
           eventBus.publish('metrics:changed', {
             activeMetrics: updatedTopSection,
@@ -307,7 +311,7 @@ const UnifiedComponentSelectorBase: React.FC<UnifiedComponentSelectorProps> = ({
           console.error('Error adding metric:', error);
         }
       } else {
-        onAddMetric(metric.id);
+        void onAddMetric(metric.id);
       }
     },
     [activeMetrics, plugin, onAddMetric]
@@ -359,7 +363,7 @@ const UnifiedComponentSelectorBase: React.FC<UnifiedComponentSelectorProps> = ({
           };
 
           await saveLayout(plugin, 'Default', newLayout);
-          onAddWidget(widget.id);
+          void onAddWidget(widget.id);
 
           eventBus.publish('widgets:changed', {
             activeWidgets: [...activeWidgets, widget.id],
@@ -368,7 +372,7 @@ const UnifiedComponentSelectorBase: React.FC<UnifiedComponentSelectorProps> = ({
           console.error('Error adding widget:', error);
         }
       } else {
-        onAddWidget(widget.id);
+        void onAddWidget(widget.id);
       }
     },
     [activeWidgets, plugin, onAddWidget]
@@ -386,8 +390,8 @@ const UnifiedComponentSelectorBase: React.FC<UnifiedComponentSelectorProps> = ({
   useEffect(() => {
     if (!listRef.current) return;
     const items = listRef.current.querySelectorAll('[data-selectable]');
-    const selected = items[selectedIndex] as HTMLElement;
-    if (selected) {
+    const selected = items[selectedIndex];
+    if (selected?.instanceOf(HTMLElement)) {
       selected.scrollIntoView({ block: 'nearest' });
     }
   }, [selectedIndex]);
@@ -410,7 +414,7 @@ const UnifiedComponentSelectorBase: React.FC<UnifiedComponentSelectorProps> = ({
 
       event.preventDefault();
       event.stopPropagation();
-      action();
+      void action();
     },
     []
   );

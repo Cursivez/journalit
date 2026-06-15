@@ -24,7 +24,6 @@ import {
   TopBreakdownDimension,
   TopBreakdownValueMode,
 } from '../../../settings/types';
-import { ensureHomeWidgetStyles } from '../../../styles/homeWidgetStyles';
 import { cssVars } from '../../../styles/inlineStylePolicy';
 import { Tooltip } from '../../shared/Tooltip';
 import {
@@ -561,9 +560,7 @@ const SetupLeaderboardWidgetComponent: React.FC<
     }
   }, [resolvedConfig.dimension, resolvedConfig.valueMode, showModal]);
 
-  const filteredTrades = useFilteredByPeriod(
-    dashboardData?.trades as Trade[] | undefined
-  );
+  const filteredTrades = useFilteredByPeriod(dashboardData?.trades);
   const currencyConversion = buildCurrencyConversionMetadata(
     dashboardData?.metrics
   );
@@ -687,7 +684,7 @@ const SetupLeaderboardWidgetComponent: React.FC<
         draftValueMode={draftValueMode}
         onDraftDimensionChange={setDraftDimension}
         onDraftValueModeChange={setDraftValueMode}
-        onSave={handleSaveConfig}
+        onSave={() => void handleSaveConfig()}
         onCancel={handleCancelModal}
       />
     );
@@ -710,7 +707,7 @@ const SetupLeaderboardWidgetComponent: React.FC<
   return (
     <div
       className="journalit-home-setups journalit-home-setups--active"
-      onClick={handleOpenModal}
+      onClick={() => void handleOpenModal()}
       role="button"
       tabIndex={0}
       onKeyDown={(e) => {
@@ -726,7 +723,7 @@ const SetupLeaderboardWidgetComponent: React.FC<
           <CurrencyConversionInfo
             metadata={currencyConversion}
             trades={(filteredTrades || []).filter((trade) =>
-              isPnlContributingTrade(trade as Trade)
+              isPnlContributingTrade(trade)
             )}
           />
         )}

@@ -2,7 +2,7 @@
 
 import { TRADE_ACCOUNT_CELL_STYLES } from '../shared/tradeAccountCellStyles';
 
-const TRADE_LOG_STYLES = `
+export const TRADE_LOG_STYLES = `
 
 .journalit-trade-log-view-container {
   height: 100%;
@@ -861,7 +861,7 @@ const TRADE_LOG_STYLES = `
 }
 
 
-.node-chevron {
+.journalit-trade-log-view-container .node-chevron {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -871,32 +871,40 @@ const TRADE_LOG_STYLES = `
   border: none;
   background: transparent !important;
   color: var(--text-muted);
+  box-shadow: none !important;
+  border-radius: 0;
+  appearance: none;
+  -webkit-appearance: none;
   cursor: pointer;
   position: relative;
 }
 
-.node-chevron:hover {
+.journalit-trade-log-view-container .node-chevron:hover {
   background: transparent !important;
   color: var(--text-normal);
+  box-shadow: none !important;
 }
 
-.node-chevron:active {
+.journalit-trade-log-view-container .node-chevron:active {
   background: transparent !important;
   color: var(--text-normal);
+  box-shadow: none !important;
 }
 
-.node-chevron:focus {
+.journalit-trade-log-view-container .node-chevron:focus {
   background: transparent !important;
   outline: none;
+  box-shadow: none !important;
 }
 
-.node-chevron:focus-visible {
+.journalit-trade-log-view-container .node-chevron:focus-visible {
   background: transparent !important;
   outline: 2px solid var(--interactive-accent);
   outline-offset: 2px;
+  box-shadow: none !important;
 }
 
-.node-chevron svg {
+.journalit-trade-log-view-container .node-chevron svg {
   width: 16px;
   height: 16px;
 }
@@ -2236,8 +2244,8 @@ ${TRADE_ACCOUNT_CELL_STYLES}
 }
 
 .journalit-trade-log-view-container .journalit-dashboard-date-range-inputs.journalit-dashboard-custom-date-dropdown {
-  width: fit-content !important;
-  max-width: none !important;
+  width: 300px !important;
+  max-width: min(300px, calc(100vw - 32px)) !important;
 }
 
 .journalit-trade-log-view-container .journalit-dashboard-date-range-inputs.journalit-dashboard-custom-date-dropdown.position-left {
@@ -2265,11 +2273,3 @@ ${TRADE_ACCOUNT_CELL_STYLES}
 }
 
 `;
-
-export function injectTradeLogStyles(): void {
-  return;
-}
-
-export function removeTradeLogStyles(): void {
-  return;
-}

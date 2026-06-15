@@ -19,8 +19,8 @@ import { HOME_WIDGET_SELECTOR_TARGET_ID } from '../../../guides/homeGuideIds';
 interface HomeWidgetSelectorProps {
   activeWidgets: string[];
   hiddenQuickLinks: QuickLinkButton[];
-  onAddWidget: (widgetId: string) => void;
-  onRestoreQuickLink: (quickLinkId: string) => void;
+  onAddWidget: (widgetId: string) => void | Promise<void>;
+  onRestoreQuickLink: (quickLinkId: string) => void | Promise<void>;
   onClose: () => void;
 }
 
@@ -118,9 +118,9 @@ export const HomeWidgetSelector: React.FC<HomeWidgetSelectorProps> = React.memo(
             const item = selectableItems[currentSelectedIndex];
             if (item) {
               if (item.type === 'widget') {
-                onAddWidget(item.id);
+                void onAddWidget(item.id);
               } else {
-                onRestoreQuickLink(item.id);
+                void onRestoreQuickLink(item.id);
               }
             }
             break;
@@ -128,8 +128,13 @@ export const HomeWidgetSelector: React.FC<HomeWidgetSelectorProps> = React.memo(
         }
       };
 
-      document.addEventListener('keydown', handleKeyDown, true);
-      return () => document.removeEventListener('keydown', handleKeyDown, true);
+      window.activeDocument.addEventListener('keydown', handleKeyDown, true);
+      return () =>
+        window.activeDocument.removeEventListener(
+          'keydown',
+          handleKeyDown,
+          true
+        );
     }, [
       onClose,
       selectableItems,
@@ -143,7 +148,7 @@ export const HomeWidgetSelector: React.FC<HomeWidgetSelectorProps> = React.memo(
       if (!listRef.current) return;
       const items = listRef.current.querySelectorAll('[data-selectable]');
       const selected = items[currentSelectedIndex];
-      if (selected instanceof HTMLElement) {
+      if (selected.instanceOf(HTMLElement)) {
         selected.scrollIntoView({ block: 'nearest' });
       }
     }, [currentSelectedIndex]);
@@ -220,11 +225,11 @@ export const HomeWidgetSelector: React.FC<HomeWidgetSelectorProps> = React.memo(
                       tabIndex={0}
                       key={widget.id}
                       data-selectable
-                      onClick={() => onAddWidget(widget.id)}
+                      onClick={() => void onAddWidget(widget.id)}
                       onKeyDown={(event) => {
                         if (event.key !== ' ') return;
                         event.preventDefault();
-                        onAddWidget(widget.id);
+                        void onAddWidget(widget.id);
                       }}
                       onMouseEnter={() => setSelectedIndex(currentIndex)}
                       onFocus={() => setSelectedIndex(currentIndex)}
@@ -277,11 +282,11 @@ export const HomeWidgetSelector: React.FC<HomeWidgetSelectorProps> = React.memo(
                       tabIndex={0}
                       key={quickLink.id}
                       data-selectable
-                      onClick={() => onRestoreQuickLink(quickLink.id)}
+                      onClick={() => void onRestoreQuickLink(quickLink.id)}
                       onKeyDown={(event) => {
                         if (event.key !== ' ') return;
                         event.preventDefault();
-                        onRestoreQuickLink(quickLink.id);
+                        void onRestoreQuickLink(quickLink.id);
                       }}
                       onMouseEnter={() => setSelectedIndex(currentIndex)}
                       onFocus={() => setSelectedIndex(currentIndex)}

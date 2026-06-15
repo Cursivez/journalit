@@ -1,6 +1,6 @@
 
 
-const KEY_EVENTS_WIDGET_STYLES = `
+export const KEY_EVENTS_WIDGET_STYLES = `
 .journalit-key-events .key-events-wrapper {
   display: flex;
   justify-content: center;
@@ -492,13 +492,3 @@ const KEY_EVENTS_WIDGET_STYLES = `
   font-style: italic;
 }
 `;
-
-const keyEventsWidgetStylesInjected = false;
-
-
-function injectKeyEventsWidgetStyles(): void {
-  return;
-}
-
-
-export function ensureKeyEventsWidgetStyles(): void {}

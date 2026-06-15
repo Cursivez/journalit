@@ -1,8 +1,5 @@
 
-
-const SETTINGS_RESET_MODAL_STYLE_ID = 'journalit-settings-reset-modal-styles';
-
-const SETTINGS_RESET_MODAL_STYLES = `
+export const SETTINGS_RESET_MODAL_STYLES = `
   .journalit-settings-reset-modal {
     padding: 20px;
     font-family: var(--default-font);
@@ -87,13 +84,3 @@ const SETTINGS_RESET_MODAL_STYLES = `
     color: var(--text-error);
   }
 `;
-
-const settingsResetModalStylesInjected = false;
-
-function injectSettingsResetModalStyles(): void {
-  return;
-}
-
-export function ensureSettingsResetModalStyles(): void {
-  return;
-}

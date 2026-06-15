@@ -65,7 +65,7 @@ export const TradeSyncTab: React.FC<TradeSyncTabProps> = ({ plugin }) => {
     const result = await new SubscriptionTierService(plugin).refreshTier(
       'manual refresh'
     );
-    document.dispatchEvent(new CustomEvent('journalit:subscription-changed'));
+    window.dispatchEvent(new CustomEvent('journalit:subscription-changed'));
 
     if (result.entitlements?.features.metatraderSync.enabled !== true) {
       new Notice(t('premium.gate.not-pro-yet'));

@@ -9,12 +9,12 @@ import { t } from '../../../lang/helpers';
 
 interface ContextualFinalStepProps {
   path: OnboardingPath;
-  onBack: () => void;
-  onFinish: () => void;
-  onChangeHotkey: () => void;
-  onAddTrade: () => void;
-  onOpenCsv: () => void;
-  onOpenMetaTrader: () => void;
+  onBack: () => void | Promise<void>;
+  onFinish: () => void | Promise<void>;
+  onChangeHotkey: () => void | Promise<void>;
+  onAddTrade: () => void | Promise<void>;
+  onOpenCsv: () => void | Promise<void>;
+  onOpenMetaTrader: () => void | Promise<void>;
 }
 
 export const ContextualFinalStep: React.FC<ContextualFinalStepProps> = ({

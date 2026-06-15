@@ -101,7 +101,7 @@ export interface Trade {
   optionType?: string; 
   account?: string | string[]; 
 
-  tradeStatus?: 'OPEN' | 'CLOSED' | string; 
+  tradeStatus?: string; 
   useDirectPnLInput?: boolean; 
   exits?: Array<{
     time?: Date | string | null;

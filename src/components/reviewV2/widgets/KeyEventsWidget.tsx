@@ -24,7 +24,6 @@ import { SkeletonBox } from '../../shared';
 import { InvalidContextMessage } from './InvalidContextMessage';
 import { OptionType } from '../../../services/options/CustomOptionsService';
 import { useEventBus } from '../../../hooks/useEventBus';
-import { ensureKeyEventsWidgetStyles } from '../../../styles/keyEventsWidgetStyles';
 import { parseLocalDateSafe } from '../../../utils/dateUtils';
 import { t, type TranslationKey } from '../../../lang/helpers';
 
@@ -45,7 +44,37 @@ interface KeyEventsWidgetProps {
 
 type ReviewMode = 'weekly-review' | 'drc';
 
-const SUPPORTED_TYPES = ['weekly-review', 'drc'];
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  Boolean(value) && typeof value === 'object' && !Array.isArray(value);
+
+const asRecord = (value: unknown): Record<string, unknown> | undefined =>
+  isRecord(value) ? value : undefined;
+
+const getReviewMode = (value: unknown): ReviewMode | null => {
+  switch (value) {
+    case 'weekly-review':
+    case 'drc':
+      return value;
+    default:
+      return null;
+  }
+};
+
+const asNewsEvents = (value: unknown): NewsEvent[] =>
+  Array.isArray(value)
+    ? value.filter((item): item is NewsEvent => {
+        const record = asRecord(item);
+        return Boolean(record && typeof record.event === 'string');
+      })
+    : [];
+
+const parseFrontmatterDate = (value: unknown): Date | null =>
+  typeof value === 'string' ||
+  typeof value === 'number' ||
+  value instanceof Date
+    ? parseLocalDateSafe(value)
+    : null;
+
 const DAYS_OF_WEEK = [
   'Monday',
   'Tuesday',
@@ -57,6 +86,17 @@ const DAYS_OF_WEEK = [
 ];
 const EVENT_COLORS = ['gray', 'red', 'orange', 'yellow'] as const;
 type EventColor = (typeof EVENT_COLORS)[number];
+
+const getEventColor = (value: unknown): EventColor => {
+  switch (value) {
+    case 'red':
+    case 'orange':
+    case 'yellow':
+      return value;
+    default:
+      return 'gray';
+  }
+};
 
 const MAX_FRONTMATTER_RETRIES = 3;
 const FRONTMATTER_RETRY_DELAY_MS = 100;
@@ -110,7 +150,7 @@ export const KeyEventsWidget: React.FC<KeyEventsWidgetProps> = React.memo(
     const [editEventNotes, setEditEventNotes] = useState('');
 
     const retryCountRef = useRef(0);
-    const retryTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const retryTimeoutRef = useRef<number | null>(null);
 
     
     useEffect(() => {}, []);
@@ -119,7 +159,7 @@ export const KeyEventsWidget: React.FC<KeyEventsWidgetProps> = React.memo(
     useEffect(() => {
       return () => {
         if (retryTimeoutRef.current) {
-          clearTimeout(retryTimeoutRef.current);
+          window.clearTimeout(retryTimeoutRef.current);
         }
       };
     }, []);
@@ -169,14 +209,14 @@ export const KeyEventsWidget: React.FC<KeyEventsWidgetProps> = React.memo(
       }
 
       const cache = plugin.app.metadataCache.getFileCache(file);
-      const frontmatter = cache?.frontmatter;
+      const frontmatter = asRecord(cache?.frontmatter);
 
       if (!frontmatter) {
         
         if (retryCountRef.current < MAX_FRONTMATTER_RETRIES) {
           retryCountRef.current++;
-          retryTimeoutRef.current = setTimeout(
-            () => loadEvents(),
+          retryTimeoutRef.current = window.setTimeout(
+            () => void loadEvents(),
             FRONTMATTER_RETRY_DELAY_MS
           );
           return;
@@ -186,27 +226,25 @@ export const KeyEventsWidget: React.FC<KeyEventsWidgetProps> = React.memo(
         return;
       }
 
-      const type = frontmatter.type;
-      if (!SUPPORTED_TYPES.includes(type)) {
+      const type = getReviewMode(frontmatter.type);
+      if (!type) {
         setIsValidContext(false);
         setLoading(false);
         return;
       }
 
-      setReviewMode(type as ReviewMode);
+      setReviewMode(type);
 
       if (type === 'weekly-review') {
         
-        const keyEvents: NewsEvent[] = frontmatter.keyEvents || [];
+        const keyEvents = asNewsEvents(frontmatter.keyEvents);
         setEvents(keyEvents);
         setIsValidContext(true);
         setLoading(false);
       } else if (type === 'drc') {
         
         
-        const date = frontmatter.date
-          ? parseLocalDateSafe(frontmatter.date)
-          : null;
+        const date = parseFrontmatterDate(frontmatter.date);
 
         if (!date) {
           setDrcDate(null);
@@ -247,7 +285,7 @@ export const KeyEventsWidget: React.FC<KeyEventsWidgetProps> = React.memo(
     useEffect(() => {
       retryCountRef.current = 0;
       setLoading(true);
-      loadEvents();
+      void loadEvents();
 
       if (preview) {
         return;
@@ -276,7 +314,7 @@ export const KeyEventsWidget: React.FC<KeyEventsWidgetProps> = React.memo(
           payload.action === 'updated'
         ) {
           
-          loadEvents();
+          void loadEvents();
         }
       },
       [reviewMode, loadEvents]
@@ -365,7 +403,7 @@ export const KeyEventsWidget: React.FC<KeyEventsWidgetProps> = React.memo(
       try {
         
         if (plugin.optionsService) {
-          plugin.optionsService.addOrUpdateEventOption(
+          void plugin.optionsService.addOrUpdateEventOption(
             eventName,
             selectedColor
           );
@@ -417,7 +455,7 @@ export const KeyEventsWidget: React.FC<KeyEventsWidgetProps> = React.memo(
     const handleStartEditEvent = (event: NewsEvent, index: number) => {
       setEditingEventIndex(index);
       setEditEventName(event.event);
-      setEditEventColor((event.color as EventColor) || 'gray');
+      setEditEventColor(getEventColor(event.color));
       setEditEventDay(event.day || '');
       setEditEventNotes(event.notes || '');
     };
@@ -434,7 +472,7 @@ export const KeyEventsWidget: React.FC<KeyEventsWidgetProps> = React.memo(
       if (editingEventIndex === null || !editEventName.trim()) return;
 
       if (plugin.optionsService) {
-        plugin.optionsService.addOrUpdateEventOption(
+        void plugin.optionsService.addOrUpdateEventOption(
           editEventName,
           editEventColor
         );
@@ -497,7 +535,7 @@ export const KeyEventsWidget: React.FC<KeyEventsWidgetProps> = React.memo(
         const savedOption =
           plugin.optionsService.getEventOptionByName(eventName);
         if (savedOption?.color) {
-          setSelectedColor(savedOption.color as EventColor);
+          setSelectedColor(getEventColor(savedOption.color));
         }
         setEventNotes(savedOption?.notes || '');
       }
@@ -506,13 +544,19 @@ export const KeyEventsWidget: React.FC<KeyEventsWidgetProps> = React.memo(
     
     const handleSaveEventOption = (option: string) => {
       if (plugin.optionsService) {
-        plugin.optionsService.addOrUpdateEventOption(option, selectedColor);
+        void plugin.optionsService.addOrUpdateEventOption(
+          option,
+          selectedColor
+        );
       }
     };
 
     const handleSaveEditEventOption = (option: string) => {
       if (plugin.optionsService) {
-        plugin.optionsService.addOrUpdateEventOption(option, editEventColor);
+        void plugin.optionsService.addOrUpdateEventOption(
+          option,
+          editEventColor
+        );
       }
     };
 
@@ -578,7 +622,7 @@ export const KeyEventsWidget: React.FC<KeyEventsWidgetProps> = React.memo(
                   const savedOption =
                     plugin.optionsService?.getEventOptionByName(eventName);
                   if (savedOption?.color) {
-                    setEditEventColor(savedOption.color as EventColor);
+                    setEditEventColor(getEventColor(savedOption.color));
                   }
                   setEditEventNotes(savedOption?.notes || '');
                 }}
@@ -651,13 +695,13 @@ export const KeyEventsWidget: React.FC<KeyEventsWidgetProps> = React.memo(
               <div className="key-events-edit-actions">
                 <button
                   className="key-events-secondary-button"
-                  onClick={handleCancelEditEvent}
+                  onClick={() => void handleCancelEditEvent()}
                 >
                   {t('button.cancel')}
                 </button>
                 <button
                   className="key-events-save-button"
-                  onClick={handleSaveEditEvent}
+                  onClick={() => void handleSaveEditEvent()}
                   disabled={!editEventName.trim()}
                 >
                   {t('button.save')}
@@ -686,14 +730,14 @@ export const KeyEventsWidget: React.FC<KeyEventsWidgetProps> = React.memo(
               <div className="key-events-item-actions">
                 <button
                   className="key-events-action-button"
-                  onClick={() => handleStartEditEvent(event, index)}
+                  onClick={() => void handleStartEditEvent(event, index)}
                   aria-label={t('button.edit')}
                 >
                   <Edit size={14} aria-hidden="true" />
                 </button>
                 <button
                   className="key-events-remove-button"
-                  onClick={() => handleRemoveEvent(index)}
+                  onClick={() => void handleRemoveEvent(index)}
                   aria-label={t('button.remove')}
                 >
                   <Trash size={14} aria-hidden="true" />
@@ -850,14 +894,14 @@ export const KeyEventsWidget: React.FC<KeyEventsWidgetProps> = React.memo(
                 {events.length > 0 && (
                   <button
                     className="key-events-secondary-button"
-                    onClick={handleCancelAddEvent}
+                    onClick={() => void handleCancelAddEvent()}
                   >
                     {t('button.cancel')}
                   </button>
                 )}
                 <button
                   className="key-events-add-button"
-                  onClick={handleAddEvent}
+                  onClick={() => void handleAddEvent()}
                   disabled={!selectedEvent.trim() || isSavingEvent}
                 >
                   {t('widget.key-events.add-button')}

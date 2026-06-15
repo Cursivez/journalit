@@ -2,7 +2,7 @@
 
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { t } from '../../../lang/helpers';
-import { calculateMetrics } from '../../dashboard/utils/dataUtils';
+import { calculateMetrics, type Trade } from '../../dashboard/utils/dataUtils';
 import { CurrencyCode } from '../../../utils/currencyConfig';
 import { getSingleExplicitCurrency } from '../../../utils/currencyAggregation';
 import {
@@ -23,7 +23,6 @@ import {
   type ReviewCurrencyConversionMetadata,
 } from '../../shared/display/CurrencyConversionInfo';
 import { cssVars } from '../../../styles/inlineStylePolicy';
-import type { UnifiedFilters } from '../../shared/filters/types';
 import type { CachedReviewData } from '../../../services/reviewV2/ReviewDataCache';
 import {
   getPreviousBusinessDay,
@@ -43,6 +42,18 @@ import {
   getReviewTradeTradingDay,
   splitReviewTradeByRealizedPnlEvent,
 } from '../utils/reviewTradeDates';
+
+type ReviewStatsTrade = Trade &
+  CurrencyConversionTrade &
+  Record<string, unknown>;
+
+function asReviewStatsTrades(value: unknown): ReviewStatsTrade[] {
+  return Array.isArray(value)
+    ? value.filter((item): item is ReviewStatsTrade =>
+        Boolean(item && typeof item === 'object' && !Array.isArray(item))
+      )
+    : [];
+}
 
 interface StatsWidgetProps {
   filePath: string;
@@ -99,20 +110,24 @@ export const StatsWidget: React.FC<StatsWidgetProps> = React.memo(
     );
 
     
-    const trades = useMemo(
+    const trades = useMemo<ReviewStatsTrade[]>(
       () =>
-        preview && previewData
-          ? previewData.trades
-          : (cachedData?.analyticsBasisTrades ?? cachedData?.trades ?? []),
+        asReviewStatsTrades(
+          preview && previewData
+            ? previewData.trades
+            : (cachedData?.analyticsBasisTrades ?? cachedData?.trades ?? [])
+        ),
       [cachedData, preview, previewData]
     );
-    const metricTrades = useMemo(
+    const metricTrades = useMemo<ReviewStatsTrade[]>(
       () =>
-        preview && previewData
-          ? trades
-          : trades.flatMap((trade) =>
-              splitReviewTradeByRealizedPnlEvent(trade, plugin)
-            ),
+        asReviewStatsTrades(
+          preview && previewData
+            ? trades
+            : trades.flatMap((trade) =>
+                splitReviewTradeByRealizedPnlEvent(trade, plugin)
+              )
+        ),
       [plugin, preview, previewData, trades]
     );
     const loading = preview ? false : cacheLoading;
@@ -130,44 +145,47 @@ export const StatsWidget: React.FC<StatsWidgetProps> = React.memo(
       !preview
     );
 
-    const prepareDisplayTrades = useCallback((metricTrades: typeof trades) => {
-      const applyAccountCountMultiplier = false;
+    const prepareDisplayTrades = useCallback(
+      (metricTrades: ReviewStatsTrade[]) => {
+        const applyAccountCountMultiplier = false;
 
-      return metricTrades.filter(isPnlContributingTrade).map((t) => {
-        const accountCount = getAccountCount(t);
-        const displayPnL = getDisplayPnL(
-          getEffectivePnL(t),
-          accountCount,
-          applyAccountCountMultiplier
-        );
-        const breakEvenBalanceForDisplay = applyAccountCountMultiplier
-          ? ((t as Record<string, unknown>)
-              .breakEvenAccountCurrentBalanceTotal ??
-            (t as Record<string, unknown>).breakEvenAccountCurrentBalance)
-          : (t as Record<string, unknown>).breakEvenAccountCurrentBalance;
-        const originalPnlForDisplay =
-          typeof t.originalPnlBeforeConversion === 'number'
-            ? getDisplayPnL(
-                t.originalPnlBeforeConversion,
-                accountCount,
-                applyAccountCountMultiplier
-              )
-            : t.originalPnlBeforeConversion;
+        return metricTrades.filter(isPnlContributingTrade).map((t) => {
+          const accountCount = getAccountCount(t);
+          const displayPnL = getDisplayPnL(
+            getEffectivePnL(t),
+            accountCount,
+            applyAccountCountMultiplier
+          );
+          const breakEvenBalanceForDisplay = applyAccountCountMultiplier
+            ? ((t as Record<string, unknown>)
+                .breakEvenAccountCurrentBalanceTotal ??
+              (t as Record<string, unknown>).breakEvenAccountCurrentBalance)
+            : (t as Record<string, unknown>).breakEvenAccountCurrentBalance;
+          const originalPnlForDisplay =
+            typeof t.originalPnlBeforeConversion === 'number'
+              ? getDisplayPnL(
+                  t.originalPnlBeforeConversion,
+                  accountCount,
+                  applyAccountCountMultiplier
+                )
+              : t.originalPnlBeforeConversion;
 
-        return {
-          ...t,
-          pnl: displayPnL,
-          originalPnlBeforeConversion: originalPnlForDisplay,
-          breakEvenAccountCurrentBalance:
-            typeof breakEvenBalanceForDisplay === 'number'
-              ? breakEvenBalanceForDisplay
-              : undefined,
-        };
-      });
-    }, []);
+          return {
+            ...t,
+            pnl: displayPnL,
+            originalPnlBeforeConversion: originalPnlForDisplay,
+            breakEvenAccountCurrentBalance:
+              typeof breakEvenBalanceForDisplay === 'number'
+                ? breakEvenBalanceForDisplay
+                : undefined,
+          };
+        });
+      },
+      []
+    );
 
     const calculateStatsMetrics = useCallback(
-      (metricTrades: typeof trades) => {
+      (metricTrades: ReviewStatsTrade[]) => {
         const tradesWithDisplayPnL = prepareDisplayTrades(metricTrades);
 
         if (tradesWithDisplayPnL.length === 0) {
@@ -240,7 +258,9 @@ export const StatsWidget: React.FC<StatsWidgetProps> = React.memo(
       );
     }, [currentDisplayTrades, plugin]);
 
-    const [previousTrades, setPreviousTrades] = useState<typeof trades>([]);
+    const [previousTrades, setPreviousTrades] = useState<ReviewStatsTrade[]>(
+      []
+    );
 
     useEffect(() => {
       if (preview || !cachedData || !plugin.tradeService) {
@@ -263,7 +283,7 @@ export const StatsWidget: React.FC<StatsWidgetProps> = React.memo(
         );
 
         if (isMounted) {
-          setPreviousTrades(previousPeriodTrades);
+          setPreviousTrades(asReviewStatsTrades(previousPeriodTrades));
         }
       })().catch((error) => {
         console.error(
@@ -650,12 +670,15 @@ async function getPreviousPeriodTrades(
   if (!plugin.reviewDataCache) return [];
 
   const eventScopedTrades = filteredByDate.flatMap((trade) =>
-    splitReviewTradeByRealizedPnlEvent(trade as PartialTradeFrontmatter, plugin)
+    splitReviewTradeByRealizedPnlEvent(trade, plugin)
+  );
+  const eventScopedRecords = eventScopedTrades.map((trade) =>
+    Object.fromEntries(Object.entries(trade))
   );
 
   return plugin.reviewDataCache.prepareTradesForReviewFilters(
-    eventScopedTrades as unknown as Array<Record<string, unknown>>,
-    cachedData.filters as UnifiedFilters
+    eventScopedRecords,
+    cachedData.filters
   );
 }
 

@@ -39,7 +39,7 @@ interface DashboardDataContextValue {
   forceRefreshData: () => Promise<void>;
   getMetricData: (metricId: string) => MetricValue[];
 
-  getWidgetData: (widgetId: string) => any;
+  getWidgetData: (widgetId: string) => unknown;
 
   
   lastFetchTime: number;
@@ -197,7 +197,7 @@ const getDashboardMetricData = (
 const getDashboardWidgetData = (
   dashboardData: DashboardData | null,
   widgetId: string
-): any => {
+): unknown => {
   if (!dashboardData) return null;
 
   switch (widgetId) {
@@ -344,7 +344,8 @@ export const DashboardDataProvider: React.FC<DashboardDataProviderProps> = ({
   );
 
   const getWidgetData = useCallback(
-    (widgetId: string): any => getDashboardWidgetData(dashboardData, widgetId),
+    (widgetId: string): unknown =>
+      getDashboardWidgetData(dashboardData, widgetId),
     [dashboardData]
   );
 
@@ -362,32 +363,32 @@ export const DashboardDataProvider: React.FC<DashboardDataProviderProps> = ({
     }
 
     
-    const timeoutId = setTimeout(() => {
-      refreshDataRef.current();
+    const timeoutId = window.setTimeout(() => {
+      void refreshDataRef.current();
     }, 100);
 
-    return () => clearTimeout(timeoutId);
+    return () => window.clearTimeout(timeoutId);
   }, [filters, dashboardData]);
 
   
   useEventBus(
     'trade:changed',
     () => {
-      refreshData(true);
+      void refreshData(true);
     },
     isActive
   );
   useEventBus(
     'backtest-trade:changed',
     () => {
-      refreshData(true);
+      void refreshData(true);
     },
     isActive
   );
   useEventBus(
     'account:changed',
     () => {
-      refreshData(true);
+      void refreshData(true);
     },
     isActive
   );
@@ -396,7 +397,7 @@ export const DashboardDataProvider: React.FC<DashboardDataProviderProps> = ({
   useEventBus(
     'folder-path:changed',
     () => {
-      refreshData(true);
+      void refreshData(true);
     },
     isActive
   );
@@ -409,7 +410,7 @@ export const DashboardDataProvider: React.FC<DashboardDataProviderProps> = ({
         payload?.section === 'general' ||
         payload?.section === 'copyTradeAdjustments'
       ) {
-        refreshData(true);
+        void refreshData(true);
       }
     },
     isActive
@@ -432,7 +433,7 @@ export const DashboardDataProvider: React.FC<DashboardDataProviderProps> = ({
 
   React.useEffect(() => {
     if (isActive && !wasActiveRef.current) {
-      refreshData(true);
+      void refreshData(true);
     }
     wasActiveRef.current = isActive;
   }, [isActive, refreshData]);

@@ -19,7 +19,7 @@ import type { OnboardingService } from '../services/onboarding';
 import type { FolderPathService } from '../services/core/FolderPathService';
 
 
-interface ServiceRegistry {
+export interface ServiceRegistry {
   tradeService: TradeService;
   setupService: SetupService;
   drcService: DRCService;

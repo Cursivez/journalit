@@ -77,12 +77,15 @@ export interface AccountChangedPayload {
     | 'created'
     | 'updated'
     | 'deleted'
+    | 'type-changed'
     | 'transaction-added'
     | 'transaction-deleted'
     | 'batch-updated';
   accountId?: string;
   accountName?: string;
   accountNames?: string[];
+  accountType?: string;
+  timestamp?: number;
 }
 
 
@@ -193,9 +196,9 @@ export interface EventMap {
 export type EventName = keyof EventMap;
 
 
-export type EventCallback<K extends EventName> = EventMap[K] extends void
-  ? () => void
-  : (payload: EventMap[K]) => void;
+export type EventCallback<K extends EventName> = (
+  payload: EventMap[K]
+) => void | Promise<void>;
 
 
 export type Unsubscribe = () => void;

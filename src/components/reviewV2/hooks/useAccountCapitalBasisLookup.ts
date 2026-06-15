@@ -38,8 +38,20 @@ export function useAccountCapitalBasisLookup(
     return refreshLookup();
   }, [refreshLookup]);
 
-  useEventBus('account:changed', refreshLookup, enabled);
-  useEventBus('settings:changed', refreshLookup, enabled);
+  useEventBus(
+    'account:changed',
+    () => {
+      refreshLookup();
+    },
+    enabled
+  );
+  useEventBus(
+    'settings:changed',
+    () => {
+      refreshLookup();
+    },
+    enabled
+  );
 
   return lookup;
 }

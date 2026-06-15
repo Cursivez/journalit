@@ -21,7 +21,6 @@ import {
 import { PositionSizeAssetType } from '../../../settings/types';
 import { getSizePrecision } from '../../forms/trade/utils';
 import { hasTranslation, t } from '../../../lang/helpers';
-import { ensureHomeWidgetStyles } from '../../../styles/homeWidgetStyles';
 
 interface PositionSizeWidgetProps {
   plugin: JournalitPlugin;
@@ -1048,7 +1047,7 @@ const PositionSizeWidgetComponent: React.FC<PositionSizeWidgetProps> = ({
   return (
     <div className="journalit-home-position">
       <PositionSizeHeader
-        onSaveDefaults={handleSaveDefaults}
+        onSaveDefaults={() => void handleSaveDefaults()}
         onReset={handleReset}
       />
 

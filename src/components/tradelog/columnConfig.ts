@@ -3,6 +3,7 @@
 import { hasTranslation, t } from '../../lang/helpers';
 import {
   TradeLogColumnId,
+  CustomTradeLogColumnId,
   TradeLogSettings,
   DEFAULT_SETTINGS,
 } from '../../settings/types';
@@ -34,7 +35,7 @@ export type ColumnCategory =
   | 'custom';
 
 export interface ColumnDefinition {
-  id: string;
+  id: TradeLogColumnId;
   width: number;
   sortable: boolean;
   defaultVisible: boolean;
@@ -438,7 +439,7 @@ function getCustomColumnWidth(fieldType: CustomFieldType): number {
   }
 }
 
-function createCustomTradeLogColumnId(fieldId: string): string {
+function createCustomTradeLogColumnId(fieldId: string): CustomTradeLogColumnId {
   return `${CUSTOM_TRADE_LOG_COLUMN_PREFIX}${fieldId}`;
 }
 
@@ -471,23 +472,21 @@ export function buildDefaultTradeLogSettings(
   const allColumns = buildTradeLogColumnDefinitions(customFields);
   const defaultTradeLogSettings = DEFAULT_SETTINGS.tradeLog!;
   const defaultOrder = defaultTradeLogSettings.columnOrder;
-  const allColumnIds = allColumns.map((column) => column.id);
+  const allColumnIds: TradeLogColumnId[] = allColumns.map(
+    (column) => column.id
+  );
 
-  const columnOrder = [
+  const columnOrder: TradeLogColumnId[] = [
     ...defaultOrder.filter((id) => allColumnIds.includes(id)),
-    ...allColumnIds.filter(
-      (id) => !defaultOrder.includes(id as TradeLogColumnId)
-    ),
-  ] as TradeLogColumnId[];
+    ...allColumnIds.filter((id) => !defaultOrder.includes(id)),
+  ];
 
-  const columnVisibility = Object.fromEntries(
-    allColumns.map((column) => [
-      column.id,
-      defaultTradeLogSettings.columnVisibility[
-        column.id as keyof typeof defaultTradeLogSettings.columnVisibility
-      ] ?? column.defaultVisible,
-    ])
-  ) as Partial<Record<TradeLogColumnId, boolean>>;
+  const columnVisibility: Partial<Record<TradeLogColumnId, boolean>> = {};
+  for (const column of allColumns) {
+    columnVisibility[column.id] =
+      defaultTradeLogSettings.columnVisibility[column.id] ??
+      column.defaultVisible;
+  }
 
   return {
     columnVisibility,
@@ -526,7 +525,9 @@ export function getVisibleColumns(
   columnOrder: string[],
   allColumns: ColumnDefinition[] = COLUMN_DEFINITIONS
 ): ColumnDefinition[] {
-  const columnsById = new Map(allColumns.map((col) => [col.id, col]));
+  const columnsById: Map<string, ColumnDefinition> = new Map(
+    allColumns.map((col) => [col.id, col])
+  );
 
   
   const order =

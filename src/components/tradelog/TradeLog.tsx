@@ -43,6 +43,7 @@ import {
   ArrowUpNarrowWide,
   ArrowDownWideNarrow,
   ArrowUpDown,
+  type ObsidianIconComponent,
 } from '../shared/icons/ObsidianIcon';
 import { BatchActionToolbar } from './BatchActionToolbar';
 import {
@@ -201,8 +202,30 @@ const sanitizeCustomFieldFilters = (
   );
 };
 
+function asRecord(value: unknown): Record<string, unknown> | undefined {
+  return value && typeof value === 'object' && !Array.isArray(value)
+    ? Object.fromEntries(Object.entries(value))
+    : undefined;
+}
 
-const ICON_COMPONENTS: Record<string, any> = {
+function asStringArray(value: unknown): string[] {
+  return Array.isArray(value)
+    ? value.filter((item): item is string => typeof item === 'string')
+    : typeof value === 'string'
+      ? [value]
+      : [];
+}
+
+function getStringValue(
+  record: Record<string, unknown> | undefined,
+  key: string
+): string | undefined {
+  const value = record?.[key];
+  return typeof value === 'string' ? value : undefined;
+}
+
+
+const ICON_COMPONENTS: Record<string, ObsidianIconComponent> = {
   ArrowUp01,
   ArrowDown10,
   ArrowUpAZ,
@@ -687,20 +710,10 @@ const useTradeLogController = ({ plugin, leaf }: TradeLogProps) => {
     const traverse = (nodeList: TimeNode[]) => {
       for (const node of nodeList) {
         if (node.type === 'trade' && node.trade) {
-          const trade = node.trade;
-          const tradeSetup = trade.setup;
-          const tradeMistake = trade.mistake;
-          const setups = Array.isArray(tradeSetup)
-            ? tradeSetup
-            : tradeSetup
-              ? [tradeSetup]
-              : [];
-          const mistakes = Array.isArray(tradeMistake)
-            ? tradeMistake
-            : tradeMistake
-              ? [tradeMistake]
-              : [];
-          const tags = Array.isArray(trade.tags) ? trade.tags : [];
+          const trade = asRecord(node.trade);
+          const setups = asStringArray(trade?.setup);
+          const mistakes = asStringArray(trade?.mistake);
+          const tags = asStringArray(trade?.tags);
 
           if (setups.length > widestSetups.length) widestSetups = setups;
           if (mistakes.length > widestMistakes.length) {
@@ -714,10 +727,7 @@ const useTradeLogController = ({ plugin, leaf }: TradeLogProps) => {
 
             const values = getCustomFieldDisplayValues(
               field,
-              getCustomFieldRawValue(
-                node.trade as Record<string, unknown>,
-                field
-              )
+              getCustomFieldRawValue(trade ?? {}, field)
             );
 
             if (values.length === 0) continue;
@@ -749,7 +759,7 @@ const useTradeLogController = ({ plugin, leaf }: TradeLogProps) => {
     }
 
     
-    requestAnimationFrame(() => {
+    window.requestAnimationFrame(() => {
       if (!sizerRowRef.current) return;
 
       const newWidths: Record<string, number> = {};
@@ -1012,24 +1022,25 @@ const useTradeLogController = ({ plugin, leaf }: TradeLogProps) => {
   
   useEffect(() => {
     const updateHeight = () => {
-      const viewContainer = document.querySelector(
+      const viewContainer = window.activeDocument.querySelector(
         '.journalit-trade-log-view-container'
       );
       if (viewContainer) {
         const rect = viewContainer.getBoundingClientRect();
         const headerHeight =
-          document.querySelector('.trade-log-header')?.getBoundingClientRect()
-            ?.height || 120;
+          window.activeDocument
+            .querySelector('.trade-log-header')
+            ?.getBoundingClientRect()?.height || 120;
         const availableHeight = rect.height - headerHeight;
         setContainerHeight(Math.max(400, availableHeight));
       }
     };
 
-    const timer = setTimeout(updateHeight, 200);
+    const timer = window.setTimeout(updateHeight, 200);
     window.addEventListener('resize', updateHeight);
 
     return () => {
-      clearTimeout(timer);
+      window.clearTimeout(timer);
       window.removeEventListener('resize', updateHeight);
     };
   }, []);
@@ -1253,12 +1264,16 @@ const useTradeLogController = ({ plugin, leaf }: TradeLogProps) => {
     const collectTradeIds = (nodes: TimeNode[]) => {
       nodes.forEach((node) => {
         if (node.type === 'trade') {
-          if (node.trade?.isCopiedTrade) {
+          const trade = asRecord(node.trade);
+          if (trade?.isCopiedTrade === true) {
             return;
           }
 
+          const fileRecord = asRecord(trade?.file);
           const filePath =
-            node.trade?.file?.path || node.trade?.filePath || node.trade?.path;
+            getStringValue(fileRecord, 'path') ??
+            getStringValue(trade, 'filePath') ??
+            getStringValue(trade, 'path');
           if (filePath) {
             allTradeIds.add(filePath);
           }
@@ -1517,7 +1532,7 @@ const useTradeLogController = ({ plugin, leaf }: TradeLogProps) => {
 
   
   useEffect(() => {
-    loadData();
+    void loadData();
   }, [debouncedFilters, loadData]);
 
   
@@ -1530,15 +1545,17 @@ const useTradeLogController = ({ plugin, leaf }: TradeLogProps) => {
     if (reloadTimerRef.current) {
       window.clearTimeout(reloadTimerRef.current);
     }
-    reloadTimerRef.current = window.setTimeout(async () => {
-      
-      if (plugin.app.workspace.trigger) {
-        plugin.app.workspace.trigger('layout-change');
-      }
-      
-      await new Promise((resolve) => setTimeout(resolve, 80));
-      await loadData();
-      reloadTimerRef.current = null;
+    reloadTimerRef.current = window.setTimeout(() => {
+      void (async () => {
+        
+        if (plugin.app.workspace.trigger) {
+          plugin.app.workspace.trigger('layout-change');
+        }
+        
+        await new Promise((resolve) => window.setTimeout(resolve, 80));
+        await loadData();
+        reloadTimerRef.current = null;
+      })();
     }, 400);
   }, [loadData, plugin.app.workspace]);
 
@@ -1613,7 +1630,7 @@ const useTradeLogController = ({ plugin, leaf }: TradeLogProps) => {
 
             
             
-            setTimeout(() => {
+            window.setTimeout(() => {
               setExpandedNodes((prev) => {
                 const newExpandedDelayed = new Set(prev);
                 newExpandedDelayed.add(node.id);
@@ -1644,13 +1661,18 @@ const useTradeLogController = ({ plugin, leaf }: TradeLogProps) => {
           
           
           let tradePath: string | undefined;
-          if (node.trade?.copySourceFilePath) {
-            tradePath = node.trade.copySourceFilePath;
-          } else if (node.trade?.file) {
-            tradePath = node.trade.file.path;
-          } else if (node.trade?.filePath) {
+          const trade = asRecord(node.trade);
+          const fileRecord = asRecord(trade?.file);
+          const copySourcePath = getStringValue(trade, 'copySourceFilePath');
+          const filePath = getStringValue(fileRecord, 'path');
+          const tradeFilePath = getStringValue(trade, 'filePath');
+          if (copySourcePath) {
+            tradePath = copySourcePath;
+          } else if (filePath) {
+            tradePath = filePath;
+          } else if (tradeFilePath) {
             
-            tradePath = node.trade.filePath;
+            tradePath = tradeFilePath;
           } else if (node.id && node.id.includes('.md')) {
             
             tradePath = node.id;
@@ -1860,8 +1882,8 @@ const useTradeLogController = ({ plugin, leaf }: TradeLogProps) => {
           <TradeLogTree
             nodes={sortedNodes}
             expandedNodes={expandedNodes}
-            onToggleExpand={handleToggleExpand}
-            onNodeClick={handleNodeClick}
+            onToggleExpand={(path) => void handleToggleExpand(path)}
+            onNodeClick={(node) => void handleNodeClick(node)}
             onTreeReady={handleTreeReady}
             onScrollbarWidthChange={setHeaderScrollbarWidth}
             viewLevel={filters.viewLevel}
@@ -1981,9 +2003,11 @@ const renderTradeLog = (
             message={t('tradelog.empty')}
             subMessage={t('tradelog.empty.submessage')}
             actionButtonText={t('button.create-trade')}
-            onActionButtonClick={async () => {
-              const modal = new TradeFormModal({ app: plugin.app, plugin });
-              modal.open();
+            onActionButtonClick={() => {
+              void (async () => {
+                const modal = new TradeFormModal({ app: plugin.app, plugin });
+                modal.open();
+              })();
             }}
           />
         </div>

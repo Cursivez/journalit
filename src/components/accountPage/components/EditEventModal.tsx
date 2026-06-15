@@ -21,6 +21,9 @@ import {
 } from '../../../contexts/CurrencyContext';
 import { t } from '../../../lang/helpers';
 
+const getErrorMessage = (error: unknown): string =>
+  error instanceof Error ? error.message : String(error);
+
 interface EditEventModalProps {
   app: App;
   plugin: JournalitPlugin;
@@ -186,7 +189,7 @@ function useEditEventModalModel({
     } catch (error) {
       console.error('Error updating transaction:', error);
       new Notice(
-        t('account.edit-event.error.update', { error: error.message })
+        t('account.edit-event.error.update', { error: getErrorMessage(error) })
       );
     } finally {
       setIsLoading(false);
@@ -212,7 +215,7 @@ function useEditEventModalModel({
     } catch (error) {
       console.error('Error deleting transaction:', error);
       new Notice(
-        t('account.edit-event.error.delete', { error: error.message })
+        t('account.edit-event.error.delete', { error: getErrorMessage(error) })
       );
     } finally {
       setIsDeleting(false);

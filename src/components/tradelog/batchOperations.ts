@@ -56,12 +56,20 @@ function arraysEqual(left: string[], right: string[]): boolean {
   );
 }
 
-function getTradeServiceOrThrow(): TradeServiceLike {
-  const tradeService = getPluginInstance()?.tradeService as
-    | TradeServiceLike
-    | undefined;
+function isTradeServiceLike(value: unknown): value is TradeServiceLike {
+  return Boolean(
+    value &&
+    typeof value === 'object' &&
+    !Array.isArray(value) &&
+    typeof Reflect.get(value, 'extractTradeData') === 'function' &&
+    typeof Reflect.get(value, 'updateTrade') === 'function'
+  );
+}
 
-  if (!tradeService) {
+function getTradeServiceOrThrow(): TradeServiceLike {
+  const tradeService = getPluginInstance()?.tradeService;
+
+  if (!isTradeServiceLike(tradeService)) {
     throw new Error('TradeService is required for batch trade mutations');
   }
 
@@ -109,7 +117,7 @@ function getNoteKind(app: App, file: TFile): BatchNoteKind {
   const frontmatter = app.metadataCache?.getFileCache(file)?.frontmatter;
   const frontmatterRecord =
     frontmatter && typeof frontmatter === 'object'
-      ? (frontmatter as Record<string, unknown>)
+      ? Object.fromEntries(Object.entries(frontmatter))
       : null;
   const noteType = getTradeIdentityNoteType(frontmatterRecord, file.path);
 
@@ -192,25 +200,28 @@ async function runBatchOperation(
             didIdentityBackfill: false,
           };
 
-          await app.fileManager.processFrontMatter(file, (frontmatter) => {
-            const frontmatterRecord = frontmatter as Record<string, unknown>;
-            const noteType = getTradeIdentityNoteType(
-              frontmatterRecord,
-              file.path
-            );
-            const identityBackfillResult =
-              noteType !== null
-                ? ensureTradeIdentityFrontmatter(frontmatterRecord)
-                : null;
+          await app.fileManager.processFrontMatter(
+            file,
+            (frontmatter: Record<string, unknown>) => {
+              const frontmatterRecord = frontmatter;
+              const noteType = getTradeIdentityNoteType(
+                frontmatterRecord,
+                file.path
+              );
+              const identityBackfillResult =
+                noteType !== null
+                  ? ensureTradeIdentityFrontmatter(frontmatterRecord)
+                  : null;
 
-            const primaryMutation =
-              operation.applyToFrontmatterPatch(frontmatterRecord);
+              const primaryMutation =
+                operation.applyToFrontmatterPatch(frontmatterRecord);
 
-            mutationResult = {
-              didPrimaryMutation: primaryMutation.didPrimaryMutation,
-              didIdentityBackfill: identityBackfillResult?.changed ?? false,
-            };
-          });
+              mutationResult = {
+                didPrimaryMutation: primaryMutation.didPrimaryMutation,
+                didIdentityBackfill: identityBackfillResult?.changed ?? false,
+              };
+            }
+          );
 
           return mutationResult;
         };
@@ -272,7 +283,7 @@ async function runBatchOperation(
       const frontmatter = app.metadataCache?.getFileCache(file)?.frontmatter;
       const frontmatterRecord =
         frontmatter && typeof frontmatter === 'object'
-          ? (frontmatter as Record<string, unknown>)
+          ? Object.fromEntries(Object.entries(frontmatter))
           : null;
 
       const { shouldApplyPrimaryMutation, nextTradeData } =
@@ -355,14 +366,14 @@ async function runBatchOperation(
   }
 
   
-  setTimeout(() => {
+  window.setTimeout(() => {
     plugin?.backendIntegrationService?.removeBatchModifiedFiles(
       Array.from(removalPaths)
     );
   }, 500);
 
   if (relocatedRemovalPaths.size > 0) {
-    setTimeout(() => {
+    window.setTimeout(() => {
       plugin?.backendIntegrationService?.removeBatchModifiedFiles(
         Array.from(relocatedRemovalPaths)
       );
@@ -586,11 +597,11 @@ export async function batchDeleteTrades(
   }
 
   
-  await new Promise((resolve) => setTimeout(resolve, 500));
+  await new Promise((resolve) => window.setTimeout(resolve, 500));
 
   publishBatchTradeChanged(tradeFilePaths);
 
-  setTimeout(() => {
+  window.setTimeout(() => {
     plugin?.backendIntegrationService?.removeBatchModifiedFiles(tradeFilePaths);
   }, 500);
 

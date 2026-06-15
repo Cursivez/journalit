@@ -14,9 +14,17 @@ import {
   formatSupportErrorDetails,
 } from '../../../utils/supportReport';
 import { t } from '../../../lang/helpers';
+import { openExternalUrl } from '../../../utils/externalLinks';
+import { writeClipboardText } from '../../../utils/clipboard';
 
 interface AuthTabProps {
   plugin: JournalitPlugin;
+}
+
+function isAuthErrorDetail(
+  value: unknown
+): value is SupportErrorDetails & { occurrences?: number } {
+  return value !== null && typeof value === 'object' && 'message' in value;
 }
 
 function useAuthTabModel({ plugin }: AuthTabProps) {
@@ -34,9 +42,7 @@ function useAuthTabModel({ plugin }: AuthTabProps) {
   );
   const [authError, setAuthError] = useState<SupportErrorDetails | null>(null);
   const [signOutReportCopied, setSignOutReportCopied] = useState(false);
-  const signOutCopyTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
-    null
-  );
+  const signOutCopyTimerRef = useRef<number | null>(null);
 
   useEffect(() => {
     const handleSubscriptionChange = () => {
@@ -48,13 +54,13 @@ function useAuthTabModel({ plugin }: AuthTabProps) {
       setSignOutReportCopied(false);
     };
 
-    document.addEventListener(
+    window.addEventListener(
       'journalit:subscription-changed',
       handleSubscriptionChange
     );
 
     return () => {
-      document.removeEventListener(
+      window.removeEventListener(
         'journalit:subscription-changed',
         handleSubscriptionChange
       );
@@ -63,10 +69,9 @@ function useAuthTabModel({ plugin }: AuthTabProps) {
 
   useEffect(() => {
     const handleAuthError = (event: Event) => {
-      const detail = (
-        event as CustomEvent<SupportErrorDetails & { occurrences?: number }>
-      ).detail;
-      if (!detail) {
+      const detail: unknown =
+        event instanceof CustomEvent ? event.detail : undefined;
+      if (!isAuthErrorDetail(detail)) {
         return;
       }
 
@@ -78,10 +83,16 @@ function useAuthTabModel({ plugin }: AuthTabProps) {
       setSignOutReportCopied(false);
     };
 
-    document.addEventListener('journalit:auth-error', handleAuthError);
+    window.activeDocument.addEventListener(
+      'journalit:auth-error',
+      handleAuthError
+    );
 
     return () => {
-      document.removeEventListener('journalit:auth-error', handleAuthError);
+      window.activeDocument.removeEventListener(
+        'journalit:auth-error',
+        handleAuthError
+      );
     };
   }, []);
 
@@ -98,7 +109,7 @@ function useAuthTabModel({ plugin }: AuthTabProps) {
   useEffect(() => {
     return () => {
       if (signOutCopyTimerRef.current) {
-        clearTimeout(signOutCopyTimerRef.current);
+        window.clearTimeout(signOutCopyTimerRef.current);
       }
     };
   }, []);
@@ -132,17 +143,17 @@ function useAuthTabModel({ plugin }: AuthTabProps) {
     const report = buildSignOutReport();
 
     try {
-      await navigator.clipboard.writeText(report);
+      await writeClipboardText(report);
       setSignOutReportCopied(true);
 
       if (signOutCopyTimerRef.current) {
-        clearTimeout(signOutCopyTimerRef.current);
+        window.clearTimeout(signOutCopyTimerRef.current);
       }
 
-      signOutCopyTimerRef.current = setTimeout(() => {
+      signOutCopyTimerRef.current = window.setTimeout(() => {
         setSignOutReportCopied(false);
       }, 2000);
-    } catch (_error) {
+    } catch {
       new Notice(t('library.error.copy-failed'));
     }
   }, [buildSignOutReport]);
@@ -179,7 +190,7 @@ function useAuthTabModel({ plugin }: AuthTabProps) {
       setAuthError(null);
       setSignOutReportCopied(false);
 
-      document.dispatchEvent(new CustomEvent('journalit:subscription-changed'));
+      window.dispatchEvent(new CustomEvent('journalit:subscription-changed'));
     } catch (error) {
       console.error('[AuthTab] Sign-out failed:', error);
       new Notice(t('notice.error.sign-out'));
@@ -284,7 +295,7 @@ const AuthTabComponent: React.FC<AuthTabProps> = ({ plugin }) => {
         {isAuthenticated ? (
           <Button
             variant="danger"
-            onClick={handleDeviceFlowSignOut}
+            onClick={() => void handleDeviceFlowSignOut()}
             className="sign-out-inline"
           >
             {t('settings.auth.sign-out')}
@@ -292,7 +303,7 @@ const AuthTabComponent: React.FC<AuthTabProps> = ({ plugin }) => {
         ) : (
           <Button
             variant="primary"
-            onClick={handleDeviceFlowSignIn}
+            onClick={() => void handleDeviceFlowSignIn()}
             className="sign-in-inline"
           >
             {t('settings.auth.sign-in-up')}
@@ -310,9 +321,7 @@ const AuthTabComponent: React.FC<AuthTabProps> = ({ plugin }) => {
             copiedLabel={t('csv.errors.copied')}
             discordLabel={t('button.discord')}
             note={t('csv.results.discord-note')}
-            onDiscord={() =>
-              window.open('https://discord.gg/AkSw3D9h8b', '_blank')
-            }
+            onDiscord={() => openExternalUrl('https://discord.gg/AkSw3D9h8b')}
             actionsClassName="auth-error-actions"
             helpClassName="auth-error-help"
             helpContentClassName="auth-error-help-content"

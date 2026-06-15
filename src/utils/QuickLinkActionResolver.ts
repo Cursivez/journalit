@@ -147,7 +147,7 @@ export class QuickLinkActionResolver {
       }
 
       default:
-        console.warn(`Unknown quick link action: ${action}`);
+        console.warn('Unknown quick link action');
     }
   }
 }

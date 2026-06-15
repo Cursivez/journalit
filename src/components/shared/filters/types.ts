@@ -48,7 +48,7 @@ export interface FilterModalProps {
   plugin: JournalitPlugin;
   context: FilterContext;
   currentFilters: UnifiedFilters;
-  onApply: (filters: UnifiedFilters) => void;
+  onApply: (filters: UnifiedFilters) => void | Promise<void>;
   onClose: () => void;
   
   availableAccounts?: string[];

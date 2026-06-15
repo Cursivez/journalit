@@ -1,6 +1,6 @@
 
 
-const badgeStyles = `
+export const badgeStyles = `
 
 .journalit-count-badge {
   display: inline-flex;
@@ -95,9 +95,3 @@ const badgeStyles = `
   color: var(--color-red);
 }
 `;
-
-const stylesInjected = false;
-
-export function injectBadgeStyles(): void {
-  return;
-}

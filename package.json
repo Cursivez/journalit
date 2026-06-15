@@ -1,11 +1,13 @@
 {
   "name": "journalit",
-  "version": "1.7.8",
+  "version": "1.7.9",
   "description": "Trading journal with templates, trade tracking, imports, and reviews for Obsidian.",
   "main": "main.js",
   "scripts": {
-    "build": "tsc -noEmit -skipLibCheck && node scripts/generate-styles-css.mjs && node esbuild.config.mjs production",
-    "lint": "node scripts/generate-styles-css.mjs && eslint src manifest.json --max-warnings 0"
+    "build": "tsc -noEmit -skipLibCheck && node scripts/generate-styles-css.mjs && node esbuild.config.mjs release",
+    "lint": "node scripts/generate-styles-css.mjs && eslint src manifest.json --max-warnings 0",
+    "lint:review": "node scripts/generate-styles-css.mjs && node scripts/lint-review-findings.mjs",
+    "css:review": "node scripts/generate-styles-css.mjs && node scripts/validate-public-css.mjs"
   },
   "keywords": [
     "obsidian",
@@ -40,12 +42,10 @@
     "@typescript-eslint/eslint-plugin": "^8.57.2",
     "@typescript-eslint/parser": "^8.57.2",
     "bippy": "^0.5.41",
-    "builtin-modules": "^5.2.0",
-    "esbuild": "^0.28.0",
+    "esbuild": "^0.28.1",
     "eslint": "^9.39.4",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-obsidianmd": "^0.3.0",
-    "eslint-plugin-react": "^7.37.5",
     "eslint-plugin-react-hooks": "^7.1.1",
     "obsidian": "^1.12.3",
     "prettier": "^3.8.3",

@@ -1,6 +1,6 @@
 
 
-const RADIO_OPTION_STYLES = `
+export const RADIO_OPTION_STYLES = `
 
 .radio-options {
   display: flex;
@@ -157,15 +157,3 @@ const RADIO_OPTION_STYLES = `
   border-radius: 12px;
 }
 `;
-
-const RADIO_OPTION_STYLE_ID = 'radio-option-styles';
-
-
-function injectRadioOptionStyles(): void {
-  return;
-}
-
-
-export function ensureRadioOptionStyles(): void {
-  return;
-}

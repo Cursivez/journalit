@@ -7,12 +7,13 @@ import { imageService } from '../../services/image/ImageService';
 import { PasteManager } from '../../utils/PasteManager';
 import { getApp } from '../../utils/obsidian';
 import { resolveImageInput } from '../../utils/imageMediaUtils';
+import { readClipboardText } from '../../utils/clipboard';
 
 interface CompactImageUploaderProps {
   
-  onImageAdded: (imagePath: string) => void;
+  onImageAdded: (imagePath: string) => void | Promise<void>;
   
-  onMultipleImagesAdded?: (imagePaths: string[]) => void;
+  onMultipleImagesAdded?: (imagePaths: string[]) => void | Promise<void>;
   
   onError?: (error: Error) => void;
   
@@ -61,7 +62,7 @@ function useCompactImageUploaderModel({
     try {
       const finalUrl = resolveImageInput(getApp(), url, sourcePath);
 
-      onImageAdded(finalUrl);
+      void onImageAdded(finalUrl);
       setUrlInput('');
     } catch (error) {
       console.error('[CompactImageUploader] URL error:', error);
@@ -78,7 +79,7 @@ function useCompactImageUploaderModel({
     (e: React.KeyboardEvent<HTMLInputElement>) => {
       if (e.key === 'Enter' && urlInput.trim()) {
         e.preventDefault();
-        handleUrlSubmit();
+        void handleUrlSubmit();
       }
     },
     [urlInput, handleUrlSubmit]
@@ -120,9 +121,9 @@ function useCompactImageUploaderModel({
         }
 
         if (imagePaths.length > 1 && onMultipleImagesAdded) {
-          onMultipleImagesAdded(imagePaths);
+          void onMultipleImagesAdded(imagePaths);
         } else if (imagePaths.length > 0) {
-          onImageAdded(imagePaths[0]);
+          void onImageAdded(imagePaths[0]);
         }
       } finally {
         setIsProcessing(false);
@@ -144,7 +145,7 @@ function useCompactImageUploaderModel({
       if (!result.success || result.files.length === 0) {
         
         try {
-          const text = await navigator.clipboard.readText();
+          const text = await readClipboardText();
           if (text?.trim()) {
             setUrlInput(text);
             setIsProcessing(false);
@@ -180,9 +181,9 @@ function useCompactImageUploaderModel({
       }
 
       if (imagePaths.length > 1 && onMultipleImagesAdded) {
-        onMultipleImagesAdded(imagePaths);
+        void onMultipleImagesAdded(imagePaths);
       } else if (imagePaths.length > 0) {
-        onImageAdded(imagePaths[0]);
+        void onImageAdded(imagePaths[0]);
       }
     } catch (error) {
       console.error('[CompactImageUploader] Paste error:', error);
@@ -259,9 +260,9 @@ function useCompactImageUploaderModel({
         }
 
         if (imagePaths.length > 1 && onMultipleImagesAdded) {
-          onMultipleImagesAdded(imagePaths);
+          void onMultipleImagesAdded(imagePaths);
         } else if (imagePaths.length > 0) {
-          onImageAdded(imagePaths[0]);
+          void onImageAdded(imagePaths[0]);
         }
       } finally {
         setIsProcessing(false);
@@ -329,14 +330,14 @@ function CompactImageUploaderControls({
       onDragEnter={handleDragEnter}
       onDragLeave={handleDragLeave}
       onDragOver={handleDragOver}
-      onDrop={handleDrop}
+      onDrop={(event) => void handleDrop(event)}
     >
       <input
         type="text"
         className="journalit-compact-uploader-url-input"
         value={urlInput}
         onChange={(e) => setUrlInput(e.target.value)}
-        onKeyDown={handleKeyDown}
+        onKeyDown={(event) => void handleKeyDown(event)}
         placeholder={placeholder}
         disabled={disabled || isProcessing}
         aria-label={t('image.uploader.url-input-aria')}
@@ -345,7 +346,7 @@ function CompactImageUploaderControls({
       <button
         type="button"
         className="journalit-compact-uploader-btn clickable-icon"
-        onClick={handleFilePickerClick}
+        onClick={() => void handleFilePickerClick()}
         disabled={disabled || isProcessing}
         aria-label={t('image.uploader.file-upload-aria')}
       >
@@ -355,7 +356,7 @@ function CompactImageUploaderControls({
       <button
         type="button"
         className="journalit-compact-uploader-btn clickable-icon"
-        onClick={handleClipboardPaste}
+        onClick={() => void handleClipboardPaste()}
         disabled={disabled || isProcessing}
         aria-label={t('image.uploader.paste-clipboard-aria')}
       >
@@ -367,7 +368,7 @@ function CompactImageUploaderControls({
         type="file"
         accept="image/*"
         multiple={multiple}
-        onChange={handleFileSelect}
+        onChange={(event) => void handleFileSelect(event)}
         className="journalit-compact-uploader-file-input"
         aria-hidden="true"
       />

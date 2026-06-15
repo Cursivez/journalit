@@ -27,26 +27,35 @@ interface ReviewsTabProps {
   plugin: JournalitPlugin;
 }
 
-const DEMON_TRACKER_COUNT_MODES: DemonTrackerCountMode[] = [
-  'per-trade',
-  'per-trading-day',
-];
-
-const DEMON_TRACKER_SOURCE_MODES: DemonTrackerSourceMode[] = [
-  'trades',
-  'session',
-  'combined',
-];
-
 const isDemonTrackerCountMode = (
   value: string
 ): value is DemonTrackerCountMode =>
-  DEMON_TRACKER_COUNT_MODES.includes(value as DemonTrackerCountMode);
+  value === 'per-trade' || value === 'per-trading-day';
 
 const isDemonTrackerSourceMode = (
   value: string
 ): value is DemonTrackerSourceMode =>
-  DEMON_TRACKER_SOURCE_MODES.includes(value as DemonTrackerSourceMode);
+  value === 'trades' || value === 'session' || value === 'combined';
+
+const getDefaultTemplateEventType = (
+  type: keyof NonNullable<JournalitPlugin['settings']['templates']>
+): DefaultTemplateChangedPayload['type'] => {
+  switch (type) {
+    case 'defaultDrc':
+      return 'drc';
+    case 'defaultWeekly':
+      return 'weekly';
+    case 'defaultMonthly':
+      return 'monthly';
+    case 'defaultQuarterly':
+      return 'quarterly';
+    case 'defaultYearly':
+      return 'yearly';
+    case 'defaultTrade':
+    default:
+      return 'trade';
+  }
+};
 
 function useReviewsTabModel(props: ReviewsTabProps) {
   const { plugin } = props;
@@ -296,13 +305,7 @@ function useReviewsTabModel(props: ReviewsTabProps) {
 
     
     
-    const eventType = type.replace('default', '').toLowerCase() as
-      | 'trade'
-      | 'drc'
-      | 'weekly'
-      | 'monthly'
-      | 'quarterly'
-      | 'yearly';
+    const eventType = getDefaultTemplateEventType(type);
     eventBus.publish('default-template:changed', { type: eventType, value });
 
     new Notice(t('settings.reviews.notice.template-updated'));

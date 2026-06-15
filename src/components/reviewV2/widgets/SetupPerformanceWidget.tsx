@@ -24,6 +24,43 @@ import { getBreakEvenBalanceForDisplayTrade } from './shared/breakEvenDisplayUti
 import { CurrencyConversionInfo } from '../../shared/display/CurrencyConversionInfo';
 import { splitReviewTradeByRealizedPnlEvent } from '../utils/reviewTradeDates';
 
+type ReviewSetupTrade = Record<string, unknown> & {
+  pnl?: number | null;
+  directPnL?: number | null;
+  useDirectPnLInput?: boolean;
+  dividends?: Array<{ amount?: number | null }>;
+  commission?: number | null;
+  swap?: number | null;
+  fees?: number | null;
+  rebate?: number | null;
+  tradeStatus?: string;
+  account?: string | string[];
+  currency?: string;
+  originalCurrency?: string;
+  brokerBaseCurrency?: string;
+  setup?: string | string[];
+  rMultiple?: number;
+  riskAmount?: number;
+  breakEvenAccountCurrentBalance?: number;
+  breakEvenAccountCurrentBalanceTotal?: number;
+};
+
+function asReviewSetupTrades(value: unknown): ReviewSetupTrade[] {
+  return Array.isArray(value)
+    ? value.filter((item): item is ReviewSetupTrade =>
+        Boolean(item && typeof item === 'object' && !Array.isArray(item))
+      )
+    : [];
+}
+
+function getTradeSetups(trade: ReviewSetupTrade): string[] {
+  return Array.isArray(trade.setup)
+    ? trade.setup.filter((setup): setup is string => typeof setup === 'string')
+    : typeof trade.setup === 'string'
+      ? [trade.setup]
+      : [t('common.other')];
+}
+
 interface SetupPerformanceWidgetProps {
   filePath: string;
   plugin: JournalitPlugin;
@@ -61,7 +98,9 @@ export const SetupPerformanceWidget: React.FC<SetupPerformanceWidgetProps> =
       } = useReviewTrades(filePath, plugin);
 
       
-      const trades = preview && previewData ? previewData.trades : cachedTrades;
+      const trades = asReviewSetupTrades(
+        preview && previewData ? previewData.trades : cachedTrades
+      );
       const loading = preview ? false : cacheLoading;
 
       
@@ -89,13 +128,15 @@ export const SetupPerformanceWidget: React.FC<SetupPerformanceWidgetProps> =
 
       
       const setupPerformance = useMemo(() => {
-        const closedTrades = trades
-          .filter((t) => isPnlContributingTrade(t))
-          .flatMap((trade) =>
-            preview
-              ? [trade]
-              : splitReviewTradeByRealizedPnlEvent(trade, plugin)
-          );
+        const closedTrades = asReviewSetupTrades(
+          trades
+            .filter((t) => isPnlContributingTrade(t))
+            .flatMap((trade) =>
+              preview
+                ? [trade]
+                : splitReviewTradeByRealizedPnlEvent(trade, plugin)
+            )
+        );
 
         if (closedTrades.length === 0) {
           return [];
@@ -124,11 +165,7 @@ export const SetupPerformanceWidget: React.FC<SetupPerformanceWidgetProps> =
             applyAccountCountMultiplier
           );
 
-          const setups = Array.isArray(trade.setup)
-            ? trade.setup
-            : trade.setup
-              ? [trade.setup]
-              : [t('common.other')];
+          const setups = getTradeSetups(trade);
           setups.forEach((setup: string) => {
             const existing = setupMap.get(setup) || {
               pnl: 0,

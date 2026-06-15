@@ -5,12 +5,6 @@ import { GlobalPasteManager } from '../utils/GlobalPasteManager';
 import { removeDropdownFixScript } from '../utils';
 import { resetPluginHookState } from '../hooks/usePlugin';
 import { EventBus } from '../services/events';
-import { removeViewGuideStyles } from '../styles/viewGuideStyles';
-import { removeFilterModalStyles } from '../components/shared/filters/filterModalStyles';
-import { removeFilterChipStyles } from '../components/shared/FilterChip';
-import { removeFilterButtonStyles } from '../components/shared/FilterButton';
-import { removeCollapsibleSectionStyles } from '../components/shared/CollapsibleSection';
-import { removeNavigationStyles } from '../styles/navigationStyles';
 
 
 interface ElementWithEmpty {
@@ -66,10 +60,8 @@ export class PluginCleanupManager {
     }
 
     
-    window.__dropdownClickHandlerAdded = false;
-    window.__isHandlingComboBoxRemove = false;
-    window.__isInjectingStyles = false;
-    window.__JOURNALIT_INJECT_DRC_STYLES = undefined;
+    
+    removeDropdownFixScript();
     window.__obsidianStartTime = undefined;
 
     
@@ -104,8 +96,6 @@ export class PluginCleanupManager {
       console.error('Error cleaning up GlobalPasteManager:', e);
     }
 
-    removeDropdownFixScript();
-
     
     const cleanupSelectors = [
       '.journalit-trade-view',
@@ -121,7 +111,7 @@ export class PluginCleanupManager {
     
     cleanupSelectors.forEach((selector) => {
       try {
-        const elements = document.querySelectorAll(selector);
+        const elements = window.activeDocument.querySelectorAll(selector);
 
         elements.forEach((el) => {
           try {
@@ -152,26 +142,20 @@ export class PluginCleanupManager {
     } else {
       
       
-      const pluginCleanup = this.plugin as unknown as {
-        tradeService: null;
-        setupService: null;
-        drcService: null;
-        weeklyReviewService: null;
-        monthlyReviewService: null;
-        optionsService: null;
-        customFieldsService: null;
-        customReviewFieldsService: null;
-        reviewContextInheritanceService: null;
-      };
-      pluginCleanup.tradeService = null;
-      pluginCleanup.setupService = null;
-      pluginCleanup.drcService = null;
-      pluginCleanup.weeklyReviewService = null;
-      pluginCleanup.monthlyReviewService = null;
-      pluginCleanup.optionsService = null;
-      pluginCleanup.customFieldsService = null;
-      pluginCleanup.customReviewFieldsService = null;
-      pluginCleanup.reviewContextInheritanceService = null;
+      
+      for (const serviceKey of [
+        'tradeService',
+        'setupService',
+        'drcService',
+        'weeklyReviewService',
+        'monthlyReviewService',
+        'optionsService',
+        'customFieldsService',
+        'customReviewFieldsService',
+        'reviewContextInheritanceService',
+      ]) {
+        Reflect.set(this.plugin, serviceKey, null);
+      }
       
       this.plugin.backendIntegrationService = null;
     }

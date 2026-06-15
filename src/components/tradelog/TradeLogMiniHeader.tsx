@@ -2,10 +2,6 @@
 
 import React, { useLayoutEffect } from 'react';
 import { ColumnDefinition, getColumnLabel } from './columnConfig';
-import {
-  ensureTradeLogMiniHeaderStyles,
-  removeTradeLogMiniHeaderStyles,
-} from '../../styles/tradelog/tradeLogMiniHeaderStyles';
 import { cssVars } from '../../styles/inlineStylePolicy';
 
 interface TradeLogMiniHeaderProps {

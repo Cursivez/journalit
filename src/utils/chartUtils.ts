@@ -474,8 +474,10 @@ export const preparePnLChartData = (
 
   
   if (pnlChartDataCache.size > 50) {
-    const firstKey = pnlChartDataCache.keys().next().value;
-    pnlChartDataCache.delete(firstKey);
+    for (const firstKey of pnlChartDataCache.keys()) {
+      pnlChartDataCache.delete(firstKey);
+      break;
+    }
   }
 
   return chartData;
@@ -752,8 +754,10 @@ export const prepareDrawdownChartState = (
   drawdownChartDataCache.set(cacheKey, preparedState);
 
   if (drawdownChartDataCache.size > 50) {
-    const firstKey = drawdownChartDataCache.keys().next().value;
-    drawdownChartDataCache.delete(firstKey);
+    for (const firstKey of drawdownChartDataCache.keys()) {
+      drawdownChartDataCache.delete(firstKey);
+      break;
+    }
   }
 
   return preparedState;

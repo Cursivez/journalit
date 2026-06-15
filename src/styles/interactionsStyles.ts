@@ -1,6 +1,6 @@
 
 
-const interactionsCSS = `
+export const interactionsCSS = `
 
 .jl-icon-button-hover {
   background: none;
@@ -179,11 +179,3 @@ const interactionsCSS = `
   text-decoration: underline;
 }
 `;
-
-export function injectInteractionsStyles(): void {
-  return;
-}
-
-export function removeInteractionsStyles(): void {
-  return;
-}

@@ -28,7 +28,7 @@ import {
   getColumnLabel,
   resolveTradeLogSettings,
 } from './columnConfig';
-import { TradeLogColumnId } from '../../settings/types';
+import { CustomTradeLogColumnId, TradeLogColumnId } from '../../settings/types';
 import { DndContext, DragEndEvent, closestCenter } from '@dnd-kit/core';
 import {
   SortableContext,
@@ -43,10 +43,6 @@ import {
   ChevronDown,
   ChevronRight,
 } from '../shared/icons/ObsidianIcon';
-import {
-  ensureTradeLogSettingsModalStyles,
-  removeTradeLogSettingsModalStyles,
-} from '../../styles/tradelog/tradeLogSettingsModalStyles';
 import { eventBus } from '../../services/events';
 import ToggleSwitch from '../ui/ToggleSwitch';
 
@@ -173,7 +169,7 @@ export class TradeLogSettingsModal extends Modal {
     
     if (this.checkForUnsavedChanges && this.checkForUnsavedChanges()) {
       this.isConfirming = true;
-      this.showUnsavedChangesConfirmation()
+      void this.showUnsavedChangesConfirmation()
         .then((shouldClose) => {
           if (shouldClose) super.close();
         })
@@ -258,6 +254,58 @@ interface InitialState {
   expandedMode: boolean;
 }
 
+function parseTradeLogColumnId(value: string): TradeLogColumnId | null {
+  if (value.startsWith('cf:')) {
+    const customId: CustomTradeLogColumnId = `cf:${value.slice(3)}`;
+    return customId;
+  }
+
+  switch (value) {
+    case 'select':
+    case 'image':
+    case 'account':
+    case 'ticker':
+    case 'exchange':
+    case 'status':
+    case 'direction':
+    case 'date':
+    case 'entryTime':
+    case 'exitDate':
+    case 'exitTime':
+    case 'duration':
+    case 'expirationDate':
+    case 'daysToExpiry':
+    case 'entryPrice':
+    case 'exitPrice':
+    case 'priceMove':
+    case 'stopLoss':
+    case 'slDistanceDollar':
+    case 'slDistancePercent':
+    case 'riskAmount':
+    case 'rMultiple':
+    case 'maxR':
+    case 'positionSize':
+    case 'positionValue':
+    case 'fees':
+    case 'dividends':
+    case 'pnl':
+    case 'returnPercent':
+    case 'setups':
+    case 'mistakes':
+    case 'tags':
+    case 'reviewed':
+    case 'thesis':
+    case 'mtComment':
+      return value;
+    default:
+      return null;
+  }
+}
+
+function getErrorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
+}
+
 function buildColumnsWithVisibility(
   plugin: JournalitPlugin,
   tradeLogState?: {
@@ -284,8 +332,12 @@ function buildColumnsWithVisibility(
 
     columnsWithVisibility.push({
       ...col,
-      visible: (columnVisibility[col.id as TradeLogColumnId] ??
-        col.defaultVisible) as boolean,
+      visible: (() => {
+        const columnId = parseTradeLogColumnId(col.id);
+        return columnId
+          ? (columnVisibility[columnId] ?? col.defaultVisible)
+          : col.defaultVisible;
+      })(),
     });
   }
 
@@ -302,9 +354,10 @@ function buildColumnsWithVisibility(
     }
     const orderedIds = new Set(columnOrder);
 
-    const remaining = columnsWithVisibility.filter(
-      (col) => !orderedIds.has(col.id as TradeLogColumnId)
-    );
+    const remaining = columnsWithVisibility.filter((col) => {
+      const columnId = parseTradeLogColumnId(col.id);
+      return !columnId || !orderedIds.has(columnId);
+    });
 
     return [...ordered, ...remaining];
   }
@@ -365,12 +418,14 @@ function useTradeLogSettingsModalModel({
       };
 
       setColumns((prevColumns) => {
-        const columnVisibility = Object.fromEntries(
-          prevColumns.map((column) => [column.id, column.visible])
-        ) as Partial<Record<TradeLogColumnId, boolean>>;
-        const columnOrder = prevColumns.map(
-          (column) => column.id as TradeLogColumnId
-        );
+        const columnVisibility: Partial<Record<TradeLogColumnId, boolean>> = {};
+        const columnOrder: TradeLogColumnId[] = [];
+        for (const column of prevColumns) {
+          const columnId = parseTradeLogColumnId(column.id);
+          if (!columnId) continue;
+          columnVisibility[columnId] = column.visible;
+          columnOrder.push(columnId);
+        }
 
         return buildColumnsWithVisibility(plugin, {
           columnVisibility,
@@ -585,8 +640,10 @@ function useTradeLogSettingsModalModel({
       const columnOrder: TradeLogColumnId[] = [];
 
       columns.forEach((col) => {
-        columnVisibility[col.id as TradeLogColumnId] = col.visible;
-        columnOrder.push(col.id as TradeLogColumnId);
+        const columnId = parseTradeLogColumnId(col.id);
+        if (!columnId) return;
+        columnVisibility[columnId] = col.visible;
+        columnOrder.push(columnId);
       });
 
       
@@ -621,7 +678,7 @@ function useTradeLogSettingsModalModel({
     } catch (error) {
       console.error('Error saving TradeLog settings:', error);
       new Notice(
-        t('notice.error.save-settings', { error: (error as Error).message })
+        t('notice.error.save-settings', { error: getErrorMessage(error) })
       );
     } finally {
       setIsLoading(false);
@@ -824,16 +881,20 @@ const TradeLogSettingsModalContent: React.FC<
       
       <div className="tradelog-settings-modal-buttons">
         <button
-          onClick={handleReset}
+          onClick={() => void handleReset()}
           disabled={isLoading}
           className="reset-button"
         >
           {t('tradelog.settings.reset')}
         </button>
-        <button onClick={handleCancel} disabled={isLoading}>
+        <button onClick={() => void handleCancel()} disabled={isLoading}>
           {t('button.cancel')}
         </button>
-        <button onClick={handleSave} disabled={isLoading} className="primary">
+        <button
+          onClick={() => void handleSave()}
+          disabled={isLoading}
+          className="primary"
+        >
           {isLoading ? t('tradelog.settings.saving') : t('button.save')}
         </button>
       </div>

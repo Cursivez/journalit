@@ -77,7 +77,7 @@ export function getEffectivePnL(trade: {
 }
 
 interface TradePnLContributionContext {
-  tradeStatus?: 'OPEN' | 'CLOSED' | string;
+  tradeStatus?: string;
   exitTime?: Date | string | null;
   exitPrice?: number | null;
   pnl?: number | null;
@@ -202,7 +202,7 @@ export function isPnlContributingTrade(
 
 
 function isTradeOpen(trade: {
-  tradeStatus?: 'OPEN' | 'CLOSED' | string;
+  tradeStatus?: string;
   exitTime?: Date | string | null;
   pnl?: number | null;
 }): boolean {
@@ -223,7 +223,7 @@ function isTradeOpen(trade: {
 
 
 export function isTradeOpenWithContext(trade: {
-  tradeStatus?: 'OPEN' | 'CLOSED' | string;
+  tradeStatus?: string;
   exitTime?: Date | string | null;
   exitPrice?: number | null;
   pnl?: number | null;
@@ -313,7 +313,7 @@ export function isTradeOpenWithContext(trade: {
 
 
 export function isTradeOpenPreservingNullPnl(trade: {
-  tradeStatus?: 'OPEN' | 'CLOSED' | string;
+  tradeStatus?: string;
   exitTime?: Date | string | null;
   exitPrice?: number | null;
   pnl?: number | null;
@@ -356,7 +356,7 @@ export function isTradeOpenPreservingNullPnl(trade: {
 
 export function getTradeDisplayStatus(
   trade: {
-    tradeStatus?: 'OPEN' | 'CLOSED' | string;
+    tradeStatus?: string;
     exitTime?: Date | string | null;
     pnl?: number | null;
     isMissedTrade?: boolean;
@@ -416,7 +416,7 @@ export function getTradeDisplayStatus(
 
 export function getTradeDisplayStatusWithContext(
   trade: {
-    tradeStatus?: 'OPEN' | 'CLOSED' | string;
+    tradeStatus?: string;
     exitTime?: Date | string | null;
     pnl?: number | null;
     isMissedTrade?: boolean;
@@ -512,7 +512,7 @@ export function getPartialExitInfo(trade: {
     price?: number | null;
     size?: number | null;
   }>;
-  direction?: 'long' | 'short' | string;
+  direction?: string;
   assetType?: string;
   optionType?: string;
   contractSize?: number;
@@ -725,7 +725,7 @@ interface TradeExecutionCompatibilityInput {
   exitTime?: Date | string | null;
   hasExplicitExitPrice?: boolean;
   useDirectPnLInput?: boolean | string;
-  direction?: 'long' | 'short' | string;
+  direction?: string;
   assetType?: string;
   optionType?: string;
 }

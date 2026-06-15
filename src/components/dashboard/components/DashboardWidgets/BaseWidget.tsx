@@ -40,23 +40,9 @@ export const BaseWidget: React.FC<
   
   useEffect(() => {
     
-    const loadStyles = async () => {
-      try {
-        const { ensureChartStyles } =
-          await import('../../../../styles/chartStyles');
-      } catch (err) {
-        console.error('Error loading chart styles:', err);
-      }
+    const loadStyles = async () => {};
 
-      try {
-        const { ensureSharedComponentStyles } =
-          await import('../../../../styles/sharedComponentStyles');
-      } catch (err) {
-        console.error('Error loading shared component styles:', err);
-      }
-    };
-
-    loadStyles();
+    void loadStyles();
   }, []);
 
   

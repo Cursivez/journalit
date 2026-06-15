@@ -41,6 +41,18 @@ import {
 } from '../../guides/tradeLogGuideIds';
 import { useEventBus } from '../../hooks/useEventBus';
 
+const VIEW_LEVELS: ReadonlySet<string> = new Set([
+  'years',
+  'quarters',
+  'months',
+  'weeks',
+  'days',
+  'trades',
+]);
+
+const isViewLevel = (value: string): value is ViewLevel =>
+  VIEW_LEVELS.has(value);
+
 interface TradeLogHeaderProps {
   app: App;
   plugin: JournalitPlugin;
@@ -394,11 +406,12 @@ export const TradeLogHeader = memo<TradeLogHeaderProps>(
             <label>{t('tradelog.view.selector.label')}:</label>
             <select
               value={filters.viewLevel}
-              onChange={(e) =>
-                onFilterChange({
-                  viewLevel: e.target.value as ViewLevel,
-                })
-              }
+              onChange={(e) => {
+                const nextViewLevel = e.target.value;
+                if (isViewLevel(nextViewLevel)) {
+                  onFilterChange({ viewLevel: nextViewLevel });
+                }
+              }}
               className="trade-log-view-dropdown"
             >
               <option value="trades">{t('common.trades')}</option>

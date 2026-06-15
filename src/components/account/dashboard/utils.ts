@@ -661,10 +661,12 @@ export function calculateAccountWithdrawals(account: AccountData): number {
     .reduce((sum, t) => sum + Math.abs(t.amount), 0);
 }
 
+type MonthShortKey = (typeof MONTH_SHORT_KEYS)[number];
+
 export interface MonthlyWithdrawal {
   year: number;
   month: number;
-  monthName: string;
+  monthName: MonthShortKey;
   total: number;
 }
 
@@ -743,7 +745,7 @@ export function getWithdrawalsByMonth(
     result.push({
       year,
       month,
-      monthName: MONTH_SHORT_KEYS[month],
+      monthName: MONTH_SHORT_KEYS[month] ?? MONTH_SHORT_KEYS[0],
       total,
     });
   }

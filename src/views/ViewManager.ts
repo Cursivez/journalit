@@ -933,7 +933,7 @@ export class ViewManager {
       this.plugin.app.workspace.getLeavesOfType(NAVIGATION_VIEW_TYPE);
     if (existing.length > 0) {
       if (revealExisting) {
-        this.plugin.app.workspace.revealLeaf(existing[0]);
+        void this.plugin.app.workspace.revealLeaf(existing[0]);
       }
       return;
     }
@@ -949,7 +949,7 @@ export class ViewManager {
     );
 
     if (leftLeaf) {
-      this.plugin.app.workspace.revealLeaf(leftLeaf);
+      void this.plugin.app.workspace.revealLeaf(leftLeaf);
     }
   }
 
@@ -982,7 +982,7 @@ export class ViewManager {
     );
     if (existing.length > 0) {
       if (revealExisting) {
-        this.plugin.app.workspace.revealLeaf(existing[0]);
+        void this.plugin.app.workspace.revealLeaf(existing[0]);
       }
       return;
     }
@@ -998,7 +998,7 @@ export class ViewManager {
     );
 
     if (leftLeaf) {
-      this.plugin.app.workspace.revealLeaf(leftLeaf);
+      void this.plugin.app.workspace.revealLeaf(leftLeaf);
     }
   }
 
@@ -1044,7 +1044,7 @@ export class ViewManager {
         state: state,
       });
       this.syncGuideContextForLeaf(leaf);
-      this.plugin.app.workspace.revealLeaf(leaf);
+      void this.plugin.app.workspace.revealLeaf(leaf);
       this.plugin.app.workspace.setActiveLeaf(leaf, { focus: focusLeaf });
       this.syncGuideContextForLeaf(leaf);
 

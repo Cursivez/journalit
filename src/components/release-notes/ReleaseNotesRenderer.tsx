@@ -7,6 +7,8 @@ import { usePlugin } from '../../hooks/usePlugin';
 import releasesData from '../../../changelog/releases.json';
 import { t } from '../../lang/helpers';
 import { compareReleaseVersions } from './versionSort';
+import { openExternalUrl } from '../../utils/externalLinks';
+import { Accordion } from '../shared/Accordion';
 
 interface ReleaseEntry {
   title: string;
@@ -406,10 +408,6 @@ export const ReleaseNotesRenderer: React.FC<Props> = ({
     }
   };
 
-  const toggleVersion = (version: string) => {
-    setExpandedVersion(expandedVersion === version ? null : version);
-  };
-
   return (
     <div className="release-notes-view">
       <div className="release-notes-header">
@@ -417,16 +415,14 @@ export const ReleaseNotesRenderer: React.FC<Props> = ({
         <div className="release-notes-header-actions">
           <button
             className="release-notes-action-button"
-            onClick={() => window.open('https://journalit.co/docs', '_blank')}
+            onClick={() => openExternalUrl('https://journalit.co/docs')}
           >
             <span ref={docsIconRef} className="button-icon" />
             <span>{t('release-notes.link.docs')}</span>
           </button>
           <button
             className="release-notes-action-button"
-            onClick={() =>
-              window.open('https://discord.gg/AkSw3D9h8b', '_blank')
-            }
+            onClick={() => openExternalUrl('https://discord.gg/AkSw3D9h8b')}
           >
             <span ref={discordIconRef} className="button-icon" />
             <span>{t('release-notes.link.discord')}</span>
@@ -434,7 +430,7 @@ export const ReleaseNotesRenderer: React.FC<Props> = ({
           <button
             className="release-notes-action-button"
             onClick={() =>
-              window.open('https://github.com/Cursivez/journalit', '_blank')
+              openExternalUrl('https://github.com/Cursivez/journalit')
             }
           >
             <span ref={githubIconRef} className="button-icon" />
@@ -455,27 +451,19 @@ export const ReleaseNotesRenderer: React.FC<Props> = ({
       ) : (
         <div className="changelog-list">
           {changelogs.map(({ version, content }) => (
-            <div
+            <Accordion
               key={version}
-              className={`changelog-entry ${expandedVersion === version ? 'expanded' : ''}`}
+              title={t('release-notes.version', { version })}
+              className="release-notes-accordion"
+              expanded={expandedVersion === version}
+              onExpandedChange={(expanded) => {
+                setExpandedVersion(expanded ? version : null);
+              }}
             >
-              <button
-                type="button"
-                className="changelog-header"
-                onClick={() => toggleVersion(version)}
-              >
-                <h3>{t('release-notes.version', { version })}</h3>
-                <span className="expand-icon">
-                  {expandedVersion === version ? '▼' : '▶'}
-                </span>
-              </button>
-
-              {expandedVersion === version && (
-                <div className="changelog-content">
-                  <ReleaseMarkdown content={content} />
-                </div>
-              )}
-            </div>
+              <div className="changelog-content">
+                <ReleaseMarkdown content={content} />
+              </div>
+            </Accordion>
           ))}
         </div>
       )}

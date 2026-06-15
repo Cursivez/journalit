@@ -50,7 +50,8 @@ export function mergeRenderableCustomFieldFilters(
       const selectedValues = customFieldFilters?.[definition.field.id] || [];
       const options = [...definition.options];
       const seen = new Set(options.map((option) => option.value));
-      const labelMap = optionMaps.get(definition.field.id) || new Map();
+      const labelMap =
+        optionMaps.get(definition.field.id) ?? new Map<string, string>();
 
       selectedValues.forEach((value) => {
         if (!seen.has(value)) {
@@ -184,7 +185,7 @@ export const FilterModalContent = React.memo<FilterModalContentProps>(
                 .tradeTypes
             : normalizeDashboardTradeTypes(filters.tradeTypes);
 
-      onApply({
+      void onApply({
         ...filters,
         tradeTypes: normalizedTradeTypes,
       });

@@ -1,22 +1,7 @@
 
 
 
-export function injectChartStyles(): void {
-  return;
-}
-
-
-export function removeChartStyles(): void {
-  return;
-}
-
-
-export function ensureChartStyles(): void {
-  return;
-}
-
-
-const CHART_STYLES = `
+export const CHART_STYLES = `
 
 .journalit-chart-container {
   

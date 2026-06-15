@@ -1,6 +1,6 @@
 
 
-const METRIC_CARD_SKELETON_STYLES = `
+export const METRIC_CARD_SKELETON_STYLES = `
 .metric-card-skeleton {
   background: transparent;
   padding: 14px;
@@ -31,11 +31,3 @@ const METRIC_CARD_SKELETON_STYLES = `
   }
 }
 `;
-
-export function injectMetricCardSkeletonStyles(): void {
-  return;
-}
-
-export function removeMetricCardSkeletonStyles(): void {
-  return;
-}

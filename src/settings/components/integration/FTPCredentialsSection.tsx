@@ -17,10 +17,34 @@ import { ErrorHandler, ErrorContext } from '../../../utils/errorHandler';
 import { t } from '../../../lang/helpers';
 import { SupportErrorDetails } from '../../../utils/supportReport';
 import { BackendSecretStorage } from '../../../services/backend/BackendSecretStorage';
+import { writeClipboardText } from '../../../utils/clipboard';
 
 interface FTPCredentialsSectionProps {
   userId: string;
   onErrorChange?: (details: SupportErrorDetails | null) => void;
+}
+
+const asRecord = (value: unknown): Record<string, unknown> | null =>
+  value && typeof value === 'object' && !Array.isArray(value)
+    ? Object.fromEntries(Object.entries(value))
+    : null;
+
+function isFtpCredentials(value: unknown): value is FTPCredentials {
+  const candidate = asRecord(value);
+  if (!candidate) return false;
+  return (
+    typeof candidate.server === 'string' &&
+    typeof candidate.port === 'number' &&
+    typeof candidate.username === 'string' &&
+    typeof candidate.password === 'string'
+  );
+}
+
+function getCredentialsFromEvent(event: Event): FTPCredentials | null {
+  if (!(event instanceof CustomEvent)) return null;
+  const detail = asRecord(event.detail);
+  const credentials = detail?.credentials;
+  return isFtpCredentials(credentials) ? credentials : null;
 }
 
 function useFTPCredentialsSectionModel({
@@ -90,39 +114,40 @@ function useFTPCredentialsSectionModel({
 
   
   React.useEffect(() => {
-    loadCredentials();
+    void loadCredentials();
   }, [userId, loadCredentials]);
 
   
   React.useEffect(() => {
-    const handleCredentialsCreated = (event: CustomEvent) => {
-      if (event.detail?.credentials) {
+    const handleCredentialsCreated = (event: Event) => {
+      const eventCredentials = getCredentialsFromEvent(event);
+      if (eventCredentials) {
         
-        setCredentials(event.detail.credentials);
+        setCredentials(eventCredentials);
         setIsPasswordMasked(false); 
         onErrorChange?.(null);
       } else {
-        loadCredentials();
+        void loadCredentials();
       }
     };
 
     window.addEventListener(
       'ftp-credentials-created',
-      handleCredentialsCreated as EventListener
+      handleCredentialsCreated
     );
     return () => {
       window.removeEventListener(
         'ftp-credentials-created',
-        handleCredentialsCreated as EventListener
+        handleCredentialsCreated
       );
     };
   }, [loadCredentials, onErrorChange]);
 
   const copyToClipboard = useCallback(async (text: string, field: string) => {
     try {
-      await navigator.clipboard.writeText(text);
+      await writeClipboardText(text);
       setCopySuccess(field);
-      setTimeout(() => setCopySuccess(null), 2000);
+      window.setTimeout(() => setCopySuccess(null), 2000);
     } catch (err) {
       const errorContext: ErrorContext = {
         operation: 'copy to clipboard',
@@ -257,7 +282,7 @@ export const FTPCredentialsSection: React.FC<FTPCredentialsSectionProps> = (
                 <button
                   className="clickable-icon"
                   onClick={() =>
-                    copyToClipboard(
+                    void copyToClipboard(
                       `${credentials.server}:${credentials.port}`,
                       'server'
                     )
@@ -285,7 +310,7 @@ export const FTPCredentialsSection: React.FC<FTPCredentialsSectionProps> = (
                 <button
                   className="clickable-icon"
                   onClick={() =>
-                    copyToClipboard(credentials.username, 'username')
+                    void copyToClipboard(credentials.username, 'username')
                   }
                   aria-label={t('settings.ftp.aria.copy-login')}
                 >
@@ -313,7 +338,7 @@ export const FTPCredentialsSection: React.FC<FTPCredentialsSectionProps> = (
                   <button
                     className="clickable-icon"
                     onClick={() =>
-                      copyToClipboard(credentials.password!, 'password')
+                      void copyToClipboard(credentials.password!, 'password')
                     }
                     disabled={isPasswordMasked || !credentials.password}
                     aria-label={
@@ -366,7 +391,7 @@ export const FTPCredentialsSection: React.FC<FTPCredentialsSectionProps> = (
           <div className="ftp-reset-password">
             <button
               className="mod-cta ftp-reset-password-button"
-              onClick={handleResetPassword}
+              onClick={() => void handleResetPassword()}
               disabled={isResettingPassword}
             >
               {isResettingPassword

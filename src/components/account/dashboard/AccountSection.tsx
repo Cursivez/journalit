@@ -66,7 +66,7 @@ const AccountSectionComponent: React.FC<AccountSectionProps> = ({
             <AccountCard
               key={account.id}
               account={account}
-              onClick={() => openAccount(account.name, account)}
+              onClick={() => void openAccount(account.name, account)}
             />
           ))}
         </div>
@@ -96,8 +96,8 @@ const AccountSectionsComponent: React.FC<AccountSectionsProps> = ({
       return [];
     }
 
-    const configuredOrder: string[] | undefined = plugin?.settings?.account
-      ?.accountTypeOrder as string[] | undefined;
+    const configuredOrder: string[] | undefined =
+      plugin?.settings?.account?.accountTypeOrder;
     const customTypes: string[] =
       plugin?.optionsService?.getOptions?.(OptionType.ACCOUNT_TYPE) || [];
 

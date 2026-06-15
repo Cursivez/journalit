@@ -7,6 +7,92 @@ import { MissedTradeFormData } from './types';
 import { BaseComponentRenderer } from '../base/BaseComponentRenderer';
 import { parseDisplayText } from '../../utils/tagSchema';
 import { CustomFieldDefinition } from '../../types/customFields';
+import { safeString } from '../../utils/safeString';
+
+interface JournalitPluginForMissedTradeNote {
+  openTradeFormInEditMode?: (
+    data: Partial<MissedTradeFormData>,
+    filePath: string
+  ) => void;
+  missedTradeService?: {
+    updateMissedTrade: (
+      data: Partial<MissedTradeFormData>,
+      filePath: string,
+      source?: string
+    ) => Promise<void>;
+  };
+  customFieldsService?: {
+    getFields: () => CustomFieldDefinition[];
+  };
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return value !== null && typeof value === 'object';
+}
+
+function stringValue(value: unknown): string | undefined {
+  return typeof value === 'string' ? value : undefined;
+}
+
+function stringArrayValue(value: unknown): string[] | undefined {
+  if (Array.isArray(value)) {
+    return value.filter((item): item is string => typeof item === 'string');
+  }
+
+  if (!value || typeof value !== 'string') {
+    return undefined;
+  }
+
+  if (!value.startsWith('[') || !value.endsWith(']')) {
+    return [value];
+  }
+
+  const trimmed = value.slice(1, -1).trim();
+  return trimmed ? trimmed.split(',').map((item) => item.trim()) : [];
+}
+
+function numericValue(value: unknown): number {
+  if (typeof value === 'number') {
+    return Number.isFinite(value) ? value : 0;
+  }
+
+  if (typeof value === 'string') {
+    const parsed = Number.parseFloat(value);
+    return Number.isFinite(parsed) ? parsed : 0;
+  }
+
+  return 0;
+}
+
+function optionalNumericValue(value: unknown): number | undefined {
+  if (value === undefined || value === null) {
+    return undefined;
+  }
+
+  return numericValue(value);
+}
+
+function dateValue(value: unknown): Date | null {
+  if (value instanceof Date) {
+    return value;
+  }
+
+  if (typeof value === 'string' || typeof value === 'number') {
+    return new Date(value);
+  }
+
+  return null;
+}
+
+function getJournalitPlugin(
+  app: App
+): JournalitPluginForMissedTradeNote | undefined {
+  const plugins = app.plugins?.plugins;
+  const plugin = plugins?.journalit;
+  return isRecord(plugin)
+    ? (plugin as JournalitPluginForMissedTradeNote)
+    : undefined;
+}
 
 export class MissedTradeNoteRenderer extends BaseComponentRenderer {
   constructor(app: App) {
@@ -87,7 +173,7 @@ export class MissedTradeNoteRenderer extends BaseComponentRenderer {
       
       let domLeafId: string | null = null;
       if (leaf && leaf.view) {
-        const viewContainerEl = leaf.view.containerEl as HTMLElement;
+        const viewContainerEl = leaf.view.containerEl;
 
         
         if (viewContainerEl && viewContainerEl.id) {
@@ -215,7 +301,7 @@ export class MissedTradeNoteRenderer extends BaseComponentRenderer {
   ): React.ReactElement {
     const handleEditClick = (missedTradeData: Partial<MissedTradeFormData>) => {
       
-      const plugin = this.app.plugins?.plugins?.['journalit'];
+      const plugin = getJournalitPlugin(this.app);
       if (!plugin) {
         console.error('Cannot access plugin instance for edit action');
         return;
@@ -233,7 +319,7 @@ export class MissedTradeNoteRenderer extends BaseComponentRenderer {
       updatedData: Partial<MissedTradeFormData>
     ) => {
       
-      const plugin = this.app.plugins?.plugins?.['journalit'];
+      const plugin = getJournalitPlugin(this.app);
       if (!plugin || !plugin.missedTradeService) {
         console.error('Cannot access plugin instance for data update');
         return;
@@ -257,8 +343,8 @@ export class MissedTradeNoteRenderer extends BaseComponentRenderer {
 
     return React.createElement(MissedTradeNote, {
       data: { ...data, filePath, isMissedTrade: true as const },
-      onEditClick: handleEditClick,
-      onDataUpdate: handleDataUpdate,
+      onEditClick: (nextData: typeof data) => void handleEditClick(nextData),
+      onDataUpdate: (nextData: typeof data) => void handleDataUpdate(nextData),
     });
   }
 
@@ -299,67 +385,38 @@ export class MissedTradeNoteRenderer extends BaseComponentRenderer {
 
     
     if (frontmatter.entries && Array.isArray(frontmatter.entries)) {
-      missedTradeData.entries = frontmatter.entries.map(
-        (entry: Record<string, unknown>) => ({
-          time: entry.time ? new Date(entry.time as string) : null,
-          price: parseFloat(entry.price as string) || 0,
-          size: parseFloat(entry.size as string) || 0,
-          notional:
-            entry.notional !== undefined
-              ? parseFloat(entry.notional as string)
-              : undefined,
-        })
-      );
+      missedTradeData.entries = frontmatter.entries
+        .filter(isRecord)
+        .map((entry) => ({
+          time: dateValue(entry.time),
+          price: numericValue(entry.price),
+          size: numericValue(entry.size),
+          notional: optionalNumericValue(entry.notional),
+        }));
     }
 
     if (frontmatter.exits && Array.isArray(frontmatter.exits)) {
-      missedTradeData.exits = frontmatter.exits.map(
-        (exit: Record<string, unknown>) => ({
-          time: exit.time ? new Date(exit.time as string) : null,
-          price: parseFloat(exit.price as string) || 0,
-          size: parseFloat(exit.size as string) || 0,
-          notional:
-            exit.notional !== undefined
-              ? parseFloat(exit.notional as string)
-              : undefined,
-        })
-      );
+      missedTradeData.exits = frontmatter.exits
+        .filter(isRecord)
+        .map((exit) => ({
+          time: dateValue(exit.time),
+          price: numericValue(exit.price),
+          size: numericValue(exit.size),
+          notional: optionalNumericValue(exit.notional),
+        }));
     }
 
     
-    ['setupIds', 'setup', 'mistake', 'account', 'tags', 'customTags'].forEach(
-      (field) => {
-        if (missedTradeData[field]) {
-          if (!Array.isArray(missedTradeData[field])) {
-            if (
-              typeof missedTradeData[field] === 'string' &&
-              missedTradeData[field].startsWith('[') &&
-              missedTradeData[field].endsWith(']')
-            ) {
-              try {
-                const trimmedStr = missedTradeData[field].slice(1, -1).trim();
-                if (trimmedStr) {
-                  missedTradeData[field] = trimmedStr
-                    .split(',')
-                    .map((item: string) => item.trim());
-                } else {
-                  missedTradeData[field] = [];
-                }
-              } catch (e) {
-                console.error(
-                  `[MissedTradeNote] Failed to parse array string: ${field}`,
-                  e
-                );
-                missedTradeData[field] = [missedTradeData[field]];
-              }
-            } else {
-              
-              missedTradeData[field] = [missedTradeData[field]];
-            }
-          }
-        }
-      }
-    );
+    for (const field of [
+      'setupIds',
+      'setup',
+      'mistake',
+      'account',
+      'tags',
+      'customTags',
+    ]) {
+      missedTradeData[field] = stringArrayValue(missedTradeData[field]) ?? [];
+    }
 
     
     if (missedTradeData.tags && Array.isArray(missedTradeData.tags)) {
@@ -411,7 +468,9 @@ export class MissedTradeNoteRenderer extends BaseComponentRenderer {
         typeof missedTradeData[field] !== 'number'
       ) {
         try {
-          missedTradeData[field] = parseFloat(String(missedTradeData[field]));
+          missedTradeData[field] = parseFloat(
+            safeString(missedTradeData[field])
+          );
         } catch (e) {
           console.error(
             `[MissedTradeNote] Failed to parse number: ${field}`,
@@ -441,19 +500,19 @@ export class MissedTradeNoteRenderer extends BaseComponentRenderer {
     
     
     missedTradeData.thesis =
-      parseDisplayText(frontmatter.thesis as string | undefined) || '';
+      parseDisplayText(stringValue(frontmatter.thesis)) || '';
     missedTradeData.missedReason =
-      parseDisplayText(frontmatter.missedReason as string | undefined) || '';
+      parseDisplayText(stringValue(frontmatter.missedReason)) || '';
 
     
     
     
     try {
-      const plugin = this.app.plugins?.plugins?.['journalit'];
+      const plugin = getJournalitPlugin(this.app);
       if (plugin && plugin.customFieldsService) {
         const customFieldDefinitions = plugin.customFieldsService.getFields();
 
-        const customFields: { [fieldId: string]: any } = {};
+        const customFields: Record<string, unknown> = {};
 
         
         customFieldDefinitions.forEach((fieldDef: CustomFieldDefinition) => {
@@ -480,7 +539,7 @@ export class MissedTradeNoteRenderer extends BaseComponentRenderer {
 
   
 
-  private normalizeImagePaths(images: any): string[] {
+  private normalizeImagePaths(images: unknown): string[] {
     if (!images) {
       return [];
     }
@@ -489,7 +548,7 @@ export class MissedTradeNoteRenderer extends BaseComponentRenderer {
     if (Array.isArray(images)) {
       const processed = images
         .map((img) => {
-          if (typeof img !== 'string') return String(img);
+          if (typeof img !== 'string') return safeString(img);
           const cleaned = img.replace(/['"`]/g, '').trim();
           return cleaned;
         })

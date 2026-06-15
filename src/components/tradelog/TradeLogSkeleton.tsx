@@ -4,11 +4,6 @@ import React, { memo, useLayoutEffect, useMemo } from 'react';
 import { SkeletonBox } from '../shared/SkeletonBox';
 import { SkeletonText } from '../shared/SkeletonText';
 import { SkeletonCircle } from '../shared/SkeletonCircle';
-import {
-  injectTradeLogSkeletonStyles,
-  removeTradeLogSkeletonStyles,
-} from '../../styles/tradelog/tradeLogSkeletonStyles';
-import { ensureSkeletonStyles } from '../../styles/skeletonStyles';
 import type { ColumnDefinition } from './columnConfig';
 import { t } from '../../lang/helpers';
 import { cssVars } from '../../styles/inlineStylePolicy';

@@ -1,6 +1,6 @@
 
 
-const REACT_VIEW_STYLES = `
+export const REACT_VIEW_STYLES = `
   
   .react-view-container {
     height: 100% !important;
@@ -28,11 +28,3 @@ const REACT_VIEW_STYLES = `
     min-height: 0;
   }
 `;
-
-
-function injectReactViewStyles(): void {
-  return;
-}
-
-
-export function ensureReactViewStyles(): void {}

@@ -404,9 +404,9 @@ export class TradeTemplateService {
       createdAt: now,
       updatedAt: now,
       
-      sections: JSON.parse(JSON.stringify(template.sections)),
+      sections: structuredClone(template.sections),
       
-      display: JSON.parse(JSON.stringify(template.display)),
+      display: structuredClone(template.display),
     };
 
     this.templates.push(duplicatedTemplate);

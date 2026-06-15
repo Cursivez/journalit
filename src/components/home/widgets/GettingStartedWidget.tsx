@@ -12,7 +12,6 @@ import { t } from '../../../lang/helpers';
 import { DeviceFlowSignInModal } from '../../auth/DeviceFlowSignInModal';
 import { useEventBus } from '../../../hooks/useEventBus';
 import { useBackendProEntitlement } from '../../../hooks/useBackendProEntitlement';
-import { ensureHomeWidgetStyles } from '../../../styles/homeWidgetStyles';
 import { TRADE_LOG_VIEW_TYPE } from '../../../views/TradeLogView';
 import { TEMPLATE_BUILDER_VIEW_TYPE } from '../../../views/TemplateBuilderView';
 
@@ -172,7 +171,7 @@ export const GettingStartedWidget = memo<GettingStartedWidgetProps>(
           description: t('home.widget.getting-started.item.create.description'),
           time: t('home.widget.getting-started.item.create.time'),
           cta: t('home.widget.getting-started.item.create.cta'),
-          onClick: handleAddTrade,
+          onClick: () => void handleAddTrade(),
           completed: hasTrade,
         },
         {
@@ -183,7 +182,7 @@ export const GettingStartedWidget = memo<GettingStartedWidgetProps>(
           ),
           time: t('home.widget.getting-started.item.tradelog.time'),
           cta: t('home.widget.getting-started.item.tradelog.cta'),
-          onClick: handleOpenTradeLog,
+          onClick: () => void handleOpenTradeLog(),
           completed: openedTradeLog,
         },
         {
@@ -194,7 +193,7 @@ export const GettingStartedWidget = memo<GettingStartedWidgetProps>(
           ),
           time: t('home.widget.getting-started.item.layouts.time'),
           cta: t('home.widget.getting-started.item.layouts.cta'),
-          onClick: handleOpenLayoutBuilder,
+          onClick: () => void handleOpenLayoutBuilder(),
           completed: openedLayoutBuilder,
         },
         {

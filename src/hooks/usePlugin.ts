@@ -36,7 +36,7 @@ export const setupPluginHook = (plugin: JournalitPlugin) => {
   setPluginInstance(plugin);
 
   
-  setTimeout(notifyPluginReady, 0);
+  window.setTimeout(notifyPluginReady, 0);
 
   
   eventBus.publish('plugin:updated');

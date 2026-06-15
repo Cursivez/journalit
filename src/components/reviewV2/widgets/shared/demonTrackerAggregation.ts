@@ -50,7 +50,12 @@ function isSourceMode(value: unknown): value is DemonTrackerSourceMode {
 }
 
 function normalizeMistake(value: unknown): string | null {
-  const normalized = String(value ?? '').trim();
+  const normalized =
+    typeof value === 'string' ||
+    typeof value === 'number' ||
+    typeof value === 'boolean'
+      ? String(value).trim()
+      : '';
   return normalized.length > 0 ? normalized : null;
 }
 

@@ -1,9 +1,6 @@
 
 
-const DEVICE_FLOW_MODAL_STYLE_ID = 'journalit-device-flow-signin-modal-styles';
-
-
-const deviceFlowSignInModalStyles = `
+export const deviceFlowSignInModalStyles = `
 
 .device-activation-modal-container {
   width: 100%;
@@ -11,29 +8,40 @@ const deviceFlowSignInModalStyles = `
   margin: 0 auto;
 }
 
-
-.device-activation-modal-container .device-activation-step {
-  padding: 1.5rem;  
-  min-height: auto;  
-  align-items: flex-start;  
-}
-
-
-.device-activation-modal-container .activation-content {
-  grid-template-columns: 1fr !important;  
-  gap: 1.5rem !important;  
-  max-width: 100% !important;  
+.device-activation-modal-container > div {
   width: 100%;
 }
 
 
+.device-activation-modal-container.journalit-onboarding-view-container .device-activation-step {
+  padding: 1rem 1.5rem 1.25rem;  
+  min-height: auto;  
+  align-items: flex-start;  
+  width: 100%;
+}
+
+
+.device-activation-modal-container.journalit-onboarding-view-container .activation-content {
+  grid-template-columns: 1fr;  
+  gap: 1.5rem;  
+  max-width: 100%;  
+  width: 100%;
+  align-items: stretch;
+}
+
+.device-activation-modal-container.journalit-onboarding-view-container .activation-left {
+  width: 100%;
+  gap: 0.875rem;
+}
+
+
 .device-activation-modal-container .activation-right {
-  display: none !important;
+  display: none;
 }
 
 
 .device-activation-modal-container .activation-header {
-  margin-bottom: 1rem;
+  margin-bottom: 0;
 }
 
 .device-activation-modal-container .activation-header h2 {
@@ -43,21 +51,22 @@ const deviceFlowSignInModalStyles = `
 
 .device-activation-modal-container .activation-subtitle {
   font-size: 0.9rem;
+  margin: 0;
 }
 
 
 .device-activation-modal-container .device-code-container {
-  gap: 0.5rem;
+  gap: 0.375rem;
 }
 
 .device-activation-modal-container .device-code-box {
-  padding: 1rem;  
+  padding: 0.75rem 1rem;  
   gap: 0.75rem;  
 }
 
 .device-activation-modal-container .device-code {
-  font-size: 1.5rem !important;  
-  letter-spacing: 0.2em !important;  
+  font-size: 1.5rem;  
+  letter-spacing: 0.2em;  
 }
 
 .device-activation-modal-container .copy-button {
@@ -68,11 +77,11 @@ const deviceFlowSignInModalStyles = `
 
 
 .device-activation-modal-container .activation-steps {
-  gap: 0.5rem;  
+  gap: 0.4rem;  
 }
 
 .device-activation-modal-container .step-item {
-  padding: 0.75rem;  
+  padding: 0.625rem 0.75rem;  
 }
 
 .device-activation-modal-container .step-number {
@@ -87,13 +96,13 @@ const deviceFlowSignInModalStyles = `
 
 
 .device-activation-modal-container .activation-primary-action {
-  margin-top: 1rem;
+  margin-top: 0.375rem;
 }
 
 
 .device-activation-modal-container .activation-waiting {
-  margin-top: 1rem;
-  padding: 1rem;
+  margin-top: 0.375rem;
+  padding: 0.75rem 1rem;
 }
 
 .device-activation-modal-container .waiting-text p {
@@ -175,7 +184,3 @@ const deviceFlowSignInModalStyles = `
   color: var(--color-green);
 }
 `;
-
-export function injectDeviceFlowSignInModalStyles(): void {
-  return;
-}

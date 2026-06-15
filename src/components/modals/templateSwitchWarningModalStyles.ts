@@ -1,9 +1,5 @@
 
-
-const TEMPLATE_SWITCH_WARNING_MODAL_STYLE_ID =
-  'journalit-template-switch-warning-modal-styles';
-
-const TEMPLATE_SWITCH_WARNING_MODAL_STYLES = `
+export const TEMPLATE_SWITCH_WARNING_MODAL_STYLES = `
   .template-switch-warning-modal .template-switch-warning-content {
     font-family: var(--default-font);
     font-size: 14px;
@@ -92,13 +88,3 @@ const TEMPLATE_SWITCH_WARNING_MODAL_STYLES = `
     min-width: 140px;
   }
 `;
-
-const templateSwitchWarningModalStylesInjected = false;
-
-function injectTemplateSwitchWarningModalStyles(): void {
-  return;
-}
-
-export function ensureTemplateSwitchWarningModalStyles(): void {
-  return;
-}

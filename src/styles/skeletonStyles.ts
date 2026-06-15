@@ -1,6 +1,6 @@
 
 
-const SKELETON_STYLES = `
+export const SKELETON_STYLES = `
 @keyframes shimmer {
   0% {
     background-position: -1000px 0;
@@ -38,9 +38,3 @@ const SKELETON_STYLES = `
   border: 0;
 }
 `;
-
-function injectSkeletonStyles(): void {
-  return;
-}
-
-export function ensureSkeletonStyles(): void {}

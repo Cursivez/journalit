@@ -155,6 +155,20 @@ function normalizeColumnMappings(
   return normalized;
 }
 
+function canonicalMappingsForComparison(
+  columnMappings: CSVColumnMappings
+): MultiColumnMappings {
+  const mappings: MultiColumnMappings = {};
+
+  for (const [key, value] of Object.entries(columnMappings)) {
+    if (Array.isArray(value)) {
+      mappings[key] = value.filter(isNonEmptyString);
+    }
+  }
+
+  return mappings;
+}
+
 function isCanonicalV2Shape(columnMappings: CSVColumnMappings): boolean {
   const entries = Object.entries(columnMappings);
   if (entries.length === 0) {
@@ -182,7 +196,7 @@ export function normalizeTemplate(template: LocalCSVTemplate): {
   const rawMappings = template.column_mappings || {};
   const canonicalShape = isCanonicalV2Shape(rawMappings);
   const canonicalWithoutSanitization = canonicalShape
-    ? (rawMappings as MultiColumnMappings)
+    ? canonicalMappingsForComparison(rawMappings)
     : normalizeColumnMappings(rawMappings);
 
   const changed =

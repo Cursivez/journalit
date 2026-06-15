@@ -7,10 +7,13 @@ import {
   CustomDataServiceConfig,
 } from '../base/CustomDataService';
 import JournalitPlugin from '../../main';
-import { FolderPathService } from '../core/FolderPathService';
 import { mapCustomFieldsToFrontmatter } from '../../utils/customFieldPersistence';
 import { getTradingDay } from '../../utils/tradingDayUtils';
-import { getQuarterForMonth, getWeekFolderName } from '../../utils/dateUtils';
+import {
+  getQuarterForMonth,
+  getQuarterString,
+  getWeekFolderName,
+} from '../../utils/dateUtils';
 import { calculatePnL } from '../../utils/pnlCalculation';
 import { calculatePersistableRMultiple } from '../../components/forms/trade/validation';
 import { MissedTradeFormData } from '../../components/missedTrade/types';
@@ -18,9 +21,23 @@ import { eventBus } from '../events';
 import { LossReviewData } from '../backend/types';
 import { forceMetadataCacheRefresh } from '../../utils/dataRefresh';
 import { Mutex } from '../../utils/mutex';
+import { safeString } from '../../utils/safeString';
 
 function isTradeFolderPath(path: string): boolean {
   return /\/trades\//.test(path);
+}
+
+interface MissedTradeFolderPathService {
+  journalFolderPath: string;
+  getPath(...segments: string[]): string;
+  isJournalPath(path: string): boolean;
+  getDatePathForQuarterSync(
+    year: string,
+    quarterNum: number,
+    month: string,
+    week: string,
+    ...additionalSegments: string[]
+  ): string;
 }
 
 
@@ -28,7 +45,7 @@ export class MissedTradeService extends CustomDataService {
   private recentlyCreatedFiles: Set<string> = new Set();
   private readonly creationMutex = new Mutex();
   private readonly tradesFolder = 'trades';
-  private folderPathService: FolderPathService;
+  private folderPathService: MissedTradeFolderPathService;
 
   constructor(
     app: App,
@@ -50,14 +67,29 @@ export class MissedTradeService extends CustomDataService {
     });
 
     this.setPlugin(plugin);
-    this.folderPathService =
-      folderPathService ||
-      ({
-        journalFolderPath: '!Journalit',
-        getPath: (...segments: string[]) =>
-          normalizePath(['!Journalit', ...segments].join('/')),
-        isJournalPath: (path: string) => path.startsWith('!Journalit/'),
-      } as FolderPathService);
+    this.folderPathService = folderPathService || {
+      journalFolderPath: '!Journalit',
+      getPath: (...segments: string[]) =>
+        normalizePath(['!Journalit', ...segments].join('/')),
+      isJournalPath: (path: string) => path.startsWith('!Journalit/'),
+      getDatePathForQuarterSync: (
+        year: string,
+        quarterNum: number,
+        month: string,
+        week: string,
+        ...additionalSegments: string[]
+      ) =>
+        normalizePath(
+          [
+            '!Journalit',
+            year,
+            getQuarterString(quarterNum),
+            month,
+            week,
+            ...additionalSegments,
+          ].join('/')
+        ),
+    };
   }
 
   
@@ -175,7 +207,7 @@ export class MissedTradeService extends CustomDataService {
         this.recentlyCreatedFiles.add(nextFilePath);
 
         
-        setTimeout(() => {
+        window.setTimeout(() => {
           this.recentlyCreatedFiles?.delete(nextFilePath);
         }, 10000);
 
@@ -196,7 +228,7 @@ export class MissedTradeService extends CustomDataService {
       });
 
       
-      this.clearCache();
+      void this.clearCache();
 
       const runPostCreateTasks = async () => {
         
@@ -223,7 +255,7 @@ export class MissedTradeService extends CustomDataService {
       };
 
       if (options?.deferPostCreateTasks) {
-        setTimeout(() => {
+        window.setTimeout(() => {
           void runPostCreateTasks().catch((error) => {
             console.error(
               '[MissedTradeService] Post-create tasks failed:',
@@ -280,7 +312,7 @@ export class MissedTradeService extends CustomDataService {
 
       
 
-      const frontmatterData: Record<string, any> = {
+      const frontmatterData: Record<string, unknown> = {
         type: 'missed-trade',
         isMissedTrade: true,
         isBacktestTrade: undefined,
@@ -454,7 +486,7 @@ export class MissedTradeService extends CustomDataService {
       });
 
       
-      this.clearCache();
+      void this.clearCache();
 
       logger.debug(`Missed trade updated successfully: ${filePath}`);
       return filePath;
@@ -476,7 +508,7 @@ export class MissedTradeService extends CustomDataService {
         throw new Error(`Invalid file path: ${filePath}`);
       }
 
-      const frontmatterData: Record<string, any> = {
+      const frontmatterData: Record<string, unknown> = {
         reviewed,
         reviewedAt: reviewedAt || new Date().toISOString(),
       };
@@ -508,7 +540,7 @@ export class MissedTradeService extends CustomDataService {
         throw new Error(`Invalid file path: ${filePath}`);
       }
 
-      const frontmatterData: Record<string, any> = {
+      const frontmatterData: Record<string, unknown> = {
         lossReview: lossReviewData,
       };
 
@@ -533,7 +565,7 @@ export class MissedTradeService extends CustomDataService {
     logger.debug('Handling missed trade deletion:', filePath);
 
     
-    this.clearCache();
+    void this.clearCache();
 
     
     eventBus.publish('missed-trade:changed', {
@@ -703,7 +735,7 @@ export class MissedTradeService extends CustomDataService {
     endDate: Date
   ): Promise<TFile[]> {
     
-    await new Promise((resolve) => setTimeout(resolve, 50));
+    await new Promise((resolve) => window.setTimeout(resolve, 50));
 
     
     this.invalidateCache();
@@ -738,9 +770,13 @@ export class MissedTradeService extends CustomDataService {
             return null;
           }
 
-          const entryTime = frontmatter.entryTime
-            ? new Date(frontmatter.entryTime)
-            : null;
+          const entryTimeValue = frontmatter.entryTime;
+          const entryTime =
+            typeof entryTimeValue === 'string' ||
+            typeof entryTimeValue === 'number' ||
+            entryTimeValue instanceof Date
+              ? new Date(entryTimeValue)
+              : null;
           if (!entryTime) {
             return null;
           }
@@ -922,7 +958,7 @@ export class MissedTradeService extends CustomDataService {
           } else if (typeof value === 'string') {
             frontmatterLines.push(`${key}: ${JSON.stringify(value)}`);
           } else {
-            frontmatterLines.push(`${key}: ${value}`);
+            frontmatterLines.push(`${key}: ${safeString(value)}`);
           }
         });
       } catch (error) {
@@ -951,7 +987,7 @@ export class MissedTradeService extends CustomDataService {
           
           frontmatterLines.push(`${key}: ${JSON.stringify(value)}`);
         } else {
-          frontmatterLines.push(`${key}: ${value}`);
+          frontmatterLines.push(`${key}: ${safeString(value)}`);
         }
       }
     });

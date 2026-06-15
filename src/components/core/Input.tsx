@@ -53,14 +53,14 @@ export const Input: React.FC<InputProps> = ({
   
   const handleInputChange = (e: ChangeEvent<HTMLInputElement>) => {
     if (onChange) {
-      onChange(e.target.value);
+      void onChange(e.target.value);
     }
   };
 
   
   const handleTextareaChange = (e: ChangeEvent<HTMLTextAreaElement>) => {
     if (onChange) {
-      onChange(e.target.value);
+      void onChange(e.target.value);
     }
   };
 

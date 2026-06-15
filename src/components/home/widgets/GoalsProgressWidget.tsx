@@ -30,7 +30,6 @@ import {
 import { getTradingDay } from '../../../utils/tradingDayUtils';
 import { SkeletonBox } from '../../shared/SkeletonBox';
 import { SkeletonText } from '../../shared/SkeletonText';
-import { ensureHomeWidgetStyles } from '../../../styles/homeWidgetStyles';
 import { t } from '../../../lang/helpers';
 import { getTradeAnalyticsTradingDay } from '../../../utils/tradeAnalyticsDate';
 
@@ -84,7 +83,7 @@ const useGoalModel = (
   existingConfig: GoalConfig | undefined,
   dashboardData: ReturnType<typeof useDashboardData>,
   currency: string,
-  formatValue: any,
+  formatValue: ReturnType<typeof useDisplayFormatter>['formatValue'],
   defaultRiskAmount: number | undefined,
   weekStartDay: WeekStartDaySetting
 ) => {
@@ -173,7 +172,7 @@ const useGoalModel = (
     }
 
     const pnlContributingTrades = periodTrades.filter((trade) =>
-      isPnlContributingTrade(trade as Trade)
+      isPnlContributingTrade(trade)
     );
     const breakEvenSettings = plugin.settings.trade;
 
@@ -430,7 +429,7 @@ const GoalSettingModal: React.FC<{
       <div className="journalit-home-goals__actions">
         
         <button
-          onClick={handleSave}
+          onClick={() => void handleSave()}
           disabled={!canSave}
           className="clickable-icon journalit-home-goals__save-button"
           aria-label={t('home.widget.goals-progress.aria.save-goal')}
@@ -724,7 +723,7 @@ const GoalsProgressWidgetComponent: React.FC<GoalsProgressWidgetProps> = ({
         setUseRMultiples={model.setUseRMultiples}
         rMultiplesEnabled={model.rMultiplesEnabled}
         canSave={model.canSave}
-        handleSave={model.handleSave}
+        handleSave={() => void model.handleSave()}
         onCancel={() => model.setShowModal(false)}
         existingConfig={existingConfig}
         currency={currency}

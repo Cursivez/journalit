@@ -1,3 +1,4 @@
+import { safeString } from './safeString';
 
 
 type ParsedTradeDividend<TTime = string | Date | null | undefined> = {
@@ -10,7 +11,7 @@ const parseOptionalNumber = (value: unknown): number | undefined => {
     return undefined;
   }
 
-  const parsed = parseFloat(String(value));
+  const parsed = parseFloat(safeString(value));
   return Number.isFinite(parsed) ? parsed : undefined;
 };
 
@@ -19,41 +20,57 @@ const parseRequiredNumber = (value: unknown): number => {
     return 0;
   }
 
-  const parsed = parseFloat(String(value));
+  const parsed = parseFloat(safeString(value));
   return Number.isFinite(parsed) ? parsed : 0;
 };
 
-export function parseTradeDividendTransactions<
-  TTime = string | Date | null | undefined,
->(
+export function parseTradeDividendTransactions(
+  dividends: unknown
+): ParsedTradeDividend<string | Date | undefined>[] | undefined;
+export function parseTradeDividendTransactions<TTime>(
   dividends: unknown,
   options: {
+    parseTime: (value: unknown) => TTime;
+    filter?: (dividend: ParsedTradeDividend<TTime>) => boolean;
+  }
+): ParsedTradeDividend<TTime>[] | undefined;
+export function parseTradeDividendTransactions<TTime>(
+  dividends: unknown,
+  options?: {
     parseTime?: (value: unknown) => TTime;
     filter?: (dividend: ParsedTradeDividend<TTime>) => boolean;
-  } = {}
-): ParsedTradeDividend<TTime>[] | undefined {
+  }
+):
+  | ParsedTradeDividend<TTime>[]
+  | ParsedTradeDividend<string | Date | undefined>[]
+  | undefined {
   if (!Array.isArray(dividends)) {
     return undefined;
   }
 
-  const parseTime =
-    options.parseTime ||
-    ((value: unknown) =>
-      (value instanceof Date || typeof value === 'string'
-        ? value
-        : undefined) as TTime);
+  const dividendRecords = dividends.filter(
+    (dividend): dividend is Record<string, unknown> =>
+      dividend !== null &&
+      typeof dividend === 'object' &&
+      !Array.isArray(dividend)
+  );
 
-  const parsed = dividends
-    .filter(
-      (dividend): dividend is Record<string, unknown> =>
-        dividend !== null && typeof dividend === 'object'
-    )
-    .map((dividend) => ({
-      time: parseTime(dividend.time),
+  if (options?.parseTime) {
+    const parsed = dividendRecords.map((dividend) => ({
+      time: options.parseTime!(dividend.time),
       amount: parseOptionalNumber(dividend.amount),
     }));
 
-  return options.filter ? parsed.filter(options.filter) : parsed;
+    return options.filter ? parsed.filter(options.filter) : parsed;
+  }
+
+  return dividendRecords.map((dividend) => ({
+    time:
+      dividend.time instanceof Date || typeof dividend.time === 'string'
+        ? dividend.time
+        : undefined,
+    amount: parseOptionalNumber(dividend.amount),
+  }));
 }
 
 

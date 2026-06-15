@@ -13,6 +13,7 @@ import { openPathChangeInstructionModal } from '../../../components/modals/PathC
 import {
   getCurrencyOptions,
   CurrencyCode,
+  parseCuratedCurrencyCode,
 } from '../../../utils/currencyConfig';
 import { useDebouncedFunction } from '../../../hooks/useDebounced';
 import { TradePathUpdateUtility } from '../../../services/trade/TradePathUpdateUtility';
@@ -29,6 +30,46 @@ import type {
   WeekStartDay,
   SidebarTabBehavior,
 } from '../../types';
+
+type HomeStartupBehavior = 'always' | 'ifNone' | 'never';
+type MaeMfeInputMode = 'price' | 'dollar';
+
+function parseWeekStartDay(value: string): WeekStartDay {
+  switch (value) {
+    case 'sunday':
+    case 'monday':
+    case 'tuesday':
+    case 'wednesday':
+    case 'thursday':
+    case 'friday':
+    case 'saturday':
+      return value;
+    default:
+      return 'monday';
+  }
+}
+
+function parseAnalyticsDateBasis(value: string): AnalyticsDateBasis {
+  return value === 'exit' ? 'exit' : 'entry';
+}
+
+function parseHomeStartupBehavior(value: string): HomeStartupBehavior {
+  switch (value) {
+    case 'ifNone':
+    case 'never':
+      return value;
+    default:
+      return 'always';
+  }
+}
+
+function parseMaeMfeInputMode(value: string): MaeMfeInputMode {
+  return value === 'price' ? 'price' : 'dollar';
+}
+
+function parseSidebarTabBehavior(value: string): SidebarTabBehavior {
+  return value === 'newTab' ? 'newTab' : 'replaceActiveTab';
+}
 
 interface GeneralTabProps {
   plugin: JournalitPlugin;
@@ -269,7 +310,7 @@ function useGeneralTabModel(props: GeneralTabProps) {
   };
 
   const handleWeekStartDayChange = async (newValue: string) => {
-    const weekStartDay = newValue as WeekStartDay;
+    const weekStartDay = parseWeekStartDay(newValue);
     plugin.settings.trade.weekStartDay = weekStartDay;
     await plugin.saveSettings();
 
@@ -287,7 +328,7 @@ function useGeneralTabModel(props: GeneralTabProps) {
   };
 
   const handleAnalyticsDateBasisChange = async (newValue: string) => {
-    const analyticsDateBasis = newValue as AnalyticsDateBasis;
+    const analyticsDateBasis = parseAnalyticsDateBasis(newValue);
     plugin.settings.trade.analyticsDateBasis = analyticsDateBasis;
     await plugin.saveSettings();
 
@@ -343,7 +384,7 @@ function useGeneralTabModel(props: GeneralTabProps) {
 
   
   const handleCurrencyChange = async (newValue: string) => {
-    const currencyCode = newValue as CurrencyCode;
+    const currencyCode = parseCuratedCurrencyCode(newValue);
 
     
     if (!plugin.settings.general) {
@@ -461,8 +502,7 @@ function useGeneralTabModel(props: GeneralTabProps) {
       if (backendService?.getIsSyncing()) {
         new Notice(t('notice.error.cannot-change-folder-during-sync'), 5000);
         
-        const folderPathService =
-          await plugin.serviceManager?.getFolderPathService();
+        const folderPathService = plugin.serviceManager?.getFolderPathService();
         const currentPath =
           folderPathService?.journalFolderPath || '!Journalit';
         setJournalFolderPath(currentPath);
@@ -470,8 +510,7 @@ function useGeneralTabModel(props: GeneralTabProps) {
       }
 
       
-      const folderPathService =
-        await plugin.serviceManager?.getFolderPathService();
+      const folderPathService = plugin.serviceManager?.getFolderPathService();
       const currentPath = folderPathService?.journalFolderPath || '!Journalit';
 
       if (newPath === currentPath) {
@@ -564,13 +603,11 @@ function useGeneralTabModel(props: GeneralTabProps) {
     if (!plugin.settings.general) {
       plugin.settings.general = {
         currency: CurrencyCode.USD,
-        homeStartupBehavior: newValue as 'always' | 'ifNone' | 'never',
+        homeStartupBehavior: parseHomeStartupBehavior(newValue),
       };
     } else {
-      plugin.settings.general.homeStartupBehavior = newValue as
-        | 'always'
-        | 'ifNone'
-        | 'never';
+      plugin.settings.general.homeStartupBehavior =
+        parseHomeStartupBehavior(newValue);
     }
 
     await plugin.saveSettings();
@@ -585,7 +622,7 @@ function useGeneralTabModel(props: GeneralTabProps) {
     };
     new Notice(
       t('settings.general.home-startup-changed', {
-        behavior: labels[newValue as keyof typeof labels],
+        behavior: labels[parseHomeStartupBehavior(newValue)],
       })
     );
   };
@@ -765,7 +802,7 @@ function useGeneralTabModel(props: GeneralTabProps) {
   ];
 
   const handleMaeMfeInputModeChange = async (newValue: string) => {
-    plugin.settings.trade.maeMfeInputMode = newValue as 'price' | 'dollar';
+    plugin.settings.trade.maeMfeInputMode = parseMaeMfeInputMode(newValue);
     await plugin.saveSettings();
     setSettingsVersion((prev) => prev + 1);
   };
@@ -867,7 +904,7 @@ function GeneralRiskDisplaySettings({
           <input
             type="number"
             value={plugin.settings.trade.defaultRiskAmount ?? 0}
-            onChange={handleDefaultRiskAmountChange}
+            onChange={(event) => void handleDefaultRiskAmountChange(event)}
             onFocus={(e) => {
               const numValue = parseFloat(e.target.value);
               if (
@@ -1017,8 +1054,8 @@ function GeneralBreakEvenSettings({
               min="0"
               step="0.01"
               value={plugin.settings.trade.breakEvenThresholdPercent ?? 0}
-              onChange={handleBreakEvenPercentChange}
-              onBlur={handleBreakEvenRangeBlur}
+              onChange={(event) => void handleBreakEvenPercentChange(event)}
+              onBlur={() => void handleBreakEvenRangeBlur()}
               onFocus={(e) => {
                 const numValue = parseFloat(e.target.value);
                 if (
@@ -1050,8 +1087,8 @@ function GeneralBreakEvenSettings({
             <input
               type="number"
               value={plugin.settings.trade.breakEvenRangeMin ?? 0}
-              onChange={handleBreakEvenMinChange}
-              onBlur={handleBreakEvenRangeBlur}
+              onChange={(event) => void handleBreakEvenMinChange(event)}
+              onBlur={() => void handleBreakEvenRangeBlur()}
               onFocus={(e) => {
                 const numValue = parseFloat(e.target.value);
                 if (
@@ -1072,8 +1109,8 @@ function GeneralBreakEvenSettings({
             <input
               type="number"
               value={plugin.settings.trade.breakEvenRangeMax ?? 0}
-              onChange={handleBreakEvenMaxChange}
-              onBlur={handleBreakEvenRangeBlur}
+              onChange={(event) => void handleBreakEvenMaxChange(event)}
+              onBlur={() => void handleBreakEvenRangeBlur()}
               onFocus={(e) => {
                 const numValue = parseFloat(e.target.value);
                 if (
@@ -1281,7 +1318,7 @@ function GeneralTradeBasicsSettings({
               plugin.settings.trade.tradingDayCutoffTime ??
               DEFAULT_TRADING_DAY_CUTOFF_TIME
             }
-            onChange={handleTradingDayCutoffTimeChange}
+            onChange={(event) => void handleTradingDayCutoffTimeChange(event)}
             id="trading-day-cutoff-time"
             aria-label={t('settings.general.cutoff-time-aria')}
             className="setting-input time-input journalit-settings-input journalit-settings-input--time"
@@ -1416,7 +1453,7 @@ function GeneralTradeSettingsSection({
                     lastSeenVersion: '',
                   };
                 }
-                plugin.settings.backendIntegration!.showSyncNotifications =
+                plugin.settings.backendIntegration.showSyncNotifications =
                   newValue;
                 await plugin.saveSettings();
                 setSettingsVersion((prev) => prev + 1);
@@ -1461,7 +1498,7 @@ function GeneralTradeSettingsSection({
                     lastSeenVersion: '',
                   };
                 }
-                plugin.settings.backendIntegration!.showNewTradeNotifications =
+                plugin.settings.backendIntegration.showNewTradeNotifications =
                   newValue;
                 await plugin.saveSettings();
                 setSettingsVersion((prev) => prev + 1);
@@ -1506,7 +1543,7 @@ function GeneralTradeSettingsSection({
                     lastSeenVersion: '',
                   };
                 }
-                plugin.settings.backendIntegration!.showUpdateNotifications =
+                plugin.settings.backendIntegration.showUpdateNotifications =
                   newValue;
                 await plugin.saveSettings();
                 setSettingsVersion((prev) => prev + 1);
@@ -1592,13 +1629,15 @@ function GeneralDataManagementSection({
           <div className="setting-item-control">
             <Button
               variant="primary"
-              onClick={async () => {
-                setIsExporting(true);
-                try {
-                  await settingsExporter.current.exportSettings();
-                } finally {
-                  setIsExporting(false);
-                }
+              onClick={() => {
+                void (async () => {
+                  setIsExporting(true);
+                  try {
+                    await settingsExporter.current.exportSettings();
+                  } finally {
+                    setIsExporting(false);
+                  }
+                })();
               }}
               disabled={isExporting}
               className="journalit-settings-action-button"
@@ -1623,21 +1662,23 @@ function GeneralDataManagementSection({
           <div className="setting-item-control">
             <Button
               variant="primary"
-              onClick={async () => {
-                setIsImporting(true);
-                try {
-                  const file =
-                    await settingsExporter.current.openImportFilePicker();
-                  if (file) {
-                    const success =
-                      await settingsExporter.current.importSettings(file);
-                    if (success) {
-                      setSettingsVersion((prev) => prev + 1);
+              onClick={() => {
+                void (async () => {
+                  setIsImporting(true);
+                  try {
+                    const file =
+                      await settingsExporter.current.openImportFilePicker();
+                    if (file) {
+                      const success =
+                        await settingsExporter.current.importSettings(file);
+                      if (success) {
+                        setSettingsVersion((prev) => prev + 1);
+                      }
                     }
+                  } finally {
+                    setIsImporting(false);
                   }
-                } finally {
-                  setIsImporting(false);
-                }
+                })();
               }}
               disabled={isImporting}
               className="journalit-settings-action-button"
@@ -1666,17 +1707,21 @@ function GeneralDataManagementSection({
           <div className="setting-item-control">
             <Button
               variant="danger"
-              onClick={async () => {
-                setIsResetting(true);
-                try {
-                  const success =
-                    await settingsExporter.current.resetToDefaults(plugin.app);
-                  if (success) {
-                    setSettingsVersion((prev) => prev + 1);
+              onClick={() => {
+                void (async () => {
+                  setIsResetting(true);
+                  try {
+                    const success =
+                      await settingsExporter.current.resetToDefaults(
+                        plugin.app
+                      );
+                    if (success) {
+                      setSettingsVersion((prev) => prev + 1);
+                    }
+                  } finally {
+                    setIsResetting(false);
                   }
-                } finally {
-                  setIsResetting(false);
-                }
+                })();
               }}
               disabled={isResetting}
               className="journalit-settings-action-button"
@@ -1752,101 +1797,110 @@ function GeneralFolderSettingsSection({
           <div className="setting-item-control">
             <Button
               variant="primary"
-              onClick={async () => {
-                setIsUpdatingImages(true);
-                try {
-                  const currentPath =
-                    plugin.settings.general?.journalFolderPath || '!Journalit';
-                  const normalizedCurrentPath =
-                    currentPath.replace(/\/$/, '') + '/';
-
-                  
-                  const allFiles = plugin.app.vault.getMarkdownFiles();
-                  const oldBasePaths = new Set<string>();
-
-                  const utility = new TradePathUpdateUtility(
-                    plugin.app,
-                    plugin.tradeService
-                  );
-
-                  for (const file of allFiles) {
-                    
-                    const oldPaths = utility.getImageBasePaths(
-                      file,
-                      normalizedCurrentPath
-                    );
-
-                    if (oldPaths.size > 0) {
-                      oldPaths.forEach((oldPath) => oldBasePaths.add(oldPath));
-                    }
-                  }
-
-                  if (oldBasePaths.size === 0) {
-                    new Notice(t('settings.general.update-image-paths-match'));
-                    setIsUpdatingImages(false);
-                    return;
-                  }
-
-                  
-                  let totalFilesUpdated = 0;
-                  let totalFailed = 0;
-                  const allErrors: string[] = [];
-
-                  const pathStats = await utility.updateImagePathsForBasePaths(
-                    Array.from(oldBasePaths),
-                    normalizedCurrentPath.replace(/\/$/, '')
-                  );
-                  totalFilesUpdated += pathStats.updated;
-                  totalFailed += pathStats.failed;
-                  allErrors.push(...pathStats.errors);
-
-                  
+              onClick={() => {
+                void (async () => {
+                  setIsUpdatingImages(true);
                   try {
-                    const quarterlyStats = await utility.fixQuarterlyImagePaths(
-                      currentPath.replace(/\/$/, '')
-                    );
-                    totalFilesUpdated += quarterlyStats.updated;
-                    totalFailed += quarterlyStats.failed;
-                    allErrors.push(...quarterlyStats.errors);
-                  } catch (error) {
-                    console.error('Failed to fix quarterly paths:', error);
-                    allErrors.push(
-                      `Quarterly fix: ${error instanceof Error ? error.message : String(error)}`
-                    );
-                  }
+                    const currentPath =
+                      plugin.settings.general?.journalFolderPath ||
+                      '!Journalit';
+                    const normalizedCurrentPath =
+                      currentPath.replace(/\/$/, '') + '/';
 
-                  
-                  if (allErrors.length > 0) {
-                    new Notice(
-                      t('settings.general.update-image-paths-errors', {
-                        updated: String(totalFilesUpdated),
-                        failed: String(totalFailed),
-                      }),
-                      8000
+                    
+                    const allFiles = plugin.app.vault.getMarkdownFiles();
+                    const oldBasePaths = new Set<string>();
+
+                    const utility = new TradePathUpdateUtility(
+                      plugin.app,
+                      plugin.tradeService
                     );
-                    console.error('Image path update errors:', allErrors);
-                  } else if (totalFilesUpdated > 0) {
+
+                    for (const file of allFiles) {
+                      
+                      const oldPaths = utility.getImageBasePaths(
+                        file,
+                        normalizedCurrentPath
+                      );
+
+                      if (oldPaths.size > 0) {
+                        oldPaths.forEach((oldPath) =>
+                          oldBasePaths.add(oldPath)
+                        );
+                      }
+                    }
+
+                    if (oldBasePaths.size === 0) {
+                      new Notice(
+                        t('settings.general.update-image-paths-match')
+                      );
+                      setIsUpdatingImages(false);
+                      return;
+                    }
+
+                    
+                    let totalFilesUpdated = 0;
+                    let totalFailed = 0;
+                    const allErrors: string[] = [];
+
+                    const pathStats =
+                      await utility.updateImagePathsForBasePaths(
+                        Array.from(oldBasePaths),
+                        normalizedCurrentPath.replace(/\/$/, '')
+                      );
+                    totalFilesUpdated += pathStats.updated;
+                    totalFailed += pathStats.failed;
+                    allErrors.push(...pathStats.errors);
+
+                    
+                    try {
+                      const quarterlyStats =
+                        await utility.fixQuarterlyImagePaths(
+                          currentPath.replace(/\/$/, '')
+                        );
+                      totalFilesUpdated += quarterlyStats.updated;
+                      totalFailed += quarterlyStats.failed;
+                      allErrors.push(...quarterlyStats.errors);
+                    } catch (error) {
+                      console.error('Failed to fix quarterly paths:', error);
+                      allErrors.push(
+                        `Quarterly fix: ${error instanceof Error ? error.message : String(error)}`
+                      );
+                    }
+
+                    
+                    if (allErrors.length > 0) {
+                      new Notice(
+                        t('settings.general.update-image-paths-errors', {
+                          updated: String(totalFilesUpdated),
+                          failed: String(totalFailed),
+                        }),
+                        8000
+                      );
+                      console.error('Image path update errors:', allErrors);
+                    } else if (totalFilesUpdated > 0) {
+                      new Notice(
+                        t('settings.general.update-image-paths-success', {
+                          count: String(totalFilesUpdated),
+                        }),
+                        5000
+                      );
+                    } else {
+                      new Notice(
+                        t('settings.general.update-image-paths-no-update'),
+                        3000
+                      );
+                    }
+                  } catch (error) {
+                    console.error('Failed to update image paths:', error);
                     new Notice(
-                      t('settings.general.update-image-paths-success', {
-                        count: String(totalFilesUpdated),
-                      }),
+                      t('settings.general.update-image-paths-failed'),
                       5000
                     );
-                  } else {
-                    new Notice(
-                      t('settings.general.update-image-paths-no-update'),
-                      3000
-                    );
+                  } finally {
+                    setIsUpdatingImages(false);
                   }
-                } catch (error) {
-                  console.error('Failed to update image paths:', error);
-                  new Notice(
-                    t('settings.general.update-image-paths-failed'),
-                    5000
-                  );
-                } finally {
-                  setIsUpdatingImages(false);
-                }
+                })();
               }}
               disabled={isUpdatingImages}
               className="journalit-settings-action-button"
@@ -1961,7 +2015,7 @@ function GeneralCoreSettingsSection({
               onKeyDown={(e) => {
                 if (e.key === 'Enter' && displayNameDirty) {
                   e.preventDefault();
-                  handleDisplayNameConfirm();
+                  void handleDisplayNameConfirm();
                 } else if (e.key === 'Escape') {
                   e.preventDefault();
                   handleDisplayNameCancel();
@@ -1974,14 +2028,14 @@ function GeneralCoreSettingsSection({
             {displayNameDirty && (
               <>
                 <button
-                  onClick={handleDisplayNameConfirm}
+                  onClick={() => void handleDisplayNameConfirm()}
                   aria-label={t('settings.general.display-name-confirm-aria')}
                   className="journalit-settings-display-name-button journalit-settings-display-name-button--confirm"
                 >
                   ✓
                 </button>
                 <button
-                  onClick={handleDisplayNameCancel}
+                  onClick={() => void handleDisplayNameCancel()}
                   aria-label={t('settings.general.display-name-cancel-aria')}
                   className="journalit-settings-display-name-button journalit-settings-display-name-button--cancel"
                 >
@@ -2077,12 +2131,12 @@ function GeneralCoreSettingsSection({
                 if (!plugin.settings.navigation) {
                   plugin.settings.navigation = {
                     ...DEFAULT_SETTINGS.navigation!,
-                    tabBehavior: newValue as SidebarTabBehavior,
+                    tabBehavior: parseSidebarTabBehavior(newValue),
                     items: DEFAULT_SETTINGS.navigation?.items ?? [],
                   };
                 } else {
                   plugin.settings.navigation.tabBehavior =
-                    newValue as SidebarTabBehavior;
+                    parseSidebarTabBehavior(newValue);
                 }
                 await plugin.saveSettings();
                 setSettingsVersion((prev) => prev + 1);

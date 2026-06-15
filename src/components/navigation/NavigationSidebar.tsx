@@ -46,6 +46,26 @@ const VIEW_ACTION_MAP: Record<string, string> = {
   openLayoutBuilder: 'journalit-template-builder-view',
 };
 
+const QUICK_LINK_ACTIONS: ReadonlySet<string> = new Set([
+  'addTrade',
+  'openTradeLog',
+  'openTradingDashboard',
+  'openAccountDashboard',
+  'openTodaysDRC',
+  'openWeeklyReview',
+  'openMonthlyReview',
+  'openCSVImport',
+  'openQuickTradeImport',
+  'openLayoutBuilder',
+  'openHome',
+  'openQuarterlyReview',
+  'openYearlyReview',
+  'openPositionSizeCalculator',
+]);
+
+const isQuickLinkAction = (action: string): action is QuickLinkAction =>
+  QUICK_LINK_ACTIONS.has(action);
+
 const REVIEW_ACTIONS = new Set<QuickLinkAction>([
   'openTodaysDRC',
   'openWeeklyReview',
@@ -263,8 +283,6 @@ export const NavigationSidebar: React.FC<NavigationSidebarProps> = ({
         plugin.settings.navigation?.tabBehavior || 'replaceActiveTab';
       const shouldCreateNewLeaf = tabBehavior !== 'replaceActiveTab';
 
-      const typedAction = action as QuickLinkAction;
-
       
       
       const viewType = VIEW_ACTION_MAP[action];
@@ -279,8 +297,8 @@ export const NavigationSidebar: React.FC<NavigationSidebarProps> = ({
       }
 
       
-      if (REVIEW_ACTIONS.has(typedAction)) {
-        await actionResolver.executeAction(typedAction, {
+      if (isQuickLinkAction(action) && REVIEW_ACTIONS.has(action)) {
+        await actionResolver.executeAction(action, {
           createNewLeaf: shouldCreateNewLeaf,
           focusLeaf: false,
           source: 'sidebar',
@@ -288,7 +306,9 @@ export const NavigationSidebar: React.FC<NavigationSidebarProps> = ({
         return;
       }
 
-      await actionResolver.executeAction(typedAction);
+      if (isQuickLinkAction(action)) {
+        await actionResolver.executeAction(action);
+      }
     },
     [plugin, actionResolver]
   );
@@ -344,7 +364,7 @@ export const NavigationSidebar: React.FC<NavigationSidebarProps> = ({
                         item={item}
                         isEditing={isEditing}
                         onRemove={handleRemoveItem}
-                        onClick={handleItemClick}
+                        onClick={(item) => void handleItemClick(item)}
                       />
                     ))}
                   </SortableContext>

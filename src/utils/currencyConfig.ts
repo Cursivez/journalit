@@ -200,8 +200,7 @@ function buildRuntimeCurrencyConfig(currencyCode: string): CurrencyConfig {
       symbol: currencyCode,
       name: currencyCode,
       locale: DEFAULT_LOCALE,
-      decimalPlaces:
-        currencyCode === CurrencyCode.JPY ? 0 : DEFAULT_FALLBACK_DECIMALS,
+      decimalPlaces: currencyCode === 'JPY' ? 0 : DEFAULT_FALLBACK_DECIMALS,
       symbolBefore: true,
       spacing: ' ',
     };
@@ -232,11 +231,42 @@ function buildRuntimeCurrencyConfig(currencyCode: string): CurrencyConfig {
       symbol: currencyCode,
       name: currencyCode,
       locale: DEFAULT_LOCALE,
-      decimalPlaces:
-        currencyCode === CurrencyCode.JPY ? 0 : DEFAULT_FALLBACK_DECIMALS,
+      decimalPlaces: currencyCode === 'JPY' ? 0 : DEFAULT_FALLBACK_DECIMALS,
       symbolBefore: true,
       spacing: ' ',
     };
+  }
+}
+
+
+export function parseCuratedCurrencyCode(value: string): CurrencyCode {
+  switch (value) {
+    case 'USD':
+      return CurrencyCode.USD;
+    case 'EUR':
+      return CurrencyCode.EUR;
+    case 'GBP':
+      return CurrencyCode.GBP;
+    case 'JPY':
+      return CurrencyCode.JPY;
+    case 'CAD':
+      return CurrencyCode.CAD;
+    case 'AUD':
+      return CurrencyCode.AUD;
+    case 'CHF':
+      return CurrencyCode.CHF;
+    case 'CNY':
+      return CurrencyCode.CNY;
+    case 'HKD':
+      return CurrencyCode.HKD;
+    case 'SGD':
+      return CurrencyCode.SGD;
+    case 'KWD':
+      return CurrencyCode.KWD;
+    case 'NGN':
+      return CurrencyCode.NGN;
+    default:
+      return CurrencyCode.USD;
   }
 }
 
@@ -272,10 +302,21 @@ export function getCurrencyOptions() {
 function isValidCurrencyCode(
   currencyCode: string
 ): currencyCode is CurrencyCode {
-  const normalized = normalizeCurrencyCode(currencyCode, '');
-
-  return (
-    normalized !== '' &&
-    Object.values(CurrencyCode).includes(normalized as CurrencyCode)
-  );
+  switch (normalizeCurrencyCode(currencyCode, '')) {
+    case 'USD':
+    case 'EUR':
+    case 'GBP':
+    case 'JPY':
+    case 'CAD':
+    case 'AUD':
+    case 'CHF':
+    case 'CNY':
+    case 'HKD':
+    case 'SGD':
+    case 'KWD':
+    case 'NGN':
+      return true;
+    default:
+      return false;
+  }
 }

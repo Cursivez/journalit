@@ -58,8 +58,7 @@ const CustomTooltip: React.FC<CustomTooltipContentProps> = ({
   currencyOverride,
 }) => {
   const { currency: globalCurrency } = useCurrency();
-  const currency =
-    (currencyOverride as typeof globalCurrency) || globalCurrency;
+  const currency = currencyOverride || globalCurrency;
   const { formatValue, shouldMask } = useDisplayFormatter();
 
   if (!active || !payload || payload.length === 0) return null;
@@ -104,8 +103,7 @@ export const SharedDailyPerformanceChart =
     ({ data, height = '100%', minValue, maxValue, currencyOverride }) => {
       const chartRef = React.useRef<HTMLDivElement>(null);
       const { currency: globalCurrency } = useCurrency();
-      const currency =
-        (currencyOverride as typeof globalCurrency) || globalCurrency;
+      const currency = currencyOverride || globalCurrency;
       const plugin = usePlugin();
       const { formatValue, shouldMask } = useDisplayFormatter();
       const displayRMultiples =
@@ -283,7 +281,7 @@ export const SharedDailyPerformanceChart =
             >
               {(tooltipProps) => (
                 <CustomTooltip
-                  {...(tooltipProps as any)}
+                  {...(tooltipProps as TooltipProps<number, string>)}
                   currencyOverride={currencyOverride}
                 />
               )}

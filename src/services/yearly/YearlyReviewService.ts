@@ -39,19 +39,74 @@ import {
 } from '../../utils/tradeStatusUtils';
 
 const getPnlContributingTrades = (trades: Trade[]): Trade[] =>
-  trades.filter((trade) => isPnlContributingTrade(trade as Trade));
+  trades.filter((trade) => isPnlContributingTrade(trade));
 
 const sumEffectivePnL = (trades: Trade[]): number =>
   trades.reduce((sum, trade) => sum + getEffectivePnL(trade), 0);
 
-const VALID_REVIEW_GRADES = new Set(['A', 'B', 'C']);
+interface CachedYearlyData {
+  timestamp: number;
+  data: {
+    trades: Trade[];
+    quarterlyPerformance: QuarterlyPerformanceData[];
+    quarterlyGamePerformance: QuarterlyGamePerformance[];
+    demonTrackerData: YearlyDemonTrackerEntry[];
+    bestQuarter: QuarterlyPerformanceData | null;
+    worstQuarter: QuarterlyPerformanceData | null;
+  };
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
+}
+
+function asRecord(value: unknown): Record<string, unknown> | undefined {
+  return isRecord(value) ? value : undefined;
+}
+
+function getStringValue(
+  record: Record<string, unknown>,
+  key: string
+): string | undefined {
+  const value = record[key];
+  return typeof value === 'string' ? value : undefined;
+}
+
+function getNumberValue(
+  record: Record<string, unknown>,
+  key: string
+): number | undefined {
+  const value = record[key];
+  return typeof value === 'number' ? value : undefined;
+}
+
+function getBooleanValue(
+  record: Record<string, unknown>,
+  key: string
+): boolean | undefined {
+  const value = record[key];
+  if (value === 'true') return true;
+  if (value === 'false') return false;
+  return typeof value === 'boolean' ? value : undefined;
+}
+
+function getGradeValue(value: unknown): keyof GradeDistribution | undefined {
+  switch (value) {
+    case 'A':
+    case 'B':
+    case 'C':
+      return value;
+    default:
+      return undefined;
+  }
+}
 
 export class YearlyReviewService extends CustomDataService {
   private folderPathService: FolderPathService | null = null;
 
   private lastCacheClear: number = 0;
 
-  private yearlyDataCache: Map<string, any> = new Map();
+  private yearlyDataCache: Map<string, CachedYearlyData> = new Map();
 
   private templateService: ReviewTemplateService | null = null;
   private transformService: TemplateTransformationService | null = null;
@@ -73,7 +128,7 @@ export class YearlyReviewService extends CustomDataService {
 
     
     if (!this.folderPathService) {
-      this.initializeFolderPathService();
+      void this.initializeFolderPathService();
     }
 
     
@@ -105,7 +160,7 @@ export class YearlyReviewService extends CustomDataService {
     try {
       if (this.getPlugin()?.serviceManager) {
         this.folderPathService =
-          await this.getPlugin().serviceManager.getFolderPathService();
+          this.getPlugin().serviceManager.getFolderPathService();
       }
     } catch (error) {
       console.warn('Could not initialize FolderPathService:', error);
@@ -274,7 +329,7 @@ export class YearlyReviewService extends CustomDataService {
       });
 
       if (existingYearlyLeaf) {
-        this.app.workspace.revealLeaf(existingYearlyLeaf);
+        void this.app.workspace.revealLeaf(existingYearlyLeaf);
         this.app.workspace.setActiveLeaf(existingYearlyLeaf, {
           focus: focusLeaf,
         });
@@ -347,7 +402,7 @@ export class YearlyReviewService extends CustomDataService {
 
     
 
-    const yearlyData: Record<string, any> = {
+    const yearlyData: Record<string, unknown> = {
       type: frontmatter.type,
       date: frontmatter.date,
       year: frontmatter.year,
@@ -372,7 +427,7 @@ export class YearlyReviewService extends CustomDataService {
       for (const file of files) {
         try {
           const cache = this.app.metadataCache.getFileCache(file);
-          const frontmatter = cache?.frontmatter;
+          const frontmatter = asRecord(cache?.frontmatter);
 
           if (
             frontmatter?.type === 'trade' ||
@@ -391,32 +446,46 @@ export class YearlyReviewService extends CustomDataService {
                 frontmatter.pnl === undefined || frontmatter.pnl === null;
 
               const trade: Trade = {
-                instrument: frontmatter.instrument || frontmatter.ticker,
-                direction: frontmatter.direction || frontmatter.side,
+                instrument:
+                  getStringValue(frontmatter, 'instrument') ??
+                  getStringValue(frontmatter, 'ticker') ??
+                  '',
+                direction:
+                  getStringValue(frontmatter, 'direction') ??
+                  getStringValue(frontmatter, 'side') ??
+                  '',
                 ...normalizedExecution,
-                pnl:
-                  frontmatter.pnl !== undefined && frontmatter.pnl !== null
-                    ? frontmatter.pnl
-                    : 0,
-                setup: frontmatter.setup,
-                tags: frontmatter.tags,
-                mistake: frontmatter.mistake,
+                pnl: typeof frontmatter.pnl === 'number' ? frontmatter.pnl : 0,
+                setup: Array.isArray(frontmatter.setup)
+                  ? frontmatter.setup.filter(
+                      (item): item is string => typeof item === 'string'
+                    )
+                  : [],
+                tags: Array.isArray(frontmatter.tags)
+                  ? frontmatter.tags.filter(
+                      (item): item is string => typeof item === 'string'
+                    )
+                  : [],
+                mistake: Array.isArray(frontmatter.mistake)
+                  ? frontmatter.mistake.filter(
+                      (item): item is string => typeof item === 'string'
+                    )
+                  : [],
                 account: Array.isArray(frontmatter.account)
-                  ? frontmatter.account
-                  : frontmatter.account
+                  ? frontmatter.account.filter(
+                      (item): item is string => typeof item === 'string'
+                    )
+                  : typeof frontmatter.account === 'string'
                     ? [frontmatter.account]
                     : [],
                 path: file.path,
-                tradeStatus: frontmatter.tradeStatus,
-                useDirectPnLInput: frontmatter.useDirectPnLInput,
+                tradeStatus: getStringValue(frontmatter, 'tradeStatus'),
+                useDirectPnLInput: getBooleanValue(
+                  frontmatter,
+                  'useDirectPnLInput'
+                ),
                 _originalPnlWasNull: originalPnlWasNull,
                 ...parseTradeFinancialFields(frontmatter),
-              } as Trade & {
-                tradeStatus?: string;
-                useDirectPnLInput?: boolean;
-
-                exits?: any[];
-                _originalPnlWasNull?: boolean;
               };
               trades.push(trade);
             }
@@ -667,21 +736,13 @@ export class YearlyReviewService extends CustomDataService {
             const drcData = cache?.frontmatter;
 
             if (drcData && drcData.type === 'drc') {
-              if (
-                drcData.mentalGrade &&
-                VALID_REVIEW_GRADES.has(drcData.mentalGrade)
-              ) {
-                mentalGradeDistribution[
-                  drcData.mentalGrade as keyof GradeDistribution
-                ]++;
+              const mentalGrade = getGradeValue(drcData.mentalGrade);
+              if (mentalGrade) {
+                mentalGradeDistribution[mentalGrade]++;
               }
-              if (
-                drcData.technicalGrade &&
-                VALID_REVIEW_GRADES.has(drcData.technicalGrade)
-              ) {
-                technicalGradeDistribution[
-                  drcData.technicalGrade as keyof GradeDistribution
-                ]++;
+              const technicalGrade = getGradeValue(drcData.technicalGrade);
+              if (technicalGrade) {
+                technicalGradeDistribution[technicalGrade]++;
               }
             }
           }
@@ -701,10 +762,16 @@ export class YearlyReviewService extends CustomDataService {
             const cache = this.app.metadataCache.getFileCache(quarterlyFile);
             const quarterlyReviewData = cache?.frontmatter;
             if (quarterlyReviewData) {
-              mentalRating = quarterlyReviewData.mentalGrade;
-              technicalRating = quarterlyReviewData.technicalGrade;
-              mentalNotes = quarterlyReviewData.mentalNotes;
-              technicalNotes = quarterlyReviewData.technicalNotes;
+              mentalRating = getNumberValue(quarterlyReviewData, 'mentalGrade');
+              technicalRating = getNumberValue(
+                quarterlyReviewData,
+                'technicalGrade'
+              );
+              mentalNotes = getStringValue(quarterlyReviewData, 'mentalNotes');
+              technicalNotes = getStringValue(
+                quarterlyReviewData,
+                'technicalNotes'
+              );
             }
           }
         }
@@ -895,7 +962,7 @@ export class YearlyReviewService extends CustomDataService {
   public async updateYearlyReviewFrontmatter(
     filePath: string,
 
-    updates: Partial<Record<string, any>>
+    updates: Partial<Record<string, unknown>>
   ): Promise<void> {
     try {
       const file = this.app.vault.getAbstractFileByPath(filePath);
@@ -905,8 +972,9 @@ export class YearlyReviewService extends CustomDataService {
       }
 
       await this.app.fileManager.processFrontMatter(file, (frontmatter) => {
+        const frontmatterRecord = asRecord(frontmatter) ?? {};
         const { imagesByWidget, ...rest } = updates;
-        Object.assign(frontmatter, rest);
+        Object.assign(frontmatterRecord, rest);
 
         if (
           imagesByWidget &&
@@ -914,17 +982,13 @@ export class YearlyReviewService extends CustomDataService {
           !Array.isArray(imagesByWidget)
         ) {
           const existingByWidget =
-            frontmatter.imagesByWidget &&
-            typeof frontmatter.imagesByWidget === 'object' &&
-            !Array.isArray(frontmatter.imagesByWidget)
-              ? frontmatter.imagesByWidget
-              : {};
-          frontmatter.imagesByWidget = {
+            asRecord(frontmatterRecord.imagesByWidget) ?? {};
+          frontmatterRecord.imagesByWidget = {
             ...existingByWidget,
-            ...(imagesByWidget as Record<string, unknown>),
+            ...imagesByWidget,
           };
         } else if (imagesByWidget !== undefined) {
-          frontmatter.imagesByWidget = imagesByWidget;
+          frontmatterRecord.imagesByWidget = imagesByWidget;
         }
       });
 

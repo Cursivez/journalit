@@ -48,7 +48,7 @@ const CALENDAR_RESPONSIVE_SIZE_CLASSES = [
 type CalendarResponsiveSizeClass =
   (typeof CALENDAR_RESPONSIVE_SIZE_CLASSES)[number];
 
-const CALENDAR_RESPONSIVE_STYLES = `
+export const CALENDAR_RESPONSIVE_STYLES = `
 .journalit-calendar-grid-fix {
   display: flex;
   flex-direction: column;
@@ -343,10 +343,6 @@ const CALENDAR_RESPONSIVE_STYLES = `
 `;
 
 
-function injectCalendarStyles(): void {
-  return;
-}
-
 function getCalendarResponsiveSizeClass(
   cellWidth: number
 ): CalendarResponsiveSizeClass {
@@ -375,13 +371,13 @@ function applyCalendarGridFix(): void {
   const skipWeekends = plugin?.settings?.trade?.skipWeekends ?? true;
 
   
-  const calendarGrids = document.querySelectorAll(
+  const calendarGrids = window.activeDocument.querySelectorAll(
     '.journalit-dashboard-calendar-grid'
   );
 
   calendarGrids.forEach((grid) => {
     
-    if (grid instanceof HTMLElement) {
+    if (grid && grid.instanceOf(HTMLElement)) {
       grid.classList.add(CSS_CLASSES.calendarGrid);
 
       
@@ -389,7 +385,7 @@ function applyCalendarGridFix(): void {
         '.journalit-dashboard-calendar-week'
       );
       weekRows.forEach((weekRow) => {
-        if (weekRow instanceof HTMLElement) {
+        if (weekRow && weekRow.instanceOf(HTMLElement)) {
           weekRow.classList.add(CSS_CLASSES.calendarWeekRow);
           if (skipWeekends) {
             weekRow.classList.add(CSS_CLASSES.calendarWeekRowWeekdays);
@@ -407,7 +403,7 @@ function applyCalendarGridFix(): void {
       );
       dayCells.forEach((dayCell, _index) => {
         
-        if (dayCell instanceof HTMLElement) {
+        if (dayCell && dayCell.instanceOf(HTMLElement)) {
           dayCell.classList.add(CSS_CLASSES.calendarDayCell);
 
           
@@ -419,7 +415,7 @@ function applyCalendarGridFix(): void {
           const dayNumber = dayCell.querySelector(
             '.journalit-dashboard-calendar-day-number'
           );
-          if (dayNumber instanceof HTMLElement) {
+          if (dayNumber && dayNumber.instanceOf(HTMLElement)) {
             dayNumber.classList.add(CSS_CLASSES.dayNumber);
           }
 
@@ -427,7 +423,7 @@ function applyCalendarGridFix(): void {
           const pnlValue = dayCell.querySelector(
             '.journalit-dashboard-calendar-day-pnl'
           );
-          if (pnlValue instanceof HTMLElement) {
+          if (pnlValue && pnlValue.instanceOf(HTMLElement)) {
             pnlValue.classList.add(CSS_CLASSES.pnlValue);
           }
         }
@@ -443,12 +439,12 @@ function applyCalendarHeaderFix(): void {
   const plugin = getPluginInstance();
   const skipWeekends = plugin?.settings?.trade?.skipWeekends ?? true;
 
-  const calendarHeaders = document.querySelectorAll(
+  const calendarHeaders = window.activeDocument.querySelectorAll(
     '.journalit-dashboard-calendar-header'
   );
 
   calendarHeaders.forEach((header) => {
-    if (header instanceof HTMLElement) {
+    if (header && header.instanceOf(HTMLElement)) {
       
       header.classList.add(CSS_CLASSES.calendarHeader);
       if (skipWeekends) {
@@ -468,7 +464,7 @@ function applyCalendarHeaderFix(): void {
         '.journalit-dashboard-calendar-weekday'
       );
       weekdayLabels.forEach((label) => {
-        if (label instanceof HTMLElement) {
+        if (label && label.instanceOf(HTMLElement)) {
           
           label.classList.add(CSS_CLASSES.weekdayLabel);
         }
@@ -483,7 +479,7 @@ function applyCalendarHeaderFix(): void {
         );
 
         weekdayLabels.forEach((label) => {
-          if (label instanceof HTMLElement) {
+          if (label && label.instanceOf(HTMLElement)) {
             
             const day = label.getAttribute('data-day');
             if (day === 'Sun' || day === 'Sat') {
@@ -514,12 +510,12 @@ export function applyConsistentGridStructure(): void {
     const skipWeekends = plugin?.settings?.trade?.skipWeekends ?? true;
 
     
-    const calendars = document.querySelectorAll(
+    const calendars = window.activeDocument.querySelectorAll(
       '.journalit-dashboard-calendar'
     );
 
     calendars.forEach((calendar) => {
-      if (calendar instanceof HTMLElement) {
+      if (calendar && calendar.instanceOf(HTMLElement)) {
         
         if (skipWeekends) {
           calendar.classList.add('hide-weekends');
@@ -530,7 +526,7 @@ export function applyConsistentGridStructure(): void {
             '.journalit-dashboard-calendar-weekday'
           );
           allHeaders.forEach((header) => {
-            if (header instanceof HTMLElement) {
+            if (header && header.instanceOf(HTMLElement)) {
               const day = header.getAttribute('data-day');
               if (day === 'Sun' || day === 'Sat') {
                 header.classList.add(CSS_CLASSES.hiddenWeekend);
@@ -549,7 +545,7 @@ export function applyConsistentGridStructure(): void {
             '.journalit-dashboard-calendar-weekday'
           );
           allHeaders.forEach((header) => {
-            if (header instanceof HTMLElement) {
+            if (header && header.instanceOf(HTMLElement)) {
               header.classList.remove(CSS_CLASSES.hiddenWeekend);
             }
           });
@@ -562,7 +558,7 @@ export function applyConsistentGridStructure(): void {
         const header = calendar.querySelector(
           '.journalit-dashboard-calendar-header'
         );
-        if (header instanceof HTMLElement) {
+        if (header && header.instanceOf(HTMLElement)) {
           header.classList.add(CSS_CLASSES.calendarHeaderGrid);
           if (skipWeekends) {
             header.classList.add(CSS_CLASSES.calendarHeaderGridWeekdays);
@@ -576,7 +572,7 @@ export function applyConsistentGridStructure(): void {
           '.journalit-dashboard-calendar-week'
         );
         weekRows.forEach((row) => {
-          if (row instanceof HTMLElement) {
+          if (row && row.instanceOf(HTMLElement)) {
             row.classList.add(CSS_CLASSES.calendarWeekRowGrid);
             if (skipWeekends) {
               row.classList.add(CSS_CLASSES.calendarWeekRowGridWeekdays);
@@ -589,14 +585,14 @@ export function applyConsistentGridStructure(): void {
               '.journalit-dashboard-calendar-weekly-pnl'
             );
             weeklyPnLCells.forEach((cell) => {
-              if (cell instanceof HTMLElement) {
+              if (cell && cell.instanceOf(HTMLElement)) {
                 cell.classList.add(CSS_CLASSES.weeklyPnlCell);
 
                 
                 const weekNumber = cell.querySelector(
                   '.journalit-dashboard-calendar-week-number'
                 );
-                if (weekNumber instanceof HTMLElement) {
+                if (weekNumber && weekNumber.instanceOf(HTMLElement)) {
                   weekNumber.classList.add(CSS_CLASSES.weekNumberPosition);
                 }
 
@@ -604,7 +600,7 @@ export function applyConsistentGridStructure(): void {
                 const pnlValue = cell.querySelector(
                   '.journalit-dashboard-calendar-weekly-pnl-value'
                 );
-                if (pnlValue instanceof HTMLElement) {
+                if (pnlValue && pnlValue.instanceOf(HTMLElement)) {
                   pnlValue.classList.add(CSS_CLASSES.weeklyPnlValue);
                 }
               }
@@ -622,28 +618,28 @@ export function applyConsistentGridStructure(): void {
 export function applyCalendarCellStyling(): void {
   try {
     
-    const calendarContainers = document.querySelectorAll(
+    const calendarContainers = window.activeDocument.querySelectorAll(
       '.journalit-dashboard-calendar'
     );
     if (calendarContainers.length === 0) return;
 
     calendarContainers.forEach((calendar) => {
-      if (!(calendar instanceof HTMLElement)) return;
+      if (!calendar || !calendar.instanceOf(HTMLElement)) return;
 
       const firstCell = calendar.querySelector(
         '.journalit-dashboard-calendar-day'
       );
-      if (firstCell instanceof HTMLElement) {
+      if (firstCell && firstCell.instanceOf(HTMLElement)) {
         applyResponsiveSizeClass(calendar, firstCell);
       }
     });
 
     
-    const dayCells = document.querySelectorAll(
+    const dayCells = window.activeDocument.querySelectorAll(
       '.journalit-dashboard-calendar-day'
     );
     dayCells.forEach((cell) => {
-      if (cell instanceof HTMLElement) {
+      if (cell && cell.instanceOf(HTMLElement)) {
         
         cell.classList.add(CSS_CLASSES.responsiveCell);
 
@@ -651,32 +647,32 @@ export function applyCalendarCellStyling(): void {
         const dayNumber = cell.querySelector(
           '.journalit-dashboard-calendar-day-number'
         );
-        if (dayNumber instanceof HTMLElement) {
+        if (dayNumber && dayNumber.instanceOf(HTMLElement)) {
           dayNumber.classList.add(CSS_CLASSES.responsiveDayNumber);
         }
 
         const pnlValue = cell.querySelector(
           '.journalit-dashboard-calendar-day-pnl'
         );
-        if (pnlValue instanceof HTMLElement) {
+        if (pnlValue && pnlValue.instanceOf(HTMLElement)) {
           pnlValue.classList.add(CSS_CLASSES.responsivePnlValue);
         }
 
         const tradeCount = cell.querySelector(
           '.journalit-dashboard-calendar-day-trades'
         );
-        if (tradeCount instanceof HTMLElement) {
+        if (tradeCount && tradeCount.instanceOf(HTMLElement)) {
           tradeCount.classList.add(CSS_CLASSES.responsiveTradeCount);
         }
       }
     });
 
     
-    const weekPnlCells = document.querySelectorAll(
+    const weekPnlCells = window.activeDocument.querySelectorAll(
       '.journalit-dashboard-calendar-weekly-pnl'
     );
     weekPnlCells.forEach((cell) => {
-      if (cell instanceof HTMLElement) {
+      if (cell && cell.instanceOf(HTMLElement)) {
         
         cell.classList.add(CSS_CLASSES.weeklyPnlRelative);
 
@@ -684,7 +680,7 @@ export function applyCalendarCellStyling(): void {
         const weekNumber = cell.querySelector(
           '.journalit-dashboard-calendar-week-number'
         );
-        if (weekNumber instanceof HTMLElement) {
+        if (weekNumber && weekNumber.instanceOf(HTMLElement)) {
           weekNumber.classList.add(CSS_CLASSES.responsiveWeekNumber);
         }
 
@@ -692,7 +688,7 @@ export function applyCalendarCellStyling(): void {
         const weekLabel = cell.querySelector(
           '.journalit-dashboard-calendar-week-total-label'
         );
-        if (weekLabel instanceof HTMLElement) {
+        if (weekLabel && weekLabel.instanceOf(HTMLElement)) {
           weekLabel.classList.add(CSS_CLASSES.responsiveWeekLabel);
         }
 
@@ -700,14 +696,14 @@ export function applyCalendarCellStyling(): void {
         const pnlValue = cell.querySelector(
           '.journalit-dashboard-calendar-week-total-value'
         );
-        if (pnlValue instanceof HTMLElement) {
+        if (pnlValue && pnlValue.instanceOf(HTMLElement)) {
           pnlValue.classList.add(CSS_CLASSES.responsiveWeekPnl);
         }
 
         const tradeCount = cell.querySelector(
           '.journalit-dashboard-calendar-week-trade-count'
         );
-        if (tradeCount instanceof HTMLElement) {
+        if (tradeCount && tradeCount.instanceOf(HTMLElement)) {
           tradeCount.classList.add(CSS_CLASSES.responsiveWeekTrades);
         }
       }
@@ -733,7 +729,7 @@ export function setupCalendarResizeObserver(): void {
       window.__journalitCalendarResizeObserver.disconnect();
     }
 
-    let resizeTimeoutId: ReturnType<typeof setTimeout> | null = null;
+    let resizeTimeoutId: number | null = null;
 
     const lastCalendarSize = new WeakMap<
       HTMLElement,
@@ -745,13 +741,13 @@ export function setupCalendarResizeObserver(): void {
       
       
       if (resizeTimeoutId) {
-        clearTimeout(resizeTimeoutId);
+        window.clearTimeout(resizeTimeoutId);
       }
 
-      resizeTimeoutId = setTimeout(() => {
+      resizeTimeoutId = window.setTimeout(() => {
         
         entries.forEach((entry) => {
-          if (entry.target instanceof HTMLElement) {
+          if (entry.target.instanceOf(HTMLElement)) {
             
             const rect = entry.contentRect;
             const lastSize = lastCalendarSize.get(entry.target);
@@ -781,7 +777,7 @@ export function setupCalendarResizeObserver(): void {
     window.__journalitCalendarResizeObserver = resizeObserver;
 
     
-    const calendars = document.querySelectorAll(
+    const calendars = window.activeDocument.querySelectorAll(
       '.journalit-dashboard-calendar'
     );
     calendars.forEach((calendar) => {
@@ -789,7 +785,9 @@ export function setupCalendarResizeObserver(): void {
     });
 
     
-    const widgets = document.querySelectorAll('.journalit-dashboard-widget');
+    const widgets = window.activeDocument.querySelectorAll(
+      '.journalit-dashboard-widget'
+    );
     widgets.forEach((widget) => {
       
       if (widget.querySelector('.journalit-dashboard-calendar')) {
@@ -798,7 +796,8 @@ export function setupCalendarResizeObserver(): void {
     });
 
     
-    const gridItems = document.querySelectorAll('.react-grid-item');
+    const gridItems =
+      window.activeDocument.querySelectorAll('.react-grid-item');
     gridItems.forEach((item) => {
       if (item.querySelector('.journalit-dashboard-calendar')) {
         resizeObserver.observe(item);
@@ -807,8 +806,8 @@ export function setupCalendarResizeObserver(): void {
 
     
     applyCalendarCellStyling();
-    setTimeout(applyCalendarCellStyling, 50);
-    setTimeout(applyCalendarCellStyling, 200);
+    window.setTimeout(applyCalendarCellStyling, 50);
+    window.setTimeout(applyCalendarCellStyling, 200);
   } catch (error) {
     console.error('Error setting up calendar resize observer:', error);
   }
@@ -818,15 +817,13 @@ export function setupCalendarResizeObserver(): void {
 export function applyAllCalendarFixes(): void {
   try {
     
-
-    
     applyConsistentGridStructure();
     applyCalendarGridFix();
     applyCalendarHeaderFix();
     applyCalendarCellStyling();
 
     
-    requestAnimationFrame(() => {
+    window.requestAnimationFrame(() => {
       applyCalendarCellStyling();
       
       if (!window.__journalitCalendarResizeObserver) {
@@ -835,11 +832,11 @@ export function applyAllCalendarFixes(): void {
     });
 
     
-    document.removeEventListener(
+    window.activeDocument.removeEventListener(
       'dashboard-styles-updated',
       calendarStyleUpdateListener
     );
-    document.addEventListener(
+    window.activeDocument.addEventListener(
       'dashboard-styles-updated',
       calendarStyleUpdateListener
     );

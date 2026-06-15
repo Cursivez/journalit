@@ -232,7 +232,7 @@ export class ReviewContextInheritanceService {
     }
 
     return (
-      (frontmatter as Record<string, unknown>).type ===
+      Object.fromEntries(Object.entries(frontmatter)).type ===
       REVIEW_TYPE_TO_FRONTMATTER_TYPE[sourceType]
     );
   }
@@ -265,8 +265,7 @@ export class ReviewContextInheritanceService {
       case 'drc':
         throw new Error('DRC is not a parent review context source');
       default: {
-        const exhaustive: never = sourceType;
-        throw new Error(`Unsupported review context source: ${exhaustive}`);
+        throw new Error('Unsupported review context source');
       }
     }
   }

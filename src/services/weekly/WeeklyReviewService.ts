@@ -1,6 +1,6 @@
 
 
-import { App, TFile, normalizePath, FileView } from 'obsidian';
+import { App, TFile, normalizePath, FileView, WorkspaceLeaf } from 'obsidian';
 import { imageService } from '../../services/image/ImageService';
 import { NewsEvent, WeeklyReviewData } from './types';
 
@@ -29,7 +29,96 @@ import { ReviewTemplateService } from '../templates/ReviewTemplateService';
 import { TemplateTransformationService } from '../templates/TemplateTransformationService';
 import { normalizeTradeExecutionForPeriodAnalytics } from '../trade/core/TradeExecutionAnalytics';
 import { eventBus, Unsubscribe } from '../events';
+import { safeString } from '../../utils/safeString';
 
+
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
+}
+
+function asRecord(value: unknown): Record<string, unknown> | undefined {
+  return isRecord(value) ? value : undefined;
+}
+
+function isNewsEvent(value: unknown): value is NewsEvent {
+  return Boolean(value && typeof value === 'object' && !Array.isArray(value));
+}
+
+function asStringArray(value: unknown): string[] {
+  return Array.isArray(value)
+    ? value.filter((item): item is string => typeof item === 'string')
+    : [];
+}
+
+function getStringRecord(value: unknown): Record<string, string> {
+  const record = asRecord(value);
+  if (!record) return {};
+  return Object.fromEntries(
+    Object.entries(record).filter(
+      (entry): entry is [string, string] => typeof entry[1] === 'string'
+    )
+  );
+}
+
+function getBooleanRecord(value: unknown): Record<string, boolean> {
+  const record = asRecord(value);
+  if (!record) return {};
+  return Object.fromEntries(
+    Object.entries(record).filter(
+      (entry): entry is [string, boolean] => typeof entry[1] === 'boolean'
+    )
+  );
+}
+
+function createWeeklyReviewData(
+  frontmatter: Record<string, unknown>
+): WeeklyReviewData | null {
+  if (frontmatter.type !== 'weekly-review') return null;
+  const date = typeof frontmatter.date === 'string' ? frontmatter.date : '';
+  const week = typeof frontmatter.week === 'string' ? frontmatter.week : '';
+  const month = typeof frontmatter.month === 'string' ? frontmatter.month : '';
+  const year = typeof frontmatter.year === 'string' ? frontmatter.year : '';
+  const reviewQuestions = getStringRecord(frontmatter.reviewQuestions);
+
+  return Object.assign(frontmatter, {
+    type: 'weekly-review' as const,
+    date,
+    week,
+    month,
+    year,
+    reviewQuestions,
+  });
+}
+
+function createDRCData(frontmatter: Record<string, unknown>): DRCData | null {
+  if (frontmatter.type !== 'drc' || typeof frontmatter.date !== 'string') {
+    return null;
+  }
+
+  const mentalGrade: DRCData['mentalGrade'] =
+    frontmatter.mentalGrade === 'A' ||
+    frontmatter.mentalGrade === 'B' ||
+    frontmatter.mentalGrade === 'C'
+      ? frontmatter.mentalGrade
+      : 'C';
+  const technicalGrade: DRCData['technicalGrade'] =
+    frontmatter.technicalGrade === 'A' ||
+    frontmatter.technicalGrade === 'B' ||
+    frontmatter.technicalGrade === 'C'
+      ? frontmatter.technicalGrade
+      : 'C';
+
+  return Object.assign(frontmatter, {
+    date: frontmatter.date,
+    preTradeChecklist: getBooleanRecord(frontmatter.preTradeChecklist),
+    mentalGrade,
+    technicalGrade,
+    tradeRatings: {},
+    reviewQuestions: getStringRecord(frontmatter.reviewQuestions),
+    missedTrades: [],
+  });
+}
 
 export class WeeklyReviewService {
   
@@ -66,14 +155,14 @@ export class WeeklyReviewService {
 
     
     if (!this.folderPathService) {
-      this.initializeFolderPathService();
+      void this.initializeFolderPathService();
     }
 
     
     this.unsubscribeSettings = eventBus.subscribe(
       'settings:changed',
       (payload) => {
-        this.onSettingsUpdated(payload);
+        void this.onSettingsUpdated(payload);
       }
     );
   }
@@ -359,7 +448,7 @@ export class WeeklyReviewService {
     
     return transformService.generateNoteFromTemplate(
       template,
-      weeklyReviewData as Record<string, any>
+      weeklyReviewData as Record<string, unknown>
     );
   }
 
@@ -388,7 +477,7 @@ export class WeeklyReviewService {
       }
 
       if (typeof value === 'number' || typeof value === 'boolean') {
-        return String(value);
+        return safeString(value);
       }
 
       if (Array.isArray(value)) {
@@ -399,7 +488,7 @@ export class WeeklyReviewService {
         return JSON.stringify(value);
       }
 
-      return String(value);
+      return safeString(value);
     };
 
     
@@ -428,7 +517,7 @@ export class WeeklyReviewService {
         return null;
       }
 
-      return frontmatter as unknown as WeeklyReviewData;
+      return createWeeklyReviewData(frontmatter);
     } catch (error) {
       console.error('Error extracting Weekly Review data:', error);
       return null;
@@ -438,7 +527,7 @@ export class WeeklyReviewService {
   
   public async updateWeeklyReviewFrontmatter(
     filePath: string,
-    updates: Partial<Record<string, any>>
+    updates: Partial<Record<string, unknown>>
   ): Promise<void> {
     try {
       
@@ -450,8 +539,9 @@ export class WeeklyReviewService {
 
       
       await this.app.fileManager.processFrontMatter(file, (frontmatter) => {
+        const frontmatterRecord = asRecord(frontmatter) ?? {};
         const { imagesByWidget, ...rest } = updates;
-        Object.assign(frontmatter, rest);
+        Object.assign(frontmatterRecord, rest);
 
         if (
           imagesByWidget &&
@@ -459,17 +549,13 @@ export class WeeklyReviewService {
           !Array.isArray(imagesByWidget)
         ) {
           const existingByWidget =
-            frontmatter.imagesByWidget &&
-            typeof frontmatter.imagesByWidget === 'object' &&
-            !Array.isArray(frontmatter.imagesByWidget)
-              ? frontmatter.imagesByWidget
-              : {};
-          frontmatter.imagesByWidget = {
+            asRecord(frontmatterRecord.imagesByWidget) ?? {};
+          frontmatterRecord.imagesByWidget = {
             ...existingByWidget,
-            ...(imagesByWidget as Record<string, unknown>),
+            ...imagesByWidget,
           };
         } else if (imagesByWidget !== undefined) {
-          frontmatter.imagesByWidget = imagesByWidget;
+          frontmatterRecord.imagesByWidget = imagesByWidget;
         }
       });
 
@@ -485,7 +571,10 @@ export class WeeklyReviewService {
 
       
       if (updates.nextWeekGoals !== undefined) {
-        await this.syncGoalsToNextWeek(filePath, updates.nextWeekGoals);
+        await this.syncGoalsToNextWeek(
+          filePath,
+          asStringArray(updates.nextWeekGoals)
+        );
       }
 
       return;
@@ -518,10 +607,11 @@ export class WeeklyReviewService {
     await this.app.fileManager.processFrontMatter(
       weeklyReviewFile,
       (frontmatter) => {
-        const currentEvents = Array.isArray(frontmatter.keyEvents)
-          ? frontmatter.keyEvents
+        const frontmatterRecord = asRecord(frontmatter) ?? {};
+        const currentEvents = Array.isArray(frontmatterRecord.keyEvents)
+          ? frontmatterRecord.keyEvents.filter(isNewsEvent)
           : [];
-        frontmatter.keyEvents = [...currentEvents, event];
+        frontmatterRecord.keyEvents = [...currentEvents, event];
       }
     );
 
@@ -569,12 +659,15 @@ export class WeeklyReviewService {
     await this.app.fileManager.processFrontMatter(
       weeklyReviewFile,
       (frontmatter) => {
-        const currentEvents: NewsEvent[] = Array.isArray(frontmatter.keyEvents)
-          ? frontmatter.keyEvents
+        const frontmatterRecord = asRecord(frontmatter) ?? {};
+        const currentEvents: NewsEvent[] = Array.isArray(
+          frontmatterRecord.keyEvents
+        )
+          ? frontmatterRecord.keyEvents.filter(isNewsEvent)
           : [];
         let visibleIndex = -1;
 
-        frontmatter.keyEvents = currentEvents.flatMap((currentEvent) => {
+        frontmatterRecord.keyEvents = currentEvents.flatMap((currentEvent) => {
           const appliesToDate =
             !currentEvent.day ||
             currentEvent.day.toLowerCase() === dayOfWeek.toLowerCase();
@@ -647,7 +740,9 @@ export class WeeklyReviewService {
         await this.app.fileManager.processFrontMatter(
           nextWeekFile,
           (frontmatter) => {
-            frontmatter.previousGoals = nextWeekGoals || [];
+            if (isRecord(frontmatter)) {
+              frontmatter.previousGoals = nextWeekGoals || [];
+            }
           }
         );
 
@@ -690,8 +785,9 @@ export class WeeklyReviewService {
       const drcFiles: { file: TFile; data: DRCData }[] = [];
 
       for (const file of files) {
-        const frontmatter =
-          this.app.metadataCache.getFileCache(file)?.frontmatter;
+        const frontmatter = asRecord(
+          this.app.metadataCache.getFileCache(file)?.frontmatter
+        );
 
         
         if (!frontmatter || frontmatter.type !== 'drc') {
@@ -699,7 +795,8 @@ export class WeeklyReviewService {
         }
 
         
-        const drcDate = frontmatter.date;
+        const drcDate =
+          typeof frontmatter.date === 'string' ? frontmatter.date : undefined;
         if (!drcDate) continue;
 
         
@@ -707,10 +804,13 @@ export class WeeklyReviewService {
         
         
         if (drcDate >= startDate && drcDate <= endDate) {
-          drcFiles.push({
-            file,
-            data: frontmatter as unknown as DRCData,
-          });
+          const drcData = createDRCData(frontmatter);
+          if (drcData) {
+            drcFiles.push({
+              file,
+              data: drcData,
+            });
+          }
         }
       }
 
@@ -746,8 +846,9 @@ export class WeeklyReviewService {
       const tradeFiles: TFile[] = [];
 
       for (const file of files) {
-        const frontmatter =
-          this.app.metadataCache.getFileCache(file)?.frontmatter;
+        const frontmatter = asRecord(
+          this.app.metadataCache.getFileCache(file)?.frontmatter
+        );
 
         
         if (
@@ -773,7 +874,7 @@ export class WeeklyReviewService {
           if (tradingDayStr >= startDateStr && tradingDayStr <= endDateStr) {
             tradeFiles.push(file);
           }
-        } else if (frontmatter.date) {
+        } else if (typeof frontmatter.date === 'string') {
           
           
           const noteDate = parseLocalDateSafe(frontmatter.date);
@@ -814,7 +915,7 @@ export class WeeklyReviewService {
 
       
 
-      let existingWeeklyLeaf: any = null;
+      let existingWeeklyLeaf: WorkspaceLeaf | null = null;
       this.app.workspace.iterateAllLeaves((leaf) => {
         if (leaf.view instanceof FileView && leaf.view.file) {
           const frontmatter = this.app.metadataCache.getFileCache(
@@ -834,7 +935,7 @@ export class WeeklyReviewService {
 
       
       if (existingWeeklyLeaf) {
-        this.app.workspace.revealLeaf(existingWeeklyLeaf);
+        void this.app.workspace.revealLeaf(existingWeeklyLeaf);
         this.app.workspace.setActiveLeaf(existingWeeklyLeaf, {
           focus: focusLeaf,
         });

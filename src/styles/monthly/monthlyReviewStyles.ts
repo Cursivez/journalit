@@ -456,7 +456,7 @@ export const monthlyReviewStyles = `
 
 .monthly-review-overview > *:first-child,
 .monthly-review-review > *:first-child {
-  margin-top: 0 !important;
+  margin-top: 0;
 }
 
 

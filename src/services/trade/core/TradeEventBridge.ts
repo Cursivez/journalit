@@ -15,7 +15,7 @@ export class TradeEventBridge {
     eventBus.publish('trade:committed', committedPayload);
     if (shouldEmitLegacyTradeChanged) {
       const delay = this.getLegacyDelay(payload.change.action);
-      setTimeout(() => {
+      window.setTimeout(() => {
         eventBus.publish('trade:changed', this.toLegacyPayload(payload.change));
       }, delay);
     }

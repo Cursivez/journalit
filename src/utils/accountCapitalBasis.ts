@@ -15,22 +15,26 @@ const getPositiveAccountCapital = (account: {
   currentBalance?: number;
   initialBalance?: number;
 }): { amount: number; source: AccountCapitalBasisSource } | null => {
+  const initialBalance = account.initialBalance;
   if (
-    Number.isFinite(account.initialBalance) &&
-    (account.initialBalance ?? 0) > 0
+    typeof initialBalance === 'number' &&
+    Number.isFinite(initialBalance) &&
+    initialBalance > 0
   ) {
     return {
-      amount: account.initialBalance as number,
+      amount: initialBalance,
       source: 'initialBalance',
     };
   }
 
+  const currentBalance = account.currentBalance;
   if (
-    Number.isFinite(account.currentBalance) &&
-    (account.currentBalance ?? 0) > 0
+    typeof currentBalance === 'number' &&
+    Number.isFinite(currentBalance) &&
+    currentBalance > 0
   ) {
     return {
-      amount: account.currentBalance as number,
+      amount: currentBalance,
       source: 'currentCapital',
     };
   }

@@ -29,6 +29,35 @@ import { useEventBus } from '../../../hooks';
 import { SkeletonBox } from '../../shared';
 import { t, tPlural } from '../../../lang/helpers';
 
+type ReviewBestWorstTrade = Record<string, unknown> & {
+  pnl?: number | null;
+  directPnL?: number | null;
+  useDirectPnLInput?: boolean;
+  dividends?: Array<{ amount?: number | null }>;
+  commission?: number | null;
+  swap?: number | null;
+  fees?: number | null;
+  rebate?: number | null;
+  tradeStatus?: string;
+  account?: string | string[];
+  currency?: string;
+  originalCurrency?: string;
+  originalPnlBeforeConversion?: number | null;
+  brokerBaseCurrency?: string;
+  rMultiple?: number;
+  riskAmount?: number;
+  breakEvenAccountCurrentBalance?: number;
+  breakEvenAccountCurrentBalanceTotal?: number;
+};
+
+function asReviewBestWorstTrades(value: unknown): ReviewBestWorstTrade[] {
+  return Array.isArray(value)
+    ? value.filter((item): item is ReviewBestWorstTrade =>
+        Boolean(item && typeof item === 'object' && !Array.isArray(item))
+      )
+    : [];
+}
+
 interface BestWorstDaysWidgetProps {
   filePath: string;
   plugin: JournalitPlugin;
@@ -81,12 +110,13 @@ export const BestWorstDaysWidget: React.FC<BestWorstDaysWidgetProps> =
         trades: cachedTrades,
         loading: cacheLoading,
         noteType,
-        dateRange: _dateRange,
         currencyConversion,
       } = useReviewTrades(filePath, plugin);
 
       
-      const trades = preview && previewData ? previewData.trades : cachedTrades;
+      const trades = asReviewBestWorstTrades(
+        preview && previewData ? previewData.trades : cachedTrades
+      );
       const loading = preview ? false : cacheLoading;
 
       
@@ -123,11 +153,13 @@ export const BestWorstDaysWidget: React.FC<BestWorstDaysWidgetProps> =
       const breakEvenRangeMax = plugin?.settings?.trade?.breakEvenRangeMax;
       
       const { bestDay, worstDay } = useMemo(() => {
-        const closedTrades = trades
-          .filter((t) => isPnlContributingTrade(t))
-          .flatMap((trade) =>
-            splitReviewTradeByRealizedPnlEvent(trade, plugin)
-          );
+        const closedTrades = asReviewBestWorstTrades(
+          trades
+            .filter((t) => isPnlContributingTrade(t))
+            .flatMap((trade) =>
+              splitReviewTradeByRealizedPnlEvent(trade, plugin)
+            )
+        );
 
         if (closedTrades.length === 0) {
           return { bestDay: null, worstDay: null };
@@ -451,7 +483,7 @@ export const BestWorstDaysWidget: React.FC<BestWorstDaysWidgetProps> =
               }
               primaryText={bestDay ? formatDayName(bestDay.date) : ''}
               metaItems={bestDay ? buildMetaItems(bestDay) : []}
-              onClick={bestDay ? () => openDRC(bestDay.date) : undefined}
+              onClick={bestDay ? () => void openDRC(bestDay.date) : undefined}
               currencyConversion={currencyConversion}
               conversionTrades={bestDay?.trades}
             />
@@ -475,7 +507,7 @@ export const BestWorstDaysWidget: React.FC<BestWorstDaysWidgetProps> =
               }
               primaryText={worstDay ? formatDayName(worstDay.date) : ''}
               metaItems={worstDay ? buildMetaItems(worstDay) : []}
-              onClick={worstDay ? () => openDRC(worstDay.date) : undefined}
+              onClick={worstDay ? () => void openDRC(worstDay.date) : undefined}
               currencyConversion={currencyConversion}
               conversionTrades={worstDay?.trades}
             />

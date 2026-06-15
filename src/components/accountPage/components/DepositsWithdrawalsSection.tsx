@@ -79,7 +79,7 @@ const TransactionItem: React.FC<{
   return (
     <div
       className={`transaction-item ${typeClass} clickable`}
-      onClick={openTransactionEditor}
+      onClick={() => void openTransactionEditor()}
       onKeyDown={handleKeyDown}
       role="button"
       tabIndex={0}
@@ -187,7 +187,7 @@ export const DepositsWithdrawalsSection: React.FC = () => {
               key={transaction.id}
               transaction={transaction}
               accountName={account.name}
-              onUpdate={refreshData}
+              onUpdate={() => void refreshData()}
             />
           ))}
         </div>

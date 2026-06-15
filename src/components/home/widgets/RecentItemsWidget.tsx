@@ -10,7 +10,6 @@ import { TEMPLATE_BUILDER_VIEW_TYPE } from '../../../views/TemplateBuilderView';
 import { safeParseDateValue, safeGetTime } from '../../../utils/dateUtils';
 import { resolveIcon } from '../../../utils/iconResolver';
 import { useEventBus } from '../../../hooks/useEventBus';
-import { ensureHomeWidgetStyles } from '../../../styles/homeWidgetStyles';
 import { t } from '../../../lang/helpers';
 
 interface RecentItemsWidgetProps {
@@ -25,7 +24,7 @@ export const RecentItemsWidget = memo<RecentItemsWidgetProps>(({ plugin }) => {
   useEffect(() => {}, []);
 
   
-  const [_journalPath, setJournalPath] = useState<string>('!Journalit');
+  const [, setJournalPath] = useState<string>('!Journalit');
 
   
   const handleRecentItemsChanged = useCallback(() => {
@@ -40,7 +39,7 @@ export const RecentItemsWidget = memo<RecentItemsWidgetProps>(({ plugin }) => {
     const fetchJournalPath = async () => {
       if (plugin.serviceManager?.getFolderPathService) {
         try {
-          const service = await plugin.serviceManager.getFolderPathService();
+          const service = plugin.serviceManager.getFolderPathService();
           setJournalPath(service.journalFolderPath);
         } catch (error) {
           console.error('Failed to get journal folder path:', error);
@@ -215,11 +214,11 @@ export const RecentItemsWidget = memo<RecentItemsWidgetProps>(({ plugin }) => {
                   role="button"
                   tabIndex={0}
                   className="jl-recent-item-hover journalit-home-recent__item"
-                  onClick={() => handleItemClick(item)}
+                  onClick={() => void handleItemClick(item)}
                   onKeyDown={(e) => {
                     if (e.key !== 'Enter' && e.key !== ' ') return;
                     e.preventDefault();
-                    handleItemClick(item);
+                    void handleItemClick(item);
                   }}
                 >
                   <div className="journalit-home-recent__item-icon">

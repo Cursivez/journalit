@@ -11,10 +11,6 @@ import {
 } from '../components/dashboard/utils/dataUtils';
 import { createDashboardFilters } from '../settings/viewFiltersDefaults';
 import { eventBus } from '../services/events';
-import {
-  ensureDashboardStyles,
-  injectDashboardStyles,
-} from '../styles/dashboardStyles';
 import { t } from '../lang/helpers';
 
 export const CALENDAR_SIDEBAR_VIEW_TYPE = 'journalit-calendar-sidebar-view';

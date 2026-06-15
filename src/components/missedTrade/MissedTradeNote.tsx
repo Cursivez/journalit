@@ -128,7 +128,7 @@ export const MissedTradeNote: React.FC<MissedTradeNoteProps> = React.memo(
         console.error('[MissedTradeNote] Error loading trade template:', error);
         return null;
       }
-      // eslint-disable-next-line react-hooks/exhaustive-deps
+      // eslint-disable-next-line react-hooks/exhaustive-deps -- initial data load is controlled by trade identity, not every derived dependency
     }, [plugin, data.templateId, templateRefreshKey]);
 
     
@@ -572,16 +572,10 @@ const TradeNavigationSection: React.FC<{
       const { action } = payload;
 
       if (action === 'created' || action === 'updated') {
-        if (cacheKey) {
-          setTimeout(() => {
-            Object.keys(sessionStorage).forEach((key) => {
-              if (
-                key.startsWith('trade-nav-') ||
-                key.startsWith('missed-trade-nav-')
-              ) {
-                sessionStorage.removeItem(key);
-              }
-            });
+        if (cacheKey && plugin) {
+          window.setTimeout(() => {
+            plugin.app.saveLocalStorage(`trade-nav-${cacheKey}`, null);
+            plugin.app.saveLocalStorage(`missed-trade-nav-${cacheKey}`, null);
 
             setTrades([]);
             setMissedTrades([]);
@@ -591,7 +585,7 @@ const TradeNavigationSection: React.FC<{
         }
       }
     },
-    [cacheKey]
+    [cacheKey, plugin]
   );
 
   
@@ -612,40 +606,42 @@ const TradeNavigationSection: React.FC<{
     }
 
     let isMounted = true;
-    let fetchTimeoutId: ReturnType<typeof setTimeout> | null = null;
+    let fetchTimeoutId: number | null = null;
 
     const fetchDataOnce = async () => {
       try {
         if (isLoading) return;
 
-        fetchTimeoutId = setTimeout(async () => {
-          try {
-            if (!isMounted) return;
-            setIsLoading(true);
+        fetchTimeoutId = window.setTimeout(() => {
+          void (async () => {
+            try {
+              if (!isMounted) return;
+              setIsLoading(true);
 
-            
-            const [dayTrades, dayMissedTrades] = await Promise.all([
-              plugin.tradeService.getTrades(
-                dateRange.startDate,
-                dateRange.endDate
-              ),
-              plugin.missedTradeService.getMissedTrades(
-                dateRange.startDate,
-                dateRange.endDate
-              ),
-            ]);
+              
+              const [dayTrades, dayMissedTrades] = await Promise.all([
+                plugin.tradeService.getTrades(
+                  dateRange.startDate,
+                  dateRange.endDate
+                ),
+                plugin.missedTradeService.getMissedTrades(
+                  dateRange.startDate,
+                  dateRange.endDate
+                ),
+              ]);
 
-            if (isMounted) {
-              setTrades(dayTrades);
-              setMissedTrades(dayMissedTrades);
+              if (isMounted) {
+                setTrades(dayTrades);
+                setMissedTrades(dayMissedTrades);
+              }
+            } catch (error) {
+              console.error('Error fetching trades for day:', error);
+            } finally {
+              if (isMounted) {
+                setIsLoading(false);
+              }
             }
-          } catch (error) {
-            console.error('Error fetching trades for day:', error);
-          } finally {
-            if (isMounted) {
-              setIsLoading(false);
-            }
-          }
+          })();
         }, 100);
       } catch (error) {
         console.error('Error in trade fetch setup:', error);
@@ -655,15 +651,15 @@ const TradeNavigationSection: React.FC<{
       }
     };
 
-    fetchDataOnce();
+    void fetchDataOnce();
 
     return () => {
       isMounted = false;
       if (fetchTimeoutId) {
-        clearTimeout(fetchTimeoutId);
+        window.clearTimeout(fetchTimeoutId);
       }
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- navigation fetch intentionally excludes loading state to avoid cleanup races
   }, [
     isVisible,
     dateRange,
@@ -678,9 +674,9 @@ const TradeNavigationSection: React.FC<{
     (path: string, openInNewLeaf: boolean = false) => {
       try {
         if (plugin && plugin.openFile) {
-          plugin.openFile(path, openInNewLeaf);
+          void plugin.openFile(path, openInNewLeaf);
         } else if (plugin?.app) {
-          plugin.app.workspace.openLinkText(path, '', openInNewLeaf);
+          void plugin.app.workspace.openLinkText(path, '', openInNewLeaf);
         } else {
           console.error(
             'Cannot navigate: Plugin and App context not available.'

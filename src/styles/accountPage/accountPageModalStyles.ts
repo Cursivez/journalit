@@ -1,8 +1,5 @@
 
-
-const ACCOUNT_PAGE_MODAL_STYLE_ID = 'journalit-account-page-modal-styles';
-
-const ACCOUNT_PAGE_MODAL_STYLES = `
+export const ACCOUNT_PAGE_MODAL_STYLES = `
   .journalit-account-modal {
     padding: 20px;
     font-family: var(--default-font);
@@ -101,29 +98,56 @@ const ACCOUNT_PAGE_MODAL_STYLES = `
   }
 
   .journalit-account-modal__button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
     padding: 8px 16px;
-    border-radius: 4px;
-    cursor: pointer;
+    border-radius: 6px;
     font-weight: 500;
+    box-shadow: none;
+    user-select: none;
+  }
+
+  .journalit-account-modal__button:not(:disabled) {
+    cursor: pointer;
+  }
+
+  .journalit-account-modal__button:disabled {
+    cursor: not-allowed;
   }
 
   .journalit-account-modal__button--secondary {
     border: 1px solid var(--background-modifier-border);
-    background: var(--background-primary);
-    color: var(--text-normal);
+    background: transparent;
+    color: var(--text-muted);
     font-weight: 400;
   }
 
+  .journalit-account-modal__button--secondary:hover:not(:disabled) {
+    background: var(--background-modifier-hover);
+    color: var(--text-normal);
+  }
+
   .journalit-account-modal__button--primary {
-    border: none;
+    border: 1px solid var(--interactive-accent);
     background: var(--interactive-accent);
     color: var(--text-on-accent);
   }
 
+  .journalit-account-modal__button--primary:hover:not(:disabled) {
+    border-color: var(--interactive-accent-hover);
+    background: var(--interactive-accent-hover);
+  }
+
   .journalit-account-modal__button--danger {
-    border: none;
+    border: 1px solid var(--background-modifier-error);
     background: var(--background-modifier-error);
     color: var(--text-on-accent);
+  }
+
+  .journalit-account-modal__button--danger:hover:not(:disabled) {
+    opacity: 0.9;
   }
 
   .journalit-modal-title-danger {
@@ -161,13 +185,3 @@ const ACCOUNT_PAGE_MODAL_STYLES = `
     grid-column: 1 / -1;
   }
 `;
-
-const accountPageModalStylesInjected = false;
-
-function injectAccountPageModalStyles(): void {
-  return;
-}
-
-export function ensureAccountPageModalStyles(): void {
-  return;
-}

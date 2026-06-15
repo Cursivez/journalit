@@ -10,6 +10,7 @@ import { extractBaseSymbol } from '../utils/symbolNormalizer';
 import type JournalitPlugin from '../main';
 import type { SymbolMapping } from '../settings/types';
 import { eventBus, Unsubscribe } from './events';
+import type { InstrumentData } from './options/CustomOptionsService';
 
 
 interface CfdSpec {
@@ -24,7 +25,7 @@ export class InstrumentSpecService {
   private plugin: JournalitPlugin;
   private customMappings: Map<string, string>;
   
-  private customInstrumentsCache: Map<string, any>;
+  private customInstrumentsCache: Map<string, InstrumentData>;
   
   private unsubscribeOptions?: Unsubscribe;
 
@@ -32,7 +33,7 @@ export class InstrumentSpecService {
   constructor(plugin: JournalitPlugin) {
     this.plugin = plugin;
     this.customMappings = new Map<string, string>();
-    this.customInstrumentsCache = new Map<string, any>();
+    this.customInstrumentsCache = new Map<string, InstrumentData>();
 
     
     this.unsubscribeOptions = eventBus.subscribe('options:changed', () => {

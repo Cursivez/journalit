@@ -9,6 +9,7 @@ import {
   CartesianGrid,
   ReferenceLine,
 } from 'recharts';
+import type { TooltipProps } from 'recharts';
 import type JournalitPlugin from '../../main';
 import {
   DrawdownChartDataPoint,
@@ -26,6 +27,17 @@ import { useCurrency } from '../../contexts/CurrencyContext';
 import { t } from '../../lang/helpers';
 import { useDisplayFormatter } from '../../hooks/useDisplayPolicy';
 
+type DrawdownChartDataPointTooltipProps = Partial<
+  TooltipProps<number, string>
+> & {
+  payload?: Array<{ payload: DrawdownChartDataPoint }>;
+};
+
+type DrawdownChartDataPointChartClickEvent = {
+  activePayload?: Array<{ payload: DrawdownChartDataPoint }>;
+  activeTooltipIndex?: number | string | null;
+};
+
 interface SharedDrawdownChartProps extends DrawdownChartProps {
   plugin?: JournalitPlugin | null; 
   currencyOverride?: string; 
@@ -33,17 +45,37 @@ interface SharedDrawdownChartProps extends DrawdownChartProps {
 
 let drawdownChartIdCounter = 0;
 
+const isDrawdownTooltipPayloadItem = (
+  value: unknown
+): value is { payload: DrawdownChartDataPoint } =>
+  Boolean(
+    value &&
+    typeof value === 'object' &&
+    !Array.isArray(value) &&
+    typeof Object.fromEntries(Object.entries(value)).payload === 'object'
+  );
+
+const normalizeDrawdownTooltipProps = (
+  props: Partial<TooltipProps<number, string>> & {
+    payload?: readonly unknown[];
+  }
+): DrawdownChartDataPointTooltipProps => ({
+  ...props,
+  payload: props.payload?.filter(isDrawdownTooltipPayloadItem),
+});
+
 
 const renderDrawdownTooltip = (
-  props: any,
+  props: DrawdownChartDataPointTooltipProps,
   displayRMultiples?: boolean,
   defaultRiskAmount?: number,
   currencyOverride?: string,
   preferPercent?: boolean
 ) => {
   return (
-    <ChartTooltip
-      {...props}
+    <ChartTooltip<DrawdownChartDataPoint>
+      active={props.active}
+      payload={props.payload}
       displayRMultiples={displayRMultiples}
       currencyOverride={currencyOverride}
       formatter={(data: DrawdownChartDataPoint) => {
@@ -284,7 +316,7 @@ export const SharedDrawdownChart = React.memo<SharedDrawdownChartProps>(
 
     
 
-    const handleChartClick = (event: any) => {
+    const handleChartClick = (event: DrawdownChartDataPointChartClickEvent) => {
       if (onChartClick) {
         onChartClick(event);
       }
@@ -420,7 +452,7 @@ export const SharedDrawdownChart = React.memo<SharedDrawdownChartProps>(
                 customTooltip
                   ? React.cloneElement(customTooltip, runtimeProps)
                   : renderDrawdownTooltip(
-                      runtimeProps,
+                      normalizeDrawdownTooltipProps(runtimeProps),
                       displayRMultiples,
                       defaultRiskAmount,
                       currencyOverride,

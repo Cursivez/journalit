@@ -147,9 +147,9 @@ function useImageUploaderModel({
         imagePaths.length > 1 &&
         onMultipleImagesUploadedRef.current
       ) {
-        onMultipleImagesUploadedRef.current(imagePaths);
+        void onMultipleImagesUploadedRef.current(imagePaths);
       } else if (imagePaths.length > 0 && onImageUploadedRef.current) {
-        onImageUploadedRef.current(imagePaths[0]);
+        void onImageUploadedRef.current(imagePaths[0]);
       }
 
       
@@ -228,9 +228,9 @@ function useImageUploaderModel({
             imagePaths.length > 1 &&
             onMultipleImagesUploadedRef.current
           ) {
-            onMultipleImagesUploadedRef.current(imagePaths);
+            void onMultipleImagesUploadedRef.current(imagePaths);
           } else if (imagePaths.length > 0 && onImageUploadedRef.current) {
-            onImageUploadedRef.current(imagePaths[0]);
+            void onImageUploadedRef.current(imagePaths[0]);
           }
         },
         multiple
@@ -249,7 +249,7 @@ function useImageUploaderModel({
       const handlePaste = (e: ClipboardEvent) => {
         e.preventDefault();
         e.stopPropagation();
-        handleClipboardPasteRef.current?.();
+        void handleClipboardPasteRef.current?.();
       };
 
       
@@ -315,10 +315,10 @@ function useImageUploaderModel({
 
       
       if (multiple && imagePaths.length > 1 && onMultipleImagesUploaded) {
-        onMultipleImagesUploaded(imagePaths);
+        void onMultipleImagesUploaded(imagePaths);
       } else if (imagePaths.length > 0) {
         
-        onImageUploaded(imagePaths[0]);
+        void onImageUploaded(imagePaths[0]);
       }
 
       
@@ -414,10 +414,10 @@ function useImageUploaderModel({
 
         
         if (multiple && imagePaths.length > 1 && onMultipleImagesUploaded) {
-          onMultipleImagesUploaded(imagePaths);
+          void onMultipleImagesUploaded(imagePaths);
         } else if (imagePaths.length > 0) {
           
-          onImageUploaded(imagePaths[0]);
+          void onImageUploaded(imagePaths[0]);
         }
       }
     }
@@ -425,10 +425,8 @@ function useImageUploaderModel({
 
   
   const handleUploadAreaClick = () => {
-    const fileInput = document.getElementById(
-      actualInputId
-    ) as HTMLInputElement;
-    if (fileInput) {
+    const fileInput = window.activeDocument.getElementById(actualInputId);
+    if (fileInput instanceof HTMLInputElement) {
       fileInput.click();
     }
   };
@@ -488,14 +486,14 @@ function ImageUploadControls({
       
       <div
         className={`journalit-image-upload-file-area ${isDraggingOver ? draggingOverClass : ''} ${!enablePaste || !pasteSupported ? 'full-width' : ''}`}
-        onClick={handleUploadAreaClick}
-        onKeyDown={handleUploadAreaKeyDown}
+        onClick={() => void handleUploadAreaClick()}
+        onKeyDown={(event) => void handleUploadAreaKeyDown(event)}
         role="button"
         tabIndex={0}
         onDragEnter={handleDragEnter}
         onDragLeave={handleDragLeave}
         onDragOver={handleDragOver}
-        onDrop={handleDrop}
+        onDrop={(event) => void handleDrop(event)}
       >
         <label className="journalit-image-upload-label">{label}</label>
       </div>
@@ -508,7 +506,7 @@ function ImageUploadControls({
           onClick={(e) => {
             e.preventDefault();
             e.stopPropagation();
-            handleClipboardPaste();
+            void handleClipboardPaste();
           }}
           disabled={isPasting}
           aria-label={t('image.uploader.paste-title')}
@@ -575,7 +573,7 @@ export const ImageUploader: React.FC<ImageUploadProps> = ({
         type="file"
         accept="image/*"
         multiple={multiple}
-        onChange={handleFileSelect}
+        onChange={(event) => void handleFileSelect(event)}
         className="journalit-image-upload-input"
       />
     </div>

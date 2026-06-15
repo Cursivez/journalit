@@ -1,8 +1,5 @@
 
-
-const ACCOUNT_LINK_MODAL_STYLE_ID = 'journalit-account-link-modal-styles';
-
-const accountLinkModalStyles = `
+export const accountLinkModalStyles = `
   .account-link-modal {
     padding: 16px;
     font-family: var(--font-text);
@@ -142,13 +139,3 @@ const accountLinkModalStyles = `
     border-top: 1px solid var(--background-modifier-border);
   }
 `;
-
-
-export function injectAccountLinkModalStyles(): void {
-  return;
-}
-
-
-export function removeAccountLinkModalStyles(): void {
-  return;
-}

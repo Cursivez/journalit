@@ -24,7 +24,7 @@ interface TradeNavigationProps {
   getMonthlyReviewPath: (date: Date) => string | null;
   getYearlyReviewPath: (date: Date) => string | null;
 
-  onEditClick?: (data: any) => void;
+  onEditClick?: (data: unknown) => void;
   handleEditClick?: () => void;
 }
 

@@ -64,7 +64,7 @@ export const NumberInput: React.FC<NumberInputProps> = ({
     
     if (!newValue) {
       setInputValue('');
-      onChange?.(undefined);
+      void onChange?.(undefined);
       return;
     }
 
@@ -107,7 +107,7 @@ export const NumberInput: React.FC<NumberInputProps> = ({
         constrainedValue = max;
       }
 
-      onChange?.(constrainedValue);
+      void onChange?.(constrainedValue);
     } else {
       // intentional
       
@@ -129,7 +129,7 @@ export const NumberInput: React.FC<NumberInputProps> = ({
     } else if (inputValue === '-' || inputValue === '.') {
       
       setInputValue('');
-      onChange?.(undefined);
+      void onChange?.(undefined);
     }
 
     
@@ -163,7 +163,7 @@ export const NumberInput: React.FC<NumberInputProps> = ({
             : constrainedValue.toString();
 
         setInputValue(formattedValue);
-        onChange?.(constrainedValue);
+        void onChange?.(constrainedValue);
       }
     }
 

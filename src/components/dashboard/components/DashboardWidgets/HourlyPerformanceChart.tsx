@@ -26,7 +26,6 @@ import {
 } from '../../../../utils/chartUtils';
 import { ChartBase } from '../../../charts/ChartBase';
 import { RechartsPortalTooltip } from '../../../charts/RechartsPortalTooltip';
-import { CurrencyCode } from '../../../../utils/currencyConfig';
 import { isPnlContributingTrade } from '../../../../utils/tradeStatusUtils';
 import { getTradeRealizedPnlEvents } from '../../../../utils/tradeAnalyticsDate';
 import {
@@ -47,13 +46,51 @@ interface HourlyPerformanceDataPoint {
   displayValue: number;
 }
 
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  Boolean(value) && typeof value === 'object' && !Array.isArray(value);
+
+const isHourlyPerformanceDataPoint = (
+  value: unknown
+): value is HourlyPerformanceDataPoint =>
+  isRecord(value) &&
+  typeof value.hour === 'number' &&
+  typeof value.label === 'string' &&
+  typeof value.netPnL === 'number' &&
+  typeof value.netR === 'number' &&
+  typeof value.trades === 'number' &&
+  typeof value.wins === 'number' &&
+  typeof value.losses === 'number';
+
+const getHourlyTooltipPayload = (
+  payload: readonly unknown[] | undefined
+): TooltipContentLike<HourlyPerformanceDataPoint>['payload'] => {
+  if (!payload) return undefined;
+  return payload.flatMap((item) => {
+    if (!isRecord(item) || !isHourlyPerformanceDataPoint(item.payload)) {
+      return [];
+    }
+    return [{ payload: item.payload }];
+  });
+};
+
 type TooltipContentLike<TData> = TooltipProps<number, string> & {
   payload?: ReadonlyArray<{ payload?: TData }>;
 };
 
+interface HourlyBarShapeProps {
+  x?: number;
+  y?: number;
+  width?: number;
+  height?: number;
+  payload?: HourlyPerformanceDataPoint;
+  stroke?: string;
+  strokeWidth?: string | number;
+  strokeOpacity?: string | number;
+}
+
 type HourlyTooltipProps = TooltipContentLike<HourlyPerformanceDataPoint> & {
   useRMultiples: boolean;
-  currencyCode: CurrencyCode;
+  currencyCode: string;
 };
 
 const HOURS = Array.from({ length: 24 }, (_, hour) => hour);
@@ -68,7 +105,7 @@ const HourlyPerformanceTooltip: React.FC<HourlyTooltipProps> = ({
   currencyCode,
 }) => {
   const { formatValue, shouldMask } = useDisplayFormatter();
-  const data = payload?.[0]?.payload as HourlyPerformanceDataPoint | undefined;
+  const data = payload?.[0]?.payload;
 
   if (!active || !data) return null;
 
@@ -152,7 +189,7 @@ export const HourlyPerformanceChart = React.memo<BaseWidgetProps>(
             (data.metrics.isMultiCurrency
               ? data.metrics.conversionBaseCurrency
               : currency) || currency;
-          const currencyCode = activeCurrency as CurrencyCode;
+          const currencyCode = activeCurrency;
 
           const aggregates = new Map<number, HourlyPerformanceDataPoint>(
             HOURS.map((hour) => [
@@ -349,7 +386,8 @@ export const HourlyPerformanceChart = React.memo<BaseWidgetProps>(
                     >
                       {(props) => (
                         <HourlyPerformanceTooltip
-                          {...(props as TooltipContentLike<HourlyPerformanceDataPoint>)}
+                          active={props.active}
+                          payload={getHourlyTooltipPayload(props.payload)}
                           useRMultiples={useRMultiples}
                           currencyCode={currencyCode}
                         />
@@ -366,27 +404,27 @@ export const HourlyPerformanceChart = React.memo<BaseWidgetProps>(
                       strokeWidth={0.8}
                       strokeOpacity={0.5}
                       radius={[2, 2, 0, 0]}
-                      shape={(props: any) => {
+                      shape={(props: HourlyBarShapeProps) => {
                         const fill = isMasked
                           ? 'var(--text-muted)'
-                          : props.payload?.trades > 0 &&
-                              props.payload?.displayValue === 0
+                          : (props.payload?.trades ?? 0) > 0 &&
+                              (props.payload?.displayValue ?? 0) === 0
                             ? 'var(--text-muted)'
-                            : props.payload?.displayValue >= 0
+                            : (props.payload?.displayValue ?? 0) >= 0
                               ? 'var(--chart-positive)'
                               : 'var(--chart-negative)';
-                        const safeX = props.x || 0;
-                        const safeY = props.y || 0;
-                        const safeWidth = props.width || 0;
-                        const safeHeight = props.height || 0;
+                        const safeX = props.x ?? 0;
+                        const safeY = props.y ?? 0;
+                        const safeWidth = props.width ?? 0;
+                        const safeHeight = props.height ?? 0;
                         const adjustedHeight =
                           safeHeight < 0 ? Math.abs(safeHeight) : safeHeight;
                         const adjustedY =
                           safeHeight < 0 ? safeY + safeHeight : safeY;
                         const showBreakevenMarker =
                           !isMasked &&
-                          props.payload?.trades > 0 &&
-                          props.payload?.displayValue === 0;
+                          (props.payload?.trades ?? 0) > 0 &&
+                          (props.payload?.displayValue ?? 0) === 0;
 
                         return (
                           <rect

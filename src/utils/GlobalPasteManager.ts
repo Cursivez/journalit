@@ -42,6 +42,9 @@ export class GlobalPasteManager {
   private mouseMoveListener: ((e: MouseEvent) => void) | null = null;
 
   
+  private registeredDocument: Document | null = null;
+
+  
   public static getInstance(): GlobalPasteManager {
     if (!this.instance) {
       this.instance = new GlobalPasteManager();
@@ -57,7 +60,7 @@ export class GlobalPasteManager {
 
     
     this.globalPasteListener = (e: ClipboardEvent) => {
-      this.handleGlobalPaste(e);
+      void this.handleGlobalPaste(e);
     };
 
     
@@ -65,9 +68,11 @@ export class GlobalPasteManager {
       this.lastMousePosition = { x: e.clientX, y: e.clientY };
     };
 
-    
-    document.addEventListener('paste', this.globalPasteListener, true);
-    document.addEventListener('mousemove', this.mouseMoveListener, true);
+    const activeDocument = window.activeDocument;
+    this.registeredDocument = activeDocument;
+
+    activeDocument.addEventListener('paste', this.globalPasteListener, true);
+    activeDocument.addEventListener('mousemove', this.mouseMoveListener, true);
   }
 
   
@@ -76,16 +81,28 @@ export class GlobalPasteManager {
 
     this.enabled = false;
 
+    const registeredDocument = this.registeredDocument;
+
     
     if (this.globalPasteListener) {
-      document.removeEventListener('paste', this.globalPasteListener, true);
+      registeredDocument?.removeEventListener(
+        'paste',
+        this.globalPasteListener,
+        true
+      );
       this.globalPasteListener = null;
     }
 
     if (this.mouseMoveListener) {
-      document.removeEventListener('mousemove', this.mouseMoveListener, true);
+      registeredDocument?.removeEventListener(
+        'mousemove',
+        this.mouseMoveListener,
+        true
+      );
       this.mouseMoveListener = null;
     }
+
+    this.registeredDocument = null;
 
     
     this.handlers = [];
@@ -113,7 +130,7 @@ export class GlobalPasteManager {
     }
 
     
-    const activeElement = document.activeElement;
+    const activeElement = window.activeDocument.activeElement;
 
     
     if (
@@ -150,7 +167,7 @@ export class GlobalPasteManager {
             ErrorHandler.showError(noTargetError, context);
           }
         }
-      } catch (_error) {
+      } catch {
         // intentional
       }
       return;
@@ -198,7 +215,7 @@ export class GlobalPasteManager {
         },
         success: true,
       });
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Global paste handler error:', error);
 
       
@@ -210,14 +227,18 @@ export class GlobalPasteManager {
           contextData: handler.context.contextData,
         },
         success: false,
-        error: error.message,
+        error: error instanceof Error ? error.message : String(error),
       });
 
       const context: ErrorContext = {
         operation: 'global paste handling',
-        originalError: error,
+        originalError:
+          error instanceof Error ? error : new Error(String(error)),
       };
-      ErrorHandler.showError(error, context);
+      ErrorHandler.showError(
+        error instanceof Error ? error : new Error(String(error)),
+        context
+      );
     }
   }
 
@@ -284,7 +305,9 @@ export class GlobalPasteManager {
     if (!element) return false;
 
     const tagName = element.tagName.toLowerCase();
-    const inputType = (element as HTMLInputElement).type?.toLowerCase();
+    const inputType = element.instanceOf(HTMLInputElement)
+      ? element.type.toLowerCase()
+      : '';
 
     return (
       (tagName === 'input' &&
@@ -309,7 +332,7 @@ export class GlobalPasteManager {
 
   
   private findHandlerUnderMouse(): PasteHandler | null {
-    const elementsAtPoint = document.elementsFromPoint(
+    const elementsAtPoint = window.activeDocument.elementsFromPoint(
       this.lastMousePosition.x,
       this.lastMousePosition.y
     );
@@ -364,7 +387,7 @@ export class GlobalPasteManager {
       const uploadArea = container.querySelector(
         '.journalit-image-upload, .shared-forecast-image, .trade-form-metadata'
       );
-      return uploadArea as HTMLElement;
+      return uploadArea?.instanceOf(HTMLElement) ? uploadArea : null;
     }
 
     return null; 
@@ -378,7 +401,7 @@ export class GlobalPasteManager {
       cancelable: false,
     });
 
-    document.dispatchEvent(event);
+    window.activeDocument.dispatchEvent(event);
   }
 
   

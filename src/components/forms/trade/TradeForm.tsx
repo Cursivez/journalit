@@ -1,8 +1,7 @@
 
 
 import React, { useState, useEffect } from 'react';
-import { injectImageStyles } from '../../../styles/imageStyles';
-import { TradeFormData, TradeFormProps } from './types';
+import { TradeFormData, TradeFormErrors, TradeFormProps } from './types';
 
 const EMPTY_INITIAL_TRADE_DATA: Partial<TradeFormData> = {};
 import { BasicTab, DetailsTab, AdvancedTab } from './tabs';
@@ -64,7 +63,7 @@ export const TradeForm: React.FC<TradeFormProps> = ({
 
   
 
-  const handleCustomFieldChange = (fieldId: string, value: any) => {
+  const handleCustomFieldChange = (fieldId: string, value: unknown) => {
     const newCustomFieldValues = {
       ...customFieldValues,
       [fieldId]: value,
@@ -82,7 +81,7 @@ export const TradeForm: React.FC<TradeFormProps> = ({
 
   
   const tabErrorCounts = React.useMemo(() => {
-    const basicTabFields = [
+    const basicTabFields: Array<keyof TradeFormErrors> = [
       'instrument',
       'direction',
       'assetType',
@@ -121,21 +120,21 @@ export const TradeForm: React.FC<TradeFormProps> = ({
       'riskAmount',
     ];
 
-    const detailsTabFields = ['setupIds'];
+    const detailsTabFields: Array<keyof TradeFormErrors> = ['setupIds'];
 
-    const advancedTabFields = ['customFields'];
+    const advancedTabFields: Array<keyof TradeFormErrors> = ['customFields'];
 
     
     const basicErrors = basicTabFields.filter((field) => {
-      const error = errors[field as keyof typeof errors];
+      const error = errors[field];
       return error && error !== '';
     });
     const detailsErrors = detailsTabFields.filter((field) => {
-      const error = errors[field as keyof typeof errors];
+      const error = errors[field];
       return error && error !== '';
     });
     const advancedErrors = advancedTabFields.filter((field) => {
-      const error = errors[field as keyof typeof errors];
+      const error = errors[field];
       return error && error !== '';
     });
 
@@ -207,7 +206,11 @@ export const TradeForm: React.FC<TradeFormProps> = ({
   };
 
   return (
-    <form ref={formRef} className="formContainer" onSubmit={handleSubmit}>
+    <form
+      ref={formRef}
+      className="formContainer"
+      onSubmit={(event) => void handleSubmit(event)}
+    >
       
       {(errors.form ||
         tabErrorCounts.basic > 0 ||

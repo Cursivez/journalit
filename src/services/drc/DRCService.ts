@@ -1,6 +1,6 @@
 
 
-import { App, TFile, normalizePath, FileView } from 'obsidian';
+import { App, TFile, normalizePath, FileView, WorkspaceLeaf } from 'obsidian';
 import { DRCData } from './types';
 import { NewsEvent } from '../weekly/types';
 
@@ -33,6 +33,7 @@ import { TemplateTransformationService } from '../templates/TemplateTransformati
 import { eventBus } from '../events';
 import type { Unsubscribe } from '../events/types';
 import { normalizeTradeExecutionForPeriodAnalytics } from '../trade/core/TradeExecutionAnalytics';
+import { safeString } from '../../utils/safeString';
 import {
   extractJournalitImageWidgetIds,
   extractMarkdownSectionsByHeading,
@@ -53,6 +54,57 @@ export interface PreviousTradingDayContextResult {
   sections: PreviousTradingDayContextSection[];
 }
 
+interface ExtractedDRCData extends Partial<DRCData> {
+  type: 'drc';
+  date: string;
+  [key: string]: unknown;
+}
+
+
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
+}
+
+function asRecord(value: unknown): Record<string, unknown> | undefined {
+  return isRecord(value) ? value : undefined;
+}
+
+function getStringValue(record: Record<string, unknown>, key: string): string {
+  const value = record[key];
+  return typeof value === 'string' ? value : '';
+}
+
+function getStringArray(
+  record: Record<string, unknown>,
+  key: string
+): string[] {
+  const value = record[key];
+  return Array.isArray(value)
+    ? value.filter((item): item is string => typeof item === 'string')
+    : [];
+}
+
+function getBooleanRecord(
+  record: Record<string, unknown>,
+  key: string
+): Record<string, boolean> {
+  const value = record[key];
+  if (!isRecord(value)) return {};
+  return Object.fromEntries(
+    Object.entries(value).filter(
+      (entry): entry is [string, boolean] => typeof entry[1] === 'boolean'
+    )
+  );
+}
+
+function getGradeValue(value: unknown): 'A' | 'B' | 'C' {
+  return value === 'A' || value === 'B' || value === 'C' ? value : 'C';
+}
+
+function isNewsEvent(value: unknown): value is NewsEvent {
+  return Boolean(value && typeof value === 'object' && !Array.isArray(value));
+}
 
 export class DRCService {
   
@@ -95,12 +147,12 @@ export class DRCService {
       
       eventBus.subscribe('settings:changed', (payload) => {
         if (payload?.source !== 'user-input') {
-          this.onSettingsUpdated();
+          void this.onSettingsUpdated();
         }
       }),
       
       eventBus.subscribe('trade:changed', () => {
-        this.onTradeDataChanged();
+        void this.onTradeDataChanged();
       })
     );
   }
@@ -353,7 +405,7 @@ export class DRCService {
           if (tradeDate === targetDate) {
             tradeFiles.push(file);
           }
-        } else if (frontmatter.date) {
+        } else if (typeof frontmatter.date === 'string') {
           
           const dateObj = parseLocalDateSafe(frontmatter.date);
           if (!dateObj) continue;
@@ -379,7 +431,7 @@ export class DRCService {
   
   public async updateDRCFrontmatter(
     filePath: string,
-    updates: Partial<Record<string, any>>,
+    updates: Partial<Record<string, unknown>>,
     source: string = 'unknown'
   ): Promise<void> {
     try {
@@ -392,8 +444,9 @@ export class DRCService {
 
       
       await this.app.fileManager.processFrontMatter(file, (frontmatter) => {
+        const frontmatterRecord = asRecord(frontmatter) ?? {};
         const { imagesByWidget, ...rest } = updates;
-        Object.assign(frontmatter, rest);
+        Object.assign(frontmatterRecord, rest);
 
         if (
           imagesByWidget &&
@@ -401,17 +454,17 @@ export class DRCService {
           !Array.isArray(imagesByWidget)
         ) {
           const existingByWidget =
-            frontmatter.imagesByWidget &&
-            typeof frontmatter.imagesByWidget === 'object' &&
-            !Array.isArray(frontmatter.imagesByWidget)
-              ? frontmatter.imagesByWidget
+            frontmatterRecord.imagesByWidget &&
+            typeof frontmatterRecord.imagesByWidget === 'object' &&
+            !Array.isArray(frontmatterRecord.imagesByWidget)
+              ? frontmatterRecord.imagesByWidget
               : {};
-          frontmatter.imagesByWidget = {
+          frontmatterRecord.imagesByWidget = {
             ...existingByWidget,
-            ...(imagesByWidget as Record<string, unknown>),
+            ...imagesByWidget,
           };
         } else if (imagesByWidget !== undefined) {
-          frontmatter.imagesByWidget = imagesByWidget;
+          frontmatterRecord.imagesByWidget = imagesByWidget;
         }
       });
 
@@ -615,7 +668,7 @@ export class DRCService {
   }
 
   
-  public extractDRCData(file: TFile): DRCData | null {
+  public extractDRCData(file: TFile): ExtractedDRCData | null {
     try {
       
       const frontmatter =
@@ -626,7 +679,44 @@ export class DRCService {
         return null;
       }
 
-      return frontmatter as unknown as DRCData;
+      const record = asRecord(frontmatter);
+      if (!record) return null;
+
+      const drcData: ExtractedDRCData = {
+        ...record,
+        type: 'drc',
+        date: getStringValue(record, 'date'),
+      };
+
+      if (Array.isArray(record.dailyGoals)) {
+        drcData.dailyGoals = getStringArray(record, 'dailyGoals');
+      }
+      if (Array.isArray(record.tags)) {
+        drcData.tags = getStringArray(record, 'tags');
+      }
+      if (Array.isArray(record.previousDayGoals)) {
+        drcData.previousDayGoals = getStringArray(record, 'previousDayGoals');
+      }
+      if (Array.isArray(record.sessionMistakes)) {
+        drcData.sessionMistakes = getStringArray(record, 'sessionMistakes');
+      }
+      if (isRecord(record.dailyGoalStatus)) {
+        drcData.dailyGoalStatus = getBooleanRecord(record, 'dailyGoalStatus');
+      }
+      if (isRecord(record.preTradeChecklist)) {
+        drcData.preTradeChecklist = getBooleanRecord(
+          record,
+          'preTradeChecklist'
+        );
+      }
+      if (record.mentalGrade !== undefined) {
+        drcData.mentalGrade = getGradeValue(record.mentalGrade);
+      }
+      if (record.technicalGrade !== undefined) {
+        drcData.technicalGrade = getGradeValue(record.technicalGrade);
+      }
+
+      return drcData;
     } catch (error) {
       console.error('Error extracting DRC data:', error);
       return null;
@@ -685,6 +775,7 @@ export class DRCService {
       const frontmatter =
         this.app.metadataCache.getFileCache(previousDRCFile)?.frontmatter;
       if (!frontmatter || frontmatter.type !== 'drc') return null;
+      const frontmatterRecord = asRecord(frontmatter) ?? {};
 
       const content = await this.app.vault.read(previousDRCFile);
       const sections = extractMarkdownSectionsByHeading(content, headings).map(
@@ -696,7 +787,7 @@ export class DRCService {
             (widgetId) => ({
               id: widgetId,
               images: this.getImagesForWidget(
-                frontmatter.imagesByWidget,
+                frontmatterRecord.imagesByWidget,
                 widgetId
               ),
             })
@@ -793,8 +884,9 @@ export class DRCService {
     imagesByWidget: unknown,
     widgetId: string
   ): string[] {
-    if (!imagesByWidget || typeof imagesByWidget !== 'object') return [];
-    const images = (imagesByWidget as Record<string, unknown>)[widgetId];
+    const imageRecord = asRecord(imagesByWidget);
+    if (!imageRecord) return [];
+    const images = imageRecord[widgetId];
     if (!Array.isArray(images)) return [];
     return images.filter((image): image is string => typeof image === 'string');
   }
@@ -818,7 +910,7 @@ export class DRCService {
   
   private async generateInitialDRCContent(date: Date): Promise<string> {
     
-    const drcData: Record<string, any> = {
+    const drcData: Record<string, unknown> = {
       type: 'drc',
       date: this.formatDateForDisplay(date),
       tags: this.generateDRCTags(date),
@@ -831,20 +923,22 @@ export class DRCService {
     const recurringGoals = this.plugin.settings.drc.recurringGoals || [];
     if (recurringGoals.length > 0) {
       drcData.dailyGoals = [...recurringGoals];
-      drcData.dailyGoalStatus = {};
+      const dailyGoalStatus: Record<string, boolean> = {};
       recurringGoals.forEach((_, index) => {
-        drcData.dailyGoalStatus[`goal_${index}`] = false;
+        dailyGoalStatus[`goal_${index}`] = false;
       });
+      drcData.dailyGoalStatus = dailyGoalStatus;
     }
 
     
     const checklistItems = this.plugin.settings.drc.checklistItems || [];
     if (checklistItems.length > 0) {
       drcData.checklistItems = [...checklistItems];
-      drcData.checklistStatus = {};
+      const checklistStatus: Record<string, boolean> = {};
       checklistItems.forEach((_, index) => {
-        drcData.checklistStatus[`item_${index}`] = false;
+        checklistStatus[`item_${index}`] = false;
       });
+      drcData.checklistStatus = checklistStatus;
     }
 
     
@@ -884,7 +978,7 @@ export class DRCService {
       }
 
       if (typeof value === 'number' || typeof value === 'boolean') {
-        return String(value);
+        return safeString(value);
       }
 
       if (Array.isArray(value)) {
@@ -895,7 +989,7 @@ export class DRCService {
         return JSON.stringify(value);
       }
 
-      return String(value);
+      return safeString(value);
     };
 
     
@@ -923,7 +1017,7 @@ export class DRCService {
 
       
 
-      let existingDRCLeaf: any = null;
+      let existingDRCLeaf: WorkspaceLeaf | null = null;
 
       this.app.workspace.iterateAllLeaves((leaf) => {
         if (existingDRCLeaf) return; 
@@ -945,7 +1039,7 @@ export class DRCService {
 
       
       if (existingDRCLeaf) {
-        this.app.workspace.revealLeaf(existingDRCLeaf);
+        void this.app.workspace.revealLeaf(existingDRCLeaf);
         this.app.workspace.setActiveLeaf(existingDRCLeaf, {
           focus: focusLeaf,
         });
@@ -1018,7 +1112,7 @@ export class DRCService {
     const weekOfMonth = this.getWeekOfMonth(date);
 
     
-    const weeklyReviewData: Record<string, any> = {
+    const weeklyReviewData: Record<string, unknown> = {
       type: 'weekly-review',
       date: this.formatDateForDisplay(weekStart),
       created: this.formatDateTimeForDisplay(new Date()),
@@ -1030,7 +1124,7 @@ export class DRCService {
     
     const frontmatterLines = [
       '---',
-      `type: ${weeklyReviewData.type}`,
+      'type: weekly-review',
       ...this.convertToYamlFrontmatter(weeklyReviewData),
       '---',
     ];
@@ -1158,14 +1252,17 @@ export class DRCService {
       }
 
       
-      const frontmatter =
-        this.app.metadataCache.getFileCache(file)?.frontmatter;
+      const frontmatter = asRecord(
+        this.app.metadataCache.getFileCache(file)?.frontmatter
+      );
       if (!frontmatter || frontmatter.type !== 'weekly-review') {
         return [];
       }
 
       
-      const allEvents = frontmatter.keyEvents || [];
+      const allEvents = Array.isArray(frontmatter.keyEvents)
+        ? frontmatter.keyEvents.filter(isNewsEvent)
+        : [];
 
       
       

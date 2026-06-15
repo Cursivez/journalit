@@ -82,6 +82,44 @@ interface RollingWinLossRatioDataPoint {
   label: string; 
 }
 
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  Boolean(value) && typeof value === 'object' && !Array.isArray(value);
+
+const parseRollingPeriod = (value: number): RollingPeriod | null => {
+  switch (value) {
+    case 10:
+    case 20:
+    case 30:
+    case 50:
+      return value;
+    default:
+      return null;
+  }
+};
+
+const isRollingWinLossRatioDataPoint = (
+  value: unknown
+): value is RollingWinLossRatioDataPoint =>
+  isRecord(value) &&
+  typeof value.tradeIndex === 'number' &&
+  typeof value.ratio === 'number' &&
+  typeof value.avgWin === 'number' &&
+  typeof value.avgLoss === 'number' &&
+  (value.avgWinR === undefined || typeof value.avgWinR === 'number') &&
+  (value.avgLossR === undefined || typeof value.avgLossR === 'number') &&
+  typeof value.label === 'string';
+
+const getRollingTooltipDataPoint = (
+  payload: readonly unknown[] | undefined
+): RollingWinLossRatioDataPoint | undefined => {
+  const firstPayload = payload?.[0];
+  if (!isRecord(firstPayload)) {
+    return undefined;
+  }
+  const data = firstPayload.payload;
+  return isRollingWinLossRatioDataPoint(data) ? data : undefined;
+};
+
 
 const calculateRollingWinLossRatio = (
   trades: Trade[],
@@ -188,13 +226,8 @@ const calculateRollingWinLossRatio = (
 };
 
 
-type TooltipContentLike<TData> = TooltipProps<number, string> & {
-  payload?: ReadonlyArray<{
-    payload?: TData;
-  }>;
-};
-
-type CustomTooltipProps = TooltipContentLike<RollingWinLossRatioDataPoint> & {
+type CustomTooltipProps = Omit<TooltipProps<number, string>, 'payload'> & {
+  payload?: readonly unknown[];
   currency?: CurrencyCode;
   formatValue: ReturnType<typeof useDisplayFormatter>['formatValue'];
   shouldMask: ReturnType<typeof useDisplayFormatter>['shouldMask'];
@@ -209,9 +242,7 @@ const RollingWinLossRatioTooltip = (props: CustomTooltipProps) => {
     formatValue,
     shouldMask,
   } = props;
-  const data = payload?.[0]?.payload as
-    | RollingWinLossRatioDataPoint
-    | undefined;
+  const data = getRollingTooltipDataPoint(payload);
 
   if (!active || !data) return null;
 
@@ -338,9 +369,9 @@ export const RollingWinLossRatioChart = React.memo<BaseWidgetProps>(
                     className="journalit-chart-widget__select"
                     value={selectedPeriod}
                     onChange={(e) => {
-                      const value = Number(e.target.value);
-                      if (ROLLING_PERIODS.includes(value as RollingPeriod)) {
-                        setSelectedPeriod(value as RollingPeriod);
+                      const period = parseRollingPeriod(Number(e.target.value));
+                      if (period) {
+                        setSelectedPeriod(period);
                       }
                     }}
                   >
@@ -420,7 +451,7 @@ export const RollingWinLossRatioChart = React.memo<BaseWidgetProps>(
                     />
 
                     <YAxis
-                      tickFormatter={(value) => {
+                      tickFormatter={(value: number) => {
                         
                         if (!Number.isFinite(value)) {
                           return '';
@@ -449,7 +480,7 @@ export const RollingWinLossRatioChart = React.memo<BaseWidgetProps>(
                       {(props) => (
                         <RollingWinLossRatioTooltip
                           active={props.active}
-                          payload={props.payload as any}
+                          payload={props.payload}
                           currency={currency}
                           formatValue={formatValue}
                           shouldMask={shouldMask}

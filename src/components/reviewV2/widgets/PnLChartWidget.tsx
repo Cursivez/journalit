@@ -4,6 +4,7 @@ import React, { useMemo } from 'react';
 import { isPnlContributingTrade } from '../../../utils/tradeStatusUtils';
 import JournalitPlugin from '../../../main';
 import { SharedPnLChart } from '../../charts';
+import type { Trade } from '../../dashboard/utils/dataUtils';
 import { preparePnLChartData } from '../../../utils/chartUtils';
 import { getSingleExplicitCurrency } from '../../../utils/currencyAggregation';
 import { TradesPreviewData } from '../../../types/reviewV2';
@@ -12,6 +13,13 @@ import { SkeletonBox } from '../../shared';
 import { t } from '../../../lang/helpers';
 import { cssVars } from '../../../styles/inlineStylePolicy';
 import { CurrencyConversionInfo } from '../../shared/display/CurrencyConversionInfo';
+
+const asPnLTrades = (value: unknown): Trade[] =>
+  Array.isArray(value)
+    ? value.filter((item): item is Trade =>
+        Boolean(item && typeof item === 'object' && !Array.isArray(item))
+      )
+    : [];
 
 interface PnLChartWidgetProps {
   filePath: string;
@@ -41,7 +49,9 @@ export const PnLChartWidget: React.FC<PnLChartWidgetProps> = React.memo(
     } = useReviewTrades(filePath, plugin);
 
     
-    const trades = preview && previewData ? previewData.trades : cachedTrades;
+    const trades = asPnLTrades(
+      preview && previewData ? previewData.trades : cachedTrades
+    );
     const loading = preview ? false : cacheLoading;
 
     

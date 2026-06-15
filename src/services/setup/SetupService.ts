@@ -15,6 +15,9 @@ import {
   replaceFileContent,
 } from '../../utils/fileMutation';
 
+const parseSetupStatus = (value: unknown): 'active' | 'archived' =>
+  value === 'archived' ? 'archived' : 'active';
+
 
 export class SetupService extends CustomDataService {
   private readonly SETUPS_FOLDER = 'setups';
@@ -64,7 +67,7 @@ export class SetupService extends CustomDataService {
               const setupMetrics =
                 await this.metricsCalculator.calculateMetrics(setup.id);
               return [setup.id, setupMetrics] as const;
-            } catch (_error) {
+            } catch {
               console.warn(
                 `Failed to calculate metrics for setup: ${file.path}`
               );
@@ -132,7 +135,19 @@ export class SetupService extends CustomDataService {
       if ('color' in data) fieldsToValidate.push('color');
       if ('order' in data) fieldsToValidate.push('order');
 
-      const errors = validateSetupData(data as SetupData).filter((error) =>
+      const validationInput: SetupData = {
+        name: typeof data.name === 'string' ? data.name : 'valid setup name',
+        description:
+          typeof data.description === 'string'
+            ? data.description
+            : 'valid setup description',
+        rules: typeof data.rules === 'string' ? data.rules : '',
+        color: data.color,
+        icon: data.icon,
+        order: data.order,
+        status: data.status,
+      };
+      const errors = validateSetupData(validationInput).filter((error) =>
         fieldsToValidate.includes(error.field)
       );
 
@@ -256,7 +271,7 @@ export class SetupService extends CustomDataService {
       name: frontmatter.name,
       description: frontmatter.description,
       rules: content.split('## Trading Rules')[1]?.trim() || '',
-      status: frontmatter.status as 'active' | 'archived',
+      status: parseSetupStatus(frontmatter.status),
       color: frontmatter.color,
       icon: frontmatter.icon,
       version: parseInt(frontmatter.version, 10),
@@ -284,7 +299,7 @@ export class SetupService extends CustomDataService {
             return null;
 
           return file;
-        } catch (_error) {
+        } catch {
           console.warn(`Invalid setup file: ${file.path}`);
           return null;
         }

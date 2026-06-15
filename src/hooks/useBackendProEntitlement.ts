@@ -27,17 +27,21 @@ export function useBackendProEntitlement(
   );
   const [refreshStatus, setRefreshStatus] =
     useState<SubscriptionTierRefreshStatus | null>(null);
-  const [isFeatureEnabled, setIsFeatureEnabled] = useState(false);
+  const [isFeatureEnabled, setIsFeatureEnabled] = useState(
+    () =>
+      BackendSecretStorage.hasAuthToken(plugin) &&
+      plugin.settings.backendIntegration?.subscriptionTier === 'premium'
+  );
 
   useEffect(() => {
     const handleSubscriptionChanged = () =>
       setSubscriptionVersion((v) => v + 1);
-    document.addEventListener(
+    window.addEventListener(
       'journalit:subscription-changed',
       handleSubscriptionChanged
     );
     return () => {
-      document.removeEventListener(
+      window.removeEventListener(
         'journalit:subscription-changed',
         handleSubscriptionChanged
       );

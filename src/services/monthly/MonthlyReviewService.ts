@@ -41,20 +41,112 @@ import { ReviewTemplateService } from '../templates/ReviewTemplateService';
 import { eventBus, ReviewChangedPayload } from '../events';
 import { TemplateTransformationService } from '../templates/TemplateTransformationService';
 
+interface MonthlyDataOptimizedResult {
+  trades: Trade[];
+  weeklyPerformance: WeeklyPerformanceData[];
+  weeklyGamePerformance: WeeklyGamePerformance[];
+  demonTrackerData: DemonTrackerEntry[];
+  bestWeek: WeeklyPerformanceData | null;
+  worstWeek: WeeklyPerformanceData | null;
+}
+
+interface MonthlyDataCacheEntry {
+  data: MonthlyDataOptimizedResult;
+  timestamp: number;
+}
+
 const getPnlContributingTrades = (trades: Trade[]): Trade[] =>
-  trades.filter((trade) => isPnlContributingTrade(trade as Trade));
+  trades.filter((trade) => isPnlContributingTrade(trade));
 
 const sumEffectivePnL = (trades: Trade[]): number =>
   trades.reduce((sum, trade) => sum + getEffectivePnL(trade), 0);
 
-const VALID_REVIEW_GRADES = new Set(['A', 'B', 'C']);
+const VALID_REVIEW_GRADES = new Set<keyof GradeDistribution>(['A', 'B', 'C']);
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
+}
+
+function asRecord(value: unknown): Record<string, unknown> | undefined {
+  return isRecord(value) ? value : undefined;
+}
+
+function getStringValue(
+  record: Record<string, unknown>,
+  key: string
+): string | undefined {
+  const value = record[key];
+  return typeof value === 'string' ? value : undefined;
+}
+
+function getBooleanValue(
+  record: Record<string, unknown>,
+  key: string
+): boolean | undefined {
+  const value = record[key];
+  if (value === 'true') return true;
+  if (value === 'false') return false;
+  return typeof value === 'boolean' ? value : undefined;
+}
+
+function getStringArray(value: unknown): string[] {
+  return Array.isArray(value)
+    ? value.filter((item): item is string => typeof item === 'string')
+    : [];
+}
+
+function getGradeValue(value: unknown): keyof GradeDistribution | undefined {
+  switch (value) {
+    case 'A':
+    case 'B':
+    case 'C':
+      return value;
+    default:
+      return undefined;
+  }
+}
+
+function createTradeFromFrontmatter(
+  frontmatter: Record<string, unknown>,
+  normalizedExecution: ReturnType<
+    typeof normalizeTradeExecutionForPeriodAnalytics
+  > & {},
+  path: string
+): Trade {
+  const originalPnlWasNull =
+    frontmatter.pnl === undefined || frontmatter.pnl === null;
+
+  return {
+    instrument:
+      getStringValue(frontmatter, 'instrument') ??
+      getStringValue(frontmatter, 'ticker'),
+    direction:
+      getStringValue(frontmatter, 'direction') ??
+      getStringValue(frontmatter, 'side') ??
+      '',
+    ...normalizedExecution,
+    pnl: typeof frontmatter.pnl === 'number' ? frontmatter.pnl : 0,
+    setup: getStringArray(frontmatter.setup),
+    tags: getStringArray(frontmatter.tags),
+    mistake: getStringArray(frontmatter.mistake),
+    account: Array.isArray(frontmatter.account)
+      ? getStringArray(frontmatter.account)
+      : typeof frontmatter.account === 'string'
+        ? [frontmatter.account]
+        : [],
+    path,
+    tradeStatus: getStringValue(frontmatter, 'tradeStatus'),
+    useDirectPnLInput: getBooleanValue(frontmatter, 'useDirectPnLInput'),
+    _originalPnlWasNull: originalPnlWasNull,
+    ...parseTradeFinancialFields(frontmatter),
+  };
+}
 
 export class MonthlyReviewService extends CustomDataService {
   private folderPathService: FolderPathService | null = null;
 
   private lastCacheClear: number = 0;
-  private monthlyDataCache: Map<string, { data: unknown; timestamp: number }> =
-    new Map();
+  private monthlyDataCache: Map<string, MonthlyDataCacheEntry> = new Map();
 
   private templateService: ReviewTemplateService | null = null;
   private transformService: TemplateTransformationService | null = null;
@@ -76,7 +168,7 @@ export class MonthlyReviewService extends CustomDataService {
 
     
     if (!this.folderPathService) {
-      this.initializeFolderPathService();
+      void this.initializeFolderPathService();
     }
 
     
@@ -120,7 +212,7 @@ export class MonthlyReviewService extends CustomDataService {
     try {
       if (this.getPlugin()?.serviceManager) {
         this.folderPathService =
-          await this.getPlugin().serviceManager.getFolderPathService();
+          this.getPlugin().serviceManager.getFolderPathService();
       }
     } catch (error) {
       console.warn('Could not initialize FolderPathService:', error);
@@ -310,7 +402,7 @@ export class MonthlyReviewService extends CustomDataService {
 
       
       if (existingMonthlyLeaf) {
-        this.app.workspace.revealLeaf(existingMonthlyLeaf);
+        void this.app.workspace.revealLeaf(existingMonthlyLeaf);
         this.app.workspace.setActiveLeaf(existingMonthlyLeaf, {
           focus: focusLeaf,
         });
@@ -432,7 +524,7 @@ export class MonthlyReviewService extends CustomDataService {
       for (const file of files) {
         try {
           const cache = this.app.metadataCache.getFileCache(file);
-          const frontmatter = cache?.frontmatter;
+          const frontmatter = asRecord(cache?.frontmatter);
 
           if (
             frontmatter?.type === 'trade' ||
@@ -451,42 +543,13 @@ export class MonthlyReviewService extends CustomDataService {
               tradingDay.getFullYear() === year &&
               tradingDay.getMonth() + 1 === month
             ) {
-              
-              const originalPnlWasNull =
-                frontmatter.pnl === undefined || frontmatter.pnl === null;
-
-              const trade: Trade = {
-                instrument: frontmatter.instrument || frontmatter.ticker,
-                direction: frontmatter.direction || frontmatter.side,
-                ...normalizedExecution,
-                
-                pnl:
-                  frontmatter.pnl !== undefined && frontmatter.pnl !== null
-                    ? frontmatter.pnl
-                    : 0,
-                setup: frontmatter.setup,
-                tags: frontmatter.tags,
-                mistake: frontmatter.mistake,
-                account: Array.isArray(frontmatter.account)
-                  ? frontmatter.account
-                  : frontmatter.account
-                    ? [frontmatter.account]
-                    : [],
-                path: file.path,
-                
-                tradeStatus: frontmatter.tradeStatus,
-                useDirectPnLInput: frontmatter.useDirectPnLInput,
-                
-                _originalPnlWasNull: originalPnlWasNull,
-                
-                ...parseTradeFinancialFields(frontmatter),
-              } as Trade & {
-                tradeStatus?: string;
-                useDirectPnLInput?: boolean;
-                exits?: Array<{ time: Date; price: number; size: number }>;
-                _originalPnlWasNull?: boolean;
-              };
-              trades.push(trade);
+              trades.push(
+                createTradeFromFrontmatter(
+                  frontmatter,
+                  normalizedExecution,
+                  file.path
+                )
+              );
             }
           }
         } catch (fileError) {
@@ -681,11 +744,11 @@ export class MonthlyReviewService extends CustomDataService {
 
           const mistakes: Array<{ mistake: string; date: string }> = [];
           dayTrades.forEach((trade) => {
-            if (trade?.mistake && Array.isArray(trade.mistake)) {
-              trade.mistake.forEach((mistake: string) => {
-                mistakes.push({ mistake, date: date.toISOString() });
-              });
-            }
+            const tradeRecord = asRecord(trade);
+            const mistakeValues = getStringArray(tradeRecord?.mistake);
+            mistakeValues.forEach((mistake) => {
+              mistakes.push({ mistake, date: date.toISOString() });
+            });
           });
           return mistakes;
         })
@@ -823,23 +886,15 @@ export class MonthlyReviewService extends CustomDataService {
               drcDate.getFullYear() === year
             ) {
               
-              if (
-                drcData.mentalGrade &&
-                VALID_REVIEW_GRADES.has(drcData.mentalGrade)
-              ) {
-                mentalGradeDistribution[
-                  drcData.mentalGrade as keyof GradeDistribution
-                ]++;
+              const mentalGrade = getGradeValue(drcData.mentalGrade);
+              if (mentalGrade) {
+                mentalGradeDistribution[mentalGrade]++;
               }
 
               
-              if (
-                drcData.technicalGrade &&
-                VALID_REVIEW_GRADES.has(drcData.technicalGrade)
-              ) {
-                technicalGradeDistribution[
-                  drcData.technicalGrade as keyof GradeDistribution
-                ]++;
+              const technicalGrade = getGradeValue(drcData.technicalGrade);
+              if (technicalGrade) {
+                technicalGradeDistribution[technicalGrade]++;
               }
             }
           }
@@ -892,27 +947,13 @@ export class MonthlyReviewService extends CustomDataService {
   async getMonthlyDataOptimized(
     year: number,
     month: number
-  ): Promise<{
-    trades: Trade[];
-    weeklyPerformance: WeeklyPerformanceData[];
-    weeklyGamePerformance: WeeklyGamePerformance[];
-    demonTrackerData: DemonTrackerEntry[];
-    bestWeek: WeeklyPerformanceData | null;
-    worstWeek: WeeklyPerformanceData | null;
-  }> {
+  ): Promise<MonthlyDataOptimizedResult> {
     
     const cacheKey = `${year}-${month}`;
     const cached = this.monthlyDataCache.get(cacheKey);
     if (cached && Date.now() - cached.timestamp < 5 * 60 * 1000) {
       
-      return cached.data as {
-        trades: Trade[];
-        weeklyPerformance: WeeklyPerformanceData[];
-        weeklyGamePerformance: WeeklyGamePerformance[];
-        demonTrackerData: DemonTrackerEntry[];
-        bestWeek: WeeklyPerformanceData | null;
-        worstWeek: WeeklyPerformanceData | null;
-      };
+      return cached.data;
     }
 
     try {
@@ -1003,7 +1044,7 @@ export class MonthlyReviewService extends CustomDataService {
         const batchPromises = batch.map(async (file) => {
           try {
             const cache = this.app.metadataCache.getFileCache(file);
-            const frontmatter = cache?.frontmatter;
+            const frontmatter = asRecord(cache?.frontmatter);
 
             if (
               frontmatter?.type === 'trade' ||
@@ -1020,41 +1061,11 @@ export class MonthlyReviewService extends CustomDataService {
                 tradingDay.getFullYear() === year &&
                 tradingDay.getMonth() + 1 === month
               ) {
-                
-                const originalPnlWasNull =
-                  frontmatter.pnl === undefined || frontmatter.pnl === null;
-
-                return {
-                  instrument: frontmatter.instrument || frontmatter.ticker,
-                  direction: frontmatter.direction || frontmatter.side,
-                  ...normalizedExecution,
-                  
-                  pnl:
-                    frontmatter.pnl !== undefined && frontmatter.pnl !== null
-                      ? frontmatter.pnl
-                      : 0,
-                  setup: frontmatter.setup,
-                  tags: frontmatter.tags,
-                  mistake: frontmatter.mistake,
-                  account: Array.isArray(frontmatter.account)
-                    ? frontmatter.account
-                    : frontmatter.account
-                      ? [frontmatter.account]
-                      : [],
-                  path: file.path,
-                  
-                  tradeStatus: frontmatter.tradeStatus,
-                  useDirectPnLInput: frontmatter.useDirectPnLInput,
-                  
-                  _originalPnlWasNull: originalPnlWasNull,
-                  
-                  ...parseTradeFinancialFields(frontmatter),
-                } as Trade & {
-                  tradeStatus?: string;
-                  useDirectPnLInput?: boolean;
-                  exits?: Array<{ time: Date; price: number; size: number }>;
-                  _originalPnlWasNull?: boolean;
-                };
+                return createTradeFromFrontmatter(
+                  frontmatter,
+                  normalizedExecution,
+                  file.path
+                );
               }
             }
             return null;
@@ -1065,9 +1076,7 @@ export class MonthlyReviewService extends CustomDataService {
         });
 
         const batchResults = await Promise.all(batchPromises);
-        trades.push(
-          ...(batchResults.filter((trade) => trade !== null) as Trade[])
-        );
+        trades.push(...batchResults.filter((trade) => trade !== null));
       }
 
       return trades;
@@ -1335,7 +1344,8 @@ export class MonthlyReviewService extends CustomDataService {
       
       await this.app.fileManager.processFrontMatter(file, (frontmatter) => {
         const { imagesByWidget, ...rest } = updates;
-        Object.assign(frontmatter, rest);
+        const frontmatterRecord = asRecord(frontmatter) ?? {};
+        Object.assign(frontmatterRecord, rest);
 
         if (
           imagesByWidget &&
@@ -1343,17 +1353,17 @@ export class MonthlyReviewService extends CustomDataService {
           !Array.isArray(imagesByWidget)
         ) {
           const existingByWidget =
-            frontmatter.imagesByWidget &&
-            typeof frontmatter.imagesByWidget === 'object' &&
-            !Array.isArray(frontmatter.imagesByWidget)
-              ? frontmatter.imagesByWidget
+            frontmatterRecord.imagesByWidget &&
+            typeof frontmatterRecord.imagesByWidget === 'object' &&
+            !Array.isArray(frontmatterRecord.imagesByWidget)
+              ? frontmatterRecord.imagesByWidget
               : {};
-          frontmatter.imagesByWidget = {
+          frontmatterRecord.imagesByWidget = {
             ...existingByWidget,
-            ...(imagesByWidget as Record<string, unknown>),
+            ...Object.fromEntries(Object.entries(imagesByWidget)),
           };
         } else if (imagesByWidget !== undefined) {
-          frontmatter.imagesByWidget = imagesByWidget;
+          frontmatterRecord.imagesByWidget = imagesByWidget;
         }
       });
 

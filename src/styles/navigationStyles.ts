@@ -1,6 +1,6 @@
 
 
-const NAVIGATION_STYLES = `
+export const NAVIGATION_STYLES = `
   .journalit-navigation-view-container {
     height: 100% !important;
     overflow: hidden !important;
@@ -432,15 +432,3 @@ const NAVIGATION_STYLES = `
     color: var(--text-faint);
   }
 `;
-
-const navigationStylesInjected = false;
-
-export function injectNavigationStyles(): void {
-  return;
-}
-
-export function removeNavigationStyles(): void {
-  return;
-}
-
-export function ensureNavigationStyles(): void {}

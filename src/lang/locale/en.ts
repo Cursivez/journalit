@@ -1897,6 +1897,7 @@ const en = {
   'chart.loading': 'Loading chart...',
 
   
+  'chart.label.pnl': 'P&L',
   'chart.legend.entry': 'Entry',
   'chart.legend.exit': 'Exit',
   'chart.legend.trade': 'Trade',
@@ -2348,13 +2349,11 @@ const en = {
   'account.settings.section.available-types.delete-aria': 'Delete {name}',
   'account.settings.section.available-types.empty':
     'No custom account types defined.',
-  'account.settings.section.inclusion.title': 'Dashboard inclusion settings',
+  'account.settings.section.inclusion.title': 'Dashboard account types',
   'account.settings.section.inclusion.desc':
-    'Choose which account types to include in dashboard calculations. Also configure whether withdrawals from each account type are included in total withdrawal metrics.',
-  'account.settings.section.inclusion.include-dashboard':
-    'Include in dashboard',
-  'account.settings.section.inclusion.include-withdrawals':
-    'Include withdrawals',
+    'Choose which account types appear in dashboard stats, whether withdrawals count, and their display order.',
+  'account.settings.section.inclusion.include-dashboard': 'In dashboard stats',
+  'account.settings.section.inclusion.include-withdrawals': 'Withdrawals',
   'account.settings.section.inclusion.empty':
     'No account types available to configure.',
   'account.settings.section.order.title': 'Display order',
@@ -4645,10 +4644,10 @@ const en = {
   'widget.directional-drawdown.name': 'Directional Realized Drawdown',
   'widget.directional-drawdown.description':
     'Separate long and short closed-trade drawdown amount curves',
-  'widget.long-drawdown.name': 'Long Realized Drawdown',
+  'widget.long-drawdown.name': 'Long Drawdown',
   'widget.long-drawdown.description':
     'Closed-trade drawdown amount curve for long trades only',
-  'widget.short-drawdown.name': 'Short Realized Drawdown',
+  'widget.short-drawdown.name': 'Short Drawdown',
   'widget.short-drawdown.description':
     'Closed-trade drawdown amount curve for short trades only',
   'widget.trades-chart.name': 'Trade P&L',
@@ -4965,7 +4964,7 @@ const en = {
   'metric.avgRecoveryTime.name': 'Avg Recovery Time',
   'metric.avgRecoveryTime.description':
     'Average time it takes closed-trade realized drawdowns to recover to a new high',
-  'metric.longestDrawdown.name': 'Longest Realized Drawdown',
+  'metric.longestDrawdown.name': 'Longest Drawdown',
   'metric.longestDrawdown.description':
     'Longest elapsed time spent in a realized drawdown episode',
   'metric.drawdownEpisodes.name': 'Drawdown Episodes',
@@ -5813,8 +5812,8 @@ const en = {
   'widget.directional-pnl.empty.no-closed': 'No closed trades for this period',
   'widget.directional-pnl.empty.no-long': 'No long trades this period',
   'widget.directional-pnl.empty.no-short': 'No short trades this period',
-  'widget.directional-drawdown.title.long': 'Long Realized Drawdown',
-  'widget.directional-drawdown.title.short': 'Short Realized Drawdown',
+  'widget.directional-drawdown.title.long': 'Long Drawdown',
+  'widget.directional-drawdown.title.short': 'Short Drawdown',
   'widget.directional-drawdown.empty.not-enough':
     'Not enough closed trades for directional analysis',
   'widget.directional-drawdown.empty.no-closed':
@@ -6018,10 +6017,10 @@ const en = {
   'widget.directionalDrawdownChart.name': 'Directional Realized Drawdown',
   'widget.directionalDrawdownChart.description':
     'Displays separate long and short closed-trade drawdown amount curves',
-  'widget.longDrawdownChart.name': 'Long Realized Drawdown',
+  'widget.longDrawdownChart.name': 'Long Drawdown',
   'widget.longDrawdownChart.description':
     'Displays the closed-trade drawdown amount curve for long trades only',
-  'widget.shortDrawdownChart.name': 'Short Realized Drawdown',
+  'widget.shortDrawdownChart.name': 'Short Drawdown',
   'widget.shortDrawdownChart.description':
     'Displays the closed-trade drawdown amount curve for short trades only',
   'widget.drawdownStats.name': 'Realized Drawdown Stats',

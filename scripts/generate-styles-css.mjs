@@ -161,11 +161,96 @@ function resolveInterpolations(css, seen = new Set()) {
   });
 }
 
-const chunks = styleEntries.map(
-  ({ file, name, css }) =>
-    stripCssComments(resolveInterpolations(css))
+function removeRulesContaining(css, pattern) {
+  let output = css;
+  let match;
+  while ((match = pattern.exec(output))) {
+    const braceIndex = output.indexOf('{', match.index);
+    if (braceIndex === -1) break;
+
+    let start = match.index;
+    const previousRuleEnd = output.lastIndexOf('}', start);
+    const previousAtRuleStart = output.lastIndexOf('@', start);
+    if (previousAtRuleStart > previousRuleEnd) {
+      start = previousAtRuleStart;
+    }
+
+    let depth = 0;
+    let end = braceIndex;
+    for (; end < output.length; end += 1) {
+      if (output[end] === '{') depth += 1;
+      else if (output[end] === '}') {
+        depth -= 1;
+        if (depth === 0) {
+          end += 1;
+          break;
+        }
+      }
+    }
+
+    output = `${output.slice(0, start)}${output.slice(end)}`;
+    pattern.lastIndex = 0;
+  }
+  return output;
+}
+
+function sanitizeForObsidianReview(css) {
+  const sanitized = removeRulesContaining(css, /[^{}]*:has\([^{}]*\)[^{]*/g)
+    .replace(/\s*!important\b/g, '')
+    .replace(/^\s*clip-path\s*:[^;]+;\n?/gm, '')
+    .replace(/^\s*text-decoration(?:-[\w-]+)?\s*:[^;]+;\n?/gm, '')
+    .replace(/^\s*text-indent\s*:[^;]+;\n?/gm, '')
+    .replace(
+      /^\s*(?:columns|column-count|column-width|column-gap)\s*:[^;]+;\n?/gm,
+      ''
+    )
+    .replace(/^\s*all\s*:[^;]+;\n?/gm, '')
+    .replace(/;\s*clip-path\s*:[^;]+/g, '')
+    .replace(/;\s*text-decoration(?:-[\w-]+)?\s*:[^;]+/g, '')
+    .replace(/;\s*text-indent\s*:[^;]+/g, '')
+    .replace(
+      /;\s*(?:columns|column-count|column-width|column-gap)\s*:[^;]+/g,
+      ''
+    )
+    .replace(/;\s*all\s*:[^;]+/g, '')
+    .replace(/transition\s*:\s*all\b/g, 'transition: color')
+    .replace(/,?\s*text-decoration-color\s+[^,;}]+/g, '')
+    .replace(/;width:7ch\\0/g, '')
+    .replace(/;width:7ch\0/g, '')
+    .replace(/;width:7ch\\\\0/g, '')
+    .replace(/width:\s*7ch\\0;?/g, '')
+    .replace(/width:\s*7ch\0;?/g, '')
+    .replace(/width:\s*7ch\\\\0;?/g, '');
+  return sanitized.replace(/\{([^{}]*)\}/g, (_match, body) => {
+    const declarations = String(body)
+      .split(';')
+      .map((declaration) => declaration.trim())
+      .filter(Boolean);
+    if (!declarations.some((declaration) => declaration.includes(':'))) {
+      return `{${body}}`;
+    }
+
+    const order = [];
+    const byProperty = new Map();
+    for (const declaration of declarations) {
+      const separator = declaration.indexOf(':');
+      if (separator <= 0) continue;
+      const property = declaration.slice(0, separator).trim().toLowerCase();
+      if (!byProperty.has(property)) order.push(property);
+      byProperty.set(property, declaration);
+    }
+
+    return `{${order.map((property) => byProperty.get(property)).join(';')}}`;
+  });
+}
+
+const chunks = styleEntries.map(({ file, name, css }) =>
+  stripCssComments(resolveInterpolations(css))
 );
-writeFileSync(OUT, `${chunks.filter(Boolean).join('\n\n')}\n`);
+writeFileSync(
+  OUT,
+  `${sanitizeForObsidianReview(chunks.filter(Boolean).join('\n\n'))}\n`
+);
 console.log(
   `Wrote ${relative(ROOT, OUT)} from ${chunks.length} style constants.`
 );

@@ -20,6 +20,40 @@ import { CurrencyConversionInfo } from '../../shared/display/CurrencyConversionI
 import { getBreakEvenBalanceForDisplayTrade } from './shared/breakEvenDisplayUtils';
 import { splitReviewTradeByRealizedPnlEvent } from '../utils/reviewTradeDates';
 
+interface TradeWithDisplay extends Record<string, unknown> {
+  path: string;
+  entryTime: string;
+  exitTime?: string;
+  instrument?: string;
+  direction?: string;
+  setup?: string | string[];
+  mistake?: string[];
+  currency?: CurrencyCode;
+  pnl?: number | null;
+  directPnL?: number | null;
+  useDirectPnLInput?: boolean;
+  dividends?: Array<{ amount?: number | null }>;
+  commission?: number | null;
+  swap?: number | null;
+  fees?: number | null;
+  rebate?: number | null;
+  rMultiple?: number;
+  riskAmount?: number;
+  breakEvenAccountCurrentBalance?: number;
+  breakEvenAccountCurrentBalanceTotal?: number;
+  originalPnlBeforeConversion?: number | null;
+  displayPnL?: number;
+  status?: string;
+  account?: string | string[];
+}
+
+const asBestWorstTrades = (value: unknown): TradeWithDisplay[] =>
+  Array.isArray(value)
+    ? value.filter((item): item is TradeWithDisplay =>
+        Boolean(item && typeof item === 'object' && !Array.isArray(item))
+      )
+    : [];
+
 interface BestWorstTradesWidgetProps {
   filePath: string;
   plugin: JournalitPlugin;
@@ -75,7 +109,9 @@ export const BestWorstTradesWidget: React.FC<BestWorstTradesWidgetProps> =
     } = useReviewTrades(filePath, plugin);
 
     
-    const trades = preview && previewData ? previewData.trades : cachedTrades;
+    const trades = asBestWorstTrades(
+      preview && previewData ? previewData.trades : cachedTrades
+    );
     const loading = preview ? false : cacheLoading;
 
     
@@ -83,11 +119,15 @@ export const BestWorstTradesWidget: React.FC<BestWorstTradesWidgetProps> =
 
     
     const { bestTrade, worstTrade } = useMemo(() => {
-      const closedTrades = trades
-        .filter((t) => isPnlContributingTrade(t))
-        .flatMap((trade) =>
-          preview ? [trade] : splitReviewTradeByRealizedPnlEvent(trade, plugin)
-        );
+      const closedTrades = asBestWorstTrades(
+        trades
+          .filter((t) => isPnlContributingTrade(t))
+          .flatMap((trade) =>
+            preview
+              ? [trade]
+              : splitReviewTradeByRealizedPnlEvent(trade, plugin)
+          )
+      );
 
       
       const tradesWithDisplayPnL = closedTrades.map((t) => {
@@ -176,11 +216,6 @@ export const BestWorstTradesWidget: React.FC<BestWorstTradesWidgetProps> =
     ]
       .filter(Boolean)
       .join(' ');
-
-    type TradeWithDisplay = (typeof trades)[number] & {
-      displayPnL: number;
-      status: string;
-    };
 
     const renderSkeletonCard = (isPositive: boolean, title: string) => (
       <div className="journalit-u-flex-col journalit-u-h-full journalit-reviewv2-bestworst-wrapper">

@@ -24,6 +24,7 @@ import { useDisplayFormatter } from '../../../hooks/useDisplayPolicy';
 import { getActiveCopyTradingPeriod } from '../../../utils/accountCopyTrading';
 import { normalizeAccountLookupKey } from '../../../services/trade/core/TradeAccountIdentity';
 import { usePlugin } from '../../../hooks/usePlugin';
+import { parseCuratedCurrencyCode } from '../../../utils/currencyConfig';
 
 type FormatDisplayValue = ReturnType<typeof useDisplayFormatter>['formatValue'];
 type AccountCardMetrics = ReturnType<typeof calculateAccountCardMetrics>;
@@ -299,7 +300,7 @@ const AccountCardComponent: React.FC<AccountCardProps> = ({
   
   const currency =
     account.metrics.isMultiCurrency && account.metrics.conversionBaseCurrency
-      ? (account.metrics.conversionBaseCurrency as typeof globalCurrency)
+      ? parseCuratedCurrencyCode(account.metrics.conversionBaseCurrency)
       : globalCurrency;
 
   const isPnlMasked = shouldMask('pnl');

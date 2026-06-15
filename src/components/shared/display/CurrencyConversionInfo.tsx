@@ -73,6 +73,7 @@ export const CurrencyConversionInfo: React.FC<CurrencyConversionInfoProps> = ({
     return null;
   }
 
+  const conversionBaseCurrency = metadata.conversionBaseCurrency;
   const scopedOriginalByCurrency: Record<string, number> = {};
   const scopedConvertedByCurrency: Record<string, number> = {};
 
@@ -134,21 +135,18 @@ export const CurrencyConversionInfo: React.FC<CurrencyConversionInfoProps> = ({
 
   return (
     <CurrencyConversionInfoContent
-      metadata={
-        {
-          ...metadata,
-          brokerBaseCurrencyTradeCount: hasScopedTrades
-            ? trades.filter(
-                (trade) =>
-                  typeof trade.brokerBaseCurrencyPnl === 'number' &&
-                  Number.isFinite(trade.brokerBaseCurrencyPnl) &&
-                  trade.brokerBaseCurrency === metadata.conversionBaseCurrency
-              ).length
-            : metadata.brokerBaseCurrencyTradeCount,
-        } as ReviewCurrencyConversionMetadata & {
-          conversionBaseCurrency: string;
-        }
-      }
+      metadata={{
+        ...metadata,
+        conversionBaseCurrency,
+        brokerBaseCurrencyTradeCount: hasScopedTrades
+          ? trades.filter(
+              (trade) =>
+                typeof trade.brokerBaseCurrencyPnl === 'number' &&
+                Number.isFinite(trade.brokerBaseCurrencyPnl) &&
+                trade.brokerBaseCurrency === conversionBaseCurrency
+            ).length
+          : metadata.brokerBaseCurrencyTradeCount,
+      }}
       originalEntries={originalEntries}
       convertedEntries={convertedEntries}
       unconverted={unconverted}

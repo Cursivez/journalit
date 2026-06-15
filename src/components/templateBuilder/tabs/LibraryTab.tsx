@@ -13,10 +13,10 @@ import { TemplateSharingService } from '../../../services/templates/TemplateShar
 import { ReviewTemplateService } from '../../../services/templates/ReviewTemplateService';
 import { TradeTemplateService } from '../../../services/templates/TradeTemplateService';
 import type { ReviewTemplate, TradeTemplate } from '../../../types/reviewV2';
-import { ensureTemplateBuilderStyles } from '../../../styles/templateBuilderStyles';
 import { eventBus } from '../../../services/events';
 import { t } from '../../../lang/helpers';
-const LIBRARY_TAB_STYLES = `
+import { writeClipboardText } from '../../../utils/clipboard';
+export const LIBRARY_TAB_STYLES = `
 		.library-tab {
 			max-width: 800px;
 			margin: 0 auto;
@@ -161,6 +161,20 @@ interface LibraryTabProps {
 
 type ImportStatus = 'idle' | 'validating' | 'valid' | 'invalid';
 
+type LibraryTemplateItem =
+  | {
+      id: string;
+      name: string;
+      type: ReviewTemplate['type'];
+      template: ReviewTemplate;
+    }
+  | {
+      id: string;
+      name: string;
+      type: 'trade';
+      template: TradeTemplate;
+    };
+
 interface ImportPreview {
   type: string;
   name: string;
@@ -188,26 +202,14 @@ function useLibraryTabModel({
   const [sharingService] = useState(() => new TemplateSharingService());
 
   
-  const [allTemplates, setAllTemplates] = useState<
-    Array<{
-      id: string;
-      name: string;
-      type: string;
-      template: ReviewTemplate | TradeTemplate;
-    }>
-  >([]);
+  const [allTemplates, setAllTemplates] = useState<LibraryTemplateItem[]>([]);
 
   
   useLayoutEffect(() => {}, []);
 
   
   const loadTemplates = useCallback(() => {
-    const templates: Array<{
-      id: string;
-      name: string;
-      type: string;
-      template: ReviewTemplate | TradeTemplate;
-    }> = [];
+    const templates: LibraryTemplateItem[] = [];
 
     
     const drcTemplates = reviewTemplateService.getTemplates('drc');
@@ -392,13 +394,9 @@ function useLibraryTabModel({
       let code: string;
 
       if (templateData.type === 'trade') {
-        code = sharingService.exportTradeTemplate(
-          templateData.template as TradeTemplate
-        );
+        code = sharingService.exportTradeTemplate(templateData.template);
       } else {
-        code = sharingService.exportReviewTemplate(
-          templateData.template as ReviewTemplate
-        );
+        code = sharingService.exportReviewTemplate(templateData.template);
       }
 
       setExportedCode(code);
@@ -418,9 +416,9 @@ function useLibraryTabModel({
     }
 
     try {
-      await navigator.clipboard.writeText(exportedCode);
+      await writeClipboardText(exportedCode);
       new Notice(t('library.notice.copied'));
-    } catch (_error) {
+    } catch {
       new Notice(t('library.error.copy-failed'), 5000);
     }
   };
@@ -501,7 +499,7 @@ export const LibraryTab: React.FC<LibraryTabProps> = ({
         <div className="template-actions">
           <button
             className="template-action-button template-action-button--secondary"
-            onClick={handleValidate}
+            onClick={() => void handleValidate()}
             disabled={!importCode.trim()}
           >
             {importStatus === 'validating'
@@ -511,7 +509,7 @@ export const LibraryTab: React.FC<LibraryTabProps> = ({
 
           <button
             className="template-action-button template-action-button--primary"
-            onClick={handleImport}
+            onClick={() => void handleImport()}
             disabled={importStatus !== 'valid'}
           >
             {t('library.button.import')}
@@ -585,7 +583,7 @@ export const LibraryTab: React.FC<LibraryTabProps> = ({
             <div className="template-actions">
               <button
                 className="template-action-button template-action-button--primary"
-                onClick={handleExport}
+                onClick={() => void handleExport()}
                 disabled={!selectedTemplateId}
               >
                 {t('library.button.generate-code')}
@@ -606,14 +604,14 @@ export const LibraryTab: React.FC<LibraryTabProps> = ({
                 value={exportedCode}
                 readOnly
                 rows={6}
-                onClick={(e) => (e.target as HTMLTextAreaElement).select()}
+                onClick={(e) => e.currentTarget.select()}
               />
             </div>
 
             <div className="template-actions">
               <button
                 className="template-action-button template-action-button--secondary template-action-btn"
-                onClick={handleCopyToClipboard}
+                onClick={() => void handleCopyToClipboard()}
               >
                 {t('library.button.copy-code')}
               </button>
@@ -626,6 +624,3 @@ export const LibraryTab: React.FC<LibraryTabProps> = ({
 };
 
 
-function injectLibraryStyles(): void {
-  // intentional
-}

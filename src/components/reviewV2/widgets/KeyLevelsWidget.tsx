@@ -26,7 +26,7 @@ interface KeyLevelsPreviewData {
   keyLevels: KeyLevels;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-empty-object-type
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type -- component has no props but keeps an explicit props alias
 interface KeyLevelsWidgetConfig {
   
 }
@@ -62,7 +62,22 @@ interface EditingState {
 
 const WIDGET_CLASS = 'journalit-key-levels-widget';
 const EMPTY_KEY_LEVELS: KeyLevels = { support: [], resistance: [] };
-const SUPPORTED_TYPES = ['drc', 'weekly-review', 'monthly-review'];
+
+const asRecord = (value: unknown): Record<string, unknown> | null =>
+  value && typeof value === 'object' && !Array.isArray(value)
+    ? Object.fromEntries(Object.entries(value))
+    : null;
+
+const parseReviewMode = (value: unknown): ReviewMode | null => {
+  switch (value) {
+    case 'drc':
+    case 'weekly-review':
+    case 'monthly-review':
+      return value;
+    default:
+      return null;
+  }
+};
 
 const FlagSvg: React.FC<{ color: string; size?: number }> = ({
   color,
@@ -137,23 +152,34 @@ const ResistanceArrow: React.FC = () => (
 );
 
 const isKeyLevels = (value: unknown): value is KeyLevels => {
-  if (!value || typeof value !== 'object') return false;
-  const maybe = value as Partial<KeyLevels>;
-  return Array.isArray(maybe.support) && Array.isArray(maybe.resistance);
+  const record = asRecord(value);
+  return Boolean(
+    record && Array.isArray(record.support) && Array.isArray(record.resistance)
+  );
 };
 
 const normalizeKeyLevel = (level: unknown): KeyLevel | null => {
-  if (!level || typeof level !== 'object') return null;
-  const keyLevel = level as Partial<KeyLevel>;
-  if (keyLevel.price === undefined || keyLevel.price === null) return null;
+  const keyLevel = asRecord(level);
+  if (!keyLevel || keyLevel.price === undefined || keyLevel.price === null) {
+    return null;
+  }
 
-  const price = String(keyLevel.price).trim();
+  const rawPrice = keyLevel.price;
+  if (typeof rawPrice !== 'string' && typeof rawPrice !== 'number') {
+    return null;
+  }
+
+  const price = String(rawPrice).trim();
   if (!price) return null;
 
   return {
-    ...keyLevel,
     price,
-    importance: keyLevel.importance ?? null,
+    importance:
+      keyLevel.importance === 'High' ||
+      keyLevel.importance === 'Medium' ||
+      keyLevel.importance === 'Low'
+        ? keyLevel.importance
+        : null,
   };
 };
 
@@ -265,17 +291,22 @@ const FlagPicker: React.FC<{
   
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
+      const target = e.target;
       if (
         containerRef.current &&
-        !containerRef.current.contains(e.target as Node)
+        (!(target instanceof Node) || !containerRef.current.contains(target))
       ) {
         setIsOpen(false);
       }
     };
     if (isOpen) {
-      document.addEventListener('mousedown', handleClickOutside);
+      window.activeDocument.addEventListener('mousedown', handleClickOutside);
     }
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    return () =>
+      window.activeDocument.removeEventListener(
+        'mousedown',
+        handleClickOutside
+      );
   }, [isOpen]);
 
   const options: { value: ImportanceLevel; color: string; label: string }[] = [
@@ -552,7 +583,10 @@ function useKeyLevelsWidgetModel({
       
       if (retryCountRef.current < MAX_FRONTMATTER_RETRIES) {
         retryCountRef.current++;
-        setTimeout(() => void loadKeyLevels(), FRONTMATTER_RETRY_DELAY_MS);
+        window.setTimeout(
+          () => void loadKeyLevels(),
+          FRONTMATTER_RETRY_DELAY_MS
+        );
         return;
       }
       setIsValidContext(false);
@@ -560,13 +594,12 @@ function useKeyLevelsWidgetModel({
       return;
     }
 
-    if (!SUPPORTED_TYPES.includes(String(frontmatter.type))) {
+    const mode = parseReviewMode(frontmatter.type);
+    if (!mode) {
       setIsValidContext(false);
       setLoading(false);
       return;
     }
-
-    const mode = frontmatter.type as ReviewMode;
     const levels = normalizeKeyLevels(frontmatter.keyLevels);
 
     setReviewMode(mode);
@@ -889,7 +922,7 @@ export const KeyLevelsWidget: React.FC<KeyLevelsWidgetProps> = (props) => {
                   prev ? { ...prev, value: e.target.value } : prev
                 )
               }
-              onKeyDown={handleEditKeyDown}
+              onKeyDown={(event) => void handleEditKeyDown(event)}
               onBlur={() => void commitEditing()}
               className="key-levels-edit-input"
             />
@@ -916,8 +949,8 @@ export const KeyLevelsWidget: React.FC<KeyLevelsWidgetProps> = (props) => {
           <button
             onClick={() =>
               type === 'support'
-                ? removeSupportLevel(currentIndex)
-                : removeResistanceLevel(currentIndex)
+                ? void removeSupportLevel(currentIndex)
+                : void removeResistanceLevel(currentIndex)
             }
             className={`clickable-icon ${removeButtonClassName}`}
             aria-label={t('widget.key-levels.remove-level')}
@@ -962,7 +995,7 @@ export const KeyLevelsWidget: React.FC<KeyLevelsWidgetProps> = (props) => {
               type="text"
               value={newSupportLevel}
               onChange={(e) => setNewSupportLevel(e.target.value)}
-              onKeyDown={handleSupportKeyDown}
+              onKeyDown={(event) => void handleSupportKeyDown(event)}
               placeholder={t('widget.key-levels.price-placeholder')}
               className="key-levels-input"
             />
@@ -971,7 +1004,7 @@ export const KeyLevelsWidget: React.FC<KeyLevelsWidgetProps> = (props) => {
               onChange={setSupportImportance}
             />
             <button
-              onClick={addSupportLevel}
+              onClick={() => void addSupportLevel()}
               disabled={!newSupportLevel.trim()}
               className="key-levels-add-button"
             >
@@ -1012,7 +1045,7 @@ export const KeyLevelsWidget: React.FC<KeyLevelsWidgetProps> = (props) => {
               type="text"
               value={newResistanceLevel}
               onChange={(e) => setNewResistanceLevel(e.target.value)}
-              onKeyDown={handleResistanceKeyDown}
+              onKeyDown={(event) => void handleResistanceKeyDown(event)}
               placeholder={t('widget.key-levels.price-placeholder')}
               className="key-levels-input"
             />
@@ -1021,7 +1054,7 @@ export const KeyLevelsWidget: React.FC<KeyLevelsWidgetProps> = (props) => {
               onChange={setResistanceImportance}
             />
             <button
-              onClick={addResistanceLevel}
+              onClick={() => void addResistanceLevel()}
               disabled={!newResistanceLevel.trim()}
               className="key-levels-add-button"
             >

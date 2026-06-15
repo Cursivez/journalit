@@ -5,11 +5,28 @@ import { TradeFormData, TradeFormErrors, TradeFormValue } from '../types';
 import {
   CustomFieldValues,
   CustomFieldDefinition,
+  CustomFieldType,
 } from '../../../../types/customFields';
 import { CustomFieldsRenderer } from '../fields/CustomFieldRenderer';
 import { FormSection } from '../FormSection';
 import { usePlugin, useService } from '../../../../hooks';
 import { t } from '../../../../lang/helpers';
+
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  Boolean(value) && typeof value === 'object' && !Array.isArray(value);
+
+const isCustomFieldType = (value: unknown): value is CustomFieldType =>
+  Object.values<unknown>(CustomFieldType).includes(value);
+
+const isCustomFieldDefinition = (
+  value: unknown
+): value is CustomFieldDefinition =>
+  isRecord(value) &&
+  typeof value.id === 'string' &&
+  typeof value.label === 'string' &&
+  typeof value.fieldKey === 'string' &&
+  isCustomFieldType(value.type) &&
+  typeof value.order === 'number';
 
 interface AdvancedTabProps {
   data: Partial<TradeFormData>;
@@ -17,7 +34,7 @@ interface AdvancedTabProps {
   onChange: (field: keyof TradeFormData, value: TradeFormValue) => void;
   customFieldValues: CustomFieldValues;
 
-  onCustomFieldChange: (fieldId: string, value: any) => void;
+  onCustomFieldChange: (fieldId: string, value: unknown) => void;
 }
 
 export const AdvancedTab: React.FC<AdvancedTabProps> = ({
@@ -47,7 +64,7 @@ export const AdvancedTab: React.FC<AdvancedTabProps> = ({
       }
     };
 
-    loadCustomFields();
+    void loadCustomFields();
 
     
     const app = plugin?.app;
@@ -55,9 +72,9 @@ export const AdvancedTab: React.FC<AdvancedTabProps> = ({
       if (!payload || typeof payload !== 'object') return;
       if (!('fields' in payload)) return;
 
-      const fields = (payload as { fields?: unknown }).fields;
-      if (Array.isArray(fields)) {
-        setCustomFields(fields as CustomFieldDefinition[]);
+      const fields = payload.fields;
+      if (Array.isArray(fields) && fields.every(isCustomFieldDefinition)) {
+        setCustomFields(fields);
       }
     };
 

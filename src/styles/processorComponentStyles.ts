@@ -1,7 +1,7 @@
 
 
 
-const processorComponentCSS = `
+export const processorComponentCSS = `
 
 
 
@@ -100,11 +100,3 @@ const processorComponentCSS = `
   .journalit-calendar-trade-count { font-size: 10px; }
 }
 `;
-
-export function injectProcessorComponentStyles(): void {
-  return;
-}
-
-export function removeProcessorComponentStyles(): void {
-  return;
-}

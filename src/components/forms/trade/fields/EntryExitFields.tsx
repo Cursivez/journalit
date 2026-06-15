@@ -1,10 +1,6 @@
 
 
 import React, { useEffect, useCallback, useMemo } from 'react';
-import {
-  injectEntryExitStyles,
-  removeEntryExitStyles,
-} from '../../../../styles/entryExitStyles';
 import { NumberInput, FastDateTimeInput } from '../../../core';
 import { Button } from '../../../ui/Button';
 import ToggleSwitch from '../../../ui/ToggleSwitch';
@@ -26,6 +22,28 @@ import {
 import { usePlugin } from '../../../../hooks/usePlugin';
 import { t } from '../../../../lang/helpers';
 import { normalizeTradeExecution } from '../../../../services/trade/core/TradeExecutionNormalization';
+
+type TransactionFieldValue = number | Date | string | undefined | boolean;
+
+const normalizeTransactionFieldValue = (
+  field: string,
+  value: TransactionFieldValue
+): TransactionFieldValue => {
+  if (field !== 'time' || typeof value !== 'string') {
+    return value;
+  }
+
+  const parsedDate = new Date(value);
+  return isNaN(parsedDate.getTime()) ? undefined : parsedDate;
+};
+
+const toOptionalTransactionNumber = (
+  value: TransactionFieldValue
+): number | undefined => {
+  if (value === undefined || value === '') return undefined;
+  const numberValue = Number(value);
+  return Number.isFinite(numberValue) ? numberValue : undefined;
+};
 
 interface EntryExitFieldsProps {
   
@@ -204,12 +222,15 @@ function EntriesSection({
                   placeholder={t('form.field.dollar-amount-placeholder')}
                   className="size-field"
                 />
-                {entry.price > 0 && entry.size > 0 && (
-                  <div className="calculated-size">
-                    = {entry.size.toFixed(sizePrecision)}{' '}
-                    {getPositionSizeLabel().toLowerCase()}
-                  </div>
-                )}
+                {entry.price !== undefined &&
+                  entry.size !== undefined &&
+                  entry.price > 0 &&
+                  entry.size > 0 && (
+                    <div className="calculated-size">
+                      = {entry.size.toFixed(sizePrecision)}{' '}
+                      {getPositionSizeLabel().toLowerCase()}
+                    </div>
+                  )}
               </>
             ) : (
               <NumberInput
@@ -396,36 +417,38 @@ function useEntryExitFieldsModel({
 
   
   const handleEntryChange = useCallback(
-    (index: number, field: keyof EntryTransaction, value: any) => {
+    (
+      index: number,
+      field: keyof EntryTransaction,
+      rawValue: TransactionFieldValue
+    ) => {
       const entries = [...(data.entries || [])];
-
-      
-      if (field === 'time' && typeof value === 'string') {
-        const parsedDate = new Date(value);
-        value = isNaN(parsedDate.getTime()) ? undefined : parsedDate;
-      }
+      const value = normalizeTransactionFieldValue(field, rawValue);
 
       
       if (field === 'size') {
         entries[index] = {
           ...entries[index],
-          [field]: value,
+          [field]: toOptionalTransactionNumber(value),
           notional: undefined,
         };
       } else if (field === 'time') {
         entries[index] = {
           ...entries[index],
-          time: value,
+          time: value instanceof Date ? value : undefined,
           blankTimeDate: value ? undefined : entries[index]?.blankTimeDate,
         };
       } else if (field === 'blankTimeDate') {
         entries[index] = {
           ...entries[index],
           time: undefined,
-          blankTimeDate: value,
+          blankTimeDate: value instanceof Date ? value : undefined,
         };
       } else {
-        entries[index] = { ...entries[index], [field]: value };
+        entries[index] = {
+          ...entries[index],
+          [field]: toOptionalTransactionNumber(value),
+        };
       }
       onChange('entries', entries);
 
@@ -437,32 +460,40 @@ function useEntryExitFieldsModel({
 
   
   const handleExitChange = useCallback(
-    (index: number, field: keyof ExitTransaction, value: any) => {
+    (
+      index: number,
+      field: keyof ExitTransaction,
+      rawValue: TransactionFieldValue
+    ) => {
       const exits = [...(data.exits || [])];
-
-      
-      if (field === 'time' && typeof value === 'string') {
-        const parsedDate = new Date(value);
-        value = isNaN(parsedDate.getTime()) ? undefined : parsedDate;
-      }
+      const value = normalizeTransactionFieldValue(field, rawValue);
 
       
       if (field === 'size') {
-        exits[index] = { ...exits[index], [field]: value, notional: undefined };
+        exits[index] = {
+          ...exits[index],
+          [field]: toOptionalTransactionNumber(value),
+          notional: undefined,
+        };
       } else if (field === 'time') {
         exits[index] = {
           ...exits[index],
-          time: value,
+          time: value instanceof Date ? value : undefined,
           blankTimeDate: value ? undefined : exits[index]?.blankTimeDate,
         };
       } else if (field === 'blankTimeDate') {
         exits[index] = {
           ...exits[index],
           time: undefined,
-          blankTimeDate: value,
+          blankTimeDate: value instanceof Date ? value : undefined,
         };
+      } else if (field === 'hasExplicitPrice') {
+        exits[index] = { ...exits[index], hasExplicitPrice: Boolean(value) };
       } else {
-        exits[index] = { ...exits[index], [field]: value };
+        exits[index] = {
+          ...exits[index],
+          [field]: toOptionalTransactionNumber(value),
+        };
       }
       onChange('exits', exits);
 
@@ -473,15 +504,21 @@ function useEntryExitFieldsModel({
   );
 
   const handleDividendChange = useCallback(
-    (index: number, field: keyof DividendTransaction, value: any) => {
+    (
+      index: number,
+      field: keyof DividendTransaction,
+      rawValue: TransactionFieldValue
+    ) => {
       const dividends = [...(data.dividends || [])];
+      const value = normalizeTransactionFieldValue(field, rawValue);
 
-      if (field === 'time' && typeof value === 'string') {
-        const parsedDate = new Date(value);
-        value = isNaN(parsedDate.getTime()) ? undefined : parsedDate;
-      }
-
-      dividends[index] = { ...dividends[index], [field]: value };
+      dividends[index] = {
+        ...dividends[index],
+        [field]:
+          field === 'time' && value instanceof Date
+            ? value
+            : toOptionalTransactionNumber(value),
+      };
       onChange('dividends', dividends);
     },
     [data.dividends, onChange]
@@ -733,7 +770,7 @@ const EntryExitFieldsComponent: React.FC<EntryExitFieldsProps> = ({
       
       <PnLModeToggle
         useDirectPnLInput={data.useDirectPnLInput}
-        onToggle={handlePnLModeToggle}
+        onToggle={(value) => void handlePnLModeToggle(value)}
       />
 
       
@@ -840,12 +877,15 @@ const EntryExitFieldsComponent: React.FC<EntryExitFieldsProps> = ({
                     placeholder={t('form.field.dollar-amount-placeholder')}
                     className="size-field"
                   />
-                  {exit.price > 0 && exit.size > 0 && (
-                    <div className="calculated-size">
-                      = {exit.size.toFixed(sizePrecision)}{' '}
-                      {getPositionSizeLabel().toLowerCase()}
-                    </div>
-                  )}
+                  {exit.price !== undefined &&
+                    exit.size !== undefined &&
+                    exit.price > 0 &&
+                    exit.size > 0 && (
+                      <div className="calculated-size">
+                        = {exit.size.toFixed(sizePrecision)}{' '}
+                        {getPositionSizeLabel().toLowerCase()}
+                      </div>
+                    )}
                 </>
               ) : (
                 <NumberInput
@@ -867,7 +907,7 @@ const EntryExitFieldsComponent: React.FC<EntryExitFieldsProps> = ({
         <Button
           variant="outline"
           className="add-button clickable-icon"
-          onClick={handleAddExit}
+          onClick={() => void handleAddExit()}
         >
           {t('form.entry-exit.add-exit')}
         </Button>
@@ -945,7 +985,7 @@ const EntryExitFieldsComponent: React.FC<EntryExitFieldsProps> = ({
           <Button
             variant="outline"
             className="add-button clickable-icon"
-            onClick={handleAddDividend}
+            onClick={() => void handleAddDividend()}
           >
             {t('form.dividends.add-dividend')}
           </Button>

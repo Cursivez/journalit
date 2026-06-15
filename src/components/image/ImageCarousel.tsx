@@ -64,7 +64,7 @@ export const ImageCarousel: React.FC<ImageCarouselProps> = ({
     }
 
     if (onDeleteImage && images[index]) {
-      onDeleteImage(index, images[index]);
+      void onDeleteImage(index, images[index]);
     }
   };
 

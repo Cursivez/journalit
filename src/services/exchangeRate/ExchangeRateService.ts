@@ -10,7 +10,63 @@ import {
   ConvertedTradesResult,
   isFrankfurterSupported,
 } from './types';
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
+}
+
+function getNumericRecord(value: unknown): Record<string, number> | null {
+  if (!isRecord(value)) return null;
+  return Object.fromEntries(
+    Object.entries(value).filter(
+      (entry): entry is [string, number] => typeof entry[1] === 'number'
+    )
+  );
+}
+
 import { getEffectivePnL } from '../../utils/tradeStatusUtils';
+
+function asFrankfurterResponse(value: unknown): FrankfurterResponse | null {
+  if (!isRecord(value)) return null;
+  const record = value;
+  if (
+    typeof record.date !== 'string' ||
+    !record.rates ||
+    typeof record.rates !== 'object' ||
+    Array.isArray(record.rates)
+  )
+    return null;
+  const rates = getNumericRecord(record.rates);
+  if (!rates) return null;
+  return {
+    amount: typeof record.amount === 'number' ? record.amount : 1,
+    base: typeof record.base === 'string' ? record.base : '',
+    date: record.date,
+    rates,
+  };
+}
+
+function asCachedExchangeRates(value: unknown): CachedExchangeRates | null {
+  if (!isRecord(value)) return null;
+  const record = value;
+  if (
+    typeof record.baseCurrency !== 'string' ||
+    typeof record.rateDate !== 'string' ||
+    typeof record.cachedAt !== 'number' ||
+    !record.rates ||
+    typeof record.rates !== 'object' ||
+    Array.isArray(record.rates)
+  )
+    return null;
+  const rates = getNumericRecord(record.rates);
+  if (!rates) return null;
+  return {
+    baseCurrency: record.baseCurrency,
+    rateDate: record.rateDate,
+    cachedAt: record.cachedAt,
+    rates,
+  };
+}
 
 const FRANKFURTER_BASE_URL = 'https://api.frankfurter.app';
 const CACHE_TTL_MS = 24 * 60 * 60 * 1000; 
@@ -92,7 +148,11 @@ export class ExchangeRateService {
         return null;
       }
 
-      const data: FrankfurterResponse = response.json;
+      const data = asFrankfurterResponse(response.json);
+      if (!data) {
+        console.error('[ExchangeRateService] Invalid API response');
+        return null;
+      }
 
       
       const rates: Record<string, number> = { ...data.rates };
@@ -388,9 +448,11 @@ export class ExchangeRateService {
   
   private loadFromStorage(): CachedExchangeRates | null {
     try {
-      const stored = localStorage.getItem(CACHE_KEY);
+      const stored: unknown = this.plugin.app.loadLocalStorage(CACHE_KEY);
       if (stored) {
-        return JSON.parse(stored);
+        const parsed: unknown =
+          typeof stored === 'string' ? (JSON.parse(stored) as unknown) : stored;
+        return asCachedExchangeRates(parsed);
       }
     } catch (error) {
       console.warn('[ExchangeRateService] Failed to load cache:', error);
@@ -401,7 +463,7 @@ export class ExchangeRateService {
   
   private saveToStorage(rates: CachedExchangeRates): void {
     try {
-      localStorage.setItem(CACHE_KEY, JSON.stringify(rates));
+      this.plugin.app.saveLocalStorage(CACHE_KEY, rates);
     } catch (error) {
       console.warn('[ExchangeRateService] Failed to save cache:', error);
     }
@@ -411,8 +473,8 @@ export class ExchangeRateService {
   clearCache(): void {
     this.memoryCache = null;
     try {
-      localStorage.removeItem(CACHE_KEY);
-    } catch (_error) {
+      this.plugin.app.saveLocalStorage(CACHE_KEY, null);
+    } catch {
       // intentional
     }
   }

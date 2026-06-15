@@ -58,7 +58,7 @@ export function useReviewData(
     } else {
       
       setLoading(true);
-      (async () => {
+      void (async () => {
         try {
           await cache.populate(filePath);
           if (!isMountedRef.current || filePathRef.current !== filePath) return;
@@ -98,7 +98,7 @@ export function useReviewData(
     if (!cache) return;
 
     setLoading(true);
-    (async () => {
+    void (async () => {
       try {
         await cache.populate(filePath);
         if (!isMountedRef.current) return;

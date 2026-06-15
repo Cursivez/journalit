@@ -28,6 +28,84 @@ type TemplateExportPayload =
   | ReviewTemplateExportPayload
   | TradeTemplateExportPayload;
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
+}
+
+function isReviewTemplateType(
+  value: unknown
+): value is ReviewTemplateExportPayload['type'] {
+  return (
+    value === 'drc' ||
+    value === 'weekly' ||
+    value === 'monthly' ||
+    value === 'quarterly' ||
+    value === 'yearly'
+  );
+}
+
+function parseWidgetPlacements(value: unknown): WidgetPlacement[] | null {
+  if (!Array.isArray(value)) return null;
+  const widgets: WidgetPlacement[] = [];
+  for (const item of value) {
+    if (!isRecord(item) || typeof item.type !== 'string') return null;
+    widgets.push({
+      type: item.type,
+      id: typeof item.id === 'string' ? item.id : undefined,
+      locked: typeof item.locked === 'boolean' ? item.locked : undefined,
+      config: isRecord(item.config) ? item.config : undefined,
+    });
+  }
+  return widgets;
+}
+
+function isTradeTemplateSections(
+  value: unknown
+): value is TradeTemplateExportPayload['sections'] {
+  return isRecord(value);
+}
+
+function isTradeTemplateDisplay(
+  value: unknown
+): value is TradeTemplateExportPayload['display'] {
+  return isRecord(value);
+}
+
+function parseTemplateExportPayload(
+  value: unknown
+): TemplateExportPayload | null {
+  if (!isRecord(value) || typeof value.name !== 'string') {
+    return null;
+  }
+
+  if (value.type === 'trade') {
+    if (
+      !isTradeTemplateSections(value.sections) ||
+      !isTradeTemplateDisplay(value.display)
+    ) {
+      return null;
+    }
+
+    return {
+      name: value.name,
+      type: 'trade',
+      sections: value.sections,
+      display: value.display,
+    };
+  }
+
+  const widgets = parseWidgetPlacements(value.widgets);
+  if (isReviewTemplateType(value.type) && widgets) {
+    return {
+      name: value.name,
+      type: value.type,
+      widgets,
+    };
+  }
+
+  return null;
+}
+
 
 interface ImportValidationResult {
   valid: boolean;
@@ -134,7 +212,7 @@ export class TemplateSharingService {
 
     
     if (payload.type === 'trade') {
-      const tradePayload = payload as TradeTemplateExportPayload;
+      const tradePayload = payload;
       if (!tradePayload.sections || typeof tradePayload.sections !== 'object') {
         return {
           valid: false,
@@ -150,7 +228,7 @@ export class TemplateSharingService {
     } else if (
       ['drc', 'weekly', 'monthly', 'quarterly', 'yearly'].includes(payload.type)
     ) {
-      const reviewPayload = payload as ReviewTemplateExportPayload;
+      const reviewPayload = payload;
       if (!Array.isArray(reviewPayload.widgets)) {
         return {
           valid: false,
@@ -195,7 +273,7 @@ export class TemplateSharingService {
       finalName = this.generateUniqueName(payload.name, existingNames);
 
       
-      const tradePayload = payload as TradeTemplateExportPayload;
+      const tradePayload = payload;
       return await tradeTemplateService.createTemplate({
         name: finalName,
         type: 'trade',
@@ -211,7 +289,7 @@ export class TemplateSharingService {
       finalName = this.generateUniqueName(payload.name, existingNames);
 
       
-      const reviewPayload = payload as ReviewTemplateExportPayload;
+      const reviewPayload = payload;
       return await reviewTemplateService.createTemplate({
         name: finalName,
         type: reviewPayload.type,
@@ -232,8 +310,8 @@ export class TemplateSharingService {
   private decodePayload(encoded: string): TemplateExportPayload | null {
     try {
       const jsonString = atob(encoded);
-      const payload = JSON.parse(jsonString);
-      return payload as TemplateExportPayload;
+      const payload: unknown = JSON.parse(jsonString);
+      return parseTemplateExportPayload(payload);
     } catch (error) {
       console.error('Failed to decode payload:', error);
       return null;

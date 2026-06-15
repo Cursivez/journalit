@@ -38,9 +38,9 @@ export interface EntryTransaction {
   
   blankTimeDate?: Date;
   
-  price: number;
+  price?: number;
   
-  size: number;
+  size?: number;
   
   notional?: number;
 }
@@ -52,9 +52,9 @@ export interface ExitTransaction {
   
   blankTimeDate?: Date;
   
-  price: number;
+  price?: number;
   
-  size: number;
+  size?: number;
   
   notional?: number;
   
@@ -231,7 +231,7 @@ export interface TradeFormData {
   customFields?: CustomFieldValues;
 
   
-  tradeStatus?: 'OPEN' | 'CLOSED' | string;
+  tradeStatus?: string;
 
   
   notes?: string;

@@ -14,7 +14,7 @@ export interface MissedTradeFormData extends TradeFormData {
 export interface MissedTradeNoteData {
   
 
-  [key: string]: any;
+  [key: string]: unknown;
   
   isMissedTrade: true;
   

@@ -1,6 +1,6 @@
 
 
-const TRADE_LOG_SKELETON_STYLES = `
+export const TRADE_LOG_SKELETON_STYLES = `
 .trade-log-skeleton {
   width: 100%;
   height: 100%;
@@ -54,11 +54,3 @@ const TRADE_LOG_SKELETON_STYLES = `
   }
 }
 `;
-
-export function injectTradeLogSkeletonStyles(): void {
-  return;
-}
-
-export function removeTradeLogSkeletonStyles(): void {
-  return;
-}

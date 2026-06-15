@@ -21,20 +21,63 @@ interface ReviewWidgetProps {
 
 type LetterGrade = 'A' | 'B' | 'C';
 type NumericGrade = 0 | 0.5 | 1 | 1.5 | 2 | 2.5 | 3 | 3.5 | 4 | 4.5 | 5;
-
-
-const SUPPORTED_TYPES = [
-  'drc',
-  'weekly-review',
-  'monthly-review',
-  'quarterly-review',
-  'yearly-review',
+const NUMERIC_GRADES: NumericGrade[] = [
+  0, 0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5,
 ];
+const STAR_GRADES: NumericGrade[] = [1, 2, 3, 4, 5];
+
+
+type SupportedReviewWidgetType =
+  | 'drc'
+  | 'weekly-review'
+  | 'monthly-review'
+  | 'quarterly-review'
+  | 'yearly-review';
 
 
 const MAX_FRONTMATTER_RETRIES = 5;
 const FRONTMATTER_RETRY_DELAY_MS = 150;
 const SCROLL_RESTORE_DELAYS_MS = [0, 50, 150, 300, 600];
+
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  Boolean(value) && typeof value === 'object' && !Array.isArray(value);
+
+const asRecord = (value: unknown): Record<string, unknown> | undefined =>
+  isRecord(value) ? value : undefined;
+
+const getSupportedReviewWidgetType = (
+  value: unknown
+): SupportedReviewWidgetType | null => {
+  switch (value) {
+    case 'drc':
+    case 'weekly-review':
+    case 'monthly-review':
+    case 'quarterly-review':
+    case 'yearly-review':
+      return value;
+    default:
+      return null;
+  }
+};
+
+const isLetterGrade = (value: unknown): value is LetterGrade =>
+  value === 'A' || value === 'B' || value === 'C';
+
+const isNumericGrade = (value: unknown): value is NumericGrade =>
+  typeof value === 'number' && NUMERIC_GRADES.some((grade) => grade === value);
+
+const parseGrade = (value: unknown): LetterGrade | NumericGrade | null => {
+  if (isLetterGrade(value) || isNumericGrade(value)) {
+    return value;
+  }
+
+  if (typeof value === 'string') {
+    const numericValue = Number(value);
+    return isNumericGrade(numericValue) ? numericValue : null;
+  }
+
+  return null;
+};
 
 const ReviewWidgetSkeleton: React.FC = () => (
   <div className="journalit-reviewv2-card journalit-reviewv2-grade-colors">
@@ -101,7 +144,7 @@ interface LetterGradeSectionProps {
   onUpdateGrade: (
     field: 'mentalGrade' | 'technicalGrade',
     value: LetterGrade | NumericGrade
-  ) => void;
+  ) => void | Promise<void>;
 }
 
 const LetterGradeSection: React.FC<LetterGradeSectionProps> = ({
@@ -118,7 +161,7 @@ const LetterGradeSection: React.FC<LetterGradeSectionProps> = ({
         <button
           key={grade}
           type="button"
-          onClick={() => onUpdateGrade(field, grade)}
+          onClick={() => void onUpdateGrade(field, grade)}
           disabled={preview}
           className={getGradeButtonClass(
             grade,
@@ -146,8 +189,8 @@ const StarRatingSection: React.FC<LetterGradeSectionProps> = ({
       className="journalit-reviewv2-star-rating"
       aria-label={t('widget.review.star-hint')}
     >
-      {[1, 2, 3, 4, 5].map((star) => {
-        const grade = (selectedGrade as number) || 0;
+      {STAR_GRADES.map((star) => {
+        const grade = typeof selectedGrade === 'number' ? selectedGrade : 0;
         const isFull = grade >= star;
         const isHalf = !isFull && grade >= star - 0.5;
         const starClassName = [
@@ -169,20 +212,19 @@ const StarRatingSection: React.FC<LetterGradeSectionProps> = ({
             type="button"
             disabled={preview}
             key={`${field}-${star}`}
-            onClick={() =>
-              !preview && onUpdateGrade(field, star as NumericGrade)
-            }
+            onClick={() => !preview && void onUpdateGrade(field, star)}
             onKeyDown={(event) => {
               if (preview || (event.key !== 'Enter' && event.key !== ' ')) {
                 return;
               }
               event.preventDefault();
-              onUpdateGrade(field, star as NumericGrade);
+              void onUpdateGrade(field, star);
             }}
             onContextMenu={(e) => {
               e.preventDefault();
-              if (!preview) {
-                onUpdateGrade(field, (star - 0.5) as NumericGrade);
+              const halfGrade = star - 0.5;
+              if (!preview && isNumericGrade(halfGrade)) {
+                void onUpdateGrade(field, halfGrade);
               }
             }}
             className={starClassName}
@@ -247,12 +289,8 @@ export const ReviewWidget: React.FC<ReviewWidgetProps> = ({
   const loadGrades = useCallback(async () => {
     
     if (preview && previewData) {
-      setMentalGrade(
-        String(previewData.mentalGrade) as LetterGrade | NumericGrade
-      );
-      setTechnicalGrade(
-        String(previewData.technicalGrade) as LetterGrade | NumericGrade
-      );
+      setMentalGrade(parseGrade(previewData.mentalGrade));
+      setTechnicalGrade(parseGrade(previewData.technicalGrade));
       setLoading(false);
       setIsValidContext(true);
       return;
@@ -266,13 +304,17 @@ export const ReviewWidget: React.FC<ReviewWidgetProps> = ({
     }
 
     const cache = plugin.app.metadataCache.getFileCache(file);
-    const frontmatter = cache?.frontmatter;
+    const frontmatter = asRecord(cache?.frontmatter);
 
-    if (!frontmatter || !SUPPORTED_TYPES.includes(frontmatter.type)) {
+    const noteType = frontmatter
+      ? getSupportedReviewWidgetType(frontmatter.type)
+      : null;
+
+    if (!frontmatter || !noteType) {
       
       if (retryCountRef.current < MAX_FRONTMATTER_RETRIES) {
         retryCountRef.current++;
-        setTimeout(() => {
+        window.setTimeout(() => {
           void loadGrades();
         }, FRONTMATTER_RETRY_DELAY_MS);
         return;
@@ -283,11 +325,11 @@ export const ReviewWidget: React.FC<ReviewWidgetProps> = ({
     }
 
     
-    setNoteType(frontmatter.type);
+    setNoteType(noteType);
 
     
-    setMentalGrade(frontmatter.mentalGrade ?? null);
-    setTechnicalGrade(frontmatter.technicalGrade ?? null);
+    setMentalGrade(parseGrade(frontmatter.mentalGrade));
+    setTechnicalGrade(parseGrade(frontmatter.technicalGrade));
     setIsValidContext(true);
     setLoading(false);
   }, [
@@ -345,7 +387,7 @@ export const ReviewWidget: React.FC<ReviewWidgetProps> = ({
       }
 
       SCROLL_RESTORE_DELAYS_MS.forEach((delay) => {
-        setTimeout(() => {
+        window.setTimeout(() => {
           const currentScrollContainer = leafContent.querySelector(
             '.markdown-preview-view'
           );

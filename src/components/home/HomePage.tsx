@@ -61,10 +61,20 @@ import {
   normalizeHomeAccountSelection,
   normalizeHomeTradeTypes,
   remapHomeSelectedAccounts,
+  type HomeAccountTradeSnapshot,
 } from './utils/homeTradeTypeUtils';
 import { areAccountSelectionsEqual } from '../shared/filters/remapSelectedAccounts';
 import type { TradeChangedPayload } from '../../services/events/types';
 import { t, hasTranslation } from '../../lang/helpers';
+
+const asHomeAccountTradeSnapshots = (
+  value: unknown
+): HomeAccountTradeSnapshot[] =>
+  Array.isArray(value)
+    ? value.filter((item): item is HomeAccountTradeSnapshot =>
+        Boolean(item && typeof item === 'object' && !Array.isArray(item))
+      )
+    : [];
 
 interface HomePageProps {
   plugin: JournalitPlugin;
@@ -91,6 +101,8 @@ interface GreetingResult {
   originalString: string;
 }
 
+const HOME_PERIODS: HomePeriod[] = ['month', 'quarter', 'year', 'lifetime'];
+
 
 const getPeriodLabels = (): Record<HomePeriod, string> => ({
   month: t('home.period.month'),
@@ -103,7 +115,7 @@ function useHomePageModel(plugin: JournalitPlugin) {
   
   const isFirstTimeUser = useCallback((): boolean => {
     const ONBOARDING_SHOWN_KEY = `journalit-onboarding-ever-shown-${plugin.app.vault.getName()}`;
-    return !localStorage.getItem(ONBOARDING_SHOWN_KEY);
+    return !plugin.app.loadLocalStorage(ONBOARDING_SHOWN_KEY);
   }, [plugin]);
 
   const isQuestion = useCallback((greetingKey: string): boolean => {
@@ -361,17 +373,28 @@ function useHomePageModel(plugin: JournalitPlugin) {
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target;
+      const ActiveDocumentNode = window.activeDocument.defaultView?.Node;
       if (
-        periodDropdownRef.current &&
-        !periodDropdownRef.current.contains(event.target as Node)
+        !periodDropdownRef.current ||
+        !ActiveDocumentNode ||
+        !(target instanceof ActiveDocumentNode)
       ) {
+        setShowPeriodDropdown(false);
+        return;
+      }
+
+      if (!periodDropdownRef.current.contains(target)) {
         setShowPeriodDropdown(false);
       }
     };
 
-    document.addEventListener('mousedown', handleClickOutside);
+    window.activeDocument.addEventListener('mousedown', handleClickOutside);
     return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
+      window.activeDocument.removeEventListener(
+        'mousedown',
+        handleClickOutside
+      );
     };
   }, []);
 
@@ -485,7 +508,7 @@ function useHomePageModel(plugin: JournalitPlugin) {
     const greetingResult = getGreeting();
     const greetingIsQuestion = isQuestion(greetingResult.originalString);
     return {
-      greeting: greetingResult.jsx as React.ReactNode,
+      greeting: greetingResult.jsx,
       subtitle: generateSubtitle(greetingIsQuestion),
     };
   });
@@ -731,11 +754,11 @@ function useHomePageModel(plugin: JournalitPlugin) {
       try {
         await ensureHomeTradeDataReady();
 
-        const tradeService = await plugin.serviceManager.getTradeService();
+        const tradeService = plugin.serviceManager.getTradeService();
         const missedTradeService =
           await plugin.serviceManager.getMissedTradeService();
 
-        const [allTrades, missedTradeFiles, catalogAccountNames] =
+        const [rawAllTrades, missedTradeFiles, catalogAccountNames] =
           await Promise.all([
             tradeService.getTradeData({ fresh: true }),
             missedTradeService.getMissedTrades(
@@ -745,6 +768,7 @@ function useHomePageModel(plugin: JournalitPlugin) {
             getHomeAccountCatalogNames(selectedTradeTypes),
           ]);
 
+        const allTrades = asHomeAccountTradeSnapshots(rawAllTrades);
         const nextAccounts = collectAvailableHomeAccounts(
           allTrades,
           selectedTradeTypes,
@@ -804,10 +828,11 @@ function useHomePageModel(plugin: JournalitPlugin) {
 
       await ensureHomeTradeDataReady();
 
-      const [allTrades, catalogAccountNames] = await Promise.all([
+      const [rawAllTrades, catalogAccountNames] = await Promise.all([
         plugin.tradeService.getTradeData({ fresh: false }),
         getHomeAccountCatalogNames(selectedTradeTypes),
       ]);
+      const allTrades = asHomeAccountTradeSnapshots(rawAllTrades);
       const nextAccounts = collectAvailableHomeAccounts(
         allTrades,
         selectedTradeTypes,
@@ -876,7 +901,7 @@ function useHomePageModel(plugin: JournalitPlugin) {
         return;
       }
 
-      const tradeService = await plugin.serviceManager.getTradeService();
+      const tradeService = plugin.serviceManager.getTradeService();
       const missedTradeService =
         await plugin.serviceManager.getMissedTradeService();
 
@@ -960,10 +985,11 @@ function useHomePageModel(plugin: JournalitPlugin) {
 
         await ensureHomeTradeDataReady();
 
-        const [allTrades, catalogAccountNames] = await Promise.all([
+        const [rawAllTrades, catalogAccountNames] = await Promise.all([
           plugin.tradeService.getTradeData({ fresh: false }),
           getHomeAccountCatalogNames(selectedTradeTypes),
         ]);
+        const allTrades = asHomeAccountTradeSnapshots(rawAllTrades);
         const nextAccounts = collectAvailableHomeAccounts(
           allTrades,
           selectedTradeTypes,
@@ -1455,25 +1481,23 @@ const HomePageComponent: React.FC<HomePageProps> = ({ plugin }) => {
               
               {showPeriodDropdown && (
                 <div className="journalit-home-period-menu">
-                  {(Object.keys(getPeriodLabels()) as HomePeriod[]).map(
-                    (period) => (
-                      <button
-                        key={period}
-                        onClick={() => handlePeriodChange(period)}
-                        className={`journalit-home-period-option${selectedPeriod === period ? ' journalit-home-period-option--active' : ''}`}
+                  {HOME_PERIODS.map((period) => (
+                    <button
+                      key={period}
+                      onClick={() => void handlePeriodChange(period)}
+                      className={`journalit-home-period-option${selectedPeriod === period ? ' journalit-home-period-option--active' : ''}`}
+                    >
+                      <span
+                        className="journalit-home-period-option__check"
+                        aria-hidden="true"
                       >
-                        <span
-                          className="journalit-home-period-option__check"
-                          aria-hidden="true"
-                        >
-                          {selectedPeriod === period ? '✓' : ''}
-                        </span>
-                        <span className="journalit-home-period-option__label">
-                          {getPeriodLabels()[period]}
-                        </span>
-                      </button>
-                    )
-                  )}
+                        {selectedPeriod === period ? '✓' : ''}
+                      </span>
+                      <span className="journalit-home-period-option__label">
+                        {getPeriodLabels()[period]}
+                      </span>
+                    </button>
+                  ))}
                 </div>
               )}
             </div>
@@ -1506,7 +1530,7 @@ const HomePageComponent: React.FC<HomePageProps> = ({ plugin }) => {
 
           {isEditing && (
             <button
-              onClick={handleToggleQuickLinksPosition}
+              onClick={() => void handleToggleQuickLinksPosition()}
               className="journalit-home-quick-links-position-toggle clickable-icon"
               aria-label={
                 quickLinksPosition === 'belowWidgets'
@@ -1524,7 +1548,7 @@ const HomePageComponent: React.FC<HomePageProps> = ({ plugin }) => {
           )}
 
           <button
-            onClick={handleToggleEdit}
+            onClick={() => void handleToggleEdit()}
             className={`journalit-home-edit-toggle clickable-icon${isEditing ? ' journalit-home-edit-toggle--active' : ''}`}
             aria-label={
               isEditing ? t('home.aria.save-layout') : t('home.aria.customize')

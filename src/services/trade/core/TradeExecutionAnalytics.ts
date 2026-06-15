@@ -21,6 +21,11 @@ interface TradeExecutionAnalyticsFields {
   hasExplicitExitPrice?: boolean;
 }
 
+const getRecordTime = (value: unknown): unknown =>
+  value && typeof value === 'object' && !Array.isArray(value)
+    ? Object.fromEntries(Object.entries(value)).time
+    : undefined;
+
 const createValidDate = (dateInput: unknown, fallback?: Date): Date => {
   if (!dateInput) {
     return fallback || new Date();
@@ -108,11 +113,7 @@ function getFirstAnalyticsEntryTime(
 ): Date | null {
   const entries = Array.isArray(frontmatter.entries) ? frontmatter.entries : [];
   const earliest = entries.reduce<Date | null>((current, entry) => {
-    if (!entry || typeof entry !== 'object') {
-      return current;
-    }
-
-    const parsed = safeParseDateValue((entry as { time?: unknown }).time);
+    const parsed = safeParseDateValue(getRecordTime(entry));
     if (!parsed) {
       return current;
     }
@@ -133,11 +134,7 @@ function getLastAnalyticsExitTime(
 ): Date | null {
   const exits = Array.isArray(frontmatter.exits) ? frontmatter.exits : [];
   const latest = exits.reduce<Date | null>((current, exit) => {
-    if (!exit || typeof exit !== 'object') {
-      return current;
-    }
-
-    const parsed = safeParseDateValue((exit as { time?: unknown }).time);
+    const parsed = safeParseDateValue(getRecordTime(exit));
     if (!parsed) {
       return current;
     }

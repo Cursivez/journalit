@@ -19,7 +19,19 @@ import { usePlugin } from '../../hooks/usePlugin';
 import { useDisplayFormatter } from '../../hooks/useDisplayPolicy';
 import { ColumnDefinition } from './columnConfig';
 import { t } from '../../lang/helpers';
+import { DEFAULT_TRADE_FORM_DATA } from '../forms/trade/types';
 import { cssVars } from '../../styles/inlineStylePolicy';
+
+type TradeDetailsRowTrade = React.ComponentProps<
+  typeof TradeDetailsRow
+>['trade'];
+
+const completeTradeDetailsRowTrade = (
+  trade: NonNullable<TimeNode['trade']>
+): TradeDetailsRowTrade => ({
+  ...DEFAULT_TRADE_FORM_DATA,
+  ...trade,
+});
 
 interface TradeLogNodeProps {
   node: TimeNode;
@@ -90,10 +102,15 @@ export const TradeLogNode = memo<TradeLogNodeProps>(
 
     
     if (node.type === 'trade') {
-      const tradeId = node.trade?.file?.path || node.trade?.filePath || '';
+      const rawTrade = node.trade;
+      if (!rawTrade) {
+        return null;
+      }
+      const trade = completeTradeDetailsRowTrade(rawTrade);
+      const tradeId = rawTrade.file?.path || rawTrade.filePath || '';
       return (
         <TradeDetailsRow
-          trade={node.trade}
+          trade={trade}
           depth={depth}
           isLastChild={isLastChild}
           onClick={() => onNodeClick(node)}

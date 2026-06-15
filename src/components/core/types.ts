@@ -33,7 +33,7 @@ export interface InputProps
   
   variant?: 'default' | 'filled' | 'outlined';
   
-  onChange?: (value: string) => void;
+  onChange?: (value: string) => void | Promise<void>;
   
   multiline?: boolean;
   
@@ -68,7 +68,7 @@ export interface SelectProps
   
   placeholder?: string;
   
-  onChange?: (value: string) => void;
+  onChange?: (value: string) => void | Promise<void>;
   
   ref?: Ref<HTMLSelectElement>;
 }
@@ -81,7 +81,7 @@ export interface NumberInputProps extends Omit<
   
   value?: number;
   
-  onChange?: (value: number | undefined) => void;
+  onChange?: (value: number | undefined) => void | Promise<void>;
   
   min?: number;
   

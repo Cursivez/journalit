@@ -12,6 +12,7 @@ import {
   CartesianGrid,
   ReferenceLine,
 } from 'recharts';
+import type { TooltipProps } from 'recharts';
 import {
   generateNiceAxis,
   calculateYAxisWidth,
@@ -26,6 +27,36 @@ import type JournalitPlugin from '../../main';
 
 const EPSILON = 1e-6; 
 
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  Boolean(value) && typeof value === 'object' && !Array.isArray(value);
+
+const isPnLChartDataPoint = (value: unknown): value is PnLChartDataPoint =>
+  isRecord(value) &&
+  typeof value.date === 'string' &&
+  typeof value.dateKey === 'string' &&
+  typeof value.pnl === 'number';
+
+const getPnLTooltipPayload = (
+  payload: readonly unknown[] | undefined
+): PnLChartDataPointTooltipProps['payload'] => {
+  if (!payload) return undefined;
+  return payload.flatMap((item) => {
+    if (!isRecord(item) || !isPnLChartDataPoint(item.payload)) {
+      return [];
+    }
+    return [{ payload: item.payload }];
+  });
+};
+
+type PnLChartDataPointTooltipProps = Partial<TooltipProps<number, string>> & {
+  payload?: Array<{ payload: PnLChartDataPoint }>;
+};
+
+type PnLChartDataPointChartClickEvent = {
+  activePayload?: Array<{ payload: PnLChartDataPoint }>;
+  activeTooltipIndex?: number | string | null;
+};
+
 interface SharedPnLChartProps extends PnLChartProps {
   plugin?: JournalitPlugin | null; 
   currencyOverride?: string; 
@@ -33,14 +64,15 @@ interface SharedPnLChartProps extends PnLChartProps {
 
 
 const renderPnLTooltip = (
-  props: any,
+  props: PnLChartDataPointTooltipProps,
   displayRMultiples?: boolean,
   currencyOverride?: string,
   showAccountTooltip?: boolean
 ) => {
   return (
-    <ChartTooltip
-      {...props}
+    <ChartTooltip<PnLChartDataPoint>
+      active={props.active}
+      payload={props.payload}
       valueKey="pnl"
       valueType="pnl"
       displayRMultiples={displayRMultiples}
@@ -105,8 +137,7 @@ export const SharedPnLChart = React.memo<SharedPnLChartProps>(
     const chartRef = React.useRef<HTMLDivElement>(null);
     const { currency: globalCurrency } = useCurrency();
     
-    const currency =
-      (currencyOverride as typeof globalCurrency) || globalCurrency;
+    const currency = currencyOverride || globalCurrency;
     const DEBUG_CHARTS: boolean =
       (typeof window !== 'undefined' && window.JOURNALIT_DEBUG_CHARTS) === true;
 
@@ -205,11 +236,13 @@ export const SharedPnLChart = React.memo<SharedPnLChartProps>(
 
       
       
-      const {
-        domain,
-        ticks,
-        step: _step,
-      } = generateNiceAxis(effectiveMin, effectiveMax, 6, true, true);
+      const { domain, ticks } = generateNiceAxis(
+        effectiveMin,
+        effectiveMax,
+        6,
+        true,
+        true
+      );
 
       const [actualMinValue, actualMaxValue] = domain;
 
@@ -318,7 +351,7 @@ export const SharedPnLChart = React.memo<SharedPnLChartProps>(
     
 
     
-    const handleChartClick = (event: any) => {
+    const handleChartClick = (event: PnLChartDataPointChartClickEvent) => {
       if (onChartClick) {
         onChartClick(event);
       }
@@ -524,7 +557,10 @@ export const SharedPnLChart = React.memo<SharedPnLChartProps>(
                 customTooltip
                   ? React.cloneElement(customTooltip, runtimeProps)
                   : renderPnLTooltip(
-                      runtimeProps,
+                      {
+                        ...runtimeProps,
+                        payload: getPnLTooltipPayload(runtimeProps.payload),
+                      },
                       displayRMultiples,
                       currencyOverride,
                       showAccountTooltip

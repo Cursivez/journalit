@@ -17,7 +17,6 @@ import {
   getWidgetsByCategory,
   getWidgetName,
   CATEGORY_LABELS,
-  type WidgetCategory,
   type WidgetDefinition,
 } from '../../data/widgetRegistry';
 import {
@@ -187,7 +186,12 @@ export const WidgetPicker: React.FC<WidgetPickerProps> = React.memo(
       if (!isOpen) return;
 
       const handleClickOutside = (event: MouseEvent) => {
-        const target = event.target as Node;
+        const target = event.target;
+        if (!(target instanceof Node)) {
+          setIsOpen(false);
+          return;
+        }
+
         if (
           containerRef.current?.contains(target) ||
           dropdownRef.current?.contains(target)
@@ -198,9 +202,12 @@ export const WidgetPicker: React.FC<WidgetPickerProps> = React.memo(
         setIsOpen(false);
       };
 
-      document.addEventListener('mousedown', handleClickOutside);
+      window.activeDocument.addEventListener('mousedown', handleClickOutside);
       return () =>
-        document.removeEventListener('mousedown', handleClickOutside);
+        window.activeDocument.removeEventListener(
+          'mousedown',
+          handleClickOutside
+        );
     }, [isOpen]);
 
     const handleSelect = useCallback(
@@ -245,8 +252,9 @@ export const WidgetPicker: React.FC<WidgetPickerProps> = React.memo(
         }
       };
 
-      document.addEventListener('keydown', handleKeyDown);
-      return () => document.removeEventListener('keydown', handleKeyDown);
+      window.activeDocument.addEventListener('keydown', handleKeyDown);
+      return () =>
+        window.activeDocument.removeEventListener('keydown', handleKeyDown);
     }, [isOpen, focusedIndex, flatWidgets, handleSelect]);
 
     const handleTriggerClick = useCallback(() => {
@@ -370,7 +378,7 @@ export const WidgetPicker: React.FC<WidgetPickerProps> = React.memo(
                 ([category, categoryWidgets]) => (
                   <div key={category}>
                     <div className="widget-picker-category">
-                      {CATEGORY_LABELS[category as WidgetCategory]}
+                      {CATEGORY_LABELS[category]}
                     </div>
                     {categoryWidgets.map((widget) => {
                       const currentIndex = flatIndex++;
@@ -414,7 +422,7 @@ export const WidgetPicker: React.FC<WidgetPickerProps> = React.memo(
                 )
               )}
             </div>,
-            document.body
+            window.activeDocument.body
           )}
       </div>
     );

@@ -1,7 +1,7 @@
 
 
 
-const RELEASE_NOTES_STYLES = `
+export const RELEASE_NOTES_STYLES = `
 
 .journalit-release-notes-container {
   background: var(--background-primary);
@@ -95,43 +95,36 @@ const RELEASE_NOTES_STYLES = `
   gap: 12px;
 }
 
-.journalit-release-notes-container .changelog-entry {
-  border: 1px solid var(--background-modifier-border);
+.journalit-release-notes-container .release-notes-accordion {
+  margin-bottom: 0;
   border-radius: 8px;
-  overflow: hidden;
   background: var(--background-primary-alt);
 }
 
-.journalit-release-notes-container .changelog-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+.journalit-release-notes-container .release-notes-accordion .journalit-settings-accordion__header {
   padding: 16px;
-  cursor: pointer;
   background: var(--background-primary-alt);
-  transition: background 0.2s;
 }
 
-.journalit-release-notes-container .changelog-header:hover {
+.journalit-release-notes-container .release-notes-accordion .journalit-settings-accordion__header:hover {
   background: var(--background-modifier-hover);
 }
 
-.journalit-release-notes-container .changelog-header h3 {
-  margin: 0;
+.journalit-release-notes-container .release-notes-accordion .journalit-settings-accordion__title {
   font-size: 16px;
   font-weight: 600;
 }
 
-.expand-icon {
-  color: var(--text-muted);
-  font-size: 12px;
-  transition: transform 0.2s;
+.journalit-release-notes-container .release-notes-accordion .journalit-settings-accordion__content {
+  padding: 12px 16px 16px;
 }
 
 .journalit-release-notes-container .changelog-content {
-  padding: 0 16px 16px 16px;
   line-height: 1.6;
-  animation: expandDown 0.3s ease-out;
+}
+
+.journalit-release-notes-container .changelog-content > :first-child {
+  margin-top: 0;
 }
 
 .journalit-release-notes-container .changelog-content h3 {
@@ -169,25 +162,4 @@ const RELEASE_NOTES_STYLES = `
   padding: 48px;
   color: var(--text-muted);
 }
-
-@keyframes expandDown {
-  from {
-    opacity: 0;
-    max-height: 0;
-  }
-  to {
-    opacity: 1;
-    max-height: 5000px;
-  }
-}
 `;
-
-
-function injectReleaseNotesStyles(): void {
-  return;
-}
-
-
-export function ensureReleaseNotesStyles(): void {
-  return;
-}

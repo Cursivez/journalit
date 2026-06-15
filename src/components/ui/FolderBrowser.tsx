@@ -9,7 +9,6 @@ import React, {
   useMemo,
 } from 'react';
 import { TFolder, App } from 'obsidian';
-import { ensureFolderBrowserStyles } from '../../styles/folderBrowserStyles';
 import { cssVars } from '../../styles/inlineStylePolicy';
 import { t } from '../../lang/helpers';
 
@@ -241,8 +240,11 @@ function useFolderBrowserModel({
   
   useEffect(() => {
     const handleFolderSelection = (e: MouseEvent) => {
-      const target = e.target as HTMLElement;
-      const folderItem = target?.closest?.('[data-folder-item="true"]');
+      const target = e.target;
+      if (!(target instanceof HTMLElement)) {
+        return;
+      }
+      const folderItem = target.closest('[data-folder-item="true"]');
 
       if (folderItem && browserRef.current?.contains(target)) {
         
@@ -256,16 +258,24 @@ function useFolderBrowserModel({
           handleSelect(folderPath);
         }
 
-        setTimeout(() => {
+        window.setTimeout(() => {
           isSelectingFolder.current = false;
         }, 50);
       }
     };
 
-    document.addEventListener('mousedown', handleFolderSelection, true);
+    window.activeDocument.addEventListener(
+      'mousedown',
+      handleFolderSelection,
+      true
+    );
 
     return () => {
-      document.removeEventListener('mousedown', handleFolderSelection, true);
+      window.activeDocument.removeEventListener(
+        'mousedown',
+        handleFolderSelection,
+        true
+      );
     };
   }, [handleSelect]);
 
@@ -274,18 +284,27 @@ function useFolderBrowserModel({
     if (!isOpen) return;
 
     const handleOutsideClick = (e: MouseEvent) => {
-      const target = e.target as HTMLElement;
-      const isClickingInsideBrowser = browserRef.current?.contains(target);
+      const target = e.target;
+      const isClickingInsideBrowser =
+        target instanceof Node ? browserRef.current?.contains(target) : false;
 
       if (!isClickingInsideBrowser) {
         setIsOpen(false);
       }
     };
 
-    document.addEventListener('mousedown', handleOutsideClick, true);
+    window.activeDocument.addEventListener(
+      'mousedown',
+      handleOutsideClick,
+      true
+    );
 
     return () => {
-      document.removeEventListener('mousedown', handleOutsideClick, true);
+      window.activeDocument.removeEventListener(
+        'mousedown',
+        handleOutsideClick,
+        true
+      );
     };
   }, [isOpen]);
 
@@ -299,10 +318,14 @@ function useFolderBrowserModel({
       }
     };
 
-    document.addEventListener('keydown', handleEscapeKey, true);
+    window.activeDocument.addEventListener('keydown', handleEscapeKey, true);
 
     return () => {
-      document.removeEventListener('keydown', handleEscapeKey, true);
+      window.activeDocument.removeEventListener(
+        'keydown',
+        handleEscapeKey,
+        true
+      );
     };
   }, [isOpen]);
 
@@ -365,8 +388,14 @@ function useFolderBrowserModel({
     (e: React.FocusEvent<HTMLInputElement>) => {
       if (isSelectingFolder.current) return;
 
-      if (!browserRef.current?.contains(e.relatedTarget as Node)) {
-        setTimeout(() => {
+      const relatedTarget = e.relatedTarget;
+      const isFocusStillInside =
+        relatedTarget instanceof Node
+          ? browserRef.current?.contains(relatedTarget)
+          : false;
+
+      if (!isFocusStillInside) {
+        window.setTimeout(() => {
           if (!isSelectingFolder.current) {
             setIsOpen(false);
             setHighlightedIndex(-1);

@@ -11,7 +11,6 @@ import React, {
 import { BaseChartProps } from './types';
 import { ChartSkeleton } from '../shared/ChartSkeleton';
 import { cssVars } from '../../styles/inlineStylePolicy';
-import { ensureSkeletonStyles } from '../../styles/skeletonStyles';
 
 
 interface ChartBaseProps extends BaseChartProps {
@@ -78,7 +77,7 @@ export const ChartBase = React.memo<ChartBaseProps>(
             }
 
             event.preventDefault();
-            onChartClick(event as unknown as React.MouseEvent<HTMLDivElement>);
+            onChartClick(event);
           },
           role: 'button',
           tabIndex: 0,
@@ -160,11 +159,17 @@ export const ChartBase = React.memo<ChartBaseProps>(
       });
 
       resizeObserver.observe(container);
-      document.addEventListener('journalit:chart-resize-resume', measure);
+      window.activeDocument.addEventListener(
+        'journalit:chart-resize-resume',
+        measure
+      );
 
       
       return () => {
-        document.removeEventListener('journalit:chart-resize-resume', measure);
+        window.activeDocument.removeEventListener(
+          'journalit:chart-resize-resume',
+          measure
+        );
         resizeObserver.unobserve(container);
         resizeObserver.disconnect();
       };

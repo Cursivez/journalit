@@ -8,7 +8,7 @@ import { t } from '../../lang/helpers';
 interface ReviewButtonProps {
   reviewed?: boolean;
   reviewedAt?: string;
-  onMarkReviewed: () => void;
+  onMarkReviewed: () => void | Promise<void>;
   label?: string;
   className?: string;
 }

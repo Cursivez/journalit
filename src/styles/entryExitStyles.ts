@@ -1,6 +1,6 @@
 
 
-const ENTRY_EXIT_STYLES = `
+export const ENTRY_EXIT_STYLES = `
     
     .trade-form-view-container .entries-section,
     .trade-form-view-container .exits-section,
@@ -290,13 +290,3 @@ const ENTRY_EXIT_STYLES = `
       }
     }
 `;
-
-
-export const injectEntryExitStyles = (): void => {
-  return;
-};
-
-
-export const removeEntryExitStyles = (): void => {
-  return;
-};

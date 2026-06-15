@@ -76,38 +76,35 @@ export class PluginInitializer {
 
     
     this.plugin.app.workspace.onLayoutReady(() => {
-      this.initializeNonCriticalComponents();
+      void this.initializeNonCriticalComponents();
 
       
-      setTimeout(() => {
-        this.openHomeOnStartup();
+      window.setTimeout(() => {
+        void this.openHomeOnStartup();
       }, 100); 
 
       
-      setTimeout(async () => {
-        try {
-          const navigationEnabled =
-            this.plugin.settings.navigation?.enabled ?? true;
-          if (navigationEnabled) {
-            await this.plugin.viewManager.activateNavigationSidebar();
+      window.setTimeout(() => {
+        void (async () => {
+          try {
+            const navigationEnabled =
+              this.plugin.settings.navigation?.enabled ?? true;
+            if (navigationEnabled) {
+              await this.plugin.viewManager.activateNavigationSidebar();
+            }
+          } catch (error) {
+            console.error(
+              '[Journalit] Failed to activate navigation sidebar:',
+              error
+            );
           }
-        } catch (error) {
-          console.error(
-            '[Journalit] Failed to activate navigation sidebar:',
-            error
-          );
-        }
+        })();
       }, 150);
     });
   }
 
   
   private async initializeCriticalPath(): Promise<void> {
-    
-    if (process.env.NODE_ENV !== 'production') {
-      window.__REACT_ERROR_OVERLAY__ = true;
-    }
-
     
     
     setupPluginHook(this.plugin);
@@ -437,7 +434,7 @@ export class PluginInitializer {
         
         
         const scheduleOnboardingCheck = () => {
-          this.plugin.onboardingManager?.checkAndShowOnboarding();
+          void this.plugin.onboardingManager?.checkAndShowOnboarding();
         };
 
         if (typeof window.requestIdleCallback === 'function') {
@@ -651,7 +648,7 @@ export class PluginInitializer {
         error &&
         typeof error === 'object' &&
         'code' in error &&
-        error.code === 'ENOENT'
+        Reflect.get(error, 'code') === 'ENOENT'
       ) {
         return 0;
       }

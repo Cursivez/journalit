@@ -272,7 +272,7 @@ export class ProcessorManager {
     
     this.customProcessors.forEach((processor) => {
       if (processor && typeof processor.cleanup === 'function') {
-        processor.cleanup();
+        void processor.cleanup();
       }
     });
     this.customProcessors.clear();
@@ -280,7 +280,7 @@ export class ProcessorManager {
     
     this.customRenderers.forEach((renderer) => {
       if (renderer && typeof renderer.cleanup === 'function') {
-        renderer.cleanup();
+        void renderer.cleanup();
       }
     });
     this.customRenderers.clear();
@@ -300,7 +300,7 @@ export class ProcessorManager {
 
     
     if (processor && typeof processor.initialize === 'function') {
-      processor.initialize();
+      void processor.initialize();
     }
 
     

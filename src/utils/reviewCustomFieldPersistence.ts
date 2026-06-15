@@ -3,6 +3,10 @@ import { serializeCustomFieldValue } from './customFieldPersistence';
 
 const REVIEW_CUSTOM_FIELDS_FRONTMATTER_KEY = 'reviewCustomFields';
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
+}
+
 type ReviewCustomFieldsFrontmatter = Record<string, unknown>;
 
 export function mapReviewCustomFieldsToFrontmatter(
@@ -59,15 +63,11 @@ export function readReviewCustomFieldValuesById(
   reviewCustomFields: unknown,
   fieldDefinitions: CustomReviewFieldDefinition[] = []
 ): Record<string, unknown> {
-  if (
-    !reviewCustomFields ||
-    typeof reviewCustomFields !== 'object' ||
-    Array.isArray(reviewCustomFields)
-  ) {
+  if (!isRecord(reviewCustomFields)) {
     return {};
   }
 
-  const source = reviewCustomFields as Record<string, unknown>;
+  const source = reviewCustomFields;
   const values: Record<string, unknown> = {};
 
   for (const field of fieldDefinitions) {
@@ -83,18 +83,12 @@ export function readReviewCustomFieldValuesByIdFromFrontmatter(
   frontmatter: unknown,
   fieldDefinitions: CustomReviewFieldDefinition[] = []
 ): Record<string, unknown> {
-  if (
-    !frontmatter ||
-    typeof frontmatter !== 'object' ||
-    Array.isArray(frontmatter)
-  ) {
+  if (!isRecord(frontmatter)) {
     return {};
   }
 
   return readReviewCustomFieldValuesById(
-    (frontmatter as Record<string, unknown>)[
-      REVIEW_CUSTOM_FIELDS_FRONTMATTER_KEY
-    ],
+    frontmatter[REVIEW_CUSTOM_FIELDS_FRONTMATTER_KEY],
     fieldDefinitions
   );
 }
@@ -105,12 +99,9 @@ export function mergeReviewCustomFieldsFrontmatter(
   fieldDefinitions: CustomReviewFieldDefinition[],
   options?: { includeClearedFields?: boolean }
 ): ReviewCustomFieldsFrontmatter {
-  const existing =
-    existingReviewCustomFields &&
-    typeof existingReviewCustomFields === 'object' &&
-    !Array.isArray(existingReviewCustomFields)
-      ? (existingReviewCustomFields as Record<string, unknown>)
-      : {};
+  const existing = isRecord(existingReviewCustomFields)
+    ? existingReviewCustomFields
+    : {};
 
   return {
     ...existing,
@@ -131,14 +122,9 @@ export function mergeReviewCustomFieldsRootFrontmatter(
   typeof REVIEW_CUSTOM_FIELDS_FRONTMATTER_KEY,
   ReviewCustomFieldsFrontmatter
 > {
-  const source =
-    frontmatter &&
-    typeof frontmatter === 'object' &&
-    !Array.isArray(frontmatter)
-      ? (frontmatter as Record<string, unknown>)[
-          REVIEW_CUSTOM_FIELDS_FRONTMATTER_KEY
-        ]
-      : undefined;
+  const source = isRecord(frontmatter)
+    ? frontmatter[REVIEW_CUSTOM_FIELDS_FRONTMATTER_KEY]
+    : undefined;
 
   return {
     [REVIEW_CUSTOM_FIELDS_FRONTMATTER_KEY]: mergeReviewCustomFieldsFrontmatter(

@@ -10,7 +10,11 @@ import {
   DrawdownType,
   ProfitTargetType,
 } from '../../../services/account/types';
-import { CurrencyCode, CURRENCY_CONFIGS } from '../../../utils/currencyConfig';
+import {
+  CurrencyCode,
+  CURRENCY_CONFIGS,
+  parseCuratedCurrencyCode,
+} from '../../../utils/currencyConfig';
 import { OptionType } from '../../../services/options/CustomOptionsService';
 import { Button } from '../../ui/Button';
 import { Checkbox } from '../../ui';
@@ -106,7 +110,7 @@ class CreateAccountModal extends Modal {
 
 type CreateAccountFormState = {
   name: string;
-  accountType: AccountType;
+  accountType: string;
   createdDate: string;
   initialBalance: number;
   liveBalance: string;
@@ -124,6 +128,12 @@ type CreateAccountFormState = {
   copyTradingStartMode: 'all' | 'date';
   copyTradingStartDate: Date | null;
 };
+
+function profitTargetTypeFromSelect(value: string): ProfitTargetType {
+  return value === 'percentage'
+    ? ProfitTargetType.PERCENTAGE
+    : ProfitTargetType.ABSOLUTE;
+}
 
 function formatAccountTypeLabel(type: string): string {
   return type
@@ -205,7 +215,7 @@ function AccountIdentityFields({
             onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
               onChange({
                 ...account,
-                accountType: e.target.value as AccountType,
+                accountType: e.target.value,
               })
             }
             disabled={isLoading}
@@ -370,7 +380,10 @@ function LiveBalanceCurrencyFields({
           <select
             value={account.currency}
             onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
-              onChange({ ...account, currency: e.target.value as CurrencyCode })
+              onChange({
+                ...account,
+                currency: parseCuratedCurrencyCode(e.target.value),
+              })
             }
             disabled={isLoading}
           >
@@ -560,7 +573,9 @@ function ProfitTargetFields({
                   onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
                     onChange({
                       ...account,
-                      profitTargetType: e.target.value as ProfitTargetType,
+                      profitTargetType: profitTargetTypeFromSelect(
+                        e.target.value
+                      ),
                     })
                   }
                   disabled={isLoading}
@@ -872,7 +887,7 @@ function useCreateAccountModalModel({
     hasProfitTarget: false,
     profitTarget: 0,
     profitTargetType: ProfitTargetType.ABSOLUTE,
-    profitTargetDate: null as Date | null,
+    profitTargetDate: null,
     monthlyCost: 0,
     copyTradingEnabled: false,
     copyTradingBaseAccount: '',
@@ -899,9 +914,7 @@ function useCreateAccountModalModel({
         (type) => type.toLowerCase() === currentType.toLowerCase()
       );
       
-      return currentTypeExists
-        ? prev
-        : { ...prev, accountType: types[0] as AccountType };
+      return currentTypeExists ? prev : { ...prev, accountType: types[0] };
     });
   }, [plugin.optionsService]);
 
@@ -1039,22 +1052,31 @@ function useCreateAccountModalModel({
           setFormError(t('account.copy-trading.error.multiplier-range'));
           return;
         }
+        const copyTradingStartDate = newAccount.copyTradingStartDate;
         if (
           newAccount.copyTradingStartMode === 'date' &&
-          !newAccount.copyTradingStartDate
+          !copyTradingStartDate
         ) {
           setFormError(t('account.copy-trading.error.start-date-required'));
           return;
+        }
+
+        let startDate: Date;
+        if (newAccount.copyTradingStartMode === 'all') {
+          startDate = new Date(1970, 0, 1);
+        } else {
+          if (!copyTradingStartDate) {
+            setFormError(t('account.copy-trading.error.start-date-required'));
+            return;
+          }
+          startDate = startOfDay(copyTradingStartDate);
         }
 
         copyTradingPeriods = [
           {
             baseAccount: newAccount.copyTradingBaseAccount,
             multiplier: newAccount.copyTradingMultiplier,
-            startDate:
-              newAccount.copyTradingStartMode === 'all'
-                ? new Date(1970, 0, 1)
-                : startOfDay(newAccount.copyTradingStartDate as Date),
+            startDate,
           },
         ];
       }
@@ -1107,8 +1129,8 @@ function useCreateAccountModalModel({
       
       if (navigateOnSave && plugin.viewManager) {
         
-        setTimeout(() => {
-          plugin.viewManager.openAccountPageView(trimmedName);
+        window.setTimeout(() => {
+          void plugin.viewManager.openAccountPageView(trimmedName);
         }, 150);
       }
     } catch (error) {

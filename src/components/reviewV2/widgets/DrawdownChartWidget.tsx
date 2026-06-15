@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { SharedDrawdownChart } from '../../charts/SharedDrawdownChart';
+import type { Trade } from '../../dashboard/utils/dataUtils';
 import { prepareDrawdownChartState } from '../../../utils/chartUtils';
 import { mapTradesToDisplayPnL } from '../../../utils/pnlUtils';
 import JournalitPlugin from '../../../main';
@@ -15,6 +16,13 @@ import { getSingleExplicitCurrency } from '../../../utils/currencyAggregation';
 import { CurrencyConversionInfo } from '../../shared/display/CurrencyConversionInfo';
 import { getReviewAnalyticsDateBasis } from '../utils/reviewTradeDates';
 import { resolveDrawdownCapitalBasis } from '../../../utils/drawdownAnalytics';
+
+const asDrawdownTrades = (value: unknown): Trade[] =>
+  Array.isArray(value)
+    ? value.filter((item): item is Trade =>
+        Boolean(item && typeof item === 'object' && !Array.isArray(item))
+      )
+    : [];
 
 interface DrawdownChartWidgetProps {
   filePath: string;
@@ -46,7 +54,9 @@ export const DrawdownChartWidget: React.FC<DrawdownChartWidgetProps> =
     } = useReviewTrades(filePath, plugin);
 
     
-    const trades = preview && previewData ? previewData.trades : cachedTrades;
+    const trades = asDrawdownTrades(
+      preview && previewData ? previewData.trades : cachedTrades
+    );
     const loading = preview ? false : cacheLoading;
 
     

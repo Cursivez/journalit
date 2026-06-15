@@ -172,7 +172,7 @@ export function parseDisplayText(value: string | undefined): string {
     value.endsWith('"')
   ) {
     try {
-      const parsed = JSON.parse(value);
+      const parsed: unknown = JSON.parse(value);
       if (typeof parsed === 'string') {
         const simpleUnwrapped = value.slice(1, -1);
         const looksLegacyEncoded =

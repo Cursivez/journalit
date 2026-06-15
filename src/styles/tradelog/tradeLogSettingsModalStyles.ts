@@ -1,6 +1,6 @@
 
 
-const TRADELOG_SETTINGS_MODAL_STYLES = `
+export const TRADELOG_SETTINGS_MODAL_STYLES = `
   .tradelog-settings-modal {
     display: flex;
     flex-direction: column;
@@ -345,13 +345,3 @@ const TRADELOG_SETTINGS_MODAL_STYLES = `
     margin-right: auto;
   }
 `;
-
-const refCount = 0;
-
-export function ensureTradeLogSettingsModalStyles(): void {
-  return;
-}
-
-export function removeTradeLogSettingsModalStyles(): void {
-  return;
-}

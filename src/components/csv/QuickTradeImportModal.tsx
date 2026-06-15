@@ -26,10 +26,6 @@ import { UPGRADE_URL } from '../../constants';
 import { openExternalUrl } from '../../utils/externalLinks';
 import { DeviceFlowSignInModal } from '../auth/DeviceFlowSignInModal';
 import { useBackendProEntitlement } from '../../hooks/useBackendProEntitlement';
-import {
-  ensureCSVImportStyles,
-  removeCSVImportStyles,
-} from '../../styles/csvImportStyles';
 import { BackendTradeImportService } from '../../services/tradeImport/BackendTradeImportService';
 import {
   TradeImportValidationError,
@@ -42,7 +38,8 @@ import type {
 } from '../../services/tradeImport/types';
 import type { TradeImportCompletionResult } from '../../services/tradeImport/TradeImportWorkflowService';
 import {
-  resolveQuickTradeImportSetup,
+  getCachedQuickTradeImportSetup,
+  loadCachedQuickTradeImportSetup,
   type TradeImportQuickImportState,
   type TradeImportQuickSetup,
 } from '../../services/tradeImport/quickImportSetup';
@@ -144,13 +141,27 @@ const QuickTradeImportModalContent: React.FC<
     () => new TradeImportWorkflowService(plugin, backendService),
     [backendService, plugin]
   );
+  const cachedQuickSetup = getCachedQuickTradeImportSetup();
+  const hasInitialQuickSetupRef = useRef(cachedQuickSetup !== null);
   const requestVersionRef = useRef(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [capabilities, setCapabilities] =
-    useState<TradeImportCapabilities | null>(null);
-  const [setup, setSetup] = useState<TradeImportQuickSetup | null>(null);
+    useState<TradeImportCapabilities | null>(
+      () => cachedQuickSetup?.capabilities ?? null
+    );
+  const [setup, setSetup] = useState<TradeImportQuickSetup | null>(
+    () => cachedQuickSetup?.setup ?? null
+  );
   const [state, setState] = useState<TradeImportQuickImportState>({
-    phase: 'loading',
+    phase: cachedQuickSetup
+      ? cachedQuickSetup.setup.state === 'ready'
+        ? 'idle'
+        : 'needs_full_import'
+      : 'loading',
+    message:
+      cachedQuickSetup && cachedQuickSetup.setup.state !== 'ready'
+        ? t('quick-import.message.needs-setup')
+        : undefined,
   });
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<TradeImportPreviewResponse | null>(
@@ -173,36 +184,29 @@ const QuickTradeImportModalContent: React.FC<
   );
 
   useEffect(() => {
-    ensureCSVImportStyles();
-    return () => removeCSVImportStyles();
-  }, []);
-
-  useEffect(() => {
-    if (!canUseQuickTradeImport || isCheckingEntitlement) {
+    if (!canUseQuickTradeImport) {
       setState({ phase: 'idle' });
       return;
     }
     let cancelled = false;
-    setState({ phase: 'loading' });
+    if (!hasInitialQuickSetupRef.current) setState({ phase: 'loading' });
     void (async () => {
       try {
-        const loadedCapabilities = await backendService.getCapabilities();
-        if (cancelled) return;
-        const resolvedSetup = await resolveQuickTradeImportSetup(
+        const loaded = await loadCachedQuickTradeImportSetup(
           plugin,
-          loadedCapabilities
+          backendService
         );
         if (cancelled) return;
-        setCapabilities(loadedCapabilities);
-        setSetup(resolvedSetup);
+        setCapabilities(loaded.capabilities);
+        setSetup(loaded.setup);
         setState({
-          phase: resolvedSetup.state === 'ready' ? 'idle' : 'needs_full_import',
+          phase: loaded.setup.state === 'ready' ? 'idle' : 'needs_full_import',
           message:
-            resolvedSetup.state === 'ready'
+            loaded.setup.state === 'ready'
               ? undefined
               : t('quick-import.message.needs-setup'),
         });
-      } catch (_error) {
+      } catch {
         if (!cancelled) {
           setState({
             phase: 'error',
@@ -247,7 +251,7 @@ const QuickTradeImportModalContent: React.FC<
     const modal = new DeviceFlowSignInModal(
       plugin.app,
       plugin,
-      () => document.dispatchEvent(new Event('journalit:subscription-changed')),
+      () => window.dispatchEvent(new Event('journalit:subscription-changed')),
       () => undefined
     );
     modal.open();
@@ -379,14 +383,18 @@ const QuickTradeImportModalContent: React.FC<
     return (
       <div className="journalit-quick-import-modal">
         <p>{t('quick-import.gate.sign-in')}</p>
-        <button type="button" className="mod-cta" onClick={handleSignIn}>
+        <button
+          type="button"
+          className="mod-cta"
+          onClick={() => void handleSignIn()}
+        >
           {t('premium.gate.cta.signin-continue')}
         </button>
       </div>
     );
   }
 
-  if (isCheckingEntitlement) {
+  if (isCheckingEntitlement && !canUseQuickTradeImport) {
     return (
       <div className="journalit-quick-import-modal">
         <p>{t('quick-import.status.checking-subscription')}</p>
@@ -398,7 +406,11 @@ const QuickTradeImportModalContent: React.FC<
     return (
       <div className="journalit-quick-import-modal">
         <p>{t('quick-import.gate.pro')}</p>
-        <button type="button" className="mod-cta" onClick={handleUpgrade}>
+        <button
+          type="button"
+          className="mod-cta"
+          onClick={() => void handleUpgrade()}
+        >
           {t('premium.gate.cta.continue-pro')}
         </button>
       </div>
@@ -414,6 +426,7 @@ const QuickTradeImportModalContent: React.FC<
   const writableCount = classified.length - duplicateCount - failedCount;
   const hasImportExceptions = duplicateCount > 0 || failedCount > 0;
   const isImporting = state.phase === 'importing';
+  const isPreparingSetup = state.phase === 'loading';
   const needsQuickImportSetup = state.phase === 'needs_full_import' && !file;
   const noImportablePreview =
     state.phase === 'ready_to_import' && preview !== null && writableCount < 1;
@@ -450,69 +463,74 @@ const QuickTradeImportModalContent: React.FC<
         </div>
       )}
 
-      {!needsQuickImportSetup && state.phase === 'idle' && !file && (
-        <>
-          <p className="journalit-quick-import-privacy-note">
-            {t('quick-import.privacy-note')}{' '}
-            <button
-              type="button"
-              className="journalit-trade-import-inline-link"
-              onClick={() => openExternalUrl(PRIVACY_URL)}
-            >
-              {t('button.learn-more')}
-            </button>
-          </p>
+      {!needsQuickImportSetup &&
+        (state.phase === 'idle' || isPreparingSetup) &&
+        !file && (
+          <>
+            <p className="journalit-quick-import-privacy-note">
+              {t('quick-import.privacy-note')}{' '}
+              <button
+                type="button"
+                className="journalit-trade-import-inline-link"
+                onClick={() => openExternalUrl(PRIVACY_URL)}
+              >
+                {t('button.learn-more')}
+              </button>
+            </p>
 
-          <div
-            className={`journalit-quick-import-dropzone${isDragging ? ' is-dragging' : ''}`}
-            role="button"
-            tabIndex={0}
-            onClick={() => {
-              if (!isImporting) fileInputRef.current?.click();
-            }}
-            onKeyDown={(event) => {
-              if (event.key === 'Enter' || event.key === ' ') {
+            <div
+              className={`journalit-quick-import-dropzone${isDragging ? ' is-dragging' : ''}`}
+              role="button"
+              tabIndex={isPreparingSetup ? -1 : 0}
+              aria-disabled={isPreparingSetup ? 'true' : 'false'}
+              onClick={() => {
+                if (!isImporting && !isPreparingSetup)
+                  fileInputRef.current?.click();
+              }}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter' || event.key === ' ') {
+                  event.preventDefault();
+                  if (!isImporting && !isPreparingSetup)
+                    fileInputRef.current?.click();
+                }
+              }}
+              onDragEnter={(event) => {
                 event.preventDefault();
-                if (!isImporting) fileInputRef.current?.click();
-              }
-            }}
-            onDragEnter={(event) => {
-              event.preventDefault();
-              if (isImporting) return;
-              setIsDragging(true);
-            }}
-            onDragOver={(event) => event.preventDefault()}
-            onDragLeave={(event) => {
-              event.preventDefault();
-              if (
-                !event.currentTarget.contains(
-                  event.relatedTarget as Node | null
-                )
-              ) {
-                setIsDragging(false);
-              }
-            }}
-            onDrop={handleDrop}
-          >
-            <Upload size={24} />
-            <strong>
-              {isDragging
-                ? t('trade-import.action.drop-file')
-                : t('quick-import.dropzone.title')}
-            </strong>
-            <span>{t('quick-import.dropzone.subtitle')}</span>
-            <input
-              ref={fileInputRef}
-              type="file"
-              className="journalit-quick-import-file-input"
-              disabled={isImporting}
-              onChange={(event) =>
-                handleFileSelected(event.currentTarget.files?.item(0) ?? null)
-              }
-            />
-          </div>
-        </>
-      )}
+                if (isImporting || isPreparingSetup) return;
+                setIsDragging(true);
+              }}
+              onDragOver={(event) => event.preventDefault()}
+              onDragLeave={(event) => {
+                event.preventDefault();
+                const relatedTarget = event.relatedTarget;
+                if (
+                  !(relatedTarget instanceof Node) ||
+                  !event.currentTarget.contains(relatedTarget)
+                ) {
+                  setIsDragging(false);
+                }
+              }}
+              onDrop={handleDrop}
+            >
+              <Upload size={24} />
+              <strong>
+                {isDragging && !isPreparingSetup
+                  ? t('trade-import.action.drop-file')
+                  : t('quick-import.dropzone.title')}
+              </strong>
+              <span>{t('quick-import.dropzone.subtitle')}</span>
+              <input
+                ref={fileInputRef}
+                type="file"
+                className="journalit-quick-import-file-input"
+                disabled={isImporting || isPreparingSetup}
+                onChange={(event) =>
+                  handleFileSelected(event.currentTarget.files?.item(0) ?? null)
+                }
+              />
+            </div>
+          </>
+        )}
 
       {selectedFile && state.phase === 'analysing' && (
         <div className="journalit-quick-import-processing">
@@ -567,11 +585,6 @@ const QuickTradeImportModalContent: React.FC<
         </div>
       )}
 
-      {state.phase === 'loading' && (
-        <p className="journalit-quick-import-status">
-          {t('quick-import.status.loading')}
-        </p>
-      )}
       {(state.phase === 'needs_full_import' || state.phase === 'error') && (
         <div className="journalit-quick-import-callout">
           <FileText size={16} />
@@ -668,7 +681,7 @@ const QuickTradeImportModalContent: React.FC<
 
       <div className="journalit-quick-import-actions">
         {showFullTradeImportAction && (
-          <button type="button" onClick={openFullTradeImport}>
+          <button type="button" onClick={() => void openFullTradeImport()}>
             {fullTradeImportActionLabel}
           </button>
         )}
@@ -679,7 +692,7 @@ const QuickTradeImportModalContent: React.FC<
               type="button"
               className="mod-cta"
               disabled={state.phase !== 'ready_to_import' || writableCount < 1}
-              onClick={handleImport}
+              onClick={() => void handleImport()}
             >
               {state.phase === 'importing'
                 ? t('quick-import.status.importing')

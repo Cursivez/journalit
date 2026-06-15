@@ -180,7 +180,11 @@
   cursor: pointer;
   font-size: var(--font-ui-medium);
   font-weight: 500;
-  transition: all 0.2s ease-in-out;
+  transition:
+    background-color 0.2s ease-in-out,
+    border-color 0.2s ease-in-out,
+    box-shadow 0.2s ease-in-out,
+    color 0.2s ease-in-out;
   outline: none;
   position: relative;
 }

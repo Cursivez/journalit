@@ -9,7 +9,6 @@ import { TradeTemplateEditor } from './TradeTemplateEditor';
 import { LibraryTab } from './tabs/LibraryTab';
 import { ReviewTemplateService } from '../../services/templates/ReviewTemplateService';
 import { TradeTemplateService } from '../../services/templates/TradeTemplateService';
-import { ReviewTemplateType } from '../../types/reviewV2';
 import { t } from '../../lang/helpers';
 import { showUnsavedChangesModal } from './UnsavedChangesModal';
 
@@ -162,7 +161,7 @@ const TemplateBuilderRenderer: React.FC<TemplateBuilderProps> = (
           plugin={plugin}
           templateService={templateService}
           templateId={selection.id}
-          templateType={selection.templateType as ReviewTemplateType}
+          templateType={selection.templateType}
           onTemplateChange={handleTemplatesChange}
           onDirtyStateChange={handleDirtyStateChange}
         />
@@ -199,8 +198,8 @@ const TemplateBuilderRenderer: React.FC<TemplateBuilderProps> = (
         plugin={plugin}
         templateService={templateService}
         selection={selection}
-        onSelectionChange={handleSelectionChange}
-        onTemplatesChange={handleTemplatesChange}
+        onSelectionChange={(selection) => void handleSelectionChange(selection)}
+        onTemplatesChange={() => void handleTemplatesChange()}
         refreshKey={refreshKey}
       />
 

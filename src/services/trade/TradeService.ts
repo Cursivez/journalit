@@ -67,6 +67,7 @@ import {
   createTradeNotesDocument,
   ensureTradeNoteOwnershipMarker,
 } from './core/TradeNoteDocumentCodec';
+import { safeString } from '../../utils/safeString';
 import {
   buildTradeIdentityFields,
   ensureTradeIdentityFrontmatter,
@@ -98,6 +99,278 @@ type RuntimeExitExecution = RuntimeEntryExecution & {
   hasExplicitPrice?: boolean;
 };
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
+}
+
+function isDirectPnLInputEnabled(value: unknown): boolean {
+  return value === true || value === 'true';
+}
+
+function getErrorCode(error: unknown): string | undefined {
+  return isRecord(error) && typeof error.code === 'string'
+    ? error.code
+    : undefined;
+}
+
+function normalizeBooleanMap(
+  value: unknown
+): Record<string, boolean> | undefined {
+  if (!isRecord(value)) {
+    return undefined;
+  }
+
+  return Object.fromEntries(
+    Object.entries(value).filter(
+      (entry): entry is [string, boolean] => typeof entry[1] === 'boolean'
+    )
+  );
+}
+
+function normalizeStringMap(
+  value: unknown
+): Record<string, string> | undefined {
+  if (!isRecord(value)) {
+    return undefined;
+  }
+
+  return Object.fromEntries(
+    Object.entries(value).filter(
+      (entry): entry is [string, string] => typeof entry[1] === 'string'
+    )
+  );
+}
+
+function normalizeLossReviewData(value: unknown): LossReviewData | undefined {
+  if (!isRecord(value) || !isRecord(value.sections)) {
+    return undefined;
+  }
+
+  const sections = Object.fromEntries(
+    Object.entries(value.sections).flatMap(([sectionId, section]) => {
+      if (!isRecord(section)) {
+        return [];
+      }
+
+      return [
+        [
+          sectionId,
+          {
+            checkboxes: normalizeBooleanMap(section.checkboxes),
+            textAreas: normalizeStringMap(section.textAreas),
+          },
+        ],
+      ];
+    })
+  );
+
+  return {
+    sections,
+    reviewed: value.reviewed === true,
+    reviewedAt:
+      typeof value.reviewedAt === 'string' ? value.reviewedAt : undefined,
+  };
+}
+
+function getDateOrString(value: unknown): Date | string | undefined {
+  return typeof value === 'string' || value instanceof Date ? value : undefined;
+}
+
+interface TradeFinancialFrontmatter extends Record<string, unknown> {
+  type?: string;
+  instrument?: string;
+  assetType?: string;
+  tradeStatus?: string;
+  entryTime?: string | Date | null;
+  exitTime?: string | Date | null;
+  entryPrice?: number | null;
+  exitPrice?: number | null;
+  positionSize?: number | null;
+  direction?: string;
+  pnl?: number | null;
+  rMultiple?: number;
+  useDirectPnLInput?: boolean;
+  directPnL?: number;
+  entries?: Array<{
+    time?: string | Date | null;
+    price?: number | null;
+    size?: number | null;
+  }>;
+  exits?: Array<{
+    time?: string | Date | null;
+    price?: number | null;
+    size?: number | null;
+  }>;
+  dividends?: Array<{ time?: string | Date; amount?: number }>;
+  commission?: number;
+  hasExplicitCommission?: boolean;
+  commissionType?: 'fixed' | 'percentage';
+  fees?: number;
+  swap?: number;
+  rebate?: number;
+  stopLoss?: number;
+  riskAmount?: number;
+  contractSize?: number;
+  dollarPerPoint?: number;
+  tickSize?: number;
+  tickValue?: number;
+  lotSize?: number;
+  pipValue?: number;
+  pipSize?: number;
+  leverageRatio?: number;
+}
+
+function asTradeFinancialFrontmatter(
+  value: unknown
+): TradeFinancialFrontmatter | undefined {
+  return isRecord(value) ? value : undefined;
+}
+
+interface ExecutionSnapshotItem {
+  time?: string | Date;
+  price?: number | null;
+  size?: number | null;
+  notional?: number | null;
+}
+
+function normalizeExecutionSnapshotItems(
+  value: unknown
+): ExecutionSnapshotItem[] | undefined {
+  if (!Array.isArray(value)) {
+    return undefined;
+  }
+
+  const items = value.flatMap((item) => {
+    if (!isRecord(item)) {
+      return [];
+    }
+
+    return [
+      {
+        time: getDateOrString(item.time),
+        price: typeof item.price === 'number' ? item.price : undefined,
+        size: typeof item.size === 'number' ? item.size : undefined,
+        notional: typeof item.notional === 'number' ? item.notional : undefined,
+      },
+    ];
+  });
+
+  return items.length > 0 ? items : undefined;
+}
+
+function normalizeDividendSnapshotItems(
+  value: unknown
+): Array<{ time?: string | Date; amount?: number }> | undefined {
+  if (!Array.isArray(value)) {
+    return undefined;
+  }
+
+  const items = value.flatMap((item) => {
+    if (!isRecord(item)) {
+      return [];
+    }
+
+    return [
+      {
+        time: getDateOrString(item.time),
+        amount: typeof item.amount === 'number' ? item.amount : undefined,
+      },
+    ];
+  });
+
+  return items.length > 0 ? items : undefined;
+}
+
+function normalizeTradeStatusExecutions(value: unknown):
+  | Array<{
+      time?: string | Date | null;
+      price?: number | null;
+      size?: number | null;
+    }>
+  | undefined {
+  if (!Array.isArray(value)) {
+    return undefined;
+  }
+
+  const executions = value.flatMap((execution) => {
+    if (!isRecord(execution)) {
+      return [];
+    }
+
+    return [
+      {
+        time:
+          typeof execution.time === 'string' || execution.time instanceof Date
+            ? execution.time
+            : null,
+        price: typeof execution.price === 'number' ? execution.price : null,
+        size: typeof execution.size === 'number' ? execution.size : null,
+      },
+    ];
+  });
+
+  return executions.length > 0 ? executions : undefined;
+}
+
+function normalizeRuntimeEntryExecutions(
+  value: unknown
+): RuntimeEntryExecution[] | undefined {
+  if (!Array.isArray(value)) {
+    return undefined;
+  }
+
+  const executions = value.flatMap((execution) => {
+    if (!isRecord(execution)) {
+      return [];
+    }
+
+    return [
+      {
+        time:
+          typeof execution.time === 'string' || execution.time instanceof Date
+            ? execution.time
+            : null,
+        price:
+          typeof execution.price === 'string' ||
+          typeof execution.price === 'number'
+            ? execution.price
+            : null,
+        size:
+          typeof execution.size === 'string' ||
+          typeof execution.size === 'number'
+            ? execution.size
+            : null,
+        quantity:
+          typeof execution.quantity === 'string' ||
+          typeof execution.quantity === 'number'
+            ? execution.quantity
+            : null,
+      },
+    ];
+  });
+
+  return executions.length > 0 ? executions : undefined;
+}
+
+function normalizeRuntimeExitExecutions(
+  value: unknown
+): RuntimeExitExecution[] | undefined {
+  if (!Array.isArray(value)) {
+    return undefined;
+  }
+
+  const sourceItems: unknown[] = value;
+  return normalizeRuntimeEntryExecutions(sourceItems)?.map(
+    (execution, index) => {
+      const source = sourceItems[index];
+      const hasExplicitPrice = isRecord(source)
+        ? source.hasExplicitPrice === true
+        : undefined;
+      return { ...execution, hasExplicitPrice };
+    }
+  );
+}
+
 type CanonicalExecutionRuntimeFields = {
   entryTime?: Date;
   exitTime?: Date;
@@ -116,7 +389,7 @@ function parseRuntimeNumber(value: unknown): number | undefined {
     return undefined;
   }
 
-  const parsed = typeof value === 'number' ? value : Number(String(value));
+  const parsed = typeof value === 'number' ? value : Number(safeString(value));
   return Number.isFinite(parsed) ? parsed : undefined;
 }
 
@@ -146,12 +419,8 @@ function canonicalExecutionsCoverScalarSize(
 function deriveCanonicalExecutionRuntimeFields(
   data: Record<string, unknown>
 ): CanonicalExecutionRuntimeFields {
-  const entries = Array.isArray(data.entries)
-    ? (data.entries as RuntimeEntryExecution[])
-    : undefined;
-  const exits = Array.isArray(data.exits)
-    ? (data.exits as RuntimeExitExecution[])
-    : undefined;
+  const entries = normalizeRuntimeEntryExecutions(data.entries);
+  const exits = normalizeRuntimeExitExecutions(data.exits);
   const useDirectPnLInput =
     data.useDirectPnLInput === true || data.useDirectPnLInput === 'true';
   const hasExplicitExitPrice = isTruthyRuntimeValue(data.hasExplicitExitPrice);
@@ -218,17 +487,15 @@ function getCanonicalExecutionRuntimeValue(
   data: unknown,
   field: string
 ): unknown {
-  if (
-    !CANONICAL_EXECUTION_INDEX_FIELDS.has(field) ||
-    !data ||
-    typeof data !== 'object'
-  ) {
-    return data && typeof data === 'object'
-      ? (data as Record<string, unknown>)[field]
-      : undefined;
+  if (!isRecord(data)) {
+    return undefined;
   }
 
-  const record = data as Record<string, unknown>;
+  if (!CANONICAL_EXECUTION_INDEX_FIELDS.has(field)) {
+    return data[field];
+  }
+
+  const record = data;
   const derived = deriveCanonicalExecutionRuntimeFields(record);
 
   switch (field) {
@@ -247,17 +514,14 @@ function getCanonicalExecutionRuntimeValue(
   }
 }
 
-function withCanonicalExecutionRuntimeFields<T>(trade: T): T {
-  if (!trade || typeof trade !== 'object') {
-    return trade;
-  }
-
-  const record = trade as Record<string, unknown>;
-  const derived = deriveCanonicalExecutionRuntimeFields(record);
+function withCanonicalExecutionRuntimeFields(
+  trade: Record<string, unknown>
+): Record<string, unknown> {
+  const derived = deriveCanonicalExecutionRuntimeFields(trade);
   return {
-    ...record,
+    ...trade,
     ...derived,
-  } as T;
+  };
 }
 
 interface LegacyExecutionMigrationResult {
@@ -443,6 +707,12 @@ export interface TradeData {
   [key: string]: unknown;
 }
 
+type TradeRecord = Record<string, unknown> & {
+  path?: string;
+  filePath?: string;
+  accountRefs?: unknown[];
+};
+
 
 export class TradeService extends CustomDataService {
   
@@ -495,7 +765,10 @@ export class TradeService extends CustomDataService {
       const existingEntryTime = existingFrontmatterRecord
         ? this.getExistingEntryTimeForRelocation(existingFrontmatterRecord)
         : undefined;
-      const existingTicker = existingFrontmatter?.instrument;
+      const existingTicker =
+        typeof existingFrontmatterRecord?.instrument === 'string'
+          ? existingFrontmatterRecord.instrument
+          : undefined;
       let persistedIdentity = getTradeIdentityFields(existingFrontmatterRecord);
 
       if (!persistedIdentity.tradeId || !persistedIdentity.schemaVersion) {
@@ -529,10 +802,13 @@ export class TradeService extends CustomDataService {
           filePath,
           existingEntryTime: existingEntryTime,
           existingTicker,
-          existingType: existingFrontmatter?.type,
-          isMissedTrade: existingFrontmatter?.isMissedTrade === true,
+          existingType:
+            typeof existingFrontmatterRecord?.type === 'string'
+              ? existingFrontmatterRecord.type
+              : undefined,
+          isMissedTrade: existingFrontmatterRecord?.isMissedTrade === true,
         },
-      }).normalizedData as TradeData;
+      }).normalizedData;
 
       
       let financialFieldsChanged = true; 
@@ -541,8 +817,12 @@ export class TradeService extends CustomDataService {
         
         const file = this.app.vault.getAbstractFileByPath(filePath);
         if (file && file instanceof TFile) {
-          const existingFrontmatter =
+          const cachedFrontmatter =
             this.app.metadataCache.getFileCache(file)?.frontmatter;
+          const existingFrontmatter =
+            cachedFrontmatter && typeof cachedFrontmatter === 'object'
+              ? (cachedFrontmatter as Record<string, unknown>)
+              : null;
 
           if (
             existingFrontmatter &&
@@ -571,13 +851,11 @@ export class TradeService extends CustomDataService {
             const getEntrySnapshotSource = (
               frontmatter: Record<string, unknown>
             ) => {
-              if (Array.isArray(frontmatter.entries)) {
-                return frontmatter.entries as Array<{
-                  time?: string | Date;
-                  price?: number | null;
-                  size?: number | null;
-                  notional?: number | null;
-                }>;
+              const entries = normalizeExecutionSnapshotItems(
+                frontmatter.entries
+              );
+              if (entries) {
+                return entries;
               }
               if (
                 frontmatter.entryTime &&
@@ -585,7 +863,7 @@ export class TradeService extends CustomDataService {
               ) {
                 return [
                   {
-                    time: frontmatter.entryTime as string | Date,
+                    time: getDateOrString(frontmatter.entryTime),
                     price: this.parseFiniteNumber(frontmatter.entryPrice),
                     size: this.parseFiniteNumber(frontmatter.positionSize),
                   },
@@ -596,18 +874,14 @@ export class TradeService extends CustomDataService {
             const getExitSnapshotSource = (
               frontmatter: Record<string, unknown>
             ) => {
-              if (Array.isArray(frontmatter.exits)) {
-                return frontmatter.exits as Array<{
-                  time?: string | Date;
-                  price?: number | null;
-                  size?: number | null;
-                  notional?: number | null;
-                }>;
+              const exits = normalizeExecutionSnapshotItems(frontmatter.exits);
+              if (exits) {
+                return exits;
               }
               if (frontmatter.exitTime && frontmatter.exitPrice !== undefined) {
                 return [
                   {
-                    time: frontmatter.exitTime as string | Date,
+                    time: getDateOrString(frontmatter.exitTime),
                     price: this.parseFiniteNumber(frontmatter.exitPrice),
                     size: this.parseFiniteNumber(frontmatter.positionSize),
                   },
@@ -691,7 +965,9 @@ export class TradeService extends CustomDataService {
               normalizeExecutionSnapshot(
                 getExitSnapshotSource(existingFrontmatter)
               ) !== normalizeExecutionSnapshot(normalizedForComparison.exits) ||
-              normalizeDividendSnapshot(existingFrontmatter.dividends) !==
+              normalizeDividendSnapshot(
+                normalizeDividendSnapshotItems(existingFrontmatter.dividends)
+              ) !==
                 normalizeDividendSnapshot(normalizedForComparison.dividends);
           }
         }
@@ -711,11 +987,14 @@ export class TradeService extends CustomDataService {
           filePath,
           existingEntryTime: existingEntryTime,
           existingTicker,
-          existingType: existingFrontmatter?.type,
-          isMissedTrade: existingFrontmatter?.isMissedTrade === true,
+          existingType:
+            typeof existingFrontmatterRecord?.type === 'string'
+              ? existingFrontmatterRecord.type
+              : undefined,
+          isMissedTrade: existingFrontmatterRecord?.isMissedTrade === true,
         },
       });
-      data = plan.normalizedData as TradeData;
+      data = plan.normalizedData;
       const isOpenTrade = plan.isOpen;
 
       if (plan.relocation?.required) {
@@ -808,7 +1087,7 @@ export class TradeService extends CustomDataService {
       
       if (!suppressTradeChangedEvent && source !== 'user-input') {
         
-        setTimeout(() => {
+        window.setTimeout(() => {
           eventBus.publish('trade:changed', {
             action: wasRelocated ? 'relocated' : 'updated',
             filePaths: [filePath],
@@ -943,10 +1222,14 @@ export class TradeService extends CustomDataService {
           includeNested: false,
           valueExtractor: (data, field) => {
             
-            const record = data as Record<string, unknown>;
-            const value = record[field];
+            if (!isRecord(data)) {
+              return undefined;
+            }
+            const value = data[field];
             if (Array.isArray(value)) {
-              return value;
+              return value.filter(
+                (item): item is string => typeof item === 'string'
+              );
             } else if (typeof value === 'string') {
               return value
                 .split(',')
@@ -1065,7 +1348,7 @@ export class TradeService extends CustomDataService {
           typeof value === 'boolean' ||
           typeof value === 'bigint'
         ) {
-          return String(value);
+          return safeString(value);
         }
 
         return '';
@@ -1145,9 +1428,10 @@ export class TradeService extends CustomDataService {
       useIndexes: this.canUseTradeIndexes(),
     });
     
-    const instruments = trades
-      .map((trade) => this.getTradeValue(trade, 'instrument'))
-      .filter(Boolean) as string[];
+    const instruments = trades.flatMap((trade) => {
+      const instrument = this.getTradeValue(trade, 'instrument');
+      return instrument ? [instrument] : [];
+    });
 
     
     return this.normalizeUniqueOptionValues(instruments);
@@ -1161,7 +1445,7 @@ export class TradeService extends CustomDataService {
 
     const normalizedAccounts = trades.flatMap(
       (trade) =>
-        normalizeTradeAccountIdentity(trade as Record<string, unknown>, {
+        normalizeTradeAccountIdentity(trade, {
           resolveAccountIdDisplayName: (accountId) =>
             this.plugin?.settings.backendIntegration?.accountMapping?.[
               accountId
@@ -1332,8 +1616,10 @@ export class TradeService extends CustomDataService {
     const allCustomTags: string[] = [];
 
     for (const trade of trades) {
-      if (trade.tags && Array.isArray(trade.tags)) {
-        allCustomTags.push(...trade.tags);
+      if (Array.isArray(trade.tags)) {
+        allCustomTags.push(
+          ...trade.tags.filter((tag): tag is string => typeof tag === 'string')
+        );
       }
     }
 
@@ -1349,7 +1635,9 @@ export class TradeService extends CustomDataService {
 
   
 
-  public async getTradeData(options?: { fresh?: boolean }): Promise<any[]> {
+  public async getTradeData(options?: {
+    fresh?: boolean;
+  }): Promise<Array<Record<string, unknown>>> {
     
     const allMarkdownFiles = this.getTrackedMarkdownFiles();
 
@@ -1400,8 +1688,12 @@ export class TradeService extends CustomDataService {
     let count = 0;
 
     for (const file of allFiles) {
-      const frontmatter =
+      const cachedFrontmatter =
         this.app.metadataCache.getFileCache(file)?.frontmatter;
+      const frontmatter =
+        cachedFrontmatter && typeof cachedFrontmatter === 'object'
+          ? (cachedFrontmatter as Record<string, unknown>)
+          : null;
 
       if (frontmatter?.isMissedTrade || /-M\d+\.md$/.test(file.path)) {
         continue;
@@ -1429,9 +1721,9 @@ export class TradeService extends CustomDataService {
   
 
   private async resolveTradePathsAsync(
-    trades: any[],
+    trades: TradeRecord[],
     allMarkdownFiles?: TFile[]
-  ): Promise<any[]> {
+  ): Promise<TradeRecord[]> {
     
     const tradesWithPaths = trades.filter(
       (t) => t.path && t.path.trim() !== ''
@@ -1468,7 +1760,7 @@ export class TradeService extends CustomDataService {
     
     const BATCH_SIZE = 100;
 
-    const result: any[] = [];
+    const result: TradeRecord[] = [];
 
     for (let i = 0; i < trades.length; i += BATCH_SIZE) {
       const batch = trades.slice(i, i + BATCH_SIZE);
@@ -1482,8 +1774,12 @@ export class TradeService extends CustomDataService {
         
         let matchingFile: TFile | undefined;
         const entryTime = this.getTradePathResolutionEntryTime(trade);
-        if (trade.instrument && entryTime) {
-          const key = `${trade.instrument}-${entryTime}-${trade.direction || ''}`;
+        const instrument =
+          typeof trade.instrument === 'string' ? trade.instrument : undefined;
+        const direction =
+          typeof trade.direction === 'string' ? trade.direction : '';
+        if (instrument && entryTime) {
+          const key = `${instrument}-${entryTime}-${direction}`;
           matchingFile = fileMap.get(key);
         }
 
@@ -1497,7 +1793,7 @@ export class TradeService extends CustomDataService {
 
       
       if (i + BATCH_SIZE < trades.length) {
-        await new Promise((resolve) => setTimeout(resolve, 0));
+        await new Promise((resolve) => window.setTimeout(resolve, 0));
       }
     }
 
@@ -1517,11 +1813,12 @@ export class TradeService extends CustomDataService {
   }
 
   
-  private generateUniqueTradePath(trade: TradeData): string {
+  private generateUniqueTradePath(trade: TradeRecord): string {
     const date = trade.entryTime instanceof Date ? trade.entryTime : new Date();
-    const ticker = trade.instrument
-      ? this.sanitizeTickerForFilename(trade.instrument)
-      : 'UNKNOWN';
+    const ticker =
+      typeof trade.instrument === 'string'
+        ? this.sanitizeTickerForFilename(trade.instrument)
+        : 'UNKNOWN';
     const directory = buildTradeDirectoryPath(
       this.folderPathService,
       date,
@@ -1538,7 +1835,7 @@ export class TradeService extends CustomDataService {
 
   
 
-  public async readFrontmatter(file: TFile): Promise<Record<string, any>> {
+  public async readFrontmatter(file: TFile): Promise<Record<string, unknown>> {
     return super.readFrontmatter(file);
   }
 
@@ -1552,7 +1849,7 @@ export class TradeService extends CustomDataService {
   private async getAllTrades(
     allMarkdownFiles?: TFile[],
     queryOptions?: { useIndexes?: boolean }
-  ): Promise<any[]> {
+  ): Promise<TradeRecord[]> {
     const cacheKey = 'trade:all-trades';
 
     try {
@@ -1568,7 +1865,7 @@ export class TradeService extends CustomDataService {
           
           const BATCH_SIZE = 10; 
 
-          const tradeData: any[] = [];
+          const tradeData: Array<Record<string, unknown>> = [];
 
           for (let i = 0; i < files.length; i += BATCH_SIZE) {
             const batch = files.slice(i, i + BATCH_SIZE);
@@ -1598,7 +1895,7 @@ export class TradeService extends CustomDataService {
 
             
             if (i + BATCH_SIZE < files.length) {
-              await new Promise((resolve) => setTimeout(resolve, 5));
+              await new Promise((resolve) => window.setTimeout(resolve, 5));
             }
           }
 
@@ -1622,7 +1919,9 @@ export class TradeService extends CustomDataService {
       );
 
       
-      const finalResult = Array.isArray(result) ? result : [];
+      const finalResult: Array<Record<string, unknown>> = Array.isArray(result)
+        ? result
+        : [];
       return finalResult.map((trade) =>
         withCanonicalExecutionRuntimeFields(
           this.withRuntimeExitPriceExplicitness(trade)
@@ -1639,7 +1938,8 @@ export class TradeService extends CustomDataService {
       return undefined;
     }
 
-    const parsed = typeof value === 'number' ? value : Number(String(value));
+    const parsed =
+      typeof value === 'number' ? value : Number(safeString(value));
     return Number.isFinite(parsed) ? parsed : undefined;
   }
 
@@ -1651,22 +1951,23 @@ export class TradeService extends CustomDataService {
     });
     let normalizedExitIndex = 0;
 
-    const exits = Array.isArray(trade.exits)
-      ? trade.exits.map((exit) => {
-          if (!exit || typeof exit !== 'object') {
+    const rawExits: unknown = trade.exits;
+    const exits = Array.isArray(rawExits)
+      ? rawExits.map((exit: unknown) => {
+          if (!isRecord(exit)) {
             return exit;
           }
 
           const normalizedExit = normalizedExecution.exits[normalizedExitIndex];
           normalizedExitIndex += 1;
           return {
-            ...(exit as Record<string, unknown>),
+            ...exit,
             ...(normalizedExit?.hasExplicitPrice !== undefined
               ? { hasExplicitPrice: normalizedExit.hasExplicitPrice }
               : {}),
           };
         })
-      : trade.exits;
+      : rawExits;
 
     return {
       ...trade,
@@ -1680,7 +1981,7 @@ export class TradeService extends CustomDataService {
     trade: Record<string, unknown>,
     field: string
   ): string | null {
-    return trade && trade[field] ? String(trade[field]) : null;
+    return trade && trade[field] ? safeString(trade[field]) : null;
   }
 
   
@@ -1694,7 +1995,7 @@ export class TradeService extends CustomDataService {
     if (Array.isArray(trade[field])) {
       return (trade[field] as unknown[]).map(String);
     } else {
-      return String(trade[field])
+      return safeString(trade[field])
         .split(',')
         .map((s) => s.trim())
         .filter(Boolean);
@@ -1709,7 +2010,7 @@ export class TradeService extends CustomDataService {
     this.recentlyCreatedFiles.add(filePath);
 
     
-    setTimeout(() => {
+    window.setTimeout(() => {
       this.recentlyCreatedFiles?.delete(filePath);
     }, 10000);
   }
@@ -1743,7 +2044,7 @@ export class TradeService extends CustomDataService {
     await new Promise<void>((resolve) => {
       const timeoutMs = 30000;
       let finished = false;
-      const timeoutId = setTimeout(() => {
+      const timeoutId = window.setTimeout(() => {
         if (finished) return;
         finished = true;
         console.warn(
@@ -1753,10 +2054,10 @@ export class TradeService extends CustomDataService {
         resolve();
       }, timeoutMs);
 
-      this.metadataCacheReadyPromise.then(() => {
+      void this.metadataCacheReadyPromise.then(() => {
         if (finished) return;
         finished = true;
-        clearTimeout(timeoutId);
+        window.clearTimeout(timeoutId);
         resolve();
       });
     });
@@ -1784,7 +2085,7 @@ export class TradeService extends CustomDataService {
       const timeoutMs = 30000;
       let finished = false;
       let unsubscribe: Unsubscribe | null = null;
-      const timeoutId = setTimeout(() => {
+      const timeoutId = window.setTimeout(() => {
         if (finished) return;
         finished = true;
         unsubscribe?.();
@@ -1799,7 +2100,7 @@ export class TradeService extends CustomDataService {
         if (payload.indexName !== 'trades') return;
         if (finished) return;
         finished = true;
-        clearTimeout(timeoutId);
+        window.clearTimeout(timeoutId);
         unsubscribe?.();
         this.markTradeIndexReady();
         resolve();
@@ -1937,21 +2238,28 @@ export class TradeService extends CustomDataService {
 
     const files = this.app.vault.getMarkdownFiles();
     const tradeFiles = files.filter((file) => {
-      const frontmatter =
+      const cachedFrontmatter =
         this.app.metadataCache.getFileCache(file)?.frontmatter;
-      if (!frontmatter) return false;
+      const frontmatterRecord = isRecord(cachedFrontmatter)
+        ? cachedFrontmatter
+        : null;
+      if (!frontmatterRecord) return false;
 
       if (
-        frontmatter.type !== 'trade' &&
-        frontmatter.type !== 'backtest-trade'
+        frontmatterRecord.type !== 'trade' &&
+        frontmatterRecord.type !== 'backtest-trade'
       ) {
         return false;
       }
 
-      const instrumentValue = String(
-        frontmatter.instrument || ''
-      ).toLowerCase();
-      const assetTypeValue = String(frontmatter.assetType || '').toLowerCase();
+      const instrumentValue =
+        typeof frontmatterRecord.instrument === 'string'
+          ? frontmatterRecord.instrument.toLowerCase()
+          : '';
+      const assetTypeValue =
+        typeof frontmatterRecord.assetType === 'string'
+          ? frontmatterRecord.assetType.toLowerCase()
+          : '';
 
       return (
         instrumentValue === normalizedInstrument &&
@@ -1999,22 +2307,26 @@ export class TradeService extends CustomDataService {
           let updatedFileType: 'trade' | 'backtest-trade' | null = null;
 
           await this.app.fileManager.processFrontMatter(file, (frontmatter) => {
+            const frontmatterData = asTradeFinancialFrontmatter(frontmatter);
+            if (!frontmatterData) return;
+            const frontmatterRecord = frontmatterData;
             if (
-              !frontmatter ||
-              (frontmatter.type !== 'trade' &&
-                frontmatter.type !== 'backtest-trade')
+              frontmatterData.type !== 'trade' &&
+              frontmatterData.type !== 'backtest-trade'
             ) {
               return;
             }
 
-            updatedFileType = frontmatter.type;
+            updatedFileType = frontmatterData.type;
 
-            const instrumentValue = String(
-              frontmatter.instrument || ''
-            ).toLowerCase();
-            const assetTypeValue = String(
-              frontmatter.assetType || ''
-            ).toLowerCase();
+            const instrumentValue =
+              typeof frontmatterData.instrument === 'string'
+                ? frontmatterData.instrument.toLowerCase()
+                : '';
+            const assetTypeValue =
+              typeof frontmatterData.assetType === 'string'
+                ? frontmatterData.assetType.toLowerCase()
+                : '';
 
             if (
               instrumentValue !== normalizedInstrument ||
@@ -2023,7 +2335,8 @@ export class TradeService extends CustomDataService {
               return;
             }
 
-            const identityResult = ensureTradeIdentityFrontmatter(frontmatter);
+            const identityResult =
+              ensureTradeIdentityFrontmatter(frontmatterRecord);
             if (identityResult.changed) {
               updated = true;
             }
@@ -2032,54 +2345,57 @@ export class TradeService extends CustomDataService {
               normalizedAssetType === 'futures' &&
               'dollarPerPoint' in specs
             ) {
-              if (frontmatter.dollarPerPoint !== specs.dollarPerPoint) {
-                frontmatter.dollarPerPoint = specs.dollarPerPoint;
+              if (frontmatterData.dollarPerPoint !== specs.dollarPerPoint) {
+                frontmatterData.dollarPerPoint = specs.dollarPerPoint;
                 updated = true;
               }
-              if (frontmatter.tickSize !== specs.tickSize) {
-                frontmatter.tickSize = specs.tickSize;
+              if (frontmatterData.tickSize !== specs.tickSize) {
+                frontmatterData.tickSize = specs.tickSize;
                 updated = true;
               }
-              if (frontmatter.tickValue !== specs.tickValue) {
-                frontmatter.tickValue = specs.tickValue;
+              if (frontmatterData.tickValue !== specs.tickValue) {
+                frontmatterData.tickValue = specs.tickValue;
                 updated = true;
               }
             }
 
             if (normalizedAssetType === 'forex' && 'lotSize' in specs) {
-              if (frontmatter.lotSize !== specs.lotSize) {
-                frontmatter.lotSize = specs.lotSize;
+              if (frontmatterData.lotSize !== specs.lotSize) {
+                frontmatterData.lotSize = specs.lotSize;
                 updated = true;
               }
-              if (frontmatter.pipValue !== specs.pipValue) {
-                frontmatter.pipValue = specs.pipValue;
+              if (frontmatterData.pipValue !== specs.pipValue) {
+                frontmatterData.pipValue = specs.pipValue;
                 updated = true;
               }
-              if (frontmatter.pipSize !== specs.pipSize) {
-                frontmatter.pipSize = specs.pipSize;
+              if (frontmatterData.pipSize !== specs.pipSize) {
+                frontmatterData.pipSize = specs.pipSize;
                 updated = true;
               }
             }
 
             if (normalizedAssetType === 'cfd' && 'contractSize' in specs) {
-              if (frontmatter.contractSize !== specs.contractSize) {
-                frontmatter.contractSize = specs.contractSize;
+              if (frontmatterData.contractSize !== specs.contractSize) {
+                frontmatterData.contractSize = specs.contractSize;
                 updated = true;
               }
             }
 
             const isOpenTrade = isTradeOpenWithContext({
-              tradeStatus: frontmatter.tradeStatus,
-              exitTime: frontmatter.exitTime,
-              pnl: frontmatter.pnl,
-              useDirectPnLInput: frontmatter.useDirectPnLInput,
-              exits: frontmatter.exits,
-              entries: frontmatter.entries,
+              tradeStatus: frontmatterData.tradeStatus,
+              exitTime: frontmatterData.exitTime,
+              pnl: frontmatterData.pnl,
+              useDirectPnLInput: frontmatterData.useDirectPnLInput,
+              exits: frontmatterData.exits,
+              entries: frontmatterData.entries,
             });
 
-            const normalizedExecution = normalizeTradeExecution(frontmatter, {
-              deriveMissingExplicitness: true,
-            });
+            const normalizedExecution = normalizeTradeExecution(
+              frontmatterRecord,
+              {
+                deriveMissingExplicitness: true,
+              }
+            );
 
             const entries: EntryTransaction[] =
               normalizedExecution.entries.flatMap((entry) => {
@@ -2119,9 +2435,9 @@ export class TradeService extends CustomDataService {
             );
 
             const dividends =
-              parseTradeDividendTransactions(frontmatter.dividends, {
+              parseTradeDividendTransactions(frontmatterData.dividends, {
                 parseTime: (value) =>
-                  value ? new Date(String(value)) : new Date(),
+                  value ? new Date(safeString(value)) : new Date(),
                 filter: (dividend) => dividend.amount !== undefined,
               })?.map((dividend) => ({
                 time: dividend.time,
@@ -2137,10 +2453,10 @@ export class TradeService extends CustomDataService {
               normalizedExecution.exitPrice ??
               undefined;
             const positionSize = normalizedExecution.positionSize ?? undefined;
-            const commission = parseNumber(frontmatter.commission);
-            const fees = parseNumber(frontmatter.fees);
-            const swap = parseNumber(frontmatter.swap);
-            const rebate = parseNumber(frontmatter.rebate);
+            const commission = parseNumber(frontmatterData.commission);
+            const fees = parseNumber(frontmatterData.fees);
+            const swap = parseNumber(frontmatterData.swap);
+            const rebate = parseNumber(frontmatterData.rebate);
 
             const hasEntryExit =
               entryPrice !== undefined &&
@@ -2151,8 +2467,8 @@ export class TradeService extends CustomDataService {
               isOpenTrade &&
               hasRealizedPnLComponents({
                 tradeStatus:
-                  typeof frontmatter.tradeStatus === 'string'
-                    ? frontmatter.tradeStatus
+                  typeof frontmatterData.tradeStatus === 'string'
+                    ? frontmatterData.tradeStatus
                     : undefined,
                 exits: exits.length > 0 ? exits : undefined,
                 dividends: dividends.length > 0 ? dividends : undefined,
@@ -2160,10 +2476,8 @@ export class TradeService extends CustomDataService {
                 fees,
                 swap,
                 rebate,
-                useDirectPnLInput:
-                  frontmatter.useDirectPnLInput === true ||
-                  frontmatter.useDirectPnLInput === 'true',
-                directPnL: parseNumber(frontmatter.directPnL),
+                useDirectPnLInput: frontmatterData.useDirectPnLInput === true,
+                directPnL: parseNumber(frontmatterData.directPnL),
               });
 
             if (
@@ -2173,24 +2487,21 @@ export class TradeService extends CustomDataService {
             ) {
               if (
                 isOpenTrade &&
-                (frontmatter.pnl !== undefined ||
-                  frontmatter.rMultiple !== undefined)
+                (frontmatterData.pnl !== undefined ||
+                  frontmatterData.rMultiple !== undefined)
               ) {
-                frontmatter.pnl = undefined;
-                frontmatter.rMultiple = undefined;
+                frontmatterData.pnl = undefined;
+                frontmatterData.rMultiple = undefined;
                 updated = true;
               }
               return;
             }
 
-            if (
-              frontmatter.useDirectPnLInput === true ||
-              frontmatter.useDirectPnLInput === 'true'
-            ) {
+            if (isDirectPnLInputEnabled(frontmatterData.useDirectPnLInput)) {
               return;
             }
 
-            const direction = normalizeDirection(frontmatter.direction);
+            const direction = normalizeDirection(frontmatterData.direction);
 
             if (!direction && assetTypeValue !== 'options') {
               return;
@@ -2202,71 +2513,76 @@ export class TradeService extends CustomDataService {
               dividends: dividends.length > 0 ? dividends : undefined,
               entryTime:
                 normalizedExecution.firstEntryTime ??
-                (frontmatter.entryTime
-                  ? new Date(frontmatter.entryTime)
+                (frontmatterData.entryTime
+                  ? new Date(frontmatterData.entryTime)
                   : new Date()),
               exitTime:
                 normalizedExecution.lastExitTime ??
-                (frontmatter.exitTime
-                  ? new Date(frontmatter.exitTime)
+                (frontmatterData.exitTime
+                  ? new Date(frontmatterData.exitTime)
                   : undefined),
               entryPrice: entryPrice ?? 0,
               exitPrice: exitPrice ?? 0,
               positionSize: positionSize ?? 0,
               direction: direction || '',
-              assetType: frontmatter.assetType,
-              commission: parseNumber(frontmatter.commission),
-              hasExplicitCommission: frontmatter.hasExplicitCommission === true,
-              commissionType: frontmatter.commissionType,
-              fees: parseNumber(frontmatter.fees),
-              swap: parseNumber(frontmatter.swap),
-              rebate: parseNumber(frontmatter.rebate),
-              stopLoss: parseNumber(frontmatter.stopLoss),
-              riskAmount: parseNumber(frontmatter.riskAmount),
-              useDirectPnLInput: frontmatter.useDirectPnLInput,
-              directPnL: parseNumber(frontmatter.directPnL),
-              tradeStatus: frontmatter.tradeStatus,
-              contractSize: parseNumber(frontmatter.contractSize),
-              tickSize: parseNumber(frontmatter.tickSize),
-              tickValue: parseNumber(frontmatter.tickValue),
-              dollarPerPoint: parseNumber(frontmatter.dollarPerPoint),
-              lotSize: parseNumber(frontmatter.lotSize),
-              pipValue: parseNumber(frontmatter.pipValue),
-              pipSize: parseNumber(frontmatter.pipSize),
+              assetType: frontmatterData.assetType,
+              commission: parseNumber(frontmatterData.commission),
+              hasExplicitCommission:
+                frontmatterData.hasExplicitCommission === true,
+              commissionType: frontmatterData.commissionType,
+              fees: parseNumber(frontmatterData.fees),
+              swap: parseNumber(frontmatterData.swap),
+              rebate: parseNumber(frontmatterData.rebate),
+              stopLoss: parseNumber(frontmatterData.stopLoss),
+              riskAmount: parseNumber(frontmatterData.riskAmount),
+              useDirectPnLInput: frontmatterData.useDirectPnLInput,
+              directPnL: parseNumber(frontmatterData.directPnL),
+              tradeStatus: frontmatterData.tradeStatus,
+              contractSize: parseNumber(frontmatterData.contractSize),
+              tickSize: parseNumber(frontmatterData.tickSize),
+              tickValue: parseNumber(frontmatterData.tickValue),
+              dollarPerPoint: parseNumber(frontmatterData.dollarPerPoint),
+              lotSize: parseNumber(frontmatterData.lotSize),
+              pipValue: parseNumber(frontmatterData.pipValue),
+              pipSize: parseNumber(frontmatterData.pipSize),
             };
 
             const newPnL = calculatePnL(pnlData);
             const newRMultiple = calculateRMultiple(pnlData);
 
-            const existingPnL = parseNumber(frontmatter.pnl);
-            const existingRMultiple = parseNumber(frontmatter.rMultiple);
+            const existingPnL = parseNumber(frontmatterData.pnl);
+            const existingRMultiple = parseNumber(frontmatterData.rMultiple);
 
             if (existingPnL !== newPnL) {
-              frontmatter.pnl = newPnL;
+              frontmatterData.pnl = newPnL;
               updated = true;
             }
 
             if (existingRMultiple !== newRMultiple) {
-              frontmatter.rMultiple = newRMultiple;
+              frontmatterData.rMultiple = newRMultiple;
               updated = true;
             }
 
             if (updated) {
               const existingTradeId =
-                typeof frontmatter.tradeId === 'string' &&
-                frontmatter.tradeId.length > 0
-                  ? frontmatter.tradeId
-                  : buildTradeIdentityFields(frontmatter).tradeId;
-              const existingSchemaVersion = Number(frontmatter.schemaVersion);
+                typeof frontmatterData.tradeId === 'string' &&
+                frontmatterData.tradeId.length > 0
+                  ? frontmatterData.tradeId
+                  : buildTradeIdentityFields(frontmatterRecord).tradeId;
+              const existingSchemaVersion = Number(
+                frontmatterData.schemaVersion
+              );
               const existingTradeRevision = this.getTradeRevisionValue(
-                frontmatter.tradeRevision
+                frontmatterData.tradeRevision
               );
 
-              frontmatter.tradeId = existingTradeId;
-              frontmatter.schemaVersion = Number.isFinite(existingSchemaVersion)
+              frontmatterData.tradeId = existingTradeId;
+              frontmatterData.schemaVersion = Number.isFinite(
+                existingSchemaVersion
+              )
                 ? Math.max(existingSchemaVersion, this.getTradeSchemaVersion())
                 : this.getTradeSchemaVersion();
-              frontmatter.tradeRevision = existingTradeRevision
+              frontmatterData.tradeRevision = existingTradeRevision
                 ? existingTradeRevision + 1
                 : 1;
             }
@@ -2289,7 +2605,7 @@ export class TradeService extends CustomDataService {
       }
 
       if (i + BATCH_SIZE < tradeFiles.length) {
-        await new Promise((resolve) => setTimeout(resolve, 0));
+        await new Promise((resolve) => window.setTimeout(resolve, 0));
       }
     }
 
@@ -2329,7 +2645,7 @@ export class TradeService extends CustomDataService {
       await this.clearCacheWithPrefix('backtest-trade:');
     }
 
-    setTimeout(() => {
+    window.setTimeout(() => {
       this.plugin?.backendIntegrationService?.removeBatchModifiedFiles(
         tradeFiles.map((file) => file.path)
       );
@@ -2428,7 +2744,7 @@ export class TradeService extends CustomDataService {
         data,
         defaultRiskAmount: this.plugin?.settings.trade.defaultRiskAmount,
       });
-      data = plan.normalizedData as TradeData;
+      data = plan.normalizedData;
 
       
       const targetFolderPath = this.getTargetFolderPath(data.entryTime);
@@ -2469,7 +2785,7 @@ export class TradeService extends CustomDataService {
       this.recentlyCreatedFiles.add(filePath);
 
       
-      setTimeout(() => {
+      window.setTimeout(() => {
         this.recentlyCreatedFiles?.delete(filePath);
       }, 10000);
 
@@ -2483,7 +2799,7 @@ export class TradeService extends CustomDataService {
       
       
       if (!suppressTradeChangedEvent) {
-        setTimeout(async () => {
+        window.setTimeout(() => {
           eventBus.publish('trade:changed', {
             action: 'created',
             filePaths: [filePath],
@@ -2510,7 +2826,7 @@ export class TradeService extends CustomDataService {
             await this.plugin.openFile(filePath, true);
 
             
-            setTimeout(() => {
+            window.setTimeout(() => {
               Promise.resolve(
                 this.plugin?.tradeNoteProcessor?.renderActiveComponent()
               ).catch((error) => {
@@ -2685,7 +3001,7 @@ export class TradeService extends CustomDataService {
 
       if (!options?.suppressPostCreateTasks) {
         if (options?.deferPostCreateTasks) {
-          setTimeout(() => {
+          window.setTimeout(() => {
             void runPostCreateTasks().catch((error) => {
               console.error('[TradeService] Post-create tasks failed:', error);
             });
@@ -2710,7 +3026,7 @@ export class TradeService extends CustomDataService {
   ): Promise<TFile[]> {
     
     
-    await new Promise((resolve) => setTimeout(resolve, 50));
+    await new Promise((resolve) => window.setTimeout(resolve, 50));
     
     const plugin = this.plugin;
     const tradingStartDate = plugin
@@ -2932,18 +3248,21 @@ export class TradeService extends CustomDataService {
 
   
 
-  public async extractTradeData(file: TFile): Promise<any> {
+  public async extractTradeData(
+    file: TFile
+  ): Promise<Record<string, unknown> | null> {
     try {
       
-      const frontmatter =
+      const cachedFrontmatter =
         this.app.metadataCache.getFileCache(file)?.frontmatter;
+      const frontmatter =
+        cachedFrontmatter && typeof cachedFrontmatter === 'object'
+          ? (cachedFrontmatter as Record<string, unknown>)
+          : null;
 
       const isPathBasedLegacyTrade =
         this.folderPathService.isJournalPath(file.path) &&
-        isTradeIdentityEligibleNote(
-          (frontmatter as Record<string, unknown> | null | undefined) ?? null,
-          file.path
-        );
+        isTradeIdentityEligibleNote(frontmatter, file.path);
 
       
       if (
@@ -2957,12 +3276,21 @@ export class TradeService extends CustomDataService {
 
       
       const isExtractTradeOpen = isTradeOpenWithContext({
-        tradeStatus: frontmatter.tradeStatus,
-        exitTime: frontmatter.exitTime,
-        pnl: frontmatter.pnl,
-        useDirectPnLInput: frontmatter.useDirectPnLInput,
-        exits: frontmatter.exits,
-        entries: frontmatter.entries,
+        tradeStatus:
+          typeof frontmatter.tradeStatus === 'string'
+            ? frontmatter.tradeStatus
+            : undefined,
+        exitTime:
+          typeof frontmatter.exitTime === 'string' ||
+          frontmatter.exitTime instanceof Date
+            ? frontmatter.exitTime
+            : undefined,
+        pnl: this.parseFiniteNumber(frontmatter.pnl),
+        useDirectPnLInput: isDirectPnLInputEnabled(
+          frontmatter.useDirectPnLInput
+        ),
+        exits: normalizeTradeStatusExecutions(frontmatter.exits),
+        entries: normalizeTradeStatusExecutions(frontmatter.entries),
       });
 
       const parsedDirectPnL = this.parseFiniteNumber(frontmatter.directPnL);
@@ -3104,7 +3432,7 @@ export class TradeService extends CustomDataService {
           frontmatter.legacyCsvImportIds &&
           Array.isArray(frontmatter.legacyCsvImportIds)
             ? frontmatter.legacyCsvImportIds.map((value: unknown) =>
-                String(value)
+                safeString(value)
               )
             : undefined,
         sourceRows:
@@ -3117,17 +3445,26 @@ export class TradeService extends CustomDataService {
           typeof frontmatter.orderId === 'string'
             ? frontmatter.orderId
             : undefined,
-        instrument: frontmatter.instrument || 'Unknown',
+        instrument:
+          typeof frontmatter.instrument === 'string'
+            ? frontmatter.instrument
+            : 'Unknown',
         
         
         
         direction:
-          frontmatter.direction ||
-          (frontmatter.assetType === 'options' && frontmatter.optionType
-            ? frontmatter.optionType
-            : 'Unknown'),
+          typeof frontmatter.direction === 'string'
+            ? frontmatter.direction
+            : frontmatter.assetType === 'options' &&
+                typeof frontmatter.optionType === 'string'
+              ? frontmatter.optionType
+              : 'Unknown',
         tradeStatus:
-          frontmatter.tradeStatus || (isExtractTradeOpen ? 'OPEN' : 'CLOSED'),
+          typeof frontmatter.tradeStatus === 'string'
+            ? frontmatter.tradeStatus
+            : isExtractTradeOpen
+              ? 'OPEN'
+              : 'CLOSED',
         entryPrice: normalizedExecution.weightedEntryPrice ?? 0,
         hasExplicitExitPrice: normalizedExecution.hasExplicitExitPrice ?? false,
         exitPrice: isExtractTradeOpen
@@ -3136,48 +3473,48 @@ export class TradeService extends CustomDataService {
         positionSize: totalEntrySize || normalizedExecution.positionSize || 0,
         pnl:
           frontmatter.pnl != null && frontmatter.pnl !== ''
-            ? parseFloat(frontmatter.pnl) || 0
+            ? (this.parseFiniteNumber(frontmatter.pnl) ?? 0)
             : isExtractTradeOpen
               ? null
               : 0,
         originalPnl: this.parseFiniteNumber(frontmatter.pnl),
         originalRMultiple: this.parseFiniteNumber(frontmatter.rMultiple),
-        commission: parseFloat(frontmatter.commission) || 0,
+        commission: this.parseFiniteNumber(frontmatter.commission) ?? 0,
         hasExplicitCommission: frontmatter.hasExplicitCommission === true,
         commissionType:
           frontmatter.commissionType === 'percentage' ||
           frontmatter.commissionType === 'fixed'
             ? frontmatter.commissionType
             : undefined,
-        swap: parseFloat(frontmatter.swap) || 0,
-        fees: parseFloat(frontmatter.fees) || 0,
+        swap: this.parseFiniteNumber(frontmatter.swap) ?? 0,
+        fees: this.parseFiniteNumber(frontmatter.fees) ?? 0,
         rebate:
           frontmatter.rebate != null && frontmatter.rebate !== ''
-            ? parseFloat(frontmatter.rebate)
+            ? this.parseFiniteNumber(frontmatter.rebate)
             : undefined,
         riskAmount:
           frontmatter.riskAmount != null && frontmatter.riskAmount !== ''
-            ? parseFloat(frontmatter.riskAmount)
+            ? this.parseFiniteNumber(frontmatter.riskAmount)
             : undefined,
         stopLoss:
           frontmatter.stopLoss != null && frontmatter.stopLoss !== ''
-            ? parseFloat(frontmatter.stopLoss)
+            ? this.parseFiniteNumber(frontmatter.stopLoss)
             : undefined,
         mae:
           frontmatter.mae != null && frontmatter.mae !== ''
-            ? parseFloat(frontmatter.mae)
+            ? this.parseFiniteNumber(frontmatter.mae)
             : undefined,
         mfe:
           frontmatter.mfe != null && frontmatter.mfe !== ''
-            ? parseFloat(frontmatter.mfe)
+            ? this.parseFiniteNumber(frontmatter.mfe)
             : undefined,
         maePrice:
           frontmatter.maePrice != null && frontmatter.maePrice !== ''
-            ? parseFloat(frontmatter.maePrice)
+            ? this.parseFiniteNumber(frontmatter.maePrice)
             : undefined,
         mfePrice:
           frontmatter.mfePrice != null && frontmatter.mfePrice !== ''
-            ? parseFloat(frontmatter.mfePrice)
+            ? this.parseFiniteNumber(frontmatter.mfePrice)
             : undefined,
         entryTime: extractedEntryTime ?? new Date(),
         exitTime: isExtractTradeOpen
@@ -3200,7 +3537,7 @@ export class TradeService extends CustomDataService {
         })),
         dividends:
           parseTradeDividendTransactions(frontmatter.dividends, {
-            parseTime: (value) => (value ? new Date(String(value)) : null),
+            parseTime: (value) => (value ? new Date(safeString(value)) : null),
           })?.map((dividend) => ({
             time: dividend.time,
             amount: dividend.amount ?? 0,
@@ -3223,35 +3560,42 @@ export class TradeService extends CustomDataService {
         account: frontmatter.account,
 
         accountId: frontmatter.accountId,
-        accountRefs: normalizeTradeAccountIdentity(
-          frontmatter as Record<string, unknown>,
-          {
-            resolveAccountIdDisplayName: (accountId) =>
-              this.plugin?.settings.backendIntegration?.accountMapping?.[
-                accountId
-              ],
-          }
-        ).refs,
-        useDirectPnLInput:
-          frontmatter.useDirectPnLInput === true ||
-          frontmatter.useDirectPnLInput === 'true',
+        accountRefs: normalizeTradeAccountIdentity(frontmatter, {
+          resolveAccountIdDisplayName: (accountId) =>
+            this.plugin?.settings.backendIntegration?.accountMapping?.[
+              accountId
+            ],
+        }).refs,
+        useDirectPnLInput: isDirectPnLInputEnabled(
+          frontmatter.useDirectPnLInput
+        ),
         directPnL:
           parsedDirectPnL !== undefined && Number.isFinite(parsedDirectPnL)
             ? parsedDirectPnL
             : undefined,
         thesis: frontmatter.thesis,
-        images:
-          frontmatter.images && Array.isArray(frontmatter.images)
-            ? frontmatter.images
-            : [],
+        images: Array.isArray(frontmatter.images)
+          ? frontmatter.images.filter(
+              (image): image is string => typeof image === 'string'
+            )
+          : [],
         customTags,
         tags: customTags,
-        assetType: frontmatter.assetType,
-        optionType: frontmatter.optionType,
+        assetType:
+          typeof frontmatter.assetType === 'string'
+            ? frontmatter.assetType
+            : undefined,
+        optionType:
+          frontmatter.optionType === 'call' || frontmatter.optionType === 'put'
+            ? frontmatter.optionType
+            : undefined,
         strikePrice: this.parseFiniteNumber(frontmatter.strikePrice),
-        expirationDate: frontmatter.expirationDate
-          ? new Date(frontmatter.expirationDate)
-          : undefined,
+        expirationDate:
+          typeof frontmatter.expirationDate === 'string' ||
+          typeof frontmatter.expirationDate === 'number' ||
+          frontmatter.expirationDate instanceof Date
+            ? new Date(frontmatter.expirationDate)
+            : undefined,
         contractSize: this.parseFiniteNumber(frontmatter.contractSize),
         exchange:
           typeof frontmatter.exchange === 'string'
@@ -3268,13 +3612,16 @@ export class TradeService extends CustomDataService {
             ? frontmatter.cryptoExchange
             : undefined,
         leverageRatio: this.parseFiniteNumber(frontmatter.leverageRatio),
-        lossReview:
-          frontmatter.lossReview !== undefined
-            ? frontmatter.lossReview
+        lossReview: normalizeLossReviewData(frontmatter.lossReview),
+        reviewed: frontmatter.reviewed === true,
+        reviewedAt:
+          typeof frontmatter.reviewedAt === 'string'
+            ? frontmatter.reviewedAt
             : undefined,
-        reviewed: frontmatter.reviewed || false,
-        reviewedAt: frontmatter.reviewedAt,
-        currency: frontmatter.currency,
+        currency:
+          typeof frontmatter.currency === 'string'
+            ? frontmatter.currency
+            : undefined,
         brokerBaseCurrencyPnl: this.parseFiniteNumber(
           frontmatter.brokerBaseCurrencyPnl
         ),
@@ -3295,7 +3642,9 @@ export class TradeService extends CustomDataService {
             : undefined,
         executionIds:
           frontmatter.executionIds && Array.isArray(frontmatter.executionIds)
-            ? frontmatter.executionIds.map((value: unknown) => String(value))
+            ? frontmatter.executionIds.map((value: unknown) =>
+                safeString(value)
+              )
             : undefined,
       };
     } catch (error) {
@@ -3321,8 +3670,9 @@ export class TradeService extends CustomDataService {
   private getExistingEntryTimeForRelocation(
     frontmatter: Record<string, unknown>
   ): Date | string | undefined {
-    if (frontmatter.entryTime !== undefined) {
-      return frontmatter.entryTime as Date | string;
+    const entryTime = getDateOrString(frontmatter.entryTime);
+    if (entryTime !== undefined) {
+      return entryTime;
     }
 
     return (
@@ -3348,28 +3698,30 @@ export class TradeService extends CustomDataService {
       let shouldPublishCommittedChange = false;
 
       await this.app.fileManager.processFrontMatter(file, (frontmatter) => {
-        if (isTradeIdentityEligibleNote(frontmatter, file.path)) {
-          const existingIdentity = getTradeIdentityFields(frontmatter);
+        if (!isRecord(frontmatter)) return;
+        const frontmatterRecord = frontmatter;
+        if (isTradeIdentityEligibleNote(frontmatterRecord, file.path)) {
+          const existingIdentity = getTradeIdentityFields(frontmatterRecord);
           const tradeId =
             existingIdentity.tradeId ??
-            buildTradeIdentityFields(frontmatter).tradeId;
+            buildTradeIdentityFields(frontmatterRecord).tradeId;
           const schemaVersion = Math.max(
             existingIdentity.schemaVersion ?? 0,
             this.getTradeSchemaVersion()
           );
           const tradeRevision = this.tradeReadModel.getNextRevision(
             tradeId,
-            this.getTradeRevisionValue(frontmatter.tradeRevision) ?? 0
+            this.getTradeRevisionValue(frontmatterRecord.tradeRevision) ?? 0
           );
 
-          frontmatter.tradeId = tradeId;
-          frontmatter.schemaVersion = schemaVersion;
-          frontmatter.tradeRevision = tradeRevision;
+          frontmatterRecord.tradeId = tradeId;
+          frontmatterRecord.schemaVersion = schemaVersion;
+          frontmatterRecord.tradeRevision = tradeRevision;
           shouldPublishCommittedChange = true;
         }
 
         
-        frontmatter.lossReview = lossReviewData;
+        frontmatterRecord.lossReview = lossReviewData;
       });
 
       
@@ -3415,29 +3767,31 @@ export class TradeService extends CustomDataService {
       let shouldPublishCommittedChange = false;
 
       await this.app.fileManager.processFrontMatter(file, (frontmatter) => {
-        if (isTradeIdentityEligibleNote(frontmatter, file.path)) {
-          const existingIdentity = getTradeIdentityFields(frontmatter);
+        if (!isRecord(frontmatter)) return;
+        const frontmatterRecord = frontmatter;
+        if (isTradeIdentityEligibleNote(frontmatterRecord, file.path)) {
+          const existingIdentity = getTradeIdentityFields(frontmatterRecord);
           const tradeId =
             existingIdentity.tradeId ??
-            buildTradeIdentityFields(frontmatter).tradeId;
+            buildTradeIdentityFields(frontmatterRecord).tradeId;
           const schemaVersion = Math.max(
             existingIdentity.schemaVersion ?? 0,
             this.getTradeSchemaVersion()
           );
           const tradeRevision = this.tradeReadModel.getNextRevision(
             tradeId,
-            this.getTradeRevisionValue(frontmatter.tradeRevision) ?? 0
+            this.getTradeRevisionValue(frontmatterRecord.tradeRevision) ?? 0
           );
 
-          frontmatter.tradeId = tradeId;
-          frontmatter.schemaVersion = schemaVersion;
-          frontmatter.tradeRevision = tradeRevision;
+          frontmatterRecord.tradeId = tradeId;
+          frontmatterRecord.schemaVersion = schemaVersion;
+          frontmatterRecord.tradeRevision = tradeRevision;
           shouldPublishCommittedChange = true;
         }
 
         
-        frontmatter.reviewed = reviewed;
-        frontmatter.reviewedAt = reviewedAt;
+        frontmatterRecord.reviewed = reviewed;
+        frontmatterRecord.reviewedAt = reviewedAt;
       });
 
       
@@ -3510,6 +3864,7 @@ export class TradeService extends CustomDataService {
 
       try {
         await this.app.fileManager.processFrontMatter(file, (current) => {
+          if (!isRecord(current)) return;
           backfillCanonicalExecutionFrontmatter(current);
         });
         await forceMetadataCacheRefresh(this.app, file);
@@ -3579,8 +3934,12 @@ export class TradeService extends CustomDataService {
       }
 
       
-      const frontmatter =
+      const cachedFrontmatter =
         this.app.metadataCache.getFileCache(file)?.frontmatter;
+      const frontmatter =
+        cachedFrontmatter && typeof cachedFrontmatter === 'object'
+          ? (cachedFrontmatter as Record<string, unknown>)
+          : null;
 
       if (!frontmatter) {
         
@@ -3813,7 +4172,7 @@ export class TradeService extends CustomDataService {
       }
     } catch (error) {
       
-      if (error.code === 'ENOENT') {
+      if (getErrorCode(error) === 'ENOENT') {
         return false;
       }
       console.error(`Failed to delete image ${imagePath}:`, error);
@@ -3846,7 +4205,7 @@ export class TradeService extends CustomDataService {
       }
     } catch (error) {
       
-      if (error.code === 'ENOENT') {
+      if (getErrorCode(error) === 'ENOENT') {
         return false;
       }
       console.error(`Failed to delete folder ${folderPath}:`, error);
@@ -3927,15 +4286,16 @@ export class TradeService extends CustomDataService {
     duplicatesRepaired: number;
   }> {
     const tradeFiles = this.app.vault.getMarkdownFiles().filter((file) => {
-      const frontmatter =
+      const cachedFrontmatter =
         this.app.metadataCache.getFileCache(file)?.frontmatter;
+      const frontmatter =
+        cachedFrontmatter && typeof cachedFrontmatter === 'object'
+          ? (cachedFrontmatter as Record<string, unknown>)
+          : null;
 
       return (
         this.folderPathService.isJournalPath(file.path) &&
-        isTradeIdentityEligibleNote(
-          (frontmatter as Record<string, unknown> | null | undefined) ?? null,
-          file.path
-        )
+        isTradeIdentityEligibleNote(frontmatter, file.path)
       );
     });
 
@@ -3958,21 +4318,29 @@ export class TradeService extends CustomDataService {
         );
 
       await this.app.fileManager.processFrontMatter(file, (frontmatter) => {
-        updatedFileType = getTradeIdentityNoteType(frontmatter, file.path);
+        if (!isRecord(frontmatter)) return;
+        const frontmatterRecord = frontmatter;
+        updatedFileType = getTradeIdentityNoteType(
+          frontmatterRecord,
+          file.path
+        );
         if (!updatedFileType) {
           return;
         }
 
-        const currentTradeId = getTradeIdValue(frontmatter.tradeId);
+        const currentTradeId = getTradeIdValue(frontmatterRecord.tradeId);
         const duplicateOwner = currentTradeId
           ? seenTradeIds.get(currentTradeId)
           : undefined;
 
-        const identityResult = ensureTradeIdentityFrontmatter(frontmatter, {
-          forceNewTradeId:
-            duplicateOwner !== undefined &&
-            duplicateOwner.filePath !== file.path,
-        });
+        const identityResult = ensureTradeIdentityFrontmatter(
+          frontmatterRecord,
+          {
+            forceNewTradeId:
+              duplicateOwner !== undefined &&
+              duplicateOwner.filePath !== file.path,
+          }
+        );
 
         if (!currentTradeId) {
           backfilled += 1;
@@ -3992,8 +4360,8 @@ export class TradeService extends CustomDataService {
           tradeId: identityResult.tradeId,
           filePath: file.path,
           backendTradeId:
-            typeof frontmatter.backendTradeId === 'number'
-              ? frontmatter.backendTradeId
+            typeof frontmatterRecord.backendTradeId === 'number'
+              ? frontmatterRecord.backendTradeId
               : undefined,
         });
       });
@@ -4120,12 +4488,12 @@ export class TradeService extends CustomDataService {
       }
 
       
-      await new Promise((resolve) => setTimeout(resolve, 300));
+      await new Promise((resolve) => window.setTimeout(resolve, 300));
 
       
       
       
-      setTimeout(() => {
+      window.setTimeout(() => {
         eventBus.publish('trade:changed', {
           action: 'deleted',
           filePaths: [filePath],

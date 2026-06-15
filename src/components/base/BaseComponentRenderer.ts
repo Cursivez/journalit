@@ -1,11 +1,37 @@
 
 
-import { App, WorkspaceLeaf } from 'obsidian';
+import { App, TFile, WorkspaceLeaf } from 'obsidian';
 import { Root } from 'react-dom/client';
 import React from 'react';
 import { createRoot } from 'react-dom/client';
 import { CurrencyProvider } from '../../contexts/CurrencyContext';
 import { DisplayPolicyProvider } from '../../contexts/DisplayPolicyContext';
+
+interface JournalitOpenFilePlugin {
+  openFile(path: string, createNewLeaf?: boolean): unknown;
+}
+
+function isString(value: string | null): value is string {
+  return value !== null;
+}
+
+function isFileViewLike(value: unknown): value is { file: TFile } {
+  return Boolean(
+    value &&
+    typeof value === 'object' &&
+    'file' in value &&
+    value.file instanceof TFile
+  );
+}
+
+function hasOpenFile(value: unknown): value is JournalitOpenFilePlugin {
+  return (
+    !!value &&
+    typeof value === 'object' &&
+    'openFile' in value &&
+    typeof (value as { openFile?: unknown }).openFile === 'function'
+  );
+}
 
 
 interface RootContext {
@@ -75,7 +101,7 @@ export abstract class BaseComponentRenderer {
     try {
       
       const plugin = this.app.plugins?.plugins?.['journalit'];
-      if (!plugin) {
+      if (!hasOpenFile(plugin)) {
         return undefined;
       }
 
@@ -83,7 +109,7 @@ export abstract class BaseComponentRenderer {
       return (path: string, createNewLeaf: boolean = false) => {
         plugin.openFile(path, createNewLeaf);
       };
-    } catch (error) {
+    } catch (error: unknown) {
       console.error(
         `[${this.constructor.name}] Error getting openNote function:`,
         error
@@ -131,7 +157,7 @@ export abstract class BaseComponentRenderer {
       `${filePath}-view-${viewId}`,
       `${filePath}-context-${viewId}`,
       contextId ? `${filePath}-context-${contextId}` : null,
-    ].filter(Boolean) as string[];
+    ].filter(isString);
 
     let unmounted = false;
 
@@ -153,7 +179,7 @@ export abstract class BaseComponentRenderer {
           ) {
             rootContext.domContainer.remove();
           }
-        } catch (error) {
+        } catch (error: unknown) {
           console.error(
             `[${this.constructor.name}] Error unmounting component:`,
             error,
@@ -178,7 +204,7 @@ export abstract class BaseComponentRenderer {
             if (context.domContainer && context.domContainer.isConnected) {
               context.domContainer.remove();
             }
-          } catch (error) {
+          } catch (error: unknown) {
             console.error(
               `[${this.constructor.name}] Error unmounting by leafId:`,
               error,
@@ -203,7 +229,7 @@ export abstract class BaseComponentRenderer {
             if (context.domContainer && context.domContainer.isConnected) {
               context.domContainer.remove();
             }
-          } catch (error) {
+          } catch (error: unknown) {
             console.error(
               `[${this.constructor.name}] Error unmounting fallback component:`,
               error,
@@ -220,7 +246,10 @@ export abstract class BaseComponentRenderer {
   
   public unmountAllComponents(): void {
     
-    const rootsSnapshot: Record<string, any> = {};
+    const rootsSnapshot: Record<
+      string,
+      { domContainer: string; isConnected: boolean; ageSeconds: string }
+    > = {};
     const now = Date.now();
 
     
@@ -248,7 +277,7 @@ export abstract class BaseComponentRenderer {
         
         try {
           rootContext.root.unmount();
-        } catch (_unmountError) {
+        } catch {
           // intentional
         }
 
@@ -256,11 +285,11 @@ export abstract class BaseComponentRenderer {
         if (rootContext.domContainer && rootContext.domContainer.isConnected) {
           try {
             rootContext.domContainer.remove();
-          } catch (_removeError) {
+          } catch {
             // intentional
           }
         }
-      } catch (error) {
+      } catch (error: unknown) {
         console.error(`[${this.constructor.name}] Error unmounting root:`, {
           rootId,
           error,
@@ -297,7 +326,7 @@ export abstract class BaseComponentRenderer {
           ) {
             rootContext.domContainer.remove();
           }
-        } catch (error) {
+        } catch (error: unknown) {
           console.error(
             `[${this.constructor.name}] Error unmounting leaf component:`,
             { rootId, leafId, error }
@@ -321,10 +350,10 @@ export abstract class BaseComponentRenderer {
     const viewClass = this.getComponentClassName();
     const wrapperClass = this.getWrapperClassName();
 
-    const viewElements = document.querySelectorAll(
+    const viewElements = window.activeDocument.querySelectorAll(
       `.${viewClass}[data-leaf-id="${leafId}"]`
     );
-    const wrapperElements = document.querySelectorAll(
+    const wrapperElements = window.activeDocument.querySelectorAll(
       `.${wrapperClass}[data-leaf-id="${leafId}"]`
     );
 
@@ -332,7 +361,7 @@ export abstract class BaseComponentRenderer {
     viewElements.forEach((el) => {
       try {
         el.remove();
-      } catch (error) {
+      } catch (error: unknown) {
         console.error(
           `[${this.constructor.name}] Error removing leaf view element:`,
           error
@@ -344,7 +373,7 @@ export abstract class BaseComponentRenderer {
     wrapperElements.forEach((el) => {
       try {
         el.remove();
-      } catch (error) {
+      } catch (error: unknown) {
         console.error(
           `[${this.constructor.name}] Error removing leaf wrapper element:`,
           error
@@ -359,14 +388,18 @@ export abstract class BaseComponentRenderer {
     const wrapperClass = this.getWrapperClassName();
 
     
-    const viewElements = document.querySelectorAll(`.${viewClass}`);
-    const wrapperElements = document.querySelectorAll(`.${wrapperClass}`);
+    const viewElements = window.activeDocument.querySelectorAll(
+      `.${viewClass}`
+    );
+    const wrapperElements = window.activeDocument.querySelectorAll(
+      `.${wrapperClass}`
+    );
 
     
     viewElements.forEach((el) => {
       try {
         el.remove();
-      } catch (error) {
+      } catch (error: unknown) {
         console.error(
           `[${this.constructor.name}] Error removing orphaned view element:`,
           error
@@ -378,7 +411,7 @@ export abstract class BaseComponentRenderer {
     wrapperElements.forEach((el) => {
       try {
         el.remove();
-      } catch (error) {
+      } catch (error: unknown) {
         console.error(
           `[${this.constructor.name}] Error removing orphaned wrapper element:`,
           error
@@ -428,13 +461,9 @@ export abstract class BaseComponentRenderer {
           let matchedByFileTitle: WorkspaceLeaf | undefined;
 
           this.app.workspace.iterateAllLeaves((leaf) => {
-            const view = leaf.view as unknown as Record<string, unknown>;
-            if (view && 'file' in view && view.file) {
-              const file = view.file as Record<string, unknown>;
-              const fileName = file.basename as string;
-              if (fileName === fileTitle) {
-                matchedByFileTitle = leaf;
-              }
+            const view = leaf.view;
+            if (isFileViewLike(view) && view.file.basename === fileTitle) {
+              matchedByFileTitle = leaf;
             }
           });
 
@@ -449,7 +478,7 @@ export abstract class BaseComponentRenderer {
     let matchingLeaf: WorkspaceLeaf | undefined;
 
     this.app.workspace.iterateAllLeaves((leaf) => {
-      const viewContainerEl = leaf.view?.containerEl as HTMLElement;
+      const viewContainerEl = leaf.view?.containerEl;
 
       if (viewContainerEl && viewContainerEl.id === leafId) {
         matchingLeaf = leaf;
@@ -476,11 +505,11 @@ export abstract class BaseComponentRenderer {
     leafId: string | undefined,
     contextId: string | undefined,
 
-    data: any,
+    data: unknown,
     filePath: string
   ): RootContext {
     
-    const reactContainer = document.createElement('div');
+    const reactContainer = window.activeDocument.createElement('div');
     reactContainer.className = this.getWrapperClassName();
     reactContainer.setAttribute(
       `data-${this.getComponentClassName()}-root-id`,
@@ -537,7 +566,7 @@ export abstract class BaseComponentRenderer {
     const path: string[] = [];
     let currentNode: Element | null = element;
 
-    while (currentNode && currentNode !== document.body) {
+    while (currentNode && currentNode !== window.activeDocument.body) {
       let selector = currentNode.nodeName.toLowerCase();
 
       
@@ -555,7 +584,19 @@ export abstract class BaseComponentRenderer {
           : [];
 
         if (siblings.length > 1) {
-          const index = Array.prototype.indexOf.call(siblings, currentNode);
+          let index = -1;
+          if (currentNode.parentElement) {
+            for (
+              let i = 0;
+              i < currentNode.parentElement.children.length;
+              i++
+            ) {
+              if (currentNode.parentElement.children[i] === currentNode) {
+                index = i;
+                break;
+              }
+            }
+          }
           selector += `:nth-child(${index + 1})`;
         }
       }

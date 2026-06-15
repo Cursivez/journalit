@@ -1,6 +1,7 @@
 import type JournalitPlugin from '../../main';
 import { LocalTemplateService } from '../csv/LocalTemplateService';
 import type { LocalCSVTemplate, ManualImportMode } from '../csv/types';
+import type { BackendTradeImportService } from './BackendTradeImportService';
 import type { TradeImportCapabilities } from './types';
 
 export type TradeImportQuickSetupSource =
@@ -44,6 +45,18 @@ export interface TradeImportQuickImportState {
   message?: string;
 }
 
+interface CachedQuickTradeImportSetup {
+  capabilities: TradeImportCapabilities;
+  setup: TradeImportQuickSetup;
+}
+
+let cachedQuickSetup: CachedQuickTradeImportSetup | null = null;
+let inFlightQuickSetup: Promise<CachedQuickTradeImportSetup> | null = null;
+
+export function getCachedQuickTradeImportSetup(): CachedQuickTradeImportSetup | null {
+  return cachedQuickSetup;
+}
+
 function accountNames(plugin: JournalitPlugin): string[] {
   const metadata = plugin.settings.account?.accountMetadata ?? {};
   const names = Object.values(metadata)
@@ -77,6 +90,18 @@ function asMappings(value: unknown): Record<string, string[]> {
     }
   }
   return mappings;
+}
+
+function isQuickSetupAssetType(
+  value: unknown
+): value is TradeImportQuickSetup['assetType'] {
+  return (
+    value === 'stock' ||
+    value === 'options' ||
+    value === 'futures' ||
+    value === 'forex' ||
+    value === 'crypto'
+  );
 }
 
 function brokerLabel(
@@ -162,16 +187,17 @@ export async function resolveQuickTradeImportSetup(
     plugin.settings.csvFavoriteBroker
   );
   if (favoriteBroker) {
-    const rememberedAssetType = plugin.settings.csvLastAssetType?.[
-      favoriteBroker
-    ] as TradeImportQuickSetup['assetType'] | undefined;
+    const rememberedAssetType =
+      plugin.settings.csvLastAssetType?.[favoriteBroker];
     return {
       state: favoriteBroker === 'MANUAL' ? 'needs_setup' : 'ready',
       source: 'favorites',
       accountName,
       broker: favoriteBroker,
       brokerLabel: brokerLabel(capabilities, favoriteBroker),
-      assetType: rememberedAssetType ?? 'stock',
+      assetType: isQuickSetupAssetType(rememberedAssetType)
+        ? rememberedAssetType
+        : 'stock',
       manualMode: 'price_based',
       dateFormat: '',
       sheetName: null,
@@ -196,4 +222,22 @@ export async function resolveQuickTradeImportSetup(
     columnMappings: {},
     aiMappingEnabled: false,
   };
+}
+
+export function loadCachedQuickTradeImportSetup(
+  plugin: JournalitPlugin,
+  backendService: BackendTradeImportService
+): Promise<CachedQuickTradeImportSetup> {
+  if (inFlightQuickSetup) return inFlightQuickSetup;
+
+  inFlightQuickSetup = (async () => {
+    const capabilities = await backendService.getCapabilities();
+    const setup = await resolveQuickTradeImportSetup(plugin, capabilities);
+    cachedQuickSetup = { capabilities, setup };
+    return cachedQuickSetup;
+  })().finally(() => {
+    inFlightQuickSetup = null;
+  });
+
+  return inFlightQuickSetup;
 }

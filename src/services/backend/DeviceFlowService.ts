@@ -6,6 +6,12 @@ import { BackendSecretStorage } from './BackendSecretStorage';
 import type { BackendIntegrationSettings } from '../../settings/types';
 import { ApiError } from '../../types/errors';
 
+function asRecord(value: unknown): Record<string, unknown> | undefined {
+  return value && typeof value === 'object' && !Array.isArray(value)
+    ? Object.fromEntries(Object.entries(value))
+    : undefined;
+}
+
 
 export interface DeviceCodeResponse {
   device_code: string;
@@ -272,12 +278,12 @@ export class DeviceFlowService {
       retryAfterSeconds = this.getRetryAfterSeconds(
         error.context?.responseHeaders
       );
-    } else if (typeof error === 'object' && error !== null) {
-      const errObj = error as Record<string, unknown>;
+    } else {
+      const errObj = asRecord(error);
       statusCode =
-        typeof errObj.statusCode === 'number'
+        typeof errObj?.statusCode === 'number'
           ? errObj.statusCode
-          : typeof errObj.status === 'number'
+          : typeof errObj?.status === 'number'
             ? errObj.status
             : undefined;
     }
@@ -296,7 +302,7 @@ export class DeviceFlowService {
       return undefined;
     }
 
-    const errorValue = (errorBody as Record<string, unknown>).error;
+    const errorValue = asRecord(errorBody)?.error;
     return typeof errorValue === 'string' ? errorValue : undefined;
   }
 

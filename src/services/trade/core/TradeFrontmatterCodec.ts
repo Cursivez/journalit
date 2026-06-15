@@ -1,3 +1,4 @@
+import { safeString } from '../../../utils/safeString';
 import { mapCustomFieldsToFrontmatter } from '../../../utils/customFieldPersistence';
 import { deduplicateOptions } from '../../../utils/stringNormalization';
 import { CustomFieldDefinition } from '../../../types/customFields';
@@ -82,10 +83,12 @@ export function formatTradeFrontmatterDate(
   const date = parseDateInput(dateInput);
 
   if (!date) {
-    console.error(`Invalid date input for frontmatter: ${dateInput}`);
+    console.error(
+      `Invalid date input for frontmatter: ${safeString(dateInput)}`
+    );
     return invalidDateFallback === 'now'
       ? formatLocalDateTime(new Date())
-      : String(dateInput);
+      : safeString(dateInput);
   }
 
   return formatLocalDateTime(date);

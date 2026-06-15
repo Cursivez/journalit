@@ -8,7 +8,10 @@ import {
   getUserDateFormat,
   safeParseDateValue,
 } from '../../../utils/dateUtils';
-import { CurrencyCode } from '../../../utils/currencyConfig';
+import {
+  CurrencyCode,
+  parseCuratedCurrencyCode,
+} from '../../../utils/currencyConfig';
 import { getTradingDay } from '../../../utils/tradingDayUtils';
 import { usePlugin } from '../../../hooks';
 import { useDisplayFormatter } from '../../../hooks/useDisplayPolicy';
@@ -807,8 +810,14 @@ interface BalanceDotContext {
 
 const hiddenDot = <circle cx={0} cy={0} r={0} opacity={0} />;
 
+interface BalanceDotProps {
+  cx?: number;
+  cy?: number;
+  payload?: BalanceChartDataPoint;
+}
+
 const getTradePointColor = (
-  payload: any,
+  payload: BalanceChartDataPoint,
   isPnlMasked: boolean,
   fallbackColor: string
 ): string => {
@@ -853,9 +862,13 @@ const renderCashflowDot = (
   </g>
 );
 
-const renderBalanceDot = (props: any, context: BalanceDotContext) => {
+const renderBalanceDot = (
+  props: BalanceDotProps,
+  context: BalanceDotContext
+) => {
   const { cx, cy, payload } = props;
-  if (!payload || !context.showDots) return hiddenDot;
+  if (cx === undefined || cy === undefined || !payload || !context.showDots)
+    return hiddenDot;
   if (payload.isDeposit) {
     return renderCashflowDot(cx, cy, context.depositStrokeColor, false);
   }
@@ -878,9 +891,12 @@ const renderBalanceDot = (props: any, context: BalanceDotContext) => {
   );
 };
 
-const renderActiveBalanceDot = (props: any, context: BalanceDotContext) => {
+const renderActiveBalanceDot = (
+  props: BalanceDotProps,
+  context: BalanceDotContext
+) => {
   const { cx, cy, payload } = props;
-  if (!payload) return hiddenDot;
+  if (cx === undefined || cy === undefined || !payload) return hiddenDot;
   if (payload.isDeposit) {
     return renderCashflowDot(cx, cy, context.depositStrokeColor, true);
   }
@@ -1069,7 +1085,7 @@ const AccountBalanceChartSeries: React.FC<AccountBalanceChartSeriesProps> = ({
     stroke={`url(#${balanceStrokeGradientId})`}
     strokeWidth={3}
     onAnimationEnd={() => onDotsReady(transactionSignature)}
-    dot={(props: any) =>
+    dot={(props: BalanceDotProps) =>
       renderBalanceDot(props, {
         showDots,
         isPnlMasked,
@@ -1077,7 +1093,7 @@ const AccountBalanceChartSeries: React.FC<AccountBalanceChartSeriesProps> = ({
         withdrawalStrokeColor,
       })
     }
-    activeDot={(props: any) =>
+    activeDot={(props: BalanceDotProps) =>
       renderActiveBalanceDot(props, {
         showDots,
         isPnlMasked,
@@ -1102,13 +1118,14 @@ export const AccountBalanceChart: React.FC<AccountBalanceChartProps> = ({
   const balanceStrokeGradientId = `${chartIdRef.current}-balance-stroke-gradient`;
   const { currency: globalCurrency } = useCurrency();
   
-  const currency =
-    (currencyOverride as typeof globalCurrency) ||
-    account.currency ||
-    globalCurrency;
+  const currency = currencyOverride
+    ? parseCuratedCurrencyCode(currencyOverride)
+    : account.currency || globalCurrency;
 
   const transactionSignature = (account.transactions || [])
-    .map((transaction) => `${transaction.date}:${transaction.amount}`)
+    .map(
+      (transaction) => `${transaction.date.toISOString()}:${transaction.amount}`
+    )
     .join('|');
   const [dotsReadyForSignature, setDotsReadyForSignature] = useState('');
   const showDots = dotsReadyForSignature === transactionSignature;
@@ -1261,7 +1278,7 @@ export const AccountBalanceChart: React.FC<AccountBalanceChartProps> = ({
         >
           {(tooltipProps) => (
             <CustomTooltip
-              {...(tooltipProps as any)}
+              {...(tooltipProps as TooltipProps<number, string>)}
               currency={currency}
               defaultRiskAmount={defaultRiskAmount}
             />

@@ -20,10 +20,10 @@ export function useViewportThreshold(threshold: number = 768): boolean {
     };
 
     
-    let timeoutId: NodeJS.Timeout;
+    let timeoutId: number;
     const debouncedResize = () => {
-      clearTimeout(timeoutId);
-      timeoutId = setTimeout(checkThreshold, 100);
+      window.clearTimeout(timeoutId);
+      timeoutId = window.setTimeout(checkThreshold, 100);
     };
 
     window.addEventListener('resize', debouncedResize);
@@ -35,7 +35,7 @@ export function useViewportThreshold(threshold: number = 768): boolean {
     }
 
     return () => {
-      clearTimeout(timeoutId);
+      window.clearTimeout(timeoutId);
       window.removeEventListener('resize', debouncedResize);
       
     };

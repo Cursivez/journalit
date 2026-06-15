@@ -34,7 +34,7 @@ export const Tooltip = React.memo<TooltipProps>(
     const [isMounted, setIsMounted] = useState(false);
     const lastMousePosition = useRef({ x: 0, y: 0 });
     const rafRef = useRef<number | null>(null);
-    const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+    const timeoutRef = useRef<number | null>(null);
     const tooltipRef = useRef<HTMLDivElement>(null);
     const triggerRef = useRef<HTMLDivElement>(null);
 
@@ -125,10 +125,10 @@ export const Tooltip = React.memo<TooltipProps>(
 
         
         if (rafRef.current) {
-          cancelAnimationFrame(rafRef.current);
+          window.cancelAnimationFrame(rafRef.current);
         }
 
-        timeoutRef.current = setTimeout(() => {
+        timeoutRef.current = window.setTimeout(() => {
           setIsVisible(true);
           setIsMounted(true);
         }, delay);
@@ -138,11 +138,11 @@ export const Tooltip = React.memo<TooltipProps>(
 
     const hideTooltip = useCallback(() => {
       if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
+        window.clearTimeout(timeoutRef.current);
         timeoutRef.current = null;
       }
       if (rafRef.current) {
-        cancelAnimationFrame(rafRef.current);
+        window.cancelAnimationFrame(rafRef.current);
         rafRef.current = null;
       }
       setIsVisible(false);
@@ -151,13 +151,13 @@ export const Tooltip = React.memo<TooltipProps>(
         return;
       }
       
-      setTimeout(() => setIsMounted(false), 200);
+      window.setTimeout(() => setIsMounted(false), 200);
     }, [instantHide]);
 
     useEffect(() => {
       if (isVisible && isMounted) {
         
-        rafRef.current = requestAnimationFrame(() => {
+        rafRef.current = window.requestAnimationFrame(() => {
           calculatePosition();
         });
       }
@@ -166,10 +166,10 @@ export const Tooltip = React.memo<TooltipProps>(
     useEffect(() => {
       return () => {
         if (timeoutRef.current) {
-          clearTimeout(timeoutRef.current);
+          window.clearTimeout(timeoutRef.current);
         }
         if (rafRef.current) {
-          cancelAnimationFrame(rafRef.current);
+          window.cancelAnimationFrame(rafRef.current);
         }
       };
     }, []);
@@ -186,9 +186,9 @@ export const Tooltip = React.memo<TooltipProps>(
           lastMousePosition.current = { x: e.clientX, y: e.clientY };
           
           if (rafRef.current) {
-            cancelAnimationFrame(rafRef.current);
+            window.cancelAnimationFrame(rafRef.current);
           }
-          rafRef.current = requestAnimationFrame(() => {
+          rafRef.current = window.requestAnimationFrame(() => {
             calculatePosition();
           });
         }
@@ -219,7 +219,7 @@ export const Tooltip = React.memo<TooltipProps>(
             >
               {content}
             </div>,
-            document.body
+            window.activeDocument.body
           )}
       </>
     );

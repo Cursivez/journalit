@@ -6,7 +6,6 @@ import { createRoot, Root } from 'react-dom/client';
 import { AlertTriangle } from '../shared/icons/ObsidianIcon';
 import { Button } from '../ui/Button';
 import { t } from '../../lang/helpers';
-import { ensureTemplateSwitchWarningModalStyles } from './templateSwitchWarningModalStyles';
 
 interface TemplateSwitchWarningOptions {
   app: App;

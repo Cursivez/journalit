@@ -67,6 +67,109 @@ interface TemplateExportPayloadV2 extends TemplateExportPayloadBase {
   column_mappings: MultiColumnMappings;
 }
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
+}
+
+function getString(value: unknown): string | undefined {
+  return typeof value === 'string' ? value : undefined;
+}
+
+function getNumber(value: unknown): number | undefined {
+  return typeof value === 'number' ? value : undefined;
+}
+
+function getBoolean(value: unknown): boolean | undefined {
+  return typeof value === 'boolean' ? value : undefined;
+}
+
+function parseAssetType(
+  value: unknown
+): TemplateExportPayloadBase['asset_type'] {
+  switch (value) {
+    case 'options':
+    case 'futures':
+    case 'forex':
+    case 'crypto':
+      return value;
+    default:
+      return 'stock';
+  }
+}
+
+function parseManualImportMode(value: unknown): ManualImportMode | undefined {
+  return value === 'direct_pnl' || value === 'price_based' ? value : undefined;
+}
+
+function parseMultiColumnMappings(value: unknown): MultiColumnMappings | null {
+  if (!isRecord(value)) return null;
+
+  const mappings: MultiColumnMappings = {};
+  for (const [field, columns] of Object.entries(value)) {
+    if (!Array.isArray(columns)) return null;
+    const stringColumns = columns.filter(
+      (column): column is string => typeof column === 'string'
+    );
+    if (stringColumns.length !== columns.length) return null;
+    mappings[field] = stringColumns;
+  }
+  return mappings;
+}
+
+function parseLegacyColumnMappings(
+  value: unknown
+): Record<string, string> | null {
+  if (!isRecord(value)) return null;
+
+  const mappings: Record<string, string> = {};
+  for (const [column, field] of Object.entries(value)) {
+    if (typeof field !== 'string') return null;
+    mappings[column] = field;
+  }
+  return mappings;
+}
+
+function parseTemplateExportPayloadV1(
+  value: unknown
+): TemplateExportPayloadV1 | null {
+  if (!isRecord(value)) return null;
+  const columnMappings = parseLegacyColumnMappings(value.column_mappings);
+  if (!columnMappings) return null;
+
+  return {
+    name: getString(value.name) ?? '',
+    broker_type: getString(value.broker_type) ?? '',
+    asset_type: parseAssetType(value.asset_type),
+    date_format: getString(value.date_format),
+    delimiter: getString(value.delimiter),
+    header_row_index: getNumber(value.header_row_index),
+    has_headers: getBoolean(value.has_headers) ?? false,
+    manual_mode: parseManualImportMode(value.manual_mode),
+    column_mappings: columnMappings,
+  };
+}
+
+function parseTemplateExportPayloadV2(
+  value: unknown
+): TemplateExportPayloadV2 | null {
+  if (!isRecord(value)) return null;
+  const columnMappings = parseMultiColumnMappings(value.column_mappings);
+  if (!columnMappings) return null;
+
+  return {
+    name: getString(value.name) ?? '',
+    broker_type: getString(value.broker_type) ?? '',
+    asset_type: parseAssetType(value.asset_type),
+    date_format: getString(value.date_format),
+    delimiter: getString(value.delimiter),
+    header_row_index: getNumber(value.header_row_index),
+    has_headers: getBoolean(value.has_headers) ?? false,
+    manual_mode: parseManualImportMode(value.manual_mode),
+    mapping_version: 2,
+    column_mappings: columnMappings,
+  };
+}
+
 
 const MAX_SHARE_CODE_LENGTH = 10000; 
 
@@ -89,7 +192,7 @@ function parsePayload(code: string): {
     throw new Error('Invalid template code: Incorrect format');
   }
 
-  const [_prefix, version, base64] = parts;
+  const [, version, base64] = parts;
 
   let json: string;
   try {
@@ -201,7 +304,8 @@ export function encodeTemplate(template: LocalCSVTemplate): string {
     name: normalizedTemplate.name,
     broker_type: normalizedTemplate.broker_type,
     asset_type: normalizedTemplate.asset_type,
-    column_mappings: normalizedTemplate.column_mappings as MultiColumnMappings,
+    column_mappings:
+      parseMultiColumnMappings(normalizedTemplate.column_mappings) ?? {},
     mapping_version: 2,
     manual_mode: normalizedTemplate.manual_mode,
     date_format: normalizedTemplate.date_format,
@@ -221,11 +325,18 @@ export function decodeTemplate(code: string): LocalCSVTemplate {
   const { version, payload } = parsePayload(code);
 
   if (version === 'v1') {
-    return createTemplateFromPayload(payload as TemplateExportPayloadV1);
+    const v1Payload = parseTemplateExportPayloadV1(payload);
+    if (!v1Payload) {
+      throw new Error('Invalid template code: Invalid v1 payload');
+    }
+    return createTemplateFromPayload(v1Payload);
   }
 
   if (version === 'v2') {
-    const v2Payload = payload as TemplateExportPayloadV2;
+    const v2Payload = parseTemplateExportPayloadV2(payload);
+    if (!v2Payload) {
+      throw new Error('Invalid template code: Invalid v2 payload');
+    }
     if (v2Payload.mapping_version !== 2) {
       throw new Error('Invalid template code: mapping_version must be 2');
     }

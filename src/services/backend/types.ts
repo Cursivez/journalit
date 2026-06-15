@@ -29,7 +29,7 @@ export interface TradeMetadata {
   type: string;
   tradeId?: string;
   schemaVersion?: number;
-  tradeStatus?: 'OPEN' | 'CLOSED' | string;
+  tradeStatus?: string;
   backendTradeId?: number;
   csvImportId?: string;
   executionLedgerVersion?: number;

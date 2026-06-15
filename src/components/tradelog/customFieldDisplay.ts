@@ -13,8 +13,12 @@ export function getCustomFieldRawValue(
   }
 
   const nestedCustomFields = trade.customFields;
-  if (nestedCustomFields && typeof nestedCustomFields === 'object') {
-    return (nestedCustomFields as Record<string, unknown>)[field.id];
+  if (
+    nestedCustomFields &&
+    typeof nestedCustomFields === 'object' &&
+    !Array.isArray(nestedCustomFields)
+  ) {
+    return Object.fromEntries(Object.entries(nestedCustomFields))[field.id];
   }
 
   return undefined;

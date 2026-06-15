@@ -67,7 +67,7 @@ export class NavigationManager {
 
         if (existingLeaf) {
           
-          this.app.workspace.revealLeaf(existingLeaf);
+          void this.app.workspace.revealLeaf(existingLeaf);
           this.app.workspace.setActiveLeaf(existingLeaf, {
             focus: focusLeaf,
           });
@@ -97,7 +97,7 @@ export class NavigationManager {
         }
 
         await leaf.openFile(file);
-        this.app.workspace.revealLeaf(leaf);
+        void this.app.workspace.revealLeaf(leaf);
         this.app.workspace.setActiveLeaf(leaf, { focus: focusLeaf });
       } else {
         console.error(
@@ -187,7 +187,7 @@ export class NavigationManager {
         if (homeStartupBehavior === 'always') {
           
           logger.debug('[Journalit] Revealing existing home view');
-          this.app.workspace.revealLeaf(existingHome[0]);
+          void this.app.workspace.revealLeaf(existingHome[0]);
         }
         return;
       }

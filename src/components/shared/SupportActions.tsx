@@ -11,7 +11,7 @@ interface SupportActionRenderProps {
 }
 
 interface SupportActionsProps {
-  onCopy: () => void;
+  onCopy: () => void | Promise<void>;
   copied: boolean;
   copyLabel: string;
   copiedLabel: string;
@@ -78,7 +78,11 @@ export const SupportActions: React.FC<SupportActionsProps> = ({
           actionsClassName
         )}
       >
-        {render({ variant: 'primary', onClick: onCopy, content: copyContent })}
+        {render({
+          variant: 'primary',
+          onClick: () => void onCopy(),
+          content: copyContent,
+        })}
         {onDiscord &&
           render({
             variant: 'secondary',
