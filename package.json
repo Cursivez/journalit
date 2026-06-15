@@ -1,13 +1,14 @@
 {
   "name": "journalit",
-  "version": "1.7.9",
+  "version": "1.7.10",
   "description": "Trading journal with templates, trade tracking, imports, and reviews for Obsidian.",
   "main": "main.js",
   "scripts": {
     "build": "tsc -noEmit -skipLibCheck && node scripts/generate-styles-css.mjs && node esbuild.config.mjs release",
     "lint": "node scripts/generate-styles-css.mjs && eslint src manifest.json --max-warnings 0",
     "lint:review": "node scripts/generate-styles-css.mjs && node scripts/lint-review-findings.mjs",
-    "css:review": "node scripts/generate-styles-css.mjs && node scripts/validate-public-css.mjs"
+    "css:review": "node scripts/generate-styles-css.mjs && node scripts/validate-public-css.mjs",
+    "bundle:review": "node scripts/validate-review-bundle.mjs"
   },
   "keywords": [
     "obsidian",

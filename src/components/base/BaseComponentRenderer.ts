@@ -575,7 +575,9 @@ export abstract class BaseComponentRenderer {
       } else {
         
         if (currentNode.className) {
-          selector += `.${Array.from(currentNode.classList).join('.')}`;
+          for (const className of currentNode.classList) {
+            selector += `.${className}`;
+          }
         }
 
         

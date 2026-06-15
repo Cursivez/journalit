@@ -1,4 +1,10 @@
 {
+  "1.7.10": {
+    "title": "Obsidian Review Fixes",
+    "description": "Obsidian Review Fixes",
+    "features": [],
+    "content": "# **[1.7.10] - 2026/06/15**\nObsidian Review Fixes"
+  },
   "1.7.9": {
     "title": "Obsidian Plugin Submission",
     "description": "Prepared Journalit for Obsidian plugin submission with a bunch of fixes, cleanup, and minor UI polish.",
