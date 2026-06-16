@@ -1,7 +1,7 @@
 <div align="center">
 
 <img
-  src="https://github.com/user-attachments/assets/ab7232d4-1352-4658-a284-86029c0246f1"
+  src="https://github.com/user-attachments/assets/1d82c43a-9235-4659-85c2-eedf46bd34ac"
   alt="Journalit"
   width="420"
   style="max-width: 100%; height: auto;"
@@ -21,15 +21,14 @@ Local-first trading journal for Obsidian.
 
 ## Installation
 
-### BRAT
+Install Journalit from Obsidian Community Plugins:
 
-1. Install [Obsidian](https://obsidian.md/download)
-2. Enable community plugins: **Settings → Community Plugins → Turn on community plugins**
-3. Install [BRAT](https://github.com/TfTHacker/obsidian42-brat)
-4. In BRAT settings, click **Add Beta Plugin**
-5. Enter: `Cursivez/journalit` (Latest version)
+1. Open **Settings → Community Plugins → Browse**
+2. Search for `Journalit`
+3. Click **Install**, then **Enable**
 
-Full install + troubleshooting: https://journalit.co/docs
+Community page: https://community.obsidian.md/plugins/journalit  
+Docs: https://journalit.co/docs/installation
 
 ## Highlights
 
@@ -50,24 +49,11 @@ Full install + troubleshooting: https://journalit.co/docs
 - **Source available, proprietary license**: the plugin is proprietary software with reviewable source.
 - **Privacy details**: see [PRIVACY.md](PRIVACY.md) for data handling, retention, and infrastructure details.
 
-## Source review checks
-
-This public repository is a source-available mirror used for Obsidian review and user inspection. The main local verification commands are:
-
-```bash
-pnpm install --frozen-lockfile
-pnpm run lint
-pnpm run lint:review
-pnpm run build
-```
-
-`lint:review` mirrors additional Obsidian review categories and fails on new unaccepted findings. The remaining accepted findings are documented in that command's output.
-
 ## Screenshots
 
 ### Trading Dashboard
 
-![Trading Dashboard](https://github.com/user-attachments/assets/d7ab9afe-e2d6-47c4-ba95-af55f2f3c421)
+![Trading Dashboard](https://github.com/user-attachments/assets/d5c7b636-b8f7-489a-a199-d1bba6958717)
 
 ### Layout Builder
 
@@ -81,7 +67,7 @@ pnpm run build
 
 ### Trade Import
 
-![Trade Import](https://github.com/user-attachments/assets/85945f98-5e3f-4d95-9e7b-f8172a4c200a)
+![Trade Import](https://github.com/user-attachments/assets/68121823-8b24-4024-b676-a4199c81f207)
 
 ### Account Dashboard
 
