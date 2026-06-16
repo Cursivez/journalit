@@ -28,7 +28,6 @@ Install Journalit from Obsidian Community Plugins:
 3. Click **Install**, then **Enable**
 
 Community page: https://community.obsidian.md/plugins/journalit  
-Docs: https://journalit.co/docs/installation
 
 ## Highlights
 
