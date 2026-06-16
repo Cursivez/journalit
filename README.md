@@ -1,7 +1,7 @@
 <div align="center">
 
 <img
-  src="https://github.com/user-attachments/assets/1d82c43a-9235-4659-85c2-eedf46bd34ac"
+  src="https://github.com/user-attachments/assets/ab7232d4-1352-4658-a284-86029c0246f1"
   alt="Journalit"
   width="420"
   style="max-width: 100%; height: auto;"
@@ -17,7 +17,7 @@ Local-first trading journal for Obsidian.
 
 </div>
 
-![Home View](https://github.com/user-attachments/assets/7687e9a1-7bc0-47f5-bd63-d63cbe6553ef)
+![Home View](https://github.com/user-attachments/assets/1d82c43a-9235-4659-85c2-eedf46bd34ac)
 
 ## Installation
 
