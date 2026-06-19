@@ -244,6 +244,34 @@ export abstract class BaseComponentRenderer {
   }
 
   
+  public unmountContainer(container: HTMLElement): boolean {
+    let unmounted = false;
+
+    for (const [rootId, rootContext] of this.reactRoots.entries()) {
+      const domContainer = rootContext.domContainer;
+      if (domContainer !== container && !container.contains(domContainer)) {
+        continue;
+      }
+
+      try {
+        rootContext.root.unmount();
+      } catch (error: unknown) {
+        console.error(
+          `[${this.constructor.name}] Error unmounting container root:`,
+          error,
+          { rootId }
+        );
+      }
+
+      this.reactRoots.delete(rootId);
+      this.rootCreationTimes.delete(rootId);
+      unmounted = true;
+    }
+
+    return unmounted;
+  }
+
+  
   public unmountAllComponents(): void {
     
     const rootsSnapshot: Record<
@@ -509,7 +537,7 @@ export abstract class BaseComponentRenderer {
     filePath: string
   ): RootContext {
     
-    const reactContainer = window.activeDocument.createElement('div');
+    const reactContainer = container.ownerDocument.createElement('div');
     reactContainer.className = this.getWrapperClassName();
     reactContainer.setAttribute(
       `data-${this.getComponentClassName()}-root-id`,

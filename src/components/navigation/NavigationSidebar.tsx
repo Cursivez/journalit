@@ -37,6 +37,32 @@ const restrictToVerticalAxis: Modifier = ({ transform }) => ({
   x: 0,
 });
 
+const restrictToActiveNavigationSection: Modifier = ({
+  active,
+  activeNodeRect,
+  transform,
+}) => {
+  if (!active || !activeNodeRect) return transform;
+
+  const activeElement = window.activeDocument.querySelector<HTMLElement>(
+    `[data-nav-item-id="${active.id.toString()}"]`
+  );
+  const sectionElement = activeElement?.closest<HTMLElement>(
+    '.journalit-nav-section'
+  );
+  if (!sectionElement) return transform;
+
+  const sectionRect = sectionElement.getBoundingClientRect();
+  const minY = sectionRect.top - activeNodeRect.top;
+  const maxY = sectionRect.bottom - activeNodeRect.bottom;
+
+  return {
+    ...transform,
+    x: 0,
+    y: Math.min(Math.max(transform.y, minY), maxY),
+  };
+};
+
 const VIEW_ACTION_MAP: Record<string, string> = {
   openHome: 'journalit-home-view',
   openTradingDashboard: 'journalit-dashboard-view',
@@ -343,7 +369,10 @@ export const NavigationSidebar: React.FC<NavigationSidebarProps> = ({
           <DndContext
             collisionDetection={closestCenter}
             onDragEnd={handleDragEnd}
-            modifiers={[restrictToVerticalAxis]}
+            modifiers={[
+              restrictToVerticalAxis,
+              restrictToActiveNavigationSection,
+            ]}
           >
             {SECTIONS.map((section) => {
               const items = visibleBySection[section];

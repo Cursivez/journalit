@@ -48,6 +48,7 @@ const ru: Lang = {
   'form.section.trade-details': 'Детали сделки',
   'form.section.trading-costs': 'Торговые издержки',
   'form.section.risk-management': 'Управление рисками',
+  'form.section.take-profits': 'Take Profits',
   'form.section.analysis-thesis': 'Анализ и тезис',
 
   
@@ -71,6 +72,10 @@ const ru: Lang = {
   'form.field.swap': 'Своп',
   'form.field.other-fees': 'Прочие сборы',
   'form.field.stop-loss': 'Стоп-лосс',
+  'form.field.take-profit': 'Take Profit',
+  'form.field.take-profit-short': 'TP',
+  'form.field.target-price': 'Target Price',
+  'form.field.close-percent': 'Close %',
   'form.field.risk-amount': 'Сумма риска',
   'form.field.profit-loss': 'Прибыль/Убыток',
   'form.field.total-pnl': 'Общий P&L',
@@ -137,6 +142,8 @@ const ru: Lang = {
   'form.placeholder.dividend-amount':
     'Денежная сумма, положительная или отрицательная',
   'form.placeholder.stop-loss': 'Цена стоп-лосса (необязательно)',
+  'form.placeholder.target-price': 'Target price',
+  'form.placeholder.close-percent': '50%',
   'form.placeholder.risk-amount': 'Планируемый риск в валюте',
   'form.placeholder.custom-tag': 'Введите тег и нажмите Enter',
   'form.placeholder.thesis': 'Введите тезис для этой сделки...',
@@ -188,6 +195,9 @@ const ru: Lang = {
   'form.account-empty-state.create-account': 'Создать счёт',
   'form.account-empty-state.submit-disabled':
     'Сначала создайте счёт, чтобы сохранить эту сделку.',
+  'form.empty.take-profits': 'No take profit targets yet',
+  'form.action.add-take-profit': 'Add Take Profit',
+  'form.action.remove-take-profit': 'Remove take profit',
 
   
   
@@ -296,6 +306,20 @@ const ru: Lang = {
   'trade.validation.stop-loss-number': 'Стоп-лосс должен быть числом.',
   'trade.validation.stop-loss-valid-number':
     'Стоп-лосс должен быть корректным числом.',
+  'trade.validation.take-profit-price-required':
+    'Take profit price is required.',
+  'trade.validation.take-profit-price-number':
+    'Take profit price must be a number.',
+  'trade.validation.take-profit-price-valid-number':
+    'Take profit price must be a valid number.',
+  'trade.validation.take-profit-close-percent-number':
+    'Take profit close percent must be a number.',
+  'trade.validation.take-profit-close-percent-valid-number':
+    'Take profit close percent must be a valid number.',
+  'trade.validation.take-profit-close-percent-range':
+    'Take profit close percent must be between 1 and 100.',
+  'trade.validation.take-profit-total-close-percent-range':
+    'Take profit close percentages cannot exceed 100.',
   'validation.custom-field.key-empty': 'Ключ поля не может быть пустым',
   'validation.custom-field.key-conflict':
     'Это имя поля конфликтует со встроенными полями сделки',
@@ -731,6 +755,8 @@ const ru: Lang = {
 
   
   'tradelog.filter.all.desc': 'Все статусы сделок',
+  'tradelog.filter.all-review-statuses': 'Все проверки',
+  'tradelog.filter.all-directions': 'Все направления',
   'tradelog.filter.winners.desc': 'Прибыльные сделки',
   'tradelog.filter.losers.desc': 'Убыточные сделки',
   'tradelog.filter.breakeven.desc': 'Сделки в безубыток',
@@ -4055,6 +4081,9 @@ const ru: Lang = {
   'home.widget.drawdown-monitor.name': 'Монитор просадки',
   'home.widget.drawdown-monitor.description':
     'Отслеживание статуса просадки по счетам с настроенными лимитами',
+  'home.widget.profit-target-widget.name': 'Цель прибыли',
+  'home.widget.profit-target-widget.description':
+    'Отслеживать прогресс целей прибыли по счетам',
 
   
   
@@ -4198,6 +4227,12 @@ const ru: Lang = {
   'home.widget.goals-progress.tracks-lifetime': 'Отслеживает общее количество',
   'home.widget.goals-progress.use-r-multiples':
     'Использовать R-мультипликаторы',
+  'home.widget.goals-progress.account-aware': 'Цели по счетам',
+  'home.widget.goals-progress.no-target-selected':
+    'Нет цели для выбранного счета',
+  'home.widget.goals-progress.configured-for': 'Настроено для {accounts}',
+  'home.widget.goals-progress.account-scope': 'Account scope',
+  'home.widget.goals-progress.add-account': 'Add account',
   'home.widget.goals-progress.click-to-set': 'Нажмите, чтобы установить цель',
   'home.widget.goals-progress.header.pnl': 'Цель по P&L',
   'home.widget.goals-progress.header.trades': 'Цель по сделкам',
@@ -4267,6 +4302,11 @@ const ru: Lang = {
   'home.widget.drawdown.unable-to-load': 'Не удалось загрузить',
   'home.widget.drawdown.no-accounts': 'Нет счетов с лимитами',
 
+  'home.widget.profit-target.title': 'Цель прибыли',
+  'home.widget.profit-target.achieved': 'Достигнута',
+  'home.widget.profit-target.remaining': 'осталось',
+  'home.widget.profit-target.unable-to-load': 'Не удалось загрузить',
+  'home.widget.profit-target.no-accounts': 'Нет счетов с целями',
   
   
   
@@ -5490,6 +5530,11 @@ const ru: Lang = {
   'filter.modal.status.breakeven': 'Безубыток',
   'filter.modal.status.open': 'Открыта',
   'filter.modal.status.closed': 'Закрыта',
+  'filter.modal.review-status': 'Review Status',
+  'filter.modal.review-status.reviewed': 'Reviewed',
+  'filter.modal.review-status.unreviewed': 'Unreviewed',
+  'filter.modal.direction.long-call': 'Long/Call',
+  'filter.modal.direction.short-put': 'Short/Put',
   'filter.modal.section.custom-fields': 'Custom Fields',
   'filter.modal.custom-field.n-selected': '{count} selected',
   'filter.modal.custom-field.none-available': 'No values available',
@@ -6532,6 +6577,8 @@ const ru: Lang = {
   'trade-import.notice.template-saved': 'Trade Import template saved',
   'trade-import.notice.analyse-failed': 'Trade Import analyse failed',
   'trade-import.notice.preview-failed': 'Trade Import preview failed',
+  'trade-import.preview-error.guidance':
+    'Проверьте, что все обязательные поля сопоставлены, выбранный формат даты соответствует файлу, а числовые столбцы содержат корректные значения сделки.',
   'trade-import.notice.complete':
     'Trade Import complete: {written} written or updated, {duplicateCount} duplicates, {failedCount} failed',
   'trade-import.gate.sign-in':

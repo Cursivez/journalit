@@ -124,6 +124,179 @@ const withCurrentTimeForBlankTradeTimes = (
   return normalized;
 };
 
+const shouldRefreshAutoCommission = (field: keyof TradeFormData): boolean =>
+  field === 'instrument' ||
+  field === 'assetType' ||
+  field === 'account' ||
+  field === 'positionSize' ||
+  field === 'entries' ||
+  field === 'exits' ||
+  field === 'exitPrice' ||
+  field === 'hasExplicitCommission' ||
+  field === 'commissionType' ||
+  field === 'useDirectPnLInput';
+
+const hasExitData = (data: Partial<TradeFormData>): boolean => {
+  const meaningfulExits = (data.exits ?? []).filter(hasTradeLegValues);
+  const hasScalarExitPrice =
+    data.exitPrice !== undefined &&
+    data.exitPrice !== null &&
+    (data.exitPrice > 0 ||
+      (data.hasExplicitExitPrice === true && meaningfulExits.length === 0));
+
+  return (
+    (data.tradeStatus !== 'OPEN' && data.useDirectPnLInput === true) ||
+    (data.tradeStatus !== 'OPEN' && hasScalarExitPrice) ||
+    meaningfulExits.length > 0
+  );
+};
+
+const getExitedPositionSize = (
+  data: Partial<TradeFormData>
+): number | undefined => {
+  const exitedSize = (data.exits ?? []).reduce(
+    (total, exit) =>
+      exit.size !== undefined && exit.size !== null && exit.size > 0
+        ? total + exit.size
+        : total,
+    0
+  );
+  return exitedSize > 0 ? exitedSize : undefined;
+};
+
+const applyAutoCommission = (
+  data: Partial<TradeFormData>,
+  optionsService?: CustomOptionsService,
+  previousData?: Partial<TradeFormData>
+): Partial<TradeFormData> => {
+  if (data.hasExplicitCommission === true) {
+    return data;
+  }
+
+  const instrument = typeof data.instrument === 'string' ? data.instrument : '';
+  const positionSize =
+    typeof data.positionSize === 'number' ? data.positionSize : 0;
+  if (
+    data.commissionType === 'percentage' &&
+    (typeof data.commission !== 'number' || data.commission === 0)
+  ) {
+    return data;
+  }
+
+  if (
+    (data.isMissedTrade === true || data.isBacktestTrade === true) &&
+    data.hasExplicitCommission !== false &&
+    typeof data.commission === 'number' &&
+    data.commission !== 0
+  ) {
+    return data;
+  }
+
+  const canInferPreviousAutoCommission = Boolean(
+    previousData &&
+    (previousData.isMissedTrade !== true ||
+      previousData.hasExplicitCommission === false) &&
+    (previousData.isBacktestTrade !== true ||
+      previousData.hasExplicitCommission === false)
+  );
+  const previousAutoCommission =
+    previousData && canInferPreviousAutoCommission
+      ? optionsService?.calculateInstrumentCommission({
+          instrument:
+            typeof previousData.instrument === 'string'
+              ? previousData.instrument
+              : '',
+          assetType: previousData.assetType,
+          account: previousData.account,
+          positionSize:
+            typeof previousData.positionSize === 'number'
+              ? previousData.positionSize
+              : 0,
+          exitedPositionSize: getExitedPositionSize(previousData),
+          hasExit: hasExitData(previousData),
+        })
+      : undefined;
+  const hadAutoCommission =
+    previousAutoCommission !== undefined &&
+    typeof data.commission === 'number' &&
+    Math.abs(data.commission - previousAutoCommission) < 0.000001;
+
+  if (data.commissionType === 'percentage') {
+    const changedFromFixedAutoCommission =
+      previousData?.commissionType !== 'percentage' && hadAutoCommission;
+    return changedFromFixedAutoCommission
+      ? { ...data, commission: undefined, hasExplicitCommission: false }
+      : data;
+  }
+
+  if (!instrument || positionSize <= 0) {
+    return hadAutoCommission
+      ? { ...data, commission: undefined, hasExplicitCommission: false }
+      : data;
+  }
+
+  const hasExit = hasExitData(data);
+  const commission = optionsService?.calculateInstrumentCommission({
+    instrument,
+    assetType: data.assetType,
+    account: data.account,
+    positionSize,
+    exitedPositionSize: getExitedPositionSize(data),
+    hasExit,
+  });
+
+  if (hadAutoCommission) {
+    return commission === undefined
+      ? { ...data, commission: undefined, hasExplicitCommission: false }
+      : {
+          ...data,
+          commission,
+          commissionType: 'fixed',
+          hasExplicitCommission: false,
+        };
+  }
+
+  if (data.commission && data.commission !== 0) {
+    if (commission === undefined) {
+      return data;
+    }
+
+    if (hasExit === false) {
+      return data;
+    }
+
+    const entryOnlyCommission = optionsService?.calculateInstrumentCommission({
+      instrument,
+      assetType: data.assetType,
+      account: data.account,
+      positionSize,
+      exitedPositionSize: getExitedPositionSize(data),
+      hasExit: false,
+    });
+
+    if (entryOnlyCommission === undefined) {
+      return data;
+    }
+
+    const isStoredEntryOnlyCommission =
+      Math.abs(data.commission - entryOnlyCommission) < 0.000001;
+    if (!isStoredEntryOnlyCommission) {
+      return data;
+    }
+  }
+
+  if (commission === undefined) {
+    return data;
+  }
+
+  return {
+    ...data,
+    commission,
+    commissionType: 'fixed',
+    hasExplicitCommission: false,
+  };
+};
+
 export const useTradeForm = ({
   initialData = {},
   isEditMode = false,
@@ -473,10 +646,12 @@ export const useTradeForm = ({
           newData.setup = Array.isArray(value) ? Array.from(value) : [];
         }
 
-        return newData;
+        return shouldRefreshAutoCommission(field)
+          ? applyAutoCommission(newData, plugin.optionsService, prevData)
+          : newData;
       });
     },
-    []
+    [plugin.optionsService]
   );
 
   
@@ -1142,6 +1317,18 @@ export const useTradeForm = ({
     const dividendsChanged =
       normalizeDividendSnapshot(formData.dividends) !==
       normalizeDividendSnapshot(initial.dividends);
+    const normalizeTakeProfitSnapshot = (
+      takeProfits: Partial<TradeFormData>['takeProfits']
+    ) =>
+      JSON.stringify(
+        (takeProfits || []).map((target) => ({
+          price: target?.price ?? null,
+          closePercent: target?.closePercent ?? null,
+        }))
+      );
+    const takeProfitsChanged =
+      normalizeTakeProfitSnapshot(formData.takeProfits) !==
+      normalizeTakeProfitSnapshot(initial.takeProfits);
 
     
     const currentImages = Array.isArray(formData.images)
@@ -1160,7 +1347,8 @@ export const useTradeForm = ({
       thesisChanged ||
       imagesChanged ||
       directionChanged ||
-      dividendsChanged
+      dividendsChanged ||
+      takeProfitsChanged
     );
   }, [
     formData.instrument,
@@ -1171,6 +1359,7 @@ export const useTradeForm = ({
     formData.images,
     formData.direction,
     formData.dividends,
+    formData.takeProfits,
   ]);
 
   return {

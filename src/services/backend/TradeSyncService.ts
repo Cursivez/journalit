@@ -134,7 +134,6 @@ export class TradeSyncService {
       volume: number;
     }
   > = new Map();
-  private csvImportIdMap: { [csvImportId: string]: string } = {};
   private cacheBuilt: boolean = false;
   private isRebuilding: boolean = false;
   private unsubscribeFolderPath: Unsubscribe | null = null;
@@ -193,30 +192,6 @@ export class TradeSyncService {
     return value.trim().toLowerCase() === 'true';
   }
 
-  private normalizeDirectionForDirectPnl(
-    value: unknown
-  ): 'long' | 'short' | null {
-    if (typeof value !== 'string') {
-      return null;
-    }
-
-    const normalized = value.trim().toLowerCase();
-    if (
-      normalized === 'long' ||
-      normalized === 'buy' ||
-      normalized === 'b' ||
-      normalized === 'l'
-    ) {
-      return 'long';
-    }
-
-    if (normalized === 'short' || normalized === 'sell' || normalized === 's') {
-      return 'short';
-    }
-
-    return null;
-  }
-
   private parseNumericValue(value: unknown): number | null {
     if (typeof value === 'number') {
       return Number.isFinite(value) ? value : null;
@@ -233,81 +208,6 @@ export class TradeSyncService {
 
     const parsed = parseFloat(trimmed.replace(/[,$]/g, ''));
     return Number.isFinite(parsed) ? parsed : null;
-  }
-
-  private normalizeNumericKeyPart(value: number): string {
-    const normalized = Object.is(value, -0) ? 0 : value;
-    return `${normalized}`;
-  }
-
-  private roundToFixedKeyPart(value: number, decimals: number): string {
-    const factor = 10 ** decimals;
-    const epsilon = value >= 0 ? Number.EPSILON : -Number.EPSILON;
-    const rounded = Math.round((value + epsilon) * factor) / factor;
-    const normalized = Object.is(rounded, -0) ? 0 : rounded;
-
-    return normalized.toFixed(decimals);
-  }
-
-  private getPrimaryAccountName(metadata: TradeMetadata): string | null {
-    const source = Array.isArray(metadata.account)
-      ? metadata.account
-      : metadata.account
-        ? [metadata.account]
-        : [];
-
-    for (const value of source) {
-      const trimmed = String(value)
-        .trim()
-        .replace(/^['"`]+|['"`]+$/g, '');
-      if (trimmed) {
-        return trimmed;
-      }
-    }
-
-    return null;
-  }
-
-  private buildDirectPnlCsvImportId(
-    metadata: TradeMetadata,
-    entryTime: Date,
-    canonicalVolume?: number
-  ): string | null {
-    const directFlag = this.parseBooleanLike(
-      (metadata as TradeMetadata & { useDirectPnLInput?: unknown })
-        .useDirectPnLInput
-    );
-
-    if (!directFlag) {
-      return null;
-    }
-
-    const accountName = this.getPrimaryAccountName(metadata);
-    const symbol = metadata.instrument?.trim();
-    const direction = this.normalizeDirectionForDirectPnl(metadata.direction);
-    const quantity =
-      canonicalVolume ?? this.parseNumericValue(metadata.positionSize);
-    const directPnl = this.parseNumericValue(
-      (metadata as TradeMetadata & { directPnL?: unknown }).directPnL ??
-        metadata.pnl
-    );
-
-    if (
-      !accountName ||
-      !symbol ||
-      !direction ||
-      quantity === null ||
-      directPnl === null
-    ) {
-      return null;
-    }
-
-    const timeInSeconds = Math.floor(entryTime.getTime() / 1000);
-    const bucket = Math.floor(timeInSeconds / 60) * 60;
-
-    return `${accountName}_${symbol}_${direction}_${bucket}_${this.normalizeNumericKeyPart(
-      quantity
-    )}_${this.roundToFixedKeyPart(directPnl, 2)}`;
   }
 
   private getCanonicalMatchIdentity(
@@ -384,7 +284,6 @@ export class TradeSyncService {
   
   async buildTradeFileCache(): Promise<void> {
     this.tradeFileCache.clear();
-    this.csvImportIdMap = {};
 
     try {
       
@@ -407,10 +306,6 @@ export class TradeSyncService {
               ? this.getCanonicalMatchIdentity(metadata)
               : null;
 
-            if (metadata?.csvImportId) {
-              this.csvImportIdMap[metadata.csvImportId] = file.path;
-            }
-
             if (metadata && matchIdentity) {
               const cacheKey = this.createCacheKey(
                 matchIdentity.symbol,
@@ -418,18 +313,6 @@ export class TradeSyncService {
                 matchIdentity.entryPrice,
                 matchIdentity.volume
               );
-
-              
-              
-              
-              const directPnlCsvImportId = this.buildDirectPnlCsvImportId(
-                metadata,
-                matchIdentity.entryTime,
-                matchIdentity.volume
-              );
-              if (directPnlCsvImportId) {
-                this.csvImportIdMap[directPnlCsvImportId] = file.path;
-              }
 
               this.tradeFileCache.set(cacheKey, {
                 path: file.path,
@@ -463,7 +346,6 @@ export class TradeSyncService {
   
   clearTradeFileCache(): void {
     this.tradeFileCache.clear();
-    this.csvImportIdMap = {};
     this.cacheBuilt = false;
   }
 
@@ -978,11 +860,6 @@ export class TradeSyncService {
   public async findExistingTradeFileFromCache(
     trade: Trade
   ): Promise<string | null> {
-    
-    if (trade.csvImportId && this.csvImportIdMap[trade.csvImportId]) {
-      return this.csvImportIdMap[trade.csvImportId];
-    }
-
     
     const existingPath = this.getValidatedFilePathForTrade(trade.id);
     if (existingPath) {

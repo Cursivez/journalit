@@ -123,6 +123,8 @@ export const DEFAULT_DASHBOARD_FILTERS: FilterState = {
   mistakes: [],
   tradeTypes: [...DEFAULT_REGULAR_ONLY_TRADE_TYPES],
   statuses: [],
+  reviewStatus: [],
+  directions: [],
   customFieldFilters: {},
 };
 
@@ -131,7 +133,9 @@ export const DEFAULT_TRADELOG_FILTERS: TradeLogFilters = {
   viewLevel: 'trades',
   tradeTypes: [...DEFAULT_ALL_TRADE_TYPES],
   statuses: [],
+  reviewStatus: [],
   accounts: [],
+  directions: [],
   tickers: [],
   setups: [],
   tags: [],
@@ -147,6 +151,8 @@ export const DEFAULT_REVIEW_FILTERS: UnifiedFilters = {
   mistakes: [],
   tradeTypes: [...DEFAULT_REGULAR_ONLY_TRADE_TYPES],
   statuses: [],
+  reviewStatus: [],
+  directions: [],
   customFieldFilters: {},
 };
 
@@ -160,6 +166,8 @@ export const createDashboardFilters = (): FilterState => ({
   mistakes: [...DEFAULT_DASHBOARD_FILTERS.mistakes],
   tradeTypes: [...DEFAULT_DASHBOARD_FILTERS.tradeTypes],
   statuses: [...DEFAULT_DASHBOARD_FILTERS.statuses],
+  reviewStatus: [...DEFAULT_DASHBOARD_FILTERS.reviewStatus],
+  directions: [...DEFAULT_DASHBOARD_FILTERS.directions],
   customFieldFilters: { ...DEFAULT_DASHBOARD_FILTERS.customFieldFilters },
 });
 
@@ -168,7 +176,9 @@ export const createTradeLogFilters = (): TradeLogFilters => ({
   dateRange: [...DEFAULT_TRADELOG_FILTERS.dateRange],
   tradeTypes: [...DEFAULT_TRADELOG_FILTERS.tradeTypes],
   statuses: [...DEFAULT_TRADELOG_FILTERS.statuses],
+  reviewStatus: [...DEFAULT_TRADELOG_FILTERS.reviewStatus],
   accounts: [...DEFAULT_TRADELOG_FILTERS.accounts],
+  directions: [...DEFAULT_TRADELOG_FILTERS.directions],
   tickers: [...DEFAULT_TRADELOG_FILTERS.tickers],
   setups: [...DEFAULT_TRADELOG_FILTERS.setups],
   tags: [...DEFAULT_TRADELOG_FILTERS.tags],
@@ -185,6 +195,8 @@ export const createReviewFilters = (): UnifiedFilters => ({
   mistakes: [...DEFAULT_REVIEW_FILTERS.mistakes],
   tradeTypes: [...DEFAULT_REVIEW_FILTERS.tradeTypes],
   statuses: [...DEFAULT_REVIEW_FILTERS.statuses],
+  reviewStatus: [...DEFAULT_REVIEW_FILTERS.reviewStatus],
+  directions: [...DEFAULT_REVIEW_FILTERS.directions],
   customFieldFilters: { ...DEFAULT_REVIEW_FILTERS.customFieldFilters },
 });
 
@@ -204,6 +216,12 @@ export const normalizeDashboardFilters = (
     mistakes: filters?.mistakes ? [...filters.mistakes] : defaults.mistakes,
     tradeTypes: normalizeDashboardTradeTypes(filters?.tradeTypes),
     statuses: filters?.statuses ? [...filters.statuses] : defaults.statuses,
+    reviewStatus: filters?.reviewStatus
+      ? [...filters.reviewStatus]
+      : defaults.reviewStatus,
+    directions: filters?.directions
+      ? [...filters.directions]
+      : defaults.directions,
     customFieldFilters: {
       ...(filters?.customFieldFilters || defaults.customFieldFilters),
     },
@@ -221,7 +239,13 @@ export const normalizeTradeLogFilters = (
     dateRange: filters?.dateRange ?? defaults.dateRange,
     tradeTypes: normalizeTradeLogTradeTypes(filters?.tradeTypes),
     statuses: filters?.statuses ? [...filters.statuses] : defaults.statuses,
+    reviewStatus: filters?.reviewStatus
+      ? [...filters.reviewStatus]
+      : defaults.reviewStatus,
     accounts: filters?.accounts ? [...filters.accounts] : defaults.accounts,
+    directions: filters?.directions
+      ? [...filters.directions]
+      : defaults.directions,
     tickers: filters?.tickers ? [...filters.tickers] : defaults.tickers,
     setups: filters?.setups ? [...filters.setups] : defaults.setups,
     tags: filters?.tags ? [...filters.tags] : defaults.tags,
@@ -247,6 +271,12 @@ export const normalizeReviewFilters = (
     mistakes: filters?.mistakes ? [...filters.mistakes] : defaults.mistakes,
     tradeTypes: normalizeReviewTradeTypes(filters?.tradeTypes),
     statuses: filters?.statuses ? [...filters.statuses] : defaults.statuses,
+    reviewStatus: filters?.reviewStatus
+      ? [...filters.reviewStatus]
+      : defaults.reviewStatus,
+    directions: filters?.directions
+      ? [...filters.directions]
+      : defaults.directions,
     customFieldFilters: {
       ...(filters?.customFieldFilters || defaults.customFieldFilters),
     },

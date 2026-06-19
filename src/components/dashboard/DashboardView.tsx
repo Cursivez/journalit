@@ -21,6 +21,10 @@ import {
 import { usePlugin } from '../../hooks/usePlugin';
 import { useLeafActive } from '../../hooks/useLeafActive';
 import { TradeType, TradeStatus } from '../../services/tradelog/types';
+import type {
+  DirectionFilter,
+  ReviewStatusFilter,
+} from '../../services/tradelog/types';
 import type { CustomFieldFilterSelections } from '../../types/customFields';
 import { useEventBusMultiple } from '../../hooks/useEventBus';
 import {
@@ -46,6 +50,8 @@ export interface FilterState {
   mistakes: string[];
   tradeTypes: TradeType[];
   statuses: TradeStatus[];
+  reviewStatus: ReviewStatusFilter[];
+  directions: DirectionFilter[];
   customFieldFilters: CustomFieldFilterSelections;
 }
 

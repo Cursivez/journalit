@@ -45,13 +45,15 @@ function normalizeTradeDirectionSide(
 export function getTradeDirectionDisplayKind(
   input: TradeDirectionInput
 ): TradeDirectionDisplayKind {
+  const assetType = normalizeText(input.assetType);
   const optionType = normalizeText(input.optionType);
-  if (optionType === 'call' || optionType === 'put') {
+  const shouldUseOptionType = assetType === 'options' || assetType === '';
+  if (shouldUseOptionType && (optionType === 'call' || optionType === 'put')) {
     return optionType;
   }
 
   const direction = normalizeText(input.direction);
-  if (direction === 'call' || direction === 'put') {
+  if (shouldUseOptionType && (direction === 'call' || direction === 'put')) {
     return direction;
   }
 

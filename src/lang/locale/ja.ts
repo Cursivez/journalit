@@ -136,6 +136,7 @@ const ja: Partial<Lang> = {
   'form.section.trade-details': 'トレード詳細',
   'form.section.trading-costs': '取引コスト',
   'form.section.risk-management': 'リスク管理',
+  'form.section.take-profits': 'Take Profits',
   'form.section.analysis-thesis': '分析＆トレード根拠',
 
   
@@ -159,6 +160,10 @@ const ja: Partial<Lang> = {
   'form.field.swap': 'スワップ',
   'form.field.other-fees': 'その他手数料',
   'form.field.stop-loss': 'ストップロス',
+  'form.field.take-profit': 'Take Profit',
+  'form.field.take-profit-short': 'TP',
+  'form.field.target-price': 'Target Price',
+  'form.field.close-percent': 'Close %',
   'form.field.risk-amount': 'リスク金額',
   'form.field.profit-loss': '損益',
   'form.field.total-pnl': '合計損益',
@@ -221,6 +226,8 @@ const ja: Partial<Lang> = {
   'form.placeholder.swap': 'オーバーナイト金利',
   'form.placeholder.other-fees': 'プラットフォーム/規制手数料',
   'form.placeholder.stop-loss': 'ストップロス価格（任意）',
+  'form.placeholder.target-price': 'Target price',
+  'form.placeholder.close-percent': '50%',
   'form.placeholder.risk-amount': '計画リスク金額',
   'form.placeholder.custom-tag': 'カスタムタグを入力してEnterを押す',
   'form.placeholder.thesis': 'このトレードの根拠を入力...',
@@ -269,6 +276,9 @@ const ja: Partial<Lang> = {
   'form.account-empty-state.create-account': '口座を作成',
   'form.account-empty-state.submit-disabled':
     'このトレードを保存するには先に口座を作成してください。',
+  'form.empty.take-profits': 'No take profit targets yet',
+  'form.action.add-take-profit': 'Add Take Profit',
+  'form.action.remove-take-profit': 'Remove take profit',
 
   
   
@@ -1061,6 +1071,8 @@ const ja: Partial<Lang> = {
   'trade-import.notice.template-saved': 'Trade Import template saved',
   'trade-import.notice.analyse-failed': 'Trade Import analyse failed',
   'trade-import.notice.preview-failed': 'Trade Import preview failed',
+  'trade-import.preview-error.guidance':
+    'すべての必須項目がマッピングされ、選択した日付形式がファイルと一致し、数値列に有効な取引値が含まれていることを確認してください。',
   'trade-import.notice.complete':
     'Trade Import complete: {written} written or updated, {duplicateCount} duplicates, {failedCount} failed',
   'trade-import.gate.sign-in':

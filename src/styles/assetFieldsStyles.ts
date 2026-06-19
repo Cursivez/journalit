@@ -67,12 +67,122 @@ export const ASSET_FIELDS_STYLES = `
     
     .trade-form-view-container .risk-management-section {
       margin-top: 20px;
+      border-top: 1px solid var(--background-modifier-border);
+      padding-top: 16px;
     }
 
     .trade-form-view-container .risk-fields {
       display: grid;
       grid-template-columns: repeat(2, 1fr);
       gap: 16px;
+    }
+
+    .trade-form-view-container .take-profits-section {
+      grid-column: 1 / -1;
+      padding: 0;
+    }
+
+    .trade-form-view-container .take-profits-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 8px;
+    }
+
+    .trade-form-view-container .take-profits-list {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin-bottom: 10px;
+    }
+
+    .trade-form-view-container .take-profit-row {
+      display: grid;
+      grid-template-columns: 40px minmax(0, 1fr) 140px 32px;
+      gap: 6px;
+      align-items: start;
+    }
+
+    .trade-form-view-container .take-profit-row-header {
+      color: var(--text-muted);
+      font-size: 12px;
+      font-weight: 600;
+      align-items: center;
+    }
+
+    .trade-form-view-container .take-profit-row .form-group {
+      margin-bottom: 0;
+    }
+
+    .trade-form-view-container .take-profit-row .input {
+      min-height: 32px;
+    }
+
+    .trade-form-view-container .take-profit-index-label {
+      display: flex;
+      align-items: center;
+      min-height: 32px;
+      color: var(--text-normal);
+      font-weight: 500;
+      padding-left: 2px;
+    }
+
+    .trade-form-view-container .take-profit-remove-button {
+      width: 32px;
+      height: 32px;
+      padding: 0;
+      margin-top: 0;
+      font-size: 20px;
+      line-height: 1;
+    }
+
+    .trade-form-view-container .take-profit-remove-button:hover {
+      color: var(--text-error);
+      border-color: var(--text-error);
+    }
+
+    .trade-form-view-container .take-profit-add-button {
+      margin: 0;
+      padding: 2px 6px;
+      color: var(--text-muted);
+      background: transparent;
+      box-shadow: none;
+      height: 24px;
+      min-height: 24px;
+      font-size: 13px;
+      font-weight: 500;
+      border-radius: 4px;
+    }
+
+    .trade-form-view-container .take-profit-add-button:hover {
+      color: var(--text-normal);
+      background: var(--background-modifier-hover);
+      text-decoration: none;
+    }
+
+    .trade-form-view-container .take-profits-empty-state {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      min-height: 42px;
+      border: 1px dashed var(--background-modifier-border);
+      border-radius: 6px;
+      background: transparent;
+      color: var(--text-faint);
+      font-size: 13px;
+    }
+
+    @media (max-width: 600px) {
+      .trade-form-view-container .risk-fields,
+      .trade-form-view-container .take-profit-row {
+        grid-template-columns: 1fr;
+      }
+
+      .trade-form-view-container .take-profit-row-header {
+        display: none;
+      }
     }
 
     

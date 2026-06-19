@@ -238,7 +238,7 @@ export class MissedTradeService extends CustomDataService {
         ) {
           
           if (this.plugin?.processorManager) {
-            await this.getPlugin().processorManager.getMissedTradeNoteProcessor(); 
+            await this.getPlugin().processorManager.getTradeNoteProcessor();
           }
 
           try {
@@ -387,6 +387,7 @@ export class MissedTradeService extends CustomDataService {
         frontmatterData.missedReason = data.missedReason || '';
       frontmatterData.commission = data.commission;
       frontmatterData.commissionType = data.commissionType;
+      frontmatterData.hasExplicitCommission = data.hasExplicitCommission;
       frontmatterData.fees = data.fees;
       frontmatterData.swap = data.swap;
       frontmatterData.rebate = data.rebate;
@@ -828,6 +829,9 @@ export class MissedTradeService extends CustomDataService {
       data.commissionType !== undefined
         ? `commissionType: ${data.commissionType}`
         : null,
+      data.hasExplicitCommission !== undefined
+        ? `hasExplicitCommission: ${data.hasExplicitCommission}`
+        : null,
       data.fees !== undefined ? `fees: ${data.fees}` : null,
 
       
@@ -920,6 +924,7 @@ export class MissedTradeService extends CustomDataService {
       'directPnL',
       'commission',
       'commissionType',
+      'hasExplicitCommission',
       'fees',
       'assetType',
       'thesis',

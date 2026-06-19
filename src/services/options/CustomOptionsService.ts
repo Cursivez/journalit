@@ -996,6 +996,7 @@ export class CustomOptionsService {
     assetType?: string;
     account?: string | string[];
     positionSize: number;
+    exitedPositionSize?: number;
     hasExit?: boolean;
   }): number | undefined {
     if (input.assetType === 'cfd') return undefined;
@@ -1020,14 +1021,17 @@ export class CustomOptionsService {
     const quantity = Math.abs(input.positionSize || 0);
     if (quantity <= 0) return undefined;
 
-    const perContract =
+    const commission =
       rule.method === 'roundTrip'
         ? input.hasExit === false
           ? 0
-          : rule.roundTripCommission || 0
-        : (rule.entryCommission || 0) +
-          (input.hasExit === false ? 0 : rule.exitCommission || 0);
-    const commission = perContract * quantity;
+          : (rule.roundTripCommission || 0) *
+            Math.abs(input.exitedPositionSize ?? input.positionSize ?? 0)
+        : (rule.entryCommission || 0) * quantity +
+          (input.hasExit === false
+            ? 0
+            : (rule.exitCommission || 0) *
+              Math.abs(input.exitedPositionSize ?? input.positionSize ?? 0));
     return commission > 0 ? commission : undefined;
   }
 

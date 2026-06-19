@@ -578,6 +578,65 @@ export const validateTradeForm = (
     }
   }
 
+  if (!isMissedTrade && !isBacktestTrade && data.takeProfits?.length) {
+    const takeProfitErrors = data.takeProfits.map((target) => {
+      const targetErrors: { price?: string; closePercent?: string } = {};
+      const hasPrice = target.price !== undefined && target.price !== null;
+      const hasClosePercent =
+        target.closePercent !== undefined && target.closePercent !== null;
+
+      if (hasPrice) {
+        if (typeof target.price !== 'number') {
+          targetErrors.price = t('trade.validation.take-profit-price-number');
+        } else if (!Number.isFinite(target.price)) {
+          targetErrors.price = t(
+            'trade.validation.take-profit-price-valid-number'
+          );
+        }
+      } else if (hasClosePercent) {
+        targetErrors.price = t('trade.validation.take-profit-price-required');
+      }
+
+      if (hasClosePercent) {
+        if (typeof target.closePercent !== 'number') {
+          targetErrors.closePercent = t(
+            'trade.validation.take-profit-close-percent-number'
+          );
+        } else if (!Number.isFinite(target.closePercent)) {
+          targetErrors.closePercent = t(
+            'trade.validation.take-profit-close-percent-valid-number'
+          );
+        } else if (target.closePercent <= 0 || target.closePercent > 100) {
+          targetErrors.closePercent = t(
+            'trade.validation.take-profit-close-percent-range'
+          );
+        }
+      }
+
+      return targetErrors;
+    });
+    const totalClosePercent = data.takeProfits.reduce(
+      (total, target) => total + (target.closePercent || 0),
+      0
+    );
+
+    if (totalClosePercent > 100) {
+      const firstTargetErrors = takeProfitErrors[0] || {};
+      firstTargetErrors.closePercent = t(
+        'trade.validation.take-profit-total-close-percent-range'
+      );
+      takeProfitErrors[0] = firstTargetErrors;
+    }
+
+    if (
+      takeProfitErrors.some(
+        (targetErrors) => targetErrors.price || targetErrors.closePercent
+      )
+    ) {
+      errors.takeProfits = takeProfitErrors;
+    }
+  }
+
   return errors;
 };
 

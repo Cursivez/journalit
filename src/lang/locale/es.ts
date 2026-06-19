@@ -112,6 +112,7 @@ const es: Lang = {
   'form.section.trade-details': 'Detalles de la Operación',
   'form.section.trading-costs': 'Costos de Trading',
   'form.section.risk-management': 'Gestión de Riesgo',
+  'form.section.take-profits': 'Take Profits',
   'form.section.analysis-thesis': 'Análisis y Tesis',
 
   
@@ -141,6 +142,10 @@ const es: Lang = {
     'Costo de financiamiento nocturno cargado/acreditado por mantener posiciones',
   'form.field.other-fees': 'Otros Cargos',
   'form.field.stop-loss': 'Stop Loss',
+  'form.field.take-profit': 'Take Profit',
+  'form.field.take-profit-short': 'TP',
+  'form.field.target-price': 'Target Price',
+  'form.field.close-percent': 'Close %',
   'form.field.risk-amount': 'Monto en Riesgo',
   'form.field.profit-loss': 'Ganancia/Pérdida',
   'form.field.total-pnl': 'P&L Total',
@@ -207,6 +212,8 @@ const es: Lang = {
   'form.placeholder.dividend-amount':
     'Importe en efectivo, positivo o negativo',
   'form.placeholder.stop-loss': 'Precio de stop loss opcional',
+  'form.placeholder.target-price': 'Target price',
+  'form.placeholder.close-percent': '50%',
   'form.placeholder.risk-amount': 'Riesgo planificado en moneda',
   'form.placeholder.custom-tag': 'Escribe una etiqueta y presiona Enter',
   'form.placeholder.thesis': 'Ingresa tu tesis para esta operación...',
@@ -336,6 +343,9 @@ const es: Lang = {
   'form.account-empty-state.create-account': 'Crear Cuenta',
   'form.account-empty-state.submit-disabled':
     'Crea una cuenta primero para guardar esta operación.',
+  'form.empty.take-profits': 'No take profit targets yet',
+  'form.action.add-take-profit': 'Add Take Profit',
+  'form.action.remove-take-profit': 'Remove take profit',
   'form.error.image-upload-unavailable': 'Carga de imagen no disponible',
 
   
@@ -501,6 +511,20 @@ const es: Lang = {
   'trade.validation.stop-loss-number': 'El stop loss debe ser un número.',
   'trade.validation.stop-loss-valid-number':
     'El stop loss debe ser un número válido.',
+  'trade.validation.take-profit-price-required':
+    'Take profit price is required.',
+  'trade.validation.take-profit-price-number':
+    'Take profit price must be a number.',
+  'trade.validation.take-profit-price-valid-number':
+    'Take profit price must be a valid number.',
+  'trade.validation.take-profit-close-percent-number':
+    'Take profit close percent must be a number.',
+  'trade.validation.take-profit-close-percent-valid-number':
+    'Take profit close percent must be a valid number.',
+  'trade.validation.take-profit-close-percent-range':
+    'Take profit close percent must be between 1 and 100.',
+  'trade.validation.take-profit-total-close-percent-range':
+    'Take profit close percentages cannot exceed 100.',
   'validation.custom-field.key-empty':
     'La clave del campo no puede estar vacía',
   'validation.custom-field.key-conflict':
@@ -933,6 +957,8 @@ const es: Lang = {
 
   'tradelog.filter.all': 'Todas',
   'tradelog.filter.all.desc': 'Todos los estados de operación',
+  'tradelog.filter.all-review-statuses': 'Todas las revisiones',
+  'tradelog.filter.all-directions': 'Todas las direcciones',
   'tradelog.filter.winners': 'Ganadoras',
   'tradelog.filter.winners.desc': 'Operaciones ganadoras',
   'tradelog.filter.losers': 'Perdedoras',
@@ -4962,6 +4988,12 @@ const es: Lang = {
   'home.widget.goals-progress.target': 'Meta',
   'home.widget.goals-progress.tracks-lifetime': 'Rastrea el total de por vida',
   'home.widget.goals-progress.use-r-multiples': 'Usar múltiplos de R',
+  'home.widget.goals-progress.account-aware': 'Objetivos por cuenta',
+  'home.widget.goals-progress.no-target-selected':
+    'Sin objetivo para la cuenta seleccionada',
+  'home.widget.goals-progress.configured-for': 'Configurado para {accounts}',
+  'home.widget.goals-progress.account-scope': 'Account scope',
+  'home.widget.goals-progress.add-account': 'Add account',
   'home.widget.goals-progress.click-to-set':
     'Haz clic para establecer una meta',
   'home.widget.goals-progress.header.pnl': 'Meta de P&L',
@@ -5026,6 +5058,11 @@ const es: Lang = {
   'home.widget.drawdown.unable-to-load': 'No se pudo cargar',
   'home.widget.drawdown.no-accounts': 'Sin cuentas con límites',
 
+  'home.widget.profit-target.title': 'Objetivo de ganancias',
+  'home.widget.profit-target.achieved': 'Logrado',
+  'home.widget.profit-target.remaining': 'restante',
+  'home.widget.profit-target.unable-to-load': 'No se pudo cargar',
+  'home.widget.profit-target.no-accounts': 'Sin cuentas con objetivos',
   
   'home.widget.recent.title': 'Reciente',
   'home.widget.recent.unknown': 'Desconocido',
@@ -5217,6 +5254,9 @@ const es: Lang = {
   'home.widget.drawdown-monitor.name': 'Monitor de Drawdown',
   'home.widget.drawdown-monitor.description':
     'Rastrea el estado de drawdown en cuentas con límites configurados',
+  'home.widget.profit-target-widget.name': 'Objetivo de ganancias',
+  'home.widget.profit-target-widget.description':
+    'Sigue el progreso de objetivos de ganancias en cuentas',
 
   
   
@@ -5719,6 +5759,11 @@ const es: Lang = {
   'filter.modal.status.breakeven': 'Sin Cambio',
   'filter.modal.status.open': 'Abierta',
   'filter.modal.status.closed': 'Cerrada',
+  'filter.modal.review-status': 'Review Status',
+  'filter.modal.review-status.reviewed': 'Reviewed',
+  'filter.modal.review-status.unreviewed': 'Unreviewed',
+  'filter.modal.direction.long-call': 'Long/Call',
+  'filter.modal.direction.short-put': 'Short/Put',
   'filter.modal.section.custom-fields': 'Custom Fields',
   'filter.modal.custom-field.n-selected': '{count} selected',
   'filter.modal.custom-field.none-available': 'No values available',
@@ -6681,6 +6726,8 @@ const es: Lang = {
   'trade-import.notice.template-saved': 'Trade Import template saved',
   'trade-import.notice.analyse-failed': 'Trade Import analyse failed',
   'trade-import.notice.preview-failed': 'Trade Import preview failed',
+  'trade-import.preview-error.guidance':
+    'Comprueba que todos los campos obligatorios estén asignados, que el formato de fecha seleccionado coincida con tu archivo y que las columnas numéricas contengan valores de operación válidos.',
   'trade-import.notice.complete':
     'Trade Import complete: {written} written or updated, {duplicateCount} duplicates, {failedCount} failed',
   'trade-import.gate.sign-in':

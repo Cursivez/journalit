@@ -32,6 +32,7 @@ import {
   getCustomFieldDisplayValues,
   getCustomFieldRawValue,
 } from './customFieldDisplay';
+import { getTradeDirectionDisplayKind } from '../../services/trade/core/TradeDirection';
 
 export type SortDirection = 'asc' | 'desc';
 
@@ -621,6 +622,53 @@ function sortByMfePercent(
   return sortByMaeMfePercent(nodes, direction, 'mfe', 'mfePrice');
 }
 
+function sortByReviewed(
+  nodes: TimeNode[],
+  direction: SortDirection
+): TimeNode[] {
+  return [...nodes].sort((a, b) => {
+    if (a.type !== 'trade' || b.type !== 'trade') return 0;
+
+    const reviewedA = asTradeRecord(a.trade)?.reviewed === true ? 1 : 0;
+    const reviewedB = asTradeRecord(b.trade)?.reviewed === true ? 1 : 0;
+
+    return direction === 'asc' ? reviewedA - reviewedB : reviewedB - reviewedA;
+  });
+}
+
+function sortByDirection(
+  nodes: TimeNode[],
+  direction: SortDirection
+): TimeNode[] {
+  const ascendingDirectionRank: Record<string, number> = {
+    long: 0,
+    call: 1,
+    short: 2,
+    put: 3,
+    unknown: 4,
+  };
+  const descendingDirectionRank: Record<string, number> = {
+    short: 0,
+    put: 1,
+    long: 2,
+    call: 3,
+    unknown: 4,
+  };
+  const directionRank =
+    direction === 'asc' ? ascendingDirectionRank : descendingDirectionRank;
+
+  return [...nodes].sort((a, b) => {
+    if (a.type !== 'trade' || b.type !== 'trade') return 0;
+
+    const valueA = getTradeDirectionDisplayKind(asTradeRecord(a.trade) ?? {});
+    const valueB = getTradeDirectionDisplayKind(asTradeRecord(b.trade) ?? {});
+    const rankA = directionRank[valueA];
+    const rankB = directionRank[valueB];
+
+    return rankA - rankB;
+  });
+}
+
 
 export function applySorting(
   nodes: TimeNode[],
@@ -670,6 +718,10 @@ export function applySorting(
       return sortByMfePercent(nodes, sortConfig.direction);
     case 'returnPercent':
       return sortByReturnPercent(nodes, sortConfig.direction);
+    case 'reviewed':
+      return sortByReviewed(nodes, sortConfig.direction);
+    case 'direction':
+      return sortByDirection(nodes, sortConfig.direction);
     case 'priceMove':
       return sortByPriceMove(nodes, sortConfig.direction);
     case 'expirationDate':

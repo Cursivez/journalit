@@ -155,6 +155,7 @@ export const RESERVED_FRONTMATTER_KEYS = new Set([
   'riskAmount',
   'rMultiple',
   'stopLoss',
+  'takeProfits',
   'currency',
   'customFields',
   'customTags',

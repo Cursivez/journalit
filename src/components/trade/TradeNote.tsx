@@ -31,6 +31,7 @@ import {
   fetchBreakEvenAccountBalanceLookup,
   resolveBreakEvenAccountBalances,
 } from '../../services/trade/core/BreakEvenAccountBalance';
+import { DisplayPolicyProvider } from '../../contexts/DisplayPolicyContext';
 
 const TRADE_NAV_CACHE_PREFIX = 'trade-nav-';
 
@@ -59,6 +60,15 @@ const parseTradeNavigationCache = (
         )
       : [],
   };
+};
+
+const getKeyedTextLines = (text: string) => {
+  const occurrences = new Map<string, number>();
+  return text.split('\n').map((line) => {
+    const occurrence = (occurrences.get(line) ?? 0) + 1;
+    occurrences.set(line, occurrence);
+    return { line, key: `${line}-${occurrence}` };
+  });
 };
 
 interface TradeNoteProps {
@@ -185,7 +195,26 @@ export const TradeNote: React.FC<TradeNoteProps> = React.memo(
     
     const updateLossReview = useCallback(
       async (newData: LossReviewData) => {
-        if (plugin?.tradeService && filePath && filePath !== 'unknown') {
+        if (!plugin || !filePath || filePath === 'unknown') return;
+
+        if (data.isMissedTrade === true) {
+          if (!plugin.missedTradeService) return;
+
+          try {
+            await plugin.missedTradeService.updateMissedTradeReview(
+              filePath,
+              newData
+            );
+          } catch (error: unknown) {
+            console.error(
+              '[TradeNote] Error updating missed trade review:',
+              error
+            );
+          }
+          return;
+        }
+
+        if (plugin.tradeService) {
           try {
             await plugin.tradeService.updateLossReview(
               filePath,
@@ -197,7 +226,7 @@ export const TradeNote: React.FC<TradeNoteProps> = React.memo(
           }
         }
       },
-      [plugin, filePath]
+      [plugin, filePath, data.isMissedTrade]
     );
 
     
@@ -263,27 +292,36 @@ export const TradeNote: React.FC<TradeNoteProps> = React.memo(
       };
     }, [tradeTemplate, metrics.isLoss]);
 
-    
     useEffect(() => {
       
-
       
-      
-      if (containerRef.current) {
-        containerRef.current.classList.add('trade-note-mounted');
-        containerRef.current.setAttribute(
-          'data-mounted-at',
-          Date.now().toString()
-        );
+      const container = containerRef.current;
+      if (container) {
+        container.classList.add('trade-note-mounted');
+        container.setAttribute('data-mounted-at', Date.now().toString());
 
-        
-        const parentContainer = containerRef.current.closest(
-          '.journalit-trade-view'
-        );
+        const parentContainer = container.closest('.journalit-trade-view');
         if (parentContainer) {
           parentContainer.classList.add('trade-note-mounted');
+          parentContainer.setAttribute(
+            'data-mounted-at',
+            Date.now().toString()
+          );
+          parentContainer.removeAttribute('data-rendering-started-at');
         }
+
+        return () => {
+          container.classList.remove('trade-note-mounted');
+          container.removeAttribute('data-mounted-at');
+
+          if (parentContainer) {
+            parentContainer.classList.remove('trade-note-mounted');
+            parentContainer.removeAttribute('data-mounted-at');
+          }
+        };
       }
+
+      return undefined;
     }, []);
 
     
@@ -367,7 +405,10 @@ export const TradeNote: React.FC<TradeNoteProps> = React.memo(
 
     
     const handleMarkReviewed = useCallback(async () => {
-      if (plugin?.tradeService && filePath && filePath !== 'unknown') {
+      if (plugin && filePath && filePath !== 'unknown') {
+        if (data.isMissedTrade === true && !plugin.missedTradeService) return;
+        if (data.isMissedTrade !== true && !plugin.tradeService) return;
+
         const timestamp = new Date().toISOString();
 
         
@@ -376,14 +417,21 @@ export const TradeNote: React.FC<TradeNoteProps> = React.memo(
           reviewedAt: timestamp,
         });
 
-        
         try {
-          await plugin.tradeService.updateTradeReviewStatus(
-            filePath,
-            true,
-            timestamp,
-            'user-input'
-          );
+          if (data.isMissedTrade === true) {
+            await plugin.missedTradeService.updateMissedTradeReviewStatus(
+              filePath,
+              true,
+              timestamp
+            );
+          } else {
+            await plugin.tradeService.updateTradeReviewStatus(
+              filePath,
+              true,
+              timestamp,
+              'user-input'
+            );
+          }
           
         } catch (error: unknown) {
           console.error('[TradeNote] Error updating review status:', error);
@@ -394,7 +442,39 @@ export const TradeNote: React.FC<TradeNoteProps> = React.memo(
           });
         }
       }
-    }, [plugin, filePath, data.reviewed, data.reviewedAt]);
+    }, [plugin, filePath, data.reviewed, data.reviewedAt, data.isMissedTrade]);
+
+    const tradeHeader = (
+      <TradeHeader
+        instrument={data.instrument}
+        direction={data.direction}
+        isProfit={metrics.isProfit}
+        isBreakeven={metrics.isBreakeven}
+        pnl={metrics.pnl}
+        percentChange={metrics.percentChange}
+        useDirectPnLInput={data.useDirectPnLInput}
+        directPnL={data.directPnL}
+        isMissedTrade={data.isMissedTrade}
+        isBacktestTrade={data.isBacktestTrade}
+        _originalPnlWasNull={data._originalPnlWasNull}
+        exitTime={data.exitTime}
+        exitPrice={data.exitPrice}
+        tradeStatus={data.tradeStatus}
+        entries={data.entries}
+        exits={data.exits}
+        dividends={data.dividends}
+        commission={data.commission}
+        swap={data.swap}
+        fees={data.fees}
+        rebate={data.rebate}
+        assetType={data.assetType}
+        optionType={data.optionType}
+        rMultiple={data.rMultiple}
+        displayRMultiples={plugin?.settings?.trade?.displayRMultiples ?? false}
+        riskAmount={data.riskAmount}
+        currency={data.currency}
+      />
+    );
 
     return (
       <div
@@ -403,37 +483,13 @@ export const TradeNote: React.FC<TradeNoteProps> = React.memo(
         data-file-path={filePath}
       >
         
-        <TradeHeader
-          instrument={data.instrument}
-          direction={data.direction}
-          isProfit={metrics.isProfit}
-          isBreakeven={metrics.isBreakeven}
-          pnl={metrics.pnl}
-          percentChange={metrics.percentChange}
-          useDirectPnLInput={data.useDirectPnLInput}
-          directPnL={data.directPnL}
-          isMissedTrade={data.isMissedTrade}
-          isBacktestTrade={data.isBacktestTrade}
-          _originalPnlWasNull={data._originalPnlWasNull}
-          exitTime={data.exitTime}
-          exitPrice={data.exitPrice}
-          tradeStatus={data.tradeStatus}
-          entries={data.entries}
-          exits={data.exits}
-          dividends={data.dividends}
-          commission={data.commission}
-          swap={data.swap}
-          fees={data.fees}
-          rebate={data.rebate}
-          assetType={data.assetType}
-          optionType={data.optionType}
-          rMultiple={data.rMultiple}
-          displayRMultiples={
-            plugin?.settings?.trade?.displayRMultiples ?? false
-          }
-          riskAmount={data.riskAmount}
-          currency={data.currency}
-        />
+        {data.isMissedTrade === true ? (
+          <DisplayPolicyProvider privacyModeOverride={false}>
+            {tradeHeader}
+          </DisplayPolicyProvider>
+        ) : (
+          tradeHeader
+        )}
 
         
         {tradeTemplate?.sections?.navigation?.show !== false &&
@@ -480,6 +536,24 @@ export const TradeNote: React.FC<TradeNoteProps> = React.memo(
             />
           )}
 
+          {data.isMissedTrade === true && data.missedReason && (
+            <div className="missed-trade-reason-section">
+              <div className="details-card">
+                <h4>{t('missed-trade.reason-title')}</h4>
+                <div className="missed-trade-reason-content">
+                  {getKeyedTextLines(data.missedReason).map(
+                    (item, index, lines) => (
+                      <React.Fragment key={item.key}>
+                        {item.line}
+                        {index < lines.length - 1 && <br />}
+                      </React.Fragment>
+                    )
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+
           
           {(() => {
             
@@ -494,6 +568,10 @@ export const TradeNote: React.FC<TradeNoteProps> = React.memo(
               const showForBacktest =
                 tradeTemplate?.sections?.review?.showForBacktest ?? false;
               if (!showForBacktest) return false;
+            }
+
+            if (data.isMissedTrade) {
+              return tradeTemplate?.sections?.review?.showForMissed ?? false;
             }
 
             

@@ -137,6 +137,7 @@ const ptBR: Partial<Lang> = {
   'form.section.trade-details': 'Detalhes da Operação',
   'form.section.trading-costs': 'Custos de Operação',
   'form.section.risk-management': 'Gestão de Risco',
+  'form.section.take-profits': 'Take Profits',
   'form.section.analysis-thesis': 'Análise e Tese',
 
   
@@ -160,6 +161,10 @@ const ptBR: Partial<Lang> = {
   'form.field.swap': 'Swap',
   'form.field.other-fees': 'Outras Taxas',
   'form.field.stop-loss': 'Stop Loss',
+  'form.field.take-profit': 'Take Profit',
+  'form.field.take-profit-short': 'TP',
+  'form.field.target-price': 'Target Price',
+  'form.field.close-percent': 'Close %',
   'form.field.risk-amount': 'Valor em Risco',
   'form.field.profit-loss': 'Lucro/Prejuízo',
   'form.field.total-pnl': 'L&P Total',
@@ -222,6 +227,8 @@ const ptBR: Partial<Lang> = {
   'form.placeholder.swap': 'Financiamento overnight',
   'form.placeholder.other-fees': 'Taxas de plataforma/regulatórias',
   'form.placeholder.stop-loss': 'Preço de stop loss opcional',
+  'form.placeholder.target-price': 'Target price',
+  'form.placeholder.close-percent': '50%',
   'form.placeholder.risk-amount': 'Risco planejado em moeda',
   'form.placeholder.custom-tag': 'Digite uma tag e pressione Enter',
   'form.placeholder.thesis': 'Digite sua tese para esta operação...',
@@ -271,6 +278,9 @@ const ptBR: Partial<Lang> = {
   'form.account-empty-state.create-account': 'Criar Conta',
   'form.account-empty-state.submit-disabled':
     'Crie uma conta primeiro para salvar esta operação.',
+  'form.empty.take-profits': 'No take profit targets yet',
+  'form.action.add-take-profit': 'Add Take Profit',
+  'form.action.remove-take-profit': 'Remove take profit',
 
   
   
@@ -1133,6 +1143,8 @@ const ptBR: Partial<Lang> = {
   'trade-import.notice.template-saved': 'Trade Import template saved',
   'trade-import.notice.analyse-failed': 'Trade Import analyse failed',
   'trade-import.notice.preview-failed': 'Trade Import preview failed',
+  'trade-import.preview-error.guidance':
+    'Verifique se todos os campos obrigatórios estão mapeados, se o formato de data selecionado corresponde ao arquivo e se as colunas numéricas contêm valores de trade válidos.',
   'trade-import.notice.complete':
     'Trade Import complete: {written} written or updated, {duplicateCount} duplicates, {failedCount} failed',
   'trade-import.gate.sign-in':

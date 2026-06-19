@@ -1079,7 +1079,9 @@ const useTradeLogController = ({ plugin, leaf }: TradeLogProps) => {
           activeFilters.setups,
           activeFilters.tags,
           activeFilters.mistakes,
-          activeFilters.customFieldFilters
+          activeFilters.customFieldFilters,
+          activeFilters.reviewStatus,
+          activeFilters.directions
         );
 
         if (loadGenerationRef.current !== loadGeneration) {

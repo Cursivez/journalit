@@ -79,6 +79,9 @@ const getErrorMessage = (error: unknown): string =>
 const asUnknownArray = (value: unknown): unknown[] | null =>
   Array.isArray(value) ? value : null;
 
+const hasOwnRecordKey = (record: object, key: string): boolean =>
+  Object.keys(record).includes(key);
+
 function findYamlSeparator(line: string): number {
   return line.search(/:/);
 }
@@ -629,6 +632,61 @@ export class BackendIntegrationService {
 
                 if (wasOpen && isNowClosed) {
                   batchResults.push(trade); 
+                  continue;
+                }
+
+                const storedStopLoss = Number(frontmatter.stopLoss);
+                const hasBackendStopLoss = trade.stop_loss !== undefined;
+                const backendStopLoss = this.normalizeMetaTraderRiskTarget(
+                  trade.stop_loss
+                );
+                if (
+                  hasBackendStopLoss &&
+                  (backendStopLoss === undefined
+                    ? Number.isFinite(storedStopLoss)
+                    : !Number.isFinite(storedStopLoss) ||
+                      storedStopLoss !== backendStopLoss)
+                ) {
+                  batchResults.push(trade);
+                  continue;
+                }
+
+                const hasStoredTakeProfits = hasOwnRecordKey(
+                  frontmatter,
+                  'takeProfits'
+                );
+                const takeProfitsValue = asUnknownArray(
+                  frontmatter.takeProfits
+                );
+                const storedTakeProfit = takeProfitsValue
+                  ? (() => {
+                      const firstTakeProfit = takeProfitsValue[0];
+                      return isRecord(firstTakeProfit)
+                        ? Number(firstTakeProfit.price)
+                        : Number.NaN;
+                    })()
+                  : Number.NaN;
+                const hasBackendTakeProfit = trade.take_profit !== undefined;
+                const backendTakeProfit = this.normalizeMetaTraderRiskTarget(
+                  trade.take_profit
+                );
+                if (
+                  hasBackendTakeProfit &&
+                  (backendTakeProfit === undefined
+                    ? hasStoredTakeProfits
+                    : !Number.isFinite(storedTakeProfit) ||
+                      storedTakeProfit !== backendTakeProfit)
+                ) {
+                  batchResults.push(trade);
+                  continue;
+                }
+
+                if (
+                  backendStopLoss !== undefined &&
+                  this.resolveAssetTypeForSync(trade) === 'forex' &&
+                  !Number.isFinite(Number(frontmatter.lotSize))
+                ) {
+                  batchResults.push(trade);
                   continue;
                 }
               }
@@ -1330,6 +1388,14 @@ export class BackendIntegrationService {
     return trimmed.length > 0 ? trimmed : undefined;
   }
 
+  private normalizeMetaTraderRiskTarget(
+    value: number | null | undefined
+  ): number | undefined {
+    return value !== undefined && value !== null && value !== 0
+      ? value
+      : undefined;
+  }
+
   private normalizeStoredMTComment(comment: unknown): string | undefined {
     const trimmed = this.normalizeBackendMTComment(comment);
     if (!trimmed) {
@@ -1682,9 +1748,13 @@ export class BackendIntegrationService {
             )
         : [];
 
+    const hasBackendStopLoss = trade.stop_loss !== undefined;
+    const hasBackendTakeProfit = trade.take_profit !== undefined;
+    const stopLoss = this.normalizeMetaTraderRiskTarget(trade.stop_loss);
+    const takeProfit = this.normalizeMetaTraderRiskTarget(trade.take_profit);
+
     const mapped: TradeData = {
       backendTradeId: trade.id,
-      csvImportId: trade.csvImportId,
       executionLedgerVersion: trade.executionLedgerVersion,
       executionIds: trade.executionIds,
       entryTime,
@@ -1714,6 +1784,13 @@ export class BackendIntegrationService {
       commissionType: 'fixed',
       swap: trade.swap ?? 0,
       fees: trade.fees ?? 0,
+      ...(hasBackendStopLoss && { stopLoss }),
+      ...(hasBackendTakeProfit && {
+        takeProfits:
+          takeProfit !== undefined
+            ? [{ price: takeProfit, closePercent: 100 }]
+            : [],
+      }),
       currency: trade.currency,
       customFields: trade.customFields,
       useDirectPnLInput,
@@ -1737,7 +1814,8 @@ export class BackendIntegrationService {
       dollarPerPoint: trade.dollarPerPoint,
       tickSize: trade.tickSize,
       tickValue: trade.tickValue,
-      lotSize: trade.lotSize,
+      lotSize:
+        assetType === 'forex' ? (trade.lotSize ?? 100000) : trade.lotSize,
       pipValue: trade.pipValue,
     };
 
@@ -1955,6 +2033,107 @@ export class BackendIntegrationService {
         trade,
         currentTrade
       );
+      if (tradeData.instrument && tradeData.assetType) {
+        await this.ensureSyncedInstrumentOption(
+          tradeData.instrument,
+          tradeData.assetType
+        );
+      }
+
+      const updatedPath = await tradeService.updateTrade(
+        tradeData,
+        file.path,
+        'backend-sync'
+      );
+
+      if (updatedPath !== file.path) {
+        this.tradeSyncService.addMapping(trade.id, updatedPath);
+        const saved = await this.tradeSyncService.saveSyncMapping();
+        if (!saved) {
+          console.warn(
+            `Failed to save relocated mapping for trade ${trade.id}`
+          );
+        }
+      }
+
+      await this.migrateLegacySyncedNoteBody(updatedPath, trade.notes);
+
+      return 'updated';
+    }
+
+    const hasBackendStopLoss = trade.stop_loss !== undefined;
+    const hasBackendTakeProfit = trade.take_profit !== undefined;
+    const backendStopLoss = this.normalizeMetaTraderRiskTarget(trade.stop_loss);
+    const backendTakeProfit = this.normalizeMetaTraderRiskTarget(
+      trade.take_profit
+    );
+    const storedStopLoss = Number(existingFrontmatter?.stopLoss);
+    const stopLossChanged =
+      hasBackendStopLoss &&
+      (backendStopLoss === undefined
+        ? Number.isFinite(storedStopLoss)
+        : !Number.isFinite(storedStopLoss) ||
+          storedStopLoss !== backendStopLoss);
+    const hasStoredTakeProfits = hasOwnRecordKey(
+      existingFrontmatter ?? {},
+      'takeProfits'
+    );
+    const existingTakeProfits = asUnknownArray(
+      existingFrontmatter?.takeProfits
+    );
+    const storedTakeProfit = existingTakeProfits
+      ? (() => {
+          const firstTakeProfit = existingTakeProfits[0];
+          return isRecord(firstTakeProfit)
+            ? Number(firstTakeProfit.price)
+            : Number.NaN;
+        })()
+      : Number.NaN;
+    const takeProfitChanged =
+      hasBackendTakeProfit &&
+      (backendTakeProfit === undefined
+        ? hasStoredTakeProfits
+        : !Number.isFinite(storedTakeProfit) ||
+          storedTakeProfit !== backendTakeProfit);
+    const forexLotSizeMissing =
+      backendStopLoss !== undefined &&
+      this.resolveAssetTypeForSync(trade) === 'forex' &&
+      !Number.isFinite(Number(existingFrontmatter?.lotSize));
+
+    if (stopLossChanged || takeProfitChanged || forexLotSizeMissing) {
+      const tradeService = this.plugin.tradeService;
+      if (!tradeService) {
+        throw new Error('TradeService is unavailable during backend sync');
+      }
+
+      const existingTradeData = await extractCanonicalTradeData(
+        tradeService,
+        file
+      );
+      if (!existingTradeData) {
+        console.warn(
+          `[BackendIntegrationService] Could not extract canonical trade data for synced risk update: ${file.path}`
+        );
+        return 'skipped';
+      }
+
+      const tradeData: TradeData = {
+        ...existingTradeData,
+        authoritativePnl:
+          trade.status === 'CLOSED'
+            ? (trade.profit_loss ?? existingTradeData.originalPnl)
+            : undefined,
+        ...(hasBackendStopLoss && { stopLoss: backendStopLoss }),
+        ...(hasBackendTakeProfit && {
+          takeProfits:
+            backendTakeProfit !== undefined
+              ? [{ price: backendTakeProfit, closePercent: 100 }]
+              : [],
+        }),
+        ...(this.resolveAssetTypeForSync(trade) === 'forex' && {
+          lotSize: trade.lotSize ?? existingTradeData.lotSize ?? 100000,
+        }),
+      };
       if (tradeData.instrument && tradeData.assetType) {
         await this.ensureSyncedInstrumentOption(
           tradeData.instrument,

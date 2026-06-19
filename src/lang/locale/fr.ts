@@ -199,6 +199,7 @@ const fr: Lang = {
   'form.section.trade-details': 'Détails du trade',
   'form.section.trading-costs': 'Frais de trading',
   'form.section.risk-management': 'Gestion des risques',
+  'form.section.take-profits': 'Objectifs de gain',
   'form.section.analysis-thesis': 'Analyse & Thèse',
   'form.section.custom-fields': 'Champs personnalisés',
   'form.section.custom-fields-desc':
@@ -236,6 +237,10 @@ const fr: Lang = {
     'Coût de financement au jour le jour facturé/crédité pour le maintien de positions',
   'form.field.other-fees': 'Autres frais',
   'form.field.stop-loss': 'Stop-loss',
+  'form.field.take-profit': 'Objectif de gain',
+  'form.field.take-profit-short': 'N°',
+  'form.field.target-price': 'Prix cible',
+  'form.field.close-percent': '% clôturé',
   'form.field.risk-amount': 'Montant du risque',
   'form.field.profit-loss': 'Bénéfice/Perte',
   'form.field.total-pnl': 'P&L de base du trade',
@@ -262,6 +267,9 @@ const fr: Lang = {
   'form.account-empty-state.create-account': 'Créer un compte',
   'form.account-empty-state.submit-disabled':
     'Créez d’abord un compte pour enregistrer ce trade.',
+  'form.empty.take-profits': 'Aucun objectif de gain pour le moment',
+  'form.action.add-take-profit': 'Ajouter un take profit',
+  'form.action.remove-take-profit': 'Supprimer le take profit',
   'form.field.position-size': 'Taille de position',
   'form.field.position-size.shares': 'Actions',
   'form.field.position-size.contracts': 'Contrats',
@@ -315,6 +323,8 @@ const fr: Lang = {
   'form.placeholder.other-fees': 'Frais de plateforme/réglementation',
   'form.placeholder.dividend-amount': 'Montant en espèces, positif ou négatif',
   'form.placeholder.stop-loss': 'Prix ​​​​stop-loss en option',
+  'form.placeholder.target-price': 'Prix cible',
+  'form.placeholder.close-percent': '50 pour cent',
   'form.placeholder.risk-amount': 'Risque prévu en devise',
   'form.placeholder.custom-tag':
     'Tapez une balise personnalisée et appuyez sur Entrée',
@@ -500,6 +510,19 @@ const fr: Lang = {
   'trade.validation.stop-loss-number': 'Le stop-loss doit être un nombre.',
   'trade.validation.stop-loss-valid-number':
     'Le stop-loss doit être un nombre valide.',
+  'trade.validation.take-profit-price-required': 'Le prix cible est requis.',
+  'trade.validation.take-profit-price-number':
+    'Take profit price must be a number.',
+  'trade.validation.take-profit-price-valid-number':
+    'Take profit price must be a valid number.',
+  'trade.validation.take-profit-close-percent-number':
+    'Take profit close percent must be a number.',
+  'trade.validation.take-profit-close-percent-valid-number':
+    'Take profit close percent must be a valid number.',
+  'trade.validation.take-profit-close-percent-range':
+    'Take profit close percent must be between 1 and 100.',
+  'trade.validation.take-profit-total-close-percent-range':
+    'Les pourcentages de clôture des objectifs ne peuvent pas dépasser 100.',
   'validation.custom-field.key-empty': 'La clé du champ ne peut pas être vide',
   'validation.custom-field.key-conflict':
     'Ce nom de champ est en conflit avec les champs de trading intégrés',
@@ -900,6 +923,8 @@ const fr: Lang = {
   'tradelog.node.performance.period': "{indicator} période d'exécution",
   'tradelog.filter.all': 'Tous les statuts',
   'tradelog.filter.all.desc': 'Tous les statuts de trading',
+  'tradelog.filter.all-review-statuses': 'Toutes revues',
+  'tradelog.filter.all-directions': 'Toutes directions',
   'tradelog.filter.winners': 'Gagnantes',
   'tradelog.filter.winners.desc': 'Des trades gagnants',
   'tradelog.filter.losers': 'Perdantes',
@@ -3326,6 +3351,9 @@ const fr: Lang = {
     'Masque les valeurs sensibles de trading, de compte, de prix et de performance dans l’interface sans modifier les données enregistrées.',
   'settings.general.privacy-mode-aria':
     'Activer ou désactiver le mode confidentialité',
+  'home.widget.profit-target-widget.name': 'Objectif de profit',
+  'home.widget.profit-target-widget.description':
+    'Suivre la progression des objectifs de profit des comptes',
 
   'settings.general.home-view-settings': "Paramètres d'affichage de l'accueil",
   'settings.general.home-auto-open':
@@ -5088,6 +5116,12 @@ const fr: Lang = {
   'home.widget.goals-progress.tracks-lifetime':
     'Suivi du total de la durée de vie',
   'home.widget.goals-progress.use-r-multiples': 'Utiliser des R-multiples',
+  'home.widget.goals-progress.account-aware': 'Objectifs par compte',
+  'home.widget.goals-progress.no-target-selected':
+    'Aucun objectif pour le compte sélectionné',
+  'home.widget.goals-progress.configured-for': 'Configuré pour {accounts}',
+  'home.widget.goals-progress.account-scope': 'Portée du compte',
+  'home.widget.goals-progress.add-account': 'Ajouter un compte',
   'home.widget.goals-progress.click-to-set': 'Cliquez pour définir un objectif',
   'home.widget.goals-progress.header.pnl': 'Objectif de P&L',
   'home.widget.goals-progress.header.trades': 'Objectif des trades',
@@ -5142,6 +5176,12 @@ const fr: Lang = {
   'home.widget.drawdown.unable-to-load':
     'Il est impossible de charger le fichier.',
   'home.widget.drawdown.no-accounts': 'Aucun compte avec des limites',
+
+  'home.widget.profit-target.title': 'Objectif de profit',
+  'home.widget.profit-target.achieved': 'Atteint',
+  'home.widget.profit-target.remaining': 'restant',
+  'home.widget.profit-target.unable-to-load': 'Impossible de charger',
+  'home.widget.profit-target.no-accounts': 'Aucun compte avec objectifs',
   'home.widget.recent.title': 'Récent',
   'home.widget.recent.unknown': 'Inconnu',
   'home.widget.recent.just-now': "A l'instant",
@@ -5225,6 +5265,11 @@ const fr: Lang = {
   'filter.modal.status.breakeven': 'Point Mort',
   'filter.modal.status.open': 'Ouvert',
   'filter.modal.status.closed': 'Fermé',
+  'filter.modal.review-status': 'Statut de revue',
+  'filter.modal.review-status.reviewed': 'Revu',
+  'filter.modal.review-status.unreviewed': 'Non revu',
+  'filter.modal.direction.long-call': 'Achat/Call',
+  'filter.modal.direction.short-put': 'Vente/Put',
   'filter.modal.section.custom-fields': 'Champs personnalisés',
   'filter.modal.custom-field.n-selected': '{count} sélectionné',
   'filter.modal.custom-field.none-available': 'Pas de valeurs disponibles',
@@ -5976,6 +6021,8 @@ const fr: Lang = {
   'trade-import.notice.template-saved': 'Modèle Trade Import enregistré',
   'trade-import.notice.analyse-failed': 'Échec de l’analyse Trade Import',
   'trade-import.notice.preview-failed': 'Échec de l’aperçu Trade Import',
+  'trade-import.preview-error.guidance':
+    'Vérifiez que tous les champs obligatoires sont mappés, que le format de date sélectionné correspond à votre fichier et que les colonnes numériques contiennent des valeurs de trade valides.',
   'trade-import.notice.complete':
     'Trade Import terminé : {written} écrits ou mis à jour, {duplicateCount} doublons, {failedCount} échecs',
   'trade-import.gate.sign-in':

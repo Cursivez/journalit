@@ -47,6 +47,7 @@ import { GoalsProgressWidget } from './widgets/GoalsProgressWidget';
 import { TradingScoreWidget } from './widgets/TradingScoreWidget';
 import { AUMWidget } from './widgets/AUMWidget';
 import { DrawdownMonitorWidget } from './widgets/DrawdownMonitorWidget';
+import { ProfitTargetWidget } from './widgets/ProfitTargetWidget';
 import { GettingStartedWidget } from './widgets/GettingStartedWidget';
 
 
@@ -420,6 +421,8 @@ const HomeWidgetContent: React.FC<{
       return <AUMWidget plugin={plugin} />;
     case 'drawdownMonitor':
       return <DrawdownMonitorWidget plugin={plugin} />;
+    case 'profitTarget':
+      return <ProfitTargetWidget plugin={plugin} />;
     case 'gettingStarted':
       return <GettingStartedWidget plugin={plugin} tradeCount={tradeCount} />;
     default:

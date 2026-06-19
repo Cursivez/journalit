@@ -5,6 +5,10 @@ import { scheduleIdle } from '../../utils/deferredExecution';
 import type JournalitPlugin from '../../main';
 import { eventBus, type Unsubscribe } from '../events';
 import { safeString } from '../../utils/safeString';
+import {
+  getJournalitIndexesPath,
+  isPathWithinDirectory,
+} from './pluginStoragePaths';
 
 function asRecord(value: unknown): Record<string, unknown> | undefined {
   return value && typeof value === 'object' && !Array.isArray(value)
@@ -102,10 +106,7 @@ export class IndexManager {
   private saveIntervalId: number | null = null;
   
   private dataExtractor: (file: TFile) => Promise<unknown>;
-  
-  private readonly BASE_FOLDER = '.journalit';
-  
-  private readonly INDEX_FOLDER = 'indexes';
+
   
   private plugin: JournalitPlugin | null = null;
   
@@ -182,7 +183,7 @@ export class IndexManager {
 
     try {
       
-      const indexDir = `${this.BASE_FOLDER}/${this.INDEX_FOLDER}`;
+      const indexDir = getJournalitIndexesPath(this.app);
       if (!(await this.app.vault.adapter.exists(indexDir))) {
         await this.app.vault.adapter.mkdir(indexDir);
       }
@@ -759,7 +760,7 @@ export class IndexManager {
     
     if (
       !('path' in file) ||
-      file.path.includes(`${this.BASE_FOLDER}/${this.INDEX_FOLDER}`)
+      isPathWithinDirectory(file.path, getJournalitIndexesPath(this.app))
     )
       return;
 
@@ -814,7 +815,7 @@ export class IndexManager {
     if (!this.isDirty || !this.persistIndexes) return;
 
     try {
-      const indexDir = `${this.BASE_FOLDER}/${this.INDEX_FOLDER}`;
+      const indexDir = getJournalitIndexesPath(this.app);
 
       
       if (!(await this.app.vault.adapter.exists(indexDir))) {
@@ -847,7 +848,7 @@ export class IndexManager {
   
   private async loadIndexes(): Promise<void> {
     try {
-      const indexDir = `${this.BASE_FOLDER}/${this.INDEX_FOLDER}`;
+      const indexDir = getJournalitIndexesPath(this.app);
 
       
       if (!(await this.app.vault.adapter.exists(indexDir))) {

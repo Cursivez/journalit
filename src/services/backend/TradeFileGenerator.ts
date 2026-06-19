@@ -38,6 +38,11 @@ const getErrorCode = (error: unknown): string | undefined =>
 
 const FILE_ALREADY_EXISTS_PATTERN = /already exists/;
 
+const normalizeMetaTraderRiskTarget = (
+  value: number | null | undefined
+): number | undefined =>
+  value !== undefined && value !== null && value !== 0 ? value : undefined;
+
 const parseTradeStatus = (value: unknown): 'OPEN' | 'CLOSED' | null => {
   switch (value) {
     case 'OPEN':
@@ -488,10 +493,12 @@ export class TradeFileGenerator {
         ? calculatePnL(openTradeCalculationData)
         : null;
 
+    const stopLoss = normalizeMetaTraderRiskTarget(trade.stop_loss);
+    const takeProfit = normalizeMetaTraderRiskTarget(trade.take_profit);
+
     const builtFrontmatter = buildTradeFrontmatter(
       {
         backendTradeId: trade.id,
-        csvImportId: trade.csvImportId,
         executionLedgerVersion: trade.executionLedgerVersion,
         executionIds: trade.executionIds,
         entryTime: trade.entry_time,
@@ -532,6 +539,11 @@ export class TradeFileGenerator {
         swap: trade.swap ?? 0,
         fees: trade.fees ?? 0,
         rebate: trade.rebate,
+        stopLoss,
+        takeProfits:
+          takeProfit !== undefined
+            ? [{ price: takeProfit, closePercent: 100 }]
+            : undefined,
         useDirectPnLInput,
         directPnL: useDirectPnLInput ? directPnLValue : undefined,
         setupIds,
@@ -552,6 +564,9 @@ export class TradeFileGenerator {
         expirationDate: trade.expirationDate,
         optionType: trade.optionType,
         dollarPerPoint: trade.dollarPerPoint,
+        lotSize:
+          assetType === 'forex' ? (trade.lotSize ?? 100000) : trade.lotSize,
+        pipValue: trade.pipValue,
       },
       {
         tradeStatus,
@@ -574,9 +589,6 @@ export class TradeFileGenerator {
       }),
       tradeStatus,
       entryTime: builtFrontmatter.entryTime,
-      ...(builtFrontmatter.csvImportId !== undefined && {
-        csvImportId: builtFrontmatter.csvImportId,
-      }),
       ...(builtFrontmatter.executionLedgerVersion !== undefined && {
         executionLedgerVersion: builtFrontmatter.executionLedgerVersion,
       }),

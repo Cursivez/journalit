@@ -149,7 +149,6 @@ export interface Trade {
   volume: number;
   tradeId?: string;
   schemaVersion?: number | string;
-  csvImportId?: string;
   executionLedgerVersion?: number;
   executionIds?: string[];
   profit_loss?: number;
@@ -166,6 +165,8 @@ export interface Trade {
   customFields?: Record<string, unknown>;
   commission?: number;
   hasExplicitCommission?: boolean;
+  stop_loss?: number | null;
+  take_profit?: number | null;
   swap?: number;
   fees?: number; 
   rebate?: number;

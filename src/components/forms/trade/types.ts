@@ -69,6 +69,12 @@ export interface DividendTransaction {
   amount: number;
 }
 
+export interface TakeProfitTarget {
+  clientId?: string;
+  price?: number;
+  closePercent?: number;
+}
+
 
 export interface TradeFormData {
   
@@ -139,6 +145,8 @@ export interface TradeFormData {
   rebate?: number;
   
   stopLoss?: number;
+  
+  takeProfits?: TakeProfitTarget[];
   
   riskAmount?: number;
   
@@ -289,6 +297,7 @@ export const DEFAULT_TRADE_FORM_DATA: TradeFormData = {
   fees: 0, 
   rebate: undefined, 
   stopLoss: undefined,
+  takeProfits: [],
   riskAmount: undefined,
   rMultiple: undefined,
 
@@ -385,6 +394,10 @@ export interface TradeFormErrors {
   fees?: string;
   rebate?: string;
   stopLoss?: string;
+  takeProfits?: Array<{
+    price?: string;
+    closePercent?: string;
+  }>;
   riskAmount?: string;
   mae?: string;
   mfe?: string;

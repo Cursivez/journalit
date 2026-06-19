@@ -1714,6 +1714,59 @@ export class AccountPageService extends CustomDataService {
       }
     }
 
+    const homeGoalRollbacks: Array<{
+      goalId: string;
+      previousAccountTargets: Record<string, number> | undefined;
+      previousAccountTargetAccounts: string[] | undefined;
+    }> = [];
+    const homeGoals = this.plugin.settings.home?.goals;
+    if (homeGoals) {
+      const oldLookupKey = normalizeAccountLookupKey(oldAccountName);
+      for (const [goalId, goalConfig] of Object.entries(homeGoals)) {
+        let changed = false;
+
+        const nextAccountTargets = goalConfig.accountTargets
+          ? { ...goalConfig.accountTargets }
+          : undefined;
+        if (nextAccountTargets) {
+          for (const [accountName, target] of Object.entries(
+            goalConfig.accountTargets ?? {}
+          )) {
+            if (normalizeAccountLookupKey(accountName) !== oldLookupKey) {
+              continue;
+            }
+
+            nextAccountTargets[newAccountName] = target;
+            delete nextAccountTargets[accountName];
+            changed = true;
+          }
+        }
+
+        const nextAccountTargetAccounts = goalConfig.accountTargetAccounts?.map(
+          (accountName) => {
+            if (normalizeAccountLookupKey(accountName) !== oldLookupKey) {
+              return accountName;
+            }
+
+            changed = true;
+            return newAccountName;
+          }
+        );
+
+        if (!changed) {
+          continue;
+        }
+
+        homeGoalRollbacks.push({
+          goalId,
+          previousAccountTargets: goalConfig.accountTargets,
+          previousAccountTargetAccounts: goalConfig.accountTargetAccounts,
+        });
+        goalConfig.accountTargets = nextAccountTargets;
+        goalConfig.accountTargetAccounts = nextAccountTargetAccounts;
+      }
+    }
+
     try {
       await this.plugin.saveSettings();
     } catch (error) {
@@ -1732,6 +1785,22 @@ export class AccountPageService extends CustomDataService {
       if (accountMapping) {
         for (const { accountId, previous } of updatedAccountMappings) {
           accountMapping[accountId] = previous;
+        }
+      }
+
+      if (homeGoals) {
+        for (const {
+          goalId,
+          previousAccountTargets,
+          previousAccountTargetAccounts,
+        } of homeGoalRollbacks) {
+          const goalConfig = homeGoals[goalId];
+          if (!goalConfig) {
+            continue;
+          }
+
+          goalConfig.accountTargets = previousAccountTargets;
+          goalConfig.accountTargetAccounts = previousAccountTargetAccounts;
         }
       }
 
@@ -3145,6 +3214,42 @@ export class AccountPageService extends CustomDataService {
     }> = [];
     const deletedMappingEntries: Array<{ accountId: string; value: string }> =
       [];
+    const removedMappedAccountLookupKeys = new Set(
+      removedMappedAccountIds.map((accountId) =>
+        normalizeAccountLookupKey(accountId)
+      )
+    );
+    const accountLookupKeysToRemove = new Set([
+      accountLookupKey,
+      canonicalAccountLookupKey,
+      ...snapshotLookupKeysToRemove,
+      ...removedMappedAccountLookupKeys,
+    ]);
+    const homeGoals = this.plugin.settings.home?.goals;
+    const updatedHomeGoalEntries: Array<{
+      goalId: string;
+      previousAccountTargets: Record<string, number> | undefined;
+      previousAccountTargetAccounts: string[] | undefined;
+    }> = [];
+    const restoreUpdatedHomeGoals = () => {
+      if (!homeGoals) {
+        return;
+      }
+
+      for (const {
+        goalId,
+        previousAccountTargets,
+        previousAccountTargetAccounts,
+      } of updatedHomeGoalEntries) {
+        const goalConfig = homeGoals[goalId];
+        if (!goalConfig) {
+          continue;
+        }
+
+        goalConfig.accountTargets = previousAccountTargets;
+        goalConfig.accountTargetAccounts = previousAccountTargetAccounts;
+      }
+    };
 
     if (accountMetadata) {
       for (const metadataKey of metadataKeysToDelete) {
@@ -3174,7 +3279,61 @@ export class AccountPageService extends CustomDataService {
       }
     }
 
-    if (deletedMetadataEntries.length > 0 || deletedMappingEntries.length > 0) {
+    if (homeGoals) {
+      for (const [goalId, goalConfig] of Object.entries(homeGoals)) {
+        let changed = false;
+        const nextAccountTargets = goalConfig.accountTargets
+          ? { ...goalConfig.accountTargets }
+          : undefined;
+        if (nextAccountTargets) {
+          for (const accountName of Object.keys(nextAccountTargets)) {
+            if (
+              !accountLookupKeysToRemove.has(
+                normalizeAccountLookupKey(accountName)
+              )
+            ) {
+              continue;
+            }
+
+            delete nextAccountTargets[accountName];
+            changed = true;
+          }
+        }
+
+        const nextAccountTargetAccounts =
+          goalConfig.accountTargetAccounts?.filter(
+            (accountName) =>
+              !accountLookupKeysToRemove.has(
+                normalizeAccountLookupKey(accountName)
+              )
+          );
+        if (
+          nextAccountTargetAccounts &&
+          nextAccountTargetAccounts.length !==
+            goalConfig.accountTargetAccounts?.length
+        ) {
+          changed = true;
+        }
+
+        if (!changed) {
+          continue;
+        }
+
+        updatedHomeGoalEntries.push({
+          goalId,
+          previousAccountTargets: goalConfig.accountTargets,
+          previousAccountTargetAccounts: goalConfig.accountTargetAccounts,
+        });
+        goalConfig.accountTargets = nextAccountTargets;
+        goalConfig.accountTargetAccounts = nextAccountTargetAccounts;
+      }
+    }
+
+    if (
+      deletedMetadataEntries.length > 0 ||
+      deletedMappingEntries.length > 0 ||
+      updatedHomeGoalEntries.length > 0
+    ) {
       try {
         await this.plugin.saveSettings();
       } catch (error) {
@@ -3188,6 +3347,7 @@ export class AccountPageService extends CustomDataService {
             accountMapping[accountId] = value;
           }
         }
+        restoreUpdatedHomeGoals();
 
         throw new Error(
           `Account deletion could not persist settings before trade rewrites: ${
@@ -3226,18 +3386,6 @@ export class AccountPageService extends CustomDataService {
       );
     });
     const accountTagToRemove = `account/${this.formatTagForYAML(accountName)}`;
-    const removedMappedAccountLookupKeys = new Set(
-      removedMappedAccountIds.map((accountId) =>
-        normalizeAccountLookupKey(accountId)
-      )
-    );
-
-    const accountLookupKeysToRemove = new Set([
-      accountLookupKey,
-      canonicalAccountLookupKey,
-      ...snapshotLookupKeysToRemove,
-      ...removedMappedAccountLookupKeys,
-    ]);
     const accountTagValuesToRemove = new Set(
       [
         accountName,
@@ -3368,10 +3516,12 @@ export class AccountPageService extends CustomDataService {
           accountMapping[accountId] = value;
         }
       }
+      restoreUpdatedHomeGoals();
 
       if (
         deletedMetadataEntries.length > 0 ||
-        deletedMappingEntries.length > 0
+        deletedMappingEntries.length > 0 ||
+        updatedHomeGoalEntries.length > 0
       ) {
         await this.plugin.saveSettings();
       }
@@ -3542,6 +3692,7 @@ export class AccountPageService extends CustomDataService {
             accountMapping[accountId] = value;
           }
         }
+        restoreUpdatedHomeGoals();
         if (this.plugin.backendIntegrationService) {
           for (const { accountId, displayName } of unlinkedBackendAccounts
             .slice()
@@ -3570,7 +3721,8 @@ export class AccountPageService extends CustomDataService {
         if (
           deletedMetadataEntries.length > 0 ||
           deletedMappingEntries.length > 0 ||
-          deletedSyncMappingEntries.length > 0
+          deletedSyncMappingEntries.length > 0 ||
+          updatedHomeGoalEntries.length > 0
         ) {
           await this.plugin.saveSettings();
         }
@@ -3782,12 +3934,14 @@ export class AccountPageService extends CustomDataService {
               accountMapping[accountId] = value;
             }
           }
+          restoreUpdatedHomeGoals();
 
           let settingsRestoreFailureMessage: string | undefined;
           try {
             if (
               deletedMetadataEntries.length > 0 ||
-              deletedMappingEntries.length > 0
+              deletedMappingEntries.length > 0 ||
+              updatedHomeGoalEntries.length > 0
             ) {
               await this.plugin.saveSettings();
             }

@@ -8,8 +8,14 @@ import { useDashboardData } from '../../dashboard/context/DashboardDataContext';
 import { useCurrency } from '../../../contexts/CurrencyContext';
 import { cssVars } from '../../../styles/inlineStylePolicy';
 import { GoalType, GoalPeriod, GoalConfig } from '../../../settings/types';
-import { Trade, isTradeOpenInDashboard } from '../../dashboard/utils/dataUtils';
+import {
+  DashboardData,
+  fetchDashboardData,
+  Trade,
+  isTradeOpenInDashboard,
+} from '../../dashboard/utils/dataUtils';
 import { useDisplayFormatter } from '../../../hooks/useDisplayPolicy';
+import { useHomeAccount } from '../context/HomeAccountContext';
 import {
   calculateWinRateExcludingBreakeven,
   classifyPnLWithBreakEvenSettings,
@@ -32,6 +38,7 @@ import { SkeletonBox } from '../../shared/SkeletonBox';
 import { SkeletonText } from '../../shared/SkeletonText';
 import { t } from '../../../lang/helpers';
 import { getTradeAnalyticsTradingDay } from '../../../utils/tradeAnalyticsDate';
+import { normalizeAccountLookupKey } from '../../../services/trade/core/TradeAccountIdentity';
 
 interface GoalsProgressWidgetProps {
   plugin: JournalitPlugin;
@@ -46,7 +53,41 @@ interface GoalProgress {
   periodLabel: string;
   isComplete: boolean;
   trades: Trade[];
+  scopeMismatch?: boolean;
+  configuredAccounts?: string[];
 }
+
+const aggregateAccountTarget = (
+  config: GoalConfig,
+  accounts: string[]
+): number => {
+  const values = accounts
+    .map((account) => config.accountTargets?.[account] ?? 0)
+    .filter((value) => value > 0);
+
+  if (config.type === 'winRate') {
+    return values.length > 0
+      ? values.reduce((sum, value) => sum + value, 0) / values.length
+      : 0;
+  }
+
+  return values.reduce((sum, value) => sum + value, 0);
+};
+
+const tradeMatchesGoalAccounts = (
+  trade: Trade,
+  accountLookupKeys: ReadonlySet<string>
+): boolean => {
+  const tradeAccounts = [
+    ...(trade.accountNamesNormalized ?? []),
+    ...(trade.account ?? []),
+    ...(trade.accountLookupKeys ?? []),
+  ];
+
+  return tradeAccounts.some((account) =>
+    accountLookupKeys.has(normalizeAccountLookupKey(account))
+  );
+};
 
 const getGoalTypeOptions = (): {
   value: GoalType;
@@ -85,7 +126,9 @@ const useGoalModel = (
   currency: string,
   formatValue: ReturnType<typeof useDisplayFormatter>['formatValue'],
   defaultRiskAmount: number | undefined,
-  weekStartDay: WeekStartDaySetting
+  weekStartDay: WeekStartDaySetting,
+  accountContext: ReturnType<typeof useHomeAccount>,
+  accountNames: string[]
 ) => {
   const existingGoalType = existingConfig?.type || 'pnl';
   const [showModal, setShowModal] = useState(!existingConfig);
@@ -99,6 +142,20 @@ const useGoalModel = (
   const [useRMultiples, setUseRMultiples] = useState<boolean>(
     existingConfig?.useRMultiples ??
       (plugin.settings.trade?.displayRMultiples || false)
+  );
+  const [accountAware, setAccountAware] = useState<boolean>(
+    existingConfig?.accountAware ?? false
+  );
+  const [accountTargets, setAccountTargets] = useState<Record<string, string>>(
+    () =>
+      Object.fromEntries(
+        Object.entries(existingConfig?.accountTargets ?? {}).map(
+          ([account, value]) => [account, String(value)]
+        )
+      )
+  );
+  const [accountTargetAccounts, setAccountTargetAccounts] = useState<string[]>(
+    () => existingConfig?.accountTargetAccounts ?? []
   );
 
   const rMultiplesEnabled = plugin.settings.trade?.displayRMultiples || false;
@@ -125,6 +182,18 @@ const useGoalModel = (
     const now = new Date();
     const currentTradingDay = getTradingDay(now, plugin);
     const config = existingConfig;
+    const configuredGoalAccounts = config.accountTargetAccounts ?? [];
+    const selectedGoalAccounts = accountContext?.hasAccountFilter
+      ? configuredGoalAccounts.filter((account) =>
+          accountContext.matchesAccount(account)
+        )
+      : configuredGoalAccounts;
+    const targetValue =
+      config.accountAware && config.accountTargets
+        ? aggregateAccountTarget(config, selectedGoalAccounts)
+        : config.target;
+    const scopeMismatch =
+      Boolean(config.accountAware) && selectedGoalAccounts.length === 0;
 
     
     let periodTrades: Trade[] = trades;
@@ -169,6 +238,17 @@ const useGoalModel = (
       });
     } else {
       periodLabel = t('home.widget.goals-progress.period-label.total');
+    }
+
+    if (config.accountAware) {
+      const selectedGoalAccountLookupKeys = new Set(
+        selectedGoalAccounts.map((account) =>
+          normalizeAccountLookupKey(account)
+        )
+      );
+      periodTrades = periodTrades.filter((trade) =>
+        tradeMatchesGoalAccounts(trade, selectedGoalAccountLookupKeys)
+      );
     }
 
     const pnlContributingTrades = periodTrades.filter((trade) =>
@@ -248,17 +328,19 @@ const useGoalModel = (
     }
 
     const percentage =
-      config.target > 0 ? Math.min((current / config.target) * 100, 100) : 0;
-    const isComplete = current >= config.target;
+      targetValue > 0 ? Math.min((current / targetValue) * 100, 100) : 0;
+    const isComplete = targetValue > 0 && current >= targetValue;
 
     return {
       current,
-      target: config.target,
+      target: targetValue,
       percentage,
       label,
       periodLabel,
       isComplete,
       trades: pnlContributingTrades,
+      scopeMismatch,
+      configuredAccounts: configuredGoalAccounts,
     };
   }, [
     existingConfig,
@@ -268,11 +350,31 @@ const useGoalModel = (
     defaultRiskAmount,
     plugin,
     weekStartDay,
+    accountContext,
   ]);
 
   
   const handleSave = useCallback(async () => {
-    const targetNum = parseFloat(target);
+    const parsedAccountTargets = Object.fromEntries(
+      Object.entries(accountTargets)
+        .filter(([account]) => accountTargetAccounts.includes(account))
+        .map(([account, value]) => [account, parseFloat(value)] as const)
+        .filter(([, value]) => Number.isFinite(value) && value > 0)
+    );
+    const usesAccountTargets =
+      accountAware && !(goalType === 'pnl' && useRMultiples);
+    const targetNum = usesAccountTargets
+      ? aggregateAccountTarget(
+          {
+            type: goalType,
+            target: 0,
+            period,
+            accountTargets: parsedAccountTargets,
+            createdAt: '',
+          },
+          accountTargetAccounts
+        )
+      : parseFloat(target);
     if (isNaN(targetNum) || targetNum <= 0) {
       return;
     }
@@ -300,6 +402,13 @@ const useGoalModel = (
       target: targetNum,
       period: normalizedPeriod,
       useRMultiples: goalType === 'pnl' ? useRMultiples : undefined,
+      accountAware: usesAccountTargets || undefined,
+      accountTargets: usesAccountTargets ? parsedAccountTargets : undefined,
+      accountTargetAccounts: usesAccountTargets
+        ? accountTargetAccounts.filter(
+            (account) => parsedAccountTargets[account] > 0
+          )
+        : undefined,
       createdAt: existingConfig?.createdAt || new Date().toISOString(),
     };
 
@@ -318,25 +427,38 @@ const useGoalModel = (
     instanceId,
     plugin,
     existingConfig,
+    accountAware,
+    accountTargets,
+    accountTargetAccounts,
   ]);
 
   
   const getTargetLabel = (): string => {
     if (!existingConfig) return '';
+    const configuredGoalAccounts = existingConfig.accountTargetAccounts ?? [];
+    const selectedGoalAccounts = accountContext?.hasAccountFilter
+      ? configuredGoalAccounts.filter((account) =>
+          accountContext.matchesAccount(account)
+        )
+      : configuredGoalAccounts;
+    const targetValue =
+      existingConfig.accountAware && existingConfig.accountTargets
+        ? aggregateAccountTarget(existingConfig, selectedGoalAccounts)
+        : existingConfig.target;
 
     switch (existingConfig.type) {
       case 'pnl':
         if (existingConfig.useRMultiples) {
           return formatValue({
             kind: 'rMultiple',
-            value: existingConfig.target,
+            value: targetValue,
             precision: 1,
             signed: false,
           });
         }
         return formatValue({
           kind: 'pnl',
-          value: existingConfig.target,
+          value: targetValue,
           currencyCode:
             dashboardData.dashboardData?.metrics.conversionBaseCurrency ||
             currency,
@@ -344,22 +466,29 @@ const useGoalModel = (
         });
       case 'tradesJournaled':
         return t('home.widget.goals-progress.trades-count', {
-          count: String(existingConfig.target),
+          count: String(targetValue),
         });
       case 'winRate':
         return formatValue({
           kind: 'returnPercent',
-          value: existingConfig.target,
+          value: targetValue,
           signed: false,
           precision: 1,
         });
       default:
-        return existingConfig.target.toString();
+        return targetValue.toString();
     }
   };
 
   const parsedTarget = parseFloat(target);
-  const canSave = Number.isFinite(parsedTarget) && parsedTarget > 0;
+  const hasAccountTarget = accountTargetAccounts.some((account) => {
+    const parsedValue = parseFloat(accountTargets[account] ?? '');
+    return Number.isFinite(parsedValue) && parsedValue > 0;
+  });
+  const canSave =
+    accountAware && !(goalType === 'pnl' && useRMultiples)
+      ? hasAccountTarget
+      : Number.isFinite(parsedTarget) && parsedTarget > 0;
 
   return {
     showModal,
@@ -372,6 +501,12 @@ const useGoalModel = (
     setPeriod,
     useRMultiples,
     setUseRMultiples,
+    accountAware,
+    setAccountAware,
+    accountTargets,
+    setAccountTargets,
+    accountTargetAccounts,
+    setAccountTargetAccounts,
     rMultiplesEnabled,
     progress,
     handleSave,
@@ -398,6 +533,15 @@ const GoalSettingModal: React.FC<{
   setPeriod: (period: GoalPeriod) => void;
   useRMultiples: boolean;
   setUseRMultiples: (use: boolean) => void;
+  accountAware: boolean;
+  setAccountAware: (use: boolean) => void;
+  accountTargets: Record<string, string>;
+  setAccountTargets: React.Dispatch<
+    React.SetStateAction<Record<string, string>>
+  >;
+  accountTargetAccounts: string[];
+  setAccountTargetAccounts: React.Dispatch<React.SetStateAction<string[]>>;
+  accountNames: string[];
   rMultiplesEnabled: boolean;
   canSave: boolean;
   handleSave: () => void;
@@ -413,128 +557,227 @@ const GoalSettingModal: React.FC<{
   setPeriod,
   useRMultiples,
   setUseRMultiples,
+  accountAware,
+  setAccountAware,
+  accountTargets,
+  setAccountTargets,
+  accountTargetAccounts,
+  setAccountTargetAccounts,
+  accountNames,
   rMultiplesEnabled,
   canSave,
   handleSave,
   onCancel,
   existingConfig,
   currency,
-}) => (
-  <div className="journalit-home-goals journalit-home-goals--modal">
-    
-    <div className="journalit-home-goals__header">
-      <div className="journalit-home-widget__eyebrow">
-        {t('home.widget.goals-progress.set-goal')}
-      </div>
-      <div className="journalit-home-goals__actions">
-        
-        <button
-          onClick={() => void handleSave()}
-          disabled={!canSave}
-          className="clickable-icon journalit-home-goals__save-button"
-          aria-label={t('home.widget.goals-progress.aria.save-goal')}
-        >
-          <Check size={14} />
-        </button>
-        
-        {existingConfig && (
+}) => {
+  const availableAccounts = accountNames.filter(
+    (account) => !accountTargetAccounts.includes(account)
+  );
+  const targetSuffix =
+    goalType === 'pnl'
+      ? currency
+      : goalType === 'winRate'
+        ? '%'
+        : t('common.trades').toLowerCase();
+  const usesRMultiplesForPnl = goalType === 'pnl' && useRMultiples;
+
+  return (
+    <div className="journalit-home-goals journalit-home-goals--modal">
+      
+      <div className="journalit-home-goals__header">
+        <div className="journalit-home-widget__eyebrow">
+          {t('home.widget.goals-progress.set-goal')}
+        </div>
+        <div className="journalit-home-goals__actions">
+          
           <button
-            onClick={onCancel}
-            className="clickable-icon journalit-home-goals__cancel-button"
-            aria-label={t('button.cancel')}
+            onClick={() => void handleSave()}
+            disabled={!canSave}
+            className="clickable-icon journalit-home-goals__save-button"
+            aria-label={t('home.widget.goals-progress.aria.save-goal')}
           >
-            <X size={14} />
+            <Check size={14} />
           </button>
-        )}
+          
+          {existingConfig && (
+            <button
+              onClick={onCancel}
+              className="clickable-icon journalit-home-goals__cancel-button"
+              aria-label={t('button.cancel')}
+            >
+              <X size={14} />
+            </button>
+          )}
+        </div>
       </div>
-    </div>
 
-    
-    <div className="journalit-home-goals__chip-list">
-      {getGoalTypeOptions().map((option) => (
-        <button
-          key={option.value}
-          onClick={() => {
-            setGoalType(option.value);
-            
-            if (option.value !== 'tradesJournaled' && period === 'lifetime') {
-              setPeriod('weekly');
-            }
-          }}
-          className={`journalit-home-goals__chip ${goalType === option.value ? 'journalit-home-goals__chip--active' : ''}`}
-        >
-          {option.label}
-        </button>
-      ))}
-    </div>
-
-    
-    <div className="journalit-home-goals__target-row">
-      <label className="journalit-home-goals__target-label">
-        {t('home.widget.goals-progress.target')}
-      </label>
-      <input
-        type="number"
-        value={target}
-        onChange={(e) => setTarget(e.target.value)}
-        placeholder={
-          goalType === 'pnl'
-            ? useRMultiples
-              ? '10'
-              : '500'
-            : goalType === 'winRate'
-              ? '60'
-              : '100'
-        }
-        className="journalit-home-goals__target-input"
-      />
-      <span className="journalit-home-goals__target-suffix">
-        {goalType === 'pnl' && useRMultiples
-          ? 'R'
-          : goalType === 'pnl'
-            ? currency
-            : goalType === 'winRate'
-              ? '%'
-              : t('common.trades').toLowerCase()}
-      </span>
-    </div>
-
-    
-    {goalType !== 'tradesJournaled' && (
-      <div className="journalit-home-goals__period-row">
-        {getPeriodOptions().map((option) => (
+      
+      <div className="journalit-home-goals__chip-list">
+        {getGoalTypeOptions().map((option) => (
           <button
             key={option.value}
-            onClick={() => setPeriod(option.value)}
-            className={`journalit-home-goals__period-button ${period === option.value ? 'journalit-home-goals__period-button--active' : ''}`}
+            onClick={() => {
+              setGoalType(option.value);
+              
+              if (option.value !== 'tradesJournaled' && period === 'lifetime') {
+                setPeriod('weekly');
+              }
+            }}
+            className={`journalit-home-goals__chip ${goalType === option.value ? 'journalit-home-goals__chip--active' : ''}`}
           >
             {option.label}
           </button>
         ))}
       </div>
-    )}
 
-    
-    {goalType === 'tradesJournaled' && (
-      <div className="journalit-home-goals__lifetime">
-        {t('home.widget.goals-progress.tracks-lifetime')}
-      </div>
-    )}
+      {!usesRMultiplesForPnl && accountNames.length > 0 && (
+        <label className="journalit-home-goals__r-toggle">
+          <input
+            type="checkbox"
+            checked={accountAware}
+            onChange={(e) => setAccountAware(e.target.checked)}
+            className="journalit-home-goals__checkbox"
+          />
+          {t('home.widget.goals-progress.account-aware')}
+        </label>
+      )}
 
-    
-    {goalType === 'pnl' && rMultiplesEnabled && (
-      <label className="journalit-home-goals__r-toggle">
-        <input
-          type="checkbox"
-          checked={useRMultiples}
-          onChange={(e) => setUseRMultiples(e.target.checked)}
-          className="journalit-home-goals__checkbox"
-        />
-        {t('home.widget.goals-progress.use-r-multiples')}
-      </label>
-    )}
-  </div>
-);
+      {!accountAware || usesRMultiplesForPnl ? (
+        <div className="journalit-home-goals__target-row">
+          <label className="journalit-home-goals__target-label">
+            {t('home.widget.goals-progress.target')}
+          </label>
+          <input
+            type="number"
+            value={target}
+            onChange={(e) => setTarget(e.target.value)}
+            placeholder={
+              goalType === 'pnl'
+                ? usesRMultiplesForPnl
+                  ? '10'
+                  : '500'
+                : goalType === 'winRate'
+                  ? '60'
+                  : '100'
+            }
+            className="journalit-home-goals__target-input"
+          />
+          <span className="journalit-home-goals__target-suffix">
+            {usesRMultiplesForPnl ? 'R' : targetSuffix}
+          </span>
+        </div>
+      ) : (
+        <div className="journalit-home-goals__account-scope">
+          <div className="journalit-home-goals__account-scope-header">
+            <span className="journalit-home-goals__target-label">
+              {t('home.widget.goals-progress.account-scope')}
+            </span>
+            <select
+              value=""
+              onChange={(e) => {
+                const nextAccount = e.target.value;
+                if (!nextAccount) return;
+                setAccountTargetAccounts((prev) => [...prev, nextAccount]);
+              }}
+              className="journalit-home-goals__account-select"
+            >
+              <option value="">
+                {t('home.widget.goals-progress.add-account')}
+              </option>
+              {availableAccounts.map((account) => (
+                <option key={account} value={account}>
+                  {account}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="journalit-home-goals__account-chips">
+            {accountTargetAccounts.map((account) => (
+              <button
+                key={account}
+                type="button"
+                className="journalit-home-goals__account-chip"
+                onClick={() =>
+                  setAccountTargetAccounts((prev) =>
+                    prev.filter((selected) => selected !== account)
+                  )
+                }
+              >
+                {account}
+                <X size={12} />
+              </button>
+            ))}
+          </div>
+
+          <div className="journalit-home-goals__account-targets">
+            {accountTargetAccounts.map((account) => (
+              <label
+                key={account}
+                className="journalit-home-goals__account-target-row"
+              >
+                <span className="journalit-home-goals__account-target-name">
+                  {account}
+                </span>
+                <input
+                  type="number"
+                  value={accountTargets[account] ?? ''}
+                  onChange={(e) =>
+                    setAccountTargets((prev) => ({
+                      ...prev,
+                      [account]: e.target.value,
+                    }))
+                  }
+                  placeholder="0"
+                  className="journalit-home-goals__target-input"
+                />
+                <span className="journalit-home-goals__target-suffix">
+                  {targetSuffix}
+                </span>
+              </label>
+            ))}
+          </div>
+        </div>
+      )}
+
+      
+      {goalType !== 'tradesJournaled' && (
+        <div className="journalit-home-goals__period-row">
+          {getPeriodOptions().map((option) => (
+            <button
+              key={option.value}
+              onClick={() => setPeriod(option.value)}
+              className={`journalit-home-goals__period-button ${period === option.value ? 'journalit-home-goals__period-button--active' : ''}`}
+            >
+              {option.label}
+            </button>
+          ))}
+        </div>
+      )}
+
+      
+      {goalType === 'tradesJournaled' && (
+        <div className="journalit-home-goals__lifetime">
+          {t('home.widget.goals-progress.tracks-lifetime')}
+        </div>
+      )}
+
+      
+      {goalType === 'pnl' && rMultiplesEnabled && (
+        <label className="journalit-home-goals__r-toggle">
+          <input
+            type="checkbox"
+            checked={useRMultiples}
+            onChange={(e) => setUseRMultiples(e.target.checked)}
+            className="journalit-home-goals__checkbox"
+          />
+          {t('home.widget.goals-progress.use-r-multiples')}
+        </label>
+      )}
+    </div>
+  );
+};
 
 
 const GoalLoadingSkeleton: React.FC = () => (
@@ -576,6 +819,33 @@ const GoalEmptyState: React.FC<{
   </div>
 );
 
+const GoalScopeMismatchState: React.FC<{
+  configuredAccounts: string[];
+  onEdit: () => void;
+}> = ({ configuredAccounts, onEdit }) => (
+  <div
+    onClick={onEdit}
+    role="button"
+    tabIndex={0}
+    onKeyDown={(e) => {
+      if (e.key === 'Enter' || e.key === ' ') onEdit();
+    }}
+    className="journalit-home-goals journalit-home-goals--empty journalit-home-goals--scope-mismatch"
+    aria-label={t('home.widget.goals-progress.aria.change-goal')}
+  >
+    <span className="journalit-home-goals__empty-text">
+      {t('home.widget.goals-progress.no-target-selected')}
+    </span>
+    <span className="journalit-home-goals__scope-hint">
+      {configuredAccounts.length > 0
+        ? t('home.widget.goals-progress.configured-for', {
+            accounts: configuredAccounts.join(', '),
+          })
+        : t('home.widget.goals-progress.click-to-set')}
+    </span>
+  </div>
+);
+
 
 const GoalProgressDisplay: React.FC<{
   progress: GoalProgress;
@@ -594,6 +864,15 @@ const GoalProgressDisplay: React.FC<{
   formatValue,
   onEdit,
 }) => {
+  if (progress.scopeMismatch) {
+    return (
+      <GoalScopeMismatchState
+        configuredAccounts={progress.configuredAccounts ?? []}
+        onEdit={onEdit}
+      />
+    );
+  }
+
   const isSensitiveGoalMasked =
     existingConfig?.type === 'pnl'
       ? shouldMask(existingConfig.useRMultiples ? 'rMultiple' : 'pnl')
@@ -688,6 +967,9 @@ const GoalsProgressWidgetComponent: React.FC<GoalsProgressWidgetProps> = ({
   const dashboardData = useDashboardData();
   const { currency } = useCurrency();
   const { formatValue, shouldMask } = useDisplayFormatter();
+  const accountContext = useHomeAccount();
+  const [accountScopedDashboardData, setAccountScopedDashboardData] =
+    useState<DashboardData | null>(null);
 
   
   const existingConfig = plugin.settings.home?.goals?.[instanceId];
@@ -695,18 +977,87 @@ const GoalsProgressWidgetComponent: React.FC<GoalsProgressWidgetProps> = ({
   
   const defaultRiskAmount = plugin.settings.trade?.defaultRiskAmount;
   const weekStartDay = getWeekStartDaySetting(plugin);
+  const accountNames = useMemo(() => {
+    if (accountContext?.availableAccounts.length) {
+      return [...accountContext.availableAccounts].sort((a, b) =>
+        a.localeCompare(b)
+      );
+    }
 
-  useEffect(() => {}, []);
+    return Object.values(plugin.settings.account?.accountMetadata ?? {})
+      .filter((account) => account.accountType?.toLowerCase() !== 'archived')
+      .map((account) => account.name)
+      .sort((a, b) => a.localeCompare(b));
+  }, [
+    accountContext?.availableAccounts,
+    plugin.settings.account?.accountMetadata,
+  ]);
+  const accountScopedGoalAccounts = useMemo(
+    () =>
+      existingConfig?.accountAware &&
+      !accountContext?.hasAccountFilter &&
+      existingConfig.accountTargetAccounts?.length
+        ? existingConfig.accountTargetAccounts
+        : [],
+    [
+      existingConfig?.accountAware,
+      existingConfig?.accountTargetAccounts,
+      accountContext?.hasAccountFilter,
+    ]
+  );
+
+  useEffect(() => {
+    if (!dashboardData || accountScopedGoalAccounts.length === 0) {
+      setAccountScopedDashboardData(null);
+      return;
+    }
+
+    let cancelled = false;
+    void fetchDashboardData(
+      plugin.app,
+      plugin.tradeService,
+      {
+        ...dashboardData.filters,
+        accounts: accountScopedGoalAccounts,
+      },
+      defaultRiskAmount,
+      plugin
+    )
+      .then((data) => {
+        if (!cancelled) {
+          setAccountScopedDashboardData(data);
+        }
+      })
+      .catch((error) => {
+        if (!cancelled) {
+          setAccountScopedDashboardData(null);
+        }
+        console.error(
+          'Failed to load account-scoped goal dashboard data:',
+          error
+        );
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [dashboardData, accountScopedGoalAccounts, defaultRiskAmount, plugin]);
+
+  const dashboardDataForGoal = accountScopedDashboardData
+    ? { ...dashboardData, dashboardData: accountScopedDashboardData }
+    : dashboardData;
 
   const model = useGoalModel(
     plugin,
     instanceId,
     existingConfig,
-    dashboardData,
+    dashboardDataForGoal,
     currency,
     formatValue,
     defaultRiskAmount,
-    weekStartDay
+    weekStartDay,
+    accountContext,
+    accountNames
   );
 
   
@@ -721,6 +1072,13 @@ const GoalsProgressWidgetComponent: React.FC<GoalsProgressWidgetProps> = ({
         setPeriod={model.setPeriod}
         useRMultiples={model.useRMultiples}
         setUseRMultiples={model.setUseRMultiples}
+        accountAware={model.accountAware}
+        setAccountAware={model.setAccountAware}
+        accountTargets={model.accountTargets}
+        setAccountTargets={model.setAccountTargets}
+        accountTargetAccounts={model.accountTargetAccounts}
+        setAccountTargetAccounts={model.setAccountTargetAccounts}
+        accountNames={accountNames}
         rMultiplesEnabled={model.rMultiplesEnabled}
         canSave={model.canSave}
         handleSave={() => void model.handleSave()}

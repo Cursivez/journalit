@@ -732,6 +732,73 @@ export const HOME_WIDGET_STYLES = `
     color: var(--text-faint);
   }
 
+  .journalit-home-goals__account-targets {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    max-height: 120px;
+    overflow: auto;
+  }
+
+  .journalit-home-goals__account-scope {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .journalit-home-goals__account-scope-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+  }
+
+  .journalit-home-goals__account-select {
+    min-width: 120px;
+    max-width: 50%;
+    padding: 4px 8px;
+    font-size: 11px;
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 4px;
+    background-color: var(--background-modifier-form-field);
+    color: var(--text-normal);
+  }
+
+  .journalit-home-goals__account-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+
+  .journalit-home-goals__account-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 6px;
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 4px;
+    background-color: var(--background-secondary);
+    color: var(--text-muted);
+    font-size: 11px;
+    cursor: pointer;
+  }
+
+  .journalit-home-goals__account-target-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(72px, 96px) auto;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .journalit-home-goals__account-target-name {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 11px;
+    color: var(--text-muted);
+  }
+
   .journalit-home-goals__period-row {
     display: flex;
     gap: 4px;
@@ -847,6 +914,19 @@ export const HOME_WIDGET_STYLES = `
 
   .journalit-home-goals__empty-text {
     font-size: 13px;
+  }
+
+  .journalit-home-goals--scope-mismatch {
+    gap: 6px;
+    padding: 16px;
+  }
+
+  .journalit-home-goals__scope-hint {
+    max-width: 240px;
+    font-size: 11px;
+    color: var(--text-faint);
+    text-align: center;
+    line-height: 1.35;
   }
 
   .journalit-home-goals--complete,
@@ -2157,7 +2237,7 @@ export const HOME_WIDGET_STYLES = `
   }
 
   
-  .journalit-home-drawdown {
+  .journalit-home-account-progress {
     height: 100%;
     display: flex;
     flex-direction: column;
@@ -2165,7 +2245,7 @@ export const HOME_WIDGET_STYLES = `
     gap: 8px;
   }
 
-  .journalit-home-drawdown__list {
+  .journalit-home-account-progress__list {
     flex: 1;
     min-height: 0;
     display: flex;
@@ -2174,44 +2254,63 @@ export const HOME_WIDGET_STYLES = `
     overflow: hidden;
   }
 
-  .journalit-home-drawdown__row {
+  .journalit-home-account-progress__row {
     display: flex;
     flex-direction: column;
     gap: 4px;
     cursor: pointer;
   }
 
-  .journalit-home-drawdown__row-header {
+  .journalit-home-account-progress__row-header {
     display: flex;
     justify-content: space-between;
     align-items: baseline;
   }
 
-  .journalit-home-drawdown__percentage {
+  .journalit-account-progress-name {
+    font-size: 12px;
+    color: var(--text-muted);
+    font-weight: 400;
+    transition: font-weight 0.1s ease, color 0.1s ease;
+  }
+
+  .journalit-account-progress-row:hover .journalit-account-progress-name {
+    font-weight: 500;
+    color: var(--text-normal);
+  }
+
+  .journalit-home-account-progress__percentage {
     font-size: 15px;
     font-weight: 600;
     text-transform: none;
     letter-spacing: normal;
-    color: var(--journalit-home-drawdown-color, var(--text-normal));
+    color: var(--journalit-home-account-progress-color, var(--text-normal));
   }
 
-  .journalit-home-drawdown__percentage--breached {
+  .journalit-home-account-progress__percentage--breached {
     font-size: 12px;
     text-transform: uppercase;
     letter-spacing: 0.5px;
     color: var(--text-error);
   }
 
-  .journalit-home-drawdown__bar {
+  .journalit-home-account-progress__percentage--achieved {
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--color-green);
+  }
+
+  .journalit-home-account-progress__bar {
     display: block;
   }
 
-  .journalit-home-drawdown__remaining {
+  .journalit-home-account-progress__remaining {
     font-size: 11px;
     color: var(--text-faint);
   }
 
-  .journalit-home-drawdown__loading-list {
+  .journalit-home-account-progress__loading-list {
     flex: 1;
     min-height: 0;
     display: flex;
@@ -2220,13 +2319,13 @@ export const HOME_WIDGET_STYLES = `
     overflow: hidden;
   }
 
-  .journalit-home-drawdown__loading-row {
+  .journalit-home-account-progress__loading-row {
     display: flex;
     flex-direction: column;
     gap: 4px;
   }
 
-  .journalit-home-drawdown__state {
+  .journalit-home-account-progress__state {
     height: 100%;
     display: flex;
     flex-direction: column;
@@ -2235,19 +2334,19 @@ export const HOME_WIDGET_STYLES = `
     gap: 8px;
   }
 
-  .journalit-home-drawdown__state-title {
+  .journalit-home-account-progress__state-title {
     font-size: 11px;
     font-weight: 500;
     color: var(--text-faint);
     text-transform: uppercase;
   }
 
-  .journalit-home-drawdown__state-message {
+  .journalit-home-account-progress__state-message {
     font-size: 13px;
     color: var(--text-muted);
   }
 
-  .journalit-home-drawdown__state-icon {
+  .journalit-home-account-progress__state-icon {
     color: var(--text-muted);
     opacity: 0.5;
   }

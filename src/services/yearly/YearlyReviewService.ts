@@ -15,12 +15,7 @@ import type { Trade } from '../../components/dashboard/utils/dataUtils';
 import { normalizeTradeExecutionForPeriodAnalytics } from '../trade/core/TradeExecutionAnalytics';
 import { getTradingDay } from '../../utils/tradingDayUtils';
 import { forceMetadataCacheRefresh } from '../../utils/dataRefresh';
-import {
-  generatePeriodicTag,
-  generateContextualTags,
-  combineTags,
-  PERIODIC_TYPES,
-} from '../../utils/tagSchema';
+
 import { FolderPathService } from '../core/FolderPathService';
 import { parseTradeFinancialFields } from '../../utils/tradeUtils';
 import { ReviewTemplateService } from '../templates/ReviewTemplateService';
@@ -371,42 +366,14 @@ export class YearlyReviewService extends CustomDataService {
   }
 
   
-  private generateYearlyReviewTags(year: number): string[] {
-    const tagArrays: string[][] = [];
-
-    
-    const yearDate = getYearStartDate(year);
-
-    
-    tagArrays.push([generatePeriodicTag(PERIODIC_TYPES.YEARLY)]);
-
-    
-    const contextualTags = generateContextualTags(yearDate);
-    if (contextualTags.length > 0) {
-      tagArrays.push(contextualTags);
-    }
-
-    
-    tagArrays.push([`year-${year}-review`]);
-
-    
-    const decade = Math.floor(year / 10) * 10;
-    tagArrays.push([`decade-${decade}s`]);
-
-    return combineTags(...tagArrays);
-  }
-
-  
   private generateInitialContent(frontmatter: YearlyReviewFrontmatter): string {
-    const tags = this.generateYearlyReviewTags(frontmatter.year);
-
     
 
     const yearlyData: Record<string, unknown> = {
       type: frontmatter.type,
       date: frontmatter.date,
       year: frontmatter.year,
-      tags: tags,
+      tags: [],
     };
 
     const { templateService, transformService } = this.getTemplateServices();

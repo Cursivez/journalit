@@ -384,6 +384,10 @@ export interface Trade {
   assetType?: string; 
   optionType?: string; 
   stopLoss?: number; 
+  takeProfits?: Array<{
+    price?: number;
+    closePercent?: number;
+  }>;
   riskAmount?: number; 
   rMultiple?: number; 
   leverageRatio?: number; 
@@ -713,6 +717,21 @@ const fetchTradeData = async (
             frontmatter.stopLoss !== undefined
               ? Number(frontmatter.stopLoss)
               : undefined,
+          takeProfits: Array.isArray(frontmatter.takeProfits)
+            ? frontmatter.takeProfits
+                .filter(
+                  (target): target is Record<string, unknown> =>
+                    !!target && typeof target === 'object'
+                )
+                .map((target) => ({
+                  ...(target.price !== undefined && {
+                    price: Number(target.price),
+                  }),
+                  ...(target.closePercent !== undefined && {
+                    closePercent: Number(target.closePercent),
+                  }),
+                }))
+            : [],
           riskAmount:
             frontmatter.riskAmount !== undefined
               ? Number(frontmatter.riskAmount)

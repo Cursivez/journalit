@@ -8,7 +8,11 @@ const definedNumber = (value?: number | null): number | undefined =>
 
 export function mapPreviewTradeToTradeData(
   trade: TradeImportPreviewTrade,
-  accountName: string
+  accountName: string,
+  metadata?: {
+    backendTradeId?: string;
+    backendVersion?: number;
+  }
 ): TradeData {
   return {
     entryTime: new Date(trade.entryTime),
@@ -54,10 +58,10 @@ export function mapPreviewTradeToTradeData(
     })),
     executionLedgerVersion: trade.executionLedgerVersion ?? undefined,
     executionIds: trade.executionIds,
-    csvImportId: trade.csvImportId,
-    legacyCsvImportIds: trade.legacyCsvImportIds,
     sourceRows: trade.sourceRows,
     orderId: trade.orderId ?? undefined,
+    tradeImportId: metadata?.backendTradeId,
+    tradeImportVersion: metadata?.backendVersion,
     customFields: trade.customFields,
     strikePrice: definedNumber(trade.strikePrice),
     expirationDate: toDate(trade.expirationDate),

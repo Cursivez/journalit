@@ -107,7 +107,7 @@ const COLUMN_DEFINITIONS: ColumnDefinition[] = [
   {
     id: 'direction',
     width: 100,
-    sortable: false,
+    sortable: true,
     defaultVisible: true,
     type: 'text',
     category: 'basic',
@@ -373,7 +373,7 @@ const COLUMN_DEFINITIONS: ColumnDefinition[] = [
   {
     id: 'reviewed',
     width: 100,
-    sortable: false,
+    sortable: true,
     defaultVisible: true,
     type: 'boolean',
     category: 'review',

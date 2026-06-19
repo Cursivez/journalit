@@ -113,9 +113,11 @@ export function buildTradeFrontmatter(
   if (data.backendTradeId && data.backendTradeId !== 0) {
     frontmatterData.backendTradeId = data.backendTradeId;
   }
-  if (data.csvImportId) frontmatterData.csvImportId = data.csvImportId;
-  if (data.legacyCsvImportIds?.length) {
-    frontmatterData.legacyCsvImportIds = data.legacyCsvImportIds;
+  if (data.tradeImportId) {
+    frontmatterData.tradeImportId = data.tradeImportId;
+  }
+  if (data.tradeImportVersion !== undefined) {
+    frontmatterData.tradeImportVersion = data.tradeImportVersion;
   }
   if (data.sourceRows?.length) frontmatterData.sourceRows = data.sourceRows;
   if (data.orderId) frontmatterData.orderId = data.orderId;
@@ -225,6 +227,21 @@ export function buildTradeFrontmatter(
   if (data.riskAmount !== undefined)
     frontmatterData.riskAmount = data.riskAmount;
   if (data.stopLoss !== undefined) frontmatterData.stopLoss = data.stopLoss;
+  if (data.takeProfits !== undefined) {
+    const takeProfits = data.takeProfits.filter(
+      (target) => target.price !== undefined
+    );
+    if (takeProfits.length) {
+      frontmatterData.takeProfits = takeProfits.map((target) => ({
+        ...(target.price !== undefined && { price: target.price }),
+        ...(target.closePercent !== undefined && {
+          closePercent: target.closePercent,
+        }),
+      }));
+    } else {
+      frontmatterData.takeProfits = undefined;
+    }
+  }
   if (data.currency !== undefined) frontmatterData.currency = data.currency;
   if (data.brokerBaseCurrencyPnl !== undefined) {
     frontmatterData.brokerBaseCurrencyPnl = data.brokerBaseCurrencyPnl;

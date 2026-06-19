@@ -15,6 +15,12 @@ import { SkeletonBox } from '../../shared/SkeletonBox';
 import { SkeletonText } from '../../shared/SkeletonText';
 import { cssVars } from '../../../styles/inlineStylePolicy';
 import { t, tPlural } from '../../../lang/helpers';
+import {
+  createDashboardFilters,
+  createReviewFilters,
+  createTradeLogFilters,
+} from '../../../settings/viewFiltersDefaults';
+import { eventBus } from '../../../services/events';
 
 interface UnreviewedTradesWidgetProps {
   plugin: JournalitPlugin;
@@ -96,9 +102,36 @@ const UnreviewedTradesWidgetComponent: React.FC<
     };
   }, [dashboardData, weekStartDay]);
 
-  const openTradeLog = async (): Promise<void> => {
+  const openTradeLog = async (
+    applyUnreviewedFilter: boolean
+  ): Promise<void> => {
     try {
+      const currentState = plugin.uiStateManager.getState();
+      const currentFilters = currentState.viewFilters?.tradelog;
+      const nextTradeLogFilters = {
+        ...createTradeLogFilters(),
+        ...currentFilters,
+      };
+
+      if (applyUnreviewedFilter) {
+        nextTradeLogFilters.reviewStatus = ['unreviewed'];
+      } else {
+        nextTradeLogFilters.reviewStatus = [];
+      }
+
+      await plugin.uiStateManager.updateState({
+        viewFilters: {
+          dashboard:
+            currentState.viewFilters?.dashboard ?? createDashboardFilters(),
+          reviews: currentState.viewFilters?.reviews ?? createReviewFilters(),
+          tradelog: nextTradeLogFilters,
+        },
+      });
       await plugin.viewManager.openTradeLogView();
+      window.setTimeout(() => {
+        window.journalitSyncTradeLogFilters?.();
+        eventBus.publish('tradelog:filters-updated');
+      }, 250);
     } catch (error) {
       console.error('Failed to open Trade Log:', error);
     }
@@ -127,14 +160,14 @@ const UnreviewedTradesWidgetComponent: React.FC<
     return (
       <div
         className="journalit-home-unreviewed journalit-home-unreviewed--row journalit-home-unreviewed--clickable"
-        onClick={() => void openTradeLog()}
+        onClick={() => void openTradeLog(false)}
         onKeyDown={(e) => {
           if (e.key !== 'Enter' && e.key !== ' ') {
             return;
           }
 
           e.preventDefault();
-          void openTradeLog();
+          void openTradeLog(false);
         }}
         role="button"
         tabIndex={0}
@@ -158,14 +191,14 @@ const UnreviewedTradesWidgetComponent: React.FC<
   return (
     <div
       className="journalit-home-unreviewed journalit-home-unreviewed--clickable"
-      onClick={() => void openTradeLog()}
+      onClick={() => void openTradeLog(true)}
       onKeyDown={(e) => {
         if (e.key !== 'Enter' && e.key !== ' ') {
           return;
         }
 
         e.preventDefault();
-        void openTradeLog();
+        void openTradeLog(true);
       }}
       role="button"
       tabIndex={0}

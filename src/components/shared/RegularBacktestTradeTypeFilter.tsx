@@ -75,6 +75,14 @@ export const RegularBacktestTradeTypeFilter: React.FC<RegularBacktestTradeTypeFi
 
     const toggleTradeType = useCallback(
       (tradeType: TradeType) => {
+        if (
+          normalizedSelection.length === 1 &&
+          normalizedSelection[0] === tradeType
+        ) {
+          void onChange([tradeType === 'regular' ? 'backtest' : 'regular']);
+          return;
+        }
+
         const nextSelection = normalizedSelection.includes(tradeType)
           ? normalizedSelection.filter((value) => value !== tradeType)
           : [...normalizedSelection, tradeType];

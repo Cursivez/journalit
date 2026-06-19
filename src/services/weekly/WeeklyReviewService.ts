@@ -18,12 +18,7 @@ import {
 import { getTradingDay } from '../../utils/tradingDayUtils';
 import { DRCData } from '../drc/types';
 import { forceMetadataCacheRefresh } from '../../utils/dataRefresh';
-import {
-  generatePeriodicTag,
-  generateContextualTags,
-  combineTags,
-  PERIODIC_TYPES,
-} from '../../utils/tagSchema';
+
 import { FolderPathService } from '../core/FolderPathService';
 import { ReviewTemplateService } from '../templates/ReviewTemplateService';
 import { TemplateTransformationService } from '../templates/TemplateTransformationService';
@@ -373,26 +368,6 @@ export class WeeklyReviewService {
   }
 
   
-  private generateWeeklyReviewTags(date: Date): string[] {
-    const tagArrays: string[][] = [];
-
-    const weekStartDay = getWeekStartDaySetting(this.plugin);
-    const weekStart = getWeekStartDate(date, weekStartDay);
-
-    
-    tagArrays.push([generatePeriodicTag(PERIODIC_TYPES.WEEKLY)]);
-
-    
-    const contextualTags = generateContextualTags(weekStart);
-    if (contextualTags.length > 0) {
-      tagArrays.push(contextualTags);
-    }
-
-    
-    return combineTags(...tagArrays);
-  }
-
-  
   private async generateInitialWeeklyReviewContent(
     date: Date
   ): Promise<string> {
@@ -411,7 +386,7 @@ export class WeeklyReviewService {
     const weeklyReviewData: Partial<WeeklyReviewData> = {
       type: 'weekly-review',
       date: this.formatDateForDisplay(weekStart),
-      tags: this.generateWeeklyReviewTags(date),
+      tags: [],
       week: weekOfMonth,
       month: String(isoMonth).padStart(2, '0'),
       year: String(isoYear),

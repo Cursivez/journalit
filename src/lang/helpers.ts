@@ -41,6 +41,7 @@ type SupportedLanguageCode =
   | 'es'
   | 'de'
   | 'fr'
+  | 'vi'
   | 'pt-BR'
   | 'pt'
   | 'zh'
@@ -55,6 +56,7 @@ const supportedLanguageCodes = new Set<string>([
   'es',
   'de',
   'fr',
+  'vi',
   'pt-BR',
   'pt',
   'zh',

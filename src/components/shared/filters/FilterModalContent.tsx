@@ -10,6 +10,8 @@ import { TagFilter } from '../../dashboard/components/FilterControls/TagFilter';
 import { MistakeFilter } from '../../dashboard/components/FilterControls/MistakeFilter';
 import { TradeTypeFilter } from '../../tradelog/TradeTypeFilter';
 import { StatusFilter } from '../../tradelog/StatusFilter';
+import { ReviewStatusFilter } from '../../tradelog/ReviewStatusFilter';
+import { DirectionFilter } from '../../tradelog/DirectionFilter';
 import { FilterChip } from '../FilterChip';
 import { CollapsibleSection } from '../CollapsibleSection';
 import {
@@ -17,7 +19,12 @@ import {
   FilterModalProps,
   AvailableCustomFieldFilter,
 } from './types';
-import { TradeType, TradeStatus } from '../../../services/tradelog/types';
+import {
+  TradeType,
+  TradeStatus,
+  type DirectionFilter as DirectionFilterValue,
+  type ReviewStatusFilter as ReviewStatusFilterValue,
+} from '../../../services/tradelog/types';
 import { CustomFieldOptionsFilter } from './CustomFieldOptionsFilter';
 import {
   createDashboardFilters,
@@ -135,6 +142,20 @@ export const FilterModalContent = React.memo<FilterModalContentProps>(
       setFilters((prev) => ({ ...prev, statuses }));
     }, []);
 
+    const handleReviewStatusChange = useCallback(
+      (reviewStatus: ReviewStatusFilterValue[]) => {
+        setFilters((prev) => ({ ...prev, reviewStatus }));
+      },
+      []
+    );
+
+    const handleDirectionChange = useCallback(
+      (directions: DirectionFilterValue[]) => {
+        setFilters((prev) => ({ ...prev, directions }));
+      },
+      []
+    );
+
     const handleCustomFieldChange = useCallback(
       (fieldId: string, values: string[]) => {
         setFilters((prev) => {
@@ -171,6 +192,8 @@ export const FilterModalContent = React.memo<FilterModalContentProps>(
         mistakes: [],
         tradeTypes: resetTradeTypes,
         statuses: [],
+        reviewStatus: [],
+        directions: [],
         customFieldFilters: {},
       });
     }, [context]);
@@ -337,6 +360,44 @@ export const FilterModalContent = React.memo<FilterModalContentProps>(
         });
       }
 
+      if (context === 'tradelog' && filters.reviewStatus.length > 0) {
+        filters.reviewStatus.forEach((status) => {
+          chips.push({
+            key: `review-status-${status}`,
+            label:
+              status === 'reviewed'
+                ? t('filter.modal.review-status.reviewed')
+                : t('filter.modal.review-status.unreviewed'),
+            onRemove: () => {
+              setFilters((prev) => ({
+                ...prev,
+                reviewStatus: prev.reviewStatus.filter((s) => s !== status),
+              }));
+            },
+          });
+        });
+      }
+
+      if (filters.directions.length > 0) {
+        filters.directions.forEach((direction) => {
+          chips.push({
+            key: `direction-${direction}`,
+            label:
+              direction === 'long'
+                ? t('filter.modal.direction.long-call')
+                : t('filter.modal.direction.short-put'),
+            onRemove: () => {
+              setFilters((prev) => ({
+                ...prev,
+                directions: prev.directions.filter(
+                  (current) => current !== direction
+                ),
+              }));
+            },
+          });
+        });
+      }
+
       
       const customFieldOptionMaps = new Map<string, Map<string, string>>(
         mergedCustomFieldFilters.map((definition) => [
@@ -396,7 +457,7 @@ export const FilterModalContent = React.memo<FilterModalContentProps>(
       );
 
       return chips;
-    }, [defaultTradeTypes, filters, mergedCustomFieldFilters]);
+    }, [context, defaultTradeTypes, filters, mergedCustomFieldFilters]);
 
     
     const tradingDataBadgeCount =
@@ -413,9 +474,18 @@ export const FilterModalContent = React.memo<FilterModalContentProps>(
     const tradeCriteriaBadgeCount = useMemo(() => {
       return (
         getTradeTypeFilterActiveCount(filters.tradeTypes, defaultTradeTypes) +
-        filters.statuses.length
+        filters.statuses.length +
+        (context === 'tradelog' ? filters.reviewStatus.length : 0) +
+        filters.directions.length
       );
-    }, [defaultTradeTypes, filters.tradeTypes, filters.statuses.length]);
+    }, [
+      context,
+      defaultTradeTypes,
+      filters.tradeTypes,
+      filters.statuses.length,
+      filters.reviewStatus.length,
+      filters.directions.length,
+    ]);
 
     const customFieldsBadgeCount = useMemo(() => {
       return Object.values(filters.customFieldFilters || {}).filter(
@@ -529,7 +599,7 @@ export const FilterModalContent = React.memo<FilterModalContentProps>(
               badge={tradeCriteriaBadgeCount}
               defaultOpen={true}
             >
-              <div className="filter-modal-section-grid-2col">
+              <div className="filter-modal-section-grid-3col">
                 <div className="filter-modal-controls">
                   <TradeTypeFilter
                     selectedTradeTypes={filters.tradeTypes}
@@ -545,6 +615,22 @@ export const FilterModalContent = React.memo<FilterModalContentProps>(
                     onChange={handleStatusChange}
                   />
                 </div>
+                <div className="filter-modal-controls">
+                  <DirectionFilter
+                    selectedDirections={filters.directions}
+                    onChange={handleDirectionChange}
+                  />
+                </div>
+                {context === 'tradelog' && (
+                  <>
+                    <div className="filter-modal-controls">
+                      <ReviewStatusFilter
+                        selectedReviewStatus={filters.reviewStatus}
+                        onChange={handleReviewStatusChange}
+                      />
+                    </div>
+                  </>
+                )}
               </div>
             </CollapsibleSection>
 

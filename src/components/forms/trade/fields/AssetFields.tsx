@@ -229,6 +229,160 @@ interface RiskManagementSectionProps {
   onChange: (field: keyof TradeFormData, value: TradeFormValue) => void;
 }
 
+interface TakeProfitsSectionProps {
+  takeProfits: NonNullable<TradeFormData['takeProfits']>;
+  errors: TradeFormErrors;
+  pricePrecision: number;
+  onChange: (field: keyof TradeFormData, value: TradeFormValue) => void;
+}
+
+const createTakeProfitClientId = (): string =>
+  `take-profit-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+
+function TakeProfitsSection({
+  takeProfits,
+  errors,
+  pricePrecision,
+  onChange,
+}: TakeProfitsSectionProps) {
+  const generatedClientIdsRef = useRef(new WeakMap<object, string>());
+  const getTakeProfitKey = (
+    target: NonNullable<TradeFormData['takeProfits']>[number]
+  ): string => {
+    if (target.clientId) {
+      return target.clientId;
+    }
+
+    const existingId = generatedClientIdsRef.current.get(target);
+    if (existingId) {
+      return existingId;
+    }
+
+    const nextId = createTakeProfitClientId();
+    generatedClientIdsRef.current.set(target, nextId);
+    return nextId;
+  };
+
+  const updateTakeProfit = (
+    index: number,
+    field: 'price' | 'closePercent',
+    value: number | undefined
+  ) => {
+    onChange(
+      'takeProfits',
+      takeProfits.map((target, targetIndex) =>
+        targetIndex === index
+          ? { ...target, clientId: getTakeProfitKey(target), [field]: value }
+          : target
+      )
+    );
+  };
+
+  const addTakeProfit = () => {
+    if (
+      takeProfits.length === 1 &&
+      (takeProfits[0].closePercent === undefined ||
+        takeProfits[0].closePercent === 100)
+    ) {
+      onChange('takeProfits', [
+        { ...takeProfits[0], closePercent: 50 },
+        { clientId: createTakeProfitClientId(), closePercent: 50 },
+      ]);
+      return;
+    }
+
+    const allocatedPercent = takeProfits.reduce(
+      (total, target) => total + (target.closePercent || 0),
+      0
+    );
+    const remainingPercent = Math.max(0, 100 - allocatedPercent);
+    onChange('takeProfits', [
+      ...takeProfits,
+      {
+        clientId: createTakeProfitClientId(),
+        closePercent: remainingPercent || undefined,
+      },
+    ]);
+  };
+
+  const removeTakeProfit = (index: number) => {
+    onChange(
+      'takeProfits',
+      takeProfits.filter((_, targetIndex) => targetIndex !== index)
+    );
+  };
+
+  return (
+    <div className="take-profits-section">
+      <div className="take-profits-header">
+        <div className="label">{t('form.section.take-profits')}</div>
+        <Button
+          type="button"
+          variant="plain"
+          size="small"
+          className="take-profit-add-button"
+          onClick={addTakeProfit}
+          aria-label={t('form.action.add-take-profit')}
+        >
+          + {t('button.add')}
+        </Button>
+      </div>
+      {takeProfits.length > 0 && (
+        <div className="take-profits-list">
+          <div className="take-profit-row take-profit-row-header">
+            <span>{t('form.field.take-profit-short')}</span>
+            <span>{t('form.field.target-price')}</span>
+            <span>{t('form.field.close-percent')}</span>
+            <span aria-hidden="true" />
+          </div>
+          {takeProfits.map((target, index) => (
+            <div className="take-profit-row" key={getTakeProfitKey(target)}>
+              <span className="take-profit-index-label">TP{index + 1}</span>
+              <NumberInput
+                aria-label={`${t('form.field.target-price')} ${index + 1}`}
+                value={target.price}
+                onChange={(value) => updateTakeProfit(index, 'price', value)}
+                error={errors.takeProfits?.[index]?.price}
+                precision={pricePrecision}
+                allowDecimal={true}
+                placeholder={t('form.placeholder.target-price')}
+              />
+              <NumberInput
+                aria-label={`${t('form.field.close-percent')} ${index + 1}`}
+                value={target.closePercent}
+                onChange={(value) =>
+                  updateTakeProfit(index, 'closePercent', value)
+                }
+                error={errors.takeProfits?.[index]?.closePercent}
+                min={0}
+                max={100}
+                precision={0}
+                allowDecimal={false}
+                placeholder={t('form.placeholder.close-percent')}
+              />
+              <Button
+                type="button"
+                variant="plain"
+                size="small"
+                className="take-profit-remove-button"
+                onClick={() => removeTakeProfit(index)}
+                aria-label={t('form.action.remove-take-profit')}
+              >
+                ×
+              </Button>
+            </div>
+          ))}
+        </div>
+      )}
+      {takeProfits.length === 0 && (
+        <div className="take-profits-empty-state">
+          <span>{t('form.empty.take-profits')}</span>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function RiskManagementSection({
   data,
   errors,
@@ -244,6 +398,9 @@ function RiskManagementSection({
   const isShort =
     data.direction?.toUpperCase() === 'SHORT' ||
     data.direction?.toUpperCase() === 'SELL';
+  const takeProfits = data.takeProfits || [];
+  const pricePrecision = data.assetType === 'forex' ? 5 : 2;
+  const showTakeProfits = !data.isMissedTrade && !data.isBacktestTrade;
 
   return (
     <div className="risk-management-section">
@@ -255,7 +412,7 @@ function RiskManagementSection({
             value={data.stopLoss}
             onChange={(value) => onChange('stopLoss', value)}
             error={errors.stopLoss}
-            precision={data.assetType === 'forex' ? 5 : 2}
+            precision={pricePrecision}
             allowDecimal={true}
             placeholder={t('form.placeholder.stop-loss')}
           />
@@ -299,6 +456,15 @@ function RiskManagementSection({
               );
             })()}
         </div>
+
+        {showTakeProfits && (
+          <TakeProfitsSection
+            takeProfits={takeProfits}
+            errors={errors}
+            pricePrecision={pricePrecision}
+            onChange={onChange}
+          />
+        )}
 
         {showPriceFields && (
           <div className="field">

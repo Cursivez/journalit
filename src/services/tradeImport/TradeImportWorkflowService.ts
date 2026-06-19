@@ -1,19 +1,22 @@
 import { t } from '../../lang/helpers';
 import type JournalitPlugin from '../../main';
 import type { TradeData } from '../trade/TradeService';
-import { classifyPreviewTrades } from './localDuplicateDetector';
+import { generateUUID } from '../../utils/uuid';
+import { mapPreviewTradeToTradeData } from './canonicalTradeMapper';
+import {
+  isTradeImportCommitEligible,
+  isTradeImportSkipped,
+} from './commitEligibility';
 import type {
   ClassifiedPreviewTrade,
   TradeImportAnalyseResponse,
   TradeImportCapabilities,
   TradeImportCustomFieldDefinition,
-  TradeImportExistingOpenTrade,
   TradeImportFileType,
   TradeImportManualMode,
   TradeImportPreviewResponse,
 } from './types';
 import { BackendTradeImportService } from './BackendTradeImportService';
-import { safeString } from '../../utils/safeString';
 
 export class TradeImportValidationError extends Error {
   constructor(message: string) {
@@ -202,189 +205,43 @@ export function customFieldDefinitions(
   }));
 }
 
-const toBackendExecution = (execution: {
-  time: Date | string;
-  price: number;
-  size: number;
-}) => ({
-  time:
-    execution.time instanceof Date
-      ? execution.time.toISOString()
-      : new Date(execution.time).toISOString(),
-  price: execution.price,
-  size: execution.size,
-});
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
-}
-
-function isTradeData(value: unknown): value is TradeData {
-  return (
-    isRecord(value) &&
-    value.entryTime instanceof Date &&
-    typeof value.entryPrice === 'number' &&
-    typeof value.positionSize === 'number' &&
-    (typeof value.direction === 'string' || value.assetType === 'options')
-  );
-}
-
-async function getValidatedTradeData(
-  plugin: JournalitPlugin
-): Promise<TradeData[]> {
-  const trades = await plugin.tradeService.getTradeData();
-  return trades.filter(isTradeData).map((trade) => ({
-    ...trade,
-    direction: trade.direction || '',
-    setupIds: Array.isArray(trade.setupIds) ? trade.setupIds : [],
-  }));
-}
-
-function remainingOpenQuantity(trade: TradeData): number {
-  const entrySize = (trade.entries ?? []).reduce(
-    (sum, entry) => sum + Math.abs(entry.size),
-    0
-  );
-  if (entrySize === 0) return trade.positionSize;
-  const exitSize = (trade.exits ?? []).reduce(
-    (sum, exit) => sum + Math.abs(exit.size),
-    0
-  );
-  const remaining = entrySize - exitSize;
-  return remaining > 0 ? remaining : trade.positionSize;
-}
-
-function executionSize(
-  executions: Array<{ size: number }> | undefined
-): number {
-  return (executions ?? []).reduce(
-    (sum, execution) => sum + Math.abs(execution.size),
-    0
-  );
-}
-
-async function existingOpenTrades(
-  plugin: JournalitPlugin,
-  accountName: string,
-  broker: string
-): Promise<TradeImportExistingOpenTrade[]> {
-  if (broker !== 'IBKR') return [];
-
-  await plugin.tradeService.waitForTradeDataReady?.();
-  const trades = await getValidatedTradeData(plugin);
-  return trades
-    .filter(
-      (trade) =>
-        trade.tradeStatus === 'OPEN' &&
-        trade.account?.includes(accountName) &&
-        trade.instrument &&
-        trade.entryTime instanceof Date
-    )
-    .map((trade) => ({
-      sourceRows: Array.isArray(trade.sourceRows)
-        ? trade.sourceRows.map(Number).filter(Number.isFinite)
-        : [],
-      symbol: String(trade.instrument),
-      direction: String(trade.direction),
-      entryTime: trade.entryTime.toISOString(),
-      entryPrice: trade.entryPrice,
-      quantity: remainingOpenQuantity(trade),
-      exitTime:
-        trade.exitTime instanceof Date ? trade.exitTime.toISOString() : null,
-      exitPrice:
-        typeof trade.exitPrice === 'number' && Number.isFinite(trade.exitPrice)
-          ? trade.exitPrice
-          : null,
-      status: 'OPEN' as const,
-      closeOnly: false,
-      commission: trade.commission ?? null,
-      assetType: trade.assetType ?? null,
-      currency: trade.currency ?? null,
-      brokerBaseCurrencyPnl: trade.brokerBaseCurrencyPnl ?? null,
-      brokerBaseCurrency: trade.brokerBaseCurrency ?? null,
-      brokerBaseCurrencyPnlSource: trade.brokerBaseCurrencyPnlSource ?? null,
-      entries: (trade.entries ?? []).map(toBackendExecution),
-      exits: (trade.exits ?? []).map(toBackendExecution),
-      executionLedgerVersion: trade.executionLedgerVersion,
-      executionIds: trade.executionIds,
-      strikePrice: trade.strikePrice ?? null,
-      expirationDate:
-        trade.expirationDate instanceof Date
-          ? trade.expirationDate.toISOString()
-          : null,
-      optionType: trade.optionType ?? null,
-      contractSize: trade.contractSize ?? null,
-    }));
-}
-
-async function hasPersistedPreviewTrade(
-  plugin: JournalitPlugin,
-  item: ClassifiedPreviewTrade
-): Promise<boolean> {
-  const trades = await getValidatedTradeData(plugin);
-  const identityValues = new Set([
-    item.preview.csvImportId,
-    ...item.preview.legacyCsvImportIds,
-  ]);
-
-  return trades.some((trade) => {
-    if (
-      typeof trade.csvImportId === 'string' &&
-      identityValues.has(trade.csvImportId)
-    ) {
-      return true;
-    }
-
-    const legacyIds = Array.isArray(trade.legacyCsvImportIds)
-      ? trade.legacyCsvImportIds.map(String)
-      : [];
-    if (legacyIds.some((id) => identityValues.has(id))) {
-      return true;
-    }
-
-    return (
-      !!item.preview.executionLedgerVersion &&
-      trade.executionLedgerVersion === item.preview.executionLedgerVersion &&
-      item.preview.executionIds.length > 0 &&
-      item.preview.executionIds.every((id) => trade.executionIds?.includes(id))
+function timeoutAfter(ms: number): Promise<never> {
+  return new Promise((_, reject) => {
+    window.setTimeout(
+      () => reject(new Error('Trade Import local write timed out')),
+      ms
     );
   });
 }
 
-async function mergePreviewWithExistingTrade(
-  plugin: JournalitPlugin,
-  existingPath: string,
-  preview: TradeImportPreviewResponse['trades'][number],
-  previewTradeData: TradeData
-): Promise<TradeData> {
-  await plugin.tradeService.waitForTradeDataReady?.();
-  const trades = await getValidatedTradeData(plugin);
-  const existing = trades.find(
-    (trade) => typeof trade.path === 'string' && trade.path === existingPath
+function isProjectedTradeData(value: unknown): value is TradeData {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    'tradeImportId' in value &&
+    typeof value.tradeImportId === 'string' &&
+    'path' in value &&
+    typeof value.path === 'string'
   );
-  if (!existing) return previewTradeData;
+}
 
-  const unionStrings = (left?: string[], right?: string[]): string[] =>
-    Array.from(new Set([...(left ?? []), ...(right ?? [])]));
-  const unionNumbers = (left?: number[], right?: number[]): number[] =>
-    Array.from(new Set([...(left ?? []), ...(right ?? [])]));
-  const sumOptional = (left?: number, right?: number): number | undefined => {
-    if (left === undefined && right === undefined) return undefined;
-    return (left ?? 0) + (right ?? 0);
-  };
-  const existingLegacyIds = Array.isArray(existing.legacyCsvImportIds)
-    ? existing.legacyCsvImportIds.map(String)
-    : [];
-  const previewLegacyIds = Array.isArray(previewTradeData.legacyCsvImportIds)
-    ? previewTradeData.legacyCsvImportIds.map(String)
-    : [];
-  const existingSourceRows = Array.isArray(existing.sourceRows)
-    ? existing.sourceRows.map(Number).filter(Number.isFinite)
-    : [];
-  const previewSourceRows = Array.isArray(previewTradeData.sourceRows)
-    ? previewTradeData.sourceRows.map(Number).filter(Number.isFinite)
-    : [];
-  const preservedLocalFields = {
+async function findProjectedTrade(
+  plugin: JournalitPlugin,
+  backendTradeId: string
+): Promise<TradeData | undefined> {
+  await plugin.tradeService.waitForTradeDataReady?.();
+  const trades = await plugin.tradeService.getTradeData();
+  return trades
+    .filter(isProjectedTradeData)
+    .find((trade) => trade.tradeImportId === backendTradeId);
+}
+
+function preserveLocalTradeAnnotations(
+  tradeData: TradeData,
+  existing: TradeData
+): TradeData {
+  return {
+    ...tradeData,
     notes: existing.notes,
     thesis: existing.thesis,
     images: existing.images,
@@ -398,97 +255,6 @@ async function mergePreviewWithExistingTrade(
     reviewed: existing.reviewed,
     reviewedAt: existing.reviewedAt,
   };
-  const mergedCsvImportId =
-    previewTradeData.csvImportId ?? existing.csvImportId;
-  const legacyIdsToPreserve: string[] =
-    existing.csvImportId && existing.csvImportId !== mergedCsvImportId
-      ? [safeString(existing.csvImportId)]
-      : [];
-  const mergedIdentityFields = {
-    csvImportId: mergedCsvImportId,
-    orderId: previewTradeData.orderId ?? existing.orderId,
-    legacyCsvImportIds: unionStrings(
-      unionStrings(existingLegacyIds, previewLegacyIds),
-      legacyIdsToPreserve
-    ),
-    sourceRows: unionNumbers(existingSourceRows, previewSourceRows),
-    executionLedgerVersion:
-      previewTradeData.executionLedgerVersion ??
-      existing.executionLedgerVersion,
-    executionIds: unionStrings(
-      existing.executionIds,
-      previewTradeData.executionIds
-    ),
-  };
-
-  if (preview.closeOnly) {
-    const remainingBeforeClose = remainingOpenQuantity(existing);
-    const closeSize = executionSize(previewTradeData.exits);
-    if (closeSize > remainingBeforeClose) {
-      throw new Error('Close-only preview exceeds remaining open quantity');
-    }
-    const remainsOpen = closeSize > 0 && closeSize < remainingBeforeClose;
-    const mergedAuthoritativePnl = sumOptional(
-      existing.authoritativePnl,
-      previewTradeData.authoritativePnl
-    );
-    const mergedDirectPnL = sumOptional(
-      existing.directPnL,
-      previewTradeData.useDirectPnLInput
-        ? previewTradeData.directPnL
-        : undefined
-    );
-    const useDirectPnLInput = Boolean(
-      existing.useDirectPnLInput || previewTradeData.useDirectPnLInput
-    );
-    return {
-      ...existing,
-      ...previewTradeData,
-      ...mergedIdentityFields,
-      tradeStatus: remainsOpen ? 'OPEN' : previewTradeData.tradeStatus,
-      entryTime: existing.entryTime,
-      entryPrice: existing.entryPrice,
-      positionSize: existing.positionSize,
-      entries: existing.entries,
-      exits: [...(existing.exits ?? []), ...(previewTradeData.exits ?? [])],
-      exitTime: remainsOpen ? existing.exitTime : previewTradeData.exitTime,
-      exitPrice: remainsOpen ? existing.exitPrice : previewTradeData.exitPrice,
-      hasExplicitExitPrice: remainsOpen
-        ? existing.hasExplicitExitPrice
-        : previewTradeData.hasExplicitExitPrice,
-      authoritativePnl: mergedAuthoritativePnl,
-      originalPnl: existing.originalPnl,
-      useDirectPnLInput,
-      directPnL: useDirectPnLInput ? mergedDirectPnL : existing.directPnL,
-      commission: sumOptional(existing.commission, previewTradeData.commission),
-      fees: sumOptional(existing.fees, previewTradeData.fees),
-      swap: sumOptional(existing.swap, previewTradeData.swap),
-      rebate: sumOptional(existing.rebate, previewTradeData.rebate),
-      brokerBaseCurrencyPnl: sumOptional(
-        existing.brokerBaseCurrencyPnl,
-        previewTradeData.brokerBaseCurrencyPnl
-      ),
-      brokerBaseCurrency:
-        previewTradeData.brokerBaseCurrency ?? existing.brokerBaseCurrency,
-      brokerBaseCurrencyPnlSource:
-        previewTradeData.brokerBaseCurrencyPnlSource ??
-        existing.brokerBaseCurrencyPnlSource,
-      ...preservedLocalFields,
-    };
-  }
-
-  return {
-    ...existing,
-    ...previewTradeData,
-    ...mergedIdentityFields,
-    ...preservedLocalFields,
-  };
-}
-
-function timeoutAfter(ms: number): Promise<never> {
-  return new Promise((_, reject) => {
-    window.setTimeout(() => reject(new Error('Timed out')), ms);
-  });
 }
 
 export class TradeImportWorkflowService {
@@ -567,11 +333,6 @@ export class TradeImportWorkflowService {
     );
     if (validationError) throw new TradeImportValidationError(validationError);
 
-    const openTradesForPreview = await existingOpenTrades(
-      this.plugin,
-      accountName,
-      broker
-    );
     const response = await this.backendService.preview(file, {
       schemaVersion: 'trade-import-preview-request-v1',
       pluginVersion: pluginVersion(this.plugin),
@@ -587,17 +348,21 @@ export class TradeImportWorkflowService {
       mappingVersion: capabilities.manualMapping.mappingVersion,
       columnMappings,
       customFields: customFieldDefinitions(this.plugin),
-      existingOpenTrades: openTradesForPreview,
     });
-    const classifiedTrades = await classifyPreviewTrades(
-      this.plugin,
-      response.trades,
-      accountName
-    );
+    const classifiedTrades = response.items.map((item) => ({
+      itemId: item.itemId,
+      preview: item.previewTrade,
+      tradeData: mapPreviewTradeToTradeData(item.previewTrade, accountName),
+      classification: item.classification,
+      defaultAction: item.defaultAction,
+      matchedTradeId: item.matchedTradeId,
+      message: item.decisionReasons.map((reason) => reason.code).join(', '),
+    }));
     return { response, classifiedTrades };
   }
 
   async writePreview({
+    preview,
     classified,
     accountName,
     brokerLabel,
@@ -635,77 +400,225 @@ export class TradeImportWorkflowService {
       return result;
     };
 
-    for (const item of classified) {
+    const commitItems = classified.map((item) => {
+      if (item.defaultAction === 'update' && item.matchedTradeId) {
+        return {
+          itemId: item.itemId,
+          action: 'update_existing' as const,
+          targetTradeId: item.matchedTradeId,
+        };
+      }
+      return {
+        itemId: item.itemId,
+        action: isTradeImportCommitEligible(item.defaultAction)
+          ? ('accept_default' as const)
+          : ('skip' as const),
+      };
+    });
+
+    const clientCommitId = generateUUID();
+    let commit: Awaited<ReturnType<BackendTradeImportService['commit']>>;
+    try {
+      commit = await this.backendService.commit(
+        preview.importId,
+        {
+          correlationId: preview.correlationId,
+          previewRevision: preview.previewRevision,
+          clientCommitId,
+          items: commitItems,
+        },
+        clientCommitId
+      );
+    } catch {
+      const duplicateCount = classified.filter((item) =>
+        isTradeImportSkipped(item.defaultAction)
+      ).length;
+      return (
+        finalizeImport(0, duplicateCount, classified.length - duplicateCount) ??
+        buildResult(0, duplicateCount, classified.length - duplicateCount)
+      );
+    }
+
+    const previewByItemId = new Map(
+      classified.map((item) => [item.itemId, item])
+    );
+    const submittedItemIds = new Set(commitItems.map((item) => item.itemId));
+    const returnedItemIds = new Set(
+      commit.itemResults.map((result) => result.itemId)
+    );
+    if (
+      returnedItemIds.size !== commit.itemResults.length ||
+      commitItems.some((item) => !returnedItemIds.has(item.itemId)) ||
+      commit.itemResults.some((result) => !submittedItemIds.has(result.itemId))
+    ) {
+      const duplicateCount = classified.filter((item) =>
+        isTradeImportSkipped(item.defaultAction)
+      ).length;
+      return (
+        finalizeImport(0, duplicateCount, classified.length - duplicateCount) ??
+        buildResult(0, duplicateCount, classified.length - duplicateCount)
+      );
+    }
+    const resultsByTradeId = new Map<
+      string,
+      Array<(typeof commit.itemResults)[number]>
+    >();
+    for (const result of commit.itemResults) {
       if (
-        item.classification === 'duplicate' ||
-        item.classification === 'failed'
+        !result.tradeId ||
+        (result.result !== 'created' && result.result !== 'updated')
       ) {
         continue;
       }
+      resultsByTradeId.set(result.tradeId, [
+        ...(resultsByTradeId.get(result.tradeId) ?? []),
+        result,
+      ]);
+    }
+    const ackResults: Array<{
+      tradeId: string;
+      backendTradeVersion: number;
+      filePath?: string;
+      status: 'synced' | 'failed';
+      errorCode?: string;
+    }> = [];
+
+    for (const committedTrade of commit.trades) {
+      const tradeResults = resultsByTradeId.get(committedTrade.id) ?? [];
+      if (tradeResults.length === 0) continue;
       try {
-        if (item.classification === 'update_existing' && item.existingPath) {
-          const mergedTradeData = await mergePreviewWithExistingTrade(
-            this.plugin,
-            item.existingPath,
-            item.preview,
-            item.tradeData
-          );
-          await Promise.race([
-            this.plugin.tradeService.updateTrade(
-              mergedTradeData,
-              item.existingPath,
-              'trade-import'
-            ),
-            timeoutAfter(localWriteTimeoutMs),
-          ]);
-          importedTrades.push({
-            filePath: item.existingPath,
-            symbol: item.preview.symbol,
-            direction: item.preview.direction,
-            quantity: item.preview.quantity,
-            entryPrice: item.preview.entryPrice,
-            profitLoss: item.preview.profitLoss ?? undefined,
-            entryTime: item.preview.entryTime,
-            status: item.preview.status,
-          });
-        } else {
-          const filePath = await Promise.race([
-            this.plugin.tradeService.createTrade(item.tradeData, {
-              suppressAutoOpen: true,
-              suppressPostCreateTasks: true,
-            }),
-            timeoutAfter(localWriteTimeoutMs),
-          ]);
-          importedTrades.push({
-            filePath,
-            symbol: item.preview.symbol,
-            direction: item.preview.direction,
-            quantity: item.preview.quantity,
-            entryPrice: item.preview.entryPrice,
-            profitLoss: item.preview.profitLoss ?? undefined,
-            entryTime: item.preview.entryTime,
-            status: item.preview.status,
-          });
+        const existingTrade = await findProjectedTrade(
+          this.plugin,
+          committedTrade.id
+        );
+        const metadata = {
+          backendTradeId: committedTrade.id,
+          backendVersion: committedTrade.version,
+        };
+        const projectionTrade = committedTrade.previewTrade;
+        if (!projectionTrade) {
+          throw new Error('Trade Import commit projection missing trade data');
         }
+        const tradeData = mapPreviewTradeToTradeData(
+          projectionTrade,
+          accountName,
+          metadata
+        );
+        const existingPath =
+          typeof existingTrade?.path === 'string'
+            ? existingTrade.path
+            : undefined;
+        const projectedTradeData = existingTrade
+          ? preserveLocalTradeAnnotations(tradeData, existingTrade)
+          : tradeData;
+        const filePath = existingPath
+          ? await Promise.race([
+              this.plugin.tradeService.updateTrade(
+                projectedTradeData,
+                existingPath,
+                'trade-import'
+              ),
+              timeoutAfter(localWriteTimeoutMs),
+            ])
+          : await Promise.race([
+              this.plugin.tradeService.createTrade(projectedTradeData, {
+                suppressAutoOpen: true,
+                suppressPostCreateTasks: true,
+              }),
+              timeoutAfter(localWriteTimeoutMs),
+            ]);
+        importedTrades.push({
+          filePath,
+          symbol: projectionTrade.symbol,
+          direction: projectionTrade.direction,
+          quantity: projectionTrade.quantity,
+          entryPrice: projectionTrade.entryPrice,
+          profitLoss: projectionTrade.profitLoss ?? undefined,
+          entryTime: projectionTrade.entryTime,
+          status: projectionTrade.status,
+        });
+        ackResults.push({
+          tradeId: committedTrade.id,
+          backendTradeVersion: committedTrade.version,
+          filePath,
+          status: 'synced',
+        });
         written++;
       } catch {
-        if (await hasPersistedPreviewTrade(this.plugin, item)) {
-          written++;
-        } else {
-          failed++;
-        }
+        ackResults.push({
+          tradeId: committedTrade.id,
+          backendTradeVersion: committedTrade.version,
+          status: 'failed',
+          errorCode: 'obsidian_write_failed',
+        });
+        failed++;
       }
     }
 
-    const duplicateCount = classified.filter(
-      (item) => item.classification === 'duplicate'
+    const duplicateCount = commit.itemResults.filter((result) => {
+      if (
+        result.result !== 'skipped' &&
+        result.result !== 'skipped_duplicate'
+      ) {
+        return false;
+      }
+      const item = previewByItemId.get(result.itemId);
+      return item?.defaultAction === 'skip';
+    }).length;
+    const failedSkippedResults = commit.itemResults.filter((result) => {
+      if (
+        result.result !== 'skipped' &&
+        result.result !== 'skipped_duplicate'
+      ) {
+        return false;
+      }
+      const item = previewByItemId.get(result.itemId);
+      return (
+        item?.defaultAction === 'blocked' ||
+        item?.defaultAction === 'manual_review'
+      );
+    }).length;
+    const failedCommitResults = commit.itemResults.filter(
+      (result) => result.result === 'blocked' || result.result === 'conflict'
     ).length;
-    const failedClassifications = classified.filter(
-      (item) => item.classification === 'failed'
-    ).length;
-    return (
-      finalizeImport(written, duplicateCount, failed + failedClassifications) ??
-      buildResult(written, duplicateCount, failed + failedClassifications)
+    const projectedTradeIds = new Set(
+      ackResults.map((ackResult) => ackResult.tradeId)
     );
+    const successfulCommitResultsWithoutProjection = commit.itemResults.filter(
+      (result) =>
+        (result.result === 'created' || result.result === 'updated') &&
+        (!result.tradeId || !projectedTradeIds.has(result.tradeId))
+    ).length;
+    const totalFailed =
+      failed +
+      failedCommitResults +
+      failedSkippedResults +
+      successfulCommitResultsWithoutProjection;
+    const result =
+      finalizeImport(written, duplicateCount, totalFailed) ??
+      buildResult(written, duplicateCount, totalFailed);
+
+    if (ackResults.length) {
+      const uniqueAckResults = Array.from(
+        new Map(
+          ackResults.map((ackResult) => [ackResult.tradeId, ackResult])
+        ).values()
+      );
+      try {
+        await this.backendService.projectionAck({
+          correlationId: commit.correlationId,
+          importId: commit.importId,
+          commitId: commit.commitId,
+          vaultId:
+            this.plugin.settings.backendIntegration?.vaultIdentifier ??
+            this.plugin.app.vault.getName(),
+          results: uniqueAckResults,
+        });
+      } catch {
+        // intentional
+      }
+    }
+
+    return result;
   }
 }

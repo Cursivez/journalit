@@ -5,19 +5,24 @@ import { normalizeAccountLookupKey } from '../../../services/trade/core/TradeAcc
 
 interface HomeAccountContextValue {
   selectedAccounts: string[];
+  availableAccounts: string[];
   hasAccountFilter: boolean;
   matchesAccount: (account: string | string[] | null | undefined) => boolean;
 }
 
 const HomeAccountContext = createContext<HomeAccountContextValue | null>(null);
 
+const EMPTY_AVAILABLE_ACCOUNTS: string[] = [];
+
 interface HomeAccountProviderProps {
   selectedAccounts: string[];
+  availableAccounts?: string[];
   children: ReactNode;
 }
 
 export const HomeAccountProvider: React.FC<HomeAccountProviderProps> = ({
   selectedAccounts,
+  availableAccounts = EMPTY_AVAILABLE_ACCOUNTS,
   children,
 }) => {
   const normalizedSelectedAccounts = useMemo(
@@ -56,10 +61,16 @@ export const HomeAccountProvider: React.FC<HomeAccountProviderProps> = ({
   const contextValue = useMemo<HomeAccountContextValue>(
     () => ({
       selectedAccounts: normalizedSelectedAccounts,
+      availableAccounts,
       hasAccountFilter,
       matchesAccount,
     }),
-    [normalizedSelectedAccounts, hasAccountFilter, matchesAccount]
+    [
+      normalizedSelectedAccounts,
+      availableAccounts,
+      hasAccountFilter,
+      matchesAccount,
+    ]
   );
 
   return (

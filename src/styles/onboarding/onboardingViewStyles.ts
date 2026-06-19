@@ -213,6 +213,7 @@ export const ONBOARDING_VIEW_STYLES = `
     min-height: 0;
     display: flex;
     flex-direction: column;
+    container-type: inline-size;
 
     
     overflow-y: auto;
@@ -712,7 +713,7 @@ export const ONBOARDING_VIEW_STYLES = `
     width: 100%;
     max-width: 760px;
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr));
     gap: 0.9rem;
   }
 
@@ -757,6 +758,36 @@ export const ONBOARDING_VIEW_STYLES = `
     font-size: 0.82rem;
     color: var(--text-muted);
     line-height: 1.45;
+  }
+
+  @container (max-width: 1200px) {
+    .journalit-onboarding-view-container .explore-step .feature-content-wrapper {
+      grid-template-columns: 1fr;
+      gap: 2rem;
+      align-items: stretch;
+      max-width: 760px;
+    }
+
+    .journalit-onboarding-view-container .explore-step .feature-left {
+      max-width: 100%;
+    }
+
+    .journalit-onboarding-view-container .explore-step .step-header h2 {
+      font-size: clamp(1.75rem, 6cqw, 2.25rem);
+    }
+
+    .journalit-onboarding-view-container .explore-step .step-subtitle {
+      font-size: 1rem;
+      line-height: 1.6;
+    }
+
+    .journalit-onboarding-view-container .explore-right {
+      width: 100%;
+    }
+
+    .journalit-onboarding-view-container .explore-feature-grid {
+      max-width: none;
+    }
   }
 
 

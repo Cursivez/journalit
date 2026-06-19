@@ -70,6 +70,10 @@ export type TradeStatus =
   | 'loss'
   | 'breakeven';
 
+export type ReviewStatusFilter = 'reviewed' | 'unreviewed';
+
+export type DirectionFilter = 'long' | 'short';
+
 
 
 export const SELECTABLE_TRADE_TYPES_COUNT = 3; 
@@ -81,9 +85,11 @@ export interface TradeLogFilters {
   tradeTypes: TradeType[];
   statuses: TradeStatus[];
   accounts: string[];
+  directions: DirectionFilter[];
   tickers: string[];
   setups: string[];
   tags: string[];
   mistakes: string[];
+  reviewStatus: ReviewStatusFilter[];
   customFieldFilters: CustomFieldFilterSelections;
 }

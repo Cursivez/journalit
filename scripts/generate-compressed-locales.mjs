@@ -7,6 +7,7 @@ const localeCodes = [
   'es',
   'de',
   'fr',
+  'vi',
   'pt-BR',
   'zh',
   'zh-TW',

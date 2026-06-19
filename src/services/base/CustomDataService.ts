@@ -4,6 +4,10 @@ import { App, TFile, TAbstractFile } from 'obsidian';
 import { IndexManager, IndexConfig, IndexEntry } from './IndexManager';
 import { forceMetadataCacheRefresh } from '../../utils/dataRefresh';
 import type JournalitPlugin from '../../main';
+import {
+  getJournalitCachePath,
+  isPathWithinDirectory,
+} from './pluginStoragePaths';
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
@@ -398,7 +402,7 @@ export class CustomDataService {
 
   
   private getCacheFilePath(): string {
-    return `.journalit/cache/${this.config.namespace}-cache.json`;
+    return `${getJournalitCachePath(this.app)}/${this.config.namespace}-cache.json`;
   }
 
   
@@ -440,7 +444,7 @@ export class CustomDataService {
       const cachePath = this.getCacheFilePath();
 
       
-      await this.app.vault.adapter.mkdir('.journalit/cache');
+      await this.app.vault.adapter.mkdir(getJournalitCachePath(this.app));
 
       
       const namespacedEntries = Array.from(this.cache.entries()).filter(
@@ -464,7 +468,8 @@ export class CustomDataService {
     if (!('path' in file)) return;
 
     
-    if (file.path.includes('journalit/cache')) return;
+    if (isPathWithinDirectory(file.path, getJournalitCachePath(this.app)))
+      return;
 
     
     if (this.config.folder && !file.path.startsWith(this.config.folder)) return;

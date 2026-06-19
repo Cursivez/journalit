@@ -117,6 +117,7 @@ export const TradeForm: React.FC<TradeFormProps> = ({
       'leverageRatio',
       'directPnL',
       'stopLoss',
+      'takeProfits',
       'riskAmount',
     ];
 

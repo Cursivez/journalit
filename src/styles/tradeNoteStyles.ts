@@ -46,6 +46,34 @@ export const TRADE_NOTE_STYLES = `
     margin-left: auto;
     margin-right: auto;
   }
+
+  
+  .markdown-preview-view.is-readable-line-width > .journalit-trade-view[data-mode="reading"] {
+    max-width: var(--file-line-width, 700px);
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  
+  .journalit-trade-view[data-mode="export"] {
+    margin-bottom: var(--size-4-4, 1rem);
+  }
+
+  .journalit-trade-view[data-mode="export"] .trade-navigation-with-edit,
+  .journalit-trade-view[data-mode="export"] .trade-note-loading-placeholder,
+  .journalit-trade-view[data-mode="export"] .trade-note-review-section,
+  .journalit-trade-view[data-mode="export"] button {
+    display: none;
+  }
+
+  @media print {
+    .journalit-trade-view .trade-navigation-with-edit,
+    .journalit-trade-view .trade-note-loading-placeholder,
+    .journalit-trade-view .trade-note-review-section,
+    .journalit-trade-view button {
+      display: none;
+    }
+  }
   
   .trade-note-container {
     background-color: var(--background-primary);
@@ -388,8 +416,7 @@ export const TRADE_NOTE_STYLES = `
     gap: 0.4rem;
   }
   
-  .journalit-trade-view .tag,
-  .journalit-missed-trade-view .tag {
+  .journalit-trade-view .tag {
     padding: 0.35rem 0.7rem;
     border-radius: 20px;
     font-size: 0.75rem;
@@ -400,8 +427,7 @@ export const TRADE_NOTE_STYLES = `
     color: var(--text-normal);
   }
 
-  .journalit-trade-view .tag:hover,
-  .journalit-missed-trade-view .tag:hover {
+  .journalit-trade-view .tag:hover {
     transform: translateY(-1px);
   }
   
@@ -435,6 +461,41 @@ export const TRADE_NOTE_STYLES = `
   .account-tag:hover {
     transform: translateY(-1px);
     color: var(--text-accent-hover, var(--text-accent));
+  }
+
+  .journalit-trade-view .missed-trade-reason-section {
+    margin-top: 0.5rem;
+  }
+
+  .journalit-trade-view .missed-trade-reason-section .details-card {
+    border-left: 4px solid var(--color-orange, #ff9800);
+    background-color: var(--background-secondary);
+  }
+
+  .journalit-trade-view .missed-trade-reason-section h4 {
+    color: var(--color-orange, #ff9800);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .journalit-trade-view .missed-trade-reason-section h4::before {
+    content: '⚠';
+    font-size: 1.1em;
+  }
+
+  .journalit-trade-view .missed-trade-reason-content {
+    color: var(--text-normal);
+    line-height: 1.6;
+    white-space: pre-wrap;
+    background-color: var(--background-primary);
+    padding: 1rem;
+    border-radius: 6px;
+    border: 1px solid var(--background-modifier-border);
+  }
+
+  .theme-dark .journalit-trade-view .missed-trade-reason-content {
+    background-color: var(--background-secondary-alt);
   }
   
   
@@ -1190,8 +1251,7 @@ export const TRADE_NOTE_STYLES = `
     height: 14px;
   }
   
-  .journalit-trade-view .trade-review-navigation-links,
-  .journalit-missed-trade-view .trade-review-navigation-links {
+  .journalit-trade-view .trade-review-navigation-links {
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -1200,8 +1260,7 @@ export const TRADE_NOTE_STYLES = `
     width: 100%;
   }
   
-  .journalit-trade-view .trade-review-navigation-button,
-  .journalit-missed-trade-view .trade-review-navigation-button {
+  .journalit-trade-view .trade-review-navigation-button {
     flex: 1;
     min-width: 120px;
     text-align: center;
@@ -1219,14 +1278,12 @@ export const TRADE_NOTE_STYLES = `
     gap: 6px;
   }
 
-  .journalit-trade-view .trade-review-navigation-button:hover,
-  .journalit-missed-trade-view .trade-review-navigation-button:hover {
+  .journalit-trade-view .trade-review-navigation-button:hover {
     background-color: var(--background-modifier-hover);
     transform: translateY(-1px);
   }
 
-  .journalit-trade-view .trade-review-navigation-button:disabled,
-  .journalit-missed-trade-view .trade-review-navigation-button:disabled {
+  .journalit-trade-view .trade-review-navigation-button:disabled {
     opacity: 0.5;
     cursor: not-allowed;
     transform: none;

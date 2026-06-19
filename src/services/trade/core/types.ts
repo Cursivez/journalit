@@ -43,6 +43,10 @@ export interface TradeMutationInput {
   fees?: number;
   rebate?: number;
   stopLoss?: number;
+  takeProfits?: Array<{
+    price?: number;
+    closePercent?: number;
+  }>;
   riskAmount?: number;
   currency?: string;
   brokerBaseCurrencyPnl?: number;
@@ -78,11 +82,11 @@ export interface TradeMutationInput {
   directPnL?: number;
   executionLedgerVersion?: number;
   executionIds?: string[];
-  csvImportId?: string;
-  legacyCsvImportIds?: string[];
   sourceRows?: number[];
   orderId?: string;
   backendTradeId?: number;
+  tradeImportId?: string;
+  tradeImportVersion?: number;
   tradeId?: string;
   schemaVersion?: number;
   tradeRevision?: number;

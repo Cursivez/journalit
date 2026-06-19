@@ -1,6 +1,6 @@
 # Privacy Policy - Journalit
 
-**Last Updated**: 2026-06-11
+**Last Updated**: 2026-06-16
 
 ## Overview
 
@@ -46,7 +46,10 @@ When you authenticate, the following is stored locally:
 
 ### Cache Data
 
-**Location**: `.journalit/cache/`
+**Locations**:
+
+- `${app.vault.configDir}/plugins/journalit/cache/`
+- `${app.vault.configDir}/plugins/journalit/indexes/`
 
 Query results and indexes for performance optimization. Stays local, never transmitted.
 
@@ -111,11 +114,13 @@ When you enable MT5 sync in **Settings → Integration → Backend Integration**
 
 Trade Import uploads the selected broker export to Journalit servers for processing. Supported inputs may include CSV, XLSX, XLS, HTML, and broker statement files. Broker exports may contain account identifiers, trade history, symbols, timestamps, prices, quantities, fees, balances, and P&L. Raw files are processed for the requested import and are not stored by default. For preview generation, the plugin also sends the selected account name, broker/file/mapping choices, custom field definitions and saved options, and limited local open-trade context for IBKR open-position matching.
 
+When you confirm an import, the backend commits the selected preview items and returns the canonical post-commit trade projection used to create or update local Obsidian trade notes. The plugin then sends a projection acknowledgement containing backend trade IDs, versions, local file paths for successfully written notes, and success/failure status so the backend can track whether the local projection completed.
+
 **Control:**
 
 - Requires sign-in and an active Pro subscription before upload.
 - The plugin shows an upload acknowledgement before processing each view session.
-- The backend returns preview data only; final note creation remains local in your Obsidian vault.
+- Final note creation remains local in your Obsidian vault.
 
 ---
 
@@ -167,6 +172,8 @@ When backend integration is enabled, the plugin communicates with the following 
 - `/api/v1/trade-import/capabilities` - Trade Import capabilities
 - `/api/v1/trade-import/analyse` - Trade Import file analysis
 - `/api/v1/trade-import/preview` - Trade Import canonical preview
+- `/api/v1/trade-import/{importId}/commit` - Confirm selected Trade Import preview items
+- `/api/v1/trade-import/projection-ack` - Acknowledge local Trade Import note projection status
 - `/api/v1/health` - Backend health check
 
 All authenticated API requests use JWT tokens in the Authorization header.
@@ -187,6 +194,7 @@ When you use sync features, the backend stores:
 ### Trading Data
 
 - Synced trades from MetaTrader (symbol, times, prices, P&L, fees)
+- Canonical Trade Import records for confirmed imports, including imported trade identity, version, source broker/account metadata, execution details, status, and processing/projection state
 - MT account IDs and display names
 - Processing history (which reports have been synced)
 

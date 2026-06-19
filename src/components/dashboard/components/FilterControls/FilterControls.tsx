@@ -239,6 +239,7 @@ export const FilterControls = React.memo<FilterControlsProps>(
         filters.statuses.length < SELECTABLE_STATUSES_COUNT
       )
         count++;
+      if (filters.directions?.length > 0) count++;
       if (
         Object.values(sanitizedCustomFieldFilters).some(
           (values) => values.length > 0
@@ -285,6 +286,8 @@ export const FilterControls = React.memo<FilterControlsProps>(
           mistakes: filters.mistakes || [],
           tradeTypes: filters.tradeTypes || [],
           statuses: filters.statuses || [],
+          reviewStatus: filters.reviewStatus || [],
+          directions: filters.directions || [],
           customFieldFilters: sanitizedCustomFieldFilters,
         },
         availableAccounts,
@@ -299,6 +302,7 @@ export const FilterControls = React.memo<FilterControlsProps>(
             mistakes: newFilters.mistakes,
             tradeTypes: newFilters.tradeTypes,
             statuses: newFilters.statuses,
+            directions: newFilters.directions,
             customFieldFilters: sanitizeCustomFieldFilters(
               newFilters.customFieldFilters,
               discreteCustomFields

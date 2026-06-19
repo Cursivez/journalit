@@ -21,12 +21,7 @@ import {
 } from '../../utils/dateUtils';
 import { getTradingDay } from '../../utils/tradingDayUtils';
 import { forceMetadataCacheRefresh } from '../../utils/dataRefresh';
-import {
-  generatePeriodicTag,
-  generateContextualTags,
-  combineTags,
-  PERIODIC_TYPES,
-} from '../../utils/tagSchema';
+
 import { FolderPathService } from '../core/FolderPathService';
 import { ReviewTemplateService } from '../templates/ReviewTemplateService';
 import { TemplateTransformationService } from '../templates/TemplateTransformationService';
@@ -892,28 +887,12 @@ export class DRCService {
   }
 
   
-  private generateDRCTags(date: Date): string[] {
-    const tagArrays: string[][] = [];
-
-    
-    tagArrays.push([generatePeriodicTag(PERIODIC_TYPES.DAILY)]);
-
-    const contextualTags = generateContextualTags(date);
-    if (contextualTags.length > 0) {
-      tagArrays.push(contextualTags);
-    }
-
-    
-    return combineTags(...tagArrays);
-  }
-
-  
   private async generateInitialDRCContent(date: Date): Promise<string> {
     
     const drcData: Record<string, unknown> = {
       type: 'drc',
       date: this.formatDateForDisplay(date),
-      tags: this.generateDRCTags(date),
+      tags: [],
       
       
       sessionMistakes: [],

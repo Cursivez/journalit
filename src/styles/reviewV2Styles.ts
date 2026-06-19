@@ -2505,7 +2505,38 @@ ${TRADE_ACCOUNT_CELL_STYLES}
   }
 
   .journalit-key-levels-importance-option {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
     min-height: 30px;
+    padding: 6px 10px;
+    cursor: pointer;
+    font-size: 13px;
+    text-align: left;
+    color: var(--text-normal) !important;
+    background: transparent !important;
+    background-color: transparent !important;
+    border: none !important;
+    border-radius: 0;
+    box-shadow: none !important;
+    appearance: none;
+    -webkit-appearance: none;
+  }
+
+  .journalit-key-levels-importance-dropdown
+    button.journalit-key-levels-importance-option {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    padding: 6px 10px;
+    color: var(--text-normal) !important;
+    background: transparent !important;
+    background-color: transparent !important;
+    border: none !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
   }
 
   .journalit-key-levels-importance-option-icon {
@@ -2517,18 +2548,30 @@ ${TRADE_ACCOUNT_CELL_STYLES}
     flex: 0 0 14px;
   }
 
+  .journalit-key-levels-importance-option-icon svg {
+    display: block;
+  }
+
   .journalit-key-levels-importance-option-label {
     font-size: 0.78rem;
     line-height: 1;
   }
 
   .journalit-key-levels-importance-option:hover {
-    background: var(--background-modifier-hover);
+    background: var(--background-modifier-hover) !important;
+    background-color: var(--background-modifier-hover) !important;
+  }
+
+  .journalit-key-levels-importance-dropdown
+    button.journalit-key-levels-importance-option:hover {
+    background: var(--background-modifier-hover) !important;
+    background-color: var(--background-modifier-hover) !important;
   }
 
   .journalit-key-levels-importance-option--selected {
-    background: transparent;
-    color: var(--text-normal);
+    background: transparent !important;
+    background-color: transparent !important;
+    color: var(--text-normal) !important;
   }
 
   .journalit-key-levels-remove-button {

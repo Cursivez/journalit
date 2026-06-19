@@ -54,6 +54,12 @@ interface JournalitPluginForTradeNote {
       source?: string
     ) => Promise<void>;
   };
+  missedTradeService?: {
+    updateMissedTrade: (
+      data: Partial<TradeFormData>,
+      filePath: string
+    ) => Promise<void>;
+  };
   customFieldsService?: {
     getFields: () => CustomFieldDefinition[];
   };
@@ -99,11 +105,13 @@ export class TradeNoteRenderer extends BaseComponentRenderer {
   ): void {
     try {
       
-
       
-
       
-      if (!container || !container.isConnected) {
+      if (
+        !container ||
+        (!container.isConnected &&
+          container.getAttribute('data-mode') !== 'export')
+      ) {
         return;
       }
 
@@ -137,6 +145,9 @@ export class TradeNoteRenderer extends BaseComponentRenderer {
           return; 
         }
         
+        this.unmountContainer(container);
+        container.classList.remove('trade-note-mounted');
+        container.removeAttribute('data-mounted-at');
         existingWrapper.remove();
       }
 
@@ -164,6 +175,9 @@ export class TradeNoteRenderer extends BaseComponentRenderer {
       }
 
       
+      this.unmountContainer(container);
+      container.classList.remove('trade-note-mounted');
+      container.removeAttribute('data-mounted-at');
       container.empty();
 
       
@@ -323,14 +337,30 @@ export class TradeNoteRenderer extends BaseComponentRenderer {
     const handleDataUpdate = async (updatedData: Partial<TradeFormData>) => {
       
       const plugin = getJournalitPlugin(this.app);
-      if (!plugin || !plugin.tradeService) {
+      if (!plugin) {
         console.error('Cannot access plugin instance for data update');
         return;
       }
 
       try {
-        
-        
+        if (data.isMissedTrade === true) {
+          if (!plugin.missedTradeService) {
+            console.error('Cannot access missed trade service for data update');
+            return;
+          }
+
+          await plugin.missedTradeService.updateMissedTrade(
+            updatedData,
+            filePath
+          );
+          return;
+        }
+
+        if (!plugin.tradeService) {
+          console.error('Cannot access trade service for data update');
+          return;
+        }
+
         await plugin.tradeService.updateTrade(
           updatedData,
           filePath,
@@ -489,6 +519,22 @@ export class TradeNoteRenderer extends BaseComponentRenderer {
       'directPnL',
       'riskAmount',
       'stopLoss',
+      'commission',
+      'fees',
+      'swap',
+      'rebate',
+      'mae',
+      'mfe',
+      'maePrice',
+      'mfePrice',
+      'strikePrice',
+      'contractSize',
+      'dollarPerPoint',
+      'tickSize',
+      'tickValue',
+      'lotSize',
+      'pipValue',
+      'leverageRatio',
     ].forEach((field) => {
       if (
         tradeData[field] !== undefined &&
@@ -506,6 +552,22 @@ export class TradeNoteRenderer extends BaseComponentRenderer {
     
     if (tradeData.pnl !== undefined && tradeData.pnl !== null) {
       tradeData.originalPnl = tradeData.pnl;
+    }
+
+    if (
+      frontmatter.type === 'missed-trade' ||
+      frontmatter.isMissedTrade === true
+    ) {
+      tradeData.isMissedTrade = true;
+      tradeData.isBacktestTrade = false;
+    }
+
+    if (
+      frontmatter.type === 'backtest-trade' ||
+      frontmatter.isBacktestTrade === true
+    ) {
+      tradeData.isBacktestTrade = true;
+      tradeData.isMissedTrade = false;
     }
 
     
@@ -533,6 +595,12 @@ export class TradeNoteRenderer extends BaseComponentRenderer {
     const thesisValue =
       typeof frontmatter.thesis === 'string' ? frontmatter.thesis : undefined;
     tradeData.thesis = parseDisplayText(thesisValue) || '';
+
+    const missedReasonValue =
+      typeof frontmatter.missedReason === 'string'
+        ? frontmatter.missedReason
+        : undefined;
+    tradeData.missedReason = parseDisplayText(missedReasonValue) || '';
 
     const mtCommentValue =
       typeof frontmatter.mtComment === 'string'

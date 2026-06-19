@@ -3,6 +3,10 @@
 import { App } from 'obsidian';
 import JournalitPlugin from '../../../main';
 import { TradeType, TradeStatus } from '../../../services/tradelog/types';
+import type {
+  DirectionFilter,
+  ReviewStatusFilter,
+} from '../../../services/tradelog/types';
 import {
   CustomFieldDefinition,
   CustomFieldFilterSelections,
@@ -33,6 +37,12 @@ export interface UnifiedFilters {
 
   
   statuses: TradeStatus[];
+
+  
+  reviewStatus: ReviewStatusFilter[];
+
+  
+  directions: DirectionFilter[];
 
   
   customFieldFilters: CustomFieldFilterSelections;

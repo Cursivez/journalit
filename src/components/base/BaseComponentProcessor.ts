@@ -123,7 +123,12 @@ export abstract class BaseComponentProcessor {
   
   private registerMarkdownPostProcessor(): void {
     this.plugin.registerMarkdownPostProcessor((element, ctx) => {
-      void this.handleMarkdownPostProcessor(element, ctx);
+      return this.handleMarkdownPostProcessor(element, ctx).catch((error) => {
+        console.error(
+          `[${this.constructor.name}] Error handling markdown postprocessor:`,
+          error
+        );
+      });
     });
   }
 

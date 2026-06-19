@@ -19,12 +19,7 @@ import { normalizeTradeExecutionForPeriodAnalytics } from '../trade/core/TradeEx
 
 import { getTradingDay } from '../../utils/tradingDayUtils';
 import { forceMetadataCacheRefresh } from '../../utils/dataRefresh';
-import {
-  generatePeriodicTag,
-  generateContextualTags,
-  combineTags,
-  PERIODIC_TYPES,
-} from '../../utils/tagSchema';
+
 import { FolderPathService } from '../core/FolderPathService';
 import { parseTradeFinancialFields } from '../../utils/tradeUtils';
 import { ReviewTemplateService } from '../templates/ReviewTemplateService';
@@ -424,57 +419,16 @@ export class QuarterlyReviewService extends CustomDataService {
   }
 
   
-  private generateQuarterlyReviewTags(quarter: number, year: number): string[] {
-    const tagArrays: string[][] = [];
-
-    
-    const quarterDate = getQuarterStartDate(year, quarter);
-
-    
-    tagArrays.push([generatePeriodicTag(PERIODIC_TYPES.QUARTERLY)]);
-
-    
-    const contextualTags = generateContextualTags(quarterDate);
-    if (contextualTags.length > 0) {
-      tagArrays.push(contextualTags);
-    }
-
-    
-    tagArrays.push([`q${quarter}-review`]);
-
-    
-    if (quarter <= 2) {
-      tagArrays.push(['h1-review', 'first-half']);
-    } else {
-      tagArrays.push(['h2-review', 'second-half']);
-    }
-
-    
-    if (quarter === 1) {
-      tagArrays.push(['year-start']);
-    } else if (quarter === 4) {
-      tagArrays.push(['year-end']);
-    }
-
-    return combineTags(...tagArrays);
-  }
-
-  
   private generateInitialContent(
     frontmatter: QuarterlyReviewFrontmatter
   ): string {
-    const tags = this.generateQuarterlyReviewTags(
-      frontmatter.quarter,
-      frontmatter.year
-    );
-
     
     const quarterlyData: Record<string, unknown> = {
       type: frontmatter.type,
       date: frontmatter.date,
       quarter: frontmatter.quarter,
       year: frontmatter.year,
-      tags: tags,
+      tags: [],
     };
 
     const { templateService, transformService } = this.getTemplateServices();

@@ -131,6 +131,14 @@ export const AVAILABLE_HOME_WIDGETS: HomeWidgetDefinition[] = [
     minSize: { w: 3, h: 3 },
     defaultSize: { w: 4, h: 4 }, 
   },
+  {
+    id: 'profitTarget',
+    name: t('home.widget.profit-target-widget.name'),
+    description: t('home.widget.profit-target-widget.description'),
+    category: 'overview',
+    minSize: { w: 3, h: 3 },
+    defaultSize: { w: 4, h: 4 }, 
+  },
 ];
 
 

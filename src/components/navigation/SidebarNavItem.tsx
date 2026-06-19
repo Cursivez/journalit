@@ -25,7 +25,6 @@ export const SidebarNavItemComponent: React.FC<SidebarNavItemProps> = ({
       id: item.id,
       disabled: !isEditing,
     });
-
   const transformString = CSS.Transform.toString(transform);
 
   const IconComponent = resolveIcon(item.icon);
@@ -39,30 +38,57 @@ export const SidebarNavItemComponent: React.FC<SidebarNavItemProps> = ({
     [item.id, onRemove]
   );
 
+  const stopRemoveDragStart = useCallback(
+    (e: React.PointerEvent<HTMLButtonElement>) => {
+      e.stopPropagation();
+    },
+    []
+  );
+
+  const stopRemoveKeyDown = useCallback(
+    (e: React.KeyboardEvent<HTMLButtonElement>) => {
+      e.stopPropagation();
+    },
+    []
+  );
+
   const activateNavItem = useCallback(() => {
     if (!isEditing) {
       onClick(item.action);
     }
   }, [isEditing, onClick, item.action]);
 
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent<HTMLDivElement>) => {
+      if (isEditing) {
+        listeners?.onKeyDown?.(e);
+        return;
+      }
+
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        activateNavItem();
+      }
+    },
+    [activateNavItem, isEditing, listeners]
+  );
+
   return (
     <div
       ref={setNodeRef}
       className="journalit-nav-item"
+      data-nav-item-id={item.id}
       data-editing={isEditing ? 'true' : 'false'}
       onClick={activateNavItem}
       style={dndKitStyle(transformString, transition)}
+      {...(isEditing ? attributes : {})}
       role="button"
       tabIndex={0}
-      onKeyDown={(e) => {
-        if (e.key === 'Enter' || e.key === ' ') {
-          e.preventDefault();
-          activateNavItem();
-        }
-      }}
+      {...(isEditing ? listeners : {})}
+      onKeyDown={handleKeyDown}
     >
       {isEditing && (
-        <div className="journalit-nav-item-drag" {...attributes} {...listeners}>
+        <div className="journalit-nav-item-drag">
           <GripVertical size={14} />
         </div>
       )}
@@ -78,6 +104,8 @@ export const SidebarNavItemComponent: React.FC<SidebarNavItemProps> = ({
       {isEditing && (
         <button
           className="journalit-nav-item-remove"
+          onPointerDown={stopRemoveDragStart}
+          onKeyDown={stopRemoveKeyDown}
           onClick={handleRemoveClick}
           aria-label={t('navigation.edit-mode.hide-item')}
           type="button"

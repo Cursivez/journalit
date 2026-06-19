@@ -1078,6 +1078,7 @@ export const HeaderWidget: React.FC<HeaderWidgetProps> = React.memo(
           createReviewFilters().tradeTypes
         ) +
         (filters.statuses?.length || 0) +
+        (filters.directions?.length || 0) +
         Object.values(sanitizedCustomFieldFilters).filter(
           (values) => values.length > 0
         ).length

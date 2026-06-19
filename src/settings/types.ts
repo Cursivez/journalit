@@ -401,6 +401,12 @@ export interface GoalConfig {
   
   useRMultiples?: boolean;
   
+  accountAware?: boolean;
+  
+  accountTargets?: Record<string, number>;
+  
+  accountTargetAccounts?: string[];
+  
   createdAt: string;
 }
 
@@ -1169,6 +1175,8 @@ export const DEFAULT_SETTINGS: JournalitSettings = {
       mistakes: [],
       tradeTypes: [],
       statuses: [],
+      reviewStatus: [],
+      directions: [],
       customFieldFilters: {},
     },
     lastUsedFilters: {
@@ -1180,6 +1188,8 @@ export const DEFAULT_SETTINGS: JournalitSettings = {
       mistakes: [],
       tradeTypes: [],
       statuses: [],
+      reviewStatus: [],
+      directions: [],
       customFieldFilters: {},
     },
   },

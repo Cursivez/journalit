@@ -90,8 +90,6 @@ export interface TradeImportExecution {
   size: number;
 }
 export interface TradeImportPreviewTrade {
-  csvImportId: string;
-  legacyCsvImportIds: string[];
   sourceRows: number[];
   symbol: string;
   direction: 'long' | 'short';
@@ -137,6 +135,49 @@ export interface TradeImportPreviewTrade {
   pipValue?: number | null;
   pipSize?: number | null;
 }
+
+export type TradeImportPreviewClassification =
+  | 'new'
+  | 'exact_duplicate'
+  | 'already_applied'
+  | 'update_existing'
+  | 'partial_update_existing'
+  | 'likely_duplicate'
+  | 'conflict'
+  | 'failed_invalid_trade'
+  | 'failed_no_open_match'
+  | 'failed_multiple_open_matches'
+  | 'failed_quantity_mismatch'
+  | 'duplicate_in_import';
+
+export type TradeImportDefaultAction =
+  | 'create'
+  | 'update'
+  | 'skip'
+  | 'manual_review'
+  | 'blocked';
+
+export interface TradeImportIdentityCandidate {
+  entityType?: string;
+  idType: string;
+  value?: string;
+  hash?: string;
+  strength?: string;
+  cardinality?: string;
+  scope?: string;
+  source?: string;
+}
+
+export interface TradeImportPreviewItem {
+  itemId: string;
+  itemIndex?: number;
+  classification: TradeImportPreviewClassification;
+  defaultAction: TradeImportDefaultAction;
+  matchedTradeId?: string | null;
+  decisionReasons: Array<{ code: string; message?: string }>;
+  identityCandidates: TradeImportIdentityCandidate[];
+  previewTrade: TradeImportPreviewTrade;
+}
 export interface TradeImportPreviewRequest {
   schemaVersion: 'trade-import-preview-request-v1';
   pluginVersion: string;
@@ -152,7 +193,6 @@ export interface TradeImportPreviewRequest {
   mappingVersion: number;
   columnMappings: Record<string, string[]>;
   customFields: TradeImportCustomFieldDefinition[];
-  existingOpenTrades: TradeImportExistingOpenTrade[];
 }
 
 export interface TradeImportCustomFieldDefinition {
@@ -166,35 +206,11 @@ export interface TradeImportCustomFieldDefinition {
   validation?: { required?: boolean };
 }
 
-export interface TradeImportExistingOpenTrade {
-  sourceRows: number[];
-  symbol: string;
-  direction: string;
-  entryTime: string;
-  entryPrice: number;
-  quantity: number;
-  exitTime?: string | null;
-  exitPrice?: number | null;
-  status: 'OPEN' | 'CLOSED';
-  closeOnly: boolean;
-  commission?: number | null;
-  assetType?: string | null;
-  currency?: string | null;
-  brokerBaseCurrencyPnl?: number | null;
-  brokerBaseCurrency?: string | null;
-  brokerBaseCurrencyPnlSource?: string | null;
-  entries: TradeImportExecution[];
-  exits: TradeImportExecution[];
-  executionLedgerVersion?: number;
-  executionIds?: string[];
-  strikePrice?: number | null;
-  expirationDate?: string | null;
-  optionType?: string | null;
-  contractSize?: number | null;
-}
-
 export interface TradeImportPreviewResponse {
   importId: string;
+  correlationId: string;
+  previewRevision: number;
+  previewExpiresAt?: string;
   schemaVersion: 'trade-import-preview-v1';
   broker: string;
   adapterVersion: string;
@@ -206,13 +222,82 @@ export interface TradeImportPreviewResponse {
     failedRowCount: number;
     skippedIncompleteCount: number;
   };
-  trades: TradeImportPreviewTrade[];
+  items: TradeImportPreviewItem[];
   diagnostics: TradeImportDiagnostic[];
 }
 export interface ClassifiedPreviewTrade {
+  itemId: string;
   preview: TradeImportPreviewTrade;
   tradeData: TradeData;
-  classification: 'new' | 'duplicate' | 'update_existing' | 'failed';
+  classification: TradeImportPreviewClassification;
+  defaultAction: TradeImportDefaultAction;
+  matchedTradeId?: string | null;
   existingPath?: string;
   message?: string;
+}
+
+export interface TradeImportCommitRequest {
+  correlationId: string;
+  previewRevision: number;
+  clientCommitId: string;
+  items: Array<{
+    itemId: string;
+    action: 'accept_default' | 'skip' | 'create_new' | 'update_existing';
+    targetTradeId?: string;
+  }>;
+}
+
+export interface TradeImportCommittedTrade {
+  id: string;
+  version: number;
+  symbol: string;
+  direction: 'long' | 'short';
+  status: 'open' | 'closed' | 'OPEN' | 'CLOSED';
+  accountId?: string | null;
+  importId: string;
+  previewTrade?: TradeImportPreviewTrade;
+}
+
+export interface TradeImportCommitResponse {
+  commitId: string;
+  importId: string;
+  correlationId: string;
+  status: string;
+  itemResults: Array<{
+    itemId: string;
+    result:
+      | 'created'
+      | 'updated'
+      | 'skipped'
+      | 'skipped_duplicate'
+      | 'blocked'
+      | 'conflict';
+    tradeId?: string;
+    tradeVersion?: number;
+    errorCode?: string;
+    errorMessage?: string;
+  }>;
+  trades: TradeImportCommittedTrade[];
+}
+
+export interface TradeImportProjectionAckRequest {
+  correlationId: string;
+  importId: string;
+  commitId: string;
+  vaultId: string;
+  deviceId?: string;
+  results: Array<{
+    tradeId: string;
+    backendTradeVersion: number;
+    filePath?: string;
+    frontmatterHash?: string;
+    status:
+      | 'pending'
+      | 'synced'
+      | 'failed'
+      | 'conflict'
+      | 'local_deleted'
+      | 'needs_rewrite';
+    errorCode?: string;
+  }>;
 }

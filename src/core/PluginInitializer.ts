@@ -8,6 +8,15 @@ import { t } from '../lang/helpers';
 import { CANONICAL_EXECUTION_MIGRATION_VERSION } from '../services/trade/core/TradeFrontmatterCodec';
 
 const PERSISTENT_CACHE_VERSION = '2026-04-account-identity-v1';
+const OLD_DERIVED_STORAGE_CLEANUP_VERSION = '2026-06-plugin-storage-v3';
+const LEGACY_DERIVED_STORAGE_FOLDERS = [
+  '.journalit/cache',
+  '.journalit/indexes',
+  
+  
+  '.journalit/migrations',
+  '.journalit/oldcache',
+];
 const TRADE_IDENTITY_BACKFILL_ROLLOUT_VERSION =
   '2026-04-trade-identity-backfill-v1';
 import { scheduleSequence } from '../utils/deferredExecution';
@@ -16,8 +25,7 @@ import { injectDropdownFixScript } from '../utils';
 import { CommandRegistry } from '../commands/commandRegistry';
 import { RibbonManager } from '../ui/ribbonManager';
 import { OnboardingManager } from '../onboarding/onboardingManager';
-import { MissedTradeNoteProcessor } from '../components/missedTrade/MissedTradeNoteProcessor';
-import { MissedTradeNoteRenderer } from '../components/missedTrade/MissedTradeNoteRenderer';
+
 import { imageService } from '../services/image/ImageService';
 import { RecentItem } from '../settings/types';
 import { NavigationManager } from '../navigation/NavigationManager';
@@ -42,6 +50,10 @@ import { registerAccountDashboardMainGuide } from '../guides/accountDashboardMai
 import { registerAccountPageEmptyGuide } from '../guides/accountPageEmptyGuide';
 import { registerAccountPageMainGuide } from '../guides/accountPageMainGuide';
 import { ViewGuideService } from '../guides/ViewGuideService';
+import {
+  getJournalitCachePath,
+  getJournalitIndexesPath,
+} from '../services/base/pluginStoragePaths';
 
 
 interface JournalitPluginInternal extends JournalitPlugin {
@@ -159,6 +171,7 @@ export class PluginInitializer {
 
     
     await this.cleanupOldFiles();
+    await this.cleanupOldDerivedStorageIfNeeded();
     await this.resetPersistentCachesIfNeeded();
 
     
@@ -476,16 +489,6 @@ export class PluginInitializer {
             
 
             
-            this.plugin.processorManager.registerProcessor(
-              'missed-trade',
-              new MissedTradeNoteProcessor(this.plugin.app, this.plugin)
-            );
-            this.plugin.processorManager.registerRenderer(
-              'missed-trade',
-              new MissedTradeNoteRenderer(this.plugin.app)
-            );
-
-            
             const processors =
               this.plugin.processorManager.getAllInitializedProcessors();
             this.plugin.tradeNoteProcessor = processors.tradeNoteProcessor;
@@ -644,16 +647,93 @@ export class PluginInitializer {
 
       return removedCount;
     } catch (error) {
-      if (
-        error &&
-        typeof error === 'object' &&
-        'code' in error &&
-        Reflect.get(error, 'code') === 'ENOENT'
-      ) {
+      if (this.isMissingPathError(error)) {
         return 0;
       }
 
       throw error;
+    }
+  }
+
+  private isMissingPathError(error: unknown): boolean {
+    return (
+      error !== null &&
+      typeof error === 'object' &&
+      'code' in error &&
+      Reflect.get(error, 'code') === 'ENOENT'
+    );
+  }
+
+  private async removeDirectoryContents(path: string): Promise<number> {
+    const adapter = this.plugin.app.vault.adapter;
+
+    try {
+      const listing = await adapter.list(path);
+      let removedCount = 0;
+
+      for (const file of listing.files ?? []) {
+        await adapter.remove(file);
+        removedCount += 1;
+      }
+
+      for (const folder of listing.folders ?? []) {
+        removedCount += await this.removeDirectoryContents(folder);
+        await adapter.rmdir(folder, false);
+        removedCount += 1;
+      }
+
+      return removedCount;
+    } catch (error) {
+      if (this.isMissingPathError(error)) return 0;
+      throw error;
+    }
+  }
+
+  private async removeLegacyDerivedFolder(path: string): Promise<void> {
+    const adapter = this.plugin.app.vault.adapter;
+    try {
+      if (!(await adapter.exists(path))) return;
+      await this.removeDirectoryContents(path);
+      await adapter.rmdir(path, false);
+    } catch (error) {
+      if (this.isMissingPathError(error)) return;
+      throw error;
+    }
+  }
+
+  private async cleanupOldDerivedStorageIfNeeded(): Promise<void> {
+    const uiState = this.plugin.uiStateManager.getState();
+    if (
+      uiState.oldDerivedStorageCleanupVersion ===
+      OLD_DERIVED_STORAGE_CLEANUP_VERSION
+    ) {
+      return;
+    }
+
+    try {
+      const adapter = this.plugin.app.vault.adapter;
+      for (const folder of LEGACY_DERIVED_STORAGE_FOLDERS) {
+        await this.removeLegacyDerivedFolder(folder);
+      }
+
+      if (await adapter.exists('.journalit')) {
+        const listing = await adapter.list('.journalit');
+        if (
+          (listing.files ?? []).length === 0 &&
+          (listing.folders ?? []).length === 0
+        ) {
+          await adapter.rmdir('.journalit', false);
+        }
+      }
+
+      await this.plugin.uiStateManager.updateStateImmediate({
+        oldDerivedStorageCleanupVersion: OLD_DERIVED_STORAGE_CLEANUP_VERSION,
+      });
+    } catch (error) {
+      console.warn(
+        '[Journalit] Failed to clean up legacy .journalit derived storage:',
+        error
+      );
     }
   }
 
@@ -693,10 +773,12 @@ export class PluginInitializer {
     }
 
     try {
-      const cacheFilesRemoved =
-        await this.clearDirectoryFiles('.journalit/cache');
-      const indexFilesRemoved =
-        await this.clearDirectoryFiles('.journalit/indexes');
+      const cacheFilesRemoved = await this.clearDirectoryFiles(
+        getJournalitCachePath(this.plugin.app)
+      );
+      const indexFilesRemoved = await this.clearDirectoryFiles(
+        getJournalitIndexesPath(this.plugin.app)
+      );
 
       logger.info(
         `[Journalit] Reset persisted caches for ${PERSISTENT_CACHE_VERSION} (cache files: ${cacheFilesRemoved}, index files: ${indexFilesRemoved})`

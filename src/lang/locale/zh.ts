@@ -175,6 +175,7 @@ const zh: Lang = {
   'form.section.trade-details': '交易详情',
   'form.section.trading-costs': '交易成本',
   'form.section.risk-management': '风险管理',
+  'form.section.take-profits': 'Take Profits',
   'form.section.analysis-thesis': '分析与论点',
 
   
@@ -198,6 +199,10 @@ const zh: Lang = {
   'form.field.swap': '隔夜利息',
   'form.field.other-fees': '其他费用',
   'form.field.stop-loss': '止损',
+  'form.field.take-profit': 'Take Profit',
+  'form.field.take-profit-short': 'TP',
+  'form.field.target-price': 'Target Price',
+  'form.field.close-percent': 'Close %',
   'form.field.risk-amount': '风险金额',
   'form.field.profit-loss': '盈亏',
   'form.field.total-pnl': '总盈亏',
@@ -263,6 +268,8 @@ const zh: Lang = {
   'form.placeholder.other-fees': '平台/监管费用',
   'form.placeholder.dividend-amount': '现金金额，可正可负',
   'form.placeholder.stop-loss': '可选的止损价格',
+  'form.placeholder.target-price': 'Target price',
+  'form.placeholder.close-percent': '50%',
   'form.placeholder.risk-amount': '计划风险金额',
   'form.placeholder.custom-tag': '输入自定义标签后按回车',
   'form.placeholder.thesis': '输入此交易的论点...',
@@ -400,6 +407,20 @@ const zh: Lang = {
   'trade.validation.stop-loss-number': '止损必须为数字。',
   'trade.validation.stop-loss-valid-number': '止损必须为有效数字。',
 
+  'trade.validation.take-profit-price-required':
+    'Take profit price is required.',
+  'trade.validation.take-profit-price-number':
+    'Take profit price must be a number.',
+  'trade.validation.take-profit-price-valid-number':
+    'Take profit price must be a valid number.',
+  'trade.validation.take-profit-close-percent-number':
+    'Take profit close percent must be a number.',
+  'trade.validation.take-profit-close-percent-valid-number':
+    'Take profit close percent must be a valid number.',
+  'trade.validation.take-profit-close-percent-range':
+    'Take profit close percent must be between 1 and 100.',
+  'trade.validation.take-profit-total-close-percent-range':
+    'Take profit close percentages cannot exceed 100.',
   
   
   
@@ -696,6 +717,8 @@ const zh: Lang = {
   'tradelog.node.performance.period': '表现{indicator}的时段',
   'tradelog.filter.all': '全部',
   'tradelog.filter.all.desc': '所有交易状态',
+  'tradelog.filter.all-review-statuses': '所有复盘',
+  'tradelog.filter.all-directions': '所有方向',
   'tradelog.filter.winners': '盈利',
   'tradelog.filter.winners.desc': '盈利交易',
   'tradelog.filter.losers': '亏损',
@@ -1071,6 +1094,11 @@ const zh: Lang = {
   'filter.modal.status.breakeven': '保本',
   'filter.modal.status.open': '持仓中',
   'filter.modal.status.closed': '已平仓',
+  'filter.modal.review-status': 'Review Status',
+  'filter.modal.review-status.reviewed': 'Reviewed',
+  'filter.modal.review-status.unreviewed': 'Unreviewed',
+  'filter.modal.direction.long-call': '做多/Call',
+  'filter.modal.direction.short-put': '做空/Put',
   'filter.modal.section.custom-fields': 'Custom Fields',
   'filter.modal.custom-field.n-selected': '{count} selected',
   'filter.modal.custom-field.none-available': 'No values available',
@@ -1377,6 +1405,9 @@ const zh: Lang = {
   'form.account-empty-state.create-account': '创建账户',
   'form.account-empty-state.submit-disabled': '请先创建账户,再保存这笔交易。',
   'form.field.option-type': '期权类型',
+  'form.empty.take-profits': 'No take profit targets yet',
+  'form.action.add-take-profit': 'Add Take Profit',
+  'form.action.remove-take-profit': 'Remove take profit',
   'form.field.option-type.call': '看涨期权',
   'form.field.option-type.put': '看跌期权',
   'form.field.image-url-placeholder': '粘贴图片 URL 或文件路径...',
@@ -2564,6 +2595,8 @@ const zh: Lang = {
   'home.widget.weekly-summary.description': '本周交易活动汇总',
   'home.widget.year-heatmap.name': '交易热力图',
   'home.widget.year-heatmap.description': '可视化展示您的交易活动',
+  'home.widget.profit-target-widget.name': '盈利目标',
+  'home.widget.profit-target-widget.description': '跟踪各账户的盈利目标进度',
 
   
   'home.widget.getting-started.name': 'Getting Started',
@@ -2634,6 +2667,11 @@ const zh: Lang = {
   'home.widget.goals-progress.type.win-rate': '胜率',
   'home.widget.goals-progress.type.win-rate-desc': '获胜百分比目标',
   'home.widget.goals-progress.use-r-multiples': '使用R倍数',
+  'home.widget.goals-progress.account-aware': '按账户设置目标',
+  'home.widget.goals-progress.no-target-selected': '所选账户没有目标',
+  'home.widget.goals-progress.configured-for': '已为 {accounts} 配置',
+  'home.widget.goals-progress.account-scope': 'Account scope',
+  'home.widget.goals-progress.add-account': 'Add account',
 
   
   'home.widget.best-hours.no-data': '暂无交易数据',
@@ -2654,6 +2692,12 @@ const zh: Lang = {
   
   'home.widget.drawdown.breached': '已突破',
   'home.widget.drawdown.no-accounts': '暂无设置限额的账户',
+
+  'home.widget.profit-target.title': '盈利目标',
+  'home.widget.profit-target.achieved': '已达成',
+  'home.widget.profit-target.remaining': '剩余',
+  'home.widget.profit-target.unable-to-load': '无法加载',
+  'home.widget.profit-target.no-accounts': '暂无设置目标的账户',
   'home.widget.drawdown.remaining': '剩余',
   'home.widget.drawdown.title': 'Drawdown Limit',
   'home.widget.drawdown.unable-to-load': '无法加载',
@@ -5778,6 +5822,8 @@ const zh: Lang = {
   'trade-import.notice.template-saved': 'Trade Import template saved',
   'trade-import.notice.analyse-failed': 'Trade Import analyse failed',
   'trade-import.notice.preview-failed': 'Trade Import preview failed',
+  'trade-import.preview-error.guidance':
+    '请检查所有必填字段是否已映射，所选日期格式是否与文件匹配，并且数字列是否包含有效的交易数值。',
   'trade-import.notice.complete':
     'Trade Import complete: {written} written or updated, {duplicateCount} duplicates, {failedCount} failed',
   'trade-import.gate.sign-in':

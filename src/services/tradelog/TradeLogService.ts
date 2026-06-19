@@ -20,6 +20,8 @@ import {
   TradeLogMetrics,
   TradeType,
   TradeStatus,
+  ReviewStatusFilter,
+  DirectionFilter,
   SELECTABLE_TRADE_TYPES_COUNT,
 } from './types';
 import {
@@ -179,6 +181,8 @@ interface HierarchicalQueryParams {
   endDate?: Date;
   tradeTypes?: TradeType[];
   statuses?: TradeStatus[];
+  reviewStatus?: ReviewStatusFilter[];
+  directions?: DirectionFilter[];
   accounts?: string[];
   tickers?: string[];
   setups?: string[];
@@ -720,6 +724,8 @@ export class TradeLogService {
         query.tags,
         query.mistakes,
         query.customFieldFilters,
+        query.reviewStatus,
+        query.directions,
         retryCount + 1
       );
     }
@@ -742,6 +748,8 @@ export class TradeLogService {
     tags?: string[],
     mistakes?: string[],
     customFieldFilters?: CustomFieldFilterSelections,
+    reviewStatus?: ReviewStatusFilter[],
+    directions?: DirectionFilter[],
     retryCount: number = 0
   ): Promise<TimeNode[]> {
     
@@ -763,6 +771,8 @@ export class TradeLogService {
       endDate,
       tradeTypes,
       statuses,
+      reviewStatus,
+      directions,
       accounts,
       tickers,
       setups,
@@ -775,7 +785,7 @@ export class TradeLogService {
     const includeCopyAccountsInAllAccounts =
       this.plugin.settings.trade.includeCopyAccountsInAllAccountsAnalytics ===
       true;
-    const cacheKey = `v${this.CACHE_VERSION}-r${requestRevisionToken}-copy${includeCopyAccountsInAllAccounts}-${viewLevel}-${startDate?.toISOString()}-${endDate?.toISOString()}-${normalizeFilterArray(tradeTypes)}-${normalizeFilterArray(statuses)}-${normalizeFilterArray(accounts)}-${normalizeFilterArray(tickers)}-${normalizeFilterArray(setups)}-${normalizeFilterArray(tags)}-${normalizeFilterArray(mistakes)}-${normalizeCustomFieldFilters(customFieldFilters)}`;
+    const cacheKey = `v${this.CACHE_VERSION}-r${requestRevisionToken}-copy${includeCopyAccountsInAllAccounts}-${viewLevel}-${startDate?.toISOString()}-${endDate?.toISOString()}-${normalizeFilterArray(tradeTypes)}-${normalizeFilterArray(statuses)}-${normalizeFilterArray(reviewStatus)}-${normalizeFilterArray(directions)}-${normalizeFilterArray(accounts)}-${normalizeFilterArray(tickers)}-${normalizeFilterArray(setups)}-${normalizeFilterArray(tags)}-${normalizeFilterArray(mistakes)}-${normalizeCustomFieldFilters(customFieldFilters)}`;
     const now = Date.now();
 
     
@@ -817,6 +827,8 @@ export class TradeLogService {
       mistakes: mistakes || [],
       tradeTypes: tradeTypes || [],
       statuses: statuses || [],
+      reviewStatus: reviewStatus || [],
+      directions: directions || [],
       customFieldFilters: customFieldFilters || {},
     });
 

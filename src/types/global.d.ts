@@ -41,6 +41,9 @@ declare global {
     createRoot?: unknown;
 
     
+    journalitSyncTradeLogFilters?: () => void;
+
+    
     [key: string]: unknown; 
   }
 }

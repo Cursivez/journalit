@@ -38,6 +38,11 @@ import type {
 } from '../../services/tradeImport/types';
 import type { TradeImportCompletionResult } from '../../services/tradeImport/TradeImportWorkflowService';
 import {
+  isTradeImportBlocked,
+  isTradeImportCommitEligible,
+  isTradeImportSkipped,
+} from '../../services/tradeImport/commitEligibility';
+import {
   getCachedQuickTradeImportSetup,
   loadCachedQuickTradeImportSetup,
   type TradeImportQuickImportState,
@@ -64,14 +69,21 @@ const QuickImportClassificationIcon: React.FC<{
       </span>
     );
   }
-  if (classification === 'duplicate') {
+  if (
+    classification === 'exact_duplicate' ||
+    classification === 'already_applied' ||
+    classification === 'duplicate_in_import'
+  ) {
     return (
       <span className="journalit-quick-import-result-icon is-duplicate">
         <Copy size={15} aria-label={label} />
       </span>
     );
   }
-  if (classification === 'update_existing') {
+  if (
+    classification === 'update_existing' ||
+    classification === 'partial_update_existing'
+  ) {
     return (
       <span className="journalit-quick-import-result-icon is-update">
         <RefreshCw size={15} aria-label={label} />
@@ -417,13 +429,15 @@ const QuickTradeImportModalContent: React.FC<
     );
   }
 
-  const duplicateCount = classified.filter(
-    (item) => item.classification === 'duplicate'
+  const duplicateCount = classified.filter((item) =>
+    isTradeImportSkipped(item.defaultAction)
   ).length;
-  const failedCount = classified.filter(
-    (item) => item.classification === 'failed'
+  const failedCount = classified.filter((item) =>
+    isTradeImportBlocked(item.defaultAction)
   ).length;
-  const writableCount = classified.length - duplicateCount - failedCount;
+  const writableCount = classified.filter((item) =>
+    isTradeImportCommitEligible(item.defaultAction)
+  ).length;
   const hasImportExceptions = duplicateCount > 0 || failedCount > 0;
   const isImporting = state.phase === 'importing';
   const isPreparingSetup = state.phase === 'loading';
@@ -635,7 +649,7 @@ const QuickTradeImportModalContent: React.FC<
                 </thead>
                 <tbody>
                   {previewRows.map((item) => (
-                    <tr key={item.preview.csvImportId}>
+                    <tr key={item.itemId}>
                       <td>{item.preview.symbol}</td>
                       <td>{formatQuickImportDate(item.preview, plugin)}</td>
                       <td>

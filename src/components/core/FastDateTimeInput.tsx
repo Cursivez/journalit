@@ -14,6 +14,7 @@ import type { CustomLocale } from 'flatpickr/dist/types/locale';
 import { Spanish } from 'flatpickr/dist/l10n/es';
 import { German } from 'flatpickr/dist/l10n/de';
 import { French } from 'flatpickr/dist/l10n/fr';
+import { Vietnamese } from 'flatpickr/dist/l10n/vn';
 import { Portuguese } from 'flatpickr/dist/l10n/pt';
 import { Mandarin } from 'flatpickr/dist/l10n/zh';
 import { MandarinTraditional } from 'flatpickr/dist/l10n/zh-tw';
@@ -52,6 +53,7 @@ const flatpickrLocales: Record<string, CustomLocale> = {
   es: Spanish,
   de: German,
   fr: French,
+  vi: Vietnamese,
   'pt-BR': Portuguese,
   zh: Mandarin,
   'zh-TW': MandarinTraditional,

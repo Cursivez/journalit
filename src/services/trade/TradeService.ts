@@ -36,7 +36,10 @@ import {
   isTradeOpenWithContext,
 } from '../../utils/tradeStatusUtils';
 import { FolderPathService } from '../core/FolderPathService';
-import { TradeFormData } from '../../components/forms/trade/types';
+import {
+  TradeFormData,
+  TakeProfitTarget,
+} from '../../components/forms/trade/types';
 import { OptionType } from '../options/CustomOptionsService';
 import { parseTradeDividendTransactions } from '../../utils/tradeUtils';
 import { eventBus, OptionsChangedPayload, Unsubscribe } from '../events';
@@ -624,6 +627,7 @@ export interface TradeData {
   fees?: number;
   rebate?: number;
   stopLoss?: number;
+  takeProfits?: TakeProfitTarget[];
   riskAmount?: number;
   currency?: string; 
   brokerBaseCurrencyPnl?: number;
@@ -1065,6 +1069,13 @@ export class TradeService extends CustomDataService {
         data.mtComment === undefined
       ) {
         frontmatterData.mtComment = undefined;
+      }
+
+      if (
+        Object.prototype.hasOwnProperty.call(data, 'stopLoss') &&
+        data.stopLoss === undefined
+      ) {
+        frontmatterData.stopLoss = undefined;
       }
 
       
@@ -2528,7 +2539,9 @@ export class TradeService extends CustomDataService {
               assetType: frontmatterData.assetType,
               commission: parseNumber(frontmatterData.commission),
               hasExplicitCommission:
-                frontmatterData.hasExplicitCommission === true,
+                typeof frontmatterData.hasExplicitCommission === 'boolean'
+                  ? frontmatterData.hasExplicitCommission
+                  : undefined,
               commissionType: frontmatterData.commissionType,
               fees: parseNumber(frontmatterData.fees),
               swap: parseNumber(frontmatterData.swap),
@@ -2670,7 +2683,10 @@ export class TradeService extends CustomDataService {
   }
 
   private applyAutomaticCommission(data: TradeData): TradeData {
-    if (data.hasExplicitCommission === true) {
+    if (
+      data.hasExplicitCommission === true ||
+      data.commissionType === 'percentage'
+    ) {
       return data;
     }
 
@@ -2679,10 +2695,32 @@ export class TradeService extends CustomDataService {
       return data;
     }
 
+    const hasScalarExitPrice =
+      data.exitPrice !== undefined &&
+      data.exitPrice !== null &&
+      (data.exitPrice > 0 || data.hasExplicitExitPrice === true);
+    const hasMeaningfulExitRows = Boolean(
+      data.exits?.some(
+        (exit) =>
+          (exit.price !== undefined &&
+            exit.price !== null &&
+            exit.price !== 0) ||
+          (exit.size !== undefined && exit.size !== null && exit.size !== 0)
+      )
+    );
     const hasExit =
-      data.tradeStatus === 'OPEN'
-        ? false
-        : Boolean(data.exitTime || data.exits?.length);
+      (data.tradeStatus !== 'OPEN' && data.useDirectPnLInput === true) ||
+      (data.tradeStatus !== 'OPEN' && hasScalarExitPrice) ||
+      hasMeaningfulExitRows;
+    const exitedPositionSizeTotal = (data.exits ?? []).reduce(
+      (total, exit) =>
+        exit.size !== undefined && exit.size !== null && exit.size > 0
+          ? total + exit.size
+          : total,
+      0
+    );
+    const exitedPositionSize =
+      exitedPositionSizeTotal > 0 ? exitedPositionSizeTotal : undefined;
 
     const commission =
       typeof this.plugin?.optionsService?.calculateInstrumentCommission ===
@@ -2692,6 +2730,7 @@ export class TradeService extends CustomDataService {
             assetType: data.assetType,
             account: data.account,
             positionSize: data.positionSize,
+            exitedPositionSize,
             hasExit,
           })
         : undefined;
@@ -2709,6 +2748,7 @@ export class TradeService extends CustomDataService {
               assetType: data.assetType,
               account: data.account,
               positionSize: data.positionSize,
+              exitedPositionSize,
               hasExit: false,
             })
           : undefined;
@@ -3322,6 +3362,8 @@ export class TradeService extends CustomDataService {
         'schemaVersion',
         'tradeRevision',
         'backendTradeId',
+        'tradeImportId',
+        'tradeImportVersion',
         'csvImportId',
         'legacyCsvImportIds',
         'sourceRows',
@@ -3351,6 +3393,7 @@ export class TradeService extends CustomDataService {
         'rebate',
         'riskAmount',
         'stopLoss',
+        'takeProfits',
         'mae',
         'mfe',
         'maePrice',
@@ -3413,6 +3456,28 @@ export class TradeService extends CustomDataService {
         normalizedExecution.firstEntryTime ??
         (await this.extractFirstCanonicalEntryTimeFromContent(file));
       const extractedExitTime = normalizedExecution.lastExitTime;
+      const takeProfits: TakeProfitTarget[] = Array.isArray(
+        frontmatter.takeProfits
+      )
+        ? frontmatter.takeProfits
+            .map((target): TakeProfitTarget | null => {
+              if (!isRecord(target)) {
+                return null;
+              }
+              const price = this.parseFiniteNumber(target.price);
+              const closePercent = this.parseFiniteNumber(target.closePercent);
+
+              if (price === undefined && closePercent === undefined) {
+                return null;
+              }
+
+              return {
+                ...(price !== undefined && { price }),
+                ...(closePercent !== undefined && { closePercent }),
+              };
+            })
+            .filter((target): target is TakeProfitTarget => target !== null)
+        : [];
 
       
       return {
@@ -3424,17 +3489,13 @@ export class TradeService extends CustomDataService {
             : undefined,
         tradeRevision: this.getTradeRevisionValue(frontmatter.tradeRevision),
         backendTradeId: this.parseFiniteNumber(frontmatter.backendTradeId),
-        csvImportId:
-          typeof frontmatter.csvImportId === 'string'
-            ? frontmatter.csvImportId
+        tradeImportId:
+          typeof frontmatter.tradeImportId === 'string'
+            ? frontmatter.tradeImportId
             : undefined,
-        legacyCsvImportIds:
-          frontmatter.legacyCsvImportIds &&
-          Array.isArray(frontmatter.legacyCsvImportIds)
-            ? frontmatter.legacyCsvImportIds.map((value: unknown) =>
-                safeString(value)
-              )
-            : undefined,
+        tradeImportVersion: this.parseFiniteNumber(
+          frontmatter.tradeImportVersion
+        ),
         sourceRows:
           frontmatter.sourceRows && Array.isArray(frontmatter.sourceRows)
             ? frontmatter.sourceRows
@@ -3480,7 +3541,10 @@ export class TradeService extends CustomDataService {
         originalPnl: this.parseFiniteNumber(frontmatter.pnl),
         originalRMultiple: this.parseFiniteNumber(frontmatter.rMultiple),
         commission: this.parseFiniteNumber(frontmatter.commission) ?? 0,
-        hasExplicitCommission: frontmatter.hasExplicitCommission === true,
+        hasExplicitCommission:
+          typeof frontmatter.hasExplicitCommission === 'boolean'
+            ? frontmatter.hasExplicitCommission
+            : undefined,
         commissionType:
           frontmatter.commissionType === 'percentage' ||
           frontmatter.commissionType === 'fixed'
@@ -3500,6 +3564,7 @@ export class TradeService extends CustomDataService {
           frontmatter.stopLoss != null && frontmatter.stopLoss !== ''
             ? this.parseFiniteNumber(frontmatter.stopLoss)
             : undefined,
+        takeProfits,
         mae:
           frontmatter.mae != null && frontmatter.mae !== ''
             ? this.parseFiniteNumber(frontmatter.mae)

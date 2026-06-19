@@ -136,6 +136,7 @@ const ko: Partial<Lang> = {
   'form.section.trade-details': '거래 상세',
   'form.section.trading-costs': '거래 비용',
   'form.section.risk-management': '리스크 관리',
+  'form.section.take-profits': 'Take Profits',
   'form.section.analysis-thesis': '분석 및 논거',
 
   
@@ -159,6 +160,10 @@ const ko: Partial<Lang> = {
   'form.field.swap': '스왑',
   'form.field.other-fees': '기타 수수료',
   'form.field.stop-loss': '손절가',
+  'form.field.take-profit': 'Take Profit',
+  'form.field.take-profit-short': 'TP',
+  'form.field.target-price': 'Target Price',
+  'form.field.close-percent': 'Close %',
   'form.field.risk-amount': '리스크 금액',
   'form.field.profit-loss': '손익',
   'form.field.total-pnl': '총 손익',
@@ -221,6 +226,8 @@ const ko: Partial<Lang> = {
   'form.placeholder.swap': '오버나이트 금융비용',
   'form.placeholder.other-fees': '플랫폼/규제 수수료',
   'form.placeholder.stop-loss': '손절가 (선택사항)',
+  'form.placeholder.target-price': 'Target price',
+  'form.placeholder.close-percent': '50%',
   'form.placeholder.risk-amount': '계획된 리스크 금액',
   'form.placeholder.custom-tag': '사용자 태그를 입력하고 Enter를 누르세요',
   'form.placeholder.thesis': '이 거래에 대한 논거를 입력하세요...',
@@ -266,6 +273,9 @@ const ko: Partial<Lang> = {
   'form.account-empty-state.create-account': '계좌 만들기',
   'form.account-empty-state.submit-disabled':
     '이 거래를 저장하려면 먼저 계좌를 만드세요.',
+  'form.empty.take-profits': 'No take profit targets yet',
+  'form.action.add-take-profit': 'Add Take Profit',
+  'form.action.remove-take-profit': 'Remove take profit',
 
   
   
@@ -1062,6 +1072,8 @@ const ko: Partial<Lang> = {
   'trade-import.notice.template-saved': 'Trade Import template saved',
   'trade-import.notice.analyse-failed': 'Trade Import analyse failed',
   'trade-import.notice.preview-failed': 'Trade Import preview failed',
+  'trade-import.preview-error.guidance':
+    '모든 필수 필드가 매핑되어 있고, 선택한 날짜 형식이 파일과 일치하며, 숫자 열에 유효한 거래 값이 포함되어 있는지 확인하세요.',
   'trade-import.notice.complete':
     'Trade Import complete: {written} written or updated, {duplicateCount} duplicates, {failedCount} failed',
   'trade-import.gate.sign-in':

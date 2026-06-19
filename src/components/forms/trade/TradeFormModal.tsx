@@ -437,6 +437,7 @@ function useTradeFormModalContentModel({
         fees: data.fees,
         swap: data.swap,
         stopLoss: data.stopLoss,
+        takeProfits: data.takeProfits,
         riskAmount: data.riskAmount,
         mae: data.mae,
         mfe: data.mfe,

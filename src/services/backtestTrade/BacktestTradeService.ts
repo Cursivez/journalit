@@ -28,6 +28,18 @@ function getNumberValue(record: Record<string, unknown>, key: string): number {
   return typeof value === 'number' ? value : Number(value) || 0;
 }
 
+function getOptionalNumberValue(
+  record: Record<string, unknown>,
+  key: string
+): number | undefined {
+  const value = record[key];
+  if (value === undefined || value === null || value === '') {
+    return undefined;
+  }
+  const parsed = typeof value === 'number' ? value : Number(value);
+  return Number.isFinite(parsed) ? parsed : undefined;
+}
+
 function getDateValue(record: Record<string, unknown>, key: string): Date {
   const value = record[key];
   if (value instanceof Date) return value;
@@ -67,6 +79,18 @@ function createBacktestTradeData(
     account: getStringArray(frontmatter, 'account'),
     tags: getStringArray(frontmatter, 'tags'),
     pnl: getNumberValue(frontmatter, 'pnl'),
+    commission: getOptionalNumberValue(frontmatter, 'commission'),
+    commissionType:
+      frontmatter.commissionType === 'fixed' ||
+      frontmatter.commissionType === 'percentage'
+        ? frontmatter.commissionType
+        : undefined,
+    hasExplicitCommission:
+      frontmatter.hasExplicitCommission === true
+        ? true
+        : frontmatter.hasExplicitCommission === false
+          ? false
+          : undefined,
     filePath,
     isBacktestTrade: true,
   };
@@ -245,6 +269,7 @@ export class BacktestTradeService extends CustomDataService {
             account: data.account,
             commission: data.commission,
             commissionType: data.commissionType,
+            hasExplicitCommission: data.hasExplicitCommission,
             fees: data.fees,
             swap: data.swap,
             rebate: data.rebate,
@@ -451,6 +476,7 @@ export class BacktestTradeService extends CustomDataService {
         account: data.account,
         commission: data.commission,
         commissionType: data.commissionType,
+        hasExplicitCommission: data.hasExplicitCommission,
         fees: data.fees,
         swap: data.swap,
         rebate: data.rebate,

@@ -225,6 +225,7 @@ const en = {
   'form.section.trade-details': 'Trade Details',
   'form.section.trading-costs': 'Trading Costs',
   'form.section.risk-management': 'Risk Management',
+  'form.section.take-profits': 'Take Profits',
   'form.section.analysis-thesis': 'Analysis & Thesis',
   'form.section.custom-fields': 'Custom Fields',
   'form.section.custom-fields-desc':
@@ -269,6 +270,10 @@ const en = {
     'Overnight financing cost charged/credited for holding positions',
   'form.field.other-fees': 'Other Fees',
   'form.field.stop-loss': 'Stop Loss',
+  'form.field.take-profit': 'Take Profit',
+  'form.field.take-profit-short': 'TP',
+  'form.field.target-price': 'Target Price',
+  'form.field.close-percent': 'Close %',
   'form.field.risk-amount': 'Risk Amount',
   'form.field.profit-loss': 'Profit/Loss',
   'form.field.total-pnl': 'Base Trade P&L',
@@ -295,6 +300,9 @@ const en = {
   'form.account-empty-state.create-account': 'Create Account',
   'form.account-empty-state.submit-disabled':
     'Create an account first to save this trade.',
+  'form.empty.take-profits': 'No take profit targets yet',
+  'form.action.add-take-profit': 'Add Take Profit',
+  'form.action.remove-take-profit': 'Remove take profit',
 
   
   'form.field.position-size': 'Position Size',
@@ -361,6 +369,8 @@ const en = {
   'form.placeholder.other-fees': 'Platform/regulatory fees',
   'form.placeholder.dividend-amount': 'Cash amount, positive or negative',
   'form.placeholder.stop-loss': 'Optional stop loss price',
+  'form.placeholder.target-price': 'Target price',
+  'form.placeholder.close-percent': '50%',
   'form.placeholder.risk-amount': 'Planned risk in currency',
   'form.placeholder.custom-tag': 'Type a custom tag and press Enter',
   'form.placeholder.thesis': 'Enter your thesis for this trade...',
@@ -532,6 +542,20 @@ const en = {
   'trade.validation.stop-loss-number': 'Stop loss must be a number.',
   'trade.validation.stop-loss-valid-number':
     'Stop loss must be a valid number.',
+  'trade.validation.take-profit-price-required':
+    'Take profit price is required.',
+  'trade.validation.take-profit-price-number':
+    'Take profit price must be a number.',
+  'trade.validation.take-profit-price-valid-number':
+    'Take profit price must be a valid number.',
+  'trade.validation.take-profit-close-percent-number':
+    'Take profit close percent must be a number.',
+  'trade.validation.take-profit-close-percent-valid-number':
+    'Take profit close percent must be a valid number.',
+  'trade.validation.take-profit-close-percent-range':
+    'Take profit close percent must be between 1 and 100.',
+  'trade.validation.take-profit-total-close-percent-range':
+    'Take profit close percentages cannot exceed 100.',
   'validation.custom-field.key-empty': 'Field key cannot be empty',
   'validation.custom-field.key-conflict':
     'This field name conflicts with built-in trade fields',
@@ -901,6 +925,8 @@ const en = {
   'tradelog.node.performance.period': '{indicator} performing period',
   'tradelog.filter.all': 'All Statuses',
   'tradelog.filter.all.desc': 'All trade statuses',
+  'tradelog.filter.all-review-statuses': 'All Reviews',
+  'tradelog.filter.all-directions': 'All Directions',
   'tradelog.filter.winners': 'Winners',
   'tradelog.filter.winners.desc': 'Winning trades',
   'tradelog.filter.losers': 'Losers',
@@ -1312,6 +1338,9 @@ const en = {
   'home.widget.drawdown-monitor.name': 'Drawdown Monitor',
   'home.widget.drawdown-monitor.description':
     'Track drawdown status across accounts with limits configured',
+  'home.widget.profit-target-widget.name': 'Profit Target',
+  'home.widget.profit-target-widget.description':
+    'Track profit target progress across accounts',
 
   
   
@@ -5607,6 +5636,12 @@ const en = {
   'home.widget.goals-progress.target': 'Target',
   'home.widget.goals-progress.tracks-lifetime': 'Tracks lifetime total',
   'home.widget.goals-progress.use-r-multiples': 'Use R-multiples',
+  'home.widget.goals-progress.account-aware': 'Account-aware targets',
+  'home.widget.goals-progress.no-target-selected':
+    'No target for selected account',
+  'home.widget.goals-progress.configured-for': 'Configured for {accounts}',
+  'home.widget.goals-progress.account-scope': 'Account scope',
+  'home.widget.goals-progress.add-account': 'Add account',
   'home.widget.goals-progress.click-to-set': 'Click to set a goal',
   'home.widget.goals-progress.header.pnl': 'P&L Goal',
   'home.widget.goals-progress.header.trades': 'Trades Goal',
@@ -5668,6 +5703,11 @@ const en = {
   'home.widget.drawdown.unable-to-load': 'Unable to load',
   'home.widget.drawdown.no-accounts': 'No accounts with limits',
 
+  'home.widget.profit-target.title': 'Profit Target',
+  'home.widget.profit-target.achieved': 'Achieved',
+  'home.widget.profit-target.remaining': 'remaining',
+  'home.widget.profit-target.unable-to-load': 'Unable to load',
+  'home.widget.profit-target.no-accounts': 'No accounts with targets',
   
   'home.widget.recent.title': 'Recent',
   'home.widget.recent.unknown': 'Unknown',
@@ -5767,6 +5807,11 @@ const en = {
   'filter.modal.status.breakeven': 'Breakeven',
   'filter.modal.status.open': 'Open',
   'filter.modal.status.closed': 'Closed',
+  'filter.modal.review-status': 'Review Status',
+  'filter.modal.review-status.reviewed': 'Reviewed',
+  'filter.modal.review-status.unreviewed': 'Unreviewed',
+  'filter.modal.direction.long-call': 'Long/Call',
+  'filter.modal.direction.short-put': 'Short/Put',
   'filter.modal.section.custom-fields': 'Custom Fields',
   'filter.modal.custom-field.n-selected': '{count} selected',
   'filter.modal.custom-field.none-available': 'No values available',
@@ -6458,6 +6503,8 @@ const en = {
   'trade-import.notice.template-saved': 'Trade Import template saved',
   'trade-import.notice.analyse-failed': 'Trade Import analyse failed',
   'trade-import.notice.preview-failed': 'Trade Import preview failed',
+  'trade-import.preview-error.guidance':
+    'Check that every required field is mapped, the selected date format matches your file, and numeric columns contain valid trade values.',
   'trade-import.notice.complete':
     'Trade Import complete: {written} written or updated, {duplicateCount} duplicates, {failedCount} failed',
   'trade-import.gate.sign-in':

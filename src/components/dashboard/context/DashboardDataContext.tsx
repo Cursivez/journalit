@@ -97,6 +97,19 @@ const haveDashboardFiltersChanged = (
     prevFilters.statuses.length !== currentFilters.statuses.length ||
     !prevFilters.statuses.every((s) => currentFilters.statuses.includes(s));
 
+  const directionsChanged =
+    prevFilters.directions.length !== currentFilters.directions.length ||
+    !prevFilters.directions.every((direction) =>
+      currentFilters.directions.includes(direction)
+    );
+
+  const mistakesChanged =
+    (prevFilters.mistakes?.length || 0) !==
+      (currentFilters.mistakes?.length || 0) ||
+    !(prevFilters.mistakes || []).every((mistake) =>
+      (currentFilters.mistakes || []).includes(mistake)
+    );
+
   const tagsChanged =
     (prevFilters.tags?.length || 0) !== (currentFilters.tags?.length || 0) ||
     !(prevFilters.tags || []).every((t) =>
@@ -114,6 +127,8 @@ const haveDashboardFiltersChanged = (
     setupsChanged ||
     tradeTypesChanged ||
     statusesChanged ||
+    directionsChanged ||
+    mistakesChanged ||
     tagsChanged ||
     customFieldFiltersChanged
   );

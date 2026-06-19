@@ -1,4 +1,11 @@
 {
+  "1.7.11": {
+    "title": "Targets & Filters",
+    "description": "Trade import fixes, MetaTrader SL/TP sync, new Trade Log filters, and quality-of-life updates.",
+    "imageUrl": "https://github.com/user-attachments/assets/85cefcf1-7217-4371-9f29-1b72c401154c",
+    "features": [],
+    "content": "# **[1.7.11] - 2026/06/19**\nTrade import fixes, MetaTrader SL/TP sync, new Trade Log filters, and quality-of-life updates.\n\n### **Profit Target + Account Goals**\n![Account Goals](https://github.com/user-attachments/assets/85cefcf1-7217-4371-9f29-1b72c401154c)\n- New Profit Target widget for account profit targets\n- P&L Target, Trade Count, and Win Rate goals can use selected accounts\n- Home account filters now apply to goal progress too\n\n### **MetaTrader Stop Loss + Take Profit Sync**\nSynced MetaTrader trades can now bring in stop loss and take-profit data.\n- Take profits can be saved as multiple targets with close percentages\n\n### **Trade Import Improvements**\nTrade Import should behave better when files contain duplicates, updates, or trades that need review.\n\n### **New Trade Log Filters**\n- Filter by Reviewed or Unreviewed\n- Filter by direction: Long/Call or Short/Put\n- Click the Home Unreviewed Trades widget to open Trade Log with unreviewed trades selected\n\n### **Trade Note Reading View + PDF Export**\n- Trade Notes now render more reliably outside edit mode.\n- Trade Notes now show up in Obsidian PDF exports\n\n### **Vietnamese Language Support**\nJournalit now includes Vietnamese.\n\n### **Automatic Commission Fixes**\nAutomatic commission rules are now visible while editing a trade, instead of only showing up after save.\n\n### **More Fixes**\n- Sidebar edit mode: drag the whole row, with better top/bottom reordering\n- Onboarding Explore cards now fit narrow Obsidian panes better\n- Home Regular/Backtest dropdown clicks behave more consistently\n- Key Levels priority dropdown styling is fixed\n- New review notes no longer auto-generate tags\n- Internal cache/index files moved out of the vault root `.journalit/` folder\n*this may cause your first load after this update to be slower than usual*"
+  },
   "1.7.10": {
     "title": "Obsidian Review Fixes",
     "description": "Obsidian Review Fixes",

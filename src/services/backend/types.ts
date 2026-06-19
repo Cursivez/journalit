@@ -31,7 +31,6 @@ export interface TradeMetadata {
   schemaVersion?: number;
   tradeStatus?: string;
   backendTradeId?: number;
-  csvImportId?: string;
   executionLedgerVersion?: number;
   executionIds?: string[];
   entryTime: string;

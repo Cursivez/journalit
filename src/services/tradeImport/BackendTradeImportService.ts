@@ -7,9 +7,15 @@ import type {
   TradeImportAnalyseRequest,
   TradeImportAnalyseResponse,
   TradeImportCapabilities,
+  TradeImportCommitRequest,
+  TradeImportCommitResponse,
   TradeImportDiagnostic,
+  TradeImportDefaultAction,
   TradeImportFileType,
+  TradeImportPreviewClassification,
+  TradeImportPreviewItem,
   TradeImportManualMode,
+  TradeImportProjectionAckRequest,
   TradeImportPreviewRequest,
   TradeImportPreviewResponse,
   TradeImportPreviewTrade,
@@ -85,35 +91,58 @@ const diagnosticsArray = (value: unknown): TradeImportDiagnostic[] =>
     ];
   });
 
+const previewTradeStatus = (
+  value: unknown
+): TradeImportPreviewTrade['status'] | null => {
+  switch (value) {
+    case 'OPEN':
+    case 'PARTIALLY_CLOSED':
+      return 'OPEN';
+    case 'CLOSED':
+    case 'CANCELLED':
+      return 'CLOSED';
+    default:
+      return null;
+  }
+};
+
 const previewTradesArray = (value: unknown): TradeImportPreviewTrade[] =>
   unknownArray(value).flatMap((item) => {
     const record = asRecord(item);
+    const status = previewTradeStatus(record?.status);
     if (
       !record ||
-      typeof record.csvImportId !== 'string' ||
       typeof record.symbol !== 'string' ||
-      typeof record.entryTime !== 'string'
+      record.symbol.trim() === '' ||
+      (record.direction !== 'long' && record.direction !== 'short') ||
+      typeof record.entryTime !== 'string' ||
+      record.entryTime.trim() === '' ||
+      typeof record.entryPrice !== 'number' ||
+      !Number.isFinite(record.entryPrice) ||
+      typeof record.quantity !== 'number' ||
+      !Number.isFinite(record.quantity) ||
+      !status ||
+      typeof record.closeOnly !== 'boolean' ||
+      typeof record.useDirectPnLInput !== 'boolean'
     ) {
-      return [];
+      throw new Error('Invalid Trade Import preview trade response');
     }
     return [
       {
-        csvImportId: record.csvImportId,
-        legacyCsvImportIds: stringArray(record.legacyCsvImportIds),
         sourceRows: unknownArray(record.sourceRows).filter(
           (row): row is number => typeof row === 'number'
         ),
         symbol: record.symbol,
-        direction: record.direction === 'short' ? 'short' : 'long',
+        direction: record.direction,
         entryTime: record.entryTime,
-        entryPrice: numberValue(record.entryPrice),
-        quantity: numberValue(record.quantity),
+        entryPrice: record.entryPrice,
+        quantity: record.quantity,
         exitTime: typeof record.exitTime === 'string' ? record.exitTime : null,
         exitPrice:
           typeof record.exitPrice === 'number' ? record.exitPrice : null,
-        status: record.status === 'OPEN' ? 'OPEN' : 'CLOSED',
-        closeOnly: record.closeOnly === true,
-        useDirectPnLInput: record.useDirectPnLInput === true,
+        status,
+        closeOnly: record.closeOnly,
+        useDirectPnLInput: record.useDirectPnLInput,
         directPnL:
           typeof record.directPnL === 'number' ? record.directPnL : null,
         profitLoss:
@@ -177,6 +206,179 @@ const previewTradesArray = (value: unknown): TradeImportPreviewTrade[] =>
       },
     ];
   });
+
+const classificationValue = (
+  value: unknown
+): TradeImportPreviewClassification => {
+  switch (value) {
+    case 'new':
+    case 'exact_duplicate':
+    case 'already_applied':
+    case 'update_existing':
+    case 'partial_update_existing':
+    case 'likely_duplicate':
+    case 'conflict':
+    case 'failed_invalid_trade':
+    case 'failed_no_open_match':
+    case 'failed_multiple_open_matches':
+    case 'failed_quantity_mismatch':
+    case 'duplicate_in_import':
+      return value;
+    default:
+      return 'failed_invalid_trade';
+  }
+};
+
+const defaultActionValue = (value: unknown): TradeImportDefaultAction => {
+  switch (value) {
+    case 'create':
+    case 'update':
+    case 'skip':
+    case 'manual_review':
+    case 'blocked':
+      return value;
+    default:
+      return 'blocked';
+  }
+};
+
+const commitResultValue = (
+  value: unknown
+): TradeImportCommitResponse['itemResults'][number]['result'] | null => {
+  switch (value) {
+    case 'created':
+    case 'updated':
+    case 'skipped':
+    case 'skipped_duplicate':
+    case 'blocked':
+    case 'conflict':
+      return value;
+    default:
+      return null;
+  }
+};
+
+const commitItemResultsArray = (
+  value: unknown
+): TradeImportCommitResponse['itemResults'] => {
+  if (!Array.isArray(value) || value.length === 0) {
+    throw new Error('Invalid Trade Import commit item results response');
+  }
+  return value.map((item) => {
+    const itemRecord = asRecord(item);
+    const result = commitResultValue(itemRecord?.result);
+    if (
+      !itemRecord ||
+      typeof itemRecord.itemId !== 'string' ||
+      itemRecord.itemId.trim() === '' ||
+      !result
+    ) {
+      throw new Error('Invalid Trade Import commit item result response');
+    }
+    return {
+      itemId: itemRecord.itemId,
+      result,
+      tradeId:
+        typeof itemRecord.tradeId === 'string' ? itemRecord.tradeId : undefined,
+      tradeVersion:
+        typeof itemRecord.tradeVersion === 'number'
+          ? itemRecord.tradeVersion
+          : undefined,
+      errorCode:
+        typeof itemRecord.errorCode === 'string'
+          ? itemRecord.errorCode
+          : undefined,
+      errorMessage:
+        typeof itemRecord.errorMessage === 'string'
+          ? itemRecord.errorMessage
+          : undefined,
+    };
+  });
+};
+
+const previewItemsArray = (value: unknown): TradeImportPreviewItem[] => {
+  if (!Array.isArray(value)) {
+    throw new Error('Invalid Trade Import preview items response');
+  }
+  return value.map((item) => {
+    const record = asRecord(item);
+    if (
+      !record ||
+      typeof record.itemId !== 'string' ||
+      record.itemId.trim() === ''
+    ) {
+      throw new Error('Invalid Trade Import preview item response');
+    }
+    const [previewTrade] = previewTradesArray([record.previewTrade]);
+    return {
+      itemId: record.itemId,
+      itemIndex:
+        typeof record.itemIndex === 'number' ? record.itemIndex : undefined,
+      classification: classificationValue(record.classification),
+      defaultAction: defaultActionValue(record.defaultAction),
+      matchedTradeId:
+        typeof record.matchedTradeId === 'string'
+          ? record.matchedTradeId
+          : null,
+      decisionReasons: unknownArray(record.decisionReasons).flatMap(
+        (reason) => {
+          const reasonRecord = asRecord(reason);
+          if (!reasonRecord || typeof reasonRecord.code !== 'string') return [];
+          return [
+            {
+              code: reasonRecord.code,
+              message:
+                typeof reasonRecord.message === 'string'
+                  ? reasonRecord.message
+                  : undefined,
+            },
+          ];
+        }
+      ),
+      identityCandidates: unknownArray(record.identityCandidates).flatMap(
+        (candidate) => {
+          const candidateRecord = asRecord(candidate);
+          if (!candidateRecord || typeof candidateRecord.idType !== 'string')
+            return [];
+          return [
+            {
+              entityType:
+                typeof candidateRecord.entityType === 'string'
+                  ? candidateRecord.entityType
+                  : undefined,
+              idType: candidateRecord.idType,
+              value:
+                typeof candidateRecord.value === 'string'
+                  ? candidateRecord.value
+                  : undefined,
+              hash:
+                typeof candidateRecord.hash === 'string'
+                  ? candidateRecord.hash
+                  : undefined,
+              strength:
+                typeof candidateRecord.strength === 'string'
+                  ? candidateRecord.strength
+                  : undefined,
+              cardinality:
+                typeof candidateRecord.cardinality === 'string'
+                  ? candidateRecord.cardinality
+                  : undefined,
+              scope:
+                typeof candidateRecord.scope === 'string'
+                  ? candidateRecord.scope
+                  : undefined,
+              source:
+                typeof candidateRecord.source === 'string'
+                  ? candidateRecord.source
+                  : undefined,
+            },
+          ];
+        }
+      ),
+      previewTrade,
+    };
+  });
+};
 
 const parseFileType = (value: unknown): TradeImportFileType =>
   value === 'xlsx' || value === 'xls' || value === 'html' ? value : 'csv';
@@ -370,6 +572,13 @@ const ensurePreviewResponse = (value: unknown): TradeImportPreviewResponse => {
   const summary = asRecord(record.summary);
   return {
     importId: record.importId,
+    correlationId:
+      typeof record.correlationId === 'string' ? record.correlationId : '',
+    previewRevision: numberValue(record.previewRevision),
+    previewExpiresAt:
+      typeof record.previewExpiresAt === 'string'
+        ? record.previewExpiresAt
+        : undefined,
     schemaVersion: 'trade-import-preview-v1',
     broker: typeof record.broker === 'string' ? record.broker : '',
     adapterVersion:
@@ -382,8 +591,59 @@ const ensurePreviewResponse = (value: unknown): TradeImportPreviewResponse => {
       failedRowCount: numberValue(summary?.failedRowCount),
       skippedIncompleteCount: numberValue(summary?.skippedIncompleteCount),
     },
-    trades: previewTradesArray(record.trades),
+    items: previewItemsArray(record.items),
     diagnostics: diagnosticsArray(record.diagnostics),
+  };
+};
+
+const ensureCommitResponse = (value: unknown): TradeImportCommitResponse => {
+  const record = asRecord(value);
+  if (!record || typeof record.commitId !== 'string') {
+    throw new Error('Invalid Trade Import commit response');
+  }
+  return {
+    commitId: record.commitId,
+    importId: typeof record.importId === 'string' ? record.importId : '',
+    correlationId:
+      typeof record.correlationId === 'string' ? record.correlationId : '',
+    status: typeof record.status === 'string' ? record.status : '',
+    itemResults: commitItemResultsArray(record.itemResults),
+    trades: unknownArray(record.trades).flatMap((trade) => {
+      const tradeRecord = asRecord(trade);
+      if (
+        !tradeRecord ||
+        typeof tradeRecord.id !== 'string' ||
+        typeof tradeRecord.version !== 'number' ||
+        !Number.isFinite(tradeRecord.version) ||
+        tradeRecord.version <= 0
+      ) {
+        throw new Error('Invalid Trade Import commit trade response');
+      }
+      const [previewTrade] =
+        tradeRecord.previewTrade === undefined ||
+        tradeRecord.previewTrade === null
+          ? []
+          : previewTradesArray([tradeRecord.previewTrade]);
+      return [
+        {
+          id: tradeRecord.id,
+          version: tradeRecord.version,
+          symbol:
+            typeof tradeRecord.symbol === 'string' ? tradeRecord.symbol : '',
+          direction: tradeRecord.direction === 'short' ? 'short' : 'long',
+          status: tradeRecord.status === 'open' ? 'open' : 'closed',
+          accountId:
+            typeof tradeRecord.accountId === 'string'
+              ? tradeRecord.accountId
+              : null,
+          importId:
+            typeof tradeRecord.importId === 'string'
+              ? tradeRecord.importId
+              : '',
+          previewTrade,
+        },
+      ];
+    }),
   };
 };
 
@@ -438,21 +698,31 @@ async function postMultipart(
     for (const [key, value] of Object.entries(authHeaders()))
       xhr.setRequestHeader(key, value);
     xhr.onload = () => {
+      let responseBody: unknown = null;
+      try {
+        responseBody = xhr.responseText
+          ? (JSON.parse(xhr.responseText) as unknown)
+          : null;
+      } catch {
+        responseBody = xhr.responseText || null;
+      }
       if (xhr.status < 200 || xhr.status >= 300) {
         handleTradeImportHttpError(xhr.status);
         reject(
           new ApiError(
             `Trade Import request failed (${xhr.status})`,
-            xhr.status
+            xhr.status,
+            {
+              operation: `Trade Import ${path}`,
+              endpoint: path,
+              statusCode: xhr.status,
+              responseBody,
+            }
           )
         );
         return;
       }
-      try {
-        resolve(JSON.parse(xhr.responseText) as unknown);
-      } catch (error) {
-        reject(error instanceof Error ? error : new Error(String(error)));
-      }
+      resolve(responseBody);
     };
     xhr.onerror = () =>
       reject(new Error('Trade Import network request failed'));
@@ -494,5 +764,48 @@ export class BackendTradeImportService {
     return postMultipart('/api/v1/trade-import/preview', file, request).then(
       ensurePreviewResponse
     );
+  }
+
+  async commit(
+    importId: string,
+    request: TradeImportCommitRequest,
+    idempotencyKey: string
+  ): Promise<TradeImportCommitResponse> {
+    const response = await requestUrl({
+      url: ApiClient.buildUrl(`/api/v1/trade-import/${importId}/commit`),
+      method: 'POST',
+      headers: {
+        ...authHeaders(),
+        'Content-Type': 'application/json',
+        'Idempotency-Key': idempotencyKey,
+      },
+      body: JSON.stringify(request),
+      throw: false,
+    });
+    if (response.status < 200 || response.status >= 300) {
+      handleTradeImportHttpError(response.status);
+      throw new ApiError(
+        `Trade Import commit failed (${response.status})`,
+        response.status
+      );
+    }
+    return ensureCommitResponse(response.json);
+  }
+
+  async projectionAck(request: TradeImportProjectionAckRequest): Promise<void> {
+    const response = await requestUrl({
+      url: ApiClient.buildUrl('/api/v1/trade-import/projection-ack'),
+      method: 'POST',
+      headers: { ...authHeaders(), 'Content-Type': 'application/json' },
+      body: JSON.stringify(request),
+      throw: false,
+    });
+    if (response.status < 200 || response.status >= 300) {
+      handleTradeImportHttpError(response.status);
+      throw new ApiError(
+        `Trade Import projection acknowledgement failed (${response.status})`,
+        response.status
+      );
+    }
   }
 }

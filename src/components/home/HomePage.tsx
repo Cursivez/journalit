@@ -1354,6 +1354,8 @@ function useHomePageModel(plugin: JournalitPlugin) {
       setups: [],
       tradeTypes: [...selectedTradeTypes],
       statuses: [],
+      reviewStatus: [],
+      directions: [],
       tags: [],
       mistakes: [],
       customFieldFilters: {},
@@ -1364,7 +1366,8 @@ function useHomePageModel(plugin: JournalitPlugin) {
   const hasAccountBackedHomeWidgets = useMemo(
     () =>
       activeWidgets.includes('aum') ||
-      activeWidgets.includes('drawdownMonitor'),
+      activeWidgets.includes('drawdownMonitor') ||
+      activeWidgets.includes('profitTarget'),
     [activeWidgets]
   );
 
@@ -1562,7 +1565,10 @@ const HomePageComponent: React.FC<HomePageProps> = ({ plugin }) => {
 
       
       <div className="journalit-home-content">
-        <HomeAccountProvider selectedAccounts={effectiveSelectedAccounts}>
+        <HomeAccountProvider
+          selectedAccounts={effectiveSelectedAccounts}
+          availableAccounts={availableAccounts}
+        >
           <DashboardDataProvider
             app={plugin.app}
             tradeService={plugin.tradeService}

@@ -2750,9 +2750,42 @@
     .trade-form-view-container .commission-grid {display: grid;grid-template-columns: 1fr 1fr;gap: 16px;align-items: flex-start}
 
     
-    .trade-form-view-container .risk-management-section {margin-top: 20px}
+    .trade-form-view-container .risk-management-section {margin-top: 20px;border-top: 1px solid var(--background-modifier-border);padding-top: 16px}
 
     .trade-form-view-container .risk-fields {display: grid;grid-template-columns: repeat(2, 1fr);gap: 16px}
+
+    .trade-form-view-container .take-profits-section {grid-column: 1 / -1;padding: 0}
+
+    .trade-form-view-container .take-profits-header {display: flex;align-items: center;justify-content: space-between;gap: 12px;margin-bottom: 8px}
+
+    .trade-form-view-container .take-profits-list {display: flex;flex-direction: column;gap: 6px;margin-bottom: 10px}
+
+    .trade-form-view-container .take-profit-row {display: grid;grid-template-columns: 40px minmax(0, 1fr) 140px 32px;gap: 6px;align-items: start}
+
+    .trade-form-view-container .take-profit-row-header {color: var(--text-muted);font-size: 12px;font-weight: 600;align-items: center}
+
+    .trade-form-view-container .take-profit-row .form-group {margin-bottom: 0}
+
+    .trade-form-view-container .take-profit-row .input {min-height: 32px}
+
+    .trade-form-view-container .take-profit-index-label {display: flex;align-items: center;min-height: 32px;color: var(--text-normal);font-weight: 500;padding-left: 2px}
+
+    .trade-form-view-container .take-profit-remove-button {width: 32px;height: 32px;padding: 0;margin-top: 0;font-size: 20px;line-height: 1}
+
+    .trade-form-view-container .take-profit-remove-button:hover {color: var(--text-error);border-color: var(--text-error)}
+
+    .trade-form-view-container .take-profit-add-button {margin: 0;padding: 2px 6px;color: var(--text-muted);background: transparent;box-shadow: none;height: 24px;min-height: 24px;font-size: 13px;font-weight: 500;border-radius: 4px}
+
+    .trade-form-view-container .take-profit-add-button:hover {color: var(--text-normal);background: var(--background-modifier-hover)}
+
+    .trade-form-view-container .take-profits-empty-state {display: flex;align-items: center;justify-content: center;width: 100%;min-height: 42px;border: 1px dashed var(--background-modifier-border);border-radius: 6px;background: transparent;color: var(--text-faint);font-size: 13px}
+
+    @media (max-width: 600px) {
+      .trade-form-view-container .risk-fields,
+      .trade-form-view-container .take-profit-row {grid-template-columns: 1fr}
+
+      .trade-form-view-container .take-profit-row-header {display: none}
+    }
 
     
     .trade-form-view-container .calculated-risk-hint {font-size: 12px;color: var(--text-muted);margin-top: 4px;display: block}
@@ -3173,6 +3206,8 @@
 .journalit-csv-import .journalit-trade-import-template-picker,
 .journalit-csv-import .journalit-trade-import-template-trigger {width: 100%}
 
+.journalit-csv-import .journalit-trade-import-template-section {display: flex;flex-direction: column;gap: 12px}
+
 .journalit-csv-import .journalit-trade-import-account-trigger,
 .journalit-csv-import .journalit-trade-import-broker-trigger,
 .journalit-csv-import .journalit-trade-import-template-trigger {justify-content: space-between;min-height: 31px;font-size: 13px}
@@ -3198,6 +3233,31 @@
 .journalit-csv-import .journalit-trade-import-dropdown-trigger {justify-content: space-between;width: 100%;min-height: 31px;font-size: 13px}
 
 .journalit-csv-import .journalit-trade-import-dropdown-trigger span:first-child {overflow: hidden;text-overflow: ellipsis;white-space: nowrap}
+
+.journalit-csv-import .journalit-trade-import-manual-mode {display: flex;flex-direction: column;grid-column: 1 / -1;gap: 3px;width: 100%;max-width: none;margin: 0;padding: 0;border: 0;background: transparent}
+
+.journalit-csv-import .journalit-trade-import-manual-mode-title {margin: 0;padding: 0;font-size: 13px;font-weight: 600;color: var(--text-normal)}
+
+.journalit-csv-import .journalit-trade-import-manual-mode > p,
+.journalit-trade-import-manual-mode > p {margin: 0;padding: 0;color: var(--text-muted);font-size: 12px;line-height: 1.35}
+
+.journalit-csv-import .journalit-trade-import-manual-mode-options {display: grid;grid-template-columns: repeat(2, minmax(0, 1fr));gap: 8px;margin-top: 0}
+
+.journalit-csv-import .journalit-trade-import-manual-mode-option {display: block;min-height: 27px;padding: 5px 12px;border: 1px solid var(--background-modifier-border);border-radius: 4px;background-color: var(--background-secondary);color: var(--text-normal);font-size: 12px;font-weight: 600;line-height: 1.2;text-align: center;cursor: pointer;transition:
+		border-color 120ms ease,
+		background-color 120ms ease,
+		color 120ms ease,
+		box-shadow 120ms ease}
+
+.journalit-csv-import .journalit-trade-import-manual-mode-option:hover {border-color: var(--background-modifier-border-hover);background-color: var(--background-modifier-hover);color: var(--text-normal)}
+
+.journalit-csv-import .journalit-trade-import-manual-mode-option.is-selected {border-color: var(--interactive-accent);background-color: var(--interactive-accent);color: var(--text-on-accent);box-shadow: none}
+
+.journalit-csv-import .journalit-trade-import-manual-mode-option:focus-within {border-color: var(--interactive-accent);box-shadow: 0 0 0 2px var(--background-modifier-border-focus)}
+
+.journalit-csv-import .journalit-trade-import-manual-mode-option.is-disabled {cursor: not-allowed;opacity: 0.65}
+
+.journalit-csv-import .journalit-trade-import-manual-mode-option input {position: absolute;width: 1px;height: 1px;margin: 0;opacity: 0;pointer-events: none}
 
 .journalit-csv-import .journalit-trade-import-dropdown-menu {left: 0;right: auto;width: 100%;max-height: 280px;overflow-y: auto;z-index: 30}
 
@@ -3292,7 +3352,7 @@
 .journalit-quick-import-modal button.journalit-trade-import-inline-link:hover,
 .journalit-quick-import-modal button.journalit-trade-import-inline-link:focus-visible {background: transparent;background-color: transparent;box-shadow: none;color: var(--text-accent-hover, var(--text-accent))}
 
-.journalit-csv-import .csv-import-card label.journalit-trade-import-ai-toggle {display: flex;flex-direction: row;align-items: center;justify-content: flex-start;gap: 10px;width: 100%;margin: 10px 0 0 0;padding: 10px 12px;border: 1px solid var(--background-modifier-border);border-radius: 8px;background: var(--background-primary);color: var(--text-normal);font-size: 13px;font-weight: 500;cursor: pointer}
+.journalit-csv-import .csv-import-card label.journalit-trade-import-ai-toggle {display: flex;flex-direction: row;align-items: center;justify-content: flex-start;gap: 10px;width: auto;margin: 0;padding: 8px 10px;border: 1px solid var(--background-modifier-border);border-radius: 8px;background: var(--background-primary);color: var(--text-normal);font-size: 13px;font-weight: 500;cursor: pointer}
 
 .journalit-csv-import .csv-import-card label.journalit-trade-import-ai-toggle:hover {border-color: var(--interactive-accent)}
 
@@ -3313,9 +3373,16 @@
 
 .journalit-csv-import .journalit-trade-import-accordion .journalit-settings-accordion__content p {margin: 0 0 12px 0;color: var(--text-muted);font-size: 13px;line-height: 1.45}
 
-.journalit-csv-import .journalit-trade-import-template-picker-row {display: grid;grid-template-columns: minmax(0, 1fr) auto;gap: 8px;align-items: end}
+.journalit-csv-import .journalit-trade-import-template-picker-row {display: grid;grid-template-columns: minmax(240px, 420px) auto minmax(220px, 1fr);gap: 8px;align-items: end;width: 100%}
 
-.journalit-csv-import .journalit-trade-import-template-menu-wrapper {position: relative;margin-bottom: 10px}
+.journalit-csv-import .journalit-trade-import-template-picker-row > label {display: flex;flex-direction: column;gap: 5px;margin: 0}
+
+.journalit-csv-import .journalit-trade-import-template-picker-row > .journalit-trade-import-ai-toggle {justify-self: end;align-self: end}
+
+.journalit-csv-import .journalit-trade-import-template-panel,
+.journalit-csv-import .journalit-trade-import-manual-mode {grid-column: 1 / -1}
+
+.journalit-csv-import .journalit-trade-import-template-menu-wrapper {position: relative;margin-bottom: 0}
 
 .journalit-csv-import .journalit-trade-import-template-menu-trigger {display: inline-flex;align-items: center;justify-content: center;width: 34px;height: 34px;padding: 0;border: 1px solid var(--background-modifier-border);border-radius: 8px;background: var(--background-primary);color: var(--text-muted)}
 
@@ -3377,6 +3444,10 @@
 
 .journalit-csv-import .journalit-trade-import-date-format-control {max-width: 320px}
 
+.journalit-trade-import-dropdown-menu--portal.journalit-trade-import-date-format-menu {width: var(--trade-import-menu-width);min-width: min(520px, calc(100vw - 24px))}
+
+.journalit-trade-import-date-format-menu .journalit-home-period-option__label {white-space: nowrap}
+
 .journalit-csv-import .journalit-trade-import-summary-grid {display: grid;grid-template-columns: auto 1fr;gap: 6px 12px;max-width: 420px;margin: 12px 0;padding: 14px;border: 1px solid var(--background-modifier-border);border-radius: 8px;background: var(--background-primary)}
 
 .journalit-csv-import .journalit-trade-import-summary-grid strong {font-size: 18px}
@@ -3435,6 +3506,16 @@
 .journalit-csv-import .csv-message--error {border-color: var(--text-error);background: color-mix(in srgb, var(--text-error) 8%, transparent);color: var(--text-normal)}
 
 .journalit-csv-import .csv-message-spaced-bottom {margin-bottom: 14px}
+
+.journalit-csv-import .journalit-trade-import-preview-error {margin-top: 16px}
+
+.journalit-csv-import .journalit-trade-import-preview-error p {margin: 6px 0 0}
+
+.journalit-csv-import .journalit-trade-import-save-template-row {display: flex;align-items: end;gap: 10px;margin-top: 14px}
+
+.journalit-csv-import .journalit-trade-import-save-template-row label {flex: 0 1 320px;margin: 0}
+
+.journalit-csv-import .journalit-trade-import-save-template-row button {flex: 0 0 auto;min-height: 32px}
 
 .journalit-csv-import .csv-tip-text {margin: 4px 0 0;color: var(--text-muted);font-size: 13px}
 
@@ -3507,6 +3588,12 @@
 	.journalit-csv-import .journalit-trade-import-stepper {grid-template-columns: 1fr}
 
 	.journalit-csv-import .journalit-trade-import-form-grid {grid-template-columns: 1fr}
+
+	.journalit-csv-import .journalit-trade-import-template-picker-row {grid-template-columns: minmax(0, 1fr) auto}
+
+	.journalit-csv-import .journalit-trade-import-template-picker-row > .journalit-trade-import-ai-toggle {grid-column: 1 / -1;justify-self: start}
+
+	.journalit-csv-import .journalit-trade-import-manual-mode-options {grid-template-columns: 1fr}
 
 	.journalit-csv-import .journalit-trade-import-actions {flex-direction: column}
 }
@@ -6186,6 +6273,22 @@
 
   .journalit-home-goals__target-suffix {font-size: 11px;color: var(--text-faint)}
 
+  .journalit-home-goals__account-targets {display: flex;flex-direction: column;gap: 6px;max-height: 120px;overflow: auto}
+
+  .journalit-home-goals__account-scope {display: flex;flex-direction: column;gap: 8px}
+
+  .journalit-home-goals__account-scope-header {display: flex;align-items: center;justify-content: space-between;gap: 8px}
+
+  .journalit-home-goals__account-select {min-width: 120px;max-width: 50%;padding: 4px 8px;font-size: 11px;border: 1px solid var(--background-modifier-border);border-radius: 4px;background-color: var(--background-modifier-form-field);color: var(--text-normal)}
+
+  .journalit-home-goals__account-chips {display: flex;flex-wrap: wrap;gap: 4px}
+
+  .journalit-home-goals__account-chip {display: inline-flex;align-items: center;gap: 4px;padding: 3px 6px;border: 1px solid var(--background-modifier-border);border-radius: 4px;background-color: var(--background-secondary);color: var(--text-muted);font-size: 11px;cursor: pointer}
+
+  .journalit-home-goals__account-target-row {display: grid;grid-template-columns: minmax(0, 1fr) minmax(72px, 96px) auto;align-items: center;gap: 6px}
+
+  .journalit-home-goals__account-target-name {min-width: 0;overflow: hidden;text-overflow: ellipsis;white-space: nowrap;font-size: 11px;color: var(--text-muted)}
+
   .journalit-home-goals__period-row {display: flex;gap: 4px}
 
   .journalit-home-goals__period-button {flex: 1;padding: 4px 6px;font-size: 11px;border: 1px solid var(--background-modifier-border);border-radius: 4px;background-color: transparent;color: var(--text-muted);cursor: pointer;transition: color 0.15s ease}
@@ -6215,6 +6318,10 @@
   .journalit-home-goals__complete svg {display: block;flex-shrink: 0}
 
   .journalit-home-goals__empty-text {font-size: 13px}
+
+  .journalit-home-goals--scope-mismatch {gap: 6px;padding: 16px}
+
+  .journalit-home-goals__scope-hint {max-width: 240px;font-size: 11px;color: var(--text-faint);text-align: center;line-height: 1.35}
 
   .journalit-home-goals--complete,
   .journalit-home-goals--high {--journalit-goals-progress-color: var(--color-green);--journalit-goals-text-color: var(--color-green)}
@@ -6629,33 +6736,39 @@
   .journalit-home-setups__tooltip-separator {color: var(--text-muted);margin: 0 6px}
 
   
-  .journalit-home-drawdown {height: 100%;display: flex;flex-direction: column;padding: 12px;gap: 8px}
+  .journalit-home-account-progress {height: 100%;display: flex;flex-direction: column;padding: 12px;gap: 8px}
 
-  .journalit-home-drawdown__list {flex: 1;min-height: 0;display: flex;flex-direction: column;gap: 6px;overflow: hidden}
+  .journalit-home-account-progress__list {flex: 1;min-height: 0;display: flex;flex-direction: column;gap: 6px;overflow: hidden}
 
-  .journalit-home-drawdown__row {display: flex;flex-direction: column;gap: 4px;cursor: pointer}
+  .journalit-home-account-progress__row {display: flex;flex-direction: column;gap: 4px;cursor: pointer}
 
-  .journalit-home-drawdown__row-header {display: flex;justify-content: space-between;align-items: baseline}
+  .journalit-home-account-progress__row-header {display: flex;justify-content: space-between;align-items: baseline}
 
-  .journalit-home-drawdown__percentage {font-size: 15px;font-weight: 600;text-transform: none;letter-spacing: normal;color: var(--journalit-home-drawdown-color, var(--text-normal))}
+  .journalit-account-progress-name {font-size: 12px;color: var(--text-muted);font-weight: 400;transition: font-weight 0.1s ease, color 0.1s ease}
 
-  .journalit-home-drawdown__percentage--breached {font-size: 12px;text-transform: uppercase;letter-spacing: 0.5px;color: var(--text-error)}
+  .journalit-account-progress-row:hover .journalit-account-progress-name {font-weight: 500;color: var(--text-normal)}
 
-  .journalit-home-drawdown__bar {display: block}
+  .journalit-home-account-progress__percentage {font-size: 15px;font-weight: 600;text-transform: none;letter-spacing: normal;color: var(--journalit-home-account-progress-color, var(--text-normal))}
 
-  .journalit-home-drawdown__remaining {font-size: 11px;color: var(--text-faint)}
+  .journalit-home-account-progress__percentage--breached {font-size: 12px;text-transform: uppercase;letter-spacing: 0.5px;color: var(--text-error)}
 
-  .journalit-home-drawdown__loading-list {flex: 1;min-height: 0;display: flex;flex-direction: column;gap: 6px;overflow: hidden}
+  .journalit-home-account-progress__percentage--achieved {font-size: 12px;text-transform: uppercase;letter-spacing: 0.5px;color: var(--color-green)}
 
-  .journalit-home-drawdown__loading-row {display: flex;flex-direction: column;gap: 4px}
+  .journalit-home-account-progress__bar {display: block}
 
-  .journalit-home-drawdown__state {height: 100%;display: flex;flex-direction: column;align-items: center;justify-content: center;gap: 8px}
+  .journalit-home-account-progress__remaining {font-size: 11px;color: var(--text-faint)}
 
-  .journalit-home-drawdown__state-title {font-size: 11px;font-weight: 500;color: var(--text-faint);text-transform: uppercase}
+  .journalit-home-account-progress__loading-list {flex: 1;min-height: 0;display: flex;flex-direction: column;gap: 6px;overflow: hidden}
 
-  .journalit-home-drawdown__state-message {font-size: 13px;color: var(--text-muted)}
+  .journalit-home-account-progress__loading-row {display: flex;flex-direction: column;gap: 4px}
 
-  .journalit-home-drawdown__state-icon {color: var(--text-muted);opacity: 0.5}
+  .journalit-home-account-progress__state {height: 100%;display: flex;flex-direction: column;align-items: center;justify-content: center;gap: 8px}
+
+  .journalit-home-account-progress__state-title {font-size: 11px;font-weight: 500;color: var(--text-faint);text-transform: uppercase}
+
+  .journalit-home-account-progress__state-message {font-size: 13px;color: var(--text-muted)}
+
+  .journalit-home-account-progress__state-icon {color: var(--text-muted);opacity: 0.5}
 
 .journalit-image-upload-wrapper {margin-bottom: 12px;position: relative}
 
@@ -7218,113 +7331,6 @@
 
 .journalit-key-events .key-events-item-notes {display: block;margin-top: 2px;font-size: 12px;color: var(--text-muted);line-height: 1.2;font-style: italic}
 
-.journalit-missed-trade-view,
-  .missed-trade-form-view-container .journalit-missed-trade-view {margin: 0;border-bottom: none;padding: 0;display: block;width: 100%;z-index: 1;position: relative;box-sizing: border-box;contain: content;isolation: isolate}
-  
-  
-  .journalit-missed-trade-note-wrapper {width: 100%;margin: 0;padding: 0;display: flex;flex-direction: column;contain: content;isolation: isolate;position: relative;box-sizing: border-box}
-
-  
-  .markdown-source-view.is-live-preview.is-readable-line-width .journalit-missed-trade-view {max-width: var(--file-line-width, 700px);margin-left: auto;margin-right: auto}
-  
-  .missed-trade-note-container {background-color: var(--background-primary);border-radius: var(--border-radius-lg, 8px);box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);margin: 0;overflow: hidden;position: relative;font-family: var(--font-interface);isolation: isolate;contain: layout style paint;width: 100%;align-self: flex-start;transition: box-shadow 0.2s ease-in-out}
-
-  .missed-trade-note-loading-placeholder {height: 60px;display: flex;align-items: center;justify-content: center}
-
-  .missed-trade-note-loading-text {color: var(--text-muted);font-size: 12px}
-
-  
-  
-  
-  .trade-header-actions .missed-trade-badge {display: inline-flex;align-items: center;justify-content: center;background-color: var(--color-orange, #ff9500);color: white;font-size: 0.75rem;font-weight: 600;padding: 0.25rem 0.5rem;border-radius: 4px;text-transform: uppercase;letter-spacing: 0.5px;box-shadow: 0 2px 4px rgba(255, 149, 0, 0.3);margin-right: 0.75rem}
-
-  
-
-  
-  
-  .missed-trade-reason-section {margin-top: 1rem}
-
-  .missed-trade-reason-section .details-card {background-color: var(--background-secondary);border-left: 4px solid var(--color-orange, #ff9500)}
-
-  .missed-trade-reason-section h4 {color: var(--color-orange, #ff9500);font-weight: 600;display: flex;align-items: center;gap: 0.5rem}
-
-  .missed-trade-reason-section h4::before {content: '❌';font-size: 1rem}
-
-  .missed-trade-reason-content {font-size: 0.95rem;line-height: 1.6;color: var(--text-normal);white-space: pre-wrap;padding: 0.75rem;background-color: var(--background-secondary-alt, var(--background-secondary));border-radius: 4px;margin-top: 0.5rem}
-
-  
-
-  
-  .missed-trades-timeline-section {margin-top: 1rem;padding-top: 0.75rem;border-top: 1px solid var(--background-modifier-border)}
-
-  .missed-trades-label {color: var(--color-orange, #ff9500);font-weight: 600;margin-bottom: 0.5rem}
-
-  
-  .timeline-item.missed-trade {background-color: rgba(255, 149, 0, 0.15);color: var(--color-orange, #ff9500);border-color: rgba(255, 149, 0, 0.3);font-weight: 500}
-
-  .timeline-item.missed-trade:hover {background-color: rgba(255, 149, 0, 0.25);transform: translateY(-1px)}
-
-  .timeline-item.missed-trade.active {border: 2px solid var(--color-orange, #ff9500);background-color: rgba(255, 149, 0, 0.2);font-weight: 600}
-
-
-  
-  
-  .missed-trade-note-content {padding: 0;display: flex;flex-direction: column;gap: 0.5rem}
-
-  
-  
-  .missed-trade-note-review-section {margin-top: 2rem;padding-top: 1.5rem;border-top: 1px solid var(--background-modifier-border);display: flex;justify-content: center;align-items: center}
-
-  
-  
-  
-  .journalit-missed-trade-view .field .checkbox-label {display: flex;align-items: center;gap: 0.5rem;cursor: pointer;font-size: 0.9rem;color: var(--text-normal);transition: color 0.2s ease}
-
-  .journalit-missed-trade-view .field .checkbox-label:hover {color: var(--interactive-accent)}
-
-  .journalit-missed-trade-view .field .checkbox-label input[type="checkbox"] {cursor: pointer;transform: scale(1.1)}
-
-  .journalit-missed-trade-view .field .checkbox-label span {font-weight: 500}
-
-  
-  .journalit-missed-trade-view .field .textarea {width: 100%;min-height: 80px;padding: 0.75rem;border: 1px solid var(--background-modifier-border);border-radius: 4px;background: var(--background-primary);color: var(--text-normal);font-family: inherit;font-size: 0.9rem;line-height: 1.5;resize: vertical;transition: border-color 0.15s ease}
-
-  .journalit-missed-trade-view .field .textarea:focus {outline: none;border-color: var(--interactive-accent);box-shadow: 0 0 0 2px rgba(var(--interactive-accent-rgb), 0.2)}
-
-  .journalit-missed-trade-view .field .textarea::placeholder {color: var(--text-muted);opacity: 0.7}
-
-  
-  
-  @media (max-width: 768px) {
-    .missed-trade-badge {font-size: 0.7rem;padding: 0.2rem 0.4rem;margin-right: 0.5rem}
-    
-    .missed-trade-reason-content {font-size: 0.85rem;padding: 0.5rem}
-  }
-
-  @media (max-width: 480px) {
-    .missed-trades-timeline-section {margin-top: 0.75rem;padding-top: 0.5rem}
-    
-    .missed-trades-label {font-size: 0.85rem}
-  }
-
-  
-  
-  
-  
-  .theme-dark .journalit-missed-trade-view .missed-trade-reason-content {background-color: var(--background-secondary-alt)}
-  
-  .theme-dark .journalit-missed-trade-view .timeline-item.missed-trade {background-color: rgba(255, 149, 0, 0.2)}
-  
-  .theme-dark .journalit-missed-trade-view .timeline-item.missed-trade:hover {background-color: rgba(255, 149, 0, 0.3)}
-
-  
-  
-  .workspace-split.mod-vertical .journalit-missed-trade-view {max-width: 100%;flex-shrink: 1}
-  
-  .workspace-leaf-content .journalit-missed-trade-view .trade-metrics-grid {grid-template-columns: repeat(auto-fit, minmax(120px, 1fr))}
-  
-  .workspace-leaf-content .journalit-missed-trade-view .missed-trade-note-container {min-width: 0}
-
 .monthly-review {width: 100%;padding: 20px;max-width: 1200px;margin: 0 auto}
 
 .monthly-review-title {text-align: center;margin-bottom: 20px;font-size: 28px;font-weight: 600}
@@ -7715,7 +7721,7 @@
 
   .journalit-onboarding-view-container .journalit-react-view-root {flex: 1 1 auto;min-height: 0;display: flex;flex-direction: column}
 
-  .journalit-onboarding-view-container .journalit-onboarding-container {flex: 1;min-height: 0;display: flex;flex-direction: column;overflow-y: auto;overflow-x: hidden;scrollbar-gutter: stable}
+  .journalit-onboarding-view-container .journalit-onboarding-container {flex: 1;min-height: 0;display: flex;flex-direction: column;container-type: inline-size;overflow-y: auto;overflow-x: hidden;scrollbar-gutter: stable}
 
   
   .journalit-onboarding-view-container .welcome-step-container {display: flex;flex-direction: column;justify-content: center;align-items: center;min-height: 100%;padding: 0;position: relative}
@@ -7854,7 +7860,7 @@
   .journalit-onboarding-view-container .explore-step .button-icon-left {margin-right: 8px}
 
 
-  .journalit-onboarding-view-container .explore-feature-grid {width: 100%;max-width: 760px;display: grid;grid-template-columns: repeat(2, minmax(0, 1fr));gap: 0.9rem}
+  .journalit-onboarding-view-container .explore-feature-grid {width: 100%;max-width: 760px;display: grid;grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr));gap: 0.9rem}
 
   .journalit-onboarding-view-container .feature-card.explore-feature-tile {cursor: pointer;align-items: flex-start;padding: 1rem}
 
@@ -7867,6 +7873,20 @@
   .journalit-onboarding-view-container .explore-feature-title {font-size: 0.95rem;font-weight: 600;color: var(--text-normal);line-height: 1.35}
 
   .journalit-onboarding-view-container .explore-feature-description {font-size: 0.82rem;color: var(--text-muted);line-height: 1.45}
+
+  @container (max-width: 1200px) {
+    .journalit-onboarding-view-container .explore-step .feature-content-wrapper {grid-template-columns: 1fr;gap: 2rem;align-items: stretch;max-width: 760px}
+
+    .journalit-onboarding-view-container .explore-step .feature-left {max-width: 100%}
+
+    .journalit-onboarding-view-container .explore-step .step-header h2 {font-size: clamp(1.75rem, 6cqw, 2.25rem)}
+
+    .journalit-onboarding-view-container .explore-step .step-subtitle {font-size: 1rem;line-height: 1.6}
+
+    .journalit-onboarding-view-container .explore-right {width: 100%}
+
+    .journalit-onboarding-view-container .explore-feature-grid {max-width: none}
+  }
 
 
   .journalit-onboarding-view-container .graphic-placeholder {color: var(--text-muted);opacity: 0.3}
@@ -9518,15 +9538,23 @@
 
   .journalit-key-levels-importance-dropdown {position: absolute;top: auto;right: auto;bottom: 100%;left: 50%;transform: translateX(-50%);margin-bottom: 4px;margin-top: 0;min-width: 150px;z-index: 100}
 
-  .journalit-key-levels-importance-option {min-height: 30px}
+  .journalit-key-levels-importance-option {display: flex;align-items: center;gap: 8px;width: 100%;min-height: 30px;padding: 6px 10px;cursor: pointer;font-size: 13px;text-align: left;color: var(--text-normal);background: transparent;background-color: transparent;border: none;border-radius: 0;box-shadow: none;appearance: none;-webkit-appearance: none}
+
+  .journalit-key-levels-importance-dropdown
+    button.journalit-key-levels-importance-option {display: flex;align-items: center;gap: 8px;width: 100%;padding: 6px 10px;color: var(--text-normal);background: transparent;background-color: transparent;border: none;border-radius: 0;box-shadow: none}
 
   .journalit-key-levels-importance-option-icon {display: inline-flex;align-items: center;justify-content: center;width: 14px;height: 14px;flex: 0 0 14px}
 
+  .journalit-key-levels-importance-option-icon svg {display: block}
+
   .journalit-key-levels-importance-option-label {font-size: 0.78rem;line-height: 1}
 
-  .journalit-key-levels-importance-option:hover {background: var(--background-modifier-hover)}
+  .journalit-key-levels-importance-option:hover {background: var(--background-modifier-hover);background-color: var(--background-modifier-hover)}
 
-  .journalit-key-levels-importance-option--selected {background: transparent;color: var(--text-normal)}
+  .journalit-key-levels-importance-dropdown
+    button.journalit-key-levels-importance-option:hover {background: var(--background-modifier-hover);background-color: var(--background-modifier-hover)}
+
+  .journalit-key-levels-importance-option--selected {background: transparent;background-color: transparent;color: var(--text-normal)}
 
   .journalit-key-levels-remove-button {min-height: 0;height: auto;margin: 0;padding: 0;background: transparent;border: none;box-shadow: none;color: var(--text-muted);cursor: pointer;font-size: 0.9rem;line-height: 1;opacity: 0.5;transition: opacity 0.15s ease}
 
@@ -12612,6 +12640,24 @@
 
   
   .markdown-source-view.is-live-preview.is-readable-line-width .journalit-trade-view {max-width: var(--file-line-width, 700px);margin-left: auto;margin-right: auto}
+
+  
+  .markdown-preview-view.is-readable-line-width > .journalit-trade-view[data-mode="reading"] {max-width: var(--file-line-width, 700px);margin-left: auto;margin-right: auto}
+
+  
+  .journalit-trade-view[data-mode="export"] {margin-bottom: var(--size-4-4, 1rem)}
+
+  .journalit-trade-view[data-mode="export"] .trade-navigation-with-edit,
+  .journalit-trade-view[data-mode="export"] .trade-note-loading-placeholder,
+  .journalit-trade-view[data-mode="export"] .trade-note-review-section,
+  .journalit-trade-view[data-mode="export"] button {display: none}
+
+  @media print {
+    .journalit-trade-view .trade-navigation-with-edit,
+    .journalit-trade-view .trade-note-loading-placeholder,
+    .journalit-trade-view .trade-note-review-section,
+    .journalit-trade-view button {display: none}
+  }
   
   .trade-note-container {background-color: var(--background-primary);border-radius: var(--border-radius-lg, 8px);box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);margin: 0;overflow: hidden;position: relative;font-family: var(--font-interface);isolation: isolate;contain: layout style paint;width: 100%;align-self: flex-start;transition: box-shadow 0.2s ease-in-out}
 
@@ -12717,11 +12763,9 @@
   
   .tags-list {display: flex;flex-wrap: wrap;gap: 0.4rem}
   
-  .journalit-trade-view .tag,
-  .journalit-missed-trade-view .tag {padding: 0.35rem 0.7rem;border-radius: 20px;font-size: 0.75rem;font-weight: 500;display: inline-flex;align-items: center;transition: transform 0.15s ease;color: var(--text-normal)}
+  .journalit-trade-view .tag {padding: 0.35rem 0.7rem;border-radius: 20px;font-size: 0.75rem;font-weight: 500;display: inline-flex;align-items: center;transition: transform 0.15s ease;color: var(--text-normal)}
 
-  .journalit-trade-view .tag:hover,
-  .journalit-missed-trade-view .tag:hover {transform: translateY(-1px)}
+  .journalit-trade-view .tag:hover {transform: translateY(-1px)}
   
   .setup-tag {background-color: rgba(66, 133, 244, 0.15);color: rgba(66, 133, 244, 1);border: 1px solid rgba(66, 133, 244, 0.3)}
   
@@ -12730,6 +12774,18 @@
   .account-tag {padding: 0.35rem 0.7rem;color: var(--text-accent);border-radius: 20px;font-size: 0.75rem;font-weight: 500;display: inline-flex;align-items: center;cursor: pointer;transition: transform 0.15s ease, color 0.15s ease;text-underline-offset: 3px}
   
   .account-tag:hover {transform: translateY(-1px);color: var(--text-accent-hover, var(--text-accent))}
+
+  .journalit-trade-view .missed-trade-reason-section {margin-top: 0.5rem}
+
+  .journalit-trade-view .missed-trade-reason-section .details-card {border-left: 4px solid var(--color-orange, #ff9800);background-color: var(--background-secondary)}
+
+  .journalit-trade-view .missed-trade-reason-section h4 {color: var(--color-orange, #ff9800);display: flex;align-items: center;gap: 0.5rem}
+
+  .journalit-trade-view .missed-trade-reason-section h4::before {content: '⚠';font-size: 1.1em}
+
+  .journalit-trade-view .missed-trade-reason-content {color: var(--text-normal);line-height: 1.6;white-space: pre-wrap;background-color: var(--background-primary);padding: 1rem;border-radius: 6px;border: 1px solid var(--background-modifier-border)}
+
+  .theme-dark .journalit-trade-view .missed-trade-reason-content {background-color: var(--background-secondary-alt)}
   
   
   .trade-notes-preview {background-color: var(--background-secondary);padding: 1rem;border-radius: var(--border-radius-md, 4px);margin-top: 1.5rem}
@@ -13000,17 +13056,13 @@
   
   .trade-nav-edit-button svg {width: 14px;height: 14px}
   
-  .journalit-trade-view .trade-review-navigation-links,
-  .journalit-missed-trade-view .trade-review-navigation-links {display: flex;justify-content: space-between;align-items: center;gap: 8px;flex-wrap: wrap;width: 100%}
+  .journalit-trade-view .trade-review-navigation-links {display: flex;justify-content: space-between;align-items: center;gap: 8px;flex-wrap: wrap;width: 100%}
   
-  .journalit-trade-view .trade-review-navigation-button,
-  .journalit-missed-trade-view .trade-review-navigation-button {flex: 1;min-width: 120px;text-align: center;padding: 8px 14px;font-size: 14px;border: 1px solid var(--background-modifier-border);border-radius: 4px;background-color: var(--background-primary);color: var(--text-normal);cursor: pointer;transition: color 0.2s;display: flex;align-items: center;justify-content: center;gap: 6px}
+  .journalit-trade-view .trade-review-navigation-button {flex: 1;min-width: 120px;text-align: center;padding: 8px 14px;font-size: 14px;border: 1px solid var(--background-modifier-border);border-radius: 4px;background-color: var(--background-primary);color: var(--text-normal);cursor: pointer;transition: color 0.2s;display: flex;align-items: center;justify-content: center;gap: 6px}
 
-  .journalit-trade-view .trade-review-navigation-button:hover,
-  .journalit-missed-trade-view .trade-review-navigation-button:hover {background-color: var(--background-modifier-hover);transform: translateY(-1px)}
+  .journalit-trade-view .trade-review-navigation-button:hover {background-color: var(--background-modifier-hover);transform: translateY(-1px)}
 
-  .journalit-trade-view .trade-review-navigation-button:disabled,
-  .journalit-missed-trade-view .trade-review-navigation-button:disabled {opacity: 0.5;cursor: not-allowed;transform: none}
+  .journalit-trade-view .trade-review-navigation-button:disabled {opacity: 0.5;cursor: not-allowed;transform: none}
   
   
   .workspace-split.mod-vertical .journalit-trade-view {max-width: 100%;flex-shrink: 1}

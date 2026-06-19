@@ -6,6 +6,7 @@ import {
   BackendIntegrationSettings,
   AccountInfo,
   DEFAULT_SETTINGS,
+  GoalConfig,
 } from '../../settings/types';
 import { eventBus } from '../events';
 import { normalizeAccountLookupKey } from '../trade/core/TradeAccountIdentity';
@@ -117,6 +118,96 @@ export class AccountManagementService {
     };
   }
 
+  private cloneHomeGoals(): Record<string, GoalConfig> | undefined {
+    const homeGoals = this.plugin.settings.home?.goals;
+    if (!homeGoals) {
+      return undefined;
+    }
+
+    return Object.fromEntries(
+      Object.entries(homeGoals).map(([goalId, goalConfig]) => [
+        goalId,
+        {
+          ...goalConfig,
+          accountTargets: goalConfig.accountTargets
+            ? { ...goalConfig.accountTargets }
+            : undefined,
+          accountTargetAccounts: goalConfig.accountTargetAccounts
+            ? [...goalConfig.accountTargetAccounts]
+            : undefined,
+        },
+      ])
+    );
+  }
+
+  private migrateHomeGoalAccountTargets(
+    previousDisplayName: string | undefined,
+    nextDisplayName: string
+  ): void {
+    const normalizedPrevious = previousDisplayName?.trim();
+    const normalizedNext = nextDisplayName.trim();
+    if (
+      !normalizedPrevious ||
+      !normalizedNext ||
+      normalizedPrevious === normalizedNext
+    ) {
+      return;
+    }
+
+    const homeGoals = this.plugin.settings.home?.goals;
+    if (!homeGoals) {
+      return;
+    }
+
+    const previousLookupKey = normalizeAccountLookupKey(normalizedPrevious);
+    const nextLookupKey = normalizeAccountLookupKey(normalizedNext);
+    for (const goalConfig of Object.values(homeGoals)) {
+      if (goalConfig.accountTargets) {
+        const accountTargetKeyByLookup = new Map(
+          Object.keys(goalConfig.accountTargets).map((accountName) => [
+            normalizeAccountLookupKey(accountName),
+            accountName,
+          ])
+        );
+
+        for (const [accountName, target] of Object.entries(
+          goalConfig.accountTargets
+        )) {
+          if (normalizeAccountLookupKey(accountName) !== previousLookupKey) {
+            continue;
+          }
+
+          const existingNextTargetKey =
+            accountTargetKeyByLookup.get(nextLookupKey);
+
+          if (!existingNextTargetKey || existingNextTargetKey === accountName) {
+            goalConfig.accountTargets[normalizedNext] = target;
+          }
+          delete goalConfig.accountTargets[accountName];
+        }
+      }
+
+      if (goalConfig.accountTargetAccounts) {
+        const seenAccounts = new Set<string>();
+        goalConfig.accountTargetAccounts = goalConfig.accountTargetAccounts
+          .map((accountName) =>
+            normalizeAccountLookupKey(accountName) === previousLookupKey
+              ? normalizedNext
+              : accountName
+          )
+          .filter((accountName) => {
+            const lookupKey = normalizeAccountLookupKey(accountName);
+            if (seenAccounts.has(lookupKey)) {
+              return false;
+            }
+
+            seenAccounts.add(lookupKey);
+            return true;
+          });
+      }
+    }
+  }
+
   
   getAccountDisplayName(accountId: string): string {
     if (
@@ -148,9 +239,17 @@ export class AccountManagementService {
     const metadataSnapshot = accountMetadata
       ? { ...accountMetadata }
       : undefined;
+    const homeGoalsSnapshot = this.cloneHomeGoals();
+
+    const migrationPreviousDisplayName =
+      previousDisplayName ?? options?.previousDisplayName;
 
     this.settings.accountMapping[accountId] = displayName;
-    this.migrateAccountMetadataKey(previousDisplayName, displayName);
+    this.migrateAccountMetadataKey(migrationPreviousDisplayName, displayName);
+    this.migrateHomeGoalAccountTargets(
+      migrationPreviousDisplayName,
+      displayName
+    );
 
     try {
       await this.plugin.saveSettings();
@@ -158,6 +257,9 @@ export class AccountManagementService {
       this.restoreRecord(this.settings.accountMapping, mappingSnapshot);
       if (accountMetadata && metadataSnapshot) {
         this.restoreRecord(accountMetadata, metadataSnapshot);
+      }
+      if (this.plugin.settings.home?.goals && homeGoalsSnapshot) {
+        this.restoreRecord(this.plugin.settings.home.goals, homeGoalsSnapshot);
       }
       throw error;
     }
@@ -211,6 +313,7 @@ export class AccountManagementService {
     const metadataSnapshot = accountMetadata
       ? { ...accountMetadata }
       : undefined;
+    const homeGoalsSnapshot = this.cloneHomeGoals();
     const accountCatalog = await this.plugin.accountPageService
       ?.getAccountCatalog()
       .catch(() => []);
@@ -235,6 +338,10 @@ export class AccountManagementService {
       ) {
         this.settings.accountMapping[account.accountId] = account.displayName;
         this.migrateAccountMetadataKey(
+          previousDisplayName,
+          account.displayName
+        );
+        this.migrateHomeGoalAccountTargets(
           previousDisplayName,
           account.displayName
         );
@@ -265,6 +372,12 @@ export class AccountManagementService {
         this.restoreRecord(this.settings.accountMapping, mappingSnapshot);
         if (accountMetadata && metadataSnapshot) {
           this.restoreRecord(accountMetadata, metadataSnapshot);
+        }
+        if (this.plugin.settings.home?.goals && homeGoalsSnapshot) {
+          this.restoreRecord(
+            this.plugin.settings.home.goals,
+            homeGoalsSnapshot
+          );
         }
         throw error;
       }

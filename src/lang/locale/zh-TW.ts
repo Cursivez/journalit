@@ -136,6 +136,7 @@ const zhTW: Partial<Lang> = {
   'form.section.trade-details': '交易詳情',
   'form.section.trading-costs': '交易成本',
   'form.section.risk-management': '風險管理',
+  'form.section.take-profits': 'Take Profits',
   'form.section.analysis-thesis': '分析與論點',
 
   
@@ -159,6 +160,10 @@ const zhTW: Partial<Lang> = {
   'form.field.swap': '隔夜利息',
   'form.field.other-fees': '其他費用',
   'form.field.stop-loss': '停損',
+  'form.field.take-profit': 'Take Profit',
+  'form.field.take-profit-short': 'TP',
+  'form.field.target-price': 'Target Price',
+  'form.field.close-percent': 'Close %',
   'form.field.risk-amount': '風險金額',
   'form.field.profit-loss': '損益',
   'form.field.total-pnl': '總損益',
@@ -221,6 +226,8 @@ const zhTW: Partial<Lang> = {
   'form.placeholder.swap': '隔夜融資費用',
   'form.placeholder.other-fees': '平台/監管費用',
   'form.placeholder.stop-loss': '選填停損價格',
+  'form.placeholder.target-price': 'Target price',
+  'form.placeholder.close-percent': '50%',
   'form.placeholder.risk-amount': '計劃風險金額',
   'form.placeholder.custom-tag': '輸入自訂標籤後按 Enter',
   'form.placeholder.thesis': '輸入此筆交易的論點...',
@@ -265,6 +272,9 @@ const zhTW: Partial<Lang> = {
   'form.account-empty-state.create-account': '建立帳戶',
   'form.account-empty-state.submit-disabled': '請先建立帳戶，再儲存這筆交易。',
 
+  'form.empty.take-profits': 'No take profit targets yet',
+  'form.action.add-take-profit': 'Add Take Profit',
+  'form.action.remove-take-profit': 'Remove take profit',
   
   
   
@@ -1037,6 +1047,8 @@ const zhTW: Partial<Lang> = {
   'trade-import.notice.template-saved': 'Trade Import template saved',
   'trade-import.notice.analyse-failed': 'Trade Import analyse failed',
   'trade-import.notice.preview-failed': 'Trade Import preview failed',
+  'trade-import.preview-error.guidance':
+    '請檢查所有必填欄位是否已對應，所選日期格式是否符合檔案，且數字欄位是否包含有效的交易數值。',
   'trade-import.notice.complete':
     'Trade Import complete: {written} written or updated, {duplicateCount} duplicates, {failedCount} failed',
   'trade-import.gate.sign-in':

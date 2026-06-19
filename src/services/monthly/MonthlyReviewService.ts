@@ -24,12 +24,7 @@ import {
 } from '../../utils/dateUtils';
 import { getTradingDay } from '../../utils/tradingDayUtils';
 import { forceMetadataCacheRefresh } from '../../utils/dataRefresh';
-import {
-  generatePeriodicTag,
-  generateContextualTags,
-  combineTags,
-  PERIODIC_TYPES,
-} from '../../utils/tagSchema';
+
 import { calculateWinRateExcludingBreakeven } from '../../utils/breakEvenRange';
 import {
   getEffectivePnL,
@@ -449,52 +444,16 @@ export class MonthlyReviewService extends CustomDataService {
   }
 
   
-  private generateMonthlyReviewTags(month: number, year: number): string[] {
-    const tagArrays: string[][] = [];
-
-    
-    const monthDate = new Date(year, month - 1, 1);
-
-    
-    tagArrays.push([generatePeriodicTag(PERIODIC_TYPES.MONTHLY)]);
-
-    
-    const contextualTags = generateContextualTags(monthDate);
-    if (contextualTags.length > 0) {
-      tagArrays.push(contextualTags);
-    }
-
-    
-    const quarter = Math.ceil(month / 3);
-    tagArrays.push([`q${quarter}-review`]);
-
-    
-    if (month === 1) {
-      tagArrays.push(['year-start']);
-    } else if (month === 12) {
-      tagArrays.push(['year-end']);
-    }
-
-    
-    return combineTags(...tagArrays);
-  }
-
-  
   private generateInitialContent(
     frontmatter: MonthlyReviewFrontmatter
   ): string {
-    const tags = this.generateMonthlyReviewTags(
-      frontmatter.month,
-      frontmatter.year
-    );
-
     
     const monthlyData: Record<string, unknown> = {
       type: frontmatter.type,
       date: frontmatter.date,
       month: frontmatter.month,
       year: frontmatter.year,
-      tags: tags,
+      tags: [],
     };
 
     

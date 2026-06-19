@@ -60,6 +60,9 @@ interface UIState {
   persistentCacheVersion?: string;
 
   
+  oldDerivedStorageCleanupVersion?: string;
+
+  
   tradeIdentityBackfillVersion?: string;
 
   
@@ -236,6 +239,16 @@ export class UIStateManager {
       ...updates,
     };
     await this.debouncedSave();
+  }
+
+  
+  async updateStateImmediate(updates: Partial<UIState>): Promise<void> {
+    this.state = {
+      ...this.state,
+      ...updates,
+    };
+    this.debouncedSave.cancel();
+    await this.saveStateInternal();
   }
 
   

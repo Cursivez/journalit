@@ -177,6 +177,8 @@ export const TradeLogHeader = memo<TradeLogHeaderProps>(
       if (filters.setups && filters.setups.length > 0) count++;
       if (filters.tags && filters.tags.length > 0) count++;
       if (filters.mistakes && filters.mistakes.length > 0) count++;
+      if (filters.reviewStatus && filters.reviewStatus.length > 0) count++;
+      if (filters.directions && filters.directions.length > 0) count++;
       if (
         filters.customFieldFilters &&
         Object.values(filters.customFieldFilters).some(
@@ -234,6 +236,8 @@ export const TradeLogHeader = memo<TradeLogHeaderProps>(
           mistakes: filters.mistakes || [],
           tradeTypes: filters.tradeTypes || [],
           statuses: filters.statuses || [],
+          reviewStatus: filters.reviewStatus || [],
+          directions: filters.directions || [],
           customFieldFilters: filters.customFieldFilters || {},
         },
         availableAccounts: accounts,
@@ -242,6 +246,8 @@ export const TradeLogHeader = memo<TradeLogHeaderProps>(
           onFilterChange({
             tradeTypes: newFilters.tradeTypes,
             statuses: newFilters.statuses,
+            reviewStatus: newFilters.reviewStatus,
+            directions: newFilters.directions,
             accounts: newFilters.accounts,
             tickers: newFilters.tickers,
             setups: newFilters.setups,

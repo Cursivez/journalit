@@ -13,6 +13,16 @@ Local-first trading journal for Obsidian.
 [![Docs](https://img.shields.io/badge/docs-journalit.co-0B7285?style=flat-square&logo=readthedocs&logoColor=white)](https://journalit.co/docs)
 [![Discord](https://img.shields.io/badge/discord-join-5865F2?style=flat-square&logo=discord&logoColor=white)](https://discord.gg/AkSw3D9h8b)
 
+<p align="center">
+  <a href="README.md">English</a> |
+  <a href="README.es.md">Español</a> |
+  <a href="README.de.md">Deutsch</a> |
+  <a href="README.ru.md">Русский</a> |
+  <a href="README.zh.md">简体中文</a> |
+  <a href="README.fr.md">Français</a> |
+  <a href="README.vi.md">Tiếng Việt</a>
+</p>
+
 [Installation](#installation) · [Supported brokers](#supported-brokers) · [Privacy](PRIVACY.md)
 
 </div>
@@ -27,7 +37,7 @@ Install Journalit from Obsidian Community Plugins:
 2. Search for `Journalit`
 3. Click **Install**, then **Enable**
 
-Community page: https://community.obsidian.md/plugins/journalit  
+Community page: https://community.obsidian.md/plugins/journalit
 
 ## Highlights
 
@@ -82,6 +92,7 @@ Supported broker import formats:
 
 - [IBKR](https://journalit.co/docs/broker-guides-ibkr)
 - [Tradovate](https://journalit.co/docs/broker-guides-tradovate)
+- [TopStepX](https://journalit.co/docs/broker-guides-topstepx)
 - [TradeZero](https://journalit.co/docs/broker-guides-tradezero)
 - [TradingView](https://journalit.co/docs/broker-guides-tradingview)
 - [Bybit](https://journalit.co/docs/broker-guides-bybit)
