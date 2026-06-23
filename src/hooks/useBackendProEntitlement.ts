@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useReducer, useState } from 'react';
 import type JournalitPlugin from '../main';
 import {
   type BackendFeatureKey,
@@ -16,21 +16,65 @@ interface BackendProEntitlementState {
   refreshStatus: SubscriptionTierRefreshStatus | null;
 }
 
+interface BackendProEntitlementRefreshState {
+  isChecking: boolean;
+  isFeatureEnabled: boolean;
+  refreshStatus: SubscriptionTierRefreshStatus | null;
+}
+
+type BackendProEntitlementRefreshAction =
+  | { type: 'signed-out' }
+  | { type: 'checking' }
+  | {
+      type: 'resolved';
+      refreshStatus: SubscriptionTierRefreshStatus;
+      isFeatureEnabled: boolean;
+    }
+  | { type: 'settled' };
+
+const refreshReducer = (
+  state: BackendProEntitlementRefreshState,
+  action: BackendProEntitlementRefreshAction
+): BackendProEntitlementRefreshState => {
+  switch (action.type) {
+    case 'signed-out':
+      return {
+        isChecking: false,
+        refreshStatus: 'signed_out',
+        isFeatureEnabled: false,
+      };
+    case 'checking':
+      return { ...state, isChecking: true };
+    case 'resolved':
+      return {
+        isChecking: false,
+        refreshStatus: action.refreshStatus,
+        isFeatureEnabled: action.isFeatureEnabled,
+      };
+    case 'settled':
+      return { ...state, isChecking: false };
+  }
+};
+
 export function useBackendProEntitlement(
   plugin: JournalitPlugin,
   reason: string,
   feature?: BackendFeatureKey
 ): BackendProEntitlementState {
   const [subscriptionVersion, setSubscriptionVersion] = useState(0);
-  const [isChecking, setIsChecking] = useState(() =>
-    BackendSecretStorage.hasAuthToken(plugin)
-  );
-  const [refreshStatus, setRefreshStatus] =
-    useState<SubscriptionTierRefreshStatus | null>(null);
-  const [isFeatureEnabled, setIsFeatureEnabled] = useState(
-    () =>
-      BackendSecretStorage.hasAuthToken(plugin) &&
-      plugin.settings.backendIntegration?.subscriptionTier === 'premium'
+  const [refreshState, dispatchRefresh] = useReducer(
+    refreshReducer,
+    undefined,
+    () => {
+      const hasAuthToken = BackendSecretStorage.hasAuthToken(plugin);
+      return {
+        isChecking: hasAuthToken,
+        refreshStatus: null,
+        isFeatureEnabled:
+          hasAuthToken &&
+          plugin.settings.backendIntegration?.subscriptionTier === 'premium',
+      };
+    }
   );
 
   useEffect(() => {
@@ -53,29 +97,28 @@ export function useBackendProEntitlement(
 
   useEffect(() => {
     if (!isAuthenticated) {
-      setIsChecking(false);
-      setRefreshStatus('signed_out');
-      setIsFeatureEnabled(false);
+      dispatchRefresh({ type: 'signed-out' });
       return;
     }
 
     let cancelled = false;
-    setIsChecking(true);
+    dispatchRefresh({ type: 'checking' });
     void new SubscriptionTierService(plugin)
       .refreshTier(reason)
       .then((result) => {
         if (!cancelled) {
-          setRefreshStatus(result.status);
-          setIsFeatureEnabled(
-            feature
+          dispatchRefresh({
+            type: 'resolved',
+            refreshStatus: result.status,
+            isFeatureEnabled: feature
               ? result.entitlements?.features[feature]?.enabled === true
-              : result.status === 'premium'
-          );
+              : result.status === 'premium',
+          });
         }
       })
       .finally(() => {
         if (!cancelled) {
-          setIsChecking(false);
+          dispatchRefresh({ type: 'settled' });
         }
       });
 
@@ -92,6 +135,7 @@ export function useBackendProEntitlement(
   ]);
 
   return useMemo(() => {
+    const { isChecking, isFeatureEnabled, refreshStatus } = refreshState;
     const isVerified =
       refreshStatus === 'premium' ||
       refreshStatus === 'free' ||
@@ -104,5 +148,5 @@ export function useBackendProEntitlement(
       isFeatureEnabled: isAuthenticated && isFeatureEnabled,
       refreshStatus,
     };
-  }, [isAuthenticated, isChecking, isFeatureEnabled, refreshStatus]);
+  }, [isAuthenticated, refreshState]);
 }

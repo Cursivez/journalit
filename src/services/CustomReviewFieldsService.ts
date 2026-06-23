@@ -92,7 +92,12 @@ function normalizeStringOptions(value: unknown): string[] {
   if (!Array.isArray(value)) return [];
 
   return [
-    ...new Set(value.map((option) => getOptionValue(option)).filter(Boolean)),
+    ...new Set(
+      value.flatMap((option) => {
+        const normalized = getOptionValue(option);
+        return normalized ? [normalized] : [];
+      })
+    ),
   ];
 }
 
@@ -145,26 +150,29 @@ export class CustomReviewFieldsService {
       };
 
       const groups = (loadedFields.groups || [])
-        .filter((group): group is CustomReviewFieldGroup =>
+        .flatMap((group) =>
           this.isValidGroupDefinition(group)
+            ? [this.normalizeGroupDefinition(group)]
+            : []
         )
-        .map((group) => this.normalizeGroupDefinition(group))
         .sort((a, b) => a.order - b.order);
       const groupIds = new Set(groups.map((group) => group.id));
 
       this.fields.groups = groups;
       this.fields.fields = (loadedFields.fields || [])
-        .filter((field): field is CustomReviewFieldDefinition =>
-          this.isValidFieldDefinition(field)
-        )
-        .map((field) => this.normalizeFieldDefinition(field))
-        .map((field) => ({
-          ...field,
-          groupId:
-            field.groupId && groupIds.has(field.groupId)
-              ? field.groupId
-              : undefined,
-        }))
+        .flatMap((field) => {
+          if (!this.isValidFieldDefinition(field)) return [];
+          const normalized = this.normalizeFieldDefinition(field);
+          return [
+            {
+              ...normalized,
+              groupId:
+                normalized.groupId && groupIds.has(normalized.groupId)
+                  ? normalized.groupId
+                  : undefined,
+            },
+          ];
+        })
         .sort((a, b) => a.order - b.order);
     } catch (error) {
       ErrorHandler.logError(

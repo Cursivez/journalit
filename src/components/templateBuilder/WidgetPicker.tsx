@@ -114,16 +114,16 @@ export const WidgetPicker: React.FC<WidgetPickerProps> = React.memo(
       return flatWidgets.find((w) => isWidgetSelected(w));
     }, [flatWidgets, isWidgetSelected]);
 
-    
-    useEffect(() => {
-      if (isOpen) {
-        
-        const selectedIndex = flatWidgets.findIndex((w) => isWidgetSelected(w));
-        setFocusedIndex(selectedIndex >= 0 ? selectedIndex : 0);
-      } else {
-        setFocusedIndex(-1);
-      }
-    }, [isOpen, flatWidgets, isWidgetSelected]);
+    const openDropdown = useCallback(() => {
+      const selectedIndex = flatWidgets.findIndex((w) => isWidgetSelected(w));
+      setFocusedIndex(selectedIndex >= 0 ? selectedIndex : 0);
+      setIsOpen(true);
+    }, [flatWidgets, isWidgetSelected]);
+
+    const closeDropdown = useCallback(() => {
+      setFocusedIndex(-1);
+      setIsOpen(false);
+    }, []);
 
     
     useEffect(() => {
@@ -188,7 +188,7 @@ export const WidgetPicker: React.FC<WidgetPickerProps> = React.memo(
       const handleClickOutside = (event: MouseEvent) => {
         const target = event.target;
         if (!(target instanceof Node)) {
-          setIsOpen(false);
+          closeDropdown();
           return;
         }
 
@@ -199,7 +199,7 @@ export const WidgetPicker: React.FC<WidgetPickerProps> = React.memo(
           return;
         }
 
-        setIsOpen(false);
+        closeDropdown();
       };
 
       window.activeDocument.addEventListener('mousedown', handleClickOutside);
@@ -208,27 +208,24 @@ export const WidgetPicker: React.FC<WidgetPickerProps> = React.memo(
           'mousedown',
           handleClickOutside
         );
-    }, [isOpen]);
+    }, [closeDropdown, isOpen]);
 
     const handleSelect = useCallback(
       (widget: WidgetDefinition) => {
         onChange(widget);
         emitGuideAction(LAYOUT_BUILDER_WIDGET_SELECTED_ACTION_ID);
-        setIsOpen(false);
+        closeDropdown();
         triggerRef.current?.focus();
       },
-      [emitGuideAction, onChange]
+      [closeDropdown, emitGuideAction, onChange]
     );
 
-    
-    useEffect(() => {
-      if (!isOpen) return;
-
-      const handleKeyDown = (event: KeyboardEvent) => {
+    const handleGlobalKeyDown = useCallback(
+      (event: KeyboardEvent) => {
         switch (event.key) {
           case 'Escape':
             event.preventDefault();
-            setIsOpen(false);
+            closeDropdown();
             triggerRef.current?.focus();
             break;
           case 'ArrowDown':
@@ -250,28 +247,51 @@ export const WidgetPicker: React.FC<WidgetPickerProps> = React.memo(
             }
             break;
         }
+      },
+      [closeDropdown, flatWidgets, focusedIndex, handleSelect]
+    );
+    const handleGlobalKeyDownRef = useRef(handleGlobalKeyDown);
+
+    useEffect(() => {
+      handleGlobalKeyDownRef.current = handleGlobalKeyDown;
+    }, [handleGlobalKeyDown]);
+
+    
+    useEffect(() => {
+      if (!isOpen) return;
+
+      const listener = (event: KeyboardEvent) => {
+        handleGlobalKeyDownRef.current(event);
       };
 
-      window.activeDocument.addEventListener('keydown', handleKeyDown);
+      window.activeDocument.addEventListener('keydown', listener);
       return () =>
-        window.activeDocument.removeEventListener('keydown', handleKeyDown);
-    }, [isOpen, focusedIndex, flatWidgets, handleSelect]);
+        window.activeDocument.removeEventListener('keydown', listener);
+    }, [isOpen]);
 
     const handleTriggerClick = useCallback(() => {
-      setIsOpen((prev) => !prev);
-    }, []);
+      if (isOpen) {
+        closeDropdown();
+      } else {
+        openDropdown();
+      }
+    }, [closeDropdown, isOpen, openDropdown]);
 
     const handleTriggerKeyDown = useCallback(
       (event: React.KeyboardEvent) => {
         if (event.key === 'Enter' || event.key === ' ') {
           event.preventDefault();
-          setIsOpen((prev) => !prev);
+          if (isOpen) {
+            closeDropdown();
+          } else {
+            openDropdown();
+          }
         } else if (event.key === 'ArrowDown' && !isOpen) {
           event.preventDefault();
-          setIsOpen(true);
+          openDropdown();
         }
       },
-      [isOpen]
+      [closeDropdown, isOpen, openDropdown]
     );
 
     useEffect(() => {

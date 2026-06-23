@@ -84,7 +84,7 @@ export interface TradeImportAnalyseResponse {
   diagnostics: TradeImportDiagnostic[];
 }
 
-export interface TradeImportExecution {
+interface TradeImportExecution {
   time: string;
   price: number;
   size: number;
@@ -157,7 +157,7 @@ export type TradeImportDefaultAction =
   | 'manual_review'
   | 'blocked';
 
-export interface TradeImportIdentityCandidate {
+interface TradeImportIdentityCandidate {
   entityType?: string;
   idType: string;
   value?: string;
@@ -254,8 +254,96 @@ export interface TradeImportCommittedTrade {
   direction: 'long' | 'short';
   status: 'open' | 'closed' | 'OPEN' | 'CLOSED';
   accountId?: string | null;
+  accountDisplayName?: string | null;
+  broker?: string | null;
   importId: string;
   previewTrade?: TradeImportPreviewTrade;
+}
+
+type TradeImportProjectionStatus =
+  | 'missing'
+  | 'local_deleted'
+  | 'other_vault'
+  | 'needs_rewrite'
+  | 'synced'
+  | 'failed'
+  | 'conflict'
+  | 'pending';
+
+export interface TradeImportRestorableProjection {
+  id: string;
+  version: number;
+  symbol: string;
+  direction: 'long' | 'short';
+  status: 'open' | 'closed' | 'OPEN' | 'CLOSED';
+  accountName?: string | null;
+  accountId?: string | null;
+  importId: string;
+  correlationId?: string;
+  commitId?: string;
+  broker?: string | null;
+  importedAt?: string | null;
+  projectionStatus: TradeImportProjectionStatus;
+  previewTrade: TradeImportPreviewTrade;
+}
+
+export interface TradeImportRestorableProjectionRequest {
+  vaultId: string;
+  accountId?: string;
+  broker?: string;
+  importId?: string;
+  from?: string;
+  to?: string;
+  status?: TradeImportProjectionStatus;
+  limit?: number;
+  cursor?: string;
+}
+
+export interface TradeImportRestorableProjectionResponse {
+  schemaVersion: 'trade-import-restorable-projections-v1';
+  vaultId: string;
+  projections: TradeImportRestorableProjection[];
+  nextCursor?: string | null;
+}
+
+export interface TradeImportAccountVaultMapping {
+  vaultId: string;
+  localAccountId?: string | null;
+  localAccountName?: string | null;
+  mappingStatus: 'mapped';
+  lastSyncedAt?: string | null;
+  updatedAt?: string | null;
+}
+
+export interface TradeImportAccountInventoryItem {
+  accountId: string;
+  broker: string;
+  displayName: string;
+  tradeCount: number;
+  missingCount: number;
+  localDeletedCount: number;
+  failedCount: number;
+  needsRewriteCount: number;
+  staleCount: number;
+  conflictCount: number;
+  pendingCount: number;
+  syncedCount: number;
+  restorableCount: number;
+  lastImportedAt?: string | null;
+  mapping?: TradeImportAccountVaultMapping | null;
+}
+
+export interface TradeImportAccountInventoryResponse {
+  schemaVersion: 'trade-import-accounts-v1';
+  vaultId: string;
+  accounts: TradeImportAccountInventoryItem[];
+}
+
+export interface TradeImportAccountVaultMappingRequest {
+  vaultId: string;
+  localAccountId: string;
+  localAccountName: string;
+  mappingStatus: 'mapped';
 }
 
 export interface TradeImportCommitResponse {
@@ -269,6 +357,7 @@ export interface TradeImportCommitResponse {
       | 'created'
       | 'updated'
       | 'skipped'
+      | 'skipped_user'
       | 'skipped_duplicate'
       | 'blocked'
       | 'conflict';

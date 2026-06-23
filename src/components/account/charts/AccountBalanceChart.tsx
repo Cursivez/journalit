@@ -187,55 +187,55 @@ const CustomTooltip: React.FC<CustomTooltipContentProps> = React.memo(
             )}
             {data.hasEvents && data.dayTransactions && (
               <div className="journalit-account-chart-tooltip-list">
-                {data.dayTransactions
-                  .filter(
-                    (t) =>
-                      t.type === TransactionType.DEPOSIT ||
-                      t.type === TransactionType.WITHDRAWAL
-                  )
-                  .filter(
-                    (t) =>
-                      !(
-                        t.type === TransactionType.DEPOSIT &&
-                        t.description === 'Initial deposit'
-                      )
-                  )
-                  .map((transaction) => {
-                    const isDeposit =
-                      transaction.type === TransactionType.DEPOSIT &&
-                      transaction.amount > 0;
-                    const isWithdrawal =
-                      transaction.type === TransactionType.WITHDRAWAL ||
-                      (transaction.type === TransactionType.DEPOSIT &&
-                        transaction.amount < 0);
+                {data.dayTransactions.flatMap((transaction) => {
+                  if (
+                    transaction.type !== TransactionType.DEPOSIT &&
+                    transaction.type !== TransactionType.WITHDRAWAL
+                  ) {
+                    return [];
+                  }
+                  if (
+                    transaction.type === TransactionType.DEPOSIT &&
+                    transaction.description === 'Initial deposit'
+                  ) {
+                    return [];
+                  }
 
-                    const transactionClass = isMoneyMasked
-                      ? 'journalit-account-chart-tooltip-row--neutral'
-                      : isDeposit
-                        ? 'journalit-account-chart-tooltip-row--deposit'
-                        : isWithdrawal
-                          ? 'journalit-account-chart-tooltip-row--withdrawal'
-                          : 'journalit-account-chart-tooltip-row--neutral';
+                  const isDeposit =
+                    transaction.type === TransactionType.DEPOSIT &&
+                    transaction.amount > 0;
+                  const isWithdrawal =
+                    transaction.type === TransactionType.WITHDRAWAL ||
+                    (transaction.type === TransactionType.DEPOSIT &&
+                      transaction.amount < 0);
 
-                    return (
-                      <div
-                        key={transaction.id}
-                        className={`journalit-account-chart-tooltip-row journalit-account-chart-tooltip-row--compact ${transactionClass}`}
-                      >
-                        {isDeposit &&
-                          `• ${isMoneyMasked ? 'Cashflow' : 'Deposit'}: ${formatChartValue('money', transaction.amount)}`}
-                        {isWithdrawal &&
-                          `• ${isMoneyMasked ? 'Cashflow' : 'Withdrawal'}: ${formatChartValue('money', Math.abs(transaction.amount))}`}
-                        {transaction.description &&
-                          transaction.description !== 'Manual deposit' &&
-                          transaction.description !== 'Manual withdrawal' && (
-                            <span className="journalit-account-chart-tooltip-muted">
-                              {' - ' + transaction.description}
-                            </span>
-                          )}
-                      </div>
-                    );
-                  })}
+                  const transactionClass = isMoneyMasked
+                    ? 'journalit-account-chart-tooltip-row--neutral'
+                    : isDeposit
+                      ? 'journalit-account-chart-tooltip-row--deposit'
+                      : isWithdrawal
+                        ? 'journalit-account-chart-tooltip-row--withdrawal'
+                        : 'journalit-account-chart-tooltip-row--neutral';
+
+                  return [
+                    <div
+                      key={transaction.id}
+                      className={`journalit-account-chart-tooltip-row journalit-account-chart-tooltip-row--compact ${transactionClass}`}
+                    >
+                      {isDeposit &&
+                        `• ${isMoneyMasked ? 'Cashflow' : 'Deposit'}: ${formatChartValue('money', transaction.amount)}`}
+                      {isWithdrawal &&
+                        `• ${isMoneyMasked ? 'Cashflow' : 'Withdrawal'}: ${formatChartValue('money', Math.abs(transaction.amount))}`}
+                      {transaction.description &&
+                        transaction.description !== 'Manual deposit' &&
+                        transaction.description !== 'Manual withdrawal' && (
+                          <span className="journalit-account-chart-tooltip-muted">
+                            {' - ' + transaction.description}
+                          </span>
+                        )}
+                    </div>,
+                  ];
+                })}
               </div>
             )}
           </div>
@@ -697,9 +697,9 @@ const calculateBalanceChartParams = (
 
   
   
-  const drawdownLevels = displayChartData
-    .map((point) => point.displayDrawdownLevel)
-    .filter((level): level is number => level !== undefined);
+  const drawdownLevels = displayChartData.flatMap((point) =>
+    point.displayDrawdownLevel === undefined ? [] : [point.displayDrawdownLevel]
+  );
   const drawdownLevel =
     drawdownLevels.length > 0 ? Math.min(...drawdownLevels) : undefined;
 
@@ -1186,10 +1186,10 @@ export const AccountBalanceChart: React.FC<AccountBalanceChartProps> = ({
     if (!chartParams?.ticks || chartParams.ticks.length < 2) return 0;
 
     const tickSpacing = Math.min(
-      ...chartParams.ticks
-        .slice(1)
-        .map((tick, index) => Math.abs(tick - chartParams.ticks[index]))
-        .filter((spacing) => spacing > 0)
+      ...chartParams.ticks.slice(1).flatMap((tick, index) => {
+        const spacing = Math.abs(tick - chartParams.ticks[index]);
+        return spacing > 0 ? [spacing] : [];
+      })
     );
 
     return Number.isFinite(tickSpacing) && tickSpacing >= 1 ? 0 : undefined;

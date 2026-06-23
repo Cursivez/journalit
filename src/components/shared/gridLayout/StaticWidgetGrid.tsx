@@ -56,7 +56,7 @@ const calcStaticGridItemPosition = (
   };
 };
 
-interface StaticWidgetGridProps {
+interface StaticWidgetGridProps<WidgetProps extends object> {
   layouts: Record<StaticGridBreakpoint, RglLayoutItem[]>;
   widgets: string[];
   cols: Record<StaticGridBreakpoint, number>;
@@ -65,7 +65,8 @@ interface StaticWidgetGridProps {
   bottomPosition: number;
   className: string;
   itemClassName: string;
-  renderWidget: (widgetId: string) => React.ReactNode;
+  WidgetComponent: React.ComponentType<{ widgetId: string } & WidgetProps>;
+  widgetProps: WidgetProps;
   breakpoints?: Record<StaticGridBreakpoint, number>;
   getDefaultSize?: (widgetId: string) => { w: number; h: number } | undefined;
   mode?: 'css-grid' | 'absolute';
@@ -73,7 +74,7 @@ interface StaticWidgetGridProps {
   initialWidth?: number;
 }
 
-interface StaticWidgetGridItemProps {
+interface StaticWidgetGridItemProps<WidgetProps extends object> {
   item: RglLayoutItem;
   itemClassName: string;
   mode: 'css-grid' | 'absolute';
@@ -84,11 +85,19 @@ interface StaticWidgetGridItemProps {
     cols: number;
     rowHeight: number;
   };
-  renderWidget: (widgetId: string) => React.ReactNode;
+  WidgetComponent: React.ComponentType<{ widgetId: string } & WidgetProps>;
+  widgetProps: WidgetProps;
 }
 
-const StaticWidgetGridItem: React.FC<StaticWidgetGridItemProps> = React.memo(
-  ({ item, itemClassName, mode, positionParams, renderWidget }) => {
+const StaticWidgetGridItem = React.memo(
+  <WidgetProps extends object>({
+    item,
+    itemClassName,
+    mode,
+    positionParams,
+    WidgetComponent,
+    widgetProps,
+  }: StaticWidgetGridItemProps<WidgetProps>) => {
     const position = calcStaticGridItemPosition(
       positionParams,
       item.x,
@@ -113,7 +122,7 @@ const StaticWidgetGridItem: React.FC<StaticWidgetGridItemProps> = React.memo(
             mode === 'absolute' ? `${position.height}px` : undefined,
         })}
       >
-        {renderWidget(item.i)}
+        <WidgetComponent widgetId={item.i} {...widgetProps} />
       </div>
     );
   }
@@ -121,7 +130,7 @@ const StaticWidgetGridItem: React.FC<StaticWidgetGridItemProps> = React.memo(
 
 StaticWidgetGridItem.displayName = 'StaticWidgetGridItem';
 
-export const StaticWidgetGrid: React.FC<StaticWidgetGridProps> = ({
+export const StaticWidgetGrid = <WidgetProps extends object>({
   layouts,
   widgets,
   cols,
@@ -130,36 +139,43 @@ export const StaticWidgetGrid: React.FC<StaticWidgetGridProps> = ({
   bottomPosition,
   className,
   itemClassName,
-  renderWidget,
+  WidgetComponent,
+  widgetProps,
   breakpoints = DEFAULT_BREAKPOINTS,
   getDefaultSize,
   mode = 'css-grid',
   containerPadding = [0, 0],
   initialWidth = 0,
-}) => {
+}: StaticWidgetGridProps<WidgetProps>) => {
   const containerRef = useRef<HTMLDivElement>(null);
-  const [containerWidth, setContainerWidth] = useState(initialWidth);
-  const [currentBreakpoint, setCurrentBreakpoint] =
-    useState<StaticGridBreakpoint>(() =>
-      getStaticGridBreakpointForWidth(initialWidth, breakpoints)
-    );
-
-  useEffect(() => {
-    if (initialWidth > 0) {
-      setContainerWidth(initialWidth);
-      setCurrentBreakpoint(
-        getStaticGridBreakpointForWidth(initialWidth, breakpoints)
-      );
-    }
-  }, [breakpoints, initialWidth]);
+  const [sizeState, setSizeState] = useState<{
+    initialWidth: number | null;
+    containerWidth: number;
+    currentBreakpoint: StaticGridBreakpoint;
+  }>({
+    initialWidth: null,
+    containerWidth: 0,
+    currentBreakpoint: 'xxs',
+  });
+  const containerWidth =
+    sizeState.initialWidth === initialWidth
+      ? sizeState.containerWidth
+      : initialWidth;
+  const currentBreakpoint =
+    sizeState.initialWidth === initialWidth
+      ? sizeState.currentBreakpoint
+      : getStaticGridBreakpointForWidth(initialWidth, breakpoints);
 
   useEffect(() => {
     const container = containerRef.current;
     if (!container || typeof ResizeObserver === 'undefined') return;
 
     const updateBreakpoint = (width: number) => {
-      setContainerWidth(width);
-      setCurrentBreakpoint(getStaticGridBreakpointForWidth(width, breakpoints));
+      setSizeState({
+        initialWidth,
+        containerWidth: width,
+        currentBreakpoint: getStaticGridBreakpointForWidth(width, breakpoints),
+      });
     };
 
     updateBreakpoint(container.getBoundingClientRect().width);
@@ -172,7 +188,7 @@ export const StaticWidgetGrid: React.FC<StaticWidgetGridProps> = ({
 
     observer.observe(container);
     return () => observer.disconnect();
-  }, [breakpoints]);
+  }, [breakpoints, initialWidth]);
 
   const staticLayout = useMemo<RglLayoutItem[]>(() => {
     const columnCount = cols[currentBreakpoint];
@@ -291,7 +307,8 @@ export const StaticWidgetGrid: React.FC<StaticWidgetGridProps> = ({
           itemClassName={itemClassName}
           mode={mode}
           positionParams={absoluteMetrics.positionParams}
-          renderWidget={renderWidget}
+          WidgetComponent={WidgetComponent}
+          widgetProps={widgetProps}
         />
       ))}
     </div>

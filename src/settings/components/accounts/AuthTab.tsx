@@ -28,30 +28,34 @@ function isAuthErrorDetail(
 }
 
 function useAuthTabModel({ plugin }: AuthTabProps) {
-  const [isAuthenticated, setIsAuthenticated] = useState(() =>
-    BackendSecretStorage.hasAuthToken(plugin)
-  );
-  const [tier, setTier] = useState(
-    plugin.settings.backendIntegration?.subscriptionTier
-  );
-  const [userEmail, setUserEmail] = useState(
-    plugin.settings.backendIntegration?.userEmail
-  );
-  const [signOutError, setSignOutError] = useState<SupportErrorDetails | null>(
-    null
-  );
-  const [authError, setAuthError] = useState<SupportErrorDetails | null>(null);
-  const [signOutReportCopied, setSignOutReportCopied] = useState(false);
+  const [authState, setAuthState] = useState(() => ({
+    isAuthenticated: BackendSecretStorage.hasAuthToken(plugin),
+    tier: plugin.settings.backendIntegration?.subscriptionTier,
+    userEmail: plugin.settings.backendIntegration?.userEmail,
+    signOutError: null as SupportErrorDetails | null,
+    authError: null as SupportErrorDetails | null,
+    signOutReportCopied: false,
+  }));
+  const {
+    isAuthenticated,
+    tier,
+    userEmail,
+    signOutError,
+    authError,
+    signOutReportCopied,
+  } = authState;
   const signOutCopyTimerRef = useRef<number | null>(null);
 
   useEffect(() => {
     const handleSubscriptionChange = () => {
-      setIsAuthenticated(BackendSecretStorage.hasAuthToken(plugin));
-      setTier(plugin.settings.backendIntegration?.subscriptionTier);
-      setUserEmail(plugin.settings.backendIntegration?.userEmail);
-      setSignOutError(null);
-      setAuthError(null);
-      setSignOutReportCopied(false);
+      setAuthState({
+        isAuthenticated: BackendSecretStorage.hasAuthToken(plugin),
+        tier: plugin.settings.backendIntegration?.subscriptionTier,
+        userEmail: plugin.settings.backendIntegration?.userEmail,
+        signOutError: null,
+        authError: null,
+        signOutReportCopied: false,
+      });
     };
 
     window.addEventListener(
@@ -75,12 +79,11 @@ function useAuthTabModel({ plugin }: AuthTabProps) {
         return;
       }
 
-      if ((detail.occurrences ?? 0) >= 2) {
-        setAuthError(detail);
-      } else {
-        setAuthError(null);
-      }
-      setSignOutReportCopied(false);
+      setAuthState((current) => ({
+        ...current,
+        authError: (detail.occurrences ?? 0) >= 2 ? detail : null,
+        signOutReportCopied: false,
+      }));
     };
 
     window.activeDocument.addEventListener(
@@ -144,14 +147,20 @@ function useAuthTabModel({ plugin }: AuthTabProps) {
 
     try {
       await writeClipboardText(report);
-      setSignOutReportCopied(true);
+      setAuthState((current) => ({
+        ...current,
+        signOutReportCopied: true,
+      }));
 
       if (signOutCopyTimerRef.current) {
         window.clearTimeout(signOutCopyTimerRef.current);
       }
 
       signOutCopyTimerRef.current = window.setTimeout(() => {
-        setSignOutReportCopied(false);
+        setAuthState((current) => ({
+          ...current,
+          signOutReportCopied: false,
+        }));
       }, 2000);
     } catch {
       new Notice(t('library.error.copy-failed'));
@@ -186,9 +195,12 @@ function useAuthTabModel({ plugin }: AuthTabProps) {
         await plugin.saveSettings();
       }
       new Notice(t('notice.logout-success'));
-      setSignOutError(null);
-      setAuthError(null);
-      setSignOutReportCopied(false);
+      setAuthState((current) => ({
+        ...current,
+        signOutError: null,
+        authError: null,
+        signOutReportCopied: false,
+      }));
 
       window.dispatchEvent(new CustomEvent('journalit:subscription-changed'));
     } catch (error) {
@@ -197,11 +209,14 @@ function useAuthTabModel({ plugin }: AuthTabProps) {
 
       const message =
         error instanceof Error ? error.message : t('common.error');
-      setSignOutError({
-        message,
-        operation: 'sign out',
-        timestamp: new Date().toISOString(),
-      });
+      setAuthState((current) => ({
+        ...current,
+        signOutError: {
+          message,
+          operation: 'sign out',
+          timestamp: new Date().toISOString(),
+        },
+      }));
     }
   };
 

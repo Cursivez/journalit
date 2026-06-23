@@ -1,63 +1,29 @@
 
 
-import React, { memo, useMemo, useEffect } from 'react';
+import React, { memo, useMemo } from 'react';
 import { useDashboardData } from '../../dashboard/context/DashboardDataContext';
 import { useFilteredByPeriod } from '../context/HomePeriodContext';
 import { usePlugin } from '../../../hooks/usePlugin';
 import { useCurrency } from '../../../contexts/CurrencyContext';
-import { Trade } from '../../dashboard/utils/dataUtils';
 import { useDisplayFormatter } from '../../../hooks/useDisplayPolicy';
 import {
   buildCurrencyConversionMetadata,
   CurrencyConversionInfo,
 } from '../../shared/display/CurrencyConversionInfo';
-import {
-  getEffectivePnL,
-  isPnlContributingTrade,
-} from '../../../utils/tradeStatusUtils';
+import { isPnlContributingTrade } from '../../../utils/tradeStatusUtils';
 import { SkeletonBox } from '../../shared/SkeletonBox';
 import { SkeletonText } from '../../shared/SkeletonText';
 import { cssVars } from '../../../styles/inlineStylePolicy';
 import { t } from '../../../lang/helpers';
-import { getTradeAnalyticsDate } from '../../../utils/tradeAnalyticsDate';
+import { normalizeBreakEvenRange } from '../../../utils/breakEvenRange';
+import {
+  aggregateEntryTimeBuckets,
+  formatMinuteOfDay,
+  selectBestEntryWindow,
+} from './bestHoursUtils';
+import type { BucketStats, TimeBucket } from './bestHoursUtils';
 
-interface TimePeriod {
-  id: string;
-  label: string;
-  startHour: number;
-  endHour: number;
-}
-
-interface PeriodStats {
-  period: TimePeriod;
-  pnl: number;
-  tradeCount: number;
-  winRate: number;
-}
-
-
-const formatHour = (hour: number): string => {
-  
-  const normalized = ((hour % 24) + 24) % 24;
-  const totalMinutes = Math.round(normalized * 60);
-  const h = Math.floor(totalMinutes / 60) % 24;
-  const m = totalMinutes % 60;
-  const period = h >= 12 ? 'pm' : 'am';
-
-  
-  let displayHour = h % 12;
-  if (displayHour === 0) displayHour = 12;
-
-  if (m === 0) {
-    return `${displayHour}${period}`;
-  }
-  return `${displayHour}:${m.toString().padStart(2, '0')}${period}`;
-};
-
-
-const formatTimeRange = (start: number, end: number): string => {
-  return `${formatHour(start)} - ${formatHour(end)}`;
-};
+const LOW_SAMPLE_TRADE_THRESHOLD = 5;
 
 function BestHoursLoadingState() {
   return (
@@ -95,72 +61,93 @@ function BestHoursEmptyState() {
 }
 
 interface BestHoursTimelineProps {
-  timePeriods: TimePeriod[];
-  periodStats: PeriodStats[];
-  bestPeriod: PeriodStats | null;
-  hoveredPeriod: string | null;
-  hoveredStats: PeriodStats | null;
-  dayStart: number;
-  dayEnd: number;
+  buckets: TimeBucket[];
+  bucketStats: BucketStats[];
+  bestBucket: BucketStats | null;
+  hoveredBucket: string | null;
+  hoveredStats: BucketStats | null;
+  rangeStartMinute: number;
+  rangeEndMinute: number;
   maxPnL: number;
   minPnL: number;
   isPnlMasked: boolean;
   isReturnPercentMasked: boolean;
   effectiveCurrency: string;
-  setHoveredPeriod: (period: string | null) => void;
+  setHoveredBucket: (bucket: string | null) => void;
   formatValue: ReturnType<typeof useDisplayFormatter>['formatValue'];
 }
 
 function BestHoursTimeline({
-  timePeriods,
-  periodStats,
-  bestPeriod,
-  hoveredPeriod,
+  buckets,
+  bucketStats,
+  bestBucket,
+  hoveredBucket,
   hoveredStats,
-  dayStart,
-  dayEnd,
+  rangeStartMinute,
+  rangeEndMinute,
   maxPnL,
   minPnL,
   isPnlMasked,
   isReturnPercentMasked,
   effectiveCurrency,
-  setHoveredPeriod,
+  setHoveredBucket,
   formatValue,
 }: BestHoursTimelineProps) {
   const getTimelinePosition = (
-    period: TimePeriod
+    bucket: TimeBucket
   ): { left: number; width: number } => {
-    const duration = dayEnd - dayStart;
-    const left = ((period.startHour - dayStart) / duration) * 100;
-    const width = ((period.endHour - period.startHour) / duration) * 100;
+    const duration = rangeEndMinute - rangeStartMinute;
+    const left = ((bucket.startMinute - rangeStartMinute) / duration) * 100;
+    const width = ((bucket.endMinute - bucket.startMinute) / duration) * 100;
     return { left, width };
   };
+
+  const durationMinutes = rangeEndMinute - rangeStartMinute;
+  const labelIntervalMinutes =
+    durationMinutes > 12 * 60 ? 6 * 60 : durationMinutes > 4 * 60 ? 2 * 60 : 60;
+  const labelMinutes = buckets.flatMap((bucket, index) => {
+    const isFirst = index === 0;
+    const isInterval = bucket.startMinute % labelIntervalMinutes === 0;
+    return isFirst || isInterval ? [bucket.startMinute] : [];
+  });
 
   return (
     <div className="journalit-home-best-hours__timeline">
       <div className="journalit-home-best-hours__timeline-bar">
-        {timePeriods.map((period) => {
-          const stats = periodStats.find((s) => s.period.id === period.id);
-          const { left, width } = getTimelinePosition(period);
-          const isHovered = hoveredPeriod === period.id;
-          const isBest = bestPeriod?.period.id === period.id;
-          const pnl = stats?.pnl ?? 0;
-          const colorClassName = isPnlMasked
-            ? 'journalit-home-best-hours__timeline-segment--neutral'
-            : Math.abs(pnl) < 0.01
+        {buckets.map((bucket) => {
+          const stats = bucketStats.find((s) => s.bucket.id === bucket.id)!;
+          const { left, width } = getTimelinePosition(bucket);
+          const isHovered = hoveredBucket === bucket.id;
+          const isBest = bestBucket?.bucket.id === bucket.id;
+          const averagePnl = stats.averagePnl ?? 0;
+          const isEmpty = stats.tradeCount === 0;
+          const isLowSample =
+            !isEmpty &&
+            (!stats.isDevelopingEligible ||
+              stats.tradeCount < LOW_SAMPLE_TRADE_THRESHOLD);
+          const colorClassName =
+            isPnlMasked || isLowSample
               ? 'journalit-home-best-hours__timeline-segment--neutral'
-              : pnl > 0
-                ? 'journalit-home-best-hours__timeline-segment--positive'
-                : 'journalit-home-best-hours__timeline-segment--negative';
+              : isEmpty
+                ? 'journalit-home-best-hours__timeline-segment--empty'
+                : Math.abs(averagePnl) < 0.01
+                  ? 'journalit-home-best-hours__timeline-segment--neutral'
+                  : averagePnl > 0
+                    ? 'journalit-home-best-hours__timeline-segment--positive'
+                    : 'journalit-home-best-hours__timeline-segment--negative';
 
           let opacity: number;
           if (isPnlMasked) {
             opacity = 0.35;
+          } else if (isEmpty) {
+            opacity = 1;
+          } else if (isLowSample) {
+            opacity = 0.3;
           } else if (isBest) {
             opacity = 1;
           } else {
             const range = maxPnL - minPnL;
-            const normalized = range > 0 ? (pnl - minPnL) / range : 0.5;
+            const normalized = range > 0 ? (averagePnl - minPnL) / range : 0.5;
             opacity = 0.25 + normalized * 0.25;
           }
 
@@ -171,22 +158,10 @@ function BestHoursTimeline({
 
           return (
             <div
-              key={period.id}
-              onMouseEnter={() => setHoveredPeriod(period.id)}
-              onMouseLeave={() => setHoveredPeriod(null)}
-              onFocus={() => setHoveredPeriod(period.id)}
-              onBlur={() => setHoveredPeriod(null)}
-              tabIndex={0}
-              role="button"
-              aria-label={t('home.widget.best-hours.period-aria', {
-                label: period.label,
-                pnl: formatValue({
-                  kind: 'pnl',
-                  value: pnl,
-                  currencyCode: effectiveCurrency,
-                }),
-                count: String(stats?.tradeCount ?? 0),
-              })}
+              key={bucket.id}
+              onMouseEnter={() => setHoveredBucket(bucket.id)}
+              onMouseLeave={() => setHoveredBucket(null)}
+              aria-hidden="true"
               className={`journalit-home-best-hours__timeline-segment ${colorClassName}`}
               style={cssVars({
                 '--journalit-home-best-hours-segment-left': `${left}%`,
@@ -198,70 +173,87 @@ function BestHoursTimeline({
           );
         })}
       </div>
-      {hoveredStats && (
+      {hoveredStats && !isPnlMasked && (
         <div className="journalit-home-best-hours__tooltip">
           <div className="journalit-home-best-hours__tooltip-header">
-            {hoveredStats.period.label}
+            {hoveredStats.bucket.label}
           </div>
-          <div className="journalit-home-best-hours__tooltip-row">
+          <div className="journalit-home-best-hours__tooltip-value-row">
             <span
               className={
-                isPnlMasked
+                hoveredStats.averagePnl === null
                   ? 'journalit-home-best-hours__tooltip-pnl'
-                  : hoveredStats.pnl >= 0
+                  : hoveredStats.averagePnl >= 0
                     ? 'journalit-home-best-hours__tooltip-pnl journalit-home-best-hours__tooltip-pnl--positive'
                     : 'journalit-home-best-hours__tooltip-pnl journalit-home-best-hours__tooltip-pnl--negative'
               }
             >
-              {formatValue({
-                kind: 'pnl',
-                value: hoveredStats.pnl,
-                currencyCode: effectiveCurrency,
-              })}
+              {hoveredStats.averagePnl === null
+                ? t('common.na')
+                : formatValue({
+                    kind: 'pnl',
+                    value: hoveredStats.averagePnl,
+                    currencyCode: effectiveCurrency,
+                  })}
             </span>
+            <span className="journalit-home-best-hours__tooltip-stat">
+              {t('home.widget.best-hours.avg-per-trade')}
+            </span>
+          </div>
+          <div className="journalit-home-best-hours__tooltip-stats-row">
             <span className="journalit-home-best-hours__tooltip-stat">
               {t('home.widget.best-hours.trades-count', {
                 count: String(hoveredStats.tradeCount),
               })}
             </span>
             <span className="journalit-home-best-hours__tooltip-stat">
-              {t('home.widget.best-hours.win-rate', {
-                rate: isReturnPercentMasked
-                  ? formatValue({
-                      kind: 'returnPercent',
-                      value: hoveredStats.winRate,
-                      signed: false,
-                      precision: 0,
-                    })
-                  : hoveredStats.winRate.toFixed(0),
+              {t('home.widget.best-hours.days-count', {
+                count: String(hoveredStats.distinctDayCount),
               })}
+            </span>
+            <span className="journalit-home-best-hours__tooltip-stat">
+              {hoveredStats.winRate === null
+                ? t('home.widget.best-hours.win-rate-na')
+                : t('home.widget.best-hours.win-rate', {
+                    rate: isReturnPercentMasked
+                      ? formatValue({
+                          kind: 'returnPercent',
+                          value: hoveredStats.winRate,
+                          signed: false,
+                          precision: 0,
+                        })
+                      : hoveredStats.winRate.toFixed(0),
+                  })}
             </span>
           </div>
         </div>
       )}
       <div className="journalit-home-best-hours__labels">
-        {timePeriods.map((period) => {
-          const { left } = getTimelinePosition(period);
+        {labelMinutes.map((minute) => {
+          const left =
+            ((minute - rangeStartMinute) /
+              (rangeEndMinute - rangeStartMinute)) *
+            100;
           return (
             <span
-              key={`start-${period.id}`}
+              key={`label-${minute}`}
               className="journalit-home-best-hours__label"
               style={cssVars({
                 '--journalit-home-best-hours-label-left': `${left}%`,
               })}
             >
-              {formatHour(period.startHour)}
+              {formatMinuteOfDay(minute)}
             </span>
           );
         })}
-        {timePeriods.length > 0 && (
+        {buckets.length > 0 && (
           <span
             className="journalit-home-best-hours__label"
             style={cssVars({
               '--journalit-home-best-hours-label-left': '100%',
             })}
           >
-            {formatHour(timePeriods[timePeriods.length - 1].endHour)}
+            {formatMinuteOfDay(buckets[buckets.length - 1].endMinute)}
           </span>
         )}
       </div>
@@ -274,9 +266,8 @@ const BestHoursWidgetComponent: React.FC = () => {
   const plugin = usePlugin();
   const { currency } = useCurrency();
   const { formatValue, shouldMask } = useDisplayFormatter();
-  const [hoveredPeriod, setHoveredPeriod] = React.useState<string | null>(null);
-
-  useEffect(() => {}, []);
+  const [hoveredBucket, setHoveredBucket] = React.useState<string | null>(null);
+  const tradeSettings = plugin?.settings?.trade;
 
   
   const filteredTrades = useFilteredByPeriod(dashboardData?.trades);
@@ -286,142 +277,54 @@ const BestHoursWidgetComponent: React.FC = () => {
     [filteredTrades]
   );
 
-  
-  const { timePeriods, dayStart, dayEnd } = useMemo(() => {
-    if (pnlContributingTrades.length === 0) {
-      return { timePeriods: [], dayStart: 0, dayEnd: 24 };
-    }
-
-    
-    const analyticsDateBasis =
-      plugin?.settings?.trade?.analyticsDateBasis ?? 'entry';
-
-    const tradingHours: number[] = pnlContributingTrades
-      .map((trade: Trade) => getTradeAnalyticsDate(trade, analyticsDateBasis))
-      .filter((date): date is Date => date !== null)
-      .map((date) => date.getHours() + date.getMinutes() / 60);
-
-    if (tradingHours.length === 0) {
-      return { timePeriods: [], dayStart: 0, dayEnd: 24 };
-    }
-
-    
-    const minHour = Math.min(...tradingHours);
-    const maxHour = Math.max(...tradingHours);
-
-    
-    const paddedStart = Math.max(0, Math.floor(minHour));
-    const paddedEnd = Math.min(24, Math.ceil(maxHour) + 1);
-
-    
-    const duration = Math.max(4, paddedEnd - paddedStart);
-    const periodCount = duration <= 6 ? 3 : 4; 
-    const periodDuration = duration / periodCount;
-
-    const periods: TimePeriod[] = [];
-    for (let i = 0; i < periodCount; i++) {
-      const start = paddedStart + i * periodDuration;
-      const end = paddedStart + (i + 1) * periodDuration;
-      periods.push({
-        id: `period-${i}`,
-        label: formatTimeRange(start, end),
-        startHour: start,
-        endHour: end,
-      });
-    }
-
+  const breakEvenSettings = useMemo(() => {
+    const breakEvenRange = normalizeBreakEvenRange(tradeSettings);
     return {
-      timePeriods: periods,
-      dayStart: paddedStart,
-      dayEnd: paddedStart + duration,
+      breakEvenRangeMin: breakEvenRange.min,
+      breakEvenRangeMax: breakEvenRange.max,
+      breakEvenThresholdMode: tradeSettings?.breakEvenThresholdMode ?? 'fixed',
+      breakEvenThresholdPercent: tradeSettings?.breakEvenThresholdPercent,
     };
-  }, [pnlContributingTrades, plugin?.settings?.trade?.analyticsDateBasis]);
+  }, [tradeSettings]);
 
-  
-  const periodStats = useMemo((): PeriodStats[] => {
-    if (pnlContributingTrades.length === 0 || timePeriods.length === 0) {
-      return [];
-    }
+  const { buckets, stats: bucketStats } = useMemo(
+    () =>
+      aggregateEntryTimeBuckets({
+        trades: pnlContributingTrades,
+        plugin,
+        breakEvenSettings,
+      }),
+    [pnlContributingTrades, plugin, breakEvenSettings]
+  );
 
-    
-    const statsMap: Map<string, { pnl: number; wins: number; total: number }> =
-      new Map();
-    timePeriods.forEach((period) => {
-      statsMap.set(period.id, { pnl: 0, wins: 0, total: 0 });
-    });
-
-    
-    const analyticsDateBasis =
-      plugin?.settings?.trade?.analyticsDateBasis ?? 'entry';
-
-    pnlContributingTrades.forEach((trade: Trade) => {
-      const analyticsDate = getTradeAnalyticsDate(trade, analyticsDateBasis);
-      if (!analyticsDate) {
-        return;
-      }
-
-      const hour = analyticsDate.getHours() + analyticsDate.getMinutes() / 60;
-      const pnl = getEffectivePnL(trade);
-
-      
-      for (const period of timePeriods) {
-        if (hour >= period.startHour && hour < period.endHour) {
-          const stats = statsMap.get(period.id)!;
-          stats.pnl += pnl;
-          stats.total++;
-          if (pnl > 0) stats.wins++;
-          break;
-        }
-      }
-    });
-
-    
-    return timePeriods
-      .map((period) => {
-        const stats = statsMap.get(period.id)!;
-        return {
-          period,
-          pnl: stats.pnl,
-          tradeCount: stats.total,
-          winRate: stats.total > 0 ? (stats.wins / stats.total) * 100 : 0,
-        };
-      })
-      .filter((s) => s.tradeCount > 0);
-  }, [
-    pnlContributingTrades,
-    timePeriods,
-    plugin?.settings?.trade?.analyticsDateBasis,
-  ]);
-
-  
-  const { bestPeriod, isNegativeBest } = useMemo(() => {
-    if (periodStats.length === 0)
-      return { bestPeriod: null, isNegativeBest: false };
-    const best = periodStats.reduce((b, curr) => (curr.pnl > b.pnl ? curr : b));
-    return { bestPeriod: best, isNegativeBest: best.pnl < 0 };
-  }, [periodStats]);
+  const bestBucket = useMemo(
+    () => selectBestEntryWindow(bucketStats),
+    [bucketStats]
+  );
 
   
   const { maxPnL, minPnL } = useMemo(() => {
-    if (periodStats.length === 0) return { maxPnL: 1, minPnL: 0 };
-    const pnls = periodStats.map((s) => s.pnl);
+    const averages = bucketStats.flatMap((s) =>
+      s.averagePnl === null || !s.isDevelopingEligible ? [] : [s.averagePnl]
+    );
+    if (averages.length === 0) return { maxPnL: 1, minPnL: 0 };
     return {
-      maxPnL: Math.max(...pnls),
-      minPnL: Math.min(...pnls),
+      maxPnL: Math.max(...averages),
+      minPnL: Math.min(...averages),
     };
-  }, [periodStats]);
+  }, [bucketStats]);
 
   
   const hoveredStats = useMemo(() => {
-    if (!hoveredPeriod) return null;
-    return periodStats.find((s) => s.period.id === hoveredPeriod) || null;
-  }, [hoveredPeriod, periodStats]);
+    if (!hoveredBucket) return null;
+    return bucketStats.find((s) => s.bucket.id === hoveredBucket) || null;
+  }, [hoveredBucket, bucketStats]);
 
   if (!dashboardData) {
     return <BestHoursLoadingState />;
   }
 
-  if (periodStats.length === 0) {
+  if (bucketStats.length === 0) {
     return <BestHoursEmptyState />;
   }
 
@@ -432,11 +335,15 @@ const BestHoursWidgetComponent: React.FC = () => {
   );
   const effectiveCurrency =
     dashboardData.metrics.conversionBaseCurrency || currency;
-  const heroValueClassName = isPnlMasked
-    ? 'journalit-home-best-hours__hero-value'
-    : isNegativeBest
-      ? 'journalit-home-best-hours__hero-value journalit-home-best-hours__hero-value--negative'
-      : 'journalit-home-best-hours__hero-value journalit-home-best-hours__hero-value--positive';
+  const rangeStartMinute = buckets[0].startMinute;
+  const rangeEndMinute = buckets[buckets.length - 1].endMinute;
+  const sampledBucketCount = bucketStats.filter(
+    (bucket) => bucket.isDevelopingEligible
+  ).length;
+  const heroValueClassName =
+    bestBucket && !isPnlMasked
+      ? 'journalit-home-best-hours__hero-value journalit-home-best-hours__hero-value--positive'
+      : 'journalit-home-best-hours__hero-value';
 
   return (
     <div className="journalit-home-best-hours">
@@ -450,38 +357,65 @@ const BestHoursWidgetComponent: React.FC = () => {
 
       
       <div className="journalit-home-best-hours__hero">
-        {bestPeriod && (
+        {isPnlMasked ? (
           <>
-            
+            <div className="journalit-home-best-hours__hero-label">
+              {t('home.widget.best-hours.hidden')}
+            </div>
+            <div className="journalit-home-widget__muted">
+              {t('home.widget.best-hours.hidden-detail')}
+            </div>
+          </>
+        ) : bestBucket ? (
+          <>
+            <div className="journalit-home-best-hours__hero-window">
+              {bestBucket.bucket.label}
+            </div>
             <div className={heroValueClassName}>
               {formatValue({
                 kind: 'pnl',
-                value: bestPeriod.pnl,
+                value: bestBucket.averagePnl ?? 0,
                 currencyCode: effectiveCurrency,
               })}
+              {bestBucket.sampleTier === 'developing' && (
+                <span className="journalit-home-best-hours__hero-badge">
+                  {t('home.widget.best-hours.developing')}
+                </span>
+              )}
             </div>
-            
+          </>
+        ) : (
+          <>
+            <div className="journalit-home-best-hours__hero-label">
+              {sampledBucketCount >= 2
+                ? t('home.widget.best-hours.no-positive-window')
+                : t('home.widget.best-hours.insufficient-history')}
+            </div>
             <div className="journalit-home-widget__muted">
-              {bestPeriod.period.label}
+              {sampledBucketCount >= 2
+                ? t('home.widget.best-hours.no-positive-detail')
+                : t('home.widget.best-hours.sample-requirement', {
+                    count: String(sampledBucketCount),
+                  })}
             </div>
           </>
         )}
       </div>
 
       <BestHoursTimeline
-        timePeriods={timePeriods}
-        periodStats={periodStats}
-        bestPeriod={bestPeriod}
-        hoveredPeriod={hoveredPeriod}
+        buckets={buckets}
+        bucketStats={bucketStats}
+        bestBucket={isPnlMasked ? null : bestBucket}
+        hoveredBucket={hoveredBucket}
         hoveredStats={hoveredStats}
-        dayStart={dayStart}
-        dayEnd={dayEnd}
+        rangeStartMinute={rangeStartMinute}
+        rangeEndMinute={rangeEndMinute}
         maxPnL={maxPnL}
         minPnL={minPnL}
         isPnlMasked={isPnlMasked}
         isReturnPercentMasked={isReturnPercentMasked}
         effectiveCurrency={effectiveCurrency}
-        setHoveredPeriod={setHoveredPeriod}
+        setHoveredBucket={setHoveredBucket}
         formatValue={formatValue}
       />
     </div>

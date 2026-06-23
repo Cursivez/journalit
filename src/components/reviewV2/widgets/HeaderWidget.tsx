@@ -915,19 +915,18 @@ export const HeaderWidget: React.FC<HeaderWidgetProps> = React.memo(
       const allTrades = await plugin.tradeService.getTradeData({
         fresh: false,
       });
-      const sameDayTrades = allTrades
-        .map((trade) => asRecord(trade))
-        .filter((trade): trade is Record<string, unknown> => Boolean(trade))
-        .filter((trade) => {
-          
-          if (!trade.entryTime) return false;
-          const tradeDate = new Date(toDateInput(trade.entryTime) ?? 0);
-          return (
-            tradeDate.getFullYear() === headerData!.date.getFullYear() &&
-            tradeDate.getMonth() === headerData!.date.getMonth() &&
-            tradeDate.getDate() === headerData!.date.getDate()
-          );
-        });
+      const sameDayTrades = allTrades.flatMap((trade) => {
+        const tradeRecord = asRecord(trade);
+        if (!tradeRecord) return [];
+        
+        if (!tradeRecord.entryTime) return [];
+        const tradeDate = new Date(toDateInput(tradeRecord.entryTime) ?? 0);
+        return tradeDate.getFullYear() === headerData!.date.getFullYear() &&
+          tradeDate.getMonth() === headerData!.date.getMonth() &&
+          tradeDate.getDate() === headerData!.date.getDate()
+          ? [tradeRecord]
+          : [];
+      });
 
       
       sameDayTrades.sort((a, b) => {

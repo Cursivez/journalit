@@ -90,6 +90,38 @@ function useCompactImageUploaderModel({
     fileInputRef.current?.click();
   }, []);
 
+  const saveImageFiles = useCallback(
+    async (filesToProcess: File[], failureContext: string) => {
+      
+      
+      const savedPaths = await filesToProcess.reduce<
+        Promise<(string | null)[]>
+      >(async (previousSavedPaths, file) => {
+        const paths = await previousSavedPaths;
+        try {
+          if (!saveImageFunction) {
+            console.warn(
+              '[CompactImageUploader] No saveImageFunction provided'
+            );
+            return [...paths, null];
+          }
+
+          return [...paths, await saveImageFunction(file)];
+        } catch (error) {
+          console.error(
+            `[CompactImageUploader] Failed to save ${failureContext}:`,
+            error
+          );
+          if (onError && error instanceof Error) onError(error);
+          return [...paths, null];
+        }
+      }, Promise.resolve([]));
+
+      return savedPaths.filter((path): path is string => path !== null);
+    },
+    [onError, saveImageFunction]
+  );
+
   
   const handleFileSelect = useCallback(
     async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -98,27 +130,11 @@ function useCompactImageUploaderModel({
 
       setIsProcessing(true);
       try {
-        const imagePaths: string[] = [];
         const filesToProcess = multiple ? Array.from(files) : [files[0]];
-
-        for (const file of filesToProcess) {
-          try {
-            if (saveImageFunction) {
-              const path = await saveImageFunction(file);
-              imagePaths.push(path);
-            } else {
-              console.warn(
-                '[CompactImageUploader] No saveImageFunction provided'
-              );
-            }
-          } catch (error) {
-            console.error(
-              `[CompactImageUploader] Failed to save ${file.name}:`,
-              error
-            );
-            if (onError && error instanceof Error) onError(error);
-          }
-        }
+        const imagePaths = await saveImageFiles(
+          filesToProcess,
+          'selected image'
+        );
 
         if (imagePaths.length > 1 && onMultipleImagesAdded) {
           void onMultipleImagesAdded(imagePaths);
@@ -131,7 +147,7 @@ function useCompactImageUploaderModel({
         if (e.target) e.target.value = '';
       }
     },
-    [saveImageFunction, multiple, onImageAdded, onMultipleImagesAdded, onError]
+    [multiple, onImageAdded, onMultipleImagesAdded, saveImageFiles]
   );
 
   
@@ -162,23 +178,8 @@ function useCompactImageUploaderModel({
       }
 
       
-      const imagePaths: string[] = [];
       const filesToProcess = multiple ? result.files : [result.files[0]];
-
-      for (const file of filesToProcess) {
-        try {
-          if (saveImageFunction) {
-            const path = await saveImageFunction(file);
-            imagePaths.push(path);
-          }
-        } catch (error) {
-          console.error(
-            `[CompactImageUploader] Failed to save pasted image:`,
-            error
-          );
-          if (onError && error instanceof Error) onError(error);
-        }
-      }
+      const imagePaths = await saveImageFiles(filesToProcess, 'pasted image');
 
       if (imagePaths.length > 1 && onMultipleImagesAdded) {
         void onMultipleImagesAdded(imagePaths);
@@ -193,11 +194,11 @@ function useCompactImageUploaderModel({
     }
   }, [
     isProcessing,
-    saveImageFunction,
     multiple,
     onImageAdded,
     onMultipleImagesAdded,
     onError,
+    saveImageFiles,
   ]);
 
   
@@ -241,23 +242,11 @@ function useCompactImageUploaderModel({
         );
         if (imageFiles.length === 0) return;
 
-        const imagePaths: string[] = [];
         const filesToProcess = multiple ? imageFiles : [imageFiles[0]];
-
-        for (const file of filesToProcess) {
-          try {
-            if (saveImageFunction) {
-              const path = await saveImageFunction(file);
-              imagePaths.push(path);
-            }
-          } catch (error) {
-            console.error(
-              `[CompactImageUploader] Failed to save dropped image:`,
-              error
-            );
-            if (onError && error instanceof Error) onError(error);
-          }
-        }
+        const imagePaths = await saveImageFiles(
+          filesToProcess,
+          'dropped image'
+        );
 
         if (imagePaths.length > 1 && onMultipleImagesAdded) {
           void onMultipleImagesAdded(imagePaths);
@@ -268,7 +257,7 @@ function useCompactImageUploaderModel({
         setIsProcessing(false);
       }
     },
-    [saveImageFunction, multiple, onImageAdded, onMultipleImagesAdded, onError]
+    [multiple, onImageAdded, onMultipleImagesAdded, saveImageFiles]
   );
 
   return {

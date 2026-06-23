@@ -10,9 +10,10 @@ export function createTickerMatcher(
   selectedTickers: string[]
 ): (instrument: string | null | undefined) => boolean {
   const normalizedSelectedTickers = new Set(
-    selectedTickers
-      .map((ticker) => normalizeTickerForMatching(ticker))
-      .filter((ticker) => ticker.length > 0)
+    selectedTickers.flatMap((ticker) => {
+      const normalized = normalizeTickerForMatching(ticker);
+      return normalized ? [normalized] : [];
+    })
   );
 
   if (normalizedSelectedTickers.size === 0) {

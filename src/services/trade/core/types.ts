@@ -1,6 +1,6 @@
 import { CustomFieldValues } from '../../../types/customFields';
 
-export interface TradeExecutionInput {
+interface TradeExecutionInput {
   time: Date | string;
   price: number;
   size: number;
@@ -8,7 +8,7 @@ export interface TradeExecutionInput {
   hasExplicitPrice?: boolean;
 }
 
-export interface TradeDividendInput {
+interface TradeDividendInput {
   time: Date | string;
   amount: number;
 }
@@ -87,6 +87,9 @@ export interface TradeMutationInput {
   backendTradeId?: number;
   tradeImportId?: string;
   tradeImportVersion?: number;
+  tradeImportAccountId?: string;
+  tradeImportAccountBroker?: string;
+  tradeImportAccountDisplayName?: string;
   tradeId?: string;
   schemaVersion?: number;
   tradeRevision?: number;

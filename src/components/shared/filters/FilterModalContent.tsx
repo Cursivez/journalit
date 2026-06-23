@@ -52,8 +52,8 @@ export function mergeRenderableCustomFieldFilters(
     ])
   );
 
-  return availableCustomFieldFilters
-    .map((definition) => {
+  return availableCustomFieldFilters.reduce<AvailableCustomFieldFilter[]>(
+    (acc, definition) => {
       const selectedValues = customFieldFilters?.[definition.field.id] || [];
       const options = [...definition.options];
       const seen = new Set(options.map((option) => option.value));
@@ -67,16 +67,21 @@ export function mergeRenderableCustomFieldFilters(
         }
       });
 
-      return {
+      const result = {
         ...definition,
         options,
       } satisfies AvailableCustomFieldFilter;
-    })
-    .filter(
-      (definition) =>
-        definition.options.length > 0 ||
-        (customFieldFilters?.[definition.field.id] || []).length > 0
-    );
+
+      if (
+        result.options.length > 0 ||
+        (customFieldFilters?.[result.field.id] || []).length > 0
+      ) {
+        acc.push(result);
+      }
+      return acc;
+    },
+    []
+  );
 }
 
 

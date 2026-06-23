@@ -34,7 +34,7 @@ import {
 } from './customFieldDisplay';
 import { getTradeDirectionDisplayKind } from '../../services/trade/core/TradeDirection';
 
-export type SortDirection = 'asc' | 'desc';
+type SortDirection = 'asc' | 'desc';
 
 export interface SortConfig {
   column: string | null;

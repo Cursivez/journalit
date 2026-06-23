@@ -814,10 +814,16 @@ function useGeneralTabModel(props: GeneralTabProps) {
 
   
   useEffect(() => {
-    if (docsIconRef.current) setIcon(docsIconRef.current, 'book-open');
-    if (discordIconRef.current)
-      setIcon(discordIconRef.current, 'messages-square');
-    if (githubIconRef.current) setIcon(githubIconRef.current, 'github');
+    const iconTargets: Array<
+      [React.RefObject<HTMLSpanElement | null>, string]
+    > = [
+      [docsIconRef, 'book-open'],
+      [discordIconRef, 'messages-square'],
+      [githubIconRef, 'github'],
+    ];
+    for (const [ref, icon] of iconTargets) {
+      if (ref.current) setIcon(ref.current, icon);
+    }
   }, []);
 
   return {

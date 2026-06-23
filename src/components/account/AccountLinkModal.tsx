@@ -1,6 +1,6 @@
 
 
-import React, { useRef, useState } from 'react';
+import React, { useReducer, useRef } from 'react';
 import { AlertTriangle } from '../shared/icons/ObsidianIcon';
 import { Modal, App } from 'obsidian';
 import type { Root } from 'react-dom/client';
@@ -274,29 +274,51 @@ const AccountLinkModal: React.FC<AccountLinkModalProps> = ({
   
   const defaultLinkOption = existingAccounts.length > 0 ? 'existing' : 'new';
 
-  const [linkOption, setLinkOption] =
-    useState<AccountLinkOption>(defaultLinkOption);
-  const userHasSelectedOptionRef = useRef(false);
-  const [customName, setCustomName] = useState('');
-  const [selectedAccount, setSelectedAccount] = useState('');
-  const [selectedAccountType, setSelectedAccountType] = useState<string>(
-    availableAccountTypes.length > 0
-      ? availableAccountTypes[0]
-      : AccountType.DEMO
+  type LinkModalState = {
+    linkOption: AccountLinkOption;
+    customName: string;
+    selectedAccount: string;
+    selectedAccountType: string;
+    isLoading: boolean;
+    formError: string | null;
+  };
+  const [state, dispatchState] = useReducer(
+    (
+      current: LinkModalState,
+      update: Partial<LinkModalState>
+    ): LinkModalState => ({ ...current, ...update }),
+    {
+      linkOption: defaultLinkOption,
+      customName: '',
+      selectedAccount: '',
+      selectedAccountType:
+        availableAccountTypes.length > 0
+          ? availableAccountTypes[0]
+          : AccountType.DEMO,
+      isLoading: false,
+      formError: null,
+    }
   );
-  const [isLoading, setIsLoading] = useState(false);
-  const [formError, setFormError] = useState<string | null>(null);
+  const {
+    linkOption,
+    customName,
+    selectedAccount,
+    selectedAccountType,
+    isLoading,
+    formError,
+  } = state;
+  const userHasSelectedOptionRef = useRef(false);
 
   
   const hasExistingAccounts = existingAccounts.length > 0;
 
   
   const handleLinkOptionChange = (newOption: AccountLinkOption) => {
-    setLinkOption(newOption);
     userHasSelectedOptionRef.current = true;
-    if (newOption !== 'existing') {
-      setSelectedAccount('');
-    }
+    dispatchState({
+      linkOption: newOption,
+      selectedAccount: newOption === 'existing' ? selectedAccount : '',
+    });
   };
 
   
@@ -305,7 +327,7 @@ const AccountLinkModal: React.FC<AccountLinkModalProps> = ({
       availableAccountTypes.length > 0 &&
       !availableAccountTypes.includes(selectedAccountType)
     ) {
-      setSelectedAccountType(availableAccountTypes[0]);
+      dispatchState({ selectedAccountType: availableAccountTypes[0] });
     }
   }, [availableAccountTypes, selectedAccountType]);
 
@@ -313,13 +335,12 @@ const AccountLinkModal: React.FC<AccountLinkModalProps> = ({
   React.useEffect(() => {
     if (!userHasSelectedOptionRef.current) {
       const newDefaultOption = hasExistingAccounts ? 'existing' : 'new';
-      setLinkOption(newDefaultOption);
+      dispatchState({ linkOption: newDefaultOption });
     }
   }, [hasExistingAccounts]);
 
   const handleConfirm = async () => {
-    setIsLoading(true);
-    setFormError(null);
+    dispatchState({ isLoading: true, formError: null });
 
     try {
       let displayName = '';
@@ -335,8 +356,10 @@ const AccountLinkModal: React.FC<AccountLinkModalProps> = ({
           break;
         case 'existing':
           if (!selectedAccount) {
-            setFormError(t('account.link-modal.notice.select-existing'));
-            setIsLoading(false);
+            dispatchState({
+              formError: t('account.link-modal.notice.select-existing'),
+              isLoading: false,
+            });
             return;
           }
           linkToExisting = selectedAccount;
@@ -364,9 +387,9 @@ const AccountLinkModal: React.FC<AccountLinkModalProps> = ({
       const message = t('account.link-modal.notice.failed', {
         error: error instanceof Error ? error.message : t('error.unexpected'),
       });
-      setFormError(message);
+      dispatchState({ formError: message });
     } finally {
-      setIsLoading(false);
+      dispatchState({ isLoading: false });
     }
   };
 
@@ -395,9 +418,13 @@ const AccountLinkModal: React.FC<AccountLinkModalProps> = ({
         selectedAccount={selectedAccount}
         selectedAccountType={selectedAccountType}
         onLinkOptionChange={handleLinkOptionChange}
-        onCustomNameChange={setCustomName}
-        onSelectedAccountChange={setSelectedAccount}
-        onSelectedAccountTypeChange={setSelectedAccountType}
+        onCustomNameChange={(customName) => dispatchState({ customName })}
+        onSelectedAccountChange={(selectedAccount) =>
+          dispatchState({ selectedAccount })
+        }
+        onSelectedAccountTypeChange={(selectedAccountType) =>
+          dispatchState({ selectedAccountType })
+        }
       />
 
       <div className="modal-actions">

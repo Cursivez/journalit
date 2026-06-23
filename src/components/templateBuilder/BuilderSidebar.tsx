@@ -31,7 +31,7 @@ import {
 } from '../../guides/layoutBuilderGuideIds';
 
 
-export type SelectionType = 'template' | 'snippet' | 'library';
+type SelectionType = 'template' | 'snippet' | 'library';
 export interface Selection {
   type: SelectionType;
   id: string;

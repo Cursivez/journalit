@@ -78,7 +78,6 @@ import {
   ProfitTargetType,
   AccountType,
   DailyBalanceRecord,
-  ManualDrawdownSnapshot,
 } from '../account/types';
 import { AccountMetadata } from '../../settings/types';
 import {
@@ -309,7 +308,12 @@ export class AccountPageService extends CustomDataService {
   private normalizeStringArray(value: unknown): string[] {
     if (Array.isArray(value)) {
       return [
-        ...new Set(value.map((item) => String(item).trim()).filter(Boolean)),
+        ...new Set(
+          value.flatMap((item) => {
+            const trimmed = String(item).trim();
+            return trimmed ? [trimmed] : [];
+          })
+        ),
       ];
     }
 
@@ -411,9 +415,10 @@ export class AccountPageService extends CustomDataService {
 
   private getNormalizedAccountFieldValues(value: unknown): string[] {
     if (Array.isArray(value)) {
-      return value
-        .map((item) => String(item).trim())
-        .filter((item) => item.length > 0);
+      return value.flatMap((item) => {
+        const normalized = String(item).trim();
+        return normalized ? [normalized] : [];
+      });
     }
 
     const scalar = this.normalizeFrontmatterScalarString(value);
@@ -1392,61 +1397,65 @@ export class AccountPageService extends CustomDataService {
 
       
       manualTransactions: rawMetadata.manualTransactions
-        ? rawMetadata.manualTransactions
-            .filter((t) => t !== null && t !== undefined)
-            .map((t) => {
-              const parsedDate =
-                t.date instanceof Date ? t.date : this.safeParseDate(t.date);
+        ? rawMetadata.manualTransactions.flatMap((t) => {
+            if (t === null || t === undefined) return [];
+            const parsedDate =
+              t.date instanceof Date ? t.date : this.safeParseDate(t.date);
 
-              if (!parsedDate || isNaN(parsedDate.getTime())) {
-                console.warn(
-                  'AccountPageService: Skipping transaction with invalid date:',
-                  t
-                );
-                return null;
-              }
+            if (!parsedDate || isNaN(parsedDate.getTime())) {
+              console.warn(
+                'AccountPageService: Skipping transaction with invalid date:',
+                t
+              );
+              return [];
+            }
 
-              return { ...t, date: parsedDate };
-            })
-            .filter((t): t is AccountTransaction => {
-              if (t === null || t === undefined) return false;
-              
-              if (typeof t.id !== 'string' || !t.id) return false;
-              if (!(t.date instanceof Date)) return false;
-              if (typeof t.type !== 'string' || !t.type) return false;
-              if (typeof t.amount !== 'number' || isNaN(t.amount)) return false;
-              if (typeof t.balanceAfter !== 'number' || isNaN(t.balanceAfter))
-                return false;
-              return true;
-            })
+            const transaction = { ...t, date: parsedDate };
+            
+            if (typeof transaction.id !== 'string' || !transaction.id)
+              return [];
+            if (!(transaction.date instanceof Date)) return [];
+            if (typeof transaction.type !== 'string' || !transaction.type)
+              return [];
+            if (
+              typeof transaction.amount !== 'number' ||
+              isNaN(transaction.amount)
+            )
+              return [];
+            if (
+              typeof transaction.balanceAfter !== 'number' ||
+              isNaN(transaction.balanceAfter)
+            )
+              return [];
+            return [transaction];
+          })
         : undefined,
 
       
       manualDrawdownSnapshots: rawMetadata.manualDrawdownSnapshots
-        ? rawMetadata.manualDrawdownSnapshots
-            .filter((s) => s !== null && s !== undefined)
-            .map((s) => {
-              const parsedDate =
-                s.date instanceof Date ? s.date : this.safeParseDate(s.date);
+        ? rawMetadata.manualDrawdownSnapshots.flatMap((s) => {
+            if (s === null || s === undefined) return [];
+            const parsedDate =
+              s.date instanceof Date ? s.date : this.safeParseDate(s.date);
 
-              if (!parsedDate || isNaN(parsedDate.getTime())) {
-                console.warn(
-                  'AccountPageService: Skipping snapshot with invalid date:',
-                  s
-                );
-                return null;
-              }
+            if (!parsedDate || isNaN(parsedDate.getTime())) {
+              console.warn(
+                'AccountPageService: Skipping snapshot with invalid date:',
+                s
+              );
+              return [];
+            }
 
-              return { ...s, date: parsedDate };
-            })
-            .filter((s): s is ManualDrawdownSnapshot => {
-              if (s === null || s === undefined) return false;
-              
-              if (!(s.date instanceof Date)) return false;
-              if (typeof s.drawdownLimit !== 'number' || isNaN(s.drawdownLimit))
-                return false;
-              return true;
-            })
+            const snapshot = { ...s, date: parsedDate };
+            
+            if (!(snapshot.date instanceof Date)) return [];
+            if (
+              typeof snapshot.drawdownLimit !== 'number' ||
+              isNaN(snapshot.drawdownLimit)
+            )
+              return [];
+            return [snapshot];
+          })
         : undefined,
     };
 
@@ -1978,8 +1987,9 @@ export class AccountPageService extends CustomDataService {
       accountData.drawdownType === DrawdownType.MANUAL
     ) {
       accountData.allDrawdownSnapshots = [...metadata.manualDrawdownSnapshots]
-        .filter((s) => s && s.date) 
         .filter((s) => {
+          
+          if (!s || !s.date) return false;
           
           const parsedDate =
             s.date instanceof Date ? s.date : this.safeParseDate(s.date);
@@ -2184,31 +2194,29 @@ export class AccountPageService extends CustomDataService {
       losingTrades.length > 0 ? totalLossAmount / losingTrades.length : 0;
 
     const defaultRiskAmount = this.plugin?.settings?.trade?.defaultRiskAmount;
-    const winningTradesR = winningTrades
-      .map((t) =>
-        calculateEffectiveRMultiple(
-          getEffectivePnL(t),
-          t.rMultiple,
-          t.riskAmount,
-          defaultRiskAmount
-        )
-      )
-      .filter((r) => r !== undefined);
+    const winningTradesR = winningTrades.flatMap((t) => {
+      const rMultiple = calculateEffectiveRMultiple(
+        getEffectivePnL(t),
+        t.rMultiple,
+        t.riskAmount,
+        defaultRiskAmount
+      );
+      return rMultiple === undefined ? [] : [rMultiple];
+    });
     const avgWinRMultiple =
       winningTradesR.length > 0
         ? winningTradesR.reduce((sum, r) => sum + r, 0) / winningTradesR.length
         : undefined;
 
-    const losingTradesR = losingTrades
-      .map((t) =>
-        calculateEffectiveRMultiple(
-          getEffectivePnL(t),
-          t.rMultiple,
-          t.riskAmount,
-          defaultRiskAmount
-        )
-      )
-      .filter((r) => r !== undefined);
+    const losingTradesR = losingTrades.flatMap((t) => {
+      const rMultiple = calculateEffectiveRMultiple(
+        getEffectivePnL(t),
+        t.rMultiple,
+        t.riskAmount,
+        defaultRiskAmount
+      );
+      return rMultiple === undefined ? [] : [rMultiple];
+    });
     const avgLossRMultiple =
       losingTradesR.length > 0
         ? losingTradesR.reduce((sum, r) => sum + Math.abs(r), 0) /
@@ -2422,25 +2430,25 @@ export class AccountPageService extends CustomDataService {
     ) {
       
       
-      const allTransactions = account.transactions
-        .map((t) => {
-          const transactionDate =
-            t.date instanceof Date ? t.date : this.safeParseDate(t.date);
+      const allTransactions = account.transactions.flatMap((t) => {
+        const transactionDate =
+          t.date instanceof Date ? t.date : this.safeParseDate(t.date);
 
-          if (!transactionDate) {
-            console.warn(
-              `AccountPageService: Skipping existing transaction with invalid date:`,
-              t
-            );
-            return null;
-          }
+        if (!transactionDate) {
+          console.warn(
+            `AccountPageService: Skipping existing transaction with invalid date:`,
+            t
+          );
+          return [];
+        }
 
-          return {
+        return [
+          {
             ...t,
             date: transactionDate,
-          };
-        })
-        .filter((t) => t !== null); 
+          },
+        ];
+      });
 
       
       const metadata = this.getAccountMetadata(account.name);
@@ -2449,9 +2457,9 @@ export class AccountPageService extends CustomDataService {
         const existingTransactionIds = new Set(
           account.transactions.map((t) => t.id)
         );
-        const newManualTransactions = metadata.manualTransactions
-          .filter((t) => !existingTransactionIds.has(t.id))
-          .map((t) => {
+        const newManualTransactions = metadata.manualTransactions.flatMap(
+          (t) => {
+            if (existingTransactionIds.has(t.id)) return [];
             
             const transactionDate =
               t.date instanceof Date ? t.date : this.safeParseDate(t.date);
@@ -2461,15 +2469,17 @@ export class AccountPageService extends CustomDataService {
                 `AccountPageService: Skipping manual transaction with invalid date:`,
                 t
               );
-              return null;
+              return [];
             }
 
-            return {
-              ...t,
-              date: transactionDate,
-            };
-          })
-          .filter((t) => t !== null); 
+            return [
+              {
+                ...t,
+                date: transactionDate,
+              },
+            ];
+          }
+        );
 
         allTransactions.push(...newManualTransactions);
       }
@@ -2592,27 +2602,27 @@ export class AccountPageService extends CustomDataService {
     const metadata = this.getAccountMetadata(account.name);
 
     const manualTransactions = metadata?.manualTransactions
-      ? metadata.manualTransactions
-          .map((t) => {
-            
-            const transactionDate =
-              t.date instanceof Date ? t.date : this.safeParseDate(t.date);
+      ? metadata.manualTransactions.flatMap((t) => {
+          
+          const transactionDate =
+            t.date instanceof Date ? t.date : this.safeParseDate(t.date);
 
-            if (!transactionDate) {
-              console.warn(
-                `AccountPageService: Skipping manual transaction with invalid date:`,
-                t
-              );
-              return null;
-            }
+          if (!transactionDate) {
+            console.warn(
+              `AccountPageService: Skipping manual transaction with invalid date:`,
+              t
+            );
+            return [];
+          }
 
-            return {
+          return [
+            {
               ...t,
               date: transactionDate,
               balanceAfter: 0, 
-            };
-          })
-          .filter((t) => t !== null)
+            },
+          ];
+        })
       : []; 
 
     
@@ -2661,68 +2671,62 @@ export class AccountPageService extends CustomDataService {
       isPnlContributingTrade(trade as EnhancedTradeData)
     );
 
-    const validTrades = pnlContributingTrades
-      .map((trade) => {
-        const entryTime =
-          trade.entryTime instanceof Date
-            ? trade.entryTime
-            : this.safeParseDate(trade.entryTime);
-        const latestExitTime = getLastExitTime({ exits: trade.exits });
+    const validTrades = pnlContributingTrades.flatMap((trade) => {
+      const entryTime =
+        trade.entryTime instanceof Date
+          ? trade.entryTime
+          : this.safeParseDate(trade.entryTime);
+      const latestExitTime = getLastExitTime({ exits: trade.exits });
 
-        const settlementCandidate =
-          (
-            trade as EnhancedTradeData & {
-              settlementTime?: Date | string | null;
-            }
-          ).settlementTime ??
-          latestExitTime ??
-          trade.exitTime ??
-          trade.entryTime;
-        const settlementTime =
-          settlementCandidate instanceof Date
-            ? settlementCandidate
-            : this.safeParseDate(settlementCandidate);
+      const settlementCandidate =
+        (
+          trade as EnhancedTradeData & {
+            settlementTime?: Date | string | null;
+          }
+        ).settlementTime ??
+        latestExitTime ??
+        trade.exitTime ??
+        trade.entryTime;
+      const settlementTime =
+        settlementCandidate instanceof Date
+          ? settlementCandidate
+          : this.safeParseDate(settlementCandidate);
 
-        if (!entryTime || !settlementTime) {
-          console.warn(
-            `AccountPageService: Skipping trade (${trade.path}) - invalid dates`
-          );
-          return null;
-        }
+      if (!entryTime || !settlementTime) {
+        console.warn(
+          `AccountPageService: Skipping trade (${trade.path}) - invalid dates`
+        );
+        return [];
+      }
 
-        const entryYear = entryTime.getFullYear();
-        const settlementYear = settlementTime.getFullYear();
+      const entryYear = entryTime.getFullYear();
+      const settlementYear = settlementTime.getFullYear();
 
-        if (
-          entryYear < 1970 ||
-          entryYear > 2100 ||
-          settlementYear < 1970 ||
-          settlementYear > 2100
-        ) {
-          console.warn(
-            `AccountPageService: Skipping trade with corrupted dates (${trade.path}) - year ${entryYear}/${settlementYear} outside valid range`
-          );
-          return null;
-        }
+      if (
+        entryYear < 1970 ||
+        entryYear > 2100 ||
+        settlementYear < 1970 ||
+        settlementYear > 2100
+      ) {
+        console.warn(
+          `AccountPageService: Skipping trade with corrupted dates (${trade.path}) - year ${entryYear}/${settlementYear} outside valid range`
+        );
+        return [];
+      }
 
-        return {
+      return [
+        {
           ...trade,
           entryTime,
           settlementTime,
-        };
-      })
-      .filter(
-        (
-          trade
-        ): trade is AccountTradeData &
-          EnhancedTradeData & { entryTime: Date; settlementTime: Date } =>
-          trade !== null
-      );
+        },
+      ];
+    });
 
     for (const trade of validTrades) {
       const tradeIdBase = `${account.id}-trade-${trade.path.replace(/[^a-zA-Z0-9]/g, '-')}`;
       const dividendTransactions = (trade.dividends || [])
-        .map((dividend, index) => {
+        .flatMap((dividend, index) => {
           const date =
             dividend.time instanceof Date
               ? dividend.time
@@ -2738,23 +2742,21 @@ export class AccountPageService extends CustomDataService {
             !Number.isFinite(amount) ||
             amount === 0
           ) {
-            return null;
+            return [];
           }
 
-          return {
-            id: `${tradeIdBase}-dividend-${index}`,
-            date,
-            type: TransactionType.TRADE,
-            amount,
-            description: `Dividend: ${trade.path}`,
-            tradeId: trade.path,
-            balanceAfter: 0,
-          } as AccountTransaction;
+          return [
+            {
+              id: `${tradeIdBase}-dividend-${index}`,
+              date,
+              type: TransactionType.TRADE,
+              amount,
+              description: `Dividend: ${trade.path}`,
+              tradeId: trade.path,
+              balanceAfter: 0,
+            } as AccountTransaction,
+          ];
         })
-        .filter(
-          (transaction): transaction is AccountTransaction =>
-            transaction !== null
-        )
         .sort((a, b) => a.date.getTime() - b.date.getTime());
 
       const emittedDividendTotal = dividendTransactions.reduce(
@@ -3090,11 +3092,9 @@ export class AccountPageService extends CustomDataService {
         )
       );
 
-      return enhancedAccounts
-        .filter(
-          (account): account is AccountAggregateSnapshot => account !== null
-        )
-        .map((account) => this.cloneAccountData(account.account));
+      return enhancedAccounts.flatMap((account) =>
+        account === null ? [] : [this.cloneAccountData(account.account)]
+      );
     } catch (error) {
       console.error('Error getting all enhanced accounts:', error);
       return [];
@@ -3394,12 +3394,11 @@ export class AccountPageService extends CustomDataService {
         ...removedMappedAccountIds,
         ...removedMappedAccountNames,
         ...Array.from(snapshotLookupKeysToRemove),
-      ]
-        .filter(
-          (value): value is string =>
-            typeof value === 'string' && value.trim().length > 0
-        )
-        .map((value) => this.formatTagForYAML(value))
+      ].flatMap((value) =>
+        typeof value === 'string' && value.trim().length > 0
+          ? [this.formatTagForYAML(value)]
+          : []
+      )
     );
 
     const isDeletableAccountTradeFile = (file: TFile): boolean => {
@@ -3435,12 +3434,11 @@ export class AccountPageService extends CustomDataService {
       frontmatter: Record<string, unknown> | undefined
     ) =>
       Array.isArray(frontmatter?.tags)
-        ? frontmatter.tags
-            .filter(
-              (tag): tag is string =>
-                typeof tag === 'string' && tag.startsWith('account/')
-            )
-            .map((tag) => tag.slice('account/'.length))
+        ? frontmatter.tags.flatMap((tag) =>
+            typeof tag === 'string' && tag.startsWith('account/')
+              ? [tag.slice('account/'.length)]
+              : []
+          )
         : [];
 
     const backendAccountIdsToUnlink = new Set(removedMappedAccountIds);

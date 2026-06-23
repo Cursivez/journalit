@@ -4,15 +4,12 @@ import type { LocalCSVTemplate, ManualImportMode } from '../csv/types';
 import type { BackendTradeImportService } from './BackendTradeImportService';
 import type { TradeImportCapabilities } from './types';
 
-export type TradeImportQuickSetupSource =
+type TradeImportQuickSetupSource =
   | 'favorite-template'
   | 'favorites'
   | 'fallback';
 
-export type TradeImportQuickSetupState =
-  | 'ready'
-  | 'needs_setup'
-  | 'unavailable';
+type TradeImportQuickSetupState = 'ready' | 'needs_setup' | 'unavailable';
 
 export interface TradeImportQuickSetup {
   state: TradeImportQuickSetupState;
@@ -59,9 +56,9 @@ export function getCachedQuickTradeImportSetup(): CachedQuickTradeImportSetup | 
 
 function accountNames(plugin: JournalitPlugin): string[] {
   const metadata = plugin.settings.account?.accountMetadata ?? {};
-  const names = Object.values(metadata)
-    .map((account) => account.name)
-    .filter((name): name is string => !!name);
+  const names = Object.values(metadata).flatMap((account) =>
+    account.name ? [account.name] : []
+  );
   return names.length ? names : ['Main Account'];
 }
 
@@ -69,10 +66,9 @@ export async function loadTradeImportAccountNames(
   plugin: JournalitPlugin
 ): Promise<string[]> {
   const catalog = await plugin.accountPageService?.getAccountCatalog();
-  const catalogNames = (catalog ?? [])
-    .filter((account) => !account.archived)
-    .map((account) => account.name)
-    .filter((name): name is string => !!name);
+  const catalogNames = (catalog ?? []).flatMap((account) =>
+    !account.archived && account.name ? [account.name] : []
+  );
   return catalogNames.length ? catalogNames : accountNames(plugin);
 }
 
@@ -81,7 +77,10 @@ function asMappings(value: unknown): Record<string, string[]> {
   const mappings: Record<string, string[]> = {};
   for (const [key, columns] of Object.entries(value)) {
     if (Array.isArray(columns)) {
-      const normalized = columns.map(String).filter(Boolean);
+      const normalized = columns.flatMap((column) => {
+        const mappedColumn = String(column);
+        return mappedColumn ? [mappedColumn] : [];
+      });
       if (normalized.length > 0) mappings[key] = normalized;
       continue;
     }

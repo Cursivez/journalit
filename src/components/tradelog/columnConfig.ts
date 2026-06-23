@@ -533,9 +533,13 @@ export function getVisibleColumns(
   const order =
     columnOrder.length > 0 ? columnOrder : allColumns.map((col) => col.id);
 
-  const ordered = order
-    .map((id) => columnsById.get(id))
-    .filter((col): col is ColumnDefinition => Boolean(col));
+  const ordered = order.reduce<ColumnDefinition[]>((acc, id) => {
+    const col = columnsById.get(id);
+    if (col) {
+      acc.push(col);
+    }
+    return acc;
+  }, []);
 
   const remaining = allColumns.filter(
     (col) => !ordered.some((orderedColumn) => orderedColumn.id === col.id)

@@ -189,21 +189,21 @@ export class AccountManagementService {
 
       if (goalConfig.accountTargetAccounts) {
         const seenAccounts = new Set<string>();
-        goalConfig.accountTargetAccounts = goalConfig.accountTargetAccounts
-          .map((accountName) =>
+        const nextAccountTargetAccounts: string[] = [];
+        for (const accountName of goalConfig.accountTargetAccounts) {
+          const nextAccountName =
             normalizeAccountLookupKey(accountName) === previousLookupKey
               ? normalizedNext
-              : accountName
-          )
-          .filter((accountName) => {
-            const lookupKey = normalizeAccountLookupKey(accountName);
-            if (seenAccounts.has(lookupKey)) {
-              return false;
-            }
+              : accountName;
+          const lookupKey = normalizeAccountLookupKey(nextAccountName);
+          if (seenAccounts.has(lookupKey)) {
+            continue;
+          }
 
-            seenAccounts.add(lookupKey);
-            return true;
-          });
+          seenAccounts.add(lookupKey);
+          nextAccountTargetAccounts.push(nextAccountName);
+        }
+        goalConfig.accountTargetAccounts = nextAccountTargetAccounts;
       }
     }
   }

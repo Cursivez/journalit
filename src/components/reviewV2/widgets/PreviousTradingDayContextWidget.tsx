@@ -4,8 +4,8 @@ import React, {
   useCallback,
   useEffect,
   useMemo,
+  useReducer,
   useRef,
-  useState,
 } from 'react';
 import { Component, MarkdownRenderer, TFile } from 'obsidian';
 import JournalitPlugin from '../../../main';
@@ -49,9 +49,10 @@ function parseHeadings(
     try {
       const parsed: unknown = JSON.parse(config.headingsJson);
       if (Array.isArray(parsed)) {
-        return parsed
-          .map((heading) => (typeof heading === 'string' ? heading.trim() : ''))
-          .filter(Boolean);
+        return parsed.flatMap((heading) => {
+          const normalized = typeof heading === 'string' ? heading.trim() : '';
+          return normalized ? [normalized] : [];
+        });
       }
     } catch {
       // intentional
@@ -59,10 +60,10 @@ function parseHeadings(
   }
 
   if (!config?.headings) return [];
-  return config.headings
-    .split(/[|\n]/)
-    .map((heading) => heading.trim())
-    .filter(Boolean);
+  return config.headings.split(/[|\n]/).flatMap((heading) => {
+    const normalized = heading.trim();
+    return normalized ? [normalized] : [];
+  });
 }
 
 function stripImageWidgetBlocks(markdown: string): string {
@@ -156,10 +157,22 @@ function formatPreviousDRCDate(sourceDate: string): string {
 
 export const PreviousTradingDayContextWidget: React.FC<PreviousTradingDayContextWidgetProps> =
   React.memo(({ filePath, plugin, config, preview }) => {
-    const [context, setContext] =
-      useState<PreviousTradingDayContextResult | null>(null);
-    const [loading, setLoading] = useState(!preview);
-    const [error, setError] = useState<string | null>(null);
+    const [state, dispatchState] = useReducer(
+      (
+        current: {
+          context: PreviousTradingDayContextResult | null;
+          loading: boolean;
+          error: string | null;
+        },
+        update: Partial<{
+          context: PreviousTradingDayContextResult | null;
+          loading: boolean;
+          error: string | null;
+        }>
+      ) => ({ ...current, ...update }),
+      { context: null, loading: !preview, error: null }
+    );
+    const { context, loading, error } = state;
     const markdownRefs = useRef<Map<string, HTMLDivElement>>(new Map());
     const componentRefs = useRef<Component[]>([]);
 
@@ -181,12 +194,11 @@ export const PreviousTradingDayContextWidget: React.FC<PreviousTradingDayContext
 
       let isMounted = true;
       const loadContext = async () => {
-        setLoading(true);
-        setError(null);
+        dispatchState({ loading: true, error: null });
         try {
           const file = plugin.app.vault.getAbstractFileByPath(filePath);
           if (!(file instanceof TFile)) {
-            if (isMounted) setError('Current DRC not found.');
+            if (isMounted) dispatchState({ error: 'Current DRC not found.' });
             return;
           }
 
@@ -198,7 +210,8 @@ export const PreviousTradingDayContextWidget: React.FC<PreviousTradingDayContext
               ? parseLocalDateSafe(frontmatter.date)
               : null;
           if (!currentDate) {
-            if (isMounted) setError('Current DRC date not found.');
+            if (isMounted)
+              dispatchState({ error: 'Current DRC date not found.' });
             return;
           }
 
@@ -210,13 +223,15 @@ export const PreviousTradingDayContextWidget: React.FC<PreviousTradingDayContext
             headings,
             config?.fallbackMode ?? 'nearest-earlier'
           );
-          if (isMounted) setContext(result);
+          if (isMounted) dispatchState({ context: result });
         } catch (err) {
           console.error('Failed to load previous trading day context:', err);
           if (isMounted)
-            setError('Failed to load previous trading day context.');
+            dispatchState({
+              error: 'Failed to load previous trading day context.',
+            });
         } finally {
-          if (isMounted) setLoading(false);
+          if (isMounted) dispatchState({ loading: false });
         }
       };
 
@@ -337,10 +352,12 @@ export const PreviousTradingDayContextWidget: React.FC<PreviousTradingDayContext
                 altPrefix={t(
                   'widget.previous-trading-day-context.image-alt-prefix'
                 )}
-                showThumbnails={false}
-                showCounter={false}
-                enableDelete={false}
-                enableFullscreen={false}
+                displayOptions={{
+                  showThumbnails: false,
+                  showCounter: false,
+                  enableFullscreen: false,
+                }}
+                deleteOptions={{ enabled: false }}
                 useResolveMediaPath={true}
               />
             </div>
@@ -441,10 +458,12 @@ export const PreviousTradingDayContextWidget: React.FC<PreviousTradingDayContext
                         altPrefix={t(
                           'widget.previous-trading-day-context.image-alt-prefix'
                         )}
-                        showThumbnails={block.images.length > 1}
-                        showCounter={block.images.length > 1}
-                        enableDelete={false}
-                        enableFullscreen={true}
+                        displayOptions={{
+                          showThumbnails: block.images.length > 1,
+                          showCounter: block.images.length > 1,
+                          enableFullscreen: true,
+                        }}
+                        deleteOptions={{ enabled: false }}
                         useResolveMediaPath={true}
                         sourcePath={context.sourcePath}
                       />

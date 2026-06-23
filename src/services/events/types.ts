@@ -23,7 +23,7 @@ export interface TradeChangedPayload {
 }
 
 
-export interface TradeFormOpenedPayload {
+interface TradeFormOpenedPayload {
   mode: 'create' | 'edit';
   filePath?: string;
 }
@@ -89,19 +89,19 @@ export interface AccountChangedPayload {
 }
 
 
-export interface DataChangedPayload {
+interface DataChangedPayload {
   action: 'updated' | 'created' | 'deleted';
   filePath: string;
   type?: 'drc' | 'weekly' | 'monthly' | 'quarterly' | 'yearly';
 }
 
 
-export interface WidgetsChangedPayload {
+interface WidgetsChangedPayload {
   activeWidgets: string[];
 }
 
 
-export interface MetricsChangedPayload {
+interface MetricsChangedPayload {
   activeMetrics: string[];
 }
 
@@ -130,23 +130,23 @@ export interface ReviewFilterSyncPayload {
 }
 
 
-export interface IndexInvalidatedPayload {
+interface IndexInvalidatedPayload {
   indexName: string;
   reason: 'mutation' | 'file-change' | 'manual';
 }
 
 
-export interface IndexReadyPayload {
+interface IndexReadyPayload {
   indexName: string;
 }
 
 
-export interface RecentItemsChangedPayload {
+interface RecentItemsChangedPayload {
   recentItems: Array<{ path: string; timestamp: number; type: string }>;
 }
 
 
-export interface LayoutChangedPayload {
+interface LayoutChangedPayload {
   view: 'home' | 'dashboard';
   layoutName: string;
 }

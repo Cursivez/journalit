@@ -1,7 +1,7 @@
 
 
 import React, {
-  useState,
+  useReducer,
   useCallback,
   useMemo,
   useRef,
@@ -116,13 +116,47 @@ export const FastDateTimeInput: React.FC<FastDateTimeInputProps> = React.memo(
 
     const shouldDisplayBlankTime = !value && defaultDateWhenEmpty;
 
-    
-    const [day, setDay] = useState('');
-    const [month, setMonth] = useState('');
-    const [year, setYear] = useState('');
-    const [hour, setHour] = useState('');
-    const [minute, setMinute] = useState('');
-    const [ampm, setAmpm] = useState<'AM' | 'PM'>('AM');
+    type SegmentState = {
+      day: string;
+      month: string;
+      year: string;
+      hour: string;
+      minute: string;
+      ampm: 'AM' | 'PM';
+    };
+    const [segments, dispatchSegments] = useReducer(
+      (state: SegmentState, update: Partial<SegmentState>): SegmentState => ({
+        ...state,
+        ...update,
+      }),
+      { day: '', month: '', year: '', hour: '', minute: '', ampm: 'AM' }
+    );
+    const { day, month, year, hour, minute, ampm } = segments;
+
+    const setDay = useCallback(
+      (nextDay: string) => dispatchSegments({ day: nextDay }),
+      []
+    );
+    const setMonth = useCallback(
+      (nextMonth: string) => dispatchSegments({ month: nextMonth }),
+      []
+    );
+    const setYear = useCallback(
+      (nextYear: string) => dispatchSegments({ year: nextYear }),
+      []
+    );
+    const setHour = useCallback(
+      (nextHour: string) => dispatchSegments({ hour: nextHour }),
+      []
+    );
+    const setMinute = useCallback(
+      (nextMinute: string) => dispatchSegments({ minute: nextMinute }),
+      []
+    );
+    const setAmpm = useCallback(
+      (nextAmpm: 'AM' | 'PM') => dispatchSegments({ ampm: nextAmpm }),
+      []
+    );
 
     
     const dayRef = useRef<HTMLInputElement>(null);
@@ -138,49 +172,53 @@ export const FastDateTimeInput: React.FC<FastDateTimeInputProps> = React.memo(
     const hourValueRef = useRef(hour);
     const minuteValueRef = useRef(minute);
     const ampmValueRef = useRef(ampm);
-
-    
-    useEffect(() => {
-      hourValueRef.current = hour;
-    }, [hour]);
-    useEffect(() => {
-      minuteValueRef.current = minute;
-    }, [minute]);
-    useEffect(() => {
-      ampmValueRef.current = ampm;
-    }, [ampm]);
+    hourValueRef.current = hour;
+    minuteValueRef.current = minute;
+    ampmValueRef.current = ampm;
 
     
     useEffect(() => {
       if (normalizedValue) {
-        setDay(String(normalizedValue.getDate()).padStart(2, '0'));
-        setMonth(String(normalizedValue.getMonth() + 1).padStart(2, '0'));
-        setYear(String(normalizedValue.getFullYear()).slice(-2));
+        const nextSegments: Partial<SegmentState> = {
+          day: String(normalizedValue.getDate()).padStart(2, '0'),
+          month: String(normalizedValue.getMonth() + 1).padStart(2, '0'),
+          year: String(normalizedValue.getFullYear()).slice(-2),
+        };
 
         if (includeTime || timeOnly) {
           if (shouldDisplayBlankTime) {
-            setHour('');
-            setMinute('');
-            setAmpm('AM');
+            dispatchSegments({
+              ...nextSegments,
+              hour: '',
+              minute: '',
+              ampm: 'AM',
+            });
             return;
           }
           const hours = normalizedValue.getHours();
           if (use24HourTime) {
-            setHour(String(hours).padStart(2, '0'));
+            nextSegments.hour = String(hours).padStart(2, '0');
           } else {
             const h12 = hours % 12 || 12;
-            setHour(String(h12).padStart(2, '0'));
-            setAmpm(hours >= 12 ? 'PM' : 'AM');
+            nextSegments.hour = String(h12).padStart(2, '0');
+            nextSegments.ampm = hours >= 12 ? 'PM' : 'AM';
           }
-          setMinute(String(normalizedValue.getMinutes()).padStart(2, '0'));
+          nextSegments.minute = String(normalizedValue.getMinutes()).padStart(
+            2,
+            '0'
+          );
         }
+
+        dispatchSegments(nextSegments);
       } else {
-        setDay('');
-        setMonth('');
-        setYear('');
-        setHour('');
-        setMinute('');
-        setAmpm('AM');
+        dispatchSegments({
+          day: '',
+          month: '',
+          year: '',
+          hour: '',
+          minute: '',
+          ampm: 'AM',
+        });
       }
     }, [
       normalizedValue,

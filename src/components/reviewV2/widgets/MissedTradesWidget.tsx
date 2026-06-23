@@ -123,9 +123,10 @@ const normalizeStringList = (value: unknown): string[] => {
 
   const normalized = Array.isArray(value) ? value : [value];
 
-  return normalized
-    .map((item) => String(item).trim())
-    .filter((item) => item.length > 0);
+  return normalized.flatMap((item) => {
+    const normalizedItem = String(item).trim();
+    return normalizedItem ? [normalizedItem] : [];
+  });
 };
 
 const getValidDate = (value: string | Date | undefined): Date => {
@@ -462,14 +463,14 @@ export const MissedTradesWidget: React.FC<MissedTradesWidgetProps> = memo(
         );
 
         const processedMissedTrades = missedTradeFiles
-          .map((mtFile) => {
+          .flatMap((mtFile) => {
             const mtCache = plugin.app.metadataCache.getFileCache(mtFile);
-            return buildMissedTradeDisplayData(
+            const missedTrade = buildMissedTradeDisplayData(
               mtCache?.frontmatter as MissedTradeFrontmatter | undefined,
               mtFile
             );
+            return missedTrade ? [missedTrade] : [];
           })
-          .filter((trade): trade is MissedTradeDisplayData => trade !== null)
           .sort((a, b) => b.entryTime.getTime() - a.entryTime.getTime());
 
         setMissedTrades(processedMissedTrades);
@@ -726,8 +727,10 @@ export const MissedTradesWidget: React.FC<MissedTradesWidgetProps> = memo(
           {missedTrades.length === 0 ? null : noteType === 'weekly-review' &&
             groupedTrades ? (
             <div>
-              {DAYS_OF_WEEK.filter((day) => groupedTrades.has(day)).map((day) =>
-                renderDaySection(day, groupedTrades.get(day) || [])
+              {DAYS_OF_WEEK.flatMap((day) =>
+                groupedTrades.has(day)
+                  ? [renderDaySection(day, groupedTrades.get(day) || [])]
+                  : []
               )}
             </div>
           ) : (

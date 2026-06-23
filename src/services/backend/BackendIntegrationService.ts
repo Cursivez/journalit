@@ -561,9 +561,10 @@ export class BackendIntegrationService {
           await this.accountManagementService.fetchUserAccounts({
             status: 'ignored',
           })
-        )
-          .map((account) => account.accountId)
-          .filter((accountId) => accountId.trim().length > 0)
+        ).flatMap((account) => {
+          const accountId = account.accountId;
+          return accountId.trim().length > 0 ? [accountId] : [];
+        })
       );
       const allTrades =
         ignoredAccountIds.size === 0
@@ -1062,7 +1063,9 @@ export class BackendIntegrationService {
               ? this.tradesProcessedSoFar
               : trades.length;
           const accountCount = new Set(
-            trades.map((tr) => tr.mt_account_number).filter((id) => id != null)
+            trades.flatMap((tr) =>
+              tr.mt_account_number == null ? [] : [tr.mt_account_number]
+            )
           ).size;
           new Notice(
             t('backend.notice.sync-complete', {
@@ -1428,7 +1431,10 @@ export class BackendIntegrationService {
     }
 
     return deduplicateOptions(
-      values.map((value) => value.trim()).filter(Boolean)
+      values.flatMap((value) => {
+        const trimmed = value.trim();
+        return trimmed ? [trimmed] : [];
+      })
     );
   }
 
@@ -1698,23 +1704,20 @@ export class BackendIntegrationService {
               size: trade.volume,
             },
           ]
-    )
-      .map((entry) => {
-        const parsedTime = safeParseDateValue(entry.time);
-        if (!parsedTime) {
-          return null;
-        }
+    ).flatMap((entry) => {
+      const parsedTime = safeParseDateValue(entry.time);
+      if (!parsedTime) {
+        return [];
+      }
 
-        return {
+      return [
+        {
           time: parsedTime,
           price: entry.price,
           size: entry.size,
-        };
-      })
-      .filter(
-        (entry): entry is { time: Date; price: number; size: number } =>
-          entry !== null
-      );
+        },
+      ];
+    });
 
     const exits =
       tradeStatus === 'CLOSED' &&
@@ -1729,23 +1732,20 @@ export class BackendIntegrationService {
                   size: trade.volume,
                 },
               ]
-          )
-            .map((exit) => {
-              const parsedTime = safeParseDateValue(exit.time);
-              if (!parsedTime) {
-                return null;
-              }
+          ).flatMap((exit) => {
+            const parsedTime = safeParseDateValue(exit.time);
+            if (!parsedTime) {
+              return [];
+            }
 
-              return {
+            return [
+              {
                 time: parsedTime,
                 price: exit.price,
                 size: exit.size,
-              };
-            })
-            .filter(
-              (exit): exit is { time: Date; price: number; size: number } =>
-                exit !== null
-            )
+              },
+            ];
+          })
         : [];
 
     const hasBackendStopLoss = trade.stop_loss !== undefined;
@@ -2700,9 +2700,10 @@ export class BackendIntegrationService {
               : frontmatter?.account !== undefined
                 ? [frontmatter.account]
                 : []
-          )
-            .map((value) => this.normalizeRelinkAccountScalar(value))
-            .filter((value): value is string => Boolean(value));
+          ).flatMap((value) => {
+            const normalizedValue = this.normalizeRelinkAccountScalar(value);
+            return normalizedValue ? [normalizedValue] : [];
+          });
 
           const frontmatterAccountValues = accountValues;
 
@@ -2741,10 +2742,12 @@ export class BackendIntegrationService {
             matchesRelinkTarget(value)
           );
           const uniqueAccountLookupKeys = new Set(
-            accountArray
-              .map((value) => this.normalizeRelinkAccountScalar(value))
-              .filter((value): value is string => Boolean(value))
-              .map((value) => normalizeAccountLookupKey(value))
+            accountArray.flatMap((value) => {
+              const normalizedValue = this.normalizeRelinkAccountScalar(value);
+              return normalizedValue
+                ? [normalizeAccountLookupKey(normalizedValue)]
+                : [];
+            })
           );
           const hasUnambiguousAliasOnlyMatch =
             !hasAuthoritativeTargetIdentity &&

@@ -19,15 +19,17 @@ import { ExcalidrawMediaEmbed } from './ExcalidrawMediaEmbed';
 export const ImageCarousel: React.FC<ImageCarouselProps> = ({
   images,
   altPrefix = t('image.viewer.alt-default'),
-  showThumbnails = true,
-  showCounter = true,
-  enableDelete = false,
-  onDeleteImage,
-  enableFullscreen = true,
+  displayOptions,
+  deleteOptions,
   className = '',
   useResolveMediaPath = false,
   sourcePath = '',
 }) => {
+  const showThumbnails = displayOptions?.showThumbnails ?? true;
+  const showCounter = displayOptions?.showCounter ?? true;
+  const enableFullscreen = displayOptions?.enableFullscreen ?? true;
+  const enableDelete = deleteOptions?.enabled ?? false;
+  const onDeleteImage = deleteOptions?.onDeleteImage;
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [isFullscreen, setIsFullscreen] = useState(false);
 

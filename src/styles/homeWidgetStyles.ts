@@ -618,6 +618,11 @@ export const HOME_WIDGET_STYLES = `
   .journalit-home-goals--modal {
     padding: 12px;
     gap: 10px;
+    min-height: 0;
+    overflow-x: hidden;
+    overflow-y: auto;
+    box-sizing: border-box;
+    scrollbar-gutter: stable;
   }
 
   .journalit-home-goals--loading {
@@ -738,6 +743,11 @@ export const HOME_WIDGET_STYLES = `
     gap: 6px;
     max-height: 120px;
     overflow: auto;
+  }
+
+  .journalit-home-goals--modal .journalit-home-goals__account-targets {
+    max-height: none;
+    overflow: visible;
   }
 
   .journalit-home-goals__account-scope {
@@ -1314,10 +1324,36 @@ export const HOME_WIDGET_STYLES = `
     min-height: 0;
   }
 
+  .journalit-home-best-hours__hero-label {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-align: center;
+  }
+
+  .journalit-home-best-hours__hero-window {
+    font-size: 22px;
+    font-weight: 650;
+    line-height: 1.05;
+    color: var(--text-normal);
+    text-align: center;
+  }
+
   .journalit-home-best-hours__hero-value {
-    font-size: 28px;
+    font-size: 18px;
     font-weight: 600;
     line-height: 1.1;
+    display: flex;
+    align-items: baseline;
+    justify-content: center;
+    gap: 6px;
+  }
+
+  .journalit-home-best-hours__hero-badge {
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: lowercase;
   }
 
   .journalit-home-best-hours__hero-value--positive {
@@ -1365,6 +1401,11 @@ export const HOME_WIDGET_STYLES = `
     background-color: var(--text-faint);
   }
 
+  .journalit-home-best-hours__timeline-segment--empty {
+    background-color: transparent;
+    border-left: 1px solid var(--background-modifier-border);
+  }
+
   .journalit-home-best-hours__tooltip {
     position: absolute;
     bottom: 100%;
@@ -1385,13 +1426,25 @@ export const HOME_WIDGET_STYLES = `
     font-size: 12px;
     font-weight: 600;
     color: var(--text-normal);
+    margin-bottom: 3px;
+  }
+
+  .journalit-home-best-hours__tooltip-value-row,
+  .journalit-home-best-hours__tooltip-stats-row {
+    display: flex;
+    align-items: baseline;
+    font-size: 11px;
+    line-height: 1.25;
+  }
+
+  .journalit-home-best-hours__tooltip-value-row {
+    gap: 8px;
     margin-bottom: 4px;
   }
 
-  .journalit-home-best-hours__tooltip-row {
-    display: flex;
+  .journalit-home-best-hours__tooltip-stats-row {
     gap: 12px;
-    font-size: 11px;
+    white-space: nowrap;
   }
 
   .journalit-home-best-hours__tooltip-pnl {
@@ -2053,24 +2106,31 @@ export const HOME_WIDGET_STYLES = `
   }
 
   .journalit-home-setups__header {
+    width: 100%;
     margin-bottom: 0;
     display: flex;
     align-items: center;
-    justify-content: flex-start;
-    gap: 0;
-  }
-
-  .journalit-home-setups__header:has(.journalit-home-setups__actions) {
     justify-content: space-between;
+    gap: 8px;
   }
 
+  .journalit-home-setups__header > span:first-child,
   .journalit-home-setups__header > .journalit-home-setups__title {
     min-width: 0;
+    flex: 1;
   }
 
   .journalit-home-setups--active,
   .journalit-home-setups--empty {
     cursor: pointer;
+  }
+
+  .journalit-home-setups--modal {
+    min-height: 0;
+    overflow-x: hidden;
+    overflow-y: auto;
+    box-sizing: border-box;
+    scrollbar-gutter: stable;
   }
 
   .journalit-home-setups__actions {
@@ -2084,9 +2144,18 @@ export const HOME_WIDGET_STYLES = `
     border-radius: 4px;
     display: flex;
     align-items: center;
+  }
+
+  .journalit-home-setups__save-button:not(:disabled) {
     background-color: var(--color-green);
     color: var(--text-on-accent, #ffffff);
     cursor: pointer;
+  }
+
+  .journalit-home-setups__save-button:disabled {
+    background-color: var(--background-modifier-border);
+    color: var(--text-muted);
+    cursor: not-allowed;
   }
 
   .journalit-home-setups__cancel-button {

@@ -71,6 +71,7 @@ export class TradeCommandService {
         revision,
         schemaVersion,
         committedAt: Date.now(),
+        ...this.getTradeImportProjectionIdentity(committedData),
       }
     );
 
@@ -125,6 +126,7 @@ export class TradeCommandService {
         revision,
         schemaVersion,
         committedAt: Date.now(),
+        ...this.getTradeImportProjectionIdentity(committedData),
       },
       {
         suppressLegacyTradeChanged:
@@ -139,6 +141,19 @@ export class TradeCommandService {
     return (
       getTradeIdValue(data.tradeId) ?? buildTradeIdentityFields(data).tradeId
     );
+  }
+
+  private getTradeImportProjectionIdentity(
+    data: TradeData
+  ): Pick<TradeCommitReceipt, 'tradeImportId' | 'tradeImportVersion'> {
+    return typeof data.tradeImportId === 'string' &&
+      typeof data.tradeImportVersion === 'number' &&
+      Number.isFinite(data.tradeImportVersion)
+      ? {
+          tradeImportId: data.tradeImportId,
+          tradeImportVersion: data.tradeImportVersion,
+        }
+      : {};
   }
 
   private recordAndPublish(

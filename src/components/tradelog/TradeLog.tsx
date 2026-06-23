@@ -185,9 +185,12 @@ const sanitizeCustomFieldFilters = (
   customFields: CustomFieldDefinition[]
 ): TradeLogFilters['customFieldFilters'] => {
   const filterableFieldIds = new Set(
-    customFields
-      .filter((field) => isDiscreteCustomFieldFilterable(field))
-      .map((field) => field.id)
+    customFields.reduce<string[]>((acc, field) => {
+      if (isDiscreteCustomFieldFilterable(field)) {
+        acc.push(field.id);
+      }
+      return acc;
+    }, [])
   );
 
   return Object.fromEntries(
@@ -1862,49 +1865,48 @@ const useTradeLogController = ({ plugin, leaf }: TradeLogProps) => {
     setRequestedScrollOffset(null);
   }, []);
 
-  const renderTreeContent = () =>
-    !isDataLoaded ? (
-      <TradeLogSkeleton
-        visibleColumns={visibleColumns}
-        gridTemplate={gridTemplate}
-        containerHeight={containerHeight}
-      />
-    ) : (
-      <div className="trade-log-tree-wrapper">
-        {!isTreeReady && (
-          <TradeLogSkeleton
-            visibleColumns={visibleColumns}
-            gridTemplate={gridTemplate}
-            containerHeight={containerHeight}
-          />
-        )}
-        <div
-          className={`trade-log-tree-container ${isTreeReady ? 'trade-log-tree-container--visible' : 'trade-log-tree-container--hidden'}`}
-        >
-          <TradeLogTree
-            nodes={sortedNodes}
-            expandedNodes={expandedNodes}
-            onToggleExpand={(path) => void handleToggleExpand(path)}
-            onNodeClick={(node) => void handleNodeClick(node)}
-            onTreeReady={handleTreeReady}
-            onScrollbarWidthChange={setHeaderScrollbarWidth}
-            viewLevel={filters.viewLevel}
-            visibleColumns={visibleColumns}
-            gridTemplate={gridTemplate}
-            selectedTrades={selectedTrades}
-            onToggleTradeSelection={handleToggleTradeSelection}
-            isMultiSelectMode={isMultiSelectMode}
-            isExpandedMode={isExpandedMode}
-            requestedScrollOffset={requestedScrollOffset}
-            onScrollOffsetChange={(offset) => {
-              scrollOffsetRef.current = offset;
-            }}
-          />
-        </div>
+  const treeContent = !isDataLoaded ? (
+    <TradeLogSkeleton
+      visibleColumns={visibleColumns}
+      gridTemplate={gridTemplate}
+      containerHeight={containerHeight}
+    />
+  ) : (
+    <div className="trade-log-tree-wrapper">
+      {!isTreeReady && (
+        <TradeLogSkeleton
+          visibleColumns={visibleColumns}
+          gridTemplate={gridTemplate}
+          containerHeight={containerHeight}
+        />
+      )}
+      <div
+        className={`trade-log-tree-container ${isTreeReady ? 'trade-log-tree-container--visible' : 'trade-log-tree-container--hidden'}`}
+      >
+        <TradeLogTree
+          nodes={sortedNodes}
+          expandedNodes={expandedNodes}
+          onToggleExpand={(path) => void handleToggleExpand(path)}
+          onNodeClick={(node) => void handleNodeClick(node)}
+          onTreeReady={handleTreeReady}
+          onScrollbarWidthChange={setHeaderScrollbarWidth}
+          viewLevel={filters.viewLevel}
+          visibleColumns={visibleColumns}
+          gridTemplate={gridTemplate}
+          selectedTrades={selectedTrades}
+          onToggleTradeSelection={handleToggleTradeSelection}
+          isMultiSelectMode={isMultiSelectMode}
+          isExpandedMode={isExpandedMode}
+          requestedScrollOffset={requestedScrollOffset}
+          onScrollOffsetChange={(offset) => {
+            scrollOffsetRef.current = offset;
+          }}
+        />
       </div>
-    );
+    </div>
+  );
 
-  const renderExpandedModeSizerRow = () => (
+  const expandedModeSizerRow = (
     <ExpandedModeSizerRow
       isExpandedMode={Boolean(isExpandedMode)}
       isDataLoaded={isDataLoaded}
@@ -1944,8 +1946,8 @@ const useTradeLogController = ({ plugin, leaf }: TradeLogProps) => {
     visibleColumns,
     registerTableHeadersTarget,
     handleSort,
-    renderExpandedModeSizerRow,
-    renderTreeContent,
+    expandedModeSizerRow,
+    treeContent,
   };
 };
 
@@ -1982,8 +1984,8 @@ const renderTradeLog = (
     visibleColumns,
     registerTableHeadersTarget,
     handleSort,
-    renderExpandedModeSizerRow,
-    renderTreeContent,
+    expandedModeSizerRow,
+    treeContent,
   } = controller;
 
   
@@ -2073,9 +2075,9 @@ const renderTradeLog = (
                 />
               )}
 
-              {renderExpandedModeSizerRow()}
+              {expandedModeSizerRow}
 
-              {renderTreeContent()}
+              {treeContent}
             </div>
           </div>
         ) : (
@@ -2086,8 +2088,8 @@ const renderTradeLog = (
                 '--journalit-tradelog-min-width': `${tradesMinWidth}px`,
               })}
             >
-              {renderExpandedModeSizerRow()}
-              {renderTreeContent()}
+              {expandedModeSizerRow}
+              {treeContent}
             </div>
           </div>
         )}

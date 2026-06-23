@@ -160,15 +160,18 @@ function normalizeEntries(input: unknown): NormalizedExecutionEntry[] {
     return [];
   }
 
-  return input.filter(isRecord).map((entry) => {
+  return input.flatMap((entry) => {
+    if (!isRecord(entry)) return [];
     const notional = parseFiniteNumber(entry.notional);
 
-    return {
-      time: parseDateValue(entry.time),
-      price: parseFiniteNumber(entry.price),
-      size: parseFiniteNumber(entry.size ?? entry.quantity),
-      ...(notional !== null ? { notional } : {}),
-    };
+    return [
+      {
+        time: parseDateValue(entry.time),
+        price: parseFiniteNumber(entry.price),
+        size: parseFiniteNumber(entry.size ?? entry.quantity),
+        ...(notional !== null ? { notional } : {}),
+      },
+    ];
   });
 }
 
@@ -181,7 +184,8 @@ function normalizeExits(
     return [];
   }
 
-  return input.filter(isRecord).map((exit) => {
+  return input.flatMap((exit) => {
+    if (!isRecord(exit)) return [];
     const price = parseFiniteNumber(exit.price);
     const hasExplicitPrice = normalizeExitLegExplicitness(
       exit,
@@ -191,13 +195,15 @@ function normalizeExits(
     );
     const notional = parseFiniteNumber(exit.notional);
 
-    return {
-      time: parseDateValue(exit.time),
-      price,
-      size: parseFiniteNumber(exit.size ?? exit.quantity),
-      ...(notional !== null ? { notional } : {}),
-      ...(hasExplicitPrice !== undefined ? { hasExplicitPrice } : {}),
-    };
+    return [
+      {
+        time: parseDateValue(exit.time),
+        price,
+        size: parseFiniteNumber(exit.size ?? exit.quantity),
+        ...(notional !== null ? { notional } : {}),
+        ...(hasExplicitPrice !== undefined ? { hasExplicitPrice } : {}),
+      },
+    ];
   });
 }
 

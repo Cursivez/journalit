@@ -352,7 +352,7 @@ export interface TradeFormProps {
   
   onCancel?: () => void;
   
-  onDirtyStateChange?: (isDirtyFn: () => boolean) => void;
+  dirtyStateRef?: { current: (() => boolean) | null };
 }
 
 

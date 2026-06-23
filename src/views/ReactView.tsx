@@ -70,8 +70,11 @@ export abstract class ReactView extends ItemView {
       this.config.containerClass
         ?.trim()
         .split(/\s+/)
-        .filter(Boolean)
-        .forEach((className) => this.containerEl.addClass(className));
+        .forEach((className) => {
+          if (className) {
+            this.containerEl.addClass(className);
+          }
+        });
 
       
       

@@ -35,8 +35,14 @@ interface HomeAccountsDataProviderProps {
 export const HomeAccountsDataProvider: React.FC<
   HomeAccountsDataProviderProps
 > = ({ plugin, enabled, selectedTradeTypes, children }) => {
+  const supportsAccountMetrics = selectedTradeTypes.includes('regular');
+  const shouldLoadAccounts = enabled && supportsAccountMetrics;
   const [accounts, setAccounts] = useState<AccountData[]>([]);
-  const [isLoading, setIsLoading] = useState(enabled);
+  const [loadState, setLoadState] = useState(() => ({
+    isFetching: shouldLoadAccounts,
+    hasSettled: !shouldLoadAccounts,
+    shouldLoadAccounts,
+  }));
   const [error, setError] = useState<string | null>(null);
   const isMountedRef = useRef(true);
 
@@ -48,12 +54,14 @@ export const HomeAccountsDataProvider: React.FC<
   }, []);
 
   const refresh = useCallback(async () => {
-    const supportsAccountMetrics = selectedTradeTypes.includes('regular');
-
-    if (!enabled || !supportsAccountMetrics) {
+    if (!shouldLoadAccounts) {
       if (isMountedRef.current) {
         setAccounts([]);
-        setIsLoading(false);
+        setLoadState({
+          isFetching: false,
+          hasSettled: true,
+          shouldLoadAccounts,
+        });
         setError(null);
       }
       return;
@@ -62,7 +70,11 @@ export const HomeAccountsDataProvider: React.FC<
     if (!isMountedRef.current) return;
 
     try {
-      setIsLoading(true);
+      setLoadState({
+        isFetching: true,
+        hasSettled: false,
+        shouldLoadAccounts,
+      });
       setError(null);
 
       let retries = 0;
@@ -84,13 +96,21 @@ export const HomeAccountsDataProvider: React.FC<
       if (!isMountedRef.current) return;
 
       setAccounts(allAccounts);
-      setIsLoading(false);
+      setLoadState({
+        isFetching: false,
+        hasSettled: true,
+        shouldLoadAccounts,
+      });
     } catch (err) {
       if (!isMountedRef.current) return;
       setError(err instanceof Error ? err.message : 'Failed to load accounts');
-      setIsLoading(false);
+      setLoadState({
+        isFetching: false,
+        hasSettled: true,
+        shouldLoadAccounts,
+      });
     }
-  }, [enabled, plugin, selectedTradeTypes]);
+  }, [plugin, shouldLoadAccounts]);
 
   useEffect(() => {
     void refresh();
@@ -98,6 +118,12 @@ export const HomeAccountsDataProvider: React.FC<
 
   useEventBus('account:changed', refresh, enabled);
   useEventBus('trade:changed', refresh, enabled);
+
+  const isLoading =
+    shouldLoadAccounts &&
+    (loadState.isFetching ||
+      !loadState.hasSettled ||
+      loadState.shouldLoadAccounts !== shouldLoadAccounts);
 
   const value = useMemo<HomeAccountsDataContextValue>(
     () => ({

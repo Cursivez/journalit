@@ -386,7 +386,10 @@ export class TradeFileGenerator {
       }
 
       return deduplicateOptions(
-        values.map((value) => value.trim()).filter(Boolean)
+        values.flatMap((value) => {
+          const trimmed = value.trim();
+          return trimmed ? [trimmed] : [];
+        })
       );
     };
 

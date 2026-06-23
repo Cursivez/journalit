@@ -1,6 +1,6 @@
 
 
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { Notice } from 'obsidian';
 import JournalitPlugin from '../../../main';
 import { Select } from '../../../components/core/Select';
@@ -164,11 +164,9 @@ function useReviewsTabModel(props: ReviewsTabProps) {
   const [settingsVersion, setSettingsVersion] = useState(0);
   void settingsVersion; 
 
-  
-  useEffect(() => {
-    const handleDefaultChange = (payload: DefaultTemplateChangedPayload) => {
-      const value = payload.value ?? '';
-      switch (payload.type) {
+  const updateDefaultTemplateState = useCallback(
+    (type: DefaultTemplateChangedPayload['type'], value: string) => {
+      switch (type) {
         case 'trade':
           setDefaultTradeTemplate(value);
           break;
@@ -188,10 +186,19 @@ function useReviewsTabModel(props: ReviewsTabProps) {
           setDefaultYearlyTemplate(value);
           break;
       }
+    },
+    []
+  );
+
+  
+  useEffect(() => {
+    const handleDefaultChange = (payload: DefaultTemplateChangedPayload) => {
+      const value = payload.value ?? '';
+      updateDefaultTemplateState(payload.type, value);
     };
 
     return eventBus.subscribe('default-template:changed', handleDefaultChange);
-  }, []);
+  }, [updateDefaultTemplateState]);
 
   
   const tradeOptions = useMemo(

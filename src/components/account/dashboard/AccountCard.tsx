@@ -318,26 +318,22 @@ const AccountCardComponent: React.FC<AccountCardProps> = ({
     const accountMetadata = plugin?.settings.account?.accountMetadata ?? {};
     const accountLookupKey = normalizeAccountLookupKey(account.name);
 
-    return Object.values(accountMetadata)
-      .map((metadata) => {
-        const activeCopyPeriod = getActiveCopyTradingPeriod(metadata);
-        if (
-          !activeCopyPeriod ||
-          normalizeAccountLookupKey(activeCopyPeriod.baseAccount) !==
-            accountLookupKey
-        ) {
-          return null;
-        }
-
-        return {
+    return Object.values(accountMetadata).reduce<
+      Array<{ account: string; multiplier: number }>
+    >((acc, metadata) => {
+      const activeCopyPeriod = getActiveCopyTradingPeriod(metadata);
+      if (
+        activeCopyPeriod &&
+        normalizeAccountLookupKey(activeCopyPeriod.baseAccount) ===
+          accountLookupKey
+      ) {
+        acc.push({
           account: metadata.name,
           multiplier: activeCopyPeriod.multiplier,
-        };
-      })
-      .filter(
-        (entry): entry is { account: string; multiplier: number } =>
-          entry !== null
-      );
+        });
+      }
+      return acc;
+    }, []);
   }, [account.name, plugin?.settings.account?.accountMetadata]);
 
   const growthClass = isPnlMasked

@@ -42,7 +42,9 @@ import {
 } from '../../components/forms/trade/types';
 import { OptionType } from '../options/CustomOptionsService';
 import { parseTradeDividendTransactions } from '../../utils/tradeUtils';
+import { getPluginInstance } from '../../utils/pluginContext';
 import { eventBus, OptionsChangedPayload, Unsubscribe } from '../events';
+import { acknowledgeLocalDeletedTradeImportProjection } from '../tradeImport/TradeImportProjectionAckQueue';
 import { ObsidianTradeNoteStore } from './core/ObsidianTradeNoteStore';
 import { TradeReadModel } from './core/TradeReadModel';
 import { TradeCommandService } from './core/TradeCommandService';
@@ -702,6 +704,11 @@ export interface TradeData {
   tradeId?: TradeId;
   schemaVersion?: number;
   tradeRevision?: number;
+  tradeImportId?: string;
+  tradeImportVersion?: number;
+  tradeImportAccountId?: string;
+  tradeImportAccountBroker?: string;
+  tradeImportAccountDisplayName?: string;
 
   
   
@@ -1242,10 +1249,10 @@ export class TradeService extends CustomDataService {
                 (item): item is string => typeof item === 'string'
               );
             } else if (typeof value === 'string') {
-              return value
-                .split(',')
-                .map((s: string) => s.trim())
-                .filter(Boolean);
+              return value.split(',').flatMap((s: string) => {
+                const trimmed = s.trim();
+                return trimmed ? [trimmed] : [];
+              });
             }
             return value;
           },
@@ -1348,23 +1355,22 @@ export class TradeService extends CustomDataService {
       return [];
     }
 
-    const normalizedValues = values
-      .map((value) => {
-        if (typeof value === 'string') {
-          return value.trim();
-        }
+    const normalizedValues = values.flatMap((value) => {
+      if (typeof value === 'string') {
+        const normalizedValue = value.trim();
+        return normalizedValue ? [normalizedValue] : [];
+      }
 
-        if (
-          typeof value === 'number' ||
-          typeof value === 'boolean' ||
-          typeof value === 'bigint'
-        ) {
-          return safeString(value);
-        }
+      if (
+        typeof value === 'number' ||
+        typeof value === 'boolean' ||
+        typeof value === 'bigint'
+      ) {
+        return [safeString(value)];
+      }
 
-        return '';
-      })
-      .filter((value) => value.length > 0);
+      return [];
+    });
 
     return Array.from(new Set(normalizedValues));
   }
@@ -1507,9 +1513,9 @@ export class TradeService extends CustomDataService {
       useIndexes: this.canUseTradeIndexes(),
     });
     
-    const setups = trades
-      .flatMap((trade) => this.getTradeArrayValue(trade, 'setup'))
-      .filter(Boolean);
+    const setups = trades.flatMap((trade) =>
+      this.getTradeArrayValue(trade, 'setup').filter(Boolean)
+    );
 
     
     return this.normalizeUniqueOptionValues(setups);
@@ -1533,9 +1539,9 @@ export class TradeService extends CustomDataService {
       useIndexes: this.canUseTradeIndexes(),
     });
     
-    const mistakes = trades
-      .flatMap((trade) => this.getTradeArrayValue(trade, 'mistake'))
-      .filter(Boolean);
+    const mistakes = trades.flatMap((trade) =>
+      this.getTradeArrayValue(trade, 'mistake').filter(Boolean)
+    );
 
     
     return this.normalizeUniqueOptionValues(mistakes);
@@ -1608,9 +1614,9 @@ export class TradeService extends CustomDataService {
       useIndexes: this.canUseTradeIndexes(),
     });
     
-    const tags = trades
-      .flatMap((trade) => this.getTradeArrayValue(trade, 'tags'))
-      .filter(Boolean);
+    const tags = trades.flatMap((trade) =>
+      this.getTradeArrayValue(trade, 'tags').filter(Boolean)
+    );
 
     
     return this.normalizeUniqueOptionValues(tags);
@@ -1629,7 +1635,7 @@ export class TradeService extends CustomDataService {
     for (const trade of trades) {
       if (Array.isArray(trade.tags)) {
         allCustomTags.push(
-          ...trade.tags.filter((tag): tag is string => typeof tag === 'string')
+          ...trade.tags.flatMap((tag) => (typeof tag === 'string' ? [tag] : []))
         );
       }
     }
@@ -1637,9 +1643,10 @@ export class TradeService extends CustomDataService {
     
     return Array.from(
       new Set(
-        allCustomTags
-          .map((tag) => String(tag).trim())
-          .filter((tag) => tag.length > 0)
+        allCustomTags.flatMap((tag) => {
+          const normalizedTag = String(tag).trim();
+          return normalizedTag ? [normalizedTag] : [];
+        })
       )
     );
   }
@@ -2008,8 +2015,10 @@ export class TradeService extends CustomDataService {
     } else {
       return safeString(trade[field])
         .split(',')
-        .map((s) => s.trim())
-        .filter(Boolean);
+        .flatMap((s) => {
+          const trimmed = s.trim();
+          return trimmed ? [trimmed] : [];
+        });
     }
   }
 
@@ -3364,6 +3373,9 @@ export class TradeService extends CustomDataService {
         'backendTradeId',
         'tradeImportId',
         'tradeImportVersion',
+        'tradeImportAccountId',
+        'tradeImportAccountBroker',
+        'tradeImportAccountDisplayName',
         'csvImportId',
         'legacyCsvImportIds',
         'sourceRows',
@@ -3459,24 +3471,24 @@ export class TradeService extends CustomDataService {
       const takeProfits: TakeProfitTarget[] = Array.isArray(
         frontmatter.takeProfits
       )
-        ? frontmatter.takeProfits
-            .map((target): TakeProfitTarget | null => {
-              if (!isRecord(target)) {
-                return null;
-              }
-              const price = this.parseFiniteNumber(target.price);
-              const closePercent = this.parseFiniteNumber(target.closePercent);
+        ? frontmatter.takeProfits.flatMap((target) => {
+            if (!isRecord(target)) {
+              return [];
+            }
+            const price = this.parseFiniteNumber(target.price);
+            const closePercent = this.parseFiniteNumber(target.closePercent);
 
-              if (price === undefined && closePercent === undefined) {
-                return null;
-              }
+            if (price === undefined && closePercent === undefined) {
+              return [];
+            }
 
-              return {
+            return [
+              {
                 ...(price !== undefined && { price }),
                 ...(closePercent !== undefined && { closePercent }),
-              };
-            })
-            .filter((target): target is TakeProfitTarget => target !== null)
+              },
+            ];
+          })
         : [];
 
       
@@ -3496,11 +3508,24 @@ export class TradeService extends CustomDataService {
         tradeImportVersion: this.parseFiniteNumber(
           frontmatter.tradeImportVersion
         ),
+        tradeImportAccountId:
+          typeof frontmatter.tradeImportAccountId === 'string'
+            ? frontmatter.tradeImportAccountId
+            : undefined,
+        tradeImportAccountBroker:
+          typeof frontmatter.tradeImportAccountBroker === 'string'
+            ? frontmatter.tradeImportAccountBroker
+            : undefined,
+        tradeImportAccountDisplayName:
+          typeof frontmatter.tradeImportAccountDisplayName === 'string'
+            ? frontmatter.tradeImportAccountDisplayName
+            : undefined,
         sourceRows:
           frontmatter.sourceRows && Array.isArray(frontmatter.sourceRows)
-            ? frontmatter.sourceRows
-                .map((value: unknown) => Number(value))
-                .filter((value: number) => Number.isFinite(value))
+            ? frontmatter.sourceRows.flatMap((value: unknown) => {
+                const sourceRow = Number(value);
+                return Number.isFinite(sourceRow) ? [sourceRow] : [];
+              })
             : undefined,
         orderId:
           typeof frontmatter.orderId === 'string'
@@ -3987,9 +4012,9 @@ export class TradeService extends CustomDataService {
     );
 
     
-    const existingFiles = existenceChecks
-      .filter(({ exists }) => exists)
-      .map(({ file }) => file);
+    const existingFiles = existenceChecks.flatMap(({ file, exists }) =>
+      exists ? [file] : []
+    );
 
     
     const tradeFiles = existingFiles.filter((file) => {
@@ -4488,6 +4513,13 @@ export class TradeService extends CustomDataService {
       const deletedTradeRevision = this.getTradeRevisionValue(
         deletedFrontmatter?.tradeRevision
       );
+      const tradeImportId =
+        typeof deletedFrontmatter?.tradeImportId === 'string'
+          ? deletedFrontmatter.tradeImportId
+          : deletedEntry?.tradeImportId;
+      const tradeImportVersion =
+        this.parseFiniteNumber(deletedFrontmatter?.tradeImportVersion) ??
+        deletedEntry?.tradeImportVersion;
 
       const committedDelete = deletedEntry
         ? {
@@ -4531,6 +4563,22 @@ export class TradeService extends CustomDataService {
             suppressLegacyTradeChanged: true,
           }
         );
+      }
+
+      if (tradeImportId && tradeImportVersion !== undefined) {
+        try {
+          const plugin = getPluginInstance();
+          if (plugin) {
+            void acknowledgeLocalDeletedTradeImportProjection(
+              plugin,
+              tradeImportId,
+              tradeImportVersion,
+              filePath
+            ).catch(() => undefined);
+          }
+        } catch {
+          // intentional
+        }
       }
 
       

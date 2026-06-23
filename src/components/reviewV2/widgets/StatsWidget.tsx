@@ -1,6 +1,12 @@
 
 
-import React, { useState, useMemo, useCallback, useEffect } from 'react';
+import React, {
+  useState,
+  useMemo,
+  useCallback,
+  useEffect,
+  useReducer,
+} from 'react';
 import { t } from '../../../lang/helpers';
 import { calculateMetrics, type Trade } from '../../dashboard/utils/dataUtils';
 import { CurrencyCode } from '../../../utils/currencyConfig';
@@ -149,7 +155,9 @@ export const StatsWidget: React.FC<StatsWidgetProps> = React.memo(
       (metricTrades: ReviewStatsTrade[]) => {
         const applyAccountCountMultiplier = false;
 
-        return metricTrades.filter(isPnlContributingTrade).map((t) => {
+        return metricTrades.flatMap((t) => {
+          if (!isPnlContributingTrade(t)) return [];
+
           const accountCount = getAccountCount(t);
           const displayPnL = getDisplayPnL(
             getEffectivePnL(t),
@@ -170,15 +178,17 @@ export const StatsWidget: React.FC<StatsWidgetProps> = React.memo(
                 )
               : t.originalPnlBeforeConversion;
 
-          return {
-            ...t,
-            pnl: displayPnL,
-            originalPnlBeforeConversion: originalPnlForDisplay,
-            breakEvenAccountCurrentBalance:
-              typeof breakEvenBalanceForDisplay === 'number'
-                ? breakEvenBalanceForDisplay
-                : undefined,
-          };
+          return [
+            {
+              ...t,
+              pnl: displayPnL,
+              originalPnlBeforeConversion: originalPnlForDisplay,
+              breakEvenAccountCurrentBalance:
+                typeof breakEvenBalanceForDisplay === 'number'
+                  ? breakEvenBalanceForDisplay
+                  : undefined,
+            },
+          ];
         });
       },
       []
@@ -258,21 +268,20 @@ export const StatsWidget: React.FC<StatsWidgetProps> = React.memo(
       );
     }, [currentDisplayTrades, plugin]);
 
-    const [previousTrades, setPreviousTrades] = useState<ReviewStatsTrade[]>(
+    const [previousTrades, dispatchPreviousTrades] = useReducer(
+      (_state: ReviewStatsTrade[], nextTrades: ReviewStatsTrade[]) =>
+        nextTrades,
       []
     );
 
     useEffect(() => {
       if (preview || !cachedData || !plugin.tradeService) {
-        setPreviousTrades([]);
+        dispatchPreviousTrades([]);
         return;
       }
 
       let isMounted = true;
       (async () => {
-        setPreviousTrades([]);
-        if (!isMounted) return;
-
         const allTrades = await plugin.tradeService.getTradeData({
           fresh: false,
         });
@@ -283,14 +292,14 @@ export const StatsWidget: React.FC<StatsWidgetProps> = React.memo(
         );
 
         if (isMounted) {
-          setPreviousTrades(asReviewStatsTrades(previousPeriodTrades));
+          dispatchPreviousTrades(asReviewStatsTrades(previousPeriodTrades));
         }
       })().catch((error) => {
         console.error(
           '[StatsWidget] Failed to load previous period trades:',
           error
         );
-        if (isMounted) setPreviousTrades([]);
+        if (isMounted) dispatchPreviousTrades([]);
       });
 
       return () => {
@@ -632,40 +641,41 @@ async function getPreviousPeriodTrades(
   );
   if (!previousRange) return [];
 
-  const filteredByDate = allTrades
-    .map((trade: PartialTradeFrontmatter) => ({
+  const filteredByDate = allTrades.flatMap((trade: PartialTradeFrontmatter) => {
+    const rangedTrade = {
       ...trade,
       _analyticsRangeStart: previousRange.start,
       _analyticsRangeEnd: previousRange.end,
-    }))
-    .filter((trade: PartialTradeFrontmatter) => {
-      const reviewTrade = {
-        ...trade,
-        _originalPnlWasNull: trade.pnl === undefined || trade.pnl === null,
-        _analyticsRangeStart: previousRange.start,
-        _analyticsRangeEnd: previousRange.end,
-      };
+    };
+    const reviewTrade = {
+      ...rangedTrade,
+      _originalPnlWasNull: trade.pnl === undefined || trade.pnl === null,
+      _analyticsRangeStart: previousRange.start,
+      _analyticsRangeEnd: previousRange.end,
+    };
 
-      if (getReviewTradeRealizedPnlEvents(reviewTrade, plugin).length > 0) {
-        return true;
-      }
+    if (getReviewTradeRealizedPnlEvents(reviewTrade, plugin).length > 0) {
+      return [rangedTrade];
+    }
 
-      const analyticsTradingDay = getReviewTradeTradingDay(reviewTrade, plugin);
+    const analyticsTradingDay = getReviewTradeTradingDay(reviewTrade, plugin);
 
-      if (analyticsTradingDay === null) return false;
+    if (analyticsTradingDay === null) return [];
 
-      if (cachedData.noteType === 'drc') {
-        return isSameLocalDate(
-          analyticsTradingDay,
-          startOfLocalDay(previousRange.start)
-        );
-      }
+    if (cachedData.noteType === 'drc') {
+      return isSameLocalDate(
+        analyticsTradingDay,
+        startOfLocalDay(previousRange.start)
+      )
+        ? [rangedTrade]
+        : [];
+    }
 
-      return (
-        analyticsTradingDay >= previousRange.start &&
-        analyticsTradingDay <= previousRange.end
-      );
-    });
+    return analyticsTradingDay >= previousRange.start &&
+      analyticsTradingDay <= previousRange.end
+      ? [rangedTrade]
+      : [];
+  });
 
   if (!plugin.reviewDataCache) return [];
 

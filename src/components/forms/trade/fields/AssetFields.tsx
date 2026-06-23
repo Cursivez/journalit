@@ -142,10 +142,7 @@ function TradingCostsSection({
             <NumberInput
               label={t('form.field.commission')}
               value={data.commission}
-              onChange={(value) => {
-                onChange('commission', value);
-                onChange('hasExplicitCommission', true);
-              }}
+              onChange={(value) => onChange('commission', value)}
               error={errors.commission || errors.commissionType}
               precision={2}
               allowDecimal={true}

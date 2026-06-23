@@ -64,9 +64,13 @@ export function getCustomFieldDisplayValues(
   if (field.type === CustomFieldType.MULTISELECT) {
     const multiselectValues = Array.isArray(rawValue) ? rawValue : [rawValue];
 
-    return multiselectValues
-      .map((value) => getCustomFieldOptionLabel(field, value))
-      .filter((value): value is string => Boolean(value));
+    return multiselectValues.reduce<string[]>((acc, value) => {
+      const label = getCustomFieldOptionLabel(field, value);
+      if (typeof label === 'string' && label) {
+        acc.push(label);
+      }
+      return acc;
+    }, []);
   }
 
   const singleValue = getCustomFieldOptionLabel(field, rawValue);

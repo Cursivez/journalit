@@ -1,6 +1,6 @@
 import type JournalitPlugin from '../main';
 
-export type AccountCapitalBasisSource = 'currentCapital' | 'initialBalance';
+type AccountCapitalBasisSource = 'currentCapital' | 'initialBalance';
 
 export interface AccountCapitalBasisLookupEntry {
   amount: number;

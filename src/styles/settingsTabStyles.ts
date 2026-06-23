@@ -1110,6 +1110,232 @@ export const SETTINGS_TAB_STYLES = `
     margin-bottom: 8px;
   }
 
+  .backend-integration-settings .journalit-trade-sync-source-switcher {
+    display: flex;
+    width: fit-content;
+    gap: 4px;
+    margin: 0 auto 8px;
+    padding: 3px;
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 8px;
+    background: var(--background-secondary);
+  }
+
+  .backend-integration-settings .journalit-trade-sync-source {
+    padding: 6px 12px;
+    border: 0;
+    border-radius: 6px;
+    background: transparent;
+    color: var(--text-muted);
+    font-size: 12px;
+    font-weight: 600;
+    box-shadow: none;
+    cursor: pointer;
+  }
+
+  .backend-integration-settings .journalit-trade-sync-source:hover {
+    color: var(--text-normal);
+    background: var(--background-modifier-hover);
+  }
+
+  .backend-integration-settings .journalit-trade-sync-source.is-active {
+    color: var(--text-on-accent);
+    background: var(--interactive-accent);
+  }
+
+  .backend-integration-settings .journalit-trade-sync-source-description {
+    max-width: 520px;
+    margin: 0 auto 18px;
+    color: var(--text-muted);
+    font-size: 13px;
+    line-height: 1.45;
+    text-align: center;
+  }
+
+  .backend-integration-settings .journalit-trade-import-sync-toolbar {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin: 16px 0;
+  }
+
+  .backend-integration-settings .journalit-trade-import-sync-toolbar label {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--text-muted);
+    font-size: 12px;
+  }
+
+  .backend-integration-settings .journalit-trade-import-sync-toolbar select {
+    min-width: 180px;
+  }
+
+  .backend-integration-settings .journalit-trade-import-sync-card-subtext {
+    margin-top: 6px;
+    color: var(--text-muted);
+    font-size: 12px;
+    text-align: center;
+  }
+
+  .backend-integration-settings .journalit-trade-import-sync-pending {
+    margin: 14px 0;
+    color: var(--text-accent);
+    font-size: 12px;
+    font-weight: 600;
+  }
+
+  .backend-integration-settings .journalit-trade-import-sync-placeholder {
+    margin-top: 16px;
+    padding: 14px;
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 8px;
+    background: var(--background-primary);
+    color: var(--text-muted);
+    font-size: 13px;
+    text-align: center;
+  }
+
+  .backend-integration-settings .journalit-trade-import-account-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 12px;
+    margin-top: 16px;
+  }
+
+  .backend-integration-settings .journalit-trade-import-account-card {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 14px;
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 10px;
+    background: var(--background-primary);
+  }
+
+  .backend-integration-settings .journalit-trade-import-account-card__header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  .backend-integration-settings .journalit-trade-import-account-card__header div {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+  }
+
+  .backend-integration-settings .journalit-trade-import-account-card__header span {
+    color: var(--text-muted);
+    font-size: 12px;
+  }
+
+  .backend-integration-settings .journalit-trade-import-account-card__count {
+    padding: 3px 7px;
+    border-radius: 999px;
+    background: var(--background-modifier-hover);
+    color: var(--text-accent) !important;
+    font-size: 11px !important;
+    font-weight: 700;
+    white-space: nowrap;
+  }
+
+  .backend-integration-settings .journalit-trade-import-account-card__metrics {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .backend-integration-settings .journalit-trade-import-account-card__metrics span {
+    padding: 3px 7px;
+    border-radius: 6px;
+    background: var(--background-secondary);
+    color: var(--text-muted);
+    font-size: 11px;
+  }
+
+  .backend-integration-settings .journalit-trade-import-account-card__mapping label {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    color: var(--text-muted);
+    font-size: 12px;
+  }
+
+  .backend-integration-settings .journalit-trade-import-account-card__mapping select {
+    width: 100%;
+  }
+
+  .backend-integration-settings .journalit-trade-import-account-card__mapping small {
+    display: block;
+    margin-top: 6px;
+    color: var(--text-faint);
+    font-size: 11px;
+    line-height: 1.35;
+  }
+
+  .backend-integration-settings .journalit-trade-import-account-card__actions {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .backend-integration-settings .journalit-trade-import-account-card__actions button {
+    justify-content: center;
+  }
+
+  .backend-integration-settings .journalit-trade-import-account-card__actions button:disabled {
+    border-color: var(--background-modifier-border);
+    background: var(--background-secondary);
+    color: var(--text-faint);
+    opacity: 0.75;
+    cursor: not-allowed;
+  }
+
+  .backend-integration-settings .journalit-trade-import-sync-recovery {
+    padding: 12px;
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 8px;
+    background: var(--background-primary);
+  }
+
+  .backend-integration-settings .journalit-trade-import-sync-recovery-header {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+
+  .backend-integration-settings .journalit-trade-import-sync-recovery-header strong {
+    margin-right: auto;
+  }
+
+  .backend-integration-settings .journalit-trade-import-sync-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 6px;
+    max-height: 260px;
+    overflow: auto;
+  }
+
+  .backend-integration-settings .journalit-trade-import-sync-list label {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 8px;
+    border-radius: 6px;
+    background: var(--background-secondary);
+    font-size: 12px;
+  }
+
+  .backend-integration-settings .journalit-trade-import-sync-list small {
+    color: var(--text-muted);
+  }
+
   .backend-integration-settings .backend-integration__button-content {
     display: flex;
     align-items: center;

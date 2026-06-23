@@ -178,11 +178,11 @@ export const BreakdownTableWidget: React.FC<BreakdownTableWidgetProps> =
 
       const closedTrades = useMemo<BreakdownTrade[]>(() => {
         return asBreakdownTrades(
-          trades
-            .filter((t) => isPnlContributingTrade(t))
-            .flatMap((trade) =>
-              splitReviewTradeByRealizedPnlEvent(trade, plugin)
-            )
+          trades.flatMap((trade) =>
+            isPnlContributingTrade(trade)
+              ? splitReviewTradeByRealizedPnlEvent(trade, plugin)
+              : []
+          )
         );
       }, [trades, plugin]);
 

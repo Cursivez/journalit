@@ -1,7 +1,7 @@
 
 
 
-export interface MissedTrade {
+interface MissedTrade {
   instrument: string;
   setup: string[];
   notes: string;
@@ -9,7 +9,7 @@ export interface MissedTrade {
 }
 
 
-export interface TradeRating {
+interface TradeRating {
   rating: number; 
   notes: string;
 }
@@ -33,7 +33,7 @@ interface KeyLevels {
 }
 
 
-export interface DRCForecast {
+interface DRCForecast {
   daily: ForecastSection;
   fourHour: ForecastSection;
   oneHour: ForecastSection;

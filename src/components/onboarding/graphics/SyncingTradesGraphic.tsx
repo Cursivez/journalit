@@ -1,6 +1,6 @@
 
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useEffect, useReducer, useRef, useState } from 'react';
 import {
   RefreshCw,
   TrendingUp,
@@ -83,12 +83,46 @@ const DEMO_TRADES: Trade[] = [
   },
 ];
 
+interface SyncingTradesAnimationState {
+  syncingState: 'syncing' | 'complete';
+  visibleTrades: number[];
+}
+
+type SyncingTradesAnimationAction =
+  | { type: 'reduced-motion' }
+  | { type: 'restart' }
+  | { type: 'show-trade'; index: number }
+  | { type: 'complete' };
+
+const animationReducer = (
+  state: SyncingTradesAnimationState,
+  action: SyncingTradesAnimationAction
+): SyncingTradesAnimationState => {
+  switch (action.type) {
+    case 'reduced-motion':
+      return {
+        visibleTrades: DEMO_TRADES.map((_, i) => i),
+        syncingState: 'complete',
+      };
+    case 'restart':
+      return { syncingState: 'syncing', visibleTrades: [] };
+    case 'show-trade':
+      return {
+        ...state,
+        visibleTrades: [...state.visibleTrades, action.index],
+      };
+    case 'complete':
+      return { ...state, syncingState: 'complete' };
+  }
+};
+
 const SyncingTradesGraphicComponent: React.FC = () => {
   const prefersReducedMotion = usePrefersReducedMotion();
-  const [syncingState, setSyncingState] = useState<'syncing' | 'complete'>(
-    'syncing'
-  );
-  const [visibleTrades, setVisibleTrades] = useState<number[]>([]);
+  const [animationState, dispatchAnimation] = useReducer(animationReducer, {
+    syncingState: 'syncing',
+    visibleTrades: [],
+  });
+  const { syncingState, visibleTrades } = animationState;
   const isMountedRef = useRef(true);
   const timeoutsRef = useRef<number[]>([]);
 
@@ -98,8 +132,7 @@ const SyncingTradesGraphicComponent: React.FC = () => {
 
     
     if (prefersReducedMotion) {
-      setVisibleTrades(DEMO_TRADES.map((_, i) => i));
-      setSyncingState('complete');
+      dispatchAnimation({ type: 'reduced-motion' });
       return;
     }
 
@@ -124,21 +157,20 @@ const SyncingTradesGraphicComponent: React.FC = () => {
       if (!isMountedRef.current) return;
 
       
-      setSyncingState('syncing');
-      setVisibleTrades([]);
+      dispatchAnimation({ type: 'restart' });
 
       
       for (let i = 0; i < DEMO_TRADES.length; i++) {
         if (!isMountedRef.current) return;
         await createTimeout(() => {
-          setVisibleTrades((prev) => [...prev, i]);
+          dispatchAnimation({ type: 'show-trade', index: i });
         }, 600);
       }
 
       
       if (!isMountedRef.current) return;
       await createTimeout(() => {
-        setSyncingState('complete');
+        dispatchAnimation({ type: 'complete' });
       }, 400);
 
       

@@ -1,6 +1,6 @@
 
 
-import { useState, useEffect, useRef } from 'react';
+import { useEffect, useReducer, useRef } from 'react';
 import type JournalitPlugin from '../../../main';
 import type { CachedReviewData } from '../../../services/reviewV2/ReviewDataCache';
 
@@ -16,6 +16,41 @@ interface UseReviewDataResult {
   refresh: () => void;
 }
 
+interface ReviewDataState {
+  data: CachedReviewData | null;
+  loading: boolean;
+  version: number;
+}
+
+type ReviewDataAction =
+  | { type: 'loading'; loading: boolean }
+  | { type: 'loaded'; data: CachedReviewData | null }
+  | { type: 'cache-update'; data: CachedReviewData | null };
+
+const reviewDataReducer = (
+  state: ReviewDataState,
+  action: ReviewDataAction
+): ReviewDataState => {
+  switch (action.type) {
+    case 'loading':
+      return state.loading === action.loading
+        ? state
+        : { ...state, loading: action.loading };
+    case 'loaded':
+      return {
+        data: action.data,
+        loading: false,
+        version: action.data?.version ?? 0,
+      };
+    case 'cache-update':
+      return {
+        ...state,
+        data: action.data,
+        version: action.data?.version ?? 0,
+      };
+  }
+};
+
 
 export function useReviewData(
   filePath: string,
@@ -25,9 +60,12 @@ export function useReviewData(
   
   const initialData = plugin.reviewDataCache?.get(filePath) ?? null;
 
-  const [data, setData] = useState<CachedReviewData | null>(initialData);
-  const [loading, setLoading] = useState(!initialData);
-  const [version, setVersion] = useState(initialData?.version ?? 0);
+  const [state, dispatch] = useReducer(reviewDataReducer, {
+    data: initialData,
+    loading: !initialData,
+    version: initialData?.version ?? 0,
+  });
+  const { data, loading, version } = state;
 
   
   const isMountedRef = useRef(true);
@@ -43,7 +81,7 @@ export function useReviewData(
     if (!cache) {
       
       console.warn('[useReviewData] ReviewDataCache not available');
-      setLoading(false);
+      dispatch({ type: 'loading', loading: false });
       return;
     }
 
@@ -51,26 +89,24 @@ export function useReviewData(
     const currentData = cache.get(filePath);
     if (currentData) {
       if (!data || currentData.version !== data.version) {
-        setData(currentData);
-        setVersion(currentData.version);
+        dispatch({ type: 'loaded', data: currentData });
+      } else {
+        dispatch({ type: 'loading', loading: false });
       }
-      setLoading(false);
     } else {
       
-      setLoading(true);
+      dispatch({ type: 'loading', loading: true });
       void (async () => {
         try {
           await cache.populate(filePath);
           if (!isMountedRef.current || filePathRef.current !== filePath) return;
 
           const populatedData = cache.get(filePath);
-          setData(populatedData);
-          setVersion(populatedData?.version ?? 0);
-          setLoading(false);
+          dispatch({ type: 'loaded', data: populatedData });
         } catch (error) {
           console.error('[useReviewData] Failed to populate cache:', error);
           if (isMountedRef.current) {
-            setLoading(false);
+            dispatch({ type: 'loading', loading: false });
           }
         }
       })();
@@ -80,8 +116,7 @@ export function useReviewData(
     const unsubscribe = cache.subscribe(filePath, (newData) => {
       if (!isMountedRef.current || filePathRef.current !== filePath) return;
 
-      setData(newData);
-      setVersion(newData?.version ?? 0);
+      dispatch({ type: 'cache-update', data: newData });
       
     });
 
@@ -97,20 +132,18 @@ export function useReviewData(
     const cache = plugin.reviewDataCache;
     if (!cache) return;
 
-    setLoading(true);
+    dispatch({ type: 'loading', loading: true });
     void (async () => {
       try {
         await cache.populate(filePath);
         if (!isMountedRef.current) return;
 
         const refreshedData = cache.get(filePath);
-        setData(refreshedData);
-        setVersion(refreshedData?.version ?? 0);
-        setLoading(false);
+        dispatch({ type: 'loaded', data: refreshedData });
       } catch (error) {
         console.error('[useReviewData] Failed to refresh cache:', error);
         if (isMountedRef.current) {
-          setLoading(false);
+          dispatch({ type: 'loading', loading: false });
         }
       }
     })();

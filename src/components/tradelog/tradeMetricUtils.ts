@@ -53,12 +53,15 @@ const toRiskCalculationInput = (
   assetType: trade.assetType,
   entryPrice: trade.entryPrice,
   positionSize: trade.positionSize,
-  entries: trade.entries
-    ?.filter(
-      (entry): entry is { price: number; size: number } =>
-        typeof entry.price === 'number' && typeof entry.size === 'number'
-    )
-    .map((entry) => ({ price: entry.price, size: entry.size })),
+  entries: trade.entries?.reduce<{ price: number; size: number }[]>(
+    (acc, entry) => {
+      if (typeof entry.price === 'number' && typeof entry.size === 'number') {
+        acc.push({ price: entry.price, size: entry.size });
+      }
+      return acc;
+    },
+    []
+  ),
   stopLoss: trade.stopLoss,
   riskAmount: trade.riskAmount,
   contractSize: trade.contractSize,

@@ -94,20 +94,16 @@ export function parseStoredDateLikeValue(
 }
 
 function normalizeArrayValue(value: unknown[]): unknown[] | undefined {
-  const normalized = value
-    .map((entry) => {
-      if (typeof entry === 'string') {
-        const trimmed = entry.trim();
-        return trimmed || undefined;
-      }
-      if (entry instanceof Date) {
-        return Number.isNaN(entry.getTime())
-          ? undefined
-          : formatLocalDateTime(entry);
-      }
-      return entry ?? undefined;
-    })
-    .filter((entry) => entry !== undefined);
+  const normalized = value.flatMap((entry) => {
+    if (typeof entry === 'string') {
+      const trimmed = entry.trim();
+      return trimmed ? [trimmed] : [];
+    }
+    if (entry instanceof Date) {
+      return Number.isNaN(entry.getTime()) ? [] : [formatLocalDateTime(entry)];
+    }
+    return entry === undefined || entry === null ? [] : [entry];
+  });
 
   return normalized.length > 0 ? normalized : undefined;
 }

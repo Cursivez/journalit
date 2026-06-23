@@ -1152,6 +1152,15 @@ const vi: Lang = {
   'dashboard.widgets.hourly-performance.tooltip.win-rate-label': 'Tỷ lệ thắng',
   'dashboard.widgets.hourly-performance.tooltip.win-rate':
     'Tỷ lệ thắng: {rate} ({wins}W / {losses}L)',
+  'dashboard.widgets.hourly-performance.bucket-aria': 'Kích thước khung',
+  'dashboard.widgets.hourly-performance.bucket-option': '{minutes} phút',
+  'dashboard.widgets.hourly-performance.metric-aria': 'Chỉ số',
+  'dashboard.widgets.hourly-performance.metric.total': 'Tổng',
+  'dashboard.widgets.hourly-performance.metric.average': 'Trung bình',
+  'dashboard.widgets.hourly-performance.metric.total-pnl': 'Tổng P&L',
+  'dashboard.widgets.hourly-performance.metric.avg-pnl': 'P&L TB',
+  'dashboard.widgets.hourly-performance.metric.total-r': 'Tổng R',
+  'dashboard.widgets.hourly-performance.metric.avg-r': 'R TB',
   'dashboard.widgets.rollingStats.title': 'Trung bình trượt thắng/thua',
   'dashboard.widgets.rollingStats.period': 'Giai đoạn',
   'dashboard.widgets.rollingStats.trades': 'Giao dịch {count}',
@@ -5059,9 +5068,23 @@ const vi: Lang = {
   'home.widget.goals-progress.aria.change-goal': 'Bấm để thay đổi mục tiêu',
   'home.widget.best-hours.title': 'Giờ tốt nhất',
   'home.widget.best-hours.no-data': 'Không có dữ liệu giao dịch',
-  'home.widget.best-hours.period-aria': '{label}: Giao dịch {pnl} P&L, {count}',
+  'home.widget.best-hours.period-aria':
+    '{label}: P&L trung bình mỗi giao dịch {pnl}, {count}',
   'home.widget.best-hours.trades-count': '{count} giao dịch',
   'home.widget.best-hours.win-rate': '{rate}% thắng',
+  'home.widget.best-hours.win-rate-na': 'Chưa có tỷ lệ thắng',
+  'home.widget.best-hours.days-count': '{count} ngày',
+  'home.widget.best-hours.avg-per-trade': 'TB/giao dịch',
+  'home.widget.best-hours.strongest-entry-window': 'Khung vào lệnh mạnh nhất',
+  'home.widget.best-hours.avg-summary': '{trades} giao dịch · {days} ngày',
+  'home.widget.best-hours.hidden': 'Đã ẩn',
+  'home.widget.best-hours.hidden-detail': 'Chế độ riêng tư',
+  'home.widget.best-hours.no-positive-window': 'Chưa có khung dương',
+  'home.widget.best-hours.insufficient-history': 'Cần thêm dữ liệu',
+  'home.widget.best-hours.sample-requirement': '{count}/2 khung đã có mẫu',
+  'home.widget.best-hours.developing': 'đang hình thành',
+  'home.widget.best-hours.no-positive-detail': 'Các khung đủ mẫu đang âm',
+  'home.widget.best-hours.period-hidden-aria': 'Hiệu suất theo thời điểm đã ẩn',
   'home.widget.aum.title': 'AUM',
   'home.widget.aum.period.month': 'Tháng này',
   'home.widget.aum.period.quarter': 'Quý này',
@@ -5881,5 +5904,78 @@ const vi: Lang = {
   'home.widget.profit-target-widget.name': 'Mục tiêu lợi nhuận',
   'home.widget.profit-target-widget.description':
     'Theo dõi tiến độ mục tiêu lợi nhuận trên các tài khoản',
+  'trade-import.restore.title': 'Khôi phục giao dịch đã nhập từ backend',
+  'trade-import.restore.description':
+    'Tạo ghi chú cục bộ còn thiếu cho các giao dịch đã nhập trên backend trong vault này. Thao tác này không tạo giao dịch backend trùng lặp.',
+  'trade-import.restore.vault': 'Danh tính vault hiện tại: {vaultId}',
+  'trade-import.restore.load': 'Khôi phục giao dịch đã nhập từ backend',
+  'trade-import.restore.none':
+    'Không tìm thấy projection giao dịch đã nhập nào còn thiếu cho vault này.',
+  'trade-import.restore.loaded':
+    'Tìm thấy {count} giao dịch đã nhập có thể khôi phục.',
+  'trade-import.restore.load-failed':
+    'Không thể tải các giao dịch đã nhập có thể khôi phục.',
+  'trade-import.restore.select-all': 'Chọn tất cả',
+  'trade-import.restore.restore-selected': 'Khôi phục đã chọn ({count})',
+  'trade-import.restore.complete':
+    'Đã khôi phục {written} giao dịch đã nhập; {failed} thất bại.',
+  'trade-import.restore.broker-label': 'Khôi phục backend',
+  'trade-sync.source.metatrader': 'MetaTrader',
+  'trade-sync.source.trade-import': 'Trade Import',
+  'trade-sync.source.metatrader.description':
+    'Đồng bộ giao dịch từ báo cáo MetaTrader được tải lên qua kết nối FTP của bạn.',
+  'trade-sync.source.trade-import.description':
+    'Khôi phục các lần nhập tệp broker giữa các vault và phục hồi ghi chú giao dịch cục bộ bị thiếu.',
+  'trade-sync.import.title': 'Đồng bộ Trade Import',
+  'trade-sync.import.description':
+    'Khôi phục giao dịch đã nhập giữa các vault và phục hồi ghi chú cục bộ bị thiếu.',
+  'trade-sync.import.card.connection': 'Kết nối',
+  'trade-sync.import.card.backup': 'Bản sao lưu import',
+  'trade-sync.import.card.restorable': 'Giao dịch có thể khôi phục',
+  'trade-sync.import.card.import': 'Trade Import',
+  'trade-sync.import.card.open-importer': 'Mở trình nhập',
+  'trade-sync.import.card.open-importer-desc': 'Nhập tệp broker mới tại đây',
+  'trade-sync.import.card.inventory-summary':
+    '{accounts} tài khoản · {trades} giao dịch',
+  'trade-sync.import.action.check': 'Kiểm tra',
+  'trade-sync.import.action.open-import': 'Mở Trade Import',
+  'trade-sync.import.action.clear': 'Xóa chọn',
+  'trade-sync.import.action.select-all': 'Chọn tất cả',
+  'trade-sync.import.action.restore-selected': 'Khôi phục đã chọn ({count})',
+  'trade-sync.import.action.create-local-account': 'Tạo cục bộ',
+  'trade-sync.import.action.create-local-account-title':
+    'Tạo một tài khoản cục bộ trong vault này bằng tên tài khoản backend.',
+  'trade-sync.import.action.save-mapping': 'Lưu',
+  'trade-sync.import.action.save-mapping-title':
+    'Lưu ánh xạ từ tài khoản backend này sang tài khoản cục bộ.',
+  'trade-sync.import.action.mapped': 'Đã ánh xạ',
+  'trade-sync.import.action.restore-account': 'Khôi phục',
+  'trade-sync.import.action.restore-account-title':
+    'Khôi phục ghi chú giao dịch cục bộ bị thiếu cho tài khoản backend này.',
+  'trade-sync.import.action.restoring': 'Đang khôi phục…',
+  'trade-sync.import.label.account': 'Tài khoản',
+  'trade-sync.import.vault-pending': 'Vault đang chờ',
+  'trade-sync.import.pending-acks': '{count} ACK đang chờ',
+  'trade-sync.import.recovery.title': 'Ghi chú cục bộ bị thiếu',
+  'trade-sync.import.empty': 'Vault này đã được cập nhật.',
+  'trade-sync.import.empty-accounts':
+    'Chưa tìm thấy tài khoản Trade Import đã sao lưu.',
+  'trade-sync.import.account.restorable-count': '{count} có thể khôi phục',
+  'trade-sync.import.account.synced-count': '{count} đã đồng bộ',
+  'trade-sync.import.account.missing-count': '{count} bị thiếu',
+  'trade-sync.import.account.issue-count': '{count} vấn đề',
+  'trade-sync.import.account.local-account': 'Tài khoản cục bộ',
+  'trade-sync.import.account.mapping-hint':
+    'Giao dịch được khôi phục sẽ được ghi vào tài khoản cục bộ này.',
+  'trade-sync.import.notice.restored':
+    'Đã khôi phục {count} giao dịch đã nhập.',
+  'trade-sync.import.notice.load-failed':
+    'Không thể tải trạng thái đồng bộ Trade Import.',
+  'trade-sync.import.notice.mapping-failed':
+    'Không thể lưu ánh xạ tài khoản Trade Import.',
+  'trade-sync.import.notice.create-account-failed':
+    'Không thể tạo tài khoản cục bộ.',
+  'trade-sync.import.notice.restore-failed':
+    'Không thể khôi phục tài khoản Trade Import.',
 };
 export default vi;

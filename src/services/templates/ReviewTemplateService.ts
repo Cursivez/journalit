@@ -1036,9 +1036,9 @@ export class ReviewTemplateService {
     type: ReviewTemplateType,
     excludeId?: string
   ): string {
-    const existingNames = this.templates
-      .filter((t) => t.type === type && t.id !== excludeId)
-      .map((t) => t.name);
+    const existingNames = this.templates.flatMap((template) =>
+      template.type === type && template.id !== excludeId ? [template.name] : []
+    );
     const existingNameSet = new Set(existingNames);
 
     if (!existingNameSet.has(baseName)) {

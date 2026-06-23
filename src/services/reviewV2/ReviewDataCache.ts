@@ -1333,23 +1333,22 @@ export class ReviewDataCache {
           const filteredUnconvertedCurrencySet = new Set(
             filteredUnconvertedCurrencies
           );
-          const unconvertedTrades = filteredOriginalTrades
-            .filter((trade) =>
-              filteredUnconvertedCurrencySet.has(
-                typeof trade.currency === 'string'
-                  ? trade.currency
-                  : userCurrency
-              )
-            )
-            .map((trade) => ({
-              ...trade,
-              originalCurrency:
-                typeof trade.currency === 'string'
-                  ? trade.currency
-                  : userCurrency,
-              originalPnlBeforeConversion: getEffectivePnL(trade),
-              isUnconvertedCurrency: true,
-            }));
+          const unconvertedTrades = filteredOriginalTrades.flatMap((trade) => {
+            const originalCurrency =
+              typeof trade.currency === 'string'
+                ? trade.currency
+                : userCurrency;
+            return filteredUnconvertedCurrencySet.has(originalCurrency)
+              ? [
+                  {
+                    ...trade,
+                    originalCurrency,
+                    originalPnlBeforeConversion: getEffectivePnL(trade),
+                    isUnconvertedCurrency: true,
+                  },
+                ]
+              : [];
+          });
           const brokerBaseCurrencyTradeCount = pnlContributingTrades.filter(
             (trade) =>
               typeof trade.brokerBaseCurrencyPnl === 'number' &&

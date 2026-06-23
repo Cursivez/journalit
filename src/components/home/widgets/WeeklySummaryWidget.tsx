@@ -531,12 +531,12 @@ function useWeeklyMetrics(
 
         const dayAccountBalances = Array.from(
           new Set(
-            dayTrades
-              .map((trade) => trade.breakEvenAccountCurrentBalance)
-              .filter(
-                (balance): balance is number =>
-                  balance !== undefined && Number.isFinite(balance)
-              )
+            dayTrades.flatMap((trade) => {
+              const balance = trade.breakEvenAccountCurrentBalance;
+              return balance !== undefined && Number.isFinite(balance)
+                ? [balance]
+                : [];
+            })
           )
         );
         const dayAccountBalance =

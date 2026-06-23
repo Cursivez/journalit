@@ -8,6 +8,7 @@ import React, {
   useLayoutEffect,
   useCallback,
   useMemo,
+  useReducer,
 } from 'react';
 import { createPortal } from 'react-dom';
 import { t } from '../../lang/helpers';
@@ -46,6 +47,10 @@ const CLASS_NAMES = {
   REMOVE_BUTTON: 'remove-button',
   REMOVE_BUTTON_GLYPH: 'remove-button-glyph',
 };
+
+const DROPDOWN_MAX_HEIGHT_PX = 200;
+const DROPDOWN_MIN_HEIGHT_PX = 96;
+const DROPDOWN_VIEWPORT_GAP_PX = 8;
 
 interface ComboBoxProps {
   
@@ -107,13 +112,44 @@ function useComboBoxModel({
   const errorId = `error-${uniqueId}`;
 
   
-  const [inputValue, setInputValue] = useState(() => {
-    
-    if (isMulti) return '';
-    return value !== undefined && value !== null ? String(value) : '';
-  });
-  const [isOpen, setIsOpen] = useState(false);
-  const [highlightedIndex, setHighlightedIndex] = useState(-1);
+  type ComboBoxUiState = {
+    inputValue: string;
+    isOpen: boolean;
+    highlightedIndex: number;
+  };
+  const [uiState, dispatchUiState] = useReducer(
+    (
+      state: ComboBoxUiState,
+      update: Partial<ComboBoxUiState>
+    ): ComboBoxUiState => ({ ...state, ...update }),
+    undefined,
+    (): ComboBoxUiState => ({
+      inputValue:
+        
+        isMulti || value === undefined || value === null ? '' : String(value),
+      isOpen: false,
+      highlightedIndex: -1,
+    })
+  );
+  const { inputValue, isOpen, highlightedIndex } = uiState;
+  const setInputValue = useCallback(
+    (nextInputValue: string) => dispatchUiState({ inputValue: nextInputValue }),
+    []
+  );
+  const setIsOpen = useCallback(
+    (nextIsOpen: boolean) => dispatchUiState({ isOpen: nextIsOpen }),
+    []
+  );
+  const setHighlightedIndex = useCallback(
+    (nextHighlightedIndex: number | ((previous: number) => number)) =>
+      dispatchUiState({
+        highlightedIndex:
+          typeof nextHighlightedIndex === 'function'
+            ? nextHighlightedIndex(highlightedIndex)
+            : nextHighlightedIndex,
+      }),
+    [highlightedIndex]
+  );
 
   
   const comboRef = useRef<HTMLDivElement>(null);
@@ -123,6 +159,7 @@ function useComboBoxModel({
     top: number;
     left: number;
     width: number;
+    maxHeight: number;
   } | null>(null);
 
   const updatePortalDropdownRect = useCallback(() => {
@@ -134,10 +171,26 @@ function useComboBoxModel({
       return;
     }
 
+    const viewportHeight = window.innerHeight;
+    const availableBelow = Math.max(
+      0,
+      viewportHeight - rect.bottom - DROPDOWN_VIEWPORT_GAP_PX
+    );
+    const availableAbove = Math.max(0, rect.top - DROPDOWN_VIEWPORT_GAP_PX);
+    const shouldOpenAbove =
+      availableBelow < DROPDOWN_MIN_HEIGHT_PX &&
+      availableAbove > availableBelow;
+    const availableSpace = shouldOpenAbove ? availableAbove : availableBelow;
+    const maxHeight = Math.min(
+      DROPDOWN_MAX_HEIGHT_PX,
+      Math.max(DROPDOWN_MIN_HEIGHT_PX, availableSpace)
+    );
+
     setPortalDropdownRect({
-      top: rect.bottom,
+      top: shouldOpenAbove ? rect.top - maxHeight : rect.bottom,
       left: rect.left,
       width: rect.width,
+      maxHeight,
     });
   }, []);
   const updatePortalDropdownRectRef = useRef(updatePortalDropdownRect);
@@ -183,7 +236,7 @@ function useComboBoxModel({
       setHighlightedIndex(-1);
       
     },
-    []
+    [setHighlightedIndex, setInputValue, setIsOpen]
   );
 
   
@@ -250,7 +303,17 @@ function useComboBoxModel({
       
       setHighlightedIndex(-1);
     },
-    [isMulti, value, onChange, onSaveOption, optionType, normalizedOptions]
+    [
+      isMulti,
+      value,
+      onChange,
+      onSaveOption,
+      optionType,
+      normalizedOptions,
+      setHighlightedIndex,
+      setInputValue,
+      setIsOpen,
+    ]
   );
 
   
@@ -288,14 +351,13 @@ function useComboBoxModel({
           isSelectingOption.current = false;
 
           if (!isMulti) {
-            setIsOpen(false);
+            dispatchUiState({ isOpen: false });
           } else {
             
-            setIsOpen(true);
             if (inputRef.current) {
               inputRef.current.focus();
-              setInputValue('');
             }
+            dispatchUiState({ isOpen: true, inputValue: '' });
           }
         }, 50);
       }
@@ -418,7 +480,7 @@ function useComboBoxModel({
         true
       );
     };
-  }, [isOpen, value, onChange]);
+  }, [isOpen, value, onChange, setIsOpen]);
 
   useLayoutEffect(() => {
     if (!isOpen || !portalDropdown || !inputRef.current) {
@@ -442,7 +504,7 @@ function useComboBoxModel({
         true
       );
     };
-  }, [isOpen, portalDropdown]);
+  }, [isOpen, portalDropdown, setIsOpen]);
 
   
   useEffect(() => {
@@ -463,7 +525,7 @@ function useComboBoxModel({
         true
       );
     };
-  }, [isOpen]);
+  }, [isOpen, setIsOpen]);
 
   
   useEffect(() => {
@@ -478,7 +540,7 @@ function useComboBoxModel({
     return () => {
       window.removeEventListener('blur', windowBlurHandler);
     };
-  }, [isOpen]);
+  }, [isOpen, setIsOpen]);
 
   
   const filteredOptions = useMemo(
@@ -584,6 +646,8 @@ function useComboBoxModel({
       inputValue,
       isMulti,
       handleSelect,
+      setHighlightedIndex,
+      setIsOpen,
     ]
   );
 
@@ -603,7 +667,7 @@ function useComboBoxModel({
         {option}
       </li>
     ));
-  }, [filteredOptions, highlightedIndex]);
+  }, [filteredOptions, highlightedIndex, setHighlightedIndex]);
 
   
   const renderedAddOption = React.useMemo(() => {
@@ -621,7 +685,13 @@ function useComboBoxModel({
         {t('combobox.add-option', { value: inputValue })}
       </li>
     );
-  }, [showAddOption, inputValue, filteredOptions.length, highlightedIndex]);
+  }, [
+    showAddOption,
+    inputValue,
+    filteredOptions.length,
+    highlightedIndex,
+    setHighlightedIndex,
+  ]);
 
   
   const renderedSelectedItems = React.useMemo(() => {
@@ -668,7 +738,7 @@ function useComboBoxModel({
     if (!isMulti) {
       setInputValue('');
     }
-  }, [isMulti]);
+  }, [isMulti, setInputValue, setIsOpen]);
 
   const handleInputBlur = React.useCallback(
     (e: React.FocusEvent<HTMLInputElement>) => {
@@ -688,7 +758,7 @@ function useComboBoxModel({
         }, 100);
       }
     },
-    []
+    [setIsOpen]
   );
 
   const handleInputClick = React.useCallback(
@@ -706,7 +776,7 @@ function useComboBoxModel({
         inputRef.current.focus();
       }
     },
-    [portalDropdown, updatePortalDropdownRect]
+    [portalDropdown, updatePortalDropdownRect, setIsOpen]
   );
 
   const handleInputMouseDown = React.useCallback(
@@ -735,6 +805,9 @@ function useComboBoxModel({
             : undefined,
           '--combobox-portal-width': portalDropdownRect
             ? `${portalDropdownRect.width}px`
+            : undefined,
+          '--combobox-portal-max-height': portalDropdownRect
+            ? `${portalDropdownRect.maxHeight}px`
             : undefined,
         })}
       >

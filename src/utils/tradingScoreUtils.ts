@@ -20,7 +20,7 @@ export interface AxisScores {
   experience: number;
 }
 
-export interface AxisBreakdown {
+interface AxisBreakdown {
   profitability: {
     profitFactor: number;
     profitFactorScore: number;
@@ -558,18 +558,16 @@ export function calculateTradingScore(trades: Trade[]): TradingScoreResult {
   const expectancy = tradeCount > 0 ? totalPnL / tradeCount : 0;
 
   
-  const tradesWithR = closedTrades
-    .map((trade) => ({
-      trade,
-      effectiveR: calculateTradingScoreEffectiveRMultiple(trade),
-    }))
-    .filter((item) => item.effectiveR !== undefined);
+  const tradesWithR = closedTrades.flatMap((trade) => {
+    const effectiveR = calculateTradingScoreEffectiveRMultiple(trade);
+    return effectiveR === undefined ? [] : [{ trade, effectiveR }];
+  });
   const hasRData = tradesWithR.length > tradeCount * 0.5; 
   const hasCompleteRData = tradesWithR.length === tradeCount;
   let expectancyR = 0;
   let totalR: number | null = null;
   if (hasRData) {
-    totalR = tradesWithR.reduce((sum, item) => sum + item.effectiveR!, 0);
+    totalR = tradesWithR.reduce((sum, item) => sum + item.effectiveR, 0);
     expectancyR = totalR / tradesWithR.length;
   }
 

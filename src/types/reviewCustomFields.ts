@@ -16,13 +16,13 @@ export const REVIEW_FIELD_REVIEW_TYPES: ReviewFieldReviewType[] = [
   'yearly',
 ];
 
-export interface CustomReviewFieldScope {
+interface CustomReviewFieldScope {
   reviewTypes: ReviewFieldReviewType[];
   editableOn: ReviewFieldReviewType[];
   inheritTo: ReviewFieldReviewType[];
 }
 
-export interface CustomReviewFieldInheritance {
+interface CustomReviewFieldInheritance {
   enabled: boolean;
   sources: ReviewFieldReviewType[];
   mode: ReviewFieldInheritanceMode;
@@ -30,7 +30,7 @@ export interface CustomReviewFieldInheritance {
   hideWhenEmpty: boolean;
 }
 
-export interface CustomReviewFieldDisplay {
+interface CustomReviewFieldDisplay {
   order: number;
   compact?: boolean;
 }

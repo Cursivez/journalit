@@ -1,7 +1,7 @@
 import { logger } from '../../utils/logger';
 
 
-import { Plugin, TFile } from 'obsidian';
+import { App, TFile } from 'obsidian';
 import { forceMetadataCacheRefresh } from '../../utils/dataRefresh';
 import {
   normalizedEquals,
@@ -15,13 +15,16 @@ import {
 import { inferStoredTradeType } from '../../utils/tradeTypeRouting';
 import { eventBus, OptionsChangedPayload } from '../events';
 
-type PluginWithSettings = Plugin & {
+interface PluginWithSettings {
+  app: App;
   
   
   
-  settings?: Record<string, unknown>;
+  settings?: unknown;
+  loadData(): Promise<unknown>;
+  saveData(data: unknown): Promise<void>;
   saveSettings?: () => Promise<void>;
-};
+}
 
 function normalizeFrontmatterTagValues(value: unknown): string[] {
   const values = Array.isArray(value)
@@ -30,10 +33,11 @@ function normalizeFrontmatterTagValues(value: unknown): string[] {
       ? [value]
       : [];
   return deduplicateOptions(
-    values
-      .filter((entry): entry is string => typeof entry === 'string')
-      .map((entry) => entry.trim())
-      .filter(Boolean)
+    values.flatMap((entry) => {
+      if (typeof entry !== 'string') return [];
+      const trimmed = entry.trim();
+      return trimmed ? [trimmed] : [];
+    })
   );
 }
 
@@ -137,9 +141,10 @@ function normalizeCommissionRules(
     return undefined;
   }
 
-  const rules = value
-    .map(normalizeCommissionRule)
-    .filter((rule): rule is InstrumentCommissionRule => Boolean(rule));
+  const rules = value.flatMap((rule) => {
+    const normalized = normalizeCommissionRule(rule);
+    return normalized ? [normalized] : [];
+  });
   return rules.length > 0 ? rules : undefined;
 }
 
@@ -157,34 +162,33 @@ function normalizeInstrumentOptions(value: unknown): InstrumentData[] {
   }
 
   if (typeof value[0] === 'string') {
-    return value
-      .filter((name): name is string => typeof name === 'string')
-      .map((name) => ({ name, assetType: 'stock' }));
+    return value.flatMap((name) =>
+      typeof name === 'string' ? [{ name, assetType: 'stock' }] : []
+    );
   }
 
-  return value
-    .map((item) => asRecord(item))
-    .filter((item): item is Record<string, unknown> => Boolean(item))
-    .flatMap((item) => {
-      const name = item.name;
-      if (typeof name !== 'string') {
-        return [];
-      }
+  return value.flatMap((item) => {
+    const record = asRecord(item);
+    if (!record) return [];
+    const name = record.name;
+    if (typeof name !== 'string') {
+      return [];
+    }
 
-      return [
-        {
-          name,
-          assetType:
-            typeof item.assetType === 'string' ? item.assetType : 'stock',
-          currency:
-            typeof item.currency === 'string' ? item.currency : undefined,
-          commissionRules: normalizeCommissionRules(item.commissionRules),
-          futuresData: normalizeFuturesData(item.futuresData),
-          forexData: normalizeForexData(item.forexData),
-          cfdData: normalizeCfdData(item.cfdData),
-        },
-      ];
-    });
+    return [
+      {
+        name,
+        assetType:
+          typeof record.assetType === 'string' ? record.assetType : 'stock',
+        currency:
+          typeof record.currency === 'string' ? record.currency : undefined,
+        commissionRules: normalizeCommissionRules(record.commissionRules),
+        futuresData: normalizeFuturesData(record.futuresData),
+        forexData: normalizeForexData(record.forexData),
+        cfdData: normalizeCfdData(record.cfdData),
+      },
+    ];
+  });
 }
 
 
@@ -335,7 +339,7 @@ interface CustomOptionsServiceConfig {
 
 export class CustomOptionsService {
   private appendAccountTypeToDashboardOrder(accountType: string): void {
-    const accountSettings = asRecord(this.plugin.settings?.account);
+    const accountSettings = asRecord(asRecord(this.plugin.settings)?.account);
 
     if (!accountSettings) {
       return;
@@ -370,7 +374,7 @@ export class CustomOptionsService {
     oldAccountType: string,
     newAccountType: string
   ): void {
-    const accountSettings = asRecord(this.plugin.settings?.account);
+    const accountSettings = asRecord(asRecord(this.plugin.settings)?.account);
 
     if (!accountSettings) {
       return;
@@ -403,7 +407,7 @@ export class CustomOptionsService {
   }
 
   private removeAccountTypeFromDashboardOrder(accountType: string): void {
-    const accountSettings = asRecord(this.plugin.settings?.account);
+    const accountSettings = asRecord(asRecord(this.plugin.settings)?.account);
 
     if (!accountSettings) {
       return;
@@ -428,34 +432,32 @@ export class CustomOptionsService {
       return [];
     }
 
-    return rawOptions
-      .map((eventOption) => {
-        if (typeof eventOption === 'string') {
-          return { name: eventOption, color: 'gray' };
-        }
+    return rawOptions.flatMap((eventOption) => {
+      if (typeof eventOption === 'string') {
+        return [{ name: eventOption, color: 'gray' }];
+      }
 
-        const eventOptionRecord = asRecord(eventOption);
-        if (eventOptionRecord && typeof eventOptionRecord.name === 'string') {
-          const notes =
-            typeof eventOptionRecord.notes === 'string'
-              ? eventOptionRecord.notes
-              : undefined;
+      const eventOptionRecord = asRecord(eventOption);
+      if (eventOptionRecord && typeof eventOptionRecord.name === 'string') {
+        const notes =
+          typeof eventOptionRecord.notes === 'string'
+            ? eventOptionRecord.notes
+            : undefined;
 
-          return {
+        return [
+          {
             name: eventOptionRecord.name,
             color:
               typeof eventOptionRecord.color === 'string'
                 ? eventOptionRecord.color
                 : 'gray',
             notes,
-          };
-        }
+          },
+        ];
+      }
 
-        return null;
-      })
-      .filter((eventOption): eventOption is EventOptionData =>
-        Boolean(eventOption)
-      );
+      return [];
+    });
   }
 
   private plugin: PluginWithSettings;
@@ -531,8 +533,9 @@ export class CustomOptionsService {
 
       
       const pluginInstance = this.plugin;
+      const settingsRecord = asRecord(pluginInstance.settings);
 
-      const storedOptions = pluginInstance.settings?.[optionsKey];
+      const storedOptions = settingsRecord?.[optionsKey];
 
       if (storedOptions && typeof storedOptions === 'object') {
         
@@ -543,7 +546,7 @@ export class CustomOptionsService {
         this.applyLoadedOptions(loadedOptions);
       } else {
         
-        const defaultStoredOptions = pluginInstance.settings?.customOptions;
+        const defaultStoredOptions = settingsRecord?.customOptions;
 
         if (
           !this.namespace &&
@@ -578,8 +581,8 @@ export class CustomOptionsService {
             this.applyLoadedOptions(loadedOptions);
 
             
-            if (pluginInstance.settings && pluginInstance.saveSettings) {
-              pluginInstance.settings[optionsKey] = { ...this.options };
+            if (settingsRecord && pluginInstance.saveSettings) {
+              settingsRecord[optionsKey] = { ...this.options };
               await pluginInstance.saveSettings();
             }
           } else if (!this.namespace && savedData && savedData.customOptions) {
@@ -593,8 +596,8 @@ export class CustomOptionsService {
             this.applyLoadedOptions(loadedOptions);
 
             
-            if (pluginInstance.settings && pluginInstance.saveSettings) {
-              pluginInstance.settings[optionsKey] = { ...this.options };
+            if (settingsRecord && pluginInstance.saveSettings) {
+              settingsRecord[optionsKey] = { ...this.options };
               await pluginInstance.saveSettings();
             }
           } else {
@@ -603,8 +606,8 @@ export class CustomOptionsService {
             void this.initializeDefaultOptionsIfNeeded();
 
             
-            if (pluginInstance.settings && pluginInstance.saveSettings) {
-              pluginInstance.settings[optionsKey] = { ...this.options };
+            if (settingsRecord && pluginInstance.saveSettings) {
+              settingsRecord[optionsKey] = { ...this.options };
               await pluginInstance.saveSettings();
             }
           }
@@ -665,10 +668,11 @@ export class CustomOptionsService {
 
       
       const pluginInstance = this.plugin;
+      const settingsRecord = asRecord(pluginInstance.settings);
 
-      if (pluginInstance.settings && pluginInstance.saveSettings) {
+      if (settingsRecord && pluginInstance.saveSettings) {
         
-        pluginInstance.settings[optionsKey] = { ...this.options };
+        settingsRecord[optionsKey] = { ...this.options };
 
         
         await pluginInstance.saveSettings();
@@ -722,9 +726,9 @@ export class CustomOptionsService {
 
   
   public getInstrumentsForAssetType(assetType: string): string[] {
-    return this.options[OptionType.INSTRUMENT]
-      .filter((instrument) => instrument.assetType === assetType)
-      .map((instrument) => instrument.name);
+    return this.options[OptionType.INSTRUMENT].flatMap((instrument) =>
+      instrument.assetType === assetType ? [instrument.name] : []
+    );
   }
 
   
@@ -964,8 +968,8 @@ export class CustomOptionsService {
   ): InstrumentCommissionRule[] | undefined {
     if (!rules?.length) return undefined;
 
-    const normalized = rules
-      .map((rule) => ({
+    const normalized = rules.flatMap((rule) => {
+      const normalizedRule = {
         account: rule.account?.trim() || undefined,
         method: rule.method,
         entryCommission:
@@ -976,12 +980,14 @@ export class CustomOptionsService {
           rule.method === 'roundTrip'
             ? rule.roundTripCommission || 0
             : undefined,
-      }))
-      .filter((rule) =>
-        rule.method === 'roundTrip'
-          ? (rule.roundTripCommission ?? 0) > 0
-          : (rule.entryCommission ?? 0) > 0 || (rule.exitCommission ?? 0) > 0
-      );
+      };
+      const hasPositiveCommission =
+        normalizedRule.method === 'roundTrip'
+          ? (normalizedRule.roundTripCommission ?? 0) > 0
+          : (normalizedRule.entryCommission ?? 0) > 0 ||
+            (normalizedRule.exitCommission ?? 0) > 0;
+      return hasPositiveCommission ? [normalizedRule] : [];
+    });
 
     const allAccountsRule = normalized.find((rule) => !rule.account);
     if (allAccountsRule) {
@@ -1230,9 +1236,10 @@ export class CustomOptionsService {
     }
 
     
-    const cleanedValues = values
-      .map((value) => value.trim())
-      .filter((value) => !!value); 
+    const cleanedValues = values.flatMap((value) => {
+      const cleanedValue = value.trim();
+      return cleanedValue ? [cleanedValue] : [];
+    });
 
     if (!cleanedValues.length) {
       return 0;
@@ -1634,7 +1641,7 @@ export class CustomOptionsService {
     try {
       
       const files = this.getApp().vault.getMarkdownFiles();
-      const generalSettings = asRecord(this.plugin.settings?.general);
+      const generalSettings = asRecord(asRecord(this.plugin.settings)?.general);
       const configuredJournalFolderPath = generalSettings?.journalFolderPath;
       const journalFolderPath =
         typeof configuredJournalFolderPath === 'string' &&
@@ -2095,8 +2102,8 @@ export class CustomOptionsService {
     try {
       let optionsAdded = false; 
       const pluginInstance = this.plugin;
-      const initializedOptionTypes =
-        pluginInstance.settings?.initializedOptionTypes;
+      const settingsRecord = asRecord(pluginInstance.settings);
+      const initializedOptionTypes = settingsRecord?.initializedOptionTypes;
       const initializedTypes: string[] = Array.isArray(initializedOptionTypes)
         ? initializedOptionTypes.filter(
             (value): value is string => typeof value === 'string'
@@ -2175,17 +2182,17 @@ export class CustomOptionsService {
         
         if (
           newlyInitializedTypes.length > 0 &&
-          pluginInstance.settings &&
+          settingsRecord &&
           pluginInstance.saveSettings
         ) {
-          const existingRaw = pluginInstance.settings.initializedOptionTypes;
+          const existingRaw = settingsRecord.initializedOptionTypes;
           const existing: string[] = Array.isArray(existingRaw)
             ? existingRaw.filter(
                 (value): value is string => typeof value === 'string'
               )
             : [];
 
-          pluginInstance.settings.initializedOptionTypes = [
+          settingsRecord.initializedOptionTypes = [
             ...new Set([...existing, ...newlyInitializedTypes]),
           ];
 

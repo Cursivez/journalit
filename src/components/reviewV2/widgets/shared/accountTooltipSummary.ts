@@ -6,8 +6,10 @@ export const formatAccountTooltipSummary = (
   accounts: Iterable<string>
 ): string | undefined => {
   const sortedAccounts = Array.from(accounts)
-    .map((account) => account.trim())
-    .filter((account) => account.length > 0)
+    .flatMap((account) => {
+      const normalized = account.trim();
+      return normalized ? [normalized] : [];
+    })
     .sort();
 
   if (sortedAccounts.length === 0) return undefined;

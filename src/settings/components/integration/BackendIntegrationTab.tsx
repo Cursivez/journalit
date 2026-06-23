@@ -51,6 +51,7 @@ import {
 
 interface BackendIntegrationTabProps {
   plugin: JournalitPlugin;
+  embedded?: boolean;
 }
 
 function useBackendIntegrationTabModel(props: BackendIntegrationTabProps) {
@@ -349,12 +350,23 @@ function useBackendIntegrationTabModel(props: BackendIntegrationTabProps) {
             `Account-${account.accountId}`,
         });
 
-        const accountsWithMapping = fetchedAccounts
-          .filter((account) => account.status !== 'ignored')
-          .map(applyDisplayMapping);
-        const ignoredAccountsWithMapping = fetchedIgnoredAccounts
-          .filter((account) => account.status === 'ignored')
-          .map(applyDisplayMapping);
+        const accountsWithMapping = fetchedAccounts.reduce<AccountInfo[]>(
+          (acc, account) => {
+            if (account.status !== 'ignored') {
+              acc.push(applyDisplayMapping(account));
+            }
+            return acc;
+          },
+          []
+        );
+        const ignoredAccountsWithMapping = fetchedIgnoredAccounts.reduce<
+          AccountInfo[]
+        >((acc, account) => {
+          if (account.status === 'ignored') {
+            acc.push(applyDisplayMapping(account));
+          }
+          return acc;
+        }, []);
 
         setAccountState((prev) => ({
           ...prev,
@@ -1299,12 +1311,14 @@ export const BackendIntegrationTab: React.FC<BackendIntegrationTabProps> = (
     syncErrors,
   } = useBackendIntegrationTabModel(props);
 
-  return (
-    <div className="journalit-settings-tab backend-integration-settings">
-      <div className="trade-sync-header">
-        <h3>{t('backend.title')}</h3>
-        <p className="setting-item-description">{t('backend.description')}</p>
-      </div>
+  const content = (
+    <>
+      {!props.embedded && (
+        <div className="trade-sync-header">
+          <h3>{t('backend.title')}</h3>
+          <p className="setting-item-description">{t('backend.description')}</p>
+        </div>
+      )}
 
       
       <StatusCards
@@ -1506,6 +1520,16 @@ export const BackendIntegrationTab: React.FC<BackendIntegrationTabProps> = (
         plugin={plugin}
         setAccountLinkErrorDetails={setAccountLinkErrorDetails}
       />
+    </>
+  );
+
+  if (props.embedded) {
+    return content;
+  }
+
+  return (
+    <div className="journalit-settings-tab backend-integration-settings">
+      {content}
     </div>
   );
 };

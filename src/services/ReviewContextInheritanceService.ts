@@ -42,7 +42,7 @@ const PARENT_SOURCE_TYPES: Record<
   yearly: [],
 };
 
-export interface ReviewContextFieldValue {
+interface ReviewContextFieldValue {
   fieldId: string;
   fieldKey: string;
   label: string;
@@ -200,21 +200,22 @@ export class ReviewContextInheritanceService {
       exists: true,
       valid: true,
       label: REVIEW_TYPE_LABELS[sourceType],
-      fields: fields
-        .filter(
-          (field) =>
-            !field.inheritance.hideWhenEmpty || hasValue(values[field.id])
-        )
-        .map((field) => ({
-          fieldId: field.id,
-          fieldKey: field.fieldKey,
-          label: field.label,
-          value: values[field.id],
-          formattedValue: formatReviewContextValue(values[field.id]),
-          sourceType,
-          sourcePath: path,
-          field,
-        })),
+      fields: fields.flatMap((field) =>
+        !field.inheritance.hideWhenEmpty || hasValue(values[field.id])
+          ? [
+              {
+                fieldId: field.id,
+                fieldKey: field.fieldKey,
+                label: field.label,
+                value: values[field.id],
+                formattedValue: formatReviewContextValue(values[field.id]),
+                sourceType,
+                sourcePath: path,
+                field,
+              },
+            ]
+          : []
+      ),
     };
   }
 

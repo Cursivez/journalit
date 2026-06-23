@@ -524,25 +524,55 @@ const computeLayoutsFromSettings = (
   try {
     const activeLayout = getActiveLayout(plugin);
 
-    const filteredLg = (activeLayout.lg || [])
-      .filter((item: Layout) => widgets.includes(item.i))
-      .map(validateLayoutItem);
+    const filteredLg = (activeLayout.lg || []).reduce<Layout[]>(
+      (acc, item: Layout) => {
+        if (widgets.includes(item.i)) {
+          acc.push(validateLayoutItem(item));
+        }
+        return acc;
+      },
+      []
+    );
 
-    const filteredMd = (activeLayout.md || [])
-      .filter((item: Layout) => widgets.includes(item.i))
-      .map(validateLayoutItem);
+    const filteredMd = (activeLayout.md || []).reduce<Layout[]>(
+      (acc, item: Layout) => {
+        if (widgets.includes(item.i)) {
+          acc.push(validateLayoutItem(item));
+        }
+        return acc;
+      },
+      []
+    );
 
-    const filteredSm = (activeLayout.sm || [])
-      .filter((item: Layout) => widgets.includes(item.i))
-      .map(validateLayoutItem);
+    const filteredSm = (activeLayout.sm || []).reduce<Layout[]>(
+      (acc, item: Layout) => {
+        if (widgets.includes(item.i)) {
+          acc.push(validateLayoutItem(item));
+        }
+        return acc;
+      },
+      []
+    );
 
-    const filteredXs = (activeLayout.xs || [])
-      .filter((item: Layout) => widgets.includes(item.i))
-      .map(validateLayoutItem);
+    const filteredXs = (activeLayout.xs || []).reduce<Layout[]>(
+      (acc, item: Layout) => {
+        if (widgets.includes(item.i)) {
+          acc.push(validateLayoutItem(item));
+        }
+        return acc;
+      },
+      []
+    );
 
-    const filteredXxs = (activeLayout.xxs || [])
-      .filter((item: Layout) => widgets.includes(item.i))
-      .map(validateLayoutItem);
+    const filteredXxs = (activeLayout.xxs || []).reduce<Layout[]>(
+      (acc, item: Layout) => {
+        if (widgets.includes(item.i)) {
+          acc.push(validateLayoutItem(item));
+        }
+        return acc;
+      },
+      []
+    );
 
     const cols = GRID_COLS;
 
@@ -690,15 +720,23 @@ function useHomeGridLayoutPersistence({
   const persistLayoutChange = useCallback(
     (currentLayout: Layout[], allLayouts: { [key: string]: Layout[] }) => {
       const sanitizedCurrentLayout =
-        currentLayout
-          ?.map(sanitizeLayoutItem)
-          .filter((item): item is Layout => item !== null) || [];
+        currentLayout?.reduce<Layout[]>((acc, item) => {
+          const sanitized = sanitizeLayoutItem(item);
+          if (sanitized !== null) {
+            acc.push(sanitized);
+          }
+          return acc;
+        }, []) || [];
       const sanitizedAllLayouts = Object.fromEntries(
         Object.entries(allLayouts || {}).map(([key, layout]) => [
           key,
-          layout
-            ?.map(sanitizeLayoutItem)
-            .filter((item): item is Layout => item !== null) || [],
+          layout?.reduce<Layout[]>((acc, item) => {
+            const sanitized = sanitizeLayoutItem(item);
+            if (sanitized !== null) {
+              acc.push(sanitized);
+            }
+            return acc;
+          }, []) || [],
         ])
       );
 
@@ -889,6 +927,7 @@ const HomeGridLayoutBase: React.FC<HomeGridLayoutProps> = ({
     () => widgets.filter((widgetId) => !locallyRemovedWidgets.has(widgetId)),
     [locallyRemovedWidgets, widgets]
   );
+  const visibleWidgetsKey = visibleWidgets.join('\u0000');
   const {
     width: gridWidth,
     containerRef,
@@ -899,13 +938,27 @@ const HomeGridLayoutBase: React.FC<HomeGridLayoutProps> = ({
 
   
   
-  const [layouts, setLayouts] = useState<{
+  type HomeLayouts = {
     lg: Layout[];
     md: Layout[];
     sm: Layout[];
     xs: Layout[];
     xxs: Layout[];
-  }>(() => computeLayoutsFromSettings(plugin, visibleWidgets));
+  };
+  const [layoutState, setLayoutState] = useState<{
+    plugin: typeof plugin;
+    visibleWidgetsKey: string;
+    layouts: HomeLayouts;
+  }>(() => ({
+    plugin,
+    visibleWidgetsKey,
+    layouts: computeLayoutsFromSettings(plugin, visibleWidgets),
+  }));
+  const layouts =
+    layoutState.plugin === plugin &&
+    layoutState.visibleWidgetsKey === visibleWidgetsKey
+      ? layoutState.layouts
+      : computeLayoutsFromSettings(plugin, visibleWidgets);
   const [currentBreakpoint, setCurrentBreakpoint] =
     useState<BreakpointKey>('lg');
   const {
@@ -932,8 +985,12 @@ const HomeGridLayoutBase: React.FC<HomeGridLayoutProps> = ({
 
   
   const reloadLayouts = useCallback(() => {
-    setLayouts(computeLayoutsFromSettings(plugin, visibleWidgets));
-  }, [plugin, visibleWidgets]);
+    setLayoutState({
+      plugin,
+      visibleWidgetsKey,
+      layouts: computeLayoutsFromSettings(plugin, visibleWidgets),
+    });
+  }, [plugin, visibleWidgets, visibleWidgetsKey]);
 
   
   const handleLayoutChanged = useCallback(
@@ -957,10 +1014,6 @@ const HomeGridLayoutBase: React.FC<HomeGridLayoutProps> = ({
       return next.size === current.size ? current : next;
     });
   }, [widgets]);
-
-  useEffect(() => {
-    setLayouts(computeLayoutsFromSettings(plugin, visibleWidgets));
-  }, [plugin, visibleWidgets]);
 
   const handleRemoveWidget = useCallback(
     (widgetId: string) => {

@@ -1,6 +1,6 @@
 
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { WorkspaceLeaf, setIcon } from 'obsidian';
 import { ReleaseNotesView } from './ReleaseNotesView';
 import { usePlugin } from '../../hooks/usePlugin';
@@ -336,32 +336,50 @@ function ReleaseMarkdown({ content }: { content: string }) {
   return <>{elements}</>;
 }
 
+const loadBundledChangelogs = (): ChangelogEntry[] => {
+  try {
+    const releases = releasesData as Record<string, ReleaseEntry>;
+    const entries: ChangelogEntry[] = [];
+    for (const [version, release] of Object.entries(releases)) {
+      if (release.content) {
+        entries.push({ version, content: release.content });
+      }
+    }
+    return entries.sort((a, b) => compareReleaseVersions(a.version, b.version));
+  } catch (error) {
+    console.error('Failed to load changelogs:', error);
+    return [];
+  }
+};
+
 export const ReleaseNotesRenderer: React.FC<Props> = ({
   leaf: _leaf,
   view: _view,
 }) => {
   
   const plugin = usePlugin();
-  const [changelogs, setChangelogs] = useState<ChangelogEntry[]>([]);
-  const [expandedVersion, setExpandedVersion] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
+  const changelogs = useMemo(loadBundledChangelogs, []);
+  const [expandedVersion, setExpandedVersion] = useState<string | null>(
+    changelogs[0]?.version ?? null
+  );
 
   
   const docsIconRef = useRef<HTMLSpanElement>(null);
   const discordIconRef = useRef<HTMLSpanElement>(null);
   const githubIconRef = useRef<HTMLSpanElement>(null);
 
-  useEffect(() => {
-    if (!plugin) return;
-    loadChangelogs();
-  }, [plugin]);
-
   
   useEffect(() => {
-    if (docsIconRef.current) setIcon(docsIconRef.current, 'book-open');
-    if (discordIconRef.current)
-      setIcon(discordIconRef.current, 'messages-square');
-    if (githubIconRef.current) setIcon(githubIconRef.current, 'github');
+    const iconTargets: Array<
+      [React.RefObject<HTMLSpanElement | null>, string]
+    > = [
+      [docsIconRef, 'book-open'],
+      [discordIconRef, 'messages-square'],
+      [githubIconRef, 'github'],
+    ];
+    for (const [ref, icon] of iconTargets) {
+      if (ref.current) setIcon(ref.current, icon);
+    }
   }, []);
 
   
@@ -372,41 +390,6 @@ export const ReleaseNotesRenderer: React.FC<Props> = ({
       </div>
     );
   }
-
-  const loadChangelogs = () => {
-    try {
-      setLoading(true);
-
-      
-      const releases = releasesData as Record<string, ReleaseEntry>;
-
-      
-      const entries: ChangelogEntry[] = [];
-      for (const [version, release] of Object.entries(releases)) {
-        if (release.content) {
-          entries.push({
-            version,
-            content: release.content,
-          });
-        }
-      }
-
-      
-      entries.sort((a, b) => compareReleaseVersions(a.version, b.version));
-
-      setChangelogs(entries);
-
-      
-      if (entries.length > 0) {
-        setExpandedVersion(entries[0].version);
-      }
-    } catch (error) {
-      console.error('Failed to load changelogs:', error);
-      setChangelogs([]);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   return (
     <div className="release-notes-view">
@@ -444,9 +427,7 @@ export const ReleaseNotesRenderer: React.FC<Props> = ({
         </div>
       </div>
 
-      {loading ? (
-        <div className="loading">{t('release-notes.loading')}</div>
-      ) : changelogs.length === 0 ? (
+      {changelogs.length === 0 ? (
         <div className="no-content">{t('release-notes.no-content')}</div>
       ) : (
         <div className="changelog-list">

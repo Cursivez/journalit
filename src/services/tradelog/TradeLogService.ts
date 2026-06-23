@@ -434,11 +434,12 @@ export class TradeLogService {
     
     
     
-    const relevantTrades = allTrades
-      .map((trade) => asTradeLogRecord(trade))
-      .filter((trade): trade is Record<string, unknown> =>
-        Boolean(trade && (trade.path || trade.filePath))
-      );
+    const relevantTrades = allTrades.flatMap((trade) => {
+      const tradeRecord = asTradeLogRecord(trade);
+      return tradeRecord && (tradeRecord.path || tradeRecord.filePath)
+        ? [tradeRecord]
+        : [];
+    });
 
     const breakEvenThresholdMode =
       this.plugin.settings.trade.breakEvenThresholdMode ?? 'fixed';
@@ -759,8 +760,11 @@ export class TradeLogService {
       filters?: CustomFieldFilterSelections
     ): string => {
       const entries = Object.entries(filters || {})
-        .filter(([, values]) => Array.isArray(values) && values.length > 0)
-        .map(([fieldId, values]) => [fieldId, [...values].sort()] as const)
+        .flatMap(([fieldId, values]) =>
+          Array.isArray(values) && values.length > 0
+            ? ([[fieldId, [...values].sort()]] as const)
+            : []
+        )
         .sort(([fieldIdA], [fieldIdB]) => fieldIdA.localeCompare(fieldIdB));
 
       return entries.length === 0 ? 'ALL' : JSON.stringify(entries);
@@ -1065,26 +1069,26 @@ export class TradeLogService {
   private preComputeDateComponents(
     trades: TradeLogData[]
   ): EnrichedTradeData[] {
-    const result = trades
-      .map((trade) => {
-        
-        
+    const result = trades.flatMap((trade) => {
+      
+      
 
-        if (!trade.entryTime) {
-          return null; 
-        }
+      if (!trade.entryTime) {
+        return []; 
+      }
 
-        const date = new Date(trade.entryTime);
+      const date = new Date(trade.entryTime);
 
-        
-        if (isNaN(date.getTime())) {
-          return null; 
-        }
-        const year = date.getFullYear();
-        const month = date.getMonth();
-        const quarter = Math.floor(month / 3) + 1;
+      
+      if (isNaN(date.getTime())) {
+        return []; 
+      }
+      const year = date.getFullYear();
+      const month = date.getMonth();
+      const quarter = Math.floor(month / 3) + 1;
 
-        return {
+      return [
+        {
           ...trade,
           _dateComponents: {
             date,
@@ -1095,9 +1099,9 @@ export class TradeLogService {
             weekNum: this.getWeekNumber(date),
             tradingDayString: this.getTradingDayStringMemoized(date),
           },
-        };
-      })
-      .filter((trade) => trade !== null); 
+        },
+      ];
+    });
 
     return result;
   }

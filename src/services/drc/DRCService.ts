@@ -35,7 +35,7 @@ import {
   stripPreviousTradingDayContextWidgetBlocks,
 } from '../../utils/markdownSectionExtractor';
 
-export interface PreviousTradingDayContextSection {
+interface PreviousTradingDayContextSection {
   heading: string;
   level: number;
   markdown: string;

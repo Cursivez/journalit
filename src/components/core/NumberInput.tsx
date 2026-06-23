@@ -1,6 +1,6 @@
 
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { NumberInputProps } from './types';
 import { Input } from './Input';
 
@@ -21,13 +21,13 @@ export const NumberInput: React.FC<NumberInputProps> = ({
   );
 
   
-  const [isEditing, setIsEditing] = useState(false);
+  const isEditingRef = useRef(false);
 
   
   useEffect(() => {
     
     
-    if (!isEditing && value !== undefined && value !== null) {
+    if (!isEditingRef.current && value !== undefined && value !== null) {
       
       
       const formattedValue =
@@ -36,15 +36,18 @@ export const NumberInput: React.FC<NumberInputProps> = ({
           : value.toString();
 
       setInputValue(formattedValue);
-    } else if (!isEditing && (value === undefined || value === null)) {
+    } else if (
+      !isEditingRef.current &&
+      (value === undefined || value === null)
+    ) {
       setInputValue('');
     }
-  }, [value, allowDecimal, precision, isEditing]);
+  }, [value, allowDecimal, precision]);
 
   
   const beginNumberEditing = (e: React.FocusEvent<HTMLInputElement>) => {
     
-    setIsEditing(true);
+    isEditingRef.current = true;
 
     
     const numValue = parseFloat(inputValue);
@@ -59,7 +62,7 @@ export const NumberInput: React.FC<NumberInputProps> = ({
   
   const handleInputChange = (newValue: string) => {
     
-    setIsEditing(true);
+    isEditingRef.current = true;
 
     
     if (!newValue) {
@@ -117,14 +120,29 @@ export const NumberInput: React.FC<NumberInputProps> = ({
   
   const commitNumberEditing = (e: React.FocusEvent<HTMLInputElement>) => {
     
-    setIsEditing(false);
+    isEditingRef.current = false;
 
     if (inputValue && !isNaN(parseFloat(inputValue))) {
       const numValue = parseFloat(inputValue);
+      let constrainedValue = numValue;
+
+      if (min !== undefined && numValue < min) {
+        constrainedValue = min;
+      }
+
+      if (max !== undefined && numValue > max) {
+        constrainedValue = max;
+      }
 
       
       if (allowDecimal && precision > 0) {
-        setInputValue(numValue.toFixed(precision));
+        setInputValue(constrainedValue.toFixed(precision));
+      } else {
+        setInputValue(constrainedValue.toString());
+      }
+
+      if (constrainedValue !== numValue) {
+        void onChange?.(constrainedValue);
       }
     } else if (inputValue === '-' || inputValue === '.') {
       

@@ -210,11 +210,15 @@ const MetadataFieldsComponent: React.FC<MetadataFieldsProps> = ({
               <ImageCarousel
                 images={data.images}
                 altPrefix={t('form.field.trade-image-alt')}
-                showThumbnails={true}
-                showCounter={true}
-                enableDelete={true}
-                onDeleteImage={handleDeleteImage}
-                enableFullscreen={true}
+                displayOptions={{
+                  showThumbnails: true,
+                  showCounter: true,
+                  enableFullscreen: true,
+                }}
+                deleteOptions={{
+                  enabled: true,
+                  onDeleteImage: handleDeleteImage,
+                }}
                 useResolveMediaPath={true}
                 sourcePath={sourcePath}
               />

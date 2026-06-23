@@ -34,7 +34,8 @@ export function normalizeStringArray(value: unknown): string[] {
     appendValue(value);
   }
 
-  return normalized
-    .map((item) => item.trim())
-    .filter((item) => item.length > 0);
+  return normalized.flatMap((item) => {
+    const trimmed = item.trim();
+    return trimmed ? [trimmed] : [];
+  });
 }

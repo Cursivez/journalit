@@ -165,6 +165,18 @@ export const CHART_STYLES = `
   outline: none;
 }
 
+.journalit-hourly-performance-controls {
+  gap: 4px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  max-width: 70%;
+}
+
+.journalit-hourly-performance-controls .journalit-chart-widget__select {
+  max-width: 92px;
+  padding: 3px 6px;
+}
+
 .journalit-chart-widget__body {
   flex: 1;
   min-height: 0;

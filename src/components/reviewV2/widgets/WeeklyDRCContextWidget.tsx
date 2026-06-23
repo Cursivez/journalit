@@ -4,6 +4,7 @@ import React, {
   useCallback,
   useEffect,
   useMemo,
+  useReducer,
   useRef,
   useState,
 } from 'react';
@@ -96,9 +97,10 @@ function parseHeadings(config: WeeklyDRCContextConfig | undefined): string[] {
     try {
       const parsed: unknown = JSON.parse(config.headingsJson);
       if (Array.isArray(parsed)) {
-        return parsed
-          .map((heading) => (typeof heading === 'string' ? heading.trim() : ''))
-          .filter(Boolean);
+        return parsed.flatMap((heading) => {
+          const normalized = typeof heading === 'string' ? heading.trim() : '';
+          return normalized ? [normalized] : [];
+        });
       }
     } catch {
       // intentional
@@ -106,10 +108,10 @@ function parseHeadings(config: WeeklyDRCContextConfig | undefined): string[] {
   }
 
   if (!config?.headings) return [];
-  return config.headings
-    .split(/[|\n]/)
-    .map((heading) => heading.trim())
-    .filter(Boolean);
+  return config.headings.split(/[|\n]/).flatMap((heading) => {
+    const normalized = heading.trim();
+    return normalized ? [normalized] : [];
+  });
 }
 
 function normalizeHeadingText(heading: string): string {
@@ -389,8 +391,19 @@ const WeeklyDRCDay: React.FC<{
 }> = ({ day, plugin, filePath, defaultExpanded, preview }) => {
   const hasContent = day.sections.length > 0;
   const title = formatDayHeading(day.date);
-  const [isOpen, setIsOpen] = useState(defaultExpanded && !day.reviewed);
-  const [reviewed, setReviewed] = useState(day.reviewed);
+  const [dayState, setDayState] = useState<{
+    dateKey: string | null;
+    sourceReviewed: boolean;
+    isOpen: boolean;
+    reviewed: boolean;
+  }>({ dateKey: null, sourceReviewed: false, isOpen: false, reviewed: false });
+  const isCurrentDayState =
+    dayState.dateKey === day.dateKey &&
+    dayState.sourceReviewed === day.reviewed;
+  const isOpen = isCurrentDayState
+    ? dayState.isOpen
+    : defaultExpanded && !day.reviewed;
+  const reviewed = isCurrentDayState ? dayState.reviewed : day.reviewed;
   const canToggleReviewed =
     Boolean(day.sourcePath) || plugin.settings.drc.autoCreateDRCOnNavigation;
   const [stickyHeader, setStickyHeader] = useState<{
@@ -401,14 +414,24 @@ const WeeklyDRCDay: React.FC<{
   const dayRef = useRef<HTMLElement | null>(null);
   const headerRef = useRef<HTMLDivElement | null>(null);
 
-  useEffect(() => {
-    setReviewed(day.reviewed);
-    if (day.reviewed) setIsOpen(false);
-  }, [day.reviewed]);
-
-  useEffect(() => {
-    setIsOpen(defaultExpanded && !reviewed);
-  }, [defaultExpanded, reviewed]);
+  const setIsOpen: React.Dispatch<React.SetStateAction<boolean>> = (update) => {
+    setDayState((current) => {
+      const currentIsOpen =
+        current.dateKey === day.dateKey
+          ? current.isOpen
+          : defaultExpanded && !day.reviewed;
+      return {
+        dateKey: day.dateKey,
+        sourceReviewed: day.reviewed,
+        reviewed:
+          current.dateKey === day.dateKey &&
+          current.sourceReviewed === day.reviewed
+            ? current.reviewed
+            : day.reviewed,
+        isOpen: typeof update === 'function' ? update(currentIsOpen) : update,
+      };
+    });
+  };
 
   useEffect(() => {
     if (!isOpen) {
@@ -501,8 +524,12 @@ const WeeklyDRCDay: React.FC<{
     }
 
     const nextReviewed = !reviewed;
-    setReviewed(nextReviewed);
-    if (nextReviewed) setIsOpen(false);
+    setDayState({
+      dateKey: day.dateKey,
+      sourceReviewed: day.reviewed,
+      reviewed: nextReviewed,
+      isOpen: defaultExpanded && !nextReviewed,
+    });
 
     try {
       const currentEodReview =
@@ -527,7 +554,7 @@ const WeeklyDRCDay: React.FC<{
         filePath: sourcePath,
       });
     } catch (error) {
-      setReviewed(reviewed);
+      setDayState((current) => ({ ...current, reviewed }));
       console.error(
         '[WeeklyDRCContextWidget] Failed to update DRC review status:',
         error
@@ -561,10 +588,12 @@ const WeeklyDRCDay: React.FC<{
                   <ImageCarousel
                     images={block.images}
                     altPrefix={t('widget.weekly-drc-context.image-alt-prefix')}
-                    showThumbnails={block.images.length > 1}
-                    showCounter={block.images.length > 1}
-                    enableDelete={false}
-                    enableFullscreen={true}
+                    displayOptions={{
+                      showThumbnails: block.images.length > 1,
+                      showCounter: block.images.length > 1,
+                      enableFullscreen: true,
+                    }}
+                    deleteOptions={{ enabled: false }}
                     useResolveMediaPath={true}
                     sourcePath={day.sourcePath || day.dateKey}
                   />
@@ -623,10 +652,24 @@ const WeeklyDRCDay: React.FC<{
 
 export const WeeklyDRCContextWidget: React.FC<WeeklyDRCContextWidgetProps> =
   React.memo(({ filePath, plugin, config, preview }) => {
-    const [days, setDays] = useState<WeeklyDRCDayContext[]>([]);
-    const [loading, setLoading] = useState(!preview);
-    const [error, setError] = useState<string | null>(null);
-    const [invalidContext, setInvalidContext] = useState(false);
+    const [state, dispatchState] = useReducer(
+      (
+        current: {
+          days: WeeklyDRCDayContext[];
+          loading: boolean;
+          error: string | null;
+          invalidContext: boolean;
+        },
+        update: Partial<{
+          days: WeeklyDRCDayContext[];
+          loading: boolean;
+          error: string | null;
+          invalidContext: boolean;
+        }>
+      ) => ({ ...current, ...update }),
+      { days: [], loading: !preview, error: null, invalidContext: false }
+    );
+    const { days, loading, error, invalidContext } = state;
     const headings = useMemo(() => parseHeadings(config), [config]);
     const defaultExpanded = config?.defaultExpanded !== false;
     const dayScope = config?.dayScope || 'all';
@@ -634,38 +677,44 @@ export const WeeklyDRCContextWidget: React.FC<WeeklyDRCContextWidgetProps> =
     useEffect(() => {
       if (preview) {
         const today = new Date(2026, 3, 13);
-        setDays([
-          {
-            date: today,
-            dateKey: formatDateKey(today),
-            reviewed: false,
-            sections: [
-              {
-                heading: headings[0] || 'What actually happened today',
-                blocks: [
-                  {
-                    type: 'markdown',
-                    markdown: 'Preview of selected DRC section content.',
-                  },
-                ],
-              },
-            ],
-          },
-        ]);
+        dispatchState({
+          days: [
+            {
+              date: today,
+              dateKey: formatDateKey(today),
+              reviewed: false,
+              sections: [
+                {
+                  heading: headings[0] || 'What actually happened today',
+                  blocks: [
+                    {
+                      type: 'markdown',
+                      markdown: 'Preview of selected DRC section content.',
+                    },
+                  ],
+                },
+              ],
+            },
+          ],
+        });
         return;
       }
 
       let isMounted = true;
       const load = async () => {
-        setLoading(true);
-        setError(null);
-        setInvalidContext(false);
-        setDays([]);
+        dispatchState({
+          loading: true,
+          error: null,
+          invalidContext: false,
+          days: [],
+        });
         try {
           const file = plugin.app.vault.getAbstractFileByPath(filePath);
           if (!(file instanceof TFile)) {
             if (isMounted)
-              setError(t('widget.weekly-drc-context.current-week-not-found'));
+              dispatchState({
+                error: t('widget.weekly-drc-context.current-week-not-found'),
+              });
             return;
           }
 
@@ -674,16 +723,18 @@ export const WeeklyDRCContextWidget: React.FC<WeeklyDRCContextWidgetProps> =
             plugin.app.metadataCache.getFileCache(file)?.frontmatter
           );
           if (frontmatter?.type !== 'weekly-review') {
-            if (isMounted) setInvalidContext(true);
+            if (isMounted) dispatchState({ invalidContext: true });
             return;
           }
 
           const reviewDate = parseFrontmatterDate(frontmatter?.date);
           if (!reviewDate) {
             if (isMounted)
-              setError(
-                t('widget.weekly-drc-context.current-week-date-not-found')
-              );
+              dispatchState({
+                error: t(
+                  'widget.weekly-drc-context.current-week-date-not-found'
+                ),
+              });
             return;
           }
 
@@ -776,15 +827,16 @@ export const WeeklyDRCContextWidget: React.FC<WeeklyDRCContextWidgetProps> =
             })
           );
 
-          if (isMounted) setDays(nextDays);
+          if (isMounted) dispatchState({ days: nextDays });
         } catch (err) {
           console.error(
             '[WeeklyDRCContextWidget] Failed to load weekly DRC context:',
             err
           );
-          if (isMounted) setError(t('widget.weekly-drc-context.load-error'));
+          if (isMounted)
+            dispatchState({ error: t('widget.weekly-drc-context.load-error') });
         } finally {
-          if (isMounted) setLoading(false);
+          if (isMounted) dispatchState({ loading: false });
         }
       };
 

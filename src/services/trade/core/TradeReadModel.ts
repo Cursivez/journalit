@@ -4,6 +4,8 @@ interface TradeReadModelEntry extends TradeRef {
   revision: number;
   schemaVersion: number;
   committedAt: number;
+  tradeImportId?: string;
+  tradeImportVersion?: number;
 }
 
 export class TradeReadModel {
@@ -36,6 +38,8 @@ export class TradeReadModel {
       revision: receipt.revision,
       schemaVersion: receipt.schemaVersion,
       committedAt: receipt.committedAt,
+      tradeImportId: receipt.tradeImportId,
+      tradeImportVersion: receipt.tradeImportVersion,
     });
 
     this.tradeIdByPath.set(receipt.path, receipt.tradeId);
@@ -80,6 +84,8 @@ export class TradeReadModel {
     tradeId: TradeId;
     revision: number;
     schemaVersion: number;
+    tradeImportId?: string;
+    tradeImportVersion?: number;
   } | null {
     const tradeId = this.tradeIdByPath.get(path);
     if (!tradeId) {
@@ -95,6 +101,8 @@ export class TradeReadModel {
       tradeId: entry.tradeId,
       revision: entry.revision,
       schemaVersion: entry.schemaVersion,
+      tradeImportId: entry.tradeImportId,
+      tradeImportVersion: entry.tradeImportVersion,
     };
   }
 

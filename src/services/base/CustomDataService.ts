@@ -276,9 +276,9 @@ export class CustomDataService {
               let result: unknown;
               if (entriesWithData.length === indexedResults.length) {
                 
-                result = indexedResults
-                  .map((entry) => entry.data)
-                  .filter(Boolean);
+                result = indexedResults.flatMap((entry) =>
+                  entry.data ? [entry.data] : []
+                );
               } else {
                 
                 const loadedData = await Promise.all(
@@ -839,8 +839,10 @@ export class CustomDataService {
           result[key] = value
             .slice(1, -1)
             .split(',')
-            .map((v) => v.trim())
-            .filter(Boolean);
+            .flatMap((v) => {
+              const trimmed = v.trim();
+              return trimmed ? [trimmed] : [];
+            });
           currentKey = null;
         } else {
           
@@ -956,8 +958,10 @@ export class CustomDataService {
         parsed[key] = value
           .slice(1, -1)
           .split(',')
-          .map((v) => v.trim())
-          .filter(Boolean);
+          .flatMap((v) => {
+            const trimmed = v.trim();
+            return trimmed ? [trimmed] : [];
+          });
       }
       
       else if (line.startsWith('  ') && key.startsWith('  ')) {

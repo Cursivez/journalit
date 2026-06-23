@@ -188,8 +188,9 @@ function extractCurrencySpacing(
 
   return parts
     .slice(start, end)
-    .filter((part) => part.type === 'literal')
-    .map((part) => part.value.replace(/\u00A0/g, ' '))
+    .flatMap((part) =>
+      part.type === 'literal' ? [part.value.replace(/\u00A0/g, ' ')] : []
+    )
     .join('');
 }
 

@@ -1,6 +1,6 @@
 export type TradeId = string;
 
-export type TradeCommitAction = 'created' | 'updated' | 'deleted' | 'relocated';
+type TradeCommitAction = 'created' | 'updated' | 'deleted' | 'relocated';
 
 export interface TradeRef {
   tradeId: TradeId;
@@ -15,6 +15,8 @@ export interface TradeCommitReceipt {
   revision: number;
   schemaVersion: number;
   committedAt: number;
+  tradeImportId?: string;
+  tradeImportVersion?: number;
 }
 
 export interface TradeChange {

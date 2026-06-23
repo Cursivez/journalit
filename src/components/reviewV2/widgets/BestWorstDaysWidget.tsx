@@ -154,11 +154,11 @@ export const BestWorstDaysWidget: React.FC<BestWorstDaysWidgetProps> =
       
       const { bestDay, worstDay } = useMemo(() => {
         const closedTrades = asReviewBestWorstTrades(
-          trades
-            .filter((t) => isPnlContributingTrade(t))
-            .flatMap((trade) =>
-              splitReviewTradeByRealizedPnlEvent(trade, plugin)
-            )
+          trades.flatMap((trade) =>
+            isPnlContributingTrade(trade)
+              ? splitReviewTradeByRealizedPnlEvent(trade, plugin)
+              : []
+          )
         );
 
         if (closedTrades.length === 0) {

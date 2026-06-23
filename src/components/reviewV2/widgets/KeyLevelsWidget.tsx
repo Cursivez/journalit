@@ -425,17 +425,34 @@ function useKeyLevelsWidgetModel({
   preview,
   previewData,
 }: KeyLevelsWidgetProps) {
-  const [keyLevels, setKeyLevels] = useState<KeyLevels>({
-    support: [],
-    resistance: [],
+  const [levelsState, setLevelsState] = useState<{
+    keyLevels: KeyLevels;
+    displayLevels: {
+      support: DisplayKeyLevel[];
+      resistance: DisplayKeyLevel[];
+    };
+    loading: boolean;
+    isValidContext: boolean;
+  }>({
+    keyLevels: { support: [], resistance: [] },
+    displayLevels: { support: [], resistance: [] },
+    loading: true,
+    isValidContext: true,
   });
-  const [displayLevels, setDisplayLevels] = useState<{
+  const { keyLevels, displayLevels, loading, isValidContext } = levelsState;
+  const setKeyLevels = (updatedKeyLevels: KeyLevels) => {
+    setLevelsState((current) => ({ ...current, keyLevels: updatedKeyLevels }));
+  };
+  const setDisplayLevels = (updatedDisplayLevels: {
     support: DisplayKeyLevel[];
     resistance: DisplayKeyLevel[];
-  }>({ support: [], resistance: [] });
+  }) => {
+    setLevelsState((current) => ({
+      ...current,
+      displayLevels: updatedDisplayLevels,
+    }));
+  };
   const [reviewMode, setReviewMode] = useState<ReviewMode | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [isValidContext, setIsValidContext] = useState(true);
   const [editing, setEditing] = useState<EditingState | null>(null);
 
   
@@ -460,25 +477,27 @@ function useKeyLevelsWidgetModel({
   useEffect(() => {
     
     if (preview && previewData) {
-      setKeyLevels(previewData.keyLevels);
-      setDisplayLevels({
-        support: sortLevelsForType(
-          'support',
-          previewData.keyLevels.support.map((level) => ({
-            ...level,
-            source: 'current' as const,
-          }))
-        ),
-        resistance: sortLevelsForType(
-          'resistance',
-          previewData.keyLevels.resistance.map((level) => ({
-            ...level,
-            source: 'current' as const,
-          }))
-        ),
+      setLevelsState({
+        keyLevels: previewData.keyLevels,
+        displayLevels: {
+          support: sortLevelsForType(
+            'support',
+            previewData.keyLevels.support.map((level) => ({
+              ...level,
+              source: 'current' as const,
+            }))
+          ),
+          resistance: sortLevelsForType(
+            'resistance',
+            previewData.keyLevels.resistance.map((level) => ({
+              ...level,
+              source: 'current' as const,
+            }))
+          ),
+        },
+        loading: false,
+        isValidContext: true,
       });
-      setLoading(false);
-      setIsValidContext(true);
       return;
     }
 
@@ -513,7 +532,10 @@ function useKeyLevelsWidgetModel({
     mode: ReviewMode,
     frontmatter: Record<string, unknown>,
     currentLevels: KeyLevels
-  ) => {
+  ): Promise<{
+    support: DisplayKeyLevel[];
+    resistance: DisplayKeyLevel[];
+  }> => {
     const date = getDateFromFrontmatter(frontmatter);
     const monthlyDate =
       mode === 'weekly-review'
@@ -562,17 +584,20 @@ function useKeyLevelsWidgetModel({
     inheritedGroupsRef.current = groups.filter(
       (group) => group.source !== 'current'
     );
-    setDisplayLevels({
+    return {
       support: dedupeLevels('support', groups),
       resistance: dedupeLevels('resistance', groups),
-    });
+    };
   };
 
   const loadKeyLevels = async () => {
     const file = plugin.app.vault.getAbstractFileByPath(filePath);
     if (!(file instanceof TFile)) {
-      setIsValidContext(false);
-      setLoading(false);
+      setLevelsState((current) => ({
+        ...current,
+        isValidContext: false,
+        loading: false,
+      }));
       return;
     }
 
@@ -589,24 +614,37 @@ function useKeyLevelsWidgetModel({
         );
         return;
       }
-      setIsValidContext(false);
-      setLoading(false);
+      setLevelsState((current) => ({
+        ...current,
+        isValidContext: false,
+        loading: false,
+      }));
       return;
     }
 
     const mode = parseReviewMode(frontmatter.type);
     if (!mode) {
-      setIsValidContext(false);
-      setLoading(false);
+      setLevelsState((current) => ({
+        ...current,
+        isValidContext: false,
+        loading: false,
+      }));
       return;
     }
     const levels = normalizeKeyLevels(frontmatter.keyLevels);
+    const nextDisplayLevels = await buildDisplayLevels(
+      mode,
+      frontmatter,
+      levels
+    );
 
     setReviewMode(mode);
-    setKeyLevels(levels);
-    await buildDisplayLevels(mode, frontmatter, levels);
-    setIsValidContext(true);
-    setLoading(false);
+    setLevelsState({
+      keyLevels: levels,
+      displayLevels: nextDisplayLevels,
+      isValidContext: true,
+      loading: false,
+    });
   };
 
   const updateFrontmatter = async (updatedLevels: KeyLevels) => {

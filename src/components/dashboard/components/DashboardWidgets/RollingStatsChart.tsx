@@ -179,16 +179,18 @@ const calculateRollingWindowStats = (
 
     if (defaultRiskAmount && defaultRiskAmount > 0) {
       
-      const winningRMultiples = wins
-        .map((t) =>
-          calculateEffectiveRMultiple(
-            getEffectivePnL(t),
-            t.rMultiple,
-            t.riskAmount,
-            defaultRiskAmount
-          )
-        )
-        .filter((r): r is number => r !== undefined && !isNaN(r));
+      const winningRMultiples = wins.reduce<number[]>((acc, t) => {
+        const r = calculateEffectiveRMultiple(
+          getEffectivePnL(t),
+          t.rMultiple,
+          t.riskAmount,
+          defaultRiskAmount
+        );
+        if (r !== undefined && !isNaN(r)) {
+          acc.push(r);
+        }
+        return acc;
+      }, []);
 
       avgWinR =
         winningRMultiples.length > 0
@@ -197,16 +199,18 @@ const calculateRollingWindowStats = (
           : null;
 
       
-      const losingRMultiples = losses
-        .map((t) =>
-          calculateEffectiveRMultiple(
-            getEffectivePnL(t),
-            t.rMultiple,
-            t.riskAmount,
-            defaultRiskAmount
-          )
-        )
-        .filter((r): r is number => r !== undefined && !isNaN(r));
+      const losingRMultiples = losses.reduce<number[]>((acc, t) => {
+        const r = calculateEffectiveRMultiple(
+          getEffectivePnL(t),
+          t.rMultiple,
+          t.riskAmount,
+          defaultRiskAmount
+        );
+        if (r !== undefined && !isNaN(r)) {
+          acc.push(r);
+        }
+        return acc;
+      }, []);
 
       avgLossR =
         losingRMultiples.length > 0

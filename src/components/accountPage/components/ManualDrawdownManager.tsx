@@ -1,6 +1,6 @@
 
 
-import React, { useState } from 'react';
+import React, { useReducer, useState } from 'react';
 import { App, Modal, Notice } from 'obsidian';
 import { ManualDrawdownSnapshot } from '../../../services/account/types';
 import { Button } from '../../ui/Button';
@@ -466,21 +466,48 @@ export const ManualDrawdownManager = function ManualDrawdownManager({
         return (dateB?.getTime() || 0) - (dateA?.getTime() || 0);
       })
   );
-  const [editingIndex, setEditingIndex] = useState<number | null>(null);
-
-  
-  const [formDate, setFormDate] = useState<string>('');
-  const [formDrawdownLimit, setFormDrawdownLimit] = useState<string>('');
-  const [formNote, setFormNote] = useState<string>('');
-  const [validationError, setValidationError] = useState<string>('');
+  const [formState, dispatchFormState] = useReducer(
+    (
+      current: {
+        editingIndex: number | null;
+        formDate: string;
+        formDrawdownLimit: string;
+        formNote: string;
+        validationError: string;
+      },
+      update: Partial<{
+        editingIndex: number | null;
+        formDate: string;
+        formDrawdownLimit: string;
+        formNote: string;
+        validationError: string;
+      }>
+    ) => ({ ...current, ...update }),
+    {
+      editingIndex: null,
+      formDate: '',
+      formDrawdownLimit: '',
+      formNote: '',
+      validationError: '',
+    }
+  );
+  const {
+    editingIndex,
+    formDate,
+    formDrawdownLimit,
+    formNote,
+    validationError,
+  } = formState;
 
   
   const resetForm = () => {
-    setFormDate('');
-    setFormDrawdownLimit('');
-    setFormNote('');
-    setEditingIndex(null);
-    setValidationError('');
+    dispatchFormState({
+      formDate: '',
+      formDrawdownLimit: '',
+      formNote: '',
+      editingIndex: null,
+      validationError: '',
+    });
   };
 
   
@@ -491,11 +518,13 @@ export const ManualDrawdownManager = function ManualDrawdownManager({
     const year = date.getFullYear();
     const month = String(date.getMonth() + 1).padStart(2, '0');
     const day = String(date.getDate()).padStart(2, '0');
-    setFormDate(`${year}-${month}-${day}`);
-    setFormDrawdownLimit(snapshot.drawdownLimit.toString());
-    setFormNote(snapshot.note || '');
-    setEditingIndex(index);
-    setValidationError('');
+    dispatchFormState({
+      formDate: `${year}-${month}-${day}`,
+      formDrawdownLimit: snapshot.drawdownLimit.toString(),
+      formNote: snapshot.note || '',
+      editingIndex: index,
+      validationError: '',
+    });
   };
 
   
@@ -523,18 +552,22 @@ export const ManualDrawdownManager = function ManualDrawdownManager({
 
   
   const validateForm = (): boolean => {
-    setValidationError('');
+    dispatchFormState({ validationError: '' });
 
     
     if (!formDate) {
-      setValidationError(t('manual-drawdown.validation.date-required'));
+      dispatchFormState({
+        validationError: t('manual-drawdown.validation.date-required'),
+      });
       return false;
     }
 
     
     const parts = formDate.split('-').map((p) => parseInt(p, 10));
     if (parts.length !== 3 || parts.some((p) => isNaN(p))) {
-      setValidationError(t('manual-drawdown.validation.invalid-date'));
+      dispatchFormState({
+        validationError: t('manual-drawdown.validation.invalid-date'),
+      });
       return false;
     }
 
@@ -547,7 +580,9 @@ export const ManualDrawdownManager = function ManualDrawdownManager({
       date.getMonth() !== parts[1] - 1 ||
       date.getDate() !== parts[2]
     ) {
-      setValidationError(t('manual-drawdown.validation.invalid-date'));
+      dispatchFormState({
+        validationError: t('manual-drawdown.validation.invalid-date'),
+      });
       return false;
     }
 
@@ -555,19 +590,25 @@ export const ManualDrawdownManager = function ManualDrawdownManager({
     const today = new Date();
     today.setHours(23, 59, 59, 999); 
     if (date > today) {
-      setValidationError(t('manual-drawdown.validation.future-date'));
+      dispatchFormState({
+        validationError: t('manual-drawdown.validation.future-date'),
+      });
       return false;
     }
 
     
     if (!formDrawdownLimit || formDrawdownLimit.trim() === '') {
-      setValidationError(t('manual-drawdown.validation.limit-required'));
+      dispatchFormState({
+        validationError: t('manual-drawdown.validation.limit-required'),
+      });
       return false;
     }
 
     const drawdownLimit = parseFloat(formDrawdownLimit);
     if (isNaN(drawdownLimit) || drawdownLimit <= 0) {
-      setValidationError(t('manual-drawdown.validation.limit-positive'));
+      dispatchFormState({
+        validationError: t('manual-drawdown.validation.limit-positive'),
+      });
       return false;
     }
 
@@ -590,7 +631,9 @@ export const ManualDrawdownManager = function ManualDrawdownManager({
     });
 
     if (duplicateIndex !== -1) {
-      setValidationError(t('manual-drawdown.validation.duplicate-date'));
+      dispatchFormState({
+        validationError: t('manual-drawdown.validation.duplicate-date'),
+      });
       return false;
     }
 
@@ -606,7 +649,9 @@ export const ManualDrawdownManager = function ManualDrawdownManager({
     
     const date = parseLocalDateSafe(formDate);
     if (!date) {
-      setValidationError(t('manual-drawdown.validation.invalid-date'));
+      dispatchFormState({
+        validationError: t('manual-drawdown.validation.invalid-date'),
+      });
       return;
     }
     date.setHours(0, 0, 0, 0);
@@ -662,10 +707,14 @@ export const ManualDrawdownManager = function ManualDrawdownManager({
         formDrawdownLimit={formDrawdownLimit}
         formNote={formNote}
         userDateFormat={userDateFormat}
-        onDateChange={setFormDate}
-        onDrawdownLimitChange={setFormDrawdownLimit}
-        onNoteChange={setFormNote}
-        onClearValidationError={() => setValidationError('')}
+        onDateChange={(formDate) => dispatchFormState({ formDate })}
+        onDrawdownLimitChange={(formDrawdownLimit) =>
+          dispatchFormState({ formDrawdownLimit })
+        }
+        onNoteChange={(formNote) => dispatchFormState({ formNote })}
+        onClearValidationError={() =>
+          dispatchFormState({ validationError: '' })
+        }
         onSubmit={handleAddOrUpdate}
         onCancelEdit={resetForm}
       />

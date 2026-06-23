@@ -76,7 +76,9 @@ export class TradeFormModal extends Modal {
   private plugin: JournalitPlugin;
   private container: HTMLDivElement | null = null;
   private root: Root | null = null;
-  private checkForUnsavedChanges: (() => boolean) | null = null;
+  private dirtyStateRef: { current: (() => boolean) | null } = {
+    current: null,
+  };
   private isConfirming: boolean = false;
   private confirmationModal: UnsavedChangesConfirmationModal | null = null;
   private shouldBypassUnsavedCheck: boolean = false;
@@ -102,7 +104,8 @@ export class TradeFormModal extends Modal {
     }
 
     
-    if (this.checkForUnsavedChanges && this.checkForUnsavedChanges()) {
+    const checkForUnsavedChanges = this.dirtyStateRef.current;
+    if (checkForUnsavedChanges && checkForUnsavedChanges()) {
       this.isConfirming = true;
       void this.showUnsavedChangesConfirmation()
         .then((shouldClose) => {
@@ -128,11 +131,6 @@ export class TradeFormModal extends Modal {
       );
       this.confirmationModal.open();
     });
-  }
-
-  
-  setUnsavedChangesChecker(checker: (() => boolean) | null): void {
-    this.checkForUnsavedChanges = checker;
   }
 
   
@@ -194,9 +192,7 @@ export class TradeFormModal extends Modal {
           filePath={this.modalProps.filePath || ''}
           onModalClose={() => this.close()}
           onSuccessfulSubmit={() => this.closeAfterSuccessfulSubmit()}
-          onDirtyStateChange={(isDirtyFn) =>
-            this.setUnsavedChangesChecker(isDirtyFn)
-          }
+          dirtyStateRef={this.dirtyStateRef}
         />
       </CurrencyProvider>
     );
@@ -211,7 +207,7 @@ interface TradeFormModalContentProps extends Omit<
   plugin: JournalitPlugin;
   onModalClose: () => void;
   onSuccessfulSubmit: () => void;
-  onDirtyStateChange?: (isDirtyFn: () => boolean) => void;
+  dirtyStateRef: { current: (() => boolean) | null };
 }
 
 export const resolveFormExitExplicitness = (
@@ -659,7 +655,7 @@ const TradeFormModalContent: React.FC<TradeFormModalContentProps> = ({
   filePath,
   onModalClose,
   onSuccessfulSubmit,
-  onDirtyStateChange,
+  dirtyStateRef,
 }) => {
   const { isSubmitting, handleSubmit, handleCancel } =
     useTradeFormModalContentModel({
@@ -678,7 +674,7 @@ const TradeFormModalContent: React.FC<TradeFormModalContentProps> = ({
       isEditMode={isEditMode}
       onSubmit={handleSubmit}
       onCancel={handleCancel}
-      onDirtyStateChange={onDirtyStateChange}
+      dirtyStateRef={dirtyStateRef}
     />
   );
 };

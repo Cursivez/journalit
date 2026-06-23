@@ -718,19 +718,19 @@ const fetchTradeData = async (
               ? Number(frontmatter.stopLoss)
               : undefined,
           takeProfits: Array.isArray(frontmatter.takeProfits)
-            ? frontmatter.takeProfits
-                .filter(
-                  (target): target is Record<string, unknown> =>
-                    !!target && typeof target === 'object'
-                )
-                .map((target) => ({
-                  ...(target.price !== undefined && {
-                    price: Number(target.price),
-                  }),
-                  ...(target.closePercent !== undefined && {
-                    closePercent: Number(target.closePercent),
-                  }),
-                }))
+            ? frontmatter.takeProfits.flatMap((target) => {
+                if (!isRecord(target)) return [];
+                return [
+                  {
+                    ...(target.price !== undefined && {
+                      price: Number(target.price),
+                    }),
+                    ...(target.closePercent !== undefined && {
+                      closePercent: Number(target.closePercent),
+                    }),
+                  },
+                ];
+              })
             : [],
           riskAmount:
             frontmatter.riskAmount !== undefined
@@ -787,17 +787,13 @@ const fetchTradeData = async (
           customFields:
             Object.keys(customFields).length > 0 ? customFields : undefined,
           ...Object.fromEntries(
-            customFieldDefinitions
-              .filter(
-                (fieldDef) =>
-                  fieldDef.fieldKey &&
-                  frontmatter[fieldDef.fieldKey] !== undefined &&
-                  !TRADE_PROPERTY_KEYS.has(fieldDef.fieldKey)
-              )
-              .map((fieldDef) => [
-                fieldDef.fieldKey,
-                frontmatter[fieldDef.fieldKey],
-              ])
+            customFieldDefinitions.flatMap((fieldDef) =>
+              fieldDef.fieldKey &&
+              frontmatter[fieldDef.fieldKey] !== undefined &&
+              !TRADE_PROPERTY_KEYS.has(fieldDef.fieldKey)
+                ? [[fieldDef.fieldKey, frontmatter[fieldDef.fieldKey]]]
+                : []
+            )
           ),
         };
 

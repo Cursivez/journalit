@@ -2,11 +2,7 @@ import { WorkspaceLeaf } from 'obsidian';
 
 export const VIEW_GUIDE_SCHEMA_VERSION = 1;
 
-export type GuideStatus =
-  | 'not_started'
-  | 'in_progress'
-  | 'skipped'
-  | 'completed';
+type GuideStatus = 'not_started' | 'in_progress' | 'skipped' | 'completed';
 
 export interface PersistedGuideState {
   guideId: string;
@@ -53,8 +49,8 @@ export interface StartGuideSessionResult {
     | 'invalid-initial-step';
 }
 
-export type GuideStepProgression = 'manual' | 'action-required';
-export type GuideStepPlacement = 'auto' | 'center' | 'right' | 'right-top';
+type GuideStepProgression = 'manual' | 'action-required';
+type GuideStepPlacement = 'auto' | 'center' | 'right' | 'right-top';
 
 export interface GuideStepDefinition {
   id: string;

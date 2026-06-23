@@ -133,31 +133,32 @@ const QuickLinksRowComponent: React.FC<QuickLinksRowProps> = ({
   quickLinks: propQuickLinks,
   onQuickLinksChange,
 }) => {
-  const [localQuickLinks, setLocalQuickLinks] = useState<QuickLinkButton[]>([]);
+  const resolveInitialQuickLinks = () => {
+    if (propQuickLinks && propQuickLinks.length > 0) return propQuickLinks;
+    const settingsQuickLinks = plugin.settings.home?.quickLinks;
+    if (settingsQuickLinks && settingsQuickLinks.length > 0) {
+      return settingsQuickLinks;
+    }
+    return DEFAULT_SETTINGS.home?.quickLinks || [];
+  };
+  const [localQuickLinks, setLocalQuickLinks] = useState<QuickLinkButton[]>(
+    resolveInitialQuickLinks
+  );
+  const quickLinks = propQuickLinks ?? localQuickLinks;
 
   
   useEffect(() => {
-    if (propQuickLinks && propQuickLinks.length > 0) {
-      setLocalQuickLinks(propQuickLinks);
-    } else {
-      const settingsQuickLinks = plugin.settings.home?.quickLinks;
-      if (settingsQuickLinks && settingsQuickLinks.length > 0) {
-        setLocalQuickLinks(settingsQuickLinks);
-      } else {
-        
-        const defaultQuickLinks = DEFAULT_SETTINGS.home?.quickLinks || [];
-        if (defaultQuickLinks.length > 0) {
-          setLocalQuickLinks(defaultQuickLinks);
-          
-          if (plugin.settings.home) {
-            plugin.settings.home.quickLinks = defaultQuickLinks;
-            
-            void plugin.saveSettings();
-          }
-        }
-      }
+    const settingsQuickLinks = plugin.settings.home?.quickLinks;
+    const defaultQuickLinks = DEFAULT_SETTINGS.home?.quickLinks || [];
+    if (
+      (!settingsQuickLinks || settingsQuickLinks.length === 0) &&
+      defaultQuickLinks.length > 0 &&
+      plugin.settings.home
+    ) {
+      plugin.settings.home.quickLinks = defaultQuickLinks;
+      void plugin.saveSettings();
     }
-  }, [propQuickLinks, plugin]);
+  }, [plugin]);
 
   
   const actionResolver = useMemo(
@@ -167,10 +168,10 @@ const QuickLinksRowComponent: React.FC<QuickLinksRowProps> = ({
 
   
   const visibleQuickLinks = useMemo(() => {
-    return localQuickLinks
+    return [...quickLinks]
       .filter((ql) => ql.visible)
       .sort((a, b) => a.order - b.order);
-  }, [localQuickLinks]);
+  }, [quickLinks]);
 
   
   const handleDragEnd = useCallback(
@@ -194,7 +195,7 @@ const QuickLinksRowComponent: React.FC<QuickLinksRowProps> = ({
           newVisibleQuickLinks.splice(newIndex, 0, movedItem);
 
           
-          const updatedQuickLinks = localQuickLinks.map((ql) => {
+          const updatedQuickLinks = quickLinks.map((ql) => {
             const newIndex = newVisibleQuickLinks.findIndex(
               (vql) => vql.id === ql.id
             );
@@ -204,7 +205,7 @@ const QuickLinksRowComponent: React.FC<QuickLinksRowProps> = ({
             } else {
               
               const maxVisibleOrder = newVisibleQuickLinks.length - 1;
-              const hiddenIndex = localQuickLinks
+              const hiddenIndex = quickLinks
                 .filter((item) => !item.visible)
                 .findIndex((item) => item.id === ql.id);
               return { ...ql, order: maxVisibleOrder + 1 + hiddenIndex };
@@ -215,6 +216,9 @@ const QuickLinksRowComponent: React.FC<QuickLinksRowProps> = ({
           setLocalQuickLinks(updatedQuickLinks);
 
           
+          onQuickLinksChange?.(updatedQuickLinks);
+
+          
           if (plugin.settings.home) {
             plugin.settings.home.quickLinks = updatedQuickLinks;
             void plugin.saveSettings();
@@ -222,13 +226,13 @@ const QuickLinksRowComponent: React.FC<QuickLinksRowProps> = ({
         }
       }
     },
-    [visibleQuickLinks, localQuickLinks, plugin]
+    [visibleQuickLinks, quickLinks, plugin, onQuickLinksChange]
   );
 
   
   const handleRemoveQuickLink = useCallback(
     (quickLinkId: string) => {
-      const updatedQuickLinks = localQuickLinks.map((ql) =>
+      const updatedQuickLinks = quickLinks.map((ql) =>
         ql.id === quickLinkId ? { ...ql, visible: false } : ql
       );
 
@@ -244,7 +248,7 @@ const QuickLinksRowComponent: React.FC<QuickLinksRowProps> = ({
         void plugin.saveSettings();
       }
     },
-    [localQuickLinks, plugin, onQuickLinksChange]
+    [quickLinks, plugin, onQuickLinksChange]
   );
 
   

@@ -1041,6 +1041,15 @@ const zh: Lang = {
   'dashboard.widgets.hourly-performance.tooltip.win-rate-label': '胜率',
   'dashboard.widgets.hourly-performance.tooltip.win-rate':
     '胜率: {rate} ({wins}胜 / {losses}负)',
+  'dashboard.widgets.hourly-performance.bucket-aria': '时间间隔',
+  'dashboard.widgets.hourly-performance.bucket-option': '{minutes}分钟',
+  'dashboard.widgets.hourly-performance.metric-aria': '指标',
+  'dashboard.widgets.hourly-performance.metric.total': '总计',
+  'dashboard.widgets.hourly-performance.metric.average': '平均',
+  'dashboard.widgets.hourly-performance.metric.total-pnl': '总盈亏',
+  'dashboard.widgets.hourly-performance.metric.avg-pnl': '平均盈亏',
+  'dashboard.widgets.hourly-performance.metric.total-r': '总R',
+  'dashboard.widgets.hourly-performance.metric.avg-r': '平均R',
   'dashboard.widgets.weekday-performance.tooltip.no-trades': '无交易',
   'dashboard.widgets.rollingStats.title': '滚动平均盈亏',
   'dashboard.widgets.rollingStats.period': '周期',
@@ -2675,10 +2684,24 @@ const zh: Lang = {
 
   
   'home.widget.best-hours.no-data': '暂无交易数据',
-  'home.widget.best-hours.period-aria': '{label}:{pnl} 盈亏,{count} 笔交易',
+  'home.widget.best-hours.period-aria':
+    '{label}: 每笔平均盈亏 {pnl}, {count} 笔交易',
   'home.widget.best-hours.title': '最佳交易时段',
   'home.widget.best-hours.trades-count': '{count} 笔交易',
   'home.widget.best-hours.win-rate': '{rate}% 胜率',
+  'home.widget.best-hours.win-rate-na': '胜率不可用',
+  'home.widget.best-hours.days-count': '{count} 天',
+  'home.widget.best-hours.avg-per-trade': '每笔平均',
+  'home.widget.best-hours.strongest-entry-window': '最佳入场时段',
+  'home.widget.best-hours.avg-summary': '{trades} 笔交易 · {days} 天',
+  'home.widget.best-hours.hidden': '已隐藏',
+  'home.widget.best-hours.hidden-detail': '隐私模式',
+  'home.widget.best-hours.no-positive-window': '暂无正收益时段',
+  'home.widget.best-hours.insufficient-history': '需要更多数据',
+  'home.widget.best-hours.sample-requirement': '{count}/2 个已采样时段',
+  'home.widget.best-hours.developing': '形成中',
+  'home.widget.best-hours.no-positive-detail': '已采样时段均为负收益',
+  'home.widget.best-hours.period-hidden-aria': '分时段表现已隐藏',
   'home.widget.aum.account-count': '{count} 个账户',
   'home.widget.aum.account-count-plural': '{count} 个账户',
   'home.widget.aum.no-accounts': '暂无账户',
@@ -5896,6 +5919,77 @@ const zh: Lang = {
     'Matching open trade quantity differs from close-only preview',
   'trade-import.preview.message.no-open-match':
     'No matching open trade found for close-only preview',
+  'trade-import.restore.title': 'Restore imported trades from backend',
+  'trade-import.restore.description':
+    'Create missing local notes for backend imported trades in this vault. This does not create duplicate backend trades.',
+  'trade-import.restore.vault': 'Current vault identity: {vaultId}',
+  'trade-import.restore.load': 'Restore imported trades from backend',
+  'trade-import.restore.none':
+    'No missing imported trade projections found for this vault.',
+  'trade-import.restore.loaded': 'Found {count} restorable imported trades.',
+  'trade-import.restore.load-failed':
+    'Could not load restorable imported trades.',
+  'trade-import.restore.select-all': 'Select all',
+  'trade-import.restore.restore-selected': 'Restore selected ({count})',
+  'trade-import.restore.complete':
+    'Restored {written} imported trades; {failed} failed.',
+  'trade-import.restore.broker-label': 'Backend restore',
+  'trade-sync.source.metatrader': 'MetaTrader',
+  'trade-sync.source.trade-import': 'Trade Import',
+  'trade-sync.source.metatrader.description':
+    'Sync trades from MetaTrader reports uploaded through your FTP connection.',
+  'trade-sync.source.trade-import.description':
+    'Restore broker-file imports across vaults and recover missing local trade notes.',
+  'trade-sync.import.title': 'Trade Import Sync',
+  'trade-sync.import.description':
+    'Restore imported trades across vaults and recover missing local notes.',
+  'trade-sync.import.card.connection': 'Connection',
+  'trade-sync.import.card.backup': 'Import backup',
+  'trade-sync.import.card.restorable': 'Restorable trades',
+  'trade-sync.import.card.import': 'Trade Import',
+  'trade-sync.import.card.open-importer': 'Open importer',
+  'trade-sync.import.card.open-importer-desc': 'Import new broker files there',
+  'trade-sync.import.card.inventory-summary':
+    '{accounts} account(s) · {trades} trade(s)',
+  'trade-sync.import.action.check': 'Check',
+  'trade-sync.import.action.open-import': 'Open Trade Import',
+  'trade-sync.import.action.clear': 'Clear',
+  'trade-sync.import.action.select-all': 'Select all',
+  'trade-sync.import.action.restore-selected': 'Restore selected ({count})',
+  'trade-sync.import.action.create-local-account': 'Create local',
+  'trade-sync.import.action.create-local-account-title':
+    'Create a local account in this vault using the backend account name.',
+  'trade-sync.import.action.save-mapping': 'Save',
+  'trade-sync.import.action.save-mapping-title':
+    'Save this backend account to local account mapping.',
+  'trade-sync.import.action.mapped': 'Mapped',
+  'trade-sync.import.action.restore-account': 'Restore',
+  'trade-sync.import.action.restore-account-title':
+    'Restore missing local trade notes for this backend account.',
+  'trade-sync.import.action.restoring': 'Restoring…',
+  'trade-sync.import.label.account': 'Account',
+  'trade-sync.import.vault-pending': 'Vault pending',
+  'trade-sync.import.pending-acks': '{count} pending ACK(s)',
+  'trade-sync.import.recovery.title': 'Missing local notes',
+  'trade-sync.import.empty': 'This vault is up to date.',
+  'trade-sync.import.empty-accounts':
+    'No backed-up Trade Import accounts found yet.',
+  'trade-sync.import.account.restorable-count': '{count} restorable',
+  'trade-sync.import.account.synced-count': '{count} synced',
+  'trade-sync.import.account.missing-count': '{count} missing',
+  'trade-sync.import.account.issue-count': '{count} issue(s)',
+  'trade-sync.import.account.local-account': 'Local account',
+  'trade-sync.import.account.mapping-hint':
+    'Restored trades will be written to this local account.',
+  'trade-sync.import.notice.restored': 'Restored {count} imported trade(s).',
+  'trade-sync.import.notice.load-failed':
+    'Could not load Trade Import sync status.',
+  'trade-sync.import.notice.mapping-failed':
+    'Could not save Trade Import account mapping.',
+  'trade-sync.import.notice.create-account-failed':
+    'Could not create local account.',
+  'trade-sync.import.notice.restore-failed':
+    'Could not restore Trade Import account.',
 };
 
 export default zh;

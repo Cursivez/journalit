@@ -65,26 +65,50 @@ function getStringValue(
   return typeof value === 'string' ? value : null;
 }
 
+const formatTimestamp = (timestamp: string): string => {
+  const dateFormat = getUserDateFormat();
+  const date = new Date(timestamp);
+  const dateStr = formatDateDisplay(date, dateFormat);
+  const timeStr = date.toLocaleTimeString(undefined, {
+    hour: 'numeric',
+    minute: '2-digit',
+  });
+  return `${dateStr} ${timeStr}`;
+};
+
 export const MarkReviewedWidget: React.FC<MarkReviewedWidgetProps> = ({
   filePath,
   plugin,
   preview,
   previewData,
 }) => {
-  const [reviewed, setReviewed] = useState<boolean>(false);
-  const [reviewedAt, setReviewedAt] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [isValidContext, setIsValidContext] = useState(true);
-  const [noteType, setNoteType] = useState<SupportedReviewType | null>(null);
+  const [reviewState, setReviewState] = useState<{
+    reviewed: boolean;
+    reviewedAt: string | null;
+    loading: boolean;
+    isValidContext: boolean;
+    noteType: SupportedReviewType | null;
+  }>({
+    reviewed: false,
+    reviewedAt: null,
+    loading: true,
+    isValidContext: true,
+    noteType: null,
+  });
+  const { reviewed, reviewedAt, loading, isValidContext, noteType } =
+    reviewState;
   const retryCountRef = useRef(0);
 
   useEffect(() => {
     
     if (preview && previewData) {
-      setReviewed(previewData.reviewed);
-      setReviewedAt(previewData.reviewedAt ?? null);
-      setLoading(false);
-      setIsValidContext(true);
+      setReviewState({
+        reviewed: previewData.reviewed,
+        reviewedAt: previewData.reviewedAt ?? null,
+        loading: false,
+        isValidContext: true,
+        noteType: null,
+      });
       return;
     }
 
@@ -109,8 +133,11 @@ export const MarkReviewedWidget: React.FC<MarkReviewedWidgetProps> = ({
   const loadReviewStatus = async () => {
     const file = plugin.app.vault.getAbstractFileByPath(filePath);
     if (!(file instanceof TFile)) {
-      setIsValidContext(false);
-      setLoading(false);
+      setReviewState((current) => ({
+        ...current,
+        isValidContext: false,
+        loading: false,
+      }));
       return;
     }
 
@@ -127,35 +154,46 @@ export const MarkReviewedWidget: React.FC<MarkReviewedWidgetProps> = ({
         );
         return;
       }
-      setIsValidContext(false);
-      setLoading(false);
+      setReviewState((current) => ({
+        ...current,
+        isValidContext: false,
+        loading: false,
+      }));
       return;
     }
 
     
     const type = getSupportedReviewType(frontmatter.type);
     if (!type) {
-      setIsValidContext(false);
-      setLoading(false);
+      setReviewState((current) => ({
+        ...current,
+        isValidContext: false,
+        loading: false,
+      }));
       return;
     }
-
-    setNoteType(type);
 
     
     
     
     if (type === 'drc') {
       const eodReview = asRecord(frontmatter.endOfDayReview);
-      setReviewed(getBooleanValue(eodReview, 'reviewed'));
-      setReviewedAt(getStringValue(eodReview, 'reviewedAt'));
+      setReviewState({
+        reviewed: getBooleanValue(eodReview, 'reviewed'),
+        reviewedAt: getStringValue(eodReview, 'reviewedAt'),
+        loading: false,
+        isValidContext: true,
+        noteType: type,
+      });
     } else {
-      setReviewed(getBooleanValue(frontmatter, 'reviewed'));
-      setReviewedAt(getStringValue(frontmatter, 'reviewedAt'));
+      setReviewState({
+        reviewed: getBooleanValue(frontmatter, 'reviewed'),
+        reviewedAt: getStringValue(frontmatter, 'reviewedAt'),
+        loading: false,
+        isValidContext: true,
+        noteType: type,
+      });
     }
-
-    setIsValidContext(true);
-    setLoading(false);
   };
 
   const toggleReviewStatus = async () => {
@@ -168,8 +206,11 @@ export const MarkReviewedWidget: React.FC<MarkReviewedWidgetProps> = ({
     const newReviewedAt = newReviewed ? new Date().toISOString() : null;
 
     
-    setReviewed(newReviewed);
-    setReviewedAt(newReviewedAt);
+    setReviewState((current) => ({
+      ...current,
+      reviewed: newReviewed,
+      reviewedAt: newReviewedAt,
+    }));
 
     try {
       if (noteType === 'drc') {
@@ -248,20 +289,12 @@ export const MarkReviewedWidget: React.FC<MarkReviewedWidgetProps> = ({
         error
       );
       
-      setReviewed(!newReviewed);
-      setReviewedAt(newReviewed ? null : reviewedAt);
+      setReviewState((current) => ({
+        ...current,
+        reviewed: !newReviewed,
+        reviewedAt: newReviewed ? null : reviewedAt,
+      }));
     }
-  };
-
-  const formatTimestamp = (timestamp: string): string => {
-    const dateFormat = getUserDateFormat();
-    const date = new Date(timestamp);
-    const dateStr = formatDateDisplay(date, dateFormat);
-    const timeStr = date.toLocaleTimeString(undefined, {
-      hour: 'numeric',
-      minute: '2-digit',
-    });
-    return `${dateStr} ${timeStr}`;
   };
 
   if (loading) {

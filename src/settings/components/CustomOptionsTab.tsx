@@ -356,8 +356,8 @@ const parseCommissionRules = (
 ): InstrumentCommissionRule[] | undefined => {
   if (!drafts) return undefined;
 
-  const rules = drafts
-    .map((draft) => ({
+  const rules = drafts.reduce<InstrumentCommissionRule[]>((acc, draft) => {
+    const rule = {
       account: draft.account.trim() || undefined,
       method: draft.method,
       entryCommission:
@@ -372,12 +372,16 @@ const parseCommissionRules = (
         draft.method === 'roundTrip'
           ? parseFloat(draft.roundTripCommission) || 0
           : undefined,
-    }))
-    .filter((rule) =>
+    };
+    if (
       rule.method === 'roundTrip'
         ? (rule.roundTripCommission ?? 0) > 0
         : (rule.entryCommission ?? 0) > 0 || (rule.exitCommission ?? 0) > 0
-    );
+    ) {
+      acc.push(rule);
+    }
+    return acc;
+  }, []);
 
   const allAccountsRule = rules.find((rule) => !rule.account);
   if (allAccountsRule) return [allAccountsRule];
@@ -2104,532 +2108,147 @@ const renderCustomOptionsTab = (
     shouldShowSymbolMappings,
   } = controller;
 
+  const visibleOptionEntries = Object.entries(options).flatMap(
+    ([type, typeOptions]) =>
+      shouldShowCategory(type) ? ([[type, typeOptions]] as const) : []
+  );
+
   return (
     <div className="journalit-settings-tab custom-options-settings journalit-u-max-h-full journalit-u-overflow-visible">
       <div className="custom-options-container">
         
-        {Object.entries(options)
-          .filter(([type, _]) => shouldShowCategory(type))
-          .map(([type, typeOptions]) => (
-            <div key={type} className="option-category">
-              {!typeOptions || typeOptions.length === 0 ? (
-                <p className="setting-item-description">
-                  {t('settings.customization.options.empty-state', {
-                    type: getDisplayName(type).toLowerCase(),
-                  })}
-                </p>
-              ) : (
-                <div className="custom-options-container">
-                  
-                  {type === 'instrument'
-                    ? 
-                      allOptionsForType(typeOptions, OptionType.INSTRUMENT).map(
-                        (instrument) => {
-                          const optionKey = instrument.name;
-                          const optionInfo = editStates[type]?.[optionKey];
+        {visibleOptionEntries.map(([type, typeOptions]) => (
+          <div key={type} className="option-category">
+            {!typeOptions || typeOptions.length === 0 ? (
+              <p className="setting-item-description">
+                {t('settings.customization.options.empty-state', {
+                  type: getDisplayName(type).toLowerCase(),
+                })}
+              </p>
+            ) : (
+              <div className="custom-options-container">
+                
+                {type === 'instrument'
+                  ? 
+                    allOptionsForType(typeOptions, OptionType.INSTRUMENT).map(
+                      (instrument) => {
+                        const optionKey = instrument.name;
+                        const optionInfo = editStates[type]?.[optionKey];
 
+                        
+                        if (!optionInfo) return null;
+
+                        return optionInfo.isEditing ? (
                           
-                          if (!optionInfo) return null;
-
-                          return optionInfo.isEditing ? (
-                            
-                            <div
-                              key={`${type}-${optionKey}-${instrument.assetType}`}
-                              className="setting-item option-item"
-                            >
-                              <div className="setting-item-control journalit-u-flex-col journalit-u-items-stretch">
-                                <div className="journalit-u-flex journalit-u-gap-8 journalit-u-w-full">
-                                  <input
-                                    type="text"
-                                    value={optionInfo.editValue}
-                                    onChange={(e) =>
-                                      updateEditValue(
-                                        type,
-                                        optionKey,
-                                        e.target.value
-                                      )
+                          <div
+                            key={`${type}-${optionKey}-${instrument.assetType}`}
+                            className="setting-item option-item"
+                          >
+                            <div className="setting-item-control journalit-u-flex-col journalit-u-items-stretch">
+                              <div className="journalit-u-flex journalit-u-gap-8 journalit-u-w-full">
+                                <input
+                                  type="text"
+                                  value={optionInfo.editValue}
+                                  onChange={(e) =>
+                                    updateEditValue(
+                                      type,
+                                      optionKey,
+                                      e.target.value
+                                    )
+                                  }
+                                  onKeyDown={(e) => {
+                                    if (e.key === 'Enter') {
+                                      e.preventDefault();
+                                      void saveOption(type, optionKey);
+                                    } else if (e.key === 'Escape') {
+                                      e.preventDefault();
+                                      cancelEditing(type, optionKey);
                                     }
-                                    onKeyDown={(e) => {
-                                      if (e.key === 'Enter') {
-                                        e.preventDefault();
-                                        void saveOption(type, optionKey);
-                                      } else if (e.key === 'Escape') {
-                                        e.preventDefault();
-                                        cancelEditing(type, optionKey);
+                                  }}
+                                  className="option-edit-input journalit-u-flex-1"
+                                  data-option={optionKey}
+                                  aria-label={t(
+                                    'settings.customization.options.label.edit-option',
+                                    { option: optionKey }
+                                  )}
+                                />
+                                <select
+                                  className="custom-options-asset-select"
+                                  value={
+                                    optionInfo.editAssetType ||
+                                    instrument.assetType
+                                  }
+                                  onChange={(e) =>
+                                    updateEditAssetType(
+                                      type,
+                                      optionKey,
+                                      e.target.value
+                                    )
+                                  }
+                                >
+                                  {Object.values(AssetType).map((assetType) => (
+                                    <option key={assetType} value={assetType}>
+                                      {getAssetTypeDisplayName(assetType)}
+                                    </option>
+                                  ))}
+                                </select>
+                              </div>
+
+                              {(optionInfo.editAssetType ||
+                                instrument.assetType) === 'cfd' && (
+                                <div className="custom-options-cfd-row">
+                                  <div>
+                                    <label className="custom-options-spec-label">
+                                      {t('settings.general.currency')}
+                                    </label>
+                                    <select
+                                      className="journalit-u-w-full"
+                                      value={optionInfo.editCurrency || ''}
+                                      onChange={(e) =>
+                                        updateSpecField(
+                                          type,
+                                          optionKey,
+                                          'editCurrency',
+                                          e.target.value
+                                        )
                                       }
-                                    }}
-                                    className="option-edit-input journalit-u-flex-1"
-                                    data-option={optionKey}
-                                    aria-label={t(
-                                      'settings.customization.options.label.edit-option',
-                                      { option: optionKey }
-                                    )}
-                                  />
-                                  <select
-                                    className="custom-options-asset-select"
-                                    value={
-                                      optionInfo.editAssetType ||
-                                      instrument.assetType
-                                    }
-                                    onChange={(e) =>
-                                      updateEditAssetType(
-                                        type,
-                                        optionKey,
-                                        e.target.value
-                                      )
-                                    }
-                                  >
-                                    {Object.values(AssetType).map(
-                                      (assetType) => (
-                                        <option
-                                          key={assetType}
-                                          value={assetType}
-                                        >
-                                          {getAssetTypeDisplayName(assetType)}
-                                        </option>
-                                      )
-                                    )}
-                                  </select>
-                                </div>
-
-                                {(optionInfo.editAssetType ||
-                                  instrument.assetType) === 'cfd' && (
-                                  <div className="custom-options-cfd-row">
-                                    <div>
-                                      <label className="custom-options-spec-label">
-                                        {t('settings.general.currency')}
-                                      </label>
-                                      <select
-                                        className="journalit-u-w-full"
-                                        value={optionInfo.editCurrency || ''}
-                                        onChange={(e) =>
-                                          updateSpecField(
-                                            type,
-                                            optionKey,
-                                            'editCurrency',
-                                            e.target.value
-                                          )
-                                        }
-                                      >
-                                        <option value="">
-                                          {t('common.none')}
-                                        </option>
-                                        {getCurrencyOptions().map(
-                                          (currencyOption) => (
-                                            <option
-                                              key={currencyOption.value}
-                                              value={currencyOption.value}
-                                            >
-                                              {currencyOption.label}
-                                            </option>
-                                          )
-                                        )}
-                                      </select>
-                                    </div>
-                                    <div>
-                                      <label className="custom-options-spec-label">
-                                        {t('form.field.contract-size')}
-                                      </label>
-                                      <input
-                                        type="number"
-                                        value={
-                                          optionInfo.editContractSize || ''
-                                        }
-                                        onChange={(e) =>
-                                          updateSpecField(
-                                            type,
-                                            optionKey,
-                                            'editContractSize',
-                                            e.target.value
-                                          )
-                                        }
-                                        className="journalit-u-w-full"
-                                        step="any"
-                                      />
-                                    </div>
-
-                                    <div className="option-actions custom-options-cfd-actions">
-                                      <NoTooltipButton
-                                        className="custom-options-compact-icon-button"
-                                        label={t(
-                                          'settings.customization.options.label.save-changes'
-                                        )}
-                                        onClick={() =>
-                                          saveOption(type, optionKey)
-                                        }
-                                      >
-                                        <Check size={16} />
-                                      </NoTooltipButton>
-                                      <NoTooltipButton
-                                        className="custom-options-compact-icon-button"
-                                        label={t(
-                                          'settings.customization.options.label.cancel-editing'
-                                        )}
-                                        onClick={() =>
-                                          cancelEditing(type, optionKey)
-                                        }
-                                      >
-                                        <X size={16} />
-                                      </NoTooltipButton>
-                                    </div>
-                                  </div>
-                                )}
-
-                                
-                                {(optionInfo.editAssetType ||
-                                  instrument.assetType) === 'futures' && (
-                                  <div className="custom-options-spec-grid">
-                                    <div>
-                                      <label className="custom-options-spec-label">
-                                        {t('form.field.dollars-per-point')}
-                                      </label>
-                                      <input
-                                        type="number"
-                                        placeholder={t(
-                                          'settings.customization.options.placeholder.dollar-per-point'
-                                        )}
-                                        value={
-                                          optionInfo.editDollarPerPoint || ''
-                                        }
-                                        onChange={(e) =>
-                                          updateSpecField(
-                                            type,
-                                            optionKey,
-                                            'editDollarPerPoint',
-                                            e.target.value
-                                          )
-                                        }
-                                        className="journalit-u-w-full"
-                                        step="any"
-                                      />
-                                    </div>
-                                    <div>
-                                      <label className="custom-options-spec-label">
-                                        {t('form.field.tick-size')}
-                                      </label>
-                                      <input
-                                        type="number"
-                                        placeholder={t(
-                                          'settings.customization.options.placeholder.tick-size'
-                                        )}
-                                        value={optionInfo.editTickSize || ''}
-                                        onChange={(e) =>
-                                          updateSpecField(
-                                            type,
-                                            optionKey,
-                                            'editTickSize',
-                                            e.target.value
-                                          )
-                                        }
-                                        className="journalit-u-w-full"
-                                        step="any"
-                                      />
-                                    </div>
-                                    <div>
-                                      <label className="custom-options-spec-label">
-                                        {t('form.field.tick-value')}
-                                      </label>
-                                      <input
-                                        type="number"
-                                        placeholder={t(
-                                          'settings.customization.options.placeholder.tick-value'
-                                        )}
-                                        value={optionInfo.editTickValue || ''}
-                                        onChange={(e) =>
-                                          updateSpecField(
-                                            type,
-                                            optionKey,
-                                            'editTickValue',
-                                            e.target.value
-                                          )
-                                        }
-                                        className="journalit-u-w-full"
-                                        step="any"
-                                      />
-                                    </div>
-                                  </div>
-                                )}
-
-                                
-                                {(optionInfo.editAssetType ||
-                                  instrument.assetType) === 'forex' && (
-                                  <div className="custom-options-spec-grid">
-                                    <div>
-                                      <label className="custom-options-spec-label">
-                                        {t('form.field.lot-size')}
-                                      </label>
-                                      <input
-                                        type="number"
-                                        placeholder={t(
-                                          'settings.customization.options.placeholder.lot-size'
-                                        )}
-                                        value={optionInfo.editLotSize || ''}
-                                        onChange={(e) =>
-                                          updateSpecField(
-                                            type,
-                                            optionKey,
-                                            'editLotSize',
-                                            e.target.value
-                                          )
-                                        }
-                                        className="journalit-u-w-full"
-                                        step="any"
-                                      />
-                                    </div>
-                                    <div>
-                                      <label className="custom-options-spec-label">
-                                        {t('form.field.pip-value')}
-                                      </label>
-                                      <input
-                                        type="number"
-                                        placeholder={t(
-                                          'settings.customization.options.placeholder.pip-value'
-                                        )}
-                                        value={optionInfo.editPipValue || ''}
-                                        onChange={(e) =>
-                                          updateSpecField(
-                                            type,
-                                            optionKey,
-                                            'editPipValue',
-                                            e.target.value
-                                          )
-                                        }
-                                        className="journalit-u-w-full"
-                                        step="any"
-                                      />
-                                    </div>
-                                    <div>
-                                      <label className="custom-options-spec-label">
-                                        {t(
-                                          'settings.customization.options.field.pip-size'
-                                        )}
-                                      </label>
-                                      <input
-                                        type="number"
-                                        placeholder={t(
-                                          'settings.customization.options.placeholder.pip-size'
-                                        )}
-                                        value={optionInfo.editPipSize || ''}
-                                        onChange={(e) =>
-                                          updateSpecField(
-                                            type,
-                                            optionKey,
-                                            'editPipSize',
-                                            e.target.value
-                                          )
-                                        }
-                                        className="journalit-u-w-full"
-                                        step="any"
-                                      />
-                                    </div>
-                                  </div>
-                                )}
-
-                                {(optionInfo.editAssetType ||
-                                  instrument.assetType) !== 'cfd' && (
-                                  <div className="custom-options-commission-section">
-                                    <div className="custom-options-commission-header">
-                                      <span>
-                                        {t(
-                                          'settings.customization.options.commission.costs'
-                                        )}
-                                      </span>
-                                      <Button
-                                        onClick={() =>
-                                          addCommissionRule(type, optionKey)
-                                        }
-                                        disabled={(
-                                          optionInfo.editCommissionRules || []
-                                        ).some((rule) => !rule.account.trim())}
-                                      >
-                                        {t(
-                                          'settings.customization.options.commission.add-rule'
-                                        )}
-                                      </Button>
-                                    </div>
-                                    {(optionInfo.editCommissionRules || [])
-                                      .length > 0 && (
-                                      <div className="custom-options-commission-table">
-                                        {(
-                                          optionInfo.editCommissionRules || []
-                                        ).map((rule, ruleIndex) => (
-                                          <div
-                                            className={`custom-options-commission-rule custom-options-commission-rule--${rule.method}`}
-                                            key={ruleIndex}
+                                    >
+                                      <option value="">
+                                        {t('common.none')}
+                                      </option>
+                                      {getCurrencyOptions().map(
+                                        (currencyOption) => (
+                                          <option
+                                            key={currencyOption.value}
+                                            value={currencyOption.value}
                                           >
-                                            <div className="custom-options-commission-field custom-options-commission-field--account">
-                                              <span>
-                                                {t(
-                                                  'settings.customization.options.commission.applies-to'
-                                                )}
-                                              </span>
-                                              <CommissionAccountDropdown
-                                                accounts={options['account']}
-                                                value={rule.account}
-                                                onChange={(account) =>
-                                                  updateCommissionRule(
-                                                    type,
-                                                    optionKey,
-                                                    ruleIndex,
-                                                    'account',
-                                                    account
-                                                  )
-                                                }
-                                              />
-                                            </div>
-                                            <div className="custom-options-commission-field custom-options-commission-field--method">
-                                              <span>
-                                                {t(
-                                                  'settings.customization.options.commission.method'
-                                                )}
-                                              </span>
-                                              <div
-                                                className="custom-options-commission-method-toggle"
-                                                role="radiogroup"
-                                                aria-label={t(
-                                                  'settings.customization.options.commission.method'
-                                                )}
-                                              >
-                                                <button
-                                                  type="button"
-                                                  className="custom-options-commission-method-button"
-                                                  aria-checked={
-                                                    rule.method === 'perSide'
-                                                  }
-                                                  role="radio"
-                                                  onClick={() =>
-                                                    updateCommissionRule(
-                                                      type,
-                                                      optionKey,
-                                                      ruleIndex,
-                                                      'method',
-                                                      'perSide'
-                                                    )
-                                                  }
-                                                >
-                                                  {t(
-                                                    'settings.customization.options.commission.per-side'
-                                                  )}
-                                                </button>
-                                                <button
-                                                  type="button"
-                                                  className="custom-options-commission-method-button"
-                                                  aria-checked={
-                                                    rule.method === 'roundTrip'
-                                                  }
-                                                  role="radio"
-                                                  onClick={() =>
-                                                    updateCommissionRule(
-                                                      type,
-                                                      optionKey,
-                                                      ruleIndex,
-                                                      'method',
-                                                      'roundTrip'
-                                                    )
-                                                  }
-                                                >
-                                                  {t(
-                                                    'settings.customization.options.commission.round-trip'
-                                                  )}
-                                                </button>
-                                              </div>
-                                            </div>
-                                            {rule.method === 'perSide' && (
-                                              <>
-                                                <label className="custom-options-commission-field custom-options-commission-field--entry">
-                                                  <span>
-                                                    {t(
-                                                      'settings.customization.options.commission.entry'
-                                                    )}
-                                                  </span>
-                                                  <input
-                                                    type="number"
-                                                    value={rule.entryCommission}
-                                                    onChange={(e) =>
-                                                      updateCommissionRule(
-                                                        type,
-                                                        optionKey,
-                                                        ruleIndex,
-                                                        'entryCommission',
-                                                        e.target.value
-                                                      )
-                                                    }
-                                                    step="any"
-                                                  />
-                                                </label>
-                                                <label className="custom-options-commission-field custom-options-commission-field--exit">
-                                                  <span>
-                                                    {t(
-                                                      'settings.customization.options.commission.exit'
-                                                    )}
-                                                  </span>
-                                                  <input
-                                                    type="number"
-                                                    value={rule.exitCommission}
-                                                    onChange={(e) =>
-                                                      updateCommissionRule(
-                                                        type,
-                                                        optionKey,
-                                                        ruleIndex,
-                                                        'exitCommission',
-                                                        e.target.value
-                                                      )
-                                                    }
-                                                    step="any"
-                                                  />
-                                                </label>
-                                              </>
-                                            )}
-                                            {rule.method === 'roundTrip' && (
-                                              <label className="custom-options-commission-field custom-options-commission-field--round-trip">
-                                                <span>
-                                                  {t(
-                                                    'settings.customization.options.commission.round-trip'
-                                                  )}
-                                                </span>
-                                                <input
-                                                  type="number"
-                                                  value={
-                                                    rule.roundTripCommission
-                                                  }
-                                                  onChange={(e) =>
-                                                    updateCommissionRule(
-                                                      type,
-                                                      optionKey,
-                                                      ruleIndex,
-                                                      'roundTripCommission',
-                                                      e.target.value
-                                                    )
-                                                  }
-                                                  step="any"
-                                                />
-                                              </label>
-                                            )}
-                                            <NoTooltipButton
-                                              className="custom-options-compact-icon-button"
-                                              label={t(
-                                                'settings.customization.options.commission.remove-rule'
-                                              )}
-                                              onClick={() =>
-                                                removeCommissionRule(
-                                                  type,
-                                                  optionKey,
-                                                  ruleIndex
-                                                )
-                                              }
-                                            >
-                                              <Trash size={16} />
-                                            </NoTooltipButton>
-                                          </div>
-                                        ))}
-                                      </div>
-                                    )}
+                                            {currencyOption.label}
+                                          </option>
+                                        )
+                                      )}
+                                    </select>
                                   </div>
-                                )}
+                                  <div>
+                                    <label className="custom-options-spec-label">
+                                      {t('form.field.contract-size')}
+                                    </label>
+                                    <input
+                                      type="number"
+                                      value={optionInfo.editContractSize || ''}
+                                      onChange={(e) =>
+                                        updateSpecField(
+                                          type,
+                                          optionKey,
+                                          'editContractSize',
+                                          e.target.value
+                                        )
+                                      }
+                                      className="journalit-u-w-full"
+                                      step="any"
+                                    />
+                                  </div>
 
-                                {(optionInfo.editAssetType ||
-                                  instrument.assetType) !== 'cfd' && (
-                                  <div className="option-actions journalit-u-mt-8">
+                                  <div className="option-actions custom-options-cfd-actions">
                                     <NoTooltipButton
                                       className="custom-options-compact-icon-button"
                                       label={t(
@@ -2653,239 +2272,794 @@ const renderCustomOptionsTab = (
                                       <X size={16} />
                                     </NoTooltipButton>
                                   </div>
-                                )}
-                              </div>
-                            </div>
-                          ) : (
-                            
-                            <div
-                              key={`${type}-${optionKey}-${instrument.assetType}`}
-                              className="setting-item option-item"
-                            >
-                              <div className="setting-item-info">
-                                <div>
-                                  <div className="custom-options-name-row">
-                                    <div className="setting-item-name">
-                                      {optionKey}
-                                    </div>
-                                    <span className="custom-options-asset-tag">
-                                      {getAssetTypeDisplayName(
-                                        instrument.assetType
+                                </div>
+                              )}
+
+                              
+                              {(optionInfo.editAssetType ||
+                                instrument.assetType) === 'futures' && (
+                                <div className="custom-options-spec-grid">
+                                  <div>
+                                    <label className="custom-options-spec-label">
+                                      {t('form.field.dollars-per-point')}
+                                    </label>
+                                    <input
+                                      type="number"
+                                      placeholder={t(
+                                        'settings.customization.options.placeholder.dollar-per-point'
+                                      )}
+                                      value={
+                                        optionInfo.editDollarPerPoint || ''
+                                      }
+                                      onChange={(e) =>
+                                        updateSpecField(
+                                          type,
+                                          optionKey,
+                                          'editDollarPerPoint',
+                                          e.target.value
+                                        )
+                                      }
+                                      className="journalit-u-w-full"
+                                      step="any"
+                                    />
+                                  </div>
+                                  <div>
+                                    <label className="custom-options-spec-label">
+                                      {t('form.field.tick-size')}
+                                    </label>
+                                    <input
+                                      type="number"
+                                      placeholder={t(
+                                        'settings.customization.options.placeholder.tick-size'
+                                      )}
+                                      value={optionInfo.editTickSize || ''}
+                                      onChange={(e) =>
+                                        updateSpecField(
+                                          type,
+                                          optionKey,
+                                          'editTickSize',
+                                          e.target.value
+                                        )
+                                      }
+                                      className="journalit-u-w-full"
+                                      step="any"
+                                    />
+                                  </div>
+                                  <div>
+                                    <label className="custom-options-spec-label">
+                                      {t('form.field.tick-value')}
+                                    </label>
+                                    <input
+                                      type="number"
+                                      placeholder={t(
+                                        'settings.customization.options.placeholder.tick-value'
+                                      )}
+                                      value={optionInfo.editTickValue || ''}
+                                      onChange={(e) =>
+                                        updateSpecField(
+                                          type,
+                                          optionKey,
+                                          'editTickValue',
+                                          e.target.value
+                                        )
+                                      }
+                                      className="journalit-u-w-full"
+                                      step="any"
+                                    />
+                                  </div>
+                                </div>
+                              )}
+
+                              
+                              {(optionInfo.editAssetType ||
+                                instrument.assetType) === 'forex' && (
+                                <div className="custom-options-spec-grid">
+                                  <div>
+                                    <label className="custom-options-spec-label">
+                                      {t('form.field.lot-size')}
+                                    </label>
+                                    <input
+                                      type="number"
+                                      placeholder={t(
+                                        'settings.customization.options.placeholder.lot-size'
+                                      )}
+                                      value={optionInfo.editLotSize || ''}
+                                      onChange={(e) =>
+                                        updateSpecField(
+                                          type,
+                                          optionKey,
+                                          'editLotSize',
+                                          e.target.value
+                                        )
+                                      }
+                                      className="journalit-u-w-full"
+                                      step="any"
+                                    />
+                                  </div>
+                                  <div>
+                                    <label className="custom-options-spec-label">
+                                      {t('form.field.pip-value')}
+                                    </label>
+                                    <input
+                                      type="number"
+                                      placeholder={t(
+                                        'settings.customization.options.placeholder.pip-value'
+                                      )}
+                                      value={optionInfo.editPipValue || ''}
+                                      onChange={(e) =>
+                                        updateSpecField(
+                                          type,
+                                          optionKey,
+                                          'editPipValue',
+                                          e.target.value
+                                        )
+                                      }
+                                      className="journalit-u-w-full"
+                                      step="any"
+                                    />
+                                  </div>
+                                  <div>
+                                    <label className="custom-options-spec-label">
+                                      {t(
+                                        'settings.customization.options.field.pip-size'
+                                      )}
+                                    </label>
+                                    <input
+                                      type="number"
+                                      placeholder={t(
+                                        'settings.customization.options.placeholder.pip-size'
+                                      )}
+                                      value={optionInfo.editPipSize || ''}
+                                      onChange={(e) =>
+                                        updateSpecField(
+                                          type,
+                                          optionKey,
+                                          'editPipSize',
+                                          e.target.value
+                                        )
+                                      }
+                                      className="journalit-u-w-full"
+                                      step="any"
+                                    />
+                                  </div>
+                                </div>
+                              )}
+
+                              {(optionInfo.editAssetType ||
+                                instrument.assetType) !== 'cfd' && (
+                                <div className="custom-options-commission-section">
+                                  <div className="custom-options-commission-header">
+                                    <span>
+                                      {t(
+                                        'settings.customization.options.commission.costs'
                                       )}
                                     </span>
+                                    <Button
+                                      onClick={() =>
+                                        addCommissionRule(type, optionKey)
+                                      }
+                                      disabled={(
+                                        optionInfo.editCommissionRules || []
+                                      ).some((rule) => !rule.account.trim())}
+                                    >
+                                      {t(
+                                        'settings.customization.options.commission.add-rule'
+                                      )}
+                                    </Button>
                                   </div>
-                                  
-                                  {(instrument.assetType === 'futures' ||
-                                    instrument.assetType === 'forex' ||
-                                    instrument.assetType === 'cfd') &&
-                                    (() => {
-                                      const hasCustomFuturesSpecs =
-                                        instrument.assetType === 'futures' &&
-                                        instrument.futuresData &&
-                                        (instrument.futuresData
-                                          .dollarPerPoint ?? 0) > 0 &&
-                                        (instrument.futuresData.tickSize ?? 0) >
-                                          0 &&
-                                        (instrument.futuresData.tickValue ??
-                                          0) > 0;
-
-                                      const hasCustomForexSpecs =
-                                        instrument.assetType === 'forex' &&
-                                        instrument.forexData &&
-                                        (instrument.forexData.lotSize ?? 0) >
-                                          0 &&
-                                        (instrument.forexData.pipValue ?? 0) >
-                                          0 &&
-                                        (instrument.forexData.pipSize ?? 0) > 0;
-
-                                      const hasCustomCfdSpecs =
-                                        instrument.assetType === 'cfd' &&
-                                        instrument.cfdData &&
-                                        (instrument.cfdData.contractSize ?? 0) >
-                                          0;
-
-                                      if (hasCustomFuturesSpecs) {
-                                        const fd = instrument.futuresData!;
-                                        return (
-                                          <div className="custom-options-spec-preview">
-                                            {t(
-                                              'settings.customization.options.instrument.specs-futures',
-                                              {
-                                                dollar: (
-                                                  fd.dollarPerPoint ?? 0
-                                                ).toString(),
-                                                tick: (
-                                                  fd.tickSize ?? 0
-                                                ).toString(),
-                                                value: (
-                                                  fd.tickValue ?? 0
-                                                ).toString(),
-                                              }
-                                            )}
-                                          </div>
-                                        );
-                                      }
-
-                                      if (hasCustomForexSpecs) {
-                                        const fxd = instrument.forexData!;
-                                        return (
-                                          <div className="custom-options-spec-preview">
-                                            {t(
-                                              'settings.customization.options.instrument.specs-forex',
-                                              {
-                                                lot: (
-                                                  fxd.lotSize ?? 0
-                                                ).toString(),
-                                                pip: (
-                                                  fxd.pipValue ?? 0
-                                                ).toString(),
-                                                size: (
-                                                  fxd.pipSize ?? 0
-                                                ).toString(),
-                                              }
-                                            )}
-                                          </div>
-                                        );
-                                      }
-
-                                      if (hasCustomCfdSpecs) {
-                                        return (
-                                          <div className="custom-options-spec-preview">
-                                            {t('form.field.contract-size')}:{' '}
-                                            {(
-                                              instrument.cfdData
-                                                ?.contractSize ?? 0
-                                            ).toString()}
-                                          </div>
-                                        );
-                                      }
-
-                                      const builtInSpecs =
-                                        plugin.specService.getSpecsForSymbol(
-                                          optionKey,
-                                          instrument.assetType
-                                        );
-                                      if (builtInSpecs) {
-                                        if (
-                                          instrument.assetType === 'futures' &&
-                                          'dollarPerPoint' in builtInSpecs
-                                        ) {
-                                          return (
-                                            <div className="custom-options-spec-preview">
+                                  {(optionInfo.editCommissionRules || [])
+                                    .length > 0 && (
+                                    <div className="custom-options-commission-table">
+                                      {(
+                                        optionInfo.editCommissionRules || []
+                                      ).map((rule, ruleIndex) => (
+                                        <div
+                                          className={`custom-options-commission-rule custom-options-commission-rule--${rule.method}`}
+                                          key={ruleIndex}
+                                        >
+                                          <div className="custom-options-commission-field custom-options-commission-field--account">
+                                            <span>
                                               {t(
-                                                'settings.customization.options.instrument.specs-futures',
-                                                {
-                                                  dollar:
-                                                    builtInSpecs.dollarPerPoint.toString(),
-                                                  tick: builtInSpecs.tickSize.toString(),
-                                                  value:
-                                                    builtInSpecs.tickValue.toString(),
-                                                }
+                                                'settings.customization.options.commission.applies-to'
                                               )}
-                                              <span className="custom-options-spec-built-in">
+                                            </span>
+                                            <CommissionAccountDropdown
+                                              accounts={options['account']}
+                                              value={rule.account}
+                                              onChange={(account) =>
+                                                updateCommissionRule(
+                                                  type,
+                                                  optionKey,
+                                                  ruleIndex,
+                                                  'account',
+                                                  account
+                                                )
+                                              }
+                                            />
+                                          </div>
+                                          <div className="custom-options-commission-field custom-options-commission-field--method">
+                                            <span>
+                                              {t(
+                                                'settings.customization.options.commission.method'
+                                              )}
+                                            </span>
+                                            <div
+                                              className="custom-options-commission-method-toggle"
+                                              role="radiogroup"
+                                              aria-label={t(
+                                                'settings.customization.options.commission.method'
+                                              )}
+                                            >
+                                              <button
+                                                type="button"
+                                                className="custom-options-commission-method-button"
+                                                aria-checked={
+                                                  rule.method === 'perSide'
+                                                }
+                                                role="radio"
+                                                onClick={() =>
+                                                  updateCommissionRule(
+                                                    type,
+                                                    optionKey,
+                                                    ruleIndex,
+                                                    'method',
+                                                    'perSide'
+                                                  )
+                                                }
+                                              >
                                                 {t(
-                                                  'settings.customization.options.instrument.built-in'
+                                                  'settings.customization.options.commission.per-side'
+                                                )}
+                                              </button>
+                                              <button
+                                                type="button"
+                                                className="custom-options-commission-method-button"
+                                                aria-checked={
+                                                  rule.method === 'roundTrip'
+                                                }
+                                                role="radio"
+                                                onClick={() =>
+                                                  updateCommissionRule(
+                                                    type,
+                                                    optionKey,
+                                                    ruleIndex,
+                                                    'method',
+                                                    'roundTrip'
+                                                  )
+                                                }
+                                              >
+                                                {t(
+                                                  'settings.customization.options.commission.round-trip'
+                                                )}
+                                              </button>
+                                            </div>
+                                          </div>
+                                          {rule.method === 'perSide' && (
+                                            <>
+                                              <label className="custom-options-commission-field custom-options-commission-field--entry">
+                                                <span>
+                                                  {t(
+                                                    'settings.customization.options.commission.entry'
+                                                  )}
+                                                </span>
+                                                <input
+                                                  type="number"
+                                                  value={rule.entryCommission}
+                                                  onChange={(e) =>
+                                                    updateCommissionRule(
+                                                      type,
+                                                      optionKey,
+                                                      ruleIndex,
+                                                      'entryCommission',
+                                                      e.target.value
+                                                    )
+                                                  }
+                                                  step="any"
+                                                />
+                                              </label>
+                                              <label className="custom-options-commission-field custom-options-commission-field--exit">
+                                                <span>
+                                                  {t(
+                                                    'settings.customization.options.commission.exit'
+                                                  )}
+                                                </span>
+                                                <input
+                                                  type="number"
+                                                  value={rule.exitCommission}
+                                                  onChange={(e) =>
+                                                    updateCommissionRule(
+                                                      type,
+                                                      optionKey,
+                                                      ruleIndex,
+                                                      'exitCommission',
+                                                      e.target.value
+                                                    )
+                                                  }
+                                                  step="any"
+                                                />
+                                              </label>
+                                            </>
+                                          )}
+                                          {rule.method === 'roundTrip' && (
+                                            <label className="custom-options-commission-field custom-options-commission-field--round-trip">
+                                              <span>
+                                                {t(
+                                                  'settings.customization.options.commission.round-trip'
                                                 )}
                                               </span>
-                                            </div>
-                                          );
-                                        } else if (
-                                          instrument.assetType === 'forex' &&
-                                          'lotSize' in builtInSpecs
-                                        ) {
-                                          return (
-                                            <div className="custom-options-spec-preview">
-                                              {t(
-                                                'settings.customization.options.instrument.specs-forex',
-                                                {
-                                                  lot: builtInSpecs.lotSize.toString(),
-                                                  pip: builtInSpecs.pipValue.toString(),
-                                                  size: builtInSpecs.pipSize.toString(),
+                                              <input
+                                                type="number"
+                                                value={rule.roundTripCommission}
+                                                onChange={(e) =>
+                                                  updateCommissionRule(
+                                                    type,
+                                                    optionKey,
+                                                    ruleIndex,
+                                                    'roundTripCommission',
+                                                    e.target.value
+                                                  )
                                                 }
-                                              )}
-                                              <span className="custom-options-spec-built-in">
-                                                {t(
-                                                  'settings.customization.options.instrument.built-in'
-                                                )}
-                                              </span>
-                                            </div>
-                                          );
-                                        }
-                                      }
+                                                step="any"
+                                              />
+                                            </label>
+                                          )}
+                                          <NoTooltipButton
+                                            className="custom-options-compact-icon-button"
+                                            label={t(
+                                              'settings.customization.options.commission.remove-rule'
+                                            )}
+                                            onClick={() =>
+                                              removeCommissionRule(
+                                                type,
+                                                optionKey,
+                                                ruleIndex
+                                              )
+                                            }
+                                          >
+                                            <Trash size={16} />
+                                          </NoTooltipButton>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  )}
+                                </div>
+                              )}
 
-                                      return null;
-                                    })()}
-                                  {instrument.assetType === 'cfd' &&
-                                    instrument.currency && (
-                                      <div className="custom-options-spec-preview">
-                                        {t('settings.general.currency')}:{' '}
-                                        {instrument.currency}
-                                      </div>
+                              {(optionInfo.editAssetType ||
+                                instrument.assetType) !== 'cfd' && (
+                                <div className="option-actions journalit-u-mt-8">
+                                  <NoTooltipButton
+                                    className="custom-options-compact-icon-button"
+                                    label={t(
+                                      'settings.customization.options.label.save-changes'
                                     )}
-                                  
-                                  {(() => {
-                                    const mapping = symbolMappings.find(
-                                      (m) =>
-                                        m.importedSymbol.toUpperCase() ===
-                                        optionKey.toUpperCase()
-                                    );
-                                    if (mapping) {
+                                    onClick={() => saveOption(type, optionKey)}
+                                  >
+                                    <Check size={16} />
+                                  </NoTooltipButton>
+                                  <NoTooltipButton
+                                    className="custom-options-compact-icon-button"
+                                    label={t(
+                                      'settings.customization.options.label.cancel-editing'
+                                    )}
+                                    onClick={() =>
+                                      cancelEditing(type, optionKey)
+                                    }
+                                  >
+                                    <X size={16} />
+                                  </NoTooltipButton>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        ) : (
+                          
+                          <div
+                            key={`${type}-${optionKey}-${instrument.assetType}`}
+                            className="setting-item option-item"
+                          >
+                            <div className="setting-item-info">
+                              <div>
+                                <div className="custom-options-name-row">
+                                  <div className="setting-item-name">
+                                    {optionKey}
+                                  </div>
+                                  <span className="custom-options-asset-tag">
+                                    {getAssetTypeDisplayName(
+                                      instrument.assetType
+                                    )}
+                                  </span>
+                                </div>
+                                
+                                {(instrument.assetType === 'futures' ||
+                                  instrument.assetType === 'forex' ||
+                                  instrument.assetType === 'cfd') &&
+                                  (() => {
+                                    const hasCustomFuturesSpecs =
+                                      instrument.assetType === 'futures' &&
+                                      instrument.futuresData &&
+                                      (instrument.futuresData.dollarPerPoint ??
+                                        0) > 0 &&
+                                      (instrument.futuresData.tickSize ?? 0) >
+                                        0 &&
+                                      (instrument.futuresData.tickValue ?? 0) >
+                                        0;
+
+                                    const hasCustomForexSpecs =
+                                      instrument.assetType === 'forex' &&
+                                      instrument.forexData &&
+                                      (instrument.forexData.lotSize ?? 0) > 0 &&
+                                      (instrument.forexData.pipValue ?? 0) >
+                                        0 &&
+                                      (instrument.forexData.pipSize ?? 0) > 0;
+
+                                    const hasCustomCfdSpecs =
+                                      instrument.assetType === 'cfd' &&
+                                      instrument.cfdData &&
+                                      (instrument.cfdData.contractSize ?? 0) >
+                                        0;
+
+                                    if (hasCustomFuturesSpecs) {
+                                      const fd = instrument.futuresData!;
                                       return (
-                                        <div className="custom-options-mapped-message">
+                                        <div className="custom-options-spec-preview">
                                           {t(
-                                            'settings.customization.options.instrument.mapped-to',
-                                            { base: mapping.baseSymbol }
+                                            'settings.customization.options.instrument.specs-futures',
+                                            {
+                                              dollar: (
+                                                fd.dollarPerPoint ?? 0
+                                              ).toString(),
+                                              tick: (
+                                                fd.tickSize ?? 0
+                                              ).toString(),
+                                              value: (
+                                                fd.tickValue ?? 0
+                                              ).toString(),
+                                            }
                                           )}
                                         </div>
                                       );
                                     }
-                                    return null;
-                                  })()}
-                                  
-                                  {(() => {
-                                    const isMapped = symbolMappings.find(
-                                      (m) =>
-                                        m.importedSymbol.toUpperCase() ===
-                                        optionKey.toUpperCase()
-                                    );
-                                    if (isMapped) return null;
 
-                                    if (
-                                      instrument.assetType !== 'futures' &&
-                                      instrument.assetType !== 'forex' &&
-                                      instrument.assetType !== 'cfd'
-                                    )
-                                      return null;
+                                    if (hasCustomForexSpecs) {
+                                      const fxd = instrument.forexData!;
+                                      return (
+                                        <div className="custom-options-spec-preview">
+                                          {t(
+                                            'settings.customization.options.instrument.specs-forex',
+                                            {
+                                              lot: (
+                                                fxd.lotSize ?? 0
+                                              ).toString(),
+                                              pip: (
+                                                fxd.pipValue ?? 0
+                                              ).toString(),
+                                              size: (
+                                                fxd.pipSize ?? 0
+                                              ).toString(),
+                                            }
+                                          )}
+                                        </div>
+                                      );
+                                    }
 
-                                    const hasCustomSpecs =
-                                      instrument.assetType === 'futures'
-                                        ? (instrument.futuresData
-                                            ?.dollarPerPoint ?? 0) > 0
-                                        : instrument.assetType === 'forex'
-                                          ? (instrument.forexData?.lotSize ??
-                                              0) > 0
-                                          : (instrument.cfdData?.contractSize ??
-                                              0) > 0;
+                                    if (hasCustomCfdSpecs) {
+                                      return (
+                                        <div className="custom-options-spec-preview">
+                                          {t('form.field.contract-size')}:{' '}
+                                          {(
+                                            instrument.cfdData?.contractSize ??
+                                            0
+                                          ).toString()}
+                                        </div>
+                                      );
+                                    }
 
                                     const builtInSpecs =
                                       plugin.specService.getSpecsForSymbol(
                                         optionKey,
                                         instrument.assetType
                                       );
-
-                                    if (!hasCustomSpecs && !builtInSpecs) {
-                                      return (
-                                        <div className="custom-options-spec-empty">
-                                          {t(
-                                            'settings.customization.options.instrument.no-specs'
-                                          )}
-                                        </div>
-                                      );
+                                    if (builtInSpecs) {
+                                      if (
+                                        instrument.assetType === 'futures' &&
+                                        'dollarPerPoint' in builtInSpecs
+                                      ) {
+                                        return (
+                                          <div className="custom-options-spec-preview">
+                                            {t(
+                                              'settings.customization.options.instrument.specs-futures',
+                                              {
+                                                dollar:
+                                                  builtInSpecs.dollarPerPoint.toString(),
+                                                tick: builtInSpecs.tickSize.toString(),
+                                                value:
+                                                  builtInSpecs.tickValue.toString(),
+                                              }
+                                            )}
+                                            <span className="custom-options-spec-built-in">
+                                              {t(
+                                                'settings.customization.options.instrument.built-in'
+                                              )}
+                                            </span>
+                                          </div>
+                                        );
+                                      } else if (
+                                        instrument.assetType === 'forex' &&
+                                        'lotSize' in builtInSpecs
+                                      ) {
+                                        return (
+                                          <div className="custom-options-spec-preview">
+                                            {t(
+                                              'settings.customization.options.instrument.specs-forex',
+                                              {
+                                                lot: builtInSpecs.lotSize.toString(),
+                                                pip: builtInSpecs.pipValue.toString(),
+                                                size: builtInSpecs.pipSize.toString(),
+                                              }
+                                            )}
+                                            <span className="custom-options-spec-built-in">
+                                              {t(
+                                                'settings.customization.options.instrument.built-in'
+                                              )}
+                                            </span>
+                                          </div>
+                                        );
+                                      }
                                     }
 
                                     return null;
                                   })()}
+                                {instrument.assetType === 'cfd' &&
+                                  instrument.currency && (
+                                    <div className="custom-options-spec-preview">
+                                      {t('settings.general.currency')}:{' '}
+                                      {instrument.currency}
+                                    </div>
+                                  )}
+                                
+                                {(() => {
+                                  const mapping = symbolMappings.find(
+                                    (m) =>
+                                      m.importedSymbol.toUpperCase() ===
+                                      optionKey.toUpperCase()
+                                  );
+                                  if (mapping) {
+                                    return (
+                                      <div className="custom-options-mapped-message">
+                                        {t(
+                                          'settings.customization.options.instrument.mapped-to',
+                                          { base: mapping.baseSymbol }
+                                        )}
+                                      </div>
+                                    );
+                                  }
+                                  return null;
+                                })()}
+                                
+                                {(() => {
+                                  const isMapped = symbolMappings.find(
+                                    (m) =>
+                                      m.importedSymbol.toUpperCase() ===
+                                      optionKey.toUpperCase()
+                                  );
+                                  if (isMapped) return null;
+
+                                  if (
+                                    instrument.assetType !== 'futures' &&
+                                    instrument.assetType !== 'forex' &&
+                                    instrument.assetType !== 'cfd'
+                                  )
+                                    return null;
+
+                                  const hasCustomSpecs =
+                                    instrument.assetType === 'futures'
+                                      ? (instrument.futuresData
+                                          ?.dollarPerPoint ?? 0) > 0
+                                      : instrument.assetType === 'forex'
+                                        ? (instrument.forexData?.lotSize ?? 0) >
+                                          0
+                                        : (instrument.cfdData?.contractSize ??
+                                            0) > 0;
+
+                                  const builtInSpecs =
+                                    plugin.specService.getSpecsForSymbol(
+                                      optionKey,
+                                      instrument.assetType
+                                    );
+
+                                  if (!hasCustomSpecs && !builtInSpecs) {
+                                    return (
+                                      <div className="custom-options-spec-empty">
+                                        {t(
+                                          'settings.customization.options.instrument.no-specs'
+                                        )}
+                                      </div>
+                                    );
+                                  }
+
+                                  return null;
+                                })()}
+                              </div>
+                            </div>
+                            <div className="setting-item-control">
+                              <div className="option-actions">
+                                <NoTooltipButton
+                                  label={t(
+                                    'settings.customization.options.label.edit-option',
+                                    { option: optionKey }
+                                  )}
+                                  onClick={() => startEditing(type, optionKey)}
+                                >
+                                  <Edit size={24} />
+                                </NoTooltipButton>
+                                <NoTooltipButton
+                                  label={t(
+                                    'settings.customization.options.label.remove-option',
+                                    { option: optionKey }
+                                  )}
+                                  onClick={() => removeOption(type, optionKey)}
+                                >
+                                  <Trash size={24} />
+                                </NoTooltipButton>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      }
+                    )
+                  : type === 'event'
+                    ? 
+                      allOptionsForType(typeOptions, OptionType.EVENT).map(
+                        (event) => {
+                          const optionKey = event.name;
+                          const optionInfo = editStates[type]?.[optionKey];
+
+                          
+                          if (!optionInfo) return null;
+
+                          return optionInfo.isEditing ? (
+                            
+                            <div
+                              key={`${type}-${optionKey}`}
+                              className="setting-item option-item custom-options-event-item-edit"
+                              role="group"
+                              aria-label={t(
+                                'settings.customization.options.label.edit-option',
+                                { option: optionKey }
+                              )}
+                            >
+                              <div className="setting-item-control custom-options-event-editor">
+                                <div className="custom-options-event-editor-main">
+                                  <input
+                                    type="text"
+                                    value={optionInfo.editValue}
+                                    onChange={(e) =>
+                                      updateEditValue(
+                                        type,
+                                        optionKey,
+                                        e.target.value
+                                      )
+                                    }
+                                    onKeyDown={(e) => {
+                                      if (e.key === 'Enter') {
+                                        e.preventDefault();
+                                        void saveOption(type, optionKey);
+                                      } else if (e.key === 'Escape') {
+                                        e.preventDefault();
+                                        cancelEditing(type, optionKey);
+                                      }
+                                    }}
+                                    className="option-edit-input custom-options-event-input"
+                                    data-option={optionKey}
+                                    aria-label={t(
+                                      'settings.customization.options.label.edit-option',
+                                      { option: optionKey }
+                                    )}
+                                  />
                                 </div>
+                                <div className="custom-options-event-editor-footer">
+                                  <div className="custom-options-color-picker custom-options-color-picker--compact">
+                                    <span className="custom-options-color-label">
+                                      {t(
+                                        'settings.customization.options.field.priority'
+                                      )}
+                                    </span>
+                                    {EVENT_COLORS.map((color) => {
+                                      const key = `common.color.${color}`;
+                                      const label = hasTranslation(key)
+                                        ? t(key)
+                                        : key;
+
+                                      return (
+                                        <button
+                                          key={color}
+                                          type="button"
+                                          className={`clickable-icon custom-options-color-option${
+                                            optionInfo.editColor === color
+                                              ? ' custom-options-color-option--selected'
+                                              : ''
+                                          }`}
+                                          onClick={() =>
+                                            updateEditColor(
+                                              type,
+                                              optionKey,
+                                              color
+                                            )
+                                          }
+                                          aria-label={label}
+                                        >
+                                          <span
+                                            className={`custom-options-color-swatch custom-options-color-swatch--${color}`}
+                                          />
+                                        </button>
+                                      );
+                                    })}
+                                  </div>
+                                  <label className="custom-options-spec-label">
+                                    {t(
+                                      'settings.customization.options.field.default-event-notes'
+                                    )}
+                                  </label>
+                                  <textarea
+                                    value={optionInfo.editNotes || ''}
+                                    onChange={(e) =>
+                                      updateEditNotes(
+                                        type,
+                                        optionKey,
+                                        e.target.value
+                                      )
+                                    }
+                                    placeholder={t(
+                                      'settings.customization.options.placeholder.default-event-notes'
+                                    )}
+                                    className="custom-options-event-notes-textarea"
+                                    rows={4}
+                                  />
+                                  <div className="option-actions custom-options-event-actions">
+                                    <NoTooltipButton
+                                      label={t(
+                                        'settings.customization.options.label.save-changes'
+                                      )}
+                                      onClick={() =>
+                                        saveOption(type, optionKey)
+                                      }
+                                    >
+                                      <Check size={24} />
+                                    </NoTooltipButton>
+                                    <NoTooltipButton
+                                      label={t(
+                                        'settings.customization.options.label.cancel-editing'
+                                      )}
+                                      onClick={() =>
+                                        cancelEditing(type, optionKey)
+                                      }
+                                    >
+                                      <X size={24} />
+                                    </NoTooltipButton>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          ) : (
+                            
+                            <div
+                              key={`${type}-${optionKey}`}
+                              className="setting-item option-item"
+                            >
+                              <div className="setting-item-info">
+                                <div className="setting-item-name custom-options-name-row">
+                                  {optionKey}
+                                  <span
+                                    className={`custom-options-event-color-dot custom-options-event-color-dot--${event.color}`}
+                                    aria-label={`${t('settings.customization.options.field.priority')} ${event.color}`}
+                                  ></span>
+                                </div>
+                                {event.notes && (
+                                  <div className="setting-item-description custom-options-event-notes-preview">
+                                    {event.notes}
+                                  </div>
+                                )}
                               </div>
                               <div className="setting-item-control">
                                 <div className="option-actions">
@@ -2917,602 +3091,156 @@ const renderCustomOptionsTab = (
                           );
                         }
                       )
-                    : type === 'event'
-                      ? 
-                        allOptionsForType(typeOptions, OptionType.EVENT).map(
-                          (event) => {
-                            const optionKey = event.name;
-                            const optionInfo = editStates[type]?.[optionKey];
+                    : 
+                      allOptionsForType(typeOptions, OptionType.ACCOUNT).map(
+                        (option) => {
+                          const optionInfo = editStates[type]?.[option];
 
+                          
+                          if (!optionInfo) return null;
+
+                          return optionInfo.isEditing ? (
                             
-                            if (!optionInfo) return null;
-
-                            return optionInfo.isEditing ? (
-                              
-                              <div
-                                key={`${type}-${optionKey}`}
-                                className="setting-item option-item custom-options-event-item-edit"
-                                role="group"
-                                aria-label={t(
-                                  'settings.customization.options.label.edit-option',
-                                  { option: optionKey }
-                                )}
-                              >
-                                <div className="setting-item-control custom-options-event-editor">
-                                  <div className="custom-options-event-editor-main">
-                                    <input
-                                      type="text"
-                                      value={optionInfo.editValue}
-                                      onChange={(e) =>
-                                        updateEditValue(
-                                          type,
-                                          optionKey,
-                                          e.target.value
-                                        )
-                                      }
-                                      onKeyDown={(e) => {
-                                        if (e.key === 'Enter') {
-                                          e.preventDefault();
-                                          void saveOption(type, optionKey);
-                                        } else if (e.key === 'Escape') {
-                                          e.preventDefault();
-                                          cancelEditing(type, optionKey);
-                                        }
-                                      }}
-                                      className="option-edit-input custom-options-event-input"
-                                      data-option={optionKey}
-                                      aria-label={t(
-                                        'settings.customization.options.label.edit-option',
-                                        { option: optionKey }
-                                      )}
-                                    />
-                                  </div>
-                                  <div className="custom-options-event-editor-footer">
-                                    <div className="custom-options-color-picker custom-options-color-picker--compact">
-                                      <span className="custom-options-color-label">
-                                        {t(
-                                          'settings.customization.options.field.priority'
-                                        )}
-                                      </span>
-                                      {EVENT_COLORS.map((color) => {
-                                        const key = `common.color.${color}`;
-                                        const label = hasTranslation(key)
-                                          ? t(key)
-                                          : key;
-
-                                        return (
-                                          <button
-                                            key={color}
-                                            type="button"
-                                            className={`clickable-icon custom-options-color-option${
-                                              optionInfo.editColor === color
-                                                ? ' custom-options-color-option--selected'
-                                                : ''
-                                            }`}
-                                            onClick={() =>
-                                              updateEditColor(
-                                                type,
-                                                optionKey,
-                                                color
-                                              )
-                                            }
-                                            aria-label={label}
-                                          >
-                                            <span
-                                              className={`custom-options-color-swatch custom-options-color-swatch--${color}`}
-                                            />
-                                          </button>
-                                        );
-                                      })}
-                                    </div>
-                                    <label className="custom-options-spec-label">
-                                      {t(
-                                        'settings.customization.options.field.default-event-notes'
-                                      )}
-                                    </label>
-                                    <textarea
-                                      value={optionInfo.editNotes || ''}
-                                      onChange={(e) =>
-                                        updateEditNotes(
-                                          type,
-                                          optionKey,
-                                          e.target.value
-                                        )
-                                      }
-                                      placeholder={t(
-                                        'settings.customization.options.placeholder.default-event-notes'
-                                      )}
-                                      className="custom-options-event-notes-textarea"
-                                      rows={4}
-                                    />
-                                    <div className="option-actions custom-options-event-actions">
-                                      <NoTooltipButton
-                                        label={t(
-                                          'settings.customization.options.label.save-changes'
-                                        )}
-                                        onClick={() =>
-                                          saveOption(type, optionKey)
-                                        }
-                                      >
-                                        <Check size={24} />
-                                      </NoTooltipButton>
-                                      <NoTooltipButton
-                                        label={t(
-                                          'settings.customization.options.label.cancel-editing'
-                                        )}
-                                        onClick={() =>
-                                          cancelEditing(type, optionKey)
-                                        }
-                                      >
-                                        <X size={24} />
-                                      </NoTooltipButton>
-                                    </div>
-                                  </div>
+                            <div
+                              key={`${type}-${option}`}
+                              className="setting-item option-item"
+                            >
+                              <div className="setting-item-control">
+                                <input
+                                  type="text"
+                                  value={optionInfo.editValue}
+                                  onChange={(e) =>
+                                    updateEditValue(
+                                      type,
+                                      option,
+                                      e.target.value
+                                    )
+                                  }
+                                  onKeyDown={(e) => {
+                                    if (e.key === 'Enter') {
+                                      e.preventDefault();
+                                      void saveOption(type, option);
+                                    } else if (e.key === 'Escape') {
+                                      e.preventDefault();
+                                      cancelEditing(type, option);
+                                    }
+                                  }}
+                                  className="option-edit-input"
+                                  data-option={option}
+                                  aria-label={t(
+                                    'settings.customization.options.label.edit-option',
+                                    { option }
+                                  )}
+                                />
+                                <div className="option-actions">
+                                  <NoTooltipButton
+                                    label={t(
+                                      'settings.customization.options.label.save-changes'
+                                    )}
+                                    onClick={() => saveOption(type, option)}
+                                  >
+                                    <Check size={24} />
+                                  </NoTooltipButton>
+                                  <NoTooltipButton
+                                    label={t(
+                                      'settings.customization.options.label.cancel-editing'
+                                    )}
+                                    onClick={() => cancelEditing(type, option)}
+                                  >
+                                    <X size={24} />
+                                  </NoTooltipButton>
                                 </div>
                               </div>
-                            ) : (
-                              
-                              <div
-                                key={`${type}-${optionKey}`}
-                                className="setting-item option-item"
-                              >
-                                <div className="setting-item-info">
-                                  <div className="setting-item-name custom-options-name-row">
-                                    {optionKey}
-                                    <span
-                                      className={`custom-options-event-color-dot custom-options-event-color-dot--${event.color}`}
-                                      aria-label={`${t('settings.customization.options.field.priority')} ${event.color}`}
-                                    ></span>
-                                  </div>
-                                  {event.notes && (
-                                    <div className="setting-item-description custom-options-event-notes-preview">
-                                      {event.notes}
-                                    </div>
+                            </div>
+                          ) : (
+                            
+                            <div
+                              key={`${type}-${option}`}
+                              className="setting-item option-item"
+                            >
+                              <div className="setting-item-info">
+                                <div className="setting-item-name custom-options-name-row custom-options-name-row--gap">
+                                  {option}
+                                  
+                                  {type === 'account_type' &&
+                                    option.toLowerCase() === 'archived' && (
+                                      <Lock
+                                        size={14}
+                                        className="custom-options-lock-icon"
+                                      />
+                                    )}
+                                </div>
+                              </div>
+                              <div className="setting-item-control">
+                                <div className="option-actions">
+                                  
+                                  {type === 'account_type' &&
+                                  option.toLowerCase() === 'archived' ? (
+                                    <span className="custom-options-locked-label">
+                                      {t(
+                                        'settings.customization.options.label.locked'
+                                      )}
+                                    </span>
+                                  ) : (
+                                    <>
+                                      <NoTooltipButton
+                                        label={t(
+                                          'settings.customization.options.label.edit-option',
+                                          { option }
+                                        )}
+                                        onClick={() =>
+                                          startEditing(type, option)
+                                        }
+                                      >
+                                        <Edit size={24} />
+                                      </NoTooltipButton>
+                                      <NoTooltipButton
+                                        label={t(
+                                          'settings.customization.options.label.remove-option',
+                                          { option }
+                                        )}
+                                        onClick={() =>
+                                          removeOption(type, option)
+                                        }
+                                      >
+                                        <Trash size={24} />
+                                      </NoTooltipButton>
+                                    </>
                                   )}
                                 </div>
-                                <div className="setting-item-control">
-                                  <div className="option-actions">
-                                    <NoTooltipButton
-                                      label={t(
-                                        'settings.customization.options.label.edit-option',
-                                        { option: optionKey }
-                                      )}
-                                      onClick={() =>
-                                        startEditing(type, optionKey)
-                                      }
-                                    >
-                                      <Edit size={24} />
-                                    </NoTooltipButton>
-                                    <NoTooltipButton
-                                      label={t(
-                                        'settings.customization.options.label.remove-option',
-                                        { option: optionKey }
-                                      )}
-                                      onClick={() =>
-                                        removeOption(type, optionKey)
-                                      }
-                                    >
-                                      <Trash size={24} />
-                                    </NoTooltipButton>
-                                  </div>
-                                </div>
                               </div>
-                            );
-                          }
-                        )
-                      : 
-                        allOptionsForType(typeOptions, OptionType.ACCOUNT).map(
-                          (option) => {
-                            const optionInfo = editStates[type]?.[option];
-
-                            
-                            if (!optionInfo) return null;
-
-                            return optionInfo.isEditing ? (
-                              
-                              <div
-                                key={`${type}-${option}`}
-                                className="setting-item option-item"
-                              >
-                                <div className="setting-item-control">
-                                  <input
-                                    type="text"
-                                    value={optionInfo.editValue}
-                                    onChange={(e) =>
-                                      updateEditValue(
-                                        type,
-                                        option,
-                                        e.target.value
-                                      )
-                                    }
-                                    onKeyDown={(e) => {
-                                      if (e.key === 'Enter') {
-                                        e.preventDefault();
-                                        void saveOption(type, option);
-                                      } else if (e.key === 'Escape') {
-                                        e.preventDefault();
-                                        cancelEditing(type, option);
-                                      }
-                                    }}
-                                    className="option-edit-input"
-                                    data-option={option}
-                                    aria-label={t(
-                                      'settings.customization.options.label.edit-option',
-                                      { option }
-                                    )}
-                                  />
-                                  <div className="option-actions">
-                                    <NoTooltipButton
-                                      label={t(
-                                        'settings.customization.options.label.save-changes'
-                                      )}
-                                      onClick={() => saveOption(type, option)}
-                                    >
-                                      <Check size={24} />
-                                    </NoTooltipButton>
-                                    <NoTooltipButton
-                                      label={t(
-                                        'settings.customization.options.label.cancel-editing'
-                                      )}
-                                      onClick={() =>
-                                        cancelEditing(type, option)
-                                      }
-                                    >
-                                      <X size={24} />
-                                    </NoTooltipButton>
-                                  </div>
-                                </div>
-                              </div>
-                            ) : (
-                              
-                              <div
-                                key={`${type}-${option}`}
-                                className="setting-item option-item"
-                              >
-                                <div className="setting-item-info">
-                                  <div className="setting-item-name custom-options-name-row custom-options-name-row--gap">
-                                    {option}
-                                    
-                                    {type === 'account_type' &&
-                                      option.toLowerCase() === 'archived' && (
-                                        <Lock
-                                          size={14}
-                                          className="custom-options-lock-icon"
-                                        />
-                                      )}
-                                  </div>
-                                </div>
-                                <div className="setting-item-control">
-                                  <div className="option-actions">
-                                    
-                                    {type === 'account_type' &&
-                                    option.toLowerCase() === 'archived' ? (
-                                      <span className="custom-options-locked-label">
-                                        {t(
-                                          'settings.customization.options.label.locked'
-                                        )}
-                                      </span>
-                                    ) : (
-                                      <>
-                                        <NoTooltipButton
-                                          label={t(
-                                            'settings.customization.options.label.edit-option',
-                                            { option }
-                                          )}
-                                          onClick={() =>
-                                            startEditing(type, option)
-                                          }
-                                        >
-                                          <Edit size={24} />
-                                        </NoTooltipButton>
-                                        <NoTooltipButton
-                                          label={t(
-                                            'settings.customization.options.label.remove-option',
-                                            { option }
-                                          )}
-                                          onClick={() =>
-                                            removeOption(type, option)
-                                          }
-                                        >
-                                          <Trash size={24} />
-                                        </NoTooltipButton>
-                                      </>
-                                    )}
-                                  </div>
-                                </div>
-                              </div>
-                            );
-                          }
-                        )}
-
-                  
-                  <div className="custom-options-reset-container">
-                    <Button
-                      variant="danger"
-                      size="small"
-                      onClick={() => resetOptionsType(type)}
-                      className="reset-category-button"
-                      aria-label={t(
-                        'settings.customization.options.aria.reset-all',
-                        { type: getDisplayName(type).toLowerCase() }
+                            </div>
+                          );
+                        }
                       )}
-                    >
-                      {t('settings.customization.options.button.reset-all', {
-                        type: getDisplayName(type),
-                      })}
-                    </Button>
-                  </div>
+
+                
+                <div className="custom-options-reset-container">
+                  <Button
+                    variant="danger"
+                    size="small"
+                    onClick={() => resetOptionsType(type)}
+                    className="reset-category-button"
+                    aria-label={t(
+                      'settings.customization.options.aria.reset-all',
+                      { type: getDisplayName(type).toLowerCase() }
+                    )}
+                  >
+                    {t('settings.customization.options.button.reset-all', {
+                      type: getDisplayName(type),
+                    })}
+                  </Button>
                 </div>
-              )}
+              </div>
+            )}
 
-              
-              <div className="setting-item custom-item-add">
-                <div className="setting-item-info journalit-u-flex-col journalit-u-items-stretch">
-                  {type === 'instrument' ? (
-                    
-                    <>
-                      <div className="journalit-u-flex journalit-u-gap-8 journalit-u-w-full">
-                        <input
-                          type="text"
-                          value={newOptionValues[type] || ''}
-                          onChange={(e) =>
-                            setNewOptionValues((prev) => ({
-                              ...prev,
-                              [type]: e.target.value,
-                            }))
-                          }
-                          placeholder={t(
-                            'settings.customization.options.placeholder.new-name',
-                            { type: getDisplayName(type).slice(0, -1) }
-                          )}
-                          aria-label={t(
-                            'settings.customization.options.placeholder.add-new',
-                            { type: getDisplayName(type).toLowerCase() }
-                          )}
-                          onKeyDown={(e) => {
-                            if (
-                              e.key === 'Enter' &&
-                              newOptionValues[type]?.trim()
-                            ) {
-                              e.preventDefault();
-                              void handleAddOption(type);
-                            }
-                          }}
-                          className="journalit-u-flex-1"
-                        />
-                        <select
-                          className="custom-options-asset-select"
-                          value={newAssetType}
-                          onChange={(e) => setNewAssetType(e.target.value)}
-                        >
-                          {Object.values(AssetType).map((assetType) => (
-                            <option key={assetType} value={assetType}>
-                              {getAssetTypeDisplayName(assetType)}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-
-                      {newAssetType === 'cfd' && (
-                        <div className="custom-options-cfd-row">
-                          <div>
-                            <label className="custom-options-spec-label">
-                              {t('settings.general.currency')}{' '}
-                              {t(
-                                'settings.customization.options.field.optional'
-                              )}
-                            </label>
-                            <select
-                              className="journalit-u-w-full"
-                              value={newTickerSpecs.currency}
-                              onChange={(e) =>
-                                setNewTickerSpecs((prev) => ({
-                                  ...prev,
-                                  currency: e.target.value,
-                                }))
-                              }
-                            >
-                              <option value="">{t('common.none')}</option>
-                              {getCurrencyOptions().map((currencyOption) => (
-                                <option
-                                  key={currencyOption.value}
-                                  value={currencyOption.value}
-                                >
-                                  {currencyOption.label}
-                                </option>
-                              ))}
-                            </select>
-                          </div>
-                          <div>
-                            <label className="custom-options-spec-label">
-                              {t('form.field.contract-size')}{' '}
-                              {t(
-                                'settings.customization.options.field.optional'
-                              )}
-                            </label>
-                            <input
-                              type="number"
-                              value={newTickerSpecs.contractSize}
-                              onChange={(e) =>
-                                setNewTickerSpecs((prev) => ({
-                                  ...prev,
-                                  contractSize: e.target.value,
-                                }))
-                              }
-                              className="journalit-u-w-full"
-                              step="any"
-                            />
-                          </div>
-                          <div className="option-actions custom-options-cfd-actions">
-                            <Button
-                              onClick={() => handleAddOption(type)}
-                              disabled={!newOptionValues[type]?.trim()}
-                              aria-label={t(
-                                'settings.customization.options.aria.confirm-add',
-                                { type: getDisplayName(type).toLowerCase() }
-                              )}
-                            >
-                              {t('button.add')}
-                            </Button>
-                          </div>
-                        </div>
-                      )}
-
-                      
-                      {newAssetType === 'futures' && (
-                        <div className="custom-options-spec-grid">
-                          <div>
-                            <label className="custom-options-spec-label">
-                              {t('form.field.dollars-per-point')}{' '}
-                              {t(
-                                'settings.customization.options.field.optional'
-                              )}
-                            </label>
-                            <input
-                              type="number"
-                              placeholder={t(
-                                'settings.customization.options.placeholder.dollar-per-point'
-                              )}
-                              value={newTickerSpecs.dollarPerPoint}
-                              onChange={(e) =>
-                                setNewTickerSpecs((prev) => ({
-                                  ...prev,
-                                  dollarPerPoint: e.target.value,
-                                }))
-                              }
-                              className="journalit-u-w-full"
-                              step="any"
-                            />
-                          </div>
-                          <div>
-                            <label className="custom-options-spec-label">
-                              {t('form.field.tick-size')}{' '}
-                              {t(
-                                'settings.customization.options.field.optional'
-                              )}
-                            </label>
-                            <input
-                              type="number"
-                              placeholder={t(
-                                'settings.customization.options.placeholder.tick-size'
-                              )}
-                              value={newTickerSpecs.tickSize}
-                              onChange={(e) =>
-                                setNewTickerSpecs((prev) => ({
-                                  ...prev,
-                                  tickSize: e.target.value,
-                                }))
-                              }
-                              className="journalit-u-w-full"
-                              step="any"
-                            />
-                          </div>
-                          <div>
-                            <label className="custom-options-spec-label">
-                              {t('form.field.tick-value')}{' '}
-                              {t(
-                                'settings.customization.options.field.optional'
-                              )}
-                            </label>
-                            <input
-                              type="number"
-                              placeholder={t(
-                                'settings.customization.options.placeholder.tick-value'
-                              )}
-                              value={newTickerSpecs.tickValue}
-                              onChange={(e) =>
-                                setNewTickerSpecs((prev) => ({
-                                  ...prev,
-                                  tickValue: e.target.value,
-                                }))
-                              }
-                              className="journalit-u-w-full"
-                              step="any"
-                            />
-                          </div>
-                        </div>
-                      )}
-
-                      
-                      {newAssetType === 'forex' && (
-                        <div className="custom-options-spec-grid">
-                          <div>
-                            <label className="custom-options-spec-label">
-                              {t('form.field.lot-size')}{' '}
-                              {t(
-                                'settings.customization.options.field.optional'
-                              )}
-                            </label>
-                            <input
-                              type="number"
-                              placeholder={t(
-                                'settings.customization.options.placeholder.lot-size'
-                              )}
-                              value={newTickerSpecs.lotSize}
-                              onChange={(e) =>
-                                setNewTickerSpecs((prev) => ({
-                                  ...prev,
-                                  lotSize: e.target.value,
-                                }))
-                              }
-                              className="journalit-u-w-full"
-                              step="any"
-                            />
-                          </div>
-                          <div>
-                            <label className="custom-options-spec-label">
-                              {t('form.field.pip-value')}{' '}
-                              {t(
-                                'settings.customization.options.field.optional'
-                              )}
-                            </label>
-                            <input
-                              type="number"
-                              placeholder={t(
-                                'settings.customization.options.placeholder.pip-value'
-                              )}
-                              value={newTickerSpecs.pipValue}
-                              onChange={(e) =>
-                                setNewTickerSpecs((prev) => ({
-                                  ...prev,
-                                  pipValue: e.target.value,
-                                }))
-                              }
-                              className="journalit-u-w-full"
-                              step="any"
-                            />
-                          </div>
-                          <div>
-                            <label className="custom-options-spec-label">
-                              {t(
-                                'settings.customization.options.field.pip-size'
-                              )}{' '}
-                              {t(
-                                'settings.customization.options.field.optional'
-                              )}
-                            </label>
-                            <input
-                              type="number"
-                              placeholder={t(
-                                'settings.customization.options.placeholder.pip-size'
-                              )}
-                              value={newTickerSpecs.pipSize}
-                              onChange={(e) =>
-                                setNewTickerSpecs((prev) => ({
-                                  ...prev,
-                                  pipSize: e.target.value,
-                                }))
-                              }
-                              className="journalit-u-w-full"
-                              step="any"
-                            />
-                          </div>
-                        </div>
-                      )}
-                    </>
-                  ) : type === 'event' ? (
-                    
-                    <>
+            
+            <div className="setting-item custom-item-add">
+              <div className="setting-item-info journalit-u-flex-col journalit-u-items-stretch">
+                {type === 'instrument' ? (
+                  
+                  <>
+                    <div className="journalit-u-flex journalit-u-gap-8 journalit-u-w-full">
                       <input
                         type="text"
                         value={newOptionValues[type] || ''}
@@ -3539,50 +3267,223 @@ const renderCustomOptionsTab = (
                             void handleAddOption(type);
                           }
                         }}
+                        className="journalit-u-flex-1"
                       />
-                      <textarea
-                        value={newEventNotes}
-                        onChange={(e) => setNewEventNotes(e.target.value)}
-                        placeholder={t(
-                          'settings.customization.options.placeholder.default-event-notes'
-                        )}
-                        aria-label={t(
-                          'settings.customization.options.field.default-event-notes'
-                        )}
-                        className="custom-options-event-notes-textarea"
-                        rows={4}
-                      />
-                      
-                      <div className="custom-options-color-picker">
-                        <span className="custom-options-color-label">
-                          {t('settings.customization.options.field.priority')}
-                        </span>
-                        {EVENT_COLORS.map((color) => {
-                          const key = `common.color.${color}`;
-                          const label = hasTranslation(key) ? t(key) : key;
+                      <select
+                        className="custom-options-asset-select"
+                        value={newAssetType}
+                        onChange={(e) => setNewAssetType(e.target.value)}
+                      >
+                        {Object.values(AssetType).map((assetType) => (
+                          <option key={assetType} value={assetType}>
+                            {getAssetTypeDisplayName(assetType)}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
 
-                          return (
-                            <button
-                              key={color}
-                              type="button"
-                              className={`clickable-icon custom-options-color-option${
-                                newEventColor === color
-                                  ? ' custom-options-color-option--selected'
-                                  : ''
-                              }`}
-                              onClick={() => setNewEventColor(color)}
-                              aria-label={label}
-                            >
-                              <span
-                                className={`custom-options-color-swatch custom-options-color-swatch--${color}`}
-                              />
-                            </button>
-                          );
-                        })}
+                    {newAssetType === 'cfd' && (
+                      <div className="custom-options-cfd-row">
+                        <div>
+                          <label className="custom-options-spec-label">
+                            {t('settings.general.currency')}{' '}
+                            {t('settings.customization.options.field.optional')}
+                          </label>
+                          <select
+                            className="journalit-u-w-full"
+                            value={newTickerSpecs.currency}
+                            onChange={(e) =>
+                              setNewTickerSpecs((prev) => ({
+                                ...prev,
+                                currency: e.target.value,
+                              }))
+                            }
+                          >
+                            <option value="">{t('common.none')}</option>
+                            {getCurrencyOptions().map((currencyOption) => (
+                              <option
+                                key={currencyOption.value}
+                                value={currencyOption.value}
+                              >
+                                {currencyOption.label}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                        <div>
+                          <label className="custom-options-spec-label">
+                            {t('form.field.contract-size')}{' '}
+                            {t('settings.customization.options.field.optional')}
+                          </label>
+                          <input
+                            type="number"
+                            value={newTickerSpecs.contractSize}
+                            onChange={(e) =>
+                              setNewTickerSpecs((prev) => ({
+                                ...prev,
+                                contractSize: e.target.value,
+                              }))
+                            }
+                            className="journalit-u-w-full"
+                            step="any"
+                          />
+                        </div>
+                        <div className="option-actions custom-options-cfd-actions">
+                          <Button
+                            onClick={() => handleAddOption(type)}
+                            disabled={!newOptionValues[type]?.trim()}
+                            aria-label={t(
+                              'settings.customization.options.aria.confirm-add',
+                              { type: getDisplayName(type).toLowerCase() }
+                            )}
+                          >
+                            {t('button.add')}
+                          </Button>
+                        </div>
                       </div>
-                    </>
-                  ) : (
+                    )}
+
                     
+                    {newAssetType === 'futures' && (
+                      <div className="custom-options-spec-grid">
+                        <div>
+                          <label className="custom-options-spec-label">
+                            {t('form.field.dollars-per-point')}{' '}
+                            {t('settings.customization.options.field.optional')}
+                          </label>
+                          <input
+                            type="number"
+                            placeholder={t(
+                              'settings.customization.options.placeholder.dollar-per-point'
+                            )}
+                            value={newTickerSpecs.dollarPerPoint}
+                            onChange={(e) =>
+                              setNewTickerSpecs((prev) => ({
+                                ...prev,
+                                dollarPerPoint: e.target.value,
+                              }))
+                            }
+                            className="journalit-u-w-full"
+                            step="any"
+                          />
+                        </div>
+                        <div>
+                          <label className="custom-options-spec-label">
+                            {t('form.field.tick-size')}{' '}
+                            {t('settings.customization.options.field.optional')}
+                          </label>
+                          <input
+                            type="number"
+                            placeholder={t(
+                              'settings.customization.options.placeholder.tick-size'
+                            )}
+                            value={newTickerSpecs.tickSize}
+                            onChange={(e) =>
+                              setNewTickerSpecs((prev) => ({
+                                ...prev,
+                                tickSize: e.target.value,
+                              }))
+                            }
+                            className="journalit-u-w-full"
+                            step="any"
+                          />
+                        </div>
+                        <div>
+                          <label className="custom-options-spec-label">
+                            {t('form.field.tick-value')}{' '}
+                            {t('settings.customization.options.field.optional')}
+                          </label>
+                          <input
+                            type="number"
+                            placeholder={t(
+                              'settings.customization.options.placeholder.tick-value'
+                            )}
+                            value={newTickerSpecs.tickValue}
+                            onChange={(e) =>
+                              setNewTickerSpecs((prev) => ({
+                                ...prev,
+                                tickValue: e.target.value,
+                              }))
+                            }
+                            className="journalit-u-w-full"
+                            step="any"
+                          />
+                        </div>
+                      </div>
+                    )}
+
+                    
+                    {newAssetType === 'forex' && (
+                      <div className="custom-options-spec-grid">
+                        <div>
+                          <label className="custom-options-spec-label">
+                            {t('form.field.lot-size')}{' '}
+                            {t('settings.customization.options.field.optional')}
+                          </label>
+                          <input
+                            type="number"
+                            placeholder={t(
+                              'settings.customization.options.placeholder.lot-size'
+                            )}
+                            value={newTickerSpecs.lotSize}
+                            onChange={(e) =>
+                              setNewTickerSpecs((prev) => ({
+                                ...prev,
+                                lotSize: e.target.value,
+                              }))
+                            }
+                            className="journalit-u-w-full"
+                            step="any"
+                          />
+                        </div>
+                        <div>
+                          <label className="custom-options-spec-label">
+                            {t('form.field.pip-value')}{' '}
+                            {t('settings.customization.options.field.optional')}
+                          </label>
+                          <input
+                            type="number"
+                            placeholder={t(
+                              'settings.customization.options.placeholder.pip-value'
+                            )}
+                            value={newTickerSpecs.pipValue}
+                            onChange={(e) =>
+                              setNewTickerSpecs((prev) => ({
+                                ...prev,
+                                pipValue: e.target.value,
+                              }))
+                            }
+                            className="journalit-u-w-full"
+                            step="any"
+                          />
+                        </div>
+                        <div>
+                          <label className="custom-options-spec-label">
+                            {t('settings.customization.options.field.pip-size')}{' '}
+                            {t('settings.customization.options.field.optional')}
+                          </label>
+                          <input
+                            type="number"
+                            placeholder={t(
+                              'settings.customization.options.placeholder.pip-size'
+                            )}
+                            value={newTickerSpecs.pipSize}
+                            onChange={(e) =>
+                              setNewTickerSpecs((prev) => ({
+                                ...prev,
+                                pipSize: e.target.value,
+                              }))
+                            }
+                            className="journalit-u-w-full"
+                            step="any"
+                          />
+                        </div>
+                      </div>
+                    )}
+                  </>
+                ) : type === 'event' ? (
+                  
+                  <>
                     <input
                       type="text"
                       value={newOptionValues[type] || ''}
@@ -3610,25 +3511,92 @@ const renderCustomOptionsTab = (
                         }
                       }}
                     />
-                  )}
-                </div>
-                {!(type === 'instrument' && newAssetType === 'cfd') && (
-                  <div className="setting-item-control">
-                    <Button
-                      onClick={() => handleAddOption(type)}
-                      disabled={!newOptionValues[type]?.trim()}
-                      aria-label={t(
-                        'settings.customization.options.aria.confirm-add',
-                        { type: getDisplayName(type).toLowerCase() }
+                    <textarea
+                      value={newEventNotes}
+                      onChange={(e) => setNewEventNotes(e.target.value)}
+                      placeholder={t(
+                        'settings.customization.options.placeholder.default-event-notes'
                       )}
-                    >
-                      {t('button.add')}
-                    </Button>
-                  </div>
+                      aria-label={t(
+                        'settings.customization.options.field.default-event-notes'
+                      )}
+                      className="custom-options-event-notes-textarea"
+                      rows={4}
+                    />
+                    
+                    <div className="custom-options-color-picker">
+                      <span className="custom-options-color-label">
+                        {t('settings.customization.options.field.priority')}
+                      </span>
+                      {EVENT_COLORS.map((color) => {
+                        const key = `common.color.${color}`;
+                        const label = hasTranslation(key) ? t(key) : key;
+
+                        return (
+                          <button
+                            key={color}
+                            type="button"
+                            className={`clickable-icon custom-options-color-option${
+                              newEventColor === color
+                                ? ' custom-options-color-option--selected'
+                                : ''
+                            }`}
+                            onClick={() => setNewEventColor(color)}
+                            aria-label={label}
+                          >
+                            <span
+                              className={`custom-options-color-swatch custom-options-color-swatch--${color}`}
+                            />
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </>
+                ) : (
+                  
+                  <input
+                    type="text"
+                    value={newOptionValues[type] || ''}
+                    onChange={(e) =>
+                      setNewOptionValues((prev) => ({
+                        ...prev,
+                        [type]: e.target.value,
+                      }))
+                    }
+                    placeholder={t(
+                      'settings.customization.options.placeholder.new-name',
+                      { type: getDisplayName(type).slice(0, -1) }
+                    )}
+                    aria-label={t(
+                      'settings.customization.options.placeholder.add-new',
+                      { type: getDisplayName(type).toLowerCase() }
+                    )}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && newOptionValues[type]?.trim()) {
+                        e.preventDefault();
+                        void handleAddOption(type);
+                      }
+                    }}
+                  />
                 )}
               </div>
+              {!(type === 'instrument' && newAssetType === 'cfd') && (
+                <div className="setting-item-control">
+                  <Button
+                    onClick={() => handleAddOption(type)}
+                    disabled={!newOptionValues[type]?.trim()}
+                    aria-label={t(
+                      'settings.customization.options.aria.confirm-add',
+                      { type: getDisplayName(type).toLowerCase() }
+                    )}
+                  >
+                    {t('button.add')}
+                  </Button>
+                </div>
+              )}
             </div>
-          ))}
+          </div>
+        ))}
 
         
         {shouldShowSymbolMappings && (

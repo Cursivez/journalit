@@ -93,6 +93,7 @@ export const comboboxCSS = `
   left: var(--combobox-portal-left);
   right: auto;
   width: var(--combobox-portal-width);
+  max-height: var(--combobox-portal-max-height, 200px);
   z-index: 100000;
 }
 

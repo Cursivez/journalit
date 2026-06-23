@@ -107,46 +107,50 @@ export class PasteManager {
         };
       }
 
-      const extractedFiles: File[] = [];
-
-      
-      for (const clipboardItem of clipboardItems) {
+      const extractionTasks = clipboardItems.reduce<
+        Array<Promise<File | null>>
+      >((tasks, clipboardItem) => {
         const clipboardTypeSet = new Set(clipboardItem.types);
-        
         for (const format of this.SUPPORTED_FORMATS) {
-          if (clipboardTypeSet.has(format)) {
-            try {
-              const blob = await clipboardItem.getType(format);
+          if (!clipboardTypeSet.has(format)) continue;
 
-              if (blob.size > this.MAX_FILE_SIZE) {
-                const context: ErrorContext = {
-                  operation: 'image size validation',
-                };
-                const sizeError = new Error(
-                  t('paste.error.file-size-exceeds', {
-                    size: (blob.size / 1024 / 1024).toFixed(1),
-                  })
+          tasks.push(
+            (async () => {
+              try {
+                const blob = await clipboardItem.getType(format);
+
+                if (blob.size > this.MAX_FILE_SIZE) {
+                  const context: ErrorContext = {
+                    operation: 'image size validation',
+                  };
+                  const sizeError = new Error(
+                    t('paste.error.file-size-exceeds', {
+                      size: (blob.size / 1024 / 1024).toFixed(1),
+                    })
+                  );
+                  ErrorHandler.showError(sizeError, context);
+                  return null;
+                }
+
+                return new File([blob], this.generateFileName(format), {
+                  type: format,
+                  lastModified: Date.now(),
+                });
+              } catch (error: unknown) {
+                console.error(
+                  `Failed to extract ${format} from clipboard:`,
+                  error
                 );
-                ErrorHandler.showError(sizeError, context);
-                continue;
+                return null;
               }
-
-              
-              const file = new File([blob], this.generateFileName(format), {
-                type: format,
-                lastModified: Date.now(),
-              });
-
-              extractedFiles.push(file);
-            } catch (error: unknown) {
-              console.error(
-                `Failed to extract ${format} from clipboard:`,
-                error
-              );
-            }
-          }
+            })()
+          );
         }
-      }
+        return tasks;
+      }, []);
+      const extractedFiles = (await Promise.all(extractionTasks)).filter(
+        (file): file is File => file !== null
+      );
 
       if (extractedFiles.length === 0) {
         return {

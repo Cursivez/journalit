@@ -388,7 +388,7 @@ function useTradeLogSettingsModalModel({
     Set<ColumnCategory>
   >(new Set(COLUMN_CATEGORIES.map((c) => c.id)));
   const lastActiveTabRef = useRef<PanelTab>('active');
-  const [isLoading, setIsLoading] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const [guideVersion, setGuideVersion] = useState(0);
   const [expandedMode, setExpandedMode] = useState<boolean>(() => {
     return (
@@ -633,7 +633,7 @@ function useTradeLogSettingsModalModel({
   
   const handleSave = useCallback(async () => {
     try {
-      setIsLoading(true);
+      setIsSaving(true);
 
       
       const columnVisibility: Partial<Record<TradeLogColumnId, boolean>> = {};
@@ -681,7 +681,7 @@ function useTradeLogSettingsModalModel({
         t('notice.error.save-settings', { error: getErrorMessage(error) })
       );
     } finally {
-      setIsLoading(false);
+      setIsSaving(false);
     }
   }, [columns, expandedMode, plugin, onSave, modalInstance]);
 
@@ -705,7 +705,7 @@ function useTradeLogSettingsModalModel({
     activeTab,
     setActiveTab,
     expandedCategories,
-    isLoading,
+    isSaving,
     expandedMode,
     setExpandedMode,
     activeColumns,
@@ -737,7 +737,7 @@ const TradeLogSettingsModalContent: React.FC<
     activeTab,
     setActiveTab,
     expandedCategories,
-    isLoading,
+    isSaving,
     expandedMode,
     setExpandedMode,
     activeColumns,
@@ -882,20 +882,20 @@ const TradeLogSettingsModalContent: React.FC<
       <div className="tradelog-settings-modal-buttons">
         <button
           onClick={() => void handleReset()}
-          disabled={isLoading}
+          disabled={isSaving}
           className="reset-button"
         >
           {t('tradelog.settings.reset')}
         </button>
-        <button onClick={() => void handleCancel()} disabled={isLoading}>
+        <button onClick={() => void handleCancel()} disabled={isSaving}>
           {t('button.cancel')}
         </button>
         <button
           onClick={() => void handleSave()}
-          disabled={isLoading}
+          disabled={isSaving}
           className="primary"
         >
-          {isLoading ? t('tradelog.settings.saving') : t('button.save')}
+          {isSaving ? t('tradelog.settings.saving') : t('button.save')}
         </button>
       </div>
     </div>

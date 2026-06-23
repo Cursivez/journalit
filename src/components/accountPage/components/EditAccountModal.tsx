@@ -192,14 +192,14 @@ interface AccountIdentityFieldsProps {
   editAccount: EditAccountFormState;
   setEditAccount: EditAccountSetter;
   customAccountTypes: string[];
-  isLoading: boolean;
+  isSaving: boolean;
 }
 
 const AccountIdentityFields: React.FC<AccountIdentityFieldsProps> = ({
   editAccount,
   setEditAccount,
   customAccountTypes,
-  isLoading,
+  isSaving,
 }) => (
   <div className="setting-item two-column">
     <div className="column">
@@ -218,7 +218,7 @@ const AccountIdentityFields: React.FC<AccountIdentityFieldsProps> = ({
             setEditAccount((currentAccount) => ({ ...currentAccount, name }));
           }}
           placeholder={t('account.edit.placeholder.name')}
-          disabled={isLoading}
+          disabled={isSaving}
         />
       </div>
     </div>
@@ -239,7 +239,7 @@ const AccountIdentityFields: React.FC<AccountIdentityFieldsProps> = ({
               accountType,
             }));
           }}
-          disabled={isLoading}
+          disabled={isSaving}
         >
           {customAccountTypes.length > 0 ? (
             customAccountTypes.map((type) => (
@@ -270,14 +270,14 @@ interface AccountBalanceFieldsProps {
   account: AccountData;
   editAccount: EditAccountFormState;
   setEditAccount: EditAccountSetter;
-  isLoading: boolean;
+  isSaving: boolean;
 }
 
 const AccountBalanceFields: React.FC<AccountBalanceFieldsProps> = ({
   account,
   editAccount,
   setEditAccount,
-  isLoading,
+  isSaving,
 }) => (
   <>
     <div className="setting-item two-column">
@@ -310,7 +310,7 @@ const AccountBalanceFields: React.FC<AccountBalanceFieldsProps> = ({
             min="0"
             step="100"
             placeholder="0"
-            disabled={isLoading}
+            disabled={isSaving}
           />
         </div>
       </div>
@@ -342,7 +342,7 @@ const AccountBalanceFields: React.FC<AccountBalanceFieldsProps> = ({
                 }));
               }
             }}
-            disabled={isLoading}
+            disabled={isSaving}
           />
         </div>
       </div>
@@ -373,7 +373,7 @@ const AccountBalanceFields: React.FC<AccountBalanceFieldsProps> = ({
             }}
             step="100"
             placeholder={String(account.currentBalance || 0)}
-            disabled={isLoading}
+            disabled={isSaving}
           />
         </div>
       </div>
@@ -396,7 +396,7 @@ const AccountBalanceFields: React.FC<AccountBalanceFieldsProps> = ({
                 currency,
               }));
             }}
-            disabled={isLoading}
+            disabled={isSaving}
           >
             {Object.values(CURRENCY_CONFIGS).map((config) => (
               <option key={config.code} value={config.code}>
@@ -421,7 +421,7 @@ interface DrawdownSectionProps {
   >;
   showSnapshotManager: boolean;
   setShowSnapshotManager: React.Dispatch<React.SetStateAction<boolean>>;
-  isLoading: boolean;
+  isSaving: boolean;
 }
 
 const DrawdownSection: React.FC<DrawdownSectionProps> = ({
@@ -433,7 +433,7 @@ const DrawdownSection: React.FC<DrawdownSectionProps> = ({
   setManualSnapshots,
   showSnapshotManager,
   setShowSnapshotManager,
-  isLoading,
+  isSaving,
 }) => (
   <>
     <div className="setting-item journalit-setting-item--full-width">
@@ -467,7 +467,7 @@ const DrawdownSection: React.FC<DrawdownSectionProps> = ({
                   };
                 });
               }}
-              disabled={isLoading}
+              disabled={isSaving}
             >
               {t(option.labelKey)}
             </button>
@@ -506,7 +506,7 @@ const DrawdownSection: React.FC<DrawdownSectionProps> = ({
             min="0"
             step="100"
             placeholder="0"
-            disabled={isLoading}
+            disabled={isSaving}
           />
         </div>
       </div>
@@ -552,13 +552,13 @@ const DrawdownSection: React.FC<DrawdownSectionProps> = ({
 interface ProfitTargetSectionProps {
   editAccount: EditAccountFormState;
   setEditAccount: EditAccountSetter;
-  isLoading: boolean;
+  isSaving: boolean;
 }
 
 const ProfitTargetSection: React.FC<ProfitTargetSectionProps> = ({
   editAccount,
   setEditAccount,
-  isLoading,
+  isSaving,
 }) => (
   <>
     <div className="setting-item two-column">
@@ -573,7 +573,7 @@ const ProfitTargetSection: React.FC<ProfitTargetSectionProps> = ({
               }))
             }
             ariaLabel={t('account.profit-target.enable')}
-            disabled={isLoading}
+            disabled={isSaving}
           />
           <div className="setting-item-info">
             <div className="setting-item-name">
@@ -612,7 +612,7 @@ const ProfitTargetSection: React.FC<ProfitTargetSectionProps> = ({
             min="0"
             step="1"
             placeholder="0"
-            disabled={isLoading}
+            disabled={isSaving}
           />
         </div>
       </div>
@@ -642,7 +642,7 @@ const ProfitTargetSection: React.FC<ProfitTargetSectionProps> = ({
                     profitTargetType,
                   }));
                 }}
-                disabled={isLoading}
+                disabled={isSaving}
               >
                 <option value={ProfitTargetType.ABSOLUTE}>
                   {t('account.profit-target.type.absolute')}
@@ -690,7 +690,7 @@ const ProfitTargetSection: React.FC<ProfitTargetSectionProps> = ({
                     : '100'
                 }
                 placeholder="0"
-                disabled={isLoading}
+                disabled={isSaving}
               />
             </div>
           </div>
@@ -726,7 +726,7 @@ const ProfitTargetSection: React.FC<ProfitTargetSectionProps> = ({
                   }));
                 }
               }}
-              disabled={isLoading}
+              disabled={isSaving}
             />
           </div>
         </div>
@@ -740,7 +740,7 @@ interface CopyTradingSectionProps {
   plugin: JournalitPlugin;
   editAccount: EditAccountFormState;
   setEditAccount: EditAccountSetter;
-  isLoading: boolean;
+  isSaving: boolean;
 }
 
 const toDateInputValue = (date: Date | null): string => {
@@ -766,7 +766,7 @@ const CopyTradingSection: React.FC<CopyTradingSectionProps> = ({
   plugin,
   editAccount,
   setEditAccount,
-  isLoading,
+  isSaving,
 }) => {
   const accountMetadata = plugin.settings.account?.accountMetadata ?? {};
   const accountCurrency = editAccount.currency;
@@ -778,14 +778,14 @@ const CopyTradingSection: React.FC<CopyTradingSectionProps> = ({
     accountMetadata
   );
   const baseAccountOptions = Object.values(accountMetadata)
-    .filter((metadata) => metadata.name !== account.name)
-    .filter((metadata) => !hasActiveCopyTradingPeriod(metadata))
-    .filter(
-      (metadata) =>
-        (metadata.currency || plugin.settings.general?.currency) ===
+    .flatMap((metadata) =>
+      metadata.name !== account.name &&
+      !hasActiveCopyTradingPeriod(metadata) &&
+      (metadata.currency || plugin.settings.general?.currency) ===
         accountCurrency
+        ? [metadata.name]
+        : []
     )
-    .map((metadata) => metadata.name)
     .sort((a, b) => a.localeCompare(b));
   const inactivePeriods = editAccount.copyTradingPeriods.filter(
     (period) => period.endDate
@@ -825,7 +825,7 @@ const CopyTradingSection: React.FC<CopyTradingSectionProps> = ({
             }));
           }}
           ariaLabel={t('account.copy-trading.enable')}
-          disabled={isLoading || isActiveCopyBase}
+          disabled={isSaving || isActiveCopyBase}
         />
         <div className="setting-item-name journalit-checkbox-setting-label">
           {t('account.copy-trading.enable')}
@@ -864,7 +864,7 @@ const CopyTradingSection: React.FC<CopyTradingSectionProps> = ({
                       copyTradingBaseAccount: e.target.value,
                     }))
                   }
-                  disabled={isLoading}
+                  disabled={isSaving}
                 >
                   <option value="">
                     {t('account.copy-trading.base-account-placeholder')}
@@ -899,7 +899,7 @@ const CopyTradingSection: React.FC<CopyTradingSectionProps> = ({
                       copyTradingMultiplier: Number(e.target.value),
                     }))
                   }
-                  disabled={isLoading}
+                  disabled={isSaving}
                 />
               </div>
             </div>
@@ -918,7 +918,7 @@ const CopyTradingSection: React.FC<CopyTradingSectionProps> = ({
                       }))
                     }
                     ariaLabel={t('account.copy-trading.all-history')}
-                    disabled={isLoading}
+                    disabled={isSaving}
                   />
                   <div className="setting-item-name journalit-checkbox-setting-label">
                     {t('account.copy-trading.all-history')}
@@ -944,7 +944,7 @@ const CopyTradingSection: React.FC<CopyTradingSectionProps> = ({
                           ),
                         }))
                       }
-                      disabled={isLoading}
+                      disabled={isSaving}
                     />
                   </div>
                 </div>
@@ -983,7 +983,7 @@ const useEditAccountModalController = ({
   onSave,
   onModalClose,
 }: Omit<EditAccountModalProps, 'onClose'> & { onModalClose: () => void }) => {
-  const [isLoading, setIsLoading] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const [customAccountTypes, setCustomAccountTypes] = useState<string[]>([]);
   const [showSnapshotManager, setShowSnapshotManager] = useState(false);
   const initialCopyTradingPeriods = account.copyTradingPeriods ?? [];
@@ -1061,9 +1061,10 @@ const useEditAccountModalController = ({
         Array.isArray(metadata.manualDrawdownSnapshots)
       ) {
         
-        const validSnapshots = metadata.manualDrawdownSnapshots
-          .filter((s) => s !== null && s !== undefined)
-          .map((snapshot) => {
+        const validSnapshots = metadata.manualDrawdownSnapshots.flatMap(
+          (snapshot) => {
+            if (snapshot === null || snapshot === undefined) return [];
+
             const parsedDate =
               snapshot.date instanceof Date
                 ? snapshot.date
@@ -1074,15 +1075,17 @@ const useEditAccountModalController = ({
                 'EditAccountModal: Skipping snapshot with invalid date:',
                 snapshot
               );
-              return null;
+              return [];
             }
 
-            return {
-              ...snapshot,
-              date: parsedDate,
-            };
-          })
-          .filter((s): s is ManualDrawdownSnapshot => s !== null);
+            return [
+              {
+                ...snapshot,
+                date: parsedDate,
+              },
+            ];
+          }
+        );
 
         setManualSnapshots(validSnapshots);
 
@@ -1145,9 +1148,9 @@ const useEditAccountModalController = ({
     const mappedAccountIds = new Set<string>();
 
     const targetLookupKeys = new Set(
-      [primaryName, secondaryName]
-        .filter((value): value is string => Boolean(value))
-        .map((value) => normalizeAccountLookupKey(value))
+      [primaryName, secondaryName].flatMap((value) =>
+        value ? [normalizeAccountLookupKey(value)] : []
+      )
     );
 
     const accountMapping = plugin.settings.backendIntegration?.accountMapping;
@@ -1255,7 +1258,7 @@ const useEditAccountModalController = ({
 
   const handleSave = async () => {
     try {
-      setIsLoading(true);
+      setIsSaving(true);
 
       const trimmedName = editAccount.name.trim();
 
@@ -1427,7 +1430,7 @@ const useEditAccountModalController = ({
         })
       );
     } finally {
-      setIsLoading(false);
+      setIsSaving(false);
     }
   };
 
@@ -1721,7 +1724,7 @@ const useEditAccountModalController = ({
 
   const handleDeleteAccount = async () => {
     try {
-      setIsLoading(true);
+      setIsSaving(true);
 
       
       const deleteChoice = await showDeleteAccountConfirmation(account.name);
@@ -1765,12 +1768,12 @@ const useEditAccountModalController = ({
         t('account.edit.error.delete-failed', { error: getErrorMessage(error) })
       );
     } finally {
-      setIsLoading(false);
+      setIsSaving(false);
     }
   };
 
   return {
-    isLoading,
+    isSaving,
     customAccountTypes,
     showSnapshotManager,
     setShowSnapshotManager,
@@ -1787,7 +1790,7 @@ const EditAccountModalContent: React.FC<
   EditAccountModalProps & { onModalClose: () => void }
 > = ({ app, plugin, account, onSave, onModalClose }) => {
   const {
-    isLoading,
+    isSaving,
     customAccountTypes,
     showSnapshotManager,
     setShowSnapshotManager,
@@ -1811,14 +1814,14 @@ const EditAccountModalContent: React.FC<
         editAccount={editAccount}
         setEditAccount={setEditAccount}
         customAccountTypes={customAccountTypes}
-        isLoading={isLoading}
+        isSaving={isSaving}
       />
 
       <AccountBalanceFields
         account={account}
         editAccount={editAccount}
         setEditAccount={setEditAccount}
-        isLoading={isLoading}
+        isSaving={isSaving}
       />
 
       <DrawdownSection
@@ -1830,13 +1833,13 @@ const EditAccountModalContent: React.FC<
         setManualSnapshots={setManualSnapshots}
         showSnapshotManager={showSnapshotManager}
         setShowSnapshotManager={setShowSnapshotManager}
-        isLoading={isLoading}
+        isSaving={isSaving}
       />
 
       <ProfitTargetSection
         editAccount={editAccount}
         setEditAccount={setEditAccount}
-        isLoading={isLoading}
+        isSaving={isSaving}
       />
 
       <CopyTradingSection
@@ -1844,7 +1847,7 @@ const EditAccountModalContent: React.FC<
         plugin={plugin}
         editAccount={editAccount}
         setEditAccount={setEditAccount}
-        isLoading={isLoading}
+        isSaving={isSaving}
       />
 
       
@@ -1852,7 +1855,7 @@ const EditAccountModalContent: React.FC<
         <Button
           variant="secondary"
           onClick={() => void handleDeleteAccount()}
-          disabled={isLoading}
+          disabled={isSaving}
           className="delete-account-button delete-account-danger"
         >
           {t('account.edit.button.delete')}
@@ -1861,7 +1864,7 @@ const EditAccountModalContent: React.FC<
           <Button
             variant="secondary"
             onClick={onModalClose}
-            disabled={isLoading}
+            disabled={isSaving}
             className="cancel-button"
           >
             {t('button.cancel')}
@@ -1869,10 +1872,10 @@ const EditAccountModalContent: React.FC<
           <Button
             variant="primary"
             onClick={() => void handleSave()}
-            disabled={isLoading}
+            disabled={isSaving}
             className="save-account-button accent-button modal-save-accent"
           >
-            {isLoading
+            {isSaving
               ? t('account.edit.button.saving')
               : t('account.edit.button.save')}
           </Button>

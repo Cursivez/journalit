@@ -155,7 +155,12 @@ const getGroupingValues = (
   if (dimension === 'setups') {
     const setups = Array.isArray(trade.setup) ? trade.setup : [];
     return Array.from(
-      new Set(setups.map((setup) => normalizeText(setup)).filter(Boolean))
+      new Set(
+        setups.flatMap((setup) => {
+          const normalized = normalizeText(setup);
+          return normalized ? [normalized] : [];
+        })
+      )
     );
   }
 
@@ -166,7 +171,12 @@ const getGroupingValues = (
         : trade.tags || [];
 
     return Array.from(
-      new Set(rawTags.map((tag) => normalizeText(tag)).filter(Boolean))
+      new Set(
+        rawTags.flatMap((tag) => {
+          const normalized = normalizeText(tag);
+          return normalized ? [normalized] : [];
+        })
+      )
     );
   }
 
@@ -244,14 +254,14 @@ const TopBreakdownConfigPanel: React.FC<TopBreakdownConfigPanelProps> = ({
       <span>{title}</span>
       <div className="journalit-home-setups__actions">
         <button
-          className="journalit-home-setups__save-button"
+          className="clickable-icon journalit-home-setups__save-button"
           onClick={onSave}
           aria-label={t('button.save')}
         >
           <Check size={14} />
         </button>
         <button
-          className="journalit-home-setups__cancel-button"
+          className="clickable-icon journalit-home-setups__cancel-button"
           onClick={onCancel}
           aria-label={t('button.cancel')}
         >
@@ -532,10 +542,8 @@ const SetupLeaderboardWidgetComponent: React.FC<
   const existingConfig = plugin.settings.home?.topBreakdowns?.[instanceId];
   const resolvedConfig = existingConfig || DEFAULT_CONFIG;
 
-  const [showModal, setShowModal] = useState(false);
-  const [draftDimension, setDraftDimension] = useState<TopBreakdownDimension>(
-    resolvedConfig.dimension
-  );
+  const [draftDimension, setDraftDimension] =
+    useState<TopBreakdownDimension | null>(null);
   const [draftValueMode, setDraftValueMode] = useState<TopBreakdownValueMode>(
     resolvedConfig.valueMode
   );
@@ -552,13 +560,6 @@ const SetupLeaderboardWidgetComponent: React.FC<
   );
 
   useEventBus('settings:changed', handleSettingsChanged);
-
-  useEffect(() => {
-    if (!showModal) {
-      setDraftDimension(resolvedConfig.dimension);
-      setDraftValueMode(resolvedConfig.valueMode);
-    }
-  }, [resolvedConfig.dimension, resolvedConfig.valueMode, showModal]);
 
   const filteredTrades = useFilteredByPeriod(dashboardData?.trades);
   const currencyConversion = buildCurrencyConversionMetadata(
@@ -616,16 +617,16 @@ const SetupLeaderboardWidgetComponent: React.FC<
   const handleOpenModal = useCallback(() => {
     setDraftDimension(resolvedConfig.dimension);
     setDraftValueMode(resolvedConfig.valueMode);
-    setShowModal(true);
   }, [resolvedConfig.dimension, resolvedConfig.valueMode]);
 
   const handleCancelModal = useCallback(() => {
-    setDraftDimension(resolvedConfig.dimension);
+    setDraftDimension(null);
     setDraftValueMode(resolvedConfig.valueMode);
-    setShowModal(false);
-  }, [resolvedConfig.dimension, resolvedConfig.valueMode]);
+  }, [resolvedConfig.valueMode]);
 
   const handleSaveConfig = useCallback(async () => {
+    if (draftDimension === null) return;
+
     if (!plugin.settings.home) {
       plugin.settings.home = {
         layouts: { Default: { lg: [], md: [], sm: [], xs: [], xxs: [] } },
@@ -651,7 +652,7 @@ const SetupLeaderboardWidgetComponent: React.FC<
         source: 'setup-leaderboard-config',
       });
       await forceRefreshData();
-      setShowModal(false);
+      setDraftDimension(null);
     } catch (error) {
       console.error('Failed to save top breakdown settings:', error);
     }
@@ -673,10 +674,10 @@ const SetupLeaderboardWidgetComponent: React.FC<
   });
 
   const widgetConfigureTitle = t('home.widget.top-breakdown.configure-title', {
-    dimension: getDimensionLabel(draftDimension),
+    dimension: getDimensionLabel(draftDimension ?? resolvedConfig.dimension),
   });
 
-  if (showModal) {
+  if (draftDimension !== null) {
     return (
       <TopBreakdownConfigPanel
         title={widgetConfigureTitle}

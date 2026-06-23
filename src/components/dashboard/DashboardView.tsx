@@ -1,12 +1,6 @@
 
 
-import React, {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from 'react';
+import React, { useCallback, useEffect, useMemo, useRef } from 'react';
 import { WorkspaceLeaf } from 'obsidian';
 import { t } from '../../lang/helpers';
 import { ReactView } from '../../views/ReactView';
@@ -139,7 +133,40 @@ const DashboardGuideCoordinator: React.FC<DashboardGuideCoordinatorProps> = ({
   const { dashboardData } = useDashboardData();
   const emitGuideAction = useGuideAction();
   const previousIsEditingRef = useRef(isEditing);
-  const [totalTradeCount, setTotalTradeCount] = useState<number | null>(null);
+  const totalTradeCountRef = useRef<number | null>(null);
+
+  const applyResolvedGuide = useCallback(
+    (tradeCount: number | null, data: typeof dashboardData) => {
+      if (!plugin?.viewGuideService) {
+        return;
+      }
+
+      let resolvedGuideId: string | null = null;
+      if (data && tradeCount !== null) {
+        if (tradeCount === 0 && data.trades.length === 0) {
+          resolvedGuideId = DASHBOARD_EMPTY_GUIDE_ID;
+        } else if (tradeCount > 0 && data.trades.length > 0) {
+          resolvedGuideId = DASHBOARD_MAIN_GUIDE_ID;
+        }
+      }
+
+      const activeSession = plugin.viewGuideService.getSessionForLeaf(
+        leaf,
+        DASHBOARD_VIEW_TYPE
+      );
+
+      if (
+        activeSession &&
+        resolvedGuideId &&
+        activeSession.guideId !== resolvedGuideId
+      ) {
+        void plugin.viewGuideService.clearGuideState(activeSession.guideId);
+      }
+
+      plugin.viewGuideService.setResolvedGuideForLeaf(leaf, resolvedGuideId);
+    },
+    [leaf, plugin]
+  );
 
   const refreshTradeCount = useCallback(
     async ({
@@ -160,7 +187,8 @@ const DashboardGuideCoordinator: React.FC<DashboardGuideCoordinatorProps> = ({
 
         const count = await plugin.tradeService.getTradeCount();
         if (!ignoreUnmount || !ignoreUnmount()) {
-          setTotalTradeCount(count);
+          totalTradeCountRef.current = count;
+          applyResolvedGuide(count, dashboardData);
         }
       } catch (error) {
         console.error(
@@ -171,7 +199,7 @@ const DashboardGuideCoordinator: React.FC<DashboardGuideCoordinatorProps> = ({
         );
       }
     },
-    [plugin]
+    [applyResolvedGuide, dashboardData, plugin]
   );
 
   useEffect(() => {
@@ -202,42 +230,9 @@ const DashboardGuideCoordinator: React.FC<DashboardGuideCoordinatorProps> = ({
     !!plugin?.tradeService
   );
 
-  const resolvedGuideId = useMemo(() => {
-    if (!dashboardData || totalTradeCount === null) {
-      return null;
-    }
-
-    if (totalTradeCount === 0 && dashboardData.trades.length === 0) {
-      return DASHBOARD_EMPTY_GUIDE_ID;
-    }
-
-    if (totalTradeCount > 0 && dashboardData.trades.length > 0) {
-      return DASHBOARD_MAIN_GUIDE_ID;
-    }
-
-    return null;
-  }, [dashboardData, totalTradeCount]);
-
   useEffect(() => {
-    if (!plugin?.viewGuideService) {
-      return;
-    }
-
-    const activeSession = plugin.viewGuideService.getSessionForLeaf(
-      leaf,
-      DASHBOARD_VIEW_TYPE
-    );
-
-    if (
-      activeSession &&
-      resolvedGuideId &&
-      activeSession.guideId !== resolvedGuideId
-    ) {
-      void plugin.viewGuideService.clearGuideState(activeSession.guideId);
-    }
-
-    plugin.viewGuideService.setResolvedGuideForLeaf(leaf, resolvedGuideId);
-  }, [leaf, plugin, resolvedGuideId]);
+    applyResolvedGuide(totalTradeCountRef.current, dashboardData);
+  }, [applyResolvedGuide, dashboardData]);
 
   useEffect(() => {
     return () => {

@@ -375,20 +375,24 @@ function useGuideRuntimeModel({
   const isWaitingForTarget =
     !!currentStep?.targetId && !getTargetElement(currentStep.targetId);
 
+  const updateTargetRect = useCallback((rect: DOMRect | null) => {
+    setTargetRect(rect);
+  }, []);
+
   useEffect(() => {
     if (!visible || !currentStep?.targetId) {
-      setTargetRect(null);
+      updateTargetRect(null);
       return;
     }
 
     const target = getTargetElement(currentStep.targetId);
     if (!target) {
-      setTargetRect(null);
+      updateTargetRect(null);
       return;
     }
 
     const updateRect = () => {
-      setTargetRect(target.getBoundingClientRect());
+      updateTargetRect(target.getBoundingClientRect());
     };
 
     updateRect();
@@ -416,7 +420,13 @@ function useGuideRuntimeModel({
       window.removeEventListener('scroll', handleWindowUpdate, true);
       resizeObserver?.disconnect();
     };
-  }, [currentStep?.targetId, getTargetElement, targetVersion, visible]);
+  }, [
+    currentStep?.targetId,
+    getTargetElement,
+    targetVersion,
+    updateTargetRect,
+    visible,
+  ]);
 
   const advanceStep = useCallback(async () => {
     if (!guideService || !guide || !session || stepIndex < 0) {

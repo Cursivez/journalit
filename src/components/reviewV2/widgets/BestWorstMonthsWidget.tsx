@@ -173,11 +173,11 @@ export const BestWorstMonthsWidget: React.FC<BestWorstMonthsWidgetProps> =
       
       const { bestMonth, worstMonth } = useMemo(() => {
         const closedTrades = asReviewBestWorstTrades(
-          trades
-            .filter((t) => isPnlContributingTrade(t))
-            .flatMap((trade) =>
-              splitReviewTradeByRealizedPnlEvent(trade, plugin)
-            )
+          trades.flatMap((trade) =>
+            isPnlContributingTrade(trade)
+              ? splitReviewTradeByRealizedPnlEvent(trade, plugin)
+              : []
+          )
         );
 
         if (closedTrades.length === 0) {

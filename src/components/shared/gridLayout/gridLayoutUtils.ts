@@ -194,9 +194,10 @@ export function sanitizeAllLayouts(allLayouts: {
   breakpoints.forEach((bp) => {
     const layout = allLayouts[bp];
     if (Array.isArray(layout)) {
-      sanitized[bp] = layout
-        .map(sanitizeLayoutItem)
-        .filter((item): item is Layout => item !== null);
+      sanitized[bp] = layout.flatMap((item) => {
+        const sanitizedItem = sanitizeLayoutItem(item);
+        return sanitizedItem === null ? [] : [sanitizedItem];
+      });
     }
   });
 
@@ -352,12 +353,11 @@ export function filterLayoutsForWidgets(
   const breakpoints: BreakpointKey[] = ['lg', 'md', 'sm', 'xs', 'xxs'];
 
   breakpoints.forEach((bp) => {
-    filtered[bp] = (layouts[bp] || [])
-      .filter((item) => widgetSet.has(item.i))
-      .map((item) => {
-        const widgetDef = getWidgetDef ? getWidgetDef(item.i) : undefined;
-        return validateLayoutItem(item, widgetDef, GRID_COLS[bp]);
-      });
+    filtered[bp] = (layouts[bp] || []).flatMap((item) => {
+      if (!widgetSet.has(item.i)) return [];
+      const widgetDef = getWidgetDef ? getWidgetDef(item.i) : undefined;
+      return [validateLayoutItem(item, widgetDef, GRID_COLS[bp])];
+    });
   });
 
   return filtered;

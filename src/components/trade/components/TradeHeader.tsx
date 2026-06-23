@@ -15,15 +15,17 @@ import { getTradeDirectionDisplayKind } from '../../../services/trade/core/Trade
 interface TradeHeaderProps {
   instrument: string | undefined;
   direction: string | undefined;
-  isProfit: boolean;
-  isBreakeven?: boolean;
+  outcome: {
+    kind: 'profit' | 'loss' | 'breakeven';
+  };
   pnl: number;
   percentChange: number;
-  useDirectPnLInput?: boolean;
-  directPnL?: number | null;
-  isMissedTrade?: boolean;
-  isBacktestTrade?: boolean;
-  _originalPnlWasNull?: boolean;
+  pnlInput?: {
+    useDirectPnLInput?: boolean;
+    directPnL?: number | null;
+    originalPnlWasNull?: boolean;
+  };
+  noteKind?: 'trade' | 'missed-trade' | 'backtest-trade';
   
   exitTime?: Date | string | null;
   exitPrice?: number | null;
@@ -47,8 +49,10 @@ interface TradeHeaderProps {
   assetType?: string;
   optionType?: 'call' | 'put';
   rMultiple?: number;
-  displayRMultiples?: boolean;
-  riskAmount?: number;
+  rMultipleDisplay?: {
+    enabled: boolean;
+    riskAmount?: number;
+  };
   
   currency?: string;
 }
@@ -56,15 +60,11 @@ interface TradeHeaderProps {
 export const TradeHeader: React.FC<TradeHeaderProps> = ({
   instrument,
   direction,
-  isProfit,
-  isBreakeven,
+  outcome,
   pnl,
   percentChange,
-  useDirectPnLInput,
-  directPnL,
-  isMissedTrade,
-  isBacktestTrade,
-  _originalPnlWasNull,
+  pnlInput,
+  noteKind = 'trade',
   exitTime,
   exitPrice,
   tradeStatus,
@@ -78,10 +78,18 @@ export const TradeHeader: React.FC<TradeHeaderProps> = ({
   assetType,
   optionType,
   rMultiple,
-  displayRMultiples,
-  riskAmount,
+  rMultipleDisplay,
   currency: tradeCurrency,
 }) => {
+  const isBreakeven = outcome.kind === 'breakeven';
+  const isProfit = outcome.kind === 'profit';
+  const useDirectPnLInput = pnlInput?.useDirectPnLInput;
+  const directPnL = pnlInput?.directPnL;
+  const originalPnlWasNull = pnlInput?.originalPnlWasNull;
+  const isMissedTrade = noteKind === 'missed-trade';
+  const isBacktestTrade = noteKind === 'backtest-trade';
+  const displayRMultiples = rMultipleDisplay?.enabled ?? false;
+  const riskAmount = rMultipleDisplay?.riskAmount;
   const { currency: globalCurrency } = useCurrency();
   
   const currency = tradeCurrency || globalCurrency;
@@ -195,7 +203,7 @@ export const TradeHeader: React.FC<TradeHeaderProps> = ({
           !isBacktestTrade &&
           !hasRealizedStoredPnL({
             pnl,
-            _originalPnlWasNull,
+            _originalPnlWasNull: originalPnlWasNull,
             tradeStatus,
             useDirectPnLInput,
             directPnL,

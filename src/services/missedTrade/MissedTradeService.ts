@@ -333,46 +333,50 @@ export class MissedTradeService extends CustomDataService {
       };
 
       if (Array.isArray(data.entries)) {
-        const validEntries = data.entries
-          .filter(
-            (entry) =>
-              entry &&
-              entry.time instanceof Date &&
-              !Number.isNaN(entry.time.getTime()) &&
-              entry.price !== undefined &&
-              entry.size !== undefined &&
-              entry.size > 0
-          )
-          .map((entry) => ({
-            time: this.formatDateForFrontmatter(entry.time!),
-            price: entry.price,
-            size: entry.size,
-            ...(entry.notional !== undefined
-              ? { notional: entry.notional }
-              : {}),
-          }));
+        const validEntries = data.entries.flatMap((entry) =>
+          entry &&
+          entry.time instanceof Date &&
+          !Number.isNaN(entry.time.getTime()) &&
+          entry.price !== undefined &&
+          entry.size !== undefined &&
+          entry.size > 0
+            ? [
+                {
+                  time: this.formatDateForFrontmatter(entry.time),
+                  price: entry.price,
+                  size: entry.size,
+                  ...(entry.notional !== undefined
+                    ? { notional: entry.notional }
+                    : {}),
+                },
+              ]
+            : []
+        );
 
         frontmatterData.entries =
           validEntries.length > 0 ? validEntries : undefined;
       }
 
       if (Array.isArray(data.exits)) {
-        const validExits = data.exits
-          .filter(
-            (exit) =>
-              exit &&
-              exit.time instanceof Date &&
-              !Number.isNaN(exit.time.getTime()) &&
-              exit.price !== undefined &&
-              exit.size !== undefined &&
-              exit.size > 0
-          )
-          .map((exit) => ({
-            time: this.formatDateForFrontmatter(exit.time!),
-            price: exit.price,
-            size: exit.size,
-            ...(exit.notional !== undefined ? { notional: exit.notional } : {}),
-          }));
+        const validExits = data.exits.flatMap((exit) =>
+          exit &&
+          exit.time instanceof Date &&
+          !Number.isNaN(exit.time.getTime()) &&
+          exit.price !== undefined &&
+          exit.size !== undefined &&
+          exit.size > 0
+            ? [
+                {
+                  time: this.formatDateForFrontmatter(exit.time),
+                  price: exit.price,
+                  size: exit.size,
+                  ...(exit.notional !== undefined
+                    ? { notional: exit.notional }
+                    : {}),
+                },
+              ]
+            : []
+        );
 
         frontmatterData.exits = validExits.length > 0 ? validExits : undefined;
       }
@@ -868,36 +872,42 @@ export class MissedTradeService extends CustomDataService {
       'tags: []',
     ];
 
-    const validEntries = data.entries
-      ?.filter(
-        (entry) =>
-          entry.time instanceof Date &&
-          !Number.isNaN(entry.time.getTime()) &&
-          entry.price !== undefined &&
-          entry.size !== undefined &&
-          entry.size > 0
-      )
-      .map((entry) => ({
-        time: this.formatDateForFrontmatter(entry.time!),
-        price: entry.price,
-        size: entry.size,
-        ...(entry.notional !== undefined ? { notional: entry.notional } : {}),
-      }));
-    const validExits = data.exits
-      ?.filter(
-        (exit) =>
-          exit.time instanceof Date &&
-          !Number.isNaN(exit.time.getTime()) &&
-          exit.price !== undefined &&
-          exit.size !== undefined &&
-          exit.size > 0
-      )
-      .map((exit) => ({
-        time: this.formatDateForFrontmatter(exit.time!),
-        price: exit.price,
-        size: exit.size,
-        ...(exit.notional !== undefined ? { notional: exit.notional } : {}),
-      }));
+    const validEntries = data.entries?.flatMap((entry) =>
+      entry.time instanceof Date &&
+      !Number.isNaN(entry.time.getTime()) &&
+      entry.price !== undefined &&
+      entry.size !== undefined &&
+      entry.size > 0
+        ? [
+            {
+              time: this.formatDateForFrontmatter(entry.time),
+              price: entry.price,
+              size: entry.size,
+              ...(entry.notional !== undefined
+                ? { notional: entry.notional }
+                : {}),
+            },
+          ]
+        : []
+    );
+    const validExits = data.exits?.flatMap((exit) =>
+      exit.time instanceof Date &&
+      !Number.isNaN(exit.time.getTime()) &&
+      exit.price !== undefined &&
+      exit.size !== undefined &&
+      exit.size > 0
+        ? [
+            {
+              time: this.formatDateForFrontmatter(exit.time),
+              price: exit.price,
+              size: exit.size,
+              ...(exit.notional !== undefined
+                ? { notional: exit.notional }
+                : {}),
+            },
+          ]
+        : []
+    );
 
     if (validEntries?.length) {
       frontmatterLines.push(`entries: ${JSON.stringify(validEntries)}`);

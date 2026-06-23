@@ -142,7 +142,10 @@ export function extractMarkdownSectionsByHeading(
   headings: string[]
 ): ExtractedMarkdownSection[] {
   const wantedHeadings = new Set(
-    headings.map(normalizeHeadingText).filter((heading) => heading.length > 0)
+    headings.flatMap((heading) => {
+      const normalized = normalizeHeadingText(heading);
+      return normalized ? [normalized] : [];
+    })
   );
 
   if (wantedHeadings.size === 0) {

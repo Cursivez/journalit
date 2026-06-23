@@ -104,7 +104,7 @@ function useEditEventModalModel({
   onSave,
   onModalClose,
 }: EditEventModalModelProps) {
-  const [isLoading, setIsLoading] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const { currency: globalCurrency } = useCurrency();
@@ -137,7 +137,7 @@ function useEditEventModalModel({
 
   const handleSave = async () => {
     try {
-      setIsLoading(true);
+      setIsSaving(true);
 
       
       if (!eventData.amount || parseFloat(eventData.amount) <= 0) {
@@ -192,7 +192,7 @@ function useEditEventModalModel({
         t('account.edit-event.error.update', { error: getErrorMessage(error) })
       );
     } finally {
-      setIsLoading(false);
+      setIsSaving(false);
     }
   };
 
@@ -223,7 +223,7 @@ function useEditEventModalModel({
   };
 
   return {
-    isLoading,
+    isSaving,
     isDeleting,
     showDeleteConfirm,
     eventData,
@@ -311,7 +311,7 @@ function EditEventForm({
   onModalClose: () => void;
 }) {
   const {
-    isLoading,
+    isSaving,
     eventData,
     currency,
     typeText,
@@ -371,7 +371,7 @@ function EditEventForm({
               min="0.01"
               step="0.01"
               placeholder="0.00"
-              disabled={isLoading}
+              disabled={isSaving}
             />
           </div>
         </div>
@@ -408,7 +408,7 @@ function EditEventForm({
                   setEventData((currentData) => ({ ...currentData, date: '' }));
                 }
               }}
-              disabled={isLoading}
+              disabled={isSaving}
             />
           </div>
         </div>
@@ -436,7 +436,7 @@ function EditEventForm({
                   ? t('account.add-event.placeholder.deposit')
                   : t('account.add-event.placeholder.withdrawal')
               }
-              disabled={isLoading}
+              disabled={isSaving}
             />
           </div>
         </div>
@@ -448,7 +448,7 @@ function EditEventForm({
           <Button
             variant="danger"
             onClick={() => setShowDeleteConfirm(true)}
-            disabled={isLoading}
+            disabled={isSaving}
             className="delete-transaction-button"
           >
             {t('account.edit-event.button.delete', { type: typeText })}
@@ -458,17 +458,17 @@ function EditEventForm({
           <Button
             variant="primary"
             onClick={handleSave}
-            disabled={isLoading}
+            disabled={isSaving}
             className="add-event-button accent-button"
           >
-            {isLoading
+            {isSaving
               ? t('account.edit-event.button.saving')
               : t('account.edit-event.button.save')}
           </Button>
           <Button
             variant="secondary"
             onClick={onModalClose}
-            disabled={isLoading}
+            disabled={isSaving}
             className="cancel-button"
           >
             {t('button.cancel')}

@@ -1,4 +1,4 @@
-export type TradeAccountIdentitySource = 'account';
+type TradeAccountIdentitySource = 'account';
 
 export interface TradeAccountRef {
   value: string;
@@ -18,9 +18,10 @@ function toLookupKey(value: string): string {
 
 function normalizeStringArray(value: unknown): string[] {
   if (Array.isArray(value)) {
-    return value
-      .map((item) => String(item).trim())
-      .filter((item) => item.length > 0);
+    return value.flatMap((item) => {
+      const normalized = String(item).trim();
+      return normalized ? [normalized] : [];
+    });
   }
 
   if (typeof value === 'string') {

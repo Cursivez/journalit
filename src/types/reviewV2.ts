@@ -119,19 +119,14 @@ export interface CustomWidgetType {
 }
 
 
-export interface QueryFilter {
+interface QueryFilter {
   field: string;
   operator: 'eq' | 'neq' | 'gt' | 'gte' | 'lt' | 'lte' | 'in' | 'contains';
   value: unknown;
 }
 
 
-export type StatType =
-  | 'pnl'
-  | 'winRate'
-  | 'tradeCount'
-  | 'avgR'
-  | 'profitFactor';
+type StatType = 'pnl' | 'winRate' | 'tradeCount' | 'avgR' | 'profitFactor';
 
 
 export type DemonTrackerCountMode = 'per-trade' | 'per-trading-day';

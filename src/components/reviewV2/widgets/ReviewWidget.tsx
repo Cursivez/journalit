@@ -1,6 +1,6 @@
 
 
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useEffect, useRef, useCallback, useReducer } from 'react';
 import { TFile } from 'obsidian';
 import JournalitPlugin from '../../../main';
 import { InvalidContextMessage } from './InvalidContextMessage';
@@ -77,6 +77,69 @@ const parseGrade = (value: unknown): LetterGrade | NumericGrade | null => {
   }
 
   return null;
+};
+
+type ReviewWidgetState = {
+  mentalGrade: LetterGrade | NumericGrade | null;
+  technicalGrade: LetterGrade | NumericGrade | null;
+  dataLoading: boolean;
+  isValidContext: boolean;
+  noteType: string | null;
+};
+
+type ReviewWidgetAction =
+  | {
+      type: 'loadedPreview';
+      mentalGrade: LetterGrade | NumericGrade | null;
+      technicalGrade: LetterGrade | NumericGrade | null;
+    }
+  | { type: 'invalidContext' }
+  | {
+      type: 'loaded';
+      noteType: string;
+      mentalGrade: LetterGrade | NumericGrade | null;
+      technicalGrade: LetterGrade | NumericGrade | null;
+    }
+  | {
+      type: 'optimisticGrade';
+      field: 'mentalGrade' | 'technicalGrade';
+      value: LetterGrade | NumericGrade;
+    };
+
+const initialReviewWidgetState: ReviewWidgetState = {
+  mentalGrade: null,
+  technicalGrade: null,
+  dataLoading: true,
+  isValidContext: true,
+  noteType: null,
+};
+
+const reviewWidgetReducer = (
+  state: ReviewWidgetState,
+  action: ReviewWidgetAction
+): ReviewWidgetState => {
+  switch (action.type) {
+    case 'loadedPreview':
+      return {
+        ...state,
+        mentalGrade: action.mentalGrade,
+        technicalGrade: action.technicalGrade,
+        dataLoading: false,
+        isValidContext: true,
+      };
+    case 'invalidContext':
+      return { ...state, dataLoading: false, isValidContext: false };
+    case 'loaded':
+      return {
+        mentalGrade: action.mentalGrade,
+        technicalGrade: action.technicalGrade,
+        noteType: action.noteType,
+        dataLoading: false,
+        isValidContext: true,
+      };
+    case 'optimisticGrade':
+      return { ...state, [action.field]: action.value };
+  }
 };
 
 const ReviewWidgetSkeleton: React.FC = () => (
@@ -255,15 +318,12 @@ export const ReviewWidget: React.FC<ReviewWidgetProps> = ({
   preview,
   previewData,
 }) => {
-  const [mentalGrade, setMentalGrade] = useState<
-    LetterGrade | NumericGrade | null
-  >(null);
-  const [technicalGrade, setTechnicalGrade] = useState<
-    LetterGrade | NumericGrade | null
-  >(null);
-  const [dataLoading, setLoading] = useState(true);
-  const [isValidContext, setIsValidContext] = useState(true);
-  const [noteType, setNoteType] = useState<string | null>(null);
+  const [reviewState, dispatchReviewState] = useReducer(
+    reviewWidgetReducer,
+    initialReviewWidgetState
+  );
+  const { mentalGrade, technicalGrade, dataLoading, isValidContext, noteType } =
+    reviewState;
   const retryCountRef = useRef(0);
   const cardRef = useRef<HTMLDivElement>(null);
 
@@ -289,17 +349,17 @@ export const ReviewWidget: React.FC<ReviewWidgetProps> = ({
   const loadGrades = useCallback(async () => {
     
     if (preview && previewData) {
-      setMentalGrade(parseGrade(previewData.mentalGrade));
-      setTechnicalGrade(parseGrade(previewData.technicalGrade));
-      setLoading(false);
-      setIsValidContext(true);
+      dispatchReviewState({
+        type: 'loadedPreview',
+        mentalGrade: parseGrade(previewData.mentalGrade),
+        technicalGrade: parseGrade(previewData.technicalGrade),
+      });
       return;
     }
 
     const file = plugin.app.vault.getAbstractFileByPath(filePath);
     if (!(file instanceof TFile)) {
-      setIsValidContext(false);
-      setLoading(false);
+      dispatchReviewState({ type: 'invalidContext' });
       return;
     }
 
@@ -319,19 +379,16 @@ export const ReviewWidget: React.FC<ReviewWidgetProps> = ({
         }, FRONTMATTER_RETRY_DELAY_MS);
         return;
       }
-      setIsValidContext(false);
-      setLoading(false);
+      dispatchReviewState({ type: 'invalidContext' });
       return;
     }
 
-    
-    setNoteType(noteType);
-
-    
-    setMentalGrade(parseGrade(frontmatter.mentalGrade));
-    setTechnicalGrade(parseGrade(frontmatter.technicalGrade));
-    setIsValidContext(true);
-    setLoading(false);
+    dispatchReviewState({
+      type: 'loaded',
+      noteType,
+      mentalGrade: parseGrade(frontmatter.mentalGrade),
+      technicalGrade: parseGrade(frontmatter.technicalGrade),
+    });
   }, [
     filePath,
     plugin.app.metadataCache,
@@ -398,12 +455,7 @@ export const ReviewWidget: React.FC<ReviewWidgetProps> = ({
       });
     };
 
-    
-    if (field === 'mentalGrade') {
-      setMentalGrade(value);
-    } else {
-      setTechnicalGrade(value);
-    }
+    dispatchReviewState({ type: 'optimisticGrade', field, value });
 
     
     try {

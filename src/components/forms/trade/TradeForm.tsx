@@ -1,6 +1,6 @@
 
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { TradeFormData, TradeFormErrors, TradeFormProps } from './types';
 
 const EMPTY_INITIAL_TRADE_DATA: Partial<TradeFormData> = {};
@@ -16,7 +16,7 @@ export const TradeForm: React.FC<TradeFormProps> = ({
   isEditMode = false,
   onSubmit,
   onCancel,
-  onDirtyStateChange,
+  dirtyStateRef,
 }) => {
   
   const {
@@ -36,12 +36,9 @@ export const TradeForm: React.FC<TradeFormProps> = ({
     onCancel,
   });
 
-  
-  useEffect(() => {
-    if (onDirtyStateChange) {
-      onDirtyStateChange(isDirty);
-    }
-  }, [isDirty, onDirtyStateChange]);
+  if (dirtyStateRef) {
+    dirtyStateRef.current = isDirty;
+  }
 
   
   const [activeTab, setActiveTab] = useState<string>('basic');
@@ -49,9 +46,6 @@ export const TradeForm: React.FC<TradeFormProps> = ({
     useState(false);
 
   const customFieldValues = formData.customFields ?? {};
-
-  
-  useEffect(() => {}, []); 
 
   
   

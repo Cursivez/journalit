@@ -69,6 +69,9 @@ interface UIState {
   syncCount?: number;
 
   
+  tradeSyncSelectedSource?: 'metatrader' | 'tradeImport';
+
+  
   lastFuturesSymbol?: string;
 
   

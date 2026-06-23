@@ -266,9 +266,12 @@ const useReviewFieldsManagerController = ({
 
   const generateUniqueKeyForField = useCallback(
     (label: string, excludeFieldId?: string): string => {
-      const existingKeys = fields
-        .filter((field) => field.id !== excludeFieldId)
-        .map((field) => field.fieldKey || labelToFieldKey(field.label));
+      const existingKeys = fields.reduce<string[]>((acc, field) => {
+        if (field.id !== excludeFieldId) {
+          acc.push(field.fieldKey || labelToFieldKey(field.label));
+        }
+        return acc;
+      }, []);
       return generateUniqueFieldKey(label, existingKeys);
     },
     [fields]
@@ -414,12 +417,14 @@ const useReviewFieldsManagerController = ({
         return;
       }
 
-      const existingKeys = fields
-        .filter((existingField) => existingField.id !== field.id)
-        .map(
-          (existingField) =>
+      const existingKeys = fields.reduce<string[]>((acc, existingField) => {
+        if (existingField.id !== field.id) {
+          acc.push(
             existingField.fieldKey || labelToFieldKey(existingField.label)
-        );
+          );
+        }
+        return acc;
+      }, []);
       if (existingKeys.includes(field.fieldKey)) {
         new Notice(
           t('settings.customization.custom-fields.error.cannot-save', {
@@ -591,11 +596,13 @@ const useReviewFieldsManagerController = ({
       );
       const fieldMap = new Map(fields.map((field) => [field.id, field]));
       setFields(
-        reorderedFieldIds
-          .map((id) => fieldMap.get(id))
-          .filter((field): field is CustomReviewFieldDefinition =>
-            Boolean(field)
-          )
+        reorderedFieldIds.reduce<CustomReviewFieldDefinition[]>((acc, id) => {
+          const field = fieldMap.get(id);
+          if (field) {
+            acc.push(field);
+          }
+          return acc;
+        }, [])
       );
 
       try {

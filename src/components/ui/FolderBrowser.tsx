@@ -79,7 +79,14 @@ function useFolderBrowserModel({
   const errorId = `error-${uniqueId}`;
 
   
-  const [inputValue, setInputValue] = useState(selectedPath);
+  const [inputState, setInputState] = useState(() => ({
+    selectedPath,
+    inputValue: selectedPath,
+  }));
+  const inputValue =
+    inputState.selectedPath === selectedPath
+      ? inputState.inputValue
+      : selectedPath;
   const [isOpen, setIsOpen] = useState(false);
   const [highlightedIndex, setHighlightedIndex] = useState(-1);
   const [expandedFolders, setExpandedFolders] = useState<Set<string>>(
@@ -193,22 +200,22 @@ function useFolderBrowserModel({
   
   const handleInputChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
-      setInputValue(e.target.value);
+      setInputState({ selectedPath, inputValue: e.target.value });
       setIsOpen(true);
       setHighlightedIndex(-1);
     },
-    []
+    [selectedPath]
   );
 
   
   const handleSelect = useCallback(
     (folderPath: string) => {
-      setInputValue(folderPath);
+      setInputState({ selectedPath, inputValue: folderPath });
       onChange(folderPath);
       setIsOpen(false);
       setHighlightedIndex(-1);
     },
-    [onChange]
+    [onChange, selectedPath]
   );
 
   
@@ -232,10 +239,10 @@ function useFolderBrowserModel({
 
   
   const handleClear = useCallback(() => {
-    setInputValue('');
+    setInputState({ selectedPath, inputValue: '' });
     onChange('');
     setIsOpen(false);
-  }, [onChange]);
+  }, [onChange, selectedPath]);
 
   
   useEffect(() => {
@@ -466,11 +473,6 @@ function useFolderBrowserModel({
       </li>
     ));
   }, [filteredFolders, highlightedIndex, handleToggleExpansion]);
-
-  
-  useEffect(() => {
-    setInputValue(selectedPath);
-  }, [selectedPath]);
 
   
   useEffect(() => {}, []);

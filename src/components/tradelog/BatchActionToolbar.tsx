@@ -122,16 +122,17 @@ const SetupsModalContent: React.FC<SetupsModalContentProps> = ({
   plugin,
 }) => {
   const [selectedSetups, setSelectedSetups] = useState<string[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [setupOptions, setSetupOptions] =
-    useState<string[]>(initialSetupOptions);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [setupOptions, setSetupOptions] = useState<string[]>([]);
 
   const loadSetupOptions = useCallback(() => {
     if (plugin.optionsService) {
       const options = plugin.optionsService.getOptions(OptionType.SETUP);
       setSetupOptions(options);
+    } else {
+      setSetupOptions(initialSetupOptions);
     }
-  }, [plugin.optionsService]);
+  }, [initialSetupOptions, plugin.optionsService]);
 
   
   useEffect(() => {
@@ -143,13 +144,13 @@ const SetupsModalContent: React.FC<SetupsModalContentProps> = ({
 
   const handleConfirm = async () => {
     if (selectedSetups.length === 0) return;
-    setIsLoading(true);
+    setIsSubmitting(true);
     try {
       await onConfirm(selectedSetups);
       onClose();
     } catch (error) {
       console.error('Error adding setups:', error);
-      setIsLoading(false);
+      setIsSubmitting(false);
     }
   };
 
@@ -169,15 +170,15 @@ const SetupsModalContent: React.FC<SetupsModalContentProps> = ({
         />
       </div>
       <div className="batch-action-modal-buttons">
-        <button onClick={onClose} disabled={isLoading}>
+        <button onClick={onClose} disabled={isSubmitting}>
           {t('button.cancel')}
         </button>
         <button
           onClick={() => void handleConfirm()}
-          disabled={isLoading || selectedSetups.length === 0}
+          disabled={isSubmitting || selectedSetups.length === 0}
           className="primary"
         >
-          {isLoading
+          {isSubmitting
             ? t('tradelog.batch.adding')
             : t('tradelog.batch.add-count', {
                 count: selectedSetups.length.toString(),
@@ -265,14 +266,16 @@ const TagsModalContent: React.FC<TagsModalContentProps> = ({
   plugin,
 }) => {
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [tagOptions, setTagOptions] = useState<string[]>(initialTagOptions);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [tagOptions, setTagOptions] = useState<string[]>([]);
 
   const loadTagOptions = useCallback(() => {
     if (plugin.optionsService) {
       setTagOptions(plugin.optionsService.getOptions(OptionType.TAG));
+    } else {
+      setTagOptions(initialTagOptions);
     }
-  }, [plugin.optionsService]);
+  }, [initialTagOptions, plugin.optionsService]);
 
   useEffect(() => {
     loadTagOptions();
@@ -282,13 +285,13 @@ const TagsModalContent: React.FC<TagsModalContentProps> = ({
 
   const handleConfirm = async () => {
     if (selectedTags.length === 0) return;
-    setIsLoading(true);
+    setIsSubmitting(true);
     try {
       await onConfirm(selectedTags);
       onClose();
     } catch (error) {
       console.error('Error adding tags:', error);
-      setIsLoading(false);
+      setIsSubmitting(false);
     }
   };
 
@@ -308,15 +311,15 @@ const TagsModalContent: React.FC<TagsModalContentProps> = ({
         />
       </div>
       <div className="batch-action-modal-buttons">
-        <button onClick={onClose} disabled={isLoading}>
+        <button onClick={onClose} disabled={isSubmitting}>
           {t('button.cancel')}
         </button>
         <button
           onClick={() => void handleConfirm()}
-          disabled={isLoading || selectedTags.length === 0}
+          disabled={isSubmitting || selectedTags.length === 0}
           className="primary"
         >
-          {isLoading
+          {isSubmitting
             ? t('tradelog.batch.adding')
             : t('tradelog.batch.add-count', {
                 count: selectedTags.length.toString(),
@@ -398,17 +401,17 @@ const MistakesModalContent: React.FC<MistakesModalContentProps> = ({
   plugin,
 }) => {
   const [selectedMistakes, setSelectedMistakes] = useState<string[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [mistakeOptions, setMistakeOptions] = useState<string[]>(
-    initialMistakeOptions
-  );
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [mistakeOptions, setMistakeOptions] = useState<string[]>([]);
 
   const loadMistakeOptions = useCallback(() => {
     if (plugin.optionsService) {
       const options = plugin.optionsService.getOptions(OptionType.MISTAKE);
       setMistakeOptions(options);
+    } else {
+      setMistakeOptions(initialMistakeOptions);
     }
-  }, [plugin.optionsService]);
+  }, [initialMistakeOptions, plugin.optionsService]);
 
   
   useEffect(() => {
@@ -420,13 +423,13 @@ const MistakesModalContent: React.FC<MistakesModalContentProps> = ({
 
   const handleConfirm = async () => {
     if (selectedMistakes.length === 0) return;
-    setIsLoading(true);
+    setIsSubmitting(true);
     try {
       await onConfirm(selectedMistakes);
       onClose();
     } catch (error) {
       console.error('Error adding mistakes:', error);
-      setIsLoading(false);
+      setIsSubmitting(false);
     }
   };
 
@@ -446,15 +449,15 @@ const MistakesModalContent: React.FC<MistakesModalContentProps> = ({
         />
       </div>
       <div className="batch-action-modal-buttons">
-        <button onClick={onClose} disabled={isLoading}>
+        <button onClick={onClose} disabled={isSubmitting}>
           {t('button.cancel')}
         </button>
         <button
           onClick={() => void handleConfirm()}
-          disabled={isLoading || selectedMistakes.length === 0}
+          disabled={isSubmitting || selectedMistakes.length === 0}
           className="primary"
         >
-          {isLoading
+          {isSubmitting
             ? t('tradelog.batch.adding')
             : t('tradelog.batch.add-count', {
                 count: selectedMistakes.length.toString(),
@@ -547,7 +550,7 @@ export const BatchActionToolbar = memo<BatchActionToolbarProps>(
       return () => {};
     }, []);
 
-    const [isLoading, setIsLoading] = useState(false);
+    const [isSubmitting, setIsSubmitting] = useState(false);
     const [loadingAction, setLoadingAction] = useState<string | null>(null);
 
     
@@ -615,7 +618,7 @@ export const BatchActionToolbar = memo<BatchActionToolbarProps>(
     
     const handleMarkAsReviewed = useCallback(async () => {
       try {
-        setIsLoading(true);
+        setIsSubmitting(true);
         setLoadingAction('reviewed');
         await onMarkAsReviewed();
       } catch (error) {
@@ -624,7 +627,7 @@ export const BatchActionToolbar = memo<BatchActionToolbarProps>(
           t('notice.error.mark-reviewed', { error: getErrorMessage(error) })
         );
       } finally {
-        setIsLoading(false);
+        setIsSubmitting(false);
         setLoadingAction(null);
       }
     }, [onMarkAsReviewed]);
@@ -636,7 +639,7 @@ export const BatchActionToolbar = memo<BatchActionToolbarProps>(
         setupOptions,
         async (setups: string[]) => {
           try {
-            setIsLoading(true);
+            setIsSubmitting(true);
             setLoadingAction('setups');
             await onAddSetups(setups);
           } catch (error) {
@@ -645,7 +648,7 @@ export const BatchActionToolbar = memo<BatchActionToolbarProps>(
               t('notice.error.add-setups', { error: getErrorMessage(error) })
             );
           } finally {
-            setIsLoading(false);
+            setIsSubmitting(false);
             setLoadingAction(null);
           }
         },
@@ -665,7 +668,7 @@ export const BatchActionToolbar = memo<BatchActionToolbarProps>(
         mistakeOptions,
         async (mistakes: string[]) => {
           try {
-            setIsLoading(true);
+            setIsSubmitting(true);
             setLoadingAction('mistakes');
             await onAddMistakes(mistakes);
           } catch (error) {
@@ -674,7 +677,7 @@ export const BatchActionToolbar = memo<BatchActionToolbarProps>(
               t('notice.error.add-mistakes', { error: getErrorMessage(error) })
             );
           } finally {
-            setIsLoading(false);
+            setIsSubmitting(false);
             setLoadingAction(null);
           }
         },
@@ -693,7 +696,7 @@ export const BatchActionToolbar = memo<BatchActionToolbarProps>(
         tagOptions,
         async (tags: string[]) => {
           try {
-            setIsLoading(true);
+            setIsSubmitting(true);
             setLoadingAction('tags');
             await onAddTags(tags);
           } catch (error) {
@@ -702,7 +705,7 @@ export const BatchActionToolbar = memo<BatchActionToolbarProps>(
               t('notice.error.add-tags', { error: getErrorMessage(error) })
             );
           } finally {
-            setIsLoading(false);
+            setIsSubmitting(false);
             setLoadingAction(null);
           }
         },
@@ -722,7 +725,7 @@ export const BatchActionToolbar = memo<BatchActionToolbarProps>(
         selectedCount,
         async () => {
           try {
-            setIsLoading(true);
+            setIsSubmitting(true);
             setLoadingAction('delete');
             await onDelete();
           } catch (error) {
@@ -731,7 +734,7 @@ export const BatchActionToolbar = memo<BatchActionToolbarProps>(
               t('notice.error.delete-trades', { error: getErrorMessage(error) })
             );
           } finally {
-            setIsLoading(false);
+            setIsSubmitting(false);
             setLoadingAction(null);
           }
         },
@@ -769,7 +772,7 @@ export const BatchActionToolbar = memo<BatchActionToolbarProps>(
           <button
             className="batch-action-button"
             onClick={() => void handleMarkAsReviewed()}
-            disabled={isLoading || selectedCount === 0}
+            disabled={isSubmitting || selectedCount === 0}
             aria-label={t('button.mark-reviewed')}
           >
             <CheckCircle2 size={18} />
@@ -785,7 +788,7 @@ export const BatchActionToolbar = memo<BatchActionToolbarProps>(
           <button
             className="batch-action-button"
             onClick={() => void handleAddTags()}
-            disabled={isLoading || selectedCount === 0}
+            disabled={isSubmitting || selectedCount === 0}
             aria-label={t('tradelog.batch.add-tags.aria')}
           >
             <Tag size={18} />
@@ -801,7 +804,7 @@ export const BatchActionToolbar = memo<BatchActionToolbarProps>(
           <button
             className="batch-action-button"
             onClick={() => void handleAddSetups()}
-            disabled={isLoading || selectedCount === 0}
+            disabled={isSubmitting || selectedCount === 0}
             aria-label={t('tradelog.batch.add-setups.aria')}
           >
             <FlaskConical size={18} />
@@ -817,7 +820,7 @@ export const BatchActionToolbar = memo<BatchActionToolbarProps>(
           <button
             className="batch-action-button"
             onClick={() => void handleAddMistakes()}
-            disabled={isLoading || selectedCount === 0}
+            disabled={isSubmitting || selectedCount === 0}
             aria-label={t('tradelog.batch.add-mistakes.aria')}
           >
             <AlertTriangle size={18} />
@@ -833,7 +836,7 @@ export const BatchActionToolbar = memo<BatchActionToolbarProps>(
           <button
             className="batch-action-button batch-action-delete danger"
             onClick={() => void handleDelete()}
-            disabled={isLoading || selectedCount === 0}
+            disabled={isSubmitting || selectedCount === 0}
             aria-label={t('tradelog.batch.delete.aria')}
           >
             <Trash2 size={18} />
@@ -847,7 +850,7 @@ export const BatchActionToolbar = memo<BatchActionToolbarProps>(
           <button
             className="batch-action-button batch-action-clear"
             onClick={onClearSelection}
-            disabled={isLoading || selectedCount === 0}
+            disabled={isSubmitting || selectedCount === 0}
             aria-label={t('tradelog.batch.clear.aria')}
           >
             <X size={18} />

@@ -4,8 +4,8 @@ import React, {
   createContext,
   use,
   useCallback,
+  useReducer,
   useRef,
-  useState,
   useMemo,
   ReactNode,
 } from 'react';
@@ -236,13 +236,32 @@ export const DashboardDataProvider: React.FC<DashboardDataProviderProps> = ({
   plugin,
   isActive = true,
 }) => {
-  const [dashboardData, setDashboardData] = useState<DashboardData | null>(
-    null
+  const [state, dispatchState] = useReducer(
+    (
+      current: {
+        dashboardData: DashboardData | null;
+        isLoading: boolean;
+        isStale: boolean;
+        error: Error | null;
+        lastFetchTime: number;
+      },
+      update: Partial<{
+        dashboardData: DashboardData | null;
+        isLoading: boolean;
+        isStale: boolean;
+        error: Error | null;
+        lastFetchTime: number;
+      }>
+    ) => ({ ...current, ...update }),
+    {
+      dashboardData: null,
+      isLoading: false,
+      isStale: false,
+      error: null,
+      lastFetchTime: 0,
+    }
   );
-  const [isLoading, setIsLoading] = useState(false);
-  const [isStale, setIsStale] = useState(false);
-  const [error, setError] = useState<Error | null>(null);
-  const [lastFetchTime, setLastFetchTime] = useState(0);
+  const { dashboardData, isLoading, isStale, error, lastFetchTime } = state;
 
   
   const fetchingRef = useRef(false);
@@ -300,8 +319,7 @@ export const DashboardDataProvider: React.FC<DashboardDataProviderProps> = ({
           previousFiltersRef.current = filtersRef.current;
 
           fetchingRef.current = true;
-          setIsLoading(true);
-          setError(null);
+          dispatchState({ isLoading: true, error: null });
 
           try {
             const data = await fetchDashboardData(
@@ -314,19 +332,21 @@ export const DashboardDataProvider: React.FC<DashboardDataProviderProps> = ({
                 freshTradeQuery: dataReadyRef.current,
               }
             );
-            setDashboardData(data);
-            setLastFetchTime(Date.now());
-            setIsStale(false); 
+            dispatchState({
+              dashboardData: data,
+              lastFetchTime: Date.now(),
+              isStale: false,
+            });
           } catch (err) {
             console.error('Error fetching dashboard data:', err);
-            setError(
-              err instanceof Error
-                ? err
-                : new Error('Failed to fetch dashboard data')
-            );
+            dispatchState({
+              error:
+                err instanceof Error
+                  ? err
+                  : new Error('Failed to fetch dashboard data'),
+            });
           } finally {
-            setIsLoading(false);
-            setIsStale(false); 
+            dispatchState({ isLoading: false, isStale: false });
             fetchingRef.current = false;
           }
 
@@ -374,7 +394,7 @@ export const DashboardDataProvider: React.FC<DashboardDataProviderProps> = ({
 
     if (filtersChanged && dashboardData) {
       
-      setIsStale(true);
+      dispatchState({ isStale: true });
     }
 
     

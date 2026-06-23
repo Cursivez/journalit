@@ -226,22 +226,20 @@ export const SessionMistakesWidget: React.FC<SessionMistakesWidgetProps> =
             fresh: false,
           });
 
-          const tradeFilePaths = allTrades
-            .filter((trade): trade is SessionMistakeTradeRecord => {
-              if (!isSessionMistakeTradeRecord(trade)) {
-                return false;
-              }
+          const tradeFilePaths = allTrades.flatMap((trade) => {
+            if (!isSessionMistakeTradeRecord(trade)) {
+              return [];
+            }
 
-              const entryDate = new Date(trade.entryTime);
-              if (isNaN(entryDate.getTime())) {
-                return false;
-              }
+            const entryDate = new Date(trade.entryTime);
+            if (isNaN(entryDate.getTime())) {
+              return [];
+            }
 
-              return (
-                getTradingDayString(entryDate, plugin) === targetTradingDay
-              );
-            })
-            .map((trade) => trade.path);
+            return getTradingDayString(entryDate, plugin) === targetTradingDay
+              ? [trade.path]
+              : [];
+          });
 
           if (tradeFilePaths.length === 0) {
             return;
@@ -400,6 +398,7 @@ export const SessionMistakesWidget: React.FC<SessionMistakesWidgetProps> =
                   optionType={OptionType.MISTAKE}
                   onSaveOption={handleSaveMistakeOption}
                   placeholder={t('widget.session-mistakes.placeholder')}
+                  portalDropdown={true}
                 />
                 <div className="journalit-reviewv2-sessionmistakes-helper journalit-reviewv2-text-sm journalit-reviewv2-text-muted">
                   {t('widget.session-mistakes.subtitle')}

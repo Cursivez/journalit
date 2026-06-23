@@ -20,7 +20,7 @@ export interface DropdownOption {
 }
 
 
-export interface CustomFieldValidation {
+interface CustomFieldValidation {
   required?: boolean;
   minLength?: number;
   maxLength?: number;
@@ -278,13 +278,15 @@ export function validateCustomFieldValue(
 
   
   const getAllValidOptions = (): string[] => {
-    const predefinedOptions = (definition.options || [])
-      .map((opt) => normalizeComparableOption(opt.value))
-      .filter((option): option is string => option !== null);
+    const predefinedOptions = (definition.options || []).flatMap((opt) => {
+      const option = normalizeComparableOption(opt.value);
+      return option === null ? [] : [option];
+    });
 
-    const persistedOptions = (savedOptions || [])
-      .map((option) => normalizeComparableOption(option))
-      .filter((option): option is string => option !== null);
+    const persistedOptions = (savedOptions || []).flatMap((value) => {
+      const option = normalizeComparableOption(value);
+      return option === null ? [] : [option];
+    });
 
     
     return [...new Set([...predefinedOptions, ...persistedOptions])];

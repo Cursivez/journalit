@@ -85,20 +85,16 @@ export interface ImageCarouselProps extends ImageBaseProps {
   
   altPrefix?: string;
 
-  
-  showThumbnails?: boolean;
+  displayOptions?: {
+    showThumbnails?: boolean;
+    showCounter?: boolean;
+    enableFullscreen?: boolean;
+  };
 
-  
-  showCounter?: boolean;
-
-  
-  enableDelete?: boolean;
-
-  
-  onDeleteImage?: (index: number, path: string) => void | Promise<void>;
-
-  
-  enableFullscreen?: boolean;
+  deleteOptions?: {
+    enabled: boolean;
+    onDeleteImage?: (index: number, path: string) => void | Promise<void>;
+  };
 
   
   useResolveMediaPath?: boolean;

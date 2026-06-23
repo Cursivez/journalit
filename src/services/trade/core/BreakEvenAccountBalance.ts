@@ -11,7 +11,7 @@ interface BreakEvenAccountBalanceAccountSnapshot {
   accountId?: string | number | null;
 }
 
-export interface BreakEvenAccountBalanceSnapshot {
+interface BreakEvenAccountBalanceSnapshot {
   balance: number;
   currency?: string;
 }

@@ -714,9 +714,10 @@ function useHomePageModel(plugin: JournalitPlugin) {
         'regular',
       ]);
 
-      return accounts
-        .map((account) => account.name || account.accountName)
-        .filter((accountName): accountName is string => Boolean(accountName));
+      return accounts.flatMap((account) => {
+        const accountName = account.name || account.accountName;
+        return accountName ? [accountName] : [];
+      });
     },
     [plugin]
   );

@@ -30,18 +30,20 @@ export const useOptimizedAccordion = (
   initialExpanded = false,
   animationConfig: AccordionConfig = DEFAULT_CONFIG
 ) => {
-  const [isExpanded, setIsExpanded] = useState(initialExpanded);
+  const [expandedState, setExpandedState] = useState(() => ({
+    initialExpanded,
+    isExpanded: initialExpanded,
+  }));
+  const isExpanded =
+    expandedState.initialExpanded === initialExpanded
+      ? expandedState.isExpanded
+      : initialExpanded;
   const [isCollapsing, setIsCollapsing] = useState(false);
   const [contentHeight, setContentHeight] = useState<number>(0);
 
   const contentRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const collapseTimeoutRef = useRef<number | null>(null);
-
-  
-  useEffect(() => {
-    setIsExpanded(initialExpanded);
-  }, [initialExpanded]);
 
   
   useEffect(() => {
@@ -128,8 +130,8 @@ export const useOptimizedAccordion = (
   }, [isExpanded, isCollapsing]);
 
   const toggleExpanded = useCallback(() => {
-    setIsExpanded((prev) => {
-      if (prev) {
+    setExpandedState(() => {
+      if (isExpanded) {
         
         setIsCollapsing(true);
 
@@ -150,9 +152,9 @@ export const useOptimizedAccordion = (
           collapseTimeoutRef.current = null;
         }
       }
-      return !prev;
+      return { initialExpanded, isExpanded: !isExpanded };
     });
-  }, [animationConfig.duration.close]);
+  }, [animationConfig.duration.close, initialExpanded, isExpanded]);
 
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {

@@ -4,6 +4,7 @@ import React, {
   useCallback,
   useEffect,
   useMemo,
+  useReducer,
   useRef,
   useState,
 } from 'react';
@@ -419,6 +420,22 @@ const DashboardWidgetCard: React.FC<DashboardWidgetCardProps> = ({
   );
 };
 
+const DashboardGridWidgetCard: React.FC<DashboardWidgetCardProps> = (props) => {
+  const widgetDef = AVAILABLE_WIDGETS.find(
+    (widget: WidgetDefinition) => widget.id === props.widgetId
+  );
+
+  if (!widgetDef) {
+    return (
+      <div className="journalit-dashboard-widget-error">
+        Unknown widget type: {props.widgetId}
+      </div>
+    );
+  }
+
+  return <DashboardWidgetCard {...props} />;
+};
+
 
 
 const useDashboardGridLayoutState = ({
@@ -434,21 +451,25 @@ const useDashboardGridLayoutState = ({
   gridWidthMeasured: boolean;
   gridWidth: number;
 }) => {
-  const [layouts, setLayouts] = useState<{
+  type DashboardLayouts = {
     lg: Layout[];
     md: Layout[];
     sm: Layout[];
     xs: Layout[];
     xxs: Layout[];
+  };
+  const [layoutState, setLayoutState] = useState<{
+    layouts: DashboardLayouts;
+    layoutsReady: boolean;
   }>({
-    lg: [],
-    md: [],
-    sm: [],
-    xs: [],
-    xxs: [],
+    layouts: { lg: [], md: [], sm: [], xs: [], xxs: [] },
+    layoutsReady: false,
   });
-  const [layoutsReady, setLayoutsReady] = useState(false);
-  const [staticGridReady, setStaticGridReady] = useState(false);
+  const { layouts, layoutsReady } = layoutState;
+  const [staticGridReady, dispatchStaticGridReady] = useReducer(
+    (_state: boolean, nextReady: boolean) => nextReady,
+    false
+  );
   const [currentBreakpoint, setCurrentBreakpoint] =
     useState<BreakpointKey>('lg');
   const [isGridResizing, setIsGridResizing] = useState(false);
@@ -719,14 +740,16 @@ const useDashboardGridLayoutState = ({
           });
 
           
-          setLayouts({
-            lg: filteredLg,
-            md: filteredMd,
-            sm: filteredSm,
-            xs: filteredXs,
-            xxs: filteredXxs,
+          setLayoutState({
+            layouts: {
+              lg: filteredLg,
+              md: filteredMd,
+              sm: filteredSm,
+              xs: filteredXs,
+              xxs: filteredXxs,
+            },
+            layoutsReady: true,
           });
-          setLayoutsReady(true);
         }
       } catch (error) {
         console.error('Error loading layouts:', error);
@@ -777,8 +800,7 @@ const useDashboardGridLayoutState = ({
           ),
         };
 
-        setLayouts(defaultLayouts);
-        setLayoutsReady(true);
+        setLayoutState({ layouts: defaultLayouts, layoutsReady: true });
       }
     };
 
@@ -887,7 +909,7 @@ const useDashboardGridLayoutState = ({
             xxs: newLayout.bottomSection.xxs,
           };
 
-          setLayouts(nextLayouts);
+          setLayoutState({ layouts: nextLayouts, layoutsReady: true });
           void saveLayout(plugin, 'Default', newLayout);
         } catch (error) {
           console.error('Error saving layout in handleLayoutChange:', error);
@@ -1001,15 +1023,15 @@ const useDashboardGridLayoutState = ({
 
   useEffect(() => {
     if (isEditing || !layoutsReady || !gridWidthMeasured || gridWidth <= 0) {
-      setStaticGridReady(false);
+      dispatchStaticGridReady(false);
       return;
     }
 
-    setStaticGridReady(false);
+    dispatchStaticGridReady(false);
     let secondFrameId: number | null = null;
     const firstFrameId = window.requestAnimationFrame(() => {
       secondFrameId = window.requestAnimationFrame(() => {
-        setStaticGridReady(true);
+        dispatchStaticGridReady(true);
       });
     });
 
@@ -1150,31 +1172,23 @@ export const GridLayout: React.FC<GridLayoutProps> = ({
 
   const dateFormat = plugin?.settings?.trade?.dateFormat || getUserDateFormat();
 
-  const renderWidgetCard = (widgetId: string, editing: boolean) => {
-    const widgetDef = AVAILABLE_WIDGETS.find(
-      (w: WidgetDefinition) => w.id === widgetId
-    );
-
-    if (!widgetDef) {
-      return (
-        <div className="journalit-dashboard-widget-error">
-          Unknown widget type: {widgetId}
-        </div>
-      );
-    }
-
-    return (
-      <DashboardWidgetCard
-        widgetId={widgetId}
-        filters={filters}
-        dateFormat={dateFormat}
-        editing={editing}
-        onRemoveWidget={onRemoveWidget}
-        currencyConversion={currencyConversion}
-        getConversionTradesForWidget={getConversionTradesForWidget}
-      />
-    );
-  };
+  const staticDashboardWidgetProps = useMemo(
+    () => ({
+      filters,
+      dateFormat,
+      editing: false,
+      onRemoveWidget,
+      currencyConversion,
+      getConversionTradesForWidget,
+    }),
+    [
+      currencyConversion,
+      dateFormat,
+      filters,
+      getConversionTradesForWidget,
+      onRemoveWidget,
+    ]
+  );
 
   return (
     <div
@@ -1214,7 +1228,17 @@ export const GridLayout: React.FC<GridLayoutProps> = ({
             margin={[GRID_MARGIN, GRID_MARGIN]}
           >
             {widgets.map((widgetId) => (
-              <div key={widgetId}>{renderWidgetCard(widgetId, true)}</div>
+              <div key={widgetId}>
+                <DashboardGridWidgetCard
+                  widgetId={widgetId}
+                  filters={filters}
+                  dateFormat={dateFormat}
+                  editing={true}
+                  onRemoveWidget={onRemoveWidget}
+                  currencyConversion={currencyConversion}
+                  getConversionTradesForWidget={getConversionTradesForWidget}
+                />
+              </div>
             ))}
           </ResponsiveGridLayout>
         )}
@@ -1235,7 +1259,8 @@ export const GridLayout: React.FC<GridLayoutProps> = ({
               AVAILABLE_WIDGETS.find((widget) => widget.id === widgetId)
                 ?.defaultSize
             }
-            renderWidget={(widgetId) => renderWidgetCard(widgetId, false)}
+            WidgetComponent={DashboardGridWidgetCard}
+            widgetProps={staticDashboardWidgetProps}
           />
         )}
       </GridLayoutErrorBoundary>

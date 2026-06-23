@@ -215,6 +215,7 @@ interface QueuedRequest<T> {
   url: string;
   options: RequestInit;
   context: string;
+  authTokenAtQueue: string | null;
   resolve: (value: T | null) => void;
   reject: (error: unknown) => void;
   retryCount: number;
@@ -252,10 +253,14 @@ export class ApiClient {
 
   
   private static authToken: string | null = null;
+  private static authFailureDispatched = false;
 
   
   static setAuthToken(token: string | null): void {
     this.authToken = token;
+    if (token) {
+      this.authFailureDispatched = false;
+    }
   }
 
   
@@ -285,6 +290,8 @@ export class ApiClient {
   private static getHeaders(
     providedHeaders: Record<string, string> = {}
   ): Record<string, string> {
+    const endpoint = providedHeaders['x-endpoint'] || '';
+    const endpointRequiresAuth = this.requiresAuth(endpoint);
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
       'Accept-Language': 'en-US',
@@ -292,10 +299,18 @@ export class ApiClient {
     };
 
     
-    if (
-      this.authToken &&
-      this.requiresAuth(providedHeaders['x-endpoint'] || '')
-    ) {
+    
+    
+    if (endpointRequiresAuth) {
+      for (const headerName of Object.keys(headers)) {
+        if (headerName.toLowerCase() === 'authorization') {
+          delete headers[headerName];
+        }
+      }
+    }
+
+    
+    if (this.authToken && endpointRequiresAuth) {
       headers['Authorization'] = `Bearer ${this.authToken}`;
     }
 
@@ -325,27 +340,18 @@ export class ApiClient {
       }
     }
 
-    
-    const tempHeaders = {
-      ...normalizeRequestHeaders(options.headers),
-      'x-endpoint': url,
-    };
-
-    
-    const authHeaders = this.getHeaders(tempHeaders);
-
-    
-    const authenticatedOptions: RequestInit = {
+    const queuedOptions: RequestInit = {
       ...options,
-      headers: authHeaders,
+      headers: normalizeRequestHeaders(options.headers),
     };
 
     
     return new Promise((resolve, reject) => {
       const queueItem: QueuedRequest<T> = {
         url,
-        options: authenticatedOptions,
+        options: queuedOptions,
         context,
+        authTokenAtQueue: this.requiresAuth(url) ? this.authToken : null,
         resolve,
         reject,
         retryCount: 0,
@@ -409,11 +415,25 @@ export class ApiClient {
   private static async executeRequest<T>(
     request: QueuedRequest<T>
   ): Promise<void> {
+    let requestAuthToken: string | null = null;
     try {
+      if (
+        this.requiresAuth(request.url) &&
+        request.authTokenAtQueue !== this.authToken
+      ) {
+        request.reject(new Error('Authenticated request cancelled'));
+        return;
+      }
+
+      const requestHeaders = this.getHeaders({
+        ...normalizeRequestHeaders(request.options.headers),
+        'x-endpoint': request.url,
+      });
+      requestAuthToken = this.getAuthorizationToken(requestHeaders);
       const response = await requestUrl({
         url: request.url,
         method: request.options.method || 'GET',
-        headers: normalizeRequestHeaders(request.options.headers),
+        headers: requestHeaders,
         body: requestBodyToString(request.options.body),
         throw: false,
       });
@@ -448,7 +468,7 @@ export class ApiClient {
           (response.status === 429 || response.status >= 500) &&
           request.retryCount < this.MAX_RETRY_ATTEMPTS
         ) {
-          await this.retryRequest(request);
+          await this.retryRequest(request, requestAuthToken);
           return;
         }
 
@@ -506,10 +526,15 @@ export class ApiClient {
 
         if (
           response.status === 401 &&
-          this.authToken &&
+          requestAuthToken &&
           this.requiresAuth(request.url)
         ) {
-          this.dispatchAuthFailure(errorContext);
+          if (requestAuthToken === this.authToken) {
+            this.handleAuthenticationFailure(errorContext);
+          } else {
+            request.reject(new Error('Authenticated request cancelled'));
+            return;
+          }
         }
 
         throw new ApiError(
@@ -585,7 +610,7 @@ export class ApiClient {
         ((error instanceof Error && error.name === 'TypeError') ||
           (error instanceof Error && error.message?.includes('fetch')))
       ) {
-        await this.retryRequest(request);
+        await this.retryRequest(request, requestAuthToken);
       } else {
         this.handleError(error, request.context);
         request.resolve(null);
@@ -595,13 +620,23 @@ export class ApiClient {
 
   
   private static async retryRequest<T>(
-    request: QueuedRequest<T>
+    request: QueuedRequest<T>,
+    requestAuthToken: string | null
   ): Promise<void> {
     request.retryCount++;
     const delay =
       this.RETRY_DELAY_BASE_MS * Math.pow(2, request.retryCount - 1);
 
     await new Promise((resolve) => window.setTimeout(resolve, delay));
+
+    if (
+      this.requiresAuth(request.url) &&
+      requestAuthToken &&
+      requestAuthToken !== this.authToken
+    ) {
+      request.reject(new Error('Authenticated request cancelled'));
+      return;
+    }
 
     
     request.priority += 10; 
@@ -672,6 +707,46 @@ export class ApiClient {
         detail: context,
       })
     );
+  }
+
+  static handleAuthenticationFailure(context: ErrorContext): void {
+    this.authToken = null;
+    this.clearCache();
+    this.rejectQueuedAuthenticatedRequests();
+
+    if (this.authFailureDispatched) {
+      return;
+    }
+
+    this.authFailureDispatched = true;
+    this.dispatchAuthFailure(context);
+  }
+
+  private static getAuthorizationToken(
+    headers: Record<string, string>
+  ): string | null {
+    for (const [headerName, headerValue] of Object.entries(headers)) {
+      if (headerName.toLowerCase() === 'authorization') {
+        const match = headerValue.match(/^Bearer\s+(.+)$/i);
+        return match?.[1] ?? null;
+      }
+    }
+
+    return null;
+  }
+
+  private static rejectQueuedAuthenticatedRequests(): void {
+    const retainedRequests: QueuedRequest<unknown>[] = [];
+
+    for (const request of this.requestQueue) {
+      if (this.requiresAuth(request.url)) {
+        request.reject(new Error('Authenticated request cancelled'));
+      } else {
+        retainedRequests.push(request);
+      }
+    }
+
+    this.requestQueue = retainedRequests;
   }
 
   

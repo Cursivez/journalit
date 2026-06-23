@@ -173,16 +173,15 @@ const calculateRollingWinLossRatio = (
 
     if (defaultRiskAmount && defaultRiskAmount > 0) {
       
-      const winningRMultiples = wins
-        .map((t) =>
-          calculateEffectiveRMultiple(
-            getEffectivePnL(t),
-            t.rMultiple,
-            t.riskAmount,
-            defaultRiskAmount
-          )
-        )
-        .filter((r): r is number => r !== undefined && !isNaN(r));
+      const winningRMultiples = wins.flatMap((t) => {
+        const rMultiple = calculateEffectiveRMultiple(
+          getEffectivePnL(t),
+          t.rMultiple,
+          t.riskAmount,
+          defaultRiskAmount
+        );
+        return rMultiple !== undefined && !isNaN(rMultiple) ? [rMultiple] : [];
+      });
 
       avgWinR =
         winningRMultiples.length > 0
@@ -191,16 +190,15 @@ const calculateRollingWinLossRatio = (
           : undefined;
 
       
-      const losingRMultiples = losses
-        .map((t) =>
-          calculateEffectiveRMultiple(
-            getEffectivePnL(t),
-            t.rMultiple,
-            t.riskAmount,
-            defaultRiskAmount
-          )
-        )
-        .filter((r): r is number => r !== undefined && !isNaN(r));
+      const losingRMultiples = losses.flatMap((t) => {
+        const rMultiple = calculateEffectiveRMultiple(
+          getEffectivePnL(t),
+          t.rMultiple,
+          t.riskAmount,
+          defaultRiskAmount
+        );
+        return rMultiple !== undefined && !isNaN(rMultiple) ? [rMultiple] : [];
+      });
 
       avgLossR =
         losingRMultiples.length > 0

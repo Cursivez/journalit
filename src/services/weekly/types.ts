@@ -7,7 +7,7 @@ interface ForecastSection {
 }
 
 
-export interface WeeklyForecast {
+interface WeeklyForecast {
   monthly: ForecastSection;
   weekly: ForecastSection;
   daily: ForecastSection;

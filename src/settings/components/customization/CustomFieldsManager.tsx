@@ -282,9 +282,12 @@ function useCustomFieldsManagerModel(props: CustomFieldsManagerProps) {
 
   const generateUniqueKeyForField = useCallback(
     (label: string, excludeFieldId?: string): string => {
-      const existingKeys = fields
-        .filter((f) => f.id !== excludeFieldId) 
-        .map((f) => f.fieldKey || labelToFieldKey(f.label));
+      const existingKeys = fields.reduce<string[]>((acc, f) => {
+        if (f.id !== excludeFieldId) {
+          acc.push(f.fieldKey || labelToFieldKey(f.label));
+        }
+        return acc;
+      }, []);
       return generateUniqueFieldKey(label, existingKeys);
     },
     [fields]
@@ -342,9 +345,12 @@ function useCustomFieldsManagerModel(props: CustomFieldsManagerProps) {
       }
 
       
-      const existingKeys = fields
-        .filter((f) => f.id !== field.id) 
-        .map((f) => f.fieldKey || labelToFieldKey(f.label));
+      const existingKeys = fields.reduce<string[]>((acc, f) => {
+        if (f.id !== field.id) {
+          acc.push(f.fieldKey || labelToFieldKey(f.label));
+        }
+        return acc;
+      }, []);
 
       if (existingKeys.includes(field.fieldKey)) {
         new Notice(

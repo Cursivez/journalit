@@ -1225,6 +1225,15 @@ const fr: Lang = {
     'Taux de réussite',
   'dashboard.widgets.hourly-performance.tooltip.win-rate':
     'Taux de réussite : {rate} ({wins}G / {losses}P)',
+  'dashboard.widgets.hourly-performance.bucket-aria': 'Taille du créneau',
+  'dashboard.widgets.hourly-performance.bucket-option': '{minutes} min',
+  'dashboard.widgets.hourly-performance.metric-aria': 'Métrique',
+  'dashboard.widgets.hourly-performance.metric.total': 'Cumul',
+  'dashboard.widgets.hourly-performance.metric.average': 'Moyenne',
+  'dashboard.widgets.hourly-performance.metric.total-pnl': 'P&L total',
+  'dashboard.widgets.hourly-performance.metric.avg-pnl': 'P&L moy.',
+  'dashboard.widgets.hourly-performance.metric.total-r': 'R total',
+  'dashboard.widgets.hourly-performance.metric.avg-r': 'R moy.',
   'dashboard.widgets.weekday-performance.tooltip.no-trades': 'Aucun trade',
   'dashboard.widgets.rollingStats.title': 'Gains/Pertes moyennes glissantes',
   'dashboard.widgets.rollingStats.period': 'Période',
@@ -5136,9 +5145,25 @@ const fr: Lang = {
   'home.widget.goals-progress.aria.change-goal': 'Cliquer pour modifier',
   'home.widget.best-hours.title': 'Meilleures heures',
   'home.widget.best-hours.no-data': 'Pas de trade',
-  'home.widget.best-hours.period-aria': '{label} : {pnl} P&L, {count} trades',
+  'home.widget.best-hours.period-aria':
+    '{label} : {pnl} P&L moyen par trade, {count} trades',
   'home.widget.best-hours.trades-count': '{count} trades',
   'home.widget.best-hours.win-rate': 'Gain de {rate}%',
+  'home.widget.best-hours.win-rate-na': 'Taux de réussite indisponible',
+  'home.widget.best-hours.days-count': '{count} jours',
+  'home.widget.best-hours.avg-per-trade': 'moy./trade',
+  'home.widget.best-hours.strongest-entry-window': 'Meilleur créneau d’entrée',
+  'home.widget.best-hours.avg-summary': '{trades} trades · {days} jours',
+  'home.widget.best-hours.hidden': 'Masqué',
+  'home.widget.best-hours.hidden-detail': 'Mode confidentialité',
+  'home.widget.best-hours.no-positive-window': 'Aucun créneau positif',
+  'home.widget.best-hours.insufficient-history': 'Données insuffisantes',
+  'home.widget.best-hours.sample-requirement':
+    '{count}/2 créneaux échantillonnés',
+  'home.widget.best-hours.developing': 'en cours',
+  'home.widget.best-hours.no-positive-detail':
+    'Les créneaux échantillonnés sont négatifs',
+  'home.widget.best-hours.period-hidden-aria': 'Performance par heure masquée',
   'home.widget.aum.title': 'Actifs sous gestion',
   'home.widget.aum.period.month': 'Ce mois',
   'home.widget.aum.period.quarter': 'Ce trimestre',
@@ -6096,5 +6121,82 @@ const fr: Lang = {
     'La quantité du trade ouvert correspondant diffère de l’aperçu close-only',
   'trade-import.preview.message.no-open-match':
     'Aucun trade ouvert correspondant trouvé pour l’aperçu close-only',
+  'trade-import.restore.title':
+    'Restaurer les trades importés depuis le backend',
+  'trade-import.restore.description':
+    'Crée les notes locales manquantes pour les trades importés dans le backend pour ce coffre. Cela ne crée pas de doublons côté backend.',
+  'trade-import.restore.vault': 'Identité du coffre actuel : {vaultId}',
+  'trade-import.restore.load':
+    'Restaurer les trades importés depuis le backend',
+  'trade-import.restore.none':
+    'Aucune projection de trade importé manquante trouvée pour ce coffre.',
+  'trade-import.restore.loaded':
+    '{count} trades importés restaurables trouvés.',
+  'trade-import.restore.load-failed':
+    'Impossible de charger les trades importés restaurables.',
+  'trade-import.restore.select-all': 'Tout sélectionner',
+  'trade-import.restore.restore-selected': 'Restaurer la sélection ({count})',
+  'trade-import.restore.complete':
+    '{written} trades importés restaurés ; {failed} échecs.',
+  'trade-import.restore.broker-label': 'Restauration backend',
+  'trade-sync.source.metatrader': 'MetaTrader',
+  'trade-sync.source.trade-import': 'Trade Import',
+  'trade-sync.source.metatrader.description':
+    'Synchronisez les trades depuis les rapports MetaTrader téléversés via votre connexion FTP.',
+  'trade-sync.source.trade-import.description':
+    'Restaurez les imports de fichiers broker entre coffres et récupérez les notes de trade locales manquantes.',
+  'trade-sync.import.title': 'Synchronisation Trade Import',
+  'trade-sync.import.description':
+    'Restaurez les trades importés entre coffres et récupérez les notes locales manquantes.',
+  'trade-sync.import.card.connection': 'Connexion',
+  'trade-sync.import.card.backup': 'Sauvegarde des imports',
+  'trade-sync.import.card.restorable': 'Trades restaurables',
+  'trade-sync.import.card.import': 'Trade Import',
+  'trade-sync.import.card.open-importer': 'Ouvrir l’importeur',
+  'trade-sync.import.card.open-importer-desc':
+    'Importez de nouveaux fichiers broker ici',
+  'trade-sync.import.card.inventory-summary':
+    '{accounts} compte(s) · {trades} trade(s)',
+  'trade-sync.import.action.check': 'Vérifier',
+  'trade-sync.import.action.open-import': 'Ouvrir Trade Import',
+  'trade-sync.import.action.clear': 'Effacer',
+  'trade-sync.import.action.select-all': 'Tout sélectionner',
+  'trade-sync.import.action.restore-selected':
+    'Restaurer la sélection ({count})',
+  'trade-sync.import.action.create-local-account': 'Créer localement',
+  'trade-sync.import.action.create-local-account-title':
+    'Crée un compte local dans ce coffre avec le nom du compte backend.',
+  'trade-sync.import.action.save-mapping': 'Enregistrer',
+  'trade-sync.import.action.save-mapping-title':
+    'Enregistre l’association entre ce compte backend et le compte local.',
+  'trade-sync.import.action.mapped': 'Associé',
+  'trade-sync.import.action.restore-account': 'Restaurer',
+  'trade-sync.import.action.restore-account-title':
+    'Restaure les notes de trade locales manquantes pour ce compte backend.',
+  'trade-sync.import.action.restoring': 'Restauration…',
+  'trade-sync.import.label.account': 'Compte',
+  'trade-sync.import.vault-pending': 'Coffre en attente',
+  'trade-sync.import.pending-acks': '{count} ACK en attente',
+  'trade-sync.import.recovery.title': 'Notes locales manquantes',
+  'trade-sync.import.empty': 'Ce coffre est à jour.',
+  'trade-sync.import.empty-accounts':
+    'Aucun compte Trade Import sauvegardé trouvé pour le moment.',
+  'trade-sync.import.account.restorable-count': '{count} restaurable(s)',
+  'trade-sync.import.account.synced-count': '{count} synchronisé(s)',
+  'trade-sync.import.account.missing-count': '{count} manquant(s)',
+  'trade-sync.import.account.issue-count': '{count} problème(s)',
+  'trade-sync.import.account.local-account': 'Compte local',
+  'trade-sync.import.account.mapping-hint':
+    'Les trades restaurés seront écrits dans ce compte local.',
+  'trade-sync.import.notice.restored':
+    '{count} trade(s) importé(s) restauré(s).',
+  'trade-sync.import.notice.load-failed':
+    'Impossible de charger l’état de synchronisation Trade Import.',
+  'trade-sync.import.notice.mapping-failed':
+    'Impossible d’enregistrer l’association du compte Trade Import.',
+  'trade-sync.import.notice.create-account-failed':
+    'Impossible de créer le compte local.',
+  'trade-sync.import.notice.restore-failed':
+    'Impossible de restaurer le compte Trade Import.',
 };
 export default fr;

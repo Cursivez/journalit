@@ -6,9 +6,10 @@ export const UNKNOWN_ACCOUNT_LABEL = 'Unknown Account';
 
 export function getTradeAccountNames(trade: TradeWithAccount): string[] {
   if (Array.isArray(trade.account)) {
-    return trade.account
-      .map((account) => account.trim())
-      .filter((account) => account.length > 0);
+    return trade.account.flatMap((account) => {
+      const normalized = account.trim();
+      return normalized ? [normalized] : [];
+    });
   }
 
   if (typeof trade.account === 'string') {

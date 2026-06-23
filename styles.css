@@ -2909,6 +2909,10 @@
 
 .journalit-chart-widget__select {padding: 4px 8px;font-size: 11px;font-weight: 500;border: 1px solid var(--background-modifier-border);border-radius: 4px;background-color: var(--background-primary);color: var(--text-normal);cursor: pointer;outline: none}
 
+.journalit-hourly-performance-controls {gap: 4px;flex-wrap: wrap;justify-content: flex-end;max-width: 70%}
+
+.journalit-hourly-performance-controls .journalit-chart-widget__select {max-width: 92px;padding: 3px 6px}
+
 .journalit-chart-widget__body {flex: 1;min-height: 0}
 
 .journalit-dashboard-view .recharts-cartesian-grid-horizontal line:first-of-type {display: none}
@@ -3068,7 +3072,7 @@
 .journalit-combobox .combobox-dropdown,
 .journalit-combobox.combobox-dropdown {position: absolute;top: 100%;left: 0;right: 0;margin-top: -1px;z-index: 9999;background-color: var(--background-primary, #fff);border: 1px solid var(--background-modifier-border, #ddd);border-top: none;border-radius: 0 0 4px 4px;max-height: 200px;overflow-y: auto;margin-left: 0;margin-right: 0;padding: 0;list-style: none;box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);transition: opacity 0.15s ease, transform 0.15s ease;transform-origin: top center;will-change: transform, opacity;animation: journalit-combobox-dropdown-open 0.15s ease forwards}
 
-.journalit-combobox.combobox-dropdown.combobox-dropdown--portal {position: fixed;top: var(--combobox-portal-top);left: var(--combobox-portal-left);right: auto;width: var(--combobox-portal-width);z-index: 100000}
+.journalit-combobox.combobox-dropdown.combobox-dropdown--portal {position: fixed;top: var(--combobox-portal-top);left: var(--combobox-portal-left);right: auto;width: var(--combobox-portal-width);max-height: var(--combobox-portal-max-height, 200px);z-index: 100000}
 
 @keyframes journalit-combobox-dropdown-open {
   from {opacity: 0;transform: translateY(-5px)}
@@ -6239,7 +6243,7 @@
   
   .journalit-home-goals {height: 100%;display: flex;flex-direction: column}
 
-  .journalit-home-goals--modal {padding: 12px;gap: 10px}
+  .journalit-home-goals--modal {padding: 12px;gap: 10px;min-height: 0;overflow-x: hidden;overflow-y: auto;box-sizing: border-box;scrollbar-gutter: stable}
 
   .journalit-home-goals--loading {padding: 12px;gap: 12px}
 
@@ -6274,6 +6278,8 @@
   .journalit-home-goals__target-suffix {font-size: 11px;color: var(--text-faint)}
 
   .journalit-home-goals__account-targets {display: flex;flex-direction: column;gap: 6px;max-height: 120px;overflow: auto}
+
+  .journalit-home-goals--modal .journalit-home-goals__account-targets {max-height: none;overflow: visible}
 
   .journalit-home-goals__account-scope {display: flex;flex-direction: column;gap: 8px}
 
@@ -6451,7 +6457,13 @@
 
   .journalit-home-best-hours__hero {flex: 1;display: flex;flex-direction: column;align-items: center;justify-content: center;gap: 2px;min-height: 0}
 
-  .journalit-home-best-hours__hero-value {font-size: 28px;font-weight: 600;line-height: 1.1}
+  .journalit-home-best-hours__hero-label {font-size: 11px;font-weight: 600;color: var(--text-muted);text-align: center}
+
+  .journalit-home-best-hours__hero-window {font-size: 22px;font-weight: 650;line-height: 1.05;color: var(--text-normal);text-align: center}
+
+  .journalit-home-best-hours__hero-value {font-size: 18px;font-weight: 600;line-height: 1.1;display: flex;align-items: baseline;justify-content: center;gap: 6px}
+
+  .journalit-home-best-hours__hero-badge {font-size: 10px;font-weight: 600;color: var(--text-muted);text-transform: lowercase}
 
   .journalit-home-best-hours__hero-value--positive {color: var(--color-green)}
 
@@ -6469,11 +6481,18 @@
 
   .journalit-home-best-hours__timeline-segment--neutral {background-color: var(--text-faint)}
 
+  .journalit-home-best-hours__timeline-segment--empty {background-color: transparent;border-left: 1px solid var(--background-modifier-border)}
+
   .journalit-home-best-hours__tooltip {position: absolute;bottom: 100%;left: 50%;transform: translateX(-50%);margin-bottom: 8px;background-color: var(--background-primary);border: 1px solid var(--background-modifier-border);border-radius: 6px;padding: 8px 12px;box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);z-index: 100;white-space: nowrap;pointer-events: none}
 
-  .journalit-home-best-hours__tooltip-header {font-size: 12px;font-weight: 600;color: var(--text-normal);margin-bottom: 4px}
+  .journalit-home-best-hours__tooltip-header {font-size: 12px;font-weight: 600;color: var(--text-normal);margin-bottom: 3px}
 
-  .journalit-home-best-hours__tooltip-row {display: flex;gap: 12px;font-size: 11px}
+  .journalit-home-best-hours__tooltip-value-row,
+  .journalit-home-best-hours__tooltip-stats-row {display: flex;align-items: baseline;font-size: 11px;line-height: 1.25}
+
+  .journalit-home-best-hours__tooltip-value-row {gap: 8px;margin-bottom: 4px}
+
+  .journalit-home-best-hours__tooltip-stats-row {gap: 12px;white-space: nowrap}
 
   .journalit-home-best-hours__tooltip-pnl {font-weight: 500}
 
@@ -6682,16 +6701,23 @@
   
   .journalit-home-setups {height: 100%;display: flex;flex-direction: column;padding: 12px;gap: 10px}
 
-  .journalit-home-setups__header {margin-bottom: 0;display: flex;align-items: center;justify-content: flex-start;gap: 0}
+  .journalit-home-setups__header {width: 100%;margin-bottom: 0;display: flex;align-items: center;justify-content: space-between;gap: 8px}
 
-  .journalit-home-setups__header > .journalit-home-setups__title {min-width: 0}
+  .journalit-home-setups__header > span:first-child,
+  .journalit-home-setups__header > .journalit-home-setups__title {min-width: 0;flex: 1}
 
   .journalit-home-setups--active,
   .journalit-home-setups--empty {cursor: pointer}
 
+  .journalit-home-setups--modal {min-height: 0;overflow-x: hidden;overflow-y: auto;box-sizing: border-box;scrollbar-gutter: stable}
+
   .journalit-home-setups__actions {display: flex;gap: 4px}
 
-  .journalit-home-setups__save-button {padding: 4px;border: none;border-radius: 4px;display: flex;align-items: center;background-color: var(--color-green);color: var(--text-on-accent, #ffffff);cursor: pointer}
+  .journalit-home-setups__save-button {padding: 4px;border: none;border-radius: 4px;display: flex;align-items: center}
+
+  .journalit-home-setups__save-button:not(:disabled) {background-color: var(--color-green);color: var(--text-on-accent, #ffffff);cursor: pointer}
+
+  .journalit-home-setups__save-button:disabled {background-color: var(--background-modifier-border);color: var(--text-muted);cursor: not-allowed}
 
   .journalit-home-setups__cancel-button {padding: 4px;border: none;background-color: transparent;color: var(--text-muted);cursor: pointer;border-radius: 4px;display: flex;align-items: center}
 
@@ -10375,6 +10401,68 @@
   .backend-integration-settings .trade-sync-header {margin-bottom: 24px}
 
   .backend-integration-settings .trade-sync-header h3 {margin-bottom: 8px}
+
+  .backend-integration-settings .journalit-trade-sync-source-switcher {display: flex;width: fit-content;gap: 4px;margin: 0 auto 8px;padding: 3px;border: 1px solid var(--background-modifier-border);border-radius: 8px;background: var(--background-secondary)}
+
+  .backend-integration-settings .journalit-trade-sync-source {padding: 6px 12px;border: 0;border-radius: 6px;background: transparent;color: var(--text-muted);font-size: 12px;font-weight: 600;box-shadow: none;cursor: pointer}
+
+  .backend-integration-settings .journalit-trade-sync-source:hover {color: var(--text-normal);background: var(--background-modifier-hover)}
+
+  .backend-integration-settings .journalit-trade-sync-source.is-active {color: var(--text-on-accent);background: var(--interactive-accent)}
+
+  .backend-integration-settings .journalit-trade-sync-source-description {max-width: 520px;margin: 0 auto 18px;color: var(--text-muted);font-size: 13px;line-height: 1.45;text-align: center}
+
+  .backend-integration-settings .journalit-trade-import-sync-toolbar {display: flex;align-items: center;flex-wrap: wrap;gap: 10px;margin: 16px 0}
+
+  .backend-integration-settings .journalit-trade-import-sync-toolbar label {display: inline-flex;align-items: center;gap: 8px;color: var(--text-muted);font-size: 12px}
+
+  .backend-integration-settings .journalit-trade-import-sync-toolbar select {min-width: 180px}
+
+  .backend-integration-settings .journalit-trade-import-sync-card-subtext {margin-top: 6px;color: var(--text-muted);font-size: 12px;text-align: center}
+
+  .backend-integration-settings .journalit-trade-import-sync-pending {margin: 14px 0;color: var(--text-accent);font-size: 12px;font-weight: 600}
+
+  .backend-integration-settings .journalit-trade-import-sync-placeholder {margin-top: 16px;padding: 14px;border: 1px solid var(--background-modifier-border);border-radius: 8px;background: var(--background-primary);color: var(--text-muted);font-size: 13px;text-align: center}
+
+  .backend-integration-settings .journalit-trade-import-account-grid {display: grid;grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));gap: 12px;margin-top: 16px}
+
+  .backend-integration-settings .journalit-trade-import-account-card {display: flex;flex-direction: column;gap: 12px;padding: 14px;border: 1px solid var(--background-modifier-border);border-radius: 10px;background: var(--background-primary)}
+
+  .backend-integration-settings .journalit-trade-import-account-card__header {display: flex;align-items: flex-start;justify-content: space-between;gap: 12px}
+
+  .backend-integration-settings .journalit-trade-import-account-card__header div {display: flex;flex-direction: column;gap: 3px}
+
+  .backend-integration-settings .journalit-trade-import-account-card__header span {color: var(--text-muted);font-size: 12px}
+
+  .backend-integration-settings .journalit-trade-import-account-card__count {padding: 3px 7px;border-radius: 999px;background: var(--background-modifier-hover);color: var(--text-accent);font-size: 11px;font-weight: 700;white-space: nowrap}
+
+  .backend-integration-settings .journalit-trade-import-account-card__metrics {display: flex;flex-wrap: wrap;gap: 6px}
+
+  .backend-integration-settings .journalit-trade-import-account-card__metrics span {padding: 3px 7px;border-radius: 6px;background: var(--background-secondary);color: var(--text-muted);font-size: 11px}
+
+  .backend-integration-settings .journalit-trade-import-account-card__mapping label {display: flex;flex-direction: column;gap: 6px;color: var(--text-muted);font-size: 12px}
+
+  .backend-integration-settings .journalit-trade-import-account-card__mapping select {width: 100%}
+
+  .backend-integration-settings .journalit-trade-import-account-card__mapping small {display: block;margin-top: 6px;color: var(--text-faint);font-size: 11px;line-height: 1.35}
+
+  .backend-integration-settings .journalit-trade-import-account-card__actions {display: grid;grid-template-columns: repeat(3, minmax(0, 1fr));gap: 8px}
+
+  .backend-integration-settings .journalit-trade-import-account-card__actions button {justify-content: center}
+
+  .backend-integration-settings .journalit-trade-import-account-card__actions button:disabled {border-color: var(--background-modifier-border);background: var(--background-secondary);color: var(--text-faint);opacity: 0.75;cursor: not-allowed}
+
+  .backend-integration-settings .journalit-trade-import-sync-recovery {padding: 12px;border: 1px solid var(--background-modifier-border);border-radius: 8px;background: var(--background-primary)}
+
+  .backend-integration-settings .journalit-trade-import-sync-recovery-header {display: flex;align-items: center;flex-wrap: wrap;gap: 8px;margin-bottom: 10px}
+
+  .backend-integration-settings .journalit-trade-import-sync-recovery-header strong {margin-right: auto}
+
+  .backend-integration-settings .journalit-trade-import-sync-list {display: grid;grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));gap: 6px;max-height: 260px;overflow: auto}
+
+  .backend-integration-settings .journalit-trade-import-sync-list label {display: grid;grid-template-columns: auto 1fr auto;align-items: center;gap: 8px;padding: 6px 8px;border-radius: 6px;background: var(--background-secondary);font-size: 12px}
+
+  .backend-integration-settings .journalit-trade-import-sync-list small {color: var(--text-muted)}
 
   .backend-integration-settings .backend-integration__button-content {display: flex;align-items: center;gap: 8px;justify-content: center}
 

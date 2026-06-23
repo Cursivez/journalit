@@ -602,11 +602,10 @@ function useTradeTemplateEditorModel({
   const [activeReviewTab, setActiveReviewTab] = useState<'win' | 'loss'>('win');
   const nameInputRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => {
-    if (isEditingNameField) {
-      nameInputRef.current?.focus();
-    }
-  }, [isEditingNameField]);
+  const startEditingName = useCallback(() => {
+    setIsEditingNameField(true);
+    window.requestAnimationFrame(() => nameInputRef.current?.focus());
+  }, []);
 
   return {
     template,
@@ -615,6 +614,7 @@ function useTradeTemplateEditorModel({
     setEditingName,
     isEditingNameField,
     setIsEditingNameField,
+    startEditingName,
     hasChanges,
     handleDiscard,
     handleSave,
@@ -915,6 +915,7 @@ export const TradeTemplateEditor: React.FC<TradeTemplateEditorProps> = ({
     setEditingName,
     isEditingNameField,
     setIsEditingNameField,
+    startEditingName,
     hasChanges,
     handleDiscard,
     handleSave,
@@ -967,13 +968,13 @@ export const TradeTemplateEditor: React.FC<TradeTemplateEditorProps> = ({
             <h2
               role={canEdit ? 'button' : undefined}
               tabIndex={canEdit ? 0 : undefined}
-              onClick={() => canEdit && setIsEditingNameField(true)}
+              onClick={() => canEdit && startEditingName()}
               onKeyDown={
                 canEdit
                   ? (e) => {
                       if (e.key !== 'Enter' && e.key !== ' ') return;
                       e.preventDefault();
-                      setIsEditingNameField(true);
+                      startEditingName();
                     }
                   : undefined
               }

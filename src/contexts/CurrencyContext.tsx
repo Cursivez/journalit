@@ -7,6 +7,7 @@ import React, {
   useEffect,
   useState,
   useCallback,
+  useMemo,
 } from 'react';
 import { CurrencyCode } from '../utils/currencyConfig';
 import { usePlugin } from '../hooks/usePlugin';
@@ -40,10 +41,6 @@ export const CurrencyProvider: React.FC<CurrencyProviderProps> = ({
 
   const [currency, setCurrency] = useState<CurrencyCode>(getCurrentCurrency);
 
-  useEffect(() => {
-    setCurrency(getCurrentCurrency());
-  }, [getCurrentCurrency]);
-
   
   useEffect(() => {
     const handleCurrencyChange = () => {
@@ -60,9 +57,10 @@ export const CurrencyProvider: React.FC<CurrencyProviderProps> = ({
     };
   }, [getCurrentCurrency]);
 
-  const contextValue: CurrencyContextType = {
-    currency,
-  };
+  const contextValue: CurrencyContextType = useMemo(
+    () => ({ currency }),
+    [currency]
+  );
 
   return (
     <CurrencyContext.Provider value={contextValue}>

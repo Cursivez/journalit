@@ -736,9 +736,12 @@ const TradeDetailsContent = memo<{
     const customTagsArray = useMemo(() => {
       if (!trade.tags || !Array.isArray(trade.tags)) return [];
       
-      return trade.tags
-        .filter((tag: string) => typeof tag === 'string' && tag.trim())
-        .map((tag: string) => tag.trim());
+      return trade.tags.reduce<string[]>((acc, tag) => {
+        if (typeof tag === 'string' && tag.trim()) {
+          acc.push(tag.trim());
+        }
+        return acc;
+      }, []);
     }, [trade.tags]);
 
     const accountsArray = useMemo(() => {

@@ -30,10 +30,12 @@ export const TradeImageSection: React.FC<TradeImageSectionProps> = React.memo(
         <ImageCarousel
           images={images}
           altPrefix={t('trade.image.alt-prefix')}
-          showThumbnails={images.length > 1}
-          showCounter={images.length > 1}
-          enableDelete={false}
-          enableFullscreen={true}
+          displayOptions={{
+            showThumbnails: images.length > 1,
+            showCounter: images.length > 1,
+            enableFullscreen: true,
+          }}
+          deleteOptions={{ enabled: false }}
           useResolveMediaPath={true}
           sourcePath={sourcePath}
           className={images.length === 1 ? 'single-image-carousel' : ''}

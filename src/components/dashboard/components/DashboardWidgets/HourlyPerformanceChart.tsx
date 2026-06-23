@@ -34,7 +34,7 @@ import {
 } from '../../../shared/display/CurrencyConversionInfo';
 
 interface HourlyPerformanceDataPoint {
-  hour: number;
+  bucketStart: number;
   label: string;
   netPnL: number;
   netR: number;
@@ -46,6 +46,9 @@ interface HourlyPerformanceDataPoint {
   displayValue: number;
 }
 
+type TimeBucketMinutes = 15 | 30 | 60;
+type TimeMetric = 'total' | 'average';
+
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   Boolean(value) && typeof value === 'object' && !Array.isArray(value);
 
@@ -53,7 +56,7 @@ const isHourlyPerformanceDataPoint = (
   value: unknown
 ): value is HourlyPerformanceDataPoint =>
   isRecord(value) &&
-  typeof value.hour === 'number' &&
+  typeof value.bucketStart === 'number' &&
   typeof value.label === 'string' &&
   typeof value.netPnL === 'number' &&
   typeof value.netR === 'number' &&
@@ -89,18 +92,60 @@ interface HourlyBarShapeProps {
 }
 
 type HourlyTooltipProps = TooltipContentLike<HourlyPerformanceDataPoint> & {
+  metric: TimeMetric;
   useRMultiples: boolean;
   currencyCode: string;
 };
 
-const HOURS = Array.from({ length: 24 }, (_, hour) => hour);
+const MINUTES_PER_DAY = 24 * 60;
+const BUCKET_OPTIONS: TimeBucketMinutes[] = [15, 30, 60];
+const METRIC_OPTIONS: TimeMetric[] = ['total', 'average'];
 
-const formatHourLabel = (hour: number): string =>
-  `${String(hour).padStart(2, '0')}:00`;
+const parseBucketMinutes = (value: string): TimeBucketMinutes => {
+  const parsed = Number(value);
+  return parsed === 15 || parsed === 30 || parsed === 60 ? parsed : 60;
+};
+
+const parseMetric = (value: string): TimeMetric => {
+  if (value === 'total' || value === 'average') {
+    return value;
+  }
+  return 'total';
+};
+
+const formatMinuteLabel = (minute: number): string => {
+  const normalized =
+    ((minute % MINUTES_PER_DAY) + MINUTES_PER_DAY) % MINUTES_PER_DAY;
+  const hour = Math.floor(normalized / 60);
+  const minutes = normalized % 60;
+  return `${String(hour).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+};
+
+const formatBucketLabel = (
+  startMinute: number,
+  bucketMinutes: number
+): string =>
+  `${formatMinuteLabel(startMinute)}-${formatMinuteLabel(startMinute + bucketMinutes)}`;
+
+const getBucketStart = (
+  date: Date,
+  bucketMinutes: TimeBucketMinutes
+): number => {
+  const minute = date.getHours() * 60 + date.getMinutes();
+  return Math.floor(minute / bucketMinutes) * bucketMinutes;
+};
+
+const getMetricLabel = (metric: TimeMetric): string =>
+  metric === 'average'
+    ? t('dashboard.widgets.hourly-performance.metric.average')
+    : t('dashboard.widgets.hourly-performance.metric.total');
+
+const formatXAxisTick = (label: string): string => label.split('-')[0] ?? label;
 
 const HourlyPerformanceTooltip: React.FC<HourlyTooltipProps> = ({
   active,
   payload,
+  metric,
   useRMultiples,
   currencyCode,
 }) => {
@@ -109,18 +154,21 @@ const HourlyPerformanceTooltip: React.FC<HourlyTooltipProps> = ({
 
   if (!active || !data) return null;
 
-  const value = useRMultiples ? data.netR : data.netPnL;
+  const value = data.displayValue;
   const isMasked = shouldMask(useRMultiples ? 'rMultiple' : 'pnl');
   const isWinRateMasked = shouldMask('returnPercent');
   const decidedTrades = data.wins + data.losses;
   const winRate = decidedTrades > 0 ? (data.wins / decidedTrades) * 100 : 0;
   const formatted = useRMultiples
-    ? formatValue({ kind: 'rMultiple', value: data.netR, precision: 2 })
-    : formatValue({ kind: 'pnl', value: data.netPnL, currencyCode });
+    ? formatValue({ kind: 'rMultiple', value, precision: 2 })
+    : formatValue({ kind: 'pnl', value, currencyCode });
 
   return (
     <div className="journalit-chart-tooltip">
       <div className="journalit-chart-tooltip-date">{data.label}</div>
+      <div className="journalit-chart-tooltip-info journalit-chart-tooltip-info--tight">
+        {getMetricLabel(metric)}
+      </div>
       <div
         className={`journalit-chart-tooltip-value ${isMasked ? '' : value >= 0 ? 'positive' : 'negative'}`}
       >
@@ -159,6 +207,9 @@ const HourlyPerformanceTooltip: React.FC<HourlyTooltipProps> = ({
 export const HourlyPerformanceChart = React.memo<BaseWidgetProps>(
   ({ filters, dateFormat }) => {
     const chartRef = React.useRef<HTMLDivElement>(null);
+    const [bucketMinutes, setBucketMinutes] =
+      React.useState<TimeBucketMinutes>(60);
+    const [metric, setMetric] = React.useState<TimeMetric>('total');
     const plugin = usePlugin();
     const { currency } = useCurrency();
     const { formatValue, shouldMask } = useDisplayFormatter();
@@ -191,12 +242,16 @@ export const HourlyPerformanceChart = React.memo<BaseWidgetProps>(
               : currency) || currency;
           const currencyCode = activeCurrency;
 
+          const bucketStarts = Array.from(
+            { length: MINUTES_PER_DAY / bucketMinutes },
+            (_, index) => index * bucketMinutes
+          );
           const aggregates = new Map<number, HourlyPerformanceDataPoint>(
-            HOURS.map((hour) => [
-              hour,
+            bucketStarts.map((bucketStart) => [
+              bucketStart,
               {
-                hour,
-                label: formatHourLabel(hour),
+                bucketStart,
+                label: formatBucketLabel(bucketStart, bucketMinutes),
                 netPnL: 0,
                 netR: 0,
                 trades: 0,
@@ -208,74 +263,76 @@ export const HourlyPerformanceChart = React.memo<BaseWidgetProps>(
               },
             ])
           );
-          const tradeIdsByHour = new Map<number, Set<string>>(
-            HOURS.map((hour) => [hour, new Set<string>()])
+          const tradeIdsByBucket = new Map<number, Set<string>>(
+            bucketStarts.map((bucketStart) => [bucketStart, new Set<string>()])
           );
 
-          data.trades
-            .filter((trade) => isPnlContributingTrade(trade))
-            .forEach((trade) => {
-              const realizedEvents = getTradeRealizedPnlEvents(
-                trade,
-                analyticsDateBasis,
-                plugin
-              );
-              if (realizedEvents.length === 0) return;
+          data.trades.forEach((trade) => {
+            if (!isPnlContributingTrade(trade)) return;
+            const realizedEvents = getTradeRealizedPnlEvents(
+              trade,
+              analyticsDateBasis,
+              plugin
+            );
+            if (realizedEvents.length === 0) return;
 
-              const useStoredRMultiple = realizedEvents.length === 1;
-              const tradeKey = trade.tradeId ?? trade.path ?? trade.instrument;
+            const useStoredRMultiple = realizedEvents.length === 1;
+            const tradeKey = trade.tradeId ?? trade.path ?? trade.instrument;
 
-              for (const event of realizedEvents) {
-                if (
-                  (filterStartDate && event.tradingDay < filterStartDate) ||
-                  (filterEndDate && event.tradingDay > filterEndDate) ||
-                  (trade._analyticsRangeStart &&
-                    event.tradingDay < trade._analyticsRangeStart) ||
-                  (trade._analyticsRangeEnd &&
-                    event.tradingDay > trade._analyticsRangeEnd)
-                ) {
-                  continue;
-                }
-
-                const bucket = aggregates.get(event.date.getHours());
-                if (!bucket) continue;
-
-                bucket.netPnL += event.pnl;
-                bucket.pnlEvents += 1;
-
-                const hourTradeIds = tradeIdsByHour.get(event.date.getHours());
-                if (tradeKey && hourTradeIds && !hourTradeIds.has(tradeKey)) {
-                  hourTradeIds.add(tradeKey);
-                  bucket.trades += 1;
-                } else if (!tradeKey) {
-                  bucket.trades += 1;
-                }
-
-                const outcome = classifyPnLWithBreakEvenSettings(
-                  event.pnl,
-                  breakEvenSettings,
-                  trade.breakEvenAccountCurrentBalance
-                );
-                if (outcome === 'win') {
-                  bucket.wins += 1;
-                } else if (outcome === 'loss') {
-                  bucket.losses += 1;
-                }
-
-                const effectiveR = calculateEffectiveRMultiple(
-                  event.pnl,
-                  useStoredRMultiple ? trade.rMultiple : undefined,
-                  trade.riskAmount,
-                  defaultRiskAmount
-                );
-                if (effectiveR !== undefined && Number.isFinite(effectiveR)) {
-                  bucket.netR += effectiveR;
-                  bucket.rTrades += 1;
-                }
+            for (const event of realizedEvents) {
+              if (
+                (filterStartDate && event.tradingDay < filterStartDate) ||
+                (filterEndDate && event.tradingDay > filterEndDate) ||
+                (trade._analyticsRangeStart &&
+                  event.tradingDay < trade._analyticsRangeStart) ||
+                (trade._analyticsRangeEnd &&
+                  event.tradingDay > trade._analyticsRangeEnd)
+              ) {
+                continue;
               }
-            });
 
-          const hourlyData = HOURS.map((hour) => aggregates.get(hour)!);
+              const bucketStart = getBucketStart(event.date, bucketMinutes);
+              const bucket = aggregates.get(bucketStart);
+              if (!bucket) continue;
+
+              bucket.netPnL += event.pnl;
+              bucket.pnlEvents += 1;
+
+              const bucketTradeIds = tradeIdsByBucket.get(bucketStart);
+              if (tradeKey && bucketTradeIds && !bucketTradeIds.has(tradeKey)) {
+                bucketTradeIds.add(tradeKey);
+                bucket.trades += 1;
+              } else if (!tradeKey) {
+                bucket.trades += 1;
+              }
+
+              const outcome = classifyPnLWithBreakEvenSettings(
+                event.pnl,
+                breakEvenSettings,
+                trade.breakEvenAccountCurrentBalance
+              );
+              if (outcome === 'win') {
+                bucket.wins += 1;
+              } else if (outcome === 'loss') {
+                bucket.losses += 1;
+              }
+
+              const effectiveR = calculateEffectiveRMultiple(
+                event.pnl,
+                useStoredRMultiple ? trade.rMultiple : undefined,
+                trade.riskAmount,
+                defaultRiskAmount
+              );
+              if (effectiveR !== undefined && Number.isFinite(effectiveR)) {
+                bucket.netR += effectiveR;
+                bucket.rTrades += 1;
+              }
+            }
+          });
+
+          const hourlyData = bucketStarts.map(
+            (bucketStart) => aggregates.get(bucketStart)!
+          );
           const hasCompleteRCoverage = hourlyData.every(
             (item) => item.pnlEvents === 0 || item.pnlEvents === item.rTrades
           );
@@ -284,7 +341,18 @@ export const HourlyPerformanceChart = React.memo<BaseWidgetProps>(
 
           const chartData = hourlyData.map((item) => ({
             ...item,
-            displayValue: useRMultiples ? item.netR : item.netPnL,
+            displayValue:
+              metric === 'average'
+                ? useRMultiples
+                  ? item.rTrades > 0
+                    ? item.netR / item.rTrades
+                    : 0
+                  : item.trades > 0
+                    ? item.netPnL / item.trades
+                    : 0
+                : useRMultiples
+                  ? item.netR
+                  : item.netPnL,
           }));
           const displayChartData = isMasked
             ? chartData.map((item) => ({ ...item, displayValue: 1 }))
@@ -322,6 +390,45 @@ export const HourlyPerformanceChart = React.memo<BaseWidgetProps>(
                     />
                   )}
                 </div>
+                <div className="journalit-chart-widget__selector journalit-hourly-performance-controls">
+                  <select
+                    className="journalit-chart-widget__select"
+                    aria-label={t(
+                      'dashboard.widgets.hourly-performance.bucket-aria'
+                    )}
+                    value={String(bucketMinutes)}
+                    onChange={(event) =>
+                      setBucketMinutes(parseBucketMinutes(event.target.value))
+                    }
+                  >
+                    {BUCKET_OPTIONS.map((option) => (
+                      <option key={option} value={option}>
+                        {t(
+                          'dashboard.widgets.hourly-performance.bucket-option',
+                          {
+                            minutes: String(option),
+                          }
+                        )}
+                      </option>
+                    ))}
+                  </select>
+                  <select
+                    className="journalit-chart-widget__select"
+                    aria-label={t(
+                      'dashboard.widgets.hourly-performance.metric-aria'
+                    )}
+                    value={metric}
+                    onChange={(event) =>
+                      setMetric(parseMetric(event.target.value))
+                    }
+                  >
+                    {METRIC_OPTIONS.map((option) => (
+                      <option key={option} value={option}>
+                        {getMetricLabel(option)}
+                      </option>
+                    ))}
+                  </select>
+                </div>
               </div>
               <div className="journalit-chart-widget__body">
                 <ChartBase height="100%" width="100%" chartRef={chartRef}>
@@ -344,7 +451,11 @@ export const HourlyPerformanceChart = React.memo<BaseWidgetProps>(
                     />
                     <XAxis
                       dataKey="label"
-                      interval={1}
+                      tickFormatter={formatXAxisTick}
+                      interval={Math.max(
+                        0,
+                        Math.ceil(chartData.length / 8) - 1
+                      )}
                       height={18}
                       tick={{
                         fontSize: 10,
@@ -388,6 +499,7 @@ export const HourlyPerformanceChart = React.memo<BaseWidgetProps>(
                         <HourlyPerformanceTooltip
                           active={props.active}
                           payload={getHourlyTooltipPayload(props.payload)}
+                          metric={metric}
                           useRMultiples={useRMultiples}
                           currencyCode={currencyCode}
                         />

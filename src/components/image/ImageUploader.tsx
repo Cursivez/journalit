@@ -82,6 +82,35 @@ function useImageUploaderModel({
     };
   }, []);
 
+  const processImageFiles = useCallback(async (filesToProcess: File[]) => {
+    
+    
+    const imagePaths = await filesToProcess.reduce<Promise<(string | null)[]>>(
+      async (previousImagePaths, file) => {
+        const paths = await previousImagePaths;
+        try {
+          if (saveImageFunctionRef.current) {
+            return [...paths, await saveImageFunctionRef.current(file)];
+          }
+
+          console.warn(
+            'No saveImageFunction provided, using placeholder implementation'
+          );
+          return [...paths, createTrackedObjectURL(file)];
+        } catch (error) {
+          console.error(`Failed to process pasted image ${file.name}:`, error);
+          if (onErrorRef.current && error instanceof Error) {
+            onErrorRef.current(error);
+          }
+          return [...paths, null];
+        }
+      },
+      Promise.resolve([])
+    );
+
+    return imagePaths.filter((path): path is string => path !== null);
+  }, []);
+
   
   const handleClipboardPaste = useCallback(async () => {
     if (!enablePaste || isPasting) return;
@@ -112,34 +141,8 @@ function useImageUploaderModel({
       );
 
       
-      const imagePaths: string[] = [];
-
-      
       const filesToProcess = multiple ? contextualFiles : [contextualFiles[0]];
-
-      
-      for (const file of filesToProcess) {
-        try {
-          let imagePath: string;
-
-          
-          if (saveImageFunctionRef.current) {
-            imagePath = await saveImageFunctionRef.current(file);
-            imagePaths.push(imagePath);
-          } else {
-            
-            console.warn(
-              'No saveImageFunction provided, using placeholder implementation'
-            );
-            imagePath = createTrackedObjectURL(file);
-            imagePaths.push(imagePath);
-          }
-        } catch (error) {
-          console.error(`Failed to process pasted image ${file.name}:`, error);
-          if (onErrorRef.current && error instanceof Error)
-            onErrorRef.current(error);
-        }
-      }
+      const imagePaths = await processImageFiles(filesToProcess);
 
       
       if (
@@ -161,7 +164,7 @@ function useImageUploaderModel({
     } finally {
       setIsPasting(false);
     }
-  }, [enablePaste, isPasting, pasteContext, multiple]); 
+  }, [enablePaste, isPasting, pasteContext, multiple, processImageFiles]); 
 
   
   useEffect(() => {
@@ -193,34 +196,7 @@ function useImageUploaderModel({
         container.current,
         context,
         async (files: File[]) => {
-          
-          const imagePaths: string[] = [];
-
-          for (const file of files) {
-            try {
-              let imagePath: string;
-
-              
-              if (saveImageFunctionRef.current) {
-                imagePath = await saveImageFunctionRef.current(file);
-                imagePaths.push(imagePath);
-              } else {
-                
-                console.warn(
-                  'No saveImageFunction provided, using placeholder implementation'
-                );
-                imagePath = createTrackedObjectURL(file);
-                imagePaths.push(imagePath);
-              }
-            } catch (error) {
-              console.error(
-                `Failed to process pasted image ${file.name}:`,
-                error
-              );
-              if (onErrorRef.current && error instanceof Error)
-                onErrorRef.current(error);
-            }
-          }
+          const imagePaths = await processImageFiles(files);
 
           
           if (
@@ -261,7 +237,7 @@ function useImageUploaderModel({
         el.removeEventListener('paste', handlePaste);
       };
     }
-  }, [enablePaste, pasteContext, multiple]); 
+  }, [enablePaste, pasteContext, multiple, processImageFiles]); 
 
   
   const createTrackedObjectURL = (file: File): string => {
@@ -282,36 +258,8 @@ function useImageUploaderModel({
       if (!files || files.length === 0) return;
 
       
-      const imagePaths: string[] = [];
-
-      
-      const filesToProcess = multiple ? files : [files[0]];
-
-      
-      for (let i = 0; i < filesToProcess.length; i++) {
-        const file = filesToProcess[i];
-        let imagePath: string;
-
-        
-        if (saveImageFunction) {
-          try {
-            imagePath = await saveImageFunction(file);
-            
-            imagePaths.push(imagePath);
-          } catch (fileError) {
-            console.error(`Failed to process image ${file.name}:`, fileError);
-            if (onError && fileError instanceof Error) onError(fileError);
-          }
-        } else {
-          
-          
-          console.warn(
-            'No saveImageFunction provided, using placeholder implementation'
-          );
-          imagePath = createTrackedObjectURL(file);
-          imagePaths.push(imagePath);
-        }
-      }
+      const filesToProcess = multiple ? Array.from(files) : [files[0]];
+      const imagePaths = await processImageFiles(filesToProcess);
 
       
       if (multiple && imagePaths.length > 1 && onMultipleImagesUploaded) {
@@ -381,36 +329,8 @@ function useImageUploaderModel({
 
       if (imageFiles.length > 0) {
         
-        const imagePaths: string[] = [];
-
-        
         const filesToProcess = multiple ? imageFiles : [imageFiles[0]];
-
-        
-        for (const imageFile of filesToProcess) {
-          try {
-            let imagePath: string;
-
-            
-            if (saveImageFunction) {
-              imagePath = await saveImageFunction(imageFile);
-              imagePaths.push(imagePath);
-            } else {
-              
-              console.warn(
-                'No saveImageFunction provided, using placeholder implementation'
-              );
-              imagePath = createTrackedObjectURL(imageFile);
-              imagePaths.push(imagePath);
-            }
-          } catch (error) {
-            console.error(
-              `Failed to process dropped image ${imageFile.name}:`,
-              error
-            );
-            if (onError && error instanceof Error) onError(error);
-          }
-        }
+        const imagePaths = await processImageFiles(filesToProcess);
 
         
         if (multiple && imagePaths.length > 1 && onMultipleImagesUploaded) {

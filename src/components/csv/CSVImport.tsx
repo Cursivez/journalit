@@ -3,6 +3,7 @@ import React, {
   useCallback,
   useEffect,
   useMemo,
+  useReducer,
   useRef,
   useState,
 } from 'react';
@@ -52,6 +53,7 @@ import type {
   TradeImportCapabilities,
   TradeImportPreviewResponse,
 } from '../../services/tradeImport/types';
+import { flushTradeImportProjectionAcks } from '../../services/tradeImport/TradeImportProjectionAckQueue';
 import { LocalTemplateService } from '../../services/csv/LocalTemplateService';
 import type {
   LocalCSVTemplate,
@@ -205,17 +207,26 @@ const TradeImportDropdown: React.FC<{
   menuMinWidth,
   renderOptionAction,
 }) => {
-  const [isOpen, setIsOpen] = useState(false);
-  const [menuPosition, setMenuPosition] = useState<PortalMenuPosition | null>(
-    null
+  const [menuState, dispatchMenuState] = useReducer(
+    (
+      state: { isOpen: boolean; menuPosition: PortalMenuPosition | null },
+      update: Partial<{
+        isOpen: boolean;
+        menuPosition: PortalMenuPosition | null;
+      }>
+    ) => ({ ...state, ...update }),
+    { isOpen: false, menuPosition: null }
   );
+  const { isOpen, menuPosition } = menuState;
   const wrapperRef = useRef<HTMLDivElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
   const selectedOption = options.find((option) => option.value === value);
 
   const updateMenuPosition = useCallback(() => {
     if (!wrapperRef.current) return;
-    setMenuPosition(getPortalMenuPosition(wrapperRef.current, menuMinWidth));
+    dispatchMenuState({
+      menuPosition: getPortalMenuPosition(wrapperRef.current, menuMinWidth),
+    });
   }, [menuMinWidth]);
 
   useEffect(() => {
@@ -228,23 +239,23 @@ const TradeImportDropdown: React.FC<{
         !wrapperRef.current?.contains(target) &&
         !menuRef.current?.contains(target)
       ) {
-        setIsOpen(false);
+        dispatchMenuState({ isOpen: false });
       }
     };
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
-        setIsOpen(false);
+        dispatchMenuState({ isOpen: false });
       }
     };
     const handleScroll = (event: Event) => {
       const target = event.target;
       if (target instanceof Node && menuRef.current?.contains(target)) return;
-      setIsOpen(false);
+      dispatchMenuState({ isOpen: false });
     };
     const handleReposition = () => updateMenuPosition();
-    const handleWindowBlur = () => setIsOpen(false);
+    const handleWindowBlur = () => dispatchMenuState({ isOpen: false });
     const handleVisibilityChange = () => {
-      if (window.activeDocument.hidden) setIsOpen(false);
+      if (window.activeDocument.hidden) dispatchMenuState({ isOpen: false });
     };
     const monitor = window.setInterval(() => {
       if (
@@ -252,7 +263,7 @@ const TradeImportDropdown: React.FC<{
         !wrapperRef.current?.isConnected ||
         !wrapperRef.current.closest('.workspace-leaf.mod-active')
       ) {
-        setIsOpen(false);
+        dispatchMenuState({ isOpen: false });
       }
     }, 150);
     window.activeDocument.addEventListener('pointerdown', handlePointerDown);
@@ -307,7 +318,7 @@ const TradeImportDropdown: React.FC<{
                     type="button"
                     onClick={() => {
                       onChange(option.value);
-                      setIsOpen(false);
+                      dispatchMenuState({ isOpen: false });
                     }}
                     className="journalit-trade-import-favorite-option__select"
                   >
@@ -338,7 +349,7 @@ const TradeImportDropdown: React.FC<{
       <button
         type="button"
         disabled={disabled}
-        onClick={() => setIsOpen((open) => !open)}
+        onClick={() => dispatchMenuState({ isOpen: !isOpen })}
         className="journalit-home-period-selector journalit-trade-import-dropdown-trigger clickable-icon"
         aria-label={label}
       >
@@ -353,21 +364,29 @@ const TradeImportDropdown: React.FC<{
   );
 };
 
-function accountNames(plugin: JournalitPlugin): string[] {
-  const metadata = plugin.settings.account?.accountMetadata ?? {};
-  const names = Object.values(metadata)
-    .map((account) => account.name)
-    .filter((name): name is string => !!name);
-  return names.length ? names : ['Main Account'];
+interface ImportAccountOption {
+  name: string;
+  id: string | null;
 }
 
-async function loadAccountNames(plugin: JournalitPlugin): Promise<string[]> {
+function accountOptions(plugin: JournalitPlugin): ImportAccountOption[] {
+  const metadata = plugin.settings.account?.accountMetadata ?? {};
+  const options = Object.values(metadata).flatMap((account) =>
+    account.name ? [{ name: account.name, id: null }] : []
+  );
+  return options.length ? options : [{ name: 'Main Account', id: null }];
+}
+
+async function loadAccountOptions(
+  plugin: JournalitPlugin
+): Promise<ImportAccountOption[]> {
   const catalog = await plugin.accountPageService?.getAccountCatalog();
-  const catalogNames = (catalog ?? [])
-    .filter((account) => !account.archived)
-    .map((account) => account.name)
-    .filter((name): name is string => !!name);
-  return catalogNames.length ? catalogNames : accountNames(plugin);
+  const catalogOptions = (catalog ?? []).flatMap((account) =>
+    !account.archived && account.name
+      ? [{ name: account.name, id: account.id ?? null }]
+      : []
+  );
+  return catalogOptions.length ? catalogOptions : accountOptions(plugin);
 }
 
 function asMappings(value: unknown): Record<string, string[]> {
@@ -375,7 +394,10 @@ function asMappings(value: unknown): Record<string, string[]> {
   const mappings: Record<string, string[]> = {};
   for (const [key, columns] of Object.entries(value)) {
     if (Array.isArray(columns)) {
-      mappings[key] = columns.map(String).filter(Boolean);
+      mappings[key] = columns.flatMap((column) => {
+        const mappedColumn = String(column);
+        return mappedColumn ? [mappedColumn] : [];
+      });
       continue;
     }
     if (typeof columns === 'string' && columns.trim()) {
@@ -598,8 +620,12 @@ export const CSVImport = memo<CSVImportProps>(({ plugin }) => {
   );
   const [, refreshTemplates] = useState(0);
   const templates = localTemplateService.getTemplatesByUsage();
-  const [accounts, setAccounts] = useState<string[]>(() =>
-    accountNames(plugin)
+  const [importAccountOptions, setImportAccountOptions] = useState<
+    ImportAccountOption[]
+  >(() => accountOptions(plugin));
+  const accounts = useMemo(
+    () => importAccountOptions.map((account) => account.name),
+    [importAccountOptions]
   );
   const [capabilities, setCapabilities] =
     useState<TradeImportCapabilities | null>(null);
@@ -633,9 +659,20 @@ export const CSVImport = memo<CSVImportProps>(({ plugin }) => {
   const [templateShareCode, setTemplateShareCode] = useState('');
   const [templateExportCode, setTemplateExportCode] = useState('');
   const [templateCopied, setTemplateCopied] = useState(false);
-  const [templateActionsOpen, setTemplateActionsOpen] = useState(false);
-  const [templateMenuPosition, setTemplateMenuPosition] =
-    useState<PortalMenuPosition | null>(null);
+  const [templateActionMenuState, dispatchTemplateActionMenuState] = useReducer(
+    (
+      state: {
+        templateActionsOpen: boolean;
+        templateMenuPosition: PortalMenuPosition | null;
+      },
+      update: Partial<{
+        templateActionsOpen: boolean;
+        templateMenuPosition: PortalMenuPosition | null;
+      }>
+    ) => ({ ...state, ...update }),
+    { templateActionsOpen: false, templateMenuPosition: null }
+  );
+  const { templateActionsOpen, templateMenuPosition } = templateActionMenuState;
   const [templateImportOpen, setTemplateImportOpen] = useState(false);
   const templateActionsRef = useRef<HTMLDivElement>(null);
   const templateMenuRef = useRef<HTMLDivElement>(null);
@@ -675,9 +712,30 @@ export const CSVImport = memo<CSVImportProps>(({ plugin }) => {
   const appliedFavoriteTemplateRef = useRef(false);
   const accountDropdownRef = useRef<HTMLDivElement>(null);
   const brokerDropdownRef = useRef<HTMLDivElement>(null);
-  const [isAccountDropdownOpen, setIsAccountDropdownOpen] = useState(false);
-  const [isBrokerDropdownOpen, setIsBrokerDropdownOpen] = useState(false);
-  const [isTemplateDropdownOpen, setIsTemplateDropdownOpen] = useState(false);
+  const [dropdownState, dispatchDropdownState] = useReducer(
+    (
+      state: {
+        isAccountDropdownOpen: boolean;
+        isBrokerDropdownOpen: boolean;
+        isTemplateDropdownOpen: boolean;
+      },
+      update: Partial<{
+        isAccountDropdownOpen: boolean;
+        isBrokerDropdownOpen: boolean;
+        isTemplateDropdownOpen: boolean;
+      }>
+    ) => ({ ...state, ...update }),
+    {
+      isAccountDropdownOpen: false,
+      isBrokerDropdownOpen: false,
+      isTemplateDropdownOpen: false,
+    }
+  );
+  const {
+    isAccountDropdownOpen,
+    isBrokerDropdownOpen,
+    isTemplateDropdownOpen,
+  } = dropdownState;
   const {
     isAuthenticated,
     isFeatureEnabled: canUseTradeImport,
@@ -697,9 +755,12 @@ export const CSVImport = memo<CSVImportProps>(({ plugin }) => {
   useEffect(() => {
     if (!templateActionsOpen) return;
     if (templateActionsRef.current) {
-      setTemplateMenuPosition(
-        getPortalMenuPosition(templateActionsRef.current, 190)
-      );
+      dispatchTemplateActionMenuState({
+        templateMenuPosition: getPortalMenuPosition(
+          templateActionsRef.current,
+          190
+        ),
+      });
     }
     const handlePointerDown = (event: PointerEvent) => {
       const target = event.target;
@@ -708,29 +769,34 @@ export const CSVImport = memo<CSVImportProps>(({ plugin }) => {
         !templateActionsRef.current?.contains(target) &&
         !templateMenuRef.current?.contains(target)
       ) {
-        setTemplateActionsOpen(false);
+        dispatchTemplateActionMenuState({ templateActionsOpen: false });
       }
     };
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
-        setTemplateActionsOpen(false);
+        dispatchTemplateActionMenuState({ templateActionsOpen: false });
       }
     };
     const handleScroll = (event: Event) => {
       const target = event.target;
       if (target instanceof Node && templateMenuRef.current?.contains(target))
         return;
-      setTemplateActionsOpen(false);
+      dispatchTemplateActionMenuState({ templateActionsOpen: false });
     };
     const handleReposition = () => {
       if (!templateActionsRef.current) return;
-      setTemplateMenuPosition(
-        getPortalMenuPosition(templateActionsRef.current, 190)
-      );
+      dispatchTemplateActionMenuState({
+        templateMenuPosition: getPortalMenuPosition(
+          templateActionsRef.current,
+          190
+        ),
+      });
     };
-    const handleWindowBlur = () => setTemplateActionsOpen(false);
+    const handleWindowBlur = () =>
+      dispatchTemplateActionMenuState({ templateActionsOpen: false });
     const handleVisibilityChange = () => {
-      if (window.activeDocument.hidden) setTemplateActionsOpen(false);
+      if (window.activeDocument.hidden)
+        dispatchTemplateActionMenuState({ templateActionsOpen: false });
     };
     const monitor = window.setInterval(() => {
       if (
@@ -738,7 +804,7 @@ export const CSVImport = memo<CSVImportProps>(({ plugin }) => {
         !templateActionsRef.current?.isConnected ||
         !templateActionsRef.current.closest('.workspace-leaf.mod-active')
       ) {
-        setTemplateActionsOpen(false);
+        dispatchTemplateActionMenuState({ templateActionsOpen: false });
       }
     }, 150);
     window.activeDocument.addEventListener('pointerdown', handlePointerDown);
@@ -776,21 +842,21 @@ export const CSVImport = memo<CSVImportProps>(({ plugin }) => {
         event.target instanceof Node &&
         !brokerDropdownRef.current.contains(event.target)
       ) {
-        setIsBrokerDropdownOpen(false);
+        dispatchDropdownState({ isBrokerDropdownOpen: false });
       }
       if (
         accountDropdownRef.current &&
         event.target instanceof Node &&
         !accountDropdownRef.current.contains(event.target)
       ) {
-        setIsAccountDropdownOpen(false);
+        dispatchDropdownState({ isAccountDropdownOpen: false });
       }
       if (
         templateDropdownRef.current &&
         event.target instanceof Node &&
         !templateDropdownRef.current.contains(event.target)
       ) {
-        setIsTemplateDropdownOpen(false);
+        dispatchDropdownState({ isTemplateDropdownOpen: false });
       }
     };
 
@@ -805,9 +871,12 @@ export const CSVImport = memo<CSVImportProps>(({ plugin }) => {
   useEffect(() => {
     if (!canUseTradeImport) return;
     let cancelled = false;
-    void loadAccountNames(plugin).then((loadedAccounts) => {
+    void loadAccountOptions(plugin).then((loadedAccountOptions) => {
       if (cancelled) return;
-      setAccounts(loadedAccounts);
+      const loadedAccounts = loadedAccountOptions.map(
+        (account) => account.name
+      );
+      setImportAccountOptions(loadedAccountOptions);
       setSelectedAccountName((current) => {
         const favorite = plugin.settings.csvFavoriteAccount;
         if (favorite && loadedAccounts.includes(favorite)) return favorite;
@@ -823,7 +892,10 @@ export const CSVImport = memo<CSVImportProps>(({ plugin }) => {
     if (!canUseTradeImport) return;
     backendTradeImportService
       .getCapabilities()
-      .then(setCapabilities)
+      .then((loadedCapabilities) => {
+        setCapabilities(loadedCapabilities);
+        void flushTradeImportProjectionAcks(plugin, backendTradeImportService);
+      })
       .catch(
         (error) =>
           new Notice(
@@ -832,7 +904,7 @@ export const CSVImport = memo<CSVImportProps>(({ plugin }) => {
               : t('trade-import.notice.capabilities-failed')
           )
       );
-  }, [backendTradeImportService, canUseTradeImport]);
+  }, [backendTradeImportService, canUseTradeImport, plugin]);
 
   const brokers = useMemo(
     () =>
@@ -867,13 +939,12 @@ export const CSVImport = memo<CSVImportProps>(({ plugin }) => {
     isTradeImportBlocked(item.defaultAction)
   );
   const hasPreviewMessages = renderedClassified.some((item) => item.message);
-  const noImportablePreview = preview !== null && importablePreviewCount < 1;
   const acceptedExtensionList = selectedBrokerCapabilities
-    ? capabilities?.fileTypes
-        .filter((type) =>
-          selectedBrokerCapabilities.supportedFileTypes.includes(type.id)
-        )
-        .flatMap((type) => type.extensions.map((ext) => `.${ext}`)) || []
+    ? capabilities?.fileTypes.flatMap((type) =>
+        selectedBrokerCapabilities.supportedFileTypes.includes(type.id)
+          ? type.extensions.map((ext) => `.${ext}`)
+          : []
+      ) || []
     : supportedExtensions.split(',').filter(Boolean);
   const acceptedExtensions = acceptedExtensionList.join(',');
 
@@ -927,6 +998,20 @@ export const CSVImport = memo<CSVImportProps>(({ plugin }) => {
     };
   }, [applyQuickImportHandoff]);
 
+  const applyBrokerSelection = useCallback(
+    (nextBroker: string) => {
+      setBroker(nextBroker);
+      if (nextBroker !== 'MANUAL') {
+        setSelectedTemplateId('');
+        setTemplateExportCode('');
+        setTemplateImportOpen(false);
+      }
+      const lastAssetType = rememberedCsvAssetType(plugin, nextBroker);
+      if (lastAssetType) setAssetType(lastAssetType);
+    },
+    [plugin]
+  );
+
   useEffect(() => {
     if (!capabilities) return;
     const availableBrokerIds = new Set(brokers.map((item) => item.id));
@@ -945,23 +1030,16 @@ export const CSVImport = memo<CSVImportProps>(({ plugin }) => {
     appliedFavoriteBrokerRef.current = true;
 
     if (nextBroker !== broker) {
-      setBroker(nextBroker);
-      if (nextBroker !== 'MANUAL') {
-        setSelectedTemplateId('');
-        setTemplateExportCode('');
-        setTemplateImportOpen(false);
-      }
-      const lastAssetType = rememberedCsvAssetType(plugin, nextBroker);
-      if (lastAssetType) setAssetType(lastAssetType);
+      applyBrokerSelection(nextBroker);
     }
   }, [
+    applyBrokerSelection,
     broker,
     brokers,
     capabilities,
     plugin.settings.csvFavoriteBroker,
     favoriteTemplateId,
     plugin.settings.csvLastAssetType,
-    plugin,
   ]);
 
   const toggleFavoriteAccount = useCallback(
@@ -1034,7 +1112,7 @@ export const CSVImport = memo<CSVImportProps>(({ plugin }) => {
       }
       const lastAssetType = rememberedCsvAssetType(plugin, brokerId);
       if (lastAssetType) setAssetType(lastAssetType);
-      setIsBrokerDropdownOpen(false);
+      dispatchDropdownState({ isBrokerDropdownOpen: false });
       invalidateAnalysis();
     },
     [invalidateAnalysis, plugin]
@@ -1532,7 +1610,11 @@ export const CSVImport = memo<CSVImportProps>(({ plugin }) => {
                   <button
                     type="button"
                     disabled={busy}
-                    onClick={() => setIsAccountDropdownOpen((open) => !open)}
+                    onClick={() =>
+                      dispatchDropdownState({
+                        isAccountDropdownOpen: !isAccountDropdownOpen,
+                      })
+                    }
                     className="journalit-home-period-selector journalit-trade-import-account-trigger clickable-icon"
                     aria-label={t('trade-import.label.account')}
                   >
@@ -1555,7 +1637,9 @@ export const CSVImport = memo<CSVImportProps>(({ plugin }) => {
                               type="button"
                               onClick={() => {
                                 setSelectedAccountName(account);
-                                setIsAccountDropdownOpen(false);
+                                dispatchDropdownState({
+                                  isAccountDropdownOpen: false,
+                                });
                                 invalidatePreview();
                               }}
                               className="journalit-trade-import-favorite-option__select"
@@ -1601,7 +1685,11 @@ export const CSVImport = memo<CSVImportProps>(({ plugin }) => {
                   <button
                     type="button"
                     disabled={busy}
-                    onClick={() => setIsBrokerDropdownOpen((open) => !open)}
+                    onClick={() =>
+                      dispatchDropdownState({
+                        isBrokerDropdownOpen: !isBrokerDropdownOpen,
+                      })
+                    }
                     className="journalit-home-period-selector journalit-trade-import-broker-trigger clickable-icon"
                     aria-label={t('trade-import.label.broker')}
                   >
@@ -1765,7 +1853,9 @@ export const CSVImport = memo<CSVImportProps>(({ plugin }) => {
                         type="button"
                         disabled={busy}
                         onClick={() =>
-                          setIsTemplateDropdownOpen((isOpen) => !isOpen)
+                          dispatchDropdownState({
+                            isTemplateDropdownOpen: !isTemplateDropdownOpen,
+                          })
                         }
                         className="journalit-home-period-selector journalit-trade-import-template-trigger clickable-icon"
                         aria-label={t('trade-import.label.template')}
@@ -1793,7 +1883,9 @@ export const CSVImport = memo<CSVImportProps>(({ plugin }) => {
                                 setSelectedTemplateId('');
                                 setColumnMappings({});
                                 setTemplateExportCode('');
-                                setIsTemplateDropdownOpen(false);
+                                dispatchDropdownState({
+                                  isTemplateDropdownOpen: false,
+                                });
                                 invalidateAnalysis();
                               }}
                               className="journalit-trade-import-favorite-option__select"
@@ -1821,7 +1913,9 @@ export const CSVImport = memo<CSVImportProps>(({ plugin }) => {
                                   type="button"
                                   onClick={() => {
                                     void applyTemplate(template);
-                                    setIsTemplateDropdownOpen(false);
+                                    dispatchDropdownState({
+                                      isTemplateDropdownOpen: false,
+                                    });
                                   }}
                                   className="journalit-trade-import-favorite-option__select"
                                 >
@@ -1869,7 +1963,9 @@ export const CSVImport = memo<CSVImportProps>(({ plugin }) => {
                       disabled={busy}
                       aria-label={t('trade-import.label.template-actions')}
                       onClick={() =>
-                        setTemplateActionsOpen((isOpen) => !isOpen)
+                        dispatchTemplateActionMenuState({
+                          templateActionsOpen: !templateActionsOpen,
+                        })
                       }
                     >
                       <MoreHorizontal size={16} />
@@ -1892,7 +1988,9 @@ export const CSVImport = memo<CSVImportProps>(({ plugin }) => {
                             onClick={() => {
                               setTemplateImportOpen(true);
                               setTemplateExportCode('');
-                              setTemplateActionsOpen(false);
+                              dispatchTemplateActionMenuState({
+                                templateActionsOpen: false,
+                              });
                             }}
                           >
                             <Upload size={15} aria-hidden="true" />
@@ -1903,7 +2001,9 @@ export const CSVImport = memo<CSVImportProps>(({ plugin }) => {
                             disabled={!selectedTemplateId}
                             onClick={() => {
                               exportSelectedTemplate();
-                              setTemplateActionsOpen(false);
+                              dispatchTemplateActionMenuState({
+                                templateActionsOpen: false,
+                              });
                             }}
                           >
                             <Download size={15} aria-hidden="true" />
@@ -1913,7 +2013,9 @@ export const CSVImport = memo<CSVImportProps>(({ plugin }) => {
                             type="button"
                             disabled={!selectedTemplateId}
                             onClick={() => {
-                              setTemplateActionsOpen(false);
+                              dispatchTemplateActionMenuState({
+                                templateActionsOpen: false,
+                              });
                               void deleteSelectedTemplate();
                             }}
                           >
@@ -2207,29 +2309,31 @@ export const CSVImport = memo<CSVImportProps>(({ plugin }) => {
                               !isMultiColumnMappingField(field, customFields)
                           )
                         );
-                        const tradeFieldOptions = TRADE_FIELDS.filter(
+                        const tradeFieldOptions = TRADE_FIELDS.flatMap(
                           (field) =>
                             field === selectedField ||
                             !usedSingleFields.has(field)
-                        ).map((field) => ({
-                          value: field,
-                          label: fieldLabel(field),
-                        }));
+                              ? [
+                                  {
+                                    value: field,
+                                    label: fieldLabel(field),
+                                  },
+                                ]
+                              : []
+                        );
                         const customFieldOptions = customFieldDefinitions(
                           plugin
-                        )
-                          .map((field) => {
-                            const fieldKey = field.fieldKey || field.id;
-                            return {
-                              value: `custom:${fieldKey}`,
-                              label: `${field.label || fieldKey} (${fieldKey})`,
-                            };
-                          })
-                          .filter(
-                            (field) =>
-                              field.value === selectedField ||
-                              !usedSingleFields.has(field.value)
-                          );
+                        ).flatMap((field) => {
+                          const fieldKey = field.fieldKey || field.id;
+                          const option = {
+                            value: `custom:${fieldKey}`,
+                            label: `${field.label || fieldKey} (${fieldKey})`,
+                          };
+                          return option.value === selectedField ||
+                            !usedSingleFields.has(option.value)
+                            ? [option]
+                            : [];
+                        });
                         const sampleValue = sampleValueForHeader(
                           header,
                           analyse.headers,
@@ -2632,100 +2736,6 @@ export const CSVImport = memo<CSVImportProps>(({ plugin }) => {
                   </button>
                   <button
                     className="csv-button csv-button-secondary"
-                    onClick={resetImportFlow}
-                  >
-                    {t('csv.button.import-another')}
-                  </button>
-                </div>
-              </div>
-            ) : noImportablePreview ? (
-              <div className="csv-import-results journalit-trade-import-results">
-                <h3>{t('csv.results.failed')}</h3>
-                <div className="result-item result-warning">
-                  <AlertTriangle className="result-icon" size={20} />
-                  <span className="result-text">
-                    {t('quick-import.message.no-importable')}
-                  </span>
-                </div>
-                <div className="result-item result-info">
-                  <span className="result-text result-text--muted">
-                    {t('trade-import.preview.summary', {
-                      previewCount: String(preview.summary.previewTradeCount),
-                      failedCount: String(preview.summary.failedRowCount),
-                      incompleteCount: String(
-                        preview.summary.skippedIncompleteCount
-                      ),
-                    })}
-                  </span>
-                </div>
-                {preview.diagnostics.length > 0 && (
-                  <CollapsibleSection
-                    title={t('csv.results.errors-header', {
-                      count: String(preview.diagnostics.length),
-                    })}
-                    defaultOpen={true}
-                    className="csv-results-problems"
-                  >
-                    <div className="import-results-errors">
-                      <div className="csv-error-group-body">
-                        {preview.diagnostics.map((diagnostic) => (
-                          <div
-                            key={`${diagnostic.code}-${diagnostic.message}`}
-                            className="csv-error-group-example"
-                          >
-                            <strong>
-                              {diagnostic.severity ??
-                                t('trade-import.diagnostic.info')}
-                            </strong>
-                            {' — '}
-                            {diagnostic.message}
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </CollapsibleSection>
-                )}
-                {failedPreviewRows.length > 0 && (
-                  <CollapsibleSection
-                    title={t('csv.results.errors-header', {
-                      count: String(failedPreviewRows.length),
-                    })}
-                    defaultOpen={preview.diagnostics.length === 0}
-                    className="csv-results-problems"
-                  >
-                    <div className="import-results-errors">
-                      <div className="csv-error-group-body">
-                        {failedPreviewRows.map((item) => (
-                          <div
-                            key={item.itemId}
-                            className="csv-error-group-example"
-                          >
-                            {item.preview.sourceRows.length > 0 && (
-                              <>
-                                {t('csv.errors.rows', {
-                                  rows: item.preview.sourceRows.join(', '),
-                                })}
-                                {' — '}
-                              </>
-                            )}
-                            <strong>{item.preview.symbol || '—'}</strong>
-                            {' — '}
-                            {item.message ?? t('trade-import.table.message')}
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </CollapsibleSection>
-                )}
-                <div className="csv-actions journalit-trade-import-actions">
-                  <button
-                    className="csv-button csv-button-secondary"
-                    onClick={() => void cancelPreview()}
-                  >
-                    {t('trade-import.action.cancel-preview')}
-                  </button>
-                  <button
-                    className="csv-button csv-button-primary"
                     onClick={resetImportFlow}
                   >
                     {t('csv.button.import-another')}

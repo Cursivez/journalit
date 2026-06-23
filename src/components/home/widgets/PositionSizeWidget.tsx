@@ -5,8 +5,8 @@ import React, {
   useCallback,
   useEffect,
   useMemo,
+  useReducer,
   useRef,
-  useState,
 } from 'react';
 import { Save, RotateCcw, ChevronDown } from '../../shared/icons/ObsidianIcon';
 import JournalitPlugin from '../../../main';
@@ -839,6 +839,57 @@ const PositionSizeResults: React.FC<ResultsProps> = ({
   );
 };
 
+type PositionSizeFormState = {
+  assetType: PositionSizeAssetType;
+  accountBalance: number;
+  riskPercentInput: string;
+  futuresSymbol: string;
+  forexSymbol: string;
+  stockDollarValue: string;
+  entryPrice: string;
+  stopLoss: string;
+  stockProfitTarget: string;
+  futuresEntry: string;
+  futuresStop: string;
+  futuresProfitTarget: string;
+  forexStopPips: string;
+  forexProfitTargetPips: string;
+};
+
+type PositionSizeDefaults = {
+  riskPercentage: number;
+  accountBalance?: number;
+  assetType?: PositionSizeAssetType;
+  lastFuturesSymbol?: string;
+  lastForexSymbol?: string;
+};
+
+const createInitialPositionSizeFormState = (
+  defaults: PositionSizeDefaults | undefined
+): PositionSizeFormState => ({
+  assetType: defaults?.assetType || 'stock',
+  accountBalance: defaults?.accountBalance || 10000,
+  riskPercentInput: formatRiskPercentInput(
+    defaults?.riskPercentage ?? DEFAULT_RISK_PERCENT
+  ),
+  futuresSymbol: defaults?.lastFuturesSymbol || 'ES',
+  forexSymbol: defaults?.lastForexSymbol || 'EURUSD',
+  stockDollarValue: '',
+  entryPrice: '',
+  stopLoss: '',
+  stockProfitTarget: '',
+  futuresEntry: '',
+  futuresStop: '',
+  futuresProfitTarget: '',
+  forexStopPips: '',
+  forexProfitTargetPips: '',
+});
+
+const positionSizeFormReducer = (
+  state: PositionSizeFormState,
+  update: Partial<PositionSizeFormState>
+): PositionSizeFormState => ({ ...state, ...update });
+
 const PositionSizeWidgetComponent: React.FC<PositionSizeWidgetProps> = ({
   plugin,
   autoFocusOnMount = false,
@@ -860,24 +911,32 @@ const PositionSizeWidgetComponent: React.FC<PositionSizeWidgetProps> = ({
   const futuresEntryInputRef = useRef<HTMLInputElement>(null);
   const forexStopInputRef = useRef<HTMLInputElement>(null);
 
-  
-  const [assetType, setAssetType] = useState<PositionSizeAssetType>(
-    defaults?.assetType || 'stock'
+  const [formState, dispatchFormState] = useReducer(
+    positionSizeFormReducer,
+    defaults,
+    createInitialPositionSizeFormState
   );
-  const [accountBalance, setAccountBalance] = useState<number>(
-    defaults?.accountBalance || 10000
-  );
-  const [riskPercentInput, setRiskPercentInput] = useState<string>(() =>
-    formatRiskPercentInput(defaults?.riskPercentage ?? DEFAULT_RISK_PERCENT)
-  );
-  const [futuresSymbol, setFuturesSymbol] = useState<string>(
-    defaults?.lastFuturesSymbol || 'ES'
-  );
-  const [forexSymbol, setForexSymbol] = useState<string>(
-    defaults?.lastForexSymbol || 'EURUSD'
-  );
+  const {
+    assetType,
+    accountBalance,
+    riskPercentInput,
+    futuresSymbol,
+    forexSymbol,
+    stockDollarValue,
+    entryPrice,
+    stopLoss,
+    stockProfitTarget,
+    futuresEntry,
+    futuresStop,
+    futuresProfitTarget,
+    forexStopPips,
+    forexProfitTargetPips,
+  } = formState;
 
-  useEffect(() => {}, []);
+  const updateFormState = useCallback(
+    (update: Partial<PositionSizeFormState>) => dispatchFormState(update),
+    []
+  );
 
   useEffect(() => {
     if (!autoFocusOnMount) {
@@ -908,24 +967,6 @@ const PositionSizeWidgetComponent: React.FC<PositionSizeWidgetProps> = ({
   const useDollarValue = plugin.settings?.trade?.useDollarValueInput ?? false;
 
   
-  const [stockDollarValue, setStockDollarValue] = useState<string>('');
-
-  
-  const [entryPrice, setEntryPrice] = useState<string>('');
-  const [stopLoss, setStopLoss] = useState<string>('');
-  const [stockProfitTarget, setStockProfitTarget] = useState<string>('');
-
-  
-  const [futuresEntry, setFuturesEntry] = useState<string>('');
-  const [futuresStop, setFuturesStop] = useState<string>('');
-  const [futuresProfitTarget, setFuturesProfitTarget] = useState<string>('');
-
-  
-  const [forexStopPips, setForexStopPips] = useState<string>('');
-  const [forexProfitTargetPips, setForexProfitTargetPips] =
-    useState<string>('');
-
-  
   const futuresSpec = useMemo<FuturesSpec | undefined>(
     () => FUTURES_SPECS[futuresSymbol],
     [futuresSymbol]
@@ -946,8 +987,8 @@ const PositionSizeWidgetComponent: React.FC<PositionSizeWidgetProps> = ({
   }, [parsedRiskPercent]);
 
   const handleRiskPercentBlur = useCallback(() => {
-    setRiskPercentInput(String(getCommittedRiskPercent()));
-  }, [getCommittedRiskPercent]);
+    updateFormState({ riskPercentInput: String(getCommittedRiskPercent()) });
+  }, [getCommittedRiskPercent, updateFormState]);
 
   
   const riskAmount = accountBalance * (riskPercent / 100);
@@ -987,7 +1028,7 @@ const PositionSizeWidgetComponent: React.FC<PositionSizeWidgetProps> = ({
     }
 
     const committedRiskPercent = getCommittedRiskPercent();
-    setRiskPercentInput(String(committedRiskPercent));
+    updateFormState({ riskPercentInput: String(committedRiskPercent) });
 
     plugin.settings.home.positionSizeDefaults = {
       riskPercentage: committedRiskPercent,
@@ -1005,44 +1046,38 @@ const PositionSizeWidgetComponent: React.FC<PositionSizeWidgetProps> = ({
     futuresSymbol,
     forexSymbol,
     plugin,
+    updateFormState,
   ]);
 
   
   const handleReset = useCallback(() => {
     const defs = plugin.settings.home?.positionSizeDefaults;
-    setRiskPercentInput(
-      formatRiskPercentInput(defs?.riskPercentage ?? DEFAULT_RISK_PERCENT)
-    );
-    setAccountBalance(defs?.accountBalance ?? 10000);
-    setAssetType(defs?.assetType ?? 'stock');
-    setFuturesSymbol(defs?.lastFuturesSymbol ?? 'ES');
-    setForexSymbol(defs?.lastForexSymbol ?? 'EURUSD');
-    setEntryPrice('');
-    setStopLoss('');
-    setStockProfitTarget('');
-    setStockDollarValue('');
-    setFuturesEntry('');
-    setFuturesStop('');
-    setFuturesProfitTarget('');
-    setForexStopPips('');
-    setForexProfitTargetPips('');
+    dispatchFormState({
+      riskPercentInput: formatRiskPercentInput(
+        defs?.riskPercentage ?? DEFAULT_RISK_PERCENT
+      ),
+      accountBalance: defs?.accountBalance ?? 10000,
+      assetType: defs?.assetType ?? 'stock',
+      futuresSymbol: defs?.lastFuturesSymbol ?? 'ES',
+      forexSymbol: defs?.lastForexSymbol ?? 'EURUSD',
+      entryPrice: '',
+      stopLoss: '',
+      stockProfitTarget: '',
+      stockDollarValue: '',
+      futuresEntry: '',
+      futuresStop: '',
+      futuresProfitTarget: '',
+      forexStopPips: '',
+      forexProfitTargetPips: '',
+    });
   }, [plugin]);
 
-  
-  const getCurrentResult = () => {
-    switch (assetType) {
-      case 'stock':
-        return stockCalculation;
-      case 'futures':
-        return futuresCalculation;
-      case 'forex':
-        return forexCalculation;
-      default:
-        return null;
-    }
-  };
-
-  const result = getCurrentResult();
+  const result =
+    assetType === 'stock'
+      ? stockCalculation
+      : assetType === 'futures'
+        ? futuresCalculation
+        : forexCalculation;
 
   return (
     <div className="journalit-home-position">
@@ -1054,14 +1089,18 @@ const PositionSizeWidgetComponent: React.FC<PositionSizeWidgetProps> = ({
       <PositionSizeTabs
         assetTabs={assetTabs}
         assetType={assetType}
-        onAssetTypeChange={setAssetType}
+        onAssetTypeChange={(assetType) => updateFormState({ assetType })}
       />
 
       <CommonInputs
         accountBalance={accountBalance}
-        onAccountBalanceChange={setAccountBalance}
+        onAccountBalanceChange={(accountBalance) =>
+          updateFormState({ accountBalance })
+        }
         riskPercentInput={riskPercentInput}
-        onRiskPercentInputChange={setRiskPercentInput}
+        onRiskPercentInputChange={(riskPercentInput) =>
+          updateFormState({ riskPercentInput })
+        }
         onRiskPercentBlur={handleRiskPercentBlur}
         parsedRiskPercent={parsedRiskPercent}
       />
@@ -1071,42 +1110,60 @@ const PositionSizeWidgetComponent: React.FC<PositionSizeWidgetProps> = ({
         <StockInputs
           useDollarValue={useDollarValue}
           entryPrice={entryPrice}
-          onEntryPriceChange={setEntryPrice}
+          onEntryPriceChange={(entryPrice) => updateFormState({ entryPrice })}
           stockEntryInputRef={stockEntryInputRef}
           stopLoss={stopLoss}
-          onStopLossChange={setStopLoss}
+          onStopLossChange={(stopLoss) => updateFormState({ stopLoss })}
           stockProfitTarget={stockProfitTarget}
-          onStockProfitTargetChange={setStockProfitTarget}
+          onStockProfitTargetChange={(stockProfitTarget) =>
+            updateFormState({ stockProfitTarget })
+          }
           stockDollarValue={stockDollarValue}
-          onStockDollarValueChange={setStockDollarValue}
+          onStockDollarValueChange={(stockDollarValue) =>
+            updateFormState({ stockDollarValue })
+          }
         />
       )}
 
       {assetType === 'futures' && (
         <FuturesInputs
           futuresSymbol={futuresSymbol}
-          onFuturesSymbolChange={setFuturesSymbol}
+          onFuturesSymbolChange={(futuresSymbol) =>
+            updateFormState({ futuresSymbol })
+          }
           futuresSpec={futuresSpec}
           futuresEntry={futuresEntry}
-          onFuturesEntryChange={setFuturesEntry}
+          onFuturesEntryChange={(futuresEntry) =>
+            updateFormState({ futuresEntry })
+          }
           futuresEntryInputRef={futuresEntryInputRef}
           futuresStop={futuresStop}
-          onFuturesStopChange={setFuturesStop}
+          onFuturesStopChange={(futuresStop) =>
+            updateFormState({ futuresStop })
+          }
           futuresProfitTarget={futuresProfitTarget}
-          onFuturesProfitTargetChange={setFuturesProfitTarget}
+          onFuturesProfitTargetChange={(futuresProfitTarget) =>
+            updateFormState({ futuresProfitTarget })
+          }
         />
       )}
 
       {assetType === 'forex' && (
         <ForexInputs
           forexSymbol={forexSymbol}
-          onForexSymbolChange={setForexSymbol}
+          onForexSymbolChange={(forexSymbol) =>
+            updateFormState({ forexSymbol })
+          }
           forexSpec={forexSpec}
           forexStopPips={forexStopPips}
-          onForexStopPipsChange={setForexStopPips}
+          onForexStopPipsChange={(forexStopPips) =>
+            updateFormState({ forexStopPips })
+          }
           forexStopInputRef={forexStopInputRef}
           forexProfitTargetPips={forexProfitTargetPips}
-          onForexProfitTargetPipsChange={setForexProfitTargetPips}
+          onForexProfitTargetPipsChange={(forexProfitTargetPips) =>
+            updateFormState({ forexProfitTargetPips })
+          }
         />
       )}
 

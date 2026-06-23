@@ -6,6 +6,7 @@ import React, {
   useRef,
   useMemo,
   useCallback,
+  useReducer,
 } from 'react';
 import { t } from '../../../../lang/helpers';
 import { useEventBus } from '../../../../hooks';
@@ -339,10 +340,17 @@ export const DateRangeFilter: React.FC<DateRangeFilterProps> = ({
   const dateRangeContainerRef = useRef<HTMLDivElement>(null);
   const customDateAnchorRef = useRef<HTMLDivElement>(null);
   const customDateDropdownRef = useRef<HTMLDivElement>(null);
-  
-  const [shouldPositionLeft, setShouldPositionLeft] = useState(false);
-  
-  const [shouldPositionBelow, setShouldPositionBelow] = useState(false);
+  const [dropdownPosition, dispatchDropdownPosition] = useReducer(
+    (
+      _state: { shouldPositionLeft: boolean; shouldPositionBelow: boolean },
+      action: { shouldPositionLeft: boolean; shouldPositionBelow: boolean }
+    ) => action,
+    {
+      shouldPositionLeft: false,
+      shouldPositionBelow: false,
+    }
+  );
+  const { shouldPositionLeft, shouldPositionBelow } = dropdownPosition;
 
   const weekStartDay = getWeekStartDaySetting();
   const [, setSettingsVersion] = useState(0);
@@ -458,16 +466,22 @@ export const DateRangeFilter: React.FC<DateRangeFilterProps> = ({
         
         const fitsBelow =
           containerRect.bottom + dropdownHeight <= viewportHeight - padding;
-        setShouldPositionBelow(fitsBelow);
-        setShouldPositionLeft(false);
+        dispatchDropdownPosition({
+          shouldPositionBelow: fitsBelow,
+          shouldPositionLeft: false,
+        });
       } else if (wouldOverflowRight && !wouldOverflowLeft) {
         
-        setShouldPositionBelow(false);
-        setShouldPositionLeft(true);
+        dispatchDropdownPosition({
+          shouldPositionBelow: false,
+          shouldPositionLeft: true,
+        });
       } else {
         
-        setShouldPositionBelow(false);
-        setShouldPositionLeft(false);
+        dispatchDropdownPosition({
+          shouldPositionBelow: false,
+          shouldPositionLeft: false,
+        });
       }
     }
   }, [isCustomDropdownOpen]);

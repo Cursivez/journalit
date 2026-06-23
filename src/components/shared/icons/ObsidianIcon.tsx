@@ -4,7 +4,7 @@ import { cssVars } from '../../../styles/inlineStylePolicy';
 
 const ICON_CLASS_NAME = 'journalit-obsidian-icon';
 
-export interface ObsidianIconProps extends React.HTMLAttributes<HTMLSpanElement> {
+interface ObsidianIconProps extends React.HTMLAttributes<HTMLSpanElement> {
   size?: number | string;
   strokeWidth?: number | string;
   fill?: string;

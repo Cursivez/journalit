@@ -81,15 +81,24 @@ interface ChecklistWidgetProps {
 
 export const ChecklistWidget: React.FC<ChecklistWidgetProps> = React.memo(
   ({ filePath, plugin, preview, previewData, previewReviewType }) => {
-    const [items, setItems] = useState<ChecklistItem[]>([]);
-    const [loading, setLoading] = useState(true);
+    const [checklistState, setChecklistState] = useState<{
+      items: ChecklistItem[];
+      loading: boolean;
+      isValidContext: boolean;
+      reviewType: 'drc' | 'weekly-review' | null;
+    }>({
+      items: [],
+      loading: true,
+      isValidContext: true,
+      reviewType: null,
+    });
+    const { items, loading, isValidContext, reviewType } = checklistState;
     const [editingIndex, setEditingIndex] = useState<number | null>(null);
     const [editText, setEditText] = useState('');
     const [newItemText, setNewItemText] = useState('');
-    const [isValidContext, setIsValidContext] = useState(true);
-    const [reviewType, setReviewType] = useState<
-      'drc' | 'weekly-review' | null
-    >(null);
+    const setItems = (updatedItems: ChecklistItem[]) => {
+      setChecklistState((current) => ({ ...current, items: updatedItems }));
+    };
     const editInputRef = useRef<HTMLInputElement>(null);
     const newItemInputRef = useRef<HTMLInputElement>(null);
     const retryCountRef = useRef(0);
@@ -104,8 +113,11 @@ export const ChecklistWidget: React.FC<ChecklistWidgetProps> = React.memo(
     const loadChecklist = useCallback(async () => {
       const file = plugin.app.vault.getAbstractFileByPath(filePath);
       if (!(file instanceof TFile)) {
-        setIsValidContext(false);
-        setLoading(false);
+        setChecklistState((current) => ({
+          ...current,
+          isValidContext: false,
+          loading: false,
+        }));
         return;
       }
 
@@ -124,19 +136,23 @@ export const ChecklistWidget: React.FC<ChecklistWidgetProps> = React.memo(
           }, FRONTMATTER_RETRY_DELAY_MS);
           return;
         }
-        setIsValidContext(false);
-        setLoading(false);
+        setChecklistState((current) => ({
+          ...current,
+          isValidContext: false,
+          loading: false,
+        }));
         return;
       }
 
       const nextReviewType = getChecklistReviewType(frontmatter.type);
       if (!nextReviewType) {
-        setIsValidContext(false);
-        setLoading(false);
+        setChecklistState((current) => ({
+          ...current,
+          isValidContext: false,
+          loading: false,
+        }));
         return;
       }
-
-      setReviewType(nextReviewType);
 
       
       const checklistItems = getStringArray(frontmatter, 'checklistItems');
@@ -150,18 +166,23 @@ export const ChecklistWidget: React.FC<ChecklistWidgetProps> = React.memo(
         })
       );
 
-      setItems(checklistData);
-      setIsValidContext(true);
-      setLoading(false);
+      setChecklistState({
+        items: checklistData,
+        reviewType: nextReviewType,
+        isValidContext: true,
+        loading: false,
+      });
     }, [filePath, plugin.app.metadataCache, plugin.app.vault]);
 
     useEffect(() => {
       
       if (preview && previewData) {
-        setItems(previewData.items);
-        setReviewType(previewReviewType ?? 'drc');
-        setLoading(false);
-        setIsValidContext(true);
+        setChecklistState({
+          items: previewData.items,
+          reviewType: previewReviewType ?? 'drc',
+          loading: false,
+          isValidContext: true,
+        });
         return;
       }
 

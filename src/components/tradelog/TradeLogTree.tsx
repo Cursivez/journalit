@@ -5,6 +5,7 @@ import React, {
   useCallback,
   useRef,
   useEffect,
+  useReducer,
   useState,
   memo,
 } from 'react';
@@ -265,8 +266,19 @@ function useFlattenedTradeLogNodes({
   expandedNodes: Set<string>;
   onTreeReady?: () => void;
 }) {
-  const [flattenedNodes, setFlattenedNodes] = useState<FlatNode[]>([]);
-  const [isFlattening, setIsFlattening] = useState(false);
+  const [flattenState, dispatchFlattenState] = useReducer(
+    (
+      state: { flattenedNodes: FlatNode[]; isFlattening: boolean },
+      action:
+        | { type: 'loaded'; flattenedNodes: FlatNode[] }
+        | { type: 'loading' }
+    ) =>
+      action.type === 'loaded'
+        ? { flattenedNodes: action.flattenedNodes, isFlattening: false }
+        : { ...state, isFlattening: true },
+    { flattenedNodes: [], isFlattening: false }
+  );
+  const { flattenedNodes, isFlattening } = flattenState;
   const flattenGenerationRef = useRef(0);
 
   useEffect(() => {
@@ -274,8 +286,7 @@ function useFlattenedTradeLogNodes({
     flattenGenerationRef.current = flattenGeneration;
 
     if (nodes.length === 0) {
-      setFlattenedNodes([]);
-      setIsFlattening(false);
+      dispatchFlattenState({ type: 'loaded', flattenedNodes: [] });
       onTreeReady?.();
       return;
     }
@@ -289,13 +300,12 @@ function useFlattenedTradeLogNodes({
         return;
       }
 
-      setFlattenedNodes(result);
-      setIsFlattening(false);
+      dispatchFlattenState({ type: 'loaded', flattenedNodes: result });
       onTreeReady?.();
       return;
     }
 
-    setIsFlattening(true);
+    dispatchFlattenState({ type: 'loading' });
     const timeoutIds = new Set<number>();
 
     const yieldToBrowser = () =>
@@ -347,8 +357,7 @@ function useFlattenedTradeLogNodes({
         return;
       }
 
-      setFlattenedNodes(result);
-      setIsFlattening(false);
+      dispatchFlattenState({ type: 'loaded', flattenedNodes: result });
       onTreeReady?.();
     };
 

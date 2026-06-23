@@ -215,7 +215,10 @@ export function PortalChartTooltip({
     width: 0,
     height: 0,
   });
-  const [isPointerInsideChart, setIsPointerInsideChart] = React.useState(true);
+  const [isPointerInsideChart, dispatchPointerInsideChart] = React.useReducer(
+    (previous: boolean, next: boolean) => (previous === next ? previous : next),
+    true
+  );
 
   const hasActivePayload = Boolean(
     active && payload && payload.length > 0 && coordinate && portalRoot
@@ -244,7 +247,7 @@ export function PortalChartTooltip({
 
   React.useEffect(() => {
     if (!hasActivePayload) {
-      setIsPointerInsideChart((previous) => (previous ? previous : true));
+      dispatchPointerInsideChart(true);
       return undefined;
     }
 
@@ -261,13 +264,11 @@ export function PortalChartTooltip({
         2
       );
 
-      setIsPointerInsideChart((previous) =>
-        previous === nextIsInside ? previous : nextIsInside
-      );
+      dispatchPointerInsideChart(nextIsInside);
     };
 
     const hideTooltip = () => {
-      setIsPointerInsideChart(false);
+      dispatchPointerInsideChart(false);
     };
 
     doc.addEventListener('pointermove', updatePointerState, true);

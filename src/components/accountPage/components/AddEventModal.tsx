@@ -93,7 +93,7 @@ class AddEventModal extends Modal {
 const AddEventModalContent: React.FC<
   AddEventModalProps & { onModalClose: () => void }
 > = ({ plugin, accountName, onSave, onModalClose }) => {
-  const [isLoading, setIsLoading] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const { currency: globalCurrency } = useCurrency();
 
   
@@ -126,7 +126,7 @@ const AddEventModalContent: React.FC<
 
   const handleSave = async () => {
     try {
-      setIsLoading(true);
+      setIsSaving(true);
 
       
       if (!eventData.amount || parseFloat(eventData.amount) <= 0) {
@@ -203,7 +203,7 @@ const AddEventModalContent: React.FC<
         t('account.add-event.error.failed', { error: errorMessage(error) })
       );
     } finally {
-      setIsLoading(false);
+      setIsSaving(false);
     }
   };
 
@@ -248,7 +248,7 @@ const AddEventModalContent: React.FC<
                   description: '', 
                 }))
               }
-              disabled={isLoading}
+              disabled={isSaving}
             >
               <option value={TransactionType.DEPOSIT}>
                 {t('account.add-event.type.deposit')}
@@ -286,7 +286,7 @@ const AddEventModalContent: React.FC<
               min="0.01"
               step="0.01"
               placeholder="0.00"
-              disabled={isLoading}
+              disabled={isSaving}
             />
           </div>
         </div>
@@ -323,7 +323,7 @@ const AddEventModalContent: React.FC<
                   setEventData((currentData) => ({ ...currentData, date: '' }));
                 }
               }}
-              disabled={isLoading}
+              disabled={isSaving}
             />
           </div>
         </div>
@@ -351,7 +351,7 @@ const AddEventModalContent: React.FC<
                   ? t('account.add-event.placeholder.deposit')
                   : t('account.add-event.placeholder.withdrawal')
               }
-              disabled={isLoading}
+              disabled={isSaving}
             />
           </div>
         </div>
@@ -366,7 +366,7 @@ const AddEventModalContent: React.FC<
           <Button
             variant="secondary"
             onClick={onModalClose}
-            disabled={isLoading}
+            disabled={isSaving}
             className="cancel-button"
           >
             {t('button.cancel')}
@@ -374,10 +374,10 @@ const AddEventModalContent: React.FC<
           <Button
             variant="primary"
             onClick={handleSave}
-            disabled={isLoading}
+            disabled={isSaving}
             className="add-event-button accent-button"
           >
-            {isLoading
+            {isSaving
               ? t('account.add-event.button.adding')
               : t('account.add-event.button.add')}
           </Button>

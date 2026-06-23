@@ -105,13 +105,24 @@ interface GoalsWidgetProps {
 
 export const GoalsWidget: React.FC<GoalsWidgetProps> = React.memo(
   ({ filePath, plugin, preview, previewData }) => {
-    const [goals, setGoals] = useState<GoalItem[]>([]);
-    const [loading, setLoading] = useState(true);
+    const [goalsState, setGoalsState] = useState<{
+      goals: GoalItem[];
+      loading: boolean;
+      isValidContext: boolean;
+      reviewType: ReviewType | null;
+    }>({
+      goals: [],
+      loading: true,
+      isValidContext: true,
+      reviewType: null,
+    });
+    const { goals, loading, isValidContext, reviewType } = goalsState;
     const [editingIndex, setEditingIndex] = useState<number | null>(null);
     const [editText, setEditText] = useState('');
     const [newGoalText, setNewGoalText] = useState('');
-    const [isValidContext, setIsValidContext] = useState(true);
-    const [reviewType, setReviewType] = useState<ReviewType | null>(null);
+    const setGoals = (updatedGoals: GoalItem[]) => {
+      setGoalsState((current) => ({ ...current, goals: updatedGoals }));
+    };
     const editInputRef = useRef<HTMLInputElement>(null);
     const newGoalInputRef = useRef<HTMLInputElement>(null);
     const retryCountRef = useRef(0);
@@ -122,9 +133,12 @@ export const GoalsWidget: React.FC<GoalsWidgetProps> = React.memo(
     const loadGoals = useCallback(async () => {
       const file = plugin.app.vault.getAbstractFileByPath(filePath);
       if (!(file instanceof TFile)) {
-        setIsValidContext(false);
         isValidContextRef.current = false;
-        setLoading(false);
+        setGoalsState((current) => ({
+          ...current,
+          isValidContext: false,
+          loading: false,
+        }));
         return;
       }
 
@@ -144,22 +158,27 @@ export const GoalsWidget: React.FC<GoalsWidgetProps> = React.memo(
           );
           return;
         }
-        setIsValidContext(false);
         isValidContextRef.current = false;
-        setLoading(false);
+        setGoalsState((current) => ({
+          ...current,
+          isValidContext: false,
+          loading: false,
+        }));
         return;
       }
 
       const type = typeof frontmatter.type === 'string' ? frontmatter.type : '';
       if (!isReviewType(type)) {
-        setIsValidContext(false);
         isValidContextRef.current = false;
-        setLoading(false);
+        setGoalsState((current) => ({
+          ...current,
+          isValidContext: false,
+          loading: false,
+        }));
         return;
       }
 
       const validType = type;
-      setReviewType(validType);
       const fieldMap = GOALS_FIELD_MAP[validType];
 
       
@@ -172,18 +191,24 @@ export const GoalsWidget: React.FC<GoalsWidgetProps> = React.memo(
         checked: goalStatus[`goal_${index}`] ?? false,
       }));
 
-      setGoals(goalItems);
-      setIsValidContext(true);
+      setGoalsState({
+        goals: goalItems,
+        reviewType: validType,
+        isValidContext: true,
+        loading: false,
+      });
       isValidContextRef.current = true;
-      setLoading(false);
     }, [filePath, plugin]);
 
     useEffect(() => {
       
       if (preview && previewData) {
-        setGoals(previewData.goals);
-        setLoading(false);
-        setIsValidContext(true);
+        setGoalsState({
+          goals: previewData.goals,
+          reviewType: null,
+          loading: false,
+          isValidContext: true,
+        });
         isValidContextRef.current = true;
         return;
       }

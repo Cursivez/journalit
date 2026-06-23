@@ -1,7 +1,7 @@
 
 
 
-export interface ForecastTimeframeSection {
+interface ForecastTimeframeSection {
   notes: string;
   images?: string[];
 }

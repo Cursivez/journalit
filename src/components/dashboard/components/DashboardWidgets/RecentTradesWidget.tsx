@@ -27,7 +27,7 @@ import { getTradeDirectionDisplayLabel } from '../../../../utils/tradeDirectionD
 
 type RecentTradeRow = {
   trade: Trade;
-  analyticsDate: Date | null;
+  analyticsDate: Date;
   realizedPnL: number | undefined;
 };
 
@@ -89,24 +89,24 @@ export const RecentTradesWidget: React.FC<BaseWidgetProps> = ({ filters }) => {
         const rowSourceTrades = hasRealizedEventRows
           ? data.realizedEventTrades!
           : data.trades;
-        const recentTrades = rowSourceTrades
-          .flatMap((trade): RecentTradeRow[] => {
+        const recentTrades: RecentTradeRow[] = rowSourceTrades
+          .flatMap((trade) => {
+            const analyticsDate = hasRealizedEventRows
+              ? ((trade.exitTime as Date | null | undefined) ?? null)
+              : getTradeAnalyticsDate(trade, analyticsDateBasis);
+            if (analyticsDate === null) {
+              return [];
+            }
             return [
               {
                 trade,
-                analyticsDate: hasRealizedEventRows
-                  ? ((trade.exitTime as Date | null | undefined) ?? null)
-                  : getTradeAnalyticsDate(trade, analyticsDateBasis),
+                analyticsDate,
                 realizedPnL: hasRealizedEventRows
                   ? getEffectivePnL(trade)
                   : undefined,
               },
             ];
           })
-          .filter(
-            (item): item is RecentTradeRow & { analyticsDate: Date } =>
-              item.analyticsDate !== null
-          )
           .sort((a, b) => safeDateSort(b.analyticsDate, a.analyticsDate))
           .slice(0, 10); 
 

@@ -1222,6 +1222,15 @@ const de: Lang = {
   'dashboard.widgets.hourly-performance.tooltip.win-rate-label': 'Gewinnrate',
   'dashboard.widgets.hourly-performance.tooltip.win-rate':
     'Gewinnrate: {rate} ({wins}G / {losses}V)',
+  'dashboard.widgets.hourly-performance.bucket-aria': 'Intervallgröße',
+  'dashboard.widgets.hourly-performance.bucket-option': '{minutes} Min.',
+  'dashboard.widgets.hourly-performance.metric-aria': 'Metrik',
+  'dashboard.widgets.hourly-performance.metric.total': 'Gesamt',
+  'dashboard.widgets.hourly-performance.metric.average': 'Durchschnitt',
+  'dashboard.widgets.hourly-performance.metric.total-pnl': 'Gesamt-P&L',
+  'dashboard.widgets.hourly-performance.metric.avg-pnl': 'Ø P&L',
+  'dashboard.widgets.hourly-performance.metric.total-r': 'Gesamt-R',
+  'dashboard.widgets.hourly-performance.metric.avg-r': 'Ø R',
   'dashboard.widgets.weekday-performance.tooltip.no-trades': 'Keine Trades',
   'dashboard.widgets.rollingStats.title':
     'Rollierender durchschnittlicher Gewinn/Verlust',
@@ -5131,9 +5140,24 @@ const de: Lang = {
     'Klicken Sie, um das Ziel zu ändern',
   'home.widget.best-hours.title': 'Beste Stunden',
   'home.widget.best-hours.no-data': 'Keine Trading-Daten',
-  'home.widget.best-hours.period-aria': '{label}: {pnl} P&L, {count} Trades',
+  'home.widget.best-hours.period-aria':
+    '{label}: {pnl} durchschnittlicher P&L pro Trade, {count} Trades',
   'home.widget.best-hours.trades-count': '{count} Trades',
   'home.widget.best-hours.win-rate': '{rate}% Gewinn',
+  'home.widget.best-hours.win-rate-na': 'Gewinnrate nicht verfügbar',
+  'home.widget.best-hours.days-count': '{count} Tage',
+  'home.widget.best-hours.avg-per-trade': 'Ø/Trade',
+  'home.widget.best-hours.strongest-entry-window': 'Stärkstes Einstiegsfenster',
+  'home.widget.best-hours.avg-summary': '{trades} Trades · {days} Tage',
+  'home.widget.best-hours.hidden': 'Ausgeblendet',
+  'home.widget.best-hours.hidden-detail': 'Privatsphäre-Modus',
+  'home.widget.best-hours.no-positive-window': 'Kein positives Fenster',
+  'home.widget.best-hours.insufficient-history': 'Mehr Daten nötig',
+  'home.widget.best-hours.sample-requirement': '{count}/2 beprobte Fenster',
+  'home.widget.best-hours.developing': 'entwickelt sich',
+  'home.widget.best-hours.no-positive-detail': 'Beprobte Fenster sind negativ',
+  'home.widget.best-hours.period-hidden-aria':
+    'Tageszeit-Performance ausgeblendet',
   'home.widget.aum.title': 'AUM',
   'home.widget.aum.period.month': 'Diesen Monat',
   'home.widget.aum.period.quarter': 'Dieses Quartal',
@@ -6091,5 +6115,83 @@ const de: Lang = {
     'Die Menge des passenden offenen Trades unterscheidet sich von der Close-only-Vorschau',
   'trade-import.preview.message.no-open-match':
     'Kein passender offener Trade für Close-only-Vorschau gefunden',
+  'trade-import.restore.title':
+    'Importierte Trades aus dem Backend wiederherstellen',
+  'trade-import.restore.description':
+    'Erstellt fehlende lokale Notizen für im Backend importierte Trades in diesem Vault. Dadurch werden keine doppelten Backend-Trades erstellt.',
+  'trade-import.restore.vault': 'Aktive Vault-Identität: {vaultId}',
+  'trade-import.restore.load':
+    'Importierte Trades aus dem Backend wiederherstellen',
+  'trade-import.restore.none':
+    'Keine fehlenden importierten Trade-Projektionen für diesen Vault gefunden.',
+  'trade-import.restore.loaded':
+    '{count} wiederherstellbare importierte Trades gefunden.',
+  'trade-import.restore.load-failed':
+    'Wiederherstellbare importierte Trades konnten nicht geladen werden.',
+  'trade-import.restore.select-all': 'Alle auswählen',
+  'trade-import.restore.restore-selected':
+    'Ausgewählte wiederherstellen ({count})',
+  'trade-import.restore.complete':
+    '{written} importierte Trades wiederhergestellt; {failed} fehlgeschlagen.',
+  'trade-import.restore.broker-label': 'Backend-Wiederherstellung',
+  'trade-sync.source.metatrader': 'MetaTrader',
+  'trade-sync.source.trade-import': 'Trade Import',
+  'trade-sync.source.metatrader.description':
+    'Synchronisiere Trades aus MetaTrader-Berichten, die über deine FTP-Verbindung hochgeladen wurden.',
+  'trade-sync.source.trade-import.description':
+    'Stelle Broker-Dateiimporte über mehrere Vaults hinweg wieder her und rekonstruiere fehlende lokale Trade-Notizen.',
+  'trade-sync.import.title': 'Trade-Import-Sync',
+  'trade-sync.import.description':
+    'Stelle importierte Trades über mehrere Vaults hinweg wieder her und rekonstruiere fehlende lokale Notizen.',
+  'trade-sync.import.card.connection': 'Verbindung',
+  'trade-sync.import.card.backup': 'Import-Backup',
+  'trade-sync.import.card.restorable': 'Wiederherstellbare Trades',
+  'trade-sync.import.card.import': 'Trade Import',
+  'trade-sync.import.card.open-importer': 'Importer öffnen',
+  'trade-sync.import.card.open-importer-desc':
+    'Importiere dort neue Broker-Dateien',
+  'trade-sync.import.card.inventory-summary':
+    '{accounts} Konto/Konten · {trades} Trade(s)',
+  'trade-sync.import.action.check': 'Prüfen',
+  'trade-sync.import.action.open-import': 'Trade Import öffnen',
+  'trade-sync.import.action.clear': 'Zurücksetzen',
+  'trade-sync.import.action.select-all': 'Alle auswählen',
+  'trade-sync.import.action.restore-selected':
+    'Ausgewählte wiederherstellen ({count})',
+  'trade-sync.import.action.create-local-account': 'Lokal erstellen',
+  'trade-sync.import.action.create-local-account-title':
+    'Erstellt in diesem Vault ein lokales Konto mit dem Namen des Backend-Kontos.',
+  'trade-sync.import.action.save-mapping': 'Speichern',
+  'trade-sync.import.action.save-mapping-title':
+    'Speichert diese Zuordnung zwischen Backend-Konto und lokalem Konto.',
+  'trade-sync.import.action.mapped': 'Zugeordnet',
+  'trade-sync.import.action.restore-account': 'Wiederherstellen',
+  'trade-sync.import.action.restore-account-title':
+    'Stellt fehlende lokale Trade-Notizen für dieses Backend-Konto wieder her.',
+  'trade-sync.import.action.restoring': 'Wird wiederhergestellt…',
+  'trade-sync.import.label.account': 'Konto',
+  'trade-sync.import.vault-pending': 'Vault ausstehend',
+  'trade-sync.import.pending-acks': '{count} ausstehende ACK(s)',
+  'trade-sync.import.recovery.title': 'Fehlende lokale Notizen',
+  'trade-sync.import.empty': 'Dieser Vault ist aktuell.',
+  'trade-sync.import.empty-accounts':
+    'Noch keine gesicherten Trade-Import-Konten gefunden.',
+  'trade-sync.import.account.restorable-count': '{count} wiederherstellbar',
+  'trade-sync.import.account.synced-count': '{count} synchronisiert',
+  'trade-sync.import.account.missing-count': '{count} fehlend',
+  'trade-sync.import.account.issue-count': '{count} Problem(e)',
+  'trade-sync.import.account.local-account': 'Lokales Konto',
+  'trade-sync.import.account.mapping-hint':
+    'Wiederhergestellte Trades werden in dieses lokale Konto geschrieben.',
+  'trade-sync.import.notice.restored':
+    '{count} importierte Trade(s) wiederhergestellt.',
+  'trade-sync.import.notice.load-failed':
+    'Trade-Import-Sync-Status konnte nicht geladen werden.',
+  'trade-sync.import.notice.mapping-failed':
+    'Trade-Import-Kontozuordnung konnte nicht gespeichert werden.',
+  'trade-sync.import.notice.create-account-failed':
+    'Lokales Konto konnte nicht erstellt werden.',
+  'trade-sync.import.notice.restore-failed':
+    'Trade-Import-Konto konnte nicht wiederhergestellt werden.',
 };
 export default de;

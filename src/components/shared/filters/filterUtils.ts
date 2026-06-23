@@ -320,9 +320,10 @@ export function applyTradeFilters<T extends object>(
           }
 
           const selectedValueSet = new Set(
-            selectedValues
-              .map((value) => normalizeCustomFieldFilterValue(value))
-              .filter((value): value is string => value !== null)
+            selectedValues.flatMap((value) => {
+              const normalized = normalizeCustomFieldFilterValue(value);
+              return normalized === null ? [] : [normalized];
+            })
           );
 
           if (selectedValueSet.size === 0) {
@@ -336,9 +337,10 @@ export function applyTradeFilters<T extends object>(
 
           if (fieldDefinition.type === CustomFieldType.MULTISELECT) {
             const tradeValues = Array.isArray(rawValue)
-              ? rawValue
-                  .map((value) => normalizeCustomFieldFilterValue(value))
-                  .filter((value): value is string => value !== null)
+              ? rawValue.flatMap((value) => {
+                  const normalized = normalizeCustomFieldFilterValue(value);
+                  return normalized === null ? [] : [normalized];
+                })
               : rawValue !== undefined
                 ? [normalizeCustomFieldFilterValue(rawValue)].filter(
                     (value): value is string => value !== null

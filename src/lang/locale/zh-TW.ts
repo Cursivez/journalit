@@ -1118,6 +1118,21 @@ const zhTW: Partial<Lang> = {
     'Matching open trade quantity differs from close-only preview',
   'trade-import.preview.message.no-open-match':
     'No matching open trade found for close-only preview',
+  'trade-import.restore.title': 'Restore imported trades from backend',
+  'trade-import.restore.description':
+    'Create missing local notes for backend imported trades in this vault. This does not create duplicate backend trades.',
+  'trade-import.restore.vault': 'Current vault identity: {vaultId}',
+  'trade-import.restore.load': 'Restore imported trades from backend',
+  'trade-import.restore.none':
+    'No missing imported trade projections found for this vault.',
+  'trade-import.restore.loaded': 'Found {count} restorable imported trades.',
+  'trade-import.restore.load-failed':
+    'Could not load restorable imported trades.',
+  'trade-import.restore.select-all': 'Select all',
+  'trade-import.restore.restore-selected': 'Restore selected ({count})',
+  'trade-import.restore.complete':
+    'Restored {written} imported trades; {failed} failed.',
+  'trade-import.restore.broker-label': 'Backend restore',
 };
 
 export default zhTW;

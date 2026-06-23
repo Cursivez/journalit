@@ -4,6 +4,7 @@ import React, {
   createContext,
   use,
   useCallback,
+  useReducer,
   useRef,
   useState,
   useMemo,
@@ -72,6 +73,27 @@ interface AccountPageDataProviderProps {
   plugin?: JournalitPlugin | null;
   children: ReactNode;
 }
+
+type AccountPageProviderState = {
+  accountPageData: AccountPageData | null;
+  isLoading: boolean;
+  isStale: boolean;
+  error: Error | null;
+  lastFetchTime: number;
+};
+
+const initialAccountPageProviderState: AccountPageProviderState = {
+  accountPageData: null,
+  isLoading: false,
+  isStale: false,
+  error: null,
+  lastFetchTime: 0,
+};
+
+const accountPageProviderReducer = (
+  current: AccountPageProviderState,
+  update: Partial<AccountPageProviderState>
+): AccountPageProviderState => ({ ...current, ...update });
 
 const filterAccountTrades = (
   trades: AccountTradeData[] | undefined,
@@ -243,31 +265,35 @@ const calculateFilteredAccountMetrics = (
   const avgLoss =
     losingTrades.length > 0 ? totalLossAmount / losingTrades.length : 0;
 
-  const winningTradesR = winningTrades
-    .map((trade) =>
-      calculateEffectiveRMultiple(
-        getEffectivePnL(trade),
-        trade.rMultiple,
-        trade.riskAmount,
-        options.defaultRiskAmount
-      )
-    )
-    .filter((r) => r !== undefined);
+  const winningTradesR = winningTrades.reduce<number[]>((acc, trade) => {
+    const r = calculateEffectiveRMultiple(
+      getEffectivePnL(trade),
+      trade.rMultiple,
+      trade.riskAmount,
+      options.defaultRiskAmount
+    );
+    if (r !== undefined) {
+      acc.push(r);
+    }
+    return acc;
+  }, []);
   const avgWinRMultiple =
     winningTradesR.length > 0
       ? winningTradesR.reduce((sum, r) => sum + r, 0) / winningTradesR.length
       : undefined;
 
-  const losingTradesR = losingTrades
-    .map((trade) =>
-      calculateEffectiveRMultiple(
-        getEffectivePnL(trade),
-        trade.rMultiple,
-        trade.riskAmount,
-        options.defaultRiskAmount
-      )
-    )
-    .filter((r) => r !== undefined);
+  const losingTradesR = losingTrades.reduce<number[]>((acc, trade) => {
+    const r = calculateEffectiveRMultiple(
+      getEffectivePnL(trade),
+      trade.rMultiple,
+      trade.riskAmount,
+      options.defaultRiskAmount
+    );
+    if (r !== undefined) {
+      acc.push(r);
+    }
+    return acc;
+  }, []);
   const avgLossRMultiple =
     losingTradesR.length > 0
       ? losingTradesR.reduce((sum, r) => sum + Math.abs(r), 0) /
@@ -301,12 +327,11 @@ const calculateFilteredAccountMetrics = (
 export const AccountPageDataProvider: React.FC<
   AccountPageDataProviderProps
 > = ({ app: _app, accountPageService, accountName, plugin, children }) => {
-  const [accountPageData, setAccountPageData] =
-    useState<AccountPageData | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [isStale, setIsStale] = useState(false);
-  const [error, setError] = useState<Error | null>(null);
-  const [lastFetchTime, setLastFetchTime] = useState(0);
+  const [state, dispatchState] = useReducer(
+    accountPageProviderReducer,
+    initialAccountPageProviderState
+  );
+  const { accountPageData, isLoading, isStale, error, lastFetchTime } = state;
   const [filters, setFiltersState] = useState<AccountTradeFilter>({});
 
   
@@ -341,26 +366,27 @@ export const AccountPageDataProvider: React.FC<
       do {
         refreshQueuedRef.current = false;
         fetchingRef.current = true;
-        setIsLoading(true);
-        setError(null);
+        dispatchState({ isLoading: true, error: null });
 
         try {
           const data = await accountPageService.getAccountPageData(
             accountNameRef.current
           );
-          setAccountPageData(data);
-          setLastFetchTime(Date.now());
-          setIsStale(false); 
+          dispatchState({
+            accountPageData: data,
+            lastFetchTime: Date.now(),
+            isStale: false,
+          });
         } catch (err) {
           console.error('Error fetching account page data:', err);
-          setError(
-            err instanceof Error
-              ? err
-              : new Error('Failed to fetch account page data')
-          );
+          dispatchState({
+            error:
+              err instanceof Error
+                ? err
+                : new Error('Failed to fetch account page data'),
+          });
         } finally {
-          setIsLoading(false);
-          setIsStale(false); 
+          dispatchState({ isLoading: false, isStale: false });
           fetchingRef.current = false;
         }
       } while (refreshQueuedRef.current);

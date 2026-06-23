@@ -88,7 +88,7 @@ function useAccountDashboardSettingsModel({
   onSave: () => void;
   onModalClose: () => void;
 }) {
-  const [isLoading, setIsLoading] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const [customAccountTypes, setCustomAccountTypes] = useState<string[]>([]);
 
   
@@ -116,12 +116,6 @@ function useAccountDashboardSettingsModel({
   const [migrationOption, setMigrationOption] = useState<
     'reassign' | 'archive' | 'delete'
   >('reassign');
-
-  useEffect(() => {
-    if (isAddingNewType) {
-      newTypeInputRef.current?.focus();
-    }
-  }, [isAddingNewType]);
 
   
   const [dashboardSettings, setDashboardSettings] = useState({
@@ -264,7 +258,7 @@ function useAccountDashboardSettingsModel({
     }
 
     try {
-      setIsLoading(true);
+      setIsSaving(true);
 
       
       await plugin.optionsService.addOption(
@@ -315,7 +309,7 @@ function useAccountDashboardSettingsModel({
         })
       );
     } finally {
-      setIsLoading(false);
+      setIsSaving(false);
     }
   };
 
@@ -329,6 +323,7 @@ function useAccountDashboardSettingsModel({
   const handleStartAddAccountType = () => {
     setIsAddingNewType(true);
     setNewTypeName('');
+    window.requestAnimationFrame(() => newTypeInputRef.current?.focus());
   };
 
   
@@ -470,7 +465,7 @@ function useAccountDashboardSettingsModel({
     }
 
     try {
-      setIsLoading(true);
+      setIsSaving(true);
 
       
       const impact = await analyzeAccountTypeDeletionImpact(accountType);
@@ -483,7 +478,7 @@ function useAccountDashboardSettingsModel({
       console.error('Error analyzing deletion impact:', error);
       new Notice(t('account.settings.notice.analyze-error'));
     } finally {
-      setIsLoading(false);
+      setIsSaving(false);
     }
   };
 
@@ -492,7 +487,7 @@ function useAccountDashboardSettingsModel({
     if (!accountTypeToDelete) return;
 
     try {
-      setIsLoading(true);
+      setIsSaving(true);
 
       
 
@@ -615,7 +610,7 @@ function useAccountDashboardSettingsModel({
         })
       );
     } finally {
-      setIsLoading(false);
+      setIsSaving(false);
     }
   };
 
@@ -652,7 +647,7 @@ function useAccountDashboardSettingsModel({
     if (!deletionImpact || !accountTypeToDelete) return;
 
     try {
-      setIsLoading(true);
+      setIsSaving(true);
 
       if (migrationOption === 'reassign' && !migrationTargetType) {
         new Notice(t('account.settings.notice.migration-target-required'));
@@ -766,7 +761,7 @@ function useAccountDashboardSettingsModel({
         })
       );
     } finally {
-      setIsLoading(false);
+      setIsSaving(false);
     }
   };
 
@@ -876,7 +871,7 @@ function useAccountDashboardSettingsModel({
   
   const handleSave = async () => {
     try {
-      setIsLoading(true);
+      setIsSaving(true);
 
       
       if (!plugin.settings.account) {
@@ -931,7 +926,7 @@ function useAccountDashboardSettingsModel({
         })
       );
     } finally {
-      setIsLoading(false);
+      setIsSaving(false);
     }
   };
 
@@ -1081,7 +1076,7 @@ function useAccountDashboardSettingsModel({
                       onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
                         setMigrationTargetType(e.target.value)
                       }
-                      disabled={isLoading}
+                      disabled={isSaving}
                     >
                       {availableMigrationTypes.map((type) => (
                         <option key={type} value={type}>
@@ -1167,7 +1162,7 @@ function useAccountDashboardSettingsModel({
             <Button
               variant="secondary"
               onClick={() => void handleCancelMigration()}
-              disabled={isLoading}
+              disabled={isSaving}
             >
               {t('button.cancel')}
             </Button>
@@ -1175,12 +1170,12 @@ function useAccountDashboardSettingsModel({
               variant="secondary"
               onClick={() => void handleConfirmMigration()}
               disabled={
-                isLoading ||
+                isSaving ||
                 (migrationOption === 'reassign' && !migrationTargetType)
               }
               className="delete-confirm-button"
             >
-              {isLoading
+              {isSaving
                 ? t('account.settings.migration.button.migrating')
                 : t('account.settings.migration.button.migrate')}
             </Button>
@@ -1275,14 +1270,14 @@ function useAccountDashboardSettingsModel({
                 <Button
                   variant="secondary"
                   onClick={() => void handleCancelDeleteAccountType()}
-                  disabled={isLoading}
+                  disabled={isSaving}
                 >
                   {t('button.cancel')}
                 </Button>
                 <Button
                   variant="primary"
                   onClick={() => void handleStartMigration()}
-                  disabled={isLoading}
+                  disabled={isSaving}
                 >
                   {t('account.settings.delete.button.setup-migration')}
                 </Button>
@@ -1292,17 +1287,17 @@ function useAccountDashboardSettingsModel({
                 <Button
                   variant="secondary"
                   onClick={() => void handleCancelDeleteAccountType()}
-                  disabled={isLoading}
+                  disabled={isSaving}
                 >
                   {t('button.cancel')}
                 </Button>
                 <Button
                   variant="primary"
                   onClick={() => void handleConfirmDeleteAccountType()}
-                  disabled={isLoading}
+                  disabled={isSaving}
                   className="delete-confirm-button"
                 >
-                  {isLoading
+                  {isSaving
                     ? t('account.settings.delete.button.deleting')
                     : t('account.settings.delete.button.delete')}
                 </Button>
@@ -1314,7 +1309,7 @@ function useAccountDashboardSettingsModel({
     ) : null;
 
   return {
-    isLoading,
+    isSaving,
     customAccountTypes,
     isAddingNewType,
     newTypeName,
@@ -1349,7 +1344,7 @@ function AvailableAccountTypesSection({
   registerTarget?: (element: HTMLElement | null) => void;
 }) {
   const {
-    isLoading,
+    isSaving,
     customAccountTypes,
     isAddingNewType,
     newTypeName,
@@ -1402,7 +1397,7 @@ function AvailableAccountTypesSection({
                                 name: formatAccountType(type),
                               }
                             )}
-                            disabled={isLoading}
+                            disabled={isSaving}
                           >
                             ×
                           </button>
@@ -1434,13 +1429,13 @@ function AvailableAccountTypesSection({
                             handleCancelAddAccountType();
                           }
                         }}
-                        disabled={isLoading}
+                        disabled={isSaving}
                         className="account-type-name-input"
                       />
                       <div className="add-account-type-buttons">
                         <button
                           onClick={() => void handleAddAccountType()}
-                          disabled={isLoading || !newTypeName.trim()}
+                          disabled={isSaving || !newTypeName.trim()}
                           className="add-account-type-confirm-btn"
                           aria-label={t('button.add')}
                         >
@@ -1448,7 +1443,7 @@ function AvailableAccountTypesSection({
                         </button>
                         <button
                           onClick={() => void handleCancelAddAccountType()}
-                          disabled={isLoading}
+                          disabled={isSaving}
                           className="add-account-type-cancel-btn"
                           aria-label={t('button.cancel')}
                         >
@@ -1459,7 +1454,7 @@ function AvailableAccountTypesSection({
                   ) : (
                     <button
                       onClick={() => void handleStartAddAccountType()}
-                      disabled={isLoading}
+                      disabled={isSaving}
                       className="add-account-type-btn clickable-icon"
                       aria-label={t(
                         'account.settings.section.available-types.add-aria'
@@ -1477,7 +1472,7 @@ function AvailableAccountTypesSection({
                 </div>
                 <button
                   onClick={() => void handleStartAddAccountType()}
-                  disabled={isLoading}
+                  disabled={isSaving}
                   className="add-account-type-btn clickable-icon"
                   aria-label={t(
                     'account.settings.section.available-types.add-aria'
@@ -1720,7 +1715,7 @@ function SettingsModalActions({
   model: AccountDashboardSettingsModel;
   onModalClose: () => void;
 }) {
-  const { isLoading, handleSave } = model;
+  const { isSaving, handleSave } = model;
 
   return (
     <>
@@ -1729,7 +1724,7 @@ function SettingsModalActions({
         <Button
           variant="secondary"
           onClick={onModalClose}
-          disabled={isLoading}
+          disabled={isSaving}
           className="cancel-button"
         >
           {t('button.cancel')}
@@ -1737,10 +1732,10 @@ function SettingsModalActions({
         <Button
           variant="primary"
           onClick={() => void handleSave()}
-          disabled={isLoading}
+          disabled={isSaving}
           className="save-settings-button"
         >
-          {isLoading
+          {isSaving
             ? t('account.settings.button.saving')
             : t('account.settings.button.save')}
         </Button>

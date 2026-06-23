@@ -831,11 +831,15 @@ export const ImageWidget: React.FC<ImageWidgetProps> = React.memo(
           <ImageCarousel
             images={images}
             altPrefix={t('widget.images.alt-prefix')}
-            showThumbnails={images.length > 1}
-            showCounter={images.length > 1}
-            enableDelete={!preview}
-            onDeleteImage={handleDeleteImage}
-            enableFullscreen={true}
+            displayOptions={{
+              showThumbnails: images.length > 1,
+              showCounter: images.length > 1,
+              enableFullscreen: true,
+            }}
+            deleteOptions={{
+              enabled: !preview,
+              onDeleteImage: handleDeleteImage,
+            }}
             useResolveMediaPath={true}
             sourcePath={filePath}
             className={images.length === 1 ? 'single-image-carousel' : ''}

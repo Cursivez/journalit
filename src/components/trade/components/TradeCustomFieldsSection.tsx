@@ -359,15 +359,17 @@ export const TradeCustomFieldsSection: React.FC<TradeCustomFieldsSectionProps> =
     const rows = useMemo(() => {
       const dateFormat = plugin?.settings.trade.dateFormat;
 
-      const entries = fields
-        .map((field) => {
-          const rawValue = getCustomFieldRawValue(
-            data as Record<string, unknown>,
-            field
-          );
-          return getDisplayEntry(field, rawValue, dateFormat);
-        })
-        .filter((entry): entry is DisplayEntry => Boolean(entry));
+      const entries = fields.reduce<DisplayEntry[]>((acc, field) => {
+        const rawValue = getCustomFieldRawValue(
+          data as Record<string, unknown>,
+          field
+        );
+        const entry = getDisplayEntry(field, rawValue, dateFormat);
+        if (entry) {
+          acc.push(entry);
+        }
+        return acc;
+      }, []);
 
       return buildDisplayRows(entries);
     }, [data, fields, plugin?.settings.trade.dateFormat]);

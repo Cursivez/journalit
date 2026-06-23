@@ -45,9 +45,12 @@ const sanitizeCustomFieldFilters = (
   customFields: CustomFieldDefinition[]
 ): CustomFieldFilterSelections => {
   const filterableFieldIds = new Set(
-    customFields
-      .filter((field) => isDiscreteCustomFieldFilterable(field))
-      .map((field) => field.id)
+    customFields.reduce((acc: string[], field) => {
+      if (isDiscreteCustomFieldFilterable(field)) {
+        acc.push(field.id);
+      }
+      return acc;
+    }, [])
   );
 
   return Object.fromEntries(

@@ -243,20 +243,28 @@ export class BacktestTradeService extends CustomDataService {
             positionSize: data.positionSize,
             direction: data.direction,
             
-            entries: data.entries
-              ?.filter((entry) => entry.time instanceof Date)
-              .map((entry) => ({
-                time: this.formatDateForFrontmatter(entry.time!),
-                price: entry.price,
-                size: entry.size,
-              })),
-            exits: data.exits
-              ?.filter((exit) => exit.time instanceof Date)
-              .map((exit) => ({
-                time: this.formatDateForFrontmatter(exit.time!),
-                price: exit.price,
-                size: exit.size,
-              })),
+            entries: data.entries?.flatMap((entry) =>
+              entry.time instanceof Date
+                ? [
+                    {
+                      time: this.formatDateForFrontmatter(entry.time),
+                      price: entry.price,
+                      size: entry.size,
+                    },
+                  ]
+                : []
+            ),
+            exits: data.exits?.flatMap((exit) =>
+              exit.time instanceof Date
+                ? [
+                    {
+                      time: this.formatDateForFrontmatter(exit.time),
+                      price: exit.price,
+                      size: exit.size,
+                    },
+                  ]
+                : []
+            ),
             
             setupIds: data.setupIds,
 
@@ -288,9 +296,10 @@ export class BacktestTradeService extends CustomDataService {
               data.customTags &&
               Array.isArray(data.customTags) &&
               data.customTags.length > 0
-                ? data.customTags
-                    .map((tag) => String(tag).trim())
-                    .filter((tag) => tag.length > 0)
+                ? data.customTags.flatMap((tag) => {
+                    const normalizedTag = String(tag).trim();
+                    return normalizedTag ? [normalizedTag] : [];
+                  })
                 : [],
           };
 
@@ -450,20 +459,28 @@ export class BacktestTradeService extends CustomDataService {
         positionSize: data.positionSize,
         direction: data.direction,
         
-        entries: data.entries
-          ?.filter((entry) => entry.time instanceof Date)
-          .map((entry) => ({
-            time: this.formatDateForFrontmatter(entry.time!),
-            price: entry.price,
-            size: entry.size,
-          })),
-        exits: data.exits
-          ?.filter((exit) => exit.time instanceof Date)
-          .map((exit) => ({
-            time: this.formatDateForFrontmatter(exit.time!),
-            price: exit.price,
-            size: exit.size,
-          })),
+        entries: data.entries?.flatMap((entry) =>
+          entry.time instanceof Date
+            ? [
+                {
+                  time: this.formatDateForFrontmatter(entry.time),
+                  price: entry.price,
+                  size: entry.size,
+                },
+              ]
+            : []
+        ),
+        exits: data.exits?.flatMap((exit) =>
+          exit.time instanceof Date
+            ? [
+                {
+                  time: this.formatDateForFrontmatter(exit.time),
+                  price: exit.price,
+                  size: exit.size,
+                },
+              ]
+            : []
+        ),
         
         setupIds: data.setupIds,
 
@@ -496,9 +513,10 @@ export class BacktestTradeService extends CustomDataService {
           data.customTags &&
           Array.isArray(data.customTags) &&
           data.customTags.length > 0
-            ? data.customTags
-                .map((tag) => String(tag).trim())
-                .filter((tag) => tag.length > 0)
+            ? data.customTags.flatMap((tag) => {
+                const normalizedTag = String(tag).trim();
+                return normalizedTag ? [normalizedTag] : [];
+              })
             : [],
       };
 

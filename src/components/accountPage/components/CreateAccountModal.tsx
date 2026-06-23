@@ -167,14 +167,14 @@ function CreateAccountErrorMessage({
 interface AccountIdentityFieldsProps {
   account: CreateAccountFormState;
   customAccountTypes: string[];
-  isLoading: boolean;
+  isSaving: boolean;
   onChange: (account: CreateAccountFormState) => void;
 }
 
 function AccountIdentityFields({
   account,
   customAccountTypes,
-  isLoading,
+  isSaving,
   onChange,
 }: AccountIdentityFieldsProps) {
   return (
@@ -196,7 +196,7 @@ function AccountIdentityFields({
               onChange({ ...account, name: e.target.value })
             }
             placeholder={t('account.create.placeholder.name')}
-            disabled={isLoading}
+            disabled={isSaving}
           />
         </div>
       </div>
@@ -218,7 +218,7 @@ function AccountIdentityFields({
                 accountType: e.target.value,
               })
             }
-            disabled={isLoading}
+            disabled={isSaving}
           >
             {customAccountTypes.length > 0 ? (
               customAccountTypes.map((type) => (
@@ -248,13 +248,13 @@ function AccountIdentityFields({
 
 interface InitialBalanceDateFieldsProps {
   account: CreateAccountFormState;
-  isLoading: boolean;
+  isSaving: boolean;
   onChange: (account: CreateAccountFormState) => void;
 }
 
 function InitialBalanceDateFields({
   account,
-  isLoading,
+  isSaving,
   onChange,
 }: InitialBalanceDateFieldsProps) {
   return (
@@ -287,7 +287,7 @@ function InitialBalanceDateFields({
             min="0"
             step="100"
             placeholder="0"
-            disabled={isLoading}
+            disabled={isSaving}
           />
         </div>
       </div>
@@ -321,7 +321,7 @@ function InitialBalanceDateFields({
                 onChange({ ...account, createdDate: '' });
               }
             }}
-            disabled={isLoading}
+            disabled={isSaving}
           />
         </div>
       </div>
@@ -331,13 +331,13 @@ function InitialBalanceDateFields({
 
 interface LiveBalanceCurrencyFieldsProps {
   account: CreateAccountFormState;
-  isLoading: boolean;
+  isSaving: boolean;
   onChange: (account: CreateAccountFormState) => void;
 }
 
 function LiveBalanceCurrencyFields({
   account,
-  isLoading,
+  isSaving,
   onChange,
 }: LiveBalanceCurrencyFieldsProps) {
   return (
@@ -363,7 +363,7 @@ function LiveBalanceCurrencyFields({
             }
             step="100"
             placeholder={String(account.initialBalance || 0)}
-            disabled={isLoading}
+            disabled={isSaving}
           />
         </div>
       </div>
@@ -385,7 +385,7 @@ function LiveBalanceCurrencyFields({
                 currency: parseCuratedCurrencyCode(e.target.value),
               })
             }
-            disabled={isLoading}
+            disabled={isSaving}
           >
             {Object.values(CURRENCY_CONFIGS).map((config) => (
               <option key={config.code} value={config.code}>
@@ -401,11 +401,11 @@ function LiveBalanceCurrencyFields({
 
 interface DrawdownFieldsProps {
   account: CreateAccountFormState;
-  isLoading: boolean;
+  isSaving: boolean;
   onChange: (account: CreateAccountFormState) => void;
 }
 
-function DrawdownFields({ account, isLoading, onChange }: DrawdownFieldsProps) {
+function DrawdownFields({ account, isSaving, onChange }: DrawdownFieldsProps) {
   return (
     <>
       <div className="setting-item journalit-setting-item--full-width">
@@ -433,7 +433,7 @@ function DrawdownFields({ account, isLoading, onChange }: DrawdownFieldsProps) {
                         : account.drawdownAmount,
                   })
                 }
-                disabled={isLoading}
+                disabled={isSaving}
               >
                 {t(option.labelKey)}
               </button>
@@ -471,7 +471,7 @@ function DrawdownFields({ account, isLoading, onChange }: DrawdownFieldsProps) {
               min="0"
               step="100"
               placeholder="0"
-              disabled={isLoading}
+              disabled={isSaving}
             />
           </div>
         </div>
@@ -482,7 +482,7 @@ function DrawdownFields({ account, isLoading, onChange }: DrawdownFieldsProps) {
 
 interface ProfitTargetFieldsProps {
   account: CreateAccountFormState;
-  isLoading: boolean;
+  isSaving: boolean;
   profitTargetDateError: string | null;
   onProfitTargetDateErrorChange: (error: string | null) => void;
   onChange: (account: CreateAccountFormState) => void;
@@ -490,7 +490,7 @@ interface ProfitTargetFieldsProps {
 
 function ProfitTargetFields({
   account,
-  isLoading,
+  isSaving,
   profitTargetDateError,
   onProfitTargetDateErrorChange,
   onChange,
@@ -509,7 +509,7 @@ function ProfitTargetFields({
                 }
               }}
               ariaLabel={t('account.profit-target.enable')}
-              disabled={isLoading}
+              disabled={isSaving}
             />
             <div className="setting-item-info">
               <div className="setting-item-name">
@@ -549,7 +549,7 @@ function ProfitTargetFields({
               min="0"
               step="1"
               placeholder="0"
-              disabled={isLoading}
+              disabled={isSaving}
             />
           </div>
         </div>
@@ -578,7 +578,7 @@ function ProfitTargetFields({
                       ),
                     })
                   }
-                  disabled={isLoading}
+                  disabled={isSaving}
                 >
                   <option value={ProfitTargetType.ABSOLUTE}>
                     {t('account.profit-target.type.absolute')}
@@ -627,7 +627,7 @@ function ProfitTargetFields({
                       : '100'
                   }
                   placeholder="0"
-                  disabled={isLoading}
+                  disabled={isSaving}
                 />
               </div>
             </div>
@@ -653,7 +653,7 @@ function ProfitTargetFields({
                     onChange({ ...account, profitTargetDate: null });
                   }
                 }}
-                disabled={isLoading}
+                disabled={isSaving}
               />
               {profitTargetDateError && (
                 <div className="error-message-inline">
@@ -689,25 +689,25 @@ const startOfDay = (date: Date): Date =>
 interface CopyTradingFieldsProps {
   account: CreateAccountFormState;
   plugin: JournalitPlugin;
-  isLoading: boolean;
+  isSaving: boolean;
   onChange: (account: CreateAccountFormState) => void;
 }
 
 function CopyTradingFields({
   account,
   plugin,
-  isLoading,
+  isSaving,
   onChange,
 }: CopyTradingFieldsProps) {
   const accountMetadata = plugin.settings.account?.accountMetadata ?? {};
   const baseAccountOptions = Object.values(accountMetadata)
-    .filter((metadata) => !hasActiveCopyTradingPeriod(metadata))
-    .filter(
-      (metadata) =>
-        (metadata.currency || plugin.settings.general?.currency) ===
+    .flatMap((metadata) =>
+      !hasActiveCopyTradingPeriod(metadata) &&
+      (metadata.currency || plugin.settings.general?.currency) ===
         account.currency
+        ? [metadata.name]
+        : []
     )
-    .map((metadata) => metadata.name)
     .sort((a, b) => a.localeCompare(b));
 
   return (
@@ -735,7 +735,7 @@ function CopyTradingFields({
             })
           }
           ariaLabel={t('account.copy-trading.enable')}
-          disabled={isLoading}
+          disabled={isSaving}
         />
         <div className="setting-item-name journalit-checkbox-setting-label">
           {t('account.copy-trading.enable')}
@@ -763,7 +763,7 @@ function CopyTradingFields({
                       copyTradingBaseAccount: e.target.value,
                     })
                   }
-                  disabled={isLoading}
+                  disabled={isSaving}
                 >
                   <option value="">
                     {t('account.copy-trading.base-account-placeholder')}
@@ -798,7 +798,7 @@ function CopyTradingFields({
                       copyTradingMultiplier: Number(e.target.value),
                     })
                   }
-                  disabled={isLoading}
+                  disabled={isSaving}
                 />
               </div>
             </div>
@@ -816,7 +816,7 @@ function CopyTradingFields({
                     })
                   }
                   ariaLabel={t('account.copy-trading.all-history')}
-                  disabled={isLoading}
+                  disabled={isSaving}
                 />
                 <div className="setting-item-name journalit-checkbox-setting-label">
                   {t('account.copy-trading.all-history')}
@@ -842,7 +842,7 @@ function CopyTradingFields({
                         ),
                       })
                     }
-                    disabled={isLoading}
+                    disabled={isSaving}
                   />
                 </div>
               </div>
@@ -867,7 +867,7 @@ function useCreateAccountModalModel({
   onModalClose,
   navigateOnSave = true,
 }: CreateAccountModalModelProps) {
-  const [isLoading, setIsLoading] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const [customAccountTypes, setCustomAccountTypes] = useState<string[]>([]);
   const [profitTargetDateError, setProfitTargetDateError] = useState<
     string | null
@@ -951,7 +951,7 @@ function useCreateAccountModalModel({
 
   const handleCreate = async () => {
     try {
-      setIsLoading(true);
+      setIsSaving(true);
       setFormError(null);
 
       
@@ -1140,12 +1140,12 @@ function useCreateAccountModalModel({
       });
       setFormError(message);
     } finally {
-      setIsLoading(false);
+      setIsSaving(false);
     }
   };
 
   return {
-    isLoading,
+    isSaving,
     customAccountTypes,
     profitTargetDateError,
     formError,
@@ -1161,7 +1161,7 @@ const CreateAccountModalContent: React.FC<
   CreateAccountModalProps & { onModalClose: () => void }
 > = ({ plugin, onSave, onModalClose, navigateOnSave = true }) => {
   const {
-    isLoading,
+    isSaving,
     customAccountTypes,
     profitTargetDateError,
     formError,
@@ -1183,31 +1183,31 @@ const CreateAccountModalContent: React.FC<
       <AccountIdentityFields
         account={newAccount}
         customAccountTypes={customAccountTypes}
-        isLoading={isLoading}
+        isSaving={isSaving}
         onChange={setNewAccount}
       />
 
       <InitialBalanceDateFields
         account={newAccount}
-        isLoading={isLoading}
+        isSaving={isSaving}
         onChange={setNewAccount}
       />
 
       <LiveBalanceCurrencyFields
         account={newAccount}
-        isLoading={isLoading}
+        isSaving={isSaving}
         onChange={setNewAccount}
       />
 
       <DrawdownFields
         account={newAccount}
-        isLoading={isLoading}
+        isSaving={isSaving}
         onChange={setNewAccount}
       />
 
       <ProfitTargetFields
         account={newAccount}
-        isLoading={isLoading}
+        isSaving={isSaving}
         profitTargetDateError={profitTargetDateError}
         onProfitTargetDateErrorChange={setProfitTargetDateError}
         onChange={setNewAccount}
@@ -1216,7 +1216,7 @@ const CreateAccountModalContent: React.FC<
       <CopyTradingFields
         account={newAccount}
         plugin={plugin}
-        isLoading={isLoading}
+        isSaving={isSaving}
         onChange={setNewAccount}
       />
 
@@ -1225,7 +1225,7 @@ const CreateAccountModalContent: React.FC<
         <Button
           variant="secondary"
           onClick={onModalClose}
-          disabled={isLoading}
+          disabled={isSaving}
           className="cancel-button"
         >
           {t('button.cancel')}
@@ -1233,10 +1233,10 @@ const CreateAccountModalContent: React.FC<
         <Button
           variant="primary"
           onClick={handleCreate}
-          disabled={isLoading}
+          disabled={isSaving}
           className="create-account-button accent-button modal-save-accent"
         >
-          {isLoading
+          {isSaving
             ? t('account.create.button.creating')
             : t('account.create.button.create')}
         </Button>

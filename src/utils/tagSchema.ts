@@ -66,18 +66,20 @@ export function generateAccountTag(filePath: string): string {
 
 
 export function generateSetupTags(setups: string[]): string[] {
-  return setups
-    .filter((setup) => setup?.trim())
-    .map((setup) => `${TAG_BUCKETS.SETUP}/${formatTagForYAML(setup)}`)
-    .filter((tag) => !tag.endsWith('/')); 
+  return setups.flatMap((setup) => {
+    if (!setup?.trim()) return [];
+    const tag = `${TAG_BUCKETS.SETUP}/${formatTagForYAML(setup)}`;
+    return tag.endsWith('/') ? [] : [tag];
+  });
 }
 
 
 export function generateMistakeTags(mistakes: string[]): string[] {
-  return mistakes
-    .filter((mistake) => mistake?.trim())
-    .map((mistake) => `${TAG_BUCKETS.MISTAKE}/${formatTagForYAML(mistake)}`)
-    .filter((tag) => !tag.endsWith('/')); 
+  return mistakes.flatMap((mistake) => {
+    if (!mistake?.trim()) return [];
+    const tag = `${TAG_BUCKETS.MISTAKE}/${formatTagForYAML(mistake)}`;
+    return tag.endsWith('/') ? [] : [tag];
+  });
 }
 
 

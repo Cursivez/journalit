@@ -2,7 +2,8 @@
 
 import * as Obsidian from 'obsidian';
 import { App, PluginSettingTab, requireApiVersion } from 'obsidian';
-import React, { useEffect, useState } from 'react';
+import type { SettingControl, SettingDefinitionItem } from 'obsidian';
+import React, { useState } from 'react';
 import { createRoot, Root } from 'react-dom/client';
 import { eventBus } from '../services/events';
 import { t } from '../lang/helpers';
@@ -33,7 +34,7 @@ interface NativeSettingDefinitionPage {
 interface NativeSettingDefinitionGroup {
   type: 'group';
   heading: string;
-  items: NativeSettingDefinitionItem[];
+  items: NativeSettingGroupItem[];
 }
 
 interface NativeSettingDefinitionRender {
@@ -52,42 +53,17 @@ interface NativeSettingDefinitionControl {
   control: NativeSettingControl;
 }
 
-type NativeSettingControl =
-  | {
-      type: 'toggle';
-      key: string;
-      defaultValue?: boolean;
-      disabled?: boolean | (() => boolean);
-    }
-  | {
-      type: 'text';
-      key: string;
-      placeholder?: string;
-      defaultValue?: string;
-      validate?: (value: string) => string | void;
-    }
-  | {
-      type: 'number';
-      key: string;
-      min?: number;
-      max?: number;
-      step?: number;
-      placeholder?: string;
-      defaultValue?: number;
-      validate?: (value: number) => string | void;
-    }
-  | {
-      type: 'dropdown';
-      key: string;
-      defaultValue?: string;
-      options: Record<string, string>;
-    };
+type NativeSettingControl = SettingControl<string>;
+
+type NativeSettingGroupItem =
+  | NativeSettingDefinitionPage
+  | NativeSettingDefinitionRender
+  | NativeSettingDefinitionControl;
 
 type NativeSettingDefinitionItem =
   | NativeSettingDefinitionPage
   | NativeSettingDefinitionGroup
-  | NativeSettingDefinitionRender
-  | NativeSettingDefinitionControl;
+  | NativeSettingGroupItem;
 
 interface NativeSettingRenderTarget {
   settingEl: HTMLElement;
@@ -124,35 +100,37 @@ export class JournalitSettingsTab extends PluginSettingTab {
     this.initialTab = tabId;
   }
 
-  getSettingDefinitions(): NativeSettingDefinitionItem[] {
+  getSettingDefinitions(): SettingDefinitionItem<string>[] {
     if (!requireApiVersion('1.13.0')) {
       return [];
     }
 
-    return getSettingsPageDefinitions().map((definition) => ({
-      type: 'page',
-      name: definition.label,
-      desc: definition.desc,
-      aliases: definition.aliases,
-      ...(definition.createItems
-        ? { items: definition.createItems(this) }
-        : {
-            page: () =>
-              createNativeReactSettingsPage({
-                title: definition.label,
-                display: (containerEl) => {
-                  this.renderReactSettings(
-                    containerEl,
-                    definition.tabId,
-                    false
-                  );
-                },
-                hide: (containerEl) => {
-                  this.unmountReactSettings(containerEl);
-                },
-              }),
-          }),
-    }));
+    return getSettingsPageDefinitions().map<SettingDefinitionItem<string>>(
+      (definition) => ({
+        type: 'page',
+        name: definition.label,
+        desc: definition.desc,
+        aliases: definition.aliases,
+        ...(definition.createItems
+          ? { items: definition.createItems(this) }
+          : {
+              page: () =>
+                createNativeReactSettingsPage({
+                  title: definition.label,
+                  display: (containerEl) => {
+                    this.renderReactSettings(
+                      containerEl,
+                      definition.tabId,
+                      false
+                    );
+                  },
+                  hide: (containerEl) => {
+                    this.unmountReactSettings(containerEl);
+                  },
+                }),
+            }),
+      })
+    );
   }
 
   getControlValue(key: string): unknown {
@@ -335,17 +313,18 @@ const SettingsTabContent: React.FC<SettingsTabContentProps> = React.memo(
     initialTab = SETTINGS_TAB_IDS.GENERAL,
     showTabs = true,
   }: SettingsTabContentProps) => {
-    const [activeTab, setActiveTab] = useState(initialTab);
-
+    const [tabState, setTabState] = useState(() => ({
+      initialTab,
+      activeTab: initialTab,
+    }));
     
     
-    useEffect(() => {
-      setActiveTab(initialTab);
-    }, [initialTab]);
+    const activeTab =
+      tabState.initialTab === initialTab ? tabState.activeTab : initialTab;
 
     
     const handleTabChange = (newTab: string) => {
-      setActiveTab(newTab);
+      setTabState({ initialTab, activeTab: newTab });
     };
 
     

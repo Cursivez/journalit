@@ -10,7 +10,7 @@ export type ViewLevel =
   | 'days'
   | 'trades';
 
-export type NodeType =
+type NodeType =
   | 'root'
   | 'year'
   | 'quarter'

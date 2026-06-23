@@ -4,7 +4,7 @@ import { logger } from '../../utils/logger';
 import React, {
   ReactElement,
   useCallback,
-  useState,
+  useReducer,
   useRef,
   useEffect,
 } from 'react';
@@ -35,6 +35,30 @@ interface ContainerDimensions {
   height: number;
 }
 
+interface ChartMeasurementState {
+  dimensions: ContainerDimensions;
+  isInitialized: boolean;
+}
+
+type ChartMeasurementAction =
+  | { type: 'measured'; width: number; height: number }
+  | { type: 'fallback' };
+
+const chartMeasurementReducer = (
+  state: ChartMeasurementState,
+  action: ChartMeasurementAction
+): ChartMeasurementState => {
+  const nextDimensions =
+    action.type === 'fallback'
+      ? { width: MIN_CHART_WIDTH, height: MIN_CHART_HEIGHT }
+      : { width: action.width, height: action.height };
+  return state.dimensions.width === nextDimensions.width &&
+    state.dimensions.height === nextDimensions.height &&
+    state.isInitialized
+    ? state
+    : { dimensions: nextDimensions, isInitialized: true };
+};
+
 
 export const ChartBase = React.memo<ChartBaseProps>(
   ({
@@ -49,11 +73,14 @@ export const ChartBase = React.memo<ChartBaseProps>(
   }) => {
     const internalContainerRef = useRef<HTMLDivElement>(null);
     const containerRef = chartRef ?? internalContainerRef;
-    const [dimensions, setDimensions] = useState<ContainerDimensions>({
-      width: 0,
-      height: 0,
-    });
-    const [isInitialized, setIsInitialized] = useState(false);
+    const [measurement, dispatchMeasurement] = useReducer(
+      chartMeasurementReducer,
+      {
+        dimensions: { width: 0, height: 0 },
+        isInitialized: false,
+      }
+    );
+    const { dimensions, isInitialized } = measurement;
 
     
     const heightValue = typeof height === 'number' ? `${height}px` : height;
@@ -102,12 +129,7 @@ export const ChartBase = React.memo<ChartBaseProps>(
         const width = Math.floor(rect.width);
         const height = Math.floor(rect.height);
         if (width > 0 && height > 0) {
-          setDimensions((previous) =>
-            previous.width === width && previous.height === height
-              ? previous
-              : { width, height }
-          );
-          setIsInitialized(true);
+          dispatchMeasurement({ type: 'measured', width, height });
         }
       };
 
@@ -127,8 +149,7 @@ export const ChartBase = React.memo<ChartBaseProps>(
         console.warn(
           'ResizeObserver not available, falling back to immediate render'
         );
-        setDimensions({ width: MIN_CHART_WIDTH, height: MIN_CHART_HEIGHT });
-        setIsInitialized(true);
+        dispatchMeasurement({ type: 'fallback' });
         return;
       }
 
@@ -138,14 +159,7 @@ export const ChartBase = React.memo<ChartBaseProps>(
         for (const entry of entries) {
           const width = Math.floor(entry.contentRect.width);
           const height = Math.floor(entry.contentRect.height);
-          setDimensions((previous) =>
-            previous.width === width && previous.height === height
-              ? previous
-              : { width, height }
-          );
-
-          
-          setIsInitialized((previous) => previous || true);
+          dispatchMeasurement({ type: 'measured', width, height });
 
           if (DEBUG_CHARTS) {
             logger.debug('[ChartBase] resize', {

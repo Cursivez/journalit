@@ -1,6 +1,6 @@
 
 
-import React, { useEffect, useCallback, useMemo } from 'react';
+import React, { useEffect, useCallback, useMemo, useRef } from 'react';
 import { NumberInput, FastDateTimeInput } from '../../../core';
 import { Button } from '../../../ui/Button';
 import ToggleSwitch from '../../../ui/ToggleSwitch';
@@ -24,6 +24,25 @@ import { t } from '../../../../lang/helpers';
 import { normalizeTradeExecution } from '../../../../services/trade/core/TradeExecutionNormalization';
 
 type TransactionFieldValue = number | Date | string | undefined | boolean;
+
+let nextTransactionRowKey = 0;
+
+const createTransactionRowKey = (prefix: string): string =>
+  `${prefix}-${nextTransactionRowKey++}`;
+
+const getTransactionRowKeys = (
+  keys: string[],
+  prefix: string,
+  count: number
+): string[] => {
+  while (keys.length < count) {
+    keys.push(createTransactionRowKey(prefix));
+  }
+  if (keys.length > count) {
+    keys.length = count;
+  }
+  return keys;
+};
 
 const normalizeTransactionFieldValue = (
   field: string,
@@ -110,6 +129,7 @@ interface EntriesSectionProps {
   pricePrecision: number;
   sizePrecision: number;
   totalEntrySize: number;
+  entryRowKeys: string[];
   blankTimeDefaultDate: Date;
   getPositionSizeLabel: () => string;
   onAddEntry: () => void;
@@ -133,6 +153,7 @@ function EntriesSection({
   pricePrecision,
   sizePrecision,
   totalEntrySize,
+  entryRowKeys,
   blankTimeDefaultDate,
   getPositionSizeLabel,
   onAddEntry,
@@ -150,7 +171,7 @@ function EntriesSection({
       </h4>
 
       {(data.entries || []).map((entry, index) => (
-        <div key={`entry-${index}`} className="entry-row">
+        <div key={entryRowKeys[index]} className="entry-row">
           <div className="entry-index">{index + 1}</div>
           <div className="entry-fields">
             <div className="time-field-wrapper">
@@ -278,6 +299,9 @@ function useEntryExitFieldsModel({
   const sizePrecision = getSizePrecision(data.assetType);
   const supportsDividends = shouldShowTradeDividends(data);
   const blankTimeDefaultDate = useMemo(() => new Date(), []);
+  const entryRowKeysRef = useRef<string[]>([]);
+  const exitRowKeysRef = useRef<string[]>([]);
+  const dividendRowKeysRef = useRef<string[]>([]);
 
   
   const handleAddEntry = () => {
@@ -298,6 +322,7 @@ function useEntryExitFieldsModel({
   const handleRemoveEntry = (index: number) => {
     const entries = [...(data.entries || [])];
     entries.splice(index, 1);
+    entryRowKeysRef.current.splice(index, 1);
     onChange('entries', entries);
 
     
@@ -322,6 +347,7 @@ function useEntryExitFieldsModel({
   const handleRemoveExit = (index: number) => {
     const exits = [...(data.exits || [])];
     exits.splice(index, 1);
+    exitRowKeysRef.current.splice(index, 1);
     onChange('exits', exits);
 
     
@@ -342,6 +368,7 @@ function useEntryExitFieldsModel({
   const handleRemoveDividend = (index: number) => {
     const dividends = [...(data.dividends || [])];
     dividends.splice(index, 1);
+    dividendRowKeysRef.current.splice(index, 1);
     onChange('dividends', dividends);
   };
 
@@ -700,6 +727,21 @@ function useEntryExitFieldsModel({
     (sum, dividend) => sum + (dividend.amount || 0),
     0
   );
+  const entryRowKeys = getTransactionRowKeys(
+    entryRowKeysRef.current,
+    'entry',
+    data.entries?.length || 0
+  );
+  const exitRowKeys = getTransactionRowKeys(
+    exitRowKeysRef.current,
+    'exit',
+    data.exits?.length || 0
+  );
+  const dividendRowKeys = getTransactionRowKeys(
+    dividendRowKeysRef.current,
+    'dividend',
+    data.dividends?.length || 0
+  );
 
   
   useEffect(() => {
@@ -728,6 +770,9 @@ function useEntryExitFieldsModel({
     handleExitPriceChangeWithDollar,
     getPositionSizeLabel,
     blankTimeDefaultDate,
+    entryRowKeys,
+    exitRowKeys,
+    dividendRowKeys,
     totalEntrySize,
     remainingSize,
     totalDividends,
@@ -760,6 +805,9 @@ const EntryExitFieldsComponent: React.FC<EntryExitFieldsProps> = ({
     handleExitPriceChangeWithDollar,
     getPositionSizeLabel,
     blankTimeDefaultDate,
+    entryRowKeys,
+    exitRowKeys,
+    dividendRowKeys,
     totalEntrySize,
     remainingSize,
     totalDividends,
@@ -784,6 +832,7 @@ const EntryExitFieldsComponent: React.FC<EntryExitFieldsProps> = ({
         pricePrecision={pricePrecision}
         sizePrecision={sizePrecision}
         totalEntrySize={totalEntrySize}
+        entryRowKeys={entryRowKeys}
         blankTimeDefaultDate={blankTimeDefaultDate}
         getPositionSizeLabel={getPositionSizeLabel}
         onAddEntry={handleAddEntry}
@@ -803,7 +852,7 @@ const EntryExitFieldsComponent: React.FC<EntryExitFieldsProps> = ({
 
         
         {(data.exits || []).map((exit, index) => (
-          <div key={`exit-${index}`} className="exit-row">
+          <div key={exitRowKeys[index]} className="exit-row">
             <div className="exit-index">{index + 1}</div>
 
             <div className="exit-fields">
@@ -933,7 +982,7 @@ const EntryExitFieldsComponent: React.FC<EntryExitFieldsProps> = ({
           </h4>
 
           {(data.dividends || []).map((dividend, index) => (
-            <div key={`dividend-${index}`} className="dividend-row">
+            <div key={dividendRowKeys[index]} className="dividend-row">
               <div className="dividend-index">{index + 1}</div>
 
               <div className="dividend-fields">

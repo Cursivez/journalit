@@ -648,12 +648,14 @@ export class TradeNoteRenderer extends BaseComponentRenderer {
 
     
     if (Array.isArray(images)) {
-      return images
-        .map((img) => {
-          if (typeof img !== 'string') return String(img);
-          return img.replace(/['"`]/g, '').trim();
-        })
-        .filter(Boolean);
+      return images.flatMap((img) => {
+        if (typeof img !== 'string') {
+          const trimmed = String(img).replace(/['`"]/g, '').trim();
+          return trimmed ? [trimmed] : [];
+        }
+        const trimmed = img.replace(/['`"]/g, '').trim();
+        return trimmed ? [trimmed] : [];
+      });
     }
 
     
@@ -666,10 +668,10 @@ export class TradeNoteRenderer extends BaseComponentRenderer {
         const trimmedStr = images.slice(1, -1).trim();
         if (!trimmedStr) return [];
 
-        return trimmedStr
-          .split(',')
-          .map((item) => item.trim().replace(/['"`]/g, ''))
-          .filter(Boolean);
+        return trimmedStr.split(',').flatMap((item) => {
+          const trimmed = item.trim().replace(/['`"]/g, '');
+          return trimmed ? [trimmed] : [];
+        });
       } catch (e) {
         console.error('[TradeNote] Failed to parse images string:', e);
         return [images.replace(/['"`]/g, '').trim()];

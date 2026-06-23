@@ -1256,6 +1256,15 @@ const en = {
   'dashboard.widgets.hourly-performance.tooltip.win-rate-label': 'Win Rate',
   'dashboard.widgets.hourly-performance.tooltip.win-rate':
     'Win Rate: {rate} ({wins}W / {losses}L)',
+  'dashboard.widgets.hourly-performance.bucket-aria': 'Bucket size',
+  'dashboard.widgets.hourly-performance.bucket-option': '{minutes}m',
+  'dashboard.widgets.hourly-performance.metric-aria': 'Metric',
+  'dashboard.widgets.hourly-performance.metric.total': 'Total',
+  'dashboard.widgets.hourly-performance.metric.average': 'Average',
+  'dashboard.widgets.hourly-performance.metric.total-pnl': 'Total P&L',
+  'dashboard.widgets.hourly-performance.metric.avg-pnl': 'Avg P&L',
+  'dashboard.widgets.hourly-performance.metric.total-r': 'Total R',
+  'dashboard.widgets.hourly-performance.metric.avg-r': 'Avg R',
   'dashboard.widgets.rollingStats.title': 'Rolling Avg Win/Loss',
   'dashboard.widgets.rollingStats.period': 'Period',
   'dashboard.widgets.rollingStats.trades': '{count} Trades',
@@ -5657,9 +5666,23 @@ const en = {
   
   'home.widget.best-hours.title': 'Best Hours',
   'home.widget.best-hours.no-data': 'No trade data',
-  'home.widget.best-hours.period-aria': '{label}: {pnl} P&L, {count} trades',
+  'home.widget.best-hours.period-aria':
+    '{label}: {pnl} average P&L per trade, {count} trades',
   'home.widget.best-hours.trades-count': '{count} trades',
   'home.widget.best-hours.win-rate': '{rate}% win',
+  'home.widget.best-hours.win-rate-na': 'Win rate unavailable',
+  'home.widget.best-hours.days-count': '{count} days',
+  'home.widget.best-hours.avg-per-trade': 'avg/trade',
+  'home.widget.best-hours.strongest-entry-window': 'Strongest entry window',
+  'home.widget.best-hours.avg-summary': '{trades} trades · {days} days',
+  'home.widget.best-hours.hidden': 'Hidden',
+  'home.widget.best-hours.hidden-detail': 'Privacy mode',
+  'home.widget.best-hours.no-positive-window': 'No positive window',
+  'home.widget.best-hours.insufficient-history': 'Need more data',
+  'home.widget.best-hours.sample-requirement': '{count}/2 sampled windows',
+  'home.widget.best-hours.developing': 'developing',
+  'home.widget.best-hours.no-positive-detail': 'Sampled windows are negative',
+  'home.widget.best-hours.period-hidden-aria': 'Time-of-day performance hidden',
 
   
   'home.widget.aum.title': 'AUM',
@@ -6578,6 +6601,77 @@ const en = {
   'trade-import.preview.message.no-open-match':
     'No matching open trade found for close-only preview',
   'home.quick-links.quick-import': 'Quick Import',
+  'trade-import.restore.title': 'Restore imported trades from backend',
+  'trade-import.restore.description':
+    'Create missing local notes for backend imported trades in this vault. This does not create duplicate backend trades.',
+  'trade-import.restore.vault': 'Current vault identity: {vaultId}',
+  'trade-import.restore.load': 'Restore imported trades from backend',
+  'trade-import.restore.none':
+    'No missing imported trade projections found for this vault.',
+  'trade-import.restore.loaded': 'Found {count} restorable imported trades.',
+  'trade-import.restore.load-failed':
+    'Could not load restorable imported trades.',
+  'trade-import.restore.select-all': 'Select all',
+  'trade-import.restore.restore-selected': 'Restore selected ({count})',
+  'trade-import.restore.complete':
+    'Restored {written} imported trades; {failed} failed.',
+  'trade-import.restore.broker-label': 'Backend restore',
+  'trade-sync.source.metatrader': 'MetaTrader',
+  'trade-sync.source.trade-import': 'Trade Import',
+  'trade-sync.source.metatrader.description':
+    'Sync trades from MetaTrader reports uploaded through your FTP connection.',
+  'trade-sync.source.trade-import.description':
+    'Restore broker-file imports across vaults and recover missing local trade notes.',
+  'trade-sync.import.title': 'Trade Import Sync',
+  'trade-sync.import.description':
+    'Restore imported trades across vaults and recover missing local notes.',
+  'trade-sync.import.card.connection': 'Connection',
+  'trade-sync.import.card.backup': 'Import backup',
+  'trade-sync.import.card.restorable': 'Restorable trades',
+  'trade-sync.import.card.import': 'Trade Import',
+  'trade-sync.import.card.open-importer': 'Open importer',
+  'trade-sync.import.card.open-importer-desc': 'Import new broker files there',
+  'trade-sync.import.card.inventory-summary':
+    '{accounts} account(s) · {trades} trade(s)',
+  'trade-sync.import.action.check': 'Check',
+  'trade-sync.import.action.open-import': 'Open Trade Import',
+  'trade-sync.import.action.clear': 'Clear',
+  'trade-sync.import.action.select-all': 'Select all',
+  'trade-sync.import.action.restore-selected': 'Restore selected ({count})',
+  'trade-sync.import.action.create-local-account': 'Create local',
+  'trade-sync.import.action.create-local-account-title':
+    'Create a local account in this vault using the backend account name.',
+  'trade-sync.import.action.save-mapping': 'Save',
+  'trade-sync.import.action.save-mapping-title':
+    'Save this backend account to local account mapping.',
+  'trade-sync.import.action.mapped': 'Mapped',
+  'trade-sync.import.action.restore-account': 'Restore',
+  'trade-sync.import.action.restore-account-title':
+    'Restore missing local trade notes for this backend account.',
+  'trade-sync.import.action.restoring': 'Restoring…',
+  'trade-sync.import.label.account': 'Account',
+  'trade-sync.import.vault-pending': 'Vault pending',
+  'trade-sync.import.pending-acks': '{count} pending ACK(s)',
+  'trade-sync.import.recovery.title': 'Missing local notes',
+  'trade-sync.import.empty': 'This vault is up to date.',
+  'trade-sync.import.empty-accounts':
+    'No backed-up Trade Import accounts found yet.',
+  'trade-sync.import.account.restorable-count': '{count} restorable',
+  'trade-sync.import.account.synced-count': '{count} synced',
+  'trade-sync.import.account.missing-count': '{count} missing',
+  'trade-sync.import.account.issue-count': '{count} issue(s)',
+  'trade-sync.import.account.local-account': 'Local account',
+  'trade-sync.import.account.mapping-hint':
+    'Restored trades will be written to this local account.',
+  'trade-sync.import.notice.restored': 'Restored {count} imported trade(s).',
+  'trade-sync.import.notice.load-failed':
+    'Could not load Trade Import sync status.',
+  'trade-sync.import.notice.mapping-failed':
+    'Could not save Trade Import account mapping.',
+  'trade-sync.import.notice.create-account-failed':
+    'Could not create local account.',
+  'trade-sync.import.notice.restore-failed':
+    'Could not restore Trade Import account.',
 };
 
 export type TranslationKey = keyof typeof en;

@@ -119,6 +119,16 @@ export function buildTradeFrontmatter(
   if (data.tradeImportVersion !== undefined) {
     frontmatterData.tradeImportVersion = data.tradeImportVersion;
   }
+  if (data.tradeImportAccountId) {
+    frontmatterData.tradeImportAccountId = data.tradeImportAccountId;
+  }
+  if (data.tradeImportAccountBroker) {
+    frontmatterData.tradeImportAccountBroker = data.tradeImportAccountBroker;
+  }
+  if (data.tradeImportAccountDisplayName) {
+    frontmatterData.tradeImportAccountDisplayName =
+      data.tradeImportAccountDisplayName;
+  }
   if (data.sourceRows?.length) frontmatterData.sourceRows = data.sourceRows;
   if (data.orderId) frontmatterData.orderId = data.orderId;
   if (data.executionLedgerVersion) {
@@ -148,66 +158,68 @@ export function buildTradeFrontmatter(
   }
 
   if (data.entries?.length) {
-    frontmatterData.entries = data.entries
-      .filter(
-        (entry) =>
-          entry &&
-          entry.time &&
-          entry.price !== undefined &&
-          (data.useDirectPnLInput ||
-            (entry.size !== undefined && entry.size > 0))
-      )
-      .map((entry) => ({
-        time: formatTradeFrontmatterDate(
-          entry.time,
-          options.invalidDateFallback
-        ),
-        price: entry.price,
-        ...(entry.size !== undefined && { size: entry.size }),
-        ...(entry.notional !== undefined && { notional: entry.notional }),
-      }));
+    frontmatterData.entries = data.entries.flatMap((entry) =>
+      entry &&
+      entry.time &&
+      entry.price !== undefined &&
+      (data.useDirectPnLInput || (entry.size !== undefined && entry.size > 0))
+        ? [
+            {
+              time: formatTradeFrontmatterDate(
+                entry.time,
+                options.invalidDateFallback
+              ),
+              price: entry.price,
+              ...(entry.size !== undefined && { size: entry.size }),
+              ...(entry.notional !== undefined && { notional: entry.notional }),
+            },
+          ]
+        : []
+    );
   }
 
   if (data.exits?.length) {
-    frontmatterData.exits = data.exits
-      .filter(
-        (exit) =>
-          exit &&
-          exit.time &&
-          exit.price !== undefined &&
-          (data.useDirectPnLInput || (exit.size !== undefined && exit.size > 0))
-      )
-      .map((exit) => ({
-        time: formatTradeFrontmatterDate(
-          exit.time,
-          options.invalidDateFallback
-        ),
-        price: exit.price,
-        ...(exit.size !== undefined && { size: exit.size }),
-        ...(exit.notional !== undefined && { notional: exit.notional }),
-        ...(typeof exit.hasExplicitPrice === 'boolean' && {
-          hasExplicitPrice: exit.hasExplicitPrice,
-        }),
-      }));
+    frontmatterData.exits = data.exits.flatMap((exit) =>
+      exit &&
+      exit.time &&
+      exit.price !== undefined &&
+      (data.useDirectPnLInput || (exit.size !== undefined && exit.size > 0))
+        ? [
+            {
+              time: formatTradeFrontmatterDate(
+                exit.time,
+                options.invalidDateFallback
+              ),
+              price: exit.price,
+              ...(exit.size !== undefined && { size: exit.size }),
+              ...(exit.notional !== undefined && { notional: exit.notional }),
+              ...(typeof exit.hasExplicitPrice === 'boolean' && {
+                hasExplicitPrice: exit.hasExplicitPrice,
+              }),
+            },
+          ]
+        : []
+    );
   }
 
   if (data.dividends !== undefined && shouldShowTradeDividends(data)) {
-    const serializedDividends = (data.dividends || [])
-      .filter(
-        (dividend) =>
-          dividend &&
-          dividend.time &&
-          dividend.amount !== undefined &&
-          Number.isFinite(dividend.amount) &&
-          dividend.amount !== 0
-      )
-      .map((dividend) => ({
-        time: formatTradeFrontmatterDate(
-          dividend.time,
-          options.invalidDateFallback
-        ),
-        amount: dividend.amount,
-      }));
+    const serializedDividends = (data.dividends || []).flatMap((dividend) =>
+      dividend &&
+      dividend.time &&
+      dividend.amount !== undefined &&
+      Number.isFinite(dividend.amount) &&
+      dividend.amount !== 0
+        ? [
+            {
+              time: formatTradeFrontmatterDate(
+                dividend.time,
+                options.invalidDateFallback
+              ),
+              amount: dividend.amount,
+            },
+          ]
+        : []
+    );
 
     frontmatterData.dividends =
       serializedDividends.length > 0 ? serializedDividends : undefined;
@@ -720,7 +732,10 @@ function mergeNonConflictingCustomFields(
 
 function normalizeStringList(values: string[]): string[] {
   return deduplicateOptions(
-    values.map((value) => value.trim()).filter(Boolean)
+    values.flatMap((value) => {
+      const trimmed = value.trim();
+      return trimmed ? [trimmed] : [];
+    })
   );
 }
 

@@ -1,4 +1,4 @@
-import React, { memo, useEffect, useMemo, useState } from 'react';
+import React, { memo, useMemo, useState } from 'react';
 import { Trash } from '../../../components/shared/icons/ObsidianIcon';
 import {
   CustomFieldType,
@@ -83,19 +83,31 @@ const editableReviewTypeOptions = REVIEW_FIELD_REVIEW_TYPES.map((type) => ({
   label: reviewTypeDisplayLabels[type],
 }));
 
-const inheritToReviewTypeOptions = REVIEW_FIELD_REVIEW_TYPES.filter(
-  (type) => type !== 'yearly'
-).map((type) => ({
-  type,
-  label: reviewTypeDisplayLabels[type],
-}));
+const inheritToReviewTypeOptions = REVIEW_FIELD_REVIEW_TYPES.reduce(
+  (acc, type) => {
+    if (type !== 'yearly') {
+      acc.push({
+        type,
+        label: reviewTypeDisplayLabels[type],
+      });
+    }
+    return acc;
+  },
+  [] as { type: (typeof REVIEW_FIELD_REVIEW_TYPES)[number]; label: string }[]
+);
 
-const inheritanceSourceReviewTypeOptions = REVIEW_FIELD_REVIEW_TYPES.filter(
-  (type) => type !== 'drc'
-).map((type) => ({
-  type,
-  label: reviewTypeDisplayLabels[type],
-}));
+const inheritanceSourceReviewTypeOptions = REVIEW_FIELD_REVIEW_TYPES.reduce(
+  (acc, type) => {
+    if (type !== 'drc') {
+      acc.push({
+        type,
+        label: reviewTypeDisplayLabels[type],
+      });
+    }
+    return acc;
+  },
+  [] as { type: (typeof REVIEW_FIELD_REVIEW_TYPES)[number]; label: string }[]
+);
 
 const inheritanceModeOptions = REVIEW_FIELD_INHERITANCE_MODES.map((mode) => ({
   value: mode,
@@ -302,17 +314,51 @@ const useReviewFieldEditorController = ({
   ReviewFieldEditorProps,
   'field' | 'isNewField' | 'onSave' | 'generateUniqueKey' | 'validateLabel'
 >) => {
-  const [editingField, setEditingField] = useState<CustomReviewFieldDefinition>(
-    { ...field }
-  );
-  const [newOption, setNewOption] = useState('');
-  const [optionError, setOptionError] = useState<string | null>(null);
-
-  useEffect(() => {
-    setEditingField({ ...field });
-    setNewOption('');
-    setOptionError(null);
-  }, [field]);
+  const [editorState, setEditorState] = useState(() => ({
+    sourceField: field,
+    editingField: { ...field },
+    newOption: '',
+    optionError: null as string | null,
+  }));
+  const editingField =
+    editorState.sourceField === field ? editorState.editingField : { ...field };
+  const newOption =
+    editorState.sourceField === field ? editorState.newOption : '';
+  const optionError =
+    editorState.sourceField === field ? editorState.optionError : null;
+  const setEditingField: React.Dispatch<
+    React.SetStateAction<CustomReviewFieldDefinition>
+  > = (update) => {
+    setEditorState((current) => {
+      const currentEditingField =
+        current.sourceField === field ? current.editingField : { ...field };
+      return {
+        sourceField: field,
+        editingField:
+          typeof update === 'function' ? update(currentEditingField) : update,
+        newOption: current.sourceField === field ? current.newOption : '',
+        optionError: current.sourceField === field ? current.optionError : null,
+      };
+    });
+  };
+  const setNewOption = (value: string) => {
+    setEditorState((current) => ({
+      sourceField: field,
+      editingField:
+        current.sourceField === field ? current.editingField : { ...field },
+      newOption: value,
+      optionError: current.sourceField === field ? current.optionError : null,
+    }));
+  };
+  const setOptionError = (value: string | null) => {
+    setEditorState((current) => ({
+      sourceField: field,
+      editingField:
+        current.sourceField === field ? current.editingField : { ...field },
+      newOption: current.sourceField === field ? current.newOption : '',
+      optionError: value,
+    }));
+  };
 
   const showOptionsConfig = [
     CustomFieldType.DROPDOWN,

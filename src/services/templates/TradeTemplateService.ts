@@ -427,9 +427,9 @@ export class TradeTemplateService {
 
   
   public generateUniqueName(baseName: string, excludeId?: string): string {
-    const existingNames = this.templates
-      .filter((t) => t.id !== excludeId)
-      .map((t) => t.name);
+    const existingNames = this.templates.flatMap((template) =>
+      template.id !== excludeId ? [template.name] : []
+    );
     const existingNameSet = new Set(existingNames);
 
     if (!existingNameSet.has(baseName)) {

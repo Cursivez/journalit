@@ -4,6 +4,7 @@ import { Notice } from 'obsidian';
 import type JournalitPlugin from '../../main';
 import { ApiClient } from './ApiClient';
 import { BackendSecretStorage } from './BackendSecretStorage';
+import { clearPersistedBackendAuthSession } from './BackendAuthFailure';
 import { ApiError } from '../../types/errors';
 import { t } from '../../lang/helpers';
 
@@ -125,20 +126,26 @@ export class SubscriptionTierService {
         entitlements,
       };
     } catch (error) {
+      if (
+        error instanceof Error &&
+        error.message === 'Authenticated request cancelled'
+      ) {
+        return { status: 'signed_out' };
+      }
+
       if (error instanceof ApiError) {
         if (error.statusCode === 401) {
           
-          BackendSecretStorage.clearAuthToken(this.plugin);
-          backend.userEmail = undefined;
-          backend.subscriptionTier = undefined;
-          backend.userId = '';
-          await this.plugin.saveSettings();
-
-          window.dispatchEvent(
-            new CustomEvent('journalit:subscription-changed')
+          
+          
+          
+          const cleared = await clearPersistedBackendAuthSession(
+            this.plugin,
+            authToken
           );
-
-          new Notice(t('error.session-expired'));
+          if (cleared && !this.hasBackendIntegrationService()) {
+            this.showAuthExpiredNoticeWithoutBackendService();
+          }
           return { status: 'signed_out' };
         }
       }
@@ -146,5 +153,16 @@ export class SubscriptionTierService {
       console.warn('[SubscriptionTierService] Tier refresh failed:', error);
       return { status: 'unverified' };
     }
+  }
+
+  private hasBackendIntegrationService(): boolean {
+    return Boolean(
+      (this.plugin as JournalitPlugin & { backendIntegrationService?: unknown })
+        .backendIntegrationService
+    );
+  }
+
+  private showAuthExpiredNoticeWithoutBackendService(): void {
+    new Notice(t('error.session-expired'));
   }
 }

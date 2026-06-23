@@ -1,6 +1,13 @@
 
 
-import React, { memo, useCallback, useEffect, useMemo, useState } from 'react';
+import React, {
+  memo,
+  useCallback,
+  useEffect,
+  useMemo,
+  useReducer,
+  useState,
+} from 'react';
 import { useEventBus } from '../../../hooks/useEventBus';
 import { X, Check } from '../../shared/icons/ObsidianIcon';
 import JournalitPlugin from '../../../main';
@@ -57,13 +64,36 @@ interface GoalProgress {
   configuredAccounts?: string[];
 }
 
+interface AccountScopedDashboardState {
+  data: DashboardData | null;
+}
+
+interface GoalDraft {
+  goalType: GoalType;
+  target: string;
+  period: GoalPeriod;
+  useRMultiples: boolean;
+  accountAware: boolean;
+  accountTargets: Record<string, string>;
+  accountTargetAccounts: string[];
+}
+
+const accountScopedDashboardReducer = (
+  _state: AccountScopedDashboardState,
+  data: DashboardData | null
+): AccountScopedDashboardState => ({ data });
+
 const aggregateAccountTarget = (
   config: GoalConfig,
   accounts: string[]
 ): number => {
-  const values = accounts
-    .map((account) => config.accountTargets?.[account] ?? 0)
-    .filter((value) => value > 0);
+  const values: number[] = [];
+  for (const account of accounts) {
+    const value = config.accountTargets?.[account] ?? 0;
+    if (value > 0) {
+      values.push(value);
+    }
+  }
 
   if (config.type === 'winRate') {
     return values.length > 0
@@ -73,6 +103,23 @@ const aggregateAccountTarget = (
 
   return values.reduce((sum, value) => sum + value, 0);
 };
+
+const buildGoalDraft = (
+  existingConfig: GoalConfig | undefined,
+  displayRMultiples: boolean
+): GoalDraft => ({
+  goalType: existingConfig?.type || 'pnl',
+  target: existingConfig?.target?.toString() || '',
+  period: existingConfig?.period || 'weekly',
+  useRMultiples: existingConfig?.useRMultiples ?? displayRMultiples,
+  accountAware: existingConfig?.accountAware ?? false,
+  accountTargets: Object.fromEntries(
+    Object.entries(existingConfig?.accountTargets ?? {}).map(
+      ([account, value]) => [account, String(value)]
+    )
+  ),
+  accountTargetAccounts: [...(existingConfig?.accountTargetAccounts ?? [])],
+});
 
 const tradeMatchesGoalAccounts = (
   trade: Trade,
@@ -130,33 +177,57 @@ const useGoalModel = (
   accountContext: ReturnType<typeof useHomeAccount>,
   accountNames: string[]
 ) => {
-  const existingGoalType = existingConfig?.type || 'pnl';
+  const getPersistedDraft = useCallback(
+    () =>
+      buildGoalDraft(
+        existingConfig,
+        plugin.settings.trade?.displayRMultiples || false
+      ),
+    [existingConfig, plugin.settings.trade?.displayRMultiples]
+  );
   const [showModal, setShowModal] = useState(!existingConfig);
-  const [goalType, setGoalType] = useState<GoalType>(existingGoalType);
-  const [target, setTarget] = useState<string>(
-    existingConfig?.target?.toString() || ''
+  const [goalType, setGoalType] = useState<GoalType>(
+    () => getPersistedDraft().goalType
   );
   const [period, setPeriod] = useState<GoalPeriod>(
-    existingConfig?.period || 'weekly'
+    () => getPersistedDraft().period
+  );
+  const [target, setTarget] = useState<string>(
+    () => getPersistedDraft().target
   );
   const [useRMultiples, setUseRMultiples] = useState<boolean>(
-    existingConfig?.useRMultiples ??
-      (plugin.settings.trade?.displayRMultiples || false)
+    () => getPersistedDraft().useRMultiples
   );
   const [accountAware, setAccountAware] = useState<boolean>(
-    existingConfig?.accountAware ?? false
+    () => getPersistedDraft().accountAware
   );
   const [accountTargets, setAccountTargets] = useState<Record<string, string>>(
-    () =>
-      Object.fromEntries(
-        Object.entries(existingConfig?.accountTargets ?? {}).map(
-          ([account, value]) => [account, String(value)]
-        )
-      )
+    () => getPersistedDraft().accountTargets
   );
   const [accountTargetAccounts, setAccountTargetAccounts] = useState<string[]>(
-    () => existingConfig?.accountTargetAccounts ?? []
+    () => getPersistedDraft().accountTargetAccounts
   );
+
+  const resetDraftFromConfig = useCallback(() => {
+    const draft = getPersistedDraft();
+    setGoalType(draft.goalType);
+    setTarget(draft.target);
+    setPeriod(draft.period);
+    setUseRMultiples(draft.useRMultiples);
+    setAccountAware(draft.accountAware);
+    setAccountTargets(draft.accountTargets);
+    setAccountTargetAccounts(draft.accountTargetAccounts);
+  }, [getPersistedDraft]);
+
+  const handleOpenModal = useCallback(() => {
+    resetDraftFromConfig();
+    setShowModal(true);
+  }, [resetDraftFromConfig]);
+
+  const handleCancelModal = useCallback(() => {
+    resetDraftFromConfig();
+    setShowModal(false);
+  }, [resetDraftFromConfig]);
 
   const rMultiplesEnabled = plugin.settings.trade?.displayRMultiples || false;
   const [, setSettingsVersion] = useState(0);
@@ -355,12 +426,18 @@ const useGoalModel = (
 
   
   const handleSave = useCallback(async () => {
-    const parsedAccountTargets = Object.fromEntries(
-      Object.entries(accountTargets)
-        .filter(([account]) => accountTargetAccounts.includes(account))
-        .map(([account, value]) => [account, parseFloat(value)] as const)
-        .filter(([, value]) => Number.isFinite(value) && value > 0)
-    );
+    const parsedAccountTargets: Record<string, number> = {};
+    const accountTargetAccountSet = new Set(accountTargetAccounts);
+    for (const [account, rawValue] of Object.entries(accountTargets)) {
+      if (!accountTargetAccountSet.has(account)) {
+        continue;
+      }
+
+      const value = parseFloat(rawValue);
+      if (Number.isFinite(value) && value > 0) {
+        parsedAccountTargets[account] = value;
+      }
+    }
     const usesAccountTargets =
       accountAware && !(goalType === 'pnl' && useRMultiples);
     const targetNum = usesAccountTargets
@@ -492,7 +569,8 @@ const useGoalModel = (
 
   return {
     showModal,
-    setShowModal,
+    handleOpenModal,
+    handleCancelModal,
     goalType,
     setGoalType,
     target,
@@ -968,8 +1046,8 @@ const GoalsProgressWidgetComponent: React.FC<GoalsProgressWidgetProps> = ({
   const { currency } = useCurrency();
   const { formatValue, shouldMask } = useDisplayFormatter();
   const accountContext = useHomeAccount();
-  const [accountScopedDashboardData, setAccountScopedDashboardData] =
-    useState<DashboardData | null>(null);
+  const [accountScopedDashboardState, dispatchAccountScopedDashboardData] =
+    useReducer(accountScopedDashboardReducer, { data: null });
 
   
   const existingConfig = plugin.settings.home?.goals?.[instanceId];
@@ -984,10 +1062,16 @@ const GoalsProgressWidgetComponent: React.FC<GoalsProgressWidgetProps> = ({
       );
     }
 
-    return Object.values(plugin.settings.account?.accountMetadata ?? {})
-      .filter((account) => account.accountType?.toLowerCase() !== 'archived')
-      .map((account) => account.name)
-      .sort((a, b) => a.localeCompare(b));
+    const nextAccountNames: string[] = [];
+    for (const account of Object.values(
+      plugin.settings.account?.accountMetadata ?? {}
+    )) {
+      if (account.accountType?.toLowerCase() !== 'archived') {
+        nextAccountNames.push(account.name);
+      }
+    }
+
+    return nextAccountNames.sort((a, b) => a.localeCompare(b));
   }, [
     accountContext?.availableAccounts,
     plugin.settings.account?.accountMetadata,
@@ -1008,7 +1092,7 @@ const GoalsProgressWidgetComponent: React.FC<GoalsProgressWidgetProps> = ({
 
   useEffect(() => {
     if (!dashboardData || accountScopedGoalAccounts.length === 0) {
-      setAccountScopedDashboardData(null);
+      dispatchAccountScopedDashboardData(null);
       return;
     }
 
@@ -1025,12 +1109,12 @@ const GoalsProgressWidgetComponent: React.FC<GoalsProgressWidgetProps> = ({
     )
       .then((data) => {
         if (!cancelled) {
-          setAccountScopedDashboardData(data);
+          dispatchAccountScopedDashboardData(data);
         }
       })
       .catch((error) => {
         if (!cancelled) {
-          setAccountScopedDashboardData(null);
+          dispatchAccountScopedDashboardData(null);
         }
         console.error(
           'Failed to load account-scoped goal dashboard data:',
@@ -1043,8 +1127,8 @@ const GoalsProgressWidgetComponent: React.FC<GoalsProgressWidgetProps> = ({
     };
   }, [dashboardData, accountScopedGoalAccounts, defaultRiskAmount, plugin]);
 
-  const dashboardDataForGoal = accountScopedDashboardData
-    ? { ...dashboardData, dashboardData: accountScopedDashboardData }
+  const dashboardDataForGoal = accountScopedDashboardState.data
+    ? { ...dashboardData, dashboardData: accountScopedDashboardState.data }
     : dashboardData;
 
   const model = useGoalModel(
@@ -1082,7 +1166,7 @@ const GoalsProgressWidgetComponent: React.FC<GoalsProgressWidgetProps> = ({
         rMultiplesEnabled={model.rMultiplesEnabled}
         canSave={model.canSave}
         handleSave={() => void model.handleSave()}
-        onCancel={() => model.setShowModal(false)}
+        onCancel={model.handleCancelModal}
         existingConfig={existingConfig}
         currency={currency}
       />
@@ -1096,7 +1180,7 @@ const GoalsProgressWidgetComponent: React.FC<GoalsProgressWidgetProps> = ({
 
   
   if (!model.progress) {
-    return <GoalEmptyState onSetGoal={() => model.setShowModal(true)} />;
+    return <GoalEmptyState onSetGoal={model.handleOpenModal} />;
   }
 
   
@@ -1108,7 +1192,7 @@ const GoalsProgressWidgetComponent: React.FC<GoalsProgressWidgetProps> = ({
       getTargetLabel={model.getTargetLabel}
       shouldMask={shouldMask}
       formatValue={formatValue}
-      onEdit={() => model.setShowModal(true)}
+      onEdit={model.handleOpenModal}
     />
   );
 };

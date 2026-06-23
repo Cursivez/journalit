@@ -261,9 +261,10 @@ const isNonAccountFilterActive = (
 const getTradeAccountLookupKeys = (
   trade: DrawdownCapitalBasisResolvableTrade
 ): string[] => {
-  const explicitKeys = (trade.accountLookupKeys ?? [])
-    .map(normalizeLookupKey)
-    .filter((key) => key.length > 0);
+  const explicitKeys = (trade.accountLookupKeys ?? []).flatMap((key) => {
+    const normalized = normalizeLookupKey(key);
+    return normalized ? [normalized] : [];
+  });
   if (explicitKeys.length > 0) {
     return Array.from(new Set(explicitKeys));
   }
@@ -276,7 +277,10 @@ const getTradeAccountLookupKeys = (
 
   return Array.from(
     new Set(
-      accountValues.map(normalizeLookupKey).filter((key) => key.length > 0)
+      accountValues.flatMap((key) => {
+        const normalized = normalizeLookupKey(key);
+        return normalized ? [normalized] : [];
+      })
     )
   );
 };
@@ -323,9 +327,10 @@ export const resolveDrawdownCapitalBasis = (
   }
 
   const accountKeys = new Set<string>();
-  const scopedAccountKeys = (options.filters?.accounts ?? [])
-    .map(normalizeLookupKey)
-    .filter((key) => key.length > 0);
+  const scopedAccountKeys = (options.filters?.accounts ?? []).flatMap((key) => {
+    const normalized = normalizeLookupKey(key);
+    return normalized ? [normalized] : [];
+  });
 
   if (scopedAccountKeys.length > 0) {
     const tradeAccountKeys = new Set<string>();
@@ -335,9 +340,11 @@ export const resolveDrawdownCapitalBasis = (
       );
     }
 
-    scopedAccountKeys
-      .filter((key) => tradeAccountKeys.has(key))
-      .forEach((key) => accountKeys.add(key));
+    scopedAccountKeys.forEach((key) => {
+      if (tradeAccountKeys.has(key)) {
+        accountKeys.add(key);
+      }
+    });
   } else {
     for (const trade of trades) {
       const tradeAccountKeys = getTradeAccountLookupKeys(trade);
@@ -497,8 +504,10 @@ const isClosedTrade = (trade: DrawdownAnalyzableTrade): boolean => {
 
 const getFallbackExitTime = (trade: DrawdownAnalyzableTrade): Date | null => {
   const exitTimes = (trade.exits ?? [])
-    .map((exit) => safeParseDateValue(exit.time))
-    .filter((date): date is Date => date !== null)
+    .flatMap((exit) => {
+      const date = safeParseDateValue(exit.time);
+      return date ? [date] : [];
+    })
     .sort((a, b) => a.getTime() - b.getTime());
 
   return exitTimes.length > 0 ? exitTimes[exitTimes.length - 1] : null;
@@ -719,15 +728,17 @@ const buildSummary = <TTrade extends DrawdownAnalyzableTrade>(
         return total + episode.durationMs;
       }, 0);
 
-  const durationDaysValues = episodes
-    .map((episode) => episode.durationDays)
-    .filter((value): value is number => value != null);
-  const recoveryDurationDaysValues = episodes
-    .map((episode) => episode.recoveryDurationDays)
-    .filter((value): value is number => value != null);
-  const recoveryDurationTradeValues = episodes
-    .map((episode) => episode.recoveryDurationTrades)
-    .filter((value): value is number => value != null);
+  const durationDaysValues = episodes.flatMap((episode) =>
+    episode.durationDays == null ? [] : [episode.durationDays]
+  );
+  const recoveryDurationDaysValues = episodes.flatMap((episode) =>
+    episode.recoveryDurationDays == null ? [] : [episode.recoveryDurationDays]
+  );
+  const recoveryDurationTradeValues = episodes.flatMap((episode) =>
+    episode.recoveryDurationTrades == null
+      ? []
+      : [episode.recoveryDurationTrades]
+  );
   const maxDrawdownEpisodes = episodes.filter(
     (episode) => episode.maxDrawdownAmount === maxDrawdownAmount
   );
@@ -848,9 +859,12 @@ export const getDrawdownCacheSignature = (
   }
 
   return trades
-    .filter((trade) => assumeClosedTrades || isClosedTrade(trade))
-    .filter((trade) => matchesDirection(trade, direction))
-    .map(createSortableTrade)
+    .flatMap((trade, index) =>
+      (assumeClosedTrades || isClosedTrade(trade)) &&
+      matchesDirection(trade, direction)
+        ? [createSortableTrade(trade, index)]
+        : []
+    )
     .sort(compareSortableTrades)
     .map((item, index) =>
       [
@@ -887,9 +901,11 @@ export const analyzeDrawdown = <TTrade extends DrawdownAnalyzableTrade>(
     };
   }
 
-  const filteredTrades = trades
-    .filter((trade) => assumeClosedTrades || isClosedTrade(trade))
-    .filter((trade) => matchesDirection(trade, direction));
+  const filteredTrades = trades.filter(
+    (trade) =>
+      (assumeClosedTrades || isClosedTrade(trade)) &&
+      matchesDirection(trade, direction)
+  );
 
   if (filteredTrades.length === 0) {
     return {

@@ -36,18 +36,18 @@ function parseSerializedIndex(value: unknown): SerializedIndex | null {
     return null;
   }
 
-  const entries = record.entries
-    .map((entry) => {
-      const entryRecord = asRecord(entry);
-      if (!entryRecord || typeof entryRecord.path !== 'string') {
-        return null;
-      }
-      return {
+  const entries = record.entries.flatMap((entry) => {
+    const entryRecord = asRecord(entry);
+    if (!entryRecord || typeof entryRecord.path !== 'string') {
+      return [];
+    }
+    return [
+      {
         path: entryRecord.path,
         values: asRecord(entryRecord.values) ?? {},
-      };
-    })
-    .filter((entry): entry is SerializedIndexEntry => entry !== null);
+      },
+    ];
+  });
 
   return { name: record.name, entries };
 }

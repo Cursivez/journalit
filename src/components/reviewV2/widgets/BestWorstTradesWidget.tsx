@@ -120,13 +120,13 @@ export const BestWorstTradesWidget: React.FC<BestWorstTradesWidgetProps> =
     
     const { bestTrade, worstTrade } = useMemo(() => {
       const closedTrades = asBestWorstTrades(
-        trades
-          .filter((t) => isPnlContributingTrade(t))
-          .flatMap((trade) =>
-            preview
+        trades.flatMap((trade) =>
+          isPnlContributingTrade(trade)
+            ? preview
               ? [trade]
               : splitReviewTradeByRealizedPnlEvent(trade, plugin)
-          )
+            : []
+        )
       );
 
       

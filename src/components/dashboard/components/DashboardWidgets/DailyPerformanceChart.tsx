@@ -62,82 +62,80 @@ export const DailyPerformanceChart = React.memo<BaseWidgetProps>(
           const tradeIdsByDate: { [date: string]: Set<string> } = {};
 
           
-          data.trades
-            .filter((trade) => isPnlContributingTrade(trade))
-            .forEach((trade) => {
-              
-              const analyticsDateBasis =
-                plugin?.settings?.trade?.analyticsDateBasis ?? 'entry';
-              const tradeDate = getTradeAnalyticsTradingDay(
-                trade,
-                analyticsDateBasis,
-                plugin
-              );
-              const realizedEvents = getTradeRealizedPnlEvents(
-                trade,
-                analyticsDateBasis,
-                plugin
-              );
-              if (!tradeDate && realizedEvents.length === 0) {
-                return;
+          data.trades.forEach((trade) => {
+            if (!isPnlContributingTrade(trade)) return;
+            
+            const analyticsDateBasis =
+              plugin?.settings?.trade?.analyticsDateBasis ?? 'entry';
+            const tradeDate = getTradeAnalyticsTradingDay(
+              trade,
+              analyticsDateBasis,
+              plugin
+            );
+            const realizedEvents = getTradeRealizedPnlEvents(
+              trade,
+              analyticsDateBasis,
+              plugin
+            );
+            if (!tradeDate && realizedEvents.length === 0) {
+              return;
+            }
+
+            const pnlEvents = realizedEvents.length
+              ? realizedEvents
+              : tradeDate
+                ? [
+                    {
+                      tradingDay: tradeDate,
+                      pnl: getEffectivePnL(trade),
+                    },
+                  ]
+                : [];
+            const useStoredRMultiple = pnlEvents.length === 1;
+
+            for (const event of pnlEvents) {
+              const eventDate = event.tradingDay;
+              if (
+                (trade._analyticsRangeStart &&
+                  eventDate < trade._analyticsRangeStart) ||
+                (trade._analyticsRangeEnd &&
+                  eventDate > trade._analyticsRangeEnd)
+              ) {
+                continue;
               }
 
-              const pnlEvents = realizedEvents.length
-                ? realizedEvents
-                : tradeDate
-                  ? [
-                      {
-                        tradingDay: tradeDate,
-                        pnl: getEffectivePnL(trade),
-                      },
-                    ]
-                  : [];
-              const useStoredRMultiple = pnlEvents.length === 1;
+              const year = eventDate.getFullYear();
+              const month = String(eventDate.getMonth() + 1).padStart(2, '0');
+              const day = String(eventDate.getDate()).padStart(2, '0');
+              const dateKey = `${year}-${month}-${day}`;
 
-              for (const event of pnlEvents) {
-                const eventDate = event.tradingDay;
-                if (
-                  (trade._analyticsRangeStart &&
-                    eventDate < trade._analyticsRangeStart) ||
-                  (trade._analyticsRangeEnd &&
-                    eventDate > trade._analyticsRangeEnd)
-                ) {
-                  continue;
-                }
-
-                const year = eventDate.getFullYear();
-                const month = String(eventDate.getMonth() + 1).padStart(2, '0');
-                const day = String(eventDate.getDate()).padStart(2, '0');
-                const dateKey = `${year}-${month}-${day}`;
-
-                if (!tradesByDate[dateKey]) {
-                  tradesByDate[dateKey] = { pnl: 0, trades: 0, rMultiple: 0 };
-                  tradeIdsByDate[dateKey] = new Set<string>();
-                }
-
-                tradesByDate[dateKey].pnl += event.pnl;
-                const tradeKey =
-                  trade.tradeId ?? trade.path ?? trade.instrument;
-                if (tradeKey && !tradeIdsByDate[dateKey].has(tradeKey)) {
-                  tradeIdsByDate[dateKey].add(tradeKey);
-                  tradesByDate[dateKey].trades += 1;
-                }
-
-                const effectiveRMultiple = calculateEffectiveRMultiple(
-                  event.pnl,
-                  useStoredRMultiple ? trade.rMultiple : undefined,
-                  trade.riskAmount,
-                  defaultRiskAmount
-                );
-
-                if (
-                  effectiveRMultiple !== undefined &&
-                  !isNaN(effectiveRMultiple)
-                ) {
-                  tradesByDate[dateKey].rMultiple += effectiveRMultiple;
-                }
+              if (!tradesByDate[dateKey]) {
+                tradesByDate[dateKey] = { pnl: 0, trades: 0, rMultiple: 0 };
+                tradeIdsByDate[dateKey] = new Set<string>();
               }
-            });
+
+              tradesByDate[dateKey].pnl += event.pnl;
+              const tradeKey = trade.tradeId ?? trade.path ?? trade.instrument;
+              if (tradeKey && !tradeIdsByDate[dateKey].has(tradeKey)) {
+                tradeIdsByDate[dateKey].add(tradeKey);
+                tradesByDate[dateKey].trades += 1;
+              }
+
+              const effectiveRMultiple = calculateEffectiveRMultiple(
+                event.pnl,
+                useStoredRMultiple ? trade.rMultiple : undefined,
+                trade.riskAmount,
+                defaultRiskAmount
+              );
+
+              if (
+                effectiveRMultiple !== undefined &&
+                !isNaN(effectiveRMultiple)
+              ) {
+                tradesByDate[dateKey].rMultiple += effectiveRMultiple;
+              }
+            }
+          });
 
           
           const allChartData = Object.entries(tradesByDate).map(

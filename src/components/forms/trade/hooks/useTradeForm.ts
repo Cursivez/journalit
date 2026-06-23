@@ -546,14 +546,6 @@ export const useTradeForm = ({
   );
 
   
-  useEffect(() => {
-    
-    if (formSubmitted) {
-      runValidation(withCurrentTimeForBlankTradeTimes(formData));
-    }
-  }, [formData, formSubmitted, runValidation]);
-
-  
   const cleanupPendingImages = useCallback(async () => {
     try {
       
@@ -637,6 +629,10 @@ export const useTradeForm = ({
           [field]: value,
         };
 
+        if (field === 'commission') {
+          newData.hasExplicitCommission = true;
+        }
+
         
         const isHandlingSync = field.toString().endsWith('Ids');
 
@@ -646,12 +642,18 @@ export const useTradeForm = ({
           newData.setup = Array.isArray(value) ? Array.from(value) : [];
         }
 
-        return shouldRefreshAutoCommission(field)
+        const nextData = shouldRefreshAutoCommission(field)
           ? applyAutoCommission(newData, plugin.optionsService, prevData)
           : newData;
+
+        if (formSubmitted) {
+          runValidation(withCurrentTimeForBlankTradeTimes(nextData));
+        }
+
+        return nextData;
       });
     },
-    [plugin.optionsService]
+    [formSubmitted, plugin.optionsService, runValidation]
   );
 
   
@@ -1317,6 +1319,44 @@ export const useTradeForm = ({
     const dividendsChanged =
       normalizeDividendSnapshot(formData.dividends) !==
       normalizeDividendSnapshot(initial.dividends);
+    const normalizeExecutionSnapshot = (
+      executions:
+        | Partial<TradeFormData>['entries']
+        | Partial<TradeFormData>['exits']
+    ) =>
+      JSON.stringify(
+        (executions || []).map((execution) => ({
+          time:
+            execution?.time instanceof Date
+              ? Number.isFinite(execution.time.getTime())
+                ? execution.time.toISOString()
+                : null
+              : execution?.time
+                ? String(execution.time)
+                : null,
+          blankTimeDate:
+            execution?.blankTimeDate instanceof Date
+              ? Number.isFinite(execution.blankTimeDate.getTime())
+                ? execution.blankTimeDate.toISOString()
+                : null
+              : execution?.blankTimeDate
+                ? String(execution.blankTimeDate)
+                : null,
+          price: execution?.price ?? null,
+          size: execution?.size ?? null,
+          notional: execution?.notional ?? null,
+          hasExplicitPrice:
+            execution && 'hasExplicitPrice' in execution
+              ? execution.hasExplicitPrice
+              : undefined,
+        }))
+      );
+    const entriesChanged =
+      normalizeExecutionSnapshot(formData.entries) !==
+      normalizeExecutionSnapshot(initial.entries);
+    const exitsChanged =
+      normalizeExecutionSnapshot(formData.exits) !==
+      normalizeExecutionSnapshot(initial.exits);
     const normalizeTakeProfitSnapshot = (
       takeProfits: Partial<TradeFormData>['takeProfits']
     ) =>
@@ -1344,6 +1384,8 @@ export const useTradeForm = ({
       entryPriceChanged ||
       exitPriceChanged ||
       positionSizeChanged ||
+      entriesChanged ||
+      exitsChanged ||
       thesisChanged ||
       imagesChanged ||
       directionChanged ||
@@ -1355,6 +1397,8 @@ export const useTradeForm = ({
     formData.entryPrice,
     formData.exitPrice,
     formData.positionSize,
+    formData.entries,
+    formData.exits,
     formData.thesis,
     formData.images,
     formData.direction,

@@ -140,16 +140,19 @@ export class CustomFieldsService {
           ? loadedFields.fields
           : [];
         this.fields.fields = fields
-          .filter((field): field is CustomFieldDefinition =>
+          .flatMap((field) =>
             this.isValidFieldDefinition(field)
+              ? [
+                  {
+                    ...field,
+                    tradeLog: this.normalizeTradeLogSettings(
+                      field.tradeLog,
+                      field.type
+                    ),
+                  },
+                ]
+              : []
           )
-          .map((field) => ({
-            ...field,
-            tradeLog: this.normalizeTradeLogSettings(
-              field.tradeLog,
-              field.type
-            ),
-          }))
           .sort((a, b) => a.order - b.order);
       } else if (
         !this.namespace &&
@@ -165,16 +168,19 @@ export class CustomFieldsService {
           ? loadedFields.fields
           : [];
         this.fields.fields = fields
-          .filter((field): field is CustomFieldDefinition =>
+          .flatMap((field) =>
             this.isValidFieldDefinition(field)
+              ? [
+                  {
+                    ...field,
+                    tradeLog: this.normalizeTradeLogSettings(
+                      field.tradeLog,
+                      field.type
+                    ),
+                  },
+                ]
+              : []
           )
-          .map((field) => ({
-            ...field,
-            tradeLog: this.normalizeTradeLogSettings(
-              field.tradeLog,
-              field.type
-            ),
-          }))
           .sort((a, b) => a.order - b.order);
       }
     } catch (error) {

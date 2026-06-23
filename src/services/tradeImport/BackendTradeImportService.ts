@@ -1,11 +1,15 @@
 import { requestUrl } from 'obsidian';
 import { ApiClient } from '../backend/ApiClient';
-import { BackendSecretStorage } from '../backend/BackendSecretStorage';
+import { clearPersistedBackendAuthSession } from '../backend/BackendAuthFailure';
 import { ApiError } from '../../types/errors';
 import { getPluginInstance } from '../../utils/pluginContext';
 import type {
   TradeImportAnalyseRequest,
   TradeImportAnalyseResponse,
+  TradeImportAccountInventoryItem,
+  TradeImportAccountInventoryResponse,
+  TradeImportAccountVaultMapping,
+  TradeImportAccountVaultMappingRequest,
   TradeImportCapabilities,
   TradeImportCommitRequest,
   TradeImportCommitResponse,
@@ -16,6 +20,9 @@ import type {
   TradeImportPreviewItem,
   TradeImportManualMode,
   TradeImportProjectionAckRequest,
+  TradeImportRestorableProjection,
+  TradeImportRestorableProjectionRequest,
+  TradeImportRestorableProjectionResponse,
   TradeImportPreviewRequest,
   TradeImportPreviewResponse,
   TradeImportPreviewTrade,
@@ -53,6 +60,9 @@ const executionArray = (value: unknown): TradeImportPreviewTrade['entries'] =>
 
 const numberValue = (value: unknown, fallback = 0): number =>
   typeof value === 'number' && Number.isFinite(value) ? value : fallback;
+
+const optionalString = (value: unknown): string | null =>
+  typeof value === 'string' && value.trim() ? value : null;
 
 const unknownArray = (value: unknown): unknown[] =>
   Array.isArray(value) ? value : [];
@@ -249,6 +259,7 @@ const commitResultValue = (
     case 'created':
     case 'updated':
     case 'skipped':
+    case 'skipped_user':
     case 'skipped_duplicate':
     case 'blocked':
     case 'conflict':
@@ -647,12 +658,234 @@ const ensureCommitResponse = (value: unknown): TradeImportCommitResponse => {
   };
 };
 
-function authHeaders(): Record<string, string> {
-  const token = ApiClient.getAuthToken();
+const projectionStatus = (
+  value: unknown
+): TradeImportRestorableProjectionResponse['projections'][number]['projectionStatus'] => {
+  switch (value) {
+    case 'missing':
+    case 'local_deleted':
+    case 'other_vault':
+    case 'needs_rewrite':
+    case 'synced':
+    case 'failed':
+    case 'conflict':
+    case 'pending':
+      return value;
+    default:
+      return 'missing';
+  }
+};
+
+function missingProjectionStatus(record: Record<string, unknown>) {
+  const projectionState = asRecord(record.projectionState);
+  if (projectionState?.stale === true) {
+    return 'needs_rewrite';
+  }
+  return projectionStatus(projectionState?.syncStatus);
+}
+
+function normalizeMissingProjectionItem(
+  record: Record<string, unknown>
+): TradeImportRestorableProjection {
+  const projectionTrade = asRecord(record.projectionTrade);
+  const previewTradeValue = projectionTrade?.previewTrade;
+  const [previewTrade] = previewTradesArray([previewTradeValue]);
+  const summary = asRecord(record.summary);
+  if (
+    typeof record.tradeId !== 'string' ||
+    typeof record.backendTradeVersion !== 'number'
+  ) {
+    throw new Error('Invalid Trade Import restorable projection response');
+  }
+  return {
+    id: record.tradeId,
+    version: record.backendTradeVersion,
+    symbol:
+      typeof record.symbol === 'string'
+        ? record.symbol
+        : typeof summary?.symbol === 'string'
+          ? summary.symbol
+          : previewTrade.symbol,
+    direction: previewTrade.direction === 'short' ? 'short' : 'long',
+    status: previewTrade.status === 'OPEN' ? 'open' : 'closed',
+    accountName:
+      typeof record.accountDisplayName === 'string'
+        ? record.accountDisplayName
+        : null,
+    accountId: typeof record.accountId === 'string' ? record.accountId : null,
+    importId: typeof record.importId === 'string' ? record.importId : '',
+    correlationId:
+      typeof record.correlationId === 'string'
+        ? record.correlationId
+        : undefined,
+    commitId: typeof record.commitId === 'string' ? record.commitId : undefined,
+    broker: typeof record.broker === 'string' ? record.broker : null,
+    importedAt:
+      typeof record.importedAt === 'string' ? record.importedAt : null,
+    projectionStatus: missingProjectionStatus(record),
+    previewTrade,
+  };
+}
+
+const ensureRestorableProjectionResponse = (
+  value: unknown
+): TradeImportRestorableProjectionResponse => {
+  const record = asRecord(value);
+  if (!record || typeof record.vaultId !== 'string') {
+    throw new Error('Invalid Trade Import restorable projections response');
+  }
+  return {
+    schemaVersion: 'trade-import-restorable-projections-v1',
+    vaultId: record.vaultId,
+    nextCursor: optionalString(record.nextCursor),
+    projections: unknownArray(record.projections ?? record.items).map(
+      (projection) => {
+        const projectionRecord = asRecord(projection);
+        if (projectionRecord && 'projectionTrade' in projectionRecord) {
+          return normalizeMissingProjectionItem(projectionRecord);
+        }
+        if (
+          !projectionRecord ||
+          typeof projectionRecord.id !== 'string' ||
+          typeof projectionRecord.version !== 'number'
+        ) {
+          throw new Error(
+            'Invalid Trade Import restorable projection response'
+          );
+        }
+        const [previewTrade] = previewTradesArray([
+          projectionRecord.previewTrade,
+        ]);
+        return {
+          id: projectionRecord.id,
+          version: projectionRecord.version,
+          symbol:
+            typeof projectionRecord.symbol === 'string'
+              ? projectionRecord.symbol
+              : previewTrade.symbol,
+          direction: projectionRecord.direction === 'short' ? 'short' : 'long',
+          status: projectionRecord.status === 'open' ? 'open' : 'closed',
+          accountName:
+            typeof projectionRecord.accountName === 'string'
+              ? projectionRecord.accountName
+              : null,
+          accountId:
+            typeof projectionRecord.accountId === 'string'
+              ? projectionRecord.accountId
+              : null,
+          importId:
+            typeof projectionRecord.importId === 'string'
+              ? projectionRecord.importId
+              : '',
+          correlationId:
+            typeof projectionRecord.correlationId === 'string'
+              ? projectionRecord.correlationId
+              : undefined,
+          commitId:
+            typeof projectionRecord.commitId === 'string'
+              ? projectionRecord.commitId
+              : undefined,
+          broker:
+            typeof projectionRecord.broker === 'string'
+              ? projectionRecord.broker
+              : null,
+          importedAt:
+            typeof projectionRecord.importedAt === 'string'
+              ? projectionRecord.importedAt
+              : null,
+          projectionStatus: projectionStatus(projectionRecord.projectionStatus),
+          previewTrade,
+        };
+      }
+    ),
+  };
+};
+
+function normalizeAccountVaultMapping(
+  value: unknown
+): TradeImportAccountVaultMapping | null {
+  const record = asRecord(value);
+  if (!record || typeof record.vaultId !== 'string') return null;
+  return {
+    vaultId: record.vaultId,
+    localAccountId: optionalString(record.localAccountId),
+    localAccountName: optionalString(record.localAccountName),
+    mappingStatus: 'mapped',
+    lastSyncedAt: optionalString(record.lastSyncedAt),
+    updatedAt: optionalString(record.updatedAt),
+  };
+}
+
+function normalizeAccountInventoryItem(
+  value: unknown
+): TradeImportAccountInventoryItem {
+  const record = asRecord(value);
+  if (
+    !record ||
+    typeof record.accountId !== 'string' ||
+    typeof record.broker !== 'string'
+  ) {
+    throw new Error('Invalid Trade Import account inventory response');
+  }
+  return {
+    accountId: record.accountId,
+    broker: record.broker,
+    displayName: optionalString(record.displayName) ?? record.broker,
+    tradeCount: numberValue(record.tradeCount),
+    missingCount: numberValue(record.missingCount),
+    localDeletedCount: numberValue(record.localDeletedCount),
+    failedCount: numberValue(record.failedCount),
+    needsRewriteCount: numberValue(record.needsRewriteCount),
+    staleCount: numberValue(record.staleCount),
+    conflictCount: numberValue(record.conflictCount),
+    pendingCount: numberValue(record.pendingCount),
+    syncedCount: numberValue(record.syncedCount),
+    restorableCount: numberValue(record.restorableCount),
+    lastImportedAt: optionalString(record.lastImportedAt),
+    mapping: normalizeAccountVaultMapping(record.mapping),
+  };
+}
+
+const ensureAccountInventoryResponse = (
+  value: unknown
+): TradeImportAccountInventoryResponse => {
+  const record = asRecord(value);
+  if (!record || typeof record.vaultId !== 'string') {
+    throw new Error('Invalid Trade Import account inventory response');
+  }
+  return {
+    schemaVersion: 'trade-import-accounts-v1',
+    vaultId: record.vaultId,
+    accounts: unknownArray(record.accounts).map(normalizeAccountInventoryItem),
+  };
+};
+
+function restorableProjectionQuery(
+  request: TradeImportRestorableProjectionRequest
+): string {
+  const params = new URLSearchParams();
+  params.set('vaultId', request.vaultId);
+  for (const [key, value] of Object.entries(request)) {
+    if (key === 'vaultId' || value === undefined || value === null) continue;
+    params.set(key, String(value));
+  }
+  return params.toString();
+}
+
+function accountInventoryQuery(vaultId: string): string {
+  const params = new URLSearchParams();
+  params.set('vaultId', vaultId);
+  return params.toString();
+}
+
+function authHeaders(token: string | null): Record<string, string> {
   return token ? { Authorization: `Bearer ${token}` } : {};
 }
 
-function handleTradeImportHttpError(status: number): void {
+function handleTradeImportHttpError(
+  status: number,
+  requestAuthToken: string | null
+): void {
   if (status === 402) {
     window.dispatchEvent(
       new CustomEvent('journalit:premium-required', {
@@ -665,15 +898,21 @@ function handleTradeImportHttpError(status: number): void {
   if (status === 401) {
     try {
       const plugin = getPluginInstance();
-      const backend = plugin?.settings.backendIntegration;
-      if (!plugin || !backend) return;
+      if (
+        !plugin?.settings.backendIntegration ||
+        !requestAuthToken ||
+        requestAuthToken !== ApiClient.getAuthToken()
+      ) {
+        return;
+      }
 
-      BackendSecretStorage.clearAuthToken(plugin);
-      backend.userEmail = undefined;
-      backend.subscriptionTier = undefined;
-      backend.userId = '';
-      void plugin.saveSettings();
-      window.dispatchEvent(new CustomEvent('journalit:subscription-changed'));
+      ApiClient.handleAuthenticationFailure({
+        operation: 'Trade Import',
+        statusCode: status,
+      });
+      void clearPersistedBackendAuthSession(plugin, requestAuthToken).catch(
+        () => undefined
+      );
     } catch {
       // intentional
     }
@@ -693,9 +932,10 @@ async function postMultipart(
   );
 
   return new Promise<unknown>((resolve, reject) => {
+    const requestAuthToken = ApiClient.getAuthToken();
     const xhr = new XMLHttpRequest();
     xhr.open('POST', ApiClient.buildUrl(path));
-    for (const [key, value] of Object.entries(authHeaders()))
+    for (const [key, value] of Object.entries(authHeaders(requestAuthToken)))
       xhr.setRequestHeader(key, value);
     xhr.onload = () => {
       let responseBody: unknown = null;
@@ -707,7 +947,7 @@ async function postMultipart(
         responseBody = xhr.responseText || null;
       }
       if (xhr.status < 200 || xhr.status >= 300) {
-        handleTradeImportHttpError(xhr.status);
+        handleTradeImportHttpError(xhr.status, requestAuthToken);
         reject(
           new ApiError(
             `Trade Import request failed (${xhr.status})`,
@@ -732,14 +972,15 @@ async function postMultipart(
 
 export class BackendTradeImportService {
   async getCapabilities(): Promise<TradeImportCapabilities> {
+    const requestAuthToken = ApiClient.getAuthToken();
     const response = await requestUrl({
       url: ApiClient.buildUrl('/api/v1/trade-import/capabilities'),
       method: 'GET',
-      headers: authHeaders(),
+      headers: authHeaders(requestAuthToken),
       throw: false,
     });
     if (response.status < 200 || response.status >= 300) {
-      handleTradeImportHttpError(response.status);
+      handleTradeImportHttpError(response.status, requestAuthToken);
       throw new ApiError(
         'Trade Import capabilities unavailable',
         response.status
@@ -771,11 +1012,12 @@ export class BackendTradeImportService {
     request: TradeImportCommitRequest,
     idempotencyKey: string
   ): Promise<TradeImportCommitResponse> {
+    const requestAuthToken = ApiClient.getAuthToken();
     const response = await requestUrl({
       url: ApiClient.buildUrl(`/api/v1/trade-import/${importId}/commit`),
       method: 'POST',
       headers: {
-        ...authHeaders(),
+        ...authHeaders(requestAuthToken),
         'Content-Type': 'application/json',
         'Idempotency-Key': idempotencyKey,
       },
@@ -783,7 +1025,7 @@ export class BackendTradeImportService {
       throw: false,
     });
     if (response.status < 200 || response.status >= 300) {
-      handleTradeImportHttpError(response.status);
+      handleTradeImportHttpError(response.status, requestAuthToken);
       throw new ApiError(
         `Trade Import commit failed (${response.status})`,
         response.status
@@ -793,19 +1035,104 @@ export class BackendTradeImportService {
   }
 
   async projectionAck(request: TradeImportProjectionAckRequest): Promise<void> {
+    const requestAuthToken = ApiClient.getAuthToken();
     const response = await requestUrl({
       url: ApiClient.buildUrl('/api/v1/trade-import/projection-ack'),
       method: 'POST',
-      headers: { ...authHeaders(), 'Content-Type': 'application/json' },
+      headers: {
+        ...authHeaders(requestAuthToken),
+        'Content-Type': 'application/json',
+      },
       body: JSON.stringify(request),
       throw: false,
     });
     if (response.status < 200 || response.status >= 300) {
-      handleTradeImportHttpError(response.status);
+      handleTradeImportHttpError(response.status, requestAuthToken);
       throw new ApiError(
         `Trade Import projection acknowledgement failed (${response.status})`,
         response.status
       );
     }
+  }
+
+  async getRestorableProjections(
+    request: TradeImportRestorableProjectionRequest
+  ): Promise<TradeImportRestorableProjectionResponse> {
+    const requestAuthToken = ApiClient.getAuthToken();
+    const response = await requestUrl({
+      url: ApiClient.buildUrl(
+        `/api/v1/trade-import/projections/missing?${restorableProjectionQuery(request)}`
+      ),
+      method: 'GET',
+      headers: authHeaders(requestAuthToken),
+      throw: false,
+    });
+    if (response.status < 200 || response.status >= 300) {
+      handleTradeImportHttpError(response.status, requestAuthToken);
+      throw new ApiError(
+        `Trade Import restorable projections unavailable (${response.status})`,
+        response.status
+      );
+    }
+    return ensureRestorableProjectionResponse(response.json);
+  }
+
+  async getAccountInventory(
+    vaultId: string
+  ): Promise<TradeImportAccountInventoryResponse> {
+    const requestAuthToken = ApiClient.getAuthToken();
+    const response = await requestUrl({
+      url: ApiClient.buildUrl(
+        `/api/v1/trade-import/accounts?${accountInventoryQuery(vaultId)}`
+      ),
+      method: 'GET',
+      headers: authHeaders(requestAuthToken),
+      throw: false,
+    });
+    if (response.status < 200 || response.status >= 300) {
+      handleTradeImportHttpError(response.status, requestAuthToken);
+      throw new ApiError(
+        `Trade Import accounts unavailable (${response.status})`,
+        response.status
+      );
+    }
+    return ensureAccountInventoryResponse(response.json);
+  }
+
+  async updateAccountVaultMapping(
+    accountId: string,
+    request: TradeImportAccountVaultMappingRequest
+  ): Promise<TradeImportAccountVaultMapping> {
+    const requestAuthToken = ApiClient.getAuthToken();
+    const response = await requestUrl({
+      url: ApiClient.buildUrl(
+        `/api/v1/trade-import/accounts/${encodeURIComponent(accountId)}/vault-mapping`
+      ),
+      method: 'PUT',
+      headers: {
+        ...authHeaders(requestAuthToken),
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(request),
+      throw: false,
+    });
+    if (response.status < 200 || response.status >= 300) {
+      handleTradeImportHttpError(response.status, requestAuthToken);
+      throw new ApiError(
+        `Trade Import account mapping failed (${response.status})`,
+        response.status
+      );
+    }
+    const responseRecord = asRecord(response.json);
+    return (
+      normalizeAccountVaultMapping(
+        responseRecord?.mapping ?? response.json
+      ) ?? {
+        vaultId: request.vaultId,
+        localAccountId: request.localAccountId,
+        localAccountName: request.localAccountName,
+        mappingStatus: 'mapped',
+      }
+    );
   }
 }

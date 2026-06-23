@@ -502,10 +502,29 @@ export const PerformanceCalendar = memo<PerformanceCalendarProps>(
       () => new Date(gridStartDate.getFullYear(), gridStartDate.getMonth(), 1),
       [gridStartDate]
     );
-    const [visibleMonthOffset, setVisibleMonthOffset] = useState(0);
-    useEffect(() => {
-      setVisibleMonthOffset(0);
-    }, [firstVisibleMonth]);
+    const [visibleMonthState, setVisibleMonthState] = useState(() => ({
+      firstVisibleMonth,
+      offset: 0,
+    }));
+    const visibleMonthOffset =
+      visibleMonthState.firstVisibleMonth.getTime() ===
+      firstVisibleMonth.getTime()
+        ? visibleMonthState.offset
+        : 0;
+    const setVisibleMonthOffset = (
+      offset: number | ((currentOffset: number) => number)
+    ) => {
+      setVisibleMonthState((current) => {
+        const currentOffset =
+          current.firstVisibleMonth.getTime() === firstVisibleMonth.getTime()
+            ? current.offset
+            : 0;
+        return {
+          firstVisibleMonth,
+          offset: typeof offset === 'function' ? offset(currentOffset) : offset,
+        };
+      });
+    };
 
     const visibleMonth = useMemo(
       () =>
@@ -687,11 +706,9 @@ export const PerformanceCalendar = memo<PerformanceCalendarProps>(
           <div
             className={`journalit-dashboard-calendar-grid ${skipWeekends ? 'hide-weekends' : ''}`}
           >
-            {calendar
-              .filter((week) => {
-                
-                if (!skipWeekends) return true;
-
+            {calendar.flatMap((week, weekIndex) => {
+              
+              if (skipWeekends) {
                 
                 
                 const hasValidWeekdays = week.some(
@@ -701,175 +718,172 @@ export const PerformanceCalendar = memo<PerformanceCalendarProps>(
                     day.currentMonth
                 );
 
-                return hasValidWeekdays;
-              })
-              .map((week, weekIndex) => {
-                
-                let weeklyPnL = 0;
-                let weeklyTradeCount = 0;
-                let validDays = 0;
-                let weeklyRMultiple = 0;
-                let weeklyHasRMultiple = false;
+                if (!hasValidWeekdays) return [];
+              }
 
-                const visibleWeekDays = skipWeekends
-                  ? week.filter((_, dayIndex) => weekdayIndices.has(dayIndex))
-                  : week;
-                const currentMonthWeekDays = visibleWeekDays.filter(
-                  (day) => day.currentMonth
+              
+              let weeklyPnL = 0;
+              let weeklyTradeCount = 0;
+              let validDays = 0;
+              let weeklyRMultiple = 0;
+              let weeklyHasRMultiple = false;
+
+              const visibleWeekDays = skipWeekends
+                ? week.filter((_, dayIndex) => weekdayIndices.has(dayIndex))
+                : week;
+              const currentMonthWeekDays = visibleWeekDays.filter(
+                (day) => day.currentMonth
+              );
+
+              
+              const firstValidDate = currentMonthWeekDays.find(
+                (day) => day.date
+              )?.date;
+
+              
+              currentMonthWeekDays.forEach((day) => {
+                if (day.pnl !== null) {
+                  weeklyPnL += day.pnl;
+                  validDays++;
+                }
+                if (day.tradeCount > 0) {
+                  weeklyTradeCount += day.tradeCount;
+                }
+                if (day.rMultiple !== null) {
+                  weeklyRMultiple += day.rMultiple;
+                  weeklyHasRMultiple = true;
+                }
+              });
+
+              const weeklyHasUnresolvedBreakEvenBalance =
+                currentMonthWeekDays.some(
+                  (day) => day.hasUnresolvedBreakEvenBalance === true
                 );
 
-                
-                const firstValidDate = currentMonthWeekDays.find(
-                  (day) => day.date
-                )?.date;
+              const weeklyBalances = Array.from(
+                new Set(
+                  currentMonthWeekDays.flatMap((day) => {
+                    const balance = day.breakEvenAccountCurrentBalance;
+                    return balance !== undefined && Number.isFinite(balance)
+                      ? [balance]
+                      : [];
+                  })
+                )
+              );
+              const weeklyBreakEvenAccountCurrentBalance =
+                weeklyBalances.length === 1 ? weeklyBalances[0] : undefined;
 
-                
-                currentMonthWeekDays.forEach((day) => {
-                  if (day.pnl !== null) {
-                    weeklyPnL += day.pnl;
-                    validDays++;
-                  }
-                  if (day.tradeCount > 0) {
-                    weeklyTradeCount += day.tradeCount;
-                  }
-                  if (day.rMultiple !== null) {
-                    weeklyRMultiple += day.rMultiple;
-                    weeklyHasRMultiple = true;
-                  }
-                });
+              const weeklyOutcome =
+                validDays > 0 && !weeklyHasUnresolvedBreakEvenBalance
+                  ? classifyPnLWithBreakEvenSettings(
+                      weeklyPnL,
+                      breakEvenSettings,
+                      weeklyBreakEvenAccountCurrentBalance
+                    )
+                  : null;
 
-                const weeklyHasUnresolvedBreakEvenBalance =
-                  currentMonthWeekDays.some(
-                    (day) => day.hasUnresolvedBreakEvenBalance === true
-                  );
+              const weeklyOutcomeClass = isPnlMasked
+                ? ''
+                : weeklyOutcome === 'win'
+                  ? 'positive'
+                  : weeklyOutcome === 'loss'
+                    ? 'negative'
+                    : weeklyOutcome
+                      ? 'neutral'
+                      : '';
 
-                const weeklyBalances = Array.from(
-                  new Set(
-                    currentMonthWeekDays
-                      .map((day) => day.breakEvenAccountCurrentBalance)
-                      .filter(
-                        (balance): balance is number =>
-                          balance !== undefined && Number.isFinite(balance)
-                      )
-                  )
-                );
-                const weeklyBreakEvenAccountCurrentBalance =
-                  weeklyBalances.length === 1 ? weeklyBalances[0] : undefined;
+              return (
+                <React.Fragment key={`week-${weekIndex}`}>
+                  <div
+                    className={`journalit-dashboard-calendar-week ${
+                      skipWeekends ? 'hide-weekends' : ''
+                    }`}
+                  >
+                    {visibleWeekDays.map((day, filteredIndex) => {
+                      return (
+                        <CalendarDay
+                          key={`day-${weekIndex}-${filteredIndex}`}
+                          day={day}
+                          onClick={handleDayClick}
+                          breakEvenSettings={breakEvenSettings}
+                        />
+                      );
+                    })}
 
-                const weeklyOutcome =
-                  validDays > 0 && !weeklyHasUnresolvedBreakEvenBalance
-                    ? classifyPnLWithBreakEvenSettings(
-                        weeklyPnL,
-                        breakEvenSettings,
-                        weeklyBreakEvenAccountCurrentBalance
-                      )
-                    : null;
+                    
+                    {(() => {
+                      const interactiveWeekProps = firstValidDate
+                        ? {
+                            onClick: () => handleWeekClick(firstValidDate),
+                            onKeyDown: (
+                              event: React.KeyboardEvent<HTMLDivElement>
+                            ) => {
+                              if (event.key !== 'Enter' && event.key !== ' ') {
+                                return;
+                              }
 
-                const weeklyOutcomeClass = isPnlMasked
-                  ? ''
-                  : weeklyOutcome === 'win'
-                    ? 'positive'
-                    : weeklyOutcome === 'loss'
-                      ? 'negative'
-                      : weeklyOutcome
-                        ? 'neutral'
-                        : '';
+                              event.preventDefault();
+                              handleWeekClick(firstValidDate);
+                            },
+                            role: 'button',
+                            tabIndex: 0,
+                            'aria-label': t(
+                              'calendar.aria.open-weekly-review',
+                              {
+                                date: formatLocalDateString(firstValidDate),
+                              }
+                            ),
+                          }
+                        : {};
 
-                return (
-                  <React.Fragment key={`week-${weekIndex}`}>
-                    <div
-                      className={`journalit-dashboard-calendar-week ${
-                        skipWeekends ? 'hide-weekends' : ''
-                      }`}
-                    >
-                      {visibleWeekDays.map((day, filteredIndex) => {
-                        return (
-                          <CalendarDay
-                            key={`day-${weekIndex}-${filteredIndex}`}
-                            day={day}
-                            onClick={handleDayClick}
-                            breakEvenSettings={breakEvenSettings}
-                          />
-                        );
-                      })}
-
-                      
-                      {(() => {
-                        const interactiveWeekProps = firstValidDate
-                          ? {
-                              onClick: () => handleWeekClick(firstValidDate),
-                              onKeyDown: (
-                                event: React.KeyboardEvent<HTMLDivElement>
-                              ) => {
-                                if (
-                                  event.key !== 'Enter' &&
-                                  event.key !== ' '
-                                ) {
-                                  return;
-                                }
-
-                                event.preventDefault();
-                                handleWeekClick(firstValidDate);
-                              },
-                              role: 'button',
-                              tabIndex: 0,
-                              'aria-label': t(
-                                'calendar.aria.open-weekly-review',
-                                {
-                                  date: formatLocalDateString(firstValidDate),
-                                }
-                              ),
-                            }
-                          : {};
-
-                        return (
-                          <div
-                            className={`journalit-dashboard-calendar-weekly-pnl ${weeklyTradeCount > 0 ? 'has-trades' : ''} ${weeklyOutcomeClass}`}
-                            {...interactiveWeekProps}
-                          >
-                            {firstValidDate && (
-                              <div className="journalit-dashboard-calendar-week-number">
-                                W
-                                {getWeekNumberForDate(
-                                  firstValidDate,
-                                  weekStartDay
-                                )}
+                      return (
+                        <div
+                          className={`journalit-dashboard-calendar-weekly-pnl ${weeklyTradeCount > 0 ? 'has-trades' : ''} ${weeklyOutcomeClass}`}
+                          {...interactiveWeekProps}
+                        >
+                          {firstValidDate && (
+                            <div className="journalit-dashboard-calendar-week-number">
+                              W
+                              {getWeekNumberForDate(
+                                firstValidDate,
+                                weekStartDay
+                              )}
+                            </div>
+                          )}
+                          {validDays > 0 && (
+                            <>
+                              <div className="journalit-dashboard-calendar-week-total-label">
+                                {t('calendar.week')}
                               </div>
-                            )}
-                            {validDays > 0 && (
-                              <>
-                                <div className="journalit-dashboard-calendar-week-total-label">
-                                  {t('calendar.week')}
+                              <div className="journalit-dashboard-calendar-week-total-value">
+                                {formatValue({
+                                  kind: 'pnl',
+                                  value: weeklyPnL,
+                                  showCents: false,
+                                  currencyCode: currency,
+                                  rMultiple: weeklyHasRMultiple
+                                    ? weeklyRMultiple
+                                    : undefined,
+                                })}
+                              </div>
+                              {weeklyTradeCount > 0 && (
+                                <div className="journalit-dashboard-calendar-week-trade-count">
+                                  {weeklyTradeCount === 1
+                                    ? t('calendar.trade', { count: '1' })
+                                    : t('calendar.trades', {
+                                        count: String(weeklyTradeCount),
+                                      })}
                                 </div>
-                                <div className="journalit-dashboard-calendar-week-total-value">
-                                  {formatValue({
-                                    kind: 'pnl',
-                                    value: weeklyPnL,
-                                    showCents: false,
-                                    currencyCode: currency,
-                                    rMultiple: weeklyHasRMultiple
-                                      ? weeklyRMultiple
-                                      : undefined,
-                                  })}
-                                </div>
-                                {weeklyTradeCount > 0 && (
-                                  <div className="journalit-dashboard-calendar-week-trade-count">
-                                    {weeklyTradeCount === 1
-                                      ? t('calendar.trade', { count: '1' })
-                                      : t('calendar.trades', {
-                                          count: String(weeklyTradeCount),
-                                        })}
-                                  </div>
-                                )}
-                              </>
-                            )}
-                          </div>
-                        );
-                      })()}
-                    </div>
-                  </React.Fragment>
-                );
-              })}
+                              )}
+                            </>
+                          )}
+                        </div>
+                      );
+                    })()}
+                  </div>
+                </React.Fragment>
+              );
+            })}
           </div>
         </div>
       </div>

@@ -13,7 +13,7 @@ import {
   DropdownOption,
 } from '../../../types/customFields';
 
-export type FilterContext = 'dashboard' | 'tradelog' | 'review';
+type FilterContext = 'dashboard' | 'tradelog' | 'review';
 
 
 export interface UnifiedFilters {

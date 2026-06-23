@@ -289,8 +289,10 @@ export interface PnLChartDataPoint {
 const formatTradeAccountLabel = (trade: { account?: string | string[] }) => {
   if (Array.isArray(trade.account)) {
     return trade.account
-      .map((account) => account.trim())
-      .filter((account) => account.length > 0)
+      .flatMap((account) => {
+        const normalized = account.trim();
+        return normalized ? [normalized] : [];
+      })
       .join(', ');
   }
 
@@ -352,16 +354,18 @@ export const preparePnLChartData = (
   const pnlEvents = pnlContributingTrades.flatMap((trade) => {
     const events = getTradeRealizedPnlEvents(trade, analyticsDateBasis, plugin);
     return events.length > 0
-      ? events
-          .filter((event) =>
-            isEventWithinTradeAnalyticsRange(trade, event.tradingDay)
-          )
-          .map((event) => ({
-            trade,
-            date: event.date,
-            pnl: event.pnl,
-            useStoredRMultiple: events.length === 1,
-          }))
+      ? events.flatMap((event) =>
+          isEventWithinTradeAnalyticsRange(trade, event.tradingDay)
+            ? [
+                {
+                  trade,
+                  date: event.date,
+                  pnl: event.pnl,
+                  useStoredRMultiple: events.length === 1,
+                },
+              ]
+            : []
+        )
       : [
           {
             trade,
@@ -575,17 +579,19 @@ export const prepareDrawdownChartState = (
   const drawdownTrades = pnlContributingTrades.flatMap((trade) => {
     const events = getTradeRealizedPnlEvents(trade, analyticsDateBasis, plugin);
     return events.length > 0
-      ? events
-          .filter((event) =>
-            isEventWithinTradeAnalyticsRange(trade, event.tradingDay)
-          )
-          .map((event) => ({
-            ...trade,
-            pnl: event.pnl,
-            rMultiple: events.length === 1 ? trade.rMultiple : undefined,
-            exitTime: event.date,
-            exits: undefined,
-          }))
+      ? events.flatMap((event) =>
+          isEventWithinTradeAnalyticsRange(trade, event.tradingDay)
+            ? [
+                {
+                  ...trade,
+                  pnl: event.pnl,
+                  rMultiple: events.length === 1 ? trade.rMultiple : undefined,
+                  exitTime: event.date,
+                  exits: undefined,
+                },
+              ]
+            : []
+        )
       : [
           {
             ...trade,
@@ -812,16 +818,18 @@ export const prepareTradesChartData = (
   const pnlEvents = pnlContributingTrades.flatMap((trade) => {
     const events = getTradeRealizedPnlEvents(trade, analyticsDateBasis, plugin);
     return events.length > 0
-      ? events
-          .filter((event) =>
-            isEventWithinTradeAnalyticsRange(trade, event.tradingDay)
-          )
-          .map((event) => ({
-            trade,
-            date: event.date,
-            pnl: event.pnl,
-            useStoredRMultiple: events.length === 1,
-          }))
+      ? events.flatMap((event) =>
+          isEventWithinTradeAnalyticsRange(trade, event.tradingDay)
+            ? [
+                {
+                  trade,
+                  date: event.date,
+                  pnl: event.pnl,
+                  useStoredRMultiple: events.length === 1,
+                },
+              ]
+            : []
+        )
       : [
           {
             trade,

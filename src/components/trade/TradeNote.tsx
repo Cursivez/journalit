@@ -1,6 +1,12 @@
 
 
-import React, { useState, useCallback, useEffect, useRef } from 'react';
+import React, {
+  useState,
+  useCallback,
+  useEffect,
+  useRef,
+  useReducer,
+} from 'react';
 import { TFile } from 'obsidian';
 import { TradeFormData } from '../forms/trade/types';
 import { PartialTradeFrontmatter } from '../../types/TradeFrontmatter';
@@ -113,8 +119,11 @@ export const TradeNote: React.FC<TradeNoteProps> = React.memo(
     const plugin = usePlugin();
     const { service: accountPageService } = useAccountPageService();
 
-    const [breakEvenAccountCurrentBalance, setBreakEvenAccountCurrentBalance] =
-      useState<number | undefined>(undefined);
+    const [breakEvenAccountCurrentBalance, dispatchBreakEvenAccountBalance] =
+      useReducer(
+        (_state: number | undefined, balance: number | undefined) => balance,
+        undefined
+      );
     const [accountBalanceRefreshKey, setAccountBalanceRefreshKey] = useState(0);
 
     useEventBus('account:changed', () => {
@@ -140,7 +149,7 @@ export const TradeNote: React.FC<TradeNoteProps> = React.memo(
             'percentage_current_balance'
         ) {
           if (isMounted) {
-            setBreakEvenAccountCurrentBalance(undefined);
+            dispatchBreakEvenAccountBalance(undefined);
           }
           return;
         }
@@ -161,10 +170,10 @@ export const TradeNote: React.FC<TradeNoteProps> = React.memo(
 
           if (!isMounted) return;
 
-          setBreakEvenAccountCurrentBalance(resolution.singleBalance);
+          dispatchBreakEvenAccountBalance(resolution.singleBalance);
         } catch {
           if (isMounted) {
-            setBreakEvenAccountCurrentBalance(undefined);
+            dispatchBreakEvenAccountBalance(undefined);
           }
         }
       };
@@ -448,15 +457,27 @@ export const TradeNote: React.FC<TradeNoteProps> = React.memo(
       <TradeHeader
         instrument={data.instrument}
         direction={data.direction}
-        isProfit={metrics.isProfit}
-        isBreakeven={metrics.isBreakeven}
+        outcome={{
+          kind: metrics.isBreakeven
+            ? 'breakeven'
+            : metrics.isProfit
+              ? 'profit'
+              : 'loss',
+        }}
         pnl={metrics.pnl}
         percentChange={metrics.percentChange}
-        useDirectPnLInput={data.useDirectPnLInput}
-        directPnL={data.directPnL}
-        isMissedTrade={data.isMissedTrade}
-        isBacktestTrade={data.isBacktestTrade}
-        _originalPnlWasNull={data._originalPnlWasNull}
+        pnlInput={{
+          useDirectPnLInput: data.useDirectPnLInput,
+          directPnL: data.directPnL,
+          originalPnlWasNull: data._originalPnlWasNull,
+        }}
+        noteKind={
+          data.isBacktestTrade
+            ? 'backtest-trade'
+            : data.isMissedTrade
+              ? 'missed-trade'
+              : 'trade'
+        }
         exitTime={data.exitTime}
         exitPrice={data.exitPrice}
         tradeStatus={data.tradeStatus}
@@ -470,8 +491,10 @@ export const TradeNote: React.FC<TradeNoteProps> = React.memo(
         assetType={data.assetType}
         optionType={data.optionType}
         rMultiple={data.rMultiple}
-        displayRMultiples={plugin?.settings?.trade?.displayRMultiples ?? false}
-        riskAmount={data.riskAmount}
+        rMultipleDisplay={{
+          enabled: plugin?.settings?.trade?.displayRMultiples ?? false,
+          riskAmount: data.riskAmount,
+        }}
         currency={data.currency}
       />
     );
@@ -635,9 +658,30 @@ const TradeNavigationSection: React.FC<{
   handleEditClick,
 }) {
   const plugin = usePlugin();
-  const [trades, setTrades] = useState<TFile[]>([]);
-  const [missedTrades, setMissedTrades] = useState<TFile[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const [navigationState, dispatchNavigationState] = useReducer(
+    (
+      state: { trades: TFile[]; missedTrades: TFile[]; isLoading: boolean },
+      action:
+        | { type: 'clear' }
+        | { type: 'loading'; isLoading: boolean }
+        | { type: 'loaded'; trades: TFile[]; missedTrades: TFile[] }
+    ) => {
+      switch (action.type) {
+        case 'clear':
+          return { trades: [], missedTrades: [], isLoading: false };
+        case 'loading':
+          return { ...state, isLoading: action.isLoading };
+        case 'loaded':
+          return {
+            trades: action.trades,
+            missedTrades: action.missedTrades,
+            isLoading: false,
+          };
+      }
+    },
+    { trades: [], missedTrades: [], isLoading: false }
+  );
+  const { trades, missedTrades, isLoading } = navigationState;
   const [isVisible, setIsVisible] = useState(false);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
 
@@ -735,9 +779,7 @@ const TradeNavigationSection: React.FC<{
             );
 
             
-            setTrades([]);
-            setMissedTrades([]);
-            setIsLoading(false);
+            dispatchNavigationState({ type: 'clear' });
             setRefreshTrigger((prev) => prev + 1);
           }, 200); 
         }
@@ -779,27 +821,18 @@ const TradeNavigationSection: React.FC<{
               parsedData;
 
             
-            const tradeFiles = tradePaths
-              .map((path: string) => {
-                const abstractFile =
-                  plugin.app.vault.getAbstractFileByPath(path);
-                if (!(abstractFile instanceof TFile)) {
-                  return null;
-                }
-                return abstractFile;
-              })
-              .filter((file): file is TFile => file !== null); 
+            const tradeFiles = tradePaths.flatMap((path: string) => {
+              const abstractFile = plugin.app.vault.getAbstractFileByPath(path);
+              return abstractFile instanceof TFile ? [abstractFile] : [];
+            });
 
-            const missedTradeFiles = missedTradePaths
-              .map((path: string) => {
+            const missedTradeFiles = missedTradePaths.flatMap(
+              (path: string) => {
                 const abstractFile =
                   plugin.app.vault.getAbstractFileByPath(path);
-                if (!(abstractFile instanceof TFile)) {
-                  return null;
-                }
-                return abstractFile;
-              })
-              .filter((file): file is TFile => file !== null); 
+                return abstractFile instanceof TFile ? [abstractFile] : [];
+              }
+            );
 
             
             const allCachedPaths = [...tradePaths, ...missedTradePaths];
@@ -820,8 +853,11 @@ const TradeNavigationSection: React.FC<{
               );
               
             } else {
-              setTrades(tradeFiles);
-              setMissedTrades(missedTradeFiles);
+              dispatchNavigationState({
+                type: 'loaded',
+                trades: tradeFiles,
+                missedTrades: missedTradeFiles,
+              });
               return; 
             }
           }
@@ -835,7 +871,7 @@ const TradeNavigationSection: React.FC<{
           void (async () => {
             try {
               if (!isMounted) return;
-              setIsLoading(true);
+              dispatchNavigationState({ type: 'loading', isLoading: true });
 
               
               
@@ -863,8 +899,11 @@ const TradeNavigationSection: React.FC<{
 
               
               if (isMounted) {
-                setTrades(dayTrades);
-                setMissedTrades(dayMissedTrades);
+                dispatchNavigationState({
+                  type: 'loaded',
+                  trades: dayTrades,
+                  missedTrades: dayMissedTrades,
+                });
 
                 
                 try {
@@ -888,7 +927,7 @@ const TradeNavigationSection: React.FC<{
               console.error('Error fetching trades for day:', error);
             } finally {
               if (isMounted) {
-                setIsLoading(false);
+                dispatchNavigationState({ type: 'loading', isLoading: false });
               }
             }
           })();
@@ -896,7 +935,7 @@ const TradeNavigationSection: React.FC<{
       } catch (error) {
         console.error('Error in trade fetch setup:', error);
         if (isMounted) {
-          setIsLoading(false);
+          dispatchNavigationState({ type: 'loading', isLoading: false });
         }
       }
     };
@@ -910,7 +949,7 @@ const TradeNavigationSection: React.FC<{
         window.clearTimeout(fetchTimeoutId);
       }
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- isLoading intentionally excluded: including it causes race condition where setIsLoading(true) triggers cleanup before async fetch completes
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- isLoading intentionally excluded: including it causes race condition where dispatchNavigationState({ type: 'loading', isLoading: true }) triggers cleanup before async fetch completes
   }, [
     isVisible,
     dateRange,

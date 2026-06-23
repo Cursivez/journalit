@@ -86,7 +86,7 @@ export type TradeField = (typeof TRADE_FIELDS)[number];
 export type ManualImportMode = 'price_based' | 'direct_pnl';
 
 
-export type LegacyColumnMappings = Record<string, string>;
+type LegacyColumnMappings = Record<string, string>;
 
 
 export type MultiColumnMappings = Record<string, string[]>;

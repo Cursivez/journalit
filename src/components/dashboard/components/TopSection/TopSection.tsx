@@ -5,6 +5,7 @@ import React, {
   useState,
   useCallback,
   useLayoutEffect,
+  useReducer,
 } from 'react';
 import { FilterState } from '../../DashboardView';
 import { formatDuration } from '../../../../utils/formatting';
@@ -415,12 +416,15 @@ function useTopSectionModel({ filters }: Pick<TopSectionProps, 'filters'>) {
   const error = contextError
     ? contextError.message || t('dashboard.top-section.failed-load')
     : null;
-  const [comparisonData, setComparisonData] = useState<DashboardData | null>(
-    null
+  const [comparisonState, dispatchComparisonState] = useReducer(
+    (
+      _state: { data: DashboardData | null; mode: 'previous' | 'past30d' },
+      action: { data: DashboardData | null; mode: 'previous' | 'past30d' }
+    ) => action,
+    { data: null, mode: 'previous' as const }
   );
-  const [comparisonMode, setComparisonMode] = useState<'previous' | 'past30d'>(
-    'previous'
-  );
+  const comparisonData = comparisonState.data;
+  const comparisonMode = comparisonState.mode;
 
   
   useLayoutEffect(() => {
@@ -429,7 +433,7 @@ function useTopSectionModel({ filters }: Pick<TopSectionProps, 'filters'>) {
 
   useEffect(() => {
     if (!plugin?.tradeService || !data) {
-      setComparisonData(null);
+      dispatchComparisonState({ data: null, mode: comparisonMode });
       return;
     }
 
@@ -437,8 +441,7 @@ function useTopSectionModel({ filters }: Pick<TopSectionProps, 'filters'>) {
       filters,
       getWeekStartDaySetting(plugin)
     );
-    setComparisonData(null);
-    setComparisonMode(comparisonRange.mode);
+    dispatchComparisonState({ data: null, mode: comparisonRange.mode });
 
     let isMounted = true;
     fetchDashboardData(
@@ -450,20 +453,27 @@ function useTopSectionModel({ filters }: Pick<TopSectionProps, 'filters'>) {
       { freshTradeQuery: false }
     )
       .then((nextComparisonData) => {
-        if (isMounted) setComparisonData(nextComparisonData);
+        if (isMounted) {
+          dispatchComparisonState({
+            data: nextComparisonData,
+            mode: comparisonRange.mode,
+          });
+        }
       })
       .catch((comparisonError) => {
         console.error(
           '[Dashboard] Failed to load previous period metrics:',
           comparisonError
         );
-        if (isMounted) setComparisonData(null);
+        if (isMounted) {
+          dispatchComparisonState({ data: null, mode: comparisonRange.mode });
+        }
       });
 
     return () => {
       isMounted = false;
     };
-  }, [data, filters, plugin]);
+  }, [comparisonMode, data, filters, plugin]);
 
   
   useEffect(() => {

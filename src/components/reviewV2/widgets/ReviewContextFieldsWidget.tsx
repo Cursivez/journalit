@@ -568,10 +568,10 @@ export const ReviewContextFieldsWidget: React.FC<ReviewContextFieldsWidgetProps>
     const selectedFieldIds = useMemo(
       () =>
         new Set(
-          (config?.fieldIds || '')
-            .split(',')
-            .map((fieldId) => fieldId.trim())
-            .filter(Boolean)
+          (config?.fieldIds || '').split(',').flatMap((fieldId) => {
+            const trimmed = fieldId.trim();
+            return trimmed ? [trimmed] : [];
+          })
         ),
       [config?.fieldIds]
     );

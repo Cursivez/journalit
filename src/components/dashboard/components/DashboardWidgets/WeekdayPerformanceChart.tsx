@@ -298,16 +298,18 @@ export const WeekdayPerformanceChart = React.memo<BaseWidgetProps>(
     const persistedMetric = normalizeMetric(
       plugin?.settings?.dashboard?.weekdayPerformanceMetric
     );
-    const [selectedMetric, setSelectedMetric] =
-      React.useState<WeekdayPerformanceMetric>(persistedMetric);
-
-    React.useEffect(() => {
-      setSelectedMetric(persistedMetric);
-    }, [persistedMetric]);
+    const [metricSelection, setMetricSelection] = React.useState<{
+      persistedMetric: WeekdayPerformanceMetric;
+      selectedMetric: WeekdayPerformanceMetric;
+    }>(() => ({ persistedMetric, selectedMetric: persistedMetric }));
+    const selectedMetric =
+      metricSelection.persistedMetric === persistedMetric
+        ? metricSelection.selectedMetric
+        : persistedMetric;
 
     const handleMetricChange = React.useCallback(
       async (nextMetric: WeekdayPerformanceMetric) => {
-        setSelectedMetric(nextMetric);
+        setMetricSelection({ persistedMetric, selectedMetric: nextMetric });
 
         if (!plugin?.settings?.dashboard) return;
 
@@ -318,7 +320,7 @@ export const WeekdayPerformanceChart = React.memo<BaseWidgetProps>(
           console.error('Failed to save weekday performance metric:', error);
         }
       },
-      [plugin]
+      [persistedMetric, plugin]
     );
 
     const displayRMultiples =

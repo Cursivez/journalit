@@ -1,6 +1,6 @@
 
 
-import React, { useRef, useState, useEffect, useMemo } from 'react';
+import React, { useRef, useState, useEffect, useMemo, useReducer } from 'react';
 import { ChevronRight, X } from '../../shared/icons/ObsidianIcon';
 import JournalitPlugin from '../../../main';
 import { ContributionsHeatmap } from '../../charts/ContributionsHeatmap';
@@ -45,7 +45,13 @@ const YearHeatmapWidgetComponent: React.FC<YearHeatmapWidgetProps> = ({
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const [maxWeeks, setMaxWeeks] = useState<number | undefined | null>(null);
-  const [isExpanded, setIsExpanded] = useState(false);
+  const [viewMode, setViewMode] = useReducer(
+    (
+      _state: 'heatmap' | 'year-selector',
+      nextMode: 'heatmap' | 'year-selector'
+    ) => nextMode,
+    'heatmap'
+  );
 
   
   const currentYear = new Date().getFullYear();
@@ -168,7 +174,7 @@ const YearHeatmapWidgetComponent: React.FC<YearHeatmapWidgetProps> = ({
   
   const handleYearSelect = (year: number) => {
     setSelectedYear(year);
-    setIsExpanded(false);
+    setViewMode('heatmap');
   };
 
   
@@ -232,7 +238,7 @@ const YearHeatmapWidgetComponent: React.FC<YearHeatmapWidgetProps> = ({
   }
 
   
-  if (isExpanded) {
+  if (viewMode === 'year-selector') {
     return (
       <div ref={containerRef} className="journalit-home-heatmap">
         
@@ -241,7 +247,7 @@ const YearHeatmapWidgetComponent: React.FC<YearHeatmapWidgetProps> = ({
             {t('home.widget.heatmap.select-year')}
           </span>
           <button
-            onClick={() => setIsExpanded(false)}
+            onClick={() => setViewMode('heatmap')}
             className="journalit-home-heatmap__close-button"
             aria-label={t('home.widget.heatmap.close-selector')}
           >
@@ -276,13 +282,13 @@ const YearHeatmapWidgetComponent: React.FC<YearHeatmapWidgetProps> = ({
     <div
       ref={containerRef}
       className="journalit-home-heatmap journalit-home-heatmap--clickable"
-      onClick={() => setIsExpanded(true)}
+      onClick={() => setViewMode('year-selector')}
       role="button"
       tabIndex={0}
       onKeyDown={(e) => {
         if (e.key === 'Enter' || e.key === ' ') {
           e.preventDefault();
-          setIsExpanded(true);
+          setViewMode('year-selector');
         }
       }}
     >

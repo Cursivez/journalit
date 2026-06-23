@@ -129,13 +129,13 @@ export const SetupPerformanceWidget: React.FC<SetupPerformanceWidgetProps> =
       
       const setupPerformance = useMemo(() => {
         const closedTrades = asReviewSetupTrades(
-          trades
-            .filter((t) => isPnlContributingTrade(t))
-            .flatMap((trade) =>
-              preview
+          trades.flatMap((trade) =>
+            isPnlContributingTrade(trade)
+              ? preview
                 ? [trade]
                 : splitReviewTradeByRealizedPnlEvent(trade, plugin)
-            )
+              : []
+          )
         );
 
         if (closedTrades.length === 0) {

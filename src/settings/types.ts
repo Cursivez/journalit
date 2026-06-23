@@ -57,7 +57,7 @@ import {
 } from './viewFiltersDefaults';
 
 
-export interface GeneralSettings {
+interface GeneralSettings {
   
   currency: CurrencyCode;
   
@@ -73,7 +73,7 @@ export interface GeneralSettings {
 }
 
 
-export interface DisplaySettings {
+interface DisplaySettings {
   
   privacyMode: boolean;
   
@@ -81,7 +81,7 @@ export interface DisplaySettings {
 }
 
 
-export interface ReviewsSettings {
+interface ReviewsSettings {
   
   globalAutoCreate: boolean;
 }
@@ -97,7 +97,7 @@ export interface FTPCredentials {
 }
 
 
-export interface WeeklyReviewSettings {
+interface WeeklyReviewSettings {
   
   reviewQuestions: string[];
   
@@ -113,7 +113,7 @@ export interface WeeklyReviewSettings {
 }
 
 
-export interface MonthlyReviewSettings {
+interface MonthlyReviewSettings {
   
   reviewQuestions: string[];
   
@@ -125,7 +125,7 @@ export interface MonthlyReviewSettings {
 }
 
 
-export interface QuarterlyReviewSettings {
+interface QuarterlyReviewSettings {
   
   reviewQuestions: string[];
   
@@ -137,7 +137,7 @@ export interface QuarterlyReviewSettings {
 }
 
 
-export interface YearlyReviewSettings {
+interface YearlyReviewSettings {
   
   reviewQuestions: string[];
   
@@ -149,7 +149,7 @@ export interface YearlyReviewSettings {
 }
 
 
-export type UICustomizationSettings = object;
+type UICustomizationSettings = object;
 
 
 export interface LossReviewSection {
@@ -171,10 +171,10 @@ export interface LossReviewSettings {
 
 
 
-export type MaeMfeInputMode = 'price' | 'dollar';
+type MaeMfeInputMode = 'price' | 'dollar';
 
 
-export type BreakEvenThresholdMode = 'fixed' | 'percentage_current_balance';
+type BreakEvenThresholdMode = 'fixed' | 'percentage_current_balance';
 
 
 export type WeekStartDay =
@@ -188,7 +188,7 @@ export type WeekStartDay =
 
 export type AnalyticsDateBasis = 'entry' | 'exit';
 
-export interface TradeSettings {
+interface TradeSettings {
   
   autoOpenCreatedTrades: boolean;
   
@@ -236,7 +236,7 @@ export interface TradeSettings {
 }
 
 
-export interface DRCSettings {
+interface DRCSettings {
   
   checklistItems: string[];
   
@@ -347,7 +347,7 @@ export interface SidebarNavItem {
 export type SidebarTabBehavior = 'newTab' | 'replaceActiveTab';
 
 
-export interface NavigationSettings {
+interface NavigationSettings {
   enabled: boolean;
   items: SidebarNavItem[];
   tabBehavior: SidebarTabBehavior;
@@ -431,7 +431,7 @@ export interface TopBreakdownConfig {
 }
 
 
-export interface HomeSettings {
+interface HomeSettings {
   
   layouts: {
     
@@ -573,6 +573,26 @@ export interface BackendIntegrationSettings {
   
   vaultIdentifier?: string;
   
+  pendingTradeImportProjectionAcks?: Array<{
+    correlationId: string;
+    importId: string;
+    commitId: string;
+    vaultId: string;
+    results: Array<{
+      tradeId: string;
+      backendTradeVersion: number;
+      filePath?: string;
+      status:
+        | 'pending'
+        | 'synced'
+        | 'failed'
+        | 'conflict'
+        | 'local_deleted'
+        | 'needs_rewrite';
+      errorCode?: string;
+    }>;
+  }>;
+  
   secretStorageNamespace?: string;
 
   
@@ -614,7 +634,7 @@ export interface SymbolMapping {
 }
 
 
-export type StaticTradeLogColumnId =
+type StaticTradeLogColumnId =
   
   | 'select'
   | 'image'
@@ -696,7 +716,7 @@ export const DEFAULT_SCALPER_DEFAULTS: ScalperDefaultsSettings = {
 };
 
 
-export interface ReviewV2Settings {
+interface ReviewV2Settings {
   
   customWidgetTypes: CustomWidgetType[];
   

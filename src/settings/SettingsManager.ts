@@ -1,7 +1,7 @@
 import { logger } from '../utils/logger';
 
 
-import { Plugin, Notice } from 'obsidian';
+import { App, Notice, PluginManifest } from 'obsidian';
 import {
   DEFAULT_SCALPER_DEFAULTS,
   JournalitSettings,
@@ -24,9 +24,13 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
 }
 
-type PluginWithSettings = Plugin & {
+interface PluginWithSettings {
+  app: App;
+  manifest: PluginManifest;
   settings?: JournalitSettings;
-};
+  loadData(): Promise<unknown>;
+  saveData(data: unknown): Promise<void>;
+}
 
 export class SettingsManager {
   private plugin: PluginWithSettings;

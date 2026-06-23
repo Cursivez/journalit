@@ -334,7 +334,9 @@ function useSortableWidgetItemContent({
   const reviewContextGroupIdsWithFields = useMemo(
     () =>
       new Set(
-        reviewContextFields.map((field) => field.groupId).filter(Boolean)
+        reviewContextFields.flatMap((field) =>
+          field.groupId ? [field.groupId] : []
+        )
       ),
     [reviewContextFields]
   );
@@ -350,10 +352,10 @@ function useSortableWidgetItemContent({
   const reviewContextSelectedFieldIds = useMemo(
     () =>
       new Set(
-        (reviewContextConfig?.fieldIds || '')
-          .split(',')
-          .map((fieldId) => fieldId.trim())
-          .filter(Boolean)
+        (reviewContextConfig?.fieldIds || '').split(',').flatMap((fieldId) => {
+          const trimmed = fieldId.trim();
+          return trimmed ? [trimmed] : [];
+        })
       ),
     [reviewContextConfig?.fieldIds]
   );
@@ -1132,13 +1134,12 @@ function useTemplateEditorModel({
     if (templateType === 'drc') return availableMarkdownHeadings;
 
     const drcTemplate = templateService.getDefaultTemplate('drc');
-    return drcTemplate.widgets
-      .filter((widget) => widget.type === 'markdown-header')
-      .map((widget) => {
-        const config = widget.config as { text?: string } | undefined;
-        return config?.text?.trim() ?? '';
-      })
-      .filter(Boolean);
+    return drcTemplate.widgets.flatMap((widget) => {
+      if (widget.type !== 'markdown-header') return [];
+      const config = widget.config as { text?: string } | undefined;
+      const trimmed = config?.text?.trim();
+      return trimmed ? [trimmed] : [];
+    });
   }, [availableMarkdownHeadings, templateService, templateType]);
 
   

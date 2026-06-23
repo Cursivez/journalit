@@ -6,6 +6,7 @@ import React, {
   useRef,
   useMemo,
   useCallback,
+  useReducer,
 } from 'react';
 import { TFile } from 'obsidian';
 import { hasTranslation, t } from '../../../lang/helpers';
@@ -126,10 +127,24 @@ export const TechnicalGameWidget: React.FC<TechnicalGameWidgetProps> =
     ({ filePath, plugin, config = {}, preview = false, previewData }) => {
       const mergedConfig = { ...DEFAULT_CONFIG, ...config };
 
-      const [weeks, setWeeks] = useState<WeeklyGamePerformance[]>([]);
-      const [monthlyData, setMonthlyData] = useState<MonthlyGameData[]>([]);
-      const [loading, setLoading] = useState(true);
-      const [noteType, setNoteType] = useState<AllowedNoteType | null>(null);
+      const [dataState, dispatchDataState] = useReducer(
+        (
+          state: {
+            weeks: WeeklyGamePerformance[];
+            monthlyData: MonthlyGameData[];
+            loading: boolean;
+            noteType: AllowedNoteType | null;
+          },
+          update: Partial<{
+            weeks: WeeklyGamePerformance[];
+            monthlyData: MonthlyGameData[];
+            loading: boolean;
+            noteType: AllowedNoteType | null;
+          }>
+        ) => ({ ...state, ...update }),
+        { weeks: [], monthlyData: [], loading: true, noteType: null }
+      );
+      const { weeks, monthlyData, loading, noteType } = dataState;
       const [currentPage, setCurrentPage] = useState(0);
       const retryCountRef = useRef(0);
 
@@ -183,22 +198,19 @@ export const TechnicalGameWidget: React.FC<TechnicalGameWidgetProps> =
         const loadData = async () => {
           
           if (preview && previewData) {
-            setWeeks(previewData.weeks);
-            if (previewData.noteType) {
-              setNoteType(previewData.noteType);
-            }
-            
-            if (previewData.monthlyData) {
-              setMonthlyData(previewData.monthlyData);
-            }
-            setLoading(false);
+            dispatchDataState({
+              weeks: previewData.weeks,
+              noteType: previewData.noteType ?? null,
+              monthlyData: previewData.monthlyData ?? [],
+              loading: false,
+            });
             return;
           }
 
           try {
             const file = plugin.app.vault.getAbstractFileByPath(filePath);
             if (!(file instanceof TFile)) {
-              setLoading(false);
+              dispatchDataState({ loading: false });
               return;
             }
 
@@ -214,16 +226,16 @@ export const TechnicalGameWidget: React.FC<TechnicalGameWidgetProps> =
                 );
                 return;
               }
-              setLoading(false);
+              dispatchDataState({ loading: false });
               return;
             }
 
             const type = getAllowedNoteType(frontmatter.type);
-            setNoteType(type);
+            dispatchDataState({ noteType: type });
 
             
             if (!type) {
-              setLoading(false);
+              dispatchDataState({ loading: false });
               return;
             }
 
@@ -236,7 +248,7 @@ export const TechnicalGameWidget: React.FC<TechnicalGameWidgetProps> =
               console.warn(
                 '[TechnicalGameWidget] MonthlyReviewService not available'
               );
-              setLoading(false);
+              dispatchDataState({ loading: false });
               return;
             }
 
@@ -258,7 +270,7 @@ export const TechnicalGameWidget: React.FC<TechnicalGameWidgetProps> =
                   year,
                   month
                 );
-                setWeeks(data);
+                dispatchDataState({ weeks: data });
               }
             } else if (type === 'quarterly-review') {
               
@@ -301,7 +313,7 @@ export const TechnicalGameWidget: React.FC<TechnicalGameWidgetProps> =
                   new Date(a.weekStartDate).getTime() -
                   new Date(b.weekStartDate).getTime()
               );
-              setWeeks(allWeeks);
+              dispatchDataState({ weeks: allWeeks });
             } else if (type === 'yearly-review') {
               
               const parsedDate = parseRecordDate(frontmatter, 'date');
@@ -344,12 +356,12 @@ export const TechnicalGameWidget: React.FC<TechnicalGameWidgetProps> =
                   };
                 }
               );
-              setMonthlyData(monthlyAggregated);
+              dispatchDataState({ monthlyData: monthlyAggregated });
             }
           } catch (error) {
             console.error('[TechnicalGameWidget] Error loading data:', error);
           } finally {
-            setLoading(false);
+            dispatchDataState({ loading: false });
           }
         };
 

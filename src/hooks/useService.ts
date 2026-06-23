@@ -19,9 +19,13 @@ export function useService<K extends ServiceName>(
   serviceName: K
 ): ServiceHookResult<GetServiceType<K>> {
   const plugin = usePlugin();
-  const [status, setStatus] = useState<ServiceStatus>('loading');
-  const [service, setService] = useState<GetServiceType<K> | null>(null);
-  const [error, setError] = useState<Error | null>(null);
+  const [state, setState] = useState<ServiceHookResult<GetServiceType<K>>>(
+    () => ({
+      service: null,
+      status: 'loading',
+      error: null,
+    })
+  );
 
   useEffect(() => {
     let mounted = true;
@@ -41,9 +45,11 @@ export function useService<K extends ServiceName>(
             await plugin.serviceManager.getServiceByName(serviceName);
 
           if (mounted) {
-            setService(serviceInstance);
-            setStatus('ready');
-            setError(null);
+            setState({
+              service: serviceInstance,
+              status: 'ready',
+              error: null,
+            });
           }
           return;
         }
@@ -52,13 +58,14 @@ export function useService<K extends ServiceName>(
       } catch (err) {
         console.error(`Error loading ${serviceName}:`, err);
         if (mounted) {
-          setService(null);
-          setStatus('error');
-          setError(
-            err instanceof Error
-              ? err
-              : new Error(`Failed to load ${serviceName}`)
-          );
+          setState({
+            service: null,
+            status: 'error',
+            error:
+              err instanceof Error
+                ? err
+                : new Error(`Failed to load ${serviceName}`),
+          });
         }
       }
     };
@@ -73,7 +80,7 @@ export function useService<K extends ServiceName>(
     };
   }, [plugin, serviceName]);
 
-  return { service, status, error };
+  return state;
 }
 
 

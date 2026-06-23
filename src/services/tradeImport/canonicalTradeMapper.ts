@@ -12,6 +12,9 @@ export function mapPreviewTradeToTradeData(
   metadata?: {
     backendTradeId?: string;
     backendVersion?: number;
+    accountId?: string | null;
+    accountBroker?: string | null;
+    accountDisplayName?: string | null;
   }
 ): TradeData {
   return {
@@ -26,7 +29,7 @@ export function mapPreviewTradeToTradeData(
     instrument: trade.symbol,
     tradeStatus: trade.status,
     account: [accountName],
-    accountId: trade.accountId ?? undefined,
+    accountId: trade.accountId ?? metadata?.accountId ?? undefined,
     assetType: trade.assetType ?? undefined,
     setupIds: trade.setupIds ?? [],
     setup: trade.setupIds ?? [],
@@ -62,6 +65,9 @@ export function mapPreviewTradeToTradeData(
     orderId: trade.orderId ?? undefined,
     tradeImportId: metadata?.backendTradeId,
     tradeImportVersion: metadata?.backendVersion,
+    tradeImportAccountId: metadata?.accountId ?? undefined,
+    tradeImportAccountBroker: metadata?.accountBroker ?? undefined,
+    tradeImportAccountDisplayName: metadata?.accountDisplayName ?? undefined,
     customFields: trade.customFields,
     strikePrice: definedNumber(trade.strikePrice),
     expirationDate: toDate(trade.expirationDate),

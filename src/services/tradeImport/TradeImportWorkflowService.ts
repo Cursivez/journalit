@@ -1,6 +1,5 @@
 import { t } from '../../lang/helpers';
 import type JournalitPlugin from '../../main';
-import type { TradeData } from '../trade/TradeService';
 import { generateUUID } from '../../utils/uuid';
 import { mapPreviewTradeToTradeData } from './canonicalTradeMapper';
 import {
@@ -15,8 +14,15 @@ import type {
   TradeImportFileType,
   TradeImportManualMode,
   TradeImportPreviewResponse,
+  TradeImportRestorableProjection,
+  TradeImportRestorableProjectionRequest,
 } from './types';
 import { BackendTradeImportService } from './BackendTradeImportService';
+import {
+  TradeImportProjectionWriter,
+  type TradeImportPersistedTradeSummary,
+} from './TradeImportProjectionWriter';
+import { getTradeImportVaultId } from './TradeImportProjectionAckQueue';
 
 export class TradeImportValidationError extends Error {
   constructor(message: string) {
@@ -56,17 +62,6 @@ interface TradeImportPreviewInput {
   columnMappings: Record<string, string[]>;
 }
 
-export interface TradeImportPersistedTradeSummary {
-  filePath: string;
-  symbol: string;
-  direction: 'long' | 'short';
-  quantity: number;
-  entryPrice: number;
-  profitLoss?: number;
-  entryTime: string;
-  status: 'OPEN' | 'CLOSED';
-}
-
 export interface TradeImportCompletionResult {
   success: boolean;
   writtenCount: number;
@@ -84,6 +79,46 @@ interface TradeImportWriteInput {
   brokerLabel: string;
   localWriteTimeoutMs: number;
   onComplete?: (result: TradeImportCompletionResult) => void;
+}
+
+interface TradeImportRestoreInput {
+  accountName: string;
+  brokerLabel: string;
+  projections: TradeImportRestorableProjection[];
+  localWriteTimeoutMs: number;
+  onComplete?: (result: TradeImportCompletionResult) => void;
+}
+
+interface TradeImportProjectionRestoreGroup {
+  correlationId: string;
+  importId: string;
+  commitId: string;
+  projections: TradeImportRestorableProjection[];
+}
+
+function groupRestorableProjections(
+  projections: TradeImportRestorableProjection[]
+): TradeImportProjectionRestoreGroup[] {
+  const groups = new Map<string, TradeImportProjectionRestoreGroup>();
+  for (const projection of projections) {
+    const correlationId =
+      projection.correlationId ?? `restore-${projection.importId}`;
+    const importId = projection.importId || 'restore';
+    const commitId = projection.commitId ?? `restore-${importId}`;
+    const key = `${correlationId}\u001f${importId}\u001f${commitId}`;
+    const existing = groups.get(key);
+    if (existing) {
+      existing.projections.push(projection);
+      continue;
+    }
+    groups.set(key, {
+      correlationId,
+      importId,
+      commitId,
+      projections: [projection],
+    });
+  }
+  return Array.from(groups.values());
 }
 
 function pluginVersion(plugin: JournalitPlugin): string {
@@ -132,7 +167,10 @@ function asMappings(value: unknown): Record<string, string[]> {
   const mappings: Record<string, string[]> = {};
   for (const [key, columns] of Object.entries(value)) {
     if (Array.isArray(columns)) {
-      mappings[key] = columns.map(String).filter(Boolean);
+      mappings[key] = columns.flatMap((column) => {
+        const mappedColumn = String(column);
+        return mappedColumn ? [mappedColumn] : [];
+      });
       continue;
     }
     if (typeof columns === 'string' && columns.trim()) {
@@ -203,58 +241,6 @@ export function customFieldDefinitions(
     allowCreateOptions: field.allowCreateOptions,
     validation: field.validation,
   }));
-}
-
-function timeoutAfter(ms: number): Promise<never> {
-  return new Promise((_, reject) => {
-    window.setTimeout(
-      () => reject(new Error('Trade Import local write timed out')),
-      ms
-    );
-  });
-}
-
-function isProjectedTradeData(value: unknown): value is TradeData {
-  return (
-    typeof value === 'object' &&
-    value !== null &&
-    'tradeImportId' in value &&
-    typeof value.tradeImportId === 'string' &&
-    'path' in value &&
-    typeof value.path === 'string'
-  );
-}
-
-async function findProjectedTrade(
-  plugin: JournalitPlugin,
-  backendTradeId: string
-): Promise<TradeData | undefined> {
-  await plugin.tradeService.waitForTradeDataReady?.();
-  const trades = await plugin.tradeService.getTradeData();
-  return trades
-    .filter(isProjectedTradeData)
-    .find((trade) => trade.tradeImportId === backendTradeId);
-}
-
-function preserveLocalTradeAnnotations(
-  tradeData: TradeData,
-  existing: TradeData
-): TradeData {
-  return {
-    ...tradeData,
-    notes: existing.notes,
-    thesis: existing.thesis,
-    images: existing.images,
-    tags: existing.tags,
-    customTags: existing.customTags,
-    setupIds: existing.setupIds,
-    setup: existing.setup,
-    mistake: existing.mistake,
-    customFields: existing.customFields,
-    lossReview: existing.lossReview,
-    reviewed: existing.reviewed,
-    reviewedAt: existing.reviewedAt,
-  };
 }
 
 export class TradeImportWorkflowService {
@@ -361,6 +347,87 @@ export class TradeImportWorkflowService {
     return { response, classifiedTrades };
   }
 
+  async getRestorableProjections(
+    filters: Omit<TradeImportRestorableProjectionRequest, 'vaultId'> = {}
+  ) {
+    return this.backendService.getRestorableProjections({
+      ...filters,
+      vaultId: await getTradeImportVaultId(this.plugin),
+    });
+  }
+
+  async restoreProjections({
+    accountName,
+    brokerLabel,
+    projections,
+    localWriteTimeoutMs,
+    onComplete,
+  }: TradeImportRestoreInput): Promise<TradeImportCompletionResult> {
+    const projectionWriter = new TradeImportProjectionWriter(
+      this.plugin,
+      this.backendService
+    );
+    const projectionResults: Array<
+      Awaited<ReturnType<TradeImportProjectionWriter['writeProjections']>>
+    > = [];
+    let restoreChain = Promise.resolve();
+    for (const group of groupRestorableProjections(projections)) {
+      restoreChain = restoreChain.then(async () => {
+        projectionResults.push(
+          await projectionWriter.writeProjections({
+            accountName,
+            correlationId: group.correlationId,
+            importId: group.importId,
+            commitId: group.commitId,
+            trades: group.projections.map((projection) => ({
+              id: projection.id,
+              version: projection.version,
+              symbol: projection.symbol,
+              direction: projection.direction,
+              status: projection.status,
+              accountId: projection.accountId,
+              accountDisplayName: projection.accountName,
+              broker: projection.broker,
+              importId: projection.importId,
+              previewTrade: projection.previewTrade,
+            })),
+            localWriteTimeoutMs,
+          })
+        );
+      });
+    }
+    await restoreChain;
+    const writtenCount = projectionResults.reduce(
+      (total, projectionResult) => total + projectionResult.writtenCount,
+      0
+    );
+    const alreadyPresentCount = projectionResults.reduce(
+      (total, projectionResult) => total + projectionResult.alreadyPresentCount,
+      0
+    );
+    const failedCount = projectionResults.reduce(
+      (total, projectionResult) => total + projectionResult.failedCount,
+      0
+    );
+    const ackFailedCount = projectionResults.reduce(
+      (total, projectionResult) => total + projectionResult.ackFailedCount,
+      0
+    );
+    const result: TradeImportCompletionResult = {
+      success: failedCount === 0 && ackFailedCount === 0,
+      writtenCount: writtenCount + alreadyPresentCount,
+      duplicateCount: 0,
+      failedCount: failedCount + ackFailedCount,
+      accountName,
+      brokerLabel,
+      importedTrades: projectionResults.flatMap(
+        (projectionResult) => projectionResult.importedTrades
+      ),
+    };
+    onComplete?.(result);
+    return result;
+  }
+
   async writePreview({
     preview,
     classified,
@@ -459,10 +526,7 @@ export class TradeImportWorkflowService {
         buildResult(0, duplicateCount, classified.length - duplicateCount)
       );
     }
-    const resultsByTradeId = new Map<
-      string,
-      Array<(typeof commit.itemResults)[number]>
-    >();
+    const projectedTradeIds = new Set<string>();
     for (const result of commit.itemResults) {
       if (
         !result.tradeId ||
@@ -470,108 +534,36 @@ export class TradeImportWorkflowService {
       ) {
         continue;
       }
-      resultsByTradeId.set(result.tradeId, [
-        ...(resultsByTradeId.get(result.tradeId) ?? []),
-        result,
-      ]);
+      projectedTradeIds.add(result.tradeId);
     }
-    const ackResults: Array<{
-      tradeId: string;
-      backendTradeVersion: number;
-      filePath?: string;
-      status: 'synced' | 'failed';
-      errorCode?: string;
-    }> = [];
-
-    for (const committedTrade of commit.trades) {
-      const tradeResults = resultsByTradeId.get(committedTrade.id) ?? [];
-      if (tradeResults.length === 0) continue;
-      try {
-        const existingTrade = await findProjectedTrade(
-          this.plugin,
-          committedTrade.id
-        );
-        const metadata = {
-          backendTradeId: committedTrade.id,
-          backendVersion: committedTrade.version,
-        };
-        const projectionTrade = committedTrade.previewTrade;
-        if (!projectionTrade) {
-          throw new Error('Trade Import commit projection missing trade data');
-        }
-        const tradeData = mapPreviewTradeToTradeData(
-          projectionTrade,
-          accountName,
-          metadata
-        );
-        const existingPath =
-          typeof existingTrade?.path === 'string'
-            ? existingTrade.path
-            : undefined;
-        const projectedTradeData = existingTrade
-          ? preserveLocalTradeAnnotations(tradeData, existingTrade)
-          : tradeData;
-        const filePath = existingPath
-          ? await Promise.race([
-              this.plugin.tradeService.updateTrade(
-                projectedTradeData,
-                existingPath,
-                'trade-import'
-              ),
-              timeoutAfter(localWriteTimeoutMs),
-            ])
-          : await Promise.race([
-              this.plugin.tradeService.createTrade(projectedTradeData, {
-                suppressAutoOpen: true,
-                suppressPostCreateTasks: true,
-              }),
-              timeoutAfter(localWriteTimeoutMs),
-            ]);
-        importedTrades.push({
-          filePath,
-          symbol: projectionTrade.symbol,
-          direction: projectionTrade.direction,
-          quantity: projectionTrade.quantity,
-          entryPrice: projectionTrade.entryPrice,
-          profitLoss: projectionTrade.profitLoss ?? undefined,
-          entryTime: projectionTrade.entryTime,
-          status: projectionTrade.status,
-        });
-        ackResults.push({
-          tradeId: committedTrade.id,
-          backendTradeVersion: committedTrade.version,
-          filePath,
-          status: 'synced',
-        });
-        written++;
-      } catch {
-        ackResults.push({
-          tradeId: committedTrade.id,
-          backendTradeVersion: committedTrade.version,
-          status: 'failed',
-          errorCode: 'obsidian_write_failed',
-        });
-        failed++;
-      }
-    }
+    const projectionWriter = new TradeImportProjectionWriter(
+      this.plugin,
+      this.backendService
+    );
+    const projectionResult = await projectionWriter.writeProjections({
+      accountName,
+      accountBroker: preview.broker,
+      accountDisplayName: accountName,
+      correlationId: commit.correlationId,
+      importId: commit.importId,
+      commitId: commit.commitId,
+      trades: commit.trades.filter((trade) => projectedTradeIds.has(trade.id)),
+      localWriteTimeoutMs,
+    });
+    importedTrades.push(...projectionResult.importedTrades);
+    written =
+      projectionResult.writtenCount + projectionResult.alreadyPresentCount;
+    failed = projectionResult.failedCount + projectionResult.ackFailedCount;
 
     const duplicateCount = commit.itemResults.filter((result) => {
-      if (
-        result.result !== 'skipped' &&
-        result.result !== 'skipped_duplicate'
-      ) {
-        return false;
-      }
+      if (result.result === 'skipped_user') return true;
+      if (result.result === 'skipped_duplicate') return true;
+      if (result.result !== 'skipped') return false;
       const item = previewByItemId.get(result.itemId);
       return item?.defaultAction === 'skip';
     }).length;
     const failedSkippedResults = commit.itemResults.filter((result) => {
-      if (
-        result.result !== 'skipped' &&
-        result.result !== 'skipped_duplicate'
-      ) {
-        return false;
-      }
+      if (result.result !== 'skipped') return false;
       const item = previewByItemId.get(result.itemId);
       return (
         item?.defaultAction === 'blocked' ||
@@ -581,13 +573,13 @@ export class TradeImportWorkflowService {
     const failedCommitResults = commit.itemResults.filter(
       (result) => result.result === 'blocked' || result.result === 'conflict'
     ).length;
-    const projectedTradeIds = new Set(
-      ackResults.map((ackResult) => ackResult.tradeId)
+    const ackedTradeIds = new Set(
+      projectionResult.ackResults.map((ackResult) => ackResult.tradeId)
     );
     const successfulCommitResultsWithoutProjection = commit.itemResults.filter(
       (result) =>
         (result.result === 'created' || result.result === 'updated') &&
-        (!result.tradeId || !projectedTradeIds.has(result.tradeId))
+        (!result.tradeId || !ackedTradeIds.has(result.tradeId))
     ).length;
     const totalFailed =
       failed +
@@ -597,27 +589,6 @@ export class TradeImportWorkflowService {
     const result =
       finalizeImport(written, duplicateCount, totalFailed) ??
       buildResult(written, duplicateCount, totalFailed);
-
-    if (ackResults.length) {
-      const uniqueAckResults = Array.from(
-        new Map(
-          ackResults.map((ackResult) => [ackResult.tradeId, ackResult])
-        ).values()
-      );
-      try {
-        await this.backendService.projectionAck({
-          correlationId: commit.correlationId,
-          importId: commit.importId,
-          commitId: commit.commitId,
-          vaultId:
-            this.plugin.settings.backendIntegration?.vaultIdentifier ??
-            this.plugin.app.vault.getName(),
-          results: uniqueAckResults,
-        });
-      } catch {
-        // intentional
-      }
-    }
 
     return result;
   }

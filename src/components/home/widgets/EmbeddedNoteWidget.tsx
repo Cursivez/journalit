@@ -302,6 +302,11 @@ export const EmbeddedNoteWidget = memo<EmbeddedNoteWidgetProps>(
       [instanceId, plugin]
     );
 
+    const handleCancelFilePicker = useCallback(() => {
+      setShowFilePicker(false);
+      setSearchQuery('');
+    }, []);
+
     
     const displayTitle =
       customTitle ||
@@ -319,7 +324,7 @@ export const EmbeddedNoteWidget = memo<EmbeddedNoteWidgetProps>(
             </div>
             {filePath && (
               <button
-                onClick={() => setShowFilePicker(false)}
+                onClick={handleCancelFilePicker}
                 className="journalit-home-embedded-note__cancel-button"
               >
                 {t('button.cancel')}

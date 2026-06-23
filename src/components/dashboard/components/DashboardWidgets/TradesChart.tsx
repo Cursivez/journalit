@@ -54,9 +54,9 @@ export const TradesChart: React.FC<BaseWidgetProps> = ({
           tradeIndex: _index,
         }));
         const limitedTradePaths = new Set(
-          limitedData
-            .map((point) => point.path)
-            .filter((path): path is string => typeof path === 'string')
+          limitedData.flatMap((point) =>
+            typeof point.path === 'string' ? [point.path] : []
+          )
         );
         const conversionTrades = limitedTradePaths.size
           ? data.trades.filter(

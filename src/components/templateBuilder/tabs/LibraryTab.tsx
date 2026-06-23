@@ -218,53 +218,53 @@ function useLibraryTabModel({
     const quarterlyTemplates = reviewTemplateService.getTemplates('quarterly');
     const yearlyTemplates = reviewTemplateService.getTemplates('yearly');
 
-    drcTemplates
-      .filter((t: ReviewTemplate) => !t.isBuiltIn)
-      .forEach((t: ReviewTemplate) => {
+    drcTemplates.forEach((t: ReviewTemplate) => {
+      if (!t.isBuiltIn) {
         templates.push({ id: t.id, name: t.name, type: 'drc', template: t });
-      });
+      }
+    });
 
-    weeklyTemplates
-      .filter((t: ReviewTemplate) => !t.isBuiltIn)
-      .forEach((t: ReviewTemplate) => {
+    weeklyTemplates.forEach((t: ReviewTemplate) => {
+      if (!t.isBuiltIn) {
         templates.push({ id: t.id, name: t.name, type: 'weekly', template: t });
-      });
+      }
+    });
 
-    monthlyTemplates
-      .filter((t: ReviewTemplate) => !t.isBuiltIn)
-      .forEach((t: ReviewTemplate) => {
+    monthlyTemplates.forEach((t: ReviewTemplate) => {
+      if (!t.isBuiltIn) {
         templates.push({
           id: t.id,
           name: t.name,
           type: 'monthly',
           template: t,
         });
-      });
+      }
+    });
 
-    quarterlyTemplates
-      .filter((t: ReviewTemplate) => !t.isBuiltIn)
-      .forEach((t: ReviewTemplate) => {
+    quarterlyTemplates.forEach((t: ReviewTemplate) => {
+      if (!t.isBuiltIn) {
         templates.push({
           id: t.id,
           name: t.name,
           type: 'quarterly',
           template: t,
         });
-      });
+      }
+    });
 
-    yearlyTemplates
-      .filter((t: ReviewTemplate) => !t.isBuiltIn)
-      .forEach((t: ReviewTemplate) => {
+    yearlyTemplates.forEach((t: ReviewTemplate) => {
+      if (!t.isBuiltIn) {
         templates.push({ id: t.id, name: t.name, type: 'yearly', template: t });
-      });
+      }
+    });
 
     
     const tradeTemplates = tradeTemplateService.getTemplates();
-    tradeTemplates
-      .filter((t: TradeTemplate) => !t.isBuiltIn)
-      .forEach((t: TradeTemplate) => {
+    tradeTemplates.forEach((t: TradeTemplate) => {
+      if (!t.isBuiltIn) {
         templates.push({ id: t.id, name: t.name, type: 'trade', template: t });
-      });
+      }
+    });
 
     setAllTemplates(templates);
   }, [reviewTemplateService, tradeTemplateService]);
