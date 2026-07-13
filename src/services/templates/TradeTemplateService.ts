@@ -1,83 +1,136 @@
 
 
-import { Plugin } from 'obsidian';
+import type { App } from 'obsidian';
 import {
   DEFAULT_SCALPER_DEFAULTS,
   type JournalitSettings,
 } from '../../settings/types';
-import { TradeTemplate, TradeReviewSection } from '../../types/reviewV2';
+import { TradeTemplate } from '../../types/reviewV2';
 import { generateUUID } from '../../utils/uuid';
 import { eventBus } from '../events';
 
-
-const DEFAULT_REVIEW_SECTIONS: TradeReviewSection[] = [
-  {
-    id: 'what-went-well',
-    title: '**What went well?**',
-    type: 'textarea',
-    placeholder: 'What did you do right in this trade?',
-  },
-  {
-    id: 'what-to-improve',
-    title: '**What could be improved?**',
-    type: 'textarea',
-    placeholder: 'What would you do differently next time?',
-  },
-  {
-    id: 'key-lesson',
-    title: '**Key Lesson**',
-    type: 'textarea',
-    placeholder: 'What is the main takeaway from this trade?',
-  },
-];
-
-
-const DEFAULT_WIN_SECTIONS: TradeReviewSection[] = [
-  {
-    id: 'win-what-worked',
-    title: '**What worked?**',
-    type: 'textarea',
-    placeholder: 'What aspects of your strategy or execution led to this win?',
-  },
-  {
-    id: 'win-repeatable',
-    title: '**Is this repeatable?**',
-    type: 'textarea',
-    placeholder:
-      'Can you consistently replicate what made this trade successful?',
-  },
-];
-
-
-const DEFAULT_LOSS_SECTIONS: TradeReviewSection[] = [
-  {
-    id: 'loss-what-happened',
-    title: '**What went wrong?**',
-    type: 'textarea',
-    placeholder:
-      'What caused this loss? Was it execution, analysis, or market conditions?',
-  },
-  {
-    id: 'loss-avoid-next-time',
-    title: '**How to avoid next time?**',
-    type: 'textarea',
-    placeholder:
-      'What specific changes will you make to prevent this type of loss?',
-  },
-  {
-    id: 'loss-key-lesson',
-    title: '**Key Lesson**',
-    type: 'textarea',
-    placeholder: 'What is the main takeaway from this loss?',
-  },
-];
-
-
-interface JournalitPluginInstance extends Plugin {
+type JournalitPluginInstance = {
+  app: App;
   settings: JournalitSettings;
-  saveSettings(): Promise<void>;
+  saveSettings: () => Promise<void>;
+};
+
+const DEFAULT_TRADE_SECTION_ORDER = [
+  'images',
+  'metrics',
+  'thesis',
+  'missedReason',
+  'metadata',
+  'reviewButton',
+] satisfies TradeTemplate['sectionOrder'];
+
+function createStandardTradeSections(
+  metrics: TradeTemplate['sections']['details']['metrics'] = [
+    'entry',
+    'exit',
+    'duration',
+    'stopLoss',
+    'takeProfit',
+    'executionSummary',
+  ]
+): TradeTemplate['sections'] {
+  return {
+    header: { show: true },
+    navigation: { show: true },
+    images: { show: true, position: 'top' },
+    metadata: {
+      show: true,
+      showAccounts: true,
+      showSetups: true,
+      showMistakes: true,
+      showTags: true,
+      showCustomFields: true,
+    },
+    details: {
+      show: true,
+      showThesis: true,
+      metrics,
+    },
+    reviewButton: { show: true },
+    missedReason: { show: true },
+  };
 }
 
+function createStandardAssetOverrides(): NonNullable<
+  TradeTemplate['assetOverrides']
+> {
+  return {
+    stock: {
+      sectionOrder: DEFAULT_TRADE_SECTION_ORDER,
+      sections: createStandardTradeSections([
+        'entry',
+        'exit',
+        'duration',
+        'stopLoss',
+        'takeProfit',
+        'executionSummary',
+      ]),
+    },
+    options: {
+      sectionOrder: DEFAULT_TRADE_SECTION_ORDER,
+      sections: createStandardTradeSections([
+        'entry',
+        'exit',
+        'duration',
+        'pnl',
+        'costs',
+        'executionSummary',
+      ]),
+    },
+    futures: {
+      sectionOrder: DEFAULT_TRADE_SECTION_ORDER,
+      sections: createStandardTradeSections([
+        'entry',
+        'exit',
+        'duration',
+        'stopLoss',
+        'takeProfit',
+        'pnl',
+        'costs',
+      ]),
+    },
+    forex: {
+      sectionOrder: DEFAULT_TRADE_SECTION_ORDER,
+      sections: createStandardTradeSections([
+        'entry',
+        'exit',
+        'duration',
+        'stopLoss',
+        'takeProfit',
+        'rMultiple',
+        'costs',
+      ]),
+    },
+    crypto: {
+      sectionOrder: DEFAULT_TRADE_SECTION_ORDER,
+      sections: createStandardTradeSections([
+        'entry',
+        'exit',
+        'duration',
+        'stopLoss',
+        'takeProfit',
+        'pnl',
+      ]),
+    },
+    cfd: {
+      sectionOrder: DEFAULT_TRADE_SECTION_ORDER,
+      sections: createStandardTradeSections([
+        'entry',
+        'exit',
+        'duration',
+        'stopLoss',
+        'takeProfit',
+        'pnl',
+        'costs',
+      ]),
+    },
+  };
+}
 
 export class TradeTemplateService {
   private plugin: JournalitPluginInstance;
@@ -166,32 +219,9 @@ export class TradeTemplateService {
         createdAt: now,
         updatedAt: now,
         isBuiltIn: true,
-        sections: {
-          header: { show: true },
-          navigation: { show: true },
-          images: { show: true, position: 'top' },
-          metadata: {
-            show: true,
-            showAccounts: true,
-            showSetups: true,
-            showMistakes: true,
-            showTags: true,
-          },
-          details: {
-            show: true,
-            showThesis: true,
-            metrics: ['entry', 'exit', 'size', 'duration', 'pnl', 'rMultiple'],
-          },
-          review: {
-            show: 'always',
-            showForMissed: false,
-            showForBacktest: false,
-            sections: DEFAULT_REVIEW_SECTIONS,
-            winSections: DEFAULT_WIN_SECTIONS,
-            lossSections: DEFAULT_LOSS_SECTIONS,
-          },
-          reviewButton: { show: true },
-        },
+        sectionOrder: DEFAULT_TRADE_SECTION_ORDER,
+        assetDefaults: createStandardAssetOverrides(),
+        sections: createStandardTradeSections(),
         display: {
           pnlFormat: 'currency',
           showOpenBadge: true,
@@ -228,32 +258,9 @@ export class TradeTemplateService {
         createdAt: now,
         updatedAt: now,
         isBuiltIn: true,
-        sections: {
-          header: { show: true },
-          navigation: { show: true },
-          images: { show: true, position: 'top' },
-          metadata: {
-            show: true,
-            showAccounts: true,
-            showSetups: true,
-            showMistakes: true,
-            showTags: true,
-          },
-          details: {
-            show: true,
-            showThesis: true,
-            metrics: ['entry', 'exit', 'size', 'duration', 'pnl', 'rMultiple'],
-          },
-          review: {
-            show: 'always',
-            showForMissed: false,
-            showForBacktest: false,
-            sections: DEFAULT_REVIEW_SECTIONS,
-            winSections: DEFAULT_WIN_SECTIONS,
-            lossSections: DEFAULT_LOSS_SECTIONS,
-          },
-          reviewButton: { show: true },
-        },
+        sectionOrder: DEFAULT_TRADE_SECTION_ORDER,
+        assetDefaults: createStandardAssetOverrides(),
+        sections: createStandardTradeSections(),
         display: {
           pnlFormat: 'currency',
           showOpenBadge: true,
@@ -405,6 +412,12 @@ export class TradeTemplateService {
       updatedAt: now,
       
       sections: structuredClone(template.sections),
+      assetDefaults: template.assetDefaults
+        ? structuredClone(template.assetDefaults)
+        : undefined,
+      assetOverrides: template.assetOverrides
+        ? structuredClone(template.assetOverrides)
+        : undefined,
       
       display: structuredClone(template.display),
     };

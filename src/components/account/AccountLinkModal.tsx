@@ -395,8 +395,6 @@ const AccountLinkModal: React.FC<AccountLinkModalProps> = ({
 
   return (
     <div className="account-link-modal">
-      <h3>{t('account.link-modal.title')}</h3>
-
       {formError && (
         <div className="account-link-error">
           <AlertTriangle size={16} />
@@ -433,7 +431,7 @@ const AccountLinkModal: React.FC<AccountLinkModalProps> = ({
             ? t('account.link-modal.button.linking')
             : t('button.confirm')}
         </Button>
-        <Button onClick={onCancel} disabled={isLoading} variant="secondary">
+        <Button onClick={onCancel} disabled={isLoading} variant="plain">
           {t('button.cancel')}
         </Button>
       </div>
@@ -454,6 +452,7 @@ export class AccountLinkModalWrapper extends Modal {
   private existingAccounts: ExistingAccount[] = [];
   private availableAccountTypes: string[] = [];
   private root: Root | null = null;
+  private resolved = false;
 
   constructor(
     app: App,
@@ -467,6 +466,7 @@ export class AccountLinkModalWrapper extends Modal {
     onCancel: () => void
   ) {
     super(app);
+    this.titleEl.setText(t('account.link-modal.title'));
     this.accountInfo = accountInfo;
     this.onLink = onLink;
     this.onCancel = onCancel;
@@ -477,35 +477,43 @@ export class AccountLinkModalWrapper extends Modal {
     contentEl.empty();
 
     
-    await Promise.all([
+    const [, , { createRoot }] = await Promise.all([
       this.loadExistingAccounts(),
       this.loadAvailableAccountTypes(),
+      import('react-dom/client'),
     ]);
+    if (!this.resolved) {
+      const rootDiv = contentEl.createDiv();
+      this.root = createRoot(rootDiv);
 
-    const rootDiv = contentEl.createDiv();
-    const { createRoot } = await import('react-dom/client');
-    this.root = createRoot(rootDiv);
-
-    this.root.render(
-      <AccountLinkModal
-        accountInfo={this.accountInfo}
-        existingAccounts={this.existingAccounts}
-        availableAccountTypes={this.availableAccountTypes}
-        onLink={async (accountId, displayName, linkToExisting, accountType) => {
-          await this.onLink(
+      this.root.render(
+        <AccountLinkModal
+          accountInfo={this.accountInfo}
+          existingAccounts={this.existingAccounts}
+          availableAccountTypes={this.availableAccountTypes}
+          onLink={async (
             accountId,
             displayName,
             linkToExisting,
             accountType
-          );
-          this.close();
-        }}
-        onCancel={() => {
-          this.onCancel();
-          this.close();
-        }}
-      />
-    );
+          ) => {
+            await this.onLink(
+              accountId,
+              displayName,
+              linkToExisting,
+              accountType
+            );
+            this.resolved = true;
+            this.close();
+          }}
+          onCancel={() => {
+            this.resolved = true;
+            this.onCancel();
+            this.close();
+          }}
+        />
+      );
+    }
   }
 
   private async loadExistingAccounts() {
@@ -593,6 +601,11 @@ export class AccountLinkModalWrapper extends Modal {
   }
 
   onClose() {
+    if (!this.resolved) {
+      this.resolved = true;
+      this.onCancel();
+    }
+
     
     if (this.root) {
       this.root.unmount();

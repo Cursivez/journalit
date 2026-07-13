@@ -7,15 +7,6 @@ export const accountLinkModalStyles = `
     min-width: 450px;
   }
 
-  .account-link-modal h3 {
-    margin-top: 0;
-    margin-bottom: 16px;
-    font-size: 1.3rem;
-    font-weight: 600;
-    color: var(--text-normal);
-    border-bottom: 1px solid var(--background-modifier-border);
-    padding-bottom: 8px;
-  }
 
   .account-link-modal .account-link-error {
     display: flex;

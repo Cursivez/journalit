@@ -1160,7 +1160,7 @@ function useAccountDashboardSettingsModel({
 
           <div className="delete-modal-actions">
             <Button
-              variant="secondary"
+              variant="plain"
               onClick={() => void handleCancelMigration()}
               disabled={isSaving}
             >
@@ -1268,7 +1268,7 @@ function useAccountDashboardSettingsModel({
             {deletionImpact.affectedAccounts > 0 ? (
               <>
                 <Button
-                  variant="secondary"
+                  variant="plain"
                   onClick={() => void handleCancelDeleteAccountType()}
                   disabled={isSaving}
                 >
@@ -1285,7 +1285,7 @@ function useAccountDashboardSettingsModel({
             ) : (
               <>
                 <Button
-                  variant="secondary"
+                  variant="plain"
                   onClick={() => void handleCancelDeleteAccountType()}
                   disabled={isSaving}
                 >
@@ -1722,7 +1722,7 @@ function SettingsModalActions({
       
       <div className="settings-modal-buttons">
         <Button
-          variant="secondary"
+          variant="plain"
           onClick={onModalClose}
           disabled={isSaving}
           className="cancel-button"

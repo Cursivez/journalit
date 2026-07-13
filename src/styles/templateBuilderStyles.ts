@@ -246,6 +246,8 @@ export const TEMPLATE_BUILDER_STYLES = `
 .journalit-template-builder-container .template-section-item {
   display: flex;
   align-items: center;
+  justify-content: space-between;
+  gap: 12px;
   padding: 12px;
   border: 1px solid var(--background-modifier-border);
   border-radius: 6px;
@@ -261,6 +263,18 @@ export const TEMPLATE_BUILDER_STYLES = `
 .journalit-template-builder-container .template-section-item--dragging {
   opacity: 0.5;
   cursor: grabbing;
+}
+
+.journalit-template-builder-container .template-section-item__summary {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.journalit-template-builder-container .template-section-item__title {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 
@@ -326,6 +340,207 @@ export const TEMPLATE_BUILDER_STYLES = `
   gap: 8px;
   align-items: center;
   flex-shrink: 0;
+}
+
+.journalit-template-builder-container .template-layout-scope-panel {
+  gap: 20px;
+}
+
+.journalit-template-builder-container .template-layout-scope-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 0;
+}
+
+.journalit-template-builder-container .template-layout-scope-header .template-editor-section-title {
+  margin-bottom: 0;
+}
+
+.journalit-template-builder-container .template-layout-scope-bar {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 12px;
+  overflow: visible;
+  margin-top: 16px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--background-modifier-border);
+}
+
+.journalit-template-builder-container .template-layout-scope-tabs {
+  display: flex;
+  align-items: center;
+  flex-wrap: nowrap;
+  gap: 0;
+  width: 100%;
+}
+
+.journalit-template-builder-container .template-layout-scope-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  flex: 0 0 auto;
+}
+
+.journalit-template-builder-container .template-layout-scope-tab {
+  appearance: none !important;
+  flex: 0 1 auto;
+  min-width: 70px;
+  min-height: 44px;
+  margin: 0 !important;
+  padding: 0 10px !important;
+  border: 1px solid var(--background-modifier-border) !important;
+  border-right-width: 1px !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  background: var(--background-secondary) !important;
+  color: var(--text-muted) !important;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  transition:
+    background-color 0.18s ease,
+    border-color 0.18s ease,
+    color 0.18s ease,
+    box-shadow 0.18s ease;
+}
+
+.journalit-template-builder-container .template-layout-scope-tab:not(.is-first) {
+  margin-left: -1px !important;
+}
+
+.journalit-template-builder-container .template-layout-scope-tab.is-first {
+  border-top-left-radius: 10px !important;
+  border-bottom-left-radius: 10px !important;
+}
+
+.journalit-template-builder-container .template-layout-scope-tab.is-last {
+  border-top-right-radius: 10px !important;
+  border-bottom-right-radius: 10px !important;
+}
+
+.journalit-template-builder-container .template-layout-scope-tab:hover:not(.is-active) {
+  background: var(--background-modifier-hover) !important;
+  color: var(--text-normal) !important;
+}
+
+.journalit-template-builder-container .template-layout-scope-tab.is-active {
+  position: relative;
+  z-index: 1;
+  background: color-mix(
+    in srgb,
+    var(--interactive-accent) 36%,
+    var(--background-secondary)
+  ) !important;
+  border-color: var(--interactive-accent) !important;
+  box-shadow:
+    inset 0 0 0 1px
+      color-mix(in srgb, var(--interactive-accent) 55%, transparent),
+    0 0 0 1px color-mix(in srgb, var(--interactive-accent) 25%, transparent) !important;
+  color: var(--text-normal) !important;
+}
+
+.journalit-template-builder-container .template-layout-scope-tab.is-active:not(.is-first):not(.is-last) {
+  border-radius: 0 !important;
+}
+
+.journalit-template-builder-container .template-layout-scope-tab.is-active.is-first:not(.is-last) {
+  border-top-right-radius: 0 !important;
+  border-bottom-right-radius: 0 !important;
+}
+
+.journalit-template-builder-container .template-layout-scope-tab.is-active.is-last:not(.is-first) {
+  border-top-left-radius: 0 !important;
+  border-bottom-left-radius: 0 !important;
+}
+
+.journalit-template-builder-container .template-layout-scope-tab.is-active.is-first.is-last {
+  border-radius: 10px !important;
+}
+
+.journalit-template-builder-container .template-layout-scope-menu-wrapper {
+  position: relative;
+  display: inline-flex;
+  flex: 0 0 auto;
+}
+
+.journalit-template-builder-container .template-layout-scope-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 20;
+  min-width: 160px;
+  padding: 6px;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 8px;
+  background: var(--background-primary);
+  box-shadow: var(--shadow-l);
+}
+
+.journalit-template-builder-container .template-layout-scope-menu-item {
+  appearance: none !important;
+  display: flex;
+  align-items: center;
+  width: 100%;
+  min-height: 30px;
+  padding: 6px 10px !important;
+  border: 0 !important;
+  border-radius: 6px !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  color: var(--text-normal) !important;
+  font-size: 13px;
+  font-weight: 500;
+  text-align: left;
+  cursor: pointer;
+}
+
+.journalit-template-builder-container .template-layout-scope-menu-item:hover {
+  background: var(--background-modifier-hover) !important;
+}
+
+.journalit-template-builder-container .template-section-item__actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.journalit-template-builder-container .template-section-item__actions .journalit-reorder-controls {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.journalit-template-builder-container .template-section-move-button.journalit-button {
+  min-width: 28px !important;
+  width: 28px !important;
+  height: 28px !important;
+  padding: 5px !important;
+  border: 1px solid var(--background-modifier-border) !important;
+  border-radius: 4px !important;
+  background-color: var(--background-primary) !important;
+  color: var(--text-normal) !important;
+  gap: 0 !important;
+  flex: 0 0 28px;
+  line-height: 1;
+  transition: all 0.2s ease !important;
+}
+
+.journalit-template-builder-container .template-section-move-button.journalit-button:hover:not(:disabled) {
+  background-color: var(--background-modifier-hover) !important;
+  border-color: var(--interactive-accent) !important;
+  color: var(--text-normal) !important;
+}
+
+.journalit-template-builder-container .template-section-move-button.journalit-button:disabled {
+  opacity: 0.35;
 }
 
 
@@ -928,6 +1143,10 @@ export const TEMPLATE_BUILDER_STYLES = `
   border-bottom: 1px solid var(--background-modifier-border);
 }
 
+.journalit-template-builder-container .template-editor-panel .template-section-row:last-child {
+  border-bottom: 0;
+}
+
 .journalit-template-builder-container .template-section-row__info {
   flex: 1;
 }
@@ -1124,6 +1343,7 @@ export const TEMPLATE_BUILDER_STYLES = `
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  position: relative;
 }
 
 .journalit-template-builder-container .template-editor-loading {
@@ -1208,6 +1428,15 @@ export const TEMPLATE_BUILDER_STYLES = `
   overflow: auto;
 }
 
+.journalit-template-builder-container .template-editor-root--has-floating-unsaved .template-editor-canvas-container {
+  padding-bottom: var(--template-floating-unsaved-clearance, 112px);
+  scroll-padding-bottom: var(--template-floating-unsaved-clearance, 112px);
+}
+
+.journalit-template-builder-container .template-editor-root--has-floating-unsaved {
+  --template-floating-unsaved-clearance: 112px;
+}
+
 .journalit-template-builder-container .template-editor-content {
   padding: 20px;
   max-width: 600px;
@@ -1219,11 +1448,22 @@ export const TEMPLATE_BUILDER_STYLES = `
   align-items: center;
   justify-content: space-between;
   padding: 10px 14px;
-  margin-bottom: 20px;
   background: rgba(var(--color-blue-rgb, 72, 138, 224), 0.1);
   border-radius: var(--radius-s);
   border: 1px solid rgba(var(--color-blue-rgb, 72, 138, 224), 0.3);
   font-size: 13px;
+}
+
+.journalit-template-builder-container .template-unsaved-banner--floating {
+  position: absolute;
+  left: 20px;
+  right: 20px;
+  bottom: 16px;
+  z-index: 20;
+  max-width: 600px;
+  margin: 0 auto;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.18), 0 2px 8px rgba(0, 0, 0, 0.12);
+  backdrop-filter: blur(8px);
 }
 
 .journalit-template-builder-container .template-unsaved-banner__text {
@@ -1235,10 +1475,44 @@ export const TEMPLATE_BUILDER_STYLES = `
   gap: 8px;
 }
 
+@container (max-width: 520px) {
+  .journalit-template-builder-container .template-editor-root--has-floating-unsaved {
+    --template-floating-unsaved-clearance: 152px;
+  }
+
+  .journalit-template-builder-container .template-unsaved-banner--floating {
+    left: 12px;
+    right: 12px;
+    bottom: 12px;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+}
+
 .journalit-template-builder-container .template-editor-panel {
   background: var(--background-secondary);
   border-radius: var(--radius-m);
   padding: 16px 20px;
+}
+
+.journalit-template-builder-container .template-trade-note-customization-surface {
+  overflow: visible;
+  border-radius: var(--radius-m);
+  background: var(--background-secondary);
+}
+
+.journalit-template-builder-container .template-trade-note-customization-surface > .template-editor-panel {
+  background: transparent;
+  border-radius: 0;
+  padding: 16px 20px;
+}
+
+.journalit-template-builder-container .template-trade-note-customization-surface > .template-editor-panel + .template-editor-panel {
+  border-top: 1px solid var(--background-modifier-border);
+}
+
+.journalit-template-builder-container .template-trade-note-customization-surface > .template-layout-scope-panel + .template-editor-panel {
+  border-top: 0;
 }
 
 .journalit-template-builder-container .template-editor-panel--spaced {
@@ -1865,14 +2139,14 @@ export const TEMPLATE_BUILDER_STYLES = `
 }
 
 .journalit-template-builder-container .template-builder-section {
-  margin-bottom: 4px;
+  margin-bottom: 2px;
 }
 
 .journalit-template-builder-container .template-builder-section-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 8px 12px;
+  padding: 4px 12px;
   cursor: pointer;
   user-select: none;
   color: var(--text-muted);
@@ -1886,10 +2160,17 @@ export const TEMPLATE_BUILDER_STYLES = `
   display: flex;
   align-items: center;
   gap: 6px;
+  line-height: 1.2;
 }
 
 .journalit-template-builder-container .template-builder-section-chevron {
+  align-self: center;
+  display: block;
+  flex: 0 0 auto;
+  height: 12px;
   transition: transform 0.15s ease;
+  transform-origin: center;
+  width: 12px;
 }
 
 .journalit-template-builder-container .template-builder-section-chevron.is-expanded {
@@ -1897,14 +2178,28 @@ export const TEMPLATE_BUILDER_STYLES = `
 }
 
 .journalit-template-builder-container .template-builder-section-add {
+  appearance: none;
   background: transparent;
   border: none;
-  cursor: pointer;
-  padding: 2px;
+  border-radius: var(--radius-s);
+  box-shadow: none;
   color: var(--text-muted);
+  cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
+  flex: 0 0 auto;
+  height: 22px;
+  line-height: 1;
+  min-height: 0;
+  min-width: 0;
+  padding: 0;
+  width: 22px;
+}
+
+.journalit-template-builder-container .template-builder-section-add:hover {
+  background: var(--background-modifier-hover);
+  color: var(--text-normal);
 }
 
 .journalit-template-builder-container .template-builder-section-body {
@@ -1953,8 +2248,8 @@ export const TEMPLATE_BUILDER_STYLES = `
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 6px 8px;
-  margin-bottom: 2px;
+  padding: 4px 8px;
+  margin-bottom: 1px;
   border-radius: var(--radius-s);
   cursor: pointer;
   background: transparent;
@@ -2091,6 +2386,7 @@ export const TEMPLATE_BUILDER_STYLES = `
 .journalit-template-builder-container .template-builder-main-content {
   flex: 1;
   overflow: hidden;
+  container-type: inline-size;
 }
 
 .journalit-template-builder-container .template-builder-library-container {

@@ -50,7 +50,13 @@ export interface StartGuideSessionResult {
 }
 
 type GuideStepProgression = 'manual' | 'action-required';
-type GuideStepPlacement = 'auto' | 'center' | 'right' | 'right-top';
+type GuideStepPlacement =
+  | 'auto'
+  | 'center'
+  | 'center-target'
+  | 'left'
+  | 'right'
+  | 'right-top';
 
 export interface GuideStepDefinition {
   id: string;
@@ -61,6 +67,11 @@ export interface GuideStepDefinition {
   requiredActionId?: string;
   placement?: GuideStepPlacement;
   skipIfTargetMissing?: boolean;
+  requiredContext?: {
+    key: string;
+    minNumber?: number;
+    equals?: string | number | boolean;
+  };
 }
 
 export interface GuideDefinition {

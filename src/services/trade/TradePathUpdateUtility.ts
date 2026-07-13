@@ -48,23 +48,11 @@ export class TradePathUpdateUtility {
     const normalizedTargetPath = targetPath.replace(/\/$/, '') + '/';
 
     
-    const extractBasePath = (imagePath: string): string | null => {
-      if (typeof imagePath !== 'string') return null;
-
-      
-      
-      const match = imagePath.match(
-        /^(.+?)\/\d{4}\/(?:\d{2}\/)?(?:W\d+\/)?media\//
-      );
-      return match ? match[1] : null;
-    };
-
-    
     const checkSection = (section: Record<string, unknown>): void => {
       if (section?.images && Array.isArray(section.images)) {
         for (const img of section.images) {
           if (typeof img === 'string') {
-            const basePath = extractBasePath(img);
+            const basePath = this.extractImageBasePath(img);
             if (basePath) {
               basePaths.add(basePath);
             }
@@ -77,7 +65,7 @@ export class TradePathUpdateUtility {
     if (frontmatter.images && Array.isArray(frontmatter.images)) {
       for (const img of frontmatter.images) {
         if (typeof img === 'string') {
-          const basePath = extractBasePath(img);
+          const basePath = this.extractImageBasePath(img);
           if (basePath) {
             basePaths.add(basePath);
           }
@@ -93,7 +81,7 @@ export class TradePathUpdateUtility {
         if (!Array.isArray(images)) continue;
         for (const img of images) {
           if (typeof img !== 'string') continue;
-          const basePath = extractBasePath(img);
+          const basePath = this.extractImageBasePath(img);
           if (basePath) {
             basePaths.add(basePath);
           }
@@ -155,6 +143,16 @@ export class TradePathUpdateUtility {
       }
     }
 
+    const imageAnnotations = asRecord(frontmatter.imageAnnotations);
+    if (imageAnnotations) {
+      for (const imagePath of Object.keys(imageAnnotations)) {
+        const basePath = this.extractImageBasePath(imagePath);
+        if (basePath) {
+          basePaths.add(basePath);
+        }
+      }
+    }
+
     
     if (normalizedTargetPath) {
       const filteredPaths = new Set<string>();
@@ -168,6 +166,17 @@ export class TradePathUpdateUtility {
     }
 
     return basePaths;
+  }
+
+  private extractImageBasePath(imagePath: string): string | null {
+    if (typeof imagePath !== 'string') return null;
+
+    
+    
+    const match = imagePath.match(
+      /^(.+?)\/\d{4}\/(?:\d{2}\/)?(?:W\d+\/)?media\//
+    );
+    return match ? match[1] : null;
   }
 
   
@@ -194,6 +203,41 @@ export class TradePathUpdateUtility {
     });
 
     return { updated, hasChanges };
+  }
+
+  private updateImageAnnotations(
+    annotations: unknown,
+    oldPath: string,
+    newPath: string
+  ): { updated: Record<string, unknown>; hasChanges: boolean } {
+    const annotationRecord = asRecord(annotations);
+    if (!annotationRecord) return { updated: {}, hasChanges: false };
+
+    let hasChanges = false;
+    const updated: Record<string, unknown> = {};
+    for (const [imagePath, annotation] of Object.entries(annotationRecord)) {
+      const nextPath = imagePath.startsWith(oldPath)
+        ? imagePath.replace(oldPath, newPath)
+        : imagePath;
+      if (nextPath !== imagePath) hasChanges = true;
+      updated[nextPath] = annotation;
+    }
+
+    return { updated, hasChanges };
+  }
+
+  private imageAnnotationsNeedQuarterlyUpdate(
+    annotations: unknown,
+    journalFolderPath: string
+  ): boolean {
+    const annotationRecord = asRecord(annotations);
+    if (!annotationRecord) return false;
+
+    return Object.keys(annotationRecord).some(
+      (imagePath) =>
+        this.transformImagePathWithQuarter(imagePath, journalFolderPath) !==
+        null
+    );
   }
 
   
@@ -239,9 +283,13 @@ export class TradePathUpdateUtility {
     let hasChanges = false;
 
     const updated = validImages.map((imagePath: string) => {
-      const oldPath = oldPaths.find((candidate) =>
-        imagePath.startsWith(candidate)
-      );
+      let oldPath: string | undefined;
+      for (const candidate of oldPaths) {
+        if (imagePath.startsWith(candidate)) {
+          oldPath = candidate;
+          break;
+        }
+      }
       if (!oldPath) {
         return imagePath;
       }
@@ -249,6 +297,34 @@ export class TradePathUpdateUtility {
       hasChanges = true;
       return imagePath.replace(oldPath, newPath);
     });
+
+    return { updated, hasChanges };
+  }
+
+  private updateImageAnnotationsForBasePaths(
+    annotations: unknown,
+    oldPaths: string[],
+    newPath: string
+  ): { updated: Record<string, unknown>; hasChanges: boolean } {
+    const annotationRecord = asRecord(annotations);
+    if (!annotationRecord) return { updated: {}, hasChanges: false };
+
+    let hasChanges = false;
+    const updated: Record<string, unknown> = {};
+    for (const [imagePath, annotation] of Object.entries(annotationRecord)) {
+      let oldPath: string | undefined;
+      for (const candidate of oldPaths) {
+        if (imagePath.startsWith(candidate)) {
+          oldPath = candidate;
+          break;
+        }
+      }
+      const nextPath = oldPath
+        ? imagePath.replace(oldPath, newPath)
+        : imagePath;
+      if (nextPath !== imagePath) hasChanges = true;
+      updated[nextPath] = annotation;
+    }
 
     return { updated, hasChanges };
   }
@@ -352,6 +428,17 @@ export class TradePathUpdateUtility {
                     pathsUpdated = true;
                   }
                 }
+              }
+
+              const imageAnnotationsResult =
+                this.updateImageAnnotationsForBasePaths(
+                  fmRecord.imageAnnotations,
+                  normalizedOldPaths,
+                  normalizedNewPath
+                );
+              if (imageAnnotationsResult.hasChanges) {
+                fmRecord.imageAnnotations = imageAnnotationsResult.updated;
+                pathsUpdated = true;
               }
 
               if (fmRecord.type === 'drc') {
@@ -693,6 +780,16 @@ export class TradePathUpdateUtility {
                 }
               }
 
+              const imageAnnotationsResult = this.updateImageAnnotations(
+                fmRecord.imageAnnotations,
+                normalizedOldPath,
+                normalizedNewPath
+              );
+              if (imageAnnotationsResult.hasChanges) {
+                fmRecord.imageAnnotations = imageAnnotationsResult.updated;
+                pathsUpdated = true;
+              }
+
               
               if (isDRC) {
                 let drcUpdated = false;
@@ -904,6 +1001,27 @@ export class TradePathUpdateUtility {
     return { updated, hasChanges };
   }
 
+  private updateImageAnnotationsWithQuarter(
+    annotations: unknown,
+    journalFolderPath: string
+  ): { updated: Record<string, unknown>; hasChanges: boolean } {
+    const annotationRecord = asRecord(annotations);
+    if (!annotationRecord) return { updated: {}, hasChanges: false };
+
+    let hasChanges = false;
+    const updated: Record<string, unknown> = {};
+    for (const [imagePath, annotation] of Object.entries(annotationRecord)) {
+      const transformed = this.transformImagePathWithQuarter(
+        imagePath,
+        journalFolderPath
+      );
+      if (transformed) hasChanges = true;
+      updated[transformed ?? imagePath] = annotation;
+    }
+
+    return { updated, hasChanges };
+  }
+
   
   private updateForecastSectionWithQuarter(
     section: unknown,
@@ -1013,6 +1131,13 @@ export class TradePathUpdateUtility {
                 this.transformImagePathWithQuarter(img, journalFolderPath) !==
                   null
             )
+        );
+      }
+
+      if (!needsUpdate) {
+        needsUpdate = this.imageAnnotationsNeedQuarterlyUpdate(
+          frontmatter.imageAnnotations,
+          journalFolderPath
         );
       }
 
@@ -1140,6 +1265,16 @@ export class TradePathUpdateUtility {
                     pathsUpdated = true;
                   }
                 }
+              }
+
+              const imageAnnotationsResult =
+                this.updateImageAnnotationsWithQuarter(
+                  fmRecord.imageAnnotations,
+                  journalFolderPath
+                );
+              if (imageAnnotationsResult.hasChanges) {
+                fmRecord.imageAnnotations = imageAnnotationsResult.updated;
+                pathsUpdated = true;
               }
 
               if (fmRecord.type === 'drc') {

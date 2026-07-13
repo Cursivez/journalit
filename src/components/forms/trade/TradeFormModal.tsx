@@ -5,12 +5,13 @@ import { App, Modal, Notice, TFile } from 'obsidian';
 import { createRoot, Root } from 'react-dom/client';
 import JournalitPlugin from '../../../main';
 import { TradeForm } from '.';
-import { TradeFormData } from './types';
+import { TradeFormData, TradeFormOpenOptions } from './types';
 import { MissedTradeFormData } from '../../missedTrade/types';
 import { BacktestTradeFormData } from '../../../services/backtestTrade/BacktestTradeService';
 import type { TradeData } from '../../../services/trade/TradeService';
 
 import { CurrencyProvider } from '../../../contexts/CurrencyContext';
+import { DisplayPolicyProvider } from '../../../contexts/DisplayPolicyContext';
 import { t } from '../../../lang/helpers';
 import { eventBus } from '../../../services/events';
 import {
@@ -18,6 +19,7 @@ import {
   hasTradeIdentityChanged,
   inferStoredTradeType,
 } from '../../../utils/tradeTypeRouting';
+import { TradeFormGuide } from './TradeFormGuide';
 
 type TradeFormSubmissionData = TradeFormData &
   Record<string, unknown> & {
@@ -69,6 +71,7 @@ interface TradeFormModalProps {
   isEditMode?: boolean;
   initialData?: Partial<TradeFormData>;
   filePath?: string;
+  openOptions?: TradeFormOpenOptions;
 }
 
 export class TradeFormModal extends Modal {
@@ -89,37 +92,46 @@ export class TradeFormModal extends Modal {
     this.plugin = props.plugin;
   }
 
-  
-  close(): void {
+  private async closeIfConfirmed(): Promise<boolean> {
     
     if (this.isConfirming) {
-      return;
+      return false;
     }
 
     
     if (this.shouldBypassUnsavedCheck) {
       this.shouldBypassUnsavedCheck = false;
       super.close();
-      return;
+      return true;
     }
 
     
     const checkForUnsavedChanges = this.dirtyStateRef.current;
     if (checkForUnsavedChanges && checkForUnsavedChanges()) {
       this.isConfirming = true;
-      void this.showUnsavedChangesConfirmation()
-        .then((shouldClose) => {
-          if (shouldClose) {
-            super.close();
-          }
-        })
-        .finally(() => {
-          this.isConfirming = false;
-          this.confirmationModal = null;
-        });
-    } else {
-      super.close();
+      try {
+        const shouldClose = await this.showUnsavedChangesConfirmation();
+        if (shouldClose) {
+          super.close();
+        }
+        return shouldClose;
+      } finally {
+        this.isConfirming = false;
+        this.confirmationModal = null;
+      }
     }
+
+    super.close();
+    return true;
+  }
+
+  
+  close(): void {
+    void this.closeIfConfirmed();
+  }
+
+  requestClose(): Promise<boolean> {
+    return this.closeIfConfirmed();
   }
 
   
@@ -142,6 +154,7 @@ export class TradeFormModal extends Modal {
   onOpen(): void {
     const { contentEl } = this;
     contentEl.empty();
+    this.modalEl.addClass('journalit-trade-form-modal');
 
     
     
@@ -183,18 +196,21 @@ export class TradeFormModal extends Modal {
     if (!this.container) return;
     this.root = createRoot(this.container);
     this.root.render(
-      <CurrencyProvider>
-        <TradeFormModalContent
-          app={this.modalProps.app}
-          plugin={this.modalProps.plugin}
-          isEditMode={!!this.modalProps.isEditMode}
-          initialData={this.modalProps.initialData || {}}
-          filePath={this.modalProps.filePath || ''}
-          onModalClose={() => this.close()}
-          onSuccessfulSubmit={() => this.closeAfterSuccessfulSubmit()}
-          dirtyStateRef={this.dirtyStateRef}
-        />
-      </CurrencyProvider>
+      <DisplayPolicyProvider privacyModeOverride={false}>
+        <CurrencyProvider>
+          <TradeFormModalContent
+            app={this.modalProps.app}
+            plugin={this.modalProps.plugin}
+            isEditMode={!!this.modalProps.isEditMode}
+            initialData={this.modalProps.initialData || {}}
+            filePath={this.modalProps.filePath || ''}
+            openOptions={this.modalProps.openOptions}
+            onModalClose={() => this.requestClose()}
+            onSuccessfulSubmit={() => this.closeAfterSuccessfulSubmit()}
+            dirtyStateRef={this.dirtyStateRef}
+          />
+        </CurrencyProvider>
+      </DisplayPolicyProvider>
     );
   }
 }
@@ -205,7 +221,7 @@ interface TradeFormModalContentProps extends Omit<
 > {
   app: App;
   plugin: JournalitPlugin;
-  onModalClose: () => void;
+  onModalClose: () => Promise<boolean>;
   onSuccessfulSubmit: () => void;
   dirtyStateRef: { current: (() => boolean) | null };
 }
@@ -226,7 +242,7 @@ interface TradeFormModalContentModelParams {
   isEditMode?: boolean;
   initialData?: Partial<TradeFormData>;
   filePath?: string;
-  onModalClose: () => void;
+  onModalClose: () => Promise<boolean>;
   onSuccessfulSubmit: () => void;
 }
 
@@ -415,10 +431,9 @@ function useTradeFormModalContentModel({
         direction: data.direction,
         entries: data.entries || [],
         exits: formExits,
+        idealExits: data.idealExits || [],
         hasExplicitExitPrice,
         dividends: data.dividends || [],
-        setupIds: data.setupIds || [],
-
         thesis: data.thesis,
         images: data.images,
         instrument: data.instrument,
@@ -637,9 +652,7 @@ function useTradeFormModalContentModel({
     }
   };
 
-  const handleCancel = () => {
-    onModalClose();
-  };
+  const handleCancel = () => onModalClose();
 
   return {
     isSubmitting,
@@ -653,6 +666,7 @@ const TradeFormModalContent: React.FC<TradeFormModalContentProps> = ({
   isEditMode,
   initialData,
   filePath,
+  openOptions,
   onModalClose,
   onSuccessfulSubmit,
   dirtyStateRef,
@@ -668,14 +682,18 @@ const TradeFormModalContent: React.FC<TradeFormModalContentProps> = ({
     });
 
   return (
-    <TradeForm
-      initialData={initialData || {}}
-      isSubmitting={isSubmitting}
-      isEditMode={isEditMode}
-      onSubmit={handleSubmit}
-      onCancel={handleCancel}
-      dirtyStateRef={dirtyStateRef}
-    />
+    <>
+      <TradeForm
+        initialData={initialData || {}}
+        initialTab={openOptions?.initialTab}
+        isSubmitting={isSubmitting}
+        isEditMode={isEditMode}
+        onSubmit={handleSubmit}
+        onCancel={handleCancel}
+        dirtyStateRef={dirtyStateRef}
+      />
+      {!isEditMode && <TradeFormGuide plugin={plugin} />}
+    </>
   );
 };
 

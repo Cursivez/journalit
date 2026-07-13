@@ -13,7 +13,7 @@ import type { DisplayValueKind } from '../../services/display/DisplayPolicy';
 interface TooltipItem {
   label: string;
   value: number | string;
-  type?: 'pnl' | 'drawdown' | 'percentage' | 'number' | 'text';
+  type?: 'pnl' | 'drawdown' | 'rMultiple' | 'percentage' | 'number' | 'text';
   isPrimary?: boolean;
   isPositive?: boolean;
   isNegative?: boolean;
@@ -52,6 +52,7 @@ const getTooltipDisplayKind = (
 ): DisplayValueKind | null => {
   if (type === 'pnl') return 'pnl';
   if (type === 'drawdown') return 'drawdown';
+  if (type === 'rMultiple') return 'rMultiple';
   if (type === 'percentage') return 'drawdown';
   return null;
 };
@@ -108,6 +109,9 @@ const formatTooltipItemValue = (
         currencyCode: currency,
         rMultiple,
       });
+    }
+    if (item.type === 'rMultiple') {
+      return formatValue({ kind: 'rMultiple', value: item.value });
     }
     if (item.type === 'drawdown') {
       return formatTooltipValue(

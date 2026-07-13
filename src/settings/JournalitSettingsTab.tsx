@@ -3,11 +3,12 @@
 import * as Obsidian from 'obsidian';
 import { App, PluginSettingTab, requireApiVersion } from 'obsidian';
 import type { SettingControl, SettingDefinitionItem } from 'obsidian';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { createRoot, Root } from 'react-dom/client';
 import { eventBus } from '../services/events';
 import { t } from '../lang/helpers';
 import JournalitPlugin from '../main';
+import { getBaseCurrencyOptions } from '../utils/currencyConfig';
 import {
   DEFAULT_SETTINGS,
   SETTINGS_TAB_IDS,
@@ -17,10 +18,8 @@ import {
 
 
 import { GeneralTab } from './components/general/GeneralTab';
-import { ReviewsTab } from './components/reviews/ReviewsTab';
-import { AuthTab } from './components/accounts/AuthTab';
-import { CustomizationTab } from './components/customization/CustomizationTab';
-import { TradeSyncTab } from './components/integration/TradeSyncTab';
+import { JournalSettingsTab } from './components/journal/JournalSettingsTab';
+import { SyncSettingsTab } from './components/sync/SyncSettingsTab';
 
 interface NativeSettingDefinitionPage {
   type: 'page';
@@ -98,6 +97,12 @@ export class JournalitSettingsTab extends PluginSettingTab {
 
   setInitialTab(tabId: SettingsTabId): void {
     this.initialTab = tabId;
+  }
+
+  renderInitialTab(): void {
+    const tabToDisplay = this.initialTab;
+    this.initialTab = SETTINGS_TAB_IDS.GENERAL;
+    this.renderReactSettings(this.containerEl, tabToDisplay, true);
   }
 
   getSettingDefinitions(): SettingDefinitionItem<string>[] {
@@ -225,6 +230,14 @@ export class JournalitSettingsTab extends PluginSettingTab {
       return;
     }
 
+    if (key.startsWith('backendIntegration.')) {
+      eventBus.publish('settings:changed', {
+        section: 'backendIntegration',
+        source: key.slice('backendIntegration.'.length),
+      });
+      return;
+    }
+
     if (
       key.startsWith('reviews.') ||
       key.startsWith('drc.') ||
@@ -242,9 +255,7 @@ export class JournalitSettingsTab extends PluginSettingTab {
   }
 
   display(): void {
-    const tabToDisplay = this.initialTab;
-    this.initialTab = SETTINGS_TAB_IDS.GENERAL; 
-    this.renderReactSettings(this.containerEl, tabToDisplay, true);
+    this.renderInitialTab();
   }
 
   renderReactSettings(
@@ -302,7 +313,7 @@ export class JournalitSettingsTab extends PluginSettingTab {
 
 interface SettingsTabContentProps {
   plugin: JournalitPlugin;
-  initialTab?: string;
+  initialTab?: SettingsTabId;
   showTabs?: boolean;
 }
 
@@ -319,30 +330,55 @@ const SettingsTabContent: React.FC<SettingsTabContentProps> = React.memo(
     }));
     
     
-    const activeTab =
+    const requestedTab =
       tabState.initialTab === initialTab ? tabState.activeTab : initialTab;
+    const activeTab = normalizeSettingsTabId(requestedTab);
 
     
-    const handleTabChange = (newTab: string) => {
+    const handleTabChange = (newTab: SettingsTabId) => {
       setTabState({ initialTab, activeTab: newTab });
     };
+
+    useEffect(() => {
+      const handleOpenSettingsTab = (event: Event) => {
+        if (!(event instanceof CustomEvent) || !isRecord(event.detail)) return;
+        const tabId = event.detail.tabId;
+        if (typeof tabId !== 'string') return;
+        if (!isSettingsTabId(tabId)) return;
+        setTabState({
+          initialTab: tabId,
+          activeTab: tabId,
+        });
+      };
+
+      window.addEventListener(
+        'journalit:open-settings-tab',
+        handleOpenSettingsTab
+      );
+      return () => {
+        window.removeEventListener(
+          'journalit:open-settings-tab',
+          handleOpenSettingsTab
+        );
+      };
+    }, []);
 
     
     const tabs = [
       { id: SETTINGS_TAB_IDS.GENERAL, label: t('settings.tab.general') },
-      { id: SETTINGS_TAB_IDS.REVIEWS, label: t('settings.tab.reviews') },
+      { id: SETTINGS_TAB_IDS.TRADING, label: t('settings.tab.trading') },
       {
-        id: SETTINGS_TAB_IDS.CUSTOMIZATION,
-        label: t('settings.tab.customization'),
+        id: SETTINGS_TAB_IDS.JOURNAL,
+        label: t('settings.tab.journal-setup'),
       },
-      { id: SETTINGS_TAB_IDS.TRADE_SYNC, label: t('settings.tab.backend') },
-      { id: SETTINGS_TAB_IDS.ACCOUNTS, label: t('settings.tab.accounts') },
+      { id: SETTINGS_TAB_IDS.SYNC, label: t('settings.tab.sync') },
+      { id: SETTINGS_TAB_IDS.ADVANCED, label: t('form.tab.advanced') },
     ];
 
     return (
       <div className="settings-tab-container">
         {showTabs && (
-          <nav className="settings-tab-nav">
+          <nav className="settings-tab-nav journalit-settings-main-nav">
             {tabs.map((tab) => (
               <button
                 key={tab.id}
@@ -360,16 +396,38 @@ const SettingsTabContent: React.FC<SettingsTabContentProps> = React.memo(
           role="tabpanel"
           aria-labelledby={`tab-${activeTab}`}
         >
-          {activeTab === 'general' && <GeneralTab plugin={plugin} />}
-          {activeTab === 'reviews' && <ReviewsTab plugin={plugin} />}
-          {activeTab === 'customization' && (
-            <CustomizationTab plugin={plugin} />
+          {activeTab === SETTINGS_TAB_IDS.GENERAL && (
+            <GeneralTab plugin={plugin} scope="general" />
           )}
-          {activeTab === SETTINGS_TAB_IDS.TRADE_SYNC && (
-            <TradeSyncTab plugin={plugin} />
+          {activeTab === SETTINGS_TAB_IDS.TRADING && (
+            <GeneralTab plugin={plugin} scope="trading" />
           )}
-          {activeTab === SETTINGS_TAB_IDS.ACCOUNTS && (
-            <AuthTab plugin={plugin} />
+          {activeTab === SETTINGS_TAB_IDS.JOURNAL && (
+            <JournalSettingsTab
+              plugin={plugin}
+              initialSection={
+                requestedTab === SETTINGS_TAB_IDS.SESSION_MODE
+                  ? 'sessionMode'
+                  : requestedTab === SETTINGS_TAB_IDS.CUSTOMIZATION
+                    ? 'fields'
+                    : 'reviews'
+              }
+            />
+          )}
+          {activeTab === SETTINGS_TAB_IDS.SYNC && (
+            <SyncSettingsTab
+              plugin={plugin}
+              initialSection={
+                requestedTab === SETTINGS_TAB_IDS.ACCOUNTS
+                  ? 'account'
+                  : requestedTab === SETTINGS_TAB_IDS.TRADE_IMPORT_SYNC
+                    ? 'tradeImport'
+                    : 'metatrader'
+              }
+            />
+          )}
+          {activeTab === SETTINGS_TAB_IDS.ADVANCED && (
+            <GeneralTab plugin={plugin} scope="advanced" />
           )}
         </div>
       </div>
@@ -381,71 +439,91 @@ SettingsTabContent.displayName = 'SettingsTabContent';
 
 const settingsRoots = new WeakMap<HTMLElement, Root>();
 
+function isSettingsTabId(tabId: string): tabId is SettingsTabId {
+  return Object.values(SETTINGS_TAB_IDS).some((value) => value === tabId);
+}
+
+function normalizeSettingsTabId(tabId: SettingsTabId): SettingsTabId {
+  if (
+    tabId === SETTINGS_TAB_IDS.REVIEWS ||
+    tabId === SETTINGS_TAB_IDS.CUSTOMIZATION ||
+    tabId === SETTINGS_TAB_IDS.SESSION_MODE
+  ) {
+    return SETTINGS_TAB_IDS.JOURNAL;
+  }
+
+  if (
+    tabId === SETTINGS_TAB_IDS.TRADE_SYNC ||
+    tabId === SETTINGS_TAB_IDS.TRADE_IMPORT_SYNC ||
+    tabId === SETTINGS_TAB_IDS.ACCOUNTS
+  ) {
+    return SETTINGS_TAB_IDS.SYNC;
+  }
+
+  return tabId;
+}
+
 function getSettingsPageDefinitions(): SettingsPageDefinition[] {
   return [
     {
       tabId: SETTINGS_TAB_IDS.GENERAL,
       label: t('settings.tab.general'),
-      desc: 'Core trading, display, privacy, folders, startup, and data management preferences.',
+      desc: 'Currency, display name, home startup, recent items, and navigation preferences.',
       createItems: createGeneralNativeSettingItems,
       aliases: [
         'currency',
         'display name',
-        'privacy mode',
         'home view',
-        'journal folder',
+        'recent items',
+        'navigation sidebar',
+        'privacy mode',
+      ],
+    },
+    {
+      tabId: SETTINGS_TAB_IDS.TRADING,
+      label: t('settings.tab.trading'),
+      desc: 'Trade defaults, date handling, risk, break-even logic, and analytics display preferences.',
+      createItems: createTradingNativeSettingItems,
+      aliases: [
         'date format',
         'risk amount',
         'R-multiples',
+        'break-even',
+        'MAE',
+        'MFE',
         'copy trading PnL',
-        'notifications',
-        'backup',
-        'import settings',
-        'export settings',
+        'trading day cutoff',
       ],
     },
     {
-      tabId: SETTINGS_TAB_IDS.REVIEWS,
-      label: t('settings.tab.reviews'),
-      desc: 'Daily, weekly, monthly, quarterly, yearly, and scalper review templates and automation.',
-      createItems: createReviewNativeSettingItems,
+      tabId: SETTINGS_TAB_IDS.JOURNAL,
+      label: t('settings.tab.journal-setup'),
+      desc: 'Review templates, automation, custom fields, form layout, symbols, setups, mistakes, tags, and events.',
+      createItems: createJournalNativeSettingItems,
       aliases: [
         'daily review',
-        'DRC',
         'weekly review',
-        'monthly review',
-        'quarterly review',
-        'yearly review',
         'review templates',
         'recurring goals',
         'checklist',
-        'auto-create reviews',
-        'scalper',
-      ],
-    },
-    {
-      tabId: SETTINGS_TAB_IDS.CUSTOMIZATION,
-      label: t('settings.tab.customization'),
-      desc: 'Custom trade fields, review fields, entry models, instruments, setups, mistakes, and tags.',
-      aliases: [
         'custom fields',
-        'review fields',
-        'entry models',
-        'instruments',
-        'sessions',
-        'directions',
+        'trade form layout',
+        'symbols',
         'setups',
         'mistakes',
         'tags',
         'events',
-        'symbols',
       ],
     },
     {
-      tabId: SETTINGS_TAB_IDS.TRADE_SYNC,
-      label: t('settings.tab.backend'),
-      desc: 'Backend sync, MetaTrader FTP credentials, account linking, import, export, and diagnostics.',
+      tabId: SETTINGS_TAB_IDS.SYNC,
+      label: t('settings.tab.sync'),
+      desc: 'Journalit account, subscription, MetaTrader sync, trade import, account linking, and sync notifications.',
+      createItems: createSyncNativeSettingItems,
       aliases: [
+        'account',
+        'subscription',
+        'billing',
         'backend',
         'sync',
         'MetaTrader',
@@ -453,25 +531,22 @@ function getSettingsPageDefinitions(): SettingsPageDefinition[] {
         'credentials',
         'account linking',
         'import trades',
-        'export trades',
         'diagnostics',
-        'auto sync',
+        'notifications',
       ],
     },
     {
-      tabId: SETTINGS_TAB_IDS.ACCOUNTS,
-      label: t('settings.tab.accounts'),
-      desc: 'Journalit account authentication, subscription status, sign in, and sign out.',
+      tabId: SETTINGS_TAB_IDS.ADVANCED,
+      label: t('form.tab.advanced'),
+      desc: 'Journal folder, image path maintenance, settings backup, import, export, and reset.',
+      createItems: createAdvancedNativeSettingItems,
       aliases: [
-        'account',
-        'authentication',
-        'login',
-        'logout',
-        'sign in',
-        'sign out',
-        'subscription',
-        'billing',
-        'user email',
+        'journal folder',
+        'image paths',
+        'backup',
+        'import settings',
+        'export settings',
+        'reset settings',
       ],
     },
   ];
@@ -480,6 +555,11 @@ function getSettingsPageDefinitions(): SettingsPageDefinition[] {
 function createGeneralNativeSettingItems(
   tab: JournalitSettingsTab
 ): NativeSettingDefinitionItem[] {
+  void tab;
+  const currencyOptions = Object.fromEntries(
+    getBaseCurrencyOptions().map((option) => [option.value, option.label])
+  );
+
   return [
     {
       type: 'group',
@@ -489,16 +569,7 @@ function createGeneralNativeSettingItems(
           t('settings.general.currency'),
           t('settings.general.currency-desc'),
           'general.currency',
-          {
-            USD: 'USD',
-            EUR: 'EUR',
-            GBP: 'GBP',
-            CAD: 'CAD',
-            AUD: 'AUD',
-            JPY: 'JPY',
-            CHF: 'CHF',
-            NZD: 'NZD',
-          },
+          currencyOptions,
           'USD'
         ),
         textSetting(
@@ -507,6 +578,51 @@ function createGeneralNativeSettingItems(
           'general.displayName',
           t('settings.general.display-name-placeholder')
         ),
+      ],
+    },
+    {
+      type: 'group',
+      heading: t('settings.general.home-view-settings'),
+      items: [
+        dropdownSetting(
+          t('settings.general.home-auto-open'),
+          t('settings.general.home-auto-open-desc'),
+          'general.homeStartupBehavior',
+          {
+            always: t('settings.general.home-auto-open-always'),
+            ifNone: t('settings.general.home-auto-open-ifnone'),
+            never: t('settings.general.home-auto-open-never'),
+          },
+          'always'
+        ),
+        toggleSetting(
+          t('settings.general.filter-recent'),
+          t('settings.general.filter-recent-desc'),
+          'home.filterRecentItemsToJournalit',
+          false
+        ),
+      ],
+    },
+    {
+      type: 'group',
+      heading: t('settings.general.navigation-sidebar'),
+      items: [
+        dropdownSetting(
+          t('navigation.setting.tab-behavior'),
+          t('navigation.setting.tab-behavior.desc'),
+          'navigation.tabBehavior',
+          {
+            newTab: t('navigation.setting.tab-behavior.new-tab'),
+            replaceActiveTab: t('navigation.setting.tab-behavior.replace'),
+          },
+          'replaceActiveTab'
+        ),
+      ],
+    },
+    {
+      type: 'group',
+      heading: t('settings.general.data-management'),
+      items: [
         toggleSetting(
           t('settings.general.privacy-mode'),
           t('settings.general.privacy-mode-desc'),
@@ -515,6 +631,13 @@ function createGeneralNativeSettingItems(
         ),
       ],
     },
+  ];
+}
+
+function createTradingNativeSettingItems(
+  tab: JournalitSettingsTab
+): NativeSettingDefinitionItem[] {
+  return [
     {
       type: 'group',
       heading: t('settings.general.trade-settings'),
@@ -613,47 +736,24 @@ function createGeneralNativeSettingItems(
         ),
       ],
     },
-    {
-      type: 'group',
-      heading: t('settings.general.home-view-settings'),
-      items: [
-        dropdownSetting(
-          t('settings.general.home-auto-open'),
-          t('settings.general.home-auto-open-desc'),
-          'general.homeStartupBehavior',
-          {
-            always: t('settings.general.home-auto-open-always'),
-            ifNone: t('settings.general.home-auto-open-ifnone'),
-            never: t('settings.general.home-auto-open-never'),
-          },
-          'always'
-        ),
-        toggleSetting(
-          t('settings.general.filter-recent'),
-          t('settings.general.filter-recent-desc'),
-          'home.filterRecentItemsToJournalit',
-          false
-        ),
-      ],
-    },
     createReactPageDefinition(
       tab,
-      SETTINGS_TAB_IDS.GENERAL,
-      'Advanced general settings',
-      'Open the full Journalit general settings UI for folder changes, image paths, backups, import, export, and reset actions.',
+      SETTINGS_TAB_IDS.TRADING,
+      t('settings.general.trade-settings'),
+      'Open the full Journalit trade settings UI for break-even thresholds, copy-account analytics, and advanced trade display preferences.',
       [
-        'journal folder',
-        'image paths',
-        'backup',
-        'import settings',
-        'export settings',
-        'reset settings',
+        'break-even',
+        'break-even range',
+        'break-even percent',
+        'copy accounts',
+        'copy trading analytics',
+        'advanced trade settings',
       ]
     ),
   ];
 }
 
-function createReviewNativeSettingItems(
+function createJournalNativeSettingItems(
   tab: JournalitSettingsTab
 ): NativeSettingDefinitionItem[] {
   return [
@@ -747,7 +847,140 @@ function createReviewNativeSettingItems(
       'Open the full Journalit review settings UI for templates, recurring goals, and checklist management.',
       ['review templates', 'recurring goals', 'checklist', 'template builder']
     ),
+    createReactPageDefinition(
+      tab,
+      SETTINGS_TAB_IDS.CUSTOMIZATION,
+      t('settings.tab.customization'),
+      'Open custom fields, form layout, symbols, mappings, setups, mistakes, tags, and events.',
+      [
+        'custom fields',
+        'trade form layout',
+        'symbols',
+        'symbol mappings',
+        'setups',
+        'mistakes',
+        'tags',
+        'events',
+      ]
+    ),
+    createReactPageDefinition(
+      tab,
+      SETTINGS_TAB_IDS.SESSION_MODE,
+      t('settings.session-mode.title'),
+      'Open Session Mode settings for trading windows, phase layout, Trade Gate workflows, and session log tags.',
+      [
+        'session mode',
+        'trading sessions',
+        'phase layout',
+        'trade gate',
+        'session log tags',
+      ]
+    ),
   ];
+}
+
+function createSyncNativeSettingItems(
+  tab: JournalitSettingsTab
+): NativeSettingDefinitionItem[] {
+  return [
+    {
+      type: 'group',
+      heading: t('settings.general.notification-settings'),
+      items: [
+        toggleSetting(
+          t('settings.general.sync-notifications'),
+          t('settings.general.sync-notifications-desc'),
+          'backendIntegration.showSyncNotifications',
+          true
+        ),
+        toggleSetting(
+          t('settings.general.new-trade-notifications'),
+          t('settings.general.new-trade-notifications-desc'),
+          'backendIntegration.showNewTradeNotifications',
+          true
+        ),
+        toggleSetting(
+          t('settings.general.update-notifications'),
+          t('settings.general.update-notifications-desc'),
+          'backendIntegration.showUpdateNotifications',
+          true
+        ),
+      ],
+    },
+    createReactPageDefinition(
+      tab,
+      SETTINGS_TAB_IDS.ACCOUNTS,
+      t('settings.tab.accounts'),
+      'Open Journalit account authentication, subscription, sign in, and sign out.',
+      ['account', 'subscription', 'billing', 'login', 'logout', 'sign in']
+    ),
+    createReactPageDefinition(
+      tab,
+      SETTINGS_TAB_IDS.TRADE_SYNC,
+      t('trade-sync.source.metatrader'),
+      'Open MetaTrader sync setup, FTP credentials, account management, and diagnostics.',
+      ['MetaTrader', 'FTP', 'credentials', 'account management', 'diagnostics']
+    ),
+    createReactPageDefinition(
+      tab,
+      SETTINGS_TAB_IDS.TRADE_IMPORT_SYNC,
+      t('trade-sync.source.trade-import'),
+      'Open Trade Import sync inventory, account mapping, and restore tools.',
+      [
+        'trade import',
+        'import trades',
+        'inventory',
+        'restore',
+        'account mapping',
+      ]
+    ),
+  ];
+}
+
+function createAdvancedNativeSettingItems(
+  tab: JournalitSettingsTab
+): NativeSettingDefinitionItem[] {
+  return [
+    createReactPageDefinition(
+      tab,
+      SETTINGS_TAB_IDS.ADVANCED,
+      t('form.tab.advanced'),
+      'Open folder location, image path maintenance, settings import, export, and reset actions.',
+      [
+        'journal folder',
+        'image paths',
+        'backup',
+        'import settings',
+        'export settings',
+        'reset settings',
+      ]
+    ),
+  ];
+}
+
+function createReactPageDefinition(
+  tab: JournalitSettingsTab,
+  tabId: SettingsTabId,
+  name: string,
+  desc: string,
+  aliases: string[]
+): NativeSettingDefinitionPage {
+  return {
+    type: 'page',
+    name,
+    desc,
+    aliases,
+    page: () =>
+      createNativeReactSettingsPage({
+        title: name,
+        display: (containerEl) => {
+          tab.renderReactSettings(containerEl, tabId, false);
+        },
+        hide: (containerEl) => {
+          tab.unmountReactSettings(containerEl);
+        },
+      }),
+  };
 }
 
 function toggleSetting(
@@ -808,31 +1041,6 @@ function dropdownSetting(
     desc,
     aliases: Object.values(options),
     control: { type: 'dropdown', key, options, defaultValue },
-  };
-}
-
-function createReactPageDefinition(
-  tab: JournalitSettingsTab,
-  tabId: SettingsTabId,
-  name: string,
-  desc: string,
-  aliases: string[]
-): NativeSettingDefinitionPage {
-  return {
-    type: 'page',
-    name,
-    desc,
-    aliases,
-    page: () =>
-      createNativeReactSettingsPage({
-        title: name,
-        display: (containerEl) => {
-          tab.renderReactSettings(containerEl, tabId, false);
-        },
-        hide: (containerEl) => {
-          tab.unmountReactSettings(containerEl);
-        },
-      }),
   };
 }
 

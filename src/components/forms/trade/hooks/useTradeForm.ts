@@ -1,4 +1,6 @@
+import type JournalitPlugin from '../../../../main';
 import { logger } from '../../../../utils/logger';
+import { t } from '../../../../lang/helpers';
 
 
 import {
@@ -18,6 +20,7 @@ import {
   TradeFormValue,
   DEFAULT_TRADE_FORM_DATA,
 } from '../types';
+import type { TradeFormLayoutSettings } from '../../../../settings/types';
 import {
   validateTradeForm,
   hasFormErrors,
@@ -37,8 +40,12 @@ interface UseTradeFormProps {
   initialData?: Partial<TradeFormData>;
   isEditMode?: boolean;
   onSubmit?: (data: TradeFormData) => Promise<boolean> | boolean;
-  onCancel?: () => void;
+  onCancel?: () => Promise<boolean> | boolean | void;
+  layout?: TradeFormLayoutSettings;
 }
+
+const SUPPORTED_UPLOAD_MEDIA_EXTENSION_PATTERN =
+  /\.(?:jpe?g|png|gif|bmp|webp|svg|mp4|webm|mov|m4v|ogv|ogg|3gp|mkv)$/i;
 
 const hasTradeLegValues = (leg: {
   price?: number | null;
@@ -55,7 +62,8 @@ const completeTradeFormData = (
 });
 
 const withCurrentTimeForBlankTradeTimes = (
-  data: Partial<TradeFormData>
+  data: Partial<TradeFormData>,
+  preserveScalarTradeTimes = false
 ): Partial<TradeFormData> => {
   const now = new Date();
   const applyCurrentTime = (date?: Date): Date => {
@@ -90,7 +98,11 @@ const withCurrentTimeForBlankTradeTimes = (
   if (Array.isArray(data.entries)) {
     normalized.entries = data.entries.map((entry) => ({
       ...entry,
-      time: entry.time ?? applyCurrentTime(entry.blankTimeDate),
+      time:
+        entry.time ??
+        (entry.blankTimeDate || hasTradeLegValues(entry)
+          ? applyCurrentTime(entry.blankTimeDate)
+          : undefined),
       blankTimeDate: undefined,
     }));
   }
@@ -100,7 +112,7 @@ const withCurrentTimeForBlankTradeTimes = (
       ...exit,
       time:
         exit.time ??
-        (hasTradeLegValues(exit)
+        (exit.blankTimeDate || hasTradeLegValues(exit)
           ? applyCurrentTime(exit.blankTimeDate)
           : undefined),
       blankTimeDate: undefined,
@@ -110,18 +122,43 @@ const withCurrentTimeForBlankTradeTimes = (
   const entryTime = earliestTime(
     normalized.entries?.map((entry) => entry.time) ?? []
   );
-  if (entryTime) {
+  if (
+    entryTime &&
+    (!preserveScalarTradeTimes || !data.useDirectPnLInput || !data.entryTime)
+  ) {
     normalized.entryTime = entryTime;
   }
 
   const exitTime = latestTime(normalized.exits?.map((exit) => exit.time) ?? []);
   if (exitTime) {
     normalized.exitTime = exitTime;
-  } else if (Array.isArray(normalized.exits)) {
+  } else if (Array.isArray(normalized.exits) && !preserveScalarTradeTimes) {
     normalized.exitTime = undefined;
   }
 
   return normalized;
+};
+
+const syncHiddenDirectPnLExitTime = (
+  data: Partial<TradeFormData>,
+  layout: TradeFormLayoutSettings | undefined,
+  preserveExistingExitTime: boolean
+): Partial<TradeFormData> => {
+  if (preserveExistingExitTime || data.useDirectPnLInput !== true) {
+    return data;
+  }
+
+  const hasIntentionalExits = (data.exits ?? []).some(
+    (exit) => hasTradeLegValues(exit) || exit.time instanceof Date
+  );
+  if (layout?.inputMode !== 'pnl-risk' && hasIntentionalExits) {
+    return data;
+  }
+
+  return {
+    ...data,
+    exitTime: data.entryTime,
+  };
 };
 
 const shouldRefreshAutoCommission = (field: keyof TradeFormData): boolean =>
@@ -297,11 +334,36 @@ const applyAutoCommission = (
   };
 };
 
+async function resolveSetupSelections(
+  plugin: JournalitPlugin,
+  data: Partial<TradeFormData>
+): Promise<void> {
+  const setupLabels = Array.isArray(data.setup) ? data.setup : [];
+  if (setupLabels.length === 0) {
+    return;
+  }
+
+  const setupService = await plugin.serviceManager.getSetupService();
+  const creationLabels = new Set(data.setupCreationLabels ?? []);
+
+  for (const label of setupLabels) {
+    const resolved = await setupService.resolveSetupRef(label);
+    if (resolved.kind === 'resolved' && resolved.setup) {
+      continue;
+    }
+
+    if (creationLabels.has(label)) {
+      await setupService.createSetup({ name: label });
+    }
+  }
+}
+
 export const useTradeForm = ({
   initialData = {},
   isEditMode = false,
   onSubmit,
   onCancel,
+  layout,
 }: UseTradeFormProps) => {
   const plugin = usePlugin();
   if (!plugin) {
@@ -342,11 +404,14 @@ export const useTradeForm = ({
       }
       if (!editData.images) editData.images = [];
       if (!editData.tags) editData.tags = [];
-      if (!editData.customTags) editData.customTags = [];
+      if (!editData.customTags || editData.customTags.length === 0) {
+        editData.customTags = Array.isArray(editData.tags)
+          ? [...editData.tags]
+          : [];
+      }
       if (!editData.setup) editData.setup = [];
       if (!editData.mistake) editData.mistake = [];
       if (!editData.account) editData.account = [];
-      if (!editData.setupIds) editData.setupIds = [];
 
       
       if (editData.isMissedTrade === undefined) {
@@ -382,7 +447,7 @@ export const useTradeForm = ({
         editData.exitPrice !== null &&
         editData.exitPrice > 0;
 
-      const isSyncedOpenTrade = isTradeOpenWithContext({
+      const isOpenTrade = isTradeOpenWithContext({
         tradeStatus: editData.tradeStatus,
         exitTime: editData.exitTime,
         exitPrice: editData.exitPrice,
@@ -393,11 +458,14 @@ export const useTradeForm = ({
       });
 
       
-      if (isSyncedTrade) {
+      if (isOpenTrade) {
         
         
+        editData.useDirectPnLInput = false;
+      } else if (isSyncedTrade) {
         
-        editData.useDirectPnLInput = !isSyncedOpenTrade;
+        
+        editData.useDirectPnLInput = true;
       } else if (editData.useDirectPnLInput === undefined) {
         
         
@@ -450,8 +518,17 @@ export const useTradeForm = ({
 
     
     try {
-      if (plugin.settings.trade.useDirectPnLInput !== undefined) {
+      const hasExplicitDirectPnL = 'directPnL' in initialData;
+      if (plugin.settings.trade.tradeFormLayout?.inputMode === 'pnl-risk') {
+        mergedData.useDirectPnLInput = true;
+        if (!hasExplicitDirectPnL) {
+          mergedData.directPnL = undefined;
+        }
+      } else if (plugin.settings.trade.useDirectPnLInput !== undefined) {
         mergedData.useDirectPnLInput = plugin.settings.trade.useDirectPnLInput;
+        if (mergedData.useDirectPnLInput && !hasExplicitDirectPnL) {
+          mergedData.directPnL = undefined;
+        }
       }
     } catch (error) {
       console.error('Error loading PNL input mode preference:', error);
@@ -460,6 +537,15 @@ export const useTradeForm = ({
 
     
     try {
+      const tradeFormLayout = plugin.settings.trade.tradeFormLayout;
+      if (
+        tradeFormLayout?.assetTypeMode === 'fixed' &&
+        tradeFormLayout.defaultAssetType &&
+        !mergedData.assetType
+      ) {
+        mergedData.assetType = tradeFormLayout.defaultAssetType;
+      }
+
       const lastAssetType = plugin.uiStateManager.getState().lastAssetType;
       if (lastAssetType && !mergedData.assetType) {
         
@@ -501,7 +587,8 @@ export const useTradeForm = ({
   const [errors, setErrors] = useState<TradeFormErrors>({});
 
   
-  const [, setSubmissionErrors] = useState<TradeFormErrors>({});
+  
+  const [submissionErrors, setSubmissionErrors] = useState<TradeFormErrors>({});
 
   
   const [formSubmitted, setFormSubmitted] = useState(false);
@@ -542,8 +629,15 @@ export const useTradeForm = ({
       setErrors(validationErrors);
       return validationErrors;
     },
-    [plugin?.customFieldsService]
+    [plugin]
   );
+
+  const hasDisplayedErrors = Object.keys(errors).length > 0;
+
+  useEffect(() => {
+    if (!formSubmitted && !hasDisplayedErrors) return;
+    runValidation(withCurrentTimeForBlankTradeTimes(formData, isEditMode));
+  }, [formData, formSubmitted, hasDisplayedErrors, isEditMode, runValidation]);
 
   
   const cleanupPendingImages = useCallback(async () => {
@@ -633,27 +727,20 @@ export const useTradeForm = ({
           newData.hasExplicitCommission = true;
         }
 
-        
-        const isHandlingSync = field.toString().endsWith('Ids');
-
-        if (field === 'setup' && !isHandlingSync) {
-          newData.setupIds = Array.isArray(value) ? Array.from(value) : [];
-        } else if (field === 'setupIds' && !isHandlingSync) {
-          newData.setup = Array.isArray(value) ? Array.from(value) : [];
-        }
-
         const nextData = shouldRefreshAutoCommission(field)
           ? applyAutoCommission(newData, plugin.optionsService, prevData)
           : newData;
 
         if (formSubmitted) {
-          runValidation(withCurrentTimeForBlankTradeTimes(nextData));
+          runValidation(
+            withCurrentTimeForBlankTradeTimes(nextData, isEditMode)
+          );
         }
 
         return nextData;
       });
     },
-    [formSubmitted, plugin.optionsService, runValidation]
+    [formSubmitted, isEditMode, plugin.optionsService, runValidation]
   );
 
   
@@ -709,7 +796,7 @@ export const useTradeForm = ({
       }
 
       const normalizedPath = normalizePath(imagePath);
-      if (!/\.(?:jpe?g|png|gif|bmp|webp|svg)$/i.test(normalizedPath)) {
+      if (!SUPPORTED_UPLOAD_MEDIA_EXTENSION_PATTERN.test(normalizedPath)) {
         return false;
       }
 
@@ -886,9 +973,9 @@ export const useTradeForm = ({
 
       return filePath;
     } catch (error) {
-      console.error('Failed to upload image:', error);
+      console.error('Failed to upload media:', error);
       throw new Error(
-        `Failed to upload image: ${error instanceof Error ? error.message : String(error)}`
+        `Failed to upload media: ${error instanceof Error ? error.message : String(error)}`
       );
     }
   };
@@ -900,14 +987,18 @@ export const useTradeForm = ({
     
     setFormSubmitted(true);
 
-    const submitReadyData = withCurrentTimeForBlankTradeTimes(formData);
+    const submitReadyData = syncHiddenDirectPnLExitTime(
+      withCurrentTimeForBlankTradeTimes(formData, isEditMode),
+      layout ?? plugin?.settings.trade.tradeFormLayout,
+      isEditMode
+    );
 
     
     const validationErrors = runValidation(submitReadyData);
 
     
     setErrors(validationErrors);
-    setSubmissionErrors(validationErrors);
+    setSubmissionErrors({});
 
     
     const dataToSubmit = { ...submitReadyData };
@@ -945,6 +1036,19 @@ export const useTradeForm = ({
       }
 
       submissionInFlightRef.current = true;
+
+      try {
+        await resolveSetupSelections(plugin, dataToSubmit);
+      } catch (error) {
+        console.error('Failed to prepare setup selections:', error);
+        const setupResolutionError = t('validation.setup-resolution-failed');
+        setSubmissionErrors((current) => ({
+          ...current,
+          form: setupResolutionError,
+        }));
+        submissionInFlightRef.current = false;
+        return;
+      }
 
       
       await saveCustomOptions(dataToSubmit);
@@ -1248,11 +1352,6 @@ export const useTradeForm = ({
       }
 
       
-      if (data.setup && data.setup.length > 0) {
-        await optionsService.addOptions(OptionType.SETUP, data.setup);
-      }
-
-      
       if (data.mistake && data.mistake.length > 0) {
         await optionsService.addOptions(OptionType.MISTAKE, data.mistake);
       }
@@ -1274,8 +1373,11 @@ export const useTradeForm = ({
     };
   }, [cleanupPendingImages]);
 
-  const handleCancel = () => {
-    if (onCancel) onCancel();
+  const handleCancel = (): Promise<boolean> | boolean => {
+    if (!onCancel) return true;
+
+    const result = onCancel();
+    return result === undefined ? true : result;
   };
 
   
@@ -1296,6 +1398,32 @@ export const useTradeForm = ({
       (formData.exitPrice || 0) !== (initial.exitPrice || 0);
     const positionSizeChanged =
       (formData.positionSize || 0) !== (initial.positionSize || 0);
+    const normalizeOptionalNumber = (value: unknown): number | null =>
+      typeof value === 'number' && Number.isFinite(value) ? value : null;
+    const directPnLChanged =
+      normalizeOptionalNumber(formData.directPnL) !==
+      normalizeOptionalNumber(initial.directPnL);
+    const riskAmountChanged =
+      normalizeOptionalNumber(formData.riskAmount) !==
+      normalizeOptionalNumber(initial.riskAmount);
+    const stopLossChanged =
+      normalizeOptionalNumber(formData.stopLoss) !==
+      normalizeOptionalNumber(initial.stopLoss);
+    const useDirectPnLInputChanged =
+      Boolean(formData.useDirectPnLInput) !==
+      Boolean(initial.useDirectPnLInput);
+    const normalizeDateSnapshot = (date: unknown): string | null => {
+      if (date instanceof Date) {
+        return Number.isFinite(date.getTime()) ? date.toISOString() : null;
+      }
+      if (typeof date === 'string' || typeof date === 'number') {
+        return String(date);
+      }
+      return null;
+    };
+    const entryTimeChanged =
+      normalizeDateSnapshot(formData.entryTime) !==
+      normalizeDateSnapshot(initial.entryTime);
     const thesisChanged =
       (formData.thesis || '').trim() !== (initial.thesis || '').trim();
     const directionChanged =
@@ -1357,6 +1485,26 @@ export const useTradeForm = ({
     const exitsChanged =
       normalizeExecutionSnapshot(formData.exits) !==
       normalizeExecutionSnapshot(initial.exits);
+    const normalizeIdealExitSnapshot = (
+      idealExits: Partial<TradeFormData>['idealExits']
+    ) =>
+      JSON.stringify(
+        (idealExits || []).map((idealExit) => ({
+          time:
+            idealExit?.time instanceof Date
+              ? Number.isFinite(idealExit.time.getTime())
+                ? idealExit.time.toISOString()
+                : null
+              : idealExit?.time
+                ? String(idealExit.time)
+                : null,
+          price: idealExit?.price ?? null,
+          size: idealExit?.size ?? null,
+        }))
+      );
+    const idealExitsChanged =
+      normalizeIdealExitSnapshot(formData.idealExits) !==
+      normalizeIdealExitSnapshot(initial.idealExits);
     const normalizeTakeProfitSnapshot = (
       takeProfits: Partial<TradeFormData>['takeProfits']
     ) =>
@@ -1384,8 +1532,14 @@ export const useTradeForm = ({
       entryPriceChanged ||
       exitPriceChanged ||
       positionSizeChanged ||
+      directPnLChanged ||
+      riskAmountChanged ||
+      stopLossChanged ||
+      useDirectPnLInputChanged ||
+      entryTimeChanged ||
       entriesChanged ||
       exitsChanged ||
+      idealExitsChanged ||
       thesisChanged ||
       imagesChanged ||
       directionChanged ||
@@ -1397,8 +1551,14 @@ export const useTradeForm = ({
     formData.entryPrice,
     formData.exitPrice,
     formData.positionSize,
+    formData.directPnL,
+    formData.riskAmount,
+    formData.stopLoss,
+    formData.useDirectPnLInput,
+    formData.entryTime,
     formData.entries,
     formData.exits,
+    formData.idealExits,
     formData.thesis,
     formData.images,
     formData.direction,
@@ -1406,9 +1566,20 @@ export const useTradeForm = ({
     formData.takeProfits,
   ]);
 
+  const displayedErrors = {
+    ...errors,
+    ...submissionErrors,
+  };
+  const submissionState: 'idle' | 'retryable-error' = hasFormErrors(
+    submissionErrors
+  )
+    ? 'retryable-error'
+    : 'idle';
+
   return {
     formData,
-    errors,
+    errors: displayedErrors,
+    submissionState,
     formRef,
     handleFieldChange,
     handleAddImage,

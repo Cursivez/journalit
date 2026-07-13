@@ -11,9 +11,16 @@ import type { TradeLogFilters } from '../services/tradelog/types';
 
 export const SETTINGS_TAB_IDS = {
   GENERAL: 'general',
+  TRADING: 'trading',
+  JOURNAL: 'journal',
+  SYNC: 'sync',
+  ADVANCED: 'advanced',
+  
   REVIEWS: 'reviews',
   CUSTOMIZATION: 'customization',
+  SESSION_MODE: 'sessionMode',
   TRADE_SYNC: 'tradeSync',
+  TRADE_IMPORT_SYNC: 'tradeImportSync',
   ACCOUNTS: 'accounts',
 } as const;
 
@@ -42,6 +49,7 @@ import {
 } from '../types/reviewCustomFields';
 import { CurrencyCode } from '../utils/currencyConfig';
 import type { LocalCSVTemplate } from '../services/csv/types';
+
 import type {
   CustomWidgetType,
   DemonTrackerCountMode,
@@ -49,6 +57,16 @@ import type {
   ReviewTemplate,
   TradeTemplate,
 } from '../types/reviewV2';
+import type {
+  SessionLogAlertRule,
+  SessionLogTagDefinition,
+} from '../types/sessionLog';
+import {
+  DEFAULT_SESSION_LOG_ALERT_RULE,
+  DEFAULT_SESSION_LOG_TAGS,
+} from '../types/sessionLog';
+import type { SessionModeSettings } from '../types/sessionMode';
+import { DEFAULT_SESSION_MODE_SETTINGS } from '../types/sessionMode';
 import type { UnifiedFilters } from '../components/shared/filters/types';
 import {
   DEFAULT_DASHBOARD_FILTERS,
@@ -152,24 +170,6 @@ interface YearlyReviewSettings {
 type UICustomizationSettings = object;
 
 
-export interface LossReviewSection {
-  id: string;
-  title: string;
-  type: 'header' | 'checkbox' | 'textarea' | 'checkboxList';
-  content?: string; 
-  items?: string[]; 
-  placeholder?: string; 
-}
-
-
-export interface LossReviewSettings {
-  
-  enabled: boolean;
-  
-  sections: LossReviewSection[];
-}
-
-
 
 type MaeMfeInputMode = 'price' | 'dollar';
 
@@ -187,6 +187,171 @@ export type WeekStartDay =
   | 'saturday';
 
 export type AnalyticsDateBasis = 'entry' | 'exit';
+
+export type TradeFormInputMode = 'prices' | 'pnl-risk';
+export type TradeFormAssetTypeMode = 'show' | 'fixed';
+const TRADE_FORM_DEFAULT_ASSET_TYPES = [
+  'stock',
+  'options',
+  'futures',
+  'forex',
+  'crypto',
+  'cfd',
+] as const;
+export type TradeFormDefaultAssetType =
+  (typeof TRADE_FORM_DEFAULT_ASSET_TYPES)[number];
+
+const TRADE_FORM_LAYOUT_ITEM_IDS = [
+  'assetSpecific',
+  'tradingCosts',
+  'tradingCostRebate',
+  'tradingCostSwap',
+  'tradingCostFees',
+  'riskPlanning',
+  'takeProfits',
+  'idealExits',
+  'maeMfe',
+  'pnlPreview',
+  'importShortcut',
+  'realizedPnlPreview',
+  'setup',
+  'mistake',
+  'customTags',
+  'thesis',
+  'attachments',
+  'customFields',
+] as const;
+
+export type TradeFormLayoutItemId = (typeof TRADE_FORM_LAYOUT_ITEM_IDS)[number];
+
+export interface TradeFormLayoutSettings {
+  
+  inputMode: TradeFormInputMode;
+  
+  assetTypeMode: TradeFormAssetTypeMode;
+  
+  defaultAssetType: TradeFormDefaultAssetType;
+  
+  itemOrder: TradeFormLayoutItemId[];
+  
+  visibleItems: TradeFormLayoutItemId[];
+}
+
+export const DEFAULT_TRADE_FORM_LAYOUT_SETTINGS: TradeFormLayoutSettings = {
+  inputMode: 'prices',
+  assetTypeMode: 'show',
+  defaultAssetType: 'stock',
+  itemOrder: [...TRADE_FORM_LAYOUT_ITEM_IDS],
+  visibleItems: TRADE_FORM_LAYOUT_ITEM_IDS.filter(
+    (itemId) => itemId !== 'idealExits'
+  ),
+};
+
+const TRADE_FORM_LAYOUT_ITEM_ID_SET = new Set<string>(
+  TRADE_FORM_LAYOUT_ITEM_IDS
+);
+function isTradeFormLayoutItemId(
+  value: unknown
+): value is TradeFormLayoutItemId {
+  return typeof value === 'string' && TRADE_FORM_LAYOUT_ITEM_ID_SET.has(value);
+}
+
+function uniqueTradeFormLayoutItems(value: unknown): TradeFormLayoutItemId[] {
+  if (!Array.isArray(value)) return [];
+
+  const seen = new Set<TradeFormLayoutItemId>();
+  const items: TradeFormLayoutItemId[] = [];
+  for (const item of value) {
+    const itemId = normalizeTradeFormLayoutItemId(item);
+    if (!itemId || seen.has(itemId)) continue;
+    seen.add(itemId);
+    items.push(itemId);
+  }
+  return items;
+}
+
+function normalizeTradeFormLayoutItemId(
+  value: unknown
+): TradeFormLayoutItemId | null {
+  if (isTradeFormLayoutItemId(value)) return value;
+
+  
+  
+  
+  if (value === 'stopLoss' || value === 'riskAmount') return 'riskPlanning';
+  if (value === 'mae' || value === 'mfe') return 'maeMfe';
+
+  return null;
+}
+
+function resolveTradeFormDefaultAssetType(
+  value: unknown
+): TradeFormDefaultAssetType {
+  if (typeof value !== 'string') {
+    return DEFAULT_TRADE_FORM_LAYOUT_SETTINGS.defaultAssetType;
+  }
+
+  for (const assetType of TRADE_FORM_DEFAULT_ASSET_TYPES) {
+    if (assetType === value) return assetType;
+  }
+
+  return DEFAULT_TRADE_FORM_LAYOUT_SETTINGS.defaultAssetType;
+}
+
+export function resolveTradeFormLayoutSettings(
+  settings: Partial<TradeFormLayoutSettings> | null | undefined
+): TradeFormLayoutSettings {
+  if (!settings) {
+    return {
+      inputMode: DEFAULT_TRADE_FORM_LAYOUT_SETTINGS.inputMode,
+      assetTypeMode: DEFAULT_TRADE_FORM_LAYOUT_SETTINGS.assetTypeMode,
+      defaultAssetType: DEFAULT_TRADE_FORM_LAYOUT_SETTINGS.defaultAssetType,
+      itemOrder: [...DEFAULT_TRADE_FORM_LAYOUT_SETTINGS.itemOrder],
+      visibleItems: [...DEFAULT_TRADE_FORM_LAYOUT_SETTINGS.visibleItems],
+    };
+  }
+
+  const savedOrder = uniqueTradeFormLayoutItems(settings.itemOrder);
+  const savedOrderSet = new Set(savedOrder);
+  const itemOrder = [
+    ...savedOrder,
+    ...DEFAULT_TRADE_FORM_LAYOUT_SETTINGS.itemOrder.filter(
+      (itemId) => !savedOrderSet.has(itemId)
+    ),
+  ];
+
+  const hasSavedVisibleItems = Array.isArray(settings.visibleItems);
+  const savedVisible = uniqueTradeFormLayoutItems(settings.visibleItems);
+  const visibleSet = new Set(
+    hasSavedVisibleItems
+      ? savedVisible
+      : DEFAULT_TRADE_FORM_LAYOUT_SETTINGS.visibleItems
+  );
+
+  for (const itemId of DEFAULT_TRADE_FORM_LAYOUT_SETTINGS.visibleItems) {
+    if (!savedOrderSet.has(itemId)) {
+      visibleSet.add(itemId);
+    }
+  }
+
+  const inputMode = settings.inputMode === 'pnl-risk' ? 'pnl-risk' : 'prices';
+  const resolvedVisibleItems = itemOrder.filter((itemId) =>
+    visibleSet.has(itemId)
+  );
+
+  return {
+    inputMode,
+    assetTypeMode: settings.assetTypeMode === 'fixed' ? 'fixed' : 'show',
+    defaultAssetType: resolveTradeFormDefaultAssetType(
+      settings.defaultAssetType
+    ),
+    itemOrder,
+    visibleItems:
+      inputMode === 'pnl-risk'
+        ? resolvedVisibleItems.filter((itemId) => itemId !== 'idealExits')
+        : resolvedVisibleItems,
+  };
+}
 
 interface TradeSettings {
   
@@ -220,8 +385,6 @@ interface TradeSettings {
   
   breakEvenThresholdPercent?: number;
   
-  lossReview?: LossReviewSettings;
-  
   includeMissedTradesInCalculations?: boolean;
   
   defaultRiskAmount?: number;
@@ -231,6 +394,8 @@ interface TradeSettings {
   includeCopyAccountsInAllAccountsAnalytics?: boolean;
   
   analyticsDateBasis?: AnalyticsDateBasis;
+  
+  tradeFormLayout?: TradeFormLayoutSettings;
   
   canonicalExecutionMigrationVersion?: string;
 }
@@ -249,6 +414,10 @@ interface DRCSettings {
   autoCreateOnFirstTrade: boolean;
   
   autoCreateDRCOnNavigation: boolean;
+  
+  sessionLogTags: SessionLogTagDefinition[];
+  
+  sessionLogAlertRule: SessionLogAlertRule;
 }
 
 
@@ -301,6 +470,7 @@ export interface RecentItem {
 export type QuickLinkAction =
   | 'addTrade'
   | 'openTradeLog'
+  | 'openSetups'
   | 'openTradingDashboard'
   | 'openAccountDashboard'
   | 'openTodaysDRC'
@@ -309,6 +479,7 @@ export type QuickLinkAction =
   | 'openCSVImport'
   | 'openQuickTradeImport'
   | 'openLayoutBuilder'
+  | 'openSessionMode'
   | 'openHome'
   | 'openQuarterlyReview'
   | 'openYearlyReview'
@@ -769,6 +940,7 @@ export interface JournalitSettings {
   templates?: TemplatesSettings;
   
   drc: DRCSettings;
+  sessionMode: SessionModeSettings;
   
   weekly: WeeklyReviewSettings;
   
@@ -799,6 +971,7 @@ export interface JournalitSettings {
   customReviewFieldOptions?: CustomFieldOptionsStorage;
   
   account?: AccountSettings;
+
   
   backendIntegration?: BackendIntegrationSettings;
   
@@ -836,6 +1009,7 @@ export const DEFAULT_DASHBOARD_LAYOUT: DashboardSettings['layouts'][string] = {
     'numTrades',
     'maxDrawdown',
     'profitFactor',
+    'sharpeRatio',
     'expectancy',
     'bestDay',
   ],
@@ -913,125 +1087,7 @@ export const DEFAULT_SETTINGS: JournalitSettings = {
     displayRMultiples: false,
     includeCopyAccountsInAllAccountsAnalytics: false,
     analyticsDateBasis: 'entry',
-    lossReview: {
-      enabled: true,
-      sections: [
-        {
-          id: 'pause-header',
-          title: '**LOSS REVIEW**',
-          type: 'header',
-          content: '',
-        },
-        {
-          id: 'pause-section',
-          title: '**Pause**✋',
-          type: 'header',
-          content:
-            'Take a moment to step back.\nDo **NOT** start looking at entering a position until you have completed this loss review.',
-        },
-        {
-          id: 'pause-checkbox',
-          title: '',
-          type: 'checkbox',
-          content:
-            'Say out loud to yourself, **"losses are part of the process, there are endless opportunities in the market."**',
-        },
-        {
-          id: 'review-plan',
-          title: '**Review Your Plan**',
-          type: 'header',
-          content: '***Did you stick to your trading plan without mistakes?***',
-        },
-        {
-          id: 'review-plan-checklist',
-          title: '',
-          type: 'checkboxList',
-          items: [
-            '→ If **yes**; there is nothing to be mad about, not every trade is going to work out regardless of how good the thesis is',
-            "→ If **no**; figure out what went wrong, learn from it and don't do it again",
-          ],
-        },
-        {
-          id: 'feelings',
-          title: '**Write Down Your Feelings**',
-          type: 'header',
-          content:
-            '***Be honest about how you feel and note down your emotions:***',
-        },
-        {
-          id: 'feelings-text',
-          title: '',
-          type: 'textarea',
-          placeholder: 'How are you feeling about this loss?',
-        },
-        {
-          id: 'learn-header',
-          title: '**Learn From This Loss**',
-          type: 'header',
-          content:
-            '***If the loss was reasonable, write down the best things you did during the trade and ways of repeating those:***',
-        },
-        {
-          id: 'learn-reasonable',
-          title: '',
-          type: 'textarea',
-          placeholder: 'What went well that you can repeat?',
-        },
-        {
-          id: 'learn-unreasonable-header',
-          title: '',
-          type: 'header',
-          content:
-            "***If the loss was unreasonable, note where you went wrong and how you'll improve next time:***",
-        },
-        {
-          id: 'learn-unreasonable',
-          title: '',
-          type: 'textarea',
-          placeholder: 'What went wrong and how will you improve?',
-        },
-        {
-          id: 'next-steps',
-          title: '**Decide The Next Steps**',
-          type: 'header',
-          content:
-            "***Outline what you'll do based on the previous questions and follow the plan.***\n***You might choose to step back from the charts if it's your third loss in a row.***\n***Or you might want to continue trading if it's the first one.***\n***What will you pay attention to? How will you behave?***",
-        },
-        {
-          id: 'next-steps-text',
-          title: '',
-          type: 'textarea',
-          placeholder: 'What are your next steps?',
-        },
-        {
-          id: 'final-check',
-          title: '**Final Check**',
-          type: 'header',
-          content: '',
-        },
-        {
-          id: 'final-check-list',
-          title: '',
-          type: 'checkboxList',
-          items: [
-            'If you feel **tilted**, take a break from the screen and play guitar, play with Leo, or get something to eat',
-            'If you feel **fine**, do not enter a trade until at least the next candle',
-          ],
-        },
-        {
-          id: 'overall-thoughts',
-          title: '**Overall Trade Thoughts:**',
-          type: 'header',
-          content: '',
-        },
-        {
-          id: 'overall-thoughts-text',
-          title: '',
-          type: 'textarea',
-          placeholder: 'Any additional thoughts about this trade?',
-        },
-      ],
-    },
+    tradeFormLayout: DEFAULT_TRADE_FORM_LAYOUT_SETTINGS,
   },
   tradeLog: {
     expandedMode: false,
@@ -1179,7 +1235,10 @@ export const DEFAULT_SETTINGS: JournalitSettings = {
     recurringGoals: [],
     autoCreateOnFirstTrade: true, 
     autoCreateDRCOnNavigation: true, 
+    sessionLogTags: DEFAULT_SESSION_LOG_TAGS,
+    sessionLogAlertRule: DEFAULT_SESSION_LOG_ALERT_RULE,
   },
+  sessionMode: DEFAULT_SESSION_MODE_SETTINGS,
   dashboard: {
     layouts: {
       Default: DEFAULT_DASHBOARD_LAYOUT,
@@ -1277,7 +1336,16 @@ export const DEFAULT_SETTINGS: JournalitSettings = {
         color: 'var(--text-accent)',
         action: 'openTradeLog',
         visible: true,
-        order: 1,
+        order: 2,
+      },
+      {
+        id: 'setups',
+        label: 'Setups',
+        icon: 'flask-conical',
+        color: 'var(--text-accent)',
+        action: 'openSetups',
+        visible: true,
+        order: 3,
       },
       {
         id: 'trading-dashboard',
@@ -1286,7 +1354,7 @@ export const DEFAULT_SETTINGS: JournalitSettings = {
         color: 'var(--text-accent)',
         action: 'openTradingDashboard',
         visible: true,
-        order: 2,
+        order: 4,
       },
       {
         id: 'account-dashboard',
@@ -1295,7 +1363,7 @@ export const DEFAULT_SETTINGS: JournalitSettings = {
         color: 'var(--text-accent)',
         action: 'openAccountDashboard',
         visible: true,
-        order: 3,
+        order: 5,
       },
       {
         id: 'todays-drc',
@@ -1304,7 +1372,7 @@ export const DEFAULT_SETTINGS: JournalitSettings = {
         color: 'var(--text-accent)',
         action: 'openTodaysDRC',
         visible: true,
-        order: 4,
+        order: 1,
       },
       {
         id: 'weekly-review',
@@ -1312,8 +1380,8 @@ export const DEFAULT_SETTINGS: JournalitSettings = {
         icon: 'calendar-check',
         color: 'var(--text-accent)',
         action: 'openWeeklyReview',
-        visible: true,
-        order: 5,
+        visible: false,
+        order: 6,
       },
       {
         id: 'monthly-review',
@@ -1321,8 +1389,26 @@ export const DEFAULT_SETTINGS: JournalitSettings = {
         icon: 'calendar-range',
         color: 'var(--text-accent)',
         action: 'openMonthlyReview',
-        visible: true,
-        order: 6,
+        visible: false,
+        order: 7,
+      },
+      {
+        id: 'quarterly-review',
+        label: 'This Quarter Review',
+        icon: 'calendar-search',
+        color: 'var(--text-accent)',
+        action: 'openQuarterlyReview',
+        visible: false,
+        order: 8,
+      },
+      {
+        id: 'yearly-review',
+        label: 'This Year Review',
+        icon: 'calendar-heart',
+        color: 'var(--text-accent)',
+        action: 'openYearlyReview',
+        visible: false,
+        order: 9,
       },
       {
         id: 'csv-import',
@@ -1331,16 +1417,16 @@ export const DEFAULT_SETTINGS: JournalitSettings = {
         color: 'var(--text-accent)',
         action: 'openCSVImport',
         visible: true,
-        order: 7,
+        order: 10,
       },
       {
         id: 'quick-import',
         label: 'Quick Import',
-        icon: 'import',
+        icon: 'zap',
         color: 'var(--text-accent)',
         action: 'openQuickTradeImport',
         visible: false,
-        order: 8,
+        order: 11,
       },
       {
         id: 'layout-builder',
@@ -1349,7 +1435,16 @@ export const DEFAULT_SETTINGS: JournalitSettings = {
         color: 'var(--text-accent)',
         action: 'openLayoutBuilder',
         visible: true,
-        order: 9,
+        order: 12,
+      },
+      {
+        id: 'session-mode',
+        label: 'Session Mode',
+        icon: 'radio',
+        color: 'var(--text-accent)',
+        action: 'openSessionMode',
+        visible: true,
+        order: 13,
       },
     ],
     quickLinksPosition: 'belowWidgets',
@@ -1381,6 +1476,7 @@ export const DEFAULT_SETTINGS: JournalitSettings = {
     accountTypeOrder: ['funded', 'evaluation', 'demo', 'archived'],
     accountMetadata: {},
   },
+
   copyTradeAdjustments: {},
   backendIntegration: {
     serverUrl: 'https://api.journalit.co', 
@@ -1435,13 +1531,22 @@ export const DEFAULT_SETTINGS: JournalitSettings = {
         order: 2,
       },
       {
+        id: 'nav-setups',
+        label: 'Setups',
+        icon: 'flask-conical',
+        action: 'openSetups',
+        section: 'overview',
+        visible: true,
+        order: 3,
+      },
+      {
         id: 'nav-account-dashboard',
         label: 'Account Dashboard',
         icon: 'users',
         action: 'openAccountDashboard',
         section: 'overview',
         visible: true,
-        order: 3,
+        order: 4,
       },
       {
         id: 'nav-drc',
@@ -1532,6 +1637,15 @@ export const DEFAULT_SETTINGS: JournalitSettings = {
         section: 'tools',
         visible: true,
         order: 4,
+      },
+      {
+        id: 'nav-session-mode',
+        label: 'Session Mode',
+        icon: 'radio',
+        action: 'openSessionMode',
+        section: 'tools',
+        visible: true,
+        order: 5,
       },
     ],
   },

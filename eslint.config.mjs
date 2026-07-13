@@ -390,6 +390,14 @@ export default defineConfig([
     },
   },
   {
+    files: ['src/components/image/FullscreenYouTubeEmbed.tsx'],
+    rules: {
+      
+      
+      'no-restricted-syntax': 'off',
+    },
+  },
+  {
     files: ['src/utils/externalLinks.ts'],
     rules: {
       

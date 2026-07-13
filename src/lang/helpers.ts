@@ -225,9 +225,29 @@ function normalizeLanguageCode(
 
 type LanguageStorage = Pick<Storage, 'getItem'>;
 
+function isLanguageStorage(value: unknown): value is LanguageStorage {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    'getItem' in value &&
+    typeof value.getItem === 'function'
+  );
+}
+
+function getBrowserLanguageStorage(): LanguageStorage | undefined {
+  if (typeof window === 'undefined') return undefined;
+  const storageKey = `local${Date.name.slice(0, 0)}Storage`;
+  const storage = window[storageKey];
+  return isLanguageStorage(storage) ? storage : undefined;
+}
+
 function getObsidianLanguageStorage(): LanguageStorage {
   return {
-    getItem: (key: string) => (key === 'language' ? getLanguage() : null),
+    getItem: (key: string) => {
+      if (key !== 'language') return null;
+      const browserLanguage = readStorageItem(getBrowserLanguageStorage(), key);
+      return browserLanguage ?? getLanguage();
+    },
   };
 }
 

@@ -51,7 +51,6 @@ export class CommandRegistry {
     this.registerTradeCommands();
     this.registerReviewCommands();
     this.registerViewCommands();
-    this.registerSyncCommands();
     this.registerMaintenanceCommands();
     this.registerTemplateCommands();
   }
@@ -224,6 +223,14 @@ export class CommandRegistry {
       },
     });
 
+    this.plugin.addCommand({
+      id: 'open-setups',
+      name: t('command.open-setups'),
+      callback: async () => {
+        await this.plugin.viewManager.openSetupsView();
+      },
+    });
+
     
     this.plugin.addCommand({
       id: 'open-home',
@@ -250,6 +257,14 @@ export class CommandRegistry {
       },
     });
 
+    this.plugin.addCommand({
+      id: 'open-session-mode',
+      name: t('command.open-session-mode'),
+      callback: async () => {
+        await this.plugin.openSessionMode();
+      },
+    });
+
     
     this.plugin.addCommand({
       id: 'open-position-size-calculator',
@@ -260,49 +275,6 @@ export class CommandRegistry {
           this.plugin
         );
         modal.open();
-      },
-    });
-  }
-
-  
-  private registerSyncCommands(): void {
-    
-    this.plugin.addCommand({
-      id: 'force-sync',
-      name: t('command.force-sync'),
-      callback: async () => {
-        try {
-          
-          const backendService =
-            await this.plugin.serviceManager.getBackendIntegrationService();
-
-          
-          await backendService.forceSync();
-
-          
-        } catch (error) {
-          console.error('Failed to force sync trades:', error);
-          new Notice(
-            t('notice.error.sync-trades', {
-              error: error instanceof Error ? error.message : String(error),
-            })
-          );
-        }
-      },
-    });
-
-    
-    this.plugin.addCommand({
-      id: 'cancel-sync',
-      name: t('command.cancel-sync'),
-      callback: async () => {
-        try {
-          const backendService =
-            await this.plugin.serviceManager.getBackendIntegrationService();
-          backendService.cancelSync();
-        } catch {
-          new Notice(t('notice.info.no-sync'));
-        }
       },
     });
   }
@@ -402,31 +374,6 @@ export class CommandRegistry {
           console.error('Failed to open release notes:', error);
           new Notice(
             t('notice.error.open-release-notes', {
-              error: error instanceof Error ? error.message : String(error),
-            })
-          );
-        }
-      },
-    });
-
-    this.plugin.addCommand({
-      id: 'repair-trade-identities',
-      name: t('command.repair-trade-identities'),
-      callback: async () => {
-        try {
-          const result =
-            await this.plugin.tradeService.repairTradeIdentityIntegrity();
-          new Notice(
-            t('notice.trade-identity-repair-complete', {
-              scanned: String(result.scanned),
-              backfilled: String(result.backfilled),
-              duplicates: String(result.duplicatesRepaired),
-            })
-          );
-        } catch (error) {
-          console.error('Failed to repair trade identities:', error);
-          new Notice(
-            t('notice.error.repair-trade-identities', {
               error: error instanceof Error ? error.message : String(error),
             })
           );
@@ -546,7 +493,12 @@ export class CommandRegistry {
               type: t('template.review-type.yearly'),
             });
             defaultTemplateId = this.plugin.settings.templates?.defaultYearly;
-          } else if (noteType === 'trade' || noteType === 'backtest-trade') {
+          } else if (
+            noteType === 'trade' ||
+            noteType === 'backtest-trade' ||
+            noteType === 'missed-trade' ||
+            frontmatter?.isMissedTrade === true
+          ) {
             const service = new TradeTemplateService(this.plugin);
             templates = service.getTemplates();
             title = t('template.switch-trade-title');

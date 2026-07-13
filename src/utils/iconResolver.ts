@@ -16,9 +16,11 @@ import {
   CircleDotDashed,
   File,
   FileText,
+  FlaskConical,
   Calculator,
   Upload,
   Zap,
+  Radio,
   ObsidianIconComponent,
 } from '../components/shared/icons/ObsidianIcon';
 
@@ -38,11 +40,13 @@ const iconMap: Record<string, ObsidianIconComponent> = {
   'circle-dot-dashed': CircleDotDashed,
   file: File,
   'file-text': FileText,
+  'flask-conical': FlaskConical,
   'calendar-search': CalendarSearch,
   'calendar-heart': CalendarHeart,
   calculator: Calculator,
   upload: Upload,
   zap: Zap,
+  radio: Radio,
 };
 
 

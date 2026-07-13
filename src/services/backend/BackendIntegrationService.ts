@@ -73,6 +73,14 @@ interface SimpleApiResult {
   error?: string;
 }
 
+interface SyncSession {
+  cancelled: boolean;
+  completed: boolean;
+  lockAcquired: boolean;
+  resolve: (result: SyncResponse | null) => void;
+  completion: Promise<SyncResponse | null>;
+}
+
 const getErrorMessage = (error: unknown): string =>
   error instanceof Error ? error.message : String(error);
 
@@ -143,14 +151,12 @@ export class BackendIntegrationService {
     this.settings.subscriptionTier = undefined;
     this.settings.userId = '';
 
+    const session = this.activeSyncSession ?? this.pendingSyncSession;
+    if (session) {
+      this.cancelSyncSession(session, false);
+    }
     this.stopAutoSync();
 
-    if (this.syncMutex.isLocked()) {
-      this.syncMutex.unlock();
-    }
-    this.syncCancelled = true;
-    this.totalTradesToSync = 0;
-    this.tradesProcessedSoFar = 0;
     if (this.autoContinueTimeoutId !== null) {
       window.clearTimeout(this.autoContinueTimeoutId);
       this.autoContinueTimeoutId = null;
@@ -180,14 +186,17 @@ export class BackendIntegrationService {
 
   
   private syncMutex: Mutex = new Mutex();
-  private syncCancelled: boolean = false;
+  private activeSyncSession: SyncSession | null = null;
+  private pendingSyncSession: SyncSession | null = null;
+  private pendingForceSyncRequests = 0;
+  private activeAccountLinkModal: AccountLinkModalWrapper | null = null;
   private syncedAccountDisplayNameCache: Map<string, string> = new Map();
   private syncedAccountDisplayNameCacheTime: number = 0;
   private readonly SYNC_ACCOUNT_CACHE_TTL = 5 * 60 * 1000;
 
   
   public getIsSyncing(): boolean {
-    return this.syncMutex.isLocked();
+    return this.pendingForceSyncRequests > 0 || this.syncMutex.isLocked();
   }
   private totalTradesToSync: number = 0;
   private tradesProcessedSoFar: number = 0;
@@ -423,20 +432,95 @@ export class BackendIntegrationService {
 
   
   cancelSync(): void {
-    
-    if (this.syncMutex.isLocked() && !this.syncCancelled) {
-      this.syncCancelled = true;
-
+    const session = this.activeSyncSession ?? this.pendingSyncSession;
+    if (!session) {
       
+      this.debouncedForceSync.cancel();
+      return;
+    }
+
+    this.cancelSyncSession(session, true);
+  }
+
+  private cancelSyncSession(session: SyncSession, showNotice: boolean): void {
+    if (session.cancelled) {
+      return;
+    }
+
+    session.cancelled = true;
+    this.activeAccountLinkModal?.close();
+    if (
+      this.activeSyncSession === session &&
+      this.autoContinueTimeoutId !== null
+    ) {
+      window.clearTimeout(this.autoContinueTimeoutId);
+      this.autoContinueTimeoutId = null;
+      this.finishCancelledSync(session);
+    }
+
+    if (showNotice && this.settings.showSyncNotifications) {
+      new Notice(t('backend.notice.sync-cancelled'));
+    }
+  }
+
+  private createSyncSession(): SyncSession {
+    let resolve!: (result: SyncResponse | null) => void;
+    const completion = new Promise<SyncResponse | null>((resolvePromise) => {
+      resolve = resolvePromise;
+    });
+    return {
+      cancelled: false,
+      completed: false,
+      lockAcquired: false,
+      resolve,
+      completion,
+    };
+  }
+
+  private finishSyncSession(
+    session: SyncSession,
+    result: SyncResponse | null
+  ): SyncResponse | null {
+    const ownsLock = this.activeSyncSession === session;
+    if (ownsLock) {
+      if (session.lockAcquired && this.syncMutex.isLocked()) {
+        this.syncMutex.unlock();
+      }
+      this.activeSyncSession = null;
+      this.totalTradesToSync = 0;
+      this.tradesProcessedSoFar = 0;
       if (this.autoContinueTimeoutId !== null) {
         window.clearTimeout(this.autoContinueTimeoutId);
         this.autoContinueTimeoutId = null;
       }
-
-      if (this.settings.showSyncNotifications) {
-        new Notice(t('backend.notice.sync-cancelled'));
-      }
     }
+
+    if (this.pendingSyncSession === session) {
+      this.pendingSyncSession = null;
+    }
+
+    if (!session.completed) {
+      session.completed = true;
+      session.resolve(result);
+    }
+    return result;
+  }
+
+  private finishCancelledSync(session: SyncSession): SyncResponse {
+    session.cancelled = true;
+    const result = this.createCancelledSyncResponse();
+    this.finishSyncSession(session, result);
+    return result;
+  }
+
+  private createCancelledSyncResponse(): SyncResponse {
+    return {
+      status: 'cancelled',
+      synced_trades: 0,
+      new_files: 0,
+      updated_files: 0,
+      errors: [],
+    };
   }
 
   
@@ -444,45 +528,53 @@ export class BackendIntegrationService {
     isAutoContinue: boolean = false,
     isAutomaticCheck: boolean = false
   ): Promise<SyncResponse | null> {
-    if (!this.hasAuthenticatedSyncAccess()) {
-      console.warn('Sync skipped: User not authenticated');
-
-      if (isAutoContinue) {
-        if (this.syncMutex.isLocked()) {
-          this.syncMutex.unlock();
-        }
+    const session = isAutoContinue
+      ? this.activeSyncSession
+      : this.createSyncSession();
+    if (!session) {
+      if (!this.hasAuthenticatedSyncAccess()) {
+        console.warn('Sync skipped: User not authenticated');
+      }
+      if (isAutoContinue && this.syncMutex.isLocked()) {
+        this.syncMutex.unlock();
         this.totalTradesToSync = 0;
         this.tradesProcessedSoFar = 0;
         if (this.autoContinueTimeoutId !== null) {
           window.clearTimeout(this.autoContinueTimeoutId);
           this.autoContinueTimeoutId = null;
         }
-      } else {
+      }
+      return null;
+    }
+    if (!isAutoContinue) {
+      this.pendingSyncSession = session;
+    }
+
+    if (!this.hasAuthenticatedSyncAccess()) {
+      console.warn('Sync skipped: User not authenticated');
+
+      if (!isAutoContinue) {
         ErrorHandler.showError(
           new Error('Authentication required'),
           ErrorHandler.createContext('sync', undefined, 401)
         );
       }
+      return this.finishSyncSession(session, null);
+    }
 
-      return null;
+    if (session.cancelled) {
+      return this.finishCancelledSync(session);
     }
 
     const tierRefresh = await new SubscriptionTierService(
       this.plugin
     ).refreshTier(isAutoContinue ? 'trade sync auto-continue' : 'trade sync');
 
-    if (tierRefresh.entitlements?.features.metatraderSync.enabled !== true) {
-      if (isAutoContinue) {
-        if (this.syncMutex.isLocked()) {
-          this.syncMutex.unlock();
-        }
-        this.totalTradesToSync = 0;
-        this.tradesProcessedSoFar = 0;
-        if (this.autoContinueTimeoutId !== null) {
-          window.clearTimeout(this.autoContinueTimeoutId);
-          this.autoContinueTimeoutId = null;
-        }
-      } else if (isAutomaticCheck) {
+    if (
+      !session.cancelled &&
+      tierRefresh.entitlements?.features.metatraderSync.enabled !== true
+    ) {
+      if (isAutomaticCheck) {
         this.stopAutoSync();
       } else if (tierRefresh.status === 'unverified') {
         new Notice(t('premium.gate.offline'));
@@ -490,7 +582,11 @@ export class BackendIntegrationService {
         new Notice(t('trade-sync.gate.pro.description'));
       }
 
-      return null;
+      return this.finishSyncSession(session, null);
+    }
+
+    if (session.cancelled) {
+      return this.finishCancelledSync(session);
     }
 
     
@@ -498,13 +594,15 @@ export class BackendIntegrationService {
       
       if (!this.syncMutex.tryLock()) {
         new Notice(t('backend.notice.sync-in-progress'));
-        return null;
+        return this.finishSyncSession(session, null);
       }
+
+      session.lockAcquired = true;
+      this.activeSyncSession = session;
 
       
       this.totalTradesToSync = 0;
       this.tradesProcessedSoFar = 0;
-      this.syncCancelled = false;
     }
 
     try {
@@ -540,22 +638,26 @@ export class BackendIntegrationService {
         }
       } 
 
+      if (session.cancelled) {
+        return this.finishCancelledSync(session);
+      }
+
       
       const accountId = await this.getFTPUserAccountId();
+      if (session.cancelled) {
+        return this.finishCancelledSync(session);
+      }
       if (!accountId) {
         new Notice(t('backend.notice.account-info-failed'));
-
-        
-        if (!isAutoContinue) {
-          this.syncMutex.unlock();
-        }
-
-        return null;
+        return this.finishSyncSession(session, null);
       }
 
       
       const fetchedTrades =
         await this.tradeSyncService.fetchAllTrades(accountId);
+      if (session.cancelled) {
+        return this.finishCancelledSync(session);
+      }
       const ignoredAccountIds = new Set(
         (
           await this.accountManagementService.fetchUserAccounts({
@@ -575,12 +677,19 @@ export class BackendIntegrationService {
                 !ignoredAccountIds.has(trade.mt_account_number)
             );
 
+      if (session.cancelled) {
+        return this.finishCancelledSync(session);
+      }
+
       
       
       const newTrades: Trade[] = [];
       const BATCH_SIZE = 100; 
 
       for (let i = 0; i < allTrades.length; i += BATCH_SIZE) {
+        if (session.cancelled) {
+          return this.finishCancelledSync(session);
+        }
         const batch = allTrades.slice(i, i + BATCH_SIZE);
 
         
@@ -758,11 +867,8 @@ export class BackendIntegrationService {
       const errors: string[] = [];
 
       
-      if (this.syncCancelled) {
-        if (!isAutoContinue) {
-          this.syncMutex.unlock();
-        }
-        return null;
+      if (session.cancelled) {
+        return this.finishCancelledSync(session);
       }
 
       
@@ -795,6 +901,10 @@ export class BackendIntegrationService {
         }
 
         for (const newAccountId of newAccounts) {
+          if (session.cancelled) {
+            return this.finishCancelledSync(session);
+          }
+
           
           const tradeSample = tradeSampleByAccountId.get(newAccountId);
           const defaultDisplayName =
@@ -836,13 +946,20 @@ export class BackendIntegrationService {
                 resolve({ action: 'cancel' });
               }
             );
+            this.activeAccountLinkModal = modal;
             modal.open();
           });
+          this.activeAccountLinkModal = null;
+
+          if (session.cancelled) {
+            return this.finishCancelledSync(session);
+          }
 
           
           if (userDecision.action === 'cancel') {
             
-            continue;
+            
+            return this.finishCancelledSync(session);
           }
 
           let finalDisplayName = defaultDisplayName;
@@ -854,6 +971,9 @@ export class BackendIntegrationService {
               newAccountId,
               userDecision.linkToPath
             );
+            if (session.cancelled) {
+              return this.finishCancelledSync(session);
+            }
             continue; 
           } else if (
             userDecision.action === 'create' &&
@@ -867,6 +987,9 @@ export class BackendIntegrationService {
             newAccountId,
             finalDisplayName
           );
+          if (session.cancelled) {
+            return this.finishCancelledSync(session);
+          }
 
           
           if (this.plugin.accountPageService) {
@@ -891,6 +1014,10 @@ export class BackendIntegrationService {
                   initialBalance: 0, 
                 }
               );
+
+              if (session.cancelled) {
+                return this.finishCancelledSync(session);
+              }
 
               if (this.settings.showSyncNotifications) {
                 new Notice(
@@ -917,10 +1044,17 @@ export class BackendIntegrationService {
       let updatedFiles = 0;
 
       for (let i = 0; i < trades.length; i++) {
+        if (session.cancelled) {
+          return this.finishCancelledSync(session);
+        }
+
         const trade = trades[i];
         try {
           const tradeStartTime = Date.now();
           const result = await this.createTradeFile(trade);
+          if (session.cancelled) {
+            return this.finishCancelledSync(session);
+          }
           const tradeTime = Date.now() - tradeStartTime;
 
           if (result === 'created') {
@@ -943,6 +1077,10 @@ export class BackendIntegrationService {
           );
           console.error(`Failed to create file for trade ${trade.id}:`, error);
         }
+      }
+
+      if (session.cancelled) {
+        return this.finishCancelledSync(session);
       }
 
       
@@ -1017,8 +1155,12 @@ export class BackendIntegrationService {
         errors: errors,
       };
 
+      if (session.cancelled) {
+        return this.finishCancelledSync(session);
+      }
+
       
-      if (hasMoreToSync && !this.syncCancelled) {
+      if (hasMoreToSync && !session.cancelled) {
         
         if (this.settings.showSyncNotifications) {
           const progressPct = Math.round(
@@ -1040,19 +1182,16 @@ export class BackendIntegrationService {
           this.autoContinueTimeoutId = null;
 
           
-          if (!this.syncCancelled && timeoutId !== null) {
+          if (!session.cancelled && timeoutId !== null) {
             logger.debug('Auto-continuing sync with next batch...');
             this.forceSync(true).catch((error) => {
               console.error('Auto-continue sync failed:', error);
-              
-              this.syncMutex.unlock();
-              this.totalTradesToSync = 0;
-              this.tradesProcessedSoFar = 0;
+              this.finishSyncSession(session, null);
             });
           }
         }, 1000);
 
-        return syncResponse;
+        return isAutoContinue ? syncResponse : await session.completion;
       }
 
       
@@ -1081,30 +1220,18 @@ export class BackendIntegrationService {
       }
 
       
-      this.totalTradesToSync = 0;
-      this.tradesProcessedSoFar = 0;
-      this.syncMutex.unlock();
-
-      return syncResponse;
+      return this.finishSyncSession(session, syncResponse);
     } catch (error) {
+      if (session.cancelled) {
+        return this.finishCancelledSync(session);
+      }
+
       console.error('Force sync failed:', error);
       new Notice(
         t('backend.notice.sync-failed', { error: getErrorMessage(error) })
       );
 
-      
-      
-      if (this.syncMutex.isLocked()) {
-        this.syncMutex.unlock();
-      }
-      this.totalTradesToSync = 0;
-      this.tradesProcessedSoFar = 0;
-      if (this.autoContinueTimeoutId !== null) {
-        window.clearTimeout(this.autoContinueTimeoutId);
-        this.autoContinueTimeoutId = null;
-      }
-
-      return null;
+      return this.finishSyncSession(session, null);
     }
   }
 
@@ -1176,7 +1303,10 @@ export class BackendIntegrationService {
     }
 
     
-    this.debouncedForceSync.cancel();
+    
+    if (!this.activeSyncSession && !this.pendingSyncSession) {
+      this.debouncedForceSync.cancel();
+    }
     this.debouncedCheckForNewTrades.cancel();
   }
 
@@ -1685,9 +1815,7 @@ export class BackendIntegrationService {
     const account = [fallbackName];
     const accountId = trade.mt_account_number || undefined;
 
-    const setupNames = this.normalizeStringList(
-      trade.setup ?? trade.setupIds ?? []
-    );
+    const setupNames = this.normalizeStringList(trade.setup);
     const mistakeNames = this.normalizeStringList(
       trade.mistake ?? trade.mistakeIds ?? []
     );
@@ -1768,7 +1896,6 @@ export class BackendIntegrationService {
       tradeStatus,
       accountId,
       account,
-      setupIds: [],
       setup: [...setupNames],
       mistake: [...mistakeNames],
       tags,
@@ -2929,7 +3056,13 @@ export class BackendIntegrationService {
 
   
   async requestForceSync(): Promise<SyncResponse | null> {
-    return (await this.debouncedForceSync()) ?? null;
+    this.pendingForceSyncRequests += 1;
+    try {
+      const result = await this.debouncedForceSync();
+      return result === undefined ? this.createCancelledSyncResponse() : result;
+    } finally {
+      this.pendingForceSyncRequests -= 1;
+    }
   }
 
   
@@ -2944,7 +3077,9 @@ export class BackendIntegrationService {
       return null;
     }
 
-    this.debouncedForceSync.cancel();
+    if (!this.activeSyncSession && !this.pendingSyncSession) {
+      this.debouncedForceSync.cancel();
+    }
     return await this.forceSync();
   }
 
@@ -2975,8 +3110,16 @@ export class BackendIntegrationService {
     
     this.tradeSyncService.cleanup();
 
+    const session = this.activeSyncSession ?? this.pendingSyncSession;
+    if (session) {
+      this.cancelSyncSession(session, false);
+    }
+
     
-    this.debouncedForceSync.cancel();
+    
+    if (!this.activeSyncSession && !this.pendingSyncSession) {
+      this.debouncedForceSync.cancel();
+    }
     this.debouncedCheckForNewTrades.cancel();
 
     
@@ -2985,8 +3128,6 @@ export class BackendIntegrationService {
       this.autoContinueTimeoutId = null;
     }
 
-    
-    this.syncCancelled = false;
     this.totalTradesToSync = 0;
     this.tradesProcessedSoFar = 0;
   }
@@ -3002,7 +3143,7 @@ function isTradeData(value: unknown): value is TradeData {
     typeof value.entryPrice === 'number' &&
     typeof value.positionSize === 'number' &&
     typeof value.direction === 'string' &&
-    Array.isArray(value.setupIds)
+    (!('setup' in value) || Array.isArray(value.setup))
   );
 }
 

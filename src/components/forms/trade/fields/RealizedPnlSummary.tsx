@@ -22,7 +22,7 @@ export function RealizedPnlSummary({
   return (
     <div className="calculatedValue">
       <span className="calculatedLabel">
-        {t('form.field.realized-pnl')} ({closedSize}/{totalSize}{' '}
+        {t('form.layout.item.realized-pnl-preview')} ({closedSize}/{totalSize}{' '}
         {t('form.field.closed')})
       </span>
       <span

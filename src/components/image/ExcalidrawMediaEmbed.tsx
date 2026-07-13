@@ -11,6 +11,7 @@ interface ExcalidrawMediaEmbedProps {
   path: string;
   sourcePath?: string;
   fullscreen?: boolean;
+  embedWidth?: number;
 }
 
 function resolveExcalidrawFile(path: string, sourcePath = ''): TFile | null {
@@ -23,6 +24,7 @@ export const ExcalidrawMediaEmbed: React.FC<ExcalidrawMediaEmbedProps> = ({
   path,
   sourcePath = '',
   fullscreen = false,
+  embedWidth = 1000,
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const file = resolveExcalidrawFile(path, sourcePath);
@@ -37,7 +39,7 @@ export const ExcalidrawMediaEmbed: React.FC<ExcalidrawMediaEmbedProps> = ({
 
     void MarkdownRenderer.render(
       getApp(),
-      toObsidianEmbed(file.path),
+      toObsidianEmbed(file.path, embedWidth),
       container,
       sourcePath || file.path,
       component
@@ -47,7 +49,7 @@ export const ExcalidrawMediaEmbed: React.FC<ExcalidrawMediaEmbedProps> = ({
       component.unload();
       container.empty();
     };
-  }, [file, sourcePath]);
+  }, [embedWidth, file, sourcePath]);
 
   return (
     <div

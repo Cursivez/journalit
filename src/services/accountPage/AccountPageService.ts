@@ -34,7 +34,7 @@ function isExtractedTradeData(value: unknown): value is TradeData {
     typeof value.entryPrice === 'number' &&
     typeof value.positionSize === 'number' &&
     typeof value.direction === 'string' &&
-    Array.isArray(value.setupIds)
+    (!('setup' in value) || Array.isArray(value.setup))
   );
 }
 

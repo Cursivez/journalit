@@ -3,6 +3,7 @@
 import { App, TFile } from 'obsidian';
 import { TradeService } from '../../../services/trade/TradeService';
 import { FilterState } from '../DashboardView';
+import type { AnalyticsDateBasis } from '../../../settings/types';
 import {
   getEffectivePnL,
   isPnlContributingTrade,
@@ -17,6 +18,7 @@ import {
   getTradeAnalyticsTradingDay,
   getTradeRealizedPnlEvents,
 } from '../../../utils/tradeAnalyticsDate';
+import { getTradingDay } from '../../../utils/tradingDayUtils';
 import {
   type BreakEvenRangeSettings,
   calculateWinRateExcludingBreakeven,
@@ -25,6 +27,7 @@ import {
 } from '../../../utils/breakEvenRange';
 import {
   formatLocalDateString,
+  parseTradeTimestampValue,
   safeParseDateValue,
   safeDateSort,
 } from '../../../utils/dateUtils';
@@ -85,6 +88,30 @@ const toRecord = (value: object): Record<string, unknown> =>
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   Boolean(value) && typeof value === 'object' && !Array.isArray(value);
 
+const calculateTradeLevelSharpeRatio = (
+  tradeReturns: number[]
+): number | undefined => {
+  if (tradeReturns.length < 2) {
+    return undefined;
+  }
+
+  const meanReturn =
+    tradeReturns.reduce((sum, value) => sum + value, 0) / tradeReturns.length;
+  const sampleVariance =
+    tradeReturns.reduce(
+      (sum, value) => sum + Math.pow(value - meanReturn, 2),
+      0
+    ) /
+    (tradeReturns.length - 1);
+  const sampleStandardDeviation = Math.sqrt(sampleVariance);
+
+  if (sampleStandardDeviation <= Number.EPSILON) {
+    return undefined;
+  }
+
+  return meanReturn / sampleStandardDeviation;
+};
+
 const getStringField = (
   frontmatter: Record<string, unknown>,
   key: string
@@ -113,6 +140,117 @@ const hasDashboardEntryDate = (
     Array.isArray(frontmatter.entries) &&
     frontmatter.entries.some((entry) => isRecord(entry) && entry.time)
   );
+};
+
+const DATE_ONLY_TIMESTAMP_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
+
+const getDateOnlyExecutionTime = (value: unknown): string | undefined => {
+  if (!isRecord(value)) return undefined;
+  const time = value.time;
+  return typeof time === 'string' && DATE_ONLY_TIMESTAMP_PATTERN.test(time)
+    ? time
+    : undefined;
+};
+
+const preserveDateOnlyExecutionTimes = (
+  normalizedExecution: ReturnType<typeof normalizeTradeExecutionForAnalytics>,
+  frontmatter: Record<string, unknown>
+): ReturnType<typeof normalizeTradeExecutionForAnalytics> => {
+  const rawEntries = Array.isArray(frontmatter.entries)
+    ? frontmatter.entries
+    : [];
+  const rawExits = Array.isArray(frontmatter.exits) ? frontmatter.exits : [];
+  return {
+    ...normalizedExecution,
+    entries: normalizedExecution.entries.map((entry, index) => ({
+      ...entry,
+      time: getDateOnlyExecutionTime(rawEntries[index]) ?? entry.time,
+    })),
+    exits: normalizedExecution.exits.map((exit, index) => ({
+      ...exit,
+      time: getDateOnlyExecutionTime(rawExits[index]) ?? exit.time,
+    })),
+  };
+};
+
+interface DashboardDataFetchOptions {
+  freshTradeQuery?: boolean;
+  dateBasisOverride?: AnalyticsDateBasis;
+  executionScopedDateRange?: boolean;
+}
+
+const hasTimestampInRange = (
+  value: unknown,
+  startDate: Date,
+  endDate: Date,
+  plugin?: JournalitPlugin,
+  basis?: AnalyticsDateBasis
+): boolean => {
+  const timestamp = parseTradeTimestampValue(value);
+  if (timestamp && timestamp >= startDate && timestamp <= endDate) return true;
+  if (!plugin || !basis || typeof value !== 'string') return false;
+  const analyticsTradingDay = getTradeAnalyticsTradingDay(
+    basis === 'entry' ? { entryTime: value } : { exitTime: value },
+    basis,
+    plugin
+  );
+  if (!analyticsTradingDay) return false;
+  const startTradingDay = getTradingDay(startDate, plugin);
+  const endTradingDay = getTradingDay(endDate, plugin);
+  return (
+    analyticsTradingDay >= startTradingDay &&
+    analyticsTradingDay <= endTradingDay
+  );
+};
+
+const hasExecutionInDateRange = (
+  trade: Record<string, unknown>,
+  startDate: Date,
+  endDate: Date,
+  plugin?: JournalitPlugin
+): boolean => {
+  if (hasTimestampInRange(trade.entryTime, startDate, endDate, plugin, 'entry'))
+    return true;
+  if (hasTimestampInRange(trade.exitTime, startDate, endDate, plugin, 'exit'))
+    return true;
+
+  const entries = Array.isArray(trade.entries) ? trade.entries : [];
+  if (
+    entries.some(
+      (entry) =>
+        isRecord(entry) &&
+        hasTimestampInRange(entry.time, startDate, endDate, plugin, 'entry')
+    )
+  ) {
+    return true;
+  }
+
+  const exits = Array.isArray(trade.exits) ? trade.exits : [];
+  return exits.some(
+    (exit) =>
+      isRecord(exit) &&
+      hasTimestampInRange(exit.time, startDate, endDate, plugin, 'exit')
+  );
+};
+
+const getExecutionScopedTradeFiles = async (
+  app: App,
+  tradeService: TradeService,
+  startDate: Date,
+  endDate: Date,
+  fresh: boolean | undefined,
+  plugin?: JournalitPlugin
+): Promise<TFile[]> => {
+  const tradeFiles: TFile[] = [];
+  for (const value of await tradeService.getTradeData({ fresh })) {
+    if (!isRecord(value)) continue;
+    if (!hasExecutionInDateRange(value, startDate, endDate, plugin)) continue;
+    const path = value.path;
+    if (typeof path !== 'string') continue;
+    const file = app.vault.getAbstractFileByPath(path);
+    if (file instanceof TFile) tradeFiles.push(file);
+  }
+  return tradeFiles;
 };
 
 const appendHash = (hash: number, value: unknown): number => {
@@ -187,6 +325,7 @@ const buildMetricsCacheKey = (
     tradingDayCutoffTime?: string;
     drawdownCapitalBasis?: DrawdownCapitalBasis['type'];
     drawdownCapitalBasisAmount?: number | 'none';
+    sharpeRatioTrades: NormalizedMetricsTrade[];
   }
 ): string => {
   let tradeFingerprint = 0;
@@ -246,9 +385,45 @@ const buildMetricsCacheKey = (
     );
   }
 
+  let sharpeRatioFingerprint = 0;
+  for (const trade of options.sharpeRatioTrades) {
+    sharpeRatioFingerprint = appendHash(sharpeRatioFingerprint, trade.path);
+    sharpeRatioFingerprint = appendHash(
+      sharpeRatioFingerprint,
+      trade.entryTime.toISOString()
+    );
+    sharpeRatioFingerprint = appendHash(
+      sharpeRatioFingerprint,
+      trade.exitTime ? trade.exitTime.toISOString() : ''
+    );
+    sharpeRatioFingerprint = appendHash(sharpeRatioFingerprint, trade.pnl);
+    sharpeRatioFingerprint = appendHash(
+      sharpeRatioFingerprint,
+      trade.directPnL
+    );
+    sharpeRatioFingerprint = appendHash(
+      sharpeRatioFingerprint,
+      trade.useDirectPnLInput
+    );
+    sharpeRatioFingerprint = hashJsonValue(
+      sharpeRatioFingerprint,
+      trade.dividends ?? []
+    );
+    sharpeRatioFingerprint = appendHash(
+      sharpeRatioFingerprint,
+      trade.commission
+    );
+    sharpeRatioFingerprint = appendHash(sharpeRatioFingerprint, trade.swap);
+    sharpeRatioFingerprint = appendHash(sharpeRatioFingerprint, trade.fees);
+    sharpeRatioFingerprint = appendHash(sharpeRatioFingerprint, trade.rebate);
+    sharpeRatioFingerprint = appendHash(sharpeRatioFingerprint, trade.currency);
+  }
+
   return [
     trades.length,
     tradeFingerprint,
+    options.sharpeRatioTrades.length,
+    sharpeRatioFingerprint,
     options.defaultRiskAmount ?? 'none',
     options.breakEvenRangeMin,
     options.breakEvenRangeMax,
@@ -503,6 +678,11 @@ export interface DashboardData {
     netPnL: number;
     winRate: number;
     profitFactor: number;
+    sharpeRatio?: number;
+    
+    sharpeRatioTradeCount?: number;
+    
+    sharpeRatioSourceTradeCount?: number;
     expectancy: number;
     numTrades: number;
     numWinTrades: number;
@@ -581,7 +761,7 @@ const fetchTradeData = async (
   tradeService: TradeService,
   filters: FilterState,
   plugin?: JournalitPlugin,
-  options?: { freshTradeQuery?: boolean }
+  options?: DashboardDataFetchOptions
 ): Promise<Trade[]> => {
   try {
     
@@ -591,13 +771,23 @@ const fetchTradeData = async (
     
     
 
-    const analyticsDateBasis = getAnalyticsDateBasis(plugin?.settings);
+    const analyticsDateBasis =
+      options?.dateBasisOverride ?? getAnalyticsDateBasis(plugin?.settings);
 
     
-    const tradeFiles = await tradeService.getTrades(startDate, endDate, {
-      dateBasis: analyticsDateBasis,
-      fresh: options?.freshTradeQuery,
-    });
+    const tradeFiles = options?.executionScopedDateRange
+      ? await getExecutionScopedTradeFiles(
+          app,
+          tradeService,
+          startDate,
+          endDate,
+          options.freshTradeQuery,
+          plugin
+        )
+      : await tradeService.getTrades(startDate, endDate, {
+          dateBasis: analyticsDateBasis,
+          fresh: options?.freshTradeQuery,
+        });
     const customFieldDefinitions =
       plugin?.customFieldsService?.getFields() || [];
     const breakEvenThresholdMode =
@@ -641,8 +831,10 @@ const fetchTradeData = async (
           isMissedTrade: frontmatter.isMissedTrade,
           isBacktestTrade: frontmatter.isBacktestTrade,
         });
-        const normalizedExecution =
-          normalizeTradeExecutionForAnalytics(frontmatter);
+        const normalizedExecution = preserveDateOnlyExecutionTimes(
+          normalizeTradeExecutionForAnalytics(frontmatter),
+          frontmatter
+        );
 
         const trade: Trade = {
           path: file.path,
@@ -1008,6 +1200,8 @@ interface CalculateMetricsOptions {
   analyticsDateBasis?: 'entry' | 'exit';
   tradingDayCutoffTime?: string;
   drawdownCapitalBasis?: DrawdownCapitalBasis;
+  
+  sharpeRatioTrades?: Trade[];
 }
 
 
@@ -1042,6 +1236,9 @@ export const calculateMetrics = (
       netPnL: 0,
       winRate: 0,
       profitFactor: 0,
+      sharpeRatio: undefined,
+      sharpeRatioTradeCount: 0,
+      sharpeRatioSourceTradeCount: 0,
       expectancy: 0,
       numTrades: 0,
       numWinTrades: 0,
@@ -1101,8 +1298,6 @@ export const calculateMetrics = (
   const closedTrades = contributingTrades.map((trade) =>
     normalizeTradeForMetrics(trade, defaultCurrency)
   );
-  
-  const netPnLValues = closedTrades.map((t) => getEffectivePnL(t));
   const tradingDayPlugin = tradingDayCutoffTime
     ? ({
         settings: {
@@ -1112,6 +1307,54 @@ export const calculateMetrics = (
         },
       } as { settings: { trade: { tradingDayCutoffTime: string } } })
     : undefined;
+  const sharpeRatioInputTrades =
+    options.sharpeRatioTrades ?? contributingTrades;
+  const isSharpeTradeInAnalyticsRange = (trade: Trade): boolean => {
+    const fallbackAnalyticsDate = safeParseDateValue(
+      analyticsDateBasis === 'entry' ? trade.entryTime : trade.exitTime
+    );
+    const analyticsTradingDay =
+      getTradeAnalyticsTradingDay(
+        trade,
+        analyticsDateBasis,
+        tradingDayPlugin
+      ) ??
+      (fallbackAnalyticsDate
+        ? getTradingDay(fallbackAnalyticsDate, tradingDayPlugin)
+        : null);
+
+    if (!analyticsTradingDay) {
+      return false;
+    }
+
+    const rangeStart = trade._analyticsRangeStart
+      ? safeParseDateValue(trade._analyticsRangeStart)
+      : undefined;
+    const rangeEnd = trade._analyticsRangeEnd
+      ? safeParseDateValue(trade._analyticsRangeEnd)
+      : undefined;
+
+    return (
+      (!rangeStart || analyticsTradingDay >= rangeStart) &&
+      (!rangeEnd || analyticsTradingDay <= rangeEnd)
+    );
+  };
+  
+  
+  const sharpeRatioTrades: NormalizedMetricsTrade[] = [];
+  for (const trade of sharpeRatioInputTrades) {
+    if (
+      !isPnlContributingTrade(trade) ||
+      isTradeOpenInDashboard(trade) ||
+      !isSharpeTradeInAnalyticsRange(trade)
+    ) {
+      continue;
+    }
+
+    sharpeRatioTrades.push(normalizeTradeForMetrics(trade, defaultCurrency));
+  }
+  
+  const netPnLValues = closedTrades.map((t) => getEffectivePnL(t));
 
   const cacheKey = buildMetricsCacheKey(closedTrades, {
     defaultRiskAmount,
@@ -1127,6 +1370,7 @@ export const calculateMetrics = (
       options.drawdownCapitalBasis && 'amount' in options.drawdownCapitalBasis
         ? options.drawdownCapitalBasis.amount
         : 'none',
+    sharpeRatioTrades,
   });
 
   const cachedResult = metricsCache.get(cacheKey);
@@ -1219,6 +1463,17 @@ export const calculateMetrics = (
 
   
   const expectancy = winRate * avgWin - (1 - winRate) * avgLoss;
+
+  const sharpeRatioValues: number[] = [];
+  for (const trade of sharpeRatioTrades) {
+    const pnl = getEffectivePnL(trade);
+    if (Number.isFinite(pnl)) {
+      sharpeRatioValues.push(pnl);
+    }
+  }
+  const sharpeRatioSourceTradeCount = sharpeRatioTrades.length;
+  const sharpeRatioTradeCount = sharpeRatioValues.length;
+  const sharpeRatio = calculateTradeLevelSharpeRatio(sharpeRatioValues);
 
   
   
@@ -1616,6 +1871,9 @@ export const calculateMetrics = (
     netPnL,
     winRate,
     profitFactor,
+    sharpeRatio,
+    sharpeRatioTradeCount,
+    sharpeRatioSourceTradeCount,
     expectancy,
     numTrades: closedTrades.length, 
     numWinTrades: winningNetPnL.length,
@@ -1741,7 +1999,7 @@ export const fetchDashboardData = async (
   filters: FilterState,
   defaultRiskAmount?: number,
   plugin?: JournalitPlugin,
-  options?: { freshTradeQuery?: boolean }
+  options?: DashboardDataFetchOptions
 ): Promise<DashboardData> => {
   try {
     
@@ -1848,6 +2106,7 @@ export const fetchDashboardData = async (
       analyticsDateBasis,
       tradingDayCutoffTime: plugin?.settings?.trade?.tradingDayCutoffTime,
       drawdownCapitalBasis,
+      sharpeRatioTrades: tradesForDisplay,
     });
 
     

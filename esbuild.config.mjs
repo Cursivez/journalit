@@ -8,6 +8,9 @@ const banner = `
 
 
 const prod = true;
+const preview = false;
+const previewReactProd = false;
+const previewMinify = false;
 const entryPoint = 'src/main.ts';
 
 
@@ -74,7 +77,7 @@ const context = await esbuild.context({
     '.css': 'css',
   },
   
-  minify: prod,
+  minify: true,
 });
 
 function applyObsidianReviewBundleNormalizations() {
@@ -107,10 +110,10 @@ function applyObsidianReviewBundleNormalizations() {
 }
 
 
-if (prod) {
+if (prod || preview) {
   
   await context.rebuild();
-  applyObsidianReviewBundleNormalizations();
+  if (prod) applyObsidianReviewBundleNormalizations();
   process.exit(0);
 } else {
   

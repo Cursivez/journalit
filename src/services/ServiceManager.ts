@@ -230,7 +230,6 @@ export class ServiceManager {
         'SetupService'
       );
       service.setPlugin(this.plugin);
-
       this._setupService = service;
       this.initializedServices.add('setupService');
       delete this.serviceInitQueue.setupService;
@@ -341,8 +340,6 @@ export class ServiceManager {
           }),
         'MissedTradeService'
       );
-      service.setPlugin(this.plugin);
-
       this._missedTradeService = service;
       this.initializedServices.add('missedTradeService');
       delete this.serviceInitQueue.missedTradeService;
@@ -378,8 +375,6 @@ export class ServiceManager {
           }),
         'BacktestTradeService'
       );
-      service.setPlugin(this.plugin);
-
       this._backtestTradeService = service;
       this.initializedServices.add('backtestTradeService');
       delete this.serviceInitQueue.backtestTradeService;
@@ -418,8 +413,6 @@ export class ServiceManager {
           }),
         'MonthlyReviewService'
       );
-      service.setPlugin(this.plugin);
-
       this._monthlyReviewService = service;
       this.initializedServices.add('monthlyReviewService');
       delete this.serviceInitQueue.monthlyReviewService;
@@ -458,8 +451,6 @@ export class ServiceManager {
           }),
         'QuarterlyReviewService'
       );
-      service.setPlugin(this.plugin);
-
       this._quarterlyReviewService = service;
       this.initializedServices.add('quarterlyReviewService');
       delete this.serviceInitQueue.quarterlyReviewService;
@@ -498,8 +489,6 @@ export class ServiceManager {
           }),
         'YearlyReviewService'
       );
-      service.setPlugin(this.plugin);
-
       this._yearlyReviewService = service;
       this.initializedServices.add('yearlyReviewService');
       delete this.serviceInitQueue.yearlyReviewService;

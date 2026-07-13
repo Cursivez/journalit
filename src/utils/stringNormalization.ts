@@ -25,12 +25,13 @@ function normalizeOptionString(value: string): string {
   return normalized;
 }
 
+export function normalizeOptionKey(value: string): string {
+  return normalizeOptionString(value).toLowerCase();
+}
+
 
 export function normalizedEquals(a: string, b: string): boolean {
-  return (
-    normalizeOptionString(a).toLowerCase() ===
-    normalizeOptionString(b).toLowerCase()
-  );
+  return normalizeOptionKey(a) === normalizeOptionKey(b);
 }
 
 

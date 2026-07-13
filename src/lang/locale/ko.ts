@@ -32,8 +32,7 @@ const ko: Partial<Lang> = {
   'navigation.items.nav-yearly': '올해 리뷰',
 
   
-  'command.force-sync': '거래 강제 동기화',
-  'command.cancel-sync': '거래 동기화 취소',
+  'backend.cards.sync.cancel': '동기화 취소',
 
   
   'command.replay-onboarding': '온보딩 다시 보기',
@@ -149,6 +148,54 @@ const ko: Partial<Lang> = {
   
   
   
+  'form.import-shortcut.open': '거래 가져오기 열기',
+  'form.layout.customize': '양식 사용자 지정',
+  'form.layout.modal-title': '거래 양식 사용자 지정',
+  'form.layout.settings-title': '거래 양식 레이아웃',
+  'form.layout.settings-desc':
+    '거래를 기록하는 방식과 거래 양식에 표시할 선택 블록을 고르세요.',
+  'form.layout.core-fields-note':
+    '거래 유형, 계정, 자산 유형, 종목, 방향, 선택한 입력 모드에 필요한 가격 또는 P&L 입력은 계속 표시됩니다.',
+  'form.layout.input-mode': '입력 모드',
+  'form.layout.input-mode-prices': '가격',
+  'form.layout.input-mode-pnl-risk': 'P&L + 리스크',
+  'form.layout.input-mode-prices-desc':
+    '진입가와 청산가를 기록하고 Journalit이 P&L을 계산하게 합니다.',
+  'form.layout.input-mode-pnl-risk-desc':
+    '거래 P&L과 리스크 금액을 직접 기록합니다. Journalit이 R 배수를 자동 계산합니다.',
+  'form.layout.asset-type-mode': '자산 유형',
+  'form.layout.asset-type-mode-show': '매번 선택',
+  'form.layout.asset-type-mode-fixed': '고정',
+  'form.layout.default-asset-type': '기본 자산 유형',
+  'form.layout.active-fields': '표시 블록',
+  'form.layout.available-fields': '숨긴 블록',
+  'form.layout.active-fields-desc':
+    '블록을 드래그해 순서를 바꾸세요. 사용하지 않는 것은 제거하세요.',
+  'form.layout.available-fields-desc':
+    '필요할 때 숨긴 블록을 거래 양식에 다시 추가하세요.',
+  'form.layout.empty-active': '표시 중인 선택 블록이 없습니다.',
+  'form.layout.all-active': '모든 선택 블록이 표시 중입니다.',
+  'form.layout.add-field-aria': '거래 양식에 {field} 추가',
+  'form.layout.remove-field-aria': '거래 양식에서 {field} 숨기기',
+  'form.layout.saved': '거래 양식 레이아웃이 저장되었습니다',
+  'form.layout.item.trading-costs.commission': '수수료',
+  'form.layout.item.import-shortcut': '가져오기 바로가기',
+  'form.layout.item.import-shortcut-desc':
+    '거래 가져오기를 여는 푸터 버튼을 표시합니다.',
+  'form.layout.item.core-details': '핵심 거래 정보',
+  'form.layout.item.core-details-desc':
+    '계좌, 종목, 방향, 진입/청산 입력은 항상 먼저 표시됩니다.',
+  'form.layout.item.asset-specific': '자산별 필드',
+  'form.layout.item.pnl-preview': 'P&L 미리보기',
+  'form.layout.item.realized-pnl-preview': '부분 청산 P&L 요약',
+  'form.layout.item.realized-pnl-preview-desc':
+    '부분 청산 후 열린 거래에서만 표시되며 위치는 고정됩니다.',
+  'form.layout.result-r': 'R 결과',
+  'form.layout.entry-time': '거래 시간',
+
+  
+  
+  
   'form.field.account': '계좌',
   'form.field.asset-type': '자산 유형',
   'form.field.direction': '방향',
@@ -252,7 +299,18 @@ const ko: Partial<Lang> = {
   'form.entry-exit.direct-pnl-desc':
     '총 손익을 직접 입력하세요. 수수료와 비용은 여전히 차감됩니다.',
   'form.entry-exit.calc-pnl': '진입/청산 가격과 포지션 크기로 손익 계산',
+  'form.ideal-exit.title': '이상적인 청산',
+  'form.ideal-exit.subtitle': '실행 리뷰를 위한 사후 분할 청산.',
+  'form.ideal-exit.coverage': '이상적 크기',
+  'form.ideal-exit.price': '이상 가격',
+  'form.ideal-exit.size': '크기',
+  'form.ideal-exit.remove': '이상 청산 삭제',
+  'form.ideal-exit.add': '+ 이상 청산 추가',
+  'form.ideal-exit.copy-actual': '실제 청산 복사',
 
+  'form.ideal-exit.tooltip':
+    '사후에 실행했어야 했던 이상적인 청산 계획을 기록합니다. 분할 청산 리뷰를 지원합니다.',
+  'form.ideal-exit.empty': '아직 이상적인 청산이 없습니다',
   
   
   
@@ -307,7 +365,7 @@ const ko: Partial<Lang> = {
   'button.create-daily-review': '일일 리뷰 생성',
   'button.apply-settings': '설정 적용',
   'button.learn-more': '더 알아보기',
-  'button.upload-image': '이미지 업로드',
+  'button.upload-image': '미디어 업로드',
   'button.discord': 'Discord',
 
   
@@ -530,6 +588,14 @@ const ko: Partial<Lang> = {
     'Set this copy as your default template',
   'layoutBuilder.guide.set-default-template.description':
     'Click the star on your new template if you want new review notes to use this layout automatically.',
+
+  'form.layout.guide-trigger-label': '양식 사용자 지정',
+  'trade-form.guide.customization-modal.title': '양식을 내 워크플로에 맞추세요',
+  'trade-form.guide.customization-modal.description':
+    '여기에서 선택 블록을 표시, 숨김, 재정렬할 수 있습니다. 실제로 사용하는 필드에만 양식을 집중하세요.',
+  'trade-form.guide.finish.title': '이것이 사용자 지정 기능입니다',
+  'trade-form.guide.finish.description':
+    '거래 양식을 다른 저널 작성 흐름에 맞춰야 할 때 언제든 이 버튼으로 다시 설정할 수 있습니다.',
   'tradelog.guide.empty.intro.title': 'Welcome to Trade Log',
   'tradelog.guide.empty.intro.description':
     'This page becomes your main place for browsing, sorting, and reviewing trades. Once you add trades, you will also get the full Trade Log tour.',
@@ -708,6 +774,8 @@ const ko: Partial<Lang> = {
   'common.lose': '패배',
   'common.trade': '거래',
   'common.trades': '거래',
+  'common.color.label': '색상',
+  'common.color.default': '기본값',
 
   
   
@@ -799,9 +867,21 @@ const ko: Partial<Lang> = {
 
   
   'dashboard.metrics.avgRR': '평균 RR (페이오프)',
+  'dashboard.metrics.sharpeRatio': '샤프 비율',
   'dashboard.metrics.avgRRRiskBased': '평균 RR (R 기반)',
   'dashboard.metrics.longestWinStreak': '최고 연승',
   'dashboard.metrics.longestLossStreak': '최악의 연패',
+  'dashboard.sharpeRatio.tooltip.title': '샤프 비율',
+  'dashboard.sharpeRatio.tooltip.formula':
+    '공식: 청산 거래 평균 순 P&L / 청산 거래 순 P&L의 표본 표준편차. 무위험 수익률은 0이며 연율화하지 않습니다.',
+  'dashboard.sharpeRatio.tooltip.coverage':
+    '총 {total}개의 청산 거래 중 {valid}개로 계산',
+  'dashboard.sharpeRatio.tooltip.partial-coverage':
+    '부분 커버리지: 총 {total}개의 청산 거래 중 {valid}개에 유한한 순 P&L이 있습니다.',
+  'dashboard.sharpeRatio.tooltip.no-data':
+    'P&L 변동성이 0이 아닌 청산 거래가 최소 2개 필요합니다.',
+  'dashboard.sharpeRatio.tooltip.no-conversion':
+    '이 샤프 비율은 FX 변환 없는 혼합 통화를 기반으로 하므로 오해의 소지가 있을 수 있습니다.',
   'dashboard.avgRRRiskBased.tooltip.title': '평균 RR (R 기반)',
   'dashboard.avgRRRiskBased.tooltip.formula': '공식: 평균 승리 R / 평균 손실 R',
   'dashboard.avgRRRiskBased.tooltip.coverage':
@@ -814,6 +894,9 @@ const ko: Partial<Lang> = {
     'R 기반 RR을 계산하기에 데이터가 부족합니다. 손절/위험 금액을 입력하고 유효한 승리/손실 거래가 모두 있도록 해주세요.',
   'metric.avgRR.name': '평균 RR (페이오프)',
   'metric.avgRR.description': '평균 보상/위험 비율 (평균 수익 / 평균 손실)',
+  'metric.sharpeRatio.name': '샤프 비율',
+  'metric.sharpeRatio.description':
+    '거래 단위 샤프 비율: 청산 거래 평균 순 P&L을 P&L 표본 변동성으로 나눈 값',
   'metric.avgRRRiskBased.name': '평균 RR (R 기반)',
   'metric.avgRRRiskBased.description':
     'R-배수 기반 비율: 평균 승리 R / 평균 손실 R (손절/위험 데이터 필요)',
@@ -1076,6 +1159,8 @@ const ko: Partial<Lang> = {
     '모든 필수 필드가 매핑되어 있고, 선택한 날짜 형식이 파일과 일치하며, 숫자 열에 유효한 거래 값이 포함되어 있는지 확인하세요.',
   'trade-import.notice.complete':
     'Trade Import complete: {written} written or updated, {duplicateCount} duplicates, {failedCount} failed',
+  'trade-import.gate.brand-left': '거래',
+  'trade-import.gate.brand-right': '가져오기',
   'trade-import.gate.sign-in':
     'Sign in is required before uploading broker exports for Trade Import.',
   'trade-import.gate.upgrade':
@@ -1143,6 +1228,270 @@ const ko: Partial<Lang> = {
     'Matching open trade quantity differs from close-only preview',
   'trade-import.preview.message.no-open-match':
     'No matching open trade found for close-only preview',
+
+  
+  'command.open-setups': '셋업 열기',
+  'setups.create.title': 'Create Setup',
+  'setups.create.field.name': 'Setup Name',
+  'setups.create.placeholder.name': 'Opening Drive',
+  'setups.create.field.status': 'Status',
+  'setups.create.field.direction': 'Direction',
+  'setups.create.field.color': '색상',
+  'setups.create.field.color-description':
+    '이 셋업을 식별할 색상을 선택하세요.',
+  'setups.create.direction.any': 'Not specified',
+  'setups.create.direction.long': 'Long',
+  'setups.create.direction.short': 'Short',
+  'setups.create.direction.both': 'Both',
+  'setups.create.field.linked-notes': 'Linked Notes',
+  'setups.create.field.linked-notes-desc':
+    'Attach existing notes that document the playbook for this setup.',
+  'setups.create.linked-notes.empty': 'No notes linked yet.',
+  'setups.create.linked-notes.add': '+ Link note',
+  'setups.create.linked-notes.remove': 'Remove linked note',
+  'setups.create.linked-notes.picker-title': 'Choose a playbook note',
+  'setups.create.linked-notes.search': 'Search notes...',
+  'setups.create.linked-notes.no-notes': 'No markdown notes found.',
+  'setups.create.button.creating': 'Creating...',
+  'setups.create.button.create': 'Create Setup',
+  'setups.create.success': 'Setup "{name}" created successfully',
+  'setups.create.error.name-required': 'Setup name is required',
+  'setups.create.error.failed': 'Failed to create setup',
+  'setups.edit.title': 'Edit Setup',
+  'setups.edit.button.saving': 'Saving...',
+  'setups.edit.button.save': 'Save Setup',
+  'setups.edit.button.rename-and-update': 'Rename and update trades',
+  'setups.edit.rename-warning.title': 'Rename setup and update trades',
+  'setups.edit.rename-warning.message':
+    'Renaming {oldName} to {newName} will update trade notes that use the old setup name.',
+  'setups.edit.delete.button': '셋업 삭제',
+  'setups.edit.delete.title': '셋업 삭제',
+  'setups.edit.delete.confirm': '삭제 확인',
+  'setups.edit.delete.warning':
+    '"{name}"을(를) 삭제하면 셋업이 영구적으로 삭제되고 연결된 거래에서 제거됩니다. 이 작업은 취소할 수 없습니다.',
+  'setups.edit.delete.success': '셋업 "{name}"이(가) 삭제되었습니다',
+  'setups.edit.delete.error': '셋업을 삭제하지 못했습니다',
+  'setups.edit.success': 'Setup "{name}" updated successfully',
+  'setups.edit.error.failed': 'Failed to update setup',
+  'setups.view.compare.empty-submessage':
+    'Choose two setup cards from the overview to build a side-by-side report.',
+  'setups.view.compare.reason.higher.total-r': '총 R 높음',
+  'setups.view.compare.reason.lower.total-r': '총 R 낮음',
+  'setups.view.compare.reason.similar.total-r': '총 R 유사',
+  'setups.view.advanced.rule-break-count': '{count}',
+  'setups.guide.empty.intro.title': '첫 셋업 만들기',
+  'setups.guide.empty.intro.description':
+    '셋업은 플레이북 노트, 규칙, 스크린샷, 연결된 거래를 묶어 하나의 거래 아이디어를 맥락 속에서 검토하게 합니다.',
+  'setups.guide.create-new-setup.title': '새 셋업 만들기',
+  'setups.guide.create-new-setup.description':
+    '다른 플레이북을 추가하려면 새 셋업을 사용하세요. 모달에서 세부 정보, 연결 노트, 규칙을 설정할 수 있습니다.',
+  'setups.guide.detail-intro.title': '셋업 페이지입니다',
+  'setups.guide.detail-intro.description':
+    '셋업 페이지는 하나의 플레이북에 집중해 성과 차트, 맥락, 참고 자료, 작업, 실행 규칙을 모아 보여줍니다.',
+  'setups.guide.detail-actions.title': '셋업 작업',
+  'setups.guide.detail-actions.description':
+    '이 버튼으로 관련 거래를 열거나 세부 정보, 연결 노트, 스크린샷, 플레이북 규칙을 편집합니다.',
+  'setups.guide.empty.create-setup.title': '새 셋업으로 시작',
+  'setups.guide.empty.create-setup.description':
+    '먼저 셋업을 하나 만드세요. 생성되면 이 가이드가 일반 흐름을 이어갑니다.',
+  'setups.guide.empty.finish.title': '셋업 생성 완료',
+  'setups.guide.empty.finish.description':
+    '세부 정보를 입력하고 저장하세요. 셋업이 준비되면 가이드가 다시 이어집니다.',
+  'setups.guide.intro.title': 'Setups에 오신 것을 환영합니다',
+  'setups.guide.intro.description':
+    '이 보기에서는 셋업 플레이북, 연결된 거래, 노트, 스크린샷, 규칙을 한곳에 모읍니다.',
+  'setups.guide.view-tabs.title': '셋업 보기 전환',
+  'setups.guide.view-tabs.description':
+    '셋업이 충분할 때 이 탭으로 개요, 셋업 페어, 비교 흐름을 이동합니다.',
+  'setups.guide.overview-chart.title': '성과 순위',
+  'setups.guide.overview-chart.description':
+    '개요 차트는 선택한 지표로 셋업을 정렬합니다. 오른쪽 위 컨트롤로 지표를 바꾸거나 특정 셋업에 집중할 수 있습니다.',
+  'setups.guide.setup-cards.title': '셋업 카드',
+  'setups.guide.setup-cards.description':
+    '카드는 핵심 지표, 상태, 마지막 거래일, 작은 성과 추세로 각 셋업을 요약합니다.',
+  'setups.guide.open-detail.title': '셋업 페이지 열기',
+  'setups.guide.open-detail.description':
+    '셋업 카드를 열어 차트, 맥락, 플레이북 자료, 실행 규칙이 있는 전용 페이지를 확인합니다.',
+  'setups.guide.detail-performance.title': '상세 성과',
+  'setups.guide.detail-performance.description':
+    'Performance 탭은 시간에 따른 차트와 P&L, 승률, 기대값, 드로다운 같은 핵심 지표를 보여줍니다.',
+  'setups.guide.detail-context.title': '셋업 맥락',
+  'setups.guide.detail-context.description':
+    '이 패널은 셋업 건강도, 주의 항목, 연결 노트, 스크린샷을 가까이 둡니다.',
+  'setups.guide.detail-playbook.title': '플레이북 노트',
+  'setups.guide.detail-playbook.description':
+    '플레이북 영역은 연결 노트를 미리 보여줍니다. Markdown, 이미지, Excalidraw 또는 원하는 참고 자료가 될 수 있습니다.',
+  'setups.guide.detail-rules.title': '실행 규칙',
+  'setups.guide.detail-rules.description':
+    '규칙은 좋은 조건, 진입, 리스크, 피해야 할 실수를 구조화한 체크리스트입니다.',
+  'setups.guide.finish.title': 'Setups 가이드 완료',
+  'setups.guide.finish.description':
+    '개요, 페어, 비교, 개별 셋업 페이지의 주요 화면을 모두 보았습니다.',
+  'setups.guide.compare.intro.title': '셋업 성과 비교',
+  'setups.guide.compare.intro.description':
+    '이제 충분한 셋업이 있어 페어를 검토하고 두 플레이북을 나란히 비교할 수 있습니다.',
+  'setups.guide.pairs-mode.title': '셋업 페어 열기',
+  'setups.guide.pairs-mode.description':
+    '페어를 열어 비교할 만큼 공유 거래가 있는 조합을 확인합니다.',
+  'setups.guide.pairs-chart.title': '페어 순위',
+  'setups.guide.pairs-chart.description':
+    '페어 모드는 함께 더 좋거나 나쁠 수 있는 조합을 강조합니다. 막대를 클릭하면 해당 조합의 더 깊은 인사이트를 열 수 있습니다.',
+  'setups.guide.return-overview.title': '개요로 돌아가기',
+  'setups.guide.return-overview.description':
+    '비교할 셋업을 고르기 전에 개요로 돌아갑니다.',
+  'setups.guide.compare-mode.title': '비교 모드 시작',
+  'setups.guide.compare-mode.description':
+    '비교 모드에서는 두 셋업 카드를 선택해 나란히 검토합니다.',
+  'setups.guide.compare-select.title': '두 셋업 선택',
+  'setups.guide.compare-select.description':
+    '비교 페이지를 열려면 두 셋업 카드를 선택하세요.',
+  'setups.guide.compare-summary.title': '비교 페이지입니다',
+  'setups.guide.compare-summary.description':
+    '이 페이지는 두 셋업을 나란히 비교합니다. 상단 요약 행은 승자, 기대값 우위, 신뢰도, 한 셋업이 우위인 이유를 보여줍니다.',
+  'setups.guide.compare-body.title': '비교 요약 행',
+  'setups.guide.compare-body.description':
+    '상단 행은 승자, 기대값 우위, 신뢰도, 우위의 이유를 요약합니다.',
+  'setups.guide.compare-details.title': '비교 상세',
+  'setups.guide.compare-details.description':
+    '지표 표와 누적 차트로 두 셋업의 차이를 이해합니다.',
+  'setups.guide.detail-execution-gap.title': '실행 갭 분석',
+  'setups.guide.detail-execution-gap.description':
+    '놓친 거래나 백테스트 데이터가 있으면 이 탭에서 실제 실행과 놓친 또는 벤치마크 기회를 비교합니다.',
+  'setups.guide.back-to-overview.title': '셋업 카드로 돌아가기',
+  'setups.guide.back-to-overview.description':
+    '비교를 마치면 셋업 카드로 돌아갑니다.',
+  'setups.guide.compare.finish.title': '셋업 비교 가이드 완료',
+  'setups.guide.compare.finish.description':
+    '여러 셋업을 함께 검토하는 페어와 비교 화면을 보았습니다.',
+  'setups.view.open-as-markdown': 'Open as Markdown',
+  'setups.view.open-as-setup': 'Open as Journalit Setup',
+  'setups.view.overview.mode.aria': 'Overview chart mode',
+  'setups.view.overview.mode.setups': 'Setups',
+  'setups.view.overview.mode.pairs': 'Pairs',
+  'setups.view.pairs.title': 'Setup pairs',
+  'setups.view.pairs.summary-aria': 'Setup pairs summary',
+  'setups.view.pairs.best': 'Best pair',
+  'setups.view.pairs.worst': 'Worst pair',
+  'setups.view.pairs.worst-short': 'Worst',
+  'setups.view.pairs.empty': 'No setup pairs with 5+ trades yet.',
+  'setups.view.pairs.empty-submessage':
+    'Pairs appear after two setups share enough linked trades.',
+  'setups.view.pairs.privacy':
+    'Pair performance is hidden while Privacy Mode is on.',
+  'setups.view.pairs.edge-tooltip':
+    'Edge compares the pair expectancy against the stronger solo setup baseline.',
+  'setups.view.pairs.metric-aria': 'Pair metric',
+  'setups.view.pairs.metric.edge': 'Pair edge',
+  'setups.view.pairs.metric.edge-short': 'edge',
+  'setups.view.pairs.metric.expectancy': 'Pair expectancy',
+  'setups.view.pairs.metric.expectancy-short': 'expectancy',
+  'setups.view.pairs.together': 'Together',
+  'setups.view.pairs.table.setup-pair': 'Setup pair',
+  'setups.view.pairs.equity-curve': 'Equity curve',
+  'setups.view.pairs.equity-caption':
+    'Cumulative pair performance over time. Green = positive contribution, red = drawdown.',
+  'setups.view.pairs.evidence': 'Evidence',
+  'setups.view.pairs.edge-comparison': 'Edge comparison',
+  'setups.view.pairs.edge-caption': 'Combined edge: {edge}',
+  'setups.view.overview.setup-filter.all': 'Setups: All',
+  'setups.view.overview.setup-filter.selected': 'Setups: {count} selected',
+  'setups.view.overview.setup-filter.aria': 'Choose setups to show',
+  'setups.view.overview.setup-filter.select-all': 'Select all',
+  'setups.view.overview.setup-filter.clear': 'Clear',
+  'setups.view.overview.pnl-chart.title': 'Setup P&L Over Time',
+  'setups.view.overview.pnl-chart.dropdown-label': 'Cumulative P&L',
+  'setups.view.overview.pnl-chart.subtitle':
+    'Cumulative P&L from setup-linked trades, split by setup and combined.',
+  'setups.view.overview.pnl-chart.combined': 'All setups',
+  'setups.view.overview.pnl-chart.selected-combined': 'Selected setups',
+  'setups.view.overview.pnl-chart.unassigned': 'Unassigned account',
+  'setups.view.overview.pnl-chart.hidden':
+    'Setup P&L over time is hidden while privacy mode is enabled.',
+  'setups.view.overview.pnl-chart.trade': 'Trade',
+  'setups.view.overview.pnl-chart.start': 'Start',
+  'setups.view.ranking.empty-submessage':
+    'Log trades with setups to start ranking performance.',
+  'setups.view.empty.no-setups-submessage':
+    'Setups collect your playbook notes, rules, trades, and performance in one place.',
+  'setups.view.detail.performance.drawdown': '드로다운',
+  'setups.view.detail.performance.empty-submessage':
+    'Trades using this setup will appear here once you start logging them.',
+  'setups.view.detail.analysis.performance': 'Performance',
+  'setups.view.detail.analysis.execution-gap': 'Execution Gap',
+  'setups.view.detail.analysis.tabs-aria': 'Setup performance tabs',
+  'setups.view.detail.brief.linked-notes-add': 'Edit linked notes',
+  'setups.view.detail.execution-gap.title': 'Execution Gap',
+  'setups.view.detail.execution-gap.subtitle':
+    'Captured edge vs missed opportunity',
+  'setups.view.detail.execution-gap.live-pnl': 'Live PnL',
+  'setups.view.detail.execution-gap.live-r': '실거래 R',
+  'setups.view.detail.execution-gap.missed-edge': 'Missed Edge',
+  'setups.view.detail.execution-gap.live-plus-missed': 'Live + Missed',
+  'setups.view.detail.execution-gap.backtest': 'Backtest',
+  'setups.view.detail.execution-gap.gap': 'Gap',
+  'setups.view.detail.execution-gap.opportunities': 'Opportunities',
+  'setups.view.detail.execution-gap.capture-rate': 'Capture Rate',
+  'setups.view.detail.execution-gap.capture-rate-tooltip':
+    'Live P&L ÷ (Live P&L + missed-trade P&L). Shows how much available edge you captured.',
+  'setups.view.detail.execution-gap.average-r-delta': 'Avg R Delta',
+  'setups.view.detail.execution-gap.live-execution': 'Live Execution',
+  'setups.view.detail.execution-gap.backtest-benchmark': 'Backtest Benchmark',
+  'setups.view.detail.execution-gap.hidden':
+    'Execution gap is hidden in privacy mode.',
+  'setups.view.detail.execution-gap.empty':
+    'Log missed trades or backtest trades for this setup to analyze execution gaps.',
+  'setups.view.detail.brief.linked-notes': '{count}',
+  'setups.view.detail.brief.linked-notes-modal.subtitle': '{name}',
+  'setups.view.detail.brief.screenshots': '{count}',
+  'setups.view.detail.brief.no-screenshots': '아직 연결된 스크린샷이 없습니다.',
+  'setups.view.detail.brief.screenshot-alt': '{index}',
+  'setups.view.detail.brief.screenshot-open': '{index}',
+  'setups.view.detail.brief.count.rules': '{count}',
+  'setups.view.detail.brief.count.notes': '{count}',
+  'setups.view.detail.brief.count.images': '{count}',
+  'setups.view.detail.brief.count.trades': '{count}',
+  'setups.view.detail.brief.more': '{count}',
+  'setups.view.detail.attention.title': 'Needs attention',
+  'setups.view.detail.attention.count': '{count} items',
+  'setups.view.detail.attention.empty': 'No setup issues found.',
+  'setups.view.detail.attention.show-more': '+{count} more',
+  'setups.view.detail.attention.show-less': 'Show less',
+  'setups.view.detail.attention.no-playbook-title': 'Link a playbook note',
+  'setups.view.detail.attention.no-playbook-detail':
+    'Link one source note for context and examples.',
+  'setups.view.detail.attention.no-rules-title': 'Build the execution playbook',
+  'setups.view.detail.attention.no-rules-detail':
+    'Add criteria for entries, invalidation, risk, and mistakes.',
+  'setups.view.detail.attention.no-invalidation-title':
+    'Add invalidation criteria',
+  'setups.view.detail.attention.no-invalidation-detail':
+    'Define when this setup is no longer valid.',
+  'setups.view.detail.attention.no-risk-title': 'Add risk or management rules',
+  'setups.view.detail.attention.no-risk-detail':
+    'Document how this setup should be managed after entry.',
+  'setups.view.detail.attention.no-trades-title': 'No live trades yet',
+  'setups.view.detail.attention.no-trades-detail':
+    'No linked live trade history yet.',
+  'setups.view.detail.attention.no-screenshots-title':
+    'Save example screenshots',
+  'setups.view.detail.attention.no-screenshots-detail':
+    'Attach screenshots to trades for review examples.',
+  'setups.view.detail.attention.stale-title': 'Review recent relevance',
+  'setups.view.detail.attention.stale-detail':
+    'This setup has not been traded in {count} days.',
+  'setups.view.detail.attention.profit-factor-title':
+    'Performance needs review',
+  'setups.view.detail.attention.profit-factor-detail':
+    'Profit factor is below 1.0 across linked trades.',
+  'setups.view.detail.attention.expectancy-title': 'Expectancy is negative',
+  'setups.view.detail.attention.expectancy-detail':
+    'Average linked-trade outcome is below breakeven.',
+  'setups.view.card.open-named': '{name}',
+  'setups.view.card.status.active': 'Stable',
+  'setups.view.card.status.monitor': 'Monitor',
+  'setups.view.card.status.review': 'Review',
+  'setups.view.date.days-ago': '{count}',
+
   'trade-import.restore.title': 'Restore imported trades from backend',
   'trade-import.restore.description':
     'Create missing local notes for backend imported trades in this vault. This does not create duplicate backend trades.',
@@ -1158,6 +1507,114 @@ const ko: Partial<Lang> = {
   'trade-import.restore.complete':
     'Restored {written} imported trades; {failed} failed.',
   'trade-import.restore.broker-label': 'Backend restore',
+  'setups.view.loading': 'Loading setups…',
+  'settings.general.copy-trading-pnl-toggled': 'Copy trading PnL is {status}',
+  'setups.view.trade.unknown-instrument': 'Unknown instrument',
+  'settings.session-mode.linked-resources-count': '{count} linked',
+  'settings.session-mode.linked-resources-hide': 'Hide linked',
+  'settings.session-mode.session-log-tags': 'Session log tags',
+  'settings.session-mode.session-log-tags-desc':
+    'Customize the tags available in the Session Mode composer and DRC session log.',
+  'settings.session-mode.tag-label-placeholder': 'Tag name',
+  'settings.session-mode.tag-short-label-placeholder': 'Short label',
+  'settings.session-mode.tag-label-example': 'Trade',
+  'settings.session-mode.tag-short-label-example': 'TR',
+  'settings.session-mode.tag-color': 'Tag color',
+  'settings.session-mode.tag-requires-resolution': 'Requires resolution',
+  'settings.session-mode.tag-lesson': 'Lesson tag',
+  'settings.session-mode.tag-requires-resolution-tooltip':
+    'Entries with this tag are marked as follow-up items until you resolve them in the session log. Use it for notes that need review or action after the session.',
+  'settings.session-mode.tag-lesson-tooltip':
+    'Marks this tag as a learning entry. Lesson-tagged notes can be surfaced as lessons and are highlighted as learning moments in session log workflows.',
+  'settings.session-mode.add-session-log-tag': 'Add session log tag',
+  'settings.session-mode.reset-session-log-tags': 'Reset session log tags',
+  'settings.session-mode.tag-color.blue': 'Blue',
+  'settings.session-mode.tag-color.indigo': 'Indigo',
+  'settings.session-mode.tag-color.purple': 'Purple',
+  'settings.session-mode.tag-color.green': 'Green',
+  'settings.session-mode.tag-color.pink': 'Pink',
+  'settings.session-mode.tag-color.amber': 'Amber',
+  'settings.session-mode.tag-color.red': 'Red',
+  'settings.session-mode.tag-color.orange': 'Orange',
+  'session-log.action.add-note': 'Add',
+  'session-log.action.hide-composer': 'Hide composer',
+  'session-log.filter.label': 'Filter session log',
+  'session-log.filter.clear': 'Clear filter',
+  'session-log.empty-filtered': 'No entries match this filter.',
+  'media.viewer.mute-video': '동영상 음소거',
+  'media.viewer.unmute-video': '동영상 음소거 해제',
+  'media.viewer.volume': '볼륨',
+  'imageGallery.subtitle-count': '미디어 {count}개',
+  'imageGallery.empty.error.title': '갤러리를 사용할 수 없습니다',
+  'imageGallery.empty.no-images.title': '아직 미디어가 없습니다',
+  'imageGallery.empty.no-images.description':
+    '거래 또는 리뷰 노트에 첨부한 이미지, GIF, 동영상, YouTube 링크가 여기에 자동으로 표시됩니다.',
+  'imageGallery.empty.no-results.title': '이 필터와 일치하는 미디어가 없습니다',
+  'imageGallery.empty.no-results.description':
+    '활성 필터를 지우거나 날짜 범위를 넓혀 더 많은 갤러리 항목을 표시해 보세요.',
+  'imageGallery.empty.no-source.title': '이 소스에는 미디어가 없습니다',
+  'imageGallery.empty.no-source.description':
+    '이 소스에는 아직 갤러리 항목이 없습니다. 모든 미디어로 돌아가거나 다른 소스를 선택하세요.',
+  'imageGallery.empty.action.clear-filters': '필터 지우기',
+  'imageGallery.empty.action.show-all': '모든 미디어 표시',
+  'imageGallery.open-source': '노트 열기',
+  'imageGallery.image-alt': '{date}의 {source} 미디어',
+  'imageGallery.annotation.reviewed': '검토됨',
+  'imageGallery.annotation.unreviewed': '미검토',
+  'imageGallery.annotation.tag': '태그',
+  'imageGallery.annotation.editor-eyebrow': '시장 구조 저널',
+  'imageGallery.annotation.editor-title': '미디어 주석 달기',
+  'imageGallery.annotation.tags': '태그',
+  'imageGallery.annotation.tags-placeholder': '브레이크아웃, A+ 셋업, 실수',
+  'imageGallery.annotation.notes': '메모',
+  'imageGallery.annotation.notes-placeholder':
+    '미래의 나는 이 차트에서 무엇을 배워야 할까요?',
+  'imageGallery.annotation.error.save-failed':
+    '미디어 주석을 저장할 수 없습니다.',
+  'imageGallery.annotation.saving': '저장 중...',
+  'command.replay-current-view-guide': '현재 보기 가이드 다시 보기',
+
+  
+  
+  
+  'tradelog.guide.switch-to-gallery.title': '거래에서 갤러리로 전환하기',
+  'tradelog.guide.switch-to-gallery.description':
+    '이 모드 선택기로 일반 Trade Log와 갤러리를 오갈 수 있습니다. 갤러리를 클릭해 이미지, GIF, 동영상, YouTube 링크 안내를 계속하세요.',
+  'tradelog.guide.gallery-controls.title': '검토할 미디어를 선택하세요',
+  'tradelog.guide.gallery-controls.description':
+    '소스에서 거래 또는 리뷰 노트를 선택하고, 정렬로 미디어 순서를 바꾸며, 크기 버튼으로 compact 보기와 더 큰 미디어 미리보기를 전환합니다.',
+  'tradelog.guide.gallery-source-sort.title': '미디어 소스와 순서 선택하기',
+  'tradelog.guide.gallery-source-sort.description':
+    '소스로 전체 미디어, 거래 첨부 파일 또는 리뷰 노트 미디어를 선택하세요. 정렬로 최신, 오래된, 최고 또는 최악의 거래를 먼저 볼 수 있습니다.',
+  'tradelog.guide.gallery-size.title': '갤러리 미리보기 크기 조정하기',
+  'tradelog.guide.gallery-size.description':
+    '이 크기 버튼으로 compact 보기와 더 큰 미디어 미리보기를 전환하세요.',
+  'tradelog.guide.gallery-filters.title':
+    '같은 진입점에서 갤러리를 필터링하세요',
+  'tradelog.guide.gallery-filters.description':
+    '필터 버튼은 계속 고급 필터를 엽니다. 갤러리 모드에서는 주석 상태와 미디어 태그 같은 미디어 전용 필터도 포함됩니다.',
+  'tradelog.guide.gallery-filter-modal.title':
+    '미디어 필터는 거래 필터와 함께 있습니다',
+  'tradelog.guide.gallery-filter-modal.description':
+    '이 모달에서 거래 필터와 미디어 필터를 함께 사용하세요. 예를 들어 특정 setup으로 필터링한 뒤 메모가 있거나 특정 미디어 태그가 있는 미디어만 볼 수 있습니다.',
+  'tradelog.guide.gallery-grid.title': '미디어를 열어 자세히 검토하세요',
+  'tradelog.guide.gallery-grid.description':
+    '각 카드는 콘텐츠를 가리지 않으면서 거래와 리뷰 맥락을 간단히 보여줍니다. 아무 카드나 클릭하면 전체 화면으로 열립니다.',
+  'tradelog.guide.gallery-fullscreen-actions.title':
+    '전체 화면에서 미디어에 주석 달기',
+  'tradelog.guide.gallery-fullscreen-actions.description':
+    '항목을 충분히 크게 보면서 Tag로 미디어 수준의 태그와 메모를 추가하세요. 노트 열기는 원본 거래 또는 리뷰 노트로 돌아갑니다.',
+  'tradelog.guide.gallery-open-annotation.title': '주석 패널 열기',
+  'tradelog.guide.gallery-open-annotation.description':
+    'Tag를 클릭해 이 특정 미디어에 주석을 추가하세요. 미디어 태그와 메모는 전체 거래가 아니라 첨부 파일을 설명합니다.',
+  'tradelog.guide.gallery-annotation-panel.title':
+    '미디어 태그와 메모 추가하기',
+  'tradelog.guide.gallery-annotation-panel.description':
+    '유동성 스윕이나 실패한 돌파처럼 차트별 아이디어에는 미디어 태그를, 기억할 시장 구조 맥락에는 메모를 사용하세요.',
+  'tradelog.guide.gallery-finish.title':
+    '이제 Trade Log의 두 모드를 알게 되었습니다',
+  'tradelog.guide.gallery-finish.description':
+    '표와 일괄 도구가 필요할 때는 거래 모드를 사용하세요. 저널 전체의 이미지, GIF, 동영상, YouTube 링크, 시장 구조와 차트 주석을 검토할 때는 갤러리를 사용하세요.',
 };
 
 export default ko;

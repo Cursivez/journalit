@@ -1,5 +1,9 @@
 export const USER_OWNED_TRADE_CONTENT_MARKER = '<!-- User Notes Below -->';
 const LEGACY_GENERATED_NOTES_MARKER = '<!-- Legacy Generated Notes -->';
+const TRADE_REVIEW_HEADING_PATTERN = /^##\s+Trade Review\s*$/gm;
+const TRADE_REVIEW_MARKER_PATTERN = /<!--\s*journalit-trade-review:/;
+const TRADE_REVIEW_END_PATTERN =
+  /<!--\s*journalit-trade-review:end\s*-->(?:\s*\n---\s*\n_End Trade Review_\s*)?/;
 
 export function createTradeNotesDocument(
   frontmatterYaml: string,
@@ -60,6 +64,47 @@ export function extractUserOwnedTradeContent(content: string): string {
   }
 
   return extractLegacyUserOwnedTradeContent(bodySection);
+}
+
+export function extractUserOwnedTradeNotes(
+  content: string
+): string | undefined {
+  const bodySection = extractDocumentBody(content);
+  const markerIndex = bodySection.indexOf(USER_OWNED_TRADE_CONTENT_MARKER);
+  if (markerIndex !== -1) {
+    const notes = removeGeneratedTradeReviewBlock(
+      bodySection.substring(
+        markerIndex + USER_OWNED_TRADE_CONTENT_MARKER.length
+      )
+    ).trim();
+    return notes.length > 0 ? notes : undefined;
+  }
+
+  const legacyContent = extractLegacyUserOwnedTradeContent(bodySection);
+  const notes = extractPreservedUserText(legacyContent).trim();
+  return notes.length > 0 ? notes : undefined;
+}
+
+function removeGeneratedTradeReviewBlock(notesSection: string): string {
+  TRADE_REVIEW_HEADING_PATTERN.lastIndex = 0;
+  const matches = Array.from(
+    notesSection.matchAll(TRADE_REVIEW_HEADING_PATTERN)
+  );
+
+  for (const [index, match] of matches.entries()) {
+    const blockEnd = matches[index + 1]?.index ?? notesSection.length;
+    const block = notesSection.substring(match.index, blockEnd);
+    if (TRADE_REVIEW_MARKER_PATTERN.test(block)) {
+      const reviewEndMatch = TRADE_REVIEW_END_PATTERN.exec(block);
+      const generatedBlockEnd =
+        reviewEndMatch?.index !== undefined
+          ? match.index + reviewEndMatch.index + reviewEndMatch[0].length
+          : blockEnd;
+      return `${notesSection.substring(0, match.index)}${notesSection.substring(generatedBlockEnd)}`;
+    }
+  }
+
+  return notesSection;
 }
 
 function extractLegacyUserOwnedTradeContent(bodySection: string): string {

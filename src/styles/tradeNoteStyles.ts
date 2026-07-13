@@ -9,7 +9,7 @@ export const TRADE_NOTE_STYLES = `
   .journalit-trade-view,
   .trade-form-view-container .journalit-trade-view {
     margin-top: 0;
-    margin-bottom: 0;
+    margin-bottom: var(--size-4-12, 3rem);
     border-bottom: none;
     padding: 0;
     display: block !important;
@@ -48,7 +48,33 @@ export const TRADE_NOTE_STYLES = `
   }
 
   
+  .markdown-reading-view > .journalit-trade-view[data-mode="reading"],
   .markdown-preview-view.is-readable-line-width > .journalit-trade-view[data-mode="reading"] {
+    max-width: var(--file-line-width, 700px);
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .markdown-reading-view.journalit-trade-note-reading-view {
+    overflow-y: auto;
+    overflow-x: hidden;
+    height: 100%;
+  }
+
+  .markdown-reading-view.journalit-trade-note-reading-view > .markdown-preview-view {
+    margin-top: var(--size-4-8, 2rem);
+    height: auto;
+    min-height: 0;
+    overflow: visible;
+    contain: none;
+  }
+
+  .markdown-reading-view.journalit-trade-note-reading-view > .markdown-preview-view .markdown-preview-sizer {
+    min-height: 0 !important;
+    padding-bottom: var(--size-4-8, 2rem);
+  }
+
+  .markdown-source-view.is-live-preview.is-readable-line-width .journalit-trade-view[data-mode="source"] {
     max-width: var(--file-line-width, 700px);
     margin-left: auto;
     margin-right: auto;
@@ -73,6 +99,110 @@ export const TRADE_NOTE_STYLES = `
     .journalit-trade-view button {
       display: none;
     }
+  }
+
+  .journalit-trade-view .trade-note-review-section {
+    margin-top: 0.75rem;
+    margin-bottom: 0;
+    padding-top: 0;
+    padding-bottom: 0.25rem;
+    border-top: 0;
+    display: grid;
+    grid-template-columns: minmax(2rem, 1fr) auto minmax(2rem, 1fr);
+    align-items: start;
+    gap: 0.75rem;
+  }
+
+  .journalit-trade-view .trade-note-review-section::before,
+  .journalit-trade-view .trade-note-review-section::after {
+    content: '';
+    display: block;
+    height: 1px;
+    min-width: 2rem;
+    margin-top: 15px;
+    background: var(--background-modifier-border);
+  }
+
+  .journalit-trade-view .trade-note-review-control {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.35rem;
+    flex-wrap: wrap;
+  }
+
+  .journalit-trade-view .trade-note-review-section .journalit-weekly-drc-mark-reviewed-button {
+    appearance: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    min-height: 30px;
+    padding: 1px 0.7rem 0;
+    border: 1px solid var(--background-modifier-border);
+    border-radius: var(--radius-s);
+    background: transparent !important;
+    color: var(--text-muted);
+    box-shadow: none !important;
+    font-size: 0.78rem;
+    font-weight: 500;
+    line-height: 1;
+    cursor: pointer !important;
+    transition: border-color 150ms ease-out, color 150ms ease-out, background-color 150ms ease-out;
+  }
+
+  .journalit-trade-view .trade-note-review-section .journalit-weekly-drc-mark-reviewed-button:hover:not(:disabled),
+  .journalit-trade-view .trade-note-review-section .journalit-weekly-drc-mark-reviewed-button:focus-visible:not(:disabled) {
+    border-color: var(--interactive-accent);
+    background: var(--background-secondary) !important;
+    color: var(--text-normal);
+  }
+
+  .journalit-trade-view .trade-note-review-section .journalit-weekly-drc-mark-reviewed-button--reviewed,
+  .journalit-trade-view .trade-note-review-section .journalit-weekly-drc-mark-reviewed-button--reviewed:hover:not(:disabled),
+  .journalit-trade-view .trade-note-review-section .journalit-weekly-drc-mark-reviewed-button--reviewed:focus-visible:not(:disabled) {
+    border-color: var(--color-green);
+    color: var(--color-green);
+    background: transparent !important;
+  }
+
+  .journalit-trade-view .trade-note-review-section .journalit-weekly-drc-mark-reviewed-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 14px;
+    height: 14px;
+    border: 1.5px solid currentColor;
+    border-radius: 999px;
+    flex: 0 0 auto;
+    position: relative;
+    top: -1px;
+  }
+
+  .journalit-trade-view .trade-note-review-section .journalit-weekly-drc-mark-reviewed-icon--reviewed {
+    background: var(--color-green);
+    border-color: var(--color-green);
+    color: var(--background-primary);
+  }
+
+  .journalit-trade-view .trade-note-review-section .journalit-weekly-drc-mark-reviewed-icon > svg {
+    width: 10px;
+    height: 10px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 3;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  .journalit-trade-view .trade-note-reviewed-timestamp {
+    color: var(--text-muted);
+    font-size: 0.85rem;
+    font-style: italic;
+    line-height: 1.2;
+    text-align: center;
+    white-space: nowrap;
   }
   
   .trade-note-container {
@@ -109,60 +239,207 @@ export const TRADE_NOTE_STYLES = `
   
   
   .trade-note-header {
-    padding: 0.8rem;
+    min-height: 98px;
+    padding: 0.6rem 0 0.65rem;
     display: flex;
-    justify-content: space-between;
-    align-items: center;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    background: linear-gradient(to right, var(--background-secondary), var(--background-primary));
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: stretch;
+    gap: 0.35rem;
+    border-bottom: 0;
+    background: transparent;
   }
   
   .trade-note-header.profit {
-    background: linear-gradient(to right, rgba(102, 187, 106, 0.1), var(--background-primary));
-    border-left: 4px solid var(--color-success, #43a047);
+    background: transparent;
   }
 
   .trade-note-header.loss {
-    background: linear-gradient(to right, rgba(229, 57, 53, 0.1), var(--background-primary));
-    border-left: 4px solid var(--color-error, #e53935);
+    background: transparent;
   }
 
   .trade-note-header.open {
-    background: linear-gradient(to right, rgba(33, 150, 243, 0.1), var(--background-primary));
-    border-left: 4px solid var(--status-open-color);
+    background: transparent;
   }
 
   .trade-note-header.breakeven {
-    background: linear-gradient(to right, rgba(128, 128, 128, 0.1), var(--background-primary));
-    border-left: 4px solid var(--text-muted);
+    background: transparent;
   }
 
   .trade-note-header.privacy-masked {
-    background: linear-gradient(to right, var(--background-secondary), var(--background-primary));
-    border-left: 4px solid var(--text-muted);
+    background: transparent;
   }
 
-  .trade-instrument {
-    font-size: 1.4rem;
-    font-weight: 600;
-    color: var(--text-normal);
+  .journalit-trade-view .trade-header-main-row,
+  .journalit-trade-view .trade-header-context-row {
     display: flex;
-    align-items: center;
+    justify-content: space-between;
+    min-width: 0;
   }
-  
-  .trade-direction-icon {
-    margin-right: 0.5rem;
-    font-size: 1.3rem;
-    line-height: 1;
+
+  .journalit-trade-view .trade-header-main-row {
+    align-items: flex-end;
+    gap: 1.25rem;
   }
-  
-  
-  .trade-header-actions {
-    display: flex;
+
+  .journalit-trade-view .trade-header-context-row {
     align-items: center;
     gap: 1rem;
+    margin-top: 0;
   }
-  
+
+  .journalit-trade-view .trade-header-actions {
+    display: inline-flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.5rem;
+    flex-shrink: 0;
+  }
+
+  .journalit-trade-view .trade-header-primary {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+
+  .journalit-trade-view .trade-instrument {
+    color: var(--text-normal);
+    white-space: nowrap;
+    margin-left: 0;
+    display: inline-flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0;
+  }
+
+  .journalit-trade-view .trade-instrument-mainline {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    margin-top: 0.08rem;
+  }
+
+  .journalit-trade-view .trade-instrument-stack {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0;
+  }
+
+  .journalit-trade-view .trade-instrument-title-row {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+  }
+
+  .journalit-trade-view .trade-instrument-symbol {
+    font-size: clamp(2.25rem, 4.6vw, 3.35rem);
+    line-height: 0.95;
+    font-weight: 750;
+    letter-spacing: -0.055em;
+    margin-left: -0.055em;
+  }
+
+  .journalit-trade-view .trade-instrument-direction {
+    color: var(--text-muted);
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.78rem;
+    font-weight: 600;
+    letter-spacing: 0.045em;
+    line-height: 1;
+    margin-left: 0;
+    margin-bottom: -0.24rem;
+    text-transform: uppercase;
+  }
+
+  .journalit-trade-view .trade-type-badge {
+    align-self: flex-start;
+    margin-left: 0;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    color: var(--text-muted);
+    background: transparent;
+    font-size: 0.74rem;
+    font-weight: 600;
+    letter-spacing: 0.045em;
+    line-height: 1;
+    margin-top: -0.18rem;
+    text-transform: uppercase;
+  }
+
+  .journalit-trade-view .trade-type-badge--missed {
+    color: var(--color-orange, #ff9800);
+  }
+
+  .journalit-trade-view .trade-type-badge--backtest {
+    color: var(--color-purple, #6f42c1);
+  }
+
+  .journalit-trade-view .trade-type-badge--open {
+    color: var(--status-open-color, #2196f3);
+  }
+
+  .journalit-trade-view .trade-header-review-indicator {
+    display: inline-flex;
+    align-items: center;
+    margin-left: 0;
+    cursor: pointer;
+    opacity: 1;
+    transition: opacity 0.15s ease;
+  }
+
+  .journalit-trade-view .trade-header-review-indicator:hover {
+    opacity: 0.7;
+  }
+
+  .journalit-trade-view .trade-header-meta {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.45rem;
+  }
+
+  .journalit-trade-view .trade-header-meta {
+    color: var(--text-muted);
+    font-size: 0.95rem;
+    font-weight: 500;
+    min-width: 0;
+  }
+
+  .journalit-trade-view .trade-header-context-link {
+    color: var(--text-accent);
+    cursor: pointer;
+    transition: opacity 0.15s ease;
+  }
+
+  .journalit-trade-view .trade-header-context-link:hover,
+  .journalit-trade-view .trade-header-context-link:focus-visible {
+    opacity: 0.8;
+    text-decoration: underline;
+  }
+
+  .journalit-trade-view .trade-header-context-link:focus-visible {
+    outline: 2px solid var(--background-modifier-border-focus, var(--interactive-accent));
+    outline-offset: 2px;
+    border-radius: 3px;
+  }
+
+  .journalit-trade-view .trade-header-ordinal-suffix {
+    font-size: 0.68em;
+    line-height: 1;
+    vertical-align: super;
+  }
+
+  .journalit-trade-view .trade-header-context-separator {
+    margin: 0 0.5rem;
+    color: var(--text-faint);
+  }
+
   
   .trade-edit-button {
     display: flex;
@@ -189,9 +466,83 @@ export const TRADE_NOTE_STYLES = `
     height: 14px;
   }
 
-  .trade-pnl {
-    font-size: 1.2rem;
+  .trade-note-header .trade-pnl {
+    display: flex;
+    align-items: baseline;
+    gap: 0.65rem;
+    margin-bottom: -0.12rem;
+    font-size: clamp(1.55rem, 3.1vw, 2.1rem);
     font-weight: 600;
+    line-height: 1;
+    text-align: right;
+    white-space: nowrap;
+  }
+
+  .trade-note-header .trade-pnl-label {
+    color: var(--text-muted);
+    font-size: 0.95rem;
+    font-weight: 500;
+  }
+
+  .trade-note-header .trade-pnl-primary {
+    display: inline-flex;
+    align-items: baseline;
+    line-height: 1.05;
+    white-space: nowrap;
+  }
+
+  .trade-note-header .trade-pnl-cents {
+    font-size: 0.66em;
+    opacity: 0.7;
+    font-weight: 500;
+    margin-left: 1px;
+  }
+
+  .trade-note-header .trade-pnl-suffix {
+    font-size: 0.45em;
+    line-height: 1;
+    opacity: 0.95;
+    font-weight: 500;
+    margin-left: 0.25rem;
+    color: var(--text-muted);
+  }
+
+  .trade-note-header .profit-text,
+  .trade-note-header .loss-text,
+  .trade-note-header .breakeven-text,
+  .trade-note-header .open-text {
+    font-size: inherit;
+    line-height: inherit;
+    font-weight: inherit;
+  }
+
+  .trade-note-header .journalit-header-icon-button {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.35rem;
+    width: auto;
+    min-width: 2rem;
+    height: 2rem;
+    padding: 0 0.6rem;
+    background: var(--background-secondary);
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 4px;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+
+  .trade-note-header .journalit-header-icon-button:hover:not(:disabled),
+  .trade-note-header .journalit-header-icon-button:focus-visible:not(:disabled) {
+    background: var(--background-modifier-hover);
+    color: var(--text-normal);
+  }
+
+  .trade-note-header .journalit-header-icon-button:disabled {
+    opacity: 0.6;
+    cursor: default;
   }
   
   .profit-text {
@@ -207,7 +558,7 @@ export const TRADE_NOTE_STYLES = `
   }
 
   .open-text {
-    color: var(--status-open-color);
+    color: var(--status-open-color, #2196f3);
     font-weight: 600;
   }
   
@@ -227,7 +578,7 @@ export const TRADE_NOTE_STYLES = `
   
   
   .open-trade-badge {
-    background-color: var(--status-open-color);
+    background-color: var(--status-open-color, #2196f3);
     color: var(--text-on-accent, white);
     padding: 0.2rem 0.6rem;
     border-radius: 4px;
@@ -267,7 +618,7 @@ export const TRADE_NOTE_STYLES = `
   .trade-overview-section {
     display: flex;
     flex-direction: column;
-    gap: 1rem;
+    gap: 0.7rem;
     padding: 0;
     position: relative;
     margin-bottom: 0;
@@ -276,9 +627,18 @@ export const TRADE_NOTE_STYLES = `
   
   .trade-metrics-grid {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
     gap: 0.8rem;
     margin-bottom: 0;
+  }
+
+  .trade-metrics-grid > .tooltip-trigger--block {
+    display: block;
+    min-width: 0;
+  }
+
+  .trade-metrics-grid > .tooltip-trigger--block .metric-card {
+    height: 100%;
   }
   
   .journalit-trade-view .metric-card {
@@ -323,33 +683,246 @@ export const TRADE_NOTE_STYLES = `
     color: var(--text-muted);
   }
 
-  
-  .trade-metadata-container {
-    display: flex;
-    flex-wrap: wrap;
+  .journalit-trade-view .trade-risk-target-strip {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(0, 1fr));
     gap: 0.8rem;
-    padding: 0.2rem 0;
+    width: 100%;
   }
 
-  .metadata-section {
+  .journalit-trade-view .trade-risk-target-item {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
+    justify-content: space-between;
+    gap: 0.75rem;
+    min-height: 42px;
+    min-width: 0;
+    padding: 0.5rem 0.75rem;
+    border: 1px solid var(--background-modifier-border);
+    border-radius: var(--border-radius-md, 6px);
+    background: color-mix(
+      in srgb,
+      var(--background-primary) 82%,
+      var(--background-secondary) 18%
+    );
   }
 
-  .metadata-label {
-    font-size: 0.8rem;
-    font-weight: 600;
+  .journalit-trade-view .trade-risk-target-label {
     color: var(--text-muted);
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
     white-space: nowrap;
   }
 
-  .metadata-tags {
+  .journalit-trade-view .trade-risk-target-value {
+    min-width: 0;
+    color: var(--text-normal);
+    font-size: 0.95rem;
+    font-weight: 700;
+    overflow: hidden;
+    text-align: right;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .journalit-trade-view .trade-risk-target-meta {
+    color: var(--text-muted);
+    font-size: 0.72rem;
+    white-space: nowrap;
+  }
+
+  .journalit-trade-view .trade-execution-summary-section {
     display: flex;
-    flex-wrap: wrap;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .journalit-trade-view .trade-execution-summary-toggle {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 0.75rem;
+    width: 100%;
+    min-height: 38px;
+    padding: 0.55rem 0.75rem;
+    border: 1px solid var(--background-modifier-border);
+    border-radius: var(--border-radius-md, 6px);
+    background: var(--background-primary);
+    color: var(--text-normal);
+    text-align: left;
+  }
+
+  .journalit-trade-view .trade-execution-summary-toggle:hover {
+    border-color: var(--interactive-accent-hover);
+    background: var(--background-secondary-alt);
+  }
+
+  .journalit-trade-view .trade-execution-summary-title {
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  .journalit-trade-view .trade-execution-summary-counts,
+  .journalit-trade-view .trade-execution-summary-action {
+    color: var(--text-muted);
+    font-size: 0.78rem;
+  }
+
+  .journalit-trade-view .trade-execution-summary-counts {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .journalit-trade-view .trade-execution-summary-action {
+    color: var(--text-accent);
+    white-space: nowrap;
+  }
+
+  .trade-execution-breakdown {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 0.75rem;
+    padding: 0.75rem;
+    border: 1px solid var(--background-modifier-border);
+    border-radius: var(--border-radius-md, 6px);
+    background: var(--background-secondary);
+  }
+
+  .trade-execution-breakdown-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    min-width: 0;
+  }
+
+  .trade-execution-breakdown-label {
+    color: var(--text-muted);
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  .trade-execution-breakdown-rows {
+    display: flex;
+    flex-direction: column;
     gap: 0.3rem;
   }
-  
+
+  .trade-execution-breakdown-row {
+    display: grid;
+    grid-template-columns: 1.5rem max-content max-content;
+    gap: 0.65rem;
+    align-items: center;
+    min-width: 0;
+    color: var(--text-normal);
+    font-size: 0.78rem;
+  }
+
+  .trade-execution-breakdown-row span {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .trade-execution-breakdown-index {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.35rem;
+    height: 1.35rem;
+    border-radius: 999px;
+    background: var(--background-modifier-border);
+    color: var(--text-muted);
+    font-size: 0.68rem;
+    font-weight: 700;
+  }
+
+  .journalit-trade-view .trade-context-section {
+    display: flex;
+    flex-direction: column;
+    gap: 0.55rem;
+    margin: 0;
+  }
+
+  .journalit-trade-view .trade-context-title {
+    color: var(--text-normal);
+    font-size: 1.05rem;
+    font-weight: 700;
+    line-height: 1.2;
+    margin: 0;
+  }
+
+  .journalit-trade-view .trade-context-card {
+    background: var(--background-primary);
+    border: 1px solid var(--background-modifier-border);
+    border-radius: var(--radius-m, var(--border-radius-lg, 10px));
+    padding: 0;
+    box-shadow: none;
+  }
+
+  .journalit-trade-view .trade-context-row {
+    display: grid;
+    grid-template-columns: minmax(9.75rem, 0.24fr) minmax(0, 1fr);
+    gap: 1rem;
+    align-items: center;
+    min-height: 3.15rem;
+    padding: 0.7rem 1rem;
+    border-bottom: 1px solid var(--background-modifier-border);
+  }
+
+  .journalit-trade-view .trade-context-row:last-child {
+    border-bottom: 0;
+  }
+
+  .journalit-trade-view .trade-context-label {
+    color: var(--text-muted);
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    min-width: 0;
+    font-size: 0.9rem;
+    font-weight: 650;
+    line-height: 18px;
+  }
+
+  .journalit-trade-view .trade-context-icon {
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    flex: 0 0 auto;
+    line-height: 0;
+  }
+
+  .journalit-trade-view .trade-context-row--setup .trade-context-icon {
+    color: rgb(66, 133, 244);
+  }
+
+  .journalit-trade-view .trade-context-row--mistake .trade-context-icon {
+    color: var(--text-error, var(--color-red, #e53935));
+  }
+
+  .journalit-trade-view .trade-context-row--tag .trade-context-icon {
+    color: rgb(139, 92, 246);
+  }
+
+  .journalit-trade-view .trade-context-values {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.45rem;
+    min-width: 0;
+  }
   
   .trade-broker-metadata-section {
     margin: 0;
@@ -367,68 +940,29 @@ export const TRADE_NOTE_STYLES = `
     word-break: break-word;
   }
 
-  .trade-tags-container {
-    margin: 0;
-  }
-  
-  .tags-row {
-    display: flex;
-    gap: 1rem;
-    width: 100%;
-  }
-  
-  .tags-section {
-    flex: 1;
-    margin-bottom: 0;
-    background-color: var(--background-primary);
-    border-radius: var(--border-radius-md, 4px);
-    padding: 0.7rem;
-    border: 1px solid var(--background-modifier-border);
-  }
-  
-  .tags-section h4 {
-    font-size: 0.85rem;
-    margin-top: 0;
-    margin-bottom: 0.5rem;
-    color: var(--text-normal);
-    font-weight: 600;
-    display: flex;
-    align-items: center;
-    gap: 0.3rem;
-  }
-
-  
-  .setup-section h4::before {
-    content: '✓'; 
-    color: var(--color-secondary, var(--text-accent));
-    font-weight: bold;
-  }
-
-  .mistake-section h4::before {
-    content: '⚠'; 
-    color: var(--color-error, #e53935);
-    font-weight: bold;
-  }
-  
-  .tags-list {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.4rem;
-  }
-  
   .journalit-trade-view .tag {
-    padding: 0.35rem 0.7rem;
-    border-radius: 20px;
-    font-size: 0.75rem;
-    font-weight: 500;
+    padding: 0.32rem 0.68rem;
+    border-radius: 7px;
+    font-size: 0.78rem;
+    font-weight: 550;
     display: inline-flex;
     align-items: center;
-    transition: transform 0.15s ease;
+    line-height: 1.2;
     color: var(--text-normal);
   }
 
-  .journalit-trade-view .tag:hover {
-    transform: translateY(-1px);
+  .journalit-trade-view .trade-context-chip {
+    background-color: var(--background-secondary);
+    border: 1px solid var(--background-modifier-border);
+    color: var(--text-normal);
+    max-width: 100%;
+    overflow-wrap: anywhere;
+  }
+
+  .journalit-trade-view .trade-context-chip--tag {
+    background-color: rgba(139, 92, 246, 0.14);
+    border-color: rgba(139, 92, 246, 0.34);
+    color: rgb(167, 139, 250);
   }
   
   .setup-tag {
@@ -443,59 +977,77 @@ export const TRADE_NOTE_STYLES = `
     border: 1px solid rgba(229, 57, 53, 0.3);
   }
 
-  .account-tag {
-    padding: 0.35rem 0.7rem;
-    color: var(--text-accent);
-    border-radius: 20px;
-    font-size: 0.75rem;
-    font-weight: 500;
+  .journalit-trade-view .trade-context-chip.account-tag {
+    appearance: none;
+    color: var(--text-normal);
+    background-color: var(--background-secondary);
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 7px;
+    font-size: 0.78rem;
+    font-weight: 600;
     display: inline-flex;
     align-items: center;
+    line-height: 1.2;
+    padding: 0.32rem 0.68rem;
+    box-shadow: none;
+    height: auto;
     cursor: pointer;
-    transition: transform 0.15s ease, color 0.15s ease;
-    text-decoration: underline;
-    text-decoration-style: dotted;
-    text-underline-offset: 3px;
+    transition: border-color 0.15s ease, color 0.15s ease;
+    text-decoration: none;
   }
   
-  .account-tag:hover {
-    transform: translateY(-1px);
+  .journalit-trade-view .trade-context-chip.account-tag:hover {
+    border-color: var(--text-accent);
     color: var(--text-accent-hover, var(--text-accent));
   }
 
   .journalit-trade-view .missed-trade-reason-section {
-    margin-top: 0.5rem;
+    background-color: var(--background-primary);
+    border: 1px solid var(--background-modifier-border);
+    border-radius: var(--radius-m, 8px);
+    margin: 0;
+    padding: 0.85rem 1rem 0.95rem;
   }
 
-  .journalit-trade-view .missed-trade-reason-section .details-card {
-    border-left: 4px solid var(--color-orange, #ff9800);
-    background-color: var(--background-secondary);
+  .journalit-trade-view .missed-trade-reason-header {
+    align-items: center;
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 0.55rem;
   }
 
   .journalit-trade-view .missed-trade-reason-section h4 {
-    color: var(--color-orange, #ff9800);
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    font-weight: 700;
+    line-height: 17px;
+    margin: 0;
   }
 
-  .journalit-trade-view .missed-trade-reason-section h4::before {
-    content: '⚠';
-    font-size: 1.1em;
+  .journalit-trade-view .missed-trade-reason-title {
+    align-items: center;
+    color: var(--text-muted);
+    display: inline-flex;
+    gap: 0.5rem;
+    line-height: 17px;
+  }
+
+  .journalit-trade-view .missed-trade-reason-title .journalit-obsidian-icon {
+    align-items: center;
+    display: flex;
+    flex: 0 0 auto;
+    height: 17px;
+    justify-content: center;
+    line-height: 0;
+    width: 17px;
   }
 
   .journalit-trade-view .missed-trade-reason-content {
     color: var(--text-normal);
-    line-height: 1.6;
+    font-size: 0.95rem;
+    line-height: 1.7;
+    padding-left: calc(17px + 0.5rem);
     white-space: pre-wrap;
-    background-color: var(--background-primary);
-    padding: 1rem;
-    border-radius: 6px;
-    border: 1px solid var(--background-modifier-border);
-  }
-
-  .theme-dark .journalit-trade-view .missed-trade-reason-content {
-    background-color: var(--background-secondary-alt);
   }
   
   
@@ -542,81 +1094,85 @@ export const TRADE_NOTE_STYLES = `
     width: 100%;
   }
 
-  .trade-custom-fields-section {
-    margin-top: 0;
+  .trade-custom-fields-subsection {
+    padding: 0.85rem 1rem 0.95rem;
   }
 
-  .trade-custom-fields-card {
-    width: 100%;
+  .journalit-trade-view .trade-custom-fields-toggle {
+    align-items: center;
+    appearance: none;
+    background: transparent;
+    background-color: transparent;
+    border: 0;
+    box-shadow: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    display: inline-flex;
+    font-size: 0.82rem;
+    font-weight: 650;
+    gap: 0.45rem;
+    height: auto;
+    padding: 0.2rem 0;
+  }
+
+  .journalit-trade-view .trade-custom-fields-toggle:hover {
+    background: transparent;
+    background-color: transparent;
+    box-shadow: none;
+    color: var(--text-normal);
+  }
+
+  .trade-custom-fields-toggle-icon {
+    transition: transform 0.16s ease;
+  }
+
+  .trade-custom-fields-toggle-icon.is-expanded {
+    transform: rotate(180deg);
   }
 
   .trade-custom-fields-rows {
-    display: flex;
-    flex-direction: column;
-    gap: 0.55rem;
-  }
-
-  .trade-custom-fields-row {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    column-gap: 1.75rem;
-    align-items: start;
-  }
-
-  .trade-custom-fields-row--full {
-    grid-template-columns: 1fr;
+    column-gap: clamp(1.75rem, 7vw, 4.5rem);
+    row-gap: 0.62rem;
+    padding: 0;
+    width: 100%;
   }
 
   .trade-custom-field-item {
-    min-width: 0;
-  }
-
-  .trade-custom-field-item--inline {
-    display: grid;
-    grid-template-columns: minmax(100px, auto) minmax(0, 1fr);
-    column-gap: 0.9rem;
     align-items: baseline;
+    border-bottom: 0;
+    column-gap: 1rem;
+    display: grid;
+    grid-template-columns: minmax(8.25rem, 8.25rem) minmax(0, 1fr);
+    min-width: 0;
+    padding: 0;
   }
 
-  .trade-custom-field-item--empty {
-    visibility: hidden;
+  .trade-custom-field-item:last-child {
+    border-bottom: 0;
   }
 
   .trade-custom-field-label {
     color: var(--text-muted);
     font-size: 0.9rem;
-    font-weight: 500;
-    text-transform: none;
+    font-weight: 600;
     letter-spacing: normal;
-    margin-bottom: 0.3rem;
-  }
-
-  .trade-custom-field-item--inline .trade-custom-field-label {
-    margin-bottom: 0;
-  }
-
-  .trade-custom-field-value {
-    font-size: 0.9rem;
-    font-weight: 500;
-    color: var(--text-normal);
-    line-height: 1.45;
-    word-break: break-word;
-  }
-
-  .trade-custom-field-text {
-    font-size: 0.9rem;
-    font-weight: 500;
-    color: var(--text-normal);
-    line-height: 1.6;
-    white-space: pre-wrap;
-    word-break: break-word;
-  }
-
-  .trade-custom-field-pills {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.45rem;
+    margin: 0;
     min-width: 0;
+    text-transform: none;
+  }
+
+  .trade-custom-field-value,
+  .trade-custom-field-text {
+    color: var(--text-normal);
+    font-size: 0.92rem;
+    font-weight: 650;
+    line-height: 1.45;
+    min-width: 0;
+    overflow-wrap: anywhere;
+    text-align: left;
+    white-space: pre-wrap;
   }
 
   .trade-custom-field-tooltip-anchor {
@@ -625,16 +1181,31 @@ export const TRADE_NOTE_STYLES = `
     min-width: 0;
   }
 
-  .journalit-trade-view .tag.trade-custom-field-pill {
-    background-color: var(--background-secondary);
-    color: var(--text-normal);
-    border: 1px solid var(--background-modifier-border);
-    transition: none !important;
-    transform: none !important;
+  .journalit-trade-view .trade-custom-fields-show-all {
+    align-items: center;
+    appearance: none;
+    background: transparent;
+    background-color: transparent;
+    border: 0;
+    color: var(--text-accent);
+    cursor: pointer;
+    display: flex;
+    font-size: 0.9rem;
+    font-weight: 650;
+    gap: 0.45rem;
+    justify-content: flex-start;
+    min-height: 0;
+    margin-top: 0.75rem;
+    padding: 0;
+    width: auto;
+    box-shadow: none;
   }
 
-  .journalit-trade-view .tag.trade-custom-field-pill:hover {
-    transform: none !important;
+  .journalit-trade-view .trade-custom-fields-show-all:hover {
+    color: var(--text-accent-hover, var(--text-accent));
+    background: transparent;
+    background-color: transparent;
+    box-shadow: none;
   }
 
   .details-header {
@@ -659,36 +1230,50 @@ export const TRADE_NOTE_STYLES = `
     gap: 0;
   }
 
-  
   .thesis-section {
     background-color: var(--background-primary);
-    padding: 1rem 1.2rem;
-    border-radius: var(--border-radius-md, 6px);
-    box-shadow: 0 1px 5px rgba(0, 0, 0, 0.05);
+    padding: 0.85rem 1rem 0.95rem;
+    border-radius: var(--radius-m, var(--border-radius-lg, 10px));
+    box-shadow: none;
     border: 1px solid var(--background-modifier-border);
     margin: 0;
-    position: relative;
   }
-  
-  
-  .thesis-section h4 {
-    font-size: 1rem;
-    margin-top: 0;
-    margin-bottom: 1rem;
-    color: var(--text-normal);
-    padding-bottom: 0.5rem;
-    border-bottom: 1px solid var(--background-modifier-border);
-    position: relative;
+
+  .thesis-section-header {
+    align-items: center;
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 0.55rem;
+  }
+
+  .thesis-section-title {
+    align-items: center;
+    color: var(--text-muted);
+    display: inline-flex;
+    font-size: 0.9rem;
+    font-weight: 700;
+    gap: 0.5rem;
+    line-height: 17px;
+  }
+
+  .thesis-section-title .journalit-obsidian-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 auto;
+    height: 17px;
+    line-height: 0;
+    width: 17px;
   }
   
   .thesis-content {
     font-size: 0.95rem;
     line-height: 1.7;
     color: var(--text-normal);
+    padding-left: calc(17px + 0.5rem);
     white-space: pre-wrap;
-    padding: 0 0.2rem;
   }
-  
+
   .details-card h4 {
     font-size: 0.9rem;
     margin-top: 0;
@@ -792,76 +1377,14 @@ export const TRADE_NOTE_STYLES = `
   .trade-images-section {
     display: flex;
     flex-direction: column;
-    align-items: center;
-    background-color: var(--background-secondary);
-    border-radius: var(--border-radius-md, 4px);
-    padding: 0.6rem 0; 
-    margin: 0; 
-    width: 100%; 
-  }
-  
-  
-  .trade-images-section[data-image-count="1"] {
-    padding: 0; 
-    margin: 0;
-  }
-  
-  
-  .trade-images-section .journalit-image-carousel {
-    margin-bottom: 0;
-    background-color: transparent;
-    box-shadow: none;
-    padding: 0;
-  }
-
-  
-  .trade-images-section .journalit-carousel-main {
-    justify-content: center;
-  }
-
-  .trade-images-section .journalit-carousel-image-container {
-    display: flex;
-    justify-content: center;
-  }
-
-  .trade-images-section .journalit-carousel-image {
-    display: block;
-    max-width: 100%;
-    margin: 0 auto;
-  }
-  
-  
-  .trade-images-section .journalit-image-carousel[data-single-image="true"],
-  .trade-images-section[data-image-count="1"] .journalit-image-carousel {
+    align-items: stretch;
+    background: transparent;
+    border: 0;
+    border-radius: 0;
     padding: 0;
     margin: 0;
-  }
-  
-  
-  .trade-images-section .journalit-image-carousel[data-single-image="true"] .image-container,
-  .trade-images-section[data-image-count="1"] .image-container,
-  .trade-images-section[data-image-count="1"] .journalit-carousel-image-container {
-    margin: 0;
-    padding: 0;
-  }
-  
-  
-  .trade-images-section[data-image-count="1"] * {
-    margin-top: 0;
-    margin-bottom: 0;
-  }
-  
-  
-  .single-image-carousel,
-  .single-image-carousel .journalit-carousel-main,
-  .single-image-carousel .journalit-carousel-image-container {
-    padding: 0 !important;
-    margin: 0 !important;
-  }
-  
-  
-  .trade-images-section[data-image-count="1"] + .trade-metrics-grid {
-    margin-top: 0;
+    width: 100%;
+    overflow: hidden;
   }
   
   
@@ -869,11 +1392,69 @@ export const TRADE_NOTE_STYLES = `
     display: flex;
     flex-direction: column;
     align-items: center;
-    background-color: var(--background-secondary);
-    border-radius: var(--border-radius-md, 4px);
-    padding: 0.8rem 0; 
-    margin: 0; 
-    width: 100%; 
+    justify-content: center;
+    gap: 0.65rem;
+    background: transparent;
+    border: 1px dashed var(--background-modifier-border-hover);
+    border-radius: var(--radius-l, 12px);
+    padding: 1.5rem 1.75rem;
+    margin: 0.5rem auto 0;
+    width: min(100%, 40rem);
+    min-height: 8rem;
+  }
+
+  .trade-empty-images-icon {
+    width: 2.4rem;
+    height: 2.4rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 auto;
+    color: var(--text-faint);
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+  }
+
+  .trade-empty-images-copy {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 0.45rem;
+    flex: 1 1 auto;
+    text-align: center;
+  }
+
+  .trade-empty-images-title {
+    color: var(--text-muted);
+    font-size: 0.95rem;
+    font-weight: 500;
+  }
+
+  .journalit-trade-view .trade-empty-images .trade-empty-images-action {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0;
+    border: 0;
+    background: transparent !important;
+    box-shadow: none;
+    color: var(--text-accent);
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    appearance: none;
+  }
+
+  .journalit-trade-view .trade-empty-images .trade-empty-images-action:hover,
+  .journalit-trade-view .trade-empty-images .trade-empty-images-action:focus-visible {
+    background: transparent !important;
+    box-shadow: none;
+    color: var(--text-accent-hover, var(--text-accent));
+    text-decoration: underline;
   }
   
   .image-carousel {
@@ -1014,19 +1595,24 @@ export const TRADE_NOTE_STYLES = `
       gap: 0.6rem;
     }
 
-    .trade-custom-fields-row {
+    .journalit-trade-view .trade-context-row,
+    .trade-custom-field-item {
       grid-template-columns: 1fr;
-      row-gap: 0.7rem;
+      gap: 0.45rem;
+      align-items: start;
     }
 
-    .trade-custom-field-item--inline {
-      grid-template-columns: minmax(90px, auto) minmax(0, 1fr);
-      column-gap: 0.7rem;
+    .trade-custom-fields-rows {
+      grid-template-columns: 1fr;
     }
-    
-    .tags-row {
-      flex-direction: column;
-      gap: 0.8rem;
+
+    .trade-custom-field-value,
+    .trade-custom-field-text {
+      text-align: left;
+    }
+
+    .trade-custom-field-tooltip-anchor {
+      justify-content: flex-start;
     }
 
     .details-table {
@@ -1043,9 +1629,8 @@ export const TRADE_NOTE_STYLES = `
       padding: 0.8rem;
     }
 
-    .thesis-section h4 {
+    .thesis-section-title {
       font-size: 0.9rem;
-      margin-bottom: 0.7rem;
     }
 
     .thesis-content {
@@ -1060,24 +1645,36 @@ export const TRADE_NOTE_STYLES = `
       gap: 0.5rem;
     }
 
-    .metadata-section {
-      flex-direction: column;
+    .trade-custom-fields-header {
       align-items: flex-start;
-    }
-
-    .setup-section h4::before,
-    .mistake-section h4::before {
-      display: none; 
+      flex-direction: column;
+      gap: 0.35rem;
     }
   }
   
   
   .trade-navigation-container {
     display: flex;
-    flex-direction: column;
-    padding: 0.2rem 0.8rem 0.6rem 0.8rem; 
-    background-color: var(--background-secondary);
-    border-bottom: 1px solid var(--background-modifier-border);
+    justify-content: flex-end;
+    padding: 0;
+    margin: 0;
+    background: transparent;
+    border-bottom: 0;
+  }
+
+  .trade-session-nav {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.15rem;
+  }
+
+  .trade-session-nav-button {
+    width: 2rem;
+    padding: 0;
+  }
+
+  .trade-session-nav-button:disabled {
+    opacity: 0.35;
   }
   
   
@@ -1294,6 +1891,12 @@ export const TRADE_NOTE_STYLES = `
     
     max-width: 100%;
     flex-shrink: 1;
+  }
+
+  .workspace-split.mod-vertical .markdown-reading-view > .journalit-trade-view[data-mode="reading"] {
+    max-width: var(--file-line-width, 700px);
+    margin-left: auto;
+    margin-right: auto;
   }
   
   
@@ -1591,6 +2194,26 @@ export const TRADE_NOTE_STYLES = `
 
   
   @media (max-width: 600px) {
+    .journalit-trade-view .trade-note-header {
+      padding: 1.25rem 1rem;
+    }
+
+    .journalit-trade-view .trade-header-main-row,
+    .journalit-trade-view .trade-header-controls-row {
+      width: 100%;
+      justify-content: space-between;
+      gap: 0.75rem;
+    }
+
+    .journalit-trade-view .trade-pnl {
+      text-align: right;
+      flex-wrap: wrap;
+    }
+
+    .journalit-trade-view .trade-note-header .journalit-header-icon-button {
+      min-height: 2.2rem;
+    }
+
     .journalit-trade-view .trade-review-textarea-input,
     .journalit-trade-view .loss-review-textarea-input {
       font-size: 18px !important;
@@ -1599,26 +2222,21 @@ export const TRADE_NOTE_STYLES = `
 
   
   .theme-light .journalit-trade-view .trade-note-header.open {
-    background: linear-gradient(to right, rgba(33, 150, 243, 0.2), var(--background-primary));
+    background: transparent;
   }
 
   .theme-light .journalit-trade-view .trade-note-header.profit {
-    background: linear-gradient(to right, rgba(var(--color-green-rgb), 0.2), var(--background-primary));
+    background: transparent;
   }
 
   .theme-light .journalit-trade-view .trade-note-header.loss {
-    background: linear-gradient(to right, rgba(var(--color-red-rgb), 0.2), var(--background-primary));
+    background: transparent;
   }
 
   .theme-light .journalit-trade-view .trade-note-header.breakeven {
-    background: linear-gradient(to right, rgba(128, 128, 128, 0.15), var(--background-primary));
+    background: transparent;
   }
 
-  .theme-light .journalit-trade-view .open-trade-badge {
-    background-color: rgba(33, 150, 243, 0.15);
-    color: #1976d2;
-    border: 1px solid rgba(33, 150, 243, 0.3);
-  }
 `;
 
 

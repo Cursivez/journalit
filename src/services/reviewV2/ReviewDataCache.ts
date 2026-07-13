@@ -7,11 +7,13 @@ import type { UnifiedFilters } from '../../components/shared/filters/types';
 import { applyTradeFilters } from '../../components/shared/filters/filterUtils';
 import {
   createTradingDayFromString,
+  getTradingDay,
   getTradingDayRange,
 } from '../../utils/tradingDayUtils';
 import {
   formatLocalDateString,
   parseLocalDateSafe,
+  parseTradeTimestampValue,
 } from '../../utils/dateUtils';
 import { aggregatePnLByCurrency } from '../../utils/currencyAggregation';
 import { ExchangeRateService } from '../exchangeRate/ExchangeRateService';
@@ -20,6 +22,7 @@ import type {
   Unsubscribe,
   TradeChangedPayload,
   BacktestTradeChangedPayload,
+  MissedTradeChangedPayload,
   FilterChangedPayload,
   ReviewChangedPayload,
   ReviewFilterSyncPayload,
@@ -27,16 +30,21 @@ import type {
 } from '../events/types';
 import type { PartialTradeFrontmatter } from '../../types/TradeFrontmatter';
 import type { CustomFieldDefinition } from '../../types/customFields';
+import type { TradeReviewData } from '../backend/types';
 import {
   getAnalyticsDateBasis,
   getTradeAnalyticsTradingDay,
   getTradeRealizedPnlEvents,
 } from '../../utils/tradeAnalyticsDate';
+import { parseTradeReviewMarkdown } from '../trade/core/TradeReviewMarkdownCodec';
+import { extractUserOwnedTradeNotes } from '../trade/core/TradeNoteDocumentCodec';
 import {
   getEffectivePnL,
   isPnlContributingTrade,
 } from '../../utils/tradeStatusUtils';
 import { normalizeTradeExecutionForPeriodAnalytics } from '../trade/core/TradeExecutionAnalytics';
+import { resolveSessionModeWindowsForDate } from '../../utils/sessionModePhase';
+import type { ResolvedSessionModeWindow } from '../../types/sessionMode';
 import { normalizeReviewFilters } from '../../settings/viewFiltersDefaults';
 import {
   attachBreakEvenAccountBalancesToTrade,
@@ -134,6 +142,9 @@ export interface CachedReviewData {
   allTrades?: unknown[];
   
 
+  executionBasisTrades?: unknown[];
+  
+
   analyticsBasisTrades?: unknown[];
   
 
@@ -161,6 +172,108 @@ export interface CachedReviewData {
 
 
 type CacheSubscriber = (data: CachedReviewData | null) => void;
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+const getLocalDateKey = (date: Date): string =>
+  `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+
+function getSessionWindowsForTradingDay(
+  tradingDay: Date,
+  plugin: JournalitPlugin
+): ResolvedSessionModeWindow[] {
+  const previousDate = new Date(tradingDay);
+  previousDate.setDate(previousDate.getDate() - 1);
+  const tradingDayKey = getLocalDateKey(tradingDay);
+  const windows = [
+    ...resolveSessionModeWindowsForDate(
+      previousDate,
+      plugin.settings.sessionMode.sessionWindows
+    ),
+    ...resolveSessionModeWindowsForDate(
+      tradingDay,
+      plugin.settings.sessionMode.sessionWindows
+    ),
+  ];
+  const seen = new Set<string>();
+  return windows.filter((window) => {
+    if (
+      getLocalDateKey(getTradingDay(window.start, plugin)) !== tradingDayKey
+    ) {
+      return false;
+    }
+    const key = `${window.id}:${window.start.getTime()}`;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
+function getPayloadTradeFilePaths(payload: TradeChangedPayload): string[] {
+  if (typeof payload.filePath === 'string') return [payload.filePath];
+  return payload.filePaths ?? [];
+}
+
+function cachedReviewIncludesTradePath(
+  cached: CachedReviewData,
+  tradeFilePath: string
+): boolean {
+  return (
+    tradeArrayIncludesPath(cached.allTrades, tradeFilePath) ||
+    tradeArrayIncludesPath(cached.analyticsBasisTrades, tradeFilePath) ||
+    tradeArrayIncludesPath(cached.trades, tradeFilePath)
+  );
+}
+
+function tradeArrayIncludesPath(
+  trades: unknown[] | undefined,
+  tradeFilePath: string
+): boolean {
+  return (
+    trades?.some((trade) => isRecord(trade) && trade.path === tradeFilePath) ??
+    false
+  );
+}
+
+function patchMarkdownTradeContextInArray(
+  trades: unknown[] | undefined,
+  tradeFilePath: string,
+  context: { review: unknown; notes: string | undefined }
+): unknown[] | undefined {
+  if (!trades) return undefined;
+
+  let changed = false;
+  const nextTrades = trades.map((trade) => {
+    if (!isRecord(trade) || trade.path !== tradeFilePath) return trade;
+    changed = true;
+    const nextTrade = { ...trade };
+    if (context.review) {
+      nextTrade.tradeReview = context.review;
+    } else {
+      delete nextTrade.tradeReview;
+    }
+    if (context.notes) {
+      nextTrade.notes = context.notes;
+    } else {
+      delete nextTrade.notes;
+    }
+    return nextTrade;
+  });
+
+  return changed ? nextTrades : trades;
+}
+
+function patchMarkdownTradeContextInRequiredArray(
+  trades: unknown[],
+  tradeFilePath: string,
+  context: { review: unknown; notes: string | undefined }
+): unknown[] {
+  return (
+    patchMarkdownTradeContextInArray(trades, tradeFilePath, context) ?? trades
+  );
+}
 
 const REVIEW_TRADE_PROPERTY_KEYS = new Set<string>([
   'path',
@@ -314,6 +427,20 @@ export class ReviewDataCache {
 
   
   private drcAggregationFingerprintByFile: Map<string, string> = new Map();
+
+  
+  private sessionVisibleReviewedTradePathsByReview: Map<string, Set<string>> =
+    new Map();
+
+  
+  private markdownTradeReviewByPath: Map<
+    string,
+    {
+      mtime: number;
+      review: TradeReviewData | undefined;
+      notes: string | undefined;
+    }
+  > = new Map();
 
   
   private eventCleanup: Unsubscribe[] = [];
@@ -582,6 +709,18 @@ export class ReviewDataCache {
   private setupEventListeners(): void {
     
     const handleTradeDataChanged = (payload: TradeChangedPayload) => {
+      if (payload.action === 'review-status-updated') {
+        this.updateTradeReviewStatusInCache(payload);
+        return;
+      }
+
+      if (payload.action === 'trade-review-updated') {
+        for (const filePath of getPayloadTradeFilePaths(payload)) {
+          void this.refreshMarkdownTradeReviewInCache(filePath);
+        }
+        return;
+      }
+
       if (
         payload.action === 'updated' ||
         payload.action === 'created' ||
@@ -608,6 +747,26 @@ export class ReviewDataCache {
     const handleBacktestTradeDataChanged = (
       payload: BacktestTradeChangedPayload
     ) => {
+      if (payload.filePath) {
+        this.invalidateByTradeChange(payload.filePath);
+      } else {
+        this.invalidateAll();
+      }
+    };
+
+    const handleMissedTradeDataChanged = (
+      payload: MissedTradeChangedPayload
+    ) => {
+      if (payload.reviewed !== undefined) {
+        this.updateTradeReviewStatusInCache({
+          action: 'review-status-updated',
+          filePath: payload.filePath,
+          reviewed: payload.reviewed,
+          reviewedAt: payload.reviewedAt,
+        });
+        return;
+      }
+
       if (payload.filePath) {
         this.invalidateByTradeChange(payload.filePath);
       } else {
@@ -653,8 +812,14 @@ export class ReviewDataCache {
         payload?.source === 'trading-day-cutoff' ||
         payload?.source === 'week-start';
       const isCurrencyConversionChange = payload?.section === 'general';
+      const isSessionModeWindowChange = payload?.section === 'sessionMode';
 
-      if (isTradingDayBucketingChange || isCurrencyConversionChange) {
+      if (
+        isTradingDayBucketingChange ||
+        isCurrencyConversionChange ||
+        isSessionModeWindowChange
+      ) {
+        
         
         this.invalidateSessionMistakesIndex();
 
@@ -749,6 +914,11 @@ export class ReviewDataCache {
 
       this.drcAggregationFingerprintByFile.delete(file.path);
 
+      if (this.hasCachedTradePath(file.path)) {
+        void this.refreshMarkdownTradeReviewInCache(file.path);
+        return;
+      }
+
       if (this.cache.has(file.path)) {
         
         this.populateDebounced(file.path);
@@ -762,6 +932,7 @@ export class ReviewDataCache {
         'backtest-trade:changed',
         handleBacktestTradeDataChanged
       ),
+      eventBus.subscribe('missed-trade:changed', handleMissedTradeDataChanged),
       eventBus.subscribe('account:changed', () => {
         this.invalidateAll();
       }),
@@ -791,6 +962,15 @@ export class ReviewDataCache {
     this.plugin.registerEvent(
       this.app.metadataCache.on('changed', handleMetadataChanged)
     );
+    if (typeof this.app.vault.on === 'function') {
+      this.plugin.registerEvent(
+        this.app.vault.on('modify', (file) => {
+          if (file instanceof TFile && this.hasCachedTradePath(file.path)) {
+            void this.refreshMarkdownTradeReviewInCache(file.path);
+          }
+        })
+      );
+    }
   }
 
   
@@ -930,6 +1110,182 @@ export class ReviewDataCache {
     }, ReviewDataCache.POPULATE_DEBOUNCE_MS);
 
     this.populateDebounceTimers.set(filePath, timer);
+  }
+
+  public setSessionReviewedTradeVisibility(
+    reviewFilePath: string,
+    tradeFilePath: string,
+    keepVisible: boolean
+  ): void {
+    const nextPaths = new Set(
+      this.sessionVisibleReviewedTradePathsByReview.get(reviewFilePath) ?? []
+    );
+
+    if (keepVisible) {
+      nextPaths.add(tradeFilePath);
+    } else {
+      nextPaths.delete(tradeFilePath);
+    }
+
+    if (nextPaths.size === 0) {
+      this.sessionVisibleReviewedTradePathsByReview.delete(reviewFilePath);
+    } else {
+      this.sessionVisibleReviewedTradePathsByReview.set(
+        reviewFilePath,
+        nextPaths
+      );
+    }
+
+    const cached = this.cache.get(reviewFilePath);
+    if (!cached) return;
+
+    const nextCached = this.applySessionVisibilityToCachedData(
+      cached,
+      reviewFilePath
+    );
+    this.cache.set(reviewFilePath, nextCached);
+    this.notifySubscribers(reviewFilePath, nextCached);
+  }
+
+  public async attachMarkdownTradeReviews<T extends Record<string, unknown>>(
+    trades: T[]
+  ): Promise<T[]> {
+    return Promise.all(
+      trades.map(async (trade) => {
+        if (typeof trade.path !== 'string') return trade;
+        const file = this.app.vault.getAbstractFileByPath(trade.path);
+        if (!(file instanceof TFile)) return trade;
+        const context = await this.readMarkdownTradeReviewContext(file);
+        const nextTrade: T & {
+          tradeReview?: TradeReviewData;
+          notes?: string;
+        } = { ...trade };
+        if (context.review) {
+          nextTrade.tradeReview = context.review;
+        }
+        if (context.notes) {
+          nextTrade.notes = context.notes;
+        }
+        return nextTrade;
+      })
+    );
+  }
+
+  private async readMarkdownTradeReviewContext(file: TFile): Promise<{
+    review: TradeReviewData | undefined;
+    notes: string | undefined;
+  }> {
+    const cached = this.markdownTradeReviewByPath.get(file.path);
+    if (cached && cached.mtime === file.stat.mtime) {
+      return { review: cached.review, notes: cached.notes };
+    }
+
+    const content = await this.app.vault.read(file);
+    const review = parseTradeReviewMarkdown(content);
+    const notes = extractUserOwnedTradeNotes(content);
+    this.markdownTradeReviewByPath.set(file.path, {
+      mtime: file.stat.mtime,
+      review,
+      notes,
+    });
+    return { review, notes };
+  }
+
+  private async refreshMarkdownTradeReviewInCache(
+    tradeFilePath: string
+  ): Promise<void> {
+    if (!this.hasCachedTradePath(tradeFilePath)) return;
+
+    const file = this.app.vault.getAbstractFileByPath(tradeFilePath);
+    if (!(file instanceof TFile)) return;
+
+    const context = await this.readMarkdownTradeReviewContext(file);
+
+    for (const [reviewFilePath, cached] of this.cache.entries()) {
+      if (!cachedReviewIncludesTradePath(cached, tradeFilePath)) continue;
+
+      const nextCached: CachedReviewData = {
+        ...cached,
+        allTrades: patchMarkdownTradeContextInArray(
+          cached.allTrades,
+          tradeFilePath,
+          context
+        ),
+        analyticsBasisTrades: patchMarkdownTradeContextInArray(
+          cached.analyticsBasisTrades,
+          tradeFilePath,
+          context
+        ),
+        trades: patchMarkdownTradeContextInRequiredArray(
+          cached.trades,
+          tradeFilePath,
+          context
+        ),
+        version: cached.version + 1,
+        populatedAt: Date.now(),
+      };
+
+      this.cache.set(reviewFilePath, nextCached);
+      this.notifySubscribers(reviewFilePath, nextCached);
+    }
+  }
+
+  private hasCachedTradePath(tradeFilePath: string): boolean {
+    for (const cached of this.cache.values()) {
+      if (cachedReviewIncludesTradePath(cached, tradeFilePath)) return true;
+    }
+    return false;
+  }
+
+  private async getMissedTradeReviewData(
+    start: Date,
+    end: Date
+  ): Promise<Array<PartialTradeFrontmatter & Record<string, unknown>>> {
+    const missedTradeService = this.plugin.serviceManager
+      ? await this.plugin.serviceManager.getMissedTradeService()
+      : this.plugin.missedTradeService;
+
+    if (!missedTradeService?.getMissedTrades) {
+      return [];
+    }
+
+    const missedTradeFiles = await missedTradeService.getMissedTrades(
+      start,
+      end
+    );
+    const extractedTrades = await Promise.all(
+      missedTradeFiles.map((file) =>
+        this.plugin.tradeService.extractTradeData(file)
+      )
+    );
+
+    return extractedTrades.filter(
+      (trade): trade is PartialTradeFrontmatter & Record<string, unknown> =>
+        trade !== null && trade.isMissedTrade === true
+    );
+  }
+
+  private mergeReviewTradeSources(
+    primaryTrades: Array<PartialTradeFrontmatter & Record<string, unknown>>,
+    supplementalTrades: Array<PartialTradeFrontmatter & Record<string, unknown>>
+  ): Array<PartialTradeFrontmatter & Record<string, unknown>> {
+    const mergedTrades = [...primaryTrades];
+    const knownPaths = new Set<string>();
+
+    for (const trade of primaryTrades) {
+      if (typeof trade.path === 'string') {
+        knownPaths.add(trade.path);
+      }
+    }
+
+    for (const trade of supplementalTrades) {
+      const path = typeof trade.path === 'string' ? trade.path : null;
+      if (path && knownPaths.has(path)) continue;
+      if (path) knownPaths.add(path);
+      mergedTrades.push(trade);
+    }
+
+    return mergedTrades;
   }
 
   
@@ -1073,13 +1429,22 @@ export class ReviewDataCache {
     let analyticsBasisTrades: Array<
       PartialTradeFrontmatter & Record<string, unknown>
     > = [];
+    let executionBasisTrades: Array<
+      PartialTradeFrontmatter & Record<string, unknown>
+    > = [];
     let currencyConversion: CachedReviewData['currencyConversion'];
 
     if (this.plugin.tradeService) {
       try {
-        const allTrades = (await this.plugin.tradeService.getTradeData({
-          fresh: false,
-        })) as Array<PartialTradeFrontmatter & Record<string, unknown>>;
+        const regularAndBacktestTrades =
+          (await this.plugin.tradeService.getTradeData({
+            fresh: false,
+          })) as Array<PartialTradeFrontmatter & Record<string, unknown>>;
+        const missedTrades = await this.getMissedTradeReviewData(start, end);
+        const allTrades = this.mergeReviewTradeSources(
+          regularAndBacktestTrades,
+          missedTrades
+        );
 
         const analyticsDateBasis = getAnalyticsDateBasis(this.plugin.settings);
 
@@ -1124,6 +1489,69 @@ export class ReviewDataCache {
                 analyticsTradingDay <= end;
         };
 
+        const hasEntryExecutionInReviewRange = (
+          trade: PartialTradeFrontmatter
+        ): boolean => {
+          const entries = Array.isArray(trade.entries) ? trade.entries : [];
+          if (entries.length === 0) {
+            return isTradeInReviewRange(trade, 'entry');
+          }
+
+          return entries.some((entry) => {
+            const entryTradingDay = getTradeAnalyticsTradingDay(
+              { entryTime: entry.time },
+              'entry',
+              this.plugin
+            );
+            if (!entryTradingDay) return false;
+            return tradingDayStr
+              ? formatLocalDateString(entryTradingDay) === tradingDayStr
+              : entryTradingDay >= start && entryTradingDay <= end;
+          });
+        };
+
+        const drcSessionWindows =
+          noteType === 'drc'
+            ? getSessionWindowsForTradingDay(date, this.plugin)
+            : [];
+        const isTimestampInDRCSessionWindow = (value: unknown): boolean => {
+          if (drcSessionWindows.length === 0) return false;
+          const timestamp = parseTradeTimestampValue(value);
+          if (!timestamp) return false;
+          return drcSessionWindows.some(
+            (window) => timestamp >= window.start && timestamp < window.end
+          );
+        };
+        const hasExecutionInDRCSessionWindow = (
+          trade: PartialTradeFrontmatter
+        ): boolean => {
+          const entries = Array.isArray(trade.entries) ? trade.entries : [];
+          if (
+            entries.some((entry) => isTimestampInDRCSessionWindow(entry.time))
+          ) {
+            return true;
+          }
+          if (
+            entries.length === 0 &&
+            isTimestampInDRCSessionWindow(trade.entryTime)
+          ) {
+            return true;
+          }
+
+          for (const event of getTradeRealizedPnlEvents(
+            {
+              ...trade,
+              _originalPnlWasNull:
+                trade.pnl === undefined || trade.pnl === null,
+            },
+            'exit',
+            this.plugin
+          )) {
+            if (isTimestampInDRCSessionWindow(event.date)) return true;
+          }
+          return false;
+        };
+
         
         
         trades = allTrades.filter((trade: PartialTradeFrontmatter) =>
@@ -1136,6 +1564,12 @@ export class ReviewDataCache {
             : allTrades.filter((trade: PartialTradeFrontmatter) =>
                 isTradeInReviewRange(trade, analyticsDateBasis)
               );
+        const executionBasisRawTrades = allTrades.filter(
+          (trade: PartialTradeFrontmatter) =>
+            hasEntryExecutionInReviewRange(trade) ||
+            isTradeInReviewRange(trade, 'exit') ||
+            hasExecutionInDRCSessionWindow(trade)
+        );
 
         const customFieldDefinitions =
           this.plugin.customFieldsService?.getFields() || [];
@@ -1165,6 +1599,17 @@ export class ReviewDataCache {
                   this.app
                 )
               );
+        executionBasisTrades = executionBasisRawTrades.map((trade) =>
+          enrichTradeWithCustomFields(
+            {
+              ...trade,
+              _analyticsRangeStart: start,
+              _analyticsRangeEnd: end,
+            },
+            customFieldDefinitions,
+            this.app
+          )
+        );
 
         scopedTrades = this.expandCopiedTradesForReviewFilters(
           scopedTrades,
@@ -1177,6 +1622,10 @@ export class ReviewDataCache {
                 analyticsBasisTrades,
                 filters.accounts || []
               );
+        executionBasisTrades = this.expandCopiedTradesForReviewFilters(
+          executionBasisTrades,
+          filters.accounts || []
+        );
 
         const breakEvenThresholdMode =
           this.plugin.settings?.trade?.breakEvenThresholdMode ?? 'fixed';
@@ -1195,6 +1644,10 @@ export class ReviewDataCache {
                   analyticsBasisTrades,
                   accountBalanceLookup
                 );
+          executionBasisTrades = this.attachBreakEvenAccountBalances(
+            executionBasisTrades,
+            accountBalanceLookup
+          );
         }
 
         
@@ -1285,6 +1738,17 @@ export class ReviewDataCache {
                     ],
                 }
               );
+        executionBasisTrades = applyTradeFilters(
+          executionBasisTrades,
+          filters,
+          customFieldDefinitions,
+          {
+            resolveAccountIdDisplayName: (accountId) =>
+              this.plugin.settings.backendIntegration?.accountMapping?.[
+                accountId
+              ],
+          }
+        );
 
         if (successfulConversion) {
           const originalByCurrency: Record<string, number> = {};
@@ -1387,20 +1851,24 @@ export class ReviewDataCache {
     const version = existingEntry ? existingEntry.version + 1 : 1;
 
     
-    const entry: CachedReviewData = {
-      frontmatter,
-      noteType,
-      dateRange: { start, end },
-      tradingDayStr,
-      filters,
-      allTrades: scopedTrades,
-      analyticsBasisTrades,
-      trades,
-      sessionMistakesByTradingDay,
-      currencyConversion,
-      version,
-      populatedAt: Date.now(),
-    };
+    const entry = this.applySessionVisibilityToCachedData(
+      {
+        frontmatter,
+        noteType,
+        dateRange: { start, end },
+        tradingDayStr,
+        filters,
+        allTrades: scopedTrades,
+        executionBasisTrades,
+        analyticsBasisTrades,
+        trades,
+        sessionMistakesByTradingDay,
+        currencyConversion,
+        version,
+        populatedAt: Date.now(),
+      },
+      filePath
+    );
 
     this.cache.set(filePath, entry);
 
@@ -1646,6 +2114,116 @@ export class ReviewDataCache {
     for (const filePath of filePaths) {
       this.populateDebounced(filePath);
     }
+  }
+
+  private updateTradeReviewStatusInCache(payload: TradeChangedPayload): void {
+    const filePaths = new Set<string>();
+    if (payload.filePath) filePaths.add(payload.filePath);
+    if (payload.filePaths) {
+      for (const filePath of payload.filePaths) filePaths.add(filePath);
+    }
+
+    if (filePaths.size === 0 || payload.reviewed === undefined) {
+      return;
+    }
+
+    for (const [reviewFilePath, cached] of this.cache.entries()) {
+      const nextCached = this.applySessionVisibilityToCachedData(
+        this.applyReviewStatusToCachedData(
+          cached,
+          filePaths,
+          payload.reviewed,
+          payload.reviewedAt
+        ),
+        reviewFilePath
+      );
+      if (nextCached === cached) continue;
+
+      this.cache.set(reviewFilePath, nextCached);
+      this.notifySubscribers(reviewFilePath, nextCached);
+    }
+  }
+
+  private applySessionVisibilityToCachedData(
+    cached: CachedReviewData,
+    reviewFilePath: string
+  ): CachedReviewData {
+    const visiblePaths =
+      this.sessionVisibleReviewedTradePathsByReview.get(reviewFilePath) ??
+      new Set<string>();
+
+    let changed = false;
+    const updateTrades = (
+      trades: unknown[] | undefined
+    ): unknown[] | undefined => {
+      if (!trades) return trades;
+      return trades.map((trade) => {
+        if (!isRecord(trade) || typeof trade.path !== 'string') return trade;
+        const shouldKeepVisible = visiblePaths.has(trade.path);
+        if (trade.reviewSessionVisible === shouldKeepVisible) return trade;
+        changed = true;
+        return {
+          ...trade,
+          reviewSessionVisible: shouldKeepVisible,
+        };
+      });
+    };
+
+    const allTrades = updateTrades(cached.allTrades);
+    const executionBasisTrades = updateTrades(cached.executionBasisTrades);
+    const analyticsBasisTrades = updateTrades(cached.analyticsBasisTrades);
+    const trades = updateTrades(cached.trades) ?? cached.trades;
+
+    if (!changed) return cached;
+
+    return {
+      ...cached,
+      ...(allTrades ? { allTrades } : {}),
+      ...(executionBasisTrades ? { executionBasisTrades } : {}),
+      ...(analyticsBasisTrades ? { analyticsBasisTrades } : {}),
+      trades,
+    };
+  }
+
+  private applyReviewStatusToCachedData(
+    cached: CachedReviewData,
+    filePaths: Set<string>,
+    reviewed: boolean,
+    reviewedAt: string | undefined
+  ): CachedReviewData {
+    let changed = false;
+    const updateTrades = (
+      trades: unknown[] | undefined
+    ): unknown[] | undefined => {
+      if (!trades) return trades;
+      return trades.map((trade) => {
+        if (!isRecord(trade) || typeof trade.path !== 'string') return trade;
+        if (!filePaths.has(trade.path)) return trade;
+        changed = true;
+        return {
+          ...trade,
+          reviewed,
+          reviewedAt,
+        };
+      });
+    };
+
+    const allTrades = updateTrades(cached.allTrades);
+    const executionBasisTrades = updateTrades(cached.executionBasisTrades);
+    const analyticsBasisTrades = updateTrades(cached.analyticsBasisTrades);
+    const trades = updateTrades(cached.trades) ?? cached.trades;
+
+    if (!changed) return cached;
+
+    return {
+      ...cached,
+      ...(allTrades ? { allTrades } : {}),
+      ...(executionBasisTrades ? { executionBasisTrades } : {}),
+      ...(analyticsBasisTrades ? { analyticsBasisTrades } : {}),
+      trades,
+      version: cached.version + 1,
+      populatedAt: Date.now(),
+    };
   }
 
   

@@ -103,7 +103,6 @@ export const RESERVED_FRONTMATTER_KEYS = new Set([
   'exits',
   'commission',
   'fees',
-  'setupIds',
 
   'instrument',
   'assetType',
@@ -115,6 +114,7 @@ export const RESERVED_FRONTMATTER_KEYS = new Set([
   'useDirectPnLInput',
   'directPnL',
   'lossReview',
+  'tradeReview',
   'reviewed',
   'reviewedAt',
   'exchange',
@@ -156,6 +156,7 @@ export const RESERVED_FRONTMATTER_KEYS = new Set([
   'rMultiple',
   'stopLoss',
   'takeProfits',
+  'idealExits',
   'currency',
   'customFields',
   'customTags',

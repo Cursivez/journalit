@@ -22,6 +22,8 @@ import { LossReviewData } from '../backend/types';
 import { forceMetadataCacheRefresh } from '../../utils/dataRefresh';
 import { Mutex } from '../../utils/mutex';
 import { safeString } from '../../utils/safeString';
+import { getDefaultTradeTemplateMetadata } from '../templates/defaultTradeTemplateMetadata';
+import { serializeIdealExitFrontmatter } from '../trade/core/TradeFrontmatterCodec';
 
 function isTradeFolderPath(path: string): boolean {
   return /\/trades\//.test(path);
@@ -381,6 +383,11 @@ export class MissedTradeService extends CustomDataService {
         frontmatterData.exits = validExits.length > 0 ? validExits : undefined;
       }
 
+      if (data.idealExits !== undefined) {
+        const idealExits = serializeIdealExitFrontmatter(data.idealExits);
+        frontmatterData.idealExits = idealExits.length ? idealExits : undefined;
+      }
+
       
       if (data.assetType) frontmatterData.assetType = data.assetType;
       
@@ -401,9 +408,10 @@ export class MissedTradeService extends CustomDataService {
       frontmatterData.mfe = data.mfe;
       frontmatterData.maePrice = data.maePrice;
       frontmatterData.mfePrice = data.mfePrice;
-      if (data.setupIds?.length) frontmatterData.setupIds = data.setupIds;
       if (data.account?.length) frontmatterData.account = data.account;
-      if (data.setup?.length) frontmatterData.setup = data.setup;
+      if (data.setup !== undefined) {
+        frontmatterData.setup = data.setup;
+      }
       if (data.mistake?.length) frontmatterData.mistake = data.mistake;
       if (data.images?.length) frontmatterData.images = data.images;
       if (data.useDirectPnLInput !== undefined)
@@ -513,9 +521,12 @@ export class MissedTradeService extends CustomDataService {
         throw new Error(`Invalid file path: ${filePath}`);
       }
 
+      const effectiveReviewedAt = reviewed
+        ? reviewedAt || new Date().toISOString()
+        : '';
       const frontmatterData: Record<string, unknown> = {
         reviewed,
-        reviewedAt: reviewedAt || new Date().toISOString(),
+        reviewedAt: effectiveReviewedAt,
       };
 
       await this.updateFrontmatter(file, frontmatterData);
@@ -525,6 +536,8 @@ export class MissedTradeService extends CustomDataService {
         action: 'updated',
         filePath,
         timestamp: Date.now(),
+        reviewed,
+        reviewedAt: reviewed ? effectiveReviewedAt : undefined,
       });
 
       logger.debug(`Missed trade review status updated: ${filePath}`);
@@ -804,11 +817,15 @@ export class MissedTradeService extends CustomDataService {
 
   
   private generateMissedTradeContent(data: MissedTradeFormData): string {
+    const templateMetadata = getDefaultTradeTemplateMetadata(this.getPlugin());
+
     
     const frontmatterLines = [
       '---',
       'type: missed-trade',
       'isMissedTrade: true',
+      `templateId: ${templateMetadata.templateId}`,
+      `templateVersion: ${templateMetadata.templateVersion}`,
       `entryTime: ${this.formatDateForFrontmatter(data.entryTime)}`,
       `exitTime: ${this.formatDateForFrontmatter(data.exitTime || data.entryTime)}`,
       `entryPrice: ${data.entryPrice || 0}`,
@@ -849,9 +866,6 @@ export class MissedTradeService extends CustomDataService {
         : null,
 
       
-      data.setupIds?.length
-        ? `setupIds: [${data.setupIds.map((id) => `"${id}"`).join(', ')}]`
-        : null,
       data.setup?.length
         ? `setup: [${data.setup.map((setup) => `"${setup}"`).join(', ')}]`
         : null,
@@ -915,6 +929,10 @@ export class MissedTradeService extends CustomDataService {
     if (validExits?.length) {
       frontmatterLines.push(`exits: ${JSON.stringify(validExits)}`);
     }
+    const idealExits = serializeIdealExitFrontmatter(data.idealExits);
+    if (idealExits.length) {
+      frontmatterLines.push(`idealExits: ${JSON.stringify(idealExits)}`);
+    }
 
     
     const knownFields = new Set([
@@ -932,6 +950,7 @@ export class MissedTradeService extends CustomDataService {
       'rMultiple',
       'useDirectPnLInput',
       'directPnL',
+      'idealExits',
       'commission',
       'commissionType',
       'hasExplicitCommission',
@@ -939,7 +958,7 @@ export class MissedTradeService extends CustomDataService {
       'assetType',
       'thesis',
       'missedReason',
-      'setupIds',
+
       'setup',
       'mistake',
       'account',

@@ -147,7 +147,7 @@ const PathChangeInstructionComponent: React.FC<
       
       <div className="path-change-instruction-actions">
         <Button
-          variant="secondary"
+          variant="plain"
           onClick={() => {
             onCancel();
             onClose();

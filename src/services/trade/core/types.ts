@@ -13,9 +13,16 @@ interface TradeDividendInput {
   amount: number;
 }
 
+interface IdealExitInput {
+  time?: Date | string;
+  price?: number;
+  size?: number;
+}
+
 export interface TradeMutationInput {
   entries?: TradeExecutionInput[];
   exits?: TradeExecutionInput[];
+  idealExits?: IdealExitInput[];
   dividends?: TradeDividendInput[];
   tradeStatus?: 'OPEN' | 'CLOSED';
   entryTime: Date | string;
@@ -25,7 +32,6 @@ export interface TradeMutationInput {
   positionSize?: number;
   hasExplicitExitPrice?: boolean;
   direction?: string;
-  setupIds?: string[];
   accountId?: string;
   thesis?: string;
   images?: string[];
@@ -70,6 +76,7 @@ export interface TradeMutationInput {
   cryptoExchange?: string;
   leverageRatio?: number;
   lossReview?: unknown;
+  tradeReview?: unknown;
   reviewed?: boolean;
   reviewedAt?: string;
   notes?: string;
@@ -93,6 +100,8 @@ export interface TradeMutationInput {
   tradeId?: string;
   schemaVersion?: number;
   tradeRevision?: number;
+  templateId?: string;
+  templateVersion?: number;
   customFields?: CustomFieldValues;
   [key: string]: unknown;
 }

@@ -15,12 +15,7 @@ import { SkeletonBox } from '../../shared/SkeletonBox';
 import { SkeletonText } from '../../shared/SkeletonText';
 import { cssVars } from '../../../styles/inlineStylePolicy';
 import { t, tPlural } from '../../../lang/helpers';
-import {
-  createDashboardFilters,
-  createReviewFilters,
-  createTradeLogFilters,
-} from '../../../settings/viewFiltersDefaults';
-import { eventBus } from '../../../services/events';
+import { openTradeLogWithFilters } from '../../../utils/openTradeLogWithFilters';
 
 interface UnreviewedTradesWidgetProps {
   plugin: JournalitPlugin;
@@ -106,32 +101,9 @@ const UnreviewedTradesWidgetComponent: React.FC<
     applyUnreviewedFilter: boolean
   ): Promise<void> => {
     try {
-      const currentState = plugin.uiStateManager.getState();
-      const currentFilters = currentState.viewFilters?.tradelog;
-      const nextTradeLogFilters = {
-        ...createTradeLogFilters(),
-        ...currentFilters,
-      };
-
-      if (applyUnreviewedFilter) {
-        nextTradeLogFilters.reviewStatus = ['unreviewed'];
-      } else {
-        nextTradeLogFilters.reviewStatus = [];
-      }
-
-      await plugin.uiStateManager.updateState({
-        viewFilters: {
-          dashboard:
-            currentState.viewFilters?.dashboard ?? createDashboardFilters(),
-          reviews: currentState.viewFilters?.reviews ?? createReviewFilters(),
-          tradelog: nextTradeLogFilters,
-        },
+      await openTradeLogWithFilters(plugin, {
+        reviewStatus: applyUnreviewedFilter ? ['unreviewed'] : [],
       });
-      await plugin.viewManager.openTradeLogView();
-      window.setTimeout(() => {
-        window.journalitSyncTradeLogFilters?.();
-        eventBus.publish('tradelog:filters-updated');
-      }, 250);
     } catch (error) {
       console.error('Failed to open Trade Log:', error);
     }

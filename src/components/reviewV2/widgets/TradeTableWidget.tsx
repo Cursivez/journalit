@@ -24,8 +24,8 @@ import { getDisplayPnL, getAccountCount } from '../../../utils/pnlUtils';
 import { FullscreenPortal } from '../../image/FullscreenPortal';
 import { FullscreenImageViewer } from '../../image/FullscreenImageViewer';
 import { ExcalidrawMediaEmbed } from '../../image/ExcalidrawMediaEmbed';
+import { MediaPreview } from '../../image/MediaPreview';
 import { Image } from '../../shared/icons/ObsidianIcon';
-import { imageService } from '../../../services/image/ImageService';
 import {
   isExcalidrawMediaPath,
   resolveMediaDisplayPath,
@@ -912,21 +912,21 @@ export const TradeTableWidget: React.FC<TradeTableWidgetProps> = React.memo(
                                 sourcePath={trade.path || filePath}
                               />
                             ) : (
-                              <img
-                                src={imageService.resolveMediaPath(
-                                  resolveMediaDisplayPath(
-                                    plugin.app,
-                                    imagesArray[0],
-                                    trade.path || filePath
-                                  )
+                              <MediaPreview
+                                app={plugin.app}
+                                path={imagesArray[0]}
+                                sourcePath={trade.path || filePath}
+                                displayPath={resolveMediaDisplayPath(
+                                  plugin.app,
+                                  imagesArray[0],
+                                  trade.path || filePath
                                 )}
                                 alt={t('widget.trade-table.image-alt', {
                                   id: String(trade.id || index),
                                 })}
-                                className="trade-image journalit-reviewv2-trade-image"
-                                onError={() => {
-                                  // intentional
-                                }}
+                                imageClassName="trade-image journalit-reviewv2-trade-image"
+                                videoClassName="trade-image journalit-reviewv2-trade-image"
+                                showVideoBadge={false}
                               />
                             )}
                           </div>

@@ -30,6 +30,7 @@ import {
   EventOptionData,
   InstrumentCommissionRule,
   InstrumentCommissionRuleMethod,
+  CustomOptionsData,
 } from '../../services/options/CustomOptionsService';
 import { AssetType } from '../../components/forms/trade/types';
 import { getCurrencyOptions } from '../../utils/currencyConfig';
@@ -37,6 +38,14 @@ import { Button } from '../../components/ui/Button';
 import { IconButton } from '../../components/ui/IconButton';
 import { NoTooltipButton } from '../../components/ui/NoTooltipButton';
 import type { SymbolMapping } from '../../settings/types';
+import { LabelColorPicker } from '../../components/shared/LabelColorPicker';
+import {
+  getLabelColorClassName,
+  getLabelColorForeground,
+  normalizeLabelColor,
+  type LabelColor,
+} from '../../types/labelColor';
+import { cssVars } from '../../styles/inlineStylePolicy';
 
 
 class AdvancedConfirmationModal extends Modal {
@@ -157,7 +166,7 @@ interface OptionInfo {
   editCurrency?: string;
   editCommissionRules?: CommissionRuleDraft[];
   
-  editColor?: string;
+  editColor?: string | null;
   editNotes?: string;
 }
 
@@ -327,11 +336,26 @@ type BuildEditStatesRuntimeOptions = BuildEditStatesOptions & {
   previousEditStates?: EditStates;
 };
 
-const createStringEditState = (option: string): OptionInfo => ({
+const createStringEditState = (
+  option: string,
+  color?: LabelColor
+): OptionInfo => ({
   text: option,
   isEditing: false,
   editValue: option,
+  editColor: color,
 });
+
+const CustomOptionColorDot: React.FC<{ color?: LabelColor }> = ({ color }) => (
+  <span
+    className={`custom-options-label-color-dot ${getLabelColorClassName(color)}`}
+    style={cssVars({
+      '--journalit-label-color': color,
+      '--journalit-label-foreground': getLabelColorForeground(color),
+    })}
+    aria-label={color ?? t('common.color.default')}
+  />
+);
 
 const createEventEditState = (event: EventOptionData): OptionInfo => ({
   text: event.name,
@@ -453,7 +477,8 @@ function allOptionsForType(
 
 const buildEditStatesForType = (
   type: OptionType,
-  typeOptions: OptionsState[OptionType]
+  typeOptions: OptionsState[OptionType],
+  tagColors: Record<string, LabelColor>
 ): Record<string, OptionInfo> => {
   const typeEditStates: Record<string, OptionInfo> = {};
 
@@ -472,9 +497,16 @@ const buildEditStatesForType = (
     case OptionType.ACCOUNT_TYPE:
     case OptionType.SETUP:
     case OptionType.MISTAKE:
-    case OptionType.TAG:
       allOptionsForType(typeOptions, type).forEach((option) => {
         typeEditStates[option] = createStringEditState(option);
+      });
+      break;
+    case OptionType.TAG:
+      allOptionsForType(typeOptions, type).forEach((option) => {
+        typeEditStates[option] = createStringEditState(
+          option,
+          tagColors[option]
+        );
       });
       break;
   }
@@ -484,6 +516,7 @@ const buildEditStatesForType = (
 
 const buildEditStates = (
   allOptions: OptionsState,
+  tagColors: Record<string, LabelColor>,
   {
     previousEditStates,
     closeEditingFor,
@@ -497,7 +530,11 @@ const buildEditStates = (
       return;
     }
 
-    nextEditStates[type] = buildEditStatesForType(type, allOptions[type]);
+    nextEditStates[type] = buildEditStatesForType(
+      type,
+      allOptions[type],
+      tagColors
+    );
 
     if (!previousEditStates) {
       return;
@@ -540,6 +577,7 @@ type StateUpdater<T> = T | ((previous: T) => T);
 
 type ViewModelState = {
   options: OptionsState;
+  tagColors: Record<string, LabelColor>;
   editStates: EditStates;
   newOptionValues: Record<string, string>;
   newAssetType: string;
@@ -553,7 +591,7 @@ type ViewModelState = {
 type ViewModelAction =
   | {
       type: 'apply-reloaded-options';
-      allOptions: OptionsState;
+      allOptions: CustomOptionsData;
       options?: BuildEditStatesOptions & { mergeWithPrevious?: boolean };
     }
   | { type: 'set-edit-states'; value: StateUpdater<EditStates> }
@@ -594,6 +632,7 @@ const createDefaultNewMapping = (): NewMappingDraft => ({
 
 const INITIAL_VIEW_MODEL_STATE: ViewModelState = {
   options: EMPTY_OPTIONS_STATE,
+  tagColors: {},
   editStates: {},
   newOptionValues: {},
   newAssetType: 'stock',
@@ -625,15 +664,29 @@ const customOptionsTabReducer = (
 
       const previousEditStates = closeEditingFor ? state.editStates : undefined;
 
-      const nextEditStates = buildEditStates(action.allOptions, {
-        previousEditStates,
-        closeEditingFor,
-        types,
-      });
+      const optionState: OptionsState = {
+        [OptionType.INSTRUMENT]: action.allOptions[OptionType.INSTRUMENT],
+        [OptionType.ACCOUNT]: action.allOptions[OptionType.ACCOUNT],
+        [OptionType.ACCOUNT_TYPE]: action.allOptions[OptionType.ACCOUNT_TYPE],
+        [OptionType.SETUP]: action.allOptions[OptionType.SETUP],
+        [OptionType.MISTAKE]: action.allOptions[OptionType.MISTAKE],
+        [OptionType.TAG]: action.allOptions[OptionType.TAG],
+        [OptionType.EVENT]: action.allOptions[OptionType.EVENT],
+      };
+      const nextEditStates = buildEditStates(
+        optionState,
+        action.allOptions.tagColors,
+        {
+          previousEditStates,
+          closeEditingFor,
+          types,
+        }
+      );
 
       return {
         ...state,
-        options: action.allOptions,
+        options: optionState,
+        tagColors: action.allOptions.tagColors,
         editStates: mergeWithPrevious
           ? { ...state.editStates, ...nextEditStates }
           : nextEditStates,
@@ -721,7 +774,7 @@ const useCustomOptionsTabViewModel = (
 
   const applyReloadedOptions = useCallback(
     (
-      allOptions: OptionsState,
+      allOptions: CustomOptionsData,
       options: BuildEditStatesOptions & { mergeWithPrevious?: boolean } = {}
     ) => {
       dispatch({
@@ -738,7 +791,7 @@ const useCustomOptionsTabViewModel = (
       options: BuildEditStatesOptions & { mergeWithPrevious?: boolean } = {}
     ) => {
       await optionsService.reloadOptions();
-      const allOptions = optionsService.getAllOptions() as OptionsState;
+      const allOptions = optionsService.getAllOptions();
       applyReloadedOptions(allOptions, options);
       return allOptions;
     },
@@ -777,6 +830,7 @@ const useCustomOptionsTabController = ({
 
   const {
     options,
+    tagColors,
     editStates,
     newOptionValues,
     newAssetType,
@@ -920,6 +974,8 @@ const useCustomOptionsTabController = ({
         const event = options['event'].find((e) => e.name === optionKey);
         updatedOptionState.editColor = event?.color || 'gray';
         updatedOptionState.editNotes = event?.notes || '';
+      } else if (type === 'tag') {
+        updatedOptionState.editColor = tagColors[optionKey];
       }
 
       return {
@@ -1342,8 +1398,12 @@ const useCustomOptionsTabController = ({
   };
 
   
-  const updateEditColor = (type: string, optionKey: string, color: string) => {
-    if (type !== 'event') return;
+  const updateEditColor = (
+    type: string,
+    optionKey: string,
+    color: string | null
+  ) => {
+    if (type !== 'event' && type !== 'tag') return;
 
     setEditStates((prev) => {
       const typeState = prev[type] || {};
@@ -1446,6 +1506,7 @@ const useCustomOptionsTabController = ({
       let currencyChanged = false;
       let eventColorChanged = false;
       let eventNotesChanged = false;
+      let tagColorChanged = false;
       let existingInstrument: InstrumentData | undefined;
       let instrumentCurrency: string | undefined;
       let commissionRules: InstrumentCommissionRule[] | undefined;
@@ -1557,6 +1618,10 @@ const useCustomOptionsTabController = ({
 
         eventColorChanged = existingColor !== editedColor;
         eventNotesChanged = existingNotes !== editedNotes;
+      } else if (type === 'tag') {
+        const existingColor = tagColors[oldValueKey];
+        tagColorChanged =
+          existingColor !== normalizeLabelColor(editState.editColor);
       }
 
       const performUpdate = async (shouldUpdateNotes: boolean) => {
@@ -1616,6 +1681,23 @@ const useCustomOptionsTabController = ({
             editState.editNotes || ''
           );
           result = { success, updatedNotes: 0 };
+        } else if (type === 'tag') {
+          const updateResult =
+            oldValueKey === newValue
+              ? { success: true, updatedNotes: 0 }
+              : await optionsService.updateOption(
+                  OptionType.TAG,
+                  oldValueKey,
+                  newValue,
+                  shouldUpdateNotes
+                );
+          const colorSaved = updateResult.success
+            ? await optionsService.setTagColor(
+                newValue,
+                normalizeLabelColor(editState.editColor)
+              )
+            : false;
+          result = { ...updateResult, success: colorSaved };
         } else {
           
           if (!isOptionType(type)) {
@@ -1764,6 +1846,8 @@ const useCustomOptionsTabController = ({
             },
           }));
         }
+      } else if (type === 'tag' && tagColorChanged) {
+        void performUpdate(false);
       } else {
         
         setEditStates((prev) => ({
@@ -2029,6 +2113,7 @@ const useCustomOptionsTabController = ({
   return {
     plugin,
     options,
+    tagColors,
     editStates,
     newOptionValues,
     newAssetType,
@@ -2072,6 +2157,7 @@ const renderCustomOptionsTab = (
   const {
     plugin,
     options,
+    tagColors,
     editStates,
     newOptionValues,
     newAssetType,
@@ -3132,6 +3218,16 @@ const renderCustomOptionsTab = (
                                     { option }
                                   )}
                                 />
+                                {type === 'tag' && (
+                                  <LabelColorPicker
+                                    value={normalizeLabelColor(
+                                      optionInfo.editColor
+                                    )}
+                                    onChange={(color) =>
+                                      updateEditColor(type, option, color)
+                                    }
+                                  />
+                                )}
                                 <div className="option-actions">
                                   <NoTooltipButton
                                     label={t(
@@ -3161,6 +3257,11 @@ const renderCustomOptionsTab = (
                               <div className="setting-item-info">
                                 <div className="setting-item-name custom-options-name-row custom-options-name-row--gap">
                                   {option}
+                                  {type === 'tag' && (
+                                    <CustomOptionColorDot
+                                      color={tagColors[option]}
+                                    />
+                                  )}
                                   
                                   {type === 'account_type' &&
                                     option.toLowerCase() === 'archived' && (

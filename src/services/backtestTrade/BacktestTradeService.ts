@@ -5,7 +5,10 @@ import {
   CustomDataService,
   CustomDataServiceConfig,
 } from '../base/CustomDataService';
-import { TradeFormData } from '../../components/forms/trade/types';
+import {
+  IdealExitTransaction,
+  TradeFormData,
+} from '../../components/forms/trade/types';
 import { calculatePnL } from '../../utils/pnlCalculation';
 import { calculatePersistableRMultiple } from '../../components/forms/trade/validation';
 import { TFile, TAbstractFile, App, normalizePath } from 'obsidian';
@@ -17,6 +20,9 @@ import { eventBus } from '../events';
 import { mapCustomFieldsToFrontmatter } from '../../utils/customFieldPersistence';
 import { buildTradeIdentityFields } from '../../utils/tradeIdentity';
 import { Mutex } from '../../utils/mutex';
+import { getDefaultTradeTemplateMetadata } from '../templates/defaultTradeTemplateMetadata';
+import { serializeIdealExitFrontmatter } from '../trade/core/TradeFrontmatterCodec';
+import { normalizeStringArray } from '../../utils/dataUtils';
 
 function getStringValue(record: Record<string, unknown>, key: string): string {
   const value = record[key];
@@ -60,6 +66,45 @@ function getStringArray(
     : [];
 }
 
+function getSetupLabels(frontmatter: Record<string, unknown>): string[] {
+  return normalizeStringArray(frontmatter.setup);
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+function getIdealExits(
+  record: Record<string, unknown>,
+  key: string
+): IdealExitTransaction[] {
+  const value = record[key];
+  return Array.isArray(value)
+    ? value.flatMap((item) => {
+        if (!isRecord(item)) {
+          return [];
+        }
+
+        const price = getOptionalNumberValue(item, 'price');
+        const size = getOptionalNumberValue(item, 'size');
+
+        if (price === undefined && size === undefined) {
+          return [];
+        }
+
+        return [
+          {
+            ...(item.time !== undefined && {
+              time: getDateValue(item, 'time'),
+            }),
+            ...(price !== undefined && { price }),
+            ...(size !== undefined && { size }),
+          },
+        ];
+      })
+    : [];
+}
+
 function createBacktestTradeData(
   frontmatter: Record<string, unknown>,
   filePath: string
@@ -73,12 +118,14 @@ function createBacktestTradeData(
     direction: getStringValue(frontmatter, 'direction'),
     instrument: getStringValue(frontmatter, 'instrument'),
     assetType: getStringValue(frontmatter, 'assetType'),
-    setupIds: getStringArray(frontmatter, 'setupIds'),
-    setup: getStringArray(frontmatter, 'setup'),
+
+    setup: getSetupLabels(frontmatter),
     mistake: getStringArray(frontmatter, 'mistake'),
     account: getStringArray(frontmatter, 'account'),
     tags: getStringArray(frontmatter, 'tags'),
     pnl: getNumberValue(frontmatter, 'pnl'),
+    riskAmount: getOptionalNumberValue(frontmatter, 'riskAmount'),
+    rMultiple: getOptionalNumberValue(frontmatter, 'rMultiple'),
     commission: getOptionalNumberValue(frontmatter, 'commission'),
     commissionType:
       frontmatter.commissionType === 'fixed' ||
@@ -91,6 +138,7 @@ function createBacktestTradeData(
         : frontmatter.hasExplicitCommission === false
           ? false
           : undefined,
+    idealExits: getIdealExits(frontmatter, 'idealExits'),
     filePath,
     isBacktestTrade: true,
   };
@@ -223,12 +271,17 @@ export class BacktestTradeService extends CustomDataService {
 
         try {
           const identityFields = buildTradeIdentityFields(data);
+          const templateMetadata = getDefaultTradeTemplateMetadata(
+            this.getPlugin()
+          );
 
           
           const frontmatter: Record<string, unknown> = {
             type: 'backtest-trade',
             tradeId: identityFields.tradeId,
             schemaVersion: identityFields.schemaVersion,
+            templateId: templateMetadata.templateId,
+            templateVersion: templateMetadata.templateVersion,
             isBacktestTrade: true,
             
             entryTime: data.entryTime
@@ -265,9 +318,8 @@ export class BacktestTradeService extends CustomDataService {
                   ]
                 : []
             ),
+            idealExits: serializeIdealExitFrontmatter(data.idealExits),
             
-            setupIds: data.setupIds,
-
             thesis: data.thesis || '',
             images: data.images,
             instrument: data.instrument,
@@ -481,9 +533,8 @@ export class BacktestTradeService extends CustomDataService {
               ]
             : []
         ),
+        idealExits: serializeIdealExitFrontmatter(data.idealExits),
         
-        setupIds: data.setupIds,
-
         thesis: data.thesis || '',
         images: data.images,
         instrument: data.instrument,

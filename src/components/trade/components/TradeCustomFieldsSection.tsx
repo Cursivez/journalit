@@ -1,7 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { formatDateDisplay } from '../../../utils/dateUtils';
 import { usePlugin } from '../../../hooks/usePlugin';
-import { t } from '../../../lang/helpers';
 import { Tooltip } from '../../shared/Tooltip';
 import {
   CustomFieldDefinition,
@@ -19,12 +18,11 @@ interface TradeCustomFieldsSectionProps {
   data: PartialTradeFrontmatter;
 }
 
-type DisplayEntry = {
+type TradeCustomFieldDisplayEntry = {
   field: CustomFieldDefinition;
   layout: 'half' | 'full';
-  kind: 'text' | 'value' | 'pills';
+  kind: 'text' | 'value';
   value?: string;
-  values?: string[];
   tooltipValues?: string[];
 };
 
@@ -40,10 +38,6 @@ function formatCompactMultiselectValue(values: string[]): string {
 
   return `${values.slice(0, 2).join(', ')} +${values.length - 2}`;
 }
-
-type DisplayRow =
-  | { type: 'pair'; left: DisplayEntry; right?: DisplayEntry }
-  | { type: 'full'; entry: DisplayEntry };
 
 function formatCustomTimeValue(date: Date): string {
   return date.toLocaleTimeString([], {
@@ -78,7 +72,7 @@ function getDisplayEntry(
   field: CustomFieldDefinition,
   rawValue: unknown,
   dateFormat?: string
-): DisplayEntry | null {
+): TradeCustomFieldDisplayEntry | null {
   const rawTextValue = typeof rawValue === 'string' ? rawValue.trim() : '';
 
   if (isEmptyCustomFieldValue(rawValue)) {
@@ -96,8 +90,8 @@ function getDisplayEntry(
         return {
           field,
           layout: 'half',
-          kind: 'pills',
-          values,
+          kind: 'value',
+          value: values.join(', '),
         };
       }
 
@@ -116,8 +110,8 @@ function getDisplayEntry(
         ? {
             field,
             layout: 'half',
-            kind: 'pills',
-            values: [value],
+            kind: 'value',
+            value,
           }
         : null;
     }
@@ -176,35 +170,30 @@ function getDisplayEntry(
   }
 }
 
-function buildDisplayRows(entries: DisplayEntry[]): DisplayRow[] {
-  const rows: DisplayRow[] = [];
-  let pendingHalf: DisplayEntry | null = null;
-
-  entries.forEach((entry) => {
-    if (entry.layout === 'full') {
-      if (pendingHalf) {
-        rows.push({ type: 'pair', left: pendingHalf });
-        pendingHalf = null;
-      }
-
-      rows.push({ type: 'full', entry });
-      return;
+function getTradeCustomFieldDisplayEntries(
+  data: PartialTradeFrontmatter,
+  fields: CustomFieldDefinition[],
+  dateFormat?: string
+): TradeCustomFieldDisplayEntry[] {
+  return fields.reduce<TradeCustomFieldDisplayEntry[]>((acc, field) => {
+    const rawValue = getCustomFieldRawValue(
+      data as Record<string, unknown>,
+      field
+    );
+    const entry = getDisplayEntry(field, rawValue, dateFormat);
+    if (entry) {
+      acc.push(entry);
     }
+    return acc;
+  }, []);
+}
 
-    if (!pendingHalf) {
-      pendingHalf = entry;
-      return;
-    }
-
-    rows.push({ type: 'pair', left: pendingHalf, right: entry });
-    pendingHalf = null;
-  });
-
-  if (pendingHalf) {
-    rows.push({ type: 'pair', left: pendingHalf });
-  }
-
-  return rows;
+export function hasTradeCustomFieldDisplayEntries(
+  data: PartialTradeFrontmatter,
+  fields: CustomFieldDefinition[],
+  dateFormat?: string
+): boolean {
+  return getTradeCustomFieldDisplayEntries(data, fields, dateFormat).length > 0;
 }
 
 function getTooltipValueEntries(values: string[]): TooltipValueEntry[] {
@@ -246,7 +235,7 @@ function TradeCustomFieldEntryValue({
   entry,
   maskedValue,
 }: {
-  entry: DisplayEntry;
+  entry: TradeCustomFieldDisplayEntry;
   maskedValue: string | null;
 }) {
   if (maskedValue) {
@@ -284,21 +273,6 @@ function TradeCustomFieldEntryValue({
     return content;
   }
 
-  if (entry.kind === 'pills' && entry.values) {
-    return (
-      <div className="trade-custom-field-pills">
-        {entry.values.map((value) => (
-          <span
-            key={`${entry.field.id}-${value}`}
-            className="tag trade-custom-field-pill"
-          >
-            {value}
-          </span>
-        ))}
-      </div>
-    );
-  }
-
   return null;
 }
 
@@ -306,25 +280,15 @@ function TradeCustomFieldEntry({
   entry,
   maskedValue,
 }: {
-  entry: DisplayEntry;
+  entry: TradeCustomFieldDisplayEntry;
   maskedValue: string | null;
 }) {
-  const isInline = entry.layout === 'half';
-
   return (
-    <div
-      className={`trade-custom-field-item${isInline ? ' trade-custom-field-item--inline' : ''}`}
-    >
+    <div className="trade-custom-field-item">
       <div className="trade-custom-field-label">{entry.field.label}</div>
       <TradeCustomFieldEntryValue entry={entry} maskedValue={maskedValue} />
     </div>
   );
-}
-
-function getDisplayRowKey(row: DisplayRow): string {
-  return row.type === 'full'
-    ? `full-${row.entry.field.id}`
-    : `pair-${row.left.field.id}-${row.right?.field.id || 'empty'}`;
 }
 
 export const TradeCustomFieldsSection: React.FC<TradeCustomFieldsSectionProps> =
@@ -356,72 +320,25 @@ export const TradeCustomFieldsSection: React.FC<TradeCustomFieldsSectionProps> =
       };
     }, [plugin]);
 
-    const rows = useMemo(() => {
+    const entries = useMemo(() => {
       const dateFormat = plugin?.settings.trade.dateFormat;
-
-      const entries = fields.reduce<DisplayEntry[]>((acc, field) => {
-        const rawValue = getCustomFieldRawValue(
-          data as Record<string, unknown>,
-          field
-        );
-        const entry = getDisplayEntry(field, rawValue, dateFormat);
-        if (entry) {
-          acc.push(entry);
-        }
-        return acc;
-      }, []);
-
-      return buildDisplayRows(entries);
+      return getTradeCustomFieldDisplayEntries(data, fields, dateFormat);
     }, [data, fields, plugin?.settings.trade.dateFormat]);
 
-    if (rows.length === 0) {
+    if (entries.length === 0) {
       return null;
     }
 
     return (
-      <div className="trade-custom-fields-section">
-        <div className="details-card trade-custom-fields-card">
-          <div className="details-header">
-            <h4>{t('form.section.custom-fields')}</h4>
-          </div>
-
-          <div className="trade-custom-fields-rows">
-            {rows.map((row) => {
-              if (row.type === 'full') {
-                return (
-                  <div
-                    key={getDisplayRowKey(row)}
-                    className="trade-custom-fields-row trade-custom-fields-row--full"
-                  >
-                    <TradeCustomFieldEntry
-                      entry={row.entry}
-                      maskedValue={maskedCustomFieldValue}
-                    />
-                  </div>
-                );
-              }
-
-              return (
-                <div
-                  key={getDisplayRowKey(row)}
-                  className="trade-custom-fields-row"
-                >
-                  <TradeCustomFieldEntry
-                    entry={row.left}
-                    maskedValue={maskedCustomFieldValue}
-                  />
-                  {row.right ? (
-                    <TradeCustomFieldEntry
-                      entry={row.right}
-                      maskedValue={maskedCustomFieldValue}
-                    />
-                  ) : (
-                    <div className="trade-custom-field-item trade-custom-field-item--empty" />
-                  )}
-                </div>
-              );
-            })}
-          </div>
+      <div className="trade-custom-fields-subsection">
+        <div className="trade-custom-fields-rows">
+          {entries.map((entry) => (
+            <TradeCustomFieldEntry
+              key={entry.field.id}
+              entry={entry}
+              maskedValue={maskedCustomFieldValue}
+            />
+          ))}
         </div>
       </div>
     );

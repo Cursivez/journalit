@@ -295,29 +295,44 @@ export class ViewGuideService {
       this.activeLeafContext = this.resolveLeafContext(options.leaf);
     }
 
-    if (existing && existing.status !== 'ended') {
+    if (
+      existing &&
+      existing.status !== 'ended' &&
+      existing.guideVersion !== guideVersion
+    ) {
+      this.sessions.delete(existing.sessionId);
+      this.guideToSessionId.delete(existing.guideId);
+    }
+
+    const currentExisting =
+      existing?.guideVersion === guideVersion ? existing : null;
+
+    if (currentExisting && currentExisting.status !== 'ended') {
       if (forceRestart) {
-        this.sessions.delete(existing.sessionId);
-        this.guideToSessionId.delete(existing.guideId);
+        this.sessions.delete(currentExisting.sessionId);
+        this.guideToSessionId.delete(currentExisting.guideId);
       } else if (
-        existing.leafId !== leafId &&
-        !this.isLeafIdStillOpen(existing.leafId, existing.viewType)
+        currentExisting.leafId !== leafId &&
+        !this.isLeafIdStillOpen(
+          currentExisting.leafId,
+          currentExisting.viewType
+        )
       ) {
-        this.sessions.delete(existing.sessionId);
-        this.guideToSessionId.delete(existing.guideId);
-      } else if (existing.leafId !== leafId) {
+        this.sessions.delete(currentExisting.sessionId);
+        this.guideToSessionId.delete(currentExisting.guideId);
+      } else if (currentExisting.leafId !== leafId) {
         return {
-          session: existing,
+          session: currentExisting,
           reason: 'already-running-in-other-leaf',
         };
-      } else if (existing.status === 'paused') {
-        existing.status = 'active';
-        existing.updatedAt = Date.now();
-        await this.persistInProgress(existing);
+      } else if (currentExisting.status === 'paused') {
+        currentExisting.status = 'active';
+        currentExisting.updatedAt = Date.now();
+        await this.persistInProgress(currentExisting);
         this.emitChange();
-        return { session: existing, reason: 'resumed' };
+        return { session: currentExisting, reason: 'resumed' };
       } else {
-        return { session: existing, reason: 'already-running' };
+        return { session: currentExisting, reason: 'already-running' };
       }
     }
 

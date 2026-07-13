@@ -4,7 +4,7 @@ import { createRoot, Root } from 'react-dom/client';
 import { Zap, Lightbulb } from '../shared/icons/ObsidianIcon';
 import type JournalitPlugin from '../../main';
 import { t } from '../../lang/helpers';
-import { UPGRADE_URL } from '../../constants';
+import { UPGRADE_URLS } from '../../constants';
 import { openExternalUrl } from '../../utils/externalLinks';
 import { Button } from '../ui/Button';
 
@@ -54,7 +54,7 @@ const UpgradeComponent: React.FC<
   UpgradeModalProps & { onClose: () => void }
 > = ({ featureName, onClose }) => {
   const handleUpgrade = () => {
-    openExternalUrl(UPGRADE_URL);
+    openExternalUrl(UPGRADE_URLS.genericUpgradeModal);
     onClose();
   };
 
@@ -96,7 +96,7 @@ const UpgradeComponent: React.FC<
 
       
       <div className="upgrade-modal-actions">
-        <Button variant="secondary" onClick={onClose}>
+        <Button variant="plain" onClick={onClose}>
           {t('button.maybe-later')}
         </Button>
         <Button variant="primary" onClick={handleUpgrade}>

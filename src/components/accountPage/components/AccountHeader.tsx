@@ -27,16 +27,7 @@ import {
   ACCOUNT_PAGE_HEADER_TARGET_ID,
   ACCOUNT_PAGE_VIEW_TRADES_BUTTON_TARGET_ID,
 } from '../../../guides/accountPageGuideIds';
-import {
-  createDashboardFilters,
-  createReviewFilters,
-  createTradeLogFilters,
-} from '../../../settings/viewFiltersDefaults';
-import { eventBus } from '../../../services/events';
-
-type TradeLogFilterSyncWindow = Window & {
-  journalitSyncTradeLogFilters?: () => void;
-};
+import { openTradeLogWithFilters } from '../../../utils/openTradeLogWithFilters';
 
 
 function findEarliestTradeDate(trades: AccountTradeData[]): Date | null {
@@ -187,25 +178,7 @@ export const AccountHeader: React.FC = () => {
   };
 
   const handleViewTrades = async () => {
-    const currentState = plugin.uiStateManager.getState();
-    const currentFilters = currentState.viewFilters?.tradelog;
-    await plugin.uiStateManager.updateState({
-      viewFilters: {
-        dashboard:
-          currentState.viewFilters?.dashboard ?? createDashboardFilters(),
-        reviews: currentState.viewFilters?.reviews ?? createReviewFilters(),
-        tradelog: {
-          ...createTradeLogFilters(),
-          ...currentFilters,
-          accounts: [account.name],
-        },
-      },
-    });
-    void plugin.viewManager.openTradeLogView();
-    window.setTimeout(() => {
-      (window as TradeLogFilterSyncWindow).journalitSyncTradeLogFilters?.();
-      eventBus.publish('tradelog:filters-updated');
-    }, 250);
+    await openTradeLogWithFilters(plugin, { accounts: [account.name] });
   };
 
   return (

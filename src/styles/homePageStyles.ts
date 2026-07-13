@@ -415,19 +415,22 @@ export const HOME_PAGE_STYLES = `
     height: 100%;
   }
 
-  .journalit-quick-link-button {
+  button.journalit-quick-link-button {
     display: flex;
     align-items: center;
     gap: 8px;
     padding: 10px 16px;
     border: 1px solid var(--background-modifier-border);
     border-radius: 8px;
+    background-color: var(--background-primary);
+    box-shadow: none;
     color: var(--text-normal);
     font-size: 13px;
     font-weight: 500;
     text-align: left;
     width: auto;
     height: 100%;
+    cursor: pointer;
   }
 
   .journalit-quick-link-wrapper[data-editing="true"] .journalit-quick-link-button:disabled {

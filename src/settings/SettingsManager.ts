@@ -6,6 +6,9 @@ import {
   DEFAULT_SCALPER_DEFAULTS,
   JournalitSettings,
   DEFAULT_SETTINGS,
+  resolveTradeFormLayoutSettings,
+  QuickLinkAction,
+  SidebarNavItem,
 } from './types';
 import {
   DEFAULT_TRADING_DAY_CUTOFF_TIME,
@@ -14,6 +17,15 @@ import {
 import { debounceAsync } from '../utils/debounce';
 import { Mutex } from '../utils/mutex';
 import { t } from '../lang/helpers';
+import type { SessionLogTagDefinition } from '../types/sessionLog';
+import type {
+  SessionModeLinkedResource,
+  SessionModePhaseLayouts,
+  SessionModeWindow,
+  TradeGateNode,
+  TradeGateWorkflow,
+} from '../types/sessionMode';
+import { normalizeSessionModePhaseLayouts } from '../utils/sessionModeLayout';
 
 
 const BACKUP_FILENAME = 'data.backup.json';
@@ -22,6 +34,267 @@ const BACKUP_FILENAME = 'data.backup.json';
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
+}
+
+const QUICK_LINK_ACTIONS = new Set<string>([
+  'addTrade',
+  'openTradeLog',
+  'openSetups',
+  'openTradingDashboard',
+  'openAccountDashboard',
+  'openTodaysDRC',
+  'openWeeklyReview',
+  'openMonthlyReview',
+  'openCSVImport',
+  'openQuickTradeImport',
+  'openLayoutBuilder',
+  'openSessionMode',
+  'openHome',
+  'openQuarterlyReview',
+  'openYearlyReview',
+  'openPositionSizeCalculator',
+]);
+
+function isQuickLinkAction(value: unknown): value is QuickLinkAction {
+  return typeof value === 'string' && QUICK_LINK_ACTIONS.has(value);
+}
+
+function cloneSessionLogTags(
+  tags: SessionLogTagDefinition[]
+): SessionLogTagDefinition[] {
+  return tags.map((tag) => ({ ...tag }));
+}
+
+function getSessionLogTagsSetting(
+  value: unknown,
+  defaults: SessionLogTagDefinition[]
+): SessionLogTagDefinition[] {
+  if (!Array.isArray(value)) return cloneSessionLogTags(defaults);
+
+  const tags: SessionLogTagDefinition[] = [];
+  const seenIds = new Set<string>();
+  for (const item of value) {
+    if (!isRecord(item)) continue;
+    const { id, label, shortLabel, color } = item;
+    if (
+      typeof id !== 'string' ||
+      typeof label !== 'string' ||
+      typeof shortLabel !== 'string' ||
+      typeof color !== 'string'
+    ) {
+      continue;
+    }
+
+    const normalizedId = id.trim();
+    if (!normalizedId || seenIds.has(normalizedId)) continue;
+    const normalizedLabel = label.trim();
+    const normalizedShortLabel = shortLabel.trim();
+    const normalizedColor = color.trim();
+    if (!normalizedLabel || !normalizedShortLabel || !normalizedColor) continue;
+
+    seenIds.add(normalizedId);
+    tags.push({
+      id: normalizedId,
+      label: normalizedLabel,
+      shortLabel: normalizedShortLabel,
+      color: normalizedColor,
+      requiresResolution: item.requiresResolution === true,
+      lessonTag: item.lessonTag === true,
+    });
+  }
+
+  return tags.length > 0 ? tags : cloneSessionLogTags(defaults);
+}
+
+function getNavigationItemsSetting(value: unknown): SidebarNavItem[] {
+  if (!Array.isArray(value)) return [];
+
+  const items: SidebarNavItem[] = [];
+  const seenIds = new Set<string>();
+  for (const item of value) {
+    if (!isRecord(item)) continue;
+    if (
+      typeof item.id !== 'string' ||
+      typeof item.label !== 'string' ||
+      typeof item.icon !== 'string' ||
+      !isQuickLinkAction(item.action) ||
+      (item.section !== 'overview' &&
+        item.section !== 'reviews' &&
+        item.section !== 'tools') ||
+      typeof item.visible !== 'boolean' ||
+      typeof item.order !== 'number'
+    ) {
+      continue;
+    }
+
+    const id = item.id.trim();
+    if (!id || seenIds.has(id)) continue;
+    seenIds.add(id);
+
+    items.push({
+      id,
+      label: item.label,
+      icon: item.icon,
+      action: item.action,
+      section: item.section,
+      visible: item.visible,
+      order: item.order,
+    });
+  }
+
+  return items;
+}
+
+function getSessionModeWindows(value: unknown): SessionModeWindow[] | null {
+  if (!Array.isArray(value)) return null;
+  const windows: SessionModeWindow[] = [];
+  for (const item of value) {
+    if (!isRecord(item)) continue;
+    if (
+      typeof item.id !== 'string' ||
+      typeof item.name !== 'string' ||
+      typeof item.startTime !== 'string' ||
+      typeof item.endTime !== 'string'
+    ) {
+      continue;
+    }
+    windows.push({
+      id: item.id,
+      name: item.name,
+      startTime: item.startTime,
+      endTime: item.endTime,
+    });
+  }
+  return windows;
+}
+
+function getSessionModeLinkedResources(
+  value: unknown
+): SessionModeLinkedResource[] | null {
+  if (!Array.isArray(value)) return null;
+  const resources: SessionModeLinkedResource[] = [];
+  for (const item of value) {
+    if (!isRecord(item) || typeof item.path !== 'string') continue;
+    resources.push({ path: item.path });
+  }
+  return resources;
+}
+
+function getSessionModePreparationLeadTimeMinutes(
+  value: unknown,
+  fallback: number
+): number {
+  return typeof value === 'number' && Number.isFinite(value) && value >= 0
+    ? value
+    : fallback;
+}
+
+function getTradeGateWorkflows(value: unknown): TradeGateWorkflow[] | null {
+  if (!Array.isArray(value)) return null;
+  const workflows: TradeGateWorkflow[] = [];
+  for (const item of value) {
+    if (
+      !isRecord(item) ||
+      typeof item.id !== 'string' ||
+      typeof item.name !== 'string' ||
+      typeof item.startNodeId !== 'string' ||
+      !Array.isArray(item.nodes)
+    ) {
+      continue;
+    }
+    const parsedNodes: TradeGateNode[] = [];
+    for (const node of item.nodes) {
+      if (!isRecord(node) || typeof node.id !== 'string') continue;
+      if (
+        node.type === 'question' &&
+        typeof node.title === 'string' &&
+        typeof node.prompt === 'string' &&
+        Array.isArray(node.options)
+      ) {
+        const options = [];
+        for (const option of node.options) {
+          if (
+            !isRecord(option) ||
+            typeof option.id !== 'string' ||
+            typeof option.label !== 'string' ||
+            typeof option.targetNodeId !== 'string'
+          ) {
+            continue;
+          }
+          options.push({
+            id: option.id,
+            label: option.label,
+            targetNodeId: option.targetNodeId,
+          });
+        }
+        parsedNodes.push({
+          id: node.id,
+          type: 'question',
+          title: node.title,
+          prompt: node.prompt,
+          options,
+        });
+      }
+      if (
+        node.type === 'outcome' &&
+        (node.outcome === 'green-light' ||
+          node.outcome === 'no-trade' ||
+          node.outcome === 'wait') &&
+        typeof node.title === 'string'
+      ) {
+        parsedNodes.push({
+          id: node.id,
+          type: 'outcome',
+          outcome: node.outcome,
+          title: node.title,
+          description:
+            typeof node.description === 'string' ? node.description : undefined,
+        });
+      }
+    }
+    const nodeIds = new Set(parsedNodes.map((node) => node.id));
+    const nodes = parsedNodes.map((node): TradeGateNode => {
+      if (node.type !== 'question') return node;
+      return {
+        ...node,
+        options: node.options.filter((option) =>
+          nodeIds.has(option.targetNodeId)
+        ),
+      };
+    });
+    let startNodeId: string | undefined;
+    let fallbackStartNodeId: string | undefined;
+    for (const node of nodes) {
+      if (node.type !== 'question' || node.options.length === 0) continue;
+      if (!fallbackStartNodeId) fallbackStartNodeId = node.id;
+      if (node.id === item.startNodeId) startNodeId = node.id;
+    }
+    startNodeId = startNodeId ?? fallbackStartNodeId;
+    if (!startNodeId) continue;
+    workflows.push({
+      id: item.id,
+      name: item.name,
+      startNodeId,
+      nodes,
+    });
+  }
+  return workflows;
+}
+
+function getSessionModePhaseLayouts(
+  value: unknown
+): Partial<SessionModePhaseLayouts> | undefined {
+  if (!isRecord(value)) return undefined;
+  const layouts: Partial<SessionModePhaseLayouts> = {};
+  for (const phase of ['preparation', 'live', 'ended'] as const) {
+    const moduleIds = value[phase];
+    if (!Array.isArray(moduleIds)) continue;
+    layouts[phase] = moduleIds.filter(
+      (moduleId): moduleId is SessionModePhaseLayouts[typeof phase][number] =>
+        typeof moduleId === 'string'
+    );
+  }
+  return layouts;
 }
 
 interface PluginWithSettings {
@@ -537,6 +810,10 @@ export class SettingsManager {
       if (merged.trade.skipWeekends === undefined) {
         merged.trade.skipWeekends = true;
       }
+
+      merged.trade.tradeFormLayout = resolveTradeFormLayoutSettings(
+        saved.trade.tradeFormLayout
+      );
     }
 
     
@@ -550,6 +827,37 @@ export class SettingsManager {
         reviewQuestions:
           saved.drc.reviewQuestions ?? defaults.drc.reviewQuestions,
         recurringGoals: saved.drc.recurringGoals ?? defaults.drc.recurringGoals,
+        sessionLogTags: getSessionLogTagsSetting(
+          saved.drc.sessionLogTags,
+          defaults.drc.sessionLogTags
+        ),
+        sessionLogAlertRule:
+          saved.drc.sessionLogAlertRule ?? defaults.drc.sessionLogAlertRule,
+      };
+    }
+
+    const sessionModeSource = saved.sessionMode;
+    if (isRecord(sessionModeSource)) {
+      const sessionModeRecord = sessionModeSource;
+      merged.sessionMode = {
+        ...defaults.sessionMode,
+        ...sessionModeRecord,
+        sessionWindows:
+          getSessionModeWindows(sessionModeRecord.sessionWindows) ??
+          defaults.sessionMode.sessionWindows,
+        linkedResources:
+          getSessionModeLinkedResources(sessionModeRecord.linkedResources) ??
+          defaults.sessionMode.linkedResources,
+        preparationLeadTimeMinutes: getSessionModePreparationLeadTimeMinutes(
+          sessionModeRecord.preparationLeadTimeMinutes,
+          defaults.sessionMode.preparationLeadTimeMinutes
+        ),
+        tradeGateWorkflows:
+          getTradeGateWorkflows(sessionModeRecord.tradeGateWorkflows) ??
+          defaults.sessionMode.tradeGateWorkflows,
+        phaseLayouts: normalizeSessionModePhaseLayouts(
+          getSessionModePhaseLayouts(sessionModeRecord.phaseLayouts)
+        ),
       };
     }
 
@@ -789,7 +1097,8 @@ export class SettingsManager {
 
     
     if (saved.home) {
-      const savedQuickLinks = saved.home.quickLinks || [];
+      const hasSavedQuickLinks = Array.isArray(saved.home.quickLinks);
+      const savedQuickLinks = hasSavedQuickLinks ? saved.home.quickLinks! : [];
       const defaultQuickLinks = defaults.home?.quickLinks || [];
       const defaultQuickLinksById = new Map(
         defaultQuickLinks.map((quickLink) => [quickLink.id, quickLink])
@@ -817,7 +1126,10 @@ export class SettingsManager {
 
         mergedQuickLinks.push({
           ...defaultQuickLink,
-          order: mergedQuickLinks.length,
+          visible: hasSavedQuickLinks ? false : defaultQuickLink.visible,
+          order: hasSavedQuickLinks
+            ? mergedQuickLinks.length
+            : defaultQuickLink.order,
         });
       }
 
@@ -835,9 +1147,29 @@ export class SettingsManager {
 
     
     if (saved.navigation) {
+      const savedNavigationItems = getNavigationItemsSetting(
+        (saved.navigation as { items?: unknown }).items
+      );
+      const mergedNavigationItems = [...savedNavigationItems];
+      const existingNavigationItemIds = new Set(
+        savedNavigationItems.map((item) => item.id)
+      );
+
+      for (const defaultNavigationItem of defaults.navigation?.items || []) {
+        if (existingNavigationItemIds.has(defaultNavigationItem.id)) {
+          continue;
+        }
+
+        mergedNavigationItems.push({
+          ...defaultNavigationItem,
+          order: mergedNavigationItems.length,
+        });
+      }
+
       merged.navigation = {
         ...defaults.navigation,
         ...saved.navigation,
+        items: mergedNavigationItems,
       };
     }
 

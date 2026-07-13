@@ -617,7 +617,7 @@ const FieldEditorActions: React.FC<FieldEditorActionsProps> = ({
       {t('settings.customization.custom-fields.editor.delete')}
     </Button>
     <div className="custom-fields-editor-primary-actions">
-      <Button variant="outline" onClick={onCancel}>
+      <Button variant="plain" onClick={onCancel}>
         {t('button.cancel')}
       </Button>
       <Button

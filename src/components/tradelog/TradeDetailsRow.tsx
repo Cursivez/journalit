@@ -13,7 +13,7 @@ import {
   Tag,
 } from '../shared/icons/ObsidianIcon';
 import { Image } from '../shared/icons/ObsidianIcon';
-import { imageService } from '../../services/image/ImageService';
+
 import {
   isExcalidrawMediaPath,
   resolveMediaDisplayPath,
@@ -22,6 +22,7 @@ import { getApp } from '../../utils/obsidian';
 import { FullscreenPortal } from '../image/FullscreenPortal';
 import { FullscreenImageViewer } from '../image/FullscreenImageViewer';
 import { ExcalidrawMediaEmbed } from '../image/ExcalidrawMediaEmbed';
+import { MediaPreview } from '../image/MediaPreview';
 import {
   formatDuration,
   calculateEffectiveRMultiple,
@@ -87,6 +88,15 @@ import {
 import { normalizeAccountLookupKey } from '../../services/trade/core/TradeAccountIdentity';
 import { eventBus } from '../../services/events';
 import { safeString } from '../../utils/safeString';
+import {
+  getSetupLabelColor,
+  getTagLabelColor,
+  useTradeLabelColors,
+} from '../../contexts/TradeLabelColorContext';
+import {
+  getLabelColorClassName,
+  getLabelColorForeground,
+} from '../../types/labelColor';
 
 
 type TradeWithPath = TradeFrontmatter & {
@@ -540,6 +550,7 @@ const TradeDetailsContent = memo<{
     isExpandedMode,
   }) => {
     const { currency: globalCurrency } = useCurrency();
+    const labelColors = useTradeLabelColors();
 
     
     const currency = trade.currency || globalCurrency;
@@ -1020,17 +1031,19 @@ const TradeDetailsContent = memo<{
                           />
                         </div>
                       ) : (
-                        <img
-                          src={imageService.resolveMediaPath(
-                            resolveMediaDisplayPath(
-                              getApp(),
-                              images[0],
-                              sourcePath
-                            )
+                        <MediaPreview
+                          app={getApp()}
+                          path={images[0]}
+                          sourcePath={sourcePath}
+                          displayPath={resolveMediaDisplayPath(
+                            getApp(),
+                            images[0],
+                            sourcePath
                           )}
                           alt={t('common.trade')}
-                          loading="lazy"
-                          decoding="async"
+                          imageClassName="trade-preview-media"
+                          videoClassName="trade-preview-media"
+                          showVideoBadge={false}
                         />
                       )}
                     </div>
@@ -1567,14 +1580,25 @@ const TradeDetailsContent = memo<{
               return (
                 <div key="setups" className="trade-setups-cell expanded">
                   <div className="expanded-pills">
-                    {setupsArray.map((setup: string, index: number) => (
-                      <span
-                        key={getDuplicateAwareStringKeys(setupsArray)[index]}
-                        className="pill pill--setup"
-                      >
-                        {setup}
-                      </span>
-                    ))}
+                    {setupsArray.map((setup: string, index: number) => {
+                      const color = getSetupLabelColor(
+                        labelColors.setups,
+                        setup
+                      );
+                      return (
+                        <span
+                          key={getDuplicateAwareStringKeys(setupsArray)[index]}
+                          className={`pill pill--setup ${getLabelColorClassName(color)}`}
+                          style={cssVars({
+                            '--journalit-label-color': color,
+                            '--journalit-label-foreground':
+                              getLabelColorForeground(color),
+                          })}
+                        >
+                          {setup}
+                        </span>
+                      );
+                    })}
                   </div>
                 </div>
               );
@@ -1609,16 +1633,24 @@ const TradeDetailsContent = memo<{
               return (
                 <div key="tags" className="trade-tags-cell expanded">
                   <div className="expanded-pills">
-                    {customTagsArray.map((tag: string, index: number) => (
-                      <span
-                        key={
-                          getDuplicateAwareStringKeys(customTagsArray)[index]
-                        }
-                        className="pill pill--tag"
-                      >
-                        {tag}
-                      </span>
-                    ))}
+                    {customTagsArray.map((tag: string, index: number) => {
+                      const color = getTagLabelColor(labelColors.tags, tag);
+                      return (
+                        <span
+                          key={
+                            getDuplicateAwareStringKeys(customTagsArray)[index]
+                          }
+                          className={`pill pill--tag ${getLabelColorClassName(color)}`}
+                          style={cssVars({
+                            '--journalit-label-color': color,
+                            '--journalit-label-foreground':
+                              getLabelColorForeground(color),
+                          })}
+                        >
+                          {tag}
+                        </span>
+                      );
+                    })}
                   </div>
                 </div>
               );
@@ -2227,6 +2259,8 @@ const TradeDetailsContent = memo<{
         mistakesArray,
         setupsArray,
         customTagsArray,
+        labelColors.setups,
+        labelColors.tags,
         duration,
         onImageClick,
         isMultiSelectMode,

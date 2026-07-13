@@ -321,18 +321,18 @@ function useFolderBrowserModel({
 
     const handleEscapeKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
         setIsOpen(false);
       }
     };
 
-    window.activeDocument.addEventListener('keydown', handleEscapeKey, true);
+    const activeWindow = window.activeDocument.defaultView ?? window;
+    activeWindow.addEventListener('keydown', handleEscapeKey, true);
 
     return () => {
-      window.activeDocument.removeEventListener(
-        'keydown',
-        handleEscapeKey,
-        true
-      );
+      activeWindow.removeEventListener('keydown', handleEscapeKey, true);
     };
   }, [isOpen]);
 
@@ -372,6 +372,8 @@ function useFolderBrowserModel({
           break;
 
         case 'Escape':
+          e.preventDefault();
+          e.stopPropagation();
           setIsOpen(false);
           break;
       }

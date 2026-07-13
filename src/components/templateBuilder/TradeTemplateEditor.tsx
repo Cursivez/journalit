@@ -1,26 +1,26 @@
 
 
 import React, {
-  useState,
   useCallback,
   useEffect,
   useMemo,
+  useReducer,
   useRef,
+  useState,
 } from 'react';
 import { Notice } from 'obsidian';
-import { Info } from '../shared/icons/ObsidianIcon';
-import { DndContext, DragEndEvent, closestCenter } from '@dnd-kit/core';
-import {
-  SortableContext,
-  verticalListSortingStrategy,
-  useSortable,
-} from '@dnd-kit/sortable';
-import { CSS } from '@dnd-kit/utilities';
-import { dndKitStyle } from '../../styles/inlineStylePolicy';
 import type JournalitPlugin from '../../main';
-import { TradeTemplate, TradeReviewSection } from '../../types/reviewV2';
+import {
+  TradeMetricType,
+  TradeNoteSectionId,
+  TradeTemplate,
+  TradeTemplateAssetType,
+} from '../../types/reviewV2';
 import { TradeTemplateService } from '../../services/templates/TradeTemplateService';
 import { t } from '../../lang/helpers';
+import { CustomFieldDefinition } from '../../types/customFields';
+import { ReorderControls } from '../shared/ReorderControls';
+import { FloatingUnsavedChangesBanner } from './FloatingUnsavedChangesBanner';
 
 interface TradeTemplateEditorProps {
   plugin: JournalitPlugin;
@@ -30,6 +30,216 @@ interface TradeTemplateEditorProps {
   onDirtyStateChange?: (isDirty: boolean) => void;
 }
 
+const SECTION_ORDER: TradeNoteSectionId[] = [
+  'images',
+  'metrics',
+  'thesis',
+  'missedReason',
+  'metadata',
+  'reviewButton',
+];
+
+const METRIC_OPTIONS: TradeMetricType[] = [
+  'entry',
+  'exit',
+  'duration',
+  'stopLoss',
+  'takeProfit',
+  'executionSummary',
+  'pnl',
+  'rMultiple',
+  'costs',
+  'size',
+];
+
+const ASSET_TYPES: TradeTemplateAssetType[] = [
+  'stock',
+  'options',
+  'futures',
+  'forex',
+  'crypto',
+  'cfd',
+];
+
+type TradeTemplateLayoutScope = 'default' | TradeTemplateAssetType;
+
+interface TradeTemplateEditorUiState {
+  isEditingNameField: boolean;
+  selectedScope: TradeTemplateLayoutScope;
+  isAddingAssetScope: boolean;
+}
+
+type TradeTemplateEditorUiAction =
+  | { type: 'setEditingName'; value: boolean }
+  | { type: 'setSelectedScope'; value: TradeTemplateLayoutScope }
+  | { type: 'setAddingAssetScope'; value: boolean };
+
+const TRADE_TEMPLATE_EDITOR_INITIAL_UI_STATE: TradeTemplateEditorUiState = {
+  isEditingNameField: false,
+  selectedScope: 'default',
+  isAddingAssetScope: false,
+};
+
+function tradeTemplateEditorUiReducer(
+  state: TradeTemplateEditorUiState,
+  action: TradeTemplateEditorUiAction
+): TradeTemplateEditorUiState {
+  switch (action.type) {
+    case 'setEditingName':
+      return { ...state, isEditingNameField: action.value };
+    case 'setSelectedScope':
+      return {
+        ...state,
+        selectedScope: action.value,
+        isAddingAssetScope: false,
+      };
+    case 'setAddingAssetScope':
+      return { ...state, isAddingAssetScope: action.value };
+  }
+}
+
+const DEFAULT_SECTIONS: TradeTemplate['sections'] = {
+  header: { show: true },
+  navigation: { show: true },
+  images: { show: true, position: 'top' },
+  metadata: {
+    show: true,
+    showAccounts: true,
+    showSetups: true,
+    showMistakes: true,
+    showTags: true,
+    showCustomFields: true,
+  },
+  details: {
+    show: true,
+    showThesis: true,
+    metrics: [
+      'entry',
+      'exit',
+      'duration',
+      'stopLoss',
+      'takeProfit',
+      'executionSummary',
+    ],
+  },
+  reviewButton: { show: true },
+  missedReason: { show: true },
+};
+
+function normalizeSectionOrder(
+  order: TradeNoteSectionId[] | undefined
+): TradeNoteSectionId[] {
+  const configured = Array.isArray(order) ? order : [];
+  const valid = configured.filter(
+    (sectionId): sectionId is TradeNoteSectionId =>
+      SECTION_ORDER.includes(sectionId)
+  );
+  const missing = SECTION_ORDER.filter(
+    (sectionId) => !valid.includes(sectionId)
+  );
+  return [...valid, ...missing];
+}
+
+function getSectionLabel(sectionId: TradeNoteSectionId): string {
+  switch (sectionId) {
+    case 'navigation':
+      return t('template.editor.nav-bar');
+    case 'images':
+      return t('template.editor.images');
+    case 'metrics':
+      return t('template.editor.metrics');
+    case 'thesis':
+      return t('template.editor.thesis');
+    case 'missedReason':
+      return t('template.editor.missed-reason');
+    case 'metadata':
+      return t('template.editor.metadata');
+    case 'reviewButton':
+      return t('template.editor.review-button');
+  }
+}
+
+function getMetricLabel(metric: TradeMetricType): string {
+  switch (metric) {
+    case 'entry':
+      return t('trade.details.entry');
+    case 'exit':
+      return t('trade.details.exit');
+    case 'size':
+      return t('template.editor.metric.position-size');
+    case 'duration':
+      return t('trade.details.duration');
+    case 'stopLoss':
+      return t('form.field.stop-loss');
+    case 'takeProfit':
+      return t('form.field.take-profit');
+    case 'executionSummary':
+      return t('template.editor.metric.execution-breakdown');
+    case 'pnl':
+      return t('template.editor.metric.pnl');
+    case 'rMultiple':
+      return t('template.editor.metric.r-multiple');
+    case 'costs':
+      return t('template.editor.metric.costs');
+  }
+}
+
+function getAssetTypeLabel(assetType: TradeTemplateAssetType): string {
+  switch (assetType) {
+    case 'stock':
+      return 'Stocks';
+    case 'options':
+      return 'Options';
+    case 'futures':
+      return 'Futures';
+    case 'forex':
+      return 'Forex';
+    case 'crypto':
+      return 'Crypto';
+    case 'cfd':
+      return 'CFD';
+  }
+}
+
+function isTradeTemplateAssetType(
+  value: string
+): value is TradeTemplateAssetType {
+  return ASSET_TYPES.some((assetType) => assetType === value);
+}
+
+function getLayoutScopeLabel(scope: TradeTemplateLayoutScope): string {
+  return scope === 'default'
+    ? t('template.editor.other-asset-types')
+    : getAssetTypeLabel(scope);
+}
+
+function getTradeNoteLayoutTitle(
+  scope: TradeTemplateLayoutScope,
+  configuredAssetTypes: TradeTemplateAssetType[]
+): string {
+  if (scope === 'default' && configuredAssetTypes.length === 0) {
+    return t('template.editor.trade-note-layout');
+  }
+  return `${t('template.editor.trade-note-layout')} · ${getLayoutScopeLabel(scope)}`;
+}
+
+function mergeSections(
+  base: TradeTemplate['sections'],
+  overrides: Partial<TradeTemplate['sections']> | undefined
+): TradeTemplate['sections'] {
+  return {
+    header: base.header,
+    navigation: { ...base.navigation, ...overrides?.navigation },
+    images: { ...base.images, ...overrides?.images },
+    metadata: { ...base.metadata, ...overrides?.metadata },
+    details: { ...base.details, ...overrides?.details },
+    reviewButton: { ...base.reviewButton, ...overrides?.reviewButton },
+    missedReason: {
+      show: base.missedReason?.show ?? true,
+      ...overrides?.missedReason,
+    },
+  };
+}
 
 const Toggle: React.FC<{
   checked: boolean;
@@ -37,15 +247,15 @@ const Toggle: React.FC<{
   disabled?: boolean;
 }> = ({ checked, onChange, disabled }) => (
   <button
+    type="button"
     onClick={() => !disabled && onChange(!checked)}
-    className={`template-toggle${checked ? ' is-checked' : ''}${
-      disabled ? ' is-disabled' : ''
-    }`}
+    className={`journalit-button template-toggle${checked ? ' is-checked' : ''}${disabled ? ' is-disabled' : ''}`}
+    aria-pressed={checked}
+    disabled={disabled}
   >
     <div className="template-toggle__thumb" />
   </button>
 );
-
 
 const SectionRow: React.FC<{
   label: string;
@@ -63,876 +273,574 @@ const SectionRow: React.FC<{
   </div>
 );
 
-
-const Select: React.FC<{
-  value: string;
-  options: { value: string; label: string }[];
-  onChange: (value: string) => void;
-  disabled?: boolean;
-}> = ({ value, options, onChange, disabled }) => (
-  <select
-    value={value}
-    onChange={(e) => onChange(e.target.value)}
-    disabled={disabled}
-    className={`template-select${disabled ? ' is-disabled' : ''}`}
-  >
-    {options.map((opt) => (
-      <option key={opt.value} value={opt.value}>
-        {opt.label}
-      </option>
+const SectionOrderControls: React.FC<{
+  order: TradeNoteSectionId[];
+  canEdit: boolean;
+  onMove: (sectionId: TradeNoteSectionId, direction: -1 | 1) => void;
+}> = ({ order, canEdit, onMove }) => (
+  <div className="template-editor-section-list">
+    {order.map((sectionId, index) => (
+      <div key={sectionId} className="template-section-item">
+        <div className="template-section-item__summary">
+          <span className="template-section-item__title">
+            {getSectionLabel(sectionId)}
+          </span>
+        </div>
+        <div className="template-section-item__actions">
+          <ReorderControls
+            label={getSectionLabel(sectionId)}
+            canMoveUp={canEdit && index > 0}
+            canMoveDown={canEdit && index < order.length - 1}
+            onMoveUp={() => onMove(sectionId, -1)}
+            onMoveDown={() => onMove(sectionId, 1)}
+            buttonClassName="template-section-move-button"
+          />
+        </div>
+      </div>
     ))}
-  </select>
+  </div>
 );
 
-
-const Input: React.FC<{
-  value: string;
-  onChange: (value: string) => void;
-  placeholder?: string;
-  multiline?: boolean;
-  rows?: number;
-  disabled?: boolean;
-}> = ({ value, onChange, placeholder, multiline, rows = 3, disabled }) => {
-  const className = `template-input${multiline ? ' template-input--textarea' : ''}${
-    disabled ? ' is-disabled' : ''
-  }`;
-
-  if (multiline) {
-    return (
-      <textarea
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        placeholder={placeholder}
-        rows={rows}
-        disabled={disabled}
-        className={className}
-      />
-    );
-  }
-
-  return (
-    <input
-      type="text"
-      value={value}
-      onChange={(e) => onChange(e.target.value)}
-      placeholder={placeholder}
-      disabled={disabled}
-      className={className}
-    />
-  );
-};
-
-const parseTradeReviewSectionType = (
-  value: string
-): TradeReviewSection['type'] | null => {
-  switch (value) {
-    case 'header':
-    case 'checkbox':
-    case 'textarea':
-    case 'checkboxList':
-      return value;
-    default:
-      return null;
-  }
-};
-
-const parseReviewVisibility = (
-  value: string
-): 'always' | 'losses-only' | 'never' | null => {
-  switch (value) {
-    case 'always':
-    case 'losses-only':
-    case 'never':
-      return value;
-    default:
-      return null;
-  }
-};
-
-
-const getSectionTypeLabel = (type: TradeReviewSection['type']) => {
-  switch (type) {
-    case 'header':
-      return t('template.editor.type.header');
-    case 'checkbox':
-      return t('template.editor.type.checkbox');
-    case 'textarea':
-      return t('template.editor.type.textarea');
-    case 'checkboxList':
-      return t('template.editor.type.checkboxList');
-  }
-};
-
-
-const getSectionPreviewText = (section: TradeReviewSection) => {
-  if (section.title) return section.title.replace(/\*\*/g, '');
-  if (section.content)
-    return (
-      section.content.substring(0, 30) +
-      (section.content.length > 30 ? '...' : '')
-    );
-  if (section.placeholder)
-    return (
-      section.placeholder.substring(0, 30) +
-      (section.placeholder.length > 30 ? '...' : '')
-    );
-  return t('template.editor.preview-fallback', {
-    type: getSectionTypeLabel(section.type),
-  });
-};
-
-
-interface SortableSectionItemProps {
-  id: string;
-  section: TradeReviewSection;
-  isEditing: boolean;
-  onUpdate: (section: TradeReviewSection) => void;
-  onRemove: () => void;
-}
-
-const SortableSectionItem: React.FC<SortableSectionItemProps> = ({
-  id,
-  section,
-  isEditing,
-  onUpdate,
-  onRemove,
-}) => {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({ id, disabled: !isEditing });
-
-  const [isExpanded, setIsExpanded] = useState(false);
-
-  const handleDragHandleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
-    listeners?.onKeyDown?.(e);
-  };
-
-  const handleTypeChange = (newType: TradeReviewSection['type']) => {
-    const updated = { ...section, type: newType };
-    
-    if (newType === 'checkboxList') {
-      updated.items = updated.items || [''];
-      updated.content = undefined;
-      updated.placeholder = undefined;
-    } else if (newType === 'textarea') {
-      updated.placeholder = updated.placeholder || '';
-      updated.content = undefined;
-      updated.items = undefined;
-    } else {
-      updated.content = updated.content || '';
-      updated.items = undefined;
-      updated.placeholder = undefined;
-    }
-    onUpdate(updated);
-  };
-
-  const handleItemUpdate = (itemIndex: number, value: string) => {
-    const newItems = [...(section.items || [])];
-    newItems[itemIndex] = value;
-    onUpdate({ ...section, items: newItems });
-  };
-
-  const handleAddItem = () => {
-    const newItems = [...(section.items || []), ''];
-    onUpdate({ ...section, items: newItems });
-  };
-
-  const handleRemoveItem = (itemIndex: number) => {
-    const newItems = (section.items || []).filter((_, i) => i !== itemIndex);
-    onUpdate({ ...section, items: newItems.length > 0 ? newItems : [''] });
-  };
-
-  return (
-    <div
-      ref={setNodeRef}
-      style={dndKitStyle(
-        CSS.Transform.toString(transform),
-        isDragging ? transition : undefined
-      )}
-      className={`template-section-card${isDragging ? ' is-dragging' : ''}`}
-    >
-      
-      <div className="template-section-row-main">
-        
-        <div
-          {...attributes}
-          {...listeners}
-          role="button"
-          tabIndex={isEditing ? 0 : -1}
-          className={`template-section-handle${isEditing ? ' is-editing' : ''}`}
-          onClick={(e) => e.stopPropagation()}
-          onKeyDown={handleDragHandleKeyDown}
-        >
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
-            <circle cx="9" cy="6" r="2" />
-            <circle cx="15" cy="6" r="2" />
-            <circle cx="9" cy="12" r="2" />
-            <circle cx="15" cy="12" r="2" />
-            <circle cx="9" cy="18" r="2" />
-            <circle cx="15" cy="18" r="2" />
-          </svg>
-        </div>
-
-        
-        <div
-          className={`template-section-info${isEditing ? ' is-editing' : ''}`}
-          role="button"
-          tabIndex={isEditing ? 0 : -1}
-          aria-disabled={!isEditing || undefined}
-          onClick={() => isEditing && setIsExpanded(!isExpanded)}
-          onKeyDown={(e) => {
-            if (!isEditing || (e.key !== 'Enter' && e.key !== ' ')) return;
-            e.preventDefault();
-            setIsExpanded(!isExpanded);
-          }}
-        >
-          <div className="template-section-info-row">
-            <span className="template-section-title">
-              {getSectionPreviewText(section)}
-            </span>
-            <span className="template-section-type">
-              {getSectionTypeLabel(section.type)}
-            </span>
-          </div>
-        </div>
-
-        
-        {isEditing && (
-          <button
-            onClick={() => onRemove()}
-            className="template-section-remove"
-          >
-            <svg
-              width="12"
-              height="12"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
+const LayoutScopePanel: React.FC<{
+  selectedScope: TradeTemplateLayoutScope;
+  setSelectedScope: (scope: TradeTemplateLayoutScope) => void;
+  configuredAssetTypes: TradeTemplateAssetType[];
+  availableAssetTypes: TradeTemplateAssetType[];
+  canEdit: boolean;
+  isAddingAssetScope: boolean;
+  setIsAddingAssetScope: (isAdding: boolean) => void;
+  addAssetScope: (assetType: TradeTemplateAssetType) => void;
+  canRemoveSelectedAssetScope: boolean;
+  removeSelectedAssetScope: () => void;
+}> = ({
+  selectedScope,
+  setSelectedScope,
+  configuredAssetTypes,
+  availableAssetTypes,
+  canEdit,
+  isAddingAssetScope,
+  setIsAddingAssetScope,
+  addAssetScope,
+  canRemoveSelectedAssetScope,
+  removeSelectedAssetScope,
+}) => (
+  <div className="template-editor-panel template-layout-scope-panel">
+    <div className="template-layout-scope-header">
+      <h3 className="template-editor-section-title">
+        {getTradeNoteLayoutTitle(selectedScope, configuredAssetTypes)}
+      </h3>
+      {(availableAssetTypes.length > 0 || canRemoveSelectedAssetScope) && (
+        <div className="template-layout-scope-actions">
+          {canRemoveSelectedAssetScope && (
+            <button
+              type="button"
+              className="journalit-button template-action-button template-action-button--neutral template-action-button--compact"
+              onClick={removeSelectedAssetScope}
             >
-              <line x1="18" y1="6" x2="6" y2="18" />
-              <line x1="6" y1="6" x2="18" y2="18" />
-            </svg>
-          </button>
-        )}
-      </div>
-
-      
-      {isExpanded && isEditing && (
-        <div className="template-section-expanded">
-          
-          <div>
-            <label className="template-section-label">
-              {t('template.editor.section-type')}
-            </label>
-            <Select
-              value={section.type}
-              options={[
-                {
-                  value: 'textarea',
-                  label: t('template.editor.type.textarea'),
-                },
-                {
-                  value: 'checkbox',
-                  label: t('template.editor.type.checkbox'),
-                },
-                {
-                  value: 'checkboxList',
-                  label: t('template.editor.type.checkboxList'),
-                },
-              ]}
-              onChange={(value) => {
-                const type = parseTradeReviewSectionType(value);
-                if (type) {
-                  handleTypeChange(type);
-                }
-              }}
-            />
-          </div>
-
-          
-          <div>
-            <label className="template-section-label">
-              {t('template.editor.title-label')}
-            </label>
-            <Input
-              value={section.title}
-              onChange={(value) => onUpdate({ ...section, title: value })}
-              placeholder={t('template.editor.title-placeholder')}
-            />
-          </div>
-
-          
-          {section.type === 'header' && (
-            <div>
-              <label className="template-section-label">
-                {t('template.editor.content-label')}
-              </label>
-              <Input
-                value={section.content || ''}
-                onChange={(value) => onUpdate({ ...section, content: value })}
-                placeholder={t('template.editor.content-placeholder')}
-                multiline
-                rows={2}
-              />
-            </div>
+              {t('template.editor.remove-asset-layout')}
+            </button>
           )}
-
-          {section.type === 'checkbox' && (
-            <div>
-              <label className="template-section-label">
-                {t('template.editor.checkbox-label')}
-              </label>
-              <Input
-                value={section.content || ''}
-                onChange={(value) => onUpdate({ ...section, content: value })}
-                placeholder={t('template.editor.checkbox-placeholder')}
-                multiline
-                rows={2}
-              />
-            </div>
-          )}
-
-          {section.type === 'textarea' && (
-            <div>
-              <label className="template-section-label">
-                {t('template.editor.placeholder-label')}
-              </label>
-              <Input
-                value={section.placeholder || ''}
-                onChange={(value) =>
-                  onUpdate({ ...section, placeholder: value })
-                }
-                placeholder={t('template.editor.placeholder-hint')}
-              />
-            </div>
-          )}
-
-          {section.type === 'checkboxList' && (
-            <div>
-              <label className="template-section-label">
-                {t('template.editor.items-label')}
-              </label>
-              {(section.items || ['']).map((item, itemIndex) => (
-                <div key={itemIndex} className="template-checkboxlist-row">
-                  <Input
-                    value={item}
-                    onChange={(value) => handleItemUpdate(itemIndex, value)}
-                    placeholder={t('template.editor.item-n', {
-                      n: String(itemIndex + 1),
-                    })}
-                  />
-                  <button
-                    onClick={() => handleRemoveItem(itemIndex)}
-                    disabled={(section.items || []).length <= 1}
-                    className="template-section-remove"
-                  >
-                    <svg
-                      width="12"
-                      height="12"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                    >
-                      <line x1="18" y1="6" x2="6" y2="18" />
-                      <line x1="6" y1="6" x2="18" y2="18" />
-                    </svg>
-                  </button>
-                </div>
-              ))}
+          {availableAssetTypes.length > 0 && (
+            <div className="template-layout-scope-menu-wrapper">
               <button
-                onClick={() => void handleAddItem()}
-                className="template-action-button template-action-button--secondary template-action-button--compact"
+                type="button"
+                className="journalit-button template-action-button template-action-button--neutral template-action-button--compact"
+                onClick={() => setIsAddingAssetScope(!isAddingAssetScope)}
+                disabled={!canEdit}
+                aria-expanded={isAddingAssetScope}
               >
-                {t('template.editor.add-item')}
+                <span aria-hidden="true">+</span>
+                {t('template.editor.asset-type-add')}
               </button>
+              {isAddingAssetScope && (
+                <div className="template-layout-scope-menu">
+                  {availableAssetTypes.map((assetType) => (
+                    <button
+                      key={assetType}
+                      type="button"
+                      className="journalit-button template-layout-scope-menu-item"
+                      onClick={() => addAssetScope(assetType)}
+                    >
+                      {getAssetTypeLabel(assetType)}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
           )}
         </div>
       )}
     </div>
-  );
-};
+    {configuredAssetTypes.length > 0 && (
+      <div className="template-layout-scope-bar" role="tablist">
+        <div className="template-layout-scope-tabs">
+          <button
+            type="button"
+            role="tab"
+            aria-selected={selectedScope === 'default'}
+            className={`journalit-button template-layout-scope-tab is-first${selectedScope === 'default' ? ' is-active' : ''}`}
+            onClick={() => setSelectedScope('default')}
+          >
+            {t('template.editor.other-asset-types')}
+          </button>
+          {configuredAssetTypes.map((assetType, index) => (
+            <button
+              key={assetType}
+              type="button"
+              role="tab"
+              aria-selected={selectedScope === assetType}
+              className={`journalit-button template-layout-scope-tab${index === configuredAssetTypes.length - 1 ? ' is-last' : ''}${selectedScope === assetType ? ' is-active' : ''}`}
+              onClick={() => setSelectedScope(assetType)}
+            >
+              {getAssetTypeLabel(assetType)}
+            </button>
+          ))}
+        </div>
+      </div>
+    )}
+  </div>
+);
 
-function useTradeTemplateEditorModel({
+const SectionVisibilityPanel: React.FC<{
+  canEdit: boolean;
+  sections: TradeTemplate['sections'];
+  updateSection: <K extends keyof TradeTemplate['sections']>(
+    sectionKey: K,
+    updates: Partial<TradeTemplate['sections'][K]>
+  ) => void;
+}> = ({ canEdit, sections, updateSection }) => (
+  <div className="template-editor-panel">
+    <h3 className="template-editor-section-title template-editor-section-title--compact">
+      {t('template.editor.section-visibility')}
+    </h3>
+    <SectionRow
+      label={t('template.editor.nav-bar')}
+      description={t('template.editor.nav-bar-desc')}
+    >
+      <Toggle
+        checked={sections.navigation.show}
+        onChange={(checked) => updateSection('navigation', { show: checked })}
+        disabled={!canEdit}
+      />
+    </SectionRow>
+    <SectionRow
+      label={t('template.editor.images')}
+      description={t('template.editor.images-desc')}
+    >
+      <Toggle
+        checked={sections.images.show}
+        onChange={(checked) => updateSection('images', { show: checked })}
+        disabled={!canEdit}
+      />
+    </SectionRow>
+    <SectionRow
+      label={t('template.editor.metrics')}
+      description={t('template.editor.metrics-desc')}
+    >
+      <Toggle
+        checked={sections.details.show}
+        onChange={(checked) => updateSection('details', { show: checked })}
+        disabled={!canEdit}
+      />
+    </SectionRow>
+    <SectionRow
+      label={t('template.editor.thesis')}
+      description={t('template.editor.thesis-desc')}
+    >
+      <Toggle
+        checked={sections.details.showThesis !== false}
+        onChange={(checked) =>
+          updateSection('details', { showThesis: checked })
+        }
+        disabled={!canEdit}
+      />
+    </SectionRow>
+    <SectionRow
+      label={t('template.editor.missed-reason')}
+      description={t('template.editor.missed-reason-desc')}
+    >
+      <Toggle
+        checked={sections.missedReason?.show !== false}
+        onChange={(checked) => updateSection('missedReason', { show: checked })}
+        disabled={!canEdit}
+      />
+    </SectionRow>
+    <SectionRow
+      label={t('template.editor.metadata')}
+      description={t('template.editor.metadata-desc')}
+    >
+      <Toggle
+        checked={sections.metadata.show}
+        onChange={(checked) => updateSection('metadata', { show: checked })}
+        disabled={!canEdit}
+      />
+    </SectionRow>
+    <SectionRow
+      label={t('template.editor.review-button')}
+      description={t('template.editor.review-button-desc')}
+    >
+      <Toggle
+        checked={sections.reviewButton.show}
+        onChange={(checked) => updateSection('reviewButton', { show: checked })}
+        disabled={!canEdit}
+      />
+    </SectionRow>
+  </div>
+);
+
+const MetricCardsPanel: React.FC<{
+  canEdit: boolean;
+  metrics: TradeMetricType[];
+  updateMetrics: (metrics: TradeMetricType[]) => void;
+}> = ({ canEdit, metrics, updateMetrics }) => (
+  <div className="template-editor-panel">
+    <h3 className="template-editor-section-title">
+      {t('template.editor.metric-cards')}
+    </h3>
+    {METRIC_OPTIONS.map((metric) => (
+      <SectionRow key={metric} label={getMetricLabel(metric)}>
+        <Toggle
+          checked={metrics.includes(metric)}
+          onChange={(checked) =>
+            updateMetrics(updateMetricList(metrics, metric, checked))
+          }
+          disabled={!canEdit}
+        />
+      </SectionRow>
+    ))}
+  </div>
+);
+
+const MetadataRowsPanel: React.FC<{
+  canEdit: boolean;
+  metadata: TradeTemplate['sections']['metadata'];
+  customFieldCount: number;
+  updateMetadata: (
+    updates: Partial<TradeTemplate['sections']['metadata']>
+  ) => void;
+}> = ({ canEdit, metadata, customFieldCount, updateMetadata }) => (
+  <div className="template-editor-panel">
+    <h3 className="template-editor-section-title">
+      {t('template.editor.metadata-rows')}
+    </h3>
+    <SectionRow label={t('template.editor.accounts')}>
+      <Toggle
+        checked={metadata.showAccounts}
+        onChange={(checked) => updateMetadata({ showAccounts: checked })}
+        disabled={!canEdit}
+      />
+    </SectionRow>
+    <SectionRow label={t('template.editor.setups')}>
+      <Toggle
+        checked={metadata.showSetups}
+        onChange={(checked) => updateMetadata({ showSetups: checked })}
+        disabled={!canEdit}
+      />
+    </SectionRow>
+    <SectionRow label={t('template.editor.mistakes')}>
+      <Toggle
+        checked={metadata.showMistakes}
+        onChange={(checked) => updateMetadata({ showMistakes: checked })}
+        disabled={!canEdit}
+      />
+    </SectionRow>
+    <SectionRow label={t('template.editor.tags')}>
+      <Toggle
+        checked={metadata.showTags}
+        onChange={(checked) => updateMetadata({ showTags: checked })}
+        disabled={!canEdit}
+      />
+    </SectionRow>
+    <SectionRow
+      label={t('template.editor.custom-fields')}
+      description={t('template.editor.custom-fields-desc', {
+        count: String(customFieldCount),
+      })}
+    >
+      <Toggle
+        checked={metadata.showCustomFields !== false}
+        onChange={(checked) => updateMetadata({ showCustomFields: checked })}
+        disabled={!canEdit}
+      />
+    </SectionRow>
+  </div>
+);
+
+function cloneTemplate(template: TradeTemplate): TradeTemplate {
+  return structuredClone(template);
+}
+
+function getSections(template: TradeTemplate): TradeTemplate['sections'] {
+  return {
+    ...DEFAULT_SECTIONS,
+    ...template.sections,
+    metadata: { ...DEFAULT_SECTIONS.metadata, ...template.sections.metadata },
+    details: { ...DEFAULT_SECTIONS.details, ...template.sections.details },
+  };
+}
+
+function updateMetricList(
+  metrics: TradeMetricType[],
+  metric: TradeMetricType,
+  enabled: boolean
+): TradeMetricType[] {
+  if (enabled) {
+    return metrics.includes(metric) ? metrics : [...metrics, metric];
+  }
+  return metrics.filter((item) => item !== metric);
+}
+
+export const TradeTemplateEditor: React.FC<TradeTemplateEditorProps> = ({
+  plugin,
   tradeTemplateService,
   templateId,
   onTemplateChange,
   onDirtyStateChange,
-}: Omit<TradeTemplateEditorProps, 'plugin'>) {
-  
-  const [template, setTemplate] = useState<TradeTemplate | null>(null);
+}) => {
+  const [savedTemplate, setSavedTemplate] = useState<TradeTemplate | null>(
+    null
+  );
+  const [editingTemplate, setEditingTemplate] = useState<TradeTemplate | null>(
+    null
+  );
+  const [uiState, dispatchUiState] = useReducer(
+    tradeTemplateEditorUiReducer,
+    TRADE_TEMPLATE_EDITOR_INITIAL_UI_STATE
+  );
+  const { isEditingNameField, selectedScope, isAddingAssetScope } = uiState;
+  const nameInputRef = useRef<HTMLInputElement>(null);
+  const onDirtyStateChangeRef = useRef(onDirtyStateChange);
 
-  
-  const [editingName, setEditingName] = useState('');
-  const [editingSections, setEditingSections] = useState<
-    TradeTemplate['sections'] | null
-  >(null);
-  const [isEditingNameField, setIsEditingNameField] = useState(false);
+  const customFields = useMemo<CustomFieldDefinition[]>(
+    () => plugin.customFieldsService?.getFields() ?? [],
+    [plugin.customFieldsService]
+  );
 
-  
   const loadTemplate = useCallback(() => {
     const loaded = tradeTemplateService.getTemplate(templateId);
-    if (loaded) {
-      setTemplate(loaded);
-      setEditingName(loaded.name);
-      setEditingSections(structuredClone(loaded.sections));
-    }
+    if (!loaded) return;
+    const normalized = {
+      ...loaded,
+      sectionOrder: normalizeSectionOrder(loaded.sectionOrder),
+      sections: getSections(loaded),
+    };
+    setSavedTemplate(normalized);
+    setEditingTemplate(cloneTemplate(normalized));
   }, [templateId, tradeTemplateService]);
 
-  
   useEffect(() => {
     loadTemplate();
   }, [loadTemplate]);
 
-  
-  const hasChanges = useMemo(() => {
-    if (!template || !editingSections) return false;
-    if (editingName !== template.name) return true;
-    return (
-      JSON.stringify(editingSections) !== JSON.stringify(template.sections)
-    );
-  }, [template, editingName, editingSections]);
-
-  
   useEffect(() => {
-    onDirtyStateChange?.(hasChanges);
-  }, [hasChanges, onDirtyStateChange]);
+    if (!editingTemplate || !isTradeTemplateAssetType(selectedScope)) return;
+    if (editingTemplate.assetOverrides?.[selectedScope] !== undefined) return;
 
-  
+    dispatchUiState({ type: 'setSelectedScope', value: 'default' });
+  }, [editingTemplate, selectedScope]);
+
+  const hasChanges = useMemo(() => {
+    if (!savedTemplate || !editingTemplate) return false;
+    return JSON.stringify(savedTemplate) !== JSON.stringify(editingTemplate);
+  }, [savedTemplate, editingTemplate]);
+
+  useEffect(() => {
+    onDirtyStateChangeRef.current = onDirtyStateChange;
+  }, [onDirtyStateChange]);
+
+  useEffect(() => {
+    onDirtyStateChangeRef.current?.(hasChanges);
+  }, [hasChanges]);
+
+  const canEdit = editingTemplate?.isBuiltIn === false;
+
+  const updateTemplate = useCallback(
+    (updater: (template: TradeTemplate) => TradeTemplate) => {
+      setEditingTemplate((current) => (current ? updater(current) : current));
+    },
+    []
+  );
+
+  const updateBaseSection = useCallback(
+    <K extends keyof TradeTemplate['sections']>(
+      sectionKey: K,
+      updates: Partial<TradeTemplate['sections'][K]>
+    ) => {
+      updateTemplate((template) => ({
+        ...template,
+        sections: {
+          ...template.sections,
+          [sectionKey]: { ...template.sections[sectionKey], ...updates },
+        },
+      }));
+    },
+    [updateTemplate]
+  );
+
+  const moveBaseSection = useCallback(
+    (sectionId: TradeNoteSectionId, direction: -1 | 1) => {
+      updateTemplate((template) => {
+        const order = normalizeSectionOrder(template.sectionOrder);
+        const index = order.indexOf(sectionId);
+        const nextIndex = index + direction;
+        if (index < 0 || nextIndex < 0 || nextIndex >= order.length)
+          return template;
+        const nextOrder = [...order];
+        const [item] = nextOrder.splice(index, 1);
+        nextOrder.splice(nextIndex, 0, item);
+        return { ...template, sectionOrder: nextOrder };
+      });
+    },
+    [updateTemplate]
+  );
+
+  const updateAssetSection = useCallback(
+    <K extends keyof TradeTemplate['sections']>(
+      assetType: TradeTemplateAssetType,
+      sectionKey: K,
+      updates: Partial<TradeTemplate['sections'][K]>
+    ) => {
+      updateTemplate((template) => {
+        const baseSections = getSections(template);
+        const defaultSections = mergeSections(
+          baseSections,
+          template.assetDefaults?.[assetType]?.sections
+        );
+        const assetOverrides = { ...(template.assetOverrides ?? {}) };
+        const currentOverride = assetOverrides[assetType] ?? {
+          sectionOrder: normalizeSectionOrder(
+            template.assetDefaults?.[assetType]?.sectionOrder ??
+              template.sectionOrder
+          ),
+          sections: defaultSections,
+        };
+        const currentSections = mergeSections(
+          defaultSections,
+          currentOverride.sections
+        );
+        assetOverrides[assetType] = {
+          ...currentOverride,
+          sections: {
+            ...currentSections,
+            [sectionKey]: {
+              ...currentSections[sectionKey],
+              ...updates,
+            },
+          },
+        };
+        return { ...template, assetOverrides };
+      });
+    },
+    [updateTemplate]
+  );
+
+  const moveAssetSection = useCallback(
+    (
+      assetType: TradeTemplateAssetType,
+      sectionId: TradeNoteSectionId,
+      direction: -1 | 1
+    ) => {
+      updateTemplate((template) => {
+        const baseSections = getSections(template);
+        const defaultSections = mergeSections(
+          baseSections,
+          template.assetDefaults?.[assetType]?.sections
+        );
+        const order = normalizeSectionOrder(
+          template.assetOverrides?.[assetType]?.sectionOrder ??
+            template.assetDefaults?.[assetType]?.sectionOrder ??
+            template.sectionOrder
+        );
+        const index = order.indexOf(sectionId);
+        const nextIndex = index + direction;
+        if (index < 0 || nextIndex < 0 || nextIndex >= order.length)
+          return template;
+        const nextOrder = [...order];
+        const [item] = nextOrder.splice(index, 1);
+        nextOrder.splice(nextIndex, 0, item);
+        return {
+          ...template,
+          assetOverrides: {
+            ...(template.assetOverrides ?? {}),
+            [assetType]: {
+              sectionOrder: nextOrder,
+              sections: mergeSections(
+                defaultSections,
+                template.assetOverrides?.[assetType]?.sections
+              ),
+            },
+          },
+        };
+      });
+    },
+    [updateTemplate]
+  );
+
+  const addAssetScope = useCallback(
+    (assetType: TradeTemplateAssetType) => {
+      updateTemplate((template) => {
+        const baseSections = getSections(template);
+        const defaultSections = mergeSections(
+          baseSections,
+          template.assetDefaults?.[assetType]?.sections
+        );
+        return {
+          ...template,
+          assetOverrides: {
+            ...(template.assetOverrides ?? {}),
+            [assetType]: {
+              sectionOrder: normalizeSectionOrder(
+                template.assetDefaults?.[assetType]?.sectionOrder ??
+                  template.sectionOrder
+              ),
+              sections: defaultSections,
+            },
+          },
+        };
+      });
+      dispatchUiState({ type: 'setSelectedScope', value: assetType });
+    },
+    [updateTemplate]
+  );
+
+  const removeSelectedAssetScope = useCallback(() => {
+    if (!isTradeTemplateAssetType(selectedScope)) return;
+    updateTemplate((template) => {
+      const assetOverrides = { ...(template.assetOverrides ?? {}) };
+      delete assetOverrides[selectedScope];
+      return { ...template, assetOverrides };
+    });
+    dispatchUiState({ type: 'setSelectedScope', value: 'default' });
+  }, [selectedScope, updateTemplate]);
+
   const handleSave = useCallback(async () => {
-    if (!template || !editingSections) return;
-
+    if (!editingTemplate || editingTemplate.isBuiltIn) return;
     try {
-      if (template.isBuiltIn) {
-        new Notice(t('notice.error.duplicate-to-customize'));
-        return;
-      }
-
-      await tradeTemplateService.updateTemplate(template.id, {
-        name: editingName,
-        sections: editingSections,
+      await tradeTemplateService.updateTemplate(editingTemplate.id, {
+        name: editingTemplate.name,
+        sectionOrder: normalizeSectionOrder(editingTemplate.sectionOrder),
+        assetDefaults: editingTemplate.assetDefaults,
+        sections: getSections(editingTemplate),
+        assetOverrides: editingTemplate.assetOverrides,
       });
       loadTemplate();
       onTemplateChange?.();
       new Notice(t('notice.template-saved'));
     } catch (error) {
-      console.error('Failed to save template:', error);
+      console.error('Failed to save trade template:', error);
       new Notice(
         error instanceof Error
           ? error.message
           : t('notice.error.switch-template-generic')
       );
     }
-  }, [
-    template,
-    editingName,
-    editingSections,
-    tradeTemplateService,
-    loadTemplate,
-    onTemplateChange,
-  ]);
+  }, [editingTemplate, tradeTemplateService, loadTemplate, onTemplateChange]);
 
-  
   const handleDiscard = useCallback(() => {
-    if (template) {
-      setEditingName(template.name);
-      setEditingSections(structuredClone(template.sections));
-    }
-  }, [template]);
+    if (savedTemplate) setEditingTemplate(cloneTemplate(savedTemplate));
+  }, [savedTemplate]);
 
-  
-  const updateSection = useCallback(
-    <K extends keyof TradeTemplate['sections']>(
-      sectionKey: K,
-      updates: Partial<TradeTemplate['sections'][K]>
-    ) => {
-      if (!editingSections) return;
-
-      setEditingSections((currentSections) => {
-        if (!currentSections) return currentSections;
-
-        return {
-          ...currentSections,
-          [sectionKey]: {
-            ...currentSections[sectionKey],
-            ...updates,
-          },
-        };
-      });
-    },
-    [editingSections]
-  );
-
-  
-  const handleNameBlur = useCallback(() => {
-    setIsEditingNameField(false);
-  }, []);
-
-  
-  const createDragEndHandler = useCallback(
-    (sectionKey: 'sections' | 'winSections' | 'lossSections') => {
-      return (event: DragEndEvent) => {
-        const { active, over } = event;
-        if (!over || active.id === over.id || !editingSections) return;
-
-        const sections = editingSections.review[sectionKey] || [];
-        const oldIndex = sections.findIndex((s) => s.id === active.id);
-        const newIndex = sections.findIndex((s) => s.id === over.id);
-
-        if (oldIndex === -1 || newIndex === -1) return;
-
-        const newSections = [...sections];
-        const [movedItem] = newSections.splice(oldIndex, 1);
-        newSections.splice(newIndex, 0, movedItem);
-
-        updateSection('review', { [sectionKey]: newSections });
-      };
-    },
-    [editingSections, updateSection]
-  );
-
-  
-  const [activeReviewTab, setActiveReviewTab] = useState<'win' | 'loss'>('win');
-  const nameInputRef = useRef<HTMLInputElement>(null);
-
-  const startEditingName = useCallback(() => {
-    setIsEditingNameField(true);
-    window.requestAnimationFrame(() => nameInputRef.current?.focus());
-  }, []);
-
-  return {
-    template,
-    editingSections,
-    editingName,
-    setEditingName,
-    isEditingNameField,
-    setIsEditingNameField,
-    startEditingName,
-    hasChanges,
-    handleDiscard,
-    handleSave,
-    updateSection,
-    handleNameBlur,
-    createDragEndHandler,
-    activeReviewTab,
-    setActiveReviewTab,
-    nameInputRef,
-  };
-}
-
-type TradeTemplateEditorModel = ReturnType<typeof useTradeTemplateEditorModel>;
-
-function ReviewSectionList({
-  editingSections,
-  canEdit,
-  sectionKey,
-  label,
-  mutedLabel = false,
-  addPrefix,
-  updateSection,
-  createDragEndHandler,
-}: Pick<TradeTemplateEditorModel, 'updateSection' | 'createDragEndHandler'> & {
-  editingSections: TradeTemplate['sections'];
-  canEdit: boolean;
-  sectionKey: 'sections' | 'winSections' | 'lossSections';
-  label: string;
-  mutedLabel?: boolean;
-  addPrefix: string;
-}) {
-  const sections = editingSections.review[sectionKey] || [];
-
-  return (
-    <>
-      <div className="template-editor-section-header">
-        <label
-          className={`template-editor-section-label${mutedLabel ? ' template-editor-section-label--muted' : ''}`}
-        >
-          {label}
-        </label>
-        {canEdit && (
-          <button
-            onClick={() => {
-              const newSection: TradeReviewSection = {
-                id: `${addPrefix}-${Date.now()}`,
-                title: '',
-                type: 'textarea',
-                placeholder: '',
-              };
-              updateSection('review', {
-                [sectionKey]: [...sections, newSection],
-              });
-            }}
-            className="template-action-button template-action-button--secondary template-action-button--compact"
-          >
-            {t('template.editor.add-section')}
-          </button>
-        )}
-      </div>
-
-      {sections.length === 0 ? (
-        <div className="template-editor-empty-state">
-          {t('template.editor.no-sections')}
-          {canEdit && t('template.editor.add-section-hint')}
-        </div>
-      ) : (
-        <DndContext
-          collisionDetection={closestCenter}
-          onDragEnd={createDragEndHandler(sectionKey)}
-        >
-          <SortableContext
-            items={sections.map((section) => section.id)}
-            strategy={verticalListSortingStrategy}
-          >
-            <div className="template-editor-section-list">
-              {sections.map((section, index) => (
-                <SortableSectionItem
-                  key={section.id}
-                  id={section.id}
-                  section={section}
-                  isEditing={canEdit}
-                  onUpdate={(updatedSection) => {
-                    const nextSections = [...sections];
-                    nextSections[index] = updatedSection;
-                    updateSection('review', { [sectionKey]: nextSections });
-                  }}
-                  onRemove={() => {
-                    updateSection('review', {
-                      [sectionKey]: sections.filter((_, i) => i !== index),
-                    });
-                  }}
-                />
-              ))}
-            </div>
-          </SortableContext>
-        </DndContext>
-      )}
-    </>
-  );
-}
-
-function TradeReviewSettingsPanel({
-  editingSections,
-  canEdit,
-  isBuiltIn,
-  updateSection,
-  createDragEndHandler,
-  activeReviewTab,
-  setActiveReviewTab,
-}: Pick<
-  TradeTemplateEditorModel,
-  | 'updateSection'
-  | 'createDragEndHandler'
-  | 'activeReviewTab'
-  | 'setActiveReviewTab'
-> & {
-  editingSections: TradeTemplate['sections'];
-  canEdit: boolean;
-  isBuiltIn: boolean;
-}) {
-  return (
-    <>
-      
-      <div className="template-editor-panel template-editor-panel--spaced">
-        <h3 className="template-editor-section-title">
-          <svg
-            width="16"
-            height="16"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-          >
-            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-            <polyline points="14 2 14 8 20 8" />
-            <line x1="16" y1="13" x2="8" y2="13" />
-            <line x1="16" y1="17" x2="8" y2="17" />
-          </svg>
-          {t('template.editor.review-title')}
-        </h3>
-
-        
-        {isBuiltIn && (
-          <div className="template-editor-notice template-editor-notice--warning">
-            <Info size={16} className="template-editor-notice__icon" />
-            <span>{t('template.editor.built-in-notice')}</span>
-          </div>
-        )}
-
-        <SectionRow
-          label={t('template.editor.show-review')}
-          description={t('template.editor.show-review-desc')}
-        >
-          <Select
-            value={editingSections.review.show}
-            options={[
-              {
-                value: 'always',
-                label: t('template.editor.show-review.always'),
-              },
-              {
-                value: 'losses-only',
-                label: t('template.editor.show-review.losses-only'),
-              },
-              {
-                value: 'never',
-                label: t('template.editor.show-review.never'),
-              },
-            ]}
-            onChange={(value) => {
-              const show = parseReviewVisibility(value);
-              if (show) {
-                updateSection('review', { show });
-              }
-            }}
-            disabled={isBuiltIn}
-          />
-        </SectionRow>
-
-        
-        {editingSections.review.show !== 'never' && (
-          <>
-            <SectionRow
-              label={t('template.editor.show-missed')}
-              description={t('template.editor.show-missed-desc')}
-            >
-              <Toggle
-                checked={editingSections.review.showForMissed ?? false}
-                onChange={(checked) =>
-                  updateSection('review', { showForMissed: checked })
-                }
-                disabled={isBuiltIn}
-              />
-            </SectionRow>
-
-            <SectionRow
-              label={t('template.editor.show-backtest')}
-              description={t('template.editor.show-backtest-desc')}
-            >
-              <Toggle
-                checked={editingSections.review.showForBacktest ?? false}
-                onChange={(checked) =>
-                  updateSection('review', { showForBacktest: checked })
-                }
-                disabled={isBuiltIn}
-              />
-            </SectionRow>
-          </>
-        )}
-
-        
-        {editingSections.review.show !== 'never' && (
-          <div className="template-editor-review-sections">
-            
-            {editingSections.review.show === 'losses-only' && (
-              <ReviewSectionList
-                editingSections={editingSections}
-                canEdit={canEdit}
-                sectionKey="sections"
-                label={t('template.editor.sections')}
-                addPrefix="section"
-                updateSection={updateSection}
-                createDragEndHandler={createDragEndHandler}
-              />
-            )}
-
-            
-            {editingSections.review.show === 'always' && (
-              <>
-                
-                <div className="template-editor-tab-list">
-                  <button
-                    onClick={() => setActiveReviewTab('win')}
-                    className={`template-editor-tab-button${
-                      activeReviewTab === 'win' ? ' is-active' : ''
-                    }`}
-                  >
-                    {t('template.editor.win-sections')}
-                  </button>
-                  <button
-                    onClick={() => setActiveReviewTab('loss')}
-                    className={`template-editor-tab-button${
-                      activeReviewTab === 'loss' ? ' is-active' : ''
-                    }`}
-                  >
-                    {t('template.editor.loss-sections')}
-                  </button>
-                </div>
-
-                
-                {activeReviewTab === 'win' && (
-                  <ReviewSectionList
-                    editingSections={editingSections}
-                    canEdit={canEdit}
-                    sectionKey="winSections"
-                    label={t('template.editor.win-sections-desc')}
-                    mutedLabel
-                    addPrefix="win-section"
-                    updateSection={updateSection}
-                    createDragEndHandler={createDragEndHandler}
-                  />
-                )}
-
-                
-                {activeReviewTab === 'loss' && (
-                  <ReviewSectionList
-                    editingSections={editingSections}
-                    canEdit={canEdit}
-                    sectionKey="lossSections"
-                    label={t('template.editor.loss-sections-desc')}
-                    mutedLabel
-                    addPrefix="loss-section"
-                    updateSection={updateSection}
-                    createDragEndHandler={createDragEndHandler}
-                  />
-                )}
-              </>
-            )}
-          </div>
-        )}
-      </div>
-    </>
-  );
-}
-
-export const TradeTemplateEditor: React.FC<TradeTemplateEditorProps> = ({
-  plugin: _plugin,
-  tradeTemplateService,
-  templateId,
-  onTemplateChange,
-  onDirtyStateChange,
-}) => {
-  const {
-    template,
-    editingSections,
-    editingName,
-    setEditingName,
-    isEditingNameField,
-    setIsEditingNameField,
-    startEditingName,
-    hasChanges,
-    handleDiscard,
-    handleSave,
-    updateSection,
-    handleNameBlur,
-    createDragEndHandler,
-    activeReviewTab,
-    setActiveReviewTab,
-    nameInputRef,
-  } = useTradeTemplateEditorModel({
-    tradeTemplateService,
-    templateId,
-    onTemplateChange,
-    onDirtyStateChange,
-  });
-
-  if (!template || !editingSections) {
+  if (!editingTemplate) {
     return (
       <div className="template-editor-loading">
         {t('template.editor.loading')}
@@ -940,11 +848,62 @@ export const TradeTemplateEditor: React.FC<TradeTemplateEditorProps> = ({
     );
   }
 
-  const isBuiltIn = template.isBuiltIn;
-  const canEdit = !isBuiltIn;
+  const sections = getSections(editingTemplate);
+  const sectionOrder = normalizeSectionOrder(editingTemplate.sectionOrder);
+  const configuredAssetTypes = ASSET_TYPES.filter(
+    (assetType) => editingTemplate.assetOverrides?.[assetType] !== undefined
+  );
+  const availableAssetTypes = ASSET_TYPES.filter(
+    (assetType) => !configuredAssetTypes.includes(assetType)
+  );
+  const selectedAssetOverride = isTradeTemplateAssetType(selectedScope)
+    ? editingTemplate.assetOverrides?.[selectedScope]
+    : undefined;
+  const selectedAssetDefault = isTradeTemplateAssetType(selectedScope)
+    ? editingTemplate.assetDefaults?.[selectedScope]
+    : undefined;
+  const defaultAssetSections = selectedAssetDefault?.sections
+    ? mergeSections(sections, selectedAssetDefault.sections)
+    : sections;
+  const activeSections = isTradeTemplateAssetType(selectedScope)
+    ? mergeSections(defaultAssetSections, selectedAssetOverride?.sections)
+    : sections;
+  const activeSectionOrder = isTradeTemplateAssetType(selectedScope)
+    ? normalizeSectionOrder(
+        selectedAssetOverride?.sectionOrder ??
+          selectedAssetDefault?.sectionOrder ??
+          sectionOrder
+      )
+    : sectionOrder;
+
+  const updateActiveSection = <K extends keyof TradeTemplate['sections']>(
+    sectionKey: K,
+    updates: Partial<TradeTemplate['sections'][K]>
+  ) => {
+    if (isTradeTemplateAssetType(selectedScope)) {
+      updateAssetSection(selectedScope, sectionKey, updates);
+      return;
+    }
+    updateBaseSection(sectionKey, updates);
+  };
+
+  const moveActiveSection = (
+    sectionId: TradeNoteSectionId,
+    direction: -1 | 1
+  ) => {
+    if (isTradeTemplateAssetType(selectedScope)) {
+      moveAssetSection(selectedScope, sectionId, direction);
+      return;
+    }
+    moveBaseSection(sectionId, direction);
+  };
+
+  const showUnsavedBanner = hasChanges && canEdit;
 
   return (
-    <div className="template-editor-root">
+    <div
+      className={`template-editor-root${showUnsavedBanner ? ' template-editor-root--has-floating-unsaved' : ''}`}
+    >
       
       <div className="template-editor-topbar">
         <div className="template-editor-topbar-group template-editor-topbar-group--tight">
@@ -952,38 +911,45 @@ export const TradeTemplateEditor: React.FC<TradeTemplateEditorProps> = ({
             <input
               ref={nameInputRef}
               type="text"
-              value={editingName}
-              onChange={(e) => setEditingName(e.target.value)}
-              onBlur={handleNameBlur}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') handleNameBlur();
-                if (e.key === 'Escape') {
-                  setEditingName(template.name);
-                  setIsEditingNameField(false);
-                }
-              }}
+              value={editingTemplate.name}
+              onChange={(event) =>
+                updateTemplate((template) => ({
+                  ...template,
+                  name: event.target.value,
+                }))
+              }
+              onBlur={() =>
+                dispatchUiState({ type: 'setEditingName', value: false })
+              }
               className="template-editor-title-input"
             />
           ) : (
             <h2
               role={canEdit ? 'button' : undefined}
               tabIndex={canEdit ? 0 : undefined}
-              onClick={() => canEdit && startEditingName()}
-              onKeyDown={
-                canEdit
-                  ? (e) => {
-                      if (e.key !== 'Enter' && e.key !== ' ') return;
-                      e.preventDefault();
-                      startEditingName();
-                    }
-                  : undefined
-              }
+              onClick={() => {
+                if (!canEdit) return;
+                dispatchUiState({ type: 'setEditingName', value: true });
+                window.requestAnimationFrame(() =>
+                  nameInputRef.current?.focus()
+                );
+              }}
+              onKeyDown={(event) => {
+                if (!canEdit || (event.key !== 'Enter' && event.key !== ' ')) {
+                  return;
+                }
+                event.preventDefault();
+                dispatchUiState({ type: 'setEditingName', value: true });
+                window.requestAnimationFrame(() =>
+                  nameInputRef.current?.focus()
+                );
+              }}
               className={`template-editor-title-text${canEdit ? ' is-editable' : ''}`}
             >
-              {editingName}
+              {editingTemplate.name}
             </h2>
           )}
-          {isBuiltIn && (
+          {editingTemplate.isBuiltIn && (
             <span className="template-editor-badge">
               {t('template.editor.built-in')}
             </span>
@@ -991,115 +957,79 @@ export const TradeTemplateEditor: React.FC<TradeTemplateEditorProps> = ({
         </div>
       </div>
 
-      
       <div className="template-editor-canvas template-editor-canvas-container">
         <div className="template-editor-content">
-          
-          {hasChanges && canEdit && (
-            <div className="template-unsaved-banner">
-              <span className="template-unsaved-banner__text">
-                {t('template.editor.unsaved-changes')}
-              </span>
-              <div className="template-unsaved-banner__actions">
-                <button
-                  onClick={() => void handleDiscard()}
-                  className="template-action-button template-action-button--neutral template-action-button--compact"
-                >
-                  {t('button.discard')}
-                </button>
-                <button
-                  onClick={() => void handleSave()}
-                  className="template-action-button template-action-button--primary template-action-button--compact"
-                >
-                  {t('button.save')}
-                </button>
-              </div>
+          {editingTemplate.isBuiltIn && (
+            <div className="template-editor-notice template-editor-notice--warning">
+              <span>{t('template.editor.built-in-notice')}</span>
             </div>
           )}
 
-          <TradeReviewSettingsPanel
-            editingSections={editingSections}
-            canEdit={canEdit}
-            isBuiltIn={isBuiltIn}
-            updateSection={updateSection}
-            createDragEndHandler={createDragEndHandler}
-            activeReviewTab={activeReviewTab}
-            setActiveReviewTab={setActiveReviewTab}
-          />
+          <div className="template-trade-note-customization-surface">
+            <LayoutScopePanel
+              selectedScope={selectedScope}
+              setSelectedScope={(scope) =>
+                dispatchUiState({ type: 'setSelectedScope', value: scope })
+              }
+              configuredAssetTypes={configuredAssetTypes}
+              availableAssetTypes={availableAssetTypes}
+              canEdit={canEdit}
+              isAddingAssetScope={isAddingAssetScope}
+              setIsAddingAssetScope={(isAdding) =>
+                dispatchUiState({
+                  type: 'setAddingAssetScope',
+                  value: isAdding,
+                })
+              }
+              addAssetScope={addAssetScope}
+              canRemoveSelectedAssetScope={
+                canEdit && isTradeTemplateAssetType(selectedScope)
+              }
+              removeSelectedAssetScope={removeSelectedAssetScope}
+            />
 
-          
-          <div className="template-editor-panel">
-            <h3 className="template-editor-section-title template-editor-section-title--compact">
-              {t('template.editor.section-visibility')}
-            </h3>
-
-            <SectionRow
-              label={t('template.editor.nav-bar')}
-              description={t('template.editor.nav-bar-desc')}
-            >
-              <Toggle
-                checked={editingSections.navigation.show}
-                onChange={(checked) =>
-                  updateSection('navigation', { show: checked })
-                }
-                disabled={!canEdit}
+            <div className="template-editor-panel">
+              <SectionOrderControls
+                order={activeSectionOrder}
+                canEdit={canEdit}
+                onMove={moveActiveSection}
               />
-            </SectionRow>
+            </div>
 
-            <SectionRow
-              label={t('template.editor.images')}
-              description={t('template.editor.images-desc')}
-            >
-              <Toggle
-                checked={editingSections.images.show}
-                onChange={(checked) =>
-                  updateSection('images', { show: checked })
-                }
-                disabled={!canEdit}
-              />
-            </SectionRow>
+            <SectionVisibilityPanel
+              canEdit={canEdit}
+              sections={activeSections}
+              updateSection={updateActiveSection}
+            />
 
-            <SectionRow
-              label={t('template.editor.metadata')}
-              description={t('template.editor.metadata-desc')}
-            >
-              <Toggle
-                checked={editingSections.metadata.show}
-                onChange={(checked) =>
-                  updateSection('metadata', { show: checked })
-                }
-                disabled={!canEdit}
-              />
-            </SectionRow>
+            <MetricCardsPanel
+              canEdit={canEdit}
+              metrics={activeSections.details.metrics}
+              updateMetrics={(metrics) =>
+                updateActiveSection('details', { metrics })
+              }
+            />
 
-            <SectionRow
-              label={t('template.editor.details')}
-              description={t('template.editor.details-desc')}
-            >
-              <Toggle
-                checked={editingSections.details.show}
-                onChange={(checked) =>
-                  updateSection('details', { show: checked })
-                }
-                disabled={!canEdit}
-              />
-            </SectionRow>
-
-            <SectionRow
-              label={t('template.editor.review-button')}
-              description={t('template.editor.review-button-desc')}
-            >
-              <Toggle
-                checked={editingSections.reviewButton.show}
-                onChange={(checked) =>
-                  updateSection('reviewButton', { show: checked })
-                }
-                disabled={!canEdit}
-              />
-            </SectionRow>
+            <MetadataRowsPanel
+              canEdit={canEdit}
+              metadata={activeSections.metadata}
+              customFieldCount={customFields.length}
+              updateMetadata={(updates) =>
+                updateActiveSection('metadata', updates)
+              }
+            />
           </div>
         </div>
       </div>
+
+      
+      {showUnsavedBanner && (
+        <FloatingUnsavedChangesBanner
+          message={t('template.editor.unsaved-changes')}
+          onDiscard={() => void handleDiscard()}
+          onSave={() => void handleSave()}
+        />
+      )}
     </div>
   );
 };

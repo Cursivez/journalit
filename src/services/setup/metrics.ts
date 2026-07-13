@@ -2,7 +2,7 @@
 
 import { TradeService } from '../trade/TradeService';
 import { normalizeTradeExecutionForAnalytics } from '../trade/core/TradeExecutionAnalytics';
-import { SetupMetrics } from './types';
+import { Setup, SetupMetrics } from './types';
 import { calculateWinRateExcludingBreakeven } from '../../utils/breakEvenRange';
 import {
   getEffectivePnL,
@@ -11,6 +11,7 @@ import {
   isPnlContributingTrade,
 } from '../../utils/tradeStatusUtils';
 import { calculateDirectionalPriceDiff } from '../../utils/pnlCalculation';
+import { inferStoredTradeType } from '../../utils/tradeTypeRouting';
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
@@ -26,12 +27,20 @@ function numberValue(value: unknown): number {
   return typeof value === 'number' && Number.isFinite(value) ? value : 0;
 }
 
+function dateString(value: unknown): string {
+  if (value instanceof Date) return value.toISOString();
+  return typeof value === 'string' ? value : '';
+}
+
 export interface Trade extends Record<string, unknown> {
+  path?: string;
+  type?: unknown;
+  isMissedTrade?: unknown;
+  isBacktestTrade?: unknown;
   exitPrice: number;
   entryPrice: number;
   positionSize: number;
-  setupIds: string[];
-  setup?: string[];
+  setup: string[];
   entryTime: string; 
   exitTime: string; 
   pnl?: number | null;
@@ -65,7 +74,6 @@ function normalizeSetupMetricTrade(value: unknown): Trade | null {
     return null;
   }
 
-  const setupIds = stringArray(value.setupIds);
   const setup = stringArray(value.setup);
 
   return {
@@ -73,10 +81,9 @@ function normalizeSetupMetricTrade(value: unknown): Trade | null {
     exitPrice: numberValue(value.exitPrice),
     entryPrice: numberValue(value.entryPrice),
     positionSize: numberValue(value.positionSize),
-    setupIds,
     setup,
-    entryTime: typeof value.entryTime === 'string' ? value.entryTime : '',
-    exitTime: typeof value.exitTime === 'string' ? value.exitTime : '',
+    entryTime: dateString(value.entryTime),
+    exitTime: dateString(value.exitTime),
   };
 }
 
@@ -86,7 +93,42 @@ export class SetupMetricsCalculator {
 
   
   public async calculateMetrics(setupId: string): Promise<SetupMetrics> {
-    const trades = await this.getSetupTrades(setupId);
+    const trades = await this.getSetupTrades([setupId]);
+    return this.calculateMetricsForTrades(trades);
+  }
+
+  public async calculateMetricsForSetup(setup: Setup): Promise<SetupMetrics> {
+    const setupLabels = [setup.id, setup.name];
+    const trades = await this.getSetupTrades(setupLabels);
+    return this.calculateMetricsForTrades(trades);
+  }
+
+  public calculateMetricsForSetupFromTradeData(
+    setup: Setup,
+    tradeData: Array<Record<string, unknown>>
+  ): SetupMetrics {
+    const normalizedSetupRefs = new Set(
+      [setup.id, setup.name].flatMap((ref) => {
+        const normalizedRef = this.normalizeSetupToken(ref);
+        return normalizedRef ? [normalizedRef] : [];
+      })
+    );
+    const trades = tradeData.flatMap((trade) => {
+      const normalizedTrade = normalizeSetupMetricTrade(trade);
+      if (
+        !normalizedTrade ||
+        !this.isRegularTrade(normalizedTrade) ||
+        !this.tradeMatchesSetup(normalizedTrade, normalizedSetupRefs) ||
+        !isPnlContributingTrade(normalizedTrade)
+      ) {
+        return [];
+      }
+      return [normalizedTrade];
+    });
+    return this.calculateMetricsForTrades(trades);
+  }
+
+  private calculateMetricsForTrades(trades: Trade[]): SetupMetrics {
     if (!trades.length) {
       return this.getEmptyMetrics();
     }
@@ -118,7 +160,13 @@ export class SetupMetricsCalculator {
   }
 
   
-  private async getSetupTrades(setupId: string): Promise<Trade[]> {
+  private async getSetupTrades(setupTokens: string[]): Promise<Trade[]> {
+    const normalizedSetupRefs = new Set(
+      setupTokens.flatMap((ref) => {
+        const normalizedRef = this.normalizeSetupToken(ref);
+        return normalizedRef ? [normalizedRef] : [];
+      })
+    );
     if (typeof this.tradeService.getTradeData === 'function') {
       const tradeData = await this.tradeService.getTradeData();
       if (Array.isArray(tradeData)) {
@@ -127,12 +175,11 @@ export class SetupMetricsCalculator {
           return normalizedTrade ? [normalizedTrade] : [];
         });
         return trades.filter((trade) => {
-          const setupIds = Array.isArray(trade.setupIds)
-            ? trade.setupIds
-            : Array.isArray(trade.setup)
-              ? trade.setup
-              : [];
-          return setupIds.includes(setupId) && isPnlContributingTrade(trade);
+          return (
+            this.isRegularTrade(trade) &&
+            this.tradeMatchesSetup(trade, normalizedSetupRefs) &&
+            isPnlContributingTrade(trade)
+          );
         });
       }
     }
@@ -146,7 +193,10 @@ export class SetupMetricsCalculator {
           try {
             const content = await this.tradeService.readTradeContent(file);
             const trade = this.parseTrade(content);
-            return trade.setupIds.includes(setupId) ? trade : null;
+            return this.isRegularTrade(trade) &&
+              this.tradeMatchesSetup(trade, normalizedSetupRefs)
+              ? trade
+              : null;
           } catch {
             console.warn(`Invalid trade file: ${file.path}`);
             return null;
@@ -154,6 +204,34 @@ export class SetupMetricsCalculator {
         })
       )
     ).filter((trade): trade is Trade => trade !== null);
+  }
+
+  private tradeMatchesSetup(
+    trade: Trade,
+    normalizedSetupRefs: Set<string>
+  ): boolean {
+    return trade.setup.some((label) =>
+      normalizedSetupRefs.has(this.normalizeSetupToken(label))
+    );
+  }
+
+  private isRegularTrade(trade: Trade): boolean {
+    return (
+      inferStoredTradeType({
+        filePath: trade.path,
+        type: trade.type,
+        isMissedTrade: trade.isMissedTrade,
+        isBacktestTrade: trade.isBacktestTrade,
+      }) === 'regular'
+    );
+  }
+
+  private normalizeSetupToken(value: string): string {
+    return value
+      .trim()
+      .normalize('NFKC')
+      .toLowerCase()
+      .replace(/[^\p{L}\p{N}]+/gu, '');
   }
 
   
@@ -256,10 +334,11 @@ export class SetupMetricsCalculator {
     const losingTrades = results.filter((r) => r < 0);
 
     
-    const durations = trades.map((trade) => {
+    const durations = trades.flatMap((trade) => {
       const exit = new Date(trade.exitTime);
       const entry = new Date(trade.entryTime);
-      return (exit.getTime() - entry.getTime()) / 1000 / 60; 
+      const duration = (exit.getTime() - entry.getTime()) / 1000 / 60;
+      return Number.isFinite(duration) ? [duration] : [];
     });
 
     const volumes = trades.map((t) => Math.abs(t.positionSize));
@@ -269,7 +348,33 @@ export class SetupMetricsCalculator {
     );
 
     
-    const tradeDates = trades.map((t) => new Date(t.exitTime));
+    const tradeDates = trades.flatMap((trade) => {
+      const date = new Date(trade.exitTime);
+      return Number.isFinite(date.getTime()) ? [date] : [];
+    });
+    const fallbackMetrics = {
+      expectedValue:
+        results.reduce((sum, pnl) => sum + pnl, 0) / results.length,
+      riskRewardRatio:
+        Math.abs(
+          winningTrades.length ? totalWinAmount / winningTrades.length : 0
+        ) /
+        Math.abs(
+          losingTrades.length ? totalLossAmount / losingTrades.length : 1
+        ),
+      profitFactor: totalLossAmount
+        ? totalWinAmount / totalLossAmount
+        : totalWinAmount
+          ? Infinity
+          : 0,
+      averageDuration: durations.length
+        ? durations.reduce((sum, d) => sum + d, 0) / durations.length
+        : 0,
+      bestTrade: Math.max(...results),
+      worstTrade: Math.min(...results),
+      averageVolume: volumes.reduce((sum, v) => sum + v, 0) / volumes.length,
+    };
+    if (tradeDates.length === 0) return fallbackMetrics;
     const lastTradeDate = new Date(
       Math.max(...tradeDates.map((d) => d.getTime()))
     );
@@ -286,25 +391,7 @@ export class SetupMetricsCalculator {
       (now.getTime() - earliestDate.getTime()) / (1000 * 60 * 60 * 24 * 30.44); 
 
     return {
-      expectedValue:
-        results.reduce((sum, pnl) => sum + pnl, 0) / results.length,
-      riskRewardRatio:
-        Math.abs(
-          winningTrades.length ? totalWinAmount / winningTrades.length : 0
-        ) /
-        Math.abs(
-          losingTrades.length ? totalLossAmount / losingTrades.length : 1
-        ),
-      profitFactor: totalLossAmount
-        ? totalWinAmount / totalLossAmount
-        : totalWinAmount
-          ? Infinity
-          : 0,
-      averageDuration:
-        durations.reduce((sum, d) => sum + d, 0) / durations.length,
-      bestTrade: Math.max(...results),
-      worstTrade: Math.min(...results),
-      averageVolume: volumes.reduce((sum, v) => sum + v, 0) / volumes.length,
+      ...fallbackMetrics,
       lastTradeDate: lastTradeDate.toISOString(),
       tradingFrequency: trades.length / monthsSinceFirst,
       inactivityStreak,
@@ -321,7 +408,7 @@ export class SetupMetricsCalculator {
         const [key, ...values] = line.split(':').map((s) => s.trim());
         if (key && values.length) {
           
-          if (key === 'setupIds') {
+          if (key === 'setup') {
             acc[key] = values
               .join(':')
               .replace(/[[\]]/g, '')
@@ -348,8 +435,8 @@ export class SetupMetricsCalculator {
       exitPrice: normalizedExecution.exitPrice,
       entryPrice: normalizedExecution.entryPrice,
       positionSize: normalizedExecution.positionSize,
-      setupIds: Array.isArray(frontmatter.setupIds)
-        ? frontmatter.setupIds.filter(
+      setup: Array.isArray(frontmatter.setup)
+        ? frontmatter.setup.filter(
             (item): item is string => typeof item === 'string'
           )
         : [],
@@ -363,6 +450,9 @@ export class SetupMetricsCalculator {
         typeof frontmatter.assetType === 'string'
           ? frontmatter.assetType
           : undefined,
+      type: frontmatter.type,
+      isMissedTrade: frontmatter.isMissedTrade === 'true',
+      isBacktestTrade: frontmatter.isBacktestTrade === 'true',
     };
   }
 }

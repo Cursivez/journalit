@@ -5,7 +5,8 @@ export const TRADELOG_SETTINGS_MODAL_STYLES = `
     display: flex;
     flex-direction: column;
     min-height: 500px;
-    max-height: 80vh;
+    max-height: min(80vh, 720px);
+    overflow: hidden;
   }
 
   .tradelog-settings-modal-container {
@@ -14,7 +15,29 @@ export const TRADELOG_SETTINGS_MODAL_STYLES = `
     margin: 0 auto;
     display: flex;
     flex-direction: column;
-    height: 100%;
+    flex: 1 1 auto;
+    height: min(70vh, 640px);
+    min-height: 0;
+  }
+
+  .tradelog-settings-modal-body {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 0 4px;
+  }
+
+  .tradelog-settings-modal-container .journalit-visibility-editor {
+    flex: 0 0 auto;
+    min-height: 0;
+  }
+
+  .tradelog-settings-modal-container .journalit-visibility-editor__content {
+    flex: 0 0 auto;
+    min-height: 0;
+    max-height: none;
+    overflow: visible;
   }
 
   
@@ -27,6 +50,7 @@ export const TRADELOG_SETTINGS_MODAL_STYLES = `
     border: 1px solid var(--background-modifier-border);
     border-radius: 6px;
     margin-top: 16px;
+    flex: 0 0 auto;
   }
 
   .display-mode-label {
@@ -49,12 +73,16 @@ export const TRADELOG_SETTINGS_MODAL_STYLES = `
   
   .tradelog-settings-modal-container .journalit-tab-nav {
     display: flex;
+    position: sticky;
+    top: 0;
+    z-index: 3;
     border-bottom: 1px solid var(--background-modifier-border);
     margin-bottom: 16px;
     justify-content: center;
     width: 100%;
     padding-top: 10px;
     padding-bottom: 0;
+    background: var(--background-primary);
   }
 
   .tradelog-settings-modal-container .journalit-tab-wrapper {
@@ -309,12 +337,17 @@ export const TRADELOG_SETTINGS_MODAL_STYLES = `
 
   
   .tradelog-settings-modal-buttons {
+    position: sticky;
+    bottom: 0;
+    z-index: 2;
     display: flex;
     gap: 8px;
     justify-content: flex-end;
-    margin-top: 16px;
-    padding-top: 16px;
+    margin-top: 8px;
+    padding: 8px 0 0;
     border-top: 1px solid var(--background-modifier-border);
+    background: var(--background-primary);
+    flex: 0 0 auto;
   }
 
   .tradelog-settings-modal-buttons button {
@@ -325,10 +358,23 @@ export const TRADELOG_SETTINGS_MODAL_STYLES = `
     border: 1px solid var(--background-modifier-border);
     background: var(--background-secondary);
     color: var(--text-normal);
+    box-shadow: none;
   }
 
   .tradelog-settings-modal-buttons button:hover {
     background: var(--background-modifier-hover);
+  }
+
+  .tradelog-settings-modal-buttons .cancel-button {
+    background: transparent;
+    border-color: transparent;
+    box-shadow: none;
+    color: var(--text-muted);
+  }
+
+  .tradelog-settings-modal-buttons .cancel-button:hover:not(:disabled) {
+    background: var(--background-modifier-hover);
+    color: var(--text-normal);
   }
 
   .tradelog-settings-modal-buttons button.primary {
@@ -343,5 +389,14 @@ export const TRADELOG_SETTINGS_MODAL_STYLES = `
 
   .tradelog-settings-modal-buttons .reset-button {
     margin-right: auto;
+    background: transparent;
+    border-color: transparent;
+    box-shadow: none;
+    color: var(--text-muted);
+  }
+
+  .tradelog-settings-modal-buttons .reset-button:hover:not(:disabled) {
+    background: var(--background-modifier-hover);
+    color: var(--text-normal);
   }
 `;

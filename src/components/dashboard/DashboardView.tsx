@@ -17,6 +17,7 @@ import { useLeafActive } from '../../hooks/useLeafActive';
 import { TradeType, TradeStatus } from '../../services/tradelog/types';
 import type {
   DirectionFilter,
+  ImageAnnotationStatusFilter,
   ReviewStatusFilter,
 } from '../../services/tradelog/types';
 import type { CustomFieldFilterSelections } from '../../types/customFields';
@@ -47,6 +48,8 @@ export interface FilterState {
   reviewStatus: ReviewStatusFilter[];
   directions: DirectionFilter[];
   customFieldFilters: CustomFieldFilterSelections;
+  imageAnnotationStatus?: ImageAnnotationStatusFilter[];
+  imageTags?: string[];
 }
 
 

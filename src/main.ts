@@ -9,7 +9,10 @@ import {
   SettingsTabId,
 } from './settings/types';
 import { TradeFormModal } from './components/forms/trade/TradeFormModal';
-import type { TradeFormData } from './components/forms/trade/types';
+import type {
+  TradeFormData,
+  TradeFormOpenOptions,
+} from './components/forms/trade/types';
 import { TradeService } from './services/trade/TradeService';
 import { SetupService } from './services/setup/SetupService';
 import { DRCService } from './services/drc/DRCService';
@@ -81,6 +84,7 @@ export default class JournalitPlugin extends Plugin {
 
   
   setupService: SetupService;
+  
   
   drcService: DRCService;
 
@@ -243,6 +247,17 @@ export default class JournalitPlugin extends Plugin {
     
     this.app.setting?.open();
     this.app.setting?.openTabById(this.manifest.id);
+    if (this.settingsTab) {
+      this.settingsTab.setInitialTab(tabId);
+      this.settingsTab.renderInitialTab();
+    }
+    window.setTimeout(() => {
+      window.dispatchEvent(
+        new CustomEvent('journalit:open-settings-tab', {
+          detail: { tabId },
+        })
+      );
+    }, 0);
   }
 
   
@@ -303,12 +318,19 @@ export default class JournalitPlugin extends Plugin {
     });
   }
 
+  async openSessionMode(): Promise<void> {
+    await this.viewManager.activateSessionMode({
+      revealExisting: true,
+    });
+  }
+
   
   async openTradeFormInEditMode(
     
 
     tradeData: Partial<TradeFormData>,
-    filePath: string
+    filePath: string,
+    openOptions?: TradeFormOpenOptions
   ): Promise<void> {
     try {
       let initialData = tradeData || {};
@@ -334,6 +356,7 @@ export default class JournalitPlugin extends Plugin {
         isEditMode: true,
         initialData,
         filePath: filePath || '',
+        openOptions,
       });
       modal.open();
     } catch (error) {

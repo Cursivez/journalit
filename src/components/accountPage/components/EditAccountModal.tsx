@@ -1810,45 +1810,47 @@ const EditAccountModalContent: React.FC<
 
   return (
     <div className="edit-account-form">
-      <AccountIdentityFields
-        editAccount={editAccount}
-        setEditAccount={setEditAccount}
-        customAccountTypes={customAccountTypes}
-        isSaving={isSaving}
-      />
+      <div className="edit-account-form-body">
+        <AccountIdentityFields
+          editAccount={editAccount}
+          setEditAccount={setEditAccount}
+          customAccountTypes={customAccountTypes}
+          isSaving={isSaving}
+        />
 
-      <AccountBalanceFields
-        account={account}
-        editAccount={editAccount}
-        setEditAccount={setEditAccount}
-        isSaving={isSaving}
-      />
+        <AccountBalanceFields
+          account={account}
+          editAccount={editAccount}
+          setEditAccount={setEditAccount}
+          isSaving={isSaving}
+        />
 
-      <DrawdownSection
-        app={app}
-        account={account}
-        editAccount={editAccount}
-        setEditAccount={setEditAccount}
-        manualSnapshots={manualSnapshots}
-        setManualSnapshots={setManualSnapshots}
-        showSnapshotManager={showSnapshotManager}
-        setShowSnapshotManager={setShowSnapshotManager}
-        isSaving={isSaving}
-      />
+        <DrawdownSection
+          app={app}
+          account={account}
+          editAccount={editAccount}
+          setEditAccount={setEditAccount}
+          manualSnapshots={manualSnapshots}
+          setManualSnapshots={setManualSnapshots}
+          showSnapshotManager={showSnapshotManager}
+          setShowSnapshotManager={setShowSnapshotManager}
+          isSaving={isSaving}
+        />
 
-      <ProfitTargetSection
-        editAccount={editAccount}
-        setEditAccount={setEditAccount}
-        isSaving={isSaving}
-      />
+        <ProfitTargetSection
+          editAccount={editAccount}
+          setEditAccount={setEditAccount}
+          isSaving={isSaving}
+        />
 
-      <CopyTradingSection
-        account={account}
-        plugin={plugin}
-        editAccount={editAccount}
-        setEditAccount={setEditAccount}
-        isSaving={isSaving}
-      />
+        <CopyTradingSection
+          account={account}
+          plugin={plugin}
+          editAccount={editAccount}
+          setEditAccount={setEditAccount}
+          isSaving={isSaving}
+        />
+      </div>
 
       
       <div className="edit-account-buttons">
@@ -1862,7 +1864,7 @@ const EditAccountModalContent: React.FC<
         </Button>
         <div className="button-group-right">
           <Button
-            variant="secondary"
+            variant="plain"
             onClick={onModalClose}
             disabled={isSaving}
             className="cancel-button"

@@ -500,6 +500,7 @@ export interface DrawdownChartDataPoint {
   pnl: number;
   cumPnL: number;
   peakRealizedPnl: number;
+  peakRealizedR?: number;
   rMultiple?: number; 
   cumulativeR?: number; 
   episodeStartDate?: string;
@@ -561,6 +562,7 @@ export const prepareDrawdownChartState = (
           pnl: 0,
           cumPnL: 0,
           peakRealizedPnl: 0,
+          peakRealizedR: 0,
           rMultiple: 0,
           cumulativeR: 0,
         },
@@ -657,6 +659,7 @@ export const prepareDrawdownChartState = (
       pnl: 0,
       cumPnL: 0,
       peakRealizedPnl: 0,
+      peakRealizedR: 0,
       rMultiple: 0,
       cumulativeR: 0,
     });
@@ -711,6 +714,7 @@ export const prepareDrawdownChartState = (
         pnl: point.pnl,
         cumPnL: point.cumulativeRealizedPnl,
         peakRealizedPnl: point.peakCumulativeRealizedPnl,
+        peakRealizedR: point.peakCumulativeR,
         rMultiple: point.rMultiple,
         cumulativeR: point.cumulativeR,
         episodeStartDate: pointEpisode
@@ -741,6 +745,7 @@ export const prepareDrawdownChartState = (
       pnl: 0,
       cumPnL: 0,
       peakRealizedPnl: 0,
+      peakRealizedR: 0,
       rMultiple: 0,
       cumulativeR: 0,
     });

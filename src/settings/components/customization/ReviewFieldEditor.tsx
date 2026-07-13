@@ -979,7 +979,7 @@ const ReviewFieldEditorActions: React.FC<ReviewFieldEditorActionsProps> = ({
       </Button>
     )}
     <div className="custom-fields-editor-primary-actions">
-      <Button variant="outline" onClick={onCancel}>
+      <Button variant="plain" onClick={onCancel}>
         {t('button.cancel')}
       </Button>
       <Button

@@ -25,6 +25,31 @@ import { resolveIcon } from '../../utils/iconResolver';
 import { hasTranslation, t } from '../../lang/helpers';
 import { cssVars, dndKitStyle } from '../../styles/inlineStylePolicy';
 
+export function mergeQuickLinksWithDefaults(
+  currentQuickLinks: QuickLinkButton[]
+): QuickLinkButton[] {
+  const defaultQuickLinks = DEFAULT_SETTINGS.home?.quickLinks || [];
+  const currentById = new Map(
+    currentQuickLinks.map((quickLink) => [quickLink.id, quickLink])
+  );
+  const merged = [...currentQuickLinks];
+  let changed = false;
+
+  for (const defaultQuickLink of defaultQuickLinks) {
+    const existing = currentById.get(defaultQuickLink.id);
+    if (!existing) {
+      const maxOrder = merged.reduce(
+        (max, quickLink) => Math.max(max, quickLink.order),
+        -1
+      );
+      merged.push({ ...defaultQuickLink, order: maxOrder + 1 });
+      changed = true;
+    }
+  }
+
+  return changed ? merged : currentQuickLinks;
+}
+
 
 const restrictToHorizontalAxis: Modifier = ({ transform }) => {
   return {
@@ -59,7 +84,8 @@ const SortableQuickLinkButton: React.FC<{
     transform ? { ...transform, y: 0 } : transform
   );
 
-  const IconComponent = resolveIcon(quickLink.icon);
+  const iconName = quickLink.id === 'quick-import' ? 'zap' : quickLink.icon;
+  const IconComponent = resolveIcon(iconName);
 
   const handleRemoveClick = useCallback(
     (e: React.MouseEvent<HTMLButtonElement>) => {
@@ -134,31 +160,39 @@ const QuickLinksRowComponent: React.FC<QuickLinksRowProps> = ({
   onQuickLinksChange,
 }) => {
   const resolveInitialQuickLinks = () => {
-    if (propQuickLinks && propQuickLinks.length > 0) return propQuickLinks;
+    if (propQuickLinks && propQuickLinks.length > 0) {
+      return mergeQuickLinksWithDefaults(propQuickLinks);
+    }
     const settingsQuickLinks = plugin.settings.home?.quickLinks;
     if (settingsQuickLinks && settingsQuickLinks.length > 0) {
-      return settingsQuickLinks;
+      return mergeQuickLinksWithDefaults(settingsQuickLinks);
     }
-    return DEFAULT_SETTINGS.home?.quickLinks || [];
+    return mergeQuickLinksWithDefaults(DEFAULT_SETTINGS.home?.quickLinks || []);
   };
   const [localQuickLinks, setLocalQuickLinks] = useState<QuickLinkButton[]>(
     resolveInitialQuickLinks
   );
-  const quickLinks = propQuickLinks ?? localQuickLinks;
+  const quickLinks = useMemo(
+    () => mergeQuickLinksWithDefaults(propQuickLinks ?? localQuickLinks),
+    [localQuickLinks, propQuickLinks]
+  );
 
   
   useEffect(() => {
     const settingsQuickLinks = plugin.settings.home?.quickLinks;
     const defaultQuickLinks = DEFAULT_SETTINGS.home?.quickLinks || [];
-    if (
-      (!settingsQuickLinks || settingsQuickLinks.length === 0) &&
-      defaultQuickLinks.length > 0 &&
-      plugin.settings.home
-    ) {
-      plugin.settings.home.quickLinks = defaultQuickLinks;
+    const mergedQuickLinks = mergeQuickLinksWithDefaults(
+      settingsQuickLinks && settingsQuickLinks.length > 0
+        ? settingsQuickLinks
+        : defaultQuickLinks
+    );
+
+    if (mergedQuickLinks !== settingsQuickLinks && plugin.settings.home) {
+      plugin.settings.home.quickLinks = mergedQuickLinks;
+      onQuickLinksChange?.(mergedQuickLinks);
       void plugin.saveSettings();
     }
-  }, [plugin]);
+  }, [plugin, onQuickLinksChange]);
 
   
   const actionResolver = useMemo(
@@ -194,22 +228,31 @@ const QuickLinksRowComponent: React.FC<QuickLinksRowProps> = ({
           const [movedItem] = newVisibleQuickLinks.splice(oldIndex, 1);
           newVisibleQuickLinks.splice(newIndex, 0, movedItem);
 
+          const visibleOrderById = new Map(
+            newVisibleQuickLinks.map((quickLink, index) => [
+              quickLink.id,
+              index,
+            ])
+          );
+          const hiddenOrderById = new Map<string, number>();
+          for (const item of quickLinks) {
+            if (!item.visible) {
+              hiddenOrderById.set(item.id, hiddenOrderById.size);
+            }
+          }
+          const maxVisibleOrder = newVisibleQuickLinks.length - 1;
+
           
           const updatedQuickLinks = quickLinks.map((ql) => {
-            const newIndex = newVisibleQuickLinks.findIndex(
-              (vql) => vql.id === ql.id
-            );
-            if (newIndex !== -1) {
+            const newIndex = visibleOrderById.get(ql.id);
+            if (newIndex !== undefined) {
               
               return { ...ql, order: newIndex };
-            } else {
-              
-              const maxVisibleOrder = newVisibleQuickLinks.length - 1;
-              const hiddenIndex = quickLinks
-                .filter((item) => !item.visible)
-                .findIndex((item) => item.id === ql.id);
-              return { ...ql, order: maxVisibleOrder + 1 + hiddenIndex };
             }
+
+            
+            const hiddenIndex = hiddenOrderById.get(ql.id) ?? 0;
+            return { ...ql, order: maxVisibleOrder + 1 + hiddenIndex };
           });
 
           

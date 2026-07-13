@@ -8,6 +8,7 @@ import { getPluginInstance } from '../../../../utils/pluginContext';
 import { CustomOptionsService, OptionType } from '../../../../services/options';
 import { useEventBus } from '../../../../hooks';
 import { t } from '../../../../lang/helpers';
+import { TradeFormLayoutItemId } from '../../../../settings/types';
 
 const EMPTY_ACCOUNT_OPTIONS: Array<{ id: string; name: string }> = [];
 const EMPTY_SETUP_OPTIONS: Array<{ id: string; name: string }> = [];
@@ -41,6 +42,8 @@ interface CommonFieldsProps {
   setups?: Array<{ id: string; name: string }>;
   
   mistakes?: Array<{ id: string; name: string }>;
+  
+  fieldOrder: TradeFormLayoutItemId[];
 }
 
 
@@ -51,6 +54,7 @@ const CommonFieldsComponent: React.FC<CommonFieldsProps> = ({
   accounts: _accounts = EMPTY_ACCOUNT_OPTIONS,
   setups: _setups = EMPTY_SETUP_OPTIONS,
   mistakes: _mistakes = EMPTY_MISTAKE_OPTIONS,
+  fieldOrder,
 }) => {
   
   const [optionsVersion, setOptionsVersion] = useState(0);
@@ -139,77 +143,84 @@ const CommonFieldsComponent: React.FC<CommonFieldsProps> = ({
     }
   };
 
+  const renderField = (fieldId: TradeFormLayoutItemId) => {
+    switch (fieldId) {
+      case 'setup':
+        return (
+          <div className="field" key={fieldId}>
+            <ComboBox
+              label={t('form.field.setup')}
+              options={setupOptions}
+              value={Array.isArray(data.setup) ? data.setup : []}
+              onChange={(value) => {
+                const selectedValues = asStringArray(value);
+                onChange('setup', selectedValues);
+              }}
+              allowCreate={true}
+              isMulti={true}
+              optionType={OptionType.SETUP}
+              onSaveOption={handleSaveSetup}
+            />
+          </div>
+        );
+      case 'mistake':
+        return (
+          <div className="field" key={fieldId}>
+            <ComboBox
+              label={t('form.field.mistake')}
+              options={mistakeOptions}
+              value={Array.isArray(data.mistake) ? data.mistake : []}
+              onChange={(value) => {
+                const selectedValues = asStringArray(value);
+                onChange('mistake', selectedValues);
+              }}
+              allowCreate={true}
+              isMulti={true}
+              optionType={OptionType.MISTAKE}
+              onSaveOption={handleSaveMistake}
+            />
+          </div>
+        );
+      case 'customTags':
+        return (
+          <div className="field" key={fieldId}>
+            <ComboBox
+              label={t('form.field.custom-tags')}
+              options={tagOptions}
+              value={Array.isArray(data.customTags) ? data.customTags : []}
+              onChange={(value) => {
+                const selectedValues = asStringArray(value);
+                onChange('customTags', selectedValues);
+              }}
+              isMulti={true}
+              allowCreate={true}
+              placeholder={t('form.placeholder.custom-tag')}
+              onSaveOption={handleSaveTag}
+              optionType={OptionType.TAG}
+            />
+          </div>
+        );
+      case 'thesis':
+        return (
+          <div className="field" key={fieldId}>
+            <Input
+              label={t('form.field.trade-thesis')}
+              placeholder={t('form.placeholder.thesis')}
+              value={data.thesis || ''}
+              onChange={(value) => onChange('thesis', value)}
+              className="thesisField"
+              multiline
+            />
+          </div>
+        );
+      default:
+        return null;
+    }
+  };
+
   return (
     <FormSection title={t('form.section.analysis-thesis')}>
-      <div className="field">
-        <ComboBox
-          label={t('form.field.setup')}
-          options={setupOptions}
-          value={Array.isArray(data.setup) ? data.setup : []}
-          onChange={(value) => {
-            
-            const selectedValues = asStringArray(value);
-
-            
-            onChange('setup', selectedValues);
-          }}
-          allowCreate={true}
-          isMulti={true}
-          optionType={OptionType.SETUP}
-          onSaveOption={handleSaveSetup}
-        />
-      </div>
-
-      <div className="field">
-        <ComboBox
-          label={t('form.field.mistake')}
-          options={mistakeOptions}
-          value={Array.isArray(data.mistake) ? data.mistake : []}
-          onChange={(value) => {
-            
-            const selectedValues = asStringArray(value);
-
-            
-            onChange('mistake', selectedValues);
-          }}
-          allowCreate={true}
-          isMulti={true}
-          optionType={OptionType.MISTAKE}
-          onSaveOption={handleSaveMistake}
-        />
-      </div>
-
-      <div className="field">
-        <ComboBox
-          label={t('form.field.custom-tags')}
-          options={tagOptions}
-          value={Array.isArray(data.customTags) ? data.customTags : []}
-          onChange={(value) => {
-            
-
-            
-            const selectedValues = asStringArray(value);
-
-            onChange('customTags', selectedValues);
-          }}
-          isMulti={true}
-          allowCreate={true}
-          placeholder={t('form.placeholder.custom-tag')}
-          onSaveOption={handleSaveTag}
-          optionType={OptionType.TAG}
-        />
-      </div>
-
-      <div className="field">
-        <Input
-          label={t('form.field.trade-thesis')}
-          placeholder={t('form.placeholder.thesis')}
-          value={data.thesis || ''}
-          onChange={(value) => onChange('thesis', value)}
-          className="thesisField"
-          multiline
-        />
-      </div>
+      {fieldOrder.map(renderField)}
     </FormSection>
   );
 };

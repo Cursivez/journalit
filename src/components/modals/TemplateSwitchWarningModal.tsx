@@ -135,7 +135,7 @@ const TemplateSwitchWarningContent: React.FC<
         
         <div className="template-switch-warning-actions">
           <Button
-            variant="secondary"
+            variant="plain"
             onClick={handleCancel}
             className="template-switch-warning-button--cancel"
           >

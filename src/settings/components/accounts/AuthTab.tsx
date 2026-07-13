@@ -280,8 +280,6 @@ const AuthTabComponent: React.FC<AuthTabProps> = ({ plugin }) => {
 
   return (
     <div className="trading-journal-settings-container">
-      <h3>{t('settings.auth.title')}</h3>
-
       
       <div className="account-profile-card">
         <div className="account-info">

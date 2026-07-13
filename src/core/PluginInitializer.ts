@@ -1,7 +1,7 @@
 import { logger } from '../utils/logger';
 
 
-import { Notice } from 'obsidian';
+import { MarkdownView, Notice, TFile } from 'obsidian';
 import JournalitPlugin from '../main';
 import { setupPluginHook } from '../hooks/usePlugin';
 import { t } from '../lang/helpers';
@@ -17,8 +17,6 @@ const LEGACY_DERIVED_STORAGE_FOLDERS = [
   '.journalit/migrations',
   '.journalit/oldcache',
 ];
-const TRADE_IDENTITY_BACKFILL_ROLLOUT_VERSION =
-  '2026-04-trade-identity-backfill-v1';
 import { scheduleSequence } from '../utils/deferredExecution';
 import { GlobalPasteManager } from '../utils/GlobalPasteManager';
 import { injectDropdownFixScript } from '../utils';
@@ -38,10 +36,13 @@ import { ReviewDataCache } from '../services/reviewV2/ReviewDataCache';
 import { EventBus, eventBus } from '../services/events';
 import { ONBOARDING_VIEW_TYPE } from '../views/OnboardingView';
 import { TEMPLATE_BUILDER_VIEW_TYPE } from '../views/TemplateBuilderView';
+import { SETUPS_VIEW_TYPE } from '../views/SetupsView';
 import { GuideRegistry } from '../guides/GuideRegistry';
 import { registerHomeMainGuide } from '../guides/homeMainGuide';
 import { registerTradeLogEmptyGuide } from '../guides/tradeLogEmptyGuide';
+import { registerTradeLogImageGalleryEmptyGuide } from '../guides/tradeLogImageGalleryEmptyGuide';
 import { registerTradeLogMainGuide } from '../guides/tradeLogMainGuide';
+import { registerTradeLogWhatsNewImageGalleryGuide } from '../guides/tradeLogWhatsNewImageGalleryGuide';
 import { registerDashboardEmptyGuide } from '../guides/dashboardEmptyGuide';
 import { registerDashboardMainGuide } from '../guides/dashboardMainGuide';
 import { registerLayoutBuilderMainGuide } from '../guides/layoutBuilderMainGuide';
@@ -49,6 +50,7 @@ import { registerAccountDashboardEmptyGuide } from '../guides/accountDashboardEm
 import { registerAccountDashboardMainGuide } from '../guides/accountDashboardMainGuide';
 import { registerAccountPageEmptyGuide } from '../guides/accountPageEmptyGuide';
 import { registerAccountPageMainGuide } from '../guides/accountPageMainGuide';
+import { registerSetupsMainGuide } from '../guides/setupsMainGuide';
 import { ViewGuideService } from '../guides/ViewGuideService';
 import {
   getJournalitCachePath,
@@ -216,6 +218,8 @@ export class PluginInitializer {
     this.plugin.guideRegistry = new GuideRegistry();
     registerHomeMainGuide(this.plugin.guideRegistry);
     registerTradeLogEmptyGuide(this.plugin.guideRegistry);
+    registerTradeLogImageGalleryEmptyGuide(this.plugin.guideRegistry);
+    registerTradeLogWhatsNewImageGalleryGuide(this.plugin.guideRegistry);
     registerTradeLogMainGuide(this.plugin.guideRegistry);
     registerDashboardEmptyGuide(this.plugin.guideRegistry);
     registerDashboardMainGuide(this.plugin.guideRegistry);
@@ -224,6 +228,7 @@ export class PluginInitializer {
     registerAccountDashboardMainGuide(this.plugin.guideRegistry);
     registerAccountPageEmptyGuide(this.plugin.guideRegistry);
     registerAccountPageMainGuide(this.plugin.guideRegistry);
+    registerSetupsMainGuide(this.plugin.guideRegistry);
 
     this.plugin.viewGuideService = new ViewGuideService(this.plugin);
     await this.plugin.viewGuideService.initialize();
@@ -259,6 +264,7 @@ export class PluginInitializer {
       .then(async () => {
         await this.plugin.tradeService.getTradeData({ fresh: true });
         await this.runCanonicalExecutionMigrationIfNeeded();
+        await this.runTradeReviewMarkdownMigration();
       })
       .catch((err) => {
         console.error('[Journalit] Failed to pre-warm trade cache:', err);
@@ -321,6 +327,21 @@ export class PluginInitializer {
     }
   }
 
+  private async runTradeReviewMarkdownMigration(): Promise<void> {
+    const result =
+      await this.plugin.tradeService.migrateTradeReviewFrontmatterToMarkdown();
+    if (result.failed > 0) {
+      console.warn(
+        `[Journalit] Trade review markdown migration completed with ${result.failed} failures`
+      );
+    }
+    if (result.migrated > 0) {
+      logger.info(
+        `[Journalit] Migrated ${result.migrated} trade review frontmatter entries to markdown`
+      );
+    }
+  }
+
   
   private async setupEssentialUI(): Promise<void> {
     const { JournalitSettingsTab } =
@@ -339,6 +360,8 @@ export class PluginInitializer {
 
   
   private setupEventHandlers(): void {
+    this.plugin.viewManager.registerSetupMarkdownOpenInterceptor();
+
     
     this.plugin.registerEvent(
       this.plugin.app.workspace.on('file-open', (file) => {
@@ -356,6 +379,39 @@ export class PluginInitializer {
           };
           void this.plugin.navigationManager.addRecentItem(recentItem);
         }
+
+        if (file instanceof TFile) {
+          window.setTimeout(() => {
+            const markdownView =
+              this.plugin.app.workspace.getActiveViewOfType(MarkdownView);
+            void this.plugin.viewManager.maybeOpenSetupMarkdownAsSetupsView(
+              markdownView?.leaf ?? null
+            );
+          }, 0);
+        }
+      })
+    );
+
+    this.plugin.registerEvent(
+      this.plugin.app.workspace.on('file-menu', (menu, file, _source, leaf) => {
+        if (!(file instanceof TFile) || !(leaf?.view instanceof MarkdownView)) {
+          return;
+        }
+        const cache = this.plugin.app.metadataCache.getFileCache(file);
+        const isSetupFile = cache?.frontmatter?.['journalit-setup'] === true;
+        if (!isSetupFile) return;
+        menu.addItem((item) => {
+          item
+            .setTitle(t('setups.view.open-as-setup'))
+            .setIcon('flask-conical')
+            .setSection('pane')
+            .onClick(() => {
+              void this.plugin.viewManager.openSetupFileAsSetupsView(
+                file,
+                leaf
+              );
+            });
+        });
       })
     );
 
@@ -394,6 +450,11 @@ export class PluginInitializer {
                   label: t('view.layout-builder'),
                   icon: 'lucide-blocks',
                 };
+              case SETUPS_VIEW_TYPE:
+                return {
+                  label: t('setups.view.title'),
+                  icon: 'flask-conical',
+                };
               default:
                 return null;
             }
@@ -407,6 +468,14 @@ export class PluginInitializer {
               viewInfo.label,
               viewInfo.icon
             );
+          }
+
+          if (leaf.view instanceof MarkdownView) {
+            window.setTimeout(() => {
+              void this.plugin.viewManager.maybeOpenSetupMarkdownAsSetupsView(
+                leaf
+              );
+            }, 0);
           }
         }
       })
@@ -424,8 +493,10 @@ export class PluginInitializer {
       this.plugin.viewManager.registerCSVImportView(),
       this.plugin.viewManager.registerOnboardingView(),
       this.plugin.viewManager.registerTemplateBuilderView(),
+      this.plugin.viewManager.registerSetupsView(),
       this.plugin.viewManager.registerNavigationView(),
       this.plugin.viewManager.registerCalendarSidebarView(),
+      this.plugin.viewManager.registerSessionModeView(),
     ]);
 
     logger.debug('[Journalit] All views registered successfully');
@@ -596,8 +667,6 @@ export class PluginInitializer {
             } catch (error) {
               console.error('Error checking for plugin updates:', error);
             }
-
-            void this.runTradeIdentityBackfillRolloutIfNeeded();
           },
         ],
         30
@@ -732,35 +801,6 @@ export class PluginInitializer {
     } catch (error) {
       console.warn(
         '[Journalit] Failed to clean up legacy .journalit derived storage:',
-        error
-      );
-    }
-  }
-
-  private async runTradeIdentityBackfillRolloutIfNeeded(): Promise<void> {
-    const uiState = this.plugin.uiStateManager.getState();
-    if (
-      uiState.tradeIdentityBackfillVersion ===
-      TRADE_IDENTITY_BACKFILL_ROLLOUT_VERSION
-    ) {
-      return;
-    }
-
-    try {
-      await this.plugin.tradeService.waitForTradeDataReady();
-      const result =
-        await this.plugin.tradeService.repairTradeIdentityIntegrity();
-
-      await this.plugin.uiStateManager.updateState({
-        tradeIdentityBackfillVersion: TRADE_IDENTITY_BACKFILL_ROLLOUT_VERSION,
-      });
-
-      logger.info(
-        `[Journalit] Trade identity startup rollout completed (${TRADE_IDENTITY_BACKFILL_ROLLOUT_VERSION}) scanned=${result.scanned}, backfilled=${result.backfilled}, duplicatesRepaired=${result.duplicatesRepaired}`
-      );
-    } catch (error) {
-      console.error(
-        '[Journalit] Failed startup trade identity backfill:',
         error
       );
     }

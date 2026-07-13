@@ -30,6 +30,26 @@ export interface TradeTemplate {
   updatedAt: string;
   isBuiltIn: boolean;
 
+  sectionOrder?: TradeNoteSectionId[];
+  assetDefaults?: Partial<
+    Record<
+      TradeTemplateAssetType,
+      {
+        sectionOrder?: TradeNoteSectionId[];
+        sections?: Partial<TradeTemplate['sections']>;
+      }
+    >
+  >;
+  assetOverrides?: Partial<
+    Record<
+      TradeTemplateAssetType,
+      {
+        sectionOrder?: TradeNoteSectionId[];
+        sections?: Partial<TradeTemplate['sections']>;
+      }
+    >
+  >;
+
   sections: {
     header: { show: true };
     navigation: { show: boolean };
@@ -43,21 +63,17 @@ export interface TradeTemplate {
       showSetups: boolean;
       showMistakes: boolean;
       showTags: boolean;
+      showCustomFields?: boolean;
     };
     details: {
       show: boolean;
       showThesis: boolean;
       metrics: TradeMetricType[];
     };
-    review: {
-      show: 'always' | 'losses-only' | 'never';
-      showForMissed?: boolean; 
-      showForBacktest?: boolean; 
-      sections: TradeReviewSection[]; 
-      winSections?: TradeReviewSection[]; 
-      lossSections?: TradeReviewSection[]; 
-    };
     reviewButton: {
+      show: boolean;
+    };
+    missedReason?: {
       show: boolean;
     };
   };
@@ -69,6 +85,22 @@ export interface TradeTemplate {
     showBacktestBadge: boolean;
   };
 }
+export type TradeNoteSectionId =
+  | 'navigation'
+  | 'images'
+  | 'metrics'
+  | 'thesis'
+  | 'missedReason'
+  | 'metadata'
+  | 'reviewButton';
+
+export type TradeTemplateAssetType =
+  | 'stock'
+  | 'options'
+  | 'futures'
+  | 'forex'
+  | 'crypto'
+  | 'cfd';
 
 
 export type TradeMetricType =
@@ -76,19 +108,12 @@ export type TradeMetricType =
   | 'exit'
   | 'size'
   | 'duration'
+  | 'stopLoss'
+  | 'takeProfit'
+  | 'executionSummary'
   | 'pnl'
   | 'rMultiple'
   | 'costs';
-
-
-export interface TradeReviewSection {
-  id: string;
-  title: string;
-  type: 'header' | 'checkbox' | 'textarea' | 'checkboxList';
-  content?: string; 
-  items?: string[]; 
-  placeholder?: string; 
-}
 
 
 export interface CustomWidgetType {
@@ -157,8 +182,10 @@ type DRCWidgetType =
   | 'goals'
   | 'checklist'
   | 'session-mistakes'
+  | 'session-log'
   | 'key-levels'
   | 'trades'
+  | 'trade-review'
   | 'stats'
   | 'account-breakdown'
   | 'pnl-chart'

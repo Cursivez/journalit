@@ -28,8 +28,15 @@ import {
   DrawdownChartWidget,
   PreviousTradingDayContextWidget,
   WeeklyDRCContextWidget,
+  SessionLogWidget,
 } from './widgets';
 import { TradeTableWidget } from './widgets/TradeTableWidget';
+import {
+  TradeReviewWidget,
+  TradeReviewWidgetConfig,
+  TradeReviewCardField,
+  TradeReviewQuestionConfig,
+} from './widgets/TradeReviewWidget';
 import { BreakdownTableWidget } from './widgets/BreakdownTableWidget';
 import {
   SetupPerformanceWidget,
@@ -198,6 +205,59 @@ function parseImageLayout(value: string): 'carousel' | 'stacked' | undefined {
   }
 }
 
+function parseTradeReviewFields(value: string): TradeReviewCardField[] {
+  return value.split(',').flatMap((field): TradeReviewCardField[] => {
+    const normalizedField = field
+      .trim()
+      .replaceAll('[', '')
+      .replaceAll(']', '')
+      .replaceAll('"', '')
+      .replaceAll("'", '');
+    switch (normalizedField) {
+      case 'entry':
+      case 'exit':
+      case 'duration':
+      case 'risk':
+      case 'positionSize':
+      case 'stopLoss':
+      case 'takeProfit':
+      case 'fees':
+      case 'commission':
+      case 'mae':
+      case 'mfe':
+      case 'account':
+      case 'setup':
+      case 'mistakes':
+      case 'tags':
+      case 'thesis':
+      case 'notes':
+      case 'customFields':
+        return [normalizedField];
+      default:
+        return [];
+    }
+  });
+}
+
+function parseTradeReviewQuestions(
+  value: string
+): TradeReviewQuestionConfig[] | undefined {
+  const questions = value.split(';').flatMap((question) => {
+    const [id = '', label = '', placeholder = ''] = question
+      .split('|')
+      .map((part) => part.trim());
+    if (!id || !label) return [];
+    return [
+      {
+        id,
+        label,
+        placeholder: placeholder || undefined,
+      },
+    ];
+  });
+  return questions.length > 0 ? questions : undefined;
+}
+
 export class WidgetCodeblockProcessor {
   private plugin: JournalitPlugin;
   private roots: Map<HTMLElement, Root> = new Map();
@@ -228,8 +288,10 @@ export class WidgetCodeblockProcessor {
       'goals',
       'checklist',
       'session-mistakes',
+      'session-log',
       'key-levels',
       'trades',
+      'trade-review',
       'review',
       'review-context-fields',
       'missed-trades',
@@ -428,6 +490,51 @@ export class WidgetCodeblockProcessor {
         }
       }
       return createElement(ReviewContextFieldsWidget, {
+        filePath,
+        plugin: this.plugin,
+        config,
+      });
+    }
+
+    if (widgetType === 'trade-review') {
+      const config: TradeReviewWidgetConfig = {};
+      if (source.trim()) {
+        const lines = source.trim().split('\n');
+        for (const line of lines) {
+          const colonIndex = findConfigSeparator(line);
+          if (colonIndex <= 0) continue;
+          const key = line.substring(0, colonIndex).trim();
+          const value = line.substring(colonIndex + 1).trim();
+          if (key === 'defaultExpanded')
+            config.defaultExpanded = value === 'true';
+          if (key === 'showReviewedTrades') {
+            config.showReviewedTrades = value === 'true';
+          }
+          if (key === 'showOpenTrades')
+            config.showOpenTrades = value === 'true';
+          if (key === 'showImages') config.showImages = value === 'true';
+          if (key === 'fields') config.fields = parseTradeReviewFields(value);
+          if (key === 'primaryMetrics')
+            config.primaryMetrics = parseTradeReviewFields(value);
+          if (key === 'classificationFields')
+            config.classificationFields = parseTradeReviewFields(value);
+          if (key === 'moreContextFields')
+            config.moreContextFields = parseTradeReviewFields(value);
+          if (key === 'winQuestions') {
+            config.winQuestions = parseTradeReviewQuestions(value);
+          }
+          if (key === 'lossQuestions') {
+            config.lossQuestions = parseTradeReviewQuestions(value);
+          }
+          if (key === 'breakevenQuestions') {
+            config.breakevenQuestions = parseTradeReviewQuestions(value);
+          }
+          if (key === 'openQuestions') {
+            config.openQuestions = parseTradeReviewQuestions(value);
+          }
+        }
+      }
+      return createElement(TradeReviewWidget, {
         filePath,
         plugin: this.plugin,
         config,
@@ -918,6 +1025,13 @@ export class WidgetCodeblockProcessor {
     
     if (widgetType === 'session-mistakes') {
       return createElement(SessionMistakesWidget, {
+        filePath,
+        plugin: this.plugin,
+      });
+    }
+
+    if (widgetType === 'session-log') {
+      return createElement(SessionLogWidget, {
         filePath,
         plugin: this.plugin,
       });

@@ -5,13 +5,16 @@ import { X, GripVertical } from '../shared/icons/ObsidianIcon';
 import { resolveIcon } from '../../utils/iconResolver';
 import { dndKitStyle } from '../../styles/inlineStylePolicy';
 import { hasTranslation, t } from '../../lang/helpers';
-import type { SidebarNavItem as SidebarNavItemType } from '../../settings/types';
+import type {
+  QuickLinkAction,
+  SidebarNavItem as SidebarNavItemType,
+} from '../../settings/types';
 
 interface SidebarNavItemProps {
   item: SidebarNavItemType;
   isEditing: boolean;
   onRemove: (id: string) => void;
-  onClick: (action: string) => void;
+  onClick: (action: QuickLinkAction) => void;
 }
 
 export const SidebarNavItemComponent: React.FC<SidebarNavItemProps> = ({

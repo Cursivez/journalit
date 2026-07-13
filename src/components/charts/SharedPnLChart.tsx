@@ -60,6 +60,7 @@ type PnLChartDataPointChartClickEvent = {
 interface SharedPnLChartProps extends PnLChartProps {
   plugin?: JournalitPlugin | null; 
   currencyOverride?: string; 
+  isAnimationActive?: boolean;
 }
 
 
@@ -133,6 +134,7 @@ export const SharedPnLChart = React.memo<SharedPnLChartProps>(
     plugin,
     currencyOverride,
     showAccountTooltip = false,
+    isAnimationActive = true,
   }) => {
     const chartRef = React.useRef<HTMLDivElement>(null);
     const { currency: globalCurrency } = useCurrency();
@@ -586,7 +588,8 @@ export const SharedPnLChart = React.memo<SharedPnLChartProps>(
               fill: 'var(--interactive-accent, #4299e1)',
               filter: `url(#${chartId}-glow)`,
             }}
-            animationDuration={500}
+            isAnimationActive={isAnimationActive}
+            animationDuration={isAnimationActive ? 500 : 0}
             animationEasing="ease-out"
             filter={`url(#${chartId}-shadow)`}
           />{' '}

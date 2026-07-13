@@ -22,7 +22,7 @@ import { PnLValue } from '../shared/display/DisplayValue';
 import { DisplayPolicyProvider } from '../../contexts/DisplayPolicyContext';
 import { formatDateDisplay } from '../../utils/dateUtils';
 import { classifyPnLWithBreakEvenSettings } from '../../utils/breakEvenRange';
-import { UPGRADE_URL } from '../../constants';
+import { UPGRADE_URLS } from '../../constants';
 import { openExternalUrl } from '../../utils/externalLinks';
 import { DeviceFlowSignInModal } from '../auth/DeviceFlowSignInModal';
 import { useBackendProEntitlement } from '../../hooks/useBackendProEntitlement';
@@ -780,7 +780,7 @@ const QuickTradeImportModalContent: React.FC<
   }, [plugin]);
 
   const handleUpgrade = useCallback(() => {
-    openExternalUrl(UPGRADE_URL);
+    openExternalUrl(UPGRADE_URLS.quickTradeImport);
   }, []);
 
   const runQuickPreview = useCallback(

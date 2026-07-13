@@ -290,7 +290,7 @@ function EditEventDeleteConfirm({
               : t('account.edit-event.button.delete', { type: typeText })}
           </Button>
           <Button
-            variant="secondary"
+            variant="plain"
             onClick={() => setShowDeleteConfirm(false)}
             disabled={isDeleting}
             className="cancel-button"
@@ -466,7 +466,7 @@ function EditEventForm({
               : t('account.edit-event.button.save')}
           </Button>
           <Button
-            variant="secondary"
+            variant="plain"
             onClick={onModalClose}
             disabled={isSaving}
             className="cancel-button"

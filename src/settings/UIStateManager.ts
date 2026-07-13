@@ -30,6 +30,9 @@ interface UIState {
   tradeLog?: TradeLogSettings;
 
   
+  tradeLogMode?: 'trades' | 'imageGallery';
+
+  
   selectedPeriod?: HomePeriod;
 
   
@@ -54,6 +57,13 @@ interface UIState {
   homeActiveLayout?: string;
 
   
+  imageGallery?: {
+    sourceType?: string;
+    sort?: string;
+    size?: string;
+  };
+
+  
   lastSyncTime?: string;
 
   
@@ -63,7 +73,6 @@ interface UIState {
   oldDerivedStorageCleanupVersion?: string;
 
   
-  tradeIdentityBackfillVersion?: string;
 
   
   syncCount?: number;
@@ -83,6 +92,37 @@ interface UIState {
   
   gettingStartedOpenedTradeLog?: boolean;
   gettingStartedOpenedLayoutBuilder?: boolean;
+
+  
+  setupDetailAnalysisMode?: 'performance' | 'execution-gap';
+
+  
+  setupOverviewMetricKey?:
+    | 'expectedValue'
+    | 'expectedR'
+    | 'totalPnL'
+    | 'totalR'
+    | 'winRate'
+    | 'profitFactor'
+    | 'totalTrades'
+    | 'cumulativePnl'
+    | 'cumulativeR';
+
+  
+  setupOverviewSelectedSetupIds?: string[];
+
+  
+  setupOverviewChartMode?: 'setups' | 'pairs';
+
+  
+  setupOverviewPairMetricKey?:
+    | 'edgeR'
+    | 'expectancyR'
+    | 'totalR'
+    | 'totalPnL'
+    | 'winRate'
+    | 'profitFactor'
+    | 'totalTrades';
 }
 
 
@@ -91,6 +131,12 @@ const isRecord = (value: unknown): value is Record<string, unknown> =>
 
 const DEFAULT_UI_STATE: UIState = {
   recentItems: [],
+  imageGallery: {
+    sourceType: 'all',
+    sort: 'newest',
+    size: 'medium',
+  },
+  tradeLogMode: 'trades',
   gettingStartedDismissed: false,
   gettingStartedOpenedTradeLog: false,
   gettingStartedOpenedLayoutBuilder: false,

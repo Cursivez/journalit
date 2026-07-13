@@ -34,6 +34,7 @@ import {
   extractMarkdownSectionsByHeading,
   stripPreviousTradingDayContextWidgetBlocks,
 } from '../../utils/markdownSectionExtractor';
+import type { SessionLogEntry } from '../../types/sessionLog';
 
 interface PreviousTradingDayContextSection {
   heading: string;
@@ -63,6 +64,32 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 
 function asRecord(value: unknown): Record<string, unknown> | undefined {
   return isRecord(value) ? value : undefined;
+}
+
+function getSessionLogEntries(value: unknown): SessionLogEntry[] {
+  if (!Array.isArray(value)) return [];
+  const entries: SessionLogEntry[] = [];
+  for (const item of value) {
+    const record = asRecord(item);
+    if (
+      !record ||
+      typeof record.id !== 'string' ||
+      typeof record.timestamp !== 'string' ||
+      typeof record.tagId !== 'string' ||
+      typeof record.text !== 'string'
+    ) {
+      continue;
+    }
+    entries.push({
+      id: record.id,
+      timestamp: record.timestamp,
+      tagId: record.tagId,
+      text: record.text,
+      resolved: record.resolved === true,
+      promoted: record.promoted === true,
+    });
+  }
+  return entries;
 }
 
 function getStringValue(record: Record<string, unknown>, key: string): string {
@@ -694,6 +721,9 @@ export class DRCService {
       }
       if (Array.isArray(record.sessionMistakes)) {
         drcData.sessionMistakes = getStringArray(record, 'sessionMistakes');
+      }
+      if (Array.isArray(record.sessionLog)) {
+        drcData.sessionLog = getSessionLogEntries(record.sessionLog);
       }
       if (isRecord(record.dailyGoalStatus)) {
         drcData.dailyGoalStatus = getBooleanRecord(record, 'dailyGoalStatus');

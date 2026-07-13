@@ -157,7 +157,7 @@ export interface Trade {
   notes?: string;
   thesis?: string;
   tags?: string[];
-  setupIds?: string[];
+
   setup?: string[];
   mistakeIds?: string[];
   mistake?: string[];

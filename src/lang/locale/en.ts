@@ -24,14 +24,11 @@ const en = {
   'command.open-position-size-calculator': 'Open position size calculator',
 
   
-  'command.force-sync': 'Force trade sync',
-  'command.cancel-sync': 'Cancel trade sync',
 
   
   'command.replay-onboarding': 'Replay onboarding flow',
   'command.replay-current-view-guide': 'Replay guide for current view',
   'command.open-release-notes': 'View release notes',
-  'command.repair-trade-identities': 'Repair trade identities',
 
   
   'command.open-layout-builder': 'Open layout builder',
@@ -247,6 +244,52 @@ const en = {
   
   
   
+  'form.import-shortcut.open': 'Import trades',
+  'form.layout.customize': 'Customise form',
+  'form.layout.modal-title': 'Customise Trade Form',
+  'form.layout.settings-title': 'Trade Form Layout',
+  'form.layout.settings-desc':
+    'Choose how you journal trades and which optional blocks appear in the trade form.',
+  'form.layout.core-fields-note':
+    'Trade type, account, asset type, instrument, direction, and the required price or P&L inputs stay visible based on the selected input mode.',
+  'form.layout.input-mode': 'Input mode',
+  'form.layout.input-mode-prices': 'Prices',
+  'form.layout.input-mode-pnl-risk': 'P&L + Risk',
+  'form.layout.input-mode-prices-desc':
+    'Entry/exit prices. Journalit calculates P&L.',
+  'form.layout.input-mode-pnl-risk-desc':
+    'Direct P&L + risk. Journalit shows R.',
+  'form.layout.asset-type-mode': 'Asset type',
+  'form.layout.asset-type-mode-show': 'Ask',
+  'form.layout.asset-type-mode-fixed': 'Fixed',
+  'form.layout.default-asset-type': 'Default asset type',
+  'form.layout.active-fields': 'Visible blocks',
+  'form.layout.available-fields': 'Hidden blocks',
+  'form.layout.active-fields-desc': 'Drag to reorder.',
+  'form.layout.available-fields-desc': 'Add hidden blocks back.',
+  'form.layout.empty-active': 'No optional blocks are visible.',
+  'form.layout.all-active': 'All optional blocks are visible.',
+  'form.layout.add-field-aria': 'Add {field} to trade form',
+  'form.layout.remove-field-aria': 'Hide {field} in trade form',
+  'form.layout.saved': 'Trade form layout saved',
+  'form.layout.item.trading-costs.commission': 'Commission',
+  'form.layout.item.import-shortcut': 'Import button',
+  'form.layout.item.import-shortcut-desc':
+    'Show a footer button that opens Trade Import.',
+  'form.layout.item.core-details': 'Core trade details',
+  'form.layout.item.core-details-desc':
+    'Account, instrument, direction, and entry/exit inputs stay first.',
+  'form.layout.item.asset-specific': 'Asset-specific fields',
+  'form.layout.item.pnl-preview': 'P&L preview',
+  'form.layout.item.realized-pnl-preview': 'Partial exit P&L summary',
+  'form.layout.item.realized-pnl-preview-desc':
+    'Only appears for open trades after partial exits; its position is fixed.',
+  'form.layout.result-r': 'Result in R',
+  'form.layout.entry-time': 'Trade time',
+
+  
+  
+  
   'form.field.account': 'Account',
   'form.field.asset-type': 'Asset Type',
   'form.field.asset-type.stock': 'Stock',
@@ -276,7 +319,7 @@ const en = {
   'form.field.close-percent': 'Close %',
   'form.field.risk-amount': 'Risk Amount',
   'form.field.profit-loss': 'Profit/Loss',
-  'form.field.total-pnl': 'Base Trade P&L',
+  'form.field.total-pnl': 'Trade P&L',
   'form.field.realized-pnl': 'Realized P&L',
   'form.field.total-costs': 'Total Costs:',
   'form.field.setup': 'Setup',
@@ -344,15 +387,14 @@ const en = {
   'form.field.lot-size.custom': 'Custom',
 
   
-  'form.field.image-url-placeholder': 'Paste image URL or file path...',
+  'form.field.image-url-placeholder': 'Paste media URL or file path...',
   'form.field.image-duplicate-error': 'This image is already added.',
   'form.field.trade-image-alt': 'Trade Image',
   'image.loading': 'Loading...',
   'image.load-failed': 'Failed to load image',
   'form.field.value-dollar': 'Value ($)',
   'form.field.dollar-amount-placeholder': 'Dollar amount',
-  'form.field.direct-pnl-placeholder':
-    'Enter trade profit or loss before dividends',
+  'form.field.direct-pnl-placeholder': 'Enter profit or loss amount',
   'form.field.mae-dollar-placeholder': 'Max drawdown in dollars',
   'form.field.mfe-dollar-placeholder': 'Max profit in dollars',
   'form.field.mae-placeholder-currency': 'Max drawdown in {currency}',
@@ -400,7 +442,18 @@ const en = {
     'Enter trade profit/loss before dividends. Commission and fees will still be applied separately.',
   'form.entry-exit.calc-pnl':
     'Calculate PNL from entry/exit prices and position sizes.',
+  'form.ideal-exit.title': 'Ideal exits',
+  'form.ideal-exit.subtitle': 'Hindsight scale-outs for execution review.',
+  'form.ideal-exit.coverage': 'Ideal size',
+  'form.ideal-exit.price': 'Ideal Price',
+  'form.ideal-exit.size': 'Size',
+  'form.ideal-exit.remove': 'Remove ideal exit',
+  'form.ideal-exit.add': '+ Add Ideal Exit',
+  'form.ideal-exit.copy-actual': 'Copy actual exits',
 
+  'form.ideal-exit.tooltip':
+    'Record the hindsight exit plan you wish you had executed. Supports scaled exits for capture review.',
+  'form.ideal-exit.empty': 'No ideal exits yet',
   
   
   
@@ -454,7 +507,7 @@ const en = {
   'button.apply': 'Apply',
   'button.apply-settings': 'Apply Settings',
   'button.learn-more': 'Learn more',
-  'button.upload-image': 'Upload Image',
+  'button.upload-image': 'Upload Media',
   'button.discord': 'Discord',
 
   
@@ -464,6 +517,8 @@ const en = {
   'trade.header.unknown-instrument': 'Unknown Instrument',
   'validation.edit': 'EDIT',
   'validation.fix-errors': 'Please fix the following errors:',
+  'validation.setup-resolution-failed':
+    'Could not prepare the selected setups. Check them and try again.',
   'validation.basic-tab-errors.one': 'Basic tab has {count} error',
   'validation.basic-tab-errors.few': 'Basic tab has {count} errors',
   'validation.basic-tab-errors.many': 'Basic tab has {count} errors',
@@ -675,10 +730,6 @@ const en = {
     'Failed to open onboarding flow. Check console for details.',
   'notice.error.sync-trades': 'Failed to sync trades: {error}',
   'notice.error.open-release-notes': 'Failed to open release notes: {error}',
-  'notice.trade-identity-repair-complete':
-    'Trade identity repair complete: scanned {scanned}, backfilled {backfilled}, repaired {duplicates} duplicates.',
-  'notice.error.repair-trade-identities':
-    'Failed to repair trade identities: {error}',
   'notice.error.open-update-notification':
     'Failed to open update notification: {error}',
   'notice.error.open-layout-builder': 'Failed to open Layout Builder: {error}',
@@ -752,6 +803,15 @@ const en = {
   'tradelog.title': 'Trade Log',
   'tradelog.root.all-trades': 'All Trades',
   'tradelog.view.selector.label': 'View',
+
+  'form.layout.guide-trigger-label': 'Customize form',
+  'trade-form.guide.customization-modal.title':
+    'Tailor the form to your workflow',
+  'trade-form.guide.customization-modal.description':
+    'Here you can show, hide, and reorder optional blocks. Keep the form focused on the fields you actually use.',
+  'trade-form.guide.finish.title': 'That is the customisation feature',
+  'trade-form.guide.finish.description':
+    'You can revisit this button any time the Trade Form needs to match a different journaling workflow.',
   'tradelog.guide.empty.intro.title': 'Welcome to Trade Log',
   'tradelog.guide.empty.intro.description':
     'This page becomes your main place for browsing, sorting, and reviewing trades. Once you add trades, you will also get the full Trade Log tour.',
@@ -1127,6 +1187,7 @@ const en = {
   'dashboard.metrics.netPnL': 'Net P&L',
   'dashboard.metrics.winRate': 'Win Rate',
   'dashboard.metrics.profitFactor': 'Profit Factor',
+  'dashboard.metrics.sharpeRatio': 'Sharpe Ratio',
   'dashboard.metrics.expectancy': 'Expectancy',
   'dashboard.metrics.numTrades': 'Total Trades',
   'dashboard.metrics.closedTrades': 'Closed Trades',
@@ -1158,6 +1219,17 @@ const en = {
   'dashboard.avgRR.tooltip.formula': 'Formula: average win / average loss',
   'dashboard.avgRR.tooltip.no-conversion':
     'This payoff ratio is based on mixed currencies without FX conversion and may be misleading.',
+  'dashboard.sharpeRatio.tooltip.title': 'Sharpe Ratio',
+  'dashboard.sharpeRatio.tooltip.formula':
+    'Formula: average closed-trade net P&L / sample standard deviation of closed-trade net P&L. Risk-free rate is 0 and the value is not annualized.',
+  'dashboard.sharpeRatio.tooltip.coverage':
+    'Computed from {valid} of {total} closed trades',
+  'dashboard.sharpeRatio.tooltip.partial-coverage':
+    'Partial coverage: {valid} of {total} closed trades have finite net P&L.',
+  'dashboard.sharpeRatio.tooltip.no-data':
+    'Requires at least two closed trades with non-zero P&L variability.',
+  'dashboard.sharpeRatio.tooltip.no-conversion':
+    'This Sharpe Ratio is based on mixed currencies without FX conversion and may be misleading.',
   'dashboard.avgRRRiskBased.tooltip.title': 'Avg RR (R-Based)',
   'dashboard.avgRRRiskBased.tooltip.formula':
     'Formula: average winning R / average losing R',
@@ -1481,12 +1553,53 @@ const en = {
   'template.editor.win-sections-desc': 'Shown on winning and breakeven trades',
   'template.editor.loss-sections-desc': 'Shown on losing trades',
   'template.editor.section-visibility': 'Section Visibility',
+  'template.editor.trade-note-layout': 'Trade Note Layout',
+  'template.editor.layout-scope': 'Layout scope',
+  'template.editor.layout-scope-desc':
+    'Choose the default layout or edit one asset type page',
+  'template.editor.all-asset-types': 'All asset types',
+  'template.editor.other-asset-types': 'Others',
+  'template.editor.default-layout': 'Default',
+  'template.editor.asset-type-add': 'Asset type',
+  'template.editor.choose-asset-type': 'Choose asset type',
+  'template.editor.remove-asset-layout': 'Remove asset layout',
+  'template.editor.reset-asset-layout': 'Reset asset layout',
+  'template.editor.reset-asset-layout-desc':
+    'Remove this asset-specific layout and use All asset types',
   'template.editor.nav-bar': 'Navigation Bar',
   'template.editor.nav-bar-desc': 'Show trade timeline and review links',
   'template.editor.images': 'Images',
   'template.editor.images-desc': 'Show trade chart images',
+  'template.editor.metrics': 'Metrics',
+  'template.editor.metrics-desc':
+    'Show entry, exit, duration, and plan metric cards',
+  'template.editor.thesis': 'Thesis',
+  'template.editor.thesis-desc': 'Show the trade thesis block',
+  'template.editor.missed-reason': 'Missed Trade Reason',
+  'template.editor.missed-reason-desc':
+    'Show why the missed trade was not taken',
   'template.editor.metadata': 'Metadata',
   'template.editor.metadata-desc': 'Show accounts, setups, and mistakes',
+  'template.editor.metric-cards': 'Metric Cards',
+  'template.editor.metadata-rows': 'Metadata Rows',
+  'template.editor.accounts': 'Accounts',
+  'template.editor.setups': 'Setups',
+  'template.editor.mistakes': 'Mistakes',
+  'template.editor.tags': 'Tags',
+  'template.editor.custom-fields': 'Custom fields',
+  'template.editor.custom-fields-desc': '{count} configured custom fields',
+  'template.editor.asset-type-overrides': 'Asset Type Overrides',
+  'template.editor.asset-type': 'Asset type',
+  'template.editor.asset-type-desc':
+    'Override section order and visibility for one asset class',
+  'template.editor.enable-asset-override': 'Enable {assetType} override',
+  'template.editor.asset-order': '{assetType} order',
+  'template.editor.reviewed-footer': 'Reviewed footer',
+  'template.editor.metric.position-size': 'Position size',
+  'template.editor.metric.execution-breakdown': 'Execution breakdown',
+  'template.editor.metric.pnl': 'P&L',
+  'template.editor.metric.r-multiple': 'R multiple',
+  'template.editor.metric.costs': 'Costs',
   'template.editor.details': 'Trade Details',
   'template.editor.details-desc': 'Show entry, exit, and P&L details',
   'template.editor.review-button': 'Mark Reviewed Button',
@@ -1758,26 +1871,26 @@ const en = {
   
   
   
-  'image.uploader.paste-title': 'Paste image from clipboard (Ctrl+V)',
+  'image.uploader.paste-title': 'Paste media from clipboard (Ctrl+V)',
   'image.uploader.pasting': 'Pasting...',
   'image.uploader.paste': 'Paste',
-  'image.uploader.url-placeholder': 'Paste image URL or file path...',
-  'image.uploader.url-input-aria': 'Image URL input',
+  'image.uploader.url-placeholder': 'Paste media URL or file path...',
+  'image.uploader.url-input-aria': 'Media URL input',
   'image.uploader.file-upload-aria': 'Upload from file',
   'image.uploader.paste-clipboard-aria': 'Paste from clipboard',
   'image.uploader.error-invalid-url':
-    'Invalid image URL or file path. Please enter a supported image URL, vault image path, or Excalidraw link.',
+    'Invalid media URL or file path. Please enter a supported image/video URL, vault media path, or Excalidraw link.',
 
   
   
   
   'image.viewer.alt-default': 'Image',
-  'image.viewer.description-default': 'Image Preview',
+  'image.viewer.description-default': 'Media Preview',
   'image.viewer.error-load':
     'Unable to load image. The file might be missing or inaccessible.',
   'image.viewer.title-fullscreen': 'Click to view fullscreen',
   'image.viewer.zoom-indicator': 'Click or hold to enlarge',
-  'image.viewer.delete-button': 'Delete Image',
+  'image.viewer.delete-button': 'Delete Media',
   'image.viewer.nav-prev': 'Previous image',
   'image.viewer.nav-next': 'Next image',
   'image.viewer.zoom-in-hint': 'Pinch or click to zoom in',
@@ -1785,6 +1898,26 @@ const en = {
   'image.viewer.no-images': 'No images to display',
   'image.viewer.thumbnail-alt': 'Thumbnail {n}',
   'image.viewer.close-aria': 'Close fullscreen',
+  'image.viewer.copy-image': 'Copy image',
+  'image.viewer.copy-success': 'Media copied to clipboard',
+  'image.viewer.copied': 'Copied',
+  'image.viewer.copy-failed': 'Failed to copy image to clipboard',
+  'image.viewer.copy-unsupported':
+    'Image clipboard copy is not supported in this environment',
+
+  
+  
+  
+  'media.viewer.video-controls': 'Video controls',
+  'media.viewer.play-video': 'Play video',
+  'media.viewer.pause-video': 'Pause video',
+  'media.viewer.mute-video': 'Mute video',
+  'media.viewer.unmute-video': 'Unmute video',
+  'media.viewer.volume': 'Volume',
+  'media.viewer.back-5': 'Back 5 seconds',
+  'media.viewer.forward-5': 'Forward 5 seconds',
+  'media.viewer.timeline': 'Video timeline',
+  'media.viewer.open-youtube': 'Open on YouTube',
 
   
   
@@ -1884,6 +2017,8 @@ const en = {
   'common.color.red': 'Red',
   'common.color.orange': 'Orange',
   'common.color.yellow': 'Yellow',
+  'common.color.label': 'Color',
+  'common.color.default': 'Default',
 
   
   'common.day.monday': 'Monday',
@@ -2063,8 +2198,12 @@ const en = {
   
   'settings.tab.general': 'General',
   'settings.tab.reviews': 'Review',
+  'settings.tab.session-mode': 'Session mode',
   'settings.tab.customization': 'Customisation',
+  'settings.tab.journal-setup': 'Journal Setup',
   'settings.tab.backend': 'Trade sync',
+  'settings.tab.trading': 'Trades',
+  'settings.tab.sync': 'Sync',
   'settings.tab.accounts': 'Account',
 
   
@@ -2187,11 +2326,11 @@ const en = {
   
   'settings.reviews.daily.checklist-title': 'Pre-trade checklist items',
   'settings.reviews.daily.checklist-desc':
-    'Customize the checklist items that appear in your Daily Report Card. These are tasks you should complete before starting your trading session.',
+    'Customise the checklist items that appear in your Daily Report Card. These are tasks you should complete before starting your trading session.',
   'settings.reviews.daily.checklist-placeholder': 'New checklist item',
   'settings.reviews.daily.questions-title': 'Review questions',
   'settings.reviews.daily.questions-desc':
-    'Customize the reflection questions that appear in the review section. These questions help you reflect on your trading performance.',
+    'Customise the reflection questions that appear in the review section. These questions help you reflect on your trading performance.',
 
   
   
@@ -2234,18 +2373,18 @@ const en = {
   'settings.reviews.daily.questions-placeholder': 'New review question',
   'settings.reviews.daily.timeframes-title': 'Forecast timeframes',
   'settings.reviews.daily.timeframes-desc':
-    'Customize the timeframes that appear in your Daily Report Card forecasts.',
+    'Customise the timeframes that appear in your Daily Report Card forecasts.',
   'settings.reviews.daily.timeframes-placeholder':
     'New timeframe (e.g., 15M, 5M)',
 
   
   'settings.weekly.review-questions': 'Review questions',
   'settings.weekly.review-questions-desc':
-    'Customize the questions that appear in your weekly review. These questions help you reflect on your trading performance over the week.',
+    'Customise the questions that appear in your weekly review. These questions help you reflect on your trading performance over the week.',
   'settings.weekly.new-question-placeholder': 'New review question',
   'settings.weekly.forecast-timeframes': 'Forecast timeframes',
   'settings.weekly.forecast-timeframes-desc':
-    'Customize the timeframes that appear in your weekly forecast.',
+    'Customise the timeframes that appear in your weekly forecast.',
   'settings.weekly.new-timeframe-placeholder':
     'New timeframe (e.g., Weekly, Daily)',
   'settings.weekly.default-question-1': 'What worked well this week?',
@@ -2262,7 +2401,7 @@ const en = {
   
   'settings.shared.timeframes.title': 'Forecast timeframes',
   'settings.shared.timeframes.desc':
-    'Customize the timeframes that appear in your forecast',
+    'Customise the timeframes that appear in your forecast',
   'settings.shared.timeframes.placeholder': 'New timeframe (e.g., 15M, 5M)',
   'settings.shared.timeframes.reset-to-defaults': 'Reset to Defaults',
 
@@ -2564,6 +2703,18 @@ const en = {
   'trade-sync.gate.pro.description':
     'Trade Sync is a Pro feature. Upgrade to continue.',
   'trade-sync.gate.pro.cta': 'Upgrade now',
+  'trade-sync.gate.feature-unavailable.title': 'Feature unavailable',
+  'trade-sync.gate.feature-unavailable.description':
+    'This sync feature is not enabled for your Pro account. Refresh your status or contact support if this persists.',
+  'trade-sync.trial.title': 'Automate your trading journal',
+  'trade-sync.trial.description':
+    'Save up to 7 hours a week with Journalit Pro.',
+  'trade-sync.trial.benefit.sync': 'Automatic trade sync',
+  'trade-sync.trial.benefit.import': 'Import trades from anywhere',
+  'trade-sync.trial.cta': 'Start your 14-day free trial',
+  'trade-sync.trial.existing-subscriber': 'Already subscribed? Sign in',
+  'trade-sync.trial.eligibility':
+    'Free trial available to new subscribers only.',
 
   
   'premium.gate.cta.activate': 'Activate PRO',
@@ -2572,16 +2723,15 @@ const en = {
   'premium.gate.cta.continue-pro': 'Continue to PRO',
   'premium.gate.cta.keep-editing': 'Keep editing',
   'premium.gate.cta.refresh': 'Refresh status',
-  'premium.gate.import.state.signin.title': 'Sign in to use Trade Import',
+  'premium.gate.import.state.signin.title':
+    'Save 7 hours a week importing trades',
   'premium.gate.import.state.signin.description':
     'Upload broker exports, preview parsed trades privately, and import them into your vault.',
-  'premium.gate.import.state.pro.title': 'Trade Import is a Pro feature',
+  'premium.gate.import.state.pro.title': 'Save 7 hours a week importing trades',
   'premium.gate.import.state.pro.description':
     'Pro unlocks broker export uploads, private previews, saved templates, and one-click imports.',
-  'premium.gate.import.reassurance':
-    'Private previews run before anything is written to your vault.',
-  'premium.gate.trial-hint':
-    'First-time Pro subscriptions include a 14-day free trial.',
+  'premium.gate.import.reassurance': 'Import unlimited trades to your vault.',
+  'premium.gate.trial-hint': 'Start with a 14-day free trial.',
   'premium.gate.offline':
     'You appear to be offline. Activation requires internet.',
   'premium.gate.not-pro-yet':
@@ -2698,6 +2848,7 @@ const en = {
   'backend.cards.sync.last-sync': 'Last sync',
   'backend.cards.sync.total': 'Total syncs',
   'backend.cards.sync.button': 'Sync Now',
+  'backend.cards.sync.cancel': 'Cancel sync',
   'backend.cards.accounts.title': 'Accounts',
   'backend.cards.accounts.linked': 'Linked accounts',
   'backend.cards.accounts.manage': 'Manage',
@@ -3405,6 +3556,15 @@ const en = {
   'trade.details.thesis': 'Thesis',
   'trade.details.no-thesis': 'No thesis provided for this trade',
   'trade.details.add-thesis': "Click 'Edit' to add a thesis",
+  'trade.details.plan': 'Plan',
+  'trade.details.risk': 'risk',
+  'trade.details.execution': 'Execution',
+  'trade.details.show-execution': 'Show breakdown',
+  'trade.details.hide-execution': 'Hide breakdown',
+  'trade.details.entries-summary': '{count} entries',
+  'trade.details.exits-summary': '{count} exits',
+  'trade.details.take-profit-count': '{count} targets',
+  'trade.details.close-percent': '{percent}% close',
 
   
   'trade.metadata.account': 'Account:',
@@ -3414,7 +3574,7 @@ const en = {
 
   
   'trade.image.no-images': 'No images for this trade',
-  'trade.image.click-edit': 'Click edit to add images',
+  'trade.image.click-edit': 'Add image',
   'trade.image.alt-prefix': 'Trade image',
 
   
@@ -3433,6 +3593,11 @@ const en = {
   'timeline.status.loss': 'Loss',
   'timeline.status.breakeven': 'Breakeven',
   'timeline.aria.trade-status': '{ticker} {tradeType} {tradeNumber} ({status})',
+  'timeline.aria.session-navigation': 'Same-day trade navigation',
+  'timeline.aria.previous-trade': 'Previous trade: {trade}',
+  'timeline.aria.next-trade': 'Next trade: {trade}',
+  'timeline.aria.no-previous-trade': 'No previous trade in this trading day',
+  'timeline.aria.no-next-trade': 'No next trade in this trading day',
   'timeline.title.current-trade':
     'Current {tradeType}: {ticker} {tradeType} {tradeNumber}',
   'timeline.title.view-trade':
@@ -3544,6 +3709,7 @@ const en = {
   
   
   'missed-trade.reason-title': 'Why I missed this trade',
+  'missed-trade.reason-kicker': 'Missed opportunity',
   'missed-trade.loading-navigation': 'Loading navigation...',
 
   
@@ -3700,12 +3866,11 @@ const en = {
     'Display times in 24-hour format (14:30) instead of 12-hour AM/PM format (2:30 PM)',
   'settings.general.use-24-hour-time-aria': 'Use 24-hour time format',
 
-  'settings.general.skip-weekends': 'Skip Weekends in Navigation',
+  'settings.general.skip-weekends': 'Exclude Weekends',
   'settings.general.skip-weekends-desc':
-    'Skip weekends when navigating between trading days (e.g., Friday → Monday)',
-  'settings.general.skip-weekends-aria': 'Skip weekends when navigating',
-  'settings.general.skip-weekends-toggled': 'Skip weekends {status}',
-
+    'When enabled, Journalit treats weekends as non-trading days across the plugin. Disable this if you trade or review activity on Saturdays and Sundays.',
+  'settings.general.skip-weekends-aria': 'Exclude weekends across Journalit',
+  'settings.general.skip-weekends-toggled': 'Weekend exclusion {status}',
   'settings.general.week-start': 'Week Start Day',
   'settings.general.week-start-desc':
     'Choose which day your trading week starts on. Affects weekly reviews and reports.',
@@ -3820,6 +3985,7 @@ const en = {
 
   
   'settings.general.data-management': 'Data Management & Privacy',
+  'settings.general.backup-restore-section': 'Backup, Restore & Reset',
   'settings.general.export-settings': 'Export Settings',
   'settings.general.export-settings-desc':
     'Download all plugin settings as a JSON file for backup or transfer to another vault',
@@ -3846,7 +4012,10 @@ const en = {
   
   'settings.customization.title': 'Customisation',
   'settings.customization.description':
-    'Customize options, appearance, and behavior of the Journalit plugin.',
+    'Customise options, appearance, and behavior of the Journalit plugin.',
+  'settings.customization.trade-form-layout.description':
+    'Choose which fields and sections appear in the trade form.',
+  'settings.customization.trade-form-layout.button': 'Customise layout',
   'settings.customization.tickers-symbols': 'Tickers/Symbols',
   'settings.customization.symbol-mappings': 'Symbol Mappings',
   'settings.customization.account-types': 'Account Types',
@@ -4372,7 +4541,7 @@ const en = {
     'Track multiple accounts and view account-specific performance pages.',
   'onboarding.explore.core.layouts.label': 'Layout Builder',
   'onboarding.explore.core.layouts.description':
-    'Customize dashboards and review layouts with widgets and layouts.',
+    'Customise dashboards and review layouts with widgets and layouts.',
   'onboarding.explore.imports.title': 'Imports & Sync (PRO)',
   'onboarding.explore.imports.subtitle':
     'Preview and setup anytime. Importing/sync requires Pro.',
@@ -4652,17 +4821,17 @@ const en = {
   'widget.key-events.empty-state-sub': 'Add events in your Weekly Review',
   'widget.missed-trades.name': 'Missed Trades',
   'widget.missed-trades.description': 'Trades you identified but did not take',
-  'widget.images.name': 'Images',
-  'widget.images.description': 'Image carousel with upload support',
+  'widget.images.name': 'Charts & Media',
+  'widget.images.description': 'Media carousel with upload support',
   'widget.images.invalid-context':
-    "Images widget requires a review note (type: 'drc', 'weekly-review', 'monthly-review', 'quarterly-review', or 'yearly-review')",
-  'widget.images.alt-prefix': 'Review image',
-  'widget.images.stacked-alt': 'Review image {index}',
-  'widget.images.open-fullscreen': 'Open image {index} fullscreen',
-  'widget.images.delete': 'Delete image',
-  'widget.images.empty': 'No images',
-  'widget.images.placeholder': 'Paste image URL or file path...',
-  'widget.images.placeholder-add-more': 'Add more images...',
+    "Media widget requires a review note (type: 'drc', 'weekly-review', 'monthly-review', 'quarterly-review', or 'yearly-review')",
+  'widget.images.alt-prefix': 'Review media',
+  'widget.images.stacked-alt': 'Review media {index}',
+  'widget.images.open-fullscreen': 'Open media {index} fullscreen',
+  'widget.images.delete': 'Delete media',
+  'widget.images.empty': 'No media',
+  'widget.images.placeholder': 'Paste media URL or file path...',
+  'widget.images.placeholder-add-more': 'Add more media...',
   'widget.mark-reviewed.name': 'Mark as Reviewed',
   'widget.mark-reviewed.description':
     'Banner to mark review as complete with timestamp',
@@ -4869,6 +5038,65 @@ const en = {
   
   'widget.trades.name': 'Trades',
   'widget.trades.description': 'List of trades with key details',
+  'widget.trade-review.name': 'Trade Review',
+  'widget.trade-review.description':
+    'Review each trade with images, key facts, and configurable questions',
+  'widget.trade-review.question.win-what-worked': 'What worked?',
+  'widget.trade-review.placeholder.win-what-worked':
+    'What did you execute well in this trade?',
+  'widget.trade-review.question.win-repeatable': 'Was this repeatable?',
+  'widget.trade-review.placeholder.win-repeatable':
+    'What made this trade repeatable?',
+  'widget.trade-review.question.key-lesson': 'Key lesson',
+  'widget.trade-review.placeholder.key-lesson':
+    'What should you remember from this trade?',
+  'widget.trade-review.question.loss-what-went-wrong': 'What went wrong?',
+  'widget.trade-review.placeholder.loss-what-went-wrong':
+    'What caused this loss?',
+  'widget.trade-review.question.loss-valid-or-mistake':
+    'Was this a valid loss or an execution mistake?',
+  'widget.trade-review.placeholder.loss-valid-or-mistake':
+    'Describe whether this was process-valid or avoidable.',
+  'widget.trade-review.question.loss-avoid-next-time':
+    'What will I avoid next time?',
+  'widget.trade-review.placeholder.loss-avoid-next-time':
+    'What specific behavior should change?',
+  'widget.trade-review.question.be-managed-correctly':
+    'Was this managed correctly?',
+  'widget.trade-review.placeholder.be-managed-correctly':
+    'Did the management match your plan?',
+  'widget.trade-review.status.reviewed': 'Reviewed',
+  'widget.trade-review.status.pending': 'Pending review',
+  'widget.trade-review.image-alt-prefix': 'Trade review image',
+  'widget.trade-review.no-image': 'No trade image',
+  'widget.trade-review.placeholder.default': 'Write your thoughts...',
+  'widget.trade-review.questions-hidden':
+    'Review questions are hidden for this trade.',
+  'widget.trade-review.open-trade-note': 'Open trade note',
+  'widget.trade-review.mark-reviewed': 'Mark reviewed',
+  'widget.trade-review.field.entry': 'Entry',
+  'widget.trade-review.field.exit': 'Exit',
+  'widget.trade-review.field.duration': 'Duration',
+  'widget.trade-review.field.risk': 'Risk',
+  'widget.trade-review.field.account': 'Account',
+  'widget.trade-review.field.setup': 'Setup',
+  'widget.trade-review.field.mistakes': 'Mistakes',
+  'widget.trade-review.field.tags': 'Tags',
+  'widget.trade-review.more-context': 'More context',
+  'widget.trade-review.field.position-size': 'Size',
+  'widget.trade-review.field.stop-loss': 'Stop loss',
+  'widget.trade-review.field.take-profit': 'Take profit',
+  'widget.trade-review.field.fees': 'Fees',
+  'widget.trade-review.field.commission': 'Commission',
+  'widget.trade-review.field.mae': 'MAE',
+  'widget.trade-review.field.mfe': 'MFE',
+  'widget.trade-review.field.thesis': 'Thesis',
+  'widget.trade-review.field.notes': 'Notes',
+  'widget.trade-review.field.custom-fields': 'Custom fields',
+  'widget.trade-review.loading': 'Loading trade reviews...',
+  'widget.trade-review.no-trades': 'No trades to review.',
+  'widget.trade-review.time.open': 'Open',
+  'widget.trade-review.fallback-title': 'Trade {index}',
   'widget.backtest-trades.name': 'Backtest Trades',
   'widget.backtest-trades.description':
     'List of backtest trades for this review period',
@@ -4933,6 +5161,9 @@ const en = {
   'metric.winRate.description': 'Percentage of winning trades',
   'metric.profitFactor.name': 'Profit Factor',
   'metric.profitFactor.description': 'Ratio of gross profit to gross loss',
+  'metric.sharpeRatio.name': 'Sharpe Ratio',
+  'metric.sharpeRatio.description':
+    'Trade-level Sharpe ratio: average closed-trade net P&L divided by sample P&L volatility',
   'metric.expectancy.name': 'Expectancy',
   'metric.expectancy.description': 'Average amount won or lost per trade',
   'metric.maxDrawdown.name': 'Max Drawdown',
@@ -5506,8 +5737,11 @@ const en = {
   'home.quick-links.todays-drc': "Today's DRC",
   'home.quick-links.weekly-review': 'This Week Review',
   'home.quick-links.monthly-review': 'This Month Review',
+  'home.quick-links.quarterly-review': 'This Quarter Review',
+  'home.quick-links.yearly-review': 'This Year Review',
   'home.quick-links.csv-import': 'Trade Import',
   'home.quick-links.layout-builder': 'Layout Builder',
+  'home.quick-links.session-mode': 'Session Mode',
   'home.quick-links.move-above': 'Move quick links above widgets',
   'home.quick-links.move-below': 'Move quick links below widgets',
 
@@ -5537,7 +5771,7 @@ const en = {
   'home.aria.filter-trade-types': 'Filter Trade Types',
   'home.aria.add-widget': 'Add Widget',
   'home.aria.save-layout': 'Save Layout',
-  'home.aria.customize': 'Customize',
+  'home.aria.customize': 'Customise',
 
   
   'home.button.add-widget': 'Add Widget',
@@ -5743,9 +5977,9 @@ const en = {
 
   
   'home.widget.top-breakdown.title': 'Top {dimension}',
-  'home.widget.top-breakdown.configure-title': 'Customize Top {dimension}',
+  'home.widget.top-breakdown.configure-title': 'Customise Top {dimension}',
   'home.widget.top-breakdown.aria.customize':
-    'Click to customize Top {dimension}',
+    'Click to customise Top {dimension}',
   'home.widget.setups.title': 'Top Setups',
   'home.widget.setups.no-data': 'No setups recorded yet',
   'home.widget.setups.trades-count': '{count} trades',
@@ -6331,6 +6565,7 @@ const en = {
   'csv.broker-guide.tradingtechnologies.doc-label':
     'View Trading Technologies export instructions',
   'trade.metadata.broker-comment': 'Broker Comment',
+  'trade.metadata.additional-fields': 'Additional fields',
 
   
   
@@ -6340,7 +6575,7 @@ const en = {
   'navigation.section.overview': 'Overview',
   'navigation.section.reviews': 'Reviews',
   'navigation.section.tools': 'Tools',
-  'navigation.edit-mode.toggle': 'Customize navigation',
+  'navigation.edit-mode.toggle': 'Customise navigation',
   'navigation.edit-mode.hide-item': 'Hide navigation item',
   'navigation.edit-mode.restore-section': 'Hidden Items',
   'navigation.edit-mode.restore': 'Restore',
@@ -6357,6 +6592,7 @@ const en = {
   'navigation.items.nav-layout-builder': 'Layout Builder',
   'navigation.items.nav-quick-import': 'Quick Import',
   'navigation.items.nav-csv-import': 'Trade Import',
+  'navigation.items.nav-session-mode': 'Session Mode',
   'navigation.items.nav-position-size': 'Position Size Calculator',
   'settings.general.navigation-sidebar': 'Navigation Sidebar',
   'navigation.setting.tab-behavior': 'Navigation tab behavior',
@@ -6447,6 +6683,15 @@ const en = {
   'templateEditor.widget.review-context-fields.current': 'Current',
   'templateEditor.widget.review-context-fields.empty-values': 'Empty values',
   'templateEditor.widget.review-context-fields.hide-empty': 'Hide empty values',
+  'templateEditor.widget.trade-review.primary-metrics': 'Primary metrics',
+  'templateEditor.widget.trade-review.classification': 'Classification',
+  'templateEditor.widget.trade-review.more-context': 'More context',
+  'templateEditor.widget.trade-review.display': 'Display',
+  'templateEditor.widget.trade-review.show-images': 'Show images',
+  'templateEditor.widget.trade-review.fields-none': 'No fields',
+  'templateEditor.widget.trade-review.fields-all': 'All fields',
+  'templateEditor.widget.trade-review.fields-count': '{count} fields',
+  'templateEditor.widget.trade-review.no-fields': 'No fields available',
   'templateEditor.widget.previous-context-add-section': '+ Add section',
   'templateEditor.widget.previous-context-headings-label':
     'Headings to include',
@@ -6530,10 +6775,12 @@ const en = {
     'Check that every required field is mapped, the selected date format matches your file, and numeric columns contain valid trade values.',
   'trade-import.notice.complete':
     'Trade Import complete: {written} written or updated, {duplicateCount} duplicates, {failedCount} failed',
+  'trade-import.gate.brand-left': 'Trade',
+  'trade-import.gate.brand-right': 'Import',
   'trade-import.gate.sign-in':
-    'Upload broker exports, preview parsed trades privately, and import them into your vault.',
+    'Stop typing every fill by hand. Sign in to preview broker exports and turn hours of manual entry into one import.',
   'trade-import.gate.upgrade':
-    'Pro unlocks broker export uploads, private previews, saved templates, and one-click imports.',
+    'Stop typing every fill by hand. Pro imports broker exports so you can spend your time reviewing trades instead of entering them.',
   'trade-import.action.open-settings': 'Open settings',
   'trade-import.action.manage-subscription': 'Manage subscription',
   'trade-import.description':
@@ -6601,6 +6848,535 @@ const en = {
   'trade-import.preview.message.no-open-match':
     'No matching open trade found for close-only preview',
   'home.quick-links.quick-import': 'Quick Import',
+
+  
+  'home.quick-links.setups': 'Setups',
+  'command.open-setups': 'Open Setups',
+  'setups.view.loading': 'Loading setups…',
+  'setups.view.error.title': 'Could not load setups',
+  'setups.view.error.load-failed': 'Failed to load setup data.',
+  'setups.view.action.retry': 'Retry',
+  'setups.view.action.refresh': 'Refresh',
+  'setups.view.action.create': 'Create setup',
+  'setups.view.action.new': 'New setup',
+  'setups.create.title': 'Create Setup',
+  'setups.create.field.name': 'Setup Name',
+  'setups.create.placeholder.name': 'Opening Drive',
+  'setups.create.field.status': 'Status',
+  'setups.create.field.direction': 'Direction',
+  'setups.create.field.color': 'Color',
+  'setups.create.field.color-description':
+    'Choose a color to identify this setup.',
+  'setups.create.direction.any': 'Not specified',
+  'setups.create.direction.long': 'Long',
+  'setups.create.direction.short': 'Short',
+  'setups.create.direction.both': 'Both',
+  'setups.create.field.linked-notes': 'Linked Notes',
+  'setups.create.field.linked-notes-desc':
+    'Attach existing notes that document the playbook for this setup.',
+  'setups.create.linked-notes.empty': 'No notes linked yet.',
+  'setups.create.linked-notes.add': '+ Link note',
+  'setups.create.linked-notes.remove': 'Remove linked note',
+  'setups.create.linked-notes.picker-title': 'Choose a playbook note',
+  'setups.create.linked-notes.search': 'Search notes...',
+  'setups.create.linked-notes.no-notes': 'No markdown notes found.',
+  'setups.create.button.creating': 'Creating...',
+  'setups.create.button.create': 'Create Setup',
+  'setups.create.success': 'Setup "{name}" created successfully',
+  'setups.create.error.name-required': 'Setup name is required',
+  'setups.create.error.failed': 'Failed to create setup',
+  'setups.edit.title': 'Edit Setup',
+  'setups.edit.button.saving': 'Saving...',
+  'setups.edit.button.save': 'Save Setup',
+  'setups.edit.button.rename-and-update': 'Rename and update trades',
+  'setups.edit.rename-warning.title': 'Rename setup and update trades',
+  'setups.edit.rename-warning.message':
+    'Renaming {oldName} to {newName} will update trade notes that use the old setup name.',
+  'setups.edit.delete.button': 'Delete setup',
+  'setups.edit.delete.title': 'Delete setup',
+  'setups.edit.delete.confirm': 'Confirm delete',
+  'setups.edit.delete.warning':
+    'Deleting "{name}" permanently removes the setup and clears it from linked trades. This cannot be undone.',
+  'setups.edit.delete.success': 'Deleted setup "{name}"',
+  'setups.edit.delete.error': 'Failed to delete setup',
+  'setups.edit.success': 'Setup "{name}" updated successfully',
+  'setups.edit.error.failed': 'Failed to update setup',
+  'setups.view.action.compare-selected': 'Compare selected setups',
+  'setups.view.tabs.aria': 'Setup view tabs',
+  'setups.view.tab.overview': 'Overview',
+  'setups.view.tab.compare': 'Compare',
+  'setups.view.card.select-for-compare': 'Select setup for comparison',
+  'setups.view.card.open': 'Open setup',
+  'setups.view.compare.title': 'Compare setups',
+  'setups.view.compare.subtitle':
+    'Compare performance and behavior across selected setups.',
+  'setups.view.compare.select-title': 'Choose setups to compare',
+  'setups.view.compare.empty': 'Select two setups to compare.',
+  'setups.view.compare.empty-submessage':
+    'Choose two setup cards from the overview to build a side-by-side report.',
+  'setups.view.compare.metrics-title': 'Comparison metrics',
+  'setups.view.compare.metric': 'Metric',
+  'setups.view.compare.edge-column': 'Edge',
+  'setups.view.compare.edge-label': 'Winner',
+  'setups.view.compare.edge-hidden': 'Hidden in Privacy Mode',
+  'setups.view.compare.no-clear-edge': 'No clear edge',
+  'setups.view.compare.expectancy-edge': 'Expectancy edge',
+  'setups.view.compare.confidence': 'Confidence',
+  'setups.view.compare.sample': 'Sample',
+  'setups.view.compare.confidence.high': 'High',
+  'setups.view.compare.confidence.moderate': 'Moderate',
+  'setups.view.compare.confidence.low': 'Low',
+  'setups.view.compare.edge-strength.strong': 'Strong edge',
+  'setups.view.compare.edge-strength.clear': 'Clear edge',
+  'setups.view.compare.edge-strength.slight': 'Slight edge',
+  'setups.view.compare.edge-reasons-privacy':
+    'Edge details are hidden while Privacy Mode is on.',
+  'setups.view.compare.reason.higher.net-pnl': 'Higher Net PnL',
+  'setups.view.compare.reason.lower.net-pnl': 'Lower Net PnL',
+  'setups.view.compare.reason.similar.net-pnl': 'Similar Net PnL',
+  'setups.view.compare.reason.higher.total-r': 'Higher Total R',
+  'setups.view.compare.reason.lower.total-r': 'Lower Total R',
+  'setups.view.compare.reason.similar.total-r': 'Similar Total R',
+  'setups.view.compare.reason.higher.win-rate': 'Higher Win Rate',
+  'setups.view.compare.reason.lower.win-rate': 'Lower Win Rate',
+  'setups.view.compare.reason.similar.win-rate': 'Similar Win Rate',
+  'setups.view.compare.reason.higher.expectancy': 'Higher Expectancy',
+  'setups.view.compare.reason.lower.expectancy': 'Lower Expectancy',
+  'setups.view.compare.reason.similar.expectancy': 'Similar Expectancy',
+  'setups.view.compare.reason.higher.profit-factor': 'Higher Profit Factor',
+  'setups.view.compare.reason.lower.profit-factor': 'Lower Profit Factor',
+  'setups.view.compare.reason.similar.profit-factor': 'Similar Profit Factor',
+  'setups.view.compare.pnl-bars': 'PnL ranking',
+  'setups.view.compare.cumulative-title': 'Cumulative performance',
+  'setups.view.compare.cumulative-privacy':
+    'Cumulative performance is hidden while Privacy Mode is on.',
+  'setups.view.compare.cumulative-empty':
+    'No cumulative trade data for the selected setups.',
+  'setups.view.advanced.title': 'Advanced analytics',
+  'setups.view.advanced.subtitle': 'Setup combinations and playbook edge.',
+  'setups.view.advanced.broken-trades': 'Broken trades',
+  'setups.view.advanced.no-rule-data': 'No rule data yet.',
+  'setups.view.advanced.rule-break-count': '{count} breaks',
+  'setups.view.advanced.rule-edge-title': 'Rule edge',
+  'setups.view.advanced.no-rule-edge': 'No rule edge data yet.',
+  'setups.view.advanced.needs-attention': 'Needs attention',
+  'setups.view.advanced.no-insights': 'No insights yet.',
+  'setups.view.advanced.severity.info': 'Info',
+  'setups.view.advanced.severity.warning': 'Warning',
+  'setups.view.advanced.severity.critical': 'Critical',
+  'setups.view.advanced.combinations-title': 'Setup combinations',
+  'setups.view.advanced.combinations-subtitle':
+    'Find setup pairs that work well together.',
+  'setups.view.advanced.top-combinations': 'Top combinations',
+  'setups.view.advanced.best-pairs': 'Best pairs',
+  'setups.view.advanced.no-combinations': 'No setup combinations yet.',
+  'setups.view.advanced.performance-privacy':
+    'Performance details are hidden while Privacy Mode is on.',
+  'setups.view.advanced.insight.no-trades':
+    'No trades are linked to this setup yet.',
+  'setups.view.trade.unknown-instrument': 'Unknown instrument',
+  'setups.view.eyebrow': 'Setups',
+  'setups.guide.empty.intro.title': 'Create your first setup',
+  'setups.guide.empty.intro.description':
+    'Setups connect your playbook notes, rules, screenshots, and linked trades so you can review one trading idea in context.',
+  'setups.guide.create-new-setup.title': 'Create new setups',
+  'setups.guide.create-new-setup.description':
+    'Use New setup when you want to add another playbook. The modal walks you through the setup details, linked notes, and rules.',
+  'setups.guide.detail-intro.title': 'This is the setup page',
+  'setups.guide.detail-intro.description':
+    'This setup page brings one playbook into focus with its performance chart, context panel, reference material, actions, and execution rules.',
+  'setups.guide.detail-actions.title': 'Setup actions',
+  'setups.guide.detail-actions.description':
+    'Use these buttons to open related trades or edit the setup, including its details, linked notes, screenshots, and playbook rules.',
+  'setups.guide.empty.create-setup.title': 'Start with New setup',
+  'setups.guide.empty.create-setup.description':
+    'Create one setup first. After it exists, this guide will continue with the normal setup walkthrough.',
+  'setups.guide.empty.finish.title': 'Finish creating the setup',
+  'setups.guide.empty.finish.description':
+    'Fill in the setup details and save it. The Setups guide will resume once the setup is available.',
+  'setups.guide.intro.title': 'Welcome to Setups',
+  'setups.guide.intro.description':
+    'This view brings your setup playbooks, linked trades, notes, screenshots, and rules into one place.',
+  'setups.guide.view-tabs.title': 'Switch setup views',
+  'setups.guide.view-tabs.description':
+    'Use these tabs to move between the overview, setup pairs, and comparison flow when enough setups are available.',
+  'setups.guide.overview-chart.title': 'Performance ranking',
+  'setups.guide.overview-chart.description':
+    'The overview chart ranks setups by the selected metric. Use the controls in the top right to switch the metric or focus the chart on specific setups.',
+  'setups.guide.setup-cards.title': 'Setup cards',
+  'setups.guide.setup-cards.description':
+    'Cards summarize each setup with key metrics, status, last traded date, and a small performance trend.',
+  'setups.guide.open-detail.title': 'Open a setup page',
+  'setups.guide.open-detail.description':
+    'Open a setup card to inspect the dedicated page for its chart, context, playbook material, and execution rules.',
+  'setups.guide.detail-performance.title': 'Detail performance',
+  'setups.guide.detail-performance.description':
+    'The Performance tab shows this setup’s chart and key metrics over time, including P&L, win rate, expectancy, and drawdown.',
+  'setups.guide.detail-context.title': 'Setup context',
+  'setups.guide.detail-context.description':
+    'This panel keeps setup health, attention items, linked notes, and screenshots close at hand.',
+  'setups.guide.detail-playbook.title': 'Playbook notes',
+  'setups.guide.detail-playbook.description':
+    'The playbook area previews the linked note for this setup. It can be markdown, images, Excalidraw, or any reference material you want.',
+  'setups.guide.detail-rules.title': 'Execution rules',
+  'setups.guide.detail-rules.description':
+    'Rules capture the structured checklist for best conditions, entries, risk, and mistakes to avoid.',
+  'setups.guide.finish.title': 'Setups guide complete',
+  'setups.guide.finish.description':
+    'You have seen the main Setups surfaces: Overview, Pairs, Compare, and the individual setup page.',
+  'setups.guide.compare.intro.title': 'Compare setup performance',
+  'setups.guide.compare.intro.description':
+    'You now have enough setups to review pairs and compare two playbooks side by side.',
+  'setups.guide.pairs-mode.title': 'Open setup pairs',
+  'setups.guide.pairs-mode.description':
+    'Open Pairs to see which setup combinations have enough shared trades to compare.',
+  'setups.guide.pairs-chart.title': 'Pair ranking',
+  'setups.guide.pairs-chart.description':
+    'Pairs mode highlights combinations that may perform better or worse together. Click a bar to open deeper pair insights for that combination.',
+  'setups.guide.return-overview.title': 'Return to Overview',
+  'setups.guide.return-overview.description':
+    'Go back to Overview before choosing setups to compare.',
+  'setups.guide.compare-mode.title': 'Start compare mode',
+  'setups.guide.compare-mode.description':
+    'Compare mode lets you select two setup cards for a side-by-side review.',
+  'setups.guide.compare-select.title': 'Select two setups',
+  'setups.guide.compare-select.description':
+    'Select two setup cards to open the comparison page.',
+  'setups.guide.compare-summary.title': 'This is the comparison page',
+  'setups.guide.compare-summary.description':
+    'This page compares two setups side by side. The top summary row shows the winner, expectancy edge, confidence, and why one setup may have an edge.',
+  'setups.guide.compare-body.title': 'Comparison summary row',
+  'setups.guide.compare-body.description':
+    'The top row summarizes the comparison: winner, expectancy edge, confidence, and the reasons behind the edge.',
+  'setups.guide.compare-details.title': 'Comparison details',
+  'setups.guide.compare-details.description':
+    'Use the metrics table and cumulative chart to understand how the two setups differ.',
+  'setups.guide.detail-execution-gap.title': 'Execution gap analysis',
+  'setups.guide.detail-execution-gap.description':
+    'When missed-trade or backtest data exists, this tab compares captured execution against missed or benchmark opportunity.',
+  'setups.guide.back-to-overview.title': 'Back to setup cards',
+  'setups.guide.back-to-overview.description':
+    'Return to the setup cards when you are finished comparing.',
+  'setups.guide.compare.finish.title': 'Setups comparison guide complete',
+  'setups.guide.compare.finish.description':
+    'You have seen the Pairs and Compare surfaces for reviewing multiple setups together.',
+  'setups.view.title': 'Setups',
+  'setups.view.open-as-markdown': 'Open as Markdown',
+  'setups.view.open-as-setup': 'Open as Journalit Setup',
+  'setups.view.subtitle':
+    'Track playbooks, execution quality, and setup performance.',
+  'setups.view.summary.aria': 'Setup overview summary',
+  'setups.view.summary.total': 'Total setups',
+  'setups.view.summary.active': 'Active',
+  'setups.view.summary.most-traded': 'Most traded',
+  'setups.view.summary.needs-review': 'Needs review',
+  'setups.view.summary.best-performer': 'Best performer',
+  'setups.view.summary.tested': 'Tested',
+  'setups.view.summary.ready': 'Ready',
+  'setups.view.summary.missing-playbooks': 'Missing playbooks',
+  'setups.view.summary.no-trade-data': 'No trade data',
+  'setups.view.summary.awaiting-trades': 'Awaiting trades',
+  'setups.view.summary.of-total': 'of total',
+  'setups.view.summary.require-attention': 'require attention',
+  'setups.view.summary.needs-mapping': 'Need mapping',
+  'setups.view.summary.all-mapped': 'All mapped',
+  'setups.view.summary.previous-unavailable': 'Previous data unavailable',
+  'setups.view.ranking.title': 'Setup performance ranking',
+  'setups.view.ranking.subtitle':
+    'Rank setups by the selected performance metric.',
+  'setups.view.ranking.metric-aria': 'Performance metric',
+  'setups.view.overview.mode.aria': 'Overview chart mode',
+  'setups.view.overview.mode.setups': 'Setups',
+  'setups.view.overview.mode.pairs': 'Pairs',
+  'setups.view.pairs.title': 'Setup pairs',
+  'setups.view.pairs.summary-aria': 'Setup pairs summary',
+  'setups.view.pairs.best': 'Best pair',
+  'setups.view.pairs.worst': 'Worst pair',
+  'setups.view.pairs.worst-short': 'Worst',
+  'setups.view.pairs.empty': 'No setup pairs with 5+ trades yet.',
+  'setups.view.pairs.empty-submessage':
+    'Pairs appear after two setups share enough linked trades.',
+  'setups.view.pairs.privacy':
+    'Pair performance is hidden while Privacy Mode is on.',
+  'setups.view.pairs.edge-tooltip':
+    'Edge compares the pair expectancy against the stronger solo setup baseline.',
+  'setups.view.pairs.metric-aria': 'Pair metric',
+  'setups.view.pairs.metric.edge': 'Pair edge',
+  'setups.view.pairs.metric.edge-short': 'edge',
+  'setups.view.pairs.metric.expectancy': 'Pair expectancy',
+  'setups.view.pairs.metric.expectancy-short': 'expectancy',
+  'setups.view.pairs.together': 'Together',
+  'setups.view.pairs.table.setup-pair': 'Setup pair',
+  'setups.view.pairs.equity-curve': 'Equity curve',
+  'setups.view.pairs.equity-caption':
+    'Cumulative pair performance over time. Green = positive contribution, red = drawdown.',
+  'setups.view.pairs.evidence': 'Evidence',
+  'setups.view.pairs.edge-comparison': 'Edge comparison',
+  'setups.view.pairs.edge-caption': 'Combined edge: {edge}',
+  'setups.view.overview.setup-filter.all': 'Setups: All',
+  'setups.view.overview.setup-filter.selected': 'Setups: {count} selected',
+  'setups.view.overview.setup-filter.aria': 'Choose setups to show',
+  'setups.view.overview.setup-filter.select-all': 'Select all',
+  'setups.view.overview.setup-filter.clear': 'Clear',
+  'setups.view.overview.pnl-chart.title': 'Setup P&L Curve',
+  'setups.view.overview.pnl-chart.dropdown-label': 'P&L curve',
+  'setups.view.overview.pnl-chart.subtitle':
+    'Cumulative P&L from setup-linked trades, split by setup and combined.',
+  'setups.view.overview.pnl-chart.combined': 'All setups',
+  'setups.view.overview.pnl-chart.selected-combined': 'Selected setups',
+  'setups.view.overview.pnl-chart.unassigned': 'Unassigned account',
+  'setups.view.overview.pnl-chart.hidden':
+    'Setup P&L over time is hidden while privacy mode is enabled.',
+  'setups.view.overview.pnl-chart.trade': 'Trade',
+  'setups.view.overview.pnl-chart.start': 'Start',
+  'setups.view.ranking.privacy':
+    'Performance values are hidden while Privacy Mode is on.',
+  'setups.view.ranking.empty': 'No setup performance data yet.',
+  'setups.view.ranking.empty-submessage':
+    'Log trades with setups to start ranking performance.',
+  'setups.view.attention.title': 'Needs attention',
+  'setups.view.attention.empty': 'No setup issues found.',
+  'setups.view.attention.incomplete-playbooks': 'Incomplete playbooks',
+  'setups.view.attention.incomplete-playbooks-desc':
+    'Some setups need a written playbook.',
+  'setups.view.attention.missing-rules': 'Missing rules',
+  'setups.view.attention.missing-rules-desc':
+    'Some setups do not have checklist rules.',
+  'setups.view.attention.low-sample-size': 'Low sample size',
+  'setups.view.attention.low-sample-size-desc':
+    'More trades are needed before judging performance.',
+  'setups.view.attention.missing-linked-notes': 'Missing linked notes',
+  'setups.view.attention.missing-linked-notes-desc':
+    'Add examples, screenshots, or references to strengthen the playbook.',
+  'setups.view.metric.trade-count': 'Trade count',
+  'setups.view.metric.trades': 'trades',
+  'setups.view.metric.net-pnl': 'Total P&L',
+  'setups.view.metric.total-pnl': 'Total PnL',
+  'setups.view.metric.win-rate': 'Win rate',
+  'setups.view.metric.profit-factor': 'Profit factor',
+  'setups.view.metric.last-traded': 'Last traded',
+  'setups.view.metric.expected-value': 'Expected value',
+  'setups.view.controls.aria': 'Setup filters',
+  'setups.view.search.placeholder': 'Search setups…',
+  'setups.view.search.aria': 'Search setups',
+  'setups.view.status.aria': 'Filter by setup status',
+  'setups.view.status.all': 'All statuses',
+  'setups.view.status.active': 'Active',
+  'setups.view.status.testing': 'Testing',
+  'setups.view.status.archived': 'Archived',
+  'setups.view.cards.aria': 'Setup cards',
+  'setups.view.empty.no-setups':
+    'No setups yet. Create your first setup to start tracking playbooks.',
+  'setups.view.empty.no-setups-submessage':
+    'Setups collect your playbook notes, rules, trades, and performance in one place.',
+  'setups.view.badge.complete': 'Complete',
+  'setups.view.meta.no-model-category': 'No model/category',
+  'setups.view.detail.back': 'Back',
+  'setups.view.detail.no-description': 'No description yet.',
+  'setups.view.detail.action.edit': 'Edit setup',
+  'setups.view.detail.action.view-trades': 'View in Trade Log',
+  'setups.view.detail.action.archive': 'Archive setup',
+  'setups.view.detail.action.compare': 'Compare setup',
+  'setups.view.detail.metrics-aria': 'Setup metrics',
+  'setups.view.detail.playbook': 'Playbook',
+  'setups.view.detail.no-playbook': 'No playbook written yet.',
+  'setups.view.detail.no-playbook-note':
+    'Link a playbook note to preview it here.',
+  'setups.view.detail.link-playbook-note': 'Link note',
+  'setups.view.detail.change-playbook-note': 'Change note',
+  'setups.view.detail.playbook-note-modal.search': 'Search notes...',
+  'setups.view.detail.playbook-note-modal.empty': 'No matching notes found.',
+  'setups.view.detail.empty-playbook-note':
+    'The linked playbook note is empty.',
+  'setups.view.detail.rules': 'Rules',
+  'setups.view.detail.no-rules':
+    'Start with guided playbook sections, then customize the criteria to match how you trade this setup.',
+  'setups.view.detail.rules.edit': 'Edit rules',
+  'setups.view.detail.rules.add-first': 'Add playbook rules',
+  'setups.view.detail.rules.add': 'Add rule',
+  'setups.view.detail.rules.editor-subtitle':
+    'Create and edit the rules that define this setup.',
+  'setups.view.detail.rules.empty-title': 'Build the setup playbook',
+  'setups.view.detail.rules.use-template': 'Use template',
+  'setups.view.detail.rules.applying-template': 'Applying template...',
+  'setups.view.detail.rules.add-custom': 'Custom rule',
+  'setups.view.detail.rules.template-error':
+    'Failed to apply playbook template.',
+  'setups.view.detail.rules.template.best-conditions': 'Best Conditions',
+  'setups.view.detail.rules.template.entry-criteria': 'Entry Criteria',
+  'setups.view.detail.rules.template.invalidation': 'Invalidation',
+  'setups.view.detail.rules.template.risk-management': 'Risk / Management',
+  'setups.view.detail.rules.template.avoid-when': 'Avoid When',
+  'setups.view.detail.rules.template.common-mistakes': 'Common Mistakes',
+  'setups.view.detail.rules.template.rule.best-conditions':
+    'Market context supports this setup',
+  'setups.view.detail.rules.template.rule.entry-criteria':
+    'Entry trigger is clearly defined',
+  'setups.view.detail.rules.template.rule.invalidation':
+    'Invalidation is clear before entry',
+  'setups.view.detail.rules.template.rule.risk-management':
+    'Risk is acceptable and target is defined',
+  'setups.view.detail.rules.template.rule.avoid-when':
+    'Avoid conditions are not present',
+  'setups.view.detail.rules.template.rule.common-mistakes':
+    'Known execution mistakes are avoided',
+  'setups.view.detail.rules.field.label': 'Rule',
+  'setups.view.detail.rules.field.description': 'Details',
+  'setups.view.detail.rules.field.group': 'Group',
+  'setups.view.detail.rules.move-up': 'Move rule up',
+  'setups.view.detail.rules.move-down': 'Move rule down',
+  'setups.view.detail.rules.delete': 'Delete rule',
+  'setups.view.detail.rules.save-error': 'Failed to save setup rules.',
+  'setups.view.detail.rules.validation-label':
+    'Add a rule name or delete the blank rule before saving.',
+  'setups.view.detail.rules.groups': 'Groups',
+  'setups.view.detail.rules.add-group': 'Add group',
+  'setups.view.detail.rules.new-group': 'New group',
+  'setups.view.detail.rules.validation-group':
+    'Add a group name or remove the blank group before saving.',
+  'setups.view.detail.rules.summary': '{count} rules · {groups} groups',
+  'setups.view.detail.rules.group-summary': '{count} · {required} required',
+  'setups.view.detail.rules.more': '+{count} more',
+  'setups.view.detail.rule.category.context': 'Context',
+  'setups.view.detail.rule.category.entry': 'Entry',
+  'setups.view.detail.rule.category.exit': 'Exit',
+  'setups.view.detail.rule.category.risk': 'Risk',
+  'setups.view.detail.rule.category.management': 'Management',
+  'setups.view.detail.rule.category.invalidation': 'Invalidation',
+  'setups.view.detail.rule.category.psychology': 'Psychology',
+  'setups.view.detail.rule.required': 'Required',
+  'setups.view.detail.rule.optional': 'Optional',
+  'setups.view.detail.linked-notes': 'Linked notes',
+  'setups.view.detail.no-linked-notes': 'No linked notes yet.',
+  'setups.view.detail.performance.aria': 'Setup performance',
+  'setups.view.detail.performance.title': 'Performance',
+  'setups.view.detail.performance.cumulative-pnl': 'Cumulative PnL',
+  'setups.view.detail.performance.cumulative-r': 'Cumulative R',
+  'setups.view.detail.performance.drawdown': 'Drawdown',
+  'setups.view.detail.performance.empty': 'No linked trades yet.',
+  'setups.view.detail.performance.empty-submessage':
+    'Trades using this setup will appear here once you start logging them.',
+  'setups.view.detail.performance.tooltip-title': 'Trade performance',
+  'setups.view.detail.analysis.performance': 'Performance',
+  'setups.view.detail.analysis.execution-gap': 'Execution Gap',
+  'setups.view.detail.analysis.tabs-aria': 'Setup performance tabs',
+  'setups.view.detail.brief.linked-notes-add': 'Edit linked notes',
+  'setups.view.detail.execution-gap.title': 'Execution Gap',
+  'setups.view.detail.execution-gap.subtitle':
+    'Captured edge vs missed opportunity',
+  'setups.view.detail.execution-gap.live-pnl': 'Live PnL',
+  'setups.view.detail.execution-gap.live-r': 'Live R',
+  'setups.view.detail.execution-gap.missed-edge': 'Missed Edge',
+  'setups.view.detail.execution-gap.live-plus-missed': 'Live + Missed',
+  'setups.view.detail.execution-gap.backtest': 'Backtest',
+  'setups.view.detail.execution-gap.gap': 'Gap',
+  'setups.view.detail.execution-gap.opportunities': 'Opportunities',
+  'setups.view.detail.execution-gap.capture-rate': 'Capture Rate',
+  'setups.view.detail.execution-gap.capture-rate-tooltip':
+    'Live P&L ÷ (Live P&L + missed-trade P&L). Shows how much available edge you captured.',
+  'setups.view.detail.execution-gap.average-r-delta': 'Avg R Delta',
+  'setups.view.detail.execution-gap.live-execution': 'Live Execution',
+  'setups.view.detail.execution-gap.backtest-benchmark': 'Backtest Benchmark',
+  'setups.view.detail.execution-gap.hidden':
+    'Execution gap is hidden in privacy mode.',
+  'setups.view.detail.execution-gap.empty':
+    'Log missed trades or backtest trades for this setup to analyze execution gaps.',
+  'setups.view.detail.scaffold.performance': 'Performance',
+  'setups.view.detail.scaffold.performance-title': 'Performance snapshot',
+  'setups.view.detail.scaffold.performance-description':
+    'Review PnL, R-multiple, drawdown, and recent trade behavior.',
+  'setups.view.detail.scaffold.evidence': 'Evidence',
+  'setups.view.detail.scaffold.evidence-title': 'Evidence board',
+  'setups.view.detail.scaffold.evidence-description':
+    'Screenshots and linked examples for this setup.',
+  'setups.view.detail.scaffold.playbook-title': 'Playbook notes',
+  'setups.view.detail.scaffold.playbook-description':
+    'Document execution context, triggers, management, and invalidation.',
+  'setups.view.detail.scaffold.rules': 'Rules',
+  'setups.view.detail.scaffold.rules-description':
+    'Checklist-style rules that define the setup.',
+  'setups.view.detail.brief.health': 'Setup health',
+  'setups.view.detail.brief.profile': 'Profile',
+  'setups.view.detail.brief.linked-notes': 'Linked notes ({count})',
+  'setups.view.detail.brief.linked-notes-modal.title': 'Linked notes',
+  'setups.view.detail.brief.linked-notes-modal.subtitle':
+    'Notes linked to {name}.',
+  'setups.view.detail.brief.screenshots': 'Screenshots ({count})',
+  'setups.view.detail.brief.view-all': 'View all',
+  'setups.view.detail.brief.no-screenshots': 'No screenshots linked yet.',
+  'setups.view.detail.brief.screenshot-alt': 'Setup screenshot {index}',
+  'setups.view.detail.brief.screenshot-open': 'Open screenshot {index}',
+  'setups.view.detail.brief.status.complete': 'Complete',
+  'setups.view.detail.brief.status.missing': 'Missing',
+  'setups.view.detail.brief.health.playbook': 'Playbook',
+  'setups.view.detail.brief.health.rules': 'Rules',
+  'setups.view.detail.brief.health.notes': 'Notes',
+  'setups.view.detail.brief.health.screenshots': 'Screenshots',
+  'setups.view.detail.brief.health.trades': 'Trades',
+  'setups.view.detail.brief.count.rules': '{count} rules',
+  'setups.view.detail.brief.count.notes': '{count} notes',
+  'setups.view.detail.brief.count.images': '{count} images',
+  'setups.view.detail.brief.count.trades': '{count} trades',
+  'setups.view.detail.brief.more': '+{count} more',
+  'setups.view.detail.brief.less': 'Show less',
+  'setups.view.detail.brief.profile.direction': 'Direction',
+  'setups.view.detail.brief.profile.sessions': 'Sessions',
+  'setups.view.detail.brief.profile.timeframes': 'Timeframes',
+  'setups.view.detail.brief.profile.tickers': 'Tickers',
+  'setups.view.detail.brief.direction.long': 'Long',
+  'setups.view.detail.brief.direction.short': 'Short',
+  'setups.view.detail.brief.direction.both': 'Both',
+  'setups.view.detail.attention.title': 'Needs attention',
+  'setups.view.detail.attention.count': '{count} items',
+  'setups.view.detail.attention.empty': 'No setup issues found.',
+  'setups.view.detail.attention.show-more': '+{count} more',
+  'setups.view.detail.attention.show-less': 'Show less',
+  'setups.view.detail.attention.no-playbook-title': 'Link a playbook note',
+  'setups.view.detail.attention.no-playbook-detail':
+    'Link one source note for context and examples.',
+  'setups.view.detail.attention.no-rules-title': 'Build the execution playbook',
+  'setups.view.detail.attention.no-rules-detail':
+    'Add criteria for entries, invalidation, risk, and mistakes.',
+  'setups.view.detail.attention.no-invalidation-title':
+    'Add invalidation criteria',
+  'setups.view.detail.attention.no-invalidation-detail':
+    'Define when this setup is no longer valid.',
+  'setups.view.detail.attention.no-risk-title': 'Add risk or management rules',
+  'setups.view.detail.attention.no-risk-detail':
+    'Document how this setup should be managed after entry.',
+  'setups.view.detail.attention.no-trades-title': 'No live trades yet',
+  'setups.view.detail.attention.no-trades-detail':
+    'No linked live trade history yet.',
+  'setups.view.detail.attention.no-screenshots-title':
+    'Save example screenshots',
+  'setups.view.detail.attention.no-screenshots-detail':
+    'Attach screenshots to trades for review examples.',
+  'setups.view.detail.attention.stale-title': 'Review recent relevance',
+  'setups.view.detail.attention.stale-detail':
+    'This setup has not been traded in {count} days.',
+  'setups.view.detail.attention.profit-factor-title':
+    'Performance needs review',
+  'setups.view.detail.attention.profit-factor-detail':
+    'Profit factor is below 1.0 across linked trades.',
+  'setups.view.detail.attention.expectancy-title': 'Expectancy is negative',
+  'setups.view.detail.attention.expectancy-detail':
+    'Average linked-trade outcome is below breakeven.',
+  'setups.view.completeness.incomplete-playbook': 'Incomplete playbook',
+  'setups.view.completeness.no-rules': 'No rules',
+  'setups.view.completeness.no-linked-notes': 'No linked notes',
+  'setups.view.date.never': 'Never',
+  'setups.view.metric.expectancy-r': 'Expectancy (R)',
+  'setups.view.metric.last-reviewed': 'Last reviewed',
+  'setups.view.card.open-named': 'Open {name}',
+  'setups.view.card.sparkline-aria': 'Setup sparkline',
+  'setups.view.card.status.active': 'Stable',
+  'setups.view.card.status.monitor': 'Monitor',
+  'setups.view.card.status.review': 'Review',
+  'setups.view.date.today': 'Today',
+  'setups.view.date.yesterday': 'Yesterday',
+  'setups.view.date.days-ago': '{count} days ago',
+  'settings.general.copy-trading-pnl-toggled': 'Copy trading PnL is {status}',
+
   'trade-import.restore.title': 'Restore imported trades from backend',
   'trade-import.restore.description':
     'Create missing local notes for backend imported trades in this vault. This does not create duplicate backend trades.',
@@ -6672,6 +7448,433 @@ const en = {
     'Could not create local account.',
   'trade-sync.import.notice.restore-failed':
     'Could not restore Trade Import account.',
+  'command.open-session-mode': 'Open session mode',
+  'view.session-mode': 'Session mode',
+  'session-mode.description':
+    "Prepare for today's trading day and capture execution context live.",
+  'session-mode.loading': 'Loading Session Mode',
+  'session-mode.section.preparation': 'Preparation',
+  'session-mode.section.timeline': 'Timeline',
+  'session-mode.title.preparation': 'Session preparation',
+  'session-mode.title.live': 'Live session',
+  'session-mode.title.break': 'Session break',
+  'session-mode.title.ended': 'Session ended',
+  'session-mode.title.unconfigured': 'Session mode',
+  'session-mode.prep.goals': 'Goals',
+  'session-mode.prep.checklist': 'Checklist',
+  'session-mode.prep.resources': 'Resources',
+  'session-mode.action.open-drc': "Open today's DRC",
+  'session-mode.action.open-drc-for-date': 'Open DRC for {date}',
+  'session-mode.ended.helper': 'Log your trades or review the day.',
+  'session-mode.ended.action.import-trades': 'Import trades',
+  'session-mode.ended.action.add-trade-manually': 'Add trade manually',
+  'session-mode.ended.action.open-drc': 'Open DRC',
+  'session-mode.ended.stat.trades': 'Trades',
+  'session-mode.ended.stat.notes': 'Notes',
+  'session-mode.ended.stat.gate-checks': 'Gate checks',
+  'session-mode.waiting.next-session': 'Next session',
+  'session-mode.waiting.starts-at': '{session} starts at {time}',
+  'session-mode.waiting.preparation-opens-in':
+    'Preparation opens in {remaining}',
+  'session-mode.waiting.open-drc': 'Open DRC',
+  'session-mode.break.eyebrow': 'Session break',
+  'session-mode.break.reset-before': 'Reset before {session}',
+  'session-mode.break.reset': 'Reset before the next session',
+  'session-mode.break.next-session-meta':
+    'Next session starts at {time} · {remaining} remaining',
+  'session-mode.break.description':
+    'Step away, hydrate, and clear your mind before the next session.',
+  'session-mode.break.open-drc': 'Open DRC',
+  'session-mode.countdown.starts-in': 'Starts in',
+  'session-mode.countdown.starts-at': '{session} starts at {time}',
+  'session-mode.countdown.hours': 'hrs',
+  'session-mode.countdown.minutes': 'min',
+  'session-mode.countdown.seconds': 'sec',
+  'session-mode.phase.preparation': 'Preparation',
+  'session-mode.phase.live': 'Live',
+  'session-mode.phase.waiting': 'Waiting',
+  'session-mode.phase.break': 'Break',
+  'session-mode.phase.ended': 'Ended',
+  'session-mode.phase.unconfigured': 'Session schedule not configured',
+  'session-mode.status.preparation':
+    '{session} starts at {time}. You have {remaining} to prepare.',
+  'session-mode.status.preparation-generic':
+    'Prepare for the next live trading session.',
+  'session-mode.status.waiting':
+    '{session} starts at {time}. Preparation starts in {remaining}.',
+  'session-mode.status.waiting-generic':
+    'Your next session is scheduled, but preparation has not started yet.',
+  'session-mode.status.live': '{remaining} remaining in this session.',
+  'session-mode.status.live-generic': 'Your trading session is live.',
+  'session-mode.status.break':
+    '{session} starts at {time}. You are on break for {remaining}.',
+  'session-mode.status.break-generic': 'You are between trading sessions.',
+  'session-mode.status.ended':
+    'Your configured trading sessions are finished for now.',
+  'session-mode.status.unconfigured':
+    'Configure session windows to unlock preparation, live, break, and ended phases. The timeline remains available for today’s DRC.',
+  'session-mode.unconfigured.eyebrow': 'Setup guide',
+  'session-mode.unconfigured.title': 'Set up Session Mode',
+  'session-mode.unconfigured.description':
+    'Add your session times to get started.',
+  'session-mode.unconfigured.step.window.title': 'Add a session window',
+  'session-mode.unconfigured.step.window.description':
+    'Set when you usually trade.',
+  'session-mode.unconfigured.step.prep.title': 'Review preparation timing',
+  'session-mode.unconfigured.step.prep.description':
+    'Default: 30 minutes before session start.',
+  'session-mode.unconfigured.step.gate.title': 'Use the Starter Trade Gate',
+  'session-mode.unconfigured.step.gate.description':
+    'Starter IF/THEN checklist is ready.',
+  'session-mode.unconfigured.step.log.title': 'Log notes during live sessions',
+  'session-mode.unconfigured.step.log.description':
+    'Capture notes while trading.',
+  'session-mode.unconfigured.action': 'Configure Session Mode',
+  'session-mode.unconfigured.settings-note':
+    'You can change this anytime in Customisation → Session mode.',
+  'session-mode.layout.empty.title': 'Nothing enabled for this phase',
+  'session-mode.layout.empty.description':
+    'Turn modules back on to build this Session Mode phase.',
+  'session-mode.duration.minutes': '{minutes}m',
+  'session-mode.duration.hours': '{hours}h',
+  'session-mode.duration.hours-minutes': '{hours}h {minutes}m',
+  'settings.session-mode.title': 'Session Mode',
+  'settings.session-mode.description':
+    'Configure session windows, preparation, phase layout, Trade Gate workflows, and session log tags.',
+  'settings.session-mode.preparation-lead-time':
+    'Preparation lead time (minutes)',
+  'settings.session-mode.preparation-lead-time-desc':
+    'How early preparation mode starts before a session.',
+  'settings.session-mode.windows': 'Session windows',
+  'settings.session-mode.windows-desc':
+    'Define the local-time windows you actually trade. These power preparation, live, break, and ended phases.',
+  'settings.session-mode.add-window': 'Add session window',
+  'settings.session-mode.add-window-short': 'Add',
+  'settings.session-mode.no-windows':
+    'No session windows configured yet. The live timeline still works, but phase-aware preparation starts after adding a window.',
+  'settings.session-mode.layout.title': 'Phase layout',
+  'settings.session-mode.layout.desc':
+    'Choose which modules appear in each Session Mode phase and set their order.',
+  'settings.session-mode.layout.phase-desc':
+    'Toggle modules on or off, then move enabled modules into the order you want.',
+  'settings.session-mode.layout.phase-desc.waiting':
+    'Choose what appears while Session Mode is waiting for the next configured session.',
+  'settings.session-mode.layout.phase-desc.preparation':
+    'Choose what appears during pre-session preparation before trading starts.',
+  'settings.session-mode.layout.phase-desc.live':
+    'Choose what appears while a configured trading session is live.',
+  'settings.session-mode.layout.phase-desc.break':
+    'Choose what appears between configured trading sessions.',
+  'settings.session-mode.layout.phase-desc.ended':
+    'Choose what appears after all configured trading sessions have ended.',
+  'settings.session-mode.layout.reset-phase': 'Reset',
+  'settings.session-mode.layout.move-up': 'Move up',
+  'settings.session-mode.layout.move-down': 'Move down',
+  'settings.session-mode.layout.module.waiting-status': 'Next session card',
+  'settings.session-mode.layout.module.waiting-status-desc':
+    'Shows the next configured session and when preparation opens.',
+  'settings.session-mode.layout.module.preparation-resources': 'Resources',
+  'settings.session-mode.layout.module.preparation-resources-desc':
+    'Shows linked preparation notes and playbooks.',
+  'settings.session-mode.layout.module.preparation-goals': 'Goals',
+  'settings.session-mode.layout.module.preparation-goals-desc':
+    'Shows the DRC goals widget for pre-session focus.',
+  'settings.session-mode.layout.module.preparation-checklist': 'Checklist',
+  'settings.session-mode.layout.module.preparation-checklist-desc':
+    'Shows the DRC checklist widget for pre-session preparation.',
+  'settings.session-mode.layout.module.trade-gate': 'Trade Gate',
+  'settings.session-mode.layout.module.trade-gate-desc':
+    'Runs your configured IF/THEN gate during the live session.',
+  'settings.session-mode.layout.module.timeline': 'Session timeline',
+  'settings.session-mode.layout.module.timeline-desc':
+    'Shows current-session notes and trade timeline entries.',
+  'settings.session-mode.layout.module.break-reset': 'Break reset card',
+  'settings.session-mode.layout.module.break-reset-desc':
+    'Shows the rest, hydration, and next-session reset prompt.',
+  'settings.session-mode.layout.module.ended-actions': 'End-of-session actions',
+  'settings.session-mode.layout.module.ended-actions-desc':
+    'Shows import, manual trade, and DRC actions after sessions end.',
+  'settings.session-mode.layout.module.ended-stats': 'Session stats',
+  'settings.session-mode.layout.module.ended-stats-desc':
+    'Shows trade, note, and gate-check totals for the day.',
+  'settings.session-mode.linked-resources': 'Linked resources',
+  'settings.session-mode.linked-resources-desc':
+    'Show quick note links during preparation.',
+  'settings.session-mode.linked-resources-count': '{count} linked',
+  'settings.session-mode.linked-resources-hide': 'Hide linked',
+  'settings.session-mode.session-log-tags': 'Session log tags',
+  'settings.session-mode.session-log-tags-desc':
+    'Customize the tags available in the Session Mode composer and DRC session log.',
+  'settings.session-mode.tag-label-placeholder': 'Tag name',
+  'settings.session-mode.tag-short-label-placeholder': 'Label',
+  'settings.session-mode.tag-label-example': 'Trade',
+  'settings.session-mode.tag-short-label-example': 'TR',
+  'settings.session-mode.tag-color': 'Tag color',
+  'settings.session-mode.tag-requires-resolution': 'Needs classification',
+  'settings.session-mode.tag-lesson': 'Lesson tag',
+  'settings.session-mode.tag-requires-resolution-tooltip':
+    'Entries with this tag are treated as uncategorized notes. Use it when the right tag is not clear during the session; classify the entry later.',
+  'settings.session-mode.tag-lesson-tooltip':
+    'Marks this tag as a learning entry. Lesson-tagged notes stay in the session log and can be surfaced by lesson filters and review summaries.',
+  'settings.session-mode.add-session-log-tag': 'Add session log tag',
+  'settings.session-mode.reset-session-log-tags': 'Reset',
+  'settings.session-mode.tag-color.blue': 'Blue',
+  'settings.session-mode.tag-color.indigo': 'Indigo',
+  'settings.session-mode.tag-color.purple': 'Purple',
+  'settings.session-mode.tag-color.green': 'Green',
+  'settings.session-mode.tag-color.pink': 'Pink',
+  'settings.session-mode.tag-color.amber': 'Amber',
+  'settings.session-mode.tag-color.red': 'Red',
+  'settings.session-mode.tag-color.orange': 'Orange',
+
+  'settings.session-mode.search-resource-placeholder':
+    'Search vault files to link…',
+  'settings.session-mode.default-session-name': 'Trading session',
+  'settings.session-mode.window-name': 'Session name',
+  'settings.session-mode.window-name-placeholder': 'e.g. NY AM',
+  'settings.session-mode.window-row-desc':
+    'Use local time. Overnight windows are supported when the end time is earlier than the start time.',
+  'settings.session-mode.start-time': 'Start time',
+  'settings.session-mode.end-time': 'End time',
+  'widget.session-log.name': 'Session log',
+  'widget.session-log.description':
+    'Capture timestamped execution notes and trade events.',
+  'session-log.title': 'Session mode log',
+  'session-log.description':
+    'Capture what happened during the current trading session.',
+  'session-log.notice.invalid-timestamp':
+    'Enter a valid session-log timestamp.',
+  'session-log.action.auto-time': 'Auto time',
+  'session-log.action.set-time': 'Set time',
+  'session-log.placeholder.entry': 'What are you seeing, thinking, or feeling?',
+  'session-log.composer.tag-label': 'Session log tag',
+  'session-log.placeholder.entry-short': 'Add session note...',
+  'session-log.action.add-entry': 'Add timestamped entry',
+  'session-log.action.add-note': 'Add',
+  'session-log.action.hide-composer': 'Hide composer',
+  'session-log.filter.all': 'All',
+  'session-log.filter.label': 'Filter session log',
+  'session-log.filter.clear': 'Clear filter',
+  'session-log.timeline.most-recent': 'Most recent',
+  'session-log.timeline.start': 'Start of session',
+  'session-log.empty': 'No session log entries yet.',
+  'session-log.empty-filtered': 'No entries match this filter.',
+  'session-log.loading': 'Loading session log…',
+  'session-log.session-group.outside': 'Outside sessions',
+  'session-log.lessons.title': 'Lessons learned',
+  'session-log.lessons.title-singular': '1 lesson learned',
+  'session-log.lessons.title-plural': '{count} lessons learned',
+  'session-log.lessons.badge': 'LSN',
+  'session-log.error.no-drc': "Could not resolve today's DRC.",
+  'session-log.trade.entered': 'Entered',
+  'session-log.trade.exited': 'Exited',
+  'session-log.trade.size': 'size',
+  'session-log.status.unresolved': 'unresolved',
+  'session-log.status.unclassified': 'unclassified',
+  'session-log.action.save': 'Save',
+  'session-log.action.cancel': 'Cancel',
+  'session-log.action.resolve': 'Resolve',
+  'session-log.action.classify': 'Classify',
+  'session-log.action.edit': 'Edit',
+  'session-log.action.delete': 'Delete',
+  'session-log.action.open-trade': 'Open trade',
+  'session-log.preview':
+    'Session log preview: timestamped notes and trade events will appear here during the session mode.',
+  'session-log.alert.tag-concentration':
+    '{tag} is {percentage}% of session notes ({count}/{total}). Mindset was a major theme this session.',
+  'trade-gate.title': 'Trade Gate',
+  'trade-gate.workflow': 'Workflow',
+  'trade-gate.action.start': 'Start trade check',
+  'trade-gate.action.start-short': 'Start',
+  'trade-gate.action.start-another': 'Start another',
+  'trade-gate.outcome.green-light': 'Green light',
+  'trade-gate.outcome.green-light-description': 'Conditions met.',
+  'trade-gate.outcome.no-trade': 'No trade',
+  'trade-gate.outcome.no-trade-description': 'Conditions are not met.',
+  'trade-gate.outcome.wait': 'Wait',
+  'trade-gate.outcome.wait-description':
+    'Setup is not ready. Wait for the next opportunity.',
+  'settings.session-mode.trade-gate.title': 'Trade Gate workflows',
+  'settings.session-mode.trade-gate.desc':
+    'Create IF/THEN decision flows for live entry checks.',
+  'settings.session-mode.trade-gate.name': 'Workflow name',
+  'settings.session-mode.trade-gate.summary': '{count} nodes',
+  'settings.session-mode.trade-gate.untitled': 'Untitled workflow',
+  'settings.session-mode.trade-gate.start-node': 'Start question',
+  'settings.session-mode.trade-gate.add-question': 'Add question',
+  'settings.session-mode.trade-gate.add-outcome': 'Add outcome',
+  'settings.session-mode.trade-gate.question': 'Question',
+  'settings.session-mode.trade-gate.outcome': 'Outcome',
+  'settings.session-mode.trade-gate.new-question-title': 'New question',
+  'settings.session-mode.trade-gate.node-title': 'Title',
+  'settings.session-mode.trade-gate.question-title': 'Question title',
+  'settings.session-mode.trade-gate.result-title': 'Result title',
+  'settings.session-mode.trade-gate.prompt': 'Prompt',
+  'settings.session-mode.trade-gate.description': 'Description',
+  'settings.session-mode.trade-gate.options': 'Options',
+  'settings.session-mode.trade-gate.option': 'Option',
+  'settings.session-mode.trade-gate.new-option': 'New option',
+  'settings.session-mode.trade-gate.option-label': 'Option label',
+  'settings.session-mode.trade-gate.option-target': 'Leads to',
+  'settings.session-mode.trade-gate.outcome-type': 'Result behavior',
+  'settings.session-mode.trade-gate.flow-map': 'Flow map',
+  'settings.session-mode.trade-gate.flow-map-hint':
+    'Click any card or path label to edit it.',
+  'settings.session-mode.trade-gate.flow-fit': 'Fit',
+  'settings.session-mode.trade-gate.flow-click-hint':
+    'Click a node or path label to edit it.',
+  'settings.session-mode.trade-gate.edit-selected': 'Edit selected step',
+  'settings.session-mode.trade-gate.results': 'Results',
+  'settings.session-mode.trade-gate.no-paths':
+    'Add options to connect this workflow.',
+  'settings.session-mode.trade-gate.missing-target': 'Missing target',
+  'settings.session-mode.trade-gate.repeated-node': 'Links back to this node.',
+  'settings.session-mode.trade-gate.default-name': 'Basic entry gate',
+  'settings.session-mode.trade-gate.default.market-regime': 'Market regime',
+  'settings.session-mode.trade-gate.default.market-regime-prompt':
+    'Is the current market regime appropriate for your setup?',
+  'settings.session-mode.trade-gate.default.bias': 'Higher timeframe bias',
+  'settings.session-mode.trade-gate.default.bias-prompt':
+    'Is higher timeframe bias aligned with this trade idea?',
+  'settings.session-mode.trade-gate.default.risk': 'Risk parameters',
+  'settings.session-mode.trade-gate.default.risk-prompt':
+    'Is risk defined and acceptable according to your plan?',
+  'filter.modal.image.annotation-status': 'Annotation status',
+  'filter.modal.image.status.tagged': 'Tagged',
+  'filter.modal.image.status.untagged': 'Untagged',
+  'filter.modal.image.status.has-notes': 'Has notes',
+  'filter.modal.image.status.no-notes': 'No notes',
+  'filter.modal.image.tags': 'Media tags',
+  'setups.view.detail.action.gallery': 'Open gallery',
+  'tradelog.mode.label': 'Trade Log mode',
+  'tradelog.mode.trades': 'Trades',
+  'tradelog.mode.image-gallery': 'Gallery',
+  'imageGallery.title': 'Gallery',
+  'imageGallery.subtitle-count': '{count} media items',
+  'imageGallery.no-images': 'No media found yet.',
+  'imageGallery.no-filter-results': 'No media matches this filter.',
+  'imageGallery.empty.error.title': 'Gallery unavailable',
+  'imageGallery.empty.no-images.title': 'No media yet',
+  'imageGallery.empty.no-images.description':
+    'Images, GIFs, videos, and YouTube links attached to trades or review notes will appear here automatically.',
+  'imageGallery.empty.no-results.title': 'No media matches these filters',
+  'imageGallery.empty.no-results.description':
+    'Try clearing the active filters or widening the date range to bring more gallery items back into view.',
+  'imageGallery.empty.no-source.title': 'No media in this source',
+  'imageGallery.empty.no-source.description':
+    'This source does not have gallery items yet. Switch back to all media or choose a different source.',
+  'imageGallery.empty.action.clear-filters': 'Clear filters',
+  'imageGallery.empty.action.show-all': 'Show all media',
+  'imageGallery.error.load-failed': 'Could not load gallery.',
+  'imageGallery.grid-aria': 'Gallery',
+  'imageGallery.open-source': 'Open note',
+  'imageGallery.image-alt': '{source} media from {date}',
+  'imageGallery.privacy-blurred': 'Blurred for privacy',
+  'imageGallery.filter.label': 'Filter:',
+  'imageGallery.filter-aria': 'Filter gallery',
+  'imageGallery.filter.all': 'All',
+  'imageGallery.filter.winners': 'Winners',
+  'imageGallery.filter.losers': 'Losers',
+  'imageGallery.filter.breakeven': 'Breakeven',
+  'imageGallery.filter.tagged': 'Tagged',
+  'imageGallery.filter.untagged': 'Untagged',
+  'imageGallery.filter.reviewed': 'Reviewed',
+  'imageGallery.filter.unreviewed': 'Unreviewed',
+  'imageGallery.sort.label': 'Sort:',
+  'imageGallery.sort.newest': 'Newest',
+  'imageGallery.sort.oldest': 'Oldest',
+  'imageGallery.sort.best': 'Best P&L',
+  'imageGallery.sort.worst': 'Worst P&L',
+  'imageGallery.size-aria': 'Gallery media size',
+  'imageGallery.size.small': 'Small',
+  'imageGallery.size.medium': 'Medium',
+  'imageGallery.size.large': 'Large',
+  'imageGallery.source.label': 'Source:',
+  'imageGallery.source.all': 'All media',
+  'imageGallery.source.trade': 'Trades',
+  'imageGallery.source.reviews': 'Reviews',
+  'imageGallery.source.drc': 'Daily reviews',
+  'imageGallery.source.weekly': 'Weekly reviews',
+  'imageGallery.source.monthly': 'Monthly reviews',
+  'imageGallery.source.quarterly': 'Quarterly reviews',
+  'imageGallery.source.yearly': 'Yearly reviews',
+  'imageGallery.annotation.tagged': 'Tagged',
+  'imageGallery.annotation.untagged': 'Untagged',
+  'imageGallery.annotation.reviewed': 'Reviewed',
+  'imageGallery.annotation.unreviewed': 'Unreviewed',
+  'imageGallery.date.unknown': 'Unknown date',
+  'imageGallery.annotation.tag': 'Tag',
+  'imageGallery.annotation.editor-eyebrow': 'Market structure journal',
+  'imageGallery.annotation.editor-title': 'Annotate media',
+  'imageGallery.annotation.tags': 'Tags',
+  'imageGallery.annotation.tags-placeholder': 'Breakout, A+ Setup, Mistake',
+  'imageGallery.annotation.notes': 'Notes',
+  'imageGallery.annotation.notes-placeholder':
+    'What should future you learn from this chart?',
+  'imageGallery.annotation.error.save-failed':
+    'Could not save media annotation.',
+  'imageGallery.annotation.saving': 'Saving...',
+  'tradelog.guide.switch-to-gallery.title': 'Switch from trades to the Gallery',
+  'tradelog.guide.switch-to-gallery.description':
+    'Use this mode selector to move between the regular Trade Log and the Gallery. Click Gallery to continue the tour with your images, GIFs, videos, and YouTube links.',
+  'tradelog.guide.gallery-controls.title':
+    'Choose which media you want to review',
+  'tradelog.guide.gallery-controls.description':
+    'Use Source to choose trades or review notes, Sort to reorder media, and the size buttons to switch between compact scans and larger media previews.',
+  'tradelog.guide.gallery-source-sort.title':
+    'Choose the media source and order',
+  'tradelog.guide.gallery-source-sort.description':
+    'Use Source to focus on all media, trade attachments, or review-note media. Use Sort to review the newest, oldest, best, or worst trades first.',
+  'tradelog.guide.gallery-size.title': 'Adjust the gallery preview size',
+  'tradelog.guide.gallery-size.description':
+    'Use these size buttons to switch between compact scanning and larger media previews.',
+  'tradelog.guide.gallery-filters.title':
+    'Filter the gallery with the same entry point',
+  'tradelog.guide.gallery-filters.description':
+    'The filter button still opens Advanced Filters. In Gallery mode it also includes media-specific filters such as annotation status and media tags.',
+  'tradelog.guide.gallery-filter-modal.title':
+    'Media filters live with your trade filters',
+  'tradelog.guide.gallery-filter-modal.description':
+    'Use this modal to combine trade filters with media filters. For example, filter to one setup, then show only media with notes or a specific media tag.',
+  'tradelog.guide.gallery-grid.title': 'Open media for closer review',
+  'tradelog.guide.gallery-grid.description':
+    'Each card keeps the media unobstructed while showing compact trade and review context. Click any card, or press Next to open the first visible item fullscreen.',
+  'tradelog.guide.gallery-fullscreen-actions.title':
+    'Annotate media from fullscreen',
+  'tradelog.guide.gallery-fullscreen-actions.description':
+    'Use Tag to add media-level tags and notes while the item is large enough to inspect. Open note takes you back to the source trade or review note.',
+  'tradelog.guide.gallery-open-annotation.title': 'Open the annotation panel',
+  'tradelog.guide.gallery-open-annotation.description':
+    'Click Tag to annotate this specific media item. Media tags and notes describe the attachment, not the whole trade.',
+  'tradelog.guide.gallery-annotation-panel.title': 'Add media tags and notes',
+  'tradelog.guide.gallery-annotation-panel.description':
+    'Use media tags for chart-specific ideas like liquidity sweep or failed breakout, and notes for the market-structure context you want to remember.',
+  'tradelog.guide.gallery-finish.title': 'You now know both Trade Log modes',
+  'tradelog.guide.gallery-finish.description':
+    'Use Trades when you need the table and batch tools. Use Gallery when you want to review images, GIFs, videos, YouTube links, and annotations across your journal.',
+  'tradelog.guide.image-gallery-empty.intro.title': 'No media yet',
+  'tradelog.guide.image-gallery-empty.intro.description':
+    'Add images, GIFs, videos, or YouTube links to trades or review notes and they will appear here automatically. Once media exists, Journalit will show the full gallery guide for fullscreen review, tags, and notes.',
+  'tradelog.guide.image-gallery-empty.source-sort.description':
+    'Use Source to choose between trade media and review-note media once both exist. Sort will reorder the gallery when media is available.',
+  'tradelog.guide.image-gallery-empty.size.description':
+    'These buttons control how large future media cards appear, from compact scans to larger previews.',
+  'tradelog.guide.image-gallery-empty.filters.description':
+    'Advanced Filters already includes the media filters you will use later, including annotation status and media tags.',
+  'tradelog.guide.image-gallery-empty.finish.title':
+    'Add media, then come back for the full gallery tour',
+  'tradelog.guide.image-gallery-empty.finish.description':
+    'After you attach media to trades or review notes, Journalit will show the full Gallery guide with fullscreen review, tagging, and notes.',
+  'filter.modal.section.image-gallery': 'Gallery',
+  'setups.view.fixture.rule.context-aligned': 'Context aligned',
+  'setups.view.fixture.rule.orb.range-defined': 'Opening range defined',
+  'setups.view.fixture.rule.orb.volume-expansion': 'Volume expansion',
+  'setups.view.fixture.rule.orb.market-aligned': 'Market aligned',
+  'setups.view.fixture.rule.orb.clean-invalidation': 'Clean invalidation',
+  'setups.view.fixture.rule.orb.target-defined': 'Target defined',
+  'setups.view.detail.brief.profile.model': 'Model',
+  'setups.view.detail.brief.profile.category': 'Category',
+  'setups.view.completeness.no-description': 'No description',
 };
 
 export type TranslationKey = keyof typeof en;

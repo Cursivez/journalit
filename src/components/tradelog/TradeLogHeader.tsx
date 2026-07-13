@@ -12,7 +12,11 @@ import {
 import { DateRangeFilter } from '../dashboard/components/FilterControls/DateRangeFilter';
 import { FilterButton } from '../shared/FilterButton';
 import { openFilterModal, UnifiedFilters } from '../shared/filters';
-import type { AvailableCustomFieldFilter } from '../shared/filters/types';
+import type {
+  AvailableCustomFieldFilter,
+  AvailableImageFilterOptions,
+} from '../shared/filters/types';
+import type { ImageGalleryService } from '../../services/imageGallery';
 import { TradeLogService } from '../../services/tradelog';
 import JournalitPlugin from '../../main';
 import {
@@ -20,10 +24,24 @@ import {
   TradeLogSettingsModal,
 } from './TradeLogSettingsModal';
 import {
+  ChevronDown,
   SlidersHorizontal,
   Square,
   SquareCheckBig,
 } from '../shared/icons/ObsidianIcon';
+import type {
+  ImageGallerySize,
+  ImageGallerySort,
+  ImageGallerySourceType,
+} from '../imageGallery/types';
+import {
+  IMAGE_GALLERY_SIZES,
+  IMAGE_GALLERY_SOURCE_TYPES,
+  getImageGallerySizeLabel,
+  getImageGallerySortLabel,
+  getImageGallerySourceTypeLabel,
+  type ImageGalleryControls,
+} from '../imageGallery/ImageGallery';
 import { t } from '../../lang/helpers';
 import {
   useGuideAction,
@@ -36,10 +54,20 @@ import {
   TRADE_LOG_FILTER_BUTTON_TARGET_ID,
   TRADE_LOG_FILTER_MODAL_CLOSED_ACTION_ID,
   TRADE_LOG_FILTER_MODAL_OPENED_ACTION_ID,
+  TRADE_LOG_IMAGE_GALLERY_CONTROLS_TARGET_ID,
+  TRADE_LOG_IMAGE_GALLERY_MODE_BUTTON_TARGET_ID,
+  TRADE_LOG_IMAGE_GALLERY_SELECTED_ACTION_ID,
+  TRADE_LOG_IMAGE_GALLERY_SIZE_TARGET_ID,
+  TRADE_LOG_IMAGE_GALLERY_SOURCE_SORT_TARGET_ID,
+  TRADE_LOG_IMAGE_GALLERY_MAIN_GUIDE_ID,
+  TRADE_LOG_MAIN_GUIDE_ID,
+  TRADE_LOG_MODE_SELECTOR_TARGET_ID,
   TRADE_LOG_MULTI_SELECT_BUTTON_TARGET_ID,
   TRADE_LOG_VIEW_SELECTOR_TARGET_ID,
 } from '../../guides/tradeLogGuideIds';
 import { useEventBus } from '../../hooks/useEventBus';
+import { ToolbarButton } from '../shared/ToolbarButton';
+import { DropdownMenu, type DropdownMenuOption } from '../shared/DropdownMenu';
 
 const VIEW_LEVELS: ReadonlySet<string> = new Set([
   'years',
@@ -53,23 +81,260 @@ const VIEW_LEVELS: ReadonlySet<string> = new Set([
 const isViewLevel = (value: string): value is ViewLevel =>
   VIEW_LEVELS.has(value);
 
+const VIEW_LEVEL_OPTIONS: Array<DropdownMenuOption<ViewLevel>> = [
+  { value: 'trades', label: t('common.trades') },
+  { value: 'years', label: t('common.years') },
+  { value: 'quarters', label: t('common.quarters') },
+  { value: 'months', label: t('common.months') },
+  { value: 'weeks', label: t('common.weeks') },
+  { value: 'days', label: t('common.days') },
+];
+
+const TRADE_LOG_GUIDE_IDS_WITH_FILTER_MODAL = new Set([
+  TRADE_LOG_MAIN_GUIDE_ID,
+  TRADE_LOG_IMAGE_GALLERY_MAIN_GUIDE_ID,
+]);
+
+const IMAGE_GALLERY_SORTS: ImageGallerySort[] = [
+  'newest',
+  'oldest',
+  'best',
+  'worst',
+];
+const IMAGE_GALLERY_SMALL_ICON_CELLS = [
+  'small-1',
+  'small-2',
+  'small-3',
+  'small-4',
+  'small-5',
+  'small-6',
+  'small-7',
+  'small-8',
+  'small-9',
+];
+const IMAGE_GALLERY_MEDIUM_ICON_CELLS = [
+  'medium-1',
+  'medium-2',
+  'medium-3',
+  'medium-4',
+];
+
+const IMAGE_GALLERY_SOURCE_OPTIONS: Array<
+  DropdownMenuOption<ImageGallerySourceType>
+> = IMAGE_GALLERY_SOURCE_TYPES.map((sourceType) => ({
+  value: sourceType,
+  label: getImageGallerySourceTypeLabel(sourceType),
+}));
+
+const IMAGE_GALLERY_SORT_OPTIONS: Array<DropdownMenuOption<ImageGallerySort>> =
+  IMAGE_GALLERY_SORTS.map((sort) => ({
+    value: sort,
+    label: getImageGallerySortLabel(sort),
+  }));
+
 interface TradeLogHeaderProps {
   app: App;
   plugin: JournalitPlugin;
+  imageGalleryService: ImageGalleryService;
   leaf: WorkspaceLeaf;
   filters: TradeLogFilters;
+  mode: 'trades' | 'imageGallery';
+  onModeChange: (mode: 'trades' | 'imageGallery') => void;
+  imageGalleryControls: ImageGalleryControls;
+  onImageGalleryControlsChange: (
+    controls: Partial<ImageGalleryControls>
+  ) => void;
   onFilterChange: (filters: Partial<TradeLogFilters>) => void;
   onSettingsChange: () => void;
   isMultiSelectMode?: boolean;
   onToggleMultiSelectMode?: () => void;
 }
 
+const ImageGalleryHeaderControls: React.FC<{
+  controls: ImageGalleryControls;
+  onChange: (controls: Partial<ImageGalleryControls>) => void;
+  filterButton: React.ReactNode;
+  targetRef?: (element: HTMLElement | null) => void;
+  sourceSortTargetRef?: (element: HTMLElement | null) => void;
+  sizeTargetRef?: (element: HTMLElement | null) => void;
+}> = ({
+  controls,
+  onChange,
+  filterButton,
+  targetRef,
+  sourceSortTargetRef,
+  sizeTargetRef,
+}) => (
+  <div className="trade-log-image-gallery-controls" ref={targetRef}>
+    <div
+      className="trade-log-image-gallery-source-sort-controls"
+      ref={sourceSortTargetRef}
+    >
+      <ImageGalleryControlDropdown
+        label={t('imageGallery.source.label')}
+        options={IMAGE_GALLERY_SOURCE_OPTIONS}
+        value={controls.sourceType}
+        onChange={(sourceType) => onChange({ sourceType })}
+      />
+
+      <ImageGalleryControlDropdown
+        label={t('imageGallery.sort.label')}
+        options={IMAGE_GALLERY_SORT_OPTIONS}
+        value={controls.sort}
+        onChange={(sort) => onChange({ sort })}
+      />
+    </div>
+
+    <div
+      className="journalit-image-gallery-size-toggle"
+      aria-label={t('imageGallery.size-aria')}
+      ref={sizeTargetRef}
+    >
+      {IMAGE_GALLERY_SIZES.map((size) => (
+        <ToolbarButton
+          active={controls.size === size}
+          aria-label={getImageGallerySizeLabel(size)}
+          key={size}
+          onClick={() => onChange({ size })}
+          type="button"
+          variant="icon"
+        >
+          <ImageGallerySizeIcon size={size} />
+        </ToolbarButton>
+      ))}
+    </div>
+
+    {filterButton}
+  </div>
+);
+
+ImageGalleryHeaderControls.displayName = 'ImageGalleryHeaderControls';
+
+function ImageGalleryControlDropdown<T extends string>({
+  label,
+  options,
+  value,
+  onChange,
+}: {
+  label: string;
+  options: Array<DropdownMenuOption<T>>;
+  value: T;
+  onChange: (value: T) => void;
+}) {
+  const [isOpen, setIsOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  const selectedOption = options.find((option) => option.value === value);
+
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target;
+      if (
+        target instanceof window.Node &&
+        !dropdownRef.current?.contains(target)
+      ) {
+        setIsOpen(false);
+      }
+    };
+
+    window.activeDocument.addEventListener('mousedown', handleClickOutside);
+    return () =>
+      window.activeDocument.removeEventListener(
+        'mousedown',
+        handleClickOutside
+      );
+  }, [isOpen]);
+
+  const selectDropdownOption = (nextValue: T) => {
+    onChange(nextValue);
+    setIsOpen(false);
+  };
+
+  return (
+    <div className="trade-log-image-gallery-control" ref={dropdownRef}>
+      <span>{label}</span>
+      <div className="journalit-home-period-wrapper trade-log-image-gallery-control-dropdown">
+        <button
+          aria-expanded={isOpen}
+          aria-haspopup="menu"
+          className="journalit-home-period-selector clickable-icon trade-log-image-gallery-control-trigger"
+          onClick={() => setIsOpen((current) => !current)}
+          type="button"
+        >
+          <span>{selectedOption?.label ?? value}</span>
+          <ChevronDown
+            className={
+              isOpen
+                ? 'journalit-home-period-chevron journalit-home-period-chevron--open trade-log-image-gallery-control-chevron'
+                : 'journalit-home-period-chevron trade-log-image-gallery-control-chevron'
+            }
+            size={14}
+            aria-hidden="true"
+          />
+        </button>
+        {isOpen ? (
+          <DropdownMenu
+            className="trade-log-image-gallery-control-menu"
+            options={options}
+            value={value}
+            onChange={selectDropdownOption}
+          />
+        ) : null}
+      </div>
+    </div>
+  );
+}
+
+const ImageGallerySizeIcon: React.FC<{ size: ImageGallerySize }> = ({
+  size,
+}) => {
+  switch (size) {
+    case 'small':
+      return (
+        <span
+          className="trade-log-image-gallery-size-icon trade-log-image-gallery-size-icon--small"
+          aria-hidden="true"
+        >
+          {IMAGE_GALLERY_SMALL_ICON_CELLS.map((cell) => (
+            <span key={cell} />
+          ))}
+        </span>
+      );
+    case 'medium':
+      return (
+        <span
+          className="trade-log-image-gallery-size-icon trade-log-image-gallery-size-icon--medium"
+          aria-hidden="true"
+        >
+          {IMAGE_GALLERY_MEDIUM_ICON_CELLS.map((cell) => (
+            <span key={cell} />
+          ))}
+        </span>
+      );
+    case 'large':
+      return (
+        <span
+          className="trade-log-image-gallery-size-icon trade-log-image-gallery-size-icon--large"
+          aria-hidden="true"
+        />
+      );
+  }
+};
+
+ImageGallerySizeIcon.displayName = 'ImageGallerySizeIcon';
+
 export const TradeLogHeader = memo<TradeLogHeaderProps>(
   ({
     app,
     plugin,
+    imageGalleryService,
     leaf,
     filters,
+    mode,
+    onModeChange,
+    imageGalleryControls,
+    onImageGalleryControlsChange,
     onFilterChange,
     onSettingsChange,
     isMultiSelectMode,
@@ -89,8 +354,23 @@ export const TradeLogHeader = memo<TradeLogHeaderProps>(
     const isClosingGuideFilterModalRef = useRef(false);
     const isOpeningGuideFilterModalRef = useRef(false);
     const emitGuideAction = useGuideAction();
+    const registerModeSelectorTarget = useGuideTarget(
+      TRADE_LOG_MODE_SELECTOR_TARGET_ID
+    );
+    const registerImageGalleryModeButtonTarget = useGuideTarget(
+      TRADE_LOG_IMAGE_GALLERY_MODE_BUTTON_TARGET_ID
+    );
     const registerViewSelectorTarget = useGuideTarget(
       TRADE_LOG_VIEW_SELECTOR_TARGET_ID
+    );
+    const registerImageGalleryControlsTarget = useGuideTarget(
+      TRADE_LOG_IMAGE_GALLERY_CONTROLS_TARGET_ID
+    );
+    const registerImageGallerySourceSortTarget = useGuideTarget(
+      TRADE_LOG_IMAGE_GALLERY_SOURCE_SORT_TARGET_ID
+    );
+    const registerImageGallerySizeTarget = useGuideTarget(
+      TRADE_LOG_IMAGE_GALLERY_SIZE_TARGET_ID
     );
     const registerFilterButtonTarget = useGuideTarget(
       TRADE_LOG_FILTER_BUTTON_TARGET_ID
@@ -156,6 +436,28 @@ export const TradeLogHeader = memo<TradeLogHeaderProps>(
       void loadAccounts();
     });
 
+    useEffect(() => {
+      void guideVersion;
+
+      if (mode !== 'imageGallery') {
+        return;
+      }
+
+      const guideService = plugin.viewGuideService;
+      const activeLeaf = guideService?.getActiveLeaf();
+      if (!guideService || !activeLeaf || activeLeaf !== leaf) {
+        return;
+      }
+
+      const session = guideService.getSessionForLeaf(
+        activeLeaf,
+        'journalit-trade-log-view'
+      );
+      if (session?.currentStepId === 'switch-to-gallery') {
+        emitGuideAction(TRADE_LOG_IMAGE_GALLERY_SELECTED_ACTION_ID);
+      }
+    }, [emitGuideAction, guideVersion, leaf, mode, plugin]);
+
     
     const getActiveFilterCount = (): number => {
       let count = 0;
@@ -189,6 +491,10 @@ export const TradeLogHeader = memo<TradeLogHeaderProps>(
           (values) => values.length > 0
         ).length;
       }
+      if (mode === 'imageGallery') {
+        if (filters.imageAnnotationStatus?.length) count++;
+        if (filters.imageTags?.length) count++;
+      }
       return count;
     };
 
@@ -204,6 +510,7 @@ export const TradeLogHeader = memo<TradeLogHeaderProps>(
       isOpeningGuideFilterModalRef.current = true;
 
       let availableCustomFieldFilters: AvailableCustomFieldFilter[] = [];
+      let availableImageFilterOptions: AvailableImageFilterOptions | undefined;
 
       try {
         availableCustomFieldFilters =
@@ -212,11 +519,12 @@ export const TradeLogHeader = memo<TradeLogHeaderProps>(
               isDiscreteCustomFieldFilterable
             )
           );
+        if (mode === 'imageGallery') {
+          availableImageFilterOptions =
+            await imageGalleryService.getAvailableFilterOptions();
+        }
       } catch (error) {
-        console.error(
-          '[TradeLogHeader] Failed to load custom field filter options:',
-          error
-        );
+        console.error('[TradeLogHeader] Failed to load filter options:', error);
       }
 
       if (activeFilterModalRef.current) {
@@ -239,9 +547,13 @@ export const TradeLogHeader = memo<TradeLogHeaderProps>(
           reviewStatus: filters.reviewStatus || [],
           directions: filters.directions || [],
           customFieldFilters: filters.customFieldFilters || {},
+          imageAnnotationStatus: filters.imageAnnotationStatus || [],
+          imageTags: filters.imageTags || [],
         },
         availableAccounts: accounts,
         availableCustomFieldFilters,
+        availableImageFilterOptions,
+        showImageFilters: mode === 'imageGallery',
         onApply: (newFilters: UnifiedFilters) => {
           onFilterChange({
             tradeTypes: newFilters.tradeTypes,
@@ -254,6 +566,8 @@ export const TradeLogHeader = memo<TradeLogHeaderProps>(
             tags: newFilters.tags,
             mistakes: newFilters.mistakes,
             customFieldFilters: newFilters.customFieldFilters,
+            imageAnnotationStatus: newFilters.imageAnnotationStatus,
+            imageTags: newFilters.imageTags,
           });
         },
         onClose: () => {
@@ -275,6 +589,8 @@ export const TradeLogHeader = memo<TradeLogHeaderProps>(
       app,
       emitGuideAction,
       filters,
+      imageGalleryService,
+      mode,
       onFilterChange,
       plugin,
       tradeLogService,
@@ -301,11 +617,17 @@ export const TradeLogHeader = memo<TradeLogHeaderProps>(
         activeLeaf,
         'journalit-trade-log-view'
       );
-      if (!session || session.guideId !== 'tradelog.main') {
+      if (
+        !session ||
+        !TRADE_LOG_GUIDE_IDS_WITH_FILTER_MODAL.has(session.guideId)
+      ) {
         return;
       }
 
-      if (session.currentStepId === 'filter-modal') {
+      if (
+        session.currentStepId === 'filter-modal' ||
+        session.currentStepId === 'gallery-filter-modal'
+      ) {
         if (!activeFilterModalRef.current) {
           void handleOpenFilterModal();
         }
@@ -355,7 +677,10 @@ export const TradeLogHeader = memo<TradeLogHeaderProps>(
         activeLeaf,
         'journalit-trade-log-view'
       );
-      if (!session || session.guideId !== 'tradelog.main') {
+      if (
+        !session ||
+        !TRADE_LOG_GUIDE_IDS_WITH_FILTER_MODAL.has(session.guideId)
+      ) {
         return;
       }
 
@@ -404,29 +729,34 @@ export const TradeLogHeader = memo<TradeLogHeaderProps>(
 
     return (
       <div className="trade-log-header">
-        <div className="trade-log-controls">
+        <div
+          className={`trade-log-controls ${mode === 'imageGallery' ? 'trade-log-controls--image-gallery' : ''}`}
+        >
           <div
-            className="trade-log-view-selector"
-            ref={registerViewSelectorTarget}
+            className="trade-log-mode-selector"
+            aria-label={t('tradelog.mode.label')}
+            ref={registerModeSelectorTarget}
           >
-            <label>{t('tradelog.view.selector.label')}:</label>
-            <select
-              value={filters.viewLevel}
-              onChange={(e) => {
-                const nextViewLevel = e.target.value;
-                if (isViewLevel(nextViewLevel)) {
-                  onFilterChange({ viewLevel: nextViewLevel });
-                }
-              }}
-              className="trade-log-view-dropdown"
+            <button
+              type="button"
+              className={`journalit-trade-log-mode-selector__button trade-log-mode-selector__button${mode === 'trades' ? ' trade-log-mode-selector__button--active' : ''}`}
+              onClick={() => onModeChange('trades')}
+              aria-pressed={mode === 'trades'}
             >
-              <option value="trades">{t('common.trades')}</option>
-              <option value="years">{t('common.years')}</option>
-              <option value="quarters">{t('common.quarters')}</option>
-              <option value="months">{t('common.months')}</option>
-              <option value="weeks">{t('common.weeks')}</option>
-              <option value="days">{t('common.days')}</option>
-            </select>
+              {t('tradelog.mode.trades')}
+            </button>
+            <button
+              type="button"
+              className={`journalit-trade-log-mode-selector__button trade-log-mode-selector__button${mode === 'imageGallery' ? ' trade-log-mode-selector__button--active' : ''}`}
+              ref={registerImageGalleryModeButtonTarget}
+              onClick={() => {
+                onModeChange('imageGallery');
+                emitGuideAction(TRADE_LOG_IMAGE_GALLERY_SELECTED_ACTION_ID);
+              }}
+              aria-pressed={mode === 'imageGallery'}
+            >
+              {t('tradelog.mode.image-gallery')}
+            </button>
           </div>
 
           <DateRangeFilter
@@ -438,22 +768,66 @@ export const TradeLogHeader = memo<TradeLogHeaderProps>(
             }
           />
 
+          {mode === 'imageGallery' ? (
+            <ImageGalleryHeaderControls
+              controls={imageGalleryControls}
+              onChange={onImageGalleryControlsChange}
+              filterButton={
+                <div
+                  className="trade-log-image-gallery-filter-action"
+                  ref={registerFilterButtonTarget}
+                >
+                  <FilterButton
+                    onClick={() => {
+                      void handleOpenFilterModal();
+                    }}
+                    className="trade-log-image-gallery-filter-button"
+                    activeFilterCount={getActiveFilterCount()}
+                  />
+                </div>
+              }
+              targetRef={registerImageGalleryControlsTarget}
+              sourceSortTargetRef={registerImageGallerySourceSortTarget}
+              sizeTargetRef={registerImageGallerySizeTarget}
+            />
+          ) : null}
+
           <div className="trade-log-filter-actions">
-            <div ref={registerFilterButtonTarget}>
-              <FilterButton
-                onClick={() => {
-                  void handleOpenFilterModal();
-                }}
-                activeFilterCount={getActiveFilterCount()}
-              />
-            </div>
-            {filters.viewLevel === 'trades' && (
+            {mode === 'trades' ? (
+              <div
+                className="trade-log-view-selector"
+                ref={registerViewSelectorTarget}
+              >
+                <ImageGalleryControlDropdown
+                  label={`${t('tradelog.view.selector.label')}:`}
+                  options={VIEW_LEVEL_OPTIONS}
+                  value={filters.viewLevel}
+                  onChange={(viewLevel) => {
+                    if (isViewLevel(viewLevel)) {
+                      onFilterChange({ viewLevel });
+                    }
+                  }}
+                />
+              </div>
+            ) : null}
+            {mode !== 'imageGallery' ? (
+              <div ref={registerFilterButtonTarget}>
+                <FilterButton
+                  onClick={() => {
+                    void handleOpenFilterModal();
+                  }}
+                  className="trade-log-image-gallery-filter-button"
+                  activeFilterCount={getActiveFilterCount()}
+                />
+              </div>
+            ) : null}
+            {mode === 'trades' && filters.viewLevel === 'trades' && (
               <div
                 className="journalit-filter-button-container"
                 ref={registerMultiSelectButtonTarget}
               >
                 <button
-                  className={`journalit-filter-button clickable-icon ${isMultiSelectMode ? 'active' : ''}`}
+                  className={`journalit-filter-button clickable-icon trade-log-image-gallery-filter-button ${isMultiSelectMode ? 'active' : ''}`}
                   onClick={() => {
                     onToggleMultiSelectMode?.();
                   }}
@@ -471,16 +845,18 @@ export const TradeLogHeader = memo<TradeLogHeaderProps>(
                 </button>
               </div>
             )}
-            <div className="journalit-filter-button-container">
-              <button
-                ref={registerColumnSettingsTarget}
-                className="journalit-filter-button clickable-icon"
-                onClick={handleOpenSettingsModal}
-                aria-label={t('tradelog.batch.column-settings')}
-              >
-                <SlidersHorizontal size={16} />
-              </button>
-            </div>
+            {mode === 'trades' ? (
+              <div className="journalit-filter-button-container">
+                <button
+                  ref={registerColumnSettingsTarget}
+                  className="journalit-filter-button clickable-icon trade-log-image-gallery-filter-button"
+                  onClick={handleOpenSettingsModal}
+                  aria-label={t('tradelog.batch.column-settings')}
+                >
+                  <SlidersHorizontal size={16} />
+                </button>
+              </div>
+            ) : null}
           </div>
         </div>
       </div>

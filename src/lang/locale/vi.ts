@@ -15,13 +15,10 @@ const vi: Lang = {
   'command.open-trade-log': 'Mở nhật ký giao dịch',
   'command.open-home': 'Mở Trang chủ',
   'command.open-position-size-calculator': 'Mở máy tính kích thước vị thế',
-  'command.force-sync': 'Buộc đồng bộ hóa giao dịch',
-  'command.cancel-sync': 'Hủy đồng bộ hóa giao dịch',
   'command.replay-onboarding': 'Phát lại quy trình giới thiệu',
   'command.replay-current-view-guide':
     'Hướng dẫn phát lại cho chế độ xem hiện tại',
   'command.open-release-notes': 'Xem ghi chú phát hành',
-  'command.repair-trade-identities': 'Sửa định danh giao dịch',
   'command.open-layout-builder': 'Mở trình tạo bố cục',
   'command.switch-template': 'Chuyển đổi bố cục',
   'notice.guide.replay-unavailable':
@@ -199,6 +196,54 @@ const vi: Lang = {
   'form.tab.basic': 'Cơ bản',
   'form.tab.details': 'Chi tiết',
   'form.tab.advanced': 'Nâng cao',
+
+  
+  
+  
+  'form.import-shortcut.open': 'Mở Nhập giao dịch',
+  'form.layout.customize': 'Tùy chỉnh biểu mẫu',
+  'form.layout.modal-title': 'Tùy chỉnh biểu mẫu giao dịch',
+  'form.layout.settings-title': 'Bố cục biểu mẫu giao dịch',
+  'form.layout.settings-desc':
+    'Chọn cách bạn ghi nhật ký giao dịch và các khối tùy chọn xuất hiện trong biểu mẫu.',
+  'form.layout.core-fields-note':
+    'Loại giao dịch, tài khoản, loại tài sản, mã giao dịch, hướng và các ô nhập giá hoặc P&L bắt buộc vẫn hiển thị theo chế độ nhập đã chọn.',
+  'form.layout.input-mode': 'Chế độ nhập',
+  'form.layout.input-mode-prices': 'Giá',
+  'form.layout.input-mode-pnl-risk': 'P&L + Rủi ro',
+  'form.layout.input-mode-prices-desc':
+    'Ghi giá vào và giá ra, rồi để Journalit tính P&L.',
+  'form.layout.input-mode-pnl-risk-desc':
+    'Nhập trực tiếp P&L giao dịch và số tiền rủi ro. Journalit tự động tính bội số R.',
+  'form.layout.asset-type-mode': 'Loại tài sản',
+  'form.layout.asset-type-mode-show': 'Hỏi',
+  'form.layout.asset-type-mode-fixed': 'Cố định',
+  'form.layout.default-asset-type': 'Loại tài sản mặc định',
+  'form.layout.active-fields': 'Khối hiển thị',
+  'form.layout.available-fields': 'Khối đã ẩn',
+  'form.layout.active-fields-desc':
+    'Kéo các khối để sắp xếp lại. Xóa những phần bạn không dùng.',
+  'form.layout.available-fields-desc':
+    'Thêm lại các khối đã ẩn vào biểu mẫu khi bạn cần.',
+  'form.layout.empty-active': 'Không có khối tùy chọn nào đang hiển thị.',
+  'form.layout.all-active': 'Tất cả khối tùy chọn đang hiển thị.',
+  'form.layout.add-field-aria': 'Thêm {field} vào biểu mẫu giao dịch',
+  'form.layout.remove-field-aria': 'Ẩn {field} trong biểu mẫu giao dịch',
+  'form.layout.saved': 'Đã lưu bố cục biểu mẫu giao dịch',
+  'form.layout.item.trading-costs.commission': 'Hoa hồng',
+  'form.layout.item.import-shortcut': 'Lối tắt nhập',
+  'form.layout.item.import-shortcut-desc':
+    'Hiển thị nút ở chân biểu mẫu để mở Nhập giao dịch.',
+  'form.layout.item.core-details': 'Chi tiết giao dịch cốt lõi',
+  'form.layout.item.core-details-desc':
+    'Tài khoản, công cụ, hướng và nhập vào/thoát luôn ở đầu.',
+  'form.layout.item.asset-specific': 'Trường riêng theo tài sản',
+  'form.layout.item.pnl-preview': 'Xem trước P&L',
+  'form.layout.item.realized-pnl-preview': 'Tóm tắt P&L thoát một phần',
+  'form.layout.item.realized-pnl-preview-desc':
+    'Chỉ xuất hiện với giao dịch đang mở sau khi thoát một phần; vị trí được cố định.',
+  'form.layout.result-r': 'Kết quả theo R',
+  'form.layout.entry-time': 'Thời gian giao dịch',
   'form.field.account': 'Tài khoản',
   'form.field.asset-type': 'Loại tài sản',
   'form.field.asset-type.stock': 'Cổ phiếu',
@@ -293,8 +338,7 @@ const vi: Lang = {
   'image.load-failed': 'Không thể tải hình ảnh',
   'form.field.value-dollar': 'Giá trị ($)',
   'form.field.dollar-amount-placeholder': 'Số tiền đô la',
-  'form.field.direct-pnl-placeholder':
-    'Nhập lãi hoặc lỗ giao dịch trước khi chia cổ tức',
+  'form.field.direct-pnl-placeholder': 'Nhập số tiền lãi hoặc lỗ',
   'form.field.mae-dollar-placeholder': 'Mức rút tiền tối đa bằng đô la',
   'form.field.mfe-dollar-placeholder': 'Lợi nhuận tối đa bằng đô la',
   'form.field.mae-placeholder-currency': 'MAE tối đa trong {currency}',
@@ -380,7 +424,7 @@ const vi: Lang = {
   'button.apply': 'Áp dụng',
   'button.apply-settings': 'Áp dụng cài đặt',
   'button.learn-more': 'Tìm hiểu thêm',
-  'button.upload-image': 'Tải hình ảnh lên',
+  'button.upload-image': 'Tải phương tiện lên',
   'button.discord': 'Discord',
   'form.error.image-upload-unavailable': 'Tải lên hình ảnh không có sẵn',
   'trade.header.unknown-instrument': 'Mã không xác định',
@@ -597,10 +641,6 @@ const vi: Lang = {
     'Không mở được quy trình giới thiệu. Kiểm tra bảng điều khiển để biết chi tiết.',
   'notice.error.sync-trades': 'Không thể đồng bộ hóa giao dịch: {error}',
   'notice.error.open-release-notes': 'Không thể mở ghi chú phát hành: {error}',
-  'notice.trade-identity-repair-complete':
-    'Hoàn tất sửa chữa nhận dạng thương mại: {scanned} được quét, {backfilled} được lấp đầy, đã sửa chữa các bản sao {duplicates}.',
-  'notice.error.repair-trade-identities':
-    'Không thể sửa chữa danh tính giao dịch: {error}',
   'notice.error.open-update-notification':
     'Không mở được thông báo cập nhật: {error}',
   'notice.error.open-layout-builder': 'Không thể mở Trình tạo bố cục: {error}',
@@ -664,6 +704,15 @@ const vi: Lang = {
   'tradelog.title': 'Nhật ký giao dịch',
   'tradelog.root.all-trades': 'Tất cả giao dịch',
   'tradelog.view.selector.label': 'Xem',
+
+  'form.layout.guide-trigger-label': 'Tùy chỉnh biểu mẫu',
+  'trade-form.guide.customization-modal.title':
+    'Điều chỉnh biểu mẫu theo quy trình của bạn',
+  'trade-form.guide.customization-modal.description':
+    'Tại đây bạn có thể hiển thị, ẩn và sắp xếp lại các khối tùy chọn. Giữ biểu mẫu tập trung vào những trường bạn thực sự dùng.',
+  'trade-form.guide.finish.title': 'Đó là tính năng tùy chỉnh',
+  'trade-form.guide.finish.description':
+    'Bạn có thể quay lại nút này bất cứ lúc nào biểu mẫu giao dịch cần phù hợp với một quy trình ghi nhật ký khác.',
   'tradelog.guide.empty.intro.title': 'Chào mừng đến với Nhật ký giao dịch',
   'tradelog.guide.empty.intro.description':
     'Trang này trở thành nơi chính để bạn duyệt, sắp xếp và xem xét các giao dịch. Sau khi thêm giao dịch, bạn cũng sẽ có được chuyến tham quan Nhật ký giao dịch đầy đủ.',
@@ -1037,6 +1086,7 @@ const vi: Lang = {
   'dashboard.metrics.netPnL': 'Lãi/Lỗ',
   'dashboard.metrics.winRate': 'Tỷ lệ thắng',
   'dashboard.metrics.profitFactor': 'Profit factor',
+  'dashboard.metrics.sharpeRatio': 'Tỷ lệ Sharpe',
   'dashboard.metrics.expectancy': 'Kỳ vọng',
   'dashboard.metrics.numTrades': 'Tổng số giao dịch',
   'dashboard.metrics.closedTrades': 'Giao dịch đã đóng',
@@ -1070,6 +1120,17 @@ const vi: Lang = {
     'Công thức: thắng trung bình/thua trung bình',
   'dashboard.avgRR.tooltip.no-conversion':
     'Tỷ lệ hoàn trả này dựa trên các loại tiền tệ hỗn hợp không có chuyển đổi ngoại hối và có thể gây hiểu nhầm.',
+  'dashboard.sharpeRatio.tooltip.title': 'Tỷ lệ Sharpe',
+  'dashboard.sharpeRatio.tooltip.formula':
+    'Công thức: P&L ròng trung bình của giao dịch đã đóng / độ lệch chuẩn mẫu của P&L ròng giao dịch đã đóng. Lãi suất phi rủi ro là 0 và giá trị không được quy năm.',
+  'dashboard.sharpeRatio.tooltip.coverage':
+    'Được tính từ {valid} trên {total} giao dịch đã đóng',
+  'dashboard.sharpeRatio.tooltip.partial-coverage':
+    'Độ phủ một phần: {valid} trên {total} giao dịch đã đóng có P&L ròng hữu hạn.',
+  'dashboard.sharpeRatio.tooltip.no-data':
+    'Cần ít nhất hai giao dịch đã đóng với biến động P&L khác 0.',
+  'dashboard.sharpeRatio.tooltip.no-conversion':
+    'Tỷ lệ Sharpe này dựa trên các loại tiền tệ hỗn hợp không có chuyển đổi FX và có thể gây hiểu nhầm.',
   'dashboard.avgRRRiskBased.tooltip.title': 'RR trung bình (Dựa trên R)',
   'dashboard.avgRRRiskBased.tooltip.formula':
     'Công thức: R thắng trung bình / R thua trung bình',
@@ -1338,6 +1399,47 @@ const vi: Lang = {
     'Thể hiện trên các giao dịch thắng và hòa vốn',
   'template.editor.loss-sections-desc': 'Hiển thị trên các giao dịch thua lỗ',
   'template.editor.section-visibility': 'Hiển thị phần',
+  'template.editor.trade-note-layout': 'Bố cục ghi chú giao dịch',
+  'template.editor.layout-scope': 'Phạm vi bố cục',
+  'template.editor.layout-scope-desc':
+    'Chọn bố cục mặc định hoặc chỉnh sửa một trang loại tài sản',
+  'template.editor.all-asset-types': 'Tất cả loại tài sản',
+  'template.editor.other-asset-types': 'Khác',
+  'template.editor.default-layout': 'Mặc định',
+  'template.editor.asset-type-add': 'Loại tài sản',
+  'template.editor.choose-asset-type': 'Chọn loại tài sản',
+  'template.editor.remove-asset-layout': 'Xóa bố cục tài sản',
+  'template.editor.reset-asset-layout': 'Đặt lại bố cục tài sản',
+  'template.editor.reset-asset-layout-desc':
+    'Xóa bố cục riêng của tài sản này và dùng Tất cả loại tài sản',
+  'template.editor.metrics': 'Chỉ số',
+  'template.editor.metrics-desc':
+    'Hiển thị thẻ vào lệnh, thoát lệnh, thời lượng và kế hoạch',
+  'template.editor.thesis': 'Luận điểm',
+  'template.editor.thesis-desc': 'Hiển thị khối luận điểm giao dịch',
+  'template.editor.metric-cards': 'Thẻ chỉ số',
+  'template.editor.missed-reason': 'Lý do bỏ lỡ giao dịch',
+  'template.editor.missed-reason-desc':
+    'Hiển thị lý do giao dịch bị bỏ lỡ không được vào lệnh',
+  'template.editor.metadata-rows': 'Dòng siêu dữ liệu',
+  'template.editor.accounts': 'Tài khoản',
+  'template.editor.setups': 'Thiết lập',
+  'template.editor.mistakes': 'Lỗi',
+  'template.editor.tags': 'Thẻ',
+  'template.editor.custom-fields': 'Trường tùy chỉnh',
+  'template.editor.custom-fields-desc': '{count} trường tùy chỉnh đã cấu hình',
+  'template.editor.asset-type-overrides': 'Ghi đè theo loại tài sản',
+  'template.editor.asset-type': 'Loại tài sản',
+  'template.editor.asset-type-desc':
+    'Ghi đè thứ tự và khả năng hiển thị phần cho một lớp tài sản',
+  'template.editor.enable-asset-override': 'Bật ghi đè {assetType}',
+  'template.editor.asset-order': 'Thứ tự {assetType}',
+  'template.editor.reviewed-footer': 'Chân trang đã xem xét',
+  'template.editor.metric.position-size': 'Kích thước vị thế',
+  'template.editor.metric.execution-breakdown': 'Phân tích khớp lệnh',
+  'template.editor.metric.pnl': 'Lãi/lỗ',
+  'template.editor.metric.r-multiple': 'Bội số R',
+  'template.editor.metric.costs': 'Chi phí',
   'template.editor.nav-bar': 'Thanh điều hướng',
   'template.editor.nav-bar-desc':
     'Hiển thị dòng thời gian giao dịch và liên kết đánh giá',
@@ -1586,17 +1688,17 @@ const vi: Lang = {
   'csv.image-review.discard-confirmation':
     'Loại bỏ tất cả các tham chiếu hình ảnh cho lần nhập này? Các giao dịch sẽ vẫn được nhập mà không có hình ảnh.',
   'csv.image-review.confirm-discard': 'Có, Hủy tất cả',
-  'image.uploader.paste-title': 'Dán hình ảnh từ clipboard (Ctrl+V)',
+  'image.uploader.paste-title': 'Dán phương tiện từ clipboard (Ctrl+V)',
   'image.uploader.pasting': 'Đang dán...',
   'image.uploader.paste': 'Dán',
-  'image.uploader.url-placeholder': 'Dán URL hình ảnh hoặc đường dẫn tệp...',
-  'image.uploader.url-input-aria': 'Nhập URL hình ảnh',
+  'image.uploader.url-placeholder': 'Dán URL phương tiện hoặc đường dẫn tệp...',
+  'image.uploader.url-input-aria': 'Nhập URL phương tiện',
   'image.uploader.file-upload-aria': 'Tải lên từ tập tin',
   'image.uploader.paste-clipboard-aria': 'Dán từ clipboard',
   'image.uploader.error-invalid-url':
     'URL hình ảnh hoặc đường dẫn tệp không hợp lệ. Vui lòng nhập URL hình ảnh được hỗ trợ, đường dẫn hình ảnh vault hoặc liên kết Excalidraw.',
   'image.viewer.alt-default': 'Hình ảnh',
-  'image.viewer.description-default': 'Xem trước hình ảnh',
+  'image.viewer.description-default': 'Xem trước phương tiện',
   'image.viewer.error-load':
     'Không thể tải hình ảnh. Tệp có thể bị thiếu hoặc không thể truy cập được.',
   'image.viewer.title-fullscreen': 'Bấm vào để xem toàn màn hình',
@@ -1609,6 +1711,23 @@ const vi: Lang = {
   'image.viewer.no-images': 'Không có hình ảnh để hiển thị',
   'image.viewer.thumbnail-alt': 'Hình thu nhỏ {n}',
   'image.viewer.close-aria': 'Đóng toàn màn hình',
+  'image.viewer.copy-image': 'Sao chép hình ảnh',
+  'image.viewer.copy-success': 'Đã sao chép hình ảnh vào bảng nhớ tạm',
+  'image.viewer.copied': 'Đã sao chép',
+  'image.viewer.copy-failed': 'Không thể sao chép hình ảnh vào bảng nhớ tạm',
+  'image.viewer.copy-unsupported':
+    'Môi trường này không hỗ trợ sao chép hình ảnh vào bảng nhớ tạm',
+  'media.viewer.video-controls': 'Điều khiển video',
+  'media.viewer.play-video': 'Phát video',
+  'media.viewer.pause-video': 'Tạm dừng video',
+  'media.viewer.mute-video': 'Tắt tiếng video',
+  'media.viewer.unmute-video': 'Bật tiếng video',
+  'media.viewer.volume': 'Âm lượng',
+  'media.viewer.back-5': 'Lùi 5 giây',
+  'media.viewer.forward-5': 'Tiến 5 giây',
+  'media.viewer.timeline': 'Dòng thời gian video',
+  'media.viewer.open-youtube': 'Mở trên YouTube',
+
   'image.carousel.no-images': 'Không có hình ảnh để hiển thị',
   'image.carousel.prev': 'Hình ảnh trước đó',
   'image.carousel.next': 'Hình ảnh tiếp theo',
@@ -1690,6 +1809,8 @@ const vi: Lang = {
   'common.color.red': 'Màu đỏ',
   'common.color.orange': 'Màu cam',
   'common.color.yellow': 'Màu vàng',
+  'common.color.label': 'Màu sắc',
+  'common.color.default': 'Mặc định',
   'common.day.monday': 'Thứ hai',
   'common.day.tuesday': 'Thứ ba',
   'common.day.wednesday': 'Thứ Tư',
@@ -1830,7 +1951,10 @@ const vi: Lang = {
   'settings.tab.general': 'Tổng quan',
   'settings.tab.reviews': 'Đánh giá',
   'settings.tab.customization': 'Tùy chỉnh',
+  'settings.tab.journal-setup': 'Thiết lập nhật ký',
   'settings.tab.backend': 'Đồng bộ hóa giao dịch',
+  'settings.tab.trading': 'Giao dịch',
+  'settings.tab.sync': 'Đồng bộ',
   'settings.tab.accounts': 'Tài khoản',
   'settings.reviews.drc': 'DRC',
   'settings.reviews.weekly': 'Đánh giá hàng tuần',
@@ -2280,6 +2404,18 @@ const vi: Lang = {
   'trade-sync.gate.pro.description':
     'Trade Sync là một tính năng Pro. Nâng cấp để tiếp tục.',
   'trade-sync.gate.pro.cta': 'Nâng cấp ngay bây giờ',
+  'trade-sync.gate.feature-unavailable.title': 'Tính năng không khả dụng',
+  'trade-sync.gate.feature-unavailable.description':
+    'Tính năng đồng bộ này chưa được bật cho tài khoản Pro của bạn. Hãy làm mới trạng thái hoặc liên hệ với bộ phận hỗ trợ nếu sự cố vẫn tiếp diễn.',
+  'trade-sync.trial.title': 'Tự động hóa nhật ký giao dịch của bạn',
+  'trade-sync.trial.description':
+    'Tiết kiệm đến 7 giờ mỗi tuần với Journalit Pro.',
+  'trade-sync.trial.benefit.sync': 'Tự động đồng bộ giao dịch',
+  'trade-sync.trial.benefit.import': 'Nhập giao dịch từ mọi nơi',
+  'trade-sync.trial.cta': 'Bắt đầu dùng thử miễn phí 14 ngày',
+  'trade-sync.trial.existing-subscriber': 'Đã đăng ký? Đăng nhập',
+  'trade-sync.trial.eligibility':
+    'Dùng thử miễn phí chỉ dành cho người đăng ký mới.',
   'premium.gate.cta.activate': 'Kích hoạt PRO',
   'premium.gate.cta.upgrade-now': 'Nâng cấp ngay bây giờ',
   'premium.gate.cta.signin-continue': 'Đăng nhập và tiếp tục',
@@ -2293,7 +2429,7 @@ const vi: Lang = {
   'premium.gate.import.state.pro.description':
     'Pro mở khóa các bản tải lên xuất của nhà môi giới, bản xem trước riêng tư, các mẫu đã lưu và nhập bằng một cú nhấp chuột.',
   'premium.gate.import.reassurance':
-    'Bản xem trước riêng tư chạy trước khi mọi thứ được ghi vào vault của bạn.',
+    'Nhập không giới hạn giao dịch vào vault của bạn.',
   'premium.gate.trial-hint':
     'Đăng ký Pro lần đầu bao gồm bản dùng thử miễn phí 14 ngày.',
   'premium.gate.offline':
@@ -2400,6 +2536,7 @@ const vi: Lang = {
   'backend.cards.sync.last-sync': 'Đồng bộ hóa lần cuối',
   'backend.cards.sync.total': 'Tổng số lần đồng bộ hóa',
   'backend.cards.sync.button': 'Đồng bộ hóa ngay bây giờ',
+  'backend.cards.sync.cancel': 'Hủy đồng bộ hóa',
   'backend.cards.accounts.title': 'Tài khoản',
   'backend.cards.accounts.linked': 'Tài khoản được liên kết',
   'backend.cards.accounts.manage': 'Quản lý',
@@ -3039,6 +3176,15 @@ const vi: Lang = {
     'Chưa có luận điểm giao dịch nào cho giao dịch này',
   'trade.details.add-thesis':
     "Nhấp vào 'Chỉnh sửa' để thêm luận điểm giao dịch",
+  'trade.details.plan': 'Plan',
+  'trade.details.risk': 'risk',
+  'trade.details.execution': 'Execution',
+  'trade.details.show-execution': 'Show breakdown',
+  'trade.details.hide-execution': 'Hide breakdown',
+  'trade.details.entries-summary': '{count} entries',
+  'trade.details.exits-summary': '{count} exits',
+  'trade.details.take-profit-count': '{count} targets',
+  'trade.details.close-percent': '{percent}% close',
   'trade.metadata.account': 'Tài khoản:',
   'trade.metadata.custom-tags': 'Thẻ tùy chỉnh:',
   'trade.metadata.setups': 'Setup',
@@ -3057,6 +3203,11 @@ const vi: Lang = {
   'timeline.status.loss': 'Lỗ',
   'timeline.status.breakeven': 'Hòa vốn',
   'timeline.aria.trade-status': '{ticker} {tradeType} {tradeNumber} ({status})',
+  'timeline.aria.session-navigation': 'Same-day trade navigation',
+  'timeline.aria.previous-trade': 'Previous trade: {trade}',
+  'timeline.aria.next-trade': 'Next trade: {trade}',
+  'timeline.aria.no-previous-trade': 'No previous trade in this trading day',
+  'timeline.aria.no-next-trade': 'No next trade in this trading day',
   'timeline.title.current-trade':
     '{tradeType} hiện tại: {ticker} {tradeType} {tradeNumber}',
   'timeline.title.view-trade':
@@ -3154,6 +3305,7 @@ const vi: Lang = {
   'drc.missed-trades.empty-sub':
     'Theo dõi các cơ hội giao dịch bạn đã bỏ lỡ để cải thiện khả năng thực hiện của mình',
   'missed-trade.reason-title': 'Tại sao tôi bỏ lỡ giao dịch này',
+  'missed-trade.reason-kicker': 'Cơ hội bị bỏ lỡ',
   'missed-trade.loading-navigation': 'Đang tải điều hướng...',
   'drc.review.goal-placeholder': 'Mục tiêu của bạn cho buổi học tiếp theo',
   'drc.review.no-questions':
@@ -3291,12 +3443,11 @@ const vi: Lang = {
     'Hiển thị thời gian ở định dạng 24 giờ (14:30) thay vì định dạng 12 giờ AM/PM (2:30 PM)',
   'settings.general.use-24-hour-time-aria':
     'Sử dụng định dạng thời gian 24 giờ',
-  'settings.general.skip-weekends': 'Bỏ qua cuối tuần trong điều hướng',
+  'settings.general.skip-weekends': 'Loại trừ cuối tuần',
   'settings.general.skip-weekends-desc':
-    'Bỏ qua các ngày cuối tuần khi di chuyển giữa các ngày giao dịch (ví dụ: Thứ Sáu → Thứ Hai)',
-  'settings.general.skip-weekends-aria':
-    'Bỏ qua những ngày cuối tuần khi điều hướng',
-  'settings.general.skip-weekends-toggled': 'Bỏ qua cuối tuần {status}',
+    'Khi bật, Journalit xem cuối tuần là ngày không giao dịch trong toàn bộ plugin. Tắt tùy chọn này nếu bạn giao dịch hoặc đánh giá hoạt động vào thứ Bảy và Chủ nhật.',
+  'settings.general.skip-weekends-aria': 'Loại trừ cuối tuần trong Journalit',
+  'settings.general.skip-weekends-toggled': 'Loại trừ cuối tuần {status}',
   'settings.general.week-start': 'Ngày bắt đầu tuần',
   'settings.general.week-start-desc':
     'Chọn ngày mà tuần giao dịch của bạn bắt đầu. Ảnh hưởng đến việc đánh giá và báo cáo hàng tuần.',
@@ -3399,6 +3550,7 @@ const vi: Lang = {
   'settings.general.update-notifications-toggled':
     'Cập nhật thông báo {status}',
   'settings.general.data-management': 'Quản lý dữ liệu & quyền riêng tư',
+  'settings.general.backup-restore-section': 'Sao lưu, khôi phục & đặt lại',
   'settings.general.export-settings': 'Xuất cài đặt',
   'settings.general.export-settings-desc':
     'Tải xuống tất cả cài đặt plugin dưới dạng tệp JSON để sao lưu hoặc chuyển sang kho khác',
@@ -3418,6 +3570,9 @@ const vi: Lang = {
   'settings.customization.title': 'Tùy chỉnh',
   'settings.customization.description':
     'Tùy chỉnh các tùy chọn, giao diện và hoạt động của plugin Journalit.',
+  'settings.customization.trade-form-layout.description':
+    'Chọn các trường và phần hiển thị trong biểu mẫu giao dịch.',
+  'settings.customization.trade-form-layout.button': 'Tuỳ chỉnh bố cục',
   'settings.customization.tickers-symbols': 'Mã/Biểu tượng',
   'settings.customization.symbol-mappings': 'Ánh xạ mã giao dịch',
   'settings.customization.account-types': 'Loại tài khoản',
@@ -4161,17 +4316,17 @@ const vi: Lang = {
   'widget.missed-trades.name': 'Giao dịch bị bỏ lỡ',
   'widget.missed-trades.description':
     'Các giao dịch bạn đã xác định nhưng không thực hiện',
-  'widget.images.name': 'Hình ảnh',
-  'widget.images.description': 'Băng chuyền hình ảnh có hỗ trợ tải lên',
+  'widget.images.name': 'Biểu đồ & media',
+  'widget.images.description': 'Băng chuyền media có hỗ trợ tải lên',
   'widget.images.invalid-context':
     "Tiện ích hình ảnh yêu cầu ghi chú đánh giá (type: 'drc', 'weekly-review', 'monthly-review', 'quarterly-review' hoặc 'yearly-review')",
-  'widget.images.alt-prefix': 'Xem lại hình ảnh',
-  'widget.images.stacked-alt': 'Đánh giá hình ảnh {index}',
-  'widget.images.open-fullscreen': 'Mở hình ảnh toàn màn hình {index}',
-  'widget.images.delete': 'Xóa hình ảnh',
-  'widget.images.empty': 'Không có hình ảnh',
+  'widget.images.alt-prefix': 'Media đánh giá',
+  'widget.images.stacked-alt': 'Media đánh giá {index}',
+  'widget.images.open-fullscreen': 'Mở media toàn màn hình {index}',
+  'widget.images.delete': 'Xóa media',
+  'widget.images.empty': 'Không có media',
   'widget.images.placeholder': 'Dán URL hình ảnh hoặc đường dẫn tệp...',
-  'widget.images.placeholder-add-more': 'Thêm hình ảnh khác...',
+  'widget.images.placeholder-add-more': 'Thêm media khác...',
   'widget.mark-reviewed.name': 'Đánh dấu là đã đánh giá',
   'widget.mark-reviewed.description':
     'Biểu ngữ để đánh dấu bài đánh giá là hoàn chỉnh kèm theo dấu thời gian',
@@ -4373,6 +4528,65 @@ const vi: Lang = {
     'Đo lường tuần giao dịch tích cực và tính nhất quán',
   'widget.trades.name': 'Giao dịch',
   'widget.trades.description': 'Danh sách các giao dịch với các chi tiết chính',
+  'widget.trade-review.name': 'Đánh giá giao dịch',
+  'widget.trade-review.description':
+    'Đánh giá từng giao dịch bằng hình ảnh, dữ kiện chính và câu hỏi tùy chỉnh',
+  'widget.trade-review.status.reviewed': 'Đã đánh giá',
+  'widget.trade-review.status.pending': 'Chờ đánh giá',
+  'widget.trade-review.no-image': 'Không có ảnh giao dịch',
+  'widget.trade-review.open-trade-note': 'Mở ghi chú',
+  'widget.trade-review.mark-reviewed': 'Đánh dấu đã đánh giá',
+  'widget.trade-review.loading': 'Đang tải đánh giá...',
+  'widget.trade-review.no-trades': 'Không có giao dịch để đánh giá.',
+  'widget.trade-review.time.open': 'Đang mở',
+  'widget.trade-review.fallback-title': 'Giao dịch {index}',
+  'widget.trade-review.question.win-what-worked': 'Điều gì hiệu quả?',
+  'widget.trade-review.placeholder.win-what-worked':
+    'Bạn đã thực hiện tốt điều gì trong giao dịch này?',
+  'widget.trade-review.question.win-repeatable': 'Có thể lặp lại không?',
+  'widget.trade-review.placeholder.win-repeatable':
+    'Điều gì khiến giao dịch này có thể lặp lại?',
+  'widget.trade-review.question.key-lesson': 'Bài học chính',
+  'widget.trade-review.placeholder.key-lesson':
+    'Bạn nên nhớ điều gì từ giao dịch này?',
+  'widget.trade-review.question.loss-what-went-wrong': 'Điều gì sai?',
+  'widget.trade-review.placeholder.loss-what-went-wrong':
+    'Điều gì gây ra khoản lỗ này?',
+  'widget.trade-review.question.loss-valid-or-mistake':
+    'Đây là khoản lỗ hợp lệ hay lỗi thực thi?',
+  'widget.trade-review.placeholder.loss-valid-or-mistake':
+    'Mô tả quy trình có hợp lệ hay có thể tránh được.',
+  'widget.trade-review.question.loss-avoid-next-time':
+    'Lần sau tôi sẽ tránh điều gì?',
+  'widget.trade-review.placeholder.loss-avoid-next-time':
+    'Hành vi cụ thể nào nên thay đổi?',
+  'widget.trade-review.question.be-managed-correctly':
+    'Giao dịch được quản lý đúng chưa?',
+  'widget.trade-review.placeholder.be-managed-correctly':
+    'Cách quản lý có đúng kế hoạch không?',
+  'widget.trade-review.image-alt-prefix': 'Ảnh đánh giá giao dịch',
+  'widget.trade-review.placeholder.default': 'Viết suy nghĩ của bạn...',
+  'widget.trade-review.questions-hidden':
+    'Câu hỏi đánh giá bị ẩn cho giao dịch này.',
+  'widget.trade-review.field.entry': 'Vào lệnh',
+  'widget.trade-review.field.exit': 'Thoát lệnh',
+  'widget.trade-review.field.duration': 'Thời lượng',
+  'widget.trade-review.field.risk': 'Rủi ro',
+  'widget.trade-review.field.account': 'Tài khoản',
+  'widget.trade-review.field.setup': 'Mẫu giao dịch',
+  'widget.trade-review.field.mistakes': 'Lỗi',
+  'widget.trade-review.field.tags': 'Thẻ',
+  'widget.trade-review.more-context': 'Thêm ngữ cảnh',
+  'widget.trade-review.field.position-size': 'Khối lượng vị thế',
+  'widget.trade-review.field.stop-loss': 'Dừng lỗ',
+  'widget.trade-review.field.take-profit': 'Chốt lời',
+  'widget.trade-review.field.fees': 'Phí',
+  'widget.trade-review.field.commission': 'Hoa hồng',
+  'widget.trade-review.field.mae': 'MAE',
+  'widget.trade-review.field.mfe': 'MFE',
+  'widget.trade-review.field.thesis': 'Luận điểm',
+  'widget.trade-review.field.notes': 'Ghi chú',
+  'widget.trade-review.field.custom-fields': 'Trường tùy chỉnh',
   'widget.backtest-trades.name': 'Giao dịch backtest',
   'widget.backtest-trades.description':
     'Danh sách các giao dịch backtest trong giai đoạn xem xét này',
@@ -4430,6 +4644,9 @@ const vi: Lang = {
   'metric.winRate.description': 'Tỷ lệ giao dịch thắng',
   'metric.profitFactor.name': 'Profit factor',
   'metric.profitFactor.description': 'Tỷ lệ lãi gộp trên lỗ gộp',
+  'metric.sharpeRatio.name': 'Tỷ lệ Sharpe',
+  'metric.sharpeRatio.description':
+    'Tỷ lệ Sharpe theo giao dịch: P&L ròng trung bình của giao dịch đã đóng chia cho độ biến động P&L mẫu',
   'metric.expectancy.name': 'Kỳ vọng',
   'metric.expectancy.description':
     'Số tiền thắng hoặc thua trung bình trên mỗi giao dịch',
@@ -4943,8 +5160,11 @@ const vi: Lang = {
   'home.quick-links.todays-drc': 'DRC ngày nay',
   'home.quick-links.weekly-review': 'Đánh giá tuần này',
   'home.quick-links.monthly-review': 'Đánh giá tháng này',
+  'home.quick-links.quarterly-review': 'Đánh giá quý này',
+  'home.quick-links.yearly-review': 'Đánh giá năm nay',
   'home.quick-links.csv-import': 'Trade Import',
   'home.quick-links.layout-builder': 'Trình tạo bố cục',
+  'home.quick-links.session-mode': 'Chế độ phiên',
   'home.quick-links.move-above':
     'Di chuyển các liên kết nhanh phía trên các tiện ích',
   'home.quick-links.move-below':
@@ -5121,7 +5341,19 @@ const vi: Lang = {
   'home.widget.drawdown.remaining': 'còn lại',
   'home.widget.drawdown.unable-to-load': 'Không thể tải',
   'home.widget.drawdown.no-accounts': 'Không có tài khoản nào có giới hạn',
+  'form.ideal-exit.title': 'Thoát lệnh lý tưởng',
+  'form.ideal-exit.subtitle':
+    'Các lần thoát từng phần theo hindsight để đánh giá thực thi.',
+  'form.ideal-exit.coverage': 'Khối lượng lý tưởng',
+  'form.ideal-exit.price': 'Giá lý tưởng',
+  'form.ideal-exit.size': 'Khối lượng',
+  'form.ideal-exit.remove': 'Xóa thoát lý tưởng',
+  'form.ideal-exit.add': '+ Thêm thoát lý tưởng',
+  'form.ideal-exit.copy-actual': 'Sao chép thoát thực tế',
 
+  'form.ideal-exit.tooltip':
+    'Ghi lại kế hoạch thoát lệnh hindsight mà bạn muốn đã thực hiện. Hỗ trợ thoát từng phần để đánh giá.',
+  'form.ideal-exit.empty': 'Chưa có thoát lý tưởng',
   'home.widget.profit-target.title': 'Mục tiêu lợi nhuận',
   'home.widget.profit-target.achieved': 'Đạt',
   'home.widget.profit-target.remaining': 'còn lại',
@@ -5627,6 +5859,7 @@ const vi: Lang = {
   'csv.broker-guide.tradingtechnologies.doc-label':
     'Xem hướng dẫn xuất khẩu Công nghệ giao dịch',
   'trade.metadata.broker-comment': 'Bình luận của nhà môi giới',
+  'trade.metadata.additional-fields': 'Trường bổ sung',
   'navigation.title': 'Journalit',
   'calendar.sidebar.title': 'Lịch hiệu suất',
   'navigation.section.overview': 'Tổng quan',
@@ -5649,6 +5882,7 @@ const vi: Lang = {
   'navigation.items.nav-layout-builder': 'Trình tạo bố cục',
   'navigation.items.nav-quick-import': 'Nhập nhanh',
   'navigation.items.nav-csv-import': 'Trade Import',
+  'navigation.items.nav-session-mode': 'Chế độ phiên',
   'navigation.items.nav-position-size': 'Công cụ tính kích thước vị thế',
   'settings.general.navigation-sidebar': 'Thanh bên điều hướng',
   'navigation.setting.tab-behavior': 'Hành vi của tab điều hướng',
@@ -5747,6 +5981,15 @@ const vi: Lang = {
   'templateEditor.widget.review-context-fields.current': 'Hiện hành',
   'templateEditor.widget.review-context-fields.empty-values': 'Giá trị trống',
   'templateEditor.widget.review-context-fields.hide-empty': 'Ẩn giá trị trống',
+  'templateEditor.widget.trade-review.primary-metrics': 'Chỉ số chính',
+  'templateEditor.widget.trade-review.classification': 'Phân loại',
+  'templateEditor.widget.trade-review.more-context': 'Thêm ngữ cảnh',
+  'templateEditor.widget.trade-review.display': 'Hiển thị',
+  'templateEditor.widget.trade-review.show-images': 'Hiển thị hình ảnh',
+  'templateEditor.widget.trade-review.fields-none': 'Không có trường',
+  'templateEditor.widget.trade-review.fields-all': 'Tất cả trường',
+  'templateEditor.widget.trade-review.fields-count': '{count} trường',
+  'templateEditor.widget.trade-review.no-fields': 'Không có trường nào',
   'templateEditor.widget.previous-context-add-section': '+ Thêm phần',
   'templateEditor.widget.previous-context-headings-label':
     'Các tiêu đề cần bao gồm',
@@ -5830,6 +6073,8 @@ const vi: Lang = {
     'Kiểm tra rằng mọi trường bắt buộc đã được ánh xạ, định dạng ngày đã chọn khớp với tệp của bạn và các cột số chứa giá trị giao dịch hợp lệ.',
   'trade-import.notice.complete':
     'Nhập giao dịch hoàn tất: {written} được viết hoặc cập nhật, {duplicateCount} trùng lặp, {failedCount} không thành công',
+  'trade-import.gate.brand-left': 'Giao dịch',
+  'trade-import.gate.brand-right': 'Nhập',
   'trade-import.gate.sign-in':
     'Tải lên các bản xuất của nhà môi giới, xem trước các giao dịch được phân tích cú pháp một cách riêng tư và nhập chúng vào kho lưu trữ của bạn.',
   'trade-import.gate.upgrade':
@@ -5901,6 +6146,331 @@ const vi: Lang = {
   'trade-import.preview.message.no-open-match':
     'Không tìm thấy giao dịch mở phù hợp cho bản xem trước chỉ đóng',
   'home.quick-links.quick-import': 'Nhập nhanh',
+
+  
+  'command.open-setups': 'Mở thiết lập',
+  'setups.create.title': 'Tạo setup',
+  'setups.create.field.name': 'Tên setup',
+  'setups.create.placeholder.name': 'Đà mở cửa',
+  'setups.create.field.status': 'Trạng thái',
+  'setups.create.field.direction': 'Hướng',
+  'setups.create.field.color': 'Màu sắc',
+  'setups.create.field.color-description': 'Chọn màu để nhận diện setup này.',
+  'setups.create.direction.any': 'Không chỉ định',
+  'setups.create.direction.long': 'Mua',
+  'setups.create.direction.short': 'Bán',
+  'setups.create.direction.both': 'Cả hai',
+  'setups.create.field.linked-notes': 'Ghi chú liên kết',
+  'setups.create.field.linked-notes-desc':
+    'Gắn các ghi chú hiện có mô tả playbook cho setup này.',
+  'setups.create.linked-notes.empty': 'Chưa liên kết ghi chú nào.',
+  'setups.create.linked-notes.add': '+ Liên kết ghi chú',
+  'setups.create.linked-notes.remove': 'Xóa ghi chú liên kết',
+  'setups.create.linked-notes.picker-title': 'Chọn ghi chú playbook',
+  'setups.create.linked-notes.search': 'Tìm ghi chú...',
+  'setups.create.linked-notes.no-notes': 'Không tìm thấy ghi chú Markdown.',
+  'setups.create.button.creating': 'Đang tạo...',
+  'setups.create.button.create': 'Tạo setup',
+  'setups.create.success': 'Đã tạo setup "{name}" thành công',
+  'setups.create.error.name-required': 'Tên setup là bắt buộc',
+  'setups.create.error.failed': 'Không thể tạo setup',
+  'setups.edit.title': 'Sửa setup',
+  'setups.edit.button.saving': 'Đang lưu...',
+  'setups.edit.button.save': 'Lưu setup',
+  'setups.edit.button.rename-and-update': 'Rename and update trades',
+  'setups.edit.rename-warning.title': 'Rename setup and update trades',
+  'setups.edit.rename-warning.message':
+    'Renaming {oldName} to {newName} will update trade notes that use the old setup name.',
+  'setups.edit.delete.button': 'Xóa setup',
+  'setups.edit.delete.title': 'Xóa setup',
+  'setups.edit.delete.confirm': 'Xác nhận xóa',
+  'setups.edit.delete.warning':
+    'Việc xóa "{name}" sẽ xóa vĩnh viễn setup và gỡ setup khỏi các giao dịch liên kết. Bạn không thể hoàn tác thao tác này.',
+  'setups.edit.delete.success': 'Đã xóa setup "{name}"',
+  'setups.edit.delete.error': 'Không thể xóa setup',
+  'setups.edit.success': 'Đã cập nhật setup "{name}" thành công',
+  'setups.edit.error.failed': 'Không thể cập nhật setup',
+  'setups.view.compare.empty-submessage':
+    'Choose two setup cards from the overview to build a side-by-side report.',
+  'setups.view.compare.reason.higher.total-r': 'Tổng R cao hơn',
+  'setups.view.compare.reason.lower.total-r': 'Tổng R thấp hơn',
+  'setups.view.compare.reason.similar.total-r': 'Tổng R tương đương',
+  'setups.view.advanced.rule-break-count': '{count}',
+  'setups.guide.empty.intro.title': 'Tạo thiết lập đầu tiên',
+  'setups.guide.empty.intro.description':
+    'Thiết lập kết nối ghi chú playbook, quy tắc, ảnh chụp và giao dịch liên kết để bạn xem lại một ý tưởng giao dịch trong ngữ cảnh.',
+  'setups.guide.create-new-setup.title': 'Tạo thiết lập mới',
+  'setups.guide.create-new-setup.description':
+    'Dùng Thiết lập mới để thêm playbook. Hộp thoại sẽ hướng dẫn chi tiết, ghi chú liên kết và quy tắc.',
+  'setups.guide.detail-intro.title': 'Đây là trang thiết lập',
+  'setups.guide.detail-intro.description':
+    'Trang thiết lập tập trung vào một playbook với biểu đồ hiệu suất, bối cảnh, tài liệu tham khảo, thao tác và quy tắc thực thi.',
+  'setups.guide.detail-actions.title': 'Thao tác thiết lập',
+  'setups.guide.detail-actions.description':
+    'Dùng các nút này để mở giao dịch liên quan hoặc chỉnh sửa chi tiết, ghi chú liên kết, ảnh chụp và quy tắc playbook.',
+  'setups.guide.empty.create-setup.title': 'Bắt đầu với thiết lập mới',
+  'setups.guide.empty.create-setup.description':
+    'Hãy tạo một thiết lập trước. Khi đã có, hướng dẫn này sẽ tiếp tục quy trình bình thường.',
+  'setups.guide.empty.finish.title': 'Hoàn tất tạo thiết lập',
+  'setups.guide.empty.finish.description':
+    'Điền chi tiết và lưu. Hướng dẫn Setups sẽ tiếp tục khi thiết lập sẵn sàng.',
+  'setups.guide.intro.title': 'Chào mừng đến Setups',
+  'setups.guide.intro.description':
+    'Chế độ xem này gom playbook thiết lập, giao dịch liên kết, ghi chú, ảnh chụp và quy tắc vào một nơi.',
+  'setups.guide.view-tabs.title': 'Chuyển chế độ xem thiết lập',
+  'setups.guide.view-tabs.description':
+    'Dùng các tab này để chuyển giữa tổng quan, cặp thiết lập và so sánh khi có đủ thiết lập.',
+  'setups.guide.overview-chart.title': 'Xếp hạng hiệu suất',
+  'setups.guide.overview-chart.description':
+    'Biểu đồ tổng quan xếp hạng thiết lập theo chỉ số đã chọn. Dùng các điều khiển ở góc trên bên phải để đổi chỉ số hoặc tập trung vào thiết lập cụ thể.',
+  'setups.guide.setup-cards.title': 'Thẻ thiết lập',
+  'setups.guide.setup-cards.description':
+    'Thẻ tóm tắt từng thiết lập với chỉ số chính, trạng thái, ngày giao dịch gần nhất và xu hướng hiệu suất nhỏ.',
+  'setups.guide.open-detail.title': 'Mở trang thiết lập',
+  'setups.guide.open-detail.description':
+    'Mở một thẻ thiết lập để xem trang riêng với biểu đồ, bối cảnh, tài liệu playbook và quy tắc thực thi.',
+  'setups.guide.detail-performance.title': 'Hiệu suất chi tiết',
+  'setups.guide.detail-performance.description':
+    'Tab Hiệu suất hiển thị biểu đồ và chỉ số chính theo thời gian, gồm P&L, win rate, kỳ vọng và drawdown.',
+  'setups.guide.detail-context.title': 'Bối cảnh thiết lập',
+  'setups.guide.detail-context.description':
+    'Bảng này giữ sức khỏe thiết lập, mục cần chú ý, ghi chú liên kết và ảnh chụp ở gần.',
+  'setups.guide.detail-playbook.title': 'Ghi chú playbook',
+  'setups.guide.detail-playbook.description':
+    'Khu vực playbook xem trước ghi chú liên kết. Nó có thể là markdown, hình ảnh, Excalidraw hoặc bất kỳ tài liệu tham khảo nào.',
+  'setups.guide.detail-rules.title': 'Quy tắc thực thi',
+  'setups.guide.detail-rules.description':
+    'Quy tắc ghi lại checklist có cấu trúc về điều kiện, điểm vào, rủi ro và lỗi cần tránh.',
+  'setups.guide.finish.title': 'Hoàn tất hướng dẫn Setups',
+  'setups.guide.finish.description':
+    'Bạn đã xem các phần chính: Tổng quan, Cặp, So sánh và trang chi tiết thiết lập.',
+  'setups.guide.compare.intro.title': 'So sánh hiệu suất thiết lập',
+  'setups.guide.compare.intro.description':
+    'Bạn đã có đủ thiết lập để xem cặp và so sánh hai playbook cạnh nhau.',
+  'setups.guide.pairs-mode.title': 'Mở cặp thiết lập',
+  'setups.guide.pairs-mode.description':
+    'Mở Cặp để xem tổ hợp nào có đủ giao dịch chung để so sánh.',
+  'setups.guide.pairs-chart.title': 'Xếp hạng cặp',
+  'setups.guide.pairs-chart.description':
+    'Chế độ Cặp làm nổi bật các tổ hợp có thể hoạt động tốt hơn hoặc kém hơn cùng nhau. Bấm vào một thanh để mở insight sâu hơn cho tổ hợp đó.',
+  'setups.guide.return-overview.title': 'Quay lại tổng quan',
+  'setups.guide.return-overview.description':
+    'Quay lại Tổng quan trước khi chọn thiết lập để so sánh.',
+  'setups.guide.compare-mode.title': 'Bắt đầu chế độ so sánh',
+  'setups.guide.compare-mode.description':
+    'Chế độ so sánh cho phép chọn hai thẻ thiết lập để xem cạnh nhau.',
+  'setups.guide.compare-select.title': 'Chọn hai thiết lập',
+  'setups.guide.compare-select.description':
+    'Chọn hai thẻ thiết lập để mở trang so sánh.',
+  'setups.guide.compare-summary.title': 'Đây là trang so sánh',
+  'setups.guide.compare-summary.description':
+    'Trang này so sánh hai thiết lập cạnh nhau. Hàng trên cùng hiển thị bên thắng, lợi thế kỳ vọng, độ tin cậy và lý do một thiết lập có lợi thế.',
+  'setups.guide.compare-body.title': 'Hàng tóm tắt so sánh',
+  'setups.guide.compare-body.description':
+    'Hàng trên cùng tóm tắt so sánh: bên thắng, lợi thế kỳ vọng, độ tin cậy và lý do tạo lợi thế.',
+  'setups.guide.compare-details.title': 'Chi tiết so sánh',
+  'setups.guide.compare-details.description':
+    'Dùng bảng chỉ số và biểu đồ lũy kế để hiểu hai thiết lập khác nhau như thế nào.',
+  'setups.guide.detail-execution-gap.title': 'Phân tích khoảng cách thực thi',
+  'setups.guide.detail-execution-gap.description':
+    'Khi có giao dịch bỏ lỡ hoặc backtest, tab này so sánh phần đã thực thi với cơ hội bỏ lỡ hoặc benchmark.',
+  'setups.guide.back-to-overview.title': 'Quay lại thẻ thiết lập',
+  'setups.guide.back-to-overview.description':
+    'Quay lại các thẻ khi bạn đã so sánh xong.',
+  'setups.guide.compare.finish.title': 'Hoàn tất hướng dẫn so sánh',
+  'setups.guide.compare.finish.description':
+    'Bạn đã xem Cặp và So sánh để đánh giá nhiều thiết lập cùng nhau.',
+  'setups.view.open-as-markdown': 'Open as Markdown',
+  'setups.view.open-as-setup': 'Open as Journalit Setup',
+  'setups.view.overview.mode.aria': 'Overview chart mode',
+  'setups.view.overview.mode.setups': 'Setups',
+  'setups.view.overview.mode.pairs': 'Pairs',
+  'setups.view.pairs.title': 'Setup pairs',
+  'setups.view.pairs.summary-aria': 'Setup pairs summary',
+  'setups.view.pairs.best': 'Best pair',
+  'setups.view.pairs.worst': 'Worst pair',
+  'setups.view.pairs.worst-short': 'Worst',
+  'setups.view.pairs.empty': 'No setup pairs with 5+ trades yet.',
+  'setups.view.pairs.empty-submessage':
+    'Pairs appear after two setups share enough linked trades.',
+  'setups.view.pairs.privacy':
+    'Pair performance is hidden while Privacy Mode is on.',
+  'setups.view.pairs.edge-tooltip':
+    'Edge compares the pair expectancy against the stronger solo setup baseline.',
+  'setups.view.pairs.metric-aria': 'Pair metric',
+  'setups.view.pairs.metric.edge': 'Pair edge',
+  'setups.view.pairs.metric.edge-short': 'edge',
+  'setups.view.pairs.metric.expectancy': 'Pair expectancy',
+  'setups.view.pairs.metric.expectancy-short': 'expectancy',
+  'setups.view.pairs.together': 'Together',
+  'setups.view.pairs.table.setup-pair': 'Setup pair',
+  'setups.view.pairs.equity-curve': 'Equity curve',
+  'setups.view.pairs.equity-caption':
+    'Cumulative pair performance over time. Green = positive contribution, red = drawdown.',
+  'setups.view.pairs.evidence': 'Evidence',
+  'setups.view.pairs.edge-comparison': 'Edge comparison',
+  'setups.view.pairs.edge-caption': 'Combined edge: {edge}',
+  'setups.view.overview.setup-filter.all': 'Setups: All',
+  'setups.view.overview.setup-filter.selected': 'Setups: {count} selected',
+  'setups.view.overview.setup-filter.aria': 'Choose setups to show',
+  'setups.view.overview.setup-filter.select-all': 'Select all',
+  'setups.view.overview.setup-filter.clear': 'Clear',
+  'setups.view.overview.pnl-chart.title': 'Setup P&L Over Time',
+  'setups.view.overview.pnl-chart.dropdown-label': 'Cumulative P&L',
+  'setups.view.overview.pnl-chart.subtitle':
+    'Cumulative P&L from setup-linked trades, split by setup and combined.',
+  'setups.view.overview.pnl-chart.combined': 'All setups',
+  'setups.view.overview.pnl-chart.selected-combined': 'Selected setups',
+  'setups.view.overview.pnl-chart.unassigned': 'Unassigned account',
+  'setups.view.overview.pnl-chart.hidden':
+    'Setup P&L over time is hidden while privacy mode is enabled.',
+  'setups.view.overview.pnl-chart.trade': 'Trade',
+  'setups.view.overview.pnl-chart.start': 'Start',
+  'setups.view.ranking.empty-submessage':
+    'Log trades with setups to start ranking performance.',
+  'setups.view.empty.no-setups-submessage':
+    'Setups collect your playbook notes, rules, trades, and performance in one place.',
+  'setups.view.detail.no-playbook-note':
+    'Link a playbook note to preview it here.',
+  'setups.view.detail.link-playbook-note': 'Link note',
+  'setups.view.detail.change-playbook-note': 'Change note',
+  'setups.view.detail.playbook-note-modal.search': 'Search notes...',
+  'setups.view.detail.playbook-note-modal.empty': 'No matching notes found.',
+  'setups.view.detail.empty-playbook-note':
+    'The linked playbook note is empty.',
+  'setups.view.detail.rules.edit': 'Chỉnh sửa quy tắc',
+  'setups.view.detail.rules.add-first': 'Thêm quy tắc',
+  'setups.view.detail.rules.add': 'Thêm quy tắc',
+  'setups.view.detail.rules.editor-subtitle':
+    'Tạo và chỉnh sửa quy tắc dùng cho checklist và tuân thủ.',
+  'setups.view.detail.rules.empty-title': 'Build the setup playbook',
+  'setups.view.detail.rules.use-template': 'Use template',
+  'setups.view.detail.rules.applying-template': 'Applying template...',
+  'setups.view.detail.rules.add-custom': 'Custom rule',
+  'setups.view.detail.rules.template-error':
+    'Failed to apply playbook template.',
+  'setups.view.detail.rules.template.best-conditions': 'Best Conditions',
+  'setups.view.detail.rules.template.entry-criteria': 'Entry Criteria',
+  'setups.view.detail.rules.template.invalidation': 'Invalidation',
+  'setups.view.detail.rules.template.risk-management': 'Risk / Management',
+  'setups.view.detail.rules.template.avoid-when': 'Avoid When',
+  'setups.view.detail.rules.template.common-mistakes': 'Common Mistakes',
+  'setups.view.detail.rules.template.rule.best-conditions':
+    'Market context supports this setup',
+  'setups.view.detail.rules.template.rule.entry-criteria':
+    'Entry trigger is clearly defined',
+  'setups.view.detail.rules.template.rule.invalidation':
+    'Invalidation is clear before entry',
+  'setups.view.detail.rules.template.rule.risk-management':
+    'Risk is acceptable and target is defined',
+  'setups.view.detail.rules.template.rule.avoid-when':
+    'Avoid conditions are not present',
+  'setups.view.detail.rules.template.rule.common-mistakes':
+    'Known execution mistakes are avoided',
+  'setups.view.detail.rules.field.label': 'Quy tắc',
+  'setups.view.detail.rules.field.description': 'Chi tiết',
+  'setups.view.detail.rules.field.group': 'Nhóm',
+  'setups.view.detail.rules.move-up': 'Di chuyển quy tắc lên',
+  'setups.view.detail.rules.move-down': 'Di chuyển quy tắc xuống',
+  'setups.view.detail.rules.delete': 'Xóa quy tắc',
+  'setups.view.detail.rules.save-error': 'Không thể lưu quy tắc setup.',
+  'setups.view.detail.rules.validation-label':
+    'Thêm tên quy tắc hoặc xóa quy tắc trống trước khi lưu.',
+  'setups.view.detail.rules.groups': 'Groups',
+  'setups.view.detail.rules.add-group': 'Add group',
+  'setups.view.detail.rules.new-group': 'New group',
+  'setups.view.detail.rules.validation-group':
+    'Add a group name or remove the blank group before saving.',
+  'setups.view.detail.rules.summary': '{count} quy tắc · {groups} nhóm',
+  'setups.view.detail.rules.group-summary': '{count} · {required} bắt buộc',
+  'setups.view.detail.rules.more': '+{count} nữa',
+  'setups.view.detail.rule.category.context': 'Bối cảnh',
+  'setups.view.detail.rule.category.entry': 'Vào lệnh',
+  'setups.view.detail.rule.category.exit': 'Thoát lệnh',
+  'setups.view.detail.rule.category.risk': 'Rủi ro',
+  'setups.view.detail.rule.category.management': 'Quản lý',
+  'setups.view.detail.rule.category.invalidation': 'Vô hiệu',
+  'setups.view.detail.rule.category.psychology': 'Tâm lý',
+  'setups.view.detail.performance.drawdown': 'Sụt giảm',
+  'setups.view.detail.performance.empty-submessage':
+    'Trades using this setup will appear here once you start logging them.',
+  'setups.view.detail.analysis.performance': 'Performance',
+  'setups.view.detail.analysis.execution-gap': 'Execution Gap',
+  'setups.view.detail.analysis.tabs-aria': 'Setup performance tabs',
+  'setups.view.detail.brief.linked-notes-add': 'Edit linked notes',
+  'setups.view.detail.execution-gap.title': 'Execution Gap',
+  'setups.view.detail.execution-gap.subtitle':
+    'Captured edge vs missed opportunity',
+  'setups.view.detail.execution-gap.live-pnl': 'Live PnL',
+  'setups.view.detail.execution-gap.live-r': 'R giao dịch thật',
+  'setups.view.detail.execution-gap.missed-edge': 'Missed Edge',
+  'setups.view.detail.execution-gap.live-plus-missed': 'Live + Missed',
+  'setups.view.detail.execution-gap.backtest': 'Backtest',
+  'setups.view.detail.execution-gap.gap': 'Gap',
+  'setups.view.detail.execution-gap.opportunities': 'Opportunities',
+  'setups.view.detail.execution-gap.capture-rate': 'Capture Rate',
+  'setups.view.detail.execution-gap.capture-rate-tooltip':
+    'Live P&L ÷ (Live P&L + missed-trade P&L). Shows how much available edge you captured.',
+  'setups.view.detail.execution-gap.average-r-delta': 'Avg R Delta',
+  'setups.view.detail.execution-gap.live-execution': 'Live Execution',
+  'setups.view.detail.execution-gap.backtest-benchmark': 'Backtest Benchmark',
+  'setups.view.detail.execution-gap.hidden':
+    'Execution gap is hidden in privacy mode.',
+  'setups.view.detail.execution-gap.empty':
+    'Log missed trades or backtest trades for this setup to analyze execution gaps.',
+  'setups.view.detail.brief.linked-notes': '{count}',
+  'setups.view.detail.brief.linked-notes-modal.subtitle': '{name}',
+  'setups.view.detail.brief.screenshots': '{count}',
+  'setups.view.detail.brief.no-screenshots':
+    'Chưa có ảnh chụp màn hình nào được liên kết.',
+  'setups.view.detail.brief.screenshot-alt': '{index}',
+  'setups.view.detail.brief.screenshot-open': '{index}',
+  'setups.view.detail.brief.count.rules': '{count}',
+  'setups.view.detail.brief.count.notes': '{count}',
+  'setups.view.detail.brief.count.images': '{count}',
+  'setups.view.detail.brief.count.trades': '{count}',
+  'setups.view.detail.brief.more': '{count}',
+  'setups.view.detail.attention.title': 'Needs attention',
+  'setups.view.detail.attention.count': '{count} items',
+  'setups.view.detail.attention.empty': 'No setup issues found.',
+  'setups.view.detail.attention.show-more': '+{count} more',
+  'setups.view.detail.attention.show-less': 'Show less',
+  'setups.view.detail.attention.no-playbook-title': 'Link a playbook note',
+  'setups.view.detail.attention.no-playbook-detail':
+    'Link one source note for context and examples.',
+  'setups.view.detail.attention.no-rules-title': 'Build the execution playbook',
+  'setups.view.detail.attention.no-rules-detail':
+    'Add criteria for entries, invalidation, risk, and mistakes.',
+  'setups.view.detail.attention.no-invalidation-title':
+    'Add invalidation criteria',
+  'setups.view.detail.attention.no-invalidation-detail':
+    'Define when this setup is no longer valid.',
+  'setups.view.detail.attention.no-risk-title': 'Add risk or management rules',
+  'setups.view.detail.attention.no-risk-detail':
+    'Document how this setup should be managed after entry.',
+  'setups.view.detail.attention.no-trades-title': 'No live trades yet',
+  'setups.view.detail.attention.no-trades-detail':
+    'No linked live trade history yet.',
+  'setups.view.detail.attention.no-screenshots-title':
+    'Save example screenshots',
+  'setups.view.detail.attention.no-screenshots-detail':
+    'Attach screenshots to trades for review examples.',
+  'setups.view.detail.attention.stale-title': 'Review recent relevance',
+  'setups.view.detail.attention.stale-detail':
+    'This setup has not been traded in {count} days.',
+  'setups.view.detail.attention.profit-factor-title':
+    'Performance needs review',
+  'setups.view.detail.attention.profit-factor-detail':
+    'Profit factor is below 1.0 across linked trades.',
+  'setups.view.detail.attention.expectancy-title': 'Expectancy is negative',
+  'setups.view.detail.attention.expectancy-detail':
+    'Average linked-trade outcome is below breakeven.',
+  'setups.view.card.open-named': '{name}',
+  'setups.view.card.status.active': 'Stable',
+  'setups.view.card.status.monitor': 'Monitor',
+  'setups.view.card.status.review': 'Review',
+  'setups.view.date.days-ago': '{count}',
+
   'home.widget.profit-target-widget.name': 'Mục tiêu lợi nhuận',
   'home.widget.profit-target-widget.description':
     'Theo dõi tiến độ mục tiêu lợi nhuận trên các tài khoản',
@@ -5977,5 +6547,639 @@ const vi: Lang = {
     'Không thể tạo tài khoản cục bộ.',
   'trade-sync.import.notice.restore-failed':
     'Không thể khôi phục tài khoản Trade Import.',
+  'setups.view.loading': 'Loading setups…',
+  'settings.general.copy-trading-pnl-toggled': 'Copy trading PnL is {status}',
+  'setups.view.trade.unknown-instrument': 'Unknown instrument',
+  'settings.tab.session-mode': 'Session mode',
+  'command.open-session-mode': 'Open session mode',
+  'view.session-mode': 'Session mode',
+  'session-mode.description':
+    "Prepare for today's trading day and capture execution context live.",
+  'session-mode.loading': 'Đang tải chế độ phiên',
+  'session-mode.section.preparation': 'Preparation',
+  'session-mode.section.timeline': 'Timeline',
+  'session-mode.title.preparation': 'Session preparation',
+  'session-mode.title.live': 'Live session',
+  'session-mode.title.break': 'Session break',
+  'session-mode.title.ended': 'Session ended',
+  'session-mode.title.unconfigured': 'Session mode',
+  'session-mode.prep.goals': 'Goals',
+  'session-mode.prep.checklist': 'Checklist',
+  'session-mode.prep.resources': 'Resources',
+  'session-mode.action.open-drc': "Open today's DRC",
+  'session-mode.action.open-drc-for-date': 'Open DRC for {date}',
+  'session-mode.ended.helper': 'Ghi lại giao dịch hoặc xem lại ngày giao dịch.',
+  'session-mode.ended.action.import-trades': 'Nhập giao dịch',
+  'session-mode.ended.action.add-trade-manually': 'Thêm giao dịch thủ công',
+  'session-mode.ended.action.open-drc': 'Mở DRC',
+  'session-mode.ended.stat.trades': 'Giao dịch',
+  'session-mode.ended.stat.notes': 'Ghi chú',
+  'session-mode.ended.stat.gate-checks': 'Lần kiểm tra Gate',
+  'session-mode.waiting.next-session': 'Phiên tiếp theo',
+  'session-mode.waiting.starts-at': '{session} bắt đầu lúc {time}',
+  'session-mode.waiting.preparation-opens-in': 'Chuẩn bị mở sau {remaining}',
+  'session-mode.waiting.open-drc': 'Mở DRC',
+  'session-mode.break.eyebrow': 'Nghỉ giữa phiên',
+  'session-mode.break.reset-before': 'Lấy lại tinh thần trước {session}',
+  'session-mode.break.reset': 'Lấy lại tinh thần trước phiên tiếp theo',
+  'session-mode.break.next-session-meta':
+    'Phiên tiếp theo bắt đầu lúc {time} · còn {remaining}',
+  'session-mode.break.description':
+    'Rời màn hình, uống nước và làm mới tâm trí trước phiên tiếp theo.',
+  'session-mode.break.open-drc': 'Mở DRC',
+  'session-mode.countdown.starts-in': 'Starts in',
+  'session-mode.countdown.starts-at': '{session} starts at {time}',
+  'session-mode.countdown.hours': 'hrs',
+  'session-mode.countdown.minutes': 'min',
+  'session-mode.countdown.seconds': 'sec',
+  'session-mode.phase.preparation': 'Preparation',
+  'session-mode.phase.live': 'Live',
+  'session-mode.phase.waiting': 'Waiting',
+  'session-mode.phase.break': 'Break',
+  'session-mode.phase.ended': 'Ended',
+  'session-mode.phase.unconfigured': 'Session schedule not configured',
+  'session-mode.status.preparation':
+    '{session} starts at {time}. You have {remaining} to prepare.',
+  'session-mode.status.preparation-generic':
+    'Prepare for the next live trading session.',
+  'session-mode.status.waiting':
+    '{session} starts at {time}. Preparation starts in {remaining}.',
+  'session-mode.status.waiting-generic':
+    'Your next session is scheduled, but preparation has not started yet.',
+  'session-mode.status.live': '{remaining} remaining in this session.',
+  'session-mode.status.live-generic': 'Your trading session is live.',
+  'session-mode.status.break':
+    '{session} starts at {time}. You are on break for {remaining}.',
+  'session-mode.status.break-generic': 'You are between trading sessions.',
+  'session-mode.status.ended':
+    'Your configured trading sessions are finished for now.',
+  'session-mode.status.unconfigured':
+    'Configure session windows to unlock preparation, live, break, and ended phases. The timeline remains available for today’s DRC.',
+  'session-mode.unconfigured.eyebrow': 'Setup guide',
+  'session-mode.unconfigured.title': 'Set your trading hours',
+  'session-mode.unconfigured.description':
+    'Add the times you actually trade so Session Mode can switch between preparation, live, break, and ended phases automatically.',
+  'session-mode.unconfigured.step.window.title': 'Add a session window',
+  'session-mode.unconfigured.step.window.description':
+    'Set when you usually trade.',
+  'session-mode.unconfigured.step.prep.title': 'Review preparation timing',
+  'session-mode.unconfigured.step.prep.description':
+    'Default: 30 minutes before session start.',
+  'session-mode.unconfigured.step.gate.title': 'Use the Starter Trade Gate',
+  'session-mode.unconfigured.step.gate.description':
+    'Starter IF/THEN checklist is ready.',
+  'session-mode.unconfigured.step.log.title': 'Log notes during live sessions',
+  'session-mode.unconfigured.step.log.description':
+    'Capture notes while trading.',
+  'session-mode.unconfigured.action': 'Configure Session Mode',
+  'session-mode.unconfigured.settings-note':
+    'You can change this anytime in Customisation → Session mode.',
+  'session-mode.layout.empty.title': 'Nothing enabled for this phase',
+  'session-mode.layout.empty.description':
+    'Turn modules back on to build this Session Mode phase.',
+  'session-mode.duration.minutes': '{minutes}m',
+  'session-mode.duration.hours': '{hours}h',
+  'session-mode.duration.hours-minutes': '{hours}h {minutes}m',
+  'settings.session-mode.title': 'Session mode',
+  'settings.session-mode.description':
+    'Cấu hình khung phiên, chuẩn bị, bố cục giai đoạn, quy trình Trade Gate và thẻ nhật ký phiên.',
+  'settings.session-mode.preparation-lead-time':
+    'Preparation lead time (minutes)',
+  'settings.session-mode.preparation-lead-time-desc':
+    'How early preparation mode starts before a session.',
+  'settings.session-mode.windows': 'Session windows',
+  'settings.session-mode.windows-desc':
+    'Define the local-time windows you actually trade. These power preparation, live, break, and ended phases.',
+  'settings.session-mode.add-window': 'Add session window',
+  'settings.session-mode.add-window-short': 'Add',
+  'settings.session-mode.no-windows':
+    'No session windows configured yet. The live timeline still works, but phase-aware preparation starts after adding a window.',
+  'settings.session-mode.layout.title': 'Phase layout',
+  'settings.session-mode.layout.desc':
+    'Choose which modules appear in each Session Mode phase and set their order.',
+  'settings.session-mode.layout.phase-desc':
+    'Toggle modules on or off, then move enabled modules into the order you want.',
+  'settings.session-mode.layout.phase-desc.waiting':
+    'Choose what appears while Session Mode is waiting for the next configured session.',
+  'settings.session-mode.layout.phase-desc.preparation':
+    'Choose what appears during pre-session preparation before trading starts.',
+  'settings.session-mode.layout.phase-desc.live':
+    'Choose what appears while a configured trading session is live.',
+  'settings.session-mode.layout.phase-desc.break':
+    'Choose what appears between configured trading sessions.',
+  'settings.session-mode.layout.phase-desc.ended':
+    'Choose what appears after all configured trading sessions have ended.',
+  'settings.session-mode.layout.reset-phase': 'Reset',
+  'settings.session-mode.layout.move-up': 'Move up',
+  'settings.session-mode.layout.move-down': 'Move down',
+  'settings.session-mode.layout.module.waiting-status': 'Next session card',
+  'settings.session-mode.layout.module.waiting-status-desc':
+    'Shows the next configured session and when preparation opens.',
+  'settings.session-mode.layout.module.preparation-resources': 'Resources',
+  'settings.session-mode.layout.module.preparation-resources-desc':
+    'Shows linked preparation notes and playbooks.',
+  'settings.session-mode.layout.module.preparation-goals': 'Goals',
+  'settings.session-mode.layout.module.preparation-goals-desc':
+    'Shows the DRC goals widget for pre-session focus.',
+  'settings.session-mode.layout.module.preparation-checklist': 'Checklist',
+  'settings.session-mode.layout.module.preparation-checklist-desc':
+    'Shows the DRC checklist widget for pre-session preparation.',
+  'settings.session-mode.layout.module.trade-gate': 'Trade Gate',
+  'settings.session-mode.layout.module.trade-gate-desc':
+    'Runs your configured IF/THEN gate during the live session.',
+  'settings.session-mode.layout.module.timeline': 'Session timeline',
+  'settings.session-mode.layout.module.timeline-desc':
+    'Shows current-session notes and trade timeline entries.',
+  'settings.session-mode.layout.module.break-reset': 'Break reset card',
+  'settings.session-mode.layout.module.break-reset-desc':
+    'Shows the rest, hydration, and next-session reset prompt.',
+  'settings.session-mode.layout.module.ended-actions': 'End-of-session actions',
+  'settings.session-mode.layout.module.ended-actions-desc':
+    'Shows import, manual trade, and DRC actions after sessions end.',
+  'settings.session-mode.layout.module.ended-stats': 'Session stats',
+  'settings.session-mode.layout.module.ended-stats-desc':
+    'Shows trade, note, and gate-check totals for the day.',
+  'settings.session-mode.linked-resources': 'Linked resources',
+  'settings.session-mode.linked-resources-desc':
+    'Show quick note links during preparation.',
+  'settings.session-mode.linked-resources-count': '{count} linked',
+  'settings.session-mode.linked-resources-hide': 'Hide linked',
+  'settings.session-mode.session-log-tags': 'Session log tags',
+  'settings.session-mode.session-log-tags-desc':
+    'Customize the tags available in the Session Mode composer and DRC session log.',
+  'settings.session-mode.tag-label-placeholder': 'Tag name',
+  'settings.session-mode.tag-short-label-placeholder': 'Short label',
+  'settings.session-mode.tag-label-example': 'Trade',
+  'settings.session-mode.tag-short-label-example': 'TR',
+  'settings.session-mode.tag-color': 'Tag color',
+  'settings.session-mode.tag-requires-resolution': 'Requires resolution',
+  'settings.session-mode.tag-lesson': 'Lesson tag',
+  'settings.session-mode.tag-requires-resolution-tooltip':
+    'Entries with this tag are marked as follow-up items until you resolve them in the session log. Use it for notes that need review or action after the session.',
+  'settings.session-mode.tag-lesson-tooltip':
+    'Marks this tag as a learning entry. Lesson-tagged notes can be surfaced as lessons and are highlighted as learning moments in session log workflows.',
+  'settings.session-mode.add-session-log-tag': 'Add session log tag',
+  'settings.session-mode.reset-session-log-tags': 'Reset session log tags',
+  'settings.session-mode.tag-color.blue': 'Blue',
+  'settings.session-mode.tag-color.indigo': 'Indigo',
+  'settings.session-mode.tag-color.purple': 'Purple',
+  'settings.session-mode.tag-color.green': 'Green',
+  'settings.session-mode.tag-color.pink': 'Pink',
+  'settings.session-mode.tag-color.amber': 'Amber',
+  'settings.session-mode.tag-color.red': 'Red',
+  'settings.session-mode.tag-color.orange': 'Orange',
+
+  'settings.session-mode.search-resource-placeholder':
+    'Search vault files to link…',
+  'settings.session-mode.default-session-name': 'Trading session',
+  'settings.session-mode.window-name': 'Session name',
+  'settings.session-mode.window-name-placeholder': 'e.g. NY AM',
+  'settings.session-mode.window-row-desc':
+    'Use local time. Overnight windows are supported when the end time is earlier than the start time.',
+  'settings.session-mode.start-time': 'Start time',
+  'settings.session-mode.end-time': 'End time',
+  'widget.session-log.name': 'Nhật ký phiên',
+  'widget.session-log.description':
+    'Ghi lại ghi chú thực thi có dấu thời gian và sự kiện giao dịch.',
+  'session-log.title': 'Session mode log',
+  'session-log.description':
+    'Capture what happened during the current trading session.',
+  'session-log.notice.invalid-timestamp':
+    'Enter a valid session-log timestamp.',
+  'session-log.action.auto-time': 'Auto time',
+  'session-log.action.set-time': 'Set time',
+  'session-log.placeholder.entry': 'What are you seeing, thinking, or feeling?',
+  'session-log.composer.tag-label': 'Session log tag',
+  'session-log.placeholder.entry-short': 'Add session note...',
+  'session-log.action.add-entry': 'Add timestamped entry',
+  'session-log.action.add-note': 'Add',
+  'session-log.action.hide-composer': 'Hide composer',
+  'session-log.filter.all': 'All',
+  'session-log.filter.label': 'Filter session log',
+  'session-log.filter.clear': 'Clear filter',
+  'session-log.timeline.most-recent': 'Most recent',
+  'session-log.timeline.start': 'Start of session',
+  'session-log.empty': 'No session log entries yet.',
+  'session-log.empty-filtered': 'No entries match this filter.',
+  'session-log.loading': 'Loading session log…',
+  'session-log.lessons.title': 'Lessons learned',
+  'session-log.lessons.title-singular': '1 lesson learned',
+  'session-log.lessons.title-plural': '{count} lessons learned',
+  'session-log.lessons.badge': 'LSN',
+  'session-log.session-group.outside': 'Ngoài phiên',
+  'session-log.error.no-drc': "Could not resolve today's DRC.",
+  'session-log.trade.entered': 'Entered',
+  'session-log.trade.exited': 'Exited',
+  'session-log.trade.size': 'size',
+  'session-log.status.unresolved': 'unresolved',
+  'session-log.status.unclassified': 'unclassified',
+  'session-log.action.save': 'Save',
+  'session-log.action.cancel': 'Cancel',
+  'session-log.action.resolve': 'Resolve',
+  'session-log.action.classify': 'Classify',
+  'session-log.action.edit': 'Edit',
+  'session-log.action.delete': 'Delete',
+  'session-log.action.open-trade': 'Open trade',
+  'session-log.preview':
+    'Session log preview: timestamped notes and trade events will appear here during the session mode.',
+  'session-log.alert.tag-concentration':
+    '{tag} is {percentage}% of session notes ({count}/{total}). Review for drift before continuing.',
+  'trade-gate.title': 'Trade Gate',
+  'trade-gate.workflow': 'Workflow',
+  'trade-gate.action.start': 'Start trade check',
+  'trade-gate.action.start-short': 'Start',
+  'trade-gate.action.start-another': 'Start another',
+  'trade-gate.outcome.green-light': 'Green light',
+  'trade-gate.outcome.green-light-description': 'Conditions met.',
+  'trade-gate.outcome.no-trade': 'No trade',
+  'trade-gate.outcome.no-trade-description': 'Conditions are not met.',
+  'trade-gate.outcome.wait': 'Wait',
+  'trade-gate.outcome.wait-description':
+    'Setup is not ready. Wait for the next opportunity.',
+  'settings.session-mode.trade-gate.title': 'Trade Gate workflows',
+  'settings.session-mode.trade-gate.desc':
+    'Create IF/THEN decision flows for live entry checks.',
+  'settings.session-mode.trade-gate.name': 'Workflow name',
+  'settings.session-mode.trade-gate.summary': '{count} nodes',
+  'settings.session-mode.trade-gate.untitled': 'Untitled workflow',
+  'settings.session-mode.trade-gate.start-node': 'Start question',
+  'settings.session-mode.trade-gate.add-question': 'Add question',
+  'settings.session-mode.trade-gate.add-outcome': 'Add outcome',
+  'settings.session-mode.trade-gate.question': 'Question',
+  'settings.session-mode.trade-gate.outcome': 'Outcome',
+  'settings.session-mode.trade-gate.new-question-title': 'New question',
+  'settings.session-mode.trade-gate.node-title': 'Title',
+  'settings.session-mode.trade-gate.question-title': 'Question title',
+  'settings.session-mode.trade-gate.result-title': 'Result title',
+  'settings.session-mode.trade-gate.prompt': 'Prompt',
+  'settings.session-mode.trade-gate.description': 'Description',
+  'settings.session-mode.trade-gate.options': 'Options',
+  'settings.session-mode.trade-gate.option': 'Option',
+  'settings.session-mode.trade-gate.new-option': 'New option',
+  'settings.session-mode.trade-gate.option-label': 'Option label',
+  'settings.session-mode.trade-gate.option-target': 'Leads to',
+  'settings.session-mode.trade-gate.outcome-type': 'Result behavior',
+  'settings.session-mode.trade-gate.flow-map': 'Flow map',
+  'settings.session-mode.trade-gate.flow-map-hint':
+    'Click any card or path label to edit it.',
+  'settings.session-mode.trade-gate.flow-fit': 'Fit',
+  'settings.session-mode.trade-gate.flow-click-hint':
+    'Click a node or path label to edit it.',
+  'settings.session-mode.trade-gate.edit-selected': 'Edit selected step',
+  'settings.session-mode.trade-gate.results': 'Results',
+  'settings.session-mode.trade-gate.no-paths':
+    'Add options to connect this workflow.',
+  'settings.session-mode.trade-gate.missing-target': 'Missing target',
+  'settings.session-mode.trade-gate.repeated-node': 'Links back to this node.',
+  'settings.session-mode.trade-gate.default-name': 'Basic entry gate',
+  'settings.session-mode.trade-gate.default.market-regime': 'Market regime',
+  'settings.session-mode.trade-gate.default.market-regime-prompt':
+    'Is the current market regime appropriate for your setup?',
+  'settings.session-mode.trade-gate.default.bias': 'Higher timeframe bias',
+  'settings.session-mode.trade-gate.default.bias-prompt':
+    'Is higher timeframe bias aligned with this trade idea?',
+  'settings.session-mode.trade-gate.default.risk': 'Risk parameters',
+  'settings.session-mode.trade-gate.default.risk-prompt':
+    'Is risk defined and acceptable according to your plan?',
+  'validation.setup-resolution-failed':
+    'Không thể xác định setup cho giao dịch này.',
+  'home.quick-links.setups': 'Thiết lập',
+  'setups.view.error.title': 'Không thể tải các thiết lập',
+  'setups.view.error.load-failed': 'Không thể tải dữ liệu thiết lập.',
+  'setups.view.action.retry': 'Thử lại',
+  'setups.view.action.refresh': 'Làm mới',
+  'setups.view.action.create': 'Tạo thiết lập',
+  'setups.view.action.new': 'Thiết lập mới',
+  'setups.view.action.compare-selected': 'So sánh các thiết lập đã chọn',
+  'setups.view.tabs.aria': 'Các tab chế độ xem thiết lập',
+  'setups.view.tab.overview': 'Tổng quan',
+  'setups.view.tab.compare': 'So sánh',
+  'setups.view.card.select-for-compare': 'Chọn thiết lập để so sánh',
+  'setups.view.card.open': 'Mở thiết lập',
+  'setups.view.compare.title': 'So sánh thiết lập',
+  'setups.view.compare.subtitle':
+    'So sánh hiệu suất và hành vi của các thiết lập đã chọn.',
+  'setups.view.compare.select-title': 'Chọn thiết lập để so sánh',
+  'setups.view.compare.empty': 'Chọn hai thiết lập để so sánh.',
+  'setups.view.compare.metrics-title': 'Chỉ số so sánh',
+  'setups.view.compare.metric': 'Chỉ số',
+  'setups.view.compare.edge-column': 'Lợi thế',
+  'setups.view.compare.edge-label': 'Thắng',
+  'setups.view.compare.edge-hidden': 'Đã ẩn trong Chế độ riêng tư',
+  'setups.view.compare.no-clear-edge': 'Không có lợi thế rõ ràng',
+  'setups.view.compare.expectancy-edge': 'Lợi thế kỳ vọng',
+  'setups.view.compare.confidence': 'Độ tin cậy',
+  'setups.view.compare.sample': 'Mẫu',
+  'setups.view.compare.confidence.high': 'Cao',
+  'setups.view.compare.confidence.moderate': 'Trung bình',
+  'setups.view.compare.confidence.low': 'Thấp',
+  'setups.view.compare.edge-strength.strong': 'Lợi thế mạnh',
+  'setups.view.compare.edge-strength.clear': 'Lợi thế rõ ràng',
+  'setups.view.compare.edge-strength.slight': 'Lợi thế nhẹ',
+  'setups.view.compare.edge-reasons-privacy':
+    'Chi tiết lợi thế bị ẩn khi bật Chế độ riêng tư.',
+  'setups.view.compare.reason.higher.net-pnl': 'PnL ròng cao hơn',
+  'setups.view.compare.reason.lower.net-pnl': 'PnL ròng thấp hơn',
+  'setups.view.compare.reason.similar.net-pnl': 'PnL ròng tương đương',
+  'setups.view.compare.reason.higher.win-rate': 'Tỷ lệ thắng cao hơn',
+  'setups.view.compare.reason.lower.win-rate': 'Tỷ lệ thắng thấp hơn',
+  'setups.view.compare.reason.similar.win-rate': 'Tỷ lệ thắng tương đương',
+  'setups.view.compare.reason.higher.expectancy': 'Kỳ vọng cao hơn',
+  'setups.view.compare.reason.lower.expectancy': 'Kỳ vọng thấp hơn',
+  'setups.view.compare.reason.similar.expectancy': 'Kỳ vọng tương đương',
+  'setups.view.compare.reason.higher.profit-factor': 'Profit factor cao hơn',
+  'setups.view.compare.reason.lower.profit-factor': 'Profit factor thấp hơn',
+  'setups.view.compare.reason.similar.profit-factor':
+    'Profit factor tương đương',
+  'setups.view.compare.pnl-bars': 'Xếp hạng PnL',
+  'setups.view.compare.cumulative-title': 'Hiệu suất tích lũy',
+  'setups.view.compare.cumulative-privacy':
+    'Hiệu suất tích lũy bị ẩn khi bật Chế độ riêng tư.',
+  'setups.view.compare.cumulative-empty':
+    'Không có dữ liệu giao dịch tích lũy cho các thiết lập đã chọn.',
+  'setups.view.advanced.title': 'Phân tích nâng cao',
+  'setups.view.advanced.subtitle': 'Các tổ hợp thiết lập và lợi thế playbook.',
+  'setups.view.advanced.broken-trades': 'Giao dịch vi phạm quy tắc',
+  'setups.view.advanced.no-rule-data': 'Chưa có dữ liệu quy tắc.',
+  'setups.view.advanced.rule-edge-title': 'Lợi thế quy tắc',
+  'setups.view.advanced.no-rule-edge': 'Chưa có dữ liệu lợi thế quy tắc.',
+  'setups.view.advanced.needs-attention': 'Cần chú ý',
+  'setups.view.advanced.no-insights': 'Chưa có nhận định.',
+  'setups.view.advanced.severity.info': 'Thông tin',
+  'setups.view.advanced.severity.warning': 'Cảnh báo',
+  'setups.view.advanced.severity.critical': 'Nghiêm trọng',
+  'setups.view.advanced.combinations-title': 'Tổ hợp thiết lập',
+  'setups.view.advanced.combinations-subtitle':
+    'Tìm các cặp thiết lập hoạt động tốt cùng nhau.',
+  'setups.view.advanced.top-combinations': 'Tổ hợp hàng đầu',
+  'setups.view.advanced.best-pairs': 'Cặp tốt nhất',
+  'setups.view.advanced.no-combinations': 'Chưa có tổ hợp thiết lập.',
+  'setups.view.advanced.performance-privacy':
+    'Chi tiết hiệu suất bị ẩn khi bật Chế độ riêng tư.',
+  'setups.view.advanced.insight.no-trades':
+    'Chưa có giao dịch nào được liên kết với thiết lập này.',
+  'setups.view.eyebrow': 'Thiết lập',
+  'setups.view.title': 'Thiết lập',
+  'setups.view.subtitle':
+    'Theo dõi playbook, chất lượng thực hiện và hiệu suất thiết lập.',
+  'setups.view.summary.aria': 'Tóm tắt tổng quan thiết lập',
+  'setups.view.summary.total': 'Tổng số thiết lập',
+  'setups.view.summary.active': 'Đang hoạt động',
+  'setups.view.summary.most-traded': 'Giao dịch nhiều nhất',
+  'setups.view.summary.needs-review': 'Cần xem xét',
+  'setups.view.summary.best-performer': 'Hiệu suất tốt nhất',
+  'setups.view.summary.tested': 'Đã kiểm nghiệm',
+  'setups.view.summary.ready': 'Sẵn sàng',
+  'setups.view.summary.missing-playbooks': 'Thiếu playbook',
+  'setups.view.summary.no-trade-data': 'Không có dữ liệu giao dịch',
+  'setups.view.summary.awaiting-trades': 'Đang chờ giao dịch',
+  'setups.view.summary.of-total': 'trên tổng số',
+  'setups.view.summary.require-attention': 'cần chú ý',
+  'setups.view.summary.needs-mapping': 'Cần ánh xạ',
+  'setups.view.summary.all-mapped': 'Đã ánh xạ tất cả',
+  'setups.view.summary.previous-unavailable': 'Không có dữ liệu trước đó',
+  'setups.view.ranking.title': 'Xếp hạng hiệu suất thiết lập',
+  'setups.view.ranking.subtitle':
+    'Xếp hạng thiết lập theo chỉ số hiệu suất đã chọn.',
+  'setups.view.ranking.metric-aria': 'Chỉ số hiệu suất',
+  'setups.view.ranking.privacy':
+    'Các giá trị hiệu suất bị ẩn khi bật Chế độ riêng tư.',
+  'setups.view.ranking.empty': 'Chưa có dữ liệu hiệu suất thiết lập.',
+  'setups.view.attention.title': 'Cần chú ý',
+  'setups.view.attention.empty': 'Không tìm thấy vấn đề nào với thiết lập.',
+  'setups.view.attention.incomplete-playbooks': 'Playbook chưa hoàn chỉnh',
+  'setups.view.attention.incomplete-playbooks-desc':
+    'Một số thiết lập cần playbook được viết đầy đủ.',
+  'setups.view.attention.missing-rules': 'Thiếu quy tắc',
+  'setups.view.attention.missing-rules-desc':
+    'Một số thiết lập chưa có quy tắc trong danh sách kiểm tra.',
+  'setups.view.attention.low-sample-size': 'Cỡ mẫu nhỏ',
+  'setups.view.attention.low-sample-size-desc':
+    'Cần thêm giao dịch trước khi đánh giá hiệu suất.',
+  'setups.view.attention.missing-linked-notes': 'Thiếu ghi chú liên kết',
+  'setups.view.attention.missing-linked-notes-desc':
+    'Thêm ví dụ, ảnh chụp màn hình hoặc tài liệu tham khảo để củng cố playbook.',
+  'setups.view.metric.trade-count': 'Số lượng giao dịch',
+  'setups.view.metric.trades': 'giao dịch',
+  'setups.view.metric.net-pnl': 'Tổng P&L',
+  'setups.view.metric.total-pnl': 'Tổng PnL',
+  'setups.view.metric.win-rate': 'Tỷ lệ thắng',
+  'setups.view.metric.profit-factor': 'Profit factor',
+  'setups.view.metric.last-traded': 'Giao dịch gần nhất',
+  'setups.view.metric.expected-value': 'Giá trị kỳ vọng',
+  'setups.view.controls.aria': 'Bộ lọc thiết lập',
+  'setups.view.search.placeholder': 'Tìm kiếm thiết lập…',
+  'setups.view.search.aria': 'Tìm kiếm thiết lập',
+  'setups.view.status.aria': 'Lọc theo trạng thái thiết lập',
+  'setups.view.status.all': 'Tất cả trạng thái',
+  'setups.view.status.active': 'Đang hoạt động',
+  'setups.view.status.testing': 'Đang thử nghiệm',
+  'setups.view.status.archived': 'Đã lưu trữ',
+  'setups.view.cards.aria': 'Thẻ thiết lập',
+  'setups.view.empty.no-setups':
+    'Chưa có thiết lập nào. Tạo thiết lập đầu tiên để bắt đầu theo dõi playbook.',
+  'setups.view.badge.complete': 'Hoàn chỉnh',
+  'setups.view.meta.no-model-category': 'Không có mô hình/danh mục',
+  'setups.view.detail.back': 'Quay lại',
+  'setups.view.detail.no-description': 'Chưa có mô tả.',
+  'setups.view.detail.action.edit': 'Chỉnh sửa thiết lập',
+  'setups.view.detail.action.view-trades': 'Xem trong Nhật ký giao dịch',
+  'setups.view.detail.action.archive': 'Lưu trữ thiết lập',
+  'setups.view.detail.action.compare': 'So sánh thiết lập',
+  'setups.view.detail.metrics-aria': 'Chỉ số thiết lập',
+  'setups.view.detail.playbook': 'Playbook',
+  'setups.view.detail.no-playbook': 'Chưa có playbook được viết.',
+  'setups.view.detail.rules': 'Quy tắc',
+  'setups.view.detail.no-rules':
+    'Bắt đầu với các phần playbook có hướng dẫn, rồi tùy chỉnh tiêu chí phù hợp với cách bạn giao dịch thiết lập này.',
+  'setups.view.detail.rule.required': 'Bắt buộc',
+  'setups.view.detail.rule.optional': 'Tùy chọn',
+  'setups.view.detail.linked-notes': 'Ghi chú liên kết',
+  'setups.view.detail.no-linked-notes': 'Chưa có ghi chú liên kết.',
+  'setups.view.detail.performance.aria': 'Hiệu suất thiết lập',
+  'setups.view.detail.performance.title': 'Hiệu suất',
+  'setups.view.detail.performance.cumulative-pnl': 'PnL tích lũy',
+  'setups.view.detail.performance.cumulative-r': 'R tích lũy',
+  'setups.view.detail.performance.empty': 'Chưa có giao dịch liên kết.',
+  'setups.view.detail.performance.tooltip-title': 'Hiệu suất giao dịch',
+  'setups.view.detail.scaffold.performance': 'Hiệu suất',
+  'setups.view.detail.scaffold.performance-title': 'Ảnh chụp hiệu suất',
+  'setups.view.detail.scaffold.performance-description':
+    'Xem lại PnL, bội số R, drawdown và hành vi giao dịch gần đây.',
+  'setups.view.detail.scaffold.evidence': 'Minh chứng',
+  'setups.view.detail.scaffold.evidence-title': 'Bảng minh chứng',
+  'setups.view.detail.scaffold.evidence-description':
+    'Ảnh chụp màn hình và ví dụ liên kết cho thiết lập này.',
+  'setups.view.detail.scaffold.playbook-title': 'Ghi chú playbook',
+  'setups.view.detail.scaffold.playbook-description':
+    'Ghi lại bối cảnh thực hiện, tín hiệu kích hoạt, quản lý và điều kiện vô hiệu.',
+  'setups.view.detail.scaffold.rules': 'Quy tắc',
+  'setups.view.detail.scaffold.rules-description':
+    'Các quy tắc dạng danh sách kiểm tra xác định thiết lập.',
+  'setups.view.detail.brief.health': 'Tình trạng thiết lập',
+  'setups.view.detail.brief.profile': 'Hồ sơ',
+  'setups.view.detail.brief.linked-notes-modal.title': 'Ghi chú liên kết',
+  'setups.view.detail.brief.view-all': 'Xem tất cả',
+  'setups.view.detail.brief.status.complete': 'Hoàn chỉnh',
+  'setups.view.detail.brief.status.missing': 'Thiếu',
+  'setups.view.detail.brief.health.playbook': 'Playbook',
+  'setups.view.detail.brief.health.rules': 'Quy tắc',
+  'setups.view.detail.brief.health.notes': 'Ghi chú',
+  'setups.view.detail.brief.health.screenshots': 'Ảnh chụp màn hình',
+  'setups.view.detail.brief.health.trades': 'Giao dịch',
+  'setups.view.detail.brief.less': 'Hiển thị ít hơn',
+  'setups.view.detail.brief.profile.direction': 'Hướng',
+  'setups.view.detail.brief.profile.sessions': 'Phiên',
+  'setups.view.detail.brief.profile.timeframes': 'Khung thời gian',
+  'setups.view.detail.brief.profile.tickers': 'Mã giao dịch',
+  'setups.view.detail.brief.direction.long': 'Mua',
+  'setups.view.detail.brief.direction.short': 'Bán',
+  'setups.view.detail.brief.direction.both': 'Cả hai',
+  'setups.view.completeness.incomplete-playbook': 'Playbook chưa hoàn chỉnh',
+  'setups.view.completeness.no-rules': 'Không có quy tắc',
+  'setups.view.completeness.no-linked-notes': 'Không có ghi chú liên kết',
+  'setups.view.date.never': 'Chưa từng',
+  'setups.view.metric.expectancy-r': 'Kỳ vọng (R)',
+  'setups.view.metric.last-reviewed': 'Xem xét lần cuối',
+  'setups.view.card.sparkline-aria': 'Biểu đồ xu hướng thiết lập',
+  'setups.view.date.today': 'Hôm nay',
+  'setups.view.date.yesterday': 'Hôm qua',
+  'filter.modal.image.annotation-status': 'Trạng thái chú thích',
+  'filter.modal.image.status.tagged': 'Có thẻ',
+  'filter.modal.image.status.untagged': 'Chưa gắn thẻ',
+  'filter.modal.image.status.has-notes': 'Có ghi chú',
+  'filter.modal.image.status.no-notes': 'Không có ghi chú',
+  'filter.modal.image.tags': 'Thẻ phương tiện',
+  'setups.view.detail.action.gallery': 'Mở thư viện',
+  'tradelog.mode.label': 'Chế độ nhật ký giao dịch',
+  'tradelog.mode.trades': 'Giao dịch',
+  'tradelog.mode.image-gallery': 'Thư viện',
+  'imageGallery.title': 'Thư viện',
+  'imageGallery.subtitle-count': '{count} mục phương tiện',
+  'imageGallery.no-images': 'Chưa tìm thấy phương tiện.',
+  'imageGallery.no-filter-results': 'Không có phương tiện khớp với bộ lọc này.',
+  'imageGallery.empty.error.title': 'Không thể mở thư viện',
+  'imageGallery.empty.no-images.title': 'Chưa có phương tiện',
+  'imageGallery.empty.no-images.description':
+    'Hình ảnh, GIF, video và liên kết YouTube đính kèm giao dịch hoặc ghi chú đánh giá sẽ tự động xuất hiện tại đây.',
+  'imageGallery.empty.no-results.title': 'Không có phương tiện khớp với bộ lọc',
+  'imageGallery.empty.no-results.description':
+    'Hãy xóa bộ lọc đang dùng hoặc mở rộng khoảng ngày để hiển thị thêm mục trong thư viện.',
+  'imageGallery.empty.no-source.title': 'Không có phương tiện trong nguồn này',
+  'imageGallery.empty.no-source.description':
+    'Nguồn này chưa có mục nào trong thư viện. Quay lại tất cả phương tiện hoặc chọn nguồn khác.',
+  'imageGallery.empty.action.clear-filters': 'Xóa bộ lọc',
+  'imageGallery.empty.action.show-all': 'Hiển thị tất cả phương tiện',
+  'imageGallery.error.load-failed': 'Không thể tải thư viện.',
+  'imageGallery.grid-aria': 'Thư viện',
+  'imageGallery.open-source': 'Mở ghi chú',
+  'imageGallery.image-alt': 'Phương tiện {source} từ {date}',
+  'imageGallery.privacy-blurred': 'Đã làm mờ để bảo mật',
+  'imageGallery.filter.label': 'Bộ lọc:',
+  'imageGallery.filter-aria': 'Lọc thư viện',
+  'imageGallery.filter.all': 'Tất cả',
+  'imageGallery.filter.winners': 'Thắng',
+  'imageGallery.filter.losers': 'Thua',
+  'imageGallery.filter.breakeven': 'Hòa vốn',
+  'imageGallery.filter.tagged': 'Có thẻ',
+  'imageGallery.filter.untagged': 'Không có thẻ',
+  'imageGallery.filter.reviewed': 'Đã xem xét',
+  'imageGallery.filter.unreviewed': 'Chưa xem xét',
+  'imageGallery.sort.label': 'Sắp xếp:',
+  'imageGallery.sort.newest': 'Mới nhất',
+  'imageGallery.sort.oldest': 'Cũ nhất',
+  'imageGallery.sort.best': 'P&L tốt nhất',
+  'imageGallery.sort.worst': 'P&L tệ nhất',
+  'imageGallery.size-aria': 'Kích thước phương tiện thư viện',
+  'imageGallery.size.small': 'Nhỏ',
+  'imageGallery.size.medium': 'Vừa',
+  'imageGallery.size.large': 'Lớn',
+  'imageGallery.source.label': 'Nguồn:',
+  'imageGallery.source.all': 'Tất cả phương tiện',
+  'imageGallery.source.trade': 'Giao dịch',
+  'imageGallery.source.reviews': 'Đánh giá',
+  'imageGallery.source.drc': 'Đánh giá hằng ngày',
+  'imageGallery.source.weekly': 'Đánh giá hằng tuần',
+  'imageGallery.source.monthly': 'Đánh giá hằng tháng',
+  'imageGallery.source.quarterly': 'Đánh giá hằng quý',
+  'imageGallery.source.yearly': 'Đánh giá hằng năm',
+  'imageGallery.annotation.tagged': 'Có thẻ',
+  'imageGallery.annotation.untagged': 'Không có thẻ',
+  'imageGallery.annotation.reviewed': 'Đã xem xét',
+  'imageGallery.annotation.unreviewed': 'Chưa xem xét',
+  'imageGallery.date.unknown': 'Không rõ ngày',
+  'imageGallery.annotation.tag': 'Thẻ',
+  'imageGallery.annotation.editor-eyebrow': 'Nhật ký cấu trúc thị trường',
+  'imageGallery.annotation.editor-title': 'Chú thích phương tiện',
+  'imageGallery.annotation.tags': 'Thẻ',
+  'imageGallery.annotation.tags-placeholder': 'Breakout, thiết lập A+, lỗi',
+  'imageGallery.annotation.notes': 'Ghi chú',
+  'imageGallery.annotation.notes-placeholder':
+    'Bạn trong tương lai nên học gì từ biểu đồ này?',
+  'imageGallery.annotation.error.save-failed':
+    'Không thể lưu chú thích phương tiện.',
+  'imageGallery.annotation.saving': 'Đang lưu...',
+  'tradelog.guide.switch-to-gallery.title': 'Chuyển từ giao dịch sang Thư viện',
+  'tradelog.guide.switch-to-gallery.description':
+    'Dùng bộ chọn chế độ này để chuyển giữa Nhật ký giao dịch thông thường và Thư viện. Nhấp Thư viện để tiếp tục hướng dẫn với hình ảnh, GIF, video và liên kết YouTube.',
+  'tradelog.guide.gallery-controls.title': 'Chọn phương tiện bạn muốn xem lại',
+  'tradelog.guide.gallery-controls.description':
+    'Dùng Nguồn để chọn giao dịch hoặc ghi chú đánh giá, Sắp xếp để đổi thứ tự tệp đính kèm, và các nút kích thước để chuyển giữa chế độ quét gọn và xem trước phương tiện lớn hơn.',
+  'tradelog.guide.gallery-source-sort.title':
+    'Chọn nguồn và thứ tự phương tiện',
+  'tradelog.guide.gallery-source-sort.description':
+    'Dùng Nguồn để tập trung vào tất cả phương tiện, tệp đính kèm giao dịch hoặc phương tiện từ ghi chú đánh giá. Dùng Sắp xếp để xem giao dịch mới nhất, cũ nhất, tốt nhất hoặc tệ nhất trước.',
+  'tradelog.guide.gallery-size.title': 'Điều chỉnh kích thước xem trước',
+  'tradelog.guide.gallery-size.description':
+    'Dùng các nút kích thước này để chuyển giữa chế độ quét gọn và xem trước biểu đồ lớn hơn mà không cắt mất chi tiết quan trọng.',
+  'tradelog.guide.gallery-filters.title': 'Lọc thư viện từ cùng một điểm vào',
+  'tradelog.guide.gallery-filters.description':
+    'Nút bộ lọc vẫn mở Bộ lọc nâng cao. Trong chế độ Thư viện, nó cũng bao gồm các bộ lọc riêng cho phương tiện như trạng thái chú thích và thẻ phương tiện.',
+  'tradelog.guide.gallery-filter-modal.title':
+    'Bộ lọc phương tiện nằm cùng bộ lọc giao dịch',
+  'tradelog.guide.gallery-filter-modal.description':
+    'Dùng hộp thoại này để kết hợp bộ lọc giao dịch với bộ lọc phương tiện. Ví dụ, lọc theo một setup rồi chỉ hiển thị phương tiện có ghi chú hoặc một thẻ phương tiện cụ thể.',
+  'tradelog.guide.gallery-grid.title': 'Mở phương tiện để xem kỹ hơn',
+  'tradelog.guide.gallery-grid.description':
+    'Mỗi thẻ giữ biểu đồ không bị che khuất trong khi vẫn hiển thị ngữ cảnh giao dịch và đánh giá gọn gàng. Nhấp vào bất kỳ thẻ nào hoặc nhấn Tiếp để mở mục đầu tiên đang hiển thị ở chế độ toàn màn hình.',
+  'tradelog.guide.gallery-fullscreen-actions.title':
+    'Chú thích phương tiện từ chế độ toàn màn hình',
+  'tradelog.guide.gallery-fullscreen-actions.description':
+    'Dùng Thẻ để thêm thẻ và ghi chú cấp phương tiện khi mục đủ lớn để kiểm tra. Mở ghi chú đưa bạn quay lại giao dịch hoặc ghi chú đánh giá gốc.',
+  'tradelog.guide.gallery-open-annotation.title': 'Mở bảng chú thích',
+  'tradelog.guide.gallery-open-annotation.description':
+    'Nhấp Thẻ để chú thích phương tiện cụ thể này. Thẻ và ghi chú phương tiện mô tả tệp đính kèm, không phải toàn bộ giao dịch.',
+  'tradelog.guide.gallery-annotation-panel.title':
+    'Thêm thẻ và ghi chú phương tiện',
+  'tradelog.guide.gallery-annotation-panel.description':
+    'Dùng thẻ phương tiện cho các ý tưởng riêng của biểu đồ như quét thanh khoản hoặc phá vỡ thất bại, và dùng ghi chú cho ngữ cảnh cấu trúc thị trường bạn muốn ghi nhớ.',
+  'tradelog.guide.gallery-finish.title':
+    'Bạn đã biết cả hai chế độ Nhật ký giao dịch',
+  'tradelog.guide.gallery-finish.description':
+    'Dùng Giao dịch khi bạn cần bảng và công cụ xử lý hàng loạt. Dùng Thư viện khi muốn xem lại hình ảnh, GIF, video, liên kết YouTube và chú thích biểu đồ trong toàn bộ nhật ký.',
+  'tradelog.guide.image-gallery-empty.intro.title': 'Chưa có phương tiện',
+  'tradelog.guide.image-gallery-empty.intro.description':
+    'Thêm hình ảnh, GIF, video hoặc liên kết YouTube vào giao dịch hoặc ghi chú đánh giá và chúng sẽ tự động xuất hiện tại đây. Khi có phương tiện, Journalit sẽ hiển thị hướng dẫn thư viện đầy đủ cho xem toàn màn hình, thẻ và ghi chú.',
+  'tradelog.guide.image-gallery-empty.source-sort.description':
+    'Dùng Nguồn để chọn giữa phương tiện giao dịch và phương tiện từ ghi chú đánh giá khi cả hai đã tồn tại. Sắp xếp sẽ đổi thứ tự thư viện khi có phương tiện.',
+  'tradelog.guide.image-gallery-empty.size.description':
+    'Các nút này điều chỉnh kích thước thẻ phương tiện trong tương lai, từ quét nhanh dạng nhỏ đến bản xem trước lớn hơn.',
+  'tradelog.guide.image-gallery-empty.filters.description':
+    'Bộ lọc nâng cao đã có các bộ lọc phương tiện bạn sẽ dùng sau này, gồm trạng thái chú thích và thẻ phương tiện.',
+  'tradelog.guide.image-gallery-empty.finish.title':
+    'Thêm phương tiện rồi quay lại để xem hướng dẫn đầy đủ',
+  'tradelog.guide.image-gallery-empty.finish.description':
+    'Sau khi bạn đính kèm phương tiện vào giao dịch hoặc ghi chú đánh giá, Journalit sẽ hiển thị hướng dẫn Thư viện đầy đủ với xem toàn màn hình, gắn thẻ và ghi chú.',
+  'filter.modal.section.image-gallery': 'Thư viện',
+  'setups.view.fixture.rule.context-aligned': 'Fixture rule context aligned',
+  'setups.view.fixture.rule.orb.range-defined': 'Rule orb range defined',
+  'setups.view.fixture.rule.orb.volume-expansion': 'Rule orb volume expansion',
+  'setups.view.fixture.rule.orb.market-aligned': 'Rule orb market aligned',
+  'setups.view.fixture.rule.orb.clean-invalidation':
+    'Rule orb clean invalidation',
+  'setups.view.fixture.rule.orb.target-defined': 'Rule orb target defined',
+  'setups.view.detail.brief.profile.model': 'Brief profile model',
+  'setups.view.detail.brief.profile.category': 'Brief profile category',
+  'setups.view.completeness.no-description': 'View completeness no description',
 };
 export default vi;

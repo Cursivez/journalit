@@ -9,9 +9,10 @@ import { CompactImageUploader } from '../../image/CompactImageUploader';
 import { FullscreenPortal } from '../../image/FullscreenPortal';
 import { FullscreenImageViewer } from '../../image/FullscreenImageViewer';
 import { ExcalidrawMediaEmbed } from '../../image/ExcalidrawMediaEmbed';
+import { MediaPreview } from '../../image/MediaPreview';
 import { eventBus } from '../../../services/events/EventBus';
 import { SkeletonBox } from '../../shared';
-import { imageService } from '../../../services/image/ImageService';
+
 import { t } from '../../../lang/helpers';
 import { generateUUID } from '../../../utils/uuid';
 import { forceMetadataCacheRefresh } from '../../../utils/dataRefresh';
@@ -28,6 +29,8 @@ import {
 
 const MAX_FRONTMATTER_RETRIES = 5;
 const FRONTMATTER_RETRY_DELAY_MS = 150;
+const SUPPORTED_UPLOAD_MEDIA_EXTENSION_PATTERN =
+  /\.(?:jpe?g|png|gif|bmp|webp|svg|mp4|webm|mov|m4v|ogv|ogg|3gp|mkv)$/i;
 
 
 type SupportedImageNoteType =
@@ -387,6 +390,13 @@ export const ImageWidget: React.FC<ImageWidgetProps> = React.memo(
     
     const saveImage = useCallback(
       async (file: File): Promise<string> => {
+        if (
+          !file.type.startsWith('image/') &&
+          !SUPPORTED_UPLOAD_MEDIA_EXTENSION_PATTERN.test(file.name)
+        ) {
+          throw new Error(`Unsupported media file type: ${file.name}`);
+        }
+
         const folderPath = getMediaFolderPath();
         const fileName = generateImageFilename(file);
         const fullPath = `${folderPath}/${fileName}`;
@@ -421,7 +431,7 @@ export const ImageWidget: React.FC<ImageWidgetProps> = React.memo(
         const normalizedPath = normalizePath(resolvedPath);
         const mediaFolder = normalizePath(getMediaFolderPath());
         if (!normalizedPath.startsWith(`${mediaFolder}/`)) return false;
-        if (!/\.(?:jpe?g|png|gif|bmp|webp|svg)$/i.test(normalizedPath)) {
+        if (!SUPPORTED_UPLOAD_MEDIA_EXTENSION_PATTERN.test(normalizedPath)) {
           return false;
         }
 
@@ -791,7 +801,7 @@ export const ImageWidget: React.FC<ImageWidgetProps> = React.memo(
     if (loading) {
       
       return (
-        <div className="journalit-images-widget">
+        <div className="journalit-images-widget journalit-media-carousel-surface">
           
           <div className="journalit-reviewv2-images-skeleton-main">
             <SkeletonBox
@@ -825,7 +835,7 @@ export const ImageWidget: React.FC<ImageWidgetProps> = React.memo(
     }
 
     return (
-      <div className="journalit-images-widget">
+      <div className="journalit-images-widget journalit-media-carousel-surface">
         
         {images.length > 0 && layout === 'carousel' && (
           <ImageCarousel
@@ -887,18 +897,19 @@ export const ImageWidget: React.FC<ImageWidgetProps> = React.memo(
                       />
                     </div>
                   ) : (
-                    <img
-                      src={imageService.resolveMediaPath(displayPath)}
+                    <MediaPreview
+                      app={plugin.app}
+                      path={imagePath}
+                      sourcePath={filePath}
+                      displayPath={displayPath}
                       alt={t('widget.images.stacked-alt', {
                         index: String(index + 1),
                       })}
-                      className="journalit-reviewv2-images-stacked__img"
+                      imageClassName="journalit-reviewv2-images-stacked__img"
+                      videoClassName="journalit-reviewv2-images-stacked__img"
                       onClick={() => setFullscreenIndex(index)}
                       tabIndex={0}
                       role="button"
-                      aria-label={t('widget.images.open-fullscreen', {
-                        index: String(index + 1),
-                      })}
                       onKeyDown={(e) => {
                         if (e.key === 'Enter' || e.key === ' ') {
                           e.preventDefault();

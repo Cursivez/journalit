@@ -4,7 +4,7 @@ import React, { useCallback, useState } from 'react';
 import { Notice } from 'obsidian';
 import type JournalitPlugin from '../../../main';
 import { t } from '../../../lang/helpers';
-import { UPGRADE_URL } from '../../../constants';
+import { UPGRADE_URLS } from '../../../constants';
 import { openExternalUrl } from '../../../utils/externalLinks';
 import { SubscriptionTierService } from '../../../services/backend/SubscriptionTierService';
 import { DeviceFlowSignInModal } from '../../../components/auth/DeviceFlowSignInModal';
@@ -13,12 +13,25 @@ import { BackendIntegrationTab } from './BackendIntegrationTab';
 import { TradeImportSyncPanel } from './TradeImportSyncPanel';
 import { useBackendProEntitlement } from '../../../hooks/useBackendProEntitlement';
 import { LoadingSpinner } from '../../../components/shared/LoadingSpinner';
+import { Check } from '../../../components/shared/icons/ObsidianIcon';
 
 interface TradeSyncTabProps {
   plugin: JournalitPlugin;
+  mode?: 'full' | 'sync' | 'accounts';
+  source?: TradeSyncSource;
 }
 
 type TradeSyncSource = 'metatrader' | 'tradeImport';
+
+interface TrialOfferProps {
+  onRedeem: () => void;
+  onRefresh?: () => Promise<void>;
+  onSignIn?: () => void;
+}
+
+interface FeatureUnavailableProps {
+  onRefresh: () => Promise<void>;
+}
 
 const TRADE_SYNC_SOURCE_STORAGE_KEY = 'journalit.tradeSyncSelectedSource';
 
@@ -42,12 +55,96 @@ function readStoredTradeSyncSource(plugin: JournalitPlugin): TradeSyncSource {
     : 'metatrader';
 }
 
-export const TradeSyncTab: React.FC<TradeSyncTabProps> = ({ plugin }) => {
+const TrialOffer: React.FC<TrialOfferProps> = ({
+  onRedeem,
+  onRefresh,
+  onSignIn,
+}) => (
+  <section
+    className="journalit-trade-sync-trial"
+    aria-labelledby="journalit-trade-sync-trial-title"
+  >
+    <div className="journalit-trade-sync-trial-copy">
+      <h3 id="journalit-trade-sync-trial-title">
+        {t('trade-sync.trial.title')}
+      </h3>
+      <p>{t('trade-sync.trial.description')}</p>
+    </div>
+    <ul className="journalit-trade-sync-trial-benefits">
+      <li>
+        <span aria-hidden="true">
+          <Check size={16} />
+        </span>
+        {t('trade-sync.trial.benefit.sync')}
+      </li>
+      <li>
+        <span aria-hidden="true">
+          <Check size={16} />
+        </span>
+        {t('trade-sync.trial.benefit.import')}
+      </li>
+    </ul>
+    <div className="journalit-trade-sync-trial-actions">
+      <Button variant="primary" size="large" onClick={onRedeem}>
+        {t('trade-sync.trial.cta')}
+      </Button>
+      {onRefresh && (
+        <Button variant="secondary" onClick={onRefresh}>
+          {t('premium.gate.cta.refresh')}
+        </Button>
+      )}
+    </div>
+    {onSignIn && (
+      <button
+        type="button"
+        className="journalit-trade-sync-trial-signin"
+        onClick={onSignIn}
+      >
+        {t('trade-sync.trial.existing-subscriber')}
+      </button>
+    )}
+    <p className="journalit-trade-sync-trial-eligibility">
+      {t('trade-sync.trial.eligibility')}
+    </p>
+  </section>
+);
+
+TrialOffer.displayName = 'TrialOffer';
+
+const FeatureUnavailable: React.FC<FeatureUnavailableProps> = ({
+  onRefresh,
+}) => (
+  <div className="setting-item">
+    <div className="setting-item-info">
+      <div className="setting-item-name">
+        {t('trade-sync.gate.feature-unavailable.title')}
+      </div>
+      <div className="setting-item-description">
+        {t('trade-sync.gate.feature-unavailable.description')}
+      </div>
+    </div>
+    <div className="setting-item-control">
+      <Button variant="secondary" onClick={onRefresh}>
+        {t('premium.gate.cta.refresh')}
+      </Button>
+    </div>
+  </div>
+);
+
+FeatureUnavailable.displayName = 'FeatureUnavailable';
+
+export const TradeSyncTab: React.FC<TradeSyncTabProps> = ({
+  plugin,
+  mode = 'full',
+  source,
+}) => {
   const [selectedSource, setSelectedSource] = useState<TradeSyncSource>(() =>
     readStoredTradeSyncSource(plugin)
   );
+  const activeSource = source ?? selectedSource;
   const {
     isAuthenticated,
+    isPro,
     isFeatureEnabled: canUseMetatraderSync,
     isChecking: isCheckingMetatraderEntitlement,
   } = useBackendProEntitlement(
@@ -64,12 +161,12 @@ export const TradeSyncTab: React.FC<TradeSyncTabProps> = ({ plugin }) => {
     'tradeImport'
   );
 
-  const selectedSourceEnabled = isTradeSyncSourceEnabled(selectedSource, {
+  const selectedSourceEnabled = isTradeSyncSourceEnabled(activeSource, {
     metatrader: canUseMetatraderSync,
     tradeImport: canUseTradeImportSync,
   });
   const isCheckingSelectedEntitlement =
-    selectedSource === 'metatrader'
+    activeSource === 'metatrader'
       ? isCheckingMetatraderEntitlement
       : isCheckingTradeImportEntitlement;
 
@@ -93,7 +190,7 @@ export const TradeSyncTab: React.FC<TradeSyncTabProps> = ({ plugin }) => {
   }, [isAuthenticated, plugin]);
 
   const handleUpgrade = () => {
-    openExternalUrl(UPGRADE_URL);
+    openExternalUrl(UPGRADE_URLS.metatraderSync);
   };
 
   const handleRefresh = useCallback(async () => {
@@ -113,14 +210,18 @@ export const TradeSyncTab: React.FC<TradeSyncTabProps> = ({ plugin }) => {
     window.dispatchEvent(new CustomEvent('journalit:subscription-changed'));
 
     const selectedFeatureEnabled =
-      selectedSource === 'metatrader'
+      activeSource === 'metatrader'
         ? result.entitlements?.features.metatraderSync.enabled === true
         : result.entitlements?.features.tradeImport.enabled === true;
 
     if (!selectedFeatureEnabled) {
-      new Notice(t('premium.gate.not-pro-yet'));
+      new Notice(
+        result.status === 'premium'
+          ? t('trade-sync.gate.feature-unavailable.description')
+          : t('premium.gate.not-pro-yet')
+      );
     }
-  }, [isAuthenticated, plugin, selectedSource]);
+  }, [activeSource, isAuthenticated, plugin]);
 
   const selectSource = useCallback(
     (source: TradeSyncSource) => {
@@ -136,25 +237,7 @@ export const TradeSyncTab: React.FC<TradeSyncTabProps> = ({ plugin }) => {
   if (!isAuthenticated) {
     return (
       <div className="journalit-settings-tab backend-integration-settings">
-        <h3>{t('backend.title')}</h3>
-        <p className="setting-item-description">{t('backend.description')}</p>
-
-        <div className="setting-item">
-          <div className="setting-item-info">
-            <div className="setting-item-name">
-              {t('trade-sync.gate.signin.title')}
-            </div>
-            <div className="setting-item-description">
-              {t('trade-sync.gate.signin.description')}
-            </div>
-          </div>
-
-          <div className="setting-item-control">
-            <Button variant="primary" onClick={handleSignIn}>
-              {t('trade-sync.gate.signin.cta')}
-            </Button>
-          </div>
-        </div>
+        <TrialOffer onRedeem={handleUpgrade} onSignIn={handleSignIn} />
       </div>
     );
   }
@@ -184,25 +267,11 @@ export const TradeSyncTab: React.FC<TradeSyncTabProps> = ({ plugin }) => {
   }
 
   const gate = !selectedSourceEnabled ? (
-    <div className="setting-item">
-      <div className="setting-item-info">
-        <div className="setting-item-name">
-          {t('trade-sync.gate.pro.title')}
-        </div>
-        <div className="setting-item-description">
-          {t('trade-sync.gate.pro.description')}
-        </div>
-      </div>
-
-      <div className="setting-item-control">
-        <Button variant="primary" onClick={handleUpgrade}>
-          {t('trade-sync.gate.pro.cta')}
-        </Button>
-        <Button variant="secondary" onClick={handleRefresh}>
-          {t('premium.gate.cta.refresh')}
-        </Button>
-      </div>
-    </div>
+    isPro ? (
+      <FeatureUnavailable onRefresh={handleRefresh} />
+    ) : (
+      <TrialOffer onRedeem={handleUpgrade} onRefresh={handleRefresh} />
+    )
   ) : null;
 
   if (!canUseMetatraderSync && !canUseTradeImportSync) {
@@ -218,43 +287,45 @@ export const TradeSyncTab: React.FC<TradeSyncTabProps> = ({ plugin }) => {
 
   return (
     <div className="journalit-settings-tab backend-integration-settings">
-      <div className="journalit-trade-sync-source-switcher" role="tablist">
-        <button
-          type="button"
-          role="tab"
-          aria-selected={selectedSource === 'metatrader'}
-          className={
-            selectedSource === 'metatrader'
-              ? 'journalit-trade-sync-source is-active'
-              : 'journalit-trade-sync-source'
-          }
-          onClick={() => selectSource('metatrader')}
-        >
-          {t('trade-sync.source.metatrader')}
-        </button>
-        <button
-          type="button"
-          role="tab"
-          aria-selected={selectedSource === 'tradeImport'}
-          className={
-            selectedSource === 'tradeImport'
-              ? 'journalit-trade-sync-source is-active'
-              : 'journalit-trade-sync-source'
-          }
-          onClick={() => selectSource('tradeImport')}
-        >
-          {t('trade-sync.source.trade-import')}
-        </button>
-      </div>
+      {!source && (
+        <div className="journalit-trade-sync-source-switcher" role="tablist">
+          <button
+            type="button"
+            role="tab"
+            aria-selected={activeSource === 'metatrader'}
+            className={
+              activeSource === 'metatrader'
+                ? 'journalit-trade-sync-source is-active'
+                : 'journalit-trade-sync-source'
+            }
+            onClick={() => selectSource('metatrader')}
+          >
+            {t('trade-sync.source.metatrader')}
+          </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={activeSource === 'tradeImport'}
+            className={
+              activeSource === 'tradeImport'
+                ? 'journalit-trade-sync-source is-active'
+                : 'journalit-trade-sync-source'
+            }
+            onClick={() => selectSource('tradeImport')}
+          >
+            {t('trade-sync.source.trade-import')}
+          </button>
+        </div>
+      )}
       <p className="journalit-trade-sync-source-description">
-        {selectedSource === 'metatrader'
+        {activeSource === 'metatrader'
           ? t('trade-sync.source.metatrader.description')
           : t('trade-sync.source.trade-import.description')}
       </p>
 
       {gate ??
-        (selectedSource === 'metatrader' ? (
-          <BackendIntegrationTab plugin={plugin} embedded />
+        (activeSource === 'metatrader' ? (
+          <BackendIntegrationTab plugin={plugin} embedded contentMode={mode} />
         ) : (
           <TradeImportSyncPanel plugin={plugin} />
         ))}

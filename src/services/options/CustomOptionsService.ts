@@ -6,6 +6,7 @@ import { forceMetadataCacheRefresh } from '../../utils/dataRefresh';
 import {
   normalizedEquals,
   deduplicateOptions,
+  normalizeOptionKey,
 } from '../../utils/stringNormalization';
 import { TAG_BUCKETS, formatTagForYAML } from '../../utils/tagSchema';
 import {
@@ -14,6 +15,7 @@ import {
 } from '../../utils/tradeIdentity';
 import { inferStoredTradeType } from '../../utils/tradeTypeRouting';
 import { eventBus, OptionsChangedPayload } from '../events';
+import { LabelColor, normalizeLabelColor } from '../../types/labelColor';
 
 interface PluginWithSettings {
   app: App;
@@ -41,7 +43,7 @@ function normalizeFrontmatterTagValues(value: unknown): string[] {
   );
 }
 
-function isTagOptionUpdateEligibleNote(
+function isTradeOptionUpdateEligibleNote(
   frontmatter: Record<string, unknown>,
   filePath: string
 ): boolean {
@@ -156,6 +158,29 @@ function normalizeStringOptions(value: unknown): string[] {
   );
 }
 
+function normalizeTagColors(
+  value: unknown,
+  tagOptions: string[]
+): Record<string, LabelColor> {
+  const record = asRecord(value);
+  if (!record) return {};
+
+  const colors: Record<string, LabelColor> = {};
+  const tagsByKey = new Map(
+    tagOptions.map((tag) => [normalizeOptionKey(tag), tag] as const)
+  );
+  for (const [storedKey, storedColor] of Object.entries(record)) {
+    const tag = tagsByKey.get(normalizeOptionKey(storedKey));
+    if (!tag) continue;
+
+    const color = normalizeLabelColor(storedColor);
+    if (color) {
+      colors[tag] = color;
+    }
+  }
+  return colors;
+}
+
 function normalizeInstrumentOptions(value: unknown): InstrumentData[] {
   if (!Array.isArray(value)) {
     return [];
@@ -257,6 +282,7 @@ export interface CustomOptionsData {
   [OptionType.MISTAKE]: string[];
   [OptionType.TAG]: string[];
   [OptionType.EVENT]: EventOptionData[];
+  tagColors: Record<string, LabelColor>;
 }
 
 function cloneInstrumentOption(option: InstrumentData): InstrumentData {
@@ -282,6 +308,7 @@ export const DEFAULT_OPTIONS_DATA: CustomOptionsData = {
   [OptionType.MISTAKE]: [],
   [OptionType.TAG]: [],
   [OptionType.EVENT]: [], 
+  tagColors: {},
 };
 
 
@@ -328,6 +355,7 @@ const INITIAL_DEFAULT_OPTIONS: CustomOptionsData = {
     { name: 'Fed Speech', color: 'gray' },
     { name: 'Market Holiday', color: 'gray' },
   ],
+  tagColors: {},
 };
 
 
@@ -461,7 +489,10 @@ export class CustomOptionsService {
   }
 
   private plugin: PluginWithSettings;
-  private options: CustomOptionsData = { ...DEFAULT_OPTIONS_DATA };
+  private options: CustomOptionsData = {
+    ...DEFAULT_OPTIONS_DATA,
+    tagColors: {},
+  };
   private namespace: string = '';
 
   
@@ -493,6 +524,13 @@ export class CustomOptionsService {
     return this.namespace ? `customOptions_${this.namespace}` : 'customOptions';
   }
 
+  private getPersistedOptions(): CustomOptionsData {
+    return {
+      ...this.options,
+      tagColors: { ...this.options.tagColors },
+    };
+  }
+
   private applyLoadedOptions(rawOptions: unknown): void {
     const loadedOptions = asRecord(rawOptions);
     if (!loadedOptions) {
@@ -519,6 +557,10 @@ export class CustomOptionsService {
     );
     this.options[OptionType.TAG] = normalizeStringOptions(
       loadedOptions[OptionType.TAG]
+    );
+    this.options.tagColors = normalizeTagColors(
+      loadedOptions.tagColors,
+      this.options[OptionType.TAG]
     );
     this.options[OptionType.EVENT] = this.normalizeEventOptions(
       loadedOptions[OptionType.EVENT]
@@ -582,7 +624,7 @@ export class CustomOptionsService {
 
             
             if (settingsRecord && pluginInstance.saveSettings) {
-              settingsRecord[optionsKey] = { ...this.options };
+              settingsRecord[optionsKey] = this.getPersistedOptions();
               await pluginInstance.saveSettings();
             }
           } else if (!this.namespace && savedData && savedData.customOptions) {
@@ -597,17 +639,17 @@ export class CustomOptionsService {
 
             
             if (settingsRecord && pluginInstance.saveSettings) {
-              settingsRecord[optionsKey] = { ...this.options };
+              settingsRecord[optionsKey] = this.getPersistedOptions();
               await pluginInstance.saveSettings();
             }
           } else {
-            this.options = { ...DEFAULT_OPTIONS_DATA };
+            this.options = { ...DEFAULT_OPTIONS_DATA, tagColors: {} };
             
             void this.initializeDefaultOptionsIfNeeded();
 
             
             if (settingsRecord && pluginInstance.saveSettings) {
-              settingsRecord[optionsKey] = { ...this.options };
+              settingsRecord[optionsKey] = this.getPersistedOptions();
               await pluginInstance.saveSettings();
             }
           }
@@ -616,7 +658,7 @@ export class CustomOptionsService {
     } catch (error) {
       console.error('Failed to load custom options:', error);
       
-      this.options = { ...DEFAULT_OPTIONS_DATA };
+      this.options = { ...DEFAULT_OPTIONS_DATA, tagColors: {} };
       
     }
   }
@@ -672,7 +714,7 @@ export class CustomOptionsService {
 
       if (settingsRecord && pluginInstance.saveSettings) {
         
-        settingsRecord[optionsKey] = { ...this.options };
+        settingsRecord[optionsKey] = this.getPersistedOptions();
 
         
         await pluginInstance.saveSettings();
@@ -688,7 +730,7 @@ export class CustomOptionsService {
         
         const updatedData = {
           ...existingData,
-          [optionsKey]: this.options,
+          [optionsKey]: this.getPersistedOptions(),
         };
 
         
@@ -722,6 +764,17 @@ export class CustomOptionsService {
 
     
     return [...this.options[type]];
+  }
+
+  public getUserDefinedSetupOptions(): string[] {
+    const shippedDefaults = new Set(
+      INITIAL_DEFAULT_OPTIONS[OptionType.SETUP].map((option) =>
+        option.toLowerCase()
+      )
+    );
+    return this.options[OptionType.SETUP].filter(
+      (option) => !shippedDefaults.has(option.toLowerCase())
+    );
   }
 
   
@@ -1054,7 +1107,43 @@ export class CustomOptionsService {
   public getAllOptions(): CustomOptionsData {
     return {
       ...this.options,
+      tagColors: { ...this.options.tagColors },
     };
+  }
+
+  public getTagColor(tag: string): LabelColor | undefined {
+    const storedTag = this.options[OptionType.TAG].find((option) =>
+      normalizedEquals(option, tag)
+    );
+    return storedTag ? this.options.tagColors[storedTag] : undefined;
+  }
+
+  public getTagColors(): Record<string, LabelColor> {
+    return { ...this.options.tagColors };
+  }
+
+  public async setTagColor(
+    tag: string,
+    color: LabelColor | undefined
+  ): Promise<boolean> {
+    const storedTag = this.options[OptionType.TAG].find((option) =>
+      normalizedEquals(option, tag)
+    );
+    if (!storedTag) return false;
+
+    const cleanColor = normalizeLabelColor(color);
+    if (!cleanColor) {
+      delete this.options.tagColors[storedTag];
+    } else {
+      this.options.tagColors[storedTag] = cleanColor;
+    }
+
+    await this.saveOptions();
+    this.notifyOptionsChanged({
+      optionType: OptionType.TAG,
+      action: 'updated',
+    });
+    return true;
   }
 
   
@@ -1352,6 +1441,13 @@ export class CustomOptionsService {
     }
 
     if (removed) {
+      if (type === OptionType.TAG) {
+        const colorKey = Object.keys(this.options.tagColors).find((key) =>
+          normalizedEquals(key, value)
+        );
+        if (colorKey) delete this.options.tagColors[colorKey];
+      }
+
       if (type === OptionType.ACCOUNT_TYPE) {
         this.removeAccountTypeFromDashboardOrder(value);
       }
@@ -1589,6 +1685,17 @@ export class CustomOptionsService {
         
         this.options[type][index] = cleanNewValue;
 
+        if (type === OptionType.TAG) {
+          const colorKey = Object.keys(this.options.tagColors).find((key) =>
+            normalizedEquals(key, oldValue)
+          );
+          if (colorKey) {
+            const color = this.options.tagColors[colorKey];
+            delete this.options.tagColors[colorKey];
+            this.options.tagColors[cleanNewValue] = color;
+          }
+        }
+
         if (type === OptionType.ACCOUNT_TYPE) {
           this.replaceAccountTypeInDashboardOrder(oldValue, cleanNewValue);
         }
@@ -1632,11 +1739,31 @@ export class CustomOptionsService {
     return updatedNotes;
   }
 
+  public async removeOptionValueFromNotes(
+    type: OptionType,
+    value: string
+  ): Promise<number> {
+    if (type !== OptionType.SETUP) {
+      throw new Error(
+        'Removing note option values is only supported for setups'
+      );
+    }
+    const updatedNotes = await this.updateNotesWithOption(
+      type,
+      value,
+      null,
+      true
+    );
+    this.notifyOptionsChanged();
+    return updatedNotes;
+  }
+
   
   private async updateNotesWithOption(
     type: OptionType,
     oldValue: string,
-    newValue: string
+    newValue: string | null,
+    failOnError: boolean = false
   ): Promise<number> {
     try {
       
@@ -1650,11 +1777,13 @@ export class CustomOptionsService {
           : '!Journalit';
       const isJournalPath = (filePath: string): boolean => {
         const normalizedPath = filePath.replace(/\\/g, '/');
-        const normalizedJournalFolder = journalFolderPath.replace(/\\/g, '/');
+        const normalizedJournalFolder = journalFolderPath
+          .replace(/\\/g, '/')
+          .replace(/^\/+|\/+$/g, '');
+        if (normalizedPath.includes('-backup-')) return false;
         return (
           normalizedPath === normalizedJournalFolder ||
-          normalizedPath.startsWith(`${normalizedJournalFolder}/`) ||
-          normalizedPath.includes(`/${normalizedJournalFolder}/`)
+          normalizedPath.startsWith(`${normalizedJournalFolder}/`)
         );
       };
 
@@ -1663,7 +1792,7 @@ export class CustomOptionsService {
       const propertyMap: Record<string, string[]> = {
         [OptionType.INSTRUMENT]: ['instrument'],
         [OptionType.ACCOUNT]: ['account'],
-        [OptionType.SETUP]: ['setup', 'setupIds'],
+        [OptionType.SETUP]: ['setup'],
         [OptionType.MISTAKE]: ['mistake'],
         [OptionType.TAG]: ['tags', 'customTags'],
         [OptionType.EVENT]: ['keyEvents'],
@@ -1682,7 +1811,10 @@ export class CustomOptionsService {
 
       
       for (const file of files) {
-        if (type === OptionType.TAG && !isJournalPath(file.path)) {
+        if (
+          (type === OptionType.TAG || type === OptionType.SETUP) &&
+          !isJournalPath(file.path)
+        ) {
           continue;
         }
 
@@ -1709,15 +1841,19 @@ export class CustomOptionsService {
               }
 
               if (
-                type === OptionType.TAG &&
-                !isTagOptionUpdateEligibleNote(frontmatter, file.path)
+                (type === OptionType.TAG || type === OptionType.SETUP) &&
+                !isTradeOptionUpdateEligibleNote(frontmatter, file.path)
               ) {
                 return;
               }
 
               let modified = false;
+              const updatePropertyNames =
+                type === OptionType.SETUP && frontmatter.setup !== undefined
+                  ? ['setup']
+                  : propertyNames;
 
-              for (const propName of propertyNames) {
+              for (const propName of updatePropertyNames) {
                 if (propName === 'keyEvents' && type === OptionType.EVENT) {
                   const keyEvents = frontmatter[propName];
 
@@ -1752,15 +1888,15 @@ export class CustomOptionsService {
                 if (Array.isArray(value)) {
                   let changed = false;
                   const valueEntries = value as unknown[];
-                  const updatedValues = valueEntries.map((entry) => {
+                  const updatedValues = valueEntries.flatMap((entry) => {
                     if (
                       typeof entry === 'string' &&
                       this.optionValueMatches(entry, oldValue)
                     ) {
                       changed = true;
-                      return newValue;
+                      return newValue === null ? [] : [newValue];
                     }
-                    return entry;
+                    return [entry];
                   });
 
                   if (changed) {
@@ -1769,7 +1905,10 @@ export class CustomOptionsService {
                   }
                 } else if (typeof value === 'string') {
                   if (this.optionValueMatches(value, oldValue)) {
-                    frontmatter[propName] = newValue;
+                    frontmatter[propName] =
+                      newValue === null && type === OptionType.SETUP
+                        ? []
+                        : newValue;
                     modified = true;
                   }
                 }
@@ -1790,6 +1929,7 @@ export class CustomOptionsService {
 
               if (
                 type === OptionType.ACCOUNT &&
+                newValue !== null &&
                 Array.isArray(frontmatter.tags)
               ) {
                 const oldTag = `${TAG_BUCKETS.ACCOUNT}/${formatTagForYAML(
@@ -1843,12 +1983,17 @@ export class CustomOptionsService {
             updatedFilePaths.push(file.path);
 
             
-            if (type === OptionType.INSTRUMENT && noteModified) {
+            if (
+              type === OptionType.INSTRUMENT &&
+              noteModified &&
+              newValue !== null
+            ) {
               await this.updateFileNameForInstrument(file, oldValue, newValue);
             }
           }
         } catch (error) {
           console.error(`Error processing file ${file.path}:`, error);
+          if (failOnError) throw error;
           
         }
       }
@@ -1863,6 +2008,7 @@ export class CustomOptionsService {
       return updatedCount;
     } catch (error) {
       console.error('Error updating notes with new option value:', error);
+      if (failOnError) throw error;
       return 0;
     }
   }
@@ -2006,6 +2152,9 @@ export class CustomOptionsService {
     }
 
     this.options[type] = [];
+    if (type === OptionType.TAG) {
+      this.options.tagColors = {};
+    }
 
     
     await this.saveOptions();
@@ -2030,7 +2179,9 @@ export class CustomOptionsService {
           ? this.getInitialEventOptions()
           : this.getInitialStringOptionsForType(type);
     const didChange =
-      JSON.stringify(currentOptions) !== JSON.stringify(defaultOptions);
+      JSON.stringify(currentOptions) !== JSON.stringify(defaultOptions) ||
+      (type === OptionType.TAG &&
+        Object.keys(this.options.tagColors).length > 0);
 
     if (!didChange) {
       return false;
@@ -2050,6 +2201,9 @@ export class CustomOptionsService {
       case OptionType.MISTAKE:
       case OptionType.TAG:
         this.options[type] = this.getInitialStringOptionsForType(type);
+        if (type === OptionType.TAG) {
+          this.options.tagColors = {};
+        }
         break;
     }
 
@@ -2081,6 +2235,7 @@ export class CustomOptionsService {
       ),
       [OptionType.TAG]: this.getInitialStringOptionsForType(OptionType.TAG),
       [OptionType.EVENT]: this.getInitialEventOptions(),
+      tagColors: {},
     };
     await this.saveOptions();
 

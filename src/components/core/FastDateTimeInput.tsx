@@ -87,6 +87,12 @@ interface FastDateTimeInputProps {
   minDate?: Date;
   defaultDateWhenEmpty?: Date;
   onBlankTimeDateChange?: (date: Date | undefined) => void;
+  hidePickerButton?: boolean;
+  openPickerSignal?: number;
+  pickerPositionElement?: HTMLElement | null;
+  controllerOnly?: boolean;
+  onPickerClose?: () => void;
+  closePickerOnQuickAction?: boolean;
 }
 
 export const FastDateTimeInput: React.FC<FastDateTimeInputProps> = React.memo(
@@ -103,6 +109,12 @@ export const FastDateTimeInput: React.FC<FastDateTimeInputProps> = React.memo(
     minDate,
     defaultDateWhenEmpty,
     onBlankTimeDateChange,
+    hidePickerButton = false,
+    openPickerSignal = 0,
+    pickerPositionElement = null,
+    controllerOnly = false,
+    onPickerClose,
+    closePickerOnQuickAction = true,
   }) => {
     
     const userDateFormat = getUserDateFormat();
@@ -165,8 +177,10 @@ export const FastDateTimeInput: React.FC<FastDateTimeInputProps> = React.memo(
     const hourRef = useRef<HTMLInputElement>(null);
     const minuteRef = useRef<HTMLInputElement>(null);
     const calendarButtonRef = useRef<HTMLButtonElement>(null);
+    const containerRef = useRef<HTMLDivElement>(null);
     const flatpickrRef = useRef<FlatpickrInstance | null>(null);
     const tempInputRef = useRef<HTMLInputElement | null>(null);
+    const lastOpenPickerSignalRef = useRef(0);
 
     
     const hourValueRef = useRef(hour);
@@ -386,334 +400,375 @@ export const FastDateTimeInput: React.FC<FastDateTimeInputProps> = React.memo(
     }, [updateValue]);
 
     
+    const openPicker = useCallback(() => {
+      if (disabled) return;
+
+      if (flatpickrRef.current) {
+        flatpickrRef.current.destroy();
+        flatpickrRef.current = null;
+      }
+
+      let wasHandledByButton = false; 
+      const tempInput = window.activeDocument.createElement('input');
+      tempInput.className = 'journalit-flatpickr-temp-input';
+      window.activeDocument.body.appendChild(tempInput);
+      tempInputRef.current = tempInput; 
+
+      
+      const cleanup = () => {
+        if (tempInput.parentNode) {
+          tempInput.remove();
+        }
+        tempInputRef.current = null;
+      };
+
+      flatpickrRef.current = flatpickr(tempInput, {
+        defaultDate: normalizedValue, 
+        enableTime: includeTime || timeOnly,
+        noCalendar: timeOnly,
+        time_24hr: use24HourTime,
+        dateFormat: timeOnly
+          ? use24HourTime
+            ? 'H:i'
+            : 'h:i K'
+          : includeTime
+            ? use24HourTime
+              ? 'Y-m-d H:i'
+              : 'Y-m-d h:i K'
+            : 'Y-m-d',
+        minDate: minDate,
+        disableMobile: true,
+        appendTo: window.activeDocument.body,
+        positionElement:
+          pickerPositionElement ??
+          calendarButtonRef.current ??
+          containerRef.current ??
+          undefined,
+        monthSelectorType: 'static',
+
+        locale: (() => {
+          const lang = getCurrentLanguage();
+          const weekStartDay = getWeekStartDaySetting();
+          const firstDayOfWeek = getWeekStartDayIndex(weekStartDay);
+
+          
+          const langLocale = flatpickrLocales[lang];
+          if (langLocale) {
+            return { ...langLocale, firstDayOfWeek };
+          }
+
+          return { firstDayOfWeek };
+        })(),
+
+        onChange: (selectedDates: Date[]) => {
+          
+          if (wasHandledByButton) {
+            wasHandledByButton = false;
+            return;
+          }
+
+          if (selectedDates.length > 0 && onChange) {
+            if (timeOnly) {
+              
+              const date = selectedDates[0];
+              const timeString = `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
+              onChange(timeString);
+            } else {
+              onChange(selectedDates[0]);
+            }
+          }
+        },
+
+        onClose: (
+          _selectedDates: Date[],
+          _dateStr: string,
+          instance: FlatpickrInstance & {
+            _dayClickHandler?: (e: Event) => void;
+            _reattachHandler?: () => void;
+            _clearBtn?: HTMLButtonElement;
+            _todayBtn?: HTMLButtonElement;
+            _clearBtnHandler?: () => void;
+            _todayBtnHandler?: () => void;
+          }
+        ) => {
+          
+          if (instance._dayClickHandler) {
+            instance.calendarContainer
+              ?.querySelectorAll('.flatpickr-day')
+              .forEach((day: Element) => {
+                day.removeEventListener('click', instance._dayClickHandler!);
+              });
+          }
+          if (instance._reattachHandler) {
+            
+            instance.calendarContainer
+              ?.querySelector('.flatpickr-prev-month')
+              ?.removeEventListener('click', instance._reattachHandler);
+            instance.calendarContainer
+              ?.querySelector('.flatpickr-next-month')
+              ?.removeEventListener('click', instance._reattachHandler);
+            
+            instance.calendarContainer
+              ?.querySelector('.numInputWrapper .arrowUp')
+              ?.removeEventListener('click', instance._reattachHandler);
+            instance.calendarContainer
+              ?.querySelector('.numInputWrapper .arrowDown')
+              ?.removeEventListener('click', instance._reattachHandler);
+            instance.calendarContainer
+              ?.querySelector('.cur-year')
+              ?.removeEventListener('input', instance._reattachHandler);
+          }
+          if (instance._clearBtn && instance._clearBtnHandler) {
+            instance._clearBtn.removeEventListener(
+              'click',
+              instance._clearBtnHandler
+            );
+          }
+          if (instance._todayBtn && instance._todayBtnHandler) {
+            instance._todayBtn.removeEventListener(
+              'click',
+              instance._todayBtnHandler
+            );
+          }
+          instance.destroy();
+          flatpickrRef.current = null;
+          cleanup();
+          onPickerClose?.();
+        },
+
+        onReady: (
+          _selectedDates: Date[],
+          _dateStr: string,
+          instance: FlatpickrInstance & {
+            _dayClickHandler?: (e: Event) => void;
+            _reattachHandler?: () => void;
+            _clearBtn?: HTMLButtonElement;
+            _todayBtn?: HTMLButtonElement;
+            _clearBtnHandler?: () => void;
+            _todayBtnHandler?: () => void;
+          }
+        ) => {
+          
+          
+          const handleDayClick = (e: Event) => {
+            const dayEl = e.currentTarget;
+            const dayDate = getFlatpickrDayDate(dayEl);
+            const ownerDocument: unknown =
+              typeof dayEl === 'object' && dayEl !== null
+                ? Reflect.get(dayEl, 'ownerDocument')
+                : undefined;
+            const defaultView: unknown =
+              typeof ownerDocument === 'object' && ownerDocument !== null
+                ? Reflect.get(ownerDocument, 'defaultView')
+                : undefined;
+            const HTMLElementCtor: unknown =
+              typeof defaultView === 'object' && defaultView !== null
+                ? Reflect.get(defaultView, 'HTMLElement')
+                : undefined;
+            const className: unknown =
+              typeof dayEl === 'object' && dayEl !== null
+                ? Reflect.get(dayEl, 'className')
+                : undefined;
+            const isDisabled =
+              typeof className === 'string' &&
+              className.split(/\s+/).includes('flatpickr-disabled');
+            if (
+              typeof HTMLElementCtor === 'function' &&
+              dayEl instanceof HTMLElementCtor &&
+              dayDate &&
+              onChange &&
+              !isDisabled
+            ) {
+              wasHandledByButton = true; 
+              const selectedDate = new Date(dayDate);
+
+              
+              
+              if (includeTime && !timeOnly) {
+                if (
+                  onBlankTimeDateChange &&
+                  (!hourValueRef.current || !minuteValueRef.current)
+                ) {
+                  onChange(undefined);
+                  onBlankTimeDateChange(selectedDate);
+                  instance.close();
+                  return;
+                }
+
+                const currentHour = parseInt(hourValueRef.current, 10) || 0;
+                const currentMinute = parseInt(minuteValueRef.current, 10) || 0;
+                let hours = currentHour;
+
+                
+                if (!use24HourTime) {
+                  if (ampmValueRef.current === 'PM' && hours !== 12)
+                    hours += 12;
+                  if (ampmValueRef.current === 'AM' && hours === 12) hours = 0;
+                }
+
+                selectedDate.setHours(hours, currentMinute, 0, 0);
+              }
+
+              if (timeOnly) {
+                const timeString = `${String(selectedDate.getHours()).padStart(2, '0')}:${String(selectedDate.getMinutes()).padStart(2, '0')}`;
+                onChange(timeString);
+              } else {
+                onChange(selectedDate);
+              }
+              instance.close();
+            }
+          };
+
+          
+          instance.calendarContainer
+            .querySelectorAll('.flatpickr-day')
+            .forEach((day: Element) => {
+              day.addEventListener('click', handleDayClick);
+            });
+
+          
+          const reattachHandlers = () => {
+            window.requestAnimationFrame(() => {
+              instance.calendarContainer
+                .querySelectorAll('.flatpickr-day')
+                .forEach((day: Element) => {
+                  day.removeEventListener('click', handleDayClick);
+                  day.addEventListener('click', handleDayClick);
+                });
+            });
+          };
+
+          
+          instance.calendarContainer
+            .querySelector('.flatpickr-prev-month')
+            ?.addEventListener('click', reattachHandlers);
+          instance.calendarContainer
+            .querySelector('.flatpickr-next-month')
+            ?.addEventListener('click', reattachHandlers);
+
+          
+          
+          instance.calendarContainer
+            .querySelector('.numInputWrapper .arrowUp')
+            ?.addEventListener('click', reattachHandlers);
+          instance.calendarContainer
+            .querySelector('.numInputWrapper .arrowDown')
+            ?.addEventListener('click', reattachHandlers);
+          
+          instance.calendarContainer
+            .querySelector('.cur-year')
+            ?.addEventListener('input', reattachHandlers);
+
+          
+          instance._dayClickHandler = handleDayClick;
+          instance._reattachHandler = reattachHandlers;
+
+          
+          const clearBtnHandler = () => {
+            wasHandledByButton = true;
+            instance.clear(false);
+            if (onChange) onChange(undefined);
+            if (closePickerOnQuickAction) instance.close();
+          };
+
+          const todayBtnHandler = () => {
+            wasHandledByButton = true;
+            const now = new Date();
+            if (onChange) {
+              if (timeOnly) {
+                
+                const timeString = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+                onChange(timeString);
+              } else {
+                onChange(now);
+              }
+            }
+            instance.setDate(now, false);
+            if (closePickerOnQuickAction) instance.close();
+          };
+
+          const clearBtn = window.activeDocument.createElement('button');
+          clearBtn.type = 'button';
+          clearBtn.textContent = t('datepicker.button.clear');
+          clearBtn.className = 'flatpickr-button';
+          clearBtn.addEventListener('click', clearBtnHandler);
+
+          const todayBtn = window.activeDocument.createElement('button');
+          todayBtn.type = 'button';
+          todayBtn.textContent = timeOnly
+            ? t('datepicker.button.now')
+            : t('datepicker.button.today');
+          todayBtn.className = 'flatpickr-button flatpickr-button-primary';
+          todayBtn.addEventListener('click', todayBtnHandler);
+
+          
+          instance._clearBtn = clearBtn;
+          instance._todayBtn = todayBtn;
+          instance._clearBtnHandler = clearBtnHandler;
+          instance._todayBtnHandler = todayBtnHandler;
+
+          
+          const timeContainer =
+            instance.calendarContainer.querySelector('.flatpickr-time');
+          if (timeContainer instanceof HTMLElement) {
+            
+            const timeContent = window.activeDocument.createElement('div');
+            timeContent.className = 'journalit-flatpickr-time-content';
+
+            
+            while (timeContainer.firstChild) {
+              timeContent.appendChild(timeContainer.firstChild);
+            }
+
+            
+            timeContainer.classList.add('journalit-flatpickr-time-container');
+            timeContainer.appendChild(clearBtn);
+            timeContainer.appendChild(timeContent);
+            timeContainer.appendChild(todayBtn);
+          } else {
+            
+            const buttonContainer = window.activeDocument.createElement('div');
+            buttonContainer.className = 'journalit-flatpickr-button-container';
+            buttonContainer.appendChild(clearBtn);
+            buttonContainer.appendChild(todayBtn);
+            instance.calendarContainer.appendChild(buttonContainer);
+          }
+        },
+      });
+
+      const fp = flatpickrRef.current;
+      if (fp?.calendarContainer) {
+        fp.calendarContainer.classList.add('journalit-flatpickr-calendar');
+      }
+      fp?.open();
+    }, [
+      disabled,
+      normalizedValue,
+      includeTime,
+      timeOnly,
+      use24HourTime,
+      minDate,
+      onChange,
+      onBlankTimeDateChange,
+      pickerPositionElement,
+      onPickerClose,
+      closePickerOnQuickAction,
+    ]);
+
     const handleOpenCalendar = useCallback(
       (e: React.MouseEvent) => {
         e.preventDefault();
         e.stopPropagation();
-        if (disabled) return;
-
-        if (flatpickrRef.current) {
-          flatpickrRef.current.destroy();
-          flatpickrRef.current = null;
-        }
-
-        let wasHandledByButton = false; 
-        const tempInput = window.activeDocument.createElement('input');
-        tempInput.className = 'journalit-flatpickr-temp-input';
-        window.activeDocument.body.appendChild(tempInput);
-        tempInputRef.current = tempInput; 
-
-        
-        const cleanup = () => {
-          if (tempInput.parentNode) {
-            tempInput.remove();
-          }
-          tempInputRef.current = null;
-        };
-
-        flatpickrRef.current = flatpickr(tempInput, {
-          defaultDate: normalizedValue, 
-          enableTime: includeTime || timeOnly,
-          noCalendar: timeOnly,
-          time_24hr: use24HourTime,
-          dateFormat: timeOnly
-            ? use24HourTime
-              ? 'H:i'
-              : 'h:i K'
-            : includeTime
-              ? use24HourTime
-                ? 'Y-m-d H:i'
-                : 'Y-m-d h:i K'
-              : 'Y-m-d',
-          minDate: minDate,
-          disableMobile: true,
-          appendTo: window.activeDocument.body,
-          positionElement: calendarButtonRef.current ?? undefined,
-          monthSelectorType: 'static',
-
-          locale: (() => {
-            const lang = getCurrentLanguage();
-            const weekStartDay = getWeekStartDaySetting();
-            const firstDayOfWeek = getWeekStartDayIndex(weekStartDay);
-
-            
-            const langLocale = flatpickrLocales[lang];
-            if (langLocale) {
-              return { ...langLocale, firstDayOfWeek };
-            }
-
-            return { firstDayOfWeek };
-          })(),
-
-          onChange: (selectedDates: Date[]) => {
-            
-            if (!wasHandledByButton && selectedDates.length > 0 && onChange) {
-              if (timeOnly) {
-                
-                const date = selectedDates[0];
-                const timeString = `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
-                onChange(timeString);
-              } else {
-                onChange(selectedDates[0]);
-              }
-            }
-          },
-
-          onClose: (
-            _selectedDates: Date[],
-            _dateStr: string,
-            instance: FlatpickrInstance & {
-              _dayClickHandler?: (e: Event) => void;
-              _reattachHandler?: () => void;
-              _clearBtn?: HTMLButtonElement;
-              _todayBtn?: HTMLButtonElement;
-              _clearBtnHandler?: () => void;
-              _todayBtnHandler?: () => void;
-            }
-          ) => {
-            
-            if (instance._dayClickHandler) {
-              instance.calendarContainer
-                ?.querySelectorAll('.flatpickr-day')
-                .forEach((day: Element) => {
-                  day.removeEventListener('click', instance._dayClickHandler!);
-                });
-            }
-            if (instance._reattachHandler) {
-              
-              instance.calendarContainer
-                ?.querySelector('.flatpickr-prev-month')
-                ?.removeEventListener('click', instance._reattachHandler);
-              instance.calendarContainer
-                ?.querySelector('.flatpickr-next-month')
-                ?.removeEventListener('click', instance._reattachHandler);
-              
-              instance.calendarContainer
-                ?.querySelector('.numInputWrapper .arrowUp')
-                ?.removeEventListener('click', instance._reattachHandler);
-              instance.calendarContainer
-                ?.querySelector('.numInputWrapper .arrowDown')
-                ?.removeEventListener('click', instance._reattachHandler);
-              instance.calendarContainer
-                ?.querySelector('.cur-year')
-                ?.removeEventListener('input', instance._reattachHandler);
-            }
-            if (instance._clearBtn && instance._clearBtnHandler) {
-              instance._clearBtn.removeEventListener(
-                'click',
-                instance._clearBtnHandler
-              );
-            }
-            if (instance._todayBtn && instance._todayBtnHandler) {
-              instance._todayBtn.removeEventListener(
-                'click',
-                instance._todayBtnHandler
-              );
-            }
-            instance.destroy();
-            flatpickrRef.current = null;
-            cleanup();
-          },
-
-          onReady: (
-            _selectedDates: Date[],
-            _dateStr: string,
-            instance: FlatpickrInstance & {
-              _dayClickHandler?: (e: Event) => void;
-              _reattachHandler?: () => void;
-              _clearBtn?: HTMLButtonElement;
-              _todayBtn?: HTMLButtonElement;
-              _clearBtnHandler?: () => void;
-              _todayBtnHandler?: () => void;
-            }
-          ) => {
-            
-            
-            const handleDayClick = (e: Event) => {
-              const dayEl = e.currentTarget;
-              const dayDate = getFlatpickrDayDate(dayEl);
-              if (
-                dayEl instanceof HTMLElement &&
-                dayDate &&
-                onChange &&
-                !dayEl.classList.contains('flatpickr-disabled')
-              ) {
-                wasHandledByButton = true; 
-                const selectedDate = new Date(dayDate);
-
-                
-                
-                if (includeTime && !timeOnly) {
-                  if (
-                    onBlankTimeDateChange &&
-                    (!hourValueRef.current || !minuteValueRef.current)
-                  ) {
-                    onChange(undefined);
-                    onBlankTimeDateChange(selectedDate);
-                    instance.close();
-                    return;
-                  }
-
-                  const currentHour = parseInt(hourValueRef.current, 10) || 0;
-                  const currentMinute =
-                    parseInt(minuteValueRef.current, 10) || 0;
-                  let hours = currentHour;
-
-                  
-                  if (!use24HourTime) {
-                    if (ampmValueRef.current === 'PM' && hours !== 12)
-                      hours += 12;
-                    if (ampmValueRef.current === 'AM' && hours === 12)
-                      hours = 0;
-                  }
-
-                  selectedDate.setHours(hours, currentMinute, 0, 0);
-                }
-
-                if (timeOnly) {
-                  const timeString = `${String(selectedDate.getHours()).padStart(2, '0')}:${String(selectedDate.getMinutes()).padStart(2, '0')}`;
-                  onChange(timeString);
-                } else {
-                  onChange(selectedDate);
-                }
-                instance.close();
-              }
-            };
-
-            
-            instance.calendarContainer
-              .querySelectorAll('.flatpickr-day')
-              .forEach((day: Element) => {
-                day.addEventListener('click', handleDayClick);
-              });
-
-            
-            const reattachHandlers = () => {
-              window.requestAnimationFrame(() => {
-                instance.calendarContainer
-                  .querySelectorAll('.flatpickr-day')
-                  .forEach((day: Element) => {
-                    day.removeEventListener('click', handleDayClick);
-                    day.addEventListener('click', handleDayClick);
-                  });
-              });
-            };
-
-            
-            instance.calendarContainer
-              .querySelector('.flatpickr-prev-month')
-              ?.addEventListener('click', reattachHandlers);
-            instance.calendarContainer
-              .querySelector('.flatpickr-next-month')
-              ?.addEventListener('click', reattachHandlers);
-
-            
-            
-            instance.calendarContainer
-              .querySelector('.numInputWrapper .arrowUp')
-              ?.addEventListener('click', reattachHandlers);
-            instance.calendarContainer
-              .querySelector('.numInputWrapper .arrowDown')
-              ?.addEventListener('click', reattachHandlers);
-            
-            instance.calendarContainer
-              .querySelector('.cur-year')
-              ?.addEventListener('input', reattachHandlers);
-
-            
-            instance._dayClickHandler = handleDayClick;
-            instance._reattachHandler = reattachHandlers;
-
-            
-            const clearBtnHandler = () => {
-              wasHandledByButton = true;
-              if (onChange) onChange(undefined);
-              instance.close();
-            };
-
-            const todayBtnHandler = () => {
-              wasHandledByButton = true;
-              if (onChange) {
-                if (timeOnly) {
-                  
-                  const now = new Date();
-                  const timeString = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
-                  onChange(timeString);
-                } else {
-                  onChange(new Date());
-                }
-              }
-              instance.close();
-            };
-
-            const clearBtn = window.activeDocument.createElement('button');
-            clearBtn.type = 'button';
-            clearBtn.textContent = t('datepicker.button.clear');
-            clearBtn.className = 'flatpickr-button';
-            clearBtn.addEventListener('click', clearBtnHandler);
-
-            const todayBtn = window.activeDocument.createElement('button');
-            todayBtn.type = 'button';
-            todayBtn.textContent = timeOnly
-              ? t('datepicker.button.now')
-              : t('datepicker.button.today');
-            todayBtn.className = 'flatpickr-button flatpickr-button-primary';
-            todayBtn.addEventListener('click', todayBtnHandler);
-
-            
-            instance._clearBtn = clearBtn;
-            instance._todayBtn = todayBtn;
-            instance._clearBtnHandler = clearBtnHandler;
-            instance._todayBtnHandler = todayBtnHandler;
-
-            
-            const timeContainer =
-              instance.calendarContainer.querySelector('.flatpickr-time');
-            if (timeContainer instanceof HTMLElement) {
-              
-              const timeContent = window.activeDocument.createElement('div');
-              timeContent.className = 'journalit-flatpickr-time-content';
-
-              
-              while (timeContainer.firstChild) {
-                timeContent.appendChild(timeContainer.firstChild);
-              }
-
-              
-              timeContainer.classList.add('journalit-flatpickr-time-container');
-              timeContainer.appendChild(clearBtn);
-              timeContainer.appendChild(timeContent);
-              timeContainer.appendChild(todayBtn);
-            } else {
-              
-              const buttonContainer =
-                window.activeDocument.createElement('div');
-              buttonContainer.className =
-                'journalit-flatpickr-button-container';
-              buttonContainer.appendChild(clearBtn);
-              buttonContainer.appendChild(todayBtn);
-              instance.calendarContainer.appendChild(buttonContainer);
-            }
-          },
-        });
-
-        const fp = flatpickrRef.current;
-        if (fp?.calendarContainer) {
-          fp.calendarContainer.classList.add('journalit-flatpickr-calendar');
-        }
-        fp?.open();
+        openPicker();
       },
-      [
-        disabled,
-        normalizedValue,
-        includeTime,
-        timeOnly,
-        use24HourTime,
-        minDate,
-        onChange,
-        onBlankTimeDateChange,
-      ]
+      [openPicker]
     );
+
+    useEffect(() => {
+      if (openPickerSignal === lastOpenPickerSignalRef.current) return;
+      lastOpenPickerSignalRef.current = openPickerSignal;
+      if (openPickerSignal > 0) openPicker();
+    }, [openPicker, openPickerSignal]);
 
     
     
@@ -826,6 +881,7 @@ export const FastDateTimeInput: React.FC<FastDateTimeInputProps> = React.memo(
         className={['journalit-fast-datetime', className]
           .filter(Boolean)
           .join(' ')}
+        data-controller-only={controllerOnly ? 'true' : 'false'}
       >
         {label && (
           <label className="journalit-fast-datetime__label">
@@ -837,12 +893,13 @@ export const FastDateTimeInput: React.FC<FastDateTimeInputProps> = React.memo(
         )}
 
         <div
+          ref={containerRef}
           className="journalit-fast-datetime__container"
           data-date-only={isDateOnly ? 'true' : 'false'}
           data-has-error={error ? 'true' : 'false'}
         >
           
-          {!timeOnly && (
+          {!controllerOnly && !timeOnly && (
             <>
               {getDateSegments().map((segment, i) => (
                 <React.Fragment key={segment.key}>
@@ -858,7 +915,7 @@ export const FastDateTimeInput: React.FC<FastDateTimeInputProps> = React.memo(
           )}
 
           
-          {(includeTime || timeOnly) && (
+          {!controllerOnly && (includeTime || timeOnly) && (
             <>
               {!timeOnly && (
                 <span
@@ -907,16 +964,18 @@ export const FastDateTimeInput: React.FC<FastDateTimeInputProps> = React.memo(
           )}
 
           
-          <button
-            ref={calendarButtonRef}
-            type="button"
-            onClick={handleOpenCalendar}
-            disabled={disabled}
-            className="clickable-icon journalit-fast-datetime__calendar-button"
-            aria-label={t('datetime.aria.open-picker')}
-          >
-            {timeOnly ? <ClockIcon size={18} /> : <CalendarIcon size={18} />}
-          </button>
+          {!controllerOnly && !hidePickerButton && (
+            <button
+              ref={calendarButtonRef}
+              type="button"
+              onClick={handleOpenCalendar}
+              disabled={disabled}
+              className="clickable-icon journalit-fast-datetime__calendar-button"
+              aria-label={t('datetime.aria.open-picker')}
+            >
+              {timeOnly ? <ClockIcon size={18} /> : <CalendarIcon size={18} />}
+            </button>
+          )}
         </div>
 
         {error && (

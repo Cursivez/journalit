@@ -686,7 +686,7 @@ function DeviceFlowErrorState({
             )}
           />
           <div className="activation-primary-action">
-            <Button variant="secondary" onClick={onCancel}>
+            <Button variant="plain" onClick={onCancel}>
               {t('onboarding.common.close')}
             </Button>
           </div>

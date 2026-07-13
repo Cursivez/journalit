@@ -6,6 +6,10 @@ export const TRADE_FORM_STYLES = `
     margin-bottom: 16px;
   }
 
+  .journalit-trade-form-modal {
+    padding-bottom: 0 !important;
+  }
+
   
   .trade-form-modal-container {
     max-height: var(--modal-content-height);
@@ -271,6 +275,28 @@ export const TRADE_FORM_STYLES = `
   .trade-form-view-container .errorSummary + .formSection {
     margin-top: 12px !important;
   }
+
+  .trade-form-view-container .setup-create-confirmations {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    gap: 6px !important;
+    margin-top: 6px !important;
+  }
+
+  .trade-form-view-container .setup-create-confirmation-button {
+    border: 1px solid var(--background-modifier-border) !important;
+    border-radius: 999px !important;
+    background: var(--background-secondary) !important;
+    color: var(--text-normal) !important;
+    cursor: pointer !important;
+    font-size: 12px !important;
+    padding: 4px 10px !important;
+  }
+
+  .trade-form-view-container .setup-create-confirmation-button:hover {
+    background: var(--background-modifier-hover) !important;
+  }
+
   
   .trade-form-view-container .combobox-container,
   .trade-form-view-container [data-combobox-type] {
@@ -490,10 +516,22 @@ export const TRADE_FORM_STYLES = `
   }
   .trade-form-view-container .label {
     display: block !important;
-    font-size: 13px !important;
+    font-size: 15px !important;
+    line-height: 20px !important;
     font-weight: 500 !important;
     margin-bottom: 4px !important;
     color: var(--text-normal) !important;
+  }
+
+  .trade-form-view-container .journalit-combobox > label {
+    font-size: 15px !important;
+    line-height: 20px !important;
+    font-weight: 500 !important;
+    color: var(--text-normal) !important;
+  }
+  .trade-form-view-container .journalit-direct-pnl-section .label {
+    font-size: 14px !important;
+    line-height: 18.2px !important;
   }
   .trade-form-view-container .errorMessage {
     font-size: 11px !important;
@@ -501,7 +539,7 @@ export const TRADE_FORM_STYLES = `
     margin-top: 2px !important;
     padding-left: 1px !important;
   }
-  .trade-form-view-container button {
+  .trade-form-view-container button:not(.journalit-trade-form-header-action):not(.journalit-button) {
     display: inline-flex !important;
     align-items: center !important;
     justify-content: center !important;
@@ -541,17 +579,32 @@ export const TRADE_FORM_STYLES = `
   .trade-form-view-container .formActionsWrapper {
     display: flex !important;
     flex-direction: column !important;
-    gap: 8px !important;
-    margin-top: 4px !important;
-    margin-bottom: 16px !important;
-    padding: 0 !important;
+    gap: 10px !important;
+    position: sticky !important;
+    bottom: 0 !important;
+    z-index: 20 !important;
+    margin: 4px -20px -16px !important;
+    width: calc(100% + 40px) !important;
+    padding: 12px 20px 4px !important;
+    background: var(--background-primary) !important;
+    border-top: 1px solid var(--background-modifier-border) !important;
   }
   .trade-form-view-container .formActions {
     display: flex !important;
     justify-content: space-between !important;
-    gap: 16px !important;
+    gap: 8px !important;
     margin: 0 !important;
     padding: 0 !important;
+  }
+  .trade-form-view-container .formActionsLeft {
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+  }
+  .trade-form-view-container .formActionsRight {
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 8px !important;
   }
   .trade-form-view-container .formActions .journalit-button {
     display: inline-flex !important;
@@ -559,6 +612,15 @@ export const TRADE_FORM_STYLES = `
     justify-content: center !important;
     border-radius: 6px !important;
     font-weight: 500 !important;
+    box-shadow: none !important;
+    gap: 8px !important;
+    user-select: none !important;
+  }
+  .trade-form-view-container .formActions .create-account-button {
+    min-width: 100px !important;
+  }
+  .trade-form-view-container .formActions .cancel-button {
+    min-width: 70px !important;
   }
   .trade-form-view-container .formActions .journalit-button--primary {
     background: var(--interactive-accent) !important;
@@ -577,6 +639,16 @@ export const TRADE_FORM_STYLES = `
   .trade-form-view-container .formActions .journalit-button--secondary:hover:not(:disabled) {
     background: var(--background-modifier-hover) !important;
     color: var(--text-normal) !important;
+  }
+  .trade-form-view-container .formActions .journalit-button--secondary.importTradesButton {
+    min-width: 108px !important;
+    background: var(--background-secondary) !important;
+    border-color: var(--background-modifier-border) !important;
+    color: var(--text-normal) !important;
+  }
+  .trade-form-view-container .formActions .journalit-button--secondary.importTradesButton:hover:not(:disabled) {
+    background: var(--background-modifier-hover) !important;
+    border-color: var(--interactive-accent) !important;
   }
   .trade-form-view-container .formSubmitHelperText {
     font-size: 12px !important;
@@ -611,6 +683,17 @@ export const TRADE_FORM_STYLES = `
     border-radius: 4px !important;
     margin: 0 !important; 
     width: 100% !important;
+  }
+  .trade-form-view-container .calculatedValue--footer {
+    align-items: center !important;
+    text-align: center !important;
+    padding: 10px 12px !important;
+    border: 1px solid var(--background-modifier-border) !important;
+    border-radius: 6px !important;
+    background: var(--background-secondary) !important;
+  }
+  .trade-form-view-container .calculatedValue--footer .calculatedAmount {
+    font-size: 16px !important;
   }
   .trade-form-view-container .calculatedLabel {
     font-size: 12px !important;
@@ -764,6 +847,50 @@ export const TRADE_FORM_STYLES = `
     gap: 0 !important;
   }
 
+  .trade-form-view-container .trade-form-details-tab {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 12px !important;
+  }
+
+  .trade-form-view-container .trade-form-details-block .sectionContent {
+    gap: 0 !important;
+  }
+
+  .trade-form-view-container .trade-form-details-block .combobox-container,
+  .trade-form-view-container .trade-form-details-block [data-combobox-type] {
+    margin-bottom: 0 !important;
+  }
+
+  .trade-form-view-container .trade-form-details-block .journalit-combobox > label,
+  .trade-form-view-container .trade-form-details-block .inputContainer > .label,
+  .trade-form-view-container .trade-form-details-block .field > .label {
+    display: block !important;
+    color: var(--text-normal) !important;
+    font-size: 14px !important;
+    font-weight: 600 !important;
+    line-height: 1.15 !important;
+    margin: 0 0 1px !important;
+  }
+
+  .trade-form-view-container .trade-form-details-block--attachments .field {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 2px !important;
+  }
+
+  .trade-form-view-container .trade-form-details-block--attachments .label {
+    margin-bottom: 0 !important;
+  }
+
+  .trade-form-view-container .trade-form-details-block--attachments .journalit-image-upload-wrapper {
+    margin-bottom: 0 !important;
+  }
+
+  .trade-form-view-container .trade-form-details-block--attachments .journalit-image-url-container {
+    margin-top: 4px !important;
+  }
+
   .trade-form-view-container .custom-fields-list {
     display: flex !important;
     flex-direction: column !important;
@@ -847,6 +974,110 @@ export const TRADE_FORM_STYLES = `
     margin-top: 1rem !important;
   }
 
+  .trade-form-view-container .trade-form-attachments .journalit-image-carousel {
+    position: relative !important;
+    margin-bottom: 0 !important;
+    padding: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+  }
+
+  .trade-form-view-container .trade-form-attachments .journalit-carousel-main {
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 0 !important;
+    margin: 0 !important;
+  }
+
+  .trade-form-view-container .trade-form-attachments .journalit-carousel-image-container {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 100% !important;
+    aspect-ratio: 1594 / 1003 !important;
+    max-height: min(52vh, 420px) !important;
+    overflow: hidden !important;
+    background: transparent !important;
+    border-radius: var(--radius-m, 8px) !important;
+  }
+
+  .trade-form-view-container .trade-form-attachments .journalit-carousel-image {
+    display: block !important;
+    width: 100% !important;
+    height: 100% !important;
+    max-width: 100% !important;
+    max-height: min(52vh, 420px) !important;
+    object-fit: contain !important;
+    margin: 0 auto !important;
+    border-radius: var(--radius-m, 8px) !important;
+  }
+
+  .trade-form-view-container .trade-form-attachments .journalit-carousel-counter {
+    position: absolute !important;
+    top: 0.65rem !important;
+    left: 0.65rem !important;
+    right: auto !important;
+    z-index: 2 !important;
+    margin: 0 !important;
+    padding: 0.25rem 0.55rem !important;
+    border: 1px solid rgba(var(--mono-rgb-100), 0.14) !important;
+    border-radius: var(--radius-s, 6px) !important;
+    background: rgba(var(--mono-rgb-0), 0.52) !important;
+    color: var(--text-normal) !important;
+    font-size: 0.75rem !important;
+    font-weight: 600 !important;
+    line-height: 1 !important;
+    backdrop-filter: blur(8px) !important;
+  }
+
+  .trade-form-view-container .trade-form-attachments .journalit-carousel-thumbnails {
+    display: flex !important;
+    flex-wrap: nowrap !important;
+    justify-content: flex-start !important;
+    gap: 0.5rem !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    padding: 0.65rem 0 0 !important;
+    margin: 0 !important;
+    border-top: 0 !important;
+    background: transparent !important;
+    scrollbar-color: var(--scrollbar-thumb-bg, var(--background-modifier-border-hover)) transparent !important;
+    scrollbar-width: thin !important;
+  }
+
+  .trade-form-view-container .trade-form-attachments .journalit-carousel-thumbnails::-webkit-scrollbar {
+    height: 4px !important;
+  }
+
+  .trade-form-view-container .trade-form-attachments .journalit-carousel-thumbnails::-webkit-scrollbar-button {
+    display: none !important;
+    width: 0 !important;
+    height: 0 !important;
+  }
+
+  .trade-form-view-container .trade-form-attachments .journalit-carousel-thumbnails::-webkit-scrollbar-track {
+    background: transparent !important;
+  }
+
+  .trade-form-view-container .trade-form-attachments .journalit-carousel-thumbnails::-webkit-scrollbar-thumb {
+    background-color: var(--scrollbar-thumb-bg, rgba(var(--mono-rgb-100), 0.22)) !important;
+    border-radius: 999px !important;
+  }
+
+  .trade-form-view-container .trade-form-attachments .journalit-carousel-thumbnails::-webkit-scrollbar-thumb:hover {
+    background-color: var(--scrollbar-active-thumb-bg, rgba(var(--mono-rgb-100), 0.34)) !important;
+  }
+
+  .trade-form-view-container .trade-form-attachments .journalit-carousel-thumbnail {
+    width: 4.5rem !important;
+    height: 3rem !important;
+    flex: 0 0 auto !important;
+    border-radius: var(--radius-s, 6px) !important;
+    background: transparent !important;
+    scroll-snap-align: center !important;
+  }
+
   @keyframes errorPulse {
     0% { transform: scale(1); }
     50% { transform: scale(1.02); }
@@ -925,9 +1156,9 @@ export const TRADE_FORM_STYLES = `
     border-bottom: 1px solid var(--background-modifier-border);
     margin-bottom: 20px;
     width: 100%;
-    padding: 10px 16px 0;
+    padding: 4px 16px 0;
     position: sticky;
-    top: -10px;
+    top: -16px;
     background-color: var(--background-primary);
     z-index: 100;
   }
@@ -936,6 +1167,14 @@ export const TRADE_FORM_STYLES = `
     grid-column: 2;
     display: flex;
     justify-content: center;
+  }
+
+  .trade-form-view-container .journalit-trade-form-header-actions {
+    grid-column: 3;
+    justify-self: end;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
   }
 
   .trade-form-view-container .journalit-tab-button {
@@ -978,8 +1217,6 @@ export const TRADE_FORM_STYLES = `
 
   
   .trade-form-view-container .journalit-edit-badge {
-    grid-column: 3;
-    justify-self: end;
     font-size: 12px;
     color: white;
     background-color: var(--interactive-accent);

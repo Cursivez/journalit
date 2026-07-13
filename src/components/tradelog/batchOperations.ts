@@ -421,19 +421,16 @@ export async function batchMarkAsReviewed(
 export async function batchAddSetups(
   app: App,
   tradeFilePaths: string[],
-  setupIds: string[],
+  _setupIds: string[],
   setupNames: string[]
 ): Promise<BatchOperationResult> {
   return runBatchOperation(app, tradeFilePaths, {
     applyToTradeData: (tradeData) => {
-      const merge = buildOptionMerge(
-        tradeData.setupIds,
-        tradeData.setup,
-        setupIds,
-        setupNames
-      );
+      const existingNames = normalizeStringArray(tradeData.setup);
+      const mergedNames = dedupeStrings([...existingNames, ...setupNames]);
+      const allExist = setupNames.every((name) => existingNames.includes(name));
 
-      if (merge.allExist) {
+      if (allExist) {
         return {
           shouldApplyPrimaryMutation: false,
           nextTradeData: tradeData,
@@ -444,25 +441,20 @@ export async function batchAddSetups(
         shouldApplyPrimaryMutation: true,
         nextTradeData: {
           ...tradeData,
-          setupIds: merge.mergedIds,
-          setup: merge.mergedNames,
+          setup: mergedNames,
         },
       };
     },
     applyToFrontmatterPatch: (frontmatter) => {
-      const merge = buildOptionMerge(
-        frontmatter.setupIds,
-        frontmatter.setup,
-        setupIds,
-        setupNames
-      );
+      const existingNames = normalizeStringArray(frontmatter.setup);
+      const mergedNames = dedupeStrings([...existingNames, ...setupNames]);
+      const allExist = setupNames.every((name) => existingNames.includes(name));
 
-      if (merge.allExist) {
+      if (allExist) {
         return { didPrimaryMutation: false };
       }
 
-      frontmatter.setupIds = merge.mergedIds;
-      frontmatter.setup = merge.mergedNames;
+      frontmatter.setup = mergedNames;
       return { didPrimaryMutation: true };
     },
   });

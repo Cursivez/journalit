@@ -94,6 +94,17 @@ export interface DRCData {
   sessionMistakes?: string[];
 
   
+  sessionLog?: import('../../types/sessionLog').SessionLogEntry[];
+
+  
+  sessionModeTradeGateRuns?: import('../../types/sessionMode').TradeGateRun[];
+
+  
+  sessionModeTradeGateActiveRun?:
+    | import('../../types/sessionMode').TradeGateRun
+    | null;
+
+  
   missedTrades: MissedTrade[];
 }
 

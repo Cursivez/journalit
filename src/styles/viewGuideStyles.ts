@@ -130,4 +130,26 @@ export const VIEW_GUIDE_STYLES = `
 .journalit-view-guide-button--primary:hover {
   filter: brightness(1.03);
 }
+
+.journalit-trade-form-guide-orb-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 100050;
+  pointer-events: none;
+}
+
+.journalit-trade-form-guide-hover-highlight {
+  position: fixed;
+  top: var(--journalit-guide-highlight-top, -9999px);
+  left: var(--journalit-guide-highlight-left, -9999px);
+  width: var(--journalit-guide-highlight-width, 0px);
+  height: var(--journalit-guide-highlight-height, 0px);
+  border: 1px solid var(--interactive-accent, #7c3aed);
+  border-radius: 6px;
+  background: rgba(var(--interactive-accent-rgb, 124, 58, 237), 0.12);
+  box-shadow:
+    inset 0 0 0 1px rgba(var(--interactive-accent-rgb, 124, 58, 237), 0.16),
+    0 0 0 2px rgba(var(--interactive-accent-rgb, 124, 58, 237), 0.08);
+  pointer-events: none;
+}
 `;

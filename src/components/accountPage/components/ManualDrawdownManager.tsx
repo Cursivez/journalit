@@ -440,7 +440,7 @@ const DrawdownSnapshotForm: React.FC<DrawdownSnapshotFormProps> = ({
           : t('manual-drawdown.button.add')}
       </Button>
       {editingIndex !== null && (
-        <Button variant="secondary" onClick={onCancelEdit}>
+        <Button variant="plain" onClick={onCancelEdit}>
           {t('manual-drawdown.button.cancel-edit')}
         </Button>
       )}

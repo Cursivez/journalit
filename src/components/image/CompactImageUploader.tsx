@@ -9,6 +9,16 @@ import { getApp } from '../../utils/obsidian';
 import { resolveImageInput } from '../../utils/imageMediaUtils';
 import { readClipboardText } from '../../utils/clipboard';
 
+const SUPPORTED_MEDIA_FILE_EXTENSION_PATTERN =
+  /\.(?:jpe?g|png|gif|bmp|webp|svg|mp4|webm|mov|m4v|ogv|ogg|3gp|mkv)$/i;
+
+function isSupportedCompactMediaFile(file: File): boolean {
+  return (
+    file.type.startsWith('image/') ||
+    SUPPORTED_MEDIA_FILE_EXTENSION_PATTERN.test(file.name)
+  );
+}
+
 interface CompactImageUploaderProps {
   
   onImageAdded: (imagePath: string) => void | Promise<void>;
@@ -130,7 +140,18 @@ function useCompactImageUploaderModel({
 
       setIsProcessing(true);
       try {
-        const filesToProcess = multiple ? Array.from(files) : [files[0]];
+        const supportedFiles = Array.from(files).filter((file) => {
+          if (isSupportedCompactMediaFile(file)) return true;
+          if (onError) {
+            onError(new Error(`Unsupported media file type: ${file.name}`));
+          }
+          return false;
+        });
+        const filesToProcess = multiple
+          ? supportedFiles
+          : supportedFiles.slice(0, 1);
+        if (filesToProcess.length === 0) return;
+
         const imagePaths = await saveImageFiles(
           filesToProcess,
           'selected image'
@@ -147,7 +168,7 @@ function useCompactImageUploaderModel({
         if (e.target) e.target.value = '';
       }
     },
-    [multiple, onImageAdded, onMultipleImagesAdded, saveImageFiles]
+    [multiple, onError, onImageAdded, onMultipleImagesAdded, saveImageFiles]
   );
 
   
@@ -237,7 +258,7 @@ function useCompactImageUploaderModel({
 
       setIsProcessing(true);
       try {
-        const imageFiles = imageService.getImagesFromDataTransfer(
+        const imageFiles = imageService.getMediaFromDataTransfer(
           e.dataTransfer
         );
         if (imageFiles.length === 0) return;
@@ -355,7 +376,7 @@ function CompactImageUploaderControls({
       <input
         ref={fileInputRef}
         type="file"
-        accept="image/*"
+        accept="image/*,video/*,.mp4,.webm,.mov,.m4v,.ogv,.ogg,.3gp,.mkv"
         multiple={multiple}
         onChange={(event) => void handleFileSelect(event)}
         className="journalit-compact-uploader-file-input"

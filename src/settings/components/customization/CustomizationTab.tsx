@@ -1,24 +1,52 @@
 
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useReducer, useState } from 'react';
 import JournalitPlugin from '../../../main';
 import { CustomOptionsTab } from '../CustomOptionsTab';
 import { CustomFieldsManager } from './CustomFieldsManager';
 import { ReviewFieldsManager } from './ReviewFieldsManager';
+
 import { Accordion } from '../../../components/shared/Accordion';
 import { OptionType } from '../../../services/options/CustomOptionsService';
+import { openTradeFormLayoutSettingsModal } from '../../../components/forms/trade/TradeFormLayoutSettingsModal';
+import { Button } from '../../../components/ui/Button';
 import { t } from '../../../lang/helpers';
 
 interface CustomizationTabProps {
   plugin: JournalitPlugin;
 }
 
+interface CustomizationExpansionState {
+  customFields: boolean;
+  reviewFields: boolean;
+}
+
+type CustomizationExpansionAction =
+  | { type: 'set-custom-fields'; expanded: boolean }
+  | { type: 'set-review-fields'; expanded: boolean };
+
+const customizationExpansionReducer = (
+  state: CustomizationExpansionState,
+  action: CustomizationExpansionAction
+): CustomizationExpansionState => {
+  switch (action.type) {
+    case 'set-custom-fields':
+      return { ...state, customFields: action.expanded };
+    case 'set-review-fields':
+      return { ...state, reviewFields: action.expanded };
+  }
+};
+
 export const CustomizationTab: React.FC<CustomizationTabProps> = ({
   plugin,
 }) => {
-  
-  const [customFieldsExpanded, setCustomFieldsExpanded] = useState(false);
-  const [reviewFieldsExpanded, setReviewFieldsExpanded] = useState(false);
+  const [expandedAccordions, dispatchExpandedAccordions] = useReducer(
+    customizationExpansionReducer,
+    {
+      customFields: false,
+      reviewFields: false,
+    }
+  );
 
   
   const [customFieldsRemeasureContent, setCustomFieldsRemeasureContent] =
@@ -39,7 +67,7 @@ export const CustomizationTab: React.FC<CustomizationTabProps> = ({
         'journalit:open-custom-fields-settings',
         null
       );
-      setCustomFieldsExpanded(true);
+      dispatchExpandedAccordions({ type: 'set-custom-fields', expanded: true });
       window.requestAnimationFrame(() => {
         window.activeDocument
           .querySelector('.custom-fields-manager')
@@ -59,7 +87,7 @@ export const CustomizationTab: React.FC<CustomizationTabProps> = ({
         'journalit:open-review-fields-settings',
         null
       );
-      setReviewFieldsExpanded(true);
+      dispatchExpandedAccordions({ type: 'set-review-fields', expanded: true });
       window.requestAnimationFrame(() => {
         window.activeDocument
           .querySelector('.review-fields-manager')
@@ -96,6 +124,22 @@ export const CustomizationTab: React.FC<CustomizationTabProps> = ({
         {t('settings.customization.description')}
       </p>
 
+      <div className="journalit-settings-trade-form-layout-card">
+        <div className="journalit-settings-trade-form-layout-card__content">
+          <h4>{t('form.layout.settings-title')}</h4>
+          <p>{t('settings.customization.trade-form-layout.description')}</p>
+        </div>
+        <Button
+          variant="primary"
+          size="small"
+          onClick={() => {
+            openTradeFormLayoutSettingsModal({ app: plugin.app, plugin });
+          }}
+        >
+          {t('settings.customization.trade-form-layout.button')}
+        </Button>
+      </div>
+
       
       <Accordion
         title={t('settings.customization.tickers-symbols')}
@@ -110,14 +154,6 @@ export const CustomizationTab: React.FC<CustomizationTabProps> = ({
         defaultExpanded={false}
       >
         <CustomOptionsTab plugin={plugin} showSymbolMappings={true} />
-      </Accordion>
-
-      
-      <Accordion
-        title={t('settings.customization.setups')}
-        defaultExpanded={false}
-      >
-        <CustomOptionsTab plugin={plugin} filterType={OptionType.SETUP} />
       </Accordion>
 
       
@@ -148,13 +184,20 @@ export const CustomizationTab: React.FC<CustomizationTabProps> = ({
       <Accordion
         title={t('settings.customization.trade-fields')}
         defaultExpanded={false}
-        expanded={customFieldsExpanded}
-        onExpandedChange={setCustomFieldsExpanded}
+        expanded={expandedAccordions.customFields}
+        onExpandedChange={(expanded) =>
+          dispatchExpandedAccordions({ type: 'set-custom-fields', expanded })
+        }
         onRemeasureContentChange={setCustomFieldsRemeasureContent}
       >
         <CustomFieldsManager
           plugin={plugin}
-          onRequestExpansion={() => setCustomFieldsExpanded(true)}
+          onRequestExpansion={() =>
+            dispatchExpandedAccordions({
+              type: 'set-custom-fields',
+              expanded: true,
+            })
+          }
           remeasureContent={customFieldsRemeasureContent || undefined}
         />
       </Accordion>
@@ -163,13 +206,20 @@ export const CustomizationTab: React.FC<CustomizationTabProps> = ({
       <Accordion
         title={t('settings.customization.review-fields')}
         defaultExpanded={false}
-        expanded={reviewFieldsExpanded}
-        onExpandedChange={setReviewFieldsExpanded}
+        expanded={expandedAccordions.reviewFields}
+        onExpandedChange={(expanded) =>
+          dispatchExpandedAccordions({ type: 'set-review-fields', expanded })
+        }
         onRemeasureContentChange={setReviewFieldsRemeasureContent}
       >
         <ReviewFieldsManager
           plugin={plugin}
-          onRequestExpansion={() => setReviewFieldsExpanded(true)}
+          onRequestExpansion={() =>
+            dispatchExpandedAccordions({
+              type: 'set-review-fields',
+              expanded: true,
+            })
+          }
           remeasureContent={reviewFieldsRemeasureContent || undefined}
         />
       </Accordion>

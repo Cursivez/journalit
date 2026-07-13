@@ -691,6 +691,10 @@ export const accountPageStylesCSS = `
 .edit-account-modal-container {
   max-width: 600px;
   width: 100%;
+  display: flex;
+  flex-direction: column;
+  max-height: min(80vh, 720px);
+  min-height: 0;
 }
 
 .edit-account-modal-container .modal-title {
@@ -704,6 +708,20 @@ export const accountPageStylesCSS = `
   flex-direction: column;
   gap: 8px;
   padding: 0;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.edit-account-form-body {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-right: 4px;
 }
 
 .edit-account-form .setting-item {
@@ -853,12 +871,17 @@ export const accountPageStylesCSS = `
 }
 
 .edit-account-buttons {
+  position: sticky;
+  bottom: 0;
+  z-index: 2;
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-top: 12px;
   padding-top: 12px;
   border-top: 1px solid var(--background-modifier-border);
+  background: var(--background-primary);
+  box-shadow: 0 -12px 18px rgba(0, 0, 0, 0.12);
   flex-shrink: 0;
 }
 
@@ -1144,16 +1167,7 @@ export const accountPageStylesCSS = `
   flex-shrink: 0;
 }
 
-.create-account-buttons .create-account-button {
-  min-width: 100px;
-}
-
-.create-account-buttons .cancel-button {
-  min-width: 70px;
-}
-
 .edit-account-buttons .journalit-button,
-.create-account-buttons .journalit-button,
 .add-event-buttons .journalit-button {
   display: inline-flex;
   align-items: center;
@@ -1166,7 +1180,6 @@ export const accountPageStylesCSS = `
 }
 
 .edit-account-buttons .journalit-button--primary,
-.create-account-buttons .journalit-button--primary,
 .add-event-buttons .journalit-button--primary {
   background: var(--interactive-accent);
   border-color: var(--interactive-accent);
@@ -1174,14 +1187,12 @@ export const accountPageStylesCSS = `
 }
 
 .edit-account-buttons .journalit-button--primary:hover:not(:disabled),
-.create-account-buttons .journalit-button--primary:hover:not(:disabled),
 .add-event-buttons .journalit-button--primary:hover:not(:disabled) {
   background: var(--interactive-accent-hover);
   border-color: var(--interactive-accent-hover);
 }
 
 .edit-account-buttons .journalit-button--secondary,
-.create-account-buttons .journalit-button--secondary,
 .add-event-buttons .journalit-button--secondary {
   background: transparent;
   border-color: var(--background-modifier-border);
@@ -1189,7 +1200,6 @@ export const accountPageStylesCSS = `
 }
 
 .edit-account-buttons .journalit-button--secondary:hover:not(:disabled),
-.create-account-buttons .journalit-button--secondary:hover:not(:disabled),
 .add-event-buttons .journalit-button--secondary:hover:not(:disabled) {
   background: var(--background-modifier-hover);
   color: var(--text-normal);
@@ -1208,8 +1218,6 @@ export const accountPageStylesCSS = `
 .edit-account-form .save-account-button:not(:disabled),
 .edit-account-form .delete-account-button:not(:disabled),
 .edit-account-form .cancel-button:not(:disabled),
-.create-account-buttons .create-account-button:not(:disabled),
-.create-account-buttons .cancel-button:not(:disabled),
 .add-event-buttons .add-event-button:not(:disabled),
 .add-event-buttons .cancel-button:not(:disabled) {
   cursor: pointer;
@@ -1218,8 +1226,6 @@ export const accountPageStylesCSS = `
 .edit-account-form .save-account-button:disabled,
 .edit-account-form .delete-account-button:disabled,
 .edit-account-form .cancel-button:disabled,
-.create-account-buttons .create-account-button:disabled,
-.create-account-buttons .cancel-button:disabled,
 .add-event-buttons .add-event-button:disabled,
 .add-event-buttons .cancel-button:disabled {
   cursor: not-allowed;

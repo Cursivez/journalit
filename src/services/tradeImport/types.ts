@@ -121,7 +121,7 @@ export interface TradeImportPreviewTrade {
   executionIds: string[];
   tags: string[];
   images: string[];
-  setupIds: string[];
+  setup: string[];
   mistake: string[];
   customFields: Record<string, unknown>;
   strikePrice?: number | null;
