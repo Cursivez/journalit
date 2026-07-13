@@ -32,8 +32,7 @@ const zhTW: Partial<Lang> = {
   'navigation.items.nav-yearly': '本年度回顧',
 
   
-  'command.force-sync': '強制同步交易',
-  'command.cancel-sync': '取消交易同步',
+  'backend.cards.sync.cancel': '取消同步',
 
   
   'command.replay-onboarding': '重新播放新手引導',
@@ -149,6 +148,51 @@ const zhTW: Partial<Lang> = {
   
   
   
+  'form.import-shortcut.open': '開啟交易匯入',
+  'form.layout.customize': '自訂表單',
+  'form.layout.modal-title': '自訂交易表單',
+  'form.layout.settings-title': '交易表單版面',
+  'form.layout.settings-desc':
+    '選擇你的交易記錄方式，以及哪些選用區塊顯示在交易表單中。',
+  'form.layout.core-fields-note':
+    '交易類型、帳戶、資產類型、商品、方向，以及所選輸入模式需要的價格或 P&L 輸入會保持可見。',
+  'form.layout.input-mode': '輸入模式',
+  'form.layout.input-mode-prices': '價格',
+  'form.layout.input-mode-pnl-risk': 'P&L + 風險',
+  'form.layout.input-mode-prices-desc':
+    '記錄進場與出場價格，讓 Journalit 計算 P&L。',
+  'form.layout.input-mode-pnl-risk-desc':
+    '直接記錄交易 P&L 和風險金額。Journalit 會自動計算 R 倍數。',
+  'form.layout.asset-type-mode': '資產類型',
+  'form.layout.asset-type-mode-show': '每次選擇',
+  'form.layout.asset-type-mode-fixed': '固定',
+  'form.layout.default-asset-type': '預設資產類型',
+  'form.layout.active-fields': '顯示區塊',
+  'form.layout.available-fields': '隱藏區塊',
+  'form.layout.active-fields-desc': '拖曳區塊來重新排序。移除你不使用的項目。',
+  'form.layout.available-fields-desc': '需要時可將隱藏區塊加回交易表單。',
+  'form.layout.empty-active': '沒有顯示任何選用區塊。',
+  'form.layout.all-active': '所有選用區塊都已顯示。',
+  'form.layout.add-field-aria': '將 {field} 加入交易表單',
+  'form.layout.remove-field-aria': '在交易表單中隱藏 {field}',
+  'form.layout.saved': '交易表單版面已儲存',
+  'form.layout.item.trading-costs.commission': '佣金',
+  'form.layout.item.import-shortcut': '匯入快捷入口',
+  'form.layout.item.import-shortcut-desc': '顯示一個開啟交易匯入的底部按鈕。',
+  'form.layout.item.core-details': '核心交易詳情',
+  'form.layout.item.core-details-desc':
+    '帳戶、標的、方向和進出場輸入會固定在最前。',
+  'form.layout.item.asset-specific': '資產專屬欄位',
+  'form.layout.item.pnl-preview': 'P&L 預覽',
+  'form.layout.item.realized-pnl-preview': '部分平倉 P&L 摘要',
+  'form.layout.item.realized-pnl-preview-desc':
+    '僅在未平倉交易發生部分平倉後顯示；位置固定。',
+  'form.layout.result-r': 'R 結果',
+  'form.layout.entry-time': '交易時間',
+
+  
+  
+  
   'form.field.account': '帳戶',
   'form.field.asset-type': '資產類型',
   'form.field.direction': '方向',
@@ -252,7 +296,18 @@ const zhTW: Partial<Lang> = {
   'form.entry-exit.direct-pnl-desc':
     '直接輸入總損益。手續費和其他費用仍會扣除。',
   'form.entry-exit.calc-pnl': '從進場/出場價格和部位大小計算損益。',
+  'form.ideal-exit.title': '理想出場',
+  'form.ideal-exit.subtitle': '用於執行回顧的事後分批出場。',
+  'form.ideal-exit.coverage': '理想數量',
+  'form.ideal-exit.price': '理想價格',
+  'form.ideal-exit.size': '數量',
+  'form.ideal-exit.remove': '移除理想出場',
+  'form.ideal-exit.add': '+ 新增理想出場',
+  'form.ideal-exit.copy-actual': '複製實際出場',
 
+  'form.ideal-exit.tooltip':
+    '記錄事後認為更理想的出場計畫。支援分批出場用於回顧捕捉效率。',
+  'form.ideal-exit.empty': '尚無理想出場',
   
   
   
@@ -305,7 +360,7 @@ const zhTW: Partial<Lang> = {
   'button.create-daily-review': '建立每日回顧',
   'button.apply-settings': '套用設定',
   'button.learn-more': '了解更多',
-  'button.upload-image': '上傳圖片',
+  'button.upload-image': '上傳媒體',
   'button.discord': 'Discord',
 
   
@@ -515,6 +570,14 @@ const zhTW: Partial<Lang> = {
     'Set this copy as your default template',
   'layoutBuilder.guide.set-default-template.description':
     'Click the star on your new template if you want new review notes to use this layout automatically.',
+
+  'form.layout.guide-trigger-label': '自訂表單',
+  'trade-form.guide.customization-modal.title': '讓表單符合你的工作流程',
+  'trade-form.guide.customization-modal.description':
+    '你可以在這裡顯示、隱藏和重新排序選用區塊。讓表單專注於你真正使用的欄位。',
+  'trade-form.guide.finish.title': '這就是自訂功能',
+  'trade-form.guide.finish.description':
+    '當交易表單需要符合不同的日誌流程時，你可以隨時回到這個按鈕進行調整。',
   'tradelog.guide.empty.intro.title': 'Welcome to Trade Log',
   'tradelog.guide.empty.intro.description':
     'This page becomes your main place for browsing, sorting, and reviewing trades. Once you add trades, you will also get the full Trade Log tour.',
@@ -685,6 +748,8 @@ const zhTW: Partial<Lang> = {
   'common.lose': '虧',
   'common.trade': '交易',
   'common.trades': '交易',
+  'common.color.label': '色彩',
+  'common.color.default': '預設',
 
   
   
@@ -776,9 +841,21 @@ const zhTW: Partial<Lang> = {
 
   
   'dashboard.metrics.avgRR': '平均風險回報比（盈虧）',
+  'dashboard.metrics.sharpeRatio': '夏普比率',
   'dashboard.metrics.avgRRRiskBased': '平均風險回報比（R 基礎）',
   'dashboard.metrics.longestWinStreak': '最佳連勝',
   'dashboard.metrics.longestLossStreak': '最差連敗',
+  'dashboard.sharpeRatio.tooltip.title': '夏普比率',
+  'dashboard.sharpeRatio.tooltip.formula':
+    '公式：已平倉交易平均淨盈虧 / 已平倉交易淨盈虧的樣本標準差。無風險利率為 0，且該值未年化。',
+  'dashboard.sharpeRatio.tooltip.coverage':
+    '由 {total} 筆已平倉交易中 {valid} 筆計算',
+  'dashboard.sharpeRatio.tooltip.partial-coverage':
+    '部分覆蓋：{total} 筆已平倉交易中有 {valid} 筆具有限淨盈虧。',
+  'dashboard.sharpeRatio.tooltip.no-data':
+    '需要至少兩筆已平倉交易，且盈虧波動不可為零。',
+  'dashboard.sharpeRatio.tooltip.no-conversion':
+    '此夏普比率基於未進行外匯轉換的混合貨幣，可能具有誤導性。',
   'dashboard.avgRRRiskBased.tooltip.title': '平均風險回報比（R 基礎）',
   'dashboard.avgRRRiskBased.tooltip.formula': '公式：平均盈利 R / 平均虧損 R',
   'dashboard.avgRRRiskBased.tooltip.coverage':
@@ -791,6 +868,9 @@ const zhTW: Partial<Lang> = {
     '資料不足，無法計算 R 基礎 RR。請補上停損/風險資料，並確保同時有有效的獲利與虧損交易。',
   'metric.avgRR.name': '平均風險回報比（盈虧）',
   'metric.avgRR.description': '平均風險回報比（平均獲利 / 平均虧損）',
+  'metric.sharpeRatio.name': '夏普比率',
+  'metric.sharpeRatio.description':
+    '按交易計算的夏普比率：已平倉交易平均淨盈虧除以盈虧樣本波動率',
   'metric.avgRRRiskBased.name': '平均風險回報比（R 基礎）',
   'metric.avgRRRiskBased.description':
     '以 R 倍數計算的比率：平均盈利 R / 平均虧損 R（需要停損/風險資料）',
@@ -1051,6 +1131,8 @@ const zhTW: Partial<Lang> = {
     '請檢查所有必填欄位是否已對應，所選日期格式是否符合檔案，且數字欄位是否包含有效的交易數值。',
   'trade-import.notice.complete':
     'Trade Import complete: {written} written or updated, {duplicateCount} duplicates, {failedCount} failed',
+  'trade-import.gate.brand-left': '交易',
+  'trade-import.gate.brand-right': '匯入',
   'trade-import.gate.sign-in':
     'Sign in is required before uploading broker exports for Trade Import.',
   'trade-import.gate.upgrade':
@@ -1118,6 +1200,267 @@ const zhTW: Partial<Lang> = {
     'Matching open trade quantity differs from close-only preview',
   'trade-import.preview.message.no-open-match':
     'No matching open trade found for close-only preview',
+
+  
+  'command.open-setups': '開啟設定形態',
+  'setups.create.title': 'Create Setup',
+  'setups.create.field.name': 'Setup Name',
+  'setups.create.placeholder.name': 'Opening Drive',
+  'setups.create.field.status': 'Status',
+  'setups.create.field.direction': 'Direction',
+  'setups.create.field.color': '色彩',
+  'setups.create.field.color-description': '選擇顏色以識別此設定形態。',
+  'setups.create.direction.any': 'Not specified',
+  'setups.create.direction.long': 'Long',
+  'setups.create.direction.short': 'Short',
+  'setups.create.direction.both': 'Both',
+  'setups.create.field.linked-notes': 'Linked Notes',
+  'setups.create.field.linked-notes-desc':
+    'Attach existing notes that document the playbook for this setup.',
+  'setups.create.linked-notes.empty': 'No notes linked yet.',
+  'setups.create.linked-notes.add': '+ Link note',
+  'setups.create.linked-notes.remove': 'Remove linked note',
+  'setups.create.linked-notes.picker-title': 'Choose a playbook note',
+  'setups.create.linked-notes.search': 'Search notes...',
+  'setups.create.linked-notes.no-notes': 'No markdown notes found.',
+  'setups.create.button.creating': 'Creating...',
+  'setups.create.button.create': 'Create Setup',
+  'setups.create.success': 'Setup "{name}" created successfully',
+  'setups.create.error.name-required': 'Setup name is required',
+  'setups.create.error.failed': 'Failed to create setup',
+  'setups.edit.title': 'Edit Setup',
+  'setups.edit.button.saving': 'Saving...',
+  'setups.edit.button.save': 'Save Setup',
+  'setups.edit.button.rename-and-update': 'Rename and update trades',
+  'setups.edit.rename-warning.title': 'Rename setup and update trades',
+  'setups.edit.rename-warning.message':
+    'Renaming {oldName} to {newName} will update trade notes that use the old setup name.',
+  'setups.edit.delete.button': '刪除設定',
+  'setups.edit.delete.title': '刪除設定',
+  'setups.edit.delete.confirm': '確認刪除',
+  'setups.edit.delete.warning':
+    '刪除「{name}」會永久移除該設定，並從相關交易中清除。此操作無法復原。',
+  'setups.edit.delete.success': '已刪除設定「{name}」',
+  'setups.edit.delete.error': '設定刪除失敗',
+  'setups.edit.success': 'Setup "{name}" updated successfully',
+  'setups.edit.error.failed': 'Failed to update setup',
+  'setups.view.compare.empty-submessage':
+    'Choose two setup cards from the overview to build a side-by-side report.',
+  'setups.view.compare.reason.higher.total-r': '較高的總 R',
+  'setups.view.compare.reason.lower.total-r': '較低的總 R',
+  'setups.view.compare.reason.similar.total-r': '相近的總 R',
+  'setups.view.advanced.rule-break-count': '{count}',
+  'setups.guide.empty.intro.title': '创建第一个设置',
+  'setups.guide.empty.intro.description':
+    '设置会连接剧本笔记、规则、截图和关联交易，方便你在上下文中复盘一个交易思路。',
+  'setups.guide.create-new-setup.title': '建立新設定',
+  'setups.guide.create-new-setup.description':
+    '想新增另一個劇本時使用「新建設定」。彈窗會引導你填寫詳情、關聯筆記和規則。',
+  'setups.guide.detail-intro.title': '這是設定頁面',
+  'setups.guide.detail-intro.description':
+    '設定頁面聚焦一個劇本，集中展示表現圖、上下文、參考資料、操作和執行規則。',
+  'setups.guide.detail-actions.title': '設定操作',
+  'setups.guide.detail-actions.description':
+    '使用這些按鈕開啟相關交易，或編輯設定詳情、關聯筆記、截圖和劇本規則。',
+  'setups.guide.empty.create-setup.title': '从“新建设置”开始',
+  'setups.guide.empty.create-setup.description':
+    '先创建一个设置。创建后，本指南会继续正常的设置流程。',
+  'setups.guide.empty.finish.title': '完成设置创建',
+  'setups.guide.empty.finish.description':
+    '填写详情并保存。设置可用后，指南会继续。',
+  'setups.guide.intro.title': '歡迎使用 Setups',
+  'setups.guide.intro.description':
+    '此檢視把設定劇本、關聯交易、筆記、截圖和規則集中在一個地方。',
+  'setups.guide.view-tabs.title': '切换设置视图',
+  'setups.guide.view-tabs.description':
+    '当有足够设置时，用这些标签在概览、设置组合和比较流程之间切换。',
+  'setups.guide.overview-chart.title': '表现排名',
+  'setups.guide.overview-chart.description':
+    '概覽圖按所選指標排列設定。使用右上角控制項可切換指標，或讓圖表聚焦到特定設定。',
+  'setups.guide.setup-cards.title': '设置卡片',
+  'setups.guide.setup-cards.description':
+    '卡片用关键指标、状态、最近交易日期和小型表现趋势总结每个设置。',
+  'setups.guide.open-detail.title': '開啟設定頁面',
+  'setups.guide.open-detail.description':
+    '開啟一張設定卡片，查看包含圖表、上下文、劇本資料和執行規則的專屬頁面。',
+  'setups.guide.detail-performance.title': '详情表现',
+  'setups.guide.detail-performance.description':
+    'Performance 標籤顯示該設定隨時間的圖表和關鍵指標，包括 P&L、勝率、期望值和回撤。',
+  'setups.guide.detail-context.title': '设置上下文',
+  'setups.guide.detail-context.description':
+    '此面板集中显示设置健康度、需关注项、关联笔记和截图。',
+  'setups.guide.detail-playbook.title': '剧本笔记',
+  'setups.guide.detail-playbook.description':
+    '劇本區域預覽此設定的關聯筆記。它可以是 Markdown、圖片、Excalidraw 或任何參考資料。',
+  'setups.guide.detail-rules.title': '执行规则',
+  'setups.guide.detail-rules.description':
+    '规则保存最佳条件、入场、风险和需避免错误的结构化清单。',
+  'setups.guide.finish.title': 'Setups 指南已完成',
+  'setups.guide.finish.description':
+    '你已查看主要頁面：概覽、組合、比較和單個設定詳情頁。',
+  'setups.guide.compare.intro.title': '比较设置表现',
+  'setups.guide.compare.intro.description':
+    '你现在有足够的设置，可以查看组合并并排比较两个剧本。',
+  'setups.guide.pairs-mode.title': '打开设置组合',
+  'setups.guide.pairs-mode.description':
+    '打开组合，查看哪些设置组合有足够的共同交易可供比较。',
+  'setups.guide.pairs-chart.title': '组合排名',
+  'setups.guide.pairs-chart.description':
+    '組合模式會突出可能一起表現更好或更差的設定組合。點擊柱條可開啟該組合的更深入洞察。',
+  'setups.guide.return-overview.title': '返回概览',
+  'setups.guide.return-overview.description':
+    '在选择要比较的设置前，先回到概览。',
+  'setups.guide.compare-mode.title': '开始比较模式',
+  'setups.guide.compare-mode.description':
+    '比较模式可选择两张设置卡片进行并排复盘。',
+  'setups.guide.compare-select.title': '选择两个设置',
+  'setups.guide.compare-select.description': '选择两张设置卡片以打开比较页面。',
+  'setups.guide.compare-summary.title': '這是比較頁面',
+  'setups.guide.compare-summary.description':
+    '此頁面並排比較兩個設定。頂部摘要列顯示勝出者、期望值優勢、信心，以及某個設定可能更有優勢的原因。',
+  'setups.guide.compare-body.title': '比較摘要列',
+  'setups.guide.compare-body.description':
+    '頂部列總結比較結果：勝出者、期望值優勢、信心，以及優勢背後的原因。',
+  'setups.guide.compare-details.title': '比較詳情',
+  'setups.guide.compare-details.description':
+    '使用指標表和累計圖了解兩個設定的差異。',
+  'setups.guide.detail-execution-gap.title': '執行差距分析',
+  'setups.guide.detail-execution-gap.description':
+    '當有錯過交易或回測資料時，此標籤會將已捕捉的執行與錯過或基準機會進行比較。',
+  'setups.guide.back-to-overview.title': '返回设置卡片',
+  'setups.guide.back-to-overview.description': '比较完成后返回设置卡片。',
+  'setups.guide.compare.finish.title': '设置比较指南已完成',
+  'setups.guide.compare.finish.description':
+    '你已查看用于一起复盘多个设置的组合和比较页面。',
+  'setups.view.open-as-markdown': 'Open as Markdown',
+  'setups.view.open-as-setup': 'Open as Journalit Setup',
+  'setups.view.overview.mode.aria': 'Overview chart mode',
+  'setups.view.overview.mode.setups': 'Setups',
+  'setups.view.overview.mode.pairs': 'Pairs',
+  'setups.view.pairs.title': 'Setup pairs',
+  'setups.view.pairs.summary-aria': 'Setup pairs summary',
+  'setups.view.pairs.best': 'Best pair',
+  'setups.view.pairs.worst': 'Worst pair',
+  'setups.view.pairs.worst-short': 'Worst',
+  'setups.view.pairs.empty': 'No setup pairs with 5+ trades yet.',
+  'setups.view.pairs.empty-submessage':
+    'Pairs appear after two setups share enough linked trades.',
+  'setups.view.pairs.privacy':
+    'Pair performance is hidden while Privacy Mode is on.',
+  'setups.view.pairs.edge-tooltip':
+    'Edge compares the pair expectancy against the stronger solo setup baseline.',
+  'setups.view.pairs.metric-aria': 'Pair metric',
+  'setups.view.pairs.metric.edge': 'Pair edge',
+  'setups.view.pairs.metric.edge-short': 'edge',
+  'setups.view.pairs.metric.expectancy': 'Pair expectancy',
+  'setups.view.pairs.metric.expectancy-short': 'expectancy',
+  'setups.view.pairs.together': 'Together',
+  'setups.view.pairs.table.setup-pair': 'Setup pair',
+  'setups.view.pairs.equity-curve': 'Equity curve',
+  'setups.view.pairs.equity-caption':
+    'Cumulative pair performance over time. Green = positive contribution, red = drawdown.',
+  'setups.view.pairs.evidence': 'Evidence',
+  'setups.view.pairs.edge-comparison': 'Edge comparison',
+  'setups.view.pairs.edge-caption': 'Combined edge: {edge}',
+  'setups.view.overview.setup-filter.all': 'Setups: All',
+  'setups.view.overview.setup-filter.selected': 'Setups: {count} selected',
+  'setups.view.overview.setup-filter.aria': 'Choose setups to show',
+  'setups.view.overview.setup-filter.select-all': 'Select all',
+  'setups.view.overview.setup-filter.clear': 'Clear',
+  'setups.view.overview.pnl-chart.title': 'Setup P&L Over Time',
+  'setups.view.overview.pnl-chart.dropdown-label': 'Cumulative P&L',
+  'setups.view.overview.pnl-chart.subtitle':
+    'Cumulative P&L from setup-linked trades, split by setup and combined.',
+  'setups.view.overview.pnl-chart.combined': 'All setups',
+  'setups.view.overview.pnl-chart.selected-combined': 'Selected setups',
+  'setups.view.overview.pnl-chart.unassigned': 'Unassigned account',
+  'setups.view.overview.pnl-chart.hidden':
+    'Setup P&L over time is hidden while privacy mode is enabled.',
+  'setups.view.overview.pnl-chart.trade': 'Trade',
+  'setups.view.overview.pnl-chart.start': 'Start',
+  'setups.view.ranking.empty-submessage':
+    'Log trades with setups to start ranking performance.',
+  'setups.view.empty.no-setups-submessage':
+    'Setups collect your playbook notes, rules, trades, and performance in one place.',
+  'setups.view.detail.performance.drawdown': '回撤',
+  'setups.view.detail.performance.empty-submessage':
+    'Trades using this setup will appear here once you start logging them.',
+  'setups.view.detail.analysis.performance': 'Performance',
+  'setups.view.detail.analysis.execution-gap': 'Execution Gap',
+  'setups.view.detail.analysis.tabs-aria': 'Setup performance tabs',
+  'setups.view.detail.brief.linked-notes-add': 'Edit linked notes',
+  'setups.view.detail.execution-gap.title': 'Execution Gap',
+  'setups.view.detail.execution-gap.subtitle':
+    'Captured edge vs missed opportunity',
+  'setups.view.detail.execution-gap.live-pnl': 'Live PnL',
+  'setups.view.detail.execution-gap.live-r': '實盤 R',
+  'setups.view.detail.execution-gap.missed-edge': 'Missed Edge',
+  'setups.view.detail.execution-gap.live-plus-missed': 'Live + Missed',
+  'setups.view.detail.execution-gap.backtest': 'Backtest',
+  'setups.view.detail.execution-gap.gap': 'Gap',
+  'setups.view.detail.execution-gap.opportunities': 'Opportunities',
+  'setups.view.detail.execution-gap.capture-rate': 'Capture Rate',
+  'setups.view.detail.execution-gap.capture-rate-tooltip':
+    'Live P&L ÷ (Live P&L + missed-trade P&L). Shows how much available edge you captured.',
+  'setups.view.detail.execution-gap.average-r-delta': 'Avg R Delta',
+  'setups.view.detail.execution-gap.live-execution': 'Live Execution',
+  'setups.view.detail.execution-gap.backtest-benchmark': 'Backtest Benchmark',
+  'setups.view.detail.execution-gap.hidden':
+    'Execution gap is hidden in privacy mode.',
+  'setups.view.detail.execution-gap.empty':
+    'Log missed trades or backtest trades for this setup to analyze execution gaps.',
+  'setups.view.detail.brief.linked-notes': '{count}',
+  'setups.view.detail.brief.linked-notes-modal.subtitle': '{name}',
+  'setups.view.detail.brief.screenshots': '{count}',
+  'setups.view.detail.brief.no-screenshots': '尚未連結截圖。',
+  'setups.view.detail.brief.screenshot-alt': '{index}',
+  'setups.view.detail.brief.screenshot-open': '{index}',
+  'setups.view.detail.brief.count.rules': '{count}',
+  'setups.view.detail.brief.count.notes': '{count}',
+  'setups.view.detail.brief.count.images': '{count}',
+  'setups.view.detail.brief.count.trades': '{count}',
+  'setups.view.detail.brief.more': '{count}',
+  'setups.view.detail.attention.title': 'Needs attention',
+  'setups.view.detail.attention.count': '{count} items',
+  'setups.view.detail.attention.empty': 'No setup issues found.',
+  'setups.view.detail.attention.show-more': '+{count} more',
+  'setups.view.detail.attention.show-less': 'Show less',
+  'setups.view.detail.attention.no-playbook-title': 'Link a playbook note',
+  'setups.view.detail.attention.no-playbook-detail':
+    'Link one source note for context and examples.',
+  'setups.view.detail.attention.no-rules-title': 'Build the execution playbook',
+  'setups.view.detail.attention.no-rules-detail':
+    'Add criteria for entries, invalidation, risk, and mistakes.',
+  'setups.view.detail.attention.no-invalidation-title':
+    'Add invalidation criteria',
+  'setups.view.detail.attention.no-invalidation-detail':
+    'Define when this setup is no longer valid.',
+  'setups.view.detail.attention.no-risk-title': 'Add risk or management rules',
+  'setups.view.detail.attention.no-risk-detail':
+    'Document how this setup should be managed after entry.',
+  'setups.view.detail.attention.no-trades-title': 'No live trades yet',
+  'setups.view.detail.attention.no-trades-detail':
+    'No linked live trade history yet.',
+  'setups.view.detail.attention.no-screenshots-title':
+    'Save example screenshots',
+  'setups.view.detail.attention.no-screenshots-detail':
+    'Attach screenshots to trades for review examples.',
+  'setups.view.detail.attention.stale-title': 'Review recent relevance',
+  'setups.view.detail.attention.stale-detail':
+    'This setup has not been traded in {count} days.',
+  'setups.view.detail.attention.profit-factor-title':
+    'Performance needs review',
+  'setups.view.detail.attention.profit-factor-detail':
+    'Profit factor is below 1.0 across linked trades.',
+  'setups.view.detail.attention.expectancy-title': 'Expectancy is negative',
+  'setups.view.detail.attention.expectancy-detail':
+    'Average linked-trade outcome is below breakeven.',
+  'setups.view.card.open-named': '{name}',
+  'setups.view.card.status.active': 'Stable',
+  'setups.view.card.status.monitor': 'Monitor',
+  'setups.view.card.status.review': 'Review',
+  'setups.view.date.days-ago': '{count}',
+
   'trade-import.restore.title': 'Restore imported trades from backend',
   'trade-import.restore.description':
     'Create missing local notes for backend imported trades in this vault. This does not create duplicate backend trades.',
@@ -1133,6 +1476,103 @@ const zhTW: Partial<Lang> = {
   'trade-import.restore.complete':
     'Restored {written} imported trades; {failed} failed.',
   'trade-import.restore.broker-label': 'Backend restore',
+  'setups.view.loading': 'Loading setups…',
+  'settings.general.copy-trading-pnl-toggled': 'Copy trading PnL is {status}',
+  'setups.view.trade.unknown-instrument': 'Unknown instrument',
+  'settings.session-mode.linked-resources-count': '{count} linked',
+  'settings.session-mode.linked-resources-hide': 'Hide linked',
+  'settings.session-mode.session-log-tags': 'Session log tags',
+  'settings.session-mode.session-log-tags-desc':
+    'Customize the tags available in the Session Mode composer and DRC session log.',
+  'settings.session-mode.tag-label-placeholder': 'Tag name',
+  'settings.session-mode.tag-short-label-placeholder': 'Short label',
+  'settings.session-mode.tag-label-example': 'Trade',
+  'settings.session-mode.tag-short-label-example': 'TR',
+  'settings.session-mode.tag-color': 'Tag color',
+  'settings.session-mode.tag-requires-resolution': 'Requires resolution',
+  'settings.session-mode.tag-lesson': 'Lesson tag',
+  'settings.session-mode.tag-requires-resolution-tooltip':
+    'Entries with this tag are marked as follow-up items until you resolve them in the session log. Use it for notes that need review or action after the session.',
+  'settings.session-mode.tag-lesson-tooltip':
+    'Marks this tag as a learning entry. Lesson-tagged notes can be surfaced as lessons and are highlighted as learning moments in session log workflows.',
+  'settings.session-mode.add-session-log-tag': 'Add session log tag',
+  'settings.session-mode.reset-session-log-tags': 'Reset session log tags',
+  'settings.session-mode.tag-color.blue': 'Blue',
+  'settings.session-mode.tag-color.indigo': 'Indigo',
+  'settings.session-mode.tag-color.purple': 'Purple',
+  'settings.session-mode.tag-color.green': 'Green',
+  'settings.session-mode.tag-color.pink': 'Pink',
+  'settings.session-mode.tag-color.amber': 'Amber',
+  'settings.session-mode.tag-color.red': 'Red',
+  'settings.session-mode.tag-color.orange': 'Orange',
+  'session-log.action.add-note': 'Add',
+  'session-log.action.hide-composer': 'Hide composer',
+  'session-log.filter.label': 'Filter session log',
+  'session-log.filter.clear': 'Clear filter',
+  'session-log.empty-filtered': 'No entries match this filter.',
+  'media.viewer.mute-video': '將影片靜音',
+  'media.viewer.unmute-video': '取消影片靜音',
+  'media.viewer.volume': '音量',
+  'imageGallery.subtitle-count': '{count} 個媒體項目',
+  'imageGallery.empty.error.title': '圖庫無法使用',
+  'imageGallery.empty.no-images.title': '尚無媒體',
+  'imageGallery.empty.no-images.description':
+    '附加到交易或複盤筆記的圖片、GIF、影片和 YouTube 連結會自動顯示在這裡。',
+  'imageGallery.empty.no-results.title': '沒有媒體符合這些篩選條件',
+  'imageGallery.empty.no-results.description':
+    '請清除目前的篩選或擴大日期範圍，以顯示更多圖庫項目。',
+  'imageGallery.empty.no-source.title': '此來源沒有媒體',
+  'imageGallery.empty.no-source.description':
+    '此來源目前還沒有圖庫項目。切換回所有媒體或選擇其他來源。',
+  'imageGallery.empty.action.clear-filters': '清除篩選',
+  'imageGallery.empty.action.show-all': '顯示所有媒體',
+  'imageGallery.open-source': '開啟筆記',
+  'imageGallery.image-alt': '{date} 的 {source} 媒體',
+  'imageGallery.annotation.reviewed': '已檢視',
+  'imageGallery.annotation.unreviewed': '未檢視',
+  'imageGallery.annotation.tag': '標籤',
+  'imageGallery.annotation.editor-eyebrow': '市場結構日誌',
+  'imageGallery.annotation.editor-title': '標註媒體',
+  'imageGallery.annotation.tags': '標籤',
+  'imageGallery.annotation.tags-placeholder': '突破、A+ 設定、錯誤',
+  'imageGallery.annotation.notes': '備註',
+  'imageGallery.annotation.notes-placeholder': '未來的你應該從這張圖學到什麼？',
+  'imageGallery.annotation.error.save-failed': '無法儲存媒體註解。',
+  'imageGallery.annotation.saving': '儲存中...',
+  'command.replay-current-view-guide': '重播目前視圖指南',
+  'tradelog.guide.switch-to-gallery.title': '從交易切換到圖庫',
+  'tradelog.guide.switch-to-gallery.description':
+    '使用這個模式選擇器在一般交易日誌和圖庫之間切換。點擊圖庫，繼續透過圖片、GIF、影片和 YouTube 連結了解導覽。',
+  'tradelog.guide.gallery-controls.title': '選擇要複盤的媒體',
+  'tradelog.guide.gallery-controls.description':
+    '使用來源選擇交易或複盤筆記，使用排序調整媒體順序，並用尺寸按鈕在緊湊瀏覽和較大的媒體預覽之間切換。',
+  'tradelog.guide.gallery-source-sort.title': '選擇媒體來源和順序',
+  'tradelog.guide.gallery-source-sort.description':
+    '使用來源聚焦所有媒體、交易附件或複盤筆記媒體。使用排序優先查看最新、最舊、最好或最差的交易。',
+  'tradelog.guide.gallery-size.title': '調整圖庫預覽大小',
+  'tradelog.guide.gallery-size.description':
+    '使用這些尺寸按鈕在緊湊瀏覽和較大的圖表預覽之間切換，同時不裁切重要圖表細節。',
+  'tradelog.guide.gallery-filters.title': '用同一個入口篩選圖庫',
+  'tradelog.guide.gallery-filters.description':
+    '篩選按鈕仍會開啟進階篩選。在圖庫模式下，它也包含媒體專用篩選，例如註解狀態和媒體標籤。',
+  'tradelog.guide.gallery-filter-modal.title': '媒體篩選與交易篩選放在一起',
+  'tradelog.guide.gallery-filter-modal.description':
+    '使用此視窗組合交易篩選和媒體篩選。例如，先篩選某個 setup，再只顯示有筆記或特定媒體標籤的媒體。',
+  'tradelog.guide.gallery-grid.title': '開啟媒體進行細看',
+  'tradelog.guide.gallery-grid.description':
+    '每張卡片都會盡量保持內容不被遮擋，同時顯示精簡的交易和複盤脈絡。點擊任意卡片即可全螢幕開啟。',
+  'tradelog.guide.gallery-fullscreen-actions.title': '在全螢幕中註解媒體',
+  'tradelog.guide.gallery-fullscreen-actions.description':
+    '項目放大後，使用標籤為媒體加入媒體層級標籤和筆記。開啟筆記會帶你回到來源交易或複盤筆記。',
+  'tradelog.guide.gallery-open-annotation.title': '開啟註解面板',
+  'tradelog.guide.gallery-open-annotation.description':
+    '點擊標籤來註解這個特定媒體。媒體標籤和筆記描述的是附件，而不是整筆交易。',
+  'tradelog.guide.gallery-annotation-panel.title': '新增媒體標籤和筆記',
+  'tradelog.guide.gallery-annotation-panel.description':
+    '使用媒體標籤記錄圖表特定想法，例如流動性掃蕩或假突破，並用筆記保存你想記住的市場結構脈絡。',
+  'tradelog.guide.gallery-finish.title': '你已了解交易日誌的兩種模式',
+  'tradelog.guide.gallery-finish.description':
+    '需要表格和批次工具時使用交易模式。想跨整個日誌複盤圖片、GIF、影片、YouTube 連結、市場結構和圖表註解時使用圖庫。',
 };
 
 export default zhTW;

@@ -13,6 +13,14 @@ import {
 import { ChartBase } from '../../charts/ChartBase';
 import { RechartsPortalTooltip } from '../../charts/RechartsPortalTooltip';
 import { useDashboardData } from '../../dashboard/context/DashboardDataContext';
+import { usePlugin } from '../../../hooks/usePlugin';
+import { useDisplayFormatter } from '../../../hooks/useDisplayPolicy';
+import {
+  fetchDashboardData,
+  type Trade,
+} from '../../dashboard/utils/dataUtils';
+import type { FilterState } from '../../dashboard/DashboardView';
+import { normalizeAccountLookupKey } from '../../../services/trade/core/TradeAccountIdentity';
 import {
   calculateTradingScore,
   TradingScoreResult,
@@ -38,11 +46,26 @@ const AXIS_SCORE_KEYS: Array<keyof AxisScores> = [
 ];
 
 interface RadarDataPoint {
+  [key: string]: string | number | undefined;
   axis: string;
   axisKey: keyof AxisScores;
   value: number;
+  allAccountsValue?: number;
   fullMark: 100;
   weight: number;
+}
+
+interface AccountTradingScore {
+  account: string;
+  scoreResult: TradingScoreResult;
+}
+
+interface RadarSeries {
+  key: string;
+  label: string;
+  legendLabel: string;
+  color: string;
+  scoreResult: TradingScoreResult;
 }
 
 type TooltipContentLike<TData> = TooltipProps<number, string> & {
@@ -70,6 +93,167 @@ const getPhaseClass = (phase: TradingScoreResult['phase']): string => {
     default:
       return 'journalit-score-phase--insufficient';
   }
+};
+
+const ACCOUNT_RADAR_COLORS = [
+  'var(--color-green, #22c55e)',
+  'var(--color-yellow, #eab308)',
+  'var(--color-cyan, #06b6d4)',
+  'var(--color-pink, #ec4899)',
+  'var(--color-orange, #f97316)',
+  'var(--color-red, #ef4444)',
+];
+
+const MAX_VISIBLE_LEGEND_ACCOUNTS = 3;
+const EMPTY_TRADES: Trade[] = [];
+
+const getAccountFilterKey = (accounts: string[]): string =>
+  accounts.join('\u0000');
+
+const getTradeAccountLookupKeys = (trade: Trade): string[] => {
+  const lookupKeys = new Set<string>();
+
+  for (const key of trade.accountLookupKeys ?? []) {
+    lookupKeys.add(normalizeAccountLookupKey(key));
+  }
+
+  for (const accountName of trade.accountNamesNormalized ?? []) {
+    lookupKeys.add(normalizeAccountLookupKey(accountName));
+  }
+
+  const accountValue = trade.account;
+  if (Array.isArray(accountValue)) {
+    for (const accountName of accountValue) {
+      lookupKeys.add(normalizeAccountLookupKey(String(accountName)));
+    }
+  } else if (typeof accountValue === 'string') {
+    lookupKeys.add(normalizeAccountLookupKey(accountValue));
+  }
+
+  return [...lookupKeys];
+};
+
+const getAccountScoreResultsFromTrades = (
+  trades: Trade[],
+  accounts: string[]
+): AccountTradingScore[] =>
+  accounts.flatMap((account) => {
+    const accountLookupKey = normalizeAccountLookupKey(account);
+    const accountTrades = trades.filter((trade) =>
+      getTradeAccountLookupKeys(trade).includes(accountLookupKey)
+    );
+
+    return accountTrades.length > 0
+      ? [{ account, scoreResult: calculateTradingScore(accountTrades) }]
+      : [];
+  });
+
+const getCompactAccountLabel = (accountName: string): string => {
+  const trimmedName = accountName.trim();
+  const accountIdMatch = trimmedName.match(/\bAccount-\d+\b/i);
+  if (accountIdMatch) return accountIdMatch[0].replace(/^Account-/i, 'Acct-');
+
+  if (trimmedName.length <= 12) return trimmedName;
+
+  const words = trimmedName.split(/\s+/).filter(Boolean);
+  if (words.length >= 2) {
+    const initials = words
+      .slice(0, 3)
+      .map((word) => word[0]?.toUpperCase() ?? '')
+      .join('');
+
+    return initials || trimmedName.slice(0, 12);
+  }
+
+  return trimmedName.slice(0, 12);
+};
+
+const scoreAxesAreSame = (
+  scoreA: TradingScoreResult,
+  scoreB: TradingScoreResult | null
+): boolean => {
+  if (!scoreB) return true;
+
+  return AXIS_SCORE_KEYS.every(
+    (axisKey) => scoreA.axisScores[axisKey] === scoreB.axisScores[axisKey]
+  );
+};
+
+const useTradingScoreComparison = (
+  filters: FilterState,
+  enabled: boolean,
+  selectedTrades: Trade[]
+): {
+  allAccountsScoreResult: TradingScoreResult | null;
+  accountScoreResults: AccountTradingScore[];
+  accountFilterKey: string;
+  refreshSource: unknown;
+} => {
+  const plugin = usePlugin();
+  const [comparison, setComparison] = useState<{
+    allAccountsScoreResult: TradingScoreResult | null;
+    accountScoreResults: AccountTradingScore[];
+    accountFilterKey: string;
+    refreshSource: unknown;
+  }>({
+    allAccountsScoreResult: null,
+    accountScoreResults: [],
+    accountFilterKey: '',
+    refreshSource: null,
+  });
+
+  useEffect(() => {
+    if (!enabled || !plugin?.app || !plugin.tradeService) {
+      setComparison({
+        allAccountsScoreResult: null,
+        accountScoreResults: [],
+        accountFilterKey: '',
+        refreshSource: null,
+      });
+      return;
+    }
+
+    let cancelled = false;
+    const allAccountFilters: FilterState = { ...filters, accounts: [] };
+    const accountFilterKey = getAccountFilterKey(filters.accounts);
+
+    const loadScore = async () => {
+      if (cancelled) return;
+
+      const allAccountData = await fetchDashboardData(
+        plugin.app,
+        plugin.tradeService,
+        allAccountFilters,
+        plugin.settings?.trade?.defaultRiskAmount,
+        plugin
+      );
+
+      const accountScoreResults =
+        filters.accounts.length > 1
+          ? getAccountScoreResultsFromTrades(selectedTrades, filters.accounts)
+          : [];
+
+      if (!cancelled) {
+        setComparison({
+          allAccountsScoreResult:
+            allAccountData.trades.length > 0
+              ? calculateTradingScore(allAccountData.trades)
+              : null,
+          accountScoreResults,
+          accountFilterKey,
+          refreshSource: selectedTrades,
+        });
+      }
+    };
+
+    void loadScore();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [enabled, filters, plugin, selectedTrades]);
+
+  return comparison;
 };
 
 const TradingScoreLoadingState: React.FC = () => (
@@ -203,7 +387,8 @@ const TradingScoreInsufficientState: React.FC<{
 };
 
 const TradingScoreWidgetComponent: React.FC<TradingScoreWidgetProps> = () => {
-  const { dashboardData } = useDashboardData();
+  const { dashboardData, filters } = useDashboardData();
+  const { formatValue, shouldMask } = useDisplayFormatter();
   const chartRef = React.useRef<HTMLDivElement>(null);
   const [isExpanded, setIsExpanded] = useState(false);
   const [hoveredAxis, setHoveredAxis] = useState<keyof AxisScores | null>(null);
@@ -216,6 +401,86 @@ const TradingScoreWidgetComponent: React.FC<TradingScoreWidgetProps> = () => {
     }
     return calculateTradingScore(dashboardData.trades);
   }, [dashboardData?.trades]);
+
+  const isMetricMasked = shouldMask('metric');
+  const selectedAccountFilterKey = getAccountFilterKey(filters.accounts);
+  const scoreRefreshSource = dashboardData?.trades ?? EMPTY_TRADES;
+  const {
+    allAccountsScoreResult,
+    accountScoreResults,
+    accountFilterKey: comparisonAccountFilterKey,
+    refreshSource: comparisonRefreshSource,
+  } = useTradingScoreComparison(
+    filters,
+    filters.accounts.length > 0 && !isMetricMasked,
+    scoreRefreshSource
+  );
+  const isComparisonCurrent =
+    comparisonAccountFilterKey === selectedAccountFilterKey &&
+    comparisonRefreshSource === scoreRefreshSource;
+
+  const accountRadarSeries = useMemo((): RadarSeries[] => {
+    if (!scoreResult || filters.accounts.length === 0 || !isComparisonCurrent) {
+      return [];
+    }
+
+    if (filters.accounts.length === 1) {
+      return [
+        {
+          key: 'value',
+          label: filters.accounts[0],
+          legendLabel: getCompactAccountLabel(filters.accounts[0]),
+          color: getScoreLabel(scoreResult.compositeScore).color,
+          scoreResult,
+        },
+      ];
+    }
+
+    if (accountScoreResults.length !== filters.accounts.length) {
+      return [
+        {
+          key: 'value',
+          label: filters.accounts.join(', '),
+          legendLabel: getCompactAccountLabel(filters.accounts.join(', ')),
+          color: getScoreLabel(scoreResult.compositeScore).color,
+          scoreResult,
+        },
+      ];
+    }
+
+    return accountScoreResults.map((accountScore, index) => ({
+      key: `accountValue${index}`,
+      label: accountScore.account,
+      legendLabel: getCompactAccountLabel(accountScore.account),
+      color: ACCOUNT_RADAR_COLORS[index % ACCOUNT_RADAR_COLORS.length],
+      scoreResult: accountScore.scoreResult,
+    }));
+  }, [accountScoreResults, filters.accounts, isComparisonCurrent, scoreResult]);
+
+  const showAccountComparison = Boolean(
+    scoreResult &&
+    !isMetricMasked &&
+    filters.accounts.length > 0 &&
+    isComparisonCurrent &&
+    allAccountsScoreResult &&
+    accountRadarSeries.some(
+      (series) => !scoreAxesAreSame(series.scoreResult, allAccountsScoreResult)
+    )
+  );
+
+  const visibleAccountRadarSeries = useMemo(
+    () => (showAccountComparison ? accountRadarSeries : []),
+    [accountRadarSeries, showAccountComparison]
+  );
+
+  const visibleLegendSeries = visibleAccountRadarSeries.slice(
+    0,
+    MAX_VISIBLE_LEGEND_ACCOUNTS
+  );
+  const hiddenLegendSeriesCount = Math.max(
+    0,
+    visibleAccountRadarSeries.length - visibleLegendSeries.length
+  );
 
   const radarData = useMemo((): RadarDataPoint[] => {
     if (!scoreResult) return [];
@@ -238,10 +503,24 @@ const TradingScoreWidgetComponent: React.FC<TradingScoreWidgetProps> = () => {
       ), 
       axisKey,
       value: scoreResult.axisScores[axisKey],
+      allAccountsValue: showAccountComparison
+        ? allAccountsScoreResult?.axisScores[axisKey]
+        : undefined,
+      ...Object.fromEntries(
+        visibleAccountRadarSeries.map((series) => [
+          series.key,
+          series.scoreResult.axisScores[axisKey],
+        ])
+      ),
       fullMark: 100,
       weight: AXIS_WEIGHTS[axisKey] * 100,
     }));
-  }, [scoreResult]);
+  }, [
+    allAccountsScoreResult,
+    scoreResult,
+    showAccountComparison,
+    visibleAccountRadarSeries,
+  ]);
 
   
   if (!dashboardData) {
@@ -368,6 +647,9 @@ const TradingScoreWidgetComponent: React.FC<TradingScoreWidgetProps> = () => {
   return (
     <div
       className="journalit-home-score journalit-home-score--compact journalit-home-score--clickable"
+      style={cssVars({
+        '--journalit-home-score-selected-color': scoreLabel.color,
+      })}
       onClick={() => setIsExpanded(true)}
       role="button"
       tabIndex={0}
@@ -414,17 +696,46 @@ const TradingScoreWidgetComponent: React.FC<TradingScoreWidgetProps> = () => {
               tick={false}
               axisLine={false}
             />
-            <Radar
-              name={t('widget.trading-score.title')}
-              dataKey="value"
-              stroke={scoreLabel.color}
-              fill={scoreLabel.color}
-              fillOpacity={scoreResult.phase === 'developing' ? 0.3 : 0.4}
-              strokeWidth={scoreResult.phase === 'developing' ? 1.5 : 2}
-              strokeDasharray={
-                scoreResult.phase === 'developing' ? '4 2' : undefined
-              }
-            />
+            {showAccountComparison ? (
+              <>
+                <Radar
+                  name={`${t('common.all')} accounts`}
+                  dataKey="allAccountsValue"
+                  stroke="var(--interactive-accent)"
+                  fill="var(--interactive-accent)"
+                  fillOpacity={0.18}
+                  strokeWidth={1.75}
+                />
+                {visibleAccountRadarSeries.map((series) => (
+                  <Radar
+                    key={series.key}
+                    name={series.label}
+                    dataKey={series.key}
+                    stroke={series.color}
+                    fill={series.color}
+                    fillOpacity={0.24}
+                    strokeWidth={1.75}
+                    strokeDasharray={
+                      series.scoreResult.phase === 'developing'
+                        ? '4 2'
+                        : undefined
+                    }
+                  />
+                ))}
+              </>
+            ) : (
+              <Radar
+                name={t('widget.trading-score.title')}
+                dataKey="value"
+                stroke={scoreLabel.color}
+                fill={scoreLabel.color}
+                fillOpacity={scoreResult.phase === 'developing' ? 0.3 : 0.4}
+                strokeWidth={scoreResult.phase === 'developing' ? 1.5 : 2}
+                strokeDasharray={
+                  scoreResult.phase === 'developing' ? '4 2' : undefined
+                }
+              />
+            )}
             <RechartsPortalTooltip chartRef={chartRef}>
               {({ active, payload }: TooltipContentLike<RadarDataPoint>) => {
                 const data = payload?.[0]?.payload;
@@ -436,11 +747,62 @@ const TradingScoreWidgetComponent: React.FC<TradingScoreWidgetProps> = () => {
                     <div className="journalit-home-score__tooltip-label">
                       {t(`widget.trading-score.axis.${data.axisKey}` as const)}
                     </div>
-                    <div
-                      className={`journalit-home-score__tooltip-value ${scoreClass}`}
-                    >
-                      {data.value}
-                    </div>
+                    {showAccountComparison ? (
+                      <div className="journalit-home-score__tooltip-series">
+                        {visibleAccountRadarSeries.map((series) => {
+                          const seriesValue = data[series.key];
+
+                          return (
+                            <div
+                              key={series.key}
+                              className="journalit-home-score__tooltip-series-row"
+                              style={cssVars({
+                                '--journalit-home-score-tooltip-series-color':
+                                  series.color,
+                              })}
+                            >
+                              <span className="journalit-home-score__tooltip-series-label">
+                                {series.label}
+                              </span>
+                              <span className="journalit-home-score__tooltip-series-value">
+                                {formatValue({
+                                  kind: 'metric',
+                                  value:
+                                    typeof seriesValue === 'number'
+                                      ? seriesValue
+                                      : undefined,
+                                  precision: 0,
+                                })}
+                              </span>
+                            </div>
+                          );
+                        })}
+                        {data.allAccountsValue !== undefined && (
+                          <div className="journalit-home-score__tooltip-series-row journalit-home-score__tooltip-series-row--all">
+                            <span className="journalit-home-score__tooltip-series-label">
+                              {t('common.all')}
+                            </span>
+                            <span className="journalit-home-score__tooltip-series-value">
+                              {formatValue({
+                                kind: 'metric',
+                                value: data.allAccountsValue,
+                                precision: 0,
+                              })}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <div
+                        className={`journalit-home-score__tooltip-value ${scoreClass}`}
+                      >
+                        {formatValue({
+                          kind: 'metric',
+                          value: data.value,
+                          precision: 0,
+                        })}
+                      </div>
+                    )}
                     <div className="journalit-home-score__tooltip-weight">
                       {t('widget.trading-score.weight', {
                         weight: String(data.weight),
@@ -459,6 +821,29 @@ const TradingScoreWidgetComponent: React.FC<TradingScoreWidgetProps> = () => {
         <div className={`journalit-home-score__score-value ${scoreClass}`}>
           {scoreResult.compositeScore}
         </div>
+        {showAccountComparison && (
+          <div className="journalit-home-score__legend journalit-home-score__legend--status-left">
+            {visibleLegendSeries.map((series) => (
+              <span
+                key={series.key}
+                className="journalit-home-score__legend-item journalit-home-score__legend-item--selected"
+                style={cssVars({
+                  '--journalit-home-score-legend-color': series.color,
+                })}
+              >
+                {series.legendLabel}
+              </span>
+            ))}
+            {hiddenLegendSeriesCount > 0 && (
+              <span className="journalit-home-score__legend-more">
+                +{hiddenLegendSeriesCount}
+              </span>
+            )}
+            <span className="journalit-home-score__legend-item journalit-home-score__legend-item--all">
+              {t('common.all')}
+            </span>
+          </div>
+        )}
         <div className="journalit-home-score__phase-row">
           <span className={`journalit-home-score__phase-label ${phaseClass}`}>
             {t(`widget.trading-score.phase.${scoreResult.phase}` as const)}

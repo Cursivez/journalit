@@ -11,6 +11,9 @@ interface ImagePathComponents {
   formattedDate?: string;
 }
 
+const SUPPORTED_MEDIA_FILE_EXTENSION_PATTERN =
+  /\.(jpg|jpeg|png|gif|bmp|webp|svg|mp4|webm|mov|m4v|ogv|ogg|3gp|mkv)$/i;
+
 class ImageService {
   private _app: App | null = null;
 
@@ -39,6 +42,13 @@ class ImageService {
     components?: ImagePathComponents
   ): Promise<string> {
     try {
+      if (
+        !file.type.startsWith('image/') &&
+        !SUPPORTED_MEDIA_FILE_EXTENSION_PATTERN.test(file.name)
+      ) {
+        throw new Error(`Unsupported media file type: ${file.name}`);
+      }
+
       
       const safeFileName = file?.name
         ? file.name.replace(/[^a-zA-Z0-9.-]/g, '_')
@@ -386,7 +396,7 @@ class ImageService {
   }
 
   
-  public getImagesFromDataTransfer(dataTransfer: DataTransfer): File[] {
+  public getMediaFromDataTransfer(dataTransfer: DataTransfer): File[] {
     try {
       if (!dataTransfer.files || dataTransfer.files.length === 0) {
         return [];
@@ -397,14 +407,19 @@ class ImageService {
       const imageFiles = files.filter(
         (file) =>
           file.type.startsWith('image/') ||
-          file.name.match(/\.(jpg|jpeg|png|gif|bmp|webp)$/i)
+          SUPPORTED_MEDIA_FILE_EXTENSION_PATTERN.test(file.name)
       );
 
       return imageFiles;
     } catch (error) {
-      console.error('Error extracting images from drop event:', error);
+      console.error('Error extracting media from drop event:', error);
       return [];
     }
+  }
+
+  
+  public getImagesFromDataTransfer(dataTransfer: DataTransfer): File[] {
+    return this.getMediaFromDataTransfer(dataTransfer);
   }
 }
 

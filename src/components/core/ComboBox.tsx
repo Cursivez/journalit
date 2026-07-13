@@ -102,7 +102,7 @@ function useComboBoxModel({
   isMulti = false,
   optionType,
   onSaveOption,
-  portalDropdown = false,
+  portalDropdown = true,
 }: ComboBoxProps) {
   
   const uniqueId = useId();
@@ -512,18 +512,18 @@ function useComboBoxModel({
 
     const handleEscapeKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
         setIsOpen(false);
       }
     };
 
-    window.activeDocument.addEventListener('keydown', handleEscapeKey, true);
+    const activeWindow = window.activeDocument.defaultView ?? window;
+    activeWindow.addEventListener('keydown', handleEscapeKey, true);
 
     return () => {
-      window.activeDocument.removeEventListener(
-        'keydown',
-        handleEscapeKey,
-        true
-      );
+      activeWindow.removeEventListener('keydown', handleEscapeKey, true);
     };
   }, [isOpen, setIsOpen]);
 
@@ -633,6 +633,8 @@ function useComboBoxModel({
           break;
 
         case 'Escape':
+          e.preventDefault();
+          e.stopPropagation();
           setIsOpen(false);
           break;
       }
@@ -847,7 +849,7 @@ export const ComboBox: React.FC<ComboBoxProps> = (props) => {
     placeholder = t('combobox.placeholder.default'),
     error,
     helperText,
-    portalDropdown = false,
+    portalDropdown = true,
   } = props;
   const {
     comboRef,

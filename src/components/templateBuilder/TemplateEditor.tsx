@@ -34,6 +34,7 @@ import { MultiSelectDropdownFilter } from '../shared/MultiSelectDropdownFilter';
 import { TemplatePreview } from './TemplatePreview';
 import type { ReviewTemplateService } from '../../services/templates/ReviewTemplateService';
 import { WidgetPicker } from './WidgetPicker';
+import { FloatingUnsavedChangesBanner } from './FloatingUnsavedChangesBanner';
 import {
   getWidgetNameByPlacement,
   type WidgetDefinition,
@@ -41,6 +42,7 @@ import {
 import { t } from '../../lang/helpers';
 import { generateUUID } from '../../utils/uuid';
 import { resolveDemonTrackerModes } from '../reviewV2/widgets/shared/demonTrackerAggregation';
+import type { TradeReviewCardField } from '../reviewV2/widgets/TradeReviewWidget';
 import {
   useGuideAction,
   useGuideBackHandler,
@@ -91,6 +93,140 @@ const parseDemonTrackerSourceMode = (value: string): DemonTrackerSourceMode => {
     default:
       return 'trades';
   }
+};
+
+const TRADE_REVIEW_PRIMARY_METRIC_OPTIONS: TradeReviewCardField[] = [
+  'entry',
+  'exit',
+  'duration',
+  'risk',
+  'positionSize',
+  'stopLoss',
+  'takeProfit',
+  'fees',
+  'commission',
+  'mae',
+  'mfe',
+];
+
+const TRADE_REVIEW_CLASSIFICATION_OPTIONS: TradeReviewCardField[] = [
+  'account',
+  'setup',
+  'mistakes',
+  'tags',
+];
+
+const TRADE_REVIEW_MORE_CONTEXT_OPTIONS: TradeReviewCardField[] = [
+  'thesis',
+  'notes',
+  'customFields',
+  'positionSize',
+  'stopLoss',
+  'takeProfit',
+  'fees',
+  'commission',
+  'mae',
+  'mfe',
+];
+
+const getTradeReviewFieldLabel = (field: TradeReviewCardField): string => {
+  switch (field) {
+    case 'entry':
+      return t('widget.trade-review.field.entry');
+    case 'exit':
+      return t('widget.trade-review.field.exit');
+    case 'duration':
+      return t('widget.trade-review.field.duration');
+    case 'risk':
+      return t('widget.trade-review.field.risk');
+    case 'positionSize':
+      return t('widget.trade-review.field.position-size');
+    case 'stopLoss':
+      return t('widget.trade-review.field.stop-loss');
+    case 'takeProfit':
+      return t('widget.trade-review.field.take-profit');
+    case 'fees':
+      return t('widget.trade-review.field.fees');
+    case 'commission':
+      return t('widget.trade-review.field.commission');
+    case 'mae':
+      return t('widget.trade-review.field.mae');
+    case 'mfe':
+      return t('widget.trade-review.field.mfe');
+    case 'account':
+      return t('widget.trade-review.field.account');
+    case 'setup':
+      return t('widget.trade-review.field.setup');
+    case 'mistakes':
+      return t('widget.trade-review.field.mistakes');
+    case 'tags':
+      return t('widget.trade-review.field.tags');
+    case 'thesis':
+      return t('widget.trade-review.field.thesis');
+    case 'notes':
+      return t('widget.trade-review.field.notes');
+    case 'customFields':
+      return t('widget.trade-review.field.custom-fields');
+  }
+};
+
+const parseTradeReviewFieldList = (
+  value: unknown,
+  fallback: TradeReviewCardField[]
+): TradeReviewCardField[] => {
+  if (!Array.isArray(value)) return fallback;
+  return value.filter(
+    (field): field is TradeReviewCardField => typeof field === 'string'
+  );
+};
+
+const getTradeReviewFieldsSummary = (
+  selectedValues: string[],
+  options: Array<{ value: string; label: string }>
+): string => {
+  if (selectedValues.length === 0) {
+    return t('templateEditor.widget.trade-review.fields-none');
+  }
+  if (selectedValues.length === options.length) {
+    return t('templateEditor.widget.trade-review.fields-all');
+  }
+  if (selectedValues.length === 1) {
+    return (
+      options.find((option) => option.value === selectedValues[0])?.label ??
+      selectedValues[0]
+    );
+  }
+  return t('templateEditor.widget.trade-review.fields-count', {
+    count: String(selectedValues.length),
+  });
+};
+
+const filterTradeReviewFieldOptions = (
+  options: Array<{ value: string; label: string }>,
+  selectedValues: string[],
+  excludedValues: string[]
+): Array<{ value: string; label: string }> => {
+  const selected = new Set(selectedValues);
+  const excluded = new Set(excludedValues);
+  return options.filter(
+    (option) => selected.has(option.value) || !excluded.has(option.value)
+  );
+};
+
+const removeTradeReviewFields = (
+  fields: TradeReviewCardField[],
+  fieldsToRemove: string[]
+): TradeReviewCardField[] => {
+  const removed = new Set(fieldsToRemove);
+  return fields.filter((field) => !removed.has(field));
+};
+
+const getRemovedTradeReviewFields = (
+  previousFields: TradeReviewCardField[],
+  nextFields: string[]
+): TradeReviewCardField[] => {
+  const next = new Set(nextFields);
+  return previousFields.filter((field) => !next.has(field));
 };
 
 
@@ -359,6 +495,85 @@ function useSortableWidgetItemContent({
       ),
     [reviewContextConfig?.fieldIds]
   );
+
+  const tradeReviewConfig = widget.config as
+    | {
+        primaryMetrics?: TradeReviewCardField[];
+        classificationFields?: TradeReviewCardField[];
+        moreContextFields?: TradeReviewCardField[];
+        showImages?: boolean;
+        defaultExpanded?: boolean;
+        showOpenTrades?: boolean;
+        showReviewedTrades?: boolean;
+      }
+    | undefined;
+
+  const primaryMetricValues = parseTradeReviewFieldList(
+    tradeReviewConfig?.primaryMetrics,
+    ['entry', 'exit', 'duration', 'risk']
+  );
+  const classificationFieldValues = parseTradeReviewFieldList(
+    tradeReviewConfig?.classificationFields,
+    ['account', 'setup', 'mistakes', 'tags']
+  );
+  const moreContextFieldValues = parseTradeReviewFieldList(
+    tradeReviewConfig?.moreContextFields,
+    ['thesis', 'notes', 'customFields']
+  );
+  const primaryMetricOptions = TRADE_REVIEW_PRIMARY_METRIC_OPTIONS.map(
+    (field) => ({ value: field, label: getTradeReviewFieldLabel(field) })
+  );
+  const classificationFieldOptions = TRADE_REVIEW_CLASSIFICATION_OPTIONS.map(
+    (field) => ({ value: field, label: getTradeReviewFieldLabel(field) })
+  );
+  const moreContextFieldOptions = [
+    ...TRADE_REVIEW_MORE_CONTEXT_OPTIONS.map((field) => ({
+      value: field,
+      label: getTradeReviewFieldLabel(field),
+    })),
+  ];
+  const availablePrimaryMetricOptions = filterTradeReviewFieldOptions(
+    primaryMetricOptions,
+    primaryMetricValues,
+    moreContextFieldValues
+  );
+  const availableMoreContextFieldOptions = filterTradeReviewFieldOptions(
+    moreContextFieldOptions,
+    moreContextFieldValues,
+    primaryMetricValues
+  );
+  const updateTradeReviewConfig = (updates: Record<string, unknown>): void => {
+    onConfigChange(index, {
+      ...widget.config,
+      ...updates,
+    });
+  };
+  const updateTradeReviewPrimaryMetrics = (fields: string[]): void => {
+    const removedPrimaryFields = getRemovedTradeReviewFields(
+      primaryMetricValues,
+      fields
+    );
+    updateTradeReviewConfig({
+      primaryMetrics: fields,
+      moreContextFields: removeTradeReviewFields(
+        moreContextFieldValues,
+        fields.concat(removedPrimaryFields)
+      ),
+    });
+  };
+  const updateTradeReviewMoreContextFields = (fields: string[]): void => {
+    const removedMoreContextFields = getRemovedTradeReviewFields(
+      moreContextFieldValues,
+      fields
+    );
+    updateTradeReviewConfig({
+      moreContextFields: fields,
+      primaryMetrics: removeTradeReviewFields(
+        primaryMetricValues,
+        fields.concat(removedMoreContextFields)
+      ),
+    });
+  };
 
   const reviewContextFieldsSummary = useMemo(() => {
     const selectedFields = reviewContextFields.filter((field) =>
@@ -708,6 +923,101 @@ function useSortableWidgetItemContent({
                   }
                 />
                 {t('templateEditor.widget.review-context-fields.hide-empty')}
+              </label>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {widget.type === 'trade-review' && isEditing && (
+        <div className="template-review-context-config template-trade-review-config">
+          <div className="template-review-context-config-row template-review-context-config-row--fields">
+            <div className="template-review-context-config-label">
+              {t('templateEditor.widget.trade-review.primary-metrics')}
+            </div>
+            <div className="template-review-context-config-control template-review-context-field-list">
+              <MultiSelectDropdownFilter
+                options={availablePrimaryMetricOptions}
+                selectedValues={primaryMetricValues}
+                summary={getTradeReviewFieldsSummary(
+                  primaryMetricValues,
+                  availablePrimaryMetricOptions
+                )}
+                emptyMessage={t('templateEditor.widget.trade-review.no-fields')}
+                classNamePrefix="template-review-context-field-filter"
+                onChange={updateTradeReviewPrimaryMetrics}
+              />
+            </div>
+          </div>
+
+          <div className="template-review-context-config-row template-review-context-config-row--fields">
+            <div className="template-review-context-config-label">
+              {t('templateEditor.widget.trade-review.classification')}
+            </div>
+            <div className="template-review-context-config-control template-review-context-field-list">
+              <MultiSelectDropdownFilter
+                options={classificationFieldOptions}
+                selectedValues={classificationFieldValues}
+                summary={getTradeReviewFieldsSummary(
+                  classificationFieldValues,
+                  classificationFieldOptions
+                )}
+                emptyMessage={t('templateEditor.widget.trade-review.no-fields')}
+                classNamePrefix="template-review-context-field-filter"
+                onChange={(fields) =>
+                  updateTradeReviewConfig({ classificationFields: fields })
+                }
+              />
+            </div>
+          </div>
+
+          <div className="template-review-context-config-row template-review-context-config-row--fields">
+            <div className="template-review-context-config-label">
+              {t('templateEditor.widget.trade-review.more-context')}
+            </div>
+            <div className="template-review-context-config-control template-review-context-field-list">
+              <MultiSelectDropdownFilter
+                options={availableMoreContextFieldOptions}
+                selectedValues={moreContextFieldValues}
+                summary={getTradeReviewFieldsSummary(
+                  moreContextFieldValues,
+                  availableMoreContextFieldOptions
+                )}
+                emptyMessage={t('templateEditor.widget.trade-review.no-fields')}
+                classNamePrefix="template-review-context-field-filter"
+                onChange={updateTradeReviewMoreContextFields}
+              />
+            </div>
+          </div>
+
+          <div className="template-review-context-config-row">
+            <div className="template-review-context-config-label">
+              {t('templateEditor.widget.trade-review.display')}
+            </div>
+            <div className="template-review-context-config-control template-trade-review-toggle-list">
+              <label className="template-review-context-toggle-row">
+                <input
+                  type="checkbox"
+                  checked={tradeReviewConfig?.showImages !== false}
+                  onChange={(event) =>
+                    updateTradeReviewConfig({
+                      showImages: event.target.checked,
+                    })
+                  }
+                />
+                {t('templateEditor.widget.trade-review.show-images')}
+              </label>
+              <label className="template-review-context-toggle-row">
+                <input
+                  type="checkbox"
+                  checked={tradeReviewConfig?.defaultExpanded === false}
+                  onChange={(event) =>
+                    updateTradeReviewConfig({
+                      defaultExpanded: !event.target.checked,
+                    })
+                  }
+                />
+                {t('templateEditor.widget.weekly-drc-start-collapsed')}
               </label>
             </div>
           </div>
@@ -1475,8 +1785,12 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = (props) => {
     );
   }
 
+  const showUnsavedBanner = hasChanges && !template.isBuiltIn;
+
   return (
-    <div className="template-editor-root">
+    <div
+      className={`template-editor-root${showUnsavedBanner ? ' template-editor-root--has-floating-unsaved' : ''}`}
+    >
       
       <div className="template-editor-topbar">
         <div className="template-editor-topbar-group">
@@ -1523,30 +1837,6 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = (props) => {
               <div className="template-editor-notice template-editor-notice--warning template-editor-notice--spaced">
                 <Info size={16} className="template-editor-notice__icon" />
                 <span>{t('templateEditor.built-in-notice')}</span>
-              </div>
-            )}
-
-            
-            {hasChanges && canEdit && (
-              <div className="template-unsaved-banner">
-                <span className="template-unsaved-banner__text">
-                  {t('templateEditor.unsaved-changes')}
-                </span>
-                <div className="template-unsaved-banner__actions">
-                  <button
-                    onClick={() => void handleDiscard()}
-                    className="template-action-button template-action-button--neutral template-action-button--compact"
-                  >
-                    {t('button.discard')}
-                  </button>
-                  <button
-                    ref={registerSaveButtonTarget}
-                    onClick={() => void handleSave()}
-                    className="template-action-button template-action-button--primary template-action-button--compact"
-                  >
-                    {t('button.save')}
-                  </button>
-                </div>
               </div>
             )}
 
@@ -1637,6 +1927,16 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = (props) => {
           </div>
         )}
       </div>
+
+      
+      {showUnsavedBanner && (
+        <FloatingUnsavedChangesBanner
+          message={t('templateEditor.unsaved-changes')}
+          onDiscard={() => void handleDiscard()}
+          onSave={() => void handleSave()}
+          saveButtonRef={registerSaveButtonTarget}
+        />
+      )}
     </div>
   );
 };

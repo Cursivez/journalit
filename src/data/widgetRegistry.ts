@@ -81,6 +81,13 @@ export const WIDGET_REGISTRY: WidgetDefinition[] = [
     availableIn: ['drc'],
   },
   {
+    type: 'session-log',
+    name: t('widget.session-log.name'),
+    description: t('widget.session-log.description'),
+    category: 'content',
+    availableIn: ['drc'],
+  },
+  {
     type: 'key-levels',
     name: t('widget.key-levels.name'),
     description: t('widget.key-levels.description'),
@@ -317,6 +324,14 @@ export const WIDGET_REGISTRY: WidgetDefinition[] = [
     description: t('widget.trades.description'),
     category: 'tables',
     availableIn: ['drc', 'weekly', 'monthly', 'quarterly', 'yearly'],
+  },
+  {
+    type: 'trade-review',
+    name: t('widget.trade-review.name'),
+    description: t('widget.trade-review.description'),
+    category: 'content',
+    availableIn: ['drc'],
+    defaultConfig: { defaultExpanded: true, showOpenTrades: true },
   },
   {
     type: 'backtest-trades',

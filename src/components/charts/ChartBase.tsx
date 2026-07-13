@@ -25,6 +25,24 @@ interface ChartBaseProps extends BaseChartProps {
 const MIN_CHART_WIDTH = 100;
 const MIN_CHART_HEIGHT = 100;
 
+function measureContentBox(container: HTMLDivElement): ContainerDimensions {
+  const view = container.ownerDocument.defaultView;
+  const styles = view?.getComputedStyle(container);
+  const horizontalPadding = styles
+    ? (Number.parseFloat(styles.paddingLeft) || 0) +
+      (Number.parseFloat(styles.paddingRight) || 0)
+    : 0;
+  const verticalPadding = styles
+    ? (Number.parseFloat(styles.paddingTop) || 0) +
+      (Number.parseFloat(styles.paddingBottom) || 0)
+    : 0;
+
+  return {
+    width: Math.max(0, container.clientWidth - horizontalPadding),
+    height: Math.max(0, container.clientHeight - verticalPadding),
+  };
+}
+
 
 const DEBUG_CHARTS: boolean =
   (typeof window !== 'undefined' && window.JOURNALIT_DEBUG_CHARTS) === true;
@@ -125,9 +143,9 @@ export const ChartBase = React.memo<ChartBaseProps>(
       if (!container) return;
 
       const measure = () => {
-        const rect = container.getBoundingClientRect();
-        const width = Math.floor(rect.width);
-        const height = Math.floor(rect.height);
+        const contentBox = measureContentBox(container);
+        const width = Math.floor(contentBox.width);
+        const height = Math.floor(contentBox.height);
         if (width > 0 && height > 0) {
           dispatchMeasurement({ type: 'measured', width, height });
         }
@@ -137,10 +155,11 @@ export const ChartBase = React.memo<ChartBaseProps>(
       measure();
       if (DEBUG_CHARTS) {
         
+        const contentBox = measureContentBox(container);
 
         logger.debug('[ChartBase] initial dimensions', {
-          width: Math.floor(container.getBoundingClientRect().width),
-          height: Math.floor(container.getBoundingClientRect().height),
+          width: Math.floor(contentBox.width),
+          height: Math.floor(contentBox.height),
         });
       }
 

@@ -80,11 +80,13 @@ export const FullscreenPortal: React.FC<FullscreenPortalProps> = ({
     };
 
     
-    window.activeDocument.addEventListener('keydown', handleKeyDown, true);
+    
+    const activeWindow = window.activeDocument.defaultView ?? window;
+    activeWindow.addEventListener('keydown', handleKeyDown, true);
 
     
     return () => {
-      window.activeDocument.removeEventListener('keydown', handleKeyDown, true);
+      activeWindow.removeEventListener('keydown', handleKeyDown, true);
 
       
       

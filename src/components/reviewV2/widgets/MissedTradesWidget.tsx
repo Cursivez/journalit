@@ -85,7 +85,6 @@ interface MissedTradeFrontmatter {
   ticker?: string;
   direction?: string;
   setup?: string | string[];
-  setupIds?: string | string[];
   mistake?: string | string[];
   account?: string | string[];
   missedReason?: string;
@@ -158,7 +157,7 @@ export const buildMissedTradeDisplayData = (
     instrument:
       frontmatter.instrument || frontmatter.ticker || t('common.unknown'),
     direction: frontmatter.direction || t('common.unknown'),
-    setup: normalizeStringList(frontmatter.setup ?? frontmatter.setupIds),
+    setup: normalizeStringList(frontmatter.setup),
     mistake: normalizeStringList(frontmatter.mistake),
     account: normalizeStringList(frontmatter.account),
     missedReason: parseDisplayText(frontmatter.missedReason) || '',
@@ -466,7 +465,7 @@ export const MissedTradesWidget: React.FC<MissedTradesWidgetProps> = memo(
           .flatMap((mtFile) => {
             const mtCache = plugin.app.metadataCache.getFileCache(mtFile);
             const missedTrade = buildMissedTradeDisplayData(
-              mtCache?.frontmatter as MissedTradeFrontmatter | undefined,
+              mtCache?.frontmatter,
               mtFile
             );
             return missedTrade ? [missedTrade] : [];

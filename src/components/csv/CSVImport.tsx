@@ -28,7 +28,7 @@ import { CollapsibleSection } from '../shared/CollapsibleSection';
 import { Notice } from 'obsidian';
 import { t, tPlural } from '../../lang/helpers';
 import JournalitPlugin from '../../main';
-import { UPGRADE_URL } from '../../constants';
+import { UPGRADE_URLS } from '../../constants';
 import { useBackendProEntitlement } from '../../hooks/useBackendProEntitlement';
 import { cssVars } from '../../styles/inlineStylePolicy';
 import { openExternalUrl } from '../../utils/externalLinks';
@@ -244,6 +244,9 @@ const TradeImportDropdown: React.FC<{
     };
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
+        event.preventDefault();
+        event.stopPropagation();
+        event.stopImmediatePropagation();
         dispatchMenuState({ isOpen: false });
       }
     };
@@ -266,8 +269,9 @@ const TradeImportDropdown: React.FC<{
         dispatchMenuState({ isOpen: false });
       }
     }, 150);
+    const activeWindow = window.activeDocument.defaultView ?? window;
     window.activeDocument.addEventListener('pointerdown', handlePointerDown);
-    window.activeDocument.addEventListener('keydown', handleKeyDown);
+    activeWindow.addEventListener('keydown', handleKeyDown, true);
     window.activeDocument.addEventListener(
       'visibilitychange',
       handleVisibilityChange
@@ -281,7 +285,7 @@ const TradeImportDropdown: React.FC<{
         'pointerdown',
         handlePointerDown
       );
-      window.activeDocument.removeEventListener('keydown', handleKeyDown);
+      activeWindow.removeEventListener('keydown', handleKeyDown, true);
       window.activeDocument.removeEventListener(
         'visibilitychange',
         handleVisibilityChange
@@ -774,6 +778,9 @@ export const CSVImport = memo<CSVImportProps>(({ plugin }) => {
     };
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
+        event.preventDefault();
+        event.stopPropagation();
+        event.stopImmediatePropagation();
         dispatchTemplateActionMenuState({ templateActionsOpen: false });
       }
     };
@@ -807,8 +814,9 @@ export const CSVImport = memo<CSVImportProps>(({ plugin }) => {
         dispatchTemplateActionMenuState({ templateActionsOpen: false });
       }
     }, 150);
+    const activeWindow = window.activeDocument.defaultView ?? window;
     window.activeDocument.addEventListener('pointerdown', handlePointerDown);
-    window.activeDocument.addEventListener('keydown', handleKeyDown);
+    activeWindow.addEventListener('keydown', handleKeyDown, true);
     window.activeDocument.addEventListener(
       'visibilitychange',
       handleVisibilityChange
@@ -822,7 +830,7 @@ export const CSVImport = memo<CSVImportProps>(({ plugin }) => {
         'pointerdown',
         handlePointerDown
       );
-      window.activeDocument.removeEventListener('keydown', handleKeyDown);
+      activeWindow.removeEventListener('keydown', handleKeyDown, true);
       window.activeDocument.removeEventListener(
         'visibilitychange',
         handleVisibilityChange
@@ -1500,7 +1508,7 @@ export const CSVImport = memo<CSVImportProps>(({ plugin }) => {
   }, [plugin]);
 
   const handleUpgrade = useCallback(() => {
-    openExternalUrl(UPGRADE_URL);
+    openExternalUrl(UPGRADE_URLS.csvImport);
   }, []);
 
   const renderGate = (
@@ -1511,8 +1519,12 @@ export const CSVImport = memo<CSVImportProps>(({ plugin }) => {
     return (
       <div className="journalit-csv-import journalit-trade-import-gate-view">
         <div className="journalit-trade-import-gate-card">
-          <div className="journalit-trade-import-gate-icon">
-            <Import size={25} strokeWidth={1.8} />
+          <div className="journalit-trade-import-gate-brand" aria-hidden="true">
+            <span>{t('trade-import.gate.brand-left')}</span>
+            <div className="journalit-trade-import-gate-icon">
+              <Import size={25} strokeWidth={1.8} />
+            </div>
+            <span>{t('trade-import.gate.brand-right')}</span>
           </div>
 
           <div className="journalit-trade-import-gate-copy">

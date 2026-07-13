@@ -2,6 +2,8 @@
 
 import React, { useState, useCallback, useMemo } from 'react';
 import { hasTranslation, t } from '../../../lang/helpers';
+import { registerExternalGuideTarget } from '../../../guides/GuideRuntimeLayer';
+import { TRADE_LOG_IMAGE_GALLERY_FILTER_SECTION_TARGET_ID } from '../../../guides/tradeLogGuideIds';
 import { Button } from '../../ui/Button';
 import { AccountFilter } from '../../dashboard/components/FilterControls/AccountFilter';
 import { TickerFilter } from '../../dashboard/components/FilterControls/TickerFilter';
@@ -15,11 +17,13 @@ import { DirectionFilter } from '../../tradelog/DirectionFilter';
 import { FilterChip } from '../FilterChip';
 import { CollapsibleSection } from '../CollapsibleSection';
 import {
+  AvailableImageFilterOptions,
   UnifiedFilters,
   FilterModalProps,
   AvailableCustomFieldFilter,
 } from './types';
 import {
+  ImageAnnotationStatusFilter,
   TradeType,
   TradeStatus,
   type DirectionFilter as DirectionFilterValue,
@@ -40,6 +44,22 @@ import {
 interface FilterModalContentProps extends FilterModalProps {
   onModalClose: () => void;
 }
+
+const EMPTY_IMAGE_FILTER_OPTIONS: AvailableImageFilterOptions = {
+  tags: [],
+};
+const EMPTY_IMAGE_ANNOTATION_STATUS: ImageAnnotationStatusFilter[] = [];
+const EMPTY_STRING_VALUES: string[] = [];
+
+const IMAGE_ANNOTATION_STATUS_OPTIONS: Array<{
+  value: ImageAnnotationStatusFilter;
+  label: string;
+}> = [
+  { value: 'tagged', label: t('filter.modal.image.status.tagged') },
+  { value: 'untagged', label: t('filter.modal.image.status.untagged') },
+  { value: 'hasNotes', label: t('filter.modal.image.status.has-notes') },
+  { value: 'noNotes', label: t('filter.modal.image.status.no-notes') },
+];
 
 export function mergeRenderableCustomFieldFilters(
   availableCustomFieldFilters: AvailableCustomFieldFilter[],
@@ -94,9 +114,23 @@ export const FilterModalContent = React.memo<FilterModalContentProps>(
     onModalClose,
     availableAccounts = [],
     availableCustomFieldFilters = [],
+    availableImageFilterOptions = EMPTY_IMAGE_FILTER_OPTIONS,
+    showImageFilters = false,
   }) => {
     
     const [filters, setFilters] = useState<UnifiedFilters>(currentFilters);
+    const imageAnnotationStatus =
+      filters.imageAnnotationStatus ?? EMPTY_IMAGE_ANNOTATION_STATUS;
+    const imageTags = filters.imageTags ?? EMPTY_STRING_VALUES;
+    const registerImageGalleryFilterSectionTarget = useCallback(
+      (element: HTMLElement | null) => {
+        registerExternalGuideTarget(
+          TRADE_LOG_IMAGE_GALLERY_FILTER_SECTION_TARGET_ID,
+          element
+        );
+      },
+      []
+    );
 
     const defaultTradeTypes = useMemo(() => {
       if (context === 'tradelog') {
@@ -180,6 +214,25 @@ export const FilterModalContent = React.memo<FilterModalContentProps>(
       []
     );
 
+    const handleImageAnnotationStatusChange = useCallback(
+      (imageAnnotationStatus: string[]) => {
+        setFilters((prev) => ({
+          ...prev,
+          imageAnnotationStatus: imageAnnotationStatus.filter(
+            (status): status is ImageAnnotationStatusFilter =>
+              IMAGE_ANNOTATION_STATUS_OPTIONS.some(
+                (option) => option.value === status
+              )
+          ),
+        }));
+      },
+      []
+    );
+
+    const handleImageTagChange = useCallback((imageTags: string[]) => {
+      setFilters((prev) => ({ ...prev, imageTags }));
+    }, []);
+
     
     const handleReset = useCallback(() => {
       const resetTradeTypes =
@@ -200,6 +253,8 @@ export const FilterModalContent = React.memo<FilterModalContentProps>(
         reviewStatus: [],
         directions: [],
         customFieldFilters: {},
+        imageAnnotationStatus: [],
+        imageTags: [],
       });
     }, [context]);
 
@@ -403,6 +458,43 @@ export const FilterModalContent = React.memo<FilterModalContentProps>(
         });
       }
 
+      if (showImageFilters && imageAnnotationStatus.length > 0) {
+        imageAnnotationStatus.forEach((status) => {
+          const option = IMAGE_ANNOTATION_STATUS_OPTIONS.find(
+            (candidate) => candidate.value === status
+          );
+          chips.push({
+            key: `image-status-${status}`,
+            label: option ? option.label : status,
+            onRemove: () => {
+              setFilters((prev) => ({
+                ...prev,
+                imageAnnotationStatus: (
+                  prev.imageAnnotationStatus || []
+                ).filter((current) => current !== status),
+              }));
+            },
+          });
+        });
+      }
+
+      if (showImageFilters && imageTags.length > 0) {
+        imageTags.forEach((tag) => {
+          chips.push({
+            key: `image-tag-${tag}`,
+            label: `${t('filter.modal.image.tags')}: ${tag === '__NO_IMAGE_TAGS__' ? t('filter.modal.no-tags') : tag}`,
+            onRemove: () => {
+              setFilters((prev) => ({
+                ...prev,
+                imageTags: (prev.imageTags || []).filter(
+                  (current) => current !== tag
+                ),
+              }));
+            },
+          });
+        });
+      }
+
       
       const customFieldOptionMaps = new Map<string, Map<string, string>>(
         mergedCustomFieldFilters.map((definition) => [
@@ -462,7 +554,15 @@ export const FilterModalContent = React.memo<FilterModalContentProps>(
       );
 
       return chips;
-    }, [context, defaultTradeTypes, filters, mergedCustomFieldFilters]);
+    }, [
+      context,
+      defaultTradeTypes,
+      filters,
+      imageAnnotationStatus,
+      imageTags,
+      mergedCustomFieldFilters,
+      showImageFilters,
+    ]);
 
     
     const tradingDataBadgeCount =
@@ -497,6 +597,8 @@ export const FilterModalContent = React.memo<FilterModalContentProps>(
         (values) => values.length > 0
       ).length;
     }, [filters.customFieldFilters]);
+
+    const imageBadgeCount = imageAnnotationStatus.length + imageTags.length;
 
     return (
       <>
@@ -639,6 +741,42 @@ export const FilterModalContent = React.memo<FilterModalContentProps>(
               </div>
             </CollapsibleSection>
 
+            {showImageFilters && (
+              <CollapsibleSection
+                title={t('filter.modal.section.image-gallery')}
+                badge={imageBadgeCount}
+                defaultOpen={true}
+                containerRef={registerImageGalleryFilterSectionTarget}
+              >
+                <div className="filter-modal-image-section">
+                  <div className="filter-modal-section-grid-3col-auto">
+                    <div className="filter-modal-controls">
+                      <CustomFieldOptionsFilter
+                        label={t('filter.modal.image.annotation-status')}
+                        options={IMAGE_ANNOTATION_STATUS_OPTIONS}
+                        selectedValues={imageAnnotationStatus}
+                        onChange={handleImageAnnotationStatusChange}
+                      />
+                    </div>
+                    <div className="filter-modal-controls">
+                      <CustomFieldOptionsFilter
+                        label={t('filter.modal.image.tags')}
+                        options={[
+                          {
+                            value: '__NO_IMAGE_TAGS__',
+                            label: t('filter.modal.no-tags'),
+                          },
+                          ...availableImageFilterOptions.tags,
+                        ]}
+                        selectedValues={imageTags}
+                        onChange={handleImageTagChange}
+                      />
+                    </div>
+                  </div>
+                </div>
+              </CollapsibleSection>
+            )}
+
             {mergedCustomFieldFilters.length > 0 && (
               <CollapsibleSection
                 title={t('filter.modal.section.custom-fields')}
@@ -674,7 +812,7 @@ export const FilterModalContent = React.memo<FilterModalContentProps>(
         </div>
 
         <div className="filter-modal-buttons">
-          <Button variant="secondary" onClick={handleCancel}>
+          <Button variant="plain" onClick={handleCancel}>
             {t('button.cancel')}
           </Button>
           <Button variant="primary" onClick={handleApply}>

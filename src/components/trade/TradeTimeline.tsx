@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { TFile } from 'obsidian';
+import { ChevronLeft, ChevronRight } from '../shared/icons/ObsidianIcon';
 import { normalizeTradeExecution } from '../../services/trade/core/TradeExecutionNormalization';
 import { isSameTradingDay } from '../../utils/tradingDayUtils';
 import {
@@ -51,86 +52,22 @@ interface TradeItem {
   isOpen: boolean; 
 }
 
-const getTimelineItemToneClass = (item: TradeItem): string => {
-  if (item.isOpen) return 'open';
-  if (item.pnl > 0) return 'profit';
-  if (item.pnl < 0) return 'loss';
-  return '';
-};
-
 const getTimelineItemPrefix = (item: TradeItem): string =>
   item.isMissedTrade ? 'M' : item.isBacktestTrade ? 'B' : 'T';
 
-const getTimelineItemTradeType = (item: TradeItem): string =>
-  item.isMissedTrade
-    ? t('timeline.trade-type.missed')
-    : item.isBacktestTrade
-      ? t('timeline.trade-type.backtest')
-      : t('timeline.trade-type.regular');
-
-const getTimelineItemStatusLabel = (item: TradeItem): string =>
-  item.isOpen
-    ? t('timeline.status.open')
-    : item.pnl > 0
-      ? t('timeline.status.profit')
-      : item.pnl < 0
-        ? t('timeline.status.loss')
-        : t('timeline.status.breakeven');
-
-interface TimelineTradeButtonProps {
-  item: TradeItem;
-  ticker: string;
-  onTradeClick?: (tradePath: string) => void;
-}
-
-const TimelineTradeButton: React.FC<TimelineTradeButtonProps> = ({
-  item,
-  ticker,
-  onTradeClick,
-}) => {
-  const prefix = getTimelineItemPrefix(item);
-  const className = `timeline-item ${item.isMissedTrade ? 'missed-trade' : ''} ${item.isBacktestTrade ? 'backtest-trade' : ''} ${getTimelineItemToneClass(item)} ${item.isActive ? 'active' : ''}`;
-
-  return (
-    <button
-      className={className}
-      disabled={!onTradeClick}
-      onClick={onTradeClick ? () => onTradeClick(item.file.path) : undefined}
-      aria-label={t('timeline.aria.trade-status', {
-        ticker,
-        tradeType: getTimelineItemTradeType(item),
-        tradeNumber: String(item.tradeNumber),
-        status: getTimelineItemStatusLabel(item),
-      })}
-    >
-      {prefix}
-      {item.tradeNumber}
-    </button>
-  );
+const getTradeSortTime = (
+  item: TradeItem,
+  plugin: ReturnType<typeof usePlugin>
+): number => {
+  const cache = plugin?.app?.metadataCache.getFileCache(item.file);
+  const tradeDate = getTradeTimelineDate(cache?.frontmatter, item.file.path);
+  return tradeDate?.getTime() ?? item.file.stat.ctime;
 };
 
-const TimelineRow: React.FC<{
-  ticker: string;
-  items: TradeItem[];
-  isActiveTicker: boolean;
-  onTradeClick: (tradePath: string) => void;
-}> = ({ ticker, items, isActiveTicker, onTradeClick }) => (
-  <div className="trade-timeline">
-    <div className={`timeline-label ${isActiveTicker ? 'active-ticker' : ''}`}>
-      {ticker}:
-    </div>
-    <div className="timeline-items">
-      {items.map((item) => (
-        <TimelineTradeButton
-          key={item.file.path}
-          item={item}
-          ticker={ticker}
-          onTradeClick={onTradeClick}
-        />
-      ))}
-    </div>
-  </div>
-);
+const getTradeNavLabel = (item: TradeItem): string => {
+  const prefix = getTimelineItemPrefix(item);
+  return `${item.ticker} ${prefix}${item.tradeNumber}`;
+};
 
 export const getTradeTimelineDate = (
   frontmatter: Record<string, unknown> | undefined,
@@ -342,53 +279,75 @@ export const TradeTimeline: React.FC<TradeTimelineProps> = ({
     return byTicker;
   }, [sameDayTrades, currentTradePath, plugin]);
 
-  
-  const tickers = Object.keys(tradesByTicker);
+  const chronologicalItems = React.useMemo(
+    () =>
+      Object.values(tradesByTicker)
+        .flat()
+        .sort((a, b) => {
+          const timeDiff =
+            getTradeSortTime(a, plugin) - getTradeSortTime(b, plugin);
+          if (timeDiff !== 0) return timeDiff;
+          return a.file.path.localeCompare(b.file.path);
+        }),
+    [tradesByTicker, plugin]
+  );
 
-  if (tickers.length === 0) {
+  if (chronologicalItems.length === 0) {
     return null; 
   }
 
-  
-  if (sameDayTrades.length <= 1) {
-    const singleTicker = tickers[0];
-    const singleTrade = tradesByTicker[singleTicker][0];
-
-    return (
-      <div className="trade-timeline-container single-trade">
-        <div className="trade-timeline">
-          <div className="timeline-label active-ticker">{singleTicker}:</div>
-          <div className="timeline-items">
-            <TimelineTradeButton item={singleTrade} ticker={singleTicker} />
-          </div>
-        </div>
-      </div>
-    );
+  if (chronologicalItems.length <= 1) {
+    return null;
   }
 
-  
-  const activeTicker = tickers.find((ticker) =>
-    tradesByTicker[ticker].some((item) => item.isActive)
-  );
+  const currentIndex = chronologicalItems.findIndex((item) => item.isActive);
+  if (currentIndex === -1) {
+    return null;
+  }
 
-  
-  const sortedTickers = [...tickers].sort((a, b) => {
-    if (a === activeTicker) return -1;
-    if (b === activeTicker) return 1;
-    return a.localeCompare(b);
-  });
+  const previousTrade = chronologicalItems[currentIndex - 1];
+  const nextTrade = chronologicalItems[currentIndex + 1];
+
+  const handleNavigate = (item: TradeItem | undefined) => {
+    if (!item) return;
+    onTradeClick(item.file.path);
+  };
 
   return (
-    <div className="trade-timeline-container">
-      {sortedTickers.map((ticker) => (
-        <TimelineRow
-          key={ticker}
-          ticker={ticker}
-          items={tradesByTicker[ticker]}
-          isActiveTicker={ticker === activeTicker}
-          onTradeClick={onTradeClick}
-        />
-      ))}
+    <div
+      className="trade-session-nav"
+      aria-label={t('timeline.aria.session-navigation')}
+    >
+      <button
+        type="button"
+        className="trade-session-nav-button journalit-header-icon-button"
+        disabled={!previousTrade}
+        onClick={() => handleNavigate(previousTrade)}
+        aria-label={
+          previousTrade
+            ? t('timeline.aria.previous-trade', {
+                trade: getTradeNavLabel(previousTrade),
+              })
+            : t('timeline.aria.no-previous-trade')
+        }
+      >
+        <ChevronLeft size={16} strokeWidth={2} aria-hidden="true" />
+      </button>
+      <button
+        type="button"
+        className="trade-session-nav-button journalit-header-icon-button"
+        disabled={!nextTrade}
+        onClick={() => handleNavigate(nextTrade)}
+        aria-label={
+          nextTrade
+            ? t('timeline.aria.next-trade', {
+                trade: getTradeNavLabel(nextTrade),
+              })
+            : t('timeline.aria.no-next-trade')
+        }
+      >
+        <ChevronRight size={16} strokeWidth={2} aria-hidden="true" />
+      </button>
     </div>
   );
 };

@@ -25,6 +25,10 @@ export interface LossReviewData {
   reviewedAt?: string;
 }
 
+export interface TradeReviewData {
+  sections: LossReviewData['sections'];
+}
+
 export interface TradeMetadata {
   type: string;
   tradeId?: string;
@@ -52,7 +56,7 @@ export interface TradeMetadata {
   mtComment?: string;
   useDirectPnLInput?: boolean | string;
   directPnL?: number | string;
-  setupIds?: string[];
+
   setup?: string[];
   mistake?: string[];
   images?: string[];
@@ -60,6 +64,7 @@ export interface TradeMetadata {
   lotSize?: number;
   pipValue?: number;
   lossReview?: LossReviewData;
+  tradeReview?: TradeReviewData;
 }
 
 export type { FTPCredentials };

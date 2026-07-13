@@ -1,4 +1,4 @@
-import { readdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join, relative } from 'node:path';
 
 const ROOT = process.cwd();
@@ -247,10 +247,11 @@ function sanitizeForObsidianReview(css) {
 const chunks = styleEntries.map(({ file, name, css }) =>
   stripCssComments(resolveInterpolations(css))
 );
-writeFileSync(
-  OUT,
-  `${sanitizeForObsidianReview(chunks.filter(Boolean).join('\n\n'))}\n`
-);
-console.log(
-  `Wrote ${relative(ROOT, OUT)} from ${chunks.length} style constants.`
-);
+const nextCss = `${sanitizeForObsidianReview(chunks.filter(Boolean).join('\n\n'))}\n`;
+
+if (existsSync(OUT) && readFileSync(OUT, 'utf8') === nextCss) {
+  console.log(`${relative(ROOT, OUT)} unchanged from ${chunks.length} style constants.`);
+} else {
+  writeFileSync(OUT, nextCss);
+  console.log(`Wrote ${relative(ROOT, OUT)} from ${chunks.length} style constants.`);
+}

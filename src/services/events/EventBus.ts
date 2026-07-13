@@ -41,11 +41,11 @@ export class EventBus {
     }
 
     const callbacks = this.listeners.get(event)!;
-    callbacks.add(callback as EventCallback<EventName>);
+    callbacks.add(callback);
 
     
     return () => {
-      callbacks.delete(callback as EventCallback<EventName>);
+      callbacks.delete(callback);
       if (callbacks.size === 0) {
         this.listeners.delete(event);
       }

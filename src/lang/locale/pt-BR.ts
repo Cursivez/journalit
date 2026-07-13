@@ -33,8 +33,7 @@ const ptBR: Partial<Lang> = {
   'navigation.items.nav-yearly': 'Revisão deste ano',
 
   
-  'command.force-sync': 'Forçar Sincronização',
-  'command.cancel-sync': 'Cancelar Sincronização',
+  'backend.cards.sync.cancel': 'Cancelar sincronização',
 
   
   'command.replay-onboarding': 'Repetir Fluxo de Integração',
@@ -150,6 +149,54 @@ const ptBR: Partial<Lang> = {
   
   
   
+  'form.import-shortcut.open': 'Abrir Importação de Trades',
+  'form.layout.customize': 'Personalizar formulário',
+  'form.layout.modal-title': 'Personalizar formulário de trade',
+  'form.layout.settings-title': 'Layout do formulário de trade',
+  'form.layout.settings-desc':
+    'Escolha como você registra trades e quais blocos opcionais aparecem no formulário.',
+  'form.layout.core-fields-note':
+    'Tipo de trade, conta, tipo de ativo, instrumento, direção e os campos obrigatórios de preço ou P&L permanecem visíveis conforme o modo de entrada selecionado.',
+  'form.layout.input-mode': 'Modo de entrada',
+  'form.layout.input-mode-prices': 'Preços',
+  'form.layout.input-mode-pnl-risk': 'P&L + Risco',
+  'form.layout.input-mode-prices-desc':
+    'Registre preços de entrada e saída e deixe o Journalit calcular o P&L.',
+  'form.layout.input-mode-pnl-risk-desc':
+    'Registre diretamente o P&L do trade e o valor de risco. O Journalit calcula automaticamente o múltiplo R.',
+  'form.layout.asset-type-mode': 'Tipo de ativo',
+  'form.layout.asset-type-mode-show': 'Perguntar',
+  'form.layout.asset-type-mode-fixed': 'Fixo',
+  'form.layout.default-asset-type': 'Tipo de ativo padrão',
+  'form.layout.active-fields': 'Blocos visíveis',
+  'form.layout.available-fields': 'Blocos ocultos',
+  'form.layout.active-fields-desc':
+    'Arraste blocos para reordená-los. Remova o que você não usa.',
+  'form.layout.available-fields-desc':
+    'Adicione blocos ocultos de volta ao formulário quando precisar deles.',
+  'form.layout.empty-active': 'Nenhum bloco opcional está visível.',
+  'form.layout.all-active': 'Todos os blocos opcionais estão visíveis.',
+  'form.layout.add-field-aria': 'Adicionar {field} ao formulário de trade',
+  'form.layout.remove-field-aria': 'Ocultar {field} no formulário de trade',
+  'form.layout.saved': 'Layout do formulário de trade salvo',
+  'form.layout.item.trading-costs.commission': 'Comissão',
+  'form.layout.item.import-shortcut': 'Atalho de importação',
+  'form.layout.item.import-shortcut-desc':
+    'Mostra um botão no rodapé que abre a Importação de Trades.',
+  'form.layout.item.core-details': 'Detalhes principais da operação',
+  'form.layout.item.core-details-desc':
+    'Conta, instrumento, direção e entradas/saídas ficam primeiro.',
+  'form.layout.item.asset-specific': 'Campos específicos do ativo',
+  'form.layout.item.pnl-preview': 'Prévia de P&L',
+  'form.layout.item.realized-pnl-preview': 'Resumo de P&L de saída parcial',
+  'form.layout.item.realized-pnl-preview-desc':
+    'Só aparece em trades abertos após saídas parciais; a posição é fixa.',
+  'form.layout.result-r': 'Resultado em R',
+  'form.layout.entry-time': 'Hora do trade',
+
+  
+  
+  
   'form.field.account': 'Conta',
   'form.field.asset-type': 'Tipo de Ativo',
   'form.field.direction': 'Direção',
@@ -254,7 +301,18 @@ const ptBR: Partial<Lang> = {
     'Insira seu lucro/prejuízo total diretamente. Comissão e taxas ainda serão subtraídas.',
   'form.entry-exit.calc-pnl':
     'Calcular L&P a partir dos preços de entrada/saída e tamanhos de posição.',
+  'form.ideal-exit.title': 'Saídas ideais',
+  'form.ideal-exit.subtitle': 'Escalas retrospectivas para revisar a execução.',
+  'form.ideal-exit.coverage': 'Tamanho ideal',
+  'form.ideal-exit.price': 'Preço ideal',
+  'form.ideal-exit.size': 'Tamanho',
+  'form.ideal-exit.remove': 'Remover saída ideal',
+  'form.ideal-exit.add': '+ Adicionar saída ideal',
+  'form.ideal-exit.copy-actual': 'Copiar saídas reais',
 
+  'form.ideal-exit.tooltip':
+    'Registre o plano de saída retrospectivo que você gostaria de ter executado. Suporta saídas escalonadas para revisão.',
+  'form.ideal-exit.empty': 'Ainda não há saídas ideais',
   
   
   
@@ -312,7 +370,7 @@ const ptBR: Partial<Lang> = {
   'button.create-daily-review': 'Criar Revisão Diária',
   'button.apply-settings': 'Aplicar Configurações',
   'button.learn-more': 'Saiba mais',
-  'button.upload-image': 'Enviar Imagem',
+  'button.upload-image': 'Enviar mídia',
   'button.discord': 'Discord',
 
   
@@ -544,6 +602,15 @@ const ptBR: Partial<Lang> = {
     'Set this copy as your default template',
   'layoutBuilder.guide.set-default-template.description':
     'Click the star on your new template if you want new review notes to use this layout automatically.',
+
+  'form.layout.guide-trigger-label': 'Personalizar formulário',
+  'trade-form.guide.customization-modal.title':
+    'Adapte o formulário ao seu fluxo de trabalho',
+  'trade-form.guide.customization-modal.description':
+    'Aqui você pode mostrar, ocultar e reordenar blocos opcionais. Mantenha o formulário focado nos campos que você realmente usa.',
+  'trade-form.guide.finish.title': 'Esse é o recurso de personalização',
+  'trade-form.guide.finish.description':
+    'Você pode voltar a este botão sempre que o formulário precisar combinar com outro fluxo de diário.',
   'tradelog.guide.empty.intro.title': 'Welcome to Trade Log',
   'tradelog.guide.empty.intro.description':
     'This page becomes your main place for browsing, sorting, and reviewing trades. Once you add trades, you will also get the full Trade Log tour.',
@@ -772,6 +839,8 @@ const ptBR: Partial<Lang> = {
   'common.lose': 'Perda',
   'common.trade': 'Operação',
   'common.trades': 'Operações',
+  'common.color.label': 'Cor',
+  'common.color.default': 'Padrão',
 
   
   
@@ -832,7 +901,7 @@ const ptBR: Partial<Lang> = {
   'premium.gate.import.state.pro.description':
     'Seu arquivo e mapeamentos estão prontos. Importar faz parte do PRO.',
   'premium.gate.import.reassurance':
-    'Sua prévia e os mapeamentos de colunas permanecem exatamente como estão.',
+    'Importe trades ilimitados para o seu vault.',
   'premium.gate.trial-hint':
     'As primeiras assinaturas PRO incluem um teste grátis de 14 dias.',
   'premium.gate.offline':
@@ -865,9 +934,21 @@ const ptBR: Partial<Lang> = {
 
   
   'dashboard.metrics.avgRR': 'RR Médio (Payoff)',
+  'dashboard.metrics.sharpeRatio': 'Índice de Sharpe',
   'dashboard.metrics.avgRRRiskBased': 'RR Médio (baseado em R)',
   'dashboard.metrics.longestWinStreak': 'Melhor sequência',
   'dashboard.metrics.longestLossStreak': 'Pior sequência',
+  'dashboard.sharpeRatio.tooltip.title': 'Índice de Sharpe',
+  'dashboard.sharpeRatio.tooltip.formula':
+    'Fórmula: P&L líquido médio dos trades fechados / desvio padrão amostral do P&L líquido dos trades fechados. A taxa livre de risco é 0 e o valor não é anualizado.',
+  'dashboard.sharpeRatio.tooltip.coverage':
+    'Calculado com {valid} de {total} trades fechados',
+  'dashboard.sharpeRatio.tooltip.partial-coverage':
+    'Cobertura parcial: {valid} de {total} trades fechados têm P&L líquido finito.',
+  'dashboard.sharpeRatio.tooltip.no-data':
+    'Requer pelo menos dois trades fechados com variabilidade de P&L diferente de zero.',
+  'dashboard.sharpeRatio.tooltip.no-conversion':
+    'Este Índice de Sharpe é baseado em moedas mistas sem conversão FX e pode ser enganoso.',
   'dashboard.avgRRRiskBased.tooltip.title': 'RR Médio (baseado em R)',
   'dashboard.avgRRRiskBased.tooltip.formula':
     'Fórmula: R médio vencedor / R médio perdedor',
@@ -882,6 +963,9 @@ const ptBR: Partial<Lang> = {
   'metric.avgRR.name': 'RR Médio (Payoff)',
   'metric.avgRR.description':
     'Relação média risco/retorno (ganho médio / perda média)',
+  'metric.sharpeRatio.name': 'Índice de Sharpe',
+  'metric.sharpeRatio.description':
+    'Índice de Sharpe por trade: P&L líquido médio dos trades fechados dividido pela volatilidade amostral do P&L',
   'metric.avgRRRiskBased.name': 'RR Médio (baseado em R)',
   'metric.avgRRRiskBased.description':
     'Relação baseada em múltiplos R: R médio vencedor / R médio perdedor (requer dados de stop/risco)',
@@ -1147,6 +1231,8 @@ const ptBR: Partial<Lang> = {
     'Verifique se todos os campos obrigatórios estão mapeados, se o formato de data selecionado corresponde ao arquivo e se as colunas numéricas contêm valores de trade válidos.',
   'trade-import.notice.complete':
     'Trade Import complete: {written} written or updated, {duplicateCount} duplicates, {failedCount} failed',
+  'trade-import.gate.brand-left': 'Trades',
+  'trade-import.gate.brand-right': 'Importar',
   'trade-import.gate.sign-in':
     'Sign in is required before uploading broker exports for Trade Import.',
   'trade-import.gate.upgrade':
@@ -1214,6 +1300,270 @@ const ptBR: Partial<Lang> = {
     'Matching open trade quantity differs from close-only preview',
   'trade-import.preview.message.no-open-match':
     'No matching open trade found for close-only preview',
+
+  
+  'command.open-setups': 'Abrir setups',
+  'setups.create.title': 'Create Setup',
+  'setups.create.field.name': 'Setup Name',
+  'setups.create.placeholder.name': 'Opening Drive',
+  'setups.create.field.status': 'Status',
+  'setups.create.field.direction': 'Direction',
+  'setups.create.field.color': 'Cor',
+  'setups.create.field.color-description':
+    'Escolha uma cor para identificar este setup.',
+  'setups.create.direction.any': 'Not specified',
+  'setups.create.direction.long': 'Long',
+  'setups.create.direction.short': 'Short',
+  'setups.create.direction.both': 'Both',
+  'setups.create.field.linked-notes': 'Linked Notes',
+  'setups.create.field.linked-notes-desc':
+    'Attach existing notes that document the playbook for this setup.',
+  'setups.create.linked-notes.empty': 'No notes linked yet.',
+  'setups.create.linked-notes.add': '+ Link note',
+  'setups.create.linked-notes.remove': 'Remove linked note',
+  'setups.create.linked-notes.picker-title': 'Choose a playbook note',
+  'setups.create.linked-notes.search': 'Search notes...',
+  'setups.create.linked-notes.no-notes': 'No markdown notes found.',
+  'setups.create.button.creating': 'Creating...',
+  'setups.create.button.create': 'Create Setup',
+  'setups.create.success': 'Setup "{name}" created successfully',
+  'setups.create.error.name-required': 'Setup name is required',
+  'setups.create.error.failed': 'Failed to create setup',
+  'setups.edit.title': 'Edit Setup',
+  'setups.edit.button.saving': 'Saving...',
+  'setups.edit.button.save': 'Save Setup',
+  'setups.edit.button.rename-and-update': 'Rename and update trades',
+  'setups.edit.rename-warning.title': 'Rename setup and update trades',
+  'setups.edit.rename-warning.message':
+    'Renaming {oldName} to {newName} will update trade notes that use the old setup name.',
+  'setups.edit.delete.button': 'Excluir setup',
+  'setups.edit.delete.title': 'Excluir setup',
+  'setups.edit.delete.confirm': 'Confirmar exclusão',
+  'setups.edit.delete.warning':
+    'A exclusão de "{name}" removerá o setup permanentemente e o retirará das operações vinculadas. Não é possível desfazer esta ação.',
+  'setups.edit.delete.success': 'Setup "{name}" excluído',
+  'setups.edit.delete.error': 'Não foi possível excluir o setup',
+  'setups.edit.success': 'Setup "{name}" updated successfully',
+  'setups.edit.error.failed': 'Failed to update setup',
+  'setups.view.compare.empty-submessage':
+    'Choose two setup cards from the overview to build a side-by-side report.',
+  'setups.view.compare.reason.higher.total-r': 'R total maior',
+  'setups.view.compare.reason.lower.total-r': 'R total menor',
+  'setups.view.compare.reason.similar.total-r': 'R total semelhante',
+  'setups.view.advanced.rule-break-count': '{count}',
+  'setups.guide.empty.intro.title': 'Crie seu primeiro setup',
+  'setups.guide.empty.intro.description':
+    'Setups conectam notas de playbook, regras, capturas e trades vinculados para revisar uma ideia de trade em contexto.',
+  'setups.guide.create-new-setup.title': 'Criar novos setups',
+  'setups.guide.create-new-setup.description':
+    'Use Novo setup para adicionar outro playbook. O modal guia detalhes, notas vinculadas e regras.',
+  'setups.guide.detail-intro.title': 'Esta é a página do setup',
+  'setups.guide.detail-intro.description':
+    'A página do setup foca um playbook com gráfico de performance, contexto, material de referência, ações e regras de execução.',
+  'setups.guide.detail-actions.title': 'Ações do setup',
+  'setups.guide.detail-actions.description':
+    'Use estes botões para abrir trades relacionados ou editar detalhes, notas vinculadas, capturas e regras do playbook.',
+  'setups.guide.empty.create-setup.title': 'Comece com Novo setup',
+  'setups.guide.empty.create-setup.description':
+    'Crie um setup primeiro. Depois que ele existir, este guia continuará com o fluxo normal.',
+  'setups.guide.empty.finish.title': 'Conclua a criação do setup',
+  'setups.guide.empty.finish.description':
+    'Preencha os detalhes e salve. O guia de Setups continuará quando o setup estiver disponível.',
+  'setups.guide.intro.title': 'Bem-vindo ao Setups',
+  'setups.guide.intro.description':
+    'Esta visão reúne playbooks de setup, trades vinculados, notas, capturas e regras em um só lugar.',
+  'setups.guide.view-tabs.title': 'Alternar vistas de setups',
+  'setups.guide.view-tabs.description':
+    'Use estas abas para ir entre visão geral, pares e comparação quando houver setups suficientes.',
+  'setups.guide.overview-chart.title': 'Ranking de performance',
+  'setups.guide.overview-chart.description':
+    'O gráfico classifica setups pela métrica escolhida. Use os controles no canto superior direito para trocar a métrica ou focar setups específicos.',
+  'setups.guide.setup-cards.title': 'Cartões de setup',
+  'setups.guide.setup-cards.description':
+    'Os cartões resumem cada setup com métricas principais, status, último trade e tendência de performance.',
+  'setups.guide.open-detail.title': 'Abrir página do setup',
+  'setups.guide.open-detail.description':
+    'Abra um cartão de setup para ver a página dedicada com gráfico, contexto, material do playbook e regras de execução.',
+  'setups.guide.detail-performance.title': 'Performance detalhada',
+  'setups.guide.detail-performance.description':
+    'A aba Performance mostra o gráfico e métricas-chave ao longo do tempo, incluindo P&L, win rate, expectativa e drawdown.',
+  'setups.guide.detail-context.title': 'Contexto do setup',
+  'setups.guide.detail-context.description':
+    'Este painel mantém saúde, itens de atenção, notas vinculadas e capturas à mão.',
+  'setups.guide.detail-playbook.title': 'Notas do playbook',
+  'setups.guide.detail-playbook.description':
+    'A área de playbook pré-visualiza a nota vinculada. Pode ser Markdown, imagens, Excalidraw ou qualquer material de referência.',
+  'setups.guide.detail-rules.title': 'Regras de execução',
+  'setups.guide.detail-rules.description':
+    'As regras capturam a checklist estruturada de condições, entradas, risco e erros a evitar.',
+  'setups.guide.finish.title': 'Guia de Setups concluído',
+  'setups.guide.finish.description':
+    'Você viu as principais áreas: Visão geral, Pares, Comparar e a página individual do setup.',
+  'setups.guide.compare.intro.title': 'Comparar performance de setups',
+  'setups.guide.compare.intro.description':
+    'Você já tem setups suficientes para revisar pares e comparar dois playbooks lado a lado.',
+  'setups.guide.pairs-mode.title': 'Abrir pares de setups',
+  'setups.guide.pairs-mode.description':
+    'Abra Pares para ver quais combinações têm trades compartilhados suficientes para comparar.',
+  'setups.guide.pairs-chart.title': 'Ranking de pares',
+  'setups.guide.pairs-chart.description':
+    'O modo Pares destaca combinações que podem performar melhor ou pior juntas. Clique em uma barra para abrir insights mais profundos dessa combinação.',
+  'setups.guide.return-overview.title': 'Voltar à visão geral',
+  'setups.guide.return-overview.description':
+    'Volte à Visão geral antes de escolher setups para comparar.',
+  'setups.guide.compare-mode.title': 'Iniciar modo comparação',
+  'setups.guide.compare-mode.description':
+    'O modo comparação permite selecionar dois cartões de setup para revisão lado a lado.',
+  'setups.guide.compare-select.title': 'Selecione dois setups',
+  'setups.guide.compare-select.description':
+    'Selecione dois cartões para abrir a página de comparação.',
+  'setups.guide.compare-summary.title': 'Esta é a página de comparação',
+  'setups.guide.compare-summary.description':
+    'Esta página compara dois setups lado a lado. A linha superior mostra vencedor, vantagem de expectativa, confiança e por que um setup pode ter vantagem.',
+  'setups.guide.compare-body.title': 'Linha de resumo da comparação',
+  'setups.guide.compare-body.description':
+    'A linha superior resume a comparação: vencedor, vantagem de expectativa, confiança e motivos da vantagem.',
+  'setups.guide.compare-details.title': 'Detalhes da comparação',
+  'setups.guide.compare-details.description':
+    'Use a tabela de métricas e o gráfico acumulado para entender como os dois setups diferem.',
+  'setups.guide.detail-execution-gap.title': 'Análise de lacuna de execução',
+  'setups.guide.detail-execution-gap.description':
+    'Quando há trades perdidos ou backtests, esta aba compara execução capturada com oportunidade perdida ou benchmark.',
+  'setups.guide.back-to-overview.title': 'Voltar aos cartões',
+  'setups.guide.back-to-overview.description':
+    'Volte aos cartões quando terminar de comparar.',
+  'setups.guide.compare.finish.title': 'Guia de comparação concluído',
+  'setups.guide.compare.finish.description':
+    'Você viu Pares e Comparar para revisar vários setups juntos.',
+  'setups.view.open-as-markdown': 'Open as Markdown',
+  'setups.view.open-as-setup': 'Open as Journalit Setup',
+  'setups.view.overview.mode.aria': 'Overview chart mode',
+  'setups.view.overview.mode.setups': 'Setups',
+  'setups.view.overview.mode.pairs': 'Pairs',
+  'setups.view.pairs.title': 'Setup pairs',
+  'setups.view.pairs.summary-aria': 'Setup pairs summary',
+  'setups.view.pairs.best': 'Best pair',
+  'setups.view.pairs.worst': 'Worst pair',
+  'setups.view.pairs.worst-short': 'Worst',
+  'setups.view.pairs.empty': 'No setup pairs with 5+ trades yet.',
+  'setups.view.pairs.empty-submessage':
+    'Pairs appear after two setups share enough linked trades.',
+  'setups.view.pairs.privacy':
+    'Pair performance is hidden while Privacy Mode is on.',
+  'setups.view.pairs.edge-tooltip':
+    'Edge compares the pair expectancy against the stronger solo setup baseline.',
+  'setups.view.pairs.metric-aria': 'Pair metric',
+  'setups.view.pairs.metric.edge': 'Pair edge',
+  'setups.view.pairs.metric.edge-short': 'edge',
+  'setups.view.pairs.metric.expectancy': 'Pair expectancy',
+  'setups.view.pairs.metric.expectancy-short': 'expectancy',
+  'setups.view.pairs.together': 'Together',
+  'setups.view.pairs.table.setup-pair': 'Setup pair',
+  'setups.view.pairs.equity-curve': 'Equity curve',
+  'setups.view.pairs.equity-caption':
+    'Cumulative pair performance over time. Green = positive contribution, red = drawdown.',
+  'setups.view.pairs.evidence': 'Evidence',
+  'setups.view.pairs.edge-comparison': 'Edge comparison',
+  'setups.view.pairs.edge-caption': 'Combined edge: {edge}',
+  'setups.view.overview.setup-filter.all': 'Setups: All',
+  'setups.view.overview.setup-filter.selected': 'Setups: {count} selected',
+  'setups.view.overview.setup-filter.aria': 'Choose setups to show',
+  'setups.view.overview.setup-filter.select-all': 'Select all',
+  'setups.view.overview.setup-filter.clear': 'Clear',
+  'setups.view.overview.pnl-chart.title': 'Setup P&L Over Time',
+  'setups.view.overview.pnl-chart.dropdown-label': 'Cumulative P&L',
+  'setups.view.overview.pnl-chart.subtitle':
+    'Cumulative P&L from setup-linked trades, split by setup and combined.',
+  'setups.view.overview.pnl-chart.combined': 'All setups',
+  'setups.view.overview.pnl-chart.selected-combined': 'Selected setups',
+  'setups.view.overview.pnl-chart.unassigned': 'Unassigned account',
+  'setups.view.overview.pnl-chart.hidden':
+    'Setup P&L over time is hidden while privacy mode is enabled.',
+  'setups.view.overview.pnl-chart.trade': 'Trade',
+  'setups.view.overview.pnl-chart.start': 'Start',
+  'setups.view.ranking.empty-submessage':
+    'Log trades with setups to start ranking performance.',
+  'setups.view.empty.no-setups-submessage':
+    'Setups collect your playbook notes, rules, trades, and performance in one place.',
+  'setups.view.detail.performance.drawdown': 'Drawdown',
+  'setups.view.detail.performance.empty-submessage':
+    'Trades using this setup will appear here once you start logging them.',
+  'setups.view.detail.analysis.performance': 'Performance',
+  'setups.view.detail.analysis.execution-gap': 'Execution Gap',
+  'setups.view.detail.analysis.tabs-aria': 'Setup performance tabs',
+  'setups.view.detail.brief.linked-notes-add': 'Edit linked notes',
+  'setups.view.detail.execution-gap.title': 'Execution Gap',
+  'setups.view.detail.execution-gap.subtitle':
+    'Captured edge vs missed opportunity',
+  'setups.view.detail.execution-gap.live-pnl': 'Live PnL',
+  'setups.view.detail.execution-gap.live-r': 'R ao vivo',
+  'setups.view.detail.execution-gap.missed-edge': 'Missed Edge',
+  'setups.view.detail.execution-gap.live-plus-missed': 'Live + Missed',
+  'setups.view.detail.execution-gap.backtest': 'Backtest',
+  'setups.view.detail.execution-gap.gap': 'Gap',
+  'setups.view.detail.execution-gap.opportunities': 'Opportunities',
+  'setups.view.detail.execution-gap.capture-rate': 'Capture Rate',
+  'setups.view.detail.execution-gap.capture-rate-tooltip':
+    'Live P&L ÷ (Live P&L + missed-trade P&L). Shows how much available edge you captured.',
+  'setups.view.detail.execution-gap.average-r-delta': 'Avg R Delta',
+  'setups.view.detail.execution-gap.live-execution': 'Live Execution',
+  'setups.view.detail.execution-gap.backtest-benchmark': 'Backtest Benchmark',
+  'setups.view.detail.execution-gap.hidden':
+    'Execution gap is hidden in privacy mode.',
+  'setups.view.detail.execution-gap.empty':
+    'Log missed trades or backtest trades for this setup to analyze execution gaps.',
+  'setups.view.detail.brief.linked-notes': '{count}',
+  'setups.view.detail.brief.linked-notes-modal.subtitle': '{name}',
+  'setups.view.detail.brief.screenshots': '{count}',
+  'setups.view.detail.brief.no-screenshots': 'Nenhuma captura vinculada ainda.',
+  'setups.view.detail.brief.screenshot-alt': '{index}',
+  'setups.view.detail.brief.screenshot-open': '{index}',
+  'setups.view.detail.brief.count.rules': '{count}',
+  'setups.view.detail.brief.count.notes': '{count}',
+  'setups.view.detail.brief.count.images': '{count}',
+  'setups.view.detail.brief.count.trades': '{count}',
+  'setups.view.detail.brief.more': '{count}',
+  'setups.view.detail.attention.title': 'Needs attention',
+  'setups.view.detail.attention.count': '{count} items',
+  'setups.view.detail.attention.empty': 'No setup issues found.',
+  'setups.view.detail.attention.show-more': '+{count} more',
+  'setups.view.detail.attention.show-less': 'Show less',
+  'setups.view.detail.attention.no-playbook-title': 'Link a playbook note',
+  'setups.view.detail.attention.no-playbook-detail':
+    'Link one source note for context and examples.',
+  'setups.view.detail.attention.no-rules-title': 'Build the execution playbook',
+  'setups.view.detail.attention.no-rules-detail':
+    'Add criteria for entries, invalidation, risk, and mistakes.',
+  'setups.view.detail.attention.no-invalidation-title':
+    'Add invalidation criteria',
+  'setups.view.detail.attention.no-invalidation-detail':
+    'Define when this setup is no longer valid.',
+  'setups.view.detail.attention.no-risk-title': 'Add risk or management rules',
+  'setups.view.detail.attention.no-risk-detail':
+    'Document how this setup should be managed after entry.',
+  'setups.view.detail.attention.no-trades-title': 'No live trades yet',
+  'setups.view.detail.attention.no-trades-detail':
+    'No linked live trade history yet.',
+  'setups.view.detail.attention.no-screenshots-title':
+    'Save example screenshots',
+  'setups.view.detail.attention.no-screenshots-detail':
+    'Attach screenshots to trades for review examples.',
+  'setups.view.detail.attention.stale-title': 'Review recent relevance',
+  'setups.view.detail.attention.stale-detail':
+    'This setup has not been traded in {count} days.',
+  'setups.view.detail.attention.profit-factor-title':
+    'Performance needs review',
+  'setups.view.detail.attention.profit-factor-detail':
+    'Profit factor is below 1.0 across linked trades.',
+  'setups.view.detail.attention.expectancy-title': 'Expectancy is negative',
+  'setups.view.detail.attention.expectancy-detail':
+    'Average linked-trade outcome is below breakeven.',
+  'setups.view.card.open-named': '{name}',
+  'setups.view.card.status.active': 'Stable',
+  'setups.view.card.status.monitor': 'Monitor',
+  'setups.view.card.status.review': 'Review',
+  'setups.view.date.days-ago': '{count}',
+
   'trade-import.restore.title': 'Restore imported trades from backend',
   'trade-import.restore.description':
     'Create missing local notes for backend imported trades in this vault. This does not create duplicate backend trades.',
@@ -1229,6 +1579,115 @@ const ptBR: Partial<Lang> = {
   'trade-import.restore.complete':
     'Restored {written} imported trades; {failed} failed.',
   'trade-import.restore.broker-label': 'Backend restore',
+  'setups.view.loading': 'Loading setups…',
+  'settings.general.copy-trading-pnl-toggled': 'Copy trading PnL is {status}',
+  'setups.view.trade.unknown-instrument': 'Unknown instrument',
+  'settings.session-mode.linked-resources-count': '{count} linked',
+  'settings.session-mode.linked-resources-hide': 'Hide linked',
+  'settings.session-mode.session-log-tags': 'Session log tags',
+  'settings.session-mode.session-log-tags-desc':
+    'Customize the tags available in the Session Mode composer and DRC session log.',
+  'settings.session-mode.tag-label-placeholder': 'Tag name',
+  'settings.session-mode.tag-short-label-placeholder': 'Short label',
+  'settings.session-mode.tag-label-example': 'Trade',
+  'settings.session-mode.tag-short-label-example': 'TR',
+  'settings.session-mode.tag-color': 'Tag color',
+  'settings.session-mode.tag-requires-resolution': 'Requires resolution',
+  'settings.session-mode.tag-lesson': 'Lesson tag',
+  'settings.session-mode.tag-requires-resolution-tooltip':
+    'Entries with this tag are marked as follow-up items until you resolve them in the session log. Use it for notes that need review or action after the session.',
+  'settings.session-mode.tag-lesson-tooltip':
+    'Marks this tag as a learning entry. Lesson-tagged notes can be surfaced as lessons and are highlighted as learning moments in session log workflows.',
+  'settings.session-mode.add-session-log-tag': 'Add session log tag',
+  'settings.session-mode.reset-session-log-tags': 'Reset session log tags',
+  'settings.session-mode.tag-color.blue': 'Blue',
+  'settings.session-mode.tag-color.indigo': 'Indigo',
+  'settings.session-mode.tag-color.purple': 'Purple',
+  'settings.session-mode.tag-color.green': 'Green',
+  'settings.session-mode.tag-color.pink': 'Pink',
+  'settings.session-mode.tag-color.amber': 'Amber',
+  'settings.session-mode.tag-color.red': 'Red',
+  'settings.session-mode.tag-color.orange': 'Orange',
+  'session-log.action.add-note': 'Add',
+  'session-log.action.hide-composer': 'Hide composer',
+  'session-log.filter.label': 'Filter session log',
+  'session-log.filter.clear': 'Clear filter',
+  'session-log.empty-filtered': 'No entries match this filter.',
+  'media.viewer.mute-video': 'Silenciar vídeo',
+  'media.viewer.unmute-video': 'Ativar som do vídeo',
+  'media.viewer.volume': 'Volume',
+  'imageGallery.subtitle-count': '{count} itens de mídia',
+  'imageGallery.empty.error.title': 'Galeria indisponível',
+  'imageGallery.empty.no-images.title': 'Ainda não há mídia',
+  'imageGallery.empty.no-images.description':
+    'Imagens, GIFs, vídeos e links do YouTube anexados a trades ou notas de revisão aparecerão aqui automaticamente.',
+  'imageGallery.empty.no-results.title':
+    'Nenhuma mídia corresponde a estes filtros',
+  'imageGallery.empty.no-results.description':
+    'Tente limpar os filtros ativos ou ampliar o intervalo de datas para exibir mais itens da galeria.',
+  'imageGallery.empty.no-source.title': 'Nenhuma mídia nesta fonte',
+  'imageGallery.empty.no-source.description':
+    'Esta fonte ainda não tem itens da galeria. Volte para toda a mídia ou escolha outra fonte.',
+  'imageGallery.empty.action.clear-filters': 'Limpar filtros',
+  'imageGallery.empty.action.show-all': 'Mostrar toda a mídia',
+  'imageGallery.open-source': 'Abrir nota',
+  'imageGallery.image-alt': 'Mídia de {source} em {date}',
+  'imageGallery.annotation.reviewed': 'Revisada',
+  'imageGallery.annotation.unreviewed': 'Não revisada',
+  'imageGallery.annotation.tag': 'Tag',
+  'imageGallery.annotation.editor-eyebrow': 'Diário de estrutura de mercado',
+  'imageGallery.annotation.editor-title': 'Anotar mídia',
+  'imageGallery.annotation.tags': 'Tags',
+  'imageGallery.annotation.tags-placeholder': 'Rompimento, Setup A+, Erro',
+  'imageGallery.annotation.notes': 'Notas',
+  'imageGallery.annotation.notes-placeholder':
+    'O que seu eu do futuro deve aprender com este gráfico?',
+  'imageGallery.annotation.error.save-failed':
+    'Não foi possível salvar a anotação da mídia.',
+  'imageGallery.annotation.saving': 'Salvando...',
+  'command.replay-current-view-guide': 'Repetir guia da visualização atual',
+
+  
+  
+  
+  'tradelog.guide.switch-to-gallery.title': 'Mudar de trades para a Galeria',
+  'tradelog.guide.switch-to-gallery.description':
+    'Use este seletor de modo para alternar entre o Trade Log normal e a Galeria. Clique em Galeria para continuar o tour com suas imagens, GIFs, vídeos e links do YouTube.',
+  'tradelog.guide.gallery-controls.title': 'Escolha quais mídias revisar',
+  'tradelog.guide.gallery-controls.description':
+    'Use Fonte para escolher trades ou notas de revisão, Ordenar para reorganizar mídias e os botões de tamanho para alternar entre varreduras compactas e prévias maiores de mídia.',
+  'tradelog.guide.gallery-source-sort.title':
+    'Escolha a fonte e a ordem das mídias',
+  'tradelog.guide.gallery-source-sort.description':
+    'Use Fonte para focar em toda a mídia, anexos de trades ou mídia de notas de revisão. Use Ordenar para revisar primeiro os trades mais novos, antigos, melhores ou piores.',
+  'tradelog.guide.gallery-size.title': 'Ajuste o tamanho da prévia',
+  'tradelog.guide.gallery-size.description':
+    'Use estes botões de tamanho para alternar entre varredura compacta e prévias maiores dos gráficos sem cortar detalhes importantes.',
+  'tradelog.guide.gallery-filters.title': 'Filtre a galeria pelo mesmo ponto',
+  'tradelog.guide.gallery-filters.description':
+    'O botão de filtro ainda abre os Filtros avançados. No modo Galeria, ele também inclui filtros específicos de mídia, como status de anotação e tags de mídia.',
+  'tradelog.guide.gallery-filter-modal.title':
+    'Filtros de mídia ficam junto dos filtros de trade',
+  'tradelog.guide.gallery-filter-modal.description':
+    'Use este modal para combinar filtros de trade com filtros de mídia. Por exemplo, filtre por um setup e depois mostre apenas mídias com notas ou uma tag de mídia específica.',
+  'tradelog.guide.gallery-grid.title': 'Abra mídias para revisar de perto',
+  'tradelog.guide.gallery-grid.description':
+    'Cada cartão mantém a mídia livre enquanto mostra contexto compacto do trade e da revisão. Clique em qualquer cartão para abrir o primeiro item em tela cheia.',
+  'tradelog.guide.gallery-fullscreen-actions.title':
+    'Anote mídias em tela cheia',
+  'tradelog.guide.gallery-fullscreen-actions.description':
+    'Use Tag para adicionar tags e notas no nível da mídia enquanto o item está grande o suficiente para inspeção. Abrir nota leva você de volta ao trade ou revisão de origem.',
+  'tradelog.guide.gallery-open-annotation.title': 'Abra o painel de anotação',
+  'tradelog.guide.gallery-open-annotation.description':
+    'Clique em Tag para anotar esta mídia específica. Tags e notas de mídia descrevem o anexo, não o trade inteiro.',
+  'tradelog.guide.gallery-annotation-panel.title':
+    'Adicione tags e notas de mídia',
+  'tradelog.guide.gallery-annotation-panel.description':
+    'Use tags de mídia para ideias específicas do gráfico, como varredura de liquidez ou rompimento falho, e notas para o contexto de estrutura de mercado que deseja lembrar.',
+  'tradelog.guide.gallery-finish.title':
+    'Agora você conhece os dois modos do Trade Log',
+  'tradelog.guide.gallery-finish.description':
+    'Use Trades quando precisar da tabela e das ferramentas em lote. Use a Galeria quando quiser revisar imagens, GIFs, vídeos, links do YouTube e anotações em todo o diário.',
 };
 
 export default ptBR;

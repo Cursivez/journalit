@@ -1,7 +1,10 @@
 
 
 import { ReactNode } from 'react';
-import { LossReviewData } from '../../../services/backend/types';
+import {
+  LossReviewData,
+  TradeReviewData,
+} from '../../../services/backend/types';
 import { CustomFieldValues } from '../../../types/customFields';
 import type { TradeId } from '../../../utils/tradeIdentity';
 
@@ -62,6 +65,16 @@ export interface ExitTransaction {
 }
 
 
+export interface IdealExitTransaction {
+  
+  time?: Date;
+  
+  price?: number;
+  
+  size?: number;
+}
+
+
 export interface DividendTransaction {
   
   time: Date;
@@ -81,6 +94,8 @@ export interface TradeFormData {
   entries?: EntryTransaction[];
   
   exits?: ExitTransaction[];
+  
+  idealExits?: IdealExitTransaction[];
   
   dividends?: DividendTransaction[];
 
@@ -102,9 +117,9 @@ export interface TradeFormData {
   instrument: string;
   
   assetType: string;
+
   
-  setupIds: string[];
-  
+  setupCreationLabels?: string[];
   
   thesis?: string;
   
@@ -205,6 +220,7 @@ export interface TradeFormData {
   
   
   lossReview?: LossReviewData;
+  tradeReview?: TradeReviewData;
 
   
   
@@ -270,6 +286,7 @@ export const DEFAULT_TRADE_FORM_DATA: TradeFormData = {
     },
   ],
   dividends: [],
+  idealExits: [],
   entryTime: new Date(),
   exitTime: new Date(),
   entryPrice: 0, 
@@ -278,7 +295,7 @@ export const DEFAULT_TRADE_FORM_DATA: TradeFormData = {
   direction: '', 
   instrument: '',
   assetType: '', 
-  setupIds: [], 
+  setupCreationLabels: [],
   thesis: '',
   images: [],
   customTags: [],
@@ -340,9 +357,15 @@ export const DEFAULT_TRADE_FORM_DATA: TradeFormData = {
 };
 
 
+export interface TradeFormOpenOptions {
+  initialTab?: 'basic' | 'details' | 'advanced';
+}
+
 export interface TradeFormProps {
   
   initialData?: Partial<TradeFormData>;
+  
+  initialTab?: 'basic' | 'details' | 'advanced';
   
   isSubmitting?: boolean;
   
@@ -350,7 +373,7 @@ export interface TradeFormProps {
   
   onSubmit?: (data: TradeFormData) => Promise<boolean> | boolean;
   
-  onCancel?: () => void;
+  onCancel?: () => Promise<boolean> | boolean | void;
   
   dirtyStateRef?: { current: (() => boolean) | null };
 }
@@ -384,7 +407,7 @@ export interface TradeFormErrors {
   direction?: string;
   instrument?: string;
   assetType?: string;
-  setupIds?: string;
+  setup?: string;
   account?: string;
   form?: string;
   directPnL?: string;

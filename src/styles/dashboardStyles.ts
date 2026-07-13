@@ -655,6 +655,37 @@ export const DASHBOARD_STYLES = `
   .journalit-dashboard-filter-actions > * {
     flex-shrink: 0 !important; 
   }
+
+  .journalit-dashboard-filter-actions
+    .journalit-filter-button-container
+    .journalit-filter-button.journalit-dashboard-filter-button {
+    min-width: 30px !important;
+    min-height: 30px !important;
+    padding: 0 !important;
+    border: 1px solid var(--background-modifier-border) !important;
+    border-radius: 4px !important;
+    background: var(--background-primary) !important;
+    color: var(--text-normal) !important;
+    box-shadow: none !important;
+  }
+
+  .journalit-dashboard-filter-actions
+    .journalit-filter-button-container
+    .journalit-filter-button.journalit-dashboard-filter-button:hover,
+  .journalit-dashboard-filter-actions
+    .journalit-filter-button-container
+    .journalit-filter-button.journalit-dashboard-filter-button:focus-visible {
+    border-color: var(--background-modifier-border-hover) !important;
+    background: var(--background-modifier-hover) !important;
+    color: var(--text-normal) !important;
+  }
+
+  .journalit-dashboard-filter-actions
+    .journalit-filter-button-container.journalit-dashboard-filter-button-container
+    .journalit-filter-badge {
+    top: -6px !important;
+    right: -6px !important;
+  }
   
   
   .journalit-dashboard-filter-actions.button-container {

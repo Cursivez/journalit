@@ -32,6 +32,22 @@ import {
   LAYOUT_BUILDER_WIDGET_SELECTED_ACTION_ID,
 } from '../../guides/layoutBuilderGuideIds';
 
+const COMPETING_ESCAPE_SURFACE_SELECTOR = [
+  '#journalit-fullscreen-portal:not(:empty)',
+  '.journalit-fullscreen-portal-container:not(:empty)',
+  '.journalit-shared-selector-overlay',
+  '.journalit-component-selector-overlay',
+  '.journalit-modal-overlay',
+  '.journalit-combobox[data-is-open="true"]',
+  '.journalit-combobox.combobox-dropdown--portal',
+  '.folder-browser-dropdown',
+  '.journalit-trade-import-dropdown-menu--portal',
+  '.journalit-trade-import-template-menu--portal',
+  '.modal-container',
+  '.suggestion-container',
+  '.menu',
+].join(', ');
+
 interface WidgetPickerProps {
   
   value: string;
@@ -222,9 +238,24 @@ export const WidgetPicker: React.FC<WidgetPickerProps> = React.memo(
 
     const handleGlobalKeyDown = useCallback(
       (event: KeyboardEvent) => {
+        const target = event.target;
+        const isPickerEvent =
+          target instanceof Node &&
+          (containerRef.current?.contains(target) ||
+            dropdownRef.current?.contains(target));
+
+        if (
+          !isPickerEvent &&
+          window.activeDocument.querySelector(COMPETING_ESCAPE_SURFACE_SELECTOR)
+        ) {
+          return;
+        }
+
         switch (event.key) {
           case 'Escape':
             event.preventDefault();
+            event.stopPropagation();
+            event.stopImmediatePropagation();
             closeDropdown();
             triggerRef.current?.focus();
             break;
@@ -264,9 +295,9 @@ export const WidgetPicker: React.FC<WidgetPickerProps> = React.memo(
         handleGlobalKeyDownRef.current(event);
       };
 
-      window.activeDocument.addEventListener('keydown', listener);
-      return () =>
-        window.activeDocument.removeEventListener('keydown', listener);
+      const activeWindow = window.activeDocument.defaultView ?? window;
+      activeWindow.addEventListener('keydown', listener, true);
+      return () => activeWindow.removeEventListener('keydown', listener, true);
     }, [isOpen]);
 
     const handleTriggerClick = useCallback(() => {

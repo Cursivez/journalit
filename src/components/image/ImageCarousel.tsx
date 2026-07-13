@@ -1,11 +1,10 @@
 
 
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { ImageCarouselProps, ImageNavigationContext } from '../../types/image';
-import { imageService } from '../../services/image/ImageService';
-import { LazyImage } from '../shared/LazyImage';
 import { FullscreenPortal } from './FullscreenPortal';
 import { FullscreenImageViewer } from './FullscreenImageViewer';
+import { LeftArrow, RightArrow } from '../shared/icons/ObsidianIcon';
 import { t } from '../../lang/helpers';
 import { getApp } from '../../utils/obsidian';
 import {
@@ -13,6 +12,7 @@ import {
   resolveMediaDisplayPath,
 } from '../../utils/imageMediaUtils';
 import { ExcalidrawMediaEmbed } from './ExcalidrawMediaEmbed';
+import { MediaPreview } from './MediaPreview';
 
 
 
@@ -32,11 +32,19 @@ export const ImageCarousel: React.FC<ImageCarouselProps> = ({
   const onDeleteImage = deleteOptions?.onDeleteImage;
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const thumbnailsRef = useRef<HTMLDivElement | null>(null);
+  const shouldScrollThumbnailRef = useRef(false);
+
+  const selectUserNavigatedIndex = (index: number) => {
+    shouldScrollThumbnailRef.current = true;
+    setSelectedIndex(index);
+  };
 
   const goToNext = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
     if (images.length <= 1) return;
+    shouldScrollThumbnailRef.current = true;
     setSelectedIndex((prev) =>
       Math.min(prev, images.length - 1) === images.length - 1 ? 0 : prev + 1
     );
@@ -46,6 +54,7 @@ export const ImageCarousel: React.FC<ImageCarouselProps> = ({
     e.preventDefault();
     e.stopPropagation();
     if (images.length <= 1) return;
+    shouldScrollThumbnailRef.current = true;
     setSelectedIndex((prev) =>
       Math.min(prev, images.length - 1) === 0 ? images.length - 1 : prev - 1
     );
@@ -55,7 +64,7 @@ export const ImageCarousel: React.FC<ImageCarouselProps> = ({
     e.preventDefault();
     e.stopPropagation();
     if (index >= 0 && index < images.length) {
-      setSelectedIndex(index);
+      selectUserNavigatedIndex(index);
     }
   };
 
@@ -75,7 +84,7 @@ export const ImageCarousel: React.FC<ImageCarouselProps> = ({
     setIsFullscreen(true);
   };
 
-  const handleImageKeyDown = (e: React.KeyboardEvent<HTMLImageElement>) => {
+  const handleImageKeyDown = (e: React.KeyboardEvent<HTMLElement>) => {
     if (e.key !== 'Enter' && e.key !== ' ') {
       return;
     }
@@ -90,11 +99,26 @@ export const ImageCarousel: React.FC<ImageCarouselProps> = ({
 
   const handleFullscreenNavigate = (index: number) => {
     if (index >= 0 && index < images.length) {
-      setSelectedIndex(index);
+      selectUserNavigatedIndex(index);
     }
   };
 
   const currentIndex = Math.min(selectedIndex, Math.max(0, images.length - 1));
+
+  useEffect(() => {
+    if (!showThumbnails || images.length <= 1) return;
+    if (!shouldScrollThumbnailRef.current) return;
+    shouldScrollThumbnailRef.current = false;
+
+    const activeThumbnail = thumbnailsRef.current?.querySelector<HTMLElement>(
+      '[data-active-thumbnail="true"]'
+    );
+
+    activeThumbnail?.scrollIntoView({
+      block: 'nearest',
+      inline: 'nearest',
+    });
+  }, [currentIndex, images.length, showThumbnails]);
 
   const navigationContext: ImageNavigationContext = {
     images,
@@ -105,7 +129,11 @@ export const ImageCarousel: React.FC<ImageCarouselProps> = ({
     sourcePath,
   };
 
-  const containerClassName = ['journalit-image-carousel', className]
+  const containerClassName = [
+    'journalit-image-carousel',
+    enableDelete ? 'journalit-image-carousel--delete-enabled' : '',
+    className,
+  ]
     .filter(Boolean)
     .join(' ');
 
@@ -129,57 +157,38 @@ export const ImageCarousel: React.FC<ImageCarouselProps> = ({
     currentImage,
     sourcePath
   );
-  const isCurrentExcalidraw = isExcalidrawMediaPath(
-    getApp(),
-    currentImage,
-    sourcePath
-  );
+  const app = getApp();
   const currentAlt = t('image.carousel.image-alt', {
     prefix: altPrefix,
     index: (currentIndex + 1).toString(),
   });
-  const currentImageUrl = isCurrentExcalidraw
-    ? ''
-    : useResolveMediaPath
-      ? imageService.resolveMediaPath(currentDisplayPath)
-      : imageService.getResourceUrl(currentDisplayPath);
 
   return (
     <div className={containerClassName}>
       <div className="journalit-carousel-main">
         <div className="journalit-carousel-image-container">
-          {isCurrentExcalidraw ? (
-            <div
-              className={`journalit-carousel-excalidraw${
-                enableFullscreen ? ' is-clickable' : ''
-              }`}
-              onClick={handleFullscreenOpen}
-              role="button"
-              tabIndex={enableFullscreen ? 0 : -1}
-              onKeyDown={(event) => {
-                if (event.key !== 'Enter' && event.key !== ' ') return;
-                event.preventDefault();
-                handleFullscreenOpen();
-              }}
-            >
-              <ExcalidrawMediaEmbed
-                path={currentImage}
-                sourcePath={sourcePath}
-              />
-            </div>
-          ) : (
-            <img
-              src={currentImageUrl}
-              alt={currentAlt}
-              onClick={handleFullscreenOpen}
-              onKeyDown={handleImageKeyDown}
-              role={enableFullscreen ? 'button' : undefined}
-              tabIndex={enableFullscreen ? 0 : undefined}
-              className={`journalit-carousel-image${
-                enableFullscreen ? ' is-clickable' : ''
-              }`}
-            />
-          )}
+          <MediaPreview
+            app={app}
+            path={currentImage}
+            sourcePath={sourcePath}
+            displayPath={currentDisplayPath}
+            alt={currentAlt}
+            useResolveMediaPath={useResolveMediaPath}
+            onClick={handleFullscreenOpen}
+            onKeyDown={handleImageKeyDown}
+            role={enableFullscreen ? 'button' : undefined}
+            tabIndex={enableFullscreen ? 0 : undefined}
+            imageClassName={`journalit-carousel-image${
+              enableFullscreen ? ' is-clickable' : ''
+            }`}
+            videoClassName={`journalit-carousel-image journalit-carousel-video${
+              enableFullscreen ? ' is-clickable' : ''
+            }`}
+            videoPreload="metadata"
+            excalidrawClassName={`journalit-carousel-excalidraw${
+              enableFullscreen ? ' is-clickable' : ''
+            }`}
+          />
 
           {enableDelete && (
             <button
@@ -199,7 +208,7 @@ export const ImageCarousel: React.FC<ImageCarouselProps> = ({
               type="button"
               className="journalit-carousel-overlay-button journalit-carousel-overlay-button--prev"
             >
-              ‹
+              <LeftArrow size={18} strokeWidth={2.25} />
             </button>
           )}
 
@@ -210,7 +219,7 @@ export const ImageCarousel: React.FC<ImageCarouselProps> = ({
               type="button"
               className="journalit-carousel-overlay-button journalit-carousel-overlay-button--next"
             >
-              ›
+              <RightArrow size={18} strokeWidth={2.25} />
             </button>
           )}
         </div>
@@ -223,7 +232,7 @@ export const ImageCarousel: React.FC<ImageCarouselProps> = ({
       )}
 
       {showThumbnails && images.length > 1 && (
-        <div className="journalit-carousel-thumbnails">
+        <div className="journalit-carousel-thumbnails" ref={thumbnailsRef}>
           {images.map((img, idx) => (
             <LazyThumbnail
               key={img}
@@ -278,36 +287,64 @@ const LazyThumbnail: React.FC<LazyThumbnailProps> = React.memo(
     sourcePath,
     onClick,
   }) => {
-    const isExcalidraw = isExcalidrawMediaPath(getApp(), imagePath, sourcePath);
-    const displayPath = resolveMediaDisplayPath(
-      getApp(),
-      imagePath,
-      sourcePath
-    );
+    const thumbnailRef = useRef<HTMLButtonElement>(null);
+    const [isVisible, setIsVisible] = useState(isActive);
+    const app = getApp();
+    const isExcalidraw = isExcalidrawMediaPath(app, imagePath, sourcePath);
+    const displayPath = resolveMediaDisplayPath(app, imagePath, sourcePath);
+
+    useEffect(() => {
+      if (isVisible) return;
+      const element = thumbnailRef.current;
+      if (!element) return;
+
+      const observer = new IntersectionObserver(
+        ([entry]) => {
+          if (entry.isIntersecting) {
+            setIsVisible(true);
+            observer.disconnect();
+          }
+        },
+        { rootMargin: '120px' }
+      );
+      observer.observe(element);
+      return () => observer.disconnect();
+    }, [isVisible]);
+
+    const shouldRenderPreview = isVisible || isActive;
 
     return (
       <button
+        ref={thumbnailRef}
         type="button"
         className={`journalit-carousel-thumbnail${isActive ? ' active' : ''}`}
+        data-active-thumbnail={isActive ? 'true' : undefined}
         onClick={onClick}
         aria-label={t('image.carousel.image-alt', {
           prefix: altPrefix,
           index: (index + 1).toString(),
         })}
       >
-        {isExcalidraw ? (
+        {!shouldRenderPreview ? (
+          <span className="journalit-carousel-thumbnail-media" />
+        ) : isExcalidraw ? (
           <div className="journalit-carousel-thumbnail-excalidraw">
             <ExcalidrawMediaEmbed path={imagePath} sourcePath={sourcePath} />
           </div>
         ) : (
-          <LazyImage
-            src={displayPath}
+          <MediaPreview
+            app={app}
+            path={imagePath}
+            sourcePath={sourcePath}
+            displayPath={displayPath}
             alt={t('image.carousel.thumbnail-alt', {
               index: (index + 1).toString(),
             })}
             useResolveMediaPath={useResolveMediaPath}
-            rootMargin="100px"
-            threshold={0.1}
+            imageClassName="journalit-carousel-thumbnail-media"
+            videoClassName="journalit-carousel-thumbnail-media"
+            videoPreload="metadata"
+            showVideoBadge={false}
           />
         )}
       </button>

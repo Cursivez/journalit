@@ -487,6 +487,11 @@ export class CustomDataService {
       cachePrefix = 'drc:';
     } else if (file.path.includes('/Weekly/')) {
       cachePrefix = 'weekly:';
+    } else if (file.path.includes('/Setups/')) {
+      if (this.config.namespace === 'setup') {
+        await this.clearCache();
+      }
+      return;
     }
 
     

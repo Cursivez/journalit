@@ -325,7 +325,7 @@ function useImageUploaderModel({
 
     
     if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-      const imageFiles = imageService.getImagesFromDataTransfer(e.dataTransfer);
+      const imageFiles = imageService.getMediaFromDataTransfer(e.dataTransfer);
 
       if (imageFiles.length > 0) {
         
@@ -491,7 +491,7 @@ export const ImageUploader: React.FC<ImageUploadProps> = ({
       <input
         id={actualInputId}
         type="file"
-        accept="image/*"
+        accept="image/*,video/*,.mp4,.webm,.mov,.m4v,.ogv,.ogg,.3gp,.mkv"
         multiple={multiple}
         onChange={(event) => void handleFileSelect(event)}
         className="journalit-image-upload-input"

@@ -14,12 +14,15 @@ export interface TradeChangedPayload {
     | 'batch'
     | 'relocated'
     | 'loss-review-updated'
+    | 'trade-review-updated'
     | 'review-status-updated';
   filePaths?: string[];
   filePath?: string;
   oldFilePath?: string;
   importedCount?: number;
   timestamp?: number;
+  reviewed?: boolean;
+  reviewedAt?: string;
 }
 
 
@@ -33,6 +36,8 @@ export interface MissedTradeChangedPayload {
   action: 'created' | 'updated' | 'deleted';
   filePath?: string;
   timestamp?: number;
+  reviewed?: boolean;
+  reviewedAt?: string;
 }
 
 
@@ -69,6 +74,16 @@ export interface OptionsChangedPayload {
   instrument?: string;
   assetType?: string;
   applyToTrades?: boolean;
+}
+
+
+interface SetupChangedPayload {
+  action: 'created' | 'updated' | 'deleted' | 'archived' | 'batch';
+  setupId?: string;
+  setupIds?: string[];
+  filePath?: string;
+  filePaths?: string[];
+  timestamp?: number;
 }
 
 
@@ -174,6 +189,9 @@ export interface EventMap {
   'trade-template:changed': void;
   'review-template:changed': void;
   'folder-path:changed': FolderPathChangedPayload;
+
+  
+  'setup:changed': SetupChangedPayload;
 
   
   'account:changed': AccountChangedPayload;

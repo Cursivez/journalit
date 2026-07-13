@@ -32,8 +32,7 @@ const ja: Partial<Lang> = {
   'navigation.items.nav-yearly': '今年のレビュー',
 
   
-  'command.force-sync': 'トレードを強制同期',
-  'command.cancel-sync': 'トレード同期をキャンセル',
+  'backend.cards.sync.cancel': '同期をキャンセル',
 
   
   'command.replay-onboarding': 'オンボーディングを再実行',
@@ -149,6 +148,54 @@ const ja: Partial<Lang> = {
   
   
   
+  'form.import-shortcut.open': 'トレードインポートを開く',
+  'form.layout.customize': 'フォームをカスタマイズ',
+  'form.layout.modal-title': 'トレードフォームをカスタマイズ',
+  'form.layout.settings-title': 'トレードフォームのレイアウト',
+  'form.layout.settings-desc':
+    'トレードの記録方法と、フォームに表示する任意ブロックを選択します。',
+  'form.layout.core-fields-note':
+    'トレード種別、口座、資産タイプ、銘柄、方向、選択した入力モードで必須の価格または P&L 入力は表示されたままになります。',
+  'form.layout.input-mode': '入力モード',
+  'form.layout.input-mode-prices': '価格',
+  'form.layout.input-mode-pnl-risk': 'P&L + リスク',
+  'form.layout.input-mode-prices-desc':
+    'エントリー価格とイグジット価格を記録し、Journalit に P&L を計算させます。',
+  'form.layout.input-mode-pnl-risk-desc':
+    'トレードの P&L とリスク額を直接記録します。Journalit が R 倍率を自動計算します。',
+  'form.layout.asset-type-mode': '資産タイプ',
+  'form.layout.asset-type-mode-show': '毎回選択',
+  'form.layout.asset-type-mode-fixed': '固定',
+  'form.layout.default-asset-type': '既定の資産タイプ',
+  'form.layout.active-fields': '表示ブロック',
+  'form.layout.available-fields': '非表示ブロック',
+  'form.layout.active-fields-desc':
+    'ブロックをドラッグして並べ替えます。使わないものは外してください。',
+  'form.layout.available-fields-desc':
+    '必要になったら非表示ブロックをフォームに戻せます。',
+  'form.layout.empty-active': '表示中の任意ブロックはありません。',
+  'form.layout.all-active': 'すべての任意ブロックが表示されています。',
+  'form.layout.add-field-aria': '{field} をトレードフォームに追加',
+  'form.layout.remove-field-aria': 'トレードフォームで {field} を非表示',
+  'form.layout.saved': 'トレードフォームのレイアウトを保存しました',
+  'form.layout.item.trading-costs.commission': '手数料',
+  'form.layout.item.import-shortcut': 'インポートショートカット',
+  'form.layout.item.import-shortcut-desc':
+    'トレードインポートを開くフッターボタンを表示します。',
+  'form.layout.item.core-details': '基本取引詳細',
+  'form.layout.item.core-details-desc':
+    '口座、銘柄、方向、エントリー/エグジット入力は先頭に固定されます。',
+  'form.layout.item.asset-specific': '資産別フィールド',
+  'form.layout.item.pnl-preview': 'P&L プレビュー',
+  'form.layout.item.realized-pnl-preview': '部分決済P&Lサマリー',
+  'form.layout.item.realized-pnl-preview-desc':
+    '部分決済後のオープントレードでのみ表示され、位置は固定です。',
+  'form.layout.result-r': 'R での結果',
+  'form.layout.entry-time': 'トレード時刻',
+
+  
+  
+  
   'form.field.account': '口座',
   'form.field.asset-type': '資産タイプ',
   'form.field.direction': '方向',
@@ -253,7 +300,18 @@ const ja: Partial<Lang> = {
     '合計損益を直接入力します。手数料とコストは差し引かれます。',
   'form.entry-exit.calc-pnl':
     'エントリー/エグジット価格とポジションサイズから損益を計算',
+  'form.ideal-exit.title': '理想のエグジット',
+  'form.ideal-exit.subtitle': '執行レビュー用の後知恵スケールアウト。',
+  'form.ideal-exit.coverage': '理想サイズ',
+  'form.ideal-exit.price': '理想価格',
+  'form.ideal-exit.size': 'サイズ',
+  'form.ideal-exit.remove': '理想エグジットを削除',
+  'form.ideal-exit.add': '+ 理想エグジットを追加',
+  'form.ideal-exit.copy-actual': '実際のエグジットをコピー',
 
+  'form.ideal-exit.tooltip':
+    '後から見て実行したかった理想の出口計画を記録します。分割決済にも対応します。',
+  'form.ideal-exit.empty': '理想のエグジットはまだありません',
   
   
   
@@ -310,7 +368,7 @@ const ja: Partial<Lang> = {
   'button.create-daily-review': 'デイリーレビューを作成',
   'button.apply-settings': '設定を適用',
   'button.learn-more': '詳細を見る',
-  'button.upload-image': '画像をアップロード',
+  'button.upload-image': 'メディアをアップロード',
   'button.discord': 'Discord',
 
   
@@ -539,6 +597,15 @@ const ja: Partial<Lang> = {
     'Set this copy as your default template',
   'layoutBuilder.guide.set-default-template.description':
     'Click the star on your new template if you want new review notes to use this layout automatically.',
+
+  'form.layout.guide-trigger-label': 'フォームをカスタマイズ',
+  'trade-form.guide.customization-modal.title':
+    'フォームをワークフローに合わせる',
+  'trade-form.guide.customization-modal.description':
+    'ここで任意ブロックの表示、非表示、並べ替えができます。実際に使う項目だけにフォームを絞りましょう。',
+  'trade-form.guide.finish.title': 'これがカスタマイズ機能です',
+  'trade-form.guide.finish.description':
+    'トレードフォームを別の記録フローに合わせたいときは、いつでもこのボタンから変更できます。',
   'tradelog.guide.empty.intro.title': 'Welcome to Trade Log',
   'tradelog.guide.empty.intro.description':
     'This page becomes your main place for browsing, sorting, and reviewing trades. Once you add trades, you will also get the full Trade Log tour.',
@@ -705,6 +772,8 @@ const ja: Partial<Lang> = {
   'common.lose': '負け',
   'common.trade': 'トレード',
   'common.trades': 'トレード',
+  'common.color.label': '色',
+  'common.color.default': 'デフォルト',
 
   
   
@@ -765,7 +834,7 @@ const ja: Partial<Lang> = {
   'premium.gate.import.state.pro.description':
     'ファイルとマッピングの準備ができました。インポートはPROに含まれます。',
   'premium.gate.import.reassurance':
-    'プレビューと列マッピングはそのまま保持されます。',
+    '無制限のトレードを保管庫にインポートできます。',
   'premium.gate.trial-hint':
     '初回のPRO購読には14日間の無料トライアルが含まれます。',
   'premium.gate.offline':
@@ -798,9 +867,21 @@ const ja: Partial<Lang> = {
 
   
   'dashboard.metrics.avgRR': '平均RR（ペイオフ）',
+  'dashboard.metrics.sharpeRatio': 'シャープレシオ',
   'dashboard.metrics.avgRRRiskBased': '平均RR（Rベース）',
   'dashboard.metrics.longestWinStreak': 'ベスト連勝',
   'dashboard.metrics.longestLossStreak': 'ワースト連敗',
+  'dashboard.sharpeRatio.tooltip.title': 'シャープレシオ',
+  'dashboard.sharpeRatio.tooltip.formula':
+    '計算式: クローズドトレードの平均純損益 / クローズドトレード純損益の標本標準偏差。無リスク金利は 0 で、年率換算はしていません。',
+  'dashboard.sharpeRatio.tooltip.coverage':
+    '{total} 件のクローズドトレード中 {valid} 件から計算',
+  'dashboard.sharpeRatio.tooltip.partial-coverage':
+    '部分カバレッジ: {total} 件中 {valid} 件のクローズドトレードに有限の純損益があります。',
+  'dashboard.sharpeRatio.tooltip.no-data':
+    'P&Lの変動がゼロではないクローズドトレードが少なくとも2件必要です。',
+  'dashboard.sharpeRatio.tooltip.no-conversion':
+    'このシャープレシオはFX換算なしの混在通貨に基づいているため、誤解を招く可能性があります。',
   'dashboard.avgRRRiskBased.tooltip.title': '平均RR（Rベース）',
   'dashboard.avgRRRiskBased.tooltip.formula': '計算式: 平均勝ちR / 平均負けR',
   'dashboard.avgRRRiskBased.tooltip.coverage':
@@ -813,6 +894,9 @@ const ja: Partial<Lang> = {
     'RベースRRの計算に十分なデータがありません。ストップ/リスク情報を入力し、有効な勝ち・負けトレードの両方を確保してください。',
   'metric.avgRR.name': '平均RR（ペイオフ）',
   'metric.avgRR.description': '平均リワード/リスク比（平均利益 / 平均損失）',
+  'metric.sharpeRatio.name': 'シャープレシオ',
+  'metric.sharpeRatio.description':
+    'トレード単位のシャープレシオ: クローズドトレードの平均純損益をP&Lの標本ボラティリティで割った値',
   'metric.avgRRRiskBased.name': '平均RR（Rベース）',
   'metric.avgRRRiskBased.description':
     'R倍数に基づく比率: 平均勝ちR / 平均負けR（ストップ/リスクデータが必要）',
@@ -1075,6 +1159,8 @@ const ja: Partial<Lang> = {
     'すべての必須項目がマッピングされ、選択した日付形式がファイルと一致し、数値列に有効な取引値が含まれていることを確認してください。',
   'trade-import.notice.complete':
     'Trade Import complete: {written} written or updated, {duplicateCount} duplicates, {failedCount} failed',
+  'trade-import.gate.brand-left': 'トレード',
+  'trade-import.gate.brand-right': 'インポート',
   'trade-import.gate.sign-in':
     'Sign in is required before uploading broker exports for Trade Import.',
   'trade-import.gate.upgrade':
@@ -1142,6 +1228,271 @@ const ja: Partial<Lang> = {
     'Matching open trade quantity differs from close-only preview',
   'trade-import.preview.message.no-open-match':
     'No matching open trade found for close-only preview',
+
+  
+  'command.open-setups': 'セットアップを開く',
+  'setups.create.title': 'Create Setup',
+  'setups.create.field.name': 'Setup Name',
+  'setups.create.placeholder.name': 'Opening Drive',
+  'setups.create.field.status': 'Status',
+  'setups.create.field.direction': 'Direction',
+  'setups.create.field.color': '色',
+  'setups.create.field.color-description':
+    'このセットアップを識別する色を選択してください。',
+  'setups.create.direction.any': 'Not specified',
+  'setups.create.direction.long': 'Long',
+  'setups.create.direction.short': 'Short',
+  'setups.create.direction.both': 'Both',
+  'setups.create.field.linked-notes': 'Linked Notes',
+  'setups.create.field.linked-notes-desc':
+    'Attach existing notes that document the playbook for this setup.',
+  'setups.create.linked-notes.empty': 'No notes linked yet.',
+  'setups.create.linked-notes.add': '+ Link note',
+  'setups.create.linked-notes.remove': 'Remove linked note',
+  'setups.create.linked-notes.picker-title': 'Choose a playbook note',
+  'setups.create.linked-notes.search': 'Search notes...',
+  'setups.create.linked-notes.no-notes': 'No markdown notes found.',
+  'setups.create.button.creating': 'Creating...',
+  'setups.create.button.create': 'Create Setup',
+  'setups.create.success': 'Setup "{name}" created successfully',
+  'setups.create.error.name-required': 'Setup name is required',
+  'setups.create.error.failed': 'Failed to create setup',
+  'setups.edit.title': 'Edit Setup',
+  'setups.edit.button.saving': 'Saving...',
+  'setups.edit.button.save': 'Save Setup',
+  'setups.edit.button.rename-and-update': 'Rename and update trades',
+  'setups.edit.rename-warning.title': 'Rename setup and update trades',
+  'setups.edit.rename-warning.message':
+    'Renaming {oldName} to {newName} will update trade notes that use the old setup name.',
+  'setups.edit.delete.button': 'セットアップを削除',
+  'setups.edit.delete.title': 'セットアップを削除',
+  'setups.edit.delete.confirm': '削除を確認',
+  'setups.edit.delete.warning':
+    '「{name}」を削除すると、セットアップが完全に削除され、関連するトレードからも解除されます。この操作は元に戻せません。',
+  'setups.edit.delete.success': 'セットアップ「{name}」を削除しました',
+  'setups.edit.delete.error': 'セットアップを削除できませんでした',
+  'setups.edit.success': 'Setup "{name}" updated successfully',
+  'setups.edit.error.failed': 'Failed to update setup',
+  'setups.view.compare.empty-submessage':
+    'Choose two setup cards from the overview to build a side-by-side report.',
+  'setups.view.compare.reason.higher.total-r': '合計Rが高い',
+  'setups.view.compare.reason.lower.total-r': '合計Rが低い',
+  'setups.view.compare.reason.similar.total-r': '合計Rが同程度',
+  'setups.view.advanced.rule-break-count': '{count}',
+  'setups.guide.empty.intro.title': '最初のセットアップを作成',
+  'setups.guide.empty.intro.description':
+    'セットアップはプレイブックノート、ルール、スクリーンショット、関連トレードを結び付け、1つの取引アイデアを文脈付きで見直せます。',
+  'setups.guide.create-new-setup.title': '新しいセットアップを作成',
+  'setups.guide.create-new-setup.description':
+    '別のプレイブックを追加するときは新規セットアップを使います。モーダルで詳細、リンクノート、ルールを設定できます。',
+  'setups.guide.detail-intro.title': 'これはセットアップページです',
+  'setups.guide.detail-intro.description':
+    'セットアップページは1つのプレイブックに焦点を当て、成績チャート、コンテキスト、参考資料、操作、実行ルールをまとめます。',
+  'setups.guide.detail-actions.title': 'セットアップ操作',
+  'setups.guide.detail-actions.description':
+    'これらのボタンで関連トレードを開くか、詳細、リンクノート、画像、プレイブックルールを編集します。',
+  'setups.guide.empty.create-setup.title': '新規セットアップから開始',
+  'setups.guide.empty.create-setup.description':
+    'まずセットアップを1つ作成します。作成後、このガイドは通常の案内を続けます。',
+  'setups.guide.empty.finish.title': 'セットアップ作成を完了',
+  'setups.guide.empty.finish.description':
+    '詳細を入力して保存してください。セットアップが利用可能になるとガイドが再開します。',
+  'setups.guide.intro.title': 'Setups へようこそ',
+  'setups.guide.intro.description':
+    'このビューでは、セットアップのプレイブック、関連トレード、ノート、スクリーンショット、ルールを1か所にまとめます。',
+  'setups.guide.view-tabs.title': 'セットアップ表示を切り替え',
+  'setups.guide.view-tabs.description':
+    '十分なセットアップがある場合、このタブで概要、ペア、比較フローを切り替えます。',
+  'setups.guide.overview-chart.title': '成績ランキング',
+  'setups.guide.overview-chart.description':
+    '概要チャートは選択した指標でセットアップを並べます。右上のコントロールで指標を切り替えたり、特定のセットアップに絞り込めます。',
+  'setups.guide.setup-cards.title': 'セットアップカード',
+  'setups.guide.setup-cards.description':
+    'カードは主要指標、状態、最終取引日、小さな成績トレンドで各セットアップを要約します。',
+  'setups.guide.open-detail.title': 'セットアップページを開く',
+  'setups.guide.open-detail.description':
+    'セットアップカードを開き、チャート、コンテキスト、プレイブック資料、実行ルールを含む専用ページを確認します。',
+  'setups.guide.detail-performance.title': '詳細成績',
+  'setups.guide.detail-performance.description':
+    'Performance タブでは、P&L、勝率、期待値、ドローダウンなどのチャートと主要指標を時系列で確認できます。',
+  'setups.guide.detail-context.title': 'セットアップコンテキスト',
+  'setups.guide.detail-context.description':
+    'このパネルは健康度、注意項目、リンクノート、スクリーンショットを手元にまとめます。',
+  'setups.guide.detail-playbook.title': 'プレイブックノート',
+  'setups.guide.detail-playbook.description':
+    'プレイブック領域はリンクノートをプレビューします。Markdown、画像、Excalidraw、任意の参考資料を使えます。',
+  'setups.guide.detail-rules.title': '実行ルール',
+  'setups.guide.detail-rules.description':
+    'ルールは好条件、エントリー、リスク、避けるミスの構造化チェックリストです。',
+  'setups.guide.finish.title': 'Setups ガイド完了',
+  'setups.guide.finish.description':
+    '概要、ペア、比較、個別セットアップページの主要画面を確認しました。',
+  'setups.guide.compare.intro.title': 'セットアップ成績を比較',
+  'setups.guide.compare.intro.description':
+    '十分なセットアップがあるので、ペアを確認し2つのプレイブックを横並びで比較できます。',
+  'setups.guide.pairs-mode.title': 'セットアップペアを開く',
+  'setups.guide.pairs-mode.description':
+    'ペアを開き、比較に十分な共有トレードがある組み合わせを確認します。',
+  'setups.guide.pairs-chart.title': 'ペアランキング',
+  'setups.guide.pairs-chart.description':
+    'ペアモードは一緒に良くまたは悪く機能する可能性がある組み合わせを強調します。バーをクリックすると、その組み合わせの詳しい洞察を開けます。',
+  'setups.guide.return-overview.title': '概要に戻る',
+  'setups.guide.return-overview.description':
+    '比較するセットアップを選ぶ前に概要へ戻ります。',
+  'setups.guide.compare-mode.title': '比較モードを開始',
+  'setups.guide.compare-mode.description':
+    '比較モードでは2つのセットアップカードを選んで横並びで確認できます。',
+  'setups.guide.compare-select.title': '2つのセットアップを選択',
+  'setups.guide.compare-select.description':
+    '2つのカードを選択して比較ページを開きます。',
+  'setups.guide.compare-summary.title': 'これは比較ページです',
+  'setups.guide.compare-summary.description':
+    'このページは2つのセットアップを並べて比較します。上部のサマリー行には勝者、期待値エッジ、信頼度、優位性の理由が表示されます。',
+  'setups.guide.compare-body.title': '比較サマリー行',
+  'setups.guide.compare-body.description':
+    '上部の行は、勝者、期待値エッジ、信頼度、優位性の理由をまとめます。',
+  'setups.guide.compare-details.title': '比較詳細',
+  'setups.guide.compare-details.description':
+    '指標表と累積チャートで2つのセットアップの違いを理解します。',
+  'setups.guide.detail-execution-gap.title': '実行ギャップ分析',
+  'setups.guide.detail-execution-gap.description':
+    'ミストレードやバックテストがある場合、このタブで実行済みの成果と逃した機会または基準を比較します。',
+  'setups.guide.back-to-overview.title': 'カードに戻る',
+  'setups.guide.back-to-overview.description':
+    '比較が終わったらセットアップカードに戻ります。',
+  'setups.guide.compare.finish.title': '比較ガイド完了',
+  'setups.guide.compare.finish.description':
+    '複数のセットアップを一緒に確認するためのペアと比較を見ました。',
+  'setups.view.open-as-markdown': 'Open as Markdown',
+  'setups.view.open-as-setup': 'Open as Journalit Setup',
+  'setups.view.overview.mode.aria': 'Overview chart mode',
+  'setups.view.overview.mode.setups': 'Setups',
+  'setups.view.overview.mode.pairs': 'Pairs',
+  'setups.view.pairs.title': 'Setup pairs',
+  'setups.view.pairs.summary-aria': 'Setup pairs summary',
+  'setups.view.pairs.best': 'Best pair',
+  'setups.view.pairs.worst': 'Worst pair',
+  'setups.view.pairs.worst-short': 'Worst',
+  'setups.view.pairs.empty': 'No setup pairs with 5+ trades yet.',
+  'setups.view.pairs.empty-submessage':
+    'Pairs appear after two setups share enough linked trades.',
+  'setups.view.pairs.privacy':
+    'Pair performance is hidden while Privacy Mode is on.',
+  'setups.view.pairs.edge-tooltip':
+    'Edge compares the pair expectancy against the stronger solo setup baseline.',
+  'setups.view.pairs.metric-aria': 'Pair metric',
+  'setups.view.pairs.metric.edge': 'Pair edge',
+  'setups.view.pairs.metric.edge-short': 'edge',
+  'setups.view.pairs.metric.expectancy': 'Pair expectancy',
+  'setups.view.pairs.metric.expectancy-short': 'expectancy',
+  'setups.view.pairs.together': 'Together',
+  'setups.view.pairs.table.setup-pair': 'Setup pair',
+  'setups.view.pairs.equity-curve': 'Equity curve',
+  'setups.view.pairs.equity-caption':
+    'Cumulative pair performance over time. Green = positive contribution, red = drawdown.',
+  'setups.view.pairs.evidence': 'Evidence',
+  'setups.view.pairs.edge-comparison': 'Edge comparison',
+  'setups.view.pairs.edge-caption': 'Combined edge: {edge}',
+  'setups.view.overview.setup-filter.all': 'Setups: All',
+  'setups.view.overview.setup-filter.selected': 'Setups: {count} selected',
+  'setups.view.overview.setup-filter.aria': 'Choose setups to show',
+  'setups.view.overview.setup-filter.select-all': 'Select all',
+  'setups.view.overview.setup-filter.clear': 'Clear',
+  'setups.view.overview.pnl-chart.title': 'Setup P&L Over Time',
+  'setups.view.overview.pnl-chart.dropdown-label': 'Cumulative P&L',
+  'setups.view.overview.pnl-chart.subtitle':
+    'Cumulative P&L from setup-linked trades, split by setup and combined.',
+  'setups.view.overview.pnl-chart.combined': 'All setups',
+  'setups.view.overview.pnl-chart.selected-combined': 'Selected setups',
+  'setups.view.overview.pnl-chart.unassigned': 'Unassigned account',
+  'setups.view.overview.pnl-chart.hidden':
+    'Setup P&L over time is hidden while privacy mode is enabled.',
+  'setups.view.overview.pnl-chart.trade': 'Trade',
+  'setups.view.overview.pnl-chart.start': 'Start',
+  'setups.view.ranking.empty-submessage':
+    'Log trades with setups to start ranking performance.',
+  'setups.view.empty.no-setups-submessage':
+    'Setups collect your playbook notes, rules, trades, and performance in one place.',
+  'setups.view.detail.performance.drawdown': 'ドローダウン',
+  'setups.view.detail.performance.empty-submessage':
+    'Trades using this setup will appear here once you start logging them.',
+  'setups.view.detail.analysis.performance': 'Performance',
+  'setups.view.detail.analysis.execution-gap': 'Execution Gap',
+  'setups.view.detail.analysis.tabs-aria': 'Setup performance tabs',
+  'setups.view.detail.brief.linked-notes-add': 'Edit linked notes',
+  'setups.view.detail.execution-gap.title': 'Execution Gap',
+  'setups.view.detail.execution-gap.subtitle':
+    'Captured edge vs missed opportunity',
+  'setups.view.detail.execution-gap.live-pnl': 'Live PnL',
+  'setups.view.detail.execution-gap.live-r': 'ライブR',
+  'setups.view.detail.execution-gap.missed-edge': 'Missed Edge',
+  'setups.view.detail.execution-gap.live-plus-missed': 'Live + Missed',
+  'setups.view.detail.execution-gap.backtest': 'Backtest',
+  'setups.view.detail.execution-gap.gap': 'Gap',
+  'setups.view.detail.execution-gap.opportunities': 'Opportunities',
+  'setups.view.detail.execution-gap.capture-rate': 'Capture Rate',
+  'setups.view.detail.execution-gap.capture-rate-tooltip':
+    'Live P&L ÷ (Live P&L + missed-trade P&L). Shows how much available edge you captured.',
+  'setups.view.detail.execution-gap.average-r-delta': 'Avg R Delta',
+  'setups.view.detail.execution-gap.live-execution': 'Live Execution',
+  'setups.view.detail.execution-gap.backtest-benchmark': 'Backtest Benchmark',
+  'setups.view.detail.execution-gap.hidden':
+    'Execution gap is hidden in privacy mode.',
+  'setups.view.detail.execution-gap.empty':
+    'Log missed trades or backtest trades for this setup to analyze execution gaps.',
+  'setups.view.detail.brief.linked-notes': '{count}',
+  'setups.view.detail.brief.linked-notes-modal.subtitle': '{name}',
+  'setups.view.detail.brief.screenshots': '{count}',
+  'setups.view.detail.brief.no-screenshots':
+    'リンクされたスクリーンショットはまだありません。',
+  'setups.view.detail.brief.screenshot-alt': '{index}',
+  'setups.view.detail.brief.screenshot-open': '{index}',
+  'setups.view.detail.brief.count.rules': '{count}',
+  'setups.view.detail.brief.count.notes': '{count}',
+  'setups.view.detail.brief.count.images': '{count}',
+  'setups.view.detail.brief.count.trades': '{count}',
+  'setups.view.detail.brief.more': '{count}',
+  'setups.view.detail.attention.title': 'Needs attention',
+  'setups.view.detail.attention.count': '{count} items',
+  'setups.view.detail.attention.empty': 'No setup issues found.',
+  'setups.view.detail.attention.show-more': '+{count} more',
+  'setups.view.detail.attention.show-less': 'Show less',
+  'setups.view.detail.attention.no-playbook-title': 'Link a playbook note',
+  'setups.view.detail.attention.no-playbook-detail':
+    'Link one source note for context and examples.',
+  'setups.view.detail.attention.no-rules-title': 'Build the execution playbook',
+  'setups.view.detail.attention.no-rules-detail':
+    'Add criteria for entries, invalidation, risk, and mistakes.',
+  'setups.view.detail.attention.no-invalidation-title':
+    'Add invalidation criteria',
+  'setups.view.detail.attention.no-invalidation-detail':
+    'Define when this setup is no longer valid.',
+  'setups.view.detail.attention.no-risk-title': 'Add risk or management rules',
+  'setups.view.detail.attention.no-risk-detail':
+    'Document how this setup should be managed after entry.',
+  'setups.view.detail.attention.no-trades-title': 'No live trades yet',
+  'setups.view.detail.attention.no-trades-detail':
+    'No linked live trade history yet.',
+  'setups.view.detail.attention.no-screenshots-title':
+    'Save example screenshots',
+  'setups.view.detail.attention.no-screenshots-detail':
+    'Attach screenshots to trades for review examples.',
+  'setups.view.detail.attention.stale-title': 'Review recent relevance',
+  'setups.view.detail.attention.stale-detail':
+    'This setup has not been traded in {count} days.',
+  'setups.view.detail.attention.profit-factor-title':
+    'Performance needs review',
+  'setups.view.detail.attention.profit-factor-detail':
+    'Profit factor is below 1.0 across linked trades.',
+  'setups.view.detail.attention.expectancy-title': 'Expectancy is negative',
+  'setups.view.detail.attention.expectancy-detail':
+    'Average linked-trade outcome is below breakeven.',
+  'setups.view.card.open-named': '{name}',
+  'setups.view.card.status.active': 'Stable',
+  'setups.view.card.status.monitor': 'Monitor',
+  'setups.view.card.status.review': 'Review',
+  'setups.view.date.days-ago': '{count}',
+
   'trade-import.restore.title': 'Restore imported trades from backend',
   'trade-import.restore.description':
     'Create missing local notes for backend imported trades in this vault. This does not create duplicate backend trades.',
@@ -1157,6 +1508,116 @@ const ja: Partial<Lang> = {
   'trade-import.restore.complete':
     'Restored {written} imported trades; {failed} failed.',
   'trade-import.restore.broker-label': 'Backend restore',
+  'setups.view.loading': 'Loading setups…',
+  'settings.general.copy-trading-pnl-toggled': 'Copy trading PnL is {status}',
+  'setups.view.trade.unknown-instrument': 'Unknown instrument',
+  'settings.session-mode.linked-resources-count': '{count} linked',
+  'settings.session-mode.linked-resources-hide': 'Hide linked',
+  'settings.session-mode.session-log-tags': 'Session log tags',
+  'settings.session-mode.session-log-tags-desc':
+    'Customize the tags available in the Session Mode composer and DRC session log.',
+  'settings.session-mode.tag-label-placeholder': 'Tag name',
+  'settings.session-mode.tag-short-label-placeholder': 'Short label',
+  'settings.session-mode.tag-label-example': 'Trade',
+  'settings.session-mode.tag-short-label-example': 'TR',
+  'settings.session-mode.tag-color': 'Tag color',
+  'settings.session-mode.tag-requires-resolution': 'Requires resolution',
+  'settings.session-mode.tag-lesson': 'Lesson tag',
+  'settings.session-mode.tag-requires-resolution-tooltip':
+    'Entries with this tag are marked as follow-up items until you resolve them in the session log. Use it for notes that need review or action after the session.',
+  'settings.session-mode.tag-lesson-tooltip':
+    'Marks this tag as a learning entry. Lesson-tagged notes can be surfaced as lessons and are highlighted as learning moments in session log workflows.',
+  'settings.session-mode.add-session-log-tag': 'Add session log tag',
+  'settings.session-mode.reset-session-log-tags': 'Reset session log tags',
+  'settings.session-mode.tag-color.blue': 'Blue',
+  'settings.session-mode.tag-color.indigo': 'Indigo',
+  'settings.session-mode.tag-color.purple': 'Purple',
+  'settings.session-mode.tag-color.green': 'Green',
+  'settings.session-mode.tag-color.pink': 'Pink',
+  'settings.session-mode.tag-color.amber': 'Amber',
+  'settings.session-mode.tag-color.red': 'Red',
+  'settings.session-mode.tag-color.orange': 'Orange',
+  'session-log.action.add-note': 'Add',
+  'session-log.action.hide-composer': 'Hide composer',
+  'session-log.filter.label': 'Filter session log',
+  'session-log.filter.clear': 'Clear filter',
+  'session-log.empty-filtered': 'No entries match this filter.',
+  'media.viewer.mute-video': '動画をミュート',
+  'media.viewer.unmute-video': '動画のミュートを解除',
+  'media.viewer.volume': '音量',
+  'imageGallery.subtitle-count': '{count} 件のメディア',
+  'imageGallery.empty.error.title': 'ギャラリーを利用できません',
+  'imageGallery.empty.no-images.title': 'まだメディアがありません',
+  'imageGallery.empty.no-images.description':
+    'トレードやレビューノートに添付した画像、GIF、動画、YouTubeリンクがここに自動的に表示されます。',
+  'imageGallery.empty.no-results.title':
+    'このフィルターに一致するメディアはありません',
+  'imageGallery.empty.no-results.description':
+    'アクティブなフィルターを解除するか日付範囲を広げて、ギャラリーの項目を増やしてください。',
+  'imageGallery.empty.no-source.title': 'このソースにはメディアがありません',
+  'imageGallery.empty.no-source.description':
+    'このソースにはギャラリーの項目がまだありません。すべてのメディアに戻るか、別のソースを選んでください。',
+  'imageGallery.empty.action.clear-filters': 'フィルターをクリア',
+  'imageGallery.empty.action.show-all': 'すべてのメディアを表示',
+  'imageGallery.open-source': 'ノートを開く',
+  'imageGallery.image-alt': '{date} の {source} メディア',
+  'imageGallery.annotation.reviewed': 'レビュー済み',
+  'imageGallery.annotation.unreviewed': '未レビュー',
+  'imageGallery.annotation.tag': 'タグ',
+  'imageGallery.annotation.editor-eyebrow': '市場構造ジャーナル',
+  'imageGallery.annotation.editor-title': 'メディアに注釈を付ける',
+  'imageGallery.annotation.tags': 'タグ',
+  'imageGallery.annotation.tags-placeholder':
+    'ブレイクアウト、A+ セットアップ、ミス',
+  'imageGallery.annotation.notes': 'メモ',
+  'imageGallery.annotation.notes-placeholder':
+    '未来の自分はこのチャートから何を学ぶべきですか？',
+  'imageGallery.annotation.error.save-failed':
+    'メディアの注釈を保存できませんでした。',
+  'imageGallery.annotation.saving': '保存中...',
+  'command.replay-current-view-guide': '現在のビューのガイドを再生',
+
+  
+  
+  
+  'tradelog.guide.switch-to-gallery.title':
+    'トレードからギャラリーへ切り替える',
+  'tradelog.guide.switch-to-gallery.description':
+    'このモードセレクターで通常のトレードログとギャラリーを切り替えます。ギャラリーをクリックして、画像、GIF、動画、YouTubeリンクのツアーを続けます。',
+  'tradelog.guide.gallery-controls.title': '確認したいメディアを選ぶ',
+  'tradelog.guide.gallery-controls.description':
+    'ソースでトレードまたはレビューノートを選び、並び替えでメディアの順序を変え、サイズボタンでコンパクトな一覧と大きめのメディアプレビューを切り替えます。',
+  'tradelog.guide.gallery-source-sort.title': 'メディアのソースと順序を選ぶ',
+  'tradelog.guide.gallery-source-sort.description':
+    'ソースで全メディア、トレードの添付、レビューノートのメディアに絞れます。並び替えで新しい、古い、成績の良い、悪いトレードから確認できます。',
+  'tradelog.guide.gallery-size.title': 'ギャラリーのプレビューサイズを調整する',
+  'tradelog.guide.gallery-size.description':
+    'これらのサイズボタンで、重要なチャート詳細を切り落とさずに、コンパクトな確認と大きめのチャートプレビューを切り替えます。',
+  'tradelog.guide.gallery-filters.title': '同じ入口からギャラリーを絞り込む',
+  'tradelog.guide.gallery-filters.description':
+    'フィルターボタンは引き続き詳細フィルターを開きます。ギャラリーモードでは、注釈ステータスやメディアタグなどメディア専用のフィルターも含まれます。',
+  'tradelog.guide.gallery-filter-modal.title':
+    'メディアフィルターはトレードフィルターと一緒にあります',
+  'tradelog.guide.gallery-filter-modal.description':
+    'このモーダルでトレードフィルターとメディアフィルターを組み合わせます。たとえば特定のセットアップで絞り込み、メモや特定のメディアタグがあるメディアだけを表示できます。',
+  'tradelog.guide.gallery-grid.title': 'メディアを開いて詳しく確認する',
+  'tradelog.guide.gallery-grid.description':
+    '各カードはチャートを邪魔せず、トレードとレビューのコンテキストをコンパクトに表示します。任意のカードをクリックすると全画面で開きます。',
+  'tradelog.guide.gallery-fullscreen-actions.title':
+    '全画面からメディアに注釈を付ける',
+  'tradelog.guide.gallery-fullscreen-actions.description':
+    '項目を十分大きく表示した状態で、タグを使ってメディア単位のタグとメモを追加します。ノートを開くと元のトレードまたはレビューノートに戻ります。',
+  'tradelog.guide.gallery-open-annotation.title': '注釈パネルを開く',
+  'tradelog.guide.gallery-open-annotation.description':
+    'タグをクリックして、この特定のメディアに注釈を付けます。メディアタグとメモは添付ファイルを説明するもので、トレード全体ではありません。',
+  'tradelog.guide.gallery-annotation-panel.title':
+    'メディアタグとメモを追加する',
+  'tradelog.guide.gallery-annotation-panel.description':
+    '流動性スイープや失敗したブレイクアウトなど、チャート固有の考えにはメディアタグを使い、覚えておきたい市場構造の文脈にはメモを使います。',
+  'tradelog.guide.gallery-finish.title':
+    'トレードログの2つのモードを確認しました',
+  'tradelog.guide.gallery-finish.description':
+    '表と一括操作が必要なときはトレードを使います。ジャーナル全体の画像、GIF、動画、YouTubeリンク、市場構造、チャート注釈を確認したいときはギャラリーを使います。',
 };
 
 export default ja;

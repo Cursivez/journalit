@@ -64,6 +64,57 @@ export function filterActiveCopyAccounts(
   );
 }
 
+export function expandAccountsWithCopyTradingAccounts(
+  accountNames: string[],
+  accountMetadata: Record<string, AccountMetadata> | undefined,
+  includeCopyAccounts: boolean
+): string[] {
+  if (!includeCopyAccounts || accountNames.length === 0 || !accountMetadata) {
+    return [...new Set(accountNames.filter(Boolean))];
+  }
+
+  const expandedAccountsByLookupKey = new Map<string, string>();
+  const selectedBaseLookupKeys = new Set<string>();
+
+  for (const accountName of accountNames) {
+    if (!accountName) {
+      continue;
+    }
+
+    const lookupKey = normalizeAccountLookupKey(accountName);
+    if (!lookupKey) {
+      continue;
+    }
+
+    selectedBaseLookupKeys.add(lookupKey);
+    expandedAccountsByLookupKey.set(lookupKey, accountName);
+  }
+
+  for (const [metadataKey, metadata] of Object.entries(accountMetadata)) {
+    const copyPeriods = metadata.copyTradingPeriods ?? [];
+    if (copyPeriods.length === 0) {
+      continue;
+    }
+
+    const copiesSelectedBaseAccount = copyPeriods.some((period) =>
+      selectedBaseLookupKeys.has(normalizeAccountLookupKey(period.baseAccount))
+    );
+    if (!copiesSelectedBaseAccount) {
+      continue;
+    }
+
+    const copyAccountName = metadata.name || metadataKey;
+    const copyAccountLookupKey = normalizeAccountLookupKey(copyAccountName);
+    if (!copyAccountLookupKey) {
+      continue;
+    }
+
+    expandedAccountsByLookupKey.set(copyAccountLookupKey, copyAccountName);
+  }
+
+  return Array.from(expandedAccountsByLookupKey.values());
+}
+
 export function isAccountUsedAsActiveCopyBase(
   accountName: string,
   accountMetadata: Record<string, AccountMetadata> | undefined,

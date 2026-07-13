@@ -47,6 +47,10 @@ import { TradeLogService } from '../../../services/tradelog';
 import { remapAccountFilterFromAccountChange } from '../../shared/filters/remapSelectedAccounts';
 import { persistViewFilter } from '../../shared/filters/viewFilterPersistence';
 
+const SHORT_WEEKDAY_FORMATTER = new Intl.DateTimeFormat(undefined, {
+  weekday: 'short',
+});
+
 function frontmatterHeaderValueToString(value: unknown): string {
   if (value === undefined || value === null) return '';
   if (typeof value === 'string') return value;
@@ -370,6 +374,25 @@ export const HeaderWidget: React.FC<HeaderWidgetProps> = React.memo(
       const year = date.getFullYear();
 
       return `${dayName}, ${monthName} ${day}, ${year}`;
+    }, []);
+
+    const formatDRCDateMedium = useCallback((date: Date): string => {
+      const monthKey = `widget.header.month-short.${date.getMonth()}`;
+      const monthName = hasTranslation(monthKey) ? t(monthKey) : monthKey;
+      const weekday = SHORT_WEEKDAY_FORMATTER.format(date);
+      const day = date.getDate();
+      const year = date.getFullYear();
+
+      return `${weekday}, ${monthName} ${day}, ${year}`;
+    }, []);
+
+    const formatDRCDateShort = useCallback((date: Date): string => {
+      const monthKey = `widget.header.month-short.${date.getMonth()}`;
+      const monthName = hasTranslation(monthKey) ? t(monthKey) : monthKey;
+      const day = date.getDate();
+      const year = date.getFullYear();
+
+      return `${monthName} ${day}, ${year}`;
     }, []);
 
     const formatWeeklyDate = useCallback(
@@ -1453,9 +1476,23 @@ export const HeaderWidget: React.FC<HeaderWidgetProps> = React.memo(
       <div className="journalit-header-content layout-e">
         <div className="journalit-header-main">
           <div className="journalit-header-title">
-            <span className="journalit-header-title-text">
-              {headerData.title}
-            </span>
+            {headerData.type === 'drc' ? (
+              <span className="journalit-header-title-text journalit-header-title-text--responsive-date">
+                <span className="journalit-header-date-full">
+                  {headerData.title}
+                </span>
+                <span className="journalit-header-date-medium">
+                  {formatDRCDateMedium(headerData.date)}
+                </span>
+                <span className="journalit-header-date-short">
+                  {formatDRCDateShort(headerData.date)}
+                </span>
+              </span>
+            ) : (
+              <span className="journalit-header-title-text">
+                {headerData.title}
+              </span>
+            )}
             
             {headerData.type !== 'trade' && (
               <span
@@ -1496,77 +1533,79 @@ export const HeaderWidget: React.FC<HeaderWidgetProps> = React.memo(
               {headerData.subtitle}
             </div>
           )}
-          <div className="journalit-header-context">{getContextLinks()}</div>
-        </div>
-        <div className="journalit-header-subtle-controls">
-          {headerData.type !== 'trade' && (
-            <button
-              type="button"
-              className="journalit-header-icon-button"
-              onClick={() => void handleOpenFilterModal()}
-              disabled={preview}
-              aria-label={
-                preview
-                  ? t('shared.filter.disabled-preview')
-                  : t('shared.filter.open')
-              }
-            >
-              <Funnel size={16} aria-hidden="true" />
-              {!preview && activeFilterCount > 0 && (
-                <span
-                  className="journalit-header-filter-badge"
-                  aria-label={t('shared.filter.active-count', {
-                    count: activeFilterCount.toString(),
-                  })}
+          <div className="journalit-header-bottom-row">
+            <div className="journalit-header-context">{getContextLinks()}</div>
+            <div className="journalit-header-subtle-controls">
+              {headerData.type !== 'trade' && (
+                <button
+                  type="button"
+                  className="journalit-header-icon-button"
+                  onClick={() => void handleOpenFilterModal()}
+                  disabled={preview}
+                  aria-label={
+                    preview
+                      ? t('shared.filter.disabled-preview')
+                      : t('shared.filter.open')
+                  }
                 >
-                  {activeFilterCount}
-                </span>
+                  <Funnel size={16} aria-hidden="true" />
+                  {!preview && activeFilterCount > 0 && (
+                    <span
+                      className="journalit-header-filter-badge"
+                      aria-label={t('shared.filter.active-count', {
+                        count: activeFilterCount.toString(),
+                      })}
+                    >
+                      {activeFilterCount}
+                    </span>
+                  )}
+                </button>
               )}
-            </button>
-          )}
-          {headerData.type !== 'trade' && (
-            <button
-              type="button"
-              className="journalit-header-icon-button"
-              onClick={() => void handleSwitchTemplate()}
-              disabled={preview}
-              aria-label={t('command.switch-template')}
-            >
-              <Repeat2 size={16} aria-hidden="true" />
-            </button>
-          )}
-          <span
-            className={`nav-link ${preview ? 'disabled' : ''}`}
-            role="button"
-            tabIndex={preview ? -1 : 0}
-            aria-disabled={preview || undefined}
-            onKeyDown={(e) => {
-              if (e.key !== 'Enter' && e.key !== ' ') return;
-              e.preventDefault();
-              e.currentTarget.click();
-            }}
-            onClick={() => {
-              if (!preview) void handleNavigate(-1);
-            }}
-          >
-            {t('widget.header.nav.prev')}
-          </span>
-          <span
-            className={`nav-link ${preview ? 'disabled' : ''}`}
-            role="button"
-            tabIndex={preview ? -1 : 0}
-            aria-disabled={preview || undefined}
-            onKeyDown={(e) => {
-              if (e.key !== 'Enter' && e.key !== ' ') return;
-              e.preventDefault();
-              e.currentTarget.click();
-            }}
-            onClick={() => {
-              if (!preview) void handleNavigate(1);
-            }}
-          >
-            {t('widget.header.nav.next')}
-          </span>
+              {headerData.type !== 'trade' && (
+                <button
+                  type="button"
+                  className="journalit-header-icon-button"
+                  onClick={() => void handleSwitchTemplate()}
+                  disabled={preview}
+                  aria-label={t('command.switch-template')}
+                >
+                  <Repeat2 size={16} aria-hidden="true" />
+                </button>
+              )}
+              <span
+                className={`nav-link ${preview ? 'disabled' : ''}`}
+                role="button"
+                tabIndex={preview ? -1 : 0}
+                aria-disabled={preview || undefined}
+                onKeyDown={(e) => {
+                  if (e.key !== 'Enter' && e.key !== ' ') return;
+                  e.preventDefault();
+                  e.currentTarget.click();
+                }}
+                onClick={() => {
+                  if (!preview) void handleNavigate(-1);
+                }}
+              >
+                {t('widget.header.nav.prev')}
+              </span>
+              <span
+                className={`nav-link ${preview ? 'disabled' : ''}`}
+                role="button"
+                tabIndex={preview ? -1 : 0}
+                aria-disabled={preview || undefined}
+                onKeyDown={(e) => {
+                  if (e.key !== 'Enter' && e.key !== ' ') return;
+                  e.preventDefault();
+                  e.currentTarget.click();
+                }}
+                onClick={() => {
+                  if (!preview) void handleNavigate(1);
+                }}
+              >
+                {t('widget.header.nav.next')}
+              </span>
+            </div>
+          </div>
         </div>
       </div>
     );

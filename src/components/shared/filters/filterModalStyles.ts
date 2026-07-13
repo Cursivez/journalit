@@ -22,7 +22,7 @@ export const FILTER_MODAL_STYLES = `
   min-height: 0;
   overflow-y: auto;
   overflow-x: hidden;
-  padding: 12px;
+  padding: 12px 12px 84px;
 }
 
 
@@ -126,6 +126,12 @@ export const FILTER_MODAL_STYLES = `
 .journalit-filter-modal .filter-modal-controls {
   display: flex;
   flex-direction: column;
+}
+
+.journalit-filter-modal .filter-modal-image-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
 
 

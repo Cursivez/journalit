@@ -1,7 +1,7 @@
 
 
 import { TradeFormData } from '../components/forms/trade/types';
-import { LossReviewData } from '../services/backend/types';
+import { LossReviewData, TradeReviewData } from '../services/backend/types';
 
 
 export interface TradeFrontmatter extends TradeFormData {
@@ -26,5 +26,6 @@ export type PartialTradeFrontmatter = Partial<TradeFrontmatter> & {
   pnl?: number;
   filePath?: string;
   lossReview?: LossReviewData;
+  tradeReview?: TradeReviewData;
   templateId?: string;
 };

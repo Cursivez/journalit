@@ -588,7 +588,7 @@ const SetupLeaderboardWidgetComponent: React.FC<
   const setupStats = useMemo(
     (): TopBreakdownStats[] =>
       buildTopBreakdownStats({
-        trades: filteredTrades as Trade[] | undefined,
+        trades: filteredTrades,
         dimension: resolvedConfig.dimension,
         valueMode: resolvedConfig.valueMode,
         breakEvenSettings,

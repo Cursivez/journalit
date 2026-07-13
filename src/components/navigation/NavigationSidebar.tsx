@@ -23,8 +23,8 @@ import { hasTranslation, t, TranslationKey } from '../../lang/helpers';
 import { SidebarNavItemComponent } from './SidebarNavItem';
 import { SidebarSearch } from './SidebarSearch';
 
-const SECTIONS = ['overview', 'reviews', 'tools'] as const;
-type Section = (typeof SECTIONS)[number];
+type Section = 'overview' | 'reviews' | 'tools';
+const SECTIONS: Section[] = ['overview', 'reviews', 'tools'];
 
 const SECTION_LABEL_KEYS: Record<Section, TranslationKey> = {
   overview: 'navigation.section.overview',
@@ -36,32 +36,6 @@ const restrictToVerticalAxis: Modifier = ({ transform }) => ({
   ...transform,
   x: 0,
 });
-
-const restrictToActiveNavigationSection: Modifier = ({
-  active,
-  activeNodeRect,
-  transform,
-}) => {
-  if (!active || !activeNodeRect) return transform;
-
-  const activeElement = window.activeDocument.querySelector<HTMLElement>(
-    `[data-nav-item-id="${active.id.toString()}"]`
-  );
-  const sectionElement = activeElement?.closest<HTMLElement>(
-    '.journalit-nav-section'
-  );
-  if (!sectionElement) return transform;
-
-  const sectionRect = sectionElement.getBoundingClientRect();
-  const minY = sectionRect.top - activeNodeRect.top;
-  const maxY = sectionRect.bottom - activeNodeRect.bottom;
-
-  return {
-    ...transform,
-    x: 0,
-    y: Math.min(Math.max(transform.y, minY), maxY),
-  };
-};
 
 const VIEW_ACTION_MAP: Record<string, string> = {
   openHome: 'journalit-home-view',
@@ -83,6 +57,8 @@ const QUICK_LINK_ACTIONS: ReadonlySet<string> = new Set([
   'openCSVImport',
   'openQuickTradeImport',
   'openLayoutBuilder',
+  'openSessionMode',
+  'openSetups',
   'openHome',
   'openQuarterlyReview',
   'openYearlyReview',
@@ -91,7 +67,6 @@ const QUICK_LINK_ACTIONS: ReadonlySet<string> = new Set([
 
 const isQuickLinkAction = (action: string): action is QuickLinkAction =>
   QUICK_LINK_ACTIONS.has(action);
-
 const REVIEW_ACTIONS = new Set<QuickLinkAction>([
   'openTodaysDRC',
   'openWeeklyReview',
@@ -100,36 +75,34 @@ const REVIEW_ACTIONS = new Set<QuickLinkAction>([
   'openYearlyReview',
 ]);
 
-function mergeNavigationItemsWithDefaults(currentItems: SidebarNavItem[]): {
+const LEGACY_SETUPS_NAVIGATION_ICON = 'notebook-tabs';
+
+export function mergeNavigationItemsWithDefaults(
+  currentItems: SidebarNavItem[]
+): {
   items: SidebarNavItem[];
   changed: boolean;
 } {
   const defaultItems = DEFAULT_SETTINGS.navigation?.items || [];
 
-  const currentById = new Map(
-    currentItems.map((item, index) => [item.id, { item, index }])
+  const currentById = new Map(currentItems.map((item) => [item.id, item]));
+  const currentIndexById = new Map(
+    currentItems.map((item, index) => [item.id, index])
   );
   const merged = [...currentItems];
   let changed = false;
 
   for (const defaultItem of defaultItems) {
-    const current = currentById.get(defaultItem.id);
-    if (current) {
-      const updatedItem = {
-        ...current.item,
-        label: defaultItem.label,
-        icon: defaultItem.icon,
-        action: defaultItem.action,
-        section: defaultItem.section,
-      };
-
+    const existingItem = currentById.get(defaultItem.id);
+    if (existingItem) {
       if (
-        updatedItem.label !== current.item.label ||
-        updatedItem.icon !== current.item.icon ||
-        updatedItem.action !== current.item.action ||
-        updatedItem.section !== current.item.section
+        (existingItem.id === 'nav-setups' ||
+          existingItem.action === 'openSetups') &&
+        existingItem.icon === LEGACY_SETUPS_NAVIGATION_ICON
       ) {
-        merged[current.index] = updatedItem;
+        const index = currentIndexById.get(existingItem.id);
+        if (index === undefined) continue;
+        merged[index] = { ...existingItem, icon: defaultItem.icon };
         changed = true;
       }
       continue;
@@ -242,9 +215,13 @@ export const NavigationSidebar: React.FC<NavigationSidebarProps> = ({
       const [moved] = reordered.splice(oldIndex, 1);
       reordered.splice(newIndex, 0, moved);
 
+      const reorderedOrderById = new Map(
+        reordered.map((item, index) => [item.id, index])
+      );
+
       const updatedItems = localNavItems.map((item) => {
-        const idx = reordered.findIndex((r) => r.id === item.id);
-        if (idx !== -1) {
+        const idx = reorderedOrderById.get(item.id);
+        if (idx !== undefined) {
           return { ...item, order: idx };
         }
         return item;
@@ -309,6 +286,14 @@ export const NavigationSidebar: React.FC<NavigationSidebarProps> = ({
         plugin.settings.navigation?.tabBehavior || 'replaceActiveTab';
       const shouldCreateNewLeaf = tabBehavior !== 'replaceActiveTab';
 
+      if (action === 'openSetups') {
+        await plugin.viewManager.openSetupsView(
+          { page: 'overview' },
+          { newTab: shouldCreateNewLeaf, focusLeaf: false }
+        );
+        return;
+      }
+
       
       
       const viewType = VIEW_ACTION_MAP[action];
@@ -369,10 +354,7 @@ export const NavigationSidebar: React.FC<NavigationSidebarProps> = ({
           <DndContext
             collisionDetection={closestCenter}
             onDragEnd={handleDragEnd}
-            modifiers={[
-              restrictToVerticalAxis,
-              restrictToActiveNavigationSection,
-            ]}
+            modifiers={[restrictToVerticalAxis]}
           >
             {SECTIONS.map((section) => {
               const items = visibleBySection[section];
@@ -393,7 +375,7 @@ export const NavigationSidebar: React.FC<NavigationSidebarProps> = ({
                         item={item}
                         isEditing={isEditing}
                         onRemove={handleRemoveItem}
-                        onClick={(item) => void handleItemClick(item)}
+                        onClick={(action) => void handleItemClick(action)}
                       />
                     ))}
                   </SortableContext>

@@ -76,6 +76,7 @@ const MONEY_AND_DECIMAL_DELTA_METRICS = new Set([
   'largestLoss',
   'maxDrawdown',
   'profitFactor',
+  'sharpeRatio',
   'avgRR',
   'avgRRRiskBased',
   'avgWinnerHeat',
@@ -603,6 +604,7 @@ function useTopSectionModel({ filters }: Pick<TopSectionProps, 'filters'>) {
       case 'timeInDrawdown':
         return 'returnPercent';
       case 'profitFactor':
+      case 'sharpeRatio':
       case 'avgRR':
       case 'avgRRRiskBased':
         return 'metric';
@@ -613,7 +615,10 @@ function useTopSectionModel({ filters }: Pick<TopSectionProps, 'filters'>) {
   };
 
   
-  const formatMetricValue = (metric: string, value: number): string => {
+  const formatMetricValue = (
+    metric: string,
+    value: number | undefined
+  ): string => {
     if (value === undefined || value === null || isNaN(value)) {
       return 'N/A';
     }
@@ -744,6 +749,7 @@ function useTopSectionModel({ filters }: Pick<TopSectionProps, 'filters'>) {
           : value === Infinity || value > 999
             ? '999+'
             : value.toFixed(2);
+      case 'sharpeRatio':
       case 'avgRR':
       case 'avgRRRiskBased':
         return shouldMask(kind)
@@ -785,6 +791,8 @@ function useTopSectionModel({ filters }: Pick<TopSectionProps, 'filters'>) {
         return t('dashboard.metrics.winRate');
       case 'profitFactor':
         return t('dashboard.metrics.profitFactor');
+      case 'sharpeRatio':
+        return t('dashboard.metrics.sharpeRatio');
       case 'expectancy':
         return t('dashboard.metrics.expectancy');
       case 'numTrades':
@@ -1035,6 +1043,7 @@ function useTopSectionModel({ filters }: Pick<TopSectionProps, 'filters'>) {
             precision: 1,
           });
         case 'profitFactor':
+        case 'sharpeRatio':
         case 'avgRR':
         case 'avgRRRiskBased':
         case 'avgWinnerHeat':
@@ -1193,7 +1202,7 @@ function useTopSectionModel({ filters }: Pick<TopSectionProps, 'filters'>) {
   
   const isPositiveMetric = (
     metric: string,
-    value: number
+    value: number | undefined
   ): boolean | undefined => {
     if (value === undefined || value === null || isNaN(value)) {
       return undefined;
@@ -1203,6 +1212,7 @@ function useTopSectionModel({ filters }: Pick<TopSectionProps, 'filters'>) {
       case 'netPnL':
       case 'profitFactor':
       case 'expectancy':
+      case 'sharpeRatio':
         return value > 0;
       case 'avgWin':
       case 'avgLoss':
@@ -1353,6 +1363,82 @@ function useTopSectionModel({ filters }: Pick<TopSectionProps, 'filters'>) {
       );
     }
 
+    if (metric === 'sharpeRatio') {
+      const validTrades = data.metrics.sharpeRatioTradeCount ?? 0;
+      const totalClosedTrades =
+        data.metrics.sharpeRatioSourceTradeCount ?? data.metrics.numTrades ?? 0;
+      const dashboardObservationCount = data.metrics.numTrades ?? 0;
+      const hasInsufficientData = data.metrics.sharpeRatio === undefined;
+      const hasPartialCoverage = validTrades < totalClosedTrades;
+      const hasMultiCurrencyConversion =
+        data.metrics.isMultiCurrency && data.metrics.conversionBaseCurrency;
+      const unconverted = data.metrics.unconvertedCurrencies || [];
+      const hasUnconvertedCurrencies = unconverted.length > 0;
+      const hasMultiCurrencyWithoutConversion =
+        Boolean(data.metrics.isMultiCurrency) &&
+        !data.metrics.conversionBaseCurrency;
+
+      return (
+        <div className="journalit-dashboard-metric-tooltip">
+          <div className="journalit-dashboard-metric-tooltip__title">
+            {t('dashboard.sharpeRatio.tooltip.title')}
+          </div>
+          <div>{t('dashboard.sharpeRatio.tooltip.formula')}</div>
+          <div>
+            {t('dashboard.sharpeRatio.tooltip.coverage', {
+              valid: String(validTrades),
+              total: String(totalClosedTrades),
+            })}
+          </div>
+          {hasInsufficientData && dashboardObservationCount > 0 && (
+            <div className="journalit-dashboard-metric-tooltip__warning">
+              {t('dashboard.sharpeRatio.tooltip.no-data')}
+            </div>
+          )}
+          {hasPartialCoverage && (
+            <div className="journalit-dashboard-metric-tooltip__warning">
+              {t('dashboard.sharpeRatio.tooltip.partial-coverage', {
+                valid: String(validTrades),
+                total: String(totalClosedTrades),
+              })}
+            </div>
+          )}
+          {hasMultiCurrencyWithoutConversion && (
+            <div className="journalit-dashboard-metric-tooltip__warning">
+              {t('dashboard.sharpeRatio.tooltip.no-conversion')}
+            </div>
+          )}
+          {hasMultiCurrencyConversion && (
+            <>
+              <div className="journalit-dashboard-metric-tooltip__title">
+                {t('dashboard.conversion.title', {
+                  currency: data.metrics.conversionBaseCurrency || 'USD',
+                })}
+              </div>
+              <div>
+                {t('dashboard.conversion.using-ecb', {
+                  date: data.metrics.conversionRateDate || 'latest',
+                })}
+              </div>
+            </>
+          )}
+          {hasUnconvertedCurrencies && (
+            <div className="journalit-dashboard-metric-tooltip__warning">
+              {t('dashboard.conversion.excluded-warning', {
+                converted: String(data.metrics.convertedTradeCount),
+                total: String(data.metrics.originalTradeCount),
+                excluded: String(
+                  data.metrics.originalTradeCount! -
+                    data.metrics.convertedTradeCount!
+                ),
+                currencies: unconverted.join(', '),
+              })}
+            </div>
+          )}
+        </div>
+      );
+    }
+
     if (
       metric === 'avgRR' &&
       data.metrics.isMultiCurrency &&
@@ -1444,6 +1530,23 @@ function useTopSectionModel({ filters }: Pick<TopSectionProps, 'filters'>) {
       return hasExcludedCurrencies || hasMultiCurrencyWithoutConversion;
     }
 
+    if (metric === 'sharpeRatio') {
+      const hasExcludedCurrencies =
+        getConversionExcludedWarningMessage() !== undefined;
+      const hasMultiCurrencyWithoutConversion =
+        Boolean(data?.metrics.isMultiCurrency) &&
+        !data?.metrics.conversionBaseCurrency;
+      const hasInsufficientData =
+        (data?.metrics.numTrades ?? 0) > 0 &&
+        data?.metrics.sharpeRatio === undefined;
+
+      return (
+        hasExcludedCurrencies ||
+        hasMultiCurrencyWithoutConversion ||
+        hasInsufficientData
+      );
+    }
+
     if (metric === 'avgRRRiskBased' && data?.metrics) {
       const totalClosedTrades = data.metrics.numTrades ?? 0;
       const validTrades = data.metrics.riskBasedTradesCount ?? 0;
@@ -1470,7 +1573,7 @@ function useTopSectionModel({ filters }: Pick<TopSectionProps, 'filters'>) {
   
   const getMainPart = (
     metric: string,
-    value: number,
+    value: number | undefined,
     formattedValue: string
   ): string | undefined => {
     if (!isCurrencyMetric(metric) && !MAE_MFE_METRICS.has(metric)) {
@@ -1507,7 +1610,7 @@ function useTopSectionModel({ filters }: Pick<TopSectionProps, 'filters'>) {
   
   const getDecimalPart = (
     metric: string,
-    value: number,
+    value: number | undefined,
     formattedValue: string
   ): string | undefined => {
     if (!isCurrencyMetric(metric) && !MAE_MFE_METRICS.has(metric)) {
@@ -1628,15 +1731,20 @@ export const TopSection: React.FC<TopSectionProps> = ({
                 id="topsection-metrics-container"
               >
                 {activeMetrics.map((metric) => {
-                  const metricValue =
-                    getDashboardMetricValue(data.metrics, metric) ?? 0;
+                  const metricValue = getDashboardMetricValue(
+                    data.metrics,
+                    metric
+                  );
                   const formattedValue = formatMetricValue(metric, metricValue);
 
                   const percentSuffix = formatMetricPercentSuffix(
                     metric,
                     formattedValue
                   );
-                  const previousDelta = createMetricDelta(metric, metricValue);
+                  const previousDelta =
+                    metricValue === undefined
+                      ? undefined
+                      : createMetricDelta(metric, metricValue);
 
                   return (
                     <SortableMetricCard

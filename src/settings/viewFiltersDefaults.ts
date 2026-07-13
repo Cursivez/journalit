@@ -99,9 +99,7 @@ export const normalizeDashboardTradeTypes = (
 };
 
 const normalizeReviewTradeTypes = (tradeTypes?: TradeType[]): TradeType[] => {
-  const sanitized = sanitizeTradeTypes(tradeTypes).filter(
-    (tradeType) => tradeType !== 'missed'
-  );
+  const sanitized = sanitizeTradeTypes(tradeTypes);
   return sanitized.length > 0
     ? sanitized
     : [...DEFAULT_REGULAR_ONLY_TRADE_TYPES];
@@ -126,6 +124,8 @@ export const DEFAULT_DASHBOARD_FILTERS: FilterState = {
   reviewStatus: [],
   directions: [],
   customFieldFilters: {},
+  imageAnnotationStatus: [],
+  imageTags: [],
 };
 
 export const DEFAULT_TRADELOG_FILTERS: TradeLogFilters = {
@@ -141,6 +141,8 @@ export const DEFAULT_TRADELOG_FILTERS: TradeLogFilters = {
   tags: [],
   mistakes: [],
   customFieldFilters: {},
+  imageAnnotationStatus: [],
+  imageTags: [],
 };
 
 export const DEFAULT_REVIEW_FILTERS: UnifiedFilters = {
@@ -154,6 +156,8 @@ export const DEFAULT_REVIEW_FILTERS: UnifiedFilters = {
   reviewStatus: [],
   directions: [],
   customFieldFilters: {},
+  imageAnnotationStatus: [],
+  imageTags: [],
 };
 
 export const createDashboardFilters = (): FilterState => ({
@@ -169,6 +173,10 @@ export const createDashboardFilters = (): FilterState => ({
   reviewStatus: [...DEFAULT_DASHBOARD_FILTERS.reviewStatus],
   directions: [...DEFAULT_DASHBOARD_FILTERS.directions],
   customFieldFilters: { ...DEFAULT_DASHBOARD_FILTERS.customFieldFilters },
+  imageAnnotationStatus: [
+    ...(DEFAULT_DASHBOARD_FILTERS.imageAnnotationStatus || []),
+  ],
+  imageTags: [...(DEFAULT_DASHBOARD_FILTERS.imageTags || [])],
 });
 
 export const createTradeLogFilters = (): TradeLogFilters => ({
@@ -184,6 +192,8 @@ export const createTradeLogFilters = (): TradeLogFilters => ({
   tags: [...DEFAULT_TRADELOG_FILTERS.tags],
   mistakes: [...DEFAULT_TRADELOG_FILTERS.mistakes],
   customFieldFilters: { ...DEFAULT_TRADELOG_FILTERS.customFieldFilters },
+  imageAnnotationStatus: [...DEFAULT_TRADELOG_FILTERS.imageAnnotationStatus],
+  imageTags: [...DEFAULT_TRADELOG_FILTERS.imageTags],
 });
 
 export const createReviewFilters = (): UnifiedFilters => ({
@@ -198,6 +208,10 @@ export const createReviewFilters = (): UnifiedFilters => ({
   reviewStatus: [...DEFAULT_REVIEW_FILTERS.reviewStatus],
   directions: [...DEFAULT_REVIEW_FILTERS.directions],
   customFieldFilters: { ...DEFAULT_REVIEW_FILTERS.customFieldFilters },
+  imageAnnotationStatus: [
+    ...(DEFAULT_REVIEW_FILTERS.imageAnnotationStatus || []),
+  ],
+  imageTags: [...(DEFAULT_REVIEW_FILTERS.imageTags || [])],
 });
 
 export const normalizeDashboardFilters = (
@@ -225,6 +239,10 @@ export const normalizeDashboardFilters = (
     customFieldFilters: {
       ...(filters?.customFieldFilters || defaults.customFieldFilters),
     },
+    imageAnnotationStatus: filters?.imageAnnotationStatus
+      ? [...filters.imageAnnotationStatus]
+      : defaults.imageAnnotationStatus,
+    imageTags: filters?.imageTags ? [...filters.imageTags] : defaults.imageTags,
   };
 };
 
@@ -253,6 +271,10 @@ export const normalizeTradeLogFilters = (
     customFieldFilters: {
       ...(filters?.customFieldFilters || defaults.customFieldFilters),
     },
+    imageAnnotationStatus: filters?.imageAnnotationStatus
+      ? [...filters.imageAnnotationStatus]
+      : defaults.imageAnnotationStatus,
+    imageTags: filters?.imageTags ? [...filters.imageTags] : defaults.imageTags,
   };
 };
 
@@ -280,5 +302,9 @@ export const normalizeReviewFilters = (
     customFieldFilters: {
       ...(filters?.customFieldFilters || defaults.customFieldFilters),
     },
+    imageAnnotationStatus: filters?.imageAnnotationStatus
+      ? [...filters.imageAnnotationStatus]
+      : defaults.imageAnnotationStatus,
+    imageTags: filters?.imageTags ? [...filters.imageTags] : defaults.imageTags,
   };
 };

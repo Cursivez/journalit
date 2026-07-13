@@ -4,6 +4,7 @@ import React from 'react';
 import { TradeFormData, TradeFormErrors, TradeFormValue } from '../types';
 import { TradeTypeSelector } from '../fields/TradeTypeSelector';
 import { AssetFields } from '../fields/AssetFields';
+import { TradeFormLayoutSettings } from '../../../../settings/types';
 
 interface BasicTabProps {
   data: Partial<TradeFormData>;
@@ -11,6 +12,9 @@ interface BasicTabProps {
   onChange: (field: keyof TradeFormData, value: TradeFormValue) => void;
   instruments: Array<{ id: string; name: string }>;
   onAccountRequirementChange?: (isBlocked: boolean) => void;
+  layout: TradeFormLayoutSettings;
+  forcePriceInputMode?: boolean;
+  isEditMode: boolean;
 }
 
 export const BasicTab: React.FC<BasicTabProps> = ({
@@ -19,6 +23,9 @@ export const BasicTab: React.FC<BasicTabProps> = ({
   onChange,
   instruments,
   onAccountRequirementChange,
+  layout,
+  forcePriceInputMode = false,
+  isEditMode,
 }) => {
   return (
     <div className="trade-form-basic-tab">
@@ -32,6 +39,9 @@ export const BasicTab: React.FC<BasicTabProps> = ({
         onChange={onChange}
         instruments={instruments}
         onAccountRequirementChange={onAccountRequirementChange}
+        layout={layout}
+        forcePriceInputMode={forcePriceInputMode}
+        isEditMode={isEditMode}
       />
     </div>
   );

@@ -23,26 +23,16 @@ import {
   buildTradeLogColumnDefinitions,
   COLUMN_CATEGORIES,
   ColumnDefinition,
-  ColumnCategory,
   getColumnCategoryLabel,
   getColumnLabel,
   resolveTradeLogSettings,
 } from './columnConfig';
 import { CustomTradeLogColumnId, TradeLogColumnId } from '../../settings/types';
-import { DndContext, DragEndEvent, closestCenter } from '@dnd-kit/core';
 import {
-  SortableContext,
-  verticalListSortingStrategy,
-  useSortable,
-} from '@dnd-kit/sortable';
-import { CSS } from '@dnd-kit/utilities';
-import { dndKitStyle } from '../../styles/inlineStylePolicy';
-import {
-  GripVertical,
-  Plus,
-  ChevronDown,
-  ChevronRight,
-} from '../shared/icons/ObsidianIcon';
+  VisibilityEditor,
+  VisibilityEditorCategory,
+  VisibilityEditorItem,
+} from '../shared/visibilityEditor';
 import { eventBus } from '../../services/events';
 import ToggleSwitch from '../ui/ToggleSwitch';
 
@@ -384,9 +374,6 @@ function useTradeLogSettingsModalModel({
   });
 
   const [activeTab, setActiveTab] = useState<PanelTab>('active');
-  const [expandedCategories, setExpandedCategories] = useState<
-    Set<ColumnCategory>
-  >(new Set(COLUMN_CATEGORIES.map((c) => c.id)));
   const lastActiveTabRef = useRef<PanelTab>('active');
   const [isSaving, setIsSaving] = useState(false);
   const [guideVersion, setGuideVersion] = useState(0);
@@ -543,50 +530,34 @@ function useTradeLogSettingsModalModel({
   );
 
   
-  const availableByCategory = useMemo(() => {
-    const grouped: Record<ColumnCategory, ColumnWithVisibility[]> = {
-      basic: [],
-      timing: [],
-      prices: [],
-      risk: [],
-      position: [],
-      review: [],
-      custom: [],
-    };
-    availableColumns.forEach((col) => {
-      grouped[col.category].push(col);
-    });
-    return grouped;
-  }, [availableColumns]);
-
-  
-  const handleDragEnd = useCallback((event: DragEndEvent) => {
-    const { active, over } = event;
-
-    if (!over || active.id === over.id) {
-      return;
-    }
-
-    setColumns((prevColumns) => {
-      const visibleColumns = prevColumns.filter((col) => col.visible);
-      const hiddenColumns = prevColumns.filter((col) => !col.visible);
-
-      const oldIndex = visibleColumns.findIndex((col) => col.id === active.id);
-      const newIndex = visibleColumns.findIndex((col) => col.id === over.id);
-
-      if (oldIndex === -1 || newIndex === -1) {
-        return prevColumns;
+  const handleReorderColumn = useCallback(
+    (activeId: string, overId: string) => {
+      if (activeId === overId) {
+        return;
       }
 
-      
-      const newVisibleColumns = [...visibleColumns];
-      const [movedItem] = newVisibleColumns.splice(oldIndex, 1);
-      newVisibleColumns.splice(newIndex, 0, movedItem);
+      setColumns((prevColumns) => {
+        const visibleColumns = prevColumns.filter((col) => col.visible);
+        const hiddenColumns = prevColumns.filter((col) => !col.visible);
 
-      
-      return [...newVisibleColumns, ...hiddenColumns];
-    });
-  }, []);
+        const oldIndex = visibleColumns.findIndex((col) => col.id === activeId);
+        const newIndex = visibleColumns.findIndex((col) => col.id === overId);
+
+        if (oldIndex === -1 || newIndex === -1) {
+          return prevColumns;
+        }
+
+        
+        const newVisibleColumns = [...visibleColumns];
+        const [movedItem] = newVisibleColumns.splice(oldIndex, 1);
+        newVisibleColumns.splice(newIndex, 0, movedItem);
+
+        
+        return [...newVisibleColumns, ...hiddenColumns];
+      });
+    },
+    []
+  );
 
   
   const handleAddColumn = useCallback((columnId: string) => {
@@ -614,19 +585,6 @@ function useTradeLogSettingsModalModel({
       return prevColumns.map((col) =>
         col.id === columnId ? { ...col, visible: false } : col
       );
-    });
-  }, []);
-
-  
-  const toggleCategory = useCallback((category: ColumnCategory) => {
-    setExpandedCategories((prev) => {
-      const next = new Set(prev);
-      if (next.has(category)) {
-        next.delete(category);
-      } else {
-        next.add(category);
-      }
-      return next;
     });
   }, []);
 
@@ -704,17 +662,14 @@ function useTradeLogSettingsModalModel({
   return {
     activeTab,
     setActiveTab,
-    expandedCategories,
     isSaving,
     expandedMode,
     setExpandedMode,
     activeColumns,
     availableColumns,
-    availableByCategory,
-    handleDragEnd,
+    handleReorderColumn,
     handleAddColumn,
     handleRemoveColumn,
-    toggleCategory,
     handleSave,
     handleCancel,
     handleReset,
@@ -736,146 +691,72 @@ const TradeLogSettingsModalContent: React.FC<
   const {
     activeTab,
     setActiveTab,
-    expandedCategories,
     isSaving,
     expandedMode,
     setExpandedMode,
     activeColumns,
     availableColumns,
-    availableByCategory,
-    handleDragEnd,
+    handleReorderColumn,
     handleAddColumn,
     handleRemoveColumn,
-    toggleCategory,
     handleSave,
     handleCancel,
     handleReset,
   } = useTradeLogSettingsModalModel({ plugin, onSave, modalInstance });
 
+  const editorCategories: VisibilityEditorCategory[] = COLUMN_CATEGORIES.map(
+    (category) => ({
+      id: category.id,
+      label: getColumnCategoryLabel(category.id),
+    })
+  );
+  const toEditorItem = (
+    column: ColumnWithVisibility
+  ): VisibilityEditorItem => ({
+    id: column.id,
+    label: getColumnLabel(column),
+    category: column.category,
+  });
+
   return (
     <div className="tradelog-settings-modal-container">
-      
-      <nav className="journalit-tab-nav">
-        <div className="journalit-tab-wrapper">
-          <button
-            type="button"
-            className={`journalit-tab-button ${activeTab === 'active' ? 'journalit-tab-active' : ''}`}
-            onClick={() => setActiveTab('active')}
-          >
-            {t('tradelog.settings.active-columns')}
-            <span className="journalit-tab-count">{activeColumns.length}</span>
-          </button>
-          <button
-            type="button"
-            className={`journalit-tab-button ${activeTab === 'available' ? 'journalit-tab-active' : ''}`}
-            onClick={() => setActiveTab('available')}
-          >
-            {t('tradelog.settings.available-columns')}
-            <span className="journalit-tab-count">
-              {availableColumns.length}
-            </span>
-          </button>
-        </div>
-      </nav>
-
-      
-      <div className="tradelog-settings-modal-content">
-        {activeTab === 'active' ? (
-          <div className="tradelog-settings-panel">
-            <div className="panel-description">
-              {t('tradelog.settings.active-desc')}
-            </div>
-            <DndContext
-              collisionDetection={closestCenter}
-              onDragEnd={handleDragEnd}
-            >
-              <SortableContext
-                items={activeColumns.map((col) => col.id)}
-                strategy={verticalListSortingStrategy}
-              >
-                {activeColumns.map((col) => (
-                  <SortableActiveColumnItem
-                    key={col.id}
-                    column={col}
-                    onRemove={handleRemoveColumn}
-                    canRemove={activeColumns.length > 1}
-                  />
-                ))}
-              </SortableContext>
-            </DndContext>
-            {activeColumns.length === 0 && (
-              <div className="empty-panel-message">
-                {t('tradelog.settings.no-active')}
-              </div>
-            )}
-          </div>
-        ) : (
-          <div className="tradelog-settings-panel available-panel">
-            <div className="panel-description">
-              {t('tradelog.settings.available-desc')}
-            </div>
-            {COLUMN_CATEGORIES.map((category) => {
-              const categoryColumns = availableByCategory[category.id];
-              if (categoryColumns.length === 0) return null;
-
-              const isExpanded = expandedCategories.has(category.id);
-
-              const label = getColumnCategoryLabel(category.id);
-
-              return (
-                <div key={category.id} className="column-category">
-                  <button
-                    className="category-header"
-                    onClick={() => toggleCategory(category.id)}
-                  >
-                    {isExpanded ? (
-                      <ChevronDown size={16} />
-                    ) : (
-                      <ChevronRight size={16} />
-                    )}
-                    <span className="category-label">{label}</span>
-                    <span className="category-count">
-                      {categoryColumns.length}
-                    </span>
-                  </button>
-                  {isExpanded && (
-                    <div className="category-columns">
-                      {categoryColumns.map((col) => (
-                        <AvailableColumnItem
-                          key={col.id}
-                          column={col}
-                          onAdd={handleAddColumn}
-                        />
-                      ))}
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-            {availableColumns.length === 0 && (
-              <div className="empty-panel-message">
-                {t('tradelog.settings.all-active')}
-              </div>
-            )}
-          </div>
-        )}
-      </div>
-
-      
-      <div className="tradelog-settings-display-mode">
-        <div className="display-mode-label">
-          <span className="display-mode-title">
-            {t('tradelog.settings.expanded-view')}
-          </span>
-          <span className="display-mode-description">
-            {t('tradelog.settings.expanded-view-desc')}
-          </span>
-        </div>
-        <ToggleSwitch
-          checked={expandedMode}
-          onChange={setExpandedMode}
-          ariaLabel={t('tradelog.settings.expanded-view-aria')}
+      <div className="tradelog-settings-modal-body">
+        <VisibilityEditor
+          activeItems={activeColumns.map(toEditorItem)}
+          availableItems={availableColumns.map(toEditorItem)}
+          categories={editorCategories}
+          activeTab={activeTab}
+          onActiveTabChange={setActiveTab}
+          activeTabLabel={t('tradelog.settings.active-columns')}
+          availableTabLabel={t('tradelog.settings.available-columns')}
+          activeDescription={t('tradelog.settings.active-desc')}
+          availableDescription={t('tradelog.settings.available-desc')}
+          emptyActiveText={t('tradelog.settings.no-active')}
+          emptyAvailableText={t('tradelog.settings.all-active')}
+          getAddAriaLabel={(label) => `Add ${label} column`}
+          getRemoveAriaLabel={(label) => `Remove ${label} column`}
+          onReorder={handleReorderColumn}
+          onAdd={handleAddColumn}
+          onRemove={handleRemoveColumn}
+          canRemoveItem={() => activeColumns.length > 1}
         />
+
+        
+        <div className="tradelog-settings-display-mode">
+          <div className="display-mode-label">
+            <span className="display-mode-title">
+              {t('tradelog.settings.expanded-view')}
+            </span>
+            <span className="display-mode-description">
+              {t('tradelog.settings.expanded-view-desc')}
+            </span>
+          </div>
+          <ToggleSwitch
+            checked={expandedMode}
+            onChange={setExpandedMode}
+            ariaLabel={t('tradelog.settings.expanded-view-aria')}
+          />
+        </div>
       </div>
 
       
@@ -887,7 +768,11 @@ const TradeLogSettingsModalContent: React.FC<
         >
           {t('tradelog.settings.reset')}
         </button>
-        <button onClick={() => void handleCancel()} disabled={isSaving}>
+        <button
+          onClick={() => void handleCancel()}
+          disabled={isSaving}
+          className="journalit-tradelog-settings-cancel-button cancel-button"
+        >
           {t('button.cancel')}
         </button>
         <button
@@ -901,82 +786,6 @@ const TradeLogSettingsModalContent: React.FC<
     </div>
   );
 };
-
-
-interface SortableActiveColumnItemProps {
-  column: ColumnWithVisibility;
-  onRemove: (columnId: string) => void;
-  canRemove: boolean;
-}
-
-const SortableActiveColumnItem: React.FC<SortableActiveColumnItemProps> =
-  React.memo(({ column, onRemove, canRemove }) => {
-    const {
-      attributes,
-      listeners,
-      setNodeRef,
-      transform,
-      transition,
-      isDragging,
-    } = useSortable({ id: column.id });
-
-    const label = getColumnLabel(column);
-
-    return (
-      <div
-        ref={setNodeRef}
-        style={dndKitStyle(
-          CSS.Transform.toString(transform),
-          isDragging ? transition : undefined
-        )}
-        className={`active-column-item ${isDragging ? 'dragging' : ''}`}
-      >
-        <div className="column-drag-handle" {...attributes} {...listeners}>
-          <GripVertical size={16} />
-        </div>
-
-        <div className="column-label">{label}</div>
-
-        <button
-          className="column-remove-btn"
-          onClick={() => onRemove(column.id)}
-          disabled={!canRemove}
-        >
-          ×
-        </button>
-      </div>
-    );
-  });
-
-SortableActiveColumnItem.displayName = 'SortableActiveColumnItem';
-
-
-interface AvailableColumnItemProps {
-  column: ColumnWithVisibility;
-  onAdd: (columnId: string) => void;
-}
-
-const AvailableColumnItem: React.FC<AvailableColumnItemProps> = React.memo(
-  ({ column, onAdd }) => {
-    const label = getColumnLabel(column);
-
-    return (
-      <div className="available-column-item">
-        <div className="column-label">{label}</div>
-        <button
-          className="column-add-btn"
-          onClick={() => onAdd(column.id)}
-          type="button"
-          aria-label={`Add ${label} column`}
-        >
-          <Plus size={14} className="column-add-btn-icon" aria-hidden="true" />
-        </button>
-      </div>
-    );
-  }
-);
-
-AvailableColumnItem.displayName = 'AvailableColumnItem';
 
 
 export function openTradeLogSettingsModal(props: {

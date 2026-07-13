@@ -1,6 +1,12 @@
 
 
-import React, { useState, useMemo, useCallback } from 'react';
+import React, {
+  useState,
+  useMemo,
+  useCallback,
+  useEffect,
+  useRef,
+} from 'react';
 import { FormSection } from '../FormSection';
 import { TradeFormData, TradeFormValue } from '../types';
 import { ImageUploader, ImageCarousel } from '../../../image';
@@ -33,6 +39,19 @@ const MetadataFieldsComponent: React.FC<MetadataFieldsProps> = ({
   onDeleteImage,
   sourcePath = '',
 }) => {
+  const imagesRef = useRef<string[]>([]);
+  useEffect(() => {
+    imagesRef.current = Array.isArray(data.images) ? [...data.images] : [];
+  }, [data.images]);
+
+  const updateImages = useCallback(
+    (nextImages: string[]) => {
+      imagesRef.current = nextImages;
+      onChange('images', nextImages);
+    },
+    [onChange]
+  );
+
   
   const tradeContext = useMemo((): PasteContext => {
     return {
@@ -50,10 +69,7 @@ const MetadataFieldsComponent: React.FC<MetadataFieldsProps> = ({
   const handleImageUploaded = useCallback(
     async (imagePath: string) => {
       try {
-        
-        const currentImages = Array.isArray(data.images)
-          ? [...data.images]
-          : [];
+        const currentImages = [...imagesRef.current];
 
         
         if (!currentImages.includes(imagePath)) {
@@ -61,20 +77,20 @@ const MetadataFieldsComponent: React.FC<MetadataFieldsProps> = ({
           const updatedImages = [...currentImages, imagePath];
 
           
-          onChange('images', updatedImages);
+          updateImages(updatedImages);
         }
       } catch (_error) {
         console.error('Failed to process uploaded image:', _error);
       }
     },
-    [data.images, onChange]
+    [updateImages]
   );
 
   
   const handleMultipleImagesUploaded = async (imagePaths: string[]) => {
     try {
       
-      const currentImages = Array.isArray(data.images) ? [...data.images] : [];
+      const currentImages = [...imagesRef.current];
 
       
       const newImagePaths = imagePaths.filter(
@@ -86,7 +102,7 @@ const MetadataFieldsComponent: React.FC<MetadataFieldsProps> = ({
         const updatedImages = [...currentImages, ...newImagePaths];
 
         
-        onChange('images', updatedImages);
+        updateImages(updatedImages);
       }
     } catch (_error) {
       console.error('Failed to process multiple uploaded images:', _error);
@@ -96,9 +112,9 @@ const MetadataFieldsComponent: React.FC<MetadataFieldsProps> = ({
   
   const handleDeleteImage = async (index: number, imagePath: string) => {
     
-    const currentImages = [...(data.images || [])];
+    const currentImages = [...imagesRef.current];
     const updatedImages = currentImages.filter((image) => image !== imagePath);
-    onChange('images', updatedImages);
+    updateImages(updatedImages);
 
     
     if (onDeleteImage) {
@@ -136,7 +152,7 @@ const MetadataFieldsComponent: React.FC<MetadataFieldsProps> = ({
     }
 
     
-    const currentImages = Array.isArray(data.images) ? data.images : [];
+    const currentImages = imagesRef.current;
     if (currentImages.includes(finalUrl)) {
       setUrlError(t('form.field.image-duplicate-error'));
       return;
@@ -146,7 +162,7 @@ const MetadataFieldsComponent: React.FC<MetadataFieldsProps> = ({
     void handleImageUploaded(finalUrl);
     setImageUrl('');
     setUrlError(null);
-  }, [imageUrl, data.images, handleImageUploaded, sourcePath]);
+  }, [imageUrl, handleImageUploaded, sourcePath]);
 
   
   const handleUrlKeyDown = useCallback(

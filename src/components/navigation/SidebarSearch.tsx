@@ -689,8 +689,7 @@ const useSidebarSearchData = (plugin: JournalitPlugin) => {
         (trade): trade is SidebarTrade => {
           if (!isSidebarTrade(trade)) return false;
           if (!plugin.app.vault.getAbstractFileByPath(trade.path)) return false;
-          const fm = plugin.app.metadataCache.getCache(trade.path)
-            ?.frontmatter as Record<string, unknown> | undefined;
+          const fm = plugin.app.metadataCache.getCache(trade.path)?.frontmatter;
           if (fm?.type === 'missed-trade') return false;
           if (MISSED_TRADE_PATH_RE.test(trade.path)) return false;
           return true;
@@ -832,8 +831,9 @@ const performSidebarSearch = ({
   const breakEvenRangeMax = plugin.settings?.trade?.breakEvenRangeMax ?? 0;
 
   for (const trade of tradesRef.current) {
-    const frontmatter = plugin.app.metadataCache.getCache(trade.path)
-      ?.frontmatter as Record<string, unknown> | undefined;
+    const frontmatter = plugin.app.metadataCache.getCache(
+      trade.path
+    )?.frontmatter;
 
     const basename = trade.path
       ? trade.path.split('/').pop()?.replace(/\.md$/, '') || ''

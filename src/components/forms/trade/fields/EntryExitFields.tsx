@@ -3,12 +3,15 @@
 import React, { useEffect, useCallback, useMemo, useRef } from 'react';
 import { NumberInput, FastDateTimeInput } from '../../../core';
 import { Button } from '../../../ui/Button';
+import { Tooltip } from '../../../shared/Tooltip';
+import { Info } from '../../../shared/icons/ObsidianIcon';
 import ToggleSwitch from '../../../ui/ToggleSwitch';
 import {
   AssetType,
   DividendTransaction,
   EntryTransaction,
   ExitTransaction,
+  IdealExitTransaction,
   TradeFormData,
   TradeFormErrors,
   TradeFormValue,
@@ -22,8 +25,10 @@ import {
 import { usePlugin } from '../../../../hooks/usePlugin';
 import { t } from '../../../../lang/helpers';
 import { normalizeTradeExecution } from '../../../../services/trade/core/TradeExecutionNormalization';
+import { TradeFormInputMode } from '../../../../settings/types';
 
 type TransactionFieldValue = number | Date | string | undefined | boolean;
+type IdealExitFieldValue = number | string | undefined;
 
 let nextTransactionRowKey = 0;
 
@@ -64,6 +69,26 @@ const toOptionalTransactionNumber = (
   return Number.isFinite(numberValue) ? numberValue : undefined;
 };
 
+const toOptionalIdealExitNumber = (
+  value: IdealExitFieldValue
+): number | undefined => {
+  if (value === undefined || value === '' || Array.isArray(value)) {
+    return undefined;
+  }
+
+  const numberValue = Number(value);
+  return Number.isFinite(numberValue) ? numberValue : undefined;
+};
+
+const hasPersistableIdealExitPrice = (exit: IdealExitTransaction): boolean =>
+  exit.price !== undefined && exit.price > 0;
+
+const hasCopyableActualExitValues = (exit: ExitTransaction): boolean =>
+  exit.price !== undefined &&
+  exit.price > 0 &&
+  exit.size !== undefined &&
+  exit.size > 0;
+
 interface EntryExitFieldsProps {
   
   data: Partial<TradeFormData>;
@@ -71,6 +96,10 @@ interface EntryExitFieldsProps {
   errors: TradeFormErrors;
   
   onChange: (field: keyof TradeFormData, value: TradeFormValue) => void;
+  
+  inputMode: TradeFormInputMode;
+  
+  showIdealExits?: boolean;
 }
 
 interface PnLModeToggleProps {
@@ -101,12 +130,29 @@ function PnLModeToggle({ useDirectPnLInput, onToggle }: PnLModeToggleProps) {
   );
 }
 
-function DirectPnLSection({ data, errors, onChange }: EntryExitFieldsProps) {
+function DirectPnLSection({
+  data,
+  errors,
+  onChange,
+  inputMode,
+}: EntryExitFieldsProps) {
   if (!data.useDirectPnLInput) return null;
 
   return (
     <div className="journalit-direct-pnl-section">
-      <div className="field">
+      {inputMode === 'pnl-risk' && (
+        <div className="field journalit-direct-pnl-time-field">
+          <FastDateTimeInput
+            label={t('form.layout.entry-time')}
+            value={data.entryTime}
+            onChange={(value) => onChange('entryTime', value)}
+            error={errors.entryTime}
+            includeTime={true}
+            className="journalit-direct-pnl-time-input"
+          />
+        </div>
+      )}
+      <div className="field journalit-direct-pnl-value-field">
         <NumberInput
           label={t('form.field.total-pnl')}
           value={data.directPnL}
@@ -301,6 +347,7 @@ function useEntryExitFieldsModel({
   const blankTimeDefaultDate = useMemo(() => new Date(), []);
   const entryRowKeysRef = useRef<string[]>([]);
   const exitRowKeysRef = useRef<string[]>([]);
+  const idealExitRowKeysRef = useRef<string[]>([]);
   const dividendRowKeysRef = useRef<string[]>([]);
 
   
@@ -352,6 +399,46 @@ function useEntryExitFieldsModel({
 
     
     updateAggregateFields(data.entries || [], exits);
+  };
+
+  const handleAddIdealExit = () => {
+    const currentActualExit = (data.exits || [])[data.idealExits?.length || 0];
+    const defaultSize =
+      currentActualExit?.size !== undefined && currentActualExit.size > 0
+        ? currentActualExit.size
+        : undefined;
+    const idealExits = [
+      ...(data.idealExits || []),
+      {
+        price: undefined,
+        size: defaultSize,
+      },
+    ];
+    onChange('idealExits', idealExits);
+  };
+
+  const handleCopyActualExitsToIdeal = () => {
+    const idealExits = (data.exits || []).flatMap((exit) =>
+      hasCopyableActualExitValues(exit)
+        ? [
+            {
+              price: exit.price,
+              size: exit.size,
+            },
+          ]
+        : []
+    );
+    if (idealExits.length === 0) {
+      return;
+    }
+    onChange('idealExits', idealExits);
+  };
+
+  const handleRemoveIdealExit = (index: number) => {
+    const idealExits = [...(data.idealExits || [])];
+    idealExits.splice(index, 1);
+    idealExitRowKeysRef.current.splice(index, 1);
+    onChange('idealExits', idealExits);
   };
 
   const handleAddDividend = () => {
@@ -551,6 +638,27 @@ function useEntryExitFieldsModel({
     [data.dividends, onChange]
   );
 
+  const handleIdealExitChange = useCallback(
+    (
+      index: number,
+      field: keyof IdealExitTransaction,
+      value: IdealExitFieldValue
+    ) => {
+      const idealExits = [...(data.idealExits || [])];
+      const existing = idealExits[index] || {};
+
+      if (field === 'price' || field === 'size') {
+        idealExits[index] = {
+          ...existing,
+          [field]: toOptionalIdealExitNumber(value),
+        };
+      }
+
+      onChange('idealExits', idealExits);
+    },
+    [data.idealExits, onChange]
+  );
+
   
   const handlePnLModeToggle = async (useDirectPnL: boolean) => {
     
@@ -719,6 +827,15 @@ function useEntryExitFieldsModel({
     (sum, exit) => sum + (exit.size || 0),
     0
   );
+  const totalIdealExitSize = (data.idealExits || []).reduce(
+    (sum, exit) =>
+      hasPersistableIdealExitPrice(exit) &&
+      exit.size !== undefined &&
+      exit.size > 0
+        ? sum + exit.size
+        : sum,
+    0
+  );
   const remainingSize = roundToPrecision(
     totalEntrySize - totalExitSize,
     sizePrecision
@@ -736,6 +853,11 @@ function useEntryExitFieldsModel({
     exitRowKeysRef.current,
     'exit',
     data.exits?.length || 0
+  );
+  const idealExitRowKeys = getTransactionRowKeys(
+    idealExitRowKeysRef.current,
+    'ideal-exit',
+    data.idealExits?.length || 0
   );
   const dividendRowKeys = getTransactionRowKeys(
     dividendRowKeysRef.current,
@@ -758,10 +880,14 @@ function useEntryExitFieldsModel({
     handleRemoveEntry,
     handleAddExit,
     handleRemoveExit,
+    handleAddIdealExit,
+    handleCopyActualExitsToIdeal,
+    handleRemoveIdealExit,
     handleAddDividend,
     handleRemoveDividend,
     handleEntryChange,
     handleExitChange,
+    handleIdealExitChange,
     handleDividendChange,
     handlePnLModeToggle,
     handleEntryDollarChange,
@@ -772,17 +898,397 @@ function useEntryExitFieldsModel({
     blankTimeDefaultDate,
     entryRowKeys,
     exitRowKeys,
+    idealExitRowKeys,
     dividendRowKeys,
     totalEntrySize,
     remainingSize,
+    totalIdealExitSize,
     totalDividends,
   };
+}
+
+interface IdealExitsSectionProps {
+  idealExits: IdealExitTransaction[];
+  idealExitRowKeys: string[];
+  pricePrecision: number;
+  sizePrecision: number;
+  totalEntrySize: number;
+  totalIdealExitSize: number;
+  onAddIdealExit: () => void;
+  onCopyActualExitsToIdeal: () => void;
+  onRemoveIdealExit: (index: number) => void;
+  onIdealExitChange: (
+    index: number,
+    field: keyof IdealExitTransaction,
+    value: IdealExitFieldValue
+  ) => void;
+}
+
+function IdealExitsSection({
+  idealExits,
+  idealExitRowKeys,
+  pricePrecision,
+  sizePrecision,
+  totalEntrySize,
+  totalIdealExitSize,
+  onAddIdealExit,
+  onCopyActualExitsToIdeal,
+  onRemoveIdealExit,
+  onIdealExitChange,
+}: IdealExitsSectionProps) {
+  const persistableIdealExits = idealExits.filter(hasPersistableIdealExitPrice);
+  const hasEntrySize = totalEntrySize > 0;
+  const roundedIdealExitSize = roundToPrecision(
+    totalIdealExitSize,
+    sizePrecision
+  );
+  const roundedEntrySize = roundToPrecision(totalEntrySize, sizePrecision);
+  const showCoverage =
+    persistableIdealExits.length > 0 &&
+    hasEntrySize &&
+    roundedIdealExitSize !== roundedEntrySize;
+
+  return (
+    <div className="journalit-ideal-exits">
+      <div className="journalit-ideal-exits__header">
+        <div className="journalit-ideal-exits__title-group">
+          <div className="journalit-ideal-exits__title">
+            {t('form.ideal-exit.title')}{' '}
+            <span className="journalit-ideal-exits__optional-text">
+              {t('form.field.optional')}
+            </span>
+          </div>
+          <Tooltip
+            content={t('form.ideal-exit.tooltip')}
+            className="trade-form-input-mode-tooltip"
+            triggerClassName="journalit-trade-form-layout-editor__mode-info-trigger"
+            preferredPosition="top"
+          >
+            <span
+              className="journalit-dashboard-metric-info journalit-trade-form-layout-editor__mode-info journalit-ideal-exits__info"
+              aria-label={t('form.ideal-exit.title')}
+            >
+              <Info size={10} aria-hidden="true" />
+            </span>
+          </Tooltip>
+        </div>
+        <div className="journalit-ideal-exits__header-actions">
+          {showCoverage && (
+            <div className="journalit-ideal-exits__coverage">
+              {totalIdealExitSize.toFixed(sizePrecision)} /{' '}
+              {totalEntrySize.toFixed(sizePrecision)}
+            </div>
+          )}
+          <Button
+            variant="plain"
+            size="small"
+            className="journalit-ideal-exits__add-button"
+            onClick={onAddIdealExit}
+          >
+            + {t('button.add')}
+          </Button>
+        </div>
+      </div>
+
+      {idealExits.length === 0 && (
+        <div className="journalit-ideal-exits__empty-state">
+          <span>{t('form.ideal-exit.empty')}</span>
+          {hasEntrySize ? (
+            <Button
+              variant="plain"
+              size="small"
+              className="journalit-ideal-exits__copy-button"
+              onClick={onCopyActualExitsToIdeal}
+            >
+              {t('form.ideal-exit.copy-actual')}
+            </Button>
+          ) : null}
+        </div>
+      )}
+
+      {idealExits.length > 0 && (
+        <div className="journalit-ideal-exit-row journalit-ideal-exit-row--header">
+          <span aria-hidden="true" />
+          <span>{t('form.ideal-exit.price')}</span>
+          <span>{t('form.ideal-exit.size')}</span>
+          <span aria-hidden="true" />
+        </div>
+      )}
+
+      {idealExits.map((idealExit, index) => (
+        <div key={idealExitRowKeys[index]} className="journalit-ideal-exit-row">
+          <span className="journalit-ideal-exit-index-label">{index + 1}</span>
+          <div className="journalit-ideal-exit-field">
+            <span className="journalit-ideal-exit-field-label">
+              {t('form.ideal-exit.price')}
+            </span>
+            <NumberInput
+              aria-label={`${t('form.ideal-exit.price')} ${index + 1}`}
+              value={idealExit.price}
+              onChange={(value) => onIdealExitChange(index, 'price', value)}
+              min={0}
+              precision={pricePrecision}
+              allowDecimal={true}
+              placeholder="112.00"
+            />
+          </div>
+          <div className="journalit-ideal-exit-field">
+            <span className="journalit-ideal-exit-field-label">
+              {t('form.ideal-exit.size')}
+            </span>
+            <NumberInput
+              aria-label={`${t('form.ideal-exit.size')} ${index + 1}`}
+              value={idealExit.size}
+              onChange={(value) => onIdealExitChange(index, 'size', value)}
+              min={0}
+              precision={sizePrecision}
+              allowDecimal={true}
+              placeholder="100"
+            />
+          </div>
+          <Button
+            type="button"
+            variant="plain"
+            size="small"
+            className="journalit-ideal-exit-remove-button"
+            onClick={() => onRemoveIdealExit(index)}
+            aria-label={t('form.ideal-exit.remove')}
+          >
+            ×
+          </Button>
+        </div>
+      ))}
+
+      {idealExits.length > 0 && hasEntrySize && (
+        <div className="journalit-ideal-exits__actions">
+          <Button
+            variant="plain"
+            size="small"
+            className="journalit-ideal-exits__copy-button"
+            onClick={onCopyActualExitsToIdeal}
+          >
+            {t('form.ideal-exit.copy-actual')}
+          </Button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+interface ExitsSectionProps {
+  data: Partial<TradeFormData>;
+  errors: TradeFormErrors;
+  useDollarValue: boolean;
+  pricePrecision: number;
+  sizePrecision: number;
+  showIdealExits: boolean;
+  totalEntrySize: number;
+  remainingSize: number;
+  totalIdealExitSize: number;
+  exitRowKeys: string[];
+  idealExitRowKeys: string[];
+  blankTimeDefaultDate: Date;
+  getPositionSizeLabel: () => string;
+  onAddExit: () => void;
+  onRemoveExit: (index: number) => void;
+  onExitChange: (
+    index: number,
+    field: keyof ExitTransaction,
+    value: TransactionFieldValue
+  ) => void;
+  onExitDollarChange: (index: number, value: number | undefined) => void;
+  onExitPriceChangeWithDollar: (
+    index: number,
+    value: number | undefined
+  ) => void;
+  onAddIdealExit: () => void;
+  onCopyActualExitsToIdeal: () => void;
+  onRemoveIdealExit: (index: number) => void;
+  onIdealExitChange: (
+    index: number,
+    field: keyof IdealExitTransaction,
+    value: IdealExitFieldValue
+  ) => void;
+}
+
+function ExitsSection({
+  data,
+  errors,
+  useDollarValue,
+  pricePrecision,
+  sizePrecision,
+  showIdealExits,
+  totalEntrySize,
+  remainingSize,
+  totalIdealExitSize,
+  exitRowKeys,
+  idealExitRowKeys,
+  blankTimeDefaultDate,
+  getPositionSizeLabel,
+  onAddExit,
+  onRemoveExit,
+  onExitChange,
+  onExitDollarChange,
+  onExitPriceChangeWithDollar,
+  onAddIdealExit,
+  onCopyActualExitsToIdeal,
+  onRemoveIdealExit,
+  onIdealExitChange,
+}: ExitsSectionProps) {
+  return (
+    <div className="exits-section">
+      <h4 className="section-title">
+        {t('form.field.exits')}{' '}
+        {data.useDirectPnLInput ? t('form.field.optional') : ''}{' '}
+        <span className="badge">{data.exits?.length || 0}</span>
+      </h4>
+
+      
+      {(data.exits || []).map((exit, index) => (
+        <div key={exitRowKeys[index]} className="exit-row">
+          <div className="exit-index">{index + 1}</div>
+
+          <div className="exit-fields">
+            
+            <div className="time-field-wrapper">
+              <div className="time-field-header">
+                <label className="time-field-label">
+                  {t('form.field.time')}
+                  {!data.isMissedTrade && !data.useDirectPnLInput && (
+                    <span className="required-star">*</span>
+                  )}
+                </label>
+                {(data.exits?.length || 0) > 1 && (
+                  <button
+                    type="button"
+                    className="remove-button-inline"
+                    onClick={() => onRemoveExit(index)}
+                    aria-label={t('form.entry-exit.remove-exit')}
+                  >
+                    ×
+                  </button>
+                )}
+              </div>
+              <FastDateTimeInput
+                value={exit.time}
+                onChange={(value) => onExitChange(index, 'time', value)}
+                onBlankTimeDateChange={(date) =>
+                  onExitChange(index, 'blankTimeDate', date)
+                }
+                error={errors.exits?.[index]?.time}
+                includeTime={true}
+                defaultDateWhenEmpty={
+                  exit.blankTimeDate ?? blankTimeDefaultDate
+                }
+                className="time-field"
+              />
+            </div>
+
+            <NumberInput
+              label={t('form.field.price')}
+              value={exit.price}
+              onChange={(value) =>
+                useDollarValue
+                  ? onExitPriceChangeWithDollar(index, value)
+                  : onExitChange(index, 'price', value)
+              }
+              error={errors.exits?.[index]?.price}
+              min={0}
+              precision={pricePrecision}
+              allowDecimal={true}
+              required={!data.isMissedTrade && !data.useDirectPnLInput}
+              className="price-field"
+            />
+
+            {useDollarValue ? (
+              <>
+                <NumberInput
+                  label={t('form.field.value-dollar')}
+                  value={
+                    exit.notional ??
+                    (exit.size && exit.price
+                      ? exit.size * exit.price
+                      : undefined)
+                  }
+                  onChange={(value) => onExitDollarChange(index, value)}
+                  error={errors.exits?.[index]?.size}
+                  min={0}
+                  precision={2}
+                  allowDecimal={true}
+                  required={!data.isMissedTrade && !data.useDirectPnLInput}
+                  placeholder={t('form.field.dollar-amount-placeholder')}
+                  className="size-field"
+                />
+                {exit.price !== undefined &&
+                  exit.size !== undefined &&
+                  exit.price > 0 &&
+                  exit.size > 0 && (
+                    <div className="calculated-size">
+                      = {exit.size.toFixed(sizePrecision)}{' '}
+                      {getPositionSizeLabel().toLowerCase()}
+                    </div>
+                  )}
+              </>
+            ) : (
+              <NumberInput
+                label={getPositionSizeLabel()}
+                value={exit.size}
+                onChange={(value) => onExitChange(index, 'size', value)}
+                error={errors.exits?.[index]?.size}
+                min={0}
+                precision={sizePrecision}
+                required={!data.isMissedTrade && !data.useDirectPnLInput}
+                className="size-field"
+              />
+            )}
+          </div>
+        </div>
+      ))}
+
+      
+      <Button
+        variant="outline"
+        className="add-button clickable-icon"
+        onClick={() => void onAddExit()}
+      >
+        {t('form.entry-exit.add-exit')}
+      </Button>
+
+      
+      <div
+        className={`remaining-size ${remainingSize > 0 ? 'positive' : 'neutral'}`}
+      >
+        {t('form.entry-exit.remaining-position')}{' '}
+        {remainingSize.toFixed(sizePrecision)}{' '}
+        {remainingSize > 0
+          ? t('form.entry-exit.open')
+          : t('form.entry-exit.closed')}
+      </div>
+
+      {showIdealExits && (
+        <IdealExitsSection
+          idealExits={data.idealExits || []}
+          idealExitRowKeys={idealExitRowKeys}
+          pricePrecision={pricePrecision}
+          sizePrecision={sizePrecision}
+          totalEntrySize={totalEntrySize}
+          totalIdealExitSize={totalIdealExitSize}
+          onAddIdealExit={onAddIdealExit}
+          onCopyActualExitsToIdeal={onCopyActualExitsToIdeal}
+          onRemoveIdealExit={onRemoveIdealExit}
+          onIdealExitChange={onIdealExitChange}
+        />
+      )}
+    </div>
+  );
 }
 
 const EntryExitFieldsComponent: React.FC<EntryExitFieldsProps> = ({
   data,
   errors,
   onChange,
+  inputMode,
+  showIdealExits = true,
 }) => {
   const {
     useDollarValue,
@@ -793,10 +1299,14 @@ const EntryExitFieldsComponent: React.FC<EntryExitFieldsProps> = ({
     handleRemoveEntry,
     handleAddExit,
     handleRemoveExit,
+    handleAddIdealExit,
+    handleCopyActualExitsToIdeal,
+    handleRemoveIdealExit,
     handleAddDividend,
     handleRemoveDividend,
     handleEntryChange,
     handleExitChange,
+    handleIdealExitChange,
     handleDividendChange,
     handlePnLModeToggle,
     handleEntryDollarChange,
@@ -807,174 +1317,88 @@ const EntryExitFieldsComponent: React.FC<EntryExitFieldsProps> = ({
     blankTimeDefaultDate,
     entryRowKeys,
     exitRowKeys,
+    idealExitRowKeys,
     dividendRowKeys,
     totalEntrySize,
     remainingSize,
+    totalIdealExitSize,
     totalDividends,
   } = useEntryExitFieldsModel({ data, onChange });
+
+  const showPriceExecutionFields = inputMode !== 'pnl-risk';
+  const hasDividendRows = (data.dividends?.length ?? 0) > 0;
+  const showDividendsSection =
+    supportsDividends &&
+    (showPriceExecutionFields || hasDividendRows || Boolean(errors.dividends));
 
   return (
     <>
       
-      <PnLModeToggle
-        useDirectPnLInput={data.useDirectPnLInput}
-        onToggle={(value) => void handlePnLModeToggle(value)}
-      />
+      {showPriceExecutionFields && (
+        <PnLModeToggle
+          useDirectPnLInput={data.useDirectPnLInput}
+          onToggle={(value) => void handlePnLModeToggle(value)}
+        />
+      )}
 
       
-      <DirectPnLSection data={data} errors={errors} onChange={onChange} />
-
-      
-      <EntriesSection
+      <DirectPnLSection
         data={data}
         errors={errors}
-        useDollarValue={useDollarValue}
-        pricePrecision={pricePrecision}
-        sizePrecision={sizePrecision}
-        totalEntrySize={totalEntrySize}
-        entryRowKeys={entryRowKeys}
-        blankTimeDefaultDate={blankTimeDefaultDate}
-        getPositionSizeLabel={getPositionSizeLabel}
-        onAddEntry={handleAddEntry}
-        onRemoveEntry={handleRemoveEntry}
-        onEntryChange={handleEntryChange}
-        onEntryDollarChange={handleEntryDollarChange}
-        onEntryPriceChangeWithDollar={handleEntryPriceChangeWithDollar}
+        onChange={onChange}
+        inputMode={inputMode}
       />
 
       
-      <div className="exits-section">
-        <h4 className="section-title">
-          {t('form.field.exits')}{' '}
-          {data.useDirectPnLInput ? t('form.field.optional') : ''}{' '}
-          <span className="badge">{data.exits?.length || 0}</span>
-        </h4>
-
-        
-        {(data.exits || []).map((exit, index) => (
-          <div key={exitRowKeys[index]} className="exit-row">
-            <div className="exit-index">{index + 1}</div>
-
-            <div className="exit-fields">
-              
-              <div className="time-field-wrapper">
-                <div className="time-field-header">
-                  <label className="time-field-label">
-                    {t('form.field.time')}
-                    {!data.isMissedTrade && !data.useDirectPnLInput && (
-                      <span className="required-star">*</span>
-                    )}
-                  </label>
-                  {(data.exits?.length || 0) > 1 && (
-                    <button
-                      type="button"
-                      className="remove-button-inline"
-                      onClick={() => handleRemoveExit(index)}
-                      aria-label={t('form.entry-exit.remove-exit')}
-                    >
-                      ×
-                    </button>
-                  )}
-                </div>
-                <FastDateTimeInput
-                  value={exit.time}
-                  onChange={(value) => handleExitChange(index, 'time', value)}
-                  onBlankTimeDateChange={(date) =>
-                    handleExitChange(index, 'blankTimeDate', date)
-                  }
-                  error={errors.exits?.[index]?.time}
-                  includeTime={true}
-                  defaultDateWhenEmpty={
-                    exit.blankTimeDate ?? blankTimeDefaultDate
-                  }
-                  className="time-field"
-                />
-              </div>
-
-              <NumberInput
-                label={t('form.field.price')}
-                value={exit.price}
-                onChange={(value) =>
-                  useDollarValue
-                    ? handleExitPriceChangeWithDollar(index, value)
-                    : handleExitChange(index, 'price', value)
-                }
-                error={errors.exits?.[index]?.price}
-                min={0}
-                precision={pricePrecision}
-                allowDecimal={true}
-                required={!data.isMissedTrade && !data.useDirectPnLInput}
-                className="price-field"
-              />
-
-              {useDollarValue ? (
-                <>
-                  <NumberInput
-                    label={t('form.field.value-dollar')}
-                    value={
-                      exit.notional ??
-                      (exit.size && exit.price
-                        ? exit.size * exit.price
-                        : undefined)
-                    }
-                    onChange={(value) => handleExitDollarChange(index, value)}
-                    error={errors.exits?.[index]?.size}
-                    min={0}
-                    precision={2}
-                    allowDecimal={true}
-                    required={!data.isMissedTrade && !data.useDirectPnLInput}
-                    placeholder={t('form.field.dollar-amount-placeholder')}
-                    className="size-field"
-                  />
-                  {exit.price !== undefined &&
-                    exit.size !== undefined &&
-                    exit.price > 0 &&
-                    exit.size > 0 && (
-                      <div className="calculated-size">
-                        = {exit.size.toFixed(sizePrecision)}{' '}
-                        {getPositionSizeLabel().toLowerCase()}
-                      </div>
-                    )}
-                </>
-              ) : (
-                <NumberInput
-                  label={getPositionSizeLabel()}
-                  value={exit.size}
-                  onChange={(value) => handleExitChange(index, 'size', value)}
-                  error={errors.exits?.[index]?.size}
-                  min={0}
-                  precision={sizePrecision}
-                  required={!data.isMissedTrade && !data.useDirectPnLInput}
-                  className="size-field"
-                />
-              )}
-            </div>
-          </div>
-        ))}
-
-        
-        <Button
-          variant="outline"
-          className="add-button clickable-icon"
-          onClick={() => void handleAddExit()}
-        >
-          {t('form.entry-exit.add-exit')}
-        </Button>
-
-        
-        <div
-          className={`remaining-size ${remainingSize > 0 ? 'positive' : 'neutral'}`}
-        >
-          {t('form.entry-exit.remaining-position')}{' '}
-          {remainingSize.toFixed(sizePrecision)}{' '}
-          {remainingSize > 0
-            ? t('form.entry-exit.open')
-            : t('form.entry-exit.closed')}
-        </div>
-      </div>
+      {showPriceExecutionFields && (
+        <EntriesSection
+          data={data}
+          errors={errors}
+          useDollarValue={useDollarValue}
+          pricePrecision={pricePrecision}
+          sizePrecision={sizePrecision}
+          totalEntrySize={totalEntrySize}
+          entryRowKeys={entryRowKeys}
+          blankTimeDefaultDate={blankTimeDefaultDate}
+          getPositionSizeLabel={getPositionSizeLabel}
+          onAddEntry={handleAddEntry}
+          onRemoveEntry={handleRemoveEntry}
+          onEntryChange={handleEntryChange}
+          onEntryDollarChange={handleEntryDollarChange}
+          onEntryPriceChangeWithDollar={handleEntryPriceChangeWithDollar}
+        />
+      )}
 
       
-      {supportsDividends && (
+      {showPriceExecutionFields && (
+        <ExitsSection
+          data={data}
+          errors={errors}
+          useDollarValue={useDollarValue}
+          pricePrecision={pricePrecision}
+          sizePrecision={sizePrecision}
+          showIdealExits={showIdealExits}
+          totalEntrySize={totalEntrySize}
+          remainingSize={remainingSize}
+          totalIdealExitSize={totalIdealExitSize}
+          exitRowKeys={exitRowKeys}
+          idealExitRowKeys={idealExitRowKeys}
+          blankTimeDefaultDate={blankTimeDefaultDate}
+          getPositionSizeLabel={getPositionSizeLabel}
+          onAddExit={handleAddExit}
+          onRemoveExit={handleRemoveExit}
+          onExitChange={handleExitChange}
+          onExitDollarChange={handleExitDollarChange}
+          onExitPriceChangeWithDollar={handleExitPriceChangeWithDollar}
+          onAddIdealExit={handleAddIdealExit}
+          onCopyActualExitsToIdeal={handleCopyActualExitsToIdeal}
+          onRemoveIdealExit={handleRemoveIdealExit}
+          onIdealExitChange={handleIdealExitChange}
+        />
+      )}
+
+      
+      {showDividendsSection && (
         <div className="dividends-section">
           <h4 className="section-title">
             {t('form.field.dividends')}{' '}
@@ -1046,11 +1470,13 @@ const EntryExitFieldsComponent: React.FC<EntryExitFieldsProps> = ({
       )}
 
       
-      {!data.useDirectPnLInput && errors.entriesExits && (
-        <div className="errorMessage" role="alert">
-          {errors.entriesExits}
-        </div>
-      )}
+      {showPriceExecutionFields &&
+        !data.useDirectPnLInput &&
+        errors.entriesExits && (
+          <div className="errorMessage" role="alert">
+            {errors.entriesExits}
+          </div>
+        )}
     </>
   );
 };

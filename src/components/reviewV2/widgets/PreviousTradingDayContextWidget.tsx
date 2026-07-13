@@ -338,7 +338,7 @@ export const PreviousTradingDayContextWidget: React.FC<PreviousTradingDayContext
                 </ul>
               </section>
             ))}
-            <div className="journalit-images-widget">
+            <div className="journalit-images-widget journalit-media-carousel-surface">
               <ImageCarousel
                 images={[
                   createSvgPlaceholderDataUri(
@@ -451,7 +451,7 @@ export const PreviousTradingDayContextWidget: React.FC<PreviousTradingDayContext
                   return (
                     <div
                       key={`${block.widgetId}-${blockIndex}`}
-                      className="journalit-images-widget"
+                      className="journalit-images-widget journalit-media-carousel-surface"
                     >
                       <ImageCarousel
                         images={block.images}

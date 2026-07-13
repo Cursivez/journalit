@@ -10,6 +10,7 @@ import React, {
 } from 'react';
 import { App, Modal, Notice } from 'obsidian';
 import { Edit } from '../../../components/shared/icons/ObsidianIcon';
+import { ReorderControls } from '../../../components/shared/ReorderControls';
 import JournalitPlugin from '../../../main';
 import { CustomFieldsService } from '../../../services/CustomFieldsService';
 import {
@@ -605,28 +606,15 @@ export const CustomFieldsManager: React.FC<CustomFieldsManagerProps> = (
                 </div>
                 <div className="setting-item-control">
                   <div className="custom-fields-field-actions">
-                    <div className="custom-fields-reorder-controls">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleMoveField(field.id, 'up')}
-                        disabled={index === 0}
-                        aria-label={`${t('button.move-up')}: ${field.label}`}
-                        className="custom-fields-reorder-button"
-                      >
-                        ↑
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleMoveField(field.id, 'down')}
-                        disabled={index === fields.length - 1}
-                        aria-label={`${t('button.move-down')}: ${field.label}`}
-                        className="custom-fields-reorder-button"
-                      >
-                        ↓
-                      </Button>
-                    </div>
+                    <ReorderControls
+                      label={field.label}
+                      canMoveUp={index > 0}
+                      canMoveDown={index < fields.length - 1}
+                      onMoveUp={() => void handleMoveField(field.id, 'up')}
+                      onMoveDown={() => void handleMoveField(field.id, 'down')}
+                      className="custom-fields-reorder-controls"
+                      buttonClassName="custom-fields-reorder-button"
+                    />
                     <Button
                       variant="outline"
                       size="sm"

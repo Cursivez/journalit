@@ -28,6 +28,7 @@ import { useDisplayFormatter } from '../../hooks/useDisplayPolicy';
 
 interface SharedTradesChartProps extends TradesChartProps {
   currencyOverride?: string;
+  valueMode?: 'pnl' | 'rMultiple';
 }
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
@@ -80,7 +81,8 @@ const renderTradesChartTooltip = (
   props: TradesChartTooltipProps,
   displayRMultiples?: boolean,
   currencyOverride?: string,
-  showAccountTooltip?: boolean
+  showAccountTooltip?: boolean,
+  valueMode?: 'pnl' | 'rMultiple'
 ) => {
   if (!props.active || !props.payload || props.payload.length === 0)
     return null;
@@ -106,9 +108,12 @@ const renderTradesChartTooltip = (
           ? `${data.instrument} ${data.direction?.toLowerCase() === 'long' ? '↑' : '↓'}`
           : `Trade #${data.tradeIndex + 1}`,
         primaryValue: {
-          label: t('chart.label.pnl'),
+          label:
+            valueMode === 'rMultiple'
+              ? t('tradelog.column.rMultiple')
+              : t('chart.label.pnl'),
           value: data.pnl,
-          type: 'pnl',
+          type: valueMode === 'rMultiple' ? 'rMultiple' : 'pnl',
           isPositive: data.pnl >= 0,
           isNegative: data.pnl < 0,
           rMultiple: data.rMultiple,
@@ -205,6 +210,7 @@ export const SharedTradesChart: React.FC<SharedTradesChartProps> = ({
   onPointClick,
   currencyOverride,
   showAccountTooltip = false,
+  valueMode,
 }) => {
   const chartRef = React.useRef<HTMLDivElement>(null);
   const { currency: globalCurrency } = useCurrency();
@@ -212,15 +218,21 @@ export const SharedTradesChart: React.FC<SharedTradesChartProps> = ({
   const plugin = usePlugin();
   const displayRMultiples = plugin?.settings?.trade?.displayRMultiples;
   const { formatValue, shouldMask } = useDisplayFormatter();
-  const isPnlMasked = shouldMask('pnl');
+  const useRValues = valueMode === 'rMultiple';
+  const effectiveDisplayRMultiples =
+    valueMode === undefined ? displayRMultiples : useRValues;
+  const isValueMasked = shouldMask(useRValues ? 'rMultiple' : 'pnl');
 
   
   const defaultRiskAmount = plugin?.settings?.trade?.defaultRiskAmount;
 
   const customTickFormatter = React.useCallback(
     (value: number): string => {
+      if (useRValues) {
+        return formatValue({ kind: 'rMultiple', value });
+      }
       const tickRMultiple =
-        displayRMultiples && defaultRiskAmount && defaultRiskAmount > 0
+        effectiveDisplayRMultiples && defaultRiskAmount && defaultRiskAmount > 0
           ? value / defaultRiskAmount
           : undefined;
 
@@ -231,16 +243,22 @@ export const SharedTradesChart: React.FC<SharedTradesChartProps> = ({
         rMultiple: tickRMultiple,
       });
     },
-    [currency, defaultRiskAmount, displayRMultiples, formatValue]
+    [
+      currency,
+      defaultRiskAmount,
+      effectiveDisplayRMultiples,
+      formatValue,
+      useRValues,
+    ]
   );
   const displayData = React.useMemo(
     () =>
       data.map((entry) => ({
         ...entry,
-        displayPnl: isPnlMasked ? 1 : entry.pnl,
-        fill: isPnlMasked ? 'var(--text-muted)' : entry.fill,
+        displayPnl: isValueMasked ? 1 : entry.pnl,
+        fill: isValueMasked ? 'var(--text-muted)' : entry.fill,
       })),
-    [data, isPnlMasked]
+    [data, isValueMasked]
   );
 
   
@@ -257,19 +275,19 @@ export const SharedTradesChart: React.FC<SharedTradesChartProps> = ({
   const { domain, ticks } = React.useMemo(() => {
     
     
-    const effectiveMin = isPnlMasked
+    const effectiveMin = isValueMasked
       ? 0
       : minValue !== undefined
         ? minValue
         : dataMin;
-    const effectiveMax = isPnlMasked
+    const effectiveMax = isValueMasked
       ? 1
       : maxValue !== undefined
         ? maxValue
         : dataMax;
 
     return generateNiceAxis(effectiveMin, effectiveMax, 6, true, true);
-  }, [dataMin, dataMax, isPnlMasked, minValue, maxValue]);
+  }, [dataMin, dataMax, isValueMasked, minValue, maxValue]);
 
   
   const yAxisWidth = React.useMemo(() => {
@@ -363,9 +381,10 @@ export const SharedTradesChart: React.FC<SharedTradesChartProps> = ({
                       ...runtimeProps,
                       payload: getTradesTooltipPayload(runtimeProps.payload),
                     },
-                    displayRMultiples,
+                    effectiveDisplayRMultiples,
                     currencyOverride,
-                    showAccountTooltip
+                    showAccountTooltip,
+                    valueMode
                   )
             }
           </RechartsPortalTooltip>
@@ -383,15 +402,15 @@ export const SharedTradesChart: React.FC<SharedTradesChartProps> = ({
           stroke="var(--background-primary)" 
           strokeWidth={0.8} 
           strokeOpacity={0.5} 
-          fillOpacity={isPnlMasked ? 0.45 : 1}
-          filter={isPnlMasked ? undefined : 'url(#tradesChartBarShadow)'} 
+          fillOpacity={isValueMasked ? 0.45 : 1}
+          filter={isValueMasked ? undefined : 'url(#tradesChartBarShadow)'} 
           
           radius={[2, 2, 0, 0]}
           
           activeBar={{
-            filter: isPnlMasked ? undefined : 'url(#tradesChartBarGlow)',
+            filter: isValueMasked ? undefined : 'url(#tradesChartBarGlow)',
             strokeWidth: 1.2,
-            strokeOpacity: isPnlMasked ? 0.4 : 0.8,
+            strokeOpacity: isValueMasked ? 0.4 : 0.8,
           }}
           
 
@@ -404,7 +423,7 @@ export const SharedTradesChart: React.FC<SharedTradesChartProps> = ({
             const isPositive = pnlValue >= 0;
 
             
-            const fill = isPnlMasked
+            const fill = isValueMasked
               ? 'var(--text-muted)'
               : props.payload?.fill ||
                 (isPositive
@@ -425,7 +444,7 @@ export const SharedTradesChart: React.FC<SharedTradesChartProps> = ({
 
             
             
-            const radius = isPnlMasked
+            const radius = isValueMasked
               ? [2, 2, 0, 0]
               : isPositive
                 ? [2, 2, 0, 0]
@@ -444,10 +463,10 @@ export const SharedTradesChart: React.FC<SharedTradesChartProps> = ({
                 stroke={props.stroke}
                 strokeWidth={props.strokeWidth}
                 strokeOpacity={props.strokeOpacity}
-                fillOpacity={isPnlMasked ? 0.45 : 1}
+                fillOpacity={isValueMasked ? 0.45 : 1}
                 
                 filter={
-                  isPnlMasked
+                  isValueMasked
                     ? undefined
                     : isPositive
                       ? props.filter

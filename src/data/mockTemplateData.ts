@@ -1,6 +1,6 @@
 
 
-import { Trade, DRCFrontmatter, ForecastData } from '../components/drc/types';
+import { Trade, DRCFrontmatter } from '../components/drc/types';
 import type { DemonTrackerEntry } from '../services/monthly/types';
 
 
@@ -971,7 +971,7 @@ const mockDRCFrontmatter: Partial<DRCFrontmatter> = {
     oneHour: { notes: 'Higher lows forming', images: [] },
     thirtyMin: { notes: 'Clean uptrend', images: [] },
     bias: 'bullish',
-  } as ForecastData,
+  },
 };
 
 

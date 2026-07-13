@@ -10,6 +10,7 @@ import React, {
 import { Notice } from 'obsidian';
 import { NumberInput, ComboBox, Select } from '../../../core';
 import { Button } from '../../../ui/Button';
+import { RMultipleValue } from '../../../shared/display';
 import { FormSection } from '../FormSection';
 import {
   TradeFormData,
@@ -19,10 +20,8 @@ import {
 } from '../types';
 import {
   calculatePnL,
-  calculatePercentageReturn,
   calculateStopLossRiskAmount,
   canCalculateStopLossRiskAmount,
-  calculateTotalCosts,
   resolveEffectiveRiskAmount,
 } from '../validation';
 import { formatPnL } from '../../../../utils';
@@ -40,6 +39,17 @@ import { calculateAssetAdjustedPriceMoveValue } from '../../../../utils/priceMov
 import { useEventBus } from '../../../../hooks';
 import { t } from '../../../../lang/helpers';
 import { filterActiveCopyAccounts } from '../../../../utils/accountCopyTrading';
+import {
+  TradeFormInputMode,
+  TradeFormLayoutItemId,
+  TradeFormLayoutSettings,
+} from '../../../../settings/types';
+import {
+  getEditAwareVisibleOrderedTradeFormLayoutItems,
+  hasPopulatedTradeFormLayoutItem,
+  isTradeFormLayoutItemVisible,
+  TRADE_FORM_BASIC_OPTIONAL_ITEM_IDS,
+} from '../tradeFormLayoutConfig';
 
 
 import { StockFields } from './StockFields';
@@ -60,6 +70,80 @@ const parseCommissionType = (value: string): 'fixed' | 'percentage' =>
 
 const EMPTY_INSTRUMENTS: Array<{ id: string; name: string }> = [];
 
+const ASSET_SPECIFIC_ERROR_FIELDS: Array<keyof TradeFormErrors> = [
+  'exchange',
+  'expirationDate',
+  'strikePrice',
+  'optionType',
+  'contractSize',
+  'contractSymbol',
+  'dollarPerPoint',
+  'tickSize',
+  'tickValue',
+  'currencyPair',
+  'lotSize',
+  'pipValue',
+  'tradingPair',
+  'cryptoExchange',
+  'leverageRatio',
+];
+
+export const hasAssetSpecificValidationErrors = (
+  errors: TradeFormErrors
+): boolean =>
+  ASSET_SPECIFIC_ERROR_FIELDS.some((field) => Boolean(errors[field]));
+
+export const shouldShowTradingCostsSection = (
+  layout: TradeFormLayoutSettings,
+  errors: TradeFormErrors
+): boolean =>
+  isTradeFormLayoutItemVisible(layout, 'tradingCosts') ||
+  isTradeFormLayoutItemVisible(layout, 'tradingCostRebate') ||
+  isTradeFormLayoutItemVisible(layout, 'tradingCostSwap') ||
+  isTradeFormLayoutItemVisible(layout, 'tradingCostFees') ||
+  Boolean(
+    errors.commission ||
+    errors.commissionType ||
+    errors.rebate ||
+    errors.swap ||
+    errors.fees
+  );
+
+export const shouldShowRebateField = (
+  data: Partial<TradeFormData>,
+  errors: TradeFormErrors
+): boolean => data.assetType === 'options' || Boolean(errors.rebate);
+
+export function resolveEffectiveTradeFormInputMode({
+  layoutInputMode,
+  forcePriceInputMode,
+  isOpenTrade,
+  useDirectPnLInput,
+}: {
+  layoutInputMode: TradeFormInputMode;
+  forcePriceInputMode: boolean;
+  isOpenTrade: boolean;
+  useDirectPnLInput?: boolean;
+}): TradeFormInputMode {
+  if (forcePriceInputMode || isOpenTrade) return 'prices';
+  if (layoutInputMode === 'prices') return 'prices';
+  if (useDirectPnLInput === false) return 'prices';
+
+  return layoutInputMode;
+}
+
+const hasOpenTradeEvidence = (data: Partial<TradeFormData>): boolean =>
+  data.tradeStatus === 'OPEN' ||
+  data.backendTradeId !== undefined ||
+  typeof data.filePath === 'string' ||
+  (data.entries ?? []).some(
+    (entry) =>
+      (entry.price !== undefined && entry.price !== null) ||
+      (entry.size !== undefined && entry.size !== null)
+  ) ||
+  data.entryPrice !== undefined ||
+  data.positionSize !== undefined;
+
 interface AssetFieldsProps {
   
   data: Partial<TradeFormData>;
@@ -71,6 +155,12 @@ interface AssetFieldsProps {
   instruments?: Array<{ id: string; name: string }>;
   
   onAccountRequirementChange?: (isBlocked: boolean) => void;
+  
+  layout: TradeFormLayoutSettings;
+  
+  forcePriceInputMode?: boolean;
+  
+  isEditMode: boolean;
 }
 
 export function getRealizedPnlSummaryProps({
@@ -121,6 +211,7 @@ interface TradingCostsSectionProps {
   errors: TradeFormErrors;
   pnlCurrency: string;
   shouldDisplaySwap: boolean;
+  visibleCostGroups: TradeFormLayoutItemId[];
   onChange: (field: keyof TradeFormData, value: TradeFormValue) => void;
 }
 
@@ -129,51 +220,68 @@ function TradingCostsSection({
   errors,
   pnlCurrency,
   shouldDisplaySwap,
+  visibleCostGroups,
   onChange,
 }: TradingCostsSectionProps) {
+  const showCommission =
+    visibleCostGroups.includes('tradingCosts') ||
+    Boolean(errors.commission || errors.commissionType);
+  const showRebate =
+    (visibleCostGroups.includes('tradingCostRebate') &&
+      shouldShowRebateField(data, errors)) ||
+    Boolean(errors.rebate);
+  const showSwap =
+    (visibleCostGroups.includes('tradingCostSwap') &&
+      (shouldDisplaySwap ||
+        (data.swap !== undefined && data.swap !== null && data.swap !== 0))) ||
+    Boolean(errors.swap);
+  const showFees =
+    visibleCostGroups.includes('tradingCostFees') || Boolean(errors.fees);
   return (
     <div className="trading-costs-section">
       <h4 className="section-title">{t('form.section.trading-costs')}</h4>
       <div
         className={`cost-fields ${shouldDisplaySwap ? 'three-column' : 'two-column'}`}
       >
-        <div className="field">
-          <div className="commission-grid">
-            <NumberInput
-              label={t('form.field.commission')}
-              value={data.commission}
-              onChange={(value) => onChange('commission', value)}
-              error={errors.commission || errors.commissionType}
-              precision={2}
-              allowDecimal={true}
-              placeholder={
-                data.commissionType === 'percentage'
-                  ? t('form.placeholder.commission')
-                  : t('form.placeholder.commission-alt')
-              }
-            />
-            <Select
-              label={t('form.field.commission-type')}
-              options={[
-                {
-                  value: 'fixed',
-                  label: `${t('form.field.commission-type.fixed')} ${formatCost(0, pnlCurrency).replace('0', '').trim()}`,
-                },
-                {
-                  value: 'percentage',
-                  label: t('form.field.commission-type.percentage'),
-                },
-              ]}
-              value={data.commissionType || 'fixed'}
-              onChange={(value) =>
-                onChange('commissionType', parseCommissionType(value))
-              }
-            />
+        {showCommission && (
+          <div className="field trading-costs-field trading-costs-field--commission">
+            <div className="commission-grid">
+              <NumberInput
+                label={t('form.field.commission')}
+                value={data.commission}
+                onChange={(value) => onChange('commission', value)}
+                error={errors.commission || errors.commissionType}
+                precision={2}
+                allowDecimal={true}
+                placeholder={
+                  data.commissionType === 'percentage'
+                    ? t('form.placeholder.commission')
+                    : t('form.placeholder.commission-alt')
+                }
+              />
+              <Select
+                label={t('form.field.commission-type')}
+                options={[
+                  {
+                    value: 'fixed',
+                    label: `${t('form.field.commission-type.fixed')} ${formatCost(0, pnlCurrency).replace('0', '').trim()}`,
+                  },
+                  {
+                    value: 'percentage',
+                    label: t('form.field.commission-type.percentage'),
+                  },
+                ]}
+                value={data.commissionType || 'fixed'}
+                onChange={(value) =>
+                  onChange('commissionType', parseCommissionType(value))
+                }
+              />
+            </div>
           </div>
-        </div>
+        )}
 
-        {data.assetType === 'options' && (
-          <div className="field">
+        {showRebate && (
+          <div className="field trading-costs-field">
             <NumberInput
               label={t('form.field.rebate')}
               value={data.rebate}
@@ -187,8 +295,8 @@ function TradingCostsSection({
           </div>
         )}
 
-        {shouldDisplaySwap && (
-          <div className="field">
+        {showSwap && (
+          <div className="field trading-costs-field">
             <NumberInput
               label={t('form.field.swap')}
               value={data.swap}
@@ -201,17 +309,19 @@ function TradingCostsSection({
           </div>
         )}
 
-        <div className="field">
-          <NumberInput
-            label={t('form.field.other-fees')}
-            value={data.fees}
-            onChange={(value) => onChange('fees', value)}
-            error={errors.fees}
-            precision={2}
-            allowDecimal={true}
-            placeholder={t('form.placeholder.other-fees')}
-          />
-        </div>
+        {showFees && (
+          <div className="field trading-costs-field">
+            <NumberInput
+              label={t('form.field.other-fees')}
+              value={data.fees}
+              onChange={(value) => onChange('fees', value)}
+              error={errors.fees}
+              precision={2}
+              allowDecimal={true}
+              placeholder={t('form.placeholder.other-fees')}
+            />
+          </div>
+        )}
       </div>
     </div>
   );
@@ -221,10 +331,17 @@ interface RiskManagementSectionProps {
   data: Partial<TradeFormData>;
   errors: TradeFormErrors;
   pnlCurrency: string;
+  pnl: number;
   defaultRiskAmount: number;
   displayRMultiples: boolean;
+  visibleRiskGroups: TradeFormLayoutItemId[];
+  title?: string;
+  showTitle?: boolean;
+  showResultPreview?: boolean;
   onChange: (field: keyof TradeFormData, value: TradeFormValue) => void;
 }
+
+type RiskFieldId = 'stopLoss' | 'riskAmount' | 'takeProfits' | 'mae' | 'mfe';
 
 interface TakeProfitsSectionProps {
   takeProfits: NonNullable<TradeFormData['takeProfits']>;
@@ -384,8 +501,13 @@ function RiskManagementSection({
   data,
   errors,
   pnlCurrency,
+  pnl,
   defaultRiskAmount,
   displayRMultiples,
+  visibleRiskGroups,
+  title,
+  showTitle = true,
+  showResultPreview = true,
   onChange,
 }: RiskManagementSectionProps) {
   const plugin = getPluginInstance();
@@ -398,174 +520,244 @@ function RiskManagementSection({
   const takeProfits = data.takeProfits || [];
   const pricePrecision = data.assetType === 'forex' ? 5 : 2;
   const showTakeProfits = !data.isMissedTrade && !data.isBacktestTrade;
+  const effectiveRiskAmount = resolveEffectiveRiskAmount(
+    data,
+    defaultRiskAmount
+  );
+  const resultRMultiple =
+    data.useDirectPnLInput &&
+    typeof data.directPnL === 'number' &&
+    effectiveRiskAmount &&
+    effectiveRiskAmount > 0
+      ? pnl / effectiveRiskAmount
+      : undefined;
 
-  return (
-    <div className="risk-management-section">
-      <h4 className="section-title">{t('form.section.risk-management')}</h4>
-      <div className="risk-fields">
-        <div className="field">
-          <NumberInput
-            label={t('form.field.stop-loss')}
-            value={data.stopLoss}
-            onChange={(value) => onChange('stopLoss', value)}
-            error={errors.stopLoss}
-            precision={pricePrecision}
-            allowDecimal={true}
-            placeholder={t('form.placeholder.stop-loss')}
-          />
-        </div>
-
-        <div className="field">
-          <NumberInput
-            label={t('form.field.risk-amount')}
-            value={data.riskAmount}
-            onChange={(value) => onChange('riskAmount', value)}
-            error={errors.riskAmount}
-            precision={2}
-            allowDecimal={true}
-            placeholder={t('form.placeholder.risk-amount')}
-          />
-          {canCalculateStopLossRiskAmount(data) &&
-            (() => {
-              const calculatedRisk = calculateStopLossRiskAmount(data);
-              const riskBudgetAmount =
-                typeof data.riskAmount === 'number' && data.riskAmount > 0
-                  ? data.riskAmount
-                  : defaultRiskAmount > 0
-                    ? defaultRiskAmount
+  const renderRiskField = (fieldId: RiskFieldId) => {
+    switch (fieldId) {
+      case 'stopLoss':
+        return (
+          <div className="field" key={fieldId}>
+            <NumberInput
+              label={t('form.field.stop-loss')}
+              value={data.stopLoss}
+              onChange={(value) => onChange('stopLoss', value)}
+              error={errors.stopLoss}
+              precision={pricePrecision}
+              allowDecimal={true}
+              placeholder={t('form.placeholder.stop-loss')}
+            />
+          </div>
+        );
+      case 'riskAmount':
+        return (
+          <div className="field" key={fieldId}>
+            <NumberInput
+              label={t('form.field.risk-amount')}
+              value={data.riskAmount}
+              onChange={(value) => onChange('riskAmount', value)}
+              error={errors.riskAmount}
+              precision={2}
+              allowDecimal={true}
+              placeholder={t('form.placeholder.risk-amount')}
+            />
+            {canCalculateStopLossRiskAmount(data) &&
+              (() => {
+                const calculatedRisk = calculateStopLossRiskAmount(data);
+                const riskBudgetAmount =
+                  typeof data.riskAmount === 'number' && data.riskAmount > 0
+                    ? data.riskAmount
+                    : defaultRiskAmount > 0
+                      ? defaultRiskAmount
+                      : undefined;
+                const calculatedRiskRMultiple =
+                  riskBudgetAmount && riskBudgetAmount > 0
+                    ? calculatedRisk / riskBudgetAmount
                     : undefined;
-              const calculatedRiskRMultiple =
-                riskBudgetAmount && riskBudgetAmount > 0
-                  ? calculatedRisk / riskBudgetAmount
-                  : undefined;
 
-              return (
-                <span className="calculated-risk-hint">
-                  {t('form.calculated')}:{' '}
-                  {formatPnL(
-                    calculatedRisk,
-                    true,
-                    pnlCurrency,
-                    displayRMultiples,
-                    calculatedRiskRMultiple
-                  )}
-                </span>
-              );
-            })()}
-        </div>
-
-        {showTakeProfits && (
+                return (
+                  <span className="calculated-risk-hint">
+                    {t('form.calculated')}:{' '}
+                    {formatPnL(
+                      calculatedRisk,
+                      true,
+                      pnlCurrency,
+                      displayRMultiples,
+                      calculatedRiskRMultiple
+                    )}
+                  </span>
+                );
+              })()}
+          </div>
+        );
+      case 'takeProfits':
+        return showTakeProfits ? (
           <TakeProfitsSection
+            key={fieldId}
             takeProfits={takeProfits}
             errors={errors}
             pricePrecision={pricePrecision}
             onChange={onChange}
           />
-        )}
+        ) : null;
+      case 'mae':
+        if (showPriceFields) {
+          return (
+            <div className="field" key={fieldId}>
+              <NumberInput
+                label={isShort ? 'MAE Price (High)' : 'MAE Price (Low)'}
+                value={data.maePrice}
+                onChange={(value) => onChange('maePrice', value)}
+                error={errors.maePrice}
+                precision={data.assetType === 'forex' ? 5 : 2}
+                allowDecimal={true}
+                placeholder={
+                  isShort ? 'Highest price reached' : 'Lowest price reached'
+                }
+              />
+              {data.maePrice !== undefined &&
+                data.entryPrice &&
+                data.positionSize &&
+                data.positionSize > 0 && (
+                  <span className="calculated-risk-hint">
+                    ={' '}
+                    {formatPnL(
+                      calculateAssetAdjustedPriceMoveValue(
+                        data,
+                        isShort
+                          ? data.entryPrice - data.maePrice
+                          : data.maePrice - data.entryPrice,
+                        data.positionSize
+                      ),
+                      false,
+                      pnlCurrency
+                    )}
+                  </span>
+                )}
+            </div>
+          );
+        }
 
-        {showPriceFields && (
-          <div className="field">
-            <NumberInput
-              label={isShort ? 'MAE Price (High)' : 'MAE Price (Low)'}
-              value={data.maePrice}
-              onChange={(value) => onChange('maePrice', value)}
-              error={errors.maePrice}
-              precision={data.assetType === 'forex' ? 5 : 2}
-              allowDecimal={true}
-              placeholder={
-                isShort ? 'Highest price reached' : 'Lowest price reached'
-              }
-            />
-            {data.maePrice !== undefined &&
-              data.entryPrice &&
-              data.positionSize &&
-              data.positionSize > 0 && (
-                <span className="calculated-risk-hint">
-                  ={' '}
-                  {formatPnL(
-                    calculateAssetAdjustedPriceMoveValue(
-                      data,
-                      isShort
-                        ? data.entryPrice - data.maePrice
-                        : data.maePrice - data.entryPrice,
-                      data.positionSize
-                    ),
-                    false,
-                    pnlCurrency
-                  )}
-                </span>
-              )}
-          </div>
-        )}
+        if (showDollarFields) {
+          return (
+            <div className="field" key={fieldId}>
+              <NumberInput
+                label={t('tradelog.column.mae-with-currency', {
+                  currency: pnlCurrency,
+                })}
+                value={data.mae}
+                onChange={(value) => onChange('mae', value)}
+                error={errors.mae}
+                precision={2}
+                allowDecimal={true}
+                placeholder={t('form.field.mae-placeholder-currency', {
+                  currency: pnlCurrency,
+                })}
+              />
+            </div>
+          );
+        }
+        return null;
+      case 'mfe':
+        if (showPriceFields) {
+          return (
+            <div className="field" key={fieldId}>
+              <NumberInput
+                label={isShort ? 'MFE Price (Low)' : 'MFE Price (High)'}
+                value={data.mfePrice}
+                onChange={(value) => onChange('mfePrice', value)}
+                error={errors.mfePrice}
+                precision={data.assetType === 'forex' ? 5 : 2}
+                allowDecimal={true}
+                placeholder={
+                  isShort ? 'Lowest price reached' : 'Highest price reached'
+                }
+              />
+              {data.mfePrice !== undefined &&
+                data.entryPrice &&
+                data.positionSize &&
+                data.positionSize > 0 && (
+                  <span className="calculated-risk-hint">
+                    ={' '}
+                    {formatPnL(
+                      calculateAssetAdjustedPriceMoveValue(
+                        data,
+                        isShort
+                          ? data.entryPrice - data.mfePrice
+                          : data.mfePrice - data.entryPrice,
+                        data.positionSize
+                      ),
+                      false,
+                      pnlCurrency
+                    )}
+                  </span>
+                )}
+            </div>
+          );
+        }
 
-        {showPriceFields && (
-          <div className="field">
-            <NumberInput
-              label={isShort ? 'MFE Price (Low)' : 'MFE Price (High)'}
-              value={data.mfePrice}
-              onChange={(value) => onChange('mfePrice', value)}
-              error={errors.mfePrice}
-              precision={data.assetType === 'forex' ? 5 : 2}
-              allowDecimal={true}
-              placeholder={
-                isShort ? 'Lowest price reached' : 'Highest price reached'
-              }
-            />
-            {data.mfePrice !== undefined &&
-              data.entryPrice &&
-              data.positionSize &&
-              data.positionSize > 0 && (
-                <span className="calculated-risk-hint">
-                  ={' '}
-                  {formatPnL(
-                    calculateAssetAdjustedPriceMoveValue(
-                      data,
-                      isShort
-                        ? data.entryPrice - data.mfePrice
-                        : data.mfePrice - data.entryPrice,
-                      data.positionSize
-                    ),
-                    false,
-                    pnlCurrency
-                  )}
-                </span>
-              )}
-          </div>
-        )}
+        if (showDollarFields) {
+          return (
+            <div className="field" key={fieldId}>
+              <NumberInput
+                label={t('tradelog.column.mfe-with-currency', {
+                  currency: pnlCurrency,
+                })}
+                value={data.mfe}
+                onChange={(value) => onChange('mfe', value)}
+                error={errors.mfe}
+                precision={2}
+                allowDecimal={true}
+                placeholder={t('form.field.mfe-placeholder-currency', {
+                  currency: pnlCurrency,
+                })}
+              />
+            </div>
+          );
+        }
+        return null;
+      default:
+        return null;
+    }
+  };
 
-        {showDollarFields && (
-          <div className="field">
-            <NumberInput
-              label={t('tradelog.column.mae-with-currency', {
-                currency: pnlCurrency,
-              })}
-              value={data.mae}
-              onChange={(value) => onChange('mae', value)}
-              error={errors.mae}
-              precision={2}
-              allowDecimal={true}
-              placeholder={t('form.field.mae-placeholder-currency', {
-                currency: pnlCurrency,
-              })}
-            />
-          </div>
-        )}
+  const orderedRiskFieldElements = visibleRiskGroups.reduce<React.ReactNode[]>(
+    (elements, groupId) => {
+      if (groupId === 'riskPlanning') {
+        elements.push(renderRiskField('stopLoss'));
+        elements.push(renderRiskField('riskAmount'));
+      } else if (groupId === 'takeProfits') {
+        elements.push(renderRiskField('takeProfits'));
+      } else if (groupId === 'maeMfe') {
+        elements.push(renderRiskField('mae'));
+        elements.push(renderRiskField('mfe'));
+      }
+      return elements;
+    },
+    []
+  );
 
-        {showDollarFields && (
-          <div className="field">
-            <NumberInput
-              label={t('tradelog.column.mfe-with-currency', {
-                currency: pnlCurrency,
-              })}
-              value={data.mfe}
-              onChange={(value) => onChange('mfe', value)}
-              error={errors.mfe}
-              precision={2}
-              allowDecimal={true}
-              placeholder={t('form.field.mfe-placeholder-currency', {
-                currency: pnlCurrency,
-              })}
-            />
+  return (
+    <div className="risk-management-section">
+      {showTitle && (
+        <h4 className="section-title">
+          {title ?? t('form.section.risk-management')}
+        </h4>
+      )}
+      <div className="risk-fields">
+        {orderedRiskFieldElements}
+        {showResultPreview && resultRMultiple !== undefined && (
+          <div className="risk-result-preview">
+            <span className="risk-result-preview__label">
+              {t('form.layout.result-r')}
+            </span>
+            <span className="risk-result-preview__value">
+              <RMultipleValue
+                value={resultRMultiple}
+                precision={2}
+                signed={false}
+                tone="none"
+              />
+            </span>
           </div>
         )}
       </div>
@@ -1268,7 +1460,6 @@ function useAssetFieldsModel({
   
   
   const pnl = calculatePnL(data);
-  const percentReturn = calculatePercentageReturn(data);
 
   
   const debouncedOnChange = useMemo(() => debounce(onChange, 300), [onChange]);
@@ -1336,7 +1527,6 @@ function useAssetFieldsModel({
     instrumentOptions,
     isLoadingAccounts,
     pnl,
-    percentReturn,
     debouncedOnChange,
     displayRMultiples,
     defaultRiskAmount,
@@ -1349,12 +1539,84 @@ function useAssetFieldsModel({
   };
 }
 
+interface BasicLayoutVisibilityState {
+  layoutVisibleBasicOptionalItems: TradeFormLayoutItemId[];
+  visibleRiskGroups: TradeFormLayoutItemId[];
+  visibleCostGroups: TradeFormLayoutItemId[];
+  showTradingCosts: boolean;
+  showAssetSpecificFields: boolean;
+}
+
+function resolveBasicLayoutVisibility({
+  layout,
+  data,
+  errors,
+  isEditMode,
+}: {
+  layout: TradeFormLayoutSettings;
+  data: Partial<TradeFormData>;
+  errors: TradeFormErrors;
+  isEditMode: boolean;
+}): BasicLayoutVisibilityState {
+  const visibleCostGroups = (
+    [
+      'tradingCosts',
+      'tradingCostRebate',
+      'tradingCostSwap',
+      'tradingCostFees',
+    ] satisfies TradeFormLayoutItemId[]
+  ).filter(
+    (itemId) =>
+      isTradeFormLayoutItemVisible(layout, itemId) ||
+      (isEditMode && hasPopulatedTradeFormLayoutItem(data, itemId))
+  );
+
+  return {
+    layoutVisibleBasicOptionalItems:
+      getEditAwareVisibleOrderedTradeFormLayoutItems(
+        layout,
+        TRADE_FORM_BASIC_OPTIONAL_ITEM_IDS,
+        data,
+        isEditMode
+      ),
+    visibleRiskGroups: (
+      [
+        'riskPlanning',
+        'takeProfits',
+        'maeMfe',
+      ] satisfies TradeFormLayoutItemId[]
+    ).filter(
+      (itemId) =>
+        isTradeFormLayoutItemVisible(layout, itemId) ||
+        (isEditMode && hasPopulatedTradeFormLayoutItem(data, itemId)) ||
+        (itemId === 'riskPlanning' &&
+          Boolean(errors.stopLoss || errors.riskAmount)) ||
+        (itemId === 'takeProfits' && Boolean(errors.takeProfits)) ||
+        (itemId === 'maeMfe' &&
+          Boolean(
+            errors.mae || errors.maePrice || errors.mfe || errors.mfePrice
+          ))
+    ),
+    visibleCostGroups,
+    showTradingCosts:
+      shouldShowTradingCostsSection(layout, errors) ||
+      (isEditMode && visibleCostGroups.length > 0),
+    showAssetSpecificFields:
+      isTradeFormLayoutItemVisible(layout, 'assetSpecific') ||
+      (isEditMode && hasPopulatedTradeFormLayoutItem(data, 'assetSpecific')) ||
+      hasAssetSpecificValidationErrors(errors),
+  };
+}
+
 const AssetFieldsComponent: React.FC<AssetFieldsProps> = ({
   data,
   errors,
   onChange,
   instruments: _instruments = EMPTY_INSTRUMENTS,
   onAccountRequirementChange,
+  layout,
+  forcePriceInputMode = false,
+  isEditMode,
 }) => {
   const {
     pnlCurrency,
@@ -1364,7 +1626,6 @@ const AssetFieldsComponent: React.FC<AssetFieldsProps> = ({
     instrumentOptions,
     isLoadingAccounts,
     pnl,
-    percentReturn,
     debouncedOnChange,
     displayRMultiples,
     defaultRiskAmount,
@@ -1375,6 +1636,146 @@ const AssetFieldsComponent: React.FC<AssetFieldsProps> = ({
     handleSaveInstrument,
     hasExplicitCurrencySelectionRef,
   } = useAssetFieldsModel({ data, onChange, onAccountRequirementChange });
+
+  const {
+    layoutVisibleBasicOptionalItems,
+    visibleRiskGroups,
+    visibleCostGroups,
+    showTradingCosts,
+    showAssetSpecificFields,
+  } = resolveBasicLayoutVisibility({ layout, data, errors, isEditMode });
+  const errorVisibleBasicItems = new Set<TradeFormLayoutItemId>();
+  if (
+    errors.commission ||
+    errors.commissionType ||
+    errors.rebate ||
+    errors.swap ||
+    errors.fees
+  ) {
+    errorVisibleBasicItems.add('tradingCosts');
+  }
+  if (errors.stopLoss || errors.riskAmount) {
+    errorVisibleBasicItems.add('riskPlanning');
+  }
+  if (errors.takeProfits) {
+    errorVisibleBasicItems.add('takeProfits');
+  }
+  if (errors.mae || errors.maePrice || errors.mfe || errors.mfePrice) {
+    errorVisibleBasicItems.add('maeMfe');
+  }
+  const visibleBasicOptionalItems = [...layoutVisibleBasicOptionalItems];
+  const visibleBasicOptionalItemSet = new Set(visibleBasicOptionalItems);
+  for (const itemId of TRADE_FORM_BASIC_OPTIONAL_ITEM_IDS) {
+    if (
+      errorVisibleBasicItems.has(itemId) &&
+      !visibleBasicOptionalItemSet.has(itemId)
+    ) {
+      visibleBasicOptionalItems.push(itemId);
+      visibleBasicOptionalItemSet.add(itemId);
+    }
+  }
+  const showRealizedPnlPreview = isTradeFormLayoutItemVisible(
+    layout,
+    'realizedPnlPreview'
+  );
+  const showIdealExits =
+    isTradeFormLayoutItemVisible(layout, 'idealExits') ||
+    (isEditMode && hasPopulatedTradeFormLayoutItem(data, 'idealExits'));
+  const fixedAssetType =
+    layout.assetTypeMode === 'fixed' ? layout.defaultAssetType : undefined;
+  const showAssetTypeSelector =
+    fixedAssetType === undefined || data.assetType !== fixedAssetType;
+  const isOpenTrade =
+    hasOpenTradeEvidence(data) &&
+    isTradeOpenWithContext({
+      tradeStatus: data.tradeStatus,
+      exitTime: data.exitTime,
+      exitPrice: data.exitPrice,
+      pnl: data._originalPnlWasNull ? null : data.pnl,
+      useDirectPnLInput: data.useDirectPnLInput,
+      exits: data.exits,
+      entries: data.entries,
+    });
+  const effectiveInputMode = resolveEffectiveTradeFormInputMode({
+    layoutInputMode: layout.inputMode,
+    forcePriceInputMode,
+    isOpenTrade,
+    useDirectPnLInput: data.useDirectPnLInput,
+  });
+  const realizedPnlSummaryProps = getRealizedPnlSummaryProps({
+    data,
+    pnl,
+    effectiveRiskAmount,
+    pnlCurrency,
+    displayRMultiples,
+  });
+  const realizedPnlPreview = realizedPnlSummaryProps ? (
+    <RealizedPnlSummary {...realizedPnlSummaryProps} />
+  ) : null;
+  let tradingCostsRendered = false;
+  let riskManagementRendered = false;
+
+  const renderOptionalLayoutItem = (itemId: TradeFormLayoutItemId) => {
+    switch (itemId) {
+      case 'assetSpecific':
+        return showAssetSpecificFields ? (
+          <AssetSpecificFields
+            key={itemId}
+            data={data}
+            errors={errors}
+            onChange={onChange}
+          />
+        ) : null;
+      case 'tradingCosts':
+      case 'tradingCostRebate':
+      case 'tradingCostSwap':
+      case 'tradingCostFees':
+        if (tradingCostsRendered || !showTradingCosts) {
+          return null;
+        }
+        tradingCostsRendered = true;
+        return showTradingCosts ? (
+          <TradingCostsSection
+            key="tradingCosts"
+            data={data}
+            errors={errors}
+            pnlCurrency={pnlCurrency}
+            shouldDisplaySwap={shouldDisplaySwap}
+            visibleCostGroups={visibleCostGroups}
+            onChange={debouncedOnChange}
+          />
+        ) : null;
+      case 'riskPlanning':
+      case 'takeProfits':
+      case 'maeMfe': {
+        if (riskManagementRendered || visibleRiskGroups.length === 0) {
+          return null;
+        }
+        riskManagementRendered = true;
+        return (
+          <RiskManagementSection
+            key="riskManagement"
+            data={data}
+            errors={errors}
+            pnlCurrency={pnlCurrency}
+            pnl={pnl}
+            defaultRiskAmount={defaultRiskAmount}
+            displayRMultiples={displayRMultiples}
+            visibleRiskGroups={visibleRiskGroups}
+            onChange={debouncedOnChange}
+          />
+        );
+      }
+      case 'pnlPreview':
+        return null;
+      case 'realizedPnlPreview':
+        return showRealizedPnlPreview ? (
+          <React.Fragment key={itemId}>{realizedPnlPreview}</React.Fragment>
+        ) : null;
+      default:
+        return null;
+    }
+  };
 
   return (
     <FormSection title={t('form.section.trade-details')}>
@@ -1428,7 +1829,9 @@ const AssetFieldsComponent: React.FC<AssetFieldsProps> = ({
           )}
       </div>
 
-      <AssetTypeField data={data} errors={errors} onChange={onChange} />
+      {showAssetTypeSelector && (
+        <AssetTypeField data={data} errors={errors} onChange={onChange} />
+      )}
 
       <div className="field">
         <ComboBox
@@ -1461,102 +1864,24 @@ const AssetFieldsComponent: React.FC<AssetFieldsProps> = ({
       )}
 
       
-      <AssetSpecificFields data={data} errors={errors} onChange={onChange} />
+      {showAssetSpecificFields && (
+        <AssetSpecificFields data={data} errors={errors} onChange={onChange} />
+      )}
 
       
       <DirectionField data={data} errors={errors} onChange={onChange} />
 
       <div className="field">
-        <EntryExitFields data={data} errors={errors} onChange={onChange} />
+        <EntryExitFields
+          data={data}
+          errors={errors}
+          onChange={onChange}
+          inputMode={effectiveInputMode}
+          showIdealExits={showIdealExits}
+        />
       </div>
 
-      
-      <TradingCostsSection
-        data={data}
-        errors={errors}
-        pnlCurrency={pnlCurrency}
-        shouldDisplaySwap={shouldDisplaySwap}
-        onChange={debouncedOnChange}
-      />
-
-      
-      <RiskManagementSection
-        data={data}
-        errors={errors}
-        pnlCurrency={pnlCurrency}
-        defaultRiskAmount={defaultRiskAmount}
-        displayRMultiples={displayRMultiples}
-        onChange={debouncedOnChange}
-      />
-
-      
-      {data.entryPrice !== undefined &&
-        data.exitPrice !== undefined &&
-        data.positionSize !== undefined &&
-        data.direction !== undefined &&
-        (() => {
-          const pnlRMultiple =
-            effectiveRiskAmount && effectiveRiskAmount > 0
-              ? pnl / effectiveRiskAmount
-              : undefined;
-          const totalCosts = calculateTotalCosts(data);
-          const costsRMultiple =
-            effectiveRiskAmount && effectiveRiskAmount > 0
-              ? totalCosts / effectiveRiskAmount
-              : undefined;
-
-          return (
-            <div className="calculatedValue">
-              <span className="calculatedLabel">
-                {t('form.field.profit-loss')}
-                {data.commission || data.swap || data.fees
-                  ? ` ${t('form.field.incl-costs')}`
-                  : ''}
-              </span>
-              <span
-                className={`calculatedAmount ${pnl > 0 ? 'positive' : pnl < 0 ? 'negative' : 'neutral'}`}
-              >
-                {formatPnL(
-                  pnl,
-                  true,
-                  pnlCurrency,
-                  displayRMultiples,
-                  pnlRMultiple
-                )}
-              </span>
-              {!data.useDirectPnLInput && (
-                <span className="calculatedLabel">
-                  ({percentReturn.toFixed(2)}%)
-                </span>
-              )}
-              {data.commission || data.swap || data.fees ? (
-                <span className="calculatedLabel">
-                  {t('form.field.total-costs')}{' '}
-                  {formatPnL(
-                    totalCosts,
-                    true,
-                    pnlCurrency,
-                    displayRMultiples,
-                    costsRMultiple
-                  )}
-                </span>
-              ) : null}
-            </div>
-          );
-        })()}
-
-      
-      {(() => {
-        const summaryProps = getRealizedPnlSummaryProps({
-          data,
-          pnl,
-          effectiveRiskAmount,
-          pnlCurrency,
-          displayRMultiples,
-        });
-
-        return summaryProps ? <RealizedPnlSummary {...summaryProps} /> : null;
-      })()}
+      {visibleBasicOptionalItems.map(renderOptionalLayoutItem)}
 
       
     </FormSection>

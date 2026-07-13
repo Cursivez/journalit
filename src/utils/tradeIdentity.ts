@@ -4,12 +4,6 @@ const TRADE_SCHEMA_VERSION = 1;
 
 export type TradeId = string;
 
-export interface TradeRef {
-  tradeId: TradeId;
-  filePath?: string;
-  backendTradeId?: number;
-}
-
 function createTradeId(): TradeId {
   return `trade_${generateUUID()}`;
 }

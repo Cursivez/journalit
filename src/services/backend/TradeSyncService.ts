@@ -65,7 +65,7 @@ const MARKDOWN_SCALAR_ARRAY_FRONTMATTER_KEYS = new Set([
   'tags',
   'customTags',
   'setup',
-  'setupIds',
+
   'mistake',
   'mistakeIds',
   'executionIds',

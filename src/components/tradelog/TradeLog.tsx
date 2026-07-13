@@ -14,9 +14,17 @@ import { TradeLogService } from '../../services/tradelog';
 import { ServiceManager } from '../../services/ServiceManager';
 import { TimeNode, TradeLogFilters } from '../../services/tradelog/types';
 import { TradeLogHeader } from './TradeLogHeader';
+import { TRADE_LOG_MAIN_GUIDE_VERSION } from '../../guides/tradeLogMainGuide';
 import { TradeLogTree } from './TradeLogTree';
 import { EmptyState } from '../shared';
 import { TradeLogSkeleton } from './TradeLogSkeleton';
+import {
+  ImageGallery,
+  type ImageGalleryControls,
+  normalizeImageGallerySize,
+  normalizeImageGallerySort,
+  normalizeImageGallerySourceType,
+} from '../imageGallery/ImageGallery';
 import { useDebounced, useEventBus, useEventBusMultiple } from '../../hooks';
 import { useLeafActive } from '../../hooks/useLeafActive';
 import { TradeFormModal } from '../forms/trade/TradeFormModal';
@@ -75,14 +83,29 @@ import {
   TRADE_LOG_BATCH_TOOLBAR_TARGET_ID,
   TRADE_LOG_EMPTY_GUIDE_ID,
   TRADE_LOG_EMPTY_STATE_TARGET_ID,
+  TRADE_LOG_IMAGE_GALLERY_EMPTY_GUIDE_ID,
+  TRADE_LOG_IMAGE_GALLERY_MAIN_GUIDE_ID,
   TRADE_LOG_MAIN_GUIDE_ID,
   TRADE_LOG_MULTI_SELECT_ENABLED_ACTION_ID,
   TRADE_LOG_TABLE_HEADERS_TARGET_ID,
 } from '../../guides/tradeLogGuideIds';
+import type { PersistedGuideState } from '../../guides/types';
 import { TRADE_LOG_VIEW_TYPE } from '../../views/TradeLogView';
 import { AccountChangedPayload } from '../../services/events/types';
 import { remapAccountFilterFromAccountChange } from '../shared/filters/remapSelectedAccounts';
 import { persistViewFilter } from '../shared/filters/viewFilterPersistence';
+import { ImageGalleryService } from '../../services/imageGallery';
+import {
+  getSetupLabelColor,
+  getTagLabelColor,
+  TradeLabelColorProvider,
+  useTradeLabelColors,
+} from '../../contexts/TradeLabelColorContext';
+import { useTradeLabelColorData } from '../../hooks/useTradeLabelColorData';
+import {
+  getLabelColorClassName,
+  getLabelColorForeground,
+} from '../../types/labelColor';
 
 interface TradeLogProps {
   plugin: JournalitPlugin;
@@ -117,6 +140,49 @@ const TRADE_DATA_CHANGE_EVENTS: Array<
 type TradeLogFilterSyncWindow = Window & {
   journalitSyncTradeLogFilters?: () => void;
 };
+
+type TradeLogMode = 'trades' | 'imageGallery';
+
+const TRADE_LOG_GUIDE_TRADE_MODE_STEPS = new Set([
+  'intro',
+  'view-selector',
+  'filters',
+  'filter-modal',
+  'sorting',
+  'multi-select',
+  'batch-actions',
+  'column-settings',
+  'active-columns',
+  'available-columns',
+  'open-trades',
+  'switch-to-gallery',
+]);
+
+const TRADE_LOG_GUIDE_IMAGE_GALLERY_STEPS = new Set([
+  'gallery-source-sort',
+  'gallery-size',
+  'gallery-filters',
+  'gallery-filter-modal',
+  'gallery-grid',
+  'gallery-fullscreen-actions',
+  'gallery-open-annotation',
+  'gallery-annotation-panel',
+  'gallery-finish',
+]);
+
+const TRADE_LOG_IMAGE_GALLERY_GUIDE_IDS = new Set([
+  TRADE_LOG_MAIN_GUIDE_ID,
+  TRADE_LOG_IMAGE_GALLERY_EMPTY_GUIDE_ID,
+  TRADE_LOG_IMAGE_GALLERY_MAIN_GUIDE_ID,
+]);
+
+function isTerminalGuideState(state: PersistedGuideState | null): boolean {
+  return state?.status === 'completed' || state?.status === 'skipped';
+}
+
+function normalizeTradeLogMode(value: unknown): TradeLogMode {
+  return value === 'imageGallery' ? 'imageGallery' : 'trades';
+}
 
 
 
@@ -265,6 +331,8 @@ const ExpandedModeSizerRow: React.FC<ExpandedModeSizerRowProps> = ({
   visibleColumns,
   sizerRowData,
 }) => {
+  const labelColors = useTradeLabelColors();
+
   if (!isExpandedMode || !isDataLoaded) {
     return null;
   }
@@ -284,11 +352,22 @@ const ExpandedModeSizerRow: React.FC<ExpandedModeSizerRowProps> = ({
               className="trade-setups-cell expanded sizer-cell"
             >
               <div className="expanded-pills sizer-pills">
-                {sizerRowData.setups.map((setup, i) => (
-                  <span key={setupKeys[i]} className="pill pill--setup">
-                    {setup}
-                  </span>
-                ))}
+                {sizerRowData.setups.map((setup, i) => {
+                  const color = getSetupLabelColor(labelColors.setups, setup);
+                  return (
+                    <span
+                      key={setupKeys[i]}
+                      className={`pill pill--setup ${getLabelColorClassName(color)}`}
+                      style={cssVars({
+                        '--journalit-label-color': color,
+                        '--journalit-label-foreground':
+                          getLabelColorForeground(color),
+                      })}
+                    >
+                      {setup}
+                    </span>
+                  );
+                })}
               </div>
             </div>
           );
@@ -318,11 +397,22 @@ const ExpandedModeSizerRow: React.FC<ExpandedModeSizerRowProps> = ({
               className="trade-tags-cell expanded sizer-cell"
             >
               <div className="expanded-pills sizer-pills">
-                {sizerRowData.tags.map((tag, i) => (
-                  <span key={tagKeys[i]} className="pill pill--tag">
-                    {tag}
-                  </span>
-                ))}
+                {sizerRowData.tags.map((tag, i) => {
+                  const color = getTagLabelColor(labelColors.tags, tag);
+                  return (
+                    <span
+                      key={tagKeys[i]}
+                      className={`pill pill--tag ${getLabelColorClassName(color)}`}
+                      style={cssVars({
+                        '--journalit-label-color': color,
+                        '--journalit-label-foreground':
+                          getLabelColorForeground(color),
+                      })}
+                    >
+                      {tag}
+                    </span>
+                  );
+                })}
               </div>
             </div>
           );
@@ -449,6 +539,18 @@ const useTradeLogController = ({ plugin, leaf }: TradeLogProps) => {
       ],
     };
   });
+  const [tradeLogMode, setTradeLogMode] = useState<TradeLogMode>(() =>
+    normalizeTradeLogMode(plugin.uiStateManager.getState().tradeLogMode)
+  );
+  const [imageGalleryControls, setImageGalleryControls] =
+    useState<ImageGalleryControls>(() => {
+      const persisted = plugin.uiStateManager.getState().imageGallery;
+      return {
+        sourceType: normalizeImageGallerySourceType(persisted?.sourceType),
+        size: normalizeImageGallerySize(persisted?.size),
+        sort: normalizeImageGallerySort(persisted?.sort),
+      };
+    });
   const [settingsVersion, setSettingsVersion] = useState(0);
 
   
@@ -472,6 +574,9 @@ const useTradeLogController = ({ plugin, leaf }: TradeLogProps) => {
   const [guideVersion, setGuideVersion] = useState(0);
   const [optionsVersion, setOptionsVersion] = useState(0);
   const [totalTradeCount, setTotalTradeCount] = useState<number | null>(null);
+  const [imageGalleryItemCount, setImageGalleryItemCount] = useState<
+    number | null
+  >(null);
   const emitGuideAction = useGuideAction();
   const wasActiveRef = useRef(isActive);
   const registerEmptyStateTarget = useGuideTarget(
@@ -525,7 +630,37 @@ const useTradeLogController = ({ plugin, leaf }: TradeLogProps) => {
     if (persistedFilters) {
       setFilters(persistedFilters);
     }
-  }, [getPersistedTradeLogFilters]);
+    setTradeLogMode(
+      normalizeTradeLogMode(plugin.uiStateManager.getState().tradeLogMode)
+    );
+  }, [getPersistedTradeLogFilters, plugin.uiStateManager]);
+
+  const handleModeChange = useCallback(
+    (nextMode: TradeLogMode) => {
+      setTradeLogMode(nextMode);
+      if (nextMode === 'imageGallery') {
+        setIsMultiSelectMode(false);
+        setSelectedTrades(new Set());
+      }
+      void plugin.uiStateManager.updateStateImmediate({
+        tradeLogMode: nextMode,
+      });
+    },
+    [plugin.uiStateManager]
+  );
+
+  const handleImageGalleryControlsChange = useCallback(
+    (updates: Partial<ImageGalleryControls>) => {
+      setImageGalleryControls((current) => {
+        const nextControls = { ...current, ...updates };
+        void plugin.uiStateManager.updateStateImmediate({
+          imageGallery: nextControls,
+        });
+        return nextControls;
+      });
+    },
+    [plugin.uiStateManager]
+  );
 
   useEffect(() => {
     const handleCustomFieldsChanged = () => {
@@ -694,7 +829,7 @@ const useTradeLogController = ({ plugin, leaf }: TradeLogProps) => {
         setups: [] as string[],
         mistakes: [] as string[],
         tags: [] as string[],
-        customMultiselects: {} as Record<string, string[]>,
+        customMultiselects: {},
       };
     }
 
@@ -814,6 +949,10 @@ const useTradeLogController = ({ plugin, leaf }: TradeLogProps) => {
     tradeLogServiceRef.current = new TradeLogService(plugin);
   }
   const tradeLogService = tradeLogServiceRef.current;
+  const imageGalleryServiceRef = useRef<ImageGalleryService | null>(null);
+  if (!imageGalleryServiceRef.current) {
+    imageGalleryServiceRef.current = new ImageGalleryService(plugin);
+  }
 
   
   const debouncedFilters = useDebounced(filters, 150);
@@ -880,9 +1019,72 @@ const useTradeLogController = ({ plugin, leaf }: TradeLogProps) => {
     !!plugin.tradeService
   );
 
+  useEventBusMultiple(
+    [
+      'trade:committed',
+      'trade:changed',
+      'missed-trade:changed',
+      'backtest-trade:changed',
+      'review:changed',
+      'settings:changed',
+      'account:changed',
+      'folder-path:changed',
+    ],
+    () => {
+      if (tradeLogMode === 'imageGallery') {
+        return;
+      }
+
+      imageGalleryServiceRef.current?.invalidate();
+      setImageGalleryItemCount(null);
+    }
+  );
+
   const resolvedGuideId = useMemo(() => {
+    void guideVersion;
+
+    const guideService = plugin.viewGuideService;
+
+    const activeSession = guideService?.getSessionForLeaf(
+      leaf,
+      TRADE_LOG_VIEW_TYPE
+    );
+    if (activeSession?.guideId === TRADE_LOG_MAIN_GUIDE_ID) {
+      return TRADE_LOG_MAIN_GUIDE_ID;
+    }
+
+    if (tradeLogMode === 'imageGallery') {
+      if (imageGalleryItemCount === null) {
+        return null;
+      }
+
+      if (imageGalleryItemCount === 0) {
+        return TRADE_LOG_IMAGE_GALLERY_EMPTY_GUIDE_ID;
+      }
+
+      return TRADE_LOG_IMAGE_GALLERY_MAIN_GUIDE_ID;
+    }
+
     if (isDataLoaded) {
       if (nodes.length > 0) {
+        if (guideService) {
+          const mainGuideState = guideService.getPersistedGuideState(
+            TRADE_LOG_MAIN_GUIDE_ID
+          );
+          const whatsNewGuideState = guideService.getPersistedGuideState(
+            TRADE_LOG_IMAGE_GALLERY_MAIN_GUIDE_ID
+          );
+
+          if (
+            mainGuideState &&
+            isTerminalGuideState(mainGuideState) &&
+            mainGuideState.guideVersion < TRADE_LOG_MAIN_GUIDE_VERSION &&
+            !isTerminalGuideState(whatsNewGuideState)
+          ) {
+            return TRADE_LOG_IMAGE_GALLERY_MAIN_GUIDE_ID;
+          }
+        }
+
         return TRADE_LOG_MAIN_GUIDE_ID;
       }
 
@@ -902,7 +1104,16 @@ const useTradeLogController = ({ plugin, leaf }: TradeLogProps) => {
     }
 
     return TRADE_LOG_MAIN_GUIDE_ID;
-  }, [isDataLoaded, nodes.length, totalTradeCount]);
+  }, [
+    guideVersion,
+    imageGalleryItemCount,
+    isDataLoaded,
+    leaf,
+    nodes.length,
+    plugin.viewGuideService,
+    tradeLogMode,
+    totalTradeCount,
+  ]);
 
   useEffect(() => {
     if (!plugin.viewGuideService) {
@@ -943,20 +1154,24 @@ const useTradeLogController = ({ plugin, leaf }: TradeLogProps) => {
   }, [plugin]);
 
   const handleGuideBack = useCallback(({ toStepId }: { toStepId: string }) => {
-    if (
-      toStepId === 'intro' ||
-      toStepId === 'view-selector' ||
-      toStepId === 'filters' ||
-      toStepId === 'filter-modal' ||
-      toStepId === 'sorting'
-    ) {
+    if (toStepId === 'multi-select' || toStepId === 'batch-actions') {
+      setTradeLogMode('trades');
+      setIsMultiSelectMode(toStepId === 'batch-actions');
+      return;
+    }
+
+    if (TRADE_LOG_GUIDE_TRADE_MODE_STEPS.has(toStepId)) {
+      setTradeLogMode('trades');
       setIsMultiSelectMode(false);
       setSelectedTrades(new Set());
       return;
     }
 
-    if (toStepId === 'multi-select' || toStepId === 'batch-actions') {
-      setIsMultiSelectMode(toStepId === 'batch-actions');
+    if (TRADE_LOG_GUIDE_IMAGE_GALLERY_STEPS.has(toStepId)) {
+      setTradeLogMode('imageGallery');
+      setIsMultiSelectMode(false);
+      setSelectedTrades(new Set());
+      return;
     }
   }, []);
 
@@ -972,7 +1187,54 @@ const useTradeLogController = ({ plugin, leaf }: TradeLogProps) => {
 
     const session = guideService.getSessionForLeaf(leaf, TRADE_LOG_VIEW_TYPE);
 
-    if (!session || session.guideId !== TRADE_LOG_MAIN_GUIDE_ID) {
+    if (!session || !TRADE_LOG_IMAGE_GALLERY_GUIDE_IDS.has(session.guideId)) {
+      return;
+    }
+
+    if (TRADE_LOG_GUIDE_TRADE_MODE_STEPS.has(session.currentStepId)) {
+      setTradeLogMode('trades');
+    }
+
+    if (TRADE_LOG_GUIDE_IMAGE_GALLERY_STEPS.has(session.currentStepId)) {
+      setTradeLogMode('imageGallery');
+    }
+  }, [guideVersion, leaf, plugin]);
+
+  useLayoutEffect(() => {
+    void guideVersion;
+
+    const guideService = plugin.viewGuideService;
+    if (!guideService) {
+      return;
+    }
+
+    const session = guideService.getSessionForLeaf(leaf, TRADE_LOG_VIEW_TYPE);
+
+    if (!session || !TRADE_LOG_IMAGE_GALLERY_GUIDE_IDS.has(session.guideId)) {
+      return;
+    }
+
+    if (TRADE_LOG_GUIDE_IMAGE_GALLERY_STEPS.has(session.currentStepId)) {
+      if (isMultiSelectMode) {
+        setIsMultiSelectMode(false);
+      }
+      setSelectedTrades((current) =>
+        current.size > 0 ? new Set<string>() : current
+      );
+    }
+  }, [guideVersion, isMultiSelectMode, leaf, plugin]);
+
+  useLayoutEffect(() => {
+    void guideVersion;
+
+    const guideService = plugin.viewGuideService;
+    if (!guideService) {
+      return;
+    }
+
+    const session = guideService.getSessionForLeaf(leaf, TRADE_LOG_VIEW_TYPE);
+
+    if (!session || !TRADE_LOG_IMAGE_GALLERY_GUIDE_IDS.has(session.guideId)) {
       return;
     }
 
@@ -1133,6 +1395,19 @@ const useTradeLogController = ({ plugin, leaf }: TradeLogProps) => {
   }, [debouncedFilters, loadDataForFilters]);
 
   const syncAndLoadPersistedFilters = useCallback(() => {
+    const persistedState = plugin.uiStateManager.getState();
+    setTradeLogMode(normalizeTradeLogMode(persistedState.tradeLogMode));
+    const persistedImageGallery = persistedState.imageGallery;
+    if (persistedImageGallery) {
+      setImageGalleryControls({
+        sourceType: normalizeImageGallerySourceType(
+          persistedImageGallery.sourceType
+        ),
+        size: normalizeImageGallerySize(persistedImageGallery.size),
+        sort: normalizeImageGallerySort(persistedImageGallery.sort),
+      });
+    }
+
     const persistedFilters = getPersistedTradeLogFilters();
     if (!persistedFilters) {
       void loadData();
@@ -1141,7 +1416,12 @@ const useTradeLogController = ({ plugin, leaf }: TradeLogProps) => {
 
     setFilters(persistedFilters);
     void loadDataForFilters(persistedFilters);
-  }, [getPersistedTradeLogFilters, loadData, loadDataForFilters]);
+  }, [
+    getPersistedTradeLogFilters,
+    loadData,
+    loadDataForFilters,
+    plugin.uiStateManager,
+  ]);
 
   useEffect(() => {
     const filterSyncWindow = window as TradeLogFilterSyncWindow;
@@ -1809,6 +2089,22 @@ const useTradeLogController = ({ plugin, leaf }: TradeLogProps) => {
     [plugin]
   );
 
+  const handleClearImageGalleryFilters = useCallback(() => {
+    setFilters((currentFilters) => {
+      const nextFilters = {
+        ...createTradeLogFilters(),
+        viewLevel: currentFilters.viewLevel,
+      };
+      persistFilters(nextFilters);
+      return nextFilters;
+    });
+    handleImageGalleryControlsChange({ sourceType: 'all' });
+  }, [handleImageGalleryControlsChange, persistFilters]);
+
+  const handleShowAllImageGallerySources = useCallback(() => {
+    handleImageGalleryControlsChange({ sourceType: 'all' });
+  }, [handleImageGalleryControlsChange]);
+
   
   const handleFilterChange = useCallback(
     (newFilters: Partial<TradeLogFilters>) => {
@@ -1922,6 +2218,14 @@ const useTradeLogController = ({ plugin, leaf }: TradeLogProps) => {
     isDataLoaded,
     nodes,
     filters,
+    tradeLogMode,
+    handleModeChange,
+    imageGalleryControls,
+    imageGalleryService: imageGalleryServiceRef.current,
+    handleImageGalleryControlsChange,
+    handleClearImageGalleryFilters,
+    setImageGalleryItemCount,
+    handleShowAllImageGallerySources,
     handleFilterChange,
     handleSettingsChange,
     isMultiSelectMode,
@@ -1951,15 +2255,23 @@ const useTradeLogController = ({ plugin, leaf }: TradeLogProps) => {
   };
 };
 
-const renderTradeLog = (
-  controller: ReturnType<typeof useTradeLogController>
-) => {
+const TradeLogContent: React.FC<{
+  controller: ReturnType<typeof useTradeLogController>;
+}> = ({ controller }) => {
   const {
     plugin,
     leaf,
     isDataLoaded,
     nodes,
     filters,
+    tradeLogMode,
+    handleModeChange,
+    imageGalleryControls,
+    imageGalleryService,
+    handleImageGalleryControlsChange,
+    handleClearImageGalleryFilters,
+    setImageGalleryItemCount,
+    handleShowAllImageGallerySources,
     handleFilterChange,
     handleSettingsChange,
     isMultiSelectMode,
@@ -1989,14 +2301,19 @@ const renderTradeLog = (
   } = controller;
 
   
-  if (isDataLoaded && nodes.length === 0) {
+  if (tradeLogMode === 'trades' && isDataLoaded && nodes.length === 0) {
     return (
       <div className="journalit-trade-log">
         <TradeLogHeader
           app={plugin.app}
           plugin={plugin}
+          imageGalleryService={imageGalleryService}
           leaf={leaf}
           filters={filters}
+          mode={tradeLogMode}
+          onModeChange={handleModeChange}
+          imageGalleryControls={imageGalleryControls}
+          onImageGalleryControlsChange={handleImageGalleryControlsChange}
           onFilterChange={handleFilterChange}
           onSettingsChange={handleSettingsChange}
           isMultiSelectMode={isMultiSelectMode}
@@ -2024,15 +2341,20 @@ const renderTradeLog = (
       <TradeLogHeader
         app={plugin.app}
         plugin={plugin}
+        imageGalleryService={imageGalleryService}
         leaf={leaf}
         filters={filters}
+        mode={tradeLogMode}
+        onModeChange={handleModeChange}
+        imageGalleryControls={imageGalleryControls}
+        onImageGalleryControlsChange={handleImageGalleryControlsChange}
         onFilterChange={handleFilterChange}
         onSettingsChange={handleSettingsChange}
         isMultiSelectMode={isMultiSelectMode}
         onToggleMultiSelectMode={handleToggleMultiSelectMode}
       />
 
-      {isMultiSelectMode && (
+      {tradeLogMode === 'trades' && isMultiSelectMode && (
         <div ref={registerBatchToolbarTarget}>
           <BatchActionToolbar
             app={plugin.app}
@@ -2052,51 +2374,73 @@ const renderTradeLog = (
         </div>
       )}
 
-      <div
-        className={`trade-log-content ${filters.viewLevel === 'trades' ? 'trades-view' : 'tree-view'}`}
-      >
-        {filters.viewLevel === 'trades' ? (
-          <div className="trade-log-hscroll">
-            <div
-              className="trade-log-hscroll-inner"
-              style={cssVars({
-                '--journalit-tradelog-min-width': `${tradesMinWidth}px`,
-              })}
-            >
-              
-              {isDataLoaded && (
-                <TradeLogColumnHeaders
-                  visibleColumns={visibleColumns}
-                  gridTemplate={gridTemplate}
-                  effectiveHeaderScrollbarWidth={effectiveHeaderScrollbarWidth}
-                  effectiveSortConfig={effectiveSortConfig}
-                  registerTableHeadersTarget={registerTableHeadersTarget}
-                  onSort={handleSort}
-                />
-              )}
+      {tradeLogMode === 'imageGallery' ? (
+        <ImageGallery
+          plugin={plugin}
+          service={imageGalleryService}
+          tradeLogFilters={filters}
+          onClearFilters={handleClearImageGalleryFilters}
+          onItemCountChange={setImageGalleryItemCount}
+          onShowAllImages={handleShowAllImageGallerySources}
+          {...imageGalleryControls}
+        />
+      ) : (
+        <div
+          className={`trade-log-content ${filters.viewLevel === 'trades' ? 'trades-view' : 'tree-view'}`}
+        >
+          {filters.viewLevel === 'trades' ? (
+            <div className="trade-log-hscroll">
+              <div
+                className="trade-log-hscroll-inner"
+                style={cssVars({
+                  '--journalit-tradelog-min-width': `${tradesMinWidth}px`,
+                })}
+              >
+                
+                {isDataLoaded && (
+                  <TradeLogColumnHeaders
+                    visibleColumns={visibleColumns}
+                    gridTemplate={gridTemplate}
+                    effectiveHeaderScrollbarWidth={
+                      effectiveHeaderScrollbarWidth
+                    }
+                    effectiveSortConfig={effectiveSortConfig}
+                    registerTableHeadersTarget={registerTableHeadersTarget}
+                    onSort={handleSort}
+                  />
+                )}
 
-              {expandedModeSizerRow}
+                {expandedModeSizerRow}
 
-              {treeContent}
+                {treeContent}
+              </div>
             </div>
-          </div>
-        ) : (
-          <div className="trade-log-hscroll">
-            <div
-              className="trade-log-hscroll-inner"
-              style={cssVars({
-                '--journalit-tradelog-min-width': `${tradesMinWidth}px`,
-              })}
-            >
-              {expandedModeSizerRow}
-              {treeContent}
+          ) : (
+            <div className="trade-log-hscroll">
+              <div
+                className="trade-log-hscroll-inner"
+                style={cssVars({
+                  '--journalit-tradelog-min-width': `${tradesMinWidth}px`,
+                })}
+              >
+                {expandedModeSizerRow}
+                {treeContent}
+              </div>
             </div>
-          </div>
-        )}
-      </div>
+          )}
+        </div>
+      )}
     </div>
   );
 };
 
-export const TradeLog: React.FC<TradeLogProps> = (props) =>
-  renderTradeLog(useTradeLogController(props));
+export const TradeLog: React.FC<TradeLogProps> = (props) => {
+  const controller = useTradeLogController(props);
+  const labelColors = useTradeLabelColorData(props.plugin);
+
+  return (
+    <TradeLabelColorProvider value={labelColors}>
+      <TradeLogContent controller={controller} />
+    </TradeLabelColorProvider>
+  );
+};

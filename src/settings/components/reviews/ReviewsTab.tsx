@@ -1,18 +1,13 @@
 
 
-import React, { useState, useMemo, useEffect, useCallback } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Notice } from 'obsidian';
 import JournalitPlugin from '../../../main';
 import { Select } from '../../../components/core/Select';
 import { ToggleSwitch } from '../../../components/ui';
-import { ReviewTemplateService } from '../../../services/templates/ReviewTemplateService';
-import { TradeTemplateService } from '../../../services/templates/TradeTemplateService';
 import { Accordion } from '../../../components/shared/Accordion';
 import { ItemManager } from '../shared/ItemManager';
-import {
-  eventBus,
-  DefaultTemplateChangedPayload,
-} from '../../../services/events';
+import { eventBus } from '../../../services/events';
 import { t } from '../../../lang/helpers';
 import {
   DEFAULT_SCALPER_DEFAULTS,
@@ -37,117 +32,21 @@ const isDemonTrackerSourceMode = (
 ): value is DemonTrackerSourceMode =>
   value === 'trades' || value === 'session' || value === 'combined';
 
-const getDefaultTemplateEventType = (
-  type: keyof NonNullable<JournalitPlugin['settings']['templates']>
-): DefaultTemplateChangedPayload['type'] => {
-  switch (type) {
-    case 'defaultDrc':
-      return 'drc';
-    case 'defaultWeekly':
-      return 'weekly';
-    case 'defaultMonthly':
-      return 'monthly';
-    case 'defaultQuarterly':
-      return 'quarterly';
-    case 'defaultYearly':
-      return 'yearly';
-    case 'defaultTrade':
-    default:
-      return 'trade';
-  }
-};
-
 function useReviewsTabModel(props: ReviewsTabProps) {
   const { plugin } = props;
-  
-  const reviewTemplateService = useMemo(
-    () => new ReviewTemplateService(plugin),
-    [plugin]
-  );
-  const tradeTemplateService = useMemo(
-    () => new TradeTemplateService(plugin),
-    [plugin]
-  );
 
-  
-  const drcTemplates = useMemo(
-    () => reviewTemplateService.getTemplates('drc'),
-    [reviewTemplateService]
-  );
-  const weeklyTemplates = useMemo(
-    () => reviewTemplateService.getTemplates('weekly'),
-    [reviewTemplateService]
-  );
-  const monthlyTemplates = useMemo(
-    () => reviewTemplateService.getTemplates('monthly'),
-    [reviewTemplateService]
-  );
-  const quarterlyTemplates = useMemo(
-    () => reviewTemplateService.getTemplates('quarterly'),
-    [reviewTemplateService]
-  );
-  const yearlyTemplates = useMemo(
-    () => reviewTemplateService.getTemplates('yearly'),
-    [reviewTemplateService]
-  );
-  const tradeTemplates = useMemo(
-    () => tradeTemplateService.getTemplates(),
-    [tradeTemplateService]
-  );
-
-  
-  const [defaultTradeTemplate, setDefaultTradeTemplate] = useState(
-    plugin.settings.templates?.defaultTrade ||
-      tradeTemplates[0]?.id ||
-      'builtin-trade-standard'
-  );
-  const [defaultDrcTemplate, setDefaultDrcTemplate] = useState(
-    plugin.settings.templates?.defaultDrc ||
-      drcTemplates[0]?.id ||
-      'builtin-drc-standard'
-  );
-  const [defaultWeeklyTemplate, setDefaultWeeklyTemplate] = useState(
-    plugin.settings.templates?.defaultWeekly ||
-      weeklyTemplates[0]?.id ||
-      'builtin-weekly-standard'
-  );
-  const [defaultMonthlyTemplate, setDefaultMonthlyTemplate] = useState(
-    plugin.settings.templates?.defaultMonthly ||
-      monthlyTemplates[0]?.id ||
-      'builtin-monthly-standard'
-  );
-  const [defaultQuarterlyTemplate, setDefaultQuarterlyTemplate] = useState(
-    plugin.settings.templates?.defaultQuarterly ||
-      quarterlyTemplates[0]?.id ||
-      'builtin-quarterly-standard'
-  );
-  const [defaultYearlyTemplate, setDefaultYearlyTemplate] = useState(
-    plugin.settings.templates?.defaultYearly ||
-      yearlyTemplates[0]?.id ||
-      'builtin-yearly-standard'
-  );
-
-  
   const [recurringGoals, setRecurringGoals] = useState<string[]>(
     plugin.settings.drc?.recurringGoals || []
   );
-
-  
   const [weeklyRecurringGoals, setWeeklyRecurringGoals] = useState<string[]>(
     plugin.settings.weekly?.recurringGoals || []
   );
-
-  
   const [checklistItems, setChecklistItems] = useState<string[]>(
     plugin.settings.drc?.checklistItems || []
   );
-
-  
   const [weeklyChecklistItems, setWeeklyChecklistItems] = useState<string[]>(
     plugin.settings.weekly?.checklistItems || []
   );
-
-  
   const [globalAutoCreate, setGlobalAutoCreate] = useState(() => {
     if (plugin.settings.reviews?.globalAutoCreate === undefined) {
       if (!plugin.settings.reviews) {
@@ -159,72 +58,8 @@ function useReviewsTabModel(props: ReviewsTabProps) {
     }
     return plugin.settings.reviews.globalAutoCreate;
   });
-
-  
   const [settingsVersion, setSettingsVersion] = useState(0);
   void settingsVersion; 
-
-  const updateDefaultTemplateState = useCallback(
-    (type: DefaultTemplateChangedPayload['type'], value: string) => {
-      switch (type) {
-        case 'trade':
-          setDefaultTradeTemplate(value);
-          break;
-        case 'drc':
-          setDefaultDrcTemplate(value);
-          break;
-        case 'weekly':
-          setDefaultWeeklyTemplate(value);
-          break;
-        case 'monthly':
-          setDefaultMonthlyTemplate(value);
-          break;
-        case 'quarterly':
-          setDefaultQuarterlyTemplate(value);
-          break;
-        case 'yearly':
-          setDefaultYearlyTemplate(value);
-          break;
-      }
-    },
-    []
-  );
-
-  
-  useEffect(() => {
-    const handleDefaultChange = (payload: DefaultTemplateChangedPayload) => {
-      const value = payload.value ?? '';
-      updateDefaultTemplateState(payload.type, value);
-    };
-
-    return eventBus.subscribe('default-template:changed', handleDefaultChange);
-  }, [updateDefaultTemplateState]);
-
-  
-  const tradeOptions = useMemo(
-    () => tradeTemplates.map((t) => ({ value: t.id, label: t.name })),
-    [tradeTemplates]
-  );
-  const drcOptions = useMemo(
-    () => drcTemplates.map((t) => ({ value: t.id, label: t.name })),
-    [drcTemplates]
-  );
-  const weeklyOptions = useMemo(
-    () => weeklyTemplates.map((t) => ({ value: t.id, label: t.name })),
-    [weeklyTemplates]
-  );
-  const monthlyOptions = useMemo(
-    () => monthlyTemplates.map((t) => ({ value: t.id, label: t.name })),
-    [monthlyTemplates]
-  );
-  const quarterlyOptions = useMemo(
-    () => quarterlyTemplates.map((t) => ({ value: t.id, label: t.name })),
-    [quarterlyTemplates]
-  );
-  const yearlyOptions = useMemo(
-    () => yearlyTemplates.map((t) => ({ value: t.id, label: t.name })),
-    [yearlyTemplates]
-  );
 
   const demonCountModeOptions = useMemo(
     () => [
@@ -262,61 +97,6 @@ function useReviewsTabModel(props: ReviewsTabProps) {
 
   const currentScalperDefaults =
     plugin.settings.reviewV2?.scalperDefaults ?? DEFAULT_SCALPER_DEFAULTS;
-
-  const handleTemplateChange = async (
-    type:
-      | 'defaultTrade'
-      | 'defaultDrc'
-      | 'defaultWeekly'
-      | 'defaultMonthly'
-      | 'defaultQuarterly'
-      | 'defaultYearly',
-    value: string
-  ) => {
-    
-    if (!plugin.settings.templates) {
-      plugin.settings.templates = {
-        defaultTrade: 'builtin-trade-standard',
-        defaultDrc: 'builtin-drc-standard',
-        defaultWeekly: 'builtin-weekly-standard',
-        defaultMonthly: 'builtin-monthly-standard',
-        defaultQuarterly: 'builtin-quarterly-standard',
-        defaultYearly: 'builtin-yearly-standard',
-      };
-    }
-
-    plugin.settings.templates[type] = value;
-    await plugin.saveSettings();
-
-    
-    switch (type) {
-      case 'defaultTrade':
-        setDefaultTradeTemplate(value);
-        break;
-      case 'defaultDrc':
-        setDefaultDrcTemplate(value);
-        break;
-      case 'defaultWeekly':
-        setDefaultWeeklyTemplate(value);
-        break;
-      case 'defaultMonthly':
-        setDefaultMonthlyTemplate(value);
-        break;
-      case 'defaultQuarterly':
-        setDefaultQuarterlyTemplate(value);
-        break;
-      case 'defaultYearly':
-        setDefaultYearlyTemplate(value);
-        break;
-    }
-
-    
-    
-    const eventType = getDefaultTemplateEventType(type);
-    eventBus.publish('default-template:changed', { type: eventType, value });
-
-    new Notice(t('settings.reviews.notice.template-updated'));
-  };
 
   const handleOpenBuilder = () => {
     
@@ -540,15 +320,8 @@ function useReviewsTabModel(props: ReviewsTabProps) {
   return {
     checklistItems,
     currentScalperDefaults,
-    defaultDrcTemplate,
-    defaultMonthlyTemplate,
-    defaultQuarterlyTemplate,
-    defaultTradeTemplate,
-    defaultWeeklyTemplate,
-    defaultYearlyTemplate,
     demonCountModeOptions,
     demonSourceModeOptions,
-    drcOptions,
     globalAutoCreate,
     handleAutoCreateDRCOnNavigationToggle,
     handleAutoCreateMonthlyReviewOnNavigationToggle,
@@ -560,131 +333,18 @@ function useReviewsTabModel(props: ReviewsTabProps) {
     handleScalperAutoApplyToggle,
     handleScalperCountModeChange,
     handleScalperSourceModeChange,
-    handleTemplateChange,
-    monthlyOptions,
     plugin,
-    quarterlyOptions,
     recurringGoals,
     setChecklistItems,
     setRecurringGoals,
     setWeeklyChecklistItems,
     setWeeklyRecurringGoals,
-    tradeOptions,
     weeklyChecklistItems,
-    weeklyOptions,
     weeklyRecurringGoals,
-    yearlyOptions,
   };
 }
 
 type ReviewsTabModel = ReturnType<typeof useReviewsTabModel>;
-
-function DefaultTemplatesSection({
-  defaultTradeTemplate,
-  defaultDrcTemplate,
-  defaultWeeklyTemplate,
-  defaultMonthlyTemplate,
-  defaultQuarterlyTemplate,
-  defaultYearlyTemplate,
-  tradeOptions,
-  drcOptions,
-  weeklyOptions,
-  monthlyOptions,
-  quarterlyOptions,
-  yearlyOptions,
-  handleTemplateChange,
-}: Pick<
-  ReviewsTabModel,
-  | 'defaultTradeTemplate'
-  | 'defaultDrcTemplate'
-  | 'defaultWeeklyTemplate'
-  | 'defaultMonthlyTemplate'
-  | 'defaultQuarterlyTemplate'
-  | 'defaultYearlyTemplate'
-  | 'tradeOptions'
-  | 'drcOptions'
-  | 'weeklyOptions'
-  | 'monthlyOptions'
-  | 'quarterlyOptions'
-  | 'yearlyOptions'
-  | 'handleTemplateChange'
->) {
-  return (
-    <div className="templates-defaults-section">
-      <h4>{t('settings.reviews.default-templates')}</h4>
-      <p className="setting-item-description">
-        {t('settings.reviews.default-templates-desc')}
-      </p>
-
-      {(
-        [
-          [
-            'trade-template',
-            'trade-template-desc',
-            'defaultTrade',
-            defaultTradeTemplate,
-            tradeOptions,
-          ],
-          [
-            'drc-template',
-            'drc-template-desc',
-            'defaultDrc',
-            defaultDrcTemplate,
-            drcOptions,
-          ],
-          [
-            'weekly-template',
-            'weekly-template-desc',
-            'defaultWeekly',
-            defaultWeeklyTemplate,
-            weeklyOptions,
-          ],
-          [
-            'monthly-template',
-            'monthly-template-desc',
-            'defaultMonthly',
-            defaultMonthlyTemplate,
-            monthlyOptions,
-          ],
-          [
-            'quarterly-template',
-            'quarterly-template-desc',
-            'defaultQuarterly',
-            defaultQuarterlyTemplate,
-            quarterlyOptions,
-          ],
-          [
-            'yearly-template',
-            'yearly-template-desc',
-            'defaultYearly',
-            defaultYearlyTemplate,
-            yearlyOptions,
-          ],
-        ] as const
-      ).map(([nameKey, descKey, templateKey, value, options]) => (
-        <div className="setting-item" key={templateKey}>
-          <div className="setting-item-info">
-            <div className="setting-item-name">
-              {t(`settings.reviews.${nameKey}`)}
-            </div>
-            <div className="setting-item-description">
-              {t(`settings.reviews.${descKey}`)}
-            </div>
-          </div>
-          <div className="setting-item-control">
-            <Select
-              value={value}
-              onChange={(nextValue) =>
-                handleTemplateChange(templateKey, nextValue)
-              }
-              options={options}
-            />
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-}
 
 function ReviewListsSection({
   plugin,
@@ -786,15 +446,8 @@ export const ReviewsTab: React.FC<ReviewsTabProps> = (props) => {
   const {
     checklistItems,
     currentScalperDefaults,
-    defaultDrcTemplate,
-    defaultMonthlyTemplate,
-    defaultQuarterlyTemplate,
-    defaultTradeTemplate,
-    defaultWeeklyTemplate,
-    defaultYearlyTemplate,
     demonCountModeOptions,
     demonSourceModeOptions,
-    drcOptions,
     globalAutoCreate,
     handleAutoCreateDRCOnNavigationToggle,
     handleAutoCreateMonthlyReviewOnNavigationToggle,
@@ -806,42 +459,18 @@ export const ReviewsTab: React.FC<ReviewsTabProps> = (props) => {
     handleScalperAutoApplyToggle,
     handleScalperCountModeChange,
     handleScalperSourceModeChange,
-    handleTemplateChange,
-    monthlyOptions,
     plugin,
-    quarterlyOptions,
     recurringGoals,
     setChecklistItems,
     setRecurringGoals,
     setWeeklyChecklistItems,
     setWeeklyRecurringGoals,
-    tradeOptions,
     weeklyChecklistItems,
-    weeklyOptions,
     weeklyRecurringGoals,
-    yearlyOptions,
   } = useReviewsTabModel(props);
 
   return (
     <div className="journalit-settings-tab templates-settings">
-      <DefaultTemplatesSection
-        defaultTradeTemplate={defaultTradeTemplate}
-        defaultDrcTemplate={defaultDrcTemplate}
-        defaultWeeklyTemplate={defaultWeeklyTemplate}
-        defaultMonthlyTemplate={defaultMonthlyTemplate}
-        defaultQuarterlyTemplate={defaultQuarterlyTemplate}
-        defaultYearlyTemplate={defaultYearlyTemplate}
-        tradeOptions={tradeOptions}
-        drcOptions={drcOptions}
-        weeklyOptions={weeklyOptions}
-        monthlyOptions={monthlyOptions}
-        quarterlyOptions={quarterlyOptions}
-        yearlyOptions={yearlyOptions}
-        handleTemplateChange={handleTemplateChange}
-      />
-
-      <hr />
-
       
       <div className="template-builder-section">
         <h4>{t('settings.reviews.template-builder')}</h4>

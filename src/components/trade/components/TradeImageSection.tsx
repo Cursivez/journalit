@@ -3,7 +3,7 @@
 import React from 'react';
 import { t } from '../../../lang/helpers';
 import { ImageCarousel } from '../../image';
-import { EmptyState } from '../../shared/EmptyState';
+import { Image } from '../../shared/icons/ObsidianIcon';
 
 interface TradeImageSectionProps {
   images: string[] | undefined;
@@ -16,17 +16,32 @@ export const TradeImageSection: React.FC<TradeImageSectionProps> = React.memo(
     if (!images || images.length === 0) {
       return (
         <div className="trade-empty-images">
-          <EmptyState
-            message={t('trade.image.no-images')}
-            subMessage={onEditClick ? t('trade.image.click-edit') : undefined}
-            iconSize={40}
-          />
+          <div className="trade-empty-images-icon" aria-hidden="true">
+            <Image size={28} strokeWidth={1.75} />
+          </div>
+          <div className="trade-empty-images-copy">
+            <div className="trade-empty-images-title">
+              {t('trade.image.no-images')}
+            </div>
+            {onEditClick && (
+              <button
+                type="button"
+                className="journalit-button trade-empty-images-action"
+                onClick={onEditClick}
+              >
+                <span>{t('trade.image.click-edit')}</span>
+              </button>
+            )}
+          </div>
         </div>
       );
     }
 
     return (
-      <div className="trade-images-section" data-image-count={images.length}>
+      <div
+        className="trade-images-section journalit-media-carousel-surface"
+        data-image-count={images.length}
+      >
         <ImageCarousel
           images={images}
           altPrefix={t('trade.image.alt-prefix')}

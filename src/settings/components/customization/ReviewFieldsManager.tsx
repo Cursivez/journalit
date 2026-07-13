@@ -809,7 +809,7 @@ export const ReviewFieldsManager: React.FC<ReviewFieldsManagerProps> = ({
                         {t('button.save')}
                       </Button>
                       <Button
-                        variant="outline"
+                        variant="plain"
                         size="sm"
                         onClick={() => void handleCancelGroupEdit()}
                       >

@@ -55,6 +55,7 @@ import { BacktestTradesWidget } from '../reviewV2/widgets/BacktestTradesWidget';
 import { SessionMistakesWidget } from '../reviewV2/widgets/SessionMistakesWidget';
 import { PreviousTradingDayContextWidget } from '../reviewV2/widgets/PreviousTradingDayContextWidget';
 import { WeeklyDRCContextWidget } from '../reviewV2/widgets/WeeklyDRCContextWidget';
+import { TradeReviewWidget } from '../reviewV2/widgets/TradeReviewWidget';
 export const TEMPLATE_PREVIEW_WIDGET_HOVER_STYLES = `
           .journalit-template-builder-container .template-preview-widget {
             position: relative;
@@ -302,6 +303,17 @@ function getWidgetPreviewContent({
             {...commonProps}
             config={widget.config}
             previewData={{ trades, noteType: reviewNoteType }}
+          />
+        </div>
+      );
+
+    case 'trade-review':
+      return (
+        <div className="journalit-widget journalit-trade-review">
+          <TradeReviewWidget
+            {...commonProps}
+            config={widget.config}
+            previewData={{ trades }}
           />
         </div>
       );
@@ -663,6 +675,15 @@ function getWidgetPreviewContent({
             {...commonProps}
             previewData={{ mistakes: sessionMistakes }}
           />
+        </div>
+      );
+
+    case 'session-log':
+      return (
+        <div className="journalit-widget journalit-session-log">
+          <div className="journalit-session-log-empty">
+            {t('session-log.preview')}
+          </div>
         </div>
       );
 

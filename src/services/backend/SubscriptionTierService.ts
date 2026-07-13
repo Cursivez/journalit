@@ -65,17 +65,42 @@ interface SubscriptionTierRefreshResult {
   entitlements?: BackendEntitlementsResponse;
 }
 
+interface ActiveRefresh {
+  authToken: string | null;
+  promise: Promise<SubscriptionTierRefreshResult>;
+}
+
+const activeRefreshes = new WeakMap<JournalitPlugin, ActiveRefresh>();
+
 export class SubscriptionTierService {
   constructor(private plugin: JournalitPlugin) {}
 
   
   async refreshTier(reason: string): Promise<SubscriptionTierRefreshResult> {
+    const authToken = BackendSecretStorage.getAuthToken(this.plugin);
+    const activeRefresh = activeRefreshes.get(this.plugin);
+    if (activeRefresh?.authToken === authToken) {
+      return activeRefresh.promise;
+    }
+
+    const refresh = this.performRefresh(reason, authToken).finally(() => {
+      if (activeRefreshes.get(this.plugin)?.promise === refresh) {
+        activeRefreshes.delete(this.plugin);
+      }
+    });
+    activeRefreshes.set(this.plugin, { authToken, promise: refresh });
+    return refresh;
+  }
+
+  private async performRefresh(
+    reason: string,
+    authToken: string | null
+  ): Promise<SubscriptionTierRefreshResult> {
     const backend = this.plugin.settings.backendIntegration;
     if (!backend) {
       return { status: 'signed_out' };
     }
 
-    const authToken = BackendSecretStorage.getAuthToken(this.plugin);
     if (!authToken) {
       return { status: 'signed_out' };
     }
@@ -105,6 +130,9 @@ export class SubscriptionTierService {
           }
         );
       if (!entitlements) {
+        return { status: 'unverified' };
+      }
+      if (BackendSecretStorage.getAuthToken(this.plugin) !== authToken) {
         return { status: 'unverified' };
       }
 

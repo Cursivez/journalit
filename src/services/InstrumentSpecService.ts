@@ -122,7 +122,7 @@ export class InstrumentSpecService {
             tickValue: futuresData.tickValue,
             name: customInstrument.name,
             exchange: undefined,
-          } as FuturesSpec;
+          };
         }
       } else if (assetType === 'forex' && customInstrument.forexData) {
         const forexData = customInstrument.forexData;
@@ -140,7 +140,7 @@ export class InstrumentSpecService {
             pipValue: forexData.pipValue,
             pipSize: forexData.pipSize,
             name: customInstrument.name,
-          } as ForexSpec;
+          };
         }
       } else if (assetType === 'cfd' && customInstrument.cfdData) {
         const cfdData = customInstrument.cfdData;
@@ -148,7 +148,7 @@ export class InstrumentSpecService {
           return {
             contractSize: cfdData.contractSize,
             name: customInstrument.name,
-          } as CfdSpec;
+          };
         }
       }
     }

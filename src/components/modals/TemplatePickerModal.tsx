@@ -95,7 +95,7 @@ const TemplatePickerContent: React.FC<
           {t('template-picker.empty')}
         </div>
         <div className="template-picker-buttons">
-          <Button variant="secondary" onClick={onModalClose}>
+          <Button variant="plain" onClick={onModalClose}>
             {t('template-picker.close')}
           </Button>
         </div>
@@ -165,7 +165,7 @@ const TemplatePickerContent: React.FC<
         })}
       </div>
       <div className="template-picker-buttons">
-        <Button variant="secondary" onClick={onModalClose}>
+        <Button variant="plain" onClick={onModalClose}>
           {t('template-picker.cancel')}
         </Button>
       </div>

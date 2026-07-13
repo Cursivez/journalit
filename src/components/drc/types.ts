@@ -7,7 +7,7 @@ interface ForecastTimeframeSection {
 }
 
 
-export interface ForecastData {
+interface ForecastData {
   daily: ForecastTimeframeSection;
   fourHour: ForecastTimeframeSection;
   oneHour: ForecastTimeframeSection;

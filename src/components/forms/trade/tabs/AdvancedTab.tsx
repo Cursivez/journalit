@@ -11,6 +11,11 @@ import { CustomFieldsRenderer } from '../fields/CustomFieldRenderer';
 import { FormSection } from '../FormSection';
 import { usePlugin, useService } from '../../../../hooks';
 import { t } from '../../../../lang/helpers';
+import { TradeFormLayoutSettings } from '../../../../settings/types';
+import {
+  hasPopulatedTradeFormLayoutItem,
+  isTradeFormLayoutItemVisible,
+} from '../tradeFormLayoutConfig';
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   Boolean(value) && typeof value === 'object' && !Array.isArray(value);
@@ -35,6 +40,8 @@ interface AdvancedTabProps {
   customFieldValues: CustomFieldValues;
 
   onCustomFieldChange: (fieldId: string, value: unknown) => void;
+  layout: TradeFormLayoutSettings;
+  isEditMode: boolean;
 }
 
 export const AdvancedTab: React.FC<AdvancedTabProps> = ({
@@ -43,6 +50,8 @@ export const AdvancedTab: React.FC<AdvancedTabProps> = ({
   onChange: _onChange,
   customFieldValues,
   onCustomFieldChange,
+  layout,
+  isEditMode,
 }) => {
   const plugin = usePlugin();
   const { service: customFieldsService, status } = useService(
@@ -96,16 +105,24 @@ export const AdvancedTab: React.FC<AdvancedTabProps> = ({
     };
   }, [plugin, customFieldsService, status]); 
 
+  const shouldShowCustomFields =
+    isTradeFormLayoutItemVisible(layout, 'customFields') ||
+    (isEditMode &&
+      hasPopulatedTradeFormLayoutItem({}, 'customFields', customFieldValues)) ||
+    Object.keys(errors.customFields ?? {}).length > 0;
+
   return (
     <div className="trade-form-advanced-tab">
-      <FormSection title={t('form.section.custom-fields')}>
-        <CustomFieldsRenderer
-          fields={customFields}
-          values={customFieldValues}
-          onChange={onCustomFieldChange}
-          errors={errors.customFields || {}}
-        />
-      </FormSection>
+      {shouldShowCustomFields && (
+        <FormSection title={t('form.section.custom-fields')}>
+          <CustomFieldsRenderer
+            fields={customFields}
+            values={customFieldValues}
+            onChange={onCustomFieldChange}
+            errors={errors.customFields || {}}
+          />
+        </FormSection>
+      )}
     </div>
   );
 };

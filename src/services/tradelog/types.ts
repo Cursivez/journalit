@@ -74,6 +74,12 @@ export type ReviewStatusFilter = 'reviewed' | 'unreviewed';
 
 export type DirectionFilter = 'long' | 'short';
 
+export type ImageAnnotationStatusFilter =
+  | 'tagged'
+  | 'untagged'
+  | 'hasNotes'
+  | 'noNotes';
+
 
 
 export const SELECTABLE_TRADE_TYPES_COUNT = 3; 
@@ -92,4 +98,6 @@ export interface TradeLogFilters {
   mistakes: string[];
   reviewStatus: ReviewStatusFilter[];
   customFieldFilters: CustomFieldFilterSelections;
+  imageAnnotationStatus: ImageAnnotationStatusFilter[];
+  imageTags: string[];
 }

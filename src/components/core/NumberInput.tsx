@@ -4,6 +4,81 @@ import React, { useState, useEffect, useRef } from 'react';
 import { NumberInputProps } from './types';
 import { Input } from './Input';
 
+const expandExponentialNumber = (value: number): string => {
+  const stringValue = value.toString();
+  if (!/[eE]/.test(stringValue)) {
+    return stringValue;
+  }
+
+  const [coefficient, exponentPart] = stringValue.split(/[eE]/);
+  const exponent = Number(exponentPart);
+  if (!Number.isInteger(exponent)) {
+    return stringValue;
+  }
+
+  const sign = coefficient.startsWith('-') ? '-' : '';
+  const unsignedCoefficient = sign ? coefficient.slice(1) : coefficient;
+  const [integerPart, decimalPart = ''] = unsignedCoefficient.split('.');
+  const digits = `${integerPart}${decimalPart}`;
+  const decimalIndex = integerPart.length + exponent;
+
+  if (decimalIndex <= 0) {
+    return `${sign}0.${'0'.repeat(Math.abs(decimalIndex))}${digits}`;
+  }
+
+  if (decimalIndex >= digits.length) {
+    return `${sign}${digits}${'0'.repeat(decimalIndex - digits.length)}`;
+  }
+
+  return `${sign}${digits.slice(0, decimalIndex)}.${digits.slice(decimalIndex)}`;
+};
+
+const countDecimalPlaces = (value: string): number => {
+  const decimalIndex = value.indexOf('.');
+  return decimalIndex === -1 ? 0 : value.length - decimalIndex - 1;
+};
+
+const trimTrailingDecimalZeros = (value: string): string =>
+  value.includes('.')
+    ? value.replace(/\.0+$/, '').replace(/(\.\d*?)0+$/, '$1')
+    : value;
+
+const isRoundedPrecisionEquivalent = (
+  value: number,
+  roundedValue: string
+): boolean => {
+  const parsedRoundedValue = Number(roundedValue);
+  return (
+    Number.isFinite(parsedRoundedValue) &&
+    Math.abs(value - parsedRoundedValue) <=
+      Number.EPSILON * Math.max(1, Math.abs(value)) * 10
+  );
+};
+
+export const formatNumberInputValue = (
+  value: number,
+  precision: number,
+  allowDecimal: boolean
+): string => {
+  if (!allowDecimal || precision <= 0) {
+    return value.toString();
+  }
+
+  const expandedValue = expandExponentialNumber(value);
+  const decimalPlaces = countDecimalPlaces(expandedValue);
+  const roundedValue = value.toFixed(precision);
+
+  if (decimalPlaces > precision) {
+    if (isRoundedPrecisionEquivalent(value, roundedValue)) {
+      return roundedValue;
+    }
+
+    return trimTrailingDecimalZeros(expandedValue);
+  }
+
+  return roundedValue;
+};
+
 
 export const NumberInput: React.FC<NumberInputProps> = ({
   value,
@@ -30,10 +105,11 @@ export const NumberInput: React.FC<NumberInputProps> = ({
     if (!isEditingRef.current && value !== undefined && value !== null) {
       
       
-      const formattedValue =
-        allowDecimal && precision > 0
-          ? value.toFixed(precision)
-          : value.toString();
+      const formattedValue = formatNumberInputValue(
+        value,
+        precision,
+        allowDecimal
+      );
 
       setInputValue(formattedValue);
     } else if (
@@ -134,12 +210,9 @@ export const NumberInput: React.FC<NumberInputProps> = ({
         constrainedValue = max;
       }
 
-      
-      if (allowDecimal && precision > 0) {
-        setInputValue(constrainedValue.toFixed(precision));
-      } else {
-        setInputValue(constrainedValue.toString());
-      }
+      setInputValue(
+        formatNumberInputValue(constrainedValue, precision, allowDecimal)
+      );
 
       if (constrainedValue !== numValue) {
         void onChange?.(constrainedValue);
@@ -175,10 +248,11 @@ export const NumberInput: React.FC<NumberInputProps> = ({
         }
 
         
-        const formattedValue =
-          allowDecimal && precision > 0
-            ? constrainedValue.toFixed(precision)
-            : constrainedValue.toString();
+        const formattedValue = formatNumberInputValue(
+          constrainedValue,
+          precision,
+          allowDecimal
+        );
 
         setInputValue(formattedValue);
         void onChange?.(constrainedValue);

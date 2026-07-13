@@ -11,3 +11,4 @@ export { PnLChartWidget } from './PnLChartWidget';
 export { DrawdownChartWidget } from './DrawdownChartWidget';
 export { PreviousTradingDayContextWidget } from './PreviousTradingDayContextWidget';
 export { WeeklyDRCContextWidget } from './WeeklyDRCContextWidget';
+export { SessionLogWidget } from './SessionLogWidget';

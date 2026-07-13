@@ -28,15 +28,12 @@ const ru: Lang = {
     'Открыть калькулятор размера позиции',
 
   
-  'command.force-sync': 'Принудительная синхронизация сделок',
-  'command.cancel-sync': 'Отменить синхронизацию сделок',
 
   
   'command.replay-onboarding': 'Повторить вводное руководство',
   'command.replay-current-view-guide':
     'Повторить гайд для текущего представления',
   'command.open-release-notes': 'Просмотреть примечания к выпуску',
-  'command.repair-trade-identities': 'Исправить идентификаторы сделок',
 
   
   'command.open-layout-builder': 'Открыть конструктор макетов',
@@ -57,6 +54,54 @@ const ru: Lang = {
   'form.tab.basic': 'Основное',
   'form.tab.details': 'Детали',
   'form.tab.advanced': 'Дополнительно',
+
+  
+  
+  
+  'form.import-shortcut.open': 'Открыть импорт сделок',
+  'form.layout.customize': 'Настроить форму',
+  'form.layout.modal-title': 'Настроить форму сделки',
+  'form.layout.settings-title': 'Макет формы сделки',
+  'form.layout.settings-desc':
+    'Выберите, как вы ведете журнал сделок и какие дополнительные блоки показывать в форме.',
+  'form.layout.core-fields-note':
+    'Тип сделки, счет, тип актива, инструмент, направление и обязательные поля цены или P&L остаются видимыми в зависимости от выбранного режима ввода.',
+  'form.layout.input-mode': 'Режим ввода',
+  'form.layout.input-mode-prices': 'Цены',
+  'form.layout.input-mode-pnl-risk': 'P&L + Риск',
+  'form.layout.input-mode-prices-desc':
+    'Записывайте цены входа и выхода, а Journalit рассчитает P&L.',
+  'form.layout.input-mode-pnl-risk-desc':
+    'Записывайте P&L сделки и сумму риска напрямую. Journalit автоматически рассчитает R-множитель.',
+  'form.layout.asset-type-mode': 'Тип актива',
+  'form.layout.asset-type-mode-show': 'Спрашивать',
+  'form.layout.asset-type-mode-fixed': 'Фиксированный',
+  'form.layout.default-asset-type': 'Тип актива по умолчанию',
+  'form.layout.active-fields': 'Видимые блоки',
+  'form.layout.available-fields': 'Скрытые блоки',
+  'form.layout.active-fields-desc':
+    'Перетаскивайте блоки, чтобы изменить порядок. Уберите то, чем не пользуетесь.',
+  'form.layout.available-fields-desc':
+    'Добавляйте скрытые блоки обратно в форму сделки, когда они нужны.',
+  'form.layout.empty-active': 'Нет видимых дополнительных блоков.',
+  'form.layout.all-active': 'Все дополнительные блоки видимы.',
+  'form.layout.add-field-aria': 'Добавить {field} в форму сделки',
+  'form.layout.remove-field-aria': 'Скрыть {field} в форме сделки',
+  'form.layout.saved': 'Макет формы сделки сохранен',
+  'form.layout.item.trading-costs.commission': 'Комиссия',
+  'form.layout.item.import-shortcut': 'Ярлык импорта',
+  'form.layout.item.import-shortcut-desc':
+    'Показывает кнопку внизу формы, открывающую импорт сделок.',
+  'form.layout.item.core-details': 'Основные детали сделки',
+  'form.layout.item.core-details-desc':
+    'Счет, инструмент, направление и входы/выходы остаются первыми.',
+  'form.layout.item.asset-specific': 'Поля для типа актива',
+  'form.layout.item.pnl-preview': 'Предпросмотр P&L',
+  'form.layout.item.realized-pnl-preview': 'Сводка P&L частичного выхода',
+  'form.layout.item.realized-pnl-preview-desc':
+    'Появляется только для открытых сделок после частичных выходов; положение фиксировано.',
+  'form.layout.result-r': 'Результат в R',
+  'form.layout.entry-time': 'Время сделки',
 
   
   
@@ -172,7 +217,19 @@ const ru: Lang = {
     'Введите общую прибыль/убыток напрямую. Комиссия и сборы будут вычтены.',
   'form.entry-exit.calc-pnl':
     'Рассчитать P&L из цен входа/выхода и размеров позиции.',
+  'form.ideal-exit.title': 'Идеальные выходы',
+  'form.ideal-exit.subtitle':
+    'Ретроспективные частичные выходы для анализа исполнения.',
+  'form.ideal-exit.coverage': 'Идеальный размер',
+  'form.ideal-exit.price': 'Идеальная цена',
+  'form.ideal-exit.size': 'Размер',
+  'form.ideal-exit.remove': 'Удалить идеальный выход',
+  'form.ideal-exit.add': '+ Добавить идеальный выход',
+  'form.ideal-exit.copy-actual': 'Копировать фактические выходы',
 
+  'form.ideal-exit.tooltip':
+    'Запишите ретроспективный план выхода, который вы хотели бы исполнить. Поддерживает частичные выходы для анализа.',
+  'form.ideal-exit.empty': 'Идеальных выходов пока нет',
   
   
   
@@ -229,7 +286,7 @@ const ru: Lang = {
   'button.create-daily-review': 'Создать ежедневный обзор',
   'button.apply-settings': 'Применить настройки',
   'button.learn-more': 'Узнать больше',
-  'button.upload-image': 'Загрузить изображение',
+  'button.upload-image': 'Загрузить медиа',
   'button.discord': 'Discord',
 
   
@@ -404,10 +461,6 @@ const ru: Lang = {
   'notice.error.sync-trades': 'Не удалось синхронизировать сделки: {error}',
   'notice.error.open-release-notes':
     'Не удалось открыть примечания к выпуску: {error}',
-  'notice.trade-identity-repair-complete':
-    'Исправление идентификаторов завершено: проверено {scanned}, дополнено {backfilled}, исправлено дубликатов {duplicates}.',
-  'notice.error.repair-trade-identities':
-    'Не удалось исправить идентификаторы сделок: {error}',
   'notice.guide.replay-unavailable':
     'Система гайдов пока недоступна. Попробуйте снова.',
   'notice.guide.no-active-view':
@@ -689,6 +742,15 @@ const ru: Lang = {
   
   'tradelog.root.all-trades': 'Все сделки',
   'tradelog.view.selector.label': 'Вид',
+
+  'form.layout.guide-trigger-label': 'Настроить форму',
+  'trade-form.guide.customization-modal.title':
+    'Настройте форму под свой процесс',
+  'trade-form.guide.customization-modal.description':
+    'Здесь можно показывать, скрывать и менять порядок дополнительных блоков. Оставьте в форме только поля, которыми вы действительно пользуетесь.',
+  'trade-form.guide.finish.title': 'Это функция настройки',
+  'trade-form.guide.finish.description':
+    'Вы можете вернуться к этой кнопке в любой момент, когда форме сделки нужно соответствовать другому процессу ведения журнала.',
   'tradelog.guide.empty.intro.title': 'Welcome to Trade Log',
   'tradelog.guide.empty.intro.description':
     'This page becomes your main place for browsing, sorting, and reviewing trades. Once you add trades, you will also get the full Trade Log tour.',
@@ -941,6 +1003,7 @@ const ru: Lang = {
   'dashboard.metrics.netPnL': 'Чистый P&L',
   'dashboard.metrics.winRate': 'Винрейт',
   'dashboard.metrics.profitFactor': 'Коэффициент прибыли',
+  'dashboard.metrics.sharpeRatio': 'Коэффициент Шарпа',
   'dashboard.metrics.expectancy': 'Матожидание',
   'dashboard.metrics.numTrades': 'Всего сделок',
   'dashboard.metrics.closedTrades': 'Закрытые сделки',
@@ -973,6 +1036,17 @@ const ru: Lang = {
     'Формула: средняя прибыль / средний убыток',
   'dashboard.avgRR.tooltip.no-conversion':
     'Этот payoff-коэффициент рассчитан по смешанным валютам без FX-конвертации и может вводить в заблуждение.',
+  'dashboard.sharpeRatio.tooltip.title': 'Коэффициент Шарпа',
+  'dashboard.sharpeRatio.tooltip.formula':
+    'Формула: средняя чистая P&L закрытых сделок / выборочное стандартное отклонение чистой P&L закрытых сделок. Безрисковая ставка равна 0, значение не годовое.',
+  'dashboard.sharpeRatio.tooltip.coverage':
+    'Рассчитано по {valid} из {total} закрытых сделок',
+  'dashboard.sharpeRatio.tooltip.partial-coverage':
+    'Частичное покрытие: {valid} из {total} закрытых сделок имеют конечную чистую P&L.',
+  'dashboard.sharpeRatio.tooltip.no-data':
+    'Требуются как минимум две закрытые сделки с ненулевой вариативностью P&L.',
+  'dashboard.sharpeRatio.tooltip.no-conversion':
+    'Этот коэффициент Шарпа основан на смешанных валютах без FX-конвертации и может вводить в заблуждение.',
   'dashboard.avgRRRiskBased.tooltip.title': 'Средний RR (на основе R)',
   'dashboard.avgRRRiskBased.tooltip.formula':
     'Формула: средний выигрыш в R / средний убыток в R',
@@ -1168,8 +1242,12 @@ const ru: Lang = {
   
   'settings.tab.general': 'Общие',
   'settings.tab.reviews': 'Обзор',
+  'settings.tab.session-mode': 'Режим сессии',
   'settings.tab.customization': 'Настройка',
+  'settings.tab.journal-setup': 'Настройка журнала',
   'settings.tab.backend': 'Синхронизация сделок',
+  'settings.tab.trading': 'Сделки',
+  'settings.tab.sync': 'Синхронизация',
   'settings.tab.accounts': 'Аккаунт',
 
   
@@ -1574,11 +1652,11 @@ const ru: Lang = {
     'Отображать время в 24-часовом формате (14:30) вместо 12-часового AM/PM (2:30 PM)',
   'settings.general.use-24-hour-time-aria':
     'Использовать 24-часовой формат времени',
-  'settings.general.skip-weekends': 'Пропускать выходные при навигации',
+  'settings.general.skip-weekends': 'Исключать выходные',
   'settings.general.skip-weekends-desc':
-    'Пропускать выходные при навигации между торговыми днями (напр., пятница → понедельник)',
-  'settings.general.skip-weekends-aria': 'Пропускать выходные при навигации',
-  'settings.general.skip-weekends-toggled': 'Пропуск выходных {status}',
+    'Когда включено, Journalit считает выходные неторговыми днями во всем плагине. Отключите это, если вы торгуете или анализируете активность по субботам и воскресеньям.',
+  'settings.general.skip-weekends-aria': 'Исключать выходные в Journalit',
+  'settings.general.skip-weekends-toggled': 'Исключение выходных {status}',
   'settings.general.week-start': 'День начала недели',
   'settings.general.week-start-desc':
     'Выберите, с какого дня начинается торговая неделя. Влияет на недельные обзоры и отчеты.',
@@ -1675,6 +1753,8 @@ const ru: Lang = {
   'settings.general.update-notifications-toggled':
     'Уведомления об обновлениях {status}',
   'settings.general.data-management': 'Управление данными & конфиденциальность',
+  'settings.general.backup-restore-section':
+    'Резервное копирование, восстановление и сброс',
   'settings.general.export-settings': 'Экспорт настроек',
   'settings.general.export-settings-desc':
     'Скачать все настройки плагина в формате JSON для резервного копирования или переноса в другое хранилище',
@@ -1704,6 +1784,9 @@ const ru: Lang = {
   'settings.customization.title': 'Настройка',
   'settings.customization.description':
     'Настройка опций, внешнего вида и поведения плагина Journalit.',
+  'settings.customization.trade-form-layout.description':
+    'Выберите поля и разделы, которые отображаются в форме сделки.',
+  'settings.customization.trade-form-layout.button': 'Настроить макет',
   'settings.customization.tickers-symbols': 'Тикеры/Символы',
   'settings.customization.symbol-mappings': 'Сопоставления символов',
   'settings.customization.account-types': 'Типы счетов',
@@ -2370,17 +2453,17 @@ const ru: Lang = {
   'widget.backtest-trades.empty': 'Нет бэктест-сделок за этот период',
 
   
-  'widget.images.name': 'Изображения',
-  'widget.images.description': 'Карусель изображений с поддержкой загрузки',
+  'widget.images.name': 'Графики и медиа',
+  'widget.images.description': 'Карусель медиа с поддержкой загрузки',
   'widget.images.invalid-context':
     'Виджет изображений требует примечания анализа (тип: drc, weekly-review, monthly-review, quarterly-review или yearly-review)',
-  'widget.images.alt-prefix': 'Изображение анализа',
-  'widget.images.stacked-alt': 'Изображение анализа {index}',
-  'widget.images.open-fullscreen': 'Открыть изображение {index} во весь экран',
-  'widget.images.delete': 'Удалить изображение',
-  'widget.images.empty': 'Нет изображений',
+  'widget.images.alt-prefix': 'Медиа анализа',
+  'widget.images.stacked-alt': 'Медиа анализа {index}',
+  'widget.images.open-fullscreen': 'Открыть медиа {index} во весь экран',
+  'widget.images.delete': 'Удалить медиа',
+  'widget.images.empty': 'Нет медиа',
   'widget.images.placeholder': 'Вставьте URL изображения или путь к файлу...',
-  'widget.images.placeholder-add-more': 'Добавьте больше изображений...',
+  'widget.images.placeholder-add-more': 'Добавьте больше медиа...',
 
   
   'widget.mark-reviewed.name': 'Отметить как проанализировано',
@@ -2597,6 +2680,65 @@ const ru: Lang = {
   
   'widget.trades.name': 'Сделки',
   'widget.trades.description': 'Список сделок с ключевыми деталями',
+  'widget.trade-review.name': 'Разбор сделок',
+  'widget.trade-review.description':
+    'Разбирайте каждую сделку с изображениями, ключевыми данными и настраиваемыми вопросами',
+  'widget.trade-review.status.reviewed': 'Проверено',
+  'widget.trade-review.status.pending': 'Ждет проверки',
+  'widget.trade-review.no-image': 'Нет изображения сделки',
+  'widget.trade-review.open-trade-note': 'Открыть заметку',
+  'widget.trade-review.mark-reviewed': 'Отметить проверенной',
+  'widget.trade-review.loading': 'Загрузка разборов...',
+  'widget.trade-review.no-trades': 'Нет сделок для разбора.',
+  'widget.trade-review.time.open': 'Открыта',
+  'widget.trade-review.fallback-title': 'Сделка {index}',
+  'widget.trade-review.question.win-what-worked': 'Что сработало?',
+  'widget.trade-review.placeholder.win-what-worked':
+    'Что ты хорошо выполнил в этой сделке?',
+  'widget.trade-review.question.win-repeatable': 'Это можно повторить?',
+  'widget.trade-review.placeholder.win-repeatable':
+    'Что сделало эту сделку повторяемой?',
+  'widget.trade-review.question.key-lesson': 'Ключевой урок',
+  'widget.trade-review.placeholder.key-lesson':
+    'Что стоит запомнить из этой сделки?',
+  'widget.trade-review.question.loss-what-went-wrong': 'Что пошло не так?',
+  'widget.trade-review.placeholder.loss-what-went-wrong':
+    'Что привело к этому убытку?',
+  'widget.trade-review.question.loss-valid-or-mistake':
+    'Это был допустимый убыток или ошибка исполнения?',
+  'widget.trade-review.placeholder.loss-valid-or-mistake':
+    'Опиши, был ли процесс верным или ошибку можно было избежать.',
+  'widget.trade-review.question.loss-avoid-next-time':
+    'Чего я избегу в следующий раз?',
+  'widget.trade-review.placeholder.loss-avoid-next-time':
+    'Какое конкретное поведение нужно изменить?',
+  'widget.trade-review.question.be-managed-correctly':
+    'Сделка была правильно сопровождена?',
+  'widget.trade-review.placeholder.be-managed-correctly':
+    'Управление соответствовало твоему плану?',
+  'widget.trade-review.image-alt-prefix': 'Изображение разбора сделки',
+  'widget.trade-review.placeholder.default': 'Запиши свои мысли...',
+  'widget.trade-review.questions-hidden':
+    'Вопросы разбора скрыты для этой сделки.',
+  'widget.trade-review.field.entry': 'Вход',
+  'widget.trade-review.field.exit': 'Выход',
+  'widget.trade-review.field.duration': 'Длительность',
+  'widget.trade-review.field.risk': 'Риск',
+  'widget.trade-review.field.account': 'Счет',
+  'widget.trade-review.field.setup': 'Сетап',
+  'widget.trade-review.field.mistakes': 'Ошибки',
+  'widget.trade-review.field.tags': 'Теги',
+  'widget.trade-review.more-context': 'Больше контекста',
+  'widget.trade-review.field.position-size': 'Размер позиции',
+  'widget.trade-review.field.stop-loss': 'Стоп-лосс',
+  'widget.trade-review.field.take-profit': 'Тейк-профит',
+  'widget.trade-review.field.fees': 'Сборы',
+  'widget.trade-review.field.commission': 'Комиссия',
+  'widget.trade-review.field.mae': 'MAE',
+  'widget.trade-review.field.mfe': 'MFE',
+  'widget.trade-review.field.thesis': 'Тезис',
+  'widget.trade-review.field.notes': 'Заметки',
+  'widget.trade-review.field.custom-fields': 'Пользовательские поля',
   'widget.backtest-trades.name': 'Бэктест-сделки',
   'widget.backtest-trades.description':
     'Список бэктест-сделок за этот период обзора',
@@ -4107,9 +4249,12 @@ const ru: Lang = {
   'home.quick-links.todays-drc': 'Дневной анализ',
   'home.quick-links.weekly-review': 'Недельный анализ',
   'home.quick-links.monthly-review': 'Месячный анализ',
+  'home.quick-links.quarterly-review': 'Обзор за квартал',
+  'home.quick-links.yearly-review': 'Обзор за год',
   'home.quick-links.quick-import': 'Quick Import',
   'home.quick-links.csv-import': 'Trade Import',
   'home.quick-links.layout-builder': 'Построитель макета',
+  'home.quick-links.session-mode': 'Режим сессии',
   'home.quick-links.move-above': 'Переместить быстрые ссылки выше виджетов',
   'home.quick-links.move-below': 'Переместить быстрые ссылки ниже виджетов',
 
@@ -4802,6 +4947,9 @@ const ru: Lang = {
   'metric.profitFactor.name': 'Профит-фактор',
   'metric.profitFactor.description':
     'Отношение валовой прибыли к валовому убытку',
+  'metric.sharpeRatio.name': 'Коэффициент Шарпа',
+  'metric.sharpeRatio.description':
+    'Коэффициент Шарпа на сделку: средняя чистая P&L закрытых сделок, деленная на выборочную волатильность P&L',
   'metric.expectancy.name': 'Математическое ожидание',
   'metric.expectancy.description': 'Средняя сумма прибыли или убытка на сделку',
   'metric.maxDrawdown.name': 'Max Drawdown',
@@ -5068,6 +5216,49 @@ const ru: Lang = {
     'Показываются для прибыльных и безубыточных сделок',
   'template.editor.loss-sections-desc': 'Показываются для убыточных сделок',
   'template.editor.section-visibility': 'Видимость раздела',
+  'template.editor.trade-note-layout': 'Макет заметки сделки',
+  'template.editor.layout-scope': 'Область макета',
+  'template.editor.layout-scope-desc':
+    'Выберите макет по умолчанию или отредактируйте страницу типа актива',
+  'template.editor.all-asset-types': 'Все типы активов',
+  'template.editor.other-asset-types': 'Остальные',
+  'template.editor.default-layout': 'По умолчанию',
+  'template.editor.asset-type-add': 'Тип актива',
+  'template.editor.choose-asset-type': 'Выберите тип актива',
+  'template.editor.remove-asset-layout': 'Удалить макет актива',
+  'template.editor.reset-asset-layout': 'Сбросить макет актива',
+  'template.editor.reset-asset-layout-desc':
+    'Удалить макет для этого актива и использовать Все типы активов',
+  'template.editor.metrics': 'Метрики',
+  'template.editor.metrics-desc':
+    'Показывать карточки входа, выхода, длительности и плана',
+  'template.editor.thesis': 'Тезис',
+  'template.editor.thesis-desc': 'Показывать блок тезиса сделки',
+  'template.editor.metric-cards': 'Карточки метрик',
+  'template.editor.missed-reason': 'Причина пропущенной сделки',
+  'template.editor.missed-reason-desc':
+    'Показывать, почему пропущенная сделка не была открыта',
+  'template.editor.metadata-rows': 'Строки метаданных',
+  'template.editor.accounts': 'Счета',
+  'template.editor.setups': 'Сетапы',
+  'template.editor.mistakes': 'Ошибки',
+  'template.editor.tags': 'Теги',
+  'template.editor.custom-fields': 'Пользовательские поля',
+  'template.editor.custom-fields-desc':
+    'Настроено пользовательских полей: {count}',
+  'template.editor.asset-type-overrides': 'Переопределения типов активов',
+  'template.editor.asset-type': 'Тип актива',
+  'template.editor.asset-type-desc':
+    'Переопределить порядок и видимость секций для класса активов',
+  'template.editor.enable-asset-override':
+    'Включить переопределение {assetType}',
+  'template.editor.asset-order': 'Порядок {assetType}',
+  'template.editor.reviewed-footer': 'Нижний блок проверки',
+  'template.editor.metric.position-size': 'Размер позиции',
+  'template.editor.metric.execution-breakdown': 'Разбивка исполнения',
+  'template.editor.metric.pnl': 'P&L',
+  'template.editor.metric.r-multiple': 'R-множитель',
+  'template.editor.metric.costs': 'Издержки',
   'template.editor.nav-bar': 'Панель навигации',
   'template.editor.nav-bar-desc':
     'Показывать временную шкалу сделок и ссылки на анализы',
@@ -5131,6 +5322,8 @@ const ru: Lang = {
   'common.color.red': 'Красный',
   'common.color.orange': 'Оранжевый',
   'common.color.yellow': 'Жёлтый',
+  'common.color.label': 'Цвет',
+  'common.color.default': 'По умолчанию',
   'common.day.monday': 'Понедельник',
   'common.day.tuesday': 'Вторник',
   'common.day.wednesday': 'Среда',
@@ -5269,6 +5462,18 @@ const ru: Lang = {
   'trade-sync.gate.pro.description':
     'Trade Sync is a Pro feature. Upgrade to continue.',
   'trade-sync.gate.pro.cta': 'Upgrade now',
+  'trade-sync.gate.feature-unavailable.title': 'Функция недоступна',
+  'trade-sync.gate.feature-unavailable.description':
+    'Эта функция синхронизации не включена для вашей учётной записи Pro. Обновите статус или обратитесь в службу поддержки, если проблема не исчезнет.',
+  'trade-sync.trial.title': 'Автоматизируйте свой торговый журнал',
+  'trade-sync.trial.description':
+    'Экономьте до 7 часов в неделю с Journalit Pro.',
+  'trade-sync.trial.benefit.sync': 'Автоматическая синхронизация сделок',
+  'trade-sync.trial.benefit.import': 'Импортируйте сделки откуда угодно',
+  'trade-sync.trial.cta': 'Начните бесплатный 14-дневный пробный период',
+  'trade-sync.trial.existing-subscriber': 'Уже подписаны? Войдите',
+  'trade-sync.trial.eligibility':
+    'Бесплатный пробный период доступен только новым подписчикам.',
 
   
   'premium.gate.cta.activate': 'Activate PRO',
@@ -5284,7 +5489,7 @@ const ru: Lang = {
   'premium.gate.import.state.pro.description':
     'Ваш файл и сопоставления готовы. Импорт входит в PRO.',
   'premium.gate.import.reassurance':
-    'Предпросмотр и сопоставления столбцов останутся без изменений.',
+    'Импортируйте неограниченное количество сделок в ваше хранилище.',
   'premium.gate.trial-hint':
     'Первые подписки PRO включают бесплатный пробный период 14 дней.',
   'premium.gate.offline':
@@ -5397,6 +5602,7 @@ const ru: Lang = {
   'backend.cards.sync.last-sync': 'Последняя синхронизация',
   'backend.cards.sync.total': 'Всего синхронизаций',
   'backend.cards.sync.button': 'Синхронизировать',
+  'backend.cards.sync.cancel': 'Отменить синхронизацию',
   'backend.cards.accounts.title': 'Счета',
   'backend.cards.accounts.linked': 'Привязанные счета',
   'backend.cards.accounts.manage': 'Управление',
@@ -5483,6 +5689,15 @@ const ru: Lang = {
   'trade.details.no-thesis': 'Торговая идея не указана для этой сделки',
   'trade.details.add-thesis':
     "Нажмите 'Редактировать' для добавления торговой идеи",
+  'trade.details.plan': 'Plan',
+  'trade.details.risk': 'risk',
+  'trade.details.execution': 'Execution',
+  'trade.details.show-execution': 'Show breakdown',
+  'trade.details.hide-execution': 'Hide breakdown',
+  'trade.details.entries-summary': '{count} entries',
+  'trade.details.exits-summary': '{count} exits',
+  'trade.details.take-profit-count': '{count} targets',
+  'trade.details.close-percent': '{percent}% close',
   'trade.metadata.account': 'Счёт:',
   'trade.metadata.custom-tags': 'Пользовательские теги:',
   'trade.metadata.setups': 'Сетапы',
@@ -5501,19 +5716,17 @@ const ru: Lang = {
   
   'image.loading': 'Загрузка...',
   'image.load-failed': 'Не удалось загрузить изображение',
-  'image.uploader.paste-title':
-    'Вставить изображение из буфера обмена (Ctrl+V)',
+  'image.uploader.paste-title': 'Вставить медиа из буфера обмена (Ctrl+V)',
   'image.uploader.pasting': 'Вставляется...',
   'image.uploader.paste': 'Вставить',
-  'image.uploader.url-placeholder':
-    'Вставьте URL изображения или путь к файлу...',
-  'image.uploader.url-input-aria': 'Поле ввода URL изображения',
+  'image.uploader.url-placeholder': 'Вставьте URL медиа или путь к файлу...',
+  'image.uploader.url-input-aria': 'Поле ввода URL медиа',
   'image.uploader.file-upload-aria': 'Загрузить файл',
   'image.uploader.paste-clipboard-aria': 'Вставить из буфера обмена',
   'image.uploader.error-invalid-url':
     'Недопустимый URL изображения или путь к файлу. Введите поддерживаемый URL изображения, путь к изображению в vault или ссылку Excalidraw.',
   'image.viewer.alt-default': 'Изображение',
-  'image.viewer.description-default': 'Предпросмотр изображения',
+  'image.viewer.description-default': 'Предпросмотр медиа',
   'image.viewer.error-load': 'Не удалось загрузить изображение',
   'image.viewer.title-fullscreen': 'Нажмите для просмотра на весь экран',
   'image.viewer.zoom-indicator': 'Нажмите или удерживайте для увеличения',
@@ -5526,6 +5739,24 @@ const ru: Lang = {
   'image.viewer.no-images': 'Нет изображений для отображения',
   'image.viewer.thumbnail-alt': 'Миниатюра {n}',
   'image.viewer.close-aria': 'Закрыть полноэкранный режим',
+  'image.viewer.copy-image': 'Копировать изображение',
+  'image.viewer.copy-success': 'Изображение скопировано в буфер обмена',
+  'image.viewer.copied': 'Скопировано',
+  'image.viewer.copy-failed':
+    'Не удалось скопировать изображение в буфер обмена',
+  'image.viewer.copy-unsupported':
+    'Копирование изображений в буфер обмена не поддерживается в этой среде',
+  'media.viewer.video-controls': 'Элементы управления видео',
+  'media.viewer.play-video': 'Воспроизвести видео',
+  'media.viewer.pause-video': 'Приостановить видео',
+  'media.viewer.mute-video': 'Отключить звук видео',
+  'media.viewer.unmute-video': 'Включить звук видео',
+  'media.viewer.volume': 'Громкость',
+  'media.viewer.back-5': 'Назад на 5 секунд',
+  'media.viewer.forward-5': 'Вперёд на 5 секунд',
+  'media.viewer.timeline': 'Шкала времени видео',
+  'media.viewer.open-youtube': 'Открыть на YouTube',
+
   'image.carousel.no-images': 'Нет изображений для отображения',
   'image.carousel.prev': 'Предыдущее изображение',
   'image.carousel.next': 'Следующее изображение',
@@ -5762,6 +5993,11 @@ const ru: Lang = {
   'timeline.status.loss': 'Убыток',
   'timeline.status.breakeven': 'Безубыточность',
   'timeline.aria.trade-status': '{ticker} {tradeType} {tradeNumber} ({status})',
+  'timeline.aria.session-navigation': 'Same-day trade navigation',
+  'timeline.aria.previous-trade': 'Previous trade: {trade}',
+  'timeline.aria.next-trade': 'Next trade: {trade}',
+  'timeline.aria.no-previous-trade': 'No previous trade in this trading day',
+  'timeline.aria.no-next-trade': 'No next trade in this trading day',
   'timeline.title.current-trade':
     'Текущая {tradeType}: {ticker} {tradeType} {tradeNumber}',
   'timeline.title.view-trade':
@@ -5977,6 +6213,7 @@ const ru: Lang = {
   
   
   'missed-trade.reason-title': 'Почему я пропустил эту сделку',
+  'missed-trade.reason-kicker': 'Упущенная возможность',
   'missed-trade.loading-navigation': 'Загрузка навигации...',
 
   
@@ -6204,6 +6441,7 @@ const ru: Lang = {
   'csv.broker-guide.tradingtechnologies.doc-label':
     'Открыть инструкции по экспорту Trading Technologies',
   'trade.metadata.broker-comment': 'Комментарий брокера',
+  'trade.metadata.additional-fields': 'Дополнительные поля',
 
   
   'navigation.title': 'Journalit',
@@ -6228,6 +6466,7 @@ const ru: Lang = {
   'navigation.items.nav-layout-builder': 'Конструктор макетов',
   'navigation.items.nav-quick-import': 'Быстрый импорт',
   'navigation.items.nav-csv-import': 'Trade Import',
+  'navigation.items.nav-session-mode': 'Режим сессии',
   'navigation.items.nav-position-size': 'Калькулятор размера позиции',
   'settings.general.navigation-sidebar': 'Боковая панель навигации',
   'navigation.setting.tab-behavior': 'Поведение вкладок навигации',
@@ -6406,6 +6645,15 @@ const ru: Lang = {
   'templateEditor.widget.review-context-fields.current': 'Current',
   'templateEditor.widget.review-context-fields.empty-values': 'Empty values',
   'templateEditor.widget.review-context-fields.hide-empty': 'Hide empty values',
+  'templateEditor.widget.trade-review.primary-metrics': 'Основные метрики',
+  'templateEditor.widget.trade-review.classification': 'Классификация',
+  'templateEditor.widget.trade-review.more-context': 'Больше контекста',
+  'templateEditor.widget.trade-review.display': 'Отображение',
+  'templateEditor.widget.trade-review.show-images': 'Показывать изображения',
+  'templateEditor.widget.trade-review.fields-none': 'Нет полей',
+  'templateEditor.widget.trade-review.fields-all': 'Все поля',
+  'templateEditor.widget.trade-review.fields-count': '{count} полей',
+  'templateEditor.widget.trade-review.no-fields': 'Нет доступных полей',
   'templateEditor.widget.previous-context-add-section': '+ Add section',
   'templateEditor.widget.previous-context-headings-label':
     'Headings to include',
@@ -6605,6 +6853,8 @@ const ru: Lang = {
     'Проверьте, что все обязательные поля сопоставлены, выбранный формат даты соответствует файлу, а числовые столбцы содержат корректные значения сделки.',
   'trade-import.notice.complete':
     'Trade Import complete: {written} written or updated, {duplicateCount} duplicates, {failedCount} failed',
+  'trade-import.gate.brand-left': 'Сделки',
+  'trade-import.gate.brand-right': 'Импорт',
   'trade-import.gate.sign-in':
     'Sign in is required before uploading broker exports for Trade Import.',
   'trade-import.gate.upgrade':
@@ -6675,6 +6925,535 @@ const ru: Lang = {
     'Matching open trade quantity differs from close-only preview',
   'trade-import.preview.message.no-open-match':
     'No matching open trade found for close-only preview',
+
+  
+  'command.open-setups': 'Открыть сетапы',
+  'setups.create.title': 'Создать сетап',
+  'setups.create.field.name': 'Название сетапа',
+  'setups.create.placeholder.name': 'Импульс открытия',
+  'setups.create.field.status': 'Статус',
+  'setups.create.field.direction': 'Направление',
+  'setups.create.field.color': 'Цвет',
+  'setups.create.field.color-description':
+    'Выберите цвет для обозначения этого сетапа.',
+  'setups.create.direction.any': 'Не указано',
+  'setups.create.direction.long': 'Лонг',
+  'setups.create.direction.short': 'Шорт',
+  'setups.create.direction.both': 'Оба',
+  'setups.create.field.linked-notes': 'Связанные заметки',
+  'setups.create.field.linked-notes-desc':
+    'Прикрепите существующие заметки с описанием плейбука этого сетапа.',
+  'setups.create.linked-notes.empty': 'Связанных заметок пока нет.',
+  'setups.create.linked-notes.add': '+ Связать заметку',
+  'setups.create.linked-notes.remove': 'Удалить связанную заметку',
+  'setups.create.linked-notes.picker-title': 'Выберите заметку плейбука',
+  'setups.create.linked-notes.search': 'Поиск заметок...',
+  'setups.create.linked-notes.no-notes': 'Markdown-заметки не найдены.',
+  'setups.create.button.creating': 'Создание...',
+  'setups.create.button.create': 'Создать сетап',
+  'setups.create.success': 'Сетап "{name}" успешно создан',
+  'setups.create.error.name-required': 'Название сетапа обязательно',
+  'setups.create.error.failed': 'Не удалось создать сетап',
+  'setups.edit.title': 'Редактировать сетап',
+  'setups.edit.button.saving': 'Сохранение...',
+  'setups.edit.button.save': 'Сохранить сетап',
+  'setups.edit.button.rename-and-update': 'Rename and update trades',
+  'setups.edit.rename-warning.title': 'Rename setup and update trades',
+  'setups.edit.rename-warning.message':
+    'Renaming {oldName} to {newName} will update trade notes that use the old setup name.',
+  'setups.edit.delete.button': 'Удалить сетап',
+  'setups.edit.delete.title': 'Удалить сетап',
+  'setups.edit.delete.confirm': 'Подтвердить удаление',
+  'setups.edit.delete.warning':
+    'Удаление сетапа «{name}» навсегда удалит его и уберёт из связанных сделок. Это действие нельзя отменить.',
+  'setups.edit.delete.success': 'Сетап «{name}» удалён',
+  'setups.edit.delete.error': 'Не удалось удалить сетап',
+  'setups.edit.success': 'Сетап "{name}" успешно обновлен',
+  'setups.edit.error.failed': 'Не удалось обновить сетап',
+  'setups.view.compare.empty-submessage':
+    'Choose two setup cards from the overview to build a side-by-side report.',
+  'setups.view.compare.reason.higher.total-r': 'Более высокий общий R',
+  'setups.view.compare.reason.lower.total-r': 'Более низкий общий R',
+  'setups.view.compare.reason.similar.total-r': 'Сопоставимый общий R',
+  'setups.view.advanced.rule-break-count': '{count}',
+  'setups.guide.empty.intro.title': 'Создайте первый сетап',
+  'setups.guide.empty.intro.description':
+    'Сетапы связывают заметки плейбука, правила, скриншоты и сделки, чтобы разбирать торговую идею в контексте.',
+  'setups.guide.create-new-setup.title': 'Создание новых сетапов',
+  'setups.guide.create-new-setup.description':
+    'Используйте Новый сетап, чтобы добавить плейбук. Модальное окно проведёт по деталям, заметкам и правилам.',
+  'setups.guide.detail-intro.title': 'Это страница сетапа',
+  'setups.guide.detail-intro.description':
+    'Страница сетапа фокусирует один плейбук: график результата, контекст, материалы, действия и правила исполнения.',
+  'setups.guide.detail-actions.title': 'Действия сетапа',
+  'setups.guide.detail-actions.description':
+    'Эти кнопки открывают связанные сделки или редактируют детали, заметки, скриншоты и правила плейбука.',
+  'setups.guide.empty.create-setup.title': 'Начните с нового сетапа',
+  'setups.guide.empty.create-setup.description':
+    'Сначала создайте один сетап. После этого руководство продолжит обычный обзор.',
+  'setups.guide.empty.finish.title': 'Завершите создание сетапа',
+  'setups.guide.empty.finish.description':
+    'Заполните детали и сохраните. Руководство Setups продолжится, когда сетап появится.',
+  'setups.guide.intro.title': 'Добро пожаловать в Setups',
+  'setups.guide.intro.description':
+    'Этот вид собирает плейбуки сетапов, связанные сделки, заметки, скриншоты и правила в одном месте.',
+  'setups.guide.view-tabs.title': 'Переключение видов сетапов',
+  'setups.guide.view-tabs.description':
+    'Используйте вкладки для перехода между обзором, парами и сравнением, когда сетапов достаточно.',
+  'setups.guide.overview-chart.title': 'Рейтинг результатов',
+  'setups.guide.overview-chart.description':
+    'График обзора ранжирует сетапы по выбранной метрике. Используйте элементы справа вверху, чтобы сменить метрику или сфокусироваться на отдельных сетапах.',
+  'setups.guide.setup-cards.title': 'Карточки сетапов',
+  'setups.guide.setup-cards.description':
+    'Карточки показывают ключевые метрики, статус, дату последней сделки и небольшой тренд результата.',
+  'setups.guide.open-detail.title': 'Открыть страницу сетапа',
+  'setups.guide.open-detail.description':
+    'Откройте карточку сетапа, чтобы посмотреть отдельную страницу с графиком, контекстом, материалами плейбука и правилами исполнения.',
+  'setups.guide.detail-performance.title': 'Детальная результативность',
+  'setups.guide.detail-performance.description':
+    'Вкладка Performance показывает график и ключевые метрики во времени: P&L, win rate, ожидание и drawdown.',
+  'setups.guide.detail-context.title': 'Контекст сетапа',
+  'setups.guide.detail-context.description':
+    'Панель держит рядом здоровье сетапа, пункты внимания, связанные заметки и скриншоты.',
+  'setups.guide.detail-playbook.title': 'Заметки плейбука',
+  'setups.guide.detail-playbook.description':
+    'Область плейбука показывает связанную заметку. Это может быть Markdown, изображения, Excalidraw или любые материалы.',
+  'setups.guide.detail-rules.title': 'Правила исполнения',
+  'setups.guide.detail-rules.description':
+    'Правила — структурированный чеклист условий, входов, риска и ошибок, которых нужно избегать.',
+  'setups.guide.finish.title': 'Руководство Setups завершено',
+  'setups.guide.finish.description':
+    'Вы увидели основные разделы: Обзор, Пары, Сравнение и страницу отдельного сетапа.',
+  'setups.guide.compare.intro.title': 'Сравнение результатов сетапов',
+  'setups.guide.compare.intro.description':
+    'Теперь сетапов достаточно, чтобы смотреть пары и сравнивать два плейбука рядом.',
+  'setups.guide.pairs-mode.title': 'Открыть пары сетапов',
+  'setups.guide.pairs-mode.description':
+    'Откройте Пары, чтобы увидеть комбинации с достаточным числом общих сделок для сравнения.',
+  'setups.guide.pairs-chart.title': 'Рейтинг пар',
+  'setups.guide.pairs-chart.description':
+    'Режим пар выделяет комбинации, которые могут работать вместе лучше или хуже. Нажмите на столбец, чтобы открыть более глубокие выводы по паре.',
+  'setups.guide.return-overview.title': 'Вернуться к обзору',
+  'setups.guide.return-overview.description':
+    'Вернитесь к обзору перед выбором сетапов для сравнения.',
+  'setups.guide.compare-mode.title': 'Начать сравнение',
+  'setups.guide.compare-mode.description':
+    'Режим сравнения позволяет выбрать две карточки сетапов для просмотра рядом.',
+  'setups.guide.compare-select.title': 'Выберите два сетапа',
+  'setups.guide.compare-select.description':
+    'Выберите две карточки, чтобы открыть страницу сравнения.',
+  'setups.guide.compare-summary.title': 'Это страница сравнения',
+  'setups.guide.compare-summary.description':
+    'Эта страница сравнивает два сетапа рядом. Верхняя строка показывает победителя, преимущество ожидания, уверенность и причины преимущества.',
+  'setups.guide.compare-body.title': 'Строка итогов сравнения',
+  'setups.guide.compare-body.description':
+    'Верхняя строка резюмирует сравнение: победитель, преимущество ожидания, уверенность и причины преимущества.',
+  'setups.guide.compare-details.title': 'Детали сравнения',
+  'setups.guide.compare-details.description':
+    'Используйте таблицу метрик и накопительный график, чтобы понять различия между двумя сетапами.',
+  'setups.guide.detail-execution-gap.title': 'Анализ разрыва исполнения',
+  'setups.guide.detail-execution-gap.description':
+    'Если есть пропущенные сделки или бэктесты, эта вкладка сравнивает исполнение с упущенной или эталонной возможностью.',
+  'setups.guide.back-to-overview.title': 'Назад к карточкам',
+  'setups.guide.back-to-overview.description':
+    'Вернитесь к карточкам после завершения сравнения.',
+  'setups.guide.compare.finish.title': 'Руководство по сравнению завершено',
+  'setups.guide.compare.finish.description':
+    'Вы увидели Пары и Сравнение для совместного анализа нескольких сетапов.',
+  'setups.view.open-as-markdown': 'Open as Markdown',
+  'setups.view.open-as-setup': 'Open as Journalit Setup',
+  'setups.view.overview.mode.aria': 'Overview chart mode',
+  'setups.view.overview.mode.setups': 'Setups',
+  'setups.view.overview.mode.pairs': 'Pairs',
+  'setups.view.pairs.title': 'Setup pairs',
+  'setups.view.pairs.summary-aria': 'Setup pairs summary',
+  'setups.view.pairs.best': 'Best pair',
+  'setups.view.pairs.worst': 'Worst pair',
+  'setups.view.pairs.worst-short': 'Worst',
+  'setups.view.pairs.empty': 'No setup pairs with 5+ trades yet.',
+  'setups.view.pairs.empty-submessage':
+    'Pairs appear after two setups share enough linked trades.',
+  'setups.view.pairs.privacy':
+    'Pair performance is hidden while Privacy Mode is on.',
+  'setups.view.pairs.edge-tooltip':
+    'Edge compares the pair expectancy against the stronger solo setup baseline.',
+  'setups.view.pairs.metric-aria': 'Pair metric',
+  'setups.view.pairs.metric.edge': 'Pair edge',
+  'setups.view.pairs.metric.edge-short': 'edge',
+  'setups.view.pairs.metric.expectancy': 'Pair expectancy',
+  'setups.view.pairs.metric.expectancy-short': 'expectancy',
+  'setups.view.pairs.together': 'Together',
+  'setups.view.pairs.table.setup-pair': 'Setup pair',
+  'setups.view.pairs.equity-curve': 'Equity curve',
+  'setups.view.pairs.equity-caption':
+    'Cumulative pair performance over time. Green = positive contribution, red = drawdown.',
+  'setups.view.pairs.evidence': 'Evidence',
+  'setups.view.pairs.edge-comparison': 'Edge comparison',
+  'setups.view.pairs.edge-caption': 'Combined edge: {edge}',
+  'setups.view.overview.setup-filter.all': 'Setups: All',
+  'setups.view.overview.setup-filter.selected': 'Setups: {count} selected',
+  'setups.view.overview.setup-filter.aria': 'Choose setups to show',
+  'setups.view.overview.setup-filter.select-all': 'Select all',
+  'setups.view.overview.setup-filter.clear': 'Clear',
+  'setups.view.overview.pnl-chart.title': 'Setup P&L Over Time',
+  'setups.view.overview.pnl-chart.dropdown-label': 'Cumulative P&L',
+  'setups.view.overview.pnl-chart.subtitle':
+    'Cumulative P&L from setup-linked trades, split by setup and combined.',
+  'setups.view.overview.pnl-chart.combined': 'All setups',
+  'setups.view.overview.pnl-chart.selected-combined': 'Selected setups',
+  'setups.view.overview.pnl-chart.unassigned': 'Unassigned account',
+  'setups.view.overview.pnl-chart.hidden':
+    'Setup P&L over time is hidden while privacy mode is enabled.',
+  'setups.view.overview.pnl-chart.trade': 'Trade',
+  'setups.view.overview.pnl-chart.start': 'Start',
+  'setups.view.ranking.empty-submessage':
+    'Log trades with setups to start ranking performance.',
+  'setups.view.empty.no-setups-submessage':
+    'Setups collect your playbook notes, rules, trades, and performance in one place.',
+  'setups.view.detail.no-playbook-note':
+    'Link a playbook note to preview it here.',
+  'setups.view.detail.link-playbook-note': 'Link note',
+  'setups.view.detail.change-playbook-note': 'Change note',
+  'setups.view.detail.playbook-note-modal.search': 'Search notes...',
+  'setups.view.detail.playbook-note-modal.empty': 'No matching notes found.',
+  'setups.view.detail.empty-playbook-note':
+    'The linked playbook note is empty.',
+  'setups.view.detail.rules.edit': 'Редактировать правила',
+  'setups.view.detail.rules.add-first': 'Добавить правила',
+  'setups.view.detail.rules.add': 'Добавить правило',
+  'setups.view.detail.rules.editor-subtitle':
+    'Создавайте и редактируйте правила для чеклистов и контроля соблюдения.',
+  'setups.view.detail.rules.empty-title': 'Build the setup playbook',
+  'setups.view.detail.rules.use-template': 'Use template',
+  'setups.view.detail.rules.applying-template': 'Applying template...',
+  'setups.view.detail.rules.add-custom': 'Custom rule',
+  'setups.view.detail.rules.template-error':
+    'Failed to apply playbook template.',
+  'setups.view.detail.rules.template.best-conditions': 'Best Conditions',
+  'setups.view.detail.rules.template.entry-criteria': 'Entry Criteria',
+  'setups.view.detail.rules.template.invalidation': 'Invalidation',
+  'setups.view.detail.rules.template.risk-management': 'Risk / Management',
+  'setups.view.detail.rules.template.avoid-when': 'Avoid When',
+  'setups.view.detail.rules.template.common-mistakes': 'Common Mistakes',
+  'setups.view.detail.rules.template.rule.best-conditions':
+    'Market context supports this setup',
+  'setups.view.detail.rules.template.rule.entry-criteria':
+    'Entry trigger is clearly defined',
+  'setups.view.detail.rules.template.rule.invalidation':
+    'Invalidation is clear before entry',
+  'setups.view.detail.rules.template.rule.risk-management':
+    'Risk is acceptable and target is defined',
+  'setups.view.detail.rules.template.rule.avoid-when':
+    'Avoid conditions are not present',
+  'setups.view.detail.rules.template.rule.common-mistakes':
+    'Known execution mistakes are avoided',
+  'setups.view.detail.rules.field.label': 'Правило',
+  'setups.view.detail.rules.field.description': 'Детали',
+  'setups.view.detail.rules.field.group': 'Группа',
+  'setups.view.detail.rules.move-up': 'Переместить правило вверх',
+  'setups.view.detail.rules.move-down': 'Переместить правило вниз',
+  'setups.view.detail.rules.delete': 'Удалить правило',
+  'setups.view.detail.rules.save-error': 'Не удалось сохранить правила сетапа.',
+  'setups.view.detail.rules.validation-label':
+    'Добавьте название правила или удалите пустое правило перед сохранением.',
+  'setups.view.detail.rules.groups': 'Groups',
+  'setups.view.detail.rules.add-group': 'Add group',
+  'setups.view.detail.rules.new-group': 'New group',
+  'setups.view.detail.rules.validation-group':
+    'Add a group name or remove the blank group before saving.',
+  'setups.view.detail.rules.summary': '{count} правил · {groups} групп',
+  'setups.view.detail.rules.group-summary': '{count} · {required} обязательных',
+  'setups.view.detail.rules.more': '+ ещё {count}',
+  'setups.view.detail.rule.category.context': 'Контекст',
+  'setups.view.detail.rule.category.entry': 'Вход',
+  'setups.view.detail.rule.category.exit': 'Выход',
+  'setups.view.detail.rule.category.risk': 'Риск',
+  'setups.view.detail.rule.category.management': 'Управление',
+  'setups.view.detail.rule.category.invalidation': 'Инвалидация',
+  'setups.view.detail.rule.category.psychology': 'Психология',
+  'setups.view.detail.performance.drawdown': 'Просадка',
+  'setups.view.detail.performance.empty-submessage':
+    'Trades using this setup will appear here once you start logging them.',
+  'setups.view.detail.analysis.performance': 'Performance',
+  'setups.view.detail.analysis.execution-gap': 'Execution Gap',
+  'setups.view.detail.analysis.tabs-aria': 'Setup performance tabs',
+  'setups.view.detail.brief.linked-notes-add': 'Edit linked notes',
+  'setups.view.detail.execution-gap.title': 'Execution Gap',
+  'setups.view.detail.execution-gap.subtitle':
+    'Captured edge vs missed opportunity',
+  'setups.view.detail.execution-gap.live-pnl': 'Live PnL',
+  'setups.view.detail.execution-gap.live-r': 'R в реальной торговле',
+  'setups.view.detail.execution-gap.missed-edge': 'Missed Edge',
+  'setups.view.detail.execution-gap.live-plus-missed': 'Live + Missed',
+  'setups.view.detail.execution-gap.backtest': 'Backtest',
+  'setups.view.detail.execution-gap.gap': 'Gap',
+  'setups.view.detail.execution-gap.opportunities': 'Opportunities',
+  'setups.view.detail.execution-gap.capture-rate': 'Capture Rate',
+  'setups.view.detail.execution-gap.capture-rate-tooltip':
+    'Live P&L ÷ (Live P&L + missed-trade P&L). Shows how much available edge you captured.',
+  'setups.view.detail.execution-gap.average-r-delta': 'Avg R Delta',
+  'setups.view.detail.execution-gap.live-execution': 'Live Execution',
+  'setups.view.detail.execution-gap.backtest-benchmark': 'Backtest Benchmark',
+  'setups.view.detail.execution-gap.hidden':
+    'Execution gap is hidden in privacy mode.',
+  'setups.view.detail.execution-gap.empty':
+    'Log missed trades or backtest trades for this setup to analyze execution gaps.',
+  'setups.view.detail.brief.linked-notes': '{count}',
+  'setups.view.detail.brief.linked-notes-modal.subtitle': '{name}',
+  'setups.view.detail.brief.screenshots': '{count}',
+  'setups.view.detail.brief.no-screenshots': 'Скриншоты пока не связаны.',
+  'setups.view.detail.brief.screenshot-alt': '{index}',
+  'setups.view.detail.brief.screenshot-open': '{index}',
+  'setups.view.detail.brief.count.rules': '{count}',
+  'setups.view.detail.brief.count.notes': '{count}',
+  'setups.view.detail.brief.count.images': '{count}',
+  'setups.view.detail.brief.count.trades': '{count}',
+  'setups.view.detail.brief.more': '{count}',
+  'setups.view.detail.attention.title': 'Needs attention',
+  'setups.view.detail.attention.count': '{count} items',
+  'setups.view.detail.attention.empty': 'No setup issues found.',
+  'setups.view.detail.attention.show-more': '+{count} more',
+  'setups.view.detail.attention.show-less': 'Show less',
+  'setups.view.detail.attention.no-playbook-title': 'Link a playbook note',
+  'setups.view.detail.attention.no-playbook-detail':
+    'Link one source note for context and examples.',
+  'setups.view.detail.attention.no-rules-title': 'Build the execution playbook',
+  'setups.view.detail.attention.no-rules-detail':
+    'Add criteria for entries, invalidation, risk, and mistakes.',
+  'setups.view.detail.attention.no-invalidation-title':
+    'Add invalidation criteria',
+  'setups.view.detail.attention.no-invalidation-detail':
+    'Define when this setup is no longer valid.',
+  'setups.view.detail.attention.no-risk-title': 'Add risk or management rules',
+  'setups.view.detail.attention.no-risk-detail':
+    'Document how this setup should be managed after entry.',
+  'setups.view.detail.attention.no-trades-title': 'No live trades yet',
+  'setups.view.detail.attention.no-trades-detail':
+    'No linked live trade history yet.',
+  'setups.view.detail.attention.no-screenshots-title':
+    'Save example screenshots',
+  'setups.view.detail.attention.no-screenshots-detail':
+    'Attach screenshots to trades for review examples.',
+  'setups.view.detail.attention.stale-title': 'Review recent relevance',
+  'setups.view.detail.attention.stale-detail':
+    'This setup has not been traded in {count} days.',
+  'setups.view.detail.attention.profit-factor-title':
+    'Performance needs review',
+  'setups.view.detail.attention.profit-factor-detail':
+    'Profit factor is below 1.0 across linked trades.',
+  'setups.view.detail.attention.expectancy-title': 'Expectancy is negative',
+  'setups.view.detail.attention.expectancy-detail':
+    'Average linked-trade outcome is below breakeven.',
+  'setups.view.card.open-named': '{name}',
+  'setups.view.card.status.active': 'Stable',
+  'setups.view.card.status.monitor': 'Monitor',
+  'setups.view.card.status.review': 'Review',
+  'setups.view.date.days-ago': '{count}',
+
+  'home.quick-links.setups': 'Сетапы',
+  'validation.setup-resolution-failed': 'Не удалось определить сетап.',
+  'setups.view.action.compare-selected': 'Сравнить выбранные сетапы',
+  'setups.view.action.create': 'Создать сетап',
+  'setups.view.action.new': 'Новый сетап',
+  'setups.view.action.refresh': 'Обновить',
+  'setups.view.action.retry': 'Повторить',
+  'setups.view.error.title': 'Не удалось загрузить сетапы',
+  'setups.view.error.load-failed': 'Не удалось загрузить данные сетапов.',
+  'setups.view.tabs.aria': 'Вкладки представления сетапов',
+  'setups.view.tab.overview': 'Обзор',
+  'setups.view.tab.compare': 'Сравнение',
+  'setups.view.card.select-for-compare': 'Выбрать сетап для сравнения',
+  'setups.view.card.open': 'Открыть сетап',
+  'setups.view.compare.title': 'Сравнение сетапов',
+  'setups.view.compare.subtitle':
+    'Сравните результаты и поведение выбранных сетапов.',
+  'setups.view.compare.select-title': 'Выберите сетапы для сравнения',
+  'setups.view.compare.empty': 'Выберите два сетапа для сравнения.',
+  'setups.view.compare.metrics-title': 'Метрики сравнения',
+  'setups.view.compare.metric': 'Метрика',
+  'setups.view.compare.edge-column': 'Преимущество',
+  'setups.view.compare.edge-label': 'Победитель',
+  'setups.view.compare.edge-hidden': 'Скрыто в режиме приватности',
+  'setups.view.compare.no-clear-edge': 'Нет явного преимущества',
+  'setups.view.compare.expectancy-edge': 'Преимущество по ожиданию',
+  'setups.view.compare.confidence': 'Уверенность',
+  'setups.view.compare.sample': 'Выборка',
+  'setups.view.compare.confidence.high': 'Высокая',
+  'setups.view.compare.confidence.moderate': 'Средняя',
+  'setups.view.compare.confidence.low': 'Низкая',
+  'setups.view.compare.edge-strength.strong': 'Сильное преимущество',
+  'setups.view.compare.edge-strength.clear': 'Явное преимущество',
+  'setups.view.compare.edge-strength.slight': 'Небольшое преимущество',
+  'setups.view.compare.edge-reasons-privacy':
+    'Причины преимущества скрыты в режиме приватности.',
+  'setups.view.compare.reason.higher.net-pnl': 'Более высокий чистый P&L',
+  'setups.view.compare.reason.lower.net-pnl': 'Более низкий чистый P&L',
+  'setups.view.compare.reason.similar.net-pnl': 'Сопоставимый чистый P&L',
+  'setups.view.compare.reason.higher.win-rate': 'Более высокий винрейт',
+  'setups.view.compare.reason.lower.win-rate': 'Более низкий винрейт',
+  'setups.view.compare.reason.similar.win-rate': 'Сопоставимый винрейт',
+  'setups.view.compare.reason.higher.expectancy': 'Более высокое ожидание',
+  'setups.view.compare.reason.lower.expectancy': 'Более низкое ожидание',
+  'setups.view.compare.reason.similar.expectancy': 'Сопоставимое ожидание',
+  'setups.view.compare.reason.higher.profit-factor':
+    'Более высокий профит-фактор',
+  'setups.view.compare.reason.lower.profit-factor':
+    'Более низкий профит-фактор',
+  'setups.view.compare.reason.similar.profit-factor':
+    'Сопоставимый профит-фактор',
+  'setups.view.compare.pnl-bars': 'Рейтинг PnL',
+  'setups.view.compare.cumulative-title': 'Накопительный результат',
+  'setups.view.compare.cumulative-privacy':
+    'Накопительный результат скрыт в режиме приватности.',
+  'setups.view.compare.cumulative-empty':
+    'Нет накопительных данных по сделкам для выбранных сетапов.',
+  'setups.view.advanced.title': 'Расширенная аналитика',
+  'setups.view.advanced.subtitle':
+    'Комбинации сетапов и преимущество плейбука.',
+  'setups.view.advanced.broken-trades': 'Сделки с нарушениями',
+  'setups.view.advanced.no-rule-data': 'Данных по правилам пока нет.',
+  'setups.view.advanced.rule-edge-title': 'Преимущество правил',
+  'setups.view.advanced.no-rule-edge': 'Данных о преимуществе правил пока нет.',
+  'setups.view.advanced.needs-attention': 'Требует внимания',
+  'setups.view.advanced.no-insights': 'Инсайтов пока нет.',
+  'setups.view.advanced.severity.info': 'Информация',
+  'setups.view.advanced.severity.warning': 'Предупреждение',
+  'setups.view.advanced.severity.critical': 'Критично',
+  'setups.view.advanced.combinations-title': 'Комбинации сетапов',
+  'setups.view.advanced.combinations-subtitle':
+    'Найдите пары сетапов, которые хорошо работают вместе.',
+  'setups.view.advanced.top-combinations': 'Лучшие комбинации',
+  'setups.view.advanced.best-pairs': 'Лучшие пары',
+  'setups.view.advanced.no-combinations': 'Комбинаций сетапов пока нет.',
+  'setups.view.advanced.performance-privacy':
+    'Результаты скрыты в режиме приватности.',
+  'setups.view.advanced.insight.no-trades':
+    'К этому сетапу пока не привязаны сделки.',
+  'setups.view.title': 'Сетапы',
+  'setups.view.eyebrow': 'Сетапы',
+  'setups.view.subtitle':
+    'Отслеживайте плейбуки, качество исполнения и результаты сетапов.',
+  'setups.view.summary.aria': 'Сводка по сетапам',
+  'setups.view.summary.total': 'Всего сетапов',
+  'setups.view.summary.active': 'Активные',
+  'setups.view.summary.most-traded': 'Самый торгуемый',
+  'setups.view.summary.needs-review': 'Требуют проверки',
+  'setups.view.summary.best-performer': 'Лучший результат',
+  'setups.view.summary.tested': 'Протестировано',
+  'setups.view.summary.ready': 'Готово',
+  'setups.view.summary.missing-playbooks': 'Нет плейбуков',
+  'setups.view.summary.no-trade-data': 'Нет данных по сделкам',
+  'setups.view.summary.awaiting-trades': 'Ожидают сделок',
+  'setups.view.summary.of-total': 'от общего числа',
+  'setups.view.summary.require-attention': 'требуют внимания',
+  'setups.view.summary.needs-mapping': 'Нужна привязка',
+  'setups.view.summary.all-mapped': 'Всё привязано',
+  'setups.view.summary.previous-unavailable': 'Предыдущие данные недоступны',
+  'setups.view.ranking.title': 'Рейтинг результатов сетапов',
+  'setups.view.ranking.subtitle':
+    'Ранжируйте сетапы по выбранной метрике результата.',
+  'setups.view.ranking.metric-aria': 'Метрика результата',
+  'setups.view.ranking.privacy': 'Рейтинг скрыт в режиме приватности.',
+  'setups.view.ranking.empty': 'Данных о результатах сетапов пока нет.',
+  'setups.view.attention.title': 'Требует внимания',
+  'setups.view.attention.empty': 'Проблем с сетапами не найдено.',
+  'setups.view.attention.incomplete-playbooks': 'Незавершённые плейбуки',
+  'setups.view.attention.incomplete-playbooks-desc':
+    'Некоторым сетапам нужен письменный плейбук.',
+  'setups.view.attention.missing-rules': 'Нет правил',
+  'setups.view.attention.missing-rules-desc':
+    'У некоторых сетапов нет правил чеклиста.',
+  'setups.view.attention.low-sample-size': 'Малый размер выборки',
+  'setups.view.attention.low-sample-size-desc':
+    'Для надёжной оценки нужно больше сделок.',
+  'setups.view.attention.missing-linked-notes': 'Нет связанных заметок',
+  'setups.view.attention.missing-linked-notes-desc':
+    'Свяжите заметки для контекста и примеров.',
+  'setups.view.metric.trade-count': 'Количество сделок',
+  'setups.view.metric.trades': 'сделки',
+  'setups.view.metric.net-pnl': 'Общий P&L',
+  'setups.view.metric.total-pnl': 'Общий PnL',
+  'setups.view.metric.win-rate': 'Винрейт',
+  'setups.view.metric.profit-factor': 'Профит-фактор',
+  'setups.view.metric.last-traded': 'Последняя сделка',
+  'setups.view.metric.expected-value': 'Ожидаемое значение',
+  'setups.view.metric.expectancy-r': 'Ожидание (R)',
+  'setups.view.metric.last-reviewed': 'Последняя проверка',
+  'setups.view.controls.aria': 'Фильтры сетапов',
+  'setups.view.search.placeholder': 'Поиск сетапов…',
+  'setups.view.search.aria': 'Поиск сетапов',
+  'setups.view.status.aria': 'Фильтр по статусу сетапа',
+  'setups.view.status.all': 'Все статусы',
+  'setups.view.status.active': 'Активный',
+  'setups.view.status.testing': 'Тестирование',
+  'setups.view.status.archived': 'В архиве',
+  'setups.view.cards.aria': 'Карточки сетапов',
+  'setups.view.empty.no-setups':
+    'Сетапов пока нет. Создайте первый сетап, чтобы отслеживать плейбуки.',
+  'setups.view.badge.complete': 'Завершено',
+  'setups.view.meta.no-model-category': 'Нет модели/категории',
+  'setups.view.date.never': 'Никогда',
+  'setups.view.date.today': 'Сегодня',
+  'setups.view.date.yesterday': 'Вчера',
+  'setups.view.card.sparkline-aria': 'Мини-график сетапа',
+  'setups.view.completeness.incomplete-playbook': 'Незавершённый плейбук',
+  'setups.view.completeness.no-rules': 'Нет правил',
+  'setups.view.completeness.no-linked-notes': 'Нет связанных заметок',
+  'setups.view.detail.back': 'Назад',
+  'setups.view.detail.no-description': 'Описания пока нет.',
+  'setups.view.detail.action.edit': 'Редактировать сетап',
+  'setups.view.detail.action.view-trades': 'Открыть в журнале сделок',
+  'setups.view.detail.action.archive': 'Архивировать сетап',
+  'setups.view.detail.action.compare': 'Сравнить сетап',
+  'setups.view.detail.metrics-aria': 'Метрики сетапа',
+  'setups.view.detail.playbook': 'Плейбук',
+  'setups.view.detail.no-playbook': 'Плейбук пока не написан.',
+  'setups.view.detail.rules': 'Правила',
+  'setups.view.detail.no-rules': 'Правил пока нет.',
+  'setups.view.detail.rule.required': 'Обязательно',
+  'setups.view.detail.rule.optional': 'Необязательно',
+  'setups.view.detail.linked-notes': 'Связанные заметки',
+  'setups.view.detail.no-linked-notes': 'Связанных заметок пока нет.',
+  'setups.view.detail.performance.aria': 'Результаты сетапа',
+  'setups.view.detail.performance.title': 'Результаты',
+  'setups.view.detail.performance.cumulative-pnl': 'Накопительный PnL',
+  'setups.view.detail.performance.cumulative-r': 'Накопительный R',
+  'setups.view.detail.performance.empty': 'Связанных сделок пока нет.',
+  'setups.view.detail.performance.tooltip-title': 'Результат сделки',
+  'setups.view.detail.scaffold.performance': 'Результаты',
+  'setups.view.detail.scaffold.performance-title': 'Сводка результатов',
+  'setups.view.detail.scaffold.performance-description':
+    'Просмотрите ключевые метрики и динамику результатов.',
+  'setups.view.detail.scaffold.evidence': 'Материалы',
+  'setups.view.detail.scaffold.evidence-title': 'Доска материалов',
+  'setups.view.detail.scaffold.evidence-description':
+    'Скриншоты и связанные примеры для этого сетапа.',
+  'setups.view.detail.scaffold.playbook-title': 'Заметки плейбука',
+  'setups.view.detail.scaffold.playbook-description':
+    'Опишите контекст исполнения, триггеры, сопровождение и инвалидацию.',
+  'setups.view.detail.scaffold.rules': 'Правила',
+  'setups.view.detail.scaffold.rules-description':
+    'Правила в формате чеклиста, определяющие сетап.',
+  'setups.view.detail.brief.health': 'Состояние сетапа',
+  'setups.view.detail.brief.profile': 'Профиль',
+  'setups.view.detail.brief.view-all': 'Показать все',
+  'setups.view.detail.brief.less': 'Показать меньше',
+  'setups.view.detail.brief.linked-notes-modal.title': 'Связанные заметки',
+  'setups.view.detail.brief.status.complete': 'Завершено',
+  'setups.view.detail.brief.status.missing': 'Отсутствует',
+  'setups.view.detail.brief.health.playbook': 'Плейбук',
+  'setups.view.detail.brief.health.rules': 'Правила',
+  'setups.view.detail.brief.health.notes': 'Заметки',
+  'setups.view.detail.brief.health.screenshots': 'Скриншоты',
+  'setups.view.detail.brief.health.trades': 'Сделки',
+  'setups.view.detail.brief.profile.direction': 'Направление',
+  'setups.view.detail.brief.profile.sessions': 'Сессии',
+  'setups.view.detail.brief.profile.timeframes': 'Таймфреймы',
+  'setups.view.detail.brief.profile.tickers': 'Тикеры',
+  'setups.view.detail.brief.direction.long': 'Лонг',
+  'setups.view.detail.brief.direction.short': 'Шорт',
+  'setups.view.detail.brief.direction.both': 'Оба',
+
   'trade-import.restore.title': 'Restore imported trades from backend',
   'trade-import.restore.description':
     'Create missing local notes for backend imported trades in this vault. This does not create duplicate backend trades.',
@@ -6746,6 +7525,440 @@ const ru: Lang = {
     'Could not create local account.',
   'trade-sync.import.notice.restore-failed':
     'Could not restore Trade Import account.',
+  'setups.view.loading': 'Loading setups…',
+  'settings.general.copy-trading-pnl-toggled': 'Copy trading PnL is {status}',
+  'setups.view.trade.unknown-instrument': 'Unknown instrument',
+  'command.open-session-mode': 'Открыть живую сессию',
+  'view.session-mode': 'Живая сессия',
+  'widget.session-log.name': 'Журнал сессии',
+  'widget.session-log.description':
+    'Записывайте заметки исполнения с отметками времени и события сделок.',
+  'session-log.title': 'Журнал живой сессии',
+  'session-log.description':
+    'Фиксируйте, что происходит во время текущей торговой сессии.',
+  'session-log.notice.invalid-timestamp':
+    'Введите корректную отметку времени для журнала сессии.',
+  'session-log.action.auto-time': 'Автовремя',
+  'session-log.action.set-time': 'Задать время',
+  'session-log.placeholder.entry': 'Что вы видите, думаете или чувствуете?',
+  'session-log.composer.tag-label': 'Тег журнала сессии',
+  'session-log.placeholder.entry-short': 'Добавить заметку сессии...',
+  'session-log.action.add-entry': 'Добавить запись с отметкой времени',
+  'session-log.action.add-note': 'Добавить',
+  'session-log.action.hide-composer': 'Скрыть редактор',
+  'session-log.filter.all': 'Все',
+  'session-log.filter.label': 'Фильтровать журнал сессии',
+  'session-log.filter.clear': 'Очистить фильтр',
+  'session-log.timeline.most-recent': 'Самое новое',
+  'session-log.timeline.start': 'Начало сессии',
+  'session-log.empty': 'В журнале сессии пока нет записей.',
+  'session-log.empty-filtered': 'Нет записей, соответствующих этому фильтру.',
+  'session-log.loading': 'Загрузка журнала сессии…',
+  'session-log.lessons.title': 'Lessons learned',
+  'session-log.lessons.title-singular': '1 lesson learned',
+  'session-log.lessons.title-plural': '{count} lessons learned',
+  'session-log.lessons.badge': 'LSN',
+  'session-log.session-group.outside': 'Вне сессий',
+  'session-log.error.no-drc': 'Не удалось определить сегодняшний DRC.',
+  'session-log.trade.entered': 'Вход',
+  'session-log.trade.exited': 'Выход',
+  'session-log.trade.size': 'размер',
+  'session-log.status.unresolved': 'не решено',
+  'session-log.status.unclassified': 'unclassified',
+  'session-log.action.save': 'Сохранить',
+  'session-log.action.cancel': 'Отмена',
+  'session-log.action.resolve': 'Решить',
+  'session-log.action.classify': 'Classify',
+  'session-log.action.edit': 'Изменить',
+  'session-log.action.delete': 'Удалить',
+  'session-log.action.open-trade': 'Открыть сделку',
+  'session-log.preview':
+    'Предпросмотр журнала сессии: заметки с отметками времени и события сделок появятся здесь во время живой сессии.',
+  'session-log.alert.tag-concentration':
+    '{tag} составляет {percentage}% заметок сессии ({count}/{total}). Проверьте возможное отклонение перед продолжением.',
+  'session-mode.description':
+    'Подготовьтесь к сегодняшнему торговому дню и фиксируйте контекст исполнения вживую.',
+  'session-mode.loading': 'Загрузка режима сессии',
+  'session-mode.section.preparation': 'Подготовка',
+  'session-mode.section.timeline': 'Хронология',
+  'session-mode.title.ended': 'Сессия завершена',
+  'session-mode.title.unconfigured': 'Режим сессии',
+  'session-mode.title.break': 'Перерыв сессии',
+  'session-mode.title.live': 'Живая сессия',
+  'session-mode.title.preparation': 'Подготовка к сессии',
+  'session-mode.prep.goals': 'Цели',
+  'session-mode.prep.checklist': 'Чеклист',
+  'session-mode.prep.resources': 'Ресурсы',
+  'session-mode.action.open-drc': 'Открыть сегодняшний DRC',
+  'session-mode.action.open-drc-for-date': 'Открыть DRC за {date}',
+  'session-mode.ended.helper': 'Запишите сделки или просмотрите день.',
+  'session-mode.ended.action.import-trades': 'Импортировать сделки',
+  'session-mode.ended.action.add-trade-manually': 'Добавить сделку вручную',
+  'session-mode.ended.action.open-drc': 'Открыть DRC',
+  'session-mode.ended.stat.trades': 'Сделки',
+  'session-mode.ended.stat.notes': 'Заметки',
+  'session-mode.ended.stat.gate-checks': 'Проверки Gate',
+  'session-mode.waiting.next-session': 'Следующая сессия',
+  'session-mode.waiting.starts-at': '{session} начнется в {time}',
+  'session-mode.waiting.preparation-opens-in':
+    'Подготовка откроется через {remaining}',
+  'session-mode.waiting.open-drc': 'Открыть DRC',
+  'session-mode.break.eyebrow': 'Перерыв сессии',
+  'session-mode.break.reset-before': 'Перезагрузитесь перед {session}',
+  'session-mode.break.reset': 'Перезагрузитесь перед следующей сессией',
+  'session-mode.break.next-session-meta':
+    'Следующая сессия в {time} · осталось {remaining}',
+  'session-mode.break.description':
+    'Отойдите, выпейте воды и очистите мысли перед следующей сессией.',
+  'session-mode.break.open-drc': 'Открыть DRC',
+  'session-mode.countdown.starts-in': 'Начнётся через',
+  'session-mode.countdown.starts-at': '{session} начнётся в {time}',
+  'session-mode.countdown.hours': 'ч',
+  'session-mode.countdown.minutes': 'мин',
+  'session-mode.countdown.seconds': 'сек',
+  'session-mode.phase.preparation': 'Подготовка',
+  'session-mode.phase.live': 'В эфире',
+  'session-mode.phase.waiting': 'Ожидание',
+  'session-mode.phase.break': 'Перерыв',
+  'session-mode.phase.ended': 'Завершено',
+  'session-mode.phase.unconfigured': 'Расписание сессии не настроено',
+  'session-mode.status.preparation':
+    '{session} начинается в {time}. У вас есть {remaining} на подготовку.',
+  'session-mode.status.preparation-generic':
+    'Подготовьтесь к следующей живой торговой сессии.',
+  'session-mode.status.waiting':
+    '{session} начинается в {time}. Подготовка начнется через {remaining}.',
+  'session-mode.status.waiting-generic':
+    'Следующая сессия запланирована, но подготовка еще не началась.',
+  'session-mode.status.live': 'Осталось {remaining} в этой сессии.',
+  'session-mode.status.live-generic': 'Ваша торговая сессия идет сейчас.',
+  'session-mode.status.break':
+    '{session} начинается в {time}. Перерыв длится еще {remaining}.',
+  'session-mode.status.break-generic': 'Вы между торговыми сессиями.',
+  'session-mode.status.ended': 'Настроенные торговые сессии пока завершены.',
+  'session-mode.status.unconfigured':
+    'Настройте окна сессий, чтобы включить фазы подготовки, live, перерыва и завершения. Хронология остается доступной для сегодняшнего DRC.',
+  'session-mode.unconfigured.eyebrow': 'Setup guide',
+  'session-mode.unconfigured.title': 'Задайте торговые часы',
+  'session-mode.unconfigured.description':
+    'Добавьте время, когда вы фактически торгуете, чтобы Режим сессии автоматически переключался между подготовкой, живой сессией, перерывом и завершением.',
+  'session-mode.unconfigured.step.window.title': 'Add a session window',
+  'session-mode.unconfigured.step.window.description':
+    'Set when you usually trade.',
+  'session-mode.unconfigured.step.prep.title': 'Review preparation timing',
+  'session-mode.unconfigured.step.prep.description':
+    'Default: 30 minutes before session start.',
+  'session-mode.unconfigured.step.gate.title': 'Use the Starter Trade Gate',
+  'session-mode.unconfigured.step.gate.description':
+    'Starter IF/THEN checklist is ready.',
+  'session-mode.unconfigured.step.log.title': 'Log notes during live sessions',
+  'session-mode.unconfigured.step.log.description':
+    'Capture notes while trading.',
+  'session-mode.unconfigured.action': 'Настроить Режим сессии',
+  'session-mode.unconfigured.settings-note':
+    'You can change this anytime in Customisation → Session mode.',
+  'session-mode.layout.empty.title': 'Nothing enabled for this phase',
+  'session-mode.layout.empty.description':
+    'Turn modules back on to build this Session Mode phase.',
+  'session-mode.duration.minutes': '{minutes}м',
+  'session-mode.duration.hours': '{hours}ч',
+  'session-mode.duration.hours-minutes': '{hours}ч {minutes}м',
+  'settings.session-mode.title': 'Живая сессия',
+  'settings.session-mode.description':
+    'Настройте окна сессий, подготовку, макет фаз, рабочие процессы Trade Gate и теги журнала сессии.',
+  'settings.session-mode.preparation-lead-time': 'Время подготовки (минуты)',
+  'settings.session-mode.preparation-lead-time-desc':
+    'За сколько до сессии начинается режим подготовки.',
+  'settings.session-mode.windows': 'Окна сессий',
+  'settings.session-mode.windows-desc':
+    'Задайте локальные временные окна, в которые вы действительно торгуете. Они управляют фазами подготовки, live, перерыва и завершения.',
+  'settings.session-mode.add-window': 'Добавить окно сессии',
+  'settings.session-mode.add-window-short': 'Добавить',
+  'settings.session-mode.no-windows':
+    'Окна сессий пока не настроены. Живая хронология всё еще работает, но фазовая подготовка начнется после добавления окна.',
+  'settings.session-mode.layout.title': 'Phase layout',
+  'settings.session-mode.layout.desc':
+    'Choose which modules appear in each Session Mode phase and set their order.',
+  'settings.session-mode.layout.phase-desc':
+    'Toggle modules on or off, then move enabled modules into the order you want.',
+  'settings.session-mode.layout.phase-desc.waiting':
+    'Choose what appears while Session Mode is waiting for the next configured session.',
+  'settings.session-mode.layout.phase-desc.preparation':
+    'Choose what appears during pre-session preparation before trading starts.',
+  'settings.session-mode.layout.phase-desc.live':
+    'Choose what appears while a configured trading session is live.',
+  'settings.session-mode.layout.phase-desc.break':
+    'Choose what appears between configured trading sessions.',
+  'settings.session-mode.layout.phase-desc.ended':
+    'Choose what appears after all configured trading sessions have ended.',
+  'settings.session-mode.layout.reset-phase': 'Reset',
+  'settings.session-mode.layout.move-up': 'Move up',
+  'settings.session-mode.layout.move-down': 'Move down',
+  'settings.session-mode.layout.module.waiting-status': 'Next session card',
+  'settings.session-mode.layout.module.waiting-status-desc':
+    'Shows the next configured session and when preparation opens.',
+  'settings.session-mode.layout.module.preparation-resources': 'Resources',
+  'settings.session-mode.layout.module.preparation-resources-desc':
+    'Shows linked preparation notes and playbooks.',
+  'settings.session-mode.layout.module.preparation-goals': 'Goals',
+  'settings.session-mode.layout.module.preparation-goals-desc':
+    'Shows the DRC goals widget for pre-session focus.',
+  'settings.session-mode.layout.module.preparation-checklist': 'Checklist',
+  'settings.session-mode.layout.module.preparation-checklist-desc':
+    'Shows the DRC checklist widget for pre-session preparation.',
+  'settings.session-mode.layout.module.trade-gate': 'Trade Gate',
+  'settings.session-mode.layout.module.trade-gate-desc':
+    'Runs your configured IF/THEN gate during the live session.',
+  'settings.session-mode.layout.module.timeline': 'Session timeline',
+  'settings.session-mode.layout.module.timeline-desc':
+    'Shows current-session notes and trade timeline entries.',
+  'settings.session-mode.layout.module.break-reset': 'Break reset card',
+  'settings.session-mode.layout.module.break-reset-desc':
+    'Shows the rest, hydration, and next-session reset prompt.',
+  'settings.session-mode.layout.module.ended-actions': 'End-of-session actions',
+  'settings.session-mode.layout.module.ended-actions-desc':
+    'Shows import, manual trade, and DRC actions after sessions end.',
+  'settings.session-mode.layout.module.ended-stats': 'Session stats',
+  'settings.session-mode.layout.module.ended-stats-desc':
+    'Shows trade, note, and gate-check totals for the day.',
+  'settings.session-mode.linked-resources': 'Связанные ресурсы',
+  'settings.session-mode.linked-resources-desc':
+    'Показывает быстрые ссылки на заметки во время подготовки.',
+  'settings.session-mode.linked-resources-count': '{count} linked',
+  'settings.session-mode.linked-resources-hide': 'Hide linked',
+  'settings.session-mode.session-log-tags': 'Теги журнала сессии',
+  'settings.session-mode.session-log-tags-desc':
+    'Настройте теги, доступные в компоновщике режима сессии и журнале сессии DRC.',
+  'settings.session-mode.tag-label-placeholder': 'Название тега',
+  'settings.session-mode.tag-short-label-placeholder': 'Короткая метка',
+  'settings.session-mode.tag-label-example': 'Trade',
+  'settings.session-mode.tag-short-label-example': 'TR',
+  'settings.session-mode.tag-color': 'Цвет тега',
+  'settings.session-mode.tag-requires-resolution': 'Требует решения',
+  'settings.session-mode.tag-lesson': 'Тег урока',
+  'settings.session-mode.tag-requires-resolution-tooltip':
+    'Записи с этим тегом помечаются как требующие последующих действий, пока вы не решите их в журнале сессии. Используйте его для заметок, которые нужно разобрать или обработать после сессии.',
+  'settings.session-mode.tag-lesson-tooltip':
+    'Помечает этот тег как обучающую запись. Заметки с тегом урока могут отображаться как уроки и выделяться как моменты обучения в рабочих процессах журнала сессии.',
+  'settings.session-mode.add-session-log-tag': 'Добавить тег журнала сессии',
+  'settings.session-mode.reset-session-log-tags':
+    'Сбросить теги журнала сессии',
+  'settings.session-mode.tag-color.blue': 'Синий',
+  'settings.session-mode.tag-color.indigo': 'Индиго',
+  'settings.session-mode.tag-color.purple': 'Фиолетовый',
+  'settings.session-mode.tag-color.green': 'Зелёный',
+  'settings.session-mode.tag-color.pink': 'Розовый',
+  'settings.session-mode.tag-color.amber': 'Янтарный',
+  'settings.session-mode.tag-color.red': 'Красный',
+  'settings.session-mode.tag-color.orange': 'Оранжевый',
+
+  'settings.session-mode.search-resource-placeholder':
+    'Искать файлы хранилища для ссылки…',
+  'settings.session-mode.default-session-name': 'Торговая сессия',
+  'settings.session-mode.window-name': 'Название сессии',
+  'settings.session-mode.window-name-placeholder': 'напр. NY AM',
+  'settings.session-mode.window-row-desc':
+    'Используйте локальное время. Ночные окна поддерживаются, если время окончания раньше времени начала.',
+  'settings.session-mode.start-time': 'Время начала',
+  'settings.session-mode.end-time': 'Время окончания',
+  'trade-gate.title': 'Trade Gate',
+  'trade-gate.workflow': 'Сценарий',
+  'trade-gate.action.start': 'Начать проверку сделки',
+  'trade-gate.action.start-short': 'Start',
+  'trade-gate.action.start-another': 'Начать другую',
+  'trade-gate.outcome.green-light': 'Зелёный свет',
+  'trade-gate.outcome.green-light-description': 'Условия выполнены.',
+  'trade-gate.outcome.no-trade': 'Не торговать',
+  'trade-gate.outcome.no-trade-description': 'Условия не выполнены.',
+  'trade-gate.outcome.wait': 'Ждать',
+  'trade-gate.outcome.wait-description':
+    'Сетап не готов. Ждите следующую возможность.',
+  'settings.session-mode.trade-gate.title': 'Сценарии Trade Gate',
+  'settings.session-mode.trade-gate.desc':
+    'Создавайте IF/THEN сценарии решений для проверки входа в реальном времени.',
+  'settings.session-mode.trade-gate.name': 'Название сценария',
+  'settings.session-mode.trade-gate.summary': '{count} узлов',
+  'settings.session-mode.trade-gate.untitled': 'Безымянный сценарий',
+  'settings.session-mode.trade-gate.start-node': 'Начальный вопрос',
+  'settings.session-mode.trade-gate.add-question': 'Добавить вопрос',
+  'settings.session-mode.trade-gate.add-outcome': 'Добавить результат',
+  'settings.session-mode.trade-gate.question': 'Вопрос',
+  'settings.session-mode.trade-gate.outcome': 'Результат',
+  'settings.session-mode.trade-gate.new-question-title': 'Новый вопрос',
+  'settings.session-mode.trade-gate.node-title': 'Название',
+  'settings.session-mode.trade-gate.question-title': 'Название вопроса',
+  'settings.session-mode.trade-gate.result-title': 'Название результата',
+  'settings.session-mode.trade-gate.prompt': 'Вопрос',
+  'settings.session-mode.trade-gate.description': 'Описание',
+  'settings.session-mode.trade-gate.options': 'Варианты',
+  'settings.session-mode.trade-gate.option': 'Вариант',
+  'settings.session-mode.trade-gate.new-option': 'Новый вариант',
+  'settings.session-mode.trade-gate.option-label': 'Метка варианта',
+  'settings.session-mode.trade-gate.option-target': 'Ведёт к',
+  'settings.session-mode.trade-gate.outcome-type': 'Поведение результата',
+  'settings.session-mode.trade-gate.flow-map': 'Карта потока',
+  'settings.session-mode.trade-gate.flow-map-hint':
+    'Нажмите любую карточку или метку пути, чтобы изменить её.',
+  'settings.session-mode.trade-gate.flow-fit': 'Вписать',
+  'settings.session-mode.trade-gate.flow-click-hint':
+    'Нажмите узел или метку пути, чтобы изменить его.',
+  'settings.session-mode.trade-gate.edit-selected':
+    'Редактировать выбранный шаг',
+  'settings.session-mode.trade-gate.results': 'Результаты',
+  'settings.session-mode.trade-gate.no-paths':
+    'Добавьте варианты, чтобы связать этот сценарий.',
+  'settings.session-mode.trade-gate.missing-target': 'Цель отсутствует',
+  'settings.session-mode.trade-gate.repeated-node':
+    'Ссылается обратно на этот узел.',
+  'settings.session-mode.trade-gate.default-name': 'Базовая проверка входа',
+  'settings.session-mode.trade-gate.default.market-regime': 'Рыночный режим',
+  'settings.session-mode.trade-gate.default.market-regime-prompt':
+    'Подходит ли текущий рыночный режим для вашего сетапа?',
+  'settings.session-mode.trade-gate.default.bias':
+    'Смещение старшего таймфрейма',
+  'settings.session-mode.trade-gate.default.bias-prompt':
+    'Совпадает ли смещение старшего таймфрейма с этой идеей сделки?',
+  'settings.session-mode.trade-gate.default.risk': 'Параметры риска',
+  'settings.session-mode.trade-gate.default.risk-prompt':
+    'Определён ли риск и приемлем ли он по вашему плану?',
+  'filter.modal.image.annotation-status': 'Статус аннотаций',
+  'filter.modal.image.status.tagged': 'С тегами',
+  'filter.modal.image.status.untagged': 'Без тегов',
+  'filter.modal.image.status.has-notes': 'Есть заметки',
+  'filter.modal.image.status.no-notes': 'Нет заметок',
+  'filter.modal.image.tags': 'Теги медиа',
+  'setups.view.detail.action.gallery': 'Открыть галерею',
+  'tradelog.mode.label': 'Режим журнала сделок',
+  'tradelog.mode.trades': 'Сделки',
+  'tradelog.mode.image-gallery': 'Галерея',
+  'imageGallery.title': 'Галерея',
+  'imageGallery.subtitle-count': '{count} медиаматериалов',
+  'imageGallery.no-images': 'Медиа пока не найдены.',
+  'imageGallery.no-filter-results': 'Нет медиа для этого фильтра.',
+  'imageGallery.empty.error.title': 'Галерея недоступна',
+  'imageGallery.empty.no-images.title': 'Медиа пока нет',
+  'imageGallery.empty.no-images.description':
+    'Изображения, GIF, видео и ссылки YouTube, прикрепленные к сделкам или заметкам обзора, будут автоматически появляться здесь.',
+  'imageGallery.empty.no-results.title': 'Нет медиа по этим фильтрам',
+  'imageGallery.empty.no-results.description':
+    'Попробуйте очистить активные фильтры или расширить диапазон дат, чтобы вернуть больше элементов галереи.',
+  'imageGallery.empty.no-source.title': 'В этом источнике нет медиа',
+  'imageGallery.empty.no-source.description':
+    'В этом источнике пока нет элементов галереи. Вернитесь ко всем медиа или выберите другой источник.',
+  'imageGallery.empty.action.clear-filters': 'Очистить фильтры',
+  'imageGallery.empty.action.show-all': 'Показать все медиа',
+  'imageGallery.error.load-failed': 'Не удалось загрузить галерею.',
+  'imageGallery.grid-aria': 'Галерея',
+  'imageGallery.open-source': 'Открыть заметку',
+  'imageGallery.image-alt': 'Медиа {source} от {date}',
+  'imageGallery.privacy-blurred': 'Размыто для конфиденциальности',
+  'imageGallery.filter.label': 'Фильтр:',
+  'imageGallery.filter-aria': 'Фильтровать галерею',
+  'imageGallery.filter.all': 'Все',
+  'imageGallery.filter.winners': 'Прибыльные',
+  'imageGallery.filter.losers': 'Убыточные',
+  'imageGallery.filter.breakeven': 'Безубыток',
+  'imageGallery.filter.tagged': 'С тегами',
+  'imageGallery.filter.untagged': 'Без тегов',
+  'imageGallery.filter.reviewed': 'Проверенные',
+  'imageGallery.filter.unreviewed': 'Непроверенные',
+  'imageGallery.sort.label': 'Сортировка:',
+  'imageGallery.sort.newest': 'Сначала новые',
+  'imageGallery.sort.oldest': 'Сначала старые',
+  'imageGallery.sort.best': 'Лучший P&L',
+  'imageGallery.sort.worst': 'Худший P&L',
+  'imageGallery.size-aria': 'Размер медиа галереи',
+  'imageGallery.size.small': 'Маленький',
+  'imageGallery.size.medium': 'Средний',
+  'imageGallery.size.large': 'Большой',
+  'imageGallery.source.label': 'Источник:',
+  'imageGallery.source.all': 'Все медиа',
+  'imageGallery.source.trade': 'Сделки',
+  'imageGallery.source.reviews': 'Обзоры',
+  'imageGallery.source.drc': 'Ежедневные обзоры',
+  'imageGallery.source.weekly': 'Еженедельные обзоры',
+  'imageGallery.source.monthly': 'Ежемесячные обзоры',
+  'imageGallery.source.quarterly': 'Квартальные обзоры',
+  'imageGallery.source.yearly': 'Годовые обзоры',
+  'imageGallery.annotation.tagged': 'С тегами',
+  'imageGallery.annotation.untagged': 'Без тегов',
+  'imageGallery.annotation.reviewed': 'Проверено',
+  'imageGallery.annotation.unreviewed': 'Непроверено',
+  'imageGallery.date.unknown': 'Неизвестная дата',
+  'imageGallery.annotation.tag': 'Тег',
+  'imageGallery.annotation.editor-eyebrow': 'Журнал структуры рынка',
+  'imageGallery.annotation.editor-title': 'Аннотировать медиа',
+  'imageGallery.annotation.tags': 'Теги',
+  'imageGallery.annotation.tags-placeholder': 'Пробой, сетап A+, ошибка',
+  'imageGallery.annotation.notes': 'Заметки',
+  'imageGallery.annotation.notes-placeholder':
+    'Что будущий вы должны извлечь из этого графика?',
+  'imageGallery.annotation.error.save-failed':
+    'Не удалось сохранить аннотацию медиа.',
+  'imageGallery.annotation.saving': 'Сохранение...',
+  'tradelog.guide.image-gallery-empty.intro.title': 'Медиа пока нет',
+  'tradelog.guide.image-gallery-empty.intro.description':
+    'Добавьте изображения, GIF, видео или ссылки YouTube к сделкам или заметкам обзоров, и они автоматически появятся здесь. Когда появятся медиа, Journalit покажет полный гид по галерее: полноэкранный разбор, теги и заметки.',
+  'tradelog.guide.image-gallery-empty.source-sort.description':
+    'Используйте Источник, чтобы выбирать между медиа сделок и медиа из заметок обзоров, когда появятся оба типа. Сортировка изменит порядок галереи, когда медиа будут доступны.',
+  'tradelog.guide.image-gallery-empty.size.description':
+    'Эти кнопки управляют размером будущих карточек медиа — от компактного просмотра до крупных превью.',
+  'tradelog.guide.image-gallery-empty.filters.description':
+    'В расширенных фильтрах уже есть фильтры медиа, которые пригодятся позже, включая статус аннотации и теги медиа.',
+  'tradelog.guide.image-gallery-empty.finish.title':
+    'Добавьте медиа и вернитесь за полным туром по галерее',
+  'tradelog.guide.image-gallery-empty.finish.description':
+    'После прикрепления медиа к сделкам или заметкам обзоров Journalit покажет полный гид по Галерее с полноэкранным разбором, тегами и заметками.',
+  'tradelog.guide.switch-to-gallery.title':
+    'Переключитесь со сделок на Галерею',
+  'tradelog.guide.switch-to-gallery.description':
+    'Используйте этот переключатель режима, чтобы переходить между обычным журналом сделок и Галереей. Нажмите Галерея, чтобы продолжить тур по изображениям, GIF, видео и ссылкам YouTube.',
+  'tradelog.guide.gallery-controls.title': 'Выберите медиа для разбора',
+  'tradelog.guide.gallery-controls.description':
+    'Используйте Источник для выбора сделок или заметок обзора, Сортировку для изменения порядка медиа и кнопки размера для переключения между компактным просмотром и более крупными превью медиа.',
+  'tradelog.guide.gallery-source-sort.title':
+    'Выберите источник и порядок медиа',
+  'tradelog.guide.gallery-source-sort.description':
+    'Используйте Источник, чтобы показать все медиа, вложения сделок или медиа из заметок обзоров. Используйте Сортировку, чтобы сначала смотреть новые, старые, лучшие или худшие сделки.',
+  'tradelog.guide.gallery-size.title': 'Настройте размер превью галереи',
+  'tradelog.guide.gallery-size.description':
+    'Используйте эти кнопки размера, чтобы переключаться между компактным просмотром и более крупными превью графиков без обрезки важных деталей.',
+  'tradelog.guide.gallery-filters.title': 'Фильтруйте галерею из того же места',
+  'tradelog.guide.gallery-filters.description':
+    'Кнопка фильтра по-прежнему открывает Расширенные фильтры. В режиме Галереи там также есть фильтры для медиа, например статус аннотации и теги медиа.',
+  'tradelog.guide.gallery-filter-modal.title':
+    'Фильтры медиа находятся рядом с фильтрами сделок',
+  'tradelog.guide.gallery-filter-modal.description':
+    'Используйте это окно, чтобы сочетать фильтры сделок с фильтрами медиа. Например, отфильтруйте один сетап, а затем покажите только медиа с заметками или конкретным тегом медиа.',
+  'tradelog.guide.gallery-grid.title': 'Откройте медиа для подробного разбора',
+  'tradelog.guide.gallery-grid.description':
+    'Каждая карточка не перекрывает график и одновременно показывает краткий контекст сделки или обзора. Нажмите любую карточку или Далее, чтобы открыть первый видимый элемент на весь экран.',
+  'tradelog.guide.gallery-fullscreen-actions.title':
+    'Аннотируйте медиа в полноэкранном режиме',
+  'tradelog.guide.gallery-fullscreen-actions.description':
+    'Используйте Тег, чтобы добавить теги и заметки уровня медиа, пока элемент достаточно крупный для изучения. Открыть заметку возвращает к исходной сделке или заметке обзора.',
+  'tradelog.guide.gallery-open-annotation.title': 'Откройте панель аннотации',
+  'tradelog.guide.gallery-open-annotation.description':
+    'Нажмите Тег, чтобы аннотировать именно это медиа. Теги и заметки медиа описывают вложение, а не всю сделку.',
+  'tradelog.guide.gallery-annotation-panel.title':
+    'Добавьте теги и заметки медиа',
+  'tradelog.guide.gallery-annotation-panel.description':
+    'Используйте теги медиа для идей по конкретному графику, например снятие ликвидности или ложный пробой, а заметки — для контекста структуры рынка, который нужно запомнить.',
+  'tradelog.guide.gallery-finish.title':
+    'Теперь вы знаете оба режима журнала сделок',
+  'tradelog.guide.gallery-finish.description':
+    'Используйте Сделки, когда нужна таблица и массовые действия. Используйте Галерею, когда хотите разбирать изображения, GIF, видео, ссылки YouTube и аннотации по всему журналу.',
+  'filter.modal.section.image-gallery': 'Галерея',
+  'setups.view.fixture.rule.context-aligned': 'Fixture rule context aligned',
+  'setups.view.fixture.rule.orb.range-defined': 'Rule orb range defined',
+  'setups.view.fixture.rule.orb.volume-expansion': 'Rule orb volume expansion',
+  'setups.view.fixture.rule.orb.market-aligned': 'Rule orb market aligned',
+  'setups.view.fixture.rule.orb.clean-invalidation':
+    'Rule orb clean invalidation',
+  'setups.view.fixture.rule.orb.target-defined': 'Rule orb target defined',
+  'setups.view.detail.brief.profile.model': 'Brief profile model',
+  'setups.view.detail.brief.profile.category': 'Brief profile category',
+  'setups.view.completeness.no-description': 'View completeness no description',
 };
 
 export default ru;

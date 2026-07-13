@@ -52,6 +52,9 @@ import {
 interface BackendIntegrationTabProps {
   plugin: JournalitPlugin;
   embedded?: boolean;
+  contentMode?: 'full' | 'sync' | 'accounts';
+  showStatusCards?: boolean;
+  showErrorPanel?: boolean;
 }
 
 function useBackendIntegrationTabModel(props: BackendIntegrationTabProps) {
@@ -64,6 +67,7 @@ function useBackendIntegrationTabModel(props: BackendIntegrationTabProps) {
   const [connectionState, setConnectionState] = useState({
     status: 'unknown' as 'connected' | 'disconnected' | 'unknown',
     isSyncing: false,
+    isRegistering: false,
     lastSyncResult: null as SyncResponse | null,
     syncStatus: null as SyncStatus | null,
     lastSyncError: null as SupportErrorDetails | null,
@@ -77,6 +81,7 @@ function useBackendIntegrationTabModel(props: BackendIntegrationTabProps) {
 
   const lastAttemptedRef = useRef(0);
   const lastErrorNoticeRef = useRef(0);
+
   const integrationErrorPanelRef = useRef<HTMLDivElement | null>(null);
   const integrationReportCopyTimerRef = useRef<number | null>(null);
 
@@ -138,6 +143,21 @@ function useBackendIntegrationTabModel(props: BackendIntegrationTabProps) {
 
   const [backendService, setBackendService] =
     useState<BackendIntegrationService | null>(null);
+
+  useEffect(() => {
+    if (!backendService) return;
+
+    const updateSyncState = () => {
+      const isSyncing = backendService.getIsSyncing();
+      setConnectionState((prev) =>
+        prev.isSyncing === isSyncing ? prev : { ...prev, isSyncing }
+      );
+    };
+    updateSyncState();
+    const syncStateInterval = window.setInterval(updateSyncState, 250);
+
+    return () => window.clearInterval(syncStateInterval);
+  }, [backendService]);
 
   
   useEffect(() => {
@@ -595,7 +615,7 @@ function useBackendIntegrationTabModel(props: BackendIntegrationTabProps) {
       return;
     }
 
-    setConnectionState((prev) => ({ ...prev, isSyncing: true }));
+    setConnectionState((prev) => ({ ...prev, isRegistering: true }));
     try {
       await updateSetting('userId', autoDetectedUserId);
 
@@ -613,7 +633,7 @@ function useBackendIntegrationTabModel(props: BackendIntegrationTabProps) {
       );
       ErrorHandler.handleError(error, errorContext);
     } finally {
-      setConnectionState((prev) => ({ ...prev, isSyncing: false }));
+      setConnectionState((prev) => ({ ...prev, isRegistering: false }));
     }
   }, [
     backendService,
@@ -639,6 +659,15 @@ function useBackendIntegrationTabModel(props: BackendIntegrationTabProps) {
     }));
     try {
       const result = await backendService.requestForceSync();
+      if (result?.status === 'cancelled') {
+        setConnectionState((prev) => ({
+          ...prev,
+          lastSyncResult: null,
+          lastSyncError: null,
+        }));
+        return;
+      }
+
       if (!result) {
         const message = t('backend.notice.sync-failed', {
           error: t('common.error'),
@@ -685,6 +714,10 @@ function useBackendIntegrationTabModel(props: BackendIntegrationTabProps) {
       setConnectionState((prev) => ({ ...prev, isSyncing: false }));
     }
   }, [backendService, loadSyncStatus, hasAuthToken]);
+
+  const handleCancelSync = useCallback(() => {
+    backendService?.cancelSync();
+  }, [backendService]);
 
   const handleManageAccounts = useCallback(() => {
     setExpandedSection('accounts');
@@ -892,6 +925,7 @@ function useBackendIntegrationTabModel(props: BackendIntegrationTabProps) {
     formatLastSyncTime,
     ftpErrorDetails,
     ftpState,
+    handleCancelSync,
     handleCopyIntegrationReport,
     handleCreateFTPCredentials,
     handleForceSync,
@@ -934,6 +968,7 @@ function BackendAccountsSection({
   handleRelinkMtAccount,
   plugin,
   setAccountLinkErrorDetails,
+  flat = false,
 }: Pick<
   BackendIntegrationTabModel,
   | 'expandedSection'
@@ -947,189 +982,200 @@ function BackendAccountsSection({
   | 'handleRelinkMtAccount'
   | 'plugin'
   | 'setAccountLinkErrorDetails'
->) {
-  return (
+> & { flat?: boolean }) {
+  const content = (
     <>
-      
-      <Accordion
-        title={t('backend.section.accounts.title')}
-        expanded={expandedSection === 'accounts'}
-        onExpandedChange={(expanded) =>
-          setExpandedSection(expanded ? 'accounts' : null)
-        }
-      >
+      <div className="setting-item">
+        <div className="setting-item-info">
+          <div className="setting-item-name">
+            {t('backend.accounts.linked')}
+          </div>
+          <div className="setting-item-description">
+            {t('backend.accounts.linked-desc')}
+            {connectionState.status === 'disconnected' && (
+              <div className="backend-integration__connection-error">
+                <AlertTriangle size={16} />{' '}
+                {t('backend.accounts.server-disconnected')}
+              </div>
+            )}
+          </div>
+        </div>
+        <div className="setting-item-control">
+          <Button
+            variant="secondary"
+            onClick={() => loadAccounts()}
+            disabled={accountState.isLoading || !backendService}
+          >
+            {t('backend.accounts.refresh')}
+          </Button>
+        </div>
+      </div>
+
+      {accountState.isLoading ? (
         <div className="setting-item">
           <div className="setting-item-info">
-            <div className="setting-item-name">
-              {t('backend.accounts.linked')}
+            <div className="backend-integration__loading">
+              <LoadingSpinner
+                message={t('backend.accounts.loading')}
+                size="small"
+              />
             </div>
-            <div className="setting-item-description">
-              {t('backend.accounts.linked-desc')}
-              {connectionState.status === 'disconnected' && (
-                <div className="backend-integration__connection-error">
-                  <AlertTriangle size={16} />{' '}
-                  {t('backend.accounts.server-disconnected')}
-                </div>
-              )}
-            </div>
-          </div>
-          <div className="setting-item-control">
-            <Button
-              variant="secondary"
-              onClick={() => loadAccounts()}
-              disabled={accountState.isLoading || !backendService}
-            >
-              {t('backend.accounts.refresh')}
-            </Button>
           </div>
         </div>
-
-        {accountState.isLoading ? (
-          <div className="setting-item">
-            <div className="setting-item-info">
-              <div className="backend-integration__loading">
-                <LoadingSpinner
-                  message={t('backend.accounts.loading')}
-                  size="small"
-                />
-              </div>
+      ) : accountState.accounts.length === 0 ? (
+        <div className="setting-item">
+          <div className="setting-item-info">
+            <div className="setting-item-description">
+              {t('backend.accounts.no-accounts')}
+              {connectionState.status === 'connected'
+                ? t('backend.accounts.sync-to-detect')
+                : t('backend.accounts.connect-to-see')}
             </div>
           </div>
-        ) : accountState.accounts.length === 0 ? (
-          <div className="setting-item">
-            <div className="setting-item-info">
-              <div className="setting-item-description">
-                {t('backend.accounts.no-accounts')}
-                {connectionState.status === 'connected'
-                  ? t('backend.accounts.sync-to-detect')
-                  : t('backend.accounts.connect-to-see')}
-              </div>
-            </div>
-          </div>
-        ) : (
-          <div className="mt-accounts-list">
-            {accountState.accounts.map((account) => (
-              <div key={account.accountId} className="mt-account-item">
-                <div className="mt-account-info">
-                  <div className="mt-account-id">
-                    {t('backend.accounts.account-id')}: {account.accountId}
-                  </div>
-                  {account.brokerName && (
-                    <div className="mt-account-broker">
-                      {t('backend.accounts.broker')}: {account.brokerName}
-                    </div>
-                  )}
-                  <div className="mt-account-dates">
-                    {account.firstSeen && (
-                      <span>
-                        {t('backend.accounts.first-seen')}:{' '}
-                        {formatLastSyncTime(account.firstSeen)}
-                      </span>
-                    )}
-                    {account.lastSeen && (
-                      <span>
-                        {' '}
-                        | {t('backend.accounts.last-seen')}:{' '}
-                        {formatLastSyncTime(account.lastSeen)}
-                      </span>
-                    )}
-                  </div>
+        </div>
+      ) : (
+        <div className="mt-accounts-list">
+          {accountState.accounts.map((account) => (
+            <div key={account.accountId} className="mt-account-item">
+              <div className="mt-account-info">
+                <div className="mt-account-id">
+                  {t('backend.accounts.account-id')}: {account.accountId}
                 </div>
-                <div className="mt-account-display">
-                  <div className="mt-account-name">
+                {account.brokerName && (
+                  <div className="mt-account-broker">
+                    {t('backend.accounts.broker')}: {account.brokerName}
+                  </div>
+                )}
+                <div className="mt-account-dates">
+                  {account.firstSeen && (
                     <span>
-                      {account.displayName || `Account-${account.accountId}`}
+                      {t('backend.accounts.first-seen')}:{' '}
+                      {formatLastSyncTime(account.firstSeen)}
                     </span>
-                  </div>
-                  <Button
-                    variant="danger"
-                    size="sm"
-                    className="mt-account-action-button"
-                    onClick={() => void handleUnlinkMtAccount(account)}
-                  >
-                    {t('backend.accounts.unlink')}
-                  </Button>
+                  )}
+                  {account.lastSeen && (
+                    <span>
+                      {' '}
+                      | {t('backend.accounts.last-seen')}:{' '}
+                      {formatLastSyncTime(account.lastSeen)}
+                    </span>
+                  )}
                 </div>
               </div>
-            ))}
-          </div>
-        )}
+              <div className="mt-account-display">
+                <div className="mt-account-name">
+                  <span>
+                    {account.displayName || `Account-${account.accountId}`}
+                  </span>
+                </div>
+                <Button
+                  variant="danger"
+                  size="sm"
+                  className="mt-account-action-button"
+                  onClick={() => void handleUnlinkMtAccount(account)}
+                >
+                  {t('backend.accounts.unlink')}
+                </Button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
 
-        <div className="backend-integration__ignored-accounts">
-          <Accordion
-            title={`${t('backend.accounts.ignored.title')} · ${t(
-              'backend.accounts.ignored.count',
-              {
-                count: String(accountState.ignoredAccounts.length),
-              }
-            )}`}
-          >
-            <div className="mt-accounts-list mt-accounts-list--ignored">
-              {accountState.ignoredAccounts.length === 0 ? (
-                <div className="setting-item">
-                  <div className="setting-item-info">
-                    <div className="setting-item-description">
-                      {t('backend.accounts.ignored.empty')}
-                    </div>
+      <div className="backend-integration__ignored-accounts">
+        <Accordion
+          title={`${t('backend.accounts.ignored.title')} · ${t(
+            'backend.accounts.ignored.count',
+            {
+              count: String(accountState.ignoredAccounts.length),
+            }
+          )}`}
+        >
+          <div className="mt-accounts-list mt-accounts-list--ignored">
+            {accountState.ignoredAccounts.length === 0 ? (
+              <div className="setting-item">
+                <div className="setting-item-info">
+                  <div className="setting-item-description">
+                    {t('backend.accounts.ignored.empty')}
                   </div>
                 </div>
-              ) : (
-                accountState.ignoredAccounts.map((account) => (
-                  <div key={account.accountId} className="mt-account-item">
-                    <div className="mt-account-info">
-                      <div className="mt-account-id">
-                        {t('backend.accounts.account-id')}: {account.accountId}
-                      </div>
-                      {account.brokerName && (
-                        <div className="mt-account-broker">
-                          {t('backend.accounts.broker')}: {account.brokerName}
-                        </div>
-                      )}
-                      {account.ignoredAt && (
-                        <div className="mt-account-dates">
-                          <span>
-                            {t('backend.accounts.ignored-at')}:{' '}
-                            {formatLastSyncTime(account.ignoredAt)}
-                          </span>
-                        </div>
-                      )}
+              </div>
+            ) : (
+              accountState.ignoredAccounts.map((account) => (
+                <div key={account.accountId} className="mt-account-item">
+                  <div className="mt-account-info">
+                    <div className="mt-account-id">
+                      {t('backend.accounts.account-id')}: {account.accountId}
                     </div>
-                    <div className="mt-account-display">
-                      <div className="mt-account-name">
+                    {account.brokerName && (
+                      <div className="mt-account-broker">
+                        {t('backend.accounts.broker')}: {account.brokerName}
+                      </div>
+                    )}
+                    {account.ignoredAt && (
+                      <div className="mt-account-dates">
                         <span>
-                          {account.displayName ||
-                            `Account-${account.accountId}`}
+                          {t('backend.accounts.ignored-at')}:{' '}
+                          {formatLastSyncTime(account.ignoredAt)}
                         </span>
                       </div>
-                      <Button
-                        variant="secondary"
-                        size="sm"
-                        className="mt-account-action-button"
-                        onClick={() => void handleRelinkMtAccount(account)}
-                      >
-                        {t('backend.accounts.relink')}
-                      </Button>
-                    </div>
+                    )}
                   </div>
-                ))
-              )}
-            </div>
-          </Accordion>
-        </div>
-
-        
-        {accountState.accounts.length > 0 && (
-          <div className="backend-integration__account-linking-divider">
-            <AccountLinkingManager
-              plugin={plugin}
-              accounts={accountState.accounts}
-              onAccountsUpdated={loadAccounts}
-              onErrorChange={setAccountLinkErrorDetails}
-            />
+                  <div className="mt-account-display">
+                    <div className="mt-account-name">
+                      <span>
+                        {account.displayName || `Account-${account.accountId}`}
+                      </span>
+                    </div>
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      className="mt-account-action-button"
+                      onClick={() => void handleRelinkMtAccount(account)}
+                    >
+                      {t('backend.accounts.relink')}
+                    </Button>
+                  </div>
+                </div>
+              ))
+            )}
           </div>
-        )}
-      </Accordion>
+        </Accordion>
+      </div>
+
+      
+      {accountState.accounts.length > 0 && (
+        <div className="backend-integration__account-linking-divider">
+          <AccountLinkingManager
+            plugin={plugin}
+            accounts={accountState.accounts}
+            onAccountsUpdated={loadAccounts}
+            onErrorChange={setAccountLinkErrorDetails}
+          />
+        </div>
+      )}
     </>
+  );
+
+  if (flat) {
+    return (
+      <section className="journalit-settings-section">
+        <h4>{t('backend.section.accounts.title')}</h4>
+        {content}
+      </section>
+    );
+  }
+
+  return (
+    <Accordion
+      title={t('backend.section.accounts.title')}
+      expanded={expandedSection === 'accounts'}
+      onExpandedChange={(expanded) =>
+        setExpandedSection(expanded ? 'accounts' : null)
+      }
+    >
+      {content}
+    </Accordion>
   );
 }
 
@@ -1286,6 +1332,7 @@ export const BackendIntegrationTab: React.FC<BackendIntegrationTabProps> = (
     formatLastSyncTime,
     ftpErrorDetails,
     ftpState,
+    handleCancelSync,
     handleCopyIntegrationReport,
     handleCreateFTPCredentials,
     handleForceSync,
@@ -1310,6 +1357,9 @@ export const BackendIntegrationTab: React.FC<BackendIntegrationTabProps> = (
     settings,
     syncErrors,
   } = useBackendIntegrationTabModel(props);
+  const contentMode = props.contentMode ?? 'full';
+  const showStatusCards = props.showStatusCards ?? true;
+  const showErrorPanel = props.showErrorPanel ?? true;
 
   const content = (
     <>
@@ -1320,206 +1370,228 @@ export const BackendIntegrationTab: React.FC<BackendIntegrationTabProps> = (
         </div>
       )}
 
-      
-      <StatusCards
-        connectionStatus={connectionState.status}
-        onRefreshConnection={checkConnectionStatus}
-        lastSyncTime={
-          settings.lastSyncTime || connectionState.syncStatus?.last_sync_time
-        }
-        syncCount={
-          settings.syncCount || connectionState.syncStatus?.sync_count || 0
-        }
-        isSyncing={connectionState.isSyncing}
-        onForceSync={handleForceSync}
-        accountCount={accountState.accounts.length}
-        onManageAccounts={handleManageAccounts}
-      />
+      {showStatusCards && (
+        <StatusCards
+          connectionStatus={connectionState.status}
+          onRefreshConnection={checkConnectionStatus}
+          lastSyncTime={
+            settings.lastSyncTime || connectionState.syncStatus?.last_sync_time
+          }
+          syncCount={
+            settings.syncCount || connectionState.syncStatus?.sync_count || 0
+          }
+          isSyncing={connectionState.isSyncing}
+          isRegistering={connectionState.isRegistering}
+          onForceSync={handleForceSync}
+          onCancelSync={handleCancelSync}
+          accountCount={accountState.accounts.length}
+          onManageAccounts={handleManageAccounts}
+        />
+      )}
 
-      <BackendIntegrationErrorPanel
-        hasIntegrationErrors={hasIntegrationErrors}
-        integrationErrorPanelRef={integrationErrorPanelRef}
-        integrationErrorCount={integrationErrorCount}
-        previewSyncErrors={previewSyncErrors}
-        hasMoreSyncErrors={hasMoreSyncErrors}
-        syncErrors={syncErrors}
-        connectionState={connectionState}
-        ftpErrorDetails={ftpErrorDetails}
-        accountLinkErrorDetails={accountLinkErrorDetails}
-        previewBackgroundIssues={previewBackgroundIssues}
-        hasMoreBackgroundIssues={hasMoreBackgroundIssues}
-        backgroundIssues={backgroundIssues}
-        handleCopyIntegrationReport={handleCopyIntegrationReport}
-        integrationReportCopied={integrationReportCopied}
-      />
+      {showErrorPanel && (
+        <BackendIntegrationErrorPanel
+          hasIntegrationErrors={hasIntegrationErrors}
+          integrationErrorPanelRef={integrationErrorPanelRef}
+          integrationErrorCount={integrationErrorCount}
+          previewSyncErrors={previewSyncErrors}
+          hasMoreSyncErrors={hasMoreSyncErrors}
+          syncErrors={syncErrors}
+          connectionState={connectionState}
+          ftpErrorDetails={ftpErrorDetails}
+          accountLinkErrorDetails={accountLinkErrorDetails}
+          previewBackgroundIssues={previewBackgroundIssues}
+          hasMoreBackgroundIssues={hasMoreBackgroundIssues}
+          backgroundIssues={backgroundIssues}
+          handleCopyIntegrationReport={handleCopyIntegrationReport}
+          integrationReportCopied={integrationReportCopied}
+        />
+      )}
 
-      
-      <Accordion
-        title={t('backend.section.setup.title')}
-        expanded={expandedSection === 'setup'}
-        onExpandedChange={(expanded) =>
-          setExpandedSection(expanded ? 'setup' : null)
-        }
-      >
-        
-        <div className="setting-item">
-          <div className="setting-item-info">
-            <div className="setting-item-name">
-              {t('backend.register.title')}
-            </div>
-            <div className="setting-item-description">
-              {t('backend.register.description')}
-            </div>
-          </div>
-          <div className="setting-item-control">
-            <Button
-              variant="primary"
-              onClick={() => void handleRegisterVault()}
-              disabled={connectionState.isSyncing || !backendService}
-            >
-              <div className="backend-integration__button-content">
-                {connectionState.isSyncing && (
-                  <LoadingSpinner size="small" message="" />
-                )}
-                {connectionState.isSyncing
-                  ? t('backend.register.registering')
-                  : t('backend.register.button')}
-              </div>
-            </Button>
-          </div>
-        </div>
-
-        
-        {connectionState.status === 'connected' && !ftpState.hasCredentials && (
-          <div className="setting-item">
-            <div className="setting-item-info">
-              <div className="setting-item-name">{t('backend.ftp.title')}</div>
-              <div className="setting-item-description">
-                {t('backend.ftp.description')}
-              </div>
-            </div>
-            <div className="setting-item-control">
-              <Button
-                variant="primary"
-                onClick={() => void handleCreateFTPCredentials()}
-                disabled={ftpState.isCreating || !backendService}
-              >
-                <div className="backend-integration__button-content">
-                  {ftpState.isCreating && (
-                    <LoadingSpinner size="small" message="" />
-                  )}
-                  {ftpState.isCreating
-                    ? t('backend.ftp.creating')
-                    : t('backend.ftp.create-button')}
+      {contentMode !== 'accounts' && (
+        <>
+          
+          <Accordion
+            title={t('backend.section.setup.title')}
+            expanded={expandedSection === 'setup'}
+            onExpandedChange={(expanded) =>
+              setExpandedSection(expanded ? 'setup' : null)
+            }
+          >
+            
+            <div className="setting-item">
+              <div className="setting-item-info">
+                <div className="setting-item-name">
+                  {t('backend.register.title')}
                 </div>
-              </Button>
-            </div>
-          </div>
-        )}
-
-        
-        {ftpState.hasCredentials && (
-          <div className="setting-item setting-item--full-width">
-            <FTPCredentialsSection
-              userId={settings.ftpUsername || autoDetectedUserId}
-              onErrorChange={setFtpErrorDetails}
-            />
-          </div>
-        )}
-      </Accordion>
-
-      
-      <Accordion
-        title={t('backend.section.sync.title')}
-        expanded={expandedSection === 'sync'}
-        onExpandedChange={(expanded) =>
-          setExpandedSection(expanded ? 'sync' : null)
-        }
-      >
-        <div className="setting-item">
-          <div className="setting-item-info">
-            <div className="setting-item-name">
-              {t('backend.sync.auto-sync')}
-            </div>
-            <div className="setting-item-description">
-              {t('backend.sync.auto-sync-desc')}
-              <div className="backend-integration__sync-info">
-                <Info size={16} /> {t('backend.sync.auto-sync-info')}
+                <div className="setting-item-description">
+                  {t('backend.register.description')}
+                </div>
+              </div>
+              <div className="setting-item-control">
+                <Button
+                  variant="primary"
+                  onClick={() => void handleRegisterVault()}
+                  disabled={
+                    connectionState.isRegistering ||
+                    connectionState.isSyncing ||
+                    !backendService
+                  }
+                >
+                  <div className="backend-integration__button-content">
+                    {connectionState.isRegistering && (
+                      <LoadingSpinner size="small" message="" />
+                    )}
+                    {connectionState.isRegistering
+                      ? t('backend.register.registering')
+                      : t('backend.register.button')}
+                  </div>
+                </Button>
               </div>
             </div>
-          </div>
-          <div className="setting-item-control">
-            <ToggleSwitch
-              checked={settings.syncEnabled || false}
-              onChange={handleSyncEnabledToggle}
-              id="sync-enabled-toggle"
-              ariaLabel={t('backend.sync.auto-sync-aria')}
-            />
-          </div>
-        </div>
 
-        {connectionState.lastSyncResult && (
-          <div className="setting-item">
-            <div className="setting-item-info">
-              <div className="setting-item-name">
-                {t('backend.sync.last-result')}
+            
+            {connectionState.status === 'connected' &&
+              !ftpState.hasCredentials && (
+                <div className="setting-item">
+                  <div className="setting-item-info">
+                    <div className="setting-item-name">
+                      {t('backend.ftp.title')}
+                    </div>
+                    <div className="setting-item-description">
+                      {t('backend.ftp.description')}
+                    </div>
+                  </div>
+                  <div className="setting-item-control">
+                    <Button
+                      variant="primary"
+                      onClick={() => void handleCreateFTPCredentials()}
+                      disabled={ftpState.isCreating || !backendService}
+                    >
+                      <div className="backend-integration__button-content">
+                        {ftpState.isCreating && (
+                          <LoadingSpinner size="small" message="" />
+                        )}
+                        {ftpState.isCreating
+                          ? t('backend.ftp.creating')
+                          : t('backend.ftp.create-button')}
+                      </div>
+                    </Button>
+                  </div>
+                </div>
+              )}
+
+            
+            {ftpState.hasCredentials && (
+              <div className="setting-item setting-item--full-width">
+                <FTPCredentialsSection
+                  userId={settings.ftpUsername || autoDetectedUserId}
+                  onErrorChange={setFtpErrorDetails}
+                />
               </div>
-              <div className="setting-item-description">
-                {connectionState.lastSyncResult.synced_trades > 0 ? (
-                  <>
-                    <CheckCircle2 size={16} />{' '}
-                    {t('backend.sync.synced-trades', {
-                      trades: String(
-                        connectionState.lastSyncResult.synced_trades
-                      ),
-                      files: String(connectionState.lastSyncResult.new_files),
-                    })}
-                  </>
-                ) : (
-                  <>
-                    <CheckCircle2 size={16} /> {t('backend.sync.no-new-trades')}
-                  </>
-                )}
+            )}
+          </Accordion>
+
+          
+          <Accordion
+            title={t('backend.section.sync.title')}
+            expanded={expandedSection === 'sync'}
+            onExpandedChange={(expanded) =>
+              setExpandedSection(expanded ? 'sync' : null)
+            }
+          >
+            <div className="setting-item">
+              <div className="setting-item-info">
+                <div className="setting-item-name">
+                  {t('backend.sync.auto-sync')}
+                </div>
+                <div className="setting-item-description">
+                  {t('backend.sync.auto-sync-desc')}
+                  <div className="backend-integration__sync-info">
+                    <Info size={16} /> {t('backend.sync.auto-sync-info')}
+                  </div>
+                </div>
+              </div>
+              <div className="setting-item-control">
+                <ToggleSwitch
+                  checked={settings.syncEnabled || false}
+                  onChange={handleSyncEnabledToggle}
+                  id="sync-enabled-toggle"
+                  ariaLabel={t('backend.sync.auto-sync-aria')}
+                />
               </div>
             </div>
-          </div>
-        )}
 
-        {(settings.lastSyncTime || connectionState.syncStatus) && (
-          <div className="setting-item">
-            <div className="setting-item-info">
-              <div className="setting-item-name">
-                {t('backend.sync.status')}
+            {connectionState.lastSyncResult && (
+              <div className="setting-item">
+                <div className="setting-item-info">
+                  <div className="setting-item-name">
+                    {t('backend.sync.last-result')}
+                  </div>
+                  <div className="setting-item-description">
+                    {connectionState.lastSyncResult.synced_trades > 0 ? (
+                      <>
+                        <CheckCircle2 size={16} />{' '}
+                        {t('backend.sync.synced-trades', {
+                          trades: String(
+                            connectionState.lastSyncResult.synced_trades
+                          ),
+                          files: String(
+                            connectionState.lastSyncResult.new_files
+                          ),
+                        })}
+                      </>
+                    ) : (
+                      <>
+                        <CheckCircle2 size={16} />{' '}
+                        {t('backend.sync.no-new-trades')}
+                      </>
+                    )}
+                  </div>
+                </div>
               </div>
-              <div className="setting-item-description">
-                {t('backend.sync.last-sync')}:{' '}
-                {formatLastSyncTime(
-                  settings.lastSyncTime ||
-                    connectionState.syncStatus?.last_sync_time
-                )}{' '}
-                | {t('backend.sync.total-syncs')}:{' '}
-                {settings.syncCount ||
-                  connectionState.syncStatus?.sync_count ||
-                  0}
-              </div>
-            </div>
-          </div>
-        )}
-      </Accordion>
+            )}
 
-      <BackendAccountsSection
-        expandedSection={expandedSection}
-        setExpandedSection={setExpandedSection}
-        connectionState={connectionState}
-        loadAccounts={loadAccounts}
-        accountState={accountState}
-        backendService={backendService}
-        formatLastSyncTime={formatLastSyncTime}
-        handleUnlinkMtAccount={handleUnlinkMtAccount}
-        handleRelinkMtAccount={handleRelinkMtAccount}
-        plugin={plugin}
-        setAccountLinkErrorDetails={setAccountLinkErrorDetails}
-      />
+            {(settings.lastSyncTime || connectionState.syncStatus) && (
+              <div className="setting-item">
+                <div className="setting-item-info">
+                  <div className="setting-item-name">
+                    {t('backend.sync.status')}
+                  </div>
+                  <div className="setting-item-description">
+                    {t('backend.sync.last-sync')}:{' '}
+                    {formatLastSyncTime(
+                      settings.lastSyncTime ||
+                        connectionState.syncStatus?.last_sync_time
+                    )}{' '}
+                    | {t('backend.sync.total-syncs')}:{' '}
+                    {settings.syncCount ||
+                      connectionState.syncStatus?.sync_count ||
+                      0}
+                  </div>
+                </div>
+              </div>
+            )}
+          </Accordion>
+        </>
+      )}
+
+      {contentMode !== 'sync' && (
+        <BackendAccountsSection
+          expandedSection={expandedSection}
+          setExpandedSection={setExpandedSection}
+          connectionState={connectionState}
+          loadAccounts={loadAccounts}
+          accountState={accountState}
+          backendService={backendService}
+          formatLastSyncTime={formatLastSyncTime}
+          handleUnlinkMtAccount={handleUnlinkMtAccount}
+          handleRelinkMtAccount={handleRelinkMtAccount}
+          plugin={plugin}
+          setAccountLinkErrorDetails={setAccountLinkErrorDetails}
+          flat={contentMode === 'accounts'}
+        />
+      )}
     </>
   );
 

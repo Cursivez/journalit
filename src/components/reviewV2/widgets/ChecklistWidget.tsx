@@ -6,6 +6,8 @@ import JournalitPlugin from '../../../main';
 import { InvalidContextMessage } from './InvalidContextMessage';
 import { ChecklistPreviewData } from '../../../types/reviewV2';
 import { SkeletonBox, SkeletonCircle, Tooltip } from '../../shared';
+import { Edit, Trash2 } from '../../shared/icons/ObsidianIcon';
+import { NoTooltipButton } from '../../ui/NoTooltipButton';
 import { t } from '../../../lang/helpers';
 
 
@@ -502,20 +504,20 @@ export const ChecklistWidget: React.FC<ChecklistWidgetProps> = React.memo(
                 
                 {!preview && editingIndex !== index && (
                   <>
-                    <button
+                    <NoTooltipButton
                       onClick={() => void handleStartEdit(index)}
-                      aria-label={t('widget.checklist.edit-item')}
-                      className="journalit-reviewv2-icon-button"
+                      label={t('widget.checklist.edit-item')}
+                      className="journalit-reviewv2-settings-icon-button"
                     >
-                      {t('button.edit')}
-                    </button>
-                    <button
+                      <Edit size={24} aria-hidden="true" />
+                    </NoTooltipButton>
+                    <NoTooltipButton
                       onClick={() => void handleDeleteItem(index)}
-                      aria-label={t('widget.checklist.delete-item')}
-                      className="journalit-reviewv2-icon-button journalit-reviewv2-icon-button--delete"
+                      label={t('widget.checklist.delete-item')}
+                      className="journalit-reviewv2-settings-icon-button"
                     >
-                      ×
-                    </button>
+                      <Trash2 size={24} aria-hidden="true" />
+                    </NoTooltipButton>
                   </>
                 )}
               </div>

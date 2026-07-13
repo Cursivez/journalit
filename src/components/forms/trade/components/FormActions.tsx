@@ -8,20 +8,26 @@ import { t } from '../../../../lang/helpers';
 
 interface FormActionsProps {
   onCancel?: () => void;
+  onImportTrades?: () => void;
   isSubmitting: boolean;
   errors: TradeFormErrors;
+  submissionState?: 'idle' | 'retryable-error';
   isEditMode: boolean;
   hasEntryTime: boolean;
   disabledReason?: string;
+  footerSummary?: React.ReactNode;
 }
 
 export const FormActions: React.FC<FormActionsProps> = ({
   onCancel,
+  onImportTrades,
   isSubmitting,
   errors,
+  submissionState = 'idle',
   isEditMode,
   hasEntryTime,
   disabledReason,
+  footerSummary,
 }) => {
   
   const getSubmitButtonText = () => {
@@ -35,32 +41,50 @@ export const FormActions: React.FC<FormActionsProps> = ({
   };
 
   const isSubmitDisabled =
-    Boolean(disabledReason) || hasFormErrors(errors) || isSubmitting;
+    Boolean(disabledReason) ||
+    (hasFormErrors(errors) && submissionState !== 'retryable-error') ||
+    isSubmitting;
 
   return (
     <div className="formActionsWrapper">
+      {footerSummary}
       <div className="formActions">
-        {onCancel && (
-          <Button
-            variant="outline"
-            onClick={onCancel}
-            disabled={isSubmitting}
-            className="cancelButton"
-          >
-            {t('button.cancel')}
-          </Button>
-        )}
+        <div className="formActionsLeft">
+          {onCancel && (
+            <Button
+              variant="plain"
+              onClick={onCancel}
+              disabled={isSubmitting}
+              className="cancelButton cancel-button"
+            >
+              {t('button.cancel')}
+            </Button>
+          )}
+        </div>
 
-        <Button
-          type="submit"
-          variant="primary"
-          loading={isSubmitting}
-          disabled={isSubmitDisabled}
-          className="submitButton"
-          title={disabledReason}
-        >
-          {getSubmitButtonText()}
-        </Button>
+        <div className="formActionsRight">
+          {onImportTrades && (
+            <Button
+              variant="secondary"
+              onClick={onImportTrades}
+              disabled={isSubmitting}
+              className="importTradesButton"
+            >
+              {t('form.import-shortcut.open')}
+            </Button>
+          )}
+
+          <Button
+            type="submit"
+            variant="primary"
+            loading={isSubmitting}
+            disabled={isSubmitDisabled}
+            className="submitButton create-account-button accent-button modal-save-accent"
+            title={disabledReason}
+          >
+            {getSubmitButtonText()}
+          </Button>
+        </div>
       </div>
 
       {disabledReason && (

@@ -12,6 +12,12 @@ export const ENTRY_EXIT_STYLES = `
       background-color: var(--background-primary);
     }
 
+    .trade-form-view-container .entries-section:last-child,
+    .trade-form-view-container .exits-section:last-child,
+    .trade-form-view-container .dividends-section:last-child {
+      margin-bottom: 0;
+    }
+
     .trade-form-view-container .section-title {
       margin: 0 0 12px 0;
       font-size: 16px;
@@ -77,6 +83,31 @@ export const ENTRY_EXIT_STYLES = `
     .trade-form-view-container .amount-field {
       flex: 1;
       min-width: 120px;
+    }
+
+    .trade-form-view-container .journalit-direct-pnl-time-input .journalit-fast-datetime__container {
+      width: fit-content;
+      max-width: 100%;
+      padding-right: 12px;
+      gap: 6px;
+    }
+
+    .trade-form-view-container .journalit-direct-pnl-time-input .journalit-fast-datetime__calendar-button {
+      margin-left: 12px;
+    }
+
+    .trade-form-view-container .journalit-direct-pnl-section {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      width: fit-content;
+      max-width: 100%;
+      margin-bottom: 12px;
+    }
+
+    .trade-form-view-container .journalit-direct-pnl-value-field,
+    .trade-form-view-container .journalit-direct-pnl-value-field .inputContainer {
+      width: 100%;
     }
 
     
@@ -167,6 +198,183 @@ export const ENTRY_EXIT_STYLES = `
       color: var(--text-normal);
     }
 
+    .trade-form-view-container .journalit-ideal-exits {
+      margin-top: 12px;
+      padding-top: 10px;
+      border-top: 1px solid var(--background-modifier-border);
+    }
+
+    .trade-form-view-container .journalit-ideal-exits__header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 8px;
+    }
+
+    .trade-form-view-container .journalit-ideal-exits__title-group,
+    .trade-form-view-container .journalit-ideal-exits__header-actions {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      min-width: 0;
+    }
+
+    .trade-form-view-container .journalit-ideal-exits__title {
+      color: var(--text-normal);
+      font-size: 15px;
+      line-height: 20px;
+      font-weight: 500;
+      white-space: nowrap;
+    }
+
+    .trade-form-view-container .journalit-ideal-exits__optional-text {
+      color: var(--text-muted);
+      font-size: 13px;
+      font-weight: 400;
+    }
+
+    .trade-form-view-container .journalit-ideal-exits__info {
+      color: var(--text-muted);
+    }
+
+    .trade-form-view-container .journalit-ideal-exits__info:hover {
+      color: var(--text-normal);
+    }
+
+    .trade-form-view-container .journalit-ideal-exits__coverage {
+      flex-shrink: 0;
+      padding: 2px 6px;
+      border-radius: 4px;
+      background: var(--background-secondary);
+      color: var(--text-muted);
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .trade-form-view-container .journalit-ideal-exits__add-button,
+    .trade-form-view-container .journalit-ideal-exits__copy-button {
+      margin: 0;
+      padding: 2px 6px;
+      color: var(--text-muted);
+      background: transparent;
+      box-shadow: none;
+      height: 24px;
+      min-height: 24px;
+      font-size: 13px;
+      font-weight: 500;
+      border-radius: 4px;
+    }
+
+    .trade-form-view-container .journalit-ideal-exits__add-button:hover,
+    .trade-form-view-container .journalit-ideal-exits__copy-button:hover {
+      color: var(--text-normal);
+      background: var(--background-modifier-hover);
+      text-decoration: none;
+    }
+
+    .trade-form-view-container .journalit-ideal-exits__empty-state {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      width: 100%;
+      min-height: 42px;
+      border: 1px dashed var(--background-modifier-border);
+      border-radius: 6px;
+      background: transparent;
+      color: var(--text-faint);
+      font-size: 13px;
+    }
+
+    .trade-form-view-container .journalit-ideal-exit-row {
+      display: grid;
+      grid-template-columns: 36px minmax(0, 1fr) 90px 32px;
+      gap: 6px;
+      align-items: start;
+      margin-top: 6px;
+    }
+
+    .trade-form-view-container .journalit-ideal-exit-row--header {
+      color: var(--text-muted);
+      font-size: 12px;
+      font-weight: 600;
+      align-items: center;
+    }
+
+    .trade-form-view-container .journalit-ideal-exit-row .form-group,
+    .trade-form-view-container .journalit-ideal-exit-row .inputContainer {
+      margin-bottom: 0;
+    }
+
+    .trade-form-view-container .journalit-ideal-exit-row .input {
+      min-height: 32px;
+    }
+
+    .trade-form-view-container .journalit-ideal-exit-field-label {
+      display: none;
+    }
+
+    .trade-form-view-container .journalit-ideal-exit-index-label {
+      display: flex;
+      align-items: center;
+      min-height: 32px;
+      color: var(--text-normal);
+      font-weight: 500;
+      padding-left: 2px;
+    }
+
+    .trade-form-view-container .journalit-ideal-exit-remove-button {
+      grid-column: 4;
+      grid-row: 1;
+      width: 32px;
+      height: 32px;
+      padding: 0;
+      margin-top: 0;
+      font-size: 20px;
+      line-height: 1;
+    }
+
+    .trade-form-view-container .journalit-ideal-exit-remove-button:hover {
+      color: var(--text-error);
+      border-color: var(--text-error);
+    }
+
+    .trade-form-view-container .journalit-ideal-exits__actions {
+      display: flex;
+      justify-content: flex-end;
+      margin-top: 6px;
+    }
+
+    @media (max-width: 640px) {
+      .trade-form-view-container .journalit-ideal-exits__header {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      .trade-form-view-container .journalit-ideal-exit-row {
+        grid-template-columns: 1fr;
+      }
+
+      .trade-form-view-container .journalit-ideal-exit-remove-button {
+        grid-column: auto;
+        grid-row: auto;
+        justify-self: flex-start;
+      }
+
+      .trade-form-view-container .journalit-ideal-exit-field-label {
+        display: block;
+        margin-bottom: 3px;
+        color: var(--text-muted);
+        font-size: 12px;
+        font-weight: 600;
+      }
+
+      .trade-form-view-container .journalit-ideal-exit-row--header {
+        display: none;
+      }
+    }
+
     
     .trade-form-view-container .journalit-pnl-mode-toggle,
     .trade-form-view-container .journalit-dollar-mode-toggle {
@@ -207,10 +415,6 @@ export const ENTRY_EXIT_STYLES = `
       font-size: 0.9em;
       line-height: 1.4;
       margin: 0;
-    }
-
-    .trade-form-view-container .journalit-direct-pnl-section {
-      margin-bottom: 24px;
     }
 
     

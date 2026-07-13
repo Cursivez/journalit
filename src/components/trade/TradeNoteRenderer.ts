@@ -3,7 +3,7 @@
 import { App } from 'obsidian';
 import React from 'react';
 import { TradeNote } from './TradeNote';
-import { TradeFormData } from '../forms/trade/types';
+import { TradeFormData, TradeFormOpenOptions } from '../forms/trade/types';
 import { BaseComponentRenderer } from '../base/BaseComponentRenderer';
 import { normalizeStringArray } from '../../utils/dataUtils';
 import { parseDisplayText } from '../../utils/tagSchema';
@@ -45,7 +45,8 @@ function normalizeFrontmatterStringArray(value: unknown): string[] {
 interface JournalitPluginForTradeNote {
   openTradeFormInEditMode?: (
     data: Partial<TradeFormData>,
-    filePath: string
+    filePath: string,
+    openOptions?: TradeFormOpenOptions
   ) => void;
   tradeService?: {
     updateTrade: (
@@ -68,7 +69,7 @@ interface JournalitPluginForTradeNote {
 function getJournalitPlugin(app: App): JournalitPluginForTradeNote | undefined {
   const plugins = app.plugins?.plugins;
   const plugin = plugins?.journalit;
-  return isRecord(plugin) ? (plugin as JournalitPluginForTradeNote) : undefined;
+  return isRecord(plugin) ? plugin : undefined;
 }
 
 export class TradeNoteRenderer extends BaseComponentRenderer {
@@ -290,7 +291,10 @@ export class TradeNoteRenderer extends BaseComponentRenderer {
     filePath: string,
     _openNoteFn?: (path: string, createNewLeaf?: boolean) => void
   ): React.ReactElement {
-    const handleEditClick = (tradeData: Partial<TradeFormData>) => {
+    const handleEditClick = (
+      tradeData: Partial<TradeFormData>,
+      openOptions?: TradeFormOpenOptions
+    ) => {
       
       const plugin = getJournalitPlugin(this.app);
       if (!plugin) {
@@ -315,7 +319,11 @@ export class TradeNoteRenderer extends BaseComponentRenderer {
           window.requestAnimationFrame(() => {
             window.setTimeout(() => {
               try {
-                plugin.openTradeFormInEditMode?.(tradeData, filePath);
+                plugin.openTradeFormInEditMode?.(
+                  tradeData,
+                  filePath,
+                  openOptions
+                );
               } catch (err) {
                 console.error('Failed to open trade form in edit mode:', err);
               }
@@ -324,7 +332,7 @@ export class TradeNoteRenderer extends BaseComponentRenderer {
         } catch {
           
           try {
-            plugin.openTradeFormInEditMode?.(tradeData, filePath);
+            plugin.openTradeFormInEditMode?.(tradeData, filePath, openOptions);
           } catch (e) {
             console.error(e);
           }
@@ -373,7 +381,10 @@ export class TradeNoteRenderer extends BaseComponentRenderer {
 
     return React.createElement(TradeNote, {
       data: { ...data, filePath },
-      onEditClick: (nextData: typeof data) => void handleEditClick(nextData),
+      onEditClick: (
+        nextData: typeof data,
+        openOptions?: TradeFormOpenOptions
+      ) => void handleEditClick(nextData, openOptions),
       onDataUpdate: (nextData: typeof data) => void handleDataUpdate(nextData),
     });
   }
@@ -416,14 +427,7 @@ export class TradeNoteRenderer extends BaseComponentRenderer {
     }
 
     
-    for (const field of [
-      'setupIds',
-      'setup',
-      'mistake',
-      'account',
-      'tags',
-      'customTags',
-    ]) {
+    for (const field of ['setup', 'mistake', 'account', 'tags', 'customTags']) {
       tradeData[field] = normalizeStringArray(
         normalizeFrontmatterStringArray(tradeData[field])
       );

@@ -523,7 +523,7 @@ function TradeLogTreeComponent({
 
   const handleNonVirtualScroll = useCallback(
     (e: React.UIEvent<HTMLDivElement>) => {
-      const target = e.currentTarget as HTMLDivElement;
+      const target = e.currentTarget;
       lastScrollOffsetRef.current = target.scrollTop;
       onScrollOffsetChange?.(target.scrollTop);
     },

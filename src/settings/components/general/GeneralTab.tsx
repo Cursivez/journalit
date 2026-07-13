@@ -11,7 +11,7 @@ import { Accordion } from '../../../components/shared/Accordion';
 import { FolderBrowser } from '../../../components/ui/FolderBrowser';
 import { openPathChangeInstructionModal } from '../../../components/modals/PathChangeInstructionModal';
 import {
-  getCurrencyOptions,
+  getBaseCurrencyOptions,
   CurrencyCode,
   parseCuratedCurrencyCode,
 } from '../../../utils/currencyConfig';
@@ -73,6 +73,42 @@ function parseSidebarTabBehavior(value: string): SidebarTabBehavior {
 
 interface GeneralTabProps {
   plugin: JournalitPlugin;
+  scope?: 'general' | 'trading' | 'advanced' | 'all';
+}
+
+function SettingsSection({
+  title,
+  children,
+}: {
+  title: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <section className="journalit-settings-section">
+      <h4>{title}</h4>
+      {children}
+    </section>
+  );
+}
+
+function SettingsSectionOrAccordion({
+  title,
+  flat,
+  children,
+}: {
+  title: string;
+  flat: boolean;
+  children: React.ReactNode;
+}) {
+  if (flat) {
+    return <SettingsSection title={title}>{children}</SettingsSection>;
+  }
+
+  return (
+    <Accordion title={title} defaultExpanded={false}>
+      {children}
+    </Accordion>
+  );
 }
 
 function useGeneralTabModel(props: GeneralTabProps) {
@@ -1359,6 +1395,7 @@ function GeneralTradeSettingsSection({
   handleIncludeCopyAccountsToggle,
   handleMaeMfeInputModeChange,
   maeMfeInputModeOptions,
+  flat = false,
 }: Pick<
   GeneralTabModel,
   | 'plugin'
@@ -1384,190 +1421,212 @@ function GeneralTradeSettingsSection({
   | 'handleIncludeCopyAccountsToggle'
   | 'handleMaeMfeInputModeChange'
   | 'maeMfeInputModeOptions'
->) {
+> & { flat?: boolean }) {
+  const tradeBasics = (
+    <GeneralTradeBasicsSettings
+      plugin={plugin}
+      handleAutoOpenToggle={handleAutoOpenToggle}
+      handleDateFormatChange={handleDateFormatChange}
+      dateFormatOptions={dateFormatOptions}
+      setSettingsVersion={setSettingsVersion}
+      handleSkipWeekendsToggle={handleSkipWeekendsToggle}
+      handleWeekStartDayChange={handleWeekStartDayChange}
+      weekStartDayOptions={weekStartDayOptions}
+      handleAnalyticsDateBasisChange={handleAnalyticsDateBasisChange}
+      analyticsDateBasisOptions={analyticsDateBasisOptions}
+      handleDollarValueInputToggle={handleDollarValueInputToggle}
+      handleTradingDayCutoffTimeChange={handleTradingDayCutoffTimeChange}
+    />
+  );
+
+  const breakEven = (
+    <GeneralBreakEvenSettings
+      plugin={plugin}
+      handleBreakEvenModeChange={handleBreakEvenModeChange}
+      breakEvenModeOptions={breakEvenModeOptions}
+      handleBreakEvenPercentChange={handleBreakEvenPercentChange}
+      handleBreakEvenRangeBlur={handleBreakEvenRangeBlur}
+      handleBreakEvenMinChange={handleBreakEvenMinChange}
+      handleBreakEvenMaxChange={handleBreakEvenMaxChange}
+    />
+  );
+
+  const riskDisplay = (
+    <GeneralRiskDisplaySettings
+      plugin={plugin}
+      handleDefaultRiskAmountChange={handleDefaultRiskAmountChange}
+      handleDisplayRMultiplesToggle={handleDisplayRMultiplesToggle}
+      handleIncludeCopyAccountsToggle={handleIncludeCopyAccountsToggle}
+      handleMaeMfeInputModeChange={handleMaeMfeInputModeChange}
+      maeMfeInputModeOptions={maeMfeInputModeOptions}
+    />
+  );
+
+  if (flat) {
+    return (
+      <>
+        <SettingsSection title={t('settings.general.trade-settings')}>
+          {tradeBasics}
+        </SettingsSection>
+        <SettingsSection
+          title={t('settings.general.break-even-threshold-mode')}
+        >
+          {breakEven}
+        </SettingsSection>
+        <SettingsSection title={t('form.section.risk-management')}>
+          {riskDisplay}
+        </SettingsSection>
+      </>
+    );
+  }
+
   return (
-    <>
-      
-      <Accordion
-        title={t('settings.general.trade-settings')}
-        defaultExpanded={true}
-      >
-        <GeneralTradeBasicsSettings
-          plugin={plugin}
-          handleAutoOpenToggle={handleAutoOpenToggle}
-          handleDateFormatChange={handleDateFormatChange}
-          dateFormatOptions={dateFormatOptions}
-          setSettingsVersion={setSettingsVersion}
-          handleSkipWeekendsToggle={handleSkipWeekendsToggle}
-          handleWeekStartDayChange={handleWeekStartDayChange}
-          weekStartDayOptions={weekStartDayOptions}
-          handleAnalyticsDateBasisChange={handleAnalyticsDateBasisChange}
-          analyticsDateBasisOptions={analyticsDateBasisOptions}
-          handleDollarValueInputToggle={handleDollarValueInputToggle}
-          handleTradingDayCutoffTimeChange={handleTradingDayCutoffTimeChange}
-        />
+    <Accordion
+      title={t('settings.general.trade-settings')}
+      defaultExpanded={true}
+    >
+      {tradeBasics}
+      {breakEven}
+      {riskDisplay}
+    </Accordion>
+  );
+}
 
-        <GeneralBreakEvenSettings
-          plugin={plugin}
-          handleBreakEvenModeChange={handleBreakEvenModeChange}
-          breakEvenModeOptions={breakEvenModeOptions}
-          handleBreakEvenPercentChange={handleBreakEvenPercentChange}
-          handleBreakEvenRangeBlur={handleBreakEvenRangeBlur}
-          handleBreakEvenMinChange={handleBreakEvenMinChange}
-          handleBreakEvenMaxChange={handleBreakEvenMaxChange}
-        />
+export function SyncNotificationSettingsSection({
+  plugin,
+}: Pick<GeneralTabModel, 'plugin'>) {
+  const [notificationSettings, setNotificationSettings] = useState(() => ({
+    showSyncNotifications:
+      plugin.settings.backendIntegration?.showSyncNotifications ?? true,
+    showNewTradeNotifications:
+      plugin.settings.backendIntegration?.showNewTradeNotifications ?? true,
+    showUpdateNotifications:
+      plugin.settings.backendIntegration?.showUpdateNotifications ?? true,
+  }));
 
-        <GeneralRiskDisplaySettings
-          plugin={plugin}
-          handleDefaultRiskAmountChange={handleDefaultRiskAmountChange}
-          handleDisplayRMultiplesToggle={handleDisplayRMultiplesToggle}
-          handleIncludeCopyAccountsToggle={handleIncludeCopyAccountsToggle}
-          handleMaeMfeInputModeChange={handleMaeMfeInputModeChange}
-          maeMfeInputModeOptions={maeMfeInputModeOptions}
-        />
-      </Accordion>
+  const ensureBackendIntegrationSettings = () => {
+    if (!plugin.settings.backendIntegration) {
+      plugin.settings.backendIntegration = {
+        serverUrl: 'https://api.journalit.co',
+        syncEnabled: false,
+        userId: '',
+        showSyncNotifications: true,
+        showNewTradeNotifications: true,
+        showUpdateNotifications: true,
+        lastSeenVersion: '',
+      };
+    }
 
-      
-      <Accordion
-        title={t('settings.general.notification-settings')}
-        defaultExpanded={false}
-      >
-        <div className="setting-item">
-          <div className="setting-item-info">
-            <div className="setting-item-name">
-              {t('settings.general.sync-notifications')}
-            </div>
-            <div className="setting-item-description">
-              {t('settings.general.sync-notifications-desc')}
-            </div>
+    return plugin.settings.backendIntegration;
+  };
+
+  const saveNotificationSetting = async (
+    key:
+      | 'showSyncNotifications'
+      | 'showNewTradeNotifications'
+      | 'showUpdateNotifications',
+    value: boolean,
+    noticeKey:
+      | 'settings.general.sync-notifications-toggled'
+      | 'settings.general.new-trade-notifications-toggled'
+      | 'settings.general.update-notifications-toggled'
+  ) => {
+    const backendIntegration = ensureBackendIntegrationSettings();
+    backendIntegration[key] = value;
+    await plugin.saveSettings();
+    setNotificationSettings((current) => ({
+      ...current,
+      [key]: value,
+    }));
+    new Notice(
+      t(noticeKey, {
+        status: value
+          ? t('settings.general.enabled')
+          : t('settings.general.disabled'),
+      })
+    );
+  };
+
+  return (
+    <Accordion
+      title={t('settings.general.notification-settings')}
+      defaultExpanded={false}
+    >
+      <div className="setting-item">
+        <div className="setting-item-info">
+          <div className="setting-item-name">
+            {t('settings.general.sync-notifications')}
           </div>
-          <div className="setting-item-control">
-            <ToggleSwitch
-              checked={
-                plugin.settings.backendIntegration?.showSyncNotifications ??
-                true
-              }
-              onChange={async (newValue: boolean) => {
-                if (!plugin.settings.backendIntegration) {
-                  plugin.settings.backendIntegration = {
-                    serverUrl: 'https://api.journalit.co',
-                    syncEnabled: false,
-                    userId: '',
-                    showSyncNotifications: true,
-                    showNewTradeNotifications: true,
-                    showUpdateNotifications: true,
-                    lastSeenVersion: '',
-                  };
-                }
-                plugin.settings.backendIntegration.showSyncNotifications =
-                  newValue;
-                await plugin.saveSettings();
-                setSettingsVersion((prev) => prev + 1);
-                new Notice(
-                  t('settings.general.sync-notifications-toggled', {
-                    status: newValue
-                      ? t('settings.general.enabled')
-                      : t('settings.general.disabled'),
-                  })
-                );
-              }}
-              id="sync-notifications-toggle"
-              ariaLabel={t('settings.general.sync-notifications-aria')}
-            />
+          <div className="setting-item-description">
+            {t('settings.general.sync-notifications-desc')}
           </div>
         </div>
+        <div className="setting-item-control">
+          <ToggleSwitch
+            checked={notificationSettings.showSyncNotifications}
+            onChange={(newValue: boolean) =>
+              void saveNotificationSetting(
+                'showSyncNotifications',
+                newValue,
+                'settings.general.sync-notifications-toggled'
+              )
+            }
+            id="sync-notifications-toggle"
+            ariaLabel={t('settings.general.sync-notifications-aria')}
+          />
+        </div>
+      </div>
 
-        <div className="setting-item">
-          <div className="setting-item-info">
-            <div className="setting-item-name">
-              {t('settings.general.new-trade-notifications')}
-            </div>
-            <div className="setting-item-description">
-              {t('settings.general.new-trade-notifications-desc')}
-            </div>
+      <div className="setting-item">
+        <div className="setting-item-info">
+          <div className="setting-item-name">
+            {t('settings.general.new-trade-notifications')}
           </div>
-          <div className="setting-item-control">
-            <ToggleSwitch
-              checked={
-                plugin.settings.backendIntegration?.showNewTradeNotifications ??
-                true
-              }
-              onChange={async (newValue: boolean) => {
-                if (!plugin.settings.backendIntegration) {
-                  plugin.settings.backendIntegration = {
-                    serverUrl: 'https://api.journalit.co',
-                    syncEnabled: false,
-                    userId: '',
-                    showSyncNotifications: true,
-                    showNewTradeNotifications: true,
-                    showUpdateNotifications: true,
-                    lastSeenVersion: '',
-                  };
-                }
-                plugin.settings.backendIntegration.showNewTradeNotifications =
-                  newValue;
-                await plugin.saveSettings();
-                setSettingsVersion((prev) => prev + 1);
-                new Notice(
-                  t('settings.general.new-trade-notifications-toggled', {
-                    status: newValue
-                      ? t('settings.general.enabled')
-                      : t('settings.general.disabled'),
-                  })
-                );
-              }}
-              id="new-trade-notifications-toggle"
-              ariaLabel={t('settings.general.new-trade-notifications-aria')}
-            />
+          <div className="setting-item-description">
+            {t('settings.general.new-trade-notifications-desc')}
           </div>
         </div>
+        <div className="setting-item-control">
+          <ToggleSwitch
+            checked={notificationSettings.showNewTradeNotifications}
+            onChange={(newValue: boolean) =>
+              void saveNotificationSetting(
+                'showNewTradeNotifications',
+                newValue,
+                'settings.general.new-trade-notifications-toggled'
+              )
+            }
+            id="new-trade-notifications-toggle"
+            ariaLabel={t('settings.general.new-trade-notifications-aria')}
+          />
+        </div>
+      </div>
 
-        <div className="setting-item">
-          <div className="setting-item-info">
-            <div className="setting-item-name">
-              {t('settings.general.update-notifications')}
-            </div>
-            <div className="setting-item-description">
-              {t('settings.general.update-notifications-desc')}
-            </div>
+      <div className="setting-item">
+        <div className="setting-item-info">
+          <div className="setting-item-name">
+            {t('settings.general.update-notifications')}
           </div>
-          <div className="setting-item-control">
-            <ToggleSwitch
-              checked={
-                plugin.settings.backendIntegration?.showUpdateNotifications ??
-                true
-              }
-              onChange={async (newValue: boolean) => {
-                if (!plugin.settings.backendIntegration) {
-                  plugin.settings.backendIntegration = {
-                    serverUrl: 'https://api.journalit.co',
-                    syncEnabled: false,
-                    userId: '',
-                    showSyncNotifications: true,
-                    showNewTradeNotifications: true,
-                    showUpdateNotifications: true,
-                    lastSeenVersion: '',
-                  };
-                }
-                plugin.settings.backendIntegration.showUpdateNotifications =
-                  newValue;
-                await plugin.saveSettings();
-                setSettingsVersion((prev) => prev + 1);
-                new Notice(
-                  t('settings.general.update-notifications-toggled', {
-                    status: newValue
-                      ? t('settings.general.enabled')
-                      : t('settings.general.disabled'),
-                  })
-                );
-              }}
-              id="show-update-notifications-toggle"
-              ariaLabel={t('settings.general.update-notifications-aria')}
-            />
+          <div className="setting-item-description">
+            {t('settings.general.update-notifications-desc')}
           </div>
         </div>
-      </Accordion>
-    </>
+        <div className="setting-item-control">
+          <ToggleSwitch
+            checked={notificationSettings.showUpdateNotifications}
+            onChange={(newValue: boolean) =>
+              void saveNotificationSetting(
+                'showUpdateNotifications',
+                newValue,
+                'settings.general.update-notifications-toggled'
+              )
+            }
+            id="show-update-notifications-toggle"
+            ariaLabel={t('settings.general.update-notifications-aria')}
+          />
+        </div>
+      </div>
+    </Accordion>
   );
 }
 
@@ -1582,6 +1641,9 @@ function GeneralDataManagementSection({
   isResetting,
   setIsResetting,
   setSettingsVersion,
+  includePrivacyMode = true,
+  includeSettingsActions = true,
+  flat = false,
 }: Pick<
   GeneralTabModel,
   | 'plugin'
@@ -1594,15 +1656,21 @@ function GeneralDataManagementSection({
   | 'isResetting'
   | 'setIsResetting'
   | 'setSettingsVersion'
->) {
+> & {
+  includePrivacyMode?: boolean;
+  includeSettingsActions?: boolean;
+  flat?: boolean;
+}) {
   return (
-    <>
-      
-      <Accordion
-        title={t('settings.general.data-management')}
-        defaultExpanded={false}
-      >
-        
+    <SettingsSectionOrAccordion
+      title={
+        includePrivacyMode
+          ? t('settings.general.data-management')
+          : t('settings.general.backup-restore-section')
+      }
+      flat={flat}
+    >
+      {includePrivacyMode && (
         <div className="setting-item">
           <div className="setting-item-info">
             <div className="setting-item-name">
@@ -1621,125 +1689,129 @@ function GeneralDataManagementSection({
             />
           </div>
         </div>
+      )}
 
-        
-        <div className="setting-item">
-          <div className="setting-item-info">
-            <div className="setting-item-name">
-              {t('settings.general.export-settings')}
+      {includeSettingsActions && (
+        <>
+          
+          <div className="setting-item">
+            <div className="setting-item-info">
+              <div className="setting-item-name">
+                {t('settings.general.export-settings')}
+              </div>
+              <div className="setting-item-description">
+                {t('settings.general.export-settings-desc')}
+              </div>
             </div>
-            <div className="setting-item-description">
-              {t('settings.general.export-settings-desc')}
+            <div className="setting-item-control">
+              <Button
+                variant="primary"
+                onClick={() => {
+                  void (async () => {
+                    setIsExporting(true);
+                    try {
+                      await settingsExporter.current.exportSettings();
+                    } finally {
+                      setIsExporting(false);
+                    }
+                  })();
+                }}
+                disabled={isExporting}
+                className="journalit-settings-action-button"
+              >
+                {isExporting
+                  ? t('settings.general.export-settings-exporting')
+                  : t('settings.general.export-settings')}
+              </Button>
             </div>
           </div>
-          <div className="setting-item-control">
-            <Button
-              variant="primary"
-              onClick={() => {
-                void (async () => {
-                  setIsExporting(true);
-                  try {
-                    await settingsExporter.current.exportSettings();
-                  } finally {
-                    setIsExporting(false);
-                  }
-                })();
-              }}
-              disabled={isExporting}
-              className="journalit-settings-action-button"
-            >
-              {isExporting
-                ? t('settings.general.export-settings-exporting')
-                : t('settings.general.export-settings')}
-            </Button>
-          </div>
-        </div>
 
-        
-        <div className="setting-item">
-          <div className="setting-item-info">
-            <div className="setting-item-name">
-              {t('settings.general.import-settings')}
+          
+          <div className="setting-item">
+            <div className="setting-item-info">
+              <div className="setting-item-name">
+                {t('settings.general.import-settings')}
+              </div>
+              <div className="setting-item-description">
+                {t('settings.general.import-settings-desc')}
+              </div>
             </div>
-            <div className="setting-item-description">
-              {t('settings.general.import-settings-desc')}
+            <div className="setting-item-control">
+              <Button
+                variant="primary"
+                onClick={() => {
+                  void (async () => {
+                    setIsImporting(true);
+                    try {
+                      const file =
+                        await settingsExporter.current.openImportFilePicker();
+                      if (file) {
+                        const success =
+                          await settingsExporter.current.importSettings(file);
+                        if (success) {
+                          setSettingsVersion((prev) => prev + 1);
+                        }
+                      }
+                    } finally {
+                      setIsImporting(false);
+                    }
+                  })();
+                }}
+                disabled={isImporting}
+                className="journalit-settings-action-button"
+              >
+                {isImporting
+                  ? t('settings.general.import-settings-importing')
+                  : t('settings.general.import-settings')}
+              </Button>
             </div>
           </div>
-          <div className="setting-item-control">
-            <Button
-              variant="primary"
-              onClick={() => {
-                void (async () => {
-                  setIsImporting(true);
-                  try {
-                    const file =
-                      await settingsExporter.current.openImportFilePicker();
-                    if (file) {
+
+          
+          <div className="setting-item journalit-settings-divider">
+            <div className="setting-item-info">
+              <div className="setting-item-name">
+                {t('settings.general.reset-to-defaults')}
+              </div>
+              <div className="setting-item-description">
+                {t('settings.general.reset-to-defaults-desc')}
+                <br />
+                <span className="journalit-settings-text-error">
+                  {t('settings.general.reset-to-defaults-warning')}
+                </span>
+              </div>
+            </div>
+            <div className="setting-item-control">
+              <Button
+                variant="danger"
+                onClick={() => {
+                  void (async () => {
+                    setIsResetting(true);
+                    try {
                       const success =
-                        await settingsExporter.current.importSettings(file);
+                        await settingsExporter.current.resetToDefaults(
+                          plugin.app
+                        );
                       if (success) {
                         setSettingsVersion((prev) => prev + 1);
                       }
+                    } finally {
+                      setIsResetting(false);
                     }
-                  } finally {
-                    setIsImporting(false);
-                  }
-                })();
-              }}
-              disabled={isImporting}
-              className="journalit-settings-action-button"
-            >
-              {isImporting
-                ? t('settings.general.import-settings-importing')
-                : t('settings.general.import-settings')}
-            </Button>
-          </div>
-        </div>
-
-        
-        <div className="setting-item journalit-settings-divider">
-          <div className="setting-item-info">
-            <div className="setting-item-name">
-              {t('settings.general.reset-to-defaults')}
-            </div>
-            <div className="setting-item-description">
-              {t('settings.general.reset-to-defaults-desc')}
-              <br />
-              <span className="journalit-settings-text-error">
-                {t('settings.general.reset-to-defaults-warning')}
-              </span>
+                  })();
+                }}
+                disabled={isResetting}
+                className="journalit-settings-action-button"
+              >
+                {isResetting
+                  ? t('settings.general.reset-to-defaults-resetting')
+                  : t('settings.general.reset-to-defaults')}
+              </Button>
             </div>
           </div>
-          <div className="setting-item-control">
-            <Button
-              variant="danger"
-              onClick={() => {
-                void (async () => {
-                  setIsResetting(true);
-                  try {
-                    const success =
-                      await settingsExporter.current.resetToDefaults(
-                        plugin.app
-                      );
-                    if (success) {
-                      setSettingsVersion((prev) => prev + 1);
-                    }
-                  } finally {
-                    setIsResetting(false);
-                  }
-                })();
-              }}
-              disabled={isResetting}
-              className="journalit-settings-action-button"
-            >
-              {isResetting
-                ? t('settings.general.reset-to-defaults-resetting')
-                : t('settings.general.reset-to-defaults')}
-            </Button>
-          </div>
-        </div>
-      </Accordion>
-    </>
+        </>
+      )}
+    </SettingsSectionOrAccordion>
   );
 }
 
@@ -1749,6 +1821,7 @@ function GeneralFolderSettingsSection({
   handleJournalFolderPathChange,
   setIsUpdatingImages,
   isUpdatingImages,
+  flat = false,
 }: Pick<
   GeneralTabModel,
   | 'plugin'
@@ -1756,169 +1829,159 @@ function GeneralFolderSettingsSection({
   | 'handleJournalFolderPathChange'
   | 'setIsUpdatingImages'
   | 'isUpdatingImages'
->) {
+> & { flat?: boolean }) {
   return (
-    <>
+    <SettingsSectionOrAccordion
+      title={t('settings.general.folder-section')}
+      flat={flat}
+    >
       
-      <Accordion
-        title={t('settings.general.folder-section')}
-        defaultExpanded={false}
-      >
-        
-        <div className="setting-item">
-          <div className="setting-item-info">
-            <div className="setting-item-name">
-              {t('settings.general.journal-folder')}
-            </div>
-            <div className="setting-item-description">
-              {t('settings.general.journal-folder-desc')}
-              <br />
-              {t('settings.general.journal-folder-desc-2')}
-            </div>
+      <div className="setting-item">
+        <div className="setting-item-info">
+          <div className="setting-item-name">
+            {t('settings.general.journal-folder')}
           </div>
-          <div className="setting-item-control">
-            <FolderBrowser
-              selectedPath={journalFolderPath}
-              onChange={handleJournalFolderPathChange}
-              placeholder={
-                journalFolderPath
-                  ? t('settings.general.journal-folder-placeholder')
-                  : t('settings.general.journal-folder-default')
-              }
-              app={plugin.app}
-            />
+          <div className="setting-item-description">
+            {t('settings.general.journal-folder-desc')}
+            <br />
+            {t('settings.general.journal-folder-desc-2')}
           </div>
         </div>
+        <div className="setting-item-control">
+          <FolderBrowser
+            selectedPath={journalFolderPath}
+            onChange={handleJournalFolderPathChange}
+            placeholder={
+              journalFolderPath
+                ? t('settings.general.journal-folder-placeholder')
+                : t('settings.general.journal-folder-default')
+            }
+            app={plugin.app}
+          />
+        </div>
+      </div>
 
-        
-        <div className="setting-item journalit-settings-divider journalit-settings-divider--compact">
-          <div className="setting-item-info">
-            <div className="setting-item-name">
-              {t('settings.general.update-image-paths')}
-            </div>
-            <div className="setting-item-description">
-              {t('settings.general.update-image-paths-desc')}
-            </div>
+      
+      <div className="setting-item journalit-settings-divider journalit-settings-divider--compact">
+        <div className="setting-item-info">
+          <div className="setting-item-name">
+            {t('settings.general.update-image-paths')}
           </div>
-          <div className="setting-item-control">
-            <Button
-              variant="primary"
-              onClick={() => {
-                void (async () => {
-                  setIsUpdatingImages(true);
-                  try {
-                    const currentPath =
-                      plugin.settings.general?.journalFolderPath ||
-                      '!Journalit';
-                    const normalizedCurrentPath =
-                      currentPath.replace(/\/$/, '') + '/';
+          <div className="setting-item-description">
+            {t('settings.general.update-image-paths-desc')}
+          </div>
+        </div>
+        <div className="setting-item-control">
+          <Button
+            variant="primary"
+            onClick={() => {
+              void (async () => {
+                setIsUpdatingImages(true);
+                try {
+                  const currentPath =
+                    plugin.settings.general?.journalFolderPath || '!Journalit';
+                  const normalizedCurrentPath =
+                    currentPath.replace(/\/$/, '') + '/';
 
+                  
+                  const allFiles = plugin.app.vault.getMarkdownFiles();
+                  const oldBasePaths = new Set<string>();
+
+                  const utility = new TradePathUpdateUtility(
+                    plugin.app,
+                    plugin.tradeService
+                  );
+
+                  for (const file of allFiles) {
                     
-                    const allFiles = plugin.app.vault.getMarkdownFiles();
-                    const oldBasePaths = new Set<string>();
-
-                    const utility = new TradePathUpdateUtility(
-                      plugin.app,
-                      plugin.tradeService
+                    const oldPaths = utility.getImageBasePaths(
+                      file,
+                      normalizedCurrentPath
                     );
 
-                    for (const file of allFiles) {
-                      
-                      const oldPaths = utility.getImageBasePaths(
-                        file,
-                        normalizedCurrentPath
-                      );
-
-                      if (oldPaths.size > 0) {
-                        oldPaths.forEach((oldPath) =>
-                          oldBasePaths.add(oldPath)
-                        );
-                      }
+                    if (oldPaths.size > 0) {
+                      oldPaths.forEach((oldPath) => oldBasePaths.add(oldPath));
                     }
+                  }
 
-                    if (oldBasePaths.size === 0) {
-                      new Notice(
-                        t('settings.general.update-image-paths-match')
-                      );
-                      setIsUpdatingImages(false);
-                      return;
-                    }
+                  if (oldBasePaths.size === 0) {
+                    new Notice(t('settings.general.update-image-paths-match'));
+                    setIsUpdatingImages(false);
+                    return;
+                  }
 
-                    
-                    let totalFilesUpdated = 0;
-                    let totalFailed = 0;
-                    const allErrors: string[] = [];
+                  
+                  let totalFilesUpdated = 0;
+                  let totalFailed = 0;
+                  const allErrors: string[] = [];
 
-                    const pathStats =
-                      await utility.updateImagePathsForBasePaths(
-                        Array.from(oldBasePaths),
-                        normalizedCurrentPath.replace(/\/$/, '')
-                      );
-                    totalFilesUpdated += pathStats.updated;
-                    totalFailed += pathStats.failed;
-                    allErrors.push(...pathStats.errors);
+                  const pathStats = await utility.updateImagePathsForBasePaths(
+                    Array.from(oldBasePaths),
+                    normalizedCurrentPath.replace(/\/$/, '')
+                  );
+                  totalFilesUpdated += pathStats.updated;
+                  totalFailed += pathStats.failed;
+                  allErrors.push(...pathStats.errors);
 
-                    
-                    try {
-                      const quarterlyStats =
-                        await utility.fixQuarterlyImagePaths(
-                          currentPath.replace(/\/$/, '')
-                        );
-                      totalFilesUpdated += quarterlyStats.updated;
-                      totalFailed += quarterlyStats.failed;
-                      allErrors.push(...quarterlyStats.errors);
-                    } catch (error) {
-                      console.error('Failed to fix quarterly paths:', error);
-                      allErrors.push(
-                        `Quarterly fix: ${error instanceof Error ? error.message : String(error)}`
-                      );
-                    }
-
-                    
-                    if (allErrors.length > 0) {
-                      new Notice(
-                        t('settings.general.update-image-paths-errors', {
-                          updated: String(totalFilesUpdated),
-                          failed: String(totalFailed),
-                        }),
-                        8000
-                      );
-                      console.error('Image path update errors:', allErrors);
-                    } else if (totalFilesUpdated > 0) {
-                      new Notice(
-                        t('settings.general.update-image-paths-success', {
-                          count: String(totalFilesUpdated),
-                        }),
-                        5000
-                      );
-                    } else {
-                      new Notice(
-                        t('settings.general.update-image-paths-no-update'),
-                        3000
-                      );
-                    }
+                  
+                  try {
+                    const quarterlyStats = await utility.fixQuarterlyImagePaths(
+                      currentPath.replace(/\/$/, '')
+                    );
+                    totalFilesUpdated += quarterlyStats.updated;
+                    totalFailed += quarterlyStats.failed;
+                    allErrors.push(...quarterlyStats.errors);
                   } catch (error) {
-                    console.error('Failed to update image paths:', error);
+                    console.error('Failed to fix quarterly paths:', error);
+                    allErrors.push(
+                      `Quarterly fix: ${error instanceof Error ? error.message : String(error)}`
+                    );
+                  }
+
+                  
+                  if (allErrors.length > 0) {
                     new Notice(
-                      t('settings.general.update-image-paths-failed'),
+                      t('settings.general.update-image-paths-errors', {
+                        updated: String(totalFilesUpdated),
+                        failed: String(totalFailed),
+                      }),
+                      8000
+                    );
+                    console.error('Image path update errors:', allErrors);
+                  } else if (totalFilesUpdated > 0) {
+                    new Notice(
+                      t('settings.general.update-image-paths-success', {
+                        count: String(totalFilesUpdated),
+                      }),
                       5000
                     );
-                  } finally {
-                    setIsUpdatingImages(false);
+                  } else {
+                    new Notice(
+                      t('settings.general.update-image-paths-no-update'),
+                      3000
+                    );
                   }
-                })();
-              }}
-              disabled={isUpdatingImages}
-              className="journalit-settings-action-button"
-            >
-              {isUpdatingImages
-                ? t('settings.general.update-image-paths-updating')
-                : t('settings.general.update-image-paths')}
-            </Button>
-          </div>
+                } catch (error) {
+                  console.error('Failed to update image paths:', error);
+                  new Notice(
+                    t('settings.general.update-image-paths-failed'),
+                    5000
+                  );
+                } finally {
+                  setIsUpdatingImages(false);
+                }
+              })();
+            }}
+            disabled={isUpdatingImages}
+            className="journalit-settings-action-button"
+          >
+            {isUpdatingImages
+              ? t('settings.general.update-image-paths-updating')
+              : t('settings.general.update-image-paths')}
+          </Button>
         </div>
-      </Accordion>
-    </>
+      </div>
+    </SettingsSectionOrAccordion>
   );
 }
 
@@ -1940,6 +2003,8 @@ function GeneralCoreSettingsSection({
   handleJournalFolderPathChange,
   setIsUpdatingImages,
   isUpdatingImages,
+  showFolderSettings = true,
+  flat = false,
 }: Pick<
   GeneralTabModel,
   | 'plugin'
@@ -1959,7 +2024,7 @@ function GeneralCoreSettingsSection({
   | 'handleJournalFolderPathChange'
   | 'setIsUpdatingImages'
   | 'isUpdatingImages'
->) {
+> & { showFolderSettings?: boolean; flat?: boolean }) {
   return (
     <>
       <h3>{t('settings.general.title')}</h3>
@@ -1995,7 +2060,7 @@ function GeneralCoreSettingsSection({
           <Select
             value={plugin.settings.general?.currency || CurrencyCode.USD}
             onChange={handleCurrencyChange}
-            options={getCurrencyOptions()}
+            options={getBaseCurrencyOptions()}
             id="currency-dropdown"
             aria-label={t('settings.general.currency-aria')}
           />
@@ -2053,10 +2118,9 @@ function GeneralCoreSettingsSection({
         </div>
       </div>
 
-      
-      <Accordion
+      <SettingsSectionOrAccordion
         title={t('settings.general.home-view-settings')}
-        defaultExpanded={false}
+        flat={flat}
       >
         
         <div className="setting-item">
@@ -2112,12 +2176,12 @@ function GeneralCoreSettingsSection({
             />
           </div>
         </div>
-      </Accordion>
+      </SettingsSectionOrAccordion>
 
       
-      <Accordion
+      <SettingsSectionOrAccordion
         title={t('settings.general.navigation-sidebar')}
-        defaultExpanded={false}
+        flat={flat}
       >
         <div className="setting-item">
           <div className="setting-item-info">
@@ -2161,20 +2225,23 @@ function GeneralCoreSettingsSection({
             />
           </div>
         </div>
-      </Accordion>
+      </SettingsSectionOrAccordion>
 
-      <GeneralFolderSettingsSection
-        plugin={plugin}
-        journalFolderPath={journalFolderPath}
-        handleJournalFolderPathChange={handleJournalFolderPathChange}
-        setIsUpdatingImages={setIsUpdatingImages}
-        isUpdatingImages={isUpdatingImages}
-      />
+      {showFolderSettings && (
+        <GeneralFolderSettingsSection
+          plugin={plugin}
+          journalFolderPath={journalFolderPath}
+          handleJournalFolderPathChange={handleJournalFolderPathChange}
+          setIsUpdatingImages={setIsUpdatingImages}
+          isUpdatingImages={isUpdatingImages}
+        />
+      )}
     </>
   );
 }
 
 export const GeneralTab: React.FC<GeneralTabProps> = (props) => {
+  const scope = props.scope ?? 'all';
   const {
     analyticsDateBasisOptions,
     breakEvenModeOptions,
@@ -2226,64 +2293,104 @@ export const GeneralTab: React.FC<GeneralTabProps> = (props) => {
 
   return (
     <div className="journalit-settings-tab general-settings">
-      <GeneralCoreSettingsSection
-        plugin={plugin}
-        docsIconRef={docsIconRef}
-        discordIconRef={discordIconRef}
-        githubIconRef={githubIconRef}
-        handleCurrencyChange={handleCurrencyChange}
-        displayName={displayName}
-        displayNameDirty={displayNameDirty}
-        handleDisplayNameInputChange={handleDisplayNameInputChange}
-        handleDisplayNameConfirm={handleDisplayNameConfirm}
-        handleDisplayNameCancel={handleDisplayNameCancel}
-        handleHomeStartupBehaviorChange={handleHomeStartupBehaviorChange}
-        handleFilterRecentItemsToggle={handleFilterRecentItemsToggle}
-        setSettingsVersion={setSettingsVersion}
-        journalFolderPath={journalFolderPath}
-        handleJournalFolderPathChange={handleJournalFolderPathChange}
-        setIsUpdatingImages={setIsUpdatingImages}
-        isUpdatingImages={isUpdatingImages}
-      />
+      {(scope === 'general' || scope === 'all') && (
+        <GeneralCoreSettingsSection
+          plugin={plugin}
+          docsIconRef={docsIconRef}
+          discordIconRef={discordIconRef}
+          githubIconRef={githubIconRef}
+          handleCurrencyChange={handleCurrencyChange}
+          displayName={displayName}
+          displayNameDirty={displayNameDirty}
+          handleDisplayNameInputChange={handleDisplayNameInputChange}
+          handleDisplayNameConfirm={handleDisplayNameConfirm}
+          handleDisplayNameCancel={handleDisplayNameCancel}
+          handleHomeStartupBehaviorChange={handleHomeStartupBehaviorChange}
+          handleFilterRecentItemsToggle={handleFilterRecentItemsToggle}
+          setSettingsVersion={setSettingsVersion}
+          journalFolderPath={journalFolderPath}
+          handleJournalFolderPathChange={handleJournalFolderPathChange}
+          setIsUpdatingImages={setIsUpdatingImages}
+          isUpdatingImages={isUpdatingImages}
+          showFolderSettings={scope === 'all'}
+          flat={scope === 'general'}
+        />
+      )}
 
-      <GeneralTradeSettingsSection
-        plugin={plugin}
-        handleAutoOpenToggle={handleAutoOpenToggle}
-        handleDateFormatChange={handleDateFormatChange}
-        dateFormatOptions={dateFormatOptions}
-        setSettingsVersion={setSettingsVersion}
-        handleSkipWeekendsToggle={handleSkipWeekendsToggle}
-        handleWeekStartDayChange={handleWeekStartDayChange}
-        weekStartDayOptions={weekStartDayOptions}
-        handleAnalyticsDateBasisChange={handleAnalyticsDateBasisChange}
-        analyticsDateBasisOptions={analyticsDateBasisOptions}
-        handleDollarValueInputToggle={handleDollarValueInputToggle}
-        handleTradingDayCutoffTimeChange={handleTradingDayCutoffTimeChange}
-        handleBreakEvenModeChange={handleBreakEvenModeChange}
-        breakEvenModeOptions={breakEvenModeOptions}
-        handleBreakEvenPercentChange={handleBreakEvenPercentChange}
-        handleBreakEvenRangeBlur={handleBreakEvenRangeBlur}
-        handleBreakEvenMinChange={handleBreakEvenMinChange}
-        handleBreakEvenMaxChange={handleBreakEvenMaxChange}
-        handleDefaultRiskAmountChange={handleDefaultRiskAmountChange}
-        handleDisplayRMultiplesToggle={handleDisplayRMultiplesToggle}
-        handleIncludeCopyAccountsToggle={handleIncludeCopyAccountsToggle}
-        handleMaeMfeInputModeChange={handleMaeMfeInputModeChange}
-        maeMfeInputModeOptions={maeMfeInputModeOptions}
-      />
+      {scope === 'general' && (
+        <GeneralDataManagementSection
+          plugin={plugin}
+          handlePrivacyModeToggle={handlePrivacyModeToggle}
+          settingsExporter={settingsExporter}
+          isExporting={isExporting}
+          setIsExporting={setIsExporting}
+          isImporting={isImporting}
+          setIsImporting={setIsImporting}
+          isResetting={isResetting}
+          setIsResetting={setIsResetting}
+          setSettingsVersion={setSettingsVersion}
+          includeSettingsActions={false}
+          flat={true}
+        />
+      )}
 
-      <GeneralDataManagementSection
-        plugin={plugin}
-        handlePrivacyModeToggle={handlePrivacyModeToggle}
-        settingsExporter={settingsExporter}
-        isExporting={isExporting}
-        setIsExporting={setIsExporting}
-        isImporting={isImporting}
-        setIsImporting={setIsImporting}
-        isResetting={isResetting}
-        setIsResetting={setIsResetting}
-        setSettingsVersion={setSettingsVersion}
-      />
+      {(scope === 'trading' || scope === 'all') && (
+        <GeneralTradeSettingsSection
+          plugin={plugin}
+          handleAutoOpenToggle={handleAutoOpenToggle}
+          handleDateFormatChange={handleDateFormatChange}
+          dateFormatOptions={dateFormatOptions}
+          setSettingsVersion={setSettingsVersion}
+          handleSkipWeekendsToggle={handleSkipWeekendsToggle}
+          handleWeekStartDayChange={handleWeekStartDayChange}
+          weekStartDayOptions={weekStartDayOptions}
+          handleAnalyticsDateBasisChange={handleAnalyticsDateBasisChange}
+          analyticsDateBasisOptions={analyticsDateBasisOptions}
+          handleDollarValueInputToggle={handleDollarValueInputToggle}
+          handleTradingDayCutoffTimeChange={handleTradingDayCutoffTimeChange}
+          handleBreakEvenModeChange={handleBreakEvenModeChange}
+          breakEvenModeOptions={breakEvenModeOptions}
+          handleBreakEvenPercentChange={handleBreakEvenPercentChange}
+          handleBreakEvenRangeBlur={handleBreakEvenRangeBlur}
+          handleBreakEvenMinChange={handleBreakEvenMinChange}
+          handleBreakEvenMaxChange={handleBreakEvenMaxChange}
+          handleDefaultRiskAmountChange={handleDefaultRiskAmountChange}
+          handleDisplayRMultiplesToggle={handleDisplayRMultiplesToggle}
+          handleIncludeCopyAccountsToggle={handleIncludeCopyAccountsToggle}
+          handleMaeMfeInputModeChange={handleMaeMfeInputModeChange}
+          maeMfeInputModeOptions={maeMfeInputModeOptions}
+          flat={scope === 'trading'}
+        />
+      )}
+
+      {(scope === 'advanced' || scope === 'all') && (
+        <>
+          {scope === 'advanced' && (
+            <GeneralFolderSettingsSection
+              plugin={plugin}
+              journalFolderPath={journalFolderPath}
+              handleJournalFolderPathChange={handleJournalFolderPathChange}
+              setIsUpdatingImages={setIsUpdatingImages}
+              isUpdatingImages={isUpdatingImages}
+              flat={true}
+            />
+          )}
+          <GeneralDataManagementSection
+            plugin={plugin}
+            handlePrivacyModeToggle={handlePrivacyModeToggle}
+            settingsExporter={settingsExporter}
+            isExporting={isExporting}
+            setIsExporting={setIsExporting}
+            isImporting={isImporting}
+            setIsImporting={setIsImporting}
+            isResetting={isResetting}
+            setIsResetting={setIsResetting}
+            setSettingsVersion={setSettingsVersion}
+            includePrivacyMode={scope === 'all'}
+            flat={scope === 'advanced'}
+          />
+        </>
+      )}
     </div>
   );
 };

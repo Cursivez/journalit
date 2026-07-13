@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { WorkspaceLeaf } from 'obsidian';
 import { ReactView } from './ReactView';
 import { RenderFunction } from './types';
@@ -11,34 +11,52 @@ import {
 } from '../components/dashboard/utils/dataUtils';
 import { createDashboardFilters } from '../settings/viewFiltersDefaults';
 import { eventBus } from '../services/events';
+import type { TradeChangedPayload } from '../services/events/types';
 import { t } from '../lang/helpers';
 
 export const CALENDAR_SIDEBAR_VIEW_TYPE = 'journalit-calendar-sidebar-view';
 
+function shouldRefreshCalendarForTradeChange(
+  payload: TradeChangedPayload
+): boolean {
+  return (
+    payload.action !== 'review-status-updated' &&
+    payload.action !== 'trade-review-updated'
+  );
+}
+
 const CalendarSidebar: React.FC<{ plugin: JournalitPlugin }> = ({ plugin }) => {
   const [trades, setTrades] = useState<Trade[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const hasLoadedRef = useRef(false);
 
-  const loadTrades = useCallback(async () => {
-    setIsLoading(true);
-    const tradeService = plugin.serviceManager.getTradeService();
-    await tradeService.waitForTradeDataReady();
-    const data = await fetchDashboardData(
-      plugin.app,
-      tradeService,
-      createDashboardFilters(),
-      plugin.settings.trade?.defaultRiskAmount,
-      plugin,
-      { freshTradeQuery: true }
-    );
-    setTrades(data.trades);
-    setIsLoading(false);
-  }, [plugin]);
+  const loadTrades = useCallback(
+    async (showSkeleton: boolean) => {
+      if (showSkeleton && !hasLoadedRef.current) {
+        setIsLoading(true);
+      }
+      const tradeService = plugin.serviceManager.getTradeService();
+      await tradeService.waitForTradeDataReady();
+      const data = await fetchDashboardData(
+        plugin.app,
+        tradeService,
+        createDashboardFilters(),
+        plugin.settings.trade?.defaultRiskAmount,
+        plugin,
+        { freshTradeQuery: true }
+      );
+      setTrades(data.trades);
+      hasLoadedRef.current = true;
+      setIsLoading(false);
+    },
+    [plugin]
+  );
 
   useEffect(() => {
-    void loadTrades();
-    const unsubscribe = eventBus.subscribe('trade:changed', () => {
-      void loadTrades();
+    void loadTrades(true);
+    const unsubscribe = eventBus.subscribe('trade:changed', (payload) => {
+      if (!shouldRefreshCalendarForTradeChange(payload)) return;
+      void loadTrades(false);
     });
     return unsubscribe;
   }, [loadTrades]);

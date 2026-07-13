@@ -96,7 +96,6 @@ function preserveLocalTradeAnnotations(
     images: existing.images,
     tags: existing.tags,
     customTags: existing.customTags,
-    setupIds: existing.setupIds,
     setup: existing.setup,
     mistake: existing.mistake,
     customFields: existing.customFields,

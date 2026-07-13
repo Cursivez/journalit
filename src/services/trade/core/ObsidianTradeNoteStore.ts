@@ -15,9 +15,7 @@ export class ObsidianTradeNoteStore {
 
     const tradeFile = file;
     const cached = this.app.metadataCache.getFileCache(tradeFile)?.frontmatter;
-    const cachedIdentity = cached
-      ? this.extractIdentity(cached as Record<string, unknown>)
-      : null;
+    const cachedIdentity = cached ? this.extractIdentity(cached) : null;
 
     try {
       const content = await this.app.vault.read(tradeFile);

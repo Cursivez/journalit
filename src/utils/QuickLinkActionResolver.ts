@@ -39,6 +39,10 @@ export class QuickLinkActionResolver {
         await this.plugin.viewManager.openTradeLogView();
         break;
 
+      case 'openSetups':
+        await this.plugin.viewManager.openSetupsView();
+        break;
+
       case 'openTradingDashboard':
         await this.plugin.viewManager.openDashboardView();
         break;
@@ -101,6 +105,10 @@ export class QuickLinkActionResolver {
 
       case 'openLayoutBuilder':
         await this.plugin.viewManager.openTemplateBuilderView();
+        break;
+
+      case 'openSessionMode':
+        await this.plugin.openSessionMode();
         break;
 
       case 'openHome':

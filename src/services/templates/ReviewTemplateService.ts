@@ -101,7 +101,7 @@ export class ReviewTemplateService {
         id: 'builtin-drc-standard',
         name: 'Standard DRC',
         type: 'drc',
-        version: 4,
+        version: 5,
         createdAt: now,
         updatedAt: now,
         isBuiltIn: true,
@@ -127,6 +127,7 @@ export class ReviewTemplateService {
           { type: 'drawdown-chart' },
           { type: 'stats' },
           { type: 'trades' },
+          { type: 'trade-review' },
           { type: 'markdown-zone', id: 'trade-notes' },
           
           {

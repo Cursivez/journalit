@@ -5,6 +5,7 @@ import JournalitPlugin from '../../../main';
 import { TradeType, TradeStatus } from '../../../services/tradelog/types';
 import type {
   DirectionFilter,
+  ImageAnnotationStatusFilter,
   ReviewStatusFilter,
 } from '../../../services/tradelog/types';
 import {
@@ -46,6 +47,14 @@ export interface UnifiedFilters {
 
   
   customFieldFilters: CustomFieldFilterSelections;
+
+  
+  imageAnnotationStatus?: ImageAnnotationStatusFilter[];
+  imageTags?: string[];
+}
+
+export interface AvailableImageFilterOptions {
+  tags: DropdownOption[];
 }
 
 export interface AvailableCustomFieldFilter {
@@ -64,4 +73,7 @@ export interface FilterModalProps {
   availableAccounts?: string[];
   
   availableCustomFieldFilters?: AvailableCustomFieldFilter[];
+  
+  availableImageFilterOptions?: AvailableImageFilterOptions;
+  showImageFilters?: boolean;
 }

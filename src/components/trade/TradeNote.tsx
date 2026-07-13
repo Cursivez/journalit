@@ -8,6 +8,7 @@ import React, {
   useReducer,
 } from 'react';
 import { TFile } from 'obsidian';
+import type JournalitPlugin from '../../main';
 import { TradeFormData } from '../forms/trade/types';
 import { PartialTradeFrontmatter } from '../../types/TradeFrontmatter';
 import { usePlugin } from '../../hooks/usePlugin';
@@ -21,25 +22,240 @@ import {
   TradeDetailsSection,
   TradeCustomFieldsSection,
 } from './components';
+import { hasTradeCustomFieldDisplayEntries } from './components/TradeCustomFieldsSection';
 import { useTradeMetrics } from './hooks';
-import { TradeReview } from './LossReview';
-import { LossReviewData } from '../../services/backend/types';
 import { TradeTemplateService } from '../../services/templates/TradeTemplateService';
-import { TradeTemplate } from '../../types/reviewV2';
+import {
+  TradeNoteSectionId,
+  TradeTemplate,
+  TradeTemplateAssetType,
+} from '../../types/reviewV2';
 import {
   getTradingDayRange,
   getTradingDayString,
 } from '../../utils/tradingDayUtils';
-import { ReviewButton } from '../shared/ReviewButton';
-import { isTradeOpenWithContext } from '../../utils/tradeStatusUtils';
+import { formatDateDisplay, getUserDateFormat } from '../../utils/dateUtils';
 import { t } from '../../lang/helpers';
 import {
   fetchBreakEvenAccountBalanceLookup,
   resolveBreakEvenAccountBalances,
 } from '../../services/trade/core/BreakEvenAccountBalance';
 import { DisplayPolicyProvider } from '../../contexts/DisplayPolicyContext';
+import { CircleHelp } from '../shared/icons/ObsidianIcon';
+import { CustomFieldDefinition } from '../../types/customFields';
+import { useTradeLabelColorData } from '../../hooks/useTradeLabelColorData';
 
 const TRADE_NAV_CACHE_PREFIX = 'trade-nav-';
+
+const DEFAULT_TRADE_NOTE_SECTION_ORDER: TradeNoteSectionId[] = [
+  'images',
+  'metrics',
+  'thesis',
+  'missedReason',
+  'metadata',
+  'reviewButton',
+];
+
+export async function updateTradeNoteReviewStatus(
+  plugin: JournalitPlugin,
+  data: Pick<PartialTradeFrontmatter, 'isMissedTrade' | 'isBacktestTrade'>,
+  filePath: string,
+  reviewed: boolean,
+  reviewedAt: string
+): Promise<void> {
+  if (data.isMissedTrade === true) {
+    const missedTradeService = plugin.serviceManager
+      ? await plugin.serviceManager.getMissedTradeService()
+      : plugin.missedTradeService;
+    await missedTradeService.updateMissedTradeReviewStatus(
+      filePath,
+      reviewed,
+      reviewedAt
+    );
+    return;
+  }
+
+  if (data.isBacktestTrade === true) {
+    const backtestTradeService = plugin.serviceManager
+      ? await plugin.serviceManager.getBacktestTradeService()
+      : plugin.backtestTradeService;
+    await backtestTradeService.updateBacktestTradeReviewStatus(
+      filePath,
+      reviewed,
+      reviewedAt
+    );
+    return;
+  }
+
+  await plugin.tradeService.updateTradeReviewStatus(
+    filePath,
+    reviewed,
+    reviewedAt,
+    'user-input'
+  );
+}
+
+function isTradeTemplateAssetType(
+  value: string | undefined
+): value is TradeTemplateAssetType {
+  switch (value) {
+    case 'stock':
+    case 'options':
+    case 'futures':
+    case 'forex':
+    case 'crypto':
+    case 'cfd':
+      return true;
+    default:
+      return false;
+  }
+}
+
+function mergeSectionConfig<K extends keyof TradeTemplate['sections']>(
+  baseSections: TradeTemplate['sections'],
+  overrideSections: Partial<TradeTemplate['sections']> | undefined,
+  key: K
+): TradeTemplate['sections'][K] {
+  return {
+    ...baseSections[key],
+    ...(overrideSections?.[key] ?? {}),
+  };
+}
+
+export function getEffectiveTradeTemplate(
+  template: TradeTemplate | null,
+  assetType: string | undefined
+): TradeTemplate | null {
+  if (!template || !isTradeTemplateAssetType(assetType)) return template;
+
+  const override = template.assetOverrides?.[assetType];
+  if (!override) return template;
+
+  return {
+    ...template,
+    sectionOrder: override.sectionOrder ?? template.sectionOrder,
+    sections: {
+      header: template.sections.header,
+      navigation: mergeSectionConfig(
+        template.sections,
+        override.sections,
+        'navigation'
+      ),
+      images: mergeSectionConfig(
+        template.sections,
+        override.sections,
+        'images'
+      ),
+      metadata: mergeSectionConfig(
+        template.sections,
+        override.sections,
+        'metadata'
+      ),
+      details: mergeSectionConfig(
+        template.sections,
+        override.sections,
+        'details'
+      ),
+      reviewButton: mergeSectionConfig(
+        template.sections,
+        override.sections,
+        'reviewButton'
+      ),
+      missedReason: mergeSectionConfig(
+        template.sections,
+        override.sections,
+        'missedReason'
+      ),
+    },
+  };
+}
+
+const isMissedReasonVisible = (template: TradeTemplate | null): boolean =>
+  template?.sections.missedReason?.show !== false;
+
+const MissedTradeReasonSection: React.FC<{ reason: string }> = ({ reason }) => (
+  <section className="missed-trade-reason-section">
+    <div className="missed-trade-reason-header">
+      <div className="missed-trade-reason-title">
+        <CircleHelp size={17} />
+        <h4>{t('missed-trade.reason-title')}</h4>
+      </div>
+    </div>
+    <div className="missed-trade-reason-content">
+      {getKeyedTextLines(reason).map((item, index, lines) => (
+        <React.Fragment key={item.key}>
+          {item.line}
+          {index < lines.length - 1 && <br />}
+        </React.Fragment>
+      ))}
+    </div>
+  </section>
+);
+
+export function getTradeNoteSectionOrder(
+  template: TradeTemplate | null
+): TradeNoteSectionId[] {
+  const configured = template?.sectionOrder ?? [];
+  const valid = configured.filter(
+    (sectionId): sectionId is TradeNoteSectionId =>
+      DEFAULT_TRADE_NOTE_SECTION_ORDER.includes(sectionId)
+  );
+  const missing = DEFAULT_TRADE_NOTE_SECTION_ORDER.filter(
+    (sectionId) => !valid.includes(sectionId)
+  );
+  return [...valid, ...missing];
+}
+
+export function isTradeThesisSectionVisible(
+  template: TradeTemplate | null
+): boolean {
+  const detailsConfig = template?.sections.details;
+  return detailsConfig?.show !== false && detailsConfig?.showThesis !== false;
+}
+
+function ReviewedCheckmark() {
+  return (
+    <svg viewBox="0 0 24 24" focusable="false" aria-hidden="true">
+      <path d="M20 6 9 17l-5-5" />
+    </svg>
+  );
+}
+
+const TradeNoteReviewButton: React.FC<{
+  reviewed?: boolean;
+  reviewedAt?: string;
+  onToggleReviewed: () => void | Promise<void>;
+}> = ({ reviewed = false, reviewedAt, onToggleReviewed }) => {
+  const dateFormat = getUserDateFormat();
+
+  return (
+    <div className="trade-note-review-control">
+      <button
+        type="button"
+        className={`journalit-weekly-drc-mark-reviewed-button ${reviewed ? 'journalit-weekly-drc-mark-reviewed-button--reviewed' : ''}`}
+        onClick={() => void onToggleReviewed()}
+        aria-pressed={reviewed}
+      >
+        <span
+          className={`journalit-weekly-drc-mark-reviewed-icon ${reviewed ? 'journalit-weekly-drc-mark-reviewed-icon--reviewed' : ''}`}
+          aria-hidden="true"
+        >
+          {reviewed && <ReviewedCheckmark />}
+        </span>
+        {reviewed
+          ? t('widget.trade-review.status.reviewed')
+          : t('widget.trade-review.status.pending')}
+      </button>
+      {reviewed && reviewedAt && (
+        <span className="trade-note-reviewed-timestamp">
+          {t('trade.review.reviewed-on', {
+            date: formatDateDisplay(reviewedAt, dateFormat),
+          })}
+        </span>
+      )}
+    </div>
+  );
+};
 
 const parseTradeNavigationCache = (
   value: unknown
@@ -95,6 +311,13 @@ export const TradeNote: React.FC<TradeNoteProps> = React.memo(
       reviewed: data.reviewed,
       reviewedAt: data.reviewedAt,
     });
+    const reviewStatusRef = useRef(reviewStatus);
+    const reviewStatusWriteInFlightRef = useRef(false);
+    const queuedReviewStatusRef = useRef<{
+      reviewed: boolean;
+      reviewedAt: string | undefined;
+      persistedReviewedAt: string;
+    } | null>(null);
 
     
     const [templateRefreshKey, setTemplateRefreshKey] = useState(0);
@@ -106,6 +329,18 @@ export const TradeNote: React.FC<TradeNoteProps> = React.memo(
 
     
     useEffect(() => {
+      if (
+        reviewStatusWriteInFlightRef.current ||
+        queuedReviewStatusRef.current
+      ) {
+        return;
+      }
+
+      const nextReviewStatus = {
+        reviewed: data.reviewed,
+        reviewedAt: data.reviewedAt,
+      };
+      reviewStatusRef.current = nextReviewStatus;
       setReviewStatus({
         reviewed: data.reviewed,
         reviewedAt: data.reviewedAt,
@@ -117,7 +352,41 @@ export const TradeNote: React.FC<TradeNoteProps> = React.memo(
 
     
     const plugin = usePlugin();
+    const labelColors = useTradeLabelColorData(plugin);
     const { service: accountPageService } = useAccountPageService();
+    const [customFieldDefinitions, setCustomFieldDefinitions] = useState<
+      CustomFieldDefinition[]
+    >(() => plugin?.customFieldsService?.getFields() || []);
+
+    useEffect(() => {
+      if (!plugin) return;
+
+      const updateFields = () => {
+        setCustomFieldDefinitions(
+          plugin.customFieldsService?.getFields() || []
+        );
+      };
+
+      updateFields();
+      plugin.app.workspace.on('journalit-custom-fields-changed', updateFields);
+
+      return () => {
+        plugin.app.workspace.off(
+          'journalit-custom-fields-changed',
+          updateFields
+        );
+      };
+    }, [plugin]);
+
+    const hasCustomFieldContent = React.useMemo(
+      () =>
+        hasTradeCustomFieldDisplayEntries(
+          data,
+          customFieldDefinitions,
+          plugin?.settings.trade.dateFormat
+        ),
+      [data, customFieldDefinitions, plugin?.settings.trade.dateFormat]
+    );
 
     const [breakEvenAccountCurrentBalance, dispatchBreakEvenAccountBalance] =
       useReducer(
@@ -202,43 +471,6 @@ export const TradeNote: React.FC<TradeNoteProps> = React.memo(
     });
 
     
-    const updateLossReview = useCallback(
-      async (newData: LossReviewData) => {
-        if (!plugin || !filePath || filePath === 'unknown') return;
-
-        if (data.isMissedTrade === true) {
-          if (!plugin.missedTradeService) return;
-
-          try {
-            await plugin.missedTradeService.updateMissedTradeReview(
-              filePath,
-              newData
-            );
-          } catch (error: unknown) {
-            console.error(
-              '[TradeNote] Error updating missed trade review:',
-              error
-            );
-          }
-          return;
-        }
-
-        if (plugin.tradeService) {
-          try {
-            await plugin.tradeService.updateLossReview(
-              filePath,
-              newData,
-              'user-input'
-            );
-          } catch (error: unknown) {
-            console.error('[TradeNote] Error updating loss review:', error);
-          }
-        }
-      },
-      [plugin, filePath, data.isMissedTrade]
-    );
-
-    
     
     const tradeTemplate = React.useMemo<TradeTemplate | null>(() => {
       if (!plugin) return null;
@@ -264,42 +496,14 @@ export const TradeNote: React.FC<TradeNoteProps> = React.memo(
       // eslint-disable-next-line react-hooks/exhaustive-deps -- initial data load is controlled by trade identity, not every derived dependency
     }, [plugin, data.templateId, templateRefreshKey]);
 
-    
-    
-    const reviewSettings = React.useMemo(() => {
-      const showMode = tradeTemplate?.sections?.review?.show ?? 'losses-only';
-      const isLoss = metrics.isLoss === true;
-
-      
-      let templateSections;
-      if (showMode === 'always') {
-        
-        templateSections = isLoss
-          ? tradeTemplate?.sections?.review?.lossSections ||
-            tradeTemplate?.sections?.review?.sections ||
-            []
-          : tradeTemplate?.sections?.review?.winSections ||
-            tradeTemplate?.sections?.review?.sections ||
-            [];
-      } else {
-        
-        templateSections = tradeTemplate?.sections?.review?.sections || [];
-      }
-
-      
-      
-      return {
-        enabled: showMode !== 'never' && templateSections.length > 0,
-        sections: templateSections.map((section) => ({
-          id: section.id,
-          title: section.title,
-          type: section.type,
-          content: section.content,
-          items: section.items,
-          placeholder: section.placeholder,
-        })),
-      };
-    }, [tradeTemplate, metrics.isLoss]);
+    const effectiveTradeTemplate = React.useMemo(
+      () => getEffectiveTradeTemplate(tradeTemplate, data.assetType),
+      [tradeTemplate, data.assetType]
+    );
+    const tradeNoteSectionOrder = React.useMemo(
+      () => getTradeNoteSectionOrder(effectiveTradeTemplate),
+      [effectiveTradeTemplate]
+    );
 
     useEffect(() => {
       
@@ -412,51 +616,95 @@ export const TradeNote: React.FC<TradeNoteProps> = React.memo(
       }
     }, [data, onEditClick]);
 
-    
-    const handleMarkReviewed = useCallback(async () => {
-      if (plugin && filePath && filePath !== 'unknown') {
-        if (data.isMissedTrade === true && !plugin.missedTradeService) return;
-        if (data.isMissedTrade !== true && !plugin.tradeService) return;
+    const flushQueuedReviewStatus = useCallback(() => {
+      if (
+        reviewStatusWriteInFlightRef.current ||
+        !plugin ||
+        !filePath ||
+        filePath === 'unknown'
+      ) {
+        return;
+      }
 
-        const timestamp = new Date().toISOString();
+      if (data.isMissedTrade !== true && !plugin.tradeService) return;
 
-        
-        setReviewStatus({
-          reviewed: true,
-          reviewedAt: timestamp,
-        });
-
+      const nextReviewStatus = queuedReviewStatusRef.current;
+      if (!nextReviewStatus) return;
+      queuedReviewStatusRef.current = null;
+      reviewStatusWriteInFlightRef.current = true;
+      void (async () => {
         try {
-          if (data.isMissedTrade === true) {
-            await plugin.missedTradeService.updateMissedTradeReviewStatus(
-              filePath,
-              true,
-              timestamp
-            );
-          } else {
-            await plugin.tradeService.updateTradeReviewStatus(
-              filePath,
-              true,
-              timestamp,
-              'user-input'
-            );
-          }
-          
+          await updateTradeNoteReviewStatus(
+            plugin,
+            data,
+            filePath,
+            nextReviewStatus.reviewed,
+            nextReviewStatus.persistedReviewedAt
+          );
         } catch (error: unknown) {
           console.error('[TradeNote] Error updating review status:', error);
-          
-          setReviewStatus({
+          queuedReviewStatusRef.current = null;
+          const revertedReviewStatus = {
             reviewed: data.reviewed,
             reviewedAt: data.reviewedAt,
-          });
+          };
+          reviewStatusRef.current = revertedReviewStatus;
+          setReviewStatus(revertedReviewStatus);
+        } finally {
+          reviewStatusWriteInFlightRef.current = false;
+          if (queuedReviewStatusRef.current) {
+            flushQueuedReviewStatus();
+          }
         }
-      }
-    }, [plugin, filePath, data.reviewed, data.reviewedAt, data.isMissedTrade]);
+      })();
+    }, [plugin, filePath, data]);
+
+    
+    const handleToggleReviewed = useCallback(() => {
+      if (!plugin || !filePath || filePath === 'unknown') return;
+      if (data.isMissedTrade !== true && !plugin.tradeService) return;
+
+      const nextReviewed = reviewStatusRef.current.reviewed !== true;
+      const timestamp = nextReviewed ? new Date().toISOString() : '';
+      const nextReviewStatus = {
+        reviewed: nextReviewed,
+        reviewedAt: nextReviewed ? timestamp : undefined,
+      };
+
+      reviewStatusRef.current = nextReviewStatus;
+      queuedReviewStatusRef.current = {
+        ...nextReviewStatus,
+        persistedReviewedAt: timestamp,
+      };
+      setReviewStatus(nextReviewStatus);
+      flushQueuedReviewStatus();
+    }, [plugin, filePath, data.isMissedTrade, flushQueuedReviewStatus]);
+
+    const showNavigationSection =
+      effectiveTradeTemplate?.sections?.navigation?.show !== false;
+    const showReviewButtonSection =
+      effectiveTradeTemplate?.sections?.reviewButton?.show !== false;
 
     const tradeHeader = (
       <TradeHeader
         instrument={data.instrument}
         direction={data.direction}
+        entryTime={data.entryTime}
+        sourcePath={filePath}
+        onEditClick={handleEditClick}
+        sessionNavigation={
+          showNavigationSection &&
+          (data.entryTime || data.useDirectPnLInput) ? (
+            <TradeNavigationSection data={data} filePath={filePath} />
+          ) : null
+        }
+        showReviewNavigation={showNavigationSection}
+        reviewed={reviewStatus.reviewed === true}
+        onToggleReviewed={
+          showReviewButtonSection
+            ? () => void handleToggleReviewed()
+            : undefined
+        }
         outcome={{
           kind: metrics.isBreakeven
             ? 'breakeven'
@@ -515,130 +763,89 @@ export const TradeNote: React.FC<TradeNoteProps> = React.memo(
         )}
 
         
-        {tradeTemplate?.sections?.navigation?.show !== false &&
-          (data.entryTime || data.useDirectPnLInput) && (
-            <TradeNavigationSection
-              data={data}
-              filePath={filePath}
-              onEditClick={onEditClick}
-              handleEditClick={handleEditClick}
-            />
-          )}
-
-        
         <div className="trade-note-content">
-          
-          {tradeTemplate?.sections?.images?.show !== false && (
-            <TradeImageSection
-              images={data.images}
-              onEditClick={handleEditClick}
-              sourcePath={filePath}
-            />
-          )}
-
-          
-          {tradeTemplate?.sections?.metadata?.show !== false && (
-            <TradeMetadataSection
-              data={data}
-              onAccountClick={handleAccountClick}
-              config={tradeTemplate?.sections?.metadata}
-            />
-          )}
-
-          
-          <TradeCustomFieldsSection data={data} />
-
-          
-          {tradeTemplate?.sections?.details?.show !== false && (
-            <TradeDetailsSection
-              data={data}
-              metrics={metrics}
-              formatTime={formatTime}
-              onEditClick={handleEditClick}
-              config={tradeTemplate?.sections?.details}
-            />
-          )}
-
-          {data.isMissedTrade === true && data.missedReason && (
-            <div className="missed-trade-reason-section">
-              <div className="details-card">
-                <h4>{t('missed-trade.reason-title')}</h4>
-                <div className="missed-trade-reason-content">
-                  {getKeyedTextLines(data.missedReason).map(
-                    (item, index, lines) => (
-                      <React.Fragment key={item.key}>
-                        {item.line}
-                        {index < lines.length - 1 && <br />}
-                      </React.Fragment>
-                    )
-                  )}
-                </div>
-              </div>
-            </div>
-          )}
-
-          
-          {(() => {
-            
-            const reviewShowMode =
-              tradeTemplate?.sections?.review?.show ?? 'losses-only';
-
-            
-            if (reviewShowMode === 'never') return false;
-
-            
-            if (data.isBacktestTrade) {
-              const showForBacktest =
-                tradeTemplate?.sections?.review?.showForBacktest ?? false;
-              if (!showForBacktest) return false;
+          {tradeNoteSectionOrder.map((sectionId) => {
+            switch (sectionId) {
+              case 'navigation':
+                return null;
+              case 'images':
+                return effectiveTradeTemplate?.sections?.images?.show !==
+                  false ? (
+                  <TradeImageSection
+                    key={sectionId}
+                    images={data.images}
+                    onEditClick={handleEditClick}
+                    sourcePath={filePath}
+                  />
+                ) : null;
+              case 'metrics':
+                return effectiveTradeTemplate?.sections?.details?.show !==
+                  false ? (
+                  <TradeDetailsSection
+                    key={sectionId}
+                    data={data}
+                    metrics={metrics}
+                    defaultRiskAmount={
+                      plugin?.settings?.trade?.defaultRiskAmount
+                    }
+                    formatTime={formatTime}
+                    config={effectiveTradeTemplate?.sections?.details}
+                    section="metrics"
+                  />
+                ) : null;
+              case 'thesis':
+                return isTradeThesisSectionVisible(effectiveTradeTemplate) ? (
+                  <TradeDetailsSection
+                    key={sectionId}
+                    data={data}
+                    metrics={metrics}
+                    defaultRiskAmount={
+                      plugin?.settings?.trade?.defaultRiskAmount
+                    }
+                    formatTime={formatTime}
+                    config={effectiveTradeTemplate?.sections?.details}
+                    section="thesis"
+                  />
+                ) : null;
+              case 'missedReason':
+                return data.isMissedTrade === true &&
+                  data.missedReason &&
+                  isMissedReasonVisible(effectiveTradeTemplate) ? (
+                  <MissedTradeReasonSection
+                    key={sectionId}
+                    reason={data.missedReason}
+                  />
+                ) : null;
+              case 'metadata':
+                return effectiveTradeTemplate?.sections?.metadata?.show !==
+                  false ? (
+                  <TradeMetadataSection
+                    key={sectionId}
+                    data={data}
+                    onAccountClick={handleAccountClick}
+                    config={effectiveTradeTemplate?.sections?.metadata}
+                    labelColors={labelColors}
+                  >
+                    {effectiveTradeTemplate?.sections?.metadata
+                      ?.showCustomFields !== false &&
+                      hasCustomFieldContent && (
+                        <TradeCustomFieldsSection data={data} />
+                      )}
+                  </TradeMetadataSection>
+                ) : null;
+              case 'reviewButton':
+                return effectiveTradeTemplate?.sections?.reviewButton?.show !==
+                  false ? (
+                  <div key={sectionId} className="trade-note-review-section">
+                    <TradeNoteReviewButton
+                      reviewed={reviewStatus.reviewed}
+                      reviewedAt={reviewStatus.reviewedAt}
+                      onToggleReviewed={handleToggleReviewed}
+                    />
+                  </div>
+                ) : null;
             }
-
-            if (data.isMissedTrade) {
-              return tradeTemplate?.sections?.review?.showForMissed ?? false;
-            }
-
-            
-            if (reviewShowMode === 'always') {
-              const isOpen = isTradeOpenWithContext({
-                tradeStatus: data.tradeStatus,
-                exitTime: data.exitTime,
-                pnl: data.pnl,
-                useDirectPnLInput: data.useDirectPnLInput,
-                exits: data.exits,
-                entries: data.entries,
-              });
-              return !isOpen; 
-            }
-
-            
-            const isOpen = isTradeOpenWithContext({
-              tradeStatus: data.tradeStatus,
-              exitTime: data.exitTime,
-              pnl: data.pnl,
-              useDirectPnLInput: data.useDirectPnLInput,
-              exits: data.exits,
-              entries: data.entries,
-            });
-            return !isOpen && metrics.isLoss === true;
-          })() && (
-            <TradeReview
-              settings={reviewSettings}
-              data={data.lossReview}
-              onUpdate={updateLossReview}
-              filePath={filePath}
-            />
-          )}
-
-          
-          {tradeTemplate?.sections?.reviewButton?.show !== false && (
-            <div className="trade-note-review-section">
-              <ReviewButton
-                reviewed={reviewStatus.reviewed}
-                reviewedAt={reviewStatus.reviewedAt}
-                onMarkReviewed={handleMarkReviewed}
-              />
-            </div>
-          )}
+          })}
         </div>
       </div>
     );
@@ -649,14 +856,7 @@ export const TradeNote: React.FC<TradeNoteProps> = React.memo(
 const TradeNavigationSection: React.FC<{
   data: TradeNoteProps['data'];
   filePath: string;
-  onEditClick?: (data: TradeNoteProps['data']) => void;
-  handleEditClick?: () => void;
-}> = React.memo(function TradeNavigationSection({
-  data,
-  filePath,
-  onEditClick,
-  handleEditClick,
-}) {
+}> = React.memo(function TradeNavigationSection({ data, filePath }) {
   const plugin = usePlugin();
   const [navigationState, dispatchNavigationState] = useReducer(
     (
@@ -981,70 +1181,20 @@ const TradeNavigationSection: React.FC<{
   );
 
   
-  const getDRCPath = useCallback(
-    (date: Date) => {
-      if (!plugin?.drcService) return '';
-      return plugin.drcService.getDRCNotePath(date);
-    },
-    [plugin?.drcService]
-  );
-
-  const getWeeklyReviewPath = useCallback(
-    (date: Date) => {
-      if (!plugin?.weeklyReviewService) return '';
-      return plugin.weeklyReviewService.getWeeklyReviewPath(date);
-    },
-    [plugin?.weeklyReviewService]
-  );
-
-  const getMonthlyReviewPath = useCallback(
-    (date: Date) => {
-      if (!plugin?.drcService) return null;
-      return plugin.drcService.getMonthlyReviewPath(date);
-    },
-    [plugin?.drcService]
-  );
-
-  const getYearlyReviewPath = useCallback(
-    (date: Date) => {
-      
-      const folderPathService = plugin?.serviceManager?.getFolderPathService();
-      if (!folderPathService) return null;
-      return folderPathService.getYearlyReviewPath(date.getFullYear());
-    },
-    [plugin?.serviceManager]
-  );
-
-  
-  if (!entryDate || !plugin?.drcService || !plugin?.weeklyReviewService) {
+  if (!entryDate) {
     return null;
   }
 
   return (
     <div ref={containerRef}>
       {isVisible ? (
-        <>
-          <TradeNavigation
-            currentDate={entryDate}
-            trades={trades}
-            missedTrades={missedTrades}
-            currentTradePath={filePath}
-            navigateTo={handleNavigate}
-            getDRCPath={getDRCPath}
-            getWeeklyReviewPath={getWeeklyReviewPath}
-            getMonthlyReviewPath={getMonthlyReviewPath}
-            getYearlyReviewPath={getYearlyReviewPath}
-            onEditClick={onEditClick}
-            handleEditClick={handleEditClick}
-          />
-        </>
-      ) : (
-        <div className="trade-note-loading-placeholder">
-          <div className="trade-note-loading-text">
-            {t('trade.loading-navigation')}
-          </div>
-        </div>
-      )}
+        <TradeNavigation
+          trades={trades}
+          missedTrades={missedTrades}
+          currentTradePath={filePath}
+          navigateTo={handleNavigate}
+        />
+      ) : null}
     </div>
   );
 });

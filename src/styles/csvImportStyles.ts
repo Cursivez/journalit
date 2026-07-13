@@ -45,11 +45,23 @@ export const CSV_IMPORT_STYLES = `
 	text-align: center;
 }
 
+.journalit-csv-import .journalit-trade-import-gate-brand {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    margin-bottom: 18px;
+    color: var(--text-normal);
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
 .journalit-csv-import .journalit-trade-import-gate-icon {
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
-	margin-bottom: 18px;
 	color: var(--interactive-accent);
 }
 

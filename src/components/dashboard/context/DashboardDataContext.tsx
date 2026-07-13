@@ -178,6 +178,17 @@ const getDashboardMetricData = (
           type: 'ratio',
         },
       ];
+    case 'sharpe-ratio':
+    case 'sharpeRatio':
+      return dashboardData.metrics.sharpeRatio === undefined
+        ? []
+        : [
+            {
+              label: t('dashboard.metrics.sharpeRatio'),
+              value: dashboardData.metrics.sharpeRatio,
+              type: 'ratio',
+            },
+          ];
     case 'total-trades':
       return [
         {

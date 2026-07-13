@@ -94,6 +94,26 @@ export function formatTradeFrontmatterDate(
   return formatLocalDateTime(date);
 }
 
+export function serializeIdealExitFrontmatter(
+  idealExits: TradeMutationInput['idealExits'],
+  invalidDateFallback: 'preserve' | 'now' = 'preserve'
+): Array<Record<string, unknown>> {
+  return (idealExits || []).flatMap((exit) =>
+    exit && exit.price !== undefined && exit.price > 0
+      ? [
+          {
+            ...(exit.time && {
+              time: formatTradeFrontmatterDate(exit.time, invalidDateFallback),
+            }),
+            price: exit.price,
+            ...(exit.size !== undefined &&
+              exit.size > 0 && { size: exit.size }),
+          },
+        ]
+      : []
+  );
+}
+
 export function buildTradeFrontmatter(
   data: TradeMutationInput,
   options: BuildTradeFrontmatterOptions
@@ -109,6 +129,12 @@ export function buildTradeFrontmatter(
   }
   if (data.tradeRevision !== undefined) {
     frontmatterData.tradeRevision = data.tradeRevision;
+  }
+  if (typeof data.templateId === 'string' && data.templateId.trim()) {
+    frontmatterData.templateId = data.templateId.trim();
+  }
+  if (typeof data.templateVersion === 'number') {
+    frontmatterData.templateVersion = data.templateVersion;
   }
   if (data.backendTradeId && data.backendTradeId !== 0) {
     frontmatterData.backendTradeId = data.backendTradeId;
@@ -202,6 +228,15 @@ export function buildTradeFrontmatter(
     );
   }
 
+  if (data.idealExits !== undefined) {
+    const idealExits = serializeIdealExitFrontmatter(
+      data.idealExits,
+      options.invalidDateFallback
+    );
+
+    frontmatterData.idealExits = idealExits.length ? idealExits : undefined;
+  }
+
   if (data.dividends !== undefined && shouldShowTradeDividends(data)) {
     const serializedDividends = (data.dividends || []).flatMap((dividend) =>
       dividend &&
@@ -270,8 +305,10 @@ export function buildTradeFrontmatter(
   if (data.maePrice !== undefined) frontmatterData.maePrice = data.maePrice;
   if (data.mfePrice !== undefined) frontmatterData.mfePrice = data.mfePrice;
   if (data.accountId) frontmatterData.accountId = data.accountId;
-  if (data.setupIds?.length) frontmatterData.setupIds = data.setupIds;
-  if (data.setup?.length) frontmatterData.setup = data.setup;
+
+  if (data.setup !== undefined) {
+    frontmatterData.setup = data.setup;
+  }
   const normalizedMistakes = normalizeStringList(data.mistake || []);
   if (normalizedMistakes.length) frontmatterData.mistake = normalizedMistakes;
   if (data.account?.length) frontmatterData.account = data.account;

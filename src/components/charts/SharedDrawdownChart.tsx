@@ -99,9 +99,12 @@ const renderDrawdownTooltip = (
             value: data.peakRealizedPnl,
             type: 'pnl',
             rMultiple:
-              data.peakRealizedPnl && defaultRiskAmount && defaultRiskAmount > 0
+              data.peakRealizedR ??
+              (data.peakRealizedPnl &&
+              defaultRiskAmount &&
+              defaultRiskAmount > 0
                 ? data.peakRealizedPnl / defaultRiskAmount
-                : undefined,
+                : undefined),
           },
         ];
 

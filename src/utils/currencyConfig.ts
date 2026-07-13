@@ -8,9 +8,11 @@ export enum CurrencyCode {
   JPY = 'JPY',
   CAD = 'CAD',
   AUD = 'AUD',
+  NZD = 'NZD',
   CHF = 'CHF',
   CNY = 'CNY',
   HKD = 'HKD',
+  INR = 'INR',
   SGD = 'SGD',
   KWD = 'KWD',
   NGN = 'NGN',
@@ -104,6 +106,15 @@ export const CURRENCY_CONFIGS: Record<CurrencyCode, CurrencyConfig> = {
     symbolBefore: true,
     spacing: DEFAULT_SPACING,
   },
+  [CurrencyCode.NZD]: {
+    code: CurrencyCode.NZD,
+    symbol: 'NZ$',
+    name: 'New Zealand Dollar',
+    locale: 'en-NZ',
+    decimalPlaces: 2,
+    symbolBefore: true,
+    spacing: DEFAULT_SPACING,
+  },
   [CurrencyCode.CHF]: {
     code: CurrencyCode.CHF,
     symbol: 'Fr',
@@ -127,6 +138,15 @@ export const CURRENCY_CONFIGS: Record<CurrencyCode, CurrencyConfig> = {
     symbol: 'HK$',
     name: 'Hong Kong Dollar',
     locale: 'zh-HK',
+    decimalPlaces: 2,
+    symbolBefore: true,
+    spacing: DEFAULT_SPACING,
+  },
+  [CurrencyCode.INR]: {
+    code: CurrencyCode.INR,
+    symbol: '₹',
+    name: 'Indian Rupee',
+    locale: 'en-IN',
     decimalPlaces: 2,
     symbolBefore: true,
     spacing: DEFAULT_SPACING,
@@ -254,12 +274,16 @@ export function parseCuratedCurrencyCode(value: string): CurrencyCode {
       return CurrencyCode.CAD;
     case 'AUD':
       return CurrencyCode.AUD;
+    case 'NZD':
+      return CurrencyCode.NZD;
     case 'CHF':
       return CurrencyCode.CHF;
     case 'CNY':
       return CurrencyCode.CNY;
     case 'HKD':
       return CurrencyCode.HKD;
+    case 'INR':
+      return CurrencyCode.INR;
     case 'SGD':
       return CurrencyCode.SGD;
     case 'KWD':
@@ -299,6 +323,29 @@ export function getCurrencyOptions() {
   }));
 }
 
+const UNSUPPORTED_BASE_CURRENCIES = new Set<string>([
+  CurrencyCode.KWD,
+  CurrencyCode.NGN,
+]);
+
+
+export function getBaseCurrencyOptions() {
+  const options: Array<{ value: string; label: string }> = [];
+
+  for (const config of Object.values(CURRENCY_CONFIGS)) {
+    if (UNSUPPORTED_BASE_CURRENCIES.has(config.code)) {
+      continue;
+    }
+
+    options.push({
+      value: config.code,
+      label: `${config.symbol} ${config.name} (${config.code})`,
+    });
+  }
+
+  return options;
+}
+
 
 function isValidCurrencyCode(
   currencyCode: string
@@ -310,9 +357,11 @@ function isValidCurrencyCode(
     case 'JPY':
     case 'CAD':
     case 'AUD':
+    case 'NZD':
     case 'CHF':
     case 'CNY':
     case 'HKD':
+    case 'INR':
     case 'SGD':
     case 'KWD':
     case 'NGN':

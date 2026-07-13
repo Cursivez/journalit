@@ -38,6 +38,53 @@ interface MappedContent {
 
 const MARKDOWN_ZONE_CONTENT_KEY_PREFIX = 'markdown-zone-content-';
 
+const TRADE_REVIEW_QUESTION_CONFIG_KEYS = new Set([
+  'winQuestions',
+  'lossQuestions',
+  'breakevenQuestions',
+  'openQuestions',
+]);
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return value !== null && typeof value === 'object' && !Array.isArray(value);
+}
+
+function formatTradeReviewQuestionPart(value: unknown): string {
+  return safeString(value).replace(/[|;]/g, ' ').replace(/\s+/g, ' ').trim();
+}
+
+function formatTradeReviewQuestionConfig(value: unknown): string | undefined {
+  if (!Array.isArray(value)) return undefined;
+
+  const questions = value.flatMap((item) => {
+    if (!isRecord(item)) return [];
+    const id = formatTradeReviewQuestionPart(item.id);
+    const label = formatTradeReviewQuestionPart(item.label);
+    const placeholder = formatTradeReviewQuestionPart(item.placeholder);
+    if (!id || !label) return [];
+    return `${id}|${label}|${placeholder}`;
+  });
+
+  return questions.length > 0 ? questions.join(';') : undefined;
+}
+
+function formatWidgetConfigValue(
+  key: string,
+  value: unknown
+): string | undefined {
+  if (value === undefined || value === null) return undefined;
+  if (TRADE_REVIEW_QUESTION_CONFIG_KEYS.has(key)) {
+    return formatTradeReviewQuestionConfig(value);
+  }
+  if (Array.isArray(value)) {
+    return value
+      .filter((item): item is string => typeof item === 'string')
+      .join(',');
+  }
+  if (typeof value === 'object') return undefined;
+  return safeString(value);
+}
+
 interface TemplateParseCursor {
   widgets: ReviewTemplate['widgets'];
   index: number;
@@ -172,10 +219,9 @@ export class TemplateTransformationService {
         
         if (widget.config && Object.keys(widget.config).length > 0) {
           for (const [key, value] of Object.entries(widget.config)) {
-            
-            if (value === undefined || value === null) continue;
-            if (typeof value === 'object') continue;
-            widgetLines.push(`${key}: ${safeString(value)}`);
+            const formattedValue = formatWidgetConfigValue(key, value);
+            if (formattedValue === undefined) continue;
+            widgetLines.push(`${key}: ${formattedValue}`);
           }
         }
         widgetLines.push('```');
@@ -631,10 +677,9 @@ export class TemplateTransformationService {
         
         if (widget.config && Object.keys(widget.config).length > 0) {
           for (const [key, value] of Object.entries(widget.config)) {
-            
-            if (value === undefined || value === null) continue;
-            if (typeof value === 'object') continue;
-            widgetLines.push(`${key}: ${safeString(value)}`);
+            const formattedValue = formatWidgetConfigValue(key, value);
+            if (formattedValue === undefined) continue;
+            widgetLines.push(`${key}: ${formattedValue}`);
           }
         }
         widgetLines.push('```');

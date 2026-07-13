@@ -32,6 +32,7 @@ import { QuickLinksRow } from './QuickLinksRow';
 import { HomeWidgetSelector } from './components/HomeWidgetSelector';
 import { HomeAccountFilter } from './components/HomeAccountFilter';
 import { HomeTradeTypeFilter } from './components/HomeTradeTypeFilter';
+import { DropdownMenu } from '../shared/DropdownMenu';
 import {
   QuickLinkButton,
   DEFAULT_SETTINGS,
@@ -1484,25 +1485,15 @@ const HomePageComponent: React.FC<HomePageProps> = ({ plugin }) => {
 
               
               {showPeriodDropdown && (
-                <div className="journalit-home-period-menu">
-                  {HOME_PERIODS.map((period) => (
-                    <button
-                      key={period}
-                      onClick={() => void handlePeriodChange(period)}
-                      className={`journalit-home-period-option${selectedPeriod === period ? ' journalit-home-period-option--active' : ''}`}
-                    >
-                      <span
-                        className="journalit-home-period-option__check"
-                        aria-hidden="true"
-                      >
-                        {selectedPeriod === period ? '✓' : ''}
-                      </span>
-                      <span className="journalit-home-period-option__label">
-                        {getPeriodLabels()[period]}
-                      </span>
-                    </button>
-                  ))}
-                </div>
+                <DropdownMenu
+                  className="journalit-home-period-menu"
+                  onChange={(period) => void handlePeriodChange(period)}
+                  options={HOME_PERIODS.map((period) => ({
+                    value: period,
+                    label: getPeriodLabels()[period],
+                  }))}
+                  value={selectedPeriod}
+                />
               )}
             </div>
 

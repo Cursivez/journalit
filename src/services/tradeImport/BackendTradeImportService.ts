@@ -190,7 +190,7 @@ const previewTradesArray = (value: unknown): TradeImportPreviewTrade[] =>
         executionIds: stringArray(record.executionIds),
         tags: stringArray(record.tags),
         images: stringArray(record.images),
-        setupIds: stringArray(record.setupIds),
+        setup: stringArray(record.setup),
         mistake: stringArray(record.mistake),
         customFields: asRecord(record.customFields) ?? {},
         strikePrice:

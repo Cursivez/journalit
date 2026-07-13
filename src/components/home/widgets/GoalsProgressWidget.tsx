@@ -46,6 +46,7 @@ import { SkeletonText } from '../../shared/SkeletonText';
 import { t } from '../../../lang/helpers';
 import { getTradeAnalyticsTradingDay } from '../../../utils/tradeAnalyticsDate';
 import { normalizeAccountLookupKey } from '../../../services/trade/core/TradeAccountIdentity';
+import { expandAccountsWithCopyTradingAccounts } from '../../../utils/accountCopyTrading';
 
 interface GoalsProgressWidgetProps {
   plugin: JournalitPlugin;
@@ -135,6 +136,13 @@ const tradeMatchesGoalAccounts = (
     accountLookupKeys.has(normalizeAccountLookupKey(account))
   );
 };
+
+const copiedTradeMatchesGoalBase = (
+  trade: Trade,
+  baseAccountLookupKeys: ReadonlySet<string>
+): boolean =>
+  typeof trade.copiedFromAccount === 'string' &&
+  baseAccountLookupKeys.has(normalizeAccountLookupKey(trade.copiedFromAccount));
 
 const getGoalTypeOptions = (): {
   value: GoalType;
@@ -230,6 +238,9 @@ const useGoalModel = (
   }, [resetDraftFromConfig]);
 
   const rMultiplesEnabled = plugin.settings.trade?.displayRMultiples || false;
+  const accountMetadata = plugin.settings.account?.accountMetadata;
+  const includeCopyAccountsInAnalytics =
+    plugin.settings.trade?.includeCopyAccountsInAllAccountsAnalytics === true;
   const [, setSettingsVersion] = useState(0);
 
   const handleSettingsChanged = useCallback(
@@ -254,17 +265,22 @@ const useGoalModel = (
     const currentTradingDay = getTradingDay(now, plugin);
     const config = existingConfig;
     const configuredGoalAccounts = config.accountTargetAccounts ?? [];
-    const selectedGoalAccounts = accountContext?.hasAccountFilter
+    const contextSelectedGoalAccounts = accountContext?.hasAccountFilter
       ? configuredGoalAccounts.filter((account) =>
           accountContext.matchesAccount(account)
         )
       : configuredGoalAccounts;
+    const selectedGoalAccounts = expandAccountsWithCopyTradingAccounts(
+      contextSelectedGoalAccounts,
+      accountMetadata,
+      includeCopyAccountsInAnalytics
+    );
     const targetValue =
       config.accountAware && config.accountTargets
-        ? aggregateAccountTarget(config, selectedGoalAccounts)
+        ? aggregateAccountTarget(config, contextSelectedGoalAccounts)
         : config.target;
     const scopeMismatch =
-      Boolean(config.accountAware) && selectedGoalAccounts.length === 0;
+      Boolean(config.accountAware) && contextSelectedGoalAccounts.length === 0;
 
     
     let periodTrades: Trade[] = trades;
@@ -312,13 +328,22 @@ const useGoalModel = (
     }
 
     if (config.accountAware) {
-      const selectedGoalAccountLookupKeys = new Set(
+      const explicitGoalAccountLookupKeys = new Set(
+        contextSelectedGoalAccounts.map((account) =>
+          normalizeAccountLookupKey(account)
+        )
+      );
+      const expandedGoalAccountLookupKeys = new Set(
         selectedGoalAccounts.map((account) =>
           normalizeAccountLookupKey(account)
         )
       );
-      periodTrades = periodTrades.filter((trade) =>
-        tradeMatchesGoalAccounts(trade, selectedGoalAccountLookupKeys)
+      periodTrades = periodTrades.filter(
+        (trade) =>
+          tradeMatchesGoalAccounts(trade, explicitGoalAccountLookupKeys) ||
+          (trade.isCopiedTrade === true &&
+            copiedTradeMatchesGoalBase(trade, explicitGoalAccountLookupKeys) &&
+            tradeMatchesGoalAccounts(trade, expandedGoalAccountLookupKeys))
       );
     }
 
@@ -420,6 +445,8 @@ const useGoalModel = (
     formatValue,
     defaultRiskAmount,
     plugin,
+    accountMetadata,
+    includeCopyAccountsInAnalytics,
     weekStartDay,
     accountContext,
   ]);
@@ -1054,6 +1081,17 @@ const GoalsProgressWidgetComponent: React.FC<GoalsProgressWidgetProps> = ({
 
   
   const defaultRiskAmount = plugin.settings.trade?.defaultRiskAmount;
+  const [accountMetadataSnapshot, setAccountMetadataSnapshot] = useState(
+    () => plugin.settings.account?.accountMetadata
+  );
+  const includeCopyAccountsInAnalytics =
+    plugin.settings.trade?.includeCopyAccountsInAllAccountsAnalytics === true;
+  const handleAccountChanged = useCallback(() => {
+    setAccountMetadataSnapshot({
+      ...(plugin.settings.account?.accountMetadata ?? {}),
+    });
+  }, [plugin]);
+  useEventBus('account:changed', handleAccountChanged);
   const weekStartDay = getWeekStartDaySetting(plugin);
   const accountNames = useMemo(() => {
     if (accountContext?.availableAccounts.length) {
@@ -1063,30 +1101,29 @@ const GoalsProgressWidgetComponent: React.FC<GoalsProgressWidgetProps> = ({
     }
 
     const nextAccountNames: string[] = [];
-    for (const account of Object.values(
-      plugin.settings.account?.accountMetadata ?? {}
-    )) {
+    for (const account of Object.values(accountMetadataSnapshot ?? {})) {
       if (account.accountType?.toLowerCase() !== 'archived') {
         nextAccountNames.push(account.name);
       }
     }
 
     return nextAccountNames.sort((a, b) => a.localeCompare(b));
-  }, [
-    accountContext?.availableAccounts,
-    plugin.settings.account?.accountMetadata,
-  ]);
+  }, [accountContext?.availableAccounts, accountMetadataSnapshot]);
   const accountScopedGoalAccounts = useMemo(
     () =>
       existingConfig?.accountAware &&
-      !accountContext?.hasAccountFilter &&
       existingConfig.accountTargetAccounts?.length
-        ? existingConfig.accountTargetAccounts
+        ? expandAccountsWithCopyTradingAccounts(
+            existingConfig.accountTargetAccounts,
+            accountMetadataSnapshot,
+            includeCopyAccountsInAnalytics
+          )
         : [],
     [
       existingConfig?.accountAware,
       existingConfig?.accountTargetAccounts,
-      accountContext?.hasAccountFilter,
+      accountMetadataSnapshot,
+      includeCopyAccountsInAnalytics,
     ]
   );
 

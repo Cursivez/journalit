@@ -21,7 +21,7 @@ export function cssVars(
     out[key] = value;
   }
 
-  return out as CSSProperties;
+  return out;
 }
 
 
@@ -58,5 +58,5 @@ export function virtualItemStyle(style?: CSSProperties | null): CSSProperties {
     if (value === null || value === undefined) continue;
     out[key] = value;
   }
-  return out as CSSProperties;
+  return out;
 }

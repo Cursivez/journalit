@@ -343,6 +343,7 @@ export const FilterControls = React.memo<FilterControlsProps>(
               <div ref={registerFilterButtonTarget}>
                 <FilterButton
                   onClick={() => void handleOpenFilterModal()}
+                  className="journalit-dashboard-filter-button"
                   activeFilterCount={getActiveFilterCount()}
                 />
               </div>
@@ -395,6 +396,7 @@ export const FilterControls = React.memo<FilterControlsProps>(
               <div ref={registerFilterButtonTarget}>
                 <FilterButton
                   onClick={() => void handleOpenFilterModal()}
+                  className="journalit-dashboard-filter-button"
                   activeFilterCount={getActiveFilterCount()}
                 />
               </div>

@@ -64,9 +64,27 @@ export const ASSET_FIELDS_STYLES = `
       align-items: flex-start;
     }
 
+    .trade-form-view-container .cost-fields {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px 16px;
+      align-items: flex-start;
+    }
+
+    .trade-form-view-container .trading-costs-field--commission {
+      grid-column: 1 / -1;
+    }
+
+    @media (max-width: 600px) {
+      .trade-form-view-container .cost-fields,
+      .trade-form-view-container .commission-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
     
     .trade-form-view-container .risk-management-section {
-      margin-top: 20px;
+      margin-top: 12px;
       border-top: 1px solid var(--background-modifier-border);
       padding-top: 16px;
     }

@@ -30,6 +30,12 @@ export const AVAILABLE_METRICS: MetricDefinition[] = [
     category: 'performance',
   },
   {
+    id: 'sharpeRatio',
+    name: t('metric.sharpeRatio.name'),
+    description: t('metric.sharpeRatio.description'),
+    category: 'performance',
+  },
+  {
     id: 'expectancy',
     name: t('metric.expectancy.name'),
     description: t('metric.expectancy.description'),

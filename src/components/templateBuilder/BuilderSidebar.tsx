@@ -38,9 +38,14 @@ export interface Selection {
   templateType?: ReviewTemplateType | 'trade';
 }
 
+function cloneTradeTemplateValue<T>(value: T): T {
+  return structuredClone(value);
+}
+
 interface BuilderSidebarProps {
   plugin: JournalitPlugin;
   templateService: ReviewTemplateService;
+  tradeTemplateService: TradeTemplateService;
   selection: Selection | null;
   onSelectionChange: (selection: Selection | null) => void;
   onTemplatesChange?: () => void;
@@ -84,8 +89,8 @@ const Section: React.FC<SectionProps> = ({
     >
       <div className="template-builder-section-title">
         <svg
-          width="10"
-          height="10"
+          width="12"
+          height="12"
           viewBox="0 0 24 24"
           fill="none"
           stroke="currentColor"
@@ -101,11 +106,13 @@ const Section: React.FC<SectionProps> = ({
       {onAdd && !disabled && (
         <Tooltip content={t('builder.sidebar.new-item', { title })}>
           <button
+            type="button"
             onClick={(e) => {
               e.stopPropagation();
               void onAdd();
             }}
-            className="template-builder-section-add"
+            className="journalit-button template-builder-section-add"
+            aria-label={t('builder.sidebar.new-item', { title })}
           >
             <svg
               width="14"
@@ -277,6 +284,7 @@ const TemplateItem: React.FC<TemplateItemProps> = ({
 function useBuilderSidebarModel({
   plugin,
   templateService,
+  tradeTemplateService,
   selection,
   onSelectionChange,
   onTemplatesChange,
@@ -322,11 +330,6 @@ function useBuilderSidebarModel({
     ReviewTemplate[]
   >([]);
   const [yearlyTemplates, setYearlyTemplates] = useState<ReviewTemplate[]>([]);
-
-  
-  const tradeTemplateService = React.useMemo(() => {
-    return new TradeTemplateService(plugin);
-  }, [plugin]);
 
   
   const [defaultIds, setDefaultIds] = useState<Record<string, string | null>>({
@@ -414,6 +417,33 @@ function useBuilderSidebarModel({
       new Notice(t('notice.template-created'));
     } catch (error) {
       console.error('Failed to create template:', error);
+      new Notice(t('notice.error.create-template'));
+    }
+  };
+
+  const handleCreateTradeTemplate = async () => {
+    try {
+      const defaultTemplate = tradeTemplateService.getDefaultTemplate();
+      const newTemplate = await tradeTemplateService.createTemplate({
+        name: t('builder.sidebar.new-template-name', { type: 'Trade' }),
+        type: 'trade',
+        isBuiltIn: false,
+        sectionOrder: cloneTradeTemplateValue(defaultTemplate.sectionOrder),
+        assetDefaults: cloneTradeTemplateValue(defaultTemplate.assetDefaults),
+        assetOverrides: cloneTradeTemplateValue(defaultTemplate.assetOverrides),
+        sections: cloneTradeTemplateValue(defaultTemplate.sections),
+        display: cloneTradeTemplateValue(defaultTemplate.display),
+      });
+      loadAllTemplates();
+      onSelectionChange({
+        type: 'template',
+        id: newTemplate.id,
+        templateType: 'trade',
+      });
+      onTemplatesChange?.();
+      new Notice(t('notice.template-created'));
+    } catch (error) {
+      console.error('Failed to create trade template:', error);
       new Notice(t('notice.error.create-template'));
     }
   };
@@ -773,6 +803,7 @@ function useBuilderSidebarModel({
     quarterlyTemplates,
     yearlyTemplates,
     handleCreateTemplate,
+    handleCreateTradeTemplate,
   };
 }
 
@@ -791,6 +822,7 @@ export const BuilderSidebar: React.FC<BuilderSidebarProps> = (props) => {
     quarterlyTemplates,
     yearlyTemplates,
     handleCreateTemplate,
+    handleCreateTradeTemplate,
   } = useBuilderSidebarModel(props);
 
   return (
@@ -812,6 +844,7 @@ export const BuilderSidebar: React.FC<BuilderSidebarProps> = (props) => {
           title={t('builder.sidebar.section.trade')}
           isExpanded={expandedSections.trade}
           onToggle={() => toggleSection('trade')}
+          onAdd={handleCreateTradeTemplate}
         >
           {getTradeTemplateList()}
         </Section>

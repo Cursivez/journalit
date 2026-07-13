@@ -36,6 +36,7 @@ type GuideBackHandler = (
 
 interface GuideRuntimeContextValue {
   registerTarget: (targetId: string, element: HTMLElement | null) => void;
+  registerContextValue: (key: string, value: string | number | boolean) => void;
   notifyAction: (actionId: string) => void;
   registerBackHandler: (handler: GuideBackHandler) => () => void;
   currentStepId: string | null;
@@ -141,6 +142,29 @@ const getAnchoredPopoverPosition = (
     return { top, left };
   }
 
+  if (placement === 'left') {
+    let top =
+      targetRect.top + targetRect.height / 2 - estimatedPopoverHeight / 2;
+    let left = targetRect.left - popoverWidth - gap;
+
+    if (left < 12) {
+      left = Math.min(
+        viewportWidth - popoverWidth - 12,
+        targetRect.right + gap
+      );
+    }
+
+    if (top < 12) {
+      top = 12;
+    }
+
+    if (top + estimatedPopoverHeight > viewportHeight - 12) {
+      top = Math.max(12, viewportHeight - estimatedPopoverHeight - 12);
+    }
+
+    return { top, left };
+  }
+
   let top = targetRect.bottom + gap;
   let left = targetRect.left;
 
@@ -175,6 +199,17 @@ export const useGuideTarget = (
 export const useGuideAction = (): ((actionId: string) => void) => {
   const context = use(GuideRuntimeContext);
   return context?.notifyAction || NOOP;
+};
+
+export const useGuideContextValue = (
+  key: string,
+  value: string | number | boolean
+): void => {
+  const context = use(GuideRuntimeContext);
+
+  useEffect(() => {
+    context?.registerContextValue(key, value);
+  }, [context, key, value]);
 };
 
 export const useGuideBackHandler = (handler: GuideBackHandler | null): void => {
@@ -225,6 +260,7 @@ function useGuideRuntimeModel({
   const guideService = plugin?.viewGuideService;
   const guideRegistry = plugin?.guideRegistry;
   const targetsRef = useRef(new Map<string, HTMLElement>());
+  const contextValuesRef = useRef(new Map<string, string | number | boolean>());
   const backHandlersRef = useRef(new Set<GuideBackHandler>());
   const [, setVersion] = useState(0);
 
@@ -342,6 +378,60 @@ function useGuideRuntimeModel({
     []
   );
 
+  const registerContextValue = useCallback(
+    (key: string, value: string | number | boolean) => {
+      if (contextValuesRef.current.get(key) === value) {
+        return;
+      }
+
+      contextValuesRef.current.set(key, value);
+      setVersion((prev) => prev + 1);
+    },
+    []
+  );
+
+  const isStepAvailable = useCallback((step: GuideStepDefinition): boolean => {
+    const requirement = step.requiredContext;
+    if (!requirement) {
+      return true;
+    }
+
+    const value = contextValuesRef.current.get(requirement.key);
+    if (requirement.equals !== undefined && value !== requirement.equals) {
+      return false;
+    }
+
+    if (
+      requirement.minNumber !== undefined &&
+      (typeof value !== 'number' || value < requirement.minNumber)
+    ) {
+      return false;
+    }
+
+    return true;
+  }, []);
+
+  const findAvailableStepIndex = useCallback(
+    (fromIndex: number, direction: 1 | -1): number => {
+      if (!guide) {
+        return -1;
+      }
+
+      for (
+        let index = fromIndex;
+        index >= 0 && index < guide.steps.length;
+        index += direction
+      ) {
+        if (isStepAvailable(guide.steps[index])) {
+          return index;
+        }
+      }
+
+      return -1;
+    },
+    [guide, isStepAvailable]
+  );
+
   const registerBackHandler = useCallback((handler: GuideBackHandler) => {
     backHandlersRef.current.add(handler);
     return () => {
@@ -446,7 +536,8 @@ function useGuideRuntimeModel({
         return;
       }
 
-      const nextStep = guide.steps[stepIndex + 1];
+      const nextStepIndex = findAvailableStepIndex(stepIndex + 1, 1);
+      const nextStep = nextStepIndex >= 0 ? guide.steps[nextStepIndex] : null;
       if (!nextStep) {
         lastAdvancedStepKeyRef.current = null;
         return;
@@ -464,7 +555,14 @@ function useGuideRuntimeModel({
       lastAdvancedStepKeyRef.current = null;
       throw error;
     }
-  }, [guideService, guide, session, stepIndex, isLastStep]);
+  }, [
+    findAvailableStepIndex,
+    guideService,
+    guide,
+    session,
+    stepIndex,
+    isLastStep,
+  ]);
 
   const notifyAction = useCallback(
     (actionId: string) => {
@@ -539,30 +637,55 @@ function useGuideRuntimeModel({
       return;
     }
 
-    const previousStep = guide.steps[stepIndex - 1];
+    const previousStepIndex = findAvailableStepIndex(stepIndex - 1, -1);
+    const previousStep =
+      previousStepIndex >= 0 ? guide.steps[previousStepIndex] : null;
     if (!previousStep) {
       return;
     }
 
     const runBack = async () => {
-      const transition = {
-        fromStepId: session.currentStepId,
-        toStepId: previousStep.id,
-        guideId: guide.id,
-      };
-      let targetStepId = previousStep.id;
-      for (const handler of backHandlersRef.current) {
-        const result = await handler({ ...transition, toStepId: targetStepId });
-        if (result?.toStepId) {
-          targetStepId = result.toStepId;
+      try {
+        const transition = {
+          fromStepId: session.currentStepId,
+          toStepId: previousStep.id,
+          guideId: guide.id,
+        };
+        let targetStepId = previousStep.id;
+        for (const handler of backHandlersRef.current) {
+          const result = await handler({
+            ...transition,
+            toStepId: targetStepId,
+          });
+          if (result?.toStepId) {
+            targetStepId = result.toStepId;
+          }
         }
+        lastAdvancedStepKeyRef.current = null;
+        await guideService.updateSessionStep(session.sessionId, targetStepId);
+      } catch (error) {
+        lastAdvancedStepKeyRef.current = null;
+        console.error('[ViewGuide] Failed to move to previous step:', error);
       }
-      lastAdvancedStepKeyRef.current = null;
-      await guideService.updateSessionStep(session.sessionId, targetStepId);
     };
 
     void runBack();
-  }, [guideService, guide, session, isFirstStep, stepIndex]);
+  }, [
+    findAvailableStepIndex,
+    guideService,
+    guide,
+    session,
+    isFirstStep,
+    stepIndex,
+  ]);
+
+  useEffect(() => {
+    if (!visible || !currentStep || isStepAvailable(currentStep)) {
+      return;
+    }
+
+    void advanceStep();
+  }, [advanceStep, currentStep, isStepAvailable, visible]);
 
   const handlePrimaryClick = useCallback(() => {
     if (!currentStep || isWaitingForTarget) {
@@ -642,6 +765,7 @@ function useGuideRuntimeModel({
   const popoverPosition = (() => {
     if (
       currentStep?.placement === 'center' ||
+      currentStep?.placement === 'center-target' ||
       !currentStep?.targetId ||
       !targetRect ||
       showOffscreenPrompt
@@ -650,7 +774,10 @@ function useGuideRuntimeModel({
         mode: 'center' as const,
         top: '50%',
         left: '50%',
-        highlight: null as DOMRect | null,
+        highlight:
+          currentStep?.placement === 'center-target' && targetRect
+            ? targetRect
+            : (null as DOMRect | null),
       };
     }
 
@@ -670,11 +797,18 @@ function useGuideRuntimeModel({
   const contextValue = useMemo<GuideRuntimeContextValue>(
     () => ({
       registerTarget,
+      registerContextValue,
       notifyAction,
       registerBackHandler,
       currentStepId: currentStep?.id ?? null,
     }),
-    [currentStep?.id, notifyAction, registerBackHandler, registerTarget]
+    [
+      currentStep?.id,
+      notifyAction,
+      registerBackHandler,
+      registerContextValue,
+      registerTarget,
+    ]
   );
 
   return {

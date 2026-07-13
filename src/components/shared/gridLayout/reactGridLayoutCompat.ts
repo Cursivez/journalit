@@ -95,7 +95,26 @@ const resolveLayoutCollisions = (
   return resolved;
 };
 
-export const verticalCompactor = reactGridVerticalCompactor;
+const compactVertically = (layout: LayoutItem[]): LayoutItem[] => {
+  const compacted: LayoutItem[] = [];
+  const sorted = [...layout].sort((a, b) => a.y - b.y || a.x - b.x);
+
+  for (const sourceItem of sorted) {
+    const item = { ...sourceItem };
+    while (item.y > 0) {
+      const candidate = { ...item, y: item.y - 1 };
+      if (firstCollision(compacted, candidate)) break;
+      item.y = candidate.y;
+    }
+    compacted.push(item);
+  }
+
+  return resolveLayoutCollisions(compacted);
+};
+
+export const verticalCompactor: GridCompactor = reactGridVerticalCompactor ?? {
+  compact: compactVertically,
+};
 
 const horizontalOverlap = (a: LayoutItem, b: LayoutItem): number =>
   Math.max(0, Math.min(a.x + a.w, b.x + b.w) - Math.max(a.x, b.x));

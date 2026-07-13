@@ -1,4 +1,14 @@
-import { WorkspaceLeaf } from 'obsidian';
+import {
+  MarkdownView,
+  OpenViewState,
+  PaneType,
+  TFile,
+  ViewState,
+  ViewStateResult,
+  Workspace,
+  WorkspaceLeaf,
+  normalizePath,
+} from 'obsidian';
 import { logger } from '../utils/logger';
 
 
@@ -15,16 +25,73 @@ import {
   TemplateBuilderView,
 } from './TemplateBuilderView';
 import { NAVIGATION_VIEW_TYPE, NavigationView } from './NavigationView';
+import { SETUPS_VIEW_TYPE, SetupsView } from './SetupsView';
 import {
   CALENDAR_SIDEBAR_VIEW_TYPE,
   CalendarSidebarView,
 } from './CalendarSidebarView';
+import { SESSION_MODE_VIEW_TYPE, SessionModeView } from './SessionModeView';
 import { TradeFormModal } from '../components/forms/trade/TradeFormModal';
-import { TradeFormData } from '../components/forms/trade/types';
+import {
+  TradeFormData,
+  TradeFormOpenOptions,
+} from '../components/forms/trade/types';
 import { t } from '../lang/helpers';
+import type { SetupsViewState } from '../components/setups/setupsViewTypes';
 
 
 const ACCOUNT_DASHBOARD_VIEW_TYPE = 'account-dashboard';
+
+type WorkspaceLeafSetViewState = (
+  this: WorkspaceLeaf,
+  state: ViewState,
+  result?: ViewStateResult
+) => Promise<void>;
+
+type WorkspaceLeafOpenFile = (
+  this: WorkspaceLeaf,
+  file: TFile,
+  openState?: OpenViewState
+) => Promise<void>;
+
+type WorkspaceOpenLinkText = (
+  this: Workspace,
+  linktext: string,
+  sourcePath: string,
+  newLeaf?: PaneType | boolean,
+  openViewState?: OpenViewState
+) => Promise<void>;
+
+interface KeyboardScopeAwareView {
+  syncActiveKeyboardScope(): void;
+}
+
+interface SetupFileOpenOptions {
+  leaf?: WorkspaceLeaf | null;
+  openState?: OpenViewState;
+  honorRequestedLeaf?: boolean;
+}
+
+interface SetupsViewOpenOptions {
+  newTab?: boolean;
+  focusLeaf?: boolean;
+}
+
+function isKeyboardScopeAwareView(
+  view: WorkspaceLeaf['view']
+): view is WorkspaceLeaf['view'] & KeyboardScopeAwareView {
+  return (
+    'syncActiveKeyboardScope' in view &&
+    typeof view.syncActiveKeyboardScope === 'function'
+  );
+}
+
+export function setupViewStateMatchesFile(
+  state: SetupsViewState,
+  filePath: string
+): boolean {
+  return state.page === 'detail' && state.setupPath === filePath;
+}
 
 export class ViewManager {
   private static instance: ViewManager | null;
@@ -33,6 +100,21 @@ export class ViewManager {
 
   
   private registeredViews: Set<string> = new Set();
+  private markdownOpenSuppression = new WeakMap<
+    WorkspaceLeaf,
+    Map<string, number>
+  >();
+  private explicitMarkdownOpenPaths = new WeakMap<WorkspaceLeaf, string>();
+  private explicitMarkdownOpenGeneration = new WeakMap<WorkspaceLeaf, number>();
+  private pendingExplicitMarkdownOpens = new WeakMap<
+    WorkspaceLeaf,
+    { generation: number; setupPath: string }
+  >();
+  private interruptedExplicitMarkdownStates = new WeakMap<
+    WorkspaceLeaf,
+    ViewState
+  >();
+  private setupMarkdownInterceptorRegistered = false;
 
   private constructor(plugin: JournalitPlugin) {
     this.plugin = plugin;
@@ -46,6 +128,378 @@ export class ViewManager {
     return ViewManager.instance;
   }
 
+  public registerSetupMarkdownOpenInterceptor(): void {
+    if (this.setupMarkdownInterceptorRegistered) return;
+    this.setupMarkdownInterceptorRegistered = true;
+
+    const originalSetViewState: WorkspaceLeafSetViewState =
+      // eslint-disable-next-line @typescript-eslint/unbound-method -- Capture Obsidian's original method so the setup-file view redirect can delegate with the original leaf receiver.
+      WorkspaceLeaf.prototype.setViewState;
+    const originalOpenFile: WorkspaceLeafOpenFile =
+      // eslint-disable-next-line @typescript-eslint/unbound-method -- Capture Obsidian's original method before installing setup-file routing.
+      WorkspaceLeaf.prototype.openFile;
+    const originalOpenLinkText: WorkspaceOpenLinkText =
+      // eslint-disable-next-line @typescript-eslint/unbound-method -- Capture Obsidian's original method before installing setup-file routing.
+      Workspace.prototype.openLinkText;
+    const workspace = this.plugin.app.workspace;
+    const originalWorkspaceOpenLinkText: WorkspaceOpenLinkText =
+      // eslint-disable-next-line @typescript-eslint/unbound-method -- Capture Obsidian's instance method because some app builds bind workspace methods per instance.
+      workspace.openLinkText;
+    const redirectSetupMarkdownViewState = (
+      leaf: WorkspaceLeaf,
+      state: ViewState
+    ): ViewState => this.redirectSetupMarkdownViewState(leaf, state);
+    const recordInterruptedExplicitMarkdownState = (
+      leaf: WorkspaceLeaf,
+      state: ViewState
+    ): void => this.recordInterruptedExplicitMarkdownState(leaf, state);
+    const maybeOpenSetupFileFromNativeOpen = (
+      file: TFile,
+      options?: SetupFileOpenOptions
+    ): Promise<boolean> => this.maybeOpenSetupFileFromNativeOpen(file, options);
+    const resolveSetupLinkTarget = (
+      linktext: string,
+      sourcePath: string
+    ): TFile | null => this.resolveSetupLinkTarget(linktext, sourcePath);
+    const isSetupFileFromCache = (file: TFile): boolean =>
+      this.isSetupFileFromCache(file);
+
+    WorkspaceLeaf.prototype.setViewState = function (
+      this: WorkspaceLeaf,
+      state: ViewState,
+      result?: ViewStateResult
+    ): Promise<void> {
+      const redirectedState = redirectSetupMarkdownViewState(this, state);
+      recordInterruptedExplicitMarkdownState(this, redirectedState);
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-return -- Delegates to Obsidian's captured setViewState implementation after replacing setup markdown states.
+      return originalSetViewState.call(this, redirectedState, result);
+    };
+
+    WorkspaceLeaf.prototype.openFile = async function (
+      this: WorkspaceLeaf,
+      file: TFile,
+      openState?: OpenViewState
+    ): Promise<void> {
+      if (
+        await maybeOpenSetupFileFromNativeOpen(file, {
+          leaf: this,
+          openState,
+          honorRequestedLeaf: true,
+        })
+      )
+        return;
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-return -- Delegates to Obsidian's captured openFile implementation for non-setup files.
+      return originalOpenFile.call(this, file, openState);
+    };
+
+    const openSetupLinkText = async function (
+      this: Workspace,
+      linktext: string,
+      sourcePath: string,
+      newLeaf?: PaneType | boolean,
+      openViewState?: OpenViewState
+    ): Promise<void> {
+      const file = resolveSetupLinkTarget(linktext, sourcePath);
+      if (file && isSetupFileFromCache(file)) {
+        const honorRequestedLeaf =
+          newLeaf !== undefined || openViewState !== undefined;
+        const requestedLeaf = honorRequestedLeaf ? this.getLeaf(newLeaf) : null;
+        if (
+          await maybeOpenSetupFileFromNativeOpen(file, {
+            leaf: requestedLeaf,
+            openState: openViewState,
+            honorRequestedLeaf,
+          })
+        )
+          return;
+      }
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-return -- Delegates to Obsidian's captured openLinkText implementation for non-setup links.
+      return originalOpenLinkText.call(
+        this,
+        linktext,
+        sourcePath,
+        newLeaf,
+        openViewState
+      );
+    };
+
+    Workspace.prototype.openLinkText = openSetupLinkText;
+    workspace.openLinkText = (
+      linktext: string,
+      sourcePath: string,
+      newLeaf?: PaneType | boolean,
+      openViewState?: OpenViewState
+    ): Promise<void> =>
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-return -- Delegates to the typed setup-link wrapper with the workspace instance receiver.
+      openSetupLinkText.call(
+        workspace,
+        linktext,
+        sourcePath,
+        newLeaf,
+        openViewState
+      );
+
+    this.plugin.register(() => {
+      WorkspaceLeaf.prototype.setViewState = originalSetViewState;
+      WorkspaceLeaf.prototype.openFile = originalOpenFile;
+      Workspace.prototype.openLinkText = originalOpenLinkText;
+      workspace.openLinkText = originalWorkspaceOpenLinkText;
+      this.setupMarkdownInterceptorRegistered = false;
+    });
+  }
+
+  private resolveSetupLinkTarget(
+    linktext: string,
+    sourcePath: string
+  ): TFile | null {
+    const linkedFile = this.plugin.app.metadataCache.getFirstLinkpathDest(
+      linktext,
+      sourcePath
+    );
+    if (linkedFile instanceof TFile) return linkedFile;
+
+    const normalizedLink = normalizePath(linktext.split('#', 1)[0] ?? '');
+    const directFile = this.plugin.app.vault.getAbstractFileByPath(
+      normalizedLink.endsWith('.md') ? normalizedLink : `${normalizedLink}.md`
+    );
+    return directFile instanceof TFile ? directFile : null;
+  }
+
+  private async maybeOpenSetupFileFromNativeOpen(
+    file: TFile,
+    options: SetupFileOpenOptions = {}
+  ): Promise<boolean> {
+    const { leaf } = options;
+    if (leaf && this.isExplicitMarkdownOpen(leaf, file.path)) return false;
+    if (leaf && this.isMarkdownOpenSuppressed(leaf, file.path)) return false;
+    this.clearExplicitMarkdownOpen(leaf);
+    if (!this.isSetupFileFromCache(file)) return false;
+
+    await this.openCachedSetupFileAsSetupsView(file, options);
+    return true;
+  }
+
+  private async openCachedSetupFileAsSetupsView(
+    file: TFile,
+    options: SetupFileOpenOptions = {}
+  ): Promise<void> {
+    const { leaf, openState, honorRequestedLeaf } = options;
+    const setupState = {
+      page: 'detail' as const,
+      setupId: file.basename,
+      setupName: file.basename,
+      setupPath: file.path,
+    };
+
+    if (honorRequestedLeaf && leaf) {
+      const viewState: ViewState = {
+        type: SETUPS_VIEW_TYPE,
+        active: openState?.active ?? true,
+        state: { ...openState?.state, ...setupState },
+      };
+      if (openState?.group) viewState.group = openState.group;
+      await leaf.setViewState(viewState, openState?.eState);
+      if (viewState.active !== false) {
+        this.plugin.app.workspace.setActiveLeaf(leaf, { focus: true });
+      }
+      this.syncGuideContextForLeaf(leaf);
+      return;
+    }
+
+    const existingLeaf = this.findOpenSetupLeaf(file.path, leaf);
+    if (existingLeaf) {
+      this.plugin.app.workspace.setActiveLeaf(existingLeaf, { focus: true });
+      this.syncGuideContextForLeaf(existingLeaf);
+      if (leaf && leaf !== existingLeaf) {
+        leaf.detach();
+      }
+      return;
+    }
+
+    const reusableSetupsLeaf = this.findReusableSetupsLeaf();
+    const targetLeaf =
+      leaf?.view instanceof SetupsView ||
+      !(reusableSetupsLeaf.view instanceof SetupsView)
+        ? (leaf ?? reusableSetupsLeaf)
+        : reusableSetupsLeaf;
+    if (targetLeaf.view instanceof SetupsView) {
+      targetLeaf.view.setSetupsState(setupState);
+      this.plugin.app.workspace.setActiveLeaf(targetLeaf, { focus: true });
+      this.syncGuideContextForLeaf(targetLeaf);
+      if (leaf && leaf !== targetLeaf) {
+        leaf.detach();
+      }
+      return;
+    }
+
+    await targetLeaf.setViewState({
+      type: SETUPS_VIEW_TYPE,
+      active: true,
+      state: setupState,
+    });
+    this.plugin.app.workspace.setActiveLeaf(targetLeaf, { focus: true });
+    this.syncGuideContextForLeaf(targetLeaf);
+  }
+
+  private redirectSetupMarkdownViewState(
+    leaf: WorkspaceLeaf,
+    state: ViewState
+  ): ViewState {
+    if (state.type !== 'markdown' || !this.isRecord(state.state)) {
+      this.clearExplicitMarkdownOpen(leaf);
+      return state;
+    }
+
+    const filePath = state.state.file;
+    if (typeof filePath !== 'string' || !filePath) {
+      this.clearExplicitMarkdownOpen(leaf);
+      return state;
+    }
+    if (this.isExplicitMarkdownOpen(leaf, filePath)) return state;
+    if (this.isMarkdownOpenSuppressed(leaf, filePath)) return state;
+    this.clearExplicitMarkdownOpen(leaf);
+
+    const file = this.plugin.app.vault.getAbstractFileByPath(filePath);
+    if (!(file instanceof TFile) || !this.isSetupFileFromCache(file)) {
+      return state;
+    }
+
+    const existingLeaf = this.findOpenSetupLeaf(file.path, leaf);
+    if (existingLeaf) {
+      window.setTimeout(() => {
+        void this.revealExistingSetupLeafAndDetachDuplicate(existingLeaf, leaf);
+      }, 0);
+    }
+
+    const setupState = {
+      page: 'detail' as const,
+      setupId: file.basename,
+      setupName: file.basename,
+      setupPath: file.path,
+    };
+
+    if (leaf.view instanceof SetupsView) {
+      leaf.view.setSetupsState(setupState);
+    }
+
+    return {
+      ...state,
+      type: SETUPS_VIEW_TYPE,
+      state: setupState,
+    };
+  }
+
+  private isSetupFileFromCache(file: TFile): boolean {
+    const cache = this.plugin.app.metadataCache.getFileCache(file);
+    return cache?.frontmatter?.['journalit-setup'] === true;
+  }
+
+  private findOpenSetupLeaf(
+    filePath: string,
+    excludeLeaf?: WorkspaceLeaf | null
+  ): WorkspaceLeaf | null {
+    const setupLeaves =
+      this.plugin.app.workspace.getLeavesOfType(SETUPS_VIEW_TYPE);
+
+    for (const leaf of setupLeaves) {
+      if (leaf === excludeLeaf) continue;
+      const view = leaf.view;
+      if (!(view instanceof SetupsView)) continue;
+      const state = view.getSetupsState();
+      if (setupViewStateMatchesFile(state, filePath)) {
+        return leaf;
+      }
+    }
+
+    return null;
+  }
+
+  private async revealExistingSetupLeafAndDetachDuplicate(
+    existingLeaf: WorkspaceLeaf,
+    duplicateLeaf: WorkspaceLeaf
+  ): Promise<void> {
+    this.syncGuideContextForLeaf(existingLeaf);
+    await Promise.resolve(this.plugin.app.workspace.revealLeaf(existingLeaf));
+    this.plugin.app.workspace.setActiveLeaf(existingLeaf, { focus: true });
+    this.syncGuideContextForLeaf(existingLeaf);
+
+    if (duplicateLeaf !== existingLeaf) {
+      duplicateLeaf.detach();
+    }
+  }
+
+  private isRecord(value: unknown): value is Record<string, unknown> {
+    return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
+  }
+
+  private isMarkdownOpenSuppressed(
+    leaf: WorkspaceLeaf,
+    filePath: string
+  ): boolean {
+    return (this.markdownOpenSuppression.get(leaf)?.get(filePath) ?? 0) > 0;
+  }
+
+  private isExplicitMarkdownOpen(
+    leaf: WorkspaceLeaf,
+    filePath: string
+  ): boolean {
+    return this.explicitMarkdownOpenPaths.get(leaf) === filePath;
+  }
+
+  private clearExplicitMarkdownOpen(
+    leaf: WorkspaceLeaf | null | undefined
+  ): void {
+    if (!leaf) return;
+    this.explicitMarkdownOpenPaths.delete(leaf);
+    this.explicitMarkdownOpenGeneration.set(
+      leaf,
+      (this.explicitMarkdownOpenGeneration.get(leaf) ?? 0) + 1
+    );
+  }
+
+  private beginExplicitMarkdownOpen(
+    leaf: WorkspaceLeaf,
+    setupPath: string
+  ): number {
+    const generation = (this.explicitMarkdownOpenGeneration.get(leaf) ?? 0) + 1;
+    this.explicitMarkdownOpenGeneration.set(leaf, generation);
+    this.pendingExplicitMarkdownOpens.set(leaf, { generation, setupPath });
+    this.interruptedExplicitMarkdownStates.delete(leaf);
+    return generation;
+  }
+
+  private recordInterruptedExplicitMarkdownState(
+    leaf: WorkspaceLeaf,
+    state: ViewState
+  ): void {
+    const pending = this.pendingExplicitMarkdownOpens.get(leaf);
+    if (!pending) return;
+    const filePath = this.isRecord(state.state) ? state.state.file : undefined;
+    if (state.type === 'markdown' && filePath === pending.setupPath) return;
+    this.interruptedExplicitMarkdownStates.set(leaf, state);
+  }
+
+  private suppressMarkdownOpen(leaf: WorkspaceLeaf, filePath: string): void {
+    const suppressedFiles =
+      this.markdownOpenSuppression.get(leaf) ?? new Map<string, number>();
+    suppressedFiles.set(filePath, (suppressedFiles.get(filePath) ?? 0) + 1);
+    this.markdownOpenSuppression.set(leaf, suppressedFiles);
+  }
+
+  private clearMarkdownOpenSuppression(
+    leaf: WorkspaceLeaf | null | undefined,
+    filePath: string
+  ): void {
+    if (!leaf) return;
+    const suppressedFiles = this.markdownOpenSuppression.get(leaf);
+    const count = suppressedFiles?.get(filePath) ?? 0;
+    if (count <= 1) {
+      suppressedFiles?.delete(filePath);
+    } else {
+      suppressedFiles?.set(filePath, count - 1);
+    }
+  }
+
   private trackRecentView(viewType: string, label: string, icon: string): void {
     if (typeof this.plugin.trackRecentView === 'function') {
       this.plugin.trackRecentView(viewType, label, icon);
@@ -54,6 +508,10 @@ export class ViewManager {
 
   private syncGuideContextForLeaf(leaf: WorkspaceLeaf): void {
     this.plugin.viewGuideService?.syncWorkspaceContext(leaf);
+    const view = leaf.view;
+    if (isKeyboardScopeAwareView(view)) {
+      view.syncActiveKeyboardScope();
+    }
   }
 
   private getRecentViewMeta(
@@ -72,6 +530,11 @@ export class ViewManager {
         return { label: t('onboarding.view.title'), icon: 'circle-dot-dashed' };
       case TEMPLATE_BUILDER_VIEW_TYPE:
         return { label: t('view.layout-builder'), icon: 'lucide-blocks' };
+      case SETUPS_VIEW_TYPE:
+        return {
+          label: t('settings.customization.setups'),
+          icon: 'flask-conical',
+        };
       default:
         return undefined;
     }
@@ -100,6 +563,9 @@ export class ViewManager {
       case TEMPLATE_BUILDER_VIEW_TYPE:
         await this.registerTemplateBuilderView();
         return;
+      case SETUPS_VIEW_TYPE:
+        await this.registerSetupsView();
+        return;
       case ACCOUNT_PAGE_VIEW_TYPE:
         await this.registerAccountPageView();
         return;
@@ -108,6 +574,9 @@ export class ViewManager {
         return;
       case CALENDAR_SIDEBAR_VIEW_TYPE:
         await this.registerCalendarSidebarView();
+        return;
+      case SESSION_MODE_VIEW_TYPE:
+        await this.registerSessionModeView();
         return;
       default:
         return;
@@ -792,7 +1261,8 @@ export class ViewManager {
   
   public async openTradeFormInEditMode(
     tradeData: Partial<TradeFormData>,
-    filePath: string
+    filePath: string,
+    openOptions?: TradeFormOpenOptions
   ): Promise<void> {
     const modal = new TradeFormModal({
       app: this.plugin.app,
@@ -800,6 +1270,7 @@ export class ViewManager {
       isEditMode: true,
       initialData: tradeData || {},
       filePath: filePath || '',
+      openOptions,
     });
     modal.open();
   }
@@ -872,6 +1343,299 @@ export class ViewManager {
         'lucide-blocks'
       );
     }
+  }
+
+  
+  public async registerSetupsView(): Promise<void> {
+    if (this.registeredViews.has(SETUPS_VIEW_TYPE)) {
+      return;
+    }
+
+    try {
+      const existingLeaves =
+        this.plugin.app.workspace.getLeavesOfType(SETUPS_VIEW_TYPE);
+      if (existingLeaves.length > 0) {
+        logger.debug(
+          '[Journalit] Preserving existing setups view leaves during registration'
+        );
+      }
+
+      this.plugin.registerView(
+        SETUPS_VIEW_TYPE,
+        (leaf) => new SetupsView(leaf, this.plugin)
+      );
+
+      this.registeredViews.add(SETUPS_VIEW_TYPE);
+      logger.debug('[Journalit] Setups view registered successfully');
+    } catch (error) {
+      console.error('[Journalit] Failed to register setups view:', error);
+    }
+  }
+
+  
+  public async openSetupsView(
+    state?: Record<string, unknown>,
+    options: SetupsViewOpenOptions = {}
+  ): Promise<void> {
+    await this.registerSetupsView();
+    const newTab = options.newTab ?? true;
+    const focusLeaf = options.focusLeaf ?? true;
+
+    const requestedSetupId =
+      state &&
+      typeof state === 'object' &&
+      'page' in state &&
+      state.page === 'detail' &&
+      'setupId' in state &&
+      typeof state.setupId === 'string'
+        ? state.setupId
+        : null;
+    const requestedSetupName =
+      state &&
+      typeof state === 'object' &&
+      'setupName' in state &&
+      typeof state.setupName === 'string'
+        ? state.setupName
+        : null;
+    const requestsOverview =
+      !state ||
+      (typeof state === 'object' &&
+        'page' in state &&
+        state.page === 'overview');
+
+    if (requestsOverview) {
+      const existingLeaves =
+        this.plugin.app.workspace.getLeavesOfType(SETUPS_VIEW_TYPE);
+      let overviewLeaf: WorkspaceLeaf | null = null;
+
+      for (const leaf of existingLeaves) {
+        const view = leaf.view;
+        if (view instanceof SetupsView) {
+          if (view.getSetupsState().page === 'overview') {
+            if (!overviewLeaf) {
+              overviewLeaf = leaf;
+            } else {
+              leaf.detach();
+            }
+          }
+        } else if (view?.getViewType?.() === SETUPS_VIEW_TYPE) {
+          logger.debug(
+            '[Journalit] Detaching broken restored setups view leaf during overview open'
+          );
+          leaf.detach();
+        }
+      }
+
+      if (overviewLeaf) {
+        this.syncGuideContextForLeaf(overviewLeaf);
+        await Promise.resolve(
+          this.plugin.app.workspace.revealLeaf(overviewLeaf)
+        );
+        this.plugin.app.workspace.setActiveLeaf(overviewLeaf, {
+          focus: focusLeaf,
+        });
+        this.syncGuideContextForLeaf(overviewLeaf);
+        this.trackRecentView(
+          SETUPS_VIEW_TYPE,
+          t('settings.customization.setups'),
+          'flask-conical'
+        );
+        return;
+      }
+    }
+
+    if (requestedSetupId) {
+      const existingLeaves =
+        this.plugin.app.workspace.getLeavesOfType(SETUPS_VIEW_TYPE);
+      for (const leaf of existingLeaves) {
+        const view = leaf.view;
+        if (view instanceof SetupsView) {
+          const existingState = view.getSetupsState();
+          if (
+            existingState.page === 'detail' &&
+            (existingState.setupId === requestedSetupId ||
+              existingState.setupName === requestedSetupId ||
+              (requestedSetupName !== null &&
+                (existingState.setupId === requestedSetupName ||
+                  existingState.setupName === requestedSetupName)))
+          ) {
+            if (requestedSetupName && !existingState.setupName) {
+              view.setSetupsState({
+                ...existingState,
+                setupName: requestedSetupName,
+              });
+            }
+            this.syncGuideContextForLeaf(leaf);
+            await Promise.resolve(this.plugin.app.workspace.revealLeaf(leaf));
+            this.plugin.app.workspace.setActiveLeaf(leaf, {
+              focus: focusLeaf,
+            });
+            this.syncGuideContextForLeaf(leaf);
+            this.trackRecentView(
+              SETUPS_VIEW_TYPE,
+              requestedSetupName ?? t('settings.customization.setups'),
+              'flask-conical'
+            );
+            return;
+          }
+        } else if (view?.getViewType?.() === SETUPS_VIEW_TYPE) {
+          logger.debug(
+            '[Journalit] Detaching broken restored setups view leaf during detail open'
+          );
+          leaf.detach();
+        }
+      }
+    }
+
+    const leaf = this.getNavigationTargetLeaf(newTab);
+
+    if (leaf) {
+      await leaf.setViewState({
+        type: SETUPS_VIEW_TYPE,
+        active: true,
+        state,
+      });
+
+      this.syncGuideContextForLeaf(leaf);
+      await Promise.resolve(this.plugin.app.workspace.revealLeaf(leaf));
+      this.plugin.app.workspace.setActiveLeaf(leaf, { focus: focusLeaf });
+      this.syncGuideContextForLeaf(leaf);
+
+      this.trackRecentView(
+        SETUPS_VIEW_TYPE,
+        requestedSetupName ?? t('settings.customization.setups'),
+        'flask-conical'
+      );
+    }
+  }
+
+  public async openSetupFileAsSetupsView(
+    file: TFile,
+    leaf?: WorkspaceLeaf | null
+  ): Promise<void> {
+    await this.registerSetupsView();
+    const setupService = await this.plugin.serviceManager.getSetupService();
+    if (!(await setupService.isSetupFile(file))) return;
+    const setup = await setupService.getSetupByFilePath(file.path);
+    if (!setup) return;
+
+    this.clearMarkdownOpenSuppression(leaf, file.path);
+    this.clearExplicitMarkdownOpen(leaf);
+
+    const existingLeaf = this.findOpenSetupLeaf(file.path, leaf);
+    if (existingLeaf) {
+      await this.revealExistingSetupLeafAndDetachDuplicate(
+        existingLeaf,
+        leaf ?? existingLeaf
+      );
+      return;
+    }
+
+    const targetLeaf = leaf ?? this.findReusableSetupsLeaf();
+    if (!targetLeaf) {
+      return;
+    }
+
+    const setupState = {
+      page: 'detail' as const,
+      setupId: setup.id,
+      setupName: setup.name,
+      setupPath: setup.filePath,
+    };
+
+    if (targetLeaf.view instanceof SetupsView) {
+      targetLeaf.view.setSetupsState(setupState);
+      this.syncGuideContextForLeaf(targetLeaf);
+      await Promise.resolve(this.plugin.app.workspace.revealLeaf(targetLeaf));
+      this.plugin.app.workspace.setActiveLeaf(targetLeaf, { focus: true });
+      this.syncGuideContextForLeaf(targetLeaf);
+      this.trackRecentView(SETUPS_VIEW_TYPE, setup.name, 'flask-conical');
+      return;
+    }
+
+    await targetLeaf.setViewState({
+      type: SETUPS_VIEW_TYPE,
+      active: true,
+      state: setupState,
+    });
+  }
+
+  private findReusableSetupsLeaf(): WorkspaceLeaf {
+    const mostRecentLeaf = this.plugin.app.workspace.getMostRecentLeaf();
+    if (mostRecentLeaf?.view instanceof SetupsView) return mostRecentLeaf;
+
+    const setupLeaves =
+      this.plugin.app.workspace.getLeavesOfType(SETUPS_VIEW_TYPE);
+    const overviewLeaf = setupLeaves.find((leaf) => {
+      const view = leaf.view;
+      return (
+        view instanceof SetupsView && view.getSetupsState().page === 'overview'
+      );
+    });
+    if (overviewLeaf) return overviewLeaf;
+
+    return this.plugin.app.workspace.getLeaf(false);
+  }
+
+  public async openSetupMarkdownView(
+    setupReference: string,
+    leaf: WorkspaceLeaf
+  ): Promise<void> {
+    const referencedFile =
+      this.plugin.app.vault.getAbstractFileByPath(setupReference);
+    let setupPath =
+      referencedFile instanceof TFile &&
+      this.isSetupFileFromCache(referencedFile)
+        ? referencedFile.path
+        : undefined;
+    if (!setupPath) {
+      const setupService = await this.plugin.serviceManager.getSetupService();
+      const setup = await setupService.getSetupById(setupReference);
+      setupPath = setup?.filePath;
+    }
+    if (!setupPath) return;
+    const generation = this.beginExplicitMarkdownOpen(leaf, setupPath);
+    this.suppressMarkdownOpen(leaf, setupPath);
+    try {
+      await leaf.setViewState({
+        type: 'markdown',
+        active: true,
+        state: { file: setupPath, mode: 'source' },
+      });
+      const isCurrent =
+        this.explicitMarkdownOpenGeneration.get(leaf) === generation;
+      const pending = this.pendingExplicitMarkdownOpens.get(leaf);
+      if (pending?.generation === generation) {
+        this.pendingExplicitMarkdownOpens.delete(leaf);
+      }
+      if (isCurrent) {
+        this.explicitMarkdownOpenPaths.set(leaf, setupPath);
+      } else {
+        const interruptedState =
+          this.interruptedExplicitMarkdownStates.get(leaf);
+        this.interruptedExplicitMarkdownStates.delete(leaf);
+        if (interruptedState) {
+          await leaf.setViewState(interruptedState);
+        }
+      }
+    } finally {
+      window.setTimeout(() => {
+        this.clearMarkdownOpenSuppression(leaf, setupPath);
+      }, 0);
+    }
+  }
+
+  public async maybeOpenSetupMarkdownAsSetupsView(
+    leaf: WorkspaceLeaf | null
+  ): Promise<void> {
+    if (!leaf || !(leaf.view instanceof MarkdownView) || !leaf.view.file) {
+      return;
+    }
+    const file = leaf.view.file;
+    if (this.isExplicitMarkdownOpen(leaf, file.path)) return;
+    if (this.isMarkdownOpenSuppressed(leaf, file.path)) return;
+    this.clearExplicitMarkdownOpen(leaf);
+    await this.openSetupFileAsSetupsView(file, leaf);
   }
 
   
@@ -970,6 +1734,52 @@ export class ViewManager {
     }
   }
 
+  public async registerSessionModeView(): Promise<void> {
+    if (this.registeredViews.has(SESSION_MODE_VIEW_TYPE)) return;
+    try {
+      this.plugin.registerView(
+        SESSION_MODE_VIEW_TYPE,
+        (leaf) => new SessionModeView(leaf, this.plugin)
+      );
+      this.registeredViews.add(SESSION_MODE_VIEW_TYPE);
+      logger.debug('[Journalit] Session mode view registered successfully');
+    } catch (error) {
+      console.error('[Journalit] Failed to register session mode view:', error);
+    }
+  }
+
+  public async activateSessionMode(options?: {
+    revealExisting?: boolean;
+  }): Promise<void> {
+    const revealExisting = options?.revealExisting ?? false;
+
+    await this.registerSessionModeView();
+
+    const existing = this.plugin.app.workspace.getLeavesOfType(
+      SESSION_MODE_VIEW_TYPE
+    );
+    if (existing.length > 0) {
+      if (revealExisting) {
+        void this.plugin.app.workspace.revealLeaf(existing[0]);
+      }
+      return;
+    }
+
+    const rightLeaf = await this.plugin.app.workspace.ensureSideLeaf(
+      SESSION_MODE_VIEW_TYPE,
+      'right',
+      {
+        active: true,
+        split: false,
+        reveal: true,
+      }
+    );
+
+    if (rightLeaf) {
+      void this.plugin.app.workspace.revealLeaf(rightLeaf);
+    }
+  }
+
   public async activateCalendarSidebar(options?: {
     revealExisting?: boolean;
   }): Promise<void> {
@@ -1021,21 +1831,7 @@ export class ViewManager {
       return;
     }
 
-    let leaf;
-    if (newTab) {
-      leaf = this.plugin.app.workspace.getLeaf('tab');
-    } else {
-      const mostRecent = this.plugin.app.workspace.getMostRecentLeaf();
-      if (
-        mostRecent &&
-        mostRecent.getRoot() === this.plugin.app.workspace.rootSplit &&
-        mostRecent.view.getViewType() !== NAVIGATION_VIEW_TYPE
-      ) {
-        leaf = mostRecent;
-      } else {
-        leaf = this.plugin.app.workspace.getLeaf('tab');
-      }
-    }
+    const leaf = this.getNavigationTargetLeaf(newTab);
 
     if (leaf) {
       await leaf.setViewState({
@@ -1056,5 +1852,22 @@ export class ViewManager {
         );
       }
     }
+  }
+
+  private getNavigationTargetLeaf(newTab: boolean): WorkspaceLeaf {
+    if (newTab) {
+      return this.plugin.app.workspace.getLeaf('tab');
+    }
+
+    const mostRecent = this.plugin.app.workspace.getMostRecentLeaf();
+    if (
+      mostRecent &&
+      mostRecent.getRoot() === this.plugin.app.workspace.rootSplit &&
+      mostRecent.view.getViewType() !== NAVIGATION_VIEW_TYPE
+    ) {
+      return mostRecent;
+    }
+
+    return this.plugin.app.workspace.getLeaf('tab');
   }
 }

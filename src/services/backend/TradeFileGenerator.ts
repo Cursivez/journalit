@@ -419,7 +419,7 @@ export class TradeFileGenerator {
       return normalized;
     };
 
-    const setupIds = normalizeStringList(trade.setupIds || trade.setup);
+    const setups = normalizeStringList(trade.setup);
     const mistakes = normalizeStringList(trade.mistake);
     const tags = normalizeStringList(trade.tags);
     const images = normalizeImageList(trade.images);
@@ -549,11 +549,10 @@ export class TradeFileGenerator {
             : undefined,
         useDirectPnLInput,
         directPnL: useDirectPnLInput ? directPnLValue : undefined,
-        setupIds,
         mistake: [...mistakes],
         accountId,
         account,
-        setup: [...setupIds],
+        setup: [...setups],
         images,
         tags,
         thesis,
@@ -628,9 +627,8 @@ export class TradeFileGenerator {
       ...(builtFrontmatter.directPnL !== undefined && {
         directPnL: builtFrontmatter.directPnL,
       }),
-      setupIds,
       ...(accountId !== undefined ? { accountId, account } : { account }),
-      setup: [...setupIds],
+      setup: [...setups],
       mistake: [...mistakes],
       images,
       tags,

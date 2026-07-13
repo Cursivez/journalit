@@ -1,6 +1,6 @@
 {
   "name": "journalit",
-  "version": "1.7.12",
+  "version": "1.8.0",
   "description": "Trading journal with templates, trade tracking, imports, and reviews for Obsidian.",
   "main": "main.js",
   "scripts": {
@@ -8,6 +8,7 @@
     "lint": "node scripts/generate-styles-css.mjs && eslint src manifest.json --max-warnings 0",
     "lint:review": "node scripts/generate-styles-css.mjs && node scripts/lint-review-findings.mjs",
     "css:review": "node scripts/generate-styles-css.mjs && node scripts/validate-public-css.mjs",
+    "css:compat": "node scripts/generate-styles-css.mjs && stylelint --config stylelint.obsidian-compat.mjs styles.css",
     "bundle:review": "node scripts/validate-review-bundle.mjs"
   },
   "keywords": [
@@ -40,8 +41,8 @@
     "@types/node": "^25.6.0",
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
-    "@typescript-eslint/eslint-plugin": "^8.57.2",
-    "@typescript-eslint/parser": "^8.57.2",
+    "@typescript-eslint/eslint-plugin": "8.62.1",
+    "@typescript-eslint/parser": "8.62.1",
     "bippy": "^0.5.41",
     "esbuild": "^0.28.1",
     "eslint": "^9.39.4",
@@ -50,9 +51,11 @@
     "eslint-plugin-react-hooks": "^7.1.1",
     "obsidian": "^1.13.1",
     "prettier": "^3.8.4",
+    "stylelint": "17.14.0",
+    "stylelint-no-unsupported-browser-features": "8.1.1",
     "tslib": "2.8.1",
     "typescript": "^5.9.3",
-    "typescript-eslint": "^8.57.2"
+    "typescript-eslint": "8.62.1"
   },
   "repository": {
     "type": "git",

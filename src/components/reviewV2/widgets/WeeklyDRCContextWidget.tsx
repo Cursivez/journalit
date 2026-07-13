@@ -8,7 +8,6 @@ import React, {
   useRef,
   useState,
 } from 'react';
-import { createPortal } from 'react-dom';
 import { Component, MarkdownRenderer, TFile } from 'obsidian';
 import JournalitPlugin from '../../../main';
 import {
@@ -25,8 +24,13 @@ import {
 import { ImageCarousel } from '../../image/ImageCarousel';
 import { t } from '../../../lang/helpers';
 import { eventBus } from '../../../services/events';
-import { cssVars } from '../../../styles/inlineStylePolicy';
 import { InvalidContextMessage } from './InvalidContextMessage';
+import {
+  scrollToNextReviewItemAfterCollapse,
+  StickyReviewHeaderPortal,
+  useStickyReviewHeader,
+} from './shared/StickyReviewHeader';
+import { ReviewWidgetSkeleton } from './shared/ReviewWidgetSkeleton';
 
 type WeeklyDRCDayScope =
   | 'all'
@@ -273,7 +277,6 @@ interface WeeklyDRCAccordionHeaderProps {
   preview?: boolean;
   reviewed: boolean;
   setIsOpen: React.Dispatch<React.SetStateAction<boolean>>;
-  stickyHeader: { left: number; top: number; width: number } | null;
   title: string;
   toggleReviewed: (
     event: React.MouseEvent<HTMLButtonElement>
@@ -290,7 +293,6 @@ function WeeklyDRCAccordionHeader({
   preview,
   reviewed,
   setIsOpen,
-  stickyHeader,
   title,
   toggleReviewed,
 }: WeeklyDRCAccordionHeaderProps) {
@@ -314,14 +316,6 @@ function WeeklyDRCAccordionHeader({
         event.preventDefault();
         setIsOpen((current) => !current);
       }}
-      style={cssVars({
-        '--journalit-weekly-drc-sticky-left':
-          isStickyClone && stickyHeader ? `${stickyHeader.left}px` : null,
-        '--journalit-weekly-drc-sticky-width':
-          isStickyClone && stickyHeader ? `${stickyHeader.width}px` : null,
-        '--journalit-weekly-drc-sticky-top':
-          isStickyClone && stickyHeader ? `${stickyHeader.top}px` : null,
-      })}
     >
       <span
         className="journalit-weekly-drc-accordion-indicator"
@@ -387,8 +381,16 @@ const WeeklyDRCDay: React.FC<{
   plugin: JournalitPlugin;
   filePath: string;
   defaultExpanded: boolean;
+  nextReviewItemKey?: string;
   preview?: boolean;
-}> = ({ day, plugin, filePath, defaultExpanded, preview }) => {
+}> = ({
+  day,
+  plugin,
+  filePath,
+  defaultExpanded,
+  nextReviewItemKey,
+  preview,
+}) => {
   const hasContent = day.sections.length > 0;
   const title = formatDayHeading(day.date);
   const [dayState, setDayState] = useState<{
@@ -406,11 +408,6 @@ const WeeklyDRCDay: React.FC<{
   const reviewed = isCurrentDayState ? dayState.reviewed : day.reviewed;
   const canToggleReviewed =
     Boolean(day.sourcePath) || plugin.settings.drc.autoCreateDRCOnNavigation;
-  const [stickyHeader, setStickyHeader] = useState<{
-    left: number;
-    width: number;
-    top: number;
-  } | null>(null);
   const dayRef = useRef<HTMLElement | null>(null);
   const headerRef = useRef<HTMLDivElement | null>(null);
 
@@ -433,39 +430,11 @@ const WeeklyDRCDay: React.FC<{
     });
   };
 
-  useEffect(() => {
-    if (!isOpen) {
-      setStickyHeader(null);
-      return;
-    }
-
-    const updateStickyHeader = () => {
-      const dayEl = dayRef.current;
-      const headerEl = headerRef.current;
-      if (!dayEl || !headerEl) return;
-
-      const dayRect = dayEl.getBoundingClientRect();
-      const headerRect = headerEl.getBoundingClientRect();
-      const scrollContainer = headerEl.closest(
-        '.cm-scroller, .markdown-preview-view, .markdown-reading-view'
-      );
-      const top = scrollContainer?.getBoundingClientRect().top ?? 0;
-      const shouldStick =
-        dayRect.top < top && dayRect.bottom > top + headerRect.height;
-
-      setStickyHeader(
-        shouldStick ? { left: dayRect.left, width: dayRect.width, top } : null
-      );
-    };
-
-    updateStickyHeader();
-    window.addEventListener('scroll', updateStickyHeader, true);
-    window.addEventListener('resize', updateStickyHeader);
-    return () => {
-      window.removeEventListener('scroll', updateStickyHeader, true);
-      window.removeEventListener('resize', updateStickyHeader);
-    };
-  }, [isOpen]);
+  const stickyHeader = useStickyReviewHeader({
+    containerRef: dayRef,
+    enabled: isOpen,
+    headerRef,
+  });
 
   const openDRCForDay = useCallback(async () => {
     if (day.sourcePath) {
@@ -530,6 +499,9 @@ const WeeklyDRCDay: React.FC<{
       reviewed: nextReviewed,
       isOpen: defaultExpanded && !nextReviewed,
     });
+    if (nextReviewed && isOpen) {
+      scrollToNextReviewItemAfterCollapse(dayRef.current, nextReviewItemKey);
+    }
 
     try {
       const currentEodReview =
@@ -583,7 +555,7 @@ const WeeklyDRCDay: React.FC<{
               return (
                 <div
                   key={`images-${block.widgetId}`}
-                  className="journalit-images-widget"
+                  className="journalit-images-widget journalit-media-carousel-surface"
                 >
                   <ImageCarousel
                     images={block.images}
@@ -614,6 +586,7 @@ const WeeklyDRCDay: React.FC<{
     <article
       ref={dayRef}
       className="journalit-weekly-drc-day journalit-weekly-drc-day--accordion journalit-previous-drc-reference"
+      data-journalit-review-item-key={day.dateKey}
     >
       <WeeklyDRCAccordionHeader
         canToggleReviewed={canToggleReviewed}
@@ -624,27 +597,26 @@ const WeeklyDRCDay: React.FC<{
         preview={preview}
         reviewed={reviewed}
         setIsOpen={setIsOpen}
-        stickyHeader={stickyHeader}
         title={title}
         toggleReviewed={toggleReviewed}
       />
-      {stickyHeader &&
-        createPortal(
-          <WeeklyDRCAccordionHeader
-            canToggleReviewed={canToggleReviewed}
-            handleOpenSourceKeyDown={handleOpenSourceKeyDown}
-            isOpen={isOpen}
-            isStickyClone={true}
-            openSourceDRC={openSourceDRC}
-            preview={preview}
-            reviewed={reviewed}
-            setIsOpen={setIsOpen}
-            stickyHeader={stickyHeader}
-            title={title}
-            toggleReviewed={toggleReviewed}
-          />,
-          window.activeDocument.body
-        )}
+      <StickyReviewHeaderPortal
+        className="journalit-weekly-drc-summary--sticky-clone"
+        metrics={stickyHeader}
+      >
+        <WeeklyDRCAccordionHeader
+          canToggleReviewed={canToggleReviewed}
+          handleOpenSourceKeyDown={handleOpenSourceKeyDown}
+          isOpen={isOpen}
+          isStickyClone={true}
+          openSourceDRC={openSourceDRC}
+          preview={preview}
+          reviewed={reviewed}
+          setIsOpen={setIsOpen}
+          title={title}
+          toggleReviewed={toggleReviewed}
+        />
+      </StickyReviewHeaderPortal>
       {isOpen && content}
     </article>
   );
@@ -854,10 +826,7 @@ export const WeeklyDRCContextWidget: React.FC<WeeklyDRCContextWidgetProps> =
         />
       );
     }
-    if (loading)
-      return (
-        <div className="journalit-widget-loading">{t('common.loading')}</div>
-      );
+    if (loading) return <ReviewWidgetSkeleton variant="weekday-review" />;
     if (error) return <div className="journalit-widget-error">{error}</div>;
     if (headings.length === 0) {
       return (
@@ -870,13 +839,14 @@ export const WeeklyDRCContextWidget: React.FC<WeeklyDRCContextWidgetProps> =
     return (
       <div className="journalit-weekly-drc-context journalit-weekly-drc-context--accordion">
         <div className="journalit-weekly-drc-days">
-          {days.map((day) => (
+          {days.map((day, index) => (
             <WeeklyDRCDay
               key={day.dateKey}
               day={day}
               plugin={plugin}
               filePath={filePath}
               defaultExpanded={defaultExpanded}
+              nextReviewItemKey={days[index + 1]?.dateKey}
               preview={preview}
             />
           ))}

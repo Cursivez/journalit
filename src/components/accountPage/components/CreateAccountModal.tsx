@@ -1221,12 +1221,12 @@ const CreateAccountModalContent: React.FC<
       />
 
       
-      <div className="create-account-buttons">
+      <div className="journalit-modal-actions create-account-buttons">
         <Button
-          variant="secondary"
+          variant="plain"
           onClick={onModalClose}
           disabled={isSaving}
-          className="cancel-button"
+          className="journalit-modal-actions__cancel cancel-button"
         >
           {t('button.cancel')}
         </Button>
@@ -1234,7 +1234,7 @@ const CreateAccountModalContent: React.FC<
           variant="primary"
           onClick={handleCreate}
           disabled={isSaving}
-          className="create-account-button accent-button modal-save-accent"
+          className="journalit-modal-actions__primary create-account-button accent-button modal-save-accent"
         >
           {isSaving
             ? t('account.create.button.creating')

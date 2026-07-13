@@ -21,7 +21,9 @@ interface StatusCardsProps {
   lastSyncTime?: string;
   syncCount: number;
   isSyncing: boolean;
+  isRegistering: boolean;
   onForceSync: () => void | Promise<void>;
+  onCancelSync: () => void | Promise<void>;
 
   
   accountCount: number;
@@ -34,7 +36,9 @@ export const StatusCards: React.FC<StatusCardsProps> = ({
   lastSyncTime,
   syncCount,
   isSyncing,
+  isRegistering,
   onForceSync,
+  onCancelSync,
   accountCount,
   onManageAccounts,
 }) => {
@@ -141,7 +145,9 @@ export const StatusCards: React.FC<StatusCardsProps> = ({
           <Button
             variant="primary"
             onClick={() => void onForceSync()}
-            disabled={isSyncing || connectionStatus !== 'connected'}
+            disabled={
+              isSyncing || isRegistering || connectionStatus !== 'connected'
+            }
           >
             {isSyncing ? (
               <>
@@ -158,6 +164,15 @@ export const StatusCards: React.FC<StatusCardsProps> = ({
               </>
             )}
           </Button>
+          {isSyncing && (
+            <Button
+              variant="secondary"
+              onClick={() => void onCancelSync()}
+              className="journalit-status-card-cancel-button"
+            >
+              {t('backend.cards.sync.cancel')}
+            </Button>
+          )}
         </div>
       </div>
 

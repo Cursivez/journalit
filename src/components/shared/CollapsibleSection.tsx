@@ -12,6 +12,7 @@ interface CollapsibleSectionProps {
   onToggle?: (open: boolean) => void;
   badge?: number;
   className?: string;
+  containerRef?: (element: HTMLDivElement | null) => void;
 }
 
 export const COLLAPSIBLE_SECTION_STYLES = `
@@ -120,6 +121,7 @@ export const CollapsibleSection = memo<CollapsibleSectionProps>(
     onToggle,
     badge,
     className = '',
+    containerRef,
   }) => {
     
     React.useEffect(() => {}, []);
@@ -148,7 +150,10 @@ export const CollapsibleSection = memo<CollapsibleSectionProps>(
     );
 
     return (
-      <div className={`journalit-collapsible-section ${className}`}>
+      <div
+        className={`journalit-collapsible-section ${className}`}
+        ref={containerRef}
+      >
         <button
           className={`journalit-collapsible-header ${badge && badge > 0 ? 'has-active-filters' : ''}`}
           onClick={handleToggle}

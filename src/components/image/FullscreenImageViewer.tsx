@@ -1,18 +1,43 @@
 
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { Notice } from 'obsidian';
 import { FullscreenImageViewerProps, ImageZoomState } from '../../types/image';
 import { imageService } from '../../services/image/ImageService';
 import { t } from '../../lang/helpers';
-import { dndKitStyle } from '../../styles/inlineStylePolicy';
+import { cssVars, dndKitStyle } from '../../styles/inlineStylePolicy';
+import {
+  Check,
+  Copy,
+  LeftArrow,
+  RightArrow,
+} from '../shared/icons/ObsidianIcon';
+import {
+  canWriteClipboardItems,
+  writeClipboardImage,
+} from '../../utils/clipboard';
 import { getApp } from '../../utils/obsidian';
 import {
+  getClipboardReadyImageBlob,
+  getClipboardReadyRenderedImageBlob,
+  getClipboardReadySvgBlob,
+} from '../../utils/imageClipboard';
+import {
+  getMediaKind,
   isExcalidrawMediaPath,
   resolveMediaDisplayPath,
 } from '../../utils/imageMediaUtils';
 import { ExcalidrawMediaEmbed } from './ExcalidrawMediaEmbed';
+import { FullscreenVideoPlayer } from './FullscreenVideoPlayer';
+import { FullscreenYouTubeEmbed } from './FullscreenYouTubeEmbed';
 
 const PAN_CLICK_SUPPRESSION_THRESHOLD = 2;
+
+interface FullscreenContextMenuState {
+  x: number;
+  y: number;
+  status: 'idle' | 'copied';
+}
 
 const createInitialZoomState = (): ImageZoomState => ({
   isZoomed: false,
@@ -38,10 +63,13 @@ function useFullscreenImageViewerModel({
   const [zoomState, setZoomState] = useState<ImageZoomState>(
     createInitialZoomState
   );
+  const [contextMenu, setContextMenu] =
+    useState<FullscreenContextMenuState | null>(null);
 
   
   const imageRef = useRef<HTMLImageElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const contextMenuCloseTimeoutRef = useRef<number | null>(null);
 
   
   const suppressNextClickRef = useRef(false);
@@ -54,6 +82,7 @@ function useFullscreenImageViewerModel({
     imagePath,
     resolvedSourcePath
   );
+  const mediaKind = getMediaKind(getApp(), imagePath, resolvedSourcePath);
   const displayPath = resolveMediaDisplayPath(
     getApp(),
     imagePath,
@@ -68,8 +97,47 @@ function useFullscreenImageViewerModel({
   useEffect(() => {
     suppressNextClickRef.current = false;
     didPanDuringGestureRef.current = false;
+    if (contextMenuCloseTimeoutRef.current !== null) {
+      window.clearTimeout(contextMenuCloseTimeoutRef.current);
+      contextMenuCloseTimeoutRef.current = null;
+    }
+    setContextMenu(null);
     setZoomState(createInitialZoomState());
   }, [imagePath]);
+
+  useEffect(
+    () => () => {
+      if (contextMenuCloseTimeoutRef.current !== null) {
+        window.clearTimeout(contextMenuCloseTimeoutRef.current);
+      }
+    },
+    []
+  );
+
+  useEffect(() => {
+    if (!contextMenu) return;
+
+    const closeContextMenu = (event: MouseEvent) => {
+      const target = event.target;
+      if (
+        target instanceof Element &&
+        target.closest('.journalit-fullscreen-copy-menu')
+      ) {
+        return;
+      }
+
+      setContextMenu(null);
+    };
+    window.activeDocument.addEventListener('click', closeContextMenu);
+    window.activeDocument.addEventListener('contextmenu', closeContextMenu);
+    return () => {
+      window.activeDocument.removeEventListener('click', closeContextMenu);
+      window.activeDocument.removeEventListener(
+        'contextmenu',
+        closeContextMenu
+      );
+    };
+  }, [contextMenu]);
 
   const toggleZoom = useCallback(() => {
     
@@ -102,6 +170,70 @@ function useFullscreenImageViewerModel({
       toggleZoom();
     },
     [toggleZoom]
+  );
+
+  const copyImageToClipboard = useCallback(async () => {
+    if (contextMenuCloseTimeoutRef.current !== null) {
+      window.clearTimeout(contextMenuCloseTimeoutRef.current);
+      contextMenuCloseTimeoutRef.current = null;
+    }
+
+    if (!canWriteClipboardItems()) {
+      setContextMenu(null);
+      new Notice(t('image.viewer.copy-unsupported'));
+      return;
+    }
+
+    try {
+      const app = getApp();
+      const excalidrawSvg = isExcalidraw
+        ? containerRef.current?.querySelector<SVGSVGElement>(
+            '.journalit-excalidraw-media__embed svg'
+          )
+        : null;
+      const excalidrawImage = isExcalidraw
+        ? containerRef.current?.querySelector<HTMLImageElement>(
+            '.journalit-excalidraw-media__embed img'
+          )
+        : null;
+      if (isExcalidraw && !excalidrawSvg && !excalidrawImage) {
+        throw new Error('Rendered Excalidraw image is unavailable');
+      }
+
+      const blob = excalidrawSvg
+        ? await getClipboardReadySvgBlob(excalidrawSvg)
+        : excalidrawImage
+          ? await getClipboardReadyRenderedImageBlob(excalidrawImage)
+          : await getClipboardReadyImageBlob({
+              app,
+              imagePath,
+              sourcePath: resolvedSourcePath,
+              imageUrl,
+            });
+      await writeClipboardImage(blob);
+      setContextMenu((current) =>
+        current ? { ...current, status: 'copied' } : current
+      );
+      contextMenuCloseTimeoutRef.current = window.setTimeout(() => {
+        setContextMenu(null);
+        contextMenuCloseTimeoutRef.current = null;
+      }, 900);
+    } catch (error) {
+      setContextMenu(null);
+      console.error('Failed to copy image to clipboard:', error);
+      new Notice(t('image.viewer.copy-failed'));
+    }
+  }, [imagePath, imageUrl, isExcalidraw, resolvedSourcePath]);
+
+  const handleImageContextMenu = useCallback(
+    (e: React.MouseEvent) => {
+      if (mediaKind === 'video') return;
+      e.preventDefault();
+      e.stopPropagation();
+
+      setContextMenu({ x: e.clientX, y: e.clientY, status: 'idle' });
+    },
+    [mediaKind]
   );
 
   
@@ -158,6 +290,8 @@ function useFullscreenImageViewerModel({
 
   
   useEffect(() => {
+    if (mediaKind === 'video') return;
+
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'ArrowLeft') {
         e.preventDefault();
@@ -173,7 +307,7 @@ function useFullscreenImageViewerModel({
     window.activeDocument.addEventListener('keydown', handleKeyDown);
     return () =>
       window.activeDocument.removeEventListener('keydown', handleKeyDown);
-  }, [handleNavigate]);
+  }, [handleNavigate, mediaKind]);
 
   
   const handleGlobalMouseMove = useCallback((e: MouseEvent) => {
@@ -415,12 +549,16 @@ function useFullscreenImageViewerModel({
     imageRef,
     containerRef,
     imageUrl,
+    contextMenu,
     isExcalidraw,
+    mediaKind,
     sourcePath: resolvedSourcePath,
     imagePath,
     imageTransform,
     isPinching,
     handleImageClick,
+    handleImageContextMenu,
+    copyImageToClipboard,
     toggleZoom,
     handlePanStart,
     handlePanEnd,
@@ -456,7 +594,7 @@ function FullscreenNavigationButtons({
             aria-label={t('image.viewer.nav-prev')}
             type="button"
           >
-            ‹
+            <LeftArrow size={20} strokeWidth={2.25} />
           </button>
           <button
             className="journalit-fullscreen-nav-btn journalit-fullscreen-nav-next"
@@ -467,7 +605,7 @@ function FullscreenNavigationButtons({
             aria-label={t('image.viewer.nav-next')}
             type="button"
           >
-            ›
+            <RightArrow size={20} strokeWidth={2.25} />
           </button>
         </>
       )}
@@ -487,11 +625,13 @@ function FullscreenImageElement({
     imageRef,
     imageUrl,
     isExcalidraw,
+    mediaKind,
     sourcePath,
     imagePath,
     imageTransform,
     isPinching,
     handleImageClick,
+    handleImageContextMenu,
     toggleZoom,
     handlePanStart,
     handlePanEnd,
@@ -529,9 +669,20 @@ function FullscreenImageElement({
     toggleZoom();
   };
 
+  if (mediaKind === 'video') {
+    return <FullscreenVideoPlayer src={imageUrl} />;
+  }
+
+  if (mediaKind === 'youtube') {
+    return <FullscreenYouTubeEmbed url={imagePath} title={alt} />;
+  }
+
   if (isExcalidraw) {
     return (
-      <div className="journalit-fullscreen-image-wrapper">
+      <div
+        className="journalit-fullscreen-image-wrapper"
+        onContextMenu={handleImageContextMenu}
+      >
         <div
           className={zoomableClassName}
           onClick={handleImageClick}
@@ -558,7 +709,10 @@ function FullscreenImageElement({
   }
 
   return (
-    <div className="journalit-fullscreen-image-wrapper">
+    <div
+      className="journalit-fullscreen-image-wrapper"
+      onContextMenu={handleImageContextMenu}
+    >
       <img
         ref={imageRef}
         src={imageUrl}
@@ -618,6 +772,67 @@ function FullscreenNavigationIndicator({
   ) : null;
 }
 
+function FullscreenCopyImageMenu({
+  model,
+}: {
+  model: FullscreenImageViewerModel;
+}) {
+  const { contextMenu, copyImageToClipboard } = model;
+  if (!contextMenu) return null;
+  const isCopied = contextMenu.status === 'copied';
+
+  const handleCopyMenuAction = () => {
+    void copyImageToClipboard();
+  };
+
+  return (
+    <div
+      className="journalit-fullscreen-copy-menu"
+      role="menuitem"
+      tabIndex={0}
+      onClick={(e) => {
+        e.stopPropagation();
+        if (isCopied) return;
+
+        handleCopyMenuAction();
+      }}
+      onKeyDown={(e) => {
+        e.stopPropagation();
+        if (e.key !== 'Enter' && e.key !== ' ') return;
+
+        e.preventDefault();
+        if (!isCopied) handleCopyMenuAction();
+      }}
+      onMouseDown={(e) => e.stopPropagation()}
+      onContextMenu={(e) => {
+        e.preventDefault();
+        e.stopPropagation();
+      }}
+      style={cssVars({
+        '--journalit-image-copy-menu-x': `${contextMenu.x}px`,
+        '--journalit-image-copy-menu-y': `${contextMenu.y}px`,
+      })}
+    >
+      {isCopied ? (
+        <Check
+          className="journalit-fullscreen-copy-menu__icon journalit-fullscreen-copy-menu__icon--success"
+          size={16}
+          aria-hidden="true"
+        />
+      ) : (
+        <Copy
+          className="journalit-fullscreen-copy-menu__icon"
+          size={16}
+          aria-hidden="true"
+        />
+      )}
+      <span>
+        {isCopied ? t('image.viewer.copied') : t('image.viewer.copy-image')}
+      </span>
+    </div>
+  );
+}
+
 export const FullscreenImageViewer: React.FC<FullscreenImageViewerProps> = ({
   imagePath,
   alt = t('image.viewer.alt-default'),
@@ -637,7 +852,7 @@ export const FullscreenImageViewer: React.FC<FullscreenImageViewerProps> = ({
     sourcePath,
     navigationContext: resolvedNavigationContext,
   });
-  const { containerRef } = model;
+  const { containerRef, mediaKind } = model;
 
   return (
     <div className="journalit-fullscreen-viewer" ref={containerRef}>
@@ -648,9 +863,15 @@ export const FullscreenImageViewer: React.FC<FullscreenImageViewerProps> = ({
 
       <FullscreenImageElement model={model} alt={alt} />
 
-      <FullscreenZoomIndicator zoomState={model.zoomState} />
+      {mediaKind !== 'video' && mediaKind !== 'youtube' && (
+        <FullscreenZoomIndicator zoomState={model.zoomState} />
+      )}
 
       <FullscreenNavigationIndicator navigationContext={navigationContext} />
+
+      {mediaKind !== 'video' && mediaKind !== 'youtube' && (
+        <FullscreenCopyImageMenu model={model} />
+      )}
     </div>
   );
 };

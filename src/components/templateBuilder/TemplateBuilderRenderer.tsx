@@ -197,6 +197,7 @@ const TemplateBuilderRenderer: React.FC<TemplateBuilderProps> = (
       <BuilderSidebar
         plugin={plugin}
         templateService={templateService}
+        tradeTemplateService={tradeTemplateService}
         selection={selection}
         onSelectionChange={(selection) => void handleSelectionChange(selection)}
         onTemplatesChange={() => void handleTemplatesChange()}

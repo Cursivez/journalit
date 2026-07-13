@@ -364,7 +364,7 @@ const AddEventModalContent: React.FC<
         </div>
         <div className="button-group-right">
           <Button
-            variant="secondary"
+            variant="plain"
             onClick={onModalClose}
             disabled={isSaving}
             className="cancel-button"
