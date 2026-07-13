@@ -575,9 +575,7 @@ export class TradePathUpdateUtility {
     const filesWithImages: TFile[] = [];
     for (const file of allFiles) {
       const cache = this.app.metadataCache.getFileCache(file);
-      const frontmatter = cache?.frontmatter as
-        | Record<string, unknown>
-        | undefined;
+      const frontmatter = cache?.frontmatter;
 
       let hasOldPathImages = false;
 
@@ -718,9 +716,7 @@ export class TradePathUpdateUtility {
         batch.map(async (file) => {
           try {
             const cache = this.app.metadataCache.getFileCache(file);
-            const frontmatter = cache?.frontmatter as
-              | Record<string, unknown>
-              | undefined;
+            const frontmatter = cache?.frontmatter;
 
             
             let hasTopLevelImages = false;
@@ -1098,9 +1094,7 @@ export class TradePathUpdateUtility {
     const filesNeedingUpdate: TFile[] = [];
     for (const file of allFiles) {
       const cache = this.app.metadataCache.getFileCache(file);
-      const frontmatter = cache?.frontmatter as
-        | Record<string, unknown>
-        | undefined;
+      const frontmatter = cache?.frontmatter;
       if (!frontmatter) continue;
 
       let needsUpdate = false;

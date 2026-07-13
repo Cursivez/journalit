@@ -773,10 +773,7 @@ const TradeDetailsContent = memo<{
           return null;
         }
 
-        const rawValue = getCustomFieldRawValue(
-          trade as Record<string, unknown>,
-          field
-        );
+        const rawValue = getCustomFieldRawValue(trade, field);
 
         const renderNoData = () => (
           <div key={column.id} className="trade-custom-field-cell">

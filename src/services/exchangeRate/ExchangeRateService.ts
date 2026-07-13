@@ -341,7 +341,7 @@ export class ExchangeRateService {
             brokerBaseBreakEvenAccountCurrentBalanceTotal !== undefined
               ? baseCurrency
               : undefined,
-        } as T;
+        };
       }
 
       const getTradeRateForCurrency = (currency: string): number | null => {
@@ -423,11 +423,11 @@ export class ExchangeRateService {
           convertedBreakEvenAccountCurrentBalanceTotal !== undefined
             ? baseCurrency
             : trade.breakEvenAccountCurrentBalanceTotalCurrency,
-      } as T;
+      };
     });
 
     
-    const validTrades = convertedTrades.filter((t): t is T => t !== null);
+    const validTrades = convertedTrades.filter((trade) => trade !== null);
 
     return {
       trades: validTrades,

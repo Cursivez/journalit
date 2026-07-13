@@ -465,7 +465,7 @@ export const MissedTradesWidget: React.FC<MissedTradesWidgetProps> = memo(
           .flatMap((mtFile) => {
             const mtCache = plugin.app.metadataCache.getFileCache(mtFile);
             const missedTrade = buildMissedTradeDisplayData(
-              mtCache?.frontmatter as MissedTradeFrontmatter | undefined,
+              mtCache?.frontmatter,
               mtFile
             );
             return missedTrade ? [missedTrade] : [];

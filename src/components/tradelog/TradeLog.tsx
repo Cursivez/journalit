@@ -829,7 +829,7 @@ const useTradeLogController = ({ plugin, leaf }: TradeLogProps) => {
         setups: [] as string[],
         mistakes: [] as string[],
         tags: [] as string[],
-        customMultiselects: {} as Record<string, string[]>,
+        customMultiselects: {},
       };
     }
 

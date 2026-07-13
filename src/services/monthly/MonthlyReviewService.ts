@@ -1192,9 +1192,7 @@ export class MonthlyReviewService extends CustomDataService {
               drcData.mentalGrade &&
               VALID_REVIEW_GRADES.has(drcData.mentalGrade)
             ) {
-              mentalGradeDistribution[
-                drcData.mentalGrade as keyof GradeDistribution
-              ]++;
+              mentalGradeDistribution[drcData.mentalGrade]++;
             }
 
             
@@ -1202,9 +1200,7 @@ export class MonthlyReviewService extends CustomDataService {
               drcData.technicalGrade &&
               VALID_REVIEW_GRADES.has(drcData.technicalGrade)
             ) {
-              technicalGradeDistribution[
-                drcData.technicalGrade as keyof GradeDistribution
-              ]++;
+              technicalGradeDistribution[drcData.technicalGrade]++;
             }
           }
         }

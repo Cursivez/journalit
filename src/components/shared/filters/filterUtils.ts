@@ -242,14 +242,14 @@ export function applyTradeFilters<T extends object>(
     filtered = filtered.filter((t) => {
       const isOpen = options.isTradeOpen
         ? options.isTradeOpen(t)
-        : isTradeOpenWithContext(t as PartialTradeFrontmatter);
+        : isTradeOpenWithContext(t);
 
       if (isOpen) {
         return filters.statuses.includes('open');
       }
 
       
-      const pnl = getEffectivePnL(t as PartialTradeFrontmatter);
+      const pnl = getEffectivePnL(t);
       const outcome = options.breakEvenSettings
         ? classifyPnLWithBreakEvenSettings(
             pnl,
@@ -286,9 +286,7 @@ export function applyTradeFilters<T extends object>(
     const selectedDirections = new Set(filters.directions);
 
     filtered = filtered.filter((t) => {
-      const directionGroup = getTradeDirectionFilterGroup(
-        t as PartialTradeFrontmatter
-      );
+      const directionGroup = getTradeDirectionFilterGroup(t);
       return directionGroup !== null && selectedDirections.has(directionGroup);
     });
   }

@@ -1405,10 +1405,7 @@ export class TradeLogService {
       savedOptions.forEach((option) => addOption(option, option));
 
       trades.forEach((trade) => {
-        const rawValue = getTradeCustomFieldRawValue(
-          trade as Record<string, unknown>,
-          field
-        );
+        const rawValue = getTradeCustomFieldRawValue(trade, field);
 
         if (
           field.type === CustomFieldType.MULTISELECT &&

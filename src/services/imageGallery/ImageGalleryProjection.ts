@@ -160,9 +160,7 @@ export function getTradeAccountVariants(
     if (lookupKey) baseAccounts.set(lookupKey, accountName);
   };
 
-  for (const accountName of normalizeTradeAccountIdentity(
-    trade as Record<string, unknown>
-  ).accountNames) {
+  for (const accountName of normalizeTradeAccountIdentity(trade).accountNames) {
     addBaseAccount(accountName);
   }
 

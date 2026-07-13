@@ -1506,7 +1506,7 @@ export class BackendIntegrationService {
     ) {
       return {
         ...existingFrontmatterCache,
-      } as Record<string, unknown>;
+      };
     }
 
     return null;
@@ -2565,7 +2565,7 @@ export class BackendIntegrationService {
   ): { didUpdate: boolean; nextTradeData: TradeData } {
     const nextTradeData: TradeData = { ...tradeData };
     const mutationResult = this.applyAccountRelinkToMutableRecord(
-      nextTradeData as Record<string, unknown>,
+      nextTradeData,
       context
     );
 

@@ -69,7 +69,7 @@ interface JournalitPluginForTradeNote {
 function getJournalitPlugin(app: App): JournalitPluginForTradeNote | undefined {
   const plugins = app.plugins?.plugins;
   const plugin = plugins?.journalit;
-  return isRecord(plugin) ? (plugin as JournalitPluginForTradeNote) : undefined;
+  return isRecord(plugin) ? plugin : undefined;
 }
 
 export class TradeNoteRenderer extends BaseComponentRenderer {

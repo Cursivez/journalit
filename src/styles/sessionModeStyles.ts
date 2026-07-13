@@ -2704,7 +2704,7 @@ export const SESSION_MODE_STYLES = `
 
 .journalit-settings .journalit-session-log-tag-add-row.setting-item {
   display: grid !important;
-  grid-template-columns: 150px 100px 82px minmax(24px, 1fr) 70px;
+  grid-template-columns: minmax(0, 1fr) 70px;
   align-items: flex-start !important;
   gap: var(--size-2-2) 16px !important;
   margin: 0 !important;
@@ -2716,7 +2716,7 @@ export const SESSION_MODE_STYLES = `
 
 .journalit-settings .journalit-session-log-tag-add-row .setting-item-control {
   display: grid !important;
-  grid-column: 5;
+  grid-column: 2;
   grid-row: 1;
   min-width: 70px !important;
   grid-template-rows: calc(var(--font-ui-smaller) * 1.2) 36px;
@@ -2727,9 +2727,16 @@ export const SESSION_MODE_STYLES = `
   padding-top: 0 !important;
 }
 
-.journalit-settings .journalit-session-log-tag-add-row .setting-item-info,
+.journalit-settings .journalit-session-log-tag-add-row .setting-item-info {
+  display: block !important;
+  grid-column: 1;
+  grid-row: 1;
+  min-width: 0;
+}
+
 .journalit-settings .journalit-session-log-tag-add-row .journalit-session-log-tag-draft-fields {
-  display: contents !important;
+  display: grid !important;
+  grid-template-columns: 150px 100px 82px;
 }
 
 .journalit-settings .journalit-session-log-tag-add-row .journalit-session-log-tags-reset-container {
@@ -2812,6 +2819,15 @@ export const SESSION_MODE_STYLES = `
   .journalit-session-log-tag-edit-grid,
   .journalit-session-log-tag-draft-fields {
     grid-template-columns: 1fr;
+  }
+
+  .journalit-settings .journalit-session-log-tag-add-row .journalit-session-log-tag-draft-fields {
+    grid-template-columns: 1fr;
+  }
+
+  .journalit-settings .journalit-session-log-tag-add-row .journalit-session-log-tag-toggle:nth-child(4),
+  .journalit-settings .journalit-session-log-tag-add-row .journalit-session-log-tag-toggle:nth-child(5) {
+    grid-column: 1;
   }
 }
 

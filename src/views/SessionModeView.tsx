@@ -43,7 +43,6 @@ import {
 } from '../components/sessionLog/sessionLogUtils';
 import { resolveSessionModePhase } from '../utils/sessionModePhase';
 import type {
-  SessionModeConfigurablePhase,
   SessionModeLayoutModuleId,
   SessionModePhaseState,
 } from '../types/sessionMode';
@@ -959,7 +958,7 @@ const SessionModePhaseContent: React.FC<{
     );
   }
 
-  const phase = phaseState.phase as SessionModeConfigurablePhase;
+  const phase = phaseState.phase;
   const moduleIds = normalizeSessionModePhaseLayouts(
     plugin.settings.sessionMode.phaseLayouts
   )[phase];

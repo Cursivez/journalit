@@ -788,7 +788,7 @@ export class TradeNoteProcessor extends BaseComponentProcessor {
       return;
     }
 
-    let frontmatter = cachedFrontmatter as Record<string, unknown> | undefined;
+    let frontmatter = cachedFrontmatter;
     if (!frontmatter) {
       
       frontmatter = await readFrontmatterFromDisk(this.app, file);

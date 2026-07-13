@@ -423,7 +423,7 @@ export class WeeklyReviewService {
     
     return transformService.generateNoteFromTemplate(
       template,
-      weeklyReviewData as Record<string, unknown>
+      weeklyReviewData
     );
   }
 

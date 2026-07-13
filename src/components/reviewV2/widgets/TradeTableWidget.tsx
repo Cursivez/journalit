@@ -96,6 +96,9 @@ const asReviewTableTrades = (value: unknown): ReviewTableTrade[] =>
       )
     : [];
 
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null && !Array.isArray(value);
+
 const calculateFallbackGrossPnL = (trade: ReviewTableTrade): number | null => {
   const entryPrice = getWeightedAverageEntryPrice(trade);
   const exitPrice = getResolvedWeightedAverageExitPrice(trade);
@@ -147,7 +150,7 @@ const SingleAccountCell = React.memo<{ account: string }>(({ account }) => {
       const range = node.ownerDocument.createRange();
       range.selectNodeContents(node);
       const contentWidth = range.getBoundingClientRect().width;
-      range.detach();
+
       const computedStyle =
         node.ownerDocument.defaultView?.getComputedStyle(node);
       const horizontalPadding = computedStyle
@@ -327,11 +330,11 @@ export const TradeTableWidget: React.FC<TradeTableWidgetProps> = React.memo(
       if (previewData?.noteType || cachedNoteType || !plugin.app) return null;
 
       const file = plugin.app.vault.getAbstractFileByPath(filePath);
-      return file instanceof TFile
-        ? (plugin.app.metadataCache.getFileCache(file)?.frontmatter as
-            | Record<string, unknown>
-            | undefined)
-        : null;
+      if (!(file instanceof TFile)) return null;
+
+      const frontmatter: unknown =
+        plugin.app.metadataCache.getFileCache(file)?.frontmatter;
+      return isRecord(frontmatter) ? frontmatter : null;
     }, [cachedNoteType, filePath, plugin.app, previewData?.noteType]);
     const effectiveNoteType =
       previewData?.noteType ?? cachedNoteType ?? noteFrontmatter?.type;

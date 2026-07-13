@@ -118,10 +118,14 @@ function useAccountDashboardSettingsModel({
   >('reassign');
 
   
-  const [dashboardSettings, setDashboardSettings] = useState({
-    excludedAccountTypes: [] as string[],
-    includeWithdrawalsFromExcluded: {} as Record<string, boolean>,
-    accountTypeOrder: [] as string[],
+  const [dashboardSettings, setDashboardSettings] = useState<{
+    excludedAccountTypes: string[];
+    includeWithdrawalsFromExcluded: Record<string, boolean>;
+    accountTypeOrder: string[];
+  }>({
+    excludedAccountTypes: [],
+    includeWithdrawalsFromExcluded: {},
+    accountTypeOrder: [],
   });
   const [guideVersion, setGuideVersion] = useState(0);
 

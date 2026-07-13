@@ -31,8 +31,7 @@ interface AUMDotProps extends Omit<DotItemDotProps, 'payload'> {
   payload?: AUMChartDataPoint;
 }
 
-const asAUMDotProps = (props: DotItemDotProps): AUMDotProps =>
-  props as AUMDotProps;
+const asAUMDotProps = (props: DotItemDotProps): AUMDotProps => props;
 
 
 interface CustomTooltipContentProps extends TooltipProps<number, string> {

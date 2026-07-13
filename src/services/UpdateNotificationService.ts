@@ -223,7 +223,7 @@ export class UpdateNotificationService {
 
   
   private loadReleaseMetadata(): ReleaseMetadata {
-    return releasesData as ReleaseMetadata;
+    return releasesData;
   }
 
   

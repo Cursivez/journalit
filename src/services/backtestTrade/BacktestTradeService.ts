@@ -486,9 +486,7 @@ export class BacktestTradeService extends CustomDataService {
       }
 
       const existingData = await this.readFrontmatter(file);
-      const identityFields = buildTradeIdentityFields(
-        (existingData as Record<string, unknown> | undefined) ?? data
-      );
+      const identityFields = buildTradeIdentityFields(existingData ?? data);
 
       
       const frontmatter: Record<string, unknown> = {
@@ -692,9 +690,7 @@ export class BacktestTradeService extends CustomDataService {
           try {
             
             const cache = this.app.metadataCache.getFileCache(file);
-            const frontmatter = cache?.frontmatter as
-              | Record<string, unknown>
-              | undefined;
+            const frontmatter = cache?.frontmatter;
 
             
             if (!frontmatter || frontmatter.type !== 'backtest-trade') continue;
@@ -759,9 +755,7 @@ export class BacktestTradeService extends CustomDataService {
             try {
               
               const cache = this.app.metadataCache.getFileCache(file);
-              const frontmatter = cache?.frontmatter as
-                | Record<string, unknown>
-                | undefined;
+              const frontmatter = cache?.frontmatter;
 
               
               if (!frontmatter || frontmatter.type !== 'backtest-trade')
@@ -823,9 +817,7 @@ export class BacktestTradeService extends CustomDataService {
       }
 
       const existingData = await this.readFrontmatter(file);
-      const identityFields = buildTradeIdentityFields(
-        existingData as Record<string, unknown> | undefined
-      );
+      const identityFields = buildTradeIdentityFields(existingData);
       await this.updateFrontmatter(file, {
         ...existingData,
         tradeId: identityFields.tradeId,

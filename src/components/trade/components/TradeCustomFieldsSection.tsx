@@ -176,10 +176,7 @@ function getTradeCustomFieldDisplayEntries(
   dateFormat?: string
 ): TradeCustomFieldDisplayEntry[] {
   return fields.reduce<TradeCustomFieldDisplayEntry[]>((acc, field) => {
-    const rawValue = getCustomFieldRawValue(
-      data as Record<string, unknown>,
-      field
-    );
+    const rawValue = getCustomFieldRawValue(data, field);
     const entry = getDisplayEntry(field, rawValue, dateFormat);
     if (entry) {
       acc.push(entry);

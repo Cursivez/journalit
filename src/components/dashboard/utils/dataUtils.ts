@@ -799,13 +799,10 @@ const fetchTradeData = async (
 
     const processTradeFile = async (file: TFile): Promise<Trade | null> => {
       try {
-        const cachedFrontmatter = app.metadataCache.getFileCache(file)
-          ?.frontmatter as Record<string, unknown> | undefined;
+        const cachedFrontmatter =
+          app.metadataCache.getFileCache(file)?.frontmatter;
         const frontmatter =
-          cachedFrontmatter ??
-          ((await tradeService.readFrontmatter(file)) as
-            | Record<string, unknown>
-            | undefined);
+          cachedFrontmatter ?? (await tradeService.readFrontmatter(file));
 
         if (!frontmatter || !hasDashboardEntryDate(frontmatter)) {
           return null;
@@ -1299,13 +1296,13 @@ export const calculateMetrics = (
     normalizeTradeForMetrics(trade, defaultCurrency)
   );
   const tradingDayPlugin = tradingDayCutoffTime
-    ? ({
+    ? {
         settings: {
           trade: {
             tradingDayCutoffTime,
           },
         },
-      } as { settings: { trade: { tradingDayCutoffTime: string } } })
+      }
     : undefined;
   const sharpeRatioInputTrades =
     options.sharpeRatioTrades ?? contributingTrades;

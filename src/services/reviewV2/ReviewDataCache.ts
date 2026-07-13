@@ -499,7 +499,7 @@ export class ReviewDataCache {
         this.plugin
       );
       scopedTrades = this.attachBreakEvenAccountBalances(
-        scopedTrades as Array<Record<string, unknown>>,
+        scopedTrades,
         accountBalanceLookup
       );
     }
@@ -873,8 +873,8 @@ export class ReviewDataCache {
 
     
     const handleMetadataChanged = (file: TFile) => {
-      const frontmatter = this.app.metadataCache.getFileCache(file)
-        ?.frontmatter as Record<string, unknown> | undefined;
+      const frontmatter =
+        this.app.metadataCache.getFileCache(file)?.frontmatter;
       if (frontmatter?.type === 'drc') {
         const newFingerprint = this.getDRCAggregationFingerprint(frontmatter);
         const previousFingerprint = this.drcAggregationFingerprintByFile.get(
@@ -1300,9 +1300,7 @@ export class ReviewDataCache {
 
     
     const cache = this.app.metadataCache.getFileCache(file);
-    const frontmatter = cache?.frontmatter as
-      | Record<string, unknown>
-      | undefined;
+    const frontmatter = cache?.frontmatter;
 
     if (!frontmatter) {
       
@@ -1634,7 +1632,7 @@ export class ReviewDataCache {
             this.plugin
           );
           scopedTrades = this.attachBreakEvenAccountBalances(
-            scopedTrades as Array<Record<string, unknown>>,
+            scopedTrades,
             accountBalanceLookup
           );
           analyticsBasisTrades =
@@ -1655,17 +1653,14 @@ export class ReviewDataCache {
         
         const userCurrency = this.plugin?.settings?.general?.currency || 'USD';
         const currencyGrouped = aggregatePnLByCurrency(
-          scopedTrades as Array<Record<string, unknown>>,
+          scopedTrades,
           userCurrency
         );
         const originalScopedTrades = scopedTrades;
         const analyticsBasisCurrencyGrouped =
           analyticsDateBasis === 'entry'
             ? currencyGrouped
-            : aggregatePnLByCurrency(
-                analyticsBasisTrades as Array<Record<string, unknown>>,
-                userCurrency
-              );
+            : aggregatePnLByCurrency(analyticsBasisTrades, userCurrency);
 
         let successfulConversion:
           | {
@@ -1680,7 +1675,7 @@ export class ReviewDataCache {
 
         if (currencyGrouped.isMultiCurrency) {
           const conversionResult = await this.exchangeRateService.convertTrades(
-            scopedTrades as Array<Record<string, unknown>>,
+            scopedTrades,
             userCurrency
           );
 
@@ -1954,11 +1949,12 @@ export class ReviewDataCache {
 
     const files = this.app.vault.getMarkdownFiles();
     for (const file of files) {
-      const frontmatter = this.app.metadataCache.getFileCache(file)
-        ?.frontmatter as Record<string, unknown> | undefined;
-      if (!frontmatter || frontmatter.type !== 'drc') {
+      const cachedFrontmatter: unknown =
+        this.app.metadataCache.getFileCache(file)?.frontmatter;
+      if (!isRecord(cachedFrontmatter) || cachedFrontmatter.type !== 'drc') {
         continue;
       }
+      const frontmatter = cachedFrontmatter;
 
       if (!Array.isArray(frontmatter.sessionMistakes)) {
         continue;
@@ -2267,8 +2263,11 @@ export class ReviewDataCache {
       return;
     }
 
-    const frontmatter = this.app.metadataCache.getFileCache(drcFile)
-      ?.frontmatter as Record<string, unknown> | undefined;
+    const cachedFrontmatter: unknown =
+      this.app.metadataCache.getFileCache(drcFile)?.frontmatter;
+    const frontmatter = isRecord(cachedFrontmatter)
+      ? cachedFrontmatter
+      : undefined;
     const rawDate = frontmatter?.date;
     if (typeof rawDate !== 'string') {
       this.invalidateAll();

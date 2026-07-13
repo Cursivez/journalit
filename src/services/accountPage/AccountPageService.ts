@@ -616,7 +616,7 @@ export class AccountPageService extends CustomDataService {
   ): { didUpdate: boolean; nextTradeData: TradeData } {
     const nextTradeData: TradeData = { ...tradeData };
     const mutationResult = this.applyAccountDeletionToMutableRecord(
-      nextTradeData as Record<string, unknown>,
+      nextTradeData,
       context
     );
 
@@ -2754,7 +2754,7 @@ export class AccountPageService extends CustomDataService {
               description: `Dividend: ${trade.path}`,
               tradeId: trade.path,
               balanceAfter: 0,
-            } as AccountTransaction,
+            },
           ];
         })
         .sort((a, b) => a.date.getTime() - b.date.getTime());

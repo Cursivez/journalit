@@ -338,9 +338,7 @@ export default class JournalitPlugin extends Plugin {
       if (filePath && this.tradeService) {
         const file = this.app.vault.getAbstractFileByPath(filePath);
         if (file instanceof TFile) {
-          const freshTradeData = (await this.tradeService.extractTradeData(
-            file
-          )) as Partial<TradeFormData> | null;
+          const freshTradeData = await this.tradeService.extractTradeData(file);
           if (freshTradeData) {
             initialData = mergeFreshTradeFormEditData(
               tradeData,

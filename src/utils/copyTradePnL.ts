@@ -155,8 +155,7 @@ export function scaleCopiedTradeExecutionFields<T extends CopyTradeInput>(
   const scaled: Partial<T> = {};
 
   if (typeof trade.positionSize === 'number') {
-    scaled.positionSize = (trade.positionSize *
-      multiplier) as T['positionSize'];
+    scaled.positionSize = trade.positionSize * multiplier;
   }
 
   if (Array.isArray(trade.entries)) {
@@ -168,7 +167,7 @@ export function scaleCopiedTradeExecutionFields<T extends CopyTradeInput>(
         typeof entry.notional === 'number'
           ? entry.notional * multiplier
           : entry.notional,
-    })) as T['entries'];
+    }));
   }
 
   if (Array.isArray(trade.exits)) {
@@ -179,15 +178,15 @@ export function scaleCopiedTradeExecutionFields<T extends CopyTradeInput>(
         typeof exit.notional === 'number'
           ? exit.notional * multiplier
           : exit.notional,
-    })) as T['exits'];
+    }));
   }
 
   if (typeof trade.mae === 'number') {
-    scaled.mae = (trade.mae * multiplier) as T['mae'];
+    scaled.mae = trade.mae * multiplier;
   }
 
   if (typeof trade.mfe === 'number') {
-    scaled.mfe = (trade.mfe * multiplier) as T['mfe'];
+    scaled.mfe = trade.mfe * multiplier;
   }
 
   return scaled;

@@ -4690,8 +4690,7 @@ export class TradeService extends CustomDataService {
         ? this.app.metadataCache.getFileCache(deletedFile)?.frontmatter
         : null;
       const deletedIdentity = getTradeIdentityFields(
-        (deletedFrontmatter as Record<string, unknown> | null | undefined) ??
-          null
+        deletedFrontmatter ?? null
       );
       const deletedTradeRevision = this.getTradeRevisionValue(
         deletedFrontmatter?.tradeRevision

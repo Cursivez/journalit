@@ -32,9 +32,7 @@ interface JournalitPluginServices {
 function getJournalitPluginServices(): JournalitPluginServices | undefined {
   const plugins = getApp().plugins?.plugins;
   const plugin = plugins?.journalit;
-  return plugin && typeof plugin === 'object'
-    ? (plugin as JournalitPluginServices)
-    : undefined;
+  return plugin && typeof plugin === 'object' ? plugin : undefined;
 }
 
 function asStringArray(value: unknown): string[] {

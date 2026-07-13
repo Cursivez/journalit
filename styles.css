@@ -11673,12 +11673,13 @@ button.journalit-button,
 
 .journalit-session-log-tag-add-row .setting-item-info {flex: 1 1 auto}
 
-.journalit-settings .journalit-session-log-tag-add-row.setting-item {display: grid;grid-template-columns: 150px 100px 82px minmax(24px, 1fr) 70px;align-items: flex-start;gap: var(--size-2-2) 16px;margin: 0;padding: var(--size-2-3) var(--size-4-3);border: 0;border-radius: 0;background: transparent}
+.journalit-settings .journalit-session-log-tag-add-row.setting-item {display: grid;grid-template-columns: minmax(0, 1fr) 70px;align-items: flex-start;gap: var(--size-2-2) 16px;margin: 0;padding: var(--size-2-3) var(--size-4-3);border: 0;border-radius: 0;background: transparent}
 
-.journalit-settings .journalit-session-log-tag-add-row .setting-item-control {display: grid;grid-column: 5;grid-row: 1;min-width: 70px;grid-template-rows: calc(var(--font-ui-smaller) * 1.2) 36px;align-items: start;justify-self: end;justify-content: end;gap: var(--size-2-1);padding-top: 0}
+.journalit-settings .journalit-session-log-tag-add-row .setting-item-control {display: grid;grid-column: 2;grid-row: 1;min-width: 70px;grid-template-rows: calc(var(--font-ui-smaller) * 1.2) 36px;align-items: start;justify-self: end;justify-content: end;gap: var(--size-2-1);padding-top: 0}
 
-.journalit-settings .journalit-session-log-tag-add-row .setting-item-info,
-.journalit-settings .journalit-session-log-tag-add-row .journalit-session-log-tag-draft-fields {display: contents}
+.journalit-settings .journalit-session-log-tag-add-row .setting-item-info {display: block;grid-column: 1;grid-row: 1;min-width: 0}
+
+.journalit-settings .journalit-session-log-tag-add-row .journalit-session-log-tag-draft-fields {display: grid;grid-template-columns: 150px 100px 82px}
 
 .journalit-settings .journalit-session-log-tag-add-row .journalit-session-log-tags-reset-container {display: flex;justify-content: flex-end;min-height: calc(var(--font-ui-smaller) * 1.2)}
 
@@ -11716,6 +11717,11 @@ button.journalit-button,
 @media (max-width: 700px) {
   .journalit-session-log-tag-edit-grid,
   .journalit-session-log-tag-draft-fields {grid-template-columns: 1fr}
+
+  .journalit-settings .journalit-session-log-tag-add-row .journalit-session-log-tag-draft-fields {grid-template-columns: 1fr}
+
+  .journalit-settings .journalit-session-log-tag-add-row .journalit-session-log-tag-toggle:nth-child(4),
+  .journalit-settings .journalit-session-log-tag-add-row .journalit-session-log-tag-toggle:nth-child(5) {grid-column: 1}
 }
 
 .journalit-session-log-unresolved {display: inline-flex;margin-left: var(--size-2-2);padding: 1px 6px;border-radius: var(--radius-s);background: rgba(var(--color-red-rgb, 233, 49, 71), 0.18);color: var(--text-error);font-size: var(--font-ui-smaller);font-weight: var(--font-semibold)}

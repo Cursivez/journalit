@@ -119,7 +119,7 @@ function mergeSectionConfig<K extends keyof TradeTemplate['sections']>(
   return {
     ...baseSections[key],
     ...(overrideSections?.[key] ?? {}),
-  } as TradeTemplate['sections'][K];
+  };
 }
 
 export function getEffectiveTradeTemplate(
