@@ -811,6 +811,11 @@ export class ReviewTemplateService {
   
   public getDefaultTemplate(type: ReviewTemplateType): ReviewTemplate {
     
+    
+    
+    this.loadTemplates();
+
+    
     const settingsKeyByType: Record<
       ReviewTemplateType,
       keyof TemplatesSettings

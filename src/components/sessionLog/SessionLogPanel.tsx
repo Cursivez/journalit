@@ -1,6 +1,7 @@
 import React, {
   useCallback,
   useEffect,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -222,6 +223,8 @@ export const SessionLogPanel: React.FC<SessionLogPanelProps> = React.memo(
       }));
     };
     const tagMenuRef = useRef<HTMLDivElement>(null);
+    const tagButtonRef = useRef<HTMLButtonElement>(null);
+    const tagMenuPortalRef = useRef<HTMLDivElement>(null);
     const editTagMenuRef = useRef<HTMLDivElement>(null);
     const filterMenuRef = useRef<HTMLDivElement>(null);
     const filterButtonRef = useRef<HTMLButtonElement>(null);
@@ -229,6 +232,10 @@ export const SessionLogPanel: React.FC<SessionLogPanelProps> = React.memo(
 
     const timestampButtonRef = useRef<HTMLButtonElement>(null);
     const [filterMenuPosition, setFilterMenuPosition] = useState({
+      left: 0,
+      top: 0,
+    });
+    const [tagMenuPosition, setTagMenuPosition] = useState({
       left: 0,
       top: 0,
     });
@@ -306,10 +313,46 @@ export const SessionLogPanel: React.FC<SessionLogPanelProps> = React.memo(
       });
     }, [updateFilterMenuPosition]);
 
+    const updateTagMenuPosition = useCallback(() => {
+      const trigger = tagButtonRef.current;
+      if (!trigger) return;
+
+      const rect = trigger.getBoundingClientRect();
+      const activeWindow = trigger.ownerDocument.defaultView;
+      const viewportWidth = activeWindow?.innerWidth ?? 0;
+      const viewportHeight = activeWindow?.innerHeight ?? 0;
+      const menuWidth = tagMenuPortalRef.current?.offsetWidth ?? 220;
+      const menuHeight =
+        tagMenuPortalRef.current?.offsetHeight ??
+        Math.min(tags.length * 30 + 2, 300, viewportHeight / 2);
+      const margin = 8;
+      const gap = 6;
+      const belowTop = rect.bottom + gap;
+      const top =
+        belowTop + menuHeight <= viewportHeight - margin
+          ? belowTop
+          : Math.max(margin, rect.top - gap - menuHeight);
+
+      setTagMenuPosition({
+        left: Math.max(
+          margin,
+          Math.min(rect.left, viewportWidth - menuWidth - margin)
+        ),
+        top,
+      });
+    }, [tags.length]);
+
+    const toggleTagMenu = useCallback(() => {
+      if (!isTagMenuOpen) updateTagMenuPosition();
+      setIsTagMenuOpen(!isTagMenuOpen);
+    }, [isTagMenuOpen, updateTagMenuPosition]);
+
     useEffect(() => {
+      const ownerDocument =
+        tagMenuRef.current?.ownerDocument ?? window.activeDocument;
       const handleClickOutside = (event: MouseEvent) => {
         const target = event.target;
-        const ActiveDocumentNode = window.activeDocument.defaultView?.Node;
+        const ActiveDocumentNode = ownerDocument.defaultView?.Node;
         if (!ActiveDocumentNode || !(target instanceof ActiveDocumentNode)) {
           setMenuOpenState((current) => ({
             ...current,
@@ -321,7 +364,10 @@ export const SessionLogPanel: React.FC<SessionLogPanelProps> = React.memo(
 
         setMenuOpenState((current) => ({
           tag:
-            tagMenuRef.current && !tagMenuRef.current.contains(target)
+            tagMenuRef.current &&
+            !tagMenuRef.current.contains(target) &&
+            (!tagMenuPortalRef.current ||
+              !tagMenuPortalRef.current.contains(target))
               ? false
               : current.tag,
           editTag:
@@ -338,14 +384,24 @@ export const SessionLogPanel: React.FC<SessionLogPanelProps> = React.memo(
         }));
       };
 
-      window.activeDocument.addEventListener('mousedown', handleClickOutside);
+      ownerDocument.addEventListener('mousedown', handleClickOutside);
       return () => {
-        window.activeDocument.removeEventListener(
-          'mousedown',
-          handleClickOutside
-        );
+        ownerDocument.removeEventListener('mousedown', handleClickOutside);
       };
     }, []);
+
+    useLayoutEffect(() => {
+      if (!isTagMenuOpen) return undefined;
+      updateTagMenuPosition();
+      const activeWindow = tagButtonRef.current?.ownerDocument.defaultView;
+      const handleReposition = () => updateTagMenuPosition();
+      activeWindow?.addEventListener('resize', handleReposition);
+      activeWindow?.addEventListener('scroll', handleReposition, true);
+      return () => {
+        activeWindow?.removeEventListener('resize', handleReposition);
+        activeWindow?.removeEventListener('scroll', handleReposition, true);
+      };
+    }, [isTagMenuOpen, updateTagMenuPosition]);
 
     useEffect(() => {
       if (!isFilterMenuOpen) return undefined;
@@ -601,9 +657,10 @@ export const SessionLogPanel: React.FC<SessionLogPanelProps> = React.memo(
                 ref={tagMenuRef}
               >
                 <button
+                  ref={tagButtonRef}
                   type="button"
                   className="journalit-session-log-composer-tag-trigger"
-                  onClick={() => setIsTagMenuOpen((value) => !value)}
+                  onClick={toggleTagMenu}
                   aria-label={t('session-log.composer.tag-label')}
                   aria-expanded={isTagMenuOpen}
                 >
@@ -618,40 +675,50 @@ export const SessionLogPanel: React.FC<SessionLogPanelProps> = React.memo(
                     }
                   />
                 </button>
-                {isTagMenuOpen && (
-                  <div className="journalit-session-log-composer-tag-menu">
-                    {tags.map((tag) => (
-                      <button
-                        type="button"
-                        key={tag.id}
-                        className={
-                          tag.id === selectedTagId
-                            ? 'journalit-session-log-composer-tag-option is-active'
-                            : 'journalit-session-log-composer-tag-option'
-                        }
-                        onClick={() => {
-                          setSelectedTagId(tag.id);
-                          setIsTagMenuOpen(false);
-                        }}
-                        aria-pressed={tag.id === selectedTagId}
-                      >
-                        <span
+                {isTagMenuOpen &&
+                  createPortal(
+                    <div
+                      ref={tagMenuPortalRef}
+                      className="journalit-session-log-composer-tag-menu journalit-session-log-composer-tag-menu--portal"
+                      style={cssVars({
+                        '--journalit-session-log-tag-menu-left': `${tagMenuPosition.left}px`,
+                        '--journalit-session-log-tag-menu-top': `${tagMenuPosition.top}px`,
+                      })}
+                    >
+                      {tags.map((tag) => (
+                        <button
+                          type="button"
+                          key={tag.id}
                           className={
                             tag.id === selectedTagId
-                              ? 'journalit-session-log-composer-tag-checkbox is-checked'
-                              : 'journalit-session-log-composer-tag-checkbox'
+                              ? 'journalit-session-log-composer-tag-option is-active'
+                              : 'journalit-session-log-composer-tag-option'
                           }
-                          aria-hidden="true"
+                          onClick={() => {
+                            setSelectedTagId(tag.id);
+                            setIsTagMenuOpen(false);
+                          }}
+                          aria-pressed={tag.id === selectedTagId}
                         >
-                          {tag.id === selectedTagId ? '✓' : ''}
-                        </span>
-                        <span className="journalit-session-log-composer-tag-option-label">
-                          {tag.label}
-                        </span>
-                      </button>
-                    ))}
-                  </div>
-                )}
+                          <span
+                            className={
+                              tag.id === selectedTagId
+                                ? 'journalit-session-log-composer-tag-checkbox is-checked'
+                                : 'journalit-session-log-composer-tag-checkbox'
+                            }
+                            aria-hidden="true"
+                          >
+                            {tag.id === selectedTagId ? '✓' : ''}
+                          </span>
+                          <span className="journalit-session-log-composer-tag-option-label">
+                            {tag.label}
+                          </span>
+                        </button>
+                      ))}
+                    </div>,
+                    tagButtonRef.current?.ownerDocument.body ??
+                      window.activeDocument.body
+                  )}
               </div>
               <input
                 type="text"

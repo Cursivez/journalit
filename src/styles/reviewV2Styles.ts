@@ -2581,17 +2581,16 @@ ${TRADE_ACCOUNT_CELL_STYLES}
     line-height: 0;
   }
 
-  .journalit-key-levels-importance-dropdown {
-    position: absolute;
-    top: auto;
+  .journalit-home-period-menu.journalit-key-levels-importance-dropdown--portal {
+    position: fixed;
+    top: var(--journalit-key-levels-menu-top);
     right: auto;
-    bottom: 100%;
-    left: 50%;
-    transform: translateX(-50%);
-    margin-bottom: 4px;
-    margin-top: 0;
+    bottom: auto;
+    left: var(--journalit-key-levels-menu-left);
+    transform: none;
+    margin: 0;
     min-width: 150px;
-    z-index: 100;
+    z-index: 20003;
   }
 
   .journalit-key-levels-importance-option {
@@ -3794,19 +3793,6 @@ ${TRADE_ACCOUNT_CELL_STYLES}
     gap: 0.85rem;
   }
 
-  .journalit-review-sticky-header-clone {
-    position: fixed;
-    top: var(--journalit-review-sticky-top);
-    left: var(--journalit-review-sticky-left);
-    width: var(--journalit-review-sticky-width);
-    box-sizing: border-box;
-    z-index: 1000;
-  }
-
-  .journalit-review-sticky-header-clone > * {
-    box-sizing: border-box;
-    width: 100%;
-  }
 
   .journalit-review-scroll-anchor-disabled {
     overflow-anchor: none;
@@ -3829,7 +3815,7 @@ ${TRADE_ACCOUNT_CELL_STYLES}
     box-shadow: 0 0 0 4px var(--background-primary), 0 8px 18px rgba(0, 0, 0, 0.16);
   }
 
-  .journalit-review-sticky-header-clone.journalit-weekly-drc-summary--sticky-clone {
+  .journalit-sticky-header-clone.journalit-weekly-drc-summary--sticky-clone {
     background: transparent;
     border: 0;
     box-shadow: none;
@@ -3895,7 +3881,7 @@ ${TRADE_ACCOUNT_CELL_STYLES}
 
   .journalit-weekly-drc-context .journalit-weekly-drc-mark-reviewed-button,
   .journalit-weekly-drc-summary--sticky-clone .journalit-weekly-drc-mark-reviewed-button,
-  .journalit-review-sticky-header-clone .journalit-weekly-drc-mark-reviewed-button {
+  .journalit-sticky-header-clone .journalit-weekly-drc-mark-reviewed-button {
     appearance: none;
     display: inline-flex;
     align-items: center;
@@ -3919,8 +3905,8 @@ ${TRADE_ACCOUNT_CELL_STYLES}
   .journalit-weekly-drc-context .journalit-weekly-drc-mark-reviewed-button:focus-visible:not(:disabled),
   .journalit-weekly-drc-summary--sticky-clone .journalit-weekly-drc-mark-reviewed-button:hover:not(:disabled),
   .journalit-weekly-drc-summary--sticky-clone .journalit-weekly-drc-mark-reviewed-button:focus-visible:not(:disabled),
-  .journalit-review-sticky-header-clone .journalit-weekly-drc-mark-reviewed-button:hover:not(:disabled),
-  .journalit-review-sticky-header-clone .journalit-weekly-drc-mark-reviewed-button:focus-visible:not(:disabled) {
+  .journalit-sticky-header-clone .journalit-weekly-drc-mark-reviewed-button:hover:not(:disabled),
+  .journalit-sticky-header-clone .journalit-weekly-drc-mark-reviewed-button:focus-visible:not(:disabled) {
     border-color: var(--interactive-accent);
     background: var(--background-secondary) !important;
     color: var(--text-normal);
@@ -3928,7 +3914,7 @@ ${TRADE_ACCOUNT_CELL_STYLES}
 
   .journalit-weekly-drc-context .journalit-weekly-drc-mark-reviewed-button--reviewed,
   .journalit-weekly-drc-summary--sticky-clone .journalit-weekly-drc-mark-reviewed-button--reviewed,
-  .journalit-review-sticky-header-clone .journalit-weekly-drc-mark-reviewed-button--reviewed {
+  .journalit-sticky-header-clone .journalit-weekly-drc-mark-reviewed-button--reviewed {
     border-color: var(--color-green);
     color: var(--color-green);
     background: transparent !important;
@@ -3938,8 +3924,8 @@ ${TRADE_ACCOUNT_CELL_STYLES}
   .journalit-weekly-drc-context .journalit-weekly-drc-mark-reviewed-button--reviewed:focus-visible:not(:disabled),
   .journalit-weekly-drc-summary--sticky-clone .journalit-weekly-drc-mark-reviewed-button--reviewed:hover:not(:disabled),
   .journalit-weekly-drc-summary--sticky-clone .journalit-weekly-drc-mark-reviewed-button--reviewed:focus-visible:not(:disabled),
-  .journalit-review-sticky-header-clone .journalit-weekly-drc-mark-reviewed-button--reviewed:hover:not(:disabled),
-  .journalit-review-sticky-header-clone .journalit-weekly-drc-mark-reviewed-button--reviewed:focus-visible:not(:disabled) {
+  .journalit-sticky-header-clone .journalit-weekly-drc-mark-reviewed-button--reviewed:hover:not(:disabled),
+  .journalit-sticky-header-clone .journalit-weekly-drc-mark-reviewed-button--reviewed:focus-visible:not(:disabled) {
     border-color: var(--color-green);
     color: var(--color-green);
     background: transparent !important;
@@ -3947,14 +3933,14 @@ ${TRADE_ACCOUNT_CELL_STYLES}
 
   .journalit-weekly-drc-context .journalit-weekly-drc-mark-reviewed-button:disabled,
   .journalit-weekly-drc-summary--sticky-clone .journalit-weekly-drc-mark-reviewed-button:disabled,
-  .journalit-review-sticky-header-clone .journalit-weekly-drc-mark-reviewed-button:disabled {
+  .journalit-sticky-header-clone .journalit-weekly-drc-mark-reviewed-button:disabled {
     opacity: 0.8;
     cursor: default !important;
   }
 
   .journalit-weekly-drc-context .journalit-weekly-drc-mark-reviewed-icon,
   .journalit-weekly-drc-summary--sticky-clone .journalit-weekly-drc-mark-reviewed-icon,
-  .journalit-review-sticky-header-clone .journalit-weekly-drc-mark-reviewed-icon {
+  .journalit-sticky-header-clone .journalit-weekly-drc-mark-reviewed-icon {
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -3969,7 +3955,7 @@ ${TRADE_ACCOUNT_CELL_STYLES}
 
   .journalit-weekly-drc-context .journalit-weekly-drc-mark-reviewed-icon--reviewed,
   .journalit-weekly-drc-summary--sticky-clone .journalit-weekly-drc-mark-reviewed-icon--reviewed,
-  .journalit-review-sticky-header-clone .journalit-weekly-drc-mark-reviewed-icon--reviewed {
+  .journalit-sticky-header-clone .journalit-weekly-drc-mark-reviewed-icon--reviewed {
     background: var(--color-green);
     border-color: var(--color-green);
     color: var(--background-primary);
@@ -3977,7 +3963,7 @@ ${TRADE_ACCOUNT_CELL_STYLES}
 
   .journalit-weekly-drc-context .journalit-weekly-drc-mark-reviewed-icon > svg,
   .journalit-weekly-drc-summary--sticky-clone .journalit-weekly-drc-mark-reviewed-icon > svg,
-  .journalit-review-sticky-header-clone .journalit-weekly-drc-mark-reviewed-icon > svg {
+  .journalit-sticky-header-clone .journalit-weekly-drc-mark-reviewed-icon > svg {
     width: 10px;
     height: 10px;
     fill: none;
@@ -4093,7 +4079,7 @@ ${TRADE_ACCOUNT_CELL_STYLES}
     box-shadow: none !important;
   }
 
-  .journalit-review-sticky-header-clone.journalit-trade-review-card-header--sticky-clone {
+  .journalit-sticky-header-clone.journalit-trade-review-card-header--sticky-clone {
     background: var(--background-primary);
     border-top: 1px solid var(--background-modifier-border);
     border-right: 1px solid var(--background-modifier-border);
@@ -4103,7 +4089,7 @@ ${TRADE_ACCOUNT_CELL_STYLES}
     box-shadow: 0 0 0 4px var(--background-primary), 0 8px 18px rgba(0, 0, 0, 0.16);
   }
 
-  .journalit-review-sticky-header-clone.journalit-trade-review-card-header--sticky-clone
+  .journalit-sticky-header-clone.journalit-trade-review-card-header--sticky-clone
     .journalit-trade-review-card-header {
     border-bottom-color: transparent;
   }

@@ -166,6 +166,60 @@ export const TRADE_LOG_STYLES = `
   min-width: 0;
 }
 
+.journalit-trade-log .journalit-image-gallery-view-toggle {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+}
+
+.journalit-trade-log .journalit-image-gallery-view-toggle__button {
+  min-height: 31px;
+  margin: 0 0 0 -1px;
+  padding: 6px 10px;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 0;
+  background: var(--background-primary);
+  box-shadow: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1;
+}
+
+.journalit-trade-log .journalit-image-gallery-view-toggle__button:first-child {
+  margin-left: 0;
+  border-radius: 6px 0 0 6px;
+}
+
+.journalit-trade-log .journalit-image-gallery-view-toggle__button:last-child {
+  border-radius: 0 6px 6px 0;
+}
+
+.journalit-trade-log .journalit-image-gallery-view-toggle__button:hover,
+.journalit-trade-log .journalit-image-gallery-view-toggle__button:focus-visible {
+  position: relative;
+  z-index: 2;
+  border-color: var(--background-modifier-border-hover);
+  background: var(--background-modifier-hover);
+  color: var(--text-normal);
+}
+
+.journalit-trade-log .journalit-image-gallery-view-toggle__button--active {
+  position: relative;
+  z-index: 3;
+  border-color: var(--interactive-accent);
+  background: color-mix(in srgb, var(--interactive-accent) 14%, transparent);
+  color: var(--text-accent);
+}
+
+.journalit-trade-log .journalit-image-gallery-view-toggle__button--active:hover,
+.journalit-trade-log .journalit-image-gallery-view-toggle__button--active:focus-visible {
+  border-color: var(--interactive-accent);
+  background: color-mix(in srgb, var(--interactive-accent) 22%, transparent);
+  color: var(--text-accent);
+}
+
 .trade-log-image-gallery-control {
   display: inline-flex;
   align-items: center;

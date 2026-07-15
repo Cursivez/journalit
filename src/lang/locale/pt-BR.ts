@@ -1311,6 +1311,16 @@ const ptBR: Partial<Lang> = {
   'setups.create.field.color': 'Cor',
   'setups.create.field.color-description':
     'Escolha uma cor para identificar este setup.',
+  'setups.create.profile.heading': 'Campos preferenciais',
+  'setups.create.profile.optional-label': '(Opcional)',
+  'setups.create.field.sessions': 'Sessões',
+  'setups.create.field.preferred-sessions-tooltip':
+    'Gerencie essas sessões em Configurações → Diário → Modo de sessão.',
+  'setups.create.placeholder.preferred-sessions': 'London, New York',
+  'setups.create.field.timeframes': 'Timeframes',
+  'setups.create.placeholder.preferred-timeframes': '5m, 15m, 1h',
+  'setups.create.field.tickers': 'Tickers',
+  'setups.create.placeholder.preferred-tickers': 'ES, NQ, EURUSD',
   'setups.create.direction.any': 'Not specified',
   'setups.create.direction.long': 'Long',
   'setups.create.direction.short': 'Short',

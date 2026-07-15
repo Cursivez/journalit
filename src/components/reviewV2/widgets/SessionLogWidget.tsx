@@ -1,10 +1,11 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import type JournalitPlugin from '../../../main';
 import { useReviewData } from '../hooks/useReviewData';
 import { SessionLogPanel } from '../../sessionLog/SessionLogPanel';
 import {
   createManualTimelineEntries,
   createTradeTimelineEntries,
+  filterAutomaticTradeTimelineEntries,
   getSessionLogTags,
   isTimelineEntryInSessionWindow,
   normalizeSessionLogEntries,
@@ -19,6 +20,7 @@ import {
 import { resolveSessionModeWindowsForDate } from '../../../utils/sessionModePhase';
 import { t } from '../../../lang/helpers';
 import type { ResolvedSessionModeWindow } from '../../../types/sessionMode';
+import { useEventBus } from '../../../hooks/useEventBus';
 
 const getLocalDateKey = (date: Date): string =>
   `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
@@ -204,8 +206,15 @@ const LessonSummary: React.FC<{
 export const SessionLogWidget: React.FC<SessionLogWidgetProps> = React.memo(
   ({ filePath, plugin }) => {
     const { data, loading, refresh } = useReviewData(filePath, plugin);
+    const [settingsVersion, setSettingsVersion] = useState(0);
+    useEventBus('settings:changed', (payload) => {
+      if (payload.section === 'sessionMode' || payload.section === 'all') {
+        setSettingsVersion((current) => current + 1);
+      }
+    });
 
     const timelineEntries = useMemo(() => {
+      void settingsVersion;
       if (!data) return [];
       const frontmatterDate = data.frontmatter.date;
       const drcDate =
@@ -218,11 +227,15 @@ export const SessionLogWidget: React.FC<SessionLogWidgetProps> = React.memo(
         normalizeSessionLogEntries(data.frontmatter?.sessionLog)
       );
       const executionTrades = data.executionBasisTrades ?? data.trades;
-      const tradeEntries = drcDate
-        ? createTradeTimelineEntriesForDRC(executionTrades, drcDate, plugin)
-        : [];
-      return sortSessionTimeline([...manualEntries, ...tradeEntries]);
-    }, [data, plugin]);
+      const tradeEntries =
+        drcDate && plugin.settings.sessionMode.showTradeExecutionsInSessionLog
+          ? createTradeTimelineEntriesForDRC(executionTrades, drcDate, plugin)
+          : [];
+      return filterAutomaticTradeTimelineEntries(
+        sortSessionTimeline([...manualEntries, ...tradeEntries]),
+        plugin.settings.sessionMode.showTradeExecutionsInSessionLog
+      );
+    }, [data, plugin, settingsVersion]);
 
     const sessionGroups = useMemo(() => {
       if (!data) return [];

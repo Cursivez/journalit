@@ -33,6 +33,7 @@ import type {
   ImageGallerySize,
   ImageGallerySort,
   ImageGallerySourceType,
+  ImageGalleryViewMode,
 } from '../imageGallery/types';
 import {
   IMAGE_GALLERY_SIZES,
@@ -55,6 +56,7 @@ import {
   TRADE_LOG_FILTER_MODAL_CLOSED_ACTION_ID,
   TRADE_LOG_FILTER_MODAL_OPENED_ACTION_ID,
   TRADE_LOG_IMAGE_GALLERY_CONTROLS_TARGET_ID,
+  TRADE_LOG_IMAGE_GALLERY_GROUPING_TARGET_ID,
   TRADE_LOG_IMAGE_GALLERY_MODE_BUTTON_TARGET_ID,
   TRADE_LOG_IMAGE_GALLERY_SELECTED_ACTION_ID,
   TRADE_LOG_IMAGE_GALLERY_SIZE_TARGET_ID,
@@ -156,6 +158,7 @@ const ImageGalleryHeaderControls: React.FC<{
   filterButton: React.ReactNode;
   targetRef?: (element: HTMLElement | null) => void;
   sourceSortTargetRef?: (element: HTMLElement | null) => void;
+  groupingTargetRef?: (element: HTMLElement | null) => void;
   sizeTargetRef?: (element: HTMLElement | null) => void;
 }> = ({
   controls,
@@ -163,6 +166,7 @@ const ImageGalleryHeaderControls: React.FC<{
   filterButton,
   targetRef,
   sourceSortTargetRef,
+  groupingTargetRef,
   sizeTargetRef,
 }) => (
   <div className="trade-log-image-gallery-controls" ref={targetRef}>
@@ -183,6 +187,33 @@ const ImageGalleryHeaderControls: React.FC<{
         value={controls.sort}
         onChange={(sort) => onChange({ sort })}
       />
+    </div>
+
+    <div
+      className="journalit-image-gallery-view-toggle"
+      aria-label={t('imageGallery.view-mode-aria')}
+      ref={groupingTargetRef}
+      role="group"
+    >
+      {(['grouped', 'individual'] satisfies ImageGalleryViewMode[]).map(
+        (viewMode) => (
+          <button
+            aria-pressed={controls.viewMode === viewMode}
+            className={
+              controls.viewMode === viewMode
+                ? 'journalit-image-gallery-view-toggle__button journalit-image-gallery-view-toggle__button--active'
+                : 'journalit-image-gallery-view-toggle__button'
+            }
+            key={viewMode}
+            onClick={() => onChange({ viewMode })}
+            type="button"
+          >
+            {viewMode === 'grouped'
+              ? t('imageGallery.view-mode.grouped')
+              : t('imageGallery.view-mode.individual')}
+          </button>
+        )
+      )}
     </div>
 
     <div
@@ -365,6 +396,9 @@ export const TradeLogHeader = memo<TradeLogHeaderProps>(
     );
     const registerImageGalleryControlsTarget = useGuideTarget(
       TRADE_LOG_IMAGE_GALLERY_CONTROLS_TARGET_ID
+    );
+    const registerImageGalleryGroupingTarget = useGuideTarget(
+      TRADE_LOG_IMAGE_GALLERY_GROUPING_TARGET_ID
     );
     const registerImageGallerySourceSortTarget = useGuideTarget(
       TRADE_LOG_IMAGE_GALLERY_SOURCE_SORT_TARGET_ID
@@ -788,6 +822,7 @@ export const TradeLogHeader = memo<TradeLogHeaderProps>(
               }
               targetRef={registerImageGalleryControlsTarget}
               sourceSortTargetRef={registerImageGallerySourceSortTarget}
+              groupingTargetRef={registerImageGalleryGroupingTarget}
               sizeTargetRef={registerImageGallerySizeTarget}
             />
           ) : null}

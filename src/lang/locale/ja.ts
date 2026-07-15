@@ -1239,6 +1239,16 @@ const ja: Partial<Lang> = {
   'setups.create.field.color': '色',
   'setups.create.field.color-description':
     'このセットアップを識別する色を選択してください。',
+  'setups.create.profile.heading': '優先する項目',
+  'setups.create.profile.optional-label': '（任意）',
+  'setups.create.field.sessions': 'セッション',
+  'setups.create.field.preferred-sessions-tooltip':
+    'これらのセッションは、設定 → ジャーナル → セッションモードで管理できます。',
+  'setups.create.placeholder.preferred-sessions': 'London, New York',
+  'setups.create.field.timeframes': '時間足',
+  'setups.create.placeholder.preferred-timeframes': '5m, 15m, 1h',
+  'setups.create.field.tickers': 'ティッカー',
+  'setups.create.placeholder.preferred-tickers': 'ES, NQ, EURUSD',
   'setups.create.direction.any': 'Not specified',
   'setups.create.direction.long': 'Long',
   'setups.create.direction.short': 'Short',

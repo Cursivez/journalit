@@ -43,6 +43,7 @@ export interface Setup {
   color?: LabelColor;
   icon?: string;
   tags: string[];
+  
   preferredSessions: string[];
   preferredTimeframes: string[];
   preferredTickers: string[];
@@ -65,6 +66,7 @@ export interface SetupData {
   color?: LabelColor | null;
   icon?: string;
   tags?: string[];
+  
   preferredSessions?: string[];
   preferredTimeframes?: string[];
   preferredTickers?: string[];

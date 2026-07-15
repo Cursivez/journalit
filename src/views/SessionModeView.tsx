@@ -37,6 +37,7 @@ import {
 import {
   createManualTimelineEntries,
   createTradeTimelineEntries,
+  filterAutomaticTradeTimelineEntries,
   filterTimelineEntriesBySessionWindow,
   getSessionLogEntriesFromFile,
   sortSessionTimeline,
@@ -350,6 +351,10 @@ const SessionMode: React.FC<{
     const tradeEntries = [...tradeEntriesById.values()];
     return sortSessionTimeline([...manualEntries, ...tradeEntries]);
   }, [backingTradingDay, filePath, phaseState, plugin, trades, tradingDay]);
+  const visibleTimelineEntries = filterAutomaticTradeTimelineEntries(
+    timelineEntries,
+    plugin.settings.sessionMode.showTradeExecutionsInSessionLog
+  );
 
   const shouldRenderLoadedSession =
     (filePath !== null &&
@@ -365,10 +370,10 @@ const SessionMode: React.FC<{
       timelineEntries={
         phaseState.phase === 'live' && phaseState.currentSession
           ? filterTimelineEntriesBySessionWindow(
-              timelineEntries,
+              visibleTimelineEntries,
               phaseState.currentSession
             )
-          : timelineEntries
+          : visibleTimelineEntries
       }
       timestampSessionWindow={
         phaseState.currentSession ??

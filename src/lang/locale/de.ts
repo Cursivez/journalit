@@ -6076,6 +6076,23 @@ const de: Lang = {
   'templateEditor.widget.trade-review.fields-all': 'Alle Felder',
   'templateEditor.widget.trade-review.fields-count': '{count} Felder',
   'templateEditor.widget.trade-review.no-fields': 'Keine Felder verfügbar',
+  'templateEditor.widget.trade-review.questions': 'Review-Fragen',
+  'templateEditor.widget.trade-review.questions-help':
+    'Wählen Sie die für jedes Handelsergebnis angezeigten Fragen aus. Die Fragen-IDs bleiben stabil, damit gespeicherte Antworten auch beim Bearbeiten oder Umsortieren der Fragen zugeordnet bleiben.',
+  'templateEditor.widget.trade-review.outcome.win': 'Gewinne',
+  'templateEditor.widget.trade-review.outcome.loss': 'Verluste',
+  'templateEditor.widget.trade-review.outcome.breakeven': 'Break-even',
+  'templateEditor.widget.trade-review.outcome.open': 'Offen',
+  'templateEditor.widget.trade-review.questions-empty':
+    'Keine Fragen für dieses Ergebnis.',
+  'templateEditor.widget.trade-review.question-label': 'Frage',
+  'templateEditor.widget.trade-review.question-placeholder':
+    'Review-Frage eingeben',
+  'templateEditor.widget.trade-review.answer-placeholder-label':
+    'Antwortplatzhalter',
+  'templateEditor.widget.trade-review.answer-placeholder':
+    'Optionaler Hinweis, der im Antwortfeld angezeigt wird',
+  'templateEditor.widget.trade-review.add-question': '+ Frage hinzufügen',
   'templateEditor.widget.previous-context-add-section':
     '+ Abschnitt hinzufügen',
   'templateEditor.widget.previous-context-headings-label':
@@ -6378,6 +6395,16 @@ const de: Lang = {
   'setups.create.field.color': 'Farbe',
   'setups.create.field.color-description':
     'Wähle eine Farbe, um dieses Setup zu kennzeichnen.',
+  'setups.create.profile.heading': 'Bevorzugte Felder',
+  'setups.create.profile.optional-label': '(Optional)',
+  'setups.create.field.sessions': 'Handelssitzungen',
+  'setups.create.field.preferred-sessions-tooltip':
+    'Verwalte diese Sitzungen unter Einstellungen → Journal-Einrichtung → Sitzungsmodus.',
+  'setups.create.placeholder.preferred-sessions': 'London, New York',
+  'setups.create.field.timeframes': 'Zeiteinheiten',
+  'setups.create.placeholder.preferred-timeframes': '5m, 15m, 1h',
+  'setups.create.field.tickers': 'Ticker',
+  'setups.create.placeholder.preferred-tickers': 'ES, NQ, EURUSD',
   'setups.create.direction.any': 'Nicht angegeben',
   'setups.create.direction.long': 'Kaufen',
   'setups.create.direction.short': 'Verkaufen',
@@ -7180,6 +7207,13 @@ const de: Lang = {
     'Zeigt schnelle Notizlinks während der Vorbereitung.',
   'settings.session-mode.linked-resources-count': '{count} linked',
   'settings.session-mode.linked-resources-hide': 'Hide linked',
+  'settings.session-mode.session-log': 'Sitzungsprotokoll',
+  'settings.session-mode.session-log-desc':
+    'Wähle aus, welche automatischen Ereignisse neben deinen Sitzungsnotizen angezeigt werden.',
+  'settings.session-mode.show-trade-executions':
+    'Trade-Einstiege und -Ausstiege',
+  'settings.session-mode.show-trade-executions-desc':
+    'Trade-Einstiege und -Ausstiege in den Protokollen von Sitzungsmodus und Tagesreview anzeigen.',
   'settings.session-mode.session-log-tags': 'Sitzungsprotokoll-Tags',
   'settings.session-mode.session-log-tags-desc':
     'Passe die Tags an, die im Session-Mode-Komponisten und im DRC-Sitzungsprotokoll verfügbar sind.',
@@ -7232,11 +7266,32 @@ const de: Lang = {
   'settings.session-mode.trade-gate.title': 'Trade-Gate-Workflows',
   'settings.session-mode.trade-gate.desc':
     'Erstelle IF/THEN-Entscheidungsflüsse für Live-Einstiegschecks.',
+  'settings.session-mode.trade-gate.delete-workflow.title':
+    'Trade-Gate-Ablauf löschen?',
+  'settings.session-mode.trade-gate.delete-workflow.message':
+    '„{name}“ löschen? Dadurch werden alle Fragen und Zweige dieses Ablaufs entfernt. Diese Aktion kann nicht rückgängig gemacht werden.',
+  'settings.session-mode.trade-gate.delete-workflow.confirm': 'Ablauf löschen',
   'settings.session-mode.trade-gate.name': 'Workflow-Name',
   'settings.session-mode.trade-gate.summary': '{count} Knoten',
   'settings.session-mode.trade-gate.untitled': 'Unbenannter Ablauf',
   'settings.session-mode.trade-gate.start-node': 'Startfrage',
   'settings.session-mode.trade-gate.add-question': 'Frage hinzufügen',
+  'settings.session-mode.trade-gate.add-branch-question': 'Zweig hinzufügen',
+  'settings.session-mode.trade-gate.add-branch-from':
+    'Fügt eine Frage nach „{question}“ hinzu.',
+  'settings.session-mode.trade-gate.add-first-question':
+    'Fügt die erste Frage in diesem Workflow hinzu.',
+  'settings.session-mode.trade-gate.select-question-to-add':
+    'Wähle eine Frage aus, um einen Zweig hinzuzufügen.',
+  'settings.session-mode.trade-gate.connect-before-branching':
+    'Verbinde diese Frage, bevor du einen Zweig hinzufügst.',
+  'settings.session-mode.trade-gate.edit-before-branching':
+    'Bearbeite diese neue Frage, bevor du einen weiteren Zweig hinzufügst.',
+  'settings.session-mode.trade-gate.unconnected-title':
+    'Nicht verbundene Fragen',
+  'settings.session-mode.trade-gate.unconnected-desc':
+    'Diese Fragen sind von der Startfrage aus nicht erreichbar. Verbinde sie über eine aktive Option oder lösche sie.',
+  'settings.session-mode.trade-gate.unconnected-label': 'Nicht verbunden',
   'settings.session-mode.trade-gate.add-outcome': 'Ergebnis hinzufügen',
   'settings.session-mode.trade-gate.question': 'Frage',
   'settings.session-mode.trade-gate.outcome': 'Ergebnis',
@@ -7263,6 +7318,8 @@ const de: Lang = {
   'settings.session-mode.trade-gate.results': 'Ergebnisse',
   'settings.session-mode.trade-gate.no-paths':
     'Füge Optionen hinzu, um diesen Ablauf zu verbinden.',
+  'settings.session-mode.trade-gate.no-questions':
+    'Füge die erste Frage hinzu, um diesen Ablauf zu beginnen.',
   'settings.session-mode.trade-gate.missing-target': 'Fehlendes Ziel',
   'settings.session-mode.trade-gate.repeated-node':
     'Verweist zurück auf diesen Knoten.',
@@ -7327,6 +7384,14 @@ const de: Lang = {
   'imageGallery.size.small': 'Klein',
   'imageGallery.size.medium': 'Mittel',
   'imageGallery.size.large': 'Groß',
+  'imageGallery.view-mode-aria': 'Gruppierung der Galerie-Karten',
+  'imageGallery.view-mode.grouped': 'Gruppiert',
+  'imageGallery.view-mode.individual': 'Einzeln',
+  'imageGallery.group.additional-media': '{count} zusätzliche Medienelemente',
+  'imageGallery.group.annotation-summary':
+    '{annotated} von {total} Medienelementen annotiert',
+  'imageGallery.group.navigation':
+    'Medien {mediaCurrent} von {mediaTotal} · Eintrag {groupCurrent} von {groupTotal}',
   'imageGallery.source.label': 'Quelle:',
   'imageGallery.source.all': 'Alle Medien',
   'imageGallery.source.trade': 'Trades',
@@ -7359,6 +7424,10 @@ const de: Lang = {
     'Wähle aus, welche Medien du prüfen möchtest',
   'tradelog.guide.gallery-controls.description':
     'Nutze Quelle, um Trades oder Review-Notizen auszuwählen, Sortieren zum Umordnen der Medien und die Größenbuttons, um zwischen kompaktem Scan und größerer Medienvorschau zu wechseln.',
+  'tradelog.guide.gallery-grouping.title':
+    'Medien nach Journaleintrag gruppieren',
+  'tradelog.guide.gallery-grouping.description':
+    'Gruppiert zeigt jeden Trade oder jedes Review in einer Karte. Einzeln zeigt jedes angehängte Medienelement als eigene Karte.',
   'tradelog.guide.gallery-source-sort.title':
     'Medienquelle und Reihenfolge wählen',
   'tradelog.guide.gallery-source-sort.description':

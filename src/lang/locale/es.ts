@@ -6804,6 +6804,23 @@ const es: Lang = {
   'templateEditor.widget.trade-review.fields-all': 'Todos los campos',
   'templateEditor.widget.trade-review.fields-count': '{count} campos',
   'templateEditor.widget.trade-review.no-fields': 'No hay campos disponibles',
+  'templateEditor.widget.trade-review.questions': 'Preguntas de revisión',
+  'templateEditor.widget.trade-review.questions-help':
+    'Elige las preguntas que se muestran para cada resultado de la operación. Los IDs de las preguntas permanecen estables para que las respuestas guardadas sigan vinculadas al editar o reordenar las preguntas.',
+  'templateEditor.widget.trade-review.outcome.win': 'Ganadoras',
+  'templateEditor.widget.trade-review.outcome.loss': 'Perdedoras',
+  'templateEditor.widget.trade-review.outcome.breakeven': 'Empate',
+  'templateEditor.widget.trade-review.outcome.open': 'Abiertas',
+  'templateEditor.widget.trade-review.questions-empty':
+    'No hay preguntas para este resultado.',
+  'templateEditor.widget.trade-review.question-label': 'Pregunta',
+  'templateEditor.widget.trade-review.question-placeholder':
+    'Escribe una pregunta de revisión',
+  'templateEditor.widget.trade-review.answer-placeholder-label':
+    'Marcador de respuesta',
+  'templateEditor.widget.trade-review.answer-placeholder':
+    'Texto opcional mostrado en el campo de respuesta',
+  'templateEditor.widget.trade-review.add-question': '+ Agregar pregunta',
   'templateEditor.widget.previous-context-add-section': '+ Add section',
   'templateEditor.widget.previous-context-headings-label':
     'Headings to include',
@@ -7087,6 +7104,16 @@ const es: Lang = {
   'setups.create.field.color': 'Color',
   'setups.create.field.color-description':
     'Elige un color para identificar este setup.',
+  'setups.create.profile.heading': 'Campos preferidos',
+  'setups.create.profile.optional-label': '(Opcional)',
+  'setups.create.field.sessions': 'Sesiones',
+  'setups.create.field.preferred-sessions-tooltip':
+    'Gestiona estas sesiones en Configuración → Configuración del diario → Modo sesión.',
+  'setups.create.placeholder.preferred-sessions': 'London, New York',
+  'setups.create.field.timeframes': 'Temporalidades',
+  'setups.create.placeholder.preferred-timeframes': '5m, 15m, 1h',
+  'setups.create.field.tickers': 'Tickers',
+  'setups.create.placeholder.preferred-tickers': 'ES, NQ, EURUSD',
   'setups.create.direction.any': 'Sin especificar',
   'setups.create.direction.long': 'Largo',
   'setups.create.direction.short': 'Corto',
@@ -7262,42 +7289,43 @@ const es: Lang = {
   'setups.view.empty.no-setups-submessage':
     'Setups collect your playbook notes, rules, trades, and performance in one place.',
   'setups.view.detail.no-playbook-note':
-    'Link a playbook note to preview it here.',
-  'setups.view.detail.link-playbook-note': 'Link note',
-  'setups.view.detail.change-playbook-note': 'Change note',
-  'setups.view.detail.playbook-note-modal.search': 'Search notes...',
-  'setups.view.detail.playbook-note-modal.empty': 'No matching notes found.',
+    'Vincula una nota del playbook para previsualizarla aquí.',
+  'setups.view.detail.link-playbook-note': 'Vincular nota',
+  'setups.view.detail.change-playbook-note': 'Cambiar nota',
+  'setups.view.detail.playbook-note-modal.search': 'Buscar notas...',
+  'setups.view.detail.playbook-note-modal.empty':
+    'No se encontraron notas coincidentes.',
   'setups.view.detail.empty-playbook-note':
-    'The linked playbook note is empty.',
+    'La nota del playbook vinculada está vacía.',
   'setups.view.detail.rules.edit': 'Editar reglas',
   'setups.view.detail.rules.add-first': 'Añadir reglas',
   'setups.view.detail.rules.add': 'Añadir regla',
   'setups.view.detail.rules.editor-subtitle':
     'Crea y edita las reglas que impulsan las listas y el cumplimiento.',
-  'setups.view.detail.rules.empty-title': 'Build the setup playbook',
-  'setups.view.detail.rules.use-template': 'Use template',
-  'setups.view.detail.rules.applying-template': 'Applying template...',
-  'setups.view.detail.rules.add-custom': 'Custom rule',
+  'setups.view.detail.rules.empty-title': 'Crear el playbook del setup',
+  'setups.view.detail.rules.use-template': 'Usar plantilla',
+  'setups.view.detail.rules.applying-template': 'Aplicando plantilla...',
+  'setups.view.detail.rules.add-custom': 'Regla personalizada',
   'setups.view.detail.rules.template-error':
-    'Failed to apply playbook template.',
-  'setups.view.detail.rules.template.best-conditions': 'Best Conditions',
-  'setups.view.detail.rules.template.entry-criteria': 'Entry Criteria',
-  'setups.view.detail.rules.template.invalidation': 'Invalidation',
-  'setups.view.detail.rules.template.risk-management': 'Risk / Management',
-  'setups.view.detail.rules.template.avoid-when': 'Avoid When',
-  'setups.view.detail.rules.template.common-mistakes': 'Common Mistakes',
+    'No se pudo aplicar la plantilla del playbook.',
+  'setups.view.detail.rules.template.best-conditions': 'Mejores condiciones',
+  'setups.view.detail.rules.template.entry-criteria': 'Criterios de entrada',
+  'setups.view.detail.rules.template.invalidation': 'Invalidación',
+  'setups.view.detail.rules.template.risk-management': 'Riesgo / gestión',
+  'setups.view.detail.rules.template.avoid-when': 'Evitar cuando',
+  'setups.view.detail.rules.template.common-mistakes': 'Errores comunes',
   'setups.view.detail.rules.template.rule.best-conditions':
-    'Market context supports this setup',
+    'El contexto del mercado favorece este setup',
   'setups.view.detail.rules.template.rule.entry-criteria':
-    'Entry trigger is clearly defined',
+    'El detonante de entrada está claramente definido',
   'setups.view.detail.rules.template.rule.invalidation':
-    'Invalidation is clear before entry',
+    'La invalidación está clara antes de la entrada',
   'setups.view.detail.rules.template.rule.risk-management':
-    'Risk is acceptable and target is defined',
+    'El riesgo es aceptable y el objetivo está definido',
   'setups.view.detail.rules.template.rule.avoid-when':
-    'Avoid conditions are not present',
+    'No están presentes las condiciones que deben evitarse',
   'setups.view.detail.rules.template.rule.common-mistakes':
-    'Known execution mistakes are avoided',
+    'Se evitan los errores de ejecución conocidos',
   'setups.view.detail.rules.field.label': 'Regla',
   'setups.view.detail.rules.field.description': 'Detalles',
   'setups.view.detail.rules.field.group': 'Grupo',
@@ -7308,11 +7336,11 @@ const es: Lang = {
     'No se pudieron guardar las reglas del setup.',
   'setups.view.detail.rules.validation-label':
     'Añade un nombre de regla o elimina la regla vacía antes de guardar.',
-  'setups.view.detail.rules.groups': 'Groups',
-  'setups.view.detail.rules.add-group': 'Add group',
-  'setups.view.detail.rules.new-group': 'New group',
+  'setups.view.detail.rules.groups': 'Grupos',
+  'setups.view.detail.rules.add-group': 'Añadir grupo',
+  'setups.view.detail.rules.new-group': 'Nuevo grupo',
   'setups.view.detail.rules.validation-group':
-    'Add a group name or remove the blank group before saving.',
+    'Añade un nombre de grupo o elimina el grupo vacío antes de guardar.',
   'setups.view.detail.rules.summary': '{count} reglas · {groups} grupos',
   'setups.view.detail.rules.group-summary': '{count} · {required} obligatorias',
   'setups.view.detail.rules.more': '+{count} más',
@@ -7329,7 +7357,7 @@ const es: Lang = {
   'setups.view.detail.analysis.performance': 'Performance',
   'setups.view.detail.analysis.execution-gap': 'Execution Gap',
   'setups.view.detail.analysis.tabs-aria': 'Setup performance tabs',
-  'setups.view.detail.brief.linked-notes-add': 'Edit linked notes',
+  'setups.view.detail.brief.linked-notes-add': 'Editar notas vinculadas',
   'setups.view.detail.execution-gap.title': 'Execution Gap',
   'setups.view.detail.execution-gap.subtitle':
     'Captured edge vs missed opportunity',
@@ -7350,52 +7378,59 @@ const es: Lang = {
     'Execution gap is hidden in privacy mode.',
   'setups.view.detail.execution-gap.empty':
     'Log missed trades or backtest trades for this setup to analyze execution gaps.',
-  'setups.view.detail.brief.linked-notes': '{count}',
-  'setups.view.detail.brief.linked-notes-modal.subtitle': '{name}',
-  'setups.view.detail.brief.screenshots': '{count}',
+  'setups.view.detail.brief.linked-notes': '{count} notas vinculadas',
+  'setups.view.detail.brief.linked-notes-modal.subtitle':
+    'Notas vinculadas a {name}.',
+  'setups.view.detail.brief.screenshots': '{count} capturas de pantalla',
   'setups.view.detail.brief.no-screenshots': 'Aún no hay capturas vinculadas.',
-  'setups.view.detail.brief.screenshot-alt': '{index}',
-  'setups.view.detail.brief.screenshot-open': '{index}',
-  'setups.view.detail.brief.count.rules': '{count}',
-  'setups.view.detail.brief.count.notes': '{count}',
-  'setups.view.detail.brief.count.images': '{count}',
-  'setups.view.detail.brief.count.trades': '{count}',
-  'setups.view.detail.brief.more': '{count}',
-  'setups.view.detail.attention.title': 'Needs attention',
-  'setups.view.detail.attention.count': '{count} items',
-  'setups.view.detail.attention.empty': 'No setup issues found.',
-  'setups.view.detail.attention.show-more': '+{count} more',
-  'setups.view.detail.attention.show-less': 'Show less',
-  'setups.view.detail.attention.no-playbook-title': 'Link a playbook note',
+  'setups.view.detail.brief.screenshot-alt':
+    'Captura de pantalla del setup {index}',
+  'setups.view.detail.brief.screenshot-open':
+    'Abrir captura de pantalla {index}',
+  'setups.view.detail.brief.count.rules': '{count} reglas',
+  'setups.view.detail.brief.count.notes': '{count} notas',
+  'setups.view.detail.brief.count.images': '{count} imágenes',
+  'setups.view.detail.brief.count.trades': '{count} trades',
+  'setups.view.detail.brief.more': '+{count} más',
+  'setups.view.detail.attention.title': 'Requiere atención',
+  'setups.view.detail.attention.count': '{count} elementos',
+  'setups.view.detail.attention.empty':
+    'No se encontraron problemas en el setup.',
+  'setups.view.detail.attention.show-more': '+{count} más',
+  'setups.view.detail.attention.show-less': 'Mostrar menos',
+  'setups.view.detail.attention.no-playbook-title':
+    'Vincula una nota del playbook',
   'setups.view.detail.attention.no-playbook-detail':
-    'Link one source note for context and examples.',
-  'setups.view.detail.attention.no-rules-title': 'Build the execution playbook',
+    'Vincula una nota de origen para consultar el contexto y ejemplos.',
+  'setups.view.detail.attention.no-rules-title':
+    'Crea el playbook de ejecución',
   'setups.view.detail.attention.no-rules-detail':
-    'Add criteria for entries, invalidation, risk, and mistakes.',
+    'Añade criterios de entrada, invalidación, riesgo y errores.',
   'setups.view.detail.attention.no-invalidation-title':
-    'Add invalidation criteria',
+    'Añade criterios de invalidación',
   'setups.view.detail.attention.no-invalidation-detail':
-    'Define when this setup is no longer valid.',
-  'setups.view.detail.attention.no-risk-title': 'Add risk or management rules',
+    'Define cuándo deja de ser válido este setup.',
+  'setups.view.detail.attention.no-risk-title':
+    'Añade reglas de riesgo o gestión',
   'setups.view.detail.attention.no-risk-detail':
-    'Document how this setup should be managed after entry.',
-  'setups.view.detail.attention.no-trades-title': 'No live trades yet',
+    'Documenta cómo debe gestionarse este setup después de la entrada.',
+  'setups.view.detail.attention.no-trades-title': 'Aún no hay trades en vivo',
   'setups.view.detail.attention.no-trades-detail':
-    'No linked live trade history yet.',
+    'Aún no hay historial de trades en vivo vinculados.',
   'setups.view.detail.attention.no-screenshots-title':
-    'Save example screenshots',
+    'Guarda capturas de pantalla de ejemplo',
   'setups.view.detail.attention.no-screenshots-detail':
-    'Attach screenshots to trades for review examples.',
-  'setups.view.detail.attention.stale-title': 'Review recent relevance',
+    'Adjunta capturas de pantalla a los trades para revisarlos como ejemplos.',
+  'setups.view.detail.attention.stale-title': 'Revisa su relevancia reciente',
   'setups.view.detail.attention.stale-detail':
-    'This setup has not been traded in {count} days.',
+    'No se han registrado trades para este setup en {count} días.',
   'setups.view.detail.attention.profit-factor-title':
-    'Performance needs review',
+    'El rendimiento requiere revisión',
   'setups.view.detail.attention.profit-factor-detail':
-    'Profit factor is below 1.0 across linked trades.',
-  'setups.view.detail.attention.expectancy-title': 'Expectancy is negative',
+    'El factor de beneficio es inferior a 1,0 en los trades vinculados.',
+  'setups.view.detail.attention.expectancy-title': 'La expectativa es negativa',
   'setups.view.detail.attention.expectancy-detail':
-    'Average linked-trade outcome is below breakeven.',
+    'El resultado medio de los trades vinculados está por debajo del punto de equilibrio.',
   'setups.view.card.open-named': '{name}',
   'setups.view.card.status.active': 'Stable',
   'setups.view.card.status.monitor': 'Monitor',
@@ -7678,6 +7713,13 @@ const es: Lang = {
     'Muestra enlaces rápidos a notas durante la preparación.',
   'settings.session-mode.linked-resources-count': '{count} linked',
   'settings.session-mode.linked-resources-hide': 'Hide linked',
+  'settings.session-mode.session-log': 'Registro de sesión',
+  'settings.session-mode.session-log-desc':
+    'Elige qué eventos automáticos aparecen junto a tus notas de sesión.',
+  'settings.session-mode.show-trade-executions':
+    'Entradas y salidas de operaciones',
+  'settings.session-mode.show-trade-executions-desc':
+    'Mostrar entradas y salidas de operaciones en los registros del Modo sesión y la Revisión diaria.',
   'settings.session-mode.session-log-tags': 'Etiquetas del registro de sesión',
   'settings.session-mode.session-log-tags-desc':
     'Personaliza las etiquetas disponibles en el compositor de Modo sesión y en el registro de sesión DRC.',
@@ -7729,11 +7771,32 @@ const es: Lang = {
   'settings.session-mode.trade-gate.title': 'Flujos de Trade Gate',
   'settings.session-mode.trade-gate.desc':
     'Crea flujos de decisión IF/THEN para comprobaciones de entrada en vivo.',
+  'settings.session-mode.trade-gate.delete-workflow.title':
+    '¿Eliminar el flujo Trade Gate?',
+  'settings.session-mode.trade-gate.delete-workflow.message':
+    '¿Eliminar «{name}»? Esto elimina todas las preguntas y ramas de este flujo. Esta acción no se puede deshacer.',
+  'settings.session-mode.trade-gate.delete-workflow.confirm': 'Eliminar flujo',
   'settings.session-mode.trade-gate.name': 'Nombre del flujo',
   'settings.session-mode.trade-gate.summary': '{count} nodos',
   'settings.session-mode.trade-gate.untitled': 'Flujo sin título',
   'settings.session-mode.trade-gate.start-node': 'Pregunta inicial',
   'settings.session-mode.trade-gate.add-question': 'Agregar pregunta',
+  'settings.session-mode.trade-gate.add-branch-question': 'Agregar rama',
+  'settings.session-mode.trade-gate.add-branch-from':
+    'Agrega una pregunta después de «{question}».',
+  'settings.session-mode.trade-gate.add-first-question':
+    'Agrega la primera pregunta de este flujo.',
+  'settings.session-mode.trade-gate.select-question-to-add':
+    'Selecciona una pregunta para agregar una rama.',
+  'settings.session-mode.trade-gate.connect-before-branching':
+    'Conecta esta pregunta antes de agregar una rama.',
+  'settings.session-mode.trade-gate.edit-before-branching':
+    'Edita esta nueva pregunta antes de agregar otra rama.',
+  'settings.session-mode.trade-gate.unconnected-title':
+    'Preguntas sin conectar',
+  'settings.session-mode.trade-gate.unconnected-desc':
+    'No se puede llegar a estas preguntas desde la pregunta inicial. Conéctalas desde una opción activa o elimínalas.',
+  'settings.session-mode.trade-gate.unconnected-label': 'Sin conectar',
   'settings.session-mode.trade-gate.add-outcome': 'Agregar resultado',
   'settings.session-mode.trade-gate.question': 'Pregunta',
   'settings.session-mode.trade-gate.outcome': 'Resultado',
@@ -7760,6 +7823,8 @@ const es: Lang = {
   'settings.session-mode.trade-gate.results': 'Resultados',
   'settings.session-mode.trade-gate.no-paths':
     'Agrega opciones para conectar este flujo.',
+  'settings.session-mode.trade-gate.no-questions':
+    'Agrega la primera pregunta para iniciar este flujo.',
   'settings.session-mode.trade-gate.missing-target': 'Destino faltante',
   'settings.session-mode.trade-gate.repeated-node': 'Vuelve a este nodo.',
   'settings.session-mode.trade-gate.default-name': 'Puerta de entrada básica',
@@ -8035,6 +8100,15 @@ const es: Lang = {
   'imageGallery.size.small': 'Pequeño',
   'imageGallery.size.medium': 'Mediano',
   'imageGallery.size.large': 'Grande',
+  'imageGallery.view-mode-aria': 'Agrupación de tarjetas de la galería',
+  'imageGallery.view-mode.grouped': 'Agrupado',
+  'imageGallery.view-mode.individual': 'Individual',
+  'imageGallery.group.additional-media':
+    '{count} elementos multimedia adicionales',
+  'imageGallery.group.annotation-summary':
+    '{annotated} de {total} elementos multimedia anotados',
+  'imageGallery.group.navigation':
+    'Medio {mediaCurrent} de {mediaTotal} · Entrada {groupCurrent} de {groupTotal}',
   'imageGallery.source.label': 'Fuente:',
   'imageGallery.source.all': 'Todo el contenido multimedia',
   'imageGallery.source.trade': 'Trades',
@@ -8067,6 +8141,10 @@ const es: Lang = {
     'Elige qué contenido multimedia quieres revisar',
   'tradelog.guide.gallery-controls.description':
     'Usa Fuente para elegir trades o notas de revisión, Ordenar para reordenar contenido multimedia y los botones de tamaño para alternar entre exploración compacta y vistas previas multimedia más grandes.',
+  'tradelog.guide.gallery-grouping.title':
+    'Agrupa el contenido multimedia por entrada del diario',
+  'tradelog.guide.gallery-grouping.description':
+    'Agrupado mantiene cada trade o revisión en una sola tarjeta. Individual muestra cada elemento multimedia adjunto en su propia tarjeta.',
   'tradelog.guide.gallery-source-sort.title':
     'Elige la fuente y el orden del contenido multimedia',
   'tradelog.guide.gallery-source-sort.description':

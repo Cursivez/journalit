@@ -51,6 +51,7 @@ const CLASS_NAMES = {
 const DROPDOWN_MAX_HEIGHT_PX = 200;
 const DROPDOWN_MIN_HEIGHT_PX = 96;
 const DROPDOWN_VIEWPORT_GAP_PX = 8;
+const getDefaultOptionLabel = (option: string): string => option;
 
 interface ComboBoxProps {
   
@@ -58,6 +59,9 @@ interface ComboBoxProps {
 
   
   value: string | string[];
+
+  
+  getOptionLabel?: (option: string) => string;
 
   
   onChange: (value: string | string[]) => void;
@@ -70,6 +74,9 @@ interface ComboBoxProps {
 
   
   label?: string;
+
+  
+  labelAccessory?: React.ReactNode;
 
   
   placeholder?: string;
@@ -90,6 +97,12 @@ interface ComboBoxProps {
   required?: boolean;
 
   
+  disabled?: boolean;
+
+  
+  selectedItemsPlacement?: 'before-input' | 'after-input' | 'inside-input';
+
+  
   portalDropdown?: boolean;
 }
 
@@ -103,6 +116,9 @@ function useComboBoxModel({
   optionType,
   onSaveOption,
   portalDropdown = true,
+  disabled = false,
+  selectedItemsPlacement = 'before-input',
+  getOptionLabel = getDefaultOptionLabel,
 }: ComboBoxProps) {
   
   const uniqueId = useId();
@@ -153,6 +169,7 @@ function useComboBoxModel({
 
   
   const comboRef = useRef<HTMLDivElement>(null);
+  const inputContainerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const dropdownRef = useRef<HTMLUListElement>(null);
   const [portalDropdownRect, setPortalDropdownRect] = useState<{
@@ -163,9 +180,13 @@ function useComboBoxModel({
   } | null>(null);
 
   const updatePortalDropdownRect = useCallback(() => {
-    if (!inputRef.current) return;
+    const target =
+      selectedItemsPlacement === 'inside-input'
+        ? inputContainerRef.current
+        : inputRef.current;
+    if (!target) return;
 
-    const rect = inputRef.current.getBoundingClientRect();
+    const rect = target.getBoundingClientRect();
     if (rect.width === 0 || rect.height === 0) {
       setPortalDropdownRect(null);
       return;
@@ -192,7 +213,7 @@ function useComboBoxModel({
       width: rect.width,
       maxHeight,
     });
-  }, []);
+  }, [selectedItemsPlacement]);
   const updatePortalDropdownRectRef = useRef(updatePortalDropdownRect);
 
   useLayoutEffect(() => {
@@ -202,6 +223,7 @@ function useComboBoxModel({
   
   const isSelectingOption = useRef(false);
   const isHandlingRemove = useRef(false);
+  const ownedPopupInteractionVersion = useRef(0);
 
   
   const normalizedOptions = useMemo(
@@ -242,6 +264,7 @@ function useComboBoxModel({
   
   const handleSelect = useCallback(
     (selected: string) => {
+      if (disabled) return;
       
       const newValue = getSelectedOptionValue(selected);
       const trimmedValue = newValue.trim();
@@ -304,6 +327,7 @@ function useComboBoxModel({
       setHighlightedIndex(-1);
     },
     [
+      disabled,
       isMulti,
       value,
       onChange,
@@ -319,6 +343,7 @@ function useComboBoxModel({
   
   useEffect(() => {
     const handleOptionSelection = (e: MouseEvent) => {
+      if (disabled) return;
       
       const target = e.target;
       if (!isHTMLElement(target)) return;
@@ -328,23 +353,19 @@ function useComboBoxModel({
       const isInsideDropdown = dropdownRef.current?.contains(target);
 
       if (isOption && (isInsideCombo || isInsideDropdown)) {
+        if (e.button !== 0) return;
+
         
         isSelectingOption.current = true;
 
         
-        const optionText = isOption.textContent?.trim();
-        if (!optionText) return;
-
-        
         const selection = isOption.hasAttribute('data-add-option')
           ? `${ADD_OPTION_PREFIX}${inputValue}`
-          : optionText;
+          : isOption.getAttribute('data-option-value');
+        if (!selection) return;
 
         
-        const actualValue = isAddOption(selection) ? selection : optionText;
-
-        
-        handleSelect(actualValue);
+        handleSelect(selection);
 
         
         window.setTimeout(() => {
@@ -377,13 +398,13 @@ function useComboBoxModel({
         true
       );
     };
-  }, [isMulti, inputValue, handleSelect]);
+  }, [disabled, isMulti, inputValue, handleSelect]);
 
   
   
   const handleRemove = useCallback(
     (val: string) => {
-      if (!isMulti) return;
+      if (!isMulti || disabled) return;
 
       
       isHandlingRemove.current = true;
@@ -401,7 +422,7 @@ function useComboBoxModel({
         isHandlingRemove.current = false;
       }, 50);
     },
-    [isMulti, value, onChange]
+    [disabled, isMulti, value, onChange]
   );
 
   
@@ -409,6 +430,7 @@ function useComboBoxModel({
     if (!isOpen) return;
 
     const handleOutsideClick = (e: MouseEvent) => {
+      if (disabled) return;
       
       if (isHandlingRemove.current) return;
 
@@ -416,11 +438,48 @@ function useComboBoxModel({
       const target = e.target;
       if (!isHTMLElement(target)) return;
       const isClickingOption = target.closest('[role="option"]');
+      const isClickingOwnedOption =
+        isClickingOption?.closest('[role="listbox"]')?.id === listId;
       const isClickingRemoveButton = target.closest(
         '[data-remove-button="true"]'
       );
       const isClickingInsideCombo = comboRef.current?.contains(target);
       const isClickingInsideDropdown = dropdownRef.current?.contains(target);
+
+      
+      
+      
+      if (isClickingInsideDropdown) {
+        ownedPopupInteractionVersion.current += 1;
+        isSelectingOption.current = true;
+        window.activeDocument.addEventListener(
+          'mouseup',
+          () => {
+            isSelectingOption.current = false;
+          },
+          { capture: true, once: true }
+        );
+      }
+
+      if (
+        e.button !== 0 &&
+        (isClickingInsideCombo ||
+          isClickingInsideDropdown ||
+          isClickingOwnedOption)
+      ) {
+        isSelectingOption.current = true;
+        window.setTimeout(() => {
+          isSelectingOption.current = false;
+        }, 150);
+        e.stopPropagation();
+        return;
+      }
+
+      
+      if (isClickingOwnedOption) {
+        e.stopPropagation();
+        return;
+      }
 
       
       if (!isClickingInsideCombo && !isClickingInsideDropdown) {
@@ -429,40 +488,12 @@ function useComboBoxModel({
       }
 
       
-      if (isClickingOption) {
-        e.stopPropagation();
-        return;
-      }
-
-      
       if (isClickingRemoveButton) {
         e.preventDefault();
         e.stopPropagation();
-
-        
-        isHandlingRemove.current = true;
-
-        
-        const removeLabel =
-          isClickingRemoveButton.getAttribute('aria-label') || '';
-        const valueToRemove = removeLabel.replace('Remove ', '');
-
-        if (valueToRemove) {
-          
-          const currentValues = Array.isArray(value) ? [...value] : [];
-          const updatedValues = currentValues.filter(
-            (v) => v !== valueToRemove
-          );
-
-          
-          onChange(updatedValues);
-
-          
-          window.setTimeout(() => {
-            if (inputRef.current) inputRef.current.focus();
-            isHandlingRemove.current = false;
-          }, 50);
-        }
+        const valueToRemove =
+          isClickingRemoveButton.getAttribute('data-remove-value') ?? '';
+        if (valueToRemove) handleRemove(valueToRemove);
       }
     };
 
@@ -480,7 +511,7 @@ function useComboBoxModel({
         true
       );
     };
-  }, [isOpen, value, onChange, setIsOpen]);
+  }, [disabled, handleRemove, isOpen, listId, setIsOpen]);
 
   useLayoutEffect(() => {
     if (!isOpen || !portalDropdown || !inputRef.current) {
@@ -495,8 +526,21 @@ function useComboBoxModel({
     updateCurrentPortalDropdownRect();
     window.addEventListener('resize', updateCurrentPortalDropdownRect);
     window.addEventListener('scroll', updateCurrentPortalDropdownRect, true);
+    const resizeTarget =
+      selectedItemsPlacement === 'inside-input'
+        ? inputContainerRef.current
+        : inputRef.current;
+    const ResizeObserverConstructor =
+      window.activeDocument.defaultView?.ResizeObserver ??
+      window.ResizeObserver;
+    const resizeObserver =
+      ResizeObserverConstructor && resizeTarget
+        ? new ResizeObserverConstructor(updateCurrentPortalDropdownRect)
+        : null;
+    if (resizeTarget) resizeObserver?.observe(resizeTarget);
 
     return () => {
+      resizeObserver?.disconnect();
       window.removeEventListener('resize', updateCurrentPortalDropdownRect);
       window.removeEventListener(
         'scroll',
@@ -504,7 +548,7 @@ function useComboBoxModel({
         true
       );
     };
-  }, [isOpen, portalDropdown, setIsOpen]);
+  }, [isOpen, portalDropdown, selectedItemsPlacement, setIsOpen]);
 
   
   useEffect(() => {
@@ -527,19 +571,25 @@ function useComboBoxModel({
     };
   }, [isOpen, setIsOpen]);
 
-  
   useEffect(() => {
     if (!isOpen) return;
 
-    const windowBlurHandler = () => {
-      setIsOpen(false);
+    const handleWindowBlur = () => {
+      if (isSelectingOption.current) return;
+
+      const interactionVersionAtBlur = ownedPopupInteractionVersion.current;
+      window.setTimeout(() => {
+        if (
+          ownedPopupInteractionVersion.current === interactionVersionAtBlur &&
+          !isSelectingOption.current
+        ) {
+          setIsOpen(false);
+        }
+      }, 100);
     };
 
-    window.addEventListener('blur', windowBlurHandler);
-
-    return () => {
-      window.removeEventListener('blur', windowBlurHandler);
-    };
+    window.addEventListener('blur', handleWindowBlur);
+    return () => window.removeEventListener('blur', handleWindowBlur);
   }, [isOpen, setIsOpen]);
 
   
@@ -550,8 +600,9 @@ function useComboBoxModel({
         inputValue,
         isMulti,
         value,
+        getOptionLabel,
       }),
-    [normalizedOptions, inputValue, isMulti, value]
+    [normalizedOptions, inputValue, isMulti, value, getOptionLabel]
   );
 
   
@@ -613,7 +664,9 @@ function useComboBoxModel({
           if (inputValue.trim() !== '' && filteredOptions.length > 0) {
             
             const matchedOption = filteredOptions.find((option) =>
-              option.toLowerCase().startsWith(inputValue.toLowerCase())
+              getOptionLabel(option)
+                .toLowerCase()
+                .startsWith(inputValue.toLowerCase())
             );
 
             if (matchedOption) {
@@ -648,6 +701,7 @@ function useComboBoxModel({
       inputValue,
       isMulti,
       handleSelect,
+      getOptionLabel,
       setHighlightedIndex,
       setIsOpen,
     ]
@@ -664,12 +718,13 @@ function useComboBoxModel({
         role="option"
         aria-selected={highlightedIndex === index}
         className={`${CLASS_NAMES.OPTION} ${highlightedIndex === index ? CLASS_NAMES.OPTION_HIGHLIGHTED : ''}`}
+        data-option-value={option}
         onMouseEnter={() => setHighlightedIndex(index)}
       >
-        {option}
+        {getOptionLabel(option)}
       </li>
     ));
-  }, [filteredOptions, highlightedIndex, setHighlightedIndex]);
+  }, [filteredOptions, getOptionLabel, highlightedIndex, setHighlightedIndex]);
 
   
   const renderedAddOption = React.useMemo(() => {
@@ -700,10 +755,10 @@ function useComboBoxModel({
     if (!isMulti) return null;
 
     return (
-      <div>
+      <div className="journalit-combobox-selected-items">
         {(Array.isArray(value) ? value : []).map((val) => (
           <span key={val} className={CLASS_NAMES.SELECTED_ITEM}>
-            {val}
+            {getOptionLabel(val)}
             <button
               type="button"
               onClick={(e) => {
@@ -718,9 +773,13 @@ function useComboBoxModel({
                 if (isHandlingRemove.current) return;
                 handleRemove(val);
               }}
-              aria-label={t('combobox.aria.remove-item', { item: val })}
+              aria-label={t('combobox.aria.remove-item', {
+                item: getOptionLabel(val),
+              })}
               data-remove-button="true"
-              className={CLASS_NAMES.REMOVE_BUTTON}
+              data-remove-value={val}
+              disabled={disabled}
+              className={`${CLASS_NAMES.REMOVE_BUTTON} journalit-combobox-remove-button`}
             >
               <span
                 aria-hidden="true"
@@ -731,7 +790,7 @@ function useComboBoxModel({
         ))}
       </div>
     );
-  }, [isMulti, value, handleRemove]);
+  }, [disabled, getOptionLabel, isMulti, value, handleRemove]);
 
   
   const handleInputFocus = React.useCallback(() => {
@@ -753,8 +812,13 @@ function useComboBoxModel({
       if (isRemoveButton) return;
 
       if (!relatedTarget || !comboRef.current?.contains(relatedTarget)) {
+        const interactionVersionAtBlur = ownedPopupInteractionVersion.current;
         window.setTimeout(() => {
-          if (!isSelectingOption.current && !isHandlingRemove.current) {
+          if (
+            ownedPopupInteractionVersion.current === interactionVersionAtBlur &&
+            !isSelectingOption.current &&
+            !isHandlingRemove.current
+          ) {
             setIsOpen(false);
           }
         }, 100);
@@ -820,6 +884,7 @@ function useComboBoxModel({
 
   return {
     comboRef,
+    inputContainerRef,
     inputRef,
     inputId,
     listId,
@@ -844,15 +909,19 @@ function useComboBoxModel({
 export const ComboBox: React.FC<ComboBoxProps> = (props) => {
   const {
     label,
+    labelAccessory,
     required = false,
     isMulti = false,
     placeholder = t('combobox.placeholder.default'),
     error,
     helperText,
     portalDropdown = true,
+    disabled = false,
+    selectedItemsPlacement = 'before-input',
   } = props;
   const {
     comboRef,
+    inputContainerRef,
     inputRef,
     inputId,
     listId,
@@ -878,20 +947,24 @@ export const ComboBox: React.FC<ComboBoxProps> = (props) => {
       ref={comboRef}
       data-combobox-type={isMulti ? 'multi' : 'single'}
       data-is-open={isOpen ? 'true' : 'false'}
+      data-selected-items-placement={selectedItemsPlacement}
       className={`${CLASS_NAMES.COMBOBOX_CONTAINER} journalit-combobox`}
     >
       {label && (
         <label htmlFor={inputId}>
-          {label}
+          <span>{label}</span>
+          {labelAccessory}
           {required && <span className="required-indicator">*</span>}
         </label>
       )}
 
-      
-      {renderedSelectedItems}
+      {selectedItemsPlacement === 'before-input' ? renderedSelectedItems : null}
 
       
-      <div className={CLASS_NAMES.INPUT_CONTAINER}>
+      <div ref={inputContainerRef} className={CLASS_NAMES.INPUT_CONTAINER}>
+        {selectedItemsPlacement === 'inside-input'
+          ? renderedSelectedItems
+          : null}
         <input
           ref={inputRef}
           id={inputId}
@@ -913,6 +986,7 @@ export const ComboBox: React.FC<ComboBoxProps> = (props) => {
           aria-invalid={!!error}
           aria-describedby={error ? errorId : helperText ? helperId : undefined}
           role="combobox"
+          disabled={disabled}
           className={CLASS_NAMES.INPUT}
         />
 
@@ -921,6 +995,8 @@ export const ComboBox: React.FC<ComboBoxProps> = (props) => {
           ? createPortal(dropdownList, window.activeDocument.body)
           : dropdownList}
       </div>
+
+      {selectedItemsPlacement === 'after-input' ? renderedSelectedItems : null}
 
       
       {error && (

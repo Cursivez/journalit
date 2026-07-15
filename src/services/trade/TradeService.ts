@@ -23,7 +23,10 @@ import type { AnalyticsDateBasis } from '../../settings/types';
 import { LossReviewData, TradeReviewData } from '../backend/types';
 import { CustomFieldValues } from '../../types/customFields';
 import { AccountPageService } from '../accountPage/AccountPageService';
-import { forceMetadataCacheRefresh } from '../../utils/dataRefresh';
+import {
+  forceMetadataCacheRefresh,
+  readFrontmatterFromDisk,
+} from '../../utils/dataRefresh';
 import { normalizeStringArray } from '../../utils/dataUtils';
 import {
   readFileContentForMutation,
@@ -77,6 +80,7 @@ import {
 import {
   ensureTradeReviewEndBoundary,
   migrateTradeReviewFrontmatterToMarkdown,
+  TRADE_REVIEW_MARKDOWN_MIGRATION_VERSION,
   upsertTradeReviewMarkdownQuestion,
 } from './core/TradeReviewMarkdownCodec';
 import { safeString } from '../../utils/safeString';
@@ -4016,7 +4020,11 @@ export class TradeService extends CustomDataService {
     questionLabel: string,
     value: string,
     _source: string = 'unknown',
-    questionOrder?: Array<{ id: string }>
+    questionOrder?: Array<{
+      id: string;
+      label?: string;
+      knownLabels?: string[];
+    }>
   ): Promise<void> {
     return this.runTradeReviewQuestionWrite(filePath, async () => {
       const file = this.app.vault.getAbstractFileByPath(filePath);
@@ -4082,8 +4090,19 @@ export class TradeService extends CustomDataService {
     let failed = 0;
 
     for (const file of files) {
-      const frontmatter =
-        this.app.metadataCache.getFileCache(file)?.frontmatter;
+      let frontmatter = this.app.metadataCache.getFileCache(file)?.frontmatter;
+      if (!frontmatter) {
+        try {
+          frontmatter = await readFrontmatterFromDisk(this.app, file);
+        } catch (error) {
+          failed++;
+          console.error(
+            `[TradeService] Failed to inspect trade review frontmatter for ${file.path}:`,
+            error
+          );
+          continue;
+        }
+      }
       if (!isJournalitTradeNoteFrontmatter(frontmatter)) continue;
 
       const tradeReview = normalizeTradeReviewData(frontmatter.tradeReview);
@@ -4136,6 +4155,12 @@ export class TradeService extends CustomDataService {
           error
         );
       }
+    }
+
+    if (failed === 0 && this.plugin?.settings.trade) {
+      this.plugin.settings.trade.tradeReviewMarkdownMigrationVersion =
+        TRADE_REVIEW_MARKDOWN_MIGRATION_VERSION;
+      await this.plugin.saveSettings();
     }
 
     return { scanned, migrated, failed };

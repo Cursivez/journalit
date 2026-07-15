@@ -6692,6 +6692,23 @@ const en = {
   'templateEditor.widget.trade-review.fields-all': 'All fields',
   'templateEditor.widget.trade-review.fields-count': '{count} fields',
   'templateEditor.widget.trade-review.no-fields': 'No fields available',
+  'templateEditor.widget.trade-review.questions': 'Review questions',
+  'templateEditor.widget.trade-review.questions-help':
+    'Choose the prompts shown for each trade outcome. Question IDs remain stable so saved answers stay connected when you edit or reorder prompts.',
+  'templateEditor.widget.trade-review.outcome.win': 'Wins',
+  'templateEditor.widget.trade-review.outcome.loss': 'Losses',
+  'templateEditor.widget.trade-review.outcome.breakeven': 'Breakeven',
+  'templateEditor.widget.trade-review.outcome.open': 'Open',
+  'templateEditor.widget.trade-review.questions-empty':
+    'No questions for this outcome.',
+  'templateEditor.widget.trade-review.question-label': 'Question',
+  'templateEditor.widget.trade-review.question-placeholder':
+    'Type a review question',
+  'templateEditor.widget.trade-review.answer-placeholder-label':
+    'Answer placeholder',
+  'templateEditor.widget.trade-review.answer-placeholder':
+    'Optional prompt shown in the answer field',
+  'templateEditor.widget.trade-review.add-question': '+ Add question',
   'templateEditor.widget.previous-context-add-section': '+ Add section',
   'templateEditor.widget.previous-context-headings-label':
     'Headings to include',
@@ -6867,6 +6884,16 @@ const en = {
   'setups.create.field.color': 'Color',
   'setups.create.field.color-description':
     'Choose a color to identify this setup.',
+  'setups.create.profile.heading': 'Preferred fields',
+  'setups.create.profile.optional-label': '(Optional)',
+  'setups.create.field.sessions': 'Sessions',
+  'setups.create.field.preferred-sessions-tooltip':
+    'Manage these sessions in Settings → Journal → Session Mode.',
+  'setups.create.placeholder.preferred-sessions': 'London, New York',
+  'setups.create.field.timeframes': 'Timeframes',
+  'setups.create.placeholder.preferred-timeframes': '5m, 15m, 1h',
+  'setups.create.field.tickers': 'Tickers',
+  'setups.create.placeholder.preferred-tickers': 'ES, NQ, EURUSD',
   'setups.create.direction.any': 'Not specified',
   'setups.create.direction.long': 'Long',
   'setups.create.direction.short': 'Short',
@@ -7602,6 +7629,12 @@ const en = {
     'Show quick note links during preparation.',
   'settings.session-mode.linked-resources-count': '{count} linked',
   'settings.session-mode.linked-resources-hide': 'Hide linked',
+  'settings.session-mode.session-log': 'Session log',
+  'settings.session-mode.session-log-desc':
+    'Choose which automatic events appear alongside your session notes.',
+  'settings.session-mode.show-trade-executions': 'Trade entries and exits',
+  'settings.session-mode.show-trade-executions-desc':
+    'Show trade entries and exits in Session Mode and Daily Review logs.',
   'settings.session-mode.session-log-tags': 'Session log tags',
   'settings.session-mode.session-log-tags-desc':
     'Customize the tags available in the Session Mode composer and DRC session log.',
@@ -7697,11 +7730,31 @@ const en = {
   'settings.session-mode.trade-gate.title': 'Trade Gate workflows',
   'settings.session-mode.trade-gate.desc':
     'Create IF/THEN decision flows for live entry checks.',
+  'settings.session-mode.trade-gate.delete-workflow.title':
+    'Delete Trade Gate workflow?',
+  'settings.session-mode.trade-gate.delete-workflow.message':
+    'Delete “{name}”? This removes every question and branch in this workflow. This action cannot be undone.',
+  'settings.session-mode.trade-gate.delete-workflow.confirm': 'Delete workflow',
   'settings.session-mode.trade-gate.name': 'Workflow name',
   'settings.session-mode.trade-gate.summary': '{count} nodes',
   'settings.session-mode.trade-gate.untitled': 'Untitled workflow',
   'settings.session-mode.trade-gate.start-node': 'Start question',
   'settings.session-mode.trade-gate.add-question': 'Add question',
+  'settings.session-mode.trade-gate.add-branch-question': 'Add branch',
+  'settings.session-mode.trade-gate.add-branch-from':
+    'Adds a question after “{question}”.',
+  'settings.session-mode.trade-gate.add-first-question':
+    'Adds the first question in this workflow.',
+  'settings.session-mode.trade-gate.select-question-to-add':
+    'Select a question to add a branch.',
+  'settings.session-mode.trade-gate.connect-before-branching':
+    'Connect this question before adding a branch.',
+  'settings.session-mode.trade-gate.edit-before-branching':
+    'Edit this new question before adding another branch.',
+  'settings.session-mode.trade-gate.unconnected-title': 'Unconnected questions',
+  'settings.session-mode.trade-gate.unconnected-desc':
+    'These questions are not reachable from the start question. Connect them from an active option or delete them.',
+  'settings.session-mode.trade-gate.unconnected-label': 'Unconnected',
   'settings.session-mode.trade-gate.add-outcome': 'Add outcome',
   'settings.session-mode.trade-gate.question': 'Question',
   'settings.session-mode.trade-gate.outcome': 'Outcome',
@@ -7727,6 +7780,8 @@ const en = {
   'settings.session-mode.trade-gate.results': 'Results',
   'settings.session-mode.trade-gate.no-paths':
     'Add options to connect this workflow.',
+  'settings.session-mode.trade-gate.no-questions':
+    'Add the first question to begin this workflow.',
   'settings.session-mode.trade-gate.missing-target': 'Missing target',
   'settings.session-mode.trade-gate.repeated-node': 'Links back to this node.',
   'settings.session-mode.trade-gate.default-name': 'Basic entry gate',
@@ -7789,6 +7844,14 @@ const en = {
   'imageGallery.size.small': 'Small',
   'imageGallery.size.medium': 'Medium',
   'imageGallery.size.large': 'Large',
+  'imageGallery.view-mode-aria': 'Gallery card grouping',
+  'imageGallery.view-mode.grouped': 'Grouped',
+  'imageGallery.view-mode.individual': 'Individual',
+  'imageGallery.group.additional-media': '{count} additional media items',
+  'imageGallery.group.annotation-summary':
+    '{annotated} of {total} media items annotated',
+  'imageGallery.group.navigation':
+    'Media {mediaCurrent} of {mediaTotal} · Entry {groupCurrent} of {groupTotal}',
   'imageGallery.source.label': 'Source:',
   'imageGallery.source.all': 'All media',
   'imageGallery.source.trade': 'Trades',
@@ -7820,7 +7883,10 @@ const en = {
   'tradelog.guide.gallery-controls.title':
     'Choose which media you want to review',
   'tradelog.guide.gallery-controls.description':
-    'Use Source to choose trades or review notes, Sort to reorder media, and the size buttons to switch between compact scans and larger media previews.',
+    'Use Grouped for one card per trade or review, or Individual to scan every media item separately. Your choice is remembered.',
+  'tradelog.guide.gallery-grouping.title': 'Group media by journal entry',
+  'tradelog.guide.gallery-grouping.description':
+    'Grouped keeps every trade or review in one card. Individual displays each attached media item as its own card.',
   'tradelog.guide.gallery-source-sort.title':
     'Choose the media source and order',
   'tradelog.guide.gallery-source-sort.description':

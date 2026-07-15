@@ -143,6 +143,9 @@ export interface Trade {
 
   
   rMultiple?: number;
+
+  
+  breakEvenAccountCurrentBalanceTotal?: number;
 }
 
 export {};

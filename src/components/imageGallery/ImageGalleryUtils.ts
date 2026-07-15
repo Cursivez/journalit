@@ -1,10 +1,12 @@
 import { formatDateDisplay, parseLocalDateSafe } from '../../utils/dateUtils';
 import { t } from '../../lang/helpers';
 import type {
+  ImageGalleryGroup,
   ImageGalleryItem,
   ImageGallerySize,
   ImageGallerySort,
   ImageGallerySourceType,
+  ImageGalleryViewMode,
 } from './types';
 
 const IMAGE_GALLERY_VIRTUALIZATION_THRESHOLD = 80;
@@ -154,6 +156,36 @@ export function sortImageGalleryItems(
   });
 }
 
+export function groupImageGalleryItems(
+  items: ImageGalleryItem[],
+  viewMode: ImageGalleryViewMode
+): ImageGalleryGroup[] {
+  if (viewMode === 'individual') {
+    return items.map((item) => ({ id: item.id, items: [item] }));
+  }
+
+  const groups = new Map<string, ImageGalleryGroup>();
+  for (const item of items) {
+    const groupId = getImageGalleryGroupId(item);
+    const group = groups.get(groupId);
+    if (group) {
+      group.items.push(item);
+    } else {
+      groups.set(groupId, { id: groupId, items: [item] });
+    }
+  }
+
+  return Array.from(groups.values());
+}
+
+function getImageGalleryGroupId(item: ImageGalleryItem): string {
+  if (item.sourceType !== 'trade' || !item.isCopiedTrade) {
+    return item.sourcePath;
+  }
+
+  return JSON.stringify([item.sourcePath, item.account ?? '']);
+}
+
 function getImageGalleryTimestamp(item: ImageGalleryItem): number {
   const timestamp = parseLocalDateSafe(item.date)?.getTime() ?? Number.NaN;
   return Number.isFinite(timestamp) ? timestamp : 0;
@@ -171,6 +203,12 @@ export function normalizeImageGallerySize(
   value: string | undefined
 ): ImageGallerySize {
   return value === 'small' || value === 'large' ? value : 'medium';
+}
+
+export function normalizeImageGalleryViewMode(
+  value: string | undefined
+): ImageGalleryViewMode {
+  return value === 'individual' ? 'individual' : 'grouped';
 }
 
 export function normalizeImageGallerySourceType(

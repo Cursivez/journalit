@@ -805,14 +805,18 @@ export class ReviewDataCache {
 
     
     const handleSettingsUpdated = (payload: SettingsChangedPayload) => {
+      const isGlobalSettingsChange = payload?.section === 'all';
       const isTradingDayBucketingChange =
+        isGlobalSettingsChange ||
         payload?.section === 'trade' ||
         payload?.section === 'copyTradeAdjustments' ||
         payload?.component === 'trade' ||
         payload?.source === 'trading-day-cutoff' ||
         payload?.source === 'week-start';
-      const isCurrencyConversionChange = payload?.section === 'general';
-      const isSessionModeWindowChange = payload?.section === 'sessionMode';
+      const isCurrencyConversionChange =
+        isGlobalSettingsChange || payload?.section === 'general';
+      const isSessionModeWindowChange =
+        isGlobalSettingsChange || payload?.section === 'sessionMode';
 
       if (
         isTradingDayBucketingChange ||

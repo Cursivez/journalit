@@ -31,12 +31,12 @@ import {
   SessionLogWidget,
 } from './widgets';
 import { TradeTableWidget } from './widgets/TradeTableWidget';
+import { TradeReviewWidget } from './widgets/TradeReviewWidget';
 import {
-  TradeReviewWidget,
-  TradeReviewWidgetConfig,
-  TradeReviewCardField,
-  TradeReviewQuestionConfig,
-} from './widgets/TradeReviewWidget';
+  parseTradeReviewQuestions,
+  type TradeReviewCardField,
+  type TradeReviewWidgetConfig,
+} from './widgets/tradeReviewConfig';
 import { BreakdownTableWidget } from './widgets/BreakdownTableWidget';
 import {
   SetupPerformanceWidget,
@@ -237,25 +237,6 @@ function parseTradeReviewFields(value: string): TradeReviewCardField[] {
         return [];
     }
   });
-}
-
-function parseTradeReviewQuestions(
-  value: string
-): TradeReviewQuestionConfig[] | undefined {
-  const questions = value.split(';').flatMap((question) => {
-    const [id = '', label = '', placeholder = ''] = question
-      .split('|')
-      .map((part) => part.trim());
-    if (!id || !label) return [];
-    return [
-      {
-        id,
-        label,
-        placeholder: placeholder || undefined,
-      },
-    ];
-  });
-  return questions.length > 0 ? questions : undefined;
 }
 
 export class WidgetCodeblockProcessor {

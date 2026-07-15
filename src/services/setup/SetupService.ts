@@ -519,9 +519,11 @@ export class SetupService extends CustomDataService {
       color: normalizeLabelColor(details.color?.toLowerCase()),
       icon: 'trading_setup',
       tags: [],
-      preferredSessions: this.parseCommaList(details['preferred sessions']),
-      preferredTimeframes: this.parseCommaList(details['preferred timeframes']),
-      preferredTickers: this.parseCommaList(details['preferred tickers']),
+      preferredSessions: this.parseStringList(details['preferred sessions']),
+      preferredTimeframes: this.parseStringList(
+        details['preferred timeframes']
+      ),
+      preferredTickers: this.parseStringList(details['preferred tickers']),
       direction: this.parseDirection(details.direction),
       playbookMarkdown: this.getSectionContent(body, 'Playbook'),
       ruleGroups: ruleData.ruleGroups,
@@ -620,19 +622,19 @@ export class SetupService extends CustomDataService {
     if (data.preferredSessions !== undefined) {
       detailUpdates.push({
         key: 'Preferred Sessions',
-        value: data.preferredSessions.join(', '),
+        value: this.serializeStringList(data.preferredSessions),
       });
     }
     if (data.preferredTimeframes !== undefined) {
       detailUpdates.push({
         key: 'Preferred Timeframes',
-        value: data.preferredTimeframes.join(', '),
+        value: this.serializeStringList(data.preferredTimeframes),
       });
     }
     if (data.preferredTickers !== undefined) {
       detailUpdates.push({
         key: 'Preferred Tickers',
-        value: data.preferredTickers.join(', '),
+        value: this.serializeStringList(data.preferredTickers),
       });
     }
     if (detailUpdates.length > 0) {
@@ -695,9 +697,15 @@ export class SetupService extends CustomDataService {
         details.direction ? this.formatDirection(details.direction) : '',
       ],
       ['Color', details.color ?? ''],
-      ['Preferred Sessions', details.preferredSessions?.join(', ') ?? ''],
-      ['Preferred Timeframes', details.preferredTimeframes?.join(', ') ?? ''],
-      ['Preferred Tickers', details.preferredTickers?.join(', ') ?? ''],
+      [
+        'Preferred Sessions',
+        this.serializeStringList(details.preferredSessions),
+      ],
+      [
+        'Preferred Timeframes',
+        this.serializeStringList(details.preferredTimeframes),
+      ],
+      ['Preferred Tickers', this.serializeStringList(details.preferredTickers)],
     ]
       .flatMap(([key, value]) => (value ? [`- ${key}: ${value}`] : []))
       .join('\n');
@@ -1277,8 +1285,28 @@ export class SetupService extends CustomDataService {
     return undefined;
   }
 
-  private parseCommaList(value: unknown): string[] {
+  private serializeStringList(values: string[] | undefined): string {
+    return values && values.length > 0 ? JSON.stringify(values) : '';
+  }
+
+  private parseStringList(value: unknown): string[] {
     if (typeof value !== 'string') return [];
+
+    if (value.trimStart().startsWith('[')) {
+      try {
+        const parsed: unknown = JSON.parse(value);
+        if (!Array.isArray(parsed)) return [];
+        return parsed.flatMap((item) => {
+          if (typeof item !== 'string') return [];
+          const trimmed = item.trim();
+          return trimmed ? [trimmed] : [];
+        });
+      } catch {
+        return [];
+      }
+    }
+
+    
     return value.split(',').flatMap((item) => {
       const trimmed = item.trim();
       return trimmed ? [trimmed] : [];

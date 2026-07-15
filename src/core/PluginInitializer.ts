@@ -6,6 +6,7 @@ import JournalitPlugin from '../main';
 import { setupPluginHook } from '../hooks/usePlugin';
 import { t } from '../lang/helpers';
 import { CANONICAL_EXECUTION_MIGRATION_VERSION } from '../services/trade/core/TradeFrontmatterCodec';
+import { TRADE_REVIEW_MARKDOWN_MIGRATION_VERSION } from '../services/trade/core/TradeReviewMarkdownCodec';
 
 const PERSISTENT_CACHE_VERSION = '2026-04-account-identity-v1';
 const OLD_DERIVED_STORAGE_CLEANUP_VERSION = '2026-06-plugin-storage-v3';
@@ -328,6 +329,13 @@ export class PluginInitializer {
   }
 
   private async runTradeReviewMarkdownMigration(): Promise<void> {
+    if (
+      this.plugin.settings.trade.tradeReviewMarkdownMigrationVersion ===
+      TRADE_REVIEW_MARKDOWN_MIGRATION_VERSION
+    ) {
+      return;
+    }
+
     const result =
       await this.plugin.tradeService.migrateTradeReviewFrontmatterToMarkdown();
     if (result.failed > 0) {

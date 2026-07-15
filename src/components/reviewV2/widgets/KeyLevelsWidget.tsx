@@ -1,6 +1,7 @@
 
 
 import React, { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { TFile } from 'obsidian';
 import JournalitPlugin from '../../../main';
 import { InvalidContextMessage } from './InvalidContextMessage';
@@ -17,6 +18,7 @@ import {
   t,
   type TranslationKey,
 } from '../../../lang/helpers';
+import { cssVars } from '../../../styles/inlineStylePolicy';
 
 
 const MAX_FRONTMATTER_RETRIES = 5;
@@ -46,6 +48,11 @@ type ReviewMode = 'drc' | 'weekly-review' | 'monthly-review';
 type KeyLevelSource = 'current' | 'weekly' | 'monthly';
 type KeyLevelType = 'support' | 'resistance';
 
+interface ImportanceMenuPosition {
+  top: number;
+  left: number;
+}
+
 interface DisplayKeyLevel extends KeyLevel {
   source: KeyLevelSource;
   currentIndex?: number;
@@ -62,6 +69,10 @@ interface EditingState {
 
 const WIDGET_CLASS = 'journalit-key-levels-widget';
 const EMPTY_KEY_LEVELS: KeyLevels = { support: [], resistance: [] };
+const IMPORTANCE_MENU_WIDTH = 150;
+const IMPORTANCE_MENU_HEIGHT = 122;
+const IMPORTANCE_MENU_GAP = 4;
+const IMPORTANCE_MENU_VIEWPORT_PADDING = 8;
 
 const asRecord = (value: unknown): Record<string, unknown> | null =>
   value && typeof value === 'object' && !Array.isArray(value)
@@ -285,29 +296,74 @@ const FlagPicker: React.FC<{
   value: ImportanceLevel;
   onChange: (value: ImportanceLevel) => void;
 }> = ({ value, onChange }) => {
-  const [isOpen, setIsOpen] = useState(false);
+  const [menuPosition, setMenuPosition] =
+    useState<ImportanceMenuPosition | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
 
-  
+  const updateMenuPosition = () => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    const rect = container.getBoundingClientRect();
+    const activeWindow = container.ownerDocument.defaultView;
+    if (!activeWindow) return;
+
+    const preferredTop =
+      rect.top - IMPORTANCE_MENU_HEIGHT - IMPORTANCE_MENU_GAP;
+    const top =
+      preferredTop >= IMPORTANCE_MENU_VIEWPORT_PADDING
+        ? preferredTop
+        : Math.min(
+            rect.bottom + IMPORTANCE_MENU_GAP,
+            activeWindow.innerHeight -
+              IMPORTANCE_MENU_HEIGHT -
+              IMPORTANCE_MENU_VIEWPORT_PADDING
+          );
+    const centeredLeft = rect.left + (rect.width - IMPORTANCE_MENU_WIDTH) / 2;
+    const left = Math.min(
+      Math.max(IMPORTANCE_MENU_VIEWPORT_PADDING, centeredLeft),
+      activeWindow.innerWidth -
+        IMPORTANCE_MENU_WIDTH -
+        IMPORTANCE_MENU_VIEWPORT_PADDING
+    );
+
+    setMenuPosition({ top, left });
+  };
+
   useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      const target = e.target;
+    if (!menuPosition || !containerRef.current) return;
+
+    const activeDocument = containerRef.current.ownerDocument;
+    const activeWindow = activeDocument.defaultView;
+    if (!activeWindow) return;
+
+    const closeMenu = () => setMenuPosition(null);
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target;
       if (
-        containerRef.current &&
-        (!(target instanceof Node) || !containerRef.current.contains(target))
+        !(target instanceof Node) ||
+        (!containerRef.current?.contains(target) &&
+          !menuRef.current?.contains(target))
       ) {
-        setIsOpen(false);
+        closeMenu();
       }
     };
-    if (isOpen) {
-      window.activeDocument.addEventListener('mousedown', handleClickOutside);
-    }
-    return () =>
-      window.activeDocument.removeEventListener(
-        'mousedown',
-        handleClickOutside
-      );
-  }, [isOpen]);
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') closeMenu();
+    };
+
+    activeDocument.addEventListener('mousedown', handleClickOutside);
+    activeWindow.addEventListener('keydown', handleKeyDown);
+    activeWindow.addEventListener('resize', closeMenu);
+    activeWindow.addEventListener('scroll', closeMenu, true);
+    return () => {
+      activeDocument.removeEventListener('mousedown', handleClickOutside);
+      activeWindow.removeEventListener('keydown', handleKeyDown);
+      activeWindow.removeEventListener('resize', closeMenu);
+      activeWindow.removeEventListener('scroll', closeMenu, true);
+    };
+  }, [menuPosition]);
 
   const options: { value: ImportanceLevel; color: string; label: string }[] = [
     {
@@ -333,45 +389,59 @@ const FlagPicker: React.FC<{
   ];
 
   const currentOption = options.find((o) => o.value === value) || options[0];
+  const portalDocument = containerRef.current?.ownerDocument;
+  const menu =
+    menuPosition && portalDocument
+      ? createPortal(
+          <div
+            ref={menuRef}
+            className="journalit-home-period-menu journalit-key-levels-importance-dropdown journalit-key-levels-importance-dropdown--portal"
+            style={cssVars({
+              '--journalit-key-levels-menu-top': `${menuPosition.top}px`,
+              '--journalit-key-levels-menu-left': `${menuPosition.left}px`,
+            })}
+          >
+            {options.map((option) => (
+              <button
+                key={option.label}
+                type="button"
+                onClick={() => {
+                  onChange(option.value);
+                  setMenuPosition(null);
+                }}
+                className={`journalit-home-period-option journalit-key-levels-importance-option ${
+                  value === option.value
+                    ? 'journalit-home-period-option--active journalit-key-levels-importance-option--selected'
+                    : ''
+                }`}
+                aria-label={option.label}
+              >
+                <span className="journalit-key-levels-importance-option-icon">
+                  <FlagSvg color={option.color} size={16} />
+                </span>
+                <span className="journalit-home-period-option__label journalit-key-levels-importance-option-label">
+                  {option.label}
+                </span>
+              </button>
+            ))}
+          </div>,
+          portalDocument.body
+        )
+      : null;
 
   return (
     <div ref={containerRef} className="journalit-key-levels-importance">
       <button
         type="button"
         className="clickable-icon journalit-key-levels-importance-button"
-        onClick={() => setIsOpen(!isOpen)}
+        onClick={() =>
+          menuPosition ? setMenuPosition(null) : updateMenuPosition()
+        }
         aria-label={t('widget.key-levels.select-importance')}
       >
         <FlagSvg color={currentOption.color} />
       </button>
-
-      {isOpen && (
-        <div className="journalit-home-period-menu journalit-key-levels-importance-dropdown">
-          {options.map((option) => (
-            <button
-              key={option.label}
-              type="button"
-              onClick={() => {
-                onChange(option.value);
-                setIsOpen(false);
-              }}
-              className={`journalit-home-period-option journalit-key-levels-importance-option ${
-                value === option.value
-                  ? 'journalit-home-period-option--active journalit-key-levels-importance-option--selected'
-                  : ''
-              }`}
-              aria-label={option.label}
-            >
-              <span className="journalit-key-levels-importance-option-icon">
-                <FlagSvg color={option.color} size={16} />
-              </span>
-              <span className="journalit-home-period-option__label journalit-key-levels-importance-option-label">
-                {option.label}
-              </span>
-            </button>
-          ))}
-        </div>
-      )}
+      {menu}
     </div>
   );
 };

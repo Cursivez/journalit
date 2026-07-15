@@ -1239,6 +1239,16 @@ const ko: Partial<Lang> = {
   'setups.create.field.color': '색상',
   'setups.create.field.color-description':
     '이 셋업을 식별할 색상을 선택하세요.',
+  'setups.create.profile.heading': '선호 필드',
+  'setups.create.profile.optional-label': '(선택 사항)',
+  'setups.create.field.sessions': '세션',
+  'setups.create.field.preferred-sessions-tooltip':
+    '이 세션은 설정 → 저널 → 세션 모드에서 관리할 수 있습니다.',
+  'setups.create.placeholder.preferred-sessions': 'London, New York',
+  'setups.create.field.timeframes': '타임프레임',
+  'setups.create.placeholder.preferred-timeframes': '5m, 15m, 1h',
+  'setups.create.field.tickers': '티커',
+  'setups.create.placeholder.preferred-tickers': 'ES, NQ, EURUSD',
   'setups.create.direction.any': 'Not specified',
   'setups.create.direction.long': 'Long',
   'setups.create.direction.short': 'Short',

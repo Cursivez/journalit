@@ -1,9 +1,10 @@
-import React, { useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import { App, Modal, Notice, TFile } from 'obsidian';
 import { createRoot, Root } from 'react-dom/client';
 
 import type JournalitPlugin from '../../main';
 import type { Setup, SetupData, SetupStatus } from '../../services/setup/types';
+import { normalizePreferredSessionIds } from '../../services/setup/sessionPreferences';
 import {
   dedupeSetupLinkedNotePaths,
   hasSetupLinkedNotePath,
@@ -11,10 +12,14 @@ import {
 } from '../../services/setup/linkedNotePaths';
 import { t } from '../../lang/helpers';
 
-import { AlertTriangle, Trash } from '../shared/icons/ObsidianIcon';
+import { AlertTriangle, Info, Trash } from '../shared/icons/ObsidianIcon';
 import { NoteFilePicker } from '../shared/NoteFilePicker';
 import { Button } from '../ui/Button';
 import { LabelColorPicker } from '../shared/LabelColorPicker';
+import { ComboBox } from '../core/ComboBox';
+import { Tooltip } from '../shared/Tooltip';
+
+import { OptionType } from '../../services/options/CustomOptionsService';
 import {
   DEFAULT_SETUP_PICKER_COLOR,
   type LabelColor,
@@ -33,6 +38,9 @@ type CreateSetupFormState = {
   name: string;
   status: SetupStatus;
   direction: '' | 'long' | 'short' | 'both';
+  preferredSessions: string[];
+  preferredTimeframes: string[];
+  preferredTickers: string[];
   color?: LabelColor | null;
   linkedNotes: string[];
 };
@@ -65,6 +73,23 @@ function parseCreateSetupDirection(
   }
   return '';
 }
+
+export function mergeSetupProfileOptions(
+  availableOptions: string[],
+  selectedOptions: string[]
+): string[] {
+  return [...new Set([...availableOptions, ...selectedOptions])];
+}
+
+const DEFAULT_SETUP_TIMEFRAME_OPTIONS = [
+  '1m',
+  '5m',
+  '15m',
+  '30m',
+  '1h',
+  '4h',
+  '1D',
+];
 
 class CreateSetupModal extends Modal {
   private root: Root | null = null;
@@ -299,6 +324,12 @@ const CreateSetupModalContent: React.FC<{
       name: setup?.name ?? '',
       status: setup?.status ?? 'active',
       direction: setup?.direction ?? '',
+      preferredSessions: normalizePreferredSessionIds(
+        setup?.preferredSessions ?? [],
+        plugin.settings.sessionMode.sessionWindows
+      ),
+      preferredTimeframes: setup?.preferredTimeframes ?? [],
+      preferredTickers: setup?.preferredTickers ?? [],
       color: setup ? setup.color : DEFAULT_SETUP_PICKER_COLOR,
       linkedNotes: dedupeSetupLinkedNotePaths(setup?.linkedNotes ?? []),
     },
@@ -320,6 +351,47 @@ const CreateSetupModalContent: React.FC<{
         (file) => !linkedNotePaths.has(normalizeSetupLinkedNotePath(file.path))
       );
   }, [form.linkedNotes, plugin.app.vault]);
+  const preferredTickerOptions = useMemo(
+    () =>
+      mergeSetupProfileOptions(
+        plugin.optionsService.getOptions(OptionType.INSTRUMENT),
+        form.preferredTickers
+      ),
+    [form.preferredTickers, plugin.optionsService]
+  );
+  const selectableSessionWindows = useMemo(
+    () =>
+      plugin.settings.sessionMode.sessionWindows.filter(
+        (sessionWindow) => sessionWindow.name.trim().length > 0
+      ),
+    [plugin.settings.sessionMode.sessionWindows]
+  );
+  const preferredSessionOptions = useMemo(
+    () => selectableSessionWindows.map((sessionWindow) => sessionWindow.id),
+    [selectableSessionWindows]
+  );
+  const preferredSessionNames = useMemo(
+    () =>
+      new Map(
+        selectableSessionWindows.map((sessionWindow) => [
+          sessionWindow.id,
+          sessionWindow.name.trim(),
+        ])
+      ),
+    [selectableSessionWindows]
+  );
+  const getPreferredSessionLabel = useCallback(
+    (sessionId: string) => preferredSessionNames.get(sessionId) ?? sessionId,
+    [preferredSessionNames]
+  );
+  const preferredTimeframeOptions = useMemo(
+    () =>
+      mergeSetupProfileOptions(
+        DEFAULT_SETUP_TIMEFRAME_OPTIONS,
+        form.preferredTimeframes
+      ),
+    [form.preferredTimeframes]
+  );
 
   const updateForm = <K extends keyof CreateSetupFormState>(
     key: K,
@@ -383,6 +455,9 @@ const CreateSetupModalContent: React.FC<{
         name,
         status: form.status,
         direction: form.direction || undefined,
+        preferredSessions: form.preferredSessions,
+        preferredTimeframes: form.preferredTimeframes,
+        preferredTickers: form.preferredTickers,
         color: form.color,
         linkedNotes: form.linkedNotes,
       };
@@ -454,6 +529,10 @@ const CreateSetupModalContent: React.FC<{
       <CreateSetupFields
         form={form}
         isSaving={isSaving}
+        preferredSessionOptions={preferredSessionOptions}
+        getPreferredSessionLabel={getPreferredSessionLabel}
+        preferredTimeframeOptions={preferredTimeframeOptions}
+        preferredTickerOptions={preferredTickerOptions}
         onChange={updateForm}
       />
 
@@ -489,11 +568,23 @@ CreateSetupModalContent.displayName = 'CreateSetupModalContent';
 const CreateSetupFields: React.FC<{
   form: CreateSetupFormState;
   isSaving: boolean;
+  preferredSessionOptions: string[];
+  getPreferredSessionLabel: (sessionId: string) => string;
+  preferredTimeframeOptions: string[];
+  preferredTickerOptions: string[];
   onChange: <K extends keyof CreateSetupFormState>(
     key: K,
     value: CreateSetupFormState[K]
   ) => void;
-}> = ({ form, isSaving, onChange }) => (
+}> = ({
+  form,
+  isSaving,
+  preferredSessionOptions,
+  getPreferredSessionLabel,
+  preferredTimeframeOptions,
+  preferredTickerOptions,
+  onChange,
+}) => (
   <>
     <div className="setting-item create-setup-name-row">
       <div className="setting-item-info">
@@ -539,6 +630,16 @@ const CreateSetupFields: React.FC<{
         disabled={isSaving}
       />
     </div>
+
+    <CreateSetupProfileFields
+      form={form}
+      isSaving={isSaving}
+      preferredSessionOptions={preferredSessionOptions}
+      getPreferredSessionLabel={getPreferredSessionLabel}
+      preferredTimeframeOptions={preferredTimeframeOptions}
+      preferredTickerOptions={preferredTickerOptions}
+      onChange={onChange}
+    />
   </>
 );
 
@@ -602,6 +703,91 @@ const CreateSetupDirectionField: React.FC<{
     </div>
   </div>
 );
+
+const CreateSetupProfileFields: React.FC<{
+  form: CreateSetupFormState;
+  isSaving: boolean;
+  preferredSessionOptions: string[];
+  getPreferredSessionLabel: (sessionId: string) => string;
+  preferredTimeframeOptions: string[];
+  preferredTickerOptions: string[];
+  onChange: <K extends keyof CreateSetupFormState>(
+    key: K,
+    value: CreateSetupFormState[K]
+  ) => void;
+}> = ({
+  form,
+  isSaving,
+  preferredSessionOptions,
+  getPreferredSessionLabel,
+  preferredTimeframeOptions,
+  preferredTickerOptions,
+  onChange,
+}) => (
+  <section className="journalit-create-setup-profile">
+    <h3 className="journalit-create-setup-profile__heading">
+      {t('setups.create.profile.heading')}{' '}
+      <span>{t('setups.create.profile.optional-label')}</span>
+    </h3>
+
+    <div className="journalit-create-setup-profile__grid">
+      <ComboBox
+        label={t('setups.create.field.sessions')}
+        labelAccessory={
+          <Tooltip
+            content={t('setups.create.field.preferred-sessions-tooltip')}
+            delay={200}
+            preferredPosition="top"
+          >
+            <span className="journalit-create-setup-profile__info">
+              <Info size={12} aria-hidden="true" />
+            </span>
+          </Tooltip>
+        }
+        options={preferredSessionOptions}
+        getOptionLabel={getPreferredSessionLabel}
+        value={form.preferredSessions}
+        onChange={(value) =>
+          onChange('preferredSessions', Array.isArray(value) ? value : [])
+        }
+        placeholder={t('setups.create.placeholder.preferred-sessions')}
+        isMulti
+        portalDropdown
+        selectedItemsPlacement="inside-input"
+        disabled={isSaving}
+      />
+      <ComboBox
+        label={t('setups.create.field.timeframes')}
+        options={preferredTimeframeOptions}
+        value={form.preferredTimeframes}
+        onChange={(value) =>
+          onChange('preferredTimeframes', Array.isArray(value) ? value : [])
+        }
+        placeholder={t('setups.create.placeholder.preferred-timeframes')}
+        allowCreate
+        isMulti
+        portalDropdown
+        selectedItemsPlacement="inside-input"
+        disabled={isSaving}
+      />
+      <ComboBox
+        label={t('setups.create.field.tickers')}
+        options={preferredTickerOptions}
+        value={form.preferredTickers}
+        onChange={(value) =>
+          onChange('preferredTickers', Array.isArray(value) ? value : [])
+        }
+        placeholder={t('setups.create.placeholder.preferred-tickers')}
+        isMulti
+        portalDropdown
+        selectedItemsPlacement="inside-input"
+        disabled={isSaving}
+      />
+    </div>
+  </section>
+);
+
+CreateSetupProfileFields.displayName = 'CreateSetupProfileFields';
 
 const CreateSetupModalActions: React.FC<{
   confirmRename: boolean;

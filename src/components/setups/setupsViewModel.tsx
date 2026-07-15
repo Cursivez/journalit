@@ -12,6 +12,8 @@ import type {
   SetupRuleGroup,
   SetupStatus,
 } from '../../services/setup/types';
+import type { SessionModeWindow } from '../../types/sessionMode';
+import { resolvePreferredSessionNames } from '../../services/setup/sessionPreferences';
 import { t } from '../../lang/helpers';
 import {
   AlertTriangle,
@@ -296,9 +298,14 @@ export function buildSetupAttentionItems(
 }
 
 export function getSetupBriefProfileRows(
-  setup: Setup
+  setup: Setup,
+  sessionWindows: readonly SessionModeWindow[]
 ): Array<{ label: string; value: string }> {
   const rows: Array<{ label: string; value: string }> = [];
+  const preferredSessionNames = resolvePreferredSessionNames(
+    setup.preferredSessions,
+    sessionWindows
+  );
 
   if (setup.direction) {
     rows.push({
@@ -306,10 +313,10 @@ export function getSetupBriefProfileRows(
       value: getSetupDirectionLabel(setup.direction),
     });
   }
-  if (setup.preferredSessions.length > 0) {
+  if (preferredSessionNames.length > 0) {
     rows.push({
       label: t('setups.view.detail.brief.profile.sessions'),
-      value: setup.preferredSessions.join(', '),
+      value: preferredSessionNames.join(', '),
     });
   }
   if (setup.preferredTimeframes.length > 0) {

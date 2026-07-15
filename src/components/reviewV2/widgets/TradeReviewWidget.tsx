@@ -19,57 +19,28 @@ import {
   getEffectivePnL,
   isTradeOpenWithContext,
 } from '../../../utils/tradeStatusUtils';
+import { classifyPnLWithBreakEvenSettings } from '../../../utils/breakEvenRange';
+import type { JournalitSettings } from '../../../settings/types';
 import { getTradeDirectionDisplayKind } from '../../../services/trade/core/TradeDirection';
 
 import { t } from '../../../lang/helpers';
 import { ChevronDown } from '../../shared/icons/ObsidianIcon';
-import {
-  scrollToNextReviewItemAfterCollapse,
-  StickyReviewHeaderPortal,
-  useStickyReviewHeader,
-} from './shared/StickyReviewHeader';
+import { StickyHeaderPortal, useStickyHeader } from '../../shared/StickyHeader';
+import { scrollToNextReviewItemAfterCollapse } from './shared/reviewScrollUtils';
 import { ReviewWidgetSkeleton } from './shared/ReviewWidgetSkeleton';
-
-export type TradeReviewCardField =
-  | 'entry'
-  | 'exit'
-  | 'duration'
-  | 'risk'
-  | 'positionSize'
-  | 'stopLoss'
-  | 'takeProfit'
-  | 'fees'
-  | 'commission'
-  | 'mae'
-  | 'mfe'
-  | 'account'
-  | 'setup'
-  | 'mistakes'
-  | 'tags'
-  | 'thesis'
-  | 'notes'
-  | 'customFields';
-
-export interface TradeReviewQuestionConfig {
-  id: string;
-  label: string;
-  placeholder?: string;
-}
-
-export interface TradeReviewWidgetConfig {
-  defaultExpanded?: boolean;
-  showReviewedTrades?: boolean;
-  showOpenTrades?: boolean;
-  fields?: TradeReviewCardField[];
-  primaryMetrics?: TradeReviewCardField[];
-  classificationFields?: TradeReviewCardField[];
-  moreContextFields?: TradeReviewCardField[];
-  showImages?: boolean;
-  winQuestions?: TradeReviewQuestionConfig[];
-  lossQuestions?: TradeReviewQuestionConfig[];
-  breakevenQuestions?: TradeReviewQuestionConfig[];
-  openQuestions?: TradeReviewQuestionConfig[];
-}
+import {
+  getTradeReviewQuestionKnownLabels,
+  getTradeReviewQuestionLabel,
+  isLegacySupplementalTradeReviewQuestionId,
+  LEGACY_TRADE_REVIEW_QUESTION_ID_ALIASES,
+} from '../../../services/trade/core/TradeReviewMarkdownCodec';
+import {
+  getAllLocalizedDefaultTradeReviewQuestionLabels,
+  resolveTradeReviewQuestions,
+  type TradeReviewCardField,
+  type TradeReviewQuestionConfig,
+  type TradeReviewWidgetConfig,
+} from './tradeReviewConfig';
 
 interface TradeReviewWidgetProps {
   filePath: string;
@@ -122,6 +93,8 @@ type ReviewTrade = Record<string, unknown> & {
   thesis?: string;
   notes?: string;
   customFields?: Record<string, unknown>;
+  breakEvenAccountCurrentBalance?: number;
+  breakEvenAccountCurrentBalanceTotal?: number;
 };
 
 type TradeReviewQuestionSaveHandle = {
@@ -141,57 +114,6 @@ const DEFAULT_FIELDS: TradeReviewCardField[] = [
   'notes',
   'customFields',
 ];
-
-const DEFAULT_WIN_QUESTIONS: TradeReviewQuestionConfig[] = [
-  {
-    id: 'win-what-worked',
-    label: t('widget.trade-review.question.win-what-worked'),
-    placeholder: t('widget.trade-review.placeholder.win-what-worked'),
-  },
-  {
-    id: 'win-repeatable',
-    label: t('widget.trade-review.question.win-repeatable'),
-    placeholder: t('widget.trade-review.placeholder.win-repeatable'),
-  },
-  {
-    id: 'win-key-lesson',
-    label: t('widget.trade-review.question.key-lesson'),
-    placeholder: t('widget.trade-review.placeholder.key-lesson'),
-  },
-];
-
-const DEFAULT_LOSS_QUESTIONS: TradeReviewQuestionConfig[] = [
-  {
-    id: 'loss-what-went-wrong',
-    label: t('widget.trade-review.question.loss-what-went-wrong'),
-    placeholder: t('widget.trade-review.placeholder.loss-what-went-wrong'),
-  },
-  {
-    id: 'loss-valid-or-mistake',
-    label: t('widget.trade-review.question.loss-valid-or-mistake'),
-    placeholder: t('widget.trade-review.placeholder.loss-valid-or-mistake'),
-  },
-  {
-    id: 'loss-avoid-next-time',
-    label: t('widget.trade-review.question.loss-avoid-next-time'),
-    placeholder: t('widget.trade-review.placeholder.loss-avoid-next-time'),
-  },
-];
-
-const DEFAULT_BREAKEVEN_QUESTIONS: TradeReviewQuestionConfig[] = [
-  {
-    id: 'be-managed-correctly',
-    label: t('widget.trade-review.question.be-managed-correctly'),
-    placeholder: t('widget.trade-review.placeholder.be-managed-correctly'),
-  },
-  {
-    id: 'be-key-lesson',
-    label: t('widget.trade-review.question.key-lesson'),
-    placeholder: t('widget.trade-review.placeholder.key-lesson'),
-  },
-];
-
-const DEFAULT_OPEN_QUESTIONS: TradeReviewQuestionConfig[] = [];
 
 const SESSION_VISIBLE_REVIEWED_PATHS_BY_REVIEW = new Map<string, Set<string>>();
 const RECENT_REVIEW_TOGGLE_VISIBLE_UNTIL_BY_REVIEW = new Map<
@@ -553,7 +475,8 @@ function getTradeKey(trade: ReviewTrade, index: number): string {
 }
 
 export function getOutcome(
-  trade: ReviewTrade
+  trade: ReviewTrade,
+  breakEvenSettings?: JournalitSettings['trade']
 ): 'win' | 'loss' | 'breakeven' | 'open' {
   const isOpen = isTradeOpenWithContext({
     tradeStatus: trade.tradeStatus,
@@ -566,19 +489,21 @@ export function getOutcome(
   });
   if (isOpen) return 'open';
   const pnl = getEffectivePnL(trade);
-  if (pnl === null || pnl === 0) return 'breakeven';
-  return pnl > 0 ? 'win' : 'loss';
+  if (pnl === null) return 'breakeven';
+  const outcome = classifyPnLWithBreakEvenSettings(
+    pnl,
+    breakEvenSettings,
+    trade.breakEvenAccountCurrentBalanceTotal ??
+      trade.breakEvenAccountCurrentBalance
+  );
+  return outcome === 'unknown' ? 'breakeven' : outcome;
 }
 
 export function getQuestions(
   config: TradeReviewWidgetConfig,
   outcome: ReturnType<typeof getOutcome>
 ): TradeReviewQuestionConfig[] {
-  if (outcome === 'win') return config.winQuestions ?? DEFAULT_WIN_QUESTIONS;
-  if (outcome === 'loss') return config.lossQuestions ?? DEFAULT_LOSS_QUESTIONS;
-  if (outcome === 'breakeven')
-    return config.breakevenQuestions ?? DEFAULT_BREAKEVEN_QUESTIONS;
-  return config.openQuestions ?? DEFAULT_OPEN_QUESTIONS;
+  return resolveTradeReviewQuestions(config, outcome);
 }
 
 export function getDisplayQuestions(
@@ -618,15 +543,83 @@ export function getPreferredOutcomeLabel({
   return formatValue({ kind: 'pnl', value: pnl, currencyCode: currency });
 }
 
-function getReviewText(
+export function getReviewText(
   review: TradeReviewData | undefined,
-  question: TradeReviewQuestionConfig
+  question: TradeReviewQuestionConfig,
+  allQuestions: TradeReviewQuestionConfig[] = [question]
 ): string {
-  return (
-    review?.sections?.[question.id]?.textAreas?.[question.id] ??
-    review?.sections?.[question.label]?.textAreas?.[question.label] ??
-    ''
+  const questionIds = [
+    question.id,
+    ...(LEGACY_TRADE_REVIEW_QUESTION_ID_ALIASES[question.id] ?? []),
+  ];
+  for (const questionId of questionIds) {
+    const textAreas = review?.sections?.[questionId]?.textAreas;
+    if (!textAreas) continue;
+    const answer = textAreas[questionId] ?? Object.values(textAreas)[0];
+    if (answer) return answer;
+  }
+  const stableLabels = [
+    ...getAllLocalizedDefaultTradeReviewQuestionLabels(question.id),
+    ...getTradeReviewQuestionKnownLabels(question.id),
+  ];
+  for (const label of stableLabels) {
+    const answer = review?.sections?.[label]?.textAreas?.[label];
+    if (answer) return answer;
+  }
+
+  const reservedLabels = new Set<string>();
+  for (const candidateQuestion of allQuestions) {
+    if (candidateQuestion.id === question.id) continue;
+    const labels = [
+      ...getAllLocalizedDefaultTradeReviewQuestionLabels(candidateQuestion.id),
+      ...getTradeReviewQuestionKnownLabels(candidateQuestion.id),
+    ];
+    for (const label of labels) {
+      reservedLabels.add(label.trim().toLocaleLowerCase());
+    }
+  }
+  if (reservedLabels.has(question.label.trim().toLocaleLowerCase())) return '';
+  const answer =
+    review?.sections?.[question.label]?.textAreas?.[question.label];
+  if (answer) return answer;
+  return '';
+}
+
+export function includeLegacyAnsweredQuestions(
+  questions: TradeReviewQuestionConfig[],
+  review: TradeReviewData | undefined
+): TradeReviewQuestionConfig[] {
+  if (!review) return questions;
+  const consumedIds = new Set(
+    questions.flatMap((question) => [
+      question.id,
+      ...(LEGACY_TRADE_REVIEW_QUESTION_ID_ALIASES[question.id] ?? []),
+      question.label,
+    ])
   );
+  const legacyQuestions = Object.entries(review.sections).flatMap(
+    ([sectionId, section]): TradeReviewQuestionConfig[] => {
+      if (
+        consumedIds.has(sectionId) ||
+        !isLegacySupplementalTradeReviewQuestionId(sectionId)
+      ) {
+        return [];
+      }
+      const answer =
+        section.textAreas?.[sectionId] ??
+        (section.textAreas ? Object.values(section.textAreas)[0] : undefined);
+      if (!answer?.trim()) return [];
+      return [
+        {
+          id: sectionId,
+          label: getTradeReviewQuestionLabel(sectionId),
+        },
+      ];
+    }
+  );
+  return legacyQuestions.length > 0
+    ? [...questions, ...legacyQuestions]
+    : questions;
 }
 
 function formatItems(value: unknown): string[] {
@@ -1153,7 +1146,11 @@ function TradeReviewQuestions({
             question.label,
             value,
             'user-input',
-            questions.map(({ id }) => ({ id }))
+            questions.map(({ id, label }) => ({
+              id,
+              label,
+              knownLabels: getAllLocalizedDefaultTradeReviewQuestionLabels(id),
+            }))
           );
         } finally {
           releaseScrollGuard();
@@ -1274,7 +1271,7 @@ function TradeReviewQuestions({
           </span>
           <TradeReviewQuestionInput
             question={question}
-            persistedValue={getReviewText(review, question)}
+            persistedValue={getReviewText(review, question, questions)}
             onDraftChange={handleQuestionChange}
           />
         </label>
@@ -1545,6 +1542,7 @@ const TradeReviewCard: React.FC<{
   config: TradeReviewWidgetConfig;
   showInstrument: boolean;
   isInitiallyExpanded: boolean;
+  enableStickyHeader: boolean;
   nextReviewItemKey?: string;
   onSessionVisibilityChange: (filePath: string, keepVisible: boolean) => void;
 }> = ({
@@ -1555,6 +1553,7 @@ const TradeReviewCard: React.FC<{
   config,
   showInstrument,
   isInitiallyExpanded,
+  enableStickyHeader,
   nextReviewItemKey,
   onSessionVisibilityChange,
 }) => {
@@ -1586,11 +1585,12 @@ const TradeReviewCard: React.FC<{
   const currency =
     typeof trade.currency === 'string' ? trade.currency : globalCurrency;
   const currencyConfig = getCurrencyConfig(currency);
-  const outcome = getOutcome(trade);
-  const questions = getDisplayQuestions(
-    config,
-    outcome,
-    isPnlMasked || isRMasked
+  const outcome = getOutcome(trade, plugin.settings.trade);
+  const review = trade.tradeReview;
+  const isOutcomeMasked = isPnlMasked || isRMasked;
+  const questions = includeLegacyAnsweredQuestions(
+    getDisplayQuestions(config, outcome, isOutcomeMasked),
+    isOutcomeMasked ? undefined : review
   );
   const legacyFields = config.fields ?? DEFAULT_FIELDS;
   const primaryMetricFields = config.primaryMetrics ?? legacyFields;
@@ -1600,7 +1600,6 @@ const TradeReviewCard: React.FC<{
   const customFieldDefinitions = plugin.customFieldsService?.getFields() ?? [];
   const showMedia = config.showImages !== false;
   const images = showMedia ? normalizeImages(trade.images) : [];
-  const review = trade.tradeReview;
   const isReviewed = localReviewed ?? trade.reviewed === true;
   const pnl = getEffectivePnL(trade);
   const effectiveR = calculateEffectiveRMultiple(
@@ -1745,9 +1744,9 @@ const TradeReviewCard: React.FC<{
     directionLabel,
   ].filter(Boolean);
   const title = titleParts.join(' · ');
-  const stickyHeader = useStickyReviewHeader({
+  const stickyHeader = useStickyHeader({
     containerRef: cardRef,
-    enabled: isExpanded,
+    enabled: enableStickyHeader && isExpanded,
     headerRef,
   });
 
@@ -1770,7 +1769,7 @@ const TradeReviewCard: React.FC<{
         trade={trade}
       />
 
-      <StickyReviewHeaderPortal
+      <StickyHeaderPortal
         className="journalit-trade-review-card-header--sticky-clone"
         metrics={stickyHeader}
       >
@@ -1785,7 +1784,7 @@ const TradeReviewCard: React.FC<{
           title={title}
           trade={trade}
         />
-      </StickyReviewHeaderPortal>
+      </StickyHeaderPortal>
 
       {isExpanded && (
         <TradeReviewCardBody
@@ -1916,7 +1915,9 @@ export const TradeReviewWidget: React.FC<TradeReviewWidgetProps> = React.memo(
       const sessionVisiblePaths = getSessionVisibleReviewedPaths(filePath);
       const withOpenFilter =
         config.showOpenTrades === false
-          ? trades.filter((trade) => getOutcome(trade) !== 'open')
+          ? trades.filter(
+              (trade) => getOutcome(trade, plugin.settings.trade) !== 'open'
+            )
           : trades;
       return config.showReviewedTrades === false
         ? withOpenFilter.filter(
@@ -1933,6 +1934,7 @@ export const TradeReviewWidget: React.FC<TradeReviewWidgetProps> = React.memo(
       config.showOpenTrades,
       config.showReviewedTrades,
       filePath,
+      plugin.settings.trade,
       sessionVisibleReviewedPaths,
       trades,
     ]);
@@ -1992,6 +1994,7 @@ export const TradeReviewWidget: React.FC<TradeReviewWidgetProps> = React.memo(
               isInitiallyExpanded={
                 config.defaultExpanded !== false && index === 0
               }
+              enableStickyHeader={!preview}
               nextReviewItemKey={
                 stableDisplayTrades[index + 1]
                   ? getTradeKey(stableDisplayTrades[index + 1], index + 1)

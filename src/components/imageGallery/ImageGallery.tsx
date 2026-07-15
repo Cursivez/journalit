@@ -40,6 +40,7 @@ import {
 } from './ImageGalleryDisplay';
 import {
   filterImageGalleryItemsBySource,
+  groupImageGalleryItems,
   shouldUpdateImageGalleryViewport,
   sortImageGalleryItems,
 } from './ImageGalleryUtils';
@@ -49,12 +50,14 @@ import type {
   ImageGallerySize,
   ImageGallerySort,
   ImageGallerySourceType,
+  ImageGalleryViewMode,
 } from './types';
 
 export interface ImageGalleryControls {
   sourceType: ImageGallerySourceType;
   size: ImageGallerySize;
   sort: ImageGallerySort;
+  viewMode: ImageGalleryViewMode;
 }
 
 interface ImageGalleryProps extends ImageGalleryControls {
@@ -113,6 +116,38 @@ const INITIAL_IMAGE_GALLERY_STATE: ImageGalleryState = {
   viewport: { width: 0, height: 0, scrollTop: 0 },
 };
 
+function useVisibleImageGallery(input: {
+  items: ImageGalleryItem[];
+  sort: ImageGallerySort;
+  sourceType: ImageGallerySourceType;
+  tradeLogFilters: TradeLogFilters;
+  viewMode: ImageGalleryViewMode;
+}) {
+  const visibleItems = useMemo(
+    () =>
+      sortImageGalleryItems(
+        filterImageGalleryItemsBySource(
+          input.items.filter((item) =>
+            matchesImageGalleryTradeLogFilters(item, input.tradeLogFilters)
+          ),
+          input.sourceType
+        ),
+        input.sort
+      ),
+    [input.items, input.sort, input.sourceType, input.tradeLogFilters]
+  );
+  const groups = useMemo(
+    () => groupImageGalleryItems(visibleItems, input.viewMode),
+    [input.viewMode, visibleItems]
+  );
+  const fullscreenItems = useMemo(
+    () => groups.flatMap((group) => group.items),
+    [groups]
+  );
+
+  return { visibleItems, groups, fullscreenItems };
+}
+
 function imageGalleryReducer(
   state: ImageGalleryState,
   action: ImageGalleryAction
@@ -157,6 +192,7 @@ export const ImageGallery: React.FC<ImageGalleryProps> = ({
   sourceType,
   size,
   sort,
+  viewMode,
 }) => {
   const { shouldMask } = useDisplayFormatter();
   const [fullscreenIndex, setFullscreenIndex] = useState<number | null>(null);
@@ -266,21 +302,21 @@ export const ImageGallery: React.FC<ImageGalleryProps> = ({
     };
   }, [size]);
 
-  const visibleItems = useMemo(
-    () =>
-      sortImageGalleryItems(
-        filterImageGalleryItemsBySource(
-          items.filter((item) =>
-            matchesImageGalleryTradeLogFilters(item, tradeLogFilters)
-          ),
-          sourceType
-        ),
-        sort
-      ),
-    [items, sort, sourceType, tradeLogFilters]
-  );
+  const {
+    visibleItems,
+    groups: visibleGroups,
+    fullscreenItems,
+  } = useVisibleImageGallery({
+    items,
+    sort,
+    sourceType,
+    tradeLogFilters,
+    viewMode,
+  });
   const fullscreenItem =
-    fullscreenIndex === null ? null : (visibleItems[fullscreenIndex] ?? null);
+    fullscreenIndex === null
+      ? null
+      : (fullscreenItems[fullscreenIndex] ?? null);
   const emptyStateKind = getImageGalleryEmptyStateKind({
     allItemCount: items.length,
     visibleItemCount: visibleItems.length,
@@ -316,12 +352,14 @@ export const ImageGallery: React.FC<ImageGalleryProps> = ({
   }, []);
 
   const handleOpenFullscreen = useCallback(
-    (index: number) => {
+    (itemId: string) => {
+      const index = fullscreenItems.findIndex((item) => item.id === itemId);
+      if (index < 0) return;
       lastFullscreenIndexRef.current = index;
       setFullscreenIndex(index);
       emitGuideAction(TRADE_LOG_IMAGE_GALLERY_FULLSCREEN_OPENED_ACTION_ID);
     },
-    [emitGuideAction]
+    [emitGuideAction, fullscreenItems]
   );
 
   const handleEditAnnotation = useCallback(
@@ -337,10 +375,10 @@ export const ImageGallery: React.FC<ImageGalleryProps> = ({
       lastFullscreenIndexRef.current = index;
       setFullscreenIndex(index);
       if (annotationEditorItem) {
-        setAnnotationEditorItem(visibleItems[index] ?? null);
+        setAnnotationEditorItem(fullscreenItems[index] ?? null);
       }
     },
-    [annotationEditorItem, visibleItems]
+    [annotationEditorItem, fullscreenItems]
   );
 
   useEffect(() => {
@@ -359,9 +397,9 @@ export const ImageGallery: React.FC<ImageGalleryProps> = ({
       if (toStepId === 'gallery-annotation-panel') {
         const itemIndex = Math.min(
           lastFullscreenIndexRef.current,
-          Math.max(visibleItems.length - 1, 0)
+          Math.max(fullscreenItems.length - 1, 0)
         );
-        const item = visibleItems[itemIndex] ?? null;
+        const item = fullscreenItems[itemIndex] ?? null;
         if (item) {
           setFullscreenIndex(itemIndex);
           setAnnotationEditorItem(item);
@@ -373,7 +411,7 @@ export const ImageGallery: React.FC<ImageGalleryProps> = ({
         setAnnotationEditorItem(null);
       }
     },
-    [handleCloseFullscreen, visibleItems]
+    [fullscreenItems, handleCloseFullscreen]
   );
 
   useGuideBackHandler(handleGuideBack);
@@ -403,8 +441,8 @@ export const ImageGallery: React.FC<ImageGalleryProps> = ({
         <ImageGalleryGrid
           app={plugin.app}
           dateFormat={dateFormat}
+          groups={visibleGroups}
           isPerformanceMasked={isPerformanceMasked}
-          items={visibleItems}
           onOpenFullscreen={handleOpenFullscreen}
           onOpenSource={handleOpenSource}
           registerGridTarget={registerGridTarget}
@@ -418,8 +456,9 @@ export const ImageGallery: React.FC<ImageGalleryProps> = ({
       <ImageGalleryFullscreen
         currentIndex={fullscreenIndex ?? 0}
         dateFormat={dateFormat}
+        groups={visibleGroups}
         item={fullscreenItem}
-        items={visibleItems}
+        items={fullscreenItems}
         annotationEditorItem={annotationEditorItem}
         plugin={plugin}
         onClose={handleCloseFullscreen}
@@ -432,6 +471,7 @@ export const ImageGallery: React.FC<ImageGalleryProps> = ({
         registerTagButtonTarget={registerTagButtonTarget}
         registerAnnotationPanelTarget={registerAnnotationPanelTarget}
         shouldBlurImages={shouldBlurImages}
+        viewMode={viewMode}
       />
     </div>
   );
@@ -471,4 +511,5 @@ export {
   normalizeImageGallerySize,
   normalizeImageGallerySort,
   normalizeImageGallerySourceType,
+  normalizeImageGalleryViewMode,
 } from './ImageGalleryUtils';
