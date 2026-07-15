@@ -42,7 +42,7 @@ import {
 import { t } from '../../lang/helpers';
 import { generateUUID } from '../../utils/uuid';
 import { resolveDemonTrackerModes } from '../reviewV2/widgets/shared/demonTrackerAggregation';
-import type { TradeReviewCardField } from '../reviewV2/widgets/TradeReviewWidget';
+
 import {
   useGuideAction,
   useGuideBackHandler,
@@ -60,6 +60,15 @@ import {
   LAYOUT_BUILDER_WIDGET_LIBRARY_DOCS_TARGET_ID,
 } from '../../guides/layoutBuilderGuideIds';
 import { openExternalUrl } from '../../utils/externalLinks';
+import { TradeReviewQuestionEditor } from './TradeReviewQuestionEditor';
+import type {
+  TradeReviewCardField,
+  TradeReviewQuestionConfig,
+  TradeReviewQuestionConfigKey,
+  TradeReviewWidgetConfig,
+} from '../reviewV2/widgets/tradeReviewConfig';
+import { TRADE_REVIEW_QUESTION_CONFIG_KEY_LIST } from '../reviewV2/widgets/tradeReviewConfig';
+import { isTradeReviewQuestionConfig } from '../reviewV2/widgets/tradeReviewConfig';
 
 interface TemplateEditorProps {
   plugin: JournalitPlugin;
@@ -228,6 +237,22 @@ const getRemovedTradeReviewFields = (
   const next = new Set(nextFields);
   return previousFields.filter((field) => !next.has(field));
 };
+
+const hasIncompleteTradeReviewQuestion = (
+  widgets: WidgetPlacement[]
+): boolean =>
+  widgets.some((widget) => {
+    if (widget.type !== 'trade-review' || !widget.config) return false;
+    return TRADE_REVIEW_QUESTION_CONFIG_KEY_LIST.some((key) => {
+      const questions = widget.config?.[key];
+      if (!Array.isArray(questions)) return false;
+      return questions.some(
+        (question: unknown) =>
+          !isTradeReviewQuestionConfig(question) ||
+          question.label.trim().length === 0
+      );
+    });
+  });
 
 
 
@@ -497,15 +522,7 @@ function useSortableWidgetItemContent({
   );
 
   const tradeReviewConfig = widget.config as
-    | {
-        primaryMetrics?: TradeReviewCardField[];
-        classificationFields?: TradeReviewCardField[];
-        moreContextFields?: TradeReviewCardField[];
-        showImages?: boolean;
-        defaultExpanded?: boolean;
-        showOpenTrades?: boolean;
-        showReviewedTrades?: boolean;
-      }
+    | TradeReviewWidgetConfig
     | undefined;
 
   const primaryMetricValues = parseTradeReviewFieldList(
@@ -547,6 +564,19 @@ function useSortableWidgetItemContent({
       ...widget.config,
       ...updates,
     });
+  };
+  const updateTradeReviewQuestions = (
+    key: TradeReviewQuestionConfigKey,
+    questions: TradeReviewQuestionConfig[]
+  ): void => {
+    updateTradeReviewConfig({ [key]: questions });
+  };
+  const resetTradeReviewQuestions = (
+    key: TradeReviewQuestionConfigKey
+  ): void => {
+    const nextConfig = { ...(widget.config ?? {}) };
+    delete nextConfig[key];
+    onConfigChange(index, nextConfig);
   };
   const updateTradeReviewPrimaryMetrics = (fields: string[]): void => {
     const removedPrimaryFields = getRemovedTradeReviewFields(
@@ -1021,6 +1051,12 @@ function useSortableWidgetItemContent({
               </label>
             </div>
           </div>
+
+          <TradeReviewQuestionEditor
+            config={tradeReviewConfig ?? {}}
+            onChange={updateTradeReviewQuestions}
+            onReset={resetTradeReviewQuestions}
+          />
         </div>
       )}
 
@@ -1474,6 +1510,10 @@ function useTemplateEditorModel({
   
   const handleSave = useCallback(async () => {
     if (!template) return;
+    if (hasIncompleteTradeReviewQuestion(editingWidgets)) {
+      new Notice(t('validation.complete-required'));
+      return;
+    }
 
     try {
       await templateService.updateTemplate(templateId, {

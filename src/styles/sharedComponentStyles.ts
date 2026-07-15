@@ -3,6 +3,20 @@
 
 
 export const SHARED_COMPONENT_STYLES = `
+  .journalit-sticky-header-clone {
+    position: fixed;
+    z-index: 1000;
+    top: var(--journalit-sticky-top);
+    left: var(--journalit-sticky-left);
+    width: var(--journalit-sticky-width);
+    box-sizing: border-box;
+  }
+
+  .journalit-sticky-header-clone > * {
+    box-sizing: border-box;
+    width: 100%;
+  }
+
   .journalit-label-color-picker {
     display: flex;
     align-items: center;

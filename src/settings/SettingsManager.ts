@@ -852,6 +852,10 @@ export class SettingsManager {
           sessionModeRecord.preparationLeadTimeMinutes,
           defaults.sessionMode.preparationLeadTimeMinutes
         ),
+        showTradeExecutionsInSessionLog:
+          typeof sessionModeRecord.showTradeExecutionsInSessionLog === 'boolean'
+            ? sessionModeRecord.showTradeExecutionsInSessionLog
+            : defaults.sessionMode.showTradeExecutionsInSessionLog,
         tradeGateWorkflows:
           getTradeGateWorkflows(sessionModeRecord.tradeGateWorkflows) ??
           defaults.sessionMode.tradeGateWorkflows,

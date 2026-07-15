@@ -173,7 +173,11 @@ export class DRCService {
         }
       }),
       
-      eventBus.subscribe('trade:changed', () => {
+      eventBus.subscribe('trade:changed', (payload) => {
+        
+        
+        
+        if (payload.action === 'trade-review-updated') return;
         void this.onTradeDataChanged();
       })
     );

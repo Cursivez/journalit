@@ -456,6 +456,15 @@ export function sortSessionTimeline(
   );
 }
 
+export function filterAutomaticTradeTimelineEntries(
+  entries: SessionLogTimelineEntry[],
+  showTradeExecutions: boolean
+): SessionLogTimelineEntry[] {
+  return showTradeExecutions
+    ? entries
+    : entries.filter((entry) => entry.kind === 'manual');
+}
+
 export function calculateSessionLogAlert(
   entries: SessionLogTimelineEntry[],
   rule: SessionLogAlertRule,

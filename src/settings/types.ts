@@ -398,6 +398,8 @@ interface TradeSettings {
   tradeFormLayout?: TradeFormLayoutSettings;
   
   canonicalExecutionMigrationVersion?: string;
+  
+  tradeReviewMarkdownMigrationVersion?: string;
 }
 
 

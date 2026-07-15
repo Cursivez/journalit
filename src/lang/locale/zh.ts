@@ -5881,6 +5881,20 @@ const zh: Lang = {
   'templateEditor.widget.trade-review.fields-all': '所有字段',
   'templateEditor.widget.trade-review.fields-count': '{count} 个字段',
   'templateEditor.widget.trade-review.no-fields': '没有可用字段',
+  'templateEditor.widget.trade-review.questions': '复盘问题',
+  'templateEditor.widget.trade-review.questions-help':
+    '选择每种交易结果要显示的问题。问题 ID 保持不变，因此编辑或重新排序问题后，已保存的答案仍会保持关联。',
+  'templateEditor.widget.trade-review.outcome.win': '盈利',
+  'templateEditor.widget.trade-review.outcome.loss': '亏损',
+  'templateEditor.widget.trade-review.outcome.breakeven': '保本',
+  'templateEditor.widget.trade-review.outcome.open': '持仓中',
+  'templateEditor.widget.trade-review.questions-empty': '此结果没有问题。',
+  'templateEditor.widget.trade-review.question-label': '问题',
+  'templateEditor.widget.trade-review.question-placeholder': '输入复盘问题',
+  'templateEditor.widget.trade-review.answer-placeholder-label': '回答提示',
+  'templateEditor.widget.trade-review.answer-placeholder':
+    '显示在回答字段中的可选提示',
+  'templateEditor.widget.trade-review.add-question': '+ 添加问题',
   'templateEditor.widget.previous-context-add-section': '+ Add section',
   'templateEditor.widget.previous-context-headings-label':
     'Headings to include',
@@ -6160,6 +6174,16 @@ const zh: Lang = {
   'setups.create.field.direction': '方向',
   'setups.create.field.color': '色彩',
   'setups.create.field.color-description': '选择颜色以识别此设置。',
+  'setups.create.profile.heading': '首选字段',
+  'setups.create.profile.optional-label': '（可选）',
+  'setups.create.field.sessions': '交易时段',
+  'setups.create.field.preferred-sessions-tooltip':
+    '在 设置 → 日志设置 → 会话模式 中管理这些交易时段。',
+  'setups.create.placeholder.preferred-sessions': 'London, New York',
+  'setups.create.field.timeframes': '时间周期',
+  'setups.create.placeholder.preferred-timeframes': '5m, 15m, 1h',
+  'setups.create.field.tickers': '交易品种',
+  'setups.create.placeholder.preferred-tickers': 'ES, NQ, EURUSD',
   'setups.create.direction.any': '未指定',
   'setups.create.direction.long': '做多',
   'setups.create.direction.short': '做空',
@@ -6724,6 +6748,12 @@ const zh: Lang = {
   'settings.session-mode.linked-resources-desc': '在准备阶段显示快速笔记链接。',
   'settings.session-mode.linked-resources-count': '{count} linked',
   'settings.session-mode.linked-resources-hide': 'Hide linked',
+  'settings.session-mode.session-log': '会话日志',
+  'settings.session-mode.session-log-desc':
+    '选择要显示在会话笔记旁边的自动事件。',
+  'settings.session-mode.show-trade-executions': '交易入场与出场',
+  'settings.session-mode.show-trade-executions-desc':
+    '在会话模式和每日复盘日志中显示交易入场和出场。',
   'settings.session-mode.session-log-tags': '会话日志标签',
   'settings.session-mode.session-log-tags-desc':
     '自定义会话模式输入栏和 DRC 会话日志中可用的标签。',
@@ -6771,11 +6801,31 @@ const zh: Lang = {
   'settings.session-mode.trade-gate.title': 'Trade Gate 工作流',
   'settings.session-mode.trade-gate.desc':
     '为实时入场检查创建 IF/THEN 决策流程。',
+  'settings.session-mode.trade-gate.delete-workflow.title':
+    '删除 Trade Gate 工作流？',
+  'settings.session-mode.trade-gate.delete-workflow.message':
+    '删除“{name}”？这将移除此工作流中的所有问题和分支，且无法撤销。',
+  'settings.session-mode.trade-gate.delete-workflow.confirm': '删除工作流',
   'settings.session-mode.trade-gate.name': '工作流名称',
   'settings.session-mode.trade-gate.summary': '{count} 个节点',
   'settings.session-mode.trade-gate.untitled': '未命名流程',
   'settings.session-mode.trade-gate.start-node': '起始问题',
   'settings.session-mode.trade-gate.add-question': '添加问题',
+  'settings.session-mode.trade-gate.add-branch-question': '添加分支',
+  'settings.session-mode.trade-gate.add-branch-from':
+    '在“{question}”之后添加一个问题。',
+  'settings.session-mode.trade-gate.add-first-question':
+    '添加此工作流的第一个问题。',
+  'settings.session-mode.trade-gate.select-question-to-add':
+    '选择一个问题以添加分支。',
+  'settings.session-mode.trade-gate.connect-before-branching':
+    '请先连接此问题，再添加分支。',
+  'settings.session-mode.trade-gate.edit-before-branching':
+    '请先编辑这个新问题，再添加其他分支。',
+  'settings.session-mode.trade-gate.unconnected-title': '未连接的问题',
+  'settings.session-mode.trade-gate.unconnected-desc':
+    '无法从起始问题到达这些问题。请从有效选项连接它们，或将其删除。',
+  'settings.session-mode.trade-gate.unconnected-label': '未连接',
   'settings.session-mode.trade-gate.add-outcome': '添加结果',
   'settings.session-mode.trade-gate.question': '问题',
   'settings.session-mode.trade-gate.outcome': '结果',
@@ -6800,6 +6850,8 @@ const zh: Lang = {
   'settings.session-mode.trade-gate.edit-selected': '编辑所选步骤',
   'settings.session-mode.trade-gate.results': '结果',
   'settings.session-mode.trade-gate.no-paths': '添加选项以连接此流程。',
+  'settings.session-mode.trade-gate.no-questions':
+    '添加第一个问题以开始此流程。',
   'settings.session-mode.trade-gate.missing-target': '缺少目标',
   'settings.session-mode.trade-gate.repeated-node': '链接回此节点。',
   'settings.session-mode.trade-gate.default-name': '基础入场闸门',
@@ -7050,6 +7102,14 @@ const zh: Lang = {
   'imageGallery.size.small': '小',
   'imageGallery.size.medium': '中',
   'imageGallery.size.large': '大',
+  'imageGallery.view-mode-aria': '图库卡片分组',
+  'imageGallery.view-mode.grouped': '分组',
+  'imageGallery.view-mode.individual': '单独',
+  'imageGallery.group.additional-media': '{count} 个其他媒体项目',
+  'imageGallery.group.annotation-summary':
+    '{total} 个媒体项目中有 {annotated} 个已添加标注',
+  'imageGallery.group.navigation':
+    '媒体 {mediaCurrent}/{mediaTotal} · 条目 {groupCurrent}/{groupTotal}',
   'imageGallery.source.label': '来源：',
   'imageGallery.source.all': '所有媒体',
   'imageGallery.source.trade': '交易',
@@ -7079,6 +7139,9 @@ const zh: Lang = {
   'tradelog.guide.gallery-controls.title': '选择要复盘的媒体',
   'tradelog.guide.gallery-controls.description':
     '使用来源选择交易或复盘笔记，使用排序调整媒体顺序，并用尺寸按钮在紧凑浏览和更大的媒体预览之间切换。',
+  'tradelog.guide.gallery-grouping.title': '按日志条目分组媒体',
+  'tradelog.guide.gallery-grouping.description':
+    '分组模式会将每笔交易或每篇复盘保留在一张卡片中。单独模式会将每个附加媒体项目显示为一张独立卡片。',
   'tradelog.guide.gallery-source-sort.title': '选择媒体来源和顺序',
   'tradelog.guide.gallery-source-sort.description':
     '使用来源聚焦所有媒体、交易附件或复盘笔记媒体。使用排序优先查看最新、最旧、最佳或最差的交易。',

@@ -116,24 +116,33 @@ export const Tooltip = React.memo<TooltipProps>(
       setPosition({ top, left });
     }, [preferredPosition]);
 
+    const scheduleShowTooltip = useCallback(() => {
+      if (disabled) return;
+
+      if (rafRef.current) {
+        window.cancelAnimationFrame(rafRef.current);
+      }
+      if (timeoutRef.current) {
+        window.clearTimeout(timeoutRef.current);
+      }
+
+      timeoutRef.current = window.setTimeout(() => {
+        setIsVisible(true);
+        setIsMounted(true);
+      }, delay);
+    }, [delay, disabled]);
+
     const showTooltip = useCallback(
-      (e: React.MouseEvent) => {
+      (event: React.MouseEvent) => {
         if (disabled) return;
 
-        
-        lastMousePosition.current = { x: e.clientX, y: e.clientY };
-
-        
-        if (rafRef.current) {
-          window.cancelAnimationFrame(rafRef.current);
-        }
-
-        timeoutRef.current = window.setTimeout(() => {
-          setIsVisible(true);
-          setIsMounted(true);
-        }, delay);
+        lastMousePosition.current = {
+          x: event.clientX,
+          y: event.clientY,
+        };
+        scheduleShowTooltip();
       },
-      [delay, disabled]
+      [disabled, scheduleShowTooltip]
     );
 
     const hideTooltip = useCallback(() => {
@@ -203,6 +212,8 @@ export const Tooltip = React.memo<TooltipProps>(
           onMouseEnter={showTooltip}
           onMouseLeave={hideTooltip}
           onMouseMove={handleMouseMove}
+          onFocus={scheduleShowTooltip}
+          onBlur={hideTooltip}
           className={`tooltip-trigger ${block ? 'tooltip-trigger--block' : 'tooltip-trigger--inline'} ${triggerClassName}`.trim()}
         >
           {children}

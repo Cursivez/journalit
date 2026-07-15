@@ -25,6 +25,7 @@ export async function openImageGalleryWithFilters(
       sourceType: 'trade',
       sort: currentState.imageGallery?.sort ?? 'newest',
       size: currentState.imageGallery?.size ?? 'medium',
+      viewMode: currentState.imageGallery?.viewMode ?? 'grouped',
     },
     viewFilters: {
       dashboard:

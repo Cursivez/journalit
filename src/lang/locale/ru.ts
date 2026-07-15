@@ -6654,6 +6654,23 @@ const ru: Lang = {
   'templateEditor.widget.trade-review.fields-all': 'Все поля',
   'templateEditor.widget.trade-review.fields-count': '{count} полей',
   'templateEditor.widget.trade-review.no-fields': 'Нет доступных полей',
+  'templateEditor.widget.trade-review.questions': 'Вопросы для разбора',
+  'templateEditor.widget.trade-review.questions-help':
+    'Выберите вопросы, которые будут показываться для каждого исхода сделки. Идентификаторы вопросов остаются неизменными, поэтому сохраненные ответы не теряются при редактировании или изменении порядка вопросов.',
+  'templateEditor.widget.trade-review.outcome.win': 'Прибыльные',
+  'templateEditor.widget.trade-review.outcome.loss': 'Убыточные',
+  'templateEditor.widget.trade-review.outcome.breakeven': 'Безубыток',
+  'templateEditor.widget.trade-review.outcome.open': 'Открытые',
+  'templateEditor.widget.trade-review.questions-empty':
+    'Нет вопросов для этого исхода.',
+  'templateEditor.widget.trade-review.question-label': 'Вопрос',
+  'templateEditor.widget.trade-review.question-placeholder':
+    'Введите вопрос для разбора',
+  'templateEditor.widget.trade-review.answer-placeholder-label':
+    'Подсказка для ответа',
+  'templateEditor.widget.trade-review.answer-placeholder':
+    'Необязательная подсказка, отображаемая в поле ответа',
+  'templateEditor.widget.trade-review.add-question': '+ Добавить вопрос',
   'templateEditor.widget.previous-context-add-section': '+ Add section',
   'templateEditor.widget.previous-context-headings-label':
     'Headings to include',
@@ -6936,6 +6953,16 @@ const ru: Lang = {
   'setups.create.field.color': 'Цвет',
   'setups.create.field.color-description':
     'Выберите цвет для обозначения этого сетапа.',
+  'setups.create.profile.heading': 'Предпочтительные поля',
+  'setups.create.profile.optional-label': '(Необязательно)',
+  'setups.create.field.sessions': 'Торговые сессии',
+  'setups.create.field.preferred-sessions-tooltip':
+    'Управляйте этими сессиями в разделе Настройки → Настройка журнала → Режим сессии.',
+  'setups.create.placeholder.preferred-sessions': 'London, New York',
+  'setups.create.field.timeframes': 'Таймфреймы',
+  'setups.create.placeholder.preferred-timeframes': '5m, 15m, 1h',
+  'setups.create.field.tickers': 'Тикеры',
+  'setups.create.placeholder.preferred-tickers': 'ES, NQ, EURUSD',
   'setups.create.direction.any': 'Не указано',
   'setups.create.direction.long': 'Лонг',
   'setups.create.direction.short': 'Шорт',
@@ -7726,6 +7753,12 @@ const ru: Lang = {
     'Показывает быстрые ссылки на заметки во время подготовки.',
   'settings.session-mode.linked-resources-count': '{count} linked',
   'settings.session-mode.linked-resources-hide': 'Hide linked',
+  'settings.session-mode.session-log': 'Журнал сессии',
+  'settings.session-mode.session-log-desc':
+    'Выберите, какие автоматические события будут отображаться рядом с заметками сессии.',
+  'settings.session-mode.show-trade-executions': 'Входы и выходы из сделок',
+  'settings.session-mode.show-trade-executions-desc':
+    'Показывать входы и выходы из сделок в журналах режима сессии и ежедневного обзора.',
   'settings.session-mode.session-log-tags': 'Теги журнала сессии',
   'settings.session-mode.session-log-tags-desc':
     'Настройте теги, доступные в компоновщике режима сессии и журнале сессии DRC.',
@@ -7776,11 +7809,33 @@ const ru: Lang = {
   'settings.session-mode.trade-gate.title': 'Сценарии Trade Gate',
   'settings.session-mode.trade-gate.desc':
     'Создавайте IF/THEN сценарии решений для проверки входа в реальном времени.',
+  'settings.session-mode.trade-gate.delete-workflow.title':
+    'Удалить сценарий Trade Gate?',
+  'settings.session-mode.trade-gate.delete-workflow.message':
+    'Удалить «{name}»? Все вопросы и ветки этого сценария будут удалены. Это действие нельзя отменить.',
+  'settings.session-mode.trade-gate.delete-workflow.confirm':
+    'Удалить сценарий',
   'settings.session-mode.trade-gate.name': 'Название сценария',
   'settings.session-mode.trade-gate.summary': '{count} узлов',
   'settings.session-mode.trade-gate.untitled': 'Безымянный сценарий',
   'settings.session-mode.trade-gate.start-node': 'Начальный вопрос',
   'settings.session-mode.trade-gate.add-question': 'Добавить вопрос',
+  'settings.session-mode.trade-gate.add-branch-question': 'Добавить ветку',
+  'settings.session-mode.trade-gate.add-branch-from':
+    'Добавляет вопрос после «{question}».',
+  'settings.session-mode.trade-gate.add-first-question':
+    'Добавляет первый вопрос в этот процесс.',
+  'settings.session-mode.trade-gate.select-question-to-add':
+    'Выберите вопрос, чтобы добавить ветку.',
+  'settings.session-mode.trade-gate.connect-before-branching':
+    'Подключите этот вопрос перед добавлением ветки.',
+  'settings.session-mode.trade-gate.edit-before-branching':
+    'Измените этот новый вопрос перед добавлением следующей ветки.',
+  'settings.session-mode.trade-gate.unconnected-title':
+    'Неподключённые вопросы',
+  'settings.session-mode.trade-gate.unconnected-desc':
+    'Эти вопросы недоступны из начального вопроса. Подключите их через активный вариант или удалите.',
+  'settings.session-mode.trade-gate.unconnected-label': 'Не подключён',
   'settings.session-mode.trade-gate.add-outcome': 'Добавить результат',
   'settings.session-mode.trade-gate.question': 'Вопрос',
   'settings.session-mode.trade-gate.outcome': 'Результат',
@@ -7807,6 +7862,8 @@ const ru: Lang = {
   'settings.session-mode.trade-gate.results': 'Результаты',
   'settings.session-mode.trade-gate.no-paths':
     'Добавьте варианты, чтобы связать этот сценарий.',
+  'settings.session-mode.trade-gate.no-questions':
+    'Добавьте первый вопрос, чтобы начать этот сценарий.',
   'settings.session-mode.trade-gate.missing-target': 'Цель отсутствует',
   'settings.session-mode.trade-gate.repeated-node':
     'Ссылается обратно на этот узел.',
@@ -7871,6 +7928,14 @@ const ru: Lang = {
   'imageGallery.size.small': 'Маленький',
   'imageGallery.size.medium': 'Средний',
   'imageGallery.size.large': 'Большой',
+  'imageGallery.view-mode-aria': 'Группировка карточек галереи',
+  'imageGallery.view-mode.grouped': 'Сгруппированные',
+  'imageGallery.view-mode.individual': 'Отдельные',
+  'imageGallery.group.additional-media': '{count} дополнительных медиафайлов',
+  'imageGallery.group.annotation-summary':
+    '{annotated} из {total} медиафайлов с аннотациями',
+  'imageGallery.group.navigation':
+    'Медиа {mediaCurrent} из {mediaTotal} · Запись {groupCurrent} из {groupTotal}',
   'imageGallery.source.label': 'Источник:',
   'imageGallery.source.all': 'Все медиа',
   'imageGallery.source.trade': 'Сделки',
@@ -7916,6 +7981,10 @@ const ru: Lang = {
   'tradelog.guide.gallery-controls.title': 'Выберите медиа для разбора',
   'tradelog.guide.gallery-controls.description':
     'Используйте Источник для выбора сделок или заметок обзора, Сортировку для изменения порядка медиа и кнопки размера для переключения между компактным просмотром и более крупными превью медиа.',
+  'tradelog.guide.gallery-grouping.title':
+    'Группировать медиа по записи журнала',
+  'tradelog.guide.gallery-grouping.description':
+    'Сгруппированные объединяют каждую сделку или обзор в одну карточку. Отдельные показывают каждый прикреплённый медиафайл в отдельной карточке.',
   'tradelog.guide.gallery-source-sort.title':
     'Выберите источник и порядок медиа',
   'tradelog.guide.gallery-source-sort.description':

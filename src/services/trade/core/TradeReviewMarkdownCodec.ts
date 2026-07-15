@@ -7,6 +7,8 @@ const TRADE_REVIEW_QUESTION_MARKER_PREFIX =
   '<!-- journalit-trade-review:question ';
 const TRADE_REVIEW_END_LABEL = '_End Trade Review_';
 const TRADE_REVIEW_END_BLOCK = `${TRADE_REVIEW_END_MARKER}\n---\n${TRADE_REVIEW_END_LABEL}`;
+const LEGACY_CHECKLIST_QUESTION_ID_PREFIX = 'legacy-checklist:';
+const LEGACY_CHECKLIST_QUESTION_ID_SUFFIX = '-checkboxes';
 
 const DEFAULT_QUESTION_LABELS_BY_ID: Record<string, string> = {
   'win-what-worked': 'What worked?',
@@ -18,6 +20,39 @@ const DEFAULT_QUESTION_LABELS_BY_ID: Record<string, string> = {
   'be-managed-correctly': 'Was this managed correctly?',
   'be-key-lesson': 'Key lesson',
 };
+
+const LEGACY_QUESTION_LABELS_BY_ID: Record<string, string> = {
+  'loss-key-lesson': 'Key lesson',
+  'feelings-text': 'How were you feeling about this loss?',
+  'learn-reasonable': 'What went well that you can repeat?',
+  'learn-unreasonable': 'What went wrong and how will you improve?',
+  'next-steps-text': 'What are your next steps?',
+  'overall-thoughts-text': 'Overall trade thoughts',
+  [`${LEGACY_CHECKLIST_QUESTION_ID_PREFIX}pause-checkbox`]: 'Pause checklist',
+  [`${LEGACY_CHECKLIST_QUESTION_ID_PREFIX}review-plan-checklist`]:
+    'Review your plan checklist',
+  [`${LEGACY_CHECKLIST_QUESTION_ID_PREFIX}final-check-list`]: 'Final check',
+  'pause-checkbox-checkboxes': 'Pause checklist',
+  'review-plan-checklist-checkboxes': 'Review your plan checklist',
+  'final-check-list-checkboxes': 'Final check',
+};
+const LEGACY_SUPPLEMENTAL_QUESTION_IDS = new Set(
+  Object.keys(LEGACY_QUESTION_LABELS_BY_ID)
+);
+
+export const TRADE_REVIEW_MARKDOWN_MIGRATION_VERSION =
+  '2026-07-trade-review-markdown-v1';
+
+export const LEGACY_TRADE_REVIEW_QUESTION_ID_ALIASES: Record<string, string[]> =
+  {
+    'loss-what-went-wrong': ['loss-what-happened'],
+  };
+const CANONICAL_TRADE_REVIEW_QUESTION_ID_BY_LEGACY_ID = new Map(
+  Object.entries(LEGACY_TRADE_REVIEW_QUESTION_ID_ALIASES).flatMap(
+    ([canonicalId, legacyIds]) =>
+      legacyIds.map((legacyId) => [legacyId, canonicalId] as const)
+  )
+);
 
 interface HeadingMatch {
   index: number;
@@ -43,9 +78,63 @@ interface ReviewQuestionBlock extends ReviewQuestionBlockStart {
   text: string;
 }
 
-function getTradeReviewQuestionLabel(questionId: string): string {
+export function getTradeReviewQuestionLabel(questionId: string): string {
+  if (questionId.startsWith(LEGACY_CHECKLIST_QUESTION_ID_PREFIX)) {
+    const sectionId = questionId.slice(
+      LEGACY_CHECKLIST_QUESTION_ID_PREFIX.length
+    );
+    return (
+      LEGACY_QUESTION_LABELS_BY_ID[questionId] ??
+      `${humanizeQuestionId(sectionId)} checklist`
+    );
+  }
+  if (questionId.endsWith(LEGACY_CHECKLIST_QUESTION_ID_SUFFIX)) {
+    const sectionId = questionId.slice(
+      0,
+      -LEGACY_CHECKLIST_QUESTION_ID_SUFFIX.length
+    );
+    return (
+      LEGACY_QUESTION_LABELS_BY_ID[questionId] ??
+      `${humanizeQuestionId(sectionId)} checklist`
+    );
+  }
   return (
-    DEFAULT_QUESTION_LABELS_BY_ID[questionId] ?? humanizeQuestionId(questionId)
+    DEFAULT_QUESTION_LABELS_BY_ID[questionId] ??
+    LEGACY_QUESTION_LABELS_BY_ID[questionId] ??
+    humanizeQuestionId(questionId)
+  );
+}
+
+export function getTradeReviewQuestionKnownLabels(
+  questionId: string
+): string[] {
+  const labels = [
+    DEFAULT_QUESTION_LABELS_BY_ID[questionId],
+    LEGACY_QUESTION_LABELS_BY_ID[questionId],
+    ...(LEGACY_TRADE_REVIEW_QUESTION_ID_ALIASES[questionId] ?? []).flatMap(
+      (legacyId) => [
+        DEFAULT_QUESTION_LABELS_BY_ID[legacyId],
+        LEGACY_QUESTION_LABELS_BY_ID[legacyId],
+      ]
+    ),
+  ].filter((label): label is string => typeof label === 'string');
+  return Array.from(new Set(labels));
+}
+
+export function isLegacySupplementalTradeReviewQuestionId(
+  questionId: string
+): boolean {
+  return (
+    LEGACY_SUPPLEMENTAL_QUESTION_IDS.has(questionId) ||
+    questionId.startsWith(LEGACY_CHECKLIST_QUESTION_ID_PREFIX) ||
+    questionId.endsWith(LEGACY_CHECKLIST_QUESTION_ID_SUFFIX)
+  );
+}
+
+function getCanonicalTradeReviewQuestionId(questionId: string): string {
+  return (
+    CANONICAL_TRADE_REVIEW_QUESTION_ID_BY_LEGACY_ID.get(questionId) ??
+    questionId
   );
 }
 
@@ -80,22 +169,6 @@ function findQuestionHeadingById(
   return findNearestHeadingBefore(content, marker.index, startIndex, 3);
 }
 
-function isDefaultQuestionLabel(label: string): boolean {
-  return Object.values(DEFAULT_QUESTION_LABELS_BY_ID).some(
-    (defaultLabel) => normalizeHeading(defaultLabel) === normalizeHeading(label)
-  );
-}
-
-function findDefaultQuestionHeadingsInRange(
-  content: string,
-  start: number,
-  end: number
-): HeadingMatch[] {
-  return findHeadingsInRange(content, start, end, 3).filter((heading) =>
-    isDefaultQuestionLabel(heading.text)
-  );
-}
-
 export function parseTradeReviewMarkdown(
   content: string
 ): TradeReviewData | undefined {
@@ -112,13 +185,6 @@ export function parseTradeReviewMarkdown(
   );
 
   if (markers.length > 0) {
-    const defaultQuestionHeadings = findDefaultQuestionHeadingsInRange(
-      content,
-      reviewHeading.endIndex,
-      reviewBodyEnd
-    );
-    let nextDefaultQuestionIndex = 0;
-
     for (const [index, marker] of markers.entries()) {
       const nextMarker = markers[index + 1];
       const nextQuestionHeading = nextMarker
@@ -129,46 +195,11 @@ export function parseTradeReviewMarkdown(
             3
           )
         : null;
-      while (
-        nextDefaultQuestionIndex < defaultQuestionHeadings.length &&
-        defaultQuestionHeadings[nextDefaultQuestionIndex].index <=
-          marker.endIndex
-      ) {
-        nextDefaultQuestionIndex += 1;
-      }
-      const nextDefaultQuestionHeading =
-        defaultQuestionHeadings[nextDefaultQuestionIndex];
-      const answerEnd = Math.min(
-        nextQuestionHeading?.index ?? reviewBodyEnd,
-        nextDefaultQuestionHeading?.index ?? reviewBodyEnd,
-        reviewBodyEnd
-      );
+      const answerEnd = nextQuestionHeading?.index ?? reviewBodyEnd;
       const rawAnswer = content.slice(marker.endIndex, answerEnd).trim();
       sections[marker.questionId] = {
         textAreas: { [marker.questionId]: rawAnswer },
       };
-    }
-
-    let markerIndex = 0;
-    for (const [index, heading] of defaultQuestionHeadings.entries()) {
-      const nextHeading = defaultQuestionHeadings[index + 1];
-      const answerStart = heading.endIndex;
-      const answerEnd = nextHeading?.index ?? reviewBodyEnd;
-      while (
-        markerIndex < markers.length &&
-        markers[markerIndex].index < heading.index
-      ) {
-        markerIndex += 1;
-      }
-      if (
-        markerIndex < markers.length &&
-        markers[markerIndex].index < answerEnd
-      ) {
-        continue;
-      }
-
-      const rawAnswer = content.slice(answerStart, answerEnd).trim();
-      sections[heading.text] = { textAreas: { [heading.text]: rawAnswer } };
     }
 
     return Object.keys(sections).length > 0 ? { sections } : undefined;
@@ -206,7 +237,11 @@ export function upsertTradeReviewMarkdownQuestion({
   questionId: string;
   questionLabel: string;
   value: string;
-  questionOrder?: Array<{ id: string }>;
+  questionOrder?: Array<{
+    id: string;
+    label?: string;
+    knownLabels?: string[];
+  }>;
 }): string {
   const normalizedValue = value.trim();
   const marker = createQuestionMarker(questionId);
@@ -224,6 +259,28 @@ export function upsertTradeReviewMarkdownQuestion({
 
   const reviewEnd = findReviewBoundary(content, reviewHeading.endIndex, 2);
   const reviewBodyEnd = reviewEnd?.index ?? content.length;
+  const markers = findQuestionMarkersInRange(
+    content,
+    reviewHeading.endIndex,
+    reviewBodyEnd
+  );
+  if (markers.length === 0 && questionOrder?.some(({ label }) => label)) {
+    const upgradedContent = addMarkersToLegacyQuestionHeadings(
+      content,
+      questionOrder,
+      reviewHeading.endIndex,
+      reviewBodyEnd
+    );
+    if (upgradedContent !== content) {
+      return upsertTradeReviewMarkdownQuestion({
+        content: upgradedContent,
+        questionId,
+        questionLabel,
+        value,
+        questionOrder,
+      });
+    }
+  }
   const markedQuestionHeading = findQuestionHeadingById(
     content,
     questionId,
@@ -232,13 +289,15 @@ export function upsertTradeReviewMarkdownQuestion({
   );
   const questionHeading =
     markedQuestionHeading ??
-    findHeadingInRange(
-      content,
-      questionLabel,
-      3,
-      reviewHeading.endIndex,
-      reviewBodyEnd
-    );
+    (markers.length === 0
+      ? findHeadingInRange(
+          content,
+          questionLabel,
+          3,
+          reviewHeading.endIndex,
+          reviewBodyEnd
+        )
+      : null);
 
   if (!questionHeading) {
     const insertion = `\n\n### ${questionLabel}\n${questionBody}\n`;
@@ -271,7 +330,9 @@ export function upsertTradeReviewMarkdownQuestion({
 
 function reorderMarkedTradeReviewQuestions(
   content: string,
-  questionOrder: Array<{ id: string }> | undefined
+  questionOrder:
+    | Array<{ id: string; label?: string; knownLabels?: string[] }>
+    | undefined
 ): string {
   if (!questionOrder || questionOrder.length === 0) return content;
 
@@ -345,6 +406,75 @@ function reorderMarkedTradeReviewQuestions(
     .join('')}${content.slice(spanEnd)}`;
 }
 
+function addMarkersToLegacyQuestionHeadings(
+  content: string,
+  questionOrder: Array<{
+    id: string;
+    label?: string;
+    knownLabels?: string[];
+  }>,
+  start: number,
+  end: number
+): string {
+  const headings = findHeadingsInRange(content, start, end, 3);
+  const headingsByLabel = new Map<string, HeadingMatch[]>();
+  for (const heading of headings) {
+    const label = normalizeHeading(heading.text);
+    const matchingHeadings = headingsByLabel.get(label) ?? [];
+    matchingHeadings.push(heading);
+    headingsByLabel.set(label, matchingHeadings);
+  }
+  const nextHeadingIndexByLabel = new Map<string, number>();
+  const insertions: Array<{ index: number; marker: string }> = [];
+  const assignedQuestionIds = new Set<string>();
+
+  const assignMarker = (
+    question: (typeof questionOrder)[number],
+    candidateLabels: string[]
+  ): boolean => {
+    for (const candidateLabel of candidateLabels) {
+      const normalizedLabel = normalizeHeading(candidateLabel);
+      const nextHeadingIndex =
+        nextHeadingIndexByLabel.get(normalizedLabel) ?? 0;
+      const candidate =
+        headingsByLabel.get(normalizedLabel)?.[nextHeadingIndex];
+      if (!candidate) continue;
+      nextHeadingIndexByLabel.set(normalizedLabel, nextHeadingIndex + 1);
+      insertions.push({
+        index: candidate.endIndex,
+        marker: `\n${createQuestionMarker(question.id)}`,
+      });
+      return true;
+    }
+    return false;
+  };
+
+  for (const question of questionOrder) {
+    const stableLabels = Array.from(
+      new Set([
+        ...(question.knownLabels ?? []),
+        ...getTradeReviewQuestionKnownLabels(question.id),
+      ])
+    );
+    if (assignMarker(question, stableLabels)) {
+      assignedQuestionIds.add(question.id);
+    }
+  }
+
+  for (const question of questionOrder) {
+    if (assignedQuestionIds.has(question.id) || !question.label) continue;
+    assignMarker(question, [question.label]);
+  }
+
+  return insertions
+    .sort((a, b) => b.index - a.index)
+    .reduce(
+      (nextContent, insertion) =>
+        insertAt(nextContent, insertion.index, insertion.marker),
+      content
+    );
+}
+
 export function ensureTradeReviewEndBoundary(content: string): string {
   const reviewHeading = findOwnedTradeReviewHeading(content);
   if (!reviewHeading) return content;
@@ -416,17 +546,20 @@ export function migrateTradeReviewFrontmatterToMarkdown({
     const textAreas = section.textAreas ?? {};
     for (const [questionId, answer] of Object.entries(textAreas)) {
       if (!answer.trim()) continue;
-      const label = getTradeReviewQuestionLabel(questionId || sectionId);
+      const sourceQuestionId = questionId || sectionId;
+      const canonicalQuestionId =
+        getCanonicalTradeReviewQuestionId(sourceQuestionId);
+      const label = getTradeReviewQuestionLabel(canonicalQuestionId);
       const existingAnswer =
-        markdownReview?.sections?.[questionId]?.textAreas?.[
-          questionId
+        markdownReview?.sections?.[canonicalQuestionId]?.textAreas?.[
+          canonicalQuestionId
         ]?.trim() ??
         markdownReview?.sections?.[label]?.textAreas?.[label]?.trim() ??
         '';
       if (existingAnswer) continue;
       nextContent = upsertTradeReviewMarkdownQuestion({
         content: nextContent,
-        questionId,
+        questionId: canonicalQuestionId,
         questionLabel: label,
         value: answer,
       });
@@ -435,8 +568,8 @@ export function migrateTradeReviewFrontmatterToMarkdown({
 
     const checklistAnswer = formatLegacyCheckboxAnswers(section.checkboxes);
     if (checklistAnswer) {
-      const questionId = `${sectionId || 'legacy'}-checkboxes`;
-      const label = `${humanizeQuestionId(sectionId || 'legacy')} checklist`;
+      const questionId = `${LEGACY_CHECKLIST_QUESTION_ID_PREFIX}${sectionId || 'legacy'}`;
+      const label = getTradeReviewQuestionLabel(questionId);
       const existingAnswer =
         markdownReview?.sections?.[questionId]?.textAreas?.[
           questionId
@@ -689,7 +822,7 @@ function insertAt(content: string, index: number, insertion: string): string {
 function humanizeQuestionId(questionId: string): string {
   const words: string[] = [];
   const normalizedQuestionId = questionId
-    .replace(/^[a-z]+-/, '')
+    .replace(/^(?:win|loss|be|open)-/, '')
     .replace(/([a-z0-9])([A-Z])/g, '$1-$2');
   for (const part of normalizedQuestionId.split('-')) {
     if (part) words.push(part.charAt(0).toUpperCase() + part.slice(1));

@@ -1707,6 +1707,13 @@ export const SESSION_MODE_STYLES = `
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1) !important;
 }
 
+.journalit-session-log-composer-tag-menu--portal {
+  position: fixed !important;
+  top: var(--journalit-session-log-tag-menu-top) !important;
+  left: var(--journalit-session-log-tag-menu-left) !important;
+  z-index: 10000 !important;
+}
+
 .journalit-session-log-composer-tag-menu
   .journalit-session-log-composer-tag-option {
   display: flex;
@@ -2314,6 +2321,55 @@ export const SESSION_MODE_STYLES = `
 .journalit-session-log-entry--tag-amber .journalit-session-log-entry__body { border-left-color: rgba(var(--color-yellow-rgb, 224, 175, 72), 0.9); }
 .journalit-session-log-entry--tag-red .journalit-session-log-entry__body { border-left-color: rgba(var(--color-red-rgb, 233, 49, 71), 0.9); }
 .journalit-session-log-entry--tag-orange .journalit-session-log-entry__body { border-left-color: rgba(var(--color-orange-rgb, 245, 124, 0), 0.9); }
+
+.journalit-settings .journalit-session-log-trade-events-setting .toggle-switch-container {
+  position: relative;
+  display: inline-block;
+  flex: 0 0 auto;
+  width: 36px;
+  height: 20px;
+}
+
+.journalit-settings .journalit-session-log-trade-events-setting .toggle-switch-input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: 0;
+  opacity: 0;
+}
+
+.journalit-settings .journalit-session-log-trade-events-setting .toggle-switch-label {
+  position: absolute;
+  inset: 0;
+  display: block;
+  cursor: pointer;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--background-modifier-border);
+}
+
+.journalit-settings .journalit-session-log-trade-events-setting .toggle-switch-button {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--background-primary);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
+}
+
+.journalit-settings .journalit-session-log-trade-events-setting .toggle-switch-input:checked + .toggle-switch-label {
+  background: var(--interactive-accent);
+}
+
+.journalit-settings .journalit-session-log-trade-events-setting .toggle-switch-input:checked + .toggle-switch-label .toggle-switch-button {
+  transform: translateX(16px);
+}
+
+.journalit-settings .journalit-session-log-trade-events-setting .toggle-switch-input:focus-visible + .toggle-switch-label {
+  box-shadow: 0 0 0 2px var(--background-modifier-border-focus);
+}
 
 .journalit-session-log-tag-settings-list {
   display: flex;

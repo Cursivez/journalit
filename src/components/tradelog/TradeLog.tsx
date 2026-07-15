@@ -24,6 +24,7 @@ import {
   normalizeImageGallerySize,
   normalizeImageGallerySort,
   normalizeImageGallerySourceType,
+  normalizeImageGalleryViewMode,
 } from '../imageGallery/ImageGallery';
 import { useDebounced, useEventBus, useEventBusMultiple } from '../../hooks';
 import { useLeafActive } from '../../hooks/useLeafActive';
@@ -160,6 +161,7 @@ const TRADE_LOG_GUIDE_TRADE_MODE_STEPS = new Set([
 
 const TRADE_LOG_GUIDE_IMAGE_GALLERY_STEPS = new Set([
   'gallery-source-sort',
+  'gallery-grouping',
   'gallery-size',
   'gallery-filters',
   'gallery-filter-modal',
@@ -549,6 +551,7 @@ const useTradeLogController = ({ plugin, leaf }: TradeLogProps) => {
         sourceType: normalizeImageGallerySourceType(persisted?.sourceType),
         size: normalizeImageGallerySize(persisted?.size),
         sort: normalizeImageGallerySort(persisted?.sort),
+        viewMode: normalizeImageGalleryViewMode(persisted?.viewMode),
       };
     });
   const [settingsVersion, setSettingsVersion] = useState(0);
@@ -1405,6 +1408,7 @@ const useTradeLogController = ({ plugin, leaf }: TradeLogProps) => {
         ),
         size: normalizeImageGallerySize(persistedImageGallery.size),
         sort: normalizeImageGallerySort(persistedImageGallery.sort),
+        viewMode: normalizeImageGalleryViewMode(persistedImageGallery.viewMode),
       });
     }
 

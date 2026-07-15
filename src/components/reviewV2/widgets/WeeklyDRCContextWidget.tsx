@@ -24,12 +24,9 @@ import {
 import { ImageCarousel } from '../../image/ImageCarousel';
 import { t } from '../../../lang/helpers';
 import { eventBus } from '../../../services/events';
+import { StickyHeaderPortal, useStickyHeader } from '../../shared/StickyHeader';
 import { InvalidContextMessage } from './InvalidContextMessage';
-import {
-  scrollToNextReviewItemAfterCollapse,
-  StickyReviewHeaderPortal,
-  useStickyReviewHeader,
-} from './shared/StickyReviewHeader';
+import { scrollToNextReviewItemAfterCollapse } from './shared/reviewScrollUtils';
 import { ReviewWidgetSkeleton } from './shared/ReviewWidgetSkeleton';
 
 type WeeklyDRCDayScope =
@@ -430,7 +427,7 @@ const WeeklyDRCDay: React.FC<{
     });
   };
 
-  const stickyHeader = useStickyReviewHeader({
+  const stickyHeader = useStickyHeader({
     containerRef: dayRef,
     enabled: isOpen,
     headerRef,
@@ -600,7 +597,7 @@ const WeeklyDRCDay: React.FC<{
         title={title}
         toggleReviewed={toggleReviewed}
       />
-      <StickyReviewHeaderPortal
+      <StickyHeaderPortal
         className="journalit-weekly-drc-summary--sticky-clone"
         metrics={stickyHeader}
       >
@@ -616,7 +613,7 @@ const WeeklyDRCDay: React.FC<{
           title={title}
           toggleReviewed={toggleReviewed}
         />
-      </StickyReviewHeaderPortal>
+      </StickyHeaderPortal>
       {isOpen && content}
     </article>
   );

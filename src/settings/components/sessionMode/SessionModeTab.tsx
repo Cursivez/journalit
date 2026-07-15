@@ -8,10 +8,21 @@ import React, {
   useState,
 } from 'react';
 import { TFile } from 'obsidian';
+import type { App } from 'obsidian';
 import JournalitPlugin from '../../../main';
 import { Button } from '../../../components/ui/Button';
 import { NoTooltipButton } from '../../../components/ui/NoTooltipButton';
+import ToggleSwitch from '../../../components/ui/ToggleSwitch';
 import { Tooltip } from '../../../components/shared/Tooltip';
+import { showConfirmationModal } from '../../../components/shared/ConfirmationModal';
+import {
+  StickyHeaderPortal,
+  useStickyHeader,
+} from '../../../components/shared/StickyHeader';
+import {
+  addConnectedTradeGateQuestion,
+  getReachableTradeGateNodeIds,
+} from '../../../components/sessionMode/tradeGateUtils';
 import {
   ChevronDown,
   ChevronRight,
@@ -494,6 +505,12 @@ function SessionModeSettingsSection({ plugin }: SessionModeTabProps) {
     setSettingsVersion((previous) => previous + 1);
   };
 
+  const applySessionModeSettings = (settings: SessionModeSettings) => {
+    sessionModeSettingsRef.current = settings;
+    plugin.settings.sessionMode = settings;
+    setSettingsVersion((previous) => previous + 1);
+  };
+
   return (
     <div className="journalit-session-mode-settings">
       <SessionModeLeadTimeSetting
@@ -619,8 +636,14 @@ function SessionModeSettingsSection({ plugin }: SessionModeTabProps) {
       />
 
       <TradeGateWorkflowSettings
+        app={plugin.app}
         workflows={tradeGateWorkflows}
         persistWorkflows={persistTradeGateWorkflows}
+      />
+
+      <SessionLogDisplaySettings
+        plugin={plugin}
+        applySettings={applySessionModeSettings}
       />
 
       <SessionLogTagsSettings
@@ -628,6 +651,62 @@ function SessionModeSettingsSection({ plugin }: SessionModeTabProps) {
         persistTags={persistSessionLogTags}
       />
     </div>
+  );
+}
+
+function SessionLogDisplaySettings({
+  plugin,
+  applySettings,
+}: SessionModeTabProps & {
+  applySettings: (settings: SessionModeSettings) => void;
+}) {
+  const showTradeExecutions =
+    plugin.settings.sessionMode.showTradeExecutionsInSessionLog;
+
+  const persistShowTradeExecutions = async (enabled: boolean) => {
+    const nextSettings: SessionModeSettings = {
+      ...plugin.settings.sessionMode,
+      showTradeExecutionsInSessionLog: enabled,
+    };
+    applySettings(nextSettings);
+    await plugin.saveSettings();
+    eventBus.publish('settings:changed', {
+      section: 'sessionMode',
+      source: 'session-mode-settings',
+    });
+  };
+
+  return (
+    <>
+      <div className="setting-item setting-item-heading">
+        <div className="setting-item-info">
+          <div className="setting-item-name">
+            {t('settings.session-mode.session-log')}
+          </div>
+          <div className="setting-item-description">
+            {t('settings.session-mode.session-log-desc')}
+          </div>
+        </div>
+      </div>
+      <div className="setting-item journalit-session-log-trade-events-setting">
+        <div className="setting-item-info">
+          <div className="setting-item-name">
+            {t('settings.session-mode.show-trade-executions')}
+          </div>
+          <div className="setting-item-description">
+            {t('settings.session-mode.show-trade-executions-desc')}
+          </div>
+        </div>
+        <div className="setting-item-control">
+          <ToggleSwitch
+            id="session-log-show-trade-executions"
+            checked={showTradeExecutions}
+            onChange={persistShowTradeExecutions}
+            ariaLabel={t('settings.session-mode.show-trade-executions')}
+          />
+        </div>
+      </div>
+    </>
   );
 }
 
@@ -1044,17 +1123,23 @@ function SessionModeLinkedResourcesSettings({
 }
 
 interface TradeGateWorkflowSettingsProps {
+  app: App;
   workflows: TradeGateWorkflow[];
   persistWorkflows: (workflows: TradeGateWorkflow[]) => Promise<void>;
 }
 
 function TradeGateWorkflowSettings({
+  app,
   workflows,
   persistWorkflows,
 }: TradeGateWorkflowSettingsProps) {
   const [expandedWorkflowId, setExpandedWorkflowId] = useState<string | null>(
     null
   );
+  const [pendingNewQuestion, setPendingNewQuestion] = useState<{
+    workflowId: string;
+    nodeId: string;
+  } | null>(null);
   const deletedWorkflowIdsRef = useRef(new Set<string>());
   const workflowDraftsRef = useRef(new Map<string, TradeGateWorkflow>());
   const workflowsRef = useRef(workflows);
@@ -1108,11 +1193,33 @@ function TradeGateWorkflowSettings({
     await persistWorkflows(getDraftMergedWorkflows());
   };
 
-  const removeWorkflow = async (id: string) => {
+  const removeWorkflow = async (id: string): Promise<boolean> => {
+    const workflow =
+      workflowDraftsRef.current.get(id) ??
+      workflowsRef.current.find((item) => item.id === id);
+    if (!workflow) return false;
+
+    const confirmed = await showConfirmationModal(app, {
+      title: t('settings.session-mode.trade-gate.delete-workflow.title'),
+      message: t('settings.session-mode.trade-gate.delete-workflow.message', {
+        name: workflow.name || t('settings.session-mode.trade-gate.untitled'),
+      }),
+      confirmLabel: t(
+        'settings.session-mode.trade-gate.delete-workflow.confirm'
+      ),
+      cancelLabel: t('button.cancel'),
+      destructive: true,
+    });
+    if (!confirmed) return false;
+
     deletedWorkflowIdsRef.current.add(id);
     workflowDraftsRef.current.delete(id);
+    setPendingNewQuestion((current) =>
+      current?.workflowId === id ? null : current
+    );
     if (expandedWorkflowId === id) setExpandedWorkflowId(null);
     await persistWorkflows(getDraftMergedWorkflows());
+    return true;
   };
 
   return (
@@ -1138,10 +1245,12 @@ function TradeGateWorkflowSettings({
         <div className="journalit-session-mode-trade-gate-list">
           {workflows.map((workflow) => {
             const isExpanded = expandedWorkflowId === workflow.id;
+            const editorWorkflow =
+              workflowDraftsRef.current.get(workflow.id) ?? workflow;
             return (
               <TradeGateWorkflowEditor
                 key={`${workflow.id}:${isExpanded ? 'expanded' : 'collapsed'}`}
-                workflow={workflow}
+                workflow={editorWorkflow}
                 isExpanded={isExpanded}
                 setExpanded={() =>
                   setExpandedWorkflowId(isExpanded ? null : workflow.id)
@@ -1149,6 +1258,21 @@ function TradeGateWorkflowSettings({
                 persistWorkflow={persistWorkflow}
                 stageWorkflowDraft={stageWorkflowDraft}
                 removeWorkflow={removeWorkflow}
+                hasPendingNewQuestion={Boolean(pendingNewQuestion)}
+                pendingNewQuestionId={
+                  pendingNewQuestion?.workflowId === workflow.id
+                    ? pendingNewQuestion.nodeId
+                    : null
+                }
+                setPendingNewQuestionId={(nodeId) =>
+                  setPendingNewQuestion((current) =>
+                    nodeId
+                      ? { workflowId: workflow.id, nodeId }
+                      : current?.workflowId === workflow.id
+                        ? null
+                        : current
+                  )
+                }
               />
             );
           })}
@@ -1164,7 +1288,103 @@ interface TradeGateWorkflowEditorProps {
   setExpanded: () => void;
   persistWorkflow: (workflow: TradeGateWorkflow) => Promise<void>;
   stageWorkflowDraft: (workflow: TradeGateWorkflow) => void;
-  removeWorkflow: (id: string) => Promise<void>;
+  removeWorkflow: (id: string) => Promise<boolean>;
+  hasPendingNewQuestion: boolean;
+  pendingNewQuestionId: string | null;
+  setPendingNewQuestionId: (nodeId: string | null) => void;
+}
+
+function getTradeGateAddQuestionState({
+  hasPendingNewQuestion,
+  questionCount,
+  reachableNodeIds,
+  selectedQuestion,
+}: {
+  hasPendingNewQuestion: boolean;
+  questionCount: number;
+  reachableNodeIds: Set<string>;
+  selectedQuestion: TradeGateQuestionNode | null;
+}): { canAddQuestion: boolean; tooltip: string } {
+  if (hasPendingNewQuestion) {
+    return {
+      canAddQuestion: false,
+      tooltip: t('settings.session-mode.trade-gate.edit-before-branching'),
+    };
+  }
+  if (questionCount === 0) {
+    return {
+      canAddQuestion: true,
+      tooltip: t('settings.session-mode.trade-gate.add-first-question'),
+    };
+  }
+
+  if (!selectedQuestion) {
+    return {
+      canAddQuestion: false,
+      tooltip: t('settings.session-mode.trade-gate.select-question-to-add'),
+    };
+  }
+
+  if (!reachableNodeIds.has(selectedQuestion.id)) {
+    return {
+      canAddQuestion: false,
+      tooltip: t('settings.session-mode.trade-gate.connect-before-branching'),
+    };
+  }
+  return {
+    canAddQuestion: true,
+    tooltip: t('settings.session-mode.trade-gate.add-branch-from', {
+      question:
+        selectedQuestion.title ||
+        t('settings.session-mode.trade-gate.question'),
+    }),
+  };
+}
+
+function scrollTradeGateEditorIntoView({
+  editor,
+  header,
+}: {
+  editor: HTMLDivElement;
+  header: HTMLDivElement | null;
+}): void {
+  const scrollContainer = editor.closest(
+    '.vertical-tab-content.journalit-settings'
+  );
+  if (!(scrollContainer instanceof HTMLElement)) {
+    editor.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    return;
+  }
+
+  const containerRect = scrollContainer.getBoundingClientRect();
+  const editorRect = editor.getBoundingClientRect();
+  const headerHeight = header?.getBoundingClientRect().height ?? 48;
+  const visibleTop = containerRect.top + headerHeight + 12;
+  const visibleBottom = containerRect.bottom - 12;
+  const availableHeight = visibleBottom - visibleTop;
+  const visibleEditorHeight = Math.max(
+    0,
+    Math.min(editorRect.bottom, visibleBottom) -
+      Math.max(editorRect.top, visibleTop)
+  );
+  let scrollDelta = 0;
+
+  if (editorRect.height <= availableHeight) {
+    if (editorRect.bottom > visibleBottom) {
+      scrollDelta = editorRect.bottom - visibleBottom;
+    } else if (editorRect.top < visibleTop) {
+      scrollDelta = editorRect.top - visibleTop;
+    }
+  } else if (visibleEditorHeight < Math.min(120, availableHeight * 0.3)) {
+    scrollDelta = editorRect.top - visibleTop;
+  }
+
+  if (Math.abs(scrollDelta) >= 1) {
+    scrollContainer.scrollTo({
+      top: scrollContainer.scrollTop + scrollDelta,
+      behavior: 'smooth',
+    });
+  }
 }
 
 function TradeGateWorkflowEditor({
@@ -1174,11 +1394,20 @@ function TradeGateWorkflowEditor({
   persistWorkflow,
   stageWorkflowDraft,
   removeWorkflow,
+  hasPendingNewQuestion,
+  pendingNewQuestionId,
+  setPendingNewQuestionId,
 }: TradeGateWorkflowEditorProps) {
   const [draftWorkflow, setDraftWorkflow] = useState(() =>
     normalizeTradeGateWorkflowOutcomes(workflow)
   );
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
+  const [isAddingQuestion, setIsAddingQuestion] = useState(false);
+  const workflowRef = useRef<HTMLDivElement | null>(null);
+  const headerRef = useRef<HTMLDivElement | null>(null);
+  const selectedEditorRef = useRef<HTMLDivElement | null>(null);
+  const selectedTitleInputRef = useRef<HTMLInputElement | null>(null);
+  const isAddingQuestionRef = useRef(false);
   const pendingPersistRef = useRef<TradeGateWorkflow | null>(null);
   const persistTimerRef = useRef<number | null>(null);
   const persistWorkflowRef = useRef(persistWorkflow);
@@ -1204,6 +1433,44 @@ function TradeGateWorkflowEditor({
   );
   const selectedNode =
     draftWorkflow.nodes.find((node) => node.id === selectedNodeId) ?? null;
+  const selectedQuestion =
+    selectedNode?.type === 'question' ? selectedNode : null;
+  const reachableNodeIds = getReachableTradeGateNodeIds(draftWorkflow);
+  const unconnectedQuestions = questionNodes.filter(
+    (node) => !reachableNodeIds.has(node.id)
+  );
+  const { canAddQuestion, tooltip: addQuestionTooltip } =
+    getTradeGateAddQuestionState({
+      hasPendingNewQuestion,
+      questionCount: questionNodes.length,
+      reachableNodeIds,
+      selectedQuestion,
+    });
+  const stickyHeader = useStickyHeader({
+    containerRef: workflowRef,
+    enabled: isExpanded,
+    headerRef,
+  });
+
+  const revealSelectedEditor = () => {
+    window.requestAnimationFrame(() => {
+      const editor = selectedEditorRef.current;
+      if (editor) {
+        scrollTradeGateEditorIntoView({
+          editor,
+          header: headerRef.current,
+        });
+      }
+      window.requestAnimationFrame(() => {
+        selectedTitleInputRef.current?.focus({ preventScroll: true });
+      });
+    });
+  };
+
+  const selectNodeForEditing = (nodeId: string) => {
+    setSelectedNodeId(nodeId);
+    revealSelectedEditor();
+  };
 
   const updateWorkflow = async (updates: Partial<TradeGateWorkflow>) => {
     const nextWorkflow = normalizeTradeGateWorkflowOutcomes({
@@ -1234,6 +1501,9 @@ function TradeGateWorkflowEditor({
   };
 
   const updateNode = async (updatedNode: TradeGateNode) => {
+    if (updatedNode.id === pendingNewQuestionId) {
+      setPendingNewQuestionId(null);
+    }
     await updateWorkflow({
       nodes: draftWorkflow.nodes.map((node) =>
         node.id === updatedNode.id ? updatedNode : node
@@ -1242,18 +1512,46 @@ function TradeGateWorkflowEditor({
   };
 
   const addQuestionNode = async () => {
-    const node: TradeGateQuestionNode = {
-      id: generateUUID(),
-      type: 'question',
-      title: t('settings.session-mode.trade-gate.new-question-title'),
-      prompt: '',
-      options: [],
-    };
-    setSelectedNodeId(node.id);
-    await updateWorkflow({
-      nodes: [...draftWorkflow.nodes, node],
-      startNodeId: draftWorkflow.startNodeId || node.id,
-    });
+    if (!canAddQuestion || isAddingQuestionRef.current) return;
+
+    isAddingQuestionRef.current = true;
+    setIsAddingQuestion(true);
+    try {
+      const node: TradeGateQuestionNode = {
+        id: generateUUID(),
+        type: 'question',
+        title: t('settings.session-mode.trade-gate.new-question-title'),
+        prompt: '',
+        options: [],
+      };
+      const nextWorkflow = selectedQuestion
+        ? addConnectedTradeGateQuestion({
+            workflow: draftWorkflow,
+            parentQuestionId: selectedQuestion.id,
+            question: node,
+            option: {
+              id: generateUUID(),
+              label: t('settings.session-mode.trade-gate.new-option'),
+            },
+          })
+        : addConnectedTradeGateQuestion({
+            workflow: draftWorkflow,
+            parentQuestionId: null,
+            question: node,
+          });
+
+      setPendingNewQuestionId(node.id);
+      selectNodeForEditing(node.id);
+      await updateWorkflow({
+        nodes: nextWorkflow.nodes,
+        startNodeId: nextWorkflow.startNodeId,
+      });
+    } finally {
+      window.requestAnimationFrame(() => {
+        isAddingQuestionRef.current = false;
+        setIsAddingQuestion(false);
+      });
+    }
   };
 
   const addOptionToQuestion = async (questionId: string) => {
@@ -1262,6 +1560,9 @@ function TradeGateWorkflowEditor({
         node.id === questionId && node.type === 'question'
     );
     if (!question) return;
+    if (question.id === pendingNewQuestionId) {
+      setPendingNewQuestionId(null);
+    }
 
     const normalizedWorkflow =
       normalizeTradeGateWorkflowOutcomes(draftWorkflow);
@@ -1315,115 +1616,247 @@ function TradeGateWorkflowEditor({
     if (selectedNodeId === nodeId) {
       setSelectedNodeId(null);
     }
+    if (pendingNewQuestionId === nodeId) {
+      setPendingNewQuestionId(null);
+    }
     await updateWorkflow({ nodes: nextNodes, startNodeId: nextStartNodeId });
   };
 
   return (
     <div
+      ref={workflowRef}
       className={`journalit-session-mode-trade-gate-workflow${isExpanded ? ' is-expanded' : ''}`}
     >
-      <div className="journalit-session-mode-trade-gate-row">
-        <button
-          type="button"
-          className="journalit-session-mode-trade-gate-expand"
-          onClick={setExpanded}
-          aria-expanded={isExpanded}
-        >
-          <span className="journalit-session-mode-trade-gate-expand__icon">
-            {isExpanded ? (
-              <ChevronDown size={16} aria-hidden="true" />
-            ) : (
-              <ChevronRight size={16} aria-hidden="true" />
-            )}
-          </span>
-          <span className="journalit-session-mode-trade-gate-expand__name">
-            {draftWorkflow.name ||
-              t('settings.session-mode.trade-gate.untitled')}
-          </span>
-          <span className="setting-item-description journalit-session-mode-trade-gate-summary">
-            {t('settings.session-mode.trade-gate.summary', {
-              count: String(draftWorkflow.nodes.length),
-            })}
-          </span>
-        </button>
-        <NoTooltipButton
-          label={t('button.delete')}
-          className="journalit-session-mode-delete-window-button"
-          onClick={() => {
-            discardPendingPersist();
-            void removeWorkflow(workflow.id);
-          }}
-        >
-          <Trash2 size={24} aria-hidden="true" />
-        </NoTooltipButton>
-      </div>
+      <TradeGateWorkflowHeader
+        addQuestionTooltip={addQuestionTooltip}
+        addQuestionNode={addQuestionNode}
+        canAddQuestion={canAddQuestion}
+        discardPendingPersist={discardPendingPersist}
+        draftWorkflow={draftWorkflow}
+        headerRef={headerRef}
+        isAddingQuestion={isAddingQuestion}
+        isExpanded={isExpanded}
+        removeWorkflow={removeWorkflow}
+        setExpanded={setExpanded}
+      />
+
+      <StickyHeaderPortal
+        className="journalit-settings journalit-session-mode-trade-gate-header--sticky-clone"
+        metrics={stickyHeader}
+      >
+        <TradeGateWorkflowHeader
+          addQuestionTooltip={addQuestionTooltip}
+          addQuestionNode={addQuestionNode}
+          canAddQuestion={canAddQuestion}
+          discardPendingPersist={discardPendingPersist}
+          draftWorkflow={draftWorkflow}
+          isAddingQuestion={isAddingQuestion}
+          isExpanded={isExpanded}
+          removeWorkflow={removeWorkflow}
+          setExpanded={setExpanded}
+        />
+      </StickyHeaderPortal>
 
       {isExpanded && (
         <div className="journalit-session-mode-trade-gate-editor">
-          <div className="journalit-session-mode-trade-gate-editor-grid">
-            <label className="journalit-session-mode-trade-gate-field">
-              <span className="setting-item-description">
-                {t('settings.session-mode.trade-gate.name')}
-              </span>
-              <input
-                type="text"
-                value={draftWorkflow.name}
-                placeholder={t('settings.session-mode.trade-gate.name')}
-                onChange={(event) =>
-                  void updateWorkflow({ name: event.target.value })
-                }
-                className="setting-input journalit-settings-input"
-              />
-            </label>
-            <label className="journalit-session-mode-trade-gate-field">
-              <span className="setting-item-description">
-                {t('settings.session-mode.trade-gate.start-node')}
-              </span>
-              <select
-                value={draftWorkflow.startNodeId}
-                onChange={(event) =>
-                  void updateWorkflow({ startNodeId: event.target.value })
-                }
-                className="dropdown journalit-settings-input"
-              >
-                {questionNodes.map((node) => (
-                  <option key={node.id} value={node.id}>
-                    {node.title ||
-                      t('settings.session-mode.trade-gate.question')}
-                  </option>
-                ))}
-              </select>
-            </label>
-          </div>
+          <TradeGateWorkflowFields
+            questionNodes={questionNodes}
+            updateWorkflow={updateWorkflow}
+            workflow={draftWorkflow}
+          />
 
           <TradeGateFlowMap
             workflow={draftWorkflow}
             selectedNodeId={selectedNodeId}
-            selectNode={setSelectedNodeId}
-            addQuestionNode={addQuestionNode}
+            selectNode={selectNodeForEditing}
+            unconnectedQuestions={unconnectedQuestions}
           />
 
-          {selectedNode && (
-            <div className="journalit-session-mode-trade-gate-selected-editor">
-              {selectedNode.type === 'question' ? (
-                <TradeGateQuestionEditor
-                  node={selectedNode}
-                  workflow={draftWorkflow}
-                  updateNode={updateNode}
-                  addOptionToQuestion={addOptionToQuestion}
-                  removeNode={removeNode}
-                />
-              ) : (
-                <TradeGateOutcomeEditor
-                  node={selectedNode}
-                  updateNode={updateNode}
-                  removeNode={removeNode}
-                />
-              )}
-            </div>
-          )}
+          <TradeGateSelectedNodeEditor
+            addOptionToQuestion={addOptionToQuestion}
+            editorRef={selectedEditorRef}
+            removeNode={removeNode}
+            selectedNode={selectedNode}
+            titleInputRef={selectedTitleInputRef}
+            updateNode={updateNode}
+            workflow={draftWorkflow}
+          />
         </div>
       )}
+    </div>
+  );
+}
+
+function TradeGateWorkflowFields({
+  questionNodes,
+  updateWorkflow,
+  workflow,
+}: {
+  questionNodes: TradeGateQuestionNode[];
+  updateWorkflow: (updates: Partial<TradeGateWorkflow>) => Promise<void>;
+  workflow: TradeGateWorkflow;
+}) {
+  return (
+    <div className="journalit-session-mode-trade-gate-editor-grid">
+      <label className="journalit-session-mode-trade-gate-field">
+        <span className="setting-item-description">
+          {t('settings.session-mode.trade-gate.name')}
+        </span>
+        <input
+          type="text"
+          value={workflow.name}
+          placeholder={t('settings.session-mode.trade-gate.name')}
+          onChange={(event) =>
+            void updateWorkflow({ name: event.target.value })
+          }
+          className="setting-input journalit-settings-input journalit-session-mode-trade-gate-workflow-name-input"
+        />
+      </label>
+      <label className="journalit-session-mode-trade-gate-field">
+        <span className="setting-item-description">
+          {t('settings.session-mode.trade-gate.start-node')}
+        </span>
+        <select
+          value={workflow.startNodeId}
+          onChange={(event) =>
+            void updateWorkflow({ startNodeId: event.target.value })
+          }
+          className="dropdown journalit-settings-input"
+        >
+          {questionNodes.map((node) => (
+            <option key={node.id} value={node.id}>
+              {node.title || t('settings.session-mode.trade-gate.question')}
+            </option>
+          ))}
+        </select>
+      </label>
+    </div>
+  );
+}
+
+function TradeGateSelectedNodeEditor({
+  addOptionToQuestion,
+  editorRef,
+  removeNode,
+  selectedNode,
+  titleInputRef,
+  updateNode,
+  workflow,
+}: {
+  addOptionToQuestion: (questionId: string) => Promise<void>;
+  editorRef: React.RefObject<HTMLDivElement | null>;
+  removeNode: (nodeId: string) => Promise<void>;
+  selectedNode: TradeGateNode | null;
+  titleInputRef: React.RefObject<HTMLInputElement | null>;
+  updateNode: (node: TradeGateNode) => Promise<void>;
+  workflow: TradeGateWorkflow;
+}) {
+  if (!selectedNode) return null;
+
+  return (
+    <div
+      ref={editorRef}
+      className="journalit-session-mode-trade-gate-selected-editor"
+    >
+      {selectedNode.type === 'question' ? (
+        <TradeGateQuestionEditor
+          titleInputRef={titleInputRef}
+          node={selectedNode}
+          workflow={workflow}
+          updateNode={updateNode}
+          addOptionToQuestion={addOptionToQuestion}
+          removeNode={removeNode}
+        />
+      ) : (
+        <TradeGateOutcomeEditor
+          node={selectedNode}
+          updateNode={updateNode}
+          removeNode={removeNode}
+        />
+      )}
+    </div>
+  );
+}
+
+function TradeGateWorkflowHeader({
+  addQuestionTooltip,
+  addQuestionNode,
+  canAddQuestion,
+  discardPendingPersist,
+  draftWorkflow,
+  headerRef,
+  isAddingQuestion,
+  isExpanded,
+  removeWorkflow,
+  setExpanded,
+}: {
+  addQuestionTooltip: string;
+  addQuestionNode: () => Promise<void>;
+  canAddQuestion: boolean;
+  discardPendingPersist: () => void;
+  draftWorkflow: TradeGateWorkflow;
+  headerRef?: React.RefObject<HTMLDivElement | null>;
+  isAddingQuestion: boolean;
+  isExpanded: boolean;
+  removeWorkflow: (id: string) => Promise<boolean>;
+  setExpanded: () => void;
+}) {
+  const addQuestionLabel = draftWorkflow.nodes.some(
+    (node) => node.type === 'question'
+  )
+    ? t('settings.session-mode.trade-gate.add-branch-question')
+    : t('settings.session-mode.trade-gate.add-question');
+  const isAddQuestionUnavailable = !canAddQuestion || isAddingQuestion;
+
+  return (
+    <div ref={headerRef} className="journalit-session-mode-trade-gate-row">
+      <button
+        type="button"
+        className="journalit-session-mode-trade-gate-expand"
+        onClick={setExpanded}
+        aria-expanded={isExpanded}
+      >
+        <span className="journalit-session-mode-trade-gate-expand__icon">
+          {isExpanded ? (
+            <ChevronDown size={16} aria-hidden="true" />
+          ) : (
+            <ChevronRight size={16} aria-hidden="true" />
+          )}
+        </span>
+        <span className="journalit-session-mode-trade-gate-expand__name">
+          {draftWorkflow.name || t('settings.session-mode.trade-gate.untitled')}
+        </span>
+        <span className="setting-item-description journalit-session-mode-trade-gate-summary">
+          {t('settings.session-mode.trade-gate.summary', {
+            count: String(draftWorkflow.nodes.length),
+          })}
+        </span>
+      </button>
+      {isExpanded && (
+        <Tooltip content={addQuestionTooltip} preferredPosition="bottom">
+          <Button
+            size="sm"
+            className={isAddQuestionUnavailable ? 'is-disabled' : ''}
+            disabled={isAddingQuestion}
+            aria-disabled={isAddQuestionUnavailable}
+            aria-label={`${addQuestionLabel}. ${addQuestionTooltip}`}
+            onClick={() => void addQuestionNode()}
+          >
+            <Plus size={15} aria-hidden="true" />
+            {addQuestionLabel}
+          </Button>
+        </Tooltip>
+      )}
+      <NoTooltipButton
+        label={t('button.delete')}
+        className="journalit-session-mode-delete-window-button"
+        onClick={async () => {
+          const removed = await removeWorkflow(draftWorkflow.id);
+          if (removed) discardPendingPersist();
+        }}
+      >
+        <Trash2 size={24} aria-hidden="true" />
+      </NoTooltipButton>
     </div>
   );
 }
@@ -1432,7 +1865,7 @@ interface TradeGateFlowMapProps {
   workflow: TradeGateWorkflow;
   selectedNodeId: string | null;
   selectNode: (nodeId: string) => void;
-  addQuestionNode: () => Promise<void>;
+  unconnectedQuestions: TradeGateQuestionNode[];
 }
 
 interface TradeGateFlowLayoutNode {
@@ -1492,7 +1925,7 @@ function TradeGateFlowMap({
   workflow,
   selectedNodeId,
   selectNode,
-  addQuestionNode,
+  unconnectedQuestions,
 }: TradeGateFlowMapProps) {
   const canvasRef = useRef<HTMLDivElement>(null);
   const dragStateRef = useRef<TradeGateFlowDragState | null>(null);
@@ -1656,16 +2089,12 @@ function TradeGateFlowMap({
             <Plus size={15} aria-hidden="true" />
           </Button>
         </div>
-        <div className="journalit-session-mode-trade-gate-flow-map__actions">
-          <Button size="sm" onClick={() => void addQuestionNode()}>
-            <Plus size={15} aria-hidden="true" />
-            {t('settings.session-mode.trade-gate.add-question')}
-          </Button>
-        </div>
       </div>
       {!startNode ? (
         <div className="setting-item-description">
-          {t('settings.session-mode.trade-gate.no-paths')}
+          {workflow.nodes.some((node) => node.type === 'question')
+            ? t('settings.session-mode.trade-gate.no-paths')
+            : t('settings.session-mode.trade-gate.no-questions')}
         </div>
       ) : (
         <div
@@ -1678,6 +2107,7 @@ function TradeGateFlowMap({
         >
           {layout && (
             <div
+              key={workflow.startNodeId}
               className="journalit-session-mode-trade-gate-flow-stage"
               style={cssVars({
                 '--trade-gate-flow-width': `${layout.width}px`,
@@ -1725,6 +2155,41 @@ function TradeGateFlowMap({
           )}
           <div className="journalit-session-mode-trade-gate-flow-canvas__hint">
             {t('settings.session-mode.trade-gate.flow-click-hint')}
+          </div>
+        </div>
+      )}
+      {unconnectedQuestions.length > 0 && (
+        <div className="journalit-session-mode-trade-gate-unconnected">
+          <div className="journalit-session-mode-trade-gate-unconnected__header">
+            <span className="journalit-session-mode-trade-gate-unconnected__title">
+              {t('settings.session-mode.trade-gate.unconnected-title')}
+            </span>
+            <span className="journalit-session-mode-trade-gate-unconnected__count">
+              {String(unconnectedQuestions.length)}
+            </span>
+          </div>
+          <div className="setting-item-description">
+            {t('settings.session-mode.trade-gate.unconnected-desc')}
+          </div>
+          <div className="journalit-session-mode-trade-gate-unconnected__list">
+            {unconnectedQuestions.map((question, index) => (
+              <button
+                key={question.id}
+                type="button"
+                className={`journalit-session-mode-trade-gate-unconnected__item${question.id === selectedNodeId ? ' is-selected' : ''}`}
+                onClick={() => selectNode(question.id)}
+                aria-label={`${question.title || t('settings.session-mode.trade-gate.question')} ${index + 1}`}
+              >
+                <span className="journalit-session-mode-trade-gate-unconnected__item-title">
+                  {question.title ||
+                    t('settings.session-mode.trade-gate.question')}
+                </span>
+                <span className="journalit-session-mode-trade-gate-unconnected__item-index">
+                  #{index + 1}
+                </span>
+                <Edit size={14} aria-hidden="true" />
+              </button>
+            ))}
           </div>
         </div>
       )}
@@ -1783,7 +2248,7 @@ function TradeGateFlowNodeButton({
   );
 }
 
-function buildTradeGateFlowLayout(
+export function buildTradeGateFlowLayout(
   workflow: TradeGateWorkflow,
   startNode: TradeGateNode
 ): TradeGateFlowLayout {
@@ -1796,11 +2261,12 @@ function buildTradeGateFlowLayout(
   const place = (
     node: TradeGateNode,
     depth: number,
-    path: string[]
+    ancestorNodeIds: string[],
+    optionPath: string[]
   ): { center: number; x: number; y: number } => {
     maxDepth = Math.max(maxDepth, depth);
-    const occurrenceId = `${node.id}-${path.join('-') || 'root'}`;
-    const isRepeated = path.includes(node.id);
+    const occurrenceId = `${node.id}-${optionPath.join('-') || 'root'}`;
+    const isRepeated = ancestorNodeIds.includes(node.id);
     const targets: Array<{ option: TradeGateOption; target: TradeGateNode }> =
       [];
     if (node.type === 'question' && !isRepeated) {
@@ -1810,8 +2276,13 @@ function buildTradeGateFlowLayout(
       }
     }
 
-    const childPlacements = targets.map(({ target }) =>
-      place(target, depth + 1, [...path, node.id])
+    const childPlacements = targets.map(({ option, target }) =>
+      place(
+        target,
+        depth + 1,
+        [...ancestorNodeIds, node.id],
+        [...optionPath, option.id]
+      )
     );
     const childCenters = childPlacements.map((placement) => placement.center);
     const center =
@@ -1855,7 +2326,7 @@ function buildTradeGateFlowLayout(
     return { center, x, y };
   };
 
-  place(startNode, 0, []);
+  place(startNode, 0, [], []);
 
   const usedLeaves = Math.max(leafCursor, 1);
   return {
@@ -1903,12 +2374,14 @@ function truncateFlowLabel(value: string, maxLength: number): string {
 }
 
 function TradeGateQuestionEditor({
+  titleInputRef,
   node,
   workflow,
   updateNode,
   addOptionToQuestion,
   removeNode,
 }: {
+  titleInputRef: React.RefObject<HTMLInputElement | null>;
   node: TradeGateQuestionNode;
   workflow: TradeGateWorkflow;
   updateNode: (node: TradeGateNode) => Promise<void>;
@@ -1916,6 +2389,7 @@ function TradeGateQuestionEditor({
   removeNode: (nodeId: string) => Promise<void>;
 }) {
   const targetNodes = workflow.nodes.filter((target) => target.id !== node.id);
+  const reachableNodeIds = getReachableTradeGateNodeIds(workflow);
 
   const updateOption = async (
     optionId: string,
@@ -1954,6 +2428,7 @@ function TradeGateQuestionEditor({
             {t('settings.session-mode.trade-gate.question-title')}
           </span>
           <input
+            ref={titleInputRef}
             value={node.title}
             onChange={(event) =>
               void updateNode({ ...node, title: event.target.value })
@@ -2010,6 +2485,10 @@ function TradeGateQuestionEditor({
               {targetNodes.map((target) => (
                 <option key={target.id} value={target.id}>
                   {getNodeDisplayLabel(target)}
+                  {target.type === 'question' &&
+                  !reachableNodeIds.has(target.id)
+                    ? ` · ${t('settings.session-mode.trade-gate.unconnected-label')}`
+                    : ''}
                 </option>
               ))}
             </select>
@@ -2082,7 +2561,7 @@ function TradeGateOutcomeEditor({
             onChange={(event) =>
               void updateNode({ ...node, title: event.target.value })
             }
-            className="setting-input journalit-settings-input"
+            className="setting-input journalit-settings-input journalit-session-mode-trade-gate-result-title-input"
           />
         </label>
         <label className="journalit-session-mode-trade-gate-field journalit-session-mode-trade-gate-field--wide">

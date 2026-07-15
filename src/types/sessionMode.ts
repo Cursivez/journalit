@@ -12,6 +12,7 @@ export interface SessionModeLinkedResource {
 export interface SessionModeSettings {
   sessionWindows: SessionModeWindow[];
   preparationLeadTimeMinutes: number;
+  showTradeExecutionsInSessionLog: boolean;
   linkedResources: SessionModeLinkedResource[];
   tradeGateWorkflows: TradeGateWorkflow[];
   phaseLayouts: SessionModePhaseLayouts;
@@ -209,6 +210,7 @@ export interface SessionModePhaseState {
 export const DEFAULT_SESSION_MODE_SETTINGS: SessionModeSettings = {
   sessionWindows: [],
   preparationLeadTimeMinutes: 30,
+  showTradeExecutionsInSessionLog: true,
   linkedResources: [],
   tradeGateWorkflows: DEFAULT_TRADE_GATE_WORKFLOWS,
   phaseLayouts: {

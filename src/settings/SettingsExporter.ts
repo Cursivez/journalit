@@ -6,6 +6,7 @@ import JournalitPlugin from '../main';
 import { JournalitSettings, DEFAULT_SETTINGS } from './types';
 import { t } from '../lang/helpers';
 import { BackendSecretStorage } from '../services/backend/BackendSecretStorage';
+import { eventBus } from '../services/events';
 
 export function redactSettingsSecretsForExport(value: unknown): unknown {
   if (Array.isArray(value)) {
@@ -139,6 +140,17 @@ export class SettingsExporter {
         this.plugin.settings,
         removeLocalSecretNamespaceFromImport(importData.settings)
       );
+      const mergedSessionMode = mergedSettings.sessionMode;
+      if (!this.isPlainObject(mergedSessionMode)) {
+        mergedSettings.sessionMode =
+          this.plugin.settings.sessionMode ?? DEFAULT_SETTINGS.sessionMode;
+      } else if (
+        typeof mergedSessionMode.showTradeExecutionsInSessionLog !== 'boolean'
+      ) {
+        mergedSessionMode.showTradeExecutionsInSessionLog =
+          this.plugin.settings.sessionMode?.showTradeExecutionsInSessionLog ??
+          DEFAULT_SETTINGS.sessionMode.showTradeExecutionsInSessionLog;
+      }
 
       
       this.plugin.settings = mergedSettings;
@@ -153,6 +165,10 @@ export class SettingsExporter {
           detail: { source: 'SettingsExporter.import' },
         })
       );
+      eventBus.publish('settings:changed', {
+        section: 'all',
+        source: 'SettingsExporter.import',
+      });
 
       const exportVersion = importData._version ?? 'unknown';
       new Notice(
@@ -208,6 +224,10 @@ export class SettingsExporter {
                 detail: { source: 'SettingsExporter.reset' },
               })
             );
+            eventBus.publish('settings:changed', {
+              section: 'all',
+              source: 'SettingsExporter.reset',
+            });
 
             const noticeMsg = backupCreated
               ? t('notice.settings-reset-with-backup')

@@ -33,11 +33,13 @@ export function getFilteredComboBoxOptions({
   inputValue,
   isMulti,
   value,
+  getOptionLabel = (option) => option,
 }: {
   normalizedOptions: string[];
   inputValue: string;
   isMulti: boolean;
   value: string | string[];
+  getOptionLabel?: (option: string) => string;
 }): string[] {
   const selectedValues =
     isMulti && Array.isArray(value) ? value.map(String) : [];
@@ -47,7 +49,7 @@ export function getFilteredComboBoxOptions({
   const filtered: string[] = [];
 
   for (const option of normalizedOptions) {
-    if (!queryPattern.test(option.toLowerCase())) continue;
+    if (!queryPattern.test(getOptionLabel(option).toLowerCase())) continue;
     if (isMulti && selectedValueSet.has(option)) continue;
     filtered.push(option);
   }

@@ -1708,15 +1708,24 @@ const mockMissedTradesWeekly = [
   },
 ];
 
+const PREVIEW_BREAK_EVEN_ACCOUNT_BALANCE = 100_000;
+
+function attachPreviewBreakEvenBalance(trades: Trade[]): Trade[] {
+  return trades.map((trade) => ({
+    ...trade,
+    breakEvenAccountCurrentBalanceTotal: PREVIEW_BREAK_EVEN_ACCOUNT_BALANCE,
+  }));
+}
+
 
 export const previewDataBundle = {
   
-  trades: mockTrades, 
-  tradesDaily: mockTradesDaily, 
-  tradesWeekly: mockTrades, 
-  tradesMonthly: mockTradesMonthly, 
-  tradesQuarterly: mockTradesQuarterly, 
-  tradesYearly: mockTradesYearly, 
+  trades: attachPreviewBreakEvenBalance(mockTrades), 
+  tradesDaily: attachPreviewBreakEvenBalance(mockTradesDaily), 
+  tradesWeekly: attachPreviewBreakEvenBalance(mockTrades), 
+  tradesMonthly: attachPreviewBreakEvenBalance(mockTradesMonthly), 
+  tradesQuarterly: attachPreviewBreakEvenBalance(mockTradesQuarterly), 
+  tradesYearly: attachPreviewBreakEvenBalance(mockTradesYearly), 
 
   
   weeklyPerformance: mockWeeklyPerformance,

@@ -2,6 +2,7 @@ import { TFile } from 'obsidian';
 import type JournalitPlugin from '../../main';
 import type {
   TradeGateNode,
+  TradeGateOption,
   TradeGateOutcomeNode,
   TradeGateQuestionNode,
   TradeGateRun,
@@ -34,6 +35,89 @@ export function getTradeGateOutcomeNode(
 ): TradeGateOutcomeNode | null {
   const node = getTradeGateNode(workflow, nodeId);
   return node?.type === 'outcome' ? node : null;
+}
+
+export function getReachableTradeGateNodeIds(
+  workflow: TradeGateWorkflow
+): Set<string> {
+  const nodesById = new Map(workflow.nodes.map((node) => [node.id, node]));
+  const reachableNodeIds = new Set<string>();
+  const pendingNodeIds = workflow.startNodeId ? [workflow.startNodeId] : [];
+
+  while (pendingNodeIds.length > 0) {
+    const nodeId = pendingNodeIds.pop();
+    if (!nodeId || reachableNodeIds.has(nodeId)) continue;
+
+    const node = nodesById.get(nodeId);
+    if (!node) continue;
+    reachableNodeIds.add(nodeId);
+
+    if (node.type === 'question') {
+      for (const option of node.options) {
+        pendingNodeIds.push(option.targetNodeId);
+      }
+    }
+  }
+
+  return reachableNodeIds;
+}
+
+export function addConnectedTradeGateQuestion(
+  params: {
+    workflow: TradeGateWorkflow;
+    question: TradeGateQuestionNode;
+  } & (
+    | { parentQuestionId: null }
+    | {
+        parentQuestionId: string;
+        option: Omit<TradeGateOption, 'targetNodeId'>;
+      }
+  )
+): TradeGateWorkflow {
+  const { question, workflow } = params;
+  const parentQuestionId = params.parentQuestionId;
+  const existingQuestions = workflow.nodes.filter(
+    (node): node is TradeGateQuestionNode => node.type === 'question'
+  );
+
+  if (parentQuestionId === null) {
+    if (existingQuestions.length > 0) {
+      throw new Error('A parent question is required for a workflow branch');
+    }
+    return {
+      ...workflow,
+      startNodeId: question.id,
+      nodes: [...workflow.nodes, question],
+    };
+  }
+
+  const parentQuestion = existingQuestions.find(
+    (node) => node.id === parentQuestionId
+  );
+  if (
+    !parentQuestion ||
+    !getReachableTradeGateNodeIds(workflow).has(parentQuestion.id)
+  ) {
+    throw new Error('The parent question must be reachable from the start');
+  }
+
+  return {
+    ...workflow,
+    nodes: [
+      ...workflow.nodes.map((node) =>
+        node.id === parentQuestion.id
+          ? {
+              ...parentQuestion,
+              options: [
+                ...parentQuestion.options,
+                { ...params.option, targetNodeId: question.id },
+              ],
+            }
+          : node
+      ),
+      question,
+    ],
+  };
 }
 
 export function createTradeGateRun(workflow: TradeGateWorkflow): TradeGateRun {

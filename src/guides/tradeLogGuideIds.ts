@@ -26,6 +26,8 @@ export const TRADE_LOG_IMAGE_GALLERY_EMPTY_STATE_TARGET_ID =
   'tradelog.image-gallery-empty-state';
 export const TRADE_LOG_IMAGE_GALLERY_SOURCE_SORT_TARGET_ID =
   'tradelog.image-gallery-source-sort';
+export const TRADE_LOG_IMAGE_GALLERY_GROUPING_TARGET_ID =
+  'tradelog.image-gallery-grouping';
 export const TRADE_LOG_IMAGE_GALLERY_SIZE_TARGET_ID =
   'tradelog.image-gallery-size';
 export const TRADE_LOG_IMAGE_GALLERY_FILTER_SECTION_TARGET_ID =

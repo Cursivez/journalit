@@ -5990,6 +5990,23 @@ const vi: Lang = {
   'templateEditor.widget.trade-review.fields-all': 'Tất cả trường',
   'templateEditor.widget.trade-review.fields-count': '{count} trường',
   'templateEditor.widget.trade-review.no-fields': 'Không có trường nào',
+  'templateEditor.widget.trade-review.questions': 'Câu hỏi đánh giá',
+  'templateEditor.widget.trade-review.questions-help':
+    'Chọn các câu hỏi hiển thị cho từng kết quả giao dịch. ID câu hỏi được giữ nguyên để các câu trả lời đã lưu vẫn được liên kết khi bạn chỉnh sửa hoặc sắp xếp lại câu hỏi.',
+  'templateEditor.widget.trade-review.outcome.win': 'Có lãi',
+  'templateEditor.widget.trade-review.outcome.loss': 'Thua lỗ',
+  'templateEditor.widget.trade-review.outcome.breakeven': 'Hòa vốn',
+  'templateEditor.widget.trade-review.outcome.open': 'Đang mở',
+  'templateEditor.widget.trade-review.questions-empty':
+    'Không có câu hỏi nào cho kết quả này.',
+  'templateEditor.widget.trade-review.question-label': 'Câu hỏi',
+  'templateEditor.widget.trade-review.question-placeholder':
+    'Nhập câu hỏi đánh giá',
+  'templateEditor.widget.trade-review.answer-placeholder-label':
+    'Nội dung mẫu câu trả lời',
+  'templateEditor.widget.trade-review.answer-placeholder':
+    'Lời nhắc tùy chọn hiển thị trong trường trả lời',
+  'templateEditor.widget.trade-review.add-question': '+ Thêm câu hỏi',
   'templateEditor.widget.previous-context-add-section': '+ Thêm phần',
   'templateEditor.widget.previous-context-headings-label':
     'Các tiêu đề cần bao gồm',
@@ -6156,6 +6173,16 @@ const vi: Lang = {
   'setups.create.field.direction': 'Hướng',
   'setups.create.field.color': 'Màu sắc',
   'setups.create.field.color-description': 'Chọn màu để nhận diện setup này.',
+  'setups.create.profile.heading': 'Các trường ưu tiên',
+  'setups.create.profile.optional-label': '(Không bắt buộc)',
+  'setups.create.field.sessions': 'Phiên giao dịch',
+  'setups.create.field.preferred-sessions-tooltip':
+    'Quản lý các phiên này trong Cài đặt → Thiết lập nhật ký → Session mode.',
+  'setups.create.placeholder.preferred-sessions': 'London, New York',
+  'setups.create.field.timeframes': 'Khung thời gian',
+  'setups.create.placeholder.preferred-timeframes': '5m, 15m, 1h',
+  'setups.create.field.tickers': 'Ticker',
+  'setups.create.placeholder.preferred-tickers': 'ES, NQ, EURUSD',
   'setups.create.direction.any': 'Không chỉ định',
   'setups.create.direction.long': 'Mua',
   'setups.create.direction.short': 'Bán',
@@ -6704,6 +6731,12 @@ const vi: Lang = {
     'Show quick note links during preparation.',
   'settings.session-mode.linked-resources-count': '{count} linked',
   'settings.session-mode.linked-resources-hide': 'Hide linked',
+  'settings.session-mode.session-log': 'Nhật ký phiên',
+  'settings.session-mode.session-log-desc':
+    'Chọn những sự kiện tự động nào sẽ xuất hiện cùng với ghi chú phiên của bạn.',
+  'settings.session-mode.show-trade-executions': 'Vào lệnh và thoát lệnh',
+  'settings.session-mode.show-trade-executions-desc':
+    'Hiển thị các điểm vào lệnh và thoát lệnh trong nhật ký Chế độ phiên và Đánh giá hằng ngày.',
   'settings.session-mode.session-log-tags': 'Session log tags',
   'settings.session-mode.session-log-tags-desc':
     'Customize the tags available in the Session Mode composer and DRC session log.',
@@ -6799,11 +6832,31 @@ const vi: Lang = {
   'settings.session-mode.trade-gate.title': 'Trade Gate workflows',
   'settings.session-mode.trade-gate.desc':
     'Create IF/THEN decision flows for live entry checks.',
+  'settings.session-mode.trade-gate.delete-workflow.title':
+    'Xóa quy trình Trade Gate?',
+  'settings.session-mode.trade-gate.delete-workflow.message':
+    'Xóa “{name}”? Thao tác này sẽ xóa mọi câu hỏi và nhánh trong quy trình. Không thể hoàn tác.',
+  'settings.session-mode.trade-gate.delete-workflow.confirm': 'Xóa quy trình',
   'settings.session-mode.trade-gate.name': 'Workflow name',
   'settings.session-mode.trade-gate.summary': '{count} nodes',
   'settings.session-mode.trade-gate.untitled': 'Untitled workflow',
   'settings.session-mode.trade-gate.start-node': 'Start question',
   'settings.session-mode.trade-gate.add-question': 'Add question',
+  'settings.session-mode.trade-gate.add-branch-question': 'Thêm nhánh',
+  'settings.session-mode.trade-gate.add-branch-from':
+    'Thêm một câu hỏi sau “{question}”.',
+  'settings.session-mode.trade-gate.add-first-question':
+    'Thêm câu hỏi đầu tiên trong quy trình này.',
+  'settings.session-mode.trade-gate.select-question-to-add':
+    'Chọn một câu hỏi để thêm nhánh.',
+  'settings.session-mode.trade-gate.connect-before-branching':
+    'Kết nối câu hỏi này trước khi thêm nhánh.',
+  'settings.session-mode.trade-gate.edit-before-branching':
+    'Chỉnh sửa câu hỏi mới này trước khi thêm nhánh khác.',
+  'settings.session-mode.trade-gate.unconnected-title': 'Câu hỏi chưa kết nối',
+  'settings.session-mode.trade-gate.unconnected-desc':
+    'Không thể truy cập các câu hỏi này từ câu hỏi bắt đầu. Hãy kết nối chúng từ một lựa chọn đang hoạt động hoặc xóa chúng.',
+  'settings.session-mode.trade-gate.unconnected-label': 'Chưa kết nối',
   'settings.session-mode.trade-gate.add-outcome': 'Add outcome',
   'settings.session-mode.trade-gate.question': 'Question',
   'settings.session-mode.trade-gate.outcome': 'Outcome',
@@ -6829,6 +6882,8 @@ const vi: Lang = {
   'settings.session-mode.trade-gate.results': 'Results',
   'settings.session-mode.trade-gate.no-paths':
     'Add options to connect this workflow.',
+  'settings.session-mode.trade-gate.no-questions':
+    'Thêm câu hỏi đầu tiên để bắt đầu quy trình này.',
   'settings.session-mode.trade-gate.missing-target': 'Missing target',
   'settings.session-mode.trade-gate.repeated-node': 'Links back to this node.',
   'settings.session-mode.trade-gate.default-name': 'Basic entry gate',
@@ -7094,6 +7149,14 @@ const vi: Lang = {
   'imageGallery.size.small': 'Nhỏ',
   'imageGallery.size.medium': 'Vừa',
   'imageGallery.size.large': 'Lớn',
+  'imageGallery.view-mode-aria': 'Nhóm thẻ thư viện',
+  'imageGallery.view-mode.grouped': 'Theo nhóm',
+  'imageGallery.view-mode.individual': 'Từng mục',
+  'imageGallery.group.additional-media': '{count} mục phương tiện bổ sung',
+  'imageGallery.group.annotation-summary':
+    '{annotated} trong số {total} mục phương tiện đã được chú thích',
+  'imageGallery.group.navigation':
+    'Phương tiện {mediaCurrent}/{mediaTotal} · Mục nhật ký {groupCurrent}/{groupTotal}',
   'imageGallery.source.label': 'Nguồn:',
   'imageGallery.source.all': 'Tất cả phương tiện',
   'imageGallery.source.trade': 'Giao dịch',
@@ -7125,6 +7188,9 @@ const vi: Lang = {
   'tradelog.guide.gallery-controls.title': 'Chọn phương tiện bạn muốn xem lại',
   'tradelog.guide.gallery-controls.description':
     'Dùng Nguồn để chọn giao dịch hoặc ghi chú đánh giá, Sắp xếp để đổi thứ tự tệp đính kèm, và các nút kích thước để chuyển giữa chế độ quét gọn và xem trước phương tiện lớn hơn.',
+  'tradelog.guide.gallery-grouping.title': 'Nhóm phương tiện theo mục nhật ký',
+  'tradelog.guide.gallery-grouping.description':
+    'Chế độ Theo nhóm giữ mỗi giao dịch hoặc đánh giá trong một thẻ. Từng mục hiển thị mỗi phương tiện đính kèm trong thẻ riêng.',
   'tradelog.guide.gallery-source-sort.title':
     'Chọn nguồn và thứ tự phương tiện',
   'tradelog.guide.gallery-source-sort.description':

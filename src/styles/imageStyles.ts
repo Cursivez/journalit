@@ -1422,6 +1422,7 @@ export const IMAGE_STYLES = `
     border-radius: 20px;
     font-size: 12px;
     font-weight: 500;
+    font-variant-numeric: tabular-nums;
     z-index: 10;
     pointer-events: none; 
   }

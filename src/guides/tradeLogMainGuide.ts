@@ -15,6 +15,7 @@ import {
   TRADE_LOG_IMAGE_GALLERY_FULLSCREEN_ACTIONS_TARGET_ID,
   TRADE_LOG_IMAGE_GALLERY_FULLSCREEN_OPENED_ACTION_ID,
   TRADE_LOG_IMAGE_GALLERY_GRID_TARGET_ID,
+  TRADE_LOG_IMAGE_GALLERY_GROUPING_TARGET_ID,
   TRADE_LOG_IMAGE_GALLERY_MODE_BUTTON_TARGET_ID,
   TRADE_LOG_IMAGE_GALLERY_SELECTED_ACTION_ID,
   TRADE_LOG_IMAGE_GALLERY_SIZE_TARGET_ID,
@@ -27,7 +28,7 @@ import {
   TRADE_LOG_VIEW_SELECTOR_TARGET_ID,
 } from './tradeLogGuideIds';
 
-export const TRADE_LOG_MAIN_GUIDE_VERSION = 6;
+export const TRADE_LOG_MAIN_GUIDE_VERSION = 7;
 
 export function registerTradeLogMainGuide(guideRegistry: GuideRegistry): void {
   guideRegistry.registerGuide({
@@ -139,6 +140,13 @@ export function registerTradeLogMainGuide(guideRegistry: GuideRegistry): void {
         progression: 'manual',
         placement: 'left',
         targetId: TRADE_LOG_IMAGE_GALLERY_SOURCE_SORT_TARGET_ID,
+      },
+      {
+        id: 'gallery-grouping',
+        title: t('tradelog.guide.gallery-grouping.title'),
+        description: t('tradelog.guide.gallery-grouping.description'),
+        progression: 'manual',
+        targetId: TRADE_LOG_IMAGE_GALLERY_GROUPING_TARGET_ID,
       },
       {
         id: 'gallery-size',

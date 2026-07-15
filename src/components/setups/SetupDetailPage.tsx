@@ -156,6 +156,7 @@ export const SetupDetailPage: React.FC<{
         viewModel={viewModel}
         linkedTrades={linkedTrades}
         onEditSetup={onEditSetup}
+        onViewGallery={handleViewGallery}
       />
     </div>
   );
@@ -201,7 +202,15 @@ const SetupDetailScaffold: React.FC<{
   viewModel: SetupViewModel;
   linkedTrades: SetupLinkedTrade[];
   onEditSetup: (setup: Setup) => void;
-}> = ({ hoverParent, plugin, viewModel, linkedTrades, onEditSetup }) => {
+  onViewGallery: () => void;
+}> = ({
+  hoverParent,
+  plugin,
+  viewModel,
+  linkedTrades,
+  onEditSetup,
+  onViewGallery,
+}) => {
   return (
     <div className="journalit-setups-detail-scaffold">
       <SetupDetailPerformanceSection
@@ -216,6 +225,7 @@ const SetupDetailScaffold: React.FC<{
         viewModel={viewModel}
         linkedTrades={linkedTrades}
         onEditSetup={onEditSetup}
+        onViewGallery={onViewGallery}
       />
 
       <SetupPlaybookPanel plugin={plugin} setup={viewModel.setup} />
@@ -395,13 +405,21 @@ export const SetupPlaybookPanel: React.FC<{
 
 SetupPlaybookPanel.displayName = 'SetupPlaybookPanel';
 
-const SetupBriefPanel: React.FC<{
+export const SetupBriefPanel: React.FC<{
   hoverParent: Component;
   plugin: JournalitPlugin;
   viewModel: SetupViewModel;
   linkedTrades: SetupLinkedTrade[];
   onEditSetup: (setup: Setup) => void;
-}> = ({ hoverParent, plugin, viewModel, linkedTrades, onEditSetup }) => {
+  onViewGallery: () => void;
+}> = ({
+  hoverParent,
+  plugin,
+  viewModel,
+  linkedTrades,
+  onEditSetup,
+  onViewGallery,
+}) => {
   const { setup } = viewModel;
   const registerDetailContextTarget = useGuideTarget(
     SETUPS_DETAIL_CONTEXT_TARGET_ID
@@ -419,9 +437,10 @@ const SetupBriefPanel: React.FC<{
   const healthPercent = Math.round(
     (completedHealthItems.length / Math.max(1, healthItems.length)) * 100
   );
-  const profileRows = getSetupBriefProfileRows(setup);
-  const profilePreviewRows = profileRows.slice(0, 3);
-  const hiddenProfileCount = Math.max(0, profileRows.length - 3);
+  const profileRows = getSetupBriefProfileRows(
+    setup,
+    plugin.settings.sessionMode.sessionWindows
+  );
   const hasHiddenNotes = setup.linkedNotes.length > 3;
   const notesPreview = setup.linkedNotes.slice(0, hasHiddenNotes ? 2 : 3);
   const hiddenNotes = setup.linkedNotes.slice(2);
@@ -498,24 +517,17 @@ const SetupBriefPanel: React.FC<{
           linkedTrades={linkedTrades}
         />
 
-        {profilePreviewRows.length > 0 ? (
+        {profileRows.length > 0 ? (
           <section className="journalit-setups-brief__section">
             <h2>{t('setups.view.detail.brief.profile')}</h2>
             <dl className="journalit-setups-brief__profile-list">
-              {profilePreviewRows.map((row) => (
+              {profileRows.map((row) => (
                 <div key={row.label}>
                   <dt>{row.label}</dt>
                   <dd>{row.value}</dd>
                 </div>
               ))}
             </dl>
-            {hiddenProfileCount > 0 ? (
-              <span className="journalit-setups-brief__more-note">
-                {t('setups.view.detail.brief.more', {
-                  count: String(hiddenProfileCount),
-                })}
-              </span>
-            ) : null}
           </section>
         ) : null}
 
@@ -612,6 +624,15 @@ const SetupBriefPanel: React.FC<{
                 count: String(screenshots.length),
               })}
             </h2>
+            {screenshots.length > screenshotPreview.length ? (
+              <button
+                type="button"
+                className="journalit-setups-brief__view-all"
+                onClick={onViewGallery}
+              >
+                {t('setups.view.detail.brief.view-all')}
+              </button>
+            ) : null}
           </div>
           {screenshotPreview.length === 0 ? (
             <p className="journalit-setups-muted">

@@ -767,7 +767,8 @@ function FullscreenNavigationIndicator({
 }) {
   return navigationContext && navigationContext.images.length > 1 ? (
     <div className="journalit-fullscreen-nav-indicator">
-      {navigationContext.currentIndex + 1} / {navigationContext.images.length}
+      {navigationContext.indicatorLabel ??
+        `${navigationContext.currentIndex + 1} / ${navigationContext.images.length}`}
     </div>
   ) : null;
 }

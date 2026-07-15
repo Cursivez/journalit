@@ -403,7 +403,34 @@ export const SETTINGS_TAB_STYLES = `
   }
 
   .journalit-settings .journalit-session-mode-trade-gate-workflow.is-expanded .journalit-session-mode-trade-gate-row {
+    grid-template-columns: minmax(0, 1fr) auto auto;
     border-width: 0 0 1px;
+    border-radius: 0;
+  }
+
+  .journalit-settings .journalit-session-mode-trade-gate-row > .tooltip-trigger {
+    min-width: 0;
+  }
+
+  .journalit-settings .journalit-session-mode-trade-gate-row button.is-disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+  }
+
+  .journalit-sticky-header-clone.journalit-session-mode-trade-gate-header--sticky-clone {
+    border: 1px solid var(--background-modifier-border);
+    border-radius: var(--radius-m) var(--radius-m) 0 0;
+    background: var(--background-secondary);
+    box-shadow:
+      0 0 0 4px var(--background-primary),
+      0 8px 18px rgba(0, 0, 0, 0.16);
+    overflow: hidden;
+  }
+
+  .journalit-session-mode-trade-gate-header--sticky-clone .journalit-session-mode-trade-gate-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    border: 0;
     border-radius: 0;
   }
 
@@ -684,6 +711,21 @@ export const SETTINGS_TAB_STYLES = `
     line-height: 20px;
   }
 
+  .journalit-settings .journalit-session-mode-trade-gate-option-row input {
+    height: 36px;
+    min-height: 36px;
+  }
+
+  .journalit-settings input.journalit-session-mode-trade-gate-workflow-name-input {
+    height: 36px;
+    min-height: 36px;
+  }
+
+  .journalit-settings input.journalit-session-mode-trade-gate-result-title-input {
+    height: 36px;
+    min-height: 36px;
+  }
+
   .journalit-settings .journalit-session-mode-trade-gate-flow-map {
     display: flex;
     flex-direction: column;
@@ -697,7 +739,7 @@ export const SETTINGS_TAB_STYLES = `
   .journalit-settings .journalit-session-mode-trade-gate-flow-map__toolbar {
     display: flex;
     align-items: center;
-    justify-content: space-between;
+    justify-content: flex-start;
     gap: var(--size-2-3);
   }
 
@@ -764,6 +806,86 @@ export const SETTINGS_TAB_STYLES = `
     color: var(--text-faint);
     font-size: var(--font-ui-smaller);
     pointer-events: none;
+  }
+
+  .journalit-settings .journalit-session-mode-trade-gate-unconnected {
+    display: flex;
+    flex-direction: column;
+    gap: var(--size-2-2);
+    padding: var(--size-2-3);
+    border: 1px dashed var(--background-modifier-border-hover);
+    border-radius: var(--radius-s);
+    background: var(--background-secondary);
+  }
+
+  .journalit-settings .journalit-session-mode-trade-gate-unconnected__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--size-2-2);
+  }
+
+  .journalit-settings .journalit-session-mode-trade-gate-unconnected__title {
+    color: var(--text-normal);
+    font-size: var(--font-ui-small);
+    font-weight: var(--font-semibold);
+  }
+
+  .journalit-settings .journalit-session-mode-trade-gate-unconnected__count {
+    display: inline-flex;
+    min-width: 22px;
+    height: 22px;
+    align-items: center;
+    justify-content: center;
+    padding: 0 var(--size-2-1);
+    border-radius: 999px;
+    background: var(--background-modifier-hover);
+    color: var(--text-muted);
+    font-size: var(--font-ui-smaller);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .journalit-settings .journalit-session-mode-trade-gate-unconnected__list {
+    display: grid;
+    max-height: 146px;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: var(--size-2-1);
+    overflow-y: auto;
+  }
+
+  .journalit-settings button.journalit-session-mode-trade-gate-unconnected__item {
+    display: grid;
+    min-width: 0;
+    min-height: 34px;
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    align-items: center;
+    justify-content: initial;
+    gap: var(--size-2-2);
+    padding: var(--size-2-1) var(--size-2-2);
+    border: 1px solid var(--background-modifier-border);
+    background: var(--background-primary);
+    box-shadow: none;
+    color: var(--text-muted);
+    text-align: left;
+  }
+
+  .journalit-settings button.journalit-session-mode-trade-gate-unconnected__item:hover,
+  .journalit-settings button.journalit-session-mode-trade-gate-unconnected__item.is-selected {
+    border-color: var(--interactive-accent);
+    color: var(--text-normal);
+  }
+
+  .journalit-settings .journalit-session-mode-trade-gate-unconnected__item-title {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .journalit-settings .journalit-session-mode-trade-gate-unconnected__item-index {
+    color: var(--text-faint);
+    font-size: var(--font-ui-smaller);
+    font-variant-numeric: tabular-nums;
   }
 
   .journalit-settings .journalit-session-mode-trade-gate-flow-stage {

@@ -10,6 +10,7 @@ import { MediaPreview } from '../image/MediaPreview';
 import { FullscreenPortal } from '../image/FullscreenPortal';
 import { PnLValue, RMultipleValue } from '../shared/display';
 import { SkeletonBox } from '../shared/SkeletonBox';
+import { Tooltip } from '../shared/Tooltip';
 import { Button } from '../ui/Button';
 import { ComboBox } from '../core/ComboBox';
 import {
@@ -21,9 +22,11 @@ import {
 } from '../shared/icons/ObsidianIcon';
 import type {
   ImageGalleryAnnotation,
+  ImageGalleryGroup,
   ImageGalleryItem,
   ImageGallerySize,
   ImageGallerySourceType,
+  ImageGalleryViewMode,
 } from './types';
 import {
   formatHoverTags,
@@ -191,19 +194,19 @@ function getImageGalleryEmptyDescription(
 
 export const ImageGalleryGrid: React.FC<{
   app: App;
-  items: ImageGalleryItem[];
+  groups: ImageGalleryGroup[];
   size: ImageGallerySize;
   dateFormat?: string;
   useRMultiples: boolean;
   isPerformanceMasked: boolean;
   shouldBlurImages: boolean;
   viewport: { width: number; height: number; scrollTop: number };
-  onOpenFullscreen: (index: number) => void;
+  onOpenFullscreen: (itemId: string) => void;
   onOpenSource: (sourcePath: string) => void;
   registerGridTarget: (element: HTMLElement | null) => void;
 }> = ({
   app,
-  items,
+  groups,
   size,
   dateFormat,
   useRMultiples,
@@ -215,12 +218,12 @@ export const ImageGalleryGrid: React.FC<{
   registerGridTarget,
 }) => {
   const virtualWindow = useMemo(
-    () => getImageGalleryVirtualWindow(items.length, size, viewport),
-    [items.length, size, viewport]
+    () => getImageGalleryVirtualWindow(groups.length, size, viewport),
+    [groups.length, size, viewport]
   );
-  const renderedItems = useMemo(
-    () => items.slice(virtualWindow.startIndex, virtualWindow.endIndex),
-    [items, virtualWindow.endIndex, virtualWindow.startIndex]
+  const renderedGroups = useMemo(
+    () => groups.slice(virtualWindow.startIndex, virtualWindow.endIndex),
+    [groups, virtualWindow.endIndex, virtualWindow.startIndex]
   );
 
   return (
@@ -237,16 +240,14 @@ export const ImageGalleryGrid: React.FC<{
           })}
         />
       ) : null}
-      {renderedItems.map((item, offset) => {
-        const itemIndex = virtualWindow.startIndex + offset;
+      {renderedGroups.map((group) => {
         return (
           <ImageGalleryCard
             app={app}
             dateFormat={dateFormat}
+            group={group}
             isPerformanceMasked={isPerformanceMasked}
-            item={item}
-            itemIndex={itemIndex}
-            key={item.id}
+            key={group.id}
             onOpenFullscreen={onOpenFullscreen}
             onOpenSource={onOpenSource}
             shouldBlurImage={shouldBlurImages}
@@ -273,11 +274,13 @@ ImageGalleryGrid.displayName = 'ImageGalleryGrid';
 export const ImageGalleryFullscreen: React.FC<{
   item: ImageGalleryItem | null;
   items: ImageGalleryItem[];
+  groups: ImageGalleryGroup[];
   annotationEditorItem: ImageGalleryItem | null;
   plugin: JournalitPlugin;
   currentIndex: number;
   dateFormat?: string;
   shouldBlurImages: boolean;
+  viewMode: ImageGalleryViewMode;
   onClose: () => void;
   onNavigate: (index: number) => void;
   onEditAnnotation: (item: ImageGalleryItem) => void;
@@ -293,11 +296,13 @@ export const ImageGalleryFullscreen: React.FC<{
 }> = ({
   item,
   items,
+  groups,
   annotationEditorItem,
   plugin,
   currentIndex,
   dateFormat,
   shouldBlurImages,
+  viewMode,
   onClose,
   onNavigate,
   onEditAnnotation,
@@ -326,7 +331,12 @@ export const ImageGalleryFullscreen: React.FC<{
             ? 'journalit-image-gallery-fullscreen-layout journalit-image-gallery-fullscreen-layout--annotating'
             : 'journalit-image-gallery-fullscreen-layout'
         }
-        onClick={(event) => event.stopPropagation()}
+        onClick={(event) => {
+          event.stopPropagation();
+          if (!isFullscreenInteractiveTarget(event.target)) {
+            onClose();
+          }
+        }}
         onKeyDown={(event) => event.stopPropagation()}
         role="presentation"
       >
@@ -340,6 +350,10 @@ export const ImageGalleryFullscreen: React.FC<{
             altPrefix: item.sourceLabel,
             useResolveMediaPath: true,
             sourcePath: item.sourcePath,
+            indicatorLabel:
+              viewMode === 'grouped'
+                ? getGroupedNavigationLabel(item, groups)
+                : undefined,
           }}
           onClose={onClose}
           sourcePath={item.sourcePath}
@@ -386,10 +400,54 @@ export const ImageGalleryFullscreen: React.FC<{
 
 ImageGalleryFullscreen.displayName = 'ImageGalleryFullscreen';
 
+function isFullscreenInteractiveTarget(target: EventTarget): boolean {
+  if (!(target instanceof Element)) return false;
+
+  return Boolean(
+    target.closest(
+      [
+        'button',
+        'a',
+        'input',
+        'textarea',
+        'select',
+        '[role="button"]',
+        '[role="menu"]',
+        '.journalit-fullscreen-zoomable-image',
+        '.journalit-fullscreen-zoomable-media',
+        '.journalit-fullscreen-video-wrapper',
+        '.journalit-fullscreen-youtube-wrapper',
+        '.journalit-fullscreen-copy-menu',
+        '.journalit-image-annotation-panel',
+        '.journalit-image-gallery-fullscreen-actions',
+      ].join(', ')
+    )
+  );
+}
+
+export function getGroupedNavigationLabel(
+  item: ImageGalleryItem,
+  groups: ImageGalleryGroup[]
+): string {
+  const groupIndex = groups.findIndex((group) =>
+    group.items.some((groupItem) => groupItem.id === item.id)
+  );
+  const group = groups[groupIndex];
+  const mediaIndex = group.items.findIndex(
+    (groupItem) => groupItem.id === item.id
+  );
+
+  return t('imageGallery.group.navigation', {
+    mediaCurrent: String(mediaIndex + 1),
+    mediaTotal: String(group.items.length),
+    groupCurrent: String(groupIndex + 1),
+    groupTotal: String(groups.length),
+  });
+}
+
 const ImageGalleryCard = React.memo(function ImageGalleryCard({
   app,
-  item,
-  itemIndex,
+  group,
   size,
   dateFormat,
   useRMultiples,
@@ -399,16 +457,33 @@ const ImageGalleryCard = React.memo(function ImageGalleryCard({
   onOpenSource,
 }: {
   app: App;
-  item: ImageGalleryItem;
-  itemIndex: number;
+  group: ImageGalleryGroup;
   size: ImageGallerySize;
   dateFormat?: string;
   useRMultiples: boolean;
   isPerformanceMasked: boolean;
   shouldBlurImage: boolean;
-  onOpenFullscreen: (index: number) => void;
+  onOpenFullscreen: (itemId: string) => void;
   onOpenSource: (sourcePath: string) => void;
 }) {
+  const item = group.items[0];
+  const additionalMediaCount = group.items.length - 1;
+  const annotatedMediaCount = group.items.filter(
+    (groupItem) => groupItem.tags.length > 0 || Boolean(groupItem.notes)
+  ).length;
+  const groupTags = Array.from(
+    new Set(group.items.flatMap((groupItem) => groupItem.tags))
+  );
+  const annotationSummary = t('imageGallery.group.annotation-summary', {
+    annotated: String(annotatedMediaCount),
+    total: String(group.items.length),
+  });
+  const hoverNotes =
+    group.items.length === 1
+      ? item.notes
+      : annotatedMediaCount > 0
+        ? annotationSummary
+        : undefined;
   const performanceValue = useRMultiples ? item.rMultiple : item.pnl;
   const showPerformanceValue =
     item.sourceType === 'trade' && performanceValue !== undefined;
@@ -419,12 +494,16 @@ const ImageGalleryCard = React.memo(function ImageGalleryCard({
       : (performanceValue ?? 0) > 0
         ? 'positive'
         : 'neutral';
-  const hasAnnotations = item.tags.length > 0 || Boolean(item.notes);
+  const hasAnnotations = annotatedMediaCount > 0;
   const cardDateLabel = getImageGalleryCardDateLabel(item, dateFormat);
-  const hoverDetailsClass = getImageGalleryCardHoverDetailsClass(item);
+  const hoverDetailsClass = getImageGalleryCardHoverDetailsClass({
+    tags: groupTags,
+    notes: hoverNotes,
+    reviewed: item.reviewed,
+  });
   const handleOpenFullscreen = useCallback(() => {
-    onOpenFullscreen(itemIndex);
-  }, [itemIndex, onOpenFullscreen]);
+    onOpenFullscreen(item.id);
+  }, [item.id, onOpenFullscreen]);
 
   return (
     <article
@@ -457,19 +536,45 @@ const ImageGalleryCard = React.memo(function ImageGalleryCard({
             videoClassName="journalit-image-gallery-card__image"
             videoPreload="metadata"
           />
-          {hasAnnotations ? (
-            <span
-              className="journalit-image-gallery-card__annotation-marker"
-              aria-label={t('imageGallery.annotation.tagged')}
+          {additionalMediaCount > 0 ? (
+            <Tooltip
+              content={t('imageGallery.group.additional-media', {
+                count: String(additionalMediaCount),
+              })}
+              delay={0}
+              preferredPosition="top"
+              triggerClassName="journalit-image-gallery-card__media-count-trigger"
             >
-              <Tag size={15} aria-hidden="true" />
-            </span>
+              <span
+                className="journalit-image-gallery-card__media-count"
+                aria-label={t('imageGallery.group.additional-media', {
+                  count: String(additionalMediaCount),
+                })}
+              >
+                +{additionalMediaCount}
+              </span>
+            </Tooltip>
+          ) : null}
+          {hasAnnotations ? (
+            <Tooltip
+              content={annotationSummary}
+              delay={0}
+              preferredPosition="top"
+              triggerClassName="journalit-image-gallery-card__annotation-marker-trigger"
+            >
+              <span
+                className="journalit-image-gallery-card__annotation-marker"
+                aria-label={annotationSummary}
+              >
+                <Tag size={15} aria-hidden="true" />
+              </span>
+            </Tooltip>
           ) : null}
           <div
             className="journalit-image-gallery-card__hover-panel"
             aria-hidden="true"
           >
-            {item.tags.length > 0 ? (
+            {groupTags.length > 0 ? (
               <div className="journalit-image-gallery-card__hover-tags">
                 <Tag
                   className="journalit-image-gallery-card__hover-tags-icon"
@@ -477,13 +582,13 @@ const ImageGalleryCard = React.memo(function ImageGalleryCard({
                   aria-hidden="true"
                 />
                 <span className="journalit-image-gallery-card__hover-tag">
-                  {formatHoverTags(item.tags)}
+                  {formatHoverTags(groupTags)}
                 </span>
               </div>
             ) : null}
-            {item.notes ? (
+            {hoverNotes ? (
               <p className="journalit-image-gallery-card__hover-notes">
-                {item.notes}
+                {hoverNotes}
               </p>
             ) : null}
             {item.reviewed !== undefined ? (

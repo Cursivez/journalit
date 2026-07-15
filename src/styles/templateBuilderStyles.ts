@@ -1927,6 +1927,242 @@ export const TEMPLATE_BUILDER_STYLES = `
   white-space: nowrap;
 }
 
+.journalit-template-builder-container .template-trade-review-question-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 4px;
+  padding: 16px 12px 4px;
+  border-top: 1px solid var(--background-modifier-border);
+}
+
+.journalit-template-builder-container .template-trade-review-question-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.journalit-template-builder-container .template-trade-review-question-title {
+  color: var(--text-normal);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.journalit-template-builder-container .template-trade-review-question-title-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.journalit-template-builder-container .template-trade-review-question-info {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+  line-height: 1;
+  opacity: 0.65;
+  cursor: help;
+}
+
+.journalit-template-builder-container .template-trade-review-reset-button {
+  flex: 0 0 auto;
+  min-height: 28px;
+  padding: 0 9px;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 4px;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.journalit-template-builder-container .template-trade-review-reset-button:hover:not(:disabled) {
+  background: var(--background-modifier-hover);
+  color: var(--text-normal);
+}
+
+.journalit-template-builder-container .template-trade-review-reset-button:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.journalit-template-builder-container .template-trade-review-outcome-options {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+  width: 100%;
+}
+
+.journalit-template-builder-container button.template-trade-review-outcome-option {
+  width: 100%;
+  min-height: 34px;
+  padding: 7px 10px;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 6px;
+  box-shadow: none;
+  background: var(--background-primary);
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background-color 0.15s ease,
+    color 0.15s ease;
+}
+
+.journalit-template-builder-container button.template-trade-review-outcome-option:hover {
+  border-color: var(--interactive-accent-hover);
+  color: var(--text-normal);
+}
+
+.journalit-template-builder-container button.template-trade-review-outcome-option.is-selected {
+  border-color: var(--interactive-accent);
+  background: color-mix(
+    in srgb,
+    var(--interactive-accent) 12%,
+    var(--background-primary)
+  );
+  color: var(--text-normal);
+}
+
+.journalit-template-builder-container .template-trade-review-question-surface {
+  min-width: 0;
+}
+
+.journalit-template-builder-container .template-trade-review-question-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.journalit-template-builder-container .template-trade-review-question-columns {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 96px;
+  gap: 12px;
+  padding: 0 0 2px;
+}
+
+.journalit-template-builder-container .template-trade-review-question-column-labels {
+  display: grid;
+  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+  gap: 8px;
+  color: var(--text-muted);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.journalit-template-builder-container .template-trade-review-question-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 96px;
+  gap: 12px;
+  align-items: center;
+  padding: 4px 0;
+}
+
+.journalit-template-builder-container .template-trade-review-question-row + .template-trade-review-question-row {
+  margin-top: 2px;
+}
+
+
+.journalit-template-builder-container .template-trade-review-question-fields {
+  display: grid;
+  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+  gap: 8px;
+  min-width: 0;
+}
+
+.journalit-template-builder-container input.template-trade-review-question-input,
+.journalit-template-builder-container input.template-trade-review-placeholder-input {
+  width: 100%;
+  min-width: 0;
+  height: 32px;
+  margin: 0;
+  font-size: 12px;
+}
+
+.journalit-template-builder-container input.template-trade-review-placeholder-input {
+  color: var(--text-muted);
+}
+
+.journalit-template-builder-container .template-trade-review-question-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 2px;
+  min-width: 0;
+}
+
+.journalit-template-builder-container .template-trade-review-visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.journalit-template-builder-container button.template-trade-review-question-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 4px;
+  box-shadow: none;
+  background: var(--background-primary);
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.journalit-template-builder-container button.template-trade-review-question-action:hover:not(:disabled) {
+  background: var(--background-modifier-hover);
+  color: var(--text-normal);
+}
+
+.journalit-template-builder-container button.template-trade-review-question-action--remove:hover:not(:disabled) {
+  color: var(--text-error);
+}
+
+.journalit-template-builder-container button.template-trade-review-question-action:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+
+.journalit-template-builder-container .template-trade-review-question-empty {
+  padding: 20px 12px;
+  color: var(--text-muted);
+  font-size: 12px;
+  text-align: center;
+}
+
+.journalit-template-builder-container .template-trade-review-add-question {
+  align-self: flex-start;
+}
+
+@media (max-width: 760px) {
+  .journalit-template-builder-container .template-trade-review-outcome-options {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .journalit-template-builder-container .template-trade-review-question-fields {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .journalit-template-builder-container .template-trade-review-question-columns {
+    display: none;
+  }
+
+  .journalit-template-builder-container .template-trade-review-question-row {
+    align-items: start;
+  }
+
+  .journalit-template-builder-container .template-trade-review-question-actions {
+    flex-direction: column;
+  }
+}
+
 
 .journalit-template-builder-container .template-widget-config-input {
   flex: 1;

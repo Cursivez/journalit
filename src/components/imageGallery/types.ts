@@ -14,6 +14,7 @@ export type ImageGalleryOutcome = 'winner' | 'loser' | 'breakeven' | 'unknown';
 
 export type ImageGallerySize = 'small' | 'medium' | 'large';
 export type ImageGallerySort = 'newest' | 'oldest' | 'best' | 'worst';
+export type ImageGalleryViewMode = 'grouped' | 'individual';
 
 export interface ImageGalleryAnnotation {
   tags: string[];
@@ -45,4 +46,9 @@ export interface ImageGalleryItem {
   pnl?: number;
   rMultiple?: number;
   reviewed?: boolean;
+}
+
+export interface ImageGalleryGroup {
+  id: string;
+  items: ImageGalleryItem[];
 }

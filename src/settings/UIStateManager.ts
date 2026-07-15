@@ -61,6 +61,7 @@ interface UIState {
     sourceType?: string;
     sort?: string;
     size?: string;
+    viewMode?: string;
   };
 
   
@@ -135,6 +136,7 @@ const DEFAULT_UI_STATE: UIState = {
     sourceType: 'all',
     sort: 'newest',
     size: 'medium',
+    viewMode: 'grouped',
   },
   tradeLogMode: 'trades',
   gettingStartedDismissed: false,

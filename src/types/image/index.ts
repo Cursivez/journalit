@@ -141,6 +141,9 @@ export interface ImageNavigationContext {
 
   
   sourcePath?: string;
+
+  
+  indicatorLabel?: string;
 }
 
 

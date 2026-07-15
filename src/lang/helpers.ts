@@ -69,6 +69,7 @@ const supportedLanguageCodes = new Set<string>([
 
 const loadedLocales: Partial<Record<SupportedLanguageCode, Partial<Lang>>> = {};
 let englishLocale: Partial<Lang> | null = null;
+const translationsAcrossLocales = new Map<TranslationKey, string[]>();
 
 const BASE64_ALPHABET =
   'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
@@ -176,6 +177,12 @@ function getEnglishLocale(): Partial<Lang> {
 
 function isSupportedLanguageCode(lang: string): lang is SupportedLanguageCode {
   return supportedLanguageCodes.has(lang);
+}
+
+function isLocalePackCode(
+  localeCode: string
+): localeCode is keyof typeof localePacks {
+  return localeCode in localePacks;
 }
 
 function canonicalizeLanguageCode(lang: string): string {
@@ -316,6 +323,42 @@ function getLocale(): Partial<Lang> {
     );
     return getEnglishLocale();
   }
+}
+
+export function getTranslationsAcrossLocales(
+  keys: readonly TranslationKey[]
+): Map<TranslationKey, string[]> {
+  const missingKeys = keys.filter((key) => !translationsAcrossLocales.has(key));
+  if (missingKeys.length > 0) {
+    const translationsByKey = new Map(
+      missingKeys.map((key) => [key, new Set<string>()])
+    );
+    const locales: Array<Partial<Lang>> = [getEnglishLocale()];
+    for (const localeCode of Object.keys(localePacks)) {
+      if (!isLocalePackCode(localeCode)) continue;
+      try {
+        const locale = parseLocalePack(localeCode);
+        if (locale) locales.push(locale);
+      } catch (error) {
+        warnI18n(
+          `[Journalit i18n] Failed to inspect locale ${localeCode}: ${error instanceof Error ? error.message : String(error)}`
+        );
+      }
+    }
+    for (const locale of locales) {
+      for (const key of missingKeys) {
+        const translation = locale[key];
+        if (translation) translationsByKey.get(key)?.add(translation);
+      }
+    }
+    for (const [key, translations] of translationsByKey) {
+      translationsAcrossLocales.set(key, Array.from(translations));
+    }
+  }
+
+  return new Map(
+    keys.map((key) => [key, translationsAcrossLocales.get(key) ?? []])
+  );
 }
 
 function hasTranslationInLocale(locale: Partial<Lang>, key: string): boolean {
