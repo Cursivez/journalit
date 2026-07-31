@@ -14,9 +14,14 @@ export interface AccountTradeData {
   positionSize: number;
   pnl: number;
   commission: number;
+  commissionType?: 'fixed' | 'percentage';
   swap: number;
   fees: number;
   rebate?: number;
+  breakEvenAccountCurrentBalance?: number;
+  breakEvenAccountCurrentBalanceCurrency?: string;
+  breakEvenAccountCurrentBalanceTotal?: number;
+  breakEvenAccountCurrentBalanceTotalCurrency?: string;
   entryTime: Date;
   exitTime: Date | null;
   setup: string[];
@@ -30,6 +35,24 @@ export interface AccountTradeData {
   stopLoss?: number;
   
   currency?: string;
+  
+  fxRate?: number;
+  
+  fxRateBaseCurrency?: string;
+  
+  brokerBaseCurrencyPnl?: number;
+  
+  brokerBaseCurrency?: string;
+  
+  brokerBaseCurrencyPnlSource?: string;
+  
+  originalCurrency?: string;
+  
+  conversionPartialCurrencies?: string[];
+  
+  conversionUsedManualRate?: boolean;
+  
+  conversionUsedFetchedRates?: boolean;
   
   tradeStatus?: string;
   
@@ -105,6 +128,12 @@ export interface AccountMetrics {
   
   unconvertedCurrencies?: string[];
   
+  partiallyConvertedCurrencies?: string[];
+  
+  brokerBaseCurrencyTradeCount?: number;
+  
+  manualFxRateTradeCount?: number;
+  
   originalTradeCount?: number;
   
   convertedTradeCount?: number;
@@ -114,6 +143,8 @@ export interface AccountMetrics {
 export interface AccountPageData {
   account: AccountData;
   trades: AccountTradeData[];
+  
+  excludedTrades?: AccountTradeData[];
   metrics: AccountMetrics;
 }
 

@@ -91,12 +91,33 @@ export interface ConvertibleTrade {
   useDirectPnLInput?: boolean;
   currency?: string;
   commission?: number;
+  commissionType?: 'fixed' | 'percentage';
   swap?: number;
   fees?: number;
   rebate?: number;
   dividends?: Array<{ amount?: number | null }>;
   
   riskAmount?: number;
+  
+  mae?: number;
+  
+  mfe?: number;
+  
+  originalMaeBeforeConversion?: number;
+  
+  originalMfeBeforeConversion?: number;
+  
+  maeAmountDerivedFromPrice?: boolean;
+  
+  mfeAmountDerivedFromPrice?: boolean;
+  
+  maeTicksBeforeConversion?: number;
+  
+  mfeTicksBeforeConversion?: number;
+  
+  maePrice?: number;
+  
+  mfePrice?: number;
   
   breakEvenAccountCurrentBalance?: number;
   
@@ -111,6 +132,12 @@ export interface ConvertibleTrade {
   brokerBaseCurrency?: string;
   
   brokerBaseCurrencyPnlSource?: string;
+  
+  unrealizedPriceSnapshot?: number | null;
+  
+  fxRate?: number;
+  
+  fxRateBaseCurrency?: string;
 }
 
 
@@ -118,17 +145,23 @@ export interface ConvertedTradesResult<T extends ConvertibleTrade> {
   
   trades: T[];
   
+  excludedTrades: T[];
+  
   baseCurrency: string;
   
   rateDate: string;
   
   unconvertedCurrencies: string[];
   
+  partiallyConvertedCurrencies?: string[];
+  
   originalTradeCount: number;
   
   convertedTradeCount: number;
   
   brokerBaseCurrencyTradeCount?: number;
+  
+  manualFxRateTradeCount?: number;
 }
 
 export {};

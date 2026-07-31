@@ -30,6 +30,8 @@ import {
   type ReviewStatusFilter as ReviewStatusFilterValue,
 } from '../../../services/tradelog/types';
 import { CustomFieldOptionsFilter } from './CustomFieldOptionsFilter';
+import { SessionLogTagFilter } from './SessionLogTagFilter';
+import { getSessionLogTags } from '../../sessionLog/sessionLogUtils';
 import {
   createDashboardFilters,
   createReviewFilters,
@@ -116,12 +118,19 @@ export const FilterModalContent = React.memo<FilterModalContentProps>(
     availableCustomFieldFilters = [],
     availableImageFilterOptions = EMPTY_IMAGE_FILTER_OPTIONS,
     showImageFilters = false,
+    showSessionLogFilters = false,
   }) => {
     
     const [filters, setFilters] = useState<UnifiedFilters>(currentFilters);
     const imageAnnotationStatus =
       filters.imageAnnotationStatus ?? EMPTY_IMAGE_ANNOTATION_STATUS;
     const imageTags = filters.imageTags ?? EMPTY_STRING_VALUES;
+    const sessionLogTags = filters.sessionLogTags ?? EMPTY_STRING_VALUES;
+    const sessionLogTagLabels = useMemo(
+      () =>
+        new Map(getSessionLogTags(plugin).map((tag) => [tag.id, tag.label])),
+      [plugin]
+    );
     const registerImageGalleryFilterSectionTarget = useCallback(
       (element: HTMLElement | null) => {
         registerExternalGuideTarget(
@@ -172,6 +181,13 @@ export const FilterModalContent = React.memo<FilterModalContentProps>(
     const handleMistakeChange = useCallback((mistakes: string[]) => {
       setFilters((prev) => ({ ...prev, mistakes }));
     }, []);
+
+    const handleSessionLogTagChange = useCallback(
+      (sessionLogTags: string[]) => {
+        setFilters((prev) => ({ ...prev, sessionLogTags }));
+      },
+      []
+    );
 
     const handleTradeTypeChange = useCallback((tradeTypes: TradeType[]) => {
       setFilters((prev) => ({ ...prev, tradeTypes }));
@@ -252,6 +268,7 @@ export const FilterModalContent = React.memo<FilterModalContentProps>(
         statuses: [],
         reviewStatus: [],
         directions: [],
+        sessionLogTags: [],
         customFieldFilters: {},
         imageAnnotationStatus: [],
         imageTags: [],
@@ -458,6 +475,25 @@ export const FilterModalContent = React.memo<FilterModalContentProps>(
         });
       }
 
+      if (showSessionLogFilters && sessionLogTags.length > 0) {
+        sessionLogTags.forEach((tagId) => {
+          const label = sessionLogTagLabels.get(tagId);
+          if (!label) return;
+          chips.push({
+            key: `session-log-tag-${tagId}`,
+            label,
+            onRemove: () => {
+              setFilters((prev) => ({
+                ...prev,
+                sessionLogTags: (prev.sessionLogTags || []).filter(
+                  (current) => current !== tagId
+                ),
+              }));
+            },
+          });
+        });
+      }
+
       if (showImageFilters && imageAnnotationStatus.length > 0) {
         imageAnnotationStatus.forEach((status) => {
           const option = IMAGE_ANNOTATION_STATUS_OPTIONS.find(
@@ -562,6 +598,9 @@ export const FilterModalContent = React.memo<FilterModalContentProps>(
       imageTags,
       mergedCustomFieldFilters,
       showImageFilters,
+      showSessionLogFilters,
+      sessionLogTags,
+      sessionLogTagLabels,
     ]);
 
     
@@ -572,9 +611,16 @@ export const FilterModalContent = React.memo<FilterModalContentProps>(
       return (
         filters.setups.length +
         (filters.tags?.length || 0) +
-        (filters.mistakes?.length || 0)
+        (filters.mistakes?.length || 0) +
+        (showSessionLogFilters ? sessionLogTags.length : 0)
       );
-    }, [filters.setups, filters.tags, filters.mistakes]);
+    }, [
+      filters.setups,
+      filters.tags,
+      filters.mistakes,
+      sessionLogTags.length,
+      showSessionLogFilters,
+    ]);
 
     const tradeCriteriaBadgeCount = useMemo(() => {
       return (
@@ -697,6 +743,15 @@ export const FilterModalContent = React.memo<FilterModalContentProps>(
                     />
                   )}
                 </div>
+                {showSessionLogFilters && (
+                  <div className="filter-modal-controls">
+                    <SessionLogTagFilter
+                      plugin={plugin}
+                      selectedTags={sessionLogTags}
+                      onChange={handleSessionLogTagChange}
+                    />
+                  </div>
+                )}
               </div>
             </CollapsibleSection>
 

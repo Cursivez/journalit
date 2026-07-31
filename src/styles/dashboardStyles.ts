@@ -42,7 +42,7 @@ export const DASHBOARD_STYLES = `
     height: 100% !important;
     display: flex !important;
     flex-direction: column !important;
-    background-color: var(--background-primary) !important;
+    background-color: var(--journalit-dashboard-surface-background, var(--background-primary)) !important;
     background-size: 20px 20px !important;
     background-position: 0 0 !important;
     padding: 0 16px 16px 16px !important;
@@ -84,7 +84,7 @@ export const DASHBOARD_STYLES = `
     flex-wrap: wrap !important;
     gap: 4px !important; 
     margin-bottom: 0 !important;
-    padding: 4px !important; 
+    padding: 0 4px !important; 
     background-color: transparent !important;
     border-radius: 0 !important;
     box-shadow: none !important;
@@ -102,7 +102,7 @@ export const DASHBOARD_STYLES = `
     align-items: stretch !important; 
     height: auto !important; 
     min-height: auto !important; 
-    padding: 10px 0 !important; 
+    padding: 0 !important; 
     justify-content: flex-start !important; 
   }
   
@@ -425,6 +425,23 @@ export const DASHBOARD_STYLES = `
     margin-top: 6px !important;
   }
 
+  .journalit-dashboard-metric-unrealized {
+    font-size: 11px;
+    line-height: 1.2;
+    font-weight: 500;
+    font-style: italic;
+    color: var(--text-muted);
+    white-space: nowrap;
+  }
+
+  .journalit-dashboard-metric-unrealized.positive {
+    color: var(--color-green);
+  }
+
+  .journalit-dashboard-metric-unrealized.negative {
+    color: var(--color-red);
+  }
+
   .journalit-dashboard-metric-previous-delta {
     display: inline-flex !important;
     align-items: center !important;
@@ -582,15 +599,39 @@ export const DASHBOARD_STYLES = `
   }
   
   
+  
   .journalit-dashboard-filter-controls {
     display: flex !important;
     flex-direction: column !important;
-    margin-bottom: 2.5px !important; 
-    padding: 12px 16px !important;
-    background-color: var(--background-secondary) !important;
-    border-radius: 8px !important;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15) !important;
-    position: relative !important;
+    margin-bottom: 0 !important;
+    padding: 8px 0 3px !important;
+    background-color: var(--journalit-dashboard-toolbar-background, var(--background-primary)) !important;
+    border-radius: 0 !important;
+    box-shadow: none;
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 30 !important;
+  }
+
+  @supports (animation-timeline: scroll()) {
+    .journalit-dashboard-view {
+      scroll-timeline: --journalit-dashboard-scroll block;
+    }
+
+    .journalit-dashboard-filter-controls {
+      animation: journalit-dashboard-toolbar-elevate linear both;
+      animation-timeline: --journalit-dashboard-scroll;
+      animation-range: 0 32px;
+    }
+  }
+
+  @keyframes journalit-dashboard-toolbar-elevate {
+    from {
+      box-shadow: 0 1px 0 transparent;
+    }
+    to {
+      box-shadow: 0 1px 0 var(--background-modifier-border);
+    }
   }
   
   
@@ -646,7 +687,7 @@ export const DASHBOARD_STYLES = `
     align-items: center !important;
     
     flex: 0 0 auto !important; 
-    gap: 8px !important; 
+    gap: 6px !important;
     min-width: fit-content !important; 
     justify-self: end !important; 
     margin-left: auto !important; 
@@ -659,8 +700,11 @@ export const DASHBOARD_STYLES = `
   .journalit-dashboard-filter-actions
     .journalit-filter-button-container
     .journalit-filter-button.journalit-dashboard-filter-button {
-    min-width: 30px !important;
-    min-height: 30px !important;
+    width: 32px !important;
+    height: 28px !important;
+    min-width: 32px !important;
+    min-height: 28px !important;
+    box-sizing: border-box !important;
     padding: 0 !important;
     border: 1px solid var(--background-modifier-border) !important;
     border-radius: 4px !important;
@@ -712,15 +756,17 @@ export const DASHBOARD_STYLES = `
     justify-content: flex-start !important;
     gap: 16px !important;
     width: 100% !important;
+    
+    padding: 0 4px 0 calc(4px + 1px + 14px) !important;
+    box-sizing: border-box !important;
     flex-wrap: wrap !important;
   }
 
   .journalit-dashboard-primary-filters {
     display: flex !important;
     align-items: center !important;
-    flex: 0 1 auto !important;
+    flex: 1 1 auto !important;
     min-width: 0 !important;
-    max-width: var(--journalit-primary-filters-max-width) !important;
   }
 
   
@@ -728,14 +774,22 @@ export const DASHBOARD_STYLES = `
     display: flex !important;
     flex-direction: column !important;
     gap: 8px !important;
+    min-width: 0 !important;
     position: relative !important; 
   }
   
   .journalit-dashboard-date-range-presets {
     display: flex !important;
-    flex-wrap: wrap !important;
+    flex-wrap: nowrap !important;
     gap: 6px !important;
     align-items: center !important;
+    min-width: 0 !important;
+    overflow-x: auto !important;
+    scrollbar-width: none !important;
+  }
+
+  .journalit-dashboard-date-range-presets::-webkit-scrollbar {
+    display: none !important;
   }
   
   .journalit-dashboard-date-range-presets button {
@@ -2367,7 +2421,9 @@ export const DASHBOARD_STYLES = `
     border: 1px solid var(--background-modifier-border) !important;
     border-radius: 4px !important;
     box-shadow: none !important;
-    padding: 5px 10px !important;
+    width: 32px !important;
+    min-width: 32px !important;
+    padding: 5px !important;
     font-size: 12px !important;
     font-weight: 500 !important;
     cursor: pointer !important;
@@ -2505,7 +2561,7 @@ export const DASHBOARD_STYLES = `
   @media (max-width: 1200px) {
     
     .journalit-dashboard-view {
-      padding: 12px !important;
+      padding: 0 12px 12px !important;
     }
 
     .journalit-dashboard-metric-card {
@@ -2527,7 +2583,7 @@ export const DASHBOARD_STYLES = `
   @media (max-width: 1000px) {
     
     .journalit-dashboard-view {
-      padding: 10px !important;
+      padding: 0 10px 10px !important;
     }
 
     .journalit-dashboard-metric-card {
@@ -2561,7 +2617,7 @@ export const DASHBOARD_STYLES = `
   @media (max-width: 900px) {
     
     .journalit-dashboard-filter-controls {
-      padding: 10px 12px !important;
+      padding: 8px 0 !important;
     }
     
     
@@ -2591,8 +2647,7 @@ export const DASHBOARD_STYLES = `
       justify-content: center !important;
     }
     
-    .journalit-dashboard-reset-button,
-    .journalit-dashboard-edit-mode-button {
+    .journalit-dashboard-reset-button {
       padding: 4px 8px !important;
       font-size: 11px !important;
     }
@@ -2733,12 +2788,12 @@ export const DASHBOARD_STYLES = `
   @media (max-width: 480px) {
     
     .journalit-dashboard-view {
-      padding: 8px !important;
+      padding: 0 8px 8px !important;
     }
     
     
     .journalit-dashboard-filter-controls.compact-view {
-      padding: 8px !important;
+      padding: 8px 0 !important;
     }
     
     
@@ -2759,8 +2814,8 @@ export const DASHBOARD_STYLES = `
     
     
     .journalit-dashboard-date-range-presets {
-      flex-wrap: wrap !important;
-      justify-content: center !important;
+      flex-wrap: nowrap !important;
+      justify-content: flex-start !important;
     }
     
     .journalit-dashboard-date-range-presets button {
@@ -2791,13 +2846,13 @@ export const DASHBOARD_STYLES = `
   @media (max-width: 360px) {
     
     .journalit-dashboard-view {
-      padding: 4px !important;
+      padding: 0 4px 4px !important;
     }
     
     .journalit-dashboard-filter-controls {
-      padding: 6px !important;
+      padding: 6px 0 !important;
     }
-    
+
     
     .journalit-dashboard-top-section,
     .journalit-dashboard-bottom-section {

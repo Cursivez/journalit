@@ -483,7 +483,7 @@ const HomeResponsiveGrid: React.FC<HomeResponsiveGridProps> = ({
     onWidthChange={onWidthChange}
     onBreakpointChange={onBreakpointChange}
     compactType={isEditing ? null : 'vertical'}
-    containerPadding={[0, 12]}
+    containerPadding={[0, 0]}
     margin={[GRID_MARGIN, GRID_MARGIN]}
   >
     {widgets.map((widgetId) => (

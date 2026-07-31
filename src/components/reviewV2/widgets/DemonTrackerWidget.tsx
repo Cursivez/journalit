@@ -11,7 +11,7 @@ import type { DemonTrackerWidgetConfig } from '../../../types/reviewV2';
 import type { PartialTradeFrontmatter } from '../../../types/TradeFrontmatter';
 import {
   aggregateDemonTrackerData,
-  resolveDemonTrackerModes,
+  resolveDemonTrackerOptions,
 } from './shared/demonTrackerAggregation';
 
 const asDemonTrades = (value: unknown): PartialTradeFrontmatter[] =>
@@ -31,17 +31,16 @@ interface DemonTrackerWidgetProps {
 
 interface DemonTrackerPreviewData {
   demons: DemonTrackerEntry[];
-  noteType?: 'monthly-review' | 'quarterly-review' | 'yearly-review';
+  noteType?:
+    | 'weekly-review'
+    | 'monthly-review'
+    | 'quarterly-review'
+    | 'yearly-review';
 }
 
 
-const STOP_TRADING_THRESHOLD = 6;
-
-
-const MONTHLY_COLUMNS = ['DEMON', '1', '2', '3', '4', '5', 'STOP TRADING'];
-
-
 const EXTENDED_COLUMNS = ['DEMON', 'OCCURRENCES'];
+const EXTENDED_HIGH_OCCURRENCE_THRESHOLD = 10;
 
 
 const getColumnLabel = (col: string): string => {
@@ -59,10 +58,25 @@ const getColumnLabel = (col: string): string => {
 
 
 const ALLOWED_NOTE_TYPES = [
+  'weekly-review',
   'monthly-review',
   'quarterly-review',
   'yearly-review',
 ];
+
+const getPeriodText = (noteType: string | null): string => {
+  switch (noteType) {
+    case 'weekly-review':
+      return t('widget.demon-tracker.period.this-week');
+    case 'quarterly-review':
+      return t('widget.demon-tracker.period.this-quarter');
+    case 'yearly-review':
+      return t('widget.demon-tracker.period.this-year');
+    case 'monthly-review':
+    default:
+      return t('widget.demon-tracker.period.this-month');
+  }
+};
 
 
 
@@ -79,18 +93,23 @@ export const DemonTrackerWidget: React.FC<DemonTrackerWidgetProps> = React.memo(
 
     const loading = preview ? false : cacheLoading;
 
-    const scalperDefaultCountMode =
-      plugin.settings.reviewV2?.scalperDefaults?.countMode;
-    const scalperDefaultSourceMode =
-      plugin.settings.reviewV2?.scalperDefaults?.sourceMode;
+    const { trackingMethod, stopThreshold } = useMemo(
+      () => resolveDemonTrackerOptions(config),
+      [config]
+    );
 
-    const { countMode, sourceMode } = useMemo(
-      () =>
-        resolveDemonTrackerModes(config, {
-          countMode: scalperDefaultCountMode,
-          sourceMode: scalperDefaultSourceMode,
-        }),
-      [config, scalperDefaultCountMode, scalperDefaultSourceMode]
+    const thresholdSteps = useMemo(
+      () => Array.from({ length: stopThreshold - 1 }, (_, index) => index + 1),
+      [stopThreshold]
+    );
+
+    const thresholdColumns = useMemo(
+      () => [
+        'DEMON',
+        ...thresholdSteps.map((threshold) => String(threshold)),
+        'STOP TRADING',
+      ],
+      [thresholdSteps]
     );
 
     
@@ -103,16 +122,14 @@ export const DemonTrackerWidget: React.FC<DemonTrackerWidgetProps> = React.memo(
       return aggregateDemonTrackerData({
         trades: asDemonTrades(trades),
         sessionMistakesByTradingDay,
-        countMode,
-        sourceMode,
+        trackingMethod,
         plugin,
         mistakesFilter: filters?.mistakes,
       });
     }, [
       trades,
       sessionMistakesByTradingDay,
-      countMode,
-      sourceMode,
+      trackingMethod,
       plugin,
       filters?.mistakes,
       preview,
@@ -127,20 +144,20 @@ export const DemonTrackerWidget: React.FC<DemonTrackerWidgetProps> = React.memo(
         0
       );
       const criticalCount = demons.filter(
-        (d) => d.occurrences >= STOP_TRADING_THRESHOLD
+        (d) => d.occurrences >= stopThreshold
       ).length;
       return { totalUnique, totalOccurrences, criticalCount };
-    }, [demons]);
+    }, [demons, stopThreshold]);
 
     if (loading) {
       
       const rowCount = 4;
       return (
         <div className="journalit-demon-tracker journalit-reviewv2-table-container journalit-reviewv2-demontracker">
-          <table className="journalit-reviewv2-table journalit-reviewv2-table--compact">
+          <table className="journalit-reviewv2-table journalit-reviewv2-table--compact journalit-reviewv2-demontracker-threshold-table">
             <thead>
               <tr>
-                {MONTHLY_COLUMNS.map((col) => (
+                {thresholdColumns.map((col) => (
                   <th
                     key={col}
                     className={[
@@ -166,7 +183,7 @@ export const DemonTrackerWidget: React.FC<DemonTrackerWidgetProps> = React.memo(
                   <td className="journalit-reviewv2-table-cell journalit-reviewv2-table-cell--compact journalit-reviewv2-demontracker-demon-cell">
                     <SkeletonBox width={80} height={14} borderRadius="4px" />
                   </td>
-                  {[1, 2, 3, 4, 5].map((num) => (
+                  {thresholdSteps.map((num) => (
                     <td
                       key={`occ-${num}`}
                       className="journalit-reviewv2-table-cell journalit-reviewv2-table-cell--compact"
@@ -205,7 +222,7 @@ export const DemonTrackerWidget: React.FC<DemonTrackerWidgetProps> = React.memo(
       return (
         <InvalidContextMessage
           widgetType={t('widget.demon-tracker.name')}
-          reason={t('widget.invalid-context.monthly-quarterly-yearly')}
+          reason={t('widget.invalid-context.weekly-monthly-quarterly-yearly')}
         />
       );
     }
@@ -219,11 +236,7 @@ export const DemonTrackerWidget: React.FC<DemonTrackerWidgetProps> = React.memo(
       effectiveNoteType === 'yearly-review';
 
     if (demons.length === 0) {
-      const periodText = useExtendedLayout
-        ? effectiveNoteType === 'yearly-review'
-          ? t('widget.demon-tracker.period.this-year')
-          : t('widget.demon-tracker.period.this-quarter')
-        : t('widget.demon-tracker.period.this-month');
+      const periodText = getPeriodText(effectiveNoteType);
       return (
         <div className="journalit-reviewv2-empty journalit-reviewv2-empty--large">
           <div className="journalit-u-mb-8">
@@ -274,7 +287,7 @@ export const DemonTrackerWidget: React.FC<DemonTrackerWidgetProps> = React.memo(
                     <span
                       className={[
                         'journalit-reviewv2-demontracker-count',
-                        demon.occurrences >= 10
+                        demon.occurrences >= EXTENDED_HIGH_OCCURRENCE_THRESHOLD
                           ? 'journalit-reviewv2-demontracker-count--high'
                           : '',
                       ]
@@ -315,10 +328,10 @@ export const DemonTrackerWidget: React.FC<DemonTrackerWidgetProps> = React.memo(
     
     return (
       <div className="journalit-demon-tracker journalit-reviewv2-table-container journalit-reviewv2-demontracker">
-        <table className="journalit-reviewv2-table journalit-reviewv2-table--compact">
+        <table className="journalit-reviewv2-table journalit-reviewv2-table--compact journalit-reviewv2-demontracker-threshold-table">
           <thead>
             <tr>
-              {MONTHLY_COLUMNS.map((col) => (
+              {thresholdColumns.map((col) => (
                 <th
                   key={col}
                   className={[
@@ -344,7 +357,7 @@ export const DemonTrackerWidget: React.FC<DemonTrackerWidgetProps> = React.memo(
                 <td className="journalit-reviewv2-table-cell journalit-reviewv2-table-cell--compact journalit-reviewv2-demontracker-demon-cell">
                   {demon.mistake}
                 </td>
-                {[1, 2, 3, 4, 5].map((num) => (
+                {thresholdSteps.map((num) => (
                   <td
                     key={`occ-${num}`}
                     className="journalit-reviewv2-table-cell journalit-reviewv2-table-cell--compact"
@@ -361,7 +374,7 @@ export const DemonTrackerWidget: React.FC<DemonTrackerWidgetProps> = React.memo(
                   </td>
                 ))}
                 <td className="journalit-reviewv2-table-cell journalit-reviewv2-table-cell--compact">
-                  {demon.occurrences >= STOP_TRADING_THRESHOLD ? (
+                  {demon.occurrences >= stopThreshold ? (
                     <span className="journalit-reviewv2-demontracker-x journalit-reviewv2-demontracker-x--stop">
                       &#10007;
                     </span>
@@ -397,7 +410,9 @@ export const DemonTrackerWidget: React.FC<DemonTrackerWidgetProps> = React.memo(
           {summaryStats.criticalCount > 0 && (
             <div className="journalit-reviewv2-demontracker-summary-item">
               <span className="journalit-reviewv2-demontracker-summary-label">
-                {t('widget.demon-tracker.summary.critical')}
+                {t('widget.demon-tracker.summary.critical', {
+                  threshold: String(stopThreshold),
+                })}
               </span>
               <span className="journalit-reviewv2-demontracker-summary-value journalit-reviewv2-demontracker-summary-value--warning">
                 {summaryStats.criticalCount}

@@ -46,6 +46,9 @@ export interface UnifiedFilters {
   directions: DirectionFilter[];
 
   
+  sessionLogTags?: string[];
+
+  
   customFieldFilters: CustomFieldFilterSelections;
 
   
@@ -76,4 +79,5 @@ export interface FilterModalProps {
   
   availableImageFilterOptions?: AvailableImageFilterOptions;
   showImageFilters?: boolean;
+  showSessionLogFilters?: boolean;
 }

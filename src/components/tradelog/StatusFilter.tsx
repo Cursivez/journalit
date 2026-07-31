@@ -16,7 +16,11 @@ interface StatusFilterProps {
 }
 
 const CLOSED_STATUSES: TradeStatus[] = ['win', 'loss', 'breakeven'];
-const ALL_SELECTABLE_STATUSES: TradeStatus[] = ['open', ...CLOSED_STATUSES];
+const ALL_SELECTABLE_STATUSES: TradeStatus[] = [
+  'open',
+  ...CLOSED_STATUSES,
+  'cancelled',
+];
 
 const getStatusOptions = (): Array<{
   value: TradeStatus;
@@ -53,6 +57,11 @@ const getStatusOptions = (): Array<{
     label: t('tradelog.filter.breakeven'),
     description: t('tradelog.filter.breakeven.desc'),
   },
+  {
+    value: 'cancelled',
+    label: t('tradelog.status.cancelled'),
+    description: t('tradelog.status.cancelled'),
+  },
 ];
 
 
@@ -87,7 +96,7 @@ export const StatusFilter: React.FC<StatusFilterProps> = React.memo(
       (status: TradeStatus) => {
         if (status === 'all') {
           
-          if (selectedStatuses.length === 4) {
+          if (selectedStatuses.length === ALL_SELECTABLE_STATUSES.length) {
             
             onChange([]);
           } else {
@@ -133,7 +142,8 @@ export const StatusFilter: React.FC<StatusFilterProps> = React.memo(
     
     const statusSummary = useMemo(() => {
       if (selectedStatuses.length === 0) return t('tradelog.filter.all');
-      if (selectedStatuses.length === 4) return t('tradelog.filter.all'); 
+      if (selectedStatuses.length === ALL_SELECTABLE_STATUSES.length)
+        return t('tradelog.filter.all'); 
       if (selectedStatuses.length === 1) {
         const selectedOption = getStatusOptions().find(
           (opt) => opt.value === selectedStatuses[0]
@@ -153,7 +163,8 @@ export const StatusFilter: React.FC<StatusFilterProps> = React.memo(
     }, [selectedStatuses]);
 
     
-    const allStatusesSelected = selectedStatuses.length === 4; 
+    const allStatusesSelected =
+      selectedStatuses.length === ALL_SELECTABLE_STATUSES.length; 
 
     
     const closedSelected = CLOSED_STATUSES.every((s) =>

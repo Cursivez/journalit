@@ -23,6 +23,7 @@ import {
   SETUPS_PAIRS_OPENED_ACTION_ID,
   SETUPS_PAIRS_TAB_TARGET_ID,
   SETUPS_SETUP_AVAILABLE_ACTION_ID,
+  SETUPS_TAG_FILTER_TARGET_ID,
   SETUPS_VIEW_TABS_TARGET_ID,
 } from './setupsGuideIds';
 
@@ -56,11 +57,14 @@ export {
   SETUPS_DETAIL_HAS_EXECUTION_GAP_CONTEXT_KEY,
 };
 
+
+
+
 export function registerSetupsMainGuide(guideRegistry: GuideRegistry): void {
   guideRegistry.registerGuide({
     id: SETUPS_MAIN_GUIDE_ID,
     viewType: SETUPS_VIEW_TYPE,
-    version: 8,
+    version: 9,
     autoShow: true,
     priority: 100,
     initialStepId: 'intro',
@@ -103,6 +107,14 @@ export function registerSetupsMainGuide(guideRegistry: GuideRegistry): void {
         description: t('setups.guide.overview-chart.description'),
         progression: 'manual',
         targetId: SETUPS_CHART_TARGET_ID,
+        requiredContext: HAS_SETUP_CONTEXT,
+      },
+      {
+        id: 'tag-filter',
+        title: t('setups.guide.tag-filter.title'),
+        description: t('setups.guide.tag-filter.description'),
+        progression: 'manual',
+        targetId: SETUPS_TAG_FILTER_TARGET_ID,
         requiredContext: HAS_SETUP_CONTEXT,
       },
       {

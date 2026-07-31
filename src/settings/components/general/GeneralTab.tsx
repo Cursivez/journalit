@@ -1,13 +1,14 @@
 
 
-import React, { useEffect, useState, useRef } from 'react';
-import { Notice, setIcon } from 'obsidian';
+import React, { useCallback, useEffect, useState, useRef } from 'react';
+import { normalizePath, Notice, setIcon, TFile, TFolder } from 'obsidian';
 import JournalitPlugin from '../../../main';
 import { ToggleSwitch } from '../../../components/ui';
 import { Button } from '../../../components/ui/Button';
 import { ExternalLinkButton } from '../../../components/ui/ExternalLinkButton';
 import { Select } from '../../../components/core/Select';
 import { Accordion } from '../../../components/shared/Accordion';
+import { Folder, X } from '../../../components/shared/icons/ObsidianIcon';
 import { FolderBrowser } from '../../../components/ui/FolderBrowser';
 import { openPathChangeInstructionModal } from '../../../components/modals/PathChangeInstructionModal';
 import {
@@ -16,6 +17,7 @@ import {
   parseCuratedCurrencyCode,
 } from '../../../utils/currencyConfig';
 import { useDebouncedFunction } from '../../../hooks/useDebounced';
+import { useEventBus } from '../../../hooks/useEventBus';
 import { TradePathUpdateUtility } from '../../../services/trade/TradePathUpdateUtility';
 import { eventBus } from '../../../services/events';
 import { SettingsExporter } from '../../SettingsExporter';
@@ -24,12 +26,24 @@ import {
   DEFAULT_TRADING_DAY_CUTOFF_TIME,
   TRADING_DAY_CUTOFF_END_OF_DAY_MIGRATION_VERSION,
 } from '../../../utils/tradingDayUtils';
-import { DEFAULT_SETTINGS } from '../../types';
+import { createDefaultNavigationSettings, DEFAULT_SETTINGS } from '../../types';
 import type {
   AnalyticsDateBasis,
+  MaeMfeDisplayUnit,
   WeekStartDay,
   SidebarTabBehavior,
 } from '../../types';
+import {
+  applyGalleryFolderMutation,
+  galleryFoldersMatch,
+  persistGalleryFolderMutation,
+  type GalleryFolderMutation,
+} from '../../galleryFolderMutations';
+import {
+  isSupportedHomeBackgroundFile,
+  saveHomeBackgroundFile,
+} from '../../../components/home/homeBackgroundUtils';
+import { JOURNALIT_SETTINGS_RESOURCES } from '../../settingsResources';
 
 type HomeStartupBehavior = 'always' | 'ifNone' | 'never';
 type MaeMfeInputMode = 'price' | 'dollar';
@@ -65,6 +79,10 @@ function parseHomeStartupBehavior(value: string): HomeStartupBehavior {
 
 function parseMaeMfeInputMode(value: string): MaeMfeInputMode {
   return value === 'price' ? 'price' : 'dollar';
+}
+
+function parseMaeMfeDisplayUnit(value: string): MaeMfeDisplayUnit {
+  return value === 'ticks' ? 'ticks' : 'dollar';
 }
 
 function parseSidebarTabBehavior(value: string): SidebarTabBehavior {
@@ -832,14 +850,45 @@ function useGeneralTabModel(props: GeneralTabProps) {
     );
   };
 
+  const handleIncludeUnrealizedPnLToggle = async (newValue: boolean) => {
+    plugin.settings.trade.includeUnrealizedPnLInCalculations = newValue;
+    await plugin.saveSettings();
+    eventBus.publish('settings:changed', {
+      section: 'trade',
+      source: 'include-unrealized-pnl',
+    });
+    setSettingsVersion((prev) => prev + 1);
+    new Notice(
+      t('settings.general.include-unrealized-pnl-toggled', {
+        status: newValue
+          ? t('settings.general.enabled')
+          : t('settings.general.disabled'),
+      })
+    );
+  };
+
   const maeMfeInputModeOptions = [
     { value: 'price', label: t('settings.general.mae-mfe-input-mode-price') },
     { value: 'dollar', label: t('settings.general.mae-mfe-input-mode-dollar') },
+  ];
+  const maeMfeDisplayUnitOptions = [
+    { value: 'dollar', label: t('settings.general.mae-mfe-display-dollar') },
+    { value: 'ticks', label: t('settings.general.mae-mfe-display-ticks') },
   ];
 
   const handleMaeMfeInputModeChange = async (newValue: string) => {
     plugin.settings.trade.maeMfeInputMode = parseMaeMfeInputMode(newValue);
     await plugin.saveSettings();
+    setSettingsVersion((prev) => prev + 1);
+  };
+
+  const handleMaeMfeDisplayUnitChange = async (newValue: string) => {
+    plugin.settings.trade.maeMfeDisplayUnit = parseMaeMfeDisplayUnit(newValue);
+    await plugin.saveSettings();
+    eventBus.publish('settings:changed', {
+      section: 'trade',
+      source: 'mae-mfe-display-unit',
+    });
     setSettingsVersion((prev) => prev + 1);
   };
 
@@ -879,6 +928,7 @@ function useGeneralTabModel(props: GeneralTabProps) {
     handleBreakEvenPercentChange,
     handleBreakEvenRangeBlur,
     handleIncludeCopyAccountsToggle,
+    handleIncludeUnrealizedPnLToggle,
     handleCurrencyChange,
     handleDateFormatChange,
     handleDefaultRiskAmountChange,
@@ -890,6 +940,7 @@ function useGeneralTabModel(props: GeneralTabProps) {
     handleFilterRecentItemsToggle,
     handleHomeStartupBehaviorChange,
     handleJournalFolderPathChange,
+    handleMaeMfeDisplayUnitChange,
     handleMaeMfeInputModeChange,
     handlePrivacyModeToggle,
     handleSkipWeekendsToggle,
@@ -900,6 +951,7 @@ function useGeneralTabModel(props: GeneralTabProps) {
     isResetting,
     isUpdatingImages,
     journalFolderPath,
+    maeMfeDisplayUnitOptions,
     maeMfeInputModeOptions,
     plugin,
     setIsExporting,
@@ -919,7 +971,10 @@ function GeneralRiskDisplaySettings({
   handleDefaultRiskAmountChange,
   handleDisplayRMultiplesToggle,
   handleIncludeCopyAccountsToggle,
+  handleIncludeUnrealizedPnLToggle,
+  handleMaeMfeDisplayUnitChange,
   handleMaeMfeInputModeChange,
+  maeMfeDisplayUnitOptions,
   maeMfeInputModeOptions,
 }: Pick<
   GeneralTabModel,
@@ -927,7 +982,10 @@ function GeneralRiskDisplaySettings({
   | 'handleDefaultRiskAmountChange'
   | 'handleDisplayRMultiplesToggle'
   | 'handleIncludeCopyAccountsToggle'
+  | 'handleIncludeUnrealizedPnLToggle'
+  | 'handleMaeMfeDisplayUnitChange'
   | 'handleMaeMfeInputModeChange'
+  | 'maeMfeDisplayUnitOptions'
   | 'maeMfeInputModeOptions'
 >) {
   return (
@@ -1007,6 +1065,27 @@ function GeneralRiskDisplaySettings({
         </div>
       </div>
 
+      <div className="setting-item">
+        <div className="setting-item-info">
+          <div className="setting-item-name">
+            {t('settings.general.include-unrealized-pnl')}
+          </div>
+          <div className="setting-item-description">
+            {t('settings.general.include-unrealized-pnl-desc')}
+          </div>
+        </div>
+        <div className="setting-item-control">
+          <ToggleSwitch
+            checked={
+              plugin.settings.trade.includeUnrealizedPnLInCalculations ?? false
+            }
+            onChange={handleIncludeUnrealizedPnLToggle}
+            id="include-unrealized-pnl-toggle"
+            ariaLabel={t('settings.general.include-unrealized-pnl-aria')}
+          />
+        </div>
+      </div>
+
       
       <div className="setting-item">
         <div className="setting-item-info">
@@ -1032,6 +1111,26 @@ function GeneralRiskDisplaySettings({
             options={maeMfeInputModeOptions}
             id="mae-mfe-input-mode-dropdown"
             aria-label={t('settings.general.mae-mfe-input-mode-aria')}
+          />
+        </div>
+      </div>
+
+      <div className="setting-item">
+        <div className="setting-item-info">
+          <div className="setting-item-name">
+            {t('settings.general.mae-mfe-display-unit')}
+          </div>
+          <div className="setting-item-description">
+            {t('settings.general.mae-mfe-display-unit-desc')}
+          </div>
+        </div>
+        <div className="setting-item-control">
+          <Select
+            value={plugin.settings.trade?.maeMfeDisplayUnit ?? 'dollar'}
+            onChange={handleMaeMfeDisplayUnitChange}
+            options={maeMfeDisplayUnitOptions}
+            id="mae-mfe-display-unit-dropdown"
+            aria-label={t('settings.general.mae-mfe-display-unit-aria')}
           />
         </div>
       </div>
@@ -1393,7 +1492,10 @@ function GeneralTradeSettingsSection({
   handleDefaultRiskAmountChange,
   handleDisplayRMultiplesToggle,
   handleIncludeCopyAccountsToggle,
+  handleIncludeUnrealizedPnLToggle,
+  handleMaeMfeDisplayUnitChange,
   handleMaeMfeInputModeChange,
+  maeMfeDisplayUnitOptions,
   maeMfeInputModeOptions,
   flat = false,
 }: Pick<
@@ -1419,7 +1521,10 @@ function GeneralTradeSettingsSection({
   | 'handleDefaultRiskAmountChange'
   | 'handleDisplayRMultiplesToggle'
   | 'handleIncludeCopyAccountsToggle'
+  | 'handleIncludeUnrealizedPnLToggle'
+  | 'handleMaeMfeDisplayUnitChange'
   | 'handleMaeMfeInputModeChange'
+  | 'maeMfeDisplayUnitOptions'
   | 'maeMfeInputModeOptions'
 > & { flat?: boolean }) {
   const tradeBasics = (
@@ -1457,7 +1562,10 @@ function GeneralTradeSettingsSection({
       handleDefaultRiskAmountChange={handleDefaultRiskAmountChange}
       handleDisplayRMultiplesToggle={handleDisplayRMultiplesToggle}
       handleIncludeCopyAccountsToggle={handleIncludeCopyAccountsToggle}
+      handleIncludeUnrealizedPnLToggle={handleIncludeUnrealizedPnLToggle}
+      handleMaeMfeDisplayUnitChange={handleMaeMfeDisplayUnitChange}
       handleMaeMfeInputModeChange={handleMaeMfeInputModeChange}
+      maeMfeDisplayUnitOptions={maeMfeDisplayUnitOptions}
       maeMfeInputModeOptions={maeMfeInputModeOptions}
     />
   );
@@ -1476,6 +1584,7 @@ function GeneralTradeSettingsSection({
         <SettingsSection title={t('form.section.risk-management')}>
           {riskDisplay}
         </SettingsSection>
+        <GalleryFoldersSettingsSection plugin={plugin} />
       </>
     );
   }
@@ -1489,6 +1598,173 @@ function GeneralTradeSettingsSection({
       {breakEven}
       {riskDisplay}
     </Accordion>
+  );
+}
+
+export function GalleryFoldersSettingsControl({
+  plugin,
+}: Pick<GeneralTabModel, 'plugin'>) {
+  const [folders, setFolders] = useState(
+    () => plugin.settings.trade.galleryFolders ?? []
+  );
+  const foldersRef = useRef(folders);
+  const saveQueueRef = useRef<Promise<void>>(Promise.resolve());
+  const latestMutationIdRef = useRef(0);
+  const pendingSavesRef = useRef(0);
+  const [selectedPath, setSelectedPath] = useState('');
+  const [folderBrowserKey, setFolderBrowserKey] = useState(0);
+
+  useEventBus('settings:changed', (payload) => {
+    if (payload.source === 'gallery-folders') return;
+    
+    
+    
+    
+    if (pendingSavesRef.current > 0) return;
+    const canonicalFolders = [...plugin.settings.trade.galleryFolders];
+    foldersRef.current = canonicalFolders;
+    setFolders(canonicalFolders);
+  });
+
+  const saveFolders = (mutation: GalleryFolderMutation): Promise<void> => {
+    const mutationId = ++latestMutationIdRef.current;
+    const folderIdentity = plugin.app.vault.getAbstractFileByPath(
+      mutation.path
+    );
+    const queuedMutation =
+      folderIdentity instanceof TFolder
+        ? { ...mutation, getCurrentPath: () => folderIdentity.path }
+        : mutation;
+    const optimisticFolders = applyGalleryFolderMutation(
+      foldersRef.current,
+      queuedMutation
+    );
+    foldersRef.current = optimisticFolders;
+    setFolders(optimisticFolders);
+    pendingSavesRef.current += 1;
+    const save = saveQueueRef.current.then(async () => {
+      try {
+        const result = await persistGalleryFolderMutation({
+          currentFolders: plugin.settings.trade.galleryFolders,
+          mutation: queuedMutation,
+          setCanonicalFolders: (folders) => {
+            plugin.settings.trade.galleryFolders = folders;
+          },
+          getCanonicalFolders: () => plugin.settings.trade.galleryFolders,
+          saveSettings: () => plugin.saveSettings(),
+          onTargetApplied: (targetFolders) => {
+            if (mutationId === latestMutationIdRef.current) {
+              foldersRef.current = targetFolders;
+              setFolders(targetFolders);
+            }
+          },
+        });
+        if (result.success) {
+          eventBus.publish('settings:changed', {
+            section: 'trade',
+            source: 'gallery-folders',
+          });
+        } else {
+          console.error('Failed to save gallery folders:', result.error);
+          const mutationIsCurrent =
+            mutationId === latestMutationIdRef.current &&
+            galleryFoldersMatch(foldersRef.current, result.targetFolders);
+          if (mutationIsCurrent) {
+            foldersRef.current = result.folders;
+            setFolders(result.folders);
+          }
+          new Notice(t('settings.gallery-folders.save-failed'), 5000);
+        }
+      } finally {
+        pendingSavesRef.current -= 1;
+      }
+    });
+    saveQueueRef.current = save.catch(() => undefined);
+    return save;
+  };
+
+  const handleAdd = async () => {
+    const normalized = normalizePath(selectedPath.trim());
+    const currentFolders = foldersRef.current;
+    if (!normalized || currentFolders.includes(normalized)) return;
+    if (plugin.app.vault.getAbstractFileByPath(normalized) instanceof TFile) {
+      new Notice(t('settings.gallery-folders.not-a-folder'), 5000);
+      return;
+    }
+    const save = saveFolders({ kind: 'add', path: normalized });
+    setSelectedPath('');
+    setFolderBrowserKey((current) => current + 1);
+    await save;
+  };
+
+  const handleRemove = (folderPath: string) => {
+    void saveFolders({ kind: 'remove', path: folderPath });
+  };
+
+  return (
+    <>
+      {folders.length > 0 && (
+        <div className="journalit-gallery-folders-list">
+          {folders.map((folderPath) => (
+            <div className="journalit-gallery-folders-row" key={folderPath}>
+              <Folder
+                aria-hidden="true"
+                className="journalit-gallery-folders-row__icon"
+                size={15}
+              />
+              <span className="journalit-gallery-folders-row__path">
+                {folderPath}
+              </span>
+              <button
+                aria-label={t('settings.gallery-folders.remove-aria', {
+                  path: folderPath,
+                })}
+                className="clickable-icon journalit-gallery-folders-row__remove"
+                onClick={() => handleRemove(folderPath)}
+                type="button"
+              >
+                <X aria-hidden="true" size={14} />
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+      <div className="journalit-gallery-folders-add">
+        <FolderBrowser
+          app={plugin.app}
+          includeJournalitTree
+          key={folderBrowserKey}
+          onChange={setSelectedPath}
+          onInputChange={setSelectedPath}
+          placeholder={t('settings.gallery-folders.placeholder')}
+          selectedPath={selectedPath}
+        />
+        <Button
+          disabled={
+            !selectedPath.trim() ||
+            folders.includes(normalizePath(selectedPath.trim()))
+          }
+          onClick={handleAdd}
+          size="small"
+          variant="primary"
+        >
+          {t('settings.gallery-folders.add')}
+        </Button>
+      </div>
+    </>
+  );
+}
+
+function GalleryFoldersSettingsSection({
+  plugin,
+}: Pick<GeneralTabModel, 'plugin'>) {
+  return (
+    <SettingsSection title={t('settings.gallery-folders.section')}>
+      <p className="journalit-gallery-folders-description">
+        {t('settings.gallery-folders.description')}
+      </p>
+      <GalleryFoldersSettingsControl plugin={plugin} />
+    </SettingsSection>
   );
 }
 
@@ -1985,6 +2261,192 @@ function GeneralFolderSettingsSection({
   );
 }
 
+function ensureHomeSettings(plugin: JournalitPlugin) {
+  if (!plugin.settings.home) {
+    plugin.settings.home = {
+      ...DEFAULT_SETTINGS.home!,
+      layouts: {},
+      activeLayout: 'Default',
+    };
+  }
+
+  return plugin.settings.home;
+}
+
+export function HomeBackgroundControls({
+  plugin,
+}: {
+  plugin: JournalitPlugin;
+}) {
+  const [isSaving, setIsSaving] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const hasBackground = Boolean(plugin.settings.home?.backgroundImagePath);
+
+  const persistPath = useCallback(
+    async (nextPath: string) => {
+      ensureHomeSettings(plugin).backgroundImagePath = nextPath || undefined;
+      await plugin.saveSettings();
+      eventBus.publish('settings:changed', {
+        section: 'home',
+        source: 'background-image',
+      });
+    },
+    [plugin]
+  );
+
+  const handleFileChange = useCallback(
+    async (event: React.ChangeEvent<HTMLInputElement>) => {
+      const file = event.target.files?.[0];
+      event.target.value = '';
+      if (!file) return;
+
+      if (!isSupportedHomeBackgroundFile(file)) {
+        new Notice(t('settings.general.home-background-invalid-file'));
+        return;
+      }
+
+      setIsSaving(true);
+      try {
+        const savedPath = await saveHomeBackgroundFile(plugin.app, file);
+        await persistPath(savedPath);
+        new Notice(t('settings.general.home-background-saved'));
+      } catch (error) {
+        console.error('Failed to import Home background image:', error);
+        new Notice(t('settings.general.home-background-save-failed'));
+      } finally {
+        setIsSaving(false);
+      }
+    },
+    [persistPath, plugin]
+  );
+
+  const clearPath = useCallback(async () => {
+    setIsSaving(true);
+    try {
+      await persistPath('');
+      new Notice(t('settings.general.home-background-cleared'));
+    } catch (error) {
+      console.error('Failed to clear Home background image:', error);
+      new Notice(t('settings.general.home-background-save-failed'));
+    } finally {
+      setIsSaving(false);
+    }
+  }, [persistPath]);
+
+  return (
+    <div className="journalit-home-background-controls">
+      <Button
+        onClick={() => fileInputRef.current?.click()}
+        variant="primary"
+        size="small"
+        loading={isSaving}
+        disabled={isSaving}
+      >
+        {t('settings.general.home-background-choose')}
+      </Button>
+      {hasBackground && (
+        <Button
+          onClick={() => void clearPath()}
+          variant="plain"
+          size="small"
+          disabled={isSaving}
+        >
+          {t('settings.general.home-background-clear')}
+        </Button>
+      )}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        onChange={(event) => void handleFileChange(event)}
+        className="journalit-home-background-file-input"
+        aria-hidden="true"
+      />
+    </div>
+  );
+}
+
+export function NavigationSidebarOpenControl({
+  plugin,
+}: {
+  plugin: JournalitPlugin;
+}) {
+  const handleOpen = async () => {
+    try {
+      await plugin.openNavigationSidebar();
+      plugin.app.setting?.close();
+    } catch (error) {
+      console.error(
+        '[Journalit] Failed to open navigation sidebar from settings:',
+        error
+      );
+      new Notice(t('notice.error.open-navigation-sidebar'));
+    }
+  };
+
+  return (
+    <Button variant="primary" size="small" onClick={handleOpen}>
+      {t('navigation.setting.open.button')}
+    </Button>
+  );
+}
+
+function HomeBackgroundSettings({ plugin }: { plugin: JournalitPlugin }) {
+  const [showInDashboard, setShowInDashboard] = useState(
+    plugin.settings.home?.showBackgroundInDashboard ?? false
+  );
+
+  const handleDashboardVisibilityChange = useCallback(
+    async (newValue: boolean) => {
+      ensureHomeSettings(plugin).showBackgroundInDashboard = newValue;
+      setShowInDashboard(newValue);
+      await plugin.saveSettings();
+      eventBus.publish('settings:changed', {
+        section: 'home',
+        source: 'background-dashboard-visibility',
+      });
+    },
+    [plugin]
+  );
+
+  return (
+    <>
+      <div className="setting-item journalit-home-background-setting">
+        <div className="setting-item-info">
+          <div className="setting-item-name">
+            {t('settings.general.home-background')}
+          </div>
+          <div className="setting-item-description">
+            {t('settings.general.home-background-desc')}
+          </div>
+        </div>
+        <div className="setting-item-control">
+          <HomeBackgroundControls plugin={plugin} />
+        </div>
+      </div>
+
+      <div className="setting-item">
+        <div className="setting-item-info">
+          <div className="setting-item-name">
+            {t('settings.general.home-background-dashboard')}
+          </div>
+          <div className="setting-item-description">
+            {t('settings.general.home-background-dashboard-desc')}
+          </div>
+        </div>
+        <div className="setting-item-control">
+          <ToggleSwitch
+            checked={showInDashboard}
+            onChange={handleDashboardVisibilityChange}
+            id="home-background-dashboard-toggle"
+            ariaLabel={t('settings.general.home-background-dashboard-aria')}
+          />
+        </div>
+      </div>
+    </>
+  );
+}
+
 function GeneralCoreSettingsSection({
   plugin,
   docsIconRef,
@@ -2030,17 +2492,17 @@ function GeneralCoreSettingsSection({
       <h3>{t('settings.general.title')}</h3>
       <div className="journalit-settings-links">
         <ExternalLinkButton
-          url="https://journalit.co/docs"
+          url={JOURNALIT_SETTINGS_RESOURCES.docs}
           label={t('settings.general.docs')}
           iconRef={docsIconRef}
         />
         <ExternalLinkButton
-          url="https://discord.gg/AkSw3D9h8b"
+          url={JOURNALIT_SETTINGS_RESOURCES.discord}
           label={t('settings.general.discord')}
           iconRef={discordIconRef}
         />
         <ExternalLinkButton
-          url="https://github.com/Cursivez/journalit"
+          url={JOURNALIT_SETTINGS_RESOURCES.github}
           label={t('settings.general.github')}
           iconRef={githubIconRef}
         />
@@ -2176,6 +2638,8 @@ function GeneralCoreSettingsSection({
             />
           </div>
         </div>
+
+        <HomeBackgroundSettings plugin={plugin} />
       </SettingsSectionOrAccordion>
 
       
@@ -2183,6 +2647,20 @@ function GeneralCoreSettingsSection({
         title={t('settings.general.navigation-sidebar')}
         flat={flat}
       >
+        <div className="setting-item">
+          <div className="setting-item-info">
+            <div className="setting-item-name">
+              {t('navigation.setting.open')}
+            </div>
+            <div className="setting-item-description">
+              {t('navigation.setting.open.desc')}
+            </div>
+          </div>
+          <div className="setting-item-control">
+            <NavigationSidebarOpenControl plugin={plugin} />
+          </div>
+        </div>
+
         <div className="setting-item">
           <div className="setting-item-info">
             <div className="setting-item-name">
@@ -2200,9 +2678,8 @@ function GeneralCoreSettingsSection({
               onChange={async (newValue: string) => {
                 if (!plugin.settings.navigation) {
                   plugin.settings.navigation = {
-                    ...DEFAULT_SETTINGS.navigation!,
+                    ...createDefaultNavigationSettings(),
                     tabBehavior: parseSidebarTabBehavior(newValue),
-                    items: DEFAULT_SETTINGS.navigation?.items ?? [],
                   };
                 } else {
                   plugin.settings.navigation.tabBehavior =
@@ -2259,6 +2736,7 @@ export const GeneralTab: React.FC<GeneralTabProps> = (props) => {
     handleBreakEvenPercentChange,
     handleBreakEvenRangeBlur,
     handleIncludeCopyAccountsToggle,
+    handleIncludeUnrealizedPnLToggle,
     handleCurrencyChange,
     handleDateFormatChange,
     handleDefaultRiskAmountChange,
@@ -2270,6 +2748,7 @@ export const GeneralTab: React.FC<GeneralTabProps> = (props) => {
     handleFilterRecentItemsToggle,
     handleHomeStartupBehaviorChange,
     handleJournalFolderPathChange,
+    handleMaeMfeDisplayUnitChange,
     handleMaeMfeInputModeChange,
     handlePrivacyModeToggle,
     handleSkipWeekendsToggle,
@@ -2280,6 +2759,7 @@ export const GeneralTab: React.FC<GeneralTabProps> = (props) => {
     isResetting,
     isUpdatingImages,
     journalFolderPath,
+    maeMfeDisplayUnitOptions,
     maeMfeInputModeOptions,
     plugin,
     setIsExporting,
@@ -2357,7 +2837,10 @@ export const GeneralTab: React.FC<GeneralTabProps> = (props) => {
           handleDefaultRiskAmountChange={handleDefaultRiskAmountChange}
           handleDisplayRMultiplesToggle={handleDisplayRMultiplesToggle}
           handleIncludeCopyAccountsToggle={handleIncludeCopyAccountsToggle}
+          handleIncludeUnrealizedPnLToggle={handleIncludeUnrealizedPnLToggle}
+          handleMaeMfeDisplayUnitChange={handleMaeMfeDisplayUnitChange}
           handleMaeMfeInputModeChange={handleMaeMfeInputModeChange}
+          maeMfeDisplayUnitOptions={maeMfeDisplayUnitOptions}
           maeMfeInputModeOptions={maeMfeInputModeOptions}
           flat={scope === 'trading'}
         />

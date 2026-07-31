@@ -3,7 +3,7 @@
 import { Notice, Platform } from 'obsidian';
 import { t } from '../lang/helpers';
 
-const DEFAULT_ALLOWED_HOSTNAMES = [
+export const DEFAULT_ALLOWED_HOSTNAMES = [
   'journalit.co',
   'api.journalit.co',
   'discord.gg',

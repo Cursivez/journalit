@@ -35,10 +35,12 @@ export const TRADE_FORM_BASIC_OPTIONAL_ITEM_IDS: TradeFormLayoutItemId[] = [
   'riskPlanning',
   'takeProfits',
   'idealExits',
+  'unrealizedSnapshot',
+  'dividends',
   'maeMfe',
+  'tradeCurrency',
   'pnlPreview',
   'importShortcut',
-  'realizedPnlPreview',
 ];
 
 export function getTradeFormLayoutCategories(): VisibilityEditorCategory[] {
@@ -97,6 +99,23 @@ export function getTradeFormLayoutItemDefinitions(): TradeFormLayoutItemDefiniti
       label: 'MAE / MFE',
     },
     {
+      id: 'unrealizedSnapshot',
+      category: 'basic',
+      label: t('form.unrealized.title'),
+      description: t('form.layout.item.unrealized-snapshot-desc'),
+    },
+    {
+      id: 'dividends',
+      category: 'basic',
+      label: t('form.field.dividends'),
+    },
+    {
+      id: 'tradeCurrency',
+      category: 'basic',
+      label: t('form.layout.item.trade-currency'),
+      description: t('form.layout.item.trade-currency-desc'),
+    },
+    {
       id: 'pnlPreview',
       category: 'basic',
       label: t('form.layout.item.pnl-preview'),
@@ -106,12 +125,6 @@ export function getTradeFormLayoutItemDefinitions(): TradeFormLayoutItemDefiniti
       category: 'basic',
       label: t('form.layout.item.import-shortcut'),
       description: t('form.layout.item.import-shortcut-desc'),
-    },
-    {
-      id: 'realizedPnlPreview',
-      category: 'basic',
-      label: t('form.layout.item.realized-pnl-preview'),
-      description: t('form.layout.item.realized-pnl-preview-desc'),
     },
     {
       id: 'setup',
@@ -232,12 +245,24 @@ export function hasPopulatedTradeFormLayoutItem(
       return hasArrayEntries(data.takeProfits);
     case 'idealExits':
       return hasArrayEntries(data.idealExits);
+    case 'unrealizedSnapshot':
+      return hasNumber(data.unrealizedPriceSnapshot);
+    case 'dividends':
+      return hasArrayEntries(data.dividends);
     case 'maeMfe':
       return Boolean(
         hasNumber(data.mae) ||
         hasNumber(data.mfe) ||
         hasNumber(data.maePrice) ||
         hasNumber(data.mfePrice)
+      );
+    case 'tradeCurrency':
+      
+      
+      
+      return (
+        hasNumber(data.fxRate) ||
+        (hasNonEmptyString(data.currency) && data.assetType !== 'cfd')
       );
     case 'setup':
       return hasArrayEntries(data.setup);

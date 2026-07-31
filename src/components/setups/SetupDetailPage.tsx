@@ -39,6 +39,7 @@ import {
   ScanSearch,
 } from '../shared/icons/ObsidianIcon';
 import { SetupStatusBadge } from './SetupStatusBadge';
+import { SetupTagSummary } from './SetupTags';
 import { SetupRulesPanel } from './SetupRulesPanel';
 import { SetupDetailPerformanceSection } from './SetupDetailPerformanceSection';
 import type {
@@ -517,7 +518,7 @@ export const SetupBriefPanel: React.FC<{
           linkedTrades={linkedTrades}
         />
 
-        {profileRows.length > 0 ? (
+        {profileRows.length > 0 || setup.tags.length > 0 ? (
           <section className="journalit-setups-brief__section">
             <h2>{t('setups.view.detail.brief.profile')}</h2>
             <dl className="journalit-setups-brief__profile-list">
@@ -527,6 +528,14 @@ export const SetupBriefPanel: React.FC<{
                   <dd>{row.value}</dd>
                 </div>
               ))}
+              {setup.tags.length > 0 ? (
+                <div>
+                  <dt>{t('setups.view.tags')}</dt>
+                  <dd>
+                    <SetupTagSummary tags={setup.tags} />
+                  </dd>
+                </div>
+              ) : null}
             </dl>
           </section>
         ) : null}

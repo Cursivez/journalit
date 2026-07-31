@@ -122,6 +122,7 @@ type SidebarTrade = Record<string, unknown> & {
   entries?: Array<Record<string, unknown>>;
   rMultiple?: number | null;
   riskAmount?: number | null;
+  canonicalTradeId?: string;
   _originalPnlWasNull?: boolean;
 };
 
@@ -803,6 +804,45 @@ interface SidebarSearchExecutionContext {
   setHasSearched: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
+export function getSidebarTradeStatusKeywords({
+  tradeStatus,
+  isOpen,
+  pnl,
+  breakEvenRangeMin,
+  breakEvenRangeMax,
+}: {
+  tradeStatus?: string;
+  isOpen: boolean;
+  pnl: number | null;
+  breakEvenRangeMin: number;
+  breakEvenRangeMax: number;
+}): string[] {
+  if (tradeStatus === 'CANCELLED') return ['cancelled'];
+  if (isOpen) return ['open'];
+  if (pnl === null) return ['closed', 'unknown'];
+  if (pnl > breakEvenRangeMax) return ['closed', 'win', 'profit'];
+  if (pnl < breakEvenRangeMin) return ['closed', 'loss'];
+  return ['closed', 'breakeven', 'break even', 'break-even'];
+}
+
+export function getSidebarTradeOutcomePnl(
+  trade: Pick<
+    SidebarTrade,
+    | 'canonicalTradeId'
+    | 'pnl'
+    | 'directPnL'
+    | 'useDirectPnLInput'
+    | '_originalPnlWasNull'
+  >
+): number | null {
+  if (trade.canonicalTradeId) {
+    return trade._originalPnlWasNull === true ? null : (trade.pnl ?? null);
+  }
+  return trade.useDirectPnLInput
+    ? (trade.directPnL ?? null)
+    : (trade.pnl ?? null);
+}
+
 const performSidebarSearch = ({
   searchQuery,
   plugin,
@@ -859,9 +899,7 @@ const performSidebarSearch = ({
       trade.optionType || frontmatterOptionType
     ).toLowerCase();
 
-    const rawPnl = trade.useDirectPnLInput
-      ? (trade.directPnL ?? null)
-      : (trade.pnl ?? null);
+    const rawPnl = getSidebarTradeOutcomePnl(trade);
     const tradeCurrency =
       typeof frontmatter?.currency === 'string'
         ? frontmatter.currency
@@ -878,22 +916,13 @@ const performSidebarSearch = ({
       entries: trade.entries,
     });
 
-    const statusKeywords = ['open', 'closed'];
-    if (isOpen) {
-      statusKeywords.length = 0;
-      statusKeywords.push('open');
-    } else {
-      statusKeywords.length = 0;
-      statusKeywords.push('closed');
-      const pnlForStatus = rawPnl ?? 0;
-      if (pnlForStatus > breakEvenRangeMax) {
-        statusKeywords.push('win', 'profit');
-      } else if (pnlForStatus < breakEvenRangeMin) {
-        statusKeywords.push('loss');
-      } else {
-        statusKeywords.push('breakeven', 'break even', 'break-even');
-      }
-    }
+    const statusKeywords = getSidebarTradeStatusKeywords({
+      tradeStatus: trade.tradeStatus,
+      isOpen,
+      pnl: rawPnl,
+      breakEvenRangeMin,
+      breakEvenRangeMax,
+    });
 
     const instrument = String(trade.instrument || '').toLowerCase();
     const direction = String(trade.direction || '').toLowerCase();

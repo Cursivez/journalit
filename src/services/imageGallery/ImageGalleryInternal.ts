@@ -23,13 +23,14 @@ export type ReviewNoteType =
   | 'yearly-review';
 export type ImageGallerySourceType =
   | 'trade'
+  | 'folder'
   | 'drc'
   | 'weekly'
   | 'monthly'
   | 'quarterly'
   | 'yearly';
 
-export const IMAGE_GALLERY_INDEX_VERSION = 6;
+export const IMAGE_GALLERY_INDEX_VERSION = 11;
 export const IMAGE_GALLERY_INDEX_TTL_MS = 60 * 60 * 1000;
 export const REVIEW_METADATA_READY_TIMEOUT_MS = 5000;
 export const SELECTABLE_TRADE_STATUSES: TradeStatus[] = [
@@ -37,6 +38,7 @@ export const SELECTABLE_TRADE_STATUSES: TradeStatus[] = [
   'win',
   'loss',
   'breakeven',
+  'cancelled',
 ];
 
 export const SOURCE_TO_REVIEW_TYPE: Partial<
@@ -56,8 +58,13 @@ export interface PersistedImageGalleryIndex {
   version: number;
   timestamp: number;
   settingsFingerprint: string;
+  annotationNoteSignature: AnnotationNoteSignature;
   items: import('../../components/imageGallery/types').ImageGalleryItem[];
 }
+
+export type AnnotationNoteSignature =
+  | { exists: false; mtime: null; size: null }
+  | { exists: true; mtime: number; size: number };
 
 export interface TradeRecord {
   [key: string]: unknown;
@@ -204,6 +211,16 @@ export function getAnnotation(
   return normalizeAnnotation(annotations[imagePath]);
 }
 
+export function hasAnnotationEntry(
+  annotations: unknown,
+  imagePath: string
+): boolean {
+  return (
+    isRecord(annotations) &&
+    Object.prototype.hasOwnProperty.call(annotations, imagePath) === true
+  );
+}
+
 export function getDateValue(record: {
   date?: unknown;
   entryTime?: unknown;
@@ -246,6 +263,7 @@ export function isImageGallerySourceType(
 ): value is ImageGallerySourceType {
   return (
     value === 'trade' ||
+    value === 'folder' ||
     value === 'drc' ||
     value === 'weekly' ||
     value === 'monthly' ||

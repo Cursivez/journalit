@@ -21,6 +21,26 @@ export class TradeEventBridge {
     }
   }
 
+  public publishCommittedBatch(payloads: TradeCommittedPayload[]): void {
+    if (payloads.length === 0) return;
+    for (const payload of payloads) {
+      this.publishCommittedChange(payload, {
+        suppressLegacyTradeChanged: true,
+      });
+    }
+    const firstAction = payloads[0].change.action;
+    const batchAction = payloads.every(
+      (payload) => payload.change.action === firstAction
+    )
+      ? firstAction
+      : 'updated';
+    eventBus.publish('trade:changed', {
+      action: batchAction,
+      filePaths: payloads.map((payload) => payload.change.path),
+      timestamp: Date.now(),
+    });
+  }
+
   private getLegacyDelay(action: TradeChange['action']): number {
     switch (action) {
       case 'created':

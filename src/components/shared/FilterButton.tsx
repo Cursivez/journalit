@@ -13,11 +13,28 @@ interface FilterButtonProps {
   className?: string;
   
   disabled?: boolean;
+  
+  ariaLabel?: string;
+  
+  ariaLabelledBy?: string;
+  
+  ariaExpanded?: boolean;
+  
+  ariaHaspopup?: React.AriaAttributes['aria-haspopup'];
 }
 
 
 export const FilterButton = memo<FilterButtonProps>(
-  ({ onClick, activeFilterCount, className = '', disabled = false }) => {
+  ({
+    onClick,
+    activeFilterCount,
+    className = '',
+    disabled = false,
+    ariaLabel,
+    ariaLabelledBy,
+    ariaExpanded,
+    ariaHaspopup,
+  }) => {
     return (
       <div
         className={`journalit-filter-button-container ${
@@ -28,10 +45,16 @@ export const FilterButton = memo<FilterButtonProps>(
           className={`journalit-filter-button clickable-icon ${className}`}
           onClick={disabled ? undefined : onClick}
           aria-label={
-            disabled
-              ? t('shared.filter.disabled-preview')
-              : t('shared.filter.open')
+            ariaLabelledBy
+              ? undefined
+              : (ariaLabel ??
+                (disabled
+                  ? t('shared.filter.disabled-preview')
+                  : t('shared.filter.open')))
           }
+          aria-labelledby={ariaLabelledBy}
+          aria-expanded={ariaExpanded}
+          aria-haspopup={ariaHaspopup}
           type="button"
           disabled={disabled}
         >

@@ -537,12 +537,12 @@ export abstract class BaseComponentRenderer {
     filePath: string
   ): RootContext {
     
-    const reactContainer = container.ownerDocument.createElement('div');
-    reactContainer.className = this.getWrapperClassName();
-    reactContainer.setAttribute(
-      `data-${this.getComponentClassName()}-root-id`,
-      rootId
-    );
+    const reactContainer = container.createDiv({
+      cls: this.getWrapperClassName(),
+      attr: {
+        [`data-${this.getComponentClassName()}-root-id`]: rootId,
+      },
+    });
 
     
     if (leafId) {
@@ -556,8 +556,6 @@ export abstract class BaseComponentRenderer {
 
     
     reactContainer.setAttribute('data-protected', 'true');
-
-    container.appendChild(reactContainer);
 
     
     const root = createRoot(reactContainer);

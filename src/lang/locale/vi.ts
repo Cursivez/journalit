@@ -3,6 +3,70 @@
 import type { Lang } from './en';
 
 const vi: Lang = {
+  'trade.broker-synced-at': 'Đã đồng bộ nhà môi giới {date}',
+  'trade-sync.tradovate.status.connecting': 'Đang kết nối',
+  'trade-sync.tradovate.status.setup-required': 'Cần thiết lập tài khoản',
+  'trade-sync.tradovate.status.paused': 'Đã tạm dừng',
+  'trade-sync.tradovate.status.reauthorization-required': 'Cần ủy quyền lại',
+  'trade-sync.tradovate.status.deleting': 'Đang xóa dữ liệu đám mây',
+  'trade-sync.tradovate.status.error': 'Lỗi kết nối',
+  'trade-sync.tradovate.sync-complete': 'Đã hoàn tất đồng bộ Tradovate.',
+  'trade-sync.tradovate.sync-partial':
+    'Đồng bộ Tradovate hoàn tất nhưng có sự cố. Hãy kiểm tra trạng thái tích hợp.',
+  'trade-sync.tradovate.sync-complete-connection':
+    'Đã đồng bộ xong {connection}.',
+  'trade-sync.tradovate.sync-partial-connection':
+    'Đã đồng bộ {connection} nhưng có sự cố.',
+  'trade-sync.tradovate.sync-all': 'Đồng bộ tất cả',
+  'trade-sync.tradovate.sync-all-complete':
+    'Đã đồng bộ {succeeded}/{total} kết nối Tradovate.',
+  'trade-sync.tradovate.sync-all-partial':
+    'Đã đồng bộ {succeeded}/{total} kết nối Tradovate. Hãy kiểm tra các kết nối gặp sự cố.',
+  'trade-sync.tradovate.connect-another': 'Kết nối thêm tài khoản Tradovate',
+  'trade-sync.tradovate.no-connections':
+    'Kết nối tài khoản Tradovate trên Journalit.co để cấu hình và đồng bộ tại đây.',
+  'trade-sync.tradovate.claimed-by-connection':
+    'Đồng bộ đang được bật qua {connection}. Hãy tắt tại đó trước khi chuyển tài khoản này.',
+  'trade-sync.tradovate.claim-conflict':
+    'Một kết nối Tradovate khác đã giữ quyền đồng bộ tài khoản này. Hãy xem lại các thẻ kết nối đã làm mới trước khi thử lại.',
+  'trade-sync.tradovate.reconciliation-issues': '{count} sự cố đối soát',
+  'trade-sync.tradovate.website-connection-description':
+    'Kết nối hoặc ủy quyền lại Tradovate an toàn trên Journalit.co, sau đó quay lại đây để chọn tài khoản và đồng bộ vault.',
+  'trade-sync.tradovate.plugin-sync-description':
+    'Mỗi lần đồng bộ sẽ lấy hoạt động Tradovate mới nhất và ghi các giao dịch tương ứng vào vault này.',
+  'trade-sync.tradovate.connect': 'Kết nối',
+  'trade-sync.tradovate.manage-connection': 'Quản lý kết nối',
+  'trade-sync.tradovate.setup-guide': 'Hướng dẫn thiết lập',
+  'trade-sync.tradovate.setup-and-sync': 'Hoàn tất thiết lập và đồng bộ',
+  'trade-sync.tradovate.sync-to-vault': 'Đồng bộ',
+  'trade-sync.tradovate.discovery-description':
+    'Journalit cần tìm các tài khoản Demo và Live có sẵn qua kết nối Tradovate của bạn.',
+  'trade-sync.tradovate.discover-accounts': 'Tìm tài khoản Tradovate',
+  'trade-sync.tradovate.discovering': 'Đang tìm tài khoản…',
+  'trade-sync.tradovate.discovery-failed':
+    'Không thể tìm tài khoản Tradovate. Hãy thử lại hoặc quản lý kết nối trên Journalit.co.',
+  'trade-sync.tradovate.sync-account': 'Đưa vào đồng bộ',
+  'trade-sync.tradovate.history-label': 'Lịch sử ban đầu',
+  'trade-sync.tradovate.history-all': 'Toàn bộ lịch sử hiện có',
+  'trade-sync.tradovate.history-recent': '90 ngày gần đây',
+  'trade-sync.tradovate.history-custom': 'Từ một ngày cụ thể',
+  'trade-sync.tradovate.history-new': 'Chỉ giao dịch mới',
+  'trade-sync.tradovate.start-date': 'Ngày bắt đầu',
+
+  'trade-sync.tradovate.account-required':
+    'Chọn ít nhất một tài khoản Tradovate để đồng bộ.',
+  'trade-sync.tradovate.mapping-required':
+    'Chọn tài khoản cục bộ trong vault cho mỗi tài khoản Tradovate đã bật.',
+  'trade-sync.tradovate.custom-date-required':
+    'Chọn ngày bắt đầu cho mỗi lựa chọn lịch sử tùy chỉnh.',
+  'trade-sync.tradovate.recovery-title': 'Khôi phục ghi chú giao dịch bị thiếu',
+  'trade-sync.tradovate.recovery-count':
+    '{count} ghi chú giao dịch cần khôi phục',
+  'trade-sync.tradovate.recovery-select-account':
+    'Chọn tài khoản cục bộ trước khi khôi phục ghi chú giao dịch.',
+  'trade-sync.tradovate.recovery-confirm':
+    'Khôi phục {count} ghi chú giao dịch vào {account}?',
+
   'command.add-trade': 'Thêm giao dịch mới',
   'command.import-trades-csv': 'Mở Trade Import',
   'command.create-drc': 'Mở DRC (thẻ báo cáo hàng ngày)',
@@ -10,11 +74,12 @@ const vi: Lang = {
   'command.create-monthly-review': 'Mở đánh giá hàng tháng',
   'command.create-quarterly-review': 'Mở đánh giá hàng quý',
   'command.create-yearly-review': 'Mở đánh giá hàng năm',
-  'command.open-dashboard': 'Mở bảng điều khiển giao dịch',
-  'command.open-account-dashboard': 'Mở bảng điều khiển tài khoản',
+  'command.open-dashboard': 'Mở bảng điều khiển',
+  'command.open-account-dashboard': 'Mở tài khoản',
   'command.open-trade-log': 'Mở nhật ký giao dịch',
   'command.open-home': 'Mở Trang chủ',
   'command.open-position-size-calculator': 'Mở máy tính kích thước vị thế',
+  'command.rebuild-graph-links': 'Xây dựng lại liên kết đồ thị Journalit',
   'command.replay-onboarding': 'Phát lại quy trình giới thiệu',
   'command.replay-current-view-guide':
     'Hướng dẫn phát lại cho chế độ xem hiện tại',
@@ -31,6 +96,10 @@ const vi: Lang = {
     'Không thể bắt đầu hướng dẫn. Vui lòng thử lại.',
   'notice.guide.replay-started':
     'Hướng dẫn đã khởi động lại cho chế độ xem này.',
+  'notice.graph-links.rebuild-complete':
+    'Đã xây dựng lại liên kết đồ thị: cập nhật {updated}, không đổi {unchanged}, cần xem lại {conflicted}.',
+  'notice.graph-links.rebuild-failed':
+    'Không thể xây dựng lại liên kết đồ thị Journalit. Hãy xem bảng điều khiển để biết chi tiết.',
   'template.switch-title': 'Chuyển đổi bố cục',
   'template.switch-trade-title': 'Chuyển đổi bố cục giao dịch',
   'template.switch-review-title': 'Chuyển đổi bố cục {type}',
@@ -242,6 +311,10 @@ const vi: Lang = {
   'form.layout.item.realized-pnl-preview': 'Tóm tắt P&L thoát một phần',
   'form.layout.item.realized-pnl-preview-desc':
     'Chỉ xuất hiện với giao dịch đang mở sau khi thoát một phần; vị trí được cố định.',
+  'form.layout.item.trade-currency': 'Tiền tệ giao dịch / Tỷ giá',
+  'form.layout.item.trade-currency-desc':
+    'Nhập giao dịch bằng loại tiền tệ khác với tỷ giá thủ công tùy chọn.',
+  'form.layout.manual-fx-rate': 'Nhập tỷ giá thủ công',
   'form.layout.result-r': 'Kết quả theo R',
   'form.layout.entry-time': 'Thời gian giao dịch',
   'form.field.account': 'Tài khoản',
@@ -275,6 +348,7 @@ const vi: Lang = {
   'form.field.profit-loss': 'Lãi/Lỗ',
   'form.field.total-pnl': 'P&L giao dịch gốc',
   'form.field.realized-pnl': 'Lãi & lỗ đã thực hiện',
+  'form.field.floating-pnl': 'Lãi/Lỗ thả nổi',
   'form.field.total-costs': 'Tổng chi phí:',
   'form.field.setup': 'Setup',
   'form.field.mistake': 'Sai lầm',
@@ -327,6 +401,8 @@ const vi: Lang = {
   'form.field.custom-lot-size': 'Kích thước lô tùy chỉnh',
   'form.field.pip-value': 'Giá trị Pip',
   'form.field.leverage-ratio': 'Tỷ lệ đòn bẩy',
+  'form.field.trade-currency': 'Tiền tệ giao dịch',
+  'form.field.fx-rate': 'Tỷ giá sang {base}',
   'form.field.lot-size.standard': 'Tiêu chuẩn (100.000)',
   'form.field.lot-size.mini': 'Nhỏ (10.000)',
   'form.field.lot-size.micro': 'Vi mô (1.000)',
@@ -354,6 +430,8 @@ const vi: Lang = {
   'form.placeholder.target-price': 'Giá mục tiêu',
   'form.placeholder.close-percent': '50%',
   'form.placeholder.risk-amount': 'Rủi ro dự kiến ​​bằng tiền tệ',
+  'form.placeholder.fx-rate':
+    '1 {currency} = ? {base} (trống: tỷ giá hằng ngày)',
   'form.placeholder.custom-tag': 'Nhập thẻ tùy chỉnh và nhấn Enter',
   'form.placeholder.thesis': 'Nhập luận điểm của bạn cho giao dịch này...',
   'form.placeholder.pnl': 'Nhập tổng lãi hoặc lỗ',
@@ -505,6 +583,8 @@ const vi: Lang = {
   'trade.validation.risk-valid-number':
     'Số tiền rủi ro phải là một con số hợp lệ.',
   'trade.validation.risk-positive': 'Số tiền rủi ro phải lớn hơn 0.',
+  'trade.validation.fx-rate-number': 'Tỷ giá phải là một số hợp lệ.',
+  'trade.validation.fx-rate-positive': 'Tỷ giá phải lớn hơn 0.',
   'trade.validation.stop-loss-number': 'Điểm dừng lỗ phải là một con số.',
   'trade.validation.stop-loss-valid-number': 'Điểm dừng lỗ phải là số hợp lệ.',
   'trade.validation.take-profit-price-required': 'Giá chốt lời là bắt buộc.',
@@ -627,8 +707,7 @@ const vi: Lang = {
   'notice.error.open-dashboard': 'Không mở được bảng điều khiển: {error}',
   'notice.error.open-trade-log': 'Không thể mở Nhật ký giao dịch: {error}',
   'notice.error.open-csv-import': 'Không thể mở Nhập giao dịch: {error}',
-  'notice.error.open-account-dashboard':
-    'Không thể mở bảng điều khiển tài khoản: {error}',
+  'notice.error.open-account-dashboard': 'Không thể mở Tài khoản: {error}',
   'notice.error.open-trade-form-edit':
     'Không thể mở biểu mẫu giao dịch ở chế độ chỉnh sửa: {error}',
   'notice.error.open-weekly-review': 'Không thể mở Đánh giá hàng tuần: {error}',
@@ -767,8 +846,7 @@ const vi: Lang = {
     'Bắt đầu bằng cách thêm giao dịch đầu tiên của bạn',
   'dashboard.guide.empty.state.description':
     'Bạn chưa có bất kỳ giao dịch nào. Thêm giao dịch theo cách thủ công hoặc nhập dữ liệu, sau đó quay lại để khám phá toàn bộ chuyến tham quan Bảng điều khiển.',
-  'dashboard.guide.main.intro.title':
-    'Đây là bảng điều khiển giao dịch của bạn',
+  'dashboard.guide.main.intro.title': 'Đây là bảng điều khiển của bạn',
   'dashboard.guide.main.intro.description':
     'Sử dụng trang này để theo dõi hiệu suất của bạn, xem lại số liệu thống kê và giữ các biểu đồ hữu ích nhất của bạn ở một nơi.',
   'dashboard.guide.main.filters.title':
@@ -922,6 +1000,8 @@ const vi: Lang = {
   'tradelog.status.win': 'THẮNG',
   'tradelog.status.loss': 'LỖ',
   'tradelog.status.open': 'MỞ',
+  'tradelog.status.partially-closed': 'ĐÃ ĐÓNG MỘT PHẦN',
+  'tradelog.status.cancelled': 'ĐÃ HỦY',
   'tradelog.status.breakeven': 'Hòa vốn',
   'tradelog.status.missed': 'BỎ LỠ',
   'tradelog.status.backtest': 'BACKTEST',
@@ -1055,8 +1135,8 @@ const vi: Lang = {
   'tradelog.column.maxR': 'tối đa R',
   'tradelog.column.maePrice': 'Giá MAE',
   'tradelog.column.mfePrice': 'Giá MFE',
-  'tradelog.column.mae': 'MAE $',
-  'tradelog.column.mfe': 'MFE$',
+  'tradelog.column.mae': 'MAE',
+  'tradelog.column.mfe': 'MFE',
   'tradelog.column.mae-with-currency': 'MAE ({currency})',
   'tradelog.column.mfe-with-currency': 'MFE ({currency})',
   'tradelog.column.maePercent': '% MAE',
@@ -1084,6 +1164,7 @@ const vi: Lang = {
   'dashboard.button.save-layout': 'Lưu bố cục',
   'dashboard.button.edit-layout': 'Chỉnh sửa bố cục',
   'dashboard.metrics.netPnL': 'Lãi/Lỗ',
+  'dashboard.metrics.incl-unrealized': 'gồm {value} chưa thực hiện',
   'dashboard.metrics.winRate': 'Tỷ lệ thắng',
   'dashboard.metrics.profitFactor': 'Profit factor',
   'dashboard.metrics.sharpeRatio': 'Tỷ lệ Sharpe',
@@ -1149,6 +1230,10 @@ const vi: Lang = {
   'dashboard.conversion.using-ecb': 'Sử dụng tỷ giá ECB ({date})',
   'dashboard.conversion.using-broker-pnl':
     'Sử dụng P&L tiền tệ cơ sở do nhà môi giới cung cấp cho {count} {tradeLabel}',
+  'dashboard.conversion.using-manual-rate':
+    'Sử dụng tỷ giá thủ công cho {count} {tradeLabel}',
+  'dashboard.conversion.partial-warning':
+    '⚠ Chi phí/rủi ro bằng {currencies} không thể quy đổi và đã bị loại trừ',
   'dashboard.conversion.trade-singular': 'giao dịch',
   'dashboard.conversion.trade-plural': 'giao dịch',
   'dashboard.conversion.excluded-warning':
@@ -1233,7 +1318,12 @@ const vi: Lang = {
   'dashboard.rolling_win_loss.trades_count': 'Giao dịch {count}',
   'dashboard.rolling_win_loss.trade_label': 'Giao dịch {label}',
   'dashboard.rolling_win_loss.ratio_label': 'Tỷ lệ: {ratio}',
+  'dashboard.rolling_win_loss.ratio_undefined':
+    'Tỷ lệ: không có lệnh thua trong kỳ',
   'dashboard.rolling_win_loss.avg_win_label': 'Lệnh thắng trung bình: {value}',
+  'dashboard.rolling_win_loss.no_losses_band': 'Không có lệnh thua',
+  'dashboard.rolling_win_loss.window_not_filled':
+    'Cần ít nhất {count} lệnh đã đóng',
   'dashboard.rolling_win_loss.avg_loss_label': 'Mức giảm trung bình: {value}',
   'home.widget.recent-items.name': 'Mục gần đây',
   'home.widget.recent-items.description':
@@ -1262,6 +1352,11 @@ const vi: Lang = {
     'Thiết kế bố cục đánh giá theo cách của bạn.',
   'home.widget.getting-started.item.layouts.time': '1 phút',
   'home.widget.getting-started.item.layouts.cta': 'Mở Trình tạo bố cục',
+  'home.widget.getting-started.item.sidebar.title': 'Mở thanh bên điều hướng',
+  'home.widget.getting-started.item.sidebar.description':
+    'Truy cập nhanh các trang, bài đánh giá, công cụ và tìm kiếm của Journalit.',
+  'home.widget.getting-started.item.sidebar.time': '10 giây',
+  'home.widget.getting-started.item.sidebar.cta': 'Mở thanh bên',
   'home.widget.getting-started.item.pro.title': 'Kích hoạt PRO',
   'home.widget.getting-started.item.pro.description':
     'Cho phép nhập CSV, đồng bộ hóa MetaTrader và ánh xạ AI.',
@@ -1329,12 +1424,11 @@ const vi: Lang = {
   'view.home': 'Trang chủ',
   'view.dashboard': 'Bảng điều khiển',
   'view.trade-log': 'Nhật ký giao dịch',
-  'view.account-dashboard': 'Bảng điều khiển tài khoản',
+  'view.account-dashboard': 'Tài khoản',
   'view.account-page.title': 'Tài khoản: {name}',
   'view.account-page.title-default': 'Trang tài khoản',
   'view.account-page.no-account-selected': 'Không có tài khoản nào được chọn',
-  'view.account-page.no-account-instructions':
-    'Vui lòng điều hướng đến trang này từ Bảng điều khiển tài khoản.',
+  'view.account-page.no-account-instructions': 'Hãy mở trang này từ Tài khoản.',
   'view.account-page.service-loading': 'Đang tải dịch vụ trang tài khoản...',
   'view.account-page.balance-chart-title': 'Biểu đồ số dư tài khoản',
   'view.account-page.balance-chart-loading': 'Đang tải biểu đồ số dư...',
@@ -1622,7 +1716,7 @@ const vi: Lang = {
   'csv.broker.fxreplay': 'FX Replay (Analytics)',
   'csv.broker.atas': 'ATAS (Thống kê thời gian thực)',
   'csv.broker.rithmic': 'Rithmic',
-  'csv.broker.jdr': 'JDR Securities Limited',
+  'csv.broker.jdr': 'MetaTrader 4 / 5',
   'csv.account-selector.loading': 'Đang tải tài khoản...',
   'csv.account-selector.no-accounts': 'Chưa có tài khoản nào.',
   'csv.account-selector.create-account-hint':
@@ -1648,6 +1742,9 @@ const vi: Lang = {
   'csv.results.failed-rows-title': 'Hàng không thành công:',
   'csv.results.import-failed': 'Nhập không thành công',
   'csv.results.import-error-generic': 'Đã xảy ra lỗi trong quá trình nhập',
+  'csv.results.pending-local-writes':
+    '{count} thao tác ghi ghi chú giao dịch vẫn đang chờ. Journalit sẽ đối soát các thao tác đã hoàn tất và giữ các phép chiếu chưa hoàn thành để có thể khôi phục.',
+  'csv.results.pending-title': 'Quá trình nhập vẫn đang đồng bộ',
   'csv.results.additional-errors': 'Các lỗi bổ sung:',
   'csv.results.button.view-account': 'Xem tài khoản',
   'csv.results.button.import-another': 'Nhập một CSV khác',
@@ -1875,7 +1972,7 @@ const vi: Lang = {
   'calendar.month.dec': 'Thg 12',
   'calendar.legend.less': 'Ít hơn',
   'calendar.legend.more': 'Hơn',
-  'settings.title': 'Cài đặt Journalit',
+
   'settings.language': 'Ngôn ngữ',
   'settings.language-desc': 'Chọn ngôn ngữ hiển thị cho plugin',
   'settings.ftp.title': 'Thông tin đăng nhập FTP',
@@ -1900,8 +1997,8 @@ const vi: Lang = {
   'settings.ftp.button.reset': 'Đặt lại mật khẩu FTP',
   'settings.ftp.button.resetting': 'Đặt lại mật khẩu...',
   'settings.ftp.reset-hint': 'Nhấp vào nút này để tạo mật khẩu FTP mới.',
-  'settings.ftp.instructions.title': 'Hướng dẫn thiết lập MetaTrader:',
-  'settings.ftp.instructions.step1': 'Mở MetaTrader 5 (MT5)',
+  'settings.ftp.instructions.title': 'Hướng dẫn thiết lập MetaTrader 4:',
+  'settings.ftp.instructions.step1': 'Mở MetaTrader 4 (MT4)',
   'settings.ftp.instructions.step2': 'Nhấp vào menu "Công cụ" ở trên cùng',
   'settings.ftp.instructions.step3': 'Chọn "Tùy chọn"',
   'settings.ftp.instructions.step4':
@@ -2039,21 +2136,6 @@ const vi: Lang = {
     'Tự động tạo Đánh giá hàng năm mới khi điều hướng đến một năm chưa có Đánh giá hàng năm',
   'settings.reviews.auto-create-yearly-nav-aria':
     'Tự động tạo đánh giá hàng năm về điều hướng',
-  'settings.reviews.scalper-defaults': 'Mặc định Scalper',
-  'settings.reviews.scalper-defaults-desc':
-    'Định cấu hình mặc định chung cho hành vi của Demon Tracker. Các tiện ích Trình theo dõi quỷ riêng lẻ vẫn có thể ghi đè các giá trị này trong Trình tạo bố cục.',
-  'settings.reviews.scalper-default-count-mode': 'Chế độ đếm mặc định',
-  'settings.reviews.scalper-default-count-mode-desc':
-    'Chọn xem các lỗi lặp lại được tính cho mỗi giao dịch hay một lần cho mỗi ngày giao dịch.',
-  'settings.reviews.scalper-default-source-mode': 'Chế độ nguồn mặc định',
-  'settings.reviews.scalper-default-source-mode-desc':
-    'Chọn xem Demon Tracker sử dụng lỗi giao dịch, lỗi phiên hay cả hai.',
-  'settings.reviews.scalper-auto-apply-session':
-    'Tự động áp dụng lỗi phiên cho giao dịch trong ngày',
-  'settings.reviews.scalper-auto-apply-session-desc':
-    'Khi được bật, các lỗi cấp phiên có thể được áp dụng mặc định cho tất cả các giao dịch trong cùng một ngày giao dịch.',
-  'settings.reviews.scalper-auto-apply-session-aria':
-    'Tự động áp dụng lỗi phiên cho giao dịch trong ngày',
   'settings.reviews.notice.template-updated': 'Đã cập nhật bố cục mặc định',
   'settings.reviews.notice.builder-not-found':
     'Không tìm thấy lệnh Trình tạo bố cục',
@@ -2395,7 +2477,7 @@ const vi: Lang = {
     'Không có phần nào được định cấu hình. Nhấp vào "Thêm phần" để tạo phần đầu tiên của bạn.',
   'backend.title': 'Đồng bộ hóa giao dịch',
   'backend.description':
-    'Thiết lập đồng bộ hóa MetaTrader (MT4/MT5) và tự động cập nhật kho tiền của bạn.',
+    'Thiết lập Trade Sync cho MetaTrader (MT4) và Tradovate để tự động cập nhật vault của bạn.',
   'trade-sync.gate.signin.title': 'Yêu cầu đăng nhập',
   'trade-sync.gate.signin.description':
     'Để bật đồng bộ hóa giao dịch, trước tiên hãy đăng nhập vào tài khoản Journalit của bạn.',
@@ -2832,16 +2914,16 @@ const vi: Lang = {
   'csv.broker-guide.rithmic.doc-label':
     'Xem R | Hướng dẫn xuất khẩu Trader Pro',
   'csv.broker-guide.jdr.description':
-    'Xuất câu lệnh HTML MetaTrader (báo cáo kiểu MT4).',
+    'Xuất báo cáo HTML MetaTrader cho MT4 và MT5.',
   'csv.broker-guide.jdr.step-1':
-    'Trong thiết bị đầu cuối JDR MetaTrader của bạn, hãy mở tab Lịch sử tài khoản / Lịch sử cho phạm vi ngày bạn muốn nhập',
+    'Trong thiết bị đầu cuối MetaTrader của bạn, hãy mở tab Lịch sử tài khoản / Lịch sử cho phạm vi ngày bạn muốn nhập',
   'csv.broker-guide.jdr.step-2':
     'Nhấp chuột phải vào bảng lịch sử và chọn Lưu dưới dạng Báo cáo (câu lệnh HTML/HTM)',
   'csv.broker-guide.jdr.step-3':
-    'Tải lên báo cáo HTML đã xuất tại đây và chọn JDR Securities Limited',
+    'Tải lên báo cáo HTML đã xuất tại đây và chọn MetaTrader 4 / 5 Statement',
   'csv.broker-guide.jdr.warning.emphasis': 'Quan trọng:',
   'csv.broker-guide.jdr.warning.message':
-    'Sử dụng xuất câu lệnh HTML. Các đơn đặt hàng đang chờ xử lý/bị hủy sẽ tự động bị bỏ qua và báo cáo HTML MT5 chưa được hỗ trợ.',
+    'Sử dụng báo cáo HTML đã xuất. Các lệnh đang chờ xử lý và bị hủy sẽ tự động bị bỏ qua.',
   'csv.broker-guide.jdr.doc-label': 'Xem hướng dẫn xuất khẩu môi giới',
   'csv.date-format.auto-detect':
     'Tự động phát hiện (được khuyến nghị cho các định dạng ISO/tiêu chuẩn)',
@@ -2867,7 +2949,7 @@ const vi: Lang = {
   'upgrade.benefit.csv': 'Nhập CSV với ánh xạ cột được AI hỗ trợ',
   'upgrade.benefit.templates':
     'Bố cục tùy chỉnh và chia sẻ bố cục không giới hạn',
-  'upgrade.benefit.mt5': 'Đồng bộ hóa tự động MetaTrader 5',
+  'upgrade.benefit.trade-sync': 'Trade Sync cho MetaTrader (MT4) và Tradovate',
   'upgrade.benefit.multi-account': 'Hỗ trợ nhiều tài khoản',
   'upgrade.benefit.analytics': 'Phân tích và số liệu nâng cao',
   'upgrade.benefit.layouts': 'Bố cục bảng điều khiển tùy chỉnh',
@@ -3015,7 +3097,7 @@ const vi: Lang = {
     'Chỉnh sửa tài khoản thay đổi cài đặt tài khoản',
   'account-page.guide.main.edit-account.description':
     'Đây là nơi bạn cập nhật chi tiết tài khoản, quy tắc rủi ro, mức rút vốn và mục tiêu lợi nhuận nếu chúng thay đổi theo thời gian.',
-  'account-dashboard.title': 'Bảng điều khiển tài khoản',
+  'account-dashboard.title': 'Tài khoản',
   'account-dashboard.copy-badge.base': 'GỐC',
   'account-dashboard.copy-badge.copy': 'COPY',
   'account-dashboard.copy-badge.copied-by': 'Sao chép bởi',
@@ -3033,14 +3115,14 @@ const vi: Lang = {
   'account-dashboard.section.empty-sub': 'Tạo một tài khoản để xem nó ở đây',
   'account-dashboard.button.create-first': 'Tạo tài khoản đầu tiên của bạn',
   'account-dashboard.action.create': 'Tạo tài khoản mới',
-  'account-dashboard.action.settings': 'Cài đặt bảng điều khiển tài khoản',
+  'account-dashboard.action.settings': 'Cài đặt tài khoản',
   'account-dashboard.weight-bar.aria': 'Loại tài khoản Phân phối AUM',
   'account-dashboard.weight-bar.segment-aria':
     '{name}: {percent}% trong tổng số AUM',
   'account-dashboard.guide.empty.intro.title':
     'Trang này giữ tất cả tài khoản của bạn ở một nơi',
   'account-dashboard.guide.empty.intro.description':
-    'Sử dụng Bảng điều khiển tài khoản để xem tất cả các tài khoản của bạn cùng nhau. Khi các tài khoản tồn tại, trang này sẽ trở thành cách nhanh nhất để so sánh chúng.',
+    'Dùng Tài khoản để xem tất cả tài khoản cùng nhau. Khi đã có tài khoản, đây là nơi nhanh nhất để so sánh chúng.',
   'account-dashboard.guide.empty.state.title':
     'Chưa có gì ở đây vì không có tài khoản nào tồn tại',
   'account-dashboard.guide.empty.state.description':
@@ -3053,8 +3135,7 @@ const vi: Lang = {
     'Sau khi lưu, Journalit mở trang tài khoản',
   'account-dashboard.guide.empty.after-create.description':
     'Điền thông tin tài khoản cơ bản và lưu lại. Hướng dẫn tiếp theo sẽ xuất hiện trên Trang tài khoản cho tài khoản cụ thể đó.',
-  'account-dashboard.guide.main.intro.title':
-    'Đây là bảng điều khiển tài khoản của bạn',
+  'account-dashboard.guide.main.intro.title': 'Đây là các tài khoản của bạn',
   'account-dashboard.guide.main.intro.description':
     'Sử dụng trang này để so sánh các tài khoản, xem tổng số trên tất cả các tài khoản và chuyển sang một tài khoản khi bạn cần thêm chi tiết.',
   'account-dashboard.guide.main.trade-filter.title':
@@ -3328,6 +3409,7 @@ const vi: Lang = {
   'settings.general.docs': 'Tài liệu',
   'settings.general.discord': 'Discord',
   'settings.general.github': 'GitHub',
+
   'settings.general.currency': 'Tiền tệ',
   'settings.general.currency-desc':
     'Chọn loại tiền để hiển thị cho tất cả các giá trị tiền tệ trong toàn bộ plugin',
@@ -3371,7 +3453,6 @@ const vi: Lang = {
   'settings.general.display-name-cleared': 'Đã xóa tên hiển thị',
   'settings.general.display-name-save-failed':
     'Không lưu được tên hiển thị. Vui lòng thử lại.',
-  'settings.general.display-privacy-section': 'Hiển thị & Quyền riêng tư',
   'settings.general.privacy-mode': 'Chế độ riêng tư',
   'settings.general.privacy-mode-desc':
     'Che giấu các giá trị giao dịch, tài khoản, giá và hiệu suất nhạy cảm trong giao diện người dùng mà không thay đổi dữ liệu đã lưu.',
@@ -3394,6 +3475,26 @@ const vi: Lang = {
     'Lọc các mục gần đây vào tệp Journalit',
   'settings.general.filter-recent-toggled':
     'Lọc các mục gần đây vào tệp Journalit {status}',
+  'settings.general.home-background': 'Ảnh nền Home',
+  'settings.general.home-background-desc':
+    'Dùng ảnh trong vault hoặc chọn ảnh từ máy tính để sao chép vào vault.',
+  'settings.general.home-background-dashboard': 'Hiển thị nền trong Dashboard',
+  'settings.general.home-background-dashboard-desc':
+    'Sử dụng cùng ảnh nền trong chế độ Dashboard.',
+  'settings.general.home-background-dashboard-aria':
+    'Hiển thị nền Trang chủ trong Dashboard',
+  'settings.general.home-background-placeholder':
+    'Đường dẫn vault, ví dụ .journalit/home-background.png',
+  'settings.general.home-background-aria': 'Đường dẫn ảnh nền Home trong vault',
+  'settings.general.home-background-choose': 'Chọn ảnh',
+  'settings.general.home-background-clear': 'Xóa',
+  'settings.general.home-background-invalid':
+    'Đường dẫn này không trỏ đến ảnh được hỗ trợ trong vault.',
+  'settings.general.home-background-invalid-file':
+    'Hãy chọn tệp ảnh được hỗ trợ.',
+  'settings.general.home-background-saved': 'Đã lưu ảnh nền Home.',
+  'settings.general.home-background-cleared': 'Đã xóa ảnh nền Home.',
+  'settings.general.home-background-save-failed': 'Không thể lưu ảnh nền Home.',
   'settings.general.folder-section': 'Vị trí thư mục & đường dẫn hình ảnh',
   'settings.general.journal-folder': 'Vị trí thư mục nhật ký giao dịch',
   'settings.general.journal-folder-desc':
@@ -3482,6 +3583,15 @@ const vi: Lang = {
   'settings.general.mae-mfe-input-mode-aria': 'Chọn chế độ đầu vào MAE/MFE',
   'settings.general.mae-mfe-input-mode-price': 'Mức giá',
   'settings.general.mae-mfe-input-mode-dollar': 'Giá trị đô la',
+  'settings.general.mae-mfe-display-unit': 'Đơn vị hiển thị MAE/MFE',
+  'settings.general.mae-mfe-display-unit-desc':
+    'Hiển thị MAE/MFE theo tiền tệ hoặc tick hợp đồng tương lai trong phân tích và các chế độ xem giao dịch. Chế độ tick tự động tính lại các giao dịch tương lai hiện có đủ dữ liệu mà không thay đổi dữ liệu đã lưu.',
+  'settings.general.mae-mfe-display-unit-aria': 'Chọn đơn vị hiển thị MAE/MFE',
+  'settings.general.mae-mfe-display-dollar': 'Tiền tệ',
+  'settings.general.mae-mfe-display-ticks': 'Tick',
+  'common.ticks': 'tick',
+  'dashboard.mae-mfe-ticks.partial-coverage':
+    'Chỉ {eligible} trong số {total} giao dịch có dữ liệu tick hợp đồng tương lai. Chỉ số này loại trừ các giao dịch không đủ điều kiện.',
   'settings.general.cutoff-time': 'Thời gian chốt ngày giao dịch',
   'settings.general.cutoff-time-desc':
     'Thời gian xác định sự kết thúc của một ngày giao dịch. Các giao dịch sau thời gian này sẽ được nhóm vào ngày hôm sau. (định dạng 24 giờ, ví dụ: 23:30 cho 11:30 tối)',
@@ -3529,6 +3639,14 @@ const vi: Lang = {
     'Bao gồm các tài khoản sao chép trong phân tích tất cả tài khoản',
   'settings.general.include-copy-accounts-toggled':
     'Sao chép tài khoản trong phân tích tất cả tài khoản {status}',
+  'settings.general.include-unrealized-pnl':
+    'Bao gồm lãi/lỗ chưa thực hiện trong phân tích',
+  'settings.general.include-unrealized-pnl-desc':
+    'Khi bật, tổng lãi/lỗ ròng bao gồm lãi/lỗ chưa thực hiện của các vị thế đang mở có ảnh chụp giá, hiển thị tách biệt với kết quả đã thực hiện. Các thống kê như tỷ lệ thắng và chuỗi vẫn chỉ tính phần đã thực hiện.',
+  'settings.general.include-unrealized-pnl-aria':
+    'Bao gồm lãi/lỗ chưa thực hiện trong phân tích',
+  'settings.general.include-unrealized-pnl-toggled':
+    'Lãi/lỗ chưa thực hiện trong phân tích {status}',
   'settings.general.notification-settings': 'Cài đặt thông báo',
   'settings.general.sync-notifications': 'Đồng bộ hóa thông báo',
   'settings.general.sync-notifications-desc':
@@ -4053,7 +4171,7 @@ const vi: Lang = {
   'onboarding.explore.tagline': 'Journalit của bạn, quy tắc của bạn.',
   'onboarding.explore.section.out-of-box.title':
     'Các công cụ và chế độ xem cốt lõi',
-  'onboarding.explore.core.dashboard.label': 'Bảng điều khiển giao dịch',
+  'onboarding.explore.core.dashboard.label': 'Bảng điều khiển',
   'onboarding.explore.core.dashboard.description':
     'Sơ lược về hiệu suất của bạn — P&L, tỷ lệ thắng, tỷ lệ rút vốn, v.v.',
   'onboarding.explore.core.tradelog.label': 'Nhật ký giao dịch',
@@ -4071,9 +4189,9 @@ const vi: Lang = {
   'onboarding.explore.imports.csv.label': 'Trade Import',
   'onboarding.explore.imports.csv.description':
     'Xem trước các cột CSV và bản đồ của bạn. Nhập vào vault của bạn yêu cầu Pro.',
-  'onboarding.explore.imports.mt.label': 'Đồng bộ hóa MetaTrader (MT4/MT5)',
-  'onboarding.explore.imports.mt.description':
-    'Đồng bộ hóa giao dịch tự động từ MetaTrader. Yêu cầu chuyên nghiệp.',
+  'onboarding.explore.imports.trade-sync.label': 'Trade Sync',
+  'onboarding.explore.imports.trade-sync.description':
+    'Tự động đồng bộ giao dịch từ MetaTrader (MT4) hoặc Tradovate. Yêu cầu Pro.',
   'onboarding.explore.cta.open': 'Mở',
   'onboarding.explore.cta.manual': 'Mở Tài liệu',
   'onboarding.path.kicker': 'Chọn đường dẫn',
@@ -4088,9 +4206,9 @@ const vi: Lang = {
   'onboarding.path.option.csv.label': 'Trade Import',
   'onboarding.path.option.csv.description':
     'Xem trước CSV của bạn ngay bây giờ; nhập sau khi kích hoạt PRO.',
-  'onboarding.path.option.mt.label': 'Đồng bộ hóa MetaTrader (MT4/MT5)',
-  'onboarding.path.option.mt.description':
-    'Kết nối MT4/MT5 để đồng bộ hóa giao dịch tự động.',
+  'onboarding.path.option.trade-sync.label': 'Trade Sync',
+  'onboarding.path.option.trade-sync.description':
+    'Kết nối MetaTrader (MT4) hoặc Tradovate để tự động đồng bộ giao dịch.',
   'onboarding.final.manual.title': 'Bạn đã sẵn sàng dùng Journalit',
   'onboarding.final.manual.hotkey.title': 'Phím nóng được đề xuất',
   'onboarding.final.manual.hotkey.value': 'Mod + Alt + A',
@@ -4101,14 +4219,14 @@ const vi: Lang = {
   'onboarding.final.csv.subtitle':
     'Tiếp theo, xem trước CSV của bạn. Nhập vào vault của bạn yêu cầu kích hoạt PRO.',
   'onboarding.final.csv.cta.open': 'Mở Trade Import',
-  'onboarding.final.mt.title': 'Bạn đã sẵn sàng kết nối MetaTrader',
-  'onboarding.final.mt.subtitle':
-    'Tiếp theo, thiết lập đồng bộ hóa MT4/MT5. Yêu cầu kích hoạt PRO.',
-  'onboarding.final.mt.cta.open': 'Mở cài đặt MetaTrader',
-  'onboarding.final.mt.hero.source.title': 'MetaTrader',
-  'onboarding.final.mt.hero.source.subtitle': 'Báo cáo giao dịch',
-  'onboarding.final.mt.hero.dest.title': 'Kho tiền',
-  'onboarding.final.mt.hero.dest.subtitle': 'Ghi chú giao dịch',
+  'onboarding.final.trade-sync.title': 'Bạn đã sẵn sàng thiết lập Trade Sync',
+  'onboarding.final.trade-sync.subtitle':
+    'Tiếp theo, thiết lập đồng bộ MetaTrader (MT4) hoặc Tradovate.',
+  'onboarding.final.trade-sync.cta.open': 'Mở cài đặt Trade Sync',
+  'onboarding.final.trade-sync.hero.source.title': 'MetaTrader + Tradovate',
+  'onboarding.final.trade-sync.hero.source.subtitle': 'Giao dịch từ broker',
+  'onboarding.final.trade-sync.hero.dest.title': 'Kho tiền',
+  'onboarding.final.trade-sync.hero.dest.subtitle': 'Ghi chú giao dịch',
   'onboarding.final.finish': 'Hoàn thành',
   'onboarding.features.graphic.syncing': 'Đang đồng bộ hóa giao dịch...',
   'onboarding.features.graphic.complete': 'Đồng bộ hóa hoàn tất',
@@ -4624,6 +4742,7 @@ const vi: Lang = {
   'widget.demon-tracker.column.demon': 'QUỶ',
   'widget.demon-tracker.column.occurrences': 'SỰ XUẤT HIỆN',
   'widget.demon-tracker.column.stop-trading': 'DỪNG GIAO DỊCH',
+  'widget.demon-tracker.period.this-week': 'tuần này',
   'widget.demon-tracker.period.this-month': 'tháng này',
   'widget.demon-tracker.period.this-quarter': 'quý này',
   'widget.demon-tracker.period.this-year': 'năm nay',
@@ -4632,7 +4751,7 @@ const vi: Lang = {
     'Những lỗi ghi lại trong giao dịch của bạn sẽ xuất hiện ở đây để giúp xác định các mẫu',
   'widget.demon-tracker.summary.unique': 'Lỗi riêng biệt:',
   'widget.demon-tracker.summary.total': 'Tổng số lần xuất hiện:',
-  'widget.demon-tracker.summary.critical': 'Quan trọng (6+):',
+  'widget.demon-tracker.summary.critical': 'Quan trọng ({threshold}+):',
   'widget.markdown-zone.name': 'Vùng Markdown',
   'widget.markdown-zone.description': 'Khu vực nội dung Markdown dạng tự do',
   'widget.markdown-header.name': 'Tiêu đề phần',
@@ -4692,28 +4811,28 @@ const vi: Lang = {
     'Thời gian trung bình để thua các giao dịch đã đóng',
   'metric.avgWinnerHeat.name': 'MAE trung bình lệnh thắng',
   'metric.avgWinnerHeat.description':
-    'MAE trung bình để thắng các giao dịch đã đóng, sử dụng đơn vị MAE/MFE được lưu trữ',
+    'MAE trung bình để thắng các giao dịch đã đóng, sử dụng đơn vị hiển thị MAE/MFE đã cấu hình',
   'metric.winnerMaeP90.name': 'MAE P90 lệnh thắng',
   'metric.winnerMaeP90.description':
-    'Ngưỡng MAE phân vị thứ 90 để thắng các giao dịch đã đóng, sử dụng đơn vị MAE/MFE được lưu trữ',
+    'Ngưỡng MAE phân vị thứ 90 để thắng các giao dịch đã đóng, sử dụng đơn vị hiển thị MAE/MFE đã cấu hình',
   'metric.winnerMaeMedian.name': 'MAE trung vị lệnh thắng',
   'metric.winnerMaeMedian.description':
-    'MAE trung bình để thắng các giao dịch đã đóng, sử dụng đơn vị MAE/MFE được lưu trữ',
+    'MAE trung bình để thắng các giao dịch đã đóng, sử dụng đơn vị hiển thị MAE/MFE đã cấu hình',
   'metric.avgLossHeat.name': 'MAE trung bình lệnh thua',
   'metric.avgLossHeat.description':
-    'MAE trung bình để thua các giao dịch đã đóng, sử dụng đơn vị MAE/MFE được lưu trữ',
+    'MAE trung bình để thua các giao dịch đã đóng, sử dụng đơn vị hiển thị MAE/MFE đã cấu hình',
   'metric.winnerAvgMfe.name': 'MFE trung bình lệnh thắng',
   'metric.winnerAvgMfe.description':
-    'MFE trung bình để thắng các giao dịch đã đóng, sử dụng đơn vị MAE/MFE được lưu trữ',
+    'MFE trung bình để thắng các giao dịch đã đóng, sử dụng đơn vị hiển thị MAE/MFE đã cấu hình',
   'metric.loserAvgMfe.name': 'MFE trung bình lệnh thua',
   'metric.loserAvgMfe.description':
-    'MFE trung bình để thua các giao dịch đã đóng, sử dụng đơn vị MAE/MFE được lưu trữ',
+    'MFE trung bình để thua các giao dịch đã đóng, sử dụng đơn vị hiển thị MAE/MFE đã cấu hình',
   'metric.winnerMfeP90.name': 'MFE P90 lệnh thắng',
   'metric.winnerMfeP90.description':
-    'Ngưỡng MFE phân vị thứ 90 để thắng các giao dịch đã đóng, sử dụng đơn vị MAE/MFE được lưu trữ',
+    'Ngưỡng MFE phân vị thứ 90 để thắng các giao dịch đã đóng, sử dụng đơn vị hiển thị MAE/MFE đã cấu hình',
   'metric.loserMfeP90.name': 'MFE P90 lệnh thua',
   'metric.loserMfeP90.description':
-    'Ngưỡng MFE phân vị thứ 90 để thua các giao dịch đã đóng, sử dụng đơn vị MAE/MFE được lưu trữ',
+    'Ngưỡng MFE phân vị thứ 90 để thua các giao dịch đã đóng, sử dụng đơn vị hiển thị MAE/MFE đã cấu hình',
   'metric.timeInDrawdown.name': 'Thời gian trong drawdown',
   'metric.timeInDrawdown.description':
     'Phần trăm thời gian đã trôi qua được sử dụng dưới mức P&L cao nhất đã nhận ra trước đó',
@@ -5077,15 +5196,20 @@ const vi: Lang = {
     'Văn bản để chèn vào ghi chú đánh giá mới...',
   'templateEditor.widget.page-size': 'Kích thước trang:',
   'templateEditor.widget.show-rating-column': 'Hiển thị cột xếp hạng',
-  'templateEditor.widget.demon-tracker.count-mode': 'Chế độ đếm:',
-  'templateEditor.widget.demon-tracker.count-mode.per-trade': 'Mỗi giao dịch',
-  'templateEditor.widget.demon-tracker.count-mode.per-trading-day':
-    'Mỗi ngày giao dịch',
-  'templateEditor.widget.demon-tracker.source-mode': 'Chế độ nguồn:',
-  'templateEditor.widget.demon-tracker.source-mode.trades': 'Chỉ giao dịch',
-  'templateEditor.widget.demon-tracker.source-mode.session': 'Chỉ có lỗi phiên',
-  'templateEditor.widget.demon-tracker.source-mode.combined':
-    'Kết hợp (giao dịch + phiên)',
+  'templateEditor.widget.demon-tracker.tracking-method': 'Theo dõi lỗi theo:',
+  'templateEditor.widget.demon-tracker.tracking-method.trade-occurrences':
+    'Số lần trong giao dịch',
+  'templateEditor.widget.demon-tracker.tracking-method.trade-occurrences-desc':
+    'Mỗi giao dịch được gắn lỗi đều được tính.',
+  'templateEditor.widget.demon-tracker.tracking-method.trading-days':
+    'Ngày giao dịch',
+  'templateEditor.widget.demon-tracker.tracking-method.trading-days-desc':
+    'Lỗi từ giao dịch và đánh giá hằng ngày được hợp nhất và tính một lần mỗi ngày giao dịch.',
+  'templateEditor.widget.demon-tracker.tracking-method.daily-review-entries':
+    'Mục trong đánh giá hằng ngày',
+  'templateEditor.widget.demon-tracker.tracking-method.daily-review-entries-desc':
+    'Chỉ tính các lỗi được ghi trong đánh giá hằng ngày.',
+  'templateEditor.widget.demon-tracker.stop-after': 'Dừng giao dịch sau:',
   'notice.error.template-save-failed': 'Không lưu được bố cục',
   'builder.sidebar.title': 'Trình tạo bố cục',
   'builder.sidebar.section.trade': 'Giao dịch',
@@ -5155,8 +5279,8 @@ const vi: Lang = {
     'Tất cả các liên kết nhanh đều bị ẩn. Sử dụng "Thêm Widget" để khôi phục chúng.',
   'home.quick-links.add-trade': 'Thêm giao dịch',
   'home.quick-links.trade-log': 'Nhật ký giao dịch',
-  'home.quick-links.trading-dashboard': 'Bảng điều khiển giao dịch',
-  'home.quick-links.account-dashboard': 'Bảng điều khiển tài khoản',
+  'home.quick-links.trading-dashboard': 'Bảng điều khiển',
+  'home.quick-links.account-dashboard': 'Tài khoản',
   'home.quick-links.todays-drc': 'DRC ngày nay',
   'home.quick-links.weekly-review': 'Đánh giá tuần này',
   'home.quick-links.monthly-review': 'Đánh giá tháng này',
@@ -5164,6 +5288,7 @@ const vi: Lang = {
   'home.quick-links.yearly-review': 'Đánh giá năm nay',
   'home.quick-links.csv-import': 'Trade Import',
   'home.quick-links.layout-builder': 'Trình tạo bố cục',
+  'home.quick-links.navigation-sidebar': 'Thanh bên điều hướng',
   'home.quick-links.session-mode': 'Chế độ phiên',
   'home.quick-links.move-above':
     'Di chuyển các liên kết nhanh phía trên các tiện ích',
@@ -5177,10 +5302,10 @@ const vi: Lang = {
   'home.widget-selector.hint.navigate': '↑↓ điều hướng',
   'home.widget-selector.hint.select': '↵ chọn',
   'home.widget-selector.hint.close': 'esc đóng',
-  'home.period.month': 'Tháng này',
-  'home.period.quarter': 'Quý này',
-  'home.period.year': 'Năm nay',
-  'home.period.lifetime': 'Trọn đời',
+  'home.period.month': 'Tháng',
+  'home.period.quarter': 'Quý',
+  'home.period.year': 'Năm',
+  'home.period.lifetime': 'Toàn bộ thời gian',
   'home.aria.filter-period': 'Thời gian lọc',
   'home.aria.filter-trade-types': 'Lọc các loại giao dịch',
   'home.aria.add-widget': 'Thêm tiện ích',
@@ -5354,6 +5479,19 @@ const vi: Lang = {
   'form.ideal-exit.tooltip':
     'Ghi lại kế hoạch thoát lệnh hindsight mà bạn muốn đã thực hiện. Hỗ trợ thoát từng phần để đánh giá.',
   'form.ideal-exit.empty': 'Chưa có thoát lý tưởng',
+  'form.unrealized.title': 'Ảnh chụp vị thế đang mở',
+  'form.unrealized.tooltip':
+    'Ghi lại giá thị trường hiện tại của vị thế đang mở để theo dõi lãi/lỗ chưa thực hiện. Ảnh chụp sẽ tự động bị xóa khi giao dịch đóng.',
+  'form.unrealized.price': 'Giá ảnh chụp',
+  'form.unrealized.time': 'Thời điểm ảnh chụp',
+  'form.unrealized.preview': 'Lãi/Lỗ chưa thực hiện',
+  'form.unrealized.captured': 'Đã ghi {time}',
+  'form.layout.item.unrealized-snapshot-desc':
+    'Theo dõi lãi/lỗ chưa thực hiện của vị thế đang mở.',
+  'trade.validation.unrealized-snapshot-price-non-negative':
+    'Giá ảnh chụp phải bằng hoặc lớn hơn 0',
+  'trade.validation.unrealized-snapshot-open-position-required':
+    'Thời điểm chụp nhanh phải nằm trong thời gian vị thế đang mở.',
   'home.widget.profit-target.title': 'Mục tiêu lợi nhuận',
   'home.widget.profit-target.achieved': 'Đạt',
   'home.widget.profit-target.remaining': 'còn lại',
@@ -5566,6 +5704,8 @@ const vi: Lang = {
     'Tiện ích {widgetType} này yêu cầu đánh giá hoặc ghi chú giao dịch',
   'widget.invalid-context.monthly-quarterly-yearly':
     'Tiện ích này chỉ khả dụng trong các đánh giá hàng tháng, hàng quý và hàng năm',
+  'widget.invalid-context.weekly-monthly-quarterly-yearly':
+    'Tiện ích này chỉ khả dụng trong các đánh giá hàng tuần, hàng tháng, hàng quý và hàng năm',
   'widget.invalid-context.quarterly-yearly':
     'Tiện ích này chỉ khả dụng trong các đánh giá hàng quý và hàng năm',
   'widget.invalid-context.yearly-only':
@@ -5712,6 +5852,8 @@ const vi: Lang = {
   'ui.folder-browser.placeholder': 'Chọn một thư mục...',
   'ui.folder-browser.root': 'Gốc',
   'ui.folder-browser.clear-aria': 'Xóa để sử dụng vị trí mặc định',
+  'ui.folder-browser.expand-folder': 'Mở rộng thư mục',
+  'ui.folder-browser.collapse-folder': 'Thu gọn thư mục',
   'icon-select.default-title': 'Chọn một tùy chọn',
   'combobox.placeholder.default': 'Chọn hoặc gõ...',
   'combobox.aria.remove-item': 'Xóa {item}',
@@ -5870,9 +6012,9 @@ const vi: Lang = {
   'navigation.edit-mode.restore-section': 'Mục ẩn',
   'navigation.edit-mode.restore': 'Khôi phục',
   'navigation.items.nav-home': 'Trang chủ',
-  'navigation.items.nav-dashboard': 'Bảng điều khiển giao dịch',
+  'navigation.items.nav-dashboard': 'Bảng điều khiển',
   'navigation.items.nav-trade-log': 'Nhật ký giao dịch',
-  'navigation.items.nav-account-dashboard': 'Bảng điều khiển tài khoản',
+  'navigation.items.nav-account-dashboard': 'Tài khoản',
   'navigation.items.nav-drc': 'DRC ngày nay',
   'navigation.items.nav-weekly': 'Đánh giá của tuần này',
   'navigation.items.nav-monthly': 'Đánh giá của tháng này',
@@ -5885,6 +6027,12 @@ const vi: Lang = {
   'navigation.items.nav-session-mode': 'Chế độ phiên',
   'navigation.items.nav-position-size': 'Công cụ tính kích thước vị thế',
   'settings.general.navigation-sidebar': 'Thanh bên điều hướng',
+  'notice.error.open-navigation-sidebar':
+    'Không thể mở thanh bên điều hướng. Vui lòng thử lại.',
+  'navigation.setting.open': 'Mở thanh bên điều hướng',
+  'navigation.setting.open.desc':
+    'Hiển thị ngay và mở rộng thanh bên Obsidian nếu đang thu gọn.',
+  'navigation.setting.open.button': 'Mở thanh bên',
   'navigation.setting.tab-behavior': 'Hành vi của tab điều hướng',
   'navigation.setting.tab-behavior.desc':
     'Cách mở chế độ xem khi được nhấp vào trong thanh bên điều hướng',
@@ -6007,6 +6155,15 @@ const vi: Lang = {
   'templateEditor.widget.trade-review.answer-placeholder':
     'Lời nhắc tùy chọn hiển thị trong trường trả lời',
   'templateEditor.widget.trade-review.add-question': '+ Thêm câu hỏi',
+  'templateEditor.widget.trade-review.answer-type-label': 'Loại câu trả lời',
+  'templateEditor.widget.trade-review.answer-type-text': 'Văn bản',
+  'templateEditor.widget.trade-review.answer-type-choice': 'Lựa chọn',
+  'templateEditor.widget.trade-review.option-placeholder': 'Nhãn lựa chọn',
+  'templateEditor.widget.trade-review.add-option': '+ Thêm lựa chọn',
+  'templateEditor.widget.trade-review.condition-label': 'Hiển thị khi',
+  'templateEditor.widget.trade-review.condition-always': 'Luôn hiển thị',
+  'templateEditor.widget.trade-review.condition-option-label':
+    'Khi C{questionNumber} = {option}',
   'templateEditor.widget.previous-context-add-section': '+ Thêm phần',
   'templateEditor.widget.previous-context-headings-label':
     'Các tiêu đề cần bao gồm',
@@ -6067,6 +6224,8 @@ const vi: Lang = {
   'quick-import.summary.to-import': 'Để nhập khẩu',
   'quick-import.summary.duplicates': 'trùng lặp',
   'quick-import.summary.failed': 'Cần xem xét',
+  'quick-import.summary.failed-rows': 'Hàng không được nhập',
+  'quick-import.summary.incomplete-rows': 'Hàng không đầy đủ đã bị bỏ qua',
   'quick-import.complete.title': 'Nhập hoàn tất',
   'quick-import.complete.message':
     '{written} đã được viết, {duplicates} trùng lặp, {failed} cần được xem xét.',
@@ -6142,6 +6301,21 @@ const vi: Lang = {
   'trade-import.action.preview': 'Tạo bản xem trước',
   'trade-import.preview.summary':
     'Giao dịch xem trước {previewCount}, hàng {failedCount} không thành công, hàng {incompleteCount} chưa hoàn thành.',
+  'trade-import.preview.completed.message':
+    'Có {count} giao dịch sẵn sàng để nhập.',
+  'trade-import.preview.partial.message':
+    'Có {count} giao dịch sẵn sàng. Không thể nhập {failed} hàng và đã bỏ qua {incomplete} hàng không đầy đủ.',
+  'trade-import.preview.partial.guidance':
+    'Chỉ những giao dịch hợp lệ hiển thị bên dưới mới được nhập.',
+
+  'trade-import.preview.failed.message':
+    'Không thể chuẩn bị giao dịch nào từ tệp này.',
+  'trade-import.preview.failed.guidance':
+    'Kiểm tra lại ánh xạ cột, định dạng ngày, trang tính và hàng tiêu đề đã chọn, cùng các giá trị không hợp lệ bên dưới.',
+  'trade-import.preview.no-eligible':
+    'Tệp đã được xử lý thành công, nhưng không có giao dịch mới hoặc đã cập nhật nào đủ điều kiện để nhập. Kiểm tra chi tiết về trùng lặp và phân loại bên dưới.',
+  'trade-import.preview.diagnostics': 'Chi tiết cần xem lại ({count})',
+  'trade-import.preview.affected-rows': 'Hàng bị ảnh hưởng: {count}',
   'trade-import.table.status': 'Trạng thái',
   'trade-import.table.symbol': 'Mã giao dịch',
   'trade-import.table.direction': 'Hướng',
@@ -6250,6 +6424,9 @@ const vi: Lang = {
   'setups.guide.overview-chart.title': 'Xếp hạng hiệu suất',
   'setups.guide.overview-chart.description':
     'Biểu đồ tổng quan xếp hạng thiết lập theo chỉ số đã chọn. Dùng các điều khiển ở góc trên bên phải để đổi chỉ số hoặc tập trung vào thiết lập cụ thể.',
+  'setups.guide.tag-filter.title': 'Lọc thiết lập',
+  'setups.guide.tag-filter.description':
+    'Lọc thẻ, biểu đồ, cặp và lựa chọn so sánh theo thẻ hoặc hướng của thiết lập. Các lựa chọn trong cùng nhóm dùng OR; thẻ và hướng kết hợp theo AND.',
   'setups.guide.setup-cards.title': 'Thẻ thiết lập',
   'setups.guide.setup-cards.description':
     'Thẻ tóm tắt từng thiết lập với chỉ số chính, trạng thái, ngày giao dịch gần nhất và xu hướng hiệu suất nhỏ.',
@@ -6518,12 +6695,30 @@ const vi: Lang = {
     'Đã khôi phục {written} giao dịch đã nhập; {failed} thất bại.',
   'trade-import.restore.broker-label': 'Khôi phục backend',
   'trade-sync.source.metatrader': 'MetaTrader',
+  'trade-sync.providers.title': 'Đồng bộ giao dịch',
+  'trade-sync.providers.description':
+    'Cấu hình riêng từng nhà cung cấp để chúng có thể hoạt động cùng nhau.',
   'trade-sync.source.trade-import': 'Trade Import',
+  'trade-sync.source.tradovate': 'Tradovate',
   'trade-sync.source.metatrader.description':
     'Đồng bộ giao dịch từ báo cáo MetaTrader được tải lên qua kết nối FTP của bạn.',
   'trade-sync.source.trade-import.description':
     'Khôi phục các lần nhập tệp broker giữa các vault và phục hồi ghi chú giao dịch cục bộ bị thiếu.',
+  'trade-sync.source.tradovate.description':
+    'Synchronize Tradovate trades in the cloud and project them into this vault.',
+  'trade-sync.tradovate.status-failed': 'Unable to load Tradovate status.',
+  'trade-sync.tradovate.last-sync': 'Lần đồng bộ gần nhất',
+  'trade-sync.tradovate.last-projection': 'Lần chiếu gần nhất',
+  'trade-sync.tradovate.pending-projections': '{count} bản chiếu đang chờ',
+  'trade-sync.tradovate.pending-acks': '{count} ACK cục bộ đang chờ',
+  'trade-sync.tradovate.never': 'Chưa bao giờ',
+  'trade-sync.tradovate.manage': 'Manage on Journalit.co',
+  'trade-sync.tradovate.enabled': 'Enabled',
+  'trade-sync.tradovate.disabled': 'Disabled',
   'trade-sync.import.title': 'Đồng bộ Trade Import',
+  'trade-sync.import.section-title': 'Sao lưu và khôi phục Trade Import',
+  'trade-sync.import.section-description':
+    'Sao lưu giao dịch đã nhập lên đám mây và khôi phục các ghi chú cục bộ còn thiếu.',
   'trade-sync.import.description':
     'Khôi phục giao dịch đã nhập giữa các vault và phục hồi ghi chú cục bộ bị thiếu.',
   'trade-sync.import.card.connection': 'Kết nối',
@@ -6535,13 +6730,14 @@ const vi: Lang = {
   'trade-sync.import.card.inventory-summary':
     '{accounts} tài khoản · {trades} giao dịch',
   'trade-sync.import.action.check': 'Kiểm tra',
+  'trade-sync.import.action.sync-cloud': 'Sync cloud trades',
   'trade-sync.import.action.open-import': 'Mở Trade Import',
   'trade-sync.import.action.clear': 'Xóa chọn',
   'trade-sync.import.action.select-all': 'Chọn tất cả',
   'trade-sync.import.action.restore-selected': 'Khôi phục đã chọn ({count})',
-  'trade-sync.import.action.create-local-account': 'Tạo cục bộ',
+  'trade-sync.import.action.create-local-account': 'Tạo tài khoản',
   'trade-sync.import.action.create-local-account-title':
-    'Tạo một tài khoản cục bộ trong vault này bằng tên tài khoản backend.',
+    'Tạo tài khoản Journalit bằng tên tài khoản backend.',
   'trade-sync.import.action.save-mapping': 'Lưu',
   'trade-sync.import.action.save-mapping-title':
     'Lưu ánh xạ từ tài khoản backend này sang tài khoản cục bộ.',
@@ -6561,11 +6757,15 @@ const vi: Lang = {
   'trade-sync.import.account.synced-count': '{count} đã đồng bộ',
   'trade-sync.import.account.missing-count': '{count} bị thiếu',
   'trade-sync.import.account.issue-count': '{count} vấn đề',
-  'trade-sync.import.account.local-account': 'Tài khoản cục bộ',
+  'trade-sync.import.account.local-account': 'Tài khoản Journalit',
   'trade-sync.import.account.mapping-hint':
-    'Giao dịch được khôi phục sẽ được ghi vào tài khoản cục bộ này.',
+    'Giao dịch được khôi phục sẽ được ghi vào tài khoản Journalit này.',
   'trade-sync.import.notice.restored':
     'Đã khôi phục {count} giao dịch đã nhập.',
+  'trade-sync.import.notice.sync-cloud-queued':
+    'Cloud synchronization queued. Refresh shortly to load new trades.',
+  'trade-sync.import.notice.sync-cloud-failed':
+    'Unable to start cloud synchronization.',
   'trade-sync.import.notice.load-failed':
     'Không thể tải trạng thái đồng bộ Trade Import.',
   'trade-sync.import.notice.mapping-failed':
@@ -6841,6 +7041,9 @@ const vi: Lang = {
   'settings.session-mode.trade-gate.summary': '{count} nodes',
   'settings.session-mode.trade-gate.untitled': 'Untitled workflow',
   'settings.session-mode.trade-gate.start-node': 'Start question',
+  'settings.session-mode.trade-gate.simulation.show': 'Mô phỏng',
+  'settings.session-mode.trade-gate.simulation.unavailable':
+    'Kết nối câu hỏi bắt đầu với ít nhất một kết quả hoàn chỉnh trước khi bắt đầu mô phỏng.',
   'settings.session-mode.trade-gate.add-question': 'Add question',
   'settings.session-mode.trade-gate.add-branch-question': 'Thêm nhánh',
   'settings.session-mode.trade-gate.add-branch-from':
@@ -7160,6 +7363,7 @@ const vi: Lang = {
   'imageGallery.source.label': 'Nguồn:',
   'imageGallery.source.all': 'Tất cả phương tiện',
   'imageGallery.source.trade': 'Giao dịch',
+  'imageGallery.source.folder': 'Thư mục',
   'imageGallery.source.reviews': 'Đánh giá',
   'imageGallery.source.drc': 'Đánh giá hằng ngày',
   'imageGallery.source.weekly': 'Đánh giá hằng tuần',
@@ -7182,6 +7386,16 @@ const vi: Lang = {
   'imageGallery.annotation.error.save-failed':
     'Không thể lưu chú thích phương tiện.',
   'imageGallery.annotation.saving': 'Đang lưu...',
+  'settings.gallery-folders.section': 'Thư viện phương tiện',
+  'settings.gallery-folders.description':
+    'Hiển thị phương tiện từ các thư mục này trong thư viện Nhật ký giao dịch.',
+  'settings.gallery-folders.placeholder': 'Chọn một thư mục...',
+  'settings.gallery-folders.add': 'Thêm',
+  'settings.gallery-folders.remove-aria': 'Xóa thư mục thư viện {path}',
+  'settings.gallery-folders.not-a-folder':
+    'Hãy chọn thư mục thay vì tệp phương tiện.',
+  'settings.gallery-folders.save-failed':
+    'Không thể lưu các thư mục thư viện. Vui lòng thử lại.',
   'tradelog.guide.switch-to-gallery.title': 'Chuyển từ giao dịch sang Thư viện',
   'tradelog.guide.switch-to-gallery.description':
     'Dùng bộ chọn chế độ này để chuyển giữa Nhật ký giao dịch thông thường và Thư viện. Nhấp Thư viện để tiếp tục hướng dẫn với hình ảnh, GIF, video và liên kết YouTube.',
@@ -7237,6 +7451,11 @@ const vi: Lang = {
   'tradelog.guide.image-gallery-empty.finish.description':
     'Sau khi bạn đính kèm phương tiện vào giao dịch hoặc ghi chú đánh giá, Journalit sẽ hiển thị hướng dẫn Thư viện đầy đủ với xem toàn màn hình, gắn thẻ và ghi chú.',
   'filter.modal.section.image-gallery': 'Thư viện',
+  'filter.modal.session-tags.placeholder': 'Thẻ phiên',
+  'filter.modal.session-tags.all': 'Tất cả thẻ phiên',
+  'filter.modal.session-tags.n-selected': '{count} thẻ phiên',
+  'filter.modal.session-tags.select-all': 'Chọn tất cả',
+  'filter.modal.session-tags.none-found': 'Không tìm thấy thẻ phiên',
   'setups.view.fixture.rule.context-aligned': 'Fixture rule context aligned',
   'setups.view.fixture.rule.orb.range-defined': 'Rule orb range defined',
   'setups.view.fixture.rule.orb.volume-expansion': 'Rule orb volume expansion',
@@ -7247,5 +7466,45 @@ const vi: Lang = {
   'setups.view.detail.brief.profile.model': 'Brief profile model',
   'setups.view.detail.brief.profile.category': 'Brief profile category',
   'setups.view.completeness.no-description': 'View completeness no description',
+  'notice.error.canonical-trade-type-change':
+    'Không thể đổi giao dịch đã đồng bộ với nhà môi giới sang loại giao dịch khác.',
+  'trade-sync.import.account.conflict-repair':
+    'Đã phát hiện các ghi chú có canonicalTradeId trùng lặp. Giữ lại một ghi chú rồi xóa canonicalTradeId khỏi ghi chú trùng hoặc xóa ghi chú đó. Đổi tên tệp không khắc phục xung đột.',
+  'setups.create.field.tags': 'Thẻ',
+  'setups.create.placeholder.tags': 'Động lượng, Phá vỡ, Buổi sáng',
+  'setups.view.overview.tag-filter.aria': 'Lọc thiết lập',
+  'setups.view.overview.tag-filter.reset': 'Đặt lại',
+  'setups.view.overview.tag-filter.untagged': 'Chưa gắn thẻ',
+  'setups.view.overview.tag-filter.empty':
+    'Không có thiết lập nào khớp với các bộ lọc này',
+  'setups.view.overview.tag-filter.empty-submessage':
+    'Điều chỉnh hoặc xóa bộ lọc để hiển thị thêm thiết lập.',
+
+  'setups.view.tags': 'Thẻ',
+  'setups.create.error.tag-save-failed':
+    'Không thể lưu thẻ vào danh sách thẻ chung.',
+  'settings.customization.options.confirm.remove-tag-message':
+    'Xóa thẻ chung “{option}”? Thẻ này sẽ bị xóa khỏi tất cả ghi chú giao dịch và thiết lập Journalit.',
+  'settings.customization.options.confirm.reset-tag-message':
+    'Đặt lại danh sách thẻ chung và màu sắc về mặc định? Các thẻ đã gán cho ghi chú giao dịch và thiết lập sẽ vẫn được giữ lại.',
+  'home.mode.overview': 'Tổng quan',
+  'home.mode.dashboard': 'Bảng điều khiển',
+  'home.mode.aria': 'Chuyển chế độ Trang chủ',
+  'home.filters.period': 'Khoảng thời gian',
+  'home.filters.trade-type': 'Loại giao dịch',
+  'home.filters.accounts': 'Tài khoản',
+  'home.filters.back': 'Quay lại',
+  'home.guide.modes.title': 'Một điều nữa: Bảng điều khiển',
+  'home.guide.modes.description':
+    'Tổng quan và Bảng điều khiển dùng chung trang này. Hãy chuyển sang Bảng điều khiển ngay để tiếp tục với chuyến tham quan ngắn về thống kê hiệu suất của bạn.',
+  'home.guide.whats-new.mode.title': 'Một Trang chủ, hai chế độ',
+  'home.guide.whats-new.mode.description':
+    'Tổng quan và Bảng điều khiển giờ dùng chung một trang. Chuyển chế độ mà không mất bố cục hoặc vị trí cuộn.',
+  'home.guide.whats-new.filters.title': 'Bộ lọc Trang chủ ở một nơi',
+  'home.guide.whats-new.filters.description':
+    'Mở nút bộ lọc để chọn Khoảng thời gian, Loại giao dịch hoặc Tài khoản trong menu nhiều lớp gọn gàng.',
+  'home.guide.whats-new.done.title': 'Không mất ngữ cảnh làm việc',
+  'home.guide.whats-new.done.description':
+    'Dùng Tổng quan cho các tiện ích cá nhân và Bảng điều khiển để phân tích sâu hơn. Mỗi chế độ giữ bộ lọc và bố cục riêng.',
 };
 export default vi;

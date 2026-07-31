@@ -1,9 +1,15 @@
 import { FilterState } from '../components/dashboard/DashboardView';
 import type { UnifiedFilters } from '../components/shared/filters/types';
-import type { TradeLogFilters, TradeType } from '../services/tradelog/types';
+import type {
+  TradeLogFilters,
+  TradeStatus,
+  TradeType,
+} from '../services/tradelog/types';
 
 const CONCRETE_TRADE_TYPES = ['regular', 'missed', 'backtest'] as const;
 const CONCRETE_TRADE_TYPE_SET = new Set<TradeType>(CONCRETE_TRADE_TYPES);
+const LEGACY_ALL_STATUSES: TradeStatus[] = ['open', 'win', 'loss', 'breakeven'];
+const ALL_STATUSES: TradeStatus[] = [...LEGACY_ALL_STATUSES, 'cancelled'];
 
 export const DEFAULT_REGULAR_ONLY_TRADE_TYPES: TradeType[] = ['regular'];
 export const DEFAULT_ALL_TRADE_TYPES: TradeType[] = [
@@ -30,6 +36,26 @@ const sanitizeTradeTypes = (tradeTypes?: TradeType[]): TradeType[] => {
   }
 
   return CONCRETE_TRADE_TYPES.filter((tradeType) => deduped.has(tradeType));
+};
+
+export const migrateLegacyAllStatusSelection = (
+  statuses?: TradeStatus[]
+): TradeStatus[] => {
+  if (!statuses || statuses.length === 0) return [];
+  const selected = new Set(statuses);
+  const isLegacyAll =
+    selected.size === LEGACY_ALL_STATUSES.length &&
+    LEGACY_ALL_STATUSES.every((status) => selected.has(status));
+  return isLegacyAll ? [] : [...statuses];
+};
+
+const normalizeStatuses = (statuses?: TradeStatus[]): TradeStatus[] => {
+  if (!statuses || statuses.length === 0) return [];
+  const selected = new Set(statuses);
+  const isCurrentAll =
+    selected.size === ALL_STATUSES.length &&
+    ALL_STATUSES.every((status) => selected.has(status));
+  return isCurrentAll ? [] : [...statuses];
 };
 
 const resolveEffectiveTradeTypes = (
@@ -136,6 +162,7 @@ export const DEFAULT_TRADELOG_FILTERS: TradeLogFilters = {
   reviewStatus: [],
   accounts: [],
   directions: [],
+  sessionLogTags: [],
   tickers: [],
   setups: [],
   tags: [],
@@ -187,6 +214,7 @@ export const createTradeLogFilters = (): TradeLogFilters => ({
   reviewStatus: [...DEFAULT_TRADELOG_FILTERS.reviewStatus],
   accounts: [...DEFAULT_TRADELOG_FILTERS.accounts],
   directions: [...DEFAULT_TRADELOG_FILTERS.directions],
+  sessionLogTags: [...DEFAULT_TRADELOG_FILTERS.sessionLogTags],
   tickers: [...DEFAULT_TRADELOG_FILTERS.tickers],
   setups: [...DEFAULT_TRADELOG_FILTERS.setups],
   tags: [...DEFAULT_TRADELOG_FILTERS.tags],
@@ -229,7 +257,7 @@ export const normalizeDashboardFilters = (
     tags: filters?.tags ? [...filters.tags] : defaults.tags,
     mistakes: filters?.mistakes ? [...filters.mistakes] : defaults.mistakes,
     tradeTypes: normalizeDashboardTradeTypes(filters?.tradeTypes),
-    statuses: filters?.statuses ? [...filters.statuses] : defaults.statuses,
+    statuses: normalizeStatuses(filters?.statuses),
     reviewStatus: filters?.reviewStatus
       ? [...filters.reviewStatus]
       : defaults.reviewStatus,
@@ -256,7 +284,7 @@ export const normalizeTradeLogFilters = (
     ...filters,
     dateRange: filters?.dateRange ?? defaults.dateRange,
     tradeTypes: normalizeTradeLogTradeTypes(filters?.tradeTypes),
-    statuses: filters?.statuses ? [...filters.statuses] : defaults.statuses,
+    statuses: normalizeStatuses(filters?.statuses),
     reviewStatus: filters?.reviewStatus
       ? [...filters.reviewStatus]
       : defaults.reviewStatus,
@@ -264,6 +292,15 @@ export const normalizeTradeLogFilters = (
     directions: filters?.directions
       ? [...filters.directions]
       : defaults.directions,
+    sessionLogTags: Array.isArray(filters?.sessionLogTags)
+      ? [
+          ...new Set(
+            filters.sessionLogTags.filter(
+              (value): value is string => typeof value === 'string'
+            )
+          ),
+        ]
+      : defaults.sessionLogTags,
     tickers: filters?.tickers ? [...filters.tickers] : defaults.tickers,
     setups: filters?.setups ? [...filters.setups] : defaults.setups,
     tags: filters?.tags ? [...filters.tags] : defaults.tags,
@@ -292,7 +329,7 @@ export const normalizeReviewFilters = (
     tags: filters?.tags ? [...filters.tags] : defaults.tags,
     mistakes: filters?.mistakes ? [...filters.mistakes] : defaults.mistakes,
     tradeTypes: normalizeReviewTradeTypes(filters?.tradeTypes),
-    statuses: filters?.statuses ? [...filters.statuses] : defaults.statuses,
+    statuses: normalizeStatuses(filters?.statuses),
     reviewStatus: filters?.reviewStatus
       ? [...filters.reviewStatus]
       : defaults.reviewStatus,

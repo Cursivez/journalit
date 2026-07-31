@@ -23,6 +23,38 @@ export interface SessionLogEntry {
   promoted?: boolean;
 }
 
+function isSessionLogRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
+}
+
+export function normalizeSessionLogEntries(value: unknown): SessionLogEntry[] {
+  if (!Array.isArray(value)) return [];
+
+  const entries: SessionLogEntry[] = [];
+  for (const item of value) {
+    if (!isSessionLogRecord(item)) continue;
+    if (
+      typeof item.id !== 'string' ||
+      typeof item.timestamp !== 'string' ||
+      typeof item.tagId !== 'string' ||
+      typeof item.text !== 'string'
+    ) {
+      continue;
+    }
+
+    entries.push({
+      id: item.id,
+      timestamp: item.timestamp,
+      tagId: item.tagId,
+      text: item.text,
+      resolved: item.resolved === true,
+      promoted: item.promoted === true,
+    });
+  }
+
+  return entries;
+}
+
 export type SessionLogTimelineEntry =
   | {
       kind: 'manual';

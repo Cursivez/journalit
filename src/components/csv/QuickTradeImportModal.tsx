@@ -27,12 +27,14 @@ import { openExternalUrl } from '../../utils/externalLinks';
 import { DeviceFlowSignInModal } from '../auth/DeviceFlowSignInModal';
 import { useBackendProEntitlement } from '../../hooks/useBackendProEntitlement';
 import { BackendTradeImportService } from '../../services/tradeImport/BackendTradeImportService';
+import { BackendTradeProjectionService } from '../../services/tradeSync/BackendTradeProjectionService';
 import {
   TradeImportValidationError,
   TradeImportWorkflowService,
 } from '../../services/tradeImport/TradeImportWorkflowService';
 import type {
   ClassifiedPreviewTrade,
+  TradeImportAnalyseResponse,
   TradeImportCapabilities,
   TradeImportPreviewResponse,
 } from '../../services/tradeImport/types';
@@ -185,9 +187,9 @@ interface QuickImportPreviewSummaryProps {
   classified: ClassifiedPreviewTrade[];
   duplicateCount: number;
   failedCount: number;
-  hasImportExceptions: boolean;
   noImportablePreview: boolean;
   plugin: JournalitPlugin;
+  preview: TradeImportPreviewResponse;
   previewRows: ClassifiedPreviewTrade[];
   writableCount: number;
 }
@@ -196,31 +198,61 @@ const QuickImportPreviewSummary: React.FC<QuickImportPreviewSummaryProps> = ({
   classified,
   duplicateCount,
   failedCount,
-  hasImportExceptions,
   noImportablePreview,
   plugin,
+  preview,
   previewRows,
   writableCount,
 }) => (
   <div className="journalit-quick-import-summary">
-    <h3>{t('quick-import.summary.title')}</h3>
+    <h3>
+      {preview.outcome === 'completed'
+        ? t('quick-import.summary.title')
+        : t('quick-import.summary.failed')}
+    </h3>
+    {preview.outcome === 'partially_completed' && (
+      <div className="journalit-quick-import-outcome-callout journalit-quick-import-outcome-callout--warning">
+        <AlertTriangle size={16} />
+        <span>
+          {t('trade-import.preview.partial.message', {
+            count: String(writableCount),
+            failed: String(preview.summary.failedRowCount),
+            incomplete: String(preview.summary.skippedIncompleteCount),
+          })}
+        </span>
+      </div>
+    )}
+    {preview.outcome === 'failed' && (
+      <div className="journalit-quick-import-outcome-callout journalit-quick-import-outcome-callout--error">
+        <AlertTriangle size={16} />
+        <span>{t('trade-import.preview.failed.message')}</span>
+      </div>
+    )}
     <div className="journalit-quick-import-summary__grid">
       <span>{t('quick-import.summary.to-import')}</span>
       <strong>{String(writableCount)}</strong>
-      {hasImportExceptions && (
+      {duplicateCount > 0 && (
         <>
-          {duplicateCount > 0 && (
-            <>
-              <span>{t('quick-import.summary.duplicates')}</span>
-              <strong>{String(duplicateCount)}</strong>
-            </>
-          )}
-          {failedCount > 0 && (
-            <>
-              <span>{t('quick-import.summary.failed')}</span>
-              <strong>{String(failedCount)}</strong>
-            </>
-          )}
+          <span>{t('quick-import.summary.duplicates')}</span>
+          <strong>{String(duplicateCount)}</strong>
+        </>
+      )}
+      {failedCount > 0 && (
+        <>
+          <span>{t('quick-import.summary.failed')}</span>
+          <strong>{String(failedCount)}</strong>
+        </>
+      )}
+      {preview.summary.failedRowCount > 0 && (
+        <>
+          <span>{t('quick-import.summary.failed-rows')}</span>
+          <strong>{String(preview.summary.failedRowCount)}</strong>
+        </>
+      )}
+      {preview.summary.skippedIncompleteCount > 0 && (
+        <>
+          <span>{t('quick-import.summary.incomplete-rows')}</span>
+          <strong>{String(preview.summary.skippedIncompleteCount)}</strong>
         </>
       )}
     </div>
@@ -419,7 +451,7 @@ interface QuickImportMainContentProps {
   state: TradeImportQuickImportState;
 }
 
-const QuickImportMainContent: React.FC<QuickImportMainContentProps> = ({
+export const QuickImportMainContent: React.FC<QuickImportMainContentProps> = ({
   classified,
   file,
   fileInputRef,
@@ -444,22 +476,27 @@ const QuickImportMainContent: React.FC<QuickImportMainContentProps> = ({
   const writableCount = classified.filter((item) =>
     isTradeImportCommitEligible(item.defaultAction)
   ).length;
-  const hasImportExceptions = duplicateCount > 0 || failedCount > 0;
   const isImporting = state.phase === 'importing';
   const isPreparingSetup = state.phase === 'loading';
   const needsQuickImportSetup = state.phase === 'needs_full_import' && !file;
   const noImportablePreview =
     state.phase === 'ready_to_import' && preview !== null && writableCount < 1;
+  const parsingNeedsFullReview =
+    state.phase === 'ready_to_import' &&
+    (preview?.outcome === 'partially_completed' ||
+      preview?.outcome === 'failed');
   const showFullTradeImportAction =
     needsQuickImportSetup ||
     state.phase === 'error' ||
     state.phase === 'needs_full_import' ||
-    noImportablePreview;
+    noImportablePreview ||
+    parsingNeedsFullReview;
   const fullTradeImportActionLabel = needsQuickImportSetup
     ? t('quick-import.action.setup-in-trade-import')
     : state.phase === 'needs_full_import' ||
         state.phase === 'error' ||
-        noImportablePreview
+        noImportablePreview ||
+        parsingNeedsFullReview
       ? t('quick-import.action.review-in-trade-import')
       : t('quick-import.action.open-full');
   const previewRows = classified.slice(0, 5);
@@ -539,9 +576,9 @@ const QuickImportMainContent: React.FC<QuickImportMainContentProps> = ({
           classified={classified}
           duplicateCount={duplicateCount}
           failedCount={failedCount}
-          hasImportExceptions={hasImportExceptions}
           noImportablePreview={noImportablePreview}
           plugin={plugin}
+          preview={preview}
           previewRows={previewRows}
           writableCount={writableCount}
         />
@@ -549,7 +586,11 @@ const QuickImportMainContent: React.FC<QuickImportMainContentProps> = ({
 
       {result && state.phase === 'complete' && (
         <div className="journalit-quick-import-summary">
-          <h3>{t('quick-import.complete.title')}</h3>
+          <h3>
+            {result.pendingCount > 0
+              ? t('csv.results.pending-title')
+              : t('quick-import.complete.title')}
+          </h3>
           <p>
             {t('quick-import.complete.message', {
               written: String(result.writtenCount),
@@ -557,6 +598,13 @@ const QuickImportMainContent: React.FC<QuickImportMainContentProps> = ({
               failed: String(result.failedCount),
             })}
           </p>
+          {result.pendingCount > 0 && (
+            <p>
+              {t('csv.results.pending-local-writes', {
+                count: String(result.pendingCount),
+              })}
+            </p>
+          )}
         </div>
       )}
 
@@ -567,7 +615,9 @@ const QuickImportMainContent: React.FC<QuickImportMainContentProps> = ({
           </button>
         )}
         <div className="journalit-quick-import-actions__primary">
-          {((state.phase === 'ready_to_import' && writableCount > 0) ||
+          {((state.phase === 'ready_to_import' &&
+            writableCount > 0 &&
+            preview?.outcome !== 'failed') ||
             state.phase === 'importing') && (
             <button
               type="button"
@@ -636,18 +686,21 @@ function renderQuickImportAccessGate({
   return null;
 }
 
-const QuickTradeImportModalContent: React.FC<
-  QuickTradeImportModalContentProps
-> = ({ plugin, closeModal }) => {
-  const backendService = useMemo(() => new BackendTradeImportService(), []);
-  const workflowService = useMemo(
-    () => new TradeImportWorkflowService(plugin, backendService),
-    [backendService, plugin]
-  );
-  const cachedQuickSetup = getCachedQuickTradeImportSetup();
+function useQuickImportSetupState({
+  backendService,
+  canUseQuickTradeImport,
+  isCheckingEntitlement,
+  plugin,
+}: {
+  backendService: BackendTradeImportService;
+  canUseQuickTradeImport: boolean;
+  isCheckingEntitlement: boolean;
+  plugin: JournalitPlugin;
+}): QuickSetupState & {
+  updateState: (state: TradeImportQuickImportState) => void;
+} {
+  const cachedQuickSetup = useMemo(getCachedQuickTradeImportSetup, []);
   const hasInitialQuickSetupRef = useRef(cachedQuickSetup !== null);
-  const requestVersionRef = useRef(0);
-  const fileInputRef = useRef<HTMLInputElement>(null);
   const [quickSetupState, dispatchQuickSetup] = useReducer(
     quickSetupReducer,
     undefined,
@@ -667,55 +720,17 @@ const QuickTradeImportModalContent: React.FC<
       },
     })
   );
-  const { capabilities, setup, state } = quickSetupState;
-  const updateQuickImportState = (nextState: TradeImportQuickImportState) => {
-    dispatchQuickSetup({ type: 'state', state: nextState });
-  };
-  const [importState, dispatchImportState] = useReducer(
-    (
-      state: {
-        file: File | null;
-        preview: TradeImportPreviewResponse | null;
-        classified: ClassifiedPreviewTrade[];
-        result: TradeImportCompletionResult | null;
-        isDragging: boolean;
-      },
-      update: Partial<{
-        file: File | null;
-        preview: TradeImportPreviewResponse | null;
-        classified: ClassifiedPreviewTrade[];
-        result: TradeImportCompletionResult | null;
-        isDragging: boolean;
-      }>
-    ) => ({ ...state, ...update }),
-    {
-      file: null,
-      preview: null,
-      classified: [],
-      result: null,
-      isDragging: false,
-    }
-  );
-  const { file, preview, classified, result, isDragging } = importState;
-
-  const {
-    isAuthenticated,
-    isFeatureEnabled: canUseQuickTradeImport,
-    isChecking: isCheckingEntitlement,
-  } = useBackendProEntitlement(
-    plugin,
-    'quick trade import open',
-    'quickTradeImport'
-  );
+  const updateState = useCallback((state: TradeImportQuickImportState) => {
+    dispatchQuickSetup({ type: 'state', state });
+  }, []);
 
   useEffect(() => {
     if (!canUseQuickTradeImport) {
-      updateQuickImportState({ phase: 'idle' });
+      updateState({ phase: 'idle' });
       return;
     }
     let cancelled = false;
-    if (!hasInitialQuickSetupRef.current)
-      updateQuickImportState({ phase: 'loading' });
+    if (!hasInitialQuickSetupRef.current) updateState({ phase: 'loading' });
     void (async () => {
       try {
         const loaded = await loadCachedQuickTradeImportSetup(
@@ -730,7 +745,7 @@ const QuickTradeImportModalContent: React.FC<
         });
       } catch {
         if (!cancelled) {
-          updateQuickImportState({
+          updateState({
             phase: 'error',
             message: t('quick-import.message.capabilities-failed'),
           });
@@ -740,7 +755,96 @@ const QuickTradeImportModalContent: React.FC<
     return () => {
       cancelled = true;
     };
-  }, [backendService, canUseQuickTradeImport, isCheckingEntitlement, plugin]);
+  }, [
+    backendService,
+    canUseQuickTradeImport,
+    isCheckingEntitlement,
+    plugin,
+    updateState,
+  ]);
+
+  return { ...quickSetupState, updateState };
+}
+
+const QuickTradeImportModalContent: React.FC<
+  QuickTradeImportModalContentProps
+> = ({ plugin, closeModal }) => {
+  const backendService = useMemo(() => new BackendTradeImportService(), []);
+  const projectionBackendService = useMemo(
+    () => new BackendTradeProjectionService(),
+    []
+  );
+  const workflowService = useMemo(
+    () =>
+      new TradeImportWorkflowService(
+        plugin,
+        backendService,
+        projectionBackendService
+      ),
+    [backendService, plugin, projectionBackendService]
+  );
+  const requestVersionRef = useRef(0);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const {
+    isAuthenticated,
+    isFeatureEnabled: canUseQuickTradeImport,
+    isChecking: isCheckingEntitlement,
+  } = useBackendProEntitlement(
+    plugin,
+    'quick trade import open',
+    'quickTradeImport'
+  );
+  const {
+    capabilities,
+    setup,
+    state,
+    updateState: updateQuickImportState,
+  } = useQuickImportSetupState({
+    backendService,
+    canUseQuickTradeImport,
+    isCheckingEntitlement,
+    plugin,
+  });
+  const [importState, dispatchImportState] = useReducer(
+    (
+      state: {
+        file: File | null;
+        analyse: TradeImportAnalyseResponse | null;
+        preview: TradeImportPreviewResponse | null;
+        previewOwnerUserId: string | null;
+        classified: ClassifiedPreviewTrade[];
+        result: TradeImportCompletionResult | null;
+        isDragging: boolean;
+      },
+      update: Partial<{
+        file: File | null;
+        analyse: TradeImportAnalyseResponse | null;
+        preview: TradeImportPreviewResponse | null;
+        previewOwnerUserId: string | null;
+        classified: ClassifiedPreviewTrade[];
+        result: TradeImportCompletionResult | null;
+        isDragging: boolean;
+      }>
+    ) => ({ ...state, ...update }),
+    {
+      file: null,
+      analyse: null,
+      preview: null,
+      previewOwnerUserId: null,
+      classified: [],
+      result: null,
+      isDragging: false,
+    }
+  );
+  const {
+    file,
+    analyse,
+    preview,
+    previewOwnerUserId,
+    classified,
+    result,
+    isDragging,
+  } = importState;
 
   const selectedBrokerCapabilities = useMemo(
     () => capabilities?.brokers.find((broker) => broker.id === setup?.broker),
@@ -760,14 +864,25 @@ const QuickTradeImportModalContent: React.FC<
         headerRowIndex: setup.headerRowIndex,
         columnMappings: setup.columnMappings,
         aiMappingEnabled: setup.aiMappingEnabled,
+        analyse,
         preview,
+        previewOwnerUserId,
         classified,
       });
     }
     closeModal();
     await plugin.viewManager.openCSVImportView();
     window.dispatchEvent(new Event('journalit:quick-import-handoff-ready'));
-  }, [classified, closeModal, file, plugin.viewManager, preview, setup]);
+  }, [
+    analyse,
+    classified,
+    closeModal,
+    file,
+    plugin.viewManager,
+    preview,
+    previewOwnerUserId,
+    setup,
+  ]);
 
   const handleSignIn = useCallback(() => {
     const modal = new DeviceFlowSignInModal(
@@ -796,7 +911,9 @@ const QuickTradeImportModalContent: React.FC<
       }
       dispatchImportState({
         file: selectedFile,
+        analyse: null,
         preview: null,
+        previewOwnerUserId: null,
         classified: [],
         result: null,
       });
@@ -812,6 +929,7 @@ const QuickTradeImportModalContent: React.FC<
           aiMappingEnabled: setup.aiMappingEnabled,
         });
         if (requestVersionRef.current !== requestVersion) return;
+        dispatchImportState({ analyse: analyseResult.response });
         const nextSheetName =
           analyseResult.response.selectedSheet ??
           analyseResult.response.suggestedSheet ??
@@ -853,6 +971,7 @@ const QuickTradeImportModalContent: React.FC<
         if (requestVersionRef.current !== requestVersion) return;
         dispatchImportState({
           preview: previewResult.response,
+          previewOwnerUserId: previewResult.ownerUserId,
           classified: previewResult.classifiedTrades,
         });
         updateQuickImportState({ phase: 'ready_to_import' });
@@ -870,7 +989,13 @@ const QuickTradeImportModalContent: React.FC<
         });
       }
     },
-    [capabilities, selectedBrokerCapabilities, setup, workflowService]
+    [
+      capabilities,
+      selectedBrokerCapabilities,
+      setup,
+      updateQuickImportState,
+      workflowService,
+    ]
   );
 
   const handleFileSelected = useCallback(
@@ -892,10 +1017,18 @@ const QuickTradeImportModalContent: React.FC<
   );
 
   const handleImport = useCallback(async () => {
-    if (!preview || classified.length === 0 || !setup) return;
+    if (
+      !preview ||
+      !previewOwnerUserId ||
+      preview.outcome === 'failed' ||
+      classified.length === 0 ||
+      !setup
+    )
+      return;
     updateQuickImportState({ phase: 'importing' });
     const writeResult = await workflowService.writePreview({
       preview,
+      previewOwnerUserId,
       classified,
       accountName: setup.accountName,
       brokerLabel: setup.brokerLabel,
@@ -903,7 +1036,14 @@ const QuickTradeImportModalContent: React.FC<
     });
     dispatchImportState({ result: writeResult });
     updateQuickImportState({ phase: 'complete' });
-  }, [classified, preview, setup, workflowService]);
+  }, [
+    classified,
+    preview,
+    previewOwnerUserId,
+    setup,
+    updateQuickImportState,
+    workflowService,
+  ]);
 
   const accessGate = renderQuickImportAccessGate({
     canUseQuickTradeImport,

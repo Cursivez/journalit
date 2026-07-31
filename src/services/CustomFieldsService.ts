@@ -9,6 +9,7 @@ import {
   CustomFieldsData,
   CustomFieldType,
   CustomFieldOptionsStorage,
+  CANONICAL_PROJECTION_CUSTOM_FIELD_MIGRATION_KEYS,
   DEFAULT_CUSTOM_FIELDS_DATA,
   generateFieldId,
   validateCustomFieldValue,
@@ -19,6 +20,16 @@ import {
   type CustomFieldTradeLogDropdownSortMode,
   type CustomFieldTradeLogSettings,
 } from '../types/customFields';
+
+export interface CustomFieldKeyMigration {
+  fieldId: string;
+  sourceKey: string;
+  targetKey: string;
+}
+
+const CANONICAL_PROJECTION_CUSTOM_FIELD_MIGRATION_KEY_SET = new Set<string>(
+  CANONICAL_PROJECTION_CUSTOM_FIELD_MIGRATION_KEYS
+);
 
 
 interface CustomFieldsServiceConfig {
@@ -347,6 +358,71 @@ export class CustomFieldsService {
     return this.fields.fields.find((field) => field.id === fieldId);
   }
 
+  planCanonicalProjectionFieldKeyMigrations(
+    occupiedFrontmatterKeys: ReadonlySet<string> = new Set()
+  ): CustomFieldKeyMigration[] {
+    const occupiedKeys = new Set(
+      this.fields.fields
+        .map((field) => field.fieldKey)
+        .concat([...occupiedFrontmatterKeys])
+    );
+    const migrations: CustomFieldKeyMigration[] = [];
+    for (const field of this.fields.fields) {
+      if (
+        !CANONICAL_PROJECTION_CUSTOM_FIELD_MIGRATION_KEY_SET.has(field.fieldKey)
+      ) {
+        continue;
+      }
+      let targetKey = `${field.fieldKey}_custom`;
+      let suffix = 1;
+      while (
+        occupiedKeys.has(targetKey) ||
+        validateFieldKey(targetKey) !== null
+      ) {
+        targetKey = `${field.fieldKey}_custom_${suffix}`;
+        suffix += 1;
+      }
+      occupiedKeys.add(targetKey);
+      migrations.push({
+        fieldId: field.id,
+        sourceKey: field.fieldKey,
+        targetKey,
+      });
+    }
+    return migrations;
+  }
+
+  async applyFieldKeyMigrations(
+    migrations: readonly CustomFieldKeyMigration[]
+  ): Promise<void> {
+    if (migrations.length === 0) return;
+    const migrationByFieldId = new Map(
+      migrations.map((migration) => [migration.fieldId, migration])
+    );
+    const previousFields = this.fields.fields;
+    const fieldsKey = this.getFieldsKey();
+    const previousSettingsValue = getSettingsValue(
+      this.plugin.settings,
+      fieldsKey
+    );
+    this.fields.fields = previousFields.map((field) => {
+      const migration = migrationByFieldId.get(field.id);
+      if (!migration) return field;
+      if (field.fieldKey === migration.targetKey) return field;
+      if (field.fieldKey !== migration.sourceKey) {
+        throw new Error('Custom field key changed during migration');
+      }
+      return { ...field, fieldKey: migration.targetKey };
+    });
+    try {
+      await this.saveFields();
+    } catch (error) {
+      this.fields.fields = previousFields;
+      this.plugin.settings[fieldsKey] = previousSettingsValue;
+      throw error;
+    }
+  }
+
   
   async addField(
     fieldDefinition: Partial<CustomFieldDefinition>
@@ -386,12 +462,24 @@ export class CustomFieldsService {
       );
     }
 
+    if (fieldDefinition.fieldKey !== undefined) {
+      const fieldKeyError = validateFieldKey(fieldDefinition.fieldKey);
+      if (fieldKeyError) {
+        throw new Error(`Invalid field key: ${fieldKeyError}`);
+      }
+    }
+
     const fieldType = fieldDefinition.type || CustomFieldType.TEXT;
+    const fieldKey =
+      fieldDefinition.fieldKey || generateUniqueFieldKey(label, existingKeys);
+    const fieldKeyError = validateFieldKey(fieldKey);
+    if (fieldKeyError) {
+      throw new Error(`Invalid field key: ${fieldKeyError}`);
+    }
     const newField: CustomFieldDefinition = {
       id: fieldDefinition.id || generateFieldId(),
       label,
-      fieldKey:
-        fieldDefinition.fieldKey || generateUniqueFieldKey(label, existingKeys),
+      fieldKey,
       type: fieldType,
       validation: fieldDefinition.validation || {},
       options: fieldDefinition.options || [],
@@ -476,11 +564,6 @@ export class CustomFieldsService {
           ErrorHandler.createContext('prevent custom field key mutation')
         );
         throw error;
-      }
-
-      const fieldKeyError = validateFieldKey(updates.fieldKey);
-      if (fieldKeyError) {
-        throw new Error(`Invalid field key: ${fieldKeyError}`);
       }
 
       

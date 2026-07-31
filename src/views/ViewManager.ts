@@ -13,7 +13,10 @@ import { logger } from '../utils/logger';
 
 
 import JournalitPlugin from '../main';
-import { DASHBOARD_VIEW_TYPE, DashboardView } from '../components/dashboard';
+import {
+  DASHBOARD_VIEW_TYPE,
+  LegacyDashboardRedirectView,
+} from '../components/dashboard';
 import { AccountDashboardView } from './AccountDashboardView';
 import { TRADE_LOG_VIEW_TYPE, TradeLogView } from './TradeLogView';
 import { ACCOUNT_PAGE_VIEW_TYPE, AccountPageView } from './AccountPageView';
@@ -38,9 +41,44 @@ import {
 } from '../components/forms/trade/types';
 import { t } from '../lang/helpers';
 import type { SetupsViewState } from '../components/setups/setupsViewTypes';
+import type { HomeViewMode } from '../settings/types';
 
 
 const ACCOUNT_DASHBOARD_VIEW_TYPE = 'account-dashboard';
+
+interface HomeNavigationOptions {
+  
+  newTab?: boolean;
+  
+  focusLeaf?: boolean;
+}
+
+const getHomeLeafMode = (leaf: WorkspaceLeaf): HomeViewMode | null => {
+  if (leaf.view instanceof HomeView) return leaf.view.getMode();
+
+  const mode = leaf.getViewState().state?.mode;
+  return mode === 'overview' || mode === 'dashboard' ? mode : null;
+};
+
+export const selectHomeLeafForNavigation = (
+  existingLeaves: readonly WorkspaceLeaf[],
+  recentLeaf: WorkspaceLeaf | null,
+  mode?: HomeViewMode
+): WorkspaceLeaf | undefined => {
+  const recentHomeLeaf =
+    recentLeaf && existingLeaves.includes(recentLeaf) ? recentLeaf : undefined;
+
+  if (!mode) return recentHomeLeaf ?? existingLeaves[0];
+  if (recentHomeLeaf && getHomeLeafMode(recentHomeLeaf) === mode) {
+    return recentHomeLeaf;
+  }
+
+  return (
+    existingLeaves.find((leaf) => getHomeLeafMode(leaf) === mode) ??
+    recentHomeLeaf ??
+    existingLeaves[0]
+  );
+};
 
 type WorkspaceLeafSetViewState = (
   this: WorkspaceLeaf,
@@ -546,7 +584,7 @@ export class ViewManager {
         await this.registerHomeView();
         return;
       case DASHBOARD_VIEW_TYPE:
-        await this.registerDashboardView();
+        await this.registerHomeView();
         return;
       case ACCOUNT_DASHBOARD_VIEW_TYPE:
         await this.registerAccountDashboardView();
@@ -625,30 +663,42 @@ export class ViewManager {
 
   
   public async registerDashboardView(): Promise<void> {
+    await this.registerHomeView();
+
     if (this.registeredViews.has(DASHBOARD_VIEW_TYPE)) {
       return;
     }
 
     try {
-      const existingLeaves =
-        this.plugin.app.workspace.getLeavesOfType(DASHBOARD_VIEW_TYPE);
-      if (existingLeaves.length > 0) {
-        logger.debug(
-          '[Journalit] Preserving existing dashboard view leaves during registration'
-        );
-      }
-
-      
       this.plugin.registerView(
         DASHBOARD_VIEW_TYPE,
-        (leaf) => new DashboardView(leaf)
+        (leaf) => new LegacyDashboardRedirectView(leaf)
       );
-
       this.registeredViews.add(DASHBOARD_VIEW_TYPE);
-      logger.debug('[Journalit] Dashboard view registered successfully');
     } catch (error) {
-      console.error('[Journalit] Failed to register dashboard view:', error);
+      console.error(
+        '[Journalit] Failed to register legacy dashboard view:',
+        error
+      );
     }
+  }
+
+  public async migrateLegacyDashboardLeaves(): Promise<void> {
+    const legacyLeaves: WorkspaceLeaf[] = [];
+    this.plugin.app.workspace.iterateAllLeaves((leaf) => {
+      if (leaf.getViewState().type === DASHBOARD_VIEW_TYPE) {
+        legacyLeaves.push(leaf);
+      }
+    });
+
+    await Promise.all(
+      legacyLeaves.map((leaf) =>
+        leaf.setViewState({
+          type: HOME_VIEW_TYPE,
+          state: { mode: 'dashboard' },
+        })
+      )
+    );
   }
 
   
@@ -805,37 +855,11 @@ export class ViewManager {
   }
 
   
-  public async openDashboardView(): Promise<void> {
-    
-    await this.registerDashboardView();
-
-    if (
-      await this.revealExistingFunctionalLeaf(DASHBOARD_VIEW_TYPE, {
-        label: t('view.dashboard'),
-        icon: 'grip',
-      })
-    ) {
-      return;
-    }
-
-    
-    const leaf = this.plugin.app.workspace.getLeaf('tab');
-
-    if (leaf) {
-      
-      await leaf.setViewState({
-        type: DASHBOARD_VIEW_TYPE,
-        active: true,
-      });
-
-      this.syncGuideContextForLeaf(leaf);
-
-      
-      await Promise.resolve(this.plugin.app.workspace.revealLeaf(leaf));
-      this.syncGuideContextForLeaf(leaf);
-
-      this.trackRecentView(DASHBOARD_VIEW_TYPE, t('view.dashboard'), 'grip');
-    }
+  public async openDashboardView(
+    options?: HomeNavigationOptions
+  ): Promise<void> {
+    await this.openHomeView('dashboard', options);
+    this.trackRecentView(DASHBOARD_VIEW_TYPE, t('view.dashboard'), 'grip');
   }
 
   
@@ -965,37 +989,55 @@ export class ViewManager {
   }
 
   
-  public async openHomeView(): Promise<void> {
-    
+  public async openHomeView(
+    mode?: HomeViewMode,
+    options?: HomeNavigationOptions
+  ): Promise<void> {
+    const newTab = options?.newTab ?? true;
+    const focusLeaf = options?.focusLeaf ?? true;
     await this.registerHomeView();
 
-    if (await this.revealExistingFunctionalLeaf(HOME_VIEW_TYPE)) {
-      return;
+    const existingLeaves =
+      this.plugin.app.workspace.getLeavesOfType(HOME_VIEW_TYPE);
+    const recentLeaf = this.plugin.app.workspace.getMostRecentLeaf();
+    const existingLeaf = selectHomeLeafForNavigation(
+      existingLeaves,
+      recentLeaf,
+      mode
+    );
+
+    if (existingLeaf) {
+      await existingLeaf.loadIfDeferred();
+      if (existingLeaf.view instanceof HomeView) {
+        if (mode) existingLeaf.view.setMode(mode);
+        await Promise.resolve(
+          this.plugin.app.workspace.revealLeaf(existingLeaf)
+        );
+        this.plugin.app.workspace.setActiveLeaf(existingLeaf, {
+          focus: focusLeaf,
+        });
+        this.syncGuideContextForLeaf(existingLeaf);
+        return;
+      }
     }
 
-    
-    const leaf = this.plugin.app.workspace.getLeaf('tab');
-
-    if (leaf) {
-      try {
-        
-        await leaf.setViewState({
-          type: HOME_VIEW_TYPE,
-          active: true,
-        });
-
-        this.syncGuideContextForLeaf(leaf);
-
-        
-        await Promise.resolve(this.plugin.app.workspace.revealLeaf(leaf));
-        this.syncGuideContextForLeaf(leaf);
-
-        
-        
-      } catch (error) {
-        console.error('[Journalit] Failed to open home view:', error);
-        throw error;
+    const leaf = this.getNavigationTargetLeaf(newTab);
+    try {
+      await leaf.setViewState({
+        type: HOME_VIEW_TYPE,
+        active: true,
+        state: mode ? { mode } : undefined,
+      });
+      if (mode && leaf.view instanceof HomeView) {
+        leaf.view.setMode(mode);
       }
+      this.syncGuideContextForLeaf(leaf);
+      await Promise.resolve(this.plugin.app.workspace.revealLeaf(leaf));
+      this.plugin.app.workspace.setActiveLeaf(leaf, { focus: focusLeaf });
+      this.syncGuideContextForLeaf(leaf);
+    } catch (error) {
+      console.error('[Journalit] Failed to open home view:', error);
+      throw error;
     }
   }
 
@@ -1677,32 +1719,20 @@ export class ViewManager {
     }
   }
 
-  public async activateNavigationSidebar(options?: {
-    forceEnable?: boolean;
-    revealExisting?: boolean;
-  }): Promise<void> {
-    const forceEnable = options?.forceEnable ?? false;
-    const revealExisting = options?.revealExisting ?? false;
+  public async activateNavigationSidebar(): Promise<void> {
+    await this.registerNavigationView();
 
     if (
-      !forceEnable &&
-      (this.plugin.settings.navigation?.enabled ?? true) === false
+      await this.revealExistingFunctionalLeaf(
+        NAVIGATION_VIEW_TYPE,
+        undefined,
+        false
+      )
     ) {
       return;
     }
 
-    await this.registerNavigationView();
-
-    const existing =
-      this.plugin.app.workspace.getLeavesOfType(NAVIGATION_VIEW_TYPE);
-    if (existing.length > 0) {
-      if (revealExisting) {
-        void this.plugin.app.workspace.revealLeaf(existing[0]);
-      }
-      return;
-    }
-
-    const leftLeaf = await this.plugin.app.workspace.ensureSideLeaf(
+    const leaf = await this.plugin.app.workspace.ensureSideLeaf(
       NAVIGATION_VIEW_TYPE,
       'left',
       {
@@ -1712,9 +1742,7 @@ export class ViewManager {
       }
     );
 
-    if (leftLeaf) {
-      void this.plugin.app.workspace.revealLeaf(leftLeaf);
-    }
+    await this.plugin.app.workspace.revealLeaf(leaf);
   }
 
   public async registerCalendarSidebarView(): Promise<void> {
@@ -1818,6 +1846,17 @@ export class ViewManager {
     newTab: boolean = true,
     focusLeaf: boolean = true
   ): Promise<void> {
+    if (viewType === DASHBOARD_VIEW_TYPE) {
+      await this.openDashboardView({ newTab, focusLeaf });
+      return;
+    }
+
+    if (viewType === HOME_VIEW_TYPE) {
+      
+      await this.openHomeView('overview', { newTab, focusLeaf });
+      return;
+    }
+
     await this.ensureViewRegistered(viewType);
 
     const recentViewMeta = this.getRecentViewMeta(viewType);

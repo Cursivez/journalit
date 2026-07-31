@@ -6,7 +6,7 @@ import { Button } from '../../ui/Button';
 import { SyncingTradesGraphic } from '../graphics/SyncingTradesGraphic';
 import { t } from '../../../lang/helpers';
 
-export type OnboardingPath = 'manual' | 'csv' | 'mt';
+export type OnboardingPath = 'manual' | 'csv' | 'trade-sync';
 
 interface ChoosePathStepProps {
   selectedPath: OnboardingPath | null;
@@ -41,9 +41,9 @@ export const ChoosePathStep: React.FC<ChoosePathStepProps> = ({
       isPremium: true,
     },
     {
-      value: 'mt',
-      label: t('onboarding.path.option.mt.label'),
-      description: t('onboarding.path.option.mt.description'),
+      value: 'trade-sync',
+      label: t('onboarding.path.option.trade-sync.label'),
+      description: t('onboarding.path.option.trade-sync.description'),
       isPremium: true,
     },
   ];

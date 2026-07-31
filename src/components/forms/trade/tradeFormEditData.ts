@@ -1,7 +1,4 @@
-type TradeFormEditHydrationData = {
-  currency?: unknown;
-  mtComment?: unknown;
-};
+type TradeFormEditHydrationData = Record<string, unknown>;
 
 export function mergeFreshTradeFormEditData<T extends Record<string, unknown>>(
   normalizedTradeData: T | null | undefined,
@@ -15,7 +12,6 @@ export function mergeFreshTradeFormEditData<T extends Record<string, unknown>>(
 
   return {
     ...initialData,
-    currency: freshTradeData.currency,
-    mtComment: freshTradeData.mtComment,
+    ...freshTradeData,
   };
 }

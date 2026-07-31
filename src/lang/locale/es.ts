@@ -2,6 +2,76 @@
 import type { Lang } from './en';
 
 const es: Lang = {
+  'trade.broker-synced-at': 'Bróker sincronizado {date}',
+  'trade-sync.tradovate.status.connecting': 'Conectando',
+  'trade-sync.tradovate.status.setup-required':
+    'Configuración de cuenta requerida',
+  'trade-sync.tradovate.status.paused': 'En pausa',
+  'trade-sync.tradovate.status.reauthorization-required':
+    'Se requiere nueva autorización',
+  'trade-sync.tradovate.status.deleting': 'Eliminando datos en la nube',
+  'trade-sync.tradovate.status.error': 'Error de conexión',
+  'trade-sync.tradovate.sync-complete':
+    'Sincronización de Tradovate completada.',
+  'trade-sync.tradovate.sync-partial':
+    'La sincronización de Tradovate terminó con problemas. Revisa el estado de la integración.',
+  'trade-sync.tradovate.sync-complete-connection':
+    'Sincronización de {connection} completada.',
+  'trade-sync.tradovate.sync-partial-connection':
+    'La sincronización de {connection} terminó con problemas.',
+  'trade-sync.tradovate.sync-all': 'Sincronizar todo',
+  'trade-sync.tradovate.sync-all-complete':
+    'Se sincronizaron {succeeded} de {total} conexiones de Tradovate.',
+  'trade-sync.tradovate.sync-all-partial':
+    'Se sincronizaron {succeeded} de {total} conexiones de Tradovate. Revisa las conexiones con problemas.',
+  'trade-sync.tradovate.connect-another': 'Conectar otra cuenta de Tradovate',
+  'trade-sync.tradovate.no-connections':
+    'Conecta una cuenta de Tradovate en Journalit.co para configurarla y sincronizarla aquí.',
+  'trade-sync.tradovate.claimed-by-connection':
+    'La sincronización está activada mediante {connection}. Desactívala allí antes de cambiar esta cuenta.',
+  'trade-sync.tradovate.claim-conflict':
+    'Otra conexión de Tradovate reclamó esta cuenta. Revisa las tarjetas de conexión actualizadas antes de volver a intentarlo.',
+  'trade-sync.tradovate.reconciliation-issues':
+    '{count} problema(s) de conciliación',
+  'trade-sync.tradovate.website-connection-description':
+    'Conecta o vuelve a autorizar Tradovate de forma segura en Journalit.co; después, vuelve aquí para elegir cuentas y sincronizar tu vault.',
+  'trade-sync.tradovate.plugin-sync-description':
+    'Una sincronización obtiene la actividad más reciente de Tradovate y escribe las operaciones resultantes en este vault.',
+  'trade-sync.tradovate.connect': 'Conectar',
+  'trade-sync.tradovate.manage-connection': 'Gestionar conexión',
+  'trade-sync.tradovate.setup-guide': 'Guía de configuración',
+  'trade-sync.tradovate.setup-and-sync':
+    'Terminar la configuración y sincronizar',
+  'trade-sync.tradovate.sync-to-vault': 'Sincronizar',
+  'trade-sync.tradovate.discovery-description':
+    'Journalit necesita descubrir las cuentas Demo y Live disponibles mediante tu conexión de Tradovate.',
+  'trade-sync.tradovate.discover-accounts': 'Descubrir cuentas de Tradovate',
+  'trade-sync.tradovate.discovering': 'Descubriendo cuentas…',
+  'trade-sync.tradovate.discovery-failed':
+    'No se pudieron descubrir las cuentas de Tradovate. Inténtalo de nuevo o gestiona la conexión en Journalit.co.',
+  'trade-sync.tradovate.sync-account': 'Incluir en la sincronización',
+  'trade-sync.tradovate.history-label': 'Historial inicial',
+  'trade-sync.tradovate.history-all': 'Todo el historial disponible',
+  'trade-sync.tradovate.history-recent': 'Últimos 90 días',
+  'trade-sync.tradovate.history-custom': 'A partir de una fecha específica',
+  'trade-sync.tradovate.history-new': 'Solo operaciones nuevas',
+  'trade-sync.tradovate.start-date': 'Fecha de inicio',
+
+  'trade-sync.tradovate.account-required':
+    'Selecciona al menos una cuenta de Tradovate para sincronizar.',
+  'trade-sync.tradovate.mapping-required':
+    'Elige una cuenta local del vault para cada cuenta de Tradovate activada.',
+  'trade-sync.tradovate.custom-date-required':
+    'Elige una fecha de inicio para cada selección de historial personalizada.',
+  'trade-sync.tradovate.recovery-title':
+    'Restaurar notas de operaciones faltantes',
+  'trade-sync.tradovate.recovery-count':
+    '{count} nota(s) de operaciones para restaurar',
+  'trade-sync.tradovate.recovery-select-account':
+    'Selecciona una cuenta local antes de restaurar notas de operaciones.',
+  'trade-sync.tradovate.recovery-confirm':
+    '¿Restaurar {count} nota(s) de operaciones en {account}?',
+
   
   
   
@@ -19,8 +89,8 @@ const es: Lang = {
   'command.create-yearly-review': 'Abrir Revisión Anual',
 
   
-  'command.open-dashboard': 'Abrir Panel de Trading',
-  'command.open-account-dashboard': 'Abrir Panel de Cuenta',
+  'command.open-dashboard': 'Abrir panel',
+  'command.open-account-dashboard': 'Abrir cuentas',
   'command.open-trade-log': 'Abrir Registro de Operaciones',
   'command.open-home': 'Abrir Vista de Inicio',
   'command.open-position-size-calculator':
@@ -29,6 +99,7 @@ const es: Lang = {
   
 
   
+  'command.rebuild-graph-links': 'Reconstruir enlaces del gráfico de Journalit',
   'command.replay-onboarding': 'Repetir Flujo de Incorporación',
   'command.replay-current-view-guide': 'Repetir guía de la vista actual',
   'command.open-release-notes': 'Ver notas de versión',
@@ -165,6 +236,10 @@ const es: Lang = {
   'form.layout.item.realized-pnl-preview': 'Resumen P/L de salida parcial',
   'form.layout.item.realized-pnl-preview-desc':
     'Solo aparece en operaciones abiertas tras salidas parciales; su posición es fija.',
+  'form.layout.item.trade-currency': 'Divisa de la operación / Tipo de cambio',
+  'form.layout.item.trade-currency-desc':
+    'Registra una operación en otra divisa con un tipo de cambio manual opcional.',
+  'form.layout.manual-fx-rate': 'Tipo de cambio manual',
   'form.layout.result-r': 'Resultado en R',
   'form.layout.entry-time': 'Hora de la operación',
 
@@ -196,6 +271,7 @@ const es: Lang = {
   'form.field.profit-loss': 'Ganancia/Pérdida',
   'form.field.total-pnl': 'P&L Total',
   'form.field.realized-pnl': 'P&L Realizado',
+  'form.field.floating-pnl': 'P&L Flotante',
   'form.field.total-costs': 'Costos Totales:',
   'form.field.setup': 'Configuración',
   'form.field.mistake': 'Error',
@@ -239,6 +315,8 @@ const es: Lang = {
   'form.field.custom-lot-size': 'Tamaño de Lote Personalizado',
   'form.field.pip-value': 'Valor del Pip',
   'form.field.leverage-ratio': 'Ratio de Apalancamiento',
+  'form.field.trade-currency': 'Divisa de la operación',
+  'form.field.fx-rate': 'Tipo de cambio a {base}',
 
   
   'form.field.lot-size.standard': 'Estándar (100.000)',
@@ -261,6 +339,7 @@ const es: Lang = {
   'form.placeholder.target-price': 'Target price',
   'form.placeholder.close-percent': '50%',
   'form.placeholder.risk-amount': 'Riesgo planificado en moneda',
+  'form.placeholder.fx-rate': '1 {currency} = ? {base} (vacío: tipo diario)',
   'form.placeholder.custom-tag': 'Escribe una etiqueta y presiona Enter',
   'form.placeholder.thesis': 'Ingresa tu tesis para esta operación...',
   'form.placeholder.pnl': 'Ingresa ganancia o pérdida total',
@@ -301,6 +380,19 @@ const es: Lang = {
   'form.ideal-exit.tooltip':
     'Registra el plan de salida retrospectivo que te habría gustado ejecutar. Admite salidas escaladas para revisar la captura.',
   'form.ideal-exit.empty': 'Aún no hay salidas ideales',
+  'form.unrealized.title': 'Instantánea de posición abierta',
+  'form.unrealized.tooltip':
+    'Registra el precio de mercado actual de tu posición abierta para seguir el P&L no realizado. La instantánea se elimina automáticamente al cerrar la operación.',
+  'form.unrealized.price': 'Precio de la instantánea',
+  'form.unrealized.time': 'Hora de la instantánea',
+  'form.unrealized.preview': 'P&L no realizado',
+  'form.unrealized.captured': 'Capturado {time}',
+  'form.layout.item.unrealized-snapshot-desc':
+    'Sigue el P&L no realizado de posiciones abiertas.',
+  'trade.validation.unrealized-snapshot-price-non-negative':
+    'El precio de la instantánea debe ser cero o mayor',
+  'trade.validation.unrealized-snapshot-open-position-required':
+    'La hora de la instantánea debe corresponder a una posición abierta.',
   
   
   
@@ -566,6 +658,10 @@ const es: Lang = {
     'El monto de riesgo debe ser un número válido.',
   'trade.validation.risk-positive':
     'El monto de riesgo debe ser mayor que cero.',
+  'trade.validation.fx-rate-number':
+    'El tipo de cambio debe ser un número válido.',
+  'trade.validation.fx-rate-positive':
+    'El tipo de cambio debe ser mayor que cero.',
   'trade.validation.stop-loss-number': 'El stop loss debe ser un número.',
   'trade.validation.stop-loss-valid-number':
     'El stop loss debe ser un número válido.',
@@ -682,6 +778,10 @@ const es: Lang = {
   'notice.guide.replay-failed':
     'No se pudo iniciar la guía. Inténtalo de nuevo.',
   'notice.guide.replay-started': 'Guía reiniciada para esta vista.',
+  'notice.graph-links.rebuild-complete':
+    'Enlaces del gráfico reconstruidos: {updated} actualizados, {unchanged} sin cambios, {conflicted} requieren atención.',
+  'notice.graph-links.rebuild-failed':
+    'No se pudieron reconstruir los enlaces del gráfico de Journalit. Consulta la consola para obtener más detalles.',
   'notice.error.open-layout-builder':
     'Error al abrir Constructor de Diseño: {error}',
   'notice.error.switch-template': 'Error al cambiar layout: {error}',
@@ -799,7 +899,7 @@ const es: Lang = {
     'Por favor ingresa un nombre de plantilla',
   'notice.error.template-name-exists': 'El nombre de la plantilla ya existe',
   'notice.error.open-account-dashboard':
-    'Error al abrir panel de cuenta: {error}',
+    'No se pudieron abrir Cuentas: {error}',
   'notice.error.open-trade-form-edit':
     'Error al abrir formulario de operación en modo edición: {error}',
   'notice.error.open-onboarding':
@@ -893,7 +993,7 @@ const es: Lang = {
   'dashboard.guide.empty.state.title': 'Start by adding your first trade',
   'dashboard.guide.empty.state.description':
     'You do not have any trades yet. Add a trade manually or import data, then come back to unlock the full Dashboard tour.',
-  'dashboard.guide.main.intro.title': 'This is your trading dashboard',
+  'dashboard.guide.main.intro.title': 'Este es tu panel',
   'dashboard.guide.main.intro.description':
     'Use this page to track your performance, review your stats, and keep your most useful charts in one place.',
   'dashboard.guide.main.filters.title': 'Filters change the whole Dashboard',
@@ -921,7 +1021,7 @@ const es: Lang = {
     'Save your layout when you are done',
   'dashboard.guide.main.save-layout.description':
     'When you finish customising, click Save Layout to keep your changes. You can come back and edit this page again anytime.',
-  'home.guide.intro.title': 'Welcome to Home',
+  'home.guide.intro.title': 'Bienvenido a casa',
   'home.guide.intro.description':
     'This is your main page. It shows your trading stats, quick actions, and shortcuts to the rest of Journalit.',
   'home.guide.filters.title': 'These buttons change what your widgets show',
@@ -1047,6 +1147,8 @@ const es: Lang = {
   'tradelog.status.win': 'GANANCIA',
   'tradelog.status.loss': 'PÉRDIDA',
   'tradelog.status.open': 'ABIERTA',
+  'tradelog.status.partially-closed': 'PARCIALMENTE CERRADA',
+  'tradelog.status.cancelled': 'CANCELADA',
   'tradelog.status.breakeven': 'SIN CAMBIO',
   'tradelog.status.missed': 'PERDIDA',
   'tradelog.status.backtest': 'BACKTESTING',
@@ -1191,8 +1293,8 @@ const es: Lang = {
   'tradelog.column.maxR': 'Max R',
   'tradelog.column.maePrice': 'Precio MAE',
   'tradelog.column.mfePrice': 'Precio MFE',
-  'tradelog.column.mae': 'MAE $',
-  'tradelog.column.mfe': 'MFE $',
+  'tradelog.column.mae': 'MAE',
+  'tradelog.column.mfe': 'MFE',
   'tradelog.column.mae-with-currency': 'MAE ({currency})',
   'tradelog.column.mfe-with-currency': 'MFE ({currency})',
   'tradelog.column.maePercent': 'MAE %',
@@ -1226,6 +1328,7 @@ const es: Lang = {
 
   
   'dashboard.metrics.netPnL': 'P&L Neto',
+  'dashboard.metrics.incl-unrealized': 'incl. {value} no realizado',
   'dashboard.metrics.winRate': 'Tasa de Acierto',
   'dashboard.metrics.profitFactor': 'Factor de Ganancia',
   'dashboard.metrics.sharpeRatio': 'Ratio de Sharpe',
@@ -1292,6 +1395,10 @@ const es: Lang = {
   'dashboard.conversion.using-ecb': 'Usando tasas BCE ({date})',
   'dashboard.conversion.using-broker-pnl':
     'Using broker-provided base-currency P&L for {count} {tradeLabel}',
+  'dashboard.conversion.using-manual-rate':
+    'Usando un tipo de cambio manual para {count} {tradeLabel}',
+  'dashboard.conversion.partial-warning':
+    '⚠ Los costes/riesgo en {currencies} no se pudieron convertir y están excluidos',
   'dashboard.conversion.trade-singular': 'trade',
   'dashboard.conversion.trade-plural': 'trades',
   'dashboard.conversion.excluded-warning':
@@ -1394,7 +1501,12 @@ const es: Lang = {
   'dashboard.rolling_win_loss.trades_count': '{count} Operaciones',
   'dashboard.rolling_win_loss.trade_label': 'Operación {label}',
   'dashboard.rolling_win_loss.ratio_label': 'Proporción: {ratio}',
+  'dashboard.rolling_win_loss.ratio_undefined':
+    'Proporción: sin pérdidas en el periodo',
   'dashboard.rolling_win_loss.avg_win_label': 'Ganancia Promedio: {value}',
+  'dashboard.rolling_win_loss.no_losses_band': 'Sin pérdidas',
+  'dashboard.rolling_win_loss.window_not_filled':
+    'Requiere al menos {count} operaciones cerradas',
   'dashboard.rolling_win_loss.avg_loss_label': 'Pérdida Promedio: {value}',
 
   
@@ -1419,7 +1531,7 @@ const es: Lang = {
   'view.home': 'Inicio',
   'view.dashboard': 'Panel',
   'view.trade-log': 'Registro de Operaciones',
-  'view.account-dashboard': 'Panel de Cuenta',
+  'view.account-dashboard': 'Cuentas',
   'view.layout-builder': 'Constructor de Diseño',
   'view.csv-import': 'Trade Import',
 
@@ -2067,7 +2179,7 @@ const es: Lang = {
   
   
   
-  'account-dashboard.title': 'Panel de Cuentas',
+  'account-dashboard.title': 'Cuentas',
   'account-dashboard.copy-badge.base': 'BASE',
   'account-dashboard.copy-badge.copy': 'COPIADOR',
   'account-dashboard.copy-badge.copied-by': 'Copiado por',
@@ -2085,14 +2197,14 @@ const es: Lang = {
   'account-dashboard.section.empty-sub': 'Crea una cuenta para verla aquí',
   'account-dashboard.button.create-first': 'Crear Su Primera Cuenta',
   'account-dashboard.action.create': 'Crear nueva cuenta',
-  'account-dashboard.action.settings': 'Configuración del panel de cuentas',
+  'account-dashboard.action.settings': 'Configuración de cuentas',
   'account-dashboard.weight-bar.aria': 'Distribución de AUM por tipo de cuenta',
   'account-dashboard.weight-bar.segment-aria':
     '{name}: {percent}% del AUM total',
   'account-dashboard.guide.empty.intro.title':
     'This page keeps all of your accounts in one place',
   'account-dashboard.guide.empty.intro.description':
-    'Use the Account Dashboard to see all of your accounts together. Once accounts exist, this page becomes the fastest way to compare them.',
+    'Usa Cuentas para ver todas tus cuentas juntas. Cuando existan cuentas, esta página será la forma más rápida de compararlas.',
   'account-dashboard.guide.empty.state.title':
     'There is nothing here yet because no accounts exist',
   'account-dashboard.guide.empty.state.description':
@@ -2105,7 +2217,7 @@ const es: Lang = {
     'After you save, Journalit opens the account page',
   'account-dashboard.guide.empty.after-create.description':
     'Fill in the basic account details and save. The next guide will pick up on the Account Page for that specific account.',
-  'account-dashboard.guide.main.intro.title': 'This is your account dashboard',
+  'account-dashboard.guide.main.intro.title': 'Estas son tus cuentas',
   'account-dashboard.guide.main.intro.description':
     'Use this page to compare accounts, watch totals across all accounts, and jump into a single account when you need more detail.',
   'account-dashboard.guide.main.trade-filter.title':
@@ -2328,7 +2440,7 @@ const es: Lang = {
   
   'backend.title': 'Sincronización de operaciones',
   'backend.description':
-    'Configura la sincronización de MetaTrader (MT4/MT5) y mantén tu bóveda actualizada automáticamente.',
+    'Configura Trade Sync para MetaTrader (MT4) y Tradovate y mantén tu bóveda actualizada automáticamente.',
 
   
   'trade-sync.gate.signin.title': 'Se requiere iniciar sesión',
@@ -2510,7 +2622,7 @@ const es: Lang = {
   
   
   
-  'settings.title': 'Configuración de Journalit',
+
   'settings.language': 'Idioma',
   'settings.language-desc': 'Selecciona el idioma de visualización del plugin',
 
@@ -2542,8 +2654,8 @@ const es: Lang = {
   'settings.ftp.reset-hint':
     'Haz clic en este botón para generar una nueva contraseña FTP.',
   'settings.ftp.instructions.title':
-    'Instrucciones de Configuración de MetaTrader:',
-  'settings.ftp.instructions.step1': 'Abre MetaTrader\u00A05 (MT5)',
+    'Instrucciones de configuración de MetaTrader 4:',
+  'settings.ftp.instructions.step1': 'Abre MetaTrader\u00A04 (MT4)',
   'settings.ftp.instructions.step2':
     'Haz clic en el menú "Herramientas" en la parte superior',
   'settings.ftp.instructions.step3': 'Selecciona "Opciones"',
@@ -2701,24 +2813,6 @@ const es: Lang = {
     'Crear automáticamente una nueva Revisión Anual al navegar a un año que no tiene una',
   'settings.reviews.auto-create-yearly-nav-aria':
     'Auto-crear Revisión Anual al navegar',
-
-  'settings.reviews.scalper-defaults': 'Valores predeterminados para scalpers',
-  'settings.reviews.scalper-defaults-desc':
-    'Configura valores globales para el comportamiento del Rastreador de Demonios. Cada widget puede sobrescribirlos desde el Layout Builder.',
-  'settings.reviews.scalper-default-count-mode':
-    'Modo de conteo predeterminado',
-  'settings.reviews.scalper-default-count-mode-desc':
-    'Elige si los errores recurrentes se cuentan por operación o una vez por día de trading.',
-  'settings.reviews.scalper-default-source-mode':
-    'Modo de origen predeterminado',
-  'settings.reviews.scalper-default-source-mode-desc':
-    'Elige si el Rastreador de Demonios usa errores de operaciones, errores de sesión o ambos.',
-  'settings.reviews.scalper-auto-apply-session':
-    'Aplicar automáticamente errores de sesión a operaciones del día',
-  'settings.reviews.scalper-auto-apply-session-desc':
-    'Cuando está activado, los errores de sesión pueden aplicarse por defecto a todas las operaciones del mismo día de trading.',
-  'settings.reviews.scalper-auto-apply-session-aria':
-    'Aplicar automáticamente errores de sesión a operaciones del día',
 
   'settings.reviews.notice.template-updated':
     'Plantilla predeterminada actualizada',
@@ -2905,7 +2999,6 @@ const es: Lang = {
   'settings.general.display-name-save-failed':
     'Error al guardar nombre. Por favor intenta de nuevo.',
 
-  'settings.general.display-privacy-section': 'Visualización & Privacidad',
   'settings.general.privacy-mode': 'Modo Privacidad',
   'settings.general.privacy-mode-desc':
     'Oculta valores sensibles de operaciones, cuentas, precios y rendimiento en la interfaz sin cambiar los datos guardados.',
@@ -2932,6 +3025,29 @@ const es: Lang = {
     'Filtrar elementos recientes a archivos de Journalit',
   'settings.general.filter-recent-toggled':
     'Filtrar elementos recientes a archivos de Journalit {status}',
+  'settings.general.home-background': 'Imagen de fondo de Home',
+  'settings.general.home-background-desc':
+    'Usa una imagen de tu bóveda o elige una de tu ordenador para copiarla a la bóveda.',
+  'settings.general.home-background-dashboard':
+    'Mostrar el fondo también en el Dashboard',
+  'settings.general.home-background-dashboard-desc':
+    'Usa la misma imagen de fondo en el modo Dashboard.',
+  'settings.general.home-background-dashboard-aria':
+    'Mostrar el fondo de Inicio en el Dashboard',
+  'settings.general.home-background-placeholder':
+    'Ruta de la bóveda, p. ej. .journalit/home-background.png',
+  'settings.general.home-background-aria': 'Ruta de la imagen de fondo de Home',
+  'settings.general.home-background-choose': 'Elegir imagen',
+  'settings.general.home-background-clear': 'Borrar',
+  'settings.general.home-background-invalid':
+    'La ruta no es una imagen compatible de la bóveda.',
+  'settings.general.home-background-invalid-file':
+    'Elige un archivo de imagen compatible.',
+  'settings.general.home-background-saved': 'Imagen de fondo de Home guardada.',
+  'settings.general.home-background-cleared':
+    'Imagen de fondo de Home eliminada.',
+  'settings.general.home-background-save-failed':
+    'No se pudo guardar la imagen de fondo de Home.',
 
   'settings.general.folder-section': 'Ubicación de Carpeta y Rutas de Imágenes',
   'settings.general.journal-folder': 'Ubicación de Carpeta del Diario',
@@ -3031,6 +3147,16 @@ const es: Lang = {
     'Seleccionar modo de entrada MAE/MFE',
   'settings.general.mae-mfe-input-mode-price': 'Niveles de precio',
   'settings.general.mae-mfe-input-mode-dollar': 'Valores en dólares',
+  'settings.general.mae-mfe-display-unit': 'Unidad de visualización MAE/MFE',
+  'settings.general.mae-mfe-display-unit-desc':
+    'Muestra MAE/MFE en moneda o ticks de futuros en análisis y vistas de operaciones. El modo ticks recalcula automáticamente las operaciones de futuros existentes compatibles sin modificar los datos guardados.',
+  'settings.general.mae-mfe-display-unit-aria':
+    'Seleccionar unidad de visualización MAE/MFE',
+  'settings.general.mae-mfe-display-dollar': 'Moneda',
+  'settings.general.mae-mfe-display-ticks': 'Ticks',
+  'common.ticks': 'ticks',
+  'dashboard.mae-mfe-ticks.partial-coverage':
+    'Solo {eligible} de {total} operaciones tienen datos de ticks de futuros. Esta métrica excluye las operaciones no compatibles.',
 
   'settings.general.cutoff-time': 'Hora de Corte del Día de Trading',
   'settings.general.cutoff-time-desc':
@@ -3087,6 +3213,14 @@ const es: Lang = {
     'Include copy accounts in all-account analytics',
   'settings.general.include-copy-accounts-toggled':
     'Copy accounts in all-account analytics {status}',
+  'settings.general.include-unrealized-pnl':
+    'Incluir P&L no realizado en analíticas',
+  'settings.general.include-unrealized-pnl-desc':
+    'Al activarlo, los totales de P&L neto incluyen el P&L no realizado de posiciones abiertas con instantánea de precio, mostrado por separado de los resultados realizados. Estadísticas como la tasa de acierto y las rachas siguen siendo solo realizadas.',
+  'settings.general.include-unrealized-pnl-aria':
+    'Incluir P&L no realizado en analíticas',
+  'settings.general.include-unrealized-pnl-toggled':
+    'P&L no realizado en analíticas {status}',
 
   'settings.general.notification-settings': 'Configuración de Notificaciones',
   'settings.general.sync-notifications': 'Notificaciones de Sincronización',
@@ -4001,6 +4135,7 @@ const es: Lang = {
   'widget.demon-tracker.column.demon': 'DEMONIO',
   'widget.demon-tracker.column.occurrences': 'OCURRENCIAS',
   'widget.demon-tracker.column.stop-trading': 'DEJAR DE OPERAR',
+  'widget.demon-tracker.period.this-week': 'esta semana',
   'widget.demon-tracker.period.this-month': 'este mes',
   'widget.demon-tracker.period.this-quarter': 'este trimestre',
   'widget.demon-tracker.period.this-year': 'este año',
@@ -4009,7 +4144,7 @@ const es: Lang = {
     'Los errores registrados en tus operaciones aparecerán aquí para ayudar a identificar patrones',
   'widget.demon-tracker.summary.unique': 'Errores únicos:',
   'widget.demon-tracker.summary.total': 'Ocurrencias totales:',
-  'widget.demon-tracker.summary.critical': 'Críticos (6+):',
+  'widget.demon-tracker.summary.critical': 'Críticos ({threshold}+):',
 
   
   'widget.markdown-zone.name': 'Zona Markdown',
@@ -4072,6 +4207,8 @@ const es: Lang = {
     'Este widget de {widgetType} requiere una nota de revisión o trade',
   'widget.invalid-context.monthly-quarterly-yearly':
     'Este widget solo está disponible en revisiones Mensuales, Trimestrales y Anuales',
+  'widget.invalid-context.weekly-monthly-quarterly-yearly':
+    'Este widget solo está disponible en revisiones Semanales, Mensuales, Trimestrales y Anuales',
   'widget.invalid-context.quarterly-yearly':
     'Este widget solo está disponible en revisiones Trimestrales y Anuales',
   'widget.invalid-context.yearly-only':
@@ -4545,7 +4682,7 @@ const es: Lang = {
   'csv.broker.fxreplay': 'FX Replay (Analytics)',
   'csv.broker.atas': 'ATAS (Estadísticas en tiempo real)',
   'csv.broker.rithmic': 'Rithmic',
-  'csv.broker.jdr': 'JDR Securities Limited',
+  'csv.broker.jdr': 'MetaTrader 4 / 5',
 
   'csv.account-selector.loading': 'Cargando cuentas...',
   'csv.account-selector.no-accounts': 'No se encontraron cuentas.',
@@ -4591,6 +4728,9 @@ const es: Lang = {
   'csv.results.failed-rows-title': 'Filas Fallidas:',
   'csv.results.import-failed': 'Importación Fallida',
   'csv.results.import-error-generic': 'Ocurrió un error durante la importación',
+  'csv.results.pending-local-writes':
+    '{count} escritura(s) de notas de operación siguen pendientes. Journalit conciliará las escrituras completadas y mantendrá las proyecciones sin terminar disponibles para restaurarlas.',
+  'csv.results.pending-title': 'La importación aún se está sincronizando',
   'csv.results.additional-errors': 'Errores Adicionales:',
   'csv.results.button.view-account': 'Ver Cuenta',
   'csv.results.button.import-another': 'Importar Otro CSV',
@@ -4808,16 +4948,16 @@ const es: Lang = {
 
   
   'csv.broker-guide.jdr.description':
-    'Exportación de estado HTML de MetaTrader (reporte estilo MT4).',
+    'Exportación de informes HTML de MetaTrader para MT4 y MT5.',
   'csv.broker-guide.jdr.step-1':
-    'En tu terminal MetaTrader de JDR, abre la pestaña Historial de cuenta / History para el rango de fechas que quieras importar',
+    'En tu terminal MetaTrader, abre la pestaña Historial de cuenta / History para el rango de fechas que quieras importar',
   'csv.broker-guide.jdr.step-2':
     'Haz clic derecho dentro de la tabla del historial y elige Save as Report para generar el estado HTML/HTM',
   'csv.broker-guide.jdr.step-3':
-    'Sube aquí el estado HTML exportado y selecciona JDR Securities Limited',
+    'Sube aquí el informe HTML exportado y selecciona MetaTrader 4 / 5 Statement',
   'csv.broker-guide.jdr.warning.emphasis': 'Importante:',
   'csv.broker-guide.jdr.warning.message':
-    'Usa la exportación HTML del estado. Las órdenes pendientes/canceladas se ignoran automáticamente y los reportes HTML de MT5 todavía no son compatibles.',
+    'Usa la exportación HTML del informe. Las órdenes pendientes y canceladas se ignoran automáticamente.',
   'csv.broker-guide.jdr.doc-label': 'Ver guías de exportación del broker',
 
   
@@ -5005,8 +5145,8 @@ const es: Lang = {
   
   'home.quick-links.add-trade': 'Agregar Operación',
   'home.quick-links.trade-log': 'Registro de Operaciones',
-  'home.quick-links.trading-dashboard': 'Panel de Trading',
-  'home.quick-links.account-dashboard': 'Panel de Cuentas',
+  'home.quick-links.trading-dashboard': 'Panel',
+  'home.quick-links.account-dashboard': 'Cuentas',
   'home.quick-links.todays-drc': 'DRC de Hoy',
   'home.quick-links.weekly-review': 'Revisión Semanal',
   'home.quick-links.monthly-review': 'Revisión Mensual',
@@ -5015,6 +5155,7 @@ const es: Lang = {
   'home.quick-links.quick-import': 'Quick Import',
   'home.quick-links.csv-import': 'Trade Import',
   'home.quick-links.layout-builder': 'Constructor de Diseño',
+  'home.quick-links.navigation-sidebar': 'Barra lateral de navegación',
   'home.quick-links.session-mode': 'Modo de Sesión',
   'home.quick-links.move-above': 'Mover enlaces rápidos encima de los widgets',
   'home.quick-links.move-below': 'Mover enlaces rápidos debajo de los widgets',
@@ -5032,10 +5173,10 @@ const es: Lang = {
   'home.widget-selector.hint.close': 'esc cerrar',
 
   
-  'home.period.month': 'Este Mes',
-  'home.period.quarter': 'Este Trimestre',
-  'home.period.year': 'Este Año',
-  'home.period.lifetime': 'Toda la Vida',
+  'home.period.month': 'Mes',
+  'home.period.quarter': 'Trimestre',
+  'home.period.year': 'Año',
+  'home.period.lifetime': 'Todo el tiempo',
 
   
   'home.aria.filter-period': 'Filtrar por Período',
@@ -5379,6 +5520,12 @@ const es: Lang = {
     'Design your review templates your way.',
   'home.widget.getting-started.item.layouts.time': '1 min',
   'home.widget.getting-started.item.layouts.cta': 'Open Layout Builder',
+  'home.widget.getting-started.item.sidebar.title':
+    'Abrir la barra lateral de navegación',
+  'home.widget.getting-started.item.sidebar.description':
+    'Accede rápidamente a las páginas, revisiones, herramientas y búsqueda de Journalit.',
+  'home.widget.getting-started.item.sidebar.time': '10 s',
+  'home.widget.getting-started.item.sidebar.cta': 'Abrir barra lateral',
   'home.widget.getting-started.item.pro.title': 'Activate PRO',
   'home.widget.getting-started.item.pro.description':
     'Enable Trade Import, MetaTrader sync, and AI mapping.',
@@ -5781,6 +5928,8 @@ const es: Lang = {
   'ui.folder-browser.placeholder': 'Seleccionar una carpeta...',
   'ui.folder-browser.root': 'Raíz',
   'ui.folder-browser.clear-aria': 'Limpiar para usar ubicación predeterminada',
+  'ui.folder-browser.expand-folder': 'Expandir carpeta',
+  'ui.folder-browser.collapse-folder': 'Contraer carpeta',
 
   
   'forecast.chart-title': 'Gráfico de {title}',
@@ -5848,7 +5997,7 @@ const es: Lang = {
   'upgrade.benefit.csv': 'Trade Import con mapeo de columnas asistido por IA',
   'upgrade.benefit.templates':
     'Plantillas personalizadas ilimitadas y compartir plantillas',
-  'upgrade.benefit.mt5': 'Sincronización automática con MetaTrader 5',
+  'upgrade.benefit.trade-sync': 'Trade Sync para MetaTrader (MT4) y Tradovate',
   'upgrade.benefit.multi-account': 'Soporte multi-cuenta',
   'upgrade.benefit.analytics': 'Analíticas y métricas avanzadas',
   'upgrade.benefit.layouts': 'Diseños de panel personalizados',
@@ -5896,7 +6045,7 @@ const es: Lang = {
   'view.account-page.title-default': 'Página de Cuenta',
   'view.account-page.no-account-selected': 'No hay Cuenta Seleccionada',
   'view.account-page.no-account-instructions':
-    'Por favor navega a esta página desde el Panel de Cuenta.',
+    'Abre esta página desde Cuentas.',
   'view.account-page.service-loading':
     'Cargando servicio de página de cuenta...',
   'view.account-page.balance-chart-title': 'Gráfico de Balance de Cuenta',
@@ -5922,16 +6071,22 @@ const es: Lang = {
     'Texto para insertar en nuevas notas de revisión...',
   'templateEditor.widget.page-size': 'Tamaño de página:',
   'templateEditor.widget.show-rating-column': 'Mostrar columna de calificación',
-  'templateEditor.widget.demon-tracker.count-mode': 'Modo de conteo:',
-  'templateEditor.widget.demon-tracker.count-mode.per-trade': 'Por operación',
-  'templateEditor.widget.demon-tracker.count-mode.per-trading-day':
-    'Por día de trading',
-  'templateEditor.widget.demon-tracker.source-mode': 'Modo de fuente:',
-  'templateEditor.widget.demon-tracker.source-mode.trades': 'Solo operaciones',
-  'templateEditor.widget.demon-tracker.source-mode.session':
-    'Solo errores de sesión',
-  'templateEditor.widget.demon-tracker.source-mode.combined':
-    'Combinado (operaciones + sesión)',
+  'templateEditor.widget.demon-tracker.tracking-method':
+    'Registrar errores por:',
+  'templateEditor.widget.demon-tracker.tracking-method.trade-occurrences':
+    'Ocurrencias en operaciones',
+  'templateEditor.widget.demon-tracker.tracking-method.trade-occurrences-desc':
+    'Cuenta cada operación etiquetada con el error.',
+  'templateEditor.widget.demon-tracker.tracking-method.trading-days':
+    'Días de trading',
+  'templateEditor.widget.demon-tracker.tracking-method.trading-days-desc':
+    'Los errores de operaciones y revisiones diarias se combinan y cuentan una vez por día de trading.',
+  'templateEditor.widget.demon-tracker.tracking-method.daily-review-entries':
+    'Entradas de revisión diaria',
+  'templateEditor.widget.demon-tracker.tracking-method.daily-review-entries-desc':
+    'Solo cuentan los errores registrados en las revisiones diarias.',
+  'templateEditor.widget.demon-tracker.stop-after':
+    'Dejar de operar después de:',
 
   
   'nav.prev-quarter': 'Trimestre Anterior',
@@ -6176,28 +6331,28 @@ const es: Lang = {
 
   'metric.avgWinnerHeat.name': 'Calor Prom. Ganadores',
   'metric.avgWinnerHeat.description':
-    'MAE promedio de operaciones ganadoras cerradas, usando la unidad MAE/MFE guardada',
+    'MAE promedio de operaciones ganadoras cerradas, usando la unidad de visualización MAE/MFE configurada',
   'metric.winnerMaeP90.name': 'MAE P90 Ganadores',
   'metric.winnerMaeP90.description':
-    'Umbral MAE del percentil 90 para operaciones ganadoras cerradas, usando la unidad MAE/MFE guardada',
+    'Umbral MAE del percentil 90 para operaciones ganadoras cerradas, usando la unidad de visualización MAE/MFE configurada',
   'metric.winnerMaeMedian.name': 'MAE Mediana Ganadores',
   'metric.winnerMaeMedian.description':
-    'MAE mediano de operaciones ganadoras cerradas, usando la unidad MAE/MFE guardada',
+    'MAE mediano de operaciones ganadoras cerradas, usando la unidad de visualización MAE/MFE configurada',
   'metric.avgLossHeat.name': 'Calor Prom. Pérdidas',
   'metric.avgLossHeat.description':
-    'MAE promedio de operaciones perdedoras cerradas, usando la unidad MAE/MFE guardada',
+    'MAE promedio de operaciones perdedoras cerradas, usando la unidad de visualización MAE/MFE configurada',
   'metric.winnerAvgMfe.name': 'MFE Prom. Ganadores',
   'metric.winnerAvgMfe.description':
-    'MFE promedio de operaciones ganadoras cerradas, usando la unidad MAE/MFE guardada',
+    'MFE promedio de operaciones ganadoras cerradas, usando la unidad de visualización MAE/MFE configurada',
   'metric.loserAvgMfe.name': 'MFE Prom. Perdedores',
   'metric.loserAvgMfe.description':
-    'MFE promedio de operaciones perdedoras cerradas, usando la unidad MAE/MFE guardada',
+    'MFE promedio de operaciones perdedoras cerradas, usando la unidad de visualización MAE/MFE configurada',
   'metric.winnerMfeP90.name': 'MFE P90 Ganadores',
   'metric.winnerMfeP90.description':
-    'Umbral MFE del percentil 90 para operaciones ganadoras cerradas, usando la unidad MAE/MFE guardada',
+    'Umbral MFE del percentil 90 para operaciones ganadoras cerradas, usando la unidad de visualización MAE/MFE configurada',
   'metric.loserMfeP90.name': 'MFE P90 Perdedores',
   'metric.loserMfeP90.description':
-    'Umbral MFE del percentil 90 para operaciones perdedoras cerradas, usando la unidad MAE/MFE guardada',
+    'Umbral MFE del percentil 90 para operaciones perdedoras cerradas, usando la unidad de visualización MAE/MFE configurada',
   'metric.timeInDrawdown.name': 'Time in Drawdown',
   'metric.timeInDrawdown.description':
     'Percentage of elapsed time spent below the prior realized P&L high',
@@ -6432,7 +6587,7 @@ const es: Lang = {
     'Designed to adapt to your workflow, not force you into ours.',
   'onboarding.explore.tagline': 'Your journal, your rules.',
   'onboarding.explore.section.out-of-box.title': 'Core views & tools',
-  'onboarding.explore.core.dashboard.label': 'Trading Dashboard',
+  'onboarding.explore.core.dashboard.label': 'Panel',
   'onboarding.explore.core.dashboard.description':
     'Your performance at a glance — P&L, win rate, drawdowns, and more.',
   'onboarding.explore.core.tradelog.label': 'Trade Log',
@@ -6450,9 +6605,9 @@ const es: Lang = {
   'onboarding.explore.imports.csv.label': 'Trade Import',
   'onboarding.explore.imports.csv.description':
     'Upload CSV, spreadsheet, HTML, and broker statement exports for backend-powered analysis and preview.',
-  'onboarding.explore.imports.mt.label': 'MetaTrader Sync (MT4/MT5)',
-  'onboarding.explore.imports.mt.description':
-    'Automatic trade syncing from MetaTrader. Requires Pro.',
+  'onboarding.explore.imports.trade-sync.label': 'Trade Sync',
+  'onboarding.explore.imports.trade-sync.description':
+    'Sincronización automática de operaciones desde MetaTrader (MT4) o Tradovate. Requiere Pro.',
   'onboarding.explore.cta.open': 'Open',
   'onboarding.explore.cta.manual': 'Open Docs',
 
@@ -6471,9 +6626,9 @@ const es: Lang = {
   'onboarding.path.option.csv.label': 'Trade Import',
   'onboarding.path.option.csv.description':
     'Use Pro backend-powered analysis for broker export files.',
-  'onboarding.path.option.mt.label': 'MetaTrader Sync (MT4/MT5)',
-  'onboarding.path.option.mt.description':
-    'Connect MT4/MT5 for automatic trade syncing.',
+  'onboarding.path.option.trade-sync.label': 'Trade Sync',
+  'onboarding.path.option.trade-sync.description':
+    'Conecta MetaTrader (MT4) o Tradovate para sincronizar operaciones automáticamente.',
 
   
   
@@ -6490,14 +6645,14 @@ const es: Lang = {
   'onboarding.final.csv.subtitle':
     'Next, open Trade Import. Uploading and processing broker exports requires PRO activation.',
   'onboarding.final.csv.cta.open': 'Open Trade Import',
-  'onboarding.final.mt.title': "You're ready to connect MetaTrader",
-  'onboarding.final.mt.subtitle':
-    'Next, set up MT4/MT5 sync. Requires PRO activation.',
-  'onboarding.final.mt.cta.open': 'Open MetaTrader Setup',
-  'onboarding.final.mt.hero.source.title': 'MetaTrader',
-  'onboarding.final.mt.hero.source.subtitle': 'Trade reports',
-  'onboarding.final.mt.hero.dest.title': 'Vault',
-  'onboarding.final.mt.hero.dest.subtitle': 'Trade notes',
+  'onboarding.final.trade-sync.title': 'Ya puedes configurar Trade Sync',
+  'onboarding.final.trade-sync.subtitle':
+    'A continuación, configura la sincronización de MetaTrader (MT4) o Tradovate.',
+  'onboarding.final.trade-sync.cta.open': 'Abrir configuración de Trade Sync',
+  'onboarding.final.trade-sync.hero.source.title': 'MetaTrader + Tradovate',
+  'onboarding.final.trade-sync.hero.source.subtitle': 'Operaciones del broker',
+  'onboarding.final.trade-sync.hero.dest.title': 'Vault',
+  'onboarding.final.trade-sync.hero.dest.subtitle': 'Trade notes',
   'onboarding.final.finish': 'Finish',
 
   'onboarding.features.graphic.syncing': 'Sincronizando operaciones...',
@@ -6602,9 +6757,9 @@ const es: Lang = {
   'navigation.edit-mode.restore-section': 'Elementos ocultos',
   'navigation.edit-mode.restore': 'Restaurar',
   'navigation.items.nav-home': 'Inicio',
-  'navigation.items.nav-dashboard': 'Panel de trading',
+  'navigation.items.nav-dashboard': 'Panel',
   'navigation.items.nav-trade-log': 'Registro de trades',
-  'navigation.items.nav-account-dashboard': 'Panel de cuentas',
+  'navigation.items.nav-account-dashboard': 'Cuentas',
   'navigation.items.nav-drc': 'DRC de hoy',
   'navigation.items.nav-weekly': 'Revisión de esta semana',
   'navigation.items.nav-monthly': 'Revisión de este mes',
@@ -6617,6 +6772,12 @@ const es: Lang = {
   'navigation.items.nav-session-mode': 'Modo sesión',
   'navigation.items.nav-position-size': 'Calculadora de tamaño de posición',
   'settings.general.navigation-sidebar': 'Barra lateral de navegación',
+  'notice.error.open-navigation-sidebar':
+    'No se pudo abrir la barra lateral de navegación. Inténtalo de nuevo.',
+  'navigation.setting.open': 'Abrir barra lateral de navegación',
+  'navigation.setting.open.desc':
+    'Muéstrala ahora y expande la barra lateral de Obsidian si está contraída.',
+  'navigation.setting.open.button': 'Abrir barra lateral',
   'navigation.setting.tab-behavior': 'Comportamiento de pestaña de navegación',
   'navigation.setting.tab-behavior.desc':
     'Cómo abrir vistas al hacer clic en la barra lateral de navegación',
@@ -6821,6 +6982,16 @@ const es: Lang = {
   'templateEditor.widget.trade-review.answer-placeholder':
     'Texto opcional mostrado en el campo de respuesta',
   'templateEditor.widget.trade-review.add-question': '+ Agregar pregunta',
+  'templateEditor.widget.trade-review.answer-type-label': 'Tipo de respuesta',
+  'templateEditor.widget.trade-review.answer-type-text': 'Texto',
+  'templateEditor.widget.trade-review.answer-type-choice': 'Opción',
+  'templateEditor.widget.trade-review.option-placeholder':
+    'Etiqueta de la opción',
+  'templateEditor.widget.trade-review.add-option': '+ Agregar opción',
+  'templateEditor.widget.trade-review.condition-label': 'Mostrar cuando',
+  'templateEditor.widget.trade-review.condition-always': 'Siempre visible',
+  'templateEditor.widget.trade-review.condition-option-label':
+    'Cuando P{questionNumber} = {option}',
   'templateEditor.widget.previous-context-add-section': '+ Add section',
   'templateEditor.widget.previous-context-headings-label':
     'Headings to include',
@@ -6976,7 +7147,7 @@ const es: Lang = {
   'quick-import.message.preview-failed':
     'This file needs review in the full Trade Import flow.',
   'quick-import.message.no-importable':
-    'No importable trades were found. Review this file in Trade Import for details.',
+    'No se encontraron operaciones importables. Revisa este archivo en Trade Import para ver los detalles.',
   'quick-import.notice.consent-required':
     'Acknowledge processing before uploading.',
   'quick-import.consent':
@@ -6994,16 +7165,18 @@ const es: Lang = {
     'Uploaded to Journalit for private processing',
   'quick-import.file.selected': 'Selected file',
   'quick-import.file.processed': 'Processed and ready to write to your vault',
-  'quick-import.summary.title': 'Ready to import',
+  'quick-import.summary.title': 'Listo para importar',
   'quick-import.summary.trades': 'Preview trades',
-  'quick-import.summary.to-import': 'To import',
-  'quick-import.summary.duplicates': 'Duplicates',
-  'quick-import.summary.failed': 'Needs review',
+  'quick-import.summary.to-import': 'Para importar',
+  'quick-import.summary.duplicates': 'Duplicados',
+  'quick-import.summary.failed': 'Requiere revisión',
+  'quick-import.summary.failed-rows': 'Filas no importadas',
+  'quick-import.summary.incomplete-rows': 'Filas incompletas omitidas',
   'quick-import.complete.title': 'Import complete',
   'quick-import.complete.message':
     '{written} written, {duplicates} duplicates, {failed} need review.',
   'quick-import.action.open-full': 'Open full Trade Import',
-  'quick-import.action.review-in-trade-import': 'Review in Trade Import',
+  'quick-import.action.review-in-trade-import': 'Revisar en Trade Import',
   'quick-import.action.setup-in-trade-import': 'Set up in Trade Import',
   'quick-import.action.replace-file': 'Replace file',
   'quick-import.action.import': 'Import trades',
@@ -7073,6 +7246,21 @@ const es: Lang = {
   'trade-import.action.preview': 'Generate preview',
   'trade-import.preview.summary':
     '{previewCount} preview trades, {failedCount} failed rows, {incompleteCount} incomplete rows.',
+  'trade-import.preview.completed.message':
+    'Operaciones listas para importar: {count}.',
+  'trade-import.preview.partial.message':
+    'Operaciones listas: {count}. Filas que no se pudieron importar: {failed}. Filas incompletas omitidas: {incomplete}.',
+  'trade-import.preview.partial.guidance':
+    'Solo se importarán las operaciones válidas que se muestran a continuación.',
+
+  'trade-import.preview.failed.message':
+    'No se pudo preparar ninguna operación a partir de este archivo.',
+  'trade-import.preview.failed.guidance':
+    'Revisa las asignaciones de columnas, el formato de fecha, la hoja y la fila de encabezado seleccionadas, así como los valores no válidos que aparecen a continuación.',
+  'trade-import.preview.no-eligible':
+    'El archivo se procesó correctamente, pero no hay operaciones nuevas ni actualizadas que se puedan importar. Revisa los detalles sobre duplicados y clasificación que aparecen a continuación.',
+  'trade-import.preview.diagnostics': 'Detalles para revisar ({count})',
+  'trade-import.preview.affected-rows': 'Filas afectadas: {count}',
   'trade-import.table.status': 'Status',
   'trade-import.table.symbol': 'Symbol',
   'trade-import.table.direction': 'Direction',
@@ -7181,6 +7369,9 @@ const es: Lang = {
   'setups.guide.overview-chart.title': 'Ranking de rendimiento',
   'setups.guide.overview-chart.description':
     'El gráfico de resumen ordena los setups por la métrica elegida. Usa los controles de arriba a la derecha para cambiar la métrica o enfocar setups concretos.',
+  'setups.guide.tag-filter.title': 'Filtrar setups',
+  'setups.guide.tag-filter.description':
+    'Filtra las tarjetas, el gráfico, los pares y la comparación por etiquetas o dirección. Las selecciones dentro de cada grupo usan O, y etiquetas y dirección se combinan entre sí.',
   'setups.guide.setup-cards.title': 'Tarjetas de setup',
   'setups.guide.setup-cards.description':
     'Las tarjetas resumen cada setup con métricas clave, estado, última operación y una pequeña tendencia de rendimiento.',
@@ -7453,12 +7644,31 @@ const es: Lang = {
     'Restored {written} imported trades; {failed} failed.',
   'trade-import.restore.broker-label': 'Backend restore',
   'trade-sync.source.metatrader': 'MetaTrader',
+  'trade-sync.providers.title': 'Sincronización de operaciones',
+  'trade-sync.providers.description':
+    'Configura cada proveedor disponible por separado para que puedan funcionar juntos.',
   'trade-sync.source.trade-import': 'Trade Import',
+  'trade-sync.source.tradovate': 'Tradovate',
   'trade-sync.source.metatrader.description':
     'Sync trades from MetaTrader reports uploaded through your FTP connection.',
   'trade-sync.source.trade-import.description':
     'Restore broker-file imports across vaults and recover missing local trade notes.',
+  'trade-sync.source.tradovate.description':
+    'Synchronize Tradovate trades in the cloud and project them into this vault.',
+  'trade-sync.tradovate.status-failed': 'Unable to load Tradovate status.',
+  'trade-sync.tradovate.last-sync': 'Last sync',
+  'trade-sync.tradovate.last-projection': 'Last projection',
+  'trade-sync.tradovate.pending-projections': '{count} pending projection(s)',
+  'trade-sync.tradovate.pending-acks': '{count} ACK(s) locales pendientes',
+  'trade-sync.tradovate.never': 'Never',
+  'trade-sync.tradovate.manage': 'Manage on Journalit.co',
+  'trade-sync.tradovate.enabled': 'Enabled',
+  'trade-sync.tradovate.disabled': 'Disabled',
   'trade-sync.import.title': 'Trade Import Sync',
+  'trade-sync.import.section-title':
+    'Copia de seguridad y restauración de Trade Import',
+  'trade-sync.import.section-description':
+    'Mantén las operaciones importadas respaldadas en la nube y restaura las notas locales que falten.',
   'trade-sync.import.description':
     'Restore imported trades across vaults and recover missing local notes.',
   'trade-sync.import.card.connection': 'Connection',
@@ -7470,13 +7680,14 @@ const es: Lang = {
   'trade-sync.import.card.inventory-summary':
     '{accounts} account(s) · {trades} trade(s)',
   'trade-sync.import.action.check': 'Check',
+  'trade-sync.import.action.sync-cloud': 'Sync cloud trades',
   'trade-sync.import.action.open-import': 'Open Trade Import',
   'trade-sync.import.action.clear': 'Clear',
   'trade-sync.import.action.select-all': 'Select all',
   'trade-sync.import.action.restore-selected': 'Restore selected ({count})',
-  'trade-sync.import.action.create-local-account': 'Create local',
+  'trade-sync.import.action.create-local-account': 'Crear cuenta',
   'trade-sync.import.action.create-local-account-title':
-    'Create a local account in this vault using the backend account name.',
+    'Crea una cuenta de Journalit con el nombre de la cuenta del backend.',
   'trade-sync.import.action.save-mapping': 'Save',
   'trade-sync.import.action.save-mapping-title':
     'Save this backend account to local account mapping.',
@@ -7496,10 +7707,18 @@ const es: Lang = {
   'trade-sync.import.account.synced-count': '{count} synced',
   'trade-sync.import.account.missing-count': '{count} missing',
   'trade-sync.import.account.issue-count': '{count} issue(s)',
-  'trade-sync.import.account.local-account': 'Local account',
+  'notice.error.canonical-trade-type-change':
+    'Los trades sincronizados con el bróker no pueden cambiarse a otro tipo de trade.',
+  'trade-sync.import.account.conflict-repair':
+    'Se encontraron notas con canonicalTradeId duplicado. Conserva una nota y elimina canonicalTradeId de la duplicada o elimina esa nota. Cambiar el nombre del archivo no resuelve el conflicto.',
+  'trade-sync.import.account.local-account': 'Cuenta de Journalit',
   'trade-sync.import.account.mapping-hint':
-    'Restored trades will be written to this local account.',
+    'Las operaciones restauradas se guardarán en esta cuenta de Journalit.',
   'trade-sync.import.notice.restored': 'Restored {count} imported trade(s).',
+  'trade-sync.import.notice.sync-cloud-queued':
+    'Cloud synchronization queued. Refresh shortly to load new trades.',
+  'trade-sync.import.notice.sync-cloud-failed':
+    'Unable to start cloud synchronization.',
   'trade-sync.import.notice.load-failed':
     'Could not load Trade Import sync status.',
   'trade-sync.import.notice.mapping-failed':
@@ -7780,6 +7999,9 @@ const es: Lang = {
   'settings.session-mode.trade-gate.summary': '{count} nodos',
   'settings.session-mode.trade-gate.untitled': 'Flujo sin título',
   'settings.session-mode.trade-gate.start-node': 'Pregunta inicial',
+  'settings.session-mode.trade-gate.simulation.show': 'Simular',
+  'settings.session-mode.trade-gate.simulation.unavailable':
+    'Conecta la pregunta inicial con al menos un resultado completo antes de iniciar la simulación.',
   'settings.session-mode.trade-gate.add-question': 'Agregar pregunta',
   'settings.session-mode.trade-gate.add-branch-question': 'Agregar rama',
   'settings.session-mode.trade-gate.add-branch-from':
@@ -8112,6 +8334,7 @@ const es: Lang = {
   'imageGallery.source.label': 'Fuente:',
   'imageGallery.source.all': 'Todo el contenido multimedia',
   'imageGallery.source.trade': 'Trades',
+  'imageGallery.source.folder': 'Carpetas',
   'imageGallery.source.reviews': 'Revisiones',
   'imageGallery.source.drc': 'Revisiones diarias',
   'imageGallery.source.weekly': 'Revisiones semanales',
@@ -8134,6 +8357,17 @@ const es: Lang = {
   'imageGallery.annotation.error.save-failed':
     'No se pudo guardar la anotación del contenido multimedia.',
   'imageGallery.annotation.saving': 'Guardando...',
+  'settings.gallery-folders.section': 'Galería multimedia',
+  'settings.gallery-folders.description':
+    'Muestra medios de estas carpetas en la galería del registro de operaciones.',
+  'settings.gallery-folders.placeholder': 'Elige una carpeta...',
+  'settings.gallery-folders.add': 'Añadir',
+  'settings.gallery-folders.remove-aria':
+    'Eliminar la carpeta de galería {path}',
+  'settings.gallery-folders.not-a-folder':
+    'Selecciona una carpeta en lugar de un archivo multimedia.',
+  'settings.gallery-folders.save-failed':
+    'No se pudieron guardar las carpetas de la galería. Inténtalo de nuevo.',
   'tradelog.guide.switch-to-gallery.title': 'Cambia de trades a la Galería',
   'tradelog.guide.switch-to-gallery.description':
     'Usa este selector de modo para moverte entre el Registro de trades normal y la Galería. Haz clic en Galería para continuar el recorrido con tus imágenes, GIF, vídeos y enlaces de YouTube.',
@@ -8195,6 +8429,12 @@ const es: Lang = {
   'tradelog.guide.image-gallery-empty.finish.description':
     'Después de adjuntar contenido multimedia a trades o notas de revisión, Journalit mostrará la guía completa de la Galería con revisión en pantalla completa, etiquetas y notas.',
   'filter.modal.section.image-gallery': 'Galería',
+  'filter.modal.session-tags.placeholder': 'Etiquetas de sesión',
+  'filter.modal.session-tags.all': 'Todas las etiquetas de sesión',
+  'filter.modal.session-tags.n-selected': '{count} etiquetas de sesión',
+  'filter.modal.session-tags.select-all': 'Seleccionar todas',
+  'filter.modal.session-tags.none-found':
+    'No se encontraron etiquetas de sesión',
   'setups.view.fixture.rule.context-aligned': 'Fixture rule context aligned',
   'setups.view.fixture.rule.orb.range-defined': 'Rule orb range defined',
   'setups.view.fixture.rule.orb.volume-expansion': 'Rule orb volume expansion',
@@ -8205,6 +8445,44 @@ const es: Lang = {
   'setups.view.detail.brief.profile.model': 'Brief profile model',
   'setups.view.detail.brief.profile.category': 'Brief profile category',
   'setups.view.completeness.no-description': 'View completeness no description',
+  'setups.create.field.tags': 'Etiquetas',
+  'setups.create.placeholder.tags': 'Momentum, Ruptura, Mañana',
+  'setups.view.overview.tag-filter.aria': 'Filtrar setups',
+  'setups.view.overview.tag-filter.reset': 'Restablecer',
+  'setups.view.overview.tag-filter.untagged': 'Sin etiquetas',
+  'setups.view.overview.tag-filter.empty':
+    'Ningún setup coincide con estos filtros',
+  'setups.view.overview.tag-filter.empty-submessage':
+    'Ajusta o borra los filtros para mostrar más setups.',
+
+  'setups.view.tags': 'Etiquetas',
+  'setups.create.error.tag-save-failed':
+    'No se pudo guardar la etiqueta en la lista global de etiquetas.',
+  'settings.customization.options.confirm.remove-tag-message':
+    '¿Eliminar la etiqueta global "{option}"? Se eliminará de todas las notas de operaciones y setups de Journalit.',
+  'settings.customization.options.confirm.reset-tag-message':
+    '¿Restablecer la lista global de etiquetas y sus colores? Las etiquetas ya asignadas a notas de operaciones y setups permanecerán en esas notas.',
+  'home.mode.overview': 'Resumen',
+  'home.mode.dashboard': 'Panel',
+  'home.mode.aria': 'Cambiar modo de Inicio',
+  'home.filters.period': 'Período',
+  'home.filters.trade-type': 'Tipo de operación',
+  'home.filters.accounts': 'Cuentas',
+  'home.filters.back': 'Atrás',
+  'home.guide.modes.title': 'Una cosa más: el Panel',
+  'home.guide.modes.description':
+    'El Resumen y el Panel comparten esta página. Cambia al Panel ahora para continuar con un breve recorrido por tus estadísticas de rendimiento.',
+  'home.guide.whats-new.mode.title': 'Un Inicio, dos modos',
+  'home.guide.whats-new.mode.description':
+    'Resumen y Panel ahora comparten una página. Cambia de modo sin perder el diseño ni la posición de desplazamiento.',
+  'home.guide.whats-new.filters.title':
+    'Los filtros de Inicio están en un solo lugar',
+  'home.guide.whats-new.filters.description':
+    'Abre el botón de filtros para elegir Período, Tipo de operación o Cuentas en un menú compacto por niveles.',
+  'home.guide.whats-new.done.title':
+    'Tu espacio de trabajo mantiene el contexto',
+  'home.guide.whats-new.done.description':
+    'Usa Resumen para tus widgets personales y Panel para un análisis más profundo. Cada modo conserva sus propios filtros y diseño.',
 };
 
 export default es;

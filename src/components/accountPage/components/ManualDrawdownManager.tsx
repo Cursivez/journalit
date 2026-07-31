@@ -1,7 +1,7 @@
 
 
 import React, { useReducer, useState } from 'react';
-import { App, Modal, Notice } from 'obsidian';
+import { App, Notice } from 'obsidian';
 import { ManualDrawdownSnapshot } from '../../../services/account/types';
 import { Button } from '../../ui/Button';
 import {
@@ -12,6 +12,7 @@ import {
 import { formatPnL } from '../../../utils/formatting';
 import { FastDateTimeInput } from '../../core';
 import { t } from '../../../lang/helpers';
+import { showActionConfirmationModal } from '../../shared/ConfirmationModal';
 
 export const MANUAL_DRAWDOWN_MANAGER_STYLES = `
         .edit-account-form .manual-drawdown-manager .save-accent {
@@ -227,6 +228,67 @@ interface DrawdownSnapshotsTableProps {
   userDateFormat: string;
   onEdit: (index: number) => void;
   onDelete: (index: number) => void;
+}
+
+interface SnapshotDeletionConfirmationOptions {
+  app: App;
+  snapshotDate: Date;
+  drawdownLimit: number;
+}
+
+function showSnapshotDeletionConfirmation({
+  app,
+  snapshotDate,
+  drawdownLimit,
+}: SnapshotDeletionConfirmationOptions): Promise<boolean> {
+  const formattedDate = formatDateDisplay(snapshotDate, getUserDateFormat());
+
+  return showActionConfirmationModal(app, {
+    title: t('manual-drawdown.modal.delete-title'),
+    cancelValue: false,
+    destructive: true,
+    renderContent: (contentEl) => {
+      const container = contentEl.createDiv({
+        cls: 'journalit-confirmation-content',
+      });
+      const infoBox = container.createDiv({
+        cls: 'journalit-confirmation-content__info',
+      });
+      infoBox.createEl('p', {
+        text: t('manual-drawdown.modal.delete-confirm', {
+          date: formattedDate,
+        }),
+        cls: 'journalit-confirmation-modal__message',
+      });
+      infoBox.createEl('p', {
+        text: t('manual-drawdown.modal.delete-limit', {
+          limit: formatPnL(drawdownLimit),
+        }),
+        cls: 'journalit-confirmation-modal__message',
+      });
+
+      const warningBox = container.createDiv({
+        cls: 'journalit-confirmation-content__alert journalit-confirmation-content__alert--destructive',
+      });
+      warningBox.createEl('p', {
+        text: t('manual-drawdown.modal.delete-warning'),
+        cls: 'journalit-confirmation-modal__message',
+      });
+    },
+    actions: [
+      {
+        value: false,
+        label: t('button.cancel'),
+        variant: 'secondary',
+        initialFocus: true,
+      },
+      {
+        value: true,
+        label: t('manual-drawdown.button.delete'),
+        variant: 'destructive',
+      },
+    ],
+  });
 }
 
 const getSnapshotDateKey = (date: ManualDrawdownSnapshot['date']): string => {
@@ -532,22 +594,20 @@ export const ManualDrawdownManager = function ManualDrawdownManager({
     const snapshot = localSnapshots[index];
     const date =
       snapshot.date instanceof Date ? snapshot.date : new Date(snapshot.date);
-    const userDateFormat = getUserDateFormat();
-    const formattedDate = formatDateDisplay(date, userDateFormat);
 
-    
-    new DeleteSnapshotConfirmationModal(
+    void showSnapshotDeletionConfirmation({
       app,
-      formattedDate,
-      snapshot.drawdownLimit,
-      () => {
+      snapshotDate: date,
+      drawdownLimit: snapshot.drawdownLimit,
+    }).then((shouldDelete) => {
+      if (shouldDelete) {
         const newSnapshots = localSnapshots.filter((_, i) => i !== index);
         setLocalSnapshots(newSnapshots);
         onSave(newSnapshots); 
         if (editingIndex === index) resetForm();
         new Notice(t('manual-drawdown.notice.deleted'));
       }
-    ).open();
+    });
   };
 
   
@@ -721,77 +781,3 @@ export const ManualDrawdownManager = function ManualDrawdownManager({
     </div>
   );
 };
-
-
-class DeleteSnapshotConfirmationModal extends Modal {
-  constructor(
-    app: App,
-    private snapshotDate: string,
-    private drawdownLimit: number,
-    private onConfirm: () => void
-  ) {
-    super(app);
-    this.titleEl.setText(t('manual-drawdown.modal.delete-title'));
-  }
-
-  onOpen() {
-    const { contentEl } = this;
-    contentEl.empty();
-
-    const container = contentEl.createDiv({
-      cls: 'journalit-account-modal',
-    });
-
-    
-    const infoBox = container.createDiv({
-      cls: 'journalit-account-modal__info',
-    });
-
-    infoBox.createEl('p', {
-      text: t('manual-drawdown.modal.delete-confirm', {
-        date: this.snapshotDate,
-      }),
-      cls: 'journalit-account-modal__text journalit-account-modal__text--spaced',
-    });
-    infoBox.createEl('p', {
-      text: t('manual-drawdown.modal.delete-limit', {
-        limit: formatPnL(this.drawdownLimit),
-      }),
-      cls: 'journalit-account-modal__text journalit-account-modal__text--muted',
-    });
-
-    
-    const warningBox = container.createDiv({
-      cls: 'journalit-account-modal__warning journalit-account-modal__warning--danger journalit-account-modal__warning--spaced',
-    });
-    warningBox.createEl('p', {
-      text: t('manual-drawdown.modal.delete-warning'),
-      cls: 'journalit-account-modal__text journalit-account-modal__text--small',
-    });
-
-    
-    const buttons = container.createDiv({
-      cls: 'journalit-account-modal__actions',
-    });
-
-    const cancelBtn = buttons.createEl('button', {
-      text: t('button.cancel'),
-      cls: 'journalit-account-modal__button journalit-account-modal__button--secondary',
-    });
-    cancelBtn.addEventListener('click', () => this.close());
-
-    const deleteBtn = buttons.createEl('button', {
-      text: t('manual-drawdown.button.delete'),
-      cls: 'journalit-account-modal__button journalit-account-modal__button--danger',
-    });
-    deleteBtn.addEventListener('click', () => {
-      this.close();
-      this.onConfirm();
-    });
-  }
-
-  onClose() {
-    const { contentEl } = this;
-    contentEl.empty();
-  }
-}

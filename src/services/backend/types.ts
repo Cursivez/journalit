@@ -19,6 +19,10 @@ export interface LossReviewData {
     [sectionId: string]: {
       checkboxes?: { [key: string]: boolean };
       textAreas?: { [key: string]: string };
+      
+      label?: string;
+      
+      choiceOptionId?: string;
     };
   };
   reviewed: boolean;

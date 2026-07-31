@@ -5,6 +5,10 @@ import type {
   TradeTemplate,
   WidgetPlacement,
 } from '../../types/reviewV2';
+import {
+  isValidTradeReviewQuestionGraph,
+  TRADE_REVIEW_QUESTION_CONFIG_KEY_LIST,
+} from '../../components/reviewV2/widgets/tradeReviewConfig';
 import type { ReviewTemplateService } from './ReviewTemplateService';
 import type { TradeTemplateService } from './TradeTemplateService';
 
@@ -57,6 +61,20 @@ function parseWidgetPlacements(value: unknown): WidgetPlacement[] | null {
     });
   }
   return widgets;
+}
+
+function hasValidTradeReviewQuestionGraphs(
+  widgets: WidgetPlacement[]
+): boolean {
+  return widgets.every((widget) => {
+    if (widget.type !== 'trade-review' || !widget.config) return true;
+    return TRADE_REVIEW_QUESTION_CONFIG_KEY_LIST.every((key) => {
+      if (!Object.prototype.hasOwnProperty.call(widget.config, key)) {
+        return true;
+      }
+      return isValidTradeReviewQuestionGraph(widget.config?.[key]);
+    });
+  });
 }
 
 function isTradeTemplateSections(
@@ -233,6 +251,12 @@ export class TemplateSharingService {
         return {
           valid: false,
           error: 'Invalid template: missing or invalid widgets field',
+        };
+      }
+      if (!hasValidTradeReviewQuestionGraphs(reviewPayload.widgets)) {
+        return {
+          valid: false,
+          error: 'Invalid template: malformed Trade Review question graph',
         };
       }
     } else {

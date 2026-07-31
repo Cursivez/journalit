@@ -6,7 +6,9 @@ import {
   getMediaKind,
   resolveVaultMediaFile,
 } from '../../utils/imageMediaUtils';
-import { forceMetadataCacheRefresh } from '../../utils/dataRefresh';
+import { parseLocalDateSafe } from '../../utils/dateUtils';
+import { getTradingDayString } from '../../utils/tradingDayUtils';
+
 import {
   CustomFieldType,
   isDiscreteCustomFieldFilterable,
@@ -27,6 +29,7 @@ import {
   getString,
   getStringArray,
   getTradeDateValue,
+  hasAnnotationEntry,
   IMAGE_GALLERY_INDEX_TTL_MS,
   IMAGE_GALLERY_INDEX_VERSION,
   isRecord,
@@ -64,14 +67,26 @@ import {
   isMissingFileError,
   normalizePersistedImageGalleryIndex,
 } from './ImageGalleryPersistence';
+import { ImageGalleryAnnotationStore } from './ImageGalleryAnnotationStore';
+import { ImageGalleryFolderSource } from './ImageGalleryFolderSource';
+import {
+  clearPersistedImageGalleryIndex,
+  getImageGalleryIndexPath,
+} from './ImageGalleryIndexStorage';
+import { refreshMetadataWithRecovery } from './ImageGalleryMetadataRefresh';
 
 export class ImageGalleryService {
   private cachedItems: ImageGalleryItem[] | null = null;
   private pendingLoad: Promise<ImageGalleryItem[]> | null = null;
   private persistedIndexInvalidated = false;
   private loadGeneration = 0;
+  private annotations: ImageGalleryAnnotationStore;
+  private folderSource: ImageGalleryFolderSource;
 
-  constructor(private plugin: JournalitPlugin) {}
+  constructor(private plugin: JournalitPlugin) {
+    this.annotations = new ImageGalleryAnnotationStore(plugin);
+    this.folderSource = new ImageGalleryFolderSource(plugin, this.annotations);
+  }
 
   invalidate(): void {
     this.cachedItems = null;
@@ -82,11 +97,56 @@ export class ImageGalleryService {
   }
 
   async getItems(filters: TradeLogFilters): Promise<ImageGalleryItem[]> {
-    const allItems = await this.getAllItems();
+    return (await this.getItemsWithTotal(filters)).items;
+  }
 
-    return allItems.filter((item) =>
-      matchesImageGalleryTradeLogFilters(item, filters)
-    );
+  async getItemsWithTotal(filters: TradeLogFilters): Promise<{
+    items: ImageGalleryItem[];
+    totalItemCount: number;
+  }> {
+    const sessionLogMatchingDaysPromise =
+      filters.sessionLogTags.length > 0
+        ? this.getSessionLogMatchingDays(filters.sessionLogTags)
+        : Promise.resolve(null);
+    const [allItems, sessionLogMatchingDays] = await Promise.all([
+      this.getAllItems(),
+      sessionLogMatchingDaysPromise,
+    ]);
+
+    const items = allItems.filter((item) => {
+      let itemTradingDay: string | null = null;
+      if (sessionLogMatchingDays) {
+        const itemDate = parseLocalDateSafe(item.date);
+        if (itemDate) {
+          itemTradingDay = getTradingDayString(itemDate, this.plugin);
+        }
+      }
+
+      return matchesImageGalleryTradeLogFilters(item, filters, {
+        matchingDays: sessionLogMatchingDays,
+        itemTradingDay,
+      });
+    });
+    return { items, totalItemCount: allItems.length };
+  }
+
+  private async getSessionLogMatchingDays(
+    selectedSessionLogTags: string[]
+  ): Promise<ReadonlySet<string> | null> {
+    if (selectedSessionLogTags.length === 0) return null;
+
+    const selectedTagIds = new Set(selectedSessionLogTags);
+    const matchingDays = new Set<string>();
+    const drcService = await this.plugin.serviceManager.getDRCService();
+    for (const [dayId, tagIds] of drcService.getSessionLogTagIdsByDay()) {
+      for (const tagId of tagIds) {
+        if (selectedTagIds.has(tagId)) {
+          matchingDays.add(dayId);
+          break;
+        }
+      }
+    }
+    return matchingDays;
   }
 
   async getAllGalleryItems(): Promise<ImageGalleryItem[]> {
@@ -114,8 +174,24 @@ export class ImageGalleryService {
   async updateImageAnnotation(
     sourcePath: string,
     imagePath: string,
-    annotation: ImageGalleryAnnotation
+    annotation: ImageGalleryAnnotation,
+    sourceType?: ImageGallerySourceType
   ): Promise<void> {
+    if (sourceType === 'folder') {
+      const publishFolderAnnotationChanged = () => {
+        this.invalidate();
+        eventBus.publish('image-gallery:changed');
+      };
+      await this.annotations.runOwnedWrite(async () => {
+        await this.annotations.update(
+          imagePath,
+          annotation,
+          publishFolderAnnotationChanged
+        );
+        publishFolderAnnotationChanged();
+      });
+      return;
+    }
     const file = this.plugin.app.vault.getAbstractFileByPath(sourcePath);
     if (!(file instanceof TFile)) {
       throw new Error(`Source note not found: ${sourcePath}`);
@@ -123,7 +199,15 @@ export class ImageGalleryService {
 
     const normalizedImagePath = normalizeImagePath(imagePath);
     const persistedAnnotation = normalizeAnnotationForPersistence(annotation);
-    let sourceType: ImageGallerySourceType = 'trade';
+    const resolvedMediaFile = resolveVaultMediaFile(
+      this.plugin.app,
+      imagePath,
+      sourcePath
+    );
+    const hasCentralEntry =
+      !!resolvedMediaFile &&
+      this.annotations.hasEntryFor(resolvedMediaFile.path, false);
+    let resolvedSourceType: ImageGallerySourceType = 'trade';
     let tradeType: 'regular' | 'missed' | 'backtest' = 'regular';
 
     await this.plugin.app.fileManager.processFrontMatter(
@@ -132,7 +216,7 @@ export class ImageGalleryService {
         const record = isRecord(frontmatter) ? frontmatter : {};
         const noteType = getString(record.type);
         if (isReviewNoteType(noteType)) {
-          sourceType = REVIEW_TYPE_TO_SOURCE[noteType];
+          resolvedSourceType = REVIEW_TYPE_TO_SOURCE[noteType];
         } else if (noteType === 'backtest-trade') {
           tradeType = 'backtest';
         } else if (
@@ -147,7 +231,11 @@ export class ImageGalleryService {
           : {};
 
         if (isEmptyPersistedAnnotation(persistedAnnotation)) {
-          delete currentAnnotations[normalizedImagePath];
+          if (hasCentralEntry) {
+            currentAnnotations[normalizedImagePath] = {};
+          } else {
+            delete currentAnnotations[normalizedImagePath];
+          }
         } else {
           currentAnnotations[normalizedImagePath] = persistedAnnotation;
         }
@@ -160,19 +248,24 @@ export class ImageGalleryService {
       }
     );
 
-    await forceMetadataCacheRefresh(this.plugin.app, file);
-    this.invalidate();
-
-    if (sourceType === 'trade') {
-      publishTradeAnnotationChanged(sourcePath, tradeType);
-      return;
-    }
-
-    eventBus.publish('review:changed', {
-      action: 'updated',
-      type: SOURCE_TO_REVIEW_TYPE[sourceType] ?? 'drc',
-      filePath: sourcePath,
-    });
+    const publishNoteAnnotationChanged = () => {
+      this.invalidate();
+      if (resolvedSourceType === 'trade') {
+        publishTradeAnnotationChanged(sourcePath, tradeType);
+        return;
+      }
+      eventBus.publish('review:changed', {
+        action: 'updated',
+        type: SOURCE_TO_REVIEW_TYPE[resolvedSourceType] ?? 'drc',
+        filePath: sourcePath,
+      });
+    };
+    await refreshMetadataWithRecovery(
+      this.plugin.app,
+      file,
+      publishNoteAnnotationChanged
+    );
+    publishNoteAnnotationChanged();
   }
 
   private async getAllItems(): Promise<ImageGalleryItem[]> {
@@ -192,16 +285,49 @@ export class ImageGalleryService {
 
     const loadGeneration = this.loadGeneration;
     const loadStartedAt = Date.now();
-    const metadataFiles = this.getGalleryMetadataFiles();
+    const reviewFiles = this.getGalleryMetadataFiles();
+    const metadataFiles = this.getMetadataReadinessFiles(reviewFiles);
     const loadPromise = this.waitForMetadataReady(metadataFiles)
       .then((metadataComplete) =>
         Promise.all([
           this.getTradeItems(),
-          this.getReviewItems(metadataFiles),
-        ]).then(([tradeItems, reviewItems]) => ({
-          items: [...tradeItems, ...reviewItems],
-          metadataComplete,
-        }))
+          this.getReviewItems(reviewFiles),
+        ]).then(([tradeItems, reviewItems]) => {
+          const noteItems = [...tradeItems, ...reviewItems];
+          const resolvedNoteMediaPaths =
+            this.getResolvedNoteMediaPaths(noteItems);
+          const resolvedNoteMediaPathSet = new Set(
+            resolvedNoteMediaPaths.values()
+          );
+          const centralAnnotations = this.annotations.getAnnotationMap();
+          const mergedNoteItems = noteItems.map((item) => {
+            if (
+              item.hasOwnAnnotation ||
+              item.tags.length > 0 ||
+              item.notes?.trim()
+            ) {
+              return item;
+            }
+            const resolvedPath = resolvedNoteMediaPaths.get(item);
+            if (!resolvedPath) return item;
+            const annotation = getAnnotation(centralAnnotations, resolvedPath);
+            if (annotation.tags.length === 0 && !annotation.notes?.trim()) {
+              return item;
+            }
+            return {
+              ...item,
+              tags: annotation.tags,
+              notes: annotation.notes,
+            };
+          });
+          const folderItems = this.folderSource
+            .getItems()
+            .filter((item) => !resolvedNoteMediaPathSet.has(item.imagePath));
+          return {
+            items: [...mergedNoteItems, ...folderItems],
+            metadataComplete,
+          };
+        })
       )
       .then(({ items, metadataComplete }) => {
         if (
@@ -230,10 +356,12 @@ export class ImageGalleryService {
   }
 
   private getIndexPath(): string {
-    return `${getJournalitCachePath(this.plugin.app)}/image-gallery-index.json`;
+    return getImageGalleryIndexPath(this.plugin.app);
   }
 
-  private getSettingsFingerprint(): string {
+  private getSettingsFingerprint(
+    configuredRoots: readonly string[] = this.folderSource.getConfiguredRoots()
+  ): string {
     return JSON.stringify({
       trade: {
         breakEvenThresholdMode: String(
@@ -285,6 +413,7 @@ export class ImageGalleryService {
         currency: this.plugin.settings.general?.currency,
         journalFolderPath: this.plugin.settings.general?.journalFolderPath,
       },
+      galleryFolders: configuredRoots,
     });
   }
 
@@ -301,16 +430,32 @@ export class ImageGalleryService {
         JSON.parse(await this.plugin.app.vault.adapter.read(indexPath))
       );
       if (!index) return null;
-      if (index.settingsFingerprint !== this.getSettingsFingerprint()) {
+      const configuredRoots = this.folderSource.getConfiguredRoots();
+      if (
+        index.settingsFingerprint !==
+        this.getSettingsFingerprint(configuredRoots)
+      ) {
+        return null;
+      }
+      const currentAnnotationSignature = this.annotations.getNoteSignature();
+      if (
+        index.annotationNoteSignature.exists !==
+          currentAnnotationSignature.exists ||
+        index.annotationNoteSignature.mtime !==
+          currentAnnotationSignature.mtime ||
+        index.annotationNoteSignature.size !== currentAnnotationSignature.size
+      ) {
         return null;
       }
       if (Date.now() - index.timestamp > IMAGE_GALLERY_INDEX_TTL_MS) {
         return null;
       }
-      if (this.hasGallerySourceModifiedSince(index.timestamp)) {
+      if (
+        this.hasGallerySourceModifiedSince(index.timestamp, configuredRoots)
+      ) {
         return null;
       }
-      if (!this.arePersistedItemsResolvable(index.items)) {
+      if (!this.arePersistedItemsResolvable(index.items, configuredRoots)) {
         return null;
       }
 
@@ -325,22 +470,89 @@ export class ImageGalleryService {
     }
   }
 
-  private hasGallerySourceModifiedSince(timestamp: number): boolean {
-    return this.getGalleryMetadataFiles().some(
-      (file) => file.stat.mtime > timestamp
-    );
+  private hasGallerySourceModifiedSince(
+    timestamp: number,
+    configuredRoots: readonly string[]
+  ): boolean {
+    if (
+      this.getGalleryMetadataFiles().some((file) => file.stat.mtime > timestamp)
+    ) {
+      return true;
+    }
+    if (configuredRoots.length === 0) return false;
+    const matchesConfiguredPath =
+      this.folderSource.createPathMatcher(configuredRoots);
+    return this.plugin.app.vault
+      .getFiles()
+      .some(
+        (file) =>
+          matchesConfiguredPath(file.path) && file.stat.mtime > timestamp
+      );
   }
 
-  private arePersistedItemsResolvable(items: ImageGalleryItem[]): boolean {
+  private arePersistedItemsResolvable(
+    items: ImageGalleryItem[],
+    configuredRoots: readonly string[]
+  ): boolean {
+    const persistedFolderPaths = new Set<string>();
+    for (const item of items) {
+      if (item.sourceType === 'folder') {
+        persistedFolderPaths.add(item.imagePath);
+      }
+    }
+    if (configuredRoots.length === 0 && persistedFolderPaths.size > 0) {
+      return false;
+    }
+    const currentFolderPaths =
+      configuredRoots.length === 0
+        ? new Set<string>()
+        : this.folderSource.getCurrentMediaPaths(configuredRoots);
+    if (!currentFolderPaths) return false;
+    const resolvedNoteMediaPaths = this.getResolvedNoteMediaPaths(items);
+    for (const resolvedPath of resolvedNoteMediaPaths.values()) {
+      currentFolderPaths.delete(resolvedPath);
+    }
+    if (currentFolderPaths.size !== persistedFolderPaths.size) return false;
+    for (const currentPath of currentFolderPaths) {
+      if (!persistedFolderPaths.has(currentPath)) return false;
+    }
+    const matchesConfiguredPath =
+      this.folderSource.createPathMatcher(configuredRoots);
+
     return items.every((item) => {
       const sourceFile = this.plugin.app.vault.getAbstractFileByPath(
         item.sourcePath
       );
+      if (item.sourceType === 'folder') {
+        return (
+          sourceFile instanceof TFile &&
+          item.sourcePath === item.imagePath &&
+          item.mediaMtime === sourceFile.stat.mtime &&
+          matchesConfiguredPath(sourceFile.path) &&
+          getMediaKind(this.plugin.app, sourceFile.path) !== 'unknown'
+        );
+      }
       return (
         sourceFile instanceof TFile &&
         this.isResolvableMediaPath(item.imagePath, item.sourcePath)
       );
     });
+  }
+
+  private getResolvedNoteMediaPaths(
+    items: readonly ImageGalleryItem[]
+  ): Map<ImageGalleryItem, string> {
+    const paths = new Map<ImageGalleryItem, string>();
+    for (const item of items) {
+      if (item.sourceType === 'folder') continue;
+      const file = resolveVaultMediaFile(
+        this.plugin.app,
+        item.imagePath,
+        item.sourcePath
+      );
+      if (file) paths.set(item, file.path);
+    }
+    return paths;
   }
 
   private async savePersistedIndex(
@@ -364,6 +576,7 @@ export class ImageGalleryService {
         version: IMAGE_GALLERY_INDEX_VERSION,
         timestamp,
         settingsFingerprint: this.getSettingsFingerprint(),
+        annotationNoteSignature: this.annotations.getNoteSignature(),
         items,
       };
       await this.plugin.app.vault.adapter.write(
@@ -384,18 +597,7 @@ export class ImageGalleryService {
   }
 
   private async clearPersistedIndex(): Promise<void> {
-    try {
-      const indexPath = this.getIndexPath();
-      if (await this.plugin.app.vault.adapter.exists(indexPath)) {
-        await this.plugin.app.vault.adapter.remove(indexPath);
-      }
-    } catch (error) {
-      if (isMissingFileError(error)) return;
-      console.warn(
-        '[ImageGalleryService] Failed to clear persisted index:',
-        error
-      );
-    }
+    await clearPersistedImageGalleryIndex(this.plugin.app);
   }
 
   private getSourceCustomFields(trade: TradeRecord): Record<string, string[]> {
@@ -531,6 +733,7 @@ export class ImageGalleryService {
             mistakes,
             tags: annotation.tags,
             notes: annotation.notes,
+            hasOwnAnnotation: hasAnnotationEntry(annotationSource, imagePath),
             sourceCustomFields,
             outcome: showTradePnl
               ? classifyOutcome(variant.pnl, this.plugin, breakEvenBalance)
@@ -581,10 +784,29 @@ export class ImageGalleryService {
     const files = this.plugin.app.vault.getMarkdownFiles();
     const folderPathService =
       this.plugin.serviceManager?.getFolderPathService();
-
     return folderPathService
       ? files.filter((file) => folderPathService.isJournalPath(file.path))
       : files;
+  }
+
+  private getMetadataReadinessFiles(reviewFiles: TFile[]): TFile[] {
+    const result: TFile[] = [];
+    const seen = new Set<string>();
+    for (const file of reviewFiles) {
+      seen.add(file.path);
+      result.push(file);
+    }
+    const configuredRoots = this.folderSource.getConfiguredRoots();
+    if (configuredRoots.length === 0) return result;
+    const matchesConfiguredPath =
+      this.folderSource.createPathMatcher(configuredRoots);
+    for (const file of this.plugin.app.vault.getMarkdownFiles()) {
+      if (!matchesConfiguredPath(file.path)) continue;
+      if (seen.has(file.path)) continue;
+      seen.add(file.path);
+      result.push(file);
+    }
+    return result;
   }
 
   private async getReviewItems(files: TFile[]): Promise<ImageGalleryItem[]> {
@@ -647,6 +869,7 @@ export class ImageGalleryService {
         mistakes: [],
         tags: annotation.tags,
         notes: annotation.notes,
+        hasOwnAnnotation: hasAnnotationEntry(annotations, normalizedImagePath),
         sourceCustomFields: {},
         outcome: 'unknown',
         reviewed,

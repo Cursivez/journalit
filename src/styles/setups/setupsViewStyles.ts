@@ -39,7 +39,7 @@ export const SETUPS_VIEW_STYLES = `
   font-weight: 700;
 }
 
-.journalit-setups-view__title--sr {
+.journalit-setups-view__sr-only {
   position: absolute;
   width: 1px;
   height: 1px;
@@ -63,6 +63,24 @@ export const SETUPS_VIEW_STYLES = `
   flex-wrap: wrap;
   justify-content: flex-end;
   align-items: center;
+}
+
+.journalit-setups-tag-filter-target {
+  display: inline-flex;
+}
+
+.journalit-setups-filter-button-container .journalit-setups-filter-button {
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border-color: var(--background-modifier-border);
+  color: var(--text-muted);
+}
+
+.journalit-setups-filter-button-container .journalit-setups-filter-button:hover,
+.journalit-setups-filter-button-container .journalit-setups-filter-button:focus-visible {
+  border-color: var(--background-modifier-border-hover, var(--background-modifier-border));
+  color: var(--text-normal);
 }
 
 .journalit-setups-view__tabs {
@@ -385,6 +403,10 @@ export const SETUPS_VIEW_STYLES = `
   flex: 0 0 auto;
 }
 
+.journalit-create-setup-tags-field {
+  margin: 4px 0 2px;
+}
+
 .journalit-create-setup-profile {
   display: flex;
   flex-direction: column;
@@ -411,7 +433,7 @@ export const SETUPS_VIEW_STYLES = `
   gap: 8px;
 }
 
-.journalit-create-setup-profile__grid > .journalit-combobox {
+.journalit-create-setup-combobox-fields > .journalit-combobox {
   display: grid;
   grid-template-columns: 170px minmax(0, 1fr);
   gap: 10px;
@@ -420,7 +442,7 @@ export const SETUPS_VIEW_STYLES = `
   margin-bottom: 0;
 }
 
-.journalit-create-setup-profile__grid > .journalit-combobox > label {
+.journalit-create-setup-combobox-fields > .journalit-combobox > label {
   display: inline-flex;
   min-height: 34px;
   align-items: center;
@@ -435,7 +457,7 @@ export const SETUPS_VIEW_STYLES = `
   cursor: help;
 }
 
-.journalit-create-setup-profile .journalit-combobox[data-selected-items-placement='inside-input'] .input-container {
+.journalit-create-setup-combobox-fields .journalit-combobox[data-selected-items-placement='inside-input'] .input-container {
   display: flex;
   min-height: 34px;
   flex-wrap: wrap;
@@ -447,20 +469,20 @@ export const SETUPS_VIEW_STYLES = `
   background: var(--background-primary);
 }
 
-.journalit-create-setup-profile .journalit-combobox[data-selected-items-placement='inside-input'] .journalit-combobox-selected-items {
+.journalit-create-setup-combobox-fields .journalit-combobox[data-selected-items-placement='inside-input'] .journalit-combobox-selected-items {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: 3px;
 }
 
-.journalit-create-setup-profile .journalit-combobox[data-selected-items-placement='inside-input'] .selected-item {
+.journalit-create-setup-combobox-fields .journalit-combobox[data-selected-items-placement='inside-input'] .selected-item {
   margin: 0;
   padding: 2px 6px;
   font-size: 11px;
 }
 
-.journalit-create-setup-profile .journalit-combobox[data-selected-items-placement='inside-input'] .combobox-input {
+.journalit-create-setup-combobox-fields .journalit-combobox[data-selected-items-placement='inside-input'] .combobox-input {
   width: auto;
   min-width: 72px;
   height: 26px;
@@ -470,7 +492,7 @@ export const SETUPS_VIEW_STYLES = `
   background: transparent;
 }
 
-.journalit-create-setup-profile .journalit-combobox[data-selected-items-placement='inside-input'] .combobox-input:focus {
+.journalit-create-setup-combobox-fields .journalit-combobox[data-selected-items-placement='inside-input'] .combobox-input:focus {
   box-shadow: none;
 }
 
@@ -1688,6 +1710,67 @@ button.journalit-toolbar-button.journalit-setups-performance-widget__setup-trigg
   align-items: flex-start;
 }
 
+.journalit-setup-card__header-meta {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 8px;
+}
+
+.journalit-setup-card__tag-indicator {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  color: var(--text-accent);
+  cursor: help;
+}
+
+.journalit-setup-card__tag-count {
+  position: absolute;
+  top: -3px;
+  right: -4px;
+  display: grid;
+  min-width: 13px;
+  height: 13px;
+  place-items: center;
+  padding: 0 3px;
+  border-radius: 999px;
+  background: var(--interactive-accent);
+  color: var(--text-on-accent);
+  font-size: 8px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.journalit-setup-tags-tooltip__title {
+  margin-bottom: 4px;
+  color: var(--text-normal);
+  font-weight: 650;
+}
+
+.journalit-setup-tags-tooltip__list {
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+.journalit-setup-tags-tooltip__item {
+  color: var(--text-muted);
+}
+
+.journalit-setup-tags-tooltip__separator {
+  color: var(--text-faint);
+}
+
+.journalit-tooltip.journalit-setup-tags-tooltip-popover {
+  width: fit-content;
+  min-width: 0;
+  max-width: min(340px, calc(100vw - 32px));
+  padding: 6px 8px;
+}
+
 .journalit-setups-detail-header {
   display: grid;
   grid-template-columns: minmax(120px, 1fr) minmax(0, auto) minmax(120px, 1fr);
@@ -1713,6 +1796,7 @@ button.journalit-toolbar-button.journalit-setups-performance-widget__setup-trigg
 }
 
 .journalit-setups-detail-header__identity .journalit-setups-view__title {
+  min-width: 0;
   max-width: min(620px, 52vw);
   overflow: hidden;
   text-overflow: ellipsis;
@@ -1724,6 +1808,26 @@ button.journalit-toolbar-button.journalit-setups-performance-widget__setup-trigg
 
 .journalit-setups-detail-header__identity .journalit-setups-badges {
   justify-content: center;
+}
+
+.journalit-setup-tag-summary,
+.journalit-setup-tag-summary__trigger,
+.journalit-setup-tag-summary__indicator {
+  display: inline-flex;
+  min-width: 0;
+  align-items: center;
+}
+
+.journalit-setup-tag-summary__trigger {
+  cursor: help;
+}
+
+.journalit-setup-tag-summary__indicator {
+  gap: 4px;
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1;
 }
 
 .journalit-setups-detail-header__actions {
@@ -1833,6 +1937,41 @@ button.journalit-toolbar-button.journalit-setups-performance-widget__setup-trigg
   box-shadow: none;
   text-align: left;
   cursor: pointer;
+}
+
+.workspace-leaf-content.journalit-setups-view-container
+  .journalit-setup-card
+  > button.journalit-setup-card__activation {
+  position: absolute;
+  z-index: 1;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  appearance: none;
+  padding: 0;
+  border: 0;
+  border-radius: inherit;
+  background: transparent;
+  box-shadow: none;
+  color: inherit;
+  cursor: inherit;
+}
+
+.journalit-setup-card > :not(.journalit-setup-card__activation) {
+  position: relative;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.journalit-setup-card
+  .journalit-setup-card__identity
+  .journalit-setup-card__tag-tooltip-trigger {
+  pointer-events: auto;
+}
+
+.journalit-setup-card__activation:focus-visible {
+  outline: 2px solid var(--interactive-accent);
+  outline-offset: -2px;
 }
 
 .theme-light .journalit-setup-card {
@@ -1950,10 +2089,21 @@ button.journalit-toolbar-button.journalit-setups-performance-widget__setup-trigg
 }
 
 .journalit-setup-card__identity {
+  display: flex;
+  flex: 1 1 auto;
   min-width: 0;
+  align-items: center;
+  gap: 6px;
+}
+
+.journalit-setup-card__identity .journalit-setup-card__tag-tooltip-trigger {
+  position: relative;
+  z-index: 3;
+  flex: 0 0 auto;
 }
 
 .journalit-setup-card__title {
+  min-width: 0;
   margin: 0;
   overflow: hidden;
   color: var(--text-normal);
@@ -2869,31 +3019,6 @@ button.journalit-toolbar-button.journalit-setups-performance-widget__setup-trigg
 
 .journalit-create-setup-modal .journalit-delete-setup-button {
   margin-right: auto;
-}
-
-.journalit-setup-delete-confirmation-modal__warning {
-  margin: 0;
-  padding: 12px;
-  border: 1px solid var(--background-modifier-error);
-  border-radius: var(--radius-s);
-  background: color-mix(
-    in srgb,
-    var(--background-modifier-error) 12%,
-    transparent
-  );
-  color: var(--text-normal);
-}
-
-.journalit-setup-delete-confirmation-modal__actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 8px;
-  margin-top: 18px;
-}
-
-.journalit-setup-delete-confirmation-modal__cancel,
-.journalit-setup-delete-confirmation-modal__delete {
-  cursor: pointer;
 }
 
 .journalit-setups-rules-editor__empty {
@@ -4762,7 +4887,7 @@ button.journalit-toolbar-button.journalit-setups-detail-performance__chart-mode-
     grid-template-columns: 1fr;
   }
 
-  .journalit-create-setup-profile__grid > .journalit-combobox {
+  .journalit-create-setup-combobox-fields > .journalit-combobox {
     grid-template-columns: 1fr;
     gap: 4px;
   }
@@ -4957,4 +5082,19 @@ button.journalit-toolbar-button.journalit-setups-detail-performance__chart-mode-
 .journalit-setups-view .journalit-setups-pairs-evidence__metric-value--neutral .journalit-display-value {
   color: var(--text-normal) !important;
 }
+
+@media (max-width: 560px) {
+  .journalit-setups-view__actions {
+    position: relative;
+    width: 100%;
+  }
+}
+
+@container (max-width: 560px) {
+  .journalit-setups-view__actions {
+    position: relative;
+    width: 100%;
+  }
+}
+
 `;

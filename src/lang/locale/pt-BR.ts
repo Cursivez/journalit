@@ -2,6 +2,11 @@
 import type { Lang } from './en';
 
 const ptBR: Partial<Lang> = {
+  'trade.broker-synced-at': 'Corretora sincronizada {date}',
+  'home.period.month': 'Mês',
+  'home.period.quarter': 'Trimestre',
+  'home.period.year': 'Ano',
+  'home.period.lifetime': 'Todo o período',
   
   
   
@@ -19,8 +24,8 @@ const ptBR: Partial<Lang> = {
   'command.create-yearly-review': 'Abrir Revisão Anual',
 
   
-  'command.open-dashboard': 'Abrir Painel de Trading',
-  'command.open-account-dashboard': 'Abrir Painel da Conta',
+  'command.open-dashboard': 'Abrir painel',
+  'command.open-account-dashboard': 'Abrir contas',
   'command.open-trade-log': 'Abrir Registro de Operações',
   'command.open-home': 'Abrir Página Inicial',
   'command.open-position-size-calculator':
@@ -48,7 +53,7 @@ const ptBR: Partial<Lang> = {
     'Designed to adapt to your workflow, not force you into ours.',
   'onboarding.explore.tagline': 'Your journal, your rules.',
   'onboarding.explore.section.out-of-box.title': 'Core views & tools',
-  'onboarding.explore.core.dashboard.label': 'Trading Dashboard',
+  'onboarding.explore.core.dashboard.label': 'Painel',
   'onboarding.explore.core.dashboard.description':
     'Your performance at a glance — P&L, win rate, drawdowns, and more.',
   'onboarding.explore.core.tradelog.label': 'Trade Log',
@@ -66,9 +71,9 @@ const ptBR: Partial<Lang> = {
   'onboarding.explore.imports.csv.label': 'Trade Import',
   'onboarding.explore.imports.csv.description':
     'Upload CSV, spreadsheet, HTML, and broker statement exports for backend-powered analysis and preview.',
-  'onboarding.explore.imports.mt.label': 'MetaTrader Sync (MT4/MT5)',
-  'onboarding.explore.imports.mt.description':
-    'Automatic trade syncing from MetaTrader. Requires Pro.',
+  'onboarding.explore.imports.trade-sync.label': 'Trade Sync',
+  'onboarding.explore.imports.trade-sync.description':
+    'Automatic trade syncing from MetaTrader (MT4) or Tradovate. Requires Pro.',
   'onboarding.explore.cta.open': 'Open',
   'onboarding.explore.cta.manual': 'Open Docs',
 
@@ -87,9 +92,9 @@ const ptBR: Partial<Lang> = {
   'onboarding.path.option.csv.label': 'Trade Import',
   'onboarding.path.option.csv.description':
     'Use Pro backend-powered analysis for broker export files.',
-  'onboarding.path.option.mt.label': 'MetaTrader Sync (MT4/MT5)',
-  'onboarding.path.option.mt.description':
-    'Connect MT4/MT5 for automatic trade syncing.',
+  'onboarding.path.option.trade-sync.label': 'Trade Sync',
+  'onboarding.path.option.trade-sync.description':
+    'Connect MetaTrader (MT4) or Tradovate for automatic trade syncing.',
 
   
   
@@ -106,14 +111,14 @@ const ptBR: Partial<Lang> = {
   'onboarding.final.csv.subtitle':
     'Next, open Trade Import. Uploading and processing broker exports requires PRO activation.',
   'onboarding.final.csv.cta.open': 'Open Trade Import',
-  'onboarding.final.mt.title': "You're ready to connect MetaTrader",
-  'onboarding.final.mt.subtitle':
-    'Next, set up MT4/MT5 sync. Requires PRO activation.',
-  'onboarding.final.mt.cta.open': 'Open MetaTrader Setup',
-  'onboarding.final.mt.hero.source.title': 'MetaTrader',
-  'onboarding.final.mt.hero.source.subtitle': 'Trade reports',
-  'onboarding.final.mt.hero.dest.title': 'Vault',
-  'onboarding.final.mt.hero.dest.subtitle': 'Trade notes',
+  'onboarding.final.trade-sync.title': "You're ready to set up Trade Sync",
+  'onboarding.final.trade-sync.subtitle':
+    'Next, set up MetaTrader (MT4) or Tradovate sync.',
+  'onboarding.final.trade-sync.cta.open': 'Open Trade Sync Setup',
+  'onboarding.final.trade-sync.hero.source.title': 'MetaTrader + Tradovate',
+  'onboarding.final.trade-sync.hero.source.subtitle': 'Broker trades',
+  'onboarding.final.trade-sync.hero.dest.title': 'Vault',
+  'onboarding.final.trade-sync.hero.dest.subtitle': 'Trade notes',
   'onboarding.final.finish': 'Finish',
   'command.open-release-notes': 'Ver notas de versão',
 
@@ -191,6 +196,10 @@ const ptBR: Partial<Lang> = {
   'form.layout.item.realized-pnl-preview': 'Resumo de P&L de saída parcial',
   'form.layout.item.realized-pnl-preview-desc':
     'Só aparece em trades abertos após saídas parciais; a posição é fixa.',
+  'form.layout.item.trade-currency': 'Moeda da operação / Taxa de câmbio',
+  'form.layout.item.trade-currency-desc':
+    'Registre uma operação em outra moeda com uma taxa de câmbio manual opcional.',
+  'form.layout.manual-fx-rate': 'Taxa de câmbio manual',
   'form.layout.result-r': 'Resultado em R',
   'form.layout.entry-time': 'Hora do trade',
 
@@ -257,6 +266,8 @@ const ptBR: Partial<Lang> = {
   'form.field.custom-lot-size': 'Tamanho de Lote Personalizado',
   'form.field.pip-value': 'Valor do Pip',
   'form.field.leverage-ratio': 'Taxa de Alavancagem',
+  'form.field.trade-currency': 'Moeda da operação',
+  'form.field.fx-rate': 'Taxa de câmbio para {base}',
 
   
   'form.field.lot-size.standard': 'Padrão (100.000)',
@@ -277,6 +288,7 @@ const ptBR: Partial<Lang> = {
   'form.placeholder.target-price': 'Target price',
   'form.placeholder.close-percent': '50%',
   'form.placeholder.risk-amount': 'Risco planejado em moeda',
+  'form.placeholder.fx-rate': '1 {currency} = ? {base} (vazio: taxa diária)',
   'form.placeholder.custom-tag': 'Digite uma tag e pressione Enter',
   'form.placeholder.thesis': 'Digite sua tese para esta operação...',
   'form.placeholder.pnl': 'Digite o lucro ou prejuízo total',
@@ -498,7 +510,7 @@ const ptBR: Partial<Lang> = {
   'dashboard.guide.empty.state.title': 'Start by adding your first trade',
   'dashboard.guide.empty.state.description':
     'You do not have any trades yet. Add a trade manually or import data, then come back to unlock the full Dashboard tour.',
-  'dashboard.guide.main.intro.title': 'This is your trading dashboard',
+  'dashboard.guide.main.intro.title': 'Este é o seu painel',
   'dashboard.guide.main.intro.description':
     'Use this page to track your performance, review your stats, and keep your most useful charts in one place.',
   'dashboard.guide.main.filters.title': 'Filters change the whole Dashboard',
@@ -526,7 +538,7 @@ const ptBR: Partial<Lang> = {
     'Save your layout when you are done',
   'dashboard.guide.main.save-layout.description':
     'When you finish customising, click Save Layout to keep your changes. You can come back and edit this page again anytime.',
-  'home.guide.intro.title': 'Welcome to Home',
+  'home.guide.intro.title': 'Bem-vindo de volta',
   'home.guide.intro.description':
     'This is your main page. It shows your trading stats, quick actions, and shortcuts to the rest of Journalit.',
   'home.guide.filters.title': 'These buttons change what your widgets show',
@@ -769,7 +781,7 @@ const ptBR: Partial<Lang> = {
   'view.home': 'Início',
   'view.dashboard': 'Painel',
   'view.trade-log': 'Registro de Operações',
-  'view.account-dashboard': 'Painel da Conta',
+  'view.account-dashboard': 'Contas',
   'view.layout-builder': 'Construtor de Layout',
   'view.csv-import': 'Trade Import',
 
@@ -845,7 +857,7 @@ const ptBR: Partial<Lang> = {
   
   
   
-  'settings.title': 'Configurações do Journalit',
+
   'settings.language': 'Idioma',
   'settings.language-desc': 'Selecione o idioma de exibição do plugin',
 
@@ -881,6 +893,19 @@ const ptBR: Partial<Lang> = {
     'Design your review templates your way.',
   'home.widget.getting-started.item.layouts.time': '1 min',
   'home.widget.getting-started.item.layouts.cta': 'Open Layout Builder',
+  'home.widget.getting-started.item.sidebar.title':
+    'Abrir a barra lateral de navegação',
+  'home.widget.getting-started.item.sidebar.description':
+    'Acesse rapidamente páginas, revisões, ferramentas e a busca do Journalit.',
+  'home.widget.getting-started.item.sidebar.time': '10 s',
+  'home.widget.getting-started.item.sidebar.cta': 'Abrir barra lateral',
+  'home.quick-links.navigation-sidebar': 'Barra lateral de navegação',
+  'notice.error.open-navigation-sidebar':
+    'Não foi possível abrir a barra lateral de navegação. Tente novamente.',
+  'navigation.setting.open': 'Abrir a barra lateral de navegação',
+  'navigation.setting.open.desc':
+    'Mostre-a agora e expanda a barra lateral do Obsidian se estiver recolhida.',
+  'navigation.setting.open.button': 'Abrir barra lateral',
   'home.widget.getting-started.item.pro.title': 'Activate PRO',
   'home.widget.getting-started.item.pro.description':
     'Enable Trade Import, MetaTrader sync, and AI mapping.',
@@ -1077,8 +1102,6 @@ const ptBR: Partial<Lang> = {
 
   'guide.skip-guide': 'Skip Guide',
   'settings.general.data-management': 'Gerenciamento de Dados & Privacidade',
-
-  'settings.general.display-privacy-section': 'Exibição & Privacidade',
 
   'settings.general.privacy-mode': 'Modo de Privacidade',
 
@@ -1388,6 +1411,9 @@ const ptBR: Partial<Lang> = {
   'setups.guide.overview-chart.title': 'Ranking de performance',
   'setups.guide.overview-chart.description':
     'O gráfico classifica setups pela métrica escolhida. Use os controles no canto superior direito para trocar a métrica ou focar setups específicos.',
+  'setups.guide.tag-filter.title': 'Filtrar setups',
+  'setups.guide.tag-filter.description':
+    'Filtre cartões, gráfico, pares e opções de comparação por tags ou direção. As seleções dentro de cada grupo usam OU; tags e direção são combinadas entre si.',
   'setups.guide.setup-cards.title': 'Cartões de setup',
   'setups.guide.setup-cards.description':
     'Os cartões resumem cada setup com métricas principais, status, último trade e tendência de performance.',
@@ -1698,6 +1724,75 @@ const ptBR: Partial<Lang> = {
     'Agora você conhece os dois modos do Trade Log',
   'tradelog.guide.gallery-finish.description':
     'Use Trades quando precisar da tabela e das ferramentas em lote. Use a Galeria quando quiser revisar imagens, GIFs, vídeos, links do YouTube e anotações em todo o diário.',
+  'trade.validation.fx-rate-number':
+    'A taxa de câmbio deve ser um número válido.',
+  'trade.validation.fx-rate-positive':
+    'A taxa de câmbio deve ser maior que zero.',
+  'dashboard.conversion.using-manual-rate':
+    'Usando taxa de câmbio manual para {count} {tradeLabel}',
+  'dashboard.conversion.partial-warning':
+    '⚠ Custos/risco em {currencies} não puderam ser convertidos e foram excluídos',
+  'trade-sync.providers.title': 'Sincronização de trades',
+  'trade-sync.providers.description':
+    'Configure cada provedor disponível separadamente para que funcionem juntos.',
+  'trade-sync.tradovate.pending-acks': '{count} ACK(s) locais pendentes',
+  'trade-sync.import.section-title': 'Backup e restauração do Trade Import',
+  'trade-sync.import.section-description':
+    'Mantenha os trades importados em backup na nuvem e restaure notas locais ausentes.',
+  'notice.error.canonical-trade-type-change':
+    'Trades sincronizados com a corretora não podem ser alterados para outro tipo de trade.',
+  'trade-sync.import.account.conflict-repair':
+    'Foram encontradas notas com canonicalTradeId duplicado. Mantenha uma nota e remova canonicalTradeId da duplicada ou exclua essa nota. Renomear o arquivo não corrige o conflito.',
+  'setups.create.field.tags': 'Tags',
+  'setups.create.placeholder.tags': 'Momentum, Rompimento, Manhã',
+  'setups.view.overview.tag-filter.aria': 'Filtrar setups',
+  'setups.view.overview.tag-filter.reset': 'Redefinir',
+  'setups.view.overview.tag-filter.untagged': 'Sem tags',
+  'setups.view.overview.tag-filter.empty':
+    'Nenhum setup corresponde a estes filtros',
+  'setups.view.overview.tag-filter.empty-submessage':
+    'Ajuste ou limpe os filtros para mostrar mais setups.',
+
+  'setups.view.tags': 'Tags',
+  'setups.create.error.tag-save-failed':
+    'Não foi possível salvar a tag na lista global de tags.',
+  'settings.customization.options.confirm.remove-tag-message':
+    'Excluir a tag global “{option}”? Ela será removida de todas as notas de trades e setups do Journalit.',
+  'settings.customization.options.confirm.reset-tag-message':
+    'Redefinir a lista global de tags e suas cores para os padrões? As tags já atribuídas às notas de trades e setups permanecerão nessas notas.',
+  'home.mode.overview': 'Visão geral',
+  'home.mode.dashboard': 'Painel',
+  'home.mode.aria': 'Alternar modo da Página inicial',
+  'home.filters.period': 'Período',
+  'home.filters.trade-type': 'Tipo de operação',
+  'home.filters.accounts': 'Contas',
+  'home.filters.back': 'Voltar',
+  'home.guide.modes.title': 'Mais uma coisa: o Painel',
+  'home.guide.modes.description':
+    'A Visão geral e o Painel compartilham esta página. Mude para o Painel agora para continuar com um breve tour pelas suas estatísticas de desempenho.',
+  'home.guide.whats-new.mode.title': 'Uma Página inicial, dois modos',
+  'home.guide.whats-new.mode.description':
+    'Visão geral e Painel agora compartilham uma página. Alterne sem perder o layout nem a posição de rolagem.',
+  'home.guide.whats-new.filters.title':
+    'Filtros da Página inicial em um só lugar',
+  'home.guide.whats-new.filters.description':
+    'Abra o botão de filtro para escolher Período, Tipo de operação ou Contas em um menu compacto em camadas.',
+  'home.guide.whats-new.done.title': 'Seu espaço de trabalho mantém o contexto',
+  'home.guide.whats-new.done.description':
+    'Use Visão geral para widgets pessoais e Painel para análises mais profundas. Cada modo mantém seus próprios filtros e layout.',
+
+  'account-dashboard.title': 'Contas',
+  'home.quick-links.trading-dashboard': 'Painel',
+  'home.quick-links.account-dashboard': 'Contas',
+  'navigation.items.nav-dashboard': 'Painel',
+  'navigation.items.nav-account-dashboard': 'Contas',
+
+  'settings.general.home-background-dashboard':
+    'Mostrar fundo também no Dashboard',
+  'settings.general.home-background-dashboard-desc':
+    'Usa a mesma imagem de fundo no modo Dashboard.',
+  'settings.general.home-background-dashboard-aria':
+    'Mostrar o fundo da Página inicial no Dashboard',
 };
 
 export default ptBR;

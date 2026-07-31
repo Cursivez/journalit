@@ -5,20 +5,20 @@ export const folderBrowserCSS = `
 
 
 
-.folder-browser-container {
+.journalit-folder-browser-container {
   position: relative;
   width: 100%;
   margin-bottom: 8px;
 }
 
 
-.folder-browser-container .input-container {
+.journalit-folder-browser-container .input-container {
   position: relative;
   width: 100%;
 }
 
 
-.folder-browser-container .input-container::after {
+.journalit-folder-browser-container .input-container::after {
   content: "";
   position: absolute;
   right: 12px;
@@ -35,12 +35,12 @@ export const folderBrowserCSS = `
 }
 
 
-[data-is-open="true"] .folder-browser-container .input-container::after {
+[data-is-open="true"] .journalit-folder-browser-container .input-container::after {
   transform: translateY(-50%) rotate(180deg);
 }
 
 
-.folder-browser-input {
+.journalit-folder-browser-input {
   position: relative;
   z-index: 1;
   width: 100%;
@@ -55,14 +55,14 @@ export const folderBrowserCSS = `
 }
 
 
-.folder-browser-input:focus {
+.journalit-folder-browser-input:focus {
   border-color: var(--interactive-accent, #5183e4);
   box-shadow: 0 0 0 2px rgba(83, 141, 226, 0.3);
   outline: none;
 }
 
 
-.folder-browser-dropdown {
+.journalit-folder-browser-dropdown {
   position: absolute;
   top: 100%;
   left: 0;
@@ -75,27 +75,26 @@ export const folderBrowserCSS = `
   border-radius: 0 0 4px 4px;
   max-height: 200px;
   overflow-y: auto;
+  margin: 0;
+  padding: 0;
+  list-style: none;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
-  transition: opacity 0.15s ease, transform 0.15s ease;
-  transform-origin: top center;
-  will-change: transform, opacity;
-  animation: folder-browser-dropdown-open 0.15s ease forwards;
+  transition: opacity 0.15s ease;
+  animation: journalit-folder-browser-dropdown-open 0.15s ease forwards;
 }
 
-@keyframes folder-browser-dropdown-open {
+@keyframes journalit-folder-browser-dropdown-open {
   from {
     opacity: 0;
-    transform: translateY(-5px);
   }
   to {
     opacity: 1;
-    transform: translateY(0);
   }
 }
 
 
-.folder-browser-item {
-  padding: 8px 12px;
+.journalit-folder-browser-item {
+  padding: 7px 12px;
   cursor: pointer;
   margin: 0;
   background-color: var(--background-primary, #fff);
@@ -108,30 +107,30 @@ export const folderBrowserCSS = `
   align-items: center;
 }
 
-.folder-browser-item.highlighted,
-.folder-browser-item:hover {
+.journalit-folder-browser-item.highlighted,
+.journalit-folder-browser-item:hover {
   background-color: var(--background-secondary, #f5f5f5);
 }
 
 
-.folder-indent {
+.journalit-folder-browser-indent {
   flex-shrink: 0;
-  width: calc(var(--folder-depth, 0) * 16px);
+  width: calc(var(--folder-depth, 0) * 14px);
 }
 
 
-.folder-browser-label {
+.journalit-folder-browser-label {
   display: block;
   margin-bottom: 4px;
 }
 
-.folder-browser-required {
+.journalit-folder-browser-required {
   color: var(--text-error);
   margin-left: 2px;
 }
 
 
-.folder-browser-clear-button {
+.journalit-folder-browser-clear-button {
   position: absolute;
   right: 8px;
   top: 50%;
@@ -144,49 +143,82 @@ export const folderBrowserCSS = `
 }
 
 
-.folder-browser-container .input-container[data-has-clear="true"]::after {
+.journalit-folder-browser-container .input-container[data-has-clear="true"]::after {
   right: 32px;
 }
 
 
-.folder-browser-error {
+.journalit-folder-browser-error {
   color: var(--text-error);
   font-size: 12px;
   margin-top: 4px;
 }
 
-.folder-browser-helper {
+.journalit-folder-browser-helper {
   color: var(--text-muted);
   font-size: 12px;
   margin-top: 4px;
 }
 
 
-.folder-toggle {
-  background: none;
-  border: none;
+.journalit-folder-browser-toggle {
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  min-width: 20px;
+  height: 20px;
+  min-height: 20px;
+  padding: 0;
+  margin: 0 2px 0 0;
+  background: transparent;
+  border: 0;
+  border-radius: 3px;
+  box-shadow: none;
   cursor: pointer;
-  padding: 2px;
-  margin-right: 4px;
-  font-size: 12px;
   color: var(--text-muted, #666);
-  transition: color 0.15s ease;
   flex-shrink: 0;
 }
 
-.folder-toggle:hover {
+.journalit-folder-browser-toggle:hover {
   color: var(--text-normal, #333);
+  background: var(--background-modifier-hover);
+  box-shadow: none;
 }
 
+.journalit-folder-browser-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
 
-.folder-icon {
-  margin-right: 6px;
-  font-size: 14px;
+.journalit-folder-browser-toggle-spacer {
+  width: 20px;
+  min-width: 20px;
+  height: 20px;
+  margin-right: 2px;
   flex-shrink: 0;
 }
 
 
-.folder-name {
+.journalit-folder-browser-folder-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 6px;
+  flex-shrink: 0;
+  color: var(--text-muted);
+}
+
+
+.journalit-folder-browser-name {
   flex: 1;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -194,12 +226,12 @@ export const folderBrowserCSS = `
 }
 
 
-.folder-browser-input.error {
+.journalit-folder-browser-input.error {
   border-color: var(--text-error, #e53935);
 }
 
 
-[data-is-open="true"] .folder-browser-input {
+[data-is-open="true"] .journalit-folder-browser-input {
   border-bottom-left-radius: 0;
   border-bottom-right-radius: 0;
 }

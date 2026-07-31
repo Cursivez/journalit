@@ -176,6 +176,7 @@ export const FastDateTimeInput: React.FC<FastDateTimeInputProps> = React.memo(
     const yearRef = useRef<HTMLInputElement>(null);
     const hourRef = useRef<HTMLInputElement>(null);
     const minuteRef = useRef<HTMLInputElement>(null);
+    const ampmButtonRef = useRef<HTMLButtonElement>(null);
     const calendarButtonRef = useRef<HTMLButtonElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
     const flatpickrRef = useRef<FlatpickrInstance | null>(null);
@@ -261,7 +262,8 @@ export const FastDateTimeInput: React.FC<FastDateTimeInputProps> = React.memo(
     const validateTime = useCallback(
       (
         h: number,
-        m: number
+        m: number,
+        meridiem: 'AM' | 'PM' = ampm === 'PM' ? 'PM' : 'AM'
       ): { hours: number; minutes: number; valid: boolean } => {
         
         const minutes = Math.max(0, Math.min(59, m));
@@ -273,8 +275,8 @@ export const FastDateTimeInput: React.FC<FastDateTimeInputProps> = React.memo(
         } else {
           
           hours = Math.max(1, Math.min(12, h));
-          if (ampm === 'PM' && hours !== 12) hours += 12;
-          else if (ampm === 'AM' && hours === 12) hours = 0;
+          if (meridiem === 'PM' && hours !== 12) hours += 12;
+          else if (meridiem === 'AM' && hours === 12) hours = 0;
         }
 
         return { hours, minutes, valid: true };
@@ -283,87 +285,96 @@ export const FastDateTimeInput: React.FC<FastDateTimeInputProps> = React.memo(
     );
 
     
-    const updateValue = useCallback(() => {
-      if (timeOnly) {
-        
-        const h = parseInt(hour, 10);
-        const m = parseInt(minute, 10);
-        if (isNaN(h) || isNaN(m)) {
-          return;
-        }
-
-        const { hours, minutes } = validateTime(h, m);
-
-        
-        const timeString = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
-        if (onChange) onChange(timeString);
-        return;
-      }
-
-      const d = parseInt(day, 10);
-      const mo = parseInt(month, 10);
-      let y = parseInt(year, 10);
-
-      if (isNaN(d) || isNaN(mo) || isNaN(y)) {
-        return;
-      }
-
-      
-      y = y > 50 ? 1900 + y : 2000 + y;
-
-      const date = new Date(y, mo - 1, d);
-
-      
-      if (date.getDate() !== d || date.getMonth() !== mo - 1) {
-        return;
-      }
-
-      if (includeTime) {
-        if (!hour || !minute) {
-          if (onBlankTimeDateChange) {
+    const updateValue = useCallback(
+      (meridiem: 'AM' | 'PM' = ampm === 'PM' ? 'PM' : 'AM') => {
+        if (timeOnly) {
+          if (!hour && !minute) {
             onChange?.(undefined);
-            onBlankTimeDateChange(date);
             return;
           }
 
-          date.setHours(0, 0, 0, 0);
-          if (onChange) onChange(date);
+          
+          const h = parseInt(hour, 10);
+          const m = parseInt(minute, 10);
+          if (isNaN(h) || isNaN(m)) {
+            return;
+          }
+
+          const { hours, minutes } = validateTime(h, m, meridiem);
+
+          
+          const timeString = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+          if (onChange) onChange(timeString);
           return;
         }
 
-        const h = parseInt(hour, 10);
-        const m = parseInt(minute, 10);
+        if (!day && !month && !year && (!includeTime || (!hour && !minute))) {
+          onChange?.(undefined);
+          return;
+        }
 
-        const { hours, minutes } = validateTime(h, m);
-        date.setHours(hours, minutes, 0, 0);
-      }
+        const d = parseInt(day, 10);
+        const mo = parseInt(month, 10);
+        let y = parseInt(year, 10);
 
-      if (onChange) onChange(date);
-    }, [
-      day,
-      month,
-      year,
-      hour,
-      minute,
-      timeOnly,
-      includeTime,
-      onChange,
-      onBlankTimeDateChange,
-      validateTime,
-    ]);
+        if (isNaN(d) || isNaN(mo) || isNaN(y)) {
+          return;
+        }
 
-    
-    const isInitialMount = useRef(true);
-    useEffect(() => {
-      if (isInitialMount.current) {
-        isInitialMount.current = false;
-        return;
-      }
-      
+        
+        y = y > 50 ? 1900 + y : 2000 + y;
+
+        const date = new Date(y, mo - 1, d);
+
+        
+        if (date.getDate() !== d || date.getMonth() !== mo - 1) {
+          return;
+        }
+
+        if (includeTime) {
+          if (!hour || !minute) {
+            if (onBlankTimeDateChange) {
+              onChange?.(undefined);
+              onBlankTimeDateChange(date);
+              return;
+            }
+
+            date.setHours(0, 0, 0, 0);
+            if (onChange) onChange(date);
+            return;
+          }
+
+          const h = parseInt(hour, 10);
+          const m = parseInt(minute, 10);
+
+          const { hours, minutes } = validateTime(h, m, meridiem);
+          date.setHours(hours, minutes, 0, 0);
+        }
+
+        if (onChange) onChange(date);
+      },
+      [
+        day,
+        month,
+        year,
+        hour,
+        minute,
+        timeOnly,
+        includeTime,
+        onChange,
+        onBlankTimeDateChange,
+        ampm,
+        validateTime,
+      ]
+    );
+
+    const handleAmpmToggle = useCallback(() => {
+      const nextAmpm = ampm === 'AM' ? 'PM' : 'AM';
+      setAmpm(nextAmpm);
       if (hour && minute && (includeTime || timeOnly)) {
-        updateValue();
+        updateValue(nextAmpm);
       }
-    }, [ampm]); // eslint-disable-line react-hooks/exhaustive-deps -- intentionally only trigger on ampm change
+    }, [ampm, hour, includeTime, minute, setAmpm, timeOnly, updateValue]);
 
     
     const handleSegmentChange = (
@@ -392,6 +403,7 @@ export const FastDateTimeInput: React.FC<FastDateTimeInputProps> = React.memo(
           yearRef,
           hourRef,
           minuteRef,
+          ampmButtonRef,
         ].some((ref) => ref.current === activeEl);
         if (!isStillInComponent) {
           updateValue();
@@ -409,9 +421,9 @@ export const FastDateTimeInput: React.FC<FastDateTimeInputProps> = React.memo(
       }
 
       let wasHandledByButton = false; 
-      const tempInput = window.activeDocument.createElement('input');
-      tempInput.className = 'journalit-flatpickr-temp-input';
-      window.activeDocument.body.appendChild(tempInput);
+      const tempInput = window.activeDocument.body.createEl('input', {
+        cls: 'journalit-flatpickr-temp-input',
+      });
       tempInputRef.current = tempInput; 
 
       
@@ -687,52 +699,60 @@ export const FastDateTimeInput: React.FC<FastDateTimeInputProps> = React.memo(
             if (closePickerOnQuickAction) instance.close();
           };
 
-          const clearBtn = window.activeDocument.createElement('button');
-          clearBtn.type = 'button';
-          clearBtn.textContent = t('datepicker.button.clear');
-          clearBtn.className = 'flatpickr-button';
-          clearBtn.addEventListener('click', clearBtnHandler);
+          
+          const timeContainer =
+            instance.calendarContainer.querySelector('.flatpickr-time');
+          let clearBtn: HTMLButtonElement;
+          let todayBtn: HTMLButtonElement;
 
-          const todayBtn = window.activeDocument.createElement('button');
-          todayBtn.type = 'button';
-          todayBtn.textContent = timeOnly
-            ? t('datepicker.button.now')
-            : t('datepicker.button.today');
-          todayBtn.className = 'flatpickr-button flatpickr-button-primary';
+          if (timeContainer instanceof HTMLElement) {
+            const existingTimeNodes = Array.from(timeContainer.childNodes);
+            
+            const timeContent = timeContainer.createDiv({
+              cls: 'journalit-flatpickr-time-content',
+            });
+            timeContent.append(...existingTimeNodes);
+
+            
+            timeContainer.classList.add('journalit-flatpickr-time-container');
+            clearBtn = timeContainer.createEl('button', {
+              cls: 'flatpickr-button',
+              text: t('datepicker.button.clear'),
+              attr: { type: 'button' },
+              prepend: true,
+            });
+            todayBtn = timeContainer.createEl('button', {
+              cls: 'flatpickr-button flatpickr-button-primary',
+              text: timeOnly
+                ? t('datepicker.button.now')
+                : t('datepicker.button.today'),
+              attr: { type: 'button' },
+            });
+          } else {
+            const buttonContainer = instance.calendarContainer.createDiv({
+              cls: 'journalit-flatpickr-button-container',
+            });
+            clearBtn = buttonContainer.createEl('button', {
+              cls: 'flatpickr-button',
+              text: t('datepicker.button.clear'),
+              attr: { type: 'button' },
+            });
+            todayBtn = buttonContainer.createEl('button', {
+              cls: 'flatpickr-button flatpickr-button-primary',
+              text: timeOnly
+                ? t('datepicker.button.now')
+                : t('datepicker.button.today'),
+              attr: { type: 'button' },
+            });
+          }
+
+          clearBtn.addEventListener('click', clearBtnHandler);
           todayBtn.addEventListener('click', todayBtnHandler);
 
-          
           instance._clearBtn = clearBtn;
           instance._todayBtn = todayBtn;
           instance._clearBtnHandler = clearBtnHandler;
           instance._todayBtnHandler = todayBtnHandler;
-
-          
-          const timeContainer =
-            instance.calendarContainer.querySelector('.flatpickr-time');
-          if (timeContainer instanceof HTMLElement) {
-            
-            const timeContent = window.activeDocument.createElement('div');
-            timeContent.className = 'journalit-flatpickr-time-content';
-
-            
-            while (timeContainer.firstChild) {
-              timeContent.appendChild(timeContainer.firstChild);
-            }
-
-            
-            timeContainer.classList.add('journalit-flatpickr-time-container');
-            timeContainer.appendChild(clearBtn);
-            timeContainer.appendChild(timeContent);
-            timeContainer.appendChild(todayBtn);
-          } else {
-            
-            const buttonContainer = window.activeDocument.createElement('div');
-            buttonContainer.className = 'journalit-flatpickr-button-container';
-            buttonContainer.appendChild(clearBtn);
-            buttonContainer.appendChild(todayBtn);
-            instance.calendarContainer.appendChild(buttonContainer);
-          }
         },
       });
 
@@ -952,8 +972,9 @@ export const FastDateTimeInput: React.FC<FastDateTimeInputProps> = React.memo(
               />
               {!use24HourTime && (
                 <button
+                  ref={ampmButtonRef}
                   type="button"
-                  onClick={() => setAmpm(ampm === 'AM' ? 'PM' : 'AM')}
+                  onClick={handleAmpmToggle}
                   disabled={disabled}
                   className="journalit-fast-datetime__ampm-button"
                 >

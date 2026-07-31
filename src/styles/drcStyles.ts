@@ -622,13 +622,6 @@ export const DRC_STYLES = `
     list-style: none !important; 
     padding: 0 !important;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15) !important;
-    
-    transform: translateZ(0) !important; 
-    backface-visibility: hidden !important;
-    perspective: 1000px !important;
-    -webkit-font-smoothing: antialiased !important;
-    -moz-osx-font-smoothing: grayscale !important;
-    
     animation: drc-dropdown-open 0.15s ease forwards !important;
   }
   
@@ -636,11 +629,9 @@ export const DRC_STYLES = `
   @keyframes drc-dropdown-open {
     from {
       opacity: 0;
-      transform: translateY(-5px) translateZ(0);
     }
     to {
       opacity: 1;
-      transform: translateY(0) translateZ(0);
     }
   }
 
@@ -653,12 +644,6 @@ export const DRC_STYLES = `
     margin: 0 !important;
     list-style: none !important; 
     border-bottom: 1px solid var(--background-modifier-border-subtle, rgba(127, 127, 127, 0.1)) !important;
-    
-    transform: translateZ(0) !important; 
-    -webkit-font-smoothing: antialiased !important;
-    -moz-osx-font-smoothing: grayscale !important;
-    
-    text-rendering: optimizeLegibility !important;
   }
 
   
@@ -674,12 +659,6 @@ export const DRC_STYLES = `
   .drc-missed-trade [data-combobox-type] ul[role="listbox"] li[data-add-option="true"] {
     font-style: italic !important;
     border-top: 1px dashed var(--background-modifier-border) !important;
-    
-    transform: translateZ(0) !important; 
-    -webkit-font-smoothing: antialiased !important;
-    -moz-osx-font-smoothing: grayscale !important;
-    
-    text-rendering: optimizeLegibility !important;
   }
 
   

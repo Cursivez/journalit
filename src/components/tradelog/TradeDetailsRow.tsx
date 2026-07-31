@@ -51,9 +51,14 @@ import {
 import {
   calculateTradeMaxR,
   calculateTradeReturnPercent,
-  getTradeMaeValue,
-  getTradeMfeValue,
 } from './tradeMetricUtils';
+import { getTradeLogDisplayedPnL, getTradeLogFloatingPnL } from './tradeLogPnl';
+import {
+  getTradeMaeTicks,
+  getTradeMaeValue,
+  getTradeMfeTicks,
+  getTradeMfeValue,
+} from '../../utils/tradeExcursion';
 import { useCurrency } from '../../contexts/CurrencyContext';
 import { usePlugin } from '../../hooks/usePlugin';
 import { useDisplayPolicy } from '../../hooks/useDisplayPolicy';
@@ -63,6 +68,11 @@ import {
   type DisplayValueOptions,
 } from '../../services/display/DisplayPolicy';
 import { getDisplayPnL, getAccountCount } from '../../utils/pnlUtils';
+import {
+  areSnapshotKeysClaimedByCustomFields,
+  calculateSnapshotRealizedPnL,
+  calculateUnrealizedPnL,
+} from '../../utils/unrealizedPnl';
 import {
   calculateStopLossRiskAmount,
   canCalculateStopLossRiskAmount,
@@ -513,7 +523,11 @@ function formatPositionSizeCompact(value: number): {
 const TradeDetailsContent = memo<{
   trade: TradeWithPath;
   images: string[];
-  status: { label: string; className: string };
+  status: {
+    kind: ReturnType<typeof getTradeDisplayStatusWithContext>;
+    label: string;
+    className: string;
+  };
   duration: string;
   onImageClick: (
     e: React.MouseEvent | React.KeyboardEvent,
@@ -578,6 +592,10 @@ const TradeDetailsContent = memo<{
       [effectiveDisplayPolicy]
     );
     const isPnlMasked = shouldMask('pnl');
+    const isMetricMasked = shouldMask('metric');
+    const displayMaeMfeTicks =
+      plugin?.settings?.trade?.maeMfeDisplayUnit === 'ticks';
+    const isExcursionMasked = displayMaeMfeTicks ? isMetricMasked : isPnlMasked;
     const isReturnPercentMasked = shouldMask('returnPercent');
     const isRMultipleMasked = shouldMask('rMultiple');
     const isPriceMasked = shouldMask('price');
@@ -587,6 +605,10 @@ const TradeDetailsContent = memo<{
     const isNotionalMasked = shouldMask('notional');
     const isFeeMasked = shouldMask('fee');
     const sourcePath = trade.filePath || trade.path || '';
+    const snapshotKeysClaimedByCustomFields =
+      areSnapshotKeysClaimedByCustomFields(
+        plugin?.customFieldsService?.getFields()
+      );
 
     const handleCheckboxChange = useCallback(
       (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -696,12 +718,17 @@ const TradeDetailsContent = memo<{
       const tradeRMultiple = isTradeOpenForR ? undefined : trade.rMultiple;
 
       return calculateEffectiveRMultiple(
-        getEffectivePnL(trade),
+        getTradeLogDisplayedPnL(trade, snapshotKeysClaimedByCustomFields),
         tradeRMultiple,
         trade.riskAmount,
         defaultRiskAmount
       );
-    }, [trade, defaultRiskAmount, isTradeOpenForR]);
+    }, [
+      trade,
+      defaultRiskAmount,
+      isTradeOpenForR,
+      snapshotKeysClaimedByCustomFields,
+    ]);
 
     const totalDividends = useMemo(
       () => calculateTotalDividends(trade),
@@ -973,6 +1000,29 @@ const TradeDetailsContent = memo<{
       [trade, isExpandedMode, plugin, currency, formatValue, isFeeMasked]
     );
 
+    const formatExcursionValue = useCallback(
+      (value: number): string => {
+        if (!displayMaeMfeTicks) {
+          return formatValue({
+            kind: 'pnl',
+            value,
+            currencyCode: currency,
+            showCents: false,
+          });
+        }
+
+        const formatted = formatValue({
+          kind: 'metric',
+          value,
+          precision: 2,
+        });
+        return isExcursionMasked
+          ? formatted
+          : `${formatted} ${t('common.ticks')}`;
+      },
+      [currency, displayMaeMfeTicks, formatValue, isExcursionMasked]
+    );
+
     
     const renderCell = useCallback(
       (column: ColumnDefinition) => {
@@ -1101,19 +1151,23 @@ const TradeDetailsContent = memo<{
           }
 
           case 'status': {
-            const isOutcomeStatus = [
-              'status-win',
-              'status-loss',
-              'status-breakeven',
-            ].includes(status.className);
+            const isOutcomeStatus =
+              status.kind === 'win' ||
+              status.kind === 'loss' ||
+              status.kind === 'breakeven';
+            const isProgressStatus = status.kind === 'partially_closed';
             const statusLabel =
-              isPnlMasked && isOutcomeStatus
-                ? t('tradelog.filter.closed').toUpperCase()
-                : status.label;
+              isPnlMasked && isProgressStatus
+                ? t('tradelog.status.open')
+                : isPnlMasked && isOutcomeStatus
+                  ? t('tradelog.filter.closed').toUpperCase()
+                  : status.label;
             const statusClassName =
-              isPnlMasked && isOutcomeStatus
-                ? 'status-closed'
-                : status.className;
+              isPnlMasked && isProgressStatus
+                ? 'status-open'
+                : isPnlMasked && isOutcomeStatus
+                  ? 'status-closed'
+                  : status.className;
 
             return (
               <div key="status" className="trade-status-cell">
@@ -1125,6 +1179,114 @@ const TradeDetailsContent = memo<{
           }
 
           case 'pnl': {
+            
+            
+            const openUnrealizedPnL =
+              status.className === 'status-open' &&
+              !snapshotKeysClaimedByCustomFields
+                ? calculateUnrealizedPnL(trade)
+                : null;
+            if (openUnrealizedPnL !== null) {
+              const currentRealizedPnL = hasRealizedStoredPnL(trade)
+                ? getEffectivePnL(trade)
+                : partialExitInfo.isPartialExit
+                  ? partialExitInfo.realizedPnL + totalDividends
+                  : 0;
+              const openRealizedPnL = calculateSnapshotRealizedPnL(
+                trade,
+                currentRealizedPnL
+              );
+              const combinedOpenPnL =
+                getTradeLogFloatingPnL(
+                  trade,
+                  snapshotKeysClaimedByCustomFields
+                ) ?? openRealizedPnL + openUnrealizedPnL;
+              const toOpenRMultiple = (value: number): number | undefined =>
+                calculateEffectiveRMultiple(
+                  value,
+                  undefined,
+                  trade.riskAmount,
+                  defaultRiskAmount
+                );
+              const openPnlTooltipContent = (
+                <div className="unrealized-pnl-tooltip">
+                  {trade.isCopiedTrade && !isPnlMasked ? (
+                    <div className="tooltip-item">
+                      {t('tradelog.copy-trade.tooltip', {
+                        account: trade.copiedFromAccount || '',
+                        multiplier: String(trade.copyMultiplier ?? ''),
+                      })}
+                    </div>
+                  ) : null}
+                  <div className="tooltip-item">
+                    {t('form.unrealized.preview')}:{' '}
+                    {formatValue({
+                      kind: 'pnl',
+                      value: openUnrealizedPnL,
+                      currencyCode: currency,
+                      rMultiple: toOpenRMultiple(openUnrealizedPnL),
+                    })}
+                  </div>
+                  
+                  {(isPnlMasked || openRealizedPnL !== 0) && (
+                    <div className="tooltip-item">
+                      {t('form.field.realized-pnl')}:{' '}
+                      {formatValue({
+                        kind: 'pnl',
+                        value: openRealizedPnL,
+                        currencyCode: currency,
+                        rMultiple: toOpenRMultiple(openRealizedPnL),
+                      })}
+                    </div>
+                  )}
+                </div>
+              );
+              const openPnlClassName = `trade-pnl unrealized ${
+                isPnlMasked
+                  ? 'journalit-privacy-mask'
+                  : combinedOpenPnL > 0
+                    ? 'positive'
+                    : combinedOpenPnL < 0
+                      ? 'negative'
+                      : 'neutral'
+              }`;
+              const openPnlText = formatValue({
+                kind: 'pnl',
+                value: combinedOpenPnL,
+                currencyCode: currency,
+                rMultiple: toOpenRMultiple(combinedOpenPnL),
+              });
+              const openPnlContent =
+                trade.isCopiedTrade && !isPnlMasked ? (
+                  <span
+                    role="button"
+                    tabIndex={0}
+                    className={`${openPnlClassName} trade-pnl-copy-adjust-trigger`}
+                    onClick={handleAdjustCopiedPnL}
+                    onKeyDown={handleAdjustCopiedPnLKeyDown}
+                    aria-label={t('tradelog.copy-trade.adjustment-action')}
+                  >
+                    <span className="trade-pnl-copy-value">{openPnlText}~</span>
+                    <span className="trade-pnl-copy-multiplier">
+                      {trade.copyMultiplier ?? ''}x
+                    </span>
+                  </span>
+                ) : (
+                  <span className={openPnlClassName}>{openPnlText}~</span>
+                );
+              return (
+                <div key="pnl" className="trade-pnl-cell">
+                  <Tooltip
+                    content={openPnlTooltipContent}
+                    delay={0}
+                    preferredPosition="top"
+                  >
+                    {openPnlContent}
+                  </Tooltip>
+                </div>
+              );
+            }
+
             
             if (
               status.className === 'status-open' &&
@@ -2102,19 +2264,16 @@ const TradeDetailsContent = memo<{
             );
 
           case 'mae': {
-            const maeValue = getTradeMaeValue(trade);
+            const maeValue = displayMaeMfeTicks
+              ? getTradeMaeTicks(trade)
+              : getTradeMaeValue(trade);
             return (
               <div key="mae" className="trade-mae-cell">
                 {maeValue !== undefined ? (
                   <span
-                    className={`trade-mae ${isPnlMasked ? 'journalit-privacy-mask' : ''}`}
+                    className={`trade-mae ${isExcursionMasked ? 'journalit-privacy-mask' : ''}`}
                   >
-                    {formatValue({
-                      kind: 'pnl',
-                      value: maeValue,
-                      currencyCode: currency,
-                      showCents: false,
-                    })}
+                    {formatExcursionValue(maeValue)}
                   </span>
                 ) : (
                   <span className="trade-no-data">-</span>
@@ -2124,19 +2283,16 @@ const TradeDetailsContent = memo<{
           }
 
           case 'mfe': {
-            const mfeValue = getTradeMfeValue(trade);
+            const mfeValue = displayMaeMfeTicks
+              ? getTradeMfeTicks(trade)
+              : getTradeMfeValue(trade);
             return (
               <div key="mfe" className="trade-mfe-cell">
                 {mfeValue !== undefined ? (
                   <span
-                    className={`trade-mfe ${isPnlMasked ? 'journalit-privacy-mask' : ''}`}
+                    className={`trade-mfe ${isExcursionMasked ? 'journalit-privacy-mask' : ''}`}
                   >
-                    {formatValue({
-                      kind: 'pnl',
-                      value: mfeValue,
-                      currencyCode: currency,
-                      showCents: false,
-                    })}
+                    {formatExcursionValue(mfeValue)}
                   </span>
                 ) : (
                   <span className="trade-no-data">-</span>
@@ -2270,8 +2426,11 @@ const TradeDetailsContent = memo<{
         defaultRiskAmount,
         totalDividends,
         renderCustomFieldCell,
+        formatExcursionValue,
         formatValue,
         isPnlMasked,
+        displayMaeMfeTicks,
+        isExcursionMasked,
         isReturnPercentMasked,
         isRMultipleMasked,
         isPriceMasked,
@@ -2281,6 +2440,7 @@ const TradeDetailsContent = memo<{
         isNotionalMasked,
         isFeeMasked,
         sourcePath,
+        snapshotKeysClaimedByCustomFields,
       ]
     );
 
@@ -2356,23 +2516,56 @@ export const TradeDetailsRow = memo<TradeDetailsRowProps>(
       switch (displayStatus) {
         case 'backtest':
           return {
+            kind: displayStatus,
             label: t('tradelog.status.backtest'),
             className: 'status-backtest',
           };
         case 'missed':
           return {
+            kind: displayStatus,
             label: t('tradelog.status.missed'),
             className: 'status-missed',
           };
         case 'open':
-          return { label: t('tradelog.status.open'), className: 'status-open' };
+          return {
+            kind: displayStatus,
+            label: t('tradelog.status.open'),
+            className: 'status-open',
+          };
+        case 'partially_closed':
+          return {
+            kind: displayStatus,
+            label: t('tradelog.status.partially-closed'),
+            className: 'status-open',
+          };
+        case 'cancelled':
+          return {
+            kind: displayStatus,
+            label: t('tradelog.status.cancelled'),
+            className: 'status-cancelled',
+          };
+        case 'unknown':
+          return {
+            kind: displayStatus,
+            label: t('common.unknown'),
+            className: 'status-unknown',
+          };
         case 'win':
-          return { label: t('tradelog.status.win'), className: 'status-win' };
+          return {
+            kind: displayStatus,
+            label: t('tradelog.status.win'),
+            className: 'status-win',
+          };
         case 'loss':
-          return { label: t('tradelog.status.loss'), className: 'status-loss' };
+          return {
+            kind: displayStatus,
+            label: t('tradelog.status.loss'),
+            className: 'status-loss',
+          };
         case 'breakeven':
         default:
           return {
+            kind: displayStatus,
             label: t('tradelog.status.breakeven'),
             className: 'status-breakeven',
           };

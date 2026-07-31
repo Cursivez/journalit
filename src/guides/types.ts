@@ -82,6 +82,8 @@ export interface GuideDefinition {
   steps: GuideStepDefinition[];
   priority?: number;
   autoShow?: boolean;
+  
+  replayGuideId?: string;
 }
 
 export interface ActiveLeafContext {

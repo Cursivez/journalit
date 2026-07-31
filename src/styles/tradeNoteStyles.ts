@@ -314,18 +314,19 @@ export const TRADE_NOTE_STYLES = `
     gap: 0;
   }
 
+  .journalit-trade-view .trade-instrument-meta-row {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 0.35rem;
+    margin-bottom: -0.2rem;
+    white-space: nowrap;
+  }
+
   .journalit-trade-view .trade-instrument-mainline {
     display: inline-flex;
     align-items: center;
     gap: 0.45rem;
     margin-top: 0.08rem;
-  }
-
-  .journalit-trade-view .trade-instrument-stack {
-    display: inline-flex;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 0;
   }
 
   .journalit-trade-view .trade-instrument-title-row {
@@ -351,24 +352,23 @@ export const TRADE_NOTE_STYLES = `
     font-weight: 600;
     letter-spacing: 0.045em;
     line-height: 1;
-    margin-left: 0;
-    margin-bottom: -0.24rem;
+    margin: 0;
     text-transform: uppercase;
   }
 
+  .journalit-trade-view .trade-instrument-status-separator {
+    color: var(--text-faint);
+    font-size: 0.82rem;
+    line-height: 1;
+  }
+
   .journalit-trade-view .trade-type-badge {
-    align-self: flex-start;
-    margin-left: 0;
-    padding: 0;
-    border: 0;
-    border-radius: 0;
     color: var(--text-muted);
-    background: transparent;
-    font-size: 0.74rem;
+    display: inline-flex;
+    font-size: 0.78rem;
     font-weight: 600;
     letter-spacing: 0.045em;
     line-height: 1;
-    margin-top: -0.18rem;
     text-transform: uppercase;
   }
 

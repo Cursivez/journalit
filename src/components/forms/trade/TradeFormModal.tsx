@@ -14,12 +14,14 @@ import { CurrencyProvider } from '../../../contexts/CurrencyContext';
 import { DisplayPolicyProvider } from '../../../contexts/DisplayPolicyContext';
 import { t } from '../../../lang/helpers';
 import { eventBus } from '../../../services/events';
+import { showConfirmationModal } from '../../shared/ConfirmationModal';
 import {
   getRequestedTradeType,
   hasTradeIdentityChanged,
   inferStoredTradeType,
 } from '../../../utils/tradeTypeRouting';
 import { TradeFormGuide } from './TradeFormGuide';
+import { canonicalizeTradeTagSelection } from '../../../utils/tradeTagNormalization';
 
 type TradeFormSubmissionData = TradeFormData &
   Record<string, unknown> & {
@@ -29,7 +31,12 @@ type TradeFormSubmissionData = TradeFormData &
 const parseTradeStatus = (
   value: string | undefined
 ): TradeData['tradeStatus'] =>
-  value === 'OPEN' || value === 'CLOSED' ? value : undefined;
+  value === 'OPEN' ||
+  value === 'PARTIALLY_CLOSED' ||
+  value === 'CLOSED' ||
+  value === 'CANCELLED'
+    ? value
+    : undefined;
 
 const toRegularTradeData = (tradeData: TradeFormSubmissionData): TradeData => ({
   ...tradeData,
@@ -83,7 +90,6 @@ export class TradeFormModal extends Modal {
     current: null,
   };
   private isConfirming: boolean = false;
-  private confirmationModal: UnsavedChangesConfirmationModal | null = null;
   private shouldBypassUnsavedCheck: boolean = false;
 
   constructor(props: TradeFormModalProps) {
@@ -117,7 +123,6 @@ export class TradeFormModal extends Modal {
         return shouldClose;
       } finally {
         this.isConfirming = false;
-        this.confirmationModal = null;
       }
     }
 
@@ -136,12 +141,15 @@ export class TradeFormModal extends Modal {
 
   
   private showUnsavedChangesConfirmation(): Promise<boolean> {
-    return new Promise((resolve) => {
-      this.confirmationModal = new UnsavedChangesConfirmationModal(
-        this.modalProps.app,
-        resolve
-      );
-      this.confirmationModal.open();
+    return showConfirmationModal(this.modalProps.app, {
+      title: t('form.modal.unsaved-changes.title'),
+      message: [
+        { text: t('form.modal.unsaved-changes.body1') },
+        { text: t('form.modal.unsaved-changes.body2') },
+      ],
+      cancelLabel: t('form.modal.unsaved-changes.continue'),
+      confirmLabel: t('form.modal.unsaved-changes.discard'),
+      destructive: true,
     });
   }
 
@@ -246,7 +254,7 @@ interface TradeFormModalContentModelParams {
   onSuccessfulSubmit: () => void;
 }
 
-function useTradeFormModalContentModel({
+export function useTradeFormModalContentModel({
   plugin,
   isEditMode,
   initialData,
@@ -401,13 +409,36 @@ function useTradeFormModalContentModel({
 
       let outPath = '';
       const isMissedTrade = data.isMissedTrade === true;
+      const originalTradeType = inferStoredTradeType({
+        ...initialData,
+        filePath,
+      });
+      const requestedTradeType = getRequestedTradeType(data);
+      const canonicalTradeTypeChanged =
+        isEditMode &&
+        typeof initialData?.canonicalTradeId === 'string' &&
+        initialData.canonicalTradeId.trim() !== '' &&
+        originalTradeType !== requestedTradeType;
+      if (canonicalTradeTypeChanged) {
+        setIsSubmitting(false);
+        new Notice(t('notice.error.canonical-trade-type-change'));
+        return false;
+      }
 
       
-      const resolvedTags = Array.isArray(data.customTags)
-        ? data.customTags
-        : Array.isArray(data.tags)
-          ? data.tags
+      const previousTags = Array.isArray(initialData?.customTags)
+        ? initialData.customTags
+        : Array.isArray(initialData?.tags)
+          ? initialData.tags
           : [];
+      const resolvedTags = canonicalizeTradeTagSelection(
+        previousTags,
+        Array.isArray(data.customTags)
+          ? data.customTags
+          : Array.isArray(data.tags)
+            ? data.tags
+            : []
+      );
 
       const formExits = (data.exits || []).map((exit) => ({
         ...exit,
@@ -422,7 +453,44 @@ function useTradeFormModalContentModel({
           : formExits.length > 0
             ? formExits.some((exit) => exit.hasExplicitPrice === true)
             : undefined;
+      
+      
+      const fxRateBaseCurrency: string =
+        plugin.settings?.general?.currency || 'USD';
+      const hasPersistableFxRate =
+        typeof data.fxRate === 'number' &&
+        Number.isFinite(data.fxRate) &&
+        data.fxRate > 0 &&
+        typeof data.currency === 'string' &&
+        data.currency.length > 0 &&
+        data.currency !== fxRateBaseCurrency &&
+        data.fxRateBaseCurrency === fxRateBaseCurrency;
+      
+      
+      
+      
+      
+      const hasPreservableForeignBaseFxRate =
+        typeof data.fxRate === 'number' &&
+        Number.isFinite(data.fxRate) &&
+        data.fxRate > 0 &&
+        typeof data.fxRateBaseCurrency === 'string' &&
+        data.fxRateBaseCurrency.length > 0 &&
+        data.fxRateBaseCurrency !== fxRateBaseCurrency &&
+        typeof data.currency === 'string' &&
+        data.currency.length > 0 &&
+        data.currency !== data.fxRateBaseCurrency;
       const tradeData: TradeFormSubmissionData = {
+        canonicalTradeId: data.canonicalTradeId,
+        authoritativePnl:
+          data.canonicalTradeId && initialData?._originalPnlWasNull === true
+            ? null
+            : data.canonicalTradeId &&
+                typeof initialData?.pnl === 'number' &&
+                Number.isFinite(initialData.pnl)
+              ? initialData.pnl
+              : undefined,
+        tradeStatus: data.tradeStatus,
         entryTime: data.entryTime,
         exitTime: data.exitTime,
         entryPrice: data.entryPrice,
@@ -454,6 +522,8 @@ function useTradeFormModalContentModel({
         mfe: data.mfe,
         maePrice: data.maePrice,
         mfePrice: data.mfePrice,
+        unrealizedPriceSnapshot: data.unrealizedPriceSnapshot,
+        unrealizedPriceSnapshotTime: data.unrealizedPriceSnapshotTime,
         useDirectPnLInput: data.useDirectPnLInput,
         directPnL: data.useDirectPnLInput ? data.directPnL : undefined,
         rebate: data.rebate,
@@ -461,8 +531,18 @@ function useTradeFormModalContentModel({
         missedReason: data.missedReason,
         isBacktestTrade: data.isBacktestTrade || false,
         customFields: data.customFields,
-        customTags: data.customTags,
+        customTags: resolvedTags,
         currency: data.currency,
+        fxRate:
+          hasPersistableFxRate || hasPreservableForeignBaseFxRate
+            ? data.fxRate
+            : undefined,
+        fxRateBaseCurrency: hasPersistableFxRate
+          ? fxRateBaseCurrency
+          : hasPreservableForeignBaseFxRate
+            ? data.fxRateBaseCurrency
+            : undefined,
+        clearUnsetCurrencyFields: true,
         mtComment: data.mtComment,
       };
 
@@ -493,12 +573,6 @@ function useTradeFormModalContentModel({
         if (data.leverageRatio !== undefined)
           tradeData.leverageRatio = data.leverageRatio;
       }
-
-      const originalTradeType = inferStoredTradeType({
-        ...initialData,
-        filePath,
-      });
-      const requestedTradeType = getRequestedTradeType(data);
 
       if (isEditMode) {
         tradeData.originalPnl = initialData?.pnl;
@@ -531,10 +605,26 @@ function useTradeFormModalContentModel({
             ? workingFilePath || t('form.trade-type.backtest').toLowerCase()
             : '';
         } else {
-          outPath = await plugin.tradeService.updateTrade(
-            toRegularTradeData(tradeData),
-            workingFilePath
-          );
+          const regularTradeData = toRegularTradeData(tradeData);
+          const expectedTradeRevision =
+            data.canonicalTradeId &&
+            typeof initialData?.tradeRevision === 'number' &&
+            Number.isInteger(initialData.tradeRevision) &&
+            initialData.tradeRevision > 0
+              ? initialData.tradeRevision
+              : undefined;
+          outPath =
+            expectedTradeRevision !== undefined
+              ? await plugin.tradeService.updateTrade(
+                  regularTradeData,
+                  workingFilePath,
+                  undefined,
+                  { expectedTradeRevision }
+                )
+              : await plugin.tradeService.updateTrade(
+                  regularTradeData,
+                  workingFilePath
+                );
         }
         const tradeType = data.isBacktestTrade
           ? t('form.trade-type.backtest')
@@ -696,75 +786,3 @@ const TradeFormModalContent: React.FC<TradeFormModalContentProps> = ({
     </>
   );
 };
-
-
-class UnsavedChangesConfirmationModal extends Modal {
-  private resolved = false;
-
-  constructor(
-    app: App,
-    private onConfirm: (shouldClose: boolean) => void
-  ) {
-    super(app);
-    this.titleEl.setText(t('form.modal.unsaved-changes.title'));
-  }
-
-  onOpen() {
-    const { contentEl } = this;
-    contentEl.empty();
-    contentEl.createEl('p', {
-      text: t('form.modal.unsaved-changes.body1'),
-    });
-    contentEl.createEl('p', {
-      text: t('form.modal.unsaved-changes.body2'),
-    });
-
-    const buttonContainer = contentEl.createDiv({
-      cls: 'modal-button-container journalit-modal-button-container',
-    });
-
-    
-    buttonContainer
-      .createEl('button', {
-        type: 'button',
-        text: t('form.modal.unsaved-changes.continue'),
-        cls: 'mod-cta',
-      })
-      .addEventListener('click', () => {
-        if (!this.resolved) {
-          this.resolved = true;
-          this.onConfirm(false); 
-        }
-        this.close();
-      });
-
-    
-    buttonContainer
-      .createEl('button', {
-        type: 'button',
-        text: t('form.modal.unsaved-changes.discard'),
-        cls: 'mod-warning',
-      })
-      .addEventListener('click', () => {
-        if (!this.resolved) {
-          this.resolved = true;
-          this.onConfirm(true); 
-        }
-        this.close();
-      });
-  }
-
-  close(): void {
-    super.close();
-    
-    if (!this.resolved) {
-      this.resolved = true;
-      this.onConfirm(false);
-    }
-  }
-
-  onClose() {
-    const { contentEl } = this;
-    contentEl.empty();
-  }
-}

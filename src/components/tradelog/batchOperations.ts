@@ -8,7 +8,10 @@ import {
   ensureTradeIdentityFrontmatter,
   getTradeIdentityNoteType,
 } from '../../utils/tradeIdentity';
-import { forceMetadataCacheRefresh } from '../../utils/dataRefresh';
+import {
+  forceMetadataCacheRefresh,
+  readFrontmatterFromDisk,
+} from '../../utils/dataRefresh';
 import { normalizeStringArray } from '../../utils/dataUtils';
 
 interface BatchOperationResult {
@@ -164,6 +167,7 @@ async function runBatchOperation(
       frontmatter: Record<string, unknown>
     ) => FrontmatterMutationResult;
     requireAuthoritativeMetadataRead?: boolean;
+    introducedTags?: string[];
   }
 ): Promise<BatchOperationResult> {
   let processed = 0;
@@ -251,7 +255,29 @@ async function runBatchOperation(
       };
 
       if (noteKind !== 'regular') {
-        const mutationResult = await applyFrontmatterPatch();
+        const readPreviousTags = async (): Promise<string[]> => {
+          const currentFrontmatter = operation.requireAuthoritativeMetadataRead
+            ? await readFrontmatterFromDisk(app, file)
+            : app.metadataCache.getFileCache(file)?.frontmatter;
+          return currentFrontmatter
+            ? dedupeStrings([
+                ...normalizeStringArray(currentFrontmatter.tags),
+                ...normalizeStringArray(currentFrontmatter.customTags),
+              ])
+            : [];
+        };
+        const mutationResult = operation.introducedTags?.length
+          ? await plugin?.optionsService.runWithTagAssignments(
+              operation.introducedTags,
+              applyFrontmatterPatch,
+              readPreviousTags
+            )
+          : await applyFrontmatterPatch();
+        if (!mutationResult) {
+          throw new Error(
+            'Options service is required for batch tag mutations'
+          );
+        }
         applyPatchedMutationResult(mutationResult, noteKind);
         continue;
       }
@@ -520,6 +546,7 @@ export async function batchAddTags(
 ): Promise<BatchOperationResult> {
   return runBatchOperation(app, tradeFilePaths, {
     requireAuthoritativeMetadataRead: true,
+    introducedTags: tags,
     applyToTradeData: (tradeData, context) => {
       const merge = buildTagMerge(
         tradeData.tags,

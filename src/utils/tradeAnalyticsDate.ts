@@ -42,15 +42,31 @@ export interface AnalyticsDateTradeLike {
   fees?: number | null;
   rebate?: number | null;
   dividends?: Array<{ amount?: number | null }>;
+  
+  conversionPnlFactor?: number;
+  originalPnlBeforeConversion?: number | null;
 }
 
 export interface RealizedPnlEvent {
   date: Date;
   tradingDay: Date;
   pnl: number;
+  originalPnl?: number;
+  pnlKnown: boolean;
   size?: number;
   source: 'entry' | 'exit';
 }
+
+interface AllocatedRealizedPnlEvent {
+  event: RealizedPnlEvent;
+  originalIndex: number;
+  brokerBaseCurrencyPnl?: number;
+}
+
+type BrokerPnlTrade = AnalyticsDateTradeLike & {
+  brokerBaseCurrencyPnl?: number | null;
+  originalPnlBeforeConversion?: number | null;
+};
 
 export function getAnalyticsDateBasis(settings?: {
   trade?: { analyticsDateBasis?: AnalyticsDateBasis };
@@ -210,6 +226,12 @@ export function getTradeRealizedPnlEvents(
     | null
     | undefined
 ): RealizedPnlEvent[] {
+  const originalEffectivePnl =
+    typeof trade.originalPnlBeforeConversion === 'number' &&
+    Number.isFinite(trade.originalPnlBeforeConversion)
+      ? trade.originalPnlBeforeConversion
+      : getEffectivePnL(trade);
+
   if (basis === 'entry') {
     const entryDate = getTradeAnalyticsDate(trade, 'entry');
     if (!entryDate) {
@@ -225,6 +247,8 @@ export function getTradeRealizedPnlEvents(
           getAnalyticsDateRawValue(trade, 'entry')
         ),
         pnl: getEffectivePnL(trade),
+        originalPnl: originalEffectivePnl,
+        pnlKnown: trade._originalPnlWasNull !== true,
         source: 'entry',
       },
     ];
@@ -245,20 +269,44 @@ export function getTradeRealizedPnlEvents(
           getAnalyticsDateRawValue(trade, 'exit')
         ),
         pnl: getEffectivePnL(trade),
+        originalPnl: originalEffectivePnl,
+        pnlKnown: trade._originalPnlWasNull !== true,
         source: 'exit',
       },
     ];
   }
 
+  
+  
+  
+  const conversionPnlFactor =
+    typeof trade.conversionPnlFactor === 'number' &&
+    Number.isFinite(trade.conversionPnlFactor) &&
+    trade.conversionPnlFactor > 0
+      ? trade.conversionPnlFactor
+      : 1;
+  
+  
+  
+  const toTradeCurrencyCost = (
+    value: number | null | undefined
+  ): number | undefined =>
+    typeof value === 'number' && Number.isFinite(value)
+      ? value / conversionPnlFactor
+      : undefined;
   const partialExitInfo = getPartialExitInfo({
     ...trade,
-    commission: trade.commission ?? undefined,
-    swap: trade.swap ?? undefined,
-    fees: trade.fees ?? undefined,
-    rebate: trade.rebate ?? undefined,
+    commission:
+      trade.commissionType === 'percentage'
+        ? (trade.commission ?? undefined)
+        : toTradeCurrencyCost(trade.commission),
+    swap: toTradeCurrencyCost(trade.swap),
+    fees: toTradeCurrencyCost(trade.fees),
+    rebate: toTradeCurrencyCost(trade.rebate),
   });
   const events: RealizedPnlEvent[] = [];
   let calculatedTotal = 0;
+  let calculatedOriginalTotal = 0;
 
   for (const exit of partialExitInfo.exits) {
     const exitDate = toValidDate(exit.time);
@@ -266,11 +314,15 @@ export function getTradeRealizedPnlEvents(
       continue;
     }
 
-    calculatedTotal += exit.pnl;
+    const exitPnl = exit.pnl * conversionPnlFactor;
+    calculatedTotal += exitPnl;
+    calculatedOriginalTotal += exit.pnl;
     events.push({
       date: exitDate,
       tradingDay: resolveTradingDay(exitDate, plugin, exit.time),
-      pnl: exit.pnl,
+      pnl: exitPnl,
+      originalPnl: exit.pnl,
+      pnlKnown: true,
       size: exit.size,
       source: 'exit',
     });
@@ -291,6 +343,8 @@ export function getTradeRealizedPnlEvents(
           getAnalyticsDateRawValue(trade, 'exit')
         ),
         pnl: getEffectivePnL(trade),
+        originalPnl: originalEffectivePnl,
+        pnlKnown: trade._originalPnlWasNull !== true,
         source: 'exit',
       },
     ];
@@ -305,14 +359,78 @@ export function getTradeRealizedPnlEvents(
     entries: trade.entries,
   });
 
-  const eventTotal = isOpen
-    ? partialExitInfo.realizedPnL
-    : getEffectivePnL(trade);
+  const hasAuthoritativePartialPnl =
+    trade.tradeStatus === 'PARTIALLY_CLOSED' &&
+    trade._originalPnlWasNull !== true &&
+    trade.pnl != null &&
+    Number.isFinite(trade.pnl);
+  const eventTotal =
+    isOpen && !hasAuthoritativePartialPnl
+      ? partialExitInfo.realizedPnL * conversionPnlFactor
+      : getEffectivePnL(trade);
   const residual = eventTotal - calculatedTotal;
+  const originalEventTotal =
+    isOpen && !hasAuthoritativePartialPnl
+      ? partialExitInfo.realizedPnL
+      : typeof trade.originalPnlBeforeConversion === 'number' &&
+          Number.isFinite(trade.originalPnlBeforeConversion)
+        ? trade.originalPnlBeforeConversion
+        : eventTotal / conversionPnlFactor;
+  const originalResidual = originalEventTotal - calculatedOriginalTotal;
   const lastEvent = events[events.length - 1];
   if (lastEvent && Number.isFinite(residual) && Math.abs(residual) > 1e-9) {
     lastEvent.pnl += residual;
   }
+  if (
+    lastEvent &&
+    Number.isFinite(originalResidual) &&
+    Math.abs(originalResidual) > 1e-9
+  ) {
+    lastEvent.originalPnl = (lastEvent.originalPnl ?? 0) + originalResidual;
+  }
 
   return events;
+}
+
+
+export function getAllocatedRealizedPnlEvents(
+  trade: BrokerPnlTrade,
+  basis: AnalyticsDateBasis,
+  plugin: Parameters<typeof getTradeRealizedPnlEvents>[2]
+): AllocatedRealizedPnlEvent[] {
+  const events = getTradeRealizedPnlEvents(trade, basis, plugin);
+  const effectivePnl =
+    typeof trade.originalPnlBeforeConversion === 'number' &&
+    Number.isFinite(trade.originalPnlBeforeConversion)
+      ? trade.originalPnlBeforeConversion
+      : getEffectivePnL(trade);
+  const brokerPnl =
+    typeof trade.brokerBaseCurrencyPnl === 'number' &&
+    Number.isFinite(trade.brokerBaseCurrencyPnl)
+      ? trade.brokerBaseCurrencyPnl
+      : null;
+  const canAllocateProportionally =
+    brokerPnl !== null && Number.isFinite(effectivePnl) && effectivePnl !== 0;
+  let finalEventIndex = -1;
+  for (let index = 0; index < events.length; index += 1) {
+    if (
+      finalEventIndex === -1 ||
+      events[index].date > events[finalEventIndex].date
+    ) {
+      finalEventIndex = index;
+    }
+  }
+
+  return events.map((event, originalIndex) => ({
+    event,
+    originalIndex,
+    brokerBaseCurrencyPnl:
+      brokerPnl === null
+        ? undefined
+        : canAllocateProportionally
+          ? brokerPnl * (event.pnl / effectivePnl)
+          : originalIndex === finalEventIndex
+            ? brokerPnl
+            : 0,
+  }));
 }

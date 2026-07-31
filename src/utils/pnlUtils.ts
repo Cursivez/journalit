@@ -1,5 +1,35 @@
 
 
+import { getEffectivePnL } from './tradeStatusUtils';
+import { calculateActualCommission } from './pnlCalculation';
+
+interface CommissionCostInput {
+  commission?: number | null;
+  commissionType?: 'fixed' | 'percentage';
+  entryPrice?: number | null;
+  positionSize?: number | null;
+  entries?: Array<{ price?: number | null; size?: number | null }>;
+  useDirectPnLInput?: boolean;
+  directPnL?: number | null;
+}
+
+export function calculateCommissionCost(trade: CommissionCostInput): number {
+  return Math.abs(
+    calculateActualCommission({
+      commission: trade.commission ?? undefined,
+      commissionType: trade.commissionType,
+      entryPrice: trade.entryPrice ?? undefined,
+      positionSize: trade.positionSize ?? undefined,
+      entries: trade.entries?.map((entry) => ({
+        price: entry.price ?? undefined,
+        size: entry.size ?? undefined,
+      })),
+      useDirectPnLInput: trade.useDirectPnLInput,
+      directPnL: trade.directPnL ?? undefined,
+    })
+  );
+}
+
 
 export function getDisplayPnL(
   pnl: number | undefined,
@@ -33,8 +63,15 @@ export function mapTradesToDisplayPnL<
   TTrade extends {
     pnl?: number | null;
     directPnL?: number | null;
+    authoritativePnl?: number | null;
+    canonicalTradeId?: string | null;
     useDirectPnLInput?: boolean;
     _originalPnlWasNull?: boolean;
+    dividends?: Array<{ amount?: number | null }>;
+    commission?: number | null;
+    swap?: number | null;
+    fees?: number | null;
+    rebate?: number | null;
     account?: string[] | string;
   },
 >(
@@ -42,13 +79,19 @@ export function mapTradesToDisplayPnL<
   applyAccountCountMultiplier: boolean
 ): Array<TTrade & { pnl: number; _originalPnlWasNull?: boolean }> {
   return trades.map((trade) => {
+    const usesCanonicalPnl =
+      trade.authoritativePnl !== undefined || Boolean(trade.canonicalTradeId);
     const effectivePnL =
-      trade.useDirectPnLInput === true && trade.directPnL != null
-        ? trade.directPnL
-        : trade.pnl;
+      trade.authoritativePnl !== undefined
+        ? trade.authoritativePnl
+        : trade.canonicalTradeId
+          ? trade.pnl
+          : getEffectivePnL(trade);
     const originalPnlWasNull =
       trade._originalPnlWasNull === true ||
-      (trade.useDirectPnLInput !== true && trade.pnl == null);
+      (usesCanonicalPnl
+        ? effectivePnL == null
+        : trade.useDirectPnLInput !== true && trade.pnl == null);
 
     return {
       ...trade,

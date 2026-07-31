@@ -1,6 +1,12 @@
 
 
-import React, { useEffect, useCallback, useMemo, useRef } from 'react';
+import React, {
+  useEffect,
+  useCallback,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import { NumberInput, FastDateTimeInput } from '../../../core';
 import { Button } from '../../../ui/Button';
 import { Tooltip } from '../../../shared/Tooltip';
@@ -26,6 +32,11 @@ import { usePlugin } from '../../../../hooks/usePlugin';
 import { t } from '../../../../lang/helpers';
 import { normalizeTradeExecution } from '../../../../services/trade/core/TradeExecutionNormalization';
 import { TradeFormInputMode } from '../../../../settings/types';
+import { calculateUnrealizedPnL } from '../../../../utils/unrealizedPnl';
+import { formatDateDisplay } from '../../../../utils/dateUtils';
+import { isTradeOpenWithContext } from '../../../../utils/tradeStatusUtils';
+import { resolveEffectiveRiskAmount } from '../validation';
+import { PnLValue } from '../../../shared/display';
 
 type TransactionFieldValue = number | Date | string | undefined | boolean;
 type IdealExitFieldValue = number | string | undefined;
@@ -100,6 +111,12 @@ interface EntryExitFieldsProps {
   inputMode: TradeFormInputMode;
   
   showIdealExits?: boolean;
+  
+  showUnrealizedSnapshot?: boolean;
+  
+  showDividends?: boolean;
+  
+  pnlCurrency?: string;
 }
 
 interface PnLModeToggleProps {
@@ -823,8 +840,14 @@ function useEntryExitFieldsModel({
     (sum, entry) => sum + (entry.size || 0),
     0
   );
-  const totalExitSize = (data.exits || []).reduce(
-    (sum, exit) => sum + (exit.size || 0),
+  const normalizedExecution = normalizeTradeExecution(data, {
+    deriveMissingExplicitness: true,
+  });
+  const totalExitSize = normalizedExecution.exits.reduce(
+    (sum, exit) =>
+      exit.hasExplicitPrice === true && exit.size !== null && exit.size > 0
+        ? sum + exit.size
+        : sum,
     0
   );
   const totalIdealExitSize = (data.idealExits || []).reduce(
@@ -1075,6 +1098,155 @@ function IdealExitsSection({
   );
 }
 
+interface UnrealizedSnapshotSectionProps {
+  data: Partial<TradeFormData>;
+  errors: TradeFormErrors;
+  pricePrecision: number;
+  pnlCurrency: string;
+  onChange: (field: keyof TradeFormData, value: TradeFormValue) => void;
+}
+
+const formatSnapshotCapturedTime = (
+  time: Date,
+  use24HourTime: boolean,
+  dateFormat: string
+): string => {
+  const datePart = formatDateDisplay(time, dateFormat);
+  const minutes = String(time.getMinutes()).padStart(2, '0');
+
+  if (use24HourTime) {
+    return `${datePart} ${String(time.getHours()).padStart(2, '0')}:${minutes}`;
+  }
+
+  const hours = time.getHours();
+  const meridiem = hours >= 12 ? 'PM' : 'AM';
+  const displayHours = hours % 12 === 0 ? 12 : hours % 12;
+  return `${datePart} ${displayHours}:${minutes} ${meridiem}`;
+};
+
+function UnrealizedSnapshotSection({
+  data,
+  errors,
+  pricePrecision,
+  pnlCurrency,
+  onChange,
+}: UnrealizedSnapshotSectionProps) {
+  const plugin = usePlugin();
+  const [isEditingSnapshotTime, setIsEditingSnapshotTime] = useState(false);
+  const unrealizedPnL = calculateUnrealizedPnL(data);
+  const effectiveRiskAmount = resolveEffectiveRiskAmount(
+    data,
+    plugin?.settings?.trade?.defaultRiskAmount ?? 0
+  );
+  const unrealizedRMultiple =
+    unrealizedPnL !== null && effectiveRiskAmount && effectiveRiskAmount > 0
+      ? unrealizedPnL / effectiveRiskAmount
+      : undefined;
+
+  const handleSnapshotPriceChange = (value: number | undefined) => {
+    if (value === undefined) {
+      onChange('unrealizedPriceSnapshot', undefined);
+      onChange('unrealizedPriceSnapshotTime', undefined);
+      return;
+    }
+
+    
+    
+    onChange('unrealizedPriceSnapshot', value);
+    onChange('unrealizedPriceSnapshotTime', new Date());
+  };
+
+  const snapshotTime = data.unrealizedPriceSnapshotTime;
+  const hasSnapshotPrice = data.unrealizedPriceSnapshot !== undefined;
+  
+  
+  const showTimeEditor =
+    isEditingSnapshotTime || (hasSnapshotPrice && !snapshotTime);
+
+  return (
+    <div className="journalit-unrealized-snapshot">
+      <div className="journalit-unrealized-snapshot__header">
+        <div className="journalit-unrealized-snapshot__title-group">
+          <div className="journalit-unrealized-snapshot__title">
+            {t('form.unrealized.title')}{' '}
+            <span className="journalit-unrealized-snapshot__optional-text">
+              {t('form.field.optional')}
+            </span>
+          </div>
+          <Tooltip
+            content={t('form.unrealized.tooltip')}
+            className="trade-form-input-mode-tooltip"
+            triggerClassName="journalit-trade-form-layout-editor__mode-info-trigger"
+            preferredPosition="top"
+          >
+            <span
+              className="journalit-dashboard-metric-info journalit-trade-form-layout-editor__mode-info journalit-unrealized-snapshot__info"
+              aria-label={t('form.unrealized.title')}
+            >
+              <Info size={10} aria-hidden="true" />
+            </span>
+          </Tooltip>
+        </div>
+        {unrealizedPnL !== null && (
+          <div className="journalit-unrealized-snapshot__value-chip">
+            <span className="journalit-unrealized-snapshot__value-label">
+              {t('form.unrealized.preview')}
+            </span>
+            <PnLValue
+              value={unrealizedPnL}
+              currencyCode={pnlCurrency}
+              showCents={true}
+              rMultiple={unrealizedRMultiple}
+            />
+          </div>
+        )}
+      </div>
+
+      <div className="journalit-unrealized-snapshot__fields">
+        <div className="journalit-unrealized-snapshot__price-field">
+          <NumberInput
+            label={t('form.unrealized.price')}
+            value={data.unrealizedPriceSnapshot}
+            onChange={handleSnapshotPriceChange}
+            error={errors.unrealizedPriceSnapshot}
+            min={0}
+            precision={pricePrecision}
+            allowDecimal={true}
+            placeholder="112.00"
+          />
+        </div>
+        {showTimeEditor ? (
+          <FastDateTimeInput
+            label={t('form.unrealized.time')}
+            value={snapshotTime}
+            onChange={(value) => onChange('unrealizedPriceSnapshotTime', value)}
+            includeTime={true}
+            hidePickerButton={true}
+            className="journalit-unrealized-snapshot__time-field"
+          />
+        ) : (
+          snapshotTime && (
+            <button
+              type="button"
+              className="journalit-unrealized-snapshot__captured"
+              onClick={() => setIsEditingSnapshotTime(true)}
+              aria-label={t('form.unrealized.time')}
+            >
+              {t('form.unrealized.captured', {
+                time: formatSnapshotCapturedTime(
+                  snapshotTime,
+                  plugin?.settings?.trade?.use24HourTime ?? false,
+                  plugin?.settings?.trade?.dateFormat ?? 'DDMMYY'
+                ),
+              })}
+            </button>
+          )
+        )}
+      </div>
+    </div>
+  );
+}
+
 interface ExitsSectionProps {
   data: Partial<TradeFormData>;
   errors: TradeFormErrors;
@@ -1082,6 +1254,8 @@ interface ExitsSectionProps {
   pricePrecision: number;
   sizePrecision: number;
   showIdealExits: boolean;
+  showUnrealizedSnapshot: boolean;
+  pnlCurrency: string;
   totalEntrySize: number;
   remainingSize: number;
   totalIdealExitSize: number;
@@ -1089,6 +1263,7 @@ interface ExitsSectionProps {
   idealExitRowKeys: string[];
   blankTimeDefaultDate: Date;
   getPositionSizeLabel: () => string;
+  onFieldChange: (field: keyof TradeFormData, value: TradeFormValue) => void;
   onAddExit: () => void;
   onRemoveExit: (index: number) => void;
   onExitChange: (
@@ -1118,6 +1293,8 @@ function ExitsSection({
   pricePrecision,
   sizePrecision,
   showIdealExits,
+  showUnrealizedSnapshot,
+  pnlCurrency,
   totalEntrySize,
   remainingSize,
   totalIdealExitSize,
@@ -1125,6 +1302,7 @@ function ExitsSection({
   idealExitRowKeys,
   blankTimeDefaultDate,
   getPositionSizeLabel,
+  onFieldChange,
   onAddExit,
   onRemoveExit,
   onExitChange,
@@ -1135,6 +1313,16 @@ function ExitsSection({
   onRemoveIdealExit,
   onIdealExitChange,
 }: ExitsSectionProps) {
+  const isOperationallyOpen = isTradeOpenWithContext({
+    tradeStatus: data.tradeStatus,
+    exitTime: data.exitTime,
+    exitPrice: data.exitPrice,
+    pnl: data._originalPnlWasNull ? null : data.pnl,
+    useDirectPnLInput: data.useDirectPnLInput,
+    exits: data.exits,
+    entries: data.entries,
+  });
+
   return (
     <div className="exits-section">
       <h4 className="section-title">
@@ -1265,6 +1453,21 @@ function ExitsSection({
           : t('form.entry-exit.closed')}
       </div>
 
+      {showUnrealizedSnapshot &&
+        isOperationallyOpen &&
+        !data.isMissedTrade &&
+        !data.isBacktestTrade &&
+        !data.useDirectPnLInput &&
+        remainingSize > 0 && (
+          <UnrealizedSnapshotSection
+            data={data}
+            errors={errors}
+            pricePrecision={pricePrecision}
+            pnlCurrency={pnlCurrency}
+            onChange={onFieldChange}
+          />
+        )}
+
       {showIdealExits && (
         <IdealExitsSection
           idealExits={data.idealExits || []}
@@ -1289,6 +1492,9 @@ const EntryExitFieldsComponent: React.FC<EntryExitFieldsProps> = ({
   onChange,
   inputMode,
   showIdealExits = true,
+  showUnrealizedSnapshot = false,
+  showDividends = false,
+  pnlCurrency = 'USD',
 }) => {
   const {
     useDollarValue,
@@ -1327,9 +1533,13 @@ const EntryExitFieldsComponent: React.FC<EntryExitFieldsProps> = ({
 
   const showPriceExecutionFields = inputMode !== 'pnl-risk';
   const hasDividendRows = (data.dividends?.length ?? 0) > 0;
+  
+  
+  
+  
   const showDividendsSection =
     supportsDividends &&
-    (showPriceExecutionFields || hasDividendRows || Boolean(errors.dividends));
+    (hasDividendRows || Boolean(errors.dividends) || showDividends);
 
   return (
     <>
@@ -1378,6 +1588,8 @@ const EntryExitFieldsComponent: React.FC<EntryExitFieldsProps> = ({
           pricePrecision={pricePrecision}
           sizePrecision={sizePrecision}
           showIdealExits={showIdealExits}
+          showUnrealizedSnapshot={showUnrealizedSnapshot}
+          pnlCurrency={pnlCurrency}
           totalEntrySize={totalEntrySize}
           remainingSize={remainingSize}
           totalIdealExitSize={totalIdealExitSize}
@@ -1385,6 +1597,7 @@ const EntryExitFieldsComponent: React.FC<EntryExitFieldsProps> = ({
           idealExitRowKeys={idealExitRowKeys}
           blankTimeDefaultDate={blankTimeDefaultDate}
           getPositionSizeLabel={getPositionSizeLabel}
+          onFieldChange={onChange}
           onAddExit={handleAddExit}
           onRemoveExit={handleRemoveExit}
           onExitChange={handleExitChange}

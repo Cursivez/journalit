@@ -1,7 +1,7 @@
 
 
 import { App, Modal, Notice } from 'obsidian';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { createRoot, Root } from 'react-dom/client';
 import JournalitPlugin from '../../../main';
 import {
@@ -20,6 +20,10 @@ import {
   useCurrency,
 } from '../../../contexts/CurrencyContext';
 import { t } from '../../../lang/helpers';
+import {
+  ConfirmationPanel,
+  type ConfirmationPanelAction,
+} from '../../shared/ConfirmationPanel';
 
 const getErrorMessage = (error: unknown): string =>
   error instanceof Error ? error.message : String(error);
@@ -75,6 +79,7 @@ class EditEventModal extends Modal {
         <EditEventModalContent
           {...this.props}
           onModalClose={() => this.close()}
+          onModalTitleChange={(title) => this.titleEl.setText(title)}
         />
       </CurrencyProvider>
     );
@@ -239,6 +244,8 @@ function useEditEventModalModel({
 
 type EditEventModalModel = ReturnType<typeof useEditEventModalModel>;
 
+type EditEventDeleteAction = 'cancel' | 'delete';
+
 function EditEventDeleteConfirm({
   model,
   transaction,
@@ -255,51 +262,53 @@ function EditEventDeleteConfirm({
   } = model;
 
   return (
-    <div className="add-event-form">
-      <div className="setting-item">
-        <div className="setting-item-info">
-          <div className="setting-item-name journalit-u-text-error">
-            {t('account.edit-event.delete-confirm.title', { type: typeText })}
-          </div>
-          <div className="setting-item-description">
-            {t('account.edit-event.delete-confirm.message', {
-              type: typeText.toLowerCase(),
-              amount: formatCurrency(transaction.amount),
-              date: formatDateDisplay(
-                new Date(transaction.date),
-                getUserDateFormat()
-              ),
-            })}
-          </div>
-          <div className="setting-item-description warning">
-            {t('account.edit-event.delete-confirm.warning')}
-          </div>
-        </div>
-      </div>
-
-      <div className="add-event-buttons">
-        <div className="button-group-right">
-          <Button
-            variant="danger"
-            onClick={handleDelete}
-            disabled={isDeleting}
-            className="delete-transaction-button"
-          >
-            {isDeleting
+    <ConfirmationPanel<EditEventDeleteAction>
+      destructive
+      disabled={isDeleting}
+      className="add-event-form"
+      actions={
+        [
+          {
+            id: 'cancel',
+            value: 'cancel',
+            label: t('button.cancel'),
+            variant: 'secondary',
+            initialFocus: true,
+          },
+          {
+            id: 'delete',
+            value: 'delete',
+            label: isDeleting
               ? t('account.edit-event.button.deleting')
-              : t('account.edit-event.button.delete', { type: typeText })}
-          </Button>
-          <Button
-            variant="plain"
-            onClick={() => setShowDeleteConfirm(false)}
-            disabled={isDeleting}
-            className="cancel-button"
-          >
-            {t('button.cancel')}
-          </Button>
+              : t('account.edit-event.button.delete', { type: typeText }),
+            variant: 'destructive',
+          },
+        ] satisfies readonly ConfirmationPanelAction<EditEventDeleteAction>[]
+      }
+      onAction={(action) => {
+        if (action === 'cancel') {
+          setShowDeleteConfirm(false);
+          return;
+        }
+        void handleDelete();
+      }}
+    >
+      <div className="setting-item-info">
+        <div className="setting-item-description">
+          {t('account.edit-event.delete-confirm.message', {
+            type: typeText.toLowerCase(),
+            amount: formatCurrency(transaction.amount),
+            date: formatDateDisplay(
+              new Date(transaction.date),
+              getUserDateFormat()
+            ),
+          })}
+        </div>
+        <div className="setting-item-description warning">
+          {t('account.edit-event.delete-confirm.warning')}
         </div>
       </div>
-    </div>
+    </ConfirmationPanel>
   );
 }
 
@@ -480,8 +489,18 @@ function EditEventForm({
 }
 
 const EditEventModalContent: React.FC<
-  EditEventModalProps & { onModalClose: () => void }
-> = ({ plugin, accountName, transaction, onSave, onModalClose }) => {
+  EditEventModalProps & {
+    onModalClose: () => void;
+    onModalTitleChange: (title: string) => void;
+  }
+> = ({
+  plugin,
+  accountName,
+  transaction,
+  onSave,
+  onModalClose,
+  onModalTitleChange,
+}) => {
   const model = useEditEventModalModel({
     plugin,
     accountName,
@@ -489,6 +508,16 @@ const EditEventModalContent: React.FC<
     onSave,
     onModalClose,
   });
+
+  useEffect(() => {
+    onModalTitleChange(
+      model.showDeleteConfirm
+        ? t('account.edit-event.delete-confirm.title', {
+            type: model.typeText,
+          })
+        : t('account.edit-event.title', { type: model.typeText })
+    );
+  }, [model.showDeleteConfirm, model.typeText, onModalTitleChange]);
 
   if (model.showDeleteConfirm) {
     return <EditEventDeleteConfirm model={model} transaction={transaction} />;

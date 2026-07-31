@@ -154,15 +154,48 @@ interface QueryFilter {
 type StatType = 'pnl' | 'winRate' | 'tradeCount' | 'avgR' | 'profitFactor';
 
 
-export type DemonTrackerCountMode = 'per-trade' | 'per-trading-day';
+export const DEMON_TRACKER_TRACKING_METHODS = [
+  'trade-occurrences',
+  'trading-days',
+  'daily-review-entries',
+] as const;
+export type DemonTrackerTrackingMethod =
+  (typeof DEMON_TRACKER_TRACKING_METHODS)[number];
+export const DEFAULT_DEMON_TRACKER_TRACKING_METHOD: DemonTrackerTrackingMethod =
+  'trade-occurrences';
+const DEMON_TRACKER_TRACKING_METHOD_SET: ReadonlySet<string> = new Set(
+  DEMON_TRACKER_TRACKING_METHODS
+);
 
+export function isDemonTrackerTrackingMethod(
+  value: unknown
+): value is DemonTrackerTrackingMethod {
+  return (
+    typeof value === 'string' && DEMON_TRACKER_TRACKING_METHOD_SET.has(value)
+  );
+}
 
-export type DemonTrackerSourceMode = 'trades' | 'session' | 'combined';
+export const DEMON_TRACKER_STOP_THRESHOLDS = [2, 3, 4, 5, 6, 7, 8, 9] as const;
+export type DemonTrackerStopThreshold =
+  (typeof DEMON_TRACKER_STOP_THRESHOLDS)[number];
+export const DEFAULT_DEMON_TRACKER_STOP_THRESHOLD: DemonTrackerStopThreshold = 6;
+const DEMON_TRACKER_STOP_THRESHOLD_SET: ReadonlySet<number> = new Set(
+  DEMON_TRACKER_STOP_THRESHOLDS
+);
+
+export function isDemonTrackerStopThreshold(
+  value: unknown
+): value is DemonTrackerStopThreshold {
+  return (
+    typeof value === 'number' && DEMON_TRACKER_STOP_THRESHOLD_SET.has(value)
+  );
+}
 
 
 export interface DemonTrackerWidgetConfig {
-  countMode?: DemonTrackerCountMode;
-  sourceMode?: DemonTrackerSourceMode;
+  trackingMethod?: DemonTrackerTrackingMethod;
+  
+  stopThreshold?: DemonTrackerStopThreshold;
 }
 
 export type ReviewContextFieldsSelectionMode = 'all' | 'group' | 'fields';
@@ -223,6 +256,7 @@ type WeeklyWidgetType =
   | 'drawdown-chart'
   | 'trades'
   | 'breakdown' 
+  | 'demon-tracker'
   | 'setup-performance'
   | 'best-worst' 
   | 'trades-chart' 

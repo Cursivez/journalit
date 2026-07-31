@@ -2198,7 +2198,7 @@ export const accountPageStylesCSS = `
   backdrop-filter: blur(2px);
 }
 
-.account-type-delete-modal {
+.account-dashboard-settings-modal-container .journalit-confirmation-panel {
   background: var(--background-primary);
   border: 1px solid var(--border-color);
   border-radius: 8px;
@@ -2208,17 +2208,6 @@ export const accountPageStylesCSS = `
   max-height: 80vh;
   overflow-y: auto;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-}
-
-.account-type-delete-modal h3 {
-  margin: 0 0 16px 0;
-  color: var(--text-normal);
-  font-size: 18px;
-  font-weight: 600;
-}
-
-.delete-modal-content {
-  margin-bottom: 20px;
 }
 
 .delete-warning {
@@ -2306,18 +2295,6 @@ export const accountPageStylesCSS = `
   font-size: 16px;
 }
 
-.account-dashboard-settings-modal-container .delete-modal-actions {
-  display: flex;
-  gap: 12px;
-  justify-content: flex-end; 
-  padding-top: 16px;
-  border-top: 1px solid var(--border-color);
-}
-
-.account-dashboard-settings-modal-container .delete-modal-actions .button {
-  min-width: 100px;
-}
-
 
 .account-dashboard-settings-modal-container .account-migration-modal-overlay {
   position: fixed;
@@ -2334,7 +2311,7 @@ export const accountPageStylesCSS = `
 }
 
 
-.account-migration-modal {
+.account-dashboard-settings-modal-container .account-migration-modal {
   max-width: 600px;
 }
 
@@ -2460,17 +2437,6 @@ export const accountPageStylesCSS = `
   border-color: var(--color-accent);
 }
 
-.account-dashboard-settings-modal-container .delete-modal-actions .delete-confirm-button {
-  background: var(--color-red) !important;
-  color: white !important;
-  border-color: var(--color-red) !important;
-}
-
-.account-dashboard-settings-modal-container .delete-modal-actions .delete-confirm-button:hover:not(:disabled) {
-  background: var(--color-red-hover, #dc2626) !important;
-  border-color: var(--color-red-hover, #dc2626) !important;
-}
-
 
 @media (max-width: 768px) {
   .account-dashboard-settings-modal-container .account-types-container {
@@ -2486,17 +2452,17 @@ export const accountPageStylesCSS = `
     width: 100%;
   }
   
-  .account-type-delete-modal {
+  .account-dashboard-settings-modal-container .journalit-confirmation-panel {
     margin: 20px;
     width: calc(100vw - 40px);
     max-width: none;
   }
   
-  .account-dashboard-settings-modal-container .delete-modal-actions {
+  .account-dashboard-settings-modal-container .journalit-confirmation-panel__actions {
     flex-direction: column;
   }
   
-  .account-dashboard-settings-modal-container .delete-modal-actions .button {
+  .account-dashboard-settings-modal-container .journalit-confirmation-panel__action {
     width: 100%;
   }
 }

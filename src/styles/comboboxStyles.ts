@@ -79,9 +79,7 @@ export const comboboxCSS = `
   padding: 0;
   list-style: none;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
-  transition: opacity 0.15s ease, transform 0.15s ease;
-  transform-origin: top center;
-  will-change: transform, opacity;
+  transition: opacity 0.15s ease;
 
   
   animation: journalit-combobox-dropdown-open 0.15s ease forwards;
@@ -100,11 +98,9 @@ export const comboboxCSS = `
 @keyframes journalit-combobox-dropdown-open {
   from {
     opacity: 0;
-    transform: translateY(-5px);
   }
   to {
     opacity: 1;
-    transform: translateY(0);
   }
 }
 

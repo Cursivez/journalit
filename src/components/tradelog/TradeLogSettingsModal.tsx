@@ -35,6 +35,7 @@ import {
 } from '../shared/visibilityEditor';
 import { eventBus } from '../../services/events';
 import ToggleSwitch from '../ui/ToggleSwitch';
+import { showConfirmationModal } from '../shared/ConfirmationModal';
 
 interface TradeLogSettingsModalProps {
   app: App;
@@ -44,84 +45,12 @@ interface TradeLogSettingsModalProps {
 }
 
 
-class UnsavedChangesConfirmationModal extends Modal {
-  private resolved = false;
-
-  constructor(
-    app: App,
-    private onConfirm: (shouldClose: boolean) => void
-  ) {
-    super(app);
-    this.titleEl.setText(t('form.modal.unsaved-changes.title'));
-  }
-
-  onOpen() {
-    const { contentEl } = this;
-    contentEl.empty();
-    contentEl.createEl('p', {
-      text: t('tradelog.settings.modal.unsaved-changes.body1'),
-    });
-    contentEl.createEl('p', {
-      text: t('tradelog.settings.modal.unsaved-changes.body2'),
-    });
-
-    const buttonContainer = contentEl.createDiv({
-      cls: 'modal-button-container journalit-modal-button-container',
-    });
-
-    
-    buttonContainer
-      .createEl('button', {
-        type: 'button',
-        text: t('form.modal.unsaved-changes.continue'),
-        cls: 'mod-cta',
-      })
-      .addEventListener('click', () => {
-        if (!this.resolved) {
-          this.resolved = true;
-          this.onConfirm(false); 
-        }
-        this.close();
-      });
-
-    
-    buttonContainer
-      .createEl('button', {
-        type: 'button',
-        text: t('form.modal.unsaved-changes.discard'),
-        cls: 'mod-warning',
-      })
-      .addEventListener('click', () => {
-        if (!this.resolved) {
-          this.resolved = true;
-          this.onConfirm(true); 
-        }
-        this.close();
-      });
-  }
-
-  close(): void {
-    super.close();
-    if (!this.resolved) {
-      this.resolved = true;
-      this.onConfirm(false);
-    }
-  }
-
-  onClose() {
-    const { contentEl } = this;
-    contentEl.empty();
-  }
-}
-
-
 export class TradeLogSettingsModal extends Modal {
   private props: TradeLogSettingsModalProps;
   private container!: HTMLDivElement;
   private root: Root | null = null;
   private checkForUnsavedChanges: (() => boolean) | null = null;
   private isConfirming = false;
-  private confirmationModal: UnsavedChangesConfirmationModal | null = null;
   private shouldBypassUnsavedCheck = false;
 
   constructor(props: TradeLogSettingsModalProps) {
@@ -165,7 +94,6 @@ export class TradeLogSettingsModal extends Modal {
         })
         .finally(() => {
           this.isConfirming = false;
-          this.confirmationModal = null;
         });
     } else {
       super.close();
@@ -173,12 +101,15 @@ export class TradeLogSettingsModal extends Modal {
   }
 
   private showUnsavedChangesConfirmation(): Promise<boolean> {
-    return new Promise((resolve) => {
-      this.confirmationModal = new UnsavedChangesConfirmationModal(
-        this.app,
-        (shouldClose) => resolve(shouldClose)
-      );
-      this.confirmationModal.open();
+    return showConfirmationModal(this.app, {
+      title: t('form.modal.unsaved-changes.title'),
+      message: [
+        { text: t('tradelog.settings.modal.unsaved-changes.body1') },
+        { text: t('tradelog.settings.modal.unsaved-changes.body2') },
+      ],
+      cancelLabel: t('form.modal.unsaved-changes.continue'),
+      confirmLabel: t('form.modal.unsaved-changes.discard'),
+      destructive: true,
     });
   }
 
@@ -244,7 +175,7 @@ interface InitialState {
   expandedMode: boolean;
 }
 
-function parseTradeLogColumnId(value: string): TradeLogColumnId | null {
+export function parseTradeLogColumnId(value: string): TradeLogColumnId | null {
   if (value.startsWith('cf:')) {
     const customId: CustomTradeLogColumnId = `cf:${value.slice(3)}`;
     return customId;
@@ -274,6 +205,12 @@ function parseTradeLogColumnId(value: string): TradeLogColumnId | null {
     case 'riskAmount':
     case 'rMultiple':
     case 'maxR':
+    case 'maePrice':
+    case 'mfePrice':
+    case 'mae':
+    case 'mfe':
+    case 'maePercent':
+    case 'mfePercent':
     case 'positionSize':
     case 'positionValue':
     case 'fees':

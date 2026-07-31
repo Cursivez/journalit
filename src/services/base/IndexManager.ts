@@ -875,9 +875,16 @@ export class IndexManager {
           const indexName = serialized.name;
           this.indexes.set(indexName, []);
 
+          const serializedEntriesByPath = new Map<
+            string,
+            SerializedIndexEntry
+          >();
+          for (const serializedEntry of serialized.entries) {
+            serializedEntriesByPath.set(serializedEntry.path, serializedEntry);
+          }
+
           
-          for (let i = 0; i < serialized.entries.length; i++) {
-            const serializedEntry = serialized.entries[i];
+          for (const serializedEntry of serializedEntriesByPath.values()) {
             const filePath = serializedEntry.path;
             const file = this.app.vault.getAbstractFileByPath(filePath);
 

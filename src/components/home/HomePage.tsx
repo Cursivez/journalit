@@ -4,14 +4,15 @@ import React, {
   useState,
   useEffect,
   useCallback,
+  useDeferredValue,
   useMemo,
   useRef,
 } from 'react';
+import type { WorkspaceLeaf } from 'obsidian';
 import {
-  Settings,
   Check,
   Plus,
-  ChevronDown,
+  Grid2x2Plus,
   ArrowUp,
   ArrowDown,
 } from '../shared/icons/ObsidianIcon';
@@ -30,14 +31,15 @@ import { HomeGridLayout } from './HomeGridLayout';
 import { HomeAccountsDataProvider } from './context/HomeAccountsDataContext';
 import { QuickLinksRow } from './QuickLinksRow';
 import { HomeWidgetSelector } from './components/HomeWidgetSelector';
-import { HomeAccountFilter } from './components/HomeAccountFilter';
-import { HomeTradeTypeFilter } from './components/HomeTradeTypeFilter';
-import { DropdownMenu } from '../shared/DropdownMenu';
+import { HomeFilterPopover } from './components/HomeFilterPopover';
+import { SegmentedControl } from '../shared/SegmentedControl';
+import { DashboardPage } from '../dashboard/DashboardView';
 import {
   QuickLinkButton,
   DEFAULT_SETTINGS,
   HomePeriod,
   HomeQuickLinksPosition,
+  HomeViewMode,
 } from '../../settings/types';
 import { useEventBus } from '../../hooks/useEventBus';
 import {
@@ -52,10 +54,17 @@ import {
   HOME_EDIT_MODE_DISABLED_ACTION_ID,
   HOME_EDIT_MODE_ENABLED_ACTION_ID,
   HOME_FILTERS_TARGET_ID,
+  HOME_FILTER_POPOVER_OPENED_ACTION_ID,
   HOME_GRID_TARGET_ID,
+  HOME_MAIN_GUIDE_ID,
+  HOME_MAIN_GUIDE_MERGED_MODES_VERSION,
+  HOME_MODE_DASHBOARD_ENABLED_ACTION_ID,
+  HOME_MODE_TOGGLE_DASHBOARD_OPTION_TARGET_ID,
+  HOME_MODE_TOGGLE_TARGET_ID,
   HOME_QUICK_LINKS_POSITION_BUTTON_TARGET_ID,
   HOME_QUICK_LINKS_TARGET_ID,
   HOME_WIDGET_SELECTOR_OPENED_ACTION_ID,
+  HOME_WHATS_NEW_DASHBOARD_TOGGLE_GUIDE_ID,
 } from '../../guides/homeGuideIds';
 import {
   collectAvailableHomeAccounts,
@@ -67,6 +76,13 @@ import {
 import { areAccountSelectionsEqual } from '../shared/filters/remapSelectedAccounts';
 import type { TradeChangedPayload } from '../../services/events/types';
 import { t, hasTranslation } from '../../lang/helpers';
+import { cssVars } from '../../styles/inlineStylePolicy';
+import {
+  getHomeBackgroundResourcePath,
+  shouldShowHomeBackground,
+} from './homeBackgroundUtils';
+import { useLeafActive } from '../../hooks/useLeafActive';
+import { subscribeToHomeModeChanges } from './homeModeEvents';
 
 const asHomeAccountTradeSnapshots = (
   value: unknown
@@ -79,6 +95,12 @@ const asHomeAccountTradeSnapshots = (
 
 interface HomePageProps {
   plugin: JournalitPlugin;
+  leaf: WorkspaceLeaf;
+  modeEventTarget: HTMLElement;
+  
+  getInitialMode: () => HomeViewMode;
+  
+  onModeChange: (mode: HomeViewMode) => void;
 }
 
 
@@ -112,7 +134,65 @@ const getPeriodLabels = (): Record<HomePeriod, string> => ({
   lifetime: t('home.period.lifetime'),
 });
 
-function useHomePageModel(plugin: JournalitPlugin) {
+
+function useHomeBackground(plugin: JournalitPlugin): {
+  resourcePath: string | null;
+  showInDashboard: boolean;
+} {
+  const [homeBackgroundPath, setHomeBackgroundPath] = useState(
+    plugin.settings.home?.backgroundImagePath || ''
+  );
+  const [showInDashboard, setShowInDashboard] = useState(
+    plugin.settings.home?.showBackgroundInDashboard ?? false
+  );
+  const [homeBackgroundRevision, setHomeBackgroundRevision] = useState(() =>
+    Date.now()
+  );
+  const refreshHomeBackground = useCallback(
+    (refreshImage: boolean) => {
+      setHomeBackgroundPath(plugin.settings.home?.backgroundImagePath || '');
+      setShowInDashboard(
+        plugin.settings.home?.showBackgroundInDashboard ?? false
+      );
+      if (refreshImage) setHomeBackgroundRevision(Date.now());
+    },
+    [plugin]
+  );
+
+  useEventBus(
+    'settings:changed',
+    useCallback(
+      (payload) => {
+        if (
+          payload.section === 'all' ||
+          (payload.section === 'home' &&
+            (payload.source === 'background-image' ||
+              payload.source === 'background-dashboard-visibility'))
+        ) {
+          refreshHomeBackground(
+            payload.section === 'all' || payload.source === 'background-image'
+          );
+        }
+      },
+      [refreshHomeBackground]
+    )
+  );
+
+  const resourcePath = useMemo(() => {
+    const resourcePath = getHomeBackgroundResourcePath(
+      plugin.app,
+      homeBackgroundPath
+    );
+    if (!resourcePath) return null;
+
+    const separator = resourcePath.includes('?') ? '&' : '?';
+    return `${resourcePath}${separator}journalit-home=${homeBackgroundRevision}`;
+  }, [homeBackgroundPath, homeBackgroundRevision, plugin]);
+
+  return { resourcePath, showInDashboard };
+}
+
+function useHomePageModel(plugin: JournalitPlugin, isActive: boolean) {
   
   const isFirstTimeUser = useCallback((): boolean => {
     const ONBOARDING_SHOWN_KEY = `journalit-onboarding-ever-shown-${plugin.app.vault.getName()}`;
@@ -284,7 +364,6 @@ function useHomePageModel(plugin: JournalitPlugin) {
         false
     );
   const [availableAccounts, setAvailableAccounts] = useState<string[]>([]);
-  const [showPeriodDropdown, setShowPeriodDropdown] = useState(false);
   const [tradeCount, setTradeCount] = useState<number | null>(null);
   const [gettingStartedDismissed, setGettingStartedDismissed] = useState(
     () => plugin.uiStateManager.getState().gettingStartedDismissed ?? false
@@ -310,7 +389,6 @@ function useHomePageModel(plugin: JournalitPlugin) {
     null
   );
   const autoAddGettingStartedRef = useRef(false);
-  const periodDropdownRef = useRef<HTMLDivElement>(null);
   const selectedAccountsRef = useRef<string[]>(selectedAccounts);
 
   useEffect(() => {
@@ -370,35 +448,6 @@ function useHomePageModel(plugin: JournalitPlugin) {
     )
   );
 
-  useEffect(() => {}, []);
-
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      const target = event.target;
-      const ActiveDocumentNode = window.activeDocument.defaultView?.Node;
-      if (
-        !periodDropdownRef.current ||
-        !ActiveDocumentNode ||
-        !(target instanceof ActiveDocumentNode)
-      ) {
-        setShowPeriodDropdown(false);
-        return;
-      }
-
-      if (!periodDropdownRef.current.contains(target)) {
-        setShowPeriodDropdown(false);
-      }
-    };
-
-    window.activeDocument.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      window.activeDocument.removeEventListener(
-        'mousedown',
-        handleClickOutside
-      );
-    };
-  }, []);
-
   const previousIsEditingRef = useRef(isEditing);
 
   useEffect(() => {
@@ -441,7 +490,13 @@ function useHomePageModel(plugin: JournalitPlugin) {
   }, [currentGuideStepId, showWidgetSelector]);
 
   const handleGuideBack = useCallback(
-    async ({ toStepId }: { toStepId: string }) => {
+    async ({ toStepId, guideId }: { toStepId: string; guideId: string }) => {
+      if (
+        guideId !== HOME_MAIN_GUIDE_ID &&
+        guideId !== HOME_WHATS_NEW_DASHBOARD_TOGGLE_GUIDE_ID
+      ) {
+        return;
+      }
       if (toStepId === 'intro' || toStepId === 'filters') {
         setIsEditing(false);
         setShowWidgetSelector(false);
@@ -476,7 +531,7 @@ function useHomePageModel(plugin: JournalitPlugin) {
     []
   );
 
-  useGuideBackHandler(handleGuideBack);
+  useGuideBackHandler(isActive ? handleGuideBack : null);
 
   
   useEffect(() => {
@@ -609,7 +664,6 @@ function useHomePageModel(plugin: JournalitPlugin) {
     setIsEditing(nextIsEditing);
 
     if (!nextIsEditing) {
-      setShowPeriodDropdown(false);
       setShowWidgetSelector(false);
     }
   };
@@ -639,7 +693,6 @@ function useHomePageModel(plugin: JournalitPlugin) {
   const handlePeriodChange = useCallback(
     async (period: HomePeriod) => {
       setSelectedPeriod(period);
-      setShowPeriodDropdown(false);
 
       
       await plugin.uiStateManager.updateState({
@@ -1377,9 +1430,6 @@ function useHomePageModel(plugin: JournalitPlugin) {
     memoizedGreeting,
     memoizedSubtitle,
     registerFiltersTarget,
-    periodDropdownRef,
-    showPeriodDropdown,
-    setShowPeriodDropdown,
     selectedPeriod,
     handlePeriodChange,
     selectedTradeTypes,
@@ -1414,202 +1464,229 @@ function useHomePageModel(plugin: JournalitPlugin) {
   };
 }
 
-const HomePageComponent: React.FC<HomePageProps> = ({ plugin }) => {
-  const {
-    memoizedGreeting,
-    memoizedSubtitle,
-    registerFiltersTarget,
-    periodDropdownRef,
-    showPeriodDropdown,
-    setShowPeriodDropdown,
-    selectedPeriod,
-    handlePeriodChange,
-    selectedTradeTypes,
-    handleTradeTypeFilterChange,
-    availableAccounts,
-    selectedAccounts,
-    explicitAllAccountsSelected,
-    handleAccountFilterChange,
-    isEditing,
-    setShowWidgetSelector,
-    registerAddWidgetButtonTarget,
-    handleToggleQuickLinksPosition,
-    quickLinksPosition,
-    registerQuickLinksPositionButtonTarget,
-    handleToggleEdit,
-    registerEditButtonTarget,
-    effectiveSelectedAccounts,
-    lifetimeFilters,
-    hasVisibleQuickLinks,
-    registerQuickLinksTarget,
-    quickLinks,
-    setQuickLinks,
-    registerGridTarget,
-    hasAccountBackedHomeWidgets,
-    activeWidgets,
-    handleRemoveWidget,
-    tradeCount,
-    showWidgetSelector,
-    hiddenQuickLinks,
-    handleAddWidget,
-    handleRestoreQuickLink,
-  } = useHomePageModel(plugin);
+type HomePageModel = ReturnType<typeof useHomePageModel>;
+
+interface HomeModeContextValue {
+  mode: HomeViewMode;
+  changeMode: (mode: HomeViewMode) => void;
+}
+
+
+
+const HomeModeContext = React.createContext<HomeModeContextValue | null>(null);
+
+interface HomeModeToggleProps {
+  registerTarget?: (element: HTMLDivElement | null) => void;
+  registerDashboardOptionTarget?: (element: HTMLButtonElement | null) => void;
+}
+
+const HomeModeToggle: React.FC<HomeModeToggleProps> = ({
+  registerTarget,
+  registerDashboardOptionTarget,
+}) => {
+  const modeContext = React.use(HomeModeContext);
+  if (!modeContext) {
+    throw new Error('HomeModeToggle must be rendered inside HomePage');
+  }
+  const { mode, changeMode } = modeContext;
+  const modeOptions = useMemo(
+    () => [
+      { value: 'overview' as const, label: t('home.mode.overview') },
+      { value: 'dashboard' as const, label: t('home.mode.dashboard') },
+    ],
+    []
+  );
 
   return (
-    <div className="journalit-home-page">
-      
+    <div className="journalit-home-mode-toggle-wrapper" ref={registerTarget}>
+      <SegmentedControl
+        options={modeOptions}
+        value={mode}
+        onChange={changeMode}
+        size="small"
+        groupRole="radiogroup"
+        ariaLabel={t('home.mode.aria')}
+        className="journalit-home-mode-toggle"
+        getOptionRef={
+          registerDashboardOptionTarget
+            ? (value) =>
+                value === 'dashboard'
+                  ? registerDashboardOptionTarget
+                  : undefined
+            : undefined
+        }
+      />
+    </div>
+  );
+};
+
+interface HomeOverviewPanelProps {
+  model: HomePageModel;
+  plugin: JournalitPlugin;
+  isActive: boolean;
+  modeToggle: React.ReactNode;
+}
+
+const HomeOverviewPanel: React.FC<HomeOverviewPanelProps> = ({
+  model,
+  plugin,
+  isActive,
+  modeToggle,
+}) => {
+  const emitGuideAction = useGuideAction();
+
+  return (
+    <section
+      className={`journalit-home-mode-panel journalit-home-mode-panel--overview${isActive ? ' is-active' : ''}`}
+      aria-hidden={!isActive}
+      inert={!isActive}
+    >
       <div className="journalit-home-header">
         <div className="journalit-home-greeting">
-          <h1 className="journalit-home-greeting-title">{memoizedGreeting}</h1>
-          <p className="journalit-home-greeting-subtitle">{memoizedSubtitle}</p>
-        </div>
+          <h1 className="journalit-home-greeting-title">
+            {model.memoizedGreeting}
+          </h1>
+          <div className="journalit-home-subtitle-row">
+            <p className="journalit-home-greeting-subtitle">
+              {model.memoizedSubtitle}
+            </p>
 
-        <div className="journalit-home-actions">
-          <div className="journalit-home-filters" ref={registerFiltersTarget}>
-            
-            <div
-              className="journalit-home-period-wrapper"
-              ref={periodDropdownRef}
-            >
-              <button
-                onClick={() => setShowPeriodDropdown(!showPeriodDropdown)}
-                className="journalit-home-period-selector clickable-icon"
-                aria-label={t('home.aria.filter-period')}
-              >
-                <span>{getPeriodLabels()[selectedPeriod]}</span>
-                <ChevronDown
-                  size={14}
-                  className={`journalit-home-period-chevron${showPeriodDropdown ? ' journalit-home-period-chevron--open' : ''}`}
+            <div className="journalit-home-actions">
+              <div ref={model.registerFiltersTarget}>
+                <HomeFilterPopover
+                  periods={HOME_PERIODS}
+                  periodLabels={getPeriodLabels()}
+                  selectedPeriod={model.selectedPeriod}
+                  onPeriodChange={model.handlePeriodChange}
+                  selectedTradeTypes={model.selectedTradeTypes}
+                  onTradeTypesChange={model.handleTradeTypeFilterChange}
+                  availableAccounts={model.availableAccounts}
+                  selectedAccounts={model.selectedAccounts}
+                  explicitAllAccountsSelected={
+                    model.explicitAllAccountsSelected
+                  }
+                  onAccountsChange={model.handleAccountFilterChange}
+                  onOpen={() =>
+                    emitGuideAction(HOME_FILTER_POPOVER_OPENED_ACTION_ID)
+                  }
                 />
+              </div>
+
+              {model.isEditing && (
+                <button
+                  type="button"
+                  onClick={() => model.setShowWidgetSelector(true)}
+                  className="journalit-home-add-widget-button clickable-icon"
+                  aria-label={t('home.aria.add-widget')}
+                  ref={model.registerAddWidgetButtonTarget}
+                >
+                  <Plus size={14} />
+                  <span>{t('home.button.add-widget')}</span>
+                </button>
+              )}
+
+              {model.isEditing && (
+                <button
+                  type="button"
+                  onClick={() => void model.handleToggleQuickLinksPosition()}
+                  className="journalit-home-quick-links-position-toggle clickable-icon"
+                  aria-label={
+                    model.quickLinksPosition === 'belowWidgets'
+                      ? t('home.quick-links.move-above')
+                      : t('home.quick-links.move-below')
+                  }
+                  ref={model.registerQuickLinksPositionButtonTarget}
+                >
+                  {model.quickLinksPosition === 'belowWidgets' ? (
+                    <ArrowUp size={14} />
+                  ) : (
+                    <ArrowDown size={14} />
+                  )}
+                </button>
+              )}
+
+              <button
+                type="button"
+                onClick={() => void model.handleToggleEdit()}
+                className={`journalit-home-edit-toggle clickable-icon${model.isEditing ? ' journalit-home-edit-toggle--active' : ''}`}
+                aria-label={
+                  model.isEditing
+                    ? t('home.aria.save-layout')
+                    : t('home.aria.customize')
+                }
+                ref={model.registerEditButtonTarget}
+              >
+                {model.isEditing ? (
+                  <Check size={14} />
+                ) : (
+                  <Grid2x2Plus size={16} />
+                )}
               </button>
 
-              
-              {showPeriodDropdown && (
-                <DropdownMenu
-                  className="journalit-home-period-menu"
-                  onChange={(period) => void handlePeriodChange(period)}
-                  options={HOME_PERIODS.map((period) => ({
-                    value: period,
-                    label: getPeriodLabels()[period],
-                  }))}
-                  value={selectedPeriod}
-                />
-              )}
+              {modeToggle}
             </div>
-
-            <HomeTradeTypeFilter
-              selectedTradeTypes={selectedTradeTypes}
-              onChange={handleTradeTypeFilterChange}
-            />
-
-            <HomeAccountFilter
-              availableAccounts={availableAccounts}
-              selectedAccounts={selectedAccounts}
-              explicitAllSelected={explicitAllAccountsSelected}
-              onChange={handleAccountFilterChange}
-            />
           </div>
-
-          
-          {isEditing && (
-            <button
-              onClick={() => setShowWidgetSelector(true)}
-              className="journalit-home-add-widget-button clickable-icon"
-              aria-label={t('home.aria.add-widget')}
-              ref={registerAddWidgetButtonTarget}
-            >
-              <Plus size={14} />
-              <span>{t('home.button.add-widget')}</span>
-            </button>
-          )}
-
-          {isEditing && (
-            <button
-              onClick={() => void handleToggleQuickLinksPosition()}
-              className="journalit-home-quick-links-position-toggle clickable-icon"
-              aria-label={
-                quickLinksPosition === 'belowWidgets'
-                  ? t('home.quick-links.move-above')
-                  : t('home.quick-links.move-below')
-              }
-              ref={registerQuickLinksPositionButtonTarget}
-            >
-              {quickLinksPosition === 'belowWidgets' ? (
-                <ArrowUp size={14} />
-              ) : (
-                <ArrowDown size={14} />
-              )}
-            </button>
-          )}
-
-          <button
-            onClick={() => void handleToggleEdit()}
-            className={`journalit-home-edit-toggle clickable-icon${isEditing ? ' journalit-home-edit-toggle--active' : ''}`}
-            aria-label={
-              isEditing ? t('home.aria.save-layout') : t('home.aria.customize')
-            }
-            ref={registerEditButtonTarget}
-          >
-            {isEditing ? <Check size={14} /> : <Settings size={14} />}
-          </button>
         </div>
       </div>
 
-      
       <div className="journalit-home-content">
         <HomeAccountProvider
-          selectedAccounts={effectiveSelectedAccounts}
-          availableAccounts={availableAccounts}
+          selectedAccounts={model.effectiveSelectedAccounts}
+          availableAccounts={model.availableAccounts}
         >
           <DashboardDataProvider
             app={plugin.app}
             tradeService={plugin.tradeService}
-            filters={lifetimeFilters}
+            filters={model.lifetimeFilters}
             plugin={plugin}
+            isActive={isActive}
           >
-            <HomePeriodProvider period={selectedPeriod}>
-              {quickLinksPosition === 'aboveWidgets' &&
-                (isEditing || hasVisibleQuickLinks) && (
+            <HomePeriodProvider period={model.selectedPeriod}>
+              {model.quickLinksPosition === 'aboveWidgets' &&
+                (model.isEditing || model.hasVisibleQuickLinks) && (
                   <div
                     className="journalit-home-section journalit-home-section--quick-links"
-                    ref={registerQuickLinksTarget}
+                    ref={model.registerQuickLinksTarget}
                   >
                     <QuickLinksRow
                       plugin={plugin}
-                      isEditing={isEditing}
-                      quickLinks={quickLinks}
-                      onQuickLinksChange={setQuickLinks}
+                      isEditing={model.isEditing}
+                      quickLinks={model.quickLinks}
+                      onQuickLinksChange={model.setQuickLinks}
                     />
                   </div>
                 )}
 
-              
-              <div className="journalit-home-section" ref={registerGridTarget}>
+              <div
+                className="journalit-home-section"
+                ref={model.registerGridTarget}
+              >
+                
                 <HomeAccountsDataProvider
                   plugin={plugin}
-                  enabled={hasAccountBackedHomeWidgets}
-                  selectedTradeTypes={selectedTradeTypes}
+                  enabled={model.hasAccountBackedHomeWidgets}
+                  selectedTradeTypes={model.selectedTradeTypes}
                 >
                   <HomeGridLayout
-                    isEditing={isEditing}
-                    widgets={activeWidgets}
-                    onRemoveWidget={handleRemoveWidget}
-                    tradeCount={tradeCount}
+                    isEditing={model.isEditing}
+                    widgets={model.activeWidgets}
+                    onRemoveWidget={model.handleRemoveWidget}
+                    tradeCount={model.tradeCount}
                   />
                 </HomeAccountsDataProvider>
               </div>
 
-              {quickLinksPosition !== 'aboveWidgets' &&
-                (isEditing || hasVisibleQuickLinks) && (
+              {model.quickLinksPosition !== 'aboveWidgets' &&
+                (model.isEditing || model.hasVisibleQuickLinks) && (
                   <div
                     className="journalit-home-section journalit-home-section--quick-links"
-                    ref={registerQuickLinksTarget}
+                    ref={model.registerQuickLinksTarget}
                   >
                     <QuickLinksRow
                       plugin={plugin}
-                      isEditing={isEditing}
-                      quickLinks={quickLinks}
-                      onQuickLinksChange={setQuickLinks}
+                      isEditing={model.isEditing}
+                      quickLinks={model.quickLinks}
+                      onQuickLinksChange={model.setQuickLinks}
                     />
                   </div>
                 )}
@@ -1617,18 +1694,179 @@ const HomePageComponent: React.FC<HomePageProps> = ({ plugin }) => {
           </DashboardDataProvider>
         </HomeAccountProvider>
       </div>
+    </section>
+  );
+};
 
-      
-      {showWidgetSelector && (
+interface HomeOverviewSectionProps {
+  plugin: JournalitPlugin;
+  isActive: boolean;
+  modeToggle: React.ReactNode;
+}
+
+
+const HomeOverviewSection: React.FC<HomeOverviewSectionProps> = ({
+  plugin,
+  isActive,
+  modeToggle,
+}) => {
+  const model = useHomePageModel(plugin, isActive);
+
+  return (
+    <>
+      <HomeOverviewPanel
+        model={model}
+        plugin={plugin}
+        isActive={isActive}
+        modeToggle={modeToggle}
+      />
+
+      {model.showWidgetSelector && isActive && (
         <HomeWidgetSelector
-          activeWidgets={activeWidgets}
-          hiddenQuickLinks={hiddenQuickLinks}
-          onAddWidget={handleAddWidget}
-          onRestoreQuickLink={handleRestoreQuickLink}
-          onClose={() => setShowWidgetSelector(false)}
+          activeWidgets={model.activeWidgets}
+          hiddenQuickLinks={model.hiddenQuickLinks}
+          onAddWidget={model.handleAddWidget}
+          onRestoreQuickLink={model.handleRestoreQuickLink}
+          onClose={() => model.setShowWidgetSelector(false)}
         />
       )}
-    </div>
+    </>
+  );
+};
+
+const HomePageComponent: React.FC<HomePageProps> = ({
+  plugin,
+  leaf,
+  modeEventTarget,
+  getInitialMode,
+  onModeChange,
+}) => {
+  const {
+    resourcePath: homeBackgroundResourcePath,
+    showInDashboard: showHomeBackgroundInDashboard,
+  } = useHomeBackground(plugin);
+  
+  
+  
+  
+  const [mode, setMode] = useState<HomeViewMode>(getInitialMode);
+  
+  
+  const panelMode = useDeferredValue(mode);
+  const isLeafActive = useLeafActive(leaf);
+  const isOverviewPanelActive = panelMode === 'overview';
+  const isDashboardPanelActive = panelMode === 'dashboard';
+  
+  
+  
+  
+  const [overviewMounted, setOverviewMounted] = useState(isOverviewPanelActive);
+  if (isOverviewPanelActive && !overviewMounted) {
+    setOverviewMounted(true);
+  }
+
+  const emitGuideAction = useGuideAction();
+  const changeMode = useCallback(
+    (nextMode: HomeViewMode) => {
+      setMode(nextMode);
+      onModeChange(nextMode);
+      if (nextMode === 'dashboard') {
+        emitGuideAction(HOME_MODE_DASHBOARD_ENABLED_ACTION_ID);
+      }
+    },
+    [emitGuideAction, onModeChange]
+  );
+
+  useEffect(() => {
+    return subscribeToHomeModeChanges(modeEventTarget, {
+      onModeChange: setMode,
+      onDashboardNavigation: () =>
+        emitGuideAction(HOME_MODE_DASHBOARD_ENABLED_ACTION_ID),
+    });
+  }, [emitGuideAction, modeEventTarget]);
+
+  useEffect(() => {
+    if (!isOverviewPanelActive || !plugin.viewGuideService) return;
+    const homeGuideState =
+      plugin.viewGuideService.getPersistedGuideState(HOME_MAIN_GUIDE_ID);
+    const hasFinishedHomeGuide =
+      homeGuideState?.status === 'completed' ||
+      homeGuideState?.status === 'skipped';
+    
+    
+    const finishedBeforeMergedModes =
+      hasFinishedHomeGuide &&
+      homeGuideState.guideVersion < HOME_MAIN_GUIDE_MERGED_MODES_VERSION;
+    plugin.viewGuideService.setResolvedGuideForLeaf(
+      leaf,
+      finishedBeforeMergedModes
+        ? HOME_WHATS_NEW_DASHBOARD_TOGGLE_GUIDE_ID
+        : HOME_MAIN_GUIDE_ID
+    );
+  }, [isOverviewPanelActive, leaf, plugin]);
+
+  const showHomeBackground = shouldShowHomeBackground(
+    homeBackgroundResourcePath,
+    panelMode,
+    showHomeBackgroundInDashboard
+  );
+  const homePageClassName = showHomeBackground
+    ? 'journalit-home-page journalit-home-page--custom-background'
+    : 'journalit-home-page';
+
+  const modeContextValue = useMemo(
+    () => ({ mode, changeMode }),
+    [mode, changeMode]
+  );
+  const registerModeToggleTarget = useGuideTarget(HOME_MODE_TOGGLE_TARGET_ID);
+  const registerModeToggleDashboardOptionTarget = useGuideTarget(
+    HOME_MODE_TOGGLE_DASHBOARD_OPTION_TARGET_ID
+  );
+  const overviewToggle = useMemo(
+    () => (
+      <HomeModeToggle
+        registerTarget={registerModeToggleTarget}
+        registerDashboardOptionTarget={registerModeToggleDashboardOptionTarget}
+      />
+    ),
+    [registerModeToggleTarget, registerModeToggleDashboardOptionTarget]
+  );
+  const dashboardToggle = useMemo(() => <HomeModeToggle />, []);
+
+  return (
+    <HomeModeContext.Provider value={modeContextValue}>
+      <div
+        className={homePageClassName}
+        data-mode={panelMode}
+        style={cssVars({
+          '--journalit-home-background-image': showHomeBackground
+            ? `url(${JSON.stringify(homeBackgroundResourcePath)})`
+            : null,
+        })}
+      >
+        <div className="journalit-home-mode-panels">
+          {overviewMounted && (
+            <HomeOverviewSection
+              plugin={plugin}
+              isActive={isLeafActive && isOverviewPanelActive}
+              modeToggle={overviewToggle}
+            />
+          )}
+
+          <section
+            className={`journalit-home-mode-panel journalit-home-mode-panel--dashboard${isDashboardPanelActive ? ' is-active' : ''}`}
+            aria-hidden={!isDashboardPanelActive}
+            inert={!isDashboardPanelActive}
+          >
+            <DashboardPage
+              leaf={leaf}
+              isActive={isLeafActive && isDashboardPanelActive}
+              modeToggle={dashboardToggle}
+            />
+          </section>
+        </div>
+      </div>
+    </HomeModeContext.Provider>
   );
 };
 

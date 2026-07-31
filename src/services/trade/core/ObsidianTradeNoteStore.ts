@@ -1,4 +1,4 @@
-import { App, TFile } from 'obsidian';
+import { App, TFile, parseYaml } from 'obsidian';
 import { getTradeIdValue } from '../../../utils/tradeIdentity';
 import type { TradeIdentitySnapshot } from './tradeCoreTypes';
 
@@ -33,6 +33,38 @@ export class ObsidianTradeNoteStore {
     }
 
     return cachedIdentity;
+  }
+
+  public async readAssignedTags(filePath: string): Promise<string[]> {
+    const file = this.app.vault.getAbstractFileByPath(filePath);
+    if (!(file instanceof TFile)) return [];
+
+    const content = await this.app.vault.read(file);
+    const match = content.match(/^---\r?\n([\s\S]*?)\r?\n---/);
+    if (!match) return [];
+
+    const parsed: unknown = parseYaml(match[1]);
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+      throw new Error(`Invalid trade frontmatter in ${filePath}`);
+    }
+    return this.extractAssignedTags(Object.fromEntries(Object.entries(parsed)));
+  }
+
+  private extractAssignedTags(frontmatter: Record<string, unknown>): string[] {
+    const values = [frontmatter.tags, frontmatter.customTags].flatMap(
+      (value) =>
+        Array.isArray(value)
+          ? value.filter((entry): entry is string => typeof entry === 'string')
+          : []
+    );
+    return Array.from(
+      new Map(
+        values.flatMap((value) => {
+          const tag = value.trim();
+          return tag ? [[tag.toLowerCase(), tag] as const] : [];
+        })
+      ).values()
+    );
   }
 
   private extractIdentity(

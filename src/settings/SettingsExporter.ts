@@ -1,12 +1,18 @@
 import { logger } from '../utils/logger';
 
 
-import { Notice, Modal, App } from 'obsidian';
+import { Notice, App } from 'obsidian';
 import JournalitPlugin from '../main';
 import { JournalitSettings, DEFAULT_SETTINGS } from './types';
 import { t } from '../lang/helpers';
 import { BackendSecretStorage } from '../services/backend/BackendSecretStorage';
 import { eventBus } from '../services/events';
+import {
+  showActionConfirmationModal,
+  showConfirmationModal,
+} from '../components/shared/ConfirmationModal';
+import { normalizeGalleryFolders } from './settingsNormalization';
+import { normalizeHomeBackgroundImagePath } from '../components/home/homeBackgroundUtils';
 
 export function redactSettingsSecretsForExport(value: unknown): unknown {
   if (Array.isArray(value)) {
@@ -99,14 +105,13 @@ export class SettingsExporter {
       const blob = new Blob([content], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
 
-      const a = window.activeDocument.createElement('a');
+      const a = window.activeDocument.body.createEl('a');
       a.href = url;
       a.download = filename;
       try {
-        window.activeDocument.body.appendChild(a);
         a.click();
       } finally {
-        window.activeDocument.body.removeChild(a);
+        a.remove();
         URL.revokeObjectURL(url);
       }
 
@@ -140,6 +145,22 @@ export class SettingsExporter {
         this.plugin.settings,
         removeLocalSecretNamespaceFromImport(importData.settings)
       );
+      if (this.isPlainObject(mergedSettings.trade)) {
+        mergedSettings.trade.galleryFolders = normalizeGalleryFolders(
+          mergedSettings.trade.galleryFolders
+        );
+      }
+      if (mergedSettings.home) {
+        mergedSettings.home.backgroundImagePath =
+          normalizeHomeBackgroundImagePath(
+            mergedSettings.home.backgroundImagePath,
+            this.plugin.settings.home?.backgroundImagePath || undefined
+          );
+        mergedSettings.home.showBackgroundInDashboard =
+          typeof mergedSettings.home.showBackgroundInDashboard === 'boolean'
+            ? mergedSettings.home.showBackgroundInDashboard
+            : (this.plugin.settings.home?.showBackgroundInDashboard ?? false);
+      }
       const mergedSessionMode = mergedSettings.sessionMode;
       if (!this.isPlainObject(mergedSessionMode)) {
         mergedSettings.sessionMode =
@@ -191,60 +212,127 @@ export class SettingsExporter {
 
   
   async resetToDefaults(app: App): Promise<boolean> {
-    return new Promise((resolve) => {
-      const modal = new ResetConfirmationModal(app, async (confirmed) => {
-        if (confirmed) {
-          try {
-            
-            const backupCreated = await this.createBackupBeforeReset();
+    const confirmed = await showActionConfirmationModal<boolean>(app, {
+      title: t('settings.reset.modal.title'),
+      destructive: true,
+      renderContent: (contentEl) => {
+        const container = contentEl.createDiv({
+          cls: 'journalit-confirmation-content',
+        });
 
-            
-            if (!backupCreated) {
-              const proceedAnyway = await new Promise<boolean>(
-                (resolveModal) => {
-                  const warningModal = new BackupFailedModal(app, resolveModal);
-                  warningModal.open();
-                }
-              );
-              if (!proceedAnyway) {
-                resolve(false);
-                return;
-              }
-            }
+        container.createEl('p', {
+          text: t('settings.reset.modal.explanation'),
+          cls: 'journalit-confirmation-modal__message',
+        });
 
-            
-            BackendSecretStorage.clearAuthToken(this.plugin);
-            BackendSecretStorage.clearFTPPassword(this.plugin);
-            this.plugin.settings = cloneDefaultSettings();
-            await this.plugin.saveSettings();
+        const infoBox = container.createDiv({
+          cls: 'journalit-confirmation-content__info',
+        });
+        const list = infoBox.createEl('ul', {
+          cls: 'journalit-confirmation-content__list',
+        });
+        list.createEl('li', {
+          text: t('settings.reset.modal.item-custom-options'),
+        });
+        list.createEl('li', {
+          text: t('settings.reset.modal.item-account-settings'),
+        });
+        list.createEl('li', {
+          text: t('settings.reset.modal.item-dashboard-layouts'),
+        });
+        list.createEl('li', {
+          text: t('settings.reset.modal.item-symbol-mappings'),
+        });
+        list.createEl('li', {
+          text: t('settings.reset.modal.item-csv-templates'),
+        });
+        list.createEl('li', { text: t('settings.reset.modal.item-other') });
 
-            
-            window.activeDocument.dispatchEvent(
-              new CustomEvent('journalit-settings-updated', {
-                detail: { source: 'SettingsExporter.reset' },
-              })
-            );
-            eventBus.publish('settings:changed', {
-              section: 'all',
-              source: 'SettingsExporter.reset',
-            });
+        const backupNote = container.createEl('p', {
+          cls: 'journalit-confirmation-modal__message',
+        });
+        backupNote.createEl('strong', {
+          text: t('common.note-label'),
+        });
+        backupNote.createSpan({
+          text: ` ${t('settings.reset.modal.backup-note')}`,
+        });
 
-            const noticeMsg = backupCreated
-              ? t('notice.settings-reset-with-backup')
-              : t('notice.settings-reset-no-backup');
-            new Notice(noticeMsg, 10000);
-            resolve(true);
-          } catch (error) {
-            console.error('Failed to reset settings:', error);
-            new Notice(t('notice.error.reset-settings'), 5000);
-            resolve(false);
-          }
-        } else {
-          resolve(false);
-        }
-      });
-      modal.open();
+        const warningBox = container.createDiv({
+          cls: 'journalit-confirmation-content__alert journalit-confirmation-content__alert--destructive',
+        });
+        warningBox.createEl('p', {
+          text: t('settings.reset.modal.warning'),
+          cls: 'journalit-confirmation-modal__message',
+        });
+      },
+      cancelValue: false,
+      actions: [
+        {
+          value: false,
+          label: t('button.cancel'),
+          variant: 'secondary',
+          initialFocus: true,
+        },
+        {
+          value: true,
+          label: t('button.reset-to-defaults'),
+          variant: 'destructive',
+        },
+      ],
     });
+
+    if (!confirmed) return false;
+
+    try {
+      
+      const backupCreated = await this.createBackupBeforeReset();
+
+      
+      if (!backupCreated) {
+        const proceedAnyway = await showConfirmationModal(app, {
+          title: t('settings.reset.backup-failed.title'),
+          message: [
+            { text: t('settings.reset.backup-failed.message') },
+            {
+              text: t('settings.reset.backup-failed.warning'),
+              destructive: true,
+            },
+          ],
+          confirmLabel: t('button.proceed-anyway'),
+          cancelLabel: t('button.cancel-reset'),
+          destructive: true,
+        });
+        if (!proceedAnyway) return false;
+      }
+
+      
+      BackendSecretStorage.clearAuthToken(this.plugin);
+      BackendSecretStorage.clearFTPPassword(this.plugin);
+      this.plugin.settings = cloneDefaultSettings();
+      await this.plugin.saveSettings();
+
+      
+      window.activeDocument.dispatchEvent(
+        new CustomEvent('journalit-settings-updated', {
+          detail: { source: 'SettingsExporter.reset' },
+        })
+      );
+      eventBus.publish('settings:changed', {
+        section: 'all',
+        source: 'SettingsExporter.reset',
+      });
+
+      const noticeMsg = backupCreated
+        ? t('notice.settings-reset-with-backup')
+        : t('notice.settings-reset-no-backup');
+      new Notice(noticeMsg, 10000);
+      return true;
+    } catch (error) {
+      console.error('Failed to reset settings:', error);
+      new Notice(t('notice.error.reset-settings'), 5000);
+      return false;
+    }
   }
 
   
@@ -335,9 +423,9 @@ export class SettingsExporter {
   
   openImportFilePicker(): Promise<File | null> {
     return new Promise((resolve) => {
-      const input = window.activeDocument.createElement('input');
-      input.type = 'file';
-      input.accept = '.json';
+      const input = createEl('input', {
+        attr: { type: 'file', accept: '.json' },
+      });
 
       input.onchange = () => {
         resolve(input.files?.[0] ?? null);
@@ -349,158 +437,5 @@ export class SettingsExporter {
 
       input.click();
     });
-  }
-}
-
-
-class ResetConfirmationModal extends Modal {
-  private onConfirm: (confirmed: boolean) => void | Promise<void>;
-
-  constructor(
-    app: App,
-    onConfirm: (confirmed: boolean) => void | Promise<void>
-  ) {
-    super(app);
-    this.titleEl.setText(t('settings.reset.modal.title'));
-    this.onConfirm = onConfirm;
-  }
-
-  onOpen() {
-    const { contentEl } = this;
-    contentEl.empty();
-
-    const container = contentEl.createDiv({
-      cls: 'journalit-settings-reset-modal',
-    });
-
-    
-    container.createEl('p', {
-      text: t('settings.reset.modal.explanation'),
-      cls: 'journalit-settings-reset-modal__text',
-    });
-
-    
-    const infoBox = container.createDiv({
-      cls: 'journalit-settings-reset-modal__info',
-    });
-
-    const list = infoBox.createEl('ul', {
-      cls: 'journalit-settings-reset-modal__list',
-    });
-    list.createEl('li', {
-      text: t('settings.reset.modal.item-custom-options'),
-    });
-    list.createEl('li', {
-      text: t('settings.reset.modal.item-account-settings'),
-    });
-    list.createEl('li', {
-      text: t('settings.reset.modal.item-dashboard-layouts'),
-    });
-    list.createEl('li', {
-      text: t('settings.reset.modal.item-symbol-mappings'),
-    });
-    list.createEl('li', { text: t('settings.reset.modal.item-csv-templates') });
-    list.createEl('li', { text: t('settings.reset.modal.item-other') });
-
-    
-    const backupNote = container.createEl('p', {
-      cls: 'journalit-settings-reset-modal__text journalit-settings-reset-modal__text--muted',
-    });
-    backupNote.createEl('strong', {
-      text: t('common.note-label'),
-    });
-    backupNote.createSpan({
-      text: ` ${t('settings.reset.modal.backup-note')}`,
-    });
-
-    
-    const warningBox = container.createDiv({
-      cls: 'journalit-settings-reset-modal__warning',
-    });
-    warningBox.createEl('p', {
-      text: t('settings.reset.modal.warning'),
-      cls: 'journalit-settings-reset-modal__text journalit-settings-reset-modal__text--compact',
-    });
-
-    
-    const buttons = container.createDiv({
-      cls: 'journalit-settings-reset-modal__actions',
-    });
-
-    const cancelBtn = buttons.createEl('button', {
-      text: t('button.cancel'),
-      cls: 'journalit-settings-reset-modal__button journalit-settings-reset-modal__button--secondary',
-    });
-    cancelBtn.addEventListener('click', () => {
-      void this.onConfirm(false);
-      this.close();
-    });
-
-    const confirmBtn = buttons.createEl('button', {
-      text: t('button.reset-to-defaults'),
-      cls: 'journalit-settings-reset-modal__button journalit-settings-reset-modal__button--danger',
-    });
-    confirmBtn.addEventListener('click', () => {
-      void this.onConfirm(true);
-      this.close();
-    });
-  }
-
-  onClose() {
-    const { contentEl } = this;
-    contentEl.empty();
-  }
-}
-
-
-class BackupFailedModal extends Modal {
-  private onConfirm: (proceed: boolean) => void | Promise<void>;
-
-  constructor(app: App, onConfirm: (proceed: boolean) => void | Promise<void>) {
-    super(app);
-    this.titleEl.setText(t('settings.reset.backup-failed.title'));
-    this.onConfirm = onConfirm;
-  }
-
-  onOpen() {
-    const { contentEl } = this;
-    contentEl.empty();
-    contentEl.addClass('journalit-settings-reset-modal');
-
-    contentEl.createEl('p', {
-      text: t('settings.reset.backup-failed.message'),
-      cls: 'journalit-settings-reset-modal__backup-warning',
-    });
-
-    contentEl.createEl('p', {
-      text: t('settings.reset.backup-failed.warning'),
-      cls: 'journalit-settings-reset-modal__backup-warning mod-warning',
-    });
-
-    const buttonContainer = contentEl.createDiv({
-      cls: 'modal-button-container journalit-modal-button-container',
-    });
-
-    const cancelButton = buttonContainer.createEl('button', {
-      text: t('button.cancel-reset'),
-    });
-    cancelButton.addEventListener('click', () => {
-      void this.onConfirm(false);
-      this.close();
-    });
-
-    const proceedButton = buttonContainer.createEl('button', {
-      text: t('button.proceed-anyway'),
-      cls: 'mod-warning',
-    });
-    proceedButton.addEventListener('click', () => {
-      void this.onConfirm(true);
-      this.close();
-    });
-  }
-
-  onClose() {
-    const { contentEl } = this;
-    contentEl.empty();
   }
 }

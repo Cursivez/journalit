@@ -8,9 +8,11 @@ import React, {
   useRef,
   startTransition,
 } from 'react';
-import { App, Modal, Notice } from 'obsidian';
+import { Notice } from 'obsidian';
 import { Edit } from '../../../components/shared/icons/ObsidianIcon';
+import { showConfirmationModal } from '../../../components/shared/ConfirmationModal';
 import { ReorderControls } from '../../../components/shared/ReorderControls';
+import { moveItemByDirection } from '../../../utils/reorderUtils';
 import JournalitPlugin from '../../../main';
 import { CustomFieldsService } from '../../../services/CustomFieldsService';
 import {
@@ -324,7 +326,13 @@ function useCustomFieldsManagerModel(props: CustomFieldsManagerProps) {
         return;
       }
 
-      const labelValidation = validateLabelForField(field.label, field.id);
+      const existingField = fields.find(
+        (candidate) => candidate.id === field.id
+      );
+      const labelValidation =
+        existingField?.label === field.label
+          ? null
+          : validateLabelForField(field.label, field.id);
       if (labelValidation) {
         new Notice(
           t('settings.customization.custom-fields.error.cannot-save', {
@@ -335,7 +343,10 @@ function useCustomFieldsManagerModel(props: CustomFieldsManagerProps) {
       }
 
       
-      const keyValidation = validateFieldKey(field.fieldKey);
+      const keyValidation =
+        existingField?.fieldKey === field.fieldKey
+          ? null
+          : validateFieldKey(field.fieldKey);
       if (keyValidation) {
         new Notice(
           t('settings.customization.custom-fields.error.cannot-save', {
@@ -424,23 +435,40 @@ function useCustomFieldsManagerModel(props: CustomFieldsManagerProps) {
           : fields.find((f) => f.id === fieldId);
       const fieldLabel = fieldToDelete?.label || 'Unknown Field';
 
-      new DeleteFieldConfirmationModal(plugin.app, fieldLabel, async () => {
-        try {
-          
-          startTransition(() => {
-            setEditingField(null);
-            setIsAddingNew(false);
-          });
+      const confirmed = await showConfirmationModal(plugin.app, {
+        message: [
+          {
+            text: t(
+              'settings.customization.custom-fields.delete.confirm-message',
+              { fieldLabel }
+            ),
+          },
+          {
+            text: t('settings.customization.custom-fields.delete.cannot-undo'),
+            destructive: true,
+          },
+        ],
+        confirmLabel: t('button.delete'),
+        cancelLabel: t('button.cancel'),
+        destructive: true,
+      });
+      if (!confirmed) return;
 
-          await customFieldsService.removeField(fieldId);
-          loadFields();
+      try {
+        
+        startTransition(() => {
+          setEditingField(null);
+          setIsAddingNew(false);
+        });
 
-          
-          debouncedRemeasure();
-        } catch (error) {
-          console.error('Failed to delete field:', error);
-        }
-      }).open();
+        await customFieldsService.removeField(fieldId);
+        loadFields();
+
+        
+        debouncedRemeasure();
+      } catch (error) {
+        console.error('Failed to delete field:', error);
+      }
     },
     [
       customFieldsService,
@@ -459,23 +487,37 @@ function useCustomFieldsManagerModel(props: CustomFieldsManagerProps) {
       return;
     }
 
-    new ResetFieldsConfirmationModal(plugin.app, async () => {
-      try {
-        
-        startTransition(() => {
-          setEditingField(null);
-          setIsAddingNew(false);
-        });
+    const confirmed = await showConfirmationModal(plugin.app, {
+      message: [
+        {
+          text: t('settings.customization.custom-fields.reset.confirm-message'),
+        },
+        {
+          text: t('settings.customization.custom-fields.delete.cannot-undo'),
+          destructive: true,
+        },
+      ],
+      confirmLabel: t('button.delete-all'),
+      cancelLabel: t('button.cancel'),
+      destructive: true,
+    });
+    if (!confirmed) return;
 
-        await customFieldsService.resetFields();
-        loadFields();
+    try {
+      
+      startTransition(() => {
+        setEditingField(null);
+        setIsAddingNew(false);
+      });
 
-        
-        debouncedRemeasure();
-      } catch (error) {
-        console.error('Failed to reset fields:', error);
-      }
-    }).open();
+      await customFieldsService.resetFields();
+      loadFields();
+
+      
+      debouncedRemeasure();
+    } catch (error) {
+      console.error('Failed to reset fields:', error);
+    }
   };
 
   const handleMoveField = useCallback(
@@ -486,19 +528,12 @@ function useCustomFieldsManagerModel(props: CustomFieldsManagerProps) {
       }
 
       const currentIndex = fields.findIndex((field) => field.id === fieldId);
-      const targetIndex =
-        direction === 'up' ? currentIndex - 1 : currentIndex + 1;
-      if (
-        currentIndex === -1 ||
-        targetIndex < 0 ||
-        targetIndex >= fields.length
-      ) {
-        return;
-      }
-
-      const reorderedFields = [...fields];
-      const [movedField] = reorderedFields.splice(currentIndex, 1);
-      reorderedFields.splice(targetIndex, 0, movedField);
+      const reorderedFields = moveItemByDirection(
+        fields,
+        currentIndex,
+        direction
+      );
+      if (!reorderedFields) return;
       setFields(reorderedFields);
 
       try {
@@ -714,180 +749,6 @@ export const CustomFieldsManager: React.FC<CustomFieldsManagerProps> = (
 };
 
 
-class DeleteFieldConfirmationModal extends Modal {
-  constructor(
-    app: App,
-    private fieldLabel: string,
-    private onConfirm: () => void | Promise<void>
-  ) {
-    super(app);
-  }
-
-  onOpen() {
-    const { contentEl } = this;
-    contentEl.createEl('p', {
-      text: t('settings.customization.custom-fields.delete.confirm-message', {
-        fieldLabel: this.fieldLabel,
-      }),
-    });
-    contentEl.createEl('p', {
-      text: t('settings.customization.custom-fields.delete.cannot-undo'),
-      cls: 'warning',
-    });
-
-    const buttonContainer = contentEl.createDiv({
-      cls: 'modal-button-container journalit-modal-button-container',
-    });
-
-    buttonContainer
-      .createEl('button', { text: t('button.delete'), cls: 'mod-warning' })
-      .addEventListener('click', () => {
-        this.close();
-        void this.onConfirm();
-      });
-
-    buttonContainer
-      .createEl('button', { text: t('button.cancel') })
-      .addEventListener('click', () => {
-        this.close();
-      });
-  }
-
-  onClose() {
-    const { contentEl } = this;
-    contentEl.empty();
-  }
-}
-
-class ResetFieldsConfirmationModal extends Modal {
-  constructor(
-    app: App,
-    private onConfirm: () => void | Promise<void>
-  ) {
-    super(app);
-  }
-
-  onOpen() {
-    const { contentEl } = this;
-    contentEl.createEl('p', {
-      text: t('settings.customization.custom-fields.reset.confirm-message'),
-    });
-    contentEl.createEl('p', {
-      text: t('settings.customization.custom-fields.delete.cannot-undo'),
-      cls: 'warning',
-    });
-
-    const buttonContainer = contentEl.createDiv({
-      cls: 'modal-button-container journalit-modal-button-container',
-    });
-
-    buttonContainer
-      .createEl('button', { text: t('button.delete-all'), cls: 'mod-warning' })
-      .addEventListener('click', () => {
-        this.close();
-        void this.onConfirm();
-      });
-
-    buttonContainer
-      .createEl('button', { text: t('button.cancel') })
-      .addEventListener('click', () => {
-        this.close();
-      });
-  }
-
-  onClose() {
-    const { contentEl } = this;
-    contentEl.empty();
-  }
-}
-
-class DeleteOptionConfirmationModal extends Modal {
-  constructor(
-    app: App,
-    private optionName: string,
-    private onConfirm: () => void | Promise<void>
-  ) {
-    super(app);
-  }
-
-  onOpen() {
-    const { contentEl } = this;
-    contentEl.createEl('p', {
-      text: t('settings.customization.custom-fields.option.delete-confirm', {
-        optionName: this.optionName,
-      }),
-    });
-
-    const buttonContainer = contentEl.createDiv({
-      cls: 'modal-button-container journalit-modal-button-container',
-    });
-
-    buttonContainer
-      .createEl('button', { text: t('button.delete'), cls: 'mod-warning' })
-      .addEventListener('click', () => {
-        this.close();
-        void this.onConfirm();
-      });
-
-    buttonContainer
-      .createEl('button', { text: t('button.cancel') })
-      .addEventListener('click', () => {
-        this.close();
-      });
-  }
-
-  onClose() {
-    const { contentEl } = this;
-    contentEl.empty();
-  }
-}
-
-class ClearAllOptionsConfirmationModal extends Modal {
-  constructor(
-    app: App,
-    private fieldLabel: string,
-    private onConfirm: () => void | Promise<void>
-  ) {
-    super(app);
-  }
-
-  onOpen() {
-    const { contentEl } = this;
-    contentEl.createEl('p', {
-      text: t('settings.customization.custom-fields.option.clear-confirm', {
-        fieldLabel: this.fieldLabel,
-      }),
-    });
-    contentEl.createEl('p', {
-      text: t('settings.customization.custom-fields.delete.cannot-undo'),
-      cls: 'warning',
-    });
-
-    const buttonContainer = contentEl.createDiv({
-      cls: 'modal-button-container journalit-modal-button-container',
-    });
-
-    buttonContainer
-      .createEl('button', { text: t('button.clear-all'), cls: 'mod-warning' })
-      .addEventListener('click', () => {
-        this.close();
-        void this.onConfirm();
-      });
-
-    buttonContainer
-      .createEl('button', { text: t('button.cancel') })
-      .addEventListener('click', () => {
-        this.close();
-      });
-  }
-
-  onClose() {
-    const { contentEl } = this;
-    contentEl.empty();
-  }
-}
-
-
 interface SavedCustomOptionsSectionProps {
   customFieldsService: CustomFieldsService | null;
   fields: CustomFieldDefinition[];
@@ -917,17 +778,26 @@ const SavedCustomOptionsSection: React.FC<SavedCustomOptionsSectionProps> = ({
     async (fieldId: string, option: string) => {
       if (!customFieldsService) return;
 
-      new DeleteOptionConfirmationModal(plugin.app, option, async () => {
-        try {
-          await customFieldsService.removeFieldOption(fieldId, option);
-          onOptionsChanged();
-        } catch (error) {
-          console.error('Failed to delete option:', error);
-          new Notice(
-            t('settings.customization.custom-fields.saved-options.delete-error')
-          );
-        }
-      }).open();
+      const confirmed = await showConfirmationModal(plugin.app, {
+        message: t(
+          'settings.customization.custom-fields.option.delete-confirm',
+          { optionName: option }
+        ),
+        confirmLabel: t('button.delete'),
+        cancelLabel: t('button.cancel'),
+        destructive: true,
+      });
+      if (!confirmed) return;
+
+      try {
+        await customFieldsService.removeFieldOption(fieldId, option);
+        onOptionsChanged();
+      } catch (error) {
+        console.error('Failed to delete option:', error);
+        new Notice(
+          t('settings.customization.custom-fields.saved-options.delete-error')
+        );
+      }
     },
     [customFieldsService, plugin.app, onOptionsChanged]
   );
@@ -936,17 +806,34 @@ const SavedCustomOptionsSection: React.FC<SavedCustomOptionsSectionProps> = ({
     async (fieldId: string, fieldLabel: string) => {
       if (!customFieldsService) return;
 
-      new ClearAllOptionsConfirmationModal(plugin.app, fieldLabel, async () => {
-        try {
-          await customFieldsService.removeAllFieldOptions(fieldId);
-          onOptionsChanged();
-        } catch (error) {
-          console.error('Failed to clear all options:', error);
-          new Notice(
-            t('settings.customization.custom-fields.saved-options.clear-error')
-          );
-        }
-      }).open();
+      const confirmed = await showConfirmationModal(plugin.app, {
+        message: [
+          {
+            text: t(
+              'settings.customization.custom-fields.option.clear-confirm',
+              { fieldLabel }
+            ),
+          },
+          {
+            text: t('settings.customization.custom-fields.delete.cannot-undo'),
+            destructive: true,
+          },
+        ],
+        confirmLabel: t('button.clear-all'),
+        cancelLabel: t('button.cancel'),
+        destructive: true,
+      });
+      if (!confirmed) return;
+
+      try {
+        await customFieldsService.removeAllFieldOptions(fieldId);
+        onOptionsChanged();
+      } catch (error) {
+        console.error('Failed to clear all options:', error);
+        new Notice(
+          t('settings.customization.custom-fields.saved-options.clear-error')
+        );
+      }
     },
     [customFieldsService, plugin.app, onOptionsChanged]
   );

@@ -1,4 +1,4 @@
-import { DASHBOARD_VIEW_TYPE } from '../components/dashboard/DashboardView';
+import { HOME_VIEW_TYPE } from '../views/HomeView';
 import { t } from '../lang/helpers';
 import { GuideRegistry } from './GuideRegistry';
 import {
@@ -17,8 +17,8 @@ import {
 export function registerDashboardMainGuide(guideRegistry: GuideRegistry): void {
   guideRegistry.registerGuide({
     id: DASHBOARD_MAIN_GUIDE_ID,
-    viewType: DASHBOARD_VIEW_TYPE,
-    version: 3,
+    viewType: HOME_VIEW_TYPE,
+    version: 4,
     autoShow: true,
     priority: 110,
     initialStepId: 'intro',

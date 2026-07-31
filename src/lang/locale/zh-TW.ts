@@ -2,6 +2,11 @@
 import type { Lang } from './en';
 
 const zhTW: Partial<Lang> = {
+  'trade.broker-synced-at': '券商同步於 {date}',
+  'home.period.month': '月份',
+  'home.period.quarter': '季度',
+  'home.period.year': '年度',
+  'home.period.lifetime': '全部時間',
   
   
   
@@ -19,8 +24,8 @@ const zhTW: Partial<Lang> = {
   'command.create-yearly-review': '開啟年回顧',
 
   
-  'command.open-dashboard': '開啟交易儀表板',
-  'command.open-account-dashboard': '開啟帳戶儀表板',
+  'command.open-dashboard': '開啟儀表板',
+  'command.open-account-dashboard': '開啟帳戶',
   'command.open-trade-log': '開啟交易紀錄',
   'command.open-home': '開啟首頁',
   'command.open-position-size-calculator': '開啟倉位大小計算器',
@@ -47,7 +52,7 @@ const zhTW: Partial<Lang> = {
     'Designed to adapt to your workflow, not force you into ours.',
   'onboarding.explore.tagline': 'Your journal, your rules.',
   'onboarding.explore.section.out-of-box.title': 'Core views & tools',
-  'onboarding.explore.core.dashboard.label': 'Trading Dashboard',
+  'onboarding.explore.core.dashboard.label': '儀表板',
   'onboarding.explore.core.dashboard.description':
     'Your performance at a glance — P&L, win rate, drawdowns, and more.',
   'onboarding.explore.core.tradelog.label': 'Trade Log',
@@ -65,9 +70,9 @@ const zhTW: Partial<Lang> = {
   'onboarding.explore.imports.csv.label': 'Trade Import',
   'onboarding.explore.imports.csv.description':
     'Upload CSV, spreadsheet, HTML, and broker statement exports for backend-powered analysis and preview.',
-  'onboarding.explore.imports.mt.label': 'MetaTrader Sync (MT4/MT5)',
-  'onboarding.explore.imports.mt.description':
-    'Automatic trade syncing from MetaTrader. Requires Pro.',
+  'onboarding.explore.imports.trade-sync.label': 'Trade Sync',
+  'onboarding.explore.imports.trade-sync.description':
+    'Automatic trade syncing from MetaTrader (MT4) or Tradovate. Requires Pro.',
   'onboarding.explore.cta.open': 'Open',
   'onboarding.explore.cta.manual': 'Open Docs',
 
@@ -86,9 +91,9 @@ const zhTW: Partial<Lang> = {
   'onboarding.path.option.csv.label': 'Trade Import',
   'onboarding.path.option.csv.description':
     'Use Pro backend-powered analysis for broker export files.',
-  'onboarding.path.option.mt.label': 'MetaTrader Sync (MT4/MT5)',
-  'onboarding.path.option.mt.description':
-    'Connect MT4/MT5 for automatic trade syncing.',
+  'onboarding.path.option.trade-sync.label': 'Trade Sync',
+  'onboarding.path.option.trade-sync.description':
+    'Connect MetaTrader (MT4) or Tradovate for automatic trade syncing.',
 
   
   
@@ -105,14 +110,14 @@ const zhTW: Partial<Lang> = {
   'onboarding.final.csv.subtitle':
     'Next, open Trade Import. Uploading and processing broker exports requires PRO activation.',
   'onboarding.final.csv.cta.open': 'Open Trade Import',
-  'onboarding.final.mt.title': "You're ready to connect MetaTrader",
-  'onboarding.final.mt.subtitle':
-    'Next, set up MT4/MT5 sync. Requires PRO activation.',
-  'onboarding.final.mt.cta.open': 'Open MetaTrader Setup',
-  'onboarding.final.mt.hero.source.title': 'MetaTrader',
-  'onboarding.final.mt.hero.source.subtitle': 'Trade reports',
-  'onboarding.final.mt.hero.dest.title': 'Vault',
-  'onboarding.final.mt.hero.dest.subtitle': 'Journalit notes',
+  'onboarding.final.trade-sync.title': "You're ready to set up Trade Sync",
+  'onboarding.final.trade-sync.subtitle':
+    'Next, set up MetaTrader (MT4) or Tradovate sync.',
+  'onboarding.final.trade-sync.cta.open': 'Open Trade Sync Setup',
+  'onboarding.final.trade-sync.hero.source.title': 'MetaTrader + Tradovate',
+  'onboarding.final.trade-sync.hero.source.subtitle': 'Broker trades',
+  'onboarding.final.trade-sync.hero.dest.title': 'Vault',
+  'onboarding.final.trade-sync.hero.dest.subtitle': 'Journalit notes',
   'onboarding.final.finish': 'Finish',
   'command.open-release-notes': '檢視版本說明',
 
@@ -187,6 +192,10 @@ const zhTW: Partial<Lang> = {
   'form.layout.item.realized-pnl-preview': '部分平倉 P&L 摘要',
   'form.layout.item.realized-pnl-preview-desc':
     '僅在未平倉交易發生部分平倉後顯示；位置固定。',
+  'form.layout.item.trade-currency': '交易貨幣 / 匯率',
+  'form.layout.item.trade-currency-desc':
+    '以其他貨幣輸入交易，並可選擇手動指定匯率。',
+  'form.layout.manual-fx-rate': '手動匯率輸入',
   'form.layout.result-r': 'R 結果',
   'form.layout.entry-time': '交易時間',
 
@@ -253,6 +262,8 @@ const zhTW: Partial<Lang> = {
   'form.field.custom-lot-size': '自訂手數規模',
   'form.field.pip-value': '點值',
   'form.field.leverage-ratio': '槓桿比率',
+  'form.field.trade-currency': '交易貨幣',
+  'form.field.fx-rate': '兌{base}匯率',
 
   
   'form.field.lot-size.standard': '標準手（100,000）',
@@ -273,6 +284,7 @@ const zhTW: Partial<Lang> = {
   'form.placeholder.target-price': 'Target price',
   'form.placeholder.close-percent': '50%',
   'form.placeholder.risk-amount': '計劃風險金額',
+  'form.placeholder.fx-rate': '1 {currency} = ? {base}（留空：使用每日匯率）',
   'form.placeholder.custom-tag': '輸入自訂標籤後按 Enter',
   'form.placeholder.thesis': '輸入此筆交易的論點...',
   'form.placeholder.pnl': '輸入總損益',
@@ -466,7 +478,7 @@ const zhTW: Partial<Lang> = {
   'dashboard.guide.empty.state.title': 'Start by adding your first trade',
   'dashboard.guide.empty.state.description':
     'You do not have any trades yet. Add a trade manually or import data, then come back to unlock the full Dashboard tour.',
-  'dashboard.guide.main.intro.title': 'This is your trading dashboard',
+  'dashboard.guide.main.intro.title': '這是您的儀表板',
   'dashboard.guide.main.intro.description':
     'Use this page to track your performance, review your stats, and keep your most useful charts in one place.',
   'dashboard.guide.main.filters.title': 'Filters change the whole Dashboard',
@@ -494,7 +506,7 @@ const zhTW: Partial<Lang> = {
     'Save your layout when you are done',
   'dashboard.guide.main.save-layout.description':
     'When you finish customising, click Save Layout to keep your changes. You can come back and edit this page again anytime.',
-  'home.guide.intro.title': 'Welcome to Home',
+  'home.guide.intro.title': '歡迎回家',
   'home.guide.intro.description':
     'This is your main page. It shows your trading stats, quick actions, and shortcuts to the rest of Journalit.',
   'home.guide.filters.title': 'These buttons change what your widgets show',
@@ -656,7 +668,7 @@ const zhTW: Partial<Lang> = {
   'view.home': '首頁',
   'view.dashboard': '儀表板',
   'view.trade-log': '交易紀錄',
-  'view.account-dashboard': '帳戶儀表板',
+  'view.account-dashboard': '帳戶',
   'view.layout-builder': '版面配置建構器',
   'view.csv-import': 'Trade Import',
 
@@ -754,7 +766,7 @@ const zhTW: Partial<Lang> = {
   
   
   
-  'settings.title': 'Journalit 設定',
+
   'settings.language': '語言',
   'settings.language-desc': '選擇外掛程式的顯示語言',
 
@@ -790,6 +802,17 @@ const zhTW: Partial<Lang> = {
     'Design your review templates your way.',
   'home.widget.getting-started.item.layouts.time': '1 min',
   'home.widget.getting-started.item.layouts.cta': 'Open Layout Builder',
+  'home.widget.getting-started.item.sidebar.title': '開啟導覽側欄',
+  'home.widget.getting-started.item.sidebar.description':
+    '快速存取 Journalit 頁面、回顧、工具與搜尋。',
+  'home.widget.getting-started.item.sidebar.time': '10 秒',
+  'home.widget.getting-started.item.sidebar.cta': '開啟側欄',
+  'home.quick-links.navigation-sidebar': '導覽側欄',
+  'notice.error.open-navigation-sidebar': '無法開啟導覽側欄，請再試一次。',
+  'navigation.setting.open': '開啟導覽側欄',
+  'navigation.setting.open.desc':
+    '立即顯示；如果 Obsidian 側欄已收合，則將其展開。',
+  'navigation.setting.open.button': '開啟側欄',
   'home.widget.getting-started.item.pro.title': 'Activate PRO',
   'home.widget.getting-started.item.pro.description':
     'Enable Trade Import, MetaTrader sync, and AI mapping.',
@@ -979,8 +1002,6 @@ const zhTW: Partial<Lang> = {
 
   'guide.skip-guide': 'Skip Guide',
   'settings.general.data-management': '資料管理 & 隱私',
-
-  'settings.general.display-privacy-section': '顯示 & 隱私',
 
   'settings.general.privacy-mode': '隱私模式',
 
@@ -1287,6 +1308,9 @@ const zhTW: Partial<Lang> = {
   'setups.guide.overview-chart.title': '表现排名',
   'setups.guide.overview-chart.description':
     '概覽圖按所選指標排列設定。使用右上角控制項可切換指標，或讓圖表聚焦到特定設定。',
+  'setups.guide.tag-filter.title': '篩選策略',
+  'setups.guide.tag-filter.description':
+    '依策略標籤或方向篩選卡片、圖表、配對和比較選項。同一組內使用「或」邏輯，標籤與方向之間使用「且」邏輯。',
   'setups.guide.setup-cards.title': '设置卡片',
   'setups.guide.setup-cards.description':
     '卡片用关键指标、状态、最近交易日期和小型表现趋势总结每个设置。',
@@ -1583,6 +1607,69 @@ const zhTW: Partial<Lang> = {
   'tradelog.guide.gallery-finish.title': '你已了解交易日誌的兩種模式',
   'tradelog.guide.gallery-finish.description':
     '需要表格和批次工具時使用交易模式。想跨整個日誌複盤圖片、GIF、影片、YouTube 連結、市場結構和圖表註解時使用圖庫。',
+  'trade.validation.fx-rate-number': '匯率必須是有效數字。',
+  'trade.validation.fx-rate-positive': '匯率必須大於零。',
+  'dashboard.conversion.using-manual-rate':
+    '對 {count} 筆{tradeLabel}使用手動匯率',
+  'dashboard.conversion.partial-warning':
+    '⚠ {currencies}的成本/風險無法換算，已被排除',
+  'trade-sync.providers.title': '交易同步',
+  'trade-sync.providers.description':
+    '分別設定可用的提供者，讓它們可以同時運作。',
+  'trade-sync.tradovate.pending-acks': '{count} 個本機 ACK 待處理',
+  'trade-sync.import.section-title': 'Trade Import 備份與還原',
+  'trade-sync.import.section-description':
+    '將匯入的交易備份到雲端，並還原缺少的本機筆記。',
+  'notice.error.canonical-trade-type-change':
+    '經紀商同步的交易不能變更為其他交易類型。',
+  'trade-sync.import.account.conflict-repair':
+    '發現重複的 canonicalTradeId 筆記。請保留一份，並從重複筆記移除 canonicalTradeId 或刪除該筆記。重新命名檔案無法修復衝突。',
+  'setups.create.field.tags': '標籤',
+  'setups.create.placeholder.tags': '動能、突破、早盤',
+  'setups.view.overview.tag-filter.aria': '篩選策略',
+  'setups.view.overview.tag-filter.reset': '重設',
+  'setups.view.overview.tag-filter.untagged': '無標籤',
+  'setups.view.overview.tag-filter.empty': '沒有符合這些篩選條件的策略',
+  'setups.view.overview.tag-filter.empty-submessage':
+    '調整或清除篩選條件以顯示更多策略。',
+
+  'setups.view.tags': '標籤',
+  'setups.create.error.tag-save-failed': '無法將標籤儲存到全域標籤清單。',
+  'settings.customization.options.confirm.remove-tag-message':
+    '刪除全域標籤「{option}」？這會從所有 Journalit 交易與策略筆記中移除該標籤。',
+  'settings.customization.options.confirm.reset-tag-message':
+    '將全域標籤清單與顏色重設為預設值？已指派給交易與策略筆記的標籤會保留在這些筆記中。',
+  'home.mode.overview': '總覽',
+  'home.mode.dashboard': '儀表板',
+  'home.mode.aria': '切換首頁模式',
+  'home.filters.period': '期間',
+  'home.filters.trade-type': '交易類型',
+  'home.filters.accounts': '帳戶',
+  'home.filters.back': '返回',
+  'home.guide.modes.title': '最後一件事：儀表板',
+  'home.guide.modes.description':
+    '總覽與儀表板共用此頁面。現在切換到儀表板，繼續進行績效統計的簡短導覽。',
+  'home.guide.whats-new.mode.title': '一個首頁，兩種模式',
+  'home.guide.whats-new.mode.description':
+    '總覽與儀表板現在位於同一頁面。切換時會保留各自的版面與捲動位置。',
+  'home.guide.whats-new.filters.title': '首頁篩選集中在一處',
+  'home.guide.whats-new.filters.description':
+    '開啟篩選按鈕，即可在精簡的分層選單中選擇期間、交易類型或帳戶。',
+  'home.guide.whats-new.done.title': '保留工作區脈絡',
+  'home.guide.whats-new.done.description':
+    '使用總覽查看個人小工具，使用儀表板進行深入分析。每種模式都會保留自己的篩選與版面。',
+
+  'account-dashboard.title': '帳戶',
+  'home.quick-links.trading-dashboard': '儀表板',
+  'home.quick-links.account-dashboard': '帳戶',
+  'navigation.items.nav-dashboard': '儀表板',
+  'navigation.items.nav-account-dashboard': '帳戶',
+
+  'settings.general.home-background-dashboard': '在 Dashboard 中也顯示背景',
+  'settings.general.home-background-dashboard-desc':
+    '在 Dashboard 模式中使用相同的背景圖片。',
+  'settings.general.home-background-dashboard-aria':
+    '在 Dashboard 中顯示首頁背景',
 };
 
 export default zhTW;

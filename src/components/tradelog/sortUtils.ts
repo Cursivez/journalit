@@ -13,9 +13,14 @@ import { calculateEffectiveRMultiple } from '../../utils/formatting';
 import {
   calculateTradeMaxR,
   calculateTradeReturnPercent,
-  getTradeMaeValue,
-  getTradeMfeValue,
 } from './tradeMetricUtils';
+import {
+  getTradeMaeTicks,
+  getTradeMaeValue,
+  getTradeMfeTicks,
+  getTradeMfeValue,
+} from '../../utils/tradeExcursion';
+import type { MaeMfeDisplayUnit } from '../../settings/types';
 import { TimeNode } from '../../services/tradelog/types';
 import { ColumnDefinition } from './columnConfig';
 import {
@@ -33,6 +38,7 @@ import {
   getCustomFieldRawValue,
 } from './customFieldDisplay';
 import { getTradeDirectionDisplayKind } from '../../services/trade/core/TradeDirection';
+import { getTradeLogDisplayedPnL, getTradeLogFloatingPnL } from './tradeLogPnl';
 
 type SortDirection = 'asc' | 'desc';
 
@@ -249,12 +255,29 @@ function sortByCustomField(
 }
 
 
-function sortByPnL(nodes: TimeNode[], direction: SortDirection): TimeNode[] {
+function getSortablePnL(
+  trade: Record<string, unknown>,
+  snapshotKeysClaimedByCustomFields: boolean
+): number {
+  return getTradeLogDisplayedPnL(trade, snapshotKeysClaimedByCustomFields);
+}
+
+function sortByPnL(
+  nodes: TimeNode[],
+  direction: SortDirection,
+  snapshotKeysClaimedByCustomFields: boolean
+): TimeNode[] {
   return [...nodes].sort((a, b) => {
     if (a.type !== 'trade' || b.type !== 'trade') return 0;
 
-    const pnlA = getEffectivePnL(asTradeRecord(a.trade) ?? {});
-    const pnlB = getEffectivePnL(asTradeRecord(b.trade) ?? {});
+    const pnlA = getSortablePnL(
+      asTradeRecord(a.trade) ?? {},
+      snapshotKeysClaimedByCustomFields
+    );
+    const pnlB = getSortablePnL(
+      asTradeRecord(b.trade) ?? {},
+      snapshotKeysClaimedByCustomFields
+    );
 
     return direction === 'asc' ? pnlA - pnlB : pnlB - pnlA;
   });
@@ -357,21 +380,32 @@ function sortByExitDate(
 function sortByRMultiple(
   nodes: TimeNode[],
   direction: SortDirection,
-  defaultRiskAmount?: number
+  defaultRiskAmount?: number,
+  snapshotKeysClaimedByCustomFields = false
 ): TimeNode[] {
   return [...nodes].sort((a, b) => {
     if (a.type !== 'trade' || b.type !== 'trade') return 0;
 
+    const tradeA = asTradeRecord(a.trade) ?? {};
+    const tradeB = asTradeRecord(b.trade) ?? {};
+    const floatingPnlA = getTradeLogFloatingPnL(
+      tradeA,
+      snapshotKeysClaimedByCustomFields
+    );
+    const floatingPnlB = getTradeLogFloatingPnL(
+      tradeB,
+      snapshotKeysClaimedByCustomFields
+    );
     const rMultipleA = calculateEffectiveRMultiple(
-      getEffectivePnL(asTradeRecord(a.trade) ?? {}),
-      getTradeNumber(asTradeRecord(a.trade), 'rMultiple'),
-      getTradeNumber(asTradeRecord(a.trade), 'riskAmount'),
+      floatingPnlA ?? getEffectivePnL(tradeA),
+      floatingPnlA === null ? getTradeNumber(tradeA, 'rMultiple') : undefined,
+      getTradeNumber(tradeA, 'riskAmount'),
       defaultRiskAmount
     );
     const rMultipleB = calculateEffectiveRMultiple(
-      getEffectivePnL(asTradeRecord(b.trade) ?? {}),
-      getTradeNumber(asTradeRecord(b.trade), 'rMultiple'),
-      getTradeNumber(asTradeRecord(b.trade), 'riskAmount'),
+      floatingPnlB ?? getEffectivePnL(tradeB),
+      floatingPnlB === null ? getTradeNumber(tradeB, 'rMultiple') : undefined,
+      getTradeNumber(tradeB, 'riskAmount'),
       defaultRiskAmount
     );
 
@@ -443,12 +477,16 @@ function sortByReturnPercent(
 }
 
 
-function sortByMae(nodes: TimeNode[], direction: SortDirection): TimeNode[] {
+function sortByMae(
+  nodes: TimeNode[],
+  direction: SortDirection,
+  displayUnit: MaeMfeDisplayUnit
+): TimeNode[] {
+  const getter = displayUnit === 'ticks' ? getTradeMaeTicks : getTradeMaeValue;
   return [...nodes].sort((a, b) => {
     if (a.type !== 'trade' || b.type !== 'trade') return 0;
-
-    const maeA = getTradeMaeValue(asTradeRecord(a.trade)) ?? null;
-    const maeB = getTradeMaeValue(asTradeRecord(b.trade)) ?? null;
+    const maeA = getter(asTradeRecord(a.trade)) ?? null;
+    const maeB = getter(asTradeRecord(b.trade)) ?? null;
 
     if (maeA === null && maeB === null) return 0;
     if (maeA === null) return 1;
@@ -458,12 +496,16 @@ function sortByMae(nodes: TimeNode[], direction: SortDirection): TimeNode[] {
   });
 }
 
-function sortByMfe(nodes: TimeNode[], direction: SortDirection): TimeNode[] {
+function sortByMfe(
+  nodes: TimeNode[],
+  direction: SortDirection,
+  displayUnit: MaeMfeDisplayUnit
+): TimeNode[] {
+  const getter = displayUnit === 'ticks' ? getTradeMfeTicks : getTradeMfeValue;
   return [...nodes].sort((a, b) => {
     if (a.type !== 'trade' || b.type !== 'trade') return 0;
-
-    const mfeA = getTradeMfeValue(asTradeRecord(a.trade)) ?? null;
-    const mfeB = getTradeMfeValue(asTradeRecord(b.trade)) ?? null;
+    const mfeA = getter(asTradeRecord(a.trade)) ?? null;
+    const mfeB = getter(asTradeRecord(b.trade)) ?? null;
 
     if (mfeA === null && mfeB === null) return 0;
     if (mfeA === null) return 1;
@@ -674,7 +716,9 @@ export function applySorting(
   nodes: TimeNode[],
   sortConfig: SortConfig,
   defaultRiskAmount?: number,
-  allColumns: ColumnDefinition[] = []
+  allColumns: ColumnDefinition[] = [],
+  snapshotKeysClaimedByCustomFields = false,
+  maeMfeDisplayUnit: MaeMfeDisplayUnit = 'dollar'
 ): TimeNode[] {
   if (!sortConfig.column) return nodes;
 
@@ -689,7 +733,11 @@ export function applySorting(
 
   switch (sortConfig.column) {
     case 'pnl':
-      return sortByPnL(nodes, sortConfig.direction);
+      return sortByPnL(
+        nodes,
+        sortConfig.direction,
+        snapshotKeysClaimedByCustomFields
+      );
     case 'date':
       return sortByDate(nodes, sortConfig.direction);
     case 'positionSize':
@@ -701,13 +749,18 @@ export function applySorting(
     case 'exitDate':
       return sortByExitDate(nodes, sortConfig.direction);
     case 'rMultiple':
-      return sortByRMultiple(nodes, sortConfig.direction, defaultRiskAmount);
+      return sortByRMultiple(
+        nodes,
+        sortConfig.direction,
+        defaultRiskAmount,
+        snapshotKeysClaimedByCustomFields
+      );
     case 'maxR':
       return sortByMaxR(nodes, sortConfig.direction, defaultRiskAmount);
     case 'mae':
-      return sortByMae(nodes, sortConfig.direction);
+      return sortByMae(nodes, sortConfig.direction, maeMfeDisplayUnit);
     case 'mfe':
-      return sortByMfe(nodes, sortConfig.direction);
+      return sortByMfe(nodes, sortConfig.direction, maeMfeDisplayUnit);
     case 'maePrice':
       return sortByMaePrice(nodes, sortConfig.direction);
     case 'mfePrice':

@@ -11,24 +11,29 @@ import React, {
 import { TFolder, App } from 'obsidian';
 import { cssVars } from '../../styles/inlineStylePolicy';
 import { t } from '../../lang/helpers';
+import {
+  ChevronDown,
+  ChevronRight,
+  Folder,
+} from '../shared/icons/ObsidianIcon';
 
 
 const CLASS_NAMES = {
-  FOLDER_BROWSER_CONTAINER: 'folder-browser-container',
+  FOLDER_BROWSER_CONTAINER: 'journalit-folder-browser-container',
   INPUT_CONTAINER: 'input-container',
-  INPUT: 'folder-browser-input',
-  DROPDOWN: 'folder-browser-dropdown',
-  FOLDER_ITEM: 'folder-browser-item',
+  INPUT: 'journalit-folder-browser-input',
+  DROPDOWN: 'journalit-folder-browser-dropdown',
+  FOLDER_ITEM: 'journalit-folder-browser-item',
   FOLDER_ITEM_HIGHLIGHTED: 'highlighted',
-  FOLDER_INDENT: 'folder-indent',
-  FOLDER_TOGGLE: 'folder-toggle',
-  FOLDER_ICON: 'folder-icon',
-  FOLDER_NAME: 'folder-name',
-  LABEL: 'folder-browser-label',
-  REQUIRED: 'folder-browser-required',
-  CLEAR_BUTTON: 'folder-browser-clear-button',
-  ERROR: 'folder-browser-error',
-  HELPER: 'folder-browser-helper',
+  FOLDER_INDENT: 'journalit-folder-browser-indent',
+  FOLDER_TOGGLE_SPACER: 'journalit-folder-browser-toggle-spacer',
+  FOLDER_ICON: 'journalit-folder-browser-folder-icon',
+  FOLDER_NAME: 'journalit-folder-browser-name',
+  LABEL: 'journalit-folder-browser-label',
+  REQUIRED: 'journalit-folder-browser-required',
+  CLEAR_BUTTON: 'journalit-folder-browser-clear-button',
+  ERROR: 'journalit-folder-browser-error',
+  HELPER: 'journalit-folder-browser-helper',
 };
 
 interface FolderItem {
@@ -47,6 +52,9 @@ interface FolderBrowserProps {
   onChange: (path: string) => void;
 
   
+  onInputChange?: (value: string) => void;
+
+  
   placeholder?: string;
 
   
@@ -63,14 +71,22 @@ interface FolderBrowserProps {
 
   
   app: App;
+
+  
+  includeJournalitTree?: boolean;
 }
 
 
 function useFolderBrowserModel({
   selectedPath = '',
   onChange,
+  onInputChange,
   app,
-}: Pick<FolderBrowserProps, 'selectedPath' | 'onChange' | 'app'>) {
+  includeJournalitTree = false,
+}: Pick<
+  FolderBrowserProps,
+  'selectedPath' | 'onChange' | 'onInputChange' | 'app' | 'includeJournalitTree'
+>) {
   
   const uniqueId = useId();
   const inputId = `folder-browser-${uniqueId}`;
@@ -100,16 +116,19 @@ function useFolderBrowserModel({
   
   const isSelectingFolder = useRef(false);
 
+  const isVisibleFolder = useCallback(
+    (folder: TFolder): boolean =>
+      !folder.name.startsWith('.') &&
+      (includeJournalitTree || folder.name.toLowerCase() !== '!journalit'),
+    [includeJournalitTree]
+  );
+
   
   const getAllFolders = useCallback((): TFolder[] => {
     const folders: TFolder[] = [];
 
     const addFoldersRecursively = (folder: TFolder) => {
-      
-      if (
-        !folder.name.startsWith('.') &&
-        folder.name.toLowerCase() !== '!journalit'
-      ) {
+      if (isVisibleFolder(folder)) {
         folders.push(folder);
 
         
@@ -133,7 +152,7 @@ function useFolderBrowserModel({
     });
 
     return folders;
-  }, [app]);
+  }, [app, isVisibleFolder]);
 
   
   const buildFolderTree = useCallback((): FolderItem[] => {
@@ -143,10 +162,7 @@ function useFolderBrowserModel({
     const addFolderToTree = (folder: TFolder, depth: number = 0) => {
       const folderPath = folder.path;
       const hasChildren = folder.children.some(
-        (child) =>
-          child instanceof TFolder &&
-          !child.name.startsWith('.') &&
-          child.name.toLowerCase() !== '!journalit'
+        (child) => child instanceof TFolder && isVisibleFolder(child)
       );
       const isExpanded = expandedFolders.has(folderPath);
 
@@ -161,11 +177,7 @@ function useFolderBrowserModel({
       
       if (isExpanded && hasChildren) {
         for (const child of folder.children) {
-          if (
-            child instanceof TFolder &&
-            !child.name.startsWith('.') &&
-            child.name.toLowerCase() !== '!journalit'
-          ) {
+          if (child instanceof TFolder && isVisibleFolder(child)) {
             addFolderToTree(child, depth + 1);
           }
         }
@@ -180,7 +192,7 @@ function useFolderBrowserModel({
     rootFolders.forEach((folder) => addFolderToTree(folder));
 
     return folderItems;
-  }, [getAllFolders, expandedFolders, app]);
+  }, [getAllFolders, expandedFolders, app, isVisibleFolder]);
 
   
   const folderTree = useMemo(() => buildFolderTree(), [buildFolderTree]);
@@ -203,8 +215,9 @@ function useFolderBrowserModel({
       setInputState({ selectedPath, inputValue: e.target.value });
       setIsOpen(true);
       setHighlightedIndex(-1);
+      onInputChange?.(e.target.value);
     },
-    [selectedPath]
+    [selectedPath, onInputChange]
   );
 
   
@@ -248,7 +261,7 @@ function useFolderBrowserModel({
   useEffect(() => {
     const handleFolderSelection = (e: MouseEvent) => {
       const target = e.target;
-      if (!(target instanceof HTMLElement)) {
+      if (!(target instanceof Element)) {
         return;
       }
       const folderItem = target.closest('[data-folder-item="true"]');
@@ -454,19 +467,38 @@ function useFolderBrowserModel({
         />
 
         
-        {item.hasChildren && (
+        {item.hasChildren ? (
           <button
             type="button"
-            className={CLASS_NAMES.FOLDER_TOGGLE}
+            className="journalit-folder-browser-toggle"
             onClick={(e) => handleToggleExpansion(item.path, e)}
             data-folder-toggle="true"
+            aria-expanded={item.isExpanded}
           >
-            {item.isExpanded ? '▼' : '▶'}
+            {item.isExpanded ? (
+              <ChevronDown aria-hidden="true" size={14} />
+            ) : (
+              <ChevronRight aria-hidden="true" size={14} />
+            )}
+            <span className="journalit-folder-browser-sr-only">
+              {item.isExpanded
+                ? t('ui.folder-browser.collapse-folder')
+                : t('ui.folder-browser.expand-folder')}
+            </span>
           </button>
+        ) : (
+          <span
+            aria-hidden="true"
+            className={CLASS_NAMES.FOLDER_TOGGLE_SPACER}
+          />
         )}
 
         
-        <span className={CLASS_NAMES.FOLDER_ICON}>📁</span>
+        <Folder
+          aria-hidden="true"
+          className={CLASS_NAMES.FOLDER_ICON}
+          size={15}
+        />
 
         
         <span className={CLASS_NAMES.FOLDER_NAME}>
@@ -503,12 +535,14 @@ function useFolderBrowserModel({
 export const FolderBrowser: React.FC<FolderBrowserProps> = ({
   selectedPath = '',
   onChange,
+  onInputChange,
   placeholder = t('ui.folder-browser.placeholder'),
   label,
   error,
   helperText,
   required = false,
   app,
+  includeJournalitTree = false,
 }) => {
   const {
     inputId,
@@ -528,7 +562,13 @@ export const FolderBrowser: React.FC<FolderBrowserProps> = ({
     handleInputClick,
     handleKeyDown,
     handleClear,
-  } = useFolderBrowserModel({ selectedPath, onChange, app });
+  } = useFolderBrowserModel({
+    selectedPath,
+    onChange,
+    onInputChange,
+    app,
+    includeJournalitTree,
+  });
 
   return (
     <div

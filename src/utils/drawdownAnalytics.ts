@@ -486,6 +486,10 @@ const matchesDirection = (
 };
 
 const isClosedTrade = (trade: DrawdownAnalyzableTrade): boolean => {
+  if (trade.tradeStatus === 'CANCELLED') {
+    return false;
+  }
+
   if (trade.tradeStatus === 'CLOSED') {
     return true;
   }
@@ -860,6 +864,8 @@ export const getDrawdownCacheSignature = (
 
   return trades
     .flatMap((trade, index) =>
+      trade.tradeStatus !== 'CANCELLED' &&
+      trade._originalPnlWasNull !== true &&
       (assumeClosedTrades || isClosedTrade(trade)) &&
       matchesDirection(trade, direction)
         ? [createSortableTrade(trade, index)]
@@ -903,6 +909,8 @@ export const analyzeDrawdown = <TTrade extends DrawdownAnalyzableTrade>(
 
   const filteredTrades = trades.filter(
     (trade) =>
+      trade.tradeStatus !== 'CANCELLED' &&
+      trade._originalPnlWasNull !== true &&
       (assumeClosedTrades || isClosedTrade(trade)) &&
       matchesDirection(trade, direction)
   );

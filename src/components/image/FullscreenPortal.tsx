@@ -58,10 +58,9 @@ export const FullscreenPortal: React.FC<FullscreenPortalProps> = ({
     let portalEl = window.activeDocument.getElementById(portalId);
 
     if (!portalEl) {
-      portalEl = window.activeDocument.createElement('div');
+      portalEl = window.activeDocument.body.createDiv();
       portalEl.id = portalId;
       portalEl.className = 'journalit-fullscreen-portal-container';
-      window.activeDocument.body.appendChild(portalEl);
     }
 
     setPortalContainer(portalEl);

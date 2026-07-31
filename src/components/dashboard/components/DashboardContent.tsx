@@ -81,7 +81,12 @@ export const DashboardContent: React.FC<DashboardContentProps> = React.memo(
     };
 
     
-    if (!isLoading && dashboardData && dashboardData.trades.length === 0) {
+    if (
+      !isLoading &&
+      dashboardData &&
+      dashboardData.trades.length === 0 &&
+      (dashboardData.unrealizedTrades?.length ?? 0) === 0
+    ) {
       return (
         <DashboardEmptyStateGuideTarget>
           <EmptyState

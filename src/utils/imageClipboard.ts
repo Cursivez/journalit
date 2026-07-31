@@ -129,7 +129,7 @@ function drawImageToPngBlob(
   width: number,
   height: number
 ): Promise<Blob> {
-  const canvas = window.activeDocument.createElement('canvas');
+  const canvas = createEl('canvas');
   canvas.width = width;
   canvas.height = height;
 

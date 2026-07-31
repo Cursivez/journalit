@@ -1,6 +1,13 @@
 
 
-import { App, TFile, normalizePath, FileView, WorkspaceLeaf } from 'obsidian';
+import {
+  App,
+  TFile,
+  normalizePath,
+  FileView,
+  WorkspaceLeaf,
+  type EventRef,
+} from 'obsidian';
 import { DRCData } from './types';
 import { NewsEvent } from '../weekly/types';
 
@@ -34,7 +41,7 @@ import {
   extractMarkdownSectionsByHeading,
   stripPreviousTradingDayContextWidgetBlocks,
 } from '../../utils/markdownSectionExtractor';
-import type { SessionLogEntry } from '../../types/sessionLog';
+import { normalizeSessionLogEntries } from '../../types/sessionLog';
 
 interface PreviousTradingDayContextSection {
   heading: string;
@@ -64,32 +71,6 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 
 function asRecord(value: unknown): Record<string, unknown> | undefined {
   return isRecord(value) ? value : undefined;
-}
-
-function getSessionLogEntries(value: unknown): SessionLogEntry[] {
-  if (!Array.isArray(value)) return [];
-  const entries: SessionLogEntry[] = [];
-  for (const item of value) {
-    const record = asRecord(item);
-    if (
-      !record ||
-      typeof record.id !== 'string' ||
-      typeof record.timestamp !== 'string' ||
-      typeof record.tagId !== 'string' ||
-      typeof record.text !== 'string'
-    ) {
-      continue;
-    }
-    entries.push({
-      id: record.id,
-      timestamp: record.timestamp,
-      tagId: record.tagId,
-      text: record.text,
-      resolved: record.resolved === true,
-      promoted: record.promoted === true,
-    });
-  }
-  return entries;
 }
 
 function getStringValue(record: Record<string, unknown>, key: string): string {
@@ -150,6 +131,13 @@ export class DRCService {
   
   private unsubscribeFns: Unsubscribe[] = [];
 
+  private metadataCacheEventRefs: EventRef[] = [];
+
+  private vaultEventRefs: EventRef[] = [];
+
+  
+  private sessionLogTagIdsByDay: Map<string, ReadonlySet<string>> | null = null;
+
   
   constructor(
     app: App,
@@ -179,8 +167,107 @@ export class DRCService {
         
         if (payload.action === 'trade-review-updated') return;
         void this.onTradeDataChanged();
+      }),
+      eventBus.subscribe('review:changed', (payload) => {
+        if (payload.type === 'drc') {
+          this.invalidateSessionLogTagIndex();
+        }
+      }),
+      eventBus.subscribe('folder-path:changed', () => {
+        this.invalidateSessionLogTagIndex();
       })
     );
+
+    this.metadataCacheEventRefs.push(
+      this.app.metadataCache.on('changed', (file) => {
+        if (this.isDRCMarkdownPath(file.path)) {
+          this.invalidateSessionLogTagIndex();
+        }
+      })
+    );
+    let initialResolvedEventRef: EventRef | null = null;
+    initialResolvedEventRef = this.app.metadataCache.on('resolved', () => {
+      if (!initialResolvedEventRef) return;
+      const eventRef = initialResolvedEventRef;
+      initialResolvedEventRef = null;
+      this.app.metadataCache.offref(eventRef);
+      this.metadataCacheEventRefs = this.metadataCacheEventRefs.filter(
+        (registeredRef) => registeredRef !== eventRef
+      );
+      this.invalidateSessionLogTagIndex();
+    });
+    this.metadataCacheEventRefs.push(initialResolvedEventRef);
+    this.vaultEventRefs.push(
+      this.app.vault.on('delete', (file) => {
+        if (file instanceof TFile && this.isDRCMarkdownPath(file.path)) {
+          this.invalidateSessionLogTagIndex();
+        }
+      }),
+      this.app.vault.on('rename', (file, oldPath) => {
+        const newPathIsDRC =
+          file instanceof TFile && this.isDRCMarkdownPath(file.path);
+        if (newPathIsDRC || this.isDRCMarkdownPath(oldPath)) {
+          this.invalidateSessionLogTagIndex();
+        }
+      })
+    );
+  }
+
+  private invalidateSessionLogTagIndex(): void {
+    this.sessionLogTagIdsByDay = null;
+    eventBus.publish('drc:session-log-index-invalidated');
+  }
+
+  private isDRCMarkdownPath(path: string): boolean {
+    const normalizedPath = normalizePath(path);
+    const journalFolder = normalizePath(
+      this.folderPathService.journalFolderPath
+    );
+    const journalFolderPrefix = `${journalFolder}/`;
+    if (!normalizedPath.startsWith(journalFolderPrefix)) return false;
+
+    const filename = normalizedPath.slice(normalizedPath.lastIndexOf('/') + 1);
+    return filename.endsWith('.md') && filename.startsWith(this.DRC_PREFIX);
+  }
+
+  private getDRCMarkdownFiles(): TFile[] {
+    return this.app.vault
+      .getMarkdownFiles()
+      .filter((file) => this.isDRCMarkdownPath(file.path));
+  }
+
+  public getSessionLogTagIdsByDay(): ReadonlyMap<string, ReadonlySet<string>> {
+    if (this.sessionLogTagIdsByDay) {
+      return this.sessionLogTagIdsByDay;
+    }
+
+    const tagsByDay = new Map<string, ReadonlySet<string>>();
+
+    for (const file of this.getDRCMarkdownFiles()) {
+      const frontmatter: unknown =
+        this.app.metadataCache.getFileCache(file)?.frontmatter;
+      if (
+        !isRecord(frontmatter) ||
+        frontmatter.type !== 'drc' ||
+        typeof frontmatter.date !== 'string' ||
+        !/^\d{4}-\d{2}-\d{2}$/.test(frontmatter.date) ||
+        !parseLocalDateSafe(frontmatter.date) ||
+        !Array.isArray(frontmatter.sessionLog)
+      ) {
+        continue;
+      }
+
+      const tagIds = new Set(tagsByDay.get(frontmatter.date) || []);
+      for (const entry of normalizeSessionLogEntries(frontmatter.sessionLog)) {
+        if (entry.tagId.length > 0) {
+          tagIds.add(entry.tagId);
+        }
+      }
+      tagsByDay.set(frontmatter.date, tagIds);
+    }
+
+    this.sessionLogTagIdsByDay = tagsByDay;
+    return tagsByDay;
   }
 
   
@@ -727,7 +814,7 @@ export class DRCService {
         drcData.sessionMistakes = getStringArray(record, 'sessionMistakes');
       }
       if (Array.isArray(record.sessionLog)) {
-        drcData.sessionLog = getSessionLogEntries(record.sessionLog);
+        drcData.sessionLog = normalizeSessionLogEntries(record.sessionLog);
       }
       if (isRecord(record.dailyGoalStatus)) {
         drcData.dailyGoalStatus = getBooleanRecord(record, 'dailyGoalStatus');
@@ -868,10 +955,6 @@ export class DRCService {
   }
 
   private findNearestEarlierDRC(currentDate: Date): TFile | null {
-    const journalFolder = normalizePath(
-      this.folderPathService.journalFolderPath
-    );
-    const journalFolderPrefix = `${journalFolder}/`;
     const currentTime = new Date(
       currentDate.getFullYear(),
       currentDate.getMonth(),
@@ -879,15 +962,7 @@ export class DRCService {
     ).getTime();
     let nearest: { file: TFile; time: number } | null = null;
 
-    for (const file of this.app.vault.getMarkdownFiles()) {
-      if (
-        file.path !== journalFolder &&
-        !file.path.startsWith(journalFolderPrefix)
-      ) {
-        continue;
-      }
-      if (!file.basename.startsWith(this.DRC_PREFIX)) continue;
-
+    for (const file of this.getDRCMarkdownFiles()) {
       const frontmatter =
         this.app.metadataCache.getFileCache(file)?.frontmatter;
       if (frontmatter?.type !== 'drc' || typeof frontmatter.date !== 'string') {
@@ -1364,5 +1439,13 @@ export class DRCService {
       unsubscribe();
     }
     this.unsubscribeFns = [];
+    for (const eventRef of this.metadataCacheEventRefs) {
+      this.app.metadataCache.offref(eventRef);
+    }
+    this.metadataCacheEventRefs = [];
+    for (const eventRef of this.vaultEventRefs) {
+      this.app.vault.offref(eventRef);
+    }
+    this.vaultEventRefs = [];
   }
 }

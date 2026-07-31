@@ -138,17 +138,31 @@ export class SubscriptionTierService {
 
       const nextTier = entitlements.subscription.isPro ? 'premium' : 'free';
       const nextUserId = String(entitlements.user.id);
+      const entitlementEventDetail = {
+        tradeImportEnabled: entitlements.features.tradeImport.enabled,
+      };
       if (
         backend.subscriptionTier !== nextTier ||
         backend.userEmail !== entitlements.user.email ||
-        backend.userId !== nextUserId
+        backend.userId !== nextUserId ||
+        backend.authenticatedAccountId !== nextUserId
       ) {
         backend.subscriptionTier = nextTier;
         backend.userEmail = entitlements.user.email;
         backend.userId = nextUserId;
+        backend.authenticatedAccountId = nextUserId;
         await this.plugin.saveSettings();
-        window.dispatchEvent(new CustomEvent('journalit:subscription-changed'));
+        window.dispatchEvent(
+          new CustomEvent('journalit:subscription-changed', {
+            detail: entitlementEventDetail,
+          })
+        );
       }
+      window.dispatchEvent(
+        new CustomEvent('journalit:entitlements-refreshed', {
+          detail: entitlementEventDetail,
+        })
+      );
       return {
         status: entitlements.subscription.isPro ? 'premium' : 'free',
         entitlements,

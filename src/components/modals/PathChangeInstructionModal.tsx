@@ -1,78 +1,23 @@
 
 
-import { App, Modal } from 'obsidian';
+import type { App } from 'obsidian';
 import React from 'react';
-import { createRoot, Root } from 'react-dom/client';
+import { createRoot } from 'react-dom/client';
 import { FolderOpen, ArrowRight, Info } from '../shared/icons/ObsidianIcon';
 import JournalitPlugin from '../../main';
-import { Button } from '../ui/Button';
 import { t } from '../../lang/helpers';
+import { showActionConfirmationModal } from '../shared/ConfirmationModal';
 
-interface PathChangeInstructionModalProps {
-  app: App;
-  plugin: JournalitPlugin;
+interface PathChangeInstructionContentProps {
   oldPath: string;
   newPath: string;
   hasExistingTrades: boolean;
-  onConfirm: () => void | Promise<void>;
-  onCancel: () => void;
-  onClose: () => void;
 }
 
-
-class PathChangeInstructionModal extends Modal {
-  private props: PathChangeInstructionModalProps;
-  private container: HTMLDivElement;
-  private root: Root | null = null;
-
-  constructor(props: PathChangeInstructionModalProps) {
-    super(props.app);
-    this.props = props;
-  }
-
-  onOpen() {
-    const { contentEl } = this;
-    contentEl.empty();
-
-    
-    this.container = contentEl.createDiv();
-    this.root = createRoot(this.container);
-    this.root.render(
-      <PathChangeInstructionComponent
-        {...this.props}
-        onClose={() => this.close()}
-      />
-    );
-
-    
-    contentEl.addClass('path-change-instruction-modal');
-    contentEl.classList.add('jl-modal-container');
-  }
-
-  onClose() {
-    if (this.root) {
-      this.root.unmount();
-    }
-  }
-}
 
 const PathChangeInstructionComponent: React.FC<
-  PathChangeInstructionModalProps
-> = ({
-  app: _app,
-  plugin: _plugin,
-  oldPath,
-  newPath,
-  hasExistingTrades,
-  onConfirm,
-  onCancel,
-  onClose,
-}) => {
-  const handleConfirm = () => {
-    void onConfirm();
-    onClose();
-  };
-
+  PathChangeInstructionContentProps
+> = ({ oldPath, newPath, hasExistingTrades }) => {
   return (
     <div className="path-change-instruction-content">
       
@@ -143,27 +88,6 @@ const PathChangeInstructionComponent: React.FC<
           </div>
         </div>
       </div>
-
-      
-      <div className="path-change-instruction-actions">
-        <Button
-          variant="plain"
-          onClick={() => {
-            onCancel();
-            onClose();
-          }}
-          className="path-change-instruction-button--cancel"
-        >
-          {t('settings.general.path-change.button.cancel')}
-        </Button>
-        <Button
-          variant="primary"
-          onClick={handleConfirm}
-          className="path-change-instruction-button--confirm"
-        >
-          {t('settings.general.path-change.button.confirm')}
-        </Button>
-      </div>
     </div>
   );
 };
@@ -171,22 +95,45 @@ const PathChangeInstructionComponent: React.FC<
 
 export function openPathChangeInstructionModal(
   app: App,
-  plugin: JournalitPlugin,
+  _plugin: JournalitPlugin,
   oldPath: string,
   newPath: string,
   hasExistingTrades: boolean,
   onConfirm: () => void | Promise<void>,
   onCancel?: () => void
 ): void {
-  const modal = new PathChangeInstructionModal({
-    app,
-    plugin,
-    oldPath,
-    newPath,
-    hasExistingTrades,
-    onConfirm,
-    onCancel: onCancel || (() => {}),
-    onClose: () => {}, 
+  void showActionConfirmationModal(app, {
+    cancelValue: false,
+    renderContent: (contentEl) => {
+      const container = contentEl.createDiv();
+      const root = createRoot(container);
+      root.render(
+        <PathChangeInstructionComponent
+          oldPath={oldPath}
+          newPath={newPath}
+          hasExistingTrades={hasExistingTrades}
+        />
+      );
+      return () => root.unmount();
+    },
+    actions: [
+      {
+        value: false,
+        label: t('settings.general.path-change.button.cancel'),
+        variant: 'secondary',
+        initialFocus: true,
+      },
+      {
+        value: true,
+        label: t('settings.general.path-change.button.confirm'),
+        variant: 'primary',
+      },
+    ],
+  }).then((confirmed) => {
+    if (confirmed) {
+      void onConfirm();
+      return;
+    }
+    onCancel?.();
   });
-  modal.open();
 }

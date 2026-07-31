@@ -23,6 +23,7 @@ import {
   addConnectedTradeGateQuestion,
   getReachableTradeGateNodeIds,
 } from '../../../components/sessionMode/tradeGateUtils';
+import { TradeGateSimulator } from '../../../components/sessionMode/TradeGateSimulator';
 import {
   ChevronDown,
   ChevronRight,
@@ -31,6 +32,7 @@ import {
   Edit,
   Info,
   Minus,
+  Play,
   Plus,
   Radio,
   RotateCcw,
@@ -1397,6 +1399,68 @@ function scrollTradeGateEditorIntoView({
   }
 }
 
+function removeTradeGateNodeFromWorkflow(
+  workflow: TradeGateWorkflow,
+  nodeId: string
+): Pick<TradeGateWorkflow, 'nodes' | 'startNodeId'> {
+  const remainingNodes = workflow.nodes.filter((node) => node.id !== nodeId);
+  const remainingQuestions = remainingNodes.filter(
+    (node): node is TradeGateQuestionNode => node.type === 'question'
+  );
+  const startNodeId =
+    workflow.startNodeId === nodeId
+      ? (remainingQuestions[0]?.id ?? '')
+      : workflow.startNodeId;
+  const nodes = remainingNodes.map((node) => {
+    if (node.type !== 'question') return node;
+    return {
+      ...node,
+      options: node.options.filter((option) => option.targetNodeId !== nodeId),
+    };
+  });
+
+  return { nodes, startNodeId };
+}
+
+function addTradeGateOptionToWorkflow(
+  workflow: TradeGateWorkflow,
+  questionId: string
+): TradeGateWorkflow | null {
+  const normalizedWorkflow = normalizeTradeGateWorkflowOutcomes(workflow);
+  const question = normalizedWorkflow.nodes.find(
+    (node): node is TradeGateQuestionNode =>
+      node.id === questionId && node.type === 'question'
+  );
+  if (!question) return null;
+
+  const targetNodes = normalizedWorkflow.nodes.filter(
+    (target) => target.id !== question.id
+  );
+  const waitOutcome = targetNodes.find(
+    (target): target is TradeGateOutcomeNode =>
+      target.type === 'outcome' && target.outcome === 'wait'
+  );
+  const targetNodeId = waitOutcome?.id ?? targetNodes[0]?.id ?? '';
+  const updatedQuestion: TradeGateQuestionNode = {
+    ...question,
+    options: [
+      ...question.options,
+      {
+        id: generateUUID(),
+        label: t('settings.session-mode.trade-gate.new-option'),
+        targetNodeId,
+      },
+    ],
+  };
+
+  return {
+    ...normalizedWorkflow,
+    nodes: normalizedWorkflow.nodes.map((node) =>
+      node.id === question.id ? updatedQuestion : node
+    ),
+  };
+}
+
 function TradeGateWorkflowEditor({
   workflow,
   isExpanded,
@@ -1413,6 +1477,7 @@ function TradeGateWorkflowEditor({
   );
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const [isAddingQuestion, setIsAddingQuestion] = useState(false);
+  const [isSimulatorOpen, setIsSimulatorOpen] = useState(false);
   const workflowRef = useRef<HTMLDivElement | null>(null);
   const headerRef = useRef<HTMLDivElement | null>(null);
   const selectedEditorRef = useRef<HTMLDivElement | null>(null);
@@ -1565,72 +1630,41 @@ function TradeGateWorkflowEditor({
   };
 
   const addOptionToQuestion = async (questionId: string) => {
-    const question = draftWorkflow.nodes.find(
-      (node): node is TradeGateQuestionNode =>
-        node.id === questionId && node.type === 'question'
+    const nextWorkflow = addTradeGateOptionToWorkflow(
+      draftWorkflow,
+      questionId
     );
-    if (!question) return;
-    if (question.id === pendingNewQuestionId) {
-      setPendingNewQuestionId(null);
-    }
-
-    const normalizedWorkflow =
-      normalizeTradeGateWorkflowOutcomes(draftWorkflow);
-    const targetNodes = normalizedWorkflow.nodes.filter(
-      (target) => target.id !== question.id
-    );
-    const waitOutcome = targetNodes.find(
-      (target): target is TradeGateOutcomeNode =>
-        target.type === 'outcome' && target.outcome === 'wait'
-    );
-    const targetNodeId = waitOutcome?.id ?? targetNodes[0]?.id ?? '';
-    const updatedQuestion: TradeGateQuestionNode = {
-      ...question,
-      options: [
-        ...question.options,
-        {
-          id: generateUUID(),
-          label: t('settings.session-mode.trade-gate.new-option'),
-          targetNodeId,
-        },
-      ],
-    };
-    const nextNodes = normalizedWorkflow.nodes.map((node) =>
-      node.id === question.id ? updatedQuestion : node
-    );
-
-    setSelectedNodeId(question.id);
-    await updateWorkflow({ nodes: nextNodes });
+    if (!nextWorkflow) return;
+    if (questionId === pendingNewQuestionId) setPendingNewQuestionId(null);
+    setSelectedNodeId(questionId);
+    await updateWorkflow({ nodes: nextWorkflow.nodes });
   };
 
   const removeNode = async (nodeId: string) => {
-    const remainingNodes = draftWorkflow.nodes.filter(
-      (node) => node.id !== nodeId
-    );
-    const remainingQuestions = remainingNodes.filter(
-      (node): node is TradeGateQuestionNode => node.type === 'question'
-    );
-    const nextStartNodeId =
-      draftWorkflow.startNodeId === nodeId
-        ? (remainingQuestions[0]?.id ?? '')
-        : draftWorkflow.startNodeId;
-    const nextNodes = remainingNodes.map((node) => {
-      if (node.type !== 'question') return node;
-      return {
-        ...node,
-        options: node.options.filter(
-          (option) => option.targetNodeId !== nodeId
-        ),
-      };
-    });
-    if (selectedNodeId === nodeId) {
-      setSelectedNodeId(null);
-    }
-    if (pendingNewQuestionId === nodeId) {
-      setPendingNewQuestionId(null);
-    }
-    await updateWorkflow({ nodes: nextNodes, startNodeId: nextStartNodeId });
+    const nextWorkflow = removeTradeGateNodeFromWorkflow(draftWorkflow, nodeId);
+    if (selectedNodeId === nodeId) setSelectedNodeId(null);
+    if (pendingNewQuestionId === nodeId) setPendingNewQuestionId(null);
+    await updateWorkflow(nextWorkflow);
   };
+
+  const simulationRegionId = `journalit-trade-gate-simulator-${draftWorkflow.id}`;
+  const simulationControl = isExpanded ? (
+    <Tooltip
+      content={t('settings.session-mode.trade-gate.simulation.show')}
+      preferredPosition="bottom"
+    >
+      <Button
+        size="sm"
+        className={`journalit-session-mode-trade-gate-simulate-button${isSimulatorOpen ? ' is-active' : ''}`}
+        aria-label={t('settings.session-mode.trade-gate.simulation.show')}
+        aria-controls={simulationRegionId}
+        aria-expanded={isSimulatorOpen}
+        onClick={() => setIsSimulatorOpen((current) => !current)}
+      >
+        <Play size={15} aria-hidden="true" />
+      </Button>
+    </Tooltip>
+  ) : null;
 
   return (
     <div
@@ -1648,6 +1682,7 @@ function TradeGateWorkflowEditor({
         isExpanded={isExpanded}
         removeWorkflow={removeWorkflow}
         setExpanded={setExpanded}
+        simulationControl={simulationControl}
       />
 
       <StickyHeaderPortal
@@ -1664,6 +1699,7 @@ function TradeGateWorkflowEditor({
           isExpanded={isExpanded}
           removeWorkflow={removeWorkflow}
           setExpanded={setExpanded}
+          simulationControl={simulationControl}
         />
       </StickyHeaderPortal>
 
@@ -1674,6 +1710,13 @@ function TradeGateWorkflowEditor({
             updateWorkflow={updateWorkflow}
             workflow={draftWorkflow}
           />
+
+          {isSimulatorOpen && (
+            <TradeGateSimulator
+              id={simulationRegionId}
+              workflow={draftWorkflow}
+            />
+          )}
 
           <TradeGateFlowMap
             workflow={draftWorkflow}
@@ -1799,6 +1842,7 @@ function TradeGateWorkflowHeader({
   isExpanded,
   removeWorkflow,
   setExpanded,
+  simulationControl,
 }: {
   addQuestionTooltip: string;
   addQuestionNode: () => Promise<void>;
@@ -1810,6 +1854,7 @@ function TradeGateWorkflowHeader({
   isExpanded: boolean;
   removeWorkflow: (id: string) => Promise<boolean>;
   setExpanded: () => void;
+  simulationControl: React.ReactNode;
 }) {
   const addQuestionLabel = draftWorkflow.nodes.some(
     (node) => node.type === 'question'
@@ -1842,6 +1887,7 @@ function TradeGateWorkflowHeader({
           })}
         </span>
       </button>
+      {simulationControl}
       {isExpanded && (
         <Tooltip content={addQuestionTooltip} preferredPosition="bottom">
           <Button
@@ -1849,7 +1895,6 @@ function TradeGateWorkflowHeader({
             className={isAddQuestionUnavailable ? 'is-disabled' : ''}
             disabled={isAddingQuestion}
             aria-disabled={isAddQuestionUnavailable}
-            aria-label={`${addQuestionLabel}. ${addQuestionTooltip}`}
             onClick={() => void addQuestionNode()}
           >
             <Plus size={15} aria-hidden="true" />

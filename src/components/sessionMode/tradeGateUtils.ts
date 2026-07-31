@@ -37,6 +37,65 @@ export function getTradeGateOutcomeNode(
   return node?.type === 'outcome' ? node : null;
 }
 
+export function hasRunnableTradeGateQuestion(
+  workflow: TradeGateWorkflow,
+  nodeId: string | undefined,
+  visitedNodeIds = new Set<string>()
+): boolean {
+  const question = getTradeGateQuestionNode(workflow, nodeId);
+  if (!question || visitedNodeIds.has(question.id)) return false;
+
+  const nextVisitedNodeIds = new Set(visitedNodeIds);
+  nextVisitedNodeIds.add(question.id);
+
+  return (
+    getRunnableTradeGateOptions(workflow, question.options, nextVisitedNodeIds)
+      .length > 0
+  );
+}
+
+function isRunnableTradeGateTarget(
+  workflow: TradeGateWorkflow,
+  targetNodeId: string,
+  visitedNodeIds: Set<string>
+): boolean {
+  if (getTradeGateOutcomeNode(workflow, targetNodeId)) return true;
+  return hasRunnableTradeGateQuestion(workflow, targetNodeId, visitedNodeIds);
+}
+
+export function getRunnableTradeGateOptions(
+  workflow: TradeGateWorkflow,
+  options: TradeGateOption[],
+  visitedNodeIds = new Set<string>()
+): TradeGateOption[] {
+  return options.filter((option) => {
+    if (!option.id || !option.label || !option.targetNodeId) return false;
+    return isRunnableTradeGateTarget(
+      workflow,
+      option.targetNodeId,
+      visitedNodeIds
+    );
+  });
+}
+
+export function getTradeGateRoutingSignature(
+  workflow: TradeGateWorkflow
+): string {
+  const nodeSignatures = workflow.nodes.map((node) => {
+    if (node.type === 'outcome') {
+      return `outcome:${node.id}:${node.outcome}`;
+    }
+    
+    const optionSignatures = node.options.map(
+      (option) =>
+        `${option.id}>${option.targetNodeId}:${option.label ? 'labeled' : 'unlabeled'}`
+    );
+    return `question:${node.id}:${optionSignatures.join(',')}`;
+  });
+
+  return `${workflow.startNodeId}|${nodeSignatures.join('|')}`;
+}
+
 export function getReachableTradeGateNodeIds(
   workflow: TradeGateWorkflow
 ): Set<string> {
@@ -129,6 +188,60 @@ export function createTradeGateRun(workflow: TradeGateWorkflow): TradeGateRun {
     status: 'in-progress',
     currentNodeId: workflow.startNodeId,
     answers: [],
+  };
+}
+
+export function advanceTradeGateRun(params: {
+  workflow: TradeGateWorkflow;
+  run: TradeGateRun;
+  optionId: string;
+  timestamp?: string;
+}): TradeGateRun | null {
+  if (params.run.status !== 'in-progress') return null;
+
+  const currentNode = getTradeGateQuestionNode(
+    params.workflow,
+    params.run.currentNodeId
+  );
+  const option = currentNode?.options.find(
+    (candidate) => candidate.id === params.optionId
+  );
+  if (!currentNode || !option) return null;
+  if (!getRunnableTradeGateOptions(params.workflow, [option]).length) {
+    return null;
+  }
+
+  const answer = {
+    nodeId: currentNode.id,
+    nodeTitle: currentNode.title,
+    prompt: currentNode.prompt,
+    selectedOptionId: option.id,
+    selectedOptionLabel: option.label,
+    targetNodeId: option.targetNodeId,
+    timestamp: params.timestamp ?? new Date().toISOString(),
+  };
+  const targetOutcome = getTradeGateOutcomeNode(
+    params.workflow,
+    option.targetNodeId
+  );
+
+  if (targetOutcome) {
+    return {
+      ...params.run,
+      answers: [...params.run.answers, answer],
+      status: 'completed',
+      completedAt: answer.timestamp,
+      currentNodeId: targetOutcome.id,
+      outcome: targetOutcome.outcome,
+      outcomeTitle: targetOutcome.title,
+      outcomeDescription: targetOutcome.description,
+    };
+  }
+
+  return {
+    ...params.run,
+    answers: [...params.run.answers, answer],
+    currentNodeId: option.targetNodeId,
   };
 }
 

@@ -1,6 +1,7 @@
 
 
 import React from 'react';
+import type { TradeFormData } from '../../forms/trade/types';
 import { calculateEffectiveRMultiple } from '../../../utils';
 import { useDisplayFormatter } from '../../../hooks/useDisplayPolicy';
 import {
@@ -11,11 +12,13 @@ import { useCurrency } from '../../../contexts/CurrencyContext';
 import { usePlugin } from '../../../hooks/usePlugin';
 import { t } from '../../../lang/helpers';
 import { getTradeDirectionDisplayKind } from '../../../services/trade/core/TradeDirection';
+import { formatLocalizedDateTime } from '../../../utils/localizedDateTime';
 import {
   getWeekNumberForDate,
   getWeekStartDaySetting,
 } from '../../../utils/dateUtils';
 import { CheckCircle2, Circle, Edit } from '../../shared/icons/ObsidianIcon';
+import { calculateSnapshotRealizedPnL } from '../../../utils/unrealizedPnl';
 
 const HEADER_WEEKDAY_FORMATTER = new Intl.DateTimeFormat(undefined, {
   weekday: 'short',
@@ -162,24 +165,24 @@ interface TradeHeaderProps {
   exitTime?: Date | string | null;
   exitPrice?: number | null;
   tradeStatus?: string;
-  exits?: Array<{
-    time?: Date | string | null;
-    price?: number | null;
-    size?: number | null;
-  }>;
-  entries?: Array<{
-    time?: Date | string | null;
-    price?: number | null;
-    size?: number | null;
-  }>;
-  dividends?: Array<{ amount?: number | null }>;
+  lastBrokerSyncAt?: string;
+  exits?: TradeFormData['exits'];
+  entries?: TradeFormData['entries'];
+  dividends?: TradeFormData['dividends'];
   commission?: number | null;
+  commissionType?: TradeFormData['commissionType'];
   swap?: number | null;
   fees?: number | null;
   rebate?: number | null;
   
   assetType?: string;
   optionType?: 'call' | 'put';
+  contractSize?: number;
+  dollarPerPoint?: number;
+  tickSize?: number;
+  tickValue?: number;
+  lotSize?: number;
+  pipValue?: number;
   rMultiple?: number;
   rMultipleDisplay?: {
     enabled: boolean;
@@ -187,6 +190,9 @@ interface TradeHeaderProps {
   };
   
   currency?: string;
+  
+  unrealizedPnL?: number | null;
+  unrealizedPriceSnapshotTime?: TradeFormData['unrealizedPriceSnapshotTime'];
 }
 
 export const TradeHeader: React.FC<TradeHeaderProps> = ({
@@ -206,18 +212,28 @@ export const TradeHeader: React.FC<TradeHeaderProps> = ({
   exitTime,
   exitPrice,
   tradeStatus,
+  lastBrokerSyncAt,
   exits,
   entries,
   dividends,
   commission,
+  commissionType,
   swap,
   fees,
   rebate,
   assetType,
   optionType,
+  contractSize,
+  dollarPerPoint,
+  tickSize,
+  tickValue,
+  lotSize,
+  pipValue,
   rMultiple,
   rMultipleDisplay,
   currency: tradeCurrency,
+  unrealizedPnL,
+  unrealizedPriceSnapshotTime,
 }) => {
   const isBreakeven = outcome.kind === 'breakeven';
   const isProfit = outcome.kind === 'profit';
@@ -247,6 +263,18 @@ export const TradeHeader: React.FC<TradeHeaderProps> = ({
       entries,
       pnl: undefined,
     });
+  const isPartiallyClosed = tradeStatus === 'PARTIALLY_CLOSED';
+  const isCancelled = tradeStatus === 'CANCELLED';
+  const isAuthoritativeUnknownOutcome =
+    tradeStatus === 'CLOSED' && originalPnlWasNull === true;
+
+  const brokerSyncDate = lastBrokerSyncAt ? new Date(lastBrokerSyncAt) : null;
+  const brokerSyncLabel =
+    isOpen && brokerSyncDate && Number.isFinite(brokerSyncDate.getTime())
+      ? t('trade.broker-synced-at', {
+          date: formatLocalizedDateTime(brokerSyncDate),
+        })
+      : null;
 
   const directionDisplayKind = getTradeDirectionDisplayKind({
     direction,
@@ -396,8 +424,66 @@ export const TradeHeader: React.FC<TradeHeaderProps> = ({
   );
 
   const defaultRiskAmount = plugin?.settings?.trade?.defaultRiskAmount;
-  const effectiveRMultiple = calculateEffectiveRMultiple(
+
+  const hasRealizedOpenComponents = hasRealizedStoredPnL({
     pnl,
+    _originalPnlWasNull: originalPnlWasNull,
+    tradeStatus,
+    useDirectPnLInput,
+    directPnL,
+    exits,
+    dividends,
+    commission,
+    swap,
+    fees,
+    rebate,
+  });
+
+  
+  
+  const openUnrealizedPnL =
+    isOpen &&
+    !isMissedTrade &&
+    !isBacktestTrade &&
+    unrealizedPnL !== null &&
+    unrealizedPnL !== undefined
+      ? unrealizedPnL
+      : null;
+  const headerPnlValue =
+    openUnrealizedPnL !== null
+      ? (hasRealizedOpenComponents
+          ? calculateSnapshotRealizedPnL(
+              {
+                tradeStatus,
+                direction,
+                entryTime: entryTime instanceof Date ? entryTime : undefined,
+                exitTime: exitTime instanceof Date ? exitTime : undefined,
+                exitPrice: exitPrice ?? undefined,
+                entries,
+                exits,
+                dividends,
+                commission: commission ?? undefined,
+                commissionType,
+                swap: swap ?? undefined,
+                fees: fees ?? undefined,
+                rebate: rebate ?? undefined,
+                assetType,
+                optionType,
+                contractSize,
+                dollarPerPoint,
+                tickSize,
+                tickValue,
+                lotSize,
+                pipValue,
+                unrealizedPriceSnapshotTime,
+              },
+              pnl
+            )
+          : 0) + openUnrealizedPnL
+      : pnl;
+
+  const effectiveRMultiple = calculateEffectiveRMultiple(
+    headerPnlValue,
     isOpen ? undefined : rMultiple,
     riskAmount,
     defaultRiskAmount
@@ -405,14 +491,14 @@ export const TradeHeader: React.FC<TradeHeaderProps> = ({
 
   const formattedPrivacyAwarePnL = formatValue({
     kind: 'pnl',
-    value: pnl,
+    value: headerPnlValue,
     currencyCode: currency,
     rMultiple: effectiveRMultiple,
   });
   const privacyAwarePnLPrefix =
     !isPnlMasked &&
     !displayRMultiples &&
-    pnl > 0 &&
+    headerPnlValue > 0 &&
     !formattedPrivacyAwarePnL.startsWith('+')
       ? '+'
       : '';
@@ -421,6 +507,8 @@ export const TradeHeader: React.FC<TradeHeaderProps> = ({
 
   const getStatusClass = () => {
     if (isOpen) return 'open';
+    if (isCancelled) return 'breakeven';
+    if (isAuthoritativeUnknownOutcome) return 'unknown';
     if (isPnlMasked) return 'privacy-masked';
     if (isBreakeven) return 'breakeven';
     return isProfit ? 'profit' : 'loss';
@@ -428,6 +516,10 @@ export const TradeHeader: React.FC<TradeHeaderProps> = ({
 
   const getTextClass = () => {
     if (isPnlMasked) return 'journalit-privacy-mask';
+    if (openUnrealizedPnL !== null) {
+      if (headerPnlValue === 0) return 'breakeven-text';
+      return headerPnlValue > 0 ? 'profit-text' : 'loss-text';
+    }
     if (isBreakeven) return 'breakeven-text';
     return isProfit ? 'profit-text' : 'loss-text';
   };
@@ -437,121 +529,98 @@ export const TradeHeader: React.FC<TradeHeaderProps> = ({
     ? t('tradelog.status.backtest')
     : isMissedTrade
       ? t('tradelog.status.missed')
-      : isOpen
-        ? t('tradelog.status.open')
-        : null;
+      : isPartiallyClosed
+        ? isPnlMasked
+          ? t('tradelog.status.open')
+          : t('tradelog.status.partially-closed')
+        : isCancelled
+          ? t('tradelog.status.cancelled')
+          : isOpen
+            ? t('tradelog.status.open')
+            : null;
   const specialStatusClass = isBacktestTrade
     ? 'trade-type-badge--backtest'
     : isMissedTrade
       ? 'trade-type-badge--missed'
-      : isOpen
+      : isPartiallyClosed
         ? 'trade-type-badge--open'
-        : '';
+        : isCancelled
+          ? 'trade-type-badge--cancelled'
+          : isOpen
+            ? 'trade-type-badge--open'
+            : '';
 
   const shouldShowOutcomeValue =
-    !isOpen ||
-    isMissedTrade ||
-    isBacktestTrade ||
-    hasRealizedStoredPnL({
-      pnl,
-      _originalPnlWasNull: originalPnlWasNull,
-      tradeStatus,
-      useDirectPnLInput,
-      directPnL,
-      exits,
-      dividends,
-      commission,
-      swap,
-      fees,
-      rebate,
-    });
+    !isCancelled &&
+    !isAuthoritativeUnknownOutcome &&
+    (!isOpen ||
+      isMissedTrade ||
+      isBacktestTrade ||
+      hasRealizedOpenComponents ||
+      openUnrealizedPnL !== null);
 
   return (
     <div className={`trade-note-header ${statusClass}`}>
       <div className="trade-header-main-row">
         <div className="trade-instrument">
-          {directionLabel && (
-            <span className="trade-instrument-direction">{directionLabel}</span>
-          )}
-          <span className="trade-instrument-mainline">
-            {specialStatusLabel ? (
-              <span className="trade-instrument-stack">
-                <span className="trade-instrument-title-row">
-                  <span className="trade-instrument-symbol">
-                    {displayInstrument || t('trade.header.unknown-instrument')}
-                  </span>
-                  {onToggleReviewed && (
-                    <span
-                      className="trade-header-review-indicator clickable-icon"
-                      role="button"
-                      tabIndex={0}
-                      onClick={onToggleReviewed}
-                      onKeyDown={(event) => {
-                        if (event.key !== 'Enter' && event.key !== ' ') return;
-                        event.preventDefault();
-                        onToggleReviewed();
-                      }}
-                      aria-label={
-                        reviewed
-                          ? t('widget.header.aria.mark-not-reviewed')
-                          : t('widget.header.aria.mark-reviewed')
-                      }
-                    >
-                      {reviewed ? (
-                        <CheckCircle2
-                          size={20}
-                          className="journalit-header-reviewed-icon"
-                        />
-                      ) : (
-                        <Circle
-                          size={20}
-                          className="journalit-header-unreviewed-icon"
-                        />
-                      )}
-                    </span>
-                  )}
+          {(directionLabel || specialStatusLabel) && (
+            <span className="trade-instrument-meta-row">
+              {directionLabel && (
+                <span className="trade-instrument-direction">
+                  {directionLabel}
                 </span>
+              )}
+              {directionLabel && specialStatusLabel && (
+                <span
+                  className="trade-instrument-status-separator"
+                  aria-hidden="true"
+                >
+                  ·
+                </span>
+              )}
+              {specialStatusLabel && (
                 <span className={`trade-type-badge ${specialStatusClass}`}>
                   {specialStatusLabel}
                 </span>
+              )}
+            </span>
+          )}
+          <span className="trade-instrument-mainline">
+            <span className="trade-instrument-title-row">
+              <span className="trade-instrument-symbol">
+                {displayInstrument || t('trade.header.unknown-instrument')}
               </span>
-            ) : (
-              <span className="trade-instrument-title-row">
-                <span className="trade-instrument-symbol">
-                  {displayInstrument || t('trade.header.unknown-instrument')}
+              {onToggleReviewed && (
+                <span
+                  className="trade-header-review-indicator clickable-icon"
+                  role="button"
+                  tabIndex={0}
+                  onClick={onToggleReviewed}
+                  onKeyDown={(event) => {
+                    if (event.key !== 'Enter' && event.key !== ' ') return;
+                    event.preventDefault();
+                    onToggleReviewed();
+                  }}
+                  aria-label={
+                    reviewed
+                      ? t('widget.header.aria.mark-not-reviewed')
+                      : t('widget.header.aria.mark-reviewed')
+                  }
+                >
+                  {reviewed ? (
+                    <CheckCircle2
+                      size={20}
+                      className="journalit-header-reviewed-icon"
+                    />
+                  ) : (
+                    <Circle
+                      size={20}
+                      className="journalit-header-unreviewed-icon"
+                    />
+                  )}
                 </span>
-                {onToggleReviewed && (
-                  <span
-                    className="trade-header-review-indicator clickable-icon"
-                    role="button"
-                    tabIndex={0}
-                    onClick={onToggleReviewed}
-                    onKeyDown={(event) => {
-                      if (event.key !== 'Enter' && event.key !== ' ') return;
-                      event.preventDefault();
-                      onToggleReviewed();
-                    }}
-                    aria-label={
-                      reviewed
-                        ? t('widget.header.aria.mark-not-reviewed')
-                        : t('widget.header.aria.mark-reviewed')
-                    }
-                  >
-                    {reviewed ? (
-                      <CheckCircle2
-                        size={20}
-                        className="journalit-header-reviewed-icon"
-                      />
-                    ) : (
-                      <Circle
-                        size={20}
-                        className="journalit-header-unreviewed-icon"
-                      />
-                    )}
-                  </span>
-                )}
-              </span>
-            )}
+              )}
+            </span>
           </span>
         </div>
         <div className="trade-pnl">
@@ -559,7 +628,14 @@ export const TradeHeader: React.FC<TradeHeaderProps> = ({
             <>
               {isOpen && !isMissedTrade && !isBacktestTrade && (
                 <span className="trade-pnl-label">
-                  {`Floating ${t('chart.label.pnl')}`}
+                  
+                  {isPnlMasked
+                    ? t('form.field.floating-pnl')
+                    : openUnrealizedPnL === null
+                      ? t('form.field.realized-pnl')
+                      : hasRealizedOpenComponents
+                        ? t('form.field.floating-pnl')
+                        : t('form.unrealized.preview')}
                 </span>
               )}
               <span className={getTextClass()}>
@@ -579,12 +655,22 @@ export const TradeHeader: React.FC<TradeHeaderProps> = ({
               </span>
             </>
           ) : (
-            <span className="open-text">{t('tradelog.status.open')}</span>
+            <span className="open-text">
+              {isCancelled
+                ? t('tradelog.status.cancelled')
+                : isAuthoritativeUnknownOutcome
+                  ? t('common.unknown')
+                  : t('tradelog.status.open')}
+            </span>
           )}
         </div>
       </div>
       <div className="trade-header-context-row">
         <div className="trade-header-meta">
+          {brokerSyncLabel && <span>{brokerSyncLabel}</span>}
+          {brokerSyncLabel && showReviewNavigation && formattedTradeWeekday && (
+            <span className="trade-header-context-separator">·</span>
+          )}
           {showReviewNavigation &&
             formattedTradeWeekday &&
             tradeDayNumber &&

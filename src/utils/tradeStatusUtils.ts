@@ -4,6 +4,7 @@ import {
   calculateWeightedAveragePrice,
   normalizeTradeExecution,
 } from '../services/trade/core/TradeExecutionNormalization';
+import { hasCanonicalProjectionIdentity } from '../services/trade/core/CanonicalProjectionFields';
 import { calculateTradeDirectionPriceDiff } from '../services/trade/core/TradeDirection';
 import { classifyPnLWithBreakEvenSettings } from './breakEvenRange';
 import { parseTradeTimestampValue } from './dateUtils';
@@ -77,6 +78,9 @@ export function getEffectivePnL(trade: {
 }
 
 interface TradePnLContributionContext {
+  canonicalTradeId?: string;
+  canonicalTradeVersion?: number;
+  canonicalProjectionSchemaVersion?: number;
   tradeStatus?: string;
   exitTime?: Date | string | null;
   exitPrice?: number | null;
@@ -147,7 +151,7 @@ export function hasRealizedPnLComponents(
     hasRealizedExits ||
     hasDividendEvents ||
     hasAdjustments ||
-    (trade.tradeStatus !== 'OPEN' &&
+    (trade.tradeStatus === 'CLOSED' &&
       trade.useDirectPnLInput === true &&
       trade.directPnL !== undefined &&
       trade.directPnL !== null)
@@ -183,8 +187,14 @@ export function hasRealizedStoredPnL(
 export function isPnlContributingTrade(
   trade: TradePnLContributionContext
 ): boolean {
+  if (trade.tradeStatus === 'CANCELLED') {
+    return false;
+  }
   if (trade.tradeStatus === 'CLOSED') {
-    return true;
+    return !(
+      trade._originalPnlWasNull === true &&
+      hasCanonicalProjectionIdentity(trade)
+    );
   }
 
   return (
@@ -211,7 +221,11 @@ function isTradeOpen(trade: {
     return true;
   }
 
-  if (trade.tradeStatus === 'CLOSED') {
+  if (trade.tradeStatus === 'PARTIALLY_CLOSED') {
+    return true;
+  }
+
+  if (trade.tradeStatus === 'CLOSED' || trade.tradeStatus === 'CANCELLED') {
     return false;
   }
 
@@ -243,6 +257,14 @@ export function isTradeOpenWithContext(trade: {
   
   if (trade.tradeStatus === 'OPEN') {
     return true;
+  }
+
+  if (trade.tradeStatus === 'PARTIALLY_CLOSED') {
+    return true;
+  }
+
+  if (trade.tradeStatus === 'CANCELLED') {
+    return false;
   }
 
   
@@ -296,7 +318,7 @@ export function isTradeOpenWithContext(trade: {
   }
 
   
-  if (trade.tradeStatus === 'CLOSED') {
+  if (trade.tradeStatus === 'CLOSED' || trade.tradeStatus === 'CANCELLED') {
     return false;
   }
 
@@ -330,11 +352,15 @@ export function isTradeOpenPreservingNullPnl(trade: {
   }>;
   _originalPnlWasNull?: boolean;
 }): boolean {
-  if (trade.tradeStatus === 'CLOSED') {
+  if (trade.tradeStatus === 'CLOSED' || trade.tradeStatus === 'CANCELLED') {
     return false;
   }
 
   if (trade.tradeStatus === 'OPEN') {
+    return true;
+  }
+
+  if (trade.tradeStatus === 'PARTIALLY_CLOSED') {
     return true;
   }
 
@@ -423,6 +449,11 @@ export function getTradeDisplayStatusWithContext(
     isBacktestTrade?: boolean;
     useDirectPnLInput?: boolean;
     directPnL?: number | null;
+    authoritativePnl?: number | null;
+    _originalPnlWasNull?: boolean;
+    canonicalTradeId?: string;
+    canonicalTradeVersion?: number;
+    canonicalProjectionSchemaVersion?: number;
     breakEvenAccountCurrentBalance?: number;
     breakEvenAccountCurrentBalanceTotal?: number;
     exits?: Array<{
@@ -442,7 +473,16 @@ export function getTradeDisplayStatusWithContext(
     breakEvenThresholdMode?: 'fixed' | 'percentage_current_balance';
     breakEvenThresholdPercent?: number;
   }
-): 'open' | 'win' | 'loss' | 'breakeven' | 'missed' | 'backtest' {
+):
+  | 'open'
+  | 'partially_closed'
+  | 'cancelled'
+  | 'win'
+  | 'loss'
+  | 'breakeven'
+  | 'unknown'
+  | 'missed'
+  | 'backtest' {
   
   if (trade.isBacktestTrade) {
     return 'backtest';
@@ -453,9 +493,19 @@ export function getTradeDisplayStatusWithContext(
     return 'missed';
   }
 
+  if (trade.tradeStatus === 'CANCELLED') return 'cancelled';
+  if (trade.tradeStatus === 'PARTIALLY_CLOSED') return 'partially_closed';
+
   
   if (isTradeOpenWithContext(trade)) {
     return 'open';
+  }
+
+  if (
+    hasCanonicalProjectionIdentity(trade) &&
+    (trade.authoritativePnl === null || trade._originalPnlWasNull === true)
+  ) {
+    return 'unknown';
   }
 
   

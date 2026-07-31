@@ -107,12 +107,16 @@ export class QuickLinkActionResolver {
         await this.plugin.viewManager.openTemplateBuilderView();
         break;
 
+      case 'openNavigationSidebar':
+        await this.plugin.openNavigationSidebar();
+        break;
+
       case 'openSessionMode':
         await this.plugin.openSessionMode();
         break;
 
       case 'openHome':
-        await this.plugin.viewManager.openHomeView();
+        await this.plugin.viewManager.openHomeView('overview');
         break;
 
       case 'openQuarterlyReview':

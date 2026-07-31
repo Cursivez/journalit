@@ -78,6 +78,10 @@ declare module 'obsidian' {
     setting?: {
       open(): void;
       openTabById(id: string): void;
+      close(): void;
+      clearPageStack?(): void;
+      openPage?(page: unknown): void;
+      activateSettingItem?(settingEl: HTMLElement): void;
     };
 
     

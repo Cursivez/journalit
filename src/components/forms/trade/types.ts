@@ -139,9 +139,19 @@ export interface TradeFormData {
   
   filePath?: string;
   
+  canonicalTradeId?: string;
+  
+  tradeRevision?: number;
+  
   pnl?: number;
   
+  _originalPnlWasNull?: boolean;
+  
   currency?: string;
+  
+  fxRate?: number;
+  
+  fxRateBaseCurrency?: string;
   
   useDirectPnLInput?: boolean;
   
@@ -174,6 +184,10 @@ export interface TradeFormData {
   maePrice?: number;
   
   mfePrice?: number;
+  
+  unrealizedPriceSnapshot?: number;
+  
+  unrealizedPriceSnapshotTime?: Date;
 
   
   
@@ -422,10 +436,12 @@ export interface TradeFormErrors {
     closePercent?: string;
   }>;
   riskAmount?: string;
+  fxRate?: string;
   mae?: string;
   mfe?: string;
   maePrice?: string;
   mfePrice?: string;
+  unrealizedPriceSnapshot?: string;
 
   
   exchange?: string;

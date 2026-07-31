@@ -1,23 +1,8 @@
-import type {
-  DemonTrackerCountMode,
-  DemonTrackerSourceMode,
-  DemonTrackerWidgetConfig,
+import type { DemonTrackerWidgetConfig } from '../../../../types/reviewV2';
+import {
+  isDemonTrackerStopThreshold,
+  isDemonTrackerTrackingMethod,
 } from '../../../../types/reviewV2';
-
-const COUNT_MODES = new Set<string>(['per-trade', 'per-trading-day']);
-const SOURCE_MODES = new Set<string>(['trades', 'session', 'combined']);
-
-function isDemonTrackerCountMode(
-  value: string
-): value is DemonTrackerCountMode {
-  return COUNT_MODES.has(value);
-}
-
-function isDemonTrackerSourceMode(
-  value: string
-): value is DemonTrackerSourceMode {
-  return SOURCE_MODES.has(value);
-}
 
 
 export function parseDemonTrackerWidgetConfig(
@@ -39,12 +24,15 @@ export function parseDemonTrackerWidgetConfig(
     const key = line.substring(0, colonIndex).trim();
     const value = line.substring(colonIndex + 1).trim();
 
-    if (key === 'countMode' && isDemonTrackerCountMode(value)) {
-      config.countMode = value;
+    if (key === 'trackingMethod' && isDemonTrackerTrackingMethod(value)) {
+      config.trackingMethod = value;
     }
 
-    if (key === 'sourceMode' && isDemonTrackerSourceMode(value)) {
-      config.sourceMode = value;
+    if (key === 'stopThreshold') {
+      const stopThreshold = Number(value);
+      if (isDemonTrackerStopThreshold(stopThreshold)) {
+        config.stopThreshold = stopThreshold;
+      }
     }
   }
 

@@ -57,6 +57,9 @@ export function getTradeStatus(
   plugin: JournalitPlugin,
   breakEvenBalance?: number
 ): TradeStatus {
+  if (getString(trade.tradeStatus)?.trim().toUpperCase() === 'CANCELLED') {
+    return 'cancelled';
+  }
   if (
     isTradeOpenWithContext({
       tradeStatus: getString(trade.tradeStatus),
@@ -285,6 +288,7 @@ export function shouldShowTradePnl(
 ): boolean {
   return (
     tradeStatus !== undefined &&
+    tradeStatus !== 'cancelled' &&
     (tradeStatus !== 'open' || hasRealizedStoredPnL(getTradePnlContext(trade)))
   );
 }
@@ -293,6 +297,8 @@ export function reviewSourceLabel(sourceType: ImageGallerySourceType): string {
   switch (sourceType) {
     case 'trade':
       return 'Trade';
+    case 'folder':
+      return 'Folder';
     case 'drc':
       return 'Daily review';
     case 'weekly':

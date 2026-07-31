@@ -19,6 +19,15 @@ export interface TradeFrontmatter extends TradeFormData {
 
   
   mtComment?: string;
+  lastBrokerSyncAt?: string;
+
+  canonicalTradeId?: string;
+  canonicalTradeVersion?: number;
+  canonicalProjectionGeneration?: string;
+  canonicalAccountId?: string;
+  canonicalBroker?: string;
+  canonicalAccountDisplayName?: string;
+  canonicalProjectionSchemaVersion?: number;
 }
 
 

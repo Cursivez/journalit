@@ -6,12 +6,11 @@ import React, {
   useRef,
   useState,
 } from 'react';
-import { App, Modal, Notice } from 'obsidian';
-import {
-  Edit,
-  Plus,
-  Trash,
-} from '../../../components/shared/icons/ObsidianIcon';
+import { Notice } from 'obsidian';
+import { showConfirmationModal } from '../../../components/shared/ConfirmationModal';
+import { ReorderControls } from '../../../components/shared/ReorderControls';
+import { moveItemByDirection } from '../../../utils/reorderUtils';
+import { Edit } from '../../../components/shared/icons/ObsidianIcon';
 import JournalitPlugin from '../../../main';
 import { Button } from '../../../components/ui/Button';
 import { Input } from '../../../components/core/Input';
@@ -35,6 +34,7 @@ import {
 } from '../../../types/reviewCustomFields';
 import { t } from '../../../lang/helpers';
 import { ReviewFieldEditor } from './ReviewFieldEditor';
+import { ReviewFieldGroupHeader } from './ReviewFieldGroupHeader';
 
 interface ReviewFieldsManagerProps {
   plugin: JournalitPlugin;
@@ -369,19 +369,32 @@ const useReviewFieldsManagerController = ({
       return;
     }
 
-    new DeleteReviewFieldGroupConfirmationModal(
-      plugin.app,
-      group.name,
-      async () => {
-        try {
-          await customReviewFieldsService.removeGroup(group.id);
-          loadFields();
-          debouncedRemeasure();
-        } catch (error) {
-          console.error('Failed to delete custom review field group:', error);
-        }
-      }
-    ).open();
+    const confirmed = await showConfirmationModal(plugin.app, {
+      message: [
+        {
+          text: t(
+            'settings.customization.review-fields.groups.delete-message',
+            { groupName: group.name }
+          ),
+        },
+        {
+          text: t('settings.customization.review-fields.groups.delete-note'),
+          destructive: true,
+        },
+      ],
+      confirmLabel: t('button.delete'),
+      cancelLabel: t('button.cancel'),
+      destructive: true,
+    });
+    if (!confirmed) return;
+
+    try {
+      await customReviewFieldsService.removeGroup(group.id);
+      loadFields();
+      debouncedRemeasure();
+    } catch (error) {
+      console.error('Failed to delete custom review field group:', error);
+    }
   };
 
   const handleEditField = (field: CustomReviewFieldDefinition) => {
@@ -487,24 +500,37 @@ const useReviewFieldsManagerController = ({
         fieldToDelete?.label ||
         t('settings.customization.review-fields.unknown-field');
 
-      new DeleteReviewFieldConfirmationModal(
-        plugin.app,
-        fieldLabel,
-        async () => {
-          try {
-            startTransition(() => {
-              setEditingField(null);
-              setIsAddingNew(false);
-            });
+      const confirmed = await showConfirmationModal(plugin.app, {
+        message: [
+          {
+            text: t(
+              'settings.customization.review-fields.delete.confirm-message',
+              { fieldLabel }
+            ),
+          },
+          {
+            text: t('settings.customization.custom-fields.delete.cannot-undo'),
+            destructive: true,
+          },
+        ],
+        confirmLabel: t('button.delete'),
+        cancelLabel: t('button.cancel'),
+        destructive: true,
+      });
+      if (!confirmed) return;
 
-            await customReviewFieldsService.removeField(fieldId);
-            loadFields();
-            debouncedRemeasure();
-          } catch (error) {
-            console.error('Failed to delete custom review field:', error);
-          }
-        }
-      ).open();
+      try {
+        startTransition(() => {
+          setEditingField(null);
+          setIsAddingNew(false);
+        });
+
+        await customReviewFieldsService.removeField(fieldId);
+        loadFields();
+        debouncedRemeasure();
+      } catch (error) {
+        console.error('Failed to delete custom review field:', error);
+      }
     },
     [
       customReviewFieldsService,
@@ -523,33 +549,56 @@ const useReviewFieldsManagerController = ({
       return;
     }
 
-    new ResetReviewFieldsConfirmationModal(plugin.app, async () => {
-      try {
-        startTransition(() => {
-          setEditingField(null);
-          setIsAddingNew(false);
-        });
+    const confirmed = await showConfirmationModal(plugin.app, {
+      message: [
+        {
+          text: t('settings.customization.review-fields.reset.confirm-message'),
+        },
+        {
+          text: t('settings.customization.custom-fields.delete.cannot-undo'),
+          destructive: true,
+        },
+      ],
+      confirmLabel: t('button.delete-all'),
+      cancelLabel: t('button.cancel'),
+      destructive: true,
+    });
+    if (!confirmed) return;
 
-        await customReviewFieldsService.resetFields();
-        loadFields();
-        debouncedRemeasure();
-      } catch (error) {
-        console.error('Failed to reset custom review fields:', error);
-      }
-    }).open();
+    try {
+      startTransition(() => {
+        setEditingField(null);
+        setIsAddingNew(false);
+      });
+
+      await customReviewFieldsService.resetFields();
+      loadFields();
+      debouncedRemeasure();
+    } catch (error) {
+      console.error('Failed to reset custom review fields:', error);
+    }
   };
 
   const groupedFieldSections = useMemo(() => {
     const sections: Array<{
       group: CustomReviewFieldGroup | null;
       fields: CustomReviewFieldDefinition[];
-    }> = groups.map((group) => ({
+      canMoveUp: boolean;
+      canMoveDown: boolean;
+    }> = groups.map((group, index) => ({
       group,
       fields: fields.filter((field) => field.groupId === group.id),
+      canMoveUp: index > 0,
+      canMoveDown: index < groups.length - 1,
     }));
     const ungroupedFields = fields.filter((field) => !field.groupId);
     if (ungroupedFields.length > 0) {
-      sections.push({ group: null, fields: ungroupedFields });
+      sections.push({
+        group: null,
+        fields: ungroupedFields,
+        canMoveUp: false,
+        canMoveDown: false,
+      });
     }
     return sections;
   }, [fields, groups]);
@@ -566,19 +615,12 @@ const useReviewFieldsManagerController = ({
       }
 
       const currentIndex = sectionFieldIds.indexOf(fieldId);
-      const targetIndex =
-        direction === 'up' ? currentIndex - 1 : currentIndex + 1;
-      if (
-        currentIndex === -1 ||
-        targetIndex < 0 ||
-        targetIndex >= sectionFieldIds.length
-      ) {
-        return;
-      }
-
-      const reorderedSectionIds = [...sectionFieldIds];
-      const [movedFieldId] = reorderedSectionIds.splice(currentIndex, 1);
-      reorderedSectionIds.splice(targetIndex, 0, movedFieldId);
+      const reorderedSectionIds = moveItemByDirection(
+        sectionFieldIds,
+        currentIndex,
+        direction
+      );
+      if (!reorderedSectionIds) return;
 
       const fieldIdsByGroup = new Map<string, string[]>();
       for (const section of groupedFieldSections) {
@@ -622,6 +664,35 @@ const useReviewFieldsManagerController = ({
     ]
   );
 
+  const handleMoveGroup = useCallback(
+    async (groupId: string, direction: 'up' | 'down') => {
+      if (!customReviewFieldsService || status !== 'ready') {
+        console.error('CustomReviewFieldsService not ready, status:', status);
+        return;
+      }
+
+      const currentIndex = groups.findIndex((group) => group.id === groupId);
+      const reorderedGroups = moveItemByDirection(
+        groups,
+        currentIndex,
+        direction
+      );
+      if (!reorderedGroups) return;
+      setGroups(reorderedGroups);
+
+      try {
+        await customReviewFieldsService.reorderGroups(
+          reorderedGroups.map((group) => group.id)
+        );
+        loadFields();
+      } catch (error) {
+        console.error('Failed to reorder custom review field groups:', error);
+        loadFields();
+      }
+    },
+    [customReviewFieldsService, groups, loadFields, status]
+  );
+
   return {
     fields,
     groups,
@@ -637,6 +708,7 @@ const useReviewFieldsManagerController = ({
     handleSaveGroupName,
     handleCancelGroupEdit,
     setEditingGroupName,
+    handleMoveGroup,
     handleMoveField,
     handleEditField,
     handleSaveField,
@@ -668,6 +740,7 @@ export const ReviewFieldsManager: React.FC<ReviewFieldsManagerProps> = ({
     handleSaveGroupName,
     handleCancelGroupEdit,
     setEditingGroupName,
+    handleMoveGroup,
     handleMoveField,
     handleEditField,
     handleSaveField,
@@ -715,192 +788,139 @@ export const ReviewFieldsManager: React.FC<ReviewFieldsManagerProps> = ({
           </div>
 
           <div className="custom-review-field-groups-list">
-            {groupedFieldSections.map(({ group, fields: sectionFields }) => {
-              const sectionId = group?.id || 'ungrouped';
-              return (
-                <div
-                  key={sectionId}
-                  className="custom-review-field-group-panel"
-                >
-                  <div className="custom-review-field-group-header">
-                    <div className="setting-item-info">
-                      <div className="setting-item-name">
-                        {group?.name ||
-                          t(
-                            'settings.customization.review-fields.groups.ungrouped'
+            {groupedFieldSections.map(
+              ({ group, fields: sectionFields, canMoveUp, canMoveDown }) => {
+                const sectionId = group?.id || 'ungrouped';
+                return (
+                  <div
+                    key={sectionId}
+                    className="custom-review-field-group-panel"
+                  >
+                    <ReviewFieldGroupHeader
+                      group={group}
+                      fieldCount={sectionFields.length}
+                      canMoveUp={canMoveUp}
+                      canMoveDown={canMoveDown}
+                      onMoveGroup={(groupId, direction) =>
+                        void handleMoveGroup(groupId, direction)
+                      }
+                      onRenameGroup={handleRenameGroup}
+                      onDeleteGroup={(groupToDelete) =>
+                        void handleDeleteGroup(groupToDelete)
+                      }
+                      onAddField={handleAddField}
+                    />
+
+                    {editingGroup?.id === group?.id && (
+                      <div className="custom-review-field-group-editor">
+                        <div className="custom-review-field-group-editor-label">
+                          {t(
+                            'settings.customization.review-fields.groups.rename-prompt'
                           )}
-                      </div>
-                      <div className="setting-item-description">
-                        {group?.description ||
-                          t(
-                            'settings.customization.review-fields.groups.field-count',
-                            {
-                              count: String(sectionFields.length),
+                        </div>
+                        <Input
+                          value={editingGroupName}
+                          onChange={setEditingGroupName}
+                          onKeyDown={(event) => {
+                            if (event.key === 'Enter') {
+                              event.preventDefault();
+                              void handleSaveGroupName();
                             }
+                          }}
+                          placeholder={t(
+                            'settings.customization.review-fields.groups.rename-prompt'
                           )}
-                      </div>
-                    </div>
-                    <div className="setting-item-control">
-                      <div className="custom-fields-field-actions">
-                        {group && (
-                          <>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleRenameGroup(group)}
-                              aria-label={`${t('validation.edit')}: ${group.name}`}
-                              className="custom-review-field-group-icon-button"
-                            >
-                              <Edit size={14} aria-hidden="true" />
-                            </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleDeleteGroup(group)}
-                              aria-label={`${t('button.delete')}: ${group.name}`}
-                              className="custom-review-field-group-icon-button"
-                            >
-                              <Trash size={14} aria-hidden="true" />
-                            </Button>
-                          </>
-                        )}
-                        {group && (
-                          <Button
-                            variant="primary"
-                            size="sm"
-                            onClick={() => handleAddField(group.id)}
-                            aria-label={`${t(
-                              'settings.customization.review-fields.add-button'
-                            )}: ${group.name}`}
-                            className="custom-review-field-group-icon-button custom-review-field-group-add-button"
-                          >
-                            <Plus size={14} aria-hidden="true" />
-                          </Button>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-
-                  {editingGroup?.id === group?.id && (
-                    <div className="custom-review-field-group-editor">
-                      <div className="custom-review-field-group-editor-label">
-                        {t(
-                          'settings.customization.review-fields.groups.rename-prompt'
-                        )}
-                      </div>
-                      <Input
-                        value={editingGroupName}
-                        onChange={setEditingGroupName}
-                        onKeyDown={(event) => {
-                          if (event.key === 'Enter') {
-                            event.preventDefault();
-                            void handleSaveGroupName();
-                          }
-                        }}
-                        placeholder={t(
-                          'settings.customization.review-fields.groups.rename-prompt'
-                        )}
-                      />
-                      <Button
-                        variant="primary"
-                        size="sm"
-                        onClick={() => void handleSaveGroupName()}
-                      >
-                        {t('button.save')}
-                      </Button>
-                      <Button
-                        variant="plain"
-                        size="sm"
-                        onClick={() => void handleCancelGroupEdit()}
-                      >
-                        {t('button.cancel')}
-                      </Button>
-                    </div>
-                  )}
-
-                  <div className="custom-fields-field-list">
-                    {sectionFields.length === 0 ? (
-                      <div className="custom-fields-empty-group">
-                        {t('settings.customization.review-fields.groups.empty')}
-                      </div>
-                    ) : (
-                      sectionFields.map((field, index) => (
-                        <div
-                          key={field.id}
-                          className="custom-fields-field-item"
+                        />
+                        <Button
+                          variant="primary"
+                          size="sm"
+                          onClick={() => void handleSaveGroupName()}
                         >
-                          <div className="setting-item-info">
-                            <div className="setting-item-name">
-                              {field.label}
+                          {t('button.save')}
+                        </Button>
+                        <Button
+                          variant="plain"
+                          size="sm"
+                          onClick={() => void handleCancelGroupEdit()}
+                        >
+                          {t('button.cancel')}
+                        </Button>
+                      </div>
+                    )}
+
+                    <div className="custom-fields-field-list">
+                      {sectionFields.length === 0 ? (
+                        <div className="custom-fields-empty-group">
+                          {t(
+                            'settings.customization.review-fields.groups.empty'
+                          )}
+                        </div>
+                      ) : (
+                        sectionFields.map((field, index) => (
+                          <div
+                            key={field.id}
+                            className="custom-fields-field-item"
+                          >
+                            <div className="setting-item-info">
+                              <div className="setting-item-name">
+                                {field.label}
+                              </div>
+                              <div className="setting-item-description">
+                                {t(
+                                  'settings.customization.review-fields.field-summary',
+                                  {
+                                    type: field.type,
+                                    reviews: field.scope.reviewTypes
+                                      .map((type) =>
+                                        t(`template.review-type.${type}`)
+                                      )
+                                      .join(', '),
+                                  }
+                                )}
+                              </div>
                             </div>
-                            <div className="setting-item-description">
-                              {t(
-                                'settings.customization.review-fields.field-summary',
-                                {
-                                  type: field.type,
-                                  reviews: field.scope.reviewTypes
-                                    .map((type) =>
-                                      t(`template.review-type.${type}`)
-                                    )
-                                    .join(', '),
-                                }
-                              )}
-                            </div>
-                          </div>
-                          <div className="setting-item-control">
-                            <div className="custom-fields-field-actions">
-                              <div className="custom-fields-reorder-controls">
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() =>
-                                    handleMoveField(
+                            <div className="setting-item-control">
+                              <div className="custom-fields-field-actions">
+                                <ReorderControls
+                                  label={field.label}
+                                  canMoveUp={index > 0}
+                                  canMoveDown={index < sectionFields.length - 1}
+                                  onMoveUp={() =>
+                                    void handleMoveField(
                                       field.id,
                                       'up',
                                       sectionFields.map((item) => item.id)
                                     )
                                   }
-                                  disabled={index === 0}
-                                  aria-label={`${t('button.move-up')}: ${field.label}`}
-                                  className="custom-fields-reorder-button"
-                                >
-                                  ↑
-                                </Button>
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() =>
-                                    handleMoveField(
+                                  onMoveDown={() =>
+                                    void handleMoveField(
                                       field.id,
                                       'down',
                                       sectionFields.map((item) => item.id)
                                     )
                                   }
-                                  disabled={index === sectionFields.length - 1}
-                                  aria-label={`${t('button.move-down')}: ${field.label}`}
-                                  className="custom-fields-reorder-button"
+                                  className="custom-fields-reorder-controls"
+                                  buttonClassName="custom-fields-reorder-button"
+                                />
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => handleEditField(field)}
+                                  aria-label={`${t('validation.edit')}: ${field.label}`}
+                                  className="custom-fields-edit-button"
                                 >
-                                  ↓
+                                  <Edit size={14} aria-hidden="true" />
                                 </Button>
                               </div>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => handleEditField(field)}
-                                aria-label={`${t('validation.edit')}: ${field.label}`}
-                                className="custom-fields-edit-button"
-                              >
-                                <Edit size={14} aria-hidden="true" />
-                              </Button>
                             </div>
                           </div>
-                        </div>
-                      ))
-                    )}
+                        ))
+                      )}
+                    </div>
                   </div>
-                </div>
-              );
-            })}
+                );
+              }
+            )}
           </div>
         </div>
       )}
@@ -928,120 +948,3 @@ export const ReviewFieldsManager: React.FC<ReviewFieldsManagerProps> = ({
     </div>
   );
 };
-
-class DeleteReviewFieldConfirmationModal extends Modal {
-  constructor(
-    app: App,
-    private fieldLabel: string,
-    private onConfirm: () => void | Promise<void>
-  ) {
-    super(app);
-  }
-
-  onOpen() {
-    const { contentEl } = this;
-    contentEl.createEl('p', {
-      text: t('settings.customization.review-fields.delete.confirm-message', {
-        fieldLabel: this.fieldLabel,
-      }),
-    });
-    contentEl.createEl('p', {
-      text: t('settings.customization.custom-fields.delete.cannot-undo'),
-      cls: 'warning',
-    });
-
-    const buttonContainer = contentEl.createDiv({
-      cls: 'modal-button-container journalit-modal-button-container',
-    });
-    buttonContainer
-      .createEl('button', { text: t('button.delete'), cls: 'mod-warning' })
-      .addEventListener('click', () => {
-        this.close();
-        void this.onConfirm();
-      });
-    buttonContainer
-      .createEl('button', { text: t('button.cancel') })
-      .addEventListener('click', () => this.close());
-  }
-
-  onClose() {
-    this.contentEl.empty();
-  }
-}
-
-class DeleteReviewFieldGroupConfirmationModal extends Modal {
-  constructor(
-    app: App,
-    private groupName: string,
-    private onConfirm: () => void | Promise<void>
-  ) {
-    super(app);
-  }
-
-  onOpen() {
-    const { contentEl } = this;
-    contentEl.createEl('p', {
-      text: t('settings.customization.review-fields.groups.delete-message', {
-        groupName: this.groupName,
-      }),
-    });
-    contentEl.createEl('p', {
-      text: t('settings.customization.review-fields.groups.delete-note'),
-      cls: 'warning',
-    });
-
-    const buttonContainer = contentEl.createDiv({
-      cls: 'modal-button-container journalit-modal-button-container',
-    });
-    buttonContainer
-      .createEl('button', { text: t('button.delete'), cls: 'mod-warning' })
-      .addEventListener('click', () => {
-        this.close();
-        void this.onConfirm();
-      });
-    buttonContainer
-      .createEl('button', { text: t('button.cancel') })
-      .addEventListener('click', () => this.close());
-  }
-
-  onClose() {
-    this.contentEl.empty();
-  }
-}
-
-class ResetReviewFieldsConfirmationModal extends Modal {
-  constructor(
-    app: App,
-    private onConfirm: () => void | Promise<void>
-  ) {
-    super(app);
-  }
-
-  onOpen() {
-    const { contentEl } = this;
-    contentEl.createEl('p', {
-      text: t('settings.customization.review-fields.reset.confirm-message'),
-    });
-    contentEl.createEl('p', {
-      text: t('settings.customization.custom-fields.delete.cannot-undo'),
-      cls: 'warning',
-    });
-
-    const buttonContainer = contentEl.createDiv({
-      cls: 'modal-button-container journalit-modal-button-container',
-    });
-    buttonContainer
-      .createEl('button', { text: t('button.delete-all'), cls: 'mod-warning' })
-      .addEventListener('click', () => {
-        this.close();
-        void this.onConfirm();
-      });
-    buttonContainer
-      .createEl('button', { text: t('button.cancel') })
-      .addEventListener('click', () => this.close());
-  }
-
-  onClose() {
-    this.contentEl.empty();
-  }
-}

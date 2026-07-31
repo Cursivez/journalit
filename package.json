@@ -1,6 +1,6 @@
 {
   "name": "journalit",
-  "version": "1.8.1",
+  "version": "1.8.2",
   "description": "Trading journal with templates, trade tracking, imports, and reviews for Obsidian.",
   "main": "main.js",
   "scripts": {

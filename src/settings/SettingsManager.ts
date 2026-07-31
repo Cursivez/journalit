@@ -3,10 +3,10 @@ import { logger } from '../utils/logger';
 
 import { App, Notice, PluginManifest } from 'obsidian';
 import {
-  DEFAULT_SCALPER_DEFAULTS,
   JournalitSettings,
   DEFAULT_SETTINGS,
   resolveTradeFormLayoutSettings,
+  QUICK_LINK_ACTIONS,
   QuickLinkAction,
   SidebarNavItem,
 } from './types';
@@ -26,6 +26,10 @@ import type {
   TradeGateWorkflow,
 } from '../types/sessionMode';
 import { normalizeSessionModePhaseLayouts } from '../utils/sessionModeLayout';
+import { normalizeGalleryFolders } from './settingsNormalization';
+import { normalizeHomeBackgroundImagePath } from '../components/home/homeBackgroundUtils';
+import { migrateLegacyMetaTraderBrokerSettings } from '../services/tradeImport/brokerIds';
+import type { LocalCSVTemplate } from '../services/csv/types';
 
 
 const BACKUP_FILENAME = 'data.backup.json';
@@ -36,27 +40,148 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
 }
 
-const QUICK_LINK_ACTIONS = new Set<string>([
-  'addTrade',
-  'openTradeLog',
-  'openSetups',
-  'openTradingDashboard',
-  'openAccountDashboard',
-  'openTodaysDRC',
-  'openWeeklyReview',
-  'openMonthlyReview',
-  'openCSVImport',
-  'openQuickTradeImport',
-  'openLayoutBuilder',
-  'openSessionMode',
-  'openHome',
-  'openQuarterlyReview',
-  'openYearlyReview',
-  'openPositionSizeCalculator',
-]);
+function isCSVTemplateAssetType(
+  value: unknown
+): value is LocalCSVTemplate['asset_type'] {
+  return (
+    value === 'stock' ||
+    value === 'options' ||
+    value === 'futures' ||
+    value === 'forex' ||
+    value === 'crypto'
+  );
+}
+
+function isCSVColumnMappings(
+  value: unknown
+): value is LocalCSVTemplate['column_mappings'] {
+  if (!isRecord(value)) return false;
+  return Object.values(value).every(
+    (mapping) =>
+      typeof mapping === 'string' ||
+      (Array.isArray(mapping) &&
+        mapping.every((column) => typeof column === 'string'))
+  );
+}
+
+function getLocalCSVTemplatesSetting(value: unknown): LocalCSVTemplate[] {
+  if (!Array.isArray(value)) return [];
+
+  return value.flatMap((item) => {
+    if (
+      !isRecord(item) ||
+      typeof item.id !== 'string' ||
+      typeof item.name !== 'string' ||
+      typeof item.broker_type !== 'string' ||
+      !isCSVColumnMappings(item.column_mappings) ||
+      typeof item.has_headers !== 'boolean' ||
+      typeof item.created_at !== 'string' ||
+      typeof item.usage_count !== 'number' ||
+      !Number.isFinite(item.usage_count)
+    ) {
+      return [];
+    }
+
+    const mappingVersion =
+      item.mapping_version === 1 || item.mapping_version === 2
+        ? item.mapping_version
+        : undefined;
+    const manualMode =
+      item.manual_mode === 'price_based' || item.manual_mode === 'direct_pnl'
+        ? item.manual_mode
+        : undefined;
+    const headerRowIndex =
+      Number.isInteger(item.header_row_index) &&
+      Number(item.header_row_index) >= 1
+        ? Number(item.header_row_index)
+        : undefined;
+
+    return [
+      {
+        id: item.id,
+        name: item.name,
+        broker_type: item.broker_type,
+        asset_type: isCSVTemplateAssetType(item.asset_type)
+          ? item.asset_type
+          : 'stock',
+        column_mappings: item.column_mappings,
+        mapping_version: mappingVersion,
+        manual_mode: manualMode,
+        date_format:
+          typeof item.date_format === 'string' ? item.date_format : undefined,
+        header_row_index: headerRowIndex,
+        delimiter:
+          typeof item.delimiter === 'string' ? item.delimiter : undefined,
+        has_headers: item.has_headers,
+        created_at: item.created_at,
+        last_used:
+          typeof item.last_used === 'string' ? item.last_used : undefined,
+        usage_count: item.usage_count,
+      },
+    ];
+  });
+}
+
+function normalizeLoadedTradeImportSettings(
+  settings: JournalitSettings,
+  rawRecord: Record<string, unknown>
+): boolean {
+  let changed = false;
+
+  const rawFavoriteBroker = rawRecord.csvFavoriteBroker;
+  if (
+    rawFavoriteBroker !== undefined &&
+    typeof rawFavoriteBroker !== 'string'
+  ) {
+    settings.csvFavoriteBroker = DEFAULT_SETTINGS.csvFavoriteBroker;
+    changed = true;
+  }
+
+  const rawHiddenBrokers = rawRecord.csvHiddenBrokers;
+  if (rawHiddenBrokers !== undefined) {
+    const hiddenBrokers = Array.isArray(rawHiddenBrokers)
+      ? rawHiddenBrokers.filter(
+          (broker): broker is string => typeof broker === 'string'
+        )
+      : [...(DEFAULT_SETTINGS.csvHiddenBrokers ?? [])];
+    if (JSON.stringify(hiddenBrokers) !== JSON.stringify(rawHiddenBrokers)) {
+      settings.csvHiddenBrokers = hiddenBrokers;
+      changed = true;
+    }
+  }
+
+  const rawLastAssetType = rawRecord.csvLastAssetType;
+  if (rawLastAssetType !== undefined) {
+    const lastAssetType: Record<string, string> = {};
+    if (isRecord(rawLastAssetType)) {
+      for (const [broker, assetType] of Object.entries(rawLastAssetType)) {
+        if (typeof assetType === 'string') {
+          lastAssetType[broker] = assetType;
+        }
+      }
+    }
+    if (JSON.stringify(lastAssetType) !== JSON.stringify(rawLastAssetType)) {
+      settings.csvLastAssetType = lastAssetType;
+      changed = true;
+    }
+  }
+
+  const rawTemplates = rawRecord.csvTemplates;
+  if (rawTemplates !== undefined) {
+    const templates = getLocalCSVTemplatesSetting(rawTemplates);
+    settings.csvTemplates = templates;
+    if (JSON.stringify(templates) !== JSON.stringify(rawTemplates)) {
+      changed = true;
+    }
+  }
+
+  return changed;
+}
+
+const QUICK_LINK_ACTION_SET = new Set<string>(QUICK_LINK_ACTIONS);
 
 function isQuickLinkAction(value: unknown): value is QuickLinkAction {
-  return typeof value === 'string' && QUICK_LINK_ACTIONS.has(value);
+  return typeof value === 'string' && QUICK_LINK_ACTION_SET.has(value);
 }
 
 function cloneSessionLogTags(
@@ -433,6 +558,14 @@ export class SettingsManager {
       migrated = true;
     }
 
+    if (normalizeLoadedTradeImportSettings(settings, rawRecord)) {
+      migrated = true;
+    }
+
+    if (migrateLegacyMetaTraderBrokerSettings(settings)) {
+      migrated = true;
+    }
+
     return migrated;
   }
 
@@ -804,6 +937,7 @@ export class SettingsManager {
       merged.trade = {
         ...defaults.trade,
         ...saved.trade,
+        galleryFolders: normalizeGalleryFolders(saved.trade.galleryFolders),
       };
 
       
@@ -1038,9 +1172,12 @@ export class SettingsManager {
 
     
     if (saved.reviewV2) {
+      const savedReviewV2 = { ...saved.reviewV2 } as Record<string, unknown>;
+      delete savedReviewV2.scalperDefaults;
+
       merged.reviewV2 = {
         ...defaults.reviewV2,
-        ...saved.reviewV2,
+        ...savedReviewV2,
         
         customWidgetTypes:
           saved.reviewV2.customWidgetTypes ||
@@ -1052,21 +1189,6 @@ export class SettingsManager {
           saved.reviewV2.tradeTemplates ||
           defaults.reviewV2?.tradeTemplates ||
           [],
-        scalperDefaults: {
-          countMode:
-            saved.reviewV2.scalperDefaults?.countMode ??
-            defaults.reviewV2?.scalperDefaults?.countMode ??
-            DEFAULT_SCALPER_DEFAULTS.countMode,
-          sourceMode:
-            saved.reviewV2.scalperDefaults?.sourceMode ??
-            defaults.reviewV2?.scalperDefaults?.sourceMode ??
-            DEFAULT_SCALPER_DEFAULTS.sourceMode,
-          autoApplySessionMistakesToTrades:
-            saved.reviewV2.scalperDefaults?.autoApplySessionMistakesToTrades ??
-            defaults.reviewV2?.scalperDefaults
-              ?.autoApplySessionMistakesToTrades ??
-            DEFAULT_SCALPER_DEFAULTS.autoApplySessionMistakesToTrades,
-        },
       };
     }
 
@@ -1140,6 +1262,14 @@ export class SettingsManager {
       merged.home = {
         ...defaults.home,
         ...saved.home,
+        backgroundImagePath: normalizeHomeBackgroundImagePath(
+          saved.home.backgroundImagePath,
+          defaults.home?.backgroundImagePath || undefined
+        ),
+        showBackgroundInDashboard:
+          typeof saved.home.showBackgroundInDashboard === 'boolean'
+            ? saved.home.showBackgroundInDashboard
+            : (defaults.home?.showBackgroundInDashboard ?? false),
         layouts: {
           ...(defaults.home?.layouts || {}),
           ...(saved.home.layouts || {}),
@@ -1171,8 +1301,8 @@ export class SettingsManager {
       }
 
       merged.navigation = {
-        ...defaults.navigation,
-        ...saved.navigation,
+        tabBehavior:
+          saved.navigation.tabBehavior ?? defaults.navigation!.tabBehavior,
         items: mergedNavigationItems,
       };
     }

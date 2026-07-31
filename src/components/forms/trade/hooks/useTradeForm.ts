@@ -30,6 +30,7 @@ import { deriveRawDirectPnLFromStoredCombinedPnL } from '../../../../utils/pnlCa
 import { usePlugin } from '../../../../hooks';
 import { getTradingDay } from '../../../../utils/tradingDayUtils';
 import { isTradeOpenWithContext } from '../../../../utils/tradeStatusUtils';
+import { shouldInvalidateUnrealizedSnapshot } from '../../../../utils/unrealizedPnl';
 import {
   getQuarterForMonth,
   getQuarterString,
@@ -46,6 +47,39 @@ interface UseTradeFormProps {
 
 const SUPPORTED_UPLOAD_MEDIA_EXTENSION_PATTERN =
   /\.(?:jpe?g|png|gif|bmp|webp|svg|mp4|webm|mov|m4v|ogv|ogg|3gp|mkv)$/i;
+
+const UNREALIZED_SNAPSHOT_QUOTE_CONTEXT_FIELDS = new Set<keyof TradeFormData>([
+  'instrument',
+  'direction',
+  'assetType',
+  'currency',
+  'exchange',
+  'expirationDate',
+  'strikePrice',
+  'optionType',
+  'contractSize',
+  'contractSymbol',
+  'dollarPerPoint',
+  'tickSize',
+  'tickValue',
+  'currencyPair',
+  'lotSize',
+  'pipValue',
+  'tradingPair',
+  'cryptoExchange',
+]);
+
+const hasQuoteContextChanged = (
+  field: keyof TradeFormData,
+  previousValue: TradeFormValue,
+  nextValue: TradeFormValue
+): boolean => {
+  if (!UNREALIZED_SNAPSHOT_QUOTE_CONTEXT_FIELDS.has(field)) return false;
+  if (previousValue instanceof Date && nextValue instanceof Date) {
+    return previousValue.getTime() !== nextValue.getTime();
+  }
+  return previousValue !== nextValue;
+};
 
 const hasTradeLegValues = (leg: {
   price?: number | null;
@@ -66,13 +100,21 @@ const withCurrentTimeForBlankTradeTimes = (
   preserveScalarTradeTimes = false
 ): Partial<TradeFormData> => {
   const now = new Date();
-  const applyCurrentTime = (date?: Date): Date => {
-    const base = date ? new Date(date) : new Date(now);
+  const snapshotTime = data.unrealizedPriceSnapshotTime;
+  const entryTimeReference =
+    snapshotTime instanceof Date && Number.isFinite(snapshotTime.getTime())
+      ? snapshotTime
+      : now;
+  const applyReferenceTime = (
+    date: Date | undefined,
+    reference: Date
+  ): Date => {
+    const base = date ? new Date(date) : new Date(reference);
     base.setHours(
-      now.getHours(),
-      now.getMinutes(),
-      now.getSeconds(),
-      now.getMilliseconds()
+      reference.getHours(),
+      reference.getMinutes(),
+      reference.getSeconds(),
+      reference.getMilliseconds()
     );
     return base;
   };
@@ -101,7 +143,7 @@ const withCurrentTimeForBlankTradeTimes = (
       time:
         entry.time ??
         (entry.blankTimeDate || hasTradeLegValues(entry)
-          ? applyCurrentTime(entry.blankTimeDate)
+          ? applyReferenceTime(entry.blankTimeDate, entryTimeReference)
           : undefined),
       blankTimeDate: undefined,
     }));
@@ -113,7 +155,7 @@ const withCurrentTimeForBlankTradeTimes = (
       time:
         exit.time ??
         (exit.blankTimeDate || hasTradeLegValues(exit)
-          ? applyCurrentTime(exit.blankTimeDate)
+          ? applyReferenceTime(exit.blankTimeDate, now)
           : undefined),
       blankTimeDate: undefined,
     }));
@@ -180,10 +222,15 @@ const hasExitData = (data: Partial<TradeFormData>): boolean => {
     data.exitPrice !== null &&
     (data.exitPrice > 0 ||
       (data.hasExplicitExitPrice === true && meaningfulExits.length === 0));
+  const hasClosedDirectPnL =
+    data.useDirectPnLInput === true &&
+    data.tradeStatus !== 'OPEN' &&
+    data.tradeStatus !== 'PARTIALLY_CLOSED' &&
+    data.tradeStatus !== 'CANCELLED';
 
   return (
-    (data.tradeStatus !== 'OPEN' && data.useDirectPnLInput === true) ||
-    (data.tradeStatus !== 'OPEN' && hasScalarExitPrice) ||
+    hasClosedDirectPnL ||
+    (data.tradeStatus === 'CLOSED' && hasScalarExitPrice) ||
     meaningfulExits.length > 0
   );
 };
@@ -412,6 +459,21 @@ export const useTradeForm = ({
       if (!editData.setup) editData.setup = [];
       if (!editData.mistake) editData.mistake = [];
       if (!editData.account) editData.account = [];
+
+      
+      
+      const rawSnapshotTime: unknown = editData.unrealizedPriceSnapshotTime;
+      if (rawSnapshotTime !== undefined && !(rawSnapshotTime instanceof Date)) {
+        const parsedSnapshotTime =
+          typeof rawSnapshotTime === 'string' ||
+          typeof rawSnapshotTime === 'number'
+            ? new Date(rawSnapshotTime)
+            : undefined;
+        editData.unrealizedPriceSnapshotTime =
+          parsedSnapshotTime && !isNaN(parsedSnapshotTime.getTime())
+            ? parsedSnapshotTime
+            : undefined;
+      }
 
       
       if (editData.isMissedTrade === undefined) {
@@ -727,6 +789,36 @@ export const useTradeForm = ({
           newData.hasExplicitCommission = true;
         }
 
+        
+        
+        
+        if (field === 'currency' && value !== prevData.currency) {
+          newData.fxRate = undefined;
+          newData.fxRateBaseCurrency = undefined;
+        }
+        if (field === 'fxRate') {
+          newData.fxRateBaseCurrency =
+            value === undefined
+              ? undefined
+              : plugin.settings?.general?.currency || 'USD';
+        }
+
+        if (
+          ((field === 'entries' || field === 'exits') &&
+            shouldInvalidateUnrealizedSnapshot(prevData, newData)) ||
+          hasQuoteContextChanged(field, prevData[field], value) ||
+          (field === 'useDirectPnLInput' && value !== prevData[field])
+        ) {
+          newData.unrealizedPriceSnapshot = undefined;
+          newData.unrealizedPriceSnapshotTime = undefined;
+        }
+        if (
+          field === 'unrealizedPriceSnapshotTime' &&
+          (value === undefined || value === null)
+        ) {
+          newData.unrealizedPriceSnapshot = undefined;
+        }
+
         const nextData = shouldRefreshAutoCommission(field)
           ? applyAutoCommission(newData, plugin.optionsService, prevData)
           : newData;
@@ -740,7 +832,13 @@ export const useTradeForm = ({
         return nextData;
       });
     },
-    [formSubmitted, isEditMode, plugin.optionsService, runValidation]
+    [
+      formSubmitted,
+      isEditMode,
+      plugin.optionsService,
+      plugin.settings?.general?.currency,
+      runValidation,
+    ]
   );
 
   
@@ -1400,6 +1498,14 @@ export const useTradeForm = ({
       (formData.positionSize || 0) !== (initial.positionSize || 0);
     const normalizeOptionalNumber = (value: unknown): number | null =>
       typeof value === 'number' && Number.isFinite(value) ? value : null;
+    const currencyChanged =
+      (formData.currency || '').trim() !== (initial.currency || '').trim();
+    const fxRateChanged =
+      normalizeOptionalNumber(formData.fxRate) !==
+      normalizeOptionalNumber(initial.fxRate);
+    const fxRateBaseCurrencyChanged =
+      (formData.fxRateBaseCurrency || '').trim() !==
+      (initial.fxRateBaseCurrency || '').trim();
     const directPnLChanged =
       normalizeOptionalNumber(formData.directPnL) !==
       normalizeOptionalNumber(initial.directPnL);
@@ -1409,6 +1515,9 @@ export const useTradeForm = ({
     const stopLossChanged =
       normalizeOptionalNumber(formData.stopLoss) !==
       normalizeOptionalNumber(initial.stopLoss);
+    const unrealizedPriceSnapshotChanged =
+      normalizeOptionalNumber(formData.unrealizedPriceSnapshot) !==
+      normalizeOptionalNumber(initial.unrealizedPriceSnapshot);
     const useDirectPnLInputChanged =
       Boolean(formData.useDirectPnLInput) !==
       Boolean(initial.useDirectPnLInput);
@@ -1424,6 +1533,9 @@ export const useTradeForm = ({
     const entryTimeChanged =
       normalizeDateSnapshot(formData.entryTime) !==
       normalizeDateSnapshot(initial.entryTime);
+    const unrealizedPriceSnapshotTimeChanged =
+      normalizeDateSnapshot(formData.unrealizedPriceSnapshotTime) !==
+      normalizeDateSnapshot(initial.unrealizedPriceSnapshotTime);
     const thesisChanged =
       (formData.thesis || '').trim() !== (initial.thesis || '').trim();
     const directionChanged =
@@ -1532,9 +1644,14 @@ export const useTradeForm = ({
       entryPriceChanged ||
       exitPriceChanged ||
       positionSizeChanged ||
+      currencyChanged ||
+      fxRateChanged ||
+      fxRateBaseCurrencyChanged ||
       directPnLChanged ||
       riskAmountChanged ||
       stopLossChanged ||
+      unrealizedPriceSnapshotChanged ||
+      unrealizedPriceSnapshotTimeChanged ||
       useDirectPnLInputChanged ||
       entryTimeChanged ||
       entriesChanged ||
@@ -1551,9 +1668,14 @@ export const useTradeForm = ({
     formData.entryPrice,
     formData.exitPrice,
     formData.positionSize,
+    formData.currency,
+    formData.fxRate,
+    formData.fxRateBaseCurrency,
     formData.directPnL,
     formData.riskAmount,
     formData.stopLoss,
+    formData.unrealizedPriceSnapshot,
+    formData.unrealizedPriceSnapshotTime,
     formData.useDirectPnLInput,
     formData.entryTime,
     formData.entries,

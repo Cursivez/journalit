@@ -75,7 +75,7 @@ function useOnboardingModel(plugin: JournalitPlugin) {
 
     try {
       
-      await plugin.viewManager.openHomeView();
+      await plugin.viewManager.openHomeView('overview');
       
       for (const leaf of onboardingLeaves) {
         leaf.detach();
@@ -260,7 +260,7 @@ function useOnboardingModel(plugin: JournalitPlugin) {
     await openCsvImportViewSafe();
   };
 
-  const handleOpenMetaTrader = () => {
+  const handleOpenTradeSync = () => {
     
     plugin.openSettingsToTab(SETTINGS_TAB_IDS.TRADE_SYNC);
   };
@@ -284,12 +284,12 @@ function useOnboardingModel(plugin: JournalitPlugin) {
     detachOnboardingLeavesSafe();
   };
 
-  const handleFinalOpenMetaTrader = async () => {
+  const handleFinalOpenTradeSync = async () => {
     
     let didOpenHome = false;
 
     try {
-      await plugin.viewManager.openHomeView();
+      await plugin.viewManager.openHomeView('overview');
       didOpenHome = true;
     } catch (error) {
       console.error('[Onboarding] Failed to open home view:', error);
@@ -426,7 +426,7 @@ function useOnboardingModel(plugin: JournalitPlugin) {
     handleOpenAccounts,
     handleOpenLayoutBuilder,
     handleOpenCsv,
-    handleOpenMetaTrader,
+    handleOpenTradeSync,
     handleOpenManual,
     manualDocsFallbackUrl,
     manualDocsCopied,
@@ -436,7 +436,7 @@ function useOnboardingModel(plugin: JournalitPlugin) {
     handleChangeHotkey,
     handleAddTrade,
     handleFinalOpenCsv,
-    handleFinalOpenMetaTrader,
+    handleFinalOpenTradeSync,
   };
 }
 
@@ -457,7 +457,7 @@ export const OnboardingComponent: React.FC<OnboardingComponentProps> = ({
     handleOpenAccounts,
     handleOpenLayoutBuilder,
     handleOpenCsv,
-    handleOpenMetaTrader,
+    handleOpenTradeSync,
     handleOpenManual,
     manualDocsFallbackUrl,
     manualDocsCopied,
@@ -467,7 +467,7 @@ export const OnboardingComponent: React.FC<OnboardingComponentProps> = ({
     handleChangeHotkey,
     handleAddTrade,
     handleFinalOpenCsv,
-    handleFinalOpenMetaTrader,
+    handleFinalOpenTradeSync,
   } = useOnboardingModel(plugin);
 
   return (
@@ -484,7 +484,7 @@ export const OnboardingComponent: React.FC<OnboardingComponentProps> = ({
           onOpenAccounts={handleOpenAccounts}
           onOpenLayoutBuilder={handleOpenLayoutBuilder}
           onOpenCsv={handleOpenCsv}
-          onOpenMetaTrader={handleOpenMetaTrader}
+          onOpenTradeSync={handleOpenTradeSync}
           onOpenManual={handleOpenManual}
           manualLinkFallbackUrl={manualDocsFallbackUrl}
           manualLinkCopied={manualDocsCopied}
@@ -507,7 +507,7 @@ export const OnboardingComponent: React.FC<OnboardingComponentProps> = ({
           onChangeHotkey={handleChangeHotkey}
           onAddTrade={handleAddTrade}
           onOpenCsv={handleFinalOpenCsv}
-          onOpenMetaTrader={handleFinalOpenMetaTrader}
+          onOpenTradeSync={handleFinalOpenTradeSync}
         />
       )}
     </div>

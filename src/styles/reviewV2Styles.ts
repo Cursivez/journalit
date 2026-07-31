@@ -603,11 +603,19 @@ ${TRADE_ACCOUNT_CELL_STYLES}
   .journalit-reviewv2-demontracker-header-stop {
     background: var(--background-modifier-error);
     color: var(--text-on-accent);
+    min-width: 96px;
+    white-space: nowrap;
   }
 
   .journalit-reviewv2-demontracker-demon-cell {
     font-weight: 500;
     color: var(--text-normal);
+  }
+
+  .journalit-reviewv2-demontracker-threshold-table
+    .journalit-reviewv2-demontracker-demon-cell {
+    min-width: 140px;
+    white-space: nowrap;
   }
 
   
@@ -3603,7 +3611,7 @@ ${TRADE_ACCOUNT_CELL_STYLES}
     font-size: 0.9rem;
     line-height: 1.4;
     overflow-wrap: anywhere;
-    white-space: normal;
+    white-space: pre-wrap;
   }
 
   .review-context-fields-inherited-value--local::after {
@@ -3613,9 +3621,9 @@ ${TRADE_ACCOUNT_CELL_STYLES}
   .review-context-fields-source-statuses {
     display: flex;
     flex-direction: column;
-    gap: 0.45rem;
-    padding-top: 0.85rem;
-    border-top: 1px solid var(--background-modifier-border-hover);
+    gap: 0;
+    padding-top: 0;
+    border-top: none;
   }
 
   .review-context-fields-inline-control {
@@ -4494,10 +4502,76 @@ ${TRADE_ACCOUNT_CELL_STYLES}
     gap: 0.45rem;
   }
 
+  .journalit-trade-review-question.is-follow-up {
+    position: relative;
+    padding-left: calc(
+      var(--journalit-trade-review-follow-up-depth, 1) * 1.75rem
+    );
+  }
+
+  .journalit-trade-review-follow-up-icon {
+    position: absolute;
+    top: 0.05rem;
+    left: calc(
+      (var(--journalit-trade-review-follow-up-depth, 1) - 1) * 1.75rem +
+        0.25rem
+    );
+    color: var(--text-muted);
+    opacity: 0.8;
+  }
+
   .journalit-trade-review-question-label {
+    display: block;
+    min-width: 0;
     color: var(--text-normal);
     font-size: 0.92rem;
     font-weight: 600;
+    line-height: 1.35;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+
+
+  .journalit-trade-review-choice-options {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: stretch;
+    gap: 0.5rem;
+  }
+
+  .journalit-trade-review-choice-option {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 1 1 96px;
+    min-width: min(96px, 100%);
+    max-width: 100%;
+    height: auto;
+    min-height: 38px;
+    padding: 0.5rem 0.9rem;
+    border: 1px solid var(--background-modifier-border);
+    border-radius: var(--radius-s);
+    background: var(--background-primary);
+    color: var(--text-normal);
+    font: inherit;
+    font-weight: 500;
+    line-height: 1.3;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+    text-align: center;
+    cursor: pointer;
+    box-shadow: none;
+  }
+
+  .journalit-trade-review-choice-option:hover {
+    background: var(--background-modifier-hover);
+  }
+
+  .journalit-trade-review-choice-option.is-selected {
+    border-color: var(--interactive-accent);
+    background: var(--interactive-accent);
+    color: var(--text-on-accent);
   }
 
   .journalit-trade-review-textarea {

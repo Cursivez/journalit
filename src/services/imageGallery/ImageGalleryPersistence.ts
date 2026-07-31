@@ -7,6 +7,7 @@ import {
   isImageGalleryOutcome,
   isImageGallerySourceType,
   isRecord,
+  type AnnotationNoteSignature,
   type PersistedImageGalleryIndex,
 } from './ImageGalleryInternal';
 import { normalizeStringArrayRecord } from './ImageGalleryFilters';
@@ -26,12 +27,14 @@ function normalizeImageGalleryItem(value: unknown): ImageGalleryItem | null {
   const sourcePath = getString(value.sourcePath);
   const sourceType = value.sourceType;
   const outcome = value.outcome;
+  const folderPath = getString(value.folderPath);
 
   if (
     !imagePath ||
     !sourcePath ||
     !isImageGallerySourceType(sourceType) ||
-    !isImageGalleryOutcome(outcome)
+    !isImageGalleryOutcome(outcome) ||
+    (sourceType === 'folder' && !folderPath)
   ) {
     return null;
   }
@@ -42,7 +45,9 @@ function normalizeImageGalleryItem(value: unknown): ImageGalleryItem | null {
     sourcePath,
     sourceType,
     sourceLabel: getString(value.sourceLabel) || reviewSourceLabel(sourceType),
+    folderPath,
     date: getString(value.date) || '',
+    mediaMtime: getOptionalNumber(value.mediaMtime),
     symbol: getString(value.symbol),
     account: getString(value.account),
     accounts: getStringArray(value.accounts),
@@ -60,13 +65,18 @@ function normalizeImageGalleryItem(value: unknown): ImageGalleryItem | null {
     mistakes: getStringArray(value.mistakes),
     tags: getStringArray(value.tags),
     notes: getString(value.notes),
+    hasOwnAnnotation:
+      typeof value.hasOwnAnnotation === 'boolean'
+        ? value.hasOwnAnnotation
+        : undefined,
     sourceCustomFields: normalizeStringArrayRecord(value.sourceCustomFields),
     outcome,
     tradeStatus:
       value.tradeStatus === 'open' ||
       value.tradeStatus === 'win' ||
       value.tradeStatus === 'loss' ||
-      value.tradeStatus === 'breakeven'
+      value.tradeStatus === 'breakeven' ||
+      value.tradeStatus === 'cancelled'
         ? value.tradeStatus
         : undefined,
     pnl: getOptionalNumber(value.pnl),
@@ -82,12 +92,32 @@ export function normalizePersistedImageGalleryIndex(
   if (value.version !== IMAGE_GALLERY_INDEX_VERSION) return null;
   if (typeof value.timestamp !== 'number') return null;
   if (typeof value.settingsFingerprint !== 'string') return null;
+  if (!isRecord(value.annotationNoteSignature)) return null;
+  const signature = value.annotationNoteSignature;
+  const annotationNoteSignature: AnnotationNoteSignature | null =
+    signature.exists === false &&
+    signature.mtime === null &&
+    signature.size === null
+      ? { exists: false, mtime: null, size: null }
+      : signature.exists === true &&
+          typeof signature.mtime === 'number' &&
+          Number.isFinite(signature.mtime) &&
+          typeof signature.size === 'number' &&
+          Number.isFinite(signature.size)
+        ? {
+            exists: true,
+            mtime: signature.mtime,
+            size: signature.size,
+          }
+        : null;
+  if (!annotationNoteSignature) return null;
   if (!Array.isArray(value.items)) return null;
 
   return {
     version: IMAGE_GALLERY_INDEX_VERSION,
     timestamp: value.timestamp,
     settingsFingerprint: value.settingsFingerprint,
+    annotationNoteSignature,
     items: value.items.flatMap((item) => {
       const normalizedItem = normalizeImageGalleryItem(item);
       return normalizedItem ? [normalizedItem] : [];

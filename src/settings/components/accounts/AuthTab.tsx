@@ -16,6 +16,7 @@ import {
 import { t } from '../../../lang/helpers';
 import { openExternalUrl } from '../../../utils/externalLinks';
 import { writeClipboardText } from '../../../utils/clipboard';
+import { JOURNALIT_SETTINGS_RESOURCES } from '../../settingsResources';
 
 interface AuthTabProps {
   plugin: JournalitPlugin;
@@ -192,6 +193,7 @@ function useAuthTabModel({ plugin }: AuthTabProps) {
         plugin.settings.backendIntegration.userEmail = undefined;
         plugin.settings.backendIntegration.subscriptionTier = undefined;
         plugin.settings.backendIntegration.userId = '';
+        plugin.settings.backendIntegration.authenticatedAccountId = undefined;
         await plugin.saveSettings();
       }
       new Notice(t('notice.logout-success'));
@@ -334,7 +336,9 @@ const AuthTabComponent: React.FC<AuthTabProps> = ({ plugin }) => {
             copiedLabel={t('csv.errors.copied')}
             discordLabel={t('button.discord')}
             note={t('csv.results.discord-note')}
-            onDiscord={() => openExternalUrl('https://discord.gg/AkSw3D9h8b')}
+            onDiscord={() =>
+              openExternalUrl(JOURNALIT_SETTINGS_RESOURCES.discord)
+            }
             actionsClassName="auth-error-actions"
             helpClassName="auth-error-help"
             helpContentClassName="auth-error-help-content"

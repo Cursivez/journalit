@@ -3,6 +3,7 @@ import { mapCustomFieldsToFrontmatter } from '../../../utils/customFieldPersiste
 import { deduplicateOptions } from '../../../utils/stringNormalization';
 import { CustomFieldDefinition } from '../../../types/customFields';
 import { shouldShowTradeDividends } from '../../../components/forms/trade/types';
+import { areSnapshotKeysClaimedByCustomFields } from '../../../utils/unrealizedPnl';
 import { TradeMutationInput } from './types';
 
 export const CANONICAL_EXECUTION_MIGRATION_VERSION =
@@ -25,7 +26,7 @@ interface SerializeTradeFrontmatterOptions {
 }
 
 interface BuildTradeFrontmatterOptions {
-  tradeStatus: 'OPEN' | 'CLOSED';
+  tradeStatus: 'OPEN' | 'PARTIALLY_CLOSED' | 'CLOSED' | 'CANCELLED';
   pnl?: number | null;
   rMultiple?: number | null;
   customFieldDefinitions?: CustomFieldDefinition[];
@@ -136,6 +137,39 @@ export function buildTradeFrontmatter(
   if (typeof data.templateVersion === 'number') {
     frontmatterData.templateVersion = data.templateVersion;
   }
+  if (data.canonicalTradeId) {
+    frontmatterData.canonicalTradeId = data.canonicalTradeId;
+  }
+  if (data.canonicalTradeVersion !== undefined) {
+    frontmatterData.canonicalTradeVersion = data.canonicalTradeVersion;
+  }
+  if (data.canonicalProjectionGeneration) {
+    frontmatterData.canonicalProjectionGeneration =
+      data.canonicalProjectionGeneration;
+  }
+  if (data.canonicalAccountId) {
+    frontmatterData.canonicalAccountId = data.canonicalAccountId;
+  }
+  if (data.canonicalBroker) {
+    frontmatterData.canonicalBroker = data.canonicalBroker;
+  }
+  if (data.canonicalAccountDisplayName) {
+    frontmatterData.canonicalAccountDisplayName =
+      data.canonicalAccountDisplayName;
+  }
+  if (data.canonicalProjectionSchemaVersion !== undefined) {
+    frontmatterData.canonicalProjectionSchemaVersion =
+      data.canonicalProjectionSchemaVersion;
+  }
+  if (data.lastBrokerSyncAt) {
+    frontmatterData.lastBrokerSyncAt = data.lastBrokerSyncAt;
+  }
+  if (data.openQuantity !== undefined) {
+    frontmatterData.openQuantity = data.openQuantity;
+  }
+  if (data.closedQuantity !== undefined) {
+    frontmatterData.closedQuantity = data.closedQuantity;
+  }
   if (data.backendTradeId && data.backendTradeId !== 0) {
     frontmatterData.backendTradeId = data.backendTradeId;
   }
@@ -168,13 +202,11 @@ export function buildTradeFrontmatter(
   }
   if (data.assetType) frontmatterData.assetType = data.assetType;
 
-  if (options.tradeStatus === 'CLOSED') {
+  if (options.tradeStatus === 'CLOSED' || options.tradeStatus === 'CANCELLED') {
     if (typeof data.hasExplicitExitPrice === 'boolean') {
       frontmatterData.hasExplicitExitPrice = data.hasExplicitExitPrice;
     }
-    if (options.pnl !== null && options.pnl !== undefined) {
-      frontmatterData.pnl = options.pnl;
-    }
+    frontmatterData.pnl = options.pnl ?? undefined;
   } else {
     frontmatterData.pnl = options.pnl ?? undefined;
   }
@@ -290,6 +322,10 @@ export function buildTradeFrontmatter(
     }
   }
   if (data.currency !== undefined) frontmatterData.currency = data.currency;
+  if (data.fxRate !== undefined) frontmatterData.fxRate = data.fxRate;
+  if (data.fxRateBaseCurrency !== undefined) {
+    frontmatterData.fxRateBaseCurrency = data.fxRateBaseCurrency;
+  }
   if (data.brokerBaseCurrencyPnl !== undefined) {
     frontmatterData.brokerBaseCurrencyPnl = data.brokerBaseCurrencyPnl;
   }
@@ -299,6 +335,35 @@ export function buildTradeFrontmatter(
   if (data.brokerBaseCurrencyPnlSource !== undefined) {
     frontmatterData.brokerBaseCurrencyPnlSource =
       data.brokerBaseCurrencyPnlSource;
+  }
+  
+  
+  
+  
+  
+  
+  
+  if (!areSnapshotKeysClaimedByCustomFields(options.customFieldDefinitions)) {
+    if (
+      options.tradeStatus === 'CLOSED' ||
+      options.tradeStatus === 'CANCELLED'
+    ) {
+      frontmatterData.unrealizedPriceSnapshot = undefined;
+      frontmatterData.unrealizedPriceSnapshotTime = undefined;
+    } else if (
+      typeof data.unrealizedPriceSnapshot === 'number' &&
+      Number.isFinite(data.unrealizedPriceSnapshot) &&
+      data.unrealizedPriceSnapshot >= 0
+    ) {
+      frontmatterData.unrealizedPriceSnapshot = data.unrealizedPriceSnapshot;
+      frontmatterData.unrealizedPriceSnapshotTime =
+        data.unrealizedPriceSnapshotTime
+          ? formatTradeFrontmatterDate(
+              data.unrealizedPriceSnapshotTime,
+              options.invalidDateFallback
+            )
+          : undefined;
+    }
   }
   if (data.mae !== undefined) frontmatterData.mae = data.mae;
   if (data.mfe !== undefined) frontmatterData.mfe = data.mfe;
@@ -329,8 +394,16 @@ export function buildTradeFrontmatter(
     frontmatterData.mtComment = data.mtComment;
   }
 
-  if (data.assetType === 'stock' && data.exchange) {
+  if (data.exchange !== undefined) {
     frontmatterData.exchange = data.exchange;
+  }
+
+  if (data.underlyingSymbol !== undefined) {
+    frontmatterData.underlyingSymbol = data.underlyingSymbol;
+  }
+
+  if (data.contractSymbol !== undefined) {
+    frontmatterData.contractSymbol = data.contractSymbol;
   }
 
   if (data.assetType === 'options') {
@@ -362,6 +435,14 @@ export function buildTradeFrontmatter(
     if (data.lotSize !== undefined) frontmatterData.lotSize = data.lotSize;
     if (data.pipValue !== undefined) frontmatterData.pipValue = data.pipValue;
     if (data.pipSize !== undefined) frontmatterData.pipSize = data.pipSize;
+  }
+
+  if (data.currencyPair !== undefined) {
+    frontmatterData.currencyPair = data.currencyPair;
+  }
+
+  if (data.tradingPair !== undefined) {
+    frontmatterData.tradingPair = data.tradingPair;
   }
 
   if (data.assetType === 'crypto' && data.cryptoExchange) {

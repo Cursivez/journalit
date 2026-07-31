@@ -36,6 +36,7 @@ import {
 } from '../../../services/events';
 import type { TradeCommittedPayload } from '../../../services/trade/core/tradeCoreTypes';
 import { normalizeAccountLookupKey } from '../../../services/trade/core/TradeAccountIdentity';
+import { calculateCommissionCost } from '../../../utils/pnlUtils';
 
 interface AccountPageDataContextValue {
   
@@ -185,7 +186,104 @@ const createEmptyAccountMetrics = (): AccountMetrics => ({
 
 interface FilteredMetricsOptions extends BreakEvenRangeSettings {
   defaultRiskAmount?: number;
+  filters?: AccountTradeFilter;
 }
+
+
+
+
+
+export const applyScopedConversionMetadata = (
+  filteredMetrics: AccountMetrics,
+  parentMetrics: AccountMetrics,
+  filteredTrades: AccountTradeData[],
+  pnlContributingTrades: AccountTradeData[],
+  filteredExcludedTrades: AccountTradeData[]
+): void => {
+  if (!parentMetrics.isMultiCurrency) return;
+
+  
+  
+  
+  const brokerBaseCurrencyTradeCount = filteredTrades.filter(
+    (trade) =>
+      typeof trade.brokerBaseCurrencyPnl === 'number' &&
+      Number.isFinite(trade.brokerBaseCurrencyPnl) &&
+      trade.brokerBaseCurrency === parentMetrics.conversionBaseCurrency &&
+      typeof trade.originalCurrency === 'string' &&
+      trade.originalCurrency !== parentMetrics.conversionBaseCurrency
+  ).length;
+  const manualFxRateTradeCount = filteredTrades.filter(
+    (trade) => trade.conversionUsedManualRate === true
+  ).length;
+  const usedFetchedRates = filteredTrades.some(
+    (trade) => trade.conversionUsedFetchedRates === true
+  );
+  const partiallyConverted = Array.from(
+    new Set(
+      filteredTrades.flatMap((trade) => trade.conversionPartialCurrencies ?? [])
+    )
+  );
+
+  if (parentMetrics.conversionBaseCurrency !== undefined) {
+    
+    
+    
+    const scopeNeedsConversionIndicator =
+      usedFetchedRates ||
+      manualFxRateTradeCount > 0 ||
+      brokerBaseCurrencyTradeCount > 0 ||
+      partiallyConverted.length > 0 ||
+      filteredExcludedTrades.length > 0;
+    if (!scopeNeedsConversionIndicator) return;
+
+    filteredMetrics.conversionBaseCurrency =
+      parentMetrics.conversionBaseCurrency;
+    
+    filteredMetrics.conversionRateDate = usedFetchedRates
+      ? parentMetrics.conversionRateDate
+      : manualFxRateTradeCount > 0
+        ? 'manual'
+        : 'broker';
+    filteredMetrics.brokerBaseCurrencyTradeCount = brokerBaseCurrencyTradeCount;
+    filteredMetrics.manualFxRateTradeCount = manualFxRateTradeCount;
+  } else {
+    
+    
+    filteredMetrics.conversionRateDate = parentMetrics.conversionRateDate;
+  }
+
+  filteredMetrics.isMultiCurrency = true;
+  if (parentMetrics.convertedTotalPnL !== undefined) {
+    filteredMetrics.convertedTotalPnL = filteredMetrics.totalPnL;
+  }
+  
+  const pnlByCurrency: Record<string, number> = {};
+  for (const trade of pnlContributingTrades) {
+    const currency =
+      trade.currency ||
+      parentMetrics.conversionBaseCurrency ||
+      parentMetrics.primaryCurrency ||
+      'USD';
+    pnlByCurrency[currency] =
+      (pnlByCurrency[currency] || 0) + getEffectivePnL(trade);
+  }
+  filteredMetrics.pnlByCurrency = pnlByCurrency;
+  if (filteredExcludedTrades.length > 0) {
+    filteredMetrics.unconvertedCurrencies = Array.from(
+      new Set(
+        filteredExcludedTrades.flatMap((trade) =>
+          typeof trade.currency === 'string' ? [trade.currency] : []
+        )
+      )
+    );
+    filteredMetrics.originalTradeCount =
+      filteredTrades.length + filteredExcludedTrades.length;
+    filteredMetrics.convertedTradeCount = filteredTrades.length;
+  }
+  filteredMetrics.partiallyConvertedCurrencies =
+    partiallyConverted.length > 0 ? partiallyConverted : undefined;
+};
 
 const calculateFilteredAccountMetrics = (
   accountPageData: AccountPageData | null,
@@ -194,12 +292,31 @@ const calculateFilteredAccountMetrics = (
 ): AccountMetrics | null => {
   if (!accountPageData) return null;
 
-  if (filteredTrades.length === accountPageData.trades.length) {
+  
+  
+  const excludedTrades = accountPageData.excludedTrades ?? [];
+  const filteredExcludedTrades = filterAccountTrades(
+    excludedTrades,
+    options.filters ?? {}
+  );
+
+  if (
+    filteredTrades.length === accountPageData.trades.length &&
+    filteredExcludedTrades.length === excludedTrades.length
+  ) {
     return accountPageData.metrics;
   }
 
   if (filteredTrades.length === 0) {
-    return createEmptyAccountMetrics();
+    const emptyMetrics = createEmptyAccountMetrics();
+    applyScopedConversionMetadata(
+      emptyMetrics,
+      accountPageData.metrics,
+      filteredTrades,
+      [],
+      filteredExcludedTrades
+    );
+    return emptyMetrics;
   }
 
   const pnlContributingTrades = filteredTrades.filter((trade) =>
@@ -207,7 +324,7 @@ const calculateFilteredAccountMetrics = (
   );
   const totalTrades = pnlContributingTrades.length;
   const totalCommission = pnlContributingTrades.reduce(
-    (sum, trade) => sum + trade.commission,
+    (sum, trade) => sum + calculateCommissionCost(trade),
     0
   );
   const totalSwap = pnlContributingTrades.reduce(
@@ -215,7 +332,7 @@ const calculateFilteredAccountMetrics = (
     0
   );
   const totalFees = pnlContributingTrades.reduce(
-    (sum, trade) => sum + trade.fees,
+    (sum, trade) => sum + Math.abs(trade.fees),
     0
   );
   const totalPnL = pnlContributingTrades.reduce(
@@ -307,7 +424,7 @@ const calculateFilteredAccountMetrics = (
     profitFactor = 999;
   }
 
-  return {
+  const filteredMetrics: AccountMetrics = {
     totalTrades,
     winningTrades: winningTrades.length,
     losingTrades: losingTrades.length,
@@ -322,6 +439,16 @@ const calculateFilteredAccountMetrics = (
     totalSwap,
     totalFees,
   };
+
+  applyScopedConversionMetadata(
+    filteredMetrics,
+    accountPageData.metrics,
+    filteredTrades,
+    pnlContributingTrades,
+    filteredExcludedTrades
+  );
+
+  return filteredMetrics;
 };
 
 export const AccountPageDataProvider: React.FC<
@@ -427,10 +554,12 @@ export const AccountPageDataProvider: React.FC<
         breakEvenRangeMin,
         breakEvenRangeMax,
         defaultRiskAmount,
+        filters,
       }),
     [
       accountPageData,
       filteredTrades,
+      filters,
       breakEvenThresholdMode,
       breakEvenThresholdPercent,
       breakEvenRangeMin,

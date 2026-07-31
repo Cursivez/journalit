@@ -15,6 +15,13 @@ export interface TradeCommitReceipt {
   revision: number;
   schemaVersion: number;
   committedAt: number;
+  canonicalTradeId?: string;
+  canonicalTradeVersion?: number;
+  canonicalProjectionGeneration?: string;
+  canonicalAccountId?: string;
+  canonicalBroker?: string;
+  canonicalAccountDisplayName?: string;
+  canonicalProjectionSchemaVersion?: number;
   tradeImportId?: string;
   tradeImportVersion?: number;
 }

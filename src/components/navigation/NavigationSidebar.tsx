@@ -15,7 +15,8 @@ import JournalitPlugin from '../../main';
 import {
   SidebarNavItem,
   QuickLinkAction,
-  DEFAULT_SETTINGS,
+  QUICK_LINK_ACTIONS,
+  createDefaultNavigationSettings,
 } from '../../settings/types';
 import { QuickLinkActionResolver } from '../../utils/QuickLinkActionResolver';
 import { resolveIcon } from '../../utils/iconResolver';
@@ -46,27 +47,10 @@ const VIEW_ACTION_MAP: Record<string, string> = {
   openLayoutBuilder: 'journalit-template-builder-view',
 };
 
-const QUICK_LINK_ACTIONS: ReadonlySet<string> = new Set([
-  'addTrade',
-  'openTradeLog',
-  'openTradingDashboard',
-  'openAccountDashboard',
-  'openTodaysDRC',
-  'openWeeklyReview',
-  'openMonthlyReview',
-  'openCSVImport',
-  'openQuickTradeImport',
-  'openLayoutBuilder',
-  'openSessionMode',
-  'openSetups',
-  'openHome',
-  'openQuarterlyReview',
-  'openYearlyReview',
-  'openPositionSizeCalculator',
-]);
+const QUICK_LINK_ACTION_SET: ReadonlySet<string> = new Set(QUICK_LINK_ACTIONS);
 
 const isQuickLinkAction = (action: string): action is QuickLinkAction =>
-  QUICK_LINK_ACTIONS.has(action);
+  QUICK_LINK_ACTION_SET.has(action);
 const REVIEW_ACTIONS = new Set<QuickLinkAction>([
   'openTodaysDRC',
   'openWeeklyReview',
@@ -83,7 +67,7 @@ export function mergeNavigationItemsWithDefaults(
   items: SidebarNavItem[];
   changed: boolean;
 } {
-  const defaultItems = DEFAULT_SETTINGS.navigation?.items || [];
+  const defaultItems = createDefaultNavigationSettings().items;
 
   const currentById = new Map(currentItems.map((item) => [item.id, item]));
   const currentIndexById = new Map(
@@ -151,18 +135,14 @@ export const NavigationSidebar: React.FC<NavigationSidebarProps> = ({
       return;
     }
 
-    const defaultItems = DEFAULT_SETTINGS.navigation?.items || [];
-    if (defaultItems.length > 0) {
-      setLocalNavItems(defaultItems);
-      if (!plugin.settings.navigation) {
-        plugin.settings.navigation = {
-          ...DEFAULT_SETTINGS.navigation!,
-        };
-      } else {
-        plugin.settings.navigation.items = defaultItems;
-      }
-      void plugin.saveSettings();
+    const defaultItems = createDefaultNavigationSettings().items;
+    setLocalNavItems(defaultItems);
+    if (!plugin.settings.navigation) {
+      plugin.settings.navigation = createDefaultNavigationSettings();
+    } else {
+      plugin.settings.navigation.items = defaultItems;
     }
+    void plugin.saveSettings();
   }, [plugin]);
 
   const actionResolver = useMemo(

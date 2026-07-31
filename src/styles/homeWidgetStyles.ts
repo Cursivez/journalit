@@ -2226,10 +2226,12 @@ export const HOME_WIDGET_STYLES = `
     gap: 8px;
   }
 
-  .journalit-home-setups__header > span:first-child,
-  .journalit-home-setups__header > .journalit-home-setups__title {
+  .journalit-home-setups__heading {
+    display: inline-flex;
+    align-items: center;
+    gap: 0;
     min-width: 0;
-    flex: 1;
+    flex: 0 1 auto;
   }
 
   .journalit-home-setups--active,

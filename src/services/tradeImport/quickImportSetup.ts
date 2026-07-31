@@ -1,6 +1,7 @@
 import type JournalitPlugin from '../../main';
 import { LocalTemplateService } from '../csv/LocalTemplateService';
 import type { LocalCSVTemplate, ManualImportMode } from '../csv/types';
+import { canonicalTradeImportBrokerId } from './brokerIds';
 import type { BackendTradeImportService } from './BackendTradeImportService';
 import type { TradeImportCapabilities } from './types';
 
@@ -117,8 +118,9 @@ function validBroker(
   broker: string | undefined
 ): string | undefined {
   if (!broker) return undefined;
-  return capabilities.brokers.some((item) => item.id === broker)
-    ? broker
+  const canonicalBroker = canonicalTradeImportBrokerId(broker);
+  return capabilities.brokers.some((item) => item.id === canonicalBroker)
+    ? canonicalBroker
     : undefined;
 }
 

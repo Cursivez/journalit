@@ -5,6 +5,7 @@ import React from 'react';
 import { createRoot, Root } from 'react-dom/client';
 import JournalitPlugin from '../../../main';
 import { t } from '../../../lang/helpers';
+import { showConfirmationModal } from '../../shared/ConfirmationModal';
 import { TradeFormLayoutSettings } from '../../../settings/types';
 import { TradeFormLayoutEditor } from './TradeFormLayoutEditor';
 
@@ -82,12 +83,15 @@ class TradeFormLayoutSettingsModal extends Modal {
   }
 
   private showUnsavedChangesConfirmation(): Promise<boolean> {
-    return new Promise((resolve) => {
-      const modal = new TradeFormLayoutUnsavedChangesModal(
-        this.props.app,
-        resolve
-      );
-      modal.open();
+    return showConfirmationModal(this.props.app, {
+      title: t('form.modal.unsaved-changes.title'),
+      message: [
+        { text: t('form.modal.unsaved-changes.body1') },
+        { text: t('form.modal.unsaved-changes.body2') },
+      ],
+      cancelLabel: t('form.modal.unsaved-changes.continue'),
+      confirmLabel: t('form.modal.unsaved-changes.discard'),
+      destructive: true,
     });
   }
 
@@ -106,64 +110,6 @@ class TradeFormLayoutSettingsModal extends Modal {
         }}
       />
     );
-  }
-}
-
-class TradeFormLayoutUnsavedChangesModal extends Modal {
-  private resolved = false;
-
-  constructor(
-    app: App,
-    private onConfirm: (shouldClose: boolean) => void
-  ) {
-    super(app);
-    this.titleEl.setText(t('form.modal.unsaved-changes.title'));
-  }
-
-  onOpen(): void {
-    const { contentEl } = this;
-    contentEl.empty();
-    contentEl.createEl('p', {
-      text: t('form.modal.unsaved-changes.body1'),
-    });
-    contentEl.createEl('p', {
-      text: t('form.modal.unsaved-changes.body2'),
-    });
-
-    const buttonContainer = contentEl.createDiv({
-      cls: 'modal-button-container journalit-modal-button-container',
-    });
-
-    buttonContainer
-      .createEl('button', {
-        type: 'button',
-        text: t('form.modal.unsaved-changes.continue'),
-        cls: 'mod-cta',
-      })
-      .addEventListener('click', () => {
-        this.resolve(false);
-      });
-
-    buttonContainer
-      .createEl('button', {
-        type: 'button',
-        text: t('form.modal.unsaved-changes.discard'),
-        cls: 'mod-warning',
-      })
-      .addEventListener('click', () => {
-        this.resolve(true);
-      });
-  }
-
-  close(): void {
-    this.resolve(false);
-  }
-
-  private resolve(shouldClose: boolean): void {
-    if (this.resolved) return;
-    this.resolved = true;
-    this.onConfirm(shouldClose);
-    super.close();
   }
 }
 

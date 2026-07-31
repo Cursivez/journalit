@@ -16,6 +16,7 @@ import { isValidDate, safeGetTime } from '../../../utils/dateUtils';
 import { formatCost } from '../../../utils/formatting';
 import { t } from '../../../lang/helpers';
 import { normalizeTradeExecution } from '../../../services/trade/core/TradeExecutionNormalization';
+import { isUnrealizedSnapshotExecutionValid } from '../../../utils/unrealizedPnl';
 
 
 import {
@@ -55,6 +56,8 @@ export const validateTradeForm = (
 
   
   const isBacktestTrade = data.isBacktestTrade === true;
+
+  const isCancelledTrade = data.tradeStatus === 'CANCELLED';
 
   const shouldValidateDividends = shouldShowTradeDividends(data);
 
@@ -102,7 +105,7 @@ export const validateTradeForm = (
   }
 
   
-  if (!isDirectPnLMode && !isMissedTrade) {
+  if (!isDirectPnLMode && !isMissedTrade && !isCancelledTrade) {
     
     if (!data.entries || data.entries.length === 0) {
       errors.entriesExits = t('trade.validation.entry-required');
@@ -148,7 +151,7 @@ export const validateTradeForm = (
   }
 
   
-  if (!isDirectPnLMode && !isMissedTrade) {
+  if (!isDirectPnLMode && !isMissedTrade && !isCancelledTrade) {
     
     if (!data.exits || data.exits.length === 0) {
       
@@ -258,6 +261,7 @@ export const validateTradeForm = (
   if (
     !isDirectPnLMode &&
     !isMissedTrade &&
+    !isCancelledTrade &&
     data.entries &&
     data.entries.length > 0 &&
     data.exits &&
@@ -325,7 +329,7 @@ export const validateTradeForm = (
   }
 
   
-  if (isDirectPnLMode && !isMissedTrade) {
+  if (isDirectPnLMode && !isMissedTrade && !isCancelledTrade) {
     if (data.directPnL === undefined || data.directPnL === null) {
       errors.directPnL = t('trade.validation.direct-pnl-required');
     }
@@ -393,7 +397,8 @@ export const validateTradeForm = (
     hasLegacyFields &&
     !hasStructuredTransactions &&
     !isDirectPnLMode &&
-    !isMissedTrade
+    !isMissedTrade &&
+    !isCancelledTrade
   ) {
     
 
@@ -570,11 +575,40 @@ export const validateTradeForm = (
   }
 
   
+  if (data.fxRate !== undefined && data.fxRate !== null) {
+    if (typeof data.fxRate !== 'number' || !Number.isFinite(data.fxRate)) {
+      errors.fxRate = t('trade.validation.fx-rate-number');
+    } else if (data.fxRate <= 0) {
+      errors.fxRate = t('trade.validation.fx-rate-positive');
+    }
+  }
+
+  
   if (data.stopLoss !== undefined && data.stopLoss !== null) {
     if (typeof data.stopLoss !== 'number') {
       errors.stopLoss = t('trade.validation.stop-loss-number');
     } else if (!Number.isFinite(data.stopLoss)) {
       errors.stopLoss = t('trade.validation.stop-loss-valid-number');
+    }
+  }
+
+  
+  if (
+    data.unrealizedPriceSnapshot !== undefined &&
+    data.unrealizedPriceSnapshot !== null
+  ) {
+    if (
+      typeof data.unrealizedPriceSnapshot !== 'number' ||
+      !Number.isFinite(data.unrealizedPriceSnapshot) ||
+      data.unrealizedPriceSnapshot < 0
+    ) {
+      errors.unrealizedPriceSnapshot = t(
+        'trade.validation.unrealized-snapshot-price-non-negative'
+      );
+    } else if (!isUnrealizedSnapshotExecutionValid(data)) {
+      errors.unrealizedPriceSnapshot = t(
+        'trade.validation.unrealized-snapshot-open-position-required'
+      );
     }
   }
 

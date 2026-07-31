@@ -116,8 +116,20 @@ function normalizeDirectionFilterValue(
 
 export function matchesImageGalleryTradeLogFilters(
   item: ImageGalleryItem,
-  filters: TradeLogFilters
+  filters: TradeLogFilters,
+  sessionLogContext: {
+    matchingDays: ReadonlySet<string> | null;
+    itemTradingDay: string | null;
+  } = { matchingDays: null, itemTradingDay: null }
 ): boolean {
+  if (
+    sessionLogContext.matchingDays &&
+    (!sessionLogContext.itemTradingDay ||
+      !sessionLogContext.matchingDays.has(sessionLogContext.itemTradingDay))
+  ) {
+    return false;
+  }
+
   const [startDate, endDate] = filters.dateRange;
   const timestamp = getTimestamp(item.date);
   if (startDate && timestamp < startDate.getTime()) return false;
@@ -125,7 +137,11 @@ export function matchesImageGalleryTradeLogFilters(
 
   if (filters.tickers.length > 0) {
     const matcher = createTickerMatcher(filters.tickers);
-    const matched = matcher(item.symbol || item.sourceLabel || '');
+    const tickerCandidate =
+      item.sourceType === 'folder'
+        ? item.symbol || ''
+        : item.symbol || item.sourceLabel || '';
+    const matched = matcher(tickerCandidate);
     if (!matched) return false;
   }
 

@@ -81,7 +81,7 @@ const UpgradeComponent: React.FC<
         <ul className="upgrade-modal-benefits-list">
           <li>{t('upgrade.benefit.csv')}</li>
           <li>{t('upgrade.benefit.templates')}</li>
-          <li>{t('upgrade.benefit.mt5')}</li>
+          <li>{t('upgrade.benefit.trade-sync')}</li>
           <li>{t('upgrade.benefit.multi-account')}</li>
           <li>{t('upgrade.benefit.analytics')}</li>
           <li>{t('upgrade.benefit.layouts')}</li>

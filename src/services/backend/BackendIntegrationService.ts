@@ -1,4 +1,5 @@
 import { logger } from '../../utils/logger';
+import { generateUUID } from '../../utils/uuid';
 
 
 import {
@@ -150,6 +151,7 @@ export class BackendIntegrationService {
     this.settings.userEmail = undefined;
     this.settings.subscriptionTier = undefined;
     this.settings.userId = '';
+    this.settings.authenticatedAccountId = undefined;
 
     const session = this.activeSyncSession ?? this.pendingSyncSession;
     if (session) {
@@ -314,53 +316,14 @@ export class BackendIntegrationService {
 
   
   private async getVaultIdentifier(): Promise<string> {
-    try {
-      
-      const existingVaultId =
-        this.plugin.settings.backendIntegration?.vaultIdentifier;
-      if (existingVaultId) {
-        return existingVaultId;
-      }
+    const existingVaultId =
+      this.plugin.settings.backendIntegration?.vaultIdentifier;
+    if (existingVaultId) return existingVaultId;
 
-      
-      const vaultName = this.plugin.app.vault.getName() || 'Unknown';
-      const deviceInfo = Platform.isDesktopApp
-        ? 'desktop'
-        : Platform.isIosApp
-          ? 'ios'
-          : Platform.isAndroidApp
-            ? 'android'
-            : Platform.isMobileApp
-              ? 'mobile'
-              : 'unknown';
-
-      
-      const identifier = vaultName + ':' + deviceInfo;
-      const hash = await this.hashIdentifier(identifier);
-      const vaultId = `vault_${hash.substring(0, 16)}`;
-
-      
-      this.settings.vaultIdentifier = vaultId;
-      
-      
-      await this.plugin.saveSettings();
-
-      return vaultId;
-    } catch (error) {
-      console.warn('Could not generate vault identifier:', error);
-
-      return `vault_${Math.random().toString(36).substring(2, 18)}`;
-    }
-  }
-
-  private async hashIdentifier(data: string): Promise<string> {
-    const encoder = new TextEncoder();
-    const dataBuffer = encoder.encode(data);
-    const hashBuffer = await window.crypto.subtle.digest('SHA-256', dataBuffer);
-    const hashArray = new Uint8Array(hashBuffer);
-    return Array.from(hashArray)
-      .map((b) => b.toString(16).padStart(2, '0'))
-      .join('');
+    const vaultId = `vault_${generateUUID()}`;
+    this.settings.vaultIdentifier = vaultId;
+    await this.plugin.saveSettings();
+    return vaultId;
   }
 
   
@@ -1820,6 +1783,9 @@ export class BackendIntegrationService {
       trade.mistake ?? trade.mistakeIds ?? []
     );
     const tags = this.normalizeStringList(trade.tags);
+    if (tags.length > 0) {
+      await this.plugin.optionsService.addOptions(OptionType.TAG, tags);
+    }
     const images = this.normalizeImageList(trade.images);
 
     const entries = (
@@ -3095,6 +3061,14 @@ export class BackendIntegrationService {
     filePaths.forEach((path) => {
       this.fileWatcherService.batchModifiedFiles.delete(path);
     });
+  }
+
+  public ignoreNextFileModification(filePath: string): void {
+    this.fileWatcherService.ignoreNextModify(filePath);
+  }
+
+  public cancelIgnoredFileModification(filePath: string): void {
+    this.fileWatcherService.cancelIgnoredModify(filePath);
   }
 
   

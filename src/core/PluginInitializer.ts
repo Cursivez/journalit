@@ -7,6 +7,8 @@ import { setupPluginHook } from '../hooks/usePlugin';
 import { t } from '../lang/helpers';
 import { CANONICAL_EXECUTION_MIGRATION_VERSION } from '../services/trade/core/TradeFrontmatterCodec';
 import { TRADE_REVIEW_MARKDOWN_MIGRATION_VERSION } from '../services/trade/core/TradeReviewMarkdownCodec';
+import { GraphLinkService } from '../services/graph/GraphLinkService';
+import { TRADE_REVIEW_LAYOUT_MIGRATION_VERSION } from '../services/trade/LegacyTradeReviewMigration';
 
 const PERSISTENT_CACHE_VERSION = '2026-04-account-identity-v1';
 const OLD_DERIVED_STORAGE_CLEANUP_VERSION = '2026-06-plugin-storage-v3';
@@ -40,6 +42,7 @@ import { TEMPLATE_BUILDER_VIEW_TYPE } from '../views/TemplateBuilderView';
 import { SETUPS_VIEW_TYPE } from '../views/SetupsView';
 import { GuideRegistry } from '../guides/GuideRegistry';
 import { registerHomeMainGuide } from '../guides/homeMainGuide';
+import { registerHomeWhatsNewDashboardToggleGuide } from '../guides/homeWhatsNewDashboardToggleGuide';
 import { registerTradeLogEmptyGuide } from '../guides/tradeLogEmptyGuide';
 import { registerTradeLogImageGalleryEmptyGuide } from '../guides/tradeLogImageGalleryEmptyGuide';
 import { registerTradeLogMainGuide } from '../guides/tradeLogMainGuide';
@@ -84,6 +87,14 @@ export class PluginInitializer {
     await this.initializeCoreServices();
 
     
+    
+    await this.registerEarlyViews();
+
+    
+    
+    await this.initializeCanonicalProjectionMigration();
+
+    
     await this.setupEssentialUI();
 
     
@@ -91,31 +102,20 @@ export class PluginInitializer {
 
     
     this.plugin.app.workspace.onLayoutReady(() => {
+      void this.plugin.viewManager.migrateLegacyDashboardLeaves();
       void this.initializeNonCriticalComponents();
 
       
       window.setTimeout(() => {
         void this.openHomeOnStartup();
       }, 100); 
-
-      
-      window.setTimeout(() => {
-        void (async () => {
-          try {
-            const navigationEnabled =
-              this.plugin.settings.navigation?.enabled ?? true;
-            if (navigationEnabled) {
-              await this.plugin.viewManager.activateNavigationSidebar();
-            }
-          } catch (error) {
-            console.error(
-              '[Journalit] Failed to activate navigation sidebar:',
-              error
-            );
-          }
-        })();
-      }, 150);
     });
+
+    this.plugin.registerEvent(
+      this.plugin.app.workspace.on('layout-change', () => {
+        void this.plugin.viewManager.migrateLegacyDashboardLeaves();
+      })
+    );
   }
 
   
@@ -159,6 +159,10 @@ export class PluginInitializer {
       new Notice(t('notice.error.restore-auth'), 10000);
       
     }
+
+    const { initializeTradeProjectionAckQueue } =
+      await import('../services/tradeSync/TradeProjectionAckQueue');
+    initializeTradeProjectionAckQueue(this.plugin);
 
     
     const uiState = this.plugin.uiStateManager.getState();
@@ -218,6 +222,7 @@ export class PluginInitializer {
     
     this.plugin.guideRegistry = new GuideRegistry();
     registerHomeMainGuide(this.plugin.guideRegistry);
+    registerHomeWhatsNewDashboardToggleGuide(this.plugin.guideRegistry);
     registerTradeLogEmptyGuide(this.plugin.guideRegistry);
     registerTradeLogImageGalleryEmptyGuide(this.plugin.guideRegistry);
     registerTradeLogWhatsNewImageGalleryGuide(this.plugin.guideRegistry);
@@ -250,6 +255,9 @@ export class PluginInitializer {
     this.plugin.optionsService =
       this.plugin.serviceManager.getOptionsServiceSync();
 
+    this.plugin.graphLinkService = new GraphLinkService(this.plugin);
+    this.plugin.graphLinkService.initialize();
+
     
     
     this.plugin.reviewDataCache = new ReviewDataCache(
@@ -265,7 +273,8 @@ export class PluginInitializer {
       .then(async () => {
         await this.plugin.tradeService.getTradeData({ fresh: true });
         await this.runCanonicalExecutionMigrationIfNeeded();
-        await this.runTradeReviewMarkdownMigration();
+        await this.runTradeReviewMigrations();
+        await this.runGraphLinkMigration();
       })
       .catch((err) => {
         console.error('[Journalit] Failed to pre-warm trade cache:', err);
@@ -289,18 +298,32 @@ export class PluginInitializer {
     this.plugin.updateNotificationService = new UpdateNotificationService(
       this.plugin
     );
+  }
 
-    
+  private async initializeCanonicalProjectionMigration(): Promise<void> {
+    const { CanonicalProjectionMigrationService } =
+      await import('../services/tradeSync/CanonicalProjectionMigrationService');
+    this.plugin.canonicalProjectionMigrationService =
+      new CanonicalProjectionMigrationService(this.plugin);
+    await this.plugin.canonicalProjectionMigrationService.run();
+  }
+
+  private async registerEarlyViews(): Promise<void> {
     this.plugin.registerView(
       RELEASE_NOTES_VIEW_TYPE,
       (leaf) => new ReleaseNotesView(leaf)
     );
 
-    
     try {
-      await this.plugin.viewManager.registerHomeView();
+      await Promise.all([
+        this.plugin.viewManager.registerHomeView(),
+        this.plugin.viewManager.registerNavigationView(),
+      ]);
     } catch (error) {
-      console.error('[Journalit] Failed to register home view early:', error);
+      console.error(
+        '[Journalit] Failed to register restoration-critical views early:',
+        error
+      );
       
     }
   }
@@ -328,12 +351,19 @@ export class PluginInitializer {
     }
   }
 
-  private async runTradeReviewMarkdownMigration(): Promise<void> {
+  private async runTradeReviewMigrations(): Promise<void> {
+    const markdownMigrationComplete =
+      await this.runTradeReviewMarkdownMigration();
+    if (!markdownMigrationComplete) return;
+    await this.runTradeReviewLayoutMigration();
+  }
+
+  private async runTradeReviewMarkdownMigration(): Promise<boolean> {
     if (
       this.plugin.settings.trade.tradeReviewMarkdownMigrationVersion ===
       TRADE_REVIEW_MARKDOWN_MIGRATION_VERSION
     ) {
-      return;
+      return true;
     }
 
     const result =
@@ -346,6 +376,55 @@ export class PluginInitializer {
     if (result.migrated > 0) {
       logger.info(
         `[Journalit] Migrated ${result.migrated} trade review frontmatter entries to markdown`
+      );
+    }
+    return (
+      this.plugin.settings.trade.tradeReviewMarkdownMigrationVersion ===
+      TRADE_REVIEW_MARKDOWN_MIGRATION_VERSION
+    );
+  }
+
+  private async runTradeReviewLayoutMigration(): Promise<void> {
+    if (
+      this.plugin.settings.trade.tradeReviewLayoutMigrationVersion ===
+      TRADE_REVIEW_LAYOUT_MIGRATION_VERSION
+    ) {
+      return;
+    }
+
+    const result = await this.plugin.tradeService.migrateTradeReviewLayout();
+    if (result.failed > 0) {
+      console.warn(
+        `[Journalit] Trade review layout migration completed with ${result.failed} failures`
+      );
+    }
+    if (result.conflicts > 0) {
+      console.warn(
+        `[Journalit] Trade review layout migration skipped ${result.conflicts} conflicting review blocks`
+      );
+    }
+    if (
+      result.repairedTrades > 0 ||
+      result.migratedDrcs > 0 ||
+      result.templateMigrated
+    ) {
+      logger.info(
+        `[Journalit] Repaired ${result.repairedTrades} migrated trade reviews and ${result.migratedDrcs} historical DRCs`
+      );
+    }
+  }
+
+  private async runGraphLinkMigration(): Promise<void> {
+    const result = await this.plugin.graphLinkService.runMigrationIfNeeded();
+    if (result.failed > 0) {
+      console.warn(
+        `[Journalit] Graph-link migration completed with ${result.failed} failures`,
+        result.errors
+      );
+    }
+    if (result.updated > 0) {
+      logger.info(
+        `[Journalit] Added native graph links to ${result.updated} notes`
       );
     }
   }
@@ -494,6 +573,8 @@ export class PluginInitializer {
   private async registerCoreFunctionality(): Promise<void> {
     
     await Promise.all([
+      
+      
       this.plugin.viewManager.registerDashboardView(),
       this.plugin.viewManager.registerAccountDashboardView(),
       this.plugin.viewManager.registerTradeLogView(),
@@ -502,7 +583,6 @@ export class PluginInitializer {
       this.plugin.viewManager.registerOnboardingView(),
       this.plugin.viewManager.registerTemplateBuilderView(),
       this.plugin.viewManager.registerSetupsView(),
-      this.plugin.viewManager.registerNavigationView(),
       this.plugin.viewManager.registerCalendarSidebarView(),
       this.plugin.viewManager.registerSessionModeView(),
     ]);
@@ -513,6 +593,10 @@ export class PluginInitializer {
   
   private async initializeNonCriticalComponents(): Promise<void> {
     try {
+      const { startTradeProjectionAckQueue } =
+        await import('../services/tradeSync/TradeProjectionAckQueue');
+      startTradeProjectionAckQueue(this.plugin);
+
       
       
 

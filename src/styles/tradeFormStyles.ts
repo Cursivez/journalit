@@ -587,7 +587,6 @@ export const TRADE_FORM_STYLES = `
     width: calc(100% + 40px) !important;
     padding: 12px 20px 4px !important;
     background: var(--background-primary) !important;
-    border-top: 1px solid var(--background-modifier-border) !important;
   }
   .trade-form-view-container .formActions {
     display: flex !important;

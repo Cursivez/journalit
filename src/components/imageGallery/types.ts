@@ -8,6 +8,7 @@ export type ImageGallerySourceType =
   | 'monthly'
   | 'quarterly'
   | 'yearly'
+  | 'folder'
   | 'reviews';
 
 export type ImageGalleryOutcome = 'winner' | 'loser' | 'breakeven' | 'unknown';
@@ -27,7 +28,9 @@ export interface ImageGalleryItem {
   sourcePath: string;
   sourceType: Exclude<ImageGallerySourceType, 'all' | 'reviews'>;
   sourceLabel: string;
+  folderPath?: string;
   date: string;
+  mediaMtime?: number;
   symbol?: string;
   account?: string;
   accounts?: string[];
@@ -40,6 +43,7 @@ export interface ImageGalleryItem {
   mistakes: string[];
   tags: string[];
   notes?: string;
+  hasOwnAnnotation?: boolean;
   sourceCustomFields: Record<string, string[]>;
   outcome: ImageGalleryOutcome;
   tradeStatus?: TradeStatus;

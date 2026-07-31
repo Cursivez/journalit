@@ -161,7 +161,14 @@ function isYouTubeMediaUrl(url: string): boolean {
 
 export function getYouTubeThumbnailUrl(url: string): string {
   const videoId = parseYouTubeVideoId(url);
-  return videoId ? `https://img.youtube.com/vi/${videoId}/hqdefault.jpg` : '';
+  return videoId
+    ? `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`
+    : '';
+}
+
+export function getYouTubeThumbnailFallbackUrl(url: string): string {
+  const videoId = parseYouTubeVideoId(url);
+  return videoId ? `https://img.youtube.com/vi/${videoId}/mqdefault.jpg` : '';
 }
 
 export function getYouTubeEmbedUrl(url: string): string {

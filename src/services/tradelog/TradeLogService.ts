@@ -27,8 +27,16 @@ import {
 import {
   getTradeDisplayStatusWithContext,
   getEffectivePnL,
+  getPartialExitInfo,
+  hasRealizedStoredPnL,
   isPnlContributingTrade,
 } from '../../utils/tradeStatusUtils';
+import { calculateTotalDividends } from '../../utils/pnlCalculation';
+import {
+  areSnapshotKeysClaimedByCustomFields,
+  calculateSnapshotRealizedPnL,
+  calculateUnrealizedPnL,
+} from '../../utils/unrealizedPnl';
 import { calculateEffectiveRMultiple } from '../../utils/formatting';
 import { eventBus } from '../events';
 import type {
@@ -183,6 +191,7 @@ interface HierarchicalQueryParams {
   statuses?: TradeStatus[];
   reviewStatus?: ReviewStatusFilter[];
   directions?: DirectionFilter[];
+  sessionLogTags?: string[];
   accounts?: string[];
   tickers?: string[];
   setups?: string[];
@@ -333,6 +342,10 @@ export class TradeLogService {
       this.tradeCommitRevisionToken++;
       this.invalidateTradeDataCaches();
     };
+    const bumpQueryRevisionAndClearCache = () => {
+      this.tradeCommitRevisionToken++;
+      this.clearCache();
+    };
 
     const handleTradeCommitted = (payload: TradeCommittedPayload) => {
       const tradeId = payload.receipt?.tradeId ?? payload.change?.tradeId;
@@ -384,6 +397,10 @@ export class TradeLogService {
           this.clearCache();
         }
       }),
+      eventBus.subscribe(
+        'drc:session-log-index-invalidated',
+        bumpQueryRevisionAndClearCache
+      ),
       eventBus.subscribe('account:changed', bumpTradeRevisionAndClearCache)
     );
   }
@@ -681,6 +698,12 @@ export class TradeLogService {
         commission: commission ?? 0,
         fees: 0,
         currency: baseTrade.currency ?? copyMetadata.currency,
+        
+        
+        
+        brokerBaseCurrencyPnl: undefined,
+        brokerBaseCurrency: undefined,
+        brokerBaseCurrencyPnlSource: undefined,
         isCopiedTrade: true,
         copiedFromAccount: copyPeriod.baseAccount,
         copyMultiplier: copyPeriod.multiplier,
@@ -727,6 +750,7 @@ export class TradeLogService {
         query.customFieldFilters,
         query.reviewStatus,
         query.directions,
+        query.sessionLogTags,
         retryCount + 1
       );
     }
@@ -751,6 +775,7 @@ export class TradeLogService {
     customFieldFilters?: CustomFieldFilterSelections,
     reviewStatus?: ReviewStatusFilter[],
     directions?: DirectionFilter[],
+    sessionLogTags?: string[],
     retryCount: number = 0
   ): Promise<TimeNode[]> {
     
@@ -777,6 +802,7 @@ export class TradeLogService {
       statuses,
       reviewStatus,
       directions,
+      sessionLogTags,
       accounts,
       tickers,
       setups,
@@ -789,7 +815,7 @@ export class TradeLogService {
     const includeCopyAccountsInAllAccounts =
       this.plugin.settings.trade.includeCopyAccountsInAllAccountsAnalytics ===
       true;
-    const cacheKey = `v${this.CACHE_VERSION}-r${requestRevisionToken}-copy${includeCopyAccountsInAllAccounts}-${viewLevel}-${startDate?.toISOString()}-${endDate?.toISOString()}-${normalizeFilterArray(tradeTypes)}-${normalizeFilterArray(statuses)}-${normalizeFilterArray(reviewStatus)}-${normalizeFilterArray(directions)}-${normalizeFilterArray(accounts)}-${normalizeFilterArray(tickers)}-${normalizeFilterArray(setups)}-${normalizeFilterArray(tags)}-${normalizeFilterArray(mistakes)}-${normalizeCustomFieldFilters(customFieldFilters)}`;
+    const cacheKey = `v${this.CACHE_VERSION}-r${requestRevisionToken}-copy${includeCopyAccountsInAllAccounts}-${viewLevel}-${startDate?.toISOString()}-${endDate?.toISOString()}-${normalizeFilterArray(tradeTypes)}-${normalizeFilterArray(statuses)}-${normalizeFilterArray(reviewStatus)}-${normalizeFilterArray(directions)}-${normalizeFilterArray(sessionLogTags)}-${normalizeFilterArray(accounts)}-${normalizeFilterArray(tickers)}-${normalizeFilterArray(setups)}-${normalizeFilterArray(tags)}-${normalizeFilterArray(mistakes)}-${normalizeCustomFieldFilters(customFieldFilters)}`;
     const now = Date.now();
 
     
@@ -837,7 +863,33 @@ export class TradeLogService {
     });
 
     
-    const enrichedTrades = this.preComputeDateComponents(filteredTrades);
+    let enrichedTrades = this.preComputeDateComponents(filteredTrades);
+    const selectedSessionLogTags = sessionLogTags || [];
+    const sessionLogFilterActive =
+      viewLevel === 'days' && selectedSessionLogTags.length > 0;
+    let matchingDays: Set<string> | null = null;
+    let sessionLogTagIdsByDay: ReadonlyMap<string, ReadonlySet<string>> | null =
+      null;
+    if (viewLevel === 'days') {
+      sessionLogTagIdsByDay = await this.loadSessionLogTagIdsByDay();
+
+      if (sessionLogFilterActive) {
+        const selectedTagIds = new Set(selectedSessionLogTags);
+        matchingDays = new Set<string>();
+        for (const [dayId, tagIds] of sessionLogTagIdsByDay) {
+          for (const tagId of tagIds) {
+            if (selectedTagIds.has(tagId)) {
+              matchingDays.add(dayId);
+              break;
+            }
+          }
+        }
+        const resolvedMatchingDays = matchingDays;
+        enrichedTrades = enrichedTrades.filter((trade) =>
+          resolvedMatchingDays.has(trade._dateComponents.tradingDayString)
+        );
+      }
+    }
 
     const retryAfterEnrichment =
       await this.retryHierarchicalDataIfRevisionChanged(
@@ -865,7 +917,10 @@ export class TradeLogService {
         result = await this.buildWeekNodesOptimized(enrichedTrades);
         break;
       case 'days':
-        result = await this.buildDayNodesOptimized(enrichedTrades);
+        result = await this.buildDayNodesOptimized(
+          enrichedTrades,
+          sessionLogTagIdsByDay
+        );
         break;
       case 'trades':
         result = await this.buildTradeNodesOptimized(enrichedTrades);
@@ -877,6 +932,34 @@ export class TradeLogService {
     
     if (result.length < 50) {
       this.markBestWorstPerformers(result);
+    }
+
+    if (matchingDays) {
+      const existingDayIds = new Set(result.map((node) => node.id));
+      for (const dayId of matchingDays) {
+        if (existingDayIds.has(dayId)) continue;
+        const date = createTradingDayFromString(dayId);
+        if (startDate && date < startDate) continue;
+        if (endDate && date > endDate) continue;
+        result.push({
+          type: 'day',
+          id: dayId,
+          label: date.toLocaleDateString('en-US', {
+            month: 'short',
+            day: 'numeric',
+            year: 'numeric',
+          }),
+          metrics: { totalPnL: 0, winRate: 0, tradeCount: 0 },
+          sessionLogTagIds: this.getSessionLogTagIdsForDay(
+            dayId,
+            sessionLogTagIdsByDay
+          ),
+          expanded: false,
+          dataLoaded: true,
+          children: [],
+        });
+      }
+      result.sort((a, b) => b.id.localeCompare(a.id));
     }
 
     
@@ -972,7 +1055,10 @@ export class TradeLogService {
         children = this.buildWeeksForMonth(filteredTrades, node.id);
         break;
       case 'week':
-        children = this.buildDaysForWeek(filteredTrades);
+        children = this.buildDaysForWeek(
+          filteredTrades,
+          await this.loadSessionLogTagIdsByDay()
+        );
         break;
       case 'day':
         children = await this.buildTradesForDay(filteredTrades, node.id);
@@ -1139,18 +1225,69 @@ export class TradeLogService {
   }
 
   
+  private getGroupedDisplayPnL(
+    trade: TradeLogData,
+    snapshotKeysClaimedByCustomFields: boolean
+  ): {
+    pnl: number;
+    includesUnrealized: boolean;
+  } {
+    const realizedPnL = getEffectivePnL(trade);
+    if (
+      !this.plugin.settings.trade.includeUnrealizedPnLInCalculations ||
+      snapshotKeysClaimedByCustomFields
+    ) {
+      return { pnl: realizedPnL, includesUnrealized: false };
+    }
+
+    const unrealizedPnL = calculateUnrealizedPnL(trade);
+    if (unrealizedPnL === null) {
+      return { pnl: realizedPnL, includesUnrealized: false };
+    }
+
+    const partialExitInfo = getPartialExitInfo(trade);
+    const currentRealizedPnL = hasRealizedStoredPnL(trade)
+      ? realizedPnL
+      : partialExitInfo.isPartialExit
+        ? partialExitInfo.realizedPnL + calculateTotalDividends(trade)
+        : 0;
+    const displayedRealizedPnL = calculateSnapshotRealizedPnL(
+      trade,
+      currentRealizedPnL
+    );
+    return {
+      pnl: displayedRealizedPnL + unrealizedPnL,
+      includesUnrealized: true,
+    };
+  }
+
+  
   private calculateMetricsLightweight(trades: TradeLogData[]): TradeLogMetrics {
     if (trades.length === 0) {
       return { totalPnL: 0, winRate: 0, tradeCount: 0 };
     }
 
-    const openTrades = trades.filter((t) => this.getTradeStatus(t) === 'open');
+    const openTrades = trades.filter((t) =>
+      ['open', 'partially_closed'].includes(this.getTradeStatus(t))
+    );
     const closedTrades = trades.filter(
-      (t) => this.getTradeStatus(t) !== 'open' && !t.isMissedTrade
+      (t) =>
+        !['open', 'partially_closed', 'cancelled'].includes(
+          this.getTradeStatus(t)
+        ) && !t.isMissedTrade
     );
-    const pnlContributingTrades = trades.filter(
-      (t) => !t.isMissedTrade && isPnlContributingTrade(t)
-    );
+    const snapshotKeysClaimedByCustomFields =
+      areSnapshotKeysClaimedByCustomFields(
+        this.plugin.customFieldsService?.getFields()
+      );
+    const pnlContributingTrades = trades.filter((trade) => {
+      if (trade.isMissedTrade) return false;
+      return (
+        isPnlContributingTrade(trade) ||
+        this.getGroupedDisplayPnL(trade, snapshotKeysClaimedByCustomFields)
+          .includesUnrealized
+      );
+    });
 
     let wins = 0;
     let losses = 0;
@@ -1164,27 +1301,38 @@ export class TradeLogService {
     }
 
     const totalPnL = pnlContributingTrades.reduce(
-      (sum, t) => sum + getEffectivePnL(t),
+      (sum, trade) =>
+        sum +
+        this.getGroupedDisplayPnL(trade, snapshotKeysClaimedByCustomFields).pnl,
       0
     );
-    const totalRMultiple = pnlContributingTrades.reduce(
-      (sum, t) =>
+    const totalRMultiple = pnlContributingTrades.reduce((sum, trade) => {
+      const displayPnL = this.getGroupedDisplayPnL(
+        trade,
+        snapshotKeysClaimedByCustomFields
+      );
+      return (
         sum +
         (calculateEffectiveRMultiple(
-          getEffectivePnL(t),
-          t.rMultiple || undefined,
-          t.riskAmount,
+          displayPnL.pnl,
+          displayPnL.includesUnrealized
+            ? undefined
+            : trade.rMultiple || undefined,
+          trade.riskAmount,
           this.plugin.settings.trade.defaultRiskAmount
-        ) || 0),
-      0
-    );
+        ) || 0)
+      );
+    }, 0);
 
     
     
-    const userCurrency = this.plugin.settings.general?.currency || 'USD';
+    const userCurrency: string =
+      this.plugin.settings.general?.currency || 'USD';
     const currencyGrouped = aggregatePnLByCurrency(
       pnlContributingTrades,
-      userCurrency
+      userCurrency,
+      (trade) =>
+        this.getGroupedDisplayPnL(trade, snapshotKeysClaimedByCustomFields).pnl
     );
 
     return {
@@ -1195,8 +1343,14 @@ export class TradeLogService {
       closedTradeCount: closedTrades.length,
       totalRMultiple,
       
+      
+      
       totalPnLByCurrency: currencyGrouped.byCurrency,
-      isMultiCurrency: currencyGrouped.isMultiCurrency,
+      isMultiCurrency:
+        currencyGrouped.isMultiCurrency ||
+        currencyGrouped.currencies.some(
+          (currency) => currency !== userCurrency
+        ),
       primaryCurrency: currencyGrouped.defaultCurrency,
       
     };
@@ -1213,13 +1367,27 @@ export class TradeLogService {
     }
 
     
-    const openTrades = trades.filter((t) => this.getTradeStatus(t) === 'open');
+    const openTrades = trades.filter((t) =>
+      ['open', 'partially_closed'].includes(this.getTradeStatus(t))
+    );
     const closedTrades = trades.filter(
-      (t) => this.getTradeStatus(t) !== 'open' && !t.isMissedTrade
+      (t) =>
+        !['open', 'partially_closed', 'cancelled'].includes(
+          this.getTradeStatus(t)
+        ) && !t.isMissedTrade
     );
-    const pnlContributingTrades = trades.filter(
-      (t) => !t.isMissedTrade && isPnlContributingTrade(t)
-    );
+    const snapshotKeysClaimedByCustomFields =
+      areSnapshotKeysClaimedByCustomFields(
+        this.plugin.customFieldsService?.getFields()
+      );
+    const pnlContributingTrades = trades.filter((trade) => {
+      if (trade.isMissedTrade) return false;
+      return (
+        isPnlContributingTrade(trade) ||
+        this.getGroupedDisplayPnL(trade, snapshotKeysClaimedByCustomFields)
+          .includesUnrealized
+      );
+    });
 
     let wins = 0;
     let losses = 0;
@@ -1233,20 +1401,28 @@ export class TradeLogService {
     }
 
     const totalPnL = pnlContributingTrades.reduce(
-      (sum, t) => sum + getEffectivePnL(t),
+      (sum, trade) =>
+        sum +
+        this.getGroupedDisplayPnL(trade, snapshotKeysClaimedByCustomFields).pnl,
       0
     );
-    const totalRMultiple = pnlContributingTrades.reduce(
-      (sum, t) =>
+    const totalRMultiple = pnlContributingTrades.reduce((sum, trade) => {
+      const displayPnL = this.getGroupedDisplayPnL(
+        trade,
+        snapshotKeysClaimedByCustomFields
+      );
+      return (
         sum +
         (calculateEffectiveRMultiple(
-          getEffectivePnL(t),
-          t.rMultiple || undefined,
-          t.riskAmount,
+          displayPnL.pnl,
+          displayPnL.includesUnrealized
+            ? undefined
+            : trade.rMultiple || undefined,
+          trade.riskAmount,
           this.plugin.settings.trade.defaultRiskAmount
-        ) || 0),
-      0
-    );
+        ) || 0)
+      );
+    }, 0);
 
     
     
@@ -1261,7 +1437,9 @@ export class TradeLogService {
         const dayKey = formatLocalDateString(date); 
         periodMap.set(
           dayKey,
-          (periodMap.get(dayKey) || 0) + getEffectivePnL(trade)
+          (periodMap.get(dayKey) || 0) +
+            this.getGroupedDisplayPnL(trade, snapshotKeysClaimedByCustomFields)
+              .pnl
         );
       });
     }
@@ -1282,10 +1460,13 @@ export class TradeLogService {
 
     
     
-    const userCurrency = this.plugin.settings.general?.currency || 'USD';
+    const userCurrency: string =
+      this.plugin.settings.general?.currency || 'USD';
     const currencyGrouped = aggregatePnLByCurrency(
       pnlContributingTrades,
-      userCurrency
+      userCurrency,
+      (trade) =>
+        this.getGroupedDisplayPnL(trade, snapshotKeysClaimedByCustomFields).pnl
     );
 
     return {
@@ -1298,8 +1479,14 @@ export class TradeLogService {
       bestPeriod: bestDay.label && periodMap.size > 0 ? bestDay : undefined,
       worstPeriod: worstDay.label && periodMap.size > 0 ? worstDay : undefined,
       
+      
+      
       totalPnLByCurrency: currencyGrouped.byCurrency,
-      isMultiCurrency: currencyGrouped.isMultiCurrency,
+      isMultiCurrency:
+        currencyGrouped.isMultiCurrency ||
+        currencyGrouped.currencies.some(
+          (currency) => currency !== userCurrency
+        ),
       primaryCurrency: currencyGrouped.defaultCurrency,
     };
   }
@@ -1307,7 +1494,16 @@ export class TradeLogService {
   
   private getTradeStatus(
     trade: TradeLogData
-  ): 'win' | 'loss' | 'breakeven' | 'missed' | 'open' | 'backtest' {
+  ):
+    | 'win'
+    | 'loss'
+    | 'breakeven'
+    | 'unknown'
+    | 'missed'
+    | 'open'
+    | 'partially_closed'
+    | 'cancelled'
+    | 'backtest' {
     return getTradeDisplayStatusWithContext(trade, this.plugin.settings.trade);
   }
 
@@ -1803,7 +1999,8 @@ export class TradeLogService {
         const date = new Date(trade.entryTime);
         const formattedDate = formatDateDisplay(date);
         const tradeStatus = this.getTradeStatus(trade);
-        const isOpenTrade = tradeStatus === 'open';
+        const isOpenTrade =
+          tradeStatus === 'open' || tradeStatus === 'partially_closed';
         const pnl = getEffectivePnL(trade);
         const instrument = trade.instrument || 'Unknown';
 
@@ -1844,7 +2041,8 @@ export class TradeLogService {
         const date = new Date(trade.entryTime);
         const formattedDate = formatDateDisplay(date);
         const tradeStatus = this.getTradeStatus(trade);
-        const isOpenTrade = tradeStatus === 'open';
+        const isOpenTrade =
+          tradeStatus === 'open' || tradeStatus === 'partially_closed';
         const pnl = getEffectivePnL(trade);
         const instrument = trade.instrument || 'Unknown';
 
@@ -2001,7 +2199,10 @@ export class TradeLogService {
   }
 
   
-  private buildDaysForWeek(trades: TradeLogData[]): TimeNode[] {
+  private buildDaysForWeek(
+    trades: TradeLogData[],
+    sessionLogTagIdsByDay: ReadonlyMap<string, ReadonlySet<string>>
+  ): TimeNode[] {
     const dayMap = new Map<string, TradeLogData[]>();
 
     trades.forEach((trade) => {
@@ -2030,6 +2231,10 @@ export class TradeLogService {
         id: dayId,
         label: `${dayName} ${date.getDate()}`,
         metrics: this.calculateMetrics(dayTrades),
+        sessionLogTagIds: this.getSessionLogTagIdsForDay(
+          dayId,
+          sessionLogTagIdsByDay
+        ),
         expanded: false,
         dataLoaded: false,
       });
@@ -2060,7 +2265,8 @@ export class TradeLogService {
     const tradeNodes: TimeNode[] = sortedTrades.map((trade) => {
       const formattedDate = formatDateDisplay(trade._dateComponents.date);
       const tradeStatus = this.getTradeStatus(trade);
-      const isOpenTrade = tradeStatus === 'open';
+      const isOpenTrade =
+        tradeStatus === 'open' || tradeStatus === 'partially_closed';
       const pnl = getEffectivePnL(trade);
       const instrument = trade.instrument || 'Unknown';
 
@@ -2101,7 +2307,8 @@ export class TradeLogService {
 
       const batchNodes = batch.map((trade) => {
         const tradeStatus = this.getTradeStatus(trade);
-        const isOpenTrade = tradeStatus === 'open';
+        const isOpenTrade =
+          tradeStatus === 'open' || tradeStatus === 'partially_closed';
         const pnl = getEffectivePnL(trade);
         const instrument = trade.instrument || 'Unknown';
 
@@ -2304,7 +2511,8 @@ export class TradeLogService {
 
   
   private async buildDayNodesOptimized(
-    enrichedTrades: EnrichedTradeData[]
+    enrichedTrades: EnrichedTradeData[],
+    sessionLogTagIdsByDay: ReadonlyMap<string, ReadonlySet<string>> | null
   ): Promise<TimeNode[]> {
     const dayMap = new Map<string, EnrichedTradeData[]>();
 
@@ -2338,12 +2546,31 @@ export class TradeLogService {
           dayTrades.length > 500
             ? this.calculateMetricsLightweight(dayTrades)
             : this.calculateMetrics(dayTrades),
+        sessionLogTagIds: this.getSessionLogTagIdsForDay(
+          dayId,
+          sessionLogTagIdsByDay
+        ),
         expanded: false,
         dataLoaded: false,
       });
     }
 
     return dayNodes;
+  }
+
+  private getSessionLogTagIdsForDay(
+    dayId: string,
+    sessionLogTagIdsByDay: ReadonlyMap<string, ReadonlySet<string>> | null
+  ): string[] | undefined {
+    const tagIds = sessionLogTagIdsByDay?.get(dayId);
+    return tagIds && tagIds.size > 0 ? [...tagIds].sort() : undefined;
+  }
+
+  private async loadSessionLogTagIdsByDay(): Promise<
+    ReadonlyMap<string, ReadonlySet<string>>
+  > {
+    const drcService = await this.plugin.serviceManager.getDRCService();
+    return drcService.getSessionLogTagIdsByDay();
   }
 
   

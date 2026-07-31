@@ -19,6 +19,7 @@ export async function clearPersistedBackendAuthSession(
   backend.userEmail = undefined;
   backend.subscriptionTier = undefined;
   backend.userId = '';
+  backend.authenticatedAccountId = undefined;
   await plugin.saveSettings();
   window.dispatchEvent(new CustomEvent('journalit:subscription-changed'));
 

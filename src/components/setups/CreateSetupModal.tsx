@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useRef, useState } from 'react';
 import { App, Modal, Notice, TFile } from 'obsidian';
 import { createRoot, Root } from 'react-dom/client';
 
@@ -11,6 +11,8 @@ import {
   normalizeSetupLinkedNotePath,
 } from '../../services/setup/linkedNotePaths';
 import { t } from '../../lang/helpers';
+import { useEventBus } from '../../hooks';
+import { showConfirmationModal } from '../shared/ConfirmationModal';
 
 import { AlertTriangle, Info, Trash } from '../shared/icons/ObsidianIcon';
 import { NoteFilePicker } from '../shared/NoteFilePicker';
@@ -24,6 +26,11 @@ import {
   DEFAULT_SETUP_PICKER_COLOR,
   type LabelColor,
 } from '../../types/labelColor';
+import {
+  deduplicateOptions,
+  normalizedEquals,
+  normalizeOptionKey,
+} from '../../utils/stringNormalization';
 
 interface CreateSetupModalProps {
   app: App;
@@ -41,6 +48,7 @@ type CreateSetupFormState = {
   preferredSessions: string[];
   preferredTimeframes: string[];
   preferredTickers: string[];
+  tags: string[];
   color?: LabelColor | null;
   linkedNotes: string[];
 };
@@ -79,6 +87,75 @@ export function mergeSetupProfileOptions(
   selectedOptions: string[]
 ): string[] {
   return [...new Set([...availableOptions, ...selectedOptions])];
+}
+
+export function removeFailedSetupTag(
+  tags: string[],
+  failedTag: string
+): string[] {
+  return tags.filter((tag) => !normalizedEquals(tag, failedTag));
+}
+
+export function normalizeSetupTagSelection(value: string | string[]): string[] {
+  return Array.isArray(value) ? deduplicateOptions(value) : [];
+}
+
+export async function waitForSetupTagPersistence(
+  tags: string[],
+  pendingSaves: Set<Promise<void>>,
+  failedTagKeys: Set<string>
+): Promise<boolean> {
+  await Promise.all(Array.from(pendingSaves));
+  return !tags.some((tag) => failedTagKeys.has(normalizeOptionKey(tag)));
+}
+
+function useSetupTagPersistence(
+  plugin: JournalitPlugin,
+  setModalState: React.Dispatch<React.SetStateAction<CreateSetupModalState>>
+) {
+  const pendingSavesRef = useRef<Set<Promise<void>>>(new Set());
+  const failedTagKeysRef = useRef<Set<string>>(new Set());
+
+  const saveTag = useCallback(
+    (tag: string): Promise<void> => {
+      const tagKey = normalizeOptionKey(tag);
+      let operation!: Promise<void>;
+      operation = (async () => {
+        try {
+          await plugin.optionsService.addOption(OptionType.TAG, tag);
+          failedTagKeysRef.current.delete(tagKey);
+        } catch (error) {
+          failedTagKeysRef.current.add(tagKey);
+          setModalState((current) => ({
+            ...current,
+            form: {
+              ...current.form,
+              tags: removeFailedSetupTag(current.form.tags, tag),
+            },
+          }));
+          console.error('Failed to save setup tag option:', error);
+          new Notice(t('setups.create.error.tag-save-failed'));
+        } finally {
+          pendingSavesRef.current.delete(operation);
+        }
+      })();
+      pendingSavesRef.current.add(operation);
+      return operation;
+    },
+    [plugin.optionsService, setModalState]
+  );
+
+  const canPersistTags = useCallback(
+    (tags: string[]) =>
+      waitForSetupTagPersistence(
+        tags,
+        pendingSavesRef.current,
+        failedTagKeysRef.current
+      ),
+    []
+  );
+
+  return { canPersistTags, saveTag };
 }
 
 const DEFAULT_SETUP_TIMEFRAME_OPTIONS = [
@@ -250,64 +327,21 @@ function CreateSetupLinkedNotesField({
   );
 }
 
-class DeleteSetupConfirmationModal extends Modal {
-  private settled = false;
-
-  constructor(
-    app: App,
-    private setupName: string,
-    private resolveChoice: (confirmed: boolean) => void
-  ) {
-    super(app);
-    this.titleEl.setText(t('setups.edit.delete.title'));
-    this.titleEl.addClass('journalit-modal-title-danger');
-  }
-
-  onOpen(): void {
-    this.contentEl.empty();
-    this.modalEl.addClass('journalit-setup-delete-confirmation-modal');
-
-    this.contentEl.createEl('p', {
-      text: t('setups.edit.delete.warning', { name: this.setupName }),
-      cls: 'journalit-setup-delete-confirmation-modal__warning',
-    });
-
-    const actions = this.contentEl.createDiv({
-      cls: 'journalit-setup-delete-confirmation-modal__actions',
-    });
-    const cancelButton = actions.createEl('button', {
-      text: t('button.cancel'),
-      cls: 'journalit-setup-delete-confirmation-modal__cancel',
-    });
-    cancelButton.addEventListener('click', () => {
-      this.settled = true;
-      this.resolveChoice(false);
-      this.close();
-    });
-
-    const deleteButton = actions.createEl('button', {
-      text: t('setups.edit.delete.confirm'),
-      cls: 'mod-warning journalit-setup-delete-confirmation-modal__delete',
-    });
-    deleteButton.addEventListener('click', () => {
-      this.settled = true;
-      this.resolveChoice(true);
-      this.close();
-    });
-  }
-
-  onClose(): void {
-    if (!this.settled) this.resolveChoice(false);
-    this.contentEl.empty();
-  }
-}
-
 function showDeleteSetupConfirmation(
   app: App,
   setupName: string
 ): Promise<boolean> {
-  return new Promise((resolve) => {
-    new DeleteSetupConfirmationModal(app, setupName, resolve).open();
+  return showConfirmationModal(app, {
+    title: t('setups.edit.delete.title'),
+    message: [
+      {
+        text: t('setups.edit.delete.warning', { name: setupName }),
+        destructive: true,
+      },
+    ],
+    confirmLabel: t('setups.edit.delete.confirm'),
+    cancelLabel: t('button.cancel'),
+    destructive: true,
   });
 }
 
@@ -330,6 +364,7 @@ const CreateSetupModalContent: React.FC<{
       ),
       preferredTimeframes: setup?.preferredTimeframes ?? [],
       preferredTickers: setup?.preferredTickers ?? [],
+      tags: setup?.tags ?? [],
       color: setup ? setup.color : DEFAULT_SETUP_PICKER_COLOR,
       linkedNotes: dedupeSetupLinkedNotePaths(setup?.linkedNotes ?? []),
     },
@@ -340,6 +375,13 @@ const CreateSetupModalContent: React.FC<{
   });
   const { form, showNotePicker, isSaving, formError, confirmRename } =
     modalState;
+  const [availableTagOptions, setAvailableTagOptions] = useState(() =>
+    plugin.optionsService.getOptions(OptionType.TAG)
+  );
+  const { canPersistTags, saveTag } = useSetupTagPersistence(
+    plugin,
+    setModalState
+  );
 
   const markdownFiles = useMemo(() => {
     const linkedNotePaths = new Set(
@@ -392,6 +434,15 @@ const CreateSetupModalContent: React.FC<{
       ),
     [form.preferredTimeframes]
   );
+  const tagOptions = useMemo(
+    () => mergeSetupProfileOptions(availableTagOptions, form.tags),
+    [availableTagOptions, form.tags]
+  );
+  const handleOptionsChanged = useCallback(() => {
+    setAvailableTagOptions(plugin.optionsService.getOptions(OptionType.TAG));
+  }, [plugin.optionsService]);
+
+  useEventBus('options:changed', handleOptionsChanged);
 
   const updateForm = <K extends keyof CreateSetupFormState>(
     key: K,
@@ -450,6 +501,15 @@ const CreateSetupModalContent: React.FC<{
       formError: null,
     }));
     try {
+      const tagsAreDurable = await canPersistTags(form.tags);
+      if (!tagsAreDurable) {
+        setModalState((current) => ({
+          ...current,
+          formError: t('setups.create.error.tag-save-failed'),
+        }));
+        return;
+      }
+
       const setupService = await plugin.serviceManager.getSetupService();
       const input: SetupData = {
         name,
@@ -458,6 +518,7 @@ const CreateSetupModalContent: React.FC<{
         preferredSessions: form.preferredSessions,
         preferredTimeframes: form.preferredTimeframes,
         preferredTickers: form.preferredTickers,
+        tags: form.tags,
         color: form.color,
         linkedNotes: form.linkedNotes,
       };
@@ -533,6 +594,8 @@ const CreateSetupModalContent: React.FC<{
         getPreferredSessionLabel={getPreferredSessionLabel}
         preferredTimeframeOptions={preferredTimeframeOptions}
         preferredTickerOptions={preferredTickerOptions}
+        tagOptions={tagOptions}
+        onSaveTag={saveTag}
         onChange={updateForm}
       />
 
@@ -572,6 +635,8 @@ const CreateSetupFields: React.FC<{
   getPreferredSessionLabel: (sessionId: string) => string;
   preferredTimeframeOptions: string[];
   preferredTickerOptions: string[];
+  tagOptions: string[];
+  onSaveTag: (tag: string) => Promise<void>;
   onChange: <K extends keyof CreateSetupFormState>(
     key: K,
     value: CreateSetupFormState[K]
@@ -583,6 +648,8 @@ const CreateSetupFields: React.FC<{
   getPreferredSessionLabel,
   preferredTimeframeOptions,
   preferredTickerOptions,
+  tagOptions,
+  onSaveTag,
   onChange,
 }) => (
   <>
@@ -627,6 +694,25 @@ const CreateSetupFields: React.FC<{
         onChange={(color) => onChange('color', color)}
         fallbackColor={DEFAULT_SETUP_PICKER_COLOR}
         showLabel={false}
+        disabled={isSaving}
+      />
+    </div>
+
+    <div className="journalit-create-setup-tags-field journalit-create-setup-combobox-fields">
+      <ComboBox
+        label={t('setups.create.field.tags')}
+        options={tagOptions}
+        value={form.tags}
+        onChange={(value) =>
+          onChange('tags', normalizeSetupTagSelection(value))
+        }
+        placeholder={t('setups.create.placeholder.tags')}
+        allowCreate
+        isMulti
+        optionType={OptionType.TAG}
+        onSaveOption={onSaveTag}
+        portalDropdown
+        selectedItemsPlacement="inside-input"
         disabled={isSaving}
       />
     </div>
@@ -730,7 +816,7 @@ const CreateSetupProfileFields: React.FC<{
       <span>{t('setups.create.profile.optional-label')}</span>
     </h3>
 
-    <div className="journalit-create-setup-profile__grid">
+    <div className="journalit-create-setup-profile__grid journalit-create-setup-combobox-fields">
       <ComboBox
         label={t('setups.create.field.sessions')}
         labelAccessory={

@@ -1205,6 +1205,42 @@ export const TRADE_LOG_STYLES = `
   font-size: 14px;
 }
 
+.journalit-trade-log-view-container .trade-log-session-tags-indicator {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  color: var(--text-muted);
+  border-radius: var(--radius-s);
+}
+
+.journalit-trade-log-view-container .trade-log-session-tags-indicator:hover,
+.journalit-trade-log-view-container .trade-log-session-tags-indicator:focus-visible {
+  color: var(--text-accent);
+}
+
+.journalit-trade-log-view-container .trade-log-session-tags-indicator:focus-visible {
+  outline: 2px solid var(--interactive-accent);
+  outline-offset: 1px;
+}
+
+.journalit-trade-log-view-container .tooltip-trigger.trade-log-session-tags-tooltip-trigger {
+  flex: 0 0 auto;
+  width: auto;
+}
+
+.journalit-trade-log-view-container .trade-log-session-tags-accessible-label {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  white-space: nowrap;
+  border: 0;
+}
+
 
 .node-metrics {
   display: flex;
@@ -1676,6 +1712,12 @@ export const TRADE_LOG_STYLES = `
   color: var(--text-muted);
 }
 
+.journalit-trade-log-view-container .status-cancelled,
+.journalit-trade-log-view-container .status-unknown {
+  background: var(--background-modifier-hover);
+  color: var(--text-muted);
+}
+
 .status-missed {
   background: rgba(255, 149, 0, 0.15);
   color: var(--color-warning);
@@ -1774,6 +1816,11 @@ export const TRADE_LOG_STYLES = `
 .trade-pnl.open {
   color: var(--status-open-color);
   font-style: italic;
+}
+
+.journalit-trade-log-view-container .trade-pnl.unrealized {
+  font-style: italic;
+  opacity: 0.85;
 }
 
 .trade-status-cell {

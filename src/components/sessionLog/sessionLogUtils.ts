@@ -24,7 +24,9 @@ import type {
 import {
   DEFAULT_SESSION_LOG_ALERT_RULE,
   DEFAULT_SESSION_LOG_TAGS,
+  normalizeSessionLogEntries,
 } from '../../types/sessionLog';
+export { normalizeSessionLogEntries } from '../../types/sessionLog';
 import { t } from '../../lang/helpers';
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
@@ -145,34 +147,6 @@ export function getSessionLogAlertRule(
   return (
     plugin.settings.drc.sessionLogAlertRule ?? DEFAULT_SESSION_LOG_ALERT_RULE
   );
-}
-
-export function normalizeSessionLogEntries(value: unknown): SessionLogEntry[] {
-  if (!Array.isArray(value)) return [];
-
-  const entries: SessionLogEntry[] = [];
-  for (const item of value) {
-    if (!isRecord(item)) continue;
-    if (
-      typeof item.id !== 'string' ||
-      typeof item.timestamp !== 'string' ||
-      typeof item.tagId !== 'string' ||
-      typeof item.text !== 'string'
-    ) {
-      continue;
-    }
-
-    entries.push({
-      id: item.id,
-      timestamp: item.timestamp,
-      tagId: item.tagId,
-      text: item.text,
-      resolved: item.resolved === true,
-      promoted: item.promoted === true,
-    });
-  }
-
-  return entries;
 }
 
 export function getSessionLogEntriesFromFile(
