@@ -6,10 +6,12 @@ import tsPlugin from '@typescript-eslint/eslint-plugin';
 import reactHooksPlugin from 'eslint-plugin-react-hooks';
 import obsidianmd from 'eslint-plugin-obsidianmd';
 import eslintConfigPrettier from 'eslint-config-prettier/flat';
+import { noNativeCreateElementRule } from './scripts/eslint/no-native-create-element.mjs';
 import { noRangeDetachRule } from './scripts/eslint/no-range-detach.mjs';
 
 const journalitLintPlugin = {
   rules: {
+    'no-native-create-element': noNativeCreateElementRule,
     'no-range-detach': noRangeDetachRule,
   },
 };
@@ -93,6 +95,7 @@ export default defineConfig([
       '@typescript-eslint/no-unsafe-function-type': 'warn',
       '@typescript-eslint/no-wrapper-object-types': 'warn',
       '@typescript-eslint/no-deprecated': 'error',
+      'journalit/no-native-create-element': 'error',
       'journalit/no-range-detach': 'error',
 
       'no-case-declarations': 'warn',

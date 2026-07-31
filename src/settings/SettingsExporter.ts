@@ -105,14 +105,13 @@ export class SettingsExporter {
       const blob = new Blob([content], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
 
-      const a = window.activeDocument.createElement('a');
+      const a = window.activeDocument.body.createEl('a');
       a.href = url;
       a.download = filename;
       try {
-        window.activeDocument.body.appendChild(a);
         a.click();
       } finally {
-        window.activeDocument.body.removeChild(a);
+        a.remove();
         URL.revokeObjectURL(url);
       }
 
@@ -424,9 +423,9 @@ export class SettingsExporter {
   
   openImportFilePicker(): Promise<File | null> {
     return new Promise((resolve) => {
-      const input = window.activeDocument.createElement('input');
-      input.type = 'file';
-      input.accept = '.json';
+      const input = createEl('input', {
+        attr: { type: 'file', accept: '.json' },
+      });
 
       input.onchange = () => {
         resolve(input.files?.[0] ?? null);

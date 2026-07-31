@@ -421,9 +421,9 @@ export const FastDateTimeInput: React.FC<FastDateTimeInputProps> = React.memo(
       }
 
       let wasHandledByButton = false; 
-      const tempInput = window.activeDocument.createElement('input');
-      tempInput.className = 'journalit-flatpickr-temp-input';
-      window.activeDocument.body.appendChild(tempInput);
+      const tempInput = window.activeDocument.body.createEl('input', {
+        cls: 'journalit-flatpickr-temp-input',
+      });
       tempInputRef.current = tempInput; 
 
       
@@ -699,52 +699,60 @@ export const FastDateTimeInput: React.FC<FastDateTimeInputProps> = React.memo(
             if (closePickerOnQuickAction) instance.close();
           };
 
-          const clearBtn = window.activeDocument.createElement('button');
-          clearBtn.type = 'button';
-          clearBtn.textContent = t('datepicker.button.clear');
-          clearBtn.className = 'flatpickr-button';
-          clearBtn.addEventListener('click', clearBtnHandler);
+          
+          const timeContainer =
+            instance.calendarContainer.querySelector('.flatpickr-time');
+          let clearBtn: HTMLButtonElement;
+          let todayBtn: HTMLButtonElement;
 
-          const todayBtn = window.activeDocument.createElement('button');
-          todayBtn.type = 'button';
-          todayBtn.textContent = timeOnly
-            ? t('datepicker.button.now')
-            : t('datepicker.button.today');
-          todayBtn.className = 'flatpickr-button flatpickr-button-primary';
+          if (timeContainer instanceof HTMLElement) {
+            const existingTimeNodes = Array.from(timeContainer.childNodes);
+            
+            const timeContent = timeContainer.createDiv({
+              cls: 'journalit-flatpickr-time-content',
+            });
+            timeContent.append(...existingTimeNodes);
+
+            
+            timeContainer.classList.add('journalit-flatpickr-time-container');
+            clearBtn = timeContainer.createEl('button', {
+              cls: 'flatpickr-button',
+              text: t('datepicker.button.clear'),
+              attr: { type: 'button' },
+              prepend: true,
+            });
+            todayBtn = timeContainer.createEl('button', {
+              cls: 'flatpickr-button flatpickr-button-primary',
+              text: timeOnly
+                ? t('datepicker.button.now')
+                : t('datepicker.button.today'),
+              attr: { type: 'button' },
+            });
+          } else {
+            const buttonContainer = instance.calendarContainer.createDiv({
+              cls: 'journalit-flatpickr-button-container',
+            });
+            clearBtn = buttonContainer.createEl('button', {
+              cls: 'flatpickr-button',
+              text: t('datepicker.button.clear'),
+              attr: { type: 'button' },
+            });
+            todayBtn = buttonContainer.createEl('button', {
+              cls: 'flatpickr-button flatpickr-button-primary',
+              text: timeOnly
+                ? t('datepicker.button.now')
+                : t('datepicker.button.today'),
+              attr: { type: 'button' },
+            });
+          }
+
+          clearBtn.addEventListener('click', clearBtnHandler);
           todayBtn.addEventListener('click', todayBtnHandler);
 
-          
           instance._clearBtn = clearBtn;
           instance._todayBtn = todayBtn;
           instance._clearBtnHandler = clearBtnHandler;
           instance._todayBtnHandler = todayBtnHandler;
-
-          
-          const timeContainer =
-            instance.calendarContainer.querySelector('.flatpickr-time');
-          if (timeContainer instanceof HTMLElement) {
-            
-            const timeContent = window.activeDocument.createElement('div');
-            timeContent.className = 'journalit-flatpickr-time-content';
-
-            
-            while (timeContainer.firstChild) {
-              timeContent.appendChild(timeContainer.firstChild);
-            }
-
-            
-            timeContainer.classList.add('journalit-flatpickr-time-container');
-            timeContainer.appendChild(clearBtn);
-            timeContainer.appendChild(timeContent);
-            timeContainer.appendChild(todayBtn);
-          } else {
-            
-            const buttonContainer = window.activeDocument.createElement('div');
-            buttonContainer.className = 'journalit-flatpickr-button-container';
-            buttonContainer.appendChild(clearBtn);
-            buttonContainer.appendChild(todayBtn);
-            instance.calendarContainer.appendChild(buttonContainer);
-          }
         },
       });
 

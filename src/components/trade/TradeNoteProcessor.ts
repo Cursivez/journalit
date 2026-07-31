@@ -366,7 +366,7 @@ export class TradeNoteProcessor extends BaseComponentProcessor {
     }
 
     const componentClass = this.getComponentClassName();
-    const host = element.ownerDocument.createElement('div');
+    const host = element.createDiv({ prepend: true });
     const instanceId = this.getInlineInstanceId(ctx);
 
     host.className = componentClass;
@@ -377,7 +377,6 @@ export class TradeNoteProcessor extends BaseComponentProcessor {
     host.setAttribute('data-markdown-view-id', ctx.docId);
     host.setAttribute('data-rendering-started-at', Date.now().toString());
 
-    element.prepend(host);
     this.inlineRenderHosts.set(renderKey, host);
     ctx.addChild(
       new InlineTradeNoteRenderChild(host, () => {
@@ -552,7 +551,7 @@ export class TradeNoteProcessor extends BaseComponentProcessor {
       );
 
       if (!host) {
-        host = readingRoot.ownerDocument.createElement('div');
+        host = readingRoot.createDiv({ prepend: true });
         host.className = componentClass;
         host.setAttribute('data-mode', 'reading');
         host.setAttribute('data-file-path', file.path);
@@ -563,8 +562,6 @@ export class TradeNoteProcessor extends BaseComponentProcessor {
         if (leafId) {
           host.setAttribute('data-leaf-id', leafId);
         }
-
-        readingRoot.prepend(host);
       }
 
       const instanceId = this.getReadingInstanceId(host);
@@ -1177,7 +1174,7 @@ export class TradeNoteProcessor extends BaseComponentProcessor {
         }
 
         if (!componentElement) {
-          componentElement = window.activeDocument.createElement('div');
+          componentElement = insertionAnchor.createDiv({ prepend: true });
           componentElement.className = componentClass;
           componentElement.setAttribute('data-mode', 'source');
           componentElement.setAttribute('data-file-path', activeFile.path);
@@ -1188,8 +1185,6 @@ export class TradeNoteProcessor extends BaseComponentProcessor {
           if (leafId) {
             componentElement.setAttribute('data-leaf-id', leafId);
           }
-
-          insertionAnchor.prepend(componentElement);
         }
 
         componentElement.setAttribute(

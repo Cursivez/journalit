@@ -945,9 +945,8 @@ const useCustomOptionsTabController = ({
       }
 
       
-      const hiddenInput = window.activeDocument.createElement('input');
+      const hiddenInput = window.activeDocument.body.createEl('input');
       hiddenInput.classList.add('jl-focus-reset-input');
-      window.activeDocument.body.appendChild(hiddenInput);
 
       
       window.requestAnimationFrame(() => {

@@ -61,9 +61,9 @@ const acquirePortalRoot = (doc: Document): HTMLDivElement => {
     return existing.element;
   }
 
-  const element = doc.createElement('div');
-  element.className = 'journalit-chart-tooltip-portal-root';
-  doc.body.appendChild(element);
+  const element = doc.body.createDiv({
+    cls: 'journalit-chart-tooltip-portal-root',
+  });
   portalRoots.set(doc, { element, users: 1 });
   return element;
 };

@@ -418,11 +418,15 @@ export abstract class BaseComponentProcessor {
       });
 
       
-      const componentElement = window.activeDocument.createElement('div');
-      componentElement.className = this.getComponentClassName();
-      componentElement.setAttribute('data-file-path', file.path);
-      componentElement.setAttribute('data-view-id', viewId);
-      componentElement.setAttribute('data-markdown-view-id', markdownViewId);
+      const componentElement = markdownView.createDiv({
+        cls: this.getComponentClassName(),
+        attr: {
+          'data-file-path': file.path,
+          'data-view-id': viewId,
+          'data-markdown-view-id': markdownViewId,
+        },
+        prepend: true,
+      });
 
       
       if (leafId) {
@@ -431,9 +435,6 @@ export abstract class BaseComponentProcessor {
 
       
       componentElement.setAttribute('data-inserted-at', Date.now().toString());
-
-      
-      markdownView.insertBefore(componentElement, markdownView.firstChild);
 
       
       try {
