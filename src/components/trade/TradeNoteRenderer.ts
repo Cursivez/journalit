@@ -11,6 +11,7 @@ import { CustomFieldDefinition } from '../../types/customFields';
 import { parseTradeDividendTransactions } from '../../utils/tradeUtils';
 import { normalizeTradeExecution } from '../../services/trade/core/TradeExecutionNormalization';
 import { safeString } from '../../utils/safeString';
+import { hasCanonicalProjectionIdentity } from '../../services/trade/core/CanonicalProjectionFields';
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === 'object';
@@ -503,22 +504,32 @@ export class TradeNoteRenderer extends BaseComponentRenderer {
       tradeData.dividends = parsedDividends;
     }
 
+    if (
+      frontmatter._originalPnlWasNull === true ||
+      (frontmatter.pnl == null && hasCanonicalProjectionIdentity(frontmatter))
+    ) {
+      tradeData._originalPnlWasNull = true;
+    }
+
     
-    ['entryTime', 'exitTime'].forEach((field) => {
-      if (tradeData[field] && typeof tradeData[field] === 'string') {
-        try {
-          tradeData[field] = new Date(tradeData[field]);
-        } catch (e) {
-          console.error(`[TradeNote] Failed to parse date: ${field}`, e);
+    ['entryTime', 'exitTime', 'unrealizedPriceSnapshotTime'].forEach(
+      (field) => {
+        if (tradeData[field] && typeof tradeData[field] === 'string') {
+          try {
+            tradeData[field] = new Date(tradeData[field]);
+          } catch (e) {
+            console.error(`[TradeNote] Failed to parse date: ${field}`, e);
+          }
         }
       }
-    });
+    );
 
     
     [
       'entryPrice',
       'exitPrice',
       'positionSize',
+      'unrealizedPriceSnapshot',
       'pnl',
       'directPnL',
       'riskAmount',
@@ -542,6 +553,7 @@ export class TradeNoteRenderer extends BaseComponentRenderer {
     ].forEach((field) => {
       if (
         tradeData[field] !== undefined &&
+        tradeData[field] !== null &&
         typeof tradeData[field] !== 'number'
       ) {
         try {

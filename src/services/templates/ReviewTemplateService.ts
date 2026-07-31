@@ -2,12 +2,16 @@
 
 import { Plugin } from 'obsidian';
 import { t } from '../../lang/helpers';
-import {
-  DEFAULT_SCALPER_DEFAULTS,
-  type JournalitSettings,
-  type TemplatesSettings,
+import type {
+  JournalitSettings,
+  TemplatesSettings,
 } from '../../settings/types';
-import { ReviewTemplate, ReviewTemplateType } from '../../types/reviewV2';
+import {
+  DEFAULT_DEMON_TRACKER_STOP_THRESHOLD,
+  DEFAULT_DEMON_TRACKER_TRACKING_METHOD,
+  ReviewTemplate,
+  ReviewTemplateType,
+} from '../../types/reviewV2';
 import { generateUUID } from '../../utils/uuid';
 import { eventBus } from '../events';
 
@@ -37,7 +41,6 @@ export class ReviewTemplateService {
           customWidgetTypes: [],
           templates: [],
           tradeTemplates: [],
-          scalperDefaults: { ...DEFAULT_SCALPER_DEFAULTS },
         };
       }
 
@@ -72,7 +75,6 @@ export class ReviewTemplateService {
           customWidgetTypes: [],
           templates: [],
           tradeTemplates: [],
-          scalperDefaults: { ...DEFAULT_SCALPER_DEFAULTS },
         };
       }
 
@@ -162,7 +164,7 @@ export class ReviewTemplateService {
         id: 'builtin-weekly-standard',
         name: 'Standard Weekly',
         type: 'weekly',
-        version: 5,
+        version: 7,
         createdAt: now,
         updatedAt: now,
         isBuiltIn: true,
@@ -198,6 +200,13 @@ export class ReviewTemplateService {
             config: { level: 2, text: t('template.section.review') },
           },
           { type: 'review' },
+          {
+            type: 'demon-tracker',
+            config: {
+              trackingMethod: DEFAULT_DEMON_TRACKER_TRACKING_METHOD,
+              stopThreshold: DEFAULT_DEMON_TRACKER_STOP_THRESHOLD,
+            },
+          },
           
           {
             type: 'markdown-header',
@@ -233,7 +242,7 @@ export class ReviewTemplateService {
         id: 'builtin-monthly-standard',
         name: 'Standard Monthly',
         type: 'monthly',
-        version: 3,
+        version: 4,
         createdAt: now,
         updatedAt: now,
         isBuiltIn: true,
@@ -258,7 +267,13 @@ export class ReviewTemplateService {
             type: 'markdown-header',
             config: { level: 2, text: t('template.section.review') },
           },
-          { type: 'demon-tracker' },
+          {
+            type: 'demon-tracker',
+            config: {
+              trackingMethod: DEFAULT_DEMON_TRACKER_TRACKING_METHOD,
+              stopThreshold: DEFAULT_DEMON_TRACKER_STOP_THRESHOLD,
+            },
+          },
           { type: 'mental-game' },
           { type: 'technical-game' },
           
@@ -296,7 +311,7 @@ export class ReviewTemplateService {
         id: 'builtin-quarterly-standard',
         name: 'Standard Quarterly',
         type: 'quarterly',
-        version: 1,
+        version: 3,
         createdAt: now,
         updatedAt: now,
         isBuiltIn: true,
@@ -311,9 +326,16 @@ export class ReviewTemplateService {
           { type: 'best-worst', config: { period: 'months' } },
           { type: 'markdown-zone', id: 'analysis-notes' },
           { type: 'review' },
+          {
+            type: 'demon-tracker',
+            config: {
+              trackingMethod: DEFAULT_DEMON_TRACKER_TRACKING_METHOD,
+            },
+          },
         ],
       },
 
+      
       
       {
         id: 'builtin-yearly-standard',
@@ -342,7 +364,7 @@ export class ReviewTemplateService {
         id: 'builtin-yearly-detailed',
         name: 'Detailed Yearly',
         type: 'yearly',
-        version: 1,
+        version: 2,
         createdAt: now,
         updatedAt: now,
         isBuiltIn: true,
@@ -626,7 +648,12 @@ export class ReviewTemplateService {
             type: 'markdown-header',
             config: { level: 2, text: 'Recurring Problems' },
           },
-          { type: 'demon-tracker' },
+          {
+            type: 'demon-tracker',
+            config: {
+              trackingMethod: DEFAULT_DEMON_TRACKER_TRACKING_METHOD,
+            },
+          },
 
           { type: 'markdown-header', config: { level: 3, text: 'Problem 1' } },
           {

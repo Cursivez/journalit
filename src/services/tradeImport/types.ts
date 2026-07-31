@@ -98,21 +98,28 @@ export interface TradeImportPreviewTrade {
   quantity: number;
   exitTime?: string | null;
   exitPrice?: number | null;
-  status: 'OPEN' | 'CLOSED';
+  status: 'OPEN' | 'PARTIALLY_CLOSED' | 'CLOSED' | 'CANCELLED';
+  openQuantity?: number;
+  closedQuantity?: number;
   closeOnly: boolean;
   useDirectPnLInput: boolean;
   directPnL?: number | null;
   profitLoss?: number | null;
+  grossProfitLoss?: number | null;
   commission?: number | null;
   fees?: number | null;
   swap?: number | null;
   assetType?: string | null;
+  exchange?: string | null;
+  underlyingSymbol?: string | null;
+  brokerContract?: string | null;
   orderId?: string | null;
   accountId?: string | null;
   currency?: string | null;
   brokerBaseCurrencyPnl?: number | null;
   brokerBaseCurrency?: string | null;
   brokerBaseCurrencyPnlSource?: string | null;
+  brokerComment?: string | null;
   notes?: string | null;
   thesis?: string | null;
   entries?: TradeImportExecution[];
@@ -130,10 +137,15 @@ export interface TradeImportPreviewTrade {
   contractSize?: number | null;
   dollarPerPoint?: number | null;
   tickSize?: number | null;
+  lastBrokerSyncAt?: string | null;
   tickValue?: number | null;
   lotSize?: number | null;
   pipValue?: number | null;
   pipSize?: number | null;
+  currencyPair?: string | null;
+  tradingPair?: string | null;
+  cryptoExchange?: string | null;
+  leverageRatio?: number | null;
 }
 
 export type TradeImportPreviewClassification =
@@ -156,6 +168,11 @@ export type TradeImportDefaultAction =
   | 'skip'
   | 'manual_review'
   | 'blocked';
+
+export type TradeImportPreviewOutcome =
+  | 'completed'
+  | 'partially_completed'
+  | 'failed';
 
 interface TradeImportIdentityCandidate {
   entityType?: string;
@@ -212,6 +229,7 @@ export interface TradeImportPreviewResponse {
   previewRevision: number;
   previewExpiresAt?: string;
   schemaVersion: 'trade-import-preview-v1';
+  outcome: TradeImportPreviewOutcome;
   broker: string;
   adapterVersion: string;
   fileType: TradeImportFileType;
@@ -247,103 +265,25 @@ export interface TradeImportCommitRequest {
   }>;
 }
 
-export interface TradeImportCommittedTrade {
+interface TradeImportCommittedTrade {
   id: string;
   version: number;
   symbol: string;
   direction: 'long' | 'short';
-  status: 'open' | 'closed' | 'OPEN' | 'CLOSED';
+  status:
+    | 'open'
+    | 'partially_closed'
+    | 'closed'
+    | 'cancelled'
+    | 'OPEN'
+    | 'PARTIALLY_CLOSED'
+    | 'CLOSED'
+    | 'CANCELLED';
   accountId?: string | null;
   accountDisplayName?: string | null;
   broker?: string | null;
   importId: string;
   previewTrade?: TradeImportPreviewTrade;
-}
-
-type TradeImportProjectionStatus =
-  | 'missing'
-  | 'local_deleted'
-  | 'other_vault'
-  | 'needs_rewrite'
-  | 'synced'
-  | 'failed'
-  | 'conflict'
-  | 'pending';
-
-export interface TradeImportRestorableProjection {
-  id: string;
-  version: number;
-  symbol: string;
-  direction: 'long' | 'short';
-  status: 'open' | 'closed' | 'OPEN' | 'CLOSED';
-  accountName?: string | null;
-  accountId?: string | null;
-  importId: string;
-  correlationId?: string;
-  commitId?: string;
-  broker?: string | null;
-  importedAt?: string | null;
-  projectionStatus: TradeImportProjectionStatus;
-  previewTrade: TradeImportPreviewTrade;
-}
-
-export interface TradeImportRestorableProjectionRequest {
-  vaultId: string;
-  accountId?: string;
-  broker?: string;
-  importId?: string;
-  from?: string;
-  to?: string;
-  status?: TradeImportProjectionStatus;
-  limit?: number;
-  cursor?: string;
-}
-
-export interface TradeImportRestorableProjectionResponse {
-  schemaVersion: 'trade-import-restorable-projections-v1';
-  vaultId: string;
-  projections: TradeImportRestorableProjection[];
-  nextCursor?: string | null;
-}
-
-export interface TradeImportAccountVaultMapping {
-  vaultId: string;
-  localAccountId?: string | null;
-  localAccountName?: string | null;
-  mappingStatus: 'mapped';
-  lastSyncedAt?: string | null;
-  updatedAt?: string | null;
-}
-
-export interface TradeImportAccountInventoryItem {
-  accountId: string;
-  broker: string;
-  displayName: string;
-  tradeCount: number;
-  missingCount: number;
-  localDeletedCount: number;
-  failedCount: number;
-  needsRewriteCount: number;
-  staleCount: number;
-  conflictCount: number;
-  pendingCount: number;
-  syncedCount: number;
-  restorableCount: number;
-  lastImportedAt?: string | null;
-  mapping?: TradeImportAccountVaultMapping | null;
-}
-
-export interface TradeImportAccountInventoryResponse {
-  schemaVersion: 'trade-import-accounts-v1';
-  vaultId: string;
-  accounts: TradeImportAccountInventoryItem[];
-}
-
-export interface TradeImportAccountVaultMappingRequest {
-  vaultId: string;
-  localAccountId: string;
-  localAccountName: string;
-  mappingStatus: 'mapped';
 }
 
 export interface TradeImportCommitResponse {
@@ -367,26 +307,4 @@ export interface TradeImportCommitResponse {
     errorMessage?: string;
   }>;
   trades: TradeImportCommittedTrade[];
-}
-
-export interface TradeImportProjectionAckRequest {
-  correlationId: string;
-  importId: string;
-  commitId: string;
-  vaultId: string;
-  deviceId?: string;
-  results: Array<{
-    tradeId: string;
-    backendTradeVersion: number;
-    filePath?: string;
-    frontmatterHash?: string;
-    status:
-      | 'pending'
-      | 'synced'
-      | 'failed'
-      | 'conflict'
-      | 'local_deleted'
-      | 'needs_rewrite';
-    errorCode?: string;
-  }>;
 }

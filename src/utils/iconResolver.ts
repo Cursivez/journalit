@@ -21,6 +21,7 @@ import {
   Upload,
   Zap,
   Radio,
+  PanelLeftOpen,
   ObsidianIconComponent,
 } from '../components/shared/icons/ObsidianIcon';
 
@@ -47,6 +48,7 @@ const iconMap: Record<string, ObsidianIconComponent> = {
   upload: Upload,
   zap: Zap,
   radio: Radio,
+  'panel-left-open': PanelLeftOpen,
 };
 
 

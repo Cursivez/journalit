@@ -109,6 +109,7 @@ export const FILTER_MODAL_STYLES = `
 .journalit-filter-modal .filter-modal-section-grid-3col-auto .journalit-dashboard-setup-summary,
 .journalit-filter-modal .filter-modal-section-grid-3col-auto .journalit-dashboard-tag-summary,
 .journalit-filter-modal .filter-modal-section-grid-3col-auto .journalit-dashboard-mistake-summary,
+.journalit-filter-modal .filter-modal-section-grid-3col-auto .journalit-session-log-tag-summary,
 .journalit-filter-modal .filter-modal-section-grid-3col-auto .journalit-tradelog-custom-field-summary {
   width: 100%;
   min-width: 0;
@@ -118,6 +119,7 @@ export const FILTER_MODAL_STYLES = `
 .journalit-filter-modal .filter-modal-section-grid-3col-auto .journalit-dashboard-setup-options-dropdown,
 .journalit-filter-modal .filter-modal-section-grid-3col-auto .journalit-dashboard-tag-options-dropdown,
 .journalit-filter-modal .filter-modal-section-grid-3col-auto .journalit-dashboard-mistake-options-dropdown,
+.journalit-filter-modal .filter-modal-section-grid-3col-auto .journalit-session-log-tag-options-dropdown,
 .journalit-filter-modal .filter-modal-section-grid-3col-auto .journalit-tradelog-custom-field-options-dropdown {
   width: 100%;
 }
@@ -140,6 +142,7 @@ export const FILTER_MODAL_STYLES = `
 .journalit-filter-modal .filter-modal-controls .journalit-dashboard-setup-summary,
 .journalit-filter-modal .filter-modal-controls .journalit-dashboard-tag-summary,
 .journalit-filter-modal .filter-modal-controls .journalit-dashboard-mistake-summary,
+.journalit-filter-modal .filter-modal-controls .journalit-session-log-tag-summary,
 .journalit-filter-modal .filter-modal-controls .journalit-tradelog-trade-type-summary,
 .journalit-filter-modal .filter-modal-controls .journalit-tradelog-status-summary,
 .journalit-filter-modal .filter-modal-controls .journalit-tradelog-custom-field-summary {

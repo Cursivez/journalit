@@ -70,6 +70,7 @@ import {
 import { useEventBus } from '../../hooks/useEventBus';
 import { ToolbarButton } from '../shared/ToolbarButton';
 import { DropdownMenu, type DropdownMenuOption } from '../shared/DropdownMenu';
+import { areSessionLogTagsActive } from './tradeLogStateUtils';
 
 const VIEW_LEVELS: ReadonlySet<string> = new Set([
   'years',
@@ -85,11 +86,11 @@ const isViewLevel = (value: string): value is ViewLevel =>
 
 const VIEW_LEVEL_OPTIONS: Array<DropdownMenuOption<ViewLevel>> = [
   { value: 'trades', label: t('common.trades') },
-  { value: 'years', label: t('common.years') },
-  { value: 'quarters', label: t('common.quarters') },
-  { value: 'months', label: t('common.months') },
-  { value: 'weeks', label: t('common.weeks') },
   { value: 'days', label: t('common.days') },
+  { value: 'weeks', label: t('common.weeks') },
+  { value: 'months', label: t('common.months') },
+  { value: 'quarters', label: t('common.quarters') },
+  { value: 'years', label: t('common.years') },
 ];
 
 const TRADE_LOG_GUIDE_IDS_WITH_FILTER_MODAL = new Set([
@@ -516,6 +517,11 @@ export const TradeLogHeader = memo<TradeLogHeaderProps>(
       if (filters.reviewStatus && filters.reviewStatus.length > 0) count++;
       if (filters.directions && filters.directions.length > 0) count++;
       if (
+        areSessionLogTagsActive(mode, filters.viewLevel) &&
+        filters.sessionLogTags.length > 0
+      )
+        count++;
+      if (
         filters.customFieldFilters &&
         Object.values(filters.customFieldFilters).some(
           (values) => values.length > 0
@@ -580,6 +586,7 @@ export const TradeLogHeader = memo<TradeLogHeaderProps>(
           statuses: filters.statuses || [],
           reviewStatus: filters.reviewStatus || [],
           directions: filters.directions || [],
+          sessionLogTags: filters.sessionLogTags || [],
           customFieldFilters: filters.customFieldFilters || {},
           imageAnnotationStatus: filters.imageAnnotationStatus || [],
           imageTags: filters.imageTags || [],
@@ -588,12 +595,14 @@ export const TradeLogHeader = memo<TradeLogHeaderProps>(
         availableCustomFieldFilters,
         availableImageFilterOptions,
         showImageFilters: mode === 'imageGallery',
+        showSessionLogFilters: areSessionLogTagsActive(mode, filters.viewLevel),
         onApply: (newFilters: UnifiedFilters) => {
           onFilterChange({
             tradeTypes: newFilters.tradeTypes,
             statuses: newFilters.statuses,
             reviewStatus: newFilters.reviewStatus,
             directions: newFilters.directions,
+            sessionLogTags: newFilters.sessionLogTags || [],
             accounts: newFilters.accounts,
             tickers: newFilters.tickers,
             setups: newFilters.setups,

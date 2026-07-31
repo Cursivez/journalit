@@ -34,14 +34,15 @@ type TradeWithCurrency = {
 const DEFAULT_CURRENCY = 'USD';
 
 
-export function aggregatePnLByCurrency(
-  trades: TradeWithCurrency[],
-  defaultCurrency: string = DEFAULT_CURRENCY
+export function aggregatePnLByCurrency<TTrade extends TradeWithCurrency>(
+  trades: TTrade[],
+  defaultCurrency: string = DEFAULT_CURRENCY,
+  getPnL?: (trade: TTrade) => number
 ): CurrencyGroupedPnL {
   const byCurrency: Record<string, number> = {};
 
   for (const trade of trades) {
-    const pnl = getEffectivePnL(trade);
+    const pnl = getPnL ? getPnL(trade) : getEffectivePnL(trade);
     const currency = trade.currency || defaultCurrency;
 
     if (!byCurrency[currency]) {

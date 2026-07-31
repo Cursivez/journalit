@@ -66,6 +66,7 @@ export class FileWatcherService {
 
   
   public batchModifiedFiles = new Set<string>();
+  private ignoredModifyCounts = new Map<string, number>();
 
   constructor(
     plugin: JournalitPlugin,
@@ -76,6 +77,30 @@ export class FileWatcherService {
     
     
     this.tradeSyncService = tradeSyncService;
+  }
+
+  public ignoreNextModify(filePath: string): void {
+    this.ignoredModifyCounts.set(
+      filePath,
+      (this.ignoredModifyCounts.get(filePath) ?? 0) + 1
+    );
+  }
+
+  public cancelIgnoredModify(filePath: string): void {
+    const count = this.ignoredModifyCounts.get(filePath);
+    if (count === undefined) return;
+    if (count <= 1) {
+      this.ignoredModifyCounts.delete(filePath);
+    } else {
+      this.ignoredModifyCounts.set(filePath, count - 1);
+    }
+  }
+
+  private consumeIgnoredModify(filePath: string): boolean {
+    const count = this.ignoredModifyCounts.get(filePath);
+    if (count === undefined) return false;
+    this.cancelIgnoredModify(filePath);
+    return true;
   }
 
   
@@ -93,8 +118,13 @@ export class FileWatcherService {
     this.plugin.registerEvent(
       this.plugin.app.vault.on('modify', (file) => {
         if (
-          file instanceof TFile &&
-          this.tradeSyncService.isTradeFile(file) &&
+          !(file instanceof TFile) ||
+          !this.tradeSyncService.isTradeFile(file)
+        ) {
+          return;
+        }
+        if (this.consumeIgnoredModify(file.path)) return;
+        if (
           !this.lastProcessedFiles.has(file.path) &&
           !this.batchModifiedFiles.has(file.path)
         ) {

@@ -5,6 +5,7 @@ export const SETUPS_PAIRS_TAB_TARGET_ID = 'setups.pairs-tab';
 export const SETUPS_OVERVIEW_TAB_TARGET_ID = 'setups.overview-tab';
 export const SETUPS_COMPARE_TAB_TARGET_ID = 'setups.compare-tab';
 export const SETUPS_CREATE_BUTTON_TARGET_ID = 'setups.create-button';
+export const SETUPS_TAG_FILTER_TARGET_ID = 'setups.tag-filter';
 export const SETUPS_CHART_TARGET_ID = 'setups.chart';
 export const SETUPS_CARD_GRID_TARGET_ID = 'setups.card-grid';
 export const SETUPS_COMPARE_HEADER_TARGET_ID = 'setups.compare-header';

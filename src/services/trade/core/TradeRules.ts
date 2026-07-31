@@ -53,18 +53,20 @@ export function validateAndNormalizeTradeMutationInput<
   }
 
   const isOpen = deriveTradeOpenState(normalizedData);
+  const isCancelled = normalizedData.tradeStatus === 'CANCELLED';
   const allowMissingExitTimeInDirectPnlMode =
     options?.allowClosedTradeWithoutExitTimeInDirectPnlMode === true;
 
   if (
     !isOpen &&
+    !isCancelled &&
     !normalizedData.exitTime &&
     !(allowMissingExitTimeInDirectPnlMode && normalizedData.useDirectPnLInput)
   ) {
     throw new Error('Exit time is required for closed trades');
   }
 
-  if (!normalizedData.useDirectPnLInput) {
+  if (!normalizedData.useDirectPnLInput && !isCancelled) {
     if (!hasCanonicalEntries(normalizedData)) {
       throw new Error('At least one entry transaction is required');
     }
@@ -220,7 +222,9 @@ export function calculateTradeMutationFinancials(
   const financialFieldsChanged = params.financialFieldsChanged ?? true;
 
   let pnl: number | null;
-  if (
+  if (data.canonicalTradeId && data.authoritativePnl === null) {
+    pnl = null;
+  } else if (
     params.isOpen &&
     typeof data.authoritativePnl === 'number' &&
     Number.isFinite(data.authoritativePnl)
@@ -240,15 +244,19 @@ export function calculateTradeMutationFinancials(
     pnl = calculatePnL(data as Record<string, unknown>);
   }
 
+  const hasAuthoritativeNullPnlOverride =
+    Boolean(data.canonicalTradeId) && data.authoritativePnl === null;
   const hasAuthoritativePnlOverride =
-    typeof data.authoritativePnl === 'number' &&
-    Number.isFinite(data.authoritativePnl);
+    hasAuthoritativeNullPnlOverride ||
+    (typeof data.authoritativePnl === 'number' &&
+      Number.isFinite(data.authoritativePnl));
 
-  const rMultiple =
-    !params.isOpen &&
-    !financialFieldsChanged &&
-    !hasAuthoritativePnlOverride &&
-    data.originalRMultiple !== undefined
+  const rMultiple = hasAuthoritativeNullPnlOverride
+    ? null
+    : !params.isOpen &&
+        !financialFieldsChanged &&
+        !hasAuthoritativePnlOverride &&
+        data.originalRMultiple !== undefined
       ? data.originalRMultiple
       : calculateRMultipleFromMutation(data, pnl);
 

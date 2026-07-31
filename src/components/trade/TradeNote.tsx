@@ -23,6 +23,10 @@ import {
   TradeCustomFieldsSection,
 } from './components';
 import { hasTradeCustomFieldDisplayEntries } from './components/TradeCustomFieldsSection';
+import {
+  areSnapshotKeysClaimedByCustomFields,
+  calculateUnrealizedPnL,
+} from '../../utils/unrealizedPnl';
 import { useTradeMetrics } from './hooks';
 import { TradeTemplateService } from '../../services/templates/TradeTemplateService';
 import {
@@ -729,21 +733,39 @@ export const TradeNote: React.FC<TradeNoteProps> = React.memo(
         exitTime={data.exitTime}
         exitPrice={data.exitPrice}
         tradeStatus={data.tradeStatus}
+        lastBrokerSyncAt={data.lastBrokerSyncAt}
         entries={data.entries}
         exits={data.exits}
         dividends={data.dividends}
         commission={data.commission}
+        commissionType={data.commissionType}
         swap={data.swap}
         fees={data.fees}
         rebate={data.rebate}
         assetType={data.assetType}
         optionType={data.optionType}
+        contractSize={data.contractSize}
+        dollarPerPoint={data.dollarPerPoint}
+        tickSize={data.tickSize}
+        tickValue={data.tickValue}
+        lotSize={data.lotSize}
+        pipValue={data.pipValue}
         rMultiple={data.rMultiple}
         rMultipleDisplay={{
           enabled: plugin?.settings?.trade?.displayRMultiples ?? false,
           riskAmount: data.riskAmount,
         }}
         currency={data.currency}
+        unrealizedPnL={
+          
+          
+          areSnapshotKeysClaimedByCustomFields(
+            plugin?.customFieldsService?.getFields()
+          )
+            ? null
+            : calculateUnrealizedPnL(data)
+        }
+        unrealizedPriceSnapshotTime={data.unrealizedPriceSnapshotTime}
       />
     );
 

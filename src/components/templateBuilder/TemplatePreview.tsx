@@ -82,6 +82,28 @@ interface TemplatePreviewProps {
   containerRef?: (element: HTMLDivElement | null) => void;
 }
 
+type DemonTrackerPreviewNoteType =
+  | 'weekly-review'
+  | 'monthly-review'
+  | 'quarterly-review'
+  | 'yearly-review';
+
+const getDemonTrackerPreviewNoteType = (
+  templateType: ReviewTemplateType
+): DemonTrackerPreviewNoteType => {
+  switch (templateType) {
+    case 'weekly':
+      return 'weekly-review';
+    case 'quarterly':
+      return 'quarterly-review';
+    case 'yearly':
+      return 'yearly-review';
+    case 'drc':
+    case 'monthly':
+      return 'monthly-review';
+  }
+};
+
 
 const WidgetPlaceholder: React.FC<{
   widgetType: string;
@@ -746,12 +768,7 @@ function getWidgetPreviewContent({
 
     case 'demon-tracker': {
       
-      const demonNoteType =
-        templateType === 'yearly'
-          ? 'yearly-review'
-          : templateType === 'quarterly'
-            ? 'quarterly-review'
-            : 'monthly-review';
+      const demonNoteType = getDemonTrackerPreviewNoteType(templateType);
       return (
         <div className="journalit-widget journalit-demon-tracker">
           <DemonTrackerWidget

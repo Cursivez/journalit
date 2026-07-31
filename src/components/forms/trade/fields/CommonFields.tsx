@@ -9,6 +9,7 @@ import { CustomOptionsService, OptionType } from '../../../../services/options';
 import { useEventBus } from '../../../../hooks';
 import { t } from '../../../../lang/helpers';
 import { TradeFormLayoutItemId } from '../../../../settings/types';
+import { canonicalizeTradeTagSelection } from '../../../../utils/tradeTagNormalization';
 
 const EMPTY_ACCOUNT_OPTIONS: Array<{ id: string; name: string }> = [];
 const EMPTY_SETUP_OPTIONS: Array<{ id: string; name: string }> = [];
@@ -189,7 +190,13 @@ const CommonFieldsComponent: React.FC<CommonFieldsProps> = ({
               options={tagOptions}
               value={Array.isArray(data.customTags) ? data.customTags : []}
               onChange={(value) => {
-                const selectedValues = asStringArray(value);
+                const previousValues = Array.isArray(data.customTags)
+                  ? data.customTags
+                  : [];
+                const selectedValues = canonicalizeTradeTagSelection(
+                  previousValues,
+                  asStringArray(value)
+                );
                 onChange('customTags', selectedValues);
               }}
               isMulti={true}

@@ -25,7 +25,7 @@ export function registerTradeLogWhatsNewImageGalleryGuide(
   guideRegistry.registerGuide({
     id: TRADE_LOG_IMAGE_GALLERY_MAIN_GUIDE_ID,
     viewType: TRADE_LOG_VIEW_TYPE,
-    version: 3,
+    version: 4,
     autoShow: true,
     priority: 105,
     initialStepId: 'switch-to-gallery',

@@ -48,6 +48,8 @@ interface AccountTradeGroupingSnapshot {
 interface AccountAggregateSnapshot {
   accountName: string;
   trades: AccountTradeData[];
+  
+  excludedTrades: AccountTradeData[];
   account: AccountData;
   metrics: AccountMetrics;
 }
@@ -98,6 +100,7 @@ import {
 import { FolderPathService } from '../core/FolderPathService';
 import { EnhancedTradeData } from '../../types/EnhancedTradeData';
 import { calculateEffectiveRMultiple } from '../../utils/formatting';
+import { calculateCommissionCost } from '../../utils/pnlUtils';
 import { eventBus, Unsubscribe } from '../events';
 import { ExchangeRateService } from '../exchangeRate';
 import {
@@ -764,6 +767,11 @@ export class AccountPageService extends CustomDataService {
         typeof trade.commission === 'number'
           ? trade.commission
           : Number(trade.commission) || 0,
+      commissionType:
+        trade.commissionType === 'fixed' ||
+        trade.commissionType === 'percentage'
+          ? trade.commissionType
+          : undefined,
       swap:
         typeof trade.swap === 'number' ? trade.swap : Number(trade.swap) || 0,
       fees:
@@ -803,6 +811,27 @@ export class AccountPageService extends CustomDataService {
             ? undefined
             : Number(trade.stopLoss),
       currency: typeof trade.currency === 'string' ? trade.currency : undefined,
+      fxRate:
+        typeof trade.fxRate === 'number' && Number.isFinite(trade.fxRate)
+          ? trade.fxRate
+          : undefined,
+      fxRateBaseCurrency:
+        typeof trade.fxRateBaseCurrency === 'string'
+          ? trade.fxRateBaseCurrency
+          : undefined,
+      brokerBaseCurrencyPnl:
+        typeof trade.brokerBaseCurrencyPnl === 'number' &&
+        Number.isFinite(trade.brokerBaseCurrencyPnl)
+          ? trade.brokerBaseCurrencyPnl
+          : undefined,
+      brokerBaseCurrency:
+        typeof trade.brokerBaseCurrency === 'string'
+          ? trade.brokerBaseCurrency
+          : undefined,
+      brokerBaseCurrencyPnlSource:
+        typeof trade.brokerBaseCurrencyPnlSource === 'string'
+          ? trade.brokerBaseCurrencyPnlSource
+          : undefined,
       tradeStatus:
         typeof trade.tradeStatus === 'string' ? trade.tradeStatus : undefined,
       useDirectPnLInput: normalizedExecution.useDirectPnLInput,
@@ -897,8 +926,15 @@ export class AccountPageService extends CustomDataService {
           ? copiedPnL / copiedRiskAmount
           : copiedTrade.rMultiple,
       commission: commission ?? 0,
+      commissionType: 'fixed',
       fees: 0,
       currency: copiedTrade.currency ?? copyMetadata.currency,
+      
+      
+      
+      brokerBaseCurrencyPnl: undefined,
+      brokerBaseCurrency: undefined,
+      brokerBaseCurrencyPnlSource: undefined,
       isCopiedTrade: true,
       copiedFromAccount: baseAccountName,
       copyMultiplier: multiplier,
@@ -1215,11 +1251,23 @@ export class AccountPageService extends CustomDataService {
         accountTrades,
         metadata
       );
+      const accountTradesForConversion =
+        this.plugin?.settings.trade.breakEvenThresholdMode ===
+          'percentage_current_balance' && account.currency
+          ? accountTrades.map((trade) => ({
+              ...trade,
+              breakEvenAccountCurrentBalance: account.currentBalance,
+              breakEvenAccountCurrentBalanceCurrency: account.currency,
+              breakEvenAccountCurrentBalanceTotal: account.currentBalance,
+              breakEvenAccountCurrentBalanceTotalCurrency: account.currency,
+            }))
+          : accountTrades;
       const conversionResult = await this.tryConvertTrades(
-        accountTrades,
+        accountTradesForConversion,
         metadata?.currency
       );
-      const convertedTrades = conversionResult?.trades ?? accountTrades;
+      const convertedTrades =
+        conversionResult?.trades ?? accountTradesForConversion;
       const pnlContributingTradesForMetrics = convertedTrades.filter((trade) =>
         isPnlContributingTrade(trade as EnhancedTradeData)
       );
@@ -1247,6 +1295,16 @@ export class AccountPageService extends CustomDataService {
             convertedBalance.unconvertedCurrencies.length === 0
               ? convertedBalance.total
               : undefined;
+        } else {
+          
+          
+          
+          
+          accountCurrentBalanceForBreakEven = this.createAccountDataFromTrades(
+            displayAccountName,
+            convertedTrades,
+            metadata
+          ).currentBalance;
         }
       }
 
@@ -1259,7 +1317,14 @@ export class AccountPageService extends CustomDataService {
       );
 
       if (conversionResult) {
-        metrics.isMultiCurrency = true;
+        metrics.isMultiCurrency =
+          accountTrades.some(
+            (trade) =>
+              (trade.currency || conversionResult.baseCurrency) !==
+              conversionResult.baseCurrency
+          ) ||
+          conversionResult.unconvertedCurrencies.length > 0 ||
+          (conversionResult.partiallyConvertedCurrencies?.length ?? 0) > 0;
         metrics.convertedTotalPnL = metrics.totalPnL;
         metrics.conversionBaseCurrency = conversionResult.baseCurrency;
         metrics.conversionRateDate = conversionResult.rateDate;
@@ -1267,6 +1332,15 @@ export class AccountPageService extends CustomDataService {
           conversionResult.unconvertedCurrencies.length > 0
             ? conversionResult.unconvertedCurrencies
             : undefined;
+        metrics.partiallyConvertedCurrencies =
+          conversionResult.partiallyConvertedCurrencies &&
+          conversionResult.partiallyConvertedCurrencies.length > 0
+            ? conversionResult.partiallyConvertedCurrencies
+            : undefined;
+        metrics.brokerBaseCurrencyTradeCount =
+          conversionResult.brokerBaseCurrencyTradeCount;
+        metrics.manualFxRateTradeCount =
+          conversionResult.manualFxRateTradeCount;
         if (
           conversionResult.originalTradeCount !==
           conversionResult.convertedTradeCount
@@ -1284,7 +1358,11 @@ export class AccountPageService extends CustomDataService {
 
       const snapshot: AccountAggregateSnapshot = {
         accountName: displayAccountName,
-        trades: accountTrades,
+        
+        
+        
+        trades: convertedTrades,
+        excludedTrades: conversionResult?.excludedTrades ?? [],
         account: enhancedAccount,
         metrics,
       };
@@ -2075,6 +2153,7 @@ export class AccountPageService extends CustomDataService {
       return {
         account: this.cloneAccountData(snapshot.account),
         trades: this.cloneAccountTrades(snapshot.trades),
+        excludedTrades: this.cloneAccountTrades(snapshot.excludedTrades),
         metrics: { ...snapshot.metrics },
       };
     } catch (error) {
@@ -2108,7 +2187,7 @@ export class AccountPageService extends CustomDataService {
     accountCurrency?: CurrencyCode,
     accountCurrentBalanceForBreakEven?: number
   ): AccountMetrics {
-    const defaultCurrency =
+    const defaultCurrency: string =
       accountCurrency || this.plugin?.settings?.general?.currency || 'USD';
 
     if (trades.length === 0) {
@@ -2134,11 +2213,14 @@ export class AccountPageService extends CustomDataService {
 
     const totalTrades = trades.length;
     const totalCommission = trades.reduce(
-      (sum, trade) => sum + trade.commission,
+      (sum, trade) => sum + calculateCommissionCost(trade),
       0
     );
     const totalSwap = trades.reduce((sum, trade) => sum + trade.swap, 0);
-    const totalFees = trades.reduce((sum, trade) => sum + trade.fees, 0);
+    const totalFees = trades.reduce(
+      (sum, trade) => sum + Math.abs(trade.fees),
+      0
+    );
 
     const totalPnL = trades.reduce(
       (sum, trade) => sum + getEffectivePnL(trade),
@@ -2153,7 +2235,12 @@ export class AccountPageService extends CustomDataService {
     }
 
     const currencies = Object.keys(pnlByCurrency).sort();
-    const isMultiCurrency = currencies.length > 1;
+    
+    
+    
+    const isMultiCurrency =
+      currencies.length > 1 ||
+      currencies.some((currency) => currency !== defaultCurrency);
     const primaryCurrency = currencies[0] || defaultCurrency;
 
     const breakEvenSettings = this.plugin?.settings.trade;
@@ -2324,17 +2411,12 @@ export class AccountPageService extends CustomDataService {
     if (!this.plugin) return null;
 
     
-    const baseCurrency =
+    const baseCurrency: string =
       accountCurrency || this.plugin.settings?.general?.currency || 'USD';
 
     
-    const currencies = new Set<string>();
-    for (const trade of trades) {
-      currencies.add(trade.currency || baseCurrency);
-    }
-
     
-    if (currencies.size <= 1) {
+    if (trades.length === 0) {
       return null;
     }
 

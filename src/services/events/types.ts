@@ -177,6 +177,9 @@ export interface EventMap {
 
   
   'review:changed': ReviewChangedPayload;
+  
+  'drc:session-log-index-invalidated': void;
+  'image-gallery:changed': void;
   'filter:changed': FilterChangedPayload;
   'tradelog:filters-updated': void;
   'review:filter-sync': ReviewFilterSyncPayload;

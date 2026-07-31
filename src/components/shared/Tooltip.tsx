@@ -1,6 +1,6 @@
 
 
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useRef, useEffect, useCallback, useId } from 'react';
 import { createPortal } from 'react-dom';
 import { cssVars } from '../../styles/inlineStylePolicy';
 
@@ -15,6 +15,8 @@ interface TooltipProps {
   block?: boolean;
   instantHide?: boolean;
   disabled?: boolean;
+  
+  disclosureLabel?: string;
 }
 
 export const Tooltip = React.memo<TooltipProps>(
@@ -28,6 +30,7 @@ export const Tooltip = React.memo<TooltipProps>(
     block = false,
     instantHide = false,
     disabled = false,
+    disclosureLabel,
   }) => {
     const [isVisible, setIsVisible] = useState(false);
     const [position, setPosition] = useState({ top: -9999, left: -9999 });
@@ -35,8 +38,11 @@ export const Tooltip = React.memo<TooltipProps>(
     const lastMousePosition = useRef({ x: 0, y: 0 });
     const rafRef = useRef<number | null>(null);
     const timeoutRef = useRef<number | null>(null);
+    const unmountTimeoutRef = useRef<number | null>(null);
     const tooltipRef = useRef<HTMLDivElement>(null);
-    const triggerRef = useRef<HTMLDivElement>(null);
+    const triggerRef = useRef<HTMLSpanElement>(null);
+    const tooltipId = useId();
+    const disclosureLabelId = `${tooltipId}-label`;
 
     const calculatePosition = useCallback(() => {
       if (!triggerRef.current || !tooltipRef.current) return;
@@ -125,6 +131,10 @@ export const Tooltip = React.memo<TooltipProps>(
       if (timeoutRef.current) {
         window.clearTimeout(timeoutRef.current);
       }
+      if (unmountTimeoutRef.current) {
+        window.clearTimeout(unmountTimeoutRef.current);
+        unmountTimeoutRef.current = null;
+      }
 
       timeoutRef.current = window.setTimeout(() => {
         setIsVisible(true);
@@ -160,7 +170,10 @@ export const Tooltip = React.memo<TooltipProps>(
         return;
       }
       
-      window.setTimeout(() => setIsMounted(false), 200);
+      unmountTimeoutRef.current = window.setTimeout(() => {
+        setIsMounted(false);
+        unmountTimeoutRef.current = null;
+      }, 200);
     }, [instantHide]);
 
     useEffect(() => {
@@ -179,6 +192,9 @@ export const Tooltip = React.memo<TooltipProps>(
         }
         if (rafRef.current) {
           window.cancelAnimationFrame(rafRef.current);
+        }
+        if (unmountTimeoutRef.current) {
+          window.clearTimeout(unmountTimeoutRef.current);
         }
       };
     }, []);
@@ -205,23 +221,82 @@ export const Tooltip = React.memo<TooltipProps>(
       [isVisible, calculatePosition]
     );
 
+    const handleDisclosureClick = useCallback(
+      (event: React.MouseEvent) => {
+        if (!disclosureLabel) return;
+        event.preventDefault();
+        event.stopPropagation();
+        if (isVisible) hideTooltip();
+        else scheduleShowTooltip();
+      },
+      [disclosureLabel, hideTooltip, isVisible, scheduleShowTooltip]
+    );
+
+    const handleDisclosureKeyDown = useCallback(
+      (event: React.KeyboardEvent) => {
+        if (!disclosureLabel) return;
+        event.stopPropagation();
+        if (event.key === 'Escape') {
+          hideTooltip();
+          return;
+        }
+        if (event.key !== 'Enter' && event.key !== ' ') return;
+        event.preventDefault();
+        if (isVisible) hideTooltip();
+        else scheduleShowTooltip();
+      },
+      [disclosureLabel, hideTooltip, isVisible, scheduleShowTooltip]
+    );
+
     return (
       <>
-        <span
-          ref={triggerRef}
-          onMouseEnter={showTooltip}
-          onMouseLeave={hideTooltip}
-          onMouseMove={handleMouseMove}
-          onFocus={scheduleShowTooltip}
-          onBlur={hideTooltip}
-          className={`tooltip-trigger ${block ? 'tooltip-trigger--block' : 'tooltip-trigger--inline'} ${triggerClassName}`.trim()}
-        >
-          {children}
-        </span>
+        {disclosureLabel ? (
+          <>
+            <span
+              id={disclosureLabelId}
+              aria-hidden="true"
+              className="journalit-tooltip__sr-only"
+            >
+              {disclosureLabel}
+            </span>
+            <span
+              ref={triggerRef}
+              aria-controls={tooltipId}
+              aria-expanded={isVisible}
+              aria-labelledby={disclosureLabelId}
+              role="button"
+              tabIndex={0}
+              onClick={handleDisclosureClick}
+              onKeyDown={handleDisclosureKeyDown}
+              onMouseEnter={showTooltip}
+              onMouseLeave={hideTooltip}
+              onMouseMove={handleMouseMove}
+              onFocus={scheduleShowTooltip}
+              onBlur={hideTooltip}
+              className={`tooltip-trigger ${block ? 'tooltip-trigger--block' : 'tooltip-trigger--inline'} ${triggerClassName}`.trim()}
+            >
+              {children}
+            </span>
+          </>
+        ) : (
+          <span
+            ref={triggerRef}
+            onMouseEnter={showTooltip}
+            onMouseLeave={hideTooltip}
+            onMouseMove={handleMouseMove}
+            onFocus={scheduleShowTooltip}
+            onBlur={hideTooltip}
+            className={`tooltip-trigger ${block ? 'tooltip-trigger--block' : 'tooltip-trigger--inline'} ${triggerClassName}`.trim()}
+          >
+            {children}
+          </span>
+        )}
         {isMounted &&
           createPortal(
             <div
+              id={tooltipId}
               ref={tooltipRef}
+              role="tooltip"
               className={`journalit-tooltip ${className} ${isVisible ? 'journalit-tooltip--visible' : ''}`}
               style={cssVars({
                 '--journalit-tooltip-top': `${position.top}px`,

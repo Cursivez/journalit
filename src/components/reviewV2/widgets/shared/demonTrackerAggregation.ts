@@ -2,17 +2,18 @@
 
 import type { PartialTradeFrontmatter } from '../../../../types/TradeFrontmatter';
 import type {
-  DemonTrackerCountMode,
-  DemonTrackerSourceMode,
+  DemonTrackerStopThreshold,
+  DemonTrackerTrackingMethod,
   DemonTrackerWidgetConfig,
+} from '../../../../types/reviewV2';
+import {
+  DEFAULT_DEMON_TRACKER_TRACKING_METHOD,
+  DEFAULT_DEMON_TRACKER_STOP_THRESHOLD,
+  isDemonTrackerTrackingMethod,
+  isDemonTrackerStopThreshold,
 } from '../../../../types/reviewV2';
 import { getTradingDayString } from '../../../../utils/tradingDayUtils';
 import type { DemonTrackerEntry } from '../../../../services/monthly/types';
-
-interface ScalperDefaultsLike {
-  countMode?: DemonTrackerCountMode;
-  sourceMode?: DemonTrackerSourceMode;
-}
 
 interface PluginWithTradeSettings {
   settings?: {
@@ -22,32 +23,20 @@ interface PluginWithTradeSettings {
   };
 }
 
-interface ResolvedDemonTrackerModes {
-  countMode: DemonTrackerCountMode;
-  sourceMode: DemonTrackerSourceMode;
+interface ResolvedDemonTrackerOptions {
+  trackingMethod: DemonTrackerTrackingMethod;
+  stopThreshold: DemonTrackerStopThreshold;
 }
 
 interface AggregateDemonTrackerInput {
   trades: PartialTradeFrontmatter[];
   sessionMistakesByTradingDay?: Record<string, string[]>;
-  countMode: DemonTrackerCountMode;
-  sourceMode: DemonTrackerSourceMode;
+  trackingMethod: DemonTrackerTrackingMethod;
   plugin?: PluginWithTradeSettings;
   mistakesFilter?: string[] | null;
 }
 
-const FALLBACK_COUNT_MODE: DemonTrackerCountMode = 'per-trade';
-const FALLBACK_SOURCE_MODE: DemonTrackerSourceMode = 'trades';
-
 const NO_MISTAKES_SENTINEL = '__NO_MISTAKES__';
-
-function isCountMode(value: unknown): value is DemonTrackerCountMode {
-  return value === 'per-trade' || value === 'per-trading-day';
-}
-
-function isSourceMode(value: unknown): value is DemonTrackerSourceMode {
-  return value === 'trades' || value === 'session' || value === 'combined';
-}
 
 function normalizeMistake(value: unknown): string | null {
   const normalized =
@@ -146,36 +135,27 @@ function isMistakeAllowed(mistake: string, allowed: Set<string>): boolean {
   return allowed.has(mistake.toLowerCase());
 }
 
-export function resolveDemonTrackerModes(
-  config?: DemonTrackerWidgetConfig,
-  scalperDefaults?: ScalperDefaultsLike
-): ResolvedDemonTrackerModes {
-  const configuredCountMode = config?.countMode;
-  const configuredSourceMode = config?.sourceMode;
+export function resolveDemonTrackerOptions(
+  config?: DemonTrackerWidgetConfig
+): ResolvedDemonTrackerOptions {
+  const configuredTrackingMethod = config?.trackingMethod;
+  const configuredStopThreshold = config?.stopThreshold;
 
-  const defaultCountMode = scalperDefaults?.countMode;
-  const defaultSourceMode = scalperDefaults?.sourceMode;
+  const trackingMethod = isDemonTrackerTrackingMethod(configuredTrackingMethod)
+    ? configuredTrackingMethod
+    : DEFAULT_DEMON_TRACKER_TRACKING_METHOD;
 
-  const countMode = isCountMode(configuredCountMode)
-    ? configuredCountMode
-    : isCountMode(defaultCountMode)
-      ? defaultCountMode
-      : FALLBACK_COUNT_MODE;
+  const stopThreshold = isDemonTrackerStopThreshold(configuredStopThreshold)
+    ? configuredStopThreshold
+    : DEFAULT_DEMON_TRACKER_STOP_THRESHOLD;
 
-  const sourceMode = isSourceMode(configuredSourceMode)
-    ? configuredSourceMode
-    : isSourceMode(defaultSourceMode)
-      ? defaultSourceMode
-      : FALLBACK_SOURCE_MODE;
-
-  return { countMode, sourceMode };
+  return { trackingMethod, stopThreshold };
 }
 
 export function aggregateDemonTrackerData({
   trades,
   sessionMistakesByTradingDay,
-  countMode,
-  sourceMode,
+  trackingMethod,
   plugin,
   mistakesFilter,
 }: AggregateDemonTrackerInput): DemonTrackerEntry[] {
@@ -186,13 +166,10 @@ export function aggregateDemonTrackerData({
   }
 
   const mistakeMap = new Map<string, DemonTrackerEntry>();
-  const seenTradeDayMistakes = new Set<string>();
-  const seenSessionDayMistakes = new Set<string>();
-  const seenCombinedDayMistakes = new Set<string>();
+  const seenTradingDayMistakes = new Set<string>();
 
-  const shouldUseTrades = sourceMode === 'trades' || sourceMode === 'combined';
-  const shouldUseSession =
-    sourceMode === 'session' || sourceMode === 'combined';
+  const shouldUseTrades = trackingMethod !== 'daily-review-entries';
+  const shouldUseSession = trackingMethod !== 'trade-occurrences';
 
   if (shouldUseTrades) {
     for (const trade of trades) {
@@ -203,18 +180,13 @@ export function aggregateDemonTrackerData({
       for (const mistake of mistakes) {
         if (!isMistakeAllowed(mistake, allowed)) continue;
 
-        if (countMode === 'per-trading-day') {
+        if (trackingMethod === 'trading-days') {
           const dedupeKey = `${dateInfo.tradingDay}::${mistake.toLowerCase()}`;
-          const dedupeSet =
-            sourceMode === 'combined'
-              ? seenCombinedDayMistakes
-              : seenTradeDayMistakes;
-
-          if (dedupeSet.has(dedupeKey)) {
+          if (seenTradingDayMistakes.has(dedupeKey)) {
             continue;
           }
 
-          dedupeSet.add(dedupeKey);
+          seenTradingDayMistakes.add(dedupeKey);
           pushOccurrence(mistakeMap, mistake, dateInfo.tradingDay);
           continue;
         }
@@ -235,20 +207,12 @@ export function aggregateDemonTrackerData({
       for (const mistake of mistakes) {
         if (!isMistakeAllowed(mistake, allowed)) continue;
 
-        if (countMode === 'per-trading-day') {
-          const dedupeKey = `${tradingDay}::${mistake.toLowerCase()}`;
-          const dedupeSet =
-            sourceMode === 'combined'
-              ? seenCombinedDayMistakes
-              : seenSessionDayMistakes;
-
-          if (dedupeSet.has(dedupeKey)) {
-            continue;
-          }
-
-          dedupeSet.add(dedupeKey);
+        const dedupeKey = `${tradingDay}::${mistake.toLowerCase()}`;
+        if (seenTradingDayMistakes.has(dedupeKey)) {
+          continue;
         }
 
+        seenTradingDayMistakes.add(dedupeKey);
         pushOccurrence(mistakeMap, mistake, tradingDay);
       }
     }

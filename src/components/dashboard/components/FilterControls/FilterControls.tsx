@@ -77,6 +77,7 @@ export const FilterControls = React.memo<FilterControlsProps>(
     isEditing = false,
     onToggleEditMode,
     onOpenAddWidget,
+    modeToggle,
   }) => {
     const plugin = usePlugin();
     const { dashboardData } = useDashboardData();
@@ -172,7 +173,11 @@ export const FilterControls = React.memo<FilterControlsProps>(
     const availableAccounts = useMemo(() => {
       if (!dashboardData?.trades) return [];
       const accountByLookupKey = new Map<string, string>();
-      dashboardData.trades.forEach((trade) => {
+      const accountSourceTrades = [
+        ...dashboardData.trades,
+        ...(dashboardData.unrealizedTrades ?? []),
+      ];
+      accountSourceTrades.forEach((trade) => {
         const accountNames =
           trade.accountNamesNormalized &&
           trade.accountNamesNormalized.length > 0
@@ -198,6 +203,7 @@ export const FilterControls = React.memo<FilterControlsProps>(
       return Array.from(accountByLookupKey.values()).sort();
     }, [
       dashboardData?.trades,
+      dashboardData?.unrealizedTrades,
       plugin?.settings?.backendIntegration?.accountMapping,
     ]);
 
@@ -380,6 +386,7 @@ export const FilterControls = React.memo<FilterControlsProps>(
                   </Button>
                 </div>
               )}
+              {modeToggle}
             </div>
           </div>
         ) : (
@@ -433,6 +440,7 @@ export const FilterControls = React.memo<FilterControlsProps>(
                   </Button>
                 </div>
               )}
+              {modeToggle}
             </div>
           </div>
         )}

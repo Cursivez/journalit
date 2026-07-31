@@ -1,4 +1,4 @@
-.select option[value=""][disabled],
+.select option[value=''][disabled],
 .placeholder {
   color: var(--color-muted);
 }
@@ -31,7 +31,9 @@
   background-color: var(--color-background);
   color: var(--color-text);
   font-size: var(--font-size-sm);
-  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+  transition:
+    border-color var(--transition-fast),
+    box-shadow var(--transition-fast);
   outline: none;
   appearance: none;
   padding-right: 30px; 

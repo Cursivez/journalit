@@ -133,7 +133,7 @@ export const ONBOARDING_VIEW_STYLES = `
     border-color: rgba(0, 0, 0, 0.1);
   }
 
-  .theme-light .journalit-onboarding-view-container .mt-hero-node--dest {
+  .theme-light .journalit-onboarding-view-container .trade-sync-hero-node--dest {
     border-color: rgba(76, 175, 80, 0.4);
     background: linear-gradient(
       135deg,
@@ -143,11 +143,6 @@ export const ONBOARDING_VIEW_STYLES = `
     box-shadow:
       0 0 0 1px rgba(76, 175, 80, 0.2),
       0 1px 3px rgba(0, 0, 0, 0.05);
-  }
-
-  .theme-light .journalit-onboarding-view-container .mt-hero-node-icon--vault {
-    background: rgba(76, 175, 80, 0.08);
-    border-color: rgba(76, 175, 80, 0.25);
   }
 
   .theme-light .journalit-onboarding-view-container .contextual-final-hero-glow {
@@ -1443,14 +1438,14 @@ export const ONBOARDING_VIEW_STYLES = `
   }
 
   
-  .journalit-onboarding-view-container .mt-hero {
+  .journalit-onboarding-view-container .trade-sync-hero {
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 0.6rem;
   }
 
-  .journalit-onboarding-view-container .mt-hero-node {
+  .journalit-onboarding-view-container .trade-sync-hero-node {
     background: var(--background-primary);
     border: 1px solid var(--background-modifier-border);
     border-radius: 10px;
@@ -1463,11 +1458,11 @@ export const ONBOARDING_VIEW_STYLES = `
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
   }
 
-  .journalit-onboarding-view-container .mt-hero-node--source {
+  .journalit-onboarding-view-container .trade-sync-hero-node--source {
     border-color: var(--background-modifier-border);
   }
 
-  .journalit-onboarding-view-container .mt-hero-node--dest {
+  .journalit-onboarding-view-container .trade-sync-hero-node--dest {
     border-color: rgba(76, 175, 80, 0.35);
     background: linear-gradient(
       135deg,
@@ -1479,52 +1474,45 @@ export const ONBOARDING_VIEW_STYLES = `
       0 1px 3px rgba(0, 0, 0, 0.08);
   }
 
-  .journalit-onboarding-view-container .mt-hero-node-icon {
+  .journalit-onboarding-view-container .trade-sync-hero-node-icon {
     width: 26px;
     height: 26px;
-    border-radius: 7px;
-    background: var(--background-secondary);
-    border: 1px solid var(--background-modifier-border);
     display: flex;
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
   }
 
-  .journalit-onboarding-view-container .mt-hero-node-icon--mt {
+  .journalit-onboarding-view-container .trade-sync-hero-node-icon--source {
     color: var(--text-accent);
-    background: var(--background-secondary);
-    border-color: var(--background-modifier-border);
   }
 
-  .journalit-onboarding-view-container .mt-hero-node-icon--vault {
+  .journalit-onboarding-view-container .trade-sync-hero-node-icon--vault {
     color: var(--color-green);
-    background: rgba(76, 175, 80, 0.12);
-    border-color: rgba(76, 175, 80, 0.25);
   }
 
-  .journalit-onboarding-view-container .mt-hero-node-text {
+  .journalit-onboarding-view-container .trade-sync-hero-node-text {
     display: flex;
     flex-direction: column;
     gap: 0.2rem;
     width: 100%;
   }
 
-  .journalit-onboarding-view-container .mt-hero-node-title {
+  .journalit-onboarding-view-container .trade-sync-hero-node-title {
     font-size: 0.82rem;
     font-weight: 700;
     color: var(--text-normal);
     line-height: 1.2;
   }
 
-  .journalit-onboarding-view-container .mt-hero-node-sub {
+  .journalit-onboarding-view-container .trade-sync-hero-node-sub {
     font-size: 0.72rem;
     line-height: 1.3;
     color: var(--text-muted);
     opacity: 0.85;
   }
 
-  .journalit-onboarding-view-container .mt-hero-link {
+  .journalit-onboarding-view-container .trade-sync-hero-link {
     position: relative;
     width: 48px;
     height: 24px;
@@ -1534,7 +1522,7 @@ export const ONBOARDING_VIEW_STYLES = `
     flex-shrink: 0;
   }
 
-  .journalit-onboarding-view-container .mt-hero-line {
+  .journalit-onboarding-view-container .trade-sync-hero-line {
     position: relative;
     width: 100%;
     height: 2px;
@@ -1547,7 +1535,7 @@ export const ONBOARDING_VIEW_STYLES = `
     opacity: 0.7;
   }
 
-  .journalit-onboarding-view-container .mt-hero-arrow {
+  .journalit-onboarding-view-container .trade-sync-hero-arrow {
     position: absolute;
     right: -3px;
     width: 0;
@@ -1558,7 +1546,7 @@ export const ONBOARDING_VIEW_STYLES = `
     opacity: 0.85;
   }
 
-  .journalit-onboarding-view-container .mt-hero-packet {
+  .journalit-onboarding-view-container .trade-sync-hero-packet {
     position: absolute;
     top: 50%;
     left: 0%;
@@ -1568,18 +1556,18 @@ export const ONBOARDING_VIEW_STYLES = `
     background: var(--interactive-accent);
     transform: translate(-50%, -50%);
     opacity: 0;
-    animation: mtPacket 2s infinite ease-in-out;
+    animation: tradeSyncPacket 2s infinite ease-in-out;
   }
 
-  .journalit-onboarding-view-container .mt-hero-packet:nth-child(2) {
+  .journalit-onboarding-view-container .trade-sync-hero-packet:nth-child(2) {
     animation-delay: 0.65s;
   }
 
-  .journalit-onboarding-view-container .mt-hero-packet:nth-child(3) {
+  .journalit-onboarding-view-container .trade-sync-hero-packet:nth-child(3) {
     animation-delay: 1.3s;
   }
 
-  @keyframes mtPacket {
+  @keyframes tradeSyncPacket {
     0% {
       left: 0%;
       opacity: 0;
@@ -1599,7 +1587,7 @@ export const ONBOARDING_VIEW_STYLES = `
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .journalit-onboarding-view-container .mt-hero-packet {
+    .journalit-onboarding-view-container .trade-sync-hero-packet {
       animation: none;
       display: none;
     }
@@ -1607,18 +1595,18 @@ export const ONBOARDING_VIEW_STYLES = `
 
   
   @media (max-width: 560px) {
-    .journalit-onboarding-view-container .mt-hero {
+    .journalit-onboarding-view-container .trade-sync-hero {
       flex-direction: column;
       gap: 0.5rem;
     }
 
-    .journalit-onboarding-view-container .mt-hero-link {
+    .journalit-onboarding-view-container .trade-sync-hero-link {
       width: 24px;
       height: 32px;
       transform: rotate(90deg);
     }
 
-    .journalit-onboarding-view-container .mt-hero-node {
+    .journalit-onboarding-view-container .trade-sync-hero-node {
       min-width: 160px;
       min-height: 64px;
     }

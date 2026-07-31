@@ -9,8 +9,10 @@ import { openExternalUrl } from '../../../utils/externalLinks';
 import { SubscriptionTierService } from '../../../services/backend/SubscriptionTierService';
 import { DeviceFlowSignInModal } from '../../../components/auth/DeviceFlowSignInModal';
 import { Button } from '../../../components/ui/Button';
+import { SegmentedControl } from '../../../components/shared/SegmentedControl';
 import { BackendIntegrationTab } from './BackendIntegrationTab';
 import { TradeImportSyncPanel } from './TradeImportSyncPanel';
+import { TradovateSyncPanel } from './TradovateSyncPanel';
 import { useBackendProEntitlement } from '../../../hooks/useBackendProEntitlement';
 import { LoadingSpinner } from '../../../components/shared/LoadingSpinner';
 import { Check } from '../../../components/shared/icons/ObsidianIcon';
@@ -19,9 +21,10 @@ interface TradeSyncTabProps {
   plugin: JournalitPlugin;
   mode?: 'full' | 'sync' | 'accounts';
   source?: TradeSyncSource;
+  displayMode?: 'default' | 'upgrade-only';
 }
 
-type TradeSyncSource = 'metatrader' | 'tradeImport';
+type TradeSyncSource = 'metatrader' | 'tradovate' | 'tradeImport';
 
 interface TrialOfferProps {
   onRedeem: () => void;
@@ -31,28 +34,6 @@ interface TrialOfferProps {
 
 interface FeatureUnavailableProps {
   onRefresh: () => Promise<void>;
-}
-
-const TRADE_SYNC_SOURCE_STORAGE_KEY = 'journalit.tradeSyncSelectedSource';
-
-function isTradeSyncSourceEnabled(
-  source: TradeSyncSource,
-  entitlements: { metatrader: boolean; tradeImport: boolean }
-): boolean {
-  return source === 'metatrader'
-    ? entitlements.metatrader
-    : entitlements.tradeImport;
-}
-
-function readStoredTradeSyncSource(plugin: JournalitPlugin): TradeSyncSource {
-  const storedUiState =
-    plugin.uiStateManager.getState().tradeSyncSelectedSource;
-  if (storedUiState === 'tradeImport') return 'tradeImport';
-
-  return plugin.app.loadLocalStorage(TRADE_SYNC_SOURCE_STORAGE_KEY) ===
-    'tradeImport'
-    ? 'tradeImport'
-    : 'metatrader';
 }
 
 const TrialOffer: React.FC<TrialOfferProps> = ({
@@ -133,15 +114,143 @@ const FeatureUnavailable: React.FC<FeatureUnavailableProps> = ({
 
 FeatureUnavailable.displayName = 'FeatureUnavailable';
 
+interface TradeSyncEntitlements {
+  metatrader: boolean;
+  tradovate: boolean;
+}
+
+interface EntitlementGateProps {
+  enabled: boolean;
+  isPro: boolean;
+  onRefresh: () => Promise<void>;
+}
+
+const EntitlementGate: React.FC<EntitlementGateProps> = ({
+  enabled,
+  isPro,
+  onRefresh,
+}) => {
+  if (enabled) return null;
+  return isPro ? (
+    <FeatureUnavailable onRefresh={onRefresh} />
+  ) : (
+    <TrialOffer
+      onRedeem={() => openExternalUrl(UPGRADE_URLS.metatraderSync)}
+      onRefresh={onRefresh}
+    />
+  );
+};
+
+EntitlementGate.displayName = 'EntitlementGate';
+
+interface ProviderSectionProps {
+  plugin: JournalitPlugin;
+  mode: 'full' | 'sync' | 'accounts';
+  entitlements: TradeSyncEntitlements;
+  isPro: boolean;
+  onRefresh: (source: TradeSyncSource) => Promise<void>;
+}
+
+type TradeSyncProvider = 'metatrader' | 'tradovate';
+
+const PROVIDER_STORAGE_KEY = 'journalit:trade-sync-provider';
+
+const ProviderSection: React.FC<ProviderSectionProps> = ({
+  plugin,
+  mode,
+  entitlements,
+  isPro,
+  onRefresh,
+}) => {
+  const [provider, setProvider] = useState<TradeSyncProvider>(() =>
+    plugin.app.loadLocalStorage(PROVIDER_STORAGE_KEY) === 'tradovate'
+      ? 'tradovate'
+      : 'metatrader'
+  );
+  const selectProvider = (next: TradeSyncProvider) => {
+    setProvider(next);
+    plugin.app.saveLocalStorage(PROVIDER_STORAGE_KEY, next);
+  };
+  const enabled = entitlements[provider];
+
+  return (
+    <section className="journalit-trade-sync-section journalit-trade-sync-providers">
+      <SegmentedControl
+        options={[
+          {
+            value: 'metatrader',
+            label: t('trade-sync.source.metatrader'),
+          },
+          {
+            value: 'tradovate',
+            label: t('trade-sync.source.tradovate'),
+          },
+        ]}
+        value={provider}
+        onChange={selectProvider}
+      />
+      <EntitlementGate
+        enabled={enabled}
+        isPro={isPro}
+        onRefresh={() => onRefresh(provider)}
+      />
+      {enabled &&
+        (provider === 'metatrader' ? (
+          <BackendIntegrationTab plugin={plugin} embedded contentMode={mode} />
+        ) : (
+          <TradovateSyncPanel plugin={plugin} />
+        ))}
+    </section>
+  );
+};
+
+ProviderSection.displayName = 'ProviderSection';
+
+interface FocusedTradeSyncContentProps {
+  plugin: JournalitPlugin;
+  mode: 'full' | 'sync' | 'accounts';
+  source: TradeSyncSource;
+  enabled: boolean;
+  isPro: boolean;
+  onRefresh: () => Promise<void>;
+}
+
+const FocusedTradeSyncContent: React.FC<FocusedTradeSyncContentProps> = ({
+  plugin,
+  mode,
+  source,
+  enabled,
+  isPro,
+  onRefresh,
+}) => (
+  <>
+    <p className="journalit-trade-sync-source-description">
+      {source === 'metatrader'
+        ? t('trade-sync.source.metatrader.description')
+        : source === 'tradovate'
+          ? t('trade-sync.source.tradovate.description')
+          : t('trade-sync.source.trade-import.description')}
+    </p>
+    <EntitlementGate enabled={enabled} isPro={isPro} onRefresh={onRefresh} />
+    {enabled &&
+      (source === 'metatrader' ? (
+        <BackendIntegrationTab plugin={plugin} embedded contentMode={mode} />
+      ) : source === 'tradovate' ? (
+        <TradovateSyncPanel plugin={plugin} />
+      ) : (
+        <TradeImportSyncPanel plugin={plugin} />
+      ))}
+  </>
+);
+
+FocusedTradeSyncContent.displayName = 'FocusedTradeSyncContent';
+
 export const TradeSyncTab: React.FC<TradeSyncTabProps> = ({
   plugin,
   mode = 'full',
   source,
+  displayMode = 'default',
 }) => {
-  const [selectedSource, setSelectedSource] = useState<TradeSyncSource>(() =>
-    readStoredTradeSyncSource(plugin)
-  );
-  const activeSource = source ?? selectedSource;
   const {
     isAuthenticated,
     isPro,
@@ -161,14 +270,18 @@ export const TradeSyncTab: React.FC<TradeSyncTabProps> = ({
     'tradeImport'
   );
 
-  const selectedSourceEnabled = isTradeSyncSourceEnabled(activeSource, {
-    metatrader: canUseMetatraderSync,
-    tradeImport: canUseTradeImportSync,
-  });
-  const isCheckingSelectedEntitlement =
-    activeSource === 'metatrader'
-      ? isCheckingMetatraderEntitlement
-      : isCheckingTradeImportEntitlement;
+  const selectedSourceEnabled = source
+    ? source === 'metatrader'
+      ? canUseMetatraderSync
+      : source === 'tradovate'
+        ? isPro
+        : canUseTradeImportSync
+    : true;
+  const isCheckingSelectedEntitlement = source
+    ? source === 'tradeImport'
+      ? isCheckingTradeImportEntitlement
+      : isCheckingMetatraderEntitlement
+    : isCheckingMetatraderEntitlement;
 
   const handleSignIn = useCallback(() => {
     if (isAuthenticated) {
@@ -193,51 +306,57 @@ export const TradeSyncTab: React.FC<TradeSyncTabProps> = ({
     openExternalUrl(UPGRADE_URLS.metatraderSync);
   };
 
-  const handleRefresh = useCallback(async () => {
-    if (typeof navigator !== 'undefined' && navigator.onLine === false) {
-      new Notice(t('premium.gate.offline'));
-      return;
-    }
+  const handleRefresh = useCallback(
+    async (refreshSource?: TradeSyncSource) => {
+      if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+        new Notice(t('premium.gate.offline'));
+        return;
+      }
 
-    if (!isAuthenticated) {
-      new Notice(t('premium.gate.not-pro-yet'));
-      return;
-    }
+      if (!isAuthenticated) {
+        new Notice(t('premium.gate.not-pro-yet'));
+        return;
+      }
 
-    const result = await new SubscriptionTierService(plugin).refreshTier(
-      'manual refresh'
-    );
-    window.dispatchEvent(new CustomEvent('journalit:subscription-changed'));
-
-    const selectedFeatureEnabled =
-      activeSource === 'metatrader'
-        ? result.entitlements?.features.metatraderSync.enabled === true
-        : result.entitlements?.features.tradeImport.enabled === true;
-
-    if (!selectedFeatureEnabled) {
-      new Notice(
-        result.status === 'premium'
-          ? t('trade-sync.gate.feature-unavailable.description')
-          : t('premium.gate.not-pro-yet')
+      const result = await new SubscriptionTierService(plugin).refreshTier(
+        'manual refresh'
       );
-    }
-  }, [activeSource, isAuthenticated, plugin]);
+      window.dispatchEvent(new CustomEvent('journalit:subscription-changed'));
 
-  const selectSource = useCallback(
-    (source: TradeSyncSource) => {
-      setSelectedSource(source);
-      void plugin.uiStateManager.updateStateImmediate({
-        tradeSyncSelectedSource: source,
-      });
-      plugin.app.saveLocalStorage(TRADE_SYNC_SOURCE_STORAGE_KEY, source);
+      const selectedSource = refreshSource ?? source;
+      const selectedFeatureEnabled =
+        selectedSource === 'metatrader'
+          ? result.entitlements?.features.metatraderSync.enabled === true
+          : selectedSource === 'tradovate'
+            ? result.status === 'premium'
+            : result.entitlements?.features.tradeImport.enabled === true;
+
+      if (!selectedFeatureEnabled) {
+        new Notice(
+          result.status === 'premium'
+            ? t('trade-sync.gate.feature-unavailable.description')
+            : t('premium.gate.not-pro-yet')
+        );
+      }
     },
-    [plugin.app, plugin.uiStateManager]
+    [isAuthenticated, plugin, source]
   );
 
   if (!isAuthenticated) {
     return (
       <div className="journalit-settings-tab backend-integration-settings">
         <TrialOffer onRedeem={handleUpgrade} onSignIn={handleSignIn} />
+      </div>
+    );
+  }
+
+  if (displayMode === 'upgrade-only') {
+    return (
+      <div className="journalit-settings-tab backend-integration-settings">
+        <TrialOffer
+          onRedeem={handleUpgrade}
+          onRefresh={() => handleRefresh(source)}
+        />
       </div>
     );
   }
@@ -266,69 +385,29 @@ export const TradeSyncTab: React.FC<TradeSyncTabProps> = ({
     );
   }
 
-  const gate = !selectedSourceEnabled ? (
-    isPro ? (
-      <FeatureUnavailable onRefresh={handleRefresh} />
-    ) : (
-      <TrialOffer onRedeem={handleUpgrade} onRefresh={handleRefresh} />
-    )
-  ) : null;
-
-  if (!canUseMetatraderSync && !canUseTradeImportSync) {
-    return (
-      <div className="journalit-settings-tab backend-integration-settings">
-        <h3>{t('backend.title')}</h3>
-        <p className="setting-item-description">{t('backend.description')}</p>
-
-        {gate}
-      </div>
-    );
-  }
-
   return (
     <div className="journalit-settings-tab backend-integration-settings">
-      {!source && (
-        <div className="journalit-trade-sync-source-switcher" role="tablist">
-          <button
-            type="button"
-            role="tab"
-            aria-selected={activeSource === 'metatrader'}
-            className={
-              activeSource === 'metatrader'
-                ? 'journalit-trade-sync-source is-active'
-                : 'journalit-trade-sync-source'
-            }
-            onClick={() => selectSource('metatrader')}
-          >
-            {t('trade-sync.source.metatrader')}
-          </button>
-          <button
-            type="button"
-            role="tab"
-            aria-selected={activeSource === 'tradeImport'}
-            className={
-              activeSource === 'tradeImport'
-                ? 'journalit-trade-sync-source is-active'
-                : 'journalit-trade-sync-source'
-            }
-            onClick={() => selectSource('tradeImport')}
-          >
-            {t('trade-sync.source.trade-import')}
-          </button>
-        </div>
+      {source ? (
+        <FocusedTradeSyncContent
+          plugin={plugin}
+          mode={mode}
+          source={source}
+          enabled={selectedSourceEnabled}
+          isPro={isPro}
+          onRefresh={() => handleRefresh(source)}
+        />
+      ) : (
+        <ProviderSection
+          plugin={plugin}
+          mode={mode}
+          entitlements={{
+            metatrader: canUseMetatraderSync,
+            tradovate: isPro,
+          }}
+          isPro={isPro}
+          onRefresh={handleRefresh}
+        />
       )}
-      <p className="journalit-trade-sync-source-description">
-        {activeSource === 'metatrader'
-          ? t('trade-sync.source.metatrader.description')
-          : t('trade-sync.source.trade-import.description')}
-      </p>
-
-      {gate ??
-        (activeSource === 'metatrader' ? (
-          <BackendIntegrationTab plugin={plugin} embedded contentMode={mode} />
-        ) : (
-          <TradeImportSyncPanel plugin={plugin} />
-        ))}
     </div>
   );
 };

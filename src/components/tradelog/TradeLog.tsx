@@ -65,6 +65,7 @@ import {
 import { OptionType } from '../../services/options';
 import { getTradeIdsInRange } from './selectionUtils';
 import { createTradingDayFromString } from '../../utils/tradingDayUtils';
+import { areSnapshotKeysClaimedByCustomFields } from '../../utils/unrealizedPnl';
 import { cssVars } from '../../styles/inlineStylePolicy';
 import {
   CustomFieldDefinition,
@@ -92,7 +93,10 @@ import {
 } from '../../guides/tradeLogGuideIds';
 import type { PersistedGuideState } from '../../guides/types';
 import { TRADE_LOG_VIEW_TYPE } from '../../views/TradeLogView';
-import { AccountChangedPayload } from '../../services/events/types';
+import {
+  AccountChangedPayload,
+  SettingsChangedPayload,
+} from '../../services/events/types';
 import { remapAccountFilterFromAccountChange } from '../shared/filters/remapSelectedAccounts';
 import { persistViewFilter } from '../shared/filters/viewFilterPersistence';
 import { ImageGalleryService } from '../../services/imageGallery';
@@ -107,6 +111,14 @@ import {
   getLabelColorClassName,
   getLabelColorForeground,
 } from '../../types/labelColor';
+import {
+  clearInactiveTreeSessionLogTags,
+  getActiveTreeSessionLogTags,
+  pruneUnknownSessionLogTags,
+  refreshSessionLogTagDefinitionNodeIdentities,
+  type TradeLogMode,
+} from './tradeLogStateUtils';
+import { getSessionLogTags } from '../sessionLog/sessionLogUtils';
 
 interface TradeLogProps {
   plugin: JournalitPlugin;
@@ -131,18 +143,18 @@ const TRADE_DATA_CHANGE_EVENTS: Array<
   | 'trade:changed'
   | 'missed-trade:changed'
   | 'backtest-trade:changed'
+  | 'drc:session-log-index-invalidated'
 > = [
   'trade:committed',
   'trade:changed',
   'missed-trade:changed',
   'backtest-trade:changed',
+  'drc:session-log-index-invalidated',
 ];
 
 type TradeLogFilterSyncWindow = Window & {
   journalitSyncTradeLogFilters?: () => void;
 };
-
-type TradeLogMode = 'trades' | 'imageGallery';
 
 const TRADE_LOG_GUIDE_TRADE_MODE_STEPS = new Set([
   'intro',
@@ -184,6 +196,34 @@ function isTerminalGuideState(state: PersistedGuideState | null): boolean {
 
 function normalizeTradeLogMode(value: unknown): TradeLogMode {
   return value === 'imageGallery' ? 'imageGallery' : 'trades';
+}
+
+function loadPersistedTradeLogFilters(
+  plugin: JournalitPlugin
+): TradeLogFilters | null {
+  const persisted = plugin.uiStateManager.getState().viewFilters?.tradelog;
+  if (!persisted) {
+    return null;
+  }
+
+  const normalizedFilters: TradeLogFilters = {
+    ...normalizeTradeLogFilters(persisted),
+    dateRange: [
+      persisted.dateRange?.[0] ? new Date(persisted.dateRange[0]) : null,
+      persisted.dateRange?.[1] ? new Date(persisted.dateRange[1]) : null,
+    ],
+  };
+  const configuredTagIds = new Set(
+    getSessionLogTags(plugin).map((tag) => tag.id)
+  );
+  const prunedFilters = pruneUnknownSessionLogTags(
+    normalizedFilters,
+    configuredTagIds
+  );
+  if (prunedFilters !== normalizedFilters) {
+    persistViewFilter(plugin.uiStateManager, 'tradelog', prunedFilters);
+  }
+  return prunedFilters;
 }
 
 
@@ -526,21 +566,9 @@ const useTradeLogController = ({ plugin, leaf }: TradeLogProps) => {
   const [isTreeReady, setIsTreeReady] = useState(false);
   const [nodes, setNodes] = useState<TimeNode[]>([]);
   const [expandedNodes, setExpandedNodes] = useState<Set<string>>(new Set());
-  const [filters, setFilters] = useState<TradeLogFilters>(() => {
-    const defaults = createTradeLogFilters();
-    const persisted = plugin.uiStateManager.getState().viewFilters?.tradelog;
-    if (!persisted) {
-      return defaults;
-    }
-
-    return {
-      ...normalizeTradeLogFilters(persisted),
-      dateRange: [
-        persisted.dateRange?.[0] ? new Date(persisted.dateRange[0]) : null,
-        persisted.dateRange?.[1] ? new Date(persisted.dateRange[1]) : null,
-      ],
-    };
-  });
+  const [filters, setFilters] = useState<TradeLogFilters>(
+    () => loadPersistedTradeLogFilters(plugin) ?? createTradeLogFilters()
+  );
   const [tradeLogMode, setTradeLogMode] = useState<TradeLogMode>(() =>
     normalizeTradeLogMode(plugin.uiStateManager.getState().tradeLogMode)
   );
@@ -614,19 +642,8 @@ const useTradeLogController = ({ plugin, leaf }: TradeLogProps) => {
 
   const getPersistedTradeLogFilters =
     useCallback((): TradeLogFilters | null => {
-      const persisted = plugin.uiStateManager.getState().viewFilters?.tradelog;
-      if (!persisted) {
-        return null;
-      }
-
-      return {
-        ...normalizeTradeLogFilters(persisted),
-        dateRange: [
-          persisted.dateRange?.[0] ? new Date(persisted.dateRange[0]) : null,
-          persisted.dateRange?.[1] ? new Date(persisted.dateRange[1]) : null,
-        ],
-      };
-    }, [plugin.uiStateManager]);
+      return loadPersistedTradeLogFilters(plugin);
+    }, [plugin]);
 
   const syncFiltersFromPersistedState = useCallback(() => {
     const persistedFilters = getPersistedTradeLogFilters();
@@ -638,6 +655,14 @@ const useTradeLogController = ({ plugin, leaf }: TradeLogProps) => {
     );
   }, [getPersistedTradeLogFilters, plugin.uiStateManager]);
 
+  const persistFilters = useCallback(
+    (nextFilters: TradeLogFilters) => {
+      const normalizedFilters = normalizeTradeLogFilters(nextFilters);
+      persistViewFilter(plugin.uiStateManager, 'tradelog', normalizedFilters);
+    },
+    [plugin]
+  );
+
   const handleModeChange = useCallback(
     (nextMode: TradeLogMode) => {
       setTradeLogMode(nextMode);
@@ -645,11 +670,21 @@ const useTradeLogController = ({ plugin, leaf }: TradeLogProps) => {
         setIsMultiSelectMode(false);
         setSelectedTrades(new Set());
       }
+      setFilters((currentFilters) => {
+        const nextFilters = clearInactiveTreeSessionLogTags(
+          currentFilters,
+          nextMode
+        );
+        if (nextFilters !== currentFilters) {
+          persistFilters(nextFilters);
+        }
+        return nextFilters;
+      });
       void plugin.uiStateManager.updateStateImmediate({
         tradeLogMode: nextMode,
       });
     },
-    [plugin.uiStateManager]
+    [persistFilters, plugin.uiStateManager]
   );
 
   const handleImageGalleryControlsChange = useCallback(
@@ -702,6 +737,10 @@ const useTradeLogController = ({ plugin, leaf }: TradeLogProps) => {
   }, [plugin.customFieldsService, settingsVersion]);
   const allColumns = useMemo(
     () => buildTradeLogColumnDefinitions(customFields),
+    [customFields]
+  );
+  const snapshotKeysClaimedByCustomFields = useMemo(
+    () => areSnapshotKeysClaimedByCustomFields(customFields),
     [customFields]
   );
 
@@ -816,7 +855,9 @@ const useTradeLogController = ({ plugin, leaf }: TradeLogProps) => {
       nodes,
       effectiveSortConfig,
       defaultRiskAmount,
-      allColumns
+      allColumns,
+      snapshotKeysClaimedByCustomFields,
+      plugin.settings.trade.maeMfeDisplayUnit ?? 'dollar'
     );
   }, [
     nodes,
@@ -824,6 +865,8 @@ const useTradeLogController = ({ plugin, leaf }: TradeLogProps) => {
     filters.viewLevel,
     defaultRiskAmount,
     allColumns,
+    snapshotKeysClaimedByCustomFields,
+    plugin.settings.trade.maeMfeDisplayUnit,
   ]);
 
   const sizerRowData = useMemo(() => {
@@ -1030,8 +1073,10 @@ const useTradeLogController = ({ plugin, leaf }: TradeLogProps) => {
       'backtest-trade:changed',
       'review:changed',
       'settings:changed',
+      'options:changed',
       'account:changed',
       'folder-path:changed',
+      'image-gallery:changed',
     ],
     () => {
       if (tradeLogMode === 'imageGallery') {
@@ -1349,7 +1394,8 @@ const useTradeLogController = ({ plugin, leaf }: TradeLogProps) => {
           activeFilters.mistakes,
           activeFilters.customFieldFilters,
           activeFilters.reviewStatus,
-          activeFilters.directions
+          activeFilters.directions,
+          getActiveTreeSessionLogTags(activeFilters)
         );
 
         if (loadGenerationRef.current !== loadGeneration) {
@@ -1864,12 +1910,29 @@ const useTradeLogController = ({ plugin, leaf }: TradeLogProps) => {
 
   useEventBus(
     'settings:changed',
-    (payload?: { section?: string; source?: string }) => {
+    (payload?: SettingsChangedPayload) => {
       if (payload?.section === 'trade' || payload?.source === 'week-start') {
         handleTradeDataChanged();
       }
       if (payload?.section === 'copyTradeAdjustments') {
         void loadData();
+      }
+      if (payload?.section === 'drc') {
+        setNodes(refreshSessionLogTagDefinitionNodeIdentities);
+        const configuredTagIds = new Set(
+          getSessionLogTags(plugin).map((tag) => tag.id)
+        );
+        setFilters((currentFilters) => {
+          const nextFilters = pruneUnknownSessionLogTags(
+            currentFilters,
+            configuredTagIds
+          );
+          if (nextFilters === currentFilters) {
+            return currentFilters;
+          }
+          persistFilters(nextFilters);
+          return nextFilters;
+        });
       }
     },
     isActive
@@ -2085,14 +2148,6 @@ const useTradeLogController = ({ plugin, leaf }: TradeLogProps) => {
     [plugin]
   );
 
-  const persistFilters = useCallback(
-    (nextFilters: TradeLogFilters) => {
-      const normalizedFilters = normalizeTradeLogFilters(nextFilters);
-      persistViewFilter(plugin.uiStateManager, 'tradelog', normalizedFilters);
-    },
-    [plugin]
-  );
-
   const handleClearImageGalleryFilters = useCallback(() => {
     setFilters((currentFilters) => {
       const nextFilters = {
@@ -2113,15 +2168,15 @@ const useTradeLogController = ({ plugin, leaf }: TradeLogProps) => {
   const handleFilterChange = useCallback(
     (newFilters: Partial<TradeLogFilters>) => {
       setFilters((prev) => {
-        const nextFilters = normalizeTradeLogFilters({
-          ...prev,
-          ...newFilters,
-        });
+        const nextFilters = clearInactiveTreeSessionLogTags(
+          normalizeTradeLogFilters({ ...prev, ...newFilters }),
+          tradeLogMode
+        );
         persistFilters(nextFilters);
         return nextFilters;
       });
     },
-    [persistFilters]
+    [persistFilters, tradeLogMode]
   );
 
   const handleAccountChanged = useCallback(

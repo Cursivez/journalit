@@ -35,33 +35,30 @@ export class NavigationManager {
 
       if (file instanceof TFile) {
         
+        
+        
         let existingLeaf: WorkspaceLeaf | null = null;
-        this.app.workspace.iterateAllLeaves((leaf) => {
+        this.app.workspace.iterateRootLeaves((leaf) => {
           if (existingLeaf) return; 
 
-          
-          
+          if (file.extension === 'md') {
+            
+            
+            if (
+              leaf.view.getViewType() === 'markdown' &&
+              isViewWithTFile(leaf.view) &&
+              leaf.view.file.path === filePath
+            ) {
+              existingLeaf = leaf;
+            }
+            return;
+          }
+
           if (
             leaf.view instanceof FileView &&
             leaf.view.file?.path === filePath
           ) {
             existingLeaf = leaf;
-            return;
-          }
-
-          
-          if (leaf.view && isViewWithTFile(leaf.view)) {
-            if (leaf.view.file.path === filePath) {
-              existingLeaf = leaf;
-              return;
-            }
-          }
-
-          
-          const state = leaf.view?.getState?.();
-          if (state?.file === filePath) {
-            existingLeaf = leaf;
-            return;
           }
         });
 
@@ -208,6 +205,7 @@ export class NavigationManager {
 
       if (shouldOpen) {
         logger.debug('[Journalit] Opening Journalit view on startup');
+        
         await this.viewManager.openHomeView();
       }
     } catch (error) {

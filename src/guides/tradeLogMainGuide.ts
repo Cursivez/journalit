@@ -28,7 +28,7 @@ import {
   TRADE_LOG_VIEW_SELECTOR_TARGET_ID,
 } from './tradeLogGuideIds';
 
-export const TRADE_LOG_MAIN_GUIDE_VERSION = 7;
+export const TRADE_LOG_MAIN_GUIDE_VERSION = 8;
 
 export function registerTradeLogMainGuide(guideRegistry: GuideRegistry): void {
   guideRegistry.registerGuide({

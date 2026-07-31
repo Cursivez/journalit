@@ -3,6 +3,7 @@
 import React, { useMemo } from 'react';
 import { t } from '../../../lang/helpers';
 import { MultiSelectDropdownFilter } from '../../shared/MultiSelectDropdownFilter';
+import { UsersRound } from '../../shared/icons/ObsidianIcon';
 
 interface HomeAccountFilterProps {
   availableAccounts: string[];
@@ -56,6 +57,7 @@ export const HomeAccountFilter: React.FC<HomeAccountFilterProps> = React.memo(
         emptyMessage={t('dashboard.filter.accounts.none-found')}
         selectAllLabel={t('dashboard.filter.accounts.select-all')}
         showSelectAll
+        icon={UsersRound}
         classNamePrefix="journalit-home-account-filter"
         onChange={(accounts) =>
           onChange(

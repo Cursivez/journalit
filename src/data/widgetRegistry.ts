@@ -1,6 +1,9 @@
 
 
-import type { ReviewTemplateType } from '../types/reviewV2';
+import {
+  DEFAULT_DEMON_TRACKER_TRACKING_METHOD,
+  type ReviewTemplateType,
+} from '../types/reviewV2';
 import { t } from '../lang/helpers';
 
 export type WidgetCategory =
@@ -314,7 +317,10 @@ export const WIDGET_REGISTRY: WidgetDefinition[] = [
     name: t('widget.demon-tracker.name'),
     description: t('widget.demon-tracker.description'),
     category: 'statistics',
-    availableIn: ['monthly', 'quarterly', 'yearly'],
+    availableIn: ['weekly', 'monthly', 'quarterly', 'yearly'],
+    defaultConfig: {
+      trackingMethod: DEFAULT_DEMON_TRACKER_TRACKING_METHOD,
+    },
   },
 
   

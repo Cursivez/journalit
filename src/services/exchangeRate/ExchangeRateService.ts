@@ -2,6 +2,7 @@
 
 import { requestUrl } from 'obsidian';
 import type JournalitPlugin from '../../main';
+import { hasUnrealizedPriceSnapshot } from '../../utils/unrealizedPnl';
 import {
   FrankfurterResponse,
   CachedExchangeRates,
@@ -232,47 +233,163 @@ export class ExchangeRateService {
   async convertTrades<T extends ConvertibleTrade>(
     trades: T[],
     baseCurrency: string,
-    defaultCurrency: string = baseCurrency
+    defaultCurrency: string = baseCurrency,
+    options: { includeUnrealizedPnl?: boolean } = {}
   ): Promise<ConvertedTradesResult<T> | null> {
+    const includeUnrealizedPnl = options.includeUnrealizedPnl === true;
     const hasUsableBrokerBasePnl = (trade: T): boolean =>
       typeof trade.brokerBaseCurrencyPnl === 'number' &&
       Number.isFinite(trade.brokerBaseCurrencyPnl) &&
       trade.brokerBaseCurrency === baseCurrency;
 
+    
+    
+    const getManualFxRate = (trade: T): number | null =>
+      typeof trade.fxRate === 'number' &&
+      Number.isFinite(trade.fxRate) &&
+      trade.fxRate > 0 &&
+      trade.fxRateBaseCurrency === baseCurrency
+        ? trade.fxRate
+        : null;
+
     const hasForeignAuxiliaryMonetaryFields = (trade: T): boolean => {
       const tradeCurrency = trade.currency || defaultCurrency;
+      const manualFxRate = getManualFxRate(trade);
+      const balanceNeedsFetchedRate = (
+        value: number | undefined,
+        currency: string | undefined
+      ): boolean =>
+        value !== undefined &&
+        currency !== baseCurrency &&
+        !(manualFxRate !== null && currency === tradeCurrency);
       return (
-        (trade.riskAmount !== undefined && tradeCurrency !== baseCurrency) ||
-        (trade.breakEvenAccountCurrentBalance !== undefined &&
-          trade.breakEvenAccountCurrentBalanceCurrency !== baseCurrency) ||
-        (trade.breakEvenAccountCurrentBalanceTotal !== undefined &&
-          trade.breakEvenAccountCurrentBalanceTotalCurrency !== baseCurrency)
+        (trade.riskAmount !== undefined &&
+          tradeCurrency !== baseCurrency &&
+          manualFxRate === null) ||
+        balanceNeedsFetchedRate(
+          trade.breakEvenAccountCurrentBalance,
+          trade.breakEvenAccountCurrentBalanceCurrency
+        ) ||
+        balanceNeedsFetchedRate(
+          trade.breakEvenAccountCurrentBalanceTotal,
+          trade.breakEvenAccountCurrentBalanceTotalCurrency
+        )
       );
     };
 
-    const needsRates = trades.some((trade) => {
+    
+    
+    
+    
+    
+    const hasMeaningfulAmount = (value: number | undefined): boolean =>
+      typeof value === 'number' && Number.isFinite(value) && value !== 0;
+    const hasForeignBrokerAuxiliaryFields = (trade: T): boolean => {
+      const tradeCurrency = trade.currency || defaultCurrency;
+      if (
+        tradeCurrency === baseCurrency ||
+        !hasUsableBrokerBasePnl(trade) ||
+        getManualFxRate(trade) !== null
+      ) {
+        return false;
+      }
+      return (
+        (trade.commissionType !== 'percentage' &&
+          hasMeaningfulAmount(trade.commission)) ||
+        hasMeaningfulAmount(trade.swap) ||
+        hasMeaningfulAmount(trade.fees) ||
+        hasMeaningfulAmount(trade.rebate) ||
+        hasMeaningfulAmount(trade.mae) ||
+        hasMeaningfulAmount(trade.mfe) ||
+        hasMeaningfulAmount(trade.riskAmount) ||
+        (Array.isArray(trade.dividends) &&
+          trade.dividends.some((dividend) =>
+            hasMeaningfulAmount(
+              typeof dividend?.amount === 'number' ? dividend.amount : undefined
+            )
+          ))
+      );
+    };
+
+    const requiresFetchedRates = (trade: T): boolean => {
       const tradeCurrency = trade.currency || defaultCurrency;
       return (
-        (tradeCurrency !== baseCurrency && !hasUsableBrokerBasePnl(trade)) ||
-        hasForeignAuxiliaryMonetaryFields(trade)
+        tradeCurrency !== baseCurrency &&
+        getManualFxRate(trade) === null &&
+        (!hasUsableBrokerBasePnl(trade) ||
+          
+          
+          (includeUnrealizedPnl && hasUnrealizedPriceSnapshot(trade)))
       );
-    });
+    };
+
+    const needsRates = trades.some(
+      (trade) =>
+        requiresFetchedRates(trade) ||
+        hasForeignAuxiliaryMonetaryFields(trade) ||
+        hasForeignBrokerAuxiliaryFields(trade)
+    );
 
     const ratesData = needsRates ? await this.getRates(baseCurrency) : null;
-    const hasTradesRequiringFxRates = trades.some((trade) => {
-      const tradeCurrency = trade.currency || defaultCurrency;
-      return tradeCurrency !== baseCurrency && !hasUsableBrokerBasePnl(trade);
-    });
+    const hasTradesRequiringFxRates = trades.some(requiresFetchedRates);
 
     if (hasTradesRequiringFxRates && !ratesData) {
-      return null;
+      
+      
+      
+      
+      
+      const hasOfflineConvertibleSource = trades.some(
+        (trade) =>
+          hasUsableBrokerBasePnl(trade) ||
+          ((trade.currency || defaultCurrency) !== baseCurrency &&
+            getManualFxRate(trade) !== null)
+      );
+      if (!hasOfflineConvertibleSource) {
+        return null;
+      }
     }
 
     const unconvertedCurrencies = new Set<string>();
+    const partiallyConvertedCurrencies = new Set<string>();
+    const excludedTrades: T[] = [];
     let brokerBaseCurrencyTradeCount = 0;
+    let manualFxRateTradeCount = 0;
 
     const convertedTrades = trades.map((trade) => {
       const tradeCurrency = trade.currency || defaultCurrency;
+
+      
+      
+      const manualFxRate =
+        tradeCurrency !== baseCurrency ? getManualFxRate(trade) : null;
+
+      
+      
+      let usedManualRate = false;
+      let usedFetchedDailyRates = false;
+      
+      
+      let conversionPnlFactor: number | null = null;
+      const tradePartialCurrencies = new Set<string>();
+
+      const finalizeConvertedTrade = <TConverted extends object>(
+        converted: TConverted
+      ) => {
+        if (usedManualRate) {
+          manualFxRateTradeCount += 1;
+        }
+        return {
+          ...converted,
+          conversionUsedManualRate: usedManualRate ? true : undefined,
+          conversionUsedFetchedRates: usedFetchedDailyRates ? true : undefined,
+          conversionPnlFactor: conversionPnlFactor ?? undefined,
+          conversionPartialCurrencies:
+            tradePartialCurrencies.size > 0
+              ? Array.from(tradePartialCurrencies)
+              : undefined,
+        };
+      };
 
       const lookupRate = (currency?: string): number | null => {
         if (!currency) {
@@ -295,21 +412,97 @@ export class ExchangeRateService {
           return undefined;
         }
 
+        
+        
+        if (value === 0) {
+          return 0;
+        }
+
+        
+        
+        
+        if (manualFxRate !== null && sourceCurrency === tradeCurrency) {
+          usedManualRate = true;
+          return value * manualFxRate;
+        }
+
         const rate = lookupRate(sourceCurrency);
         if (rate === null) {
+          
+          
+          partiallyConvertedCurrencies.add(sourceCurrency);
+          tradePartialCurrencies.add(sourceCurrency);
           return undefined;
         }
 
+        if (sourceCurrency !== baseCurrency) {
+          usedFetchedDailyRates = true;
+        }
         
         return value / rate;
       };
 
+      
+      
+      
+      const derivedAmountRate = lookupRate(tradeCurrency);
+      const unrealizedPnlConversionRate = includeUnrealizedPnl
+        ? (manualFxRate ??
+          (derivedAmountRate !== null && derivedAmountRate !== 0
+            ? 1 / derivedAmountRate
+            : undefined))
+        : undefined;
+      if (
+        includeUnrealizedPnl &&
+        tradeCurrency !== baseCurrency &&
+        hasUnrealizedPriceSnapshot(trade)
+      ) {
+        if (manualFxRate !== null) {
+          usedManualRate = true;
+        } else if (unrealizedPnlConversionRate !== undefined) {
+          usedFetchedDailyRates = true;
+        } else {
+          
+          
+          
+          partiallyConvertedCurrencies.add(tradeCurrency);
+          tradePartialCurrencies.add(tradeCurrency);
+        }
+      }
+
       if (hasUsableBrokerBasePnl(trade)) {
-        brokerBaseCurrencyTradeCount += 1;
-        const brokerBaseRiskAmount = convertValue(
-          trade.riskAmount,
-          tradeCurrency
-        );
+        if (tradeCurrency !== baseCurrency) {
+          brokerBaseCurrencyTradeCount += 1;
+        }
+        
+        
+        
+        
+        const convertTradeCurrencyAmount = (
+          value: number | undefined
+        ): number | undefined => convertValue(value, tradeCurrency);
+        const fetchedTradeRate = lookupRate(tradeCurrency);
+        const dividendMultiplier =
+          manualFxRate !== null
+            ? manualFxRate
+            : fetchedTradeRate !== null
+              ? 1 / fetchedTradeRate
+              : null;
+        
+        
+        
+        
+        const originalEffectivePnl = Number(getEffectivePnL(trade)) || 0;
+        const impliedBrokerFactor =
+          typeof trade.brokerBaseCurrencyPnl === 'number' &&
+          Number.isFinite(trade.brokerBaseCurrencyPnl) &&
+          originalEffectivePnl !== 0 &&
+          trade.brokerBaseCurrencyPnl / originalEffectivePnl > 0
+            ? trade.brokerBaseCurrencyPnl / originalEffectivePnl
+            : null;
+        if (tradeCurrency !== baseCurrency) {
+          conversionPnlFactor = impliedBrokerFactor ?? dividendMultiplier;
+        }
         const brokerBaseBreakEvenAccountCurrentBalance = convertValue(
           trade.breakEvenAccountCurrentBalance,
           trade.breakEvenAccountCurrentBalanceCurrency
@@ -318,17 +511,19 @@ export class ExchangeRateService {
           trade.breakEvenAccountCurrentBalanceTotal,
           trade.breakEvenAccountCurrentBalanceTotalCurrency
         );
-        return {
+        const brokerBaseTrade = {
           ...trade,
           currency: baseCurrency,
           originalCurrency: tradeCurrency,
+          originalMaeBeforeConversion: trade.mae,
+          originalMfeBeforeConversion: trade.mfe,
           originalPnlBeforeConversion: Number(getEffectivePnL(trade)) || 0,
+          unrealizedPnlConversionRate,
           pnl: trade.brokerBaseCurrencyPnl,
           directPnL:
             trade.useDirectPnLInput === true
               ? trade.brokerBaseCurrencyPnl
               : trade.directPnL,
-          riskAmount: brokerBaseRiskAmount,
           breakEvenAccountCurrentBalance:
             brokerBaseBreakEvenAccountCurrentBalance,
           breakEvenAccountCurrentBalanceCurrency:
@@ -342,21 +537,167 @@ export class ExchangeRateService {
               ? baseCurrency
               : undefined,
         };
+
+        if (
+          dividendMultiplier === null &&
+          hasForeignBrokerAuxiliaryFields(trade)
+        ) {
+          
+          
+          
+          
+          
+          
+          
+          
+          partiallyConvertedCurrencies.add(tradeCurrency);
+          tradePartialCurrencies.add(tradeCurrency);
+          return finalizeConvertedTrade({
+            ...brokerBaseTrade,
+            commission:
+              trade.commissionType === 'percentage'
+                ? trade.commission
+                : trade.commission === undefined
+                  ? undefined
+                  : 0,
+            swap: trade.swap === undefined ? undefined : 0,
+            fees: trade.fees === undefined ? undefined : 0,
+            rebate: undefined,
+            riskAmount: undefined,
+            mae: undefined,
+            mfe: undefined,
+            originalMaeBeforeConversion: undefined,
+            originalMfeBeforeConversion: undefined,
+            maeAmountDerivedFromPrice: undefined,
+            mfeAmountDerivedFromPrice: undefined,
+            
+            
+            maePrice: undefined,
+            mfePrice: undefined,
+            dividends: undefined,
+          });
+        }
+
+        const hasDividendAmounts =
+          Array.isArray(trade.dividends) &&
+          trade.dividends.some((dividend) =>
+            hasMeaningfulAmount(
+              typeof dividend?.amount === 'number' ? dividend.amount : undefined
+            )
+          );
+        if (dividendMultiplier !== null && hasDividendAmounts) {
+          if (manualFxRate !== null) {
+            usedManualRate = true;
+          } else {
+            usedFetchedDailyRates = true;
+          }
+        }
+
+        return finalizeConvertedTrade({
+          ...brokerBaseTrade,
+          commission:
+            trade.commissionType === 'percentage'
+              ? trade.commission
+              : convertTradeCurrencyAmount(trade.commission),
+          swap: convertTradeCurrencyAmount(trade.swap),
+          fees: convertTradeCurrencyAmount(trade.fees),
+          rebate: convertTradeCurrencyAmount(trade.rebate),
+          mae: convertTradeCurrencyAmount(trade.mae),
+          mfe: convertTradeCurrencyAmount(trade.mfe),
+          riskAmount: convertTradeCurrencyAmount(trade.riskAmount),
+          dividends:
+            dividendMultiplier !== null && Array.isArray(trade.dividends)
+              ? trade.dividends.map((dividend) => ({
+                  ...dividend,
+                  amount:
+                    typeof dividend?.amount === 'number' &&
+                    Number.isFinite(dividend.amount)
+                      ? dividend.amount * dividendMultiplier
+                      : dividend?.amount,
+                }))
+              : trade.dividends,
+        });
       }
 
-      const getTradeRateForCurrency = (currency: string): number | null => {
-        const rate = lookupRate(currency);
-        if (rate === null) {
-          unconvertedCurrencies.add(currency);
-        }
-        return rate;
-      };
-
       
-      const tradeRate = getTradeRateForCurrency(tradeCurrency);
+      
+      
+      const hasConvertibleTradeCurrencyValue =
+        hasMeaningfulAmount(
+          typeof trade.pnl === 'number' ? trade.pnl : undefined
+        ) ||
+        hasMeaningfulAmount(
+          typeof trade.directPnL === 'number' ? trade.directPnL : undefined
+        ) ||
+        (trade.commissionType !== 'percentage' &&
+          hasMeaningfulAmount(trade.commission)) ||
+        hasMeaningfulAmount(trade.swap) ||
+        hasMeaningfulAmount(trade.fees) ||
+        hasMeaningfulAmount(trade.rebate) ||
+        hasMeaningfulAmount(trade.riskAmount) ||
+        hasMeaningfulAmount(trade.mae) ||
+        hasMeaningfulAmount(trade.mfe) ||
+        (Array.isArray(trade.dividends) &&
+          trade.dividends.some((dividend) =>
+            hasMeaningfulAmount(
+              typeof dividend?.amount === 'number' ? dividend.amount : undefined
+            )
+          ));
+      
+      
+      
+      const tradeRate =
+        manualFxRate !== null ? 1 / manualFxRate : lookupRate(tradeCurrency);
       if (tradeRate === null) {
+        if (!hasConvertibleTradeCurrencyValue) {
+          
+          
+          
+          const convertedBreakEvenAccountCurrentBalance = convertValue(
+            trade.breakEvenAccountCurrentBalance,
+            trade.breakEvenAccountCurrentBalanceCurrency
+          );
+          const convertedBreakEvenAccountCurrentBalanceTotal = convertValue(
+            trade.breakEvenAccountCurrentBalanceTotal,
+            trade.breakEvenAccountCurrentBalanceTotalCurrency
+          );
+          return finalizeConvertedTrade({
+            ...trade,
+            currency: baseCurrency,
+            originalCurrency: tradeCurrency,
+            originalPnlBeforeConversion: Number(getEffectivePnL(trade)) || 0,
+            commission: trade.commission ?? 0,
+            swap: trade.swap ?? 0,
+            fees: trade.fees ?? 0,
+            breakEvenAccountCurrentBalance:
+              convertedBreakEvenAccountCurrentBalance,
+            breakEvenAccountCurrentBalanceCurrency:
+              convertedBreakEvenAccountCurrentBalance !== undefined
+                ? baseCurrency
+                : trade.breakEvenAccountCurrentBalanceCurrency,
+            breakEvenAccountCurrentBalanceTotal:
+              convertedBreakEvenAccountCurrentBalanceTotal,
+            breakEvenAccountCurrentBalanceTotalCurrency:
+              convertedBreakEvenAccountCurrentBalanceTotal !== undefined
+                ? baseCurrency
+                : trade.breakEvenAccountCurrentBalanceTotalCurrency,
+          });
+        }
         
+        
+        unconvertedCurrencies.add(tradeCurrency);
+        excludedTrades.push(trade);
         return null;
+      }
+      if (hasConvertibleTradeCurrencyValue && tradeCurrency !== baseCurrency) {
+        if (manualFxRate !== null) {
+          usedManualRate = true;
+        } else {
+          usedFetchedDailyRates = true;
+        }
+      }
+      if (tradeCurrency !== baseCurrency) {
+        conversionPnlFactor = 1 / tradeRate;
       }
 
       
@@ -364,7 +705,10 @@ export class ExchangeRateService {
         trade.pnl !== undefined && trade.pnl !== null
           ? trade.pnl / tradeRate
           : trade.pnl;
-      const convertedCommission = (trade.commission ?? 0) / tradeRate;
+      const convertedCommission =
+        trade.commissionType === 'percentage'
+          ? (trade.commission ?? 0)
+          : (trade.commission ?? 0) / tradeRate;
       const convertedSwap = (trade.swap ?? 0) / tradeRate;
       const convertedFees = (trade.fees ?? 0) / tradeRate;
       const convertedRebate =
@@ -379,6 +723,10 @@ export class ExchangeRateService {
         trade.riskAmount !== undefined
           ? trade.riskAmount / tradeRate
           : undefined;
+      const convertedMae =
+        trade.mae !== undefined ? trade.mae / tradeRate : undefined;
+      const convertedMfe =
+        trade.mfe !== undefined ? trade.mfe / tradeRate : undefined;
       const convertedDividends = Array.isArray(trade.dividends)
         ? trade.dividends.map((dividend) => ({
             ...dividend,
@@ -399,11 +747,14 @@ export class ExchangeRateService {
         trade.breakEvenAccountCurrentBalanceTotalCurrency
       );
 
-      return {
+      return finalizeConvertedTrade({
         ...trade,
         currency: baseCurrency,
         originalCurrency: tradeCurrency,
+        originalMaeBeforeConversion: trade.mae,
+        originalMfeBeforeConversion: trade.mfe,
         originalPnlBeforeConversion: Number(getEffectivePnL(trade)) || 0,
+        unrealizedPnlConversionRate,
         pnl: convertedPnl,
         directPnL: convertedDirectPnL,
         commission: convertedCommission,
@@ -411,6 +762,8 @@ export class ExchangeRateService {
         fees: convertedFees,
         rebate: convertedRebate,
         riskAmount: convertedRiskAmount,
+        mae: convertedMae,
+        mfe: convertedMfe,
         dividends: convertedDividends,
         breakEvenAccountCurrentBalance: convertedBreakEvenAccountCurrentBalance,
         breakEvenAccountCurrentBalanceCurrency:
@@ -423,20 +776,28 @@ export class ExchangeRateService {
           convertedBreakEvenAccountCurrentBalanceTotal !== undefined
             ? baseCurrency
             : trade.breakEvenAccountCurrentBalanceTotalCurrency,
-      };
+      });
     });
 
     
     const validTrades = convertedTrades.filter((trade) => trade !== null);
+    const usedFetchedRates = validTrades.some(
+      (trade) => trade.conversionUsedFetchedRates === true
+    );
 
     return {
       trades: validTrades,
+      excludedTrades,
       baseCurrency,
-      rateDate: ratesData?.rateDate ?? 'broker',
+      rateDate:
+        (usedFetchedRates ? ratesData?.rateDate : undefined) ??
+        (manualFxRateTradeCount > 0 ? 'manual' : 'broker'),
       unconvertedCurrencies: Array.from(unconvertedCurrencies),
+      partiallyConvertedCurrencies: Array.from(partiallyConvertedCurrencies),
       originalTradeCount: trades.length,
       convertedTradeCount: validTrades.length,
       brokerBaseCurrencyTradeCount,
+      manualFxRateTradeCount,
     };
   }
 

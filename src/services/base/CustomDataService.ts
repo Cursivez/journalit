@@ -17,6 +17,17 @@ function ensureRecord(value: unknown): Record<string, unknown> {
   return isRecord(value) ? value : {};
 }
 
+function materializeIndexEntryData(data: unknown, entry: IndexEntry): unknown {
+  if (!isRecord(data)) {
+    return data;
+  }
+
+  return {
+    ...data,
+    path: entry.file.path,
+  };
+}
+
 
 export interface CustomDataServiceConfig {
   
@@ -277,7 +288,9 @@ export class CustomDataService {
               if (entriesWithData.length === indexedResults.length) {
                 
                 result = indexedResults.flatMap((entry) =>
-                  entry.data ? [entry.data] : []
+                  entry.data
+                    ? [materializeIndexEntryData(entry.data, entry)]
+                    : []
                 );
               } else {
                 
@@ -292,7 +305,10 @@ export class CustomDataService {
                       if (!fileExists) {
                         return null; 
                       }
-                      return await this.readFrontmatter(entry.file);
+                      const frontmatter = await this.readFrontmatter(
+                        entry.file
+                      );
+                      return materializeIndexEntryData(frontmatter, entry);
                     } catch (error) {
                       
                       if (

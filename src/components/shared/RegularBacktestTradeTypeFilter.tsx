@@ -5,7 +5,7 @@ import React, {
   useRef,
   useState,
 } from 'react';
-import { ChevronDown } from './icons/ObsidianIcon';
+import { ChevronDown, ListFilter } from './icons/ObsidianIcon';
 import type { TradeType } from '../../services/tradelog/types';
 import { t } from '../../lang/helpers';
 import { DEFAULT_REGULAR_ONLY_TRADE_TYPES } from '../../settings/viewFiltersDefaults';
@@ -113,6 +113,11 @@ export const RegularBacktestTradeTypeFilter: React.FC<RegularBacktestTradeTypeFi
           aria-label={`${t('home.aria.filter-trade-types')}: ${summary}`}
           aria-expanded={isOpen}
         >
+          <ListFilter
+            size={14}
+            className="journalit-home-filter-icon"
+            aria-hidden="true"
+          />
           <span className="journalit-home-trade-type-filter__summary">
             {summary}
           </span>

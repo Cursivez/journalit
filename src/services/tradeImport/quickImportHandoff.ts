@@ -18,9 +18,10 @@ interface QuickImportTradeImportHandoff {
   headerRowIndex?: number | null;
   columnMappings: Record<string, string[]>;
   aiMappingEnabled: boolean;
-  analyse?: TradeImportAnalyseResponse | null;
-  preview?: TradeImportPreviewResponse | null;
-  classified?: ClassifiedPreviewTrade[];
+  analyse: TradeImportAnalyseResponse | null;
+  preview: TradeImportPreviewResponse | null;
+  previewOwnerUserId: string | null;
+  classified: ClassifiedPreviewTrade[];
 }
 
 let pendingQuickImportHandoff: QuickImportTradeImportHandoff | null = null;

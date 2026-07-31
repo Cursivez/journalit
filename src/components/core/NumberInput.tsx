@@ -43,6 +43,27 @@ const trimTrailingDecimalZeros = (value: string): string =>
     ? value.replace(/\.0+$/, '').replace(/(\.\d*?)0+$/, '$1')
     : value;
 
+const normalizeGroupedNumberInput = (
+  value: string,
+  allowDecimal: boolean
+): string | undefined => {
+  const typingRegexPattern = allowDecimal ? /^-?\d*\.?\d*$/ : /^-?\d*$/;
+
+  if (!value.includes(',')) {
+    return typingRegexPattern.test(value) ? value : undefined;
+  }
+
+  const groupedNumberPattern = allowDecimal
+    ? /^-?(?:\d{1,3}(?:,\d{3})+)(?:\.\d*)?$/
+    : /^-?(?:\d{1,3}(?:,\d{3})+)$/;
+
+  if (!groupedNumberPattern.test(value)) {
+    return undefined;
+  }
+
+  return value.replaceAll(',', '');
+};
+
 const isRoundedPrecisionEquivalent = (
   value: number,
   roundedValue: string
@@ -148,21 +169,23 @@ export const NumberInput: React.FC<NumberInputProps> = ({
     }
 
     
-    const typingRegexPattern = allowDecimal
-      ? /^-?\d*\.?\d*$/ 
-      : /^-?\d*$/;
-
     
-    if (!typingRegexPattern.test(newValue)) {
+    const normalizedValue = normalizeGroupedNumberInput(newValue, allowDecimal);
+
+    if (normalizedValue === undefined) {
       return; 
     }
 
     
-    setInputValue(newValue);
+    setInputValue(normalizedValue);
 
     
     
-    if (newValue === '-' || newValue === '.' || newValue === '-.') {
+    if (
+      normalizedValue === '-' ||
+      normalizedValue === '.' ||
+      normalizedValue === '-.'
+    ) {
       
       
       return;
@@ -170,8 +193,8 @@ export const NumberInput: React.FC<NumberInputProps> = ({
 
     
     const numericValue = allowDecimal
-      ? parseFloat(newValue)
-      : parseInt(newValue, 10);
+      ? parseFloat(normalizedValue)
+      : parseInt(normalizedValue, 10);
 
     
     if (!isNaN(numericValue)) {

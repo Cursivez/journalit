@@ -1,36 +1,18 @@
 
 
-import React, { useState, useMemo } from 'react';
+import React, { useState } from 'react';
 import { Notice } from 'obsidian';
 import JournalitPlugin from '../../../main';
-import { Select } from '../../../components/core/Select';
 import { ToggleSwitch } from '../../../components/ui';
 import { Accordion } from '../../../components/shared/Accordion';
 import { ItemManager } from '../shared/ItemManager';
 import { eventBus } from '../../../services/events';
 import { t } from '../../../lang/helpers';
-import {
-  DEFAULT_SCALPER_DEFAULTS,
-  DEFAULT_SETTINGS,
-} from '../../../settings/types';
-import {
-  DemonTrackerCountMode,
-  DemonTrackerSourceMode,
-} from '../../../types/reviewV2';
+import { DEFAULT_SETTINGS } from '../../../settings/types';
 
 interface ReviewsTabProps {
   plugin: JournalitPlugin;
 }
-
-const isDemonTrackerCountMode = (
-  value: string
-): value is DemonTrackerCountMode =>
-  value === 'per-trade' || value === 'per-trading-day';
-
-const isDemonTrackerSourceMode = (
-  value: string
-): value is DemonTrackerSourceMode =>
-  value === 'trades' || value === 'session' || value === 'combined';
 
 function useReviewsTabModel(props: ReviewsTabProps) {
   const { plugin } = props;
@@ -60,43 +42,6 @@ function useReviewsTabModel(props: ReviewsTabProps) {
   });
   const [settingsVersion, setSettingsVersion] = useState(0);
   void settingsVersion; 
-
-  const demonCountModeOptions = useMemo(
-    () => [
-      {
-        value: 'per-trade',
-        label: t('templateEditor.widget.demon-tracker.count-mode.per-trade'),
-      },
-      {
-        value: 'per-trading-day',
-        label: t(
-          'templateEditor.widget.demon-tracker.count-mode.per-trading-day'
-        ),
-      },
-    ],
-    []
-  );
-
-  const demonSourceModeOptions = useMemo(
-    () => [
-      {
-        value: 'trades',
-        label: t('templateEditor.widget.demon-tracker.source-mode.trades'),
-      },
-      {
-        value: 'session',
-        label: t('templateEditor.widget.demon-tracker.source-mode.session'),
-      },
-      {
-        value: 'combined',
-        label: t('templateEditor.widget.demon-tracker.source-mode.combined'),
-      },
-    ],
-    []
-  );
-
-  const currentScalperDefaults =
-    plugin.settings.reviewV2?.scalperDefaults ?? DEFAULT_SCALPER_DEFAULTS;
 
   const handleOpenBuilder = () => {
     
@@ -255,73 +200,8 @@ function useReviewsTabModel(props: ReviewsTabProps) {
     );
   };
 
-  const ensureScalperDefaults = () => {
-    if (!plugin.settings.reviewV2) {
-      plugin.settings.reviewV2 = {
-        customWidgetTypes: [],
-        templates: [],
-        tradeTemplates: [],
-        scalperDefaults: { ...DEFAULT_SCALPER_DEFAULTS },
-      };
-    }
-
-    if (!plugin.settings.reviewV2.scalperDefaults) {
-      plugin.settings.reviewV2.scalperDefaults = {
-        ...DEFAULT_SCALPER_DEFAULTS,
-      };
-    }
-
-    return plugin.settings.reviewV2.scalperDefaults;
-  };
-
-  const handleScalperCountModeChange = async (value: string) => {
-    if (!isDemonTrackerCountMode(value)) return;
-
-    const scalperDefaults = ensureScalperDefaults();
-    scalperDefaults.countMode = value;
-
-    await plugin.saveSettings();
-    setSettingsVersion((prev) => prev + 1);
-
-    eventBus.publish('settings:changed', {
-      component: 'reviewV2',
-      settings: plugin.settings.reviewV2,
-    });
-  };
-
-  const handleScalperSourceModeChange = async (value: string) => {
-    if (!isDemonTrackerSourceMode(value)) return;
-
-    const scalperDefaults = ensureScalperDefaults();
-    scalperDefaults.sourceMode = value;
-
-    await plugin.saveSettings();
-    setSettingsVersion((prev) => prev + 1);
-
-    eventBus.publish('settings:changed', {
-      component: 'reviewV2',
-      settings: plugin.settings.reviewV2,
-    });
-  };
-
-  const handleScalperAutoApplyToggle = async (newValue: boolean) => {
-    const scalperDefaults = ensureScalperDefaults();
-    scalperDefaults.autoApplySessionMistakesToTrades = newValue;
-
-    await plugin.saveSettings();
-    setSettingsVersion((prev) => prev + 1);
-
-    eventBus.publish('settings:changed', {
-      component: 'reviewV2',
-      settings: plugin.settings.reviewV2,
-    });
-  };
-
   return {
     checklistItems,
-    currentScalperDefaults,
-    demonCountModeOptions,
-    demonSourceModeOptions,
     globalAutoCreate,
     handleAutoCreateDRCOnNavigationToggle,
     handleAutoCreateMonthlyReviewOnNavigationToggle,
@@ -330,9 +210,6 @@ function useReviewsTabModel(props: ReviewsTabProps) {
     handleAutoCreateYearlyReviewOnNavigationToggle,
     handleGlobalAutoCreateToggle,
     handleOpenBuilder,
-    handleScalperAutoApplyToggle,
-    handleScalperCountModeChange,
-    handleScalperSourceModeChange,
     plugin,
     recurringGoals,
     setChecklistItems,
@@ -445,9 +322,6 @@ function ReviewListsSection({
 export const ReviewsTab: React.FC<ReviewsTabProps> = (props) => {
   const {
     checklistItems,
-    currentScalperDefaults,
-    demonCountModeOptions,
-    demonSourceModeOptions,
     globalAutoCreate,
     handleAutoCreateDRCOnNavigationToggle,
     handleAutoCreateMonthlyReviewOnNavigationToggle,
@@ -456,9 +330,6 @@ export const ReviewsTab: React.FC<ReviewsTabProps> = (props) => {
     handleAutoCreateYearlyReviewOnNavigationToggle,
     handleGlobalAutoCreateToggle,
     handleOpenBuilder,
-    handleScalperAutoApplyToggle,
-    handleScalperCountModeChange,
-    handleScalperSourceModeChange,
     plugin,
     recurringGoals,
     setChecklistItems,
@@ -627,73 +498,6 @@ export const ReviewsTab: React.FC<ReviewsTabProps> = (props) => {
               onChange={handleAutoCreateYearlyReviewOnNavigationToggle}
               id="auto-create-yearly-review-navigation-toggle"
               ariaLabel={t('settings.reviews.auto-create-yearly-nav-aria')}
-            />
-          </div>
-        </div>
-      </Accordion>
-
-      
-      <Accordion
-        title={t('settings.reviews.scalper-defaults')}
-        defaultExpanded={false}
-      >
-        <p className="setting-item-description journalit-u-mb-12">
-          {t('settings.reviews.scalper-defaults-desc')}
-        </p>
-
-        <div className="setting-item">
-          <div className="setting-item-info">
-            <div className="setting-item-name">
-              {t('settings.reviews.scalper-default-count-mode')}
-            </div>
-            <div className="setting-item-description">
-              {t('settings.reviews.scalper-default-count-mode-desc')}
-            </div>
-          </div>
-          <div className="setting-item-control">
-            <Select
-              value={currentScalperDefaults.countMode}
-              onChange={handleScalperCountModeChange}
-              options={demonCountModeOptions}
-            />
-          </div>
-        </div>
-
-        <div className="setting-item">
-          <div className="setting-item-info">
-            <div className="setting-item-name">
-              {t('settings.reviews.scalper-default-source-mode')}
-            </div>
-            <div className="setting-item-description">
-              {t('settings.reviews.scalper-default-source-mode-desc')}
-            </div>
-          </div>
-          <div className="setting-item-control">
-            <Select
-              value={currentScalperDefaults.sourceMode}
-              onChange={handleScalperSourceModeChange}
-              options={demonSourceModeOptions}
-            />
-          </div>
-        </div>
-
-        <div className="setting-item">
-          <div className="setting-item-info">
-            <div className="setting-item-name">
-              {t('settings.reviews.scalper-auto-apply-session')}
-            </div>
-            <div className="setting-item-description">
-              {t('settings.reviews.scalper-auto-apply-session-desc')}
-            </div>
-          </div>
-          <div className="setting-item-control">
-            <ToggleSwitch
-              checked={
-                currentScalperDefaults.autoApplySessionMistakesToTrades ?? false
-              }
-              onChange={handleScalperAutoApplyToggle}
-              id="scalper-auto-apply-session-toggle"
-              ariaLabel={t('settings.reviews.scalper-auto-apply-session-aria')}
             />
           </div>
         </div>

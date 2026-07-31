@@ -6,6 +6,7 @@ import { useCurrency } from '../../../contexts/CurrencyContext';
 import { parseCuratedCurrencyCode } from '../../../utils/currencyConfig';
 import { formatPnLWithCurrency } from '../../../utils/currencyAggregation';
 import { useDisplayFormatter } from '../../../hooks/useDisplayPolicy';
+import { ConversionSourceLines } from '../../shared/display/CurrencyConversionInfo';
 import { t } from '../../../lang/helpers';
 import { Tooltip } from '../../shared';
 import { useGuideTarget } from '../../../guides/GuideRuntimeLayer';
@@ -85,11 +86,22 @@ export const AccountMetrics: React.FC = () => {
                           currency: metrics.conversionBaseCurrency || '',
                         })}
                       </div>
-                      <div>
-                        {t('dashboard.conversion.rates', {
-                          date: metrics.conversionRateDate || '',
-                        })}
-                      </div>
+                      <ConversionSourceLines
+                        brokerBaseCurrencyTradeCount={
+                          metrics.brokerBaseCurrencyTradeCount
+                        }
+                        manualFxRateTradeCount={metrics.manualFxRateTradeCount}
+                        conversionRateDate={metrics.conversionRateDate}
+                      />
+                      {metrics.partiallyConvertedCurrencies &&
+                        metrics.partiallyConvertedCurrencies.length > 0 && (
+                          <div className="account-metrics-conversion-warning">
+                            {t('dashboard.conversion.partial-warning', {
+                              currencies:
+                                metrics.partiallyConvertedCurrencies.join(', '),
+                            })}
+                          </div>
+                        )}
                       {metrics.unconvertedCurrencies &&
                         metrics.unconvertedCurrencies.length > 0 && (
                           <div className="account-metrics-conversion-warning">

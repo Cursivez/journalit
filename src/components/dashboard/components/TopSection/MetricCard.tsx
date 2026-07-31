@@ -22,6 +22,8 @@ interface MetricCardProps {
   tooltip?: React.ReactNode; 
   hasWarning?: boolean; 
   previousDelta?: StatDelta;
+  subline?: string; 
+  sublineIsPositive?: boolean;
 }
 
 const DeltaArrow: React.FC<{ direction: 'up' | 'down' }> = ({ direction }) => {
@@ -53,6 +55,8 @@ export const MetricCard: React.FC<MetricCardProps> = ({
   tooltip,
   hasWarning = false,
   previousDelta,
+  subline,
+  sublineIsPositive,
 }) => {
   const valueSuffixDirection = valueSuffix?.startsWith('↑')
     ? 'up'
@@ -119,6 +123,22 @@ export const MetricCard: React.FC<MetricCardProps> = ({
           </span>
         )}
       </div>
+      {subline && (
+        <div
+          className={[
+            'journalit-dashboard-metric-unrealized',
+            sublineIsPositive !== undefined
+              ? sublineIsPositive
+                ? 'positive'
+                : 'negative'
+              : '',
+          ]
+            .filter(Boolean)
+            .join(' ')}
+        >
+          {subline}
+        </div>
+      )}
       <div
         className="journalit-dashboard-metric-previous-delta-slot"
         aria-hidden={previousDelta ? undefined : true}

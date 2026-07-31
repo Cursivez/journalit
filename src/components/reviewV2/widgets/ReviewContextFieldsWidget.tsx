@@ -36,6 +36,7 @@ import {
   mergeReviewCustomFieldsFrontmatter,
 } from '../../../utils/reviewCustomFieldPersistence';
 import { InvalidContextMessage } from './InvalidContextMessage';
+import { groupReviewFieldsByConfiguredOrder } from './reviewContextFieldGrouping';
 
 interface ReviewContextFieldsWidgetProps {
   filePath: string;
@@ -189,10 +190,6 @@ export const ReviewContextFieldsWidget: React.FC<ReviewContextFieldsWidgetProps>
     } | null>(null);
 
     const service = plugin.customReviewFieldsService;
-    const reviewFieldGroupLabels = useMemo(
-      () => new Map(reviewFieldGroups.map((group) => [group.id, group.name])),
-      [reviewFieldGroups]
-    );
 
     const loadInheritedContext = useCallback(
       async (type: ReviewFieldReviewType, targetDate: Date) => {
@@ -635,26 +632,16 @@ export const ReviewContextFieldsWidget: React.FC<ReviewContextFieldsWidgetProps>
         }
       }
 
-      const groups = new Map<string, CustomReviewFieldDefinition[]>();
-      for (const field of fieldMap.values()) {
-        const group =
-          (field.groupId && reviewFieldGroupLabels.get(field.groupId)) ||
-          t('widget.review-context-fields.group.default');
-        const existing = groups.get(group) ?? [];
-        existing.push(field);
-        groups.set(group, existing);
-      }
-      return Array.from(groups.entries()).map(([group, groupFields]) => ({
-        group,
-        fields: groupFields.sort(
-          (a, b) => (a.display.order ?? a.order) - (b.display.order ?? b.order)
-        ),
-      }));
+      return groupReviewFieldsByConfiguredOrder(
+        Array.from(fieldMap.values()),
+        reviewFieldGroups,
+        t('widget.review-context-fields.group.default')
+      );
     }, [
       showLocal,
       visibleEditableFields,
       visibleInheritedFieldDefinitions,
-      reviewFieldGroupLabels,
+      reviewFieldGroups,
     ]);
 
     if (!isValidContext) {
@@ -715,8 +702,11 @@ export const ReviewContextFieldsWidget: React.FC<ReviewContextFieldsWidgetProps>
               ) : null}
             </div>
             <div className="review-context-fields-local-groups">
-              {groupedFields.map(({ group, fields: groupFields }) => (
-                <div key={group} className="review-context-fields-local-group">
+              {groupedFields.map(({ groupKey, group, fields: groupFields }) => (
+                <div
+                  key={groupKey}
+                  className="review-context-fields-local-group"
+                >
                   <div className="review-context-fields-local-group-title">
                     {group}
                   </div>

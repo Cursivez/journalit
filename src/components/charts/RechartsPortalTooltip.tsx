@@ -7,6 +7,7 @@ type RechartsTooltipRuntimeProps = TooltipProps<number, string> & {
   active?: boolean;
   payload?: readonly unknown[];
   coordinate?: { x: number; y: number };
+  label?: string | number;
 };
 
 interface RechartsPortalTooltipProps {
@@ -14,6 +15,8 @@ interface RechartsPortalTooltipProps {
   children: (tooltipProps: RechartsTooltipRuntimeProps) => React.ReactNode;
   placementMode?: TooltipPlacementMode;
   cursor?: TooltipProps<number, string>['cursor'];
+  
+  allowEmptyPayload?: boolean;
   tooltipProps?: Omit<
     Partial<TooltipProps<number, string>>,
     'allowEscapeViewBox' | 'content' | 'cursor'
@@ -26,6 +29,7 @@ export function RechartsPortalTooltip({
   placementMode = 'point',
   cursor,
   tooltipProps,
+  allowEmptyPayload,
 }: RechartsPortalTooltipProps): React.ReactElement {
   return (
     <Tooltip
@@ -38,6 +42,7 @@ export function RechartsPortalTooltip({
           coordinate={runtimeProps.coordinate}
           chartRef={chartRef}
           placementMode={placementMode}
+          allowEmptyPayload={allowEmptyPayload}
         >
           {children(runtimeProps)}
         </PortalChartTooltip>

@@ -75,9 +75,26 @@ export const ASSET_FIELDS_STYLES = `
       grid-column: 1 / -1;
     }
 
+    
+    .trade-form-view-container .trade-currency-grid--paired {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px 16px;
+      align-items: flex-start;
+    }
+
+    
+    .trade-form-view-container .trade-currency-grid--paired input.input {
+      height: auto;
+      padding-top: 8px;
+      padding-bottom: 8px;
+      line-height: 20px;
+    }
+
     @media (max-width: 600px) {
       .trade-form-view-container .cost-fields,
-      .trade-form-view-container .commission-grid {
+      .trade-form-view-container .commission-grid,
+      .trade-form-view-container .trade-currency-grid--paired {
         grid-template-columns: 1fr;
       }
     }

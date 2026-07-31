@@ -17,6 +17,7 @@ import {
 } from '../../../contexts/CurrencyContext';
 import { t } from '../../../lang/helpers';
 import { FastDateTimeInput } from '../../core/FastDateTimeInput';
+import { showActionConfirmationModal } from '../../shared/ConfirmationModal';
 
 function isTransactionType(value: string): value is TransactionType {
   return value === 'deposit' || value === 'withdrawal';
@@ -43,6 +44,81 @@ interface AddEventModalProps {
   accountName: string;
   onClose: () => void;
   onSave: () => void;
+}
+
+interface AddEventConfirmationOptions {
+  app: App;
+  eventData: EventData;
+  amount: number;
+  accountName: string;
+  currency: string;
+}
+
+function showAddEventConfirmation({
+  app,
+  eventData,
+  amount,
+  accountName,
+  currency,
+}: AddEventConfirmationOptions): Promise<boolean> {
+  const formatCurrency = (value: number) =>
+    value.toLocaleString('en-US', {
+      style: 'currency',
+      currency,
+      minimumFractionDigits: 2,
+    });
+  const typeText =
+    eventData.type === TransactionType.DEPOSIT
+      ? t('account.add-event.type.deposit').toLowerCase()
+      : t('account.add-event.type.withdrawal').toLowerCase();
+  const eventDate = formatDateDisplay(
+    new Date(eventData.date),
+    getUserDateFormat()
+  );
+
+  return showActionConfirmationModal(app, {
+    title: t('account.add-event.confirm.title'),
+    cancelValue: false,
+    renderContent: (contentEl) => {
+      const container = contentEl.createDiv({
+        cls: 'journalit-confirmation-content',
+      });
+      const infoBox = container.createDiv({
+        cls: 'journalit-confirmation-content__info',
+      });
+      infoBox.createEl('p', {
+        text: t('account.add-event.confirm.message', {
+          type: typeText,
+          amount: formatCurrency(amount),
+          account: accountName,
+          date: eventDate,
+        }),
+        cls: 'journalit-confirmation-modal__message',
+      });
+
+      if (eventData.description) {
+        infoBox.createEl('p', {
+          text: t('account.add-event.confirm.description', {
+            description: eventData.description,
+          }),
+          cls: 'journalit-confirmation-modal__message',
+        });
+      }
+    },
+    actions: [
+      {
+        value: false,
+        label: t('button.cancel'),
+        variant: 'secondary',
+        initialFocus: true,
+      },
+      {
+        value: true,
+        label: t('account.add-event.button.add'),
+        variant: 'primary',
+      },
+    ],
+  });
 }
 
 
@@ -92,7 +168,7 @@ class AddEventModal extends Modal {
 
 const AddEventModalContent: React.FC<
   AddEventModalProps & { onModalClose: () => void }
-> = ({ plugin, accountName, onSave, onModalClose }) => {
+> = ({ app, plugin, accountName, onSave, onModalClose }) => {
   const [isSaving, setIsSaving] = useState(false);
   const { currency: globalCurrency } = useCurrency();
 
@@ -158,7 +234,13 @@ const AddEventModalContent: React.FC<
       }
 
       
-      const shouldProceed = await showConfirmationModal(eventData, amount);
+      const shouldProceed = await showAddEventConfirmation({
+        app,
+        eventData,
+        amount,
+        accountName,
+        currency,
+      });
       if (!shouldProceed) {
         return; 
       }
@@ -205,24 +287,6 @@ const AddEventModalContent: React.FC<
     } finally {
       setIsSaving(false);
     }
-  };
-
-  const showConfirmationModal = (
-    eventData: EventData,
-    amount: number
-  ): Promise<boolean> => {
-    return new Promise((resolve) => {
-      const modal = new ConfirmationModal(
-        plugin.app,
-        plugin,
-        eventData,
-        amount,
-        accountName,
-        currency,
-        resolve
-      );
-      modal.open();
-    });
   };
 
   return (
@@ -386,105 +450,6 @@ const AddEventModalContent: React.FC<
     </div>
   );
 };
-
-
-class ConfirmationModal extends Modal {
-  constructor(
-    app: App,
-    private plugin: JournalitPlugin,
-    private eventData: EventData,
-    private amount: number,
-    private accountName: string,
-    private accountCurrency: string,
-    private onConfirm: (proceed: boolean) => void
-  ) {
-    super(app);
-    this.titleEl.setText(t('account.add-event.confirm.title'));
-  }
-
-  onOpen() {
-    const { contentEl } = this;
-    contentEl.empty();
-
-    const container = contentEl.createDiv({
-      cls: 'journalit-account-modal',
-    });
-
-    const formatCurrency = (amount: number) => {
-      
-      const currency =
-        this.accountCurrency ||
-        this.plugin?.settings?.general?.currency ||
-        'USD';
-      return amount.toLocaleString('en-US', {
-        style: 'currency',
-        currency: currency,
-        minimumFractionDigits: 2,
-      });
-    };
-
-    const typeText =
-      this.eventData.type === TransactionType.DEPOSIT
-        ? t('account.add-event.type.deposit').toLowerCase()
-        : t('account.add-event.type.withdrawal').toLowerCase();
-    const eventDate = formatDateDisplay(
-      new Date(this.eventData.date),
-      getUserDateFormat()
-    );
-
-    
-    const infoBox = container.createDiv({
-      cls: 'journalit-account-modal__info',
-    });
-
-    infoBox.createEl('p', {
-      text: t('account.add-event.confirm.message', {
-        type: typeText,
-        amount: formatCurrency(this.amount),
-        account: this.accountName,
-        date: eventDate,
-      }),
-      cls: 'journalit-account-modal__text',
-    });
-
-    if (this.eventData.description) {
-      infoBox.createEl('p', {
-        text: t('account.add-event.confirm.description', {
-          description: this.eventData.description,
-        }),
-        cls: 'journalit-account-modal__text journalit-account-modal__text--muted journalit-account-modal__text--spaced',
-      });
-    }
-
-    
-    const buttons = container.createDiv({
-      cls: 'journalit-account-modal__actions',
-    });
-
-    const cancelBtn = buttons.createEl('button', {
-      text: t('button.cancel'),
-      cls: 'journalit-account-modal__button journalit-account-modal__button--secondary',
-    });
-    cancelBtn.addEventListener('click', () => {
-      this.close();
-      this.onConfirm(false);
-    });
-
-    const confirmBtn = buttons.createEl('button', {
-      text: t('account.add-event.button.add'),
-      cls: 'journalit-account-modal__button journalit-account-modal__button--primary',
-    });
-    confirmBtn.addEventListener('click', () => {
-      this.close();
-      this.onConfirm(true);
-    });
-  }
-
-  onClose() {
-    const { contentEl } = this;
-    contentEl.empty();
-  }
-}
 
 
 export function openAddEventModal(

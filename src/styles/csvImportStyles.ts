@@ -1081,6 +1081,49 @@ export const CSV_IMPORT_STYLES = `
 	padding-left: 18px;
 }
 
+.journalit-csv-import .journalit-trade-import-diagnostics li + li {
+	margin-top: 10px;
+}
+
+.journalit-csv-import .journalit-trade-import-diagnostic-summary {
+	display: flex;
+	justify-content: space-between;
+	gap: 12px;
+}
+
+.journalit-csv-import .journalit-trade-import-diagnostic-summary > strong,
+.journalit-csv-import .journalit-trade-import-diagnostic-rows {
+	color: var(--text-muted);
+	font-size: 12px;
+}
+
+.journalit-csv-import .journalit-trade-import-diagnostic-summary > strong {
+	flex: 0 0 auto;
+}
+
+.journalit-csv-import .journalit-trade-import-diagnostic-severity {
+	margin-right: 8px;
+	font-size: 11px;
+	text-transform: uppercase;
+}
+
+.journalit-csv-import .journalit-trade-import-diagnostic-severity--error {
+	color: var(--text-error);
+}
+
+.journalit-csv-import .journalit-trade-import-diagnostic-severity--warning {
+	color: var(--text-warning);
+}
+
+.journalit-csv-import .journalit-trade-import-diagnostic-severity--info {
+	color: var(--text-muted);
+}
+
+.journalit-csv-import .journalit-trade-import-diagnostic-rows {
+	display: block;
+	margin-top: 3px;
+}
+
 .journalit-csv-import .journalit-trade-import-sample {
 	max-height: 220px;
 }
@@ -1159,6 +1202,12 @@ export const CSV_IMPORT_STYLES = `
 }
 
 .journalit-csv-import .journalit-trade-import-results {
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+}
+
+.journalit-csv-import .journalit-trade-import-completion {
 	display: flex;
 	flex-direction: column;
 	gap: 12px;
@@ -1309,6 +1358,69 @@ export const CSV_IMPORT_STYLES = `
 
 .journalit-csv-import .journalit-trade-import-preview-error p {
 	margin: 6px 0 0;
+}
+
+.journalit-csv-import .journalit-trade-import-outcome {
+	display: flex;
+	align-items: flex-start;
+	gap: 10px;
+	margin-bottom: 14px;
+	padding: 14px;
+	border: 1px solid var(--background-modifier-border);
+	border-radius: 8px;
+	background: var(--background-secondary);
+}
+
+.journalit-csv-import .journalit-trade-import-outcome--completed {
+	border-color: var(--text-success);
+	background: color-mix(in srgb, var(--text-success) 8%, transparent);
+}
+
+.journalit-csv-import .journalit-trade-import-outcome--partially_completed {
+	border-color: var(--text-warning);
+	background: color-mix(in srgb, var(--text-warning) 8%, transparent);
+}
+
+.journalit-csv-import .journalit-trade-import-outcome--failed {
+	border-color: var(--text-error);
+	background: color-mix(in srgb, var(--text-error) 8%, transparent);
+}
+
+.journalit-csv-import .journalit-trade-import-outcome > svg {
+	flex: 0 0 auto;
+}
+
+.journalit-csv-import .journalit-trade-import-outcome strong {
+	display: block;
+	margin-bottom: 4px;
+}
+
+.journalit-csv-import .journalit-trade-import-outcome p {
+	margin: 4px 0 0;
+	color: var(--text-muted);
+}
+
+.journalit-csv-import .journalit-trade-import-preview-counts {
+	display: grid;
+	grid-template-columns: 1fr auto;
+	gap: 6px 18px;
+	margin-bottom: 14px;
+	padding: 12px 14px;
+	border: 1px solid var(--background-modifier-border);
+	border-radius: 8px;
+	color: var(--text-muted);
+}
+
+.journalit-csv-import .journalit-trade-import-preview-counts strong {
+	color: var(--text-normal);
+}
+
+.journalit-csv-import .journalit-trade-import-preview-diagnostics {
+	margin-bottom: 14px;
+}
+
+.journalit-csv-import .journalit-trade-import-cancel-preview-button {
+	color: var(--text-muted);
 }
 
 .journalit-csv-import .journalit-trade-import-save-template-row {
@@ -1777,6 +1889,27 @@ export const QUICK_IMPORT_MODAL_STYLES = `
 
 .journalit-quick-import-summary__grid strong {
   color: var(--text-normal);
+}
+
+.journalit-quick-import-outcome-callout {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--size-2-2);
+  margin-bottom: var(--size-4-3);
+  padding: var(--size-4-2);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: var(--radius-s);
+  color: var(--text-normal);
+}
+
+.journalit-quick-import-outcome-callout--warning {
+  border-color: var(--text-warning);
+  background: color-mix(in srgb, var(--text-warning) 8%, transparent);
+}
+
+.journalit-quick-import-outcome-callout--error {
+  border-color: var(--text-error);
+  background: color-mix(in srgb, var(--text-error) 8%, transparent);
 }
 
 .journalit-quick-import-preview-table-wrap {

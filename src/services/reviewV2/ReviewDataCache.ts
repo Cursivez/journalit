@@ -16,7 +16,9 @@ import {
   parseTradeTimestampValue,
 } from '../../utils/dateUtils';
 import { aggregatePnLByCurrency } from '../../utils/currencyAggregation';
+import { resolvePreConversionExcursionFields } from '../../utils/tradeExcursion';
 import { ExchangeRateService } from '../exchangeRate/ExchangeRateService';
+import { resolveScopedConversionRateDate } from '../exchangeRate/conversionAttribution';
 import { eventBus } from '../events';
 import type {
   Unsubscribe,
@@ -32,6 +34,7 @@ import type { PartialTradeFrontmatter } from '../../types/TradeFrontmatter';
 import type { CustomFieldDefinition } from '../../types/customFields';
 import type { TradeReviewData } from '../backend/types';
 import {
+  getAllocatedRealizedPnlEvents,
   getAnalyticsDateBasis,
   getTradeAnalyticsTradingDay,
   getTradeRealizedPnlEvents,
@@ -159,10 +162,12 @@ export interface CachedReviewData {
     originalByCurrency?: Record<string, number>;
     convertedByCurrency?: Record<string, number>;
     unconvertedCurrencies?: string[];
+    partiallyConvertedCurrencies?: string[];
     unconvertedTrades?: Array<Record<string, unknown>>;
     originalTradeCount?: number;
     convertedTradeCount?: number;
     brokerBaseCurrencyTradeCount?: number;
+    manualFxRateTradeCount?: number;
   };
   
   version: number;
@@ -175,6 +180,71 @@ type CacheSubscriber = (data: CachedReviewData | null) => void;
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+function finiteNumber(value: unknown): number | undefined {
+  return typeof value === 'number' && Number.isFinite(value)
+    ? value
+    : undefined;
+}
+
+function toExcursionMetricInput(trade: Record<string, unknown>) {
+  return {
+    mae: finiteNumber(trade.mae),
+    mfe: finiteNumber(trade.mfe),
+    maePrice: finiteNumber(trade.maePrice),
+    mfePrice: finiteNumber(trade.mfePrice),
+    entryPrice: finiteNumber(trade.entryPrice),
+    positionSize: finiteNumber(trade.positionSize),
+    direction:
+      typeof trade.direction === 'string' ? trade.direction : undefined,
+    assetType:
+      typeof trade.assetType === 'string' ? trade.assetType : undefined,
+    leverageRatio: finiteNumber(trade.leverageRatio),
+    contractSize: finiteNumber(trade.contractSize),
+    dollarPerPoint: finiteNumber(trade.dollarPerPoint),
+    tickSize: finiteNumber(trade.tickSize),
+    tickValue: finiteNumber(trade.tickValue),
+    lotSize: finiteNumber(trade.lotSize),
+    pipValue: finiteNumber(trade.pipValue),
+    entries: Array.isArray(trade.entries)
+      ? trade.entries.flatMap((entry) =>
+          isRecord(entry)
+            ? [
+                {
+                  price: finiteNumber(entry.price) ?? null,
+                  size: finiteNumber(entry.size) ?? null,
+                },
+              ]
+            : []
+        )
+      : undefined,
+  };
+}
+
+
+function mergeConversionRateDates(left: string, right: string): string {
+  const isSentinel = (rateDate: string) =>
+    rateDate === 'broker' || rateDate === 'manual';
+  if (!isSentinel(left)) return left;
+  if (!isSentinel(right)) return right;
+  return left === 'manual' || right === 'manual' ? 'manual' : 'broker';
+}
+
+
+function materializeExcursionAmounts(
+  trades: Array<Record<string, unknown>>,
+  baseCurrency: string
+): Array<Record<string, unknown>> {
+  return trades.map((trade) => {
+    const tradeCurrency =
+      typeof trade.currency === 'string' ? trade.currency : baseCurrency;
+    if (tradeCurrency === baseCurrency) return trade;
+
+    const metricInput = toExcursionMetricInput(trade);
+    const resolution = resolvePreConversionExcursionFields(metricInput);
+    return resolution.changed ? { ...trade, ...resolution.fields } : trade;
+  });
 }
 
 const getLocalDateKey = (date: Date): string =>
@@ -443,6 +513,10 @@ export class ReviewDataCache {
   > = new Map();
 
   
+  private markdownTradeReviewRefreshByPath: Map<string, Promise<void>> =
+    new Map();
+
+  
   private eventCleanup: Unsubscribe[] = [];
 
   
@@ -504,12 +578,17 @@ export class ReviewDataCache {
       );
     }
 
-    const userCurrency = this.plugin?.settings?.general?.currency || 'USD';
+    const userCurrency: string =
+      this.plugin?.settings?.general?.currency || 'USD';
     const currencyGrouped = aggregatePnLByCurrency(scopedTrades, userCurrency);
 
-    if (currencyGrouped.isMultiCurrency) {
+    
+    
+    if (
+      currencyGrouped.currencies.some((currency) => currency !== userCurrency)
+    ) {
       const converted = await this.exchangeRateService.convertTrades(
-        scopedTrades,
+        materializeExcursionAmounts(scopedTrades, userCurrency),
         userCurrency
       );
 
@@ -660,8 +739,15 @@ export class ReviewDataCache {
             ? copiedPnL / copiedRiskAmount
             : baseTrade.rMultiple,
         commission: commission ?? 0,
+        commissionType: 'fixed',
         fees: 0,
         currency: baseTrade.currency ?? copyMetadata.currency,
+        
+        
+        
+        brokerBaseCurrencyPnl: undefined,
+        brokerBaseCurrency: undefined,
+        brokerBaseCurrencyPnlSource: undefined,
         isCopiedTrade: true,
         copiedFromAccount: copyPeriod.baseAccount,
         copyMultiplier: copyPeriod.multiplier,
@@ -716,7 +802,7 @@ export class ReviewDataCache {
 
       if (payload.action === 'trade-review-updated') {
         for (const filePath of getPayloadTradeFilePaths(payload)) {
-          void this.refreshMarkdownTradeReviewInCache(filePath);
+          this.queueMarkdownTradeReviewRefresh(filePath);
         }
         return;
       }
@@ -919,7 +1005,7 @@ export class ReviewDataCache {
       this.drcAggregationFingerprintByFile.delete(file.path);
 
       if (this.hasCachedTradePath(file.path)) {
-        void this.refreshMarkdownTradeReviewInCache(file.path);
+        this.queueMarkdownTradeReviewRefresh(file.path);
         return;
       }
 
@@ -970,7 +1056,7 @@ export class ReviewDataCache {
       this.plugin.registerEvent(
         this.app.vault.on('modify', (file) => {
           if (file instanceof TFile && this.hasCachedTradePath(file.path)) {
-            void this.refreshMarkdownTradeReviewInCache(file.path);
+            this.queueMarkdownTradeReviewRefresh(file.path);
           }
         })
       );
@@ -1175,23 +1261,29 @@ export class ReviewDataCache {
     );
   }
 
-  private async readMarkdownTradeReviewContext(file: TFile): Promise<{
+  private async readMarkdownTradeReviewContext(
+    file: TFile,
+    bypassCache = false
+  ): Promise<{
     review: TradeReviewData | undefined;
     notes: string | undefined;
   }> {
+    const mtimeBeforeRead = file.stat.mtime;
     const cached = this.markdownTradeReviewByPath.get(file.path);
-    if (cached && cached.mtime === file.stat.mtime) {
+    if (!bypassCache && cached && cached.mtime === mtimeBeforeRead) {
       return { review: cached.review, notes: cached.notes };
     }
 
     const content = await this.app.vault.read(file);
     const review = parseTradeReviewMarkdown(content);
     const notes = extractUserOwnedTradeNotes(content);
-    this.markdownTradeReviewByPath.set(file.path, {
-      mtime: file.stat.mtime,
-      review,
-      notes,
-    });
+    if (file.stat.mtime === mtimeBeforeRead) {
+      this.markdownTradeReviewByPath.set(file.path, {
+        mtime: mtimeBeforeRead,
+        review,
+        notes,
+      });
+    }
     return { review, notes };
   }
 
@@ -1203,7 +1295,7 @@ export class ReviewDataCache {
     const file = this.app.vault.getAbstractFileByPath(tradeFilePath);
     if (!(file instanceof TFile)) return;
 
-    const context = await this.readMarkdownTradeReviewContext(file);
+    const context = await this.readMarkdownTradeReviewContext(file, true);
 
     for (const [reviewFilePath, cached] of this.cache.entries()) {
       if (!cachedReviewIncludesTradePath(cached, tradeFilePath)) continue;
@@ -1232,6 +1324,30 @@ export class ReviewDataCache {
       this.cache.set(reviewFilePath, nextCached);
       this.notifySubscribers(reviewFilePath, nextCached);
     }
+  }
+
+  private queueMarkdownTradeReviewRefresh(tradeFilePath: string): void {
+    const previous =
+      this.markdownTradeReviewRefreshByPath.get(tradeFilePath) ??
+      Promise.resolve();
+    const refresh = previous
+      .catch(() => undefined)
+      .then(() => this.refreshMarkdownTradeReviewInCache(tradeFilePath));
+    this.markdownTradeReviewRefreshByPath.set(tradeFilePath, refresh);
+    void refresh
+      .catch((error: unknown) => {
+        console.error(
+          `[ReviewDataCache] Failed to refresh trade review cache for ${tradeFilePath}:`,
+          error
+        );
+      })
+      .finally(() => {
+        if (
+          this.markdownTradeReviewRefreshByPath.get(tradeFilePath) === refresh
+        ) {
+          this.markdownTradeReviewRefreshByPath.delete(tradeFilePath);
+        }
+      });
   }
 
   private hasCachedTradePath(tradeFilePath: string): boolean {
@@ -1655,31 +1771,28 @@ export class ReviewDataCache {
         
         
         
-        const userCurrency = this.plugin?.settings?.general?.currency || 'USD';
-        const currencyGrouped = aggregatePnLByCurrency(
-          scopedTrades,
-          userCurrency
-        );
+        const userCurrency: string =
+          this.plugin?.settings?.general?.currency || 'USD';
         const originalScopedTrades = scopedTrades;
-        const analyticsBasisCurrencyGrouped =
-          analyticsDateBasis === 'entry'
-            ? currencyGrouped
-            : aggregatePnLByCurrency(analyticsBasisTrades, userCurrency);
-
         let successfulConversion:
           | {
               baseCurrency: string;
               rateDate: string;
               unconvertedCurrencies: string[];
+              partiallyConvertedCurrencies?: string[];
               originalTradeCount: number;
               convertedTradeCount: number;
               brokerBaseCurrencyTradeCount?: number;
+              manualFxRateTradeCount?: number;
             }
           | undefined;
 
-        if (currencyGrouped.isMultiCurrency) {
+        
+        
+        
+        if (scopedTrades.length > 0) {
           const conversionResult = await this.exchangeRateService.convertTrades(
-            scopedTrades,
+            materializeExcursionAmounts(scopedTrades, userCurrency),
             userCurrency
           );
 
@@ -1697,17 +1810,85 @@ export class ReviewDataCache {
           }
         }
 
-        if (
-          analyticsDateBasis !== 'entry' &&
-          analyticsBasisCurrencyGrouped.isMultiCurrency
-        ) {
+        
+        
+        
+        const originalAnalyticsBasisTrades =
+          analyticsDateBasis !== 'entry' ? analyticsBasisTrades : null;
+
+        if (analyticsDateBasis !== 'entry' && analyticsBasisTrades.length > 0) {
           const analyticsConversionResult =
             await this.exchangeRateService.convertTrades(
-              analyticsBasisTrades,
+              materializeExcursionAmounts(analyticsBasisTrades, userCurrency),
               userCurrency
             );
           if (analyticsConversionResult) {
             analyticsBasisTrades = analyticsConversionResult.trades;
+            
+            
+            
+            
+            
+            successfulConversion = successfulConversion
+              ? {
+                  ...successfulConversion,
+                  rateDate: mergeConversionRateDates(
+                    successfulConversion.rateDate,
+                    analyticsConversionResult.rateDate
+                  ),
+                  unconvertedCurrencies: Array.from(
+                    new Set([
+                      ...successfulConversion.unconvertedCurrencies,
+                      ...analyticsConversionResult.unconvertedCurrencies,
+                    ])
+                  ),
+                  partiallyConvertedCurrencies: Array.from(
+                    new Set([
+                      ...(successfulConversion.partiallyConvertedCurrencies ??
+                        []),
+                      ...(analyticsConversionResult.partiallyConvertedCurrencies ??
+                        []),
+                    ])
+                  ),
+                }
+              : analyticsConversionResult;
+          } else {
+            const unconvertedAnalyticsCurrencySet = new Set<string>();
+            for (const trade of analyticsBasisTrades) {
+              const currency = trade.currency || userCurrency;
+              if (currency !== userCurrency) {
+                unconvertedAnalyticsCurrencySet.add(currency);
+              }
+            }
+            const unconvertedAnalyticsCurrencies = Array.from(
+              unconvertedAnalyticsCurrencySet
+            );
+            
+            
+            
+            analyticsBasisTrades = analyticsBasisTrades.filter(
+              (trade) => (trade.currency || userCurrency) === userCurrency
+            );
+            successfulConversion = successfulConversion
+              ? {
+                  ...successfulConversion,
+                  unconvertedCurrencies: Array.from(
+                    new Set([
+                      ...successfulConversion.unconvertedCurrencies,
+                      ...unconvertedAnalyticsCurrencies,
+                    ])
+                  ),
+                }
+              : {
+                  baseCurrency: userCurrency,
+                  rateDate: 'broker',
+                  unconvertedCurrencies: unconvertedAnalyticsCurrencies,
+                  partiallyConvertedCurrencies: [],
+                  originalTradeCount: originalAnalyticsBasisTrades?.length ?? 0,
+                  convertedTradeCount: analyticsBasisTrades.length,
+                  brokerBaseCurrencyTradeCount: 0,
+                  manualFxRateTradeCount: 0,
+                };
           }
         }
 
@@ -1766,37 +1947,155 @@ export class ReviewDataCache {
           const pnlContributingTrades = trades.filter((trade) =>
             isPnlContributingTrade(trade)
           );
+          const filteredAnalyticsOriginals = originalAnalyticsBasisTrades
+            ? applyTradeFilters(
+                originalAnalyticsBasisTrades,
+                filters,
+                customFieldDefinitions,
+                {
+                  resolveAccountIdDisplayName: (accountId) =>
+                    this.plugin.settings.backendIntegration?.accountMapping?.[
+                      accountId
+                    ],
+                }
+              )
+            : [];
+          const exitEventOriginalTrades: Array<
+            PartialTradeFrontmatter & Record<string, unknown>
+          > = [];
+          if (analyticsDateBasis !== 'entry') {
+            for (const trade of filteredAnalyticsOriginals) {
+              const projections = getAllocatedRealizedPnlEvents(
+                trade,
+                'exit',
+                this.plugin
+              );
+              for (const { event, brokerBaseCurrencyPnl } of projections) {
+                const isInRange = tradingDayStr
+                  ? formatLocalDateString(event.tradingDay) === tradingDayStr
+                  : event.tradingDay >= start && event.tradingDay <= end;
+                if (!isInRange) continue;
+                exitEventOriginalTrades.push({
+                  ...trade,
+                  pnl: event.pnl,
+                  directPnL: undefined,
+                  useDirectPnLInput: false,
+                  exitTime: event.date,
+                  exits: undefined,
+                  brokerBaseCurrencyPnl,
+                  brokerBaseCurrency:
+                    brokerBaseCurrencyPnl !== undefined
+                      ? trade.brokerBaseCurrency
+                      : undefined,
+                  brokerBaseCurrencyPnlSource:
+                    brokerBaseCurrencyPnl !== undefined
+                      ? trade.brokerBaseCurrencyPnlSource
+                      : undefined,
+                });
+              }
+            }
+          }
+          const originalBreakdownTrades =
+            analyticsDateBasis === 'entry'
+              ? filteredOriginalTrades
+              : exitEventOriginalTrades;
+          const exitEventConversion =
+            analyticsDateBasis === 'entry'
+              ? null
+              : await this.exchangeRateService.convertTrades(
+                  materializeExcursionAmounts(
+                    exitEventOriginalTrades,
+                    userCurrency
+                  ),
+                  userCurrency
+                );
+          const retainedExitEventTrades =
+            analyticsDateBasis === 'entry'
+              ? []
+              : (exitEventConversion?.trades ??
+                exitEventOriginalTrades.filter(
+                  (trade) => (trade.currency || userCurrency) === userCurrency
+                ));
+          const convertedBreakdownTrades =
+            analyticsDateBasis === 'entry'
+              ? pnlContributingTrades
+              : retainedExitEventTrades;
+
           const filteredOriginalCurrencies = new Set<string>();
 
-          for (const trade of filteredOriginalTrades) {
+          for (const trade of originalBreakdownTrades) {
+            const pnl = getEffectivePnL(trade);
             const originalCurrency =
               typeof trade.currency === 'string'
                 ? trade.currency
                 : userCurrency;
             filteredOriginalCurrencies.add(originalCurrency);
             originalByCurrency[originalCurrency] =
-              (originalByCurrency[originalCurrency] || 0) +
-              getEffectivePnL(trade);
+              (originalByCurrency[originalCurrency] || 0) + pnl;
           }
 
-          for (const trade of pnlContributingTrades) {
+          for (const trade of convertedBreakdownTrades) {
+            const pnl = getEffectivePnL(trade);
             const originalCurrency =
               typeof trade.originalCurrency === 'string'
                 ? trade.originalCurrency
                 : userCurrency;
             convertedByCurrency[originalCurrency] =
-              (convertedByCurrency[originalCurrency] || 0) +
-              getEffectivePnL(trade);
+              (convertedByCurrency[originalCurrency] || 0) + pnl;
           }
 
+          
+          
+          
+          
+          const filteredAnalyticsOriginalCurrencies = new Set<string>();
+          for (const trade of filteredAnalyticsOriginals) {
+            filteredAnalyticsOriginalCurrencies.add(
+              typeof trade.currency === 'string' ? trade.currency : userCurrency
+            );
+          }
           const filteredUnconvertedCurrencies =
-            successfulConversion.unconvertedCurrencies.filter((currency) =>
-              filteredOriginalCurrencies.has(currency)
+            successfulConversion.unconvertedCurrencies.filter(
+              (currency) =>
+                filteredOriginalCurrencies.has(currency) ||
+                filteredAnalyticsOriginalCurrencies.has(currency)
             );
           const filteredUnconvertedCurrencySet = new Set(
             filteredUnconvertedCurrencies
           );
-          const unconvertedTrades = filteredOriginalTrades.flatMap((trade) => {
+          
+          
+          
+          
+          const tradeIdentityKey = (trade: Record<string, unknown>): unknown =>
+            typeof trade.tradeId === 'string'
+              ? trade.tradeId
+              : typeof trade.path === 'string'
+                ? trade.path
+                : trade;
+          const dedupeByTradeIdentity = (
+            tradeSets: Array<Array<Record<string, unknown>>>
+          ): Array<Record<string, unknown>> => {
+            const seen = new Set<unknown>();
+            const union: Array<Record<string, unknown>> = [];
+            for (const trade of tradeSets.flat()) {
+              const key = tradeIdentityKey(trade);
+              if (seen.has(key)) continue;
+              seen.add(key);
+              union.push(trade);
+            }
+            return union;
+          };
+          
+          
+          const unconvertedSourceTrades =
+            analyticsDateBasis === 'entry'
+              ? filteredOriginalTrades
+              : dedupeByTradeIdentity([
+                  filteredOriginalTrades,
+                  filteredAnalyticsOriginals,
+                ]);
+          const unconvertedTrades = unconvertedSourceTrades.flatMap((trade) => {
             const originalCurrency =
               typeof trade.currency === 'string'
                 ? trade.currency
@@ -1812,26 +2111,95 @@ export class ReviewDataCache {
                 ]
               : [];
           });
-          const brokerBaseCurrencyTradeCount = pnlContributingTrades.filter(
-            (trade) =>
+          
+          
+          
+          
+          const sourceCountTrades =
+            analyticsDateBasis === 'entry'
+              ? pnlContributingTrades
+              : retainedExitEventTrades.filter((trade) =>
+                  isPnlContributingTrade(trade)
+                );
+          const brokerSourceTradeKeys = new Set<string>();
+          const manualSourceTradeKeys = new Set<string>();
+          for (const trade of sourceCountTrades) {
+            const tradeKey =
+              typeof trade.tradeId === 'string'
+                ? trade.tradeId
+                : typeof trade.path === 'string'
+                  ? trade.path
+                  : String(
+                      brokerSourceTradeKeys.size + manualSourceTradeKeys.size
+                    );
+            if (
               typeof trade.brokerBaseCurrencyPnl === 'number' &&
               Number.isFinite(trade.brokerBaseCurrencyPnl) &&
-              trade.brokerBaseCurrency === successfulConversion.baseCurrency
-          ).length;
+              trade.brokerBaseCurrencyPnl !== 0 &&
+              trade.brokerBaseCurrency === successfulConversion.baseCurrency &&
+              typeof trade.originalCurrency === 'string' &&
+              trade.originalCurrency !== successfulConversion.baseCurrency
+            ) {
+              brokerSourceTradeKeys.add(tradeKey);
+            }
+            if (trade.conversionUsedManualRate === true) {
+              manualSourceTradeKeys.add(tradeKey);
+            }
+          }
+          const brokerBaseCurrencyTradeCount = brokerSourceTradeKeys.size;
+          const manualFxRateTradeCount = manualSourceTradeKeys.size;
+          const conversionRateDate = resolveScopedConversionRateDate(
+            sourceCountTrades,
+            successfulConversion.rateDate,
+            manualFxRateTradeCount
+          );
+          const filteredPartiallyConvertedCurrencies = Array.from(
+            new Set(
+              [
+                ...(analyticsDateBasis === 'entry'
+                  ? pnlContributingTrades
+                  : retainedExitEventTrades),
+              ].flatMap((trade) =>
+                Array.isArray(trade.conversionPartialCurrencies)
+                  ? trade.conversionPartialCurrencies.filter(
+                      (currency): currency is string =>
+                        typeof currency === 'string'
+                    )
+                  : []
+              )
+            )
+          );
 
           currencyConversion = {
-            isMultiCurrency:
-              pnlContributingTrades.length > 0 ||
-              filteredUnconvertedCurrencies.length > 0,
+            isMultiCurrency: [
+              ...Object.keys(originalByCurrency),
+              ...Object.keys(convertedByCurrency),
+              ...filteredUnconvertedCurrencies,
+              ...filteredPartiallyConvertedCurrencies,
+            ].some(
+              (currency) => currency !== successfulConversion.baseCurrency
+            ),
             conversionBaseCurrency: successfulConversion.baseCurrency,
-            conversionRateDate: successfulConversion.rateDate,
+            conversionRateDate,
             originalByCurrency,
             convertedByCurrency,
             unconvertedCurrencies: filteredUnconvertedCurrencies,
+            
+            
+            
+            partiallyConvertedCurrencies: filteredPartiallyConvertedCurrencies,
             unconvertedTrades,
-            originalTradeCount: filteredOriginalTrades.length,
-            convertedTradeCount: pnlContributingTrades.length,
+            
+            originalTradeCount:
+              analyticsDateBasis === 'entry'
+                ? filteredOriginalTrades.length
+                : dedupeByTradeIdentity([filteredAnalyticsOriginals]).length,
+            convertedTradeCount:
+              analyticsDateBasis === 'entry'
+                ? sourceCountTrades.length
+                : dedupeByTradeIdentity([sourceCountTrades]).length,
             brokerBaseCurrencyTradeCount,
+            manualFxRateTradeCount,
           };
         }
       } catch (error) {
@@ -2439,6 +2807,7 @@ export class ReviewDataCache {
     
     this.pendingPopulations.clear();
     this.pendingFilterOverrides.clear();
+    this.markdownTradeReviewRefreshByPath.clear();
 
     
     this.cache.clear();

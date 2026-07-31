@@ -52,8 +52,6 @@ import type { LocalCSVTemplate } from '../services/csv/types';
 
 import type {
   CustomWidgetType,
-  DemonTrackerCountMode,
-  DemonTrackerSourceMode,
   ReviewTemplate,
   TradeTemplate,
 } from '../types/reviewV2';
@@ -172,6 +170,7 @@ type UICustomizationSettings = object;
 
 
 type MaeMfeInputMode = 'price' | 'dollar';
+export type MaeMfeDisplayUnit = 'dollar' | 'ticks';
 
 
 type BreakEvenThresholdMode = 'fixed' | 'percentage_current_balance';
@@ -210,10 +209,12 @@ const TRADE_FORM_LAYOUT_ITEM_IDS = [
   'riskPlanning',
   'takeProfits',
   'idealExits',
+  'unrealizedSnapshot',
+  'dividends',
   'maeMfe',
+  'tradeCurrency',
   'pnlPreview',
   'importShortcut',
-  'realizedPnlPreview',
   'setup',
   'mistake',
   'customTags',
@@ -235,6 +236,8 @@ export interface TradeFormLayoutSettings {
   itemOrder: TradeFormLayoutItemId[];
   
   visibleItems: TradeFormLayoutItemId[];
+  
+  showManualFxRate: boolean;
 }
 
 export const DEFAULT_TRADE_FORM_LAYOUT_SETTINGS: TradeFormLayoutSettings = {
@@ -243,8 +246,13 @@ export const DEFAULT_TRADE_FORM_LAYOUT_SETTINGS: TradeFormLayoutSettings = {
   defaultAssetType: 'stock',
   itemOrder: [...TRADE_FORM_LAYOUT_ITEM_IDS],
   visibleItems: TRADE_FORM_LAYOUT_ITEM_IDS.filter(
-    (itemId) => itemId !== 'idealExits'
+    (itemId) =>
+      itemId !== 'idealExits' &&
+      itemId !== 'unrealizedSnapshot' &&
+      itemId !== 'dividends' &&
+      itemId !== 'tradeCurrency'
   ),
+  showManualFxRate: false,
 };
 
 const TRADE_FORM_LAYOUT_ITEM_ID_SET = new Set<string>(
@@ -268,6 +276,15 @@ function uniqueTradeFormLayoutItems(value: unknown): TradeFormLayoutItemId[] {
     items.push(itemId);
   }
   return items;
+}
+
+function containsRetiredRealizedPnlPreview(value: unknown): boolean {
+  if (!Array.isArray(value)) return false;
+
+  for (const item of value) {
+    if (item === 'realizedPnlPreview') return true;
+  }
+  return false;
 }
 
 function normalizeTradeFormLayoutItemId(
@@ -308,6 +325,7 @@ export function resolveTradeFormLayoutSettings(
       defaultAssetType: DEFAULT_TRADE_FORM_LAYOUT_SETTINGS.defaultAssetType,
       itemOrder: [...DEFAULT_TRADE_FORM_LAYOUT_SETTINGS.itemOrder],
       visibleItems: [...DEFAULT_TRADE_FORM_LAYOUT_SETTINGS.visibleItems],
+      showManualFxRate: DEFAULT_TRADE_FORM_LAYOUT_SETTINGS.showManualFxRate,
     };
   }
 
@@ -327,6 +345,9 @@ export function resolveTradeFormLayoutSettings(
       ? savedVisible
       : DEFAULT_TRADE_FORM_LAYOUT_SETTINGS.visibleItems
   );
+  if (containsRetiredRealizedPnlPreview(settings.visibleItems)) {
+    visibleSet.add('pnlPreview');
+  }
 
   for (const itemId of DEFAULT_TRADE_FORM_LAYOUT_SETTINGS.visibleItems) {
     if (!savedOrderSet.has(itemId)) {
@@ -350,6 +371,7 @@ export function resolveTradeFormLayoutSettings(
       inputMode === 'pnl-risk'
         ? resolvedVisibleItems.filter((itemId) => itemId !== 'idealExits')
         : resolvedVisibleItems,
+    showManualFxRate: settings.showManualFxRate === true,
   };
 }
 
@@ -373,6 +395,8 @@ interface TradeSettings {
   
   maeMfeInputMode?: MaeMfeInputMode;
   
+  maeMfeDisplayUnit?: MaeMfeDisplayUnit;
+  
   tradingDayCutoffTime?: string;
   
   tradingDayCutoffEndOfDayMigrationVersion?: string;
@@ -387,6 +411,8 @@ interface TradeSettings {
   
   includeMissedTradesInCalculations?: boolean;
   
+  includeUnrealizedPnLInCalculations?: boolean;
+  
   defaultRiskAmount?: number;
   
   displayRMultiples?: boolean;
@@ -400,6 +426,12 @@ interface TradeSettings {
   canonicalExecutionMigrationVersion?: string;
   
   tradeReviewMarkdownMigrationVersion?: string;
+  
+  galleryFolders: string[];
+  
+  graphLinkMigrationVersion?: string;
+  
+  tradeReviewLayoutMigrationVersion?: string;
 }
 
 
@@ -469,23 +501,27 @@ export interface RecentItem {
 }
 
 
-export type QuickLinkAction =
-  | 'addTrade'
-  | 'openTradeLog'
-  | 'openSetups'
-  | 'openTradingDashboard'
-  | 'openAccountDashboard'
-  | 'openTodaysDRC'
-  | 'openWeeklyReview'
-  | 'openMonthlyReview'
-  | 'openCSVImport'
-  | 'openQuickTradeImport'
-  | 'openLayoutBuilder'
-  | 'openSessionMode'
-  | 'openHome'
-  | 'openQuarterlyReview'
-  | 'openYearlyReview'
-  | 'openPositionSizeCalculator';
+export const QUICK_LINK_ACTIONS = [
+  'addTrade',
+  'openTradeLog',
+  'openSetups',
+  'openTradingDashboard',
+  'openAccountDashboard',
+  'openTodaysDRC',
+  'openWeeklyReview',
+  'openMonthlyReview',
+  'openCSVImport',
+  'openQuickTradeImport',
+  'openLayoutBuilder',
+  'openNavigationSidebar',
+  'openSessionMode',
+  'openHome',
+  'openQuarterlyReview',
+  'openYearlyReview',
+  'openPositionSizeCalculator',
+] as const;
+
+export type QuickLinkAction = (typeof QUICK_LINK_ACTIONS)[number];
 
 
 export interface QuickLinkButton {
@@ -521,9 +557,162 @@ export type SidebarTabBehavior = 'newTab' | 'replaceActiveTab';
 
 
 interface NavigationSettings {
-  enabled: boolean;
   items: SidebarNavItem[];
   tabBehavior: SidebarTabBehavior;
+}
+
+const DEFAULT_NAVIGATION_ITEMS: SidebarNavItem[] = [
+  {
+    id: 'nav-home',
+    label: 'Home',
+    icon: 'circle-dot-dashed',
+    action: 'openHome',
+    section: 'overview',
+    visible: true,
+    order: 0,
+  },
+  {
+    id: 'nav-dashboard',
+    label: 'Dashboard',
+    icon: 'grip',
+    action: 'openTradingDashboard',
+    section: 'overview',
+    visible: true,
+    order: 1,
+  },
+  {
+    id: 'nav-trade-log',
+    label: 'Trade Log',
+    icon: 'folder-tree',
+    action: 'openTradeLog',
+    section: 'overview',
+    visible: true,
+    order: 2,
+  },
+  {
+    id: 'nav-setups',
+    label: 'Setups',
+    icon: 'flask-conical',
+    action: 'openSetups',
+    section: 'overview',
+    visible: true,
+    order: 3,
+  },
+  {
+    id: 'nav-account-dashboard',
+    label: 'Accounts',
+    icon: 'users',
+    action: 'openAccountDashboard',
+    section: 'overview',
+    visible: true,
+    order: 4,
+  },
+  {
+    id: 'nav-drc',
+    label: "Today's DRC",
+    icon: 'calendar',
+    action: 'openTodaysDRC',
+    section: 'reviews',
+    visible: true,
+    order: 0,
+  },
+  {
+    id: 'nav-weekly',
+    label: "This Week's Review",
+    icon: 'calendar-check',
+    action: 'openWeeklyReview',
+    section: 'reviews',
+    visible: true,
+    order: 1,
+  },
+  {
+    id: 'nav-monthly',
+    label: "This Month's Review",
+    icon: 'calendar-range',
+    action: 'openMonthlyReview',
+    section: 'reviews',
+    visible: true,
+    order: 2,
+  },
+  {
+    id: 'nav-quarterly',
+    label: "This Quarter's Review",
+    icon: 'calendar-search',
+    action: 'openQuarterlyReview',
+    section: 'reviews',
+    visible: true,
+    order: 3,
+  },
+  {
+    id: 'nav-yearly',
+    label: "This Year's Review",
+    icon: 'calendar-heart',
+    action: 'openYearlyReview',
+    section: 'reviews',
+    visible: true,
+    order: 4,
+  },
+  {
+    id: 'nav-add-trade',
+    label: 'Add Trade',
+    icon: 'plus-circle',
+    action: 'addTrade',
+    section: 'tools',
+    visible: true,
+    order: 0,
+  },
+  {
+    id: 'nav-layout-builder',
+    label: 'Layout Builder',
+    icon: 'lucide-blocks',
+    action: 'openLayoutBuilder',
+    section: 'tools',
+    visible: true,
+    order: 1,
+  },
+  {
+    id: 'nav-quick-import',
+    label: 'Quick Import',
+    icon: 'zap',
+    action: 'openQuickTradeImport',
+    section: 'tools',
+    visible: true,
+    order: 2,
+  },
+  {
+    id: 'nav-csv-import',
+    label: 'Trade Import',
+    icon: 'import',
+    action: 'openCSVImport',
+    section: 'tools',
+    visible: true,
+    order: 3,
+  },
+  {
+    id: 'nav-position-size',
+    label: 'Position Size Calculator',
+    icon: 'calculator',
+    action: 'openPositionSizeCalculator',
+    section: 'tools',
+    visible: true,
+    order: 4,
+  },
+  {
+    id: 'nav-session-mode',
+    label: 'Session Mode',
+    icon: 'radio',
+    action: 'openSessionMode',
+    section: 'tools',
+    visible: true,
+    order: 5,
+  },
+];
+
+export function createDefaultNavigationSettings(): NavigationSettings {
+  return {
+    tabBehavior: 'replaceActiveTab',
+    items: DEFAULT_NAVIGATION_ITEMS.map((item) => ({ ...item })),
+  };
 }
 
 
@@ -559,6 +748,7 @@ export type GoalPeriod = 'daily' | 'weekly' | 'monthly' | 'lifetime';
 
 
 export type HomePeriod = 'month' | 'quarter' | 'year' | 'lifetime';
+export type HomeViewMode = 'overview' | 'dashboard';
 
 
 export type HomeQuickLinksPosition = 'aboveWidgets' | 'belowWidgets';
@@ -639,6 +829,10 @@ interface HomeSettings {
   topBreakdowns?: Record<string, TopBreakdownConfig>;
   
   selectedPeriod?: HomePeriod;
+  
+  backgroundImagePath?: string;
+  
+  showBackgroundInDashboard?: boolean;
 }
 
 
@@ -719,6 +913,8 @@ export interface BackendIntegrationSettings {
   
   userId: string;
   
+  authenticatedAccountId?: string;
+  
   lastSyncTime?: string;
   
   syncCount?: number;
@@ -746,11 +942,21 @@ export interface BackendIntegrationSettings {
   
   vaultIdentifier?: string;
   
+  canonicalProjectionMigrationVersion?: number;
+  
+  canonicalProjectionCustomFieldKeyMigrations?: Array<{
+    fieldId: string;
+    sourceKey: string;
+    targetKey: string;
+  }>;
+  
   pendingTradeImportProjectionAcks?: Array<{
-    correlationId: string;
-    importId: string;
-    commitId: string;
+    ownerUserId?: string;
     vaultId: string;
+    deviceId?: string;
+    pluginVersion?: string;
+    clientOperationId?: string;
+    diagnosticSyncRunId?: string;
     results: Array<{
       tradeId: string;
       backendTradeVersion: number;
@@ -765,6 +971,63 @@ export interface BackendIntegrationSettings {
       errorCode?: string;
     }>;
   }>;
+  
+  pendingTradeProjectionAckRecoveryByOwner?: Record<
+    string,
+    {
+      nextAttemptAt?: string;
+      blockedBy?: 'authentication' | 'entitlement';
+    }
+  >;
+
+  
+  pendingCanonicalProjectionMigrationAcks?: Array<{
+    tradeId: string;
+    backendTradeVersion: number;
+    filePath?: string;
+    status: 'conflict';
+    errorCode: 'duplicate_canonical_projection';
+  }>;
+
+  
+  pendingTradovateClientDiagnostics?: Array<{
+    ownerUserId: string;
+    schemaVersion: 'tradovate-client-diagnostics-v2';
+    pluginVersion: string;
+    vaultId: string;
+    deviceId?: string;
+    jobId?: string;
+    operationId: string;
+    connectionId?: string;
+    syncRunId?: string;
+    events: Array<{
+      eventType:
+        | 'sync_requested'
+        | 'job_poll_started'
+        | 'job_poll_completed'
+        | 'projection_inventory_loaded'
+        | 'account_mapping_missing'
+        | 'projection_write_failed'
+        | 'projection_ack_queued';
+      occurredAt: string;
+      errorCode?:
+        | 'broker_job_failed'
+        | 'broker_job_cancelled'
+        | 'job_poll_request_failed'
+        | 'local_account_mapping_missing'
+        | 'obsidian_write_timeout'
+        | 'blocked_by_obsidian_write_timeout'
+        | 'obsidian_write_failed'
+        | 'trade_cache_lookup_failed';
+      count?: number;
+    }>;
+  }>;
+  
+  localDeletedCanonicalTradeIds?: string[];
+  
+  canonicalTradeProjectionOwners?: Record<string, string>;
+  
+  restoringCanonicalTradeIds?: string[];
   
   secretStorageNamespace?: string;
 
@@ -873,22 +1136,6 @@ export interface TradeLogSettings {
 }
 
 
-interface ScalperDefaultsSettings {
-  
-  countMode: DemonTrackerCountMode;
-  
-  sourceMode: DemonTrackerSourceMode;
-  
-  autoApplySessionMistakesToTrades: boolean;
-}
-
-export const DEFAULT_SCALPER_DEFAULTS: ScalperDefaultsSettings = {
-  countMode: 'per-trade',
-  sourceMode: 'trades',
-  autoApplySessionMistakesToTrades: false,
-};
-
-
 interface ReviewV2Settings {
   
   customWidgetTypes: CustomWidgetType[];
@@ -896,8 +1143,6 @@ interface ReviewV2Settings {
   templates?: ReviewTemplate[];
   
   tradeTemplates?: TradeTemplate[];
-  
-  scalperDefaults?: ScalperDefaultsSettings;
 }
 
 
@@ -1077,6 +1322,7 @@ export const DEFAULT_SETTINGS: JournalitSettings = {
     useDirectPnLInput: false, 
     useDollarValueInput: false, 
     maeMfeInputMode: 'dollar', 
+    maeMfeDisplayUnit: 'dollar',
     tradingDayCutoffTime: DEFAULT_TRADING_DAY_CUTOFF_TIME, 
     tradingDayCutoffEndOfDayMigrationVersion:
       TRADING_DAY_CUTOFF_END_OF_DAY_MIGRATION_VERSION,
@@ -1085,11 +1331,13 @@ export const DEFAULT_SETTINGS: JournalitSettings = {
     breakEvenThresholdMode: 'fixed',
     breakEvenThresholdPercent: 0.05,
     includeMissedTradesInCalculations: false, 
+    includeUnrealizedPnLInCalculations: false, 
     defaultRiskAmount: 0,
     displayRMultiples: false,
     includeCopyAccountsInAllAccountsAnalytics: false,
     analyticsDateBasis: 'entry',
     tradeFormLayout: DEFAULT_TRADE_FORM_LAYOUT_SETTINGS,
+    galleryFolders: [],
   },
   tradeLog: {
     expandedMode: false,
@@ -1144,7 +1392,6 @@ export const DEFAULT_SETTINGS: JournalitSettings = {
     customWidgetTypes: [],
     templates: [],
     tradeTemplates: [],
-    scalperDefaults: { ...DEFAULT_SCALPER_DEFAULTS },
   },
   templates: {
     defaultTrade: 'builtin-trade-standard',
@@ -1351,7 +1598,7 @@ export const DEFAULT_SETTINGS: JournalitSettings = {
       },
       {
         id: 'trading-dashboard',
-        label: 'Trading Dashboard',
+        label: 'Dashboard',
         icon: 'grip',
         color: 'var(--text-accent)',
         action: 'openTradingDashboard',
@@ -1360,7 +1607,7 @@ export const DEFAULT_SETTINGS: JournalitSettings = {
       },
       {
         id: 'account-dashboard',
-        label: 'Account Dashboard',
+        label: 'Accounts',
         icon: 'users',
         color: 'var(--text-accent)',
         action: 'openAccountDashboard',
@@ -1440,13 +1687,22 @@ export const DEFAULT_SETTINGS: JournalitSettings = {
         order: 12,
       },
       {
+        id: 'navigation-sidebar',
+        label: 'Navigation Sidebar',
+        icon: 'panel-left-open',
+        color: 'var(--text-accent)',
+        action: 'openNavigationSidebar',
+        visible: false,
+        order: 13,
+      },
+      {
         id: 'session-mode',
         label: 'Session Mode',
         icon: 'radio',
         color: 'var(--text-accent)',
         action: 'openSessionMode',
         visible: true,
-        order: 13,
+        order: 14,
       },
     ],
     quickLinksPosition: 'belowWidgets',
@@ -1462,6 +1718,8 @@ export const DEFAULT_SETTINGS: JournalitSettings = {
       lastForexSymbol: 'EURUSD',
     },
     selectedPeriod: 'lifetime',
+    backgroundImagePath: '',
+    showBackgroundInDashboard: false,
   },
   viewFilters: {
     dashboard: DEFAULT_DASHBOARD_FILTERS,
@@ -1501,156 +1759,7 @@ export const DEFAULT_SETTINGS: JournalitSettings = {
   csvLastAssetType: {},
   initializedOptionTypes: [],
   symbolMappings: [],
-  navigation: {
-    enabled: true,
-    tabBehavior: 'replaceActiveTab',
-    items: [
-      {
-        id: 'nav-home',
-        label: 'Home',
-        icon: 'circle-dot-dashed',
-        action: 'openHome',
-        section: 'overview',
-        visible: true,
-        order: 0,
-      },
-      {
-        id: 'nav-dashboard',
-        label: 'Trading Dashboard',
-        icon: 'grip',
-        action: 'openTradingDashboard',
-        section: 'overview',
-        visible: true,
-        order: 1,
-      },
-      {
-        id: 'nav-trade-log',
-        label: 'Trade Log',
-        icon: 'folder-tree',
-        action: 'openTradeLog',
-        section: 'overview',
-        visible: true,
-        order: 2,
-      },
-      {
-        id: 'nav-setups',
-        label: 'Setups',
-        icon: 'flask-conical',
-        action: 'openSetups',
-        section: 'overview',
-        visible: true,
-        order: 3,
-      },
-      {
-        id: 'nav-account-dashboard',
-        label: 'Account Dashboard',
-        icon: 'users',
-        action: 'openAccountDashboard',
-        section: 'overview',
-        visible: true,
-        order: 4,
-      },
-      {
-        id: 'nav-drc',
-        label: "Today's DRC",
-        icon: 'calendar',
-        action: 'openTodaysDRC',
-        section: 'reviews',
-        visible: true,
-        order: 0,
-      },
-      {
-        id: 'nav-weekly',
-        label: "This Week's Review",
-        icon: 'calendar-check',
-        action: 'openWeeklyReview',
-        section: 'reviews',
-        visible: true,
-        order: 1,
-      },
-      {
-        id: 'nav-monthly',
-        label: "This Month's Review",
-        icon: 'calendar-range',
-        action: 'openMonthlyReview',
-        section: 'reviews',
-        visible: true,
-        order: 2,
-      },
-      {
-        id: 'nav-quarterly',
-        label: "This Quarter's Review",
-        icon: 'calendar-search',
-        action: 'openQuarterlyReview',
-        section: 'reviews',
-        visible: true,
-        order: 3,
-      },
-      {
-        id: 'nav-yearly',
-        label: "This Year's Review",
-        icon: 'calendar-heart',
-        action: 'openYearlyReview',
-        section: 'reviews',
-        visible: true,
-        order: 4,
-      },
-      {
-        id: 'nav-add-trade',
-        label: 'Add Trade',
-        icon: 'plus-circle',
-        action: 'addTrade',
-        section: 'tools',
-        visible: true,
-        order: 0,
-      },
-      {
-        id: 'nav-layout-builder',
-        label: 'Layout Builder',
-        icon: 'lucide-blocks',
-        action: 'openLayoutBuilder',
-        section: 'tools',
-        visible: true,
-        order: 1,
-      },
-      {
-        id: 'nav-quick-import',
-        label: 'Quick Import',
-        icon: 'zap',
-        action: 'openQuickTradeImport',
-        section: 'tools',
-        visible: true,
-        order: 2,
-      },
-      {
-        id: 'nav-csv-import',
-        label: 'Trade Import',
-        icon: 'import',
-        action: 'openCSVImport',
-        section: 'tools',
-        visible: true,
-        order: 3,
-      },
-      {
-        id: 'nav-position-size',
-        label: 'Position Size Calculator',
-        icon: 'calculator',
-        action: 'openPositionSizeCalculator',
-        section: 'tools',
-        visible: true,
-        order: 4,
-      },
-      {
-        id: 'nav-session-mode',
-        label: 'Session Mode',
-        icon: 'radio',
-        action: 'openSessionMode',
-        section: 'tools',
-        visible: true,
-        order: 5,
-      },
-    ],
-  },
+  navigation: createDefaultNavigationSettings(),
 };
 
 export {};

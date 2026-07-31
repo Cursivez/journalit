@@ -1705,6 +1705,50 @@ export const TEMPLATE_BUILDER_STYLES = `
   gap: 16px;
 }
 
+.journalit-template-builder-container .template-widget-config-row--demon-tracker {
+  flex-wrap: wrap;
+  align-items: flex-start;
+}
+
+.journalit-template-builder-container
+  .template-widget-config-row--demon-tracker
+  .template-widget-config-label {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+}
+
+.journalit-template-builder-container .template-widget-config-label-heading {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.journalit-template-builder-container .journalit-template-widget-config-info-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--text-faint);
+  cursor: help;
+}
+
+.journalit-template-builder-container
+  .journalit-template-widget-config-info-button:hover,
+.journalit-template-builder-container
+  .journalit-template-widget-config-info-button:focus-visible {
+  color: var(--text-muted);
+}
+
+.journalit-template-builder-container .template-widget-config-help {
+  max-width: 360px;
+  color: var(--text-muted);
+  font-size: 11px;
+  line-height: 1.35;
+}
+
 .journalit-template-builder-container .template-widget-config-row--markdown-zone {
   padding-right: 12px;
   padding-top: 0;
@@ -1804,20 +1848,12 @@ export const TEMPLATE_BUILDER_STYLES = `
   cursor: pointer;
 }
 
-.journalit-template-builder-container .template-review-context-pills .segmented-control-option:not(.is-active) {
-  color: var(--text-faint);
-}
-
-.journalit-template-builder-container .template-review-context-pills .segmented-control-option:not(.is-active):hover {
-  color: var(--text-muted);
-}
-
 .journalit-template-builder-container .template-review-context-field-filter {
   position: relative;
   width: min(100%, 280px);
 }
 
-.journalit-template-builder-container .template-review-context-field-filter__trigger {
+.journalit-template-builder-container button.template-review-context-field-filter__trigger {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -1828,6 +1864,8 @@ export const TEMPLATE_BUILDER_STYLES = `
   padding: 8px 12px;
   border: 1px solid var(--background-modifier-border);
   border-radius: 6px;
+  box-shadow: none;
+  background: var(--background-primary);
   background-color: var(--background-primary);
   color: var(--text-normal);
   font-size: 12px;
@@ -1835,8 +1873,9 @@ export const TEMPLATE_BUILDER_STYLES = `
   transition: all 0.2s ease;
 }
 
-.journalit-template-builder-container .template-review-context-field-filter__trigger:hover {
-  background: var(--background-primary);
+.journalit-template-builder-container button.template-review-context-field-filter__trigger:hover {
+  background: var(--background-modifier-hover);
+  background-color: var(--background-modifier-hover);
 }
 
 .journalit-template-builder-container .template-review-context-field-filter__summary {
@@ -1896,9 +1935,15 @@ export const TEMPLATE_BUILDER_STYLES = `
 }
 
 .journalit-template-builder-container .template-review-context-field-filter__option:hover,
-.journalit-template-builder-container .template-review-context-field-filter__option--active {
+.journalit-template-builder-container .template-review-context-field-filter__option:focus-visible {
   background: var(--background-modifier-hover) !important;
   background-color: var(--background-modifier-hover) !important;
+  color: var(--text-normal) !important;
+}
+
+.journalit-template-builder-container .template-review-context-field-filter__option--active {
+  background: transparent !important;
+  background-color: transparent !important;
   color: var(--text-normal) !important;
 }
 
@@ -1938,9 +1983,10 @@ export const TEMPLATE_BUILDER_STYLES = `
 
 .journalit-template-builder-container .template-trade-review-question-header {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
   gap: 16px;
+  min-height: 30px;
 }
 
 .journalit-template-builder-container .template-trade-review-question-title {
@@ -1988,41 +2034,42 @@ export const TEMPLATE_BUILDER_STYLES = `
 }
 
 .journalit-template-builder-container .template-trade-review-outcome-options {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 8px;
   width: 100%;
+  border-radius: 8px;
+  background: var(--background-secondary);
 }
 
-.journalit-template-builder-container button.template-trade-review-outcome-option {
-  width: 100%;
-  min-height: 34px;
-  padding: 7px 10px;
-  border: 1px solid var(--background-modifier-border);
-  border-radius: 6px;
+.journalit-template-builder-container .template-trade-review-outcome-options button.segmented-control-option {
+  min-width: 0;
+  border: none;
   box-shadow: none;
-  background: var(--background-primary);
+  background: transparent;
+  background-color: transparent;
   color: var(--text-muted);
-  font-size: 12px;
   font-weight: 600;
-  cursor: pointer;
-  transition: border-color 0.15s ease, background-color 0.15s ease,
-    color 0.15s ease;
+  appearance: none;
+  -webkit-appearance: none;
 }
 
-.journalit-template-builder-container button.template-trade-review-outcome-option:hover {
-  border-color: var(--interactive-accent-hover);
+.journalit-template-builder-container .template-trade-review-outcome-options button.segmented-control-option:not(.is-active):hover {
+  background: var(--background-modifier-hover);
+  background-color: var(--background-modifier-hover);
   color: var(--text-normal);
 }
 
-.journalit-template-builder-container button.template-trade-review-outcome-option.is-selected {
-  border-color: var(--interactive-accent);
+.journalit-template-builder-container .template-trade-review-outcome-options button.segmented-control-option.is-active {
   background: color-mix(
     in srgb,
-    var(--interactive-accent) 12%,
+    var(--interactive-accent) 14%,
     var(--background-primary)
   );
-  color: var(--text-normal);
+  background-color: color-mix(
+    in srgb,
+    var(--interactive-accent) 14%,
+    var(--background-primary)
+  );
+  color: var(--interactive-accent);
+  box-shadow: none;
 }
 
 .journalit-template-builder-container .template-trade-review-question-surface {
@@ -2052,12 +2099,26 @@ export const TEMPLATE_BUILDER_STYLES = `
   text-transform: uppercase;
 }
 
+
 .journalit-template-builder-container .template-trade-review-question-row {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 96px;
   gap: 12px;
-  align-items: center;
+  align-items: start;
+  position: relative;
   padding: 4px 0;
+}
+
+.journalit-template-builder-container .template-trade-review-question-number {
+  position: absolute;
+  top: 12px;
+  left: -10px;
+  transform: translateX(-100%);
+  color: var(--text-faint);
+  font-size: 12px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
 }
 
 .journalit-template-builder-container .template-trade-review-question-row + .template-trade-review-question-row {
@@ -2072,8 +2133,17 @@ export const TEMPLATE_BUILDER_STYLES = `
   min-width: 0;
 }
 
+.journalit-template-builder-container .template-trade-review-field-label {
+  display: block;
+  min-width: 0;
+}
+
+.journalit-template-builder-container .template-trade-review-option-field-label {
+  flex: 1;
+}
+
 .journalit-template-builder-container input.template-trade-review-question-input,
-.journalit-template-builder-container input.template-trade-review-placeholder-input {
+.journalit-template-builder-container textarea.template-trade-review-placeholder-input {
   width: 100%;
   min-width: 0;
   height: 32px;
@@ -2081,8 +2151,25 @@ export const TEMPLATE_BUILDER_STYLES = `
   font-size: 12px;
 }
 
-.journalit-template-builder-container input.template-trade-review-placeholder-input {
+.journalit-template-builder-container textarea.template-trade-review-placeholder-input {
   color: var(--text-muted);
+  line-height: 18px;
+  min-height: 32px;
+  padding-right: 18px;
+  padding-bottom: 7px;
+  resize: vertical;
+}
+
+.journalit-template-builder-container textarea.template-trade-review-placeholder-input::-webkit-resizer {
+  background: linear-gradient(
+    135deg,
+    transparent 0 48%,
+    var(--text-faint) 49% 57%,
+    transparent 58% 66%,
+    var(--text-muted) 67% 75%,
+    transparent 76%
+  );
+  border-radius: 0 0 4px 0;
 }
 
 .journalit-template-builder-container .template-trade-review-question-actions {
@@ -2091,6 +2178,8 @@ export const TEMPLATE_BUILDER_STYLES = `
   justify-content: flex-end;
   gap: 2px;
   min-width: 0;
+  
+  margin-top: 2px;
 }
 
 .journalit-template-builder-container .template-trade-review-visually-hidden {
@@ -2130,6 +2219,141 @@ export const TEMPLATE_BUILDER_STYLES = `
   cursor: default;
 }
 
+.journalit-template-builder-container .template-trade-review-question-main {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.journalit-template-builder-container .template-trade-review-question-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 4px;
+  min-width: 0;
+}
+
+.journalit-template-builder-container .template-trade-review-dropdown {
+  position: relative;
+  align-self: flex-start;
+  width: fit-content;
+  max-width: 100%;
+  min-width: 0;
+}
+
+.journalit-template-builder-container .template-trade-review-answer-type-select {
+  min-width: 90px;
+}
+
+.journalit-template-builder-container button.template-trade-review-dropdown-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 4px;
+  height: 26px;
+  width: auto;
+  max-width: 100%;
+  padding: 0 8px;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 5px;
+  box-shadow: none;
+  background: var(--background-secondary);
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.journalit-template-builder-container button.template-trade-review-dropdown-trigger:hover {
+  background: var(--background-modifier-hover);
+  color: var(--text-normal);
+}
+
+.journalit-template-builder-container .template-trade-review-dropdown-value {
+  flex: 1;
+  max-width: none;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: left;
+}
+
+.journalit-template-builder-container .template-trade-review-dropdown-menu {
+  left: 0;
+  right: auto;
+  z-index: var(--layer-menu);
+  width: max-content;
+  min-width: 100%;
+  max-width: min(280px, 90vw);
+}
+
+.journalit-template-builder-container .template-trade-review-dropdown .journalit-home-trade-type-filter__option {
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+  background: transparent;
+  background-color: transparent;
+}
+
+.journalit-template-builder-container .template-trade-review-dropdown .journalit-home-trade-type-filter__option:hover,
+.journalit-template-builder-container .template-trade-review-dropdown .journalit-home-trade-type-filter__option:focus-visible {
+  background: var(--background-modifier-hover);
+  background-color: var(--background-modifier-hover);
+}
+
+.journalit-template-builder-container .template-trade-review-option-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.journalit-template-builder-container .template-trade-review-option-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+}
+
+.journalit-template-builder-container input.template-trade-review-option-input {
+  flex: 1;
+  min-width: 0;
+  height: 28px;
+  margin: 0;
+  font-size: 12px;
+}
+
+.journalit-template-builder-container button.template-trade-review-add-option {
+  align-self: flex-start;
+  padding: 3px 10px;
+  border: 1px dashed var(--background-modifier-border);
+  border-radius: 5px;
+  box-shadow: none;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.journalit-template-builder-container button.template-trade-review-add-option:hover {
+  border-color: var(--interactive-accent);
+  color: var(--interactive-accent);
+  background: color-mix(
+    in srgb,
+    var(--interactive-accent) 6%,
+    transparent
+  );
+}
+
+.journalit-template-builder-container button.template-trade-review-option-remove {
+  width: 24px;
+  height: 24px;
+  border: none;
+  background: transparent;
+}
+
 .journalit-template-builder-container .template-trade-review-question-empty {
   padding: 20px 12px;
   color: var(--text-muted);
@@ -2138,7 +2362,7 @@ export const TEMPLATE_BUILDER_STYLES = `
 }
 
 .journalit-template-builder-container .template-trade-review-add-question {
-  align-self: flex-start;
+  align-self: center;
 }
 
 @media (max-width: 760px) {
@@ -2153,6 +2377,7 @@ export const TEMPLATE_BUILDER_STYLES = `
   .journalit-template-builder-container .template-trade-review-question-columns {
     display: none;
   }
+
 
   .journalit-template-builder-container .template-trade-review-question-row {
     align-items: start;

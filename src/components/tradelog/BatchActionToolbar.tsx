@@ -23,6 +23,7 @@ import JournalitPlugin from '../../main';
 import { OptionType } from '../../services/options';
 import { useEventBus } from '../../hooks/useEventBus';
 import { t, tPlural } from '../../lang/helpers';
+import { showConfirmationModal } from '../shared/ConfirmationModal';
 
 const asStringArray = (value: unknown): string[] =>
   Array.isArray(value)
@@ -46,63 +47,6 @@ interface BatchActionToolbarProps {
   mistakeOptions: string[];
   app: App;
   plugin: JournalitPlugin;
-}
-
-
-class DeleteConfirmationModal extends Modal {
-  private onConfirm: () => void | Promise<void>;
-  private onCancel: () => void;
-  private count: number;
-
-  constructor(
-    app: App,
-    count: number,
-    onConfirm: () => void | Promise<void>,
-    onCancel: () => void
-  ) {
-    super(app);
-    this.titleEl.setText(t('tradelog.batch.delete-confirm.title'));
-    this.count = count;
-    this.onConfirm = onConfirm;
-    this.onCancel = onCancel;
-  }
-
-  onOpen() {
-    const { contentEl } = this;
-    contentEl.empty();
-    contentEl.createEl('p', {
-      text: tPlural('tradelog.batch.delete-confirm.message', this.count),
-    });
-    contentEl.createEl('p', {
-      text: t('tradelog.batch.delete-confirm.warning'),
-    });
-
-    const buttonContainer = contentEl.createDiv({
-      cls: 'modal-button-container journalit-modal-button-container',
-    });
-
-    const cancelButton = buttonContainer.createEl('button', {
-      text: t('button.cancel'),
-    });
-    cancelButton.onclick = () => {
-      this.onCancel();
-      this.close();
-    };
-
-    const deleteButton = buttonContainer.createEl('button', {
-      text: t('button.delete'),
-      cls: 'mod-warning',
-    });
-    deleteButton.onclick = () => {
-      void this.onConfirm();
-      this.close();
-    };
-  }
-
-  onClose() {
-    const { contentEl } = this;
-    contentEl.empty();
-  }
 }
 
 
@@ -719,30 +663,40 @@ export const BatchActionToolbar = memo<BatchActionToolbarProps>(
     }, [app, tagOptions, onAddTags, handleSaveTag, plugin]);
 
     
-    const handleDelete = useCallback(() => {
-      const modal = new DeleteConfirmationModal(
-        app,
-        selectedCount,
-        async () => {
-          try {
-            setIsSubmitting(true);
-            setLoadingAction('delete');
-            await onDelete();
-          } catch (error) {
-            console.error('Error deleting trades:', error);
-            new Notice(
-              t('notice.error.delete-trades', { error: getErrorMessage(error) })
-            );
-          } finally {
-            setIsSubmitting(false);
-            setLoadingAction(null);
-          }
-        },
-        () => {
-          // intentional
-        }
-      );
-      modal.open();
+    const handleDelete = useCallback(async () => {
+      const confirmed = await showConfirmationModal(app, {
+        title: t('tradelog.batch.delete-confirm.title'),
+        message: [
+          {
+            text: tPlural(
+              'tradelog.batch.delete-confirm.message',
+              selectedCount
+            ),
+          },
+          {
+            text: t('tradelog.batch.delete-confirm.warning'),
+            destructive: true,
+          },
+        ],
+        confirmLabel: t('button.delete'),
+        cancelLabel: t('button.cancel'),
+        destructive: true,
+      });
+      if (!confirmed) return;
+
+      try {
+        setIsSubmitting(true);
+        setLoadingAction('delete');
+        await onDelete();
+      } catch (error) {
+        console.error('Error deleting trades:', error);
+        new Notice(
+          t('notice.error.delete-trades', { error: getErrorMessage(error) })
+        );
+      } finally {
+        setIsSubmitting(false);
+        setLoadingAction(null);
+      }
     }, [app, selectedCount, onDelete]);
 
     return (

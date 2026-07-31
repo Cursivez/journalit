@@ -9,6 +9,9 @@ import {
   HOME_FILTERS_TARGET_ID,
   HOME_GRID_TARGET_ID,
   HOME_MAIN_GUIDE_ID,
+  HOME_MAIN_GUIDE_MERGED_MODES_VERSION,
+  HOME_MODE_DASHBOARD_ENABLED_ACTION_ID,
+  HOME_MODE_TOGGLE_DASHBOARD_OPTION_TARGET_ID,
   HOME_QUICK_LINKS_POSITION_BUTTON_TARGET_ID,
   HOME_QUICK_LINKS_TARGET_ID,
   HOME_WIDGET_SELECTOR_OPENED_ACTION_ID,
@@ -19,7 +22,7 @@ export function registerHomeMainGuide(guideRegistry: GuideRegistry): void {
   guideRegistry.registerGuide({
     id: HOME_MAIN_GUIDE_ID,
     viewType: HOME_VIEW_TYPE,
-    version: 3,
+    version: HOME_MAIN_GUIDE_MERGED_MODES_VERSION,
     autoShow: true,
     priority: 100,
     initialStepId: 'intro',
@@ -98,6 +101,18 @@ export function registerHomeMainGuide(guideRegistry: GuideRegistry): void {
         description: t('home.guide.widget-interactions.description'),
         progression: 'manual',
         placement: 'center',
+      },
+      
+      
+      {
+        id: 'modes',
+        title: t('home.guide.modes.title'),
+        description: t('home.guide.modes.description'),
+        progression: 'action-required',
+        
+        
+        targetId: HOME_MODE_TOGGLE_DASHBOARD_OPTION_TARGET_ID,
+        requiredActionId: HOME_MODE_DASHBOARD_ENABLED_ACTION_ID,
       },
     ],
   });

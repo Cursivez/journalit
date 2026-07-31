@@ -26,7 +26,7 @@ export class RibbonManager {
       async () => {
         try {
           
-          await this.plugin.viewManager.openHomeView();
+          await this.plugin.viewManager.openHomeView('overview');
         } catch (error) {
           console.error(
             '[Journalit] Failed to open home view from ribbon:',

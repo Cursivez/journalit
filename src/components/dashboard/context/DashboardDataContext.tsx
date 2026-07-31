@@ -282,6 +282,12 @@ export const DashboardDataProvider: React.FC<DashboardDataProviderProps> = ({
   const filtersRef = useRef(filters);
   const previousFiltersRef = useRef(filters);
   const wasActiveRef = useRef(isActive);
+  const isActiveRef = useRef(isActive);
+  const pendingInvalidationRef = useRef(false);
+
+  React.useEffect(() => {
+    isActiveRef.current = isActive;
+  }, [isActive]);
 
   
   React.useEffect(() => {
@@ -409,58 +415,46 @@ export const DashboardDataProvider: React.FC<DashboardDataProviderProps> = ({
     }
 
     
+    
+    
+    if (!isActive) return;
+
+    
     const timeoutId = window.setTimeout(() => {
       void refreshDataRef.current();
     }, 100);
 
     return () => window.clearTimeout(timeoutId);
-  }, [filters, dashboardData]);
+  }, [filters, dashboardData, isActive]);
 
   
-  useEventBus(
-    'trade:changed',
-    () => {
+  
+  
+  const handleDataInvalidation = useCallback(() => {
+    if (isActiveRef.current) {
       void refreshData(true);
-    },
-    isActive
-  );
-  useEventBus(
-    'backtest-trade:changed',
-    () => {
-      void refreshData(true);
-    },
-    isActive
-  );
-  useEventBus(
-    'account:changed',
-    () => {
-      void refreshData(true);
-    },
-    isActive
-  );
+    } else {
+      pendingInvalidationRef.current = true;
+    }
+  }, [refreshData]);
 
   
-  useEventBus(
-    'folder-path:changed',
-    () => {
-      void refreshData(true);
-    },
-    isActive
-  );
+  useEventBus('trade:changed', handleDataInvalidation);
+  useEventBus('backtest-trade:changed', handleDataInvalidation);
+  useEventBus('account:changed', handleDataInvalidation);
 
-  useEventBus(
-    'settings:changed',
-    (payload) => {
-      if (
-        payload?.section === 'trade' ||
-        payload?.section === 'general' ||
-        payload?.section === 'copyTradeAdjustments'
-      ) {
-        void refreshData(true);
-      }
-    },
-    isActive
-  );
+  
+  useEventBus('folder-path:changed', handleDataInvalidation);
+
+  useEventBus('settings:changed', (payload) => {
+    if (
+      payload?.section === 'trade' ||
+      payload?.section === 'general' ||
+      payload?.section === 'copyTradeAdjustments'
+    ) {
+      handleDataInvalidation();
+    }
+  });
 
   React.useEffect(() => {
     if (!isActive || dataReadyRef.current) return;
@@ -478,7 +472,8 @@ export const DashboardDataProvider: React.FC<DashboardDataProviderProps> = ({
   }, [isActive, refreshData, tradeService]);
 
   React.useEffect(() => {
-    if (isActive && !wasActiveRef.current) {
+    if (isActive && !wasActiveRef.current && pendingInvalidationRef.current) {
+      pendingInvalidationRef.current = false;
       void refreshData(true);
     }
     wasActiveRef.current = isActive;

@@ -12,7 +12,8 @@ import {
   Info,
   AlertTriangle,
 } from '../../../components/shared/icons/ObsidianIcon';
-import { Notice, FileSystemAdapter, Platform, Modal, App } from 'obsidian';
+import { showConfirmationModal } from '../../../components/shared/ConfirmationModal';
+import { Notice, FileSystemAdapter, Platform } from 'obsidian';
 import JournalitPlugin from '../../../main';
 import { ToggleSwitch } from '../../../components/ui';
 import { Button } from '../../../components/ui';
@@ -48,6 +49,7 @@ import {
   canWriteClipboardText,
   writeClipboardText,
 } from '../../../utils/clipboard';
+import { JOURNALIT_SETTINGS_RESOURCES } from '../../settingsResources';
 
 interface BackendIntegrationTabProps {
   plugin: JournalitPlugin;
@@ -450,10 +452,15 @@ function useBackendIntegrationTabModel(props: BackendIntegrationTabProps) {
     async (account: AccountInfo) => {
       if (!backendService) return;
 
-      const confirmed = await confirmMtAccountUnlink(
-        plugin.app,
-        account.accountId
-      );
+      const confirmed = await showConfirmationModal(plugin.app, {
+        title: t('backend.accounts.unlink-title'),
+        message: t('backend.accounts.unlink-confirm', {
+          accountId: account.accountId,
+        }),
+        confirmLabel: t('backend.accounts.unlink'),
+        cancelLabel: t('button.cancel'),
+        destructive: true,
+      });
       if (!confirmed) return;
 
       try {
@@ -1295,7 +1302,7 @@ function BackendIntegrationErrorPanel({
                 discordLabel={t('button.discord')}
                 note={t('csv.results.discord-note')}
                 onDiscord={() =>
-                  openExternalUrl('https://discord.gg/AkSw3D9h8b')
+                  openExternalUrl(JOURNALIT_SETTINGS_RESOURCES.discord)
                 }
                 actionsClassName="backend-integration__sync-error-actions"
                 helpClassName="backend-integration__sync-discord-help"
@@ -1362,7 +1369,7 @@ export const BackendIntegrationTab: React.FC<BackendIntegrationTabProps> = (
   const showErrorPanel = props.showErrorPanel ?? true;
 
   const content = (
-    <>
+    <div className="journalit-metatrader-sync-panel">
       {!props.embedded && (
         <div className="trade-sync-header">
           <h3>{t('backend.title')}</h3>
@@ -1592,7 +1599,7 @@ export const BackendIntegrationTab: React.FC<BackendIntegrationTabProps> = (
           flat={contentMode === 'accounts'}
         />
       )}
-    </>
+    </div>
   );
 
   if (props.embedded) {
@@ -1605,55 +1612,5 @@ export const BackendIntegrationTab: React.FC<BackendIntegrationTabProps> = (
     </div>
   );
 };
-
-class MtAccountUnlinkConfirmationModal extends Modal {
-  constructor(
-    app: App,
-    private accountId: string,
-    private onResult: (confirmed: boolean) => void
-  ) {
-    super(app);
-    this.titleEl.setText(t('backend.accounts.unlink-title'));
-  }
-
-  onOpen(): void {
-    const { contentEl } = this;
-    contentEl.empty();
-
-    contentEl.createEl('p', {
-      text: t('backend.accounts.unlink-confirm', {
-        accountId: this.accountId,
-      }),
-    });
-
-    const buttons = contentEl.createDiv({ cls: 'modal-button-container' });
-    const cancelButton = buttons.createEl('button', {
-      text: t('button.cancel'),
-    });
-    cancelButton.addEventListener('click', () => {
-      this.close();
-      this.onResult(false);
-    });
-
-    const unlinkButton = buttons.createEl('button', {
-      text: t('backend.accounts.unlink'),
-      cls: 'mod-warning',
-    });
-    unlinkButton.addEventListener('click', () => {
-      this.close();
-      this.onResult(true);
-    });
-  }
-
-  onClose(): void {
-    this.contentEl.empty();
-  }
-}
-
-function confirmMtAccountUnlink(app: App, accountId: string): Promise<boolean> {
-  return new Promise((resolve) => {
-    new MtAccountUnlinkConfirmationModal(app, accountId, resolve).open();
-  });
-}
 
 BackendIntegrationTab.displayName = 'BackendIntegrationTab';

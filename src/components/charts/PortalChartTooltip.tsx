@@ -196,6 +196,8 @@ interface PortalChartTooltipProps {
   offset?: number;
   margin?: number;
   placementMode?: TooltipPlacementMode;
+  
+  allowEmptyPayload?: boolean;
 }
 
 export function PortalChartTooltip({
@@ -207,6 +209,7 @@ export function PortalChartTooltip({
   offset = DEFAULT_OFFSET,
   margin = DEFAULT_MARGIN,
   placementMode = 'point',
+  allowEmptyPayload = false,
 }: PortalChartTooltipProps): React.ReactPortal | null {
   const portalRoot = useTooltipPortalRoot(chartRef);
   const tooltipRef = React.useRef<HTMLDivElement>(null);
@@ -221,7 +224,10 @@ export function PortalChartTooltip({
   );
 
   const hasActivePayload = Boolean(
-    active && payload && payload.length > 0 && coordinate && portalRoot
+    active &&
+    (allowEmptyPayload || (payload && payload.length > 0)) &&
+    coordinate &&
+    portalRoot
   );
   const isVisible = hasActivePayload && isPointerInsideChart;
 

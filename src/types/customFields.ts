@@ -90,6 +90,37 @@ export const DEFAULT_CUSTOM_FIELDS_DATA: CustomFieldsData = {
 };
 
 
+export const CANONICAL_PROJECTION_CUSTOM_FIELD_MIGRATION_KEYS = [
+  'canonicalTradeId',
+  'canonicalTradeVersion',
+  'canonicalAccountId',
+  'canonicalBroker',
+  'canonicalAccountDisplayName',
+  'canonicalProjectionSchemaVersion',
+  'canonicalProjectionGeneration',
+  'hasExplicitExitPrice',
+  'openQuantity',
+  'closedQuantity',
+  'hasExplicitCommission',
+  'commissionType',
+  'brokerBaseCurrencyPnl',
+  'brokerBaseCurrency',
+  'brokerBaseCurrencyPnlSource',
+  'authoritativePnl',
+  'underlyingSymbol',
+  'contractSymbol',
+  'lastBrokerSyncAt',
+  'pipSize',
+  'tradingPair',
+  'sourceRows',
+  'orderId',
+  'tradeImportId',
+  'tradeImportVersion',
+  'tradeImportAccountId',
+  'tradeImportAccountBroker',
+  'tradeImportAccountDisplayName',
+] as const;
+
 export const RESERVED_FRONTMATTER_KEYS = new Set([
   'type',
   'entryTime',
@@ -152,6 +183,12 @@ export const RESERVED_FRONTMATTER_KEYS = new Set([
   'mfe',
   'maePrice',
   'mfePrice',
+  'unrealizedPriceSnapshot',
+  'unrealizedPriceSnapshotTime',
+  
+  
+  'originalCurrency',
+  'unrealizedPnlConversionRate',
   'riskAmount',
   'rMultiple',
   'stopLoss',
@@ -160,6 +197,7 @@ export const RESERVED_FRONTMATTER_KEYS = new Set([
   'currency',
   'customFields',
   'customTags',
+  ...CANONICAL_PROJECTION_CUSTOM_FIELD_MIGRATION_KEYS,
 ]);
 
 

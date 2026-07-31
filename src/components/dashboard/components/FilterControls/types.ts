@@ -1,5 +1,6 @@
 
 
+import type * as React from 'react';
 import { FilterState } from '../../DashboardView';
 
 
@@ -47,4 +48,5 @@ export interface FilterControlsProps {
   isEditing?: boolean;
   onToggleEditMode?: () => void;
   onOpenAddWidget?: () => void;
+  modeToggle?: React.ReactNode;
 }

@@ -6,11 +6,14 @@ import { FilterState } from '../components/dashboard/DashboardView';
 import {
   RecentItem,
   HomePeriod,
+  HomeViewMode,
   TradeLogSettings,
   PersistedViewFilters,
   JournalitSettings,
 } from './types';
 import type { TradeType } from '../services/tradelog/types';
+import type { SetupDirection } from '../services/setup/types';
+import { migrateLegacyAllStatusSelection } from './viewFiltersDefaults';
 
 
 const UI_STATE_FILENAME = 'ui-state.json';
@@ -27,6 +30,9 @@ interface UIState {
   viewFilters?: PersistedViewFilters;
 
   
+  statusFilterCancelledMigrationVersion?: number;
+
+  
   tradeLog?: TradeLogSettings;
 
   
@@ -34,6 +40,9 @@ interface UIState {
 
   
   selectedPeriod?: HomePeriod;
+
+  
+  homeViewMode?: HomeViewMode;
 
   
   selectedHomeAccounts?: string[];
@@ -79,9 +88,6 @@ interface UIState {
   syncCount?: number;
 
   
-  tradeSyncSelectedSource?: 'metatrader' | 'tradeImport';
-
-  
   lastFuturesSymbol?: string;
 
   
@@ -93,6 +99,7 @@ interface UIState {
   
   gettingStartedOpenedTradeLog?: boolean;
   gettingStartedOpenedLayoutBuilder?: boolean;
+  gettingStartedOpenedNavigationSidebar?: boolean;
 
   
   setupDetailAnalysisMode?: 'performance' | 'execution-gap';
@@ -113,6 +120,12 @@ interface UIState {
   setupOverviewSelectedSetupIds?: string[];
 
   
+  setupOverviewSelectedTags?: string[];
+
+  
+  setupOverviewSelectedDirections?: Array<SetupDirection | 'unspecified'>;
+
+  
   setupOverviewChartMode?: 'setups' | 'pairs';
 
   
@@ -130,6 +143,36 @@ interface UIState {
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   value !== null && typeof value === 'object' && !Array.isArray(value);
 
+function normalizeSetupOverviewSelectedTags(
+  value: unknown
+): string[] | undefined {
+  if (value === undefined) return undefined;
+  if (!Array.isArray(value)) return [];
+
+  const normalized: string[] = [];
+  const seen = new Set<string>();
+  for (const entry of value) {
+    if (typeof entry !== 'string') continue;
+    const tag = entry.trim();
+    const key = tag.toLowerCase();
+    if (!tag || seen.has(key)) continue;
+    seen.add(key);
+    normalized.push(tag);
+  }
+  return normalized;
+}
+
+function normalizeSetupOverviewSelectedDirections(
+  value: unknown
+): Array<SetupDirection | 'unspecified'> {
+  if (!Array.isArray(value)) return [];
+  const allowed = new Set(['long', 'short', 'both', 'unspecified']);
+  return value.filter(
+    (entry): entry is SetupDirection | 'unspecified' =>
+      typeof entry === 'string' && allowed.has(entry)
+  );
+}
+
 const DEFAULT_UI_STATE: UIState = {
   recentItems: [],
   imageGallery: {
@@ -142,7 +185,46 @@ const DEFAULT_UI_STATE: UIState = {
   gettingStartedDismissed: false,
   gettingStartedOpenedTradeLog: false,
   gettingStartedOpenedLayoutBuilder: false,
+  gettingStartedOpenedNavigationSidebar: false,
 };
+
+const STATUS_FILTER_CANCELLED_MIGRATION_VERSION = 1;
+
+function migratePersistedViewFilters(
+  filters: PersistedViewFilters
+): PersistedViewFilters {
+  return {
+    ...filters,
+    ...(filters.dashboard
+      ? {
+          dashboard: {
+            ...filters.dashboard,
+            statuses: migrateLegacyAllStatusSelection(
+              filters.dashboard.statuses
+            ),
+          },
+        }
+      : {}),
+    ...(filters.tradelog
+      ? {
+          tradelog: {
+            ...filters.tradelog,
+            statuses: migrateLegacyAllStatusSelection(
+              filters.tradelog.statuses
+            ),
+          },
+        }
+      : {}),
+    ...(filters.reviews
+      ? {
+          reviews: {
+            ...filters.reviews,
+            statuses: migrateLegacyAllStatusSelection(filters.reviews.statuses),
+          },
+        }
+      : {}),
+  };
+}
 
 
 export class UIStateManager {
@@ -173,19 +255,44 @@ export class UIStateManager {
       const exists = await this.plugin.app.vault.adapter.exists(statePath);
 
       if (!exists) {
-        this.state = { ...DEFAULT_UI_STATE };
+        this.state = {
+          ...DEFAULT_UI_STATE,
+          statusFilterCancelledMigrationVersion:
+            STATUS_FILTER_CANCELLED_MIGRATION_VERSION,
+        };
         this.loadedFromDisk = false;
         return this.state;
       }
 
       const content = await this.plugin.app.vault.adapter.read(statePath);
       const data: unknown = JSON.parse(content);
+      const persistedState = isRecord(data) ? data : {};
 
       
       this.state = {
         ...DEFAULT_UI_STATE,
-        ...(isRecord(data) ? data : {}),
+        ...persistedState,
+        setupOverviewSelectedTags: normalizeSetupOverviewSelectedTags(
+          persistedState.setupOverviewSelectedTags
+        ),
+        setupOverviewSelectedDirections:
+          normalizeSetupOverviewSelectedDirections(
+            persistedState.setupOverviewSelectedDirections
+          ),
       };
+      if (
+        this.state.statusFilterCancelledMigrationVersion !==
+        STATUS_FILTER_CANCELLED_MIGRATION_VERSION
+      ) {
+        if (this.state.viewFilters) {
+          this.state.viewFilters = migratePersistedViewFilters(
+            this.state.viewFilters
+          );
+        }
+        this.state.statusFilterCancelledMigrationVersion =
+          STATUS_FILTER_CANCELLED_MIGRATION_VERSION;
+        await this.saveStateInternal();
+      }
       this.loadedFromDisk = true;
 
       return this.state;
@@ -372,8 +479,11 @@ export class UIStateManager {
     
     if (settings.viewFilters) {
       const currentViewFilters = this.state.viewFilters ?? {};
+      const migratedSettingsViewFilters = migratePersistedViewFilters(
+        settings.viewFilters
+      );
       this.state.viewFilters = {
-        ...settings.viewFilters,
+        ...migratedSettingsViewFilters,
         ...currentViewFilters,
       };
       migrated = true;

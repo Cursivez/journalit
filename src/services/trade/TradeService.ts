@@ -13,11 +13,14 @@ import { parseDisplayText } from '../../utils/tagSchema';
 import {
   getISOWeekString,
   parseTradeTimestampValue,
+  safeParseDateValue,
 } from '../../utils/dateUtils';
 import { getTradingDay } from '../../utils/tradingDayUtils';
 import {
+  getAnalyticsDateBasis,
   getTradeAnalyticsTradingDay,
   getTradeRealizedPnlEvents,
+  type AnalyticsDateTradeLike,
 } from '../../utils/tradeAnalyticsDate';
 import type { AnalyticsDateBasis } from '../../settings/types';
 import { LossReviewData, TradeReviewData } from '../backend/types';
@@ -36,22 +39,45 @@ import {
   getFirstEntryTime,
   getLastExitTime,
   hasRealizedPnLComponents,
+  isTradeOpenPreservingNullPnl,
   isTradeOpenWithContext,
 } from '../../utils/tradeStatusUtils';
+import {
+  areSnapshotKeysClaimedByCustomFields,
+  shouldInvalidateUnrealizedSnapshot,
+  hasUnrealizedPriceSnapshot,
+} from '../../utils/unrealizedPnl';
 import { FolderPathService } from '../core/FolderPathService';
 import {
   IdealExitTransaction,
   TradeFormData,
   TakeProfitTarget,
 } from '../../components/forms/trade/types';
-import { OptionType } from '../options/CustomOptionsService';
+import {
+  OptionType,
+  type PreviousTagAssignments,
+} from '../options/CustomOptionsService';
 import { parseTradeDividendTransactions } from '../../utils/tradeUtils';
 import { getPluginInstance } from '../../utils/pluginContext';
 import { eventBus, OptionsChangedPayload, Unsubscribe } from '../events';
-import { acknowledgeLocalDeletedTradeImportProjection } from '../tradeImport/TradeImportProjectionAckQueue';
+import {
+  acknowledgeLocalDeletedTradeProjection,
+  clearLocalDeletedTradeProjection,
+  reserveLocalDeletedTradeProjection,
+} from '../tradeSync/TradeProjectionAckQueue';
+import {
+  registerTradeProjectionDeletionIntent,
+  runWithTradeProjectionWriteLock,
+} from '../tradeSync/TradeProjectionWriteLock';
 import { ObsidianTradeNoteStore } from './core/ObsidianTradeNoteStore';
 import { TradeReadModel } from './core/TradeReadModel';
-import { TradeCommandService } from './core/TradeCommandService';
+import {
+  TradeCommandService,
+  TradeCommitEventBatch,
+  type TradeCreateOptions,
+  type TradeCreationBatch,
+  type TradeUpdateOptions,
+} from './core/TradeCommandService';
 import { getDefaultTradeTemplateMetadata } from '../templates/defaultTradeTemplateMetadata';
 import { TradeEventBridge } from './core/TradeEventBridge';
 import { planTradeMutation } from './core/TradeMutationPlanner';
@@ -61,6 +87,11 @@ import {
   formatTradeDateForFilename,
   sanitizeTradeSymbolForFilename,
 } from './core/TradePathPolicy';
+import {
+  CANONICAL_PROJECTION_CLEAR_FIELDS,
+  hasCanonicalProjectionIdentity,
+  type CanonicalProjectionClearField,
+} from './core/CanonicalProjectionFields';
 import {
   backfillCanonicalExecutionFrontmatter,
   buildTradeFrontmatter,
@@ -80,9 +111,19 @@ import {
 import {
   ensureTradeReviewEndBoundary,
   migrateTradeReviewFrontmatterToMarkdown,
+  parseTradeReviewMarkdown,
+  repairLegacyTradeReviewMarkdown,
   TRADE_REVIEW_MARKDOWN_MIGRATION_VERSION,
   upsertTradeReviewMarkdownQuestion,
 } from './core/TradeReviewMarkdownCodec';
+import { ReviewTemplateService } from '../templates/ReviewTemplateService';
+import {
+  buildLegacyTradeReviewMigrationPlan,
+  createMigratedDefaultDrcTemplate,
+  MIGRATED_TRADE_REVIEW_DRC_TEMPLATE_ID,
+  TRADE_REVIEW_LAYOUT_MIGRATION_VERSION,
+  upsertHistoricalDrcTradeReviewWidget,
+} from './LegacyTradeReviewMigration';
 import { safeString } from '../../utils/safeString';
 import {
   buildTradeIdentityFields,
@@ -216,6 +257,105 @@ function normalizeReviewSections(
   );
 }
 
+function getReviewMigrationNumber(value: unknown): number | null {
+  if (typeof value === 'number') {
+    return Number.isFinite(value) ? value : null;
+  }
+  if (typeof value !== 'string' || !value.trim()) return null;
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+function getReviewMigrationString(value: unknown): string | undefined {
+  return typeof value === 'string' ? value : undefined;
+}
+
+function getReviewMigrationDividends(
+  value: unknown
+): Array<{ amount?: number | null }> | undefined {
+  if (!Array.isArray(value)) return undefined;
+  return value.flatMap((dividend): Array<{ amount?: number | null }> => {
+    if (!isRecord(dividend)) return [];
+    return [{ amount: getReviewMigrationNumber(dividend.amount) }];
+  });
+}
+
+function formatReviewMigrationTradingDay(tradingDay: Date): string {
+  const year = tradingDay.getFullYear();
+  const month = String(tradingDay.getMonth() + 1).padStart(2, '0');
+  const day = String(tradingDay.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+function getReviewMigrationTradingDays(
+  frontmatter: Record<string, unknown>,
+  plugin: JournalitPlugin
+): string[] {
+  const execution = normalizeTradeExecution(frontmatter, {
+    deriveMissingExplicitness: true,
+  });
+  const commissionType =
+    frontmatter.commissionType === 'fixed' ||
+    frontmatter.commissionType === 'percentage'
+      ? frontmatter.commissionType
+      : undefined;
+  const analyticsTrade: AnalyticsDateTradeLike = {
+    entryTime: execution.firstEntryTime,
+    exitTime: execution.lastExitTime,
+    entries: execution.entries,
+    exits: execution.exits,
+    tradeStatus: getReviewMigrationString(frontmatter.tradeStatus),
+    pnl: getReviewMigrationNumber(frontmatter.pnl),
+    directPnL: getReviewMigrationNumber(frontmatter.directPnL),
+    useDirectPnLInput: execution.useDirectPnLInput,
+    _originalPnlWasNull:
+      frontmatter.pnl === undefined || frontmatter.pnl === null,
+    direction: getReviewMigrationString(frontmatter.direction),
+    assetType: getReviewMigrationString(frontmatter.assetType),
+    optionType: getReviewMigrationString(frontmatter.optionType),
+    contractSize:
+      getReviewMigrationNumber(frontmatter.contractSize) ?? undefined,
+    dollarPerPoint:
+      getReviewMigrationNumber(frontmatter.dollarPerPoint) ?? undefined,
+    tickValue: getReviewMigrationNumber(frontmatter.tickValue) ?? undefined,
+    tickSize: getReviewMigrationNumber(frontmatter.tickSize) ?? undefined,
+    lotSize: getReviewMigrationNumber(frontmatter.lotSize) ?? undefined,
+    pipValue: getReviewMigrationNumber(frontmatter.pipValue) ?? undefined,
+    commission: getReviewMigrationNumber(frontmatter.commission),
+    commissionType,
+    swap: getReviewMigrationNumber(frontmatter.swap),
+    fees: getReviewMigrationNumber(frontmatter.fees),
+    rebate: getReviewMigrationNumber(frontmatter.rebate),
+    dividends: getReviewMigrationDividends(frontmatter.dividends),
+  };
+  const basis = getAnalyticsDateBasis(plugin.settings);
+
+  if (basis === 'exit') {
+    const events = getTradeRealizedPnlEvents(analyticsTrade, basis, plugin);
+    if (events.length > 0) {
+      return Array.from(
+        new Set(
+          events.map((event) =>
+            formatReviewMigrationTradingDay(event.tradingDay)
+          )
+        )
+      );
+    }
+  }
+
+  const tradingDay = getTradeAnalyticsTradingDay(analyticsTrade, basis, plugin);
+  return tradingDay ? [formatReviewMigrationTradingDay(tradingDay)] : [];
+}
+
+function getDrcReviewMigrationDate(
+  frontmatter: Record<string, unknown>
+): string | null {
+  return typeof frontmatter.date === 'string' &&
+    /^\d{4}-\d{2}-\d{2}$/.test(frontmatter.date)
+    ? frontmatter.date
+    : null;
+}
+
 function getDateOrString(value: unknown): Date | string | undefined {
   return typeof value === 'string' || value instanceof Date ? value : undefined;
 }
@@ -262,6 +402,7 @@ interface TradeFinancialFrontmatter extends Record<string, unknown> {
   pipValue?: number;
   pipSize?: number;
   leverageRatio?: number;
+  lastBrokerSyncAt?: string;
 }
 
 function asTradeFinancialFrontmatter(
@@ -641,7 +782,9 @@ export interface TradeData {
   dividends?: DividendTransaction[];
 
   
-  tradeStatus?: 'OPEN' | 'CLOSED';
+  tradeStatus?: 'OPEN' | 'PARTIALLY_CLOSED' | 'CLOSED' | 'CANCELLED';
+  openQuantity?: number;
+  closedQuantity?: number;
 
   
   entryTime: Date;
@@ -672,6 +815,8 @@ export interface TradeData {
   takeProfits?: TakeProfitTarget[];
   riskAmount?: number;
   currency?: string; 
+  fxRate?: number; 
+  fxRateBaseCurrency?: string; 
   brokerBaseCurrencyPnl?: number;
   brokerBaseCurrency?: string;
   brokerBaseCurrencyPnlSource?: string;
@@ -679,6 +824,8 @@ export interface TradeData {
   mfe?: number;
   maePrice?: number;
   mfePrice?: number;
+  unrealizedPriceSnapshot?: number;
+  unrealizedPriceSnapshotTime?: Date;
 
   
   exchange?: string;
@@ -722,16 +869,22 @@ export interface TradeData {
 
   
   mtComment?: string;
+  lastBrokerSyncAt?: string;
 
   
   originalPnl?: number;
   originalRMultiple?: number;
 
   
-  authoritativePnl?: number;
+  authoritativePnl?: number | null;
 
   
   skipDefaultRiskAmount?: boolean;
+
+  
+  
+  
+  clearUnsetCurrencyFields?: boolean;
 
   
   useDirectPnLInput?: boolean;
@@ -752,6 +905,15 @@ export interface TradeData {
   tradeImportAccountId?: string;
   tradeImportAccountBroker?: string;
   tradeImportAccountDisplayName?: string;
+  canonicalTradeId?: string;
+  canonicalTradeVersion?: number;
+  canonicalProjectionGeneration?: string;
+  canonicalAccountId?: string;
+  canonicalBroker?: string;
+  canonicalAccountDisplayName?: string;
+  canonicalProjectionSchemaVersion?: number;
+  
+  canonicalProjectionClearFields?: CanonicalProjectionClearField[];
 
   
   
@@ -767,8 +929,50 @@ type TradeRecord = Record<string, unknown> & {
   accountRefs?: unknown[];
 };
 
+class TradeCreationBatchImpl implements TradeCreationBatch {
+  private readonly filePaths: string[] = [];
+  private cacheInvalidationRequested = false;
+  private flushed = false;
+
+  constructor(private readonly tradeService: TradeService) {}
+
+  public async registerCreatedFile(filePath: string): Promise<void> {
+    if (this.flushed) {
+      await this.tradeService.finalizeCreatedTradeFiles([filePath]);
+      return;
+    }
+    this.filePaths.push(filePath);
+  }
+
+  public async requestCacheInvalidation(): Promise<void> {
+    if (this.flushed) {
+      await this.tradeService.clearCacheWithPrefix('trade:');
+      return;
+    }
+    this.cacheInvalidationRequested = true;
+  }
+
+  public async flush(): Promise<void> {
+    if (this.flushed) return;
+    this.flushed = true;
+    await this.tradeService.finalizeCreatedTradeFiles(this.filePaths);
+    if (this.cacheInvalidationRequested) {
+      await this.tradeService.clearCacheWithPrefix('trade:');
+    }
+    this.filePaths.length = 0;
+  }
+}
+
 
 export class TradeService extends CustomDataService {
+  private readonly projectionIdentityByPath = new Map<
+    string,
+    {
+      canonicalTradeId: string;
+      canonicalTradeVersion: number;
+      canonicalProjectionGeneration?: string;
+    }
+  >();
   private tradeReviewQuestionWriteQueueByFile = new Map<
     string,
     Promise<void>
@@ -783,10 +987,10 @@ export class TradeService extends CustomDataService {
     data: TradeData,
     filePath: string,
     source?: string,
-    options?: { suppressLegacyTradeChanged?: boolean }
+    options?: TradeUpdateOptions
   ): Promise<string> {
     return this.tradeCommandService.updateTrade(
-      this.applyAutomaticCommission(data),
+      data.canonicalTradeId ? data : this.applyAutomaticCommission(data),
       filePath,
       source,
       options
@@ -1106,7 +1310,14 @@ export class TradeService extends CustomDataService {
           schemaVersion: identityFields.schemaVersion,
         },
         {
-          tradeStatus: isOpenTrade ? 'OPEN' : 'CLOSED',
+          tradeStatus:
+            data.tradeStatus === 'CANCELLED'
+              ? 'CANCELLED'
+              : data.tradeStatus === 'PARTIALLY_CLOSED'
+                ? 'PARTIALLY_CLOSED'
+                : isOpenTrade
+                  ? 'OPEN'
+                  : 'CLOSED',
           pnl: plan.pnl,
           rMultiple: plan.rMultiple,
           customFieldDefinitions:
@@ -1132,6 +1343,117 @@ export class TradeService extends CustomDataService {
       ) {
         frontmatterData.stopLoss = undefined;
       }
+
+      const snapshotKeysClaimedByCustomFields =
+        areSnapshotKeysClaimedByCustomFields(
+          this.plugin?.customFieldsService?.getFields()
+        );
+      const quoteContextValuesEqual = (
+        field: string,
+        existingValue: unknown,
+        incomingValue: unknown
+      ): boolean => {
+        if (field !== 'expirationDate') {
+          return existingValue === incomingValue;
+        }
+
+        const existingDate = safeParseDateValue(existingValue);
+        const incomingDate = safeParseDateValue(incomingValue);
+        return existingDate && incomingDate
+          ? existingDate.getTime() === incomingDate.getTime()
+          : existingValue === incomingValue;
+      };
+      const snapshotQuoteContextChanged =
+        existingFrontmatterRecord !== null &&
+        [
+          'instrument',
+          'direction',
+          'currency',
+          'assetType',
+          'exchange',
+          'expirationDate',
+          'strikePrice',
+          'optionType',
+          'contractSize',
+          'contractSymbol',
+          'dollarPerPoint',
+          'tickSize',
+          'tickValue',
+          'currencyPair',
+          'lotSize',
+          'pipValue',
+          'tradingPair',
+          'cryptoExchange',
+        ].some(
+          (field) =>
+            Object.prototype.hasOwnProperty.call(data, field) &&
+            !quoteContextValuesEqual(
+              field,
+              existingFrontmatterRecord[field],
+              (data as Record<string, unknown>)[field]
+            )
+        );
+      const shouldInvalidatePreservedBackendSnapshot =
+        source === 'backend-sync' &&
+        !snapshotKeysClaimedByCustomFields &&
+        existingFrontmatterRecord !== null &&
+        hasUnrealizedPriceSnapshot(existingFrontmatterRecord) &&
+        (snapshotQuoteContextChanged ||
+          shouldInvalidateUnrealizedSnapshot(existingFrontmatterRecord, {
+            ...existingFrontmatterRecord,
+            ...data,
+          }));
+
+      if (shouldInvalidatePreservedBackendSnapshot) {
+        frontmatterData.unrealizedPriceSnapshot = undefined;
+        frontmatterData.unrealizedPriceSnapshotTime = undefined;
+      } else if (
+        !snapshotKeysClaimedByCustomFields &&
+        Object.prototype.hasOwnProperty.call(data, 'unrealizedPriceSnapshot') &&
+        data.unrealizedPriceSnapshot === undefined
+      ) {
+        frontmatterData.unrealizedPriceSnapshot = undefined;
+        frontmatterData.unrealizedPriceSnapshotTime = undefined;
+      }
+
+      if (data.clearUnsetCurrencyFields) {
+        if (data.currency === undefined) {
+          frontmatterData.currency = undefined;
+        }
+        if (data.fxRate === undefined) {
+          frontmatterData.fxRate = undefined;
+          frontmatterData.fxRateBaseCurrency = undefined;
+        }
+      }
+
+      const storedCurrency =
+        typeof existingFrontmatterRecord?.currency === 'string'
+          ? existingFrontmatterRecord.currency
+          : undefined;
+      const incomingCurrencyChangesStored =
+        typeof data.currency === 'string' && data.currency !== storedCurrency;
+      const hasCompleteIncomingFxPair =
+        typeof data.fxRate === 'number' &&
+        Number.isFinite(data.fxRate) &&
+        data.fxRate > 0 &&
+        typeof data.fxRateBaseCurrency === 'string' &&
+        data.fxRateBaseCurrency.trim() !== '';
+      if (incomingCurrencyChangesStored && !hasCompleteIncomingFxPair) {
+        frontmatterData.fxRate = undefined;
+        frontmatterData.fxRateBaseCurrency = undefined;
+      }
+
+      const canonicalProjectionClearFields =
+        data.canonicalProjectionClearFields;
+      const canonicalProjectionClearFieldSet = new Set(
+        canonicalProjectionClearFields
+      );
+      for (const field of CANONICAL_PROJECTION_CLEAR_FIELDS) {
+        if (canonicalProjectionClearFieldSet.has(field)) {
+          frontmatterData[field] = undefined;
+        }
+      }
+      delete data.canonicalProjectionClearFields;
 
       
       
@@ -1355,6 +1677,26 @@ export class TradeService extends CustomDataService {
       this.tradeReadModel,
       this.tradeEventBridge
     );
+    this.hydrateProjectionIdentityIndex();
+  }
+
+  private hydrateProjectionIdentityIndex(): void {
+    if (typeof this.app.vault.getMarkdownFiles !== 'function') return;
+    for (const file of this.app.vault.getMarkdownFiles()) {
+      const frontmatter =
+        this.app.metadataCache.getFileCache(file)?.frontmatter;
+      if (!hasCanonicalProjectionIdentity(frontmatter)) continue;
+      const projectionGeneration: unknown =
+        frontmatter?.canonicalProjectionGeneration;
+      this.projectionIdentityByPath.set(file.path, {
+        canonicalTradeId: frontmatter.canonicalTradeId,
+        canonicalTradeVersion: frontmatter.canonicalTradeVersion,
+        canonicalProjectionGeneration:
+          typeof projectionGeneration === 'string'
+            ? projectionGeneration
+            : undefined,
+      });
+    }
   }
 
   public getTradeSchemaVersion(): number {
@@ -1614,11 +1956,13 @@ export class TradeService extends CustomDataService {
   
   private determineLogicalTradeStatus(
     tradeData: Record<string, unknown>
-  ): string {
+  ): 'OPEN' | 'PARTIALLY_CLOSED' | 'CLOSED' | 'CANCELLED' {
     
     if (
       tradeData.tradeStatus === 'OPEN' ||
-      tradeData.tradeStatus === 'CLOSED'
+      tradeData.tradeStatus === 'PARTIALLY_CLOSED' ||
+      tradeData.tradeStatus === 'CLOSED' ||
+      tradeData.tradeStatus === 'CANCELLED'
     ) {
       return tradeData.tradeStatus;
     }
@@ -1719,6 +2063,24 @@ export class TradeService extends CustomDataService {
 
     return result.map((trade) => {
       const tradeRecord = trade as Record<string, unknown>;
+      const canonicalTradeId = tradeRecord.canonicalTradeId;
+      const canonicalTradeVersion = this.parseFiniteNumber(
+        tradeRecord.canonicalTradeVersion
+      );
+      if (
+        typeof tradeRecord.path === 'string' &&
+        typeof canonicalTradeId === 'string' &&
+        canonicalTradeVersion !== undefined
+      ) {
+        this.projectionIdentityByPath.set(tradeRecord.path, {
+          canonicalTradeId,
+          canonicalTradeVersion,
+          canonicalProjectionGeneration:
+            typeof tradeRecord.canonicalProjectionGeneration === 'string'
+              ? tradeRecord.canonicalProjectionGeneration
+              : undefined,
+        });
+      }
       const existingAccountRefs = tradeRecord.accountRefs;
 
       if (Array.isArray(existingAccountRefs)) {
@@ -1802,7 +2164,7 @@ export class TradeService extends CustomDataService {
     const files = allMarkdownFiles || this.getTrackedMarkdownFiles();
 
     
-    const fileMap = new Map<string, TFile>();
+    const fileMap = new Map<string, TFile | null>();
     for (const file of files) {
       const cachedFrontmatter =
         this.app.metadataCache.getFileCache(file)?.frontmatter;
@@ -1819,7 +2181,12 @@ export class TradeService extends CustomDataService {
       ) {
         
         const key = `${frontmatter.instrument}-${entryTime}-${frontmatter.direction || ''}`;
-        fileMap.set(key, file);
+        const existingMatch = fileMap.get(key);
+        if (existingMatch === undefined) {
+          fileMap.set(key, file);
+        } else if (existingMatch?.path !== file.path) {
+          fileMap.set(key, null);
+        }
       }
     }
 
@@ -1839,6 +2206,7 @@ export class TradeService extends CustomDataService {
 
         
         let matchingFile: TFile | undefined;
+        let hasAmbiguousMatch = false;
         const entryTime = this.getTradePathResolutionEntryTime(trade);
         const instrument =
           typeof trade.instrument === 'string' ? trade.instrument : undefined;
@@ -1846,7 +2214,13 @@ export class TradeService extends CustomDataService {
           typeof trade.direction === 'string' ? trade.direction : '';
         if (instrument && entryTime) {
           const key = `${instrument}-${entryTime}-${direction}`;
-          matchingFile = fileMap.get(key);
+          const fileMatch = fileMap.get(key);
+          hasAmbiguousMatch = fileMatch === null;
+          matchingFile = fileMatch ?? undefined;
+        }
+
+        if (hasAmbiguousMatch) {
+          return trade;
         }
 
         return {
@@ -1916,7 +2290,7 @@ export class TradeService extends CustomDataService {
     allMarkdownFiles?: TFile[],
     queryOptions?: { useIndexes?: boolean }
   ): Promise<TradeRecord[]> {
-    const cacheKey = 'trade:all-trades';
+    const cacheKey = 'trade:all-trades:index-path-v1';
 
     try {
       const result = await this.query(
@@ -2246,19 +2620,49 @@ export class TradeService extends CustomDataService {
     }
 
     
-    plugin.registerEvent(
-      plugin.app.vault.on('delete', async (file) => {
-        
-        if (/\/trades\//.test(file.path) && file.path.endsWith('.md')) {
-          
-          const normalizedPath = normalizePath(file.path);
-          await this.handleTradeDeletion(
-            normalizedPath,
-            file instanceof TFile ? file : undefined
-          );
-        }
-      })
-    );
+    
+    if (typeof plugin.app.metadataCache.on === 'function') {
+      plugin.registerEvent(
+        plugin.app.metadataCache.on('deleted', async (file, previousCache) => {
+          if (file.path.endsWith('.md')) {
+            const normalizedPath = normalizePath(file.path);
+            const frontmatter = previousCache?.frontmatter;
+            const wasTrade =
+              frontmatter?.type === 'trade' ||
+              frontmatter?.isMissedTrade === true ||
+              frontmatter?.isBacktestTrade === true ||
+              typeof frontmatter?.canonicalTradeId === 'string' ||
+              Boolean(this.tradeReadModel.getEntryForPath(normalizedPath));
+            if (!wasTrade && !/\/trades\//.test(file.path)) return;
+            await this.handleTradeDeletion(
+              normalizedPath,
+              file,
+              frontmatter
+                ? Object.fromEntries(Object.entries(frontmatter))
+                : undefined
+            );
+          }
+        })
+      );
+    } else {
+      
+      plugin.registerEvent(
+        plugin.app.vault.on('delete', async (file) => {
+          if (file.path.endsWith('.md')) {
+            const normalizedPath = normalizePath(file.path);
+            if (
+              !/\/trades\//.test(file.path) &&
+              !this.tradeReadModel.getEntryForPath(normalizedPath)
+            )
+              return;
+            await this.handleTradeDeletion(
+              normalizedPath,
+              file instanceof TFile ? file : undefined
+            );
+          }
+        })
+      );
+    }
 
     this.unsubscribeOptions?.();
     this.unsubscribeOptions = eventBus.subscribe(
@@ -2267,6 +2671,16 @@ export class TradeService extends CustomDataService {
         this.handleOptionsChanged(payload);
       }
     );
+  }
+
+  public setTagAssignmentRunner(
+    runner: <T>(
+      tags: readonly string[],
+      operation: () => Promise<T>,
+      previousTags?: PreviousTagAssignments
+    ) => Promise<T>
+  ): void {
+    this.tradeCommandService.setTagAssignmentRunner(runner);
   }
 
   private handleOptionsChanged(payload: OptionsChangedPayload): void {
@@ -2447,6 +2861,13 @@ export class TradeService extends CustomDataService {
                 frontmatterData.contractSize = specs.contractSize;
                 updated = true;
               }
+            }
+
+            if (
+              typeof frontmatterData.canonicalTradeId === 'string' &&
+              frontmatterData.canonicalTradeId.trim()
+            ) {
+              return;
             }
 
             const isOpenTrade = isTradeOpenWithContext({
@@ -2727,18 +3148,35 @@ export class TradeService extends CustomDataService {
   
   public async createTrade(
     data: TradeData,
-    options?: {
-      suppressAutoOpen?: boolean;
-      deferPostCreateTasks?: boolean;
-      suppressPostCreateTasks?: boolean;
-    }
+    options?: TradeCreateOptions
   ): Promise<string> {
     const templateMetadata = this.plugin
       ? getDefaultTradeTemplateMetadata(this.plugin)
       : undefined;
+    const mergedData = { ...(templateMetadata ?? {}), ...data };
     return this.tradeCommandService.createTrade(
-      this.applyAutomaticCommission({ ...(templateMetadata ?? {}), ...data }),
+      data.canonicalTradeId
+        ? mergedData
+        : this.applyAutomaticCommission(mergedData),
       options
+    );
+  }
+
+  public createTradeCommitEventBatch(): TradeCommitEventBatch {
+    return new TradeCommitEventBatch(this.tradeEventBridge);
+  }
+
+  public createTradeCreationBatch(): TradeCreationBatch {
+    return new TradeCreationBatchImpl(this);
+  }
+
+  public async finalizeCreatedTradeFiles(filePaths: string[]): Promise<void> {
+    const files = filePaths.flatMap((filePath) => {
+      const file = this.app.vault.getAbstractFileByPath(filePath);
+      return file instanceof TFile ? [file] : [];
+    });
+    await Promise.all(
+      files.map((file) => forceMetadataCacheRefresh(this.app, file, 500))
     );
   }
 
@@ -2768,9 +3206,14 @@ export class TradeService extends CustomDataService {
           (exit.size !== undefined && exit.size !== null && exit.size !== 0)
       )
     );
+    const hasClosedDirectPnL =
+      data.useDirectPnLInput === true &&
+      data.tradeStatus !== 'OPEN' &&
+      data.tradeStatus !== 'PARTIALLY_CLOSED' &&
+      data.tradeStatus !== 'CANCELLED';
     const hasExit =
-      (data.tradeStatus !== 'OPEN' && data.useDirectPnLInput === true) ||
-      (data.tradeStatus !== 'OPEN' && hasScalarExitPrice) ||
+      hasClosedDirectPnL ||
+      (data.tradeStatus === 'CLOSED' && hasScalarExitPrice) ||
       hasMeaningfulExitRows;
     const exitedPositionSizeTotal = (data.exits ?? []).reduce(
       (total, exit) =>
@@ -2831,11 +3274,7 @@ export class TradeService extends CustomDataService {
 
   public async legacyCreateTrade(
     data: TradeData,
-    options?: {
-      suppressAutoOpen?: boolean;
-      deferPostCreateTasks?: boolean;
-      suppressPostCreateTasks?: boolean;
-    },
+    options?: TradeCreateOptions,
     suppressTradeChangedEvent: boolean = false
   ): Promise<string> {
     try {
@@ -2860,11 +3299,10 @@ export class TradeService extends CustomDataService {
       const filePath = await this.getTradeFilePath(data);
 
       
-      const existingFiles = await this.listFilesInFolder(targetFolderPath);
-
       
       const fileExists = await this.app.vault.adapter.exists(filePath);
       if (fileExists) {
+        const existingFiles = await this.listFilesInFolder(targetFolderPath);
         console.error(
           `Cannot create trade - File already exists at path: ${filePath}`
         );
@@ -2891,7 +3329,11 @@ export class TradeService extends CustomDataService {
 
       
       const newFile = await this.app.vault.create(filePath, content);
-      await forceMetadataCacheRefresh(this.app, newFile, 500);
+      if (options?.creationBatch) {
+        await options.creationBatch.registerCreatedFile(filePath);
+      } else {
+        await forceMetadataCacheRefresh(this.app, newFile, 500);
+      }
 
       
 
@@ -2908,7 +3350,11 @@ export class TradeService extends CustomDataService {
       }
 
       
-      await this.clearCacheWithPrefix('trade:');
+      if (options?.creationBatch) {
+        await options.creationBatch.requestCacheInvalidation();
+      } else {
+        await this.clearCacheWithPrefix('trade:');
+      }
 
       const runPostCreateTasks = async () => {
         
@@ -3122,7 +3568,11 @@ export class TradeService extends CustomDataService {
   public async getTrades(
     startDate: Date,
     endDate: Date,
-    options?: { dateBasis?: AnalyticsDateBasis; fresh?: boolean }
+    options?: {
+      dateBasis?: AnalyticsDateBasis;
+      fresh?: boolean;
+      includeUnrealizedPnL?: boolean;
+    }
   ): Promise<TFile[]> {
     
     
@@ -3136,6 +3586,43 @@ export class TradeService extends CustomDataService {
       ? getTradingDay(endDate, plugin)
       : new Date(endDate);
     const dateBasis = options?.dateBasis ?? 'entry';
+    const snapshotKeysClaimedByCustomFields =
+      areSnapshotKeysClaimedByCustomFields(
+        this.plugin?.customFieldsService?.getFields()
+      );
+    const isSnapshotCaptureInRange = (
+      frontmatter: Record<string, unknown>,
+      tradeForAnalytics: Record<string, unknown>
+    ): boolean => {
+      if (
+        dateBasis !== 'exit' ||
+        options?.includeUnrealizedPnL !== true ||
+        snapshotKeysClaimedByCustomFields ||
+        !hasUnrealizedPriceSnapshot({
+          unrealizedPriceSnapshot: this.parseFiniteNumber(
+            frontmatter.unrealizedPriceSnapshot
+          ),
+        }) ||
+        !isTradeOpenPreservingNullPnl(tradeForAnalytics)
+      ) {
+        return false;
+      }
+
+      
+      
+      
+      const snapshotCaptureTime = safeParseDateValue(
+        frontmatter.unrealizedPriceSnapshotTime
+      );
+      const snapshotTradingDay = snapshotCaptureTime
+        ? getTradingDay(snapshotCaptureTime, this.plugin)
+        : getTradeAnalyticsTradingDay(tradeForAnalytics, 'entry', this.plugin);
+      return Boolean(
+        snapshotTradingDay &&
+        snapshotTradingDay >= tradingStartDate &&
+        snapshotTradingDay <= tradingEndDate
+      );
+    };
 
     
     tradingEndDate.setHours(23, 59, 59, 999);
@@ -3182,7 +3669,8 @@ export class TradeService extends CustomDataService {
                 (event) =>
                   event.tradingDay >= tradingStartDate &&
                   event.tradingDay <= tradingEndDate
-              )
+              ) ||
+              isSnapshotCaptureInRange(frontmatter, tradeForAnalytics)
             ) {
               recentMatchingFiles.push(recentFile);
             }
@@ -3332,6 +3820,8 @@ export class TradeService extends CustomDataService {
           )
         ) {
           matchingFiles.push(file);
+        } else if (isSnapshotCaptureInRange(frontmatter, tradeForAnalytics)) {
+          matchingFiles.push(file);
         }
       } catch (error) {
         console.warn(`Error checking trade file ${file.path}:`, error);
@@ -3395,6 +3885,7 @@ export class TradeService extends CustomDataService {
         entries: normalizeTradeStatusExecutions(frontmatter.entries),
       });
 
+      const isCanonicalProjection = hasCanonicalProjectionIdentity(frontmatter);
       const parsedDirectPnL = this.parseFiniteNumber(frontmatter.directPnL);
 
       const customTags = normalizeStringArray(frontmatter.tags);
@@ -3445,6 +3936,8 @@ export class TradeService extends CustomDataService {
         'exitPrice',
         'hasExplicitExitPrice',
         'positionSize',
+        'openQuantity',
+        'closedQuantity',
         'entries',
         'exits',
         'idealExits',
@@ -3464,10 +3957,15 @@ export class TradeService extends CustomDataService {
         'mfe',
         'maePrice',
         'mfePrice',
+        'unrealizedPriceSnapshot',
+        'unrealizedPriceSnapshotTime',
         'account',
         'accountId',
 
         'setup',
+        'journalitDrc',
+        'journalitSetups',
+        'journalitParentReview',
 
         'mistake',
         'mistakeIds',
@@ -3476,6 +3974,7 @@ export class TradeService extends CustomDataService {
         'tags',
         'assetType',
         'exchange',
+        'underlyingSymbol',
         'optionType',
         'strikePrice',
         'expirationDate',
@@ -3486,6 +3985,9 @@ export class TradeService extends CustomDataService {
         'lotSize',
         'pipValue',
         'pipSize',
+        'currencyPair',
+        'tradingPair',
+        'contractSymbol',
         'cryptoExchange',
         'leverageRatio',
         'useDirectPnLInput',
@@ -3494,9 +3996,19 @@ export class TradeService extends CustomDataService {
         'reviewedAt',
         'templateId',
         'templateVersion',
+        'lastBrokerSyncAt',
+        'canonicalTradeId',
+        'canonicalTradeVersion',
+        'canonicalProjectionGeneration',
+        'canonicalAccountId',
+        'canonicalBroker',
+        'canonicalAccountDisplayName',
+        'canonicalProjectionSchemaVersion',
         'lossReview',
         'tradeReview',
         'currency',
+        'fxRate',
+        'fxRateBaseCurrency',
         'brokerBaseCurrencyPnl',
         'brokerBaseCurrency',
         'brokerBaseCurrencyPnlSource',
@@ -3592,6 +4104,35 @@ export class TradeService extends CustomDataService {
             ? frontmatter.templateId
             : undefined,
         templateVersion: this.parseFiniteNumber(frontmatter.templateVersion),
+        canonicalTradeId: isCanonicalProjection
+          ? frontmatter.canonicalTradeId.trim()
+          : undefined,
+        canonicalTradeVersion: isCanonicalProjection
+          ? frontmatter.canonicalTradeVersion
+          : undefined,
+        canonicalProjectionGeneration:
+          isCanonicalProjection &&
+          typeof frontmatter.canonicalProjectionGeneration === 'string'
+            ? frontmatter.canonicalProjectionGeneration
+            : undefined,
+        canonicalAccountId:
+          isCanonicalProjection &&
+          typeof frontmatter.canonicalAccountId === 'string'
+            ? frontmatter.canonicalAccountId
+            : undefined,
+        canonicalBroker:
+          isCanonicalProjection &&
+          typeof frontmatter.canonicalBroker === 'string'
+            ? frontmatter.canonicalBroker
+            : undefined,
+        canonicalAccountDisplayName:
+          isCanonicalProjection &&
+          typeof frontmatter.canonicalAccountDisplayName === 'string'
+            ? frontmatter.canonicalAccountDisplayName
+            : undefined,
+        canonicalProjectionSchemaVersion: isCanonicalProjection
+          ? frontmatter.canonicalProjectionSchemaVersion
+          : undefined,
         type:
           frontmatter.type === 'backtest-trade' ||
           frontmatter.type === 'missed-trade'
@@ -3661,15 +4202,25 @@ export class TradeService extends CustomDataService {
           ? null
           : (normalizedExecution.resolvedExitPrice ?? 0),
         positionSize: totalEntrySize || normalizedExecution.positionSize || 0,
+        openQuantity: this.parseFiniteNumber(frontmatter.openQuantity),
+        closedQuantity: this.parseFiniteNumber(frontmatter.closedQuantity),
         pnl:
           frontmatter.pnl != null && frontmatter.pnl !== ''
             ? (this.parseFiniteNumber(frontmatter.pnl) ?? 0)
-            : isExtractTradeOpen
+            : isExtractTradeOpen || isCanonicalProjection
               ? null
               : 0,
+        _originalPnlWasNull:
+          isCanonicalProjection &&
+          !isExtractTradeOpen &&
+          (frontmatter.pnl === undefined || frontmatter.pnl === null)
+            ? true
+            : undefined,
         originalPnl: this.parseFiniteNumber(frontmatter.pnl),
         originalRMultiple: this.parseFiniteNumber(frontmatter.rMultiple),
-        commission: this.parseFiniteNumber(frontmatter.commission) ?? 0,
+        commission:
+          this.parseFiniteNumber(frontmatter.commission) ??
+          (isCanonicalProjection ? undefined : 0),
         hasExplicitCommission:
           typeof frontmatter.hasExplicitCommission === 'boolean'
             ? frontmatter.hasExplicitCommission
@@ -3679,8 +4230,12 @@ export class TradeService extends CustomDataService {
           frontmatter.commissionType === 'fixed'
             ? frontmatter.commissionType
             : undefined,
-        swap: this.parseFiniteNumber(frontmatter.swap) ?? 0,
-        fees: this.parseFiniteNumber(frontmatter.fees) ?? 0,
+        swap:
+          this.parseFiniteNumber(frontmatter.swap) ??
+          (isCanonicalProjection ? undefined : 0),
+        fees:
+          this.parseFiniteNumber(frontmatter.fees) ??
+          (isCanonicalProjection ? undefined : 0),
         rebate:
           frontmatter.rebate != null && frontmatter.rebate !== ''
             ? this.parseFiniteNumber(frontmatter.rebate)
@@ -3709,6 +4264,26 @@ export class TradeService extends CustomDataService {
         mfePrice:
           frontmatter.mfePrice != null && frontmatter.mfePrice !== ''
             ? this.parseFiniteNumber(frontmatter.mfePrice)
+            : undefined,
+        
+        
+        unrealizedPriceSnapshot:
+          !areSnapshotKeysClaimedByCustomFields(
+            this.plugin?.customFieldsService?.getFields()
+          ) &&
+          frontmatter.unrealizedPriceSnapshot != null &&
+          frontmatter.unrealizedPriceSnapshot !== ''
+            ? this.parseFiniteNumber(frontmatter.unrealizedPriceSnapshot)
+            : undefined,
+        unrealizedPriceSnapshotTime:
+          !areSnapshotKeysClaimedByCustomFields(
+            this.plugin?.customFieldsService?.getFields()
+          ) &&
+          (typeof frontmatter.unrealizedPriceSnapshotTime === 'string' ||
+            typeof frontmatter.unrealizedPriceSnapshotTime === 'number' ||
+            frontmatter.unrealizedPriceSnapshotTime instanceof Date)
+            ? (safeParseDateValue(frontmatter.unrealizedPriceSnapshotTime) ??
+              undefined)
             : undefined,
         entryTime: extractedEntryTime ?? new Date(),
         exitTime: isExtractTradeOpen
@@ -3794,12 +4369,28 @@ export class TradeService extends CustomDataService {
           typeof frontmatter.exchange === 'string'
             ? frontmatter.exchange
             : undefined,
+        underlyingSymbol:
+          typeof frontmatter.underlyingSymbol === 'string'
+            ? frontmatter.underlyingSymbol
+            : undefined,
+        contractSymbol:
+          typeof frontmatter.contractSymbol === 'string'
+            ? frontmatter.contractSymbol
+            : undefined,
         dollarPerPoint: this.parseFiniteNumber(frontmatter.dollarPerPoint),
         tickSize: this.parseFiniteNumber(frontmatter.tickSize),
         tickValue: this.parseFiniteNumber(frontmatter.tickValue),
         lotSize: this.parseFiniteNumber(frontmatter.lotSize),
         pipValue: this.parseFiniteNumber(frontmatter.pipValue),
         pipSize: this.parseFiniteNumber(frontmatter.pipSize),
+        currencyPair:
+          typeof frontmatter.currencyPair === 'string'
+            ? frontmatter.currencyPair
+            : undefined,
+        tradingPair:
+          typeof frontmatter.tradingPair === 'string'
+            ? frontmatter.tradingPair
+            : undefined,
         cryptoExchange:
           typeof frontmatter.cryptoExchange === 'string'
             ? frontmatter.cryptoExchange
@@ -3816,6 +4407,11 @@ export class TradeService extends CustomDataService {
           typeof frontmatter.currency === 'string'
             ? frontmatter.currency
             : undefined,
+        fxRate: this.parseFiniteNumber(frontmatter.fxRate),
+        fxRateBaseCurrency:
+          typeof frontmatter.fxRateBaseCurrency === 'string'
+            ? frontmatter.fxRateBaseCurrency
+            : undefined,
         brokerBaseCurrencyPnl: this.parseFiniteNumber(
           frontmatter.brokerBaseCurrencyPnl
         ),
@@ -3828,6 +4424,10 @@ export class TradeService extends CustomDataService {
             ? frontmatter.brokerBaseCurrencyPnlSource
             : undefined,
         mtComment: normalizeExtractedMTComment(frontmatter.mtComment),
+        lastBrokerSyncAt:
+          typeof frontmatter.lastBrokerSyncAt === 'string'
+            ? frontmatter.lastBrokerSyncAt
+            : undefined,
         customFields:
           Object.keys(customFields).length > 0 ? customFields : undefined,
         executionLedgerVersion:
@@ -4024,7 +4624,9 @@ export class TradeService extends CustomDataService {
       id: string;
       label?: string;
       knownLabels?: string[];
-    }>
+      depth?: number;
+    }>,
+    selectedOptionId?: string
   ): Promise<void> {
     return this.runTradeReviewQuestionWrite(filePath, async () => {
       const file = this.app.vault.getAbstractFileByPath(filePath);
@@ -4038,6 +4640,7 @@ export class TradeService extends CustomDataService {
         questionId,
         questionLabel,
         value,
+        selectedOptionId,
         questionOrder,
       });
       if (nextContent !== currentContent) {
@@ -4077,6 +4680,13 @@ export class TradeService extends CustomDataService {
         this.tradeReviewQuestionWriteQueueByFile.delete(filePath);
       }
     }
+  }
+
+  private async refreshTradeIndexesAfterReviewMigration(): Promise<void> {
+    this.indexManager?.markDirty('trades');
+    this.indexManager?.markDirty('trade-unique-values');
+    await this.clearCache();
+    await this.waitForTradeIndexReady();
   }
 
   public async migrateTradeReviewFrontmatterToMarkdown(): Promise<{
@@ -4142,10 +4752,28 @@ export class TradeService extends CustomDataService {
         if (tradeReview || legacyLossReview) {
           await this.app.fileManager.processFrontMatter(file, (fm) => {
             if (isRecord(fm)) {
+              const currentLossReview = isRecord(fm.lossReview)
+                ? fm.lossReview
+                : undefined;
+              if (currentLossReview) {
+                if (
+                  !Object.prototype.hasOwnProperty.call(fm, 'reviewed') &&
+                  typeof currentLossReview.reviewed === 'boolean'
+                ) {
+                  fm.reviewed = currentLossReview.reviewed;
+                }
+                if (
+                  !Object.prototype.hasOwnProperty.call(fm, 'reviewedAt') &&
+                  typeof currentLossReview.reviewedAt === 'string'
+                ) {
+                  fm.reviewedAt = currentLossReview.reviewedAt;
+                }
+              }
               delete fm.tradeReview;
               delete fm.lossReview;
             }
           });
+          await forceMetadataCacheRefresh(this.app, file);
         }
         if (changed || tradeReview || legacyLossReview) migrated++;
       } catch (error) {
@@ -4157,6 +4785,10 @@ export class TradeService extends CustomDataService {
       }
     }
 
+    if (migrated > 0) {
+      await this.refreshTradeIndexesAfterReviewMigration();
+    }
+
     if (failed === 0 && this.plugin?.settings.trade) {
       this.plugin.settings.trade.tradeReviewMarkdownMigrationVersion =
         TRADE_REVIEW_MARKDOWN_MIGRATION_VERSION;
@@ -4164,6 +4796,193 @@ export class TradeService extends CustomDataService {
     }
 
     return { scanned, migrated, failed };
+  }
+
+  public async migrateTradeReviewLayout(): Promise<{
+    scannedTrades: number;
+    repairedTrades: number;
+    scannedDrcs: number;
+    migratedDrcs: number;
+    templateMigrated: boolean;
+    conflicts: number;
+    failed: number;
+  }> {
+    const plugin = this.plugin;
+    if (!plugin) {
+      return {
+        scannedTrades: 0,
+        repairedTrades: 0,
+        scannedDrcs: 0,
+        migratedDrcs: 0,
+        templateMigrated: false,
+        conflicts: 0,
+        failed: 1,
+      };
+    }
+
+    const plan = buildLegacyTradeReviewMigrationPlan(plugin.settings);
+    const affectedTradingDays = new Set<string>();
+    const drcFiles: Array<{ file: TFile; date: string }> = [];
+    let scannedTrades = 0;
+    let repairedTrades = 0;
+    let scannedDrcs = 0;
+    let migratedDrcs = 0;
+    let templateMigrated = false;
+    let conflicts = 0;
+    let failed = 0;
+
+    for (const file of this.app.vault.getMarkdownFiles()) {
+      let frontmatter = this.app.metadataCache.getFileCache(file)?.frontmatter;
+      if (!frontmatter) {
+        try {
+          frontmatter = await readFrontmatterFromDisk(this.app, file);
+        } catch (error) {
+          failed++;
+          console.error(
+            `[TradeService] Failed to inspect trade review layout for ${file.path}:`,
+            error
+          );
+          continue;
+        }
+      }
+      if (!isRecord(frontmatter)) continue;
+
+      if (frontmatter.type === 'drc') {
+        const date = getDrcReviewMigrationDate(frontmatter);
+        if (date) drcFiles.push({ file, date });
+        continue;
+      }
+      if (!isJournalitTradeNoteFrontmatter(frontmatter)) continue;
+
+      try {
+        const currentContent = await readFileContentForMutation(this.app, file);
+        const review = parseTradeReviewMarkdown(currentContent);
+        if (!review || Object.keys(review.sections).length === 0) continue;
+        scannedTrades++;
+
+        for (const tradingDay of getReviewMigrationTradingDays(
+          frontmatter,
+          plugin
+        )) {
+          affectedTradingDays.add(tradingDay);
+        }
+
+        const tradeTemplateId =
+          typeof frontmatter.templateId === 'string'
+            ? frontmatter.templateId
+            : undefined;
+        const repaired = repairLegacyTradeReviewMarkdown({
+          content: currentContent,
+          labelsByQuestionId:
+            (tradeTemplateId
+              ? plan.labelsByTemplateId.get(tradeTemplateId)
+              : undefined) ?? plan.labelsByQuestionId,
+        });
+        conflicts += repaired.conflicts;
+        if (repaired.repaired) {
+          await replaceFileContent(this.app, file, repaired.content);
+          await forceMetadataCacheRefresh(this.app, file);
+          repairedTrades++;
+        }
+      } catch (error) {
+        failed++;
+        console.error(
+          `[TradeService] Failed to repair migrated trade review for ${file.path}:`,
+          error
+        );
+      }
+    }
+
+    for (const { file, date } of drcFiles) {
+      if (!affectedTradingDays.has(date)) continue;
+      scannedDrcs++;
+
+      try {
+        const currentContent = await readFileContentForMutation(this.app, file);
+        const migrated = upsertHistoricalDrcTradeReviewWidget(
+          currentContent,
+          plan.widgetConfig
+        );
+        if (migrated.status === 'conflict') {
+          conflicts++;
+          failed++;
+          continue;
+        }
+        if (migrated.status === 'inserted' || migrated.status === 'updated') {
+          await replaceFileContent(this.app, file, migrated.content);
+          migratedDrcs++;
+        }
+      } catch (error) {
+        failed++;
+        console.error(
+          `[TradeService] Failed to add the Trade Review widget to ${file.path}:`,
+          error
+        );
+      }
+    }
+
+    const reviewV2Settings = plugin.settings.reviewV2;
+    const templateSettings = plugin.settings.templates;
+    if (
+      reviewV2Settings &&
+      templateSettings &&
+      Object.keys(plan.widgetConfig).length > 0
+    ) {
+      const templateService = new ReviewTemplateService(plugin);
+      const sourceTemplate = templateService.getDefaultTemplate('drc');
+      const existingMigratedTemplate = reviewV2Settings.templates?.find(
+        (template) =>
+          template.id === MIGRATED_TRADE_REVIEW_DRC_TEMPLATE_ID &&
+          template.type === 'drc'
+      );
+      const templateMigration = createMigratedDefaultDrcTemplate({
+        sourceTemplate,
+        existingMigratedTemplate,
+        legacyConfig: plan.widgetConfig,
+        now: new Date().toISOString(),
+      });
+
+      if (templateMigration.status === 'conflict') {
+        conflicts++;
+        failed++;
+      } else if (templateMigration.status === 'updated') {
+        const migratedTemplate = templateMigration.template;
+        const savedTemplates = reviewV2Settings.templates ?? [];
+        reviewV2Settings.templates = [
+          ...savedTemplates.filter(
+            (template) => template.id !== MIGRATED_TRADE_REVIEW_DRC_TEMPLATE_ID
+          ),
+          migratedTemplate,
+        ];
+        templateSettings.defaultDrc = migratedTemplate.id;
+        templateMigrated = true;
+      } else if (
+        existingMigratedTemplate &&
+        templateSettings.defaultDrc !== existingMigratedTemplate.id
+      ) {
+        templateSettings.defaultDrc = existingMigratedTemplate.id;
+        templateMigrated = true;
+      }
+    }
+
+    if (repairedTrades > 0) {
+      await this.refreshTradeIndexesAfterReviewMigration();
+    }
+    if (failed === 0) {
+      plugin.settings.trade.tradeReviewLayoutMigrationVersion =
+        TRADE_REVIEW_LAYOUT_MIGRATION_VERSION;
+      await plugin.saveSettings();
+    }
+
+    return {
+      scannedTrades,
+      repairedTrades,
+      scannedDrcs,
+      migratedDrcs,
+      templateMigrated,
+      conflicts,
+      failed,
+    };
   }
 
   
@@ -4655,7 +5474,14 @@ export class TradeService extends CustomDataService {
         schemaVersion: identityFields.schemaVersion,
       },
       {
-        tradeStatus: plan.isOpen ? 'OPEN' : 'CLOSED',
+        tradeStatus:
+          data.tradeStatus === 'CANCELLED'
+            ? 'CANCELLED'
+            : data.tradeStatus === 'PARTIALLY_CLOSED'
+              ? 'PARTIALLY_CLOSED'
+              : plan.isOpen
+                ? 'OPEN'
+                : 'CLOSED',
         pnl: plan.pnl,
         rMultiple: plan.rMultiple,
         customFieldDefinitions:
@@ -4701,30 +5527,67 @@ export class TradeService extends CustomDataService {
     }
   }
 
+  private hasCanonicalProjectionInVault(
+    canonicalTradeId: string,
+    excludedPath: string
+  ): boolean {
+    return this.app.vault.getMarkdownFiles().some((file) => {
+      if (file.path === excludedPath) return false;
+      const frontmatter =
+        this.app.metadataCache.getFileCache(file)?.frontmatter;
+      return (
+        hasCanonicalProjectionIdentity(frontmatter) &&
+        frontmatter.canonicalTradeId === canonicalTradeId
+      );
+    });
+  }
+
   
   public async handleTradeDeletion(
     filePath: string,
-    deletedFile?: TFile
+    deletedFile?: TFile,
+    previousFrontmatter?: Record<string, unknown>
   ): Promise<void> {
     try {
       
       
 
       const deletedEntry = this.tradeReadModel.getEntryForPath(filePath);
-      const deletedFrontmatter = deletedFile
-        ? this.app.metadataCache.getFileCache(deletedFile)?.frontmatter
-        : null;
+      const indexedProjection = this.projectionIdentityByPath.get(filePath);
+      const deletedFrontmatter =
+        previousFrontmatter ??
+        (deletedFile
+          ? this.app.metadataCache.getFileCache(deletedFile)?.frontmatter
+          : null);
       const deletedIdentity = getTradeIdentityFields(
         deletedFrontmatter ?? null
       );
+      const deletedCanonicalIdentity =
+        hasCanonicalProjectionIdentity(deletedFrontmatter);
       const deletedTradeRevision = this.getTradeRevisionValue(
         deletedFrontmatter?.tradeRevision
       );
+      const canonicalTradeId = deletedCanonicalIdentity
+        ? deletedFrontmatter.canonicalTradeId
+        : (deletedEntry?.canonicalTradeId ??
+          indexedProjection?.canonicalTradeId);
+      const canonicalTradeVersion = deletedCanonicalIdentity
+        ? deletedFrontmatter.canonicalTradeVersion
+        : (deletedEntry?.canonicalTradeVersion ??
+          indexedProjection?.canonicalTradeVersion);
+      const canonicalProjectionGeneration =
+        deletedCanonicalIdentity &&
+        typeof deletedFrontmatter.canonicalProjectionGeneration === 'string'
+          ? deletedFrontmatter.canonicalProjectionGeneration
+          : (deletedEntry?.canonicalProjectionGeneration ??
+            indexedProjection?.canonicalProjectionGeneration);
       const tradeImportId =
-        typeof deletedFrontmatter?.tradeImportId === 'string'
+        canonicalTradeId ??
+        (typeof deletedFrontmatter?.tradeImportId === 'string'
           ? deletedFrontmatter.tradeImportId
-          : deletedEntry?.tradeImportId;
+          : deletedEntry?.tradeImportId);
       const tradeImportVersion =
+        canonicalTradeVersion ??
         this.parseFiniteNumber(deletedFrontmatter?.tradeImportVersion) ??
         deletedEntry?.tradeImportVersion;
 
@@ -4749,6 +5612,7 @@ export class TradeService extends CustomDataService {
           : null;
 
       this.tradeReadModel.forgetPath(filePath);
+      this.projectionIdentityByPath.delete(filePath);
 
       if (committedDelete) {
         this.tradeEventBridge.publishCommittedChange(
@@ -4776,12 +5640,54 @@ export class TradeService extends CustomDataService {
         try {
           const plugin = getPluginInstance();
           if (plugin) {
-            void acknowledgeLocalDeletedTradeImportProjection(
+            const releaseDeletionIntent = registerTradeProjectionDeletionIntent(
               plugin,
-              tradeImportId,
-              tradeImportVersion,
-              filePath
-            ).catch(() => undefined);
+              tradeImportId
+            );
+            let shouldAcknowledge = false;
+            try {
+              shouldAcknowledge = await runWithTradeProjectionWriteLock(
+                plugin,
+                async () => {
+                  const remainingProjection =
+                    this.hasCanonicalProjectionInVault(
+                      tradeImportId,
+                      filePath
+                    ) ||
+                    (await this.getTradeData({ fresh: true })).some(
+                      (trade) =>
+                        trade.path !== filePath &&
+                        (trade.canonicalTradeId === tradeImportId ||
+                          trade.tradeImportId === tradeImportId)
+                    );
+                  if (remainingProjection) {
+                    await clearLocalDeletedTradeProjection(
+                      plugin,
+                      tradeImportId
+                    );
+                    return { value: false };
+                  }
+                  await reserveLocalDeletedTradeProjection(
+                    plugin,
+                    tradeImportId
+                  );
+                  return { value: true };
+                }
+              );
+            } finally {
+              releaseDeletionIntent();
+            }
+            if (shouldAcknowledge) {
+              void acknowledgeLocalDeletedTradeProjection(
+                plugin,
+                tradeImportId,
+                tradeImportVersion,
+                filePath,
+                canonicalProjectionGeneration
+              ).catch(() => {
+                // intentional
+              });
+            }
           }
         } catch {
           // intentional

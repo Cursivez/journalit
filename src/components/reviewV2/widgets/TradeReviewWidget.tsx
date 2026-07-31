@@ -22,21 +22,26 @@ import {
 import { classifyPnLWithBreakEvenSettings } from '../../../utils/breakEvenRange';
 import type { JournalitSettings } from '../../../settings/types';
 import { getTradeDirectionDisplayKind } from '../../../services/trade/core/TradeDirection';
+import { hasCanonicalProjectionIdentity } from '../../../services/trade/core/CanonicalProjectionFields';
+import { cssVars } from '../../../styles/inlineStylePolicy';
 
 import { t } from '../../../lang/helpers';
-import { ChevronDown } from '../../shared/icons/ObsidianIcon';
+import { ChevronDown, CornerDownRight } from '../../shared/icons/ObsidianIcon';
 import { StickyHeaderPortal, useStickyHeader } from '../../shared/StickyHeader';
 import { scrollToNextReviewItemAfterCollapse } from './shared/reviewScrollUtils';
 import { ReviewWidgetSkeleton } from './shared/ReviewWidgetSkeleton';
 import {
+  getTradeReviewQuestionIdCandidates,
   getTradeReviewQuestionKnownLabels,
   getTradeReviewQuestionLabel,
   isLegacySupplementalTradeReviewQuestionId,
-  LEGACY_TRADE_REVIEW_QUESTION_ID_ALIASES,
 } from '../../../services/trade/core/TradeReviewMarkdownCodec';
 import {
   getAllLocalizedDefaultTradeReviewQuestionLabels,
+  orderTradeReviewQuestionsByHierarchy,
   resolveTradeReviewQuestions,
+  resolveTradeReviewQuestionDepths,
+  resolveVisibleTradeReviewQuestions,
   type TradeReviewCardField,
   type TradeReviewQuestionConfig,
   type TradeReviewWidgetConfig,
@@ -66,6 +71,8 @@ type ReviewTrade = Record<string, unknown> & {
   entries?: Array<{ time?: Date | string; price?: number; size?: number }>;
   exits?: Array<{ time?: Date | string; price?: number; size?: number }>;
   pnl?: number | null;
+  authoritativePnl?: number | null;
+  _originalPnlWasNull?: boolean;
   directPnL?: number | null;
   useDirectPnLInput?: boolean;
   rMultiple?: number;
@@ -477,7 +484,8 @@ function getTradeKey(trade: ReviewTrade, index: number): string {
 export function getOutcome(
   trade: ReviewTrade,
   breakEvenSettings?: JournalitSettings['trade']
-): 'win' | 'loss' | 'breakeven' | 'open' {
+): 'win' | 'loss' | 'breakeven' | 'unknown' | 'open' | 'cancelled' {
+  if (trade.tradeStatus === 'CANCELLED') return 'cancelled';
   const isOpen = isTradeOpenWithContext({
     tradeStatus: trade.tradeStatus,
     exitTime: trade.exitTime,
@@ -488,6 +496,14 @@ export function getOutcome(
     entries: trade.entries,
   });
   if (isOpen) return 'open';
+  if (
+    hasCanonicalProjectionIdentity(trade) &&
+    (trade.authoritativePnl === null ||
+      trade.pnl === null ||
+      trade._originalPnlWasNull === true)
+  ) {
+    return 'unknown';
+  }
   const pnl = getEffectivePnL(trade);
   if (pnl === null) return 'breakeven';
   const outcome = classifyPnLWithBreakEvenSettings(
@@ -503,6 +519,7 @@ export function getQuestions(
   config: TradeReviewWidgetConfig,
   outcome: ReturnType<typeof getOutcome>
 ): TradeReviewQuestionConfig[] {
+  if (outcome === 'cancelled' || outcome === 'unknown') return [];
   return resolveTradeReviewQuestions(config, outcome);
 }
 
@@ -530,8 +547,14 @@ export function getPreferredOutcomeLabel({
   currency: string;
   formatValue: ReturnType<typeof useDisplayFormatter>['formatValue'];
 }): string {
+  if (outcome === 'cancelled') {
+    return t('tradelog.status.cancelled');
+  }
   if (outcome === 'open') {
     return t('widget.trade-review.time.open');
+  }
+  if (outcome === 'unknown') {
+    return t('common.unknown');
   }
 
   if (displayRMultiples) {
@@ -548,10 +571,7 @@ export function getReviewText(
   question: TradeReviewQuestionConfig,
   allQuestions: TradeReviewQuestionConfig[] = [question]
 ): string {
-  const questionIds = [
-    question.id,
-    ...(LEGACY_TRADE_REVIEW_QUESTION_ID_ALIASES[question.id] ?? []),
-  ];
+  const questionIds = getTradeReviewQuestionIdCandidates(question.id);
   for (const questionId of questionIds) {
     const textAreas = review?.sections?.[questionId]?.textAreas;
     if (!textAreas) continue;
@@ -585,6 +605,17 @@ export function getReviewText(
   return '';
 }
 
+function getReviewChoiceOptionId(
+  review: TradeReviewData | undefined,
+  question: TradeReviewQuestionConfig
+): string | undefined {
+  for (const questionId of getTradeReviewQuestionIdCandidates(question.id)) {
+    const optionId = review?.sections?.[questionId]?.choiceOptionId;
+    if (optionId) return optionId;
+  }
+  return undefined;
+}
+
 export function includeLegacyAnsweredQuestions(
   questions: TradeReviewQuestionConfig[],
   review: TradeReviewData | undefined
@@ -592,8 +623,7 @@ export function includeLegacyAnsweredQuestions(
   if (!review) return questions;
   const consumedIds = new Set(
     questions.flatMap((question) => [
-      question.id,
-      ...(LEGACY_TRADE_REVIEW_QUESTION_ID_ALIASES[question.id] ?? []),
+      ...getTradeReviewQuestionIdCandidates(question.id),
       question.label,
     ])
   );
@@ -612,7 +642,8 @@ export function includeLegacyAnsweredQuestions(
       return [
         {
           id: sectionId,
-          label: getTradeReviewQuestionLabel(sectionId),
+          label:
+            section.label?.trim() || getTradeReviewQuestionLabel(sectionId),
         },
       ];
     }
@@ -1103,6 +1134,151 @@ const TradeReviewQuestionInput = React.memo(function TradeReviewQuestionInput({
   );
 });
 
+function TradeReviewChoiceInput({
+  question,
+  value,
+  selectedOptionId,
+  onSelect,
+}: {
+  question: TradeReviewQuestionConfig;
+  value: string;
+  selectedOptionId?: string;
+  onSelect: (question: TradeReviewQuestionConfig, value: string) => void;
+}) {
+  const selectedValue = value.trim();
+  return (
+    <div
+      className="journalit-trade-review-choice-options"
+      role="group"
+      aria-label={question.label}
+    >
+      {(question.options ?? []).map((option) => {
+        const optionLabel = option.label.trim();
+        if (!optionLabel) return null;
+        const selected = selectedOptionId
+          ? selectedOptionId === option.id
+          : selectedValue === optionLabel;
+        return (
+          <button
+            key={option.id}
+            type="button"
+            className={`journalit-trade-review-choice-option${selected ? ' is-selected' : ''}`}
+            aria-pressed={selected}
+            onClick={() => onSelect(question, selected ? '' : optionLabel)}
+          >
+            {option.label}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+export function shouldRetainTradeReviewChoiceDraft({
+  review,
+  question,
+  questions,
+  draft,
+  saveInFlight,
+}: {
+  review: TradeReviewData | undefined;
+  question: TradeReviewQuestionConfig;
+  questions: TradeReviewQuestionConfig[];
+  draft: { value: string; optionId?: string };
+  saveInFlight: boolean;
+}): boolean {
+  if (saveInFlight) return true;
+  const persistedOptionId = getReviewChoiceOptionId(review, question);
+  const persistedValue = getReviewText(review, question, questions);
+  const persistedMatches = draft.optionId
+    ? persistedOptionId === draft.optionId
+    : persistedOptionId === undefined &&
+      persistedValue.trim() === draft.value.trim();
+  return !persistedMatches;
+}
+
+function useTradeReviewChoiceDrafts({
+  review,
+  questions,
+  commitQuestionSave,
+}: {
+  review: TradeReviewData | undefined;
+  questions: TradeReviewQuestionConfig[];
+  commitQuestionSave: (
+    question: TradeReviewQuestionConfig,
+    value: string
+  ) => Promise<void>;
+}): {
+  choiceDrafts: Record<string, { value: string; optionId?: string }>;
+  handleChoiceSelect: (
+    question: TradeReviewQuestionConfig,
+    value: string
+  ) => void;
+} {
+  const [choiceDrafts, setChoiceDrafts] = useState<
+    Record<string, { value: string; optionId?: string }>
+  >({});
+  const inFlightSaveCountsRef = useRef<Map<string, number>>(new Map());
+
+  const handleChoiceSelect = useCallback(
+    (question: TradeReviewQuestionConfig, value: string) => {
+      const optionId = question.options?.find(
+        (option) => option.label.trim() === value.trim()
+      )?.id;
+      setChoiceDrafts((current) => ({
+        ...current,
+        [question.id]: { value, optionId },
+      }));
+      const counts = inFlightSaveCountsRef.current;
+      counts.set(question.id, (counts.get(question.id) ?? 0) + 1);
+      const finishSave = (failed: boolean): void => {
+        const remaining = (counts.get(question.id) ?? 1) - 1;
+        if (remaining <= 0) {
+          counts.delete(question.id);
+          if (failed) {
+            setChoiceDrafts((current) => {
+              const next = { ...current };
+              delete next[question.id];
+              return next;
+            });
+          }
+        } else {
+          counts.set(question.id, remaining);
+        }
+      };
+      void commitQuestionSave(question, value).then(
+        () => finishSave(false),
+        () => finishSave(true)
+      );
+    },
+    [commitQuestionSave]
+  );
+
+  useEffect(() => {
+    setChoiceDrafts((current) => {
+      const questionsById = new Map(
+        questions.map((question) => [question.id, question])
+      );
+      const entries = Object.entries(current).filter(([questionId, draft]) => {
+        const question = questionsById.get(questionId);
+        if (!question) return false;
+        return shouldRetainTradeReviewChoiceDraft({
+          review,
+          question,
+          questions,
+          draft,
+          saveInFlight: inFlightSaveCountsRef.current.has(questionId),
+        });
+      });
+      return entries.length === Object.keys(current).length
+        ? current
+        : Object.fromEntries(entries);
+    });
+  }, [questions, review]);
+
+  return { choiceDrafts, handleChoiceSelect };
+}
+
 function TradeReviewQuestions({
   plugin,
   tradePath,
@@ -1128,6 +1304,14 @@ function TradeReviewQuestions({
     >
   >({});
   const saveQueueRef = useRef<Promise<void>>(Promise.resolve());
+  const orderedQuestions = useMemo(
+    () => orderTradeReviewQuestionsByHierarchy(questions),
+    [questions]
+  );
+  const questionDepths = useMemo(
+    () => resolveTradeReviewQuestionDepths(orderedQuestions),
+    [orderedQuestions]
+  );
 
   const commitQuestionSave = useCallback(
     (
@@ -1146,11 +1330,17 @@ function TradeReviewQuestions({
             question.label,
             value,
             'user-input',
-            questions.map(({ id, label }) => ({
+            orderedQuestions.map(({ id, label }) => ({
               id,
               label,
+              depth: questionDepths.get(id) ?? 0,
               knownLabels: getAllLocalizedDefaultTradeReviewQuestionLabels(id),
-            }))
+            })),
+            question.type === 'choice'
+              ? question.options?.find(
+                  (option) => option.label.trim() === value.trim()
+                )?.id
+              : undefined
           );
         } finally {
           releaseScrollGuard();
@@ -1163,7 +1353,7 @@ function TradeReviewQuestions({
         .then(commit);
       return saveQueueRef.current;
     },
-    [plugin.tradeService, questions, tradePath]
+    [orderedQuestions, plugin.tradeService, questionDepths, tradePath]
   );
 
   const flushPendingSaves = useCallback(async () => {
@@ -1258,24 +1448,89 @@ function TradeReviewQuestions({
     [scheduleQuestionSave]
   );
 
+  const { choiceDrafts, handleChoiceSelect } = useTradeReviewChoiceDrafts({
+    review,
+    questions: orderedQuestions,
+    commitQuestionSave,
+  });
+
   if (questions.length === 0) {
     return null;
   }
 
+  const getEffectiveAnswer = (question: TradeReviewQuestionConfig): string =>
+    choiceDrafts[question.id]?.value ??
+    getReviewText(review, question, questions);
+
+  const getEffectiveOptionId = (
+    question: TradeReviewQuestionConfig
+  ): string | undefined => {
+    const draft = choiceDrafts[question.id];
+    return draft ? draft.optionId : getReviewChoiceOptionId(review, question);
+  };
+
+  const visibleQuestions = resolveVisibleTradeReviewQuestions(
+    orderedQuestions,
+    getEffectiveAnswer,
+    getEffectiveOptionId
+  );
   return (
     <div className="journalit-trade-review-questions">
-      {questions.map((question) => (
-        <label key={question.id} className="journalit-trade-review-question">
-          <span className="journalit-trade-review-question-label">
-            {question.label}
-          </span>
-          <TradeReviewQuestionInput
-            question={question}
-            persistedValue={getReviewText(review, question, questions)}
-            onDraftChange={handleQuestionChange}
+      {visibleQuestions.map((question) => {
+        const depth = questionDepths.get(question.id) ?? 0;
+        const isFollowUp = depth > 0;
+        const visualDepth = Math.min(depth, 4);
+        const followUpIndicator = isFollowUp ? (
+          <CornerDownRight
+            size={16}
+            aria-hidden="true"
+            className="journalit-trade-review-follow-up-icon"
           />
-        </label>
-      ))}
+        ) : null;
+        if (question.type === 'choice') {
+          return (
+            <div
+              key={question.id}
+              className={`journalit-trade-review-question${isFollowUp ? ' is-follow-up' : ''}`}
+              style={cssVars({
+                '--journalit-trade-review-follow-up-depth':
+                  visualDepth.toString(),
+              })}
+            >
+              {followUpIndicator}
+              <span className="journalit-trade-review-question-label">
+                {question.label}
+              </span>
+              <TradeReviewChoiceInput
+                question={question}
+                value={getEffectiveAnswer(question)}
+                selectedOptionId={getEffectiveOptionId(question)}
+                onSelect={handleChoiceSelect}
+              />
+            </div>
+          );
+        }
+        return (
+          <label
+            key={question.id}
+            className={`journalit-trade-review-question${isFollowUp ? ' is-follow-up' : ''}`}
+            style={cssVars({
+              '--journalit-trade-review-follow-up-depth':
+                visualDepth.toString(),
+            })}
+          >
+            {followUpIndicator}
+            <span className="journalit-trade-review-question-label">
+              {question.label}
+            </span>
+            <TradeReviewQuestionInput
+              question={question}
+              persistedValue={getReviewText(review, question, questions)}
+              onDraftChange={handleQuestionChange}
+            />
+          </label>
+        );
+      })}
     </div>
   );
 }

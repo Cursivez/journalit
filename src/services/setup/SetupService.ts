@@ -1,6 +1,7 @@
 
 
-import { App, TFile, TFolder, normalizePath } from 'obsidian';
+import { App, TFile, TFolder, normalizePath, parseYaml } from 'obsidian';
+import type JournalitPlugin from '../../main';
 import {
   CustomDataService,
   CustomDataServiceConfig,
@@ -20,8 +21,14 @@ import { validateSetupData, validateSetupId } from './validation';
 import { SetupMetricsCalculator } from './metrics';
 import { TradeService } from '../trade/TradeService';
 import { eventBus, type Unsubscribe } from '../events';
-import { OptionType } from '../options/CustomOptionsService';
-import { forceMetadataCacheRefresh } from '../../utils/dataRefresh';
+import {
+  OptionType,
+  type PreviousTagAssignments,
+} from '../options/CustomOptionsService';
+import {
+  forceMetadataCacheRefresh,
+  readFrontmatterFromDisk,
+} from '../../utils/dataRefresh';
 import {
   readFileContentForMutation,
   replaceFileContent,
@@ -29,15 +36,28 @@ import {
 import { getSetupHistoryDateRange } from './setupHistoryRange';
 import { normalizeLabelColor, type LabelColor } from '../../types/labelColor';
 import { normalizeSetupKey } from './setupIdentity';
+import { SETUP_FRONTMATTER_KEY } from './constants';
+import { deduplicateOptions } from '../../utils/stringNormalization';
 
 const SETUPS_FOLDER_NAME = 'Setups';
-const SETUP_FRONTMATTER_KEY = 'journalit-setup';
+const FRONTMATTER_BLOCK_PATTERN = /^---\r?\n([\s\S]*?)\r?\n---/;
+const SETUP_MARKER_LINE_PATTERN = new RegExp(
+  `^${SETUP_FRONTMATTER_KEY}:\\s*true\\s*$`,
+  'm'
+);
+const SETUP_MARKER_KEY_PATTERN = new RegExp(`^${SETUP_FRONTMATTER_KEY}\\s*:`);
+const FRONTMATTER_TAGS_KEY_PATTERN = /^(?:tags|'tags'|"tags")\s*:/;
 const SETUP_WARNING =
   '==⚠ This is a Journalit Setup file. Journalit opens it in the Setup view by default. If you are reading this as markdown, use the note menu / pane details menu and choose “Open as Journalit Setup” to return to the setup editor. This markdown exists for portability, search, and manual reference; create and edit setups through Journalit’s Setups view. ⚠==';
 
 interface SetupFileRecord {
   file: TFile;
   setup: Setup;
+}
+
+interface ExistingSetupDiscoveryResult {
+  setups: Setup[];
+  errors: Array<{ filePath: string; message: string }>;
 }
 
 interface MarkdownSection {
@@ -48,12 +68,96 @@ interface MarkdownSection {
   endLine: number;
 }
 
+function matchFrontmatterBlock(content: string): RegExpMatchArray | null {
+  return content.match(FRONTMATTER_BLOCK_PATTERN);
+}
+
+interface FlowCollectionScan {
+  endIndex?: number;
+  nodeProperties: string[];
+}
+
+function scanFlowCollection(
+  lines: string[],
+  keyLineIndex: number
+): FlowCollectionScan {
+  let squareDepth = 0;
+  let curlyDepth = 0;
+  let quote: 'single' | 'double' | undefined;
+  let collectionStarted = false;
+  const nodeProperties: string[] = [];
+  const keyValueStartIndex = lines[keyLineIndex].indexOf(':') + 1;
+
+  for (let lineIndex = keyLineIndex; lineIndex < lines.length; lineIndex += 1) {
+    const line = lines[lineIndex];
+    const startIndex = lineIndex === keyLineIndex ? keyValueStartIndex : 0;
+
+    for (let index = startIndex; index < line.length; index += 1) {
+      const character = line[index];
+      if (!collectionStarted) {
+        if (/\s/.test(character)) continue;
+        if (character === '#') break;
+        if (character === '&' || character === '!') {
+          const propertyStart = index;
+          while (index + 1 < line.length && !/\s/.test(line[index + 1])) {
+            index += 1;
+          }
+          nodeProperties.push(line.slice(propertyStart, index + 1));
+          continue;
+        }
+        if (character !== '[' && character !== '{') {
+          return { nodeProperties };
+        }
+      }
+      if (quote === 'single') {
+        if (character === "'") {
+          if (line[index + 1] === "'") index += 1;
+          else quote = undefined;
+        }
+        continue;
+      }
+      if (quote === 'double') {
+        if (character === '\\') index += 1;
+        else if (character === '"') quote = undefined;
+        continue;
+      }
+      if (character === '#') break;
+      if (character === "'") {
+        quote = 'single';
+        continue;
+      }
+      if (character === '"') {
+        quote = 'double';
+        continue;
+      }
+      if (character === '[') {
+        squareDepth += 1;
+        collectionStarted = true;
+      } else if (character === ']') {
+        squareDepth -= 1;
+      } else if (character === '{') {
+        curlyDepth += 1;
+        collectionStarted = true;
+      } else if (character === '}') {
+        curlyDepth -= 1;
+      }
+
+      if (collectionStarted && squareDepth === 0 && curlyDepth === 0) {
+        return { endIndex: lineIndex, nodeProperties };
+      }
+    }
+  }
+
+  return { nodeProperties };
+}
+
 
 export class SetupService extends CustomDataService {
   private metricsCalculator: SetupMetricsCalculator;
   private materializePromise: Promise<void> | null = null;
   private mutationQueue: Promise<void> = Promise.resolve();
   private tradeCacheUnsubscribers: Unsubscribe[] = [];
+  private setupRecordsGeneration = 0;
 
   constructor(
     app: App,
@@ -76,6 +180,24 @@ export class SetupService extends CustomDataService {
       eventBus.subscribe('missed-trade:changed', invalidateMetricsCache),
       eventBus.subscribe('backtest-trade:changed', invalidateMetricsCache),
     ];
+  }
+
+  public override setPlugin(plugin: JournalitPlugin): void {
+    super.setPlugin(plugin);
+    plugin.registerEvent(
+      this.app.vault.on('rename', (file, oldPath) => {
+        if (!(file instanceof TFolder)) return;
+        const setupsFolderPath = this.getSetupsFolderPath();
+        if (
+          !this.pathsIntersect(file.path, setupsFolderPath) &&
+          !this.pathsIntersect(oldPath, setupsFolderPath)
+        ) {
+          return;
+        }
+        this.setupRecordsGeneration += 1;
+        void this.clearCache();
+      })
+    );
   }
 
   public override cleanup(): void {
@@ -152,11 +274,40 @@ export class SetupService extends CustomDataService {
   
   public async listSetups(filter?: SetupFilter): Promise<Setup[]> {
     await this.materializeTradeSetups();
+    const { records, errors } = await this.discoverSetupFileRecords();
+    if (errors.length > 0) {
+      throw new Error(
+        `Failed to load setup files: ${errors
+          .map(({ filePath, message }) => `${filePath}: ${message}`)
+          .join('; ')}`
+      );
+    }
+    return this.filterSetups(
+      records.map((record) => record.setup),
+      filter
+    );
+  }
+
+  
+  public async listExistingSetups(filter?: SetupFilter): Promise<Setup[]> {
     const records = await this.listSetupFileRecords();
     return this.filterSetups(
       records.map((record) => record.setup),
       filter
     );
+  }
+
+  public async listExistingSetupsWithErrors(
+    filter?: SetupFilter
+  ): Promise<ExistingSetupDiscoveryResult> {
+    const { records, errors } = await this.discoverSetupFileRecords();
+    return {
+      setups: this.filterSetups(
+        records.map((record) => record.setup),
+        filter
+      ),
+      errors,
+    };
   }
 
   
@@ -240,19 +391,21 @@ export class SetupService extends CustomDataService {
 
     const folder = await this.ensureSetupFolder();
     const filePath = this.getUniqueSetupFilePath(folder.path, name);
-    await this.app.vault.create(filePath, this.serializeNewSetup(data));
-    const file = this.app.vault.getAbstractFileByPath(filePath);
-    if (!(file instanceof TFile)) {
-      throw new Error(`Failed to create setup file: ${filePath}`);
-    }
-    await Promise.all([
-      forceMetadataCacheRefresh(this.app, file),
-      this.clearCache(),
-      this.plugin?.optionsService?.addOption?.(OptionType.SETUP, name),
-    ]);
-    const setup = await this.parseSetupFile(file);
-    this.publishChanged('created', setup);
-    return setup;
+    return this.runWithTagAssignments(data.tags ?? [], async () => {
+      await this.app.vault.create(filePath, this.serializeNewSetup(data));
+      const file = this.app.vault.getAbstractFileByPath(filePath);
+      if (!(file instanceof TFile)) {
+        throw new Error(`Failed to create setup file: ${filePath}`);
+      }
+      await Promise.all([
+        forceMetadataCacheRefresh(this.app, file),
+        this.clearCache(),
+        this.plugin?.optionsService?.addOption?.(OptionType.SETUP, name),
+      ]);
+      const setup = await this.parseSetupFile(file);
+      this.publishChanged('created', setup);
+      return setup;
+    });
   }
 
   public async updateSetup(
@@ -289,34 +442,43 @@ export class SetupService extends CustomDataService {
         throw new Error(`Setup already exists: ${nextName}`);
       }
     }
-    const currentContent = await readFileContentForMutation(
-      this.app,
-      record.file
+    return this.runWithTagAssignments(
+      data.tags ?? existing.tags,
+      async () => {
+        const currentContent = await readFileContentForMutation(
+          this.app,
+          record.file
+        );
+        const nextContent = this.updateSetupMarkdown(currentContent, existing, {
+          ...data,
+          name: nextName,
+        });
+        await replaceFileContent(this.app, record.file, nextContent);
+
+        let targetFile = record.file;
+        if (nextName !== existing.name) {
+          const newPath = this.getRenamedSetupPath(record.file.path, nextName);
+          if (newPath !== record.file.path) {
+            await this.app.fileManager.renameFile(record.file, newPath);
+            const renamed = this.app.vault.getAbstractFileByPath(newPath);
+            if (renamed instanceof TFile) targetFile = renamed;
+          }
+          await this.updateTradeSetupName(existing.name, nextName);
+        }
+
+        await Promise.all([
+          forceMetadataCacheRefresh(this.app, targetFile),
+          this.clearCache(),
+        ]);
+        const updated = await this.parseSetupFile(targetFile);
+        this.publishChanged('updated', updated);
+        return updated;
+      },
+      async () =>
+        this.normalizeSetupTags(
+          (await readFrontmatterFromDisk(this.app, record.file)).tags
+        )
     );
-    const nextContent = this.updateSetupMarkdown(currentContent, existing, {
-      ...data,
-      name: nextName,
-    });
-    await replaceFileContent(this.app, record.file, nextContent);
-
-    let targetFile = record.file;
-    if (nextName !== existing.name) {
-      const newPath = this.getRenamedSetupPath(record.file.path, nextName);
-      if (newPath !== record.file.path) {
-        await this.app.fileManager.renameFile(record.file, newPath);
-        const renamed = this.app.vault.getAbstractFileByPath(newPath);
-        if (renamed instanceof TFile) targetFile = renamed;
-      }
-      await this.updateTradeSetupName(existing.name, nextName);
-    }
-
-    await Promise.all([
-      forceMetadataCacheRefresh(this.app, targetFile),
-      this.clearCache(),
-    ]);
-    const updated = await this.parseSetupFile(targetFile);
-    this.publishChanged('updated', updated);
-    return updated;
   }
 
   public async archiveSetup(id: string): Promise<Setup> {
@@ -343,7 +505,13 @@ export class SetupService extends CustomDataService {
         OptionType.SETUP,
         record.setup.name
       );
-      await optionsService.removeOption(OptionType.SETUP, record.setup.name);
+      const removedOption = await optionsService.removeOption(
+        OptionType.SETUP,
+        record.setup.name
+      );
+      if (!removedOption) {
+        optionsService.notifyOptionsChanged();
+      }
     }
 
     await this.app.fileManager.trashFile(record.file);
@@ -397,13 +565,31 @@ export class SetupService extends CustomDataService {
     return result;
   }
 
+  private runWithTagAssignments<T>(
+    tags: readonly string[],
+    operation: () => Promise<T>,
+    previousTags: PreviousTagAssignments = []
+  ): Promise<T> {
+    return this.plugin?.optionsService
+      ? this.plugin.optionsService.runWithTagAssignments(
+          tags,
+          operation,
+          previousTags
+        )
+      : operation();
+  }
+
   private async materializeTradeSetupsNow(): Promise<void> {
-    const [labels, existing] = await Promise.all([
+    const [labels, discovery] = await Promise.all([
       this.collectSetupLabels(),
-      this.listSetupFileRecordsWithoutMaterialization(),
+      this.discoverSetupFileRecords(),
     ]);
+    const existing = discovery.records;
     const existingNames = new Set(
-      existing.map((record) => normalizeSetupKey(record.setup.name))
+      [
+        ...existing.map((record) => record.setup.name),
+        ...discovery.rejectedNames,
+      ].map(normalizeSetupKey)
     );
 
     const namesToCreate: string[] = [];
@@ -453,10 +639,20 @@ export class SetupService extends CustomDataService {
     }
   }
 
+  private pathsIntersect(path: string, folderPath: string): boolean {
+    const candidate = normalizePath(path).replace(/\/$/, '');
+    const folder = normalizePath(folderPath).replace(/\/$/, '');
+    return (
+      candidate === folder ||
+      candidate.startsWith(`${folder}/`) ||
+      folder.startsWith(`${candidate}/`)
+    );
+  }
+
   private async listSetupFileRecords(): Promise<SetupFileRecord[]> {
     return this.query(
       async () => this.listSetupFileRecordsWithoutMaterialization(),
-      'setups:records',
+      `setups:records:${this.setupRecordsGeneration}`,
       { offlineCapable: true }
     );
   }
@@ -464,30 +660,64 @@ export class SetupService extends CustomDataService {
   private async listSetupFileRecordsWithoutMaterialization(): Promise<
     SetupFileRecord[]
   > {
+    return (await this.discoverSetupFileRecords()).records;
+  }
+
+  private async discoverSetupFileRecords(): Promise<{
+    records: SetupFileRecord[];
+    errors: Array<{ filePath: string; message: string }>;
+    rejectedNames: string[];
+  }> {
     const setupFolderPath = this.getSetupsFolderPath();
     const files = this.app.vault
       .getMarkdownFiles()
       .filter((file) => this.isPathInSetupsFolder(file.path, setupFolderPath));
 
-    const records = await Promise.all(
+    const results = await Promise.all(
       files.map(async (file) => {
         try {
-          if (!(await this.isSetupFile(file))) return null;
-          return { file, setup: await this.parseSetupFile(file) };
+          if (!(await this.isSetupFile(file))) {
+            return { record: null, error: undefined };
+          }
+          return {
+            record: { file, setup: await this.parseSetupFile(file) },
+            error: undefined,
+          };
         } catch (error) {
           console.warn(`Failed to parse setup file ${file.path}:`, error);
-          return null;
+          let rejectedName = file.basename;
+          try {
+            const content = await this.app.vault.cachedRead(file);
+            rejectedName =
+              this.extractTitle(this.stripFrontmatter(content)) ||
+              file.basename;
+          } catch {
+            // intentional
+          }
+          return {
+            record: null,
+            error: {
+              filePath: file.path,
+              message: error instanceof Error ? error.message : String(error),
+            },
+            rejectedName,
+          };
         }
       })
     );
 
-    return records
-      .filter((record): record is SetupFileRecord => record !== null)
+    const records = results
+      .flatMap(({ record }) => (record ? [record] : []))
       .sort(
         (a, b) =>
           a.setup.order - b.setup.order ||
           a.setup.name.localeCompare(b.setup.name)
       );
+    const errors = results.flatMap(({ error }) => (error ? [error] : []));
+    const rejectedNames = results.flatMap(({ rejectedName }) =>
+      rejectedName ? [rejectedName] : []
+    );
+    return { records, errors, rejectedNames };
   }
 
   private async requireSetupFileRecord(id: string): Promise<SetupFileRecord> {
@@ -504,6 +734,7 @@ export class SetupService extends CustomDataService {
   private async parseSetupFile(file: TFile): Promise<Setup> {
     const content = await this.app.vault.cachedRead(file);
     const body = this.stripFrontmatter(content);
+    const frontmatter = this.parseSetupFrontmatter(content);
     const title = this.extractTitle(body) || file.basename;
     const details = this.parseDetailsSection(body);
     const linkedNotes = this.parseLinkedNotesSection(body);
@@ -518,7 +749,7 @@ export class SetupService extends CustomDataService {
       status: this.parseStatus(details.status),
       color: normalizeLabelColor(details.color?.toLowerCase()),
       icon: 'trading_setup',
-      tags: [],
+      tags: this.normalizeSetupTags(frontmatter.tags),
       preferredSessions: this.parseStringList(details['preferred sessions']),
       preferredTimeframes: this.parseStringList(
         details['preferred timeframes']
@@ -540,6 +771,7 @@ export class SetupService extends CustomDataService {
   private serializeNewSetup(data: SetupData): string {
     const name = data.name.trim();
     const status = data.status ?? 'active';
+    const tags = this.normalizeSetupTags(data.tags);
     const details = this.serializeDetailsContent({
       status,
       direction: data.direction,
@@ -558,6 +790,7 @@ export class SetupService extends CustomDataService {
     return [
       '---',
       `${SETUP_FRONTMATTER_KEY}: true`,
+      `tags: ${JSON.stringify(tags)}`,
       '---',
       '',
       `# ${name}`,
@@ -679,7 +912,11 @@ export class SetupService extends CustomDataService {
       );
     }
 
-    return this.mergeSetupFrontmatter(content, body);
+    return this.mergeSetupFrontmatter(
+      content,
+      body,
+      data.tags === undefined ? undefined : this.normalizeSetupTags(data.tags)
+    );
   }
 
   private serializeDetailsContent(details: {
@@ -864,20 +1101,57 @@ export class SetupService extends CustomDataService {
   }
 
   private hasSetupFrontmatterMarker(content: string): boolean {
-    const match = content.match(/^---\r?\n([\s\S]*?)\r?\n---/);
-    return Boolean(match?.[1].match(/^journalit-setup:\s*true\s*$/m));
+    const match = matchFrontmatterBlock(content);
+    return Boolean(match?.[1].match(SETUP_MARKER_LINE_PATTERN));
   }
 
   private stripFrontmatter(content: string): string {
-    return content.replace(/^---\r?\n[\s\S]*?\r?\n---\r?\n?/, '').trim();
+    const match = matchFrontmatterBlock(content);
+    return match
+      ? content
+          .slice(match[0].length)
+          .replace(/^\r?\n?/, '')
+          .trim()
+      : content.trim();
   }
 
-  private mergeSetupFrontmatter(content: string, body: string): string {
-    const match = content.match(/^---\r?\n([\s\S]*?)\r?\n---/);
-    const frontmatterLines = match ? match[1].split(/\r?\n/) : [];
-    const markerPattern = new RegExp(`^${SETUP_FRONTMATTER_KEY}\\s*:`);
+  private parseSetupFrontmatter(content: string): Record<string, unknown> {
+    
+    const match = matchFrontmatterBlock(content);
+    if (!match) return {};
+
+    const parsed: unknown = parseYaml(match[1]);
+    if (!this.isRecord(parsed)) {
+      throw new Error('Invalid setup frontmatter: expected a YAML mapping');
+    }
+    return parsed;
+  }
+
+  private normalizeSetupTags(value: unknown): string[] {
+    if (value === undefined) return [];
+    if (!Array.isArray(value)) {
+      throw new Error('Invalid setup tags: expected an array of strings');
+    }
+
+    const values: string[] = [];
+    for (const item of value) {
+      if (typeof item !== 'string') {
+        throw new Error('Invalid setup tags: expected an array of strings');
+      }
+      values.push(item);
+    }
+    return deduplicateOptions(values);
+  }
+
+  private mergeSetupFrontmatter(
+    content: string,
+    body: string,
+    tags?: string[]
+  ): string {
+    const match = matchFrontmatterBlock(content);
+    let frontmatterLines = match ? match[1].split(/\r?\n/) : [];
     const markerIndexes = frontmatterLines.flatMap((line, index) =>
-      markerPattern.test(line) ? [index] : []
+      SETUP_MARKER_KEY_PATTERN.test(line) ? [index] : []
     );
 
     if (markerIndexes.length === 0) {
@@ -887,6 +1161,44 @@ export class SetupService extends CustomDataService {
       for (const index of markerIndexes.slice(1).reverse()) {
         frontmatterLines.splice(index, 1);
       }
+    }
+
+    if (tags !== undefined) {
+      const linesWithoutTags: string[] = [];
+      let firstTagPosition: number | undefined;
+      let firstTagNodeProperties: string[] | undefined;
+      for (let index = 0; index < frontmatterLines.length; index += 1) {
+        if (!FRONTMATTER_TAGS_KEY_PATTERN.test(frontmatterLines[index])) {
+          linesWithoutTags.push(frontmatterLines[index]);
+          continue;
+        }
+
+        firstTagPosition ??= linesWithoutTags.length;
+        const flowCollection = scanFlowCollection(frontmatterLines, index);
+        firstTagNodeProperties ??= flowCollection.nodeProperties;
+        if (flowCollection.endIndex !== undefined) {
+          index = flowCollection.endIndex;
+        } else {
+          while (
+            index + 1 < frontmatterLines.length &&
+            /^(?:\s+|-\s)/.test(frontmatterLines[index + 1])
+          ) {
+            index += 1;
+          }
+        }
+      }
+
+      const nodeProperties = firstTagNodeProperties?.join(' ');
+      const serializedTags = `tags: ${nodeProperties ? `${nodeProperties} ` : ''}${JSON.stringify(tags)}`;
+      const markerIndex = linesWithoutTags.findIndex((line) =>
+        SETUP_MARKER_KEY_PATTERN.test(line)
+      );
+      linesWithoutTags.splice(
+        firstTagPosition ?? markerIndex + 1,
+        0,
+        serializedTags
+      );
+      frontmatterLines = linesWithoutTags;
     }
 
     return ['---', ...frontmatterLines, '---', '', body.trim(), ''].join('\n');

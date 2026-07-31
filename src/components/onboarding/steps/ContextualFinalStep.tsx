@@ -14,7 +14,7 @@ interface ContextualFinalStepProps {
   onChangeHotkey: () => void | Promise<void>;
   onAddTrade: () => void | Promise<void>;
   onOpenCsv: () => void | Promise<void>;
-  onOpenMetaTrader: () => void | Promise<void>;
+  onOpenTradeSync: () => void | Promise<void>;
 }
 
 export const ContextualFinalStep: React.FC<ContextualFinalStepProps> = ({
@@ -24,7 +24,7 @@ export const ContextualFinalStep: React.FC<ContextualFinalStepProps> = ({
   onChangeHotkey,
   onAddTrade,
   onOpenCsv,
-  onOpenMetaTrader,
+  onOpenTradeSync,
 }) => {
   const getManualHotkeyParts = (): string[] =>
     t('onboarding.final.manual.hotkey.value')
@@ -153,51 +153,51 @@ export const ContextualFinalStep: React.FC<ContextualFinalStepProps> = ({
     </div>
   );
 
-  const renderMetaTraderContent = () => (
+  const renderTradeSyncContent = () => (
     <div className="contextual-final-simple">
       <p className="contextual-final-description">
-        {t('onboarding.final.mt.subtitle')}
+        {t('onboarding.final.trade-sync.subtitle')}
       </p>
 
       <div
-        className="contextual-final-hero contextual-final-hero--mt"
+        className="contextual-final-hero contextual-final-hero--trade-sync"
         aria-hidden="true"
       >
         <div className="contextual-final-hero-glow" aria-hidden="true" />
-        <div className="mt-hero" role="presentation">
-          <div className="mt-hero-node mt-hero-node--source">
-            <div className="mt-hero-node-icon mt-hero-node-icon--mt">
+        <div className="trade-sync-hero" role="presentation">
+          <div className="trade-sync-hero-node trade-sync-hero-node--source">
+            <div className="trade-sync-hero-node-icon trade-sync-hero-node-icon--source">
               <Monitor size={14} strokeWidth={2} />
             </div>
-            <div className="mt-hero-node-text">
-              <div className="mt-hero-node-title">
-                {t('onboarding.final.mt.hero.source.title')}
+            <div className="trade-sync-hero-node-text">
+              <div className="trade-sync-hero-node-title">
+                {t('onboarding.final.trade-sync.hero.source.title')}
               </div>
-              <div className="mt-hero-node-sub">
-                {t('onboarding.final.mt.hero.source.subtitle')}
+              <div className="trade-sync-hero-node-sub">
+                {t('onboarding.final.trade-sync.hero.source.subtitle')}
               </div>
             </div>
           </div>
 
-          <div className="mt-hero-link">
-            <div className="mt-hero-line">
-              <span className="mt-hero-packet" />
-              <span className="mt-hero-packet" />
-              <span className="mt-hero-packet" />
+          <div className="trade-sync-hero-link">
+            <div className="trade-sync-hero-line">
+              <span className="trade-sync-hero-packet" />
+              <span className="trade-sync-hero-packet" />
+              <span className="trade-sync-hero-packet" />
             </div>
-            <div className="mt-hero-arrow" />
+            <div className="trade-sync-hero-arrow" />
           </div>
 
-          <div className="mt-hero-node mt-hero-node--dest">
-            <div className="mt-hero-node-icon mt-hero-node-icon--vault">
+          <div className="trade-sync-hero-node trade-sync-hero-node--dest">
+            <div className="trade-sync-hero-node-icon trade-sync-hero-node-icon--vault">
               <CircleDotDashed size={14} strokeWidth={2} />
             </div>
-            <div className="mt-hero-node-text">
-              <div className="mt-hero-node-title">
-                {t('onboarding.final.mt.hero.dest.title')}
+            <div className="trade-sync-hero-node-text">
+              <div className="trade-sync-hero-node-title">
+                {t('onboarding.final.trade-sync.hero.dest.title')}
               </div>
-              <div className="mt-hero-node-sub">
-                {t('onboarding.final.mt.hero.dest.subtitle')}
+              <div className="trade-sync-hero-node-sub">
+                {t('onboarding.final.trade-sync.hero.dest.subtitle')}
               </div>
             </div>
           </div>
@@ -213,7 +213,7 @@ export const ContextualFinalStep: React.FC<ContextualFinalStepProps> = ({
     if (path === 'csv') {
       return t('onboarding.final.csv.title');
     }
-    return t('onboarding.final.mt.title');
+    return t('onboarding.final.trade-sync.title');
   };
 
   return (
@@ -229,7 +229,7 @@ export const ContextualFinalStep: React.FC<ContextualFinalStepProps> = ({
 
         {path === 'manual' && renderManualContent()}
         {path === 'csv' && renderCsvContent()}
-        {path === 'mt' && renderMetaTraderContent()}
+        {path === 'trade-sync' && renderTradeSyncContent()}
 
         {path === 'manual' ? (
           <div className="contextual-final-manual-footer">
@@ -250,11 +250,11 @@ export const ContextualFinalStep: React.FC<ContextualFinalStepProps> = ({
               </Button>
               <Button
                 variant="primary"
-                onClick={path === 'csv' ? onOpenCsv : onOpenMetaTrader}
+                onClick={path === 'csv' ? onOpenCsv : onOpenTradeSync}
               >
                 {path === 'csv'
                   ? t('onboarding.final.csv.cta.open')
-                  : t('onboarding.final.mt.cta.open')}
+                  : t('onboarding.final.trade-sync.cta.open')}
               </Button>
             </div>
             <Button

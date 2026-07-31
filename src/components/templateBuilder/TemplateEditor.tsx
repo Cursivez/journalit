@@ -20,9 +20,12 @@ import { ChevronDown, Info } from '../shared/icons/ObsidianIcon';
 import { Tooltip } from '../shared/Tooltip';
 import type JournalitPlugin from '../../main';
 import {
-  DemonTrackerCountMode,
-  DemonTrackerSourceMode,
+  DEMON_TRACKER_TRACKING_METHODS,
+  DEMON_TRACKER_STOP_THRESHOLDS,
+  DemonTrackerTrackingMethod,
   DemonTrackerWidgetConfig,
+  isDemonTrackerStopThreshold,
+  isDemonTrackerTrackingMethod,
   ReviewContextFieldsSelectionMode,
   ReviewContextFieldsWidgetConfig,
   ReviewTemplate,
@@ -41,7 +44,7 @@ import {
 } from '../../data/widgetRegistry';
 import { t } from '../../lang/helpers';
 import { generateUUID } from '../../utils/uuid';
-import { resolveDemonTrackerModes } from '../reviewV2/widgets/shared/demonTrackerAggregation';
+import { resolveDemonTrackerOptions } from '../reviewV2/widgets/shared/demonTrackerAggregation';
 
 import {
   useGuideAction,
@@ -67,8 +70,10 @@ import type {
   TradeReviewQuestionConfigKey,
   TradeReviewWidgetConfig,
 } from '../reviewV2/widgets/tradeReviewConfig';
-import { TRADE_REVIEW_QUESTION_CONFIG_KEY_LIST } from '../reviewV2/widgets/tradeReviewConfig';
-import { isTradeReviewQuestionConfig } from '../reviewV2/widgets/tradeReviewConfig';
+import {
+  isValidTradeReviewQuestionGraph,
+  TRADE_REVIEW_QUESTION_CONFIG_KEY_LIST,
+} from '../reviewV2/widgets/tradeReviewConfig';
 
 interface TemplateEditorProps {
   plugin: JournalitPlugin;
@@ -91,16 +96,41 @@ const parseReviewContextFieldsSelectionMode = (
   }
 };
 
-const parseDemonTrackerCountMode = (value: string): DemonTrackerCountMode =>
-  value === 'per-trading-day' ? 'per-trading-day' : 'per-trade';
-
-const parseDemonTrackerSourceMode = (value: string): DemonTrackerSourceMode => {
-  switch (value) {
-    case 'session':
-    case 'combined':
-      return value;
+const getDemonTrackerTrackingMethodLabel = (
+  method: DemonTrackerTrackingMethod
+): string => {
+  switch (method) {
+    case 'trading-days':
+      return t(
+        'templateEditor.widget.demon-tracker.tracking-method.trading-days'
+      );
+    case 'daily-review-entries':
+      return t(
+        'templateEditor.widget.demon-tracker.tracking-method.daily-review-entries'
+      );
     default:
-      return 'trades';
+      return t(
+        'templateEditor.widget.demon-tracker.tracking-method.trade-occurrences'
+      );
+  }
+};
+
+const getDemonTrackerTrackingMethodDescription = (
+  method: DemonTrackerTrackingMethod
+): string => {
+  switch (method) {
+    case 'trading-days':
+      return t(
+        'templateEditor.widget.demon-tracker.tracking-method.trading-days-desc'
+      );
+    case 'daily-review-entries':
+      return t(
+        'templateEditor.widget.demon-tracker.tracking-method.daily-review-entries-desc'
+      );
+    default:
+      return t(
+        'templateEditor.widget.demon-tracker.tracking-method.trade-occurrences-desc'
+      );
   }
 };
 
@@ -246,11 +276,7 @@ const hasIncompleteTradeReviewQuestion = (
     return TRADE_REVIEW_QUESTION_CONFIG_KEY_LIST.some((key) => {
       const questions = widget.config?.[key];
       if (!Array.isArray(questions)) return false;
-      return questions.some(
-        (question: unknown) =>
-          !isTradeReviewQuestionConfig(question) ||
-          question.label.trim().length === 0
-      );
+      return !isValidTradeReviewQuestionGraph(questions);
     });
   });
 
@@ -271,10 +297,6 @@ interface SortableWidgetItemProps {
   availableMarkdownHeadings: string[];
   availableDrcMarkdownHeadings: string[];
   skipWeekends: boolean;
-  scalperDefaults?: {
-    countMode?: DemonTrackerCountMode;
-    sourceMode?: DemonTrackerSourceMode;
-  };
   onWidgetChange: (index: number, widget: WidgetDefinition) => void;
   onConfigChange: (index: number, config: Record<string, unknown>) => void;
   onDuplicate: (index: number) => void;
@@ -339,7 +361,6 @@ function useSortableWidgetItemContent({
   availableMarkdownHeadings,
   availableDrcMarkdownHeadings,
   skipWeekends,
-  scalperDefaults,
   onWidgetChange,
   onConfigChange,
   onDuplicate,
@@ -479,7 +500,8 @@ function useSortableWidgetItemContent({
   };
 
   const demonConfig = widget.config as DemonTrackerWidgetConfig | undefined;
-  const demonModes = resolveDemonTrackerModes(demonConfig, scalperDefaults);
+  const demonOptions = resolveDemonTrackerOptions(demonConfig);
+  const demonTrackingMethodSelectId = `${id}-demon-tracking-method`;
   const reviewContextConfig = widget.config as
     | ReviewContextFieldsWidgetConfig
     | undefined;
@@ -1329,53 +1351,76 @@ function useSortableWidgetItemContent({
 
       
       {widget.type === 'demon-tracker' && isEditing && (
-        <div className="template-widget-config-row template-widget-config-row--wide">
-          <label className="template-widget-config-label">
-            {t('templateEditor.widget.demon-tracker.count-mode')}
-            <select
-              value={demonModes.countMode}
-              onChange={(e) =>
-                onConfigChange(index, {
-                  ...widget.config,
-                  countMode: parseDemonTrackerCountMode(e.target.value),
-                })
-              }
-              className="template-select template-select--compact"
-            >
-              <option value="per-trade">
-                {t('templateEditor.widget.demon-tracker.count-mode.per-trade')}
-              </option>
-              <option value="per-trading-day">
-                {t(
-                  'templateEditor.widget.demon-tracker.count-mode.per-trading-day'
+        <div className="template-widget-config-row template-widget-config-row--wide template-widget-config-row--demon-tracker">
+          <div className="template-widget-config-label">
+            <span className="template-widget-config-label-heading">
+              <label htmlFor={demonTrackingMethodSelectId}>
+                {t('templateEditor.widget.demon-tracker.tracking-method')}
+              </label>
+              <Tooltip
+                content={getDemonTrackerTrackingMethodDescription(
+                  demonOptions.trackingMethod
                 )}
-              </option>
-            </select>
-          </label>
-
-          <label className="template-widget-config-label">
-            {t('templateEditor.widget.demon-tracker.source-mode')}
+                preferredPosition="top"
+              >
+                <button
+                  type="button"
+                  className="journalit-template-widget-config-info-button"
+                  aria-label={getDemonTrackerTrackingMethodDescription(
+                    demonOptions.trackingMethod
+                  )}
+                >
+                  <Info size={13} aria-hidden="true" />
+                </button>
+              </Tooltip>
+            </span>
             <select
-              value={demonModes.sourceMode}
-              onChange={(e) =>
-                onConfigChange(index, {
-                  ...widget.config,
-                  sourceMode: parseDemonTrackerSourceMode(e.target.value),
-                })
-              }
+              id={demonTrackingMethodSelectId}
+              value={demonOptions.trackingMethod}
+              onChange={(event) => {
+                const trackingMethod = event.target.value;
+                if (isDemonTrackerTrackingMethod(trackingMethod)) {
+                  onConfigChange(index, {
+                    ...widget.config,
+                    trackingMethod,
+                  });
+                }
+              }}
               className="template-select template-select--compact"
             >
-              <option value="trades">
-                {t('templateEditor.widget.demon-tracker.source-mode.trades')}
-              </option>
-              <option value="session">
-                {t('templateEditor.widget.demon-tracker.source-mode.session')}
-              </option>
-              <option value="combined">
-                {t('templateEditor.widget.demon-tracker.source-mode.combined')}
-              </option>
+              {DEMON_TRACKER_TRACKING_METHODS.map((method) => (
+                <option key={method} value={method}>
+                  {getDemonTrackerTrackingMethodLabel(method)}
+                </option>
+              ))}
             </select>
-          </label>
+          </div>
+
+          {(templateType === 'weekly' || templateType === 'monthly') && (
+            <label className="template-widget-config-label">
+              {t('templateEditor.widget.demon-tracker.stop-after')}
+              <select
+                value={demonOptions.stopThreshold}
+                onChange={(event) => {
+                  const stopThreshold = Number(event.target.value);
+                  if (isDemonTrackerStopThreshold(stopThreshold)) {
+                    onConfigChange(index, {
+                      ...widget.config,
+                      stopThreshold,
+                    });
+                  }
+                }}
+                aria-label={t('templateEditor.widget.demon-tracker.stop-after')}
+                className="template-select template-select--compact"
+              >
+                {DEMON_TRACKER_STOP_THRESHOLDS.map((threshold) => (
+                  <option key={threshold} value={threshold}>
+                    {threshold}
+                  </option>
+                ))}
+              </select>
+            </label>
+          )}
         </div>
       )}
     </div>
@@ -1495,7 +1540,6 @@ function useTemplateEditorModel({
 
   
   const canEdit = viewMode === 'editor' && template && !template.isBuiltIn;
-  const scalperDefaults = plugin.settings.reviewV2?.scalperDefaults;
   const getWidgetEditorId = useCallback((widget: WidgetPlacement): string => {
     const existingId = widgetEditorIdsRef.current.get(widget);
     if (existingId) {
@@ -1761,7 +1805,6 @@ function useTemplateEditorModel({
     availableMarkdownHeadings,
     availableDrcMarkdownHeadings,
     canEdit,
-    scalperDefaults,
     getWidgetEditorId,
     previewTemplate,
     handleSave,
@@ -1796,7 +1839,6 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = (props) => {
     availableMarkdownHeadings,
     availableDrcMarkdownHeadings,
     canEdit,
-    scalperDefaults,
     getWidgetEditorId,
     previewTemplate,
     handleSave,
@@ -1953,7 +1995,6 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = (props) => {
                         skipWeekends={
                           plugin.settings.trade.skipWeekends ?? true
                         }
-                        scalperDefaults={scalperDefaults}
                         onWidgetChange={handleWidgetChange}
                         onConfigChange={handleWidgetConfigChange}
                         onDuplicate={handleDuplicateWidget}

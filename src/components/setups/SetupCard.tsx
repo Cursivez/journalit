@@ -21,6 +21,7 @@ import {
   getSetupCardHealthLabel,
   getSetupSparklineTone,
 } from './setupsViewModel';
+import { SetupTagIndicator } from './SetupTags';
 
 const MASKED_SPARKLINE_BASELINE_Y = '34';
 const MASKED_SPARKLINE_PATH = 'M 8.0 34.0 L 312.0 34.0';
@@ -62,18 +63,13 @@ export const SetupCard: React.FC<{
   const sparklineTone = isPerformanceMasked
     ? 'neutral'
     : getSetupSparklineTone(sparklineModel);
-
-  const handleKeyDown = (event: React.KeyboardEvent<HTMLElement>) => {
-    if (event.key === 'Enter' || event.key === ' ') {
-      event.preventDefault();
-      if (compareMode) {
-        if (!compareDisabled) onToggleCompare();
-        return;
-      }
-      onOpen();
-    }
-  };
-
+  const cardActionLabel = compareMode
+    ? t('setups.view.card.select-for-compare')
+    : t('setups.view.card.open-named', { name: setup.name });
+  const cardAccessibleLabel =
+    setup.tags.length > 0
+      ? `${cardActionLabel}. ${t('setups.view.tags')}: ${setup.tags.join(', ')}.`
+      : cardActionLabel;
   const handleSetupCardActivation = () => {
     if (compareMode) {
       if (!compareDisabled) onToggleCompare();
@@ -93,34 +89,37 @@ export const SetupCard: React.FC<{
       ]
         .filter(Boolean)
         .join(' ')}
-      role="button"
-      tabIndex={0}
-      aria-pressed={compareMode ? compareSelected : undefined}
-      onClick={handleSetupCardActivation}
-      onKeyDown={handleKeyDown}
-      aria-label={
-        compareMode
-          ? t('setups.view.card.select-for-compare')
-          : t('setups.view.card.open-named', { name: setup.name })
-      }
     >
+      <button
+        type="button"
+        className="journalit-setup-card__activation"
+        aria-disabled={compareMode && compareDisabled}
+        aria-label={cardAccessibleLabel}
+        aria-pressed={compareMode ? compareSelected : undefined}
+        onClick={handleSetupCardActivation}
+      />
       <div className="journalit-setup-card__header">
         <div className="journalit-setup-card__identity">
           <h3 className="journalit-setup-card__title">{setup.name}</h3>
+          <SetupTagIndicator tags={setup.tags} />
         </div>
-        {compareMode ? (
-          <span
-            className="journalit-setup-card__compare-indicator"
-            aria-hidden="true"
-          >
-            {compareSelected ? (
-              <CheckCircle2 size={16} />
-            ) : (
-              <Circle size={16} />
-            )}
-          </span>
-        ) : health ? (
-          <SetupCardHealthBadge health={health} />
+        {compareMode || health ? (
+          <div className="journalit-setup-card__header-meta">
+            {compareMode ? (
+              <span
+                className="journalit-setup-card__compare-indicator"
+                aria-hidden="true"
+              >
+                {compareSelected ? (
+                  <CheckCircle2 size={16} />
+                ) : (
+                  <Circle size={16} />
+                )}
+              </span>
+            ) : health ? (
+              <SetupCardHealthBadge health={health} />
+            ) : null}
+          </div>
         ) : null}
       </div>
 

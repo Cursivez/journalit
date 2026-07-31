@@ -9,7 +9,6 @@ import React, {
 } from 'react';
 import { createPortal } from 'react-dom';
 import {
-  AlertTriangle,
   BadgeCheck,
   ChevronDown,
   Download,
@@ -26,7 +25,7 @@ import {
 import { Accordion } from '../shared/Accordion';
 import { CollapsibleSection } from '../shared/CollapsibleSection';
 import { Notice } from 'obsidian';
-import { t, tPlural } from '../../lang/helpers';
+import { t } from '../../lang/helpers';
 import JournalitPlugin from '../../main';
 import { UPGRADE_URLS } from '../../constants';
 import { useBackendProEntitlement } from '../../hooks/useBackendProEntitlement';
@@ -34,10 +33,8 @@ import { cssVars } from '../../styles/inlineStylePolicy';
 import { openExternalUrl } from '../../utils/externalLinks';
 import { DeviceFlowSignInModal } from '../auth/DeviceFlowSignInModal';
 import { BackendTradeImportService } from '../../services/tradeImport/BackendTradeImportService';
-import {
-  isTradeImportBlocked,
-  isTradeImportCommitEligible,
-} from '../../services/tradeImport/commitEligibility';
+import { BackendTradeProjectionService } from '../../services/tradeSync/BackendTradeProjectionService';
+import { isTradeImportBlocked } from '../../services/tradeImport/commitEligibility';
 import { consumeQuickImportTradeImportHandoff } from '../../services/tradeImport/quickImportHandoff';
 import {
   customFieldDefinitions,
@@ -45,7 +42,7 @@ import {
   TradeImportWorkflowService,
   type TradeImportCompletionResult,
 } from '../../services/tradeImport/TradeImportWorkflowService';
-import { useDisplayFormatter } from '../../hooks/useDisplayPolicy';
+
 import type {
   ClassifiedPreviewTrade,
   TradeImportCustomFieldDefinition,
@@ -53,7 +50,7 @@ import type {
   TradeImportCapabilities,
   TradeImportPreviewResponse,
 } from '../../services/tradeImport/types';
-import { flushTradeImportProjectionAcks } from '../../services/tradeImport/TradeImportProjectionAckQueue';
+import { flushTradeProjectionAcks } from '../../services/tradeSync/TradeProjectionAckQueue';
 import { LocalTemplateService } from '../../services/csv/LocalTemplateService';
 import type {
   LocalCSVTemplate,
@@ -62,6 +59,11 @@ import type {
 } from '../../services/csv/types';
 import { getDateFormatOptions, TRADE_FIELDS } from '../../services/csv/types';
 import { writeClipboardText } from '../../utils/clipboard';
+import {
+  TradeImportDiagnostics,
+  TradeImportPreviewReview,
+} from './TradeImportPreviewReview';
+import { TradeImportCompletionSummary } from './TradeImportCompletionSummary';
 
 interface CSVImportProps {
   plugin: JournalitPlugin;
@@ -146,7 +148,7 @@ const BROKER_GUIDE_URLS: Record<string, string> = {
   TRADINGTECHNOLOGIES:
     'https://journalit.co/docs/broker-guides-tradingtechnologies',
   RITHMIC: 'https://journalit.co/docs/broker-guides-rithmic',
-  JDR: 'https://journalit.co/docs/broker-guides-jdr',
+  METATRADER: 'https://journalit.co/docs/broker-guides-jdr',
 };
 
 interface PortalMenuPosition {
@@ -608,15 +610,22 @@ function updateColumnAssignment(
 }
 
 export const CSVImport = memo<CSVImportProps>(({ plugin }) => {
-  const { formatValue } = useDisplayFormatter();
-
   const backendTradeImportService = useMemo(
     () => new BackendTradeImportService(),
     []
   );
+  const backendTradeProjectionService = useMemo(
+    () => new BackendTradeProjectionService(),
+    []
+  );
   const workflowService = useMemo(
-    () => new TradeImportWorkflowService(plugin, backendTradeImportService),
-    [backendTradeImportService, plugin]
+    () =>
+      new TradeImportWorkflowService(
+        plugin,
+        backendTradeImportService,
+        backendTradeProjectionService
+      ),
+    [backendTradeImportService, backendTradeProjectionService, plugin]
   );
   const localTemplateService = useMemo(
     () => new LocalTemplateService(plugin, plugin.settingsManager),
@@ -698,6 +707,9 @@ export const CSVImport = memo<CSVImportProps>(({ plugin }) => {
     Record<string, string[]>
   >({});
   const [preview, setPreview] = useState<TradeImportPreviewResponse | null>(
+    null
+  );
+  const [previewOwnerUserId, setPreviewOwnerUserId] = useState<string | null>(
     null
   );
   const [previewError, setPreviewError] = useState<{
@@ -902,7 +914,7 @@ export const CSVImport = memo<CSVImportProps>(({ plugin }) => {
       .getCapabilities()
       .then((loadedCapabilities) => {
         setCapabilities(loadedCapabilities);
-        void flushTradeImportProjectionAcks(plugin, backendTradeImportService);
+        void flushTradeProjectionAcks(plugin, backendTradeProjectionService);
       })
       .catch(
         (error) =>
@@ -912,7 +924,12 @@ export const CSVImport = memo<CSVImportProps>(({ plugin }) => {
               : t('trade-import.notice.capabilities-failed')
           )
       );
-  }, [backendTradeImportService, canUseTradeImport, plugin]);
+  }, [
+    backendTradeImportService,
+    backendTradeProjectionService,
+    canUseTradeImport,
+    plugin,
+  ]);
 
   const brokers = useMemo(
     () =>
@@ -940,13 +957,10 @@ export const CSVImport = memo<CSVImportProps>(({ plugin }) => {
     isManualMappingFlow &&
     (selectedBrokerCapabilities?.supportsManualMapping ?? broker === 'MANUAL');
   const renderedClassified = classified.slice(0, MAX_RENDERED_PREVIEW_ROWS);
-  const importablePreviewCount = classified.filter((item) =>
-    isTradeImportCommitEligible(item.defaultAction)
-  ).length;
   const failedPreviewRows = classified.filter((item) =>
     isTradeImportBlocked(item.defaultAction)
   );
-  const hasPreviewMessages = renderedClassified.some((item) => item.message);
+
   const acceptedExtensionList = selectedBrokerCapabilities
     ? capabilities?.fileTypes.flatMap((type) =>
         selectedBrokerCapabilities.supportedFileTypes.includes(type.id)
@@ -977,6 +991,7 @@ export const CSVImport = memo<CSVImportProps>(({ plugin }) => {
     setFile(handoff.file);
     setAnalyse(handoff.analyse ?? null);
     setPreview(handoff.preview ?? null);
+    setPreviewOwnerUserId(handoff.previewOwnerUserId ?? null);
     setClassified(handoff.classified ?? []);
     setImportResult(null);
     setImportCompleted(false);
@@ -1084,6 +1099,7 @@ export const CSVImport = memo<CSVImportProps>(({ plugin }) => {
     requestVersionRef.current += 1;
     setAnalyse(null);
     setPreview(null);
+    setPreviewOwnerUserId(null);
     setPreviewError(null);
     setClassified([]);
     setImportResult(null);
@@ -1094,6 +1110,7 @@ export const CSVImport = memo<CSVImportProps>(({ plugin }) => {
   const invalidatePreview = useCallback(() => {
     requestVersionRef.current += 1;
     setPreview(null);
+    setPreviewOwnerUserId(null);
     setPreviewError(null);
     setClassified([]);
     setImportResult(null);
@@ -1311,6 +1328,7 @@ export const CSVImport = memo<CSVImportProps>(({ plugin }) => {
           : suggestedColumnMappings
       );
       setPreview(null);
+      setPreviewOwnerUserId(null);
       setPreviewError(null);
       setClassified([]);
       setImportResult(null);
@@ -1342,22 +1360,24 @@ export const CSVImport = memo<CSVImportProps>(({ plugin }) => {
     const requestVersion = requestVersionRef.current;
     setBusy(true);
     try {
-      const { response, classifiedTrades } = await workflowService.previewFile({
-        file,
-        capabilities,
-        brokerCapabilities: selectedBrokerCapabilities,
-        analyse,
-        broker,
-        sheetName: selectedSheetName,
-        headerRowIndex: selectedHeaderRowIndex,
-        accountName: selectedAccountName,
-        assetType,
-        manualMode,
-        dateFormat: selectedDateFormat,
-        columnMappings,
-      });
+      const { response, classifiedTrades, ownerUserId } =
+        await workflowService.previewFile({
+          file,
+          capabilities,
+          brokerCapabilities: selectedBrokerCapabilities,
+          analyse,
+          broker,
+          sheetName: selectedSheetName,
+          headerRowIndex: selectedHeaderRowIndex,
+          accountName: selectedAccountName,
+          assetType,
+          manualMode,
+          dateFormat: selectedDateFormat,
+          columnMappings,
+        });
       if (requestVersion !== requestVersionRef.current) return;
       setPreview(response);
+      setPreviewOwnerUserId(ownerUserId);
       setPreviewError(null);
       setImportResult(null);
       setImportCompleted(false);
@@ -1366,6 +1386,7 @@ export const CSVImport = memo<CSVImportProps>(({ plugin }) => {
     } catch (error) {
       if (requestVersion !== requestVersionRef.current) return;
       setPreview(null);
+      setPreviewOwnerUserId(null);
       setPreviewError({
         message: previewErrorMessage(error),
         details: previewErrorDetails(error),
@@ -1399,6 +1420,7 @@ export const CSVImport = memo<CSVImportProps>(({ plugin }) => {
     setFile(null);
     setAnalyse(null);
     setPreview(null);
+    setPreviewOwnerUserId(null);
     setPreviewError(null);
     setClassified([]);
     setImportResult(null);
@@ -1410,11 +1432,12 @@ export const CSVImport = memo<CSVImportProps>(({ plugin }) => {
   }, []);
 
   const confirmImport = useCallback(async () => {
-    if (!preview || !file || importCompleted) return;
+    if (!preview || !previewOwnerUserId || !file || importCompleted) return;
     setBusy(true);
     try {
       await workflowService.writePreview({
         preview,
+        previewOwnerUserId,
         classified,
         accountName: selectedAccountName,
         brokerLabel: selectedBrokerLabel,
@@ -1427,6 +1450,13 @@ export const CSVImport = memo<CSVImportProps>(({ plugin }) => {
               failedCount: String(result.failedCount),
             })
           );
+          if (result.pendingCount > 0) {
+            new Notice(
+              t('csv.results.pending-local-writes', {
+                count: String(result.pendingCount),
+              })
+            );
+          }
           setImportResult(result);
           setImportCompleted(true);
           setBusy(false);
@@ -1440,6 +1470,7 @@ export const CSVImport = memo<CSVImportProps>(({ plugin }) => {
     file,
     importCompleted,
     preview,
+    previewOwnerUserId,
     selectedAccountName,
     selectedBrokerLabel,
     workflowService,
@@ -1448,6 +1479,7 @@ export const CSVImport = memo<CSVImportProps>(({ plugin }) => {
   const cancelPreview = useCallback(() => {
     if (!preview || importCompleted) return;
     setPreview(null);
+    setPreviewOwnerUserId(null);
     setPreviewError(null);
     setClassified([]);
     setImportResult(null);
@@ -2189,16 +2221,10 @@ export const CSVImport = memo<CSVImportProps>(({ plugin }) => {
                   fileType: analyse.fileType,
                 })}
               </p>
-              {analyse.diagnostics.length > 0 && (
-                <ul className="journalit-trade-import-diagnostics">
-                  {analyse.diagnostics.map((diagnostic) => (
-                    <li key={`${diagnostic.code}-${diagnostic.message}`}>
-                      {diagnostic.severity ?? t('trade-import.diagnostic.info')}
-                      : {diagnostic.message}
-                    </li>
-                  ))}
-                </ul>
-              )}
+              <TradeImportDiagnostics
+                diagnostics={analyse.diagnostics}
+                defaultOpen={true}
+              />
               <div className="journalit-trade-import-review-controls">
                 {analyse.sheets.length > 0 && (
                   <label>
@@ -2558,151 +2584,15 @@ export const CSVImport = memo<CSVImportProps>(({ plugin }) => {
             </h2>
             {importCompleted && importResult ? (
               <div className="csv-import-results journalit-trade-import-results">
-                <h3>
-                  {importResult.success
-                    ? t('csv.results.complete')
-                    : t('csv.results.failed')}
-                </h3>
-                {importResult.writtenCount > 0 && (
-                  <div className="result-item result-success">
-                    <BadgeCheck className="result-icon" size={20} />
-                    <span className="result-text">
-                      {tPlural(
-                        'csv.results.success',
-                        importResult.writtenCount,
-                        {
-                          account: importResult.accountName,
-                        }
-                      )}
-                    </span>
-                  </div>
-                )}
-                {importResult.duplicateCount > 0 && (
-                  <div className="result-item result-warning">
-                    <AlertTriangle className="result-icon" size={20} />
-                    <span className="result-text">
-                      {tPlural(
-                        'csv.results.skipped',
-                        importResult.duplicateCount
-                      )}
-                    </span>
-                  </div>
-                )}
-                {importResult.failedCount > 0 && (
-                  <div className="result-item result-warning">
-                    <AlertTriangle className="result-icon" size={20} />
-                    <span className="result-text">
-                      {t('csv.results.failed-to-import-prefix')}
-                      {importResult.failedCount}
-                      {t('csv.results.failed-to-import-suffix')}
-                    </span>
-                  </div>
-                )}
-                <div className="result-item result-info">
-                  <span className="result-text result-text--muted">
-                    {t('csv.results.broker', {
-                      broker: importResult.brokerLabel,
-                    })}
-                  </span>
-                </div>
-                {importResult.importedTrades.length > 0 && (
-                  <div className="imported-trades-preview">
-                    <div className="preview-header">
-                      {t('csv.results.preview-header', {
-                        shown: String(
-                          Math.min(5, importResult.importedTrades.length)
-                        ),
-                        total: String(importResult.writtenCount),
-                      })}
-                    </div>
-                    <div className="csv-trades-list">
-                      <div
-                        className="csv-trade-preview-header"
-                        aria-hidden="true"
-                      >
-                        <span>{t('trade-import.table.symbol')}</span>
-                        <span>{t('trade-import.table.date')}</span>
-                        <span>{t('trade-import.table.direction')}</span>
-                        <span>{t('trade-import.table.position')}</span>
-                        <span>{t('trade-import.table.result')}</span>
-                      </div>
-                      {importResult.importedTrades.slice(0, 5).map((trade) => (
-                        <button
-                          key={trade.filePath}
-                          type="button"
-                          className="csv-trade-preview-item"
-                          onClick={() =>
-                            void plugin.openFile(trade.filePath, false)
-                          }
-                        >
-                          <span className="csv-trade-symbol">
-                            {trade.symbol}
-                          </span>
-                          <span className="csv-trade-date">
-                            {new Date(trade.entryTime).toLocaleDateString()}
-                          </span>
-                          <span
-                            className={`csv-trade-direction ${trade.direction}`}
-                          >
-                            {trade.direction.toUpperCase()}
-                          </span>
-                          <span className="csv-trade-quantity">
-                            {formatValue({
-                              kind: 'positionSize',
-                              value: trade.quantity,
-                            })}{' '}
-                            @{' '}
-                            {formatValue({
-                              kind: 'price',
-                              value: trade.entryPrice,
-                              currencyCode: plugin.settings.general?.currency,
-                            })}
-                          </span>
-                          <span
-                            className={`csv-trade-status ${trade.status.toLowerCase()}`}
-                          >
-                            {typeof trade.profitLoss === 'number' &&
-                            trade.profitLoss !== 0
-                              ? formatValue({
-                                  kind: 'pnl',
-                                  value: trade.profitLoss,
-                                  currencyCode:
-                                    plugin.settings.general?.currency,
-                                })
-                              : trade.status}
-                          </span>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                )}
-                {preview.diagnostics.length > 0 && (
-                  <CollapsibleSection
-                    title={t('csv.results.errors-header', {
-                      count: String(preview.diagnostics.length),
-                    })}
-                    defaultOpen={importResult.writtenCount === 0}
-                    className="csv-results-problems"
-                  >
-                    <div className="import-results-errors">
-                      <div className="csv-error-group-body">
-                        {preview.diagnostics.map((diagnostic) => (
-                          <div
-                            key={`${diagnostic.code}-${diagnostic.message}`}
-                            className="csv-error-group-example"
-                          >
-                            <strong>
-                              {diagnostic.severity ??
-                                t('trade-import.diagnostic.info')}
-                            </strong>
-                            {' — '}
-                            {diagnostic.message}
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </CollapsibleSection>
-                )}
+                <TradeImportCompletionSummary
+                  plugin={plugin}
+                  result={importResult}
+                />
+                <TradeImportDiagnostics
+                  diagnostics={preview.diagnostics}
+                  defaultOpen={importResult.writtenCount === 0}
+                  className="csv-results-problems"
+                />
                 {failedPreviewRows.length > 0 && (
                   <CollapsibleSection
                     title={t('csv.results.errors-header', {
@@ -2755,73 +2645,15 @@ export const CSVImport = memo<CSVImportProps>(({ plugin }) => {
                 </div>
               </div>
             ) : (
-              <>
-                <p>
-                  {t('trade-import.preview.summary', {
-                    previewCount: String(preview.summary.previewTradeCount),
-                    failedCount: String(preview.summary.failedRowCount),
-                    incompleteCount: String(
-                      preview.summary.skippedIncompleteCount
-                    ),
-                  })}
-                </p>
-                {preview.diagnostics.length > 0 && (
-                  <ul className="journalit-trade-import-diagnostics">
-                    {preview.diagnostics.map((diagnostic) => (
-                      <li key={`${diagnostic.code}-${diagnostic.message}`}>
-                        {diagnostic.severity ??
-                          t('trade-import.diagnostic.info')}
-                        : {diagnostic.message}
-                      </li>
-                    ))}
-                  </ul>
-                )}
-                <div className="csv-preview-table-wrapper">
-                  <table className="csv-preview-table">
-                    <thead>
-                      <tr>
-                        <th>{t('trade-import.table.status')}</th>
-                        <th>{t('trade-import.table.symbol')}</th>
-                        <th>{t('trade-import.table.direction')}</th>
-                        <th>{t('trade-import.table.entry-time')}</th>
-                        <th>{t('trade-import.table.quantity')}</th>
-                        {hasPreviewMessages && (
-                          <th>{t('trade-import.table.message')}</th>
-                        )}
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {renderedClassified.map((item) => (
-                        <tr key={item.itemId}>
-                          <td>{item.classification}</td>
-                          <td>{item.preview.symbol}</td>
-                          <td>{item.preview.direction}</td>
-                          <td>{item.preview.entryTime}</td>
-                          <td>{item.preview.quantity}</td>
-                          {hasPreviewMessages && <td>{item.message ?? ''}</td>}
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-                <div className="journalit-trade-import-actions">
-                  <button
-                    disabled={busy || importCompleted}
-                    onClick={() => void cancelPreview()}
-                  >
-                    {t('trade-import.action.cancel-preview')}
-                  </button>
-                  <button
-                    className="journalit-trade-import-confirm-button"
-                    disabled={
-                      busy || importCompleted || importablePreviewCount < 1
-                    }
-                    onClick={() => void confirmImport()}
-                  >
-                    {t('trade-import.action.confirm')}
-                  </button>
-                </div>
-              </>
+              <TradeImportPreviewReview
+                busy={busy}
+                classified={classified}
+                importCompleted={importCompleted}
+                onCancel={() => void cancelPreview()}
+                onConfirm={() => void confirmImport()}
+                preview={preview}
+                visibleClassified={renderedClassified}
+              />
             )}
           </section>
         )}

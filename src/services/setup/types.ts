@@ -4,7 +4,7 @@ import type { LabelColor } from '../../types/labelColor';
 
 export type SetupStatus = 'testing' | 'active' | 'archived';
 
-type SetupDirection = 'long' | 'short' | 'both';
+export type SetupDirection = 'long' | 'short' | 'both';
 
 export type SetupRuleCategory =
   | 'context'

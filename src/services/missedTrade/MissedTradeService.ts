@@ -19,11 +19,15 @@ import { calculatePersistableRMultiple } from '../../components/forms/trade/vali
 import { MissedTradeFormData } from '../../components/missedTrade/types';
 import { eventBus } from '../events';
 import { LossReviewData } from '../backend/types';
-import { forceMetadataCacheRefresh } from '../../utils/dataRefresh';
+import {
+  forceMetadataCacheRefresh,
+  readFrontmatterFromDisk,
+} from '../../utils/dataRefresh';
 import { Mutex } from '../../utils/mutex';
 import { safeString } from '../../utils/safeString';
 import { getDefaultTradeTemplateMetadata } from '../templates/defaultTradeTemplateMetadata';
 import { serializeIdealExitFrontmatter } from '../trade/core/TradeFrontmatterCodec';
+import type { PreviousTagAssignments } from '../options/CustomOptionsService';
 
 function isTradeFolderPath(path: string): boolean {
   return /\/trades\//.test(path);
@@ -94,6 +98,33 @@ export class MissedTradeService extends CustomDataService {
     };
   }
 
+  private getAssignedTags(data: MissedTradeFormData): string[] {
+    return [...(data.tags ?? []), ...(data.customTags ?? [])];
+  }
+
+  private async getStoredAssignedTags(filePath: string): Promise<string[]> {
+    const file = this.app.vault.getAbstractFileByPath(filePath);
+    if (!(file instanceof TFile)) return [];
+    const frontmatter = await readFrontmatterFromDisk(this.app, file);
+    return Array.isArray(frontmatter?.tags)
+      ? frontmatter.tags.filter(
+          (tag: unknown): tag is string => typeof tag === 'string'
+        )
+      : [];
+  }
+
+  private runWithTagAssignments<T>(
+    data: MissedTradeFormData,
+    operation: () => Promise<T>,
+    previousTags: PreviousTagAssignments = []
+  ): Promise<T> {
+    return this.getPlugin().optionsService.runWithTagAssignments(
+      this.getAssignedTags(data),
+      operation,
+      previousTags
+    );
+  }
+
   
   private getPlugin(): JournalitPlugin {
     if (!this.plugin) {
@@ -152,6 +183,15 @@ export class MissedTradeService extends CustomDataService {
 
   
   public async createMissedTrade(
+    data: MissedTradeFormData,
+    options?: { suppressAutoOpen?: boolean; deferPostCreateTasks?: boolean }
+  ): Promise<string> {
+    return this.runWithTagAssignments(data, () =>
+      this.createMissedTradeInternal(data, options)
+    );
+  }
+
+  private async createMissedTradeInternal(
     data: MissedTradeFormData,
     options?: { suppressAutoOpen?: boolean; deferPostCreateTasks?: boolean }
   ): Promise<string> {
@@ -282,6 +322,17 @@ export class MissedTradeService extends CustomDataService {
     data: MissedTradeFormData,
     filePath: string
   ): Promise<string> {
+    return this.runWithTagAssignments(
+      data,
+      () => this.updateMissedTradeInternal(data, filePath),
+      () => this.getStoredAssignedTags(filePath)
+    );
+  }
+
+  private async updateMissedTradeInternal(
+    data: MissedTradeFormData,
+    filePath: string
+  ): Promise<string> {
     try {
       
       if (!data.entryTime) throw new Error('Entry time is required');
@@ -404,6 +455,9 @@ export class MissedTradeService extends CustomDataService {
       frontmatterData.rebate = data.rebate;
       frontmatterData.riskAmount = data.riskAmount;
       frontmatterData.stopLoss = data.stopLoss;
+      frontmatterData.currency = data.currency;
+      frontmatterData.fxRate = data.fxRate;
+      frontmatterData.fxRateBaseCurrency = data.fxRateBaseCurrency;
       frontmatterData.mae = data.mae;
       frontmatterData.mfe = data.mfe;
       frontmatterData.maePrice = data.maePrice;
@@ -854,6 +908,13 @@ export class MissedTradeService extends CustomDataService {
         ? `hasExplicitCommission: ${data.hasExplicitCommission}`
         : null,
       data.fees !== undefined ? `fees: ${data.fees}` : null,
+
+      
+      data.currency ? `currency: ${data.currency}` : null,
+      data.fxRate !== undefined ? `fxRate: ${data.fxRate}` : null,
+      data.fxRateBaseCurrency
+        ? `fxRateBaseCurrency: ${data.fxRateBaseCurrency}`
+        : null,
 
       
       data.assetType ? `assetType: ${data.assetType}` : null,

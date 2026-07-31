@@ -40,7 +40,7 @@ const COMPETING_ESCAPE_SURFACE_SELECTOR = [
   '.journalit-modal-overlay',
   '.journalit-combobox[data-is-open="true"]',
   '.journalit-combobox.combobox-dropdown--portal',
-  '.folder-browser-dropdown',
+  '.journalit-folder-browser-dropdown',
   '.journalit-trade-import-dropdown-menu--portal',
   '.journalit-trade-import-template-menu--portal',
   '.modal-container',

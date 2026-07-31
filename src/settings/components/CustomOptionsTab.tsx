@@ -15,7 +15,11 @@ import {
   Lock,
   ChevronDown,
 } from '../../components/shared/icons/ObsidianIcon';
-import { App, Notice, Modal } from 'obsidian';
+import {
+  showActionConfirmationModal,
+  showConfirmationModal,
+} from '../../components/shared/ConfirmationModal';
+import { Notice } from 'obsidian';
 import { hasTranslation, t } from '../../lang/helpers';
 import { ErrorHandler } from '../../utils/errorHandler';
 import JournalitPlugin from '../../main';
@@ -46,100 +50,6 @@ import {
   type LabelColor,
 } from '../../types/labelColor';
 import { cssVars } from '../../styles/inlineStylePolicy';
-
-
-class AdvancedConfirmationModal extends Modal {
-  constructor(
-    app: App,
-    private message: string,
-    private onConfirm: (updateNotes: boolean) => void
-  ) {
-    super(app);
-  }
-
-  onOpen() {
-    const { contentEl } = this;
-    contentEl.createEl('p', { text: this.message });
-    const buttonContainer = contentEl.createDiv({
-      cls: 'modal-button-container journalit-modal-button-container',
-    });
-
-    
-    buttonContainer
-      .createEl('button', {
-        text: t('settings.customization.options.confirm.update-notes'),
-        cls: 'mod-cta',
-      })
-      .addEventListener('click', () => {
-        this.close();
-        this.onConfirm(true);
-      });
-
-    
-    buttonContainer
-      .createEl('button', {
-        text: t('settings.customization.options.confirm.save-name'),
-      })
-      .addEventListener('click', () => {
-        this.close();
-        this.onConfirm(false);
-      });
-
-    
-    buttonContainer
-      .createEl('button', {
-        text: t('settings.customization.options.confirm.cancel'),
-      })
-      .addEventListener('click', () => {
-        this.close();
-        
-      });
-  }
-
-  onClose() {
-    const { contentEl } = this;
-    contentEl.empty();
-  }
-}
-
-
-class ResetConfirmationModal extends Modal {
-  constructor(
-    app: App,
-    private message: string,
-    private onConfirm: () => void | Promise<void>
-  ) {
-    super(app);
-  }
-
-  onOpen() {
-    const { contentEl } = this;
-    contentEl.createEl('p', { text: this.message });
-    const buttonContainer = contentEl.createDiv({
-      cls: 'modal-button-container journalit-modal-button-container',
-    });
-
-    
-    buttonContainer
-      .createEl('button', { text: t('button.reset'), cls: 'mod-warning' })
-      .addEventListener('click', () => {
-        this.close();
-        void this.onConfirm();
-      });
-
-    
-    buttonContainer
-      .createEl('button', { text: t('button.cancel') })
-      .addEventListener('click', () => {
-        this.close();
-      });
-  }
-
-  onClose() {
-    const { contentEl } = this;
-    contentEl.empty();
-  }
-}
 
 interface CustomOptionsTabProps {
   plugin: JournalitPlugin;
@@ -1785,14 +1695,35 @@ const useCustomOptionsTabController = ({
           }
         );
 
-        
-        new AdvancedConfirmationModal(
-          plugin.app,
+        const action = await showActionConfirmationModal<
+          'update-notes' | 'save-name' | 'cancel'
+        >(plugin.app, {
           message,
-          (shouldUpdateNotes) => {
-            void performUpdate(shouldUpdateNotes);
-          }
-        ).open();
+          cancelValue: 'cancel',
+          actions: [
+            {
+              value: 'update-notes',
+              label: t('settings.customization.options.confirm.update-notes'),
+              variant: 'primary',
+            },
+            {
+              value: 'save-name',
+              label: t('settings.customization.options.confirm.save-name'),
+              variant: 'secondary',
+            },
+            {
+              value: 'cancel',
+              label: t('settings.customization.options.confirm.cancel'),
+              variant: 'secondary',
+            },
+          ],
+        });
+
+        if (action === 'update-notes') {
+          void performUpdate(true);
+        } else if (action === 'save-name') {
+          void performUpdate(false);
+        }
       } else if (type === 'instrument') {
         
         const instrument = options['instrument'].find(
@@ -1899,86 +1830,46 @@ const useCustomOptionsTabController = ({
     }
 
     try {
-      
       const message = t(
-        'settings.customization.options.confirm.remove-message',
+        type === 'tag'
+          ? 'settings.customization.options.confirm.remove-tag-message'
+          : 'settings.customization.options.confirm.remove-message',
         { option: optionKey }
       );
 
-      
-      class DeleteConfirmationModal extends Modal {
-        constructor(
-          app: App,
-          private message: string,
-          private onConfirm: () => void | Promise<void>
-        ) {
-          super(app);
-        }
+      const confirmed = await showConfirmationModal(plugin.app, {
+        message,
+        confirmLabel: t('button.delete'),
+        cancelLabel: t('button.cancel'),
+        destructive: true,
+      });
+      if (!confirmed) return;
 
-        onOpen() {
-          const { contentEl } = this;
-          contentEl.createEl('p', { text: this.message });
-          const buttonContainer = contentEl.createDiv({
-            cls: 'modal-button-container journalit-modal-button-container',
-          });
+      resetFocusState();
 
-          
-          buttonContainer
-            .createEl('button', {
-              text: t('button.delete'),
-              cls: 'mod-warning',
-            })
-            .addEventListener('click', () => {
-              this.close();
-              void this.onConfirm();
-            });
-
-          
-          buttonContainer
-            .createEl('button', { text: t('button.cancel') })
-            .addEventListener('click', () => {
-              this.close();
-            });
-        }
-
-        onClose() {
-          const { contentEl } = this;
-          contentEl.empty();
-        }
+      if (!isOptionType(type)) {
+        return;
       }
+      const optionType: OptionType = type;
 
-      
-      new DeleteConfirmationModal(plugin.app, message, async () => {
-        
-        resetFocusState();
+      const removed = await optionsService.removeOption(optionType, optionKey);
 
-        if (!isOptionType(type)) {
-          return;
-        }
-        const optionType: OptionType = type;
+      if (removed) {
+        await reloadOptionsState();
 
-        const removed = await optionsService.removeOption(
-          optionType,
-          optionKey
+        new Notice(
+          t('settings.customization.options.notice.removed', {
+            option: optionKey,
+          })
         );
-
-        if (removed) {
-          await reloadOptionsState();
-
-          new Notice(
-            t('settings.customization.options.notice.removed', {
-              option: optionKey,
-            })
-          );
-        } else {
-          ErrorHandler.showError(
-            new Error(t('settings.customization.options.notice.remove-failed')),
-            ErrorHandler.createContext(
-              `remove ${getDisplayName(type).toLowerCase()} option`
-            )
-          );
-        }
-      }).open();
+      } else {
+        ErrorHandler.showError(
+          new Error(t('settings.customization.options.notice.remove-failed')),
+          ErrorHandler.createContext(
+            `remove ${getDisplayName(type).toLowerCase()} option`
+          )
+        );
+      }
     } catch (error) {
       ErrorHandler.handleError(
         error,
@@ -1993,40 +1884,47 @@ const useCustomOptionsTabController = ({
   const resetOptionsType = async (type: string) => {
     try {
       const message = t(
-        'settings.customization.options.confirm.reset-message',
+        type === 'tag'
+          ? 'settings.customization.options.confirm.reset-tag-message'
+          : 'settings.customization.options.confirm.reset-message',
         { type: getDisplayName(type).toLowerCase() }
       );
 
-      new ResetConfirmationModal(plugin.app, message, async () => {
-        resetFocusState();
-        if (!isOptionType(type)) {
-          return;
-        }
-        const optionType: OptionType = type;
+      const confirmed = await showConfirmationModal(plugin.app, {
+        message,
+        confirmLabel: t('button.reset'),
+        cancelLabel: t('button.cancel'),
+        destructive: true,
+      });
+      if (!confirmed) return;
 
-        const didChange =
-          await optionsService.resetOptionsToDefaults(optionType);
+      resetFocusState();
+      if (!isOptionType(type)) {
+        return;
+      }
+      const optionType: OptionType = type;
 
-        if (!didChange) {
-          new Notice(
-            t('settings.customization.options.notice.no-options-to-reset', {
-              type: getDisplayName(type).toLowerCase(),
-            })
-          );
-          return;
-        }
+      const didChange = await optionsService.resetOptionsToDefaults(optionType);
 
-        await reloadOptionsState({
-          types: [type],
-          mergeWithPrevious: true,
-        });
-
+      if (!didChange) {
         new Notice(
-          t('settings.customization.options.notice.reset-success', {
+          t('settings.customization.options.notice.no-options-to-reset', {
             type: getDisplayName(type).toLowerCase(),
           })
         );
-      }).open();
+        return;
+      }
+
+      await reloadOptionsState({
+        types: [type],
+        mergeWithPrevious: true,
+      });
+
+      new Notice(
+        t('settings.customization.options.notice.reset-success', {
+          type: getDisplayName(type).toLowerCase(),
+        })
+      );
     } catch (error) {
       ErrorHandler.handleError(
         error,

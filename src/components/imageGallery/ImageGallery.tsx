@@ -12,7 +12,7 @@ import {
   matchesImageGalleryTradeLogFilters,
 } from '../../services/imageGallery';
 import { useDisplayFormatter } from '../../hooks/useDisplayPolicy';
-import { useEventBusMultiple } from '../../hooks/useEventBus';
+import { useEventBus, useEventBusMultiple } from '../../hooks/useEventBus';
 import { t } from '../../lang/helpers';
 import {
   useGuideAction,
@@ -41,6 +41,9 @@ import {
 import {
   filterImageGalleryItemsBySource,
   groupImageGalleryItems,
+  reconcileImageGalleryIndex,
+  reconcileImageGalleryItem,
+  shouldReloadImageGalleryForSettingsChange,
   shouldUpdateImageGalleryViewport,
   sortImageGalleryItems,
 } from './ImageGalleryUtils';
@@ -72,6 +75,7 @@ interface ImageGalleryProps extends ImageGalleryControls {
 export const IMAGE_GALLERY_SOURCE_TYPES: ImageGallerySourceType[] = [
   'all',
   'trade',
+  'folder',
   'reviews',
   'drc',
   'weekly',
@@ -90,14 +94,15 @@ const IMAGE_GALLERY_CHANGE_EVENTS: EventName[] = [
   'missed-trade:changed',
   'backtest-trade:changed',
   'review:changed',
-  'settings:changed',
   'options:changed',
   'account:changed',
   'folder-path:changed',
+  'image-gallery:changed',
 ];
 
 interface ImageGalleryState {
   items: ImageGalleryItem[];
+  totalItemCount: number;
   loading: boolean;
   loadError: string | null;
   viewport: { width: number; height: number; scrollTop: number };
@@ -105,47 +110,59 @@ interface ImageGalleryState {
 
 type ImageGalleryAction =
   | { type: 'load-start' }
-  | { type: 'load-success'; items: ImageGalleryItem[] }
+  | {
+      type: 'load-success';
+      items: ImageGalleryItem[];
+      totalItemCount: number;
+    }
   | { type: 'load-error'; error: string }
   | { type: 'viewport'; viewport: ImageGalleryState['viewport'] };
 
 const INITIAL_IMAGE_GALLERY_STATE: ImageGalleryState = {
   items: [],
+  totalItemCount: 0,
   loading: true,
   loadError: null,
   viewport: { width: 0, height: 0, scrollTop: 0 },
 };
 
-function useVisibleImageGallery(input: {
+interface VisibleImageGalleryInput {
   items: ImageGalleryItem[];
   sort: ImageGallerySort;
   sourceType: ImageGallerySourceType;
   tradeLogFilters: TradeLogFilters;
   viewMode: ImageGalleryViewMode;
-}) {
-  const visibleItems = useMemo(
-    () =>
-      sortImageGalleryItems(
-        filterImageGalleryItemsBySource(
-          input.items.filter((item) =>
-            matchesImageGalleryTradeLogFilters(item, input.tradeLogFilters)
-          ),
-          input.sourceType
-        ),
-        input.sort
+}
+
+function projectVisibleImageGallery(input: VisibleImageGalleryInput) {
+  const visibleItems = sortImageGalleryItems(
+    filterImageGalleryItemsBySource(
+      input.items.filter((item) =>
+        matchesImageGalleryTradeLogFilters(item, input.tradeLogFilters)
       ),
-    [input.items, input.sort, input.sourceType, input.tradeLogFilters]
+      input.sourceType
+    ),
+    input.sort
   );
-  const groups = useMemo(
-    () => groupImageGalleryItems(visibleItems, input.viewMode),
-    [input.viewMode, visibleItems]
-  );
-  const fullscreenItems = useMemo(
-    () => groups.flatMap((group) => group.items),
-    [groups]
-  );
+  const groups = groupImageGalleryItems(visibleItems, input.viewMode);
+  const fullscreenItems = groups.flatMap((group) => group.items);
 
   return { visibleItems, groups, fullscreenItems };
+}
+
+function useVisibleImageGallery(input: VisibleImageGalleryInput) {
+  const { items, sort, sourceType, tradeLogFilters, viewMode } = input;
+  return useMemo(
+    () =>
+      projectVisibleImageGallery({
+        items,
+        sort,
+        sourceType,
+        tradeLogFilters,
+        viewMode,
+      }),
+    [items, sort, sourceType, tradeLogFilters, viewMode]
+  );
 }
 
 function imageGalleryReducer(
@@ -156,7 +173,13 @@ function imageGalleryReducer(
     case 'load-start':
       return { ...state, loading: true, loadError: null };
     case 'load-success':
-      return { ...state, items: action.items, loading: false, loadError: null };
+      return {
+        ...state,
+        items: action.items,
+        totalItemCount: action.totalItemCount,
+        loading: false,
+        loadError: null,
+      };
     case 'load-error':
       return { ...state, loading: false, loadError: action.error };
     case 'viewport':
@@ -207,49 +230,39 @@ export const ImageGallery: React.FC<ImageGalleryProps> = ({
     registerTagButtonTarget,
     registerAnnotationPanelTarget,
   } = useImageGalleryGuideTargets();
-  const [{ items, loading, loadError, viewport }, dispatch] = useReducer(
-    imageGalleryReducer,
-    INITIAL_IMAGE_GALLERY_STATE
-  );
+  const [{ items, totalItemCount, loading, loadError, viewport }, dispatch] =
+    useReducer(imageGalleryReducer, INITIAL_IMAGE_GALLERY_STATE);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const lastFullscreenIndexRef = useRef(0);
   const viewportRef = useRef(INITIAL_IMAGE_GALLERY_STATE.viewport);
   const viewportFrameRef = useRef<number | null>(null);
   const serviceRef = useRef<ImageGalleryService | null>(service);
-  const loadGenerationRef = useRef(0);
+  const { loadItems, fullscreenItemIdRef } = useImageGalleryLoader({
+    serviceRef,
+    dispatch,
+    setAnnotationEditorItem,
+    setFullscreenIndex,
+    onItemCountChange,
+    sort,
+    sourceType,
+    tradeLogFilters,
+    viewMode,
+  });
 
   const useRMultiples = plugin.settings.trade?.displayRMultiples ?? false;
   const dateFormat = plugin.settings.trade?.dateFormat;
   const isPerformanceMasked = shouldMask(useRMultiples ? 'rMultiple' : 'pnl');
   const shouldBlurImages = shouldMask('pnl') || shouldMask('rMultiple');
 
-  const loadItems = useCallback(async () => {
-    const loadGeneration = loadGenerationRef.current + 1;
-    loadGenerationRef.current = loadGeneration;
-    dispatch({ type: 'load-start' });
-    try {
-      const nextItems = await serviceRef.current!.getAllGalleryItems();
-      if (loadGenerationRef.current !== loadGeneration) return;
-      dispatch({ type: 'load-success', items: nextItems });
-      onItemCountChange?.(nextItems.length);
-    } catch (error) {
-      if (loadGenerationRef.current !== loadGeneration) return;
-      console.error('[ImageGallery] Failed to load image gallery:', error);
-      dispatch({
-        type: 'load-error',
-        error: t('imageGallery.error.load-failed'),
-      });
-    }
-  }, [onItemCountChange]);
-
   useEffect(() => {
     void loadItems();
-  }, [loadItems]);
+  }, [loadItems, tradeLogFilters]);
 
-  useEventBusMultiple(IMAGE_GALLERY_CHANGE_EVENTS, () => {
-    serviceRef.current?.invalidate();
-    void loadItems();
-  });
+  useImageGalleryInvalidation(
+    serviceRef,
+    loadItems,
+    tradeLogFilters.sessionLogTags.length > 0
+  );
   useImageGalleryCustomFieldInvalidation(plugin, serviceRef, loadItems);
 
   useEffect(() => {
@@ -317,8 +330,9 @@ export const ImageGallery: React.FC<ImageGalleryProps> = ({
     fullscreenIndex === null
       ? null
       : (fullscreenItems[fullscreenIndex] ?? null);
+  fullscreenItemIdRef.current = fullscreenItem?.id ?? null;
   const emptyStateKind = getImageGalleryEmptyStateKind({
-    allItemCount: items.length,
+    allItemCount: totalItemCount,
     visibleItemCount: visibleItems.length,
     sourceType,
     tradeLogFilters,
@@ -338,7 +352,8 @@ export const ImageGallery: React.FC<ImageGalleryProps> = ({
       await serviceRef.current!.updateImageAnnotation(
         item.sourcePath,
         item.imagePath,
-        annotation
+        annotation,
+        item.sourceType
       );
       setAnnotationEditorItem(null);
       await loadItems();
@@ -347,19 +362,21 @@ export const ImageGallery: React.FC<ImageGalleryProps> = ({
   );
 
   const handleCloseFullscreen = useCallback(() => {
+    fullscreenItemIdRef.current = null;
     setFullscreenIndex(null);
     setAnnotationEditorItem(null);
-  }, []);
+  }, [fullscreenItemIdRef]);
 
   const handleOpenFullscreen = useCallback(
     (itemId: string) => {
       const index = fullscreenItems.findIndex((item) => item.id === itemId);
       if (index < 0) return;
       lastFullscreenIndexRef.current = index;
+      fullscreenItemIdRef.current = itemId;
       setFullscreenIndex(index);
       emitGuideAction(TRADE_LOG_IMAGE_GALLERY_FULLSCREEN_OPENED_ACTION_ID);
     },
-    [emitGuideAction, fullscreenItems]
+    [emitGuideAction, fullscreenItemIdRef, fullscreenItems]
   );
 
   const handleEditAnnotation = useCallback(
@@ -373,12 +390,13 @@ export const ImageGallery: React.FC<ImageGalleryProps> = ({
   const handleNavigateFullscreen = useCallback(
     (index: number) => {
       lastFullscreenIndexRef.current = index;
+      fullscreenItemIdRef.current = fullscreenItems[index]?.id ?? null;
       setFullscreenIndex(index);
       if (annotationEditorItem) {
         setAnnotationEditorItem(fullscreenItems[index] ?? null);
       }
     },
-    [annotationEditorItem, fullscreenItems]
+    [annotationEditorItem, fullscreenItemIdRef, fullscreenItems]
   );
 
   useEffect(() => {
@@ -401,6 +419,7 @@ export const ImageGallery: React.FC<ImageGalleryProps> = ({
         );
         const item = fullscreenItems[itemIndex] ?? null;
         if (item) {
+          fullscreenItemIdRef.current = item.id;
           setFullscreenIndex(itemIndex);
           setAnnotationEditorItem(item);
         }
@@ -411,7 +430,7 @@ export const ImageGallery: React.FC<ImageGalleryProps> = ({
         setAnnotationEditorItem(null);
       }
     },
-    [fullscreenItems, handleCloseFullscreen]
+    [fullscreenItemIdRef, fullscreenItems, handleCloseFullscreen]
   );
 
   useGuideBackHandler(handleGuideBack);
@@ -425,7 +444,7 @@ export const ImageGallery: React.FC<ImageGalleryProps> = ({
           description={loadError}
           title={t('imageGallery.empty.error.title')}
         />
-      ) : items.length === 0 ? (
+      ) : totalItemCount === 0 ? (
         <ImageGalleryEmptyState
           kind="no-images"
           registerTarget={registerEmptyStateTarget}
@@ -478,6 +497,123 @@ export const ImageGallery: React.FC<ImageGalleryProps> = ({
 };
 
 ImageGallery.displayName = 'ImageGallery';
+
+function useImageGalleryLoader(input: {
+  serviceRef: React.RefObject<ImageGalleryService | null>;
+  dispatch: React.Dispatch<ImageGalleryAction>;
+  setAnnotationEditorItem: React.Dispatch<
+    React.SetStateAction<ImageGalleryItem | null>
+  >;
+  setFullscreenIndex: React.Dispatch<React.SetStateAction<number | null>>;
+  onItemCountChange?: (count: number) => void;
+  sort: ImageGallerySort;
+  sourceType: ImageGallerySourceType;
+  tradeLogFilters: TradeLogFilters;
+  viewMode: ImageGalleryViewMode;
+}): {
+  loadItems: () => Promise<void>;
+  fullscreenItemIdRef: React.RefObject<string | null>;
+} {
+  const {
+    serviceRef,
+    dispatch,
+    setAnnotationEditorItem,
+    setFullscreenIndex,
+    onItemCountChange,
+    sort,
+    sourceType,
+    tradeLogFilters,
+    viewMode,
+  } = input;
+  const loadGenerationRef = useRef(0);
+  const fullscreenItemIdRef = useRef<string | null>(null);
+  const presentationRef = useRef({
+    sort,
+    sourceType,
+    tradeLogFilters,
+    viewMode,
+  });
+  presentationRef.current = {
+    sort,
+    sourceType,
+    tradeLogFilters,
+    viewMode,
+  };
+
+  const loadItems = useCallback(async () => {
+    const loadGeneration = loadGenerationRef.current + 1;
+    loadGenerationRef.current = loadGeneration;
+    dispatch({ type: 'load-start' });
+    try {
+      const { items: nextItems, totalItemCount } =
+        await serviceRef.current!.getItemsWithTotal(
+          presentationRef.current.tradeLogFilters
+        );
+      if (loadGenerationRef.current !== loadGeneration) return;
+      dispatch({
+        type: 'load-success',
+        items: nextItems,
+        totalItemCount,
+      });
+      setAnnotationEditorItem((currentItem) =>
+        reconcileImageGalleryItem(currentItem, nextItems)
+      );
+      const currentFullscreenItemId = fullscreenItemIdRef.current;
+      if (currentFullscreenItemId) {
+        const nextFullscreenItems = projectVisibleImageGallery({
+          items: nextItems,
+          ...presentationRef.current,
+        }).fullscreenItems;
+        const nextFullscreenIndex = reconcileImageGalleryIndex(
+          currentFullscreenItemId,
+          nextFullscreenItems
+        );
+        setFullscreenIndex(nextFullscreenIndex);
+        if (nextFullscreenIndex === null) {
+          fullscreenItemIdRef.current = null;
+          setAnnotationEditorItem(null);
+        }
+      }
+      onItemCountChange?.(totalItemCount);
+    } catch (error) {
+      if (loadGenerationRef.current !== loadGeneration) return;
+      console.error('[ImageGallery] Failed to load image gallery:', error);
+      dispatch({
+        type: 'load-error',
+        error: t('imageGallery.error.load-failed'),
+      });
+    }
+  }, [
+    dispatch,
+    onItemCountChange,
+    serviceRef,
+    setAnnotationEditorItem,
+    setFullscreenIndex,
+  ]);
+
+  return { loadItems, fullscreenItemIdRef };
+}
+
+function useImageGalleryInvalidation(
+  serviceRef: React.RefObject<ImageGalleryService | null>,
+  loadItems: () => Promise<void>,
+  sessionLogFilterActive: boolean
+): void {
+  const invalidateAndReload = useCallback(() => {
+    serviceRef.current?.invalidate();
+    void loadItems();
+  }, [loadItems, serviceRef]);
+  useEventBusMultiple(IMAGE_GALLERY_CHANGE_EVENTS, invalidateAndReload);
+  useEventBus('drc:session-log-index-invalidated', () => {
+    if (!sessionLogFilterActive) return;
+    void loadItems();
+  });
+  useEventBus('settings:changed', (payload) => {
+    
+    if (!shouldReloadImageGalleryForSettingsChange(payload)) return;
+    invalidateAndReload();
+  });
+}
 
 function useImageGalleryCustomFieldInvalidation(
   plugin: JournalitPlugin,

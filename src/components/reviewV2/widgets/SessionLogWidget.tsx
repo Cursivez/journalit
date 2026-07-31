@@ -350,7 +350,7 @@ export const SessionLogWidget: React.FC<SessionLogWidgetProps> = React.memo(
                 filePath={filePath}
                 timelineEntries={group.entries}
                 compact
-                composerInitiallyVisible={group.entries.length === 0}
+                composerInitiallyVisible={false}
                 showComposerToggle
                 showFilters={false}
                 timestampSessionWindow={group.sessionWindow}

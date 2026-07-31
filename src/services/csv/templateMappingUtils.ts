@@ -6,6 +6,7 @@ import {
   type ManualImportMode,
   type MultiColumnMappings,
 } from './types';
+import { canonicalTradeImportBrokerId } from '../tradeImport/brokerIds';
 
 const TRADE_FIELD_SET = new Set<string>(TRADE_FIELDS);
 const CUSTOM_FIELD_PREFIX = 'custom:';
@@ -193,6 +194,8 @@ export function normalizeTemplate(template: LocalCSVTemplate): {
     template.header_row_index
   );
 
+  const normalizedBroker = canonicalTradeImportBrokerId(template.broker_type);
+
   const rawMappings = template.column_mappings || {};
   const canonicalShape = isCanonicalV2Shape(rawMappings);
   const canonicalWithoutSanitization = canonicalShape
@@ -205,11 +208,13 @@ export function normalizeTemplate(template: LocalCSVTemplate): {
       JSON.stringify(normalizedMappings) ||
     template.mapping_version !== 2 ||
     template.manual_mode !== normalizedMode ||
-    template.header_row_index !== normalizedHeaderRowIndex;
+    template.header_row_index !== normalizedHeaderRowIndex ||
+    template.broker_type !== normalizedBroker;
 
   return {
     template: {
       ...template,
+      broker_type: normalizedBroker,
       mapping_version: 2,
       manual_mode: normalizedMode,
       header_row_index: normalizedHeaderRowIndex,

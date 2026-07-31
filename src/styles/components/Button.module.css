@@ -5,10 +5,11 @@
   border-radius: var(--border-radius-md);
   font-weight: 500;
   cursor: pointer;
-  transition: background-color var(--transition-fast), 
-              border-color var(--transition-fast), 
-              color var(--transition-fast), 
-              box-shadow var(--transition-fast);
+  transition:
+    background-color var(--transition-fast),
+    border-color var(--transition-fast),
+    color var(--transition-fast),
+    box-shadow var(--transition-fast);
   gap: var(--spacing-sm);
   user-select: none;
   outline: none;
@@ -108,7 +109,7 @@
 }
 
 .loading::after {
-  content: "";
+  content: '';
   position: absolute;
   width: 16px;
   height: 16px;

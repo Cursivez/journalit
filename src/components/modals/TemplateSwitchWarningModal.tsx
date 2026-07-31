@@ -1,94 +1,21 @@
 
 
-import { App, Modal } from 'obsidian';
+import type { App } from 'obsidian';
 import React from 'react';
-import { createRoot, Root } from 'react-dom/client';
+import { createRoot } from 'react-dom/client';
 import { AlertTriangle } from '../shared/icons/ObsidianIcon';
-import { Button } from '../ui/Button';
 import { t } from '../../lang/helpers';
+import { showActionConfirmationModal } from '../shared/ConfirmationModal';
 
 interface TemplateSwitchWarningOptions {
-  app: App;
   fromTemplateName: string;
   toTemplateName: string;
   hasContent: boolean;
-  onConfirm: () => void;
-  onCancel?: () => void;
-}
-
-class TemplateSwitchWarningModal extends Modal {
-  private options: TemplateSwitchWarningOptions;
-  private root: Root | null = null;
-  private confirmCalled = false;
-
-  constructor(options: TemplateSwitchWarningOptions) {
-    super(options.app);
-    this.options = options;
-  }
-
-  onOpen() {
-    const { contentEl } = this;
-    contentEl.empty();
-
-    
-    const container = contentEl.createDiv();
-    this.root = createRoot(container);
-    this.root.render(
-      <TemplateSwitchWarningContent
-        {...this.options}
-        onClose={() => this.close()}
-        markConfirmCalled={() => {
-          this.confirmCalled = true;
-        }}
-      />
-    );
-
-    
-    contentEl.addClass('template-switch-warning-modal');
-    contentEl.addClass('jl-modal-container');
-  }
-
-  onClose() {
-    
-    if (!this.confirmCalled) {
-      this.options.onCancel?.();
-    }
-
-    if (this.root) {
-      this.root.unmount();
-      this.root = null;
-    }
-  }
 }
 
 
-const TemplateSwitchWarningContent: React.FC<
-  TemplateSwitchWarningOptions & {
-    onClose: () => void;
-    markConfirmCalled: () => void;
-  }
-> = React.memo(
-  ({
-    fromTemplateName,
-    toTemplateName,
-    hasContent,
-    onConfirm,
-    onCancel,
-    onClose,
-    markConfirmCalled,
-  }) => {
-    const handleProceed = () => {
-      markConfirmCalled();
-      onConfirm();
-      onClose();
-    };
-
-    const handleCancel = () => {
-      markConfirmCalled();
-      onCancel?.();
-      onClose();
-    };
-
+const TemplateSwitchWarningContent: React.FC<TemplateSwitchWarningOptions> =
+  React.memo(({ fromTemplateName, toTemplateName, hasContent }) => {
     return (
       <div className="template-switch-warning-content">
         
@@ -131,28 +58,9 @@ const TemplateSwitchWarningContent: React.FC<
         <p className="template-switch-warning-note">
           {t('modal.template-switch.cannot-undo')}
         </p>
-
-        
-        <div className="template-switch-warning-actions">
-          <Button
-            variant="plain"
-            onClick={handleCancel}
-            className="template-switch-warning-button--cancel"
-          >
-            {t('button.cancel')}
-          </Button>
-          <Button
-            variant="primary"
-            onClick={handleProceed}
-            className="template-switch-warning-button--confirm"
-          >
-            {t('modal.template-switch.button.switch')}
-          </Button>
-        </div>
       </div>
     );
-  }
-);
+  });
 
 TemplateSwitchWarningContent.displayName = 'TemplateSwitchWarningContent';
 
@@ -163,15 +71,32 @@ export function showTemplateSwitchWarning(
   toTemplateName: string,
   hasContent: boolean
 ): Promise<boolean> {
-  return new Promise((resolve) => {
-    const modal = new TemplateSwitchWarningModal({
-      app,
-      fromTemplateName,
-      toTemplateName,
-      hasContent,
-      onConfirm: () => resolve(true),
-      onCancel: () => resolve(false),
-    });
-    modal.open();
+  return showActionConfirmationModal(app, {
+    cancelValue: false,
+    renderContent: (contentEl) => {
+      const container = contentEl.createDiv();
+      const root = createRoot(container);
+      root.render(
+        <TemplateSwitchWarningContent
+          fromTemplateName={fromTemplateName}
+          toTemplateName={toTemplateName}
+          hasContent={hasContent}
+        />
+      );
+      return () => root.unmount();
+    },
+    actions: [
+      {
+        value: false,
+        label: t('button.cancel'),
+        variant: 'secondary',
+        initialFocus: true,
+      },
+      {
+        value: true,
+        label: t('modal.template-switch.button.switch'),
+        variant: 'primary',
+      },
+    ],
   });
 }

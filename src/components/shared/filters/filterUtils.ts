@@ -23,6 +23,15 @@ import {
 } from '../../../services/trade/core/TradeAccountIdentity';
 import { getTradeDirectionDisplayKind } from '../../../services/trade/core/TradeDirection';
 import { createTickerMatcher } from '../../../utils/tickerMatching';
+import { hasCanonicalProjectionIdentity } from '../../../services/trade/core/CanonicalProjectionFields';
+
+const ALL_SELECTABLE_TRADE_STATUSES = [
+  'open',
+  'win',
+  'loss',
+  'breakeven',
+  'cancelled',
+] as const;
 
 function asRecord(value: unknown): Record<string, unknown> | undefined {
   return value && typeof value === 'object' && !Array.isArray(value)
@@ -239,13 +248,26 @@ export function applyTradeFilters<T extends object>(
 
   
   if (filters.statuses?.length > 0) {
+    const explicitlyIncludesAllStatuses = ALL_SELECTABLE_TRADE_STATUSES.every(
+      (status) => filters.statuses.includes(status)
+    );
     filtered = filtered.filter((t) => {
+      if ((t as { tradeStatus?: string }).tradeStatus === 'CANCELLED') {
+        return filters.statuses.includes('cancelled');
+      }
       const isOpen = options.isTradeOpen
         ? options.isTradeOpen(t)
         : isTradeOpenWithContext(t);
 
       if (isOpen) {
         return filters.statuses.includes('open');
+      }
+
+      if (
+        hasCanonicalProjectionIdentity(t) &&
+        (t.authoritativePnl === null || t._originalPnlWasNull === true)
+      ) {
+        return explicitlyIncludesAllStatuses;
       }
 
       

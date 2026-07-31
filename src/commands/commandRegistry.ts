@@ -236,7 +236,7 @@ export class CommandRegistry {
       id: 'open-home',
       name: t('command.open-home'),
       callback: async () => {
-        await this.plugin.viewManager.openHomeView();
+        await this.plugin.viewManager.openHomeView('overview');
       },
     });
 
@@ -281,6 +281,40 @@ export class CommandRegistry {
 
   
   private registerMaintenanceCommands(): void {
+    this.plugin.addCommand({
+      id: 'rebuild-graph-links',
+      name: t('command.rebuild-graph-links'),
+      callback: async () => {
+        try {
+          const result = await this.plugin.graphLinkService.rebuildAll();
+          if (result.conflicts.length > 0) {
+            console.warn(
+              '[Journalit] Some graph links need attention:',
+              result.conflicts
+            );
+          }
+          if (result.failed > 0 || result.cancelled) {
+            console.error(
+              '[Journalit] Some graph links could not be rebuilt:',
+              result.errors
+            );
+            new Notice(t('notice.graph-links.rebuild-failed'));
+            return;
+          }
+          new Notice(
+            t('notice.graph-links.rebuild-complete', {
+              updated: String(result.updated),
+              unchanged: String(result.unchanged),
+              conflicted: String(result.conflicted),
+            })
+          );
+        } catch (error) {
+          console.error('Failed to rebuild graph links:', error);
+          new Notice(t('notice.graph-links.rebuild-failed'));
+        }
+      },
+    });
+
     
     this.plugin.addCommand({
       id: 'replay-onboarding',
@@ -345,6 +379,19 @@ export class CommandRegistry {
           );
           return;
         }
+
+        
+        if (guide.replayGuideId) {
+          const replayGuide = guideRegistry.getGuideById(guide.replayGuideId);
+          if (replayGuide) {
+            guide = replayGuide;
+          }
+        }
+
+        
+        
+        
+        guideService.setResolvedGuideForLeaf(activeLeaf, guide.id);
 
         const result = await guideService.startOrResumeSession({
           guideId: guide.id,

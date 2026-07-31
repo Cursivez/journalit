@@ -1,4 +1,5 @@
 import { CustomFieldValues } from '../../../types/customFields';
+import type { CanonicalProjectionClearField } from './CanonicalProjectionFields';
 
 interface TradeExecutionInput {
   time: Date | string;
@@ -24,7 +25,9 @@ export interface TradeMutationInput {
   exits?: TradeExecutionInput[];
   idealExits?: IdealExitInput[];
   dividends?: TradeDividendInput[];
-  tradeStatus?: 'OPEN' | 'CLOSED';
+  tradeStatus?: 'OPEN' | 'PARTIALLY_CLOSED' | 'CLOSED' | 'CANCELLED';
+  openQuantity?: number;
+  closedQuantity?: number;
   entryTime: Date | string;
   exitTime?: Date | string;
   entryPrice?: number;
@@ -55,6 +58,8 @@ export interface TradeMutationInput {
   }>;
   riskAmount?: number;
   currency?: string;
+  fxRate?: number;
+  fxRateBaseCurrency?: string;
   brokerBaseCurrencyPnl?: number;
   brokerBaseCurrency?: string;
   brokerBaseCurrencyPnlSource?: string;
@@ -62,13 +67,17 @@ export interface TradeMutationInput {
   mfe?: number;
   maePrice?: number;
   mfePrice?: number;
+  unrealizedPriceSnapshot?: number;
+  unrealizedPriceSnapshotTime?: Date | string;
   exchange?: string;
   expirationDate?: Date | string;
   strikePrice?: number;
   optionType?: string;
   contractSize?: number;
+  contractSymbol?: string;
   dollarPerPoint?: number;
   tickSize?: number;
+  lastBrokerSyncAt?: string;
   tickValue?: number;
   lotSize?: number;
   pipValue?: number;
@@ -83,7 +92,7 @@ export interface TradeMutationInput {
   mtComment?: string;
   originalPnl?: number;
   originalRMultiple?: number;
-  authoritativePnl?: number;
+  authoritativePnl?: number | null;
   skipDefaultRiskAmount?: boolean;
   useDirectPnLInput?: boolean;
   directPnL?: number;
@@ -97,6 +106,15 @@ export interface TradeMutationInput {
   tradeImportAccountId?: string;
   tradeImportAccountBroker?: string;
   tradeImportAccountDisplayName?: string;
+  canonicalTradeId?: string;
+  canonicalTradeVersion?: number;
+  canonicalProjectionGeneration?: string;
+  canonicalAccountId?: string;
+  canonicalBroker?: string;
+  canonicalAccountDisplayName?: string;
+  canonicalProjectionSchemaVersion?: number;
+  
+  canonicalProjectionClearFields?: CanonicalProjectionClearField[];
   tradeId?: string;
   schemaVersion?: number;
   tradeRevision?: number;

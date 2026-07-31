@@ -35,7 +35,11 @@ import { CSS } from '@dnd-kit/utilities';
 import { MetricCardSkeleton } from '../../../shared';
 import { useCurrency } from '../../../../contexts/CurrencyContext';
 import { useDisplayFormatter } from '../../../../hooks/useDisplayPolicy';
-import type { DisplayValueKind } from '../../../../services/display/DisplayPolicy';
+import { ConversionSourceLines } from '../../../shared/display/CurrencyConversionInfo';
+import type {
+  DisplayValueKind,
+  DisplayValueOptions,
+} from '../../../../services/display/DisplayPolicy';
 import { eventBus, useEventBus } from '../../../../services/events';
 import { t } from '../../../../lang/helpers';
 import { dndKitStyle } from '../../../../styles/inlineStylePolicy';
@@ -46,6 +50,7 @@ import {
 } from '../../../../utils/dateUtils';
 import { GripVertical } from '../../../shared/icons/ObsidianIcon';
 import { fetchDashboardData, type DashboardData } from '../../utils/dataUtils';
+
 import {
   createPeriodValueDelta,
   createStatDelta,
@@ -99,6 +104,103 @@ const MAE_MFE_METRICS = new Set([
   'winnerMfeP90',
   'loserMfeP90',
 ]);
+
+const RATIO_DELTA_METRICS = new Set([
+  'profitFactor',
+  'sharpeRatio',
+  'avgRR',
+  'avgRRRiskBased',
+]);
+
+export function formatTopSectionRatioOrExcursionDelta({
+  metric,
+  deltaValue,
+  displayMaeMfeTicks,
+  currency,
+  formatValue,
+}: {
+  metric: string;
+  deltaValue: number;
+  displayMaeMfeTicks: boolean;
+  currency: string;
+  formatValue: (options: DisplayValueOptions) => string;
+}): string | null {
+  if (RATIO_DELTA_METRICS.has(metric)) {
+    return `${deltaValue > 0 ? '+' : ''}${formatValue({
+      kind: 'metric',
+      value: deltaValue,
+      precision: 2,
+    })}`;
+  }
+
+  if (!MAE_MFE_METRICS.has(metric)) return null;
+
+  return displayMaeMfeTicks
+    ? `${deltaValue > 0 ? '+' : ''}${formatValue({
+        kind: 'metric',
+        value: deltaValue,
+        precision: 2,
+      })} ${t('common.ticks')}`
+    : formatValue({
+        kind: 'money',
+        value: deltaValue,
+        currencyCode: currency,
+        signed: true,
+        precision: 2,
+      });
+}
+
+export function shouldSplitTopSectionMetricValue({
+  metric,
+  formattedValue,
+  displayMaeMfeTicks,
+  currencyMetric,
+}: {
+  metric: string;
+  formattedValue: string;
+  displayMaeMfeTicks: boolean;
+  currencyMetric: boolean;
+}): boolean {
+  if (!currencyMetric && !MAE_MFE_METRICS.has(metric)) return false;
+  if (formattedValue.includes('R')) return false;
+  if (formattedValue.includes('K') || formattedValue.includes('M'))
+    return false;
+  if (formattedValue.includes('|')) return false;
+  return !(displayMaeMfeTicks && MAE_MFE_METRICS.has(metric));
+}
+
+export function shouldShowExcursionCoverageWarning({
+  displayMaeMfeTicks,
+  masked,
+  coverage,
+}: {
+  displayMaeMfeTicks: boolean;
+  masked: boolean;
+  coverage: { eligible: number; total: number } | null;
+}): boolean {
+  return (
+    displayMaeMfeTicks &&
+    !masked &&
+    coverage !== null &&
+    coverage.eligible < coverage.total
+  );
+}
+
+export const resolveTopSectionRHeadline = ({
+  metricValue,
+  displayRMultiples,
+  netPnLR,
+}: {
+  metricValue: number | undefined;
+  displayRMultiples: boolean;
+  netPnLR: number | undefined;
+}): { value: number | undefined; combined: boolean } | null => {
+  if (!displayRMultiples) return null;
+  return {
+    value: netPnLR ?? metricValue,
+    combined: netPnLR !== undefined,
+  };
+};
 
 function getDashboardMetricValue(
   metrics: DashboardData['metrics'],
@@ -171,11 +273,6 @@ function isSameRangeEndDate(endDate: Date, expectedEndDate: Date): boolean {
 function formatDurationDelta(valueMs: number): string {
   const prefix = valueMs > 0 ? '+' : valueMs < 0 ? '-' : '';
   return `${prefix}${formatDuration(Math.abs(valueMs))}`;
-}
-
-function formatTrimmedDecimal(value: number, precision = 2): string {
-  const formatted = value.toFixed(precision);
-  return formatted.replace(/(\.\d*?[1-9])0+$/, '$1').replace(/\.0+$/, '');
 }
 
 function minDate(a: Date, b: Date): Date {
@@ -324,6 +421,8 @@ const SortableMetricCard: React.FC<{
   valueSuffixIsPositive?: boolean;
   hasWarning?: boolean;
   previousDelta?: StatDelta;
+  subline?: string;
+  sublineIsPositive?: boolean;
 }> = ({
   id,
   name,
@@ -338,6 +437,8 @@ const SortableMetricCard: React.FC<{
   tooltip,
   hasWarning,
   previousDelta,
+  subline,
+  sublineIsPositive,
 }) => {
   const { attributes, listeners, setNodeRef, transform, transition } =
     useSortable({
@@ -378,6 +479,8 @@ const SortableMetricCard: React.FC<{
             tooltip={tooltip}
             hasWarning={hasWarning}
             previousDelta={previousDelta}
+            subline={subline}
+            sublineIsPositive={sublineIsPositive}
           />
           {isEditing && (
             <div
@@ -413,7 +516,12 @@ function useTopSectionModel({ filters }: Pick<TopSectionProps, 'filters'>) {
   const { currency } = useCurrency();
   const { formatValue, shouldMask } = useDisplayFormatter();
   const { dashboardData: data, error: contextError } = useDashboardData();
+  const displayMaeMfeTicks =
+    plugin?.settings?.trade?.maeMfeDisplayUnit === 'ticks';
   const [activeMetrics, setActiveMetrics] = useState<string[]>([]);
+  const isUnconvertedGroupedDisplay =
+    Boolean(data?.metrics.isMultiCurrency) &&
+    !data?.metrics.conversionBaseCurrency;
   const error = contextError
     ? contextError.message || t('dashboard.top-section.failed-load')
     : null;
@@ -614,6 +722,67 @@ function useTopSectionModel({ filters }: Pick<TopSectionProps, 'filters'>) {
     }
   };
 
+  const includeUnrealizedPnL =
+    plugin?.settings?.trade?.includeUnrealizedPnLInCalculations === true;
+
+  
+  const getNetPnLUnrealizedDisplay = (
+    metricValue: number | undefined
+  ): {
+    value: number | undefined;
+    
+    combined: boolean;
+    subline?: string;
+    sublineIsPositive?: boolean;
+  } => {
+    const unrealized = data?.metrics.unrealizedPnL;
+    if (!includeUnrealizedPnL || unrealized === undefined) {
+      return { value: metricValue, combined: false };
+    }
+
+    const rHeadline = resolveTopSectionRHeadline({
+      metricValue,
+      displayRMultiples: plugin?.settings?.trade?.displayRMultiples === true,
+      netPnLR: data?.metrics.netPnLR,
+    });
+    if (rHeadline) return rHeadline;
+
+    const effectiveCurrency =
+      data?.metrics.isMultiCurrency && data?.metrics.conversionBaseCurrency
+        ? parseCuratedCurrencyCode(data.metrics.conversionBaseCurrency)
+        : currency;
+    const subline = t('dashboard.metrics.incl-unrealized', {
+      value: formatValue({
+        kind: 'pnl',
+        value: unrealized,
+        currencyCode: effectiveCurrency,
+      }),
+    });
+    
+    
+    
+    
+    const isConvertedMultiCurrency =
+      data?.metrics.isMultiCurrency === true &&
+      data.metrics.convertedNetPnL !== undefined &&
+      Boolean(data.metrics.conversionBaseCurrency);
+    const useCombinedHeadline =
+      metricValue !== undefined &&
+      (!data?.metrics.isMultiCurrency || isConvertedMultiCurrency);
+    const snapshotTimelineAdjustment =
+      data?.metrics.snapshotTimelineRealizedPnLContribution ?? 0;
+
+    return {
+      value: useCombinedHeadline
+        ? metricValue + snapshotTimelineAdjustment + unrealized
+        : metricValue,
+      combined: useCombinedHeadline,
+      subline,
+      sublineIsPositive:
+        shouldMask('pnl') || unrealized === 0 ? undefined : unrealized > 0,
+    };
+  };
+
   
   const formatMetricValue = (
     metric: string,
@@ -647,8 +816,10 @@ function useTopSectionModel({ filters }: Pick<TopSectionProps, 'filters'>) {
         data.metrics.convertedNetPnL !== undefined &&
         data.metrics.conversionBaseCurrency
       ) {
+        
+        
         return formatPnLWithCurrency(
-          data.metrics.convertedNetPnL,
+          value,
           data.metrics.conversionBaseCurrency,
           false
         );
@@ -765,9 +936,17 @@ function useTopSectionModel({ filters }: Pick<TopSectionProps, 'filters'>) {
       case 'loserAvgMfe':
       case 'winnerMfeP90':
       case 'loserMfeP90':
-        return shouldMask('metric')
-          ? formatValue({ kind: 'metric', value, precision: 2 })
-          : formatTrimmedDecimal(value);
+        if (shouldMask('metric')) {
+          return formatValue({ kind: 'metric', value, precision: 2 });
+        }
+        return displayMaeMfeTicks
+          ? `${formatValue({ kind: 'metric', value, precision: 2 })} ${t('common.ticks')}`
+          : formatValue({
+              kind: 'money',
+              value,
+              currencyCode: effectiveCurrency,
+              precision: 2,
+            });
       case 'avgHoldTime':
       case 'avgWinHoldTime':
       case 'avgLossHoldTime':
@@ -994,6 +1173,17 @@ function useTopSectionModel({ filters }: Pick<TopSectionProps, 'filters'>) {
         });
       }
 
+      const ratioOrExcursionDelta = formatTopSectionRatioOrExcursionDelta({
+        metric,
+        deltaValue,
+        displayMaeMfeTicks,
+        currency,
+        formatValue,
+      });
+      if (ratioOrExcursionDelta !== null) {
+        return ratioOrExcursionDelta;
+      }
+
       switch (metric) {
         case 'netPnL':
         case 'expectancy':
@@ -1042,26 +1232,7 @@ function useTopSectionModel({ filters }: Pick<TopSectionProps, 'filters'>) {
             signed: true,
             precision: 1,
           });
-        case 'profitFactor':
-        case 'sharpeRatio':
-        case 'avgRR':
-        case 'avgRRRiskBased':
-        case 'avgWinnerHeat':
-        case 'winnerMaeP90':
-        case 'winnerMaeMedian':
-        case 'avgLossHeat':
-        case 'winnerAvgMfe':
-        case 'loserAvgMfe':
-        case 'winnerMfeP90':
-        case 'loserMfeP90':
-          return shouldMask('metric')
-            ? formatValue({
-                kind: 'metric',
-                value: deltaValue,
-                signed: true,
-                precision: 2,
-              })
-            : `${deltaValue > 0 ? '+' : ''}${formatTrimmedDecimal(deltaValue)}`;
+
         case 'avgHoldTime':
         case 'avgWinHoldTime':
         case 'avgLossHoldTime':
@@ -1137,10 +1308,8 @@ function useTopSectionModel({ filters }: Pick<TopSectionProps, 'filters'>) {
       return undefined;
     }
 
-    const hasUnconvertedMultiCurrencyTotals =
-      data.metrics.isMultiCurrency && !data.metrics.conversionBaseCurrency;
     if (
-      hasUnconvertedMultiCurrencyTotals &&
+      isUnconvertedGroupedDisplay &&
       (metric === 'largestWin' || metric === 'largestLoss')
     ) {
       return undefined;
@@ -1282,9 +1451,62 @@ function useTopSectionModel({ filters }: Pick<TopSectionProps, 'filters'>) {
     'bestDay',
   ];
 
+  const getExcursionCoverage = (
+    metric: string
+  ): { eligible: number; total: number } | null => {
+    if (!data?.metrics || !MAE_MFE_METRICS.has(metric)) return null;
+
+    const winnerMetric = [
+      'avgWinnerHeat',
+      'winnerMaeP90',
+      'winnerMaeMedian',
+      'winnerAvgMfe',
+      'winnerMfeP90',
+    ].includes(metric);
+    const total = winnerMetric
+      ? (data.metrics.winnerExcursionSourceTradeCount ?? 0)
+      : (data.metrics.loserExcursionSourceTradeCount ?? 0);
+    const maeMetric = [
+      'avgWinnerHeat',
+      'winnerMaeP90',
+      'winnerMaeMedian',
+      'avgLossHeat',
+    ].includes(metric);
+    const eligible = winnerMetric
+      ? maeMetric
+        ? (data.metrics.winnerMaeEligibleTradeCount ?? 0)
+        : (data.metrics.winnerMfeEligibleTradeCount ?? 0)
+      : maeMetric
+        ? (data.metrics.loserMaeEligibleTradeCount ?? 0)
+        : (data.metrics.loserMfeEligibleTradeCount ?? 0);
+
+    return { eligible, total };
+  };
+
   
   const getMetricTooltip = (metric: string): React.ReactNode | undefined => {
     if (!data) return undefined;
+
+    const excursionCoverage = getExcursionCoverage(metric);
+    if (
+      excursionCoverage !== null &&
+      shouldShowExcursionCoverageWarning({
+        displayMaeMfeTicks,
+        masked: shouldMask('metric'),
+        coverage: excursionCoverage,
+      })
+    ) {
+      return (
+        <div className="journalit-dashboard-metric-tooltip">
+          <div className="journalit-dashboard-metric-tooltip__warning">
+            {t('dashboard.mae-mfe-ticks.partial-coverage', {
+              eligible: String(excursionCoverage.eligible),
+              total: String(excursionCoverage.total),
+            })}
+          </div>
+        </div>
+      );
+    }
 
     
     if (metric === 'avgRRRiskBased') {
@@ -1299,6 +1521,8 @@ function useTopSectionModel({ filters }: Pick<TopSectionProps, 'filters'>) {
         data.metrics.isMultiCurrency && data.metrics.conversionBaseCurrency;
       const unconverted = data.metrics.unconvertedCurrencies || [];
       const hasUnconvertedCurrencies = unconverted.length > 0;
+      const partiallyConverted =
+        data.metrics.partiallyConvertedCurrencies || [];
 
       return (
         <div className="journalit-dashboard-metric-tooltip">
@@ -1339,12 +1563,21 @@ function useTopSectionModel({ filters }: Pick<TopSectionProps, 'filters'>) {
                   currency: data.metrics.conversionBaseCurrency || 'USD',
                 })}
               </div>
-              <div>
-                {t('dashboard.conversion.using-ecb', {
-                  date: data.metrics.conversionRateDate || 'latest',
-                })}
-              </div>
+              <ConversionSourceLines
+                brokerBaseCurrencyTradeCount={
+                  data.metrics.brokerBaseCurrencyTradeCount
+                }
+                manualFxRateTradeCount={data.metrics.manualFxRateTradeCount}
+                conversionRateDate={data.metrics.conversionRateDate}
+              />
             </>
+          )}
+          {partiallyConverted.length > 0 && (
+            <div className="journalit-dashboard-metric-tooltip__warning">
+              {t('dashboard.conversion.partial-warning', {
+                currencies: partiallyConverted.join(', '),
+              })}
+            </div>
           )}
           {hasUnconvertedCurrencies && (
             <div className="journalit-dashboard-metric-tooltip__warning">
@@ -1374,10 +1607,8 @@ function useTopSectionModel({ filters }: Pick<TopSectionProps, 'filters'>) {
         data.metrics.isMultiCurrency && data.metrics.conversionBaseCurrency;
       const unconverted = data.metrics.unconvertedCurrencies || [];
       const hasUnconvertedCurrencies = unconverted.length > 0;
-      const hasMultiCurrencyWithoutConversion =
-        Boolean(data.metrics.isMultiCurrency) &&
-        !data.metrics.conversionBaseCurrency;
-
+      const partiallyConverted =
+        data.metrics.partiallyConvertedCurrencies || [];
       return (
         <div className="journalit-dashboard-metric-tooltip">
           <div className="journalit-dashboard-metric-tooltip__title">
@@ -1403,7 +1634,7 @@ function useTopSectionModel({ filters }: Pick<TopSectionProps, 'filters'>) {
               })}
             </div>
           )}
-          {hasMultiCurrencyWithoutConversion && (
+          {isUnconvertedGroupedDisplay && (
             <div className="journalit-dashboard-metric-tooltip__warning">
               {t('dashboard.sharpeRatio.tooltip.no-conversion')}
             </div>
@@ -1415,12 +1646,21 @@ function useTopSectionModel({ filters }: Pick<TopSectionProps, 'filters'>) {
                   currency: data.metrics.conversionBaseCurrency || 'USD',
                 })}
               </div>
-              <div>
-                {t('dashboard.conversion.using-ecb', {
-                  date: data.metrics.conversionRateDate || 'latest',
-                })}
-              </div>
+              <ConversionSourceLines
+                brokerBaseCurrencyTradeCount={
+                  data.metrics.brokerBaseCurrencyTradeCount
+                }
+                manualFxRateTradeCount={data.metrics.manualFxRateTradeCount}
+                conversionRateDate={data.metrics.conversionRateDate}
+              />
             </>
+          )}
+          {partiallyConverted.length > 0 && (
+            <div className="journalit-dashboard-metric-tooltip__warning">
+              {t('dashboard.conversion.partial-warning', {
+                currencies: partiallyConverted.join(', '),
+              })}
+            </div>
           )}
           {hasUnconvertedCurrencies && (
             <div className="journalit-dashboard-metric-tooltip__warning">
@@ -1439,11 +1679,7 @@ function useTopSectionModel({ filters }: Pick<TopSectionProps, 'filters'>) {
       );
     }
 
-    if (
-      metric === 'avgRR' &&
-      data.metrics.isMultiCurrency &&
-      !data.metrics.conversionBaseCurrency
-    ) {
+    if (metric === 'avgRR' && isUnconvertedGroupedDisplay) {
       return (
         <div className="journalit-dashboard-metric-tooltip">
           <div className="journalit-dashboard-metric-tooltip__title">
@@ -1458,20 +1694,34 @@ function useTopSectionModel({ filters }: Pick<TopSectionProps, 'filters'>) {
     }
 
     if (!data.metrics.isMultiCurrency) return undefined;
-    if (!data.metrics.conversionBaseCurrency) return undefined;
+    if (isUnconvertedGroupedDisplay) return undefined;
 
     
     if (CURRENCY_BASED_METRICS.includes(metric)) {
-      const rateDate = data.metrics.conversionRateDate || 'latest';
       const baseCurrency = data.metrics.conversionBaseCurrency || 'USD';
       const unconverted = data.metrics.unconvertedCurrencies || [];
+      const partiallyConverted =
+        data.metrics.partiallyConvertedCurrencies || [];
 
       return (
         <div className="journalit-dashboard-metric-tooltip">
           <div className="journalit-dashboard-metric-tooltip__title">
             {t('dashboard.conversion.title', { currency: baseCurrency })}
           </div>
-          <div>{t('dashboard.conversion.using-ecb', { date: rateDate })}</div>
+          <ConversionSourceLines
+            brokerBaseCurrencyTradeCount={
+              data.metrics.brokerBaseCurrencyTradeCount
+            }
+            manualFxRateTradeCount={data.metrics.manualFxRateTradeCount}
+            conversionRateDate={data.metrics.conversionRateDate}
+          />
+          {partiallyConverted.length > 0 && (
+            <div className="journalit-dashboard-metric-tooltip__warning">
+              {t('dashboard.conversion.partial-warning', {
+                currencies: partiallyConverted.join(', '),
+              })}
+            </div>
+          )}
           {unconverted.length > 0 && (
             <div className="journalit-dashboard-metric-tooltip__warning">
               {t('dashboard.conversion.excluded-warning', {
@@ -1517,32 +1767,29 @@ function useTopSectionModel({ filters }: Pick<TopSectionProps, 'filters'>) {
   
   const hasMetricWarning = (metric: string): boolean => {
     if (metric === 'netPnL') {
-      return getConversionExcludedWarningMessage() !== undefined;
+      return (
+        Boolean(data?.metrics.conversionBaseCurrency) &&
+        getConversionExcludedWarningMessage() !== undefined
+      );
     }
 
     if (metric === 'avgRR') {
       const hasExcludedCurrencies =
         getConversionExcludedWarningMessage() !== undefined;
-      const hasMultiCurrencyWithoutConversion =
-        Boolean(data?.metrics.isMultiCurrency) &&
-        !data?.metrics.conversionBaseCurrency;
 
-      return hasExcludedCurrencies || hasMultiCurrencyWithoutConversion;
+      return hasExcludedCurrencies || isUnconvertedGroupedDisplay;
     }
 
     if (metric === 'sharpeRatio') {
       const hasExcludedCurrencies =
         getConversionExcludedWarningMessage() !== undefined;
-      const hasMultiCurrencyWithoutConversion =
-        Boolean(data?.metrics.isMultiCurrency) &&
-        !data?.metrics.conversionBaseCurrency;
       const hasInsufficientData =
         (data?.metrics.numTrades ?? 0) > 0 &&
         data?.metrics.sharpeRatio === undefined;
 
       return (
         hasExcludedCurrencies ||
-        hasMultiCurrencyWithoutConversion ||
+        isUnconvertedGroupedDisplay ||
         hasInsufficientData
       );
     }
@@ -1567,6 +1814,15 @@ function useTopSectionModel({ filters }: Pick<TopSectionProps, 'filters'>) {
       );
     }
 
+    if (MAE_MFE_METRICS.has(metric)) {
+      const coverage = getExcursionCoverage(metric);
+      return shouldShowExcursionCoverageWarning({
+        displayMaeMfeTicks,
+        masked: shouldMask('metric'),
+        coverage,
+      });
+    }
+
     return false;
   };
 
@@ -1576,24 +1832,14 @@ function useTopSectionModel({ filters }: Pick<TopSectionProps, 'filters'>) {
     value: number | undefined,
     formattedValue: string
   ): string | undefined => {
-    if (!isCurrencyMetric(metric) && !MAE_MFE_METRICS.has(metric)) {
-      return undefined;
-    }
-
-    
-    
-    if (formattedValue.includes('R')) {
-      return undefined;
-    }
-
-    
-    
-    if (formattedValue.includes('K') || formattedValue.includes('M')) {
-      return undefined;
-    }
-
-    
-    if (formattedValue.includes('|')) {
+    if (
+      !shouldSplitTopSectionMetricValue({
+        metric,
+        formattedValue,
+        displayMaeMfeTicks,
+        currencyMetric: isCurrencyMetric(metric),
+      })
+    ) {
       return undefined;
     }
 
@@ -1613,23 +1859,14 @@ function useTopSectionModel({ filters }: Pick<TopSectionProps, 'filters'>) {
     value: number | undefined,
     formattedValue: string
   ): string | undefined => {
-    if (!isCurrencyMetric(metric) && !MAE_MFE_METRICS.has(metric)) {
-      return undefined;
-    }
-
-    
-    
-    if (formattedValue.includes('R')) {
-      return undefined;
-    }
-
-    
-    if (formattedValue.includes('K') || formattedValue.includes('M')) {
-      return undefined;
-    }
-
-    
-    if (formattedValue.includes('|')) {
+    if (
+      !shouldSplitTopSectionMetricValue({
+        metric,
+        formattedValue,
+        displayMaeMfeTicks,
+        currencyMetric: isCurrencyMetric(metric),
+      })
+    ) {
       return undefined;
     }
 
@@ -1664,6 +1901,7 @@ function useTopSectionModel({ filters }: Pick<TopSectionProps, 'filters'>) {
     hasMetricWarning,
     handleRemoveMetric,
     shouldMask,
+    getNetPnLUnrealizedDisplay,
   };
 }
 
@@ -1690,6 +1928,7 @@ export const TopSection: React.FC<TopSectionProps> = ({
     hasMetricWarning,
     handleRemoveMetric,
     shouldMask,
+    getNetPnLUnrealizedDisplay,
   } = useTopSectionModel({ filters });
 
   return (
@@ -1731,20 +1970,30 @@ export const TopSection: React.FC<TopSectionProps> = ({
                 id="topsection-metrics-container"
               >
                 {activeMetrics.map((metric) => {
-                  const metricValue = getDashboardMetricValue(
+                  const rawMetricValue = getDashboardMetricValue(
                     data.metrics,
                     metric
                   );
+                  const netPnLUnrealized =
+                    metric === 'netPnL'
+                      ? getNetPnLUnrealizedDisplay(rawMetricValue)
+                      : undefined;
+                  const metricValue = netPnLUnrealized
+                    ? netPnLUnrealized.value
+                    : rawMetricValue;
                   const formattedValue = formatMetricValue(metric, metricValue);
 
                   const percentSuffix = formatMetricPercentSuffix(
                     metric,
                     formattedValue
                   );
+                  
+                  
+                  
                   const previousDelta =
-                    metricValue === undefined
+                    rawMetricValue === undefined || netPnLUnrealized?.combined
                       ? undefined
-                      : createMetricDelta(metric, metricValue);
+                      : createMetricDelta(metric, rawMetricValue);
 
                   return (
                     <SortableMetricCard
@@ -1775,6 +2024,8 @@ export const TopSection: React.FC<TopSectionProps> = ({
                       tooltip={getMetricTooltip(metric)}
                       hasWarning={hasMetricWarning(metric)}
                       previousDelta={previousDelta}
+                      subline={netPnLUnrealized?.subline}
+                      sublineIsPositive={netPnLUnrealized?.sublineIsPositive}
                     />
                   );
                 })}

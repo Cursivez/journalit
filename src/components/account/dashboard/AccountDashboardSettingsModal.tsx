@@ -12,11 +12,17 @@ import { AccountType, DrawdownType } from '../../../services/account/types';
 import { eventBus } from '../../../services/events';
 import type { AccountCatalogEntry } from '../../../services/accountPage/types';
 import { useEventBus } from '../../../hooks/useEventBus';
+import {
+  ConfirmationPanel,
+  type ConfirmationPanelAction,
+} from '../../shared/ConfirmationPanel';
 
 const getErrorMessage = (error: unknown): string =>
   error instanceof Error ? error.message : String(error);
 
 type AccountTypeChangedDetails = Record<string, unknown>;
+type AccountTypeDeleteAction = 'cancel' | 'setup-migration' | 'delete';
+type AccountMigrationAction = 'cancel' | 'migrate';
 
 interface AccountDashboardGuideBindings {
   onClose?: () => void;
@@ -1001,10 +1007,40 @@ function useAccountDashboardSettingsModel({
   const accountMigrationModal =
     showMigrationModal && deletionImpact && accountTypeToDelete ? (
       <div className="account-migration-modal-overlay">
-        <div className="account-type-delete-modal account-migration-modal">
-          <h3>{t('account.settings.migration.title')}</h3>
-
-          <div className="delete-modal-content">
+        <ConfirmationPanel<AccountMigrationAction>
+          title={t('account.settings.migration.title')}
+          disabled={isSaving}
+          className="account-migration-modal"
+          actions={
+            [
+              {
+                id: 'cancel',
+                value: 'cancel',
+                label: t('button.cancel'),
+                variant: 'secondary',
+                initialFocus: true,
+              },
+              {
+                id: 'migrate',
+                value: 'migrate',
+                label: isSaving
+                  ? t('account.settings.migration.button.migrating')
+                  : t('account.settings.migration.button.migrate'),
+                variant: 'destructive',
+                disabled:
+                  migrationOption === 'reassign' && !migrationTargetType,
+              },
+            ] satisfies readonly ConfirmationPanelAction<AccountMigrationAction>[]
+          }
+          onAction={(action) => {
+            if (action === 'cancel') {
+              void handleCancelMigration();
+              return;
+            }
+            void handleConfirmMigration();
+          }}
+        >
+          <div>
             <div className="migration-warning">
               <p>
                 <strong>
@@ -1161,40 +1197,64 @@ function useAccountDashboardSettingsModel({
               </div>
             </div>
           </div>
-
-          <div className="delete-modal-actions">
-            <Button
-              variant="plain"
-              onClick={() => void handleCancelMigration()}
-              disabled={isSaving}
-            >
-              {t('button.cancel')}
-            </Button>
-            <Button
-              variant="secondary"
-              onClick={() => void handleConfirmMigration()}
-              disabled={
-                isSaving ||
-                (migrationOption === 'reassign' && !migrationTargetType)
-              }
-              className="delete-confirm-button"
-            >
-              {isSaving
-                ? t('account.settings.migration.button.migrating')
-                : t('account.settings.migration.button.migrate')}
-            </Button>
-          </div>
-        </div>
+        </ConfirmationPanel>
       </div>
     ) : null;
 
   const deleteConfirmationModal =
     showDeleteConfirmation && deletionImpact ? (
       <div className="account-type-delete-modal-overlay">
-        <div className="account-type-delete-modal">
-          <h3>{t('account.settings.delete.title')}</h3>
-
-          <div className="delete-modal-content">
+        <ConfirmationPanel<AccountTypeDeleteAction>
+          title={t('account.settings.delete.title')}
+          disabled={isSaving}
+          actions={
+            (deletionImpact.affectedAccounts > 0
+              ? [
+                  {
+                    id: 'cancel',
+                    value: 'cancel',
+                    label: t('button.cancel'),
+                    variant: 'secondary',
+                    initialFocus: true,
+                  },
+                  {
+                    id: 'setup-migration',
+                    value: 'setup-migration',
+                    label: t('account.settings.delete.button.setup-migration'),
+                    variant: 'primary',
+                  },
+                ]
+              : [
+                  {
+                    id: 'cancel',
+                    value: 'cancel',
+                    label: t('button.cancel'),
+                    variant: 'secondary',
+                    initialFocus: true,
+                  },
+                  {
+                    id: 'delete',
+                    value: 'delete',
+                    label: isSaving
+                      ? t('account.settings.delete.button.deleting')
+                      : t('account.settings.delete.button.delete'),
+                    variant: 'destructive',
+                  },
+                ]) satisfies readonly ConfirmationPanelAction<AccountTypeDeleteAction>[]
+          }
+          onAction={(action) => {
+            if (action === 'cancel') {
+              void handleCancelDeleteAccountType();
+              return;
+            }
+            if (action === 'setup-migration') {
+              void handleStartMigration();
+              return;
+            }
+            void handleConfirmDeleteAccountType();
+          }}
+        >
+          <div>
             <div className="delete-warning">
               <p>
                 <strong>
@@ -1267,48 +1327,7 @@ function useAccountDashboardSettingsModel({
               </div>
             </div>
           </div>
-
-          <div className="delete-modal-actions">
-            {deletionImpact.affectedAccounts > 0 ? (
-              <>
-                <Button
-                  variant="plain"
-                  onClick={() => void handleCancelDeleteAccountType()}
-                  disabled={isSaving}
-                >
-                  {t('button.cancel')}
-                </Button>
-                <Button
-                  variant="primary"
-                  onClick={() => void handleStartMigration()}
-                  disabled={isSaving}
-                >
-                  {t('account.settings.delete.button.setup-migration')}
-                </Button>
-              </>
-            ) : (
-              <>
-                <Button
-                  variant="plain"
-                  onClick={() => void handleCancelDeleteAccountType()}
-                  disabled={isSaving}
-                >
-                  {t('button.cancel')}
-                </Button>
-                <Button
-                  variant="primary"
-                  onClick={() => void handleConfirmDeleteAccountType()}
-                  disabled={isSaving}
-                  className="delete-confirm-button"
-                >
-                  {isSaving
-                    ? t('account.settings.delete.button.deleting')
-                    : t('account.settings.delete.button.delete')}
-                </Button>
-              </>
-            )}
-          </div>
-        </div>
+        </ConfirmationPanel>
       </div>
     ) : null;
 

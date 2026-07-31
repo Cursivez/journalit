@@ -16,7 +16,16 @@ import {
   isTradeFormLayoutItemVisible,
   TRADE_FORM_DETAILS_ITEM_IDS,
 } from './tradeFormLayoutConfig';
-import { isTradeOpenWithContext } from '../../../utils/tradeStatusUtils';
+import {
+  getPartialExitInfo,
+  hasRealizedPnLComponents,
+  isTradeOpenWithContext,
+} from '../../../utils/tradeStatusUtils';
+import {
+  areSnapshotKeysClaimedByCustomFields,
+  calculateSnapshotRealizedPnL,
+  calculateUnrealizedPnL,
+} from '../../../utils/unrealizedPnl';
 import {
   calculatePercentageReturn,
   calculatePnL,
@@ -70,6 +79,7 @@ const BASIC_TAB_ERROR_FIELDS: Array<keyof TradeFormErrors> = [
   'stopLoss',
   'takeProfits',
   'riskAmount',
+  'unrealizedPriceSnapshot',
 ];
 const DETAILS_TAB_ERROR_FIELDS: Array<keyof TradeFormErrors> = ['setup'];
 const ADVANCED_TAB_ERROR_FIELDS: Array<keyof TradeFormErrors> = [
@@ -309,6 +319,120 @@ function TradeFormFooterPnlPreview({
   currency: string;
   defaultRiskAmount: number;
 }) {
+  const plugin = usePlugin();
+  const isOpen = isTradeOpenWithContext({
+    tradeStatus: data.tradeStatus,
+    exitTime: data.exitTime,
+    exitPrice: data.exitPrice,
+    pnl: data._originalPnlWasNull ? null : data.pnl,
+    useDirectPnLInput: data.useDirectPnLInput,
+    exits: data.exits,
+    entries: data.entries,
+  });
+  
+  
+  const unrealizedPnL =
+    isOpen &&
+    !areSnapshotKeysClaimedByCustomFields(
+      plugin?.customFieldsService?.getFields()
+    )
+      ? calculateUnrealizedPnL(data)
+      : null;
+  const hasRealizedComponents = isOpen ? hasRealizedPnLComponents(data) : false;
+
+  const pnl = calculatePnL(data);
+  const effectiveRiskAmount = resolveEffectiveRiskAmount(
+    data,
+    defaultRiskAmount
+  );
+  const toRMultiple = (value: number): number | undefined =>
+    effectiveRiskAmount && effectiveRiskAmount > 0
+      ? value / effectiveRiskAmount
+      : undefined;
+  const hasCosts = Boolean(data.commission || data.swap || data.fees);
+  const totalCosts = calculateTotalCosts(data);
+  const costsLine = hasCosts ? (
+    <span className="calculatedLabel">
+      {t('form.field.total-costs')}{' '}
+      <PnLValue
+        value={totalCosts}
+        currencyCode={currency}
+        showCents={true}
+        rMultiple={toRMultiple(totalCosts)}
+        tone="none"
+      />
+    </span>
+  ) : null;
+
+  
+  
+  if (isOpen && (unrealizedPnL !== null || hasRealizedComponents)) {
+    const hasSyncedIdentity =
+      data.backendTradeId !== undefined ||
+      (typeof data.canonicalTradeId === 'string' &&
+        data.canonicalTradeId.trim().length > 0);
+    const currentRealizedPnL =
+      hasSyncedIdentity &&
+      typeof data.pnl === 'number' &&
+      Number.isFinite(data.pnl)
+        ? data.pnl
+        : pnl;
+    const realizedPnL = hasRealizedComponents
+      ? calculateSnapshotRealizedPnL(data, currentRealizedPnL)
+      : 0;
+    const combinedPnL = realizedPnL + (unrealizedPnL ?? 0);
+    const partialInfo = getPartialExitInfo(data);
+    const closedCountSuffix = partialInfo.isPartialExit
+      ? ` (${partialInfo.closedSize}/${partialInfo.totalSize} ${t('form.field.closed')})`
+      : '';
+    const showBreakdown = unrealizedPnL !== null && hasRealizedComponents;
+    const headlineLabel = showBreakdown
+      ? t('form.field.floating-pnl')
+      : unrealizedPnL !== null
+        ? t('form.unrealized.preview')
+        : `${t('form.field.realized-pnl')}${closedCountSuffix}`;
+
+    return (
+      <div className="calculatedValue calculatedValue--footer">
+        <span className="calculatedLabel">
+          {headlineLabel}
+          {hasCosts ? ` ${t('form.field.incl-costs')}` : ''}
+        </span>
+        <PnLValue
+          className="calculatedAmount"
+          value={combinedPnL}
+          currencyCode={currency}
+          showCents={true}
+          rMultiple={toRMultiple(combinedPnL)}
+        />
+        {showBreakdown && (
+          <span className="calculatedLabel">
+            {t('form.field.realized-pnl')}
+            {closedCountSuffix}{' '}
+            <PnLValue
+              value={realizedPnL}
+              currencyCode={currency}
+              showCents={true}
+              rMultiple={toRMultiple(realizedPnL)}
+            />
+          </span>
+        )}
+        {showBreakdown && unrealizedPnL !== null && (
+          <span className="calculatedLabel">
+            {t('form.unrealized.preview')}{' '}
+            <PnLValue
+              value={unrealizedPnL}
+              currencyCode={currency}
+              showCents={true}
+              rMultiple={toRMultiple(unrealizedPnL)}
+            />
+          </span>
+        )}
+        {costsLine}
+      </div>
+    );
+  }
+
   const canShowPnlPreview =
     (data.useDirectPnLInput && data.directPnL !== undefined) ||
     (data.entryPrice !== undefined &&
@@ -318,36 +442,20 @@ function TradeFormFooterPnlPreview({
 
   if (!canShowPnlPreview) return null;
 
-  const pnl = calculatePnL(data);
   const percentReturn = calculatePercentageReturn(data);
-  const effectiveRiskAmount = resolveEffectiveRiskAmount(
-    data,
-    defaultRiskAmount
-  );
-  const pnlRMultiple =
-    effectiveRiskAmount && effectiveRiskAmount > 0
-      ? pnl / effectiveRiskAmount
-      : undefined;
-  const totalCosts = calculateTotalCosts(data);
-  const costsRMultiple =
-    effectiveRiskAmount && effectiveRiskAmount > 0
-      ? totalCosts / effectiveRiskAmount
-      : undefined;
 
   return (
     <div className="calculatedValue calculatedValue--footer">
       <span className="calculatedLabel">
         {t('form.field.profit-loss')}
-        {data.commission || data.swap || data.fees
-          ? ` ${t('form.field.incl-costs')}`
-          : ''}
+        {hasCosts ? ` ${t('form.field.incl-costs')}` : ''}
       </span>
       <PnLValue
         className="calculatedAmount"
         value={pnl}
         currencyCode={currency}
         showCents={true}
-        rMultiple={pnlRMultiple}
+        rMultiple={toRMultiple(pnl)}
       />
       {!data.useDirectPnLInput && (
         <span className="calculatedLabel">
@@ -360,18 +468,7 @@ function TradeFormFooterPnlPreview({
           )
         </span>
       )}
-      {data.commission || data.swap || data.fees ? (
-        <span className="calculatedLabel">
-          {t('form.field.total-costs')}{' '}
-          <PnLValue
-            value={totalCosts}
-            currencyCode={currency}
-            showCents={true}
-            rMultiple={costsRMultiple}
-            tone="none"
-          />
-        </span>
-      ) : null}
+      {costsLine}
     </div>
   );
 }

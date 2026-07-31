@@ -23,6 +23,29 @@ const IMAGE_GALLERY_CARD_EXTRA_HEIGHT: Record<ImageGallerySize, number> = {
 };
 const IMAGE_GALLERY_SCROLL_UPDATE_ROW_GRANULARITY = 2;
 
+export function reconcileImageGalleryItem(
+  currentItem: ImageGalleryItem | null,
+  nextItems: readonly ImageGalleryItem[]
+): ImageGalleryItem | null {
+  if (!currentItem) return null;
+  return nextItems.find((item) => item.id === currentItem.id) ?? null;
+}
+
+export function reconcileImageGalleryIndex(
+  currentItemId: string | null,
+  nextItems: readonly ImageGalleryItem[]
+): number | null {
+  if (!currentItemId) return null;
+  const index = nextItems.findIndex((item) => item.id === currentItemId);
+  return index >= 0 ? index : null;
+}
+
+export function shouldReloadImageGalleryForSettingsChange(payload: {
+  source?: string;
+}): boolean {
+  return payload.source !== 'gallery-folders-service';
+}
+
 export function getImageGalleryVirtualWindow(
   itemCount: number,
   size: ImageGallerySize,
@@ -133,7 +156,9 @@ export function filterImageGalleryItemsBySource(
 ): ImageGalleryItem[] {
   if (sourceType === 'all') return items;
   if (sourceType === 'reviews') {
-    return items.filter((item) => item.sourceType !== 'trade');
+    return items.filter(
+      (item) => item.sourceType !== 'trade' && item.sourceType !== 'folder'
+    );
   }
   return items.filter((item) => item.sourceType === sourceType);
 }
@@ -179,6 +204,19 @@ export function groupImageGalleryItems(
 }
 
 function getImageGalleryGroupId(item: ImageGalleryItem): string {
+  if (item.sourceType === 'folder') {
+    const configuredRoot = item.folderPath ?? item.sourcePath;
+    const lastSlash = item.imagePath.lastIndexOf('/');
+    const parentDir = lastSlash >= 0 ? item.imagePath.slice(0, lastSlash) : '';
+    
+    
+    
+    if (parentDir === '' || parentDir === configuredRoot) {
+      return item.id;
+    }
+    return `folder:${parentDir}`;
+  }
+
   if (item.sourceType !== 'trade' || !item.isCopiedTrade) {
     return item.sourcePath;
   }
@@ -216,6 +254,7 @@ export function normalizeImageGallerySourceType(
 ): ImageGallerySourceType {
   switch (value) {
     case 'trade':
+    case 'folder':
     case 'reviews':
     case 'drc':
     case 'weekly':
@@ -261,6 +300,8 @@ export function getImageGalleryCardSourceLabel(item: ImageGalleryItem): string {
   }
 
   switch (item.sourceType) {
+    case 'folder':
+      return item.sourceLabel;
     case 'drc':
       return 'DRC';
     case 'weekly':
@@ -300,6 +341,7 @@ export function getImageGalleryCardDateLabel(
       );
     case 'trade':
     case 'drc':
+    case 'folder':
       return formatDateLabel(item.date, dateFormat);
   }
 }
@@ -359,6 +401,8 @@ export function getImageGallerySourceTypeLabel(
   switch (sourceType) {
     case 'trade':
       return t('imageGallery.source.trade');
+    case 'folder':
+      return t('imageGallery.source.folder');
     case 'reviews':
       return t('imageGallery.source.reviews');
     case 'drc':

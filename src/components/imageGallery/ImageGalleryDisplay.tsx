@@ -10,7 +10,7 @@ import { MediaPreview } from '../image/MediaPreview';
 import { FullscreenPortal } from '../image/FullscreenPortal';
 import { PnLValue, RMultipleValue } from '../shared/display';
 import { SkeletonBox } from '../shared/SkeletonBox';
-import { Tooltip } from '../shared/Tooltip';
+
 import { Button } from '../ui/Button';
 import { ComboBox } from '../core/ComboBox';
 import {
@@ -158,6 +158,7 @@ function hasActiveTradeLogFilters(filters: TradeLogFilters): boolean {
     filters.statuses.length > 0 ||
     filters.reviewStatus.length > 0 ||
     filters.directions.length > 0 ||
+    filters.sessionLogTags.length > 0 ||
     filters.imageAnnotationStatus.length > 0 ||
     filters.imageTags.length > 0 ||
     filters.dateRange.some(Boolean) ||
@@ -537,38 +538,22 @@ const ImageGalleryCard = React.memo(function ImageGalleryCard({
             videoPreload="metadata"
           />
           {additionalMediaCount > 0 ? (
-            <Tooltip
-              content={t('imageGallery.group.additional-media', {
+            <span
+              className="journalit-image-gallery-card__media-count"
+              aria-label={t('imageGallery.group.additional-media', {
                 count: String(additionalMediaCount),
               })}
-              delay={0}
-              preferredPosition="top"
-              triggerClassName="journalit-image-gallery-card__media-count-trigger"
             >
-              <span
-                className="journalit-image-gallery-card__media-count"
-                aria-label={t('imageGallery.group.additional-media', {
-                  count: String(additionalMediaCount),
-                })}
-              >
-                +{additionalMediaCount}
-              </span>
-            </Tooltip>
+              +{additionalMediaCount}
+            </span>
           ) : null}
           {hasAnnotations ? (
-            <Tooltip
-              content={annotationSummary}
-              delay={0}
-              preferredPosition="top"
-              triggerClassName="journalit-image-gallery-card__annotation-marker-trigger"
+            <span
+              className="journalit-image-gallery-card__annotation-marker"
+              aria-label={annotationSummary}
             >
-              <span
-                className="journalit-image-gallery-card__annotation-marker"
-                aria-label={annotationSummary}
-              >
-                <Tag size={15} aria-hidden="true" />
-              </span>
-            </Tooltip>
+              <Tag size={15} aria-hidden="true" />
+            </span>
           ) : null}
           <div
             className="journalit-image-gallery-card__hover-panel"

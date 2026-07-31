@@ -1,6 +1,13 @@
 
 
-import React, { memo, useCallback, useEffect, useMemo, useState } from 'react';
+import React, {
+  memo,
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+  useSyncExternalStore,
+} from 'react';
 import {
   CheckCircle,
   ChevronRight,
@@ -14,6 +21,7 @@ import { useEventBus } from '../../../hooks/useEventBus';
 import { useBackendProEntitlement } from '../../../hooks/useBackendProEntitlement';
 import { TRADE_LOG_VIEW_TYPE } from '../../../views/TradeLogView';
 import { TEMPLATE_BUILDER_VIEW_TYPE } from '../../../views/TemplateBuilderView';
+import { NAVIGATION_VIEW_TYPE } from '../../../views/NavigationView';
 
 interface GettingStartedWidgetProps {
   plugin: JournalitPlugin;
@@ -31,8 +39,11 @@ export const GettingStartedWidget = memo<GettingStartedWidgetProps>(
         plugin.uiStateManager.getState().gettingStartedOpenedLayoutBuilder ??
         false
     );
-
-    useEffect(() => {}, []);
+    const [openedNavigationSidebar, setOpenedNavigationSidebar] = useState(
+      () =>
+        plugin.uiStateManager.getState()
+          .gettingStartedOpenedNavigationSidebar ?? false
+    );
 
     const { isAuthenticated, isPro } = useBackendProEntitlement(
       plugin,
@@ -54,6 +65,34 @@ export const GettingStartedWidget = memo<GettingStartedWidgetProps>(
         gettingStartedOpenedLayoutBuilder: true,
       });
     }, [plugin]);
+
+    const markOpenedNavigationSidebar = useCallback(() => {
+      setOpenedNavigationSidebar(true);
+      void plugin.uiStateManager.updateState({
+        gettingStartedOpenedNavigationSidebar: true,
+      });
+    }, [plugin]);
+
+    const subscribeToNavigationSidebar = useCallback(
+      (onStoreChange: () => void) => {
+        const eventRef = plugin.app.workspace.on(
+          'layout-change',
+          onStoreChange
+        );
+        return () => plugin.app.workspace.offref(eventRef);
+      },
+      [plugin]
+    );
+    const getNavigationSidebarSnapshot = useCallback(
+      () =>
+        plugin.app.workspace.getLeavesOfType(NAVIGATION_VIEW_TYPE).length > 0,
+      [plugin]
+    );
+    const isNavigationSidebarOpen = useSyncExternalStore(
+      subscribeToNavigationSidebar,
+      getNavigationSidebarSnapshot,
+      getNavigationSidebarSnapshot
+    );
 
     const handleAddTrade = useCallback(async () => {
       try {
@@ -91,6 +130,19 @@ export const GettingStartedWidget = memo<GettingStartedWidgetProps>(
         );
       }
     }, [plugin, markOpenedLayoutBuilder]);
+
+    const handleOpenNavigationSidebar = useCallback(async () => {
+      try {
+        await plugin.openNavigationSidebar();
+        markOpenedNavigationSidebar();
+      } catch (error) {
+        console.error(
+          '[GettingStarted] Failed to open navigation sidebar:',
+          error
+        );
+        new Notice(t('notice.error.open-navigation-sidebar'));
+      }
+    }, [plugin, markOpenedNavigationSidebar]);
 
     const handleActivatePro = useCallback(() => {
       if (!isAuthenticated) {
@@ -163,6 +215,16 @@ export const GettingStartedWidget = memo<GettingStartedWidgetProps>(
       handleRecentItemsChanged();
     }, [handleRecentItemsChanged]);
 
+    useEffect(() => {
+      if (isNavigationSidebarOpen && !openedNavigationSidebar) {
+        markOpenedNavigationSidebar();
+      }
+    }, [
+      isNavigationSidebarOpen,
+      openedNavigationSidebar,
+      markOpenedNavigationSidebar,
+    ]);
+
     const checklistItems = useMemo(
       () => [
         {
@@ -197,6 +259,17 @@ export const GettingStartedWidget = memo<GettingStartedWidgetProps>(
           completed: openedLayoutBuilder,
         },
         {
+          id: 'open-navigation-sidebar',
+          title: t('home.widget.getting-started.item.sidebar.title'),
+          description: t(
+            'home.widget.getting-started.item.sidebar.description'
+          ),
+          time: t('home.widget.getting-started.item.sidebar.time'),
+          cta: t('home.widget.getting-started.item.sidebar.cta'),
+          onClick: () => void handleOpenNavigationSidebar(),
+          completed: openedNavigationSidebar,
+        },
+        {
           id: 'activate-pro',
           title: t('home.widget.getting-started.item.pro.title'),
           description: t('home.widget.getting-started.item.pro.description'),
@@ -210,10 +283,12 @@ export const GettingStartedWidget = memo<GettingStartedWidgetProps>(
         handleAddTrade,
         handleOpenTradeLog,
         handleOpenLayoutBuilder,
+        handleOpenNavigationSidebar,
         handleActivatePro,
         hasTrade,
         openedTradeLog,
         openedLayoutBuilder,
+        openedNavigationSidebar,
         isProComplete,
       ]
     );

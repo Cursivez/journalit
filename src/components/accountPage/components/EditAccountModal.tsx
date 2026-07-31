@@ -31,6 +31,7 @@ import { ManualDrawdownManager } from './ManualDrawdownManager';
 import { useEventBus } from '../../../hooks';
 import { eventBus } from '../../../services/events';
 import { t } from '../../../lang/helpers';
+import { showActionConfirmationModal } from '../../shared/ConfirmationModal';
 import {
   hasLiveBalanceAdjustment,
   parseLiveBalanceInput,
@@ -1380,7 +1381,8 @@ const useEditAccountModalController = ({
           await performUpdate(
             renameConfirmed,
             effectiveAccountName,
-            validatedCreatedDate
+            validatedCreatedDate,
+            editAccount.initialBalance
           );
         } else {
           
@@ -1391,7 +1393,8 @@ const useEditAccountModalController = ({
           await performUpdateWithAccountName(
             renameConfirmed,
             effectiveAccountName,
-            validatedCreatedDate
+            validatedCreatedDate,
+            account.initialBalance
           );
         }
       } else if (effectiveNameChanged) {
@@ -1399,7 +1402,8 @@ const useEditAccountModalController = ({
         await performUpdate(
           renameConfirmed,
           effectiveAccountName,
-          validatedCreatedDate
+          validatedCreatedDate,
+          editAccount.initialBalance
         );
       } else if (initialBalanceChanged) {
         
@@ -1412,7 +1416,8 @@ const useEditAccountModalController = ({
           await performUpdate(
             false,
             effectiveAccountName,
-            validatedCreatedDate
+            validatedCreatedDate,
+            editAccount.initialBalance
           );
         } else {
           
@@ -1420,7 +1425,12 @@ const useEditAccountModalController = ({
         }
       } else {
         
-        await performUpdate(false, effectiveAccountName, validatedCreatedDate);
+        await performUpdate(
+          false,
+          effectiveAccountName,
+          validatedCreatedDate,
+          editAccount.initialBalance
+        );
       }
     } catch (error) {
       console.error('Error updating account:', error);
@@ -1437,19 +1447,22 @@ const useEditAccountModalController = ({
   const performUpdate = async (
     shouldUpdateNotes: boolean,
     accountName: string,
-    createdDate: Date
+    createdDate: Date,
+    initialBalance: number
   ) => {
     await performUpdateWithAccountName(
       shouldUpdateNotes,
       accountName,
-      createdDate
+      createdDate,
+      initialBalance
     );
   };
 
   const performUpdateWithAccountName = async (
     shouldUpdateNotes: boolean,
     accountName: string,
-    createdDate: Date
+    createdDate: Date,
+    initialBalance: number
   ) => {
     try {
       
@@ -1463,6 +1476,7 @@ const useEditAccountModalController = ({
       const creationDateChanged =
         oldCreatedDate.getTime() !== newCreatedDate.getTime();
 
+      let effectiveCreatedDate = createdDate;
       if (creationDateChanged) {
         
         const shouldProceed = await showCreationDateChangeConfirmation(
@@ -1477,13 +1491,15 @@ const useEditAccountModalController = ({
             ...prev,
             createdDate: account.createdDate,
           }));
+          effectiveCreatedDate = oldCreatedDate;
         }
       }
 
       await updateAccountDataWithAccountName(
         shouldUpdateNotes,
         accountName,
-        createdDate
+        effectiveCreatedDate,
+        initialBalance
       );
     } catch (error) {
       console.error('Error in performUpdate:', error);
@@ -1498,7 +1514,8 @@ const useEditAccountModalController = ({
   const updateAccountDataWithAccountName = async (
     shouldUpdateNotes: boolean,
     accountName: string,
-    createdDate: Date
+    createdDate: Date,
+    initialBalance: number
   ) => {
     try {
       const parsedLiveBalance = parseLiveBalanceInput(editAccount.liveBalance);
@@ -1512,7 +1529,7 @@ const useEditAccountModalController = ({
         account.currentBalance - (account.liveBalanceAdjustment ?? 0);
       const nextComputedCurrentBalance =
         baseCurrentBalanceWithoutAdjustment +
-        (editAccount.initialBalance - account.initialBalance);
+        (initialBalance - account.initialBalance);
       const liveBalanceAdjustment = toLiveBalanceAdjustment(
         parsedLiveBalance,
         nextComputedCurrentBalance
@@ -1521,7 +1538,7 @@ const useEditAccountModalController = ({
       const updateData: Partial<AccountData> = {
         name: accountName,
         accountType: editAccount.accountType,
-        initialBalance: editAccount.initialBalance,
+        initialBalance,
         liveBalanceAdjustment,
         currency: editAccount.currency,
         drawdownType: editAccount.drawdownType,
@@ -1664,14 +1681,30 @@ const useEditAccountModalController = ({
     oldName: string,
     newName: string
   ): Promise<NameChangeAction> => {
-    return new Promise((resolve) => {
-      const message = t('account.edit.modal.update-notes.message', {
+    return showActionConfirmationModal<NameChangeAction>(app, {
+      title: t('account.edit.modal.update-notes.title'),
+      message: t('account.edit.modal.update-notes.message', {
         oldName,
         newName,
-      });
-
-      const modal = new NameChangeConfirmationModal(app, message, resolve);
-      modal.open();
+      }),
+      cancelValue: 'cancel',
+      actions: [
+        {
+          value: 'update-notes',
+          label: t('account.edit.modal.update-notes.yes'),
+          variant: 'primary',
+        },
+        {
+          value: 'keep-old-name',
+          label: t('account.edit.modal.update-notes.no'),
+          variant: 'secondary',
+        },
+        {
+          value: 'cancel',
+          label: t('account.edit.modal.update-notes.cancel'),
+          variant: 'secondary',
+        },
+      ],
     });
   };
 
@@ -1680,15 +1713,45 @@ const useEditAccountModalController = ({
     oldDate: Date,
     newDate: Date
   ): Promise<boolean> => {
-    return new Promise((resolve) => {
-      const modal = new CreationDateChangeConfirmationModal(
-        app,
-        accountName,
-        oldDate,
-        newDate,
-        resolve
-      );
-      modal.open();
+    return showActionConfirmationModal<boolean>(app, {
+      title: t('account.edit.modal.change-date.title'),
+      cancelValue: false,
+      renderContent: (contentEl) => {
+        const container = contentEl.createDiv({
+          cls: 'journalit-confirmation-content',
+        });
+        const infoBox = container.createDiv({
+          cls: 'journalit-confirmation-content__info',
+        });
+        infoBox.createEl('p', {
+          text: t('account.edit.modal.change-date.message', {
+            account: accountName,
+            oldDate: formatDateDisplay(oldDate, getUserDateFormat()),
+            newDate: formatDateDisplay(newDate, getUserDateFormat()),
+          }),
+          cls: 'journalit-confirmation-modal__message',
+        });
+        const warningBox = container.createDiv({
+          cls: 'journalit-confirmation-content__info',
+        });
+        warningBox.createEl('p', {
+          text: t('account.edit.modal.change-date.warning'),
+          cls: 'journalit-confirmation-modal__message',
+        });
+      },
+      actions: [
+        {
+          value: false,
+          label: t('button.cancel'),
+          variant: 'secondary',
+          initialFocus: true,
+        },
+        {
+          value: true,
+          label: t('account.edit.modal.change-date.confirm'),
+          variant: 'primary',
+        },
+      ],
     });
   };
 
@@ -1696,30 +1759,137 @@ const useEditAccountModalController = ({
     oldBalance: number,
     newBalance: number
   ): Promise<boolean> => {
-    return new Promise((resolve) => {
-      const modal = new InitialBalanceChangeConfirmationModal(
-        app,
-        plugin,
-        oldBalance,
-        newBalance,
-        editAccount.currency,
-        resolve
-      );
-      modal.open();
+    const formatCurrency = (amount: number) =>
+      amount.toLocaleString('en-US', {
+        style: 'currency',
+        currency:
+          editAccount.currency || plugin.settings?.general?.currency || 'USD',
+        minimumFractionDigits: 2,
+      });
+
+    return showActionConfirmationModal<boolean>(app, {
+      title: t('account.edit.modal.change-balance.title'),
+      cancelValue: false,
+      renderContent: (contentEl) => {
+        const container = contentEl.createDiv({
+          cls: 'journalit-confirmation-content',
+        });
+        const infoBox = container.createDiv({
+          cls: 'journalit-confirmation-content__info',
+        });
+        infoBox.createEl('p', {
+          text: t('account.edit.modal.change-balance.message', {
+            oldBalance: formatCurrency(oldBalance),
+            newBalance: formatCurrency(newBalance),
+          }),
+          cls: 'journalit-confirmation-modal__message',
+        });
+        const warningBox = container.createDiv({
+          cls: 'journalit-confirmation-content__info',
+        });
+        warningBox.createEl('p', {
+          text: t('account.edit.modal.change-balance.info'),
+          cls: 'journalit-confirmation-modal__message',
+        });
+        warningBox.createEl('p', {
+          text: t('account.edit.modal.change-balance.info2'),
+          cls: 'journalit-confirmation-modal__message',
+        });
+        container.createEl('p', {
+          text: t('account.edit.modal.change-balance.info3'),
+          cls: 'journalit-confirmation-modal__message journalit-confirmation-modal__message--destructive',
+        });
+      },
+      actions: [
+        {
+          value: false,
+          label: t('button.cancel'),
+          variant: 'secondary',
+          initialFocus: true,
+        },
+        {
+          value: true,
+          label: t('account.edit.modal.change-balance.confirm'),
+          variant: 'primary',
+        },
+      ],
     });
   };
 
   const showDeleteAccountConfirmation = (
     accountName: string
   ): Promise<{ proceed: boolean; deleteAssociatedTrades: boolean }> => {
-    return new Promise((resolve) => {
-      const modal = new DeleteAccountConfirmationModal(
-        app,
-        accountName,
-        resolve
-      );
-      modal.open();
-    });
+    let deleteAssociatedTrades = false;
+    return showActionConfirmationModal<'cancel' | 'delete'>(app, {
+      title: t('account.edit.modal.delete.title'),
+      destructive: true,
+      cancelValue: 'cancel',
+      renderContent: (contentEl) => {
+        const container = contentEl.createDiv({
+          cls: 'journalit-confirmation-content',
+        });
+        container.createEl('p', {
+          text: t('account.edit.modal.delete.question', {
+            name: accountName,
+          }),
+          cls: 'journalit-confirmation-modal__message',
+        });
+
+        const warningBox = container.createDiv({
+          cls: 'journalit-confirmation-content__alert journalit-confirmation-content__alert--destructive',
+        });
+        warningBox.createEl('p', {
+          text: t('account.edit.modal.delete.will'),
+          cls: 'journalit-confirmation-modal__message',
+        });
+        const list = warningBox.createEl('ul', {
+          cls: 'journalit-confirmation-content__list',
+        });
+        list.createEl('li', { text: t('account.edit.modal.delete.item1') });
+        list.createEl('li', { text: t('account.edit.modal.delete.item2') });
+        list.createEl('li', { text: t('account.edit.modal.delete.item3') });
+
+        const tradeDeleteOption = container.createDiv({
+          cls: 'journalit-confirmation-content__checkbox',
+        });
+        const tradeDeleteCheckbox = tradeDeleteOption.createEl('input', {
+          type: 'checkbox',
+        });
+        tradeDeleteCheckbox.addEventListener('change', () => {
+          deleteAssociatedTrades = tradeDeleteCheckbox.checked;
+        });
+        tradeDeleteOption.createEl('label', {
+          text: t('account.edit.modal.delete.delete-associated-trades'),
+        });
+
+        const dangerWarning = container.createEl('p', {
+          cls: 'journalit-confirmation-modal__message journalit-confirmation-modal__message--destructive',
+        });
+        dangerWarning.createEl('strong', {
+          text: `⚠️ ${t('common.warning').toUpperCase()}:`,
+        });
+        dangerWarning.createSpan({
+          text: ` ${t('account.edit.delete-warning')}`,
+        });
+      },
+      actions: [
+        {
+          value: 'cancel',
+          label: t('button.cancel'),
+          variant: 'secondary',
+          initialFocus: true,
+        },
+        {
+          value: 'delete',
+          label: t('account.edit.button.delete-name', { name: accountName }),
+          variant: 'destructive',
+        },
+      ],
+    }).then((action) =>
+      action === 'delete'
+        ? { proceed: true, deleteAssociatedTrades }
+        : { proceed: false, deleteAssociatedTrades: false }
+    );
   };
 
   const handleDeleteAccount = async () => {
@@ -1886,346 +2056,6 @@ const EditAccountModalContent: React.FC<
     </div>
   );
 };
-
-
-class NameChangeConfirmationModal extends Modal {
-  constructor(
-    app: App,
-    private message: string,
-    private onConfirm: (action: NameChangeAction) => void
-  ) {
-    super(app);
-    this.titleEl.setText(t('account.edit.modal.update-notes.title'));
-  }
-
-  onOpen() {
-    const { contentEl } = this;
-    contentEl.createEl('p', { text: this.message });
-    const buttonContainer = contentEl.createDiv({
-      cls: 'modal-button-container journalit-modal-button-container',
-    });
-
-    
-    buttonContainer
-      .createEl('button', {
-        type: 'button',
-        text: t('account.edit.modal.update-notes.yes'),
-        cls: 'mod-cta',
-      })
-      .addEventListener('click', () => {
-        this.close();
-        this.onConfirm('update-notes');
-      });
-
-    
-    buttonContainer
-      .createEl('button', {
-        type: 'button',
-        text: t('account.edit.modal.update-notes.no'),
-      })
-      .addEventListener('click', () => {
-        this.close();
-        this.onConfirm('keep-old-name');
-      });
-
-    
-    buttonContainer
-      .createEl('button', {
-        type: 'button',
-        text: t('account.edit.modal.update-notes.cancel'),
-      })
-      .addEventListener('click', () => {
-        this.close();
-        this.onConfirm('cancel');
-      });
-  }
-
-  onClose() {
-    const { contentEl } = this;
-    contentEl.empty();
-  }
-}
-
-
-class CreationDateChangeConfirmationModal extends Modal {
-  constructor(
-    app: App,
-    private accountName: string,
-    private oldDate: Date,
-    private newDate: Date,
-    private onConfirm: (proceed: boolean) => void
-  ) {
-    super(app);
-    this.titleEl.setText(t('account.edit.modal.change-date.title'));
-  }
-
-  onOpen() {
-    const { contentEl } = this;
-    contentEl.empty();
-
-    const container = contentEl.createDiv({
-      cls: 'journalit-account-modal',
-    });
-
-    const userDateFormat = getUserDateFormat();
-
-    
-    const infoBox = container.createDiv({
-      cls: 'journalit-account-modal__info',
-    });
-    infoBox.createEl('p', {
-      text: t('account.edit.modal.change-date.message', {
-        account: this.accountName,
-        oldDate: formatDateDisplay(this.oldDate, userDateFormat),
-        newDate: formatDateDisplay(this.newDate, userDateFormat),
-      }),
-      cls: 'journalit-account-modal__text',
-    });
-
-    
-    const warningBox = container.createDiv({
-      cls: 'journalit-account-modal__warning journalit-account-modal__warning--warning journalit-account-modal__warning--spaced',
-    });
-    warningBox.createEl('p', {
-      text: t('account.edit.modal.change-date.warning'),
-      cls: 'journalit-account-modal__text journalit-account-modal__text--small',
-    });
-
-    
-    const buttons = container.createDiv({
-      cls: 'journalit-account-modal__actions',
-    });
-
-    const cancelBtn = buttons.createEl('button', {
-      text: t('button.cancel'),
-      cls: 'journalit-account-modal__button journalit-account-modal__button--secondary',
-    });
-    cancelBtn.addEventListener('click', () => {
-      this.close();
-      this.onConfirm(false);
-    });
-
-    const confirmBtn = buttons.createEl('button', {
-      text: t('account.edit.modal.change-date.confirm'),
-      cls: 'journalit-account-modal__button journalit-account-modal__button--primary',
-    });
-    confirmBtn.addEventListener('click', () => {
-      this.close();
-      this.onConfirm(true);
-    });
-  }
-
-  onClose() {
-    const { contentEl } = this;
-    contentEl.empty();
-  }
-}
-
-
-class InitialBalanceChangeConfirmationModal extends Modal {
-  constructor(
-    app: App,
-    private plugin: JournalitPlugin,
-    private oldBalance: number,
-    private newBalance: number,
-    private accountCurrency: string | undefined,
-    private onConfirm: (proceed: boolean) => void
-  ) {
-    super(app);
-    this.titleEl.setText(t('account.edit.modal.change-balance.title'));
-  }
-
-  onOpen() {
-    const { contentEl } = this;
-    contentEl.empty();
-
-    const container = contentEl.createDiv({
-      cls: 'journalit-account-modal',
-    });
-
-    const formatCurrency = (amount: number) => {
-      
-      const currency =
-        this.accountCurrency ||
-        this.plugin?.settings?.general?.currency ||
-        'USD';
-      return amount.toLocaleString('en-US', {
-        style: 'currency',
-        currency: currency,
-        minimumFractionDigits: 2,
-      });
-    };
-
-    
-    const infoBox = container.createDiv({
-      cls: 'journalit-account-modal__info',
-    });
-    infoBox.createEl('p', {
-      text: t('account.edit.modal.change-balance.message', {
-        oldBalance: formatCurrency(this.oldBalance),
-        newBalance: formatCurrency(this.newBalance),
-      }),
-      cls: 'journalit-account-modal__text',
-    });
-
-    
-    const warningBox = container.createDiv({
-      cls: 'journalit-account-modal__warning journalit-account-modal__warning--warning',
-    });
-    warningBox.createEl('p', {
-      text: t('account.edit.modal.change-balance.info'),
-      cls: 'journalit-account-modal__text journalit-account-modal__text--small journalit-account-modal__text--spaced',
-    });
-    warningBox.createEl('p', {
-      text: t('account.edit.modal.change-balance.info2'),
-      cls: 'journalit-account-modal__text journalit-account-modal__text--muted',
-    });
-
-    
-    container.createEl('p', {
-      text: t('account.edit.modal.change-balance.info3'),
-      cls: 'journalit-account-modal__danger-note',
-    });
-
-    
-    const buttons = container.createDiv({
-      cls: 'journalit-account-modal__actions',
-    });
-
-    const cancelBtn = buttons.createEl('button', {
-      text: t('button.cancel'),
-      cls: 'journalit-account-modal__button journalit-account-modal__button--secondary',
-    });
-    cancelBtn.addEventListener('click', () => {
-      this.close();
-      this.onConfirm(false);
-    });
-
-    const confirmBtn = buttons.createEl('button', {
-      text: t('account.edit.modal.change-balance.confirm'),
-      cls: 'journalit-account-modal__button journalit-account-modal__button--primary',
-    });
-    confirmBtn.addEventListener('click', () => {
-      this.close();
-      this.onConfirm(true);
-    });
-  }
-
-  onClose() {
-    const { contentEl } = this;
-    contentEl.empty();
-  }
-}
-
-
-class DeleteAccountConfirmationModal extends Modal {
-  private deleteAssociatedTrades = false;
-
-  constructor(
-    app: App,
-    private accountName: string,
-    private onConfirm: (choice: {
-      proceed: boolean;
-      deleteAssociatedTrades: boolean;
-    }) => void
-  ) {
-    super(app);
-    this.titleEl.setText(t('account.edit.modal.delete.title'));
-    this.titleEl.addClass('journalit-modal-title-danger');
-  }
-
-  onOpen() {
-    const { contentEl } = this;
-    contentEl.empty();
-
-    const container = contentEl.createDiv({
-      cls: 'journalit-account-modal',
-    });
-
-    
-    container.createEl('p', {
-      text: t('account.edit.modal.delete.question', {
-        name: this.accountName,
-      }),
-      cls: 'journalit-account-modal__question',
-    });
-
-    
-    const warningBox = container.createDiv({
-      cls: 'journalit-account-modal__warning journalit-account-modal__warning--danger',
-    });
-
-    warningBox.createEl('p', {
-      text: t('account.edit.modal.delete.will'),
-      cls: 'journalit-account-modal__text journalit-account-modal__text--small journalit-account-modal__text--emphasis journalit-account-modal__text--spaced',
-    });
-
-    const list = warningBox.createEl('ul', {
-      cls: 'journalit-account-modal__list',
-    });
-    list.createEl('li', { text: t('account.edit.modal.delete.item1') });
-    list.createEl('li', { text: t('account.edit.modal.delete.item2') });
-    list.createEl('li', { text: t('account.edit.modal.delete.item3') });
-
-    const tradeDeleteOption = container.createDiv({
-      cls: 'journalit-account-modal__checkbox-row',
-    });
-    const tradeDeleteCheckbox = tradeDeleteOption.createEl('input', {
-      type: 'checkbox',
-    });
-    tradeDeleteCheckbox.addEventListener('change', () => {
-      this.deleteAssociatedTrades = tradeDeleteCheckbox.checked;
-    });
-    tradeDeleteOption.createEl('label', {
-      text: t('account.edit.modal.delete.delete-associated-trades'),
-    });
-
-    
-    const dangerWarning = container.createEl('p', {
-      cls: 'journalit-account-modal__danger-warning',
-    });
-
-    dangerWarning.createEl('strong', {
-      text: `⚠️ ${t('common.warning').toUpperCase()}:`,
-    });
-    dangerWarning.createSpan({
-      text: ` ${t('account.edit.delete-warning')}`,
-    });
-
-    
-    const buttons = container.createDiv({
-      cls: 'journalit-account-modal__actions',
-    });
-
-    const cancelBtn = buttons.createEl('button', {
-      text: t('button.cancel'),
-      cls: 'journalit-account-modal__button journalit-account-modal__button--primary',
-    });
-    cancelBtn.addEventListener('click', () => {
-      this.close();
-      this.onConfirm({ proceed: false, deleteAssociatedTrades: false });
-    });
-
-    const deleteBtn = buttons.createEl('button', {
-      text: t('account.edit.button.delete-name', {
-        name: this.accountName,
-      }),
-      cls: 'journalit-account-modal__button journalit-account-modal__button--danger',
-    });
-    deleteBtn.addEventListener('click', () => {
-      this.close();
-      this.onConfirm({
-        proceed: true,
-        deleteAssociatedTrades: this.deleteAssociatedTrades,
-      });
-    });
-  }
-
-  onClose() {
-    const { contentEl } = this;
-    contentEl.empty();
-  }
-}
 
 
 export function openEditAccountModal(

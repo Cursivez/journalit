@@ -72,22 +72,6 @@ export const TRADE_FORM_LAYOUT_STYLES = `
     padding: 4px 0;
   }
 
-  .journalit-trade-form-layout-editor__mode-card .segmented-control-option.is-active {
-    background: var(--interactive-accent);
-    color: var(--text-on-accent);
-    box-shadow: 0 0 0 1px var(--interactive-accent-hover), 0 2px 8px rgba(0, 0, 0, 0.18);
-  }
-
-  .journalit-trade-form-layout-editor__mode-card .segmented-control-option:not(.is-active) {
-    background: var(--background-primary);
-    color: var(--text-normal);
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-  }
-
-  .journalit-trade-form-layout-editor__mode-card .segmented-control-option:not(.is-active):hover {
-    background: var(--background-modifier-hover);
-  }
-
   .journalit-trade-form-layout-editor__asset-controls {
     display: inline-flex;
     align-items: center;

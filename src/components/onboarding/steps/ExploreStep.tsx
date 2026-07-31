@@ -23,7 +23,7 @@ interface ExploreStepProps {
   onOpenAccounts: () => void | Promise<void>;
   onOpenLayoutBuilder: () => void | Promise<void>;
   onOpenCsv: () => void | Promise<void>;
-  onOpenMetaTrader: () => void | Promise<void>;
+  onOpenTradeSync: () => void | Promise<void>;
   onOpenManual: () => void | Promise<void>;
   manualLinkFallbackUrl?: string | null;
   manualLinkCopied?: boolean;
@@ -47,7 +47,7 @@ export const ExploreStep: React.FC<ExploreStepProps> = ({
   onOpenAccounts,
   onOpenLayoutBuilder,
   onOpenCsv,
-  onOpenMetaTrader,
+  onOpenTradeSync,
   onOpenManual,
   manualLinkFallbackUrl,
   manualLinkCopied,
@@ -91,12 +91,12 @@ export const ExploreStep: React.FC<ExploreStepProps> = ({
       onOpen: onOpenCsv,
     },
     {
-      id: 'mt',
-      label: t('onboarding.explore.imports.mt.label'),
-      description: t('onboarding.explore.imports.mt.description'),
+      id: 'trade-sync',
+      label: t('onboarding.explore.imports.trade-sync.label'),
+      description: t('onboarding.explore.imports.trade-sync.description'),
       icon: <Plug size={22} />,
       isPremium: true,
-      onOpen: onOpenMetaTrader,
+      onOpen: onOpenTradeSync,
     },
   ];
 

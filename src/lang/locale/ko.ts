@@ -2,6 +2,11 @@
 import type { Lang } from './en';
 
 const ko: Partial<Lang> = {
+  'trade.broker-synced-at': '브로커 동기화 {date}',
+  'home.period.month': '월',
+  'home.period.quarter': '분기',
+  'home.period.year': '년',
+  'home.period.lifetime': '전체 기간',
   
   
   
@@ -19,8 +24,8 @@ const ko: Partial<Lang> = {
   'command.create-yearly-review': '연간 리뷰 열기',
 
   
-  'command.open-dashboard': '트레이딩 대시보드 열기',
-  'command.open-account-dashboard': '계좌 대시보드 열기',
+  'command.open-dashboard': '대시보드 열기',
+  'command.open-account-dashboard': '계정 열기',
   'command.open-trade-log': '거래 기록 열기',
   'command.open-home': '홈 화면 열기',
   'command.open-position-size-calculator': '포지션 크기 계산기 열기',
@@ -47,7 +52,7 @@ const ko: Partial<Lang> = {
     'Designed to adapt to your workflow, not force you into ours.',
   'onboarding.explore.tagline': 'Your journal, your rules.',
   'onboarding.explore.section.out-of-box.title': 'Core views & tools',
-  'onboarding.explore.core.dashboard.label': 'Trading Dashboard',
+  'onboarding.explore.core.dashboard.label': '대시보드',
   'onboarding.explore.core.dashboard.description':
     'Your performance at a glance — P&L, win rate, drawdowns, and more.',
   'onboarding.explore.core.tradelog.label': 'Trade Log',
@@ -65,9 +70,9 @@ const ko: Partial<Lang> = {
   'onboarding.explore.imports.csv.label': 'Trade Import',
   'onboarding.explore.imports.csv.description':
     'Upload CSV, spreadsheet, HTML, and broker statement exports for backend-powered analysis and preview.',
-  'onboarding.explore.imports.mt.label': 'MetaTrader Sync (MT4/MT5)',
-  'onboarding.explore.imports.mt.description':
-    'Automatic trade syncing from MetaTrader. Requires Pro.',
+  'onboarding.explore.imports.trade-sync.label': 'Trade Sync',
+  'onboarding.explore.imports.trade-sync.description':
+    'Automatic trade syncing from MetaTrader (MT4) or Tradovate. Requires Pro.',
   'onboarding.explore.cta.open': 'Open',
   'onboarding.explore.cta.manual': 'Open Docs',
 
@@ -86,9 +91,9 @@ const ko: Partial<Lang> = {
   'onboarding.path.option.csv.label': 'Trade Import',
   'onboarding.path.option.csv.description':
     'Use Pro backend-powered analysis for broker export files.',
-  'onboarding.path.option.mt.label': 'MetaTrader Sync (MT4/MT5)',
-  'onboarding.path.option.mt.description':
-    'Connect MT4/MT5 for automatic trade syncing.',
+  'onboarding.path.option.trade-sync.label': 'Trade Sync',
+  'onboarding.path.option.trade-sync.description':
+    'Connect MetaTrader (MT4) or Tradovate for automatic trade syncing.',
 
   
   
@@ -105,14 +110,14 @@ const ko: Partial<Lang> = {
   'onboarding.final.csv.subtitle':
     'Next, open Trade Import. Uploading and processing broker exports requires PRO activation.',
   'onboarding.final.csv.cta.open': 'Open Trade Import',
-  'onboarding.final.mt.title': "You're ready to connect MetaTrader",
-  'onboarding.final.mt.subtitle':
-    'Next, set up MT4/MT5 sync. Requires PRO activation.',
-  'onboarding.final.mt.cta.open': 'Open MetaTrader Setup',
-  'onboarding.final.mt.hero.source.title': 'MetaTrader',
-  'onboarding.final.mt.hero.source.subtitle': 'Trade reports',
-  'onboarding.final.mt.hero.dest.title': 'Vault',
-  'onboarding.final.mt.hero.dest.subtitle': 'Trade notes',
+  'onboarding.final.trade-sync.title': "You're ready to set up Trade Sync",
+  'onboarding.final.trade-sync.subtitle':
+    'Next, set up MetaTrader (MT4) or Tradovate sync.',
+  'onboarding.final.trade-sync.cta.open': 'Open Trade Sync Setup',
+  'onboarding.final.trade-sync.hero.source.title': 'MetaTrader + Tradovate',
+  'onboarding.final.trade-sync.hero.source.subtitle': 'Broker trades',
+  'onboarding.final.trade-sync.hero.dest.title': 'Vault',
+  'onboarding.final.trade-sync.hero.dest.subtitle': 'Trade notes',
   'onboarding.final.finish': 'Finish',
   'command.open-release-notes': '릴리스 노트 보기',
 
@@ -190,6 +195,10 @@ const ko: Partial<Lang> = {
   'form.layout.item.realized-pnl-preview': '부분 청산 P&L 요약',
   'form.layout.item.realized-pnl-preview-desc':
     '부분 청산 후 열린 거래에서만 표시되며 위치는 고정됩니다.',
+  'form.layout.item.trade-currency': '거래 통화 / 환율',
+  'form.layout.item.trade-currency-desc':
+    '다른 통화로 거래를 입력하고 선택적으로 환율을 직접 지정할 수 있습니다.',
+  'form.layout.manual-fx-rate': '수동 환율 입력',
   'form.layout.result-r': 'R 결과',
   'form.layout.entry-time': '거래 시간',
 
@@ -256,6 +265,8 @@ const ko: Partial<Lang> = {
   'form.field.custom-lot-size': '사용자 정의 랏 크기',
   'form.field.pip-value': '핍 가치',
   'form.field.leverage-ratio': '레버리지 비율',
+  'form.field.trade-currency': '거래 통화',
+  'form.field.fx-rate': '{base} 환율',
 
   
   'form.field.lot-size.standard': '스탠다드 (100,000)',
@@ -276,6 +287,8 @@ const ko: Partial<Lang> = {
   'form.placeholder.target-price': 'Target price',
   'form.placeholder.close-percent': '50%',
   'form.placeholder.risk-amount': '계획된 리스크 금액',
+  'form.placeholder.fx-rate':
+    '1 {currency} = ? {base} (비워두면 일일 환율 사용)',
   'form.placeholder.custom-tag': '사용자 태그를 입력하고 Enter를 누르세요',
   'form.placeholder.thesis': '이 거래에 대한 논거를 입력하세요...',
   'form.placeholder.pnl': '총 손익 입력',
@@ -484,7 +497,7 @@ const ko: Partial<Lang> = {
   'dashboard.guide.empty.state.title': 'Start by adding your first trade',
   'dashboard.guide.empty.state.description':
     'You do not have any trades yet. Add a trade manually or import data, then come back to unlock the full Dashboard tour.',
-  'dashboard.guide.main.intro.title': 'This is your trading dashboard',
+  'dashboard.guide.main.intro.title': '대시보드입니다',
   'dashboard.guide.main.intro.description':
     'Use this page to track your performance, review your stats, and keep your most useful charts in one place.',
   'dashboard.guide.main.filters.title': 'Filters change the whole Dashboard',
@@ -512,7 +525,7 @@ const ko: Partial<Lang> = {
     'Save your layout when you are done',
   'dashboard.guide.main.save-layout.description':
     'When you finish customising, click Save Layout to keep your changes. You can come back and edit this page again anytime.',
-  'home.guide.intro.title': 'Welcome to Home',
+  'home.guide.intro.title': '홈에 오신 것을 환영합니다',
   'home.guide.intro.description':
     'This is your main page. It shows your trading stats, quick actions, and shortcuts to the rest of Journalit.',
   'home.guide.filters.title': 'These buttons change what your widgets show',
@@ -676,7 +689,7 @@ const ko: Partial<Lang> = {
   'view.home': '홈',
   'view.dashboard': '대시보드',
   'view.trade-log': '거래 기록',
-  'view.account-dashboard': '계좌 대시보드',
+  'view.account-dashboard': '계정',
   'view.layout-builder': '레이아웃 빌더',
   'view.csv-import': 'Trade Import',
 
@@ -780,7 +793,7 @@ const ko: Partial<Lang> = {
   
   
   
-  'settings.title': 'Journalit 설정',
+
   'settings.language': '언어',
   'settings.language-desc': '플러그인 표시 언어 선택',
 
@@ -816,6 +829,18 @@ const ko: Partial<Lang> = {
     'Design your review templates your way.',
   'home.widget.getting-started.item.layouts.time': '1 min',
   'home.widget.getting-started.item.layouts.cta': 'Open Layout Builder',
+  'home.widget.getting-started.item.sidebar.title': '탐색 사이드바 열기',
+  'home.widget.getting-started.item.sidebar.description':
+    'Journalit 페이지, 리뷰, 도구 및 검색에 빠르게 접근하세요.',
+  'home.widget.getting-started.item.sidebar.time': '10초',
+  'home.widget.getting-started.item.sidebar.cta': '사이드바 열기',
+  'home.quick-links.navigation-sidebar': '탐색 사이드바',
+  'notice.error.open-navigation-sidebar':
+    '탐색 사이드바를 열지 못했습니다. 다시 시도해 주세요.',
+  'navigation.setting.open': '탐색 사이드바 열기',
+  'navigation.setting.open.desc':
+    '지금 표시하고 Obsidian 사이드바가 접혀 있으면 펼칩니다.',
+  'navigation.setting.open.button': '사이드바 열기',
   'home.widget.getting-started.item.pro.title': 'Activate PRO',
   'home.widget.getting-started.item.pro.description':
     'Enable Trade Import, MetaTrader sync, and AI mapping.',
@@ -1005,8 +1030,6 @@ const ko: Partial<Lang> = {
 
   'guide.skip-guide': 'Skip Guide',
   'settings.general.data-management': '데이터 관리 & 개인정보 보호',
-
-  'settings.general.display-privacy-section': '표시 & 개인정보 보호',
 
   'settings.general.privacy-mode': '개인정보 보호 모드',
 
@@ -1316,6 +1339,9 @@ const ko: Partial<Lang> = {
   'setups.guide.overview-chart.title': '성과 순위',
   'setups.guide.overview-chart.description':
     '개요 차트는 선택한 지표로 셋업을 정렬합니다. 오른쪽 위 컨트롤로 지표를 바꾸거나 특정 셋업에 집중할 수 있습니다.',
+  'setups.guide.tag-filter.title': '셋업 필터링',
+  'setups.guide.tag-filter.description':
+    '셋업 태그 또는 방향으로 카드, 차트, 페어 및 비교 항목을 필터링합니다. 각 그룹 안에서는 OR, 태그와 방향 사이는 AND로 적용됩니다.',
   'setups.guide.setup-cards.title': '셋업 카드',
   'setups.guide.setup-cards.description':
     '카드는 핵심 지표, 상태, 마지막 거래일, 작은 성과 추세로 각 셋업을 요약합니다.',
@@ -1625,6 +1651,70 @@ const ko: Partial<Lang> = {
     '이제 Trade Log의 두 모드를 알게 되었습니다',
   'tradelog.guide.gallery-finish.description':
     '표와 일괄 도구가 필요할 때는 거래 모드를 사용하세요. 저널 전체의 이미지, GIF, 동영상, YouTube 링크, 시장 구조와 차트 주석을 검토할 때는 갤러리를 사용하세요.',
+  'trade.validation.fx-rate-number': '환율은 유효한 숫자여야 합니다.',
+  'trade.validation.fx-rate-positive': '환율은 0보다 커야 합니다.',
+  'dashboard.conversion.using-manual-rate':
+    '{count} {tradeLabel}에 수동 환율 사용',
+  'dashboard.conversion.partial-warning':
+    '⚠ {currencies}의 비용/리스크는 환산할 수 없어 제외되었습니다',
+  'trade-sync.providers.title': '거래 동기화',
+  'trade-sync.providers.description':
+    '사용 가능한 각 제공자를 개별적으로 설정하여 함께 실행하세요.',
+  'trade-sync.tradovate.pending-acks': '대기 중인 로컬 ACK {count}개',
+  'trade-sync.import.section-title': 'Trade Import 백업 및 복원',
+  'trade-sync.import.section-description':
+    '가져온 거래를 클라우드에 백업하고 누락된 로컬 노트를 복원하세요.',
+  'notice.error.canonical-trade-type-change':
+    '브로커와 동기화된 트레이드는 다른 트레이드 유형으로 변경할 수 없습니다.',
+  'trade-sync.import.account.conflict-repair':
+    '중복된 canonicalTradeId 노트가 발견되었습니다. 하나를 남기고 중복 노트에서 canonicalTradeId를 제거하거나 해당 노트를 삭제하세요. 파일 이름 변경만으로는 충돌이 해결되지 않습니다.',
+  'setups.create.field.tags': '태그',
+  'setups.create.placeholder.tags': '모멘텀, 돌파, 오전',
+  'setups.view.overview.tag-filter.aria': '셋업 필터링',
+  'setups.view.overview.tag-filter.reset': '초기화',
+  'setups.view.overview.tag-filter.untagged': '태그 없음',
+  'setups.view.overview.tag-filter.empty': '이 필터와 일치하는 셋업이 없습니다',
+  'setups.view.overview.tag-filter.empty-submessage':
+    '더 많은 셋업을 보려면 필터를 조정하거나 지우세요.',
+
+  'setups.view.tags': '태그',
+  'setups.create.error.tag-save-failed':
+    '태그를 전역 태그 목록에 저장하지 못했습니다.',
+  'settings.customization.options.confirm.remove-tag-message':
+    '전역 태그 “{option}”을 삭제할까요? 모든 Journalit 거래 및 셋업 노트에서 제거됩니다.',
+  'settings.customization.options.confirm.reset-tag-message':
+    '전역 태그 목록과 색상을 기본값으로 초기화할까요? 거래 및 셋업 노트에 이미 지정된 태그는 해당 노트에 유지됩니다.',
+  'home.mode.overview': '개요',
+  'home.mode.dashboard': '대시보드',
+  'home.mode.aria': '홈 모드 전환',
+  'home.filters.period': '기간',
+  'home.filters.trade-type': '거래 유형',
+  'home.filters.accounts': '계정',
+  'home.filters.back': '뒤로',
+  'home.guide.modes.title': '마지막으로 하나 더: 대시보드',
+  'home.guide.modes.description':
+    '개요와 대시보드는 이 페이지를 공유합니다. 지금 대시보드로 전환하여 성과 통계에 대한 짧은 투어를 계속하세요.',
+  'home.guide.whats-new.mode.title': '하나의 홈, 두 가지 모드',
+  'home.guide.whats-new.mode.description':
+    '개요와 대시보드가 이제 한 페이지를 공유합니다. 레이아웃과 스크롤 위치를 유지한 채 전환할 수 있습니다.',
+  'home.guide.whats-new.filters.title': '홈 필터를 한곳에서',
+  'home.guide.whats-new.filters.description':
+    '필터 버튼을 열어 기간, 거래 유형 또는 계정을 간결한 계층 메뉴에서 선택하세요.',
+  'home.guide.whats-new.done.title': '작업 공간의 맥락을 유지합니다',
+  'home.guide.whats-new.done.description':
+    '개인 위젯에는 개요를, 심층 분석에는 대시보드를 사용하세요. 각 모드는 자체 필터와 레이아웃을 유지합니다.',
+
+  'account-dashboard.title': '계정',
+  'home.quick-links.trading-dashboard': '대시보드',
+  'home.quick-links.account-dashboard': '계정',
+  'navigation.items.nav-dashboard': '대시보드',
+  'navigation.items.nav-account-dashboard': '계정',
+
+  'settings.general.home-background-dashboard': '대시보드에도 배경 표시',
+  'settings.general.home-background-dashboard-desc':
+    '대시보드 모드에서도 동일한 배경 이미지를 사용합니다.',
+  'settings.general.home-background-dashboard-aria':
+    '홈 배경을 대시보드에 표시',
 };
 
 export default ko;

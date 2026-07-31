@@ -295,10 +295,7 @@ export const TradesMonthlyWidget: React.FC<TradesMonthlyWidgetProps> = ({
       <div className="journalit-reviewv2-chart-header">
         <div className="journalit-reviewv2-chart-title">
           {t('widget.trades-chart-monthly.name')}
-          <CurrencyConversionInfo
-            metadata={currencyConversion}
-            trades={trades.filter((trade) => isPnlContributingTrade(trade))}
-          />
+          <CurrencyConversionInfo metadata={currencyConversion} />
         </div>
       </div>
       <div className="journalit-reviewv2-chart-body">

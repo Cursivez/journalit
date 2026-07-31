@@ -20,6 +20,8 @@ export class PluginCleanupManager {
 
   
   async cleanup(): Promise<void> {
+    this.plugin.graphLinkService?.destroy();
+
     
     if (this.plugin.uiStateManager) {
       try {

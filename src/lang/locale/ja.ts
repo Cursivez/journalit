@@ -2,6 +2,11 @@
 import type { Lang } from './en';
 
 const ja: Partial<Lang> = {
+  'trade.broker-synced-at': 'ブローカー同期 {date}',
+  'home.period.month': '月',
+  'home.period.quarter': '四半期',
+  'home.period.year': '年',
+  'home.period.lifetime': '全期間',
   
   
   
@@ -19,8 +24,8 @@ const ja: Partial<Lang> = {
   'command.create-yearly-review': '年次レビューを開く',
 
   
-  'command.open-dashboard': 'トレーディングダッシュボードを開く',
-  'command.open-account-dashboard': '口座ダッシュボードを開く',
+  'command.open-dashboard': 'ダッシュボードを開く',
+  'command.open-account-dashboard': '口座を開く',
   'command.open-trade-log': 'トレードログを開く',
   'command.open-home': 'ホームビューを開く',
   'command.open-position-size-calculator': 'ポジションサイズ計算機を開く',
@@ -47,7 +52,7 @@ const ja: Partial<Lang> = {
     'Designed to adapt to your workflow, not force you into ours.',
   'onboarding.explore.tagline': 'Your journal, your rules.',
   'onboarding.explore.section.out-of-box.title': 'Core views & tools',
-  'onboarding.explore.core.dashboard.label': 'Trading Dashboard',
+  'onboarding.explore.core.dashboard.label': 'ダッシュボード',
   'onboarding.explore.core.dashboard.description':
     'Your performance at a glance — P&L, win rate, drawdowns, and more.',
   'onboarding.explore.core.tradelog.label': 'Trade Log',
@@ -65,9 +70,9 @@ const ja: Partial<Lang> = {
   'onboarding.explore.imports.csv.label': 'Trade Import',
   'onboarding.explore.imports.csv.description':
     'Upload CSV, spreadsheet, HTML, and broker statement exports for backend-powered analysis and preview.',
-  'onboarding.explore.imports.mt.label': 'MetaTrader Sync (MT4/MT5)',
-  'onboarding.explore.imports.mt.description':
-    'Automatic trade syncing from MetaTrader. Requires Pro.',
+  'onboarding.explore.imports.trade-sync.label': 'Trade Sync',
+  'onboarding.explore.imports.trade-sync.description':
+    'Automatic trade syncing from MetaTrader (MT4) or Tradovate. Requires Pro.',
   'onboarding.explore.cta.open': 'Open',
   'onboarding.explore.cta.manual': 'Open Docs',
 
@@ -86,9 +91,9 @@ const ja: Partial<Lang> = {
   'onboarding.path.option.csv.label': 'Trade Import',
   'onboarding.path.option.csv.description':
     'Use Pro backend-powered analysis for broker export files.',
-  'onboarding.path.option.mt.label': 'MetaTrader Sync (MT4/MT5)',
-  'onboarding.path.option.mt.description':
-    'Connect MT4/MT5 for automatic trade syncing.',
+  'onboarding.path.option.trade-sync.label': 'Trade Sync',
+  'onboarding.path.option.trade-sync.description':
+    'Connect MetaTrader (MT4) or Tradovate for automatic trade syncing.',
 
   
   
@@ -105,14 +110,14 @@ const ja: Partial<Lang> = {
   'onboarding.final.csv.subtitle':
     'Next, open Trade Import. Uploading and processing broker exports requires PRO activation.',
   'onboarding.final.csv.cta.open': 'Open Trade Import',
-  'onboarding.final.mt.title': "You're ready to connect MetaTrader",
-  'onboarding.final.mt.subtitle':
-    'Next, set up MT4/MT5 sync. Requires PRO activation.',
-  'onboarding.final.mt.cta.open': 'Open MetaTrader Setup',
-  'onboarding.final.mt.hero.source.title': 'MetaTrader',
-  'onboarding.final.mt.hero.source.subtitle': 'Trade reports',
-  'onboarding.final.mt.hero.dest.title': 'Vault',
-  'onboarding.final.mt.hero.dest.subtitle': 'Trade notes',
+  'onboarding.final.trade-sync.title': "You're ready to set up Trade Sync",
+  'onboarding.final.trade-sync.subtitle':
+    'Next, set up MetaTrader (MT4) or Tradovate sync.',
+  'onboarding.final.trade-sync.cta.open': 'Open Trade Sync Setup',
+  'onboarding.final.trade-sync.hero.source.title': 'MetaTrader + Tradovate',
+  'onboarding.final.trade-sync.hero.source.subtitle': 'Broker trades',
+  'onboarding.final.trade-sync.hero.dest.title': 'Vault',
+  'onboarding.final.trade-sync.hero.dest.subtitle': 'Trade notes',
   'onboarding.final.finish': 'Finish',
   'command.open-release-notes': 'リリースノートを表示',
 
@@ -190,6 +195,10 @@ const ja: Partial<Lang> = {
   'form.layout.item.realized-pnl-preview': '部分決済P&Lサマリー',
   'form.layout.item.realized-pnl-preview-desc':
     '部分決済後のオープントレードでのみ表示され、位置は固定です。',
+  'form.layout.item.trade-currency': 'トレード通貨 / 為替レート',
+  'form.layout.item.trade-currency-desc':
+    '別の通貨でトレードを入力し、任意で為替レートを手動指定できます。',
+  'form.layout.manual-fx-rate': '手動為替レート入力',
   'form.layout.result-r': 'R での結果',
   'form.layout.entry-time': 'トレード時刻',
 
@@ -256,6 +265,8 @@ const ja: Partial<Lang> = {
   'form.field.custom-lot-size': 'カスタムロットサイズ',
   'form.field.pip-value': 'ピップ価値',
   'form.field.leverage-ratio': 'レバレッジ比率',
+  'form.field.trade-currency': 'トレード通貨',
+  'form.field.fx-rate': '{base}への為替レート',
 
   
   'form.field.lot-size.standard': 'スタンダード（100,000）',
@@ -276,6 +287,7 @@ const ja: Partial<Lang> = {
   'form.placeholder.target-price': 'Target price',
   'form.placeholder.close-percent': '50%',
   'form.placeholder.risk-amount': '計画リスク金額',
+  'form.placeholder.fx-rate': '1 {currency} = ? {base}（空欄: 日次レート）',
   'form.placeholder.custom-tag': 'カスタムタグを入力してEnterを押す',
   'form.placeholder.thesis': 'このトレードの根拠を入力...',
   'form.placeholder.pnl': '合計損益を入力',
@@ -493,7 +505,7 @@ const ja: Partial<Lang> = {
   'dashboard.guide.empty.state.title': 'Start by adding your first trade',
   'dashboard.guide.empty.state.description':
     'You do not have any trades yet. Add a trade manually or import data, then come back to unlock the full Dashboard tour.',
-  'dashboard.guide.main.intro.title': 'This is your trading dashboard',
+  'dashboard.guide.main.intro.title': 'ダッシュボードです',
   'dashboard.guide.main.intro.description':
     'Use this page to track your performance, review your stats, and keep your most useful charts in one place.',
   'dashboard.guide.main.filters.title': 'Filters change the whole Dashboard',
@@ -521,7 +533,7 @@ const ja: Partial<Lang> = {
     'Save your layout when you are done',
   'dashboard.guide.main.save-layout.description':
     'When you finish customising, click Save Layout to keep your changes. You can come back and edit this page again anytime.',
-  'home.guide.intro.title': 'Welcome to Home',
+  'home.guide.intro.title': 'おかえりなさい',
   'home.guide.intro.description':
     'This is your main page. It shows your trading stats, quick actions, and shortcuts to the rest of Journalit.',
   'home.guide.filters.title': 'These buttons change what your widgets show',
@@ -686,7 +698,7 @@ const ja: Partial<Lang> = {
   'view.home': 'ホーム',
   'view.dashboard': 'ダッシュボード',
   'view.trade-log': 'トレードログ',
-  'view.account-dashboard': '口座ダッシュボード',
+  'view.account-dashboard': '口座',
   'view.layout-builder': 'レイアウトビルダー',
   'view.csv-import': 'Trade Import',
 
@@ -778,7 +790,7 @@ const ja: Partial<Lang> = {
   
   
   
-  'settings.title': 'Journalit設定',
+
   'settings.language': '言語',
   'settings.language-desc': 'プラグインの表示言語を選択',
 
@@ -814,6 +826,19 @@ const ja: Partial<Lang> = {
     'Design your review templates your way.',
   'home.widget.getting-started.item.layouts.time': '1 min',
   'home.widget.getting-started.item.layouts.cta': 'Open Layout Builder',
+  'home.widget.getting-started.item.sidebar.title':
+    'ナビゲーションサイドバーを開く',
+  'home.widget.getting-started.item.sidebar.description':
+    'Journalitのページ、レビュー、ツール、検索にすばやくアクセスできます。',
+  'home.widget.getting-started.item.sidebar.time': '10秒',
+  'home.widget.getting-started.item.sidebar.cta': 'サイドバーを開く',
+  'home.quick-links.navigation-sidebar': 'ナビゲーションサイドバー',
+  'notice.error.open-navigation-sidebar':
+    'ナビゲーションサイドバーを開けませんでした。もう一度お試しください。',
+  'navigation.setting.open': 'ナビゲーションサイドバーを開く',
+  'navigation.setting.open.desc':
+    '今すぐ表示し、Obsidianのサイドバーが折りたたまれている場合は展開します。',
+  'navigation.setting.open.button': 'サイドバーを開く',
   'home.widget.getting-started.item.pro.title': 'Activate PRO',
   'home.widget.getting-started.item.pro.description':
     'Enable Trade Import, MetaTrader sync, and AI mapping.',
@@ -1005,8 +1030,6 @@ const ja: Partial<Lang> = {
 
   'guide.skip-guide': 'Skip Guide',
   'settings.general.data-management': 'データ管理 & プライバシー',
-
-  'settings.general.display-privacy-section': '表示 & プライバシー',
 
   'settings.general.privacy-mode': 'プライバシーモード',
 
@@ -1316,6 +1339,9 @@ const ja: Partial<Lang> = {
   'setups.guide.overview-chart.title': '成績ランキング',
   'setups.guide.overview-chart.description':
     '概要チャートは選択した指標でセットアップを並べます。右上のコントロールで指標を切り替えたり、特定のセットアップに絞り込めます。',
+  'setups.guide.tag-filter.title': 'セットアップを絞り込む',
+  'setups.guide.tag-filter.description':
+    'セットアップのタグまたは方向でカード、チャート、ペア、比較候補を絞り込みます。各グループ内は OR、タグと方向の間は AND で適用されます。',
   'setups.guide.setup-cards.title': 'セットアップカード',
   'setups.guide.setup-cards.description':
     'カードは主要指標、状態、最終取引日、小さな成績トレンドで各セットアップを要約します。',
@@ -1628,6 +1654,73 @@ const ja: Partial<Lang> = {
     'トレードログの2つのモードを確認しました',
   'tradelog.guide.gallery-finish.description':
     '表と一括操作が必要なときはトレードを使います。ジャーナル全体の画像、GIF、動画、YouTubeリンク、市場構造、チャート注釈を確認したいときはギャラリーを使います。',
+  'trade.validation.fx-rate-number':
+    '為替レートは有効な数値である必要があります。',
+  'trade.validation.fx-rate-positive':
+    '為替レートは0より大きい必要があります。',
+  'dashboard.conversion.using-manual-rate':
+    '{count} {tradeLabel}に手動為替レートを使用',
+  'dashboard.conversion.partial-warning':
+    '⚠ {currencies}のコスト/リスクは換算できず除外されています',
+  'trade-sync.providers.title': 'トレード同期',
+  'trade-sync.providers.description':
+    '利用可能な各プロバイダーを個別に設定して、同時に実行できます。',
+  'trade-sync.tradovate.pending-acks': '{count} 件のローカル ACK が保留中',
+  'trade-sync.import.section-title': 'Trade Import のバックアップと復元',
+  'trade-sync.import.section-description':
+    'インポートしたトレードをクラウドにバックアップし、不足しているローカルノートを復元します。',
+  'notice.error.canonical-trade-type-change':
+    'ブローカー同期済みのトレードは別のトレード種別に変更できません。',
+  'trade-sync.import.account.conflict-repair':
+    'canonicalTradeId が重複するノートが見つかりました。1つを残し、重複ノートから canonicalTradeId を削除するか、そのノートを削除してください。ファイル名の変更では競合は解消されません。',
+  'setups.create.field.tags': 'タグ',
+  'setups.create.placeholder.tags': 'モメンタム、ブレイクアウト、朝',
+  'setups.view.overview.tag-filter.aria': 'セットアップを絞り込む',
+  'setups.view.overview.tag-filter.reset': 'リセット',
+  'setups.view.overview.tag-filter.untagged': 'タグなし',
+  'setups.view.overview.tag-filter.empty':
+    'これらのフィルターに一致するセットアップはありません',
+  'setups.view.overview.tag-filter.empty-submessage':
+    'フィルターを調整または解除して、さらにセットアップを表示します。',
+
+  'setups.view.tags': 'タグ',
+  'setups.create.error.tag-save-failed':
+    'タグをグローバルタグ一覧に保存できませんでした。',
+  'settings.customization.options.confirm.remove-tag-message':
+    'グローバルタグ「{option}」を削除しますか？すべてのJournalitトレードおよびセットアップノートから削除されます。',
+  'settings.customization.options.confirm.reset-tag-message':
+    'グローバルタグ一覧と色を既定値に戻しますか？トレードおよびセットアップノートに割り当て済みのタグはノート内に残ります。',
+  'home.mode.overview': '概要',
+  'home.mode.dashboard': 'ダッシュボード',
+  'home.mode.aria': 'ホームモードを切り替え',
+  'home.filters.period': '期間',
+  'home.filters.trade-type': 'トレードタイプ',
+  'home.filters.accounts': '口座',
+  'home.filters.back': '戻る',
+  'home.guide.modes.title': '最後にもう1つ：ダッシュボード',
+  'home.guide.modes.description':
+    '概要とダッシュボードはこのページを共有しています。今すぐダッシュボードに切り替えて、パフォーマンス統計の短いツアーを続けましょう。',
+  'home.guide.whats-new.mode.title': '1つのホーム、2つのモード',
+  'home.guide.whats-new.mode.description':
+    '概要とダッシュボードが同じページになりました。レイアウトやスクロール位置を保ったまま切り替えられます。',
+  'home.guide.whats-new.filters.title': 'ホームフィルターを1か所に集約',
+  'home.guide.whats-new.filters.description':
+    'フィルターボタンから、期間、トレードタイプ、口座をコンパクトな階層メニューで選択できます。',
+  'home.guide.whats-new.done.title': '作業コンテキストを維持',
+  'home.guide.whats-new.done.description':
+    '個人ウィジェットには概要、詳しい分析にはダッシュボードを使います。各モードは独自のフィルターとレイアウトを保持します。',
+
+  'account-dashboard.title': '口座',
+  'home.quick-links.trading-dashboard': 'ダッシュボード',
+  'home.quick-links.account-dashboard': '口座',
+  'navigation.items.nav-dashboard': 'ダッシュボード',
+  'navigation.items.nav-account-dashboard': '口座',
+
+  'settings.general.home-background-dashboard': 'ダッシュボードにも背景を表示',
+  'settings.general.home-background-dashboard-desc':
+    'ダッシュボードモードでも同じ背景画像を使用します。',
+  'settings.general.home-background-dashboard-aria':
+    'ホームの背景をダッシュボードに表示',
 };
 
 export default ja;

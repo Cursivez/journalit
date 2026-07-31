@@ -25,6 +25,7 @@ import { MissedTradeService } from './missedTrade/MissedTradeService';
 import { BacktestTradeService } from './backtestTrade/BacktestTradeService';
 import { AccountPageService } from './accountPage';
 import { FolderPathService } from './core/FolderPathService';
+import { ImageGalleryVaultWatcher } from './imageGallery/ImageGalleryVaultWatcher';
 import { ServiceName, ServiceRegistry } from '../types/ServiceRegistry';
 
 interface ServiceInitQueue {
@@ -50,6 +51,7 @@ export class ServiceManager {
   
   private _tradeService: TradeService | null = null;
   private _folderPathService: FolderPathService | null = null;
+  private _imageGalleryVaultWatcher: ImageGalleryVaultWatcher | null = null;
 
   
   private _setupService: SetupService | null = null;
@@ -141,6 +143,12 @@ export class ServiceManager {
 
     
     const folderPathService = this.getFolderPathService();
+    if (!this._imageGalleryVaultWatcher) {
+      this._imageGalleryVaultWatcher = new ImageGalleryVaultWatcher(
+        this.plugin
+      );
+      this._imageGalleryVaultWatcher.register();
+    }
     this._tradeService = new TradeService(this.app, folderPathService, {
       namespace: 'trade',
     });
@@ -162,9 +170,13 @@ export class ServiceManager {
     this.initializedServices.add('reviewContextInheritanceService');
 
     
-    this._optionsService = new CustomOptionsService(this.plugin, {
+    const optionsService = new CustomOptionsService(this.plugin, {
       namespace: 'options',
     });
+    this._optionsService = optionsService;
+    this._tradeService.setTagAssignmentRunner((tags, operation, previousTags) =>
+      optionsService.runWithTagAssignments(tags, operation, previousTags)
+    );
     this.initializedServices.add('optionsService');
   }
 
@@ -597,6 +609,10 @@ export class ServiceManager {
   }
 
   
+  public getBackendIntegrationServiceIfInitialized(): BackendIntegrationService | null {
+    return this._backendIntegrationService;
+  }
+
   public async getBackendIntegrationService(): Promise<BackendIntegrationService> {
     if (this._backendIntegrationService) {
       return this._backendIntegrationService;

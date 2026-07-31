@@ -6,10 +6,6 @@ import { getPluginInstance } from '../../utils/pluginContext';
 import type {
   TradeImportAnalyseRequest,
   TradeImportAnalyseResponse,
-  TradeImportAccountInventoryItem,
-  TradeImportAccountInventoryResponse,
-  TradeImportAccountVaultMapping,
-  TradeImportAccountVaultMappingRequest,
   TradeImportCapabilities,
   TradeImportCommitRequest,
   TradeImportCommitResponse,
@@ -18,11 +14,8 @@ import type {
   TradeImportFileType,
   TradeImportPreviewClassification,
   TradeImportPreviewItem,
+  TradeImportPreviewOutcome,
   TradeImportManualMode,
-  TradeImportProjectionAckRequest,
-  TradeImportRestorableProjection,
-  TradeImportRestorableProjectionRequest,
-  TradeImportRestorableProjectionResponse,
   TradeImportPreviewRequest,
   TradeImportPreviewResponse,
   TradeImportPreviewTrade,
@@ -38,31 +31,239 @@ const stringArray = (value: unknown): string[] =>
     ? value.filter((item): item is string => typeof item === 'string')
     : [];
 
-const executionArray = (value: unknown): TradeImportPreviewTrade['entries'] =>
-  unknownArray(value).flatMap((item) => {
+const nullableString = (value: unknown, field: string): string | null => {
+  if (value === undefined || value === null) return null;
+  if (typeof value !== 'string') {
+    throw new Error(`Invalid Trade Import preview ${field} response`);
+  }
+  return value;
+};
+
+const nullableTimestamp = (value: unknown, field: string): string | null => {
+  const timestamp = nullableString(value, field);
+  if (timestamp !== null && !Number.isFinite(Date.parse(timestamp))) {
+    throw new Error(`Invalid Trade Import preview ${field} response`);
+  }
+  return timestamp;
+};
+
+const nullableNumber = (value: unknown, field: string): number | null => {
+  if (value === undefined || value === null) return null;
+  if (typeof value !== 'number' || !Number.isFinite(value)) {
+    throw new Error(`Invalid Trade Import preview ${field} response`);
+  }
+  return value;
+};
+
+const nullableMinimumNumber = (
+  value: unknown,
+  field: string,
+  minimum: number
+): number | null => {
+  const number = nullableNumber(value, field);
+  if (number !== null && number < minimum) {
+    throw new Error(`Invalid Trade Import preview ${field} response`);
+  }
+  return number;
+};
+
+const nullablePositiveNumber = (
+  value: unknown,
+  field: string
+): number | null => {
+  const number = nullableNumber(value, field);
+  if (number !== null && number <= 0) {
+    throw new Error(`Invalid Trade Import preview ${field} response`);
+  }
+  return number;
+};
+
+const executionArray = (
+  value: unknown,
+  field: 'entries' | 'exits'
+): TradeImportPreviewTrade['entries'] => {
+  if (value === undefined || value === null) return [];
+  if (!Array.isArray(value)) {
+    throw new Error(`Invalid Trade Import preview ${field} response`);
+  }
+  return value.map((item) => {
     const record = asRecord(item);
     if (
       !record ||
       typeof record.time !== 'string' ||
+      !Number.isFinite(Date.parse(record.time)) ||
       typeof record.price !== 'number' ||
-      typeof record.size !== 'number'
+      !Number.isFinite(record.price) ||
+      typeof record.size !== 'number' ||
+      !Number.isFinite(record.size) ||
+      record.size <= 0
     ) {
-      return [];
+      throw new Error(`Invalid Trade Import preview ${field} response`);
     }
-    return [
-      {
-        time: record.time,
-        price: record.price,
-        size: record.size,
-      },
-    ];
+    return {
+      time: record.time,
+      price: record.price,
+      size: record.size,
+    };
   });
+};
+
+function validateCommittedPreviewTrade(record: Record<string, unknown>): void {
+  if (
+    typeof record.quantity === 'number' &&
+    Number.isFinite(record.quantity) &&
+    record.quantity < 0
+  ) {
+    throw new Error('Invalid Trade Import commit quantity response');
+  }
+  const optionalNumberFields = [
+    'exitPrice',
+    'openQuantity',
+    'closedQuantity',
+    'directPnL',
+    'profitLoss',
+    'grossProfitLoss',
+    'commission',
+    'fees',
+    'swap',
+    'brokerBaseCurrencyPnl',
+    'executionLedgerVersion',
+    'strikePrice',
+    'contractSize',
+    'dollarPerPoint',
+    'tickSize',
+    'tickValue',
+    'lotSize',
+    'pipValue',
+    'pipSize',
+    'leverageRatio',
+  ];
+  for (const field of optionalNumberFields) {
+    const value = record[field];
+    if (
+      value !== undefined &&
+      value !== null &&
+      (typeof value !== 'number' || !Number.isFinite(value))
+    ) {
+      throw new Error(`Invalid Trade Import commit ${field} response`);
+    }
+    if (
+      (field === 'openQuantity' ||
+        field === 'closedQuantity' ||
+        field === 'lotSize') &&
+      typeof value === 'number' &&
+      value < 0
+    ) {
+      throw new Error(`Invalid Trade Import commit ${field} response`);
+    }
+    if (field === 'contractSize' && typeof value === 'number' && value <= 0) {
+      throw new Error('Invalid Trade Import commit contractSize response');
+    }
+    if (field === 'strikePrice' && typeof value === 'number' && value <= 0) {
+      throw new Error('Invalid Trade Import commit strikePrice response');
+    }
+    if (
+      field === 'dollarPerPoint' &&
+      typeof value === 'number' &&
+      value < 0.01
+    ) {
+      throw new Error('Invalid Trade Import commit dollarPerPoint response');
+    }
+    if (field === 'leverageRatio' && typeof value === 'number' && value <= 0) {
+      throw new Error('Invalid Trade Import commit leverageRatio response');
+    }
+  }
+
+  const optionalStringFields = [
+    'assetType',
+    'exchange',
+    'underlyingSymbol',
+    'brokerContract',
+    'orderId',
+    'accountId',
+    'currency',
+    'brokerBaseCurrency',
+    'brokerBaseCurrencyPnlSource',
+    'brokerComment',
+    'notes',
+    'thesis',
+    'optionType',
+    'currencyPair',
+    'tradingPair',
+    'cryptoExchange',
+  ];
+  for (const field of optionalStringFields) {
+    const value = record[field];
+    if (value !== undefined && value !== null && typeof value !== 'string') {
+      throw new Error(`Invalid Trade Import commit ${field} response`);
+    }
+  }
+
+  for (const field of [
+    'entryTime',
+    'exitTime',
+    'expirationDate',
+    'lastBrokerSyncAt',
+  ]) {
+    const value = record[field];
+    if (
+      value !== undefined &&
+      value !== null &&
+      (typeof value !== 'string' || !Number.isFinite(Date.parse(value)))
+    ) {
+      throw new Error(`Invalid Trade Import commit ${field} response`);
+    }
+  }
+
+  const sourceRows = record.sourceRows;
+  if (
+    sourceRows !== undefined &&
+    sourceRows !== null &&
+    (!Array.isArray(sourceRows) ||
+      sourceRows.some(
+        (row) => typeof row !== 'number' || !Number.isFinite(row)
+      ))
+  ) {
+    throw new Error('Invalid Trade Import commit sourceRows response');
+  }
+
+  for (const field of ['executionIds', 'tags', 'images', 'setup', 'mistake']) {
+    const value = record[field];
+    if (
+      value !== undefined &&
+      value !== null &&
+      (!Array.isArray(value) || value.some((item) => typeof item !== 'string'))
+    ) {
+      throw new Error(`Invalid Trade Import commit ${field} response`);
+    }
+  }
+
+  for (const field of ['entries', 'exits']) {
+    const value = record[field];
+    if (value === undefined || value === null) continue;
+    if (!Array.isArray(value)) {
+      throw new Error(`Invalid Trade Import commit ${field} response`);
+    }
+    for (const item of value) {
+      const execution = asRecord(item);
+      if (
+        !execution ||
+        typeof execution.time !== 'string' ||
+        !Number.isFinite(Date.parse(execution.time)) ||
+        typeof execution.price !== 'number' ||
+        !Number.isFinite(execution.price) ||
+        typeof execution.size !== 'number' ||
+        !Number.isFinite(execution.size) ||
+        execution.size <= 0
+      ) {
+        throw new Error(`Invalid Trade Import commit ${field} response`);
+      }
+    }
+  }
+}
 
 const numberValue = (value: unknown, fallback = 0): number =>
   typeof value === 'number' && Number.isFinite(value) ? value : fallback;
-
-const optionalString = (value: unknown): string | null =>
-  typeof value === 'string' && value.trim() ? value : null;
 
 const unknownArray = (value: unknown): unknown[] =>
   Array.isArray(value) ? value : [];
@@ -106,13 +307,43 @@ const previewTradeStatus = (
 ): TradeImportPreviewTrade['status'] | null => {
   switch (value) {
     case 'OPEN':
-    case 'PARTIALLY_CLOSED':
       return 'OPEN';
+    case 'PARTIALLY_CLOSED':
+      return 'PARTIALLY_CLOSED';
     case 'CLOSED':
-    case 'CANCELLED':
       return 'CLOSED';
+    case 'CANCELLED':
+      return 'CANCELLED';
     default:
       return null;
+  }
+};
+
+const restorableTradeStatus = (
+  value: unknown,
+  fallback: TradeImportPreviewTrade['status'] = 'CLOSED'
+): 'open' | 'partially_closed' | 'closed' | 'cancelled' => {
+  switch (value) {
+    case 'open':
+    case 'OPEN':
+      return 'open';
+    case 'partially_closed':
+    case 'PARTIALLY_CLOSED':
+      return 'partially_closed';
+    case 'closed':
+    case 'CLOSED':
+      return 'closed';
+    case 'cancelled':
+    case 'CANCELLED':
+      return 'cancelled';
+    default:
+      return fallback === 'OPEN'
+        ? 'open'
+        : fallback === 'PARTIALLY_CLOSED'
+          ? 'partially_closed'
+          : fallback === 'CANCELLED'
+            ? 'cancelled'
+            : 'closed';
   }
 };
 
@@ -127,10 +358,22 @@ const previewTradesArray = (value: unknown): TradeImportPreviewTrade[] =>
       (record.direction !== 'long' && record.direction !== 'short') ||
       typeof record.entryTime !== 'string' ||
       record.entryTime.trim() === '' ||
+      !Number.isFinite(Date.parse(record.entryTime)) ||
       typeof record.entryPrice !== 'number' ||
       !Number.isFinite(record.entryPrice) ||
       typeof record.quantity !== 'number' ||
       !Number.isFinite(record.quantity) ||
+      record.quantity < 0 ||
+      (record.openQuantity !== undefined &&
+        record.openQuantity !== null &&
+        (typeof record.openQuantity !== 'number' ||
+          !Number.isFinite(record.openQuantity) ||
+          record.openQuantity < 0)) ||
+      (record.closedQuantity !== undefined &&
+        record.closedQuantity !== null &&
+        (typeof record.closedQuantity !== 'number' ||
+          !Number.isFinite(record.closedQuantity) ||
+          record.closedQuantity < 0)) ||
       !status ||
       typeof record.closeOnly !== 'boolean' ||
       typeof record.useDirectPnLInput !== 'boolean'
@@ -147,7 +390,17 @@ const previewTradesArray = (value: unknown): TradeImportPreviewTrade[] =>
         entryTime: record.entryTime,
         entryPrice: record.entryPrice,
         quantity: record.quantity,
-        exitTime: typeof record.exitTime === 'string' ? record.exitTime : null,
+        openQuantity:
+          typeof record.openQuantity === 'number' &&
+          Number.isFinite(record.openQuantity)
+            ? record.openQuantity
+            : undefined,
+        closedQuantity:
+          typeof record.closedQuantity === 'number' &&
+          Number.isFinite(record.closedQuantity)
+            ? record.closedQuantity
+            : undefined,
+        exitTime: nullableTimestamp(record.exitTime, 'exitTime'),
         exitPrice:
           typeof record.exitPrice === 'number' ? record.exitPrice : null,
         status,
@@ -157,12 +410,30 @@ const previewTradesArray = (value: unknown): TradeImportPreviewTrade[] =>
           typeof record.directPnL === 'number' ? record.directPnL : null,
         profitLoss:
           typeof record.profitLoss === 'number' ? record.profitLoss : null,
+        grossProfitLoss:
+          typeof record.grossProfitLoss === 'number'
+            ? record.grossProfitLoss
+            : record.useDirectPnLInput === true &&
+                typeof record.profitLoss === 'number'
+              ? record.profitLoss +
+                Math.abs(
+                  typeof record.commission === 'number' ? record.commission : 0
+                ) +
+                Math.abs(typeof record.fees === 'number' ? record.fees : 0) -
+                (typeof record.swap === 'number' ? record.swap : 0)
+              : null,
         commission:
           typeof record.commission === 'number' ? record.commission : null,
         fees: typeof record.fees === 'number' ? record.fees : null,
         swap: typeof record.swap === 'number' ? record.swap : null,
         assetType:
           typeof record.assetType === 'string' ? record.assetType : null,
+        exchange: nullableString(record.exchange, 'exchange'),
+        underlyingSymbol: nullableString(
+          record.underlyingSymbol,
+          'underlyingSymbol'
+        ),
+        brokerContract: nullableString(record.brokerContract, 'brokerContract'),
         orderId: typeof record.orderId === 'string' ? record.orderId : null,
         accountId:
           typeof record.accountId === 'string' ? record.accountId : null,
@@ -179,10 +450,11 @@ const previewTradesArray = (value: unknown): TradeImportPreviewTrade[] =>
           typeof record.brokerBaseCurrencyPnlSource === 'string'
             ? record.brokerBaseCurrencyPnlSource
             : null,
+        brokerComment: nullableString(record.brokerComment, 'brokerComment'),
         notes: typeof record.notes === 'string' ? record.notes : null,
         thesis: typeof record.thesis === 'string' ? record.thesis : null,
-        entries: executionArray(record.entries),
-        exits: executionArray(record.exits),
+        entries: executionArray(record.entries, 'entries'),
+        exits: executionArray(record.exits, 'exits'),
         executionLedgerVersion:
           typeof record.executionLedgerVersion === 'number'
             ? record.executionLedgerVersion
@@ -193,26 +465,39 @@ const previewTradesArray = (value: unknown): TradeImportPreviewTrade[] =>
         setup: stringArray(record.setup),
         mistake: stringArray(record.mistake),
         customFields: asRecord(record.customFields) ?? {},
-        strikePrice:
-          typeof record.strikePrice === 'number' ? record.strikePrice : null,
-        expirationDate:
-          typeof record.expirationDate === 'string'
-            ? record.expirationDate
-            : null,
+        strikePrice: nullablePositiveNumber(record.strikePrice, 'strikePrice'),
+        expirationDate: nullableTimestamp(
+          record.expirationDate,
+          'expirationDate'
+        ),
         optionType:
           typeof record.optionType === 'string' ? record.optionType : null,
-        contractSize:
-          typeof record.contractSize === 'number' ? record.contractSize : null,
-        dollarPerPoint:
-          typeof record.dollarPerPoint === 'number'
-            ? record.dollarPerPoint
-            : null,
+        contractSize: nullablePositiveNumber(
+          record.contractSize,
+          'contractSize'
+        ),
+        dollarPerPoint: nullableMinimumNumber(
+          record.dollarPerPoint,
+          'dollarPerPoint',
+          0.01
+        ),
         tickSize: typeof record.tickSize === 'number' ? record.tickSize : null,
         tickValue:
           typeof record.tickValue === 'number' ? record.tickValue : null,
-        lotSize: typeof record.lotSize === 'number' ? record.lotSize : null,
+        lotSize: nullableMinimumNumber(record.lotSize, 'lotSize', 0),
         pipValue: typeof record.pipValue === 'number' ? record.pipValue : null,
         pipSize: typeof record.pipSize === 'number' ? record.pipSize : null,
+        currencyPair: nullableString(record.currencyPair, 'currencyPair'),
+        tradingPair: nullableString(record.tradingPair, 'tradingPair'),
+        cryptoExchange: nullableString(record.cryptoExchange, 'cryptoExchange'),
+        leverageRatio: nullablePositiveNumber(
+          record.leverageRatio,
+          'leverageRatio'
+        ),
+        lastBrokerSyncAt: nullableTimestamp(
+          record.lastBrokerSyncAt,
+          'lastBrokerSyncAt'
+        ),
       },
     ];
   });
@@ -571,7 +856,20 @@ const ensureAnalyseResponse = (value: unknown): TradeImportAnalyseResponse => {
   };
 };
 
-const ensurePreviewResponse = (value: unknown): TradeImportPreviewResponse => {
+const previewOutcome = (value: unknown): TradeImportPreviewOutcome => {
+  if (
+    value === 'completed' ||
+    value === 'partially_completed' ||
+    value === 'failed'
+  ) {
+    return value;
+  }
+  throw new Error('Invalid Trade Import preview outcome');
+};
+
+export const parseTradeImportPreviewResponse = (
+  value: unknown
+): TradeImportPreviewResponse => {
   const record = asRecord(value);
   if (
     !record ||
@@ -591,6 +889,7 @@ const ensurePreviewResponse = (value: unknown): TradeImportPreviewResponse => {
         ? record.previewExpiresAt
         : undefined,
     schemaVersion: 'trade-import-preview-v1',
+    outcome: previewOutcome(record.outcome),
     broker: typeof record.broker === 'string' ? record.broker : '',
     adapterVersion:
       typeof record.adapterVersion === 'string' ? record.adapterVersion : '',
@@ -624,11 +923,24 @@ const ensureCommitResponse = (value: unknown): TradeImportCommitResponse => {
       if (
         !tradeRecord ||
         typeof tradeRecord.id !== 'string' ||
+        tradeRecord.id.trim() === '' ||
+        tradeRecord.id !== tradeRecord.id.trim() ||
         typeof tradeRecord.version !== 'number' ||
         !Number.isFinite(tradeRecord.version) ||
+        !Number.isInteger(tradeRecord.version) ||
         tradeRecord.version <= 0
       ) {
         throw new Error('Invalid Trade Import commit trade response');
+      }
+      if (
+        tradeRecord.previewTrade !== undefined &&
+        tradeRecord.previewTrade !== null
+      ) {
+        const previewRecord = asRecord(tradeRecord.previewTrade);
+        if (!previewRecord) {
+          throw new Error('Invalid Trade Import commit previewTrade response');
+        }
+        validateCommittedPreviewTrade(previewRecord);
       }
       const [previewTrade] =
         tradeRecord.previewTrade === undefined ||
@@ -642,7 +954,7 @@ const ensureCommitResponse = (value: unknown): TradeImportCommitResponse => {
           symbol:
             typeof tradeRecord.symbol === 'string' ? tradeRecord.symbol : '',
           direction: tradeRecord.direction === 'short' ? 'short' : 'long',
-          status: tradeRecord.status === 'open' ? 'open' : 'closed',
+          status: restorableTradeStatus(tradeRecord.status),
           accountId:
             typeof tradeRecord.accountId === 'string'
               ? tradeRecord.accountId
@@ -657,226 +969,6 @@ const ensureCommitResponse = (value: unknown): TradeImportCommitResponse => {
     }),
   };
 };
-
-const projectionStatus = (
-  value: unknown
-): TradeImportRestorableProjectionResponse['projections'][number]['projectionStatus'] => {
-  switch (value) {
-    case 'missing':
-    case 'local_deleted':
-    case 'other_vault':
-    case 'needs_rewrite':
-    case 'synced':
-    case 'failed':
-    case 'conflict':
-    case 'pending':
-      return value;
-    default:
-      return 'missing';
-  }
-};
-
-function missingProjectionStatus(record: Record<string, unknown>) {
-  const projectionState = asRecord(record.projectionState);
-  if (projectionState?.stale === true) {
-    return 'needs_rewrite';
-  }
-  return projectionStatus(projectionState?.syncStatus);
-}
-
-function normalizeMissingProjectionItem(
-  record: Record<string, unknown>
-): TradeImportRestorableProjection {
-  const projectionTrade = asRecord(record.projectionTrade);
-  const previewTradeValue = projectionTrade?.previewTrade;
-  const [previewTrade] = previewTradesArray([previewTradeValue]);
-  const summary = asRecord(record.summary);
-  if (
-    typeof record.tradeId !== 'string' ||
-    typeof record.backendTradeVersion !== 'number'
-  ) {
-    throw new Error('Invalid Trade Import restorable projection response');
-  }
-  return {
-    id: record.tradeId,
-    version: record.backendTradeVersion,
-    symbol:
-      typeof record.symbol === 'string'
-        ? record.symbol
-        : typeof summary?.symbol === 'string'
-          ? summary.symbol
-          : previewTrade.symbol,
-    direction: previewTrade.direction === 'short' ? 'short' : 'long',
-    status: previewTrade.status === 'OPEN' ? 'open' : 'closed',
-    accountName:
-      typeof record.accountDisplayName === 'string'
-        ? record.accountDisplayName
-        : null,
-    accountId: typeof record.accountId === 'string' ? record.accountId : null,
-    importId: typeof record.importId === 'string' ? record.importId : '',
-    correlationId:
-      typeof record.correlationId === 'string'
-        ? record.correlationId
-        : undefined,
-    commitId: typeof record.commitId === 'string' ? record.commitId : undefined,
-    broker: typeof record.broker === 'string' ? record.broker : null,
-    importedAt:
-      typeof record.importedAt === 'string' ? record.importedAt : null,
-    projectionStatus: missingProjectionStatus(record),
-    previewTrade,
-  };
-}
-
-const ensureRestorableProjectionResponse = (
-  value: unknown
-): TradeImportRestorableProjectionResponse => {
-  const record = asRecord(value);
-  if (!record || typeof record.vaultId !== 'string') {
-    throw new Error('Invalid Trade Import restorable projections response');
-  }
-  return {
-    schemaVersion: 'trade-import-restorable-projections-v1',
-    vaultId: record.vaultId,
-    nextCursor: optionalString(record.nextCursor),
-    projections: unknownArray(record.projections ?? record.items).map(
-      (projection) => {
-        const projectionRecord = asRecord(projection);
-        if (projectionRecord && 'projectionTrade' in projectionRecord) {
-          return normalizeMissingProjectionItem(projectionRecord);
-        }
-        if (
-          !projectionRecord ||
-          typeof projectionRecord.id !== 'string' ||
-          typeof projectionRecord.version !== 'number'
-        ) {
-          throw new Error(
-            'Invalid Trade Import restorable projection response'
-          );
-        }
-        const [previewTrade] = previewTradesArray([
-          projectionRecord.previewTrade,
-        ]);
-        return {
-          id: projectionRecord.id,
-          version: projectionRecord.version,
-          symbol:
-            typeof projectionRecord.symbol === 'string'
-              ? projectionRecord.symbol
-              : previewTrade.symbol,
-          direction: projectionRecord.direction === 'short' ? 'short' : 'long',
-          status: projectionRecord.status === 'open' ? 'open' : 'closed',
-          accountName:
-            typeof projectionRecord.accountName === 'string'
-              ? projectionRecord.accountName
-              : null,
-          accountId:
-            typeof projectionRecord.accountId === 'string'
-              ? projectionRecord.accountId
-              : null,
-          importId:
-            typeof projectionRecord.importId === 'string'
-              ? projectionRecord.importId
-              : '',
-          correlationId:
-            typeof projectionRecord.correlationId === 'string'
-              ? projectionRecord.correlationId
-              : undefined,
-          commitId:
-            typeof projectionRecord.commitId === 'string'
-              ? projectionRecord.commitId
-              : undefined,
-          broker:
-            typeof projectionRecord.broker === 'string'
-              ? projectionRecord.broker
-              : null,
-          importedAt:
-            typeof projectionRecord.importedAt === 'string'
-              ? projectionRecord.importedAt
-              : null,
-          projectionStatus: projectionStatus(projectionRecord.projectionStatus),
-          previewTrade,
-        };
-      }
-    ),
-  };
-};
-
-function normalizeAccountVaultMapping(
-  value: unknown
-): TradeImportAccountVaultMapping | null {
-  const record = asRecord(value);
-  if (!record || typeof record.vaultId !== 'string') return null;
-  return {
-    vaultId: record.vaultId,
-    localAccountId: optionalString(record.localAccountId),
-    localAccountName: optionalString(record.localAccountName),
-    mappingStatus: 'mapped',
-    lastSyncedAt: optionalString(record.lastSyncedAt),
-    updatedAt: optionalString(record.updatedAt),
-  };
-}
-
-function normalizeAccountInventoryItem(
-  value: unknown
-): TradeImportAccountInventoryItem {
-  const record = asRecord(value);
-  if (
-    !record ||
-    typeof record.accountId !== 'string' ||
-    typeof record.broker !== 'string'
-  ) {
-    throw new Error('Invalid Trade Import account inventory response');
-  }
-  return {
-    accountId: record.accountId,
-    broker: record.broker,
-    displayName: optionalString(record.displayName) ?? record.broker,
-    tradeCount: numberValue(record.tradeCount),
-    missingCount: numberValue(record.missingCount),
-    localDeletedCount: numberValue(record.localDeletedCount),
-    failedCount: numberValue(record.failedCount),
-    needsRewriteCount: numberValue(record.needsRewriteCount),
-    staleCount: numberValue(record.staleCount),
-    conflictCount: numberValue(record.conflictCount),
-    pendingCount: numberValue(record.pendingCount),
-    syncedCount: numberValue(record.syncedCount),
-    restorableCount: numberValue(record.restorableCount),
-    lastImportedAt: optionalString(record.lastImportedAt),
-    mapping: normalizeAccountVaultMapping(record.mapping),
-  };
-}
-
-const ensureAccountInventoryResponse = (
-  value: unknown
-): TradeImportAccountInventoryResponse => {
-  const record = asRecord(value);
-  if (!record || typeof record.vaultId !== 'string') {
-    throw new Error('Invalid Trade Import account inventory response');
-  }
-  return {
-    schemaVersion: 'trade-import-accounts-v1',
-    vaultId: record.vaultId,
-    accounts: unknownArray(record.accounts).map(normalizeAccountInventoryItem),
-  };
-};
-
-function restorableProjectionQuery(
-  request: TradeImportRestorableProjectionRequest
-): string {
-  const params = new URLSearchParams();
-  params.set('vaultId', request.vaultId);
-  for (const [key, value] of Object.entries(request)) {
-    if (key === 'vaultId' || value === undefined || value === null) continue;
-    params.set(key, String(value));
-  }
-  return params.toString();
-}
-
-function accountInventoryQuery(vaultId: string): string {
-  const params = new URLSearchParams();
-  params.set('vaultId', vaultId);
-  return params.toString();
-}
 
 function authHeaders(token: string | null): Record<string, string> {
   return token ? { Authorization: `Bearer ${token}` } : {};
@@ -1003,7 +1095,7 @@ export class BackendTradeImportService {
     request: TradeImportPreviewRequest
   ): Promise<TradeImportPreviewResponse> {
     return postMultipart('/api/v1/trade-import/preview', file, request).then(
-      ensurePreviewResponse
+      parseTradeImportPreviewResponse
     );
   }
 
@@ -1031,108 +1123,13 @@ export class BackendTradeImportService {
         response.status
       );
     }
-    return ensureCommitResponse(response.json);
-  }
-
-  async projectionAck(request: TradeImportProjectionAckRequest): Promise<void> {
-    const requestAuthToken = ApiClient.getAuthToken();
-    const response = await requestUrl({
-      url: ApiClient.buildUrl('/api/v1/trade-import/projection-ack'),
-      method: 'POST',
-      headers: {
-        ...authHeaders(requestAuthToken),
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(request),
-      throw: false,
-    });
-    if (response.status < 200 || response.status >= 300) {
-      handleTradeImportHttpError(response.status, requestAuthToken);
-      throw new ApiError(
-        `Trade Import projection acknowledgement failed (${response.status})`,
-        response.status
-      );
+    const commitResponse = ensureCommitResponse(response.json);
+    if (
+      commitResponse.importId !== importId ||
+      commitResponse.correlationId !== request.correlationId
+    ) {
+      throw new Error('Invalid Trade Import commit response scope');
     }
-  }
-
-  async getRestorableProjections(
-    request: TradeImportRestorableProjectionRequest
-  ): Promise<TradeImportRestorableProjectionResponse> {
-    const requestAuthToken = ApiClient.getAuthToken();
-    const response = await requestUrl({
-      url: ApiClient.buildUrl(
-        `/api/v1/trade-import/projections/missing?${restorableProjectionQuery(request)}`
-      ),
-      method: 'GET',
-      headers: authHeaders(requestAuthToken),
-      throw: false,
-    });
-    if (response.status < 200 || response.status >= 300) {
-      handleTradeImportHttpError(response.status, requestAuthToken);
-      throw new ApiError(
-        `Trade Import restorable projections unavailable (${response.status})`,
-        response.status
-      );
-    }
-    return ensureRestorableProjectionResponse(response.json);
-  }
-
-  async getAccountInventory(
-    vaultId: string
-  ): Promise<TradeImportAccountInventoryResponse> {
-    const requestAuthToken = ApiClient.getAuthToken();
-    const response = await requestUrl({
-      url: ApiClient.buildUrl(
-        `/api/v1/trade-import/accounts?${accountInventoryQuery(vaultId)}`
-      ),
-      method: 'GET',
-      headers: authHeaders(requestAuthToken),
-      throw: false,
-    });
-    if (response.status < 200 || response.status >= 300) {
-      handleTradeImportHttpError(response.status, requestAuthToken);
-      throw new ApiError(
-        `Trade Import accounts unavailable (${response.status})`,
-        response.status
-      );
-    }
-    return ensureAccountInventoryResponse(response.json);
-  }
-
-  async updateAccountVaultMapping(
-    accountId: string,
-    request: TradeImportAccountVaultMappingRequest
-  ): Promise<TradeImportAccountVaultMapping> {
-    const requestAuthToken = ApiClient.getAuthToken();
-    const response = await requestUrl({
-      url: ApiClient.buildUrl(
-        `/api/v1/trade-import/accounts/${encodeURIComponent(accountId)}/vault-mapping`
-      ),
-      method: 'PUT',
-      headers: {
-        ...authHeaders(requestAuthToken),
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(request),
-      throw: false,
-    });
-    if (response.status < 200 || response.status >= 300) {
-      handleTradeImportHttpError(response.status, requestAuthToken);
-      throw new ApiError(
-        `Trade Import account mapping failed (${response.status})`,
-        response.status
-      );
-    }
-    const responseRecord = asRecord(response.json);
-    return (
-      normalizeAccountVaultMapping(
-        responseRecord?.mapping ?? response.json
-      ) ?? {
-        vaultId: request.vaultId,
-        localAccountId: request.localAccountId,
-        localAccountName: request.localAccountName,
-        mappingStatus: 'mapped',
-      }
-    );
+    return commitResponse;
   }
 }

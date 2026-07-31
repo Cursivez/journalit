@@ -7,36 +7,12 @@ import { ComboBox } from '../../core/ComboBox';
 import { SkeletonBox } from '../../shared';
 import { InvalidContextMessage } from './InvalidContextMessage';
 import { OptionType } from '../../../services/options/CustomOptionsService';
-import { batchAddMistakes } from '../../tradelog/batchOperations';
 import { useEventBus } from '../../../hooks/useEventBus';
-import {
-  formatLocalDateString,
-  parseLocalDateSafe,
-} from '../../../utils/dateUtils';
-import { getTradingDayString } from '../../../utils/tradingDayUtils';
 import { t } from '../../../lang/helpers';
 
 interface SessionMistakesPreviewData {
   mistakes: string[];
 }
-
-const asRecord = (value: unknown): Record<string, unknown> | undefined =>
-  value && typeof value === 'object' && !Array.isArray(value)
-    ? Object.fromEntries(Object.entries(value))
-    : undefined;
-
-interface SessionMistakeTradeRecord extends Record<string, unknown> {
-  entryTime: string | number | Date;
-  path: string;
-}
-
-const isSessionMistakeTradeRecord = (
-  value: Record<string, unknown>
-): value is SessionMistakeTradeRecord =>
-  typeof value.path === 'string' &&
-  (typeof value.entryTime === 'string' ||
-    typeof value.entryTime === 'number' ||
-    value.entryTime instanceof Date);
 
 interface SessionMistakesWidgetProps {
   filePath: string;
@@ -192,70 +168,6 @@ export const SessionMistakesWidget: React.FC<SessionMistakesWidgetProps> =
       !preview
     );
 
-    const applySessionMistakesToDayTrades = useCallback(
-      async (mistakesToApply: string[]) => {
-        if (preview || mistakesToApply.length === 0) return;
-
-        const shouldAutoApply =
-          plugin.settings.reviewV2?.scalperDefaults
-            ?.autoApplySessionMistakesToTrades === true;
-
-        if (!shouldAutoApply || !plugin.tradeService) {
-          return;
-        }
-
-        try {
-          const drcFile = plugin.app.vault.getAbstractFileByPath(filePath);
-          if (!(drcFile instanceof TFile)) return;
-
-          const frontmatter = asRecord(
-            plugin.app.metadataCache.getFileCache(drcFile)?.frontmatter
-          );
-          const rawDate = frontmatter?.date;
-          if (typeof rawDate !== 'string') return;
-
-          const parsedDate = parseLocalDateSafe(rawDate);
-          if (!parsedDate) return;
-
-          
-          
-          
-          const targetTradingDay = formatLocalDateString(parsedDate);
-
-          const allTrades = await plugin.tradeService.getTradeData({
-            fresh: false,
-          });
-
-          const tradeFilePaths = allTrades.flatMap((trade) => {
-            if (!isSessionMistakeTradeRecord(trade)) {
-              return [];
-            }
-
-            const entryDate = new Date(trade.entryTime);
-            if (isNaN(entryDate.getTime())) {
-              return [];
-            }
-
-            return getTradingDayString(entryDate, plugin) === targetTradingDay
-              ? [trade.path]
-              : [];
-          });
-
-          if (tradeFilePaths.length === 0) {
-            return;
-          }
-
-          await batchAddMistakes(plugin.app, tradeFilePaths, mistakesToApply);
-        } catch (error) {
-          console.error(
-            '[SessionMistakesWidget] Failed to auto-apply session mistakes to trades:',
-            error
-          );
-        }
-      },
-      [filePath, plugin, preview]
-    );
-
     const handleSaveMistakeOption = useCallback(
       async (option: string) => {
         if (!plugin.optionsService) return;
@@ -288,13 +200,6 @@ export const SessionMistakesWidget: React.FC<SessionMistakesWidgetProps> =
         }
 
         const previous = sessionMistakes;
-        const previousKeys = new Set(
-          previous.map((item) => item.toLowerCase())
-        );
-        const addedMistakes = normalized.filter(
-          (item) => !previousKeys.has(item.toLowerCase())
-        );
-
         setSessionMistakes(normalized);
 
         if (plugin.optionsService && normalized.length > 0) {
@@ -319,8 +224,6 @@ export const SessionMistakesWidget: React.FC<SessionMistakesWidgetProps> =
             },
             'session-mistakes-widget'
           );
-
-          await applySessionMistakesToDayTrades(addedMistakes);
         } catch (error) {
           setSessionMistakes(previous);
           console.error(
@@ -329,13 +232,7 @@ export const SessionMistakesWidget: React.FC<SessionMistakesWidgetProps> =
           );
         }
       },
-      [
-        applySessionMistakesToDayTrades,
-        filePath,
-        plugin,
-        preview,
-        sessionMistakes,
-      ]
+      [filePath, plugin, preview, sessionMistakes]
     );
 
     if (loading) {

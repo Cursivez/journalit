@@ -231,6 +231,10 @@ export const SessionLogPanel: React.FC<SessionLogPanelProps> = React.memo(
     const filterMenuPortalRef = useRef<HTMLDivElement>(null);
 
     const timestampButtonRef = useRef<HTMLButtonElement>(null);
+    const composerInputRef = useRef<HTMLInputElement>(null);
+    const composerFocusRequestedRef = useRef(false);
+    const addButtonRef = useRef<HTMLButtonElement>(null);
+    const addButtonFocusRequestedRef = useRef(false);
     const [filterMenuPosition, setFilterMenuPosition] = useState({
       left: 0,
       top: 0,
@@ -287,8 +291,26 @@ export const SessionLogPanel: React.FC<SessionLogPanelProps> = React.memo(
     const hideComposer = useCallback(() => {
       setManualTimestampEnabled(false);
       setIsTagMenuOpen(false);
+      addButtonFocusRequestedRef.current = true;
       setIsComposerVisible(false);
     }, []);
+
+    const showComposer = useCallback(() => {
+      composerFocusRequestedRef.current = true;
+      setIsComposerVisible(true);
+    }, []);
+
+    useLayoutEffect(() => {
+      if (isComposerVisible && composerFocusRequestedRef.current) {
+        composerFocusRequestedRef.current = false;
+        composerInputRef.current?.focus();
+        return;
+      }
+      if (!isComposerVisible && addButtonFocusRequestedRef.current) {
+        addButtonFocusRequestedRef.current = false;
+        addButtonRef.current?.focus();
+      }
+    }, [isComposerVisible]);
 
     const updateFilterMenuPosition = useCallback(() => {
       const trigger = filterButtonRef.current;
@@ -467,7 +489,10 @@ export const SessionLogPanel: React.FC<SessionLogPanelProps> = React.memo(
         setText('');
         setManualTimestampEnabled(false);
         setManualTimestamp(getDefaultEntryTimestamp(timestampSessionWindow));
-        if (showComposerToggle) setIsComposerVisible(false);
+        if (showComposerToggle) {
+          addButtonFocusRequestedRef.current = true;
+          setIsComposerVisible(false);
+        }
         onRefresh?.();
       } finally {
         isSubmittingEntryRef.current = false;
@@ -631,6 +656,176 @@ export const SessionLogPanel: React.FC<SessionLogPanelProps> = React.memo(
       </div>
     ) : undefined;
 
+    const addNoteButton =
+      showComposerToggle && !isComposerVisible ? (
+        <button
+          ref={addButtonRef}
+          type="button"
+          className="journalit-button journalit-button--plain journalit-button--small take-profit-add-button journalit-session-log-add-button"
+          onClick={showComposer}
+          aria-label={t('session-log.action.add-entry')}
+          aria-expanded={false}
+        >
+          + {t('session-log.action.add-note')}
+        </button>
+      ) : null;
+
+    const composer = isComposerVisible ? (
+      <div className="journalit-session-log-composer">
+        <div className="journalit-session-log-composer-bar">
+          <div
+            className="journalit-session-log-composer-tag-control"
+            ref={tagMenuRef}
+          >
+            <button
+              ref={tagButtonRef}
+              type="button"
+              className="journalit-session-log-composer-tag-trigger"
+              onClick={toggleTagMenu}
+              aria-label={t('session-log.composer.tag-label')}
+              aria-expanded={isTagMenuOpen}
+            >
+              <Tag size={15} />
+              <span>{selectedTag?.shortLabel ?? 'AN'}</span>
+              <ChevronDown
+                size={12}
+                className={
+                  isTagMenuOpen
+                    ? 'journalit-session-log-composer-tag-chevron is-open'
+                    : 'journalit-session-log-composer-tag-chevron'
+                }
+              />
+            </button>
+            {isTagMenuOpen &&
+              createPortal(
+                <div
+                  ref={tagMenuPortalRef}
+                  className="journalit-session-log-composer-tag-menu journalit-session-log-composer-tag-menu--portal"
+                  style={cssVars({
+                    '--journalit-session-log-tag-menu-left': `${tagMenuPosition.left}px`,
+                    '--journalit-session-log-tag-menu-top': `${tagMenuPosition.top}px`,
+                  })}
+                >
+                  {tags.map((tag) => (
+                    <button
+                      type="button"
+                      key={tag.id}
+                      className={
+                        tag.id === selectedTagId
+                          ? 'journalit-session-log-composer-tag-option is-active'
+                          : 'journalit-session-log-composer-tag-option'
+                      }
+                      onClick={() => {
+                        setSelectedTagId(tag.id);
+                        setIsTagMenuOpen(false);
+                      }}
+                      aria-pressed={tag.id === selectedTagId}
+                    >
+                      <span
+                        className={
+                          tag.id === selectedTagId
+                            ? 'journalit-session-log-composer-tag-checkbox is-checked'
+                            : 'journalit-session-log-composer-tag-checkbox'
+                        }
+                        aria-hidden="true"
+                      >
+                        {tag.id === selectedTagId ? '✓' : ''}
+                      </span>
+                      <span className="journalit-session-log-composer-tag-option-label">
+                        {tag.label}
+                      </span>
+                    </button>
+                  ))}
+                </div>,
+                tagButtonRef.current?.ownerDocument.body ??
+                  window.activeDocument.body
+              )}
+          </div>
+          <input
+            ref={composerInputRef}
+            type="text"
+            value={text}
+            placeholder={t('session-log.placeholder.entry-short')}
+            onChange={(event) => setText(event.target.value)}
+            onKeyDown={submitEntryFromKeyboard}
+          />
+          <button
+            ref={timestampButtonRef}
+            type="button"
+            className={
+              manualTimestampEnabled
+                ? 'journalit-session-log-icon-button is-active'
+                : 'journalit-session-log-icon-button'
+            }
+            onClick={() => {
+              setManualTimestampEnabled((value) => {
+                if (!value) {
+                  setManualTimestamp(
+                    getDefaultEntryTimestamp(timestampSessionWindow)
+                  );
+                  setManualTimestampPickerSignal((signal) => signal + 1);
+                }
+                return !value;
+              });
+            }}
+            aria-label={
+              manualTimestampEnabled
+                ? t('session-log.action.auto-time')
+                : t('session-log.action.set-time')
+            }
+          >
+            <Clock size={16} />
+          </button>
+          <button
+            type="button"
+            className="journalit-session-log-icon-button journalit-session-log-send-button"
+            onClick={() => void submitEntry()}
+            disabled={!text.trim() || isSubmittingEntry}
+            aria-label={t('session-log.action.add-entry')}
+          >
+            <Send size={16} />
+          </button>
+          {showComposerToggle && (
+            <button
+              type="button"
+              className="journalit-session-log-icon-button"
+              onClick={hideComposer}
+              aria-label={t('session-log.action.hide-composer')}
+            >
+              <X size={16} />
+            </button>
+          )}
+        </div>
+        {manualTimestampEnabled && (
+          <FastDateTimeInput
+            className="journalit-session-log-timestamp-input"
+            value={manualTimestamp}
+            includeTime={!compact}
+            timeOnly={compact}
+            hidePickerButton={compact}
+            openPickerSignal={manualTimestampPickerSignal}
+            pickerPositionElement={timestampButtonRef.current}
+            controllerOnly={compact}
+            closePickerOnQuickAction={!compact}
+            onChange={(value) => {
+              if (value instanceof Date) {
+                setManualTimestamp(value);
+                return;
+              }
+              if (typeof value === 'string') {
+                const timestamp = inferTimestampForSessionTime(
+                  value,
+                  manualTimestamp,
+                  timestampSessionWindow
+                );
+                if (timestamp) setManualTimestamp(timestamp);
+              }
+            }}
+          />
+        )}
+      </div>
+    ) : null;
+
     return (
       <div className="journalit-session-log-panel">
         {!compact && (
@@ -649,160 +844,7 @@ export const SessionLogPanel: React.FC<SessionLogPanelProps> = React.memo(
           </div>
         )}
 
-        {isComposerVisible && (
-          <div className="journalit-session-log-composer">
-            <div className="journalit-session-log-composer-bar">
-              <div
-                className="journalit-session-log-composer-tag-control"
-                ref={tagMenuRef}
-              >
-                <button
-                  ref={tagButtonRef}
-                  type="button"
-                  className="journalit-session-log-composer-tag-trigger"
-                  onClick={toggleTagMenu}
-                  aria-label={t('session-log.composer.tag-label')}
-                  aria-expanded={isTagMenuOpen}
-                >
-                  <Tag size={15} />
-                  <span>{selectedTag?.shortLabel ?? 'AN'}</span>
-                  <ChevronDown
-                    size={12}
-                    className={
-                      isTagMenuOpen
-                        ? 'journalit-session-log-composer-tag-chevron is-open'
-                        : 'journalit-session-log-composer-tag-chevron'
-                    }
-                  />
-                </button>
-                {isTagMenuOpen &&
-                  createPortal(
-                    <div
-                      ref={tagMenuPortalRef}
-                      className="journalit-session-log-composer-tag-menu journalit-session-log-composer-tag-menu--portal"
-                      style={cssVars({
-                        '--journalit-session-log-tag-menu-left': `${tagMenuPosition.left}px`,
-                        '--journalit-session-log-tag-menu-top': `${tagMenuPosition.top}px`,
-                      })}
-                    >
-                      {tags.map((tag) => (
-                        <button
-                          type="button"
-                          key={tag.id}
-                          className={
-                            tag.id === selectedTagId
-                              ? 'journalit-session-log-composer-tag-option is-active'
-                              : 'journalit-session-log-composer-tag-option'
-                          }
-                          onClick={() => {
-                            setSelectedTagId(tag.id);
-                            setIsTagMenuOpen(false);
-                          }}
-                          aria-pressed={tag.id === selectedTagId}
-                        >
-                          <span
-                            className={
-                              tag.id === selectedTagId
-                                ? 'journalit-session-log-composer-tag-checkbox is-checked'
-                                : 'journalit-session-log-composer-tag-checkbox'
-                            }
-                            aria-hidden="true"
-                          >
-                            {tag.id === selectedTagId ? '✓' : ''}
-                          </span>
-                          <span className="journalit-session-log-composer-tag-option-label">
-                            {tag.label}
-                          </span>
-                        </button>
-                      ))}
-                    </div>,
-                    tagButtonRef.current?.ownerDocument.body ??
-                      window.activeDocument.body
-                  )}
-              </div>
-              <input
-                type="text"
-                value={text}
-                placeholder={t('session-log.placeholder.entry-short')}
-                onChange={(event) => setText(event.target.value)}
-                onKeyDown={submitEntryFromKeyboard}
-              />
-              <button
-                ref={timestampButtonRef}
-                type="button"
-                className={
-                  manualTimestampEnabled
-                    ? 'journalit-session-log-icon-button is-active'
-                    : 'journalit-session-log-icon-button'
-                }
-                onClick={() => {
-                  setManualTimestampEnabled((value) => {
-                    if (!value) {
-                      setManualTimestamp(
-                        getDefaultEntryTimestamp(timestampSessionWindow)
-                      );
-                      setManualTimestampPickerSignal((signal) => signal + 1);
-                    }
-                    return !value;
-                  });
-                }}
-                aria-label={
-                  manualTimestampEnabled
-                    ? t('session-log.action.auto-time')
-                    : t('session-log.action.set-time')
-                }
-              >
-                <Clock size={16} />
-              </button>
-              <button
-                type="button"
-                className="journalit-session-log-icon-button journalit-session-log-send-button"
-                onClick={() => void submitEntry()}
-                disabled={!text.trim() || isSubmittingEntry}
-                aria-label={t('session-log.action.add-entry')}
-              >
-                <Send size={16} />
-              </button>
-              {showComposerToggle && (
-                <button
-                  type="button"
-                  className="journalit-session-log-icon-button"
-                  onClick={hideComposer}
-                  aria-label={t('session-log.action.hide-composer')}
-                >
-                  <X size={16} />
-                </button>
-              )}
-            </div>
-            {manualTimestampEnabled && (
-              <FastDateTimeInput
-                className="journalit-session-log-timestamp-input"
-                value={manualTimestamp}
-                includeTime={!compact}
-                timeOnly={compact}
-                hidePickerButton={compact}
-                openPickerSignal={manualTimestampPickerSignal}
-                pickerPositionElement={timestampButtonRef.current}
-                controllerOnly={compact}
-                closePickerOnQuickAction={!compact}
-                onChange={(value) => {
-                  if (value instanceof Date) {
-                    setManualTimestamp(value);
-                    return;
-                  }
-                  if (typeof value === 'string') {
-                    const timestamp = inferTimestampForSessionTime(
-                      value,
-                      manualTimestamp,
-                      timestampSessionWindow
-                    );
-                    if (timestamp) setManualTimestamp(timestamp);
-                  }
-                }}
-              />
-            )}
-          </div>
-        )}
+        {newestFirst && composer}
 
         <div className="journalit-session-log-timeline">
           {displayedEntries.length === 0 ? (
@@ -839,18 +881,10 @@ export const SessionLogPanel: React.FC<SessionLogPanelProps> = React.memo(
                       {t('session-log.filter.clear')}
                     </button>
                   )}
-                  {showComposerToggle && !isComposerVisible && (
-                    <button
-                      type="button"
-                      className="journalit-button journalit-button--plain journalit-button--small take-profit-add-button journalit-session-log-add-button"
-                      onClick={() => setIsComposerVisible(true)}
-                      aria-label={t('session-log.action.add-entry')}
-                    >
-                      + {t('session-log.action.add-note')}
-                    </button>
-                  )}
+                  {addNoteButton}
                 </div>
               </div>
+              {!newestFirst && composer}
               {isFilteredEmpty && (
                 <TimelineSeparator
                   label={
@@ -869,20 +903,7 @@ export const SessionLogPanel: React.FC<SessionLogPanelProps> = React.memo(
                     ? t('session-log.timeline.most-recent')
                     : t('session-log.timeline.start')
                 }
-                action={
-                  newestFirst && showComposerToggle && !isComposerVisible ? (
-                    <button
-                      type="button"
-                      className="journalit-button journalit-button--plain journalit-button--small take-profit-add-button journalit-session-log-add-button"
-                      onClick={() => setIsComposerVisible(true)}
-                      aria-label={t('session-log.action.add-entry')}
-                    >
-                      + {t('session-log.action.add-note')}
-                    </button>
-                  ) : (
-                    !newestFirst && filterControl
-                  )
-                }
+                action={newestFirst ? addNoteButton : filterControl}
               />
               {displayedEntries.map((entry) => {
                 if (entry.kind === 'trade') {
@@ -1098,26 +1119,14 @@ export const SessionLogPanel: React.FC<SessionLogPanelProps> = React.memo(
                   </div>
                 );
               })}
+              {!newestFirst && composer}
               <TimelineSeparator
                 label={
                   newestFirst
                     ? t('session-log.timeline.start')
                     : t('session-log.timeline.most-recent')
                 }
-                action={
-                  !newestFirst && showComposerToggle && !isComposerVisible ? (
-                    <button
-                      type="button"
-                      className="journalit-button journalit-button--plain journalit-button--small take-profit-add-button journalit-session-log-add-button"
-                      onClick={() => setIsComposerVisible(true)}
-                      aria-label={t('session-log.action.add-entry')}
-                    >
-                      + {t('session-log.action.add-note')}
-                    </button>
-                  ) : (
-                    newestFirst && filterControl
-                  )
-                }
+                action={newestFirst ? filterControl : addNoteButton}
               />
             </>
           )}

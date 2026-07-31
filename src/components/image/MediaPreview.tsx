@@ -3,6 +3,7 @@ import { App } from 'obsidian';
 import { imageService } from '../../services/image/ImageService';
 import {
   getMediaKind,
+  getYouTubeThumbnailFallbackUrl,
   getYouTubeThumbnailUrl,
   resolveMediaDisplayPath,
 } from '../../utils/imageMediaUtils';
@@ -99,6 +100,8 @@ export const MediaPreview: React.FC<MediaPreviewProps> = ({
   }
 
   if (mediaKind === 'youtube') {
+    const thumbnailFallbackUrl = getYouTubeThumbnailFallbackUrl(path);
+
     return (
       <div
         className={`journalit-media-preview-video journalit-media-preview-youtube ${className}`.trim()}
@@ -111,6 +114,14 @@ export const MediaPreview: React.FC<MediaPreviewProps> = ({
           loading={loading}
           decoding={decoding}
           className={imageClassName || videoClassName}
+          onError={(event) => {
+            if (
+              thumbnailFallbackUrl &&
+              event.currentTarget.src !== thumbnailFallbackUrl
+            ) {
+              event.currentTarget.src = thumbnailFallbackUrl;
+            }
+          }}
         />
         {showVideoBadge && (
           <span

@@ -4,6 +4,13 @@ interface TradeReadModelEntry extends TradeRef {
   revision: number;
   schemaVersion: number;
   committedAt: number;
+  canonicalTradeId?: string;
+  canonicalTradeVersion?: number;
+  canonicalProjectionGeneration?: string;
+  canonicalAccountId?: string;
+  canonicalBroker?: string;
+  canonicalAccountDisplayName?: string;
+  canonicalProjectionSchemaVersion?: number;
   tradeImportId?: string;
   tradeImportVersion?: number;
 }
@@ -38,6 +45,14 @@ export class TradeReadModel {
       revision: receipt.revision,
       schemaVersion: receipt.schemaVersion,
       committedAt: receipt.committedAt,
+      canonicalTradeId: receipt.canonicalTradeId,
+      canonicalTradeVersion: receipt.canonicalTradeVersion,
+      canonicalProjectionGeneration: receipt.canonicalProjectionGeneration,
+      canonicalAccountId: receipt.canonicalAccountId,
+      canonicalBroker: receipt.canonicalBroker,
+      canonicalAccountDisplayName: receipt.canonicalAccountDisplayName,
+      canonicalProjectionSchemaVersion:
+        receipt.canonicalProjectionSchemaVersion,
       tradeImportId: receipt.tradeImportId,
       tradeImportVersion: receipt.tradeImportVersion,
     });
@@ -84,6 +99,13 @@ export class TradeReadModel {
     tradeId: TradeId;
     revision: number;
     schemaVersion: number;
+    canonicalTradeId?: string;
+    canonicalTradeVersion?: number;
+    canonicalProjectionGeneration?: string;
+    canonicalAccountId?: string;
+    canonicalBroker?: string;
+    canonicalAccountDisplayName?: string;
+    canonicalProjectionSchemaVersion?: number;
     tradeImportId?: string;
     tradeImportVersion?: number;
   } | null {
@@ -101,6 +123,13 @@ export class TradeReadModel {
       tradeId: entry.tradeId,
       revision: entry.revision,
       schemaVersion: entry.schemaVersion,
+      canonicalTradeId: entry.canonicalTradeId,
+      canonicalTradeVersion: entry.canonicalTradeVersion,
+      canonicalProjectionGeneration: entry.canonicalProjectionGeneration,
+      canonicalAccountId: entry.canonicalAccountId,
+      canonicalBroker: entry.canonicalBroker,
+      canonicalAccountDisplayName: entry.canonicalAccountDisplayName,
+      canonicalProjectionSchemaVersion: entry.canonicalProjectionSchemaVersion,
       tradeImportId: entry.tradeImportId,
       tradeImportVersion: entry.tradeImportVersion,
     };

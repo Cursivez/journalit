@@ -30,7 +30,7 @@ The core functionality of Journalit operates **entirely locally** within your Ob
 
 **Location**: `.obsidian/plugins/journalit/data.json`
 
-Contains your preferences: currency, display name, date formats, custom fields, dashboard layout, and sync mappings. Never transmitted to any server.
+Contains your preferences: currency, display name, date formats, custom fields, dashboard layout, and sync mappings. Most settings remain local. Network-backed features transmit only the settings and identifiers explicitly described in their sections below.
 
 ### Authentication Data (If Authenticated)
 
@@ -122,6 +122,22 @@ When you confirm an import, the backend commits the selected preview items and r
 - The plugin shows an upload acknowledgement before processing each view session.
 - Final note creation remains local in your Obsidian vault.
 
+### Tradovate Sync (Optional Pro Feature)
+
+Tradovate authorization and connection lifecycle are handled on Journalit.co. Tradovate credentials and provider tokens are stored by the Journalit backend and are never returned to the plugin.
+
+When you configure or run Tradovate Sync, the plugin transmits:
+
+- The selected backend account records and initial-history boundaries
+- A random vault identifier used for projection coordination
+- The plugin version and random client-installation/operation identifiers
+- Privacy-safe synchronization event codes, timestamps, and aggregate counts
+- Projection acknowledgements containing canonical trade IDs, versions, local file paths for written notes, and success/failure codes
+
+The anonymous client-installation identifier is stored in Obsidian's device-local browser storage rather than the vault settings file. Client diagnostic events do not contain note contents, frontmatter, account names, symbols, prices, quantities, P&L, raw exception messages, stack traces, response bodies, or Tradovate credentials/provider tokens. Diagnostic storage is used for synchronization support and is subject to limited backend retention and access controls.
+
+The backend stores the connected Tradovate account configuration, normalized provider source data, canonical synchronized trades, synchronization jobs, reconciliation state, projection state, and privacy-safe diagnostics required to operate and support the feature.
+
 ---
 
 ### Exchange-rate conversion (Optional)
@@ -173,7 +189,14 @@ When backend integration is enabled, the plugin communicates with the following 
 - `/api/v1/trade-import/analyse` - Trade Import file analysis
 - `/api/v1/trade-import/preview` - Trade Import canonical preview
 - `/api/v1/trade-import/{importId}/commit` - Confirm selected Trade Import preview items
-- `/api/v1/trade-import/projection-ack` - Acknowledge local Trade Import note projection status
+- `/api/v1/trade-projections/accounts` - List canonical account projection inventory
+- `/api/v1/trade-projections/missing` - Retrieve missing or stale canonical projections
+- `/api/v1/trade-projections/ack` - Acknowledge local canonical note projection status
+- `/api/v1/broker-connections/tradovate` - Read Tradovate connection and account status
+- `/api/v1/broker-connections/tradovate/accounts` - Configure synchronized accounts and history
+- `/api/v1/broker-connections/tradovate/sync` - Start Tradovate discovery or synchronization
+- `/api/v1/broker-connections/tradovate/jobs/{jobId}` - Read synchronization job status
+- `/api/v1/broker-connections/tradovate/client-diagnostics` - Submit privacy-safe client synchronization diagnostics
 - `/api/v1/health` - Backend health check
 
 All authenticated API requests use JWT tokens in the Authorization header.
@@ -195,6 +218,7 @@ When you use sync features, the backend stores:
 
 - Synced trades from MetaTrader (symbol, times, prices, P&L, fees)
 - Canonical Trade Import records for confirmed imports, including imported trade identity, version, source broker/account metadata, execution details, status, and processing/projection state
+- Canonical Tradovate synchronization records, normalized provider source entities, account selections, durable job history, reconciliation issues, and projection state
 - MT account IDs and display names
 - Processing history (which reports have been synced)
 
@@ -216,7 +240,7 @@ All user data is protected by PostgreSQL Row-Level Security (RLS). Each user can
 - All network communications use **HTTPS (TLS 1.2+)**
 - Authentication tokens stored locally using Obsidian SecretStorage
 - FTP credentials stored locally using Obsidian SecretStorage
-- Vault identifier is hashed using SHA-256 (non-reversible)
+- Vault identifiers are randomly generated opaque values and do not contain the vault path or name
 
 ### Password Security
 
@@ -250,10 +274,11 @@ Verification codes are sent via email service provider:
 - Only your email address and verification code
 - Used solely for authentication
 
-### No Analytics or Tracking
+### No Advertising or Behavioral Analytics
 
 - No Google Analytics
-- No user behavior tracking or plugin-side telemetry
+- No advertising or clickstream tracking
+- Network-backed synchronization features may submit the narrow operational diagnostics disclosed above
 - No advertising networks
 - No data sold to third parties
 
@@ -287,12 +312,12 @@ Verification codes are sent via email service provider:
 ## What We Do NOT Collect
 
 - Browsing history or clickstream data
-- Device identifiers or fingerprints (beyond what's used for local encryption)
+- Hardware fingerprints or operating-system advertising identifiers
 - Location data
 - Trading account passwords or API keys
 - Contents of your Obsidian vault
 - Your manual trades or personal notes
-- Usage analytics or telemetry from the plugin
+- General usage analytics or behavioral telemetry unrelated to the explicitly disclosed synchronization diagnostics
 
 ---
 

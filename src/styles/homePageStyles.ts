@@ -8,15 +8,208 @@ export const HOME_PAGE_STYLES = `
     display: flex;
     flex-direction: column;
     overflow: hidden;
+    position: relative;
+    isolation: isolate;
+    background-color: var(--background-primary);
+    container-type: inline-size;
   }
 
-  .journalit-home-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    gap: 12px;
-    padding: 4px 28px 8px 16px;
+  
+  .journalit-home-actions
+    .journalit-filter-button-container
+    .journalit-filter-button {
+    width: 32px;
+    height: 28px;
+    padding: 5px;
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 6px;
     background-color: var(--background-primary);
+    color: var(--text-normal);
+    box-shadow: none;
+    box-sizing: border-box;
+  }
+
+  .journalit-home-actions
+    .journalit-filter-button-container
+    .journalit-filter-button:hover {
+    background-color: var(--background-modifier-hover);
+    border-color: var(--background-modifier-border-hover);
+  }
+
+  .journalit-home-actions .journalit-home-mode-toggle-wrapper,
+  .journalit-dashboard-filter-actions .journalit-home-mode-toggle-wrapper {
+    display: inline-flex;
+    align-items: center;
+    height: 28px;
+  }
+
+  
+  .journalit-home-actions .journalit-home-edit-toggle,
+  .journalit-home-actions .journalit-home-quick-links-position-toggle,
+  .journalit-home-actions .journalit-home-add-widget-button {
+    height: 28px;
+    box-sizing: border-box;
+  }
+
+  .journalit-home-actions .journalit-home-add-widget-button {
+    padding-block: 4px;
+  }
+
+  
+  .journalit-home-mode-toggle.segmented-control {
+    height: 100%;
+    box-sizing: border-box;
+    align-items: stretch;
+  }
+
+  .journalit-home-mode-toggle .segmented-control-option {
+    display: inline-flex;
+    align-items: center;
+  }
+
+  .journalit-home-mode-panels {
+    position: relative;
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .journalit-home-mode-panel {
+    position: absolute;
+    inset: 0;
+    min-width: 0;
+    min-height: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transition:
+      opacity 140ms ease,
+      visibility 0s linear 140ms;
+  }
+
+  .journalit-home-mode-panel.is-active {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+    transition-delay: 0s;
+  }
+
+  .journalit-home-mode-panel--dashboard {
+    overflow: hidden;
+  }
+
+  .journalit-dashboard-view--embedded {
+    height: 100%;
+  }
+
+  .journalit-home-page--custom-background
+    .journalit-dashboard-view--embedded {
+    --journalit-dashboard-surface-background: transparent;
+    --journalit-dashboard-toolbar-background: color-mix(
+      in srgb,
+      var(--background-primary) var(--journalit-home-surface-alpha),
+      transparent
+    );
+  }
+
+  .journalit-home-page::before,
+  .journalit-home-page::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+  }
+
+  .journalit-home-page::before {
+    background-image: var(--journalit-home-background-image, none);
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: cover;
+    opacity: 0;
+    z-index: -2;
+  }
+
+  .journalit-home-page::after {
+    background-color: var(--background-primary);
+    opacity: 0;
+    z-index: -1;
+  }
+
+  .journalit-home-page--custom-background::before {
+    opacity: 0.42;
+  }
+
+  .journalit-home-page--custom-background {
+    --journalit-home-surface-alpha: 62%;
+    --journalit-home-scrim-opacity: 0.66;
+  }
+
+  .journalit-home-page--custom-background::after {
+    opacity: var(--journalit-home-scrim-opacity);
+  }
+
+  .journalit-home-page--custom-background .journalit-home-widget {
+    background-color: color-mix(
+      in srgb,
+      var(--background-primary) var(--journalit-home-surface-alpha),
+      transparent
+    );
+  }
+
+  .journalit-home-page--custom-background
+    .journalit-home-widget
+    button:not(.journalit-home-goals__save-button):not(
+      .journalit-home-goals__chip--active
+    ):not(.journalit-home-goals__period-button--active):not(
+      .journalit-home-setups__save-button
+    ):not(.journalit-home-setups__chip--active):not(
+      .journalit-home-heatmap__year-button--active
+    ):not(.journalit-home-embedded-note__error-button):not(
+      .journalit-home-widget-remove
+    ) {
+    background-color: color-mix(
+      in srgb,
+      var(--background-primary) var(--journalit-home-surface-alpha),
+      transparent
+    );
+  }
+
+  .journalit-home-page--custom-background .journalit-home-period-selector,
+  .journalit-home-page--custom-background
+    .journalit-home-account-filter__trigger,
+  .journalit-home-page--custom-background
+    .journalit-home-trade-type-filter__trigger,
+  .journalit-home-page--custom-background .journalit-home-add-widget-button,
+  .journalit-home-page--custom-background
+    .journalit-home-quick-links-position-toggle,
+  .journalit-home-page--custom-background .journalit-home-edit-toggle,
+  .journalit-home-page--custom-background button.journalit-quick-link-button {
+    background-color: color-mix(
+      in srgb,
+      var(--background-primary) var(--journalit-home-surface-alpha),
+      transparent
+    );
+  }
+
+  .journalit-home-page--custom-background
+    .journalit-home-edit-toggle--active {
+    background-color: var(--interactive-accent);
+  }
+
+  .theme-light .journalit-home-page--custom-background {
+    --journalit-home-surface-alpha: 38%;
+    --journalit-home-scrim-opacity: 0.42;
+  }
+
+  .theme-light .journalit-home-page--custom-background::before {
+    opacity: 0.5;
+  }
+
+  .journalit-home-page .journalit-home-header {
+    padding: 16px 28px 4px 40px;
+    background-color: transparent;
     flex-shrink: 0;
   }
 
@@ -27,16 +220,25 @@ export const HOME_PAGE_STYLES = `
     flex: 1 1 auto;
   }
 
+  .journalit-home-subtitle-row {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 12px;
+    margin-top: 0;
+  }
+
   .journalit-home-greeting-title {
     margin: 0;
     font-size: 28px;
     font-weight: 600;
     color: var(--text-normal);
-    line-height: 1.2;
+    line-height: 1.05;
+    transform: translateY(6px);
   }
 
   .journalit-home-greeting-subtitle {
-    margin: 4px 0 0 0;
+    margin: 0;
     font-size: 14px;
     color: var(--text-muted);
     font-weight: 400;
@@ -52,7 +254,7 @@ export const HOME_PAGE_STYLES = `
 
   .journalit-home-actions {
     display: flex;
-    gap: 8px;
+    gap: 6px;
     flex-wrap: wrap;
     justify-content: flex-end;
     align-items: stretch;
@@ -64,6 +266,11 @@ export const HOME_PAGE_STYLES = `
     gap: 8px;
     flex-wrap: wrap;
     align-items: stretch;
+  }
+
+  .journalit-home-filter-icon {
+    flex: 0 0 auto;
+    color: var(--text-muted);
   }
 
   .journalit-home-period-wrapper,
@@ -97,11 +304,13 @@ export const HOME_PAGE_STYLES = `
     transform: rotate(180deg);
   }
 
-  .journalit-home-period-menu {
+  .journalit-home-page .journalit-home-period-menu {
     position: absolute;
     top: 100%;
     right: 0;
-    min-width: 150px;
+    width: max-content;
+    min-width: 112px;
+    max-width: min(220px, calc(100cqw - 24px));
     margin-top: 4px;
     background-color: var(--background-primary) !important;
     border: 1px solid var(--background-modifier-border) !important;
@@ -220,8 +429,9 @@ export const HOME_PAGE_STYLES = `
     position: absolute;
     top: 100%;
     right: 0;
-    min-width: 220px;
-    max-width: 280px;
+    width: max-content;
+    min-width: 120px;
+    max-width: min(280px, calc(100cqw - 24px));
     max-height: min(300px, 50vh);
     overflow-y: auto;
     background-color: var(--background-primary) !important;
@@ -340,6 +550,13 @@ export const HOME_PAGE_STYLES = `
     color: var(--text-on-accent);
   }
 
+  .journalit-home-edit-toggle {
+    width: 32px;
+    height: 28px;
+    padding: 5px;
+    box-sizing: border-box;
+  }
+
   .journalit-home-content {
     flex: 1;
     overflow-y: auto;
@@ -348,11 +565,18 @@ export const HOME_PAGE_STYLES = `
     padding: 0 16px 16px 16px;
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 4px;
   }
 
   .journalit-home-section {
     flex: 0 0 auto;
+  }
+
+  .journalit-home-content
+    > .journalit-home-section:first-child:not(
+      .journalit-home-section--quick-links
+    ) {
+    margin-top: 6px;
   }
 
   .journalit-home-section--quick-links .journalit-quick-links-row {
@@ -479,19 +703,29 @@ export const HOME_PAGE_STYLES = `
     transform: scale(1.05);
   }
 
-  @media (max-width: 900px) {
-    .journalit-home-header {
+  @container (max-width: 900px) {
+    .journalit-home-subtitle-row {
       flex-direction: column;
       align-items: stretch;
+      gap: 8px;
+      margin-top: 0;
     }
 
     .journalit-home-actions {
       width: 100%;
       justify-content: flex-start;
     }
+
+    
+    .journalit-home-actions
+      .journalit-drilldown-filter
+      .journalit-drilldown-filter__menu {
+      left: 0;
+      right: auto;
+    }
   }
 
-  @media (max-width: 700px) {
+  @container (max-width: 700px) {
     .journalit-home-content {
       padding: 0 12px 12px 12px;
     }
@@ -527,7 +761,7 @@ export const HOME_PAGE_STYLES = `
       width: auto;
       min-width: 40px;
       justify-content: center;
-      padding: 8px;
+      padding: 5px;
       flex: 0 0 auto;
     }
 
@@ -566,7 +800,7 @@ export const HOME_PAGE_STYLES = `
     }
   }
 
-  @media (max-width: 520px) {
+  @container (max-width: 520px) {
     .journalit-home-header {
       padding: 12px 12px 8px 12px;
     }
@@ -595,10 +829,14 @@ export const HOME_PAGE_STYLES = `
     .journalit-home-period-selector,
     .journalit-home-account-filter__trigger,
     .journalit-home-trade-type-filter__trigger,
-    .journalit-home-add-widget-button,
+    .journalit-home-add-widget-button {
+      padding: 10px 12px;
+      font-size: 13px;
+    }
+
     .journalit-home-quick-links-position-toggle,
     .journalit-home-edit-toggle {
-      padding: 10px 12px;
+      padding: 5px;
       font-size: 13px;
     }
 

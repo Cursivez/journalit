@@ -220,6 +220,8 @@ export const StatsWidget: React.FC<StatsWidgetProps> = React.memo(
           breakEvenThresholdPercent,
           analyticsDateBasis,
           tradingDayCutoffTime: plugin?.settings?.trade?.tradingDayCutoffTime,
+          maeMfeDisplayUnit:
+            plugin?.settings?.trade?.maeMfeDisplayUnit ?? 'dollar',
         });
       },
       [analyticsDateBasis, plugin, prepareDisplayTrades]

@@ -7,6 +7,16 @@ import { ApiError } from '../../types/errors';
 import { getPluginInstance } from '../../utils/pluginContext';
 
 const DEFAULT_BACKEND_SERVER_URL = 'https://api.journalit.co';
+const APPROVED_BACKEND_HOSTS = new Set([
+  'api.journalit.co',
+  'stg-api.journalit.co',
+]);
+
+function isLoopbackBackendHost(hostname: string): boolean {
+  return (
+    hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '[::1]'
+  );
+}
 
 function normalizeBackendServerUrl(value: unknown): string {
   if (typeof value !== 'string' || value.trim().length === 0) {
@@ -15,7 +25,13 @@ function normalizeBackendServerUrl(value: unknown): string {
 
   try {
     const parsedUrl = new URL(value.trim());
-    if (parsedUrl.protocol !== 'https:' && parsedUrl.protocol !== 'http:') {
+    const approvedJournalitHost =
+      parsedUrl.protocol === 'https:' &&
+      APPROVED_BACKEND_HOSTS.has(parsedUrl.hostname);
+    const approvedLocalDevelopmentHost =
+      (parsedUrl.protocol === 'https:' || parsedUrl.protocol === 'http:') &&
+      isLoopbackBackendHost(parsedUrl.hostname);
+    if (!approvedJournalitHost && !approvedLocalDevelopmentHost) {
       return DEFAULT_BACKEND_SERVER_URL;
     }
     parsedUrl.pathname = parsedUrl.pathname.replace(/\/+$|^$/, '');

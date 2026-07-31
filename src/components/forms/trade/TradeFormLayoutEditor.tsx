@@ -35,13 +35,17 @@ const NON_REORDERABLE_LAYOUT_ITEMS = new Set<string>([
   
   'assetSpecific',
   
-  'realizedPnlPreview',
-  
   'idealExits',
+  
+  'unrealizedSnapshot',
+  
+  'dividends',
   
   'pnlPreview',
   
   'customFields',
+  
+  'tradeCurrency',
 ]);
 
 const COST_LAYOUT_ITEMS = new Set<string>([
@@ -69,19 +73,28 @@ const RISK_LAYOUT_ITEM_ORDER: TradeFormLayoutItemId[] = [
   'maeMfe',
 ];
 const RISK_MANAGEMENT_EDITOR_ID = '__riskManagement';
-const EXECUTION_EMBEDDED_LAYOUT_ITEMS = new Set<string>(['idealExits']);
+const EXECUTION_EMBEDDED_LAYOUT_ITEMS = new Set<string>([
+  'idealExits',
+  'unrealizedSnapshot',
+  'dividends',
+]);
 
-const FIXED_TOP_LAYOUT_ITEMS = new Set<string>(['assetSpecific']);
+
+const EXECUTION_EMBEDDED_LAYOUT_ITEM_ORDER = [
+  'unrealizedSnapshot',
+  'idealExits',
+  'dividends',
+];
+
+const FIXED_TOP_LAYOUT_ITEMS = new Set<string>([
+  'assetSpecific',
+  'tradeCurrency',
+]);
 const FIXED_BOTTOM_LAYOUT_ITEMS = new Set<string>([
   'pnlPreview',
   'importShortcut',
-  'realizedPnlPreview',
 ]);
-const FIXED_BOTTOM_LAYOUT_ITEM_ORDER = [
-  'pnlPreview',
-  'importShortcut',
-  'realizedPnlPreview',
-];
+const FIXED_BOTTOM_LAYOUT_ITEM_ORDER = ['pnlPreview', 'importShortcut'];
 const createCoreFormDetailsItem = (): VisibilityEditorItem => ({
   id: '__coreTradeDetails',
   label: t('form.layout.item.core-details'),
@@ -120,7 +133,8 @@ interface TradeFormLayoutEditorProps {
 const createEditorItems = (
   layout: TradeFormLayoutSettings,
   costDescription?: React.ReactNode,
-  riskDescription?: React.ReactNode
+  riskDescription?: React.ReactNode,
+  tradeCurrencyDescription?: React.ReactNode
 ): {
   activeItems: VisibilityEditorItem[];
   availableItems: VisibilityEditorItem[];
@@ -149,8 +163,15 @@ const createEditorItems = (
     }
   );
 
-  const activeOrderedItems = orderedItems.filter((item) =>
-    visibleSet.has(item.id)
+  const activeOrderedItems = orderedItems.flatMap<VisibilityEditorItem>(
+    (item) => {
+      if (!visibleSet.has(item.id)) return [];
+      return [
+        item.id === 'tradeCurrency' && tradeCurrencyDescription
+          ? { ...item, description: tradeCurrencyDescription }
+          : item,
+      ];
+    }
   );
   const fixedTopItems = activeOrderedItems.filter((item) =>
     FIXED_TOP_LAYOUT_ITEMS.has(item.id)
@@ -170,9 +191,13 @@ const createEditorItems = (
       !RISK_LAYOUT_ITEMS.has(item.id) &&
       !EXECUTION_EMBEDDED_LAYOUT_ITEMS.has(item.id)
   );
-  const visibleExecutionEmbeddedItems = activeOrderedItems.filter((item) =>
-    EXECUTION_EMBEDDED_LAYOUT_ITEMS.has(item.id)
-  );
+  const visibleExecutionEmbeddedItems = activeOrderedItems
+    .filter((item) => EXECUTION_EMBEDDED_LAYOUT_ITEMS.has(item.id))
+    .sort(
+      (left, right) =>
+        EXECUTION_EMBEDDED_LAYOUT_ITEM_ORDER.indexOf(left.id) -
+        EXECUTION_EMBEDDED_LAYOUT_ITEM_ORDER.indexOf(right.id)
+    );
   const visibleCostItems = activeOrderedItems.filter((item) =>
     COST_LAYOUT_ITEMS.has(item.id)
   );
@@ -340,6 +365,29 @@ const RiskFieldsVisibilitySelector: React.FC<
 
 RiskFieldsVisibilitySelector.displayName = 'RiskFieldsVisibilitySelector';
 
+interface ManualFxRateToggleProps {
+  layout: TradeFormLayoutSettings;
+  onChange: (showManualFxRate: boolean) => void;
+}
+
+const ManualFxRateToggle: React.FC<ManualFxRateToggleProps> = ({
+  layout,
+  onChange,
+}) => (
+  <div className="journalit-trade-form-layout-editor__risk-fields">
+    <label className="journalit-trade-form-layout-editor__risk-field">
+      <input
+        type="checkbox"
+        checked={layout.showManualFxRate}
+        onChange={(event) => onChange(event.currentTarget.checked)}
+      />
+      <span>{t('form.layout.manual-fx-rate')}</span>
+    </label>
+  </div>
+);
+
+ManualFxRateToggle.displayName = 'ManualFxRateToggle';
+
 interface InputModeCardProps {
   value: TradeFormInputMode;
   onChange: (value: TradeFormInputMode) => void;
@@ -433,6 +481,58 @@ const AssetTypeModeCard: React.FC<AssetTypeModeCardProps> = ({
 );
 
 AssetTypeModeCard.displayName = 'AssetTypeModeCard';
+
+interface LayoutEditorFooterProps {
+  compactFooter: boolean;
+  isSaving: boolean;
+  onReset: () => void;
+  onCancel?: () => void;
+  onSave: () => void;
+}
+
+const LayoutEditorFooter: React.FC<LayoutEditorFooterProps> = ({
+  compactFooter,
+  isSaving,
+  onReset,
+  onCancel,
+  onSave,
+}) => (
+  <div
+    className={`journalit-trade-form-layout-editor__footer ${compactFooter ? 'is-compact' : ''}`}
+  >
+    <Button
+      type="button"
+      variant="plain"
+      className="journalit-trade-form-layout-editor__reset"
+      onClick={onReset}
+      disabled={isSaving}
+    >
+      {t('tradelog.settings.reset')}
+    </Button>
+    {onCancel && (
+      <Button
+        type="button"
+        variant="plain"
+        className="cancel-button"
+        onClick={onCancel}
+        disabled={isSaving}
+      >
+        {t('button.cancel')}
+      </Button>
+    )}
+    <Button
+      type="button"
+      variant="primary"
+      className="create-account-button accent-button modal-save-accent"
+      onClick={onSave}
+      disabled={isSaving}
+    >
+      {isSaving ? t('tradelog.settings.saving') : t('button.save')}
+    </Button>
+  </div>
+);
+
+LayoutEditorFooter.displayName = 'LayoutEditorFooter';
 
 const reorderTradeFormLayoutItems = (
   previous: TradeFormLayoutSettings,
@@ -605,6 +705,10 @@ export const TradeFormLayoutEditor: React.FC<TradeFormLayoutEditorProps> = ({
     });
   };
 
+  const handleManualFxRateChange = (showManualFxRate: boolean) => {
+    setLayout((previous) => ({ ...previous, showManualFxRate }));
+  };
+
   const { activeItems, availableItems } = useMemo(
     () =>
       createEditorItems(
@@ -616,6 +720,10 @@ export const TradeFormLayoutEditor: React.FC<TradeFormLayoutEditorProps> = ({
         <RiskFieldsVisibilitySelector
           layout={layout}
           onChange={handleRiskGroupVisibilityChange}
+        />,
+        <ManualFxRateToggle
+          layout={layout}
+          onChange={handleManualFxRateChange}
         />
       ),
     [layout]
@@ -769,39 +877,13 @@ export const TradeFormLayoutEditor: React.FC<TradeFormLayoutEditorProps> = ({
         groupActiveByCategory={true}
       />
 
-      <div
-        className={`journalit-trade-form-layout-editor__footer ${compactFooter ? 'is-compact' : ''}`}
-      >
-        <Button
-          type="button"
-          variant="plain"
-          className="journalit-trade-form-layout-editor__reset"
-          onClick={handleReset}
-          disabled={isSaving}
-        >
-          {t('tradelog.settings.reset')}
-        </Button>
-        {onCancel && (
-          <Button
-            type="button"
-            variant="plain"
-            className="cancel-button"
-            onClick={onCancel}
-            disabled={isSaving}
-          >
-            {t('button.cancel')}
-          </Button>
-        )}
-        <Button
-          type="button"
-          variant="primary"
-          className="create-account-button accent-button modal-save-accent"
-          onClick={() => void handleSave()}
-          disabled={isSaving}
-        >
-          {isSaving ? t('tradelog.settings.saving') : t('button.save')}
-        </Button>
-      </div>
+      <LayoutEditorFooter
+        compactFooter={compactFooter}
+        isSaving={isSaving}
+        onReset={handleReset}
+        onCancel={onCancel}
+        onSave={() => void handleSave()}
+      />
     </div>
   );
 };

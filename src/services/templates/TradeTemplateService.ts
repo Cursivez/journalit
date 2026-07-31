@@ -1,10 +1,7 @@
 
 
 import type { App } from 'obsidian';
-import {
-  DEFAULT_SCALPER_DEFAULTS,
-  type JournalitSettings,
-} from '../../settings/types';
+import type { JournalitSettings } from '../../settings/types';
 import { TradeTemplate } from '../../types/reviewV2';
 import { generateUUID } from '../../utils/uuid';
 import { eventBus } from '../events';
@@ -151,7 +148,6 @@ export class TradeTemplateService {
           customWidgetTypes: [],
           templates: [],
           tradeTemplates: [],
-          scalperDefaults: { ...DEFAULT_SCALPER_DEFAULTS },
         };
       }
 
@@ -186,7 +182,6 @@ export class TradeTemplateService {
           customWidgetTypes: [],
           templates: [],
           tradeTemplates: [],
-          scalperDefaults: { ...DEFAULT_SCALPER_DEFAULTS },
         };
       }
 

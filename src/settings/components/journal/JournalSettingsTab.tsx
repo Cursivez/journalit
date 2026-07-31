@@ -10,6 +10,7 @@ import { SessionModeTab } from '../sessionMode/SessionModeTab';
 interface JournalSettingsTabProps {
   plugin: JournalitPlugin;
   initialSection?: JournalSettingsSection;
+  showSectionTabs?: boolean;
 }
 
 type JournalSettingsSection = 'reviews' | 'fields' | 'sessionMode';
@@ -17,6 +18,7 @@ type JournalSettingsSection = 'reviews' | 'fields' | 'sessionMode';
 export const JournalSettingsTab: React.FC<JournalSettingsTabProps> = ({
   plugin,
   initialSection = 'reviews',
+  showSectionTabs = true,
 }) => {
   const [sectionState, setSectionState] = useState(() => ({
     initialSection,
@@ -33,29 +35,31 @@ export const JournalSettingsTab: React.FC<JournalSettingsTabProps> = ({
 
   return (
     <div className="journalit-settings-tab journal-settings">
-      <nav className="settings-tab-nav journalit-settings-subnav">
-        <button
-          type="button"
-          className={`journalit-button journalit-settings-tab-button settings-tab-button ${activeSection === 'reviews' ? 'settings-tab-button--active' : ''}`}
-          onClick={() => selectSection('reviews')}
-        >
-          {t('settings.tab.reviews')}
-        </button>
-        <button
-          type="button"
-          className={`journalit-button journalit-settings-tab-button settings-tab-button ${activeSection === 'fields' ? 'settings-tab-button--active' : ''}`}
-          onClick={() => selectSection('fields')}
-        >
-          {t('settings.tab.customization')}
-        </button>
-        <button
-          type="button"
-          className={`journalit-button journalit-settings-tab-button settings-tab-button ${activeSection === 'sessionMode' ? 'settings-tab-button--active' : ''}`}
-          onClick={() => selectSection('sessionMode')}
-        >
-          {t('settings.session-mode.title')}
-        </button>
-      </nav>
+      {showSectionTabs && (
+        <nav className="settings-tab-nav journalit-settings-subnav">
+          <button
+            type="button"
+            className={`journalit-button journalit-settings-tab-button settings-tab-button ${activeSection === 'reviews' ? 'settings-tab-button--active' : ''}`}
+            onClick={() => selectSection('reviews')}
+          >
+            {t('settings.tab.reviews')}
+          </button>
+          <button
+            type="button"
+            className={`journalit-button journalit-settings-tab-button settings-tab-button ${activeSection === 'fields' ? 'settings-tab-button--active' : ''}`}
+            onClick={() => selectSection('fields')}
+          >
+            {t('settings.tab.customization')}
+          </button>
+          <button
+            type="button"
+            className={`journalit-button journalit-settings-tab-button settings-tab-button ${activeSection === 'sessionMode' ? 'settings-tab-button--active' : ''}`}
+            onClick={() => selectSection('sessionMode')}
+          >
+            {t('settings.session-mode.title')}
+          </button>
+        </nav>
+      )}
 
       {activeSection === 'reviews' && <ReviewsTab plugin={plugin} />}
       {activeSection === 'fields' && <CustomizationTab plugin={plugin} />}

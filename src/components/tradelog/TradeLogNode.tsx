@@ -1,6 +1,6 @@
 
 
-import React, { memo } from 'react';
+import React, { memo, useId } from 'react';
 import { TimeNode } from '../../services/tradelog/types';
 import { calculateEffectiveRMultiple } from '../../utils/formatting';
 import {
@@ -21,6 +21,9 @@ import { ColumnDefinition } from './columnConfig';
 import { t } from '../../lang/helpers';
 import { DEFAULT_TRADE_FORM_DATA } from '../forms/trade/types';
 import { cssVars } from '../../styles/inlineStylePolicy';
+import { Tooltip } from '../shared/Tooltip';
+import { Tag } from '../shared/icons/ObsidianIcon';
+import { getSessionLogTags } from '../sessionLog/sessionLogUtils';
 
 type TradeDetailsRowTrade = React.ComponentProps<
   typeof TradeDetailsRow
@@ -73,6 +76,8 @@ export const TradeLogNode = memo<TradeLogNodeProps>(
     const { formatValue, shouldMask } = useDisplayFormatter();
     const isPnlMasked = shouldMask('pnl');
     const isPercentageMasked = shouldMask('percentage');
+    const sessionLogTags = getSessionLogTagDisplayItems(node, plugin);
+    const sessionLogTagsLabelId = useId();
 
     const handleToggle = (e: React.MouseEvent) => {
       e.stopPropagation();
@@ -313,6 +318,42 @@ export const TradeLogNode = memo<TradeLogNodeProps>(
               )}
             </span>
 
+            {sessionLogTags.length > 0 && (
+              <Tooltip
+                content={
+                  <div className="custom-tags-tooltip">
+                    <div className="tooltip-title">
+                      {t('filter.modal.session-tags.placeholder')}
+                    </div>
+                    {sessionLogTags.map((tag) => (
+                      <div key={tag.id} className="tooltip-item">
+                        • {tag.label}
+                      </div>
+                    ))}
+                  </div>
+                }
+                delay={0}
+                preferredPosition="top"
+                triggerClassName="trade-log-session-tags-tooltip-trigger"
+              >
+                <span
+                  className="trade-log-session-tags-indicator"
+                  aria-labelledby={sessionLogTagsLabelId}
+                  role="img"
+                  tabIndex={0}
+                >
+                  <Tag size={16} aria-hidden="true" />
+                  <span
+                    id={sessionLogTagsLabelId}
+                    className="trade-log-session-tags-accessible-label"
+                  >
+                    {t('filter.modal.session-tags.placeholder')}:{' '}
+                    {sessionLogTags.map((tag) => tag.label).join(', ')}
+                  </span>
+                </span>
+              </Tooltip>
+            )}
+
             
             <div className="node-metrics">
               
@@ -406,6 +447,30 @@ export const TradeLogNode = memo<TradeLogNodeProps>(
 );
 
 TradeLogNode.displayName = 'TradeLogNode';
+
+function getSessionLogTagDisplayItems(
+  node: TimeNode,
+  plugin: ReturnType<typeof usePlugin>
+): Array<{ id: string; label: string }> {
+  if (node.type !== 'day' || !node.sessionLogTagIds?.length) {
+    return [];
+  }
+
+  if (!plugin) {
+    return [];
+  }
+
+  const tagIds = new Set(node.sessionLogTagIds);
+  const configuredTags = getSessionLogTags(plugin);
+  const displayTags: Array<{ id: string; label: string }> = [];
+  for (const tag of configuredTags) {
+    if (tagIds.has(tag.id)) {
+      displayTags.push({ id: tag.id, label: tag.label });
+    }
+  }
+
+  return displayTags;
+}
 
 
 function getWinRateClass(winRate: number): string {

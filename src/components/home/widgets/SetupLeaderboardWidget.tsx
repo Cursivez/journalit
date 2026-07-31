@@ -251,7 +251,9 @@ const TopBreakdownConfigPanel: React.FC<TopBreakdownConfigPanelProps> = ({
 }) => (
   <div className="journalit-home-setups journalit-home-setups--modal">
     <div className="journalit-home-widget__eyebrow journalit-home-setups__header">
-      <span>{title}</span>
+      <span className="journalit-home-setups__heading">
+        <span>{title}</span>
+      </span>
       <div className="journalit-home-setups__actions">
         <button
           className="clickable-icon journalit-home-setups__save-button"
@@ -719,15 +721,17 @@ const SetupLeaderboardWidgetComponent: React.FC<
       aria-label={widgetCustomizeLabel}
     >
       <div className="journalit-home-widget__eyebrow journalit-home-setups__header">
-        <span className="journalit-home-setups__title">{widgetTitle}</span>
-        {resolvedConfig.valueMode === 'currency' && (
-          <CurrencyConversionInfo
-            metadata={currencyConversion}
-            trades={(filteredTrades || []).filter((trade) =>
-              isPnlContributingTrade(trade)
-            )}
-          />
-        )}
+        <span className="journalit-home-setups__heading">
+          <span className="journalit-home-setups__title">{widgetTitle}</span>
+          {resolvedConfig.valueMode === 'currency' && (
+            <CurrencyConversionInfo
+              metadata={currencyConversion}
+              trades={(filteredTrades || []).filter((trade) =>
+                isPnlContributingTrade(trade)
+              )}
+            />
+          )}
+        </span>
       </div>
 
       <div className="journalit-home-setups__list">

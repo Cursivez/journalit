@@ -5,7 +5,7 @@ import {
   TRADE_LOG_IMAGE_GALLERY_EMPTY_GUIDE_ID,
 } from './tradeLogGuideIds';
 
-const TRADE_LOG_IMAGE_GALLERY_EMPTY_GUIDE_VERSION = 2;
+const TRADE_LOG_IMAGE_GALLERY_EMPTY_GUIDE_VERSION = 3;
 
 export function registerTradeLogImageGalleryEmptyGuide(
   guideRegistry: GuideRegistry

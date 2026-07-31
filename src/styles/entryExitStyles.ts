@@ -234,6 +234,152 @@ export const ENTRY_EXIT_STYLES = `
       font-weight: 400;
     }
 
+    .trade-form-view-container .journalit-unrealized-snapshot {
+      margin-top: 12px;
+      padding-top: 10px;
+      border-top: 1px solid var(--background-modifier-border);
+    }
+
+    .trade-form-view-container .journalit-unrealized-snapshot__header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 8px;
+    }
+
+    .trade-form-view-container .journalit-unrealized-snapshot__title-group {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      min-width: 0;
+    }
+
+    .trade-form-view-container .journalit-unrealized-snapshot__value-chip {
+      flex-shrink: 0;
+      display: inline-flex;
+      align-items: baseline;
+      gap: 6px;
+      padding: 3px 8px;
+      border-radius: 4px;
+      background: var(--background-secondary);
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .trade-form-view-container .journalit-unrealized-snapshot__value-label {
+      color: var(--text-muted);
+      font-size: 12px;
+      font-weight: 500;
+    }
+
+    .trade-form-view-container .journalit-unrealized-snapshot__captured {
+      background: transparent;
+      border: none;
+      box-shadow: none;
+      padding: 6px 0;
+      align-self: flex-end;
+      color: var(--text-muted);
+      font-size: 12px;
+      cursor: pointer;
+      text-decoration: underline dotted;
+      text-underline-offset: 3px;
+    }
+
+    .trade-form-view-container .journalit-unrealized-snapshot__captured:hover {
+      color: var(--text-normal);
+    }
+
+    .trade-form-view-container .journalit-unrealized-snapshot__title {
+      color: var(--text-normal);
+      font-size: 15px;
+      line-height: 20px;
+      font-weight: 500;
+      white-space: nowrap;
+    }
+
+    .trade-form-view-container .journalit-unrealized-snapshot__optional-text {
+      color: var(--text-muted);
+      font-size: 13px;
+      font-weight: 400;
+    }
+
+    .trade-form-view-container .journalit-unrealized-snapshot__info {
+      color: var(--text-muted);
+    }
+
+    .trade-form-view-container .journalit-unrealized-snapshot__info:hover {
+      color: var(--text-normal);
+    }
+
+    .trade-form-view-container .journalit-unrealized-snapshot__fields {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      align-items: flex-start;
+    }
+
+    
+    .trade-form-view-container .journalit-unrealized-snapshot__price-field {
+      flex: 0 1 130px;
+      min-width: 100px;
+    }
+
+    .trade-form-view-container .journalit-unrealized-snapshot__time-field {
+      flex: 1 1 auto;
+      min-width: 0;
+    }
+
+    @media (max-width: 640px) {
+      .trade-form-view-container .journalit-unrealized-snapshot__fields {
+        flex-direction: column;
+        gap: 8px;
+      }
+
+      .trade-form-view-container .journalit-unrealized-snapshot__price-field {
+        flex: 0 0 auto;
+        width: 130px;
+      }
+
+      .trade-form-view-container
+        .journalit-unrealized-snapshot__time-field
+        .journalit-fast-datetime__container {
+        gap: 1px;
+        padding: 4px;
+      }
+
+      .trade-form-view-container
+        .journalit-unrealized-snapshot__time-field
+        .journalit-fast-datetime__segment {
+        width: 26px;
+        min-width: 26px;
+        max-width: 26px;
+        padding: 5px 1px;
+        font-size: 11px;
+      }
+
+      .trade-form-view-container
+        .journalit-unrealized-snapshot__time-field
+        .journalit-fast-datetime__separator {
+        padding: 0;
+      }
+
+      .trade-form-view-container
+        .journalit-unrealized-snapshot__time-field
+        .journalit-fast-datetime__separator--spacer {
+        padding: 0 2px;
+      }
+
+      .trade-form-view-container
+        .journalit-unrealized-snapshot__time-field
+        .journalit-fast-datetime__ampm-button {
+        min-width: 28px;
+        margin-left: 1px;
+        padding: 5px 2px;
+      }
+
+    }
+
     .trade-form-view-container .journalit-ideal-exits__info {
       color: var(--text-muted);
     }

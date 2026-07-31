@@ -23,6 +23,8 @@ import { Mutex } from '../../utils/mutex';
 import { getDefaultTradeTemplateMetadata } from '../templates/defaultTradeTemplateMetadata';
 import { serializeIdealExitFrontmatter } from '../trade/core/TradeFrontmatterCodec';
 import { normalizeStringArray } from '../../utils/dataUtils';
+import { readFrontmatterFromDisk } from '../../utils/dataRefresh';
+import type { PreviousTagAssignments } from '../options/CustomOptionsService';
 
 function getStringValue(record: Record<string, unknown>, key: string): string {
   const value = record[key];
@@ -124,6 +126,15 @@ function createBacktestTradeData(
     account: getStringArray(frontmatter, 'account'),
     tags: getStringArray(frontmatter, 'tags'),
     pnl: getNumberValue(frontmatter, 'pnl'),
+    currency:
+      typeof frontmatter.currency === 'string'
+        ? frontmatter.currency
+        : undefined,
+    fxRate: getOptionalNumberValue(frontmatter, 'fxRate'),
+    fxRateBaseCurrency:
+      typeof frontmatter.fxRateBaseCurrency === 'string'
+        ? frontmatter.fxRateBaseCurrency
+        : undefined,
     riskAmount: getOptionalNumberValue(frontmatter, 'riskAmount'),
     rMultiple: getOptionalNumberValue(frontmatter, 'rMultiple'),
     commission: getOptionalNumberValue(frontmatter, 'commission'),
@@ -189,6 +200,29 @@ export class BacktestTradeService extends CustomDataService {
     return this.plugin;
   }
 
+  private getAssignedTags(data: BacktestTradeFormData): string[] {
+    return [...(data.tags ?? []), ...(data.customTags ?? [])];
+  }
+
+  private async getStoredAssignedTags(filePath: string): Promise<string[]> {
+    const file = this.app.vault.getAbstractFileByPath(filePath);
+    if (!(file instanceof TFile)) return [];
+    const frontmatter = await readFrontmatterFromDisk(this.app, file);
+    return getStringArray(frontmatter, 'tags');
+  }
+
+  private runWithTagAssignments<T>(
+    data: BacktestTradeFormData,
+    operation: () => Promise<T>,
+    previousTags: PreviousTagAssignments = []
+  ): Promise<T> {
+    return this.getPlugin().optionsService.runWithTagAssignments(
+      this.getAssignedTags(data),
+      operation,
+      previousTags
+    );
+  }
+
   
   public setPlugin(plugin: JournalitPlugin): void {
     super.setPlugin(plugin);
@@ -213,6 +247,20 @@ export class BacktestTradeService extends CustomDataService {
       images?: string[];
       deferPostCreateTasks?: boolean;
 
+      customFields?: Record<string, unknown>;
+    } = {}
+  ): Promise<TFile | null> {
+    return this.runWithTagAssignments(data, () =>
+      this.createBacktestTradeInternal(data, options)
+    );
+  }
+
+  private async createBacktestTradeInternal(
+    data: BacktestTradeFormData,
+    options: {
+      openFile?: boolean;
+      images?: string[];
+      deferPostCreateTasks?: boolean;
       customFields?: Record<string, unknown>;
     } = {}
   ): Promise<TFile | null> {
@@ -335,6 +383,9 @@ export class BacktestTradeService extends CustomDataService {
             rebate: data.rebate,
             stopLoss: data.stopLoss,
             riskAmount: data.riskAmount,
+            currency: data.currency,
+            fxRate: data.fxRate,
+            fxRateBaseCurrency: data.fxRateBaseCurrency,
             mae: data.mae,
             mfe: data.mfe,
             maePrice: data.maePrice,
@@ -478,6 +529,17 @@ export class BacktestTradeService extends CustomDataService {
     data: BacktestTradeFormData,
     filePath: string
   ): Promise<boolean> {
+    return this.runWithTagAssignments(
+      data,
+      () => this.updateBacktestTradeInternal(data, filePath),
+      () => this.getStoredAssignedTags(filePath)
+    );
+  }
+
+  private async updateBacktestTradeInternal(
+    data: BacktestTradeFormData,
+    filePath: string
+  ): Promise<boolean> {
     try {
       const file = this.app.vault.getAbstractFileByPath(filePath);
       if (!file || !(file instanceof TFile)) {
@@ -548,6 +610,9 @@ export class BacktestTradeService extends CustomDataService {
         rebate: data.rebate,
         stopLoss: data.stopLoss,
         riskAmount: data.riskAmount,
+        currency: data.currency,
+        fxRate: data.fxRate,
+        fxRateBaseCurrency: data.fxRateBaseCurrency,
         mae: data.mae,
         mfe: data.mfe,
         maePrice: data.maePrice,

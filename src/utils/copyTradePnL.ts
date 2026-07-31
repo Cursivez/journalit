@@ -23,6 +23,7 @@ type CopyTradeInput = {
   commission?: unknown;
   commissionType?: unknown;
   entries?: unknown;
+  dividends?: unknown;
   mae?: unknown;
   mfe?: unknown;
 };
@@ -178,6 +179,16 @@ export function scaleCopiedTradeExecutionFields<T extends CopyTradeInput>(
         typeof exit.notional === 'number'
           ? exit.notional * multiplier
           : exit.notional,
+    }));
+  }
+
+  if (Array.isArray(trade.dividends)) {
+    scaled.dividends = trade.dividends.map((dividend: ExecutionRow) => ({
+      ...dividend,
+      amount:
+        typeof dividend.amount === 'number'
+          ? dividend.amount * multiplier
+          : dividend.amount,
     }));
   }
 

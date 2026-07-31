@@ -35,7 +35,16 @@ export interface TradeLogMetrics {
     label: string;
     pnl: number;
   };
-  status?: 'win' | 'loss' | 'breakeven' | 'missed' | 'open' | 'backtest';
+  status?:
+    | 'win'
+    | 'loss'
+    | 'breakeven'
+    | 'unknown'
+    | 'missed'
+    | 'open'
+    | 'partially_closed'
+    | 'cancelled'
+    | 'backtest';
   
   totalPnLByCurrency?: Record<string, number>;
   
@@ -49,6 +58,7 @@ export interface TimeNode {
   id: string;
   label: string;
   metrics: TradeLogMetrics;
+  sessionLogTagIds?: string[];
   children?: TimeNode[];
   trade?: Record<string, unknown> & {
     filePath?: string;
@@ -68,7 +78,8 @@ export type TradeStatus =
   | 'closed'
   | 'win'
   | 'loss'
-  | 'breakeven';
+  | 'breakeven'
+  | 'cancelled';
 
 export type ReviewStatusFilter = 'reviewed' | 'unreviewed';
 
@@ -83,7 +94,7 @@ export type ImageAnnotationStatusFilter =
 
 
 export const SELECTABLE_TRADE_TYPES_COUNT = 3; 
-export const SELECTABLE_STATUSES_COUNT = 4; 
+export const SELECTABLE_STATUSES_COUNT = 5; 
 
 export interface TradeLogFilters {
   dateRange: [Date | null, Date | null];
@@ -92,6 +103,7 @@ export interface TradeLogFilters {
   statuses: TradeStatus[];
   accounts: string[];
   directions: DirectionFilter[];
+  sessionLogTags: string[];
   tickers: string[];
   setups: string[];
   tags: string[];

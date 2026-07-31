@@ -473,7 +473,7 @@ export const imageGalleryStyles = `
   transform: scale(1.04);
 }
 
-.journalit-image-gallery-card__image-frame .tooltip-trigger.journalit-image-gallery-card__media-count-trigger {
+.journalit-image-gallery-card__media-count {
   position: absolute;
   top: 10px;
   right: auto;
@@ -483,10 +483,6 @@ export const imageGalleryStyles = `
   display: inline-flex;
   width: auto;
   height: auto;
-}
-
-.journalit-image-gallery-card__media-count {
-  display: inline-flex;
   align-items: center;
   justify-content: center;
   min-width: 26px;
@@ -515,7 +511,7 @@ export const imageGalleryStyles = `
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
 }
 
-.journalit-image-gallery-card__image-frame .tooltip-trigger.journalit-image-gallery-card__annotation-marker-trigger {
+.journalit-image-gallery-card__annotation-marker {
   position: absolute;
   top: 10px;
   right: 10px;
@@ -525,10 +521,6 @@ export const imageGalleryStyles = `
   display: inline-flex;
   width: auto;
   height: auto;
-}
-
-.journalit-image-gallery-card__annotation-marker {
-  display: inline-flex;
   align-items: center;
   justify-content: center;
   width: 24px;

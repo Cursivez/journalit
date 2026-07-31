@@ -1,7 +1,8 @@
 import { t } from '../../lang/helpers';
 import type JournalitPlugin from '../../main';
+import type { TradeData } from '../trade/TradeService';
 import { generateUUID } from '../../utils/uuid';
-import { mapPreviewTradeToTradeData } from './canonicalTradeMapper';
+import { mapProjectionTradeToTradeData } from '../tradeSync/canonicalTradeMapper';
 import {
   isTradeImportCommitEligible,
   isTradeImportSkipped,
@@ -14,15 +15,23 @@ import type {
   TradeImportFileType,
   TradeImportManualMode,
   TradeImportPreviewResponse,
-  TradeImportRestorableProjection,
-  TradeImportRestorableProjectionRequest,
 } from './types';
+import { BackendTradeProjectionService } from '../tradeSync/BackendTradeProjectionService';
 import { BackendTradeImportService } from './BackendTradeImportService';
+import type {
+  TradeProjection,
+  TradeProjectionClient,
+  TradeProjectionPersistedTradeSummary,
+  TradeProjectionRequest,
+  TradovateClientOperationContext,
+} from '../tradeSync/types';
+import { getTradeProjectionVaultId } from '../tradeSync/TradeProjectionAckQueue';
+import { TradeProjectionRestoreService } from '../tradeSync/TradeProjectionRestoreService';
+import { TradeProjectionWriter } from '../tradeSync/TradeProjectionWriter';
 import {
-  TradeImportProjectionWriter,
-  type TradeImportPersistedTradeSummary,
-} from './TradeImportProjectionWriter';
-import { getTradeImportVaultId } from './TradeImportProjectionAckQueue';
+  createTradeProjectionOwnershipGuard,
+  getTradeProjectionOwnerId,
+} from '../tradeSync/TradeProjectionOwnership';
 
 export class TradeImportValidationError extends Error {
   constructor(message: string) {
@@ -67,13 +76,15 @@ export interface TradeImportCompletionResult {
   writtenCount: number;
   duplicateCount: number;
   failedCount: number;
+  pendingCount: number;
   accountName: string;
   brokerLabel: string;
-  importedTrades: TradeImportPersistedTradeSummary[];
+  importedTrades: TradeProjectionPersistedTradeSummary[];
 }
 
 interface TradeImportWriteInput {
   preview: TradeImportPreviewResponse;
+  previewOwnerUserId: string;
   classified: ClassifiedPreviewTrade[];
   accountName: string;
   brokerLabel: string;
@@ -84,41 +95,59 @@ interface TradeImportWriteInput {
 interface TradeImportRestoreInput {
   accountName: string;
   brokerLabel: string;
-  projections: TradeImportRestorableProjection[];
+  projections: TradeProjection[];
   localWriteTimeoutMs: number;
+  ownerUserId?: string;
+  shouldStop?: () => boolean;
+  clientOperation?: TradovateClientOperationContext;
   onComplete?: (result: TradeImportCompletionResult) => void;
 }
 
-interface TradeImportProjectionRestoreGroup {
-  correlationId: string;
-  importId: string;
-  commitId: string;
-  projections: TradeImportRestorableProjection[];
+type TradeProjectionBackend = TradeProjectionClient;
+
+function hasProjectionAck(
+  value: object
+): value is Pick<TradeProjectionBackend, 'projectionAck'> {
+  return 'projectionAck' in value && typeof value.projectionAck === 'function';
 }
 
-function groupRestorableProjections(
-  projections: TradeImportRestorableProjection[]
-): TradeImportProjectionRestoreGroup[] {
-  const groups = new Map<string, TradeImportProjectionRestoreGroup>();
-  for (const projection of projections) {
-    const correlationId =
-      projection.correlationId ?? `restore-${projection.importId}`;
-    const importId = projection.importId || 'restore';
-    const commitId = projection.commitId ?? `restore-${importId}`;
-    const key = `${correlationId}\u001f${importId}\u001f${commitId}`;
-    const existing = groups.get(key);
-    if (existing) {
-      existing.projections.push(projection);
-      continue;
-    }
-    groups.set(key, {
-      correlationId,
-      importId,
-      commitId,
-      projections: [projection],
-    });
+function hasRestorableProjectionQuery(
+  value: object
+): value is Pick<TradeProjectionBackend, 'getRestorableProjections'> {
+  return (
+    'getRestorableProjections' in value &&
+    typeof value.getRestorableProjections === 'function'
+  );
+}
+
+function projectionBackendFrom(value: unknown): TradeProjectionBackend | null {
+  if (typeof value !== 'object' || value === null) return null;
+  const projectionAck = hasProjectionAck(value)
+    ? value.projectionAck
+    : undefined;
+  const getRestorableProjections = hasRestorableProjectionQuery(value)
+    ? value.getRestorableProjections
+    : undefined;
+  if (
+    typeof projectionAck !== 'function' &&
+    typeof getRestorableProjections !== 'function'
+  ) {
+    return null;
   }
-  return Array.from(groups.values());
+  return {
+    projectionAck:
+      (typeof projectionAck === 'function' ? projectionAck : undefined) ??
+      (async () => {
+        throw new Error('Projection acknowledgement client is unavailable');
+      }),
+    getRestorableProjections:
+      (typeof getRestorableProjections === 'function'
+        ? getRestorableProjections
+        : undefined) ??
+      (async () => {
+        throw new Error('Projection restore client is unavailable');
+      }),
+  };
 }
 
 function pluginVersion(plugin: JournalitPlugin): string {
@@ -246,8 +275,24 @@ export function customFieldDefinitions(
 export class TradeImportWorkflowService {
   constructor(
     private plugin: JournalitPlugin,
-    private backendService: BackendTradeImportService
-  ) {}
+    private importBackend: Pick<
+      BackendTradeImportService,
+      'analyse' | 'preview' | 'commit'
+    >,
+    projectionBackend?: TradeProjectionBackend
+  ) {
+    this.projectionBackend =
+      projectionBackend ??
+      projectionBackendFrom(importBackend) ??
+      new BackendTradeProjectionService();
+    this.restoreService = new TradeProjectionRestoreService(
+      plugin,
+      this.projectionBackend
+    );
+  }
+
+  private readonly projectionBackend: TradeProjectionBackend;
+  private readonly restoreService: TradeProjectionRestoreService;
 
   async analyseFile({
     file,
@@ -269,7 +314,9 @@ export class TradeImportWorkflowService {
     if (validationError) throw new TradeImportValidationError(validationError);
 
     const customFields = customFieldDefinitions(this.plugin);
-    const response = await this.backendService.analyse(file, {
+    const shouldStop = createTradeProjectionOwnershipGuard(this.plugin);
+    if (shouldStop()) throw new Error('Trade Import ownership changed');
+    const response = await this.importBackend.analyse(file, {
       schemaVersion: 'trade-import-analyse-request-v1',
       pluginVersion: pluginVersion(this.plugin),
       requestedBroker: broker,
@@ -284,6 +331,7 @@ export class TradeImportWorkflowService {
       },
       customFields,
     });
+    if (shouldStop()) throw new Error('Trade Import ownership changed');
 
     return {
       response,
@@ -311,6 +359,7 @@ export class TradeImportWorkflowService {
   }: TradeImportPreviewInput): Promise<{
     response: TradeImportPreviewResponse;
     classifiedTrades: ClassifiedPreviewTrade[];
+    ownerUserId: string;
   }> {
     const validationError = validateSelectedFile(
       file,
@@ -319,7 +368,13 @@ export class TradeImportWorkflowService {
     );
     if (validationError) throw new TradeImportValidationError(validationError);
 
-    const response = await this.backendService.preview(file, {
+    const ownerUserId = getTradeProjectionOwnerId(this.plugin);
+    const shouldStop = createTradeProjectionOwnershipGuard(
+      this.plugin,
+      ownerUserId
+    );
+    if (shouldStop()) throw new Error('Trade Import ownership changed');
+    const response = await this.importBackend.preview(file, {
       schemaVersion: 'trade-import-preview-request-v1',
       pluginVersion: pluginVersion(this.plugin),
       broker,
@@ -335,24 +390,25 @@ export class TradeImportWorkflowService {
       columnMappings,
       customFields: customFieldDefinitions(this.plugin),
     });
+    if (shouldStop()) throw new Error('Trade Import ownership changed');
     const classifiedTrades = response.items.map((item) => ({
       itemId: item.itemId,
       preview: item.previewTrade,
-      tradeData: mapPreviewTradeToTradeData(item.previewTrade, accountName),
+      tradeData: mapProjectionTradeToTradeData(item.previewTrade, accountName),
       classification: item.classification,
       defaultAction: item.defaultAction,
       matchedTradeId: item.matchedTradeId,
       message: item.decisionReasons.map((reason) => reason.code).join(', '),
     }));
-    return { response, classifiedTrades };
+    return { response, classifiedTrades, ownerUserId };
   }
 
   async getRestorableProjections(
-    filters: Omit<TradeImportRestorableProjectionRequest, 'vaultId'> = {}
+    filters: Omit<TradeProjectionRequest, 'vaultId'> = {}
   ) {
-    return this.backendService.getRestorableProjections({
+    return this.projectionBackend.getRestorableProjections({
       ...filters,
-      vaultId: await getTradeImportVaultId(this.plugin),
+      vaultId: await getTradeProjectionVaultId(this.plugin),
     });
   }
 
@@ -361,75 +417,37 @@ export class TradeImportWorkflowService {
     brokerLabel,
     projections,
     localWriteTimeoutMs,
+    ownerUserId,
+    shouldStop,
+    clientOperation,
     onComplete,
   }: TradeImportRestoreInput): Promise<TradeImportCompletionResult> {
-    const projectionWriter = new TradeImportProjectionWriter(
-      this.plugin,
-      this.backendService
-    );
-    const projectionResults: Array<
-      Awaited<ReturnType<TradeImportProjectionWriter['writeProjections']>>
-    > = [];
-    let restoreChain = Promise.resolve();
-    for (const group of groupRestorableProjections(projections)) {
-      restoreChain = restoreChain.then(async () => {
-        projectionResults.push(
-          await projectionWriter.writeProjections({
-            accountName,
-            correlationId: group.correlationId,
-            importId: group.importId,
-            commitId: group.commitId,
-            trades: group.projections.map((projection) => ({
-              id: projection.id,
-              version: projection.version,
-              symbol: projection.symbol,
-              direction: projection.direction,
-              status: projection.status,
-              accountId: projection.accountId,
-              accountDisplayName: projection.accountName,
-              broker: projection.broker,
-              importId: projection.importId,
-              previewTrade: projection.previewTrade,
-            })),
-            localWriteTimeoutMs,
-          })
-        );
-      });
-    }
-    await restoreChain;
-    const writtenCount = projectionResults.reduce(
-      (total, projectionResult) => total + projectionResult.writtenCount,
-      0
-    );
-    const alreadyPresentCount = projectionResults.reduce(
-      (total, projectionResult) => total + projectionResult.alreadyPresentCount,
-      0
-    );
-    const failedCount = projectionResults.reduce(
-      (total, projectionResult) => total + projectionResult.failedCount,
-      0
-    );
-    const ackFailedCount = projectionResults.reduce(
-      (total, projectionResult) => total + projectionResult.ackFailedCount,
-      0
-    );
-    const result: TradeImportCompletionResult = {
-      success: failedCount === 0 && ackFailedCount === 0,
-      writtenCount: writtenCount + alreadyPresentCount,
-      duplicateCount: 0,
-      failedCount: failedCount + ackFailedCount,
+    const result = await this.restoreService.restoreProjections({
       accountName,
       brokerLabel,
-      importedTrades: projectionResults.flatMap(
-        (projectionResult) => projectionResult.importedTrades
-      ),
+      projections,
+      localWriteTimeoutMs,
+      ownerUserId,
+      shouldStop,
+      clientOperation,
+    });
+    const completionResult: TradeImportCompletionResult = {
+      success: result.success,
+      writtenCount: result.writtenCount + result.duplicateCount,
+      duplicateCount: 0,
+      failedCount: result.failedCount + result.ackFailedCount,
+      pendingCount: result.pendingCount,
+      accountName: result.accountName,
+      brokerLabel: result.brokerLabel,
+      importedTrades: result.importedTrades,
     };
-    onComplete?.(result);
-    return result;
+    onComplete?.(completionResult);
+    return completionResult;
   }
 
   async writePreview({
     preview,
+    previewOwnerUserId,
     classified,
     accountName,
     brokerLabel,
@@ -439,17 +457,19 @@ export class TradeImportWorkflowService {
     let finalized = false;
     let written = 0;
     let failed = 0;
-    const importedTrades: TradeImportPersistedTradeSummary[] = [];
+    const importedTrades: TradeProjectionPersistedTradeSummary[] = [];
 
     const buildResult = (
       writtenCount: number,
       duplicateCount: number,
-      failedCount: number
+      failedCount: number,
+      pendingCount: number = 0
     ): TradeImportCompletionResult => ({
-      success: failedCount === 0,
+      success: failedCount === 0 && pendingCount === 0,
       writtenCount,
       duplicateCount,
       failedCount,
+      pendingCount,
       accountName,
       brokerLabel,
       importedTrades,
@@ -458,13 +478,28 @@ export class TradeImportWorkflowService {
     const finalizeImport = (
       writtenCount: number,
       duplicateCount: number,
-      failedCount: number
+      failedCount: number,
+      pendingCount: number = 0
     ): TradeImportCompletionResult | null => {
       if (finalized) return null;
       finalized = true;
-      const result = buildResult(writtenCount, duplicateCount, failedCount);
+      const result = buildResult(
+        writtenCount,
+        duplicateCount,
+        failedCount,
+        pendingCount
+      );
       onComplete?.(result);
       return result;
+    };
+    const abortImport = (): TradeImportCompletionResult => {
+      const duplicateCount = classified.filter((item) =>
+        isTradeImportSkipped(item.defaultAction)
+      ).length;
+      return (
+        finalizeImport(0, duplicateCount, classified.length - duplicateCount) ??
+        buildResult(0, duplicateCount, classified.length - duplicateCount)
+      );
     };
 
     const commitItems = classified.map((item) => {
@@ -484,9 +519,14 @@ export class TradeImportWorkflowService {
     });
 
     const clientCommitId = generateUUID();
+    const shouldStop = createTradeProjectionOwnershipGuard(
+      this.plugin,
+      previewOwnerUserId
+    );
+    if (shouldStop()) return abortImport();
     let commit: Awaited<ReturnType<BackendTradeImportService['commit']>>;
     try {
-      commit = await this.backendService.commit(
+      commit = await this.importBackend.commit(
         preview.importId,
         {
           correlationId: preview.correlationId,
@@ -505,6 +545,7 @@ export class TradeImportWorkflowService {
         buildResult(0, duplicateCount, classified.length - duplicateCount)
       );
     }
+    if (shouldStop()) return abortImport();
 
     const previewByItemId = new Map(
       classified.map((item) => [item.itemId, item])
@@ -527,6 +568,7 @@ export class TradeImportWorkflowService {
       );
     }
     const projectedTradeIds = new Set<string>();
+    const localTradeDataByTradeId = new Map<string, TradeData>();
     for (const result of commit.itemResults) {
       if (
         !result.tradeId ||
@@ -535,19 +577,24 @@ export class TradeImportWorkflowService {
         continue;
       }
       projectedTradeIds.add(result.tradeId);
+      const classifiedItem = previewByItemId.get(result.itemId);
+      if (classifiedItem) {
+        localTradeDataByTradeId.set(result.tradeId, classifiedItem.tradeData);
+      }
     }
-    const projectionWriter = new TradeImportProjectionWriter(
+    const projectionWriter = new TradeProjectionWriter(
       this.plugin,
-      this.backendService
+      this.projectionBackend
     );
     const projectionResult = await projectionWriter.writeProjections({
       accountName,
       accountBroker: preview.broker,
       accountDisplayName: accountName,
-      correlationId: commit.correlationId,
-      importId: commit.importId,
-      commitId: commit.commitId,
+
       trades: commit.trades.filter((trade) => projectedTradeIds.has(trade.id)),
+      ownerUserId: previewOwnerUserId,
+      shouldStop,
+      localTradeDataByTradeId,
       localWriteTimeoutMs,
     });
     importedTrades.push(...projectionResult.importedTrades);
@@ -587,8 +634,18 @@ export class TradeImportWorkflowService {
       failedSkippedResults +
       successfulCommitResultsWithoutProjection;
     const result =
-      finalizeImport(written, duplicateCount, totalFailed) ??
-      buildResult(written, duplicateCount, totalFailed);
+      finalizeImport(
+        written,
+        duplicateCount,
+        totalFailed,
+        projectionResult.pendingCount
+      ) ??
+      buildResult(
+        written,
+        duplicateCount,
+        totalFailed,
+        projectionResult.pendingCount
+      );
 
     return result;
   }

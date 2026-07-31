@@ -1,4 +1,4 @@
-import React, { useMemo, useReducer, useState } from 'react';
+import React, { useCallback, useMemo, useReducer, useState } from 'react';
 
 import type JournalitPlugin from '../../main';
 import { t } from '../../lang/helpers';
@@ -19,6 +19,7 @@ import {
   SETUPS_OVERVIEW_TAB_TARGET_ID,
   SETUPS_PAIRS_OPENED_ACTION_ID,
   SETUPS_PAIRS_TAB_TARGET_ID,
+  SETUPS_TAG_FILTER_TARGET_ID,
   SETUPS_VIEW_TABS_TARGET_ID,
 } from '../../guides/setupsGuideIds';
 import { EmptyState } from '../shared/EmptyState';
@@ -42,6 +43,52 @@ import {
 } from './setupsViewModel';
 import { SetupCard } from './SetupCard';
 import { SetupPerformanceChartSection } from './SetupOverviewPerformanceSection';
+import {
+  SetupOverviewFilter,
+  type SetupDirectionFilter,
+  useSetupOverviewTagFilter,
+} from './SetupTags';
+
+function useSetupOverviewFilterActions({
+  currentGuideStepId,
+  handleDirectionFiltersChange,
+  handleFiltersChange,
+  handleTagFiltersChange,
+  setIsCompareSelecting,
+}: {
+  currentGuideStepId: string | null;
+  handleDirectionFiltersChange: (directions: SetupDirectionFilter[]) => number;
+  handleFiltersChange: (
+    tags: string[],
+    directions: SetupDirectionFilter[]
+  ) => number;
+  handleTagFiltersChange: (tags: string[]) => number;
+  setIsCompareSelecting: React.Dispatch<React.SetStateAction<boolean>>;
+}) {
+  const exitInvalidCompareSelection = useCallback(
+    (visibleSetupCount: number) => {
+      if (!currentGuideStepId && visibleSetupCount < 2) {
+        setIsCompareSelecting(false);
+      }
+    },
+    [currentGuideStepId, setIsCompareSelecting]
+  );
+  const onTagsChange = useCallback(
+    (tags: string[]) =>
+      exitInvalidCompareSelection(handleTagFiltersChange(tags)),
+    [exitInvalidCompareSelection, handleTagFiltersChange]
+  );
+  const onDirectionsChange = useCallback(
+    (directions: SetupDirectionFilter[]) =>
+      exitInvalidCompareSelection(handleDirectionFiltersChange(directions)),
+    [exitInvalidCompareSelection, handleDirectionFiltersChange]
+  );
+  const onReset = useCallback(
+    () => exitInvalidCompareSelection(handleFiltersChange([], [])),
+    [exitInvalidCompareSelection, handleFiltersChange]
+  );
+  return { onDirectionsChange, onReset, onTagsChange };
+}
 
 export const SetupOverviewPage: React.FC<{
   plugin: JournalitPlugin;
@@ -62,10 +109,24 @@ export const SetupOverviewPage: React.FC<{
   onCompareSelected,
   onCreateSetup,
 }) => {
-  const sortedOverviewViewModels = useMemo(
-    () => sortSetupCardsByRecentActivity(viewModels),
-    [viewModels]
-  );
+  const currentGuideStepId = useGuideCurrentStepId();
+  const {
+    availableTags,
+    filteredViewModels: effectiveViewModels,
+    handleDirectionFiltersChange,
+    handleFiltersChange,
+    handleTagFiltersChange,
+    selectedDirectionFilters,
+    selectedTagFilters,
+    visibleSelectedSetupIds: effectiveVisibleSelectedSetupIds,
+  } = useSetupOverviewTagFilter({
+    plugin,
+    viewModels,
+    selectedSetupIds,
+    onSelectedSetupIdsChange,
+    isGuideActive: Boolean(currentGuideStepId),
+  });
+
   const [chartSettings, dispatchChartSettings] = useReducer(
     setupOverviewChartSettingsReducer,
     undefined,
@@ -83,10 +144,20 @@ export const SetupOverviewPage: React.FC<{
     })
   );
   const [isCompareSelecting, setIsCompareSelecting] = useState(
-    selectedSetupIds.length > 0
+    selectedSetupIds.length > 0 && effectiveViewModels.length >= 2
   );
+  const {
+    onDirectionsChange: handleOverviewDirectionFiltersChange,
+    onReset: resetOverviewFilters,
+    onTagsChange: handleOverviewTagFiltersChange,
+  } = useSetupOverviewFilterActions({
+    currentGuideStepId,
+    handleDirectionFiltersChange,
+    handleFiltersChange,
+    handleTagFiltersChange,
+    setIsCompareSelecting,
+  });
   const emitGuideAction = useGuideAction();
-  const currentGuideStepId = useGuideCurrentStepId();
   const registerViewTabsTarget = useGuideTarget(SETUPS_VIEW_TABS_TARGET_ID);
   const registerPairsTabTarget = useGuideTarget(SETUPS_PAIRS_TAB_TARGET_ID);
   const registerOverviewTabTarget = useGuideTarget(
@@ -97,6 +168,7 @@ export const SetupOverviewPage: React.FC<{
     SETUPS_CREATE_BUTTON_TARGET_ID
   );
   const registerCardGridTarget = useGuideTarget(SETUPS_CARD_GRID_TARGET_ID);
+  const registerTagFilterTarget = useGuideTarget(SETUPS_TAG_FILTER_TARGET_ID);
   const { metricKey, chartMode, pairMetricKey } = chartSettings;
   const chartSelectedSetupIds = chartSettings.selectedSetupIds;
   const guideForcesPairsView =
@@ -104,6 +176,10 @@ export const SetupOverviewPage: React.FC<{
   const guideForcesCompareSelection =
     currentGuideStepId === 'compare-mode' ||
     currentGuideStepId === 'compare-select';
+  const sortedOverviewViewModels = useMemo(
+    () => sortSetupCardsByRecentActivity(effectiveViewModels),
+    [effectiveViewModels]
+  );
   const effectiveChartMode: SetupOverviewChartMode = guideForcesPairsView
     ? 'pairs'
     : currentGuideStepId
@@ -151,7 +227,7 @@ export const SetupOverviewPage: React.FC<{
 
   const handleToggleSetupForCompare = (setupId: string) => {
     const nextSelectedSetupIds = toggleSelectedSetupId(
-      selectedSetupIds,
+      effectiveVisibleSelectedSetupIds,
       setupId
     );
     onSelectedSetupIdsChange(nextSelectedSetupIds);
@@ -211,24 +287,30 @@ export const SetupOverviewPage: React.FC<{
   return (
     <div className="journalit-setups-view">
       <SetupOverviewHeader
-        canCompare={viewModels.length >= 2}
+        availableTags={availableTags}
+        canCompare={effectiveViewModels.length >= 2}
         chartMode={effectiveChartMode}
         isCompareSelecting={effectiveIsCompareSelecting}
-        selectedSetupCount={selectedSetupIds.length}
+        selectedDirectionFilters={selectedDirectionFilters}
+        selectedSetupCount={effectiveVisibleSelectedSetupIds.length}
+        selectedTagFilters={selectedTagFilters}
         onCompare={handleCompareAction}
         onCreateSetup={handleCreateSetupAction}
+        onDirectionFiltersChange={handleOverviewDirectionFiltersChange}
         onOverview={handleOverviewAction}
         onPairs={handlePairsAction}
+        onTagFiltersChange={handleOverviewTagFiltersChange}
         registerCompareTabTarget={registerCompareTabTarget}
         registerCreateButtonTarget={registerCreateButtonTarget}
         registerOverviewTabTarget={registerOverviewTabTarget}
         registerPairsTabTarget={registerPairsTabTarget}
+        registerTagFilterTarget={registerTagFilterTarget}
         registerViewTabsTarget={registerViewTabsTarget}
       />
 
       <SetupPerformanceChartSection
         plugin={plugin}
-        viewModels={viewModels}
+        viewModels={effectiveViewModels}
         tradeIndex={tradeIndex}
         chartMode={effectiveChartMode}
         metricKey={metricKey}
@@ -247,6 +329,15 @@ export const SetupOverviewPage: React.FC<{
           subMessage={t('setups.view.empty.no-setups-submessage')}
           actionButtonText={t('setups.view.action.new')}
           onActionButtonClick={handleCreateSetupAction}
+        />
+      ) : effectiveViewModels.length === 0 ? (
+        <EmptyState
+          className="journalit-setups-overview-empty-state"
+          iconSize={42}
+          message={t('setups.view.overview.tag-filter.empty')}
+          subMessage={t('setups.view.overview.tag-filter.empty-submessage')}
+          actionButtonText={t('setups.view.overview.tag-filter.reset')}
+          onActionButtonClick={resetOverviewFilters}
         />
       ) : (
         <section
@@ -271,11 +362,13 @@ export const SetupOverviewPage: React.FC<{
                 plugin.settings.trade?.displayRMultiples ?? false
               }
               compareMode={effectiveIsCompareSelecting}
-              compareSelected={selectedSetupIds.includes(viewModel.setup.id)}
+              compareSelected={effectiveVisibleSelectedSetupIds.includes(
+                viewModel.setup.id
+              )}
               compareDisabled={
                 effectiveIsCompareSelecting &&
-                selectedSetupIds.length >= 2 &&
-                !selectedSetupIds.includes(viewModel.setup.id)
+                effectiveVisibleSelectedSetupIds.length >= 2 &&
+                !effectiveVisibleSelectedSetupIds.includes(viewModel.setup.id)
               }
               onOpen={() => {
                 emitGuideAction(SETUPS_DETAIL_OPENED_ACTION_ID);
@@ -299,37 +392,49 @@ export const SetupOverviewPage: React.FC<{
 SetupOverviewPage.displayName = 'SetupOverviewPage';
 
 const SetupOverviewHeader: React.FC<{
+  availableTags: string[];
   canCompare: boolean;
   chartMode: SetupOverviewChartMode;
   isCompareSelecting: boolean;
+  selectedDirectionFilters: SetupDirectionFilter[];
   selectedSetupCount: number;
+  selectedTagFilters: string[];
   onCompare: () => void;
   onCreateSetup: () => void;
+  onDirectionFiltersChange: (directions: SetupDirectionFilter[]) => void;
   onOverview: () => void;
   onPairs: () => void;
+  onTagFiltersChange: (tags: string[]) => void;
   registerCompareTabTarget: (element: HTMLElement | null) => void;
   registerCreateButtonTarget: (element: HTMLElement | null) => void;
   registerOverviewTabTarget: (element: HTMLElement | null) => void;
   registerPairsTabTarget: (element: HTMLElement | null) => void;
+  registerTagFilterTarget: (element: HTMLElement | null) => void;
   registerViewTabsTarget: (element: HTMLElement | null) => void;
 }> = ({
+  availableTags,
   canCompare,
   chartMode,
   isCompareSelecting,
+  selectedDirectionFilters,
   selectedSetupCount,
+  selectedTagFilters,
   onCompare,
   onCreateSetup,
+  onDirectionFiltersChange,
   onOverview,
   onPairs,
+  onTagFiltersChange,
   registerCompareTabTarget,
   registerCreateButtonTarget,
   registerOverviewTabTarget,
   registerPairsTabTarget,
+  registerTagFilterTarget,
   registerViewTabsTarget,
 }) => (
   <header className="journalit-setups-view__header">
     <div>
-      <h1 className="journalit-setups-view__title journalit-setups-view__title--sr">
+      <h1 className="journalit-setups-view__title journalit-setups-view__sr-only">
         {t('setups.view.title')}
       </h1>
     </div>
@@ -401,6 +506,18 @@ const SetupOverviewHeader: React.FC<{
       </button>
     </nav>
     <div className="journalit-setups-view__actions">
+      <div
+        className="journalit-setups-tag-filter-target"
+        ref={registerTagFilterTarget}
+      >
+        <SetupOverviewFilter
+          availableTags={availableTags}
+          selectedDirections={selectedDirectionFilters}
+          selectedTags={selectedTagFilters}
+          onDirectionsChange={onDirectionFiltersChange}
+          onTagsChange={onTagFiltersChange}
+        />
+      </div>
       <button
         className="journalit-setups-create-button"
         onClick={onCreateSetup}

@@ -230,6 +230,7 @@ export class DeviceFlowService {
 
     
     this.settings.userId = tokenResponse.user.id;
+    this.settings.authenticatedAccountId = tokenResponse.user.id;
 
     
     const tier = tokenResponse.user.tier?.toLowerCase() || 'free';

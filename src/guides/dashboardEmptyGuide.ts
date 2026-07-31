@@ -1,4 +1,4 @@
-import { DASHBOARD_VIEW_TYPE } from '../components/dashboard/DashboardView';
+import { HOME_VIEW_TYPE } from '../views/HomeView';
 import { t } from '../lang/helpers';
 import { GuideRegistry } from './GuideRegistry';
 import {
@@ -11,8 +11,8 @@ export function registerDashboardEmptyGuide(
 ): void {
   guideRegistry.registerGuide({
     id: DASHBOARD_EMPTY_GUIDE_ID,
-    viewType: DASHBOARD_VIEW_TYPE,
-    version: 1,
+    viewType: HOME_VIEW_TYPE,
+    version: 2,
     autoShow: true,
     priority: 100,
     initialStepId: 'intro',

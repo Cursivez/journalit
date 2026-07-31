@@ -1,13 +1,9 @@
 
 
-import { Plugin, Notice, TFile } from 'obsidian';
+import { Plugin, Notice, TFile, requireApiVersion } from 'obsidian';
 import { t } from './lang/helpers';
 import { JournalitSettingsTab } from './settings';
-import {
-  DEFAULT_SETTINGS,
-  JournalitSettings,
-  SettingsTabId,
-} from './settings/types';
+import { JournalitSettings, SettingsTabId } from './settings/types';
 import { TradeFormModal } from './components/forms/trade/TradeFormModal';
 import type {
   TradeFormData,
@@ -42,6 +38,8 @@ import { OnboardingManager } from './onboarding/onboardingManager';
 import { AccountPageService } from './services/accountPage';
 import { BackendIntegrationService } from './services/backend';
 import { SubscriptionTierService } from './services/backend/SubscriptionTierService';
+import { TradeProjectionSyncService } from './services/tradeSync/TradeProjectionSyncService';
+import type { CanonicalProjectionMigrationService } from './services/tradeSync/CanonicalProjectionMigrationService';
 import { InstrumentSpecService } from './services/InstrumentSpecService';
 import { RecentItem } from './settings/types';
 
@@ -51,12 +49,14 @@ import { UIStateManager } from './settings/UIStateManager';
 import { NavigationManager } from './navigation/NavigationManager';
 import { PluginInitializer } from './core/PluginInitializer';
 import { UpdateNotificationService } from './services/UpdateNotificationService';
+import { GraphLinkService } from './services/graph/GraphLinkService';
 
 import { ReviewDataCache } from './services/reviewV2/ReviewDataCache';
 import { EventBus } from './services/events';
 import { GuideRegistry } from './guides/GuideRegistry';
 import { ViewGuideService } from './guides/ViewGuideService';
 import { mergeFreshTradeFormEditData } from './components/forms/trade/tradeFormEditData';
+
 
 
 const isCustomEvent = (event: Event): event is CustomEvent<unknown> =>
@@ -133,6 +133,9 @@ export default class JournalitPlugin extends Plugin {
   eventBus: EventBus;
 
   
+  graphLinkService: GraphLinkService;
+
+  
   settings: JournalitSettings;
 
   
@@ -160,6 +163,9 @@ export default class JournalitPlugin extends Plugin {
   private cleanupManager: PluginCleanupManager;
   navigationManager: NavigationManager;
   updateNotificationService: UpdateNotificationService | null = null;
+  tradeProjectionSyncService: TradeProjectionSyncService | null = null;
+  canonicalProjectionMigrationService: CanonicalProjectionMigrationService | null =
+    null;
 
   
   guideRegistry: GuideRegistry | null = null;
@@ -200,9 +206,56 @@ export default class JournalitPlugin extends Plugin {
     
     void new SubscriptionTierService(this)
       .refreshTier('startup')
+      .then(async (result) => {
+        if (result.status !== 'premium' && result.status !== 'free') return;
+        await this.canonicalProjectionMigrationService?.queuePendingConflictAcknowledgements();
+        if (result.status === 'premium') {
+          this.ensureTradeProjectionSyncService();
+        }
+      })
       .catch((error) => {
         console.warn('[Journalit] Startup tier refresh failed:', error);
       });
+    const startProjectionSyncForPremium = () => {
+      void Promise.resolve()
+        .then(() =>
+          this.canonicalProjectionMigrationService?.queuePendingConflictAcknowledgements()
+        )
+        .then(() => {
+          if (
+            this.settings.backendIntegration?.subscriptionTier === 'premium'
+          ) {
+            this.ensureTradeProjectionSyncService();
+          }
+        })
+        .catch((error) => {
+          console.warn(
+            '[Journalit] Pending projection conflict ownership failed:',
+            error
+          );
+        });
+    };
+    window.addEventListener(
+      'journalit:subscription-changed',
+      startProjectionSyncForPremium
+    );
+    this.register(() =>
+      window.removeEventListener(
+        'journalit:subscription-changed',
+        startProjectionSyncForPremium
+      )
+    );
+    
+    
+    startProjectionSyncForPremium();
+  }
+
+  ensureTradeProjectionSyncService(): TradeProjectionSyncService {
+    if (!this.tradeProjectionSyncService) {
+      this.tradeProjectionSyncService = new TradeProjectionSyncService(this);
+      this.tradeProjectionSyncService.start();
+    }
+    return this.tradeProjectionSyncService;
   }
 
   
@@ -239,6 +292,13 @@ export default class JournalitPlugin extends Plugin {
 
   
   openSettingsToTab(tabId: SettingsTabId): void {
+    if (requireApiVersion('1.13.0')) {
+      this.app.setting?.open();
+      this.app.setting?.openTabById(this.manifest.id);
+      this.settingsTab?.openNativeSettingsPage(tabId);
+      return;
+    }
+
     
     if (this.settingsTab) {
       this.settingsTab.setInitialTab(tabId);
@@ -296,20 +356,10 @@ export default class JournalitPlugin extends Plugin {
 
   
   async openNavigationSidebar(): Promise<void> {
-    const navigationSettings =
-      this.settings.navigation ??
-      (this.settings.navigation = {
-        ...DEFAULT_SETTINGS.navigation!,
-      });
-
-    navigationSettings.enabled = true;
-
-    await this.viewManager.activateNavigationSidebar({
-      forceEnable: true,
-      revealExisting: true,
+    await this.viewManager.activateNavigationSidebar();
+    void this.uiStateManager.updateState({
+      gettingStartedOpenedNavigationSidebar: true,
     });
-
-    await this.saveSettings();
   }
 
   async openCalendarSidebar(): Promise<void> {

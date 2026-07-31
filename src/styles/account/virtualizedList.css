@@ -1,7 +1,7 @@
 .virtualized-account-list {
   
   scroll-behavior: smooth;
-  
+
   
   scrollbar-width: thin;
   scrollbar-color: var(--background-modifier-border) transparent;
