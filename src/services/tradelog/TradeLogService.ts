@@ -257,6 +257,7 @@ export class TradeLogService {
   private readonly pendingLegacyMirrors = new Map<string, number>();
   
   private tradeCommitRevisionToken: number = 0;
+  private missedTradeAccountOptionsCache: string[] | null = null;
 
   
   private cachedTradingDayCutoffTime: string | null = null;
@@ -401,6 +402,7 @@ export class TradeLogService {
         'drc:session-log-index-invalidated',
         bumpQueryRevisionAndClearCache
       ),
+      eventBus.subscribe('folder-path:changed', bumpQueryRevisionAndClearCache),
       eventBus.subscribe('account:changed', bumpTradeRevisionAndClearCache)
     );
   }
@@ -530,38 +532,23 @@ export class TradeLogService {
 
     
     if (this.shouldLoadMissedTrades(tradeTypes)) {
-      const missedTradeService =
-        await this.plugin.serviceManager.getMissedTradeService();
-      if (missedTradeService) {
-        try {
-          const startDate = new Date('2000-01-01');
-          const endDate = new Date('2099-12-31');
-          const missedTradeFiles = await missedTradeService.getMissedTrades(
-            startDate,
-            endDate
-          );
-
-          for (const file of missedTradeFiles) {
-            const cache = this.plugin.app.metadataCache.getFileCache(file);
-            const frontmatter = asTradeLogRecord(cache?.frontmatter);
-
-            if (frontmatter && frontmatter.type === 'missed-trade') {
-              if (!frontmatter.entryTime) {
-                continue;
-              }
-
-              const missedTradeData = createMissedTradeLogData(
-                frontmatter,
-                file.path
-              );
-              if (missedTradeData) {
-                tradesWithPaths.push(missedTradeData);
-              }
-            }
+      try {
+        const missedTrades = await this.getMissedTradeFrontmatter();
+        for (const { filePath, frontmatter } of missedTrades) {
+          if (!frontmatter.entryTime) {
+            continue;
           }
-        } catch (error) {
-          console.error('Error fetching missed trades for trade log:', error);
+
+          const missedTradeData = createMissedTradeLogData(
+            frontmatter,
+            filePath
+          );
+          if (missedTradeData) {
+            tradesWithPaths.push(missedTradeData);
+          }
         }
+      } catch (error) {
+        console.error('Error fetching missed trades for trade log:', error);
       }
     }
 
@@ -570,6 +557,68 @@ export class TradeLogService {
     
 
     return tradesWithPaths;
+  }
+
+  private async getMissedTradeFrontmatter(): Promise<
+    Array<{ filePath: string; frontmatter: Record<string, unknown> }>
+  > {
+    const missedTradeService =
+      await this.plugin.serviceManager.getMissedTradeService();
+    if (!missedTradeService) {
+      return [];
+    }
+
+    const missedTradeFiles = await missedTradeService.getMissedTrades(
+      new Date('2000-01-01'),
+      new Date('2099-12-31')
+    );
+
+    return missedTradeFiles.flatMap((file) => {
+      const frontmatter = asTradeLogRecord(
+        this.plugin.app.metadataCache.getFileCache(file)?.frontmatter
+      );
+      if (
+        !frontmatter ||
+        (frontmatter.type !== 'missed-trade' &&
+          frontmatter.isMissedTrade !== true)
+      ) {
+        return [];
+      }
+
+      return [{ filePath: file.path, frontmatter }];
+    });
+  }
+
+  private async getMissedTradeAccountNames(): Promise<string[]> {
+    if (this.missedTradeAccountOptionsCache !== null) {
+      return this.missedTradeAccountOptionsCache;
+    }
+
+    const accountNames = new Map<string, string>();
+    try {
+      const missedTrades = await this.getMissedTradeFrontmatter();
+      for (const { frontmatter } of missedTrades) {
+        for (const accountName of normalizeTradeAccountIdentity(frontmatter)
+          .accountNames) {
+          const normalizedName = accountName.trim();
+          const lookupKey = normalizeAccountLookupKey(normalizedName);
+          if (!lookupKey || accountNames.has(lookupKey)) {
+            continue;
+          }
+
+          accountNames.set(lookupKey, normalizedName);
+        }
+      }
+    } catch (error) {
+      console.error(
+        'Error fetching missed trades for Trade Log account options:',
+        error
+      );
+      return [];
+    }
+
+    this.missedTradeAccountOptionsCache = Array.from(accountNames.values());
+    return this.missedTradeAccountOptionsCache;
   }
 
   private createCopiedTradeLogRows(
@@ -1623,7 +1672,29 @@ export class TradeLogService {
 
   
   async getUniqueAccounts(): Promise<string[]> {
-    return await this.tradeService.getUniqueAccounts();
+    const accountNames = await this.tradeService.getUniqueAccounts();
+    const dedupedAccounts = new Map<string, string>();
+
+    const addAccount = (value: unknown): void => {
+      if (typeof value !== 'string') {
+        return;
+      }
+
+      const accountName = value.trim();
+      const lookupKey = normalizeAccountLookupKey(accountName);
+      if (!lookupKey || dedupedAccounts.has(lookupKey)) {
+        return;
+      }
+
+      dedupedAccounts.set(lookupKey, accountName);
+    };
+
+    accountNames.forEach(addAccount);
+
+    const missedTradeAccountNames = await this.getMissedTradeAccountNames();
+    missedTradeAccountNames.forEach(addAccount);
+
+    return Array.from(dedupedAccounts.values());
   }
 
   
@@ -1853,6 +1924,7 @@ export class TradeLogService {
   clearCache(): void {
     this.cache.clear();
     this.tradingDayStringCache.clear();
+    this.missedTradeAccountOptionsCache = null;
     this.cachedEnrichedTrades = null; 
     this.cachedEnrichedTradesCacheKey = null;
     this.lastUpdateTime = 0;
@@ -2597,5 +2669,6 @@ export class TradeLogService {
     this.cache.clear();
     this.latestTradeRevisionById.clear();
     this.pendingLegacyMirrors.clear();
+    this.missedTradeAccountOptionsCache = null;
   }
 }

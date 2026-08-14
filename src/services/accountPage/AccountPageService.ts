@@ -1,7 +1,7 @@
 import { logger } from '../../utils/logger';
 
 
-import { App, TFile } from 'obsidian';
+import { App, TFile, TFolder } from 'obsidian';
 import {
   CustomDataService,
   CustomDataServiceConfig,
@@ -55,12 +55,9 @@ interface AccountAggregateSnapshot {
 }
 
 interface AccountDeletionRewriteContext {
-  accountLookupKey: string;
   accountTagToRemove: string;
-  snapshotLookupKeysToRemove: Set<string>;
   removedMappedAccountIds: string[];
   removedMappedAccountNames: string[];
-  removedMappedAccountLookupKeys: Set<string>;
   accountLookupKeysToRemove: Set<string>;
 }
 
@@ -124,6 +121,8 @@ import {
 import { normalizeTradeExecution } from '../trade/core/TradeExecutionNormalization';
 import { TradeType } from '../tradelog/types';
 import type { TradeData } from '../trade/TradeService';
+import { OptionType } from '../options/CustomOptionsService';
+import { isPathWithinDirectory } from '../base/pluginStoragePaths';
 
 const ACCOUNT_DELETION_REQUIRED_ACCOUNT_ERROR =
   /At least one account is required/;
@@ -135,6 +134,7 @@ export class AccountPageService extends CustomDataService {
   private unsubscribeTradeCommitted: Unsubscribe;
   private unsubscribeMissedTradeChanged: Unsubscribe;
   private unsubscribeBacktestTradeChanged: Unsubscribe;
+  private unsubscribeFolderPathChanged: Unsubscribe;
   private unsubscribeSettingsChanged: Unsubscribe;
   private unsubscribeAccountChanged: Unsubscribe;
   private tradeGroupingSnapshots = new Map<
@@ -155,6 +155,7 @@ export class AccountPageService extends CustomDataService {
   >();
   private exchangeRateService: ExchangeRateService | null = null;
   private accountSnapshotGeneration = 0;
+  private folderRenameListenerRegistered = false;
 
   private requirePlugin(): JournalitPlugin {
     if (!this.plugin) {
@@ -176,10 +177,7 @@ export class AccountPageService extends CustomDataService {
 
     
     const handleTradeDataChange = () => {
-      this.invalidateTradeReadCache();
-      this.clearAccountSnapshots();
-      
-      void this.clearCache();
+      this.invalidateTradeDerivedCaches();
     };
 
     
@@ -197,6 +195,10 @@ export class AccountPageService extends CustomDataService {
     );
     this.unsubscribeBacktestTradeChanged = eventBus.subscribe(
       'backtest-trade:changed',
+      handleTradeDataChange
+    );
+    this.unsubscribeFolderPathChanged = eventBus.subscribe(
+      'folder-path:changed',
       handleTradeDataChange
     );
     this.unsubscribeSettingsChanged = eventBus.subscribe(
@@ -220,6 +222,27 @@ export class AccountPageService extends CustomDataService {
     super.setPlugin(plugin);
     this.folderPathService =
       plugin.serviceManager?.getFolderPathService() || null;
+    if (!this.folderRenameListenerRegistered) {
+      this.folderRenameListenerRegistered = true;
+      plugin.registerEvent(
+        this.app.vault.on('rename', (file, oldPath) => {
+          const isRelevantFile =
+            file instanceof TFolder ||
+            (file instanceof TFile && file.extension === 'md');
+          if (!isRelevantFile || !this.folderPathService) return;
+
+          const journalPath = this.folderPathService.journalFolderPath;
+          const affectsJournal = [file.path, oldPath].some(
+            (path) =>
+              isPathWithinDirectory(path, journalPath) ||
+              isPathWithinDirectory(journalPath, path)
+          );
+          if (affectsJournal) {
+            this.invalidateTradeDerivedCaches();
+          }
+        })
+      );
+    }
   }
 
   private normalizeSupportedTradeTypes(tradeTypes?: TradeType[]): TradeType[] {
@@ -298,6 +321,12 @@ export class AccountPageService extends CustomDataService {
     }
 
     void tradeService.clearCacheWithPrefix('trade:all-trades');
+  }
+
+  private invalidateTradeDerivedCaches(): void {
+    this.invalidateTradeReadCache();
+    this.clearAccountSnapshots();
+    void this.clearCache();
   }
 
   private async getReadyTradeService(): Promise<
@@ -428,6 +457,26 @@ export class AccountPageService extends CustomDataService {
     return scalar ? [scalar] : [];
   }
 
+  private getRetainedAccountSlugs(
+    trade: Record<string, unknown>,
+    accountLookupKeysToRemove: Set<string>
+  ): Set<string> {
+    const retainedAccountSlugs = new Set<string>();
+    for (const accountName of this.getNormalizedAccountFieldValues(
+      trade.account
+    )) {
+      if (
+        accountLookupKeysToRemove.has(normalizeAccountLookupKey(accountName))
+      ) {
+        continue;
+      }
+
+      retainedAccountSlugs.add(this.formatTagForYAML(accountName));
+    }
+
+    return retainedAccountSlugs;
+  }
+
   private filterAccountFieldValues(
     value: unknown,
     accountLookupKeysToRemove: Set<string>
@@ -439,14 +488,13 @@ export class AccountPageService extends CustomDataService {
 
   private applyFilteredAccountField(
     frontmatter: Record<string, unknown>,
-    field: 'account',
     nextValues: string[]
   ): boolean {
-    const currentValue = frontmatter[field];
+    const currentValue = frontmatter.account;
 
     if (nextValues.length === 0) {
       if (currentValue !== undefined) {
-        delete frontmatter[field];
+        delete frontmatter.account;
         return true;
       }
       return false;
@@ -454,7 +502,7 @@ export class AccountPageService extends CustomDataService {
 
     if (Array.isArray(currentValue)) {
       if (currentValue.length !== nextValues.length) {
-        frontmatter[field] = nextValues;
+        frontmatter.account = nextValues;
         return true;
       }
 
@@ -462,7 +510,7 @@ export class AccountPageService extends CustomDataService {
         (value, index) => String(value).trim() !== nextValues[index]
       );
       if (changed) {
-        frontmatter[field] = nextValues;
+        frontmatter.account = nextValues;
       }
       return changed;
     }
@@ -470,7 +518,7 @@ export class AccountPageService extends CustomDataService {
     if (typeof currentValue === 'string') {
       const nextValue = nextValues[0];
       if (currentValue.trim() !== nextValue) {
-        frontmatter[field] = nextValue;
+        frontmatter.account = nextValue;
         return true;
       }
       return false;
@@ -491,30 +539,30 @@ export class AccountPageService extends CustomDataService {
     const effectiveAccountLookupKeysToRemove = new Set(
       context.accountLookupKeysToRemove
     );
-
-    const hasRemovedMappedAccountRef =
-      normalizedAccountId &&
-      context.removedMappedAccountLookupKeys.has(
-        normalizeAccountLookupKey(normalizedAccountId)
-      );
+    const deletedAccountAliasSlugs = new Set(
+      Array.from(context.accountLookupKeysToRemove).map((lookupKey) =>
+        this.formatTagForYAML(lookupKey)
+      )
+    );
+    const normalizedAccountIdLookupKey = normalizedAccountId
+      ? normalizeAccountLookupKey(normalizedAccountId)
+      : undefined;
+    const normalizedAccountIdSlug = normalizedAccountId
+      ? this.formatTagForYAML(normalizedAccountId)
+      : undefined;
+    const retainedAccountSlugs = this.getRetainedAccountSlugs(
+      mutableTrade,
+      context.accountLookupKeysToRemove
+    );
 
     if (
-      normalizedAccountId &&
-      (context.removedMappedAccountLookupKeys.has(
-        normalizeAccountLookupKey(normalizedAccountId)
-      ) ||
-        normalizeAccountLookupKey(normalizedAccountId) ===
-          context.accountLookupKey)
+      normalizedAccountIdLookupKey !== undefined &&
+      (context.accountLookupKeysToRemove.has(normalizedAccountIdLookupKey) ||
+        (normalizedAccountIdSlug !== undefined &&
+          deletedAccountAliasSlugs.has(normalizedAccountIdSlug) &&
+          !retainedAccountSlugs.has(normalizedAccountIdSlug)))
     ) {
-      effectiveAccountLookupKeysToRemove.add(
-        normalizeAccountLookupKey(normalizedAccountId)
-      );
-    }
-
-    if (hasRemovedMappedAccountRef) {
-      for (const lookupKey of context.snapshotLookupKeysToRemove) {
-        effectiveAccountLookupKeysToRemove.add(lookupKey);
-      }
+      effectiveAccountLookupKeysToRemove.add(normalizedAccountIdLookupKey);
     }
 
     const accountValuesBefore = this.getNormalizedAccountFieldValues(
@@ -524,9 +572,7 @@ export class AccountPageService extends CustomDataService {
       mutableTrade.account,
       effectiveAccountLookupKeysToRemove
     );
-    if (
-      this.applyFilteredAccountField(mutableTrade, 'account', nextAccountValues)
-    ) {
+    if (this.applyFilteredAccountField(mutableTrade, nextAccountValues)) {
       modified = true;
     }
 
@@ -575,6 +621,15 @@ export class AccountPageService extends CustomDataService {
         }
 
         const normalizedTag = tag.trim();
+        if (
+          normalizedTag.startsWith('account/') &&
+          retainedAccountSlugs.has(
+            this.formatTagForYAML(normalizedTag.slice('account/'.length))
+          )
+        ) {
+          return true;
+        }
+
         return (
           normalizedTag.length > 0 && !accountTagsToRemove.has(normalizedTag)
         );
@@ -3439,50 +3494,6 @@ export class AccountPageService extends CustomDataService {
       }
     }
 
-    
-    const trades = allFiles.filter((file) => {
-      if (!file.path.endsWith('.md')) {
-        return false;
-      }
-
-      const frontmatter =
-        this.app.metadataCache.getFileCache(file)?.frontmatter;
-
-      
-      if (frontmatter?.isMissedTrade) {
-        return false;
-      }
-
-      
-      if (frontmatter?.type === 'trade') {
-        return true;
-      }
-
-      
-      
-      const journalFolder =
-        this.folderPathService?.journalFolderPath || '!Journalit';
-      return (
-        file.path.includes('/trades/') &&
-        file.path.startsWith(`${journalFolder}/`)
-      );
-    });
-    const accountTagToRemove = `account/${this.formatTagForYAML(accountName)}`;
-    const accountTagValuesToRemove = new Set(
-      [
-        accountName,
-        canonicalAccountNameForDeletion,
-        ...metadataKeysToDelete,
-        ...removedMappedAccountIds,
-        ...removedMappedAccountNames,
-        ...Array.from(snapshotLookupKeysToRemove),
-      ].flatMap((value) =>
-        typeof value === 'string' && value.trim().length > 0
-          ? [this.formatTagForYAML(value)]
-          : []
-      )
-    );
-
     const isDeletableAccountTradeFile = (file: TFile): boolean => {
       if (!file.path.endsWith('.md')) {
         return false;
@@ -3490,6 +3501,7 @@ export class AccountPageService extends CustomDataService {
 
       const frontmatter =
         this.app.metadataCache.getFileCache(file)?.frontmatter;
+
       if (
         frontmatter?.type === 'trade' ||
         frontmatter?.type === 'missed-trade' ||
@@ -3512,6 +3524,24 @@ export class AccountPageService extends CustomDataService {
       );
     };
 
+    
+    const trades = allFiles.filter((file) => isDeletableAccountTradeFile(file));
+    const accountTagToRemove = `account/${this.formatTagForYAML(accountName)}`;
+    const accountTagValuesToRemove = new Set(
+      [
+        accountName,
+        canonicalAccountNameForDeletion,
+        ...metadataKeysToDelete,
+        ...removedMappedAccountIds,
+        ...removedMappedAccountNames,
+        ...Array.from(snapshotLookupKeysToRemove),
+      ].flatMap((value) =>
+        typeof value === 'string' && value.trim().length > 0
+          ? [this.formatTagForYAML(value)]
+          : []
+      )
+    );
+
     const getAccountTags = (
       frontmatter: Record<string, unknown> | undefined
     ) =>
@@ -3523,7 +3553,71 @@ export class AccountPageService extends CustomDataService {
           )
         : [];
 
+    const referencesDeletedAccount = (
+      frontmatter: Record<string, unknown> | undefined
+    ): boolean => {
+      const accountFieldValues = [
+        frontmatter?.account,
+        frontmatter?.mtAccountId,
+      ].flatMap(toUnknownList);
+      const hasDeletedAccountFieldReference = accountFieldValues.some(
+        (value) => {
+          const normalizedValue = this.normalizeFrontmatterScalarString(value);
+          return Boolean(
+            normalizedValue &&
+            accountLookupKeysToRemove.has(
+              normalizeAccountLookupKey(normalizedValue)
+            )
+          );
+        }
+      );
+      const normalizedAccountId = this.normalizeFrontmatterScalarString(
+        frontmatter?.accountId
+      );
+      const normalizedAccountIdLookupKey = normalizedAccountId
+        ? normalizeAccountLookupKey(normalizedAccountId)
+        : undefined;
+      const normalizedAccountIdSlug = normalizedAccountId
+        ? this.formatTagForYAML(normalizedAccountId)
+        : undefined;
+      let retainedAccountSlugs: Set<string> | undefined;
+      const hasRetainedAccountSlug = (slug: string): boolean => {
+        retainedAccountSlugs ??= this.getRetainedAccountSlugs(
+          frontmatter ?? {},
+          accountLookupKeysToRemove
+        );
+        return retainedAccountSlugs.has(slug);
+      };
+      const hasDeletedAccountIdReference =
+        normalizedAccountIdLookupKey !== undefined &&
+        (accountLookupKeysToRemove.has(normalizedAccountIdLookupKey) ||
+          (normalizedAccountIdSlug !== undefined &&
+            accountTagValuesToRemove.has(normalizedAccountIdSlug) &&
+            !hasRetainedAccountSlug(normalizedAccountIdSlug)));
+      const hasDeletedAccountTagReference = getAccountTags(frontmatter).some(
+        (tag) => {
+          const tagSlug = this.formatTagForYAML(tag);
+          return (
+            accountTagValuesToRemove.has(tagSlug) &&
+            !hasRetainedAccountSlug(tagSlug)
+          );
+        }
+      );
+
+      return (
+        hasDeletedAccountFieldReference ||
+        hasDeletedAccountIdReference ||
+        hasDeletedAccountTagReference
+      );
+    };
+
     const backendAccountIdsToUnlink = new Set(removedMappedAccountIds);
+    const patchedRegularTradePaths: string[] = [];
+    const patchedMissedTradePaths: string[] = [];
+    const patchedBacktestTradePaths: string[] = [];
+    const deletedRegularTradePaths: string[] = [];
+    const deletedMissedTradePaths: string[] = [];
+    const deletedBacktestTradePaths: string[] = [];
     if (options.deleteAssociatedTrades) {
       for (const file of allFiles) {
         if (!(file instanceof TFile) || !isDeletableAccountTradeFile(file)) {
@@ -3533,29 +3627,7 @@ export class AccountPageService extends CustomDataService {
         const frontmatter = asRecord(
           this.app.metadataCache.getFileCache(file)?.frontmatter
         );
-        const values = [
-          frontmatter?.account,
-          frontmatter?.accounts,
-          frontmatter?.accountId,
-          frontmatter?.mtAccountId,
-        ].flatMap(toUnknownList);
-        const hasDeletedAccountFieldReference = values.some((value) => {
-          const normalizedValue = this.normalizeFrontmatterScalarString(value);
-          return Boolean(
-            normalizedValue &&
-            accountLookupKeysToRemove.has(
-              normalizeAccountLookupKey(normalizedValue)
-            )
-          );
-        });
-        const hasDeletedAccountTagReference = getAccountTags(frontmatter).some(
-          (tag) => accountTagValuesToRemove.has(this.formatTagForYAML(tag))
-        );
-
-        if (
-          !hasDeletedAccountFieldReference &&
-          !hasDeletedAccountTagReference
-        ) {
+        if (!referencesDeletedAccount(frontmatter)) {
           continue;
         }
 
@@ -3623,9 +3695,6 @@ export class AccountPageService extends CustomDataService {
         tradeId: number;
         filePath: string;
       }> = [];
-      const deletedRegularTradePaths: string[] = [];
-      const deletedMissedTradePaths: string[] = [];
-      const deletedBacktestTradePaths: string[] = [];
       const unlinkedBackendAccounts: Array<{
         accountId: string;
         displayName: string;
@@ -3636,62 +3705,42 @@ export class AccountPageService extends CustomDataService {
           const frontmatterRecord = asRecord(
             this.app.metadataCache.getFileCache(trade)?.frontmatter
           );
-          const values = [
-            frontmatterRecord?.account,
-            frontmatterRecord?.accounts,
-            frontmatterRecord?.accountId,
-            frontmatterRecord?.mtAccountId,
-          ].flatMap(toUnknownList);
-          const accountTags = getAccountTags(frontmatterRecord);
-          const hasDeletedAccountFieldReference = values.some((value) => {
-            const normalizedValue =
-              this.normalizeFrontmatterScalarString(value);
-            if (!normalizedValue) {
-              return false;
-            }
-            const lookupKey = normalizeAccountLookupKey(normalizedValue);
-            return accountLookupKeysToRemove.has(lookupKey);
-          });
-          const hasDeletedAccountTagReference = accountTags.some((tag) =>
-            accountTagValuesToRemove.has(this.formatTagForYAML(tag))
-          );
-          const referencesDeletedAccount =
-            hasDeletedAccountFieldReference || hasDeletedAccountTagReference;
-
-          if (referencesDeletedAccount) {
-            const originalContent = await this.app.vault.read(trade);
-            const backendTradeId = frontmatterRecord?.backendTradeId;
-            const storedTradeType = inferStoredTradeType({
-              filePath: trade.path,
-              type: frontmatterRecord?.type,
-              isMissedTrade: frontmatterRecord?.isMissedTrade,
-              isBacktestTrade: frontmatterRecord?.isBacktestTrade,
-            });
-            await this.app.fileManager.trashFile(trade);
-            if (storedTradeType === 'missed') {
-              deletedMissedTradePaths.push(trade.path);
-            } else if (storedTradeType === 'backtest') {
-              deletedBacktestTradePaths.push(trade.path);
-            } else {
-              deletedRegularTradePaths.push(trade.path);
-            }
-            if (typeof backendTradeId === 'number') {
-              const tradeSyncMapping =
-                this.plugin.settings.backendIntegration?.tradeSyncMapping;
-              const mappedPath = tradeSyncMapping?.[backendTradeId];
-              if (tradeSyncMapping && typeof mappedPath === 'string') {
-                deletedSyncMappingEntries.push({
-                  tradeId: backendTradeId,
-                  filePath: mappedPath,
-                });
-                delete tradeSyncMapping[backendTradeId];
-              }
-            }
-            deletedTradeSnapshots.push({
-              path: trade.path,
-              content: originalContent,
-            });
+          if (!referencesDeletedAccount(frontmatterRecord)) {
+            continue;
           }
+
+          const originalContent = await this.app.vault.read(trade);
+          const backendTradeId = frontmatterRecord?.backendTradeId;
+          const storedTradeType = inferStoredTradeType({
+            filePath: trade.path,
+            type: frontmatterRecord?.type,
+            isMissedTrade: frontmatterRecord?.isMissedTrade,
+            isBacktestTrade: frontmatterRecord?.isBacktestTrade,
+          });
+          await this.app.fileManager.trashFile(trade);
+          if (storedTradeType === 'missed') {
+            deletedMissedTradePaths.push(trade.path);
+          } else if (storedTradeType === 'backtest') {
+            deletedBacktestTradePaths.push(trade.path);
+          } else {
+            deletedRegularTradePaths.push(trade.path);
+          }
+          if (typeof backendTradeId === 'number') {
+            const tradeSyncMapping =
+              this.plugin.settings.backendIntegration?.tradeSyncMapping;
+            const mappedPath = tradeSyncMapping?.[backendTradeId];
+            if (tradeSyncMapping && typeof mappedPath === 'string') {
+              deletedSyncMappingEntries.push({
+                tradeId: backendTradeId,
+                filePath: mappedPath,
+              });
+              delete tradeSyncMapping[backendTradeId];
+            }
+          }
+          deletedTradeSnapshots.push({
+            path: trade.path,
+            content: originalContent,
+          });
         }
 
         if (
@@ -3724,29 +3773,6 @@ export class AccountPageService extends CustomDataService {
 
         if (deletedSyncMappingEntries.length > 0) {
           await this.plugin.saveSettings();
-        }
-
-        const timestamp = Date.now();
-        if (deletedRegularTradePaths.length > 0) {
-          eventBus.publish('trade:changed', {
-            action: 'deleted',
-            filePaths: deletedRegularTradePaths,
-            timestamp,
-          });
-        }
-        for (const filePath of deletedMissedTradePaths) {
-          eventBus.publish('missed-trade:changed', {
-            action: 'deleted',
-            filePath,
-            timestamp,
-          });
-        }
-        for (const filePath of deletedBacktestTradePaths) {
-          eventBus.publish('backtest-trade:changed', {
-            action: 'deleted',
-            filePath,
-            timestamp,
-          });
         }
       } catch (error) {
         for (const snapshot of deletedTradeSnapshots.reverse()) {
@@ -3818,17 +3844,46 @@ export class AccountPageService extends CustomDataService {
       const rollbackSnapshots: AccountDeletionRollbackSnapshot[] = [];
 
       const deletionContext: AccountDeletionRewriteContext = {
-        accountLookupKey,
         accountTagToRemove,
-        snapshotLookupKeysToRemove,
         removedMappedAccountIds,
         removedMappedAccountNames,
-        removedMappedAccountLookupKeys,
         accountLookupKeysToRemove,
+      };
+      const recordDirectFrontmatterPatch = (
+        filePath: string,
+        storedTradeType: 'regular' | 'missed' | 'backtest'
+      ) => {
+        if (storedTradeType === 'missed') {
+          patchedMissedTradePaths.push(filePath);
+        } else if (storedTradeType === 'backtest') {
+          patchedBacktestTradePaths.push(filePath);
+        } else {
+          patchedRegularTradePaths.push(filePath);
+        }
+      };
+      const applyDirectFrontmatterPatch = async (
+        trade: TFile,
+        storedTradeType: 'regular' | 'missed' | 'backtest'
+      ): Promise<boolean> => {
+        const didUpdate = await this.applyAccountDeletionFrontmatterPatch(
+          trade,
+          deletionContext
+        );
+        if (didUpdate) {
+          recordDirectFrontmatterPatch(trade.path, storedTradeType);
+        }
+        return didUpdate;
       };
 
       for (const trade of trades) {
         try {
+          const frontmatterRecord = asRecord(
+            this.app.metadataCache.getFileCache(trade)?.frontmatter
+          );
+          if (!referencesDeletedAccount(frontmatterRecord)) {
+            continue;
+          }
+
           const originalContent = await this.app.vault.read(trade);
           const rollbackSnapshot: AccountDeletionRollbackSnapshot = {
             fileRef: trade,
@@ -3838,8 +3893,6 @@ export class AccountPageService extends CustomDataService {
           };
           rollbackSnapshots.push(rollbackSnapshot);
 
-          const frontmatterRecord =
-            this.app.metadataCache.getFileCache(trade)?.frontmatter;
           const storedTradeType = inferStoredTradeType({
             filePath: trade.path,
             type: frontmatterRecord?.type,
@@ -3849,6 +3902,7 @@ export class AccountPageService extends CustomDataService {
           const isExplicitNonTradeType =
             typeof frontmatterRecord?.type === 'string' &&
             frontmatterRecord.type !== 'trade' &&
+            frontmatterRecord.type !== 'missed-trade' &&
             frontmatterRecord.type !== 'backtest-trade';
           if (isExplicitNonTradeType) {
             rollbackSnapshots.pop();
@@ -3858,11 +3912,10 @@ export class AccountPageService extends CustomDataService {
           const hasNonStringTagValues =
             Array.isArray(frontmatterRecord?.tags) &&
             frontmatterRecord.tags.some((tag) => typeof tag !== 'string');
-
           if (storedTradeType !== 'regular' || hasNonStringTagValues) {
-            const didUpdate = await this.applyAccountDeletionFrontmatterPatch(
+            const didUpdate = await applyDirectFrontmatterPatch(
               trade,
-              deletionContext
+              storedTradeType
             );
 
             if (!didUpdate) {
@@ -3908,11 +3961,10 @@ export class AccountPageService extends CustomDataService {
               `AccountPageService: Falling back to direct frontmatter patch for ${trade.path} because canonical extraction returned null`
             );
 
-            const didUpdateViaFallback =
-              await this.applyAccountDeletionFrontmatterPatch(
-                trade,
-                deletionContext
-              );
+            const didUpdateViaFallback = await applyDirectFrontmatterPatch(
+              trade,
+              storedTradeType
+            );
 
             if (!didUpdateViaFallback) {
               rollbackSnapshots.pop();
@@ -3940,11 +3992,10 @@ export class AccountPageService extends CustomDataService {
             this.shouldAvoidCanonicalMetadataUpdate(nextTradeData);
 
           if (shouldAvoidCanonicalUpdate) {
-            const didUpdateViaFallback =
-              await this.applyAccountDeletionFrontmatterPatch(
-                trade,
-                deletionContext
-              );
+            const didUpdateViaFallback = await applyDirectFrontmatterPatch(
+              trade,
+              storedTradeType
+            );
 
             if (!didUpdateViaFallback) {
               rollbackSnapshots.pop();
@@ -3971,11 +4022,10 @@ export class AccountPageService extends CustomDataService {
               throw error;
             }
 
-            const didUpdateViaFallback =
-              await this.applyAccountDeletionFrontmatterPatch(
-                trade,
-                deletionContext
-              );
+            const didUpdateViaFallback = await applyDirectFrontmatterPatch(
+              trade,
+              storedTradeType
+            );
 
             if (!didUpdateViaFallback) {
               rollbackSnapshots.pop();
@@ -4050,21 +4100,74 @@ export class AccountPageService extends CustomDataService {
     }
 
     
-    this.clearAccountSnapshots();
-    await Promise.all([
-      this.clearCacheWithPrefix('allEnhancedAccounts'),
-      this.clearCacheWithPrefix('accountPage:'),
-      this.clearCacheWithPrefix('accountTrades:'),
-    ]);
-
-    
-    
-    if (this.plugin?.tradeService) {
+    try {
+      this.clearAccountSnapshots();
       await Promise.all([
-        this.plugin.tradeService.clearCacheWithPrefix('trade:all-trades'),
-        this.plugin.tradeService.clearCacheWithPrefix('trade:unique-accounts'),
-        this.plugin.tradeService.clearCacheWithPrefix('trade:unique-values'),
+        this.clearCacheWithPrefix('allEnhancedAccounts'),
+        this.clearCacheWithPrefix('accountPage:'),
+        this.clearCacheWithPrefix('accountTrades:'),
       ]);
+
+      
+      
+      if (this.plugin?.tradeService) {
+        await Promise.all([
+          this.plugin.tradeService.clearCacheWithPrefix('trade:all-trades'),
+          this.plugin.tradeService.clearCacheWithPrefix(
+            'trade:unique-accounts'
+          ),
+          this.plugin.tradeService.clearCacheWithPrefix('trade:unique-values'),
+        ]);
+      }
+    } catch (error) {
+      console.error(
+        'AccountPageService: Failed to clear caches after account deletion:',
+        error
+      );
+    }
+
+    const timestamp = Date.now();
+    if (deletedRegularTradePaths.length > 0) {
+      eventBus.publish('trade:changed', {
+        action: 'deleted',
+        filePaths: deletedRegularTradePaths,
+        timestamp,
+      });
+    }
+    for (const filePath of deletedMissedTradePaths) {
+      eventBus.publish('missed-trade:changed', {
+        action: 'deleted',
+        filePath,
+        timestamp,
+      });
+    }
+    for (const filePath of deletedBacktestTradePaths) {
+      eventBus.publish('backtest-trade:changed', {
+        action: 'deleted',
+        filePath,
+        timestamp,
+      });
+    }
+    if (patchedRegularTradePaths.length > 0) {
+      eventBus.publish('trade:changed', {
+        action: 'updated',
+        filePaths: patchedRegularTradePaths,
+        timestamp,
+      });
+    }
+    for (const filePath of patchedMissedTradePaths) {
+      eventBus.publish('missed-trade:changed', {
+        action: 'updated',
+        filePath,
+        timestamp,
+      });
+    }
+    for (const filePath of patchedBacktestTradePaths) {
+      eventBus.publish('backtest-trade:changed', {
+        action: 'updated',
+        filePath,
+        timestamp,
+      });
     }
 
     const deletedAccountAliases = Array.from(
@@ -4076,6 +4179,34 @@ export class AccountPageService extends CustomDataService {
         ...Array.from(snapshotLookupKeysToRemove),
       ])
     ).filter((value) => typeof value === 'string' && value.trim().length > 0);
+
+    const deletedAccountLookupKeys = new Set(
+      deletedAccountAliases.map((alias) => normalizeAccountLookupKey(alias))
+    );
+    const storedAccountOptions = this.plugin.optionsService.getOptions(
+      OptionType.ACCOUNT
+    );
+    for (const storedOptionValue of storedAccountOptions) {
+      if (
+        !deletedAccountLookupKeys.has(
+          normalizeAccountLookupKey(storedOptionValue)
+        )
+      ) {
+        continue;
+      }
+
+      try {
+        await this.plugin.optionsService.removeOption(
+          OptionType.ACCOUNT,
+          storedOptionValue
+        );
+      } catch (error) {
+        console.warn(
+          `AccountPageService: Failed to remove persisted account option "${storedOptionValue}" after deleting account "${canonicalAccountNameForDeletion}"`,
+          error
+        );
+      }
+    }
 
     eventBus.publish('account:changed', {
       action: 'deleted',
@@ -4244,6 +4375,9 @@ export class AccountPageService extends CustomDataService {
     }
     if (this.unsubscribeBacktestTradeChanged) {
       this.unsubscribeBacktestTradeChanged();
+    }
+    if (this.unsubscribeFolderPathChanged) {
+      this.unsubscribeFolderPathChanged();
     }
     if (this.unsubscribeSettingsChanged) {
       this.unsubscribeSettingsChanged();

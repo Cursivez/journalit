@@ -32,6 +32,12 @@ interface DeviceFlowUser {
 interface DeviceTokenResponse {
   status: string;
   token: string; 
+  access_token?: string;
+  token_type?: string;
+  expires_in?: number;
+  refresh_token?: string;
+  refresh_expires_in?: number;
+  session_id?: string;
   user: DeviceFlowUser;
   expires_at: string; 
 }
@@ -226,7 +232,31 @@ export class DeviceFlowService {
       throw new Error('Missing user data in response');
     }
 
-    const authToken = tokenResponse.token;
+    const sessionFields = [
+      tokenResponse.access_token,
+      tokenResponse.token_type,
+      tokenResponse.expires_in,
+      tokenResponse.refresh_token,
+      tokenResponse.session_id,
+    ];
+    const hasRefreshSession = sessionFields.some(
+      (value) => value !== undefined
+    );
+    if (
+      hasRefreshSession &&
+      (typeof tokenResponse.access_token !== 'string' ||
+        tokenResponse.access_token.length === 0 ||
+        tokenResponse.token_type !== 'Bearer' ||
+        typeof tokenResponse.expires_in !== 'number' ||
+        !Number.isFinite(tokenResponse.expires_in) ||
+        tokenResponse.expires_in <= 0 ||
+        typeof tokenResponse.refresh_token !== 'string' ||
+        tokenResponse.refresh_token.length === 0 ||
+        typeof tokenResponse.session_id !== 'string' ||
+        tokenResponse.session_id.length === 0)
+    ) {
+      throw new Error('Incomplete access and refresh token response');
+    }
 
     
     this.settings.userId = tokenResponse.user.id;
@@ -235,7 +265,22 @@ export class DeviceFlowService {
     
     const tier = tokenResponse.user.tier?.toLowerCase() || 'free';
 
-    BackendSecretStorage.setAuthToken(this.plugin, authToken);
+    if (hasRefreshSession) {
+      BackendSecretStorage.setAuthSession(
+        this.plugin,
+        tokenResponse.access_token!,
+        tokenResponse.refresh_token!
+      );
+      this.settings.accessTokenExpiresAt = new Date(
+        Date.now() + tokenResponse.expires_in! * 1000
+      ).toISOString();
+      this.settings.authSessionId = tokenResponse.session_id;
+    } else {
+      BackendSecretStorage.clearRefreshToken(this.plugin);
+      BackendSecretStorage.setAuthToken(this.plugin, tokenResponse.token);
+      this.settings.accessTokenExpiresAt = undefined;
+      this.settings.authSessionId = undefined;
+    }
     this.settings.userEmail = tokenResponse.user.email || '';
     this.settings.subscriptionTier =
       tier === 'premium' || tier === 'pro' ? 'premium' : 'free';

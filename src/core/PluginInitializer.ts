@@ -148,6 +148,10 @@ export class PluginInitializer {
     }
 
     
+    const { initializeTokenManager } =
+      await import('../services/backend/TokenManager');
+    initializeTokenManager(this.plugin);
+
     
     
     try {

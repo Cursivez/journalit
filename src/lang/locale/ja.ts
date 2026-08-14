@@ -597,7 +597,7 @@ const ja: Partial<Lang> = {
     'This picker shows the widgets you can add for this review type.',
   'layoutBuilder.guide.choose-widget.title': 'Choose a widget',
   'layoutBuilder.guide.choose-widget.description':
-    'This list shows every widget you can add for this review type. Pick any widget you want, or press Next and Journalit will choose the first one for you.',
+    'Type in the search box to find a widget by name, description, or category, then choose it. You can also press Next and Journalit will choose the first result for you.',
   'layoutBuilder.guide.widget-library-docs.title':
     'Use the widget library if you get stuck',
   'layoutBuilder.guide.widget-library-docs.description':
@@ -644,8 +644,6 @@ const ja: Partial<Lang> = {
   'tradelog.guide.multi-select.description':
     'Click this button to select several trades at once. When multi-select is on, row clicks select trades instead of opening them.',
   'tradelog.guide.batch-actions.title': 'These are your batch actions',
-  'tradelog.guide.batch-actions.description':
-    'Use this bar to select all visible trades, clear your selection, mark trades as reviewed, add setups, add mistakes, or delete several trades at once. You can also shift-click to select a range of trades.',
   'tradelog.guide.column-settings.title': 'Open column settings',
   'tradelog.guide.column-settings.description':
     'Click this button to choose which columns are shown and how dense or detailed the table should feel.',
@@ -677,6 +675,42 @@ const ja: Partial<Lang> = {
   
   'dashboard.title': 'ダッシュボード',
   'dashboard.no-data': 'トレードデータがありません',
+  'dashboard.widgets.setup-performance.title': 'セットアップ別パフォーマンス',
+  'dashboard.widgets.setup-performance.description':
+    'セットアップ別のパフォーマンスを比較するランキング棒グラフ',
+  'dashboard.widgets.setup-performance.empty':
+    'セットアップ別のパフォーマンスデータがありません',
+  'dashboard.widgets.setup-performance.masked-label': 'セットアップ',
+  'dashboard.widgets.tag-performance.title': 'タグ別パフォーマンス',
+  'dashboard.widgets.tag-performance.description':
+    'タグ別のパフォーマンスを比較するランキング棒グラフ',
+  'dashboard.widgets.tag-performance.empty':
+    'タグ別のパフォーマンスデータがありません',
+  'dashboard.widgets.tag-performance.masked-label': 'タグ',
+  'dashboard.widgets.ticker-performance.title': 'ティッカー別パフォーマンス',
+  'dashboard.widgets.ticker-performance.metric-aria': '指標',
+  'dashboard.widgets.ticker-performance.view-aria': '表示モード',
+  'dashboard.widgets.ticker-performance.view.best-and-worst': '上位と下位',
+  'dashboard.widgets.ticker-performance.view.best': '上位10件',
+  'dashboard.widgets.ticker-performance.view.worst': '下位10件',
+  'dashboard.widgets.ticker-performance.metric.total-pnl': '合計損益',
+  'dashboard.widgets.ticker-performance.metric.total-r': '合計R',
+  'dashboard.widgets.ticker-performance.metric.win-rate': '勝率',
+  'dashboard.widgets.ticker-performance.tooltip.ticker': 'ティッカー: {ticker}',
+  'dashboard.widgets.ticker-performance.tooltip.trades': '取引: {count}',
+  'dashboard.widgets.ticker-performance.tooltip.win-rate':
+    '勝率: {rate} ({wins}勝 / {losses}敗)',
+
+  'dashboard.widgets.ticker-performance.empty':
+    'ティッカー別のパフォーマンスデータがありません',
+  'dashboard.widgets.ticker-performance.empty-submessage':
+    '現在のフィルターに一致するティッカー付きの決済済み取引がありません。',
+  'dashboard.widgets.ticker-performance.masked-ticker': 'ティッカー',
+  'dashboard.widgets.ticker-performance.omitted-count': '省略：{count}',
+
+  'widget.tickerPerformance.name': 'ティッカー別パフォーマンス',
+  'widget.tickerPerformance.description':
+    'ティッカー別のパフォーマンスを比較するランキング棒グラフ',
 
   
   'dashboard.filter.accounts.all': 'すべての口座',
@@ -1115,6 +1149,10 @@ const ja: Partial<Lang> = {
   'chart.tooltip.account': 'Account',
   'chart.tooltip.accounts-list': '{accounts}',
   'chart.tooltip.more-accounts': '+{count} more',
+  'widget.tag-performance.name': 'タグ別パフォーマンス',
+  'widget.tag-performance.description': '取引タグ別のパフォーマンス内訳',
+  'widget.table.header.tag': 'タグ',
+  'widget.empty.no-tag-data': 'この期間のタグデータはありません',
   'widget.account-breakdown.name': 'Account Breakdown',
   'widget.account-breakdown.description':
     'Compare performance across accounts in this review period',
@@ -1697,6 +1735,7 @@ const ja: Partial<Lang> = {
   'home.filters.trade-type': 'トレードタイプ',
   'home.filters.accounts': '口座',
   'home.filters.back': '戻る',
+  'filter.reset': 'フィルターをリセット',
   'home.guide.modes.title': '最後にもう1つ：ダッシュボード',
   'home.guide.modes.description':
     '概要とダッシュボードはこのページを共有しています。今すぐダッシュボードに切り替えて、パフォーマンス統計の短いツアーを続けましょう。',
@@ -1721,6 +1760,11 @@ const ja: Partial<Lang> = {
     'ダッシュボードモードでも同じ背景画像を使用します。',
   'settings.general.home-background-dashboard-aria':
     'ホームの背景をダッシュボードに表示',
+  'datepicker.placeholder.second': 'SS',
+  'settings.general.show-seconds': '取引時刻に秒を表示',
+  'settings.general.show-seconds-desc':
+    '取引のエントリー時刻と決済時刻の入力時に秒を表示します。',
+  'settings.general.show-seconds-aria': '取引時刻に秒を表示',
 };
 
 export default ja;

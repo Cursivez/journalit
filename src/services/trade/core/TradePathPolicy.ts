@@ -40,6 +40,20 @@ export function formatTradeDateForFilename(date: Date, format: string): string {
   }
 }
 
+export function getTradeFilenameDateTokens(date: Date): string[] {
+  const year = String(date.getFullYear()).padStart(4, '0');
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return Array.from(
+    new Set([
+      `${year}-${month}-${day}`,
+      formatTradeDateForFilename(date, 'DDMMYY'),
+      formatTradeDateForFilename(date, 'MMDDYY'),
+      formatTradeDateForFilename(date, 'YYMMDD'),
+    ])
+  );
+}
+
 export function normalizeTradePathDate(dateLike: Date | string): Date {
   const normalized =
     dateLike instanceof Date ? dateLike : new Date(String(dateLike));

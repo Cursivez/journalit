@@ -27,7 +27,7 @@ Local-first Trading-Journal für Obsidian.
 
 </div>
 
-![Home View](https://github.com/user-attachments/assets/1d82c43a-9235-4659-85c2-eedf46bd34ac)
+![Home View](https://github.com/user-attachments/assets/8ef38dac-c932-4530-aa06-4a382e5ba827)
 
 <a id="installation"></a>
 
@@ -49,7 +49,7 @@ Community-Seite: https://community.obsidian.md/plugins/journalit
 - **Konto-Dashboard**: für Profit-Targets und Drawdowns von Prop-Firms entwickelt.
 - **Review-System (V2)**: tägliche bis jährliche Vorlagen mit Layout-Builder.
 - **[Trade Import](https://journalit.co/csv-import)**: backendgestützte Importe für CSV, Tabellen, HTML und Broker-Abrechnungen.
-- **[MetaTrader 4/5 Sync](https://journalit.co/metatrader-trading-journal)**: automatischer Trade-Import per FTP.
+- **[Trade Sync](https://journalit.co/docs/trade-sync)**: automatische Tradesynchronisierung für Tradovate und MT4.
 
 ## Wichtige Hinweise
 
@@ -58,7 +58,7 @@ Community-Seite: https://community.obsidian.md/plugins/journalit
 - **Bezahlte Funktionen**: Für vollständigen Zugriff auf Pro-Funktionen wie MetaTrader Sync und Trade Import ist ein Pro-Abonnement erforderlich.
 - **Optionale Netzwerknutzung**: Das Plugin nutzt Journalit-Netzwerkdienste nur, wenn du netzwerkgestützte Funktionen verwendest. Beim Anmelden kontaktiert es Journalit für E-Mail-Verifizierung, Token-Validierung und Abonnementstatus. Wenn du MetaTrader Sync oder Trade Import nutzt, verbindet sich das Plugin außerdem mit der Journalit-Backend-API für Sync-Koordination, Trade-Abruf und optionalen Trade Import; MetaTrader Sync verwendet von Journalit verwaltete FTP-Infrastruktur. Journalit kann außerdem Wechselkurse von einem Drittanbieter abrufen, wenn Mehrwährungsumrechnung benötigt wird. Diese Funktionen sind optional.
 - **Source-available, proprietäre Lizenz**: Das Plugin ist proprietäre Software mit einsehbarem Quellcode.
-- **Datenschutzdetails**: siehe [PRIVACY.md](PRIVACY.md).
+- **Datenschutzdetails**: siehe [PRIVACY.md](PRIVACY.md) für Informationen zur Datenverarbeitung, Aufbewahrung und Infrastruktur.
 
 <a id="screenshots"></a>
 
@@ -66,17 +66,27 @@ Community-Seite: https://community.obsidian.md/plugins/journalit
 
 ### Trading-Dashboard
 
-![Trading Dashboard](https://github.com/user-attachments/assets/d5c7b636-b8f7-489a-a199-d1bba6958717)
+![Trading Dashboard](https://github.com/user-attachments/assets/ebb402c3-c8da-41dc-9317-73f6a50d0a93)
+
+### Setups
+
+![Setup-Übersicht](https://github.com/user-attachments/assets/09976a8b-8500-4629-b790-6cb834c84b24)
+
+![Setup-Paare](https://github.com/user-attachments/assets/bb7b66fc-db1b-4e1c-a174-32bc6bea49c6)
+
+![Setup-Vergleich](https://github.com/user-attachments/assets/8eaf5509-cf27-4e73-8c8c-2a9cf0da6c43)
 
 ### Layout-Builder
 
 ![Layout Builder](https://github.com/user-attachments/assets/48bcc59a-2b17-4478-98b3-dce8677cca47)
 
-![Layout Builder](https://github.com/user-attachments/assets/03f20e4b-37e7-43d9-94bf-fb444e43afbf)
+![Layout Builder](https://github.com/user-attachments/assets/66744217-b3b1-46ec-bb65-ca2debcd72da)
 
-### Trade Log
+### Trade Log & Galerie
 
-![Trade Log](https://github.com/user-attachments/assets/84593d6b-9783-4df6-ad06-6201f101ffcd)
+![Trade Log](https://github.com/user-attachments/assets/09586646-50a2-4fd1-970f-83e926cab19a)
+
+![Galerie](https://github.com/user-attachments/assets/1bb496ab-a165-43c6-83f0-500565f2a1c3)
 
 ### Trade Import
 
@@ -110,7 +120,7 @@ Unterstützte Broker-Importformate:
 - [ATAS](https://journalit.co/docs/broker-guides-atas)
 - [Trading Technologies (TT)](https://journalit.co/docs/broker-guides-tradingtechnologies)
 - [Rithmic](https://journalit.co/docs/broker-guides-rithmic)
-- [JDR Securities Limited](https://journalit.co/docs/broker-guides-jdr)
+- [MetaTrader 4/5](https://journalit.co/docs/broker-guides-jdr)
 
 Fehlt dein Broker? Komm auf [Discord](https://discord.gg/AkSw3D9h8b) und sag uns, was du als Nächstes möchtest.
 

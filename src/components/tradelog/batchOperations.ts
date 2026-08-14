@@ -10,9 +10,25 @@ import {
 } from '../../utils/tradeIdentity';
 import {
   forceMetadataCacheRefresh,
+  parseFrontmatterFromContentOrThrow,
+  readFileContentFromDisk,
   readFrontmatterFromDisk,
 } from '../../utils/dataRefresh';
 import { normalizeStringArray } from '../../utils/dataUtils';
+import type {
+  TradeCommitEventBatch,
+  TradeCreateOptions,
+  TradeCreationBatch,
+} from '../../services/trade/core/TradeCommandService';
+import { extractUserOwnedTradeNotes } from '../../services/trade/core/TradeNoteDocumentCodec';
+import {
+  removeTradeNoteMediaReferences,
+  snapshotTradeNoteMediaReferenceResolutions,
+} from '../../services/trade/core/TradeNoteMediaReferenceCodec';
+import {
+  isManagedTradeMediaPath,
+  resolveManagedTradeMediaReferencePath,
+} from '../../services/trade/core/TradeMediaOwnership';
 
 interface BatchOperationResult {
   processed: number;
@@ -21,13 +37,29 @@ interface BatchOperationResult {
   total: number;
 }
 
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  Boolean(value) && typeof value === 'object' && !Array.isArray(value);
+
 interface TradeServiceLike {
-  extractTradeData: (file: TFile) => Promise<TradeData | null>;
+  extractTradeData: (
+    file: TFile,
+    frontmatterOverride?: Record<string, unknown>,
+    contentOverride?: string
+  ) => Promise<TradeData | null>;
   updateTrade: (
     data: TradeData,
     filePath: string,
     source?: string
   ) => Promise<string>;
+  createTrade: (
+    data: TradeData,
+    options?: TradeCreateOptions
+  ) => Promise<string>;
+  createTradeCommitEventBatch: () => TradeCommitEventBatch;
+  createTradeCreationBatch: () => TradeCreationBatch;
+  discardCreatedTradeState: (filePath: string) => void;
+  suppressCreatedTradeRollbackDeletion: (filePath: string) => void;
+  cancelCreatedTradeRollbackDeletion: (filePath: string) => void;
 }
 
 type BatchNoteKind = 'regular' | 'missed' | 'backtest';
@@ -65,7 +97,15 @@ function isTradeServiceLike(value: unknown): value is TradeServiceLike {
     typeof value === 'object' &&
     !Array.isArray(value) &&
     typeof Reflect.get(value, 'extractTradeData') === 'function' &&
-    typeof Reflect.get(value, 'updateTrade') === 'function'
+    typeof Reflect.get(value, 'updateTrade') === 'function' &&
+    typeof Reflect.get(value, 'createTrade') === 'function' &&
+    typeof Reflect.get(value, 'createTradeCommitEventBatch') === 'function' &&
+    typeof Reflect.get(value, 'createTradeCreationBatch') === 'function' &&
+    typeof Reflect.get(value, 'discardCreatedTradeState') === 'function' &&
+    typeof Reflect.get(value, 'suppressCreatedTradeRollbackDeletion') ===
+      'function' &&
+    typeof Reflect.get(value, 'cancelCreatedTradeRollbackDeletion') ===
+      'function'
   );
 }
 
@@ -142,6 +182,25 @@ function getNoteKind(app: App, file: TFile): BatchNoteKind {
   }
 
   return 'regular';
+}
+
+
+async function readCanonicalTradeSource(
+  app: App,
+  tradeService: TradeServiceLike,
+  file: TFile
+): Promise<{
+  content: string;
+  frontmatter: Record<string, unknown>;
+  tradeData: TradeData | null;
+}> {
+  const content = await readFileContentFromDisk(app, file);
+  const frontmatter = parseFrontmatterFromContentOrThrow(content);
+  return {
+    content,
+    frontmatter,
+    tradeData: await tradeService.extractTradeData(file, frontmatter, content),
+  };
 }
 
 function publishBatchTradeChanged(filePaths: string[]): void {
@@ -282,23 +341,11 @@ async function runBatchOperation(
         continue;
       }
 
-      const canRefreshMetadata =
-        typeof app.metadataCache?.getCache === 'function' &&
-        typeof app.vault.cachedRead === 'function';
-
-      if (operation.requireAuthoritativeMetadataRead && canRefreshMetadata) {
-        await forceMetadataCacheRefresh(app, file, 0).catch((_error) => {
-          // intentional
-        });
-      }
-
-      let tradeData = await tradeService.extractTradeData(file);
-      if (!tradeData && canRefreshMetadata) {
-        await forceMetadataCacheRefresh(app, file, 0).catch((_error) => {
-          // intentional
-        });
-        tradeData = await tradeService.extractTradeData(file);
-      }
+      const { frontmatter, tradeData } = await readCanonicalTradeSource(
+        app,
+        tradeService,
+        file
+      );
 
       if (!tradeData) {
         throw new Error(
@@ -306,15 +353,9 @@ async function runBatchOperation(
         );
       }
 
-      const frontmatter = app.metadataCache?.getFileCache(file)?.frontmatter;
-      const frontmatterRecord =
-        frontmatter && typeof frontmatter === 'object'
-          ? Object.fromEntries(Object.entries(frontmatter))
-          : null;
-
       const { shouldApplyPrimaryMutation, nextTradeData } =
         operation.applyToTradeData(tradeData, {
-          frontmatter: frontmatterRecord,
+          frontmatter,
         });
 
       const needsIdentityBackfill =
@@ -414,7 +455,6 @@ export async function batchMarkAsReviewed(
   tradeFilePaths: string[]
 ): Promise<BatchOperationResult> {
   return runBatchOperation(app, tradeFilePaths, {
-    requireAuthoritativeMetadataRead: true,
     applyToTradeData: (tradeData) => {
       if (tradeData.reviewed === true) {
         return {
@@ -585,6 +625,286 @@ export async function batchAddTags(
       return { didPrimaryMutation: true };
     },
   });
+}
+
+
+const DUPLICATE_EXCLUDED_FIELDS = [
+  
+  'tradeId',
+  'schemaVersion',
+  'tradeRevision',
+  
+  'path',
+  
+  'backendTradeId',
+  'canonicalTradeId',
+  'canonicalTradeVersion',
+  'canonicalProjectionGeneration',
+  'canonicalAccountId',
+  'canonicalBroker',
+  'canonicalAccountDisplayName',
+  'canonicalProjectionSchemaVersion',
+  'canonicalProjectionClearFields',
+  'mtComment',
+  'lastBrokerSyncAt',
+  'brokerBaseCurrencyPnl',
+  'brokerBaseCurrency',
+  'brokerBaseCurrencyPnlSource',
+  
+  
+  'originalPnl',
+  'originalRMultiple',
+  'authoritativePnl',
+  '_originalPnlWasNull',
+  
+  
+  'unrealizedPriceSnapshot',
+  'unrealizedPriceSnapshotTime',
+  
+  'tradeImportId',
+  'tradeImportVersion',
+  'tradeImportAccountId',
+  'tradeImportAccountBroker',
+  'tradeImportAccountDisplayName',
+  'csvImportId',
+  'legacyCsvImportIds',
+  'sourceRows',
+  'orderId',
+  'canonicalExecutionMigrationVersion',
+  'executionLedgerVersion',
+  'executionIds',
+  
+  'lossReview',
+  'tradeReview',
+  'reviewed',
+  'reviewedAt',
+  
+  
+  'filePath',
+] as const;
+
+function buildDuplicateTradeData(
+  app: App,
+  tradeData: TradeData,
+  notes: string | undefined,
+  sourceFilePath: string
+): TradeData {
+  const duplicate: TradeData = { ...tradeData };
+  const droppedManagedMediaPaths = new Set<string>();
+  const resolveSourceMediaPath = (target: string): string => {
+    const resolvedLink =
+      !target.includes('/') && !target.includes('\\')
+        ? app.metadataCache.getFirstLinkpathDest(target, sourceFilePath)?.path
+        : undefined;
+    return (
+      resolvedLink ??
+      resolveManagedTradeMediaReferencePath({
+        mediaTarget: target,
+        tradeFilePath: sourceFilePath,
+        instrument: tradeData.instrument,
+        pathExists: (path) =>
+          app.vault.getAbstractFileByPath(path) instanceof TFile,
+      }) ??
+      app.metadataCache.getFirstLinkpathDest(target, sourceFilePath)?.path ??
+      target
+    );
+  };
+  for (const field of DUPLICATE_EXCLUDED_FIELDS) {
+    delete duplicate[field];
+  }
+
+  if (duplicate.customFields) {
+    const customFields = { ...duplicate.customFields };
+    for (const field of DUPLICATE_EXCLUDED_FIELDS) {
+      delete customFields[field];
+    }
+    duplicate.customFields = customFields;
+  }
+
+  if (notes) {
+    const resolvedNoteMedia = snapshotTradeNoteMediaReferenceResolutions(
+      notes,
+      resolveSourceMediaPath,
+      'notes'
+    );
+    for (const resolvedPath of resolvedNoteMedia.values()) {
+      if (
+        isManagedTradeMediaPath({
+          mediaPath: resolvedPath,
+          tradeFilePath: sourceFilePath,
+          instrument: tradeData.instrument,
+        })
+      ) {
+        droppedManagedMediaPaths.add(resolvedPath);
+      }
+    }
+  }
+
+  if (duplicate.images) {
+    duplicate.images = duplicate.images.filter((mediaPath) => {
+      const isManaged = isManagedTradeMediaPath({
+        mediaPath,
+        tradeFilePath: sourceFilePath,
+        instrument: tradeData.instrument,
+      });
+      if (isManaged) {
+        droppedManagedMediaPaths.add(mediaPath);
+      }
+      return !isManaged;
+    });
+    if (duplicate.images.length === 0) {
+      delete duplicate.images;
+    }
+  }
+
+  const imageAnnotations = duplicate.customFields?.imageAnnotations;
+  if (isRecord(imageAnnotations)) {
+    const filteredAnnotations = Object.fromEntries(
+      Object.entries(imageAnnotations).filter(([mediaPath]) => {
+        if (droppedManagedMediaPaths.has(mediaPath)) return false;
+        return !isManagedTradeMediaPath({
+          mediaPath,
+          tradeFilePath: sourceFilePath,
+          instrument: tradeData.instrument,
+        });
+      })
+    );
+    const customFields = { ...duplicate.customFields };
+    if (Object.keys(filteredAnnotations).length > 0) {
+      customFields.imageAnnotations = filteredAnnotations;
+    } else {
+      delete customFields.imageAnnotations;
+    }
+    duplicate.customFields = customFields;
+  }
+
+  duplicate.notes = removeTradeNoteMediaReferences(
+    notes,
+    droppedManagedMediaPaths,
+    resolveSourceMediaPath
+  );
+  return duplicate;
+}
+
+async function rollbackCreatedDuplicateTrades(
+  app: App,
+  tradeService: TradeServiceLike,
+  createdFilePaths: readonly string[]
+): Promise<string[]> {
+  const survivingFilePaths: string[] = [];
+  for (const filePath of [...createdFilePaths].reverse()) {
+    try {
+      const file = app.vault.getAbstractFileByPath(filePath);
+      if (!(file instanceof TFile)) {
+        tradeService.discardCreatedTradeState(filePath);
+        continue;
+      }
+      tradeService.suppressCreatedTradeRollbackDeletion(filePath);
+      try {
+        await app.fileManager.trashFile(file);
+      } catch (error) {
+        tradeService.cancelCreatedTradeRollbackDeletion(filePath);
+        throw error;
+      }
+      tradeService.discardCreatedTradeState(filePath);
+    } catch (error) {
+      console.error(`Failed to roll back duplicated trade: ${filePath}`, error);
+      survivingFilePaths.push(filePath);
+    }
+  }
+  return survivingFilePaths.reverse();
+}
+
+
+export async function batchDuplicateTrades(
+  app: App,
+  tradeFilePaths: string[]
+): Promise<BatchOperationResult> {
+  let processed = 0;
+  let skipped = 0;
+  let errors = 0;
+  const total = tradeFilePaths.length;
+
+  const tradeService = getTradeServiceOrThrow();
+  const commitEventBatch = tradeService.createTradeCommitEventBatch();
+  const creationBatch = tradeService.createTradeCreationBatch();
+  const createdFilePaths: string[] = [];
+
+  for (const filePath of tradeFilePaths) {
+    try {
+      const file = app.vault.getAbstractFileByPath(filePath);
+      if (!(file instanceof TFile)) {
+        console.warn(`File not found or not a TFile: ${filePath}`);
+        errors++;
+        continue;
+      }
+
+      const { content: sourceContent, tradeData } =
+        await readCanonicalTradeSource(app, tradeService, file);
+
+      if (!tradeData) {
+        throw new Error(
+          `Could not extract canonical trade data for duplication: ${file.path}`
+        );
+      }
+
+      
+      
+      if (getTradeIdentityNoteType(tradeData, file.path) !== 'trade') {
+        skipped++;
+        continue;
+      }
+
+      const notes = extractUserOwnedTradeNotes(sourceContent);
+
+      createdFilePaths.push(
+        await tradeService.createTrade(
+          buildDuplicateTradeData(app, tradeData, notes, file.path),
+          {
+            suppressAutoOpen: true,
+            commitEventBatch,
+            creationBatch,
+          }
+        )
+      );
+      processed++;
+    } catch (error) {
+      console.error(`Failed to duplicate trade: ${filePath}`, error);
+      errors++;
+    }
+  }
+
+  try {
+    await creationBatch.flush(() => commitEventBatch.flush());
+  } catch (error) {
+    console.error('Failed to finalize duplicated trades:', error);
+    const survivingFilePaths = await rollbackCreatedDuplicateTrades(
+      app,
+      tradeService,
+      createdFilePaths
+    );
+    processed = survivingFilePaths.length;
+    errors++;
+    if (survivingFilePaths.length > 0) {
+      creationBatch.retainPaths(new Set(survivingFilePaths));
+      commitEventBatch.retainPaths(new Set(survivingFilePaths));
+      try {
+        await creationBatch.flush(() => commitEventBatch.flush());
+      } catch (survivorFinalizationError) {
+        console.error(
+          'Failed to finalize surviving duplicated trades:',
+          survivorFinalizationError
+        );
+        creationBatch.abandon();
+        processed = 0;
+        errors++;
+        return { processed, skipped, errors, total };
+      }
+    }
+    return { processed, skipped, errors, total };
+  }
+
+  return { processed, skipped, errors, total };
 }
 
 export async function batchDeleteTrades(

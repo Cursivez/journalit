@@ -13,6 +13,7 @@ import {
   DrilldownFilterOption,
   DrilldownFilterPanel,
   DrilldownFilterPanelHeader,
+  DrilldownFilterReset,
   DrilldownFilterRow,
 } from '../shared/filters/DrilldownFilterPopover';
 import type { SetupViewModel } from './setupsViewTypes';
@@ -313,6 +314,7 @@ interface SetupOverviewFilterProps {
   selectedDirections: SetupDirectionFilter[];
   onTagsChange: (tags: string[]) => void;
   onDirectionsChange: (directions: SetupDirectionFilter[]) => void;
+  onReset: () => void;
 }
 
 export const SetupOverviewFilter: React.FC<SetupOverviewFilterProps> = ({
@@ -321,6 +323,7 @@ export const SetupOverviewFilter: React.FC<SetupOverviewFilterProps> = ({
   selectedDirections,
   onTagsChange,
   onDirectionsChange,
+  onReset,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [panel, setPanel] = useState<SetupFilterPanel>('root');
@@ -436,6 +439,8 @@ export const SetupOverviewFilter: React.FC<SetupOverviewFilterProps> = ({
         <div className="journalit-drilldown-filter__menu">
           {panel === 'root' ? (
             <DrilldownFilterPanel>
+              <DrilldownFilterReset onClick={onReset} />
+              <DrilldownFilterDivider />
               {(
                 [
                   ['tags', t('setups.view.tags'), tagSummary, Tag],

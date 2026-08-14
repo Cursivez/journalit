@@ -83,6 +83,39 @@ const getStepIndex = (steps: GuideStepDefinition[], stepId: string): number => {
   return steps.findIndex((step) => step.id === stepId);
 };
 
+export const resolveGuidePrimaryClickTarget = (
+  target: HTMLElement
+): HTMLElement | null => {
+  const explicitPrimaryTarget = target.matches('[data-guide-primary-action]')
+    ? target
+    : target.querySelector<HTMLElement>('[data-guide-primary-action]');
+  if (explicitPrimaryTarget) {
+    return explicitPrimaryTarget;
+  }
+
+  const controlledElementId = target.getAttribute('aria-controls');
+  if (controlledElementId) {
+    const controlledElement =
+      target.ownerDocument.getElementById(controlledElementId);
+    const controlledPrimaryTarget = controlledElement?.matches(
+      '[data-guide-primary-action]'
+    )
+      ? controlledElement
+      : controlledElement?.querySelector<HTMLElement>(
+          '[data-guide-primary-action]'
+        );
+    if (controlledPrimaryTarget) {
+      return controlledPrimaryTarget;
+    }
+  }
+
+  return target.matches('button, [role="button"], input, select, a')
+    ? target
+    : target.querySelector<HTMLElement>(
+        'button, [role="button"], input, select, a'
+      );
+};
+
 const resolveGuideForLeaf = (
   viewType: string,
   resolvedGuideId: string | null,
@@ -711,13 +744,7 @@ function useGuideRuntimeModel({
       return;
     }
 
-    const clickableTarget = target.matches(
-      'button, [role="button"], input, select, a'
-    )
-      ? target
-      : target.querySelector<HTMLElement>(
-          'button, [role="button"], input, select, a'
-        );
+    const clickableTarget = resolveGuidePrimaryClickTarget(target);
 
     clickableTarget?.click();
   }, [

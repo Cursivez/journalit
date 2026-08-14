@@ -7,6 +7,7 @@ import { Button } from '../../../components/ui/Button';
 import { DeviceFlowSignInModal } from '../../../components/auth/DeviceFlowSignInModal';
 import { SupportActions } from '../../../components/shared/SupportActions';
 import { BackendSecretStorage } from '../../../services/backend/BackendSecretStorage';
+import { TokenManager } from '../../../services/backend/TokenManager';
 import { SubscriptionTierService } from '../../../services/backend/SubscriptionTierService';
 import {
   SupportErrorDetails,
@@ -188,6 +189,14 @@ function useAuthTabModel({ plugin }: AuthTabProps) {
 
   const handleDeviceFlowSignOut = async () => {
     try {
+      try {
+        await new TokenManager(plugin).revokeRefreshSession();
+      } catch (error) {
+        
+        
+        console.warn('[AuthTab] Backend session revocation failed:', error);
+      }
+
       if (plugin.settings.backendIntegration) {
         BackendSecretStorage.clearAuthToken(plugin);
         plugin.settings.backendIntegration.userEmail = undefined;
@@ -196,6 +205,8 @@ function useAuthTabModel({ plugin }: AuthTabProps) {
         plugin.settings.backendIntegration.authenticatedAccountId = undefined;
         await plugin.saveSettings();
       }
+      window.dispatchEvent(new CustomEvent('journalit:subscription-changed'));
+
       new Notice(t('notice.logout-success'));
       setAuthState((current) => ({
         ...current,
@@ -203,8 +214,6 @@ function useAuthTabModel({ plugin }: AuthTabProps) {
         authError: null,
         signOutReportCopied: false,
       }));
-
-      window.dispatchEvent(new CustomEvent('journalit:subscription-changed'));
     } catch (error) {
       console.error('[AuthTab] Sign-out failed:', error);
       new Notice(t('notice.error.sign-out'));

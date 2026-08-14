@@ -1964,7 +1964,7 @@ button.journalit-toolbar-button.journalit-setups-performance-widget__setup-trigg
 }
 
 .journalit-setup-card
-  .journalit-setup-card__identity
+  .journalit-setup-card__header-meta
   .journalit-setup-card__tag-tooltip-trigger {
   pointer-events: auto;
 }
@@ -2088,21 +2088,14 @@ button.journalit-toolbar-button.journalit-setups-performance-widget__setup-trigg
   color: var(--text-accent);
 }
 
-.journalit-setup-card__identity {
-  display: flex;
-  flex: 1 1 auto;
-  min-width: 0;
-  align-items: center;
-  gap: 6px;
-}
-
-.journalit-setup-card__identity .journalit-setup-card__tag-tooltip-trigger {
+.journalit-setup-card__header-meta .journalit-setup-card__tag-tooltip-trigger {
   position: relative;
   z-index: 3;
   flex: 0 0 auto;
 }
 
 .journalit-setup-card__title {
+  flex: 1 1 auto;
   min-width: 0;
   margin: 0;
   overflow: hidden;

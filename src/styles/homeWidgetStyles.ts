@@ -1296,12 +1296,21 @@ export const HOME_WIDGET_STYLES = `
     background-color: var(--color-red);
   }
 
-  .journalit-home-weekly__bar--neutral {
+  .journalit-home-weekly__bar--neutral,
+  .journalit-home-weekly__bar--empty,
+  .journalit-home-weekly__bar--future {
     background-color: var(--background-modifier-border);
   }
 
-  .journalit-home-weekly__bar--future {
-    background-color: var(--background-modifier-border);
+  .journalit-home-weekly__bar--breakeven {
+    background:
+      repeating-linear-gradient(
+        135deg,
+        var(--text-faint) 0 2px,
+        transparent 2px 6px
+      ),
+      var(--background-modifier-border);
+    border: 1px solid var(--background-modifier-border-hover);
   }
 
   .journalit-home-weekly__day-label {
@@ -2532,5 +2541,177 @@ export const HOME_WIDGET_STYLES = `
   .journalit-home-account-progress__state-icon {
     color: var(--text-muted);
     opacity: 0.5;
+  }
+
+  .journalit-home-key-events {
+    --journalit-home-key-events-red: var(--color-red, #e53935);
+    --journalit-home-key-events-orange: var(--color-orange, #fb8c00);
+    --journalit-home-key-events-yellow: var(--color-yellow, #fdd835);
+    --journalit-home-key-events-gray: var(--text-muted, #888888);
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    padding: 0;
+    box-sizing: border-box;
+    cursor: pointer;
+    border-radius: 5px;
+    outline: none;
+  }
+
+  .journalit-home-key-events:focus-visible {
+    box-shadow: inset 0 0 0 2px var(--interactive-accent);
+  }
+
+  .journalit-home-key-events__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    flex: 0 0 auto;
+    margin-bottom: 8px;
+  }
+
+  .journalit-home-key-events__header-title {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    min-width: 0;
+  }
+
+  .journalit-home-key-events__count {
+    min-width: 20px;
+    height: 18px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 6px;
+    border-radius: 3px;
+    background-color: var(--background-modifier-hover);
+    color: var(--text-muted);
+    font-size: 11px;
+    font-weight: 600;
+    line-height: 1;
+    box-sizing: border-box;
+  }
+
+  .journalit-home-key-events__chevron {
+    flex: 0 0 auto;
+    color: var(--text-faint);
+  }
+
+  .journalit-home-key-events__list,
+  .journalit-home-key-events__loading {
+    flex: 1;
+    min-height: 0;
+    overflow-x: hidden;
+    overflow-y: auto;
+    padding-right: 10px;
+    scrollbar-gutter: stable;
+  }
+
+  .journalit-home-key-events__loading {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .journalit-home-key-events__group + .journalit-home-key-events__group {
+    margin-top: 8px;
+  }
+
+  .journalit-home-key-events__group--past .journalit-home-key-events__group-label,
+  .journalit-home-key-events__group--past .journalit-home-key-events__item-title,
+  .journalit-home-key-events__group--past .journalit-home-key-events__item-time {
+    color: var(--text-faint);
+    opacity: 0.65;
+  }
+
+  .journalit-home-key-events__group-label {
+    padding: 2px 0 3px;
+    color: var(--text-faint);
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+  }
+
+  .journalit-home-key-events__item {
+    min-height: 32px;
+    display: grid;
+    grid-template-columns: 3px minmax(0, 1fr) minmax(0, auto);
+    align-items: center;
+    gap: 10px;
+  }
+
+  .journalit-home-key-events__rail {
+    width: 3px;
+    height: 22px;
+    border-radius: 3px;
+  }
+
+  .journalit-home-key-events__rail--red {
+    background: var(--journalit-home-key-events-red);
+  }
+
+  .journalit-home-key-events__rail--orange {
+    background: var(--journalit-home-key-events-orange);
+  }
+
+  .journalit-home-key-events__rail--yellow {
+    background: var(--journalit-home-key-events-yellow);
+  }
+
+  .journalit-home-key-events__rail--gray {
+    background: var(--journalit-home-key-events-gray);
+  }
+
+  .journalit-home-key-events__item-title {
+    min-width: 0;
+    overflow: hidden;
+    color: var(--text-normal);
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1.25;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .journalit-home-key-events__item-time {
+    max-width: 120px;
+    overflow: hidden;
+    color: var(--text-muted);
+    font-size: 11px;
+    justify-self: end;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .journalit-home-key-events__empty {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+  }
+
+  .journalit-home-key-events__empty-title {
+    color: var(--text-muted);
+    font-size: 12px;
+  }
+
+  .journalit-home-key-events__loading-row {
+    min-height: 32px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .journalit-home-key-events__loading-copy {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
   }
 `;

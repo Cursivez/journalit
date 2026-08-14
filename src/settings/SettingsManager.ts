@@ -30,6 +30,10 @@ import { normalizeGalleryFolders } from './settingsNormalization';
 import { normalizeHomeBackgroundImagePath } from '../components/home/homeBackgroundUtils';
 import { migrateLegacyMetaTraderBrokerSettings } from '../services/tradeImport/brokerIds';
 import type { LocalCSVTemplate } from '../services/csv/types';
+import type {
+  PerformanceBreakdownMetric,
+  PerformanceBreakdownViewMode,
+} from './types';
 
 
 const BACKUP_FILENAME = 'data.backup.json';
@@ -38,6 +42,22 @@ const BACKUP_FILENAME = 'data.backup.json';
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
+}
+
+function normalizePerformanceBreakdownMetric(
+  value: unknown,
+  fallback: PerformanceBreakdownMetric
+): PerformanceBreakdownMetric {
+  return value === 'net' || value === 'winRate' ? value : fallback;
+}
+
+function normalizePerformanceBreakdownViewMode(
+  value: unknown,
+  fallback: PerformanceBreakdownViewMode
+): PerformanceBreakdownViewMode {
+  return value === 'bestAndWorst' || value === 'best' || value === 'worst'
+    ? value
+    : fallback;
 }
 
 function isCSVTemplateAssetType(
@@ -1091,6 +1111,30 @@ export class SettingsManager {
           saved.dashboard.weekdayPerformanceMetric ||
           defaults.dashboard?.weekdayPerformanceMetric ||
           'net',
+        tickerPerformanceMetric:
+          saved.dashboard.tickerPerformanceMetric ||
+          defaults.dashboard?.tickerPerformanceMetric ||
+          'net',
+        tickerPerformanceViewMode:
+          saved.dashboard.tickerPerformanceViewMode ||
+          defaults.dashboard?.tickerPerformanceViewMode ||
+          'bestAndWorst',
+        setupPerformanceMetric: normalizePerformanceBreakdownMetric(
+          saved.dashboard.setupPerformanceMetric,
+          defaults.dashboard?.setupPerformanceMetric || 'net'
+        ),
+        setupPerformanceViewMode: normalizePerformanceBreakdownViewMode(
+          saved.dashboard.setupPerformanceViewMode,
+          defaults.dashboard?.setupPerformanceViewMode || 'bestAndWorst'
+        ),
+        tagPerformanceMetric: normalizePerformanceBreakdownMetric(
+          saved.dashboard.tagPerformanceMetric,
+          defaults.dashboard?.tagPerformanceMetric || 'net'
+        ),
+        tagPerformanceViewMode: normalizePerformanceBreakdownViewMode(
+          saved.dashboard.tagPerformanceViewMode,
+          defaults.dashboard?.tagPerformanceViewMode || 'bestAndWorst'
+        ),
 
         
         defaultFilters: {

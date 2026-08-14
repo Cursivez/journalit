@@ -589,7 +589,7 @@ const ko: Partial<Lang> = {
     'This picker shows the widgets you can add for this review type.',
   'layoutBuilder.guide.choose-widget.title': 'Choose a widget',
   'layoutBuilder.guide.choose-widget.description':
-    'This list shows every widget you can add for this review type. Pick any widget you want, or press Next and Journalit will choose the first one for you.',
+    'Type in the search box to find a widget by name, description, or category, then choose it. You can also press Next and Journalit will choose the first result for you.',
   'layoutBuilder.guide.widget-library-docs.title':
     'Use the widget library if you get stuck',
   'layoutBuilder.guide.widget-library-docs.description':
@@ -635,8 +635,6 @@ const ko: Partial<Lang> = {
   'tradelog.guide.multi-select.description':
     'Click this button to select several trades at once. When multi-select is on, row clicks select trades instead of opening them.',
   'tradelog.guide.batch-actions.title': 'These are your batch actions',
-  'tradelog.guide.batch-actions.description':
-    'Use this bar to select all visible trades, clear your selection, mark trades as reviewed, add setups, add mistakes, or delete several trades at once. You can also shift-click to select a range of trades.',
   'tradelog.guide.column-settings.title': 'Open column settings',
   'tradelog.guide.column-settings.description':
     'Click this button to choose which columns are shown and how dense or detailed the table should feel.',
@@ -668,6 +666,39 @@ const ko: Partial<Lang> = {
   
   'dashboard.title': '대시보드',
   'dashboard.no-data': '사용 가능한 거래 데이터가 없습니다',
+  'dashboard.widgets.setup-performance.title': '셋업 성과',
+  'dashboard.widgets.setup-performance.description':
+    '셋업별 성과를 비교하는 순위 막대 차트',
+  'dashboard.widgets.setup-performance.empty': '셋업 성과 데이터가 없습니다',
+  'dashboard.widgets.setup-performance.masked-label': '셋업',
+  'dashboard.widgets.tag-performance.title': '태그 성과',
+  'dashboard.widgets.tag-performance.description':
+    '태그별 성과를 비교하는 순위 막대 차트',
+  'dashboard.widgets.tag-performance.empty': '태그 성과 데이터가 없습니다',
+  'dashboard.widgets.tag-performance.masked-label': '태그',
+  'dashboard.widgets.ticker-performance.title': '티커 성과',
+  'dashboard.widgets.ticker-performance.metric-aria': '지표',
+  'dashboard.widgets.ticker-performance.view-aria': '보기 모드',
+  'dashboard.widgets.ticker-performance.view.best-and-worst': '최고 및 최저',
+  'dashboard.widgets.ticker-performance.view.best': '상위 10개',
+  'dashboard.widgets.ticker-performance.view.worst': '하위 10개',
+  'dashboard.widgets.ticker-performance.metric.total-pnl': '총 P&L',
+  'dashboard.widgets.ticker-performance.metric.total-r': '총 R',
+  'dashboard.widgets.ticker-performance.metric.win-rate': '승률',
+  'dashboard.widgets.ticker-performance.tooltip.ticker': '티커: {ticker}',
+  'dashboard.widgets.ticker-performance.tooltip.trades': '거래: {count}',
+  'dashboard.widgets.ticker-performance.tooltip.win-rate':
+    '승률: {rate} ({wins}승 / {losses}패)',
+
+  'dashboard.widgets.ticker-performance.empty': '티커 성과 데이터가 없습니다',
+  'dashboard.widgets.ticker-performance.empty-submessage':
+    '현재 필터와 일치하는 티커가 있는 종료 거래가 없습니다.',
+  'dashboard.widgets.ticker-performance.masked-ticker': '티커',
+  'dashboard.widgets.ticker-performance.omitted-count': '생략: {count}',
+
+  'widget.tickerPerformance.name': '티커 성과',
+  'widget.tickerPerformance.description':
+    '티커별 성과를 비교하는 순위 막대 차트',
 
   
   'dashboard.filter.accounts.all': '모든 계좌',
@@ -1115,6 +1146,10 @@ const ko: Partial<Lang> = {
   'chart.tooltip.account': 'Account',
   'chart.tooltip.accounts-list': '{accounts}',
   'chart.tooltip.more-accounts': '+{count} more',
+  'widget.tag-performance.name': '태그 성과',
+  'widget.tag-performance.description': '거래 태그별 성과 분석',
+  'widget.table.header.tag': '태그',
+  'widget.empty.no-tag-data': '이 기간에 사용할 수 있는 태그 데이터가 없습니다',
   'widget.account-breakdown.name': 'Account Breakdown',
   'widget.account-breakdown.description':
     'Compare performance across accounts in this review period',
@@ -1691,6 +1726,7 @@ const ko: Partial<Lang> = {
   'home.filters.trade-type': '거래 유형',
   'home.filters.accounts': '계정',
   'home.filters.back': '뒤로',
+  'filter.reset': '필터 초기화',
   'home.guide.modes.title': '마지막으로 하나 더: 대시보드',
   'home.guide.modes.description':
     '개요와 대시보드는 이 페이지를 공유합니다. 지금 대시보드로 전환하여 성과 통계에 대한 짧은 투어를 계속하세요.',
@@ -1715,6 +1751,11 @@ const ko: Partial<Lang> = {
     '대시보드 모드에서도 동일한 배경 이미지를 사용합니다.',
   'settings.general.home-background-dashboard-aria':
     '홈 배경을 대시보드에 표시',
+  'datepicker.placeholder.second': 'SS',
+  'settings.general.show-seconds': '거래 시간에 초 표시',
+  'settings.general.show-seconds-desc':
+    '거래 진입 및 청산 시간을 입력할 때 초를 표시합니다.',
+  'settings.general.show-seconds-aria': '거래 시간에 초 표시',
 };
 
 export default ko;

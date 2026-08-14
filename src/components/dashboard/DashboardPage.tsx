@@ -1,14 +1,15 @@
 import React, { useCallback, useEffect, useMemo, useRef } from 'react';
 import type { WorkspaceLeaf } from 'obsidian';
+import type JournalitPlugin from '../../main';
 import { FilterControls } from './components/FilterControls';
 import { DashboardContent } from './components/DashboardContent';
 import { useDashboard } from './hooks';
+import type { FilterState } from './DashboardView';
 import {
   DashboardDataProvider,
   useDashboardData,
 } from './context/DashboardDataContext';
-import { usePlugin } from '../../hooks/usePlugin';
-import { useEventBusMultiple } from '../../hooks/useEventBus';
+import { useDebounced, useEventBusMultiple, usePlugin } from '../../hooks';
 import {
   useGuideAction,
   useGuideBackHandler,
@@ -145,6 +146,101 @@ const DashboardGuideCoordinator: React.FC<DashboardGuideCoordinatorProps> = ({
   return null;
 };
 
+interface DashboardBodyProps {
+  plugin: JournalitPlugin;
+  leaf: WorkspaceLeaf;
+  modeToggle: React.ReactNode;
+  filters: FilterState;
+  activeMetrics: string[];
+  activeWidgets: string[];
+  handleFilterChange: (filters: FilterState) => void;
+  toggleEditMode: () => void;
+  openUnifiedSelector: () => void;
+  closeUnifiedSelector: () => void;
+  handleAddMetric: (metricId: string) => void;
+  handleAddWidget: (widgetId: string) => void;
+  isActive: boolean;
+  isLoading: boolean;
+  isEditing: boolean;
+  showUnifiedSelector: boolean;
+}
+
+const DashboardContentWrapper: React.FC<
+  Omit<React.ComponentProps<typeof DashboardContent>, 'dashboardData'>
+> = (props) => {
+  const { dashboardData } = useDashboardData();
+  return <DashboardContent {...props} dashboardData={dashboardData} />;
+};
+
+
+
+
+
+
+const DashboardBody: React.FC<DashboardBodyProps> = ({
+  plugin,
+  leaf,
+  modeToggle,
+  filters,
+  activeMetrics,
+  activeWidgets,
+  handleFilterChange,
+  toggleEditMode,
+  openUnifiedSelector,
+  closeUnifiedSelector,
+  handleAddMetric,
+  handleAddWidget,
+  isActive,
+  isLoading,
+  isEditing,
+  showUnifiedSelector,
+}) => {
+  
+  const debouncedFilters = useDebounced(filters, 150);
+
+  return (
+    <DashboardDataProvider
+      app={plugin.app}
+      tradeService={plugin.tradeService}
+      filters={debouncedFilters}
+      defaultRiskAmount={plugin.settings.trade?.defaultRiskAmount}
+      plugin={plugin}
+      isActive={isActive}
+    >
+      <div className="journalit-dashboard-view-container journalit-dashboard-view--embedded">
+        <div className="journalit-dashboard-view">
+          <DashboardGuideCoordinator
+            leaf={leaf}
+            isActive={isActive}
+            isEditing={isEditing}
+            showUnifiedSelector={showUnifiedSelector}
+          />
+          <FilterControls
+            filters={filters}
+            onFilterChange={handleFilterChange}
+            isEditing={isEditing}
+            onToggleEditMode={toggleEditMode}
+            onOpenAddWidget={openUnifiedSelector}
+            modeToggle={modeToggle}
+          />
+          <DashboardContentWrapper
+            isLoading={isLoading}
+            filters={debouncedFilters}
+            isEditing={isEditing}
+            showUnifiedSelector={showUnifiedSelector}
+            activeMetrics={activeMetrics}
+            activeWidgets={activeWidgets}
+            onAddMetric={handleAddMetric}
+            onAddWidget={handleAddWidget}
+            onCloseSelector={closeUnifiedSelector}
+            openUnifiedSelector={openUnifiedSelector}
+          />
+        </div>
+      </div>
+    </DashboardDataProvider>
+  );
+};
+
 interface DashboardPageProps {
   leaf: WorkspaceLeaf;
   isActive: boolean;
@@ -164,6 +260,7 @@ export const DashboardPage = React.memo(function DashboardPage({
   const suppressWidgetPickerAutoOpenRef = useRef(false);
   const {
     filters,
+    isFiltersHydrated,
     isLoading,
     isEditing,
     showUnifiedSelector,
@@ -231,58 +328,30 @@ export const DashboardPage = React.memo(function DashboardPage({
     showUnifiedSelector,
   ]);
 
-  if (!plugin) {
+  if (!plugin || !isFiltersHydrated) {
     return <div className="journalit-dashboard-view">Loading…</div>;
   }
 
   return (
-    <DashboardDataProvider
-      app={plugin.app}
-      tradeService={plugin.tradeService}
-      filters={filters}
-      defaultRiskAmount={plugin.settings.trade?.defaultRiskAmount}
+    <DashboardBody
       plugin={plugin}
+      leaf={leaf}
+      modeToggle={modeToggle}
+      filters={filters}
+      activeMetrics={activeMetrics}
+      activeWidgets={activeWidgets}
+      handleFilterChange={handleFilterChange}
+      toggleEditMode={toggleEditMode}
+      openUnifiedSelector={openUnifiedSelector}
+      closeUnifiedSelector={closeUnifiedSelector}
+      handleAddMetric={handleAddMetric}
+      handleAddWidget={handleAddWidget}
       isActive={isActive}
-    >
-      <div className="journalit-dashboard-view-container journalit-dashboard-view--embedded">
-        <div className="journalit-dashboard-view">
-          <DashboardGuideCoordinator
-            leaf={leaf}
-            isActive={isActive}
-            isEditing={isEditing}
-            showUnifiedSelector={showUnifiedSelector}
-          />
-          <FilterControls
-            filters={filters}
-            onFilterChange={handleFilterChange}
-            isEditing={isEditing}
-            onToggleEditMode={toggleEditMode}
-            onOpenAddWidget={openUnifiedSelector}
-            modeToggle={modeToggle}
-          />
-          <DashboardContentWrapper
-            isLoading={isLoading}
-            filters={filters}
-            isEditing={isEditing}
-            showUnifiedSelector={showUnifiedSelector}
-            activeMetrics={activeMetrics}
-            activeWidgets={activeWidgets}
-            onAddMetric={handleAddMetric}
-            onAddWidget={handleAddWidget}
-            onCloseSelector={closeUnifiedSelector}
-            openUnifiedSelector={openUnifiedSelector}
-          />
-        </div>
-      </div>
-    </DashboardDataProvider>
+      isLoading={isLoading}
+      isEditing={isEditing}
+      showUnifiedSelector={showUnifiedSelector}
+    />
   );
 });
-
-const DashboardContentWrapper: React.FC<
-  Omit<React.ComponentProps<typeof DashboardContent>, 'dashboardData'>
-> = (props) => {
-  const { dashboardData } = useDashboardData();
-  return <DashboardContent {...props} dashboardData={dashboardData} />;
-};
 
 DashboardPage.displayName = 'DashboardPage';

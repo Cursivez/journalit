@@ -383,6 +383,8 @@ interface TradeSettings {
   
   use24HourTime?: boolean;
   
+  showSeconds?: boolean;
+  
   skipWeekends: boolean;
   
   weekStartDay?: WeekStartDay;
@@ -456,6 +458,8 @@ interface DRCSettings {
 
 
 export type WeekdayPerformanceMetric = 'net' | 'winRate' | 'trades';
+export type PerformanceBreakdownMetric = 'net' | 'winRate';
+export type PerformanceBreakdownViewMode = 'bestAndWorst' | 'best' | 'worst';
 
 export interface DashboardSettings {
   
@@ -478,6 +482,18 @@ export interface DashboardSettings {
   activeLayout: string;
   
   weekdayPerformanceMetric?: WeekdayPerformanceMetric;
+  
+  tickerPerformanceMetric?: PerformanceBreakdownMetric;
+  
+  tickerPerformanceViewMode?: PerformanceBreakdownViewMode;
+  
+  setupPerformanceMetric?: PerformanceBreakdownMetric;
+  
+  setupPerformanceViewMode?: PerformanceBreakdownViewMode;
+  
+  tagPerformanceMetric?: PerformanceBreakdownMetric;
+  
+  tagPerformanceViewMode?: PerformanceBreakdownViewMode;
   
   defaultFilters: FilterState;
   
@@ -1035,6 +1051,10 @@ export interface BackendIntegrationSettings {
   
   authToken?: string;
   
+  accessTokenExpiresAt?: string;
+  
+  authSessionId?: string;
+  
   userEmail?: string;
   
   subscriptionTier?: 'free' | 'premium';
@@ -1317,6 +1337,7 @@ export const DEFAULT_SETTINGS: JournalitSettings = {
     autoOpenCreatedTrades: true,
     dateFormat: 'DDMMYY',
     use24HourTime: false, 
+    showSeconds: false,
     skipWeekends: true,
     weekStartDay: 'monday',
     useDirectPnLInput: false, 
@@ -1494,6 +1515,12 @@ export const DEFAULT_SETTINGS: JournalitSettings = {
     },
     activeLayout: 'Default',
     weekdayPerformanceMetric: 'net',
+    tickerPerformanceMetric: 'net',
+    tickerPerformanceViewMode: 'bestAndWorst',
+    setupPerformanceMetric: 'net',
+    setupPerformanceViewMode: 'bestAndWorst',
+    tagPerformanceMetric: 'net',
+    tagPerformanceViewMode: 'bestAndWorst',
     defaultFilters: {
       dateRange: [null, null],
       accounts: [],

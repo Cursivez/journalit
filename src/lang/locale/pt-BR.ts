@@ -602,7 +602,7 @@ const ptBR: Partial<Lang> = {
     'This picker shows the widgets you can add for this review type.',
   'layoutBuilder.guide.choose-widget.title': 'Choose a widget',
   'layoutBuilder.guide.choose-widget.description':
-    'This list shows every widget you can add for this review type. Pick any widget you want, or press Next and Journalit will choose the first one for you.',
+    'Type in the search box to find a widget by name, description, or category, then choose it. You can also press Next and Journalit will choose the first result for you.',
   'layoutBuilder.guide.widget-library-docs.title':
     'Use the widget library if you get stuck',
   'layoutBuilder.guide.widget-library-docs.description':
@@ -649,8 +649,6 @@ const ptBR: Partial<Lang> = {
   'tradelog.guide.multi-select.description':
     'Click this button to select several trades at once. When multi-select is on, row clicks select trades instead of opening them.',
   'tradelog.guide.batch-actions.title': 'These are your batch actions',
-  'tradelog.guide.batch-actions.description':
-    'Use this bar to select all visible trades, clear your selection, mark trades as reviewed, add setups, add mistakes, or delete several trades at once. You can also shift-click to select a range of trades.',
   'tradelog.guide.column-settings.title': 'Open column settings',
   'tradelog.guide.column-settings.description':
     'Click this button to choose which columns are shown and how dense or detailed the table should feel.',
@@ -682,6 +680,43 @@ const ptBR: Partial<Lang> = {
   
   'dashboard.title': 'Painel',
   'dashboard.no-data': 'Nenhum dado de trading disponível',
+  'dashboard.widgets.setup-performance.title': 'Desempenho por setups',
+  'dashboard.widgets.setup-performance.description':
+    'Gráfico de barras classificado comparando o desempenho por setup',
+  'dashboard.widgets.setup-performance.empty':
+    'Nenhum dado de desempenho por setup',
+  'dashboard.widgets.setup-performance.masked-label': 'Setup',
+  'dashboard.widgets.tag-performance.title': 'Desempenho por tags',
+  'dashboard.widgets.tag-performance.description':
+    'Gráfico de barras classificado comparando o desempenho por tag',
+  'dashboard.widgets.tag-performance.empty':
+    'Nenhum dado de desempenho por tag',
+  'dashboard.widgets.tag-performance.masked-label': 'Tag',
+  'dashboard.widgets.ticker-performance.title': 'Desempenho por ticker',
+  'dashboard.widgets.ticker-performance.metric-aria': 'Métrica',
+  'dashboard.widgets.ticker-performance.view-aria': 'Modo de visualização',
+  'dashboard.widgets.ticker-performance.view.best-and-worst':
+    'Melhores e piores',
+  'dashboard.widgets.ticker-performance.view.best': 'Melhores 10',
+  'dashboard.widgets.ticker-performance.view.worst': 'Piores 10',
+  'dashboard.widgets.ticker-performance.metric.total-pnl': 'P&L total',
+  'dashboard.widgets.ticker-performance.metric.total-r': 'R total',
+  'dashboard.widgets.ticker-performance.metric.win-rate': 'Taxa de vitória',
+  'dashboard.widgets.ticker-performance.tooltip.ticker': 'Ticker: {ticker}',
+  'dashboard.widgets.ticker-performance.tooltip.trades': 'Operações: {count}',
+  'dashboard.widgets.ticker-performance.tooltip.win-rate':
+    'Taxa de vitória: {rate} ({wins}V / {losses}D)',
+
+  'dashboard.widgets.ticker-performance.empty':
+    'Sem dados de desempenho por ticker',
+  'dashboard.widgets.ticker-performance.empty-submessage':
+    'Nenhuma operação fechada com ticker corresponde aos filtros atuais.',
+  'dashboard.widgets.ticker-performance.masked-ticker': 'Ticker',
+  'dashboard.widgets.ticker-performance.omitted-count': 'Omitidos: {count}',
+
+  'widget.tickerPerformance.name': 'Desempenho por ticker',
+  'widget.tickerPerformance.description':
+    'Gráfico de barras ordenado comparando o desempenho por ticker',
 
   
   'dashboard.filter.accounts.all': 'Todas as contas',
@@ -1187,6 +1222,11 @@ const ptBR: Partial<Lang> = {
   'chart.tooltip.account': 'Account',
   'chart.tooltip.accounts-list': '{accounts}',
   'chart.tooltip.more-accounts': '+{count} more',
+  'widget.tag-performance.name': 'Desempenho por tags',
+  'widget.tag-performance.description':
+    'Detalhamento do desempenho por tag de operação',
+  'widget.table.header.tag': 'Tag',
+  'widget.empty.no-tag-data': 'Nenhum dado de tag disponível para este período',
   'widget.account-breakdown.name': 'Account Breakdown',
   'widget.account-breakdown.description':
     'Compare performance across accounts in this review period',
@@ -1767,6 +1807,7 @@ const ptBR: Partial<Lang> = {
   'home.filters.trade-type': 'Tipo de operação',
   'home.filters.accounts': 'Contas',
   'home.filters.back': 'Voltar',
+  'filter.reset': 'Redefinir filtros',
   'home.guide.modes.title': 'Mais uma coisa: o Painel',
   'home.guide.modes.description':
     'A Visão geral e o Painel compartilham esta página. Mude para o Painel agora para continuar com um breve tour pelas suas estatísticas de desempenho.',
@@ -1793,6 +1834,12 @@ const ptBR: Partial<Lang> = {
     'Usa a mesma imagem de fundo no modo Dashboard.',
   'settings.general.home-background-dashboard-aria':
     'Mostrar o fundo da Página inicial no Dashboard',
+  'datepicker.placeholder.second': 'SS',
+  'settings.general.show-seconds': 'Mostrar segundos nos horários da operação',
+  'settings.general.show-seconds-desc':
+    'Exibir segundos ao inserir os horários de entrada e saída.',
+  'settings.general.show-seconds-aria':
+    'Mostrar segundos nos horários da operação',
 };
 
 export default ptBR;

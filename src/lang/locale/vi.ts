@@ -687,6 +687,10 @@ const vi: Lang = {
   'notice.setups-added': 'Đã thêm thiết lập cho giao dịch {count}',
   'notice.tags-added': 'Đã thêm thẻ vào giao dịch {count}',
   'notice.mistakes-added': 'Đã thêm lỗi vào giao dịch {count}',
+  'notice.trades-duplicated.one': 'Đã nhân bản {count} giao dịch',
+  'notice.trades-duplicated.few': 'Đã nhân bản {count} giao dịch',
+  'notice.trades-duplicated.many': 'Đã nhân bản {count} giao dịch',
+  'notice.trades-duplicated.other': 'Đã nhân bản {count} giao dịch',
   'notice.trades-deleted.one': 'Đã xóa giao dịch {count}',
   'notice.trades-deleted.few': 'Đã xóa giao dịch {count}',
   'notice.trades-deleted.many': 'Đã xóa giao dịch {count}',
@@ -758,6 +762,7 @@ const vi: Lang = {
   'notice.error.add-setups': 'Lỗi khi thêm thiết lập: {error}',
   'notice.error.add-tags': 'Lỗi khi thêm thẻ: {error}',
   'notice.error.add-mistakes': 'Lỗi thêm lỗi: {error}',
+  'notice.error.duplicate-trades': 'Lỗi nhân bản giao dịch: {error}',
   'notice.error.delete-trades': 'Lỗi xóa giao dịch: {error}',
   'notice.error.csv-validation':
     'Xác thực CSV/XLSX/XLS không thành công: {errors}',
@@ -822,7 +827,7 @@ const vi: Lang = {
   'tradelog.guide.batch-actions.title':
     'Đây là những hành động hàng loạt của bạn',
   'tradelog.guide.batch-actions.description':
-    'Sử dụng thanh này để chọn tất cả các giao dịch hiển thị, xóa lựa chọn của bạn, đánh dấu các giao dịch là đã xem xét, thêm thiết lập, thêm lỗi hoặc xóa một số giao dịch cùng một lúc. Bạn cũng có thể nhấn shift để chọn nhiều giao dịch.',
+    'Sử dụng thanh này để chọn tất cả các giao dịch hiển thị, xóa lựa chọn của bạn, đánh dấu các giao dịch là đã xem xét, thêm thiết lập, thêm lỗi, nhân bản giao dịch hoặc xóa một số giao dịch cùng một lúc. Bạn cũng có thể nhấn shift để chọn nhiều giao dịch.',
   'tradelog.guide.column-settings.title': 'Mở cài đặt cột',
   'tradelog.guide.column-settings.description':
     'Nhấp vào nút này để chọn cột nào được hiển thị và mức độ dày đặc hoặc chi tiết của bảng.',
@@ -942,7 +947,7 @@ const vi: Lang = {
     'Bộ chọn này hiển thị các tiện ích bạn có thể thêm cho loại đánh giá này.',
   'layoutBuilder.guide.choose-widget.title': 'Chọn một tiện ích',
   'layoutBuilder.guide.choose-widget.description':
-    'Danh sách này hiển thị mọi tiện ích bạn có thể thêm cho loại đánh giá này. Chọn bất kỳ tiện ích nào bạn muốn hoặc nhấn Tiếp theo và Journalit sẽ chọn tiện ích đầu tiên cho bạn.',
+    'Nhập tên, mô tả hoặc danh mục vào ô tìm kiếm, sau đó chọn tiện ích. Bạn cũng có thể nhấn Tiếp theo để Journalit chọn kết quả đầu tiên.',
   'layoutBuilder.guide.widget-library-docs.title':
     'Sử dụng thư viện tiện ích nếu bạn gặp khó khăn',
   'layoutBuilder.guide.widget-library-docs.description':
@@ -1084,6 +1089,17 @@ const vi: Lang = {
   'tradelog.batch.add-mistakes.label': 'Thêm sai lầm',
   'tradelog.batch.adding': 'Đang thêm...',
   'tradelog.batch.add-count': 'Thêm ({count})',
+  'tradelog.batch.duplicate.aria': 'Nhân bản giao dịch',
+  'tradelog.batch.duplicate.label': 'Nhân bản',
+  'tradelog.batch.duplicating': 'Đang nhân bản...',
+  'tradelog.batch.duplicate-skipped.one':
+    'Không thể nhân bản {count} ghi chú đã chọn',
+  'tradelog.batch.duplicate-skipped.few':
+    'Không thể nhân bản {count} ghi chú đã chọn',
+  'tradelog.batch.duplicate-skipped.many':
+    'Không thể nhân bản {count} ghi chú đã chọn',
+  'tradelog.batch.duplicate-skipped.other':
+    'Không thể nhân bản {count} ghi chú đã chọn',
   'tradelog.batch.delete.aria': 'Xóa giao dịch',
   'tradelog.batch.delete.title': 'Xóa các giao dịch đã chọn',
   'tradelog.batch.deleting': 'Đang xóa...',
@@ -1307,6 +1323,40 @@ const vi: Lang = {
   'dashboard.widgets.hourly-performance.metric.avg-pnl': 'P&L TB',
   'dashboard.widgets.hourly-performance.metric.total-r': 'Tổng R',
   'dashboard.widgets.hourly-performance.metric.avg-r': 'R TB',
+  'dashboard.widgets.setup-performance.title': 'Hiệu suất thiết lập',
+  'dashboard.widgets.setup-performance.description':
+    'Biểu đồ thanh xếp hạng so sánh hiệu suất theo thiết lập',
+  'dashboard.widgets.setup-performance.empty':
+    'Không có dữ liệu hiệu suất thiết lập',
+  'dashboard.widgets.setup-performance.masked-label': 'Thiết lập',
+  'dashboard.widgets.tag-performance.title': 'Hiệu suất theo thẻ',
+  'dashboard.widgets.tag-performance.description':
+    'Biểu đồ thanh xếp hạng so sánh hiệu suất theo thẻ',
+  'dashboard.widgets.tag-performance.empty':
+    'Không có dữ liệu hiệu suất theo thẻ',
+  'dashboard.widgets.tag-performance.masked-label': 'Thẻ',
+  'dashboard.widgets.ticker-performance.title': 'Hiệu suất theo mã',
+  'dashboard.widgets.ticker-performance.metric-aria': 'Chỉ số',
+  'dashboard.widgets.ticker-performance.view-aria': 'Chế độ xem',
+  'dashboard.widgets.ticker-performance.view.best-and-worst':
+    'Tốt nhất & kém nhất',
+  'dashboard.widgets.ticker-performance.view.best': '10 mã tốt nhất',
+  'dashboard.widgets.ticker-performance.view.worst': '10 mã kém nhất',
+  'dashboard.widgets.ticker-performance.metric.total-pnl': 'Tổng P&L',
+  'dashboard.widgets.ticker-performance.metric.total-r': 'Tổng R',
+  'dashboard.widgets.ticker-performance.metric.win-rate': 'Tỷ lệ thắng',
+  'dashboard.widgets.ticker-performance.tooltip.ticker': 'Mã: {ticker}',
+  'dashboard.widgets.ticker-performance.tooltip.trades': 'Giao dịch: {count}',
+  'dashboard.widgets.ticker-performance.tooltip.win-rate':
+    'Tỷ lệ thắng: {rate} ({wins}W / {losses}L)',
+
+  'dashboard.widgets.ticker-performance.empty':
+    'Không có dữ liệu hiệu suất theo mã',
+  'dashboard.widgets.ticker-performance.empty-submessage':
+    'Không có giao dịch đã đóng nào có mã khớp với bộ lọc hiện tại.',
+  'dashboard.widgets.ticker-performance.masked-ticker': 'Mã',
+  'dashboard.widgets.ticker-performance.omitted-count': 'Đã bỏ qua: {count}',
+
   'dashboard.widgets.rollingStats.title': 'Trung bình trượt thắng/thua',
   'dashboard.widgets.rollingStats.period': 'Giai đoạn',
   'dashboard.widgets.rollingStats.trades': 'Giao dịch {count}',
@@ -1365,6 +1415,11 @@ const vi: Lang = {
   'home.widget.weekly-summary.name': 'Tóm tắt hàng tuần',
   'home.widget.weekly-summary.description':
     'Số liệu tuần hiện tại với biểu đồ thu nhỏ P&L hàng ngày',
+  'home.widget.key-events.name': 'Sự kiện chính',
+  'home.widget.key-events.description':
+    'Tin tức và sự kiện thị trường quan trọng từ bản đánh giá tuần hiện tại',
+  'home.widget.key-events.empty-title': 'Chưa có sự kiện chính',
+  'home.widget.key-events.open-aria': 'Mở bản đánh giá của tuần này',
   'home.widget.position-size.name': 'Công cụ tính kích thước vị thế',
   'home.widget.position-size.description':
     'Tính toán quy mô vị thế dựa trên tỷ lệ phần trăm rủi ro tài khoản',
@@ -1847,6 +1902,7 @@ const vi: Lang = {
   'datepicker.placeholder.year': 'YY',
   'datepicker.placeholder.hour': 'HH',
   'datepicker.placeholder.minute': 'MM',
+  'datepicker.placeholder.second': 'SS',
   'common.loading': 'Đang tải...',
   'common.error': 'Lỗi',
   'common.success': 'Thành công',
@@ -3544,6 +3600,11 @@ const vi: Lang = {
     'Hiển thị thời gian ở định dạng 24 giờ (14:30) thay vì định dạng 12 giờ AM/PM (2:30 PM)',
   'settings.general.use-24-hour-time-aria':
     'Sử dụng định dạng thời gian 24 giờ',
+  'settings.general.show-seconds': 'Hiển thị giây trong thời gian giao dịch',
+  'settings.general.show-seconds-desc':
+    'Hiển thị giây khi nhập thời gian vào và thoát lệnh.',
+  'settings.general.show-seconds-aria':
+    'Hiển thị giây trong thời gian giao dịch',
   'settings.general.skip-weekends': 'Loại trừ cuối tuần',
   'settings.general.skip-weekends-desc':
     'Khi bật, Journalit xem cuối tuần là ngày không giao dịch trong toàn bộ plugin. Tắt tùy chọn này nếu bạn giao dịch hoặc đánh giá hoạt động vào thứ Bảy và Chủ nhật.',
@@ -4367,6 +4428,11 @@ const vi: Lang = {
   'widget.header.month-short.10': 'Thg 11',
   'widget.header.month-short.11': 'Thg 12',
   'widget.picker.placeholder': 'Chọn một tiện ích...',
+  'widget.picker.search-placeholder': 'Tìm kiếm tiện ích...',
+  'widget.picker.search-label': 'Tìm kiếm tiện ích',
+  'widget.picker.clear-search': 'Xóa tìm kiếm tiện ích',
+  'widget.picker.results-label': 'Tiện ích có sẵn',
+  'widget.picker.no-results': 'Không có tiện ích nào khớp với tìm kiếm',
   'widget.category.charts': 'Biểu đồ',
   'widget.category.statistics': 'Thống kê',
   'widget.category.content': 'Nội dung',
@@ -4503,6 +4569,9 @@ const vi: Lang = {
   'widget.account-breakdown.column.pnl': 'Lãi & lỗ ròng',
   'widget.account-breakdown.column.win-rate': 'Tỷ lệ thắng',
   'widget.account-breakdown.column.profit-factor': 'Profit factor',
+  'widget.tag-performance.name': 'Hiệu suất theo thẻ',
+  'widget.tag-performance.description':
+    'Phân tích hiệu suất theo thẻ giao dịch',
   'widget.setup-performance.name': 'Hiệu suất thiết lập',
   'widget.setup-performance.description':
     'Phân tích hiệu suất theo thiết lập giao dịch',
@@ -4733,6 +4802,7 @@ const vi: Lang = {
   'widget.table.header.pnl': 'P&L',
   'widget.table.header.win-rate': 'Thắng%',
   'widget.table.header.profit-factor': 'PF',
+  'widget.table.header.tag': 'Thẻ',
   'widget.table.header.setup': 'Setup',
   'widget.table.header.a-games': 'A-game',
   'widget.table.header.b-games': 'Trò chơi B',
@@ -5515,6 +5585,7 @@ const vi: Lang = {
   'home.widget.setups.win-rate': 'Tỷ lệ thắng {rate}%',
   'home.widget.weekly.title': 'Tuần này',
   'home.widget.weekly.no-trades': 'chưa có giao dịch nào trong tuần này',
+  'home.widget.weekly.breakeven': 'đang hòa vốn trong tuần này',
   'home.widget.weekly.losing-days': '{count} thua ngày liên tiếp',
   'home.widget.weekly.winning-days': '{count} ngày chiến thắng liên tiếp',
   'home.widget.weekly.above-average': 'trên mức trung bình hàng tuần của bạn',
@@ -5545,6 +5616,7 @@ const vi: Lang = {
   'calendar.week': 'TUẦN',
   'calendar.trade': 'Giao dịch {count}',
   'calendar.trades': '{count} giao dịch',
+  'calendar.reviewed': 'Đã đánh giá',
   'calendar.month.january': 'Tháng 1',
   'calendar.month.february': 'Tháng 2',
   'calendar.month.march': 'Tháng 3',
@@ -5693,6 +5765,7 @@ const vi: Lang = {
     'Không có dữ liệu hàng tháng trong khoảng thời gian này',
   'widget.empty.no-quarterly-data':
     'Không có dữ liệu hàng quý cho giai đoạn này',
+  'widget.empty.no-tag-data': 'Không có dữ liệu thẻ cho giai đoạn này',
   'widget.empty.no-setup-data':
     'Không có dữ liệu thiết lập có sẵn trong khoảng thời gian này',
   'widget.empty.no-mental-game-data':
@@ -5804,6 +5877,9 @@ const vi: Lang = {
   'widget.hourlyPerformance.name': 'Hiệu suất hàng giờ',
   'widget.hourlyPerformance.description':
     'Biểu đồ thanh hiển thị P&L cho mỗi giờ trong ngày',
+  'widget.tickerPerformance.name': 'Hiệu suất theo mã',
+  'widget.tickerPerformance.description':
+    'Biểu đồ thanh xếp hạng so sánh hiệu suất theo mã',
   'widget.tradesChart.limit': 'Giao dịch {count}',
   'widget.drawdownChart.name': 'Biểu đồ drawdown',
   'widget.drawdownChart.description':
@@ -7494,6 +7570,7 @@ const vi: Lang = {
   'home.filters.trade-type': 'Loại giao dịch',
   'home.filters.accounts': 'Tài khoản',
   'home.filters.back': 'Quay lại',
+  'filter.reset': 'Đặt lại bộ lọc',
   'home.guide.modes.title': 'Một điều nữa: Bảng điều khiển',
   'home.guide.modes.description':
     'Tổng quan và Bảng điều khiển dùng chung trang này. Hãy chuyển sang Bảng điều khiển ngay để tiếp tục với chuyến tham quan ngắn về thống kê hiệu suất của bạn.',

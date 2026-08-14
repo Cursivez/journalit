@@ -4,6 +4,7 @@ import type JournalitPlugin from '../../main';
 import { ApiClient } from './ApiClient';
 
 const AUTH_TOKEN_SECRET_NAME = 'auth-token';
+const REFRESH_TOKEN_SECRET_NAME = 'refresh-token';
 const FTP_PASSWORD_SECRET_NAME = 'ftp-password';
 
 function createNamespaceId(): string {
@@ -88,6 +89,14 @@ export class BackendSecretStorage {
     return this.getAuthToken(plugin) !== null;
   }
 
+  static getRefreshToken(plugin: JournalitPlugin): string | null {
+    return getSecret(plugin, getSecretId(plugin, REFRESH_TOKEN_SECRET_NAME));
+  }
+
+  static hasRefreshToken(plugin: JournalitPlugin): boolean {
+    return this.getRefreshToken(plugin) !== null;
+  }
+
   static setAuthToken(plugin: JournalitPlugin, token: string): void {
     setSecret(plugin, getSecretId(plugin, AUTH_TOKEN_SECRET_NAME), token);
     if (plugin.settings.backendIntegration) {
@@ -96,12 +105,104 @@ export class BackendSecretStorage {
     ApiClient.setAuthToken(token);
   }
 
-  static clearAuthToken(plugin: JournalitPlugin): void {
-    clearSecret(plugin, getSecretId(plugin, AUTH_TOKEN_SECRET_NAME));
+  static setAuthSession(
+    plugin: JournalitPlugin,
+    accessToken: string,
+    refreshToken: string
+  ): void {
+    setSecret(
+      plugin,
+      getSecretId(plugin, REFRESH_TOKEN_SECRET_NAME),
+      refreshToken
+    );
+    try {
+      this.setAuthToken(plugin, accessToken);
+    } catch (error) {
+      try {
+        clearSecret(plugin, getSecretId(plugin, REFRESH_TOKEN_SECRET_NAME));
+      } catch {
+        // intentional
+      }
+      throw error;
+    }
+  }
+
+  static replaceAuthToken(
+    plugin: JournalitPlugin,
+    expectedToken: string,
+    accessToken: string
+  ): boolean {
+    if (
+      this.getAuthToken(plugin) !== expectedToken ||
+      ApiClient.getAuthToken() !== expectedToken
+    ) {
+      return false;
+    }
+    setSecret(plugin, getSecretId(plugin, AUTH_TOKEN_SECRET_NAME), accessToken);
     if (plugin.settings.backendIntegration) {
       plugin.settings.backendIntegration.authToken = undefined;
     }
+    return ApiClient.replaceAuthToken(expectedToken, accessToken);
+  }
+
+  static replaceAuthSession(
+    plugin: JournalitPlugin,
+    expectedAccessToken: string,
+    expectedRefreshToken: string,
+    accessToken: string,
+    refreshToken: string
+  ): boolean {
+    if (
+      this.getAuthToken(plugin) !== expectedAccessToken ||
+      ApiClient.getAuthToken() !== expectedAccessToken ||
+      this.getRefreshToken(plugin) !== expectedRefreshToken
+    ) {
+      return false;
+    }
+
+    
+    
+    setSecret(
+      plugin,
+      getSecretId(plugin, REFRESH_TOKEN_SECRET_NAME),
+      refreshToken
+    );
+    setSecret(plugin, getSecretId(plugin, AUTH_TOKEN_SECRET_NAME), accessToken);
+    if (plugin.settings.backendIntegration) {
+      plugin.settings.backendIntegration.authToken = undefined;
+    }
+    return ApiClient.replaceAuthToken(expectedAccessToken, accessToken);
+  }
+
+  static clearRefreshToken(plugin: JournalitPlugin): void {
+    clearSecret(plugin, getSecretId(plugin, REFRESH_TOKEN_SECRET_NAME));
+  }
+
+  static clearAuthToken(plugin: JournalitPlugin): void {
+    let clearError: unknown;
+    try {
+      clearSecret(plugin, getSecretId(plugin, AUTH_TOKEN_SECRET_NAME));
+    } catch (error) {
+      clearError = error;
+    }
+    try {
+      this.clearRefreshToken(plugin);
+    } catch (error) {
+      clearError ??= error;
+    }
+
+    if (plugin.settings.backendIntegration) {
+      plugin.settings.backendIntegration.authToken = undefined;
+      plugin.settings.backendIntegration.accessTokenExpiresAt = undefined;
+      plugin.settings.backendIntegration.authSessionId = undefined;
+    }
     ApiClient.setAuthToken(null);
+
+    if (clearError) {
+      throw clearError instanceof Error
+        ? clearError
+        : new Error('Failed to clear backend authentication secrets');
+    }
   }
 
   static getFTPPassword(plugin: JournalitPlugin): string | null {

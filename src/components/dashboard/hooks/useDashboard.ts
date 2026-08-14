@@ -1,6 +1,12 @@
 
 
-import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import {
+  useState,
+  useEffect,
+  useLayoutEffect,
+  useCallback,
+  useMemo,
+} from 'react';
 import { FilterState } from '../DashboardView';
 import {
   getActiveLayout,
@@ -30,27 +36,27 @@ export const useDashboard = () => {
     createDashboardFilters()
   );
 
-  
-  const hydratedRef = useRef(false);
+  const [isFiltersHydrated, setIsFiltersHydrated] = useState(false);
 
   
-  useEffect(() => {
-    if (plugin && !hydratedRef.current) {
-      const persisted = plugin.uiStateManager.getState().viewFilters?.dashboard;
-      if (persisted) {
-        const normalizedPersisted = normalizeDashboardFilters(persisted);
-        setFilters({
-          ...normalizedPersisted,
-          
-          dateRange: [
-            persisted.dateRange[0] ? new Date(persisted.dateRange[0]) : null,
-            persisted.dateRange[1] ? new Date(persisted.dateRange[1]) : null,
-          ],
-        });
-      }
-      hydratedRef.current = true;
+  
+  useLayoutEffect(() => {
+    if (!plugin || isFiltersHydrated) return;
+
+    const persisted = plugin.uiStateManager.getState().viewFilters?.dashboard;
+    if (persisted) {
+      const normalizedPersisted = normalizeDashboardFilters(persisted);
+      setFilters({
+        ...normalizedPersisted,
+        
+        dateRange: [
+          persisted.dateRange[0] ? new Date(persisted.dateRange[0]) : null,
+          persisted.dateRange[1] ? new Date(persisted.dateRange[1]) : null,
+        ],
+      });
     }
-  }, [plugin]);
+    setIsFiltersHydrated(true);
+  }, [isFiltersHydrated, plugin]);
 
   
   const [isEditing, setIsEditing] = useState<boolean>(false);
@@ -351,6 +357,7 @@ export const useDashboard = () => {
 
   return {
     filters,
+    isFiltersHydrated,
     setFilters,
     isLoading: false,
     isEditing,

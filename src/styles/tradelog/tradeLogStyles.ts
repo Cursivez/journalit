@@ -2392,18 +2392,6 @@ ${TRADE_ACCOUNT_CELL_STYLES}
 }
 
 
-@media (max-width: 1440px) {
-  .journalit-dashboard-custom-date-dropdown {
-    right: -250px !important;
-    width: 300px !important;
-  }
-
-  .journalit-dashboard-custom-date-dropdown.position-left {
-    left: -250px !important;
-    width: 300px !important;
-  }
-}
-
 @media (max-width: 1200px) {
   
 
@@ -2423,16 +2411,6 @@ ${TRADE_ACCOUNT_CELL_STYLES}
   .trade-log-view-selector select {
     min-width: 75px;
     font-size: 12px;
-  }
-}
-
-@media (max-width: 996px) {
-  .journalit-dashboard-custom-date-dropdown {
-    right: -100px !important;
-  }
-
-  .journalit-dashboard-custom-date-dropdown.position-left {
-    left: -100px !important;
   }
 }
 
@@ -2524,22 +2502,6 @@ ${TRADE_ACCOUNT_CELL_STYLES}
     font-size: 12px;
   }
 
-  .journalit-dashboard-custom-date-dropdown {
-    position: static !important;
-    width: 100% !important;
-    margin-top: 8px !important;
-    flex-direction: column !important;
-    box-shadow: none !important;
-    left: auto !important;
-    right: auto !important;
-  }
-
-  .journalit-dashboard-custom-date-dropdown.position-left,
-  .journalit-dashboard-custom-date-dropdown.position-below {
-    position: static !important;
-    left: auto !important;
-    right: auto !important;
-  }
 }
 
 @media (max-width: 600px) {
@@ -2579,9 +2541,6 @@ ${TRADE_ACCOUNT_CELL_STYLES}
     flex: 0 0 auto;
   }
 
-  .journalit-dashboard-custom-date-dropdown.position-below {
-    max-width: 100% !important;
-  }
 }
 
 @container journalit-trade-log (max-width: 480px) {
@@ -2617,45 +2576,6 @@ ${TRADE_ACCOUNT_CELL_STYLES}
 
   .journalit-image-gallery-size-toggle {
     flex: 0 0 auto;
-  }
-}
-
-
-.journalit-dashboard-custom-date-dropdown.position-below {
-  top: 100% !important;
-  left: 0 !important;
-  right: auto !important;
-  margin-top: 8px !important;
-  width: 100% !important;
-  max-width: 360px !important;
-}
-
-.journalit-trade-log-view-container .journalit-dashboard-date-range-inputs.journalit-dashboard-custom-date-dropdown {
-  width: 300px !important;
-  max-width: min(300px, calc(100vw - 32px)) !important;
-}
-
-.journalit-trade-log-view-container .journalit-dashboard-date-range-inputs.journalit-dashboard-custom-date-dropdown.position-left {
-  left: auto !important;
-  right: 0 !important;
-}
-
-@media (max-width: 768px) {
-  .journalit-dashboard-custom-date-anchor {
-    display: flex !important;
-    flex-direction: column !important;
-  }
-
-  .journalit-trade-log-view-container .journalit-dashboard-date-range-inputs.journalit-dashboard-custom-date-dropdown {
-    width: 100% !important;
-    max-width: none !important;
-  }
-
-  .journalit-trade-log-view-container .journalit-dashboard-date-range-inputs.journalit-dashboard-custom-date-dropdown.position-left,
-  .journalit-trade-log-view-container .journalit-dashboard-date-range-inputs.journalit-dashboard-custom-date-dropdown.position-below {
-    position: static !important;
-    left: auto !important;
-    right: auto !important;
   }
 }
 

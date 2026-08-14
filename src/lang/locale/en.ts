@@ -790,6 +790,10 @@ const en = {
   'notice.setups-added': 'Added setups to {count} trades',
   'notice.tags-added': 'Added tags to {count} trades',
   'notice.mistakes-added': 'Added mistakes to {count} trades',
+  'notice.trades-duplicated.one': 'Duplicated {count} trade',
+  'notice.trades-duplicated.few': 'Duplicated {count} trades',
+  'notice.trades-duplicated.many': 'Duplicated {count} trades',
+  'notice.trades-duplicated.other': 'Duplicated {count} trades',
   'notice.trades-deleted.one': 'Deleted {count} trade',
   'notice.trades-deleted.few': 'Deleted {count} trades',
   'notice.trades-deleted.many': 'Deleted {count} trades',
@@ -861,6 +865,7 @@ const en = {
   'notice.error.add-tags': 'Error adding tags: {error}',
   'notice.error.add-mistakes': 'Error adding mistakes: {error}',
   'notice.error.delete-trades': 'Error deleting trades: {error}',
+  'notice.error.duplicate-trades': 'Error duplicating trades: {error}',
   'notice.error.csv-validation': 'CSV/XLSX/XLS validation failed: {errors}',
   'notice.error.import-failed': 'Import failed: {error}',
   'notice.error.file-too-large': 'File is too large. Maximum size is 10MB',
@@ -931,7 +936,7 @@ const en = {
     'Click this button to select several trades at once. When multi-select is on, row clicks select trades instead of opening them.',
   'tradelog.guide.batch-actions.title': 'These are your batch actions',
   'tradelog.guide.batch-actions.description':
-    'Use this bar to select all visible trades, clear your selection, mark trades as reviewed, add setups, add mistakes, or delete several trades at once. You can also shift-click to select a range of trades.',
+    'Use this bar to select all visible trades, clear your selection, mark trades as reviewed, add setups, add mistakes, duplicate trades, or delete several trades at once. You can also shift-click to select a range of trades.',
   'tradelog.guide.column-settings.title': 'Open column settings',
   'tradelog.guide.column-settings.description':
     'Click this button to choose which columns are shown and how dense or detailed the table should feel.',
@@ -1044,7 +1049,7 @@ const en = {
     'This picker shows the widgets you can add for this review type.',
   'layoutBuilder.guide.choose-widget.title': 'Choose a widget',
   'layoutBuilder.guide.choose-widget.description':
-    'This list shows every widget you can add for this review type. Pick any widget you want, or press Next and Journalit will choose the first one for you.',
+    'Type in the search box to find a widget by name, description, or category, then choose it. You can also press Next and Journalit will choose the first result for you.',
   'layoutBuilder.guide.widget-library-docs.title':
     'Use the widget library if you get stuck',
   'layoutBuilder.guide.widget-library-docs.description':
@@ -1188,6 +1193,17 @@ const en = {
   'tradelog.batch.add-mistakes.label': 'Add Mistakes',
   'tradelog.batch.adding': 'Adding...',
   'tradelog.batch.add-count': 'Add ({count})',
+  'tradelog.batch.duplicate.aria': 'Duplicate trades',
+  'tradelog.batch.duplicate.label': 'Duplicate',
+  'tradelog.batch.duplicating': 'Duplicating...',
+  'tradelog.batch.duplicate-skipped.one':
+    '{count} selected note cannot be duplicated',
+  'tradelog.batch.duplicate-skipped.few':
+    '{count} selected notes cannot be duplicated',
+  'tradelog.batch.duplicate-skipped.many':
+    '{count} selected notes cannot be duplicated',
+  'tradelog.batch.duplicate-skipped.other':
+    '{count} selected notes cannot be duplicated',
   'tradelog.batch.delete.aria': 'Delete trades',
   'tradelog.batch.delete.title': 'Delete selected trades',
   'tradelog.batch.deleting': 'Deleting...',
@@ -1436,6 +1452,35 @@ const en = {
   'dashboard.widgets.hourly-performance.metric.avg-pnl': 'Avg P&L',
   'dashboard.widgets.hourly-performance.metric.total-r': 'Total R',
   'dashboard.widgets.hourly-performance.metric.avg-r': 'Avg R',
+  'dashboard.widgets.setup-performance.title': 'Setup Performance',
+  'dashboard.widgets.setup-performance.description':
+    'Ranked bar chart comparing performance by setup',
+  'dashboard.widgets.setup-performance.empty': 'No setup performance data',
+  'dashboard.widgets.setup-performance.masked-label': 'Setup',
+  'dashboard.widgets.tag-performance.title': 'Tag Performance',
+  'dashboard.widgets.tag-performance.description':
+    'Ranked bar chart comparing performance by tag',
+  'dashboard.widgets.tag-performance.empty': 'No tag performance data',
+  'dashboard.widgets.tag-performance.masked-label': 'Tag',
+  'dashboard.widgets.ticker-performance.title': 'Ticker Performance',
+  'dashboard.widgets.ticker-performance.metric-aria': 'Metric',
+  'dashboard.widgets.ticker-performance.view-aria': 'View',
+  'dashboard.widgets.ticker-performance.view.best-and-worst': 'Best & worst',
+  'dashboard.widgets.ticker-performance.view.best': 'Best 10',
+  'dashboard.widgets.ticker-performance.view.worst': 'Worst 10',
+  'dashboard.widgets.ticker-performance.metric.total-pnl': 'Total P&L',
+  'dashboard.widgets.ticker-performance.metric.total-r': 'Total R',
+  'dashboard.widgets.ticker-performance.metric.win-rate': 'Win Rate',
+  'dashboard.widgets.ticker-performance.tooltip.ticker': 'Ticker: {ticker}',
+  'dashboard.widgets.ticker-performance.tooltip.trades': 'Trades: {count}',
+  'dashboard.widgets.ticker-performance.tooltip.win-rate':
+    'Win Rate: {rate} ({wins}W / {losses}L)',
+  'dashboard.widgets.ticker-performance.empty': 'No ticker performance data',
+  'dashboard.widgets.ticker-performance.empty-submessage':
+    'No closed trades with a ticker match the current filters.',
+  'dashboard.widgets.ticker-performance.masked-ticker': 'Ticker',
+  'dashboard.widgets.ticker-performance.omitted-count': '{count} omitted',
+
   'dashboard.widgets.rollingStats.title': 'Rolling Avg Win/Loss',
   'dashboard.widgets.rollingStats.period': 'Period',
   'dashboard.widgets.rollingStats.trades': '{count} Trades',
@@ -1499,6 +1544,11 @@ const en = {
   'home.widget.weekly-summary.name': 'Weekly Summary',
   'home.widget.weekly-summary.description':
     'Current week metrics with daily P&L sparkline chart',
+  'home.widget.key-events.name': 'Key Events',
+  'home.widget.key-events.description':
+    'Important news and market events from the current Weekly Review',
+  'home.widget.key-events.empty-title': 'No key events yet',
+  'home.widget.key-events.open-aria': "Open this week's Weekly Review",
   'home.widget.position-size.name': 'Position Size Calculator',
   'home.widget.position-size.description':
     'Calculate position size based on account risk percentage',
@@ -2064,6 +2114,7 @@ const en = {
   'datepicker.placeholder.year': 'YY',
   'datepicker.placeholder.hour': 'HH',
   'datepicker.placeholder.minute': 'MM',
+  'datepicker.placeholder.second': 'SS',
 
   
   
@@ -3981,6 +4032,10 @@ const en = {
     'Display times in 24-hour format (14:30) instead of 12-hour AM/PM format (2:30 PM)',
   'settings.general.use-24-hour-time-aria': 'Use 24-hour time format',
 
+  'settings.general.show-seconds': 'Show Seconds in Trade Times',
+  'settings.general.show-seconds-desc':
+    'Display seconds when entering trade entry and exit times.',
+  'settings.general.show-seconds-aria': 'Show seconds in trade times',
   'settings.general.skip-weekends': 'Exclude Weekends',
   'settings.general.skip-weekends-desc':
     'When enabled, Journalit treats weekends as non-trading days across the plugin. Disable this if you trade or review activity on Saturdays and Sundays.',
@@ -4891,6 +4946,11 @@ const en = {
 
   
   'widget.picker.placeholder': 'Select a widget...',
+  'widget.picker.search-placeholder': 'Search widgets...',
+  'widget.picker.search-label': 'Search widgets',
+  'widget.picker.clear-search': 'Clear widget search',
+  'widget.picker.results-label': 'Available widgets',
+  'widget.picker.no-results': 'No widgets match your search',
 
   
   'widget.category.charts': 'Charts',
@@ -5030,6 +5090,8 @@ const en = {
   'widget.account-breakdown.column.pnl': 'Net P&L',
   'widget.account-breakdown.column.win-rate': 'Win Rate',
   'widget.account-breakdown.column.profit-factor': 'Profit Factor',
+  'widget.tag-performance.name': 'Tag Performance',
+  'widget.tag-performance.description': 'Performance breakdown by trade tag',
   'widget.setup-performance.name': 'Setup Performance',
   'widget.setup-performance.description':
     'Performance breakdown by trading setup',
@@ -5261,6 +5323,7 @@ const en = {
   'widget.table.header.pnl': 'P&L',
   'widget.table.header.win-rate': 'Win%',
   'widget.table.header.profit-factor': 'PF',
+  'widget.table.header.tag': 'Tag',
   'widget.table.header.setup': 'Setup',
   'widget.table.header.a-games': 'A Games',
   'widget.table.header.b-games': 'B Games',
@@ -6131,6 +6194,7 @@ const en = {
   
   'home.widget.weekly.title': 'This Week',
   'home.widget.weekly.no-trades': 'no trades yet this week',
+  'home.widget.weekly.breakeven': 'breakeven so far this week',
   'home.widget.weekly.losing-days': '{count} losing days in a row',
   'home.widget.weekly.winning-days': '{count} winning days straight',
   'home.widget.weekly.above-average': 'above your weekly average',
@@ -6165,6 +6229,7 @@ const en = {
   'calendar.week': 'WEEK',
   'calendar.trade': '{count} trade',
   'calendar.trades': '{count} trades',
+  'calendar.reviewed': 'Reviewed',
   'calendar.month.january': 'January',
   'calendar.month.february': 'February',
   'calendar.month.march': 'March',
@@ -6330,6 +6395,7 @@ const en = {
   'widget.empty.no-weekly-data': 'No weekly data for this period',
   'widget.empty.no-monthly-data': 'No monthly data for this period',
   'widget.empty.no-quarterly-data': 'No quarterly data for this period',
+  'widget.empty.no-tag-data': 'No tag data available for this period',
   'widget.empty.no-setup-data': 'No setup data available for this period',
   'widget.empty.no-mental-game-data':
     'No mental game data available for {period}',
@@ -6457,6 +6523,9 @@ const en = {
   'widget.hourlyPerformance.name': 'Hourly Performance',
   'widget.hourlyPerformance.description':
     'Bar chart showing P&L for each hour of the day',
+  'widget.tickerPerformance.name': 'Ticker Performance',
+  'widget.tickerPerformance.description':
+    'Ranked bar chart comparing performance by ticker',
   'widget.tradesChart.limit': '{count} Trades',
   'widget.drawdownChart.name': 'Drawdown Chart',
   'widget.drawdownChart.description':
@@ -8188,6 +8257,7 @@ const en = {
   'home.filters.trade-type': 'Trade type',
   'home.filters.accounts': 'Accounts',
   'home.filters.back': 'Back',
+  'filter.reset': 'Reset filters',
   'home.guide.modes.title': 'One more thing: the Dashboard',
   'home.guide.modes.description':
     'Overview and Dashboard share this page. Switch to Dashboard now to continue with a short tour of your performance stats.',

@@ -179,6 +179,10 @@ export interface EventMap {
   'review:changed': ReviewChangedPayload;
   
   'drc:session-log-index-invalidated': void;
+  
+  'drc:reviewed-index-invalidated': void;
+  
+  'weekly:reviewed-index-invalidated': void;
   'image-gallery:changed': void;
   'filter:changed': FilterChangedPayload;
   'tradelog:filters-updated': void;

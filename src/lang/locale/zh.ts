@@ -663,6 +663,7 @@ const zh: Lang = {
   'notice.error.add-setups': '添加策略时出错:{error}',
   'notice.error.add-tags': 'Error adding tags: {error}',
   'notice.error.add-mistakes': '添加失误时出错:{error}',
+  'notice.error.duplicate-trades': '复制交易时出错:{error}',
   'notice.error.delete-trades': '删除交易时出错:{error}',
   'notice.error.csv-validation': 'CSV/XLSX/XLS验证失败:{errors}',
   'notice.error.import-failed': '导入失败:{error}',
@@ -722,7 +723,7 @@ const zh: Lang = {
     'Click this button to select several trades at once. When multi-select is on, row clicks select trades instead of opening them.',
   'tradelog.guide.batch-actions.title': 'These are your batch actions',
   'tradelog.guide.batch-actions.description':
-    'Use this bar to select all visible trades, clear your selection, mark trades as reviewed, add setups, add mistakes, or delete several trades at once. You can also shift-click to select a range of trades.',
+    'Use this bar to select all visible trades, clear your selection, mark trades as reviewed, add setups, add mistakes, duplicate trades, or delete several trades at once. You can also shift-click to select a range of trades.',
   'tradelog.guide.column-settings.title': 'Open column settings',
   'tradelog.guide.column-settings.description':
     'Click this button to choose which columns are shown and how dense or detailed the table should feel.',
@@ -836,7 +837,7 @@ const zh: Lang = {
     'This picker shows the widgets you can add for this review type.',
   'layoutBuilder.guide.choose-widget.title': 'Choose a widget',
   'layoutBuilder.guide.choose-widget.description':
-    'This list shows every widget you can add for this review type. Pick any widget you want, or press Next and Journalit will choose the first one for you.',
+    '在搜索框中输入组件名称、描述或类别，然后选择所需组件。也可以按“下一步”，让 Journalit 选择第一个搜索结果。',
   'layoutBuilder.guide.widget-library-docs.title':
     'Use the widget library if you get stuck',
   'layoutBuilder.guide.widget-library-docs.description':
@@ -972,6 +973,13 @@ const zh: Lang = {
   'tradelog.batch.add-mistakes.label': '添加失误',
   'tradelog.batch.adding': '添加中...',
   'tradelog.batch.add-count': '添加({count})',
+  'tradelog.batch.duplicate.aria': '复制交易',
+  'tradelog.batch.duplicate.label': '复制',
+  'tradelog.batch.duplicating': '复制中...',
+  'tradelog.batch.duplicate-skipped.one': '{count}条所选笔记无法复制',
+  'tradelog.batch.duplicate-skipped.few': '{count}条所选笔记无法复制',
+  'tradelog.batch.duplicate-skipped.many': '{count}条所选笔记无法复制',
+  'tradelog.batch.duplicate-skipped.other': '{count}条所选笔记无法复制',
   'tradelog.batch.delete.aria': '删除交易',
   'tradelog.batch.delete.title': '删除选中交易',
   'tradelog.batch.deleting': '删除中...',
@@ -1217,6 +1225,36 @@ const zh: Lang = {
   'dashboard.widgets.hourly-performance.metric.total-r': '总R',
   'dashboard.widgets.hourly-performance.metric.avg-r': '平均R',
   'dashboard.widgets.weekday-performance.tooltip.no-trades': '无交易',
+  'dashboard.widgets.setup-performance.title': '策略表现',
+  'dashboard.widgets.setup-performance.description':
+    '按交易策略比较表现的排名柱状图',
+  'dashboard.widgets.setup-performance.empty': '没有策略表现数据',
+  'dashboard.widgets.setup-performance.masked-label': '策略',
+  'dashboard.widgets.tag-performance.title': '标签表现',
+  'dashboard.widgets.tag-performance.description':
+    '按交易标签比较表现的排名柱状图',
+  'dashboard.widgets.tag-performance.empty': '没有标签表现数据',
+  'dashboard.widgets.tag-performance.masked-label': '标签',
+  'dashboard.widgets.ticker-performance.title': '标的绩效',
+  'dashboard.widgets.ticker-performance.metric-aria': '指标',
+  'dashboard.widgets.ticker-performance.view-aria': '视图',
+  'dashboard.widgets.ticker-performance.view.best-and-worst': '最佳和最差',
+  'dashboard.widgets.ticker-performance.view.best': '最佳 10',
+  'dashboard.widgets.ticker-performance.view.worst': '最差 10',
+  'dashboard.widgets.ticker-performance.metric.total-pnl': '总盈亏',
+  'dashboard.widgets.ticker-performance.metric.total-r': '总R',
+  'dashboard.widgets.ticker-performance.metric.win-rate': '胜率',
+  'dashboard.widgets.ticker-performance.tooltip.ticker': '标的：{ticker}',
+  'dashboard.widgets.ticker-performance.tooltip.trades': '交易数：{count}',
+  'dashboard.widgets.ticker-performance.tooltip.win-rate':
+    '胜率：{rate}（{wins}胜 / {losses}负）',
+
+  'dashboard.widgets.ticker-performance.empty': '无标的绩效数据',
+  'dashboard.widgets.ticker-performance.empty-submessage':
+    '没有与当前筛选条件匹配的带标的已平仓交易。',
+  'dashboard.widgets.ticker-performance.masked-ticker': '标的',
+  'dashboard.widgets.ticker-performance.omitted-count': '已省略：{count}',
+
   'dashboard.widgets.rollingStats.title': '滚动平均盈亏',
   'dashboard.widgets.rollingStats.period': '周期',
   'dashboard.widgets.rollingStats.trades': '{count} 笔交易',
@@ -1777,6 +1815,10 @@ const zh: Lang = {
   'notice.csv-symbol-mappings-created.other': '已创建{count}个代码映射',
   'notice.csv-symbol-mapping-skipped': '跳过代码映射',
   'notice.csv-missing-fields': '请在导入前映射所有必填字段',
+  'notice.trades-duplicated.one': '已复制{count}笔交易',
+  'notice.trades-duplicated.few': '已复制{count}笔交易',
+  'notice.trades-duplicated.many': '已复制{count}笔交易',
+  'notice.trades-duplicated.other': '已复制{count}笔交易',
   'notice.trades-deleted.one': '已删除{count}笔交易',
   'notice.trades-deleted.few': '已删除{count}笔交易',
   'notice.trades-deleted.many': '已删除{count}笔交易',
@@ -1903,6 +1945,7 @@ const zh: Lang = {
   'datepicker.placeholder.year': 'YY',
   'datepicker.placeholder.hour': 'HH',
   'datepicker.placeholder.minute': 'MM',
+  'datepicker.placeholder.second': 'SS',
 
   
   
@@ -1959,6 +2002,7 @@ const zh: Lang = {
   'calendar.week': '周',
   'calendar.trade': '{count} 笔交易',
   'calendar.trades': '{count} 笔交易',
+  'calendar.reviewed': '已复盘',
 
   
   
@@ -2840,6 +2884,10 @@ const zh: Lang = {
   'home.widget.unreviewed-trades.description': '需要复盘的交易记录',
   'home.widget.weekly-summary.name': '周度总结',
   'home.widget.weekly-summary.description': '本周交易活动汇总',
+  'home.widget.key-events.name': '关键事件',
+  'home.widget.key-events.description': '当前周度复盘中的重要新闻和市场事件',
+  'home.widget.key-events.empty-title': '暂无关键事件',
+  'home.widget.key-events.open-aria': '打开本周周度复盘',
   'home.widget.year-heatmap.name': '交易热力图',
   'home.widget.year-heatmap.description': '可视化展示您的交易活动',
   'home.widget.profit-target-widget.name': '盈利目标',
@@ -3031,6 +3079,7 @@ const zh: Lang = {
   
   'home.widget.weekly.above-average': '高于周均水平',
   'home.widget.weekly.below-average': '低于周均水平',
+  'home.widget.weekly.breakeven': '本周目前持平',
   'home.widget.weekly.better-than-last': '优于上周',
   'home.widget.weekly.early-in-week': '本周刚开始',
   'home.widget.weekly.losing-days': '连续{count}天亏损',
@@ -3125,6 +3174,11 @@ const zh: Lang = {
 
   
   'widget.picker.placeholder': '选择组件...',
+  'widget.picker.search-placeholder': '搜索组件...',
+  'widget.picker.search-label': '搜索组件',
+  'widget.picker.clear-search': '清除组件搜索',
+  'widget.picker.results-label': '可用组件',
+  'widget.picker.no-results': '没有符合搜索条件的组件',
 
   
   'widget.category.charts': '图表',
@@ -3262,6 +3316,8 @@ const zh: Lang = {
   'widget.account-breakdown.column.pnl': 'Net P&L',
   'widget.account-breakdown.column.win-rate': 'Win Rate',
   'widget.account-breakdown.column.profit-factor': 'Profit Factor',
+  'widget.tag-performance.name': '标签表现',
+  'widget.tag-performance.description': '按交易标签细分表现',
   'widget.setup-performance.name': '策略绩效',
   'widget.setup-performance.description': '按交易策略分类的绩效统计',
 
@@ -3490,6 +3546,7 @@ const zh: Lang = {
   'widget.table.header.pnl': '盈亏',
   'widget.table.header.win-rate': '胜率',
   'widget.table.header.profit-factor': '盈亏比',
+  'widget.table.header.tag': '标签',
   'widget.table.header.setup': '交易设置',
   'widget.table.header.a-games': 'A级交易',
   'widget.table.header.b-games': 'B级交易',
@@ -3610,6 +3667,7 @@ const zh: Lang = {
   'widget.empty.no-weekly-data': '该周期内无每周数据',
   'widget.empty.no-monthly-data': '该周期内无每月数据',
   'widget.empty.no-quarterly-data': '该周期内无季度数据',
+  'widget.empty.no-tag-data': '此期间没有可用的标签数据',
   'widget.empty.no-setup-data': '该周期内无策略数据',
   'widget.empty.no-mental-game-data': '在{period}中未找到心态评分',
   'widget.empty.no-technical-game-data': '在{period}中未找到技术评分',
@@ -3662,6 +3720,8 @@ const zh: Lang = {
   'widget.weekdayPerformance.description': '显示每周各天绩效的柱状图',
   'widget.hourlyPerformance.name': '每小时绩效',
   'widget.hourlyPerformance.description': '显示一天中每小时 P&L 的柱状图',
+  'widget.tickerPerformance.name': '标的绩效',
+  'widget.tickerPerformance.description': '按标的比较绩效的排名柱状图',
   'widget.tradesChart.limit': '{count} 笔交易',
   'widget.drawdownChart.name': 'Drawdown Chart',
   'widget.drawdownChart.description':
@@ -4590,6 +4650,9 @@ const zh: Lang = {
   'settings.general.use-24-hour-time-desc':
     '以24小时制显示时间(14:30)而非12小时制(下午2:30)',
   'settings.general.use-24-hour-time-aria': '使用24小时制',
+  'settings.general.show-seconds': '在交易时间中显示秒',
+  'settings.general.show-seconds-desc': '输入交易进场和出场时间时显示秒。',
+  'settings.general.show-seconds-aria': '在交易时间中显示秒',
   'settings.general.skip-weekends': '排除周末',
   'settings.general.skip-weekends-desc':
     '启用后，Journalit 会在整个插件中将周末视为非交易日。如果你在周六或周日交易或复盘，请关闭此选项。',
@@ -7427,6 +7490,7 @@ const zh: Lang = {
   'home.filters.trade-type': '交易类型',
   'home.filters.accounts': '账户',
   'home.filters.back': '返回',
+  'filter.reset': '重置筛选器',
   'home.guide.modes.title': '最后一件事：仪表盘',
   'home.guide.modes.description':
     '概览与仪表盘共用此页面。现在切换到仪表盘，继续进行绩效统计的简短导览。',

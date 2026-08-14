@@ -16,13 +16,17 @@ import {
   UsersRound,
   type ObsidianIconComponent,
 } from '../../shared/icons/ObsidianIcon';
-import { normalizeHomeTradeTypes } from '../utils/homeTradeTypeUtils';
+import {
+  DEFAULT_HOME_FILTERS,
+  normalizeHomeTradeTypes,
+} from '../utils/homeTradeTypeUtils';
 import {
   DrilldownFilterDivider,
   DrilldownFilterEmpty,
   DrilldownFilterOption,
   DrilldownFilterPanel,
   DrilldownFilterPanelHeader,
+  DrilldownFilterReset,
   DrilldownFilterRow,
 } from '../../shared/filters/DrilldownFilterPopover';
 
@@ -42,6 +46,7 @@ interface HomeFilterPopoverProps {
     accounts: string[],
     explicitAllSelected: boolean
   ) => void | Promise<void>;
+  onReset: () => void;
   onOpen?: () => void;
 }
 
@@ -58,6 +63,7 @@ export const HomeFilterPopover: React.FC<HomeFilterPopoverProps> = ({
   selectedAccounts,
   explicitAllAccountsSelected,
   onAccountsChange,
+  onReset,
   onOpen,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -77,11 +83,16 @@ export const HomeFilterPopover: React.FC<HomeFilterPopoverProps> = ({
   const allTradeTypesSelected = TRADE_TYPES.every((tradeType) =>
     normalizedTradeTypes.includes(tradeType)
   );
+  const defaultTradeTypesSelected =
+    normalizedTradeTypes.length === DEFAULT_HOME_FILTERS.tradeTypes.length &&
+    DEFAULT_HOME_FILTERS.tradeTypes.every((tradeType) =>
+      normalizedTradeTypes.includes(tradeType)
+    );
   const allAccountsSelected =
     explicitAllAccountsSelected || selectedAccounts.length === 0;
   const activeFilterCount =
-    (selectedPeriod === 'lifetime' ? 0 : 1) +
-    (allTradeTypesSelected ? 0 : 1) +
+    (selectedPeriod === DEFAULT_HOME_FILTERS.period ? 0 : 1) +
+    (defaultTradeTypesSelected ? 0 : 1) +
     (allAccountsSelected ? 0 : 1);
 
   useEffect(() => {
@@ -175,6 +186,8 @@ export const HomeFilterPopover: React.FC<HomeFilterPopoverProps> = ({
         <div className="journalit-drilldown-filter__menu">
           {panel === 'root' ? (
             <DrilldownFilterPanel>
+              <DrilldownFilterReset onClick={onReset} />
+              <DrilldownFilterDivider />
               {(
                 [
                   [

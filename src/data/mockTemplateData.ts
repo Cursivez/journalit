@@ -1709,10 +1709,19 @@ const mockMissedTradesWeekly = [
 ];
 
 const PREVIEW_BREAK_EVEN_ACCOUNT_BALANCE = 100_000;
+const PREVIEW_TAGS = [
+  ['A+', 'Patient Entry'],
+  ['High Volume'],
+  ['Trend Day', 'A+'],
+  ['Late Entry'],
+  ['FOMO'],
+  ['News Catalyst', 'High Volume'],
+] as const;
 
-function attachPreviewBreakEvenBalance(trades: Trade[]): Trade[] {
-  return trades.map((trade) => ({
+function withPreviewTradeDefaults(trades: Trade[]): Trade[] {
+  return trades.map((trade, index) => ({
     ...trade,
+    customTags: [...PREVIEW_TAGS[index % PREVIEW_TAGS.length]],
     breakEvenAccountCurrentBalanceTotal: PREVIEW_BREAK_EVEN_ACCOUNT_BALANCE,
   }));
 }
@@ -1720,12 +1729,12 @@ function attachPreviewBreakEvenBalance(trades: Trade[]): Trade[] {
 
 export const previewDataBundle = {
   
-  trades: attachPreviewBreakEvenBalance(mockTrades), 
-  tradesDaily: attachPreviewBreakEvenBalance(mockTradesDaily), 
-  tradesWeekly: attachPreviewBreakEvenBalance(mockTrades), 
-  tradesMonthly: attachPreviewBreakEvenBalance(mockTradesMonthly), 
-  tradesQuarterly: attachPreviewBreakEvenBalance(mockTradesQuarterly), 
-  tradesYearly: attachPreviewBreakEvenBalance(mockTradesYearly), 
+  trades: withPreviewTradeDefaults(mockTrades), 
+  tradesDaily: withPreviewTradeDefaults(mockTradesDaily), 
+  tradesWeekly: withPreviewTradeDefaults(mockTrades), 
+  tradesMonthly: withPreviewTradeDefaults(mockTradesMonthly), 
+  tradesQuarterly: withPreviewTradeDefaults(mockTradesQuarterly), 
+  tradesYearly: withPreviewTradeDefaults(mockTradesYearly), 
 
   
   weeklyPerformance: mockWeeklyPerformance,

@@ -7,52 +7,19 @@ import React, {
   useMemo,
   useCallback,
 } from 'react';
-import { OptionType } from '../../../../services/options/CustomOptionsService';
-import { usePlugin } from '../../../../hooks/usePlugin';
-import { useEventBus } from '../../../../hooks';
 import { t } from '../../../../lang/helpers';
 import { AccountFilterProps } from './types';
 
 
 export const AccountFilter: React.FC<AccountFilterProps> = React.memo(
-  ({
-    accounts,
-    selectedAccounts,
-    onChange,
-    useOnlyProvidedAccounts = false, 
-  }) => {
-    const plugin = usePlugin();
-    const [customAccounts, setCustomAccounts] = useState<string[]>([]);
+  ({ accounts, selectedAccounts, onChange }) => {
     const [isOpen, setIsOpen] = useState(false);
     const dropdownRef = useRef<HTMLDivElement>(null);
 
     
-    useEffect(() => {
-      if (plugin && plugin.optionsService) {
-        
-        const optionsAccounts = plugin.optionsService.getOptions(
-          OptionType.ACCOUNT
-        );
-        setCustomAccounts(optionsAccounts);
-      }
-    }, [plugin]);
-
-    
-    useEventBus('options:changed', () => {
-      if (plugin && plugin.optionsService) {
-        const updatedAccounts = plugin.optionsService.getOptions(
-          OptionType.ACCOUNT
-        );
-        setCustomAccounts(updatedAccounts);
-      }
-    });
-
-    
     const combinedAccounts = useMemo(() => {
-      return useOnlyProvidedAccounts
-        ? [...new Set(accounts)] 
-        : [...new Set([...customAccounts, ...accounts])]; 
-    }, [accounts, customAccounts, useOnlyProvidedAccounts]);
+      return [...new Set([...accounts, ...selectedAccounts])];
+    }, [accounts, selectedAccounts]);
 
     
     useEffect(() => {

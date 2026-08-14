@@ -6,6 +6,10 @@ import { createRoot, Root } from 'react-dom/client';
 import JournalitPlugin from '../../../main';
 import { TradeForm } from '.';
 import { TradeFormData, TradeFormOpenOptions } from './types';
+import {
+  resolveFormExitExplicitness,
+  resolveFormHasExplicitExitPrice,
+} from './exitExplicitness';
 import { MissedTradeFormData } from '../../missedTrade/types';
 import { BacktestTradeFormData } from '../../../services/backtestTrade/BacktestTradeService';
 import type { TradeData } from '../../../services/trade/TradeService';
@@ -234,17 +238,6 @@ interface TradeFormModalContentProps extends Omit<
   dirtyStateRef: { current: (() => boolean) | null };
 }
 
-export const resolveFormExitExplicitness = (
-  exit: { price?: number | null; hasExplicitPrice?: boolean },
-  useDirectPnLInput?: boolean
-): boolean => {
-  if (typeof exit.hasExplicitPrice === 'boolean') {
-    return exit.hasExplicitPrice;
-  }
-
-  return !(useDirectPnLInput === true && exit.price === 0);
-};
-
 interface TradeFormModalContentModelParams {
   plugin: JournalitPlugin;
   isEditMode?: boolean;
@@ -447,12 +440,10 @@ export function useTradeFormModalContentModel({
           data.useDirectPnLInput
         ),
       }));
-      const hasExplicitExitPrice =
-        typeof data.hasExplicitExitPrice === 'boolean'
-          ? data.hasExplicitExitPrice
-          : formExits.length > 0
-            ? formExits.some((exit) => exit.hasExplicitPrice === true)
-            : undefined;
+      const hasExplicitExitPrice = resolveFormHasExplicitExitPrice(
+        formExits,
+        data.hasExplicitExitPrice
+      );
       
       
       const fxRateBaseCurrency: string =

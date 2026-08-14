@@ -235,6 +235,8 @@ interface QueuedRequest<T> {
   resolve: (value: T | null) => void;
   reject: (error: unknown) => void;
   retryCount: number;
+  
+  authRefreshAttempted: boolean;
   priority: number; 
   
   suppressPremiumRequiredEvent?: boolean;
@@ -242,6 +244,26 @@ interface QueuedRequest<T> {
   throwOnPremiumRequired?: boolean;
   
   propagateErrors?: boolean;
+}
+
+export type AuthTokenRefreshResult =
+  | { status: 'refreshed'; accessToken: string }
+  | { status: 'rejected' }
+  | { status: 'unavailable' };
+
+type AuthenticationRefreshOutcome = AuthTokenRefreshResult['status'];
+
+export interface AuthTokenRefresher {
+  refreshAccessToken(
+    failedAccessToken: string
+  ): Promise<AuthTokenRefreshResult>;
+}
+
+export class AuthenticationRefreshUnavailableError extends Error {
+  constructor() {
+    super('Authentication refresh temporarily unavailable');
+    this.name = 'AuthenticationRefreshUnavailableError';
+  }
 }
 
 
@@ -269,19 +291,89 @@ export class ApiClient {
 
   
   private static authToken: string | null = null;
+  private static authSessionVersion = 0;
   private static authFailureDispatched = false;
+  private static tokenRefresher: AuthTokenRefresher | null = null;
+  private static lastTokenRefresh: {
+    previousToken: string;
+    accessToken: string;
+  } | null = null;
 
   
   static setAuthToken(token: string | null): void {
+    if (this.authToken !== token) {
+      this.authSessionVersion++;
+      this.lastTokenRefresh = null;
+    }
     this.authToken = token;
     if (token) {
       this.authFailureDispatched = false;
     }
   }
 
+  static replaceAuthToken(expectedToken: string, accessToken: string): boolean {
+    if (this.authToken !== expectedToken || !accessToken) {
+      return false;
+    }
+
+    this.authToken = accessToken;
+    this.authFailureDispatched = false;
+    this.lastTokenRefresh = {
+      previousToken: expectedToken,
+      accessToken,
+    };
+    for (const request of this.requestQueue) {
+      if (request.authTokenAtQueue === expectedToken) {
+        request.authTokenAtQueue = accessToken;
+      }
+    }
+    return true;
+  }
+
+  static setTokenRefresher(refresher: AuthTokenRefresher | null): void {
+    this.tokenRefresher = refresher;
+  }
+
+  static clearTokenRefresher(refresher: AuthTokenRefresher): void {
+    if (this.tokenRefresher === refresher) {
+      this.tokenRefresher = null;
+    }
+  }
+
+  static async refreshAuthentication(
+    requestAccessToken: string | null
+  ): Promise<AuthenticationRefreshOutcome> {
+    if (!requestAccessToken) {
+      return 'rejected';
+    }
+
+    if (requestAccessToken !== this.authToken) {
+      return this.isCurrentRefreshReplacement(requestAccessToken)
+        ? 'refreshed'
+        : 'rejected';
+    }
+    if (!this.tokenRefresher) {
+      return 'rejected';
+    }
+
+    const result =
+      await this.tokenRefresher.refreshAccessToken(requestAccessToken);
+    if (result.status !== 'refreshed') {
+      return result.status;
+    }
+    return result.accessToken === this.authToken &&
+      this.isCurrentRefreshReplacement(requestAccessToken)
+      ? 'refreshed'
+      : 'unavailable';
+  }
+
   
   static getAuthToken(): string | null {
     return this.authToken;
+  }
+
+  static getAuthSessionVersion(): number {
+    return this.authSessionVersion;
   }
 
   
@@ -371,6 +463,7 @@ export class ApiClient {
         resolve,
         reject,
         retryCount: 0,
+        authRefreshAttempted: false,
         priority,
         suppressPremiumRequiredEvent: config?.suppressPremiumRequiredEvent,
         throwOnPremiumRequired: config?.throwOnPremiumRequired,
@@ -437,8 +530,15 @@ export class ApiClient {
         this.requiresAuth(request.url) &&
         request.authTokenAtQueue !== this.authToken
       ) {
-        request.reject(new Error('Authenticated request cancelled'));
-        return;
+        if (
+          request.authTokenAtQueue &&
+          this.isCurrentRefreshReplacement(request.authTokenAtQueue)
+        ) {
+          request.authTokenAtQueue = this.authToken;
+        } else {
+          request.reject(new Error('Authenticated request cancelled'));
+          return;
+        }
       }
 
       const requestHeaders = this.getHeaders({
@@ -545,6 +645,24 @@ export class ApiClient {
           requestAuthToken &&
           this.requiresAuth(request.url)
         ) {
+          if (!request.authRefreshAttempted) {
+            const refreshOutcome =
+              await this.refreshAuthentication(requestAuthToken);
+            if (refreshOutcome === 'refreshed') {
+              request.authRefreshAttempted = true;
+              request.authTokenAtQueue = this.authToken;
+              request.priority += 10;
+              this.requestQueue.unshift(request);
+              if (!this.isProcessingQueue) {
+                void this.processQueue();
+              }
+              return;
+            }
+            if (refreshOutcome === 'unavailable') {
+              throw new AuthenticationRefreshUnavailableError();
+            }
+          }
+
           if (requestAuthToken === this.authToken) {
             this.handleAuthenticationFailure(errorContext);
           } else {
@@ -650,8 +768,12 @@ export class ApiClient {
       requestAuthToken &&
       requestAuthToken !== this.authToken
     ) {
-      request.reject(new Error('Authenticated request cancelled'));
-      return;
+      if (this.isCurrentRefreshReplacement(requestAuthToken)) {
+        request.authTokenAtQueue = this.authToken;
+      } else {
+        request.reject(new Error('Authenticated request cancelled'));
+        return;
+      }
     }
 
     
@@ -726,7 +848,7 @@ export class ApiClient {
   }
 
   static handleAuthenticationFailure(context: ErrorContext): void {
-    this.authToken = null;
+    this.setAuthToken(null);
     this.clearCache();
     this.rejectQueuedAuthenticatedRequests();
 
@@ -749,6 +871,13 @@ export class ApiClient {
     }
 
     return null;
+  }
+
+  private static isCurrentRefreshReplacement(token: string): boolean {
+    return (
+      this.lastTokenRefresh?.previousToken === token &&
+      this.lastTokenRefresh.accessToken === this.authToken
+    );
   }
 
   private static rejectQueuedAuthenticatedRequests(): void {

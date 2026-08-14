@@ -10,6 +10,7 @@ export enum CurrencyCode {
   AUD = 'AUD',
   NZD = 'NZD',
   CHF = 'CHF',
+  DKK = 'DKK',
   CNY = 'CNY',
   HKD = 'HKD',
   INR = 'INR',
@@ -123,6 +124,15 @@ export const CURRENCY_CONFIGS: Record<CurrencyCode, CurrencyConfig> = {
     decimalPlaces: 2,
     symbolBefore: false,
     spacing: DEFAULT_SPACING,
+  },
+  [CurrencyCode.DKK]: {
+    code: CurrencyCode.DKK,
+    symbol: 'kr',
+    name: 'Danish Krone',
+    locale: 'da-DK',
+    decimalPlaces: 2,
+    symbolBefore: false,
+    spacing: ' ',
   },
   [CurrencyCode.CNY]: {
     code: CurrencyCode.CNY,
@@ -278,6 +288,8 @@ export function parseCuratedCurrencyCode(value: string): CurrencyCode {
       return CurrencyCode.NZD;
     case 'CHF':
       return CurrencyCode.CHF;
+    case 'DKK':
+      return CurrencyCode.DKK;
     case 'CNY':
       return CurrencyCode.CNY;
     case 'HKD':
@@ -359,6 +371,7 @@ function isValidCurrencyCode(
     case 'AUD':
     case 'NZD':
     case 'CHF':
+    case 'DKK':
     case 'CNY':
     case 'HKD':
     case 'INR':

@@ -299,6 +299,7 @@ export const SetupOverviewPage: React.FC<{
         onDirectionFiltersChange={handleOverviewDirectionFiltersChange}
         onOverview={handleOverviewAction}
         onPairs={handlePairsAction}
+        onResetFilters={resetOverviewFilters}
         onTagFiltersChange={handleOverviewTagFiltersChange}
         registerCompareTabTarget={registerCompareTabTarget}
         registerCreateButtonTarget={registerCreateButtonTarget}
@@ -404,6 +405,7 @@ const SetupOverviewHeader: React.FC<{
   onDirectionFiltersChange: (directions: SetupDirectionFilter[]) => void;
   onOverview: () => void;
   onPairs: () => void;
+  onResetFilters: () => void;
   onTagFiltersChange: (tags: string[]) => void;
   registerCompareTabTarget: (element: HTMLElement | null) => void;
   registerCreateButtonTarget: (element: HTMLElement | null) => void;
@@ -424,6 +426,7 @@ const SetupOverviewHeader: React.FC<{
   onDirectionFiltersChange,
   onOverview,
   onPairs,
+  onResetFilters,
   onTagFiltersChange,
   registerCompareTabTarget,
   registerCreateButtonTarget,
@@ -515,6 +518,7 @@ const SetupOverviewHeader: React.FC<{
           selectedDirections={selectedDirectionFilters}
           selectedTags={selectedTagFilters}
           onDirectionsChange={onDirectionFiltersChange}
+          onReset={onResetFilters}
           onTagsChange={onTagFiltersChange}
         />
       </div>

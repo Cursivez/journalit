@@ -1,6 +1,6 @@
 
 
-import { App, TFile, TAbstractFile } from 'obsidian';
+import { App, TFile, TAbstractFile, TFolder } from 'obsidian';
 import { scheduleIdle } from '../../utils/deferredExecution';
 import type JournalitPlugin from '../../main';
 import { eventBus, type Unsubscribe } from '../events';
@@ -64,6 +64,10 @@ export interface IndexConfig {
   valueExtractor?: (data: unknown, field: string) => unknown;
   
   fileFilter?: (file: TFile) => boolean;
+  
+  dataFilter?: (data: unknown, file: TFile) => boolean;
+  
+  folderFilter?: (path: string) => boolean;
 }
 
 
@@ -91,7 +95,10 @@ export class IndexManager {
   
   private processedFiles: Set<string> = new Set();
   
-  private boundHandleFileChange: (file: TAbstractFile) => void;
+  private boundHandleFileChange: (
+    file: TAbstractFile,
+    oldPath?: string
+  ) => void;
   
   private app: App;
   
@@ -101,7 +108,10 @@ export class IndexManager {
   
   private isInitialized: boolean = false;
   
-  private pendingFileChanges: TAbstractFile[] = [];
+  private pendingFileChanges: Array<{
+    file: TAbstractFile;
+    oldPath?: string;
+  }> = [];
   
   private saveIntervalId: number | null = null;
   
@@ -115,6 +125,8 @@ export class IndexManager {
   private pendingRebuildIndexes: Set<string> = new Set();
   
   private eventUnsubscribers: Unsubscribe[] = [];
+  
+  private listenersRegistered: boolean = false;
 
   
   constructor(
@@ -125,8 +137,8 @@ export class IndexManager {
     this.app = app;
     this.dataExtractor = dataExtractor;
     this.persistIndexes = options.persistIndexes ?? true;
-    this.boundHandleFileChange = (file: TAbstractFile) => {
-      this.handleFileChange(file);
+    this.boundHandleFileChange = (file: TAbstractFile, oldPath?: string) => {
+      this.handleFileChange(file, oldPath);
     };
 
     
@@ -136,37 +148,41 @@ export class IndexManager {
   public setPlugin(plugin: JournalitPlugin): void {
     this.plugin = plugin;
 
-    
-    this.plugin.registerEvent(
-      this.app.vault.on('create', this.boundHandleFileChange)
-    );
-    this.plugin.registerEvent(
-      this.app.vault.on('modify', this.boundHandleFileChange)
-    );
-    this.plugin.registerEvent(
-      this.app.vault.on('delete', this.boundHandleFileChange)
-    );
-    this.plugin.registerEvent(
-      this.app.vault.on('rename', this.boundHandleFileChange)
-    );
+    if (!this.listenersRegistered) {
+      
+      this.plugin.registerEvent(
+        this.app.vault.on('create', this.boundHandleFileChange)
+      );
+      this.plugin.registerEvent(
+        this.app.vault.on('modify', this.boundHandleFileChange)
+      );
+      this.plugin.registerEvent(
+        this.app.vault.on('delete', this.boundHandleFileChange)
+      );
+      this.plugin.registerEvent(
+        this.app.vault.on('rename', this.boundHandleFileChange)
+      );
 
-    
-    
-    this.eventUnsubscribers.push(
-      eventBus.subscribe('trade:changed', () => {
-        this.markAllIndexesDirty();
-      })
-    );
-    this.eventUnsubscribers.push(
-      eventBus.subscribe('missed-trade:changed', () => {
-        this.markAllIndexesDirty();
-      })
-    );
-    this.eventUnsubscribers.push(
-      eventBus.subscribe('backtest-trade:changed', () => {
-        this.markAllIndexesDirty();
-      })
-    );
+      
+      
+      this.eventUnsubscribers.push(
+        eventBus.subscribe('trade:changed', (payload) => {
+          if (payload.action === 'relocated') return;
+          this.markAllIndexesDirty();
+        })
+      );
+      this.eventUnsubscribers.push(
+        eventBus.subscribe('missed-trade:changed', () => {
+          this.markAllIndexesDirty();
+        })
+      );
+      this.eventUnsubscribers.push(
+        eventBus.subscribe('backtest-trade:changed', () => {
+          this.markAllIndexesDirty();
+        })
+      );
+      this.listenersRegistered = true;
+    }
 
     
     
@@ -196,10 +212,16 @@ export class IndexManager {
       this.isInitialized = true;
 
       
-      for (const file of this.pendingFileChanges) {
-        this.handleFileChange(file);
+      for (const { file, oldPath } of this.pendingFileChanges) {
+        this.handleFileChange(file, oldPath);
       }
       this.pendingFileChanges = [];
+
+      for (const indexName of this.indexConfigs.keys()) {
+        if (!this.buildingIndexes.has(indexName)) {
+          void this.buildIndex(indexName);
+        }
+      }
 
       
       if (this.persistIndexes && this.plugin) {
@@ -222,7 +244,7 @@ export class IndexManager {
     this.readyIndexes.delete(config.name);
 
     
-    if (!this.buildingIndexes.has(config.name)) {
+    if (this.isInitialized && !this.buildingIndexes.has(config.name)) {
       void this.buildIndex(config.name);
     }
   }
@@ -611,12 +633,19 @@ export class IndexManager {
     if (!config) return;
 
     
-    if (config.fileFilter && !config.fileFilter(file)) return;
+    if (config.fileFilter && !config.fileFilter(file)) {
+      this.removeFileFromIndex(file.path, indexName);
+      return;
+    }
 
     try {
       
       const data = await this.dataExtractor(file);
       if (!data) return;
+      if (config.dataFilter && !config.dataFilter(data, file)) {
+        this.removeFileFromIndex(file.path, indexName);
+        return;
+      }
 
       
       const values: Record<string, unknown> = {};
@@ -755,8 +784,86 @@ export class IndexManager {
     this.processedFiles.delete(filePath);
   }
 
+  private getIndexesForPathAndDescendants(path: string): Set<string> {
+    const indexNames = new Set<string>();
+    for (const [indexedPath, indexedByName] of this.filePathMap.entries()) {
+      if (isPathWithinDirectory(indexedPath, path)) {
+        for (const indexName of indexedByName.keys()) {
+          indexNames.add(indexName);
+        }
+      }
+    }
+    return indexNames;
+  }
+
+  private getIndexesAffectedByFolderChange(
+    folder: TFolder,
+    oldPath?: string
+  ): Set<string> {
+    const indexNames = this.getIndexesForPathAndDescendants(folder.path);
+    if (oldPath) {
+      for (const indexName of this.getIndexesForPathAndDescendants(oldPath)) {
+        indexNames.add(indexName);
+      }
+    }
+    for (const [indexName, config] of this.indexConfigs.entries()) {
+      if (config.folderFilter?.(folder.path)) {
+        indexNames.add(indexName);
+      }
+    }
+    return indexNames;
+  }
+
+  private handleFileRenameImmediately(file: TFile, oldPath: string): void {
+    const oldIndexNames = new Set(this.filePathMap.get(oldPath)?.keys() ?? []);
+    const retainedMappings = new Map<string, number>();
+
+    for (const indexName of oldIndexNames) {
+      const config = this.indexConfigs.get(indexName);
+      const remainsEligible =
+        file.extension === 'md' &&
+        (!config?.fileFilter || config.fileFilter(file));
+
+      if (remainsEligible) {
+        const fileIndex = this.filePathMap.get(oldPath)?.get(indexName);
+        if (fileIndex !== undefined) {
+          retainedMappings.set(indexName, fileIndex);
+        }
+      } else {
+        this.removeFileFromIndex(oldPath, indexName);
+      }
+    }
+
+    const oldMappings = this.filePathMap.get(oldPath);
+    const newMappings =
+      this.filePathMap.get(file.path) ?? new Map<string, number>();
+    for (const [indexName, fileIndex] of retainedMappings) {
+      oldMappings?.delete(indexName);
+      newMappings.set(indexName, fileIndex);
+    }
+    if (retainedMappings.size > 0) {
+      this.filePathMap.set(file.path, newMappings);
+      this.processedFiles.add(file.path);
+      this.isDirty = true;
+    }
+    if (oldMappings?.size === 0) {
+      this.filePathMap.delete(oldPath);
+      this.processedFiles.delete(oldPath);
+    }
+
+    for (const [indexName, config] of this.indexConfigs.entries()) {
+      if (oldIndexNames.has(indexName)) continue;
+      const becomesEligible =
+        file.extension === 'md' &&
+        (!config.fileFilter || config.fileFilter(file));
+      if (becomesEligible) {
+        this.markDirty(indexName);
+      }
+    }
+  }
+
   
-  private handleFileChange(file: TAbstractFile): void {
+  private handleFileChange(file: TAbstractFile, oldPath?: string): void {
     
     if (
       !('path' in file) ||
@@ -766,13 +873,29 @@ export class IndexManager {
 
     
     if (!this.isInitialized) {
-      this.pendingFileChanges.push(file);
+      this.pendingFileChanges.push({ file, oldPath });
       return;
+    }
+
+    const isFolder = file instanceof TFolder;
+    if (isFolder) {
+      for (const indexName of this.getIndexesAffectedByFolderChange(
+        file,
+        oldPath
+      )) {
+        this.markDirty(indexName);
+      }
+    } else if (file instanceof TFile && oldPath && oldPath !== file.path) {
+      this.handleFileRenameImmediately(file, oldPath);
     }
 
     scheduleIdle(async () => {
       try {
-        if (file instanceof TFile) {
+        if (isFolder) {
+          
+          
+          this.removeFileFromIndexes(file.path);
+        } else if (file instanceof TFile) {
           if (file.extension !== 'md') return;
 
           
@@ -873,6 +996,8 @@ export class IndexManager {
 
           
           const indexName = serialized.name;
+          const config = this.indexConfigs.get(indexName);
+          if (!config) continue;
           this.indexes.set(indexName, []);
 
           const serializedEntriesByPath = new Map<
@@ -890,6 +1015,7 @@ export class IndexManager {
 
             
             if (!file || !(file instanceof TFile)) continue;
+            if (config.fileFilter && !config.fileFilter(file)) continue;
 
             
             const entry: IndexEntry = {

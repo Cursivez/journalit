@@ -5,6 +5,7 @@ import { GlobalPasteManager } from '../utils/GlobalPasteManager';
 import { removeDropdownFixScript } from '../utils';
 import { resetPluginHookState } from '../hooks/usePlugin';
 import { EventBus } from '../services/events';
+import { clearTokenManager } from '../services/backend/TokenManager';
 
 
 interface ElementWithEmpty {
@@ -142,6 +143,8 @@ export class PluginCleanupManager {
     if (this.plugin.serviceManager) {
       this.plugin.serviceManager.cleanupServices();
     } else {
+      this.plugin.backendIntegrationService?.cleanup();
+
       
       
       
@@ -164,6 +167,11 @@ export class PluginCleanupManager {
 
     
     this.plugin.backendIntegrationService = null;
+
+    
+    
+    
+    clearTokenManager(this.plugin);
 
     
     if (this.plugin.reviewDataCache) {

@@ -25,7 +25,15 @@ import { InvalidContextMessage } from './InvalidContextMessage';
 import { OptionType } from '../../../services/options/CustomOptionsService';
 import { useEventBus } from '../../../hooks/useEventBus';
 import { parseLocalDateSafe } from '../../../utils/dateUtils';
-import { t, type TranslationKey } from '../../../lang/helpers';
+import { t } from '../../../lang/helpers';
+import {
+  compareKeyEventDays,
+  getKeyEventColor,
+  getKeyEventDayLabel,
+  KEY_EVENT_COLORS,
+  KEY_EVENT_DAYS,
+  type KeyEventColor,
+} from '../../../utils/keyEvents';
 
 
 interface KeyEventsPreviewData {
@@ -75,41 +83,8 @@ const parseFrontmatterDate = (value: unknown): Date | null =>
     ? parseLocalDateSafe(value)
     : null;
 
-const DAYS_OF_WEEK = [
-  'Monday',
-  'Tuesday',
-  'Wednesday',
-  'Thursday',
-  'Friday',
-  'Saturday',
-  'Sunday',
-];
-const EVENT_COLORS = ['gray', 'red', 'orange', 'yellow'] as const;
-type EventColor = (typeof EVENT_COLORS)[number];
-
-const getEventColor = (value: unknown): EventColor => {
-  switch (value) {
-    case 'red':
-    case 'orange':
-    case 'yellow':
-      return value;
-    default:
-      return 'gray';
-  }
-};
-
 const MAX_FRONTMATTER_RETRIES = 3;
 const FRONTMATTER_RETRY_DELAY_MS = 100;
-
-const DAY_TO_KEY: Partial<Record<string, TranslationKey>> = {
-  Monday: 'common.day.monday',
-  Tuesday: 'common.day.tuesday',
-  Wednesday: 'common.day.wednesday',
-  Thursday: 'common.day.thursday',
-  Friday: 'common.day.friday',
-  Saturday: 'common.day.saturday',
-  Sunday: 'common.day.sunday',
-};
 
 function getEventDayForDrc(date: Date): string {
   return date.toLocaleDateString('en-US', { weekday: 'long' });
@@ -137,7 +112,7 @@ export const KeyEventsWidget: React.FC<KeyEventsWidgetProps> = React.memo(
 
     
     const [selectedEvent, setSelectedEvent] = useState('');
-    const [selectedColor, setSelectedColor] = useState<EventColor>('gray');
+    const [selectedColor, setSelectedColor] = useState<KeyEventColor>('gray');
     const [selectedDay, setSelectedDay] = useState('');
     const [eventNotes, setEventNotes] = useState('');
     const [eventOptions, setEventOptions] = useState<string[]>([]);
@@ -145,7 +120,7 @@ export const KeyEventsWidget: React.FC<KeyEventsWidgetProps> = React.memo(
       null
     );
     const [editEventName, setEditEventName] = useState('');
-    const [editEventColor, setEditEventColor] = useState<EventColor>('gray');
+    const [editEventColor, setEditEventColor] = useState<KeyEventColor>('gray');
     const [editEventDay, setEditEventDay] = useState('');
     const [editEventNotes, setEditEventNotes] = useState('');
 
@@ -333,17 +308,7 @@ export const KeyEventsWidget: React.FC<KeyEventsWidgetProps> = React.memo(
           seenEventKeys.set(keyBase, occurrence);
           return { event, originalIndex, key: `${keyBase}|${occurrence}` };
         })
-        .sort((a, b) => {
-          
-          if (!a.event.day && b.event.day) return -1;
-          if (a.event.day && !b.event.day) return 1;
-          if (!a.event.day && !b.event.day) return 0;
-          
-          return (
-            DAYS_OF_WEEK.indexOf(a.event.day!) -
-            DAYS_OF_WEEK.indexOf(b.event.day!)
-          );
-        });
+        .sort((a, b) => compareKeyEventDays(a.event.day, b.event.day));
     }, [events]);
 
     
@@ -455,7 +420,7 @@ export const KeyEventsWidget: React.FC<KeyEventsWidgetProps> = React.memo(
     const handleStartEditEvent = (event: NewsEvent, index: number) => {
       setEditingEventIndex(index);
       setEditEventName(event.event);
-      setEditEventColor(getEventColor(event.color));
+      setEditEventColor(getKeyEventColor(event.color));
       setEditEventDay(event.day || '');
       setEditEventNotes(event.notes || '');
     };
@@ -535,7 +500,7 @@ export const KeyEventsWidget: React.FC<KeyEventsWidgetProps> = React.memo(
         const savedOption =
           plugin.optionsService.getEventOptionByName(eventName);
         if (savedOption?.color) {
-          setSelectedColor(getEventColor(savedOption.color));
+          setSelectedColor(getKeyEventColor(savedOption.color));
         }
         setEventNotes(savedOption?.notes || '');
       }
@@ -601,8 +566,7 @@ export const KeyEventsWidget: React.FC<KeyEventsWidgetProps> = React.memo(
       
       const showDayBadge = reviewMode === 'weekly-review' || !event.day;
 
-      const dayKey = event.day ? DAY_TO_KEY[event.day] : undefined;
-      const dayLabel = dayKey ? t(dayKey) : event.day || '';
+      const dayLabel = event.day ? getKeyEventDayLabel(event.day) : '';
 
       if (editingEventIndex === index) {
         return (
@@ -622,7 +586,7 @@ export const KeyEventsWidget: React.FC<KeyEventsWidgetProps> = React.memo(
                   const savedOption =
                     plugin.optionsService?.getEventOptionByName(eventName);
                   if (savedOption?.color) {
-                    setEditEventColor(getEventColor(savedOption.color));
+                    setEditEventColor(getKeyEventColor(savedOption.color));
                   }
                   setEditEventNotes(savedOption?.notes || '');
                 }}
@@ -641,7 +605,7 @@ export const KeyEventsWidget: React.FC<KeyEventsWidgetProps> = React.memo(
                 <span className="key-events-color-label">
                   {t('widget.key-events.color-label')}
                 </span>
-                {EVENT_COLORS.map((color) => (
+                {KEY_EVENT_COLORS.map((color) => (
                   <button
                     type="button"
                     key={color}
@@ -671,16 +635,11 @@ export const KeyEventsWidget: React.FC<KeyEventsWidgetProps> = React.memo(
                     className="key-events-day-select"
                   >
                     <option value="">{t('common.day.all-week')}</option>
-                    {DAYS_OF_WEEK.map((day) => {
-                      const dayKey = DAY_TO_KEY[day];
-                      const label = dayKey ? t(dayKey) : day;
-
-                      return (
-                        <option key={day} value={day}>
-                          {label}
-                        </option>
-                      );
-                    })}
+                    {KEY_EVENT_DAYS.map((day) => (
+                      <option key={day} value={day}>
+                        {getKeyEventDayLabel(day)}
+                      </option>
+                    ))}
                   </select>
                 </div>
               )}
@@ -818,7 +777,7 @@ export const KeyEventsWidget: React.FC<KeyEventsWidgetProps> = React.memo(
                 <span className="key-events-color-label">
                   {t('widget.key-events.color-label')}
                 </span>
-                {EVENT_COLORS.map((color) => (
+                {KEY_EVENT_COLORS.map((color) => (
                   <button
                     type="button"
                     key={color}
@@ -848,16 +807,11 @@ export const KeyEventsWidget: React.FC<KeyEventsWidgetProps> = React.memo(
                     className="key-events-day-select"
                   >
                     <option value="">{t('common.day.all-week')}</option>
-                    {DAYS_OF_WEEK.map((day) => {
-                      const dayKey = DAY_TO_KEY[day];
-                      const label = dayKey ? t(dayKey) : day;
-
-                      return (
-                        <option key={day} value={day}>
-                          {label}
-                        </option>
-                      );
-                    })}
+                    {KEY_EVENT_DAYS.map((day) => (
+                      <option key={day} value={day}>
+                        {getKeyEventDayLabel(day)}
+                      </option>
+                    ))}
                   </select>
                 </div>
               )}

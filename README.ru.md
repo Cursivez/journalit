@@ -27,7 +27,7 @@ Local-first торговый журнал для Obsidian.
 
 </div>
 
-![Home View](https://github.com/user-attachments/assets/1d82c43a-9235-4659-85c2-eedf46bd34ac)
+![Home View](https://github.com/user-attachments/assets/8ef38dac-c932-4530-aa06-4a382e5ba827)
 
 <a id="installation"></a>
 
@@ -49,7 +49,7 @@ Local-first торговый журнал для Obsidian.
 - **Панель аккаунта**: создана для profit target и drawdown в prop firm аккаунтах.
 - **Система обзоров (V2)**: шаблоны от ежедневных до годовых с конструктором макетов.
 - **[Trade Import](https://journalit.co/csv-import)**: импорт через backend для CSV, таблиц, HTML и брокерских отчетов.
-- **[Синхронизация MetaTrader 4/5](https://journalit.co/metatrader-trading-journal)**: автоматический импорт сделок через FTP.
+- **[Trade Sync](https://journalit.co/docs/trade-sync)**: автоматическая синхронизация сделок для Tradovate и MT4.
 
 ## Важные сведения
 
@@ -58,7 +58,7 @@ Local-first торговый журнал для Obsidian.
 - **Платные функции**: для полного доступа к Pro-функциям, таким как MetaTrader sync и Trade Import, требуется подписка Pro.
 - **Опциональное использование сети**: плагин использует сетевые сервисы Journalit только когда вы выбираете функции, которым они нужны. Вход в аккаунт обращается к сервисам Journalit для проверки email, валидации токена и статуса подписки. Если затем вы используете MetaTrader sync или Trade Import, плагин также подключается к backend API Journalit для координации синхронизации, получения сделок и опционального Trade Import; MetaTrader sync использует FTP-инфраструктуру под управлением Journalit. Journalit также может запрашивать курсы валют у стороннего сервиса, когда нужна мультивалютная конвертация. Эти функции включаются по выбору.
 - **Source-available, проприетарная лицензия**: плагин является проприетарным ПО с доступным для просмотра исходным кодом.
-- **Подробности о конфиденциальности**: см. [PRIVACY.md](PRIVACY.md).
+- **Подробности о конфиденциальности**: см. [PRIVACY.md](PRIVACY.md), где приведены сведения об обработке и хранении данных, а также об инфраструктуре.
 
 <a id="screenshots"></a>
 
@@ -66,17 +66,27 @@ Local-first торговый журнал для Obsidian.
 
 ### Торговая панель
 
-![Trading Dashboard](https://github.com/user-attachments/assets/d5c7b636-b8f7-489a-a199-d1bba6958717)
+![Trading Dashboard](https://github.com/user-attachments/assets/ebb402c3-c8da-41dc-9317-73f6a50d0a93)
+
+### Сетапы
+
+![Обзор сетапов](https://github.com/user-attachments/assets/09976a8b-8500-4629-b790-6cb834c84b24)
+
+![Пары сетапов](https://github.com/user-attachments/assets/bb7b66fc-db1b-4e1c-a174-32bc6bea49c6)
+
+![Сравнение сетапов](https://github.com/user-attachments/assets/8eaf5509-cf27-4e73-8c8c-2a9cf0da6c43)
 
 ### Конструктор макетов
 
 ![Layout Builder](https://github.com/user-attachments/assets/48bcc59a-2b17-4478-98b3-dce8677cca47)
 
-![Layout Builder](https://github.com/user-attachments/assets/03f20e4b-37e7-43d9-94bf-fb444e43afbf)
+![Layout Builder](https://github.com/user-attachments/assets/66744217-b3b1-46ec-bb65-ca2debcd72da)
 
-### Журнал сделок
+### Журнал сделок и галерея
 
-![Trade Log](https://github.com/user-attachments/assets/84593d6b-9783-4df6-ad06-6201f101ffcd)
+![Trade Log](https://github.com/user-attachments/assets/09586646-50a2-4fd1-970f-83e926cab19a)
+
+![Галерея](https://github.com/user-attachments/assets/1bb496ab-a165-43c6-83f0-500565f2a1c3)
 
 ### Trade Import
 
@@ -110,7 +120,7 @@ Local-first торговый журнал для Obsidian.
 - [ATAS](https://journalit.co/docs/broker-guides-atas)
 - [Trading Technologies (TT)](https://journalit.co/docs/broker-guides-tradingtechnologies)
 - [Rithmic](https://journalit.co/docs/broker-guides-rithmic)
-- [JDR Securities Limited](https://journalit.co/docs/broker-guides-jdr)
+- [MetaTrader 4/5](https://journalit.co/docs/broker-guides-jdr)
 
 Нет вашего брокера? Присоединяйтесь к [Discord](https://discord.gg/AkSw3D9h8b) и скажите, кого добавить следующим.
 

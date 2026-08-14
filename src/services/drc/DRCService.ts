@@ -1,13 +1,6 @@
 
 
-import {
-  App,
-  TFile,
-  normalizePath,
-  FileView,
-  WorkspaceLeaf,
-  type EventRef,
-} from 'obsidian';
+import { App, TFile, normalizePath, FileView, WorkspaceLeaf } from 'obsidian';
 import { DRCData } from './types';
 import { NewsEvent } from '../weekly/types';
 
@@ -33,6 +26,7 @@ import { FolderPathService } from '../core/FolderPathService';
 import { ReviewTemplateService } from '../templates/ReviewTemplateService';
 import { TemplateTransformationService } from '../templates/TemplateTransformationService';
 import { eventBus } from '../events';
+import { registerPathIndexInvalidator } from '../indexing/pathIndexInvalidator';
 import type { Unsubscribe } from '../events/types';
 import { normalizeTradeExecutionForPeriodAnalytics } from '../trade/core/TradeExecutionAnalytics';
 import { safeString } from '../../utils/safeString';
@@ -131,12 +125,14 @@ export class DRCService {
   
   private unsubscribeFns: Unsubscribe[] = [];
 
-  private metadataCacheEventRefs: EventRef[] = [];
-
-  private vaultEventRefs: EventRef[] = [];
+  
+  private disposeIndexInvalidator: (() => void) | null = null;
 
   
   private sessionLogTagIdsByDay: Map<string, ReadonlySet<string>> | null = null;
+
+  
+  private reviewedDayKeys: ReadonlySet<string> | null = null;
 
   
   constructor(
@@ -170,52 +166,26 @@ export class DRCService {
       }),
       eventBus.subscribe('review:changed', (payload) => {
         if (payload.type === 'drc') {
-          this.invalidateSessionLogTagIndex();
+          this.invalidateDRCIndexes();
         }
       }),
       eventBus.subscribe('folder-path:changed', () => {
-        this.invalidateSessionLogTagIndex();
+        this.invalidateDRCIndexes();
       })
     );
 
-    this.metadataCacheEventRefs.push(
-      this.app.metadataCache.on('changed', (file) => {
-        if (this.isDRCMarkdownPath(file.path)) {
-          this.invalidateSessionLogTagIndex();
-        }
-      })
-    );
-    let initialResolvedEventRef: EventRef | null = null;
-    initialResolvedEventRef = this.app.metadataCache.on('resolved', () => {
-      if (!initialResolvedEventRef) return;
-      const eventRef = initialResolvedEventRef;
-      initialResolvedEventRef = null;
-      this.app.metadataCache.offref(eventRef);
-      this.metadataCacheEventRefs = this.metadataCacheEventRefs.filter(
-        (registeredRef) => registeredRef !== eventRef
-      );
-      this.invalidateSessionLogTagIndex();
+    this.disposeIndexInvalidator = registerPathIndexInvalidator({
+      app: this.app,
+      matchesPath: (path) => this.isDRCMarkdownPath(path),
+      onInvalidate: () => this.invalidateDRCIndexes(),
     });
-    this.metadataCacheEventRefs.push(initialResolvedEventRef);
-    this.vaultEventRefs.push(
-      this.app.vault.on('delete', (file) => {
-        if (file instanceof TFile && this.isDRCMarkdownPath(file.path)) {
-          this.invalidateSessionLogTagIndex();
-        }
-      }),
-      this.app.vault.on('rename', (file, oldPath) => {
-        const newPathIsDRC =
-          file instanceof TFile && this.isDRCMarkdownPath(file.path);
-        if (newPathIsDRC || this.isDRCMarkdownPath(oldPath)) {
-          this.invalidateSessionLogTagIndex();
-        }
-      })
-    );
   }
 
-  private invalidateSessionLogTagIndex(): void {
+  private invalidateDRCIndexes(): void {
     this.sessionLogTagIdsByDay = null;
+    this.reviewedDayKeys = null;
     eventBus.publish('drc:session-log-index-invalidated');
+    eventBus.publish('drc:reviewed-index-invalidated');
   }
 
   private isDRCMarkdownPath(path: string): boolean {
@@ -228,6 +198,24 @@ export class DRCService {
 
     const filename = normalizedPath.slice(normalizedPath.lastIndexOf('/') + 1);
     return filename.endsWith('.md') && filename.startsWith(this.DRC_PREFIX);
+  }
+
+  
+  private getDRCFrontmatter(
+    file: TFile
+  ): { dayKey: string; frontmatter: Record<string, unknown> } | null {
+    const frontmatter: unknown =
+      this.app.metadataCache.getFileCache(file)?.frontmatter;
+    if (
+      !isRecord(frontmatter) ||
+      frontmatter.type !== 'drc' ||
+      typeof frontmatter.date !== 'string' ||
+      !/^\d{4}-\d{2}-\d{2}$/.test(frontmatter.date) ||
+      !parseLocalDateSafe(frontmatter.date)
+    ) {
+      return null;
+    }
+    return { dayKey: frontmatter.date, frontmatter };
   }
 
   private getDRCMarkdownFiles(): TFile[] {
@@ -244,30 +232,46 @@ export class DRCService {
     const tagsByDay = new Map<string, ReadonlySet<string>>();
 
     for (const file of this.getDRCMarkdownFiles()) {
-      const frontmatter: unknown =
-        this.app.metadataCache.getFileCache(file)?.frontmatter;
-      if (
-        !isRecord(frontmatter) ||
-        frontmatter.type !== 'drc' ||
-        typeof frontmatter.date !== 'string' ||
-        !/^\d{4}-\d{2}-\d{2}$/.test(frontmatter.date) ||
-        !parseLocalDateSafe(frontmatter.date) ||
-        !Array.isArray(frontmatter.sessionLog)
-      ) {
+      const drcNote = this.getDRCFrontmatter(file);
+      if (!drcNote || !Array.isArray(drcNote.frontmatter.sessionLog)) {
         continue;
       }
 
-      const tagIds = new Set(tagsByDay.get(frontmatter.date) || []);
-      for (const entry of normalizeSessionLogEntries(frontmatter.sessionLog)) {
+      const tagIds = new Set(tagsByDay.get(drcNote.dayKey) || []);
+      for (const entry of normalizeSessionLogEntries(
+        drcNote.frontmatter.sessionLog
+      )) {
         if (entry.tagId.length > 0) {
           tagIds.add(entry.tagId);
         }
       }
-      tagsByDay.set(frontmatter.date, tagIds);
+      tagsByDay.set(drcNote.dayKey, tagIds);
     }
 
     this.sessionLogTagIdsByDay = tagsByDay;
     return tagsByDay;
+  }
+
+  
+  public getReviewedDayKeys(): ReadonlySet<string> {
+    if (this.reviewedDayKeys) {
+      return this.reviewedDayKeys;
+    }
+
+    const dayKeys = new Set<string>();
+
+    for (const file of this.getDRCMarkdownFiles()) {
+      const drcNote = this.getDRCFrontmatter(file);
+      if (!drcNote) continue;
+
+      const eodReview = drcNote.frontmatter.endOfDayReview;
+      if (isRecord(eodReview) && eodReview.reviewed === true) {
+        dayKeys.add(drcNote.dayKey);
+      }
+    }
+
+    this.reviewedDayKeys = dayKeys;
+    return dayKeys;
   }
 
   
@@ -1434,18 +1438,12 @@ export class DRCService {
   }
 
   
-  public destroy(): void {
+  public cleanup(): void {
     for (const unsubscribe of this.unsubscribeFns) {
       unsubscribe();
     }
     this.unsubscribeFns = [];
-    for (const eventRef of this.metadataCacheEventRefs) {
-      this.app.metadataCache.offref(eventRef);
-    }
-    this.metadataCacheEventRefs = [];
-    for (const eventRef of this.vaultEventRefs) {
-      this.app.vault.offref(eventRef);
-    }
-    this.vaultEventRefs = [];
+    this.disposeIndexInvalidator?.();
+    this.disposeIndexInvalidator = null;
   }
 }

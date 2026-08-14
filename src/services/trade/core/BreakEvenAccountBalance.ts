@@ -11,7 +11,8 @@ interface BreakEvenAccountBalanceAccountSnapshot {
   accountId?: string | number | null;
 }
 
-interface BreakEvenAccountBalanceSnapshot {
+export interface BreakEvenAccountBalanceSnapshot {
+  accountKey: string;
   balance: number;
   currency?: string;
 }
@@ -32,6 +33,7 @@ interface BreakEvenAccountBalanceResolution {
 }
 
 interface BreakEvenAccountBalanceFields {
+  breakEvenAccountCurrentBalanceSnapshots?: BreakEvenAccountBalanceSnapshot[];
   breakEvenAccountCurrentBalance?: number;
   breakEvenAccountCurrentBalanceCurrency?: string;
   breakEvenAccountCurrentBalanceTotal?: number;
@@ -97,6 +99,7 @@ export const buildBreakEvenAccountBalanceLookup = (
     }
 
     const snapshot: BreakEvenAccountBalanceSnapshot = {
+      accountKey: normalizeAccountLookupKey(account.name),
       balance,
       currency: account.currency,
     };
@@ -223,6 +226,9 @@ export const resolveBreakEvenAccountBalances = (
 export const getBreakEvenAccountBalanceFields = (
   resolution: BreakEvenAccountBalanceResolution
 ): BreakEvenAccountBalanceFields => ({
+  breakEvenAccountCurrentBalanceSnapshots: resolution.unresolved
+    ? undefined
+    : resolution.resolvedSnapshots,
   breakEvenAccountCurrentBalance: resolution.singleBalance,
   breakEvenAccountCurrentBalanceCurrency: resolution.singleBalanceCurrency,
   breakEvenAccountCurrentBalanceTotal: resolution.totalBalance,

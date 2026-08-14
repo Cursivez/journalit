@@ -68,6 +68,7 @@ import {
 } from '../../guides/homeGuideIds';
 import {
   collectAvailableHomeAccounts,
+  DEFAULT_HOME_FILTERS,
   normalizeHomeAccountSelection,
   normalizeHomeTradeTypes,
   remapHomeSelectedAccounts,
@@ -83,6 +84,7 @@ import {
 } from './homeBackgroundUtils';
 import { useLeafActive } from '../../hooks/useLeafActive';
 import { subscribeToHomeModeChanges } from './homeModeEvents';
+import { runQueuedTradeCountRefresh } from './homeTradeCountRefresh';
 
 const asHomeAccountTradeSnapshots = (
   value: unknown
@@ -347,21 +349,30 @@ function useHomePageModel(plugin: JournalitPlugin, isActive: boolean) {
 
   
   const [selectedPeriod, setSelectedPeriod] = useState<HomePeriod>(() => {
-    return plugin.uiStateManager.getState().selectedPeriod || 'lifetime';
+    return (
+      plugin.uiStateManager.getState().selectedPeriod ??
+      DEFAULT_HOME_FILTERS.period
+    );
   });
   const [selectedAccounts, setSelectedAccounts] = useState<string[]>(() => {
-    return plugin.uiStateManager.getState().selectedHomeAccounts || [];
+    return (
+      plugin.uiStateManager.getState().selectedHomeAccounts ?? [
+        ...DEFAULT_HOME_FILTERS.accounts,
+      ]
+    );
   });
   const [selectedTradeTypes, setSelectedTradeTypes] = useState(() =>
     normalizeHomeTradeTypes(
-      plugin.uiStateManager.getState().selectedHomeTradeTypes
+      plugin.uiStateManager.getState().selectedHomeTradeTypes ?? [
+        ...DEFAULT_HOME_FILTERS.tradeTypes,
+      ]
     )
   );
   const [explicitAllAccountsSelected, setExplicitAllAccountsSelected] =
     useState(
       () =>
         plugin.uiStateManager.getState().homeAccountFilterSelectAllActive ??
-        false
+        DEFAULT_HOME_FILTERS.explicitAllAccountsSelected
     );
   const [availableAccounts, setAvailableAccounts] = useState<string[]>([]);
   const [tradeCount, setTradeCount] = useState<number | null>(null);
@@ -382,6 +393,8 @@ function useHomePageModel(plugin: JournalitPlugin, isActive: boolean) {
   const registerGridTarget = useGuideTarget(HOME_GRID_TARGET_ID);
 
   const isTradeCountLoadingRef = useRef(false);
+  const isTradeCountRefreshQueuedRef = useRef(false);
+  const activeTradeCountRefreshRef = useRef<Promise<void> | null>(null);
   const homeTradeDataReadyRef = useRef(false);
   const homeStartupRefreshDoneRef = useRef(false);
   const homeAuthoritativeBootstrapDoneRef = useRef(false);
@@ -734,6 +747,26 @@ function useHomePageModel(plugin: JournalitPlugin, isActive: boolean) {
     [plugin]
   );
 
+  const handleResetFilters = useCallback(async () => {
+    const defaultTradeTypes = [...DEFAULT_HOME_FILTERS.tradeTypes];
+    const defaultAccounts = [...DEFAULT_HOME_FILTERS.accounts];
+
+    setSelectedPeriod(DEFAULT_HOME_FILTERS.period);
+    setSelectedTradeTypes(defaultTradeTypes);
+    setSelectedAccounts(defaultAccounts);
+    setExplicitAllAccountsSelected(
+      DEFAULT_HOME_FILTERS.explicitAllAccountsSelected
+    );
+
+    await plugin.uiStateManager.updateState({
+      selectedPeriod: DEFAULT_HOME_FILTERS.period,
+      selectedHomeTradeTypes: defaultTradeTypes,
+      selectedHomeAccounts: defaultAccounts,
+      homeAccountFilterSelectAllActive:
+        DEFAULT_HOME_FILTERS.explicitAllAccountsSelected,
+    });
+  }, [plugin]);
+
   const ensureHomeTradeDataReady = useCallback(async () => {
     if (homeTradeDataReadyRef.current) {
       return;
@@ -944,35 +977,34 @@ function useHomePageModel(plugin: JournalitPlugin, isActive: boolean) {
   }, []);
 
   const refreshTradeCount = useCallback(async () => {
-    if (isTradeCountLoadingRef.current) {
-      return;
-    }
+    await runQueuedTradeCountRefresh(
+      isTradeCountLoadingRef,
+      isTradeCountRefreshQueuedRef,
+      activeTradeCountRefreshRef,
+      async () => {
+        try {
+          if (!homeAuthoritativeBootstrapDoneRef.current) {
+            await bootstrapHomeAuthoritativeData();
+            return;
+          }
 
-    isTradeCountLoadingRef.current = true;
+          const tradeService = plugin.serviceManager.getTradeService();
+          const missedTradeService =
+            await plugin.serviceManager.getMissedTradeService();
 
-    try {
-      if (!homeAuthoritativeBootstrapDoneRef.current) {
-        await bootstrapHomeAuthoritativeData();
-        return;
+          await ensureHomeTradeDataReady();
+
+          const [tradeCountTotal, missedTradeCount] = await Promise.all([
+            tradeService.getTradeCount(),
+            missedTradeService.getMissedTradeCount(),
+          ]);
+
+          setTradeCount(tradeCountTotal + missedTradeCount);
+        } catch (error) {
+          console.error('[HomePage] Failed to refresh trade count:', error);
+        }
       }
-
-      const tradeService = plugin.serviceManager.getTradeService();
-      const missedTradeService =
-        await plugin.serviceManager.getMissedTradeService();
-
-      await ensureHomeTradeDataReady();
-
-      const [tradeCountTotal, missedTradeCount] = await Promise.all([
-        tradeService.getTradeCount(),
-        missedTradeService.getMissedTradeCount(),
-      ]);
-
-      setTradeCount(tradeCountTotal + missedTradeCount);
-    } catch (error) {
-      console.error('[HomePage] Failed to refresh trade count:', error);
-    } finally {
-      isTradeCountLoadingRef.current = false;
-    }
+    );
   }, [bootstrapHomeAuthoritativeData, ensureHomeTradeDataReady, plugin]);
 
   const handleTradeChanged = useCallback(
@@ -1438,6 +1470,7 @@ function useHomePageModel(plugin: JournalitPlugin, isActive: boolean) {
     selectedAccounts,
     explicitAllAccountsSelected,
     handleAccountFilterChange,
+    handleResetFilters,
     isEditing,
     setShowWidgetSelector,
     registerAddWidgetButtonTarget,
@@ -1566,6 +1599,7 @@ const HomeOverviewPanel: React.FC<HomeOverviewPanelProps> = ({
                     model.explicitAllAccountsSelected
                   }
                   onAccountsChange={model.handleAccountFilterChange}
+                  onReset={() => void model.handleResetFilters()}
                   onOpen={() =>
                     emitGuideAction(HOME_FILTER_POPOVER_OPENED_ACTION_ID)
                   }

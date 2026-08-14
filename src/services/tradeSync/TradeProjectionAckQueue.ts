@@ -421,14 +421,14 @@ async function flushTradeProjectionAcksUnlocked(
       permanentlyFailed: [],
     };
   }
-  const ownerToken = ApiClient.getAuthToken();
+  const ownerAuthSessionVersion = ApiClient.getAuthSessionVersion();
   const outgoingRequest = projectionAckDeliveryRequest(request);
   try {
     await deliverProjectionAck(backendService, outgoingRequest, options);
     if (
       isProjectionAckRuntimeDisposed(plugin) ||
       getTradeProjectionOwnerId(plugin) !== ownerUserId ||
-      ApiClient.getAuthToken() !== ownerToken
+      ApiClient.getAuthSessionVersion() !== ownerAuthSessionVersion
     ) {
       return {
         continueDrain: false,
@@ -503,7 +503,7 @@ async function flushTradeProjectionAcksUnlocked(
           !shouldContinue ||
           isProjectionAckRuntimeDisposed(plugin) ||
           getTradeProjectionOwnerId(plugin) !== ownerUserId ||
-          ApiClient.getAuthToken() !== ownerToken
+          ApiClient.getAuthSessionVersion() !== ownerAuthSessionVersion
         ) {
           return false;
         }

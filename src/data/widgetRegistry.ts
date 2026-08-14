@@ -255,6 +255,14 @@ export const WIDGET_REGISTRY: WidgetDefinition[] = [
     category: 'statistics',
     availableIn: ['drc', 'weekly', 'monthly', 'quarterly', 'yearly'],
   },
+  {
+    type: 'tag-performance',
+    name: t('widget.tag-performance.name'),
+    description: t('widget.tag-performance.description'),
+    category: 'statistics',
+    availableIn: ['drc', 'weekly', 'monthly', 'quarterly', 'yearly'],
+    defaultConfig: { topN: 10 },
+  },
   
   {
     type: 'best-worst',
@@ -438,24 +446,28 @@ export function getWidgetByType(type: string): WidgetDefinition | undefined {
   return WIDGET_REGISTRY.find((w) => w.type === type);
 }
 
+export function widgetMatchesPlacement(
+  widget: WidgetDefinition,
+  type: string,
+  config?: Record<string, unknown>
+): boolean {
+  if (widget.type !== type) return false;
+  if (!widget.defaultConfig) return true;
+  if (!config) return false;
+
+  return Object.entries(widget.defaultConfig).every(
+    ([key, val]) => config[key] === val
+  );
+}
+
 
 export function getWidgetByTypeAndConfig(
   type: string,
   config?: Record<string, unknown>
 ): WidgetDefinition | undefined {
-  return WIDGET_REGISTRY.find((w) => {
-    if (w.type !== type) return false;
-    
-    if (w.defaultConfig) {
-      if (!config) return false;
-      
-      return Object.entries(w.defaultConfig).every(
-        ([key, val]) => config[key] === val
-      );
-    }
-    
-    return !config || Object.keys(config).length === 0;
-  });
+  return WIDGET_REGISTRY.find((widget) =>
+    widgetMatchesPlacement(widget, type, config)
+  );
 }
 
 

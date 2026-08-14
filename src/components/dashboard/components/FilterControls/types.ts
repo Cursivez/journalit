@@ -13,9 +13,6 @@ export interface AccountFilterProps {
 
   
   onChange: (accounts: string[]) => void;
-
-  
-  useOnlyProvidedAccounts?: boolean;
 }
 
 

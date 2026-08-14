@@ -776,9 +776,17 @@ export class ServiceManager {
       console.error('Error cleaning up CustomDataService:', error);
     }
 
+    if (this._weeklyReviewService) {
+      this._weeklyReviewService.cleanup();
+      this._weeklyReviewService = null;
+    }
+
+    if (this._drcService) {
+      this._drcService.cleanup();
+      this._drcService = null;
+    }
+
     
-    this._drcService = null;
-    this._weeklyReviewService = null;
     this._optionsService = null;
     this._customFieldsService = null;
     this._customReviewFieldsService = null;

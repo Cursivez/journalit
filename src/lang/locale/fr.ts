@@ -750,6 +750,10 @@ const fr: Lang = {
   'notice.setups-added': 'Ajout de setups aux trades {count}',
   'notice.tags-added': 'Added tags to {count} trades',
   'notice.mistakes-added': "Ajout d'erreurs aux trades {count}",
+  'notice.trades-duplicated.one': '{count} trade dupliqué',
+  'notice.trades-duplicated.few': '{count} trades dupliqués',
+  'notice.trades-duplicated.many': '{count} trades dupliqués',
+  'notice.trades-duplicated.other': '{count} trades dupliqués',
   'notice.trades-deleted.one': '{count} trade supprimé',
   'notice.trades-deleted.few': '{count} trades supprimés',
   'notice.trades-deleted.many': '{count} trades supprimés',
@@ -832,6 +836,8 @@ const fr: Lang = {
   'notice.error.add-setups': "Erreur lors de l'ajout des setups : {error}",
   'notice.error.add-tags': 'Error adding tags: {error}',
   'notice.error.add-mistakes': "Erreur lors de l'ajout d'erreurs : {error}",
+  'notice.error.duplicate-trades':
+    'Erreur lors de la duplication des trades : {error}',
   'notice.error.delete-trades':
     'Erreur lors de la suppression des trades : {error}',
   'notice.error.csv-validation':
@@ -902,7 +908,7 @@ const fr: Lang = {
     'Cliquez sur ce bouton pour sélectionner plusieurs trades à la fois. Lorsque la sélection multiple est activée, les clics sur les lignes sélectionnent les trades au lieu de les ouvrir.',
   'tradelog.guide.batch-actions.title': 'Ce sont vos actions par lots',
   'tradelog.guide.batch-actions.description':
-    'Utilisez cette barre pour sélectionner tous les trades visibles, effacer votre sélection, marquer les trades comme revus, ajouter des setups, ajouter des erreurs ou supprimer plusieurs trades à la fois. Vous pouvez également faire un Maj-clic pour sélectionner une plage de trades.',
+    'Utilisez cette barre pour sélectionner tous les trades visibles, effacer votre sélection, marquer les trades comme revus, ajouter des setups, ajouter des erreurs, dupliquer des trades ou supprimer plusieurs trades à la fois. Vous pouvez également faire un Maj-clic pour sélectionner une plage de trades.',
   'tradelog.guide.column-settings.title': 'Ouvrir les paramètres de la colonne',
   'tradelog.guide.column-settings.description':
     'Cliquez sur ce bouton pour choisir les colonnes à afficher et le degré de densité ou de détail du tableau.',
@@ -1025,7 +1031,7 @@ const fr: Lang = {
     'Ce sélecteur affiche les widgets que vous pouvez ajouter pour ce type de revue.',
   'layoutBuilder.guide.choose-widget.title': 'Choisissez un widget',
   'layoutBuilder.guide.choose-widget.description':
-    'Cette liste montre tous les widgets que vous pouvez ajouter pour ce type de revue. Choisissez le widget de votre choix ou appuyez sur Suivant et Journalit choisira le premier pour vous.',
+    'Saisissez un nom, une description ou une catégorie dans le champ de recherche, puis choisissez le widget. Vous pouvez aussi appuyer sur Suivant pour sélectionner le premier résultat.',
   'layoutBuilder.guide.widget-library-docs.title':
     'Utilisez la bibliothèque de widgets si vous êtes bloqué',
   'layoutBuilder.guide.widget-library-docs.description':
@@ -1171,6 +1177,17 @@ const fr: Lang = {
   'tradelog.batch.add-mistakes.label': 'Ajouter des erreurs',
   'tradelog.batch.adding': 'Ajout...',
   'tradelog.batch.add-count': 'Ajouter ({count})',
+  'tradelog.batch.duplicate.aria': 'Dupliquer les trades',
+  'tradelog.batch.duplicate.label': 'Dupliquer',
+  'tradelog.batch.duplicating': 'Duplication...',
+  'tradelog.batch.duplicate-skipped.one':
+    '{count} note sélectionnée ne peut pas être dupliquée',
+  'tradelog.batch.duplicate-skipped.few':
+    '{count} notes sélectionnées ne peuvent pas être dupliquées',
+  'tradelog.batch.duplicate-skipped.many':
+    '{count} notes sélectionnées ne peuvent pas être dupliquées',
+  'tradelog.batch.duplicate-skipped.other':
+    '{count} notes sélectionnées ne peuvent pas être dupliquées',
   'tradelog.batch.delete.aria': 'Supprimer les trades',
   'tradelog.batch.delete.title': 'Supprimer les trades sélectionnés',
   'tradelog.batch.deleting': 'Suppression...',
@@ -1390,6 +1407,40 @@ const fr: Lang = {
   'dashboard.widgets.hourly-performance.metric.total-r': 'R total',
   'dashboard.widgets.hourly-performance.metric.avg-r': 'R moy.',
   'dashboard.widgets.weekday-performance.tooltip.no-trades': 'Aucun trade',
+  'dashboard.widgets.setup-performance.title': 'Performance des setups',
+  'dashboard.widgets.setup-performance.description':
+    'Graphique en barres classé comparant la performance par configuration',
+  'dashboard.widgets.setup-performance.empty':
+    'Aucune donnée de performance des setups',
+  'dashboard.widgets.setup-performance.masked-label': 'Configurations',
+  'dashboard.widgets.tag-performance.title': 'Performance des tags',
+  'dashboard.widgets.tag-performance.description':
+    'Graphique en barres classé comparant la performance par balise',
+  'dashboard.widgets.tag-performance.empty':
+    'Aucune donnée de performance des tags',
+  'dashboard.widgets.tag-performance.masked-label': 'Balises',
+  'dashboard.widgets.ticker-performance.title': 'Performance par ticker',
+  'dashboard.widgets.ticker-performance.metric-aria': 'Métrique',
+  'dashboard.widgets.ticker-performance.view-aria': "Mode d'affichage",
+  'dashboard.widgets.ticker-performance.view.best-and-worst':
+    'Meilleurs et moins bons',
+  'dashboard.widgets.ticker-performance.view.best': '10 meilleurs',
+  'dashboard.widgets.ticker-performance.view.worst': '10 moins bons',
+  'dashboard.widgets.ticker-performance.metric.total-pnl': 'P&L total',
+  'dashboard.widgets.ticker-performance.metric.total-r': 'R total',
+  'dashboard.widgets.ticker-performance.metric.win-rate': 'Taux de réussite',
+  'dashboard.widgets.ticker-performance.tooltip.ticker': 'Symbole : {ticker}',
+  'dashboard.widgets.ticker-performance.tooltip.trades': 'Opérations : {count}',
+  'dashboard.widgets.ticker-performance.tooltip.win-rate':
+    'Taux de réussite : {rate} ({wins}G / {losses}P)',
+
+  'dashboard.widgets.ticker-performance.empty':
+    'Aucune donnée de performance par ticker',
+  'dashboard.widgets.ticker-performance.empty-submessage':
+    'Aucun trade clôturé avec un ticker ne correspond aux filtres actuels.',
+  'dashboard.widgets.ticker-performance.masked-ticker': 'Symbole',
+  'dashboard.widgets.ticker-performance.omitted-count': 'Omis : {count}',
+
   'dashboard.widgets.rollingStats.title': 'Gains/Pertes moyennes glissantes',
   'dashboard.widgets.rollingStats.period': 'Période',
   'dashboard.widgets.rollingStats.trades': '{count} trades',
@@ -1450,6 +1501,12 @@ const fr: Lang = {
   'home.widget.weekly-summary.name': 'Résumé hebdomadaire',
   'home.widget.weekly-summary.description':
     'Mesures de la semaine en cours avec graphique sparkline P&L quotidien',
+  'home.widget.key-events.name': 'Événements clés',
+  'home.widget.key-events.description':
+    'Actualités et événements de marché importants de la revue hebdomadaire en cours',
+  'home.widget.key-events.empty-title': 'Aucun événement clé',
+  'home.widget.key-events.open-aria':
+    'Ouvrir la revue hebdomadaire de cette semaine',
   'home.widget.position-size.name': 'Calculateur de taille de position',
   'home.widget.position-size.description':
     'Calculer la taille de la position en fonction du pourcentage de risque du compte',
@@ -1956,6 +2013,7 @@ const fr: Lang = {
   'datepicker.placeholder.year': 'AA',
   'datepicker.placeholder.hour': 'HH',
   'datepicker.placeholder.minute': 'MM',
+  'datepicker.placeholder.second': 'SS',
   'common.loading': 'Chargement...',
   'common.error': 'Erreur',
   'common.success': 'Succès',
@@ -3736,6 +3794,12 @@ const fr: Lang = {
     'Afficher les heures au format 24 heures (14h30) au lieu du format 12 heures AM/PM (14h30)',
   'settings.general.use-24-hour-time-aria':
     'Utiliser le format horaire 24 heures',
+  'settings.general.show-seconds':
+    'Afficher les secondes dans les heures de trading',
+  'settings.general.show-seconds-desc':
+    "Afficher les secondes lors de la saisie des heures d'entrée et de sortie.",
+  'settings.general.show-seconds-aria':
+    'Afficher les secondes dans les heures de trading',
   'settings.general.skip-weekends': 'Exclure les week-ends',
   'settings.general.skip-weekends-desc':
     'Lorsque cette option est activée, Journalit traite les week-ends comme des jours sans trading dans tout le plugin. Désactivez-la si vous tradez ou analysez une activité le samedi et le dimanche.',
@@ -4441,6 +4505,11 @@ const fr: Lang = {
   'widget.header.month-short.10': 'Nov',
   'widget.header.month-short.11': 'Déc',
   'widget.picker.placeholder': 'Sélectionnez un widget...',
+  'widget.picker.search-placeholder': 'Rechercher des widgets...',
+  'widget.picker.search-label': 'Rechercher des widgets',
+  'widget.picker.clear-search': 'Effacer la recherche de widgets',
+  'widget.picker.results-label': 'Widgets disponibles',
+  'widget.picker.no-results': 'Aucun widget ne correspond à votre recherche',
   'widget.category.charts': 'Graphiques',
   'widget.category.statistics': 'Statistiques',
   'widget.category.content': 'Contenu',
@@ -4580,6 +4649,9 @@ const fr: Lang = {
   'widget.account-breakdown.column.pnl': 'P&L net',
   'widget.account-breakdown.column.win-rate': 'Taux de réussite',
   'widget.account-breakdown.column.profit-factor': 'Facteur de profit',
+  'widget.tag-performance.name': 'Performance des balises',
+  'widget.tag-performance.description':
+    'Répartition des performances par balise de trade',
   'widget.setup-performance.name': 'Performances de setup',
   'widget.setup-performance.description':
     'Répartition des performances par setup de trading',
@@ -4822,6 +4894,7 @@ const fr: Lang = {
   'widget.table.header.pnl': 'P&L',
   'widget.table.header.win-rate': 'Gagner%',
   'widget.table.header.profit-factor': 'PF',
+  'widget.table.header.tag': 'Balise',
   'widget.table.header.setup': 'Setup',
   'widget.table.header.a-games': 'Un jeux',
   'widget.table.header.b-games': 'Jeux B',
@@ -5614,6 +5687,7 @@ const fr: Lang = {
   'home.widget.setups.win-rate': '{rate}% de taux de réussite',
   'home.widget.weekly.title': 'Cette semaine',
   'home.widget.weekly.no-trades': 'pas encore de trades cette semaine',
+  'home.widget.weekly.breakeven': "à l'équilibre cette semaine",
   'home.widget.weekly.losing-days': "{count} jours perdus d'affilée",
   'home.widget.weekly.winning-days': '{count} jours consécutifs gagnants',
   'home.widget.weekly.above-average': 'au-dessus de votre moyenne hebdomadaire',
@@ -5645,6 +5719,7 @@ const fr: Lang = {
   'calendar.week': 'semaine',
   'calendar.trade': '{count} trades',
   'calendar.trades': '{count} trades',
+  'calendar.reviewed': 'Révisé',
   'calendar.month.january': 'Janvier',
   'calendar.month.february': 'Février',
   'calendar.month.march': 'Mars',
@@ -5782,6 +5857,8 @@ const fr: Lang = {
   'widget.empty.no-weekly-data': 'Aucune données pour la période',
   'widget.empty.no-monthly-data': 'Aucune données pour la période',
   'widget.empty.no-quarterly-data': 'Aucune données pour la période',
+  'widget.empty.no-tag-data':
+    'Aucune donnée de balise disponible pour cette période',
   'widget.empty.no-setup-data':
     'Aucune donnée de setup disponible pour cette période',
   'widget.empty.no-mental-game-data':
@@ -5899,6 +5976,9 @@ const fr: Lang = {
   'widget.hourlyPerformance.name': 'Performance horaire',
   'widget.hourlyPerformance.description':
     'Histogramme montrant le P&L pour chaque heure de la journée',
+  'widget.tickerPerformance.name': 'Performance par ticker',
+  'widget.tickerPerformance.description':
+    'Graphique à barres classé comparant les performances par ticker',
   'widget.tradesChart.limit': '{count} trades',
   'widget.drawdownChart.name': 'Retrait Chart',
   'widget.drawdownChart.description':
@@ -7769,6 +7849,7 @@ const fr: Lang = {
   'home.filters.trade-type': 'Type de trade',
   'home.filters.accounts': 'Comptes',
   'home.filters.back': 'Retour',
+  'filter.reset': 'Réinitialiser les filtres',
   'home.guide.modes.title': 'Une dernière chose : le Tableau de bord',
   'home.guide.modes.description':
     'La Vue d’ensemble et le Tableau de bord partagent cette page. Passez maintenant au Tableau de bord pour continuer avec une courte visite de vos statistiques de performance.',

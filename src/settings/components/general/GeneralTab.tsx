@@ -1368,6 +1368,29 @@ function GeneralTradeBasicsSettings({
       <div className="setting-item">
         <div className="setting-item-info">
           <div className="setting-item-name">
+            {t('settings.general.show-seconds')}
+          </div>
+          <div className="setting-item-description">
+            {t('settings.general.show-seconds-desc')}
+          </div>
+        </div>
+        <div className="setting-item-control">
+          <ToggleSwitch
+            checked={plugin.settings.trade.showSeconds ?? false}
+            onChange={async (checked: boolean) => {
+              plugin.settings.trade.showSeconds = checked;
+              await plugin.saveSettings();
+              setSettingsVersion((prev) => prev + 1);
+            }}
+            id="show-trade-seconds-toggle"
+            ariaLabel={t('settings.general.show-seconds-aria')}
+          />
+        </div>
+      </div>
+
+      <div className="setting-item">
+        <div className="setting-item-info">
+          <div className="setting-item-name">
             {t('settings.general.skip-weekends')}
           </div>
           <div className="setting-item-description">

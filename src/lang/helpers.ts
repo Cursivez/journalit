@@ -16,6 +16,8 @@ type PluralBaseKey =
   | 'validation.advanced-tab-errors'
   | 'notice.csv-symbol-mappings-created'
   | 'notice.trades-deleted'
+  | 'notice.trades-duplicated'
+  | 'tradelog.batch.duplicate-skipped'
   | 'notice.mark-reviewed'
   | 'tradelog.batch.delete-confirm.message'
   | 'tradelog.batch.errors-count'

@@ -102,6 +102,19 @@ function getTradeSequenceLabel(sourcePath: string | undefined): string | null {
   return match ? match[1].toUpperCase() : null;
 }
 
+export function getTradeHeaderSequenceLabel(
+  sourcePath: string | undefined,
+  noteKind: TradeHeaderProps['noteKind']
+): string | null {
+  if (noteKind && noteKind !== 'trade') return null;
+
+  const sequenceLabel = getTradeSequenceLabel(sourcePath);
+  if (!sequenceLabel?.startsWith('T')) return null;
+
+  const sequenceNumber = Number.parseInt(sequenceLabel.slice(1), 10);
+  return sequenceNumber > 1 ? sequenceLabel : null;
+}
+
 export function getTradeHeaderReviewDate({
   entryTime,
   sourcePath,
@@ -251,6 +264,7 @@ export const TradeHeader: React.FC<TradeHeaderProps> = ({
   const isPnlMasked = shouldMask('pnl');
   const isNavigatingRef = React.useRef(false);
   const displayInstrument = getDisplayInstrument(instrument, sourcePath);
+  const tradeSequenceLabel = getTradeHeaderSequenceLabel(sourcePath, noteKind);
 
   const isOpen =
     tradeStatus === 'OPEN' ||
@@ -587,8 +601,15 @@ export const TradeHeader: React.FC<TradeHeaderProps> = ({
           )}
           <span className="trade-instrument-mainline">
             <span className="trade-instrument-title-row">
-              <span className="trade-instrument-symbol">
-                {displayInstrument || t('trade.header.unknown-instrument')}
+              <span className="trade-instrument-identity">
+                <span className="trade-instrument-symbol">
+                  {displayInstrument || t('trade.header.unknown-instrument')}
+                </span>
+                {tradeSequenceLabel && (
+                  <span className="trade-instrument-sequence">
+                    {tradeSequenceLabel}
+                  </span>
+                )}
               </span>
               {onToggleReviewed && (
                 <span

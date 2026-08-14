@@ -1,3 +1,5 @@
+import { mapOutsideMarkdownCodeRegions } from './MarkdownContentParser';
+
 export const USER_OWNED_TRADE_CONTENT_MARKER = '<!-- User Notes Below -->';
 const LEGACY_GENERATED_NOTES_MARKER = '<!-- Legacy Generated Notes -->';
 const TRADE_REVIEW_HEADING_PATTERN = /^##\s+Trade Review\s*$/gm;
@@ -76,16 +78,25 @@ export function extractUserOwnedTradeNotes(
       bodySection.substring(
         markerIndex + USER_OWNED_TRADE_CONTENT_MARKER.length
       )
-    ).trim();
-    return notes.length > 0 ? notes : undefined;
+    );
+    const trimmedNotes = trimDocumentBlankLines(notes);
+    return trimmedNotes.length > 0 ? trimmedNotes : undefined;
   }
 
   const legacyContent = extractLegacyUserOwnedTradeContent(bodySection);
-  const notes = extractPreservedUserText(legacyContent).trim();
+  const notes = trimDocumentBlankLines(extractPreservedUserText(legacyContent));
   return notes.length > 0 ? notes : undefined;
 }
 
-function removeGeneratedTradeReviewBlock(notesSection: string): string {
+function trimDocumentBlankLines(content: string): string {
+  return content
+    .replace(/^(?:[ \t]*\r?\n)+/, '')
+    .replace(/(?:\r?\n[ \t]*)+$/, '');
+}
+
+function removeGeneratedTradeReviewBlockFromRenderedMarkdown(
+  notesSection: string
+): string {
   TRADE_REVIEW_HEADING_PATTERN.lastIndex = 0;
   const matches = Array.from(
     notesSection.matchAll(TRADE_REVIEW_HEADING_PATTERN)
@@ -105,6 +116,14 @@ function removeGeneratedTradeReviewBlock(notesSection: string): string {
   }
 
   return notesSection;
+}
+
+function removeGeneratedTradeReviewBlock(notesSection: string): string {
+  return mapOutsideMarkdownCodeRegions(
+    notesSection,
+    removeGeneratedTradeReviewBlockFromRenderedMarkdown,
+    { protectHtmlComments: false }
+  );
 }
 
 function extractLegacyUserOwnedTradeContent(bodySection: string): string {
@@ -197,11 +216,11 @@ function extractPreservedUserText(content: string): string {
       : null;
 
   if (!marker) {
-    return content.trim();
+    return trimDocumentBlankLines(content);
   }
 
   const markerIndex = content.indexOf(marker);
-  return content.substring(markerIndex + marker.length).trim();
+  return trimDocumentBlankLines(content.substring(markerIndex + marker.length));
 }
 
 function extractGeneratedNotesText(content: string): string {

@@ -892,6 +892,12 @@ function createTradingNativeSettingItems(
           false
         ),
         toggleSetting(
+          t('settings.general.show-seconds'),
+          t('settings.general.show-seconds-desc'),
+          'trade.showSeconds',
+          false
+        ),
+        toggleSetting(
           t('settings.general.skip-weekends'),
           t('settings.general.skip-weekends-desc'),
           'trade.skipWeekends',

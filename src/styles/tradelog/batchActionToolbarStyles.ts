@@ -13,7 +13,8 @@ export const BATCH_ACTION_TOOLBAR_STYLES = `
     justify-content: flex-start;
   }
 
-  .batch-action-toolbar-actions button {
+  .batch-action-toolbar-actions button,
+  .batch-action-toolbar-actions button.journalit-batch-action-button {
     display: inline-flex;
     align-items: center;
     justify-content: center;

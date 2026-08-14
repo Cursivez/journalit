@@ -692,6 +692,7 @@ export const AccountPageDataProvider: React.FC<
   useEventBus('trade:changed', handleLegacyTradeChanged);
   useEventBus('trade:committed', handleTradeCommitted);
   useEventBus('missed-trade:changed', handleTradeDataChanged);
+  useEventBus('folder-path:changed', handleTradeDataChanged);
   useEventBus('account:changed', handleAccountChanged);
   useEventBus('settings:changed', (payload) => {
     if (payload?.section === 'copyTradeAdjustments') {

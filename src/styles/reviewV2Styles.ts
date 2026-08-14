@@ -468,7 +468,8 @@ ${TRADE_ACCOUNT_CELL_STYLES}
   }
 
   
-  .journalit-setup-performance {
+  .journalit-setup-performance,
+  .journalit-tag-performance {
     padding: 0;
     background: transparent;
     border: none;

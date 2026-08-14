@@ -1,5 +1,7 @@
 
 
+import type { BreakEvenAccountBalanceSnapshot } from '../trade/core/BreakEvenAccountBalance';
+
 
 export interface FrankfurterResponse {
   amount: number;
@@ -119,6 +121,7 @@ export interface ConvertibleTrade {
   
   mfePrice?: number;
   
+  breakEvenAccountCurrentBalanceSnapshots?: BreakEvenAccountBalanceSnapshot[];
   breakEvenAccountCurrentBalance?: number;
   
   breakEvenAccountCurrentBalanceCurrency?: string;

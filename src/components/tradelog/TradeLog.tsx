@@ -61,6 +61,7 @@ import {
   batchAddTags,
   batchAddMistakes,
   batchDeleteTrades,
+  batchDuplicateTrades,
 } from './batchOperations';
 import { OptionType } from '../../services/options';
 import { getTradeIdsInRange } from './selectionUtils';
@@ -143,12 +144,14 @@ const TRADE_DATA_CHANGE_EVENTS: Array<
   | 'trade:changed'
   | 'missed-trade:changed'
   | 'backtest-trade:changed'
+  | 'folder-path:changed'
   | 'drc:session-log-index-invalidated'
 > = [
   'trade:committed',
   'trade:changed',
   'missed-trade:changed',
   'backtest-trade:changed',
+  'folder-path:changed',
   'drc:session-log-index-invalidated',
 ];
 
@@ -1842,6 +1845,36 @@ const useTradeLogController = ({ plugin, leaf }: TradeLogProps) => {
     [selectedTrades, plugin.app]
   );
 
+  const handleBatchDuplicate = useCallback(async () => {
+    const paths = Array.from(selectedTrades);
+    const result = await batchDuplicateTrades(plugin.app, paths);
+
+    if (result.errors > 0 && result.processed === 0) {
+      new Notice(
+        t('notice.error.duplicate-trades', {
+          error: tPlural('tradelog.batch.errors-count', result.errors),
+        })
+      );
+    } else if (result.processed === 0) {
+      new Notice(tPlural('tradelog.batch.duplicate-skipped', result.skipped));
+    } else {
+      const parts = [tPlural('notice.trades-duplicated', result.processed)];
+      if (result.skipped > 0) {
+        parts.push(tPlural('tradelog.batch.duplicate-skipped', result.skipped));
+      }
+      if (result.errors > 0) {
+        parts.push(tPlural('tradelog.batch.errors-count', result.errors));
+      }
+      new Notice(parts.join(', '));
+    }
+
+    setSelectedTrades(new Set());
+
+    if (result.processed > 0) {
+      setIsMultiSelectMode(false);
+    }
+  }, [selectedTrades, plugin.app]);
+
   const handleBatchDelete = useCallback(async () => {
     const paths = Array.from(selectedTrades);
     const result = await batchDeleteTrades(plugin.app, paths);
@@ -2296,6 +2329,7 @@ const useTradeLogController = ({ plugin, leaf }: TradeLogProps) => {
     handleBatchAddSetups,
     handleBatchAddTags,
     handleBatchAddMistakes,
+    handleBatchDuplicate,
     handleBatchDelete,
     handleSelectAll,
     handleClearSelection,
@@ -2342,6 +2376,7 @@ const TradeLogContent: React.FC<{
     handleBatchAddSetups,
     handleBatchAddTags,
     handleBatchAddMistakes,
+    handleBatchDuplicate,
     handleBatchDelete,
     handleSelectAll,
     handleClearSelection,
@@ -2423,6 +2458,7 @@ const TradeLogContent: React.FC<{
             onAddSetups={handleBatchAddSetups}
             onAddTags={handleBatchAddTags}
             onAddMistakes={handleBatchAddMistakes}
+            onDuplicate={handleBatchDuplicate}
             onDelete={handleBatchDelete}
             onSelectAll={handleSelectAll}
             onClearSelection={handleClearSelection}

@@ -570,7 +570,7 @@ const zhTW: Partial<Lang> = {
     'This picker shows the widgets you can add for this review type.',
   'layoutBuilder.guide.choose-widget.title': 'Choose a widget',
   'layoutBuilder.guide.choose-widget.description':
-    'This list shows every widget you can add for this review type. Pick any widget you want, or press Next and Journalit will choose the first one for you.',
+    'Type in the search box to find a widget by name, description, or category, then choose it. You can also press Next and Journalit will choose the first result for you.',
   'layoutBuilder.guide.widget-library-docs.title':
     'Use the widget library if you get stuck',
   'layoutBuilder.guide.widget-library-docs.description':
@@ -616,8 +616,6 @@ const zhTW: Partial<Lang> = {
   'tradelog.guide.multi-select.description':
     'Click this button to select several trades at once. When multi-select is on, row clicks select trades instead of opening them.',
   'tradelog.guide.batch-actions.title': 'These are your batch actions',
-  'tradelog.guide.batch-actions.description':
-    'Use this bar to select all visible trades, clear your selection, mark trades as reviewed, add setups, add mistakes, or delete several trades at once. You can also shift-click to select a range of trades.',
   'tradelog.guide.column-settings.title': 'Open column settings',
   'tradelog.guide.column-settings.description':
     'Click this button to choose which columns are shown and how dense or detailed the table should feel.',
@@ -649,6 +647,38 @@ const zhTW: Partial<Lang> = {
   
   'dashboard.title': '儀表板',
   'dashboard.no-data': '沒有可用的交易資料',
+  'dashboard.widgets.setup-performance.title': '策略績效',
+  'dashboard.widgets.setup-performance.description':
+    '按交易策略比較績效的排名長條圖',
+  'dashboard.widgets.setup-performance.empty': '沒有策略績效資料',
+  'dashboard.widgets.setup-performance.masked-label': '策略',
+  'dashboard.widgets.tag-performance.title': '標籤績效',
+  'dashboard.widgets.tag-performance.description':
+    '按交易標籤比較績效的排名長條圖',
+  'dashboard.widgets.tag-performance.empty': '沒有標籤績效資料',
+  'dashboard.widgets.tag-performance.masked-label': '標籤',
+  'dashboard.widgets.ticker-performance.title': '標的績效',
+  'dashboard.widgets.ticker-performance.metric-aria': '指標',
+  'dashboard.widgets.ticker-performance.view-aria': '檢視模式',
+  'dashboard.widgets.ticker-performance.view.best-and-worst': '最佳與最差',
+  'dashboard.widgets.ticker-performance.view.best': '最佳 10',
+  'dashboard.widgets.ticker-performance.view.worst': '最差 10',
+  'dashboard.widgets.ticker-performance.metric.total-pnl': '總盈虧',
+  'dashboard.widgets.ticker-performance.metric.total-r': '總R',
+  'dashboard.widgets.ticker-performance.metric.win-rate': '勝率',
+  'dashboard.widgets.ticker-performance.tooltip.ticker': '標的：{ticker}',
+  'dashboard.widgets.ticker-performance.tooltip.trades': '交易：{count}',
+  'dashboard.widgets.ticker-performance.tooltip.win-rate':
+    '勝率：{rate}（{wins}勝 / {losses}負）',
+
+  'dashboard.widgets.ticker-performance.empty': '沒有標的績效資料',
+  'dashboard.widgets.ticker-performance.empty-submessage':
+    '沒有符合目前篩選條件且含標的的已平倉交易。',
+  'dashboard.widgets.ticker-performance.masked-ticker': '標的',
+  'dashboard.widgets.ticker-performance.omitted-count': '已省略：{count}',
+
+  'widget.tickerPerformance.name': '標的績效',
+  'widget.tickerPerformance.description': '按標的比較績效的排名長條圖',
   'dashboard.filter.accounts.all': '所有帳戶',
   'dashboard.filter.accounts.n-selected': '{count} 個帳戶',
   'dashboard.filter.accounts.select-all': '全選',
@@ -1085,6 +1115,10 @@ const zhTW: Partial<Lang> = {
   'chart.tooltip.account': 'Account',
   'chart.tooltip.accounts-list': '{accounts}',
   'chart.tooltip.more-accounts': '+{count} more',
+  'widget.tag-performance.name': '標籤績效',
+  'widget.tag-performance.description': '按交易標籤細分績效',
+  'widget.table.header.tag': '標籤',
+  'widget.empty.no-tag-data': '此期間沒有可用的標籤資料',
   'widget.account-breakdown.name': 'Account Breakdown',
   'widget.account-breakdown.description':
     'Compare performance across accounts in this review period',
@@ -1646,6 +1680,7 @@ const zhTW: Partial<Lang> = {
   'home.filters.trade-type': '交易類型',
   'home.filters.accounts': '帳戶',
   'home.filters.back': '返回',
+  'filter.reset': '重設篩選器',
   'home.guide.modes.title': '最後一件事：儀表板',
   'home.guide.modes.description':
     '總覽與儀表板共用此頁面。現在切換到儀表板，繼續進行績效統計的簡短導覽。',
@@ -1670,6 +1705,10 @@ const zhTW: Partial<Lang> = {
     '在 Dashboard 模式中使用相同的背景圖片。',
   'settings.general.home-background-dashboard-aria':
     '在 Dashboard 中顯示首頁背景',
+  'datepicker.placeholder.second': 'SS',
+  'settings.general.show-seconds': '在交易時間中顯示秒',
+  'settings.general.show-seconds-desc': '輸入交易進場和出場時間時顯示秒。',
+  'settings.general.show-seconds-aria': '在交易時間中顯示秒',
 };
 
 export default zhTW;

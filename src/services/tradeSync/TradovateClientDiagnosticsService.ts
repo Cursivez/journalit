@@ -382,8 +382,8 @@ export class TradovateClientDiagnosticsService {
           settings.pendingTradovateClientDiagnostics = queue;
           await this.plugin.saveSettings().catch(() => undefined);
         }
-        const ownerToken = ApiClient.getAuthToken();
-        if (!ownerUserId || !ownerToken) return;
+        const ownerAuthSessionVersion = ApiClient.getAuthSessionVersion();
+        if (!ownerUserId || !ApiClient.getAuthToken()) return;
         const retained: PersistedBatch[] = [];
         let deliveryAvailable = true;
         await queue.reduce(
@@ -393,7 +393,7 @@ export class TradovateClientDiagnosticsService {
                 batch.ownerUserId !== ownerUserId ||
                 !deliveryAvailable ||
                 getTradeProjectionOwnerId(this.plugin) !== ownerUserId ||
-                ApiClient.getAuthToken() !== ownerToken
+                ApiClient.getAuthSessionVersion() !== ownerAuthSessionVersion
               ) {
                 retained.push(batch);
                 return;

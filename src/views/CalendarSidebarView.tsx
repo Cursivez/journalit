@@ -25,29 +25,41 @@ function shouldRefreshCalendarForTradeChange(
   );
 }
 
-const CalendarSidebar: React.FC<{ plugin: JournalitPlugin }> = ({ plugin }) => {
+export function useCalendarTrades(plugin: JournalitPlugin): {
+  trades: Trade[];
+  isLoading: boolean;
+} {
   const [trades, setTrades] = useState<Trade[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const hasLoadedRef = useRef(false);
+  const loadGenerationRef = useRef(0);
 
   const loadTrades = useCallback(
     async (showSkeleton: boolean) => {
+      const generation = ++loadGenerationRef.current;
       if (showSkeleton && !hasLoadedRef.current) {
         setIsLoading(true);
       }
       const tradeService = plugin.serviceManager.getTradeService();
       await tradeService.waitForTradeDataReady();
-      const data = await fetchDashboardData(
+      if (generation !== loadGenerationRef.current) {
+        return;
+      }
+      return fetchDashboardData(
         plugin.app,
         tradeService,
         createDashboardFilters(),
         plugin.settings.trade?.defaultRiskAmount,
         plugin,
         { freshTradeQuery: true }
-      );
-      setTrades(data.trades);
-      hasLoadedRef.current = true;
-      setIsLoading(false);
+      ).then((data) => {
+        if (generation !== loadGenerationRef.current) {
+          return;
+        }
+        setTrades(data.trades);
+        hasLoadedRef.current = true;
+        setIsLoading(false);
+      });
     },
     [plugin]
   );
@@ -58,8 +70,17 @@ const CalendarSidebar: React.FC<{ plugin: JournalitPlugin }> = ({ plugin }) => {
       if (!shouldRefreshCalendarForTradeChange(payload)) return;
       void loadTrades(false);
     });
-    return unsubscribe;
+    return () => {
+      loadGenerationRef.current += 1;
+      unsubscribe();
+    };
   }, [loadTrades]);
+
+  return { trades, isLoading };
+}
+
+const CalendarSidebar: React.FC<{ plugin: JournalitPlugin }> = ({ plugin }) => {
+  const { trades, isLoading } = useCalendarTrades(plugin);
 
   return (
     <div className="journalit-calendar-sidebar">

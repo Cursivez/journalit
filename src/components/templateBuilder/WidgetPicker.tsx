@@ -6,9 +6,10 @@ import React, {
   useRef,
   useMemo,
   useCallback,
+  useId,
 } from 'react';
 import { createPortal } from 'react-dom';
-import { ChevronDown, Check } from '../shared/icons/ObsidianIcon';
+import { ChevronDown, Check, Search, X } from '../shared/icons/ObsidianIcon';
 import { t } from '../../lang/helpers';
 import { cssVars } from '../../styles/inlineStylePolicy';
 import type { ReviewTemplateType } from '../../types/reviewV2';
@@ -16,6 +17,7 @@ import {
   getWidgetsForTemplate,
   getWidgetsByCategory,
   getWidgetName,
+  widgetMatchesPlacement,
   CATEGORY_LABELS,
   type WidgetDefinition,
 } from '../../data/widgetRegistry';
@@ -59,6 +61,17 @@ interface WidgetPickerProps {
   placeholder?: string;
 }
 
+const widgetMatchesQuery = (
+  widget: WidgetDefinition,
+  normalizedQuery: string
+): boolean => {
+  const categoryLabel = CATEGORY_LABELS[widget.category];
+  return [widget.name, widget.description, categoryLabel, widget.type].some(
+    (valueToSearch) =>
+      valueToSearch.toLocaleLowerCase().includes(normalizedQuery)
+  );
+};
+
 export const WidgetPicker: React.FC<WidgetPickerProps> = React.memo(
   ({
     value,
@@ -68,12 +81,15 @@ export const WidgetPicker: React.FC<WidgetPickerProps> = React.memo(
     placeholder = t('widget.picker.placeholder'),
   }) => {
     const [isOpen, setIsOpen] = useState(false);
+    const [searchQuery, setSearchQuery] = useState('');
     const [focusedIndex, setFocusedIndex] = useState(-1);
     const [dropdownPosition, setDropdownPosition] = useState({
       top: 0,
+      bottom: 0,
       left: 0,
       width: 0,
       maxHeight: 400,
+      openAbove: false,
     });
     const emitGuideAction = useGuideAction();
     const currentGuideStepId = useGuideCurrentStepId();
@@ -86,17 +102,41 @@ export const WidgetPicker: React.FC<WidgetPickerProps> = React.memo(
     const containerRef = useRef<HTMLDivElement>(null);
     const dropdownRef = useRef<HTMLDivElement>(null);
     const triggerRef = useRef<HTMLButtonElement>(null);
+    const searchInputRef = useRef<HTMLInputElement>(null);
+    const clearButtonRef = useRef<HTMLButtonElement>(null);
     const itemRefs = useRef<(HTMLButtonElement | null)[]>([]);
+    const focusTriggerOnCloseRef = useRef(false);
+    const listboxId = useId();
+    const searchLabelId = `${listboxId}-search-label`;
+    const listboxLabelId = `${listboxId}-label`;
 
     
     const widgets = useMemo(
       () => getWidgetsForTemplate(templateType),
       [templateType]
     );
-    const groupedWidgets = useMemo(
+    const allGroupedWidgets = useMemo(
       () => getWidgetsByCategory(widgets),
       [widgets]
     );
+    const allFlatWidgets = useMemo(() => {
+      const flat: WidgetDefinition[] = [];
+      allGroupedWidgets.forEach((categoryWidgets) => {
+        flat.push(...categoryWidgets);
+      });
+      return flat;
+    }, [allGroupedWidgets]);
+
+    const groupedWidgets = useMemo(() => {
+      const normalizedQuery = searchQuery.trim().toLocaleLowerCase();
+      if (!normalizedQuery) {
+        return allGroupedWidgets;
+      }
+
+      return getWidgetsByCategory(
+        widgets.filter((widget) => widgetMatchesQuery(widget, normalizedQuery))
+      );
+    }, [allGroupedWidgets, searchQuery, widgets]);
 
     
     const flatWidgets = useMemo(() => {
@@ -109,37 +149,53 @@ export const WidgetPicker: React.FC<WidgetPickerProps> = React.memo(
 
     
     const isWidgetSelected = useCallback(
-      (widget: WidgetDefinition): boolean => {
-        if (widget.type !== value) return false;
-        
-        if (widget.defaultConfig) {
-          if (!valueConfig) return false;
-          
-          return Object.entries(widget.defaultConfig).every(
-            ([key, val]) => valueConfig[key] === val
-          );
-        }
-        
-        return !valueConfig || Object.keys(valueConfig).length === 0;
-      },
+      (widget: WidgetDefinition): boolean =>
+        widgetMatchesPlacement(widget, value, valueConfig),
       [value, valueConfig]
     );
 
     
     const selectedWidget = useMemo(() => {
-      return flatWidgets.find((w) => isWidgetSelected(w));
-    }, [flatWidgets, isWidgetSelected]);
+      return widgets.find((widget) => isWidgetSelected(widget));
+    }, [isWidgetSelected, widgets]);
+
+    const getInitialFocusedIndex = useCallback(
+      (candidateWidgets: WidgetDefinition[]): number => {
+        const selectedIndex = candidateWidgets.findIndex((widget) =>
+          isWidgetSelected(widget)
+        );
+        return selectedIndex >= 0
+          ? selectedIndex
+          : candidateWidgets.length > 0
+            ? 0
+            : -1;
+      },
+      [isWidgetSelected]
+    );
 
     const openDropdown = useCallback(() => {
-      const selectedIndex = flatWidgets.findIndex((w) => isWidgetSelected(w));
-      setFocusedIndex(selectedIndex >= 0 ? selectedIndex : 0);
+      setFocusedIndex(getInitialFocusedIndex(allFlatWidgets));
       setIsOpen(true);
-    }, [flatWidgets, isWidgetSelected]);
+    }, [allFlatWidgets, getInitialFocusedIndex]);
 
-    const closeDropdown = useCallback(() => {
+    const closeDropdown = useCallback((focusTrigger = false) => {
+      focusTriggerOnCloseRef.current = focusTrigger;
+      setSearchQuery('');
       setFocusedIndex(-1);
       setIsOpen(false);
     }, []);
+
+    useEffect(() => {
+      if (isOpen) {
+        searchInputRef.current?.focus();
+        return;
+      }
+
+      if (focusTriggerOnCloseRef.current) {
+        focusTriggerOnCloseRef.current = false;
+        triggerRef.current?.focus();
+      }
+    }, [isOpen]);
 
     
     useEffect(() => {
@@ -152,12 +208,12 @@ export const WidgetPicker: React.FC<WidgetPickerProps> = React.memo(
     }, [focusedIndex, isOpen]);
 
     const updateDropdownPosition = useCallback(() => {
-      const trigger = triggerRef.current;
-      if (!trigger) {
+      const anchor = containerRef.current;
+      if (!anchor) {
         return;
       }
 
-      const rect = trigger.getBoundingClientRect();
+      const rect = anchor.getBoundingClientRect();
       const viewportHeight = window.innerHeight;
       const gap = 4;
       const margin = 12;
@@ -170,10 +226,12 @@ export const WidgetPicker: React.FC<WidgetPickerProps> = React.memo(
       );
 
       setDropdownPosition({
-        top: openAbove ? rect.top - gap - availableHeight : rect.bottom + gap,
+        top: rect.bottom + gap,
+        bottom: viewportHeight - rect.top + gap,
         left: rect.left,
         width: rect.width,
         maxHeight: availableHeight,
+        openAbove,
       });
     }, []);
 
@@ -230,19 +288,32 @@ export const WidgetPicker: React.FC<WidgetPickerProps> = React.memo(
       (widget: WidgetDefinition) => {
         onChange(widget);
         emitGuideAction(LAYOUT_BUILDER_WIDGET_SELECTED_ACTION_ID);
-        closeDropdown();
-        triggerRef.current?.focus();
+        closeDropdown(true);
       },
       [closeDropdown, emitGuideAction, onChange]
     );
 
     const handleGlobalKeyDown = useCallback(
       (event: KeyboardEvent) => {
+        if (event.isComposing) {
+          return;
+        }
+
         const target = event.target;
         const isPickerEvent =
           target instanceof Node &&
           (containerRef.current?.contains(target) ||
             dropdownRef.current?.contains(target));
+
+        if (
+          event.key === 'Enter' &&
+          target instanceof Node &&
+          target !== searchInputRef.current &&
+          (clearButtonRef.current?.contains(target) ||
+            dropdownRef.current?.contains(target))
+        ) {
+          return;
+        }
 
         if (
           !isPickerEvent &&
@@ -256,8 +327,7 @@ export const WidgetPicker: React.FC<WidgetPickerProps> = React.memo(
             event.preventDefault();
             event.stopPropagation();
             event.stopImmediatePropagation();
-            closeDropdown();
-            triggerRef.current?.focus();
+            closeDropdown(true);
             break;
           case 'ArrowDown':
             event.preventDefault();
@@ -300,29 +370,51 @@ export const WidgetPicker: React.FC<WidgetPickerProps> = React.memo(
       return () => activeWindow.removeEventListener('keydown', listener, true);
     }, [isOpen]);
 
-    const handleTriggerClick = useCallback(() => {
-      if (isOpen) {
-        closeDropdown();
-      } else {
-        openDropdown();
-      }
-    }, [closeDropdown, isOpen, openDropdown]);
-
     const handleTriggerKeyDown = useCallback(
       (event: React.KeyboardEvent) => {
-        if (event.key === 'Enter' || event.key === ' ') {
-          event.preventDefault();
-          if (isOpen) {
-            closeDropdown();
-          } else {
-            openDropdown();
-          }
-        } else if (event.key === 'ArrowDown' && !isOpen) {
+        if (event.key === 'ArrowDown') {
           event.preventDefault();
           openDropdown();
         }
       },
-      [closeDropdown, isOpen, openDropdown]
+      [openDropdown]
+    );
+
+    const handleSearchChange = useCallback(
+      (event: React.ChangeEvent<HTMLInputElement>) => {
+        const nextQuery = event.target.value;
+        const normalizedQuery = nextQuery.trim().toLocaleLowerCase();
+        setSearchQuery(nextQuery);
+        setFocusedIndex(
+          normalizedQuery.length > 0
+            ? 0
+            : getInitialFocusedIndex(allFlatWidgets)
+        );
+      },
+      [allFlatWidgets, getInitialFocusedIndex]
+    );
+
+    const handleClearSearch = useCallback(() => {
+      setSearchQuery('');
+      setFocusedIndex(getInitialFocusedIndex(allFlatWidgets));
+      searchInputRef.current?.focus();
+    }, [allFlatWidgets, getInitialFocusedIndex]);
+
+    const handleClearSearchKeyDown = useCallback(
+      (event: React.KeyboardEvent<HTMLButtonElement>) => {
+        if (event.key === 'Enter') {
+          event.preventDefault();
+          handleClearSearch();
+        }
+      },
+      [handleClearSearch]
+    );
+
+    const registerSearchContainer = useCallback(
+      (element: HTMLDivElement | null) => {
+        registerWidgetPickerTarget(element);
+      },
+      [registerWidgetPickerTarget]
     );
 
     useEffect(() => {
@@ -342,7 +434,7 @@ export const WidgetPicker: React.FC<WidgetPickerProps> = React.memo(
               inline: 'nearest',
             });
             await new Promise((resolve) => window.setTimeout(resolve, 100));
-            setIsOpen(true);
+            openDropdown();
             await new Promise((resolve) => window.setTimeout(resolve, 0));
           }
           return;
@@ -352,11 +444,11 @@ export const WidgetPicker: React.FC<WidgetPickerProps> = React.memo(
           toStepId === 'open-widget-picker' ||
           toStepId === 'widget-library-docs'
         ) {
-          setIsOpen(false);
+          closeDropdown();
           await new Promise((resolve) => window.setTimeout(resolve, 0));
         }
       },
-      [value]
+      [closeDropdown, openDropdown, value]
     );
 
     useGuideBackHandler(handleGuideBack);
@@ -369,7 +461,11 @@ export const WidgetPicker: React.FC<WidgetPickerProps> = React.memo(
             inline: 'nearest',
           });
         }
-        setIsOpen(!value);
+        if (value) {
+          closeDropdown();
+        } else {
+          openDropdown();
+        }
         return;
       }
 
@@ -377,101 +473,196 @@ export const WidgetPicker: React.FC<WidgetPickerProps> = React.memo(
         currentGuideStepId === 'open-widget-picker' ||
         currentGuideStepId === 'widget-library-docs'
       ) {
-        setIsOpen(false);
+        closeDropdown();
       }
-    }, [currentGuideStepId, value]);
+    }, [closeDropdown, currentGuideStepId, openDropdown, value]);
 
     const displayValue =
       selectedWidget?.name || (value ? getWidgetName(value) : placeholder);
     const triggerClasses = `widget-picker-trigger${!value ? ' widget-picker-trigger--placeholder' : ''}`;
-    const iconClasses = `widget-picker-icon${isOpen ? ' widget-picker-icon--open' : ''}`;
 
     
     let flatIndex = 0;
 
     return (
       <div ref={containerRef} className="widget-picker-container">
-        <button
-          ref={(element) => {
-            triggerRef.current = element;
-            if (!value) {
-              registerEmptyPickerTriggerTarget(element);
-            }
-          }}
-          type="button"
-          onClick={handleTriggerClick}
-          onKeyDown={handleTriggerKeyDown}
-          className={triggerClasses}
-          aria-haspopup="listbox"
-          aria-expanded={isOpen}
-        >
-          <span>{displayValue}</span>
-          <ChevronDown size={14} className={iconClasses} />
-        </button>
+        {isOpen ? (
+          <div
+            ref={registerSearchContainer}
+            className="widget-picker-search widget-picker-search--inline"
+            aria-controls={listboxId}
+          >
+            <span
+              id={searchLabelId}
+              className="journalit-widget-picker-sr-only"
+            >
+              {t('widget.picker.search-label')}
+            </span>
+            <Search
+              size={14}
+              className="widget-picker-search-icon"
+              aria-hidden="true"
+            />
+            <input
+              ref={searchInputRef}
+              type="search"
+              className="widget-picker-search-input"
+              placeholder={t('widget.picker.search-placeholder')}
+              aria-labelledby={searchLabelId}
+              role="combobox"
+              aria-expanded={isOpen}
+              aria-autocomplete="list"
+              aria-controls={listboxId}
+              aria-activedescendant={
+                focusedIndex >= 0 && focusedIndex < flatWidgets.length
+                  ? `${listboxId}-option-${focusedIndex}`
+                  : undefined
+              }
+              value={searchQuery}
+              onChange={handleSearchChange}
+            />
+            {searchQuery && (
+              <button
+                ref={clearButtonRef}
+                type="button"
+                className="journalit-widget-picker-search-clear widget-picker-search-clear"
+                onClick={handleClearSearch}
+              >
+                <X size={13} aria-hidden="true" />
+                <span className="journalit-widget-picker-sr-only">
+                  {t('widget.picker.clear-search')}
+                </span>
+              </button>
+            )}
+          </div>
+        ) : (
+          <button
+            ref={(element) => {
+              triggerRef.current = element;
+              if (!value) {
+                registerEmptyPickerTriggerTarget(element);
+              }
+            }}
+            type="button"
+            onClick={openDropdown}
+            onKeyDown={handleTriggerKeyDown}
+            className={`journalit-widget-picker-trigger ${triggerClasses}`}
+            aria-haspopup="listbox"
+            aria-expanded={false}
+          >
+            <span>{displayValue}</span>
+            <ChevronDown size={14} className="widget-picker-icon" />
+          </button>
+        )}
 
         {isOpen &&
           createPortal(
             <div
               ref={(element) => {
                 dropdownRef.current = element;
-                registerWidgetPickerTarget(element);
               }}
-              className="widget-picker-dropdown widget-picker-dropdown--floating"
-              role="listbox"
+              className={`journalit-widget-picker-dropdown widget-picker-dropdown widget-picker-dropdown--floating${dropdownPosition.openAbove ? ' widget-picker-dropdown--above' : ''}`}
               style={cssVars({
                 '--widget-picker-floating-top': `${dropdownPosition.top}px`,
+                '--widget-picker-floating-bottom': `${dropdownPosition.bottom}px`,
                 '--widget-picker-floating-left': `${dropdownPosition.left}px`,
                 '--widget-picker-floating-width': `${dropdownPosition.width}px`,
                 '--widget-picker-floating-max-height': `${dropdownPosition.maxHeight}px`,
               })}
             >
-              {Array.from(groupedWidgets.entries()).map(
-                ([category, categoryWidgets]) => (
-                  <div key={category}>
-                    <div className="widget-picker-category">
-                      {CATEGORY_LABELS[category]}
-                    </div>
-                    {categoryWidgets.map((widget) => {
-                      const currentIndex = flatIndex++;
-                      const isFocused = currentIndex === focusedIndex;
-                      const isSelected = isWidgetSelected(widget);
-                      
-                      const widgetKey = widget.defaultConfig
-                        ? `${widget.type}-${JSON.stringify(widget.defaultConfig)}`
-                        : widget.type;
+              <span
+                id={listboxLabelId}
+                className="journalit-widget-picker-sr-only"
+              >
+                {t('widget.picker.results-label')}
+              </span>
+              <div
+                id={listboxId}
+                className="widget-picker-results"
+                role={flatWidgets.length > 0 ? 'listbox' : undefined}
+                aria-labelledby={
+                  flatWidgets.length > 0 ? listboxLabelId : undefined
+                }
+              >
+                {flatWidgets.length > 0 &&
+                  Array.from(groupedWidgets.entries()).map(
+                    ([category, categoryWidgets]) => {
+                      const categoryId = `${listboxId}-category-${category.toLocaleLowerCase().replaceAll(' ', '-')}`;
                       return (
-                        <button
-                          key={widgetKey}
-                          ref={(el) => {
-                            itemRefs.current[currentIndex] = el;
-                          }}
-                          type="button"
-                          onClick={() => handleSelect(widget)}
-                          onMouseEnter={() => setFocusedIndex(currentIndex)}
-                          className={`widget-picker-item${isFocused ? ' widget-picker-item--focused' : ''}${isSelected ? ' widget-picker-item--selected' : ''}`}
-                          role="option"
-                          aria-selected={isSelected}
+                        <div
+                          key={category}
+                          role="group"
+                          aria-labelledby={categoryId}
                         >
-                          <span className="widget-picker-item-content">
-                            <span className="widget-picker-item-name">
-                              {widget.name}
-                            </span>
-                            <span className="widget-picker-item-description">
-                              {widget.description}
-                            </span>
-                          </span>
-                          {isSelected && (
-                            <Check
-                              size={16}
-                              className="widget-picker-item-check"
-                            />
-                          )}
-                        </button>
+                          <div
+                            id={categoryId}
+                            className="widget-picker-category"
+                          >
+                            {CATEGORY_LABELS[category]}
+                          </div>
+                          {categoryWidgets.map((widget) => {
+                            const currentIndex = flatIndex++;
+                            const isFocused = currentIndex === focusedIndex;
+                            const isSelected = isWidgetSelected(widget);
+                            
+                            const widgetKey = widget.defaultConfig
+                              ? `${widget.type}-${JSON.stringify(widget.defaultConfig)}`
+                              : widget.type;
+                            return (
+                              <button
+                                id={`${listboxId}-option-${currentIndex}`}
+                                key={widgetKey}
+                                ref={(el) => {
+                                  itemRefs.current[currentIndex] = el;
+                                }}
+                                type="button"
+                                data-guide-primary-action={
+                                  currentIndex === 0 ? true : undefined
+                                }
+                                onClick={() => handleSelect(widget)}
+                                onMouseEnter={() =>
+                                  setFocusedIndex(currentIndex)
+                                }
+                                className={`journalit-widget-picker-item widget-picker-item${isFocused ? ' widget-picker-item--focused' : ''}${isSelected ? ' widget-picker-item--selected' : ''}`}
+                                role="option"
+                                aria-selected={isSelected}
+                              >
+                                <span className="widget-picker-item-content">
+                                  <span className="widget-picker-item-name">
+                                    {widget.name}
+                                  </span>
+                                  <span className="widget-picker-item-description">
+                                    {widget.description}
+                                  </span>
+                                </span>
+                                {isSelected && (
+                                  <Check
+                                    size={16}
+                                    className="widget-picker-item-check"
+                                  />
+                                )}
+                              </button>
+                            );
+                          })}
+                        </div>
                       );
-                    })}
-                  </div>
-                )
-              )}
+                    }
+                  )}
+                {flatWidgets.length === 0 && (
+                  <button
+                    type="button"
+                    className="journalit-widget-picker-empty widget-picker-empty"
+                    data-guide-primary-action
+                    onClick={handleClearSearch}
+                    onKeyDown={handleClearSearchKeyDown}
+                  >
+                    <span role="status">{t('widget.picker.no-results')}</span>
+                    <span className="widget-picker-empty-action">
+                      {t('widget.picker.clear-search')}
+                    </span>
+                  </button>
+                )}
+              </div>
             </div>,
             window.activeDocument.body
           )}

@@ -1,13 +1,14 @@
 import { logger } from '../../utils/logger';
 
 
-import { App, TFile, normalizePath } from 'obsidian';
+import { App, TFile, TFolder, normalizePath } from 'obsidian';
 import { calculatePnL } from '../../utils/pnlCalculation';
 import { calculateRMultiple } from '../../components/forms/trade/validation';
 import {
   CustomDataService,
   CustomDataServiceConfig,
 } from '../base/CustomDataService';
+import { isPathWithinDirectory } from '../base/pluginStoragePaths';
 import JournalitPlugin from '../../main';
 import { parseDisplayText } from '../../utils/tagSchema';
 import {
@@ -71,6 +72,7 @@ import {
 } from '../tradeSync/TradeProjectionWriteLock';
 import { ObsidianTradeNoteStore } from './core/ObsidianTradeNoteStore';
 import { TradeReadModel } from './core/TradeReadModel';
+import { isTradeIndexEligible } from './TradeIndexEligibility';
 import {
   TradeCommandService,
   TradeCommitEventBatch,
@@ -85,8 +87,17 @@ import {
   buildTradeFilePath,
   buildTradeDirectoryPath,
   formatTradeDateForFilename,
+  getTradeFilenameDateTokens,
   sanitizeTradeSymbolForFilename,
 } from './core/TradePathPolicy';
+import {
+  cleanupRelocatedManagedTradeMediaDirectories,
+  rekeyRelocatedManagedTradeMediaAnnotations,
+  relocateManagedTradeMedia,
+  rollbackRelocatedManagedTradeMedia,
+  type RelocatedManagedTradeMedia,
+} from './core/TradeMediaRelocation';
+import { resolveManagedTradeMediaReferencePath } from './core/TradeMediaOwnership';
 import {
   CANONICAL_PROJECTION_CLEAR_FIELDS,
   hasCanonicalProjectionIdentity,
@@ -108,6 +119,10 @@ import {
   createTradeNotesDocument,
   ensureTradeNoteOwnershipMarker,
 } from './core/TradeNoteDocumentCodec';
+import {
+  rewriteTradeNoteMediaReferences,
+  snapshotTradeNoteMediaReferenceResolutions,
+} from './core/TradeNoteMediaReferenceCodec';
 import {
   ensureTradeReviewEndBoundary,
   migrateTradeReviewFrontmatterToMarkdown,
@@ -931,17 +946,37 @@ type TradeRecord = Record<string, unknown> & {
 
 class TradeCreationBatchImpl implements TradeCreationBatch {
   private readonly filePaths: string[] = [];
+  private readonly postCreateTasksByPath = new Map<
+    string,
+    () => Promise<void>
+  >();
   private cacheInvalidationRequested = false;
   private flushed = false;
 
   constructor(private readonly tradeService: TradeService) {}
 
   public async registerCreatedFile(filePath: string): Promise<void> {
+    this.tradeService.markCreatedTradePendingFinalization(filePath);
     if (this.flushed) {
-      await this.tradeService.finalizeCreatedTradeFiles([filePath]);
+      try {
+        await this.tradeService.finalizeCreatedTradeFiles([filePath]);
+      } finally {
+        this.tradeService.markCreatedTradeFinalized(filePath);
+      }
       return;
     }
     this.filePaths.push(filePath);
+  }
+
+  public async registerPostCreateTask(
+    filePath: string,
+    task: () => Promise<void>
+  ): Promise<void> {
+    if (this.flushed) {
+      await task();
+      return;
+    }
+    this.postCreateTasksByPath.set(filePath, task);
   }
 
   public async requestCacheInvalidation(): Promise<void> {
@@ -952,14 +987,53 @@ class TradeCreationBatchImpl implements TradeCreationBatch {
     this.cacheInvalidationRequested = true;
   }
 
-  public async flush(): Promise<void> {
+  public retainPaths(filePaths: ReadonlySet<string>): void {
     if (this.flushed) return;
+    for (let index = this.filePaths.length - 1; index >= 0; index--) {
+      if (!filePaths.has(this.filePaths[index])) {
+        this.postCreateTasksByPath.delete(this.filePaths[index]);
+        this.filePaths.splice(index, 1);
+      }
+    }
+  }
+
+  public abandon(): void {
+    if (this.flushed) return;
+    for (const filePath of this.filePaths) {
+      this.tradeService.markCreatedTradeFinalized(filePath);
+    }
+    this.filePaths.length = 0;
+    this.postCreateTasksByPath.clear();
     this.flushed = true;
+  }
+
+  public async flush(
+    beforePostCreateTasks?: () => void | Promise<void>
+  ): Promise<void> {
+    if (this.flushed) return;
     await this.tradeService.finalizeCreatedTradeFiles(this.filePaths);
     if (this.cacheInvalidationRequested) {
       await this.tradeService.clearCacheWithPrefix('trade:');
     }
+    this.tradeService.assertCreatedTradeFilesExist(this.filePaths);
+    const postCreateTasks = this.filePaths.flatMap((filePath) => {
+      const task = this.postCreateTasksByPath.get(filePath);
+      return task ? [task] : [];
+    });
+    await beforePostCreateTasks?.();
+    for (const filePath of this.filePaths) {
+      this.tradeService.markCreatedTradeFinalized(filePath);
+    }
     this.filePaths.length = 0;
+    this.postCreateTasksByPath.clear();
+    this.flushed = true;
+    for (const task of postCreateTasks) {
+      try {
+        await task();
+      } catch (error) {
+        console.error('[TradeService] Post-create tasks failed:', error);
+      }
+    }
   }
 }
 
@@ -1003,6 +1077,13 @@ export class TradeService extends CustomDataService {
     source?: string,
     suppressTradeChangedEvent: boolean = false
   ): Promise<string> {
+    const originalFilePath = filePath;
+    let wasRelocated = false;
+    let relocatedManagedMedia: RelocatedManagedTradeMedia[] = [];
+    let relocatedFrontmatterCommitted = false;
+    let originalTradeContentBeforeRelocation: string | null = null;
+    let managedRelocationPaths: [string, string] | null = null;
+
     try {
       const defaultRisk = this.plugin?.settings.trade.defaultRiskAmount;
 
@@ -1019,12 +1100,9 @@ export class TradeService extends CustomDataService {
       }
 
       
-      const existingCache = this.app.metadataCache.getFileCache(file);
-      const existingFrontmatter = existingCache?.frontmatter;
+      const diskFrontmatter = await readFrontmatterFromDisk(this.app, file);
       const existingFrontmatterRecord =
-        existingFrontmatter && typeof existingFrontmatter === 'object'
-          ? (existingFrontmatter as Record<string, unknown>)
-          : null;
+        Object.keys(diskFrontmatter).length > 0 ? diskFrontmatter : null;
       const existingEntryTime = existingFrontmatterRecord
         ? this.getExistingEntryTimeForRelocation(existingFrontmatterRecord)
         : undefined;
@@ -1047,10 +1125,6 @@ export class TradeService extends CustomDataService {
         tradeId: getTradeIdValue(data.tradeId) ?? persistedIdentity.tradeId,
         schemaVersion: data.schemaVersion ?? persistedIdentity.schemaVersion,
       });
-
-      
-      const originalFilePath = filePath;
-      let wasRelocated = false;
 
       const oldTicker = existingTicker
         ? this.sanitizeTickerForFilename(existingTicker)
@@ -1272,6 +1346,57 @@ export class TradeService extends CustomDataService {
 
         
         if (newPath !== filePath) {
+          originalTradeContentBeforeRelocation =
+            await readFileContentForMutation(this.app, file);
+          const resolvedOriginalMediaReferences =
+            snapshotTradeNoteMediaReferenceResolutions(
+              originalTradeContentBeforeRelocation,
+              (target) => {
+                const resolvedLink =
+                  !target.includes('/') && !target.includes('\\')
+                    ? this.app.metadataCache.getFirstLinkpathDest(
+                        target,
+                        originalFilePath
+                      )?.path
+                    : undefined;
+                return (
+                  resolvedLink ??
+                  resolveManagedTradeMediaReferencePath({
+                    mediaTarget: target,
+                    tradeFilePath: originalFilePath,
+                    instrument: existingTicker,
+                    pathExists: (path) =>
+                      this.app.vault.getAbstractFileByPath(path) instanceof
+                      TFile,
+                  }) ??
+                  this.app.metadataCache.getFirstLinkpathDest(
+                    target,
+                    originalFilePath
+                  )?.path ??
+                  target
+                );
+              },
+              'document'
+            );
+          const mediaRelocation = await relocateManagedTradeMedia({
+            app: this.app,
+            images: data.images ?? [],
+            additionalMediaPaths: Array.from(
+              resolvedOriginalMediaReferences.values()
+            ),
+            sourceTradeFilePath: originalFilePath,
+            sourceInstrument: existingTicker,
+            destinationTradeFilePath: newPath,
+            destinationInstrument: data.instrument ?? plan.normalizedTicker,
+            ensureDirectory: (path) => this.ensureDirectoryExists(path),
+          });
+          relocatedManagedMedia = mediaRelocation.relocated;
+          if (relocatedManagedMedia.length > 0 && data.images) {
+            data.images = mediaRelocation.images;
+          }
+
+          managedRelocationPaths = [originalFilePath, newPath];
+          this.beginManagedTradeRename(...managedRelocationPaths);
           await this.app.vault.rename(file, newPath);
           filePath = newPath;
           wasRelocated = true;
@@ -1279,6 +1404,32 @@ export class TradeService extends CustomDataService {
           file = this.app.vault.getAbstractFileByPath(newPath);
           if (!file || !(file instanceof TFile)) {
             throw new Error(`Failed to get file after relocation: ${newPath}`);
+          }
+
+          const relocatedContent = await readFileContentForMutation(
+            this.app,
+            file
+          );
+          const contentWithRelocatedMediaReferences =
+            rewriteTradeNoteMediaReferences(
+              relocatedContent,
+              relocatedManagedMedia,
+              resolvedOriginalMediaReferences,
+              (target) =>
+                this.app.metadataCache.getFirstLinkpathDest(target, filePath)
+                  ?.path ??
+                this.app.metadataCache.getFirstLinkpathDest(
+                  target,
+                  originalFilePath
+                )?.path
+            );
+          if (contentWithRelocatedMediaReferences !== relocatedContent) {
+            await replaceFileContent(
+              this.app,
+              file,
+              contentWithRelocatedMediaReferences
+            );
+            await forceMetadataCacheRefresh(this.app, file);
           }
         }
 
@@ -1457,7 +1608,30 @@ export class TradeService extends CustomDataService {
 
       
       
-      await this.updateFrontmatter(file, frontmatterData);
+      if (relocatedManagedMedia.length > 0) {
+        await this.updateFrontmatter(
+          file,
+          frontmatterData,
+          (frontmatter) =>
+            rekeyRelocatedManagedTradeMediaAnnotations(
+              frontmatter,
+              relocatedManagedMedia
+            ),
+          () => {
+            relocatedFrontmatterCommitted = true;
+          }
+        );
+      } else if (wasRelocated) {
+        await this.updateFrontmatter(file, frontmatterData, undefined, () => {
+          relocatedFrontmatterCommitted = true;
+        });
+      } else {
+        await this.updateFrontmatter(file, frontmatterData);
+      }
+      await cleanupRelocatedManagedTradeMediaDirectories(
+        this.app,
+        relocatedManagedMedia
+      );
       
 
       const updatedContent = await readFileContentForMutation(this.app, file);
@@ -1489,12 +1663,112 @@ export class TradeService extends CustomDataService {
 
       return filePath;
     } catch (error) {
+      if (relocatedFrontmatterCommitted) {
+        console.warn(
+          `Trade relocation committed but post-commit refresh failed for ${filePath}:`,
+          error
+        );
+        try {
+          await this.clearCacheWithPrefix('trade:');
+        } catch (cacheError) {
+          console.warn(
+            `Failed to recover trade cache after committed relocation ${filePath}:`,
+            cacheError
+          );
+        }
+        return filePath;
+      }
+
+      const rollbackFailures: string[] = [];
+      if (
+        (wasRelocated || relocatedManagedMedia.length > 0) &&
+        originalTradeContentBeforeRelocation !== null
+      ) {
+        try {
+          const relocatedFile = this.app.vault.getAbstractFileByPath(filePath);
+          if (!(relocatedFile instanceof TFile)) {
+            throw new Error(`Relocated trade file not found: ${filePath}`);
+          }
+          await replaceFileContent(
+            this.app,
+            relocatedFile,
+            originalTradeContentBeforeRelocation
+          );
+        } catch (rollbackError) {
+          const detail =
+            rollbackError instanceof Error
+              ? rollbackError.message
+              : String(rollbackError);
+          rollbackFailures.push(
+            `Failed to restore relocated trade content ${filePath}: ${detail}`
+          );
+        }
+      }
+
+      if (relocatedManagedMedia.length > 0) {
+        try {
+          await rollbackRelocatedManagedTradeMedia(
+            this.app,
+            relocatedManagedMedia,
+            (path) => this.ensureDirectoryExists(path)
+          );
+        } catch (rollbackError) {
+          rollbackFailures.push(
+            rollbackError instanceof Error
+              ? rollbackError.message
+              : String(rollbackError)
+          );
+        }
+      }
+
+      if (wasRelocated) {
+        try {
+          const relocatedFile = this.app.vault.getAbstractFileByPath(filePath);
+          if (!(relocatedFile instanceof TFile)) {
+            throw new Error(`Relocated trade file not found: ${filePath}`);
+          }
+          const originalDirectory = originalFilePath.slice(
+            0,
+            originalFilePath.lastIndexOf('/')
+          );
+          await this.ensureDirectoryExists(originalDirectory);
+          await this.app.vault.rename(relocatedFile, originalFilePath);
+          filePath = originalFilePath;
+          wasRelocated = false;
+        } catch (rollbackError) {
+          const detail =
+            rollbackError instanceof Error
+              ? rollbackError.message
+              : String(rollbackError);
+          rollbackFailures.push(
+            `Failed to roll back relocated trade note ${filePath}: ${detail}`
+          );
+        }
+      }
       console.error('Error updating trade:', error);
+      if (rollbackFailures.length > 0) {
+        await this.refreshAfterIncompleteManagedRollback(
+          originalFilePath,
+          filePath
+        );
+        const updateDetail =
+          error instanceof Error ? error.message : String(error);
+        throw new Error(
+          `Trade update failed (${updateDetail}) and rollback was incomplete: ${rollbackFailures.join('; ')}`
+        );
+      }
       throw error;
+    } finally {
+      if (managedRelocationPaths) {
+        this.endManagedTradeRename(...managedRelocationPaths);
+      }
     }
   }
   
   public recentlyCreatedFiles?: Set<string>;
+  
+  private readonly rollbackSuppressedDeletionPaths = new Set<string>();
+  private readonly pendingCreationBatchPaths = new Set<string>();
   
   private unsubscribeOptions?: Unsubscribe;
   
@@ -1537,6 +1811,70 @@ export class TradeService extends CustomDataService {
 
   
   private unsubscribeIndexReady?: Unsubscribe;
+  
+  private unsubscribeFolderPathChanged?: Unsubscribe;
+  private folderPathRefreshGeneration = 0;
+  
+  private vaultRenameBridgeRegistered: boolean = false;
+  private readonly managedTradeRenameKeys = new Set<string>();
+
+  private getManagedTradeRenameKey(oldPath: string, newPath: string): string {
+    return `${oldPath}\0${newPath}`;
+  }
+
+  private beginManagedTradeRename(oldPath: string, newPath: string): void {
+    this.managedTradeRenameKeys.add(
+      this.getManagedTradeRenameKey(oldPath, newPath)
+    );
+    this.managedTradeRenameKeys.add(
+      this.getManagedTradeRenameKey(newPath, oldPath)
+    );
+  }
+
+  private endManagedTradeRename(oldPath: string, newPath: string): void {
+    this.managedTradeRenameKeys.delete(
+      this.getManagedTradeRenameKey(oldPath, newPath)
+    );
+    this.managedTradeRenameKeys.delete(
+      this.getManagedTradeRenameKey(newPath, oldPath)
+    );
+  }
+
+  private isManagedTradeRename(oldPath: string, newPath: string): boolean {
+    return this.managedTradeRenameKeys.has(
+      this.getManagedTradeRenameKey(oldPath, newPath)
+    );
+  }
+
+  private async refreshAfterIncompleteManagedRollback(
+    originalPath: string,
+    currentPath: string
+  ): Promise<void> {
+    this.indexManager?.markDirty('trades');
+    this.indexManager?.markDirty('trade-unique-values');
+
+    try {
+      await this.clearCacheWithPrefix('trade:');
+    } catch (error) {
+      console.warn(
+        'Failed to clear trade cache after an incomplete managed rollback:',
+        error
+      );
+    }
+
+    const survivingPaths = Array.from(
+      new Set([currentPath, originalPath])
+    ).filter(
+      (path) => this.app.vault.getAbstractFileByPath(path) instanceof TFile
+    );
+
+    eventBus.publish('trade:changed', {
+      action: 'relocated',
+      filePaths: survivingPaths.length > 0 ? survivingPaths : undefined,
+      oldFilePath: originalPath,
+      timestamp: Date.now(),
+    });
+  }
 
   
   constructor(
@@ -1547,6 +1885,28 @@ export class TradeService extends CustomDataService {
     
     const appRef = app;
     const folderPathServiceRef = folderPathService;
+    const shouldScanTradeFile = (file: TFile): boolean => {
+      if (
+        file.extension !== 'md' ||
+        !folderPathServiceRef.isJournalPath(file.path)
+      ) {
+        return false;
+      }
+
+      const frontmatter = appRef.metadataCache.getFileCache(file)?.frontmatter;
+      return frontmatter
+        ? isTradeIndexEligible(file, frontmatter, folderPathServiceRef)
+        : true;
+    };
+    const shouldIndexTradeData = (data: unknown, file: TFile): boolean =>
+      isTradeIndexEligible(
+        file,
+        isRecord(data) ? data : undefined,
+        folderPathServiceRef
+      );
+    const canContainIndexedTradeFiles = (path: string): boolean =>
+      folderPathServiceRef.isJournalPath(path) ||
+      isPathWithinDirectory(folderPathServiceRef.journalFolderPath, path);
 
     super(app, {
       folder: TradeService.getFolderPath(folderPathService),
@@ -1573,35 +1933,9 @@ export class TradeService extends CustomDataService {
           ],
           includeNested: false,
           valueExtractor: getCanonicalExecutionRuntimeValue,
-          fileFilter: (file) => {
-            
-            if (!file.path.endsWith('.md')) {
-              return false;
-            }
-
-            const frontmatter =
-              appRef.metadataCache.getFileCache(file)?.frontmatter;
-
-            
-            if (frontmatter?.isMissedTrade) {
-              return false;
-            }
-
-            
-            if (
-              frontmatter?.type === 'trade' ||
-              frontmatter?.type === 'backtest-trade'
-            ) {
-              return true;
-            }
-
-            
-            
-            return (
-              /\/trades\//.test(file.path) &&
-              folderPathServiceRef.isJournalPath(file.path)
-            );
-          },
+          fileFilter: shouldScanTradeFile,
+          dataFilter: shouldIndexTradeData,
+          folderFilter: canContainIndexedTradeFiles,
         },
         
         {
@@ -1626,35 +1960,9 @@ export class TradeService extends CustomDataService {
             }
             return value;
           },
-          fileFilter: (file) => {
-            
-            if (!file.path.endsWith('.md')) {
-              return false;
-            }
-
-            const frontmatter =
-              appRef.metadataCache.getFileCache(file)?.frontmatter;
-
-            
-            if (frontmatter?.isMissedTrade) {
-              return false;
-            }
-
-            
-            if (
-              frontmatter?.type === 'trade' ||
-              frontmatter?.type === 'backtest-trade'
-            ) {
-              return true;
-            }
-
-            
-            
-            return (
-              /\/trades\//.test(file.path) &&
-              folderPathServiceRef.isJournalPath(file.path)
-            );
-          },
+          fileFilter: shouldScanTradeFile,
+          dataFilter: shouldIndexTradeData,
+          folderFilter: canContainIndexedTradeFiles,
         },
       ],
     });
@@ -1819,6 +2127,8 @@ export class TradeService extends CustomDataService {
 
   
   public async getUniqueInstruments(): Promise<string[]> {
+    await this.waitForTradeDataReady();
+
     
     if (this.canUseTradeIndexes()) {
       const uniqueValues = this.getUniqueIndexValues(
@@ -1887,6 +2197,8 @@ export class TradeService extends CustomDataService {
 
   
   public async getUniqueSetups(): Promise<string[]> {
+    await this.waitForTradeDataReady();
+
     
     if (this.canUseTradeIndexes()) {
       const uniqueValues = this.getUniqueIndexValues(
@@ -1913,6 +2225,8 @@ export class TradeService extends CustomDataService {
 
   
   public async getUniqueMistakes(): Promise<string[]> {
+    await this.waitForTradeDataReady();
+
     
     if (this.canUseTradeIndexes()) {
       const uniqueValues = this.getUniqueIndexValues(
@@ -1990,6 +2304,8 @@ export class TradeService extends CustomDataService {
 
   
   public async getUniqueTags(): Promise<string[]> {
+    await this.waitForTradeDataReady();
+
     
     if (this.canUseTradeIndexes()) {
       const uniqueValues = this.getUniqueIndexValues(
@@ -2048,6 +2364,12 @@ export class TradeService extends CustomDataService {
   public async getTradeData(options?: {
     fresh?: boolean;
   }): Promise<Array<Record<string, unknown>>> {
+    
+    
+    
+    
+    await this.waitForTradeDataReady();
+
     
     const allMarkdownFiles = this.getTrackedMarkdownFiles();
 
@@ -2116,29 +2438,14 @@ export class TradeService extends CustomDataService {
     let count = 0;
 
     for (const file of allFiles) {
-      const cachedFrontmatter =
-        this.app.metadataCache.getFileCache(file)?.frontmatter;
       const frontmatter =
-        cachedFrontmatter && typeof cachedFrontmatter === 'object'
-          ? (cachedFrontmatter as Record<string, unknown>)
-          : null;
+        this.app.metadataCache.getFileCache(file)?.frontmatter;
 
-      if (frontmatter?.isMissedTrade || /-M\d+\.md$/.test(file.path)) {
+      if (/-M\d+\.md$/.test(file.path)) {
         continue;
       }
 
-      if (
-        frontmatter?.type === 'trade' ||
-        frontmatter?.type === 'backtest-trade'
-      ) {
-        count++;
-        continue;
-      }
-
-      if (
-        /\/trades\//.test(file.path) &&
-        this.folderPathService.isJournalPath(file.path)
-      ) {
+      if (isTradeIndexEligible(file, frontmatter, this.folderPathService)) {
         count++;
       }
     }
@@ -2290,7 +2597,24 @@ export class TradeService extends CustomDataService {
     allMarkdownFiles?: TFile[],
     queryOptions?: { useIndexes?: boolean }
   ): Promise<TradeRecord[]> {
-    const cacheKey = 'trade:all-trades:index-path-v1';
+    
+    
+    
+    await this.waitForTradeDataReady();
+
+    const useIndexes = queryOptions?.useIndexes ?? true;
+    if (
+      useIndexes &&
+      this.indexManager?.isIndexReady('trades') &&
+      this.indexManager.getIndex('trades').length === 0
+    ) {
+      
+      
+      
+      return [];
+    }
+
+    const cacheKey = 'trade:all-trades:index-path-v2';
 
     try {
       const result = await this.query(
@@ -2344,11 +2668,12 @@ export class TradeService extends CustomDataService {
         cacheKey,
         {
           offlineCapable: true,
-          useIndexes:
-            queryOptions?.useIndexes !== undefined
-              ? queryOptions.useIndexes
-              : true,
-          useCache: queryOptions?.useIndexes === false ? false : true,
+          useIndexes,
+          
+          
+          
+          
+          useCache: false,
         },
         
         {
@@ -2492,6 +2817,13 @@ export class TradeService extends CustomDataService {
         console.warn(
           'TradeService: metadata cache readiness timeout, proceeding anyway'
         );
+        
+        
+        
+        
+        if (this.isIndexingEnabled()) {
+          this.needsTradeIndexRefresh = true;
+        }
         this.markMetadataCacheReady();
         resolve();
       }, timeoutMs);
@@ -2527,6 +2859,14 @@ export class TradeService extends CustomDataService {
       const timeoutMs = 30000;
       let finished = false;
       let unsubscribe: Unsubscribe | null = null;
+      const finish = () => {
+        if (finished) return;
+        finished = true;
+        window.clearTimeout(timeoutId);
+        unsubscribe?.();
+        this.markTradeIndexReady();
+        resolve();
+      };
       const timeoutId = window.setTimeout(() => {
         if (finished) return;
         finished = true;
@@ -2540,13 +2880,15 @@ export class TradeService extends CustomDataService {
 
       unsubscribe = eventBus.subscribe('index:ready', (payload) => {
         if (payload.indexName !== 'trades') return;
-        if (finished) return;
-        finished = true;
-        window.clearTimeout(timeoutId);
-        unsubscribe?.();
-        this.markTradeIndexReady();
-        resolve();
+        finish();
       });
+
+      
+      
+      
+      if (this.indexManager?.isIndexReady('trades')) {
+        finish();
+      }
     });
   }
 
@@ -2562,9 +2904,109 @@ export class TradeService extends CustomDataService {
     this.resolveTradeIndexReady?.();
   }
 
+  private async refreshAfterFolderPathChange(
+    folderPath: string
+  ): Promise<void> {
+    const generation = ++this.folderPathRefreshGeneration;
+    this.setMonitoredFolder(folderPath);
+    this.indexManager?.markDirty('trades');
+    this.indexManager?.markDirty('trade-unique-values');
+    await this.clearCache();
+    if (this.isIndexingEnabled()) {
+      await this.waitForTradeIndexReady();
+    }
+
+    if (generation !== this.folderPathRefreshGeneration) {
+      return;
+    }
+
+    eventBus.publish('trade:changed', {
+      action: 'relocated',
+      timestamp: Date.now(),
+    });
+  }
+
   
   public setPlugin(plugin: JournalitPlugin): void {
     super.setPlugin(plugin);
+
+    this.unsubscribeFolderPathChanged?.();
+    this.unsubscribeFolderPathChanged = eventBus.subscribe(
+      'folder-path:changed',
+      (payload) => {
+        void this.refreshAfterFolderPathChange(payload.value);
+      }
+    );
+
+    if (!this.vaultRenameBridgeRegistered) {
+      this.vaultRenameBridgeRegistered = true;
+      plugin.registerEvent(
+        plugin.app.vault.on('rename', async (file, oldPath) => {
+          if (file instanceof TFolder) {
+            const journalPath = this.folderPathService.journalFolderPath;
+            const affectsJournal = [file.path, oldPath].some(
+              (path) =>
+                isPathWithinDirectory(path, journalPath) ||
+                isPathWithinDirectory(journalPath, path)
+            );
+            if (!affectsJournal || oldPath === file.path) return;
+
+            eventBus.publish('trade:changed', {
+              action: 'relocated',
+              filePaths: [file.path],
+              oldFilePath: oldPath,
+              timestamp: Date.now(),
+            });
+            return;
+          }
+
+          if (!(file instanceof TFile) || oldPath === file.path) {
+            return;
+          }
+          if (this.isManagedTradeRename(oldPath, file.path)) {
+            return;
+          }
+          if (!oldPath.endsWith('.md') && file.extension !== 'md') {
+            return;
+          }
+
+          const frontmatter =
+            plugin.app.metadataCache.getFileCache(file)?.frontmatter ??
+            (await this.readFrontmatter(file));
+          const wasEligible =
+            Boolean(
+              this.tradeReadModel.getEntryForPath(normalizePath(oldPath))
+            ) ||
+            isTradeIndexEligible(
+              { path: oldPath },
+              frontmatter,
+              this.folderPathService
+            );
+          const isEligible = isTradeIndexEligible(
+            file,
+            frontmatter,
+            this.folderPathService
+          );
+          if (!wasEligible && !isEligible) return;
+
+          if (wasEligible !== isEligible) {
+            this.indexManager?.markDirty('trades');
+            this.indexManager?.markDirty('trade-unique-values');
+            await this.clearCacheWithPrefix('trade:');
+            if (this.isIndexingEnabled()) {
+              await this.waitForTradeIndexReady();
+            }
+          }
+
+          eventBus.publish('trade:changed', {
+            action: 'relocated',
+            filePaths: [file.path],
+            oldFilePath: oldPath,
+            timestamp: Date.now(),
+          });
+        })
+      );
+    }
 
     if (typeof this.app.metadataCache.on === 'function') {
       plugin.registerEvent(
@@ -3170,14 +3612,57 @@ export class TradeService extends CustomDataService {
     return new TradeCreationBatchImpl(this);
   }
 
+  public markCreatedTradePendingFinalization(filePath: string): void {
+    this.pendingCreationBatchPaths.add(normalizePath(filePath));
+  }
+
+  public markCreatedTradeFinalized(filePath: string): void {
+    this.pendingCreationBatchPaths.delete(normalizePath(filePath));
+  }
+
+  public discardCreatedTradeState(filePath: string): void {
+    this.pendingCreationBatchPaths.delete(normalizePath(filePath));
+    this.recentlyCreatedFiles?.delete(filePath);
+    this.tradeReadModel.forgetPath(filePath);
+    this.projectionIdentityByPath.delete(filePath);
+  }
+
+  public suppressCreatedTradeRollbackDeletion(filePath: string): void {
+    const normalizedPath = normalizePath(filePath);
+    this.rollbackSuppressedDeletionPaths.add(normalizedPath);
+    window.setTimeout(() => {
+      this.rollbackSuppressedDeletionPaths.delete(normalizedPath);
+    }, 30_000);
+  }
+
+  public cancelCreatedTradeRollbackDeletion(filePath: string): void {
+    this.rollbackSuppressedDeletionPaths.delete(normalizePath(filePath));
+  }
+
   public async finalizeCreatedTradeFiles(filePaths: string[]): Promise<void> {
-    const files = filePaths.flatMap((filePath) => {
-      const file = this.app.vault.getAbstractFileByPath(filePath);
-      return file instanceof TFile ? [file] : [];
-    });
+    const files = this.assertCreatedTradeFilesExist(filePaths);
     await Promise.all(
       files.map((file) => forceMetadataCacheRefresh(this.app, file, 500))
     );
+  }
+
+  public assertCreatedTradeFilesExist(filePaths: string[]): TFile[] {
+    const files: TFile[] = [];
+    const missingFilePaths: string[] = [];
+    for (const filePath of filePaths) {
+      const file = this.app.vault.getAbstractFileByPath(filePath);
+      if (file instanceof TFile) {
+        files.push(file);
+      } else {
+        missingFilePaths.push(filePath);
+      }
+    }
+    if (missingFilePaths.length > 0) {
+      throw new Error(
+        `Cannot finalize missing created trade files: ${missingFilePaths.join(', ')}`
+      );
+    }
+    return files;
   }
 
   private applyAutomaticCommission(data: TradeData): TradeData {
@@ -3546,7 +4031,12 @@ export class TradeService extends CustomDataService {
       };
 
       if (!options?.suppressPostCreateTasks) {
-        if (options?.deferPostCreateTasks) {
+        if (options?.creationBatch) {
+          await options.creationBatch.registerPostCreateTask(
+            filePath,
+            runPostCreateTasks
+          );
+        } else if (options?.deferPostCreateTasks) {
           window.setTimeout(() => {
             void runPostCreateTasks().catch((error) => {
               console.error('[TradeService] Post-create tasks failed:', error);
@@ -3641,6 +4131,16 @@ export class TradeService extends CustomDataService {
             this.app.metadataCache.getFileCache(recentFile)?.frontmatter;
           const frontmatter =
             cachedFrontmatter ?? (await this.readFrontmatter(recentFile));
+
+          if (
+            !isTradeIndexEligible(
+              recentFile,
+              frontmatter,
+              this.folderPathService
+            )
+          ) {
+            continue;
+          }
 
           if (
             frontmatter?.type === 'trade' ||
@@ -3756,15 +4256,11 @@ export class TradeService extends CustomDataService {
 
     
     const allMarkdownFiles = this.getTrackedMarkdownFiles();
-    const allFiles = allMarkdownFiles.filter((file) => {
-      
-      return (
-        ((file.path.startsWith(this.folderPathService.journalFolderPath) &&
-          file.path.includes(`/${this.tradesFolder}/`)) ||
-          file.path.startsWith(this.tradesFolder)) &&
-        file.path.endsWith('.md')
-      );
-    });
+    const allFiles = allMarkdownFiles.filter(
+      (file) =>
+        file.path.endsWith('.md') &&
+        this.folderPathService.isJournalPath(file.path)
+    );
 
     
     
@@ -3785,6 +4281,10 @@ export class TradeService extends CustomDataService {
           this.app.metadataCache.getFileCache(file)?.frontmatter;
         const frontmatter =
           cachedFrontmatter ?? (await this.readFrontmatter(file));
+
+        if (!isTradeIndexEligible(file, frontmatter, this.folderPathService)) {
+          continue;
+        }
 
         if (
           frontmatter?.type !== 'trade' &&
@@ -3839,16 +4339,20 @@ export class TradeService extends CustomDataService {
   
 
   public async extractTradeData(
-    file: TFile
+    file: TFile,
+    frontmatterOverride?: Record<string, unknown>,
+    contentOverride?: string
   ): Promise<Record<string, unknown> | null> {
     try {
       
       const cachedFrontmatter =
         this.app.metadataCache.getFileCache(file)?.frontmatter;
-      const frontmatter =
+      const cachedFrontmatterRecord =
         cachedFrontmatter && typeof cachedFrontmatter === 'object'
-          ? (cachedFrontmatter as Record<string, unknown>)
+          ? Object.fromEntries(Object.entries(cachedFrontmatter))
           : null;
+      const frontmatter: Record<string, unknown> | null =
+        frontmatterOverride ?? cachedFrontmatterRecord;
 
       const isPathBasedLegacyTrade =
         this.folderPathService.isJournalPath(file.path) &&
@@ -4035,7 +4539,11 @@ export class TradeService extends CustomDataService {
       );
       const extractedEntryTime =
         normalizedExecution.firstEntryTime ??
-        (await this.extractFirstCanonicalEntryTimeFromContent(file));
+        (contentOverride !== undefined
+          ? this.extractFirstCanonicalEntryTime(contentOverride)
+          : frontmatterOverride === undefined
+            ? await this.extractFirstCanonicalEntryTimeFromContent(file)
+            : null);
       const extractedExitTime = normalizedExecution.lastExitTime;
       const takeProfits: TakeProfitTarget[] = Array.isArray(
         frontmatter.takeProfits
@@ -4452,13 +4960,17 @@ export class TradeService extends CustomDataService {
   ): Promise<Date | null> {
     try {
       const content = await this.app.vault.cachedRead(file);
-      const entriesMatch = content.match(/^entries:\s*\n([\s\S]*?)(?:\n\S|$)/m);
-      const timeMatch = entriesMatch?.[1]?.match(/^\s+-\s+time:\s*(.+)$/m);
-      const parsed = timeMatch?.[1] ? new Date(timeMatch[1].trim()) : null;
-      return parsed && !Number.isNaN(parsed.getTime()) ? parsed : null;
+      return this.extractFirstCanonicalEntryTime(content);
     } catch {
       return null;
     }
+  }
+
+  private extractFirstCanonicalEntryTime(content: string): Date | null {
+    const entriesMatch = content.match(/^entries:\s*\n([\s\S]*?)(?:\n\S|$)/m);
+    const timeMatch = entriesMatch?.[1]?.match(/^\s+-\s+time:\s*(.+)$/m);
+    const parsed = timeMatch?.[1] ? new Date(timeMatch[1].trim()) : null;
+    return parsed && !Number.isNaN(parsed.getTime()) ? parsed : null;
   }
 
   private getExistingEntryTimeForRelocation(
@@ -5312,13 +5824,12 @@ export class TradeService extends CustomDataService {
     const files = await this.listFilesInFolder(targetFolder);
 
     
-    const dateFormat = this.plugin?.settings.trade.dateFormat || 'DDMMYY';
-    const formattedDate = this.formatDateForFilename(date, dateFormat);
-
+    
     
     const escapedTicker = ticker.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const datePattern = getTradeFilenameDateTokens(date).join('|');
     const pattern = new RegExp(
-      `^${escapedTicker}-${formattedDate}-T(\\d+)\\.md$`
+      `^${escapedTicker}-(?:${datePattern})-T(\\d+)\\.md$`
     );
 
     
@@ -5549,6 +6060,16 @@ export class TradeService extends CustomDataService {
     previousFrontmatter?: Record<string, unknown>
   ): Promise<void> {
     try {
+      const normalizedPath = normalizePath(filePath);
+      const rollbackSuppressed =
+        this.rollbackSuppressedDeletionPaths.delete(normalizedPath);
+      const pendingCreation =
+        this.pendingCreationBatchPaths.delete(normalizedPath);
+      if (rollbackSuppressed || pendingCreation) {
+        this.discardCreatedTradeState(normalizedPath);
+        return;
+      }
+
       
       
 
@@ -5733,6 +6254,8 @@ export class TradeService extends CustomDataService {
   public override cleanup(): void {
     this.unsubscribeOptions?.();
     this.unsubscribeOptions = undefined;
+    this.unsubscribeFolderPathChanged?.();
+    this.unsubscribeFolderPathChanged = undefined;
     super.cleanup();
   }
 }

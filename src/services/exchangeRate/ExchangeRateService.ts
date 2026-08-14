@@ -3,6 +3,7 @@
 import { requestUrl } from 'obsidian';
 import type JournalitPlugin from '../../main';
 import { hasUnrealizedPriceSnapshot } from '../../utils/unrealizedPnl';
+import type { BreakEvenAccountBalanceSnapshot } from '../trade/core/BreakEvenAccountBalance';
 import {
   FrankfurterResponse,
   CachedExchangeRates,
@@ -259,13 +260,15 @@ export class ExchangeRateService {
         value: number | undefined,
         currency: string | undefined
       ): boolean =>
-        value !== undefined &&
-        currency !== baseCurrency &&
-        !(manualFxRate !== null && currency === tradeCurrency);
+        value !== undefined && value !== 0 && currency !== baseCurrency;
       return (
         (trade.riskAmount !== undefined &&
           tradeCurrency !== baseCurrency &&
           manualFxRate === null) ||
+        (trade.breakEvenAccountCurrentBalanceSnapshots?.some((snapshot) =>
+          balanceNeedsFetchedRate(snapshot.balance, snapshot.currency)
+        ) ??
+          false) ||
         balanceNeedsFetchedRate(
           trade.breakEvenAccountCurrentBalance,
           trade.breakEvenAccountCurrentBalanceCurrency
@@ -442,6 +445,91 @@ export class ExchangeRateService {
         return value / rate;
       };
 
+      const convertAccountBalanceValue = (
+        value: number | undefined,
+        sourceCurrency?: string
+      ): number | undefined => {
+        if (value === undefined || !sourceCurrency) {
+          return undefined;
+        }
+
+        if (value === 0) {
+          return 0;
+        }
+
+        
+        
+        
+        const rate = lookupRate(sourceCurrency);
+        if (rate === null) {
+          partiallyConvertedCurrencies.add(sourceCurrency);
+          tradePartialCurrencies.add(sourceCurrency);
+          return undefined;
+        }
+
+        if (sourceCurrency !== baseCurrency) {
+          usedFetchedDailyRates = true;
+        }
+        return value / rate;
+      };
+
+      const convertBreakEvenAccountBalanceFields = () => {
+        const sourceSnapshots = trade.breakEvenAccountCurrentBalanceSnapshots;
+        const hasSourceSnapshots =
+          sourceSnapshots !== undefined && sourceSnapshots.length > 0;
+        let convertedSnapshots: BreakEvenAccountBalanceSnapshot[] | undefined;
+
+        if (hasSourceSnapshots) {
+          const nextSnapshots: BreakEvenAccountBalanceSnapshot[] = [];
+          for (const snapshot of sourceSnapshots) {
+            const balance = convertAccountBalanceValue(
+              snapshot.balance,
+              snapshot.currency
+            );
+            if (balance === undefined) {
+              continue;
+            }
+            nextSnapshots.push({
+              accountKey: snapshot.accountKey,
+              balance,
+              currency: baseCurrency,
+            });
+          }
+
+          if (nextSnapshots.length === sourceSnapshots.length) {
+            convertedSnapshots = nextSnapshots;
+          }
+        }
+
+        const singleBalance = hasSourceSnapshots
+          ? convertedSnapshots?.length === 1
+            ? convertedSnapshots[0].balance
+            : undefined
+          : convertAccountBalanceValue(
+              trade.breakEvenAccountCurrentBalance,
+              trade.breakEvenAccountCurrentBalanceCurrency
+            );
+        const totalBalance = hasSourceSnapshots
+          ? convertedSnapshots?.reduce(
+              (sum, snapshot) => sum + snapshot.balance,
+              0
+            )
+          : convertAccountBalanceValue(
+              trade.breakEvenAccountCurrentBalanceTotal,
+              trade.breakEvenAccountCurrentBalanceTotalCurrency
+            );
+
+        return {
+          breakEvenAccountCurrentBalanceSnapshots: convertedSnapshots,
+          breakEvenAccountCurrentBalance: singleBalance,
+          breakEvenAccountCurrentBalanceCurrency:
+            singleBalance !== undefined ? baseCurrency : undefined,
+          breakEvenAccountCurrentBalanceTotal: totalBalance,
+          breakEvenAccountCurrentBalanceTotalCurrency:
+            totalBalance !== undefined ? baseCurrency : undefined,
+        };
+      };
+
       
       
       
@@ -503,14 +591,8 @@ export class ExchangeRateService {
         if (tradeCurrency !== baseCurrency) {
           conversionPnlFactor = impliedBrokerFactor ?? dividendMultiplier;
         }
-        const brokerBaseBreakEvenAccountCurrentBalance = convertValue(
-          trade.breakEvenAccountCurrentBalance,
-          trade.breakEvenAccountCurrentBalanceCurrency
-        );
-        const brokerBaseBreakEvenAccountCurrentBalanceTotal = convertValue(
-          trade.breakEvenAccountCurrentBalanceTotal,
-          trade.breakEvenAccountCurrentBalanceTotalCurrency
-        );
+        const convertedBreakEvenAccountBalanceFields =
+          convertBreakEvenAccountBalanceFields();
         const brokerBaseTrade = {
           ...trade,
           currency: baseCurrency,
@@ -524,18 +606,7 @@ export class ExchangeRateService {
             trade.useDirectPnLInput === true
               ? trade.brokerBaseCurrencyPnl
               : trade.directPnL,
-          breakEvenAccountCurrentBalance:
-            brokerBaseBreakEvenAccountCurrentBalance,
-          breakEvenAccountCurrentBalanceCurrency:
-            brokerBaseBreakEvenAccountCurrentBalance !== undefined
-              ? baseCurrency
-              : undefined,
-          breakEvenAccountCurrentBalanceTotal:
-            brokerBaseBreakEvenAccountCurrentBalanceTotal,
-          breakEvenAccountCurrentBalanceTotalCurrency:
-            brokerBaseBreakEvenAccountCurrentBalanceTotal !== undefined
-              ? baseCurrency
-              : undefined,
+          ...convertedBreakEvenAccountBalanceFields,
         };
 
         if (
@@ -653,14 +724,8 @@ export class ExchangeRateService {
           
           
           
-          const convertedBreakEvenAccountCurrentBalance = convertValue(
-            trade.breakEvenAccountCurrentBalance,
-            trade.breakEvenAccountCurrentBalanceCurrency
-          );
-          const convertedBreakEvenAccountCurrentBalanceTotal = convertValue(
-            trade.breakEvenAccountCurrentBalanceTotal,
-            trade.breakEvenAccountCurrentBalanceTotalCurrency
-          );
+          const convertedBreakEvenAccountBalanceFields =
+            convertBreakEvenAccountBalanceFields();
           return finalizeConvertedTrade({
             ...trade,
             currency: baseCurrency,
@@ -669,18 +734,7 @@ export class ExchangeRateService {
             commission: trade.commission ?? 0,
             swap: trade.swap ?? 0,
             fees: trade.fees ?? 0,
-            breakEvenAccountCurrentBalance:
-              convertedBreakEvenAccountCurrentBalance,
-            breakEvenAccountCurrentBalanceCurrency:
-              convertedBreakEvenAccountCurrentBalance !== undefined
-                ? baseCurrency
-                : trade.breakEvenAccountCurrentBalanceCurrency,
-            breakEvenAccountCurrentBalanceTotal:
-              convertedBreakEvenAccountCurrentBalanceTotal,
-            breakEvenAccountCurrentBalanceTotalCurrency:
-              convertedBreakEvenAccountCurrentBalanceTotal !== undefined
-                ? baseCurrency
-                : trade.breakEvenAccountCurrentBalanceTotalCurrency,
+            ...convertedBreakEvenAccountBalanceFields,
           });
         }
         
@@ -738,14 +792,8 @@ export class ExchangeRateService {
           }))
         : trade.dividends;
 
-      const convertedBreakEvenAccountCurrentBalance = convertValue(
-        trade.breakEvenAccountCurrentBalance,
-        trade.breakEvenAccountCurrentBalanceCurrency
-      );
-      const convertedBreakEvenAccountCurrentBalanceTotal = convertValue(
-        trade.breakEvenAccountCurrentBalanceTotal,
-        trade.breakEvenAccountCurrentBalanceTotalCurrency
-      );
+      const convertedBreakEvenAccountBalanceFields =
+        convertBreakEvenAccountBalanceFields();
 
       return finalizeConvertedTrade({
         ...trade,
@@ -765,17 +813,7 @@ export class ExchangeRateService {
         mae: convertedMae,
         mfe: convertedMfe,
         dividends: convertedDividends,
-        breakEvenAccountCurrentBalance: convertedBreakEvenAccountCurrentBalance,
-        breakEvenAccountCurrentBalanceCurrency:
-          convertedBreakEvenAccountCurrentBalance !== undefined
-            ? baseCurrency
-            : trade.breakEvenAccountCurrentBalanceCurrency,
-        breakEvenAccountCurrentBalanceTotal:
-          convertedBreakEvenAccountCurrentBalanceTotal,
-        breakEvenAccountCurrentBalanceTotalCurrency:
-          convertedBreakEvenAccountCurrentBalanceTotal !== undefined
-            ? baseCurrency
-            : trade.breakEvenAccountCurrentBalanceTotalCurrency,
+        ...convertedBreakEvenAccountBalanceFields,
       });
     });
 

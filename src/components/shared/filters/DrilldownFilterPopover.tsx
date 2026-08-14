@@ -4,6 +4,7 @@ import {
   Check,
   ChevronLeft,
   ChevronRight,
+  RotateCcw,
   type ObsidianIconComponent,
 } from '../icons/ObsidianIcon';
 
@@ -56,6 +57,19 @@ export const DrilldownFilterRow: React.FC<{
     <span className="journalit-drilldown-filter__row-label">{label}</span>
     <span className="journalit-drilldown-filter__row-summary">{summary}</span>
     <ChevronRight size={15} aria-hidden="true" />
+  </button>
+);
+
+export const DrilldownFilterReset: React.FC<{
+  onClick: () => void;
+}> = ({ onClick }) => (
+  <button
+    type="button"
+    className="journalit-drilldown-filter__reset"
+    onClick={onClick}
+  >
+    <RotateCcw size={14} aria-hidden="true" />
+    <span>{t('filter.reset')}</span>
   </button>
 );
 

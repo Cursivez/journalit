@@ -1,6 +1,6 @@
 
 
-import { App, TFile, TAbstractFile } from 'obsidian';
+import { App, TFile, TAbstractFile, TFolder } from 'obsidian';
 import { IndexManager, IndexConfig, IndexEntry } from './IndexManager';
 import { forceMetadataCacheRefresh } from '../../utils/dataRefresh';
 import type JournalitPlugin from '../../main';
@@ -81,6 +81,8 @@ export class CustomDataService {
   
   private cache: Map<string, CacheEntry<unknown>>;
   private isCacheInvalidated: boolean;
+  
+  private cacheGeneration: number = 0;
   private config: Required<
     CustomDataServiceConfig & {
       enableIndexing: boolean;
@@ -92,7 +94,10 @@ export class CustomDataService {
   private pendingQueries: Map<string, Promise<unknown>> = new Map();
 
   
-  private boundHandleFileChange: (file: TAbstractFile) => Promise<void>;
+  private boundHandleFileChange: (
+    file: TAbstractFile,
+    oldPath?: string
+  ) => Promise<void>;
 
   
   protected indexManager: IndexManager | null = null;
@@ -133,8 +138,8 @@ export class CustomDataService {
     this.isCacheInvalidated = false;
 
     
-    this.boundHandleFileChange = (file: TAbstractFile) =>
-      this.handleFileChange(file);
+    this.boundHandleFileChange = (file: TAbstractFile, oldPath?: string) =>
+      this.handleFileChange(file, oldPath);
 
     
     if (this.config.enableIndexing) {
@@ -219,6 +224,11 @@ export class CustomDataService {
   }
 
   
+  protected setMonitoredFolder(folder: string): void {
+    this.config.folder = folder;
+  }
+
+  
   protected async query<T>(
     queryFn: () => Promise<T>,
     cacheKey: string,
@@ -259,6 +269,8 @@ export class CustomDataService {
         
         return pendingQuery as Promise<T>;
       }
+
+      const queryGeneration = this.cacheGeneration;
 
       
       const executeQuery = async (): Promise<T> => {
@@ -328,7 +340,7 @@ export class CustomDataService {
               }
 
               
-              if (useCache) {
+              if (useCache && queryGeneration === this.cacheGeneration) {
                 this.setCache(namespacedKey, result);
                 this.isCacheInvalidated = false;
               }
@@ -351,7 +363,7 @@ export class CustomDataService {
         const result = await queryFn();
 
         
-        if (useCache) {
+        if (useCache && queryGeneration === this.cacheGeneration) {
           this.setCache(namespacedKey, result);
           
           this.isCacheInvalidated = false;
@@ -367,7 +379,9 @@ export class CustomDataService {
       try {
         return await queryPromise;
       } finally {
-        this.pendingQueries.delete(namespacedKey);
+        if (this.pendingQueries.get(namespacedKey) === queryPromise) {
+          this.pendingQueries.delete(namespacedKey);
+        }
       }
     } catch (error) {
       
@@ -479,67 +493,109 @@ export class CustomDataService {
   }
 
   
-  private async handleFileChange(file: TAbstractFile): Promise<void> {
+  private async handleFileChange(
+    file: TAbstractFile,
+    oldPath?: string
+  ): Promise<void> {
     
     if (!('path' in file)) return;
 
     
-    if (isPathWithinDirectory(file.path, getJournalitCachePath(this.app)))
+    const relevantPaths = [file.path, oldPath].filter((path): path is string =>
+      Boolean(path)
+    );
+    if (
+      relevantPaths.every((path) =>
+        isPathWithinDirectory(path, getJournalitCachePath(this.app))
+      )
+    )
       return;
 
     
-    if (this.config.folder && !file.path.startsWith(this.config.folder)) return;
-    if (this.config.extension && !file.path.endsWith(this.config.extension))
+    const isFolder = file instanceof TFolder;
+    if (
+      this.config.folder &&
+      !relevantPaths.some(
+        (path) =>
+          isPathWithinDirectory(path, this.config.folder) ||
+          (isFolder && isPathWithinDirectory(this.config.folder, path))
+      )
+    )
+      return;
+    if (
+      !isFolder &&
+      this.config.extension &&
+      !relevantPaths.some((path) => path.endsWith(this.config.extension))
+    )
       return;
 
     
-    let cachePrefix = '';
-
-    if (file.path.includes('/trades/')) {
-      cachePrefix = 'trade:';
-    } else if (file.path.includes('/Accounts/')) {
-      cachePrefix = 'account:';
-    } else if (file.path.includes('/DRC/')) {
-      cachePrefix = 'drc:';
-    } else if (file.path.includes('/Weekly/')) {
-      cachePrefix = 'weekly:';
-    } else if (file.path.includes('/Setups/')) {
-      if (this.config.namespace === 'setup') {
-        await this.clearCache();
-      }
+    if (isFolder && this.config.folder) {
+      await this.clearCache();
       return;
     }
 
-    
-    
-    if (cachePrefix) {
-      
-      const isAccountPageWatchingTrades =
-        this.config.namespace === 'accountPage' && cachePrefix === 'trade:';
+    const cachePrefixes = new Set<string>();
+    for (const path of relevantPaths) {
+      if (/(?:^|\/)trades(?:\/|$)/.test(path)) {
+        cachePrefixes.add('trade:');
+      }
+      if (/(?:^|\/)Accounts(?:\/|$)/.test(path)) {
+        cachePrefixes.add('account:');
+      }
+      if (/(?:^|\/)DRC(?:\/|$)/.test(path)) {
+        cachePrefixes.add('drc:');
+      }
+      if (/(?:^|\/)Weekly(?:\/|$)/.test(path)) {
+        cachePrefixes.add('weekly:');
+      }
+      if (/(?:^|\/)Setups(?:\/|$)/.test(path)) {
+        cachePrefixes.add('setup:');
+      }
+    }
 
-      
-      if (
-        this.config.namespace === 'default' ||
-        cachePrefix.startsWith(this.config.namespace) ||
-        this.config.namespace === cachePrefix.replace(':', '') ||
-        isAccountPageWatchingTrades
-      ) {
-        await this.clearCacheWithPrefix(cachePrefix);
+    const namespace = this.config.namespace;
+    await Promise.all(
+      Array.from(cachePrefixes, async (cachePrefix) => {
+        if (cachePrefix === 'setup:') {
+          if (namespace === 'setup') {
+            await this.clearCache();
+          }
+          return;
+        }
 
         
-        if (isAccountPageWatchingTrades) {
-          await Promise.all([
-            this.clearCacheByPattern('accountPage:', false),
-            this.clearCacheByPattern('accountTrades:', false),
-            this.clearCacheByPattern('allEnhancedAccounts', false),
-          ]);
+        const isAccountPageWatchingTrades =
+          namespace === 'accountPage' && cachePrefix === 'trade:';
+
+        
+        if (
+          namespace === 'default' ||
+          cachePrefix.startsWith(namespace) ||
+          namespace === cachePrefix.replace(':', '') ||
+          isAccountPageWatchingTrades
+        ) {
+          await this.clearCacheWithPrefix(cachePrefix);
+
+          
+          if (isAccountPageWatchingTrades) {
+            await Promise.all([
+              this.clearCacheByPattern('accountPage:', false),
+              this.clearCacheByPattern('accountTrades:', false),
+              this.clearCacheByPattern('allEnhancedAccounts', false),
+            ]);
+          }
         }
-      }
-    } else {
+      })
+    );
+
+    if (cachePrefixes.size === 0) {
       
       
-      if (this.config.namespace === 'default') {
-        this.isCacheInvalidated = true;
+      if (
+        namespace === 'default' ||
+        (oldPath !== undefined && Boolean(this.config.folder))
+      ) {
         await this.clearCache();
       }
     }
@@ -556,6 +612,7 @@ export class CustomDataService {
   
   public async clearCache(): Promise<void> {
     
+    this.cacheGeneration += 1;
     this.isCacheInvalidated = true;
 
     
@@ -591,6 +648,8 @@ export class CustomDataService {
   public async clearCacheKey(key: string): Promise<void> {
     
     const namespacedKey = this.getNamespacedKey(key);
+    this.cacheGeneration += 1;
+    this.pendingQueries.delete(namespacedKey);
 
     
     const deleted = this.cache.delete(namespacedKey);
@@ -607,6 +666,13 @@ export class CustomDataService {
   public async clearCacheWithPrefix(prefix: string): Promise<void> {
     
     const namespacedPrefix = this.getNamespacedKey(prefix);
+    this.cacheGeneration += 1;
+
+    for (const key of this.pendingQueries.keys()) {
+      if (key.startsWith(namespacedPrefix)) {
+        this.pendingQueries.delete(key);
+      }
+    }
 
     let keysDeleted = false;
 
@@ -635,6 +701,13 @@ export class CustomDataService {
     const searchPattern = useNamespacing
       ? this.getNamespacedKey(pattern)
       : pattern;
+    this.cacheGeneration += 1;
+
+    for (const key of this.pendingQueries.keys()) {
+      if (key.startsWith(searchPattern)) {
+        this.pendingQueries.delete(key);
+      }
+    }
 
     let keysDeleted = false;
 
@@ -656,6 +729,7 @@ export class CustomDataService {
 
   
   public invalidateCache(): void {
+    this.cacheGeneration += 1;
     this.isCacheInvalidated = true;
   }
 
@@ -1006,7 +1080,9 @@ export class CustomDataService {
   
   protected async updateFrontmatter(
     file: TFile,
-    data: Record<string, unknown>
+    data: Record<string, unknown>,
+    mutate?: (frontmatter: Record<string, unknown>) => void,
+    onCommitted?: () => void
   ): Promise<void> {
     await this.app.fileManager.processFrontMatter(file, (frontmatter) => {
       const record = ensureRecord(frontmatter);
@@ -1018,7 +1094,9 @@ export class CustomDataService {
 
         record[key] = value;
       });
+      mutate?.(record);
     });
+    onCommitted?.();
     
     await forceMetadataCacheRefresh(this.app, file);
   }

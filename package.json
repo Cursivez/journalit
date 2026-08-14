@@ -1,11 +1,11 @@
 {
   "name": "journalit",
-  "version": "1.8.1",
+  "version": "1.8.2",
   "description": "Trading journal with templates, trade tracking, imports, and reviews for Obsidian.",
   "main": "main.js",
   "scripts": {
     "build": "tsc -noEmit -skipLibCheck && node scripts/generate-styles-css.mjs && node esbuild.config.mjs release",
-    "lint": "node scripts/generate-styles-css.mjs && eslint src manifest.json --max-warnings 0",
+    "lint": "node scripts/generate-styles-css.mjs && eslint src manifest.json --max-warnings 0 --cache --cache-strategy content --cache-location .cache/eslint/",
     "lint:review": "node scripts/generate-styles-css.mjs && node scripts/lint-review-findings.mjs",
     "css:review": "node scripts/generate-styles-css.mjs && node scripts/validate-public-css.mjs",
     "css:compat": "node scripts/generate-styles-css.mjs && stylelint --config stylelint.obsidian-compat.mjs styles.css",
@@ -27,6 +27,8 @@
     "@dnd-kit/core": "^6.3.1",
     "@dnd-kit/sortable": "^10.0.0",
     "@dnd-kit/utilities": "^3.2.2",
+    "@lezer/markdown": "1.7.2",
+    "entities": "^8.0.0",
     "fflate": "^0.8.3",
     "flatpickr": "^4.6.13",
     "react": "^19.2.7",
