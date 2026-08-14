@@ -69,6 +69,7 @@ export const ENTRY_EXIT_STYLES = `
     .trade-form-view-container .dividend-fields {
       display: flex;
       flex: 1;
+      min-width: 0;
       gap: 12px;
       flex-wrap: wrap;
     }
@@ -85,14 +86,19 @@ export const ENTRY_EXIT_STYLES = `
       min-width: 120px;
     }
 
-    .trade-form-view-container .journalit-direct-pnl-time-input .journalit-fast-datetime__container {
+    .trade-form-view-container .journalit-direct-pnl-time-input .journalit-fast-datetime__container:not([data-has-seconds="true"]) {
       width: fit-content;
       max-width: 100%;
       padding-right: 12px;
       gap: 6px;
     }
 
-    .trade-form-view-container .journalit-direct-pnl-time-input .journalit-fast-datetime__calendar-button {
+    .trade-form-view-container .journalit-direct-pnl-time-input .journalit-fast-datetime__container:not([data-has-seconds="true"]) .journalit-fast-datetime__date-group,
+    .trade-form-view-container .journalit-direct-pnl-time-input .journalit-fast-datetime__container:not([data-has-seconds="true"]) .journalit-fast-datetime__time-group {
+      gap: 6px;
+    }
+
+    .trade-form-view-container .journalit-direct-pnl-time-input .journalit-fast-datetime__container:not([data-has-seconds="true"]) .journalit-fast-datetime__calendar-button {
       margin-left: 12px;
     }
 
@@ -110,12 +116,139 @@ export const ENTRY_EXIT_STYLES = `
       width: 100%;
     }
 
-    
     .trade-form-view-container .time-field-wrapper {
       display: flex;
       flex-direction: column;
       gap: 2px;
       min-width: 200px;
+    }
+
+    .trade-form-view-container .time-field-wrapper[data-has-seconds="true"] {
+      flex: 1 1 100%;
+      width: 100%;
+      min-width: 0;
+      max-width: 100%;
+      container-type: inline-size;
+    }
+
+    .trade-form-view-container .journalit-fast-datetime__container[data-has-seconds="true"] {
+      justify-content: space-between;
+      gap: 4px;
+      max-width: 520px;
+      padding-right: 6px;
+      padding-left: 6px;
+    }
+
+    .trade-form-view-container .journalit-fast-datetime__container[data-has-seconds="true"] .journalit-fast-datetime__date-group,
+    .trade-form-view-container .journalit-fast-datetime__container[data-has-seconds="true"] .journalit-fast-datetime__time-group {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .trade-form-view-container .journalit-fast-datetime__container[data-has-seconds="true"] .journalit-fast-datetime__segment {
+      width: 40px;
+      min-width: 40px;
+      max-width: 40px;
+      padding-right: 3px;
+      padding-left: 3px;
+      font-size: 14px;
+    }
+
+    .trade-form-view-container .journalit-fast-datetime__container[data-has-seconds="true"] .journalit-fast-datetime__separator {
+      padding-right: 1px;
+      padding-left: 1px;
+      font-size: 12px;
+    }
+
+    .trade-form-view-container .journalit-fast-datetime__container[data-has-seconds="true"] .journalit-fast-datetime__separator--spacer {
+      width: 0;
+      padding: 0;
+    }
+
+    .trade-form-view-container .journalit-fast-datetime__container[data-has-seconds="true"] .journalit-fast-datetime__ampm-button {
+      width: auto;
+      min-width: 36px;
+      max-width: none;
+      margin-left: 4px;
+      padding-right: 6px;
+      padding-left: 6px;
+      font-size: 12px;
+    }
+
+    .trade-form-view-container .journalit-fast-datetime__container[data-has-seconds="true"] .journalit-fast-datetime__calendar-button {
+      width: auto;
+      min-width: 0;
+      max-width: none;
+      margin-left: 0;
+      padding: 4px;
+    }
+
+    .trade-form-view-container .journalit-direct-pnl-time-input--seconds {
+      width: 520px;
+      max-width: 100%;
+      container-type: inline-size;
+    }
+
+    @container (max-width: 400px) {
+      .trade-form-view-container .journalit-fast-datetime__container[data-has-seconds="true"] {
+        display: grid;
+        grid-template-areas:
+          "date calendar"
+          "time time";
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 6px 8px;
+        padding: 6px;
+      }
+
+      .trade-form-view-container .journalit-fast-datetime__container[data-has-seconds="true"] .journalit-fast-datetime__date-group {
+        grid-area: date;
+        gap: 3px;
+      }
+
+      .trade-form-view-container .journalit-fast-datetime__container[data-has-seconds="true"] .journalit-fast-datetime__time-group {
+        grid-area: time;
+        gap: 3px;
+      }
+
+      .trade-form-view-container .journalit-fast-datetime__container[data-has-seconds="true"] .journalit-fast-datetime__segment {
+        width: 36px;
+        min-width: 36px;
+        max-width: 36px;
+        padding-right: 2px;
+        padding-left: 2px;
+        font-size: 14px;
+      }
+
+      .trade-form-view-container .journalit-fast-datetime__container[data-has-seconds="true"] .journalit-fast-datetime__separator {
+        padding-right: 0;
+        padding-left: 0;
+        font-size: 12px;
+      }
+
+      .trade-form-view-container .journalit-fast-datetime__container[data-has-seconds="true"] .journalit-fast-datetime__separator--spacer {
+        width: 0;
+        padding: 0;
+      }
+
+      .trade-form-view-container .journalit-fast-datetime__container[data-has-seconds="true"] .journalit-fast-datetime__ampm-button {
+        width: auto;
+        min-width: 36px;
+        max-width: none;
+        margin-left: 3px;
+        padding-right: 4px;
+        padding-left: 4px;
+        font-size: 12px;
+      }
+
+      .trade-form-view-container .journalit-fast-datetime__container[data-has-seconds="true"] .journalit-fast-datetime__calendar-button {
+        grid-area: calendar;
+        justify-self: end;
+        width: 26px;
+        min-width: 26px;
+        max-width: 26px;
+        margin-left: 0;
+      }
     }
 
     .trade-form-view-container .time-field-header {

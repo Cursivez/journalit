@@ -16,7 +16,7 @@ import JournalitPlugin from '../../main';
 import { FolderPathService } from '../core/FolderPathService';
 import { getQuarterForMonth, getWeekFolderName } from '../../utils/dateUtils';
 import { getTradingDay } from '../../utils/tradingDayUtils';
-import { eventBus } from '../events';
+import { eventBus, type Unsubscribe } from '../events';
 import { mapCustomFieldsToFrontmatter } from '../../utils/customFieldPersistence';
 import { buildTradeIdentityFields } from '../../utils/tradeIdentity';
 import { Mutex } from '../../utils/mutex';
@@ -167,6 +167,7 @@ export class BacktestTradeService extends CustomDataService {
   private readonly creationMutex = new Mutex();
   private readonly tradesFolder = 'trades';
   private folderPathService: FolderPathService;
+  private unsubscribeFolderPathChanged?: Unsubscribe;
 
   constructor(
     app: App,
@@ -187,9 +188,9 @@ export class BacktestTradeService extends CustomDataService {
       ...config,
     });
 
-    this.setPlugin(plugin);
     this.folderPathService =
       folderPathService || new FolderPathService(app, plugin);
+    this.setPlugin(plugin);
   }
 
   
@@ -227,6 +228,15 @@ export class BacktestTradeService extends CustomDataService {
   public setPlugin(plugin: JournalitPlugin): void {
     super.setPlugin(plugin);
 
+    this.unsubscribeFolderPathChanged?.();
+    this.unsubscribeFolderPathChanged = eventBus.subscribe(
+      'folder-path:changed',
+      (payload) => {
+        this.setMonitoredFolder(payload.value);
+        void this.clearCache();
+      }
+    );
+
     
     plugin.registerEvent(
       plugin.app.vault.on('delete', async (file: TAbstractFile) => {
@@ -237,6 +247,12 @@ export class BacktestTradeService extends CustomDataService {
         }
       })
     );
+  }
+
+  public override cleanup(): void {
+    this.unsubscribeFolderPathChanged?.();
+    this.unsubscribeFolderPathChanged = undefined;
+    super.cleanup();
   }
 
   

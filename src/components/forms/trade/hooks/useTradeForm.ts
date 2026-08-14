@@ -20,6 +20,7 @@ import {
   TradeFormValue,
   DEFAULT_TRADE_FORM_DATA,
 } from '../types';
+import { resolveFormExitExplicitness } from '../exitExplicitness';
 import type { TradeFormLayoutSettings } from '../../../../settings/types';
 import {
   validateTradeForm,
@@ -30,12 +31,20 @@ import { deriveRawDirectPnLFromStoredCombinedPnL } from '../../../../utils/pnlCa
 import { usePlugin } from '../../../../hooks';
 import { getTradingDay } from '../../../../utils/tradingDayUtils';
 import { isTradeOpenWithContext } from '../../../../utils/tradeStatusUtils';
-import { shouldInvalidateUnrealizedSnapshot } from '../../../../utils/unrealizedPnl';
+import {
+  hasUnrealizedPriceSnapshot,
+  isUnrealizedSnapshotExecutionValid,
+  shouldInvalidateUnrealizedSnapshot,
+} from '../../../../utils/unrealizedPnl';
 import {
   getQuarterForMonth,
   getQuarterString,
   getWeekFolderName,
 } from '../../../../utils/dateUtils';
+import {
+  getTradeMediaOwner,
+  isManagedTradeMediaPath,
+} from '../../../../services/trade/core/TradeMediaOwnership';
 
 interface UseTradeFormProps {
   initialData?: Partial<TradeFormData>;
@@ -44,9 +53,6 @@ interface UseTradeFormProps {
   onCancel?: () => Promise<boolean> | boolean | void;
   layout?: TradeFormLayoutSettings;
 }
-
-const SUPPORTED_UPLOAD_MEDIA_EXTENSION_PATTERN =
-  /\.(?:jpe?g|png|gif|bmp|webp|svg|mp4|webm|mov|m4v|ogv|ogg|3gp|mkv)$/i;
 
 const UNREALIZED_SNAPSHOT_QUOTE_CONTEXT_FIELDS = new Set<keyof TradeFormData>([
   'instrument',
@@ -88,6 +94,25 @@ const hasTradeLegValues = (leg: {
   (leg.price !== undefined && leg.price !== null && leg.price !== 0) ||
   (leg.size !== undefined && leg.size !== null && leg.size !== 0);
 
+const withResolvedSnapshotExitExplicitness = (
+  data: Partial<TradeFormData>
+): Partial<TradeFormData> => {
+  if (!Array.isArray(data.exits)) {
+    return data;
+  }
+
+  return {
+    ...data,
+    exits: data.exits.map((exit) => ({
+      ...exit,
+      hasExplicitPrice: resolveFormExitExplicitness(
+        exit,
+        data.useDirectPnLInput
+      ),
+    })),
+  };
+};
+
 const completeTradeFormData = (
   data: Partial<TradeFormData>
 ): TradeFormData => ({
@@ -97,14 +122,14 @@ const completeTradeFormData = (
 
 const withCurrentTimeForBlankTradeTimes = (
   data: Partial<TradeFormData>,
-  preserveScalarTradeTimes = false
+  preserveScalarTradeTimes = false,
+  referenceDate = new Date()
 ): Partial<TradeFormData> => {
-  const now = new Date();
   const snapshotTime = data.unrealizedPriceSnapshotTime;
   const entryTimeReference =
     snapshotTime instanceof Date && Number.isFinite(snapshotTime.getTime())
       ? snapshotTime
-      : now;
+      : referenceDate;
   const applyReferenceTime = (
     date: Date | undefined,
     reference: Date
@@ -155,7 +180,7 @@ const withCurrentTimeForBlankTradeTimes = (
       time:
         exit.time ??
         (exit.blankTimeDate || hasTradeLegValues(exit)
-          ? applyReferenceTime(exit.blankTimeDate, now)
+          ? applyReferenceTime(exit.blankTimeDate, referenceDate)
           : undefined),
       blankTimeDate: undefined,
     }));
@@ -179,6 +204,56 @@ const withCurrentTimeForBlankTradeTimes = (
   }
 
   return normalized;
+};
+
+const clearInvalidUnrealizedSnapshot = (
+  data: Partial<TradeFormData>
+): Partial<TradeFormData> => {
+  if (
+    !hasUnrealizedPriceSnapshot(data) ||
+    isUnrealizedSnapshotExecutionValid(data)
+  ) {
+    return data;
+  }
+
+  return {
+    ...data,
+    unrealizedPriceSnapshot: undefined,
+    unrealizedPriceSnapshotTime: undefined,
+  };
+};
+
+const normalizeSubmittedTradeStatus = (
+  data: Partial<TradeFormData>
+): Partial<TradeFormData> => {
+  const isRegularPriceBasedTrade =
+    data.useDirectPnLInput !== true &&
+    data.isMissedTrade !== true &&
+    data.isBacktestTrade !== true &&
+    data.tradeStatus !== 'CANCELLED';
+
+  if (!isRegularPriceBasedTrade) {
+    return data;
+  }
+
+  const explicitExits = (data.exits ?? []).filter((exit) =>
+    resolveFormExitExplicitness(exit, data.useDirectPnLInput)
+  );
+  const isOpenTrade = isTradeOpenWithContext({
+    
+    
+    tradeStatus: undefined,
+    
+    
+    exitTime: undefined,
+    exitPrice: undefined,
+    pnl: undefined,
+    useDirectPnLInput: data.useDirectPnLInput,
+    exits: explicitExits,
+    entries: data.entries,
+  });
+
+  return isOpenTrade ? data : { ...data, tradeStatus: 'CLOSED' };
 };
 
 const syncHiddenDirectPnLExitTime = (
@@ -803,9 +878,29 @@ export const useTradeForm = ({
               : plugin.settings?.general?.currency || 'USD';
         }
 
+        let executionsChanged = false;
         if (
-          ((field === 'entries' || field === 'exits') &&
-            shouldInvalidateUnrealizedSnapshot(prevData, newData)) ||
+          (field === 'entries' || field === 'exits') &&
+          prevData.unrealizedPriceSnapshot !== undefined &&
+          prevData.unrealizedPriceSnapshot !== null
+        ) {
+          const referenceDate = new Date();
+          executionsChanged = shouldInvalidateUnrealizedSnapshot(
+            withCurrentTimeForBlankTradeTimes(
+              withResolvedSnapshotExitExplicitness(prevData),
+              isEditMode,
+              referenceDate
+            ),
+            withCurrentTimeForBlankTradeTimes(
+              withResolvedSnapshotExitExplicitness(newData),
+              isEditMode,
+              referenceDate
+            )
+          );
+        }
+
+        if (
+          executionsChanged ||
           hasQuoteContextChanged(field, prevData[field], value) ||
           (field === 'useDirectPnLInput' && value !== prevData[field])
         ) {
@@ -863,6 +958,63 @@ export const useTradeForm = ({
     []
   );
 
+  const getExistingMediaOwnerForIdentity = useCallback(
+    (safeTicker: string, targetDate: Date, tradePrefix: string) => {
+      const tradeService = plugin.tradeService;
+      const initialFilePath = initialData.filePath;
+      const initialInstrument = initialData.instrument;
+      const initialEntryTime = initialData.entryTime
+        ? new Date(String(initialData.entryTime))
+        : null;
+      if (
+        !isEditMode ||
+        !tradeService ||
+        !initialFilePath ||
+        !initialInstrument ||
+        !initialEntryTime ||
+        isNaN(initialEntryTime.getTime())
+      ) {
+        return null;
+      }
+
+      const initialSafeTicker =
+        tradeService.sanitizeTickerForFilename(initialInstrument);
+      if (initialSafeTicker !== safeTicker) {
+        return null;
+      }
+
+      const initialIsMissedTrade = initialData.isMissedTrade || false;
+      const initialTargetDate = initialIsMissedTrade
+        ? getTradingDay(initialEntryTime, plugin)
+        : initialEntryTime;
+      const initialTradePrefix = initialIsMissedTrade
+        ? 'M'
+        : initialData.isBacktestTrade
+          ? 'B'
+          : 'T';
+      const initialKey = getTradeNumberKey(
+        initialSafeTicker,
+        initialTargetDate,
+        initialTradePrefix
+      );
+      const currentKey = getTradeNumberKey(safeTicker, targetDate, tradePrefix);
+
+      return initialKey === currentKey
+        ? getTradeMediaOwner(initialFilePath, initialInstrument)
+        : null;
+    },
+    [
+      getTradeNumberKey,
+      initialData.entryTime,
+      initialData.filePath,
+      initialData.instrument,
+      initialData.isBacktestTrade,
+      initialData.isMissedTrade,
+      isEditMode,
+      plugin,
+    ]
+  );
+
   const ensureFolderHierarchy = useCallback(
     async (folderPath: string) => {
       const app = plugin.app;
@@ -888,30 +1040,14 @@ export const useTradeForm = ({
   );
 
   const isPersistedTradeUpload = useCallback(
-    (imagePath: string): boolean => {
-      if (!isEditMode || !initialData.filePath || !initialData.instrument) {
-        return false;
-      }
-
-      const normalizedPath = normalizePath(imagePath);
-      if (!SUPPORTED_UPLOAD_MEDIA_EXTENSION_PATTERN.test(normalizedPath)) {
-        return false;
-      }
-
-      const tradeFileName = initialData.filePath.split('/').pop() ?? '';
-      const tradeNumberMatch = tradeFileName.match(/-([TMB]\d+)\.md$/i);
-      if (!tradeNumberMatch || !normalizedPath.includes('/media/')) {
-        return false;
-      }
-
-      const safeTicker = plugin?.tradeService
-        ? plugin.tradeService.sanitizeTickerForFilename(initialData.instrument)
-        : initialData.instrument.replace(/[^a-zA-Z0-9.-]/g, '_');
-      const fileName = normalizedPath.split('/').pop() ?? '';
-
-      return fileName.startsWith(`${safeTicker}-${tradeNumberMatch[1]}-`);
-    },
-    [initialData.filePath, initialData.instrument, isEditMode, plugin]
+    (imagePath: string): boolean =>
+      isEditMode &&
+      isManagedTradeMediaPath({
+        mediaPath: imagePath,
+        tradeFilePath: initialData.filePath,
+        instrument: initialData.instrument,
+      }),
+    [initialData.filePath, initialData.instrument, isEditMode]
   );
 
   const handleAddImage = async (file: File): Promise<string> => {
@@ -942,6 +1078,12 @@ export const useTradeForm = ({
         targetDate,
         tradePrefix
       );
+      const initialFilePath = initialData.filePath || '';
+      const existingMediaOwner = getExistingMediaOwnerForIdentity(
+        safeTicker,
+        targetDate,
+        tradePrefix
+      );
 
       const backtestTradeService = isBacktestTrade
         ? pluginInstance?.backtestTradeService ||
@@ -958,38 +1100,10 @@ export const useTradeForm = ({
       ) {
         tradeNumber = tradeNumberRef.current;
       } else {
-        const filePath = initialData?.filePath || '';
-        const initialInstrument = initialData?.instrument
-          ? tradeService.sanitizeTickerForFilename(initialData.instrument)
-          : null;
-        const initialEntryTime = initialData?.entryTime
-          ? new Date(String(initialData.entryTime))
-          : null;
-        const initialIsMissedTrade = initialData?.isMissedTrade || false;
-        const initialTargetDate =
-          initialEntryTime && !isNaN(initialEntryTime.getTime())
-            ? initialIsMissedTrade
-              ? getTradingDay(initialEntryTime, pluginInstance)
-              : initialEntryTime
-            : null;
-        const initialTradePrefix = initialIsMissedTrade
-          ? 'M'
-          : initialData?.isBacktestTrade
-            ? 'B'
-            : 'T';
-        const initialKey =
-          initialTargetDate && initialInstrument === safeTicker
-            ? getTradeNumberKey(
-                safeTicker,
-                initialTargetDate,
-                initialTradePrefix
-              )
-            : null;
-
         let resolvedTradeNumber: string | null = null;
 
-        if (filePath && initialKey === tradeNumberKey) {
-          const match = filePath.match(/[TMB](\d+)\.md$/);
+        if (initialFilePath && existingMediaOwner) {
+          const match = initialFilePath.match(/[TMB](\d+)\.md$/);
           if (match) {
             resolvedTradeNumber = match[1];
           }
@@ -1048,23 +1162,28 @@ export const useTradeForm = ({
       const quarter = getQuarterForMonth(monthNum);
       const quarterFolder = getQuarterString(quarter);
 
-      const baseFolder = folderPathService
-        ? folderPathService.getDatePathForQuarterSync(
-            String(year),
-            quarter,
-            month,
-            weekFolderName,
-            'media',
-            imageFolderName
-          )
-        : `${baseFolderPath}/${year}/${quarterFolder}/${month}/${weekFolderName}/media/${imageFolderName}`;
+      const baseFolder =
+        existingMediaOwner?.directory ??
+        (folderPathService
+          ? folderPathService.getDatePathForQuarterSync(
+              String(year),
+              quarter,
+              month,
+              weekFolderName,
+              'media',
+              imageFolderName
+            )
+          : `${baseFolderPath}/${year}/${quarterFolder}/${month}/${weekFolderName}/media/${imageFolderName}`);
+      const imageFilePrefix = existingMediaOwner
+        ? existingMediaOwner.fileNamePrefix.slice(0, -1)
+        : `${safeTicker}-${tradePrefix}${tradeNumber}`;
 
       await ensureFolderHierarchy(baseFolder);
 
       const filePath = await imageService.saveImage(
         file,
         baseFolder,
-        `${safeTicker}-${tradePrefix}${tradeNumber}`
+        imageFilePrefix
       );
 
       setTempImages((prev) => [...prev, filePath]);
@@ -1085,10 +1204,18 @@ export const useTradeForm = ({
     
     setFormSubmitted(true);
 
-    const submitReadyData = syncHiddenDirectPnLExitTime(
-      withCurrentTimeForBlankTradeTimes(formData, isEditMode),
-      layout ?? plugin?.settings.trade.tradeFormLayout,
-      isEditMode
+    
+    
+    
+    const submitReadyData = clearInvalidUnrealizedSnapshot(
+      syncHiddenDirectPnLExitTime(
+        withCurrentTimeForBlankTradeTimes(
+          withResolvedSnapshotExitExplicitness(formData),
+          isEditMode
+        ),
+        layout ?? plugin?.settings.trade.tradeFormLayout,
+        isEditMode
+      )
     );
 
     
@@ -1099,7 +1226,11 @@ export const useTradeForm = ({
     setSubmissionErrors({});
 
     
-    const dataToSubmit = { ...submitReadyData };
+    
+    
+    const dataToSubmit = {
+      ...normalizeSubmittedTradeStatus(submitReadyData),
+    };
 
     
     if (isEditMode && initialData.filePath) {
@@ -1193,6 +1324,11 @@ export const useTradeForm = ({
               targetDate,
               tradePrefix
             );
+            const existingMediaOwner = getExistingMediaOwnerForIdentity(
+              safeTicker,
+              targetDate,
+              tradePrefix
+            );
             const backtestTradeService = isBacktestTrade
               ? pluginInstance?.backtestTradeService ||
                 (pluginInstance?.serviceManager?.getBacktestTradeService
@@ -1260,20 +1396,24 @@ export const useTradeForm = ({
             const quarter = getQuarterForMonth(monthNum);
             const quarterFolder = getQuarterString(quarter);
 
-            const baseFolder = folderPathService
-              ? folderPathService.getDatePathForQuarterSync(
-                  String(year),
-                  quarter,
-                  month,
-                  weekFolderName,
-                  'media',
-                  imageFolderName
-                )
-              : `${baseFolderPath}/${year}/${quarterFolder}/${month}/${weekFolderName}/media/${imageFolderName}`;
+            const baseFolder =
+              existingMediaOwner?.directory ??
+              (folderPathService
+                ? folderPathService.getDatePathForQuarterSync(
+                    String(year),
+                    quarter,
+                    month,
+                    weekFolderName,
+                    'media',
+                    imageFolderName
+                  )
+                : `${baseFolderPath}/${year}/${quarterFolder}/${month}/${weekFolderName}/media/${imageFolderName}`);
 
             await ensureFolderHierarchy(baseFolder);
 
-            const fileNamePrefix = `${safeTicker}-${tradePrefix}${tradeNumber}`;
+            const fileNamePrefix = existingMediaOwner
+              ? existingMediaOwner.fileNamePrefix.slice(0, -1)
+              : `${safeTicker}-${tradePrefix}${tradeNumber}`;
             const updatedImages: string[] = [];
             const tempImageMap = new Map<string, string>();
             const tempImageSet = new Set(tempImages);

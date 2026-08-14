@@ -440,4 +440,19 @@ export default defineConfig([
     },
   },
   eslintConfigPrettier,
+  
+  
+  
+  
+  
+  ...(process.env.JOURNALIT_LINT_UNSAFE_ASSERTIONS === '1'
+    ? [
+        {
+          files: ['src/**/*.{ts,tsx}'],
+          rules: {
+            '@typescript-eslint/no-unsafe-type-assertion': 'warn',
+          },
+        },
+      ]
+    : []),
 ]);

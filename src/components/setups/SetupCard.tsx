@@ -99,12 +99,10 @@ export const SetupCard: React.FC<{
         onClick={handleSetupCardActivation}
       />
       <div className="journalit-setup-card__header">
-        <div className="journalit-setup-card__identity">
-          <h3 className="journalit-setup-card__title">{setup.name}</h3>
-          <SetupTagIndicator tags={setup.tags} />
-        </div>
-        {compareMode || health ? (
+        <h3 className="journalit-setup-card__title">{setup.name}</h3>
+        {setup.tags.length > 0 || compareMode || health ? (
           <div className="journalit-setup-card__header-meta">
+            <SetupTagIndicator tags={setup.tags} />
             {compareMode ? (
               <span
                 className="journalit-setup-card__compare-indicator"

@@ -30,7 +30,7 @@ export function registerLayoutBuilderMainGuide(
   guideRegistry.registerGuide({
     id: LAYOUT_BUILDER_MAIN_GUIDE_ID,
     viewType: TEMPLATE_BUILDER_VIEW_TYPE,
-    version: 3,
+    version: 4,
     autoShow: true,
     priority: 100,
     initialStepId: 'intro',

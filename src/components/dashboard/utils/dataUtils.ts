@@ -67,6 +67,8 @@ import {
   normalizeTradeAccountIdentity,
 } from '../../../services/trade/core/TradeAccountIdentity';
 import {
+  type BreakEvenAccountBalanceLookup,
+  type BreakEvenAccountBalanceSnapshot,
   fetchBreakEvenAccountBalanceLookup,
   getBreakEvenAccountBalanceFields,
   resolveBreakEvenAccountBalances,
@@ -741,6 +743,8 @@ export interface Trade {
   accountLookupKeys?: string[];
   accountNamesNormalized?: string[];
   
+  breakEvenAccountCurrentBalanceSnapshots?: BreakEvenAccountBalanceSnapshot[];
+  
   breakEvenAccountCurrentBalance?: number;
   
   breakEvenAccountCurrentBalanceCurrency?: string;
@@ -856,6 +860,7 @@ const TRADE_PROPERTY_KEYS = new Set<string>([
   'accountRefs',
   'accountLookupKeys',
   'accountNamesNormalized',
+  'breakEvenAccountCurrentBalanceSnapshots',
   'breakEvenAccountCurrentBalance',
   'breakEvenAccountCurrentBalanceCurrency',
   'breakEvenAccountCurrentBalanceTotal',
@@ -1322,7 +1327,12 @@ const fetchTradeData = async (
       trade
         ? [
             trade,
-            ...createCopiedDashboardTrades(trade, filters.accounts, plugin),
+            ...createCopiedDashboardTrades(
+              trade,
+              filters.accounts,
+              plugin,
+              accountBalanceLookup
+            ),
           ]
         : [trade]
     );
@@ -1355,7 +1365,8 @@ const fetchTradeData = async (
 const createCopiedDashboardTrades = (
   baseTrade: Trade,
   requestedAccounts: string[],
-  plugin?: JournalitPlugin
+  plugin: JournalitPlugin | undefined,
+  accountBalanceLookup: BreakEvenAccountBalanceLookup | null
 ): Trade[] => {
   if (!plugin) {
     return [];
@@ -1442,7 +1453,7 @@ const createCopiedDashboardTrades = (
         ? undefined
         : baseTrade.riskAmount * copyPeriod.multiplier;
 
-    copiedTrades.push({
+    const copiedTrade: Trade = {
       ...baseTrade,
       ...scaleCopiedTradeExecutionFields(baseTrade, copyPeriod.multiplier),
       tradeId: `${baseTrade.tradeId || baseTrade.path || baseTrade.instrument || 'trade'}::copy::${copyAccountLookupKey}`,
@@ -1476,13 +1487,32 @@ const createCopiedDashboardTrades = (
       brokerBaseCurrencyPnl: undefined,
       brokerBaseCurrency: undefined,
       brokerBaseCurrencyPnlSource: undefined,
+      breakEvenAccountCurrentBalanceSnapshots: undefined,
+      breakEvenAccountCurrentBalance: undefined,
+      breakEvenAccountCurrentBalanceCurrency: undefined,
+      breakEvenAccountCurrentBalanceTotal: undefined,
+      breakEvenAccountCurrentBalanceTotalCurrency: undefined,
       isCopiedTrade: true,
       copiedFromAccount: copyPeriod.baseAccount,
       copyMultiplier: copyPeriod.multiplier,
       copyAccountLookupKey,
       copyPnlAdjustment: adjustment,
       copyBaseTradeKey,
-    });
+    };
+
+    if (accountBalanceLookup) {
+      Object.assign(
+        copiedTrade,
+        getBreakEvenAccountBalanceFields(
+          resolveBreakEvenAccountBalances(
+            toRecord(copiedTrade),
+            accountBalanceLookup
+          )
+        )
+      );
+    }
+
+    copiedTrades.push(copiedTrade);
   }
 
   return copiedTrades;

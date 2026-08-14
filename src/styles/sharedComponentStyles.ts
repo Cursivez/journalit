@@ -1537,6 +1537,14 @@ export const SHARED_COMPONENT_STYLES = `
     border-color: var(--text-error);
   }
 
+  .journalit-fast-datetime__date-group,
+  .journalit-fast-datetime__time-group {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex: 0 0 auto;
+  }
+
   .journalit-fast-datetime__segment {
     width: 42px;
     min-width: 42px;
@@ -1988,7 +1996,8 @@ export const SHARED_COMPONENT_STYLES = `
     padding: 5px;
   }
 
-   .journalit-drilldown-filter .journalit-drilldown-filter__row,
+   .journalit-drilldown-filter .journalit-drilldown-filter__reset,
+  .journalit-drilldown-filter .journalit-drilldown-filter__row,
   .journalit-drilldown-filter .journalit-drilldown-filter__option {
     width: 100%;
     height: auto;
@@ -2012,9 +2021,16 @@ export const SHARED_COMPONENT_STYLES = `
     font-weight: 400;
   }
 
+  .journalit-drilldown-filter .journalit-drilldown-filter__reset:hover,
   .journalit-drilldown-filter .journalit-drilldown-filter__row:hover,
   .journalit-drilldown-filter .journalit-drilldown-filter__option:hover {
     background-color: var(--background-modifier-hover);
+  }
+
+  .journalit-drilldown-filter .journalit-drilldown-filter__reset {
+    min-height: 36px;
+    color: var(--text-muted);
+    font-weight: 500;
   }
 
   .journalit-drilldown-filter__row-icon {

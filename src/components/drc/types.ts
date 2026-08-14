@@ -96,6 +96,8 @@ export interface Trade {
   ticker?: string; 
   side?: string; 
   setup?: string[] | string; 
+  tags?: string[]; 
+  customTags?: string[]; 
   images?: string[]; 
   assetType?: string; 
   optionType?: string; 

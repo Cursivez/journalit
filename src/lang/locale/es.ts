@@ -747,6 +747,10 @@ const es: Lang = {
   'notice.setups-added': 'Configuraciones añadidas a {count} operaciones',
   'notice.tags-added': 'Added tags to {count} trades',
   'notice.mistakes-added': 'Errores añadidos a {count} operaciones',
+  'notice.trades-duplicated.one': 'Se duplicó {count} operación',
+  'notice.trades-duplicated.few': 'Se duplicaron {count} operaciones',
+  'notice.trades-duplicated.many': 'Se duplicaron {count} operaciones',
+  'notice.trades-duplicated.other': 'Se duplicaron {count} operaciones',
   'notice.trades-deleted.one': 'Se eliminó {count} operación',
   'notice.trades-deleted.few': 'Se eliminaron {count} operaciones',
   'notice.trades-deleted.many': 'Se eliminaron {count} operaciones',
@@ -816,6 +820,7 @@ const es: Lang = {
   'notice.error.add-setups': 'Error al añadir configuraciones: {error}',
   'notice.error.add-tags': 'Error adding tags: {error}',
   'notice.error.add-mistakes': 'Error al añadir errores: {error}',
+  'notice.error.duplicate-trades': 'Error al duplicar operaciones: {error}',
   'notice.error.delete-trades': 'Error al eliminar operaciones: {error}',
   'notice.error.csv-validation': 'Validación de CSV/XLSX/XLS falló: {errors}',
   'notice.error.import-failed': 'Importación fallida: {error}',
@@ -971,7 +976,7 @@ const es: Lang = {
     'Click this button to select several trades at once. When multi-select is on, row clicks select trades instead of opening them.',
   'tradelog.guide.batch-actions.title': 'These are your batch actions',
   'tradelog.guide.batch-actions.description':
-    'Use this bar to select all visible trades, clear your selection, mark trades as reviewed, add setups, add mistakes, or delete several trades at once. You can also shift-click to select a range of trades.',
+    'Use this bar to select all visible trades, clear your selection, mark trades as reviewed, add setups, add mistakes, duplicate trades, or delete several trades at once. You can also shift-click to select a range of trades.',
   'tradelog.guide.column-settings.title': 'Open column settings',
   'tradelog.guide.column-settings.description':
     'Click this button to choose which columns are shown and how dense or detailed the table should feel.',
@@ -1085,7 +1090,7 @@ const es: Lang = {
     'This picker shows the widgets you can add for this review type.',
   'layoutBuilder.guide.choose-widget.title': 'Choose a widget',
   'layoutBuilder.guide.choose-widget.description':
-    'This list shows every widget you can add for this review type. Pick any widget you want, or press Next and Journalit will choose the first one for you.',
+    'Escribe en el cuadro de búsqueda para encontrar un widget por nombre, descripción o categoría y selecciónalo. También puedes pulsar Siguiente y Journalit elegirá el primer resultado.',
   'layoutBuilder.guide.widget-library-docs.title':
     'Use the widget library if you get stuck',
   'layoutBuilder.guide.widget-library-docs.description':
@@ -1236,6 +1241,17 @@ const es: Lang = {
   'tradelog.batch.add-mistakes.label': 'Añadir Errores',
   'tradelog.batch.adding': 'Añadiendo...',
   'tradelog.batch.add-count': 'Añadir ({count})',
+  'tradelog.batch.duplicate.aria': 'Duplicar operaciones',
+  'tradelog.batch.duplicate.label': 'Duplicar',
+  'tradelog.batch.duplicating': 'Duplicando...',
+  'tradelog.batch.duplicate-skipped.one':
+    '{count} nota seleccionada no se puede duplicar',
+  'tradelog.batch.duplicate-skipped.few':
+    '{count} notas seleccionadas no se pueden duplicar',
+  'tradelog.batch.duplicate-skipped.many':
+    '{count} notas seleccionadas no se pueden duplicar',
+  'tradelog.batch.duplicate-skipped.other':
+    '{count} notas seleccionadas no se pueden duplicar',
   'tradelog.batch.delete.aria': 'Eliminar operaciones',
   'tradelog.batch.delete.title': 'Eliminar operaciones seleccionadas',
   'tradelog.batch.deleting': 'Eliminando...',
@@ -1488,6 +1504,40 @@ const es: Lang = {
   'dashboard.widgets.hourly-performance.metric.total-r': 'R total',
   'dashboard.widgets.hourly-performance.metric.avg-r': 'R prom.',
   'dashboard.widgets.weekday-performance.tooltip.no-trades': 'Sin operaciones',
+  'dashboard.widgets.setup-performance.title': 'Rendimiento por setups',
+  'dashboard.widgets.setup-performance.description':
+    'Gráfico de barras ordenado que compara el rendimiento por setup',
+  'dashboard.widgets.setup-performance.empty':
+    'No hay datos de rendimiento por setups',
+  'dashboard.widgets.setup-performance.masked-label': 'Configuraciones',
+  'dashboard.widgets.tag-performance.title': 'Rendimiento por etiquetas',
+  'dashboard.widgets.tag-performance.description':
+    'Gráfico de barras ordenado que compara el rendimiento por etiqueta',
+  'dashboard.widgets.tag-performance.empty':
+    'No hay datos de rendimiento por etiquetas',
+  'dashboard.widgets.tag-performance.masked-label': 'Etiquetas',
+  'dashboard.widgets.ticker-performance.title': 'Desempeño por Ticker',
+  'dashboard.widgets.ticker-performance.metric-aria': 'Métrica',
+  'dashboard.widgets.ticker-performance.view-aria': 'Modo de vista',
+  'dashboard.widgets.ticker-performance.view.best-and-worst':
+    'Mejores y peores',
+  'dashboard.widgets.ticker-performance.view.best': 'Mejores 10',
+  'dashboard.widgets.ticker-performance.view.worst': 'Peores 10',
+  'dashboard.widgets.ticker-performance.metric.total-pnl': 'P&L total',
+  'dashboard.widgets.ticker-performance.metric.total-r': 'R total',
+  'dashboard.widgets.ticker-performance.metric.win-rate': 'Tasa de acierto',
+  'dashboard.widgets.ticker-performance.tooltip.ticker': 'Ticker: {ticker}',
+  'dashboard.widgets.ticker-performance.tooltip.trades': 'Operaciones: {count}',
+  'dashboard.widgets.ticker-performance.tooltip.win-rate':
+    'Tasa de acierto: {rate} ({wins}G / {losses}P)',
+
+  'dashboard.widgets.ticker-performance.empty':
+    'No hay datos de desempeño por ticker',
+  'dashboard.widgets.ticker-performance.empty-submessage':
+    'No hay operaciones cerradas con un ticker que coincida con los filtros actuales.',
+  'dashboard.widgets.ticker-performance.masked-ticker': 'Ticker',
+  'dashboard.widgets.ticker-performance.omitted-count': 'Omitidos: {count}',
+
   'dashboard.widgets.rollingStats.title': 'Promedio Móvil de Ganancia/Pérdida',
   'dashboard.widgets.rollingStats.period': 'Período',
   'dashboard.widgets.rollingStats.trades': '{count} Operaciones',
@@ -3103,6 +3153,11 @@ const es: Lang = {
     'Mostrar horas en formato de 24 horas (14:30) en lugar de formato AM/PM de 12 horas (2:30 PM)',
   'settings.general.use-24-hour-time-aria': 'Usar formato de 24 horas',
 
+  'settings.general.show-seconds': 'Mostrar segundos en las horas de operación',
+  'settings.general.show-seconds-desc':
+    'Mostrar segundos al introducir las horas de entrada y salida.',
+  'settings.general.show-seconds-aria':
+    'Mostrar segundos en las horas de operación',
   'settings.general.skip-weekends': 'Excluir fines de semana',
   'settings.general.skip-weekends-desc':
     'Cuando está activado, Journalit trata los fines de semana como días sin trading en todo el plugin. Desactívalo si operas o revisas actividad los sábados y domingos.',
@@ -3655,6 +3710,11 @@ const es: Lang = {
 
   
   'widget.picker.placeholder': 'Seleccionar un widget...',
+  'widget.picker.search-placeholder': 'Buscar widgets...',
+  'widget.picker.search-label': 'Buscar widgets',
+  'widget.picker.clear-search': 'Borrar búsqueda de widgets',
+  'widget.picker.results-label': 'Widgets disponibles',
+  'widget.picker.no-results': 'Ningún widget coincide con tu búsqueda',
 
   
   'widget.category.charts': 'Gráficos',
@@ -3866,6 +3926,9 @@ const es: Lang = {
   'widget.account-breakdown.column.pnl': 'Net P&L',
   'widget.account-breakdown.column.win-rate': 'Win Rate',
   'widget.account-breakdown.column.profit-factor': 'Profit Factor',
+  'widget.tag-performance.name': 'Rendimiento por etiquetas',
+  'widget.tag-performance.description':
+    'Desglose del rendimiento por etiqueta de operación',
   'widget.setup-performance.name': 'Rendimiento por Configuración',
   'widget.setup-performance.description':
     'Rendimiento desglosado por configuración de trading',
@@ -4124,6 +4187,7 @@ const es: Lang = {
   'widget.table.header.pnl': 'G/P',
   'widget.table.header.win-rate': '% Acierto',
   'widget.table.header.profit-factor': 'FG',
+  'widget.table.header.tag': 'Etiqueta',
   'widget.table.header.setup': 'Configuración',
   'widget.table.header.a-games': 'Juegos A',
   'widget.table.header.b-games': 'Juegos B',
@@ -4192,6 +4256,8 @@ const es: Lang = {
   'widget.empty.no-weekly-data': 'Sin datos semanales para este período',
   'widget.empty.no-monthly-data': 'Sin datos mensuales para este período',
   'widget.empty.no-quarterly-data': 'Sin datos trimestrales para este período',
+  'widget.empty.no-tag-data':
+    'No hay datos de etiquetas disponibles para este período',
   'widget.empty.no-setup-data':
     'Sin datos de configuración disponibles para este período',
   'widget.empty.no-mental-game-data':
@@ -4245,6 +4311,9 @@ const es: Lang = {
   'widget.hourlyPerformance.name': 'Desempeño por Hora',
   'widget.hourlyPerformance.description':
     'Gráfico de barras que muestra P&L para cada hora del día',
+  'widget.tickerPerformance.name': 'Desempeño por Ticker',
+  'widget.tickerPerformance.description':
+    'Gráfico de barras ordenado que compara el desempeño por ticker',
   'widget.tradesChart.limit': '{count} Operaciones',
   'widget.drawdownChart.name': 'Drawdown Chart',
   'widget.drawdownChart.description':
@@ -5412,6 +5481,7 @@ const es: Lang = {
   
   'home.widget.weekly.title': 'Esta Semana',
   'home.widget.weekly.no-trades': 'sin operaciones esta semana',
+  'home.widget.weekly.breakeven': 'en equilibrio esta semana',
   'home.widget.weekly.losing-days': '{count} días perdedores seguidos',
   'home.widget.weekly.winning-days': '{count} días ganadores seguidos',
   'home.widget.weekly.above-average': 'por encima de tu promedio semanal',
@@ -5474,6 +5544,7 @@ const es: Lang = {
   'calendar.week': 'SEMANA',
   'calendar.trade': '{count} operación',
   'calendar.trades': '{count} operaciones',
+  'calendar.reviewed': 'Revisado',
   'calendar.month.january': 'Enero',
   'calendar.month.february': 'Febrero',
   'calendar.month.march': 'Marzo',
@@ -5536,6 +5607,12 @@ const es: Lang = {
   'home.widget.weekly-summary.name': 'Resumen Semanal',
   'home.widget.weekly-summary.description':
     'Métricas de la semana actual con gráfico de P&L diario',
+  'home.widget.key-events.name': 'Eventos clave',
+  'home.widget.key-events.description':
+    'Noticias y eventos de mercado importantes de la revisión semanal actual',
+  'home.widget.key-events.empty-title': 'Aún no hay eventos clave',
+  'home.widget.key-events.open-aria':
+    'Abrir la revisión semanal de esta semana',
 
   
   'home.widget.position-size.name': 'Calculadora de Tamaño de Posición',
@@ -5847,6 +5924,7 @@ const es: Lang = {
   'datepicker.placeholder.year': 'AA',
   'datepicker.placeholder.hour': 'HH',
   'datepicker.placeholder.minute': 'MM',
+  'datepicker.placeholder.second': 'SS',
 
   
   'icon-select.default-title': 'Seleccionar una opción',
@@ -8469,6 +8547,7 @@ const es: Lang = {
   'home.filters.trade-type': 'Tipo de operación',
   'home.filters.accounts': 'Cuentas',
   'home.filters.back': 'Atrás',
+  'filter.reset': 'Restablecer filtros',
   'home.guide.modes.title': 'Una cosa más: el Panel',
   'home.guide.modes.description':
     'El Resumen y el Panel comparten esta página. Cambia al Panel ahora para continuar con un breve recorrido por tus estadísticas de rendimiento.',

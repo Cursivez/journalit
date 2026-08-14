@@ -24,6 +24,10 @@ import {
   shouldShowTradeDividends,
 } from '../types';
 import {
+  resolveFormExitExplicitness,
+  resolveFormHasExplicitExitPrice,
+} from '../exitExplicitness';
+import {
   getPricePrecision,
   getSizePrecision,
   roundToPrecision,
@@ -147,12 +151,17 @@ function PnLModeToggle({ useDirectPnLInput, onToggle }: PnLModeToggleProps) {
   );
 }
 
+interface DirectPnLSectionProps extends EntryExitFieldsProps {
+  showSeconds: boolean;
+}
+
 function DirectPnLSection({
   data,
   errors,
   onChange,
   inputMode,
-}: EntryExitFieldsProps) {
+  showSeconds,
+}: DirectPnLSectionProps) {
   if (!data.useDirectPnLInput) return null;
 
   return (
@@ -165,7 +174,8 @@ function DirectPnLSection({
             onChange={(value) => onChange('entryTime', value)}
             error={errors.entryTime}
             includeTime={true}
-            className="journalit-direct-pnl-time-input"
+            showSeconds={showSeconds}
+            className={`journalit-direct-pnl-time-input${showSeconds ? ' journalit-direct-pnl-time-input--seconds' : ''}`}
           />
         </div>
       )}
@@ -189,6 +199,7 @@ interface EntriesSectionProps {
   data: Partial<TradeFormData>;
   errors: TradeFormErrors;
   useDollarValue: boolean;
+  showSeconds: boolean;
   pricePrecision: number;
   sizePrecision: number;
   totalEntrySize: number;
@@ -213,6 +224,7 @@ function EntriesSection({
   data,
   errors,
   useDollarValue,
+  showSeconds,
   pricePrecision,
   sizePrecision,
   totalEntrySize,
@@ -237,7 +249,10 @@ function EntriesSection({
         <div key={entryRowKeys[index]} className="entry-row">
           <div className="entry-index">{index + 1}</div>
           <div className="entry-fields">
-            <div className="time-field-wrapper">
+            <div
+              className="time-field-wrapper"
+              data-has-seconds={showSeconds ? 'true' : 'false'}
+            >
               <div className="time-field-header">
                 <label className="time-field-label">
                   {t('form.field.time')}
@@ -264,6 +279,7 @@ function EntriesSection({
                 }
                 error={errors.entries?.[index]?.time}
                 includeTime={true}
+                showSeconds={showSeconds}
                 defaultDateWhenEmpty={
                   entry.blankTimeDate ?? blankTimeDefaultDate
                 }
@@ -356,6 +372,7 @@ function useEntryExitFieldsModel({
 
   
   const useDollarValue = plugin?.settings?.trade?.useDollarValueInput ?? false;
+  const showSeconds = plugin?.settings?.trade?.showSeconds ?? false;
 
   
   const pricePrecision = getPricePrecision(data.assetType);
@@ -490,14 +507,18 @@ function useEntryExitFieldsModel({
         return;
       }
 
+      const resolvedExits = exits.map((exit) => ({
+        ...exit,
+        hasExplicitPrice: resolveFormExitExplicitness(
+          exit,
+          data.useDirectPnLInput
+        ),
+      }));
       const normalizedExecution = normalizeTradeExecution(
         {
           entries,
-          exits: exits.map((exit) => ({
-            ...exit,
-            hasExplicitPrice: true,
-          })),
-          hasExplicitExitPrice: exits.length > 0 ? true : undefined,
+          exits: resolvedExits,
+          hasExplicitExitPrice: resolveFormHasExplicitExitPrice(resolvedExits),
         },
         { deriveMissingExplicitness: true }
       );
@@ -543,7 +564,7 @@ function useEntryExitFieldsModel({
         onChange('exitTime', undefined);
       }
     },
-    [onChange]
+    [data.useDirectPnLInput, onChange]
   );
 
   
@@ -620,6 +641,16 @@ function useEntryExitFieldsModel({
         };
       } else if (field === 'hasExplicitPrice') {
         exits[index] = { ...exits[index], hasExplicitPrice: Boolean(value) };
+      } else if (field === 'price') {
+        const price = toOptionalTransactionNumber(value);
+        exits[index] = {
+          ...exits[index],
+          price,
+          hasExplicitPrice: resolveFormExitExplicitness(
+            { price },
+            data.useDirectPnLInput
+          ),
+        };
       } else {
         exits[index] = {
           ...exits[index],
@@ -631,7 +662,13 @@ function useEntryExitFieldsModel({
       
       updateAggregateFields(data.entries || [], exits);
     },
-    [data.entries, data.exits, onChange, updateAggregateFields]
+    [
+      data.entries,
+      data.exits,
+      data.useDirectPnLInput,
+      onChange,
+      updateAggregateFields,
+    ]
   );
 
   const handleDividendChange = useCallback(
@@ -796,6 +833,10 @@ function useEntryExitFieldsModel({
             price,
             size: roundedSize,
             notional: dollarValue,
+            hasExplicitPrice: resolveFormExitExplicitness(
+              { price },
+              data.useDirectPnLInput
+            ),
           };
           onChange('exits', exits);
           updateAggregateFields(data.entries || [], exits);
@@ -809,6 +850,7 @@ function useEntryExitFieldsModel({
       useDollarValue,
       data.entries,
       data.exits,
+      data.useDirectPnLInput,
       sizePrecision,
       onChange,
       updateAggregateFields,
@@ -840,9 +882,21 @@ function useEntryExitFieldsModel({
     (sum, entry) => sum + (entry.size || 0),
     0
   );
-  const normalizedExecution = normalizeTradeExecution(data, {
-    deriveMissingExplicitness: true,
-  });
+  const resolvedExits = (data.exits || []).map((exit) => ({
+    ...exit,
+    hasExplicitPrice: resolveFormExitExplicitness(exit, data.useDirectPnLInput),
+  }));
+  const normalizedExecution = normalizeTradeExecution(
+    {
+      ...data,
+      exits: resolvedExits,
+      hasExplicitExitPrice: resolveFormHasExplicitExitPrice(
+        resolvedExits,
+        data.hasExplicitExitPrice
+      ),
+    },
+    { deriveMissingExplicitness: true }
+  );
   const totalExitSize = normalizedExecution.exits.reduce(
     (sum, exit) =>
       exit.hasExplicitPrice === true && exit.size !== null && exit.size > 0
@@ -896,6 +950,7 @@ function useEntryExitFieldsModel({
 
   return {
     useDollarValue,
+    showSeconds,
     pricePrecision,
     sizePrecision,
     supportsDividends,
@@ -1251,6 +1306,7 @@ interface ExitsSectionProps {
   data: Partial<TradeFormData>;
   errors: TradeFormErrors;
   useDollarValue: boolean;
+  showSeconds: boolean;
   pricePrecision: number;
   sizePrecision: number;
   showIdealExits: boolean;
@@ -1290,6 +1346,7 @@ function ExitsSection({
   data,
   errors,
   useDollarValue,
+  showSeconds,
   pricePrecision,
   sizePrecision,
   showIdealExits,
@@ -1338,7 +1395,10 @@ function ExitsSection({
 
           <div className="exit-fields">
             
-            <div className="time-field-wrapper">
+            <div
+              className="time-field-wrapper"
+              data-has-seconds={showSeconds ? 'true' : 'false'}
+            >
               <div className="time-field-header">
                 <label className="time-field-label">
                   {t('form.field.time')}
@@ -1365,6 +1425,7 @@ function ExitsSection({
                 }
                 error={errors.exits?.[index]?.time}
                 includeTime={true}
+                showSeconds={showSeconds}
                 defaultDateWhenEmpty={
                   exit.blankTimeDate ?? blankTimeDefaultDate
                 }
@@ -1498,6 +1559,7 @@ const EntryExitFieldsComponent: React.FC<EntryExitFieldsProps> = ({
 }) => {
   const {
     useDollarValue,
+    showSeconds,
     pricePrecision,
     sizePrecision,
     supportsDividends,
@@ -1557,6 +1619,7 @@ const EntryExitFieldsComponent: React.FC<EntryExitFieldsProps> = ({
         errors={errors}
         onChange={onChange}
         inputMode={inputMode}
+        showSeconds={showSeconds}
       />
 
       
@@ -1565,6 +1628,7 @@ const EntryExitFieldsComponent: React.FC<EntryExitFieldsProps> = ({
           data={data}
           errors={errors}
           useDollarValue={useDollarValue}
+          showSeconds={showSeconds}
           pricePrecision={pricePrecision}
           sizePrecision={sizePrecision}
           totalEntrySize={totalEntrySize}
@@ -1585,6 +1649,7 @@ const EntryExitFieldsComponent: React.FC<EntryExitFieldsProps> = ({
           data={data}
           errors={errors}
           useDollarValue={useDollarValue}
+          showSeconds={showSeconds}
           pricePrecision={pricePrecision}
           sizePrecision={sizePrecision}
           showIdealExits={showIdealExits}

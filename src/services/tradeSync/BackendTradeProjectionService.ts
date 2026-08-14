@@ -1,7 +1,10 @@
-import { requestUrl } from 'obsidian';
 import { ApiClient } from '../backend/ApiClient';
 import { ApiError } from '../../types/errors';
-import { handleTradeSyncHttpError, authHeaders } from './http';
+import {
+  authHeaders,
+  handleTradeSyncHttpError,
+  requestTradeSyncWithAuthRetry,
+} from './http';
 import {
   decodeRestoreProjectionResponse,
   decodeTradovateAccountSetupResponse,
@@ -54,22 +57,30 @@ export class BackendTradeProjectionService {
     vaultId: string,
     operation?: TradovateClientOperationContext
   ): Promise<{ version: number; generation: string }> {
-    const token = ApiClient.getAuthToken();
-    const response = await requestUrl({
-      url: ApiClient.buildUrl(
-        `/api/v1/trade-projections/${encodeURIComponent(tradeId)}/restore`
-      ),
-      method: 'POST',
-      headers: { ...authHeaders(token), 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        vaultId,
-        pluginVersion: operation?.pluginVersion,
-        clientOperationId: operation?.clientOperationId,
-      }),
-      throw: false,
-    });
+    const { response, requestAuthToken } = await requestTradeSyncWithAuthRetry(
+      (authToken) => ({
+        url: ApiClient.buildUrl(
+          `/api/v1/trade-projections/${encodeURIComponent(tradeId)}/restore`
+        ),
+        method: 'POST',
+        headers: {
+          ...authHeaders(authToken),
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          vaultId,
+          pluginVersion: operation?.pluginVersion,
+          clientOperationId: operation?.clientOperationId,
+        }),
+        throw: false,
+      })
+    );
     if (response.status < 200 || response.status >= 300) {
-      handleTradeSyncHttpError(response.status, token, 'Trade Projection');
+      handleTradeSyncHttpError(
+        response.status,
+        requestAuthToken,
+        'Trade Projection'
+      );
       throw new ApiError(
         `Trade Projection restore failed (${response.status})`,
         response.status
@@ -82,24 +93,28 @@ export class BackendTradeProjectionService {
     request: TradeProjectionAckRequest,
     options: TradeProjectionRequestOptions = {}
   ): Promise<void> {
-    const token = ApiClient.getAuthToken();
-    const response = await requestUrl({
-      url: ApiClient.buildUrl('/api/v1/trade-projections/ack'),
-      method: 'POST',
-      headers: { ...authHeaders(token), 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        vaultId: request.vaultId,
-        deviceId: request.deviceId,
-        pluginVersion: request.pluginVersion,
-        clientOperationId: request.clientOperationId,
-        results: request.results,
-      }),
-      throw: false,
-    });
+    const { response, requestAuthToken } = await requestTradeSyncWithAuthRetry(
+      (authToken) => ({
+        url: ApiClient.buildUrl('/api/v1/trade-projections/ack'),
+        method: 'POST',
+        headers: {
+          ...authHeaders(authToken),
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          vaultId: request.vaultId,
+          deviceId: request.deviceId,
+          pluginVersion: request.pluginVersion,
+          clientOperationId: request.clientOperationId,
+          results: request.results,
+        }),
+        throw: false,
+      })
+    );
     if (response.status < 200 || response.status >= 300) {
       handleTradeSyncHttpError(
         response.status,
-        token,
+        requestAuthToken,
         'Trade Projection',
         options.interactiveEntitlement ?? true
       );
@@ -121,25 +136,33 @@ export class BackendTradeProjectionService {
     intent: 'sync' | 'discovery' = 'sync',
     operation?: TradovateClientOperationContext
   ): Promise<TradovateSyncJob> {
-    const token = ApiClient.getAuthToken();
-    const response = await requestUrl({
-      url: ApiClient.buildUrl(
-        `/api/v1/broker-connections/tradovate/connections/${encodeURIComponent(connectionId)}/sync`
-      ),
-      method: 'POST',
-      headers: { ...authHeaders(token), 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        source: 'plugin',
-        intent,
-        pluginVersion: operation?.pluginVersion,
-        vaultId: operation?.vaultId,
-        deviceId: operation?.deviceId,
-        clientOperationId: operation?.clientOperationId,
-      }),
-      throw: false,
-    });
+    const { response, requestAuthToken } = await requestTradeSyncWithAuthRetry(
+      (authToken) => ({
+        url: ApiClient.buildUrl(
+          `/api/v1/broker-connections/tradovate/connections/${encodeURIComponent(connectionId)}/sync`
+        ),
+        method: 'POST',
+        headers: {
+          ...authHeaders(authToken),
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          source: 'plugin',
+          intent,
+          pluginVersion: operation?.pluginVersion,
+          vaultId: operation?.vaultId,
+          deviceId: operation?.deviceId,
+          clientOperationId: operation?.clientOperationId,
+        }),
+        throw: false,
+      })
+    );
     if (response.status < 200 || response.status >= 300) {
-      handleTradeSyncHttpError(response.status, token, 'Trade Projection');
+      handleTradeSyncHttpError(
+        response.status,
+        requestAuthToken,
+        'Trade Projection'
+      );
       throw new ApiError(
         `Tradovate cloud sync failed (${response.status})`,
         response.status
@@ -153,23 +176,27 @@ export class BackendTradeProjectionService {
     accounts: TradovateAccountSelection[],
     operation?: TradovateClientOperationContext
   ): Promise<{ job: TradovateSyncJob | null; created: boolean }> {
-    const token = ApiClient.getAuthToken();
-    const response = await requestUrl({
-      url: ApiClient.buildUrl(
-        `/api/v1/broker-connections/tradovate/connections/${encodeURIComponent(connectionId)}/accounts`
-      ),
-      method: 'PUT',
-      headers: { ...authHeaders(token), 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        source: 'plugin',
-        accounts,
-        pluginVersion: operation?.pluginVersion,
-        vaultId: operation?.vaultId,
-        deviceId: operation?.deviceId,
-        clientOperationId: operation?.clientOperationId,
-      }),
-      throw: false,
-    });
+    const { response, requestAuthToken } = await requestTradeSyncWithAuthRetry(
+      (authToken) => ({
+        url: ApiClient.buildUrl(
+          `/api/v1/broker-connections/tradovate/connections/${encodeURIComponent(connectionId)}/accounts`
+        ),
+        method: 'PUT',
+        headers: {
+          ...authHeaders(authToken),
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          source: 'plugin',
+          accounts,
+          pluginVersion: operation?.pluginVersion,
+          vaultId: operation?.vaultId,
+          deviceId: operation?.deviceId,
+          clientOperationId: operation?.clientOperationId,
+        }),
+        throw: false,
+      })
+    );
     if (response.status < 200 || response.status >= 300) {
       if (
         response.status === 409 &&
@@ -177,7 +204,7 @@ export class BackendTradeProjectionService {
       ) {
         throw new TradovateSyncClaimConflictError();
       }
-      handleTradeSyncHttpError(response.status, token, 'Tradovate');
+      handleTradeSyncHttpError(response.status, requestAuthToken, 'Tradovate');
       throw new ApiError(
         `Tradovate account setup failed (${response.status})`,
         response.status
@@ -190,17 +217,18 @@ export class BackendTradeProjectionService {
     connectionId: string,
     jobId: string
   ): Promise<TradovateSyncJob> {
-    const token = ApiClient.getAuthToken();
-    const response = await requestUrl({
-      url: ApiClient.buildUrl(
-        `/api/v1/broker-connections/tradovate/connections/${encodeURIComponent(connectionId)}/jobs/${encodeURIComponent(jobId)}`
-      ),
-      method: 'GET',
-      headers: authHeaders(token),
-      throw: false,
-    });
+    const { response, requestAuthToken } = await requestTradeSyncWithAuthRetry(
+      (authToken) => ({
+        url: ApiClient.buildUrl(
+          `/api/v1/broker-connections/tradovate/connections/${encodeURIComponent(connectionId)}/jobs/${encodeURIComponent(jobId)}`
+        ),
+        method: 'GET',
+        headers: authHeaders(authToken),
+        throw: false,
+      })
+    );
     if (response.status < 200 || response.status >= 300) {
-      handleTradeSyncHttpError(response.status, token, 'Tradovate');
+      handleTradeSyncHttpError(response.status, requestAuthToken, 'Tradovate');
       throw new ApiError(
         `Tradovate synchronization job unavailable (${response.status})`,
         response.status
@@ -210,17 +238,18 @@ export class BackendTradeProjectionService {
   }
 
   async getTradovateConnections(): Promise<TradovateConnections> {
-    const token = ApiClient.getAuthToken();
-    const response = await requestUrl({
-      url: ApiClient.buildUrl(
-        '/api/v1/broker-connections/tradovate/connections'
-      ),
-      method: 'GET',
-      headers: authHeaders(token),
-      throw: false,
-    });
+    const { response, requestAuthToken } = await requestTradeSyncWithAuthRetry(
+      (authToken) => ({
+        url: ApiClient.buildUrl(
+          '/api/v1/broker-connections/tradovate/connections'
+        ),
+        method: 'GET',
+        headers: authHeaders(authToken),
+        throw: false,
+      })
+    );
     if (response.status < 200 || response.status >= 300) {
-      handleTradeSyncHttpError(response.status, token, 'Tradovate');
+      handleTradeSyncHttpError(response.status, requestAuthToken, 'Tradovate');
       throw new ApiError(
         `Tradovate status unavailable (${response.status})`,
         response.status
@@ -233,19 +262,20 @@ export class BackendTradeProjectionService {
     request: TradeProjectionRequest,
     options: TradeProjectionRequestOptions = {}
   ): Promise<TradeProjectionResponse> {
-    const token = ApiClient.getAuthToken();
-    const response = await requestUrl({
-      url: ApiClient.buildUrl(
-        `/api/v1/trade-projections/missing?${projectionQuery(request)}`
-      ),
-      method: 'GET',
-      headers: authHeaders(token),
-      throw: false,
-    });
+    const { response, requestAuthToken } = await requestTradeSyncWithAuthRetry(
+      (authToken) => ({
+        url: ApiClient.buildUrl(
+          `/api/v1/trade-projections/missing?${projectionQuery(request)}`
+        ),
+        method: 'GET',
+        headers: authHeaders(authToken),
+        throw: false,
+      })
+    );
     if (response.status < 200 || response.status >= 300) {
       handleTradeSyncHttpError(
         response.status,
-        token,
+        requestAuthToken,
         'Trade Projection',
         options.interactiveEntitlement ?? true
       );
@@ -261,19 +291,20 @@ export class BackendTradeProjectionService {
     vaultId: string,
     options: TradeProjectionRequestOptions = {}
   ): Promise<TradeProjectionAccountInventoryResponse> {
-    const token = ApiClient.getAuthToken();
-    const response = await requestUrl({
-      url: ApiClient.buildUrl(
-        `/api/v1/trade-projections/accounts?vaultId=${encodeURIComponent(vaultId)}`
-      ),
-      method: 'GET',
-      headers: authHeaders(token),
-      throw: false,
-    });
+    const { response, requestAuthToken } = await requestTradeSyncWithAuthRetry(
+      (authToken) => ({
+        url: ApiClient.buildUrl(
+          `/api/v1/trade-projections/accounts?vaultId=${encodeURIComponent(vaultId)}`
+        ),
+        method: 'GET',
+        headers: authHeaders(authToken),
+        throw: false,
+      })
+    );
     if (response.status < 200 || response.status >= 300) {
       handleTradeSyncHttpError(
         response.status,
-        token,
+        requestAuthToken,
         'Trade Projection',
         options.interactiveEntitlement ?? true
       );
@@ -289,18 +320,26 @@ export class BackendTradeProjectionService {
     accountId: string,
     request: TradeProjectionAccountVaultMappingRequest
   ): Promise<TradeProjectionAccountVaultMapping> {
-    const token = ApiClient.getAuthToken();
-    const response = await requestUrl({
-      url: ApiClient.buildUrl(
-        `/api/v1/trade-projections/accounts/${encodeURIComponent(accountId)}/vault-mapping`
-      ),
-      method: 'PUT',
-      headers: { ...authHeaders(token), 'Content-Type': 'application/json' },
-      body: JSON.stringify(request),
-      throw: false,
-    });
+    const { response, requestAuthToken } = await requestTradeSyncWithAuthRetry(
+      (authToken) => ({
+        url: ApiClient.buildUrl(
+          `/api/v1/trade-projections/accounts/${encodeURIComponent(accountId)}/vault-mapping`
+        ),
+        method: 'PUT',
+        headers: {
+          ...authHeaders(authToken),
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(request),
+        throw: false,
+      })
+    );
     if (response.status < 200 || response.status >= 300) {
-      handleTradeSyncHttpError(response.status, token, 'Trade Projection');
+      handleTradeSyncHttpError(
+        response.status,
+        requestAuthToken,
+        'Trade Projection'
+      );
       throw new ApiError(
         `Trade Projection account mapping failed (${response.status})`,
         response.status
@@ -312,16 +351,18 @@ export class BackendTradeProjectionService {
   async submitTradovateClientDiagnostics(
     payload: TradovateClientDiagnosticPayload
   ): Promise<void> {
-    const token = ApiClient.getAuthToken();
-    const response = await requestUrl({
+    const { response } = await requestTradeSyncWithAuthRetry((authToken) => ({
       url: ApiClient.buildUrl(
         '/api/v1/broker-connections/tradovate/client-diagnostics'
       ),
       method: 'POST',
-      headers: { ...authHeaders(token), 'Content-Type': 'application/json' },
+      headers: {
+        ...authHeaders(authToken),
+        'Content-Type': 'application/json',
+      },
       body: JSON.stringify(payload),
       throw: false,
-    });
+    }));
     if (response.status < 200 || response.status >= 300) {
       throw new ApiError(
         `Tradovate client diagnostics submission failed (${response.status})`,

@@ -77,7 +77,11 @@ interface FastDateTimeInputProps {
   label?: string;
   value?: Date | string;
   onChange?: (date: Date | string | undefined) => void;
+  
+  commitValidSegmentChangesImmediately?: boolean;
   includeTime?: boolean;
+  
+  showSeconds?: boolean;
   timeOnly?: boolean;
   required?: boolean;
   error?: string;
@@ -95,12 +99,42 @@ interface FastDateTimeInputProps {
   closePickerOnQuickAction?: boolean;
 }
 
+type SegmentState = {
+  day: string;
+  month: string;
+  year: string;
+  hour: string;
+  minute: string;
+  second: string;
+  ampm: 'AM' | 'PM';
+};
+
+type EditableSegment = Exclude<keyof SegmentState, 'ampm'>;
+
+type SegmentValueResult =
+  | { kind: 'invalid' }
+  | { kind: 'empty' }
+  | { kind: 'value'; value: Date | string }
+  | { kind: 'blank-time'; value: Date };
+
+const INITIAL_SEGMENTS: SegmentState = {
+  day: '',
+  month: '',
+  year: '',
+  hour: '',
+  minute: '',
+  second: '',
+  ampm: 'AM',
+};
+
 export const FastDateTimeInput: React.FC<FastDateTimeInputProps> = React.memo(
   ({
     label,
     value,
     onChange,
+    commitValidSegmentChangesImmediately = false,
     includeTime = false,
+    showSeconds = false,
     timeOnly = false,
     required = false,
     error,
@@ -119,6 +153,7 @@ export const FastDateTimeInput: React.FC<FastDateTimeInputProps> = React.memo(
     
     const userDateFormat = getUserDateFormat();
     const use24HourTime = useMemo(() => getUse24HourTime(), []);
+    const shouldShowSeconds = showSeconds && includeTime && !timeOnly;
 
     
     const normalizedValue = useMemo(() => {
@@ -126,24 +161,16 @@ export const FastDateTimeInput: React.FC<FastDateTimeInputProps> = React.memo(
       return parseStoredDateLikeValue(value, { includeTime, timeOnly });
     }, [value, defaultDateWhenEmpty, includeTime, timeOnly]);
 
-    const shouldDisplayBlankTime = !value && defaultDateWhenEmpty;
+    const shouldDisplayBlankTime = !value && Boolean(defaultDateWhenEmpty);
 
-    type SegmentState = {
-      day: string;
-      month: string;
-      year: string;
-      hour: string;
-      minute: string;
-      ampm: 'AM' | 'PM';
-    };
     const [segments, dispatchSegments] = useReducer(
       (state: SegmentState, update: Partial<SegmentState>): SegmentState => ({
         ...state,
         ...update,
       }),
-      { day: '', month: '', year: '', hour: '', minute: '', ampm: 'AM' }
+      INITIAL_SEGMENTS
     );
-    const { day, month, year, hour, minute, ampm } = segments;
+    const { day, month, year, hour, minute, second, ampm } = segments;
 
     const setDay = useCallback(
       (nextDay: string) => dispatchSegments({ day: nextDay }),
@@ -165,6 +192,10 @@ export const FastDateTimeInput: React.FC<FastDateTimeInputProps> = React.memo(
       (nextMinute: string) => dispatchSegments({ minute: nextMinute }),
       []
     );
+    const setSecond = useCallback(
+      (nextSecond: string) => dispatchSegments({ second: nextSecond }),
+      []
+    );
     const setAmpm = useCallback(
       (nextAmpm: 'AM' | 'PM') => dispatchSegments({ ampm: nextAmpm }),
       []
@@ -176,71 +207,95 @@ export const FastDateTimeInput: React.FC<FastDateTimeInputProps> = React.memo(
     const yearRef = useRef<HTMLInputElement>(null);
     const hourRef = useRef<HTMLInputElement>(null);
     const minuteRef = useRef<HTMLInputElement>(null);
+    const secondRef = useRef<HTMLInputElement>(null);
     const ampmButtonRef = useRef<HTMLButtonElement>(null);
     const calendarButtonRef = useRef<HTMLButtonElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
     const flatpickrRef = useRef<FlatpickrInstance | null>(null);
     const tempInputRef = useRef<HTMLInputElement | null>(null);
     const lastOpenPickerSignalRef = useRef(0);
+    const normalizedValueRef = useRef(normalizedValue);
+    const shouldDisplayBlankTimeRef = useRef(shouldDisplayBlankTime);
+    normalizedValueRef.current = normalizedValue;
+    shouldDisplayBlankTimeRef.current = shouldDisplayBlankTime;
 
     
     const hourValueRef = useRef(hour);
     const minuteValueRef = useRef(minute);
+    const secondValueRef = useRef(second);
     const ampmValueRef = useRef(ampm);
     hourValueRef.current = hour;
     minuteValueRef.current = minute;
+    secondValueRef.current = second;
     ampmValueRef.current = ampm;
+
+    const syncSegmentsWithValue = useCallback(
+      (nextValue: Date | undefined, blankTime: boolean) => {
+        if (nextValue) {
+          const nextSegments: Partial<SegmentState> = {
+            day: String(nextValue.getDate()).padStart(2, '0'),
+            month: String(nextValue.getMonth() + 1).padStart(2, '0'),
+            year: String(nextValue.getFullYear()).slice(-2),
+          };
+
+          if (includeTime || timeOnly) {
+            if (blankTime) {
+              dispatchSegments({
+                ...nextSegments,
+                hour: '',
+                minute: '',
+                second: '',
+                ampm: 'AM',
+              });
+              return;
+            }
+            const hours = nextValue.getHours();
+            if (use24HourTime) {
+              nextSegments.hour = String(hours).padStart(2, '0');
+            } else {
+              const h12 = hours % 12 || 12;
+              nextSegments.hour = String(h12).padStart(2, '0');
+              nextSegments.ampm = hours >= 12 ? 'PM' : 'AM';
+            }
+            nextSegments.minute = String(nextValue.getMinutes()).padStart(
+              2,
+              '0'
+            );
+            nextSegments.second = String(nextValue.getSeconds()).padStart(
+              2,
+              '0'
+            );
+          }
+
+          dispatchSegments(nextSegments);
+        } else {
+          dispatchSegments(INITIAL_SEGMENTS);
+        }
+      },
+      [includeTime, timeOnly, use24HourTime]
+    );
 
     
     useEffect(() => {
-      if (normalizedValue) {
-        const nextSegments: Partial<SegmentState> = {
-          day: String(normalizedValue.getDate()).padStart(2, '0'),
-          month: String(normalizedValue.getMonth() + 1).padStart(2, '0'),
-          year: String(normalizedValue.getFullYear()).slice(-2),
-        };
-
-        if (includeTime || timeOnly) {
-          if (shouldDisplayBlankTime) {
-            dispatchSegments({
-              ...nextSegments,
-              hour: '',
-              minute: '',
-              ampm: 'AM',
-            });
-            return;
-          }
-          const hours = normalizedValue.getHours();
-          if (use24HourTime) {
-            nextSegments.hour = String(hours).padStart(2, '0');
-          } else {
-            const h12 = hours % 12 || 12;
-            nextSegments.hour = String(h12).padStart(2, '0');
-            nextSegments.ampm = hours >= 12 ? 'PM' : 'AM';
-          }
-          nextSegments.minute = String(normalizedValue.getMinutes()).padStart(
-            2,
-            '0'
-          );
-        }
-
-        dispatchSegments(nextSegments);
-      } else {
-        dispatchSegments({
-          day: '',
-          month: '',
-          year: '',
-          hour: '',
-          minute: '',
-          ampm: 'AM',
-        });
+      if (commitValidSegmentChangesImmediately) {
+        const activeElement = window.activeDocument.activeElement;
+        const isSegmentFocused = [
+          dayRef,
+          monthRef,
+          yearRef,
+          hourRef,
+          minuteRef,
+          secondRef,
+        ].some((ref) => ref.current === activeElement);
+        if (isSegmentFocused) return;
       }
+
+      syncSegmentsWithValue(normalizedValue, shouldDisplayBlankTime);
     }, [
+      commitValidSegmentChangesImmediately,
       normalizedValue,
-      use24HourTime,
-      includeTime,
-      timeOnly,
       shouldDisplayBlankTime,
+      syncSegmentsWithValue,
     ]);
 
     
@@ -263,10 +318,12 @@ export const FastDateTimeInput: React.FC<FastDateTimeInputProps> = React.memo(
       (
         h: number,
         m: number,
-        meridiem: 'AM' | 'PM' = ampm === 'PM' ? 'PM' : 'AM'
-      ): { hours: number; minutes: number; valid: boolean } => {
+        meridiem: 'AM' | 'PM',
+        s = 0
+      ): { hours: number; minutes: number; seconds: number } => {
         
         const minutes = Math.max(0, Math.min(59, m));
+        const seconds = Math.max(0, Math.min(59, s));
 
         let hours = h;
         if (use24HourTime) {
@@ -279,46 +336,60 @@ export const FastDateTimeInput: React.FC<FastDateTimeInputProps> = React.memo(
           else if (meridiem === 'AM' && hours === 12) hours = 0;
         }
 
-        return { hours, minutes, valid: true };
+        return { hours, minutes, seconds };
       },
-      [use24HourTime, ampm]
+      [use24HourTime]
     );
 
     
-    const updateValue = useCallback(
-      (meridiem: 'AM' | 'PM' = ampm === 'PM' ? 'PM' : 'AM') => {
+    const buildValueFromSegments = useCallback(
+      (
+        candidateSegments: SegmentState,
+        meridiem: 'AM' | 'PM' = candidateSegments.ampm
+      ): SegmentValueResult => {
+        const {
+          day: candidateDay,
+          month: candidateMonth,
+          year: candidateYear,
+          hour: candidateHour,
+          minute: candidateMinute,
+          second: candidateSecond,
+        } = candidateSegments;
+
         if (timeOnly) {
-          if (!hour && !minute) {
-            onChange?.(undefined);
-            return;
+          if (!candidateHour && !candidateMinute) {
+            return { kind: 'empty' };
           }
 
           
-          const h = parseInt(hour, 10);
-          const m = parseInt(minute, 10);
+          const h = parseInt(candidateHour, 10);
+          const m = parseInt(candidateMinute, 10);
           if (isNaN(h) || isNaN(m)) {
-            return;
+            return { kind: 'invalid' };
           }
 
           const { hours, minutes } = validateTime(h, m, meridiem);
 
           
           const timeString = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
-          if (onChange) onChange(timeString);
-          return;
+          return { kind: 'value', value: timeString };
         }
 
-        if (!day && !month && !year && (!includeTime || (!hour && !minute))) {
-          onChange?.(undefined);
-          return;
+        if (
+          !candidateDay &&
+          !candidateMonth &&
+          !candidateYear &&
+          (!includeTime || (!candidateHour && !candidateMinute))
+        ) {
+          return { kind: 'empty' };
         }
 
-        const d = parseInt(day, 10);
-        const mo = parseInt(month, 10);
-        let y = parseInt(year, 10);
+        const d = parseInt(candidateDay, 10);
+        const mo = parseInt(candidateMonth, 10);
+        let y = parseInt(candidateYear, 10);
 
         if (isNaN(d) || isNaN(mo) || isNaN(y)) {
-          return;
+          return { kind: 'invalid' };
         }
 
         
@@ -328,44 +399,63 @@ export const FastDateTimeInput: React.FC<FastDateTimeInputProps> = React.memo(
 
         
         if (date.getDate() !== d || date.getMonth() !== mo - 1) {
-          return;
+          return { kind: 'invalid' };
         }
 
         if (includeTime) {
-          if (!hour || !minute) {
+          if (!candidateHour || !candidateMinute) {
+            return { kind: 'blank-time', value: date };
+          }
+
+          const h = parseInt(candidateHour, 10);
+          const m = parseInt(candidateMinute, 10);
+          const s = parseInt(candidateSecond || '0', 10);
+
+          const { hours, minutes, seconds } = validateTime(h, m, meridiem, s);
+          date.setHours(hours, minutes, seconds, 0);
+        }
+
+        return { kind: 'value', value: date };
+      },
+      [timeOnly, includeTime, validateTime]
+    );
+
+    const emitValue = useCallback(
+      (result: SegmentValueResult) => {
+        switch (result.kind) {
+          case 'invalid':
+            return;
+          case 'empty':
+            onChange?.(undefined);
+            return;
+          case 'value':
+            onChange?.(result.value);
+            return;
+          case 'blank-time':
             if (onBlankTimeDateChange) {
               onChange?.(undefined);
-              onBlankTimeDateChange(date);
+              onBlankTimeDateChange(result.value);
               return;
             }
 
-            date.setHours(0, 0, 0, 0);
-            if (onChange) onChange(date);
+            result.value.setHours(0, 0, 0, 0);
+            onChange?.(result.value);
             return;
+          default: {
+            const exhaustiveResult: never = result;
+            return exhaustiveResult;
           }
-
-          const h = parseInt(hour, 10);
-          const m = parseInt(minute, 10);
-
-          const { hours, minutes } = validateTime(h, m, meridiem);
-          date.setHours(hours, minutes, 0, 0);
         }
-
-        if (onChange) onChange(date);
       },
-      [
-        day,
-        month,
-        year,
-        hour,
-        minute,
-        timeOnly,
-        includeTime,
-        onChange,
-        onBlankTimeDateChange,
-        ampm,
-        validateTime,
-      ]
+      [onBlankTimeDateChange, onChange]
+    );
+
+    
+    const updateValue = useCallback(
+      (meridiem?: 'AM' | 'PM') => {
+        emitValue(buildValueFromSegments(segments, meridiem));
+      },
+      [buildValueFromSegments, emitValue, segments]
     );
 
     const handleAmpmToggle = useCallback(() => {
@@ -379,12 +469,21 @@ export const FastDateTimeInput: React.FC<FastDateTimeInputProps> = React.memo(
     
     const handleSegmentChange = (
       value: string,
+      segment: EditableSegment,
       setter: (v: string) => void,
       maxLength: number,
       nextRef?: React.RefObject<HTMLInputElement | null>
     ) => {
       const digits = value.replace(/\D/g, '').slice(0, maxLength);
       setter(digits);
+
+      if (commitValidSegmentChangesImmediately) {
+        const candidateSegments: SegmentState = {
+          ...segments,
+          [segment]: digits,
+        };
+        emitValue(buildValueFromSegments(candidateSegments));
+      }
 
       if (digits.length === maxLength && nextRef?.current) {
         nextRef.current.focus();
@@ -397,19 +496,38 @@ export const FastDateTimeInput: React.FC<FastDateTimeInputProps> = React.memo(
       
       window.setTimeout(() => {
         const activeEl = window.activeDocument.activeElement;
+
+        if (commitValidSegmentChangesImmediately) {
+          if (!containerRef.current) return;
+
+          const isStillInComponent = containerRef.current.contains(activeEl);
+          if (!isStillInComponent) {
+            syncSegmentsWithValue(
+              normalizedValueRef.current,
+              shouldDisplayBlankTimeRef.current
+            );
+          }
+          return;
+        }
+
         const isStillInComponent = [
           dayRef,
           monthRef,
           yearRef,
           hourRef,
           minuteRef,
+          secondRef,
           ampmButtonRef,
         ].some((ref) => ref.current === activeEl);
         if (!isStillInComponent) {
           updateValue();
         }
       }, 100);
-    }, [updateValue]);
+    }, [
+      commitValidSegmentChangesImmediately,
+      syncSegmentsWithValue,
+      updateValue,
+    ]);
 
     
     const openPicker = useCallback(() => {
@@ -434,20 +552,26 @@ export const FastDateTimeInput: React.FC<FastDateTimeInputProps> = React.memo(
         tempInputRef.current = null;
       };
 
+      const timeFormat = use24HourTime
+        ? shouldShowSeconds
+          ? 'H:i:S'
+          : 'H:i'
+        : shouldShowSeconds
+          ? 'h:i:S K'
+          : 'h:i K';
+      const pickerDateFormat = timeOnly
+        ? timeFormat
+        : includeTime
+          ? `Y-m-d ${timeFormat}`
+          : 'Y-m-d';
+
       flatpickrRef.current = flatpickr(tempInput, {
         defaultDate: normalizedValue, 
         enableTime: includeTime || timeOnly,
+        enableSeconds: shouldShowSeconds,
         noCalendar: timeOnly,
         time_24hr: use24HourTime,
-        dateFormat: timeOnly
-          ? use24HourTime
-            ? 'H:i'
-            : 'h:i K'
-          : includeTime
-            ? use24HourTime
-              ? 'Y-m-d H:i'
-              : 'Y-m-d h:i K'
-            : 'Y-m-d',
+        dateFormat: pickerDateFormat,
         minDate: minDate,
         disableMobile: true,
         appendTo: window.activeDocument.body,
@@ -486,7 +610,14 @@ export const FastDateTimeInput: React.FC<FastDateTimeInputProps> = React.memo(
               const timeString = `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
               onChange(timeString);
             } else {
-              onChange(selectedDates[0]);
+              const selectedDate = new Date(selectedDates[0]);
+              if (includeTime && !shouldShowSeconds) {
+                selectedDate.setSeconds(
+                  parseInt(secondValueRef.current, 10) || 0,
+                  0
+                );
+              }
+              onChange(selectedDate);
             }
           }
         },
@@ -609,6 +740,7 @@ export const FastDateTimeInput: React.FC<FastDateTimeInputProps> = React.memo(
 
                 const currentHour = parseInt(hourValueRef.current, 10) || 0;
                 const currentMinute = parseInt(minuteValueRef.current, 10) || 0;
+                const currentSecond = parseInt(secondValueRef.current, 10) || 0;
                 let hours = currentHour;
 
                 
@@ -618,7 +750,7 @@ export const FastDateTimeInput: React.FC<FastDateTimeInputProps> = React.memo(
                   if (ampmValueRef.current === 'AM' && hours === 12) hours = 0;
                 }
 
-                selectedDate.setHours(hours, currentMinute, 0, 0);
+                selectedDate.setHours(hours, currentMinute, currentSecond, 0);
               }
 
               if (timeOnly) {
@@ -766,6 +898,7 @@ export const FastDateTimeInput: React.FC<FastDateTimeInputProps> = React.memo(
       normalizedValue,
       includeTime,
       timeOnly,
+      shouldShowSeconds,
       use24HourTime,
       minDate,
       onChange,
@@ -808,6 +941,7 @@ export const FastDateTimeInput: React.FC<FastDateTimeInputProps> = React.memo(
             onChange={(e) =>
               handleSegmentChange(
                 e.target.value,
+                'day',
                 setDay,
                 2,
                 userDateFormat === 'DDMMYY'
@@ -819,6 +953,7 @@ export const FastDateTimeInput: React.FC<FastDateTimeInputProps> = React.memo(
             }
             onBlur={commitDateTimeSegments}
             placeholder={t('datepicker.placeholder.day')}
+            data-segment="day"
             disabled={disabled}
             className="segment-input journalit-fast-datetime__segment"
           />
@@ -832,6 +967,7 @@ export const FastDateTimeInput: React.FC<FastDateTimeInputProps> = React.memo(
             onChange={(e) =>
               handleSegmentChange(
                 e.target.value,
+                'month',
                 setMonth,
                 2,
                 userDateFormat === 'DDMMYY'
@@ -843,6 +979,7 @@ export const FastDateTimeInput: React.FC<FastDateTimeInputProps> = React.memo(
             }
             onBlur={commitDateTimeSegments}
             placeholder={t('datepicker.placeholder.month')}
+            data-segment="month"
             disabled={disabled}
             className="segment-input journalit-fast-datetime__segment"
           />
@@ -856,6 +993,7 @@ export const FastDateTimeInput: React.FC<FastDateTimeInputProps> = React.memo(
             onChange={(e) =>
               handleSegmentChange(
                 e.target.value,
+                'year',
                 setYear,
                 2,
                 userDateFormat === 'YYMMDD' ? monthRef : timeRef
@@ -863,6 +1001,7 @@ export const FastDateTimeInput: React.FC<FastDateTimeInputProps> = React.memo(
             }
             onBlur={commitDateTimeSegments}
             placeholder={t('datepicker.placeholder.year')}
+            data-segment="year"
             disabled={disabled}
             className="segment-input journalit-fast-datetime__segment"
           />
@@ -916,11 +1055,12 @@ export const FastDateTimeInput: React.FC<FastDateTimeInputProps> = React.memo(
           ref={containerRef}
           className="journalit-fast-datetime__container"
           data-date-only={isDateOnly ? 'true' : 'false'}
+          data-has-seconds={shouldShowSeconds ? 'true' : 'false'}
           data-has-error={error ? 'true' : 'false'}
         >
           
           {!controllerOnly && !timeOnly && (
-            <>
+            <div className="journalit-fast-datetime__date-group">
               {getDateSegments().map((segment, i) => (
                 <React.Fragment key={segment.key}>
                   {segment.element}
@@ -931,12 +1071,12 @@ export const FastDateTimeInput: React.FC<FastDateTimeInputProps> = React.memo(
                   )}
                 </React.Fragment>
               ))}
-            </>
+            </div>
           )}
 
           
           {!controllerOnly && (includeTime || timeOnly) && (
-            <>
+            <div className="journalit-fast-datetime__time-group">
               {!timeOnly && (
                 <span
                   className="journalit-fast-datetime__separator journalit-fast-datetime__separator--spacer"
@@ -949,10 +1089,17 @@ export const FastDateTimeInput: React.FC<FastDateTimeInputProps> = React.memo(
                 inputMode="numeric"
                 value={hour}
                 onChange={(e) =>
-                  handleSegmentChange(e.target.value, setHour, 2, minuteRef)
+                  handleSegmentChange(
+                    e.target.value,
+                    'hour',
+                    setHour,
+                    2,
+                    minuteRef
+                  )
                 }
                 onBlur={commitDateTimeSegments}
                 placeholder={t('datepicker.placeholder.hour')}
+                data-segment="hour"
                 disabled={disabled}
                 className="segment-input journalit-fast-datetime__segment"
               />
@@ -963,13 +1110,44 @@ export const FastDateTimeInput: React.FC<FastDateTimeInputProps> = React.memo(
                 inputMode="numeric"
                 value={minute}
                 onChange={(e) =>
-                  handleSegmentChange(e.target.value, setMinute, 2)
+                  handleSegmentChange(
+                    e.target.value,
+                    'minute',
+                    setMinute,
+                    2,
+                    shouldShowSeconds ? secondRef : undefined
+                  )
                 }
                 onBlur={commitDateTimeSegments}
                 placeholder={t('datepicker.placeholder.minute')}
+                data-segment="minute"
                 disabled={disabled}
                 className="segment-input journalit-fast-datetime__segment"
               />
+              {shouldShowSeconds && (
+                <>
+                  <span className="journalit-fast-datetime__separator">:</span>
+                  <input
+                    ref={secondRef}
+                    type="text"
+                    inputMode="numeric"
+                    value={second}
+                    onChange={(e) =>
+                      handleSegmentChange(
+                        e.target.value,
+                        'second',
+                        setSecond,
+                        2
+                      )
+                    }
+                    onBlur={commitDateTimeSegments}
+                    placeholder={t('datepicker.placeholder.second')}
+                    data-segment="second"
+                    disabled={disabled}
+                    className="segment-input journalit-fast-datetime__segment"
+                  />
+                </>
+              )}
               {!use24HourTime && (
                 <button
                   ref={ampmButtonRef}
@@ -981,7 +1159,7 @@ export const FastDateTimeInput: React.FC<FastDateTimeInputProps> = React.memo(
                   {ampm}
                 </button>
               )}
-            </>
+            </div>
           )}
 
           

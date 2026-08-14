@@ -201,6 +201,9 @@ import { RollingWinLossRatioChart } from '../DashboardWidgets/RollingWinLossRati
 import { RollingStatsChart } from '../DashboardWidgets/RollingStatsChart';
 import { WeekdayPerformanceChart } from '../DashboardWidgets/WeekdayPerformanceChart';
 import { HourlyPerformanceChart } from '../DashboardWidgets/HourlyPerformanceChart';
+import { TickerPerformanceChart } from '../DashboardWidgets/TickerPerformanceChart';
+import { SetupPerformanceChart } from '../DashboardWidgets/SetupPerformanceChart';
+import { TagPerformanceChart } from '../DashboardWidgets/TagPerformanceChart';
 
 
 type BreakpointKey = 'lg' | 'md' | 'sm' | 'xs' | 'xxs';
@@ -352,6 +355,16 @@ const DashboardWidgetRenderer: React.FC<DashboardWidgetRendererProps> = ({
       return (
         <HourlyPerformanceChart filters={filters} dateFormat={dateFormat} />
       );
+    case 'tickerPerformance':
+      return (
+        <TickerPerformanceChart filters={filters} dateFormat={dateFormat} />
+      );
+    case 'setupPerformance':
+      return (
+        <SetupPerformanceChart filters={filters} dateFormat={dateFormat} />
+      );
+    case 'tagPerformance':
+      return <TagPerformanceChart filters={filters} dateFormat={dateFormat} />;
     default:
       return (
         <div className="journalit-dashboard-widget-error">

@@ -49,6 +49,7 @@ import { AUMWidget } from './widgets/AUMWidget';
 import { DrawdownMonitorWidget } from './widgets/DrawdownMonitorWidget';
 import { ProfitTargetWidget } from './widgets/ProfitTargetWidget';
 import { GettingStartedWidget } from './widgets/GettingStartedWidget';
+import { KeyEventsHomeWidget } from './widgets/KeyEventsHomeWidget';
 
 
 class GridLayoutErrorBoundary extends React.Component<
@@ -399,6 +400,8 @@ const HomeWidgetContent: React.FC<{
       return <YearHeatmapWidget plugin={plugin} />;
     case 'weeklySummary':
       return <WeeklySummaryWidget plugin={plugin} />;
+    case 'keyEvents':
+      return <KeyEventsHomeWidget plugin={plugin} />;
     case 'positionSize':
       return (
         <DisplayPolicyProvider privacyModeOverride={false}>

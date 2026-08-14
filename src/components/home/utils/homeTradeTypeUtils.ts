@@ -1,5 +1,9 @@
 import type { TradeType } from '../../../services/tradelog/types';
-import { normalizeDashboardTradeTypes } from '../../../settings/viewFiltersDefaults';
+import type { HomePeriod } from '../../../settings/types';
+import {
+  DEFAULT_REGULAR_ONLY_TRADE_TYPES,
+  normalizeDashboardTradeTypes,
+} from '../../../settings/viewFiltersDefaults';
 import { inferStoredTradeType } from '../../../utils/tradeTypeRouting';
 import {
   normalizeAccountLookupKey,
@@ -7,6 +11,20 @@ import {
 } from '../../../services/trade/core/TradeAccountIdentity';
 
 type HomeTradeType = Extract<TradeType, 'regular' | 'backtest'>;
+
+interface HomeFilterDefaults {
+  period: HomePeriod;
+  tradeTypes: readonly TradeType[];
+  accounts: readonly string[];
+  explicitAllAccountsSelected: boolean;
+}
+
+export const DEFAULT_HOME_FILTERS: HomeFilterDefaults = {
+  period: 'lifetime',
+  tradeTypes: [...DEFAULT_REGULAR_ONLY_TRADE_TYPES],
+  accounts: [],
+  explicitAllAccountsSelected: false,
+};
 
 export interface HomeAccountTradeSnapshot {
   account?: string | string[];

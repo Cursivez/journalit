@@ -21,7 +21,9 @@ import { Trade } from '../../dashboard/utils/dataUtils';
 import { calculateEffectiveRMultiple } from '../../../utils/formatting';
 import {
   calculateWinRateExcludingBreakeven,
+  classifyGroupedPnLWithBreakEvenSettings,
   classifyPnLWithBreakEvenSettings,
+  type PnLOutcomeWithUnknown,
 } from '../../../utils/breakEvenRange';
 import {
   getEffectivePnL,
@@ -42,6 +44,14 @@ import {
   buildCurrencyConversionMetadata,
   CurrencyConversionInfo,
 } from '../../shared/display/CurrencyConversionInfo';
+import {
+  getWeeklySummaryBreakEvenBalance,
+  getWeeklySummaryBreakEvenBalanceGroups,
+  getWeeklySummaryContext,
+  getWeeklySummaryDayBarPresentation,
+  getWeeklySummaryHeroColor,
+  getWeeklySummaryHeroOutcome,
+} from './weeklySummaryUtils';
 
 
 function formatTradingDayString(date: Date): string {
@@ -62,7 +72,7 @@ interface DailyData {
   rMultiple: number | undefined;
   tradeCount: number;
   isFuture: boolean;
-  outcome: 'win' | 'loss' | 'breakeven';
+  outcome: PnLOutcomeWithUnknown;
   currency: string | undefined;
 }
 
@@ -77,6 +87,7 @@ interface WeeklyMetrics {
     losingDays: number;
     currency: string | undefined;
     trades: Trade[];
+    outcome: PnLOutcomeWithUnknown;
   };
   previous: {
     netPnL: number;
@@ -181,23 +192,16 @@ function DayBarsSectionComponent({
         isPnlMasked={isPnlMasked}
       />
       {dailyData.map((day, index) => {
-        const isNeutralLikeEmpty =
-          day.tradeCount === 0 || day.outcome === 'breakeven';
+        const barPresentation = getWeeklySummaryDayBarPresentation({
+          isFuture: day.isFuture,
+          isPnlMasked,
+          tradeCount: day.tradeCount,
+          outcome: day.outcome,
+          pnl: day.pnl,
+          maxAbsPnL,
+        });
 
-        const barHeight =
-          day.isFuture || isNeutralLikeEmpty || isPnlMasked
-            ? 4
-            : Math.max(8, (Math.abs(day.pnl) / maxAbsPnL) * 40);
-
-        const barVariant = day.isFuture
-          ? 'future'
-          : isNeutralLikeEmpty || isPnlMasked
-            ? 'neutral'
-            : day.outcome === 'win'
-              ? 'positive'
-              : 'negative';
-
-        const barClassName = `journalit-home-weekly__bar journalit-home-weekly__bar--${barVariant}`;
+        const barClassName = `journalit-home-weekly__bar journalit-home-weekly__bar--${barPresentation.variant}`;
         const barWrapperClassName = day.isFuture
           ? 'journalit-home-weekly__bar-wrapper'
           : 'journalit-home-weekly__bar-wrapper journalit-home-weekly__bar-wrapper--clickable';
@@ -207,13 +211,6 @@ function DayBarsSectionComponent({
             : day.isFuture
               ? 'journalit-home-weekly__day-label journalit-home-weekly__day-label--future'
               : 'journalit-home-weekly__day-label journalit-home-weekly__day-label--muted';
-
-        const opacity =
-          day.isFuture || (isPnlMasked && !isNeutralLikeEmpty)
-            ? 0.3
-            : isNeutralLikeEmpty
-              ? 0.5
-              : 1;
 
         return (
           <div
@@ -225,9 +222,9 @@ function DayBarsSectionComponent({
             <div
               className={barClassName}
               style={cssVars({
-                '--journalit-home-weekly-bar-height': `${barHeight}px`,
+                '--journalit-home-weekly-bar-height': `${barPresentation.height}px`,
                 '--journalit-home-weekly-bar-opacity': String(
-                  hoveredDay === index ? 1 : opacity
+                  hoveredDay === index ? 1 : barPresentation.opacity
                 ),
                 '--journalit-home-weekly-bar-scale':
                   hoveredDay === index ? '1.1' : '1',
@@ -250,20 +247,19 @@ function HeroSectionComponent({
   emptyHeroValue,
   contextMessage,
   isPnlMasked,
-  displayValue,
+  outcome,
 }: {
   hasCurrentTrades: boolean;
   formattedHeroValue: string;
   emptyHeroValue: string;
   contextMessage: string;
   isPnlMasked: boolean;
-  displayValue: number;
+  outcome: PnLOutcomeWithUnknown;
 }) {
-  const pnlColor = isPnlMasked
-    ? 'var(--text-normal)'
-    : displayValue >= 0
-      ? 'var(--color-green)'
-      : 'var(--color-red)';
+  const pnlColor = getWeeklySummaryHeroColor({
+    isPnlMasked,
+    outcome,
+  });
 
   return (
     <div className="journalit-home-weekly__hero">
@@ -360,12 +356,19 @@ function useWeeklyMetrics(
         0
       );
       const currentTotalTrades = currentWeekTrades.length;
+      const currentOutcome = classifyGroupedPnLWithBreakEvenSettings({
+        pnl: currentNetPnL,
+        settings: breakEvenSettings,
+        accountBalanceGroups: currentWeekTrades.flatMap(
+          getWeeklySummaryBreakEvenBalanceGroups
+        ),
+      });
 
       const getTradeOutcome = (trade: Trade) =>
         classifyPnLWithBreakEvenSettings(
           getEffectivePnL(trade),
           breakEvenSettings,
-          trade.breakEvenAccountCurrentBalance
+          getWeeklySummaryBreakEvenBalance(trade)
         );
 
       const currentWinningTrades = currentWeekTrades.filter(
@@ -529,38 +532,13 @@ function useWeeklyMetrics(
           }
         }
 
-        const dayAccountBalances = Array.from(
-          new Set(
-            dayTrades.flatMap((trade) => {
-              const balance = trade.breakEvenAccountCurrentBalance;
-              return balance !== undefined && Number.isFinite(balance)
-                ? [balance]
-                : [];
-            })
-          )
-        );
-        const dayAccountBalance =
-          dayAccountBalances.length === 1 ? dayAccountBalances[0] : undefined;
-        const dayHasUnresolvedBreakEvenBalance =
-          breakEvenThresholdMode === 'percentage_current_balance' &&
-          dayTrades.some(
-            (trade) =>
-              trade.breakEvenAccountCurrentBalance === undefined ||
-              !Number.isFinite(trade.breakEvenAccountCurrentBalance)
-          );
-
-        const dayOutcomeRaw =
-          dayTrades.length === 0
-            ? 'breakeven'
-            : dayHasUnresolvedBreakEvenBalance
-              ? 'unknown'
-              : classifyPnLWithBreakEvenSettings(
-                  dayPnL,
-                  breakEvenSettings,
-                  dayAccountBalance
-                );
-        const dayOutcome =
-          dayOutcomeRaw === 'unknown' ? 'breakeven' : dayOutcomeRaw;
+        const dayOutcomeRaw = classifyGroupedPnLWithBreakEvenSettings({
+          pnl: dayPnL,
+          settings: breakEvenSettings,
+          accountBalanceGroups: dayTrades.flatMap(
+            getWeeklySummaryBreakEvenBalanceGroups
+          ),
+        });
 
         if (!isFuture && dayTrades.length > 0) {
           if (dayOutcomeRaw === 'win') {
@@ -577,48 +555,26 @@ function useWeeklyMetrics(
           rMultiple: dayRMultiple,
           tradeCount: dayTrades.length,
           isFuture,
-          outcome: dayOutcome,
+          outcome: dayOutcomeRaw,
           currency: getSingleExplicitCurrency(dayTrades),
         });
       }
 
-      let contextMessage = '';
-
-      if (currentTotalTrades === 0) {
-        contextMessage = t('home.widget.weekly.no-trades');
-      } else if (losingDays >= 3 && winningDays === 0) {
-        contextMessage = t('home.widget.weekly.losing-days', {
-          count: String(losingDays),
-        });
-      } else if (winningDays >= 3 && losingDays === 0) {
-        contextMessage = t('home.widget.weekly.winning-days', {
-          count: String(winningDays),
-        });
-      } else if (historicalAvg !== 0 && currentNetPnL > historicalAvg * 1.5) {
-        contextMessage = t('home.widget.weekly.above-average');
-      } else if (
-        historicalAvg !== 0 &&
-        currentNetPnL < historicalAvg * 0.5 &&
-        currentNetPnL > 0
-      ) {
-        contextMessage = t('home.widget.weekly.below-average');
-      } else if (previousNetPnL !== 0) {
-        const changePercent =
-          ((currentNetPnL - previousNetPnL) / Math.abs(previousNetPnL)) * 100;
-        if (changePercent > 50) {
-          contextMessage = t('home.widget.weekly.better-than-last');
-        } else if (changePercent < -50) {
-          contextMessage = t('home.widget.weekly.slower-than-last');
-        } else if (currentNetPnL >= 0) {
-          contextMessage = t('home.widget.weekly.on-track');
-        } else {
-          contextMessage = t('home.widget.weekly.room-to-recover');
-        }
-      } else if (currentNetPnL >= 0) {
-        contextMessage = t('home.widget.weekly.solid-start');
-      } else {
-        contextMessage = t('home.widget.weekly.early-in-week');
-      }
+      const context = getWeeklySummaryContext({
+        currentTotalTrades,
+        currentOutcome,
+        losingDays,
+        winningDays,
+        historicalAvg,
+        currentNetPnL,
+        previousNetPnL,
+      });
+      const contextMessage = context
+        ? t(
+            context.key,
+            'count' in context ? { count: String(context.count) } : undefined
+          )
+        : '';
 
       return {
         current: {
@@ -631,6 +587,7 @@ function useWeeklyMetrics(
           losingDays,
           currency: getSingleExplicitCurrency(currentWeekTrades),
           trades: currentWeekTrades,
+          outcome: currentOutcome,
         },
         previous: {
           netPnL: previousNetPnL,
@@ -792,12 +749,11 @@ const WeeklySummaryWidgetComponent: React.FC<WeeklySummaryWidgetProps> = ({
   const currencyConversion = buildCurrencyConversionMetadata(
     dashboardData.dashboardData?.metrics
   );
-
-  
-  const displayValue =
-    displayRMultiples && current.netRMultiple !== undefined
-      ? current.netRMultiple
-      : current.netPnL;
+  const heroOutcome = getWeeklySummaryHeroOutcome({
+    pnlOutcome: current.outcome,
+    displayRMultiples,
+    netRMultiple: current.netRMultiple,
+  });
 
   
   const formattedHeroValue = formatValue({
@@ -831,7 +787,7 @@ const WeeklySummaryWidgetComponent: React.FC<WeeklySummaryWidgetProps> = ({
         emptyHeroValue={emptyHeroValue}
         contextMessage={contextMessage}
         isPnlMasked={isPnlMasked}
-        displayValue={displayValue}
+        outcome={heroOutcome}
       />
 
       

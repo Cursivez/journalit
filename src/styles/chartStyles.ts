@@ -165,15 +165,28 @@ export const CHART_STYLES = `
   outline: none;
 }
 
-.journalit-hourly-performance-controls {
+.journalit-hourly-performance-controls,
+.journalit-performance-breakdown-controls {
   gap: 4px;
   flex-wrap: wrap;
   justify-content: flex-end;
+}
+
+.journalit-hourly-performance-controls {
   max-width: 70%;
 }
 
 .journalit-hourly-performance-controls .journalit-chart-widget__select {
   max-width: 92px;
+  padding: 3px 6px;
+}
+
+.journalit-performance-breakdown-controls {
+  max-width: 72%;
+}
+
+.journalit-performance-breakdown-controls .journalit-chart-widget__select {
+  max-width: 108px;
   padding: 3px 6px;
 }
 
@@ -335,6 +348,14 @@ export const CHART_STYLES = `
   stroke-opacity: 0.4;
   stroke-dasharray: 3;
   stroke-width: 1.5;
+}
+
+.journalit-chart-container .recharts-reference-line.journalit-performance-breakdown-divider-line line {
+  stroke: var(--background-modifier-border);
+  stroke-opacity: 0.65;
+  stroke-dasharray: 1 4;
+  stroke-linecap: round;
+  stroke-width: 1;
 }
 
 

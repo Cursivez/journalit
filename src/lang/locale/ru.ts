@@ -598,6 +598,7 @@ const ru: Lang = {
   'notice.error.add-setups': 'Ошибка добавления сетапов: {error}',
   'notice.error.add-tags': 'Error adding tags: {error}',
   'notice.error.add-mistakes': 'Ошибка добавления ошибок: {error}',
+  'notice.error.duplicate-trades': 'Ошибка дублирования сделок: {error}',
   'notice.error.delete-trades': 'Ошибка удаления сделок: {error}',
   'notice.error.csv-validation': 'Ошибка валидации CSV/XLSX/XLS: {errors}',
   'notice.error.import-failed': 'Импорт не удался: {error}',
@@ -806,7 +807,7 @@ const ru: Lang = {
     'This picker shows the widgets you can add for this review type.',
   'layoutBuilder.guide.choose-widget.title': 'Choose a widget',
   'layoutBuilder.guide.choose-widget.description':
-    'This list shows every widget you can add for this review type. Pick any widget you want, or press Next and Journalit will choose the first one for you.',
+    'Введите в строке поиска название, описание или категорию, затем выберите виджет. Можно также нажать «Далее», и Journalit выберет первый результат.',
   'layoutBuilder.guide.widget-library-docs.title':
     'Use the widget library if you get stuck',
   'layoutBuilder.guide.widget-library-docs.description':
@@ -874,7 +875,7 @@ const ru: Lang = {
     'Click this button to select several trades at once. When multi-select is on, row clicks select trades instead of opening them.',
   'tradelog.guide.batch-actions.title': 'These are your batch actions',
   'tradelog.guide.batch-actions.description':
-    'Use this bar to select all visible trades, clear your selection, mark trades as reviewed, add setups, add mistakes, or delete several trades at once. You can also shift-click to select a range of trades.',
+    'Use this bar to select all visible trades, clear your selection, mark trades as reviewed, add setups, add mistakes, duplicate trades, or delete several trades at once. You can also shift-click to select a range of trades.',
   'tradelog.guide.column-settings.title': 'Open column settings',
   'tradelog.guide.column-settings.description':
     'Click this button to choose which columns are shown and how dense or detailed the table should feel.',
@@ -1009,6 +1010,17 @@ const ru: Lang = {
   'tradelog.batch.add-mistakes.label': 'Добавить ошибки',
   'tradelog.batch.adding': 'Добавление...',
   'tradelog.batch.add-count': 'Добавить ({count})',
+  'tradelog.batch.duplicate.aria': 'Дублировать сделки',
+  'tradelog.batch.duplicate.label': 'Дублировать',
+  'tradelog.batch.duplicating': 'Дублирование...',
+  'tradelog.batch.duplicate-skipped.one':
+    '{count} выбранную заметку нельзя дублировать',
+  'tradelog.batch.duplicate-skipped.few':
+    '{count} выбранные заметки нельзя дублировать',
+  'tradelog.batch.duplicate-skipped.many':
+    '{count} выбранных заметок нельзя дублировать',
+  'tradelog.batch.duplicate-skipped.other':
+    '{count} выбранных заметок нельзя дублировать',
   'tradelog.batch.delete.aria': 'Удалить сделки',
   'tradelog.batch.delete.title': 'Удалить выбранные сделки',
   'tradelog.batch.deleting': 'Удаление...',
@@ -1245,6 +1257,39 @@ const ru: Lang = {
   'dashboard.widgets.hourly-performance.metric.total-r': 'Общий R',
   'dashboard.widgets.hourly-performance.metric.avg-r': 'Сред. R',
   'dashboard.widgets.weekday-performance.tooltip.no-trades': 'Нет сделок',
+  'dashboard.widgets.setup-performance.title': 'Результативность сетапов',
+  'dashboard.widgets.setup-performance.description':
+    'Ранжированная столбчатая диаграмма результатов по сетапам',
+  'dashboard.widgets.setup-performance.empty':
+    'Нет данных по результативности сетапов',
+  'dashboard.widgets.setup-performance.masked-label': 'Сетап',
+  'dashboard.widgets.tag-performance.title': 'Результативность тегов',
+  'dashboard.widgets.tag-performance.description':
+    'Ранжированная столбчатая диаграмма результатов по тегам',
+  'dashboard.widgets.tag-performance.empty':
+    'Нет данных по результативности тегов',
+  'dashboard.widgets.tag-performance.masked-label': 'Тег',
+  'dashboard.widgets.ticker-performance.title': 'Производительность по тикерам',
+  'dashboard.widgets.ticker-performance.metric-aria': 'Метрика',
+  'dashboard.widgets.ticker-performance.view-aria': 'Режим просмотра',
+  'dashboard.widgets.ticker-performance.view.best-and-worst': 'Лучшие и худшие',
+  'dashboard.widgets.ticker-performance.view.best': 'Лучшие 10',
+  'dashboard.widgets.ticker-performance.view.worst': 'Худшие 10',
+  'dashboard.widgets.ticker-performance.metric.total-pnl': 'Общий P&L',
+  'dashboard.widgets.ticker-performance.metric.total-r': 'Общий R',
+  'dashboard.widgets.ticker-performance.metric.win-rate': 'Винрейт',
+  'dashboard.widgets.ticker-performance.tooltip.ticker': 'Тикер: {ticker}',
+  'dashboard.widgets.ticker-performance.tooltip.trades': 'Сделки: {count}',
+  'dashboard.widgets.ticker-performance.tooltip.win-rate':
+    'Винрейт: {rate} ({wins}П / {losses}У)',
+
+  'dashboard.widgets.ticker-performance.empty':
+    'Нет данных о производительности тикеров',
+  'dashboard.widgets.ticker-performance.empty-submessage':
+    'Нет закрытых сделок с тикером, соответствующих текущим фильтрам.',
+  'dashboard.widgets.ticker-performance.masked-ticker': 'Тикер',
+  'dashboard.widgets.ticker-performance.omitted-count': 'Пропущено: {count}',
+
   'dashboard.widgets.rollingStats.title': 'Скользящее среднее прибыль/убыток',
   'dashboard.widgets.rollingStats.period': 'Период',
   'dashboard.widgets.rollingStats.trades': '{count} сделок',
@@ -1767,6 +1812,10 @@ const ru: Lang = {
     'Отображать время в 24-часовом формате (14:30) вместо 12-часового AM/PM (2:30 PM)',
   'settings.general.use-24-hour-time-aria':
     'Использовать 24-часовой формат времени',
+  'settings.general.show-seconds': 'Показывать секунды во времени сделки',
+  'settings.general.show-seconds-desc':
+    'Показывать секунды при вводе времени входа и выхода.',
+  'settings.general.show-seconds-aria': 'Показывать секунды во времени сделки',
   'settings.general.skip-weekends': 'Исключать выходные',
   'settings.general.skip-weekends-desc':
     'Когда включено, Journalit считает выходные неторговыми днями во всем плагине. Отключите это, если вы торгуете или анализируете активность по субботам и воскресеньям.',
@@ -2266,6 +2315,10 @@ const ru: Lang = {
   'notice.csv-symbol-mappings-created.other':
     'Создано {count} сопоставлений символов',
 
+  'notice.trades-duplicated.one': 'Дублирована {count} сделка',
+  'notice.trades-duplicated.few': 'Дублировано {count} сделки',
+  'notice.trades-duplicated.many': 'Дублировано {count} сделок',
+  'notice.trades-duplicated.other': 'Дублировано {count} сделок',
   'notice.trades-deleted.one': 'Удалена {count} сделка',
   'notice.trades-deleted.few': 'Удалено {count} сделки',
   'notice.trades-deleted.many': 'Удалено {count} сделок',
@@ -2452,6 +2505,11 @@ const ru: Lang = {
 
   
   'widget.picker.placeholder': 'Выберите виджет...',
+  'widget.picker.search-placeholder': 'Поиск виджетов...',
+  'widget.picker.search-label': 'Поиск виджетов',
+  'widget.picker.clear-search': 'Очистить поиск виджетов',
+  'widget.picker.results-label': 'Доступные виджеты',
+  'widget.picker.no-results': 'Нет виджетов, соответствующих поиску',
   'widget.category.charts': 'Графики',
   'widget.category.statistics': 'Статистика',
   'widget.category.content': 'Содержание',
@@ -2656,6 +2714,8 @@ const ru: Lang = {
   'widget.account-breakdown.column.pnl': 'Net P&L',
   'widget.account-breakdown.column.win-rate': 'Win Rate',
   'widget.account-breakdown.column.profit-factor': 'Profit Factor',
+  'widget.tag-performance.name': 'Результативность тегов',
+  'widget.tag-performance.description': 'Разбивка результатов по тегам сделок',
   'widget.setup-performance.name': 'Результативность сетапа',
   'widget.setup-performance.description':
     'Разбор результативности по торговым сетапам',
@@ -2903,6 +2963,7 @@ const ru: Lang = {
   'widget.table.header.pnl': 'P&L',
   'widget.table.header.win-rate': 'Win%',
   'widget.table.header.profit-factor': 'PF',
+  'widget.table.header.tag': 'Тег',
   'widget.table.header.setup': 'Сетап',
   'widget.table.header.a-games': 'A-игры',
   'widget.table.header.b-games': 'B-игры',
@@ -2960,6 +3021,7 @@ const ru: Lang = {
   'widget.empty.no-weekly-data': 'Нет недельных данных за этот период',
   'widget.empty.no-monthly-data': 'Нет ежемесячных данных за этот период',
   'widget.empty.no-quarterly-data': 'Нет квартальных данных за этот период',
+  'widget.empty.no-tag-data': 'Нет данных по тегам за этот период',
   'widget.empty.no-setup-data': 'Нет данных по сетапам за этот период',
   'widget.empty.no-mental-game-data':
     'Нет данных психологического анализа за {period}',
@@ -3009,6 +3071,9 @@ const ru: Lang = {
   'widget.hourlyPerformance.name': 'Производительность по часам',
   'widget.hourlyPerformance.description':
     'Столбчатая диаграмма P&L для каждого часа дня',
+  'widget.tickerPerformance.name': 'Производительность по тикерам',
+  'widget.tickerPerformance.description':
+    'Ранжированная столбчатая диаграмма сравнения по тикерам',
   'widget.tradesChart.limit': '{count} сделок',
   'widget.drawdownChart.name': 'Drawdown Chart',
   'widget.drawdownChart.description':
@@ -4347,6 +4412,11 @@ const ru: Lang = {
   'home.widget.weekly-summary.name': 'Еженедельная сводка',
   'home.widget.weekly-summary.description':
     'Метрики текущей недели с графиком дневного P&L',
+  'home.widget.key-events.name': 'Ключевые события',
+  'home.widget.key-events.description':
+    'Важные новости и рыночные события из текущего недельного обзора',
+  'home.widget.key-events.empty-title': 'Ключевых событий пока нет',
+  'home.widget.key-events.open-aria': 'Открыть недельный обзор этой недели',
   'home.widget.position-size.name': 'Калькулятор размера позиции',
   'home.widget.position-size.description':
     'Расчет размера позиции на основе процента риска счета',
@@ -4652,6 +4722,7 @@ const ru: Lang = {
   
   'home.widget.weekly.title': 'На этой неделе',
   'home.widget.weekly.no-trades': 'на этой неделе сделок ещё нет',
+  'home.widget.weekly.breakeven': 'пока безубыточная неделя',
   'home.widget.weekly.losing-days': '{count} убыточных дней подряд',
   'home.widget.weekly.winning-days': '{count} прибыльных дней подряд',
   'home.widget.weekly.above-average': 'выше вашего еженедельного среднего',
@@ -5071,6 +5142,7 @@ const ru: Lang = {
   'calendar.week': 'НЕДЕЛЯ',
   'calendar.trade': '{count} сделка',
   'calendar.trades': '{count} сделки',
+  'calendar.reviewed': 'Проанализировано',
   'calendar.month.january': 'Январь',
   'calendar.month.february': 'Февраль',
   'calendar.month.march': 'Март',
@@ -6204,6 +6276,7 @@ const ru: Lang = {
   'datepicker.placeholder.year': 'ГГ',
   'datepicker.placeholder.hour': 'ЧЧ',
   'datepicker.placeholder.minute': 'ММ',
+  'datepicker.placeholder.second': 'SS',
 
   
   
@@ -8287,6 +8360,7 @@ const ru: Lang = {
   'home.filters.trade-type': 'Тип сделки',
   'home.filters.accounts': 'Счета',
   'home.filters.back': 'Назад',
+  'filter.reset': 'Сбросить фильтры',
   'home.guide.modes.title': 'И ещё кое-что: Панель',
   'home.guide.modes.description':
     'Обзор и Панель используют одну страницу. Переключитесь на Панель сейчас, чтобы продолжить короткий тур по статистике ваших результатов.',

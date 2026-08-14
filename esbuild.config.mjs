@@ -7,11 +7,13 @@ const banner = `
 `;
 
 
-const prod = true;
-const preview = false;
-const previewReactProd = false;
-const previewMinify = false;
-const entryPoint = 'src/main.ts';
+const mode = process.argv[2] || 'dev';
+const prod = mode === 'release';
+const preview = mode === 'preview';
+const entryPoint = prod ? 'src/main.ts' : 'src/main-dev.ts';
+const previewReactProd =
+  preview && process.env.JOURNALIT_PREVIEW_REACT_PROD !== '0';
+const previewMinify = preview && process.env.JOURNALIT_PREVIEW_MINIFY !== '0';
 
 
 const context = await esbuild.context({
@@ -34,9 +36,6 @@ const context = await esbuild.context({
     '@codemirror/search',
     '@codemirror/state',
     '@codemirror/view',
-    '@lezer/common',
-    '@lezer/highlight',
-    '@lezer/lr',
     ...builtinModules,
   ],
   
@@ -49,7 +48,9 @@ const context = await esbuild.context({
   sourcemap: false,
   
   define: {
-    'process.env.NODE_ENV': JSON.stringify('production'),
+    'process.env.NODE_ENV': JSON.stringify(
+      prod || previewReactProd ? 'production' : 'development'
+    ),
   },
   
   treeShaking: true,

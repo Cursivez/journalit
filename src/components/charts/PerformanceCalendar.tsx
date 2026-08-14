@@ -8,7 +8,8 @@ import React, {
   useCallback,
   useState,
 } from 'react';
-import { useEventBus } from '../../hooks';
+import { useEventBus, useReviewedCalendarData } from '../../hooks';
+import { CheckCircle2 } from '../shared/icons/ObsidianIcon';
 import { usePlugin } from '../../hooks/usePlugin';
 import { calculateEffectiveRMultiple } from '../../utils/formatting';
 import {
@@ -41,6 +42,9 @@ import { cssVars } from '../../styles/inlineStylePolicy';
 
 
 
+const applyAccountCountMultiplier = false;
+
+
 interface PerformanceCalendarProps {
   trades: Trade[];
   filters?: FilterState;
@@ -60,9 +64,25 @@ interface DayData {
   tradeCount: number;
   isToday: boolean;
   rMultiple: number | null;
+  reviewed: boolean;
   breakEvenAccountCurrentBalance?: number;
   hasUnresolvedBreakEvenBalance?: boolean;
 }
+
+
+const ReviewedIndicator: React.FC = () => (
+  <>
+    <CheckCircle2
+      size={12}
+      className="journalit-dashboard-calendar-reviewed-badge"
+      aria-hidden="true"
+    />
+    <span
+      className="journalit-dashboard-calendar-reviewed-dot"
+      aria-hidden="true"
+    />
+  </>
+);
 
 
 const CalendarDay = memo<{
@@ -131,9 +151,9 @@ const CalendarDay = memo<{
         role: 'button',
         tabIndex: 0,
         'aria-label': day.date
-          ? t('calendar.aria.open-daily-review', {
+          ? `${t('calendar.aria.open-daily-review', {
               date: formatLocalDateString(day.date),
-            })
+            })}${day.reviewed ? ` (${t('calendar.reviewed')})` : ''}`
           : undefined,
       }
     : {};
@@ -143,6 +163,7 @@ const CalendarDay = memo<{
       <div className="journalit-dashboard-calendar-day-number">
         {day.dayNumber || ''}
       </div>
+      {day.reviewed && <ReviewedIndicator />}
       {day.pnl !== null && (
         <div className="journalit-dashboard-calendar-day-pnl">
           {formatValue({
@@ -181,6 +202,7 @@ export const PerformanceCalendar = memo<PerformanceCalendarProps>(
     const plugin = usePlugin();
     const { currency } = useCurrency();
     const { formatValue, shouldMask } = useDisplayFormatter();
+    const { reviewedDayKeys, isWeekReviewed } = useReviewedCalendarData();
     const calendarRef = useRef<HTMLDivElement>(null);
     const [isCompact, setIsCompact] = useState(false);
 
@@ -270,9 +292,6 @@ export const PerformanceCalendar = memo<PerformanceCalendarProps>(
       return indices;
     }, [weekStartDayIndex]);
 
-    
-    const applyAccountCountMultiplier = false;
-
     const isPnlMasked = shouldMask('pnl');
 
     
@@ -312,129 +331,156 @@ export const PerformanceCalendar = memo<PerformanceCalendarProps>(
     );
 
     
-    const tradesByDate: { [date: string]: number } = {};
-    const tradeCountByDate: { [date: string]: number } = {};
-    const tradeIdsByDate: { [date: string]: Set<string> } = {};
-    const rMultipleByDate: { [date: string]: number } = {};
-    const breakEvenBalancesByDate: { [date: string]: Set<number> } = {};
-    const hasUnresolvedBreakEvenBalanceByDate: { [date: string]: boolean } = {};
-
     
-    trades.forEach((trade) => {
-      const tradeDate = getTradeAnalyticsTradingDay(
-        trade,
-        analyticsDateBasis,
-        plugin
-      );
-      const realizedEvents = getTradeRealizedPnlEvents(
-        trade,
-        analyticsDateBasis,
-        plugin
-      );
-      if (!tradeDate && realizedEvents.length === 0) {
-        return;
-      }
+    
+    const {
+      tradesByDate,
+      tradeCountByDate,
+      rMultipleByDate,
+      breakEvenBalancesByDate,
+      hasUnresolvedBreakEvenBalanceByDate,
+    } = useMemo(() => {
+      
+      const tradesByDate: { [date: string]: number } = {};
+      const tradeCountByDate: { [date: string]: number } = {};
+      const tradeIdsByDate: { [date: string]: Set<string> } = {};
+      const rMultipleByDate: { [date: string]: number } = {};
+      const breakEvenBalancesByDate: { [date: string]: Set<number> } = {};
+      const hasUnresolvedBreakEvenBalanceByDate: { [date: string]: boolean } =
+        {};
 
       
-      if (!isPnlContributingTrade(trade)) {
-        return;
-      }
-
-      
-      if (trade.isMissedTrade === true) {
-        return;
-      }
-
-      
-      if (trade.isBacktestTrade === true) {
-        return;
-      }
-
-      
-      if (!trade.instrument) {
-        return;
-      }
-
-      const pnlEvents = realizedEvents.length
-        ? realizedEvents
-        : tradeDate
-          ? [
-              {
-                tradingDay: tradeDate,
-                pnl: getEffectivePnL(trade),
-              },
-            ]
-          : [];
-      const useStoredRMultiple = pnlEvents.length === 1;
-      const accountCount = getAccountCount(trade);
-      const breakEvenBalanceForDisplay = applyAccountCountMultiplier
-        ? (trade.breakEvenAccountCurrentBalanceTotal ??
-          trade.breakEvenAccountCurrentBalance)
-        : trade.breakEvenAccountCurrentBalance;
-
-      for (const event of pnlEvents) {
-        const eventDate = event.tradingDay;
-        if (
-          (filters?.dateRange?.[0] && eventDate < filters.dateRange[0]) ||
-          (filters?.dateRange?.[1] && eventDate > filters.dateRange[1])
-        ) {
-          continue;
-        }
-
-        const dateKey = formatLocalDateString(eventDate);
-
-        if (tradesByDate[dateKey] === undefined) {
-          tradesByDate[dateKey] = 0;
-          tradeCountByDate[dateKey] = 0;
-          tradeIdsByDate[dateKey] = new Set<string>();
-          breakEvenBalancesByDate[dateKey] = new Set<number>();
-          hasUnresolvedBreakEvenBalanceByDate[dateKey] = false;
-        }
-
-        const displayPnL = getDisplayPnL(
-          event.pnl,
-          accountCount,
-          applyAccountCountMultiplier
+      trades.forEach((trade) => {
+        const tradeDate = getTradeAnalyticsTradingDay(
+          trade,
+          analyticsDateBasis,
+          plugin
         );
-        tradesByDate[dateKey] += displayPnL;
-        const tradeKey = trade.tradeId ?? trade.path ?? trade.instrument;
-        if (tradeKey && !tradeIdsByDate[dateKey].has(tradeKey)) {
-          tradeIdsByDate[dateKey].add(tradeKey);
-          tradeCountByDate[dateKey]++;
-        }
-
-        const resolvedBreakEvenBalance =
-          typeof breakEvenBalanceForDisplay === 'number' &&
-          Number.isFinite(breakEvenBalanceForDisplay)
-            ? breakEvenBalanceForDisplay
-            : undefined;
-
-        if (resolvedBreakEvenBalance !== undefined) {
-          breakEvenBalancesByDate[dateKey].add(resolvedBreakEvenBalance);
-        }
-
-        const displayOutcome = classifyPnLWithBreakEvenSettings(
-          displayPnL,
-          breakEvenSettings,
-          resolvedBreakEvenBalance
+        const realizedEvents = getTradeRealizedPnlEvents(
+          trade,
+          analyticsDateBasis,
+          plugin
         );
-        if (displayOutcome === 'unknown') {
-          hasUnresolvedBreakEvenBalanceByDate[dateKey] = true;
+        if (!tradeDate && realizedEvents.length === 0) {
+          return;
         }
 
-        const effectiveRMultiple = calculateEffectiveRMultiple(
-          displayPnL,
-          useStoredRMultiple ? trade.rMultiple : undefined,
-          trade.riskAmount,
-          defaultRiskAmount
-        );
-
-        if (effectiveRMultiple !== undefined && !isNaN(effectiveRMultiple)) {
-          rMultipleByDate[dateKey] =
-            (rMultipleByDate[dateKey] ?? 0) + effectiveRMultiple;
+        
+        if (!isPnlContributingTrade(trade)) {
+          return;
         }
-      }
-    });
+
+        
+        if (trade.isMissedTrade === true) {
+          return;
+        }
+
+        
+        if (trade.isBacktestTrade === true) {
+          return;
+        }
+
+        
+        if (!trade.instrument) {
+          return;
+        }
+
+        const pnlEvents = realizedEvents.length
+          ? realizedEvents
+          : tradeDate
+            ? [
+                {
+                  tradingDay: tradeDate,
+                  pnl: getEffectivePnL(trade),
+                },
+              ]
+            : [];
+        const useStoredRMultiple = pnlEvents.length === 1;
+        const accountCount = getAccountCount(trade);
+        const breakEvenBalanceForDisplay = applyAccountCountMultiplier
+          ? (trade.breakEvenAccountCurrentBalanceTotal ??
+            trade.breakEvenAccountCurrentBalance)
+          : trade.breakEvenAccountCurrentBalance;
+
+        for (const event of pnlEvents) {
+          const eventDate = event.tradingDay;
+          if (
+            (filters?.dateRange?.[0] && eventDate < filters.dateRange[0]) ||
+            (filters?.dateRange?.[1] && eventDate > filters.dateRange[1])
+          ) {
+            continue;
+          }
+
+          const dateKey = formatLocalDateString(eventDate);
+
+          if (tradesByDate[dateKey] === undefined) {
+            tradesByDate[dateKey] = 0;
+            tradeCountByDate[dateKey] = 0;
+            tradeIdsByDate[dateKey] = new Set<string>();
+            breakEvenBalancesByDate[dateKey] = new Set<number>();
+            hasUnresolvedBreakEvenBalanceByDate[dateKey] = false;
+          }
+
+          const displayPnL = getDisplayPnL(
+            event.pnl,
+            accountCount,
+            applyAccountCountMultiplier
+          );
+          tradesByDate[dateKey] += displayPnL;
+          const tradeKey = trade.tradeId ?? trade.path ?? trade.instrument;
+          if (tradeKey && !tradeIdsByDate[dateKey].has(tradeKey)) {
+            tradeIdsByDate[dateKey].add(tradeKey);
+            tradeCountByDate[dateKey]++;
+          }
+
+          const resolvedBreakEvenBalance =
+            typeof breakEvenBalanceForDisplay === 'number' &&
+            Number.isFinite(breakEvenBalanceForDisplay)
+              ? breakEvenBalanceForDisplay
+              : undefined;
+
+          if (resolvedBreakEvenBalance !== undefined) {
+            breakEvenBalancesByDate[dateKey].add(resolvedBreakEvenBalance);
+          }
+
+          const displayOutcome = classifyPnLWithBreakEvenSettings(
+            displayPnL,
+            breakEvenSettings,
+            resolvedBreakEvenBalance
+          );
+          if (displayOutcome === 'unknown') {
+            hasUnresolvedBreakEvenBalanceByDate[dateKey] = true;
+          }
+
+          const effectiveRMultiple = calculateEffectiveRMultiple(
+            displayPnL,
+            useStoredRMultiple ? trade.rMultiple : undefined,
+            trade.riskAmount,
+            defaultRiskAmount
+          );
+
+          if (effectiveRMultiple !== undefined && !isNaN(effectiveRMultiple)) {
+            rMultipleByDate[dateKey] =
+              (rMultipleByDate[dateKey] ?? 0) + effectiveRMultiple;
+          }
+        }
+      });
+
+      return {
+        tradesByDate,
+        tradeCountByDate,
+        rMultipleByDate,
+        breakEvenBalancesByDate,
+        hasUnresolvedBreakEvenBalanceByDate,
+      };
+    }, [
+      analyticsDateBasis,
+      breakEvenSettings,
+      defaultRiskAmount,
+      filters?.dateRange,
+      plugin,
+      trades,
+    ]);
 
     
     
@@ -559,27 +605,52 @@ export const PerformanceCalendar = memo<PerformanceCalendarProps>(
       []
     );
     
-    const calendar = generateCalendarGrid(
-      visibleMonth,
-      visibleMonthEnd,
-      tradesByDate,
-      tradeCountByDate,
-      rMultipleByDate,
-      breakEvenBalancesByDate,
-      hasUnresolvedBreakEvenBalanceByDate,
-      weekStartDayIndex
+    
+    
+    const todayKey = formatLocalDateString(new Date());
+
+    const calendar = useMemo(
+      () =>
+        generateCalendarGrid(
+          visibleMonth,
+          visibleMonthEnd,
+          tradesByDate,
+          tradeCountByDate,
+          rMultipleByDate,
+          breakEvenBalancesByDate,
+          hasUnresolvedBreakEvenBalanceByDate,
+          weekStartDayIndex,
+          reviewedDayKeys,
+          todayKey
+        ),
+      [
+        breakEvenBalancesByDate,
+        hasUnresolvedBreakEvenBalanceByDate,
+        rMultipleByDate,
+        reviewedDayKeys,
+        tradeCountByDate,
+        todayKey,
+        tradesByDate,
+        visibleMonth,
+        visibleMonthEnd,
+        weekStartDayIndex,
+      ]
     );
 
     
-    const handleDayClick = (date: Date) => {
-      if (onDayClick) {
-        
-        onDayClick(date);
-      } else if (plugin) {
-        
-        void plugin.drcService?.openDRC(date);
-      }
-    };
+    
+    const handleDayClick = useCallback(
+      (date: Date) => {
+        if (onDayClick) {
+          
+          onDayClick(date);
+        } else if (plugin) {
+          
+          void plugin.drcService?.openDRC(date);
+        }
+      },
+      [onDayClick, plugin]
+    );
 
     
     const handleWeekClick = (date: Date) => {
@@ -812,6 +883,9 @@ export const PerformanceCalendar = memo<PerformanceCalendarProps>(
 
                     
                     {(() => {
+                      const weekReviewed = firstValidDate
+                        ? isWeekReviewed(firstValidDate)
+                        : false;
                       const interactiveWeekProps = firstValidDate
                         ? {
                             onClick: () => handleWeekClick(firstValidDate),
@@ -827,12 +901,12 @@ export const PerformanceCalendar = memo<PerformanceCalendarProps>(
                             },
                             role: 'button',
                             tabIndex: 0,
-                            'aria-label': t(
+                            'aria-label': `${t(
                               'calendar.aria.open-weekly-review',
                               {
                                 date: formatLocalDateString(firstValidDate),
                               }
-                            ),
+                            )}${weekReviewed ? ` (${t('calendar.reviewed')})` : ''}`,
                           }
                         : {};
 
@@ -850,6 +924,7 @@ export const PerformanceCalendar = memo<PerformanceCalendarProps>(
                               )}
                             </div>
                           )}
+                          {weekReviewed && <ReviewedIndicator />}
                           {validDays > 0 && (
                             <>
                               <div className="journalit-dashboard-calendar-week-total-label">
@@ -902,7 +977,9 @@ const generateCalendarGrid = (
   rMultipleByDate: { [date: string]: number },
   breakEvenBalancesByDate: { [date: string]: Set<number> },
   hasUnresolvedBreakEvenBalanceByDate: { [date: string]: boolean },
-  weekStartDayIndex: number
+  weekStartDayIndex: number,
+  reviewedDayKeys: ReadonlySet<string>,
+  todayKey: string
 ) => {
   const calendar = [];
 
@@ -959,8 +1036,9 @@ const generateCalendarGrid = (
           currentMonth,
           pnl: currentMonth ? (tradesByDate[dateStr] ?? null) : null,
           tradeCount: currentMonth ? (tradeCountByDate[dateStr] ?? 0) : 0,
-          isToday: isToday(dateStr),
+          isToday: dateStr === todayKey,
           rMultiple: currentMonth ? (rMultipleByDate[dateStr] ?? null) : null,
+          reviewed: currentMonth && reviewedDayKeys.has(dateStr),
           breakEvenAccountCurrentBalance: currentMonth
             ? breakEvenAccountCurrentBalance
             : undefined,
@@ -983,13 +1061,3 @@ const generateCalendarGrid = (
 
   return calendar;
 };
-
-
-function isToday(date: string | null): boolean {
-  if (!date) return false;
-
-  const today = new Date();
-  const todayString = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
-
-  return date === todayString;
-}

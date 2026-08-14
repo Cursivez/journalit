@@ -17,6 +17,7 @@ import { formatCost } from '../../../utils/formatting';
 import { t } from '../../../lang/helpers';
 import { normalizeTradeExecution } from '../../../services/trade/core/TradeExecutionNormalization';
 import { isUnrealizedSnapshotExecutionValid } from '../../../utils/unrealizedPnl';
+import { resolveFormExitExplicitness } from './exitExplicitness';
 
 
 import {
@@ -269,11 +270,11 @@ export const validateTradeForm = (
   ) {
     
     
+    
+    
     const completeExits = data.exits.filter(
       (exit) =>
-        exit.price !== undefined &&
-        exit.price !== null &&
-        exit.price !== 0 &&
+        resolveFormExitExplicitness(exit, data.useDirectPnLInput) &&
         exit.size !== undefined &&
         exit.size !== null &&
         exit.size !== 0

@@ -455,6 +455,7 @@ function enrichTradeWithCustomFields(
 interface PendingPopulation {
   promise: Promise<void>;
   timestamp: number;
+  generation: number;
 }
 
 
@@ -470,6 +471,9 @@ export class ReviewDataCache {
 
   
   private pendingPopulations: Map<string, PendingPopulation> = new Map();
+
+  
+  private populationGenerations: Map<string, number> = new Map();
 
   
   private pendingFilterOverrides: Map<string, UnifiedFilters> = new Map();
@@ -827,6 +831,10 @@ export class ReviewDataCache {
       } else if (payload.action === 'batch') {
         
         this.invalidateAll();
+      } else if (payload.action === 'relocated') {
+        
+        
+        this.invalidateAll();
       }
     };
 
@@ -1161,9 +1169,18 @@ export class ReviewDataCache {
       await pending.promise;
 
       const queuedOverride = this.pendingFilterOverrides.get(filePath);
+      const wasSuperseded =
+        pending.generation !== this.getPopulationGeneration(filePath);
       if (queuedOverride) {
         this.pendingFilterOverrides.delete(filePath);
+      }
 
+      if (wasSuperseded) {
+        await this.populate(filePath, queuedOverride ?? normalizedOverride);
+        return;
+      }
+
+      if (queuedOverride) {
         const cached = this.cache.get(filePath);
         if (!cached || !this.areFiltersEqual(cached.filters, queuedOverride)) {
           await this.populate(filePath, queuedOverride);
@@ -1174,15 +1191,33 @@ export class ReviewDataCache {
     }
 
     this.log('Starting population:', filePath);
-    const promise = this.doPopulate(filePath, normalizedOverride);
-    this.pendingPopulations.set(filePath, { promise, timestamp: Date.now() });
+    const generation = this.getPopulationGeneration(filePath);
+    const promise = this.doPopulate(filePath, normalizedOverride, generation);
+    this.pendingPopulations.set(filePath, {
+      promise,
+      timestamp: Date.now(),
+      generation,
+    });
 
     try {
       await promise;
       this.log('Population complete:', filePath);
     } finally {
-      this.pendingPopulations.delete(filePath);
+      if (this.pendingPopulations.get(filePath)?.promise === promise) {
+        this.pendingPopulations.delete(filePath);
+      }
     }
+  }
+
+  private getPopulationGeneration(filePath: string): number {
+    return this.populationGenerations.get(filePath) ?? 0;
+  }
+
+  private supersedePopulation(filePath: string): void {
+    this.populationGenerations.set(
+      filePath,
+      this.getPopulationGeneration(filePath) + 1
+    );
   }
 
   
@@ -1411,8 +1446,13 @@ export class ReviewDataCache {
   
   private async doPopulate(
     filePath: string,
-    filtersOverride?: UnifiedFilters
+    filtersOverride?: UnifiedFilters,
+    generation: number = this.getPopulationGeneration(filePath)
   ): Promise<void> {
+    if (generation !== this.getPopulationGeneration(filePath)) {
+      return;
+    }
+
     const file = this.app.vault.getAbstractFileByPath(filePath);
     if (!(file instanceof TFile)) {
       return;
@@ -1424,7 +1464,7 @@ export class ReviewDataCache {
 
     if (!frontmatter) {
       
-      await this.retryPopulate(filePath, 5, 150, filtersOverride);
+      await this.retryPopulate(filePath, 5, 150, filtersOverride, generation);
       return;
     }
 
@@ -2237,6 +2277,10 @@ export class ReviewDataCache {
       filePath
     );
 
+    if (generation !== this.getPopulationGeneration(filePath)) {
+      return;
+    }
+
     this.cache.set(filePath, entry);
 
     
@@ -2425,17 +2469,22 @@ export class ReviewDataCache {
     filePath: string,
     retries: number,
     delay: number,
-    filtersOverride?: UnifiedFilters
+    filtersOverride?: UnifiedFilters,
+    generation: number = this.getPopulationGeneration(filePath)
   ): Promise<void> {
     for (let i = 0; i < retries; i++) {
       await new Promise((resolve) => window.setTimeout(resolve, delay));
+
+      if (generation !== this.getPopulationGeneration(filePath)) {
+        return;
+      }
 
       const file = this.app.vault.getAbstractFileByPath(filePath);
       if (!(file instanceof TFile)) return;
 
       const cache = this.app.metadataCache.getFileCache(file);
       if (cache?.frontmatter) {
-        await this.doPopulate(filePath, filtersOverride);
+        await this.doPopulate(filePath, filtersOverride, generation);
         return;
       }
     }
@@ -2454,6 +2503,7 @@ export class ReviewDataCache {
 
   
   public invalidate(filePath: string): void {
+    this.supersedePopulation(filePath);
     this.cache.delete(filePath);
     this.pendingFilterOverrides.delete(filePath);
     this.notifySubscribers(filePath, null);
@@ -2468,6 +2518,9 @@ export class ReviewDataCache {
         ...this.pendingPopulations.keys(),
       ])
     );
+    for (const filePath of filePaths) {
+      this.supersedePopulation(filePath);
+    }
     this.cache.clear();
     this.pendingFilterOverrides.clear();
     this.invalidateSessionMistakesIndex();
@@ -2806,6 +2859,7 @@ export class ReviewDataCache {
 
     
     this.pendingPopulations.clear();
+    this.populationGenerations.clear();
     this.pendingFilterOverrides.clear();
     this.markdownTradeReviewRefreshByPath.clear();
 

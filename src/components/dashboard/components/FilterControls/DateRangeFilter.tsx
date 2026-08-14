@@ -3,14 +3,16 @@
 import React, {
   useState,
   useEffect,
+  useLayoutEffect,
   useRef,
   useMemo,
   useCallback,
-  useReducer,
 } from 'react';
+import { createPortal } from 'react-dom';
 import { t } from '../../../../lang/helpers';
 import { useEventBus } from '../../../../hooks';
 import { FastDateTimeInput } from '../../../../components/core/FastDateTimeInput';
+import { cssVars } from '../../../../styles/inlineStylePolicy';
 import {
   createDateWithoutTime,
   getQuarter,
@@ -44,13 +46,19 @@ interface DatePresetButtonsProps {
   displayedPreset: PresetType | null;
   onPresetClick: (preset: PresetType) => void;
   customDateAnchorRef: React.RefObject<HTMLDivElement | null>;
-  children: React.ReactNode;
 }
+
+interface DropdownPosition {
+  left: number;
+  top: number;
+}
+
+const getOwnerDocument = (anchor: HTMLElement | null): Document =>
+  anchor?.ownerDocument ?? window.activeDocument;
 
 interface CustomDateDropdownProps {
   dropdownRef: React.RefObject<HTMLDivElement | null>;
-  shouldPositionLeft: boolean;
-  shouldPositionBelow: boolean;
+  dropdownPosition: DropdownPosition | null;
   dateRange: [Date | null, Date | null];
   onStartDateChange: (date: Date | string | undefined) => void;
   onEndDateChange: (date: Date | string | undefined) => void;
@@ -72,7 +80,6 @@ const DatePresetButtons: React.FC<DatePresetButtonsProps> = ({
   displayedPreset,
   onPresetClick,
   customDateAnchorRef,
-  children,
 }) => {
   const getButtonClickHandler = useCallback(
     (btnId: PresetType) => () => onPresetClick(btnId),
@@ -103,7 +110,6 @@ const DatePresetButtons: React.FC<DatePresetButtonsProps> = ({
             className="journalit-dashboard-custom-date-anchor"
           >
             {button}
-            {children}
           </div>
         );
       })}
@@ -113,21 +119,29 @@ const DatePresetButtons: React.FC<DatePresetButtonsProps> = ({
 
 const CustomDateDropdown: React.FC<CustomDateDropdownProps> = ({
   dropdownRef,
-  shouldPositionLeft,
-  shouldPositionBelow,
+  dropdownPosition,
   dateRange,
   onStartDateChange,
   onEndDateChange,
 }) => (
   <div
     ref={dropdownRef}
-    className={`journalit-dashboard-date-range-inputs journalit-dashboard-custom-date-dropdown date-dropdown-visible ${shouldPositionLeft ? 'position-left' : ''} ${shouldPositionBelow ? 'position-below' : ''}`}
+    className={`journalit-dashboard-custom-date-dropdown date-dropdown-visible ${dropdownPosition ? '' : 'journalit-dashboard-custom-date-dropdown--measuring'}`}
+    style={cssVars({
+      '--journalit-dashboard-date-dropdown-left': dropdownPosition
+        ? `${dropdownPosition.left}px`
+        : '0px',
+      '--journalit-dashboard-date-dropdown-top': dropdownPosition
+        ? `${dropdownPosition.top}px`
+        : '0px',
+    })}
   >
     <div className="journalit-dashboard-date-range-start">
       <label>{t('dashboard.filter.date.from')}</label>
       <FastDateTimeInput
         value={dateRange[0] || undefined}
         onChange={onStartDateChange}
+        commitValidSegmentChangesImmediately
         className="journalit-date-picker-input"
       />
     </div>
@@ -137,6 +151,7 @@ const CustomDateDropdown: React.FC<CustomDateDropdownProps> = ({
       <FastDateTimeInput
         value={dateRange[1] || undefined}
         onChange={onEndDateChange}
+        commitValidSegmentChangesImmediately
         className="journalit-date-picker-input"
         minDate={dateRange[0] || undefined}
       />
@@ -328,6 +343,98 @@ const doesDateRangeMatchPresetValue = (
   );
 };
 
+const DATE_DROPDOWN_FALLBACK_WIDTH = 300;
+const DATE_DROPDOWN_FALLBACK_HEIGHT = 160;
+const DATE_DROPDOWN_VIEWPORT_MARGIN = 20;
+const DATE_DROPDOWN_GAP = 8;
+
+interface ViewportRect {
+  left: number;
+  top: number;
+  right: number;
+  bottom: number;
+}
+
+const clamp = (value: number, min: number, max: number): number => {
+  if (max < min) return min;
+  return Math.min(Math.max(value, min), max);
+};
+
+const getViewportRect = (win: Window): ViewportRect => {
+  const visualViewport = win.visualViewport;
+  const left = visualViewport?.offsetLeft ?? 0;
+  const top = visualViewport?.offsetTop ?? 0;
+  const width = visualViewport?.width ?? win.innerWidth;
+  const height = visualViewport?.height ?? win.innerHeight;
+
+  return {
+    left,
+    top,
+    right: left + width,
+    bottom: top + height,
+  };
+};
+
+const calculateDropdownPosition = (
+  anchorRect: DOMRect,
+  dropdownRect: DOMRect | null,
+  win: Window
+): DropdownPosition => {
+  const dropdownWidth = dropdownRect?.width || DATE_DROPDOWN_FALLBACK_WIDTH;
+  const dropdownHeight = dropdownRect?.height || DATE_DROPDOWN_FALLBACK_HEIGHT;
+  const viewport = getViewportRect(win);
+  const margin = DATE_DROPDOWN_VIEWPORT_MARGIN;
+
+  const wouldOverflowRight =
+    anchorRect.left + dropdownWidth > viewport.right - margin;
+  const wouldOverflowLeft =
+    anchorRect.right - dropdownWidth < viewport.left + margin;
+  const shouldPositionLeft = wouldOverflowRight && !wouldOverflowLeft;
+
+  const preferredLeft = shouldPositionLeft
+    ? anchorRect.right - dropdownWidth
+    : anchorRect.left;
+  const anchorIsHorizontallyVisible =
+    anchorRect.right > viewport.left && anchorRect.left < viewport.right;
+  const left = anchorIsHorizontallyVisible
+    ? clamp(
+        preferredLeft,
+        viewport.left + margin,
+        viewport.right - margin - dropdownWidth
+      )
+    : preferredLeft;
+
+  const preferredTopBelow = anchorRect.bottom + DATE_DROPDOWN_GAP;
+  const preferredTopAbove = anchorRect.top - dropdownHeight - DATE_DROPDOWN_GAP;
+  const fitsBelow =
+    preferredTopBelow + dropdownHeight <= viewport.bottom - margin;
+  const fitsAbove = preferredTopAbove >= viewport.top + margin;
+  const preferredTop =
+    fitsBelow || !fitsAbove ? preferredTopBelow : preferredTopAbove;
+  const anchorIsVerticallyVisible =
+    anchorRect.bottom > viewport.top && anchorRect.top < viewport.bottom;
+  const top = anchorIsVerticallyVisible
+    ? clamp(
+        preferredTop,
+        viewport.top + margin,
+        viewport.bottom - margin - dropdownHeight
+      )
+    : preferredTop;
+
+  return {
+    left: Math.round(left),
+    top: Math.round(top),
+  };
+};
+
+const areDropdownPositionsEqual = (
+  first: DropdownPosition | null,
+  second: DropdownPosition
+): boolean => {
+  if (!first) return false;
+  return first.left === second.left && first.top === second.top;
+};
+
 
 export const DateRangeFilter: React.FC<DateRangeFilterProps> = ({
   dateRange,
@@ -340,17 +447,8 @@ export const DateRangeFilter: React.FC<DateRangeFilterProps> = ({
   const dateRangeContainerRef = useRef<HTMLDivElement>(null);
   const customDateAnchorRef = useRef<HTMLDivElement>(null);
   const customDateDropdownRef = useRef<HTMLDivElement>(null);
-  const [dropdownPosition, dispatchDropdownPosition] = useReducer(
-    (
-      _state: { shouldPositionLeft: boolean; shouldPositionBelow: boolean },
-      action: { shouldPositionLeft: boolean; shouldPositionBelow: boolean }
-    ) => action,
-    {
-      shouldPositionLeft: false,
-      shouldPositionBelow: false,
-    }
-  );
-  const { shouldPositionLeft, shouldPositionBelow } = dropdownPosition;
+  const [dropdownPosition, setDropdownPosition] =
+    useState<DropdownPosition | null>(null);
 
   const weekStartDay = getWeekStartDaySetting();
   const [, setSettingsVersion] = useState(0);
@@ -402,6 +500,7 @@ export const DateRangeFilter: React.FC<DateRangeFilterProps> = ({
 
   
   useEffect(() => {
+    const ownerDocument = getOwnerDocument(customDateAnchorRef.current);
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target;
       if (!(target instanceof Node)) {
@@ -409,7 +508,10 @@ export const DateRangeFilter: React.FC<DateRangeFilterProps> = ({
       }
 
       
-      if (dateRangeContainerRef.current?.contains(target)) {
+      if (
+        dateRangeContainerRef.current?.contains(target) ||
+        customDateDropdownRef.current?.contains(target)
+      ) {
         return;
       }
 
@@ -427,64 +529,84 @@ export const DateRangeFilter: React.FC<DateRangeFilterProps> = ({
 
     
     if (isCustomDropdownOpen) {
-      window.activeDocument.addEventListener('mousedown', handleClickOutside);
+      ownerDocument.addEventListener('mousedown', handleClickOutside);
     }
 
     
     return () => {
-      window.activeDocument.removeEventListener(
-        'mousedown',
-        handleClickOutside
-      );
+      ownerDocument.removeEventListener('mousedown', handleClickOutside);
     };
   }, [isCustomDropdownOpen]);
 
+  const updateDropdownPosition = useCallback(() => {
+    const anchor = customDateAnchorRef.current;
+    if (!anchor) return;
+
+    const ownerDocument = getOwnerDocument(anchor);
+    const win = ownerDocument.defaultView;
+    if (!win) return;
+
+    const nextPosition = calculateDropdownPosition(
+      anchor.getBoundingClientRect(),
+      customDateDropdownRef.current?.getBoundingClientRect() ?? null,
+      win
+    );
+
+    setDropdownPosition((previous) =>
+      areDropdownPositionsEqual(previous, nextPosition)
+        ? previous
+        : nextPosition
+    );
+  }, []);
+
   
-  useEffect(() => {
-    if (isCustomDropdownOpen && customDateAnchorRef.current) {
-      const containerRect = customDateAnchorRef.current.getBoundingClientRect();
-      const dropdownWidth =
-        customDateDropdownRef.current?.getBoundingClientRect().width ?? 260;
-      const dropdownHeight = 160; 
-      const viewportWidth = window.innerWidth;
-      const viewportHeight = window.innerHeight;
-      const padding = 20; 
-
-      
-      const wouldOverflowRight =
-        containerRect.right + dropdownWidth > viewportWidth - padding;
-
-      
-      const wouldOverflowLeft = containerRect.left - dropdownWidth < padding;
-
-      
-      
-      
-      
-
-      if (wouldOverflowRight && wouldOverflowLeft) {
-        
-        const fitsBelow =
-          containerRect.bottom + dropdownHeight <= viewportHeight - padding;
-        dispatchDropdownPosition({
-          shouldPositionBelow: fitsBelow,
-          shouldPositionLeft: false,
-        });
-      } else if (wouldOverflowRight && !wouldOverflowLeft) {
-        
-        dispatchDropdownPosition({
-          shouldPositionBelow: false,
-          shouldPositionLeft: true,
-        });
-      } else {
-        
-        dispatchDropdownPosition({
-          shouldPositionBelow: false,
-          shouldPositionLeft: false,
-        });
-      }
+  
+  
+  useLayoutEffect(() => {
+    if (!isCustomDropdownOpen) {
+      setDropdownPosition(null);
+      return undefined;
     }
-  }, [isCustomDropdownOpen]);
+
+    updateDropdownPosition();
+
+    const anchor = customDateAnchorRef.current;
+    if (!anchor) return undefined;
+
+    const ownerDocument = getOwnerDocument(anchor);
+    const win = ownerDocument.defaultView;
+    if (!win) return undefined;
+
+    const handleViewportChange = () => updateDropdownPosition();
+    win.addEventListener('resize', handleViewportChange);
+    ownerDocument.addEventListener('scroll', handleViewportChange, {
+      capture: true,
+      passive: true,
+    });
+    win.visualViewport?.addEventListener('resize', handleViewportChange);
+    win.visualViewport?.addEventListener('scroll', handleViewportChange, {
+      passive: true,
+    });
+
+    const ResizeObserverConstructor = win.ResizeObserver;
+    const resizeObserver = ResizeObserverConstructor
+      ? new ResizeObserverConstructor(handleViewportChange)
+      : null;
+    resizeObserver?.observe(anchor);
+    if (customDateDropdownRef.current) {
+      resizeObserver?.observe(customDateDropdownRef.current);
+    }
+
+    return () => {
+      resizeObserver?.disconnect();
+      win.removeEventListener('resize', handleViewportChange);
+      ownerDocument.removeEventListener('scroll', handleViewportChange, {
+        capture: true,
+      });
+      win.visualViewport?.removeEventListener('resize', handleViewportChange);
+      win.visualViewport?.removeEventListener('scroll', handleViewportChange);
+    };
+  }, [isCustomDropdownOpen, updateDropdownPosition]);
 
   
   const handleStartDateChange = useCallback(
@@ -565,27 +687,30 @@ export const DateRangeFilter: React.FC<DateRangeFilterProps> = ({
   const presetButtons = useMemo(createPresetButtons, []);
 
   return (
-    <div
-      className="journalit-dashboard-date-range-filter"
-      ref={dateRangeContainerRef}
-    >
-      <DatePresetButtons
-        presetButtons={presetButtons}
-        displayedPreset={displayedPreset}
-        onPresetClick={handlePresetClick}
-        customDateAnchorRef={customDateAnchorRef}
+    <>
+      <div
+        className="journalit-dashboard-date-range-filter"
+        ref={dateRangeContainerRef}
       >
-        {isCustomDropdownOpen && (
-          <CustomDateDropdown
-            dropdownRef={customDateDropdownRef}
-            shouldPositionLeft={shouldPositionLeft}
-            shouldPositionBelow={shouldPositionBelow}
-            dateRange={dateRange}
-            onStartDateChange={handleStartDateChange}
-            onEndDateChange={handleEndDateChange}
-          />
-        )}
-      </DatePresetButtons>
-    </div>
+        <DatePresetButtons
+          presetButtons={presetButtons}
+          displayedPreset={displayedPreset}
+          onPresetClick={handlePresetClick}
+          customDateAnchorRef={customDateAnchorRef}
+        />
+      </div>
+      {isCustomDropdownOpen
+        ? createPortal(
+            <CustomDateDropdown
+              dropdownRef={customDateDropdownRef}
+              dropdownPosition={dropdownPosition}
+              dateRange={dateRange}
+              onStartDateChange={handleStartDateChange}
+              onEndDateChange={handleEndDateChange}
+            />,
+            getOwnerDocument(customDateAnchorRef.current).body
+          )
+        : null}
+    </>
   );
 };

@@ -280,6 +280,10 @@ export const FLATPICKR_STYLES = `
     position: relative !important;
   }
 
+  .flatpickr-calendar.journalit-flatpickr-calendar .flatpickr-time.hasSeconds .numInputWrapper {
+    width: 34px !important;
+  }
+
   .flatpickr-time input {
     background: var(--background-secondary) !important;
     color: var(--text-normal) !important;
@@ -477,6 +481,21 @@ export const FLATPICKR_STYLES = `
     align-items: center;
     justify-content: center;
     margin: 0 10px;
+  }
+
+  .journalit-flatpickr-time-container.hasSeconds {
+    padding-right: 8px;
+    padding-left: 8px;
+  }
+
+  .journalit-flatpickr-time-container.hasSeconds .journalit-flatpickr-time-content {
+    margin-right: 4px;
+    margin-left: 4px;
+  }
+
+  .journalit-flatpickr-time-container.hasSeconds .flatpickr-button {
+    padding-right: 7px !important;
+    padding-left: 7px !important;
   }
 
   .journalit-flatpickr-button-container {

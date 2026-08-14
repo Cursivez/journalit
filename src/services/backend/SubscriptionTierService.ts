@@ -66,7 +66,7 @@ interface SubscriptionTierRefreshResult {
 }
 
 interface ActiveRefresh {
-  authToken: string | null;
+  authSessionVersion: number;
   promise: Promise<SubscriptionTierRefreshResult>;
 }
 
@@ -78,23 +78,30 @@ export class SubscriptionTierService {
   
   async refreshTier(reason: string): Promise<SubscriptionTierRefreshResult> {
     const authToken = BackendSecretStorage.getAuthToken(this.plugin);
+    ApiClient.setAuthToken(authToken);
+    const authSessionVersion = ApiClient.getAuthSessionVersion();
     const activeRefresh = activeRefreshes.get(this.plugin);
-    if (activeRefresh?.authToken === authToken) {
+    if (activeRefresh?.authSessionVersion === authSessionVersion) {
       return activeRefresh.promise;
     }
 
-    const refresh = this.performRefresh(reason, authToken).finally(() => {
+    const refresh = this.performRefresh(
+      reason,
+      authToken,
+      authSessionVersion
+    ).finally(() => {
       if (activeRefreshes.get(this.plugin)?.promise === refresh) {
         activeRefreshes.delete(this.plugin);
       }
     });
-    activeRefreshes.set(this.plugin, { authToken, promise: refresh });
+    activeRefreshes.set(this.plugin, { authSessionVersion, promise: refresh });
     return refresh;
   }
 
   private async performRefresh(
     reason: string,
-    authToken: string | null
+    authToken: string | null,
+    authSessionVersion: number
   ): Promise<SubscriptionTierRefreshResult> {
     const backend = this.plugin.settings.backendIntegration;
     if (!backend) {
@@ -104,8 +111,6 @@ export class SubscriptionTierService {
     if (!authToken) {
       return { status: 'signed_out' };
     }
-
-    ApiClient.setAuthToken(authToken);
 
     
     ApiClient.invalidateCache('/api/v1/me/entitlements');
@@ -132,7 +137,7 @@ export class SubscriptionTierService {
       if (!entitlements) {
         return { status: 'unverified' };
       }
-      if (BackendSecretStorage.getAuthToken(this.plugin) !== authToken) {
+      if (ApiClient.getAuthSessionVersion() !== authSessionVersion) {
         return { status: 'unverified' };
       }
 

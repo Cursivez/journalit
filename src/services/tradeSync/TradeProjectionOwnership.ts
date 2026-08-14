@@ -11,10 +11,11 @@ export function createTradeProjectionOwnershipGuard(
   plugin: JournalitPlugin,
   ownerUserId = getTradeProjectionOwnerId(plugin)
 ): () => boolean {
-  const ownerToken = ApiClient.getAuthToken();
+  const hasOwnerToken = ApiClient.getAuthToken() !== null;
+  const ownerAuthSessionVersion = ApiClient.getAuthSessionVersion();
   return () =>
     !ownerUserId ||
-    !ownerToken ||
+    !hasOwnerToken ||
     getTradeProjectionOwnerId(plugin) !== ownerUserId ||
-    ApiClient.getAuthToken() !== ownerToken;
+    ApiClient.getAuthSessionVersion() !== ownerAuthSessionVersion;
 }

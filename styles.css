@@ -2860,9 +2860,16 @@ button.journalit-button,
 
 .journalit-chart-widget__select {padding: 4px 8px;font-size: 11px;font-weight: 500;border: 1px solid var(--background-modifier-border);border-radius: 4px;background-color: var(--background-primary);color: var(--text-normal);cursor: pointer;outline: none}
 
-.journalit-hourly-performance-controls {gap: 4px;flex-wrap: wrap;justify-content: flex-end;max-width: 70%}
+.journalit-hourly-performance-controls,
+.journalit-performance-breakdown-controls {gap: 4px;flex-wrap: wrap;justify-content: flex-end}
+
+.journalit-hourly-performance-controls {max-width: 70%}
 
 .journalit-hourly-performance-controls .journalit-chart-widget__select {max-width: 92px;padding: 3px 6px}
+
+.journalit-performance-breakdown-controls {max-width: 72%}
+
+.journalit-performance-breakdown-controls .journalit-chart-widget__select {max-width: 108px;padding: 3px 6px}
 
 .journalit-chart-widget__body {flex: 1;min-height: 0}
 
@@ -2921,6 +2928,8 @@ button.journalit-button,
 .journalit-chart-container .recharts-cartesian-grid-vertical line {stroke: var(--background-modifier-border);stroke-opacity: 0.4;stroke-dasharray: 3}
 
 .journalit-chart-container .recharts-reference-line line {stroke: var(--text-normal);stroke-opacity: 0.4;stroke-dasharray: 3;stroke-width: 1.5}
+
+.journalit-chart-container .recharts-reference-line.journalit-performance-breakdown-divider-line line {stroke: var(--background-modifier-border);stroke-opacity: 0.65;stroke-dasharray: 1 4;stroke-linecap: round;stroke-width: 1}
 
 
 .journalit-chart-container .recharts-reference-line.profit-target-line line {stroke: var(--chart-positive, var(--text-success, #00b300));stroke-opacity: 1;stroke-dasharray: 5 5;stroke-width: 2}
@@ -3977,7 +3986,7 @@ button.journalit-button,
   .journalit-dashboard-primary-filters {display: flex;align-items: center;flex: 1 1 auto;min-width: 0}
 
   
-  .journalit-dashboard-date-range-filter {display: flex;flex-direction: column;gap: 8px;min-width: 0;position: relative}
+  .journalit-dashboard-date-range-filter {display: flex;flex-direction: column;gap: 8px;min-width: 0}
   
   .journalit-dashboard-date-range-presets {display: flex;flex-wrap: nowrap;gap: 6px;align-items: center;min-width: 0;overflow-x: auto;scrollbar-width: none}
 
@@ -3989,44 +3998,31 @@ button.journalit-button,
   
   .journalit-dashboard-date-range-presets button.active {background-color: var(--interactive-accent);color: var(--text-on-accent, white);border-color: var(--interactive-accent)}
 
-  .journalit-dashboard-custom-date-anchor {position: relative;display: inline-flex}
+  .journalit-dashboard-custom-date-anchor {display: inline-flex}
+
+  .journalit-dashboard-custom-date-dropdown {display: grid;grid-template-columns: max-content minmax(0, max-content);gap: 8px;align-items: center;padding: 10px 12px;box-sizing: border-box;background-color: var(--background-primary);border-radius: 8px;border: 1px solid var(--background-modifier-border);position: fixed;top: var(--journalit-dashboard-date-dropdown-top);left: var(--journalit-dashboard-date-dropdown-left);z-index: 1000;width: max-content;max-width: calc(100vw - 32px);box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15), 0 2px 8px rgba(0, 0, 0, 0.1)}
+
   
-  .journalit-dashboard-date-range-inputs {display: flex;flex-direction: column;gap: 16px;padding: 20px 24px;background-color: var(--background-primary);border-radius: 8px;border: 1px solid var(--background-modifier-border);position: absolute;top: 100%;left: 0;right: auto;margin-top: 8px;z-index: 1000;width: 300px;box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15), 0 2px 8px rgba(0, 0, 0, 0.1)}
-  
-  
-  .journalit-dashboard-date-range-inputs.date-dropdown-visible {animation: dateDropdownFadeIn 0.2s ease-out}
-  
+  .journalit-dashboard-custom-date-dropdown.date-dropdown-visible {animation: dateDropdownFadeIn 0.2s ease-out}
+
   @keyframes dateDropdownFadeIn {
     from {opacity: 0;transform: translateY(-4px)}
     to {opacity: 1;transform: translateY(0)}
   }
-  
-  
-  .journalit-dashboard-custom-date-dropdown {position: absolute;top: 100%;left: 0;right: auto;margin-top: 8px;z-index: 1000;box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15), 0 2px 8px rgba(0, 0, 0, 0.1)}
 
-  .journalit-dashboard-view .journalit-dashboard-date-range-inputs.journalit-dashboard-custom-date-dropdown {width: 300px;max-width: min(300px, calc(100vw - 32px))}
-
-  
-  .journalit-dashboard-custom-date-dropdown.position-left {left: auto;right: 0}
-
-  
-  .journalit-dashboard-custom-date-dropdown.position-below {top: 100%;left: 0;right: auto;margin-top: 8px}
+  .journalit-dashboard-custom-date-dropdown--measuring {visibility: hidden;pointer-events: none}
 
   .journalit-dashboard-date-range-start,
-  .journalit-dashboard-date-range-end {display: flex;flex-direction: column;gap: 6px}
+  .journalit-dashboard-date-range-end {display: grid;grid-column: 1 / -1;grid-template-columns: subgrid;gap: 8px;align-items: center}
   
   .journalit-dashboard-date-range-start label,
-  .journalit-dashboard-date-range-end label {display: block;font-size: 11px;font-weight: 600;text-transform: uppercase;letter-spacing: 0.5px;color: var(--text-muted)}
+  .journalit-dashboard-date-range-end label {display: block;font-size: 11px;font-weight: 600;text-transform: uppercase;letter-spacing: 0.5px;color: var(--text-muted);white-space: nowrap;margin: 0}
   
   
-  .journalit-date-picker-input {width: max-content}
+  .journalit-date-picker-input {width: auto;min-width: 0}
   
   
-  .journalit-date-picker-input > div {width: max-content}
-
-  .journalit-date-picker-input .journalit-fast-datetime__container {width: max-content;flex-wrap: nowrap}
-
-  .journalit-date-picker-input .journalit-fast-datetime__container[data-date-only="true"] {padding-right: 8px}
+  .journalit-date-picker-input .journalit-fast-datetime__container {width: 100%;flex-wrap: nowrap;overflow-x: auto;padding: 2px 0;border: none;border-radius: 0;background: transparent}
   
   .journalit-date-picker-input input {font-size: 13px;border-radius: 4px;border: 1px solid var(--background-modifier-border);background-color: var(--background-secondary);color: var(--text-normal);transition: border-color 0.15s ease, box-shadow 0.15s ease}
 
@@ -4035,7 +4031,7 @@ button.journalit-button,
   .journalit-date-picker-input input:focus {border-color: var(--interactive-accent);box-shadow: 0 0 0 2px rgba(var(--interactive-accent-rgb), 0.2);outline: none}
   
   .journalit-date-picker-input input:hover {border-color: var(--interactive-hover)}
-  
+
   
   .journalit-dashboard-account-filter,
   .journalit-dashboard-ticker-filter,
@@ -4556,6 +4552,20 @@ button.journalit-button,
   .journalit-dashboard-calendar.is-compact .journalit-dashboard-calendar-week-trade-count {display: none}
 
   .journalit-dashboard-calendar-day.today {animation: none;border: 1px solid var(--interactive-accent)}
+
+  
+  .journalit-dashboard-calendar-day .journalit-dashboard-calendar-reviewed-badge,
+  .journalit-dashboard-calendar-weekly-pnl .journalit-dashboard-calendar-reviewed-badge {position: absolute;top: 3px;right: 3px;display: flex;align-items: center;justify-content: center;color: var(--color-green);opacity: 0.85;pointer-events: none}
+
+  
+  .journalit-dashboard-calendar-day .journalit-dashboard-calendar-reviewed-dot,
+  .journalit-dashboard-calendar-weekly-pnl .journalit-dashboard-calendar-reviewed-dot {display: none}
+
+  .journalit-dashboard-calendar.is-compact .journalit-dashboard-calendar-day .journalit-dashboard-calendar-reviewed-badge,
+  .journalit-dashboard-calendar.is-compact .journalit-dashboard-calendar-weekly-pnl .journalit-dashboard-calendar-reviewed-badge {display: none}
+
+  .journalit-dashboard-calendar.is-compact .journalit-dashboard-calendar-day .journalit-dashboard-calendar-reviewed-dot,
+  .journalit-dashboard-calendar.is-compact .journalit-dashboard-calendar-weekly-pnl .journalit-dashboard-calendar-reviewed-dot {display: block;position: absolute;top: calc(75% + 1.5px);left: 50%;transform: translate(-50%, -50%);width: 4px;height: 4px;border-radius: 50%;background-color: var(--color-green);pointer-events: none}
   
   
   .journalit-dashboard-trades-table {width: 100%;border-collapse: collapse}
@@ -4633,9 +4643,6 @@ button.journalit-button,
     
     .journalit-dashboard-filter-section {width: 100%}
     
-    
-    .journalit-dashboard-date-range-inputs,
-    .journalit-dashboard-custom-date-dropdown {width: 300px}
   }
   
   
@@ -4659,10 +4666,6 @@ button.journalit-button,
     .journalit-dashboard-metric-card {min-width: 100%;min-height: 94px;padding: 12px}
 
     .journalit-dashboard-metric-value {font-size: 20px}
-
-    
-    .journalit-dashboard-date-range-inputs,
-    .journalit-dashboard-custom-date-dropdown {width: 300px}
 
     
     .journalit-dashboard-primary-filters {max-width: 500px}
@@ -4735,17 +4738,6 @@ button.journalit-button,
     
     
     .journalit-dashboard-date-range-section {margin-right: 0;width: 100%;min-width: auto}
-    
-    .journalit-dashboard-custom-date-anchor {display: flex;flex-direction: column}
-
-    
-    .journalit-dashboard-date-range-inputs,
-    .journalit-dashboard-custom-date-dropdown {position: static;width: 300px;margin-top: 8px;flex-direction: column;box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15), 0 2px 8px rgba(0, 0, 0, 0.1);border: 1px solid var(--background-modifier-border);left: auto;right: auto}
-
-    .journalit-dashboard-view .journalit-dashboard-date-range-inputs.journalit-dashboard-custom-date-dropdown {width: 300px;max-width: none}
-
-    .journalit-dashboard-custom-date-dropdown.position-left,
-    .journalit-dashboard-custom-date-dropdown.position-below {position: static;left: auto;right: auto}
     
     
     .journalit-dashboard-metrics {flex-wrap: wrap;justify-content: center}
@@ -5557,7 +5549,7 @@ button.journalit-button,
 
     .trade-form-view-container .entry-fields,
     .trade-form-view-container .exit-fields,
-    .trade-form-view-container .dividend-fields {display: flex;flex: 1;gap: 12px;flex-wrap: wrap}
+    .trade-form-view-container .dividend-fields {display: flex;flex: 1;min-width: 0;gap: 12px;flex-wrap: wrap}
 
     .trade-form-view-container .time-field {flex: 2;min-width: 180px}
 
@@ -5565,17 +5557,58 @@ button.journalit-button,
     .trade-form-view-container .size-field,
     .trade-form-view-container .amount-field {flex: 1;min-width: 120px}
 
-    .trade-form-view-container .journalit-direct-pnl-time-input .journalit-fast-datetime__container {width: fit-content;max-width: 100%;padding-right: 12px;gap: 6px}
+    .trade-form-view-container .journalit-direct-pnl-time-input .journalit-fast-datetime__container:not([data-has-seconds="true"]) {width: fit-content;max-width: 100%;padding-right: 12px;gap: 6px}
 
-    .trade-form-view-container .journalit-direct-pnl-time-input .journalit-fast-datetime__calendar-button {margin-left: 12px}
+    .trade-form-view-container .journalit-direct-pnl-time-input .journalit-fast-datetime__container:not([data-has-seconds="true"]) .journalit-fast-datetime__date-group,
+    .trade-form-view-container .journalit-direct-pnl-time-input .journalit-fast-datetime__container:not([data-has-seconds="true"]) .journalit-fast-datetime__time-group {gap: 6px}
+
+    .trade-form-view-container .journalit-direct-pnl-time-input .journalit-fast-datetime__container:not([data-has-seconds="true"]) .journalit-fast-datetime__calendar-button {margin-left: 12px}
 
     .trade-form-view-container .journalit-direct-pnl-section {display: flex;flex-direction: column;gap: 12px;width: fit-content;max-width: 100%;margin-bottom: 12px}
 
     .trade-form-view-container .journalit-direct-pnl-value-field,
     .trade-form-view-container .journalit-direct-pnl-value-field .inputContainer {width: 100%}
 
-    
     .trade-form-view-container .time-field-wrapper {display: flex;flex-direction: column;gap: 2px;min-width: 200px}
+
+    .trade-form-view-container .time-field-wrapper[data-has-seconds="true"] {flex: 1 1 100%;width: 100%;min-width: 0;max-width: 100%;container-type: inline-size}
+
+    .trade-form-view-container .journalit-fast-datetime__container[data-has-seconds="true"] {justify-content: space-between;gap: 4px;max-width: 520px;padding-right: 6px;padding-left: 6px}
+
+    .trade-form-view-container .journalit-fast-datetime__container[data-has-seconds="true"] .journalit-fast-datetime__date-group,
+    .trade-form-view-container .journalit-fast-datetime__container[data-has-seconds="true"] .journalit-fast-datetime__time-group {display: flex;align-items: center;gap: 4px}
+
+    .trade-form-view-container .journalit-fast-datetime__container[data-has-seconds="true"] .journalit-fast-datetime__segment {width: 40px;min-width: 40px;max-width: 40px;padding-right: 3px;padding-left: 3px;font-size: 14px}
+
+    .trade-form-view-container .journalit-fast-datetime__container[data-has-seconds="true"] .journalit-fast-datetime__separator {padding-right: 1px;padding-left: 1px;font-size: 12px}
+
+    .trade-form-view-container .journalit-fast-datetime__container[data-has-seconds="true"] .journalit-fast-datetime__separator--spacer {width: 0;padding: 0}
+
+    .trade-form-view-container .journalit-fast-datetime__container[data-has-seconds="true"] .journalit-fast-datetime__ampm-button {width: auto;min-width: 36px;max-width: none;margin-left: 4px;padding-right: 6px;padding-left: 6px;font-size: 12px}
+
+    .trade-form-view-container .journalit-fast-datetime__container[data-has-seconds="true"] .journalit-fast-datetime__calendar-button {width: auto;min-width: 0;max-width: none;margin-left: 0;padding: 4px}
+
+    .trade-form-view-container .journalit-direct-pnl-time-input--seconds {width: 520px;max-width: 100%;container-type: inline-size}
+
+    @container (max-width: 400px) {
+      .trade-form-view-container .journalit-fast-datetime__container[data-has-seconds="true"] {display: grid;grid-template-areas:
+          "date calendar"
+          "time time";grid-template-columns: minmax(0, 1fr) auto;gap: 6px 8px;padding: 6px}
+
+      .trade-form-view-container .journalit-fast-datetime__container[data-has-seconds="true"] .journalit-fast-datetime__date-group {grid-area: date;gap: 3px}
+
+      .trade-form-view-container .journalit-fast-datetime__container[data-has-seconds="true"] .journalit-fast-datetime__time-group {grid-area: time;gap: 3px}
+
+      .trade-form-view-container .journalit-fast-datetime__container[data-has-seconds="true"] .journalit-fast-datetime__segment {width: 36px;min-width: 36px;max-width: 36px;padding-right: 2px;padding-left: 2px;font-size: 14px}
+
+      .trade-form-view-container .journalit-fast-datetime__container[data-has-seconds="true"] .journalit-fast-datetime__separator {padding-right: 0;padding-left: 0;font-size: 12px}
+
+      .trade-form-view-container .journalit-fast-datetime__container[data-has-seconds="true"] .journalit-fast-datetime__separator--spacer {width: 0;padding: 0}
+
+      .trade-form-view-container .journalit-fast-datetime__container[data-has-seconds="true"] .journalit-fast-datetime__ampm-button {width: auto;min-width: 36px;max-width: none;margin-left: 3px;padding-right: 4px;padding-left: 4px;font-size: 12px}
+
+      .trade-form-view-container .journalit-fast-datetime__container[data-has-seconds="true"] .journalit-fast-datetime__calendar-button {grid-area: calendar;justify-self: end;width: 26px;min-width: 26px;max-width: 26px;margin-left: 0}
+    }
 
     .trade-form-view-container .time-field-header {display: flex;align-items: center;justify-content: space-between;gap: 8px}
 
@@ -5841,6 +5874,8 @@ button.journalit-button,
 
   .flatpickr-calendar.journalit-flatpickr-calendar .flatpickr-time .numInputWrapper{flex: 0 0 auto;width: 40px;height: 30px;float: none;display: flex;align-items: center;position: relative}
 
+  .flatpickr-calendar.journalit-flatpickr-calendar .flatpickr-time.hasSeconds .numInputWrapper{width: 34px}
+
   .flatpickr-calendar.journalit-flatpickr-calendar .flatpickr-time input{background: var(--background-secondary);color: var(--text-normal);border: 1px solid var(--background-modifier-border);border-radius: 4px;font-size: 15px;font-weight: 500;height: 30px;line-height: 30px;padding: 0;text-align: center}
 
   .flatpickr-calendar.journalit-flatpickr-calendar .flatpickr-time input.flatpickr-hour, .flatpickr-calendar.journalit-flatpickr-calendar .flatpickr-time input.flatpickr-minute, .flatpickr-calendar.journalit-flatpickr-calendar .flatpickr-time input.flatpickr-second{font-weight: 500}
@@ -5898,6 +5933,12 @@ button.journalit-button,
   .journalit-flatpickr-time-container{display: flex;align-items: center;justify-content: space-between;padding: 10px 12px;border-top: 1px solid var(--background-modifier-border);background: var(--background-primary)}
 
   .journalit-flatpickr-time-content{display: flex;align-items: center;justify-content: center;margin: 0 10px}
+
+  .journalit-flatpickr-time-container.hasSeconds{padding-right: 8px;padding-left: 8px}
+
+  .journalit-flatpickr-time-container.hasSeconds .journalit-flatpickr-time-content{margin-right: 4px;margin-left: 4px}
+
+  .journalit-flatpickr-time-container.hasSeconds .flatpickr-button{padding-right: 7px;padding-left: 7px}
 
   .journalit-flatpickr-button-container{display: flex;justify-content: space-between;padding: 10px 12px;border-top: 1px solid var(--background-modifier-border);background: var(--background-primary)}
 
@@ -6724,9 +6765,17 @@ button.journalit-button,
 
   .journalit-home-weekly__bar--negative {background-color: var(--color-red)}
 
-  .journalit-home-weekly__bar--neutral {background-color: var(--background-modifier-border)}
-
+  .journalit-home-weekly__bar--neutral,
+  .journalit-home-weekly__bar--empty,
   .journalit-home-weekly__bar--future {background-color: var(--background-modifier-border)}
+
+  .journalit-home-weekly__bar--breakeven {background:
+      repeating-linear-gradient(
+        135deg,
+        var(--text-faint) 0 2px,
+        transparent 2px 6px
+      ),
+      var(--background-modifier-border);border: 1px solid var(--background-modifier-border-hover)}
 
   .journalit-home-weekly__day-label {font-size: 10px;transition: color 0.15s ease}
 
@@ -7106,6 +7155,55 @@ button.journalit-button,
   .journalit-home-account-progress__state-message {font-size: 13px;color: var(--text-muted)}
 
   .journalit-home-account-progress__state-icon {color: var(--text-muted);opacity: 0.5}
+
+  .journalit-home-key-events {--journalit-home-key-events-red: var(--color-red, #e53935);--journalit-home-key-events-orange: var(--color-orange, #fb8c00);--journalit-home-key-events-yellow: var(--color-yellow, #fdd835);--journalit-home-key-events-gray: var(--text-muted, #888888);height: 100%;display: flex;flex-direction: column;padding: 0;box-sizing: border-box;cursor: pointer;border-radius: 5px;outline: none}
+
+  .journalit-home-key-events:focus-visible {box-shadow: inset 0 0 0 2px var(--interactive-accent)}
+
+  .journalit-home-key-events__header {display: flex;align-items: center;justify-content: space-between;gap: 8px;flex: 0 0 auto;margin-bottom: 8px}
+
+  .journalit-home-key-events__header-title {display: flex;align-items: center;gap: 6px;min-width: 0}
+
+  .journalit-home-key-events__count {min-width: 20px;height: 18px;display: inline-flex;align-items: center;justify-content: center;padding: 0 6px;border-radius: 3px;background-color: var(--background-modifier-hover);color: var(--text-muted);font-size: 11px;font-weight: 600;line-height: 1;box-sizing: border-box}
+
+  .journalit-home-key-events__chevron {flex: 0 0 auto;color: var(--text-faint)}
+
+  .journalit-home-key-events__list,
+  .journalit-home-key-events__loading {flex: 1;min-height: 0;overflow-x: hidden;overflow-y: auto;padding-right: 10px;scrollbar-gutter: stable}
+
+  .journalit-home-key-events__loading {display: flex;flex-direction: column}
+
+  .journalit-home-key-events__group + .journalit-home-key-events__group {margin-top: 8px}
+
+  .journalit-home-key-events__group--past .journalit-home-key-events__group-label,
+  .journalit-home-key-events__group--past .journalit-home-key-events__item-title,
+  .journalit-home-key-events__group--past .journalit-home-key-events__item-time {color: var(--text-faint);opacity: 0.65}
+
+  .journalit-home-key-events__group-label {padding: 2px 0 3px;color: var(--text-faint);font-size: 10px;font-weight: 500;letter-spacing: 0.5px;text-transform: uppercase}
+
+  .journalit-home-key-events__item {min-height: 32px;display: grid;grid-template-columns: 3px minmax(0, 1fr) minmax(0, auto);align-items: center;gap: 10px}
+
+  .journalit-home-key-events__rail {width: 3px;height: 22px;border-radius: 3px}
+
+  .journalit-home-key-events__rail--red {background: var(--journalit-home-key-events-red)}
+
+  .journalit-home-key-events__rail--orange {background: var(--journalit-home-key-events-orange)}
+
+  .journalit-home-key-events__rail--yellow {background: var(--journalit-home-key-events-yellow)}
+
+  .journalit-home-key-events__rail--gray {background: var(--journalit-home-key-events-gray)}
+
+  .journalit-home-key-events__item-title {min-width: 0;overflow: hidden;color: var(--text-normal);font-size: 13px;font-weight: 600;line-height: 1.25;text-overflow: ellipsis;white-space: nowrap}
+
+  .journalit-home-key-events__item-time {max-width: 120px;overflow: hidden;color: var(--text-muted);font-size: 11px;justify-self: end;text-overflow: ellipsis;white-space: nowrap}
+
+  .journalit-home-key-events__empty {flex: 1;min-height: 0;display: flex;flex-direction: column;align-items: center;justify-content: center;text-align: center}
+
+  .journalit-home-key-events__empty-title {color: var(--text-muted);font-size: 12px}
+
+  .journalit-home-key-events__loading-row {min-height: 32px;display: flex;align-items: center;gap: 10px}
+
+  .journalit-home-key-events__loading-copy {flex: 1;min-width: 0;display: flex;flex-direction: column;gap: 4px}
 
 .journalit-image-gallery-page {flex: 1 1 auto;min-height: 0;height: 100%;overflow-y: auto;overflow-x: hidden;padding: 12px 16px 16px;-webkit-overflow-scrolling: touch;scroll-behavior: auto}
 
@@ -9697,7 +9795,8 @@ button.journalit-button,
   .journalit-trades .pnl-negative {color: var(--text-error, #f44336);font-weight: 500}
 
   
-  .journalit-setup-performance {padding: 0;background: transparent;border: none;overflow: visible}
+  .journalit-setup-performance,
+  .journalit-tag-performance {padding: 0;background: transparent;border: none;overflow: visible}
 
   
   .journalit-best-worst {padding: 0;background: transparent;border: none}
@@ -14287,7 +14386,7 @@ button.journalit-toolbar-button.journalit-setups-performance-widget__setup-trigg
 .journalit-setup-card > :not(.journalit-setup-card__activation) {position: relative;z-index: 2;pointer-events: none}
 
 .journalit-setup-card
-  .journalit-setup-card__identity
+  .journalit-setup-card__header-meta
   .journalit-setup-card__tag-tooltip-trigger {pointer-events: auto}
 
 .journalit-setup-card__activation:focus-visible {outline: 2px solid var(--interactive-accent);outline-offset: -2px}
@@ -14360,11 +14459,9 @@ button.journalit-toolbar-button.journalit-setups-performance-widget__setup-trigg
 
 .journalit-setup-card--compare-selected .journalit-setup-card__compare-indicator {color: var(--text-accent)}
 
-.journalit-setup-card__identity {display: flex;flex: 1 1 auto;min-width: 0;align-items: center;gap: 6px}
+.journalit-setup-card__header-meta .journalit-setup-card__tag-tooltip-trigger {position: relative;z-index: 3;flex: 0 0 auto}
 
-.journalit-setup-card__identity .journalit-setup-card__tag-tooltip-trigger {position: relative;z-index: 3;flex: 0 0 auto}
-
-.journalit-setup-card__title {min-width: 0;margin: 0;overflow: hidden;color: var(--text-normal);font-size: 17px;font-weight: 700;line-height: 1.2;text-overflow: ellipsis;white-space: nowrap}
+.journalit-setup-card__title {flex: 1 1 auto;min-width: 0;margin: 0;overflow: hidden;color: var(--text-normal);font-size: 17px;font-weight: 700;line-height: 1.2;text-overflow: ellipsis;white-space: nowrap}
 
 .journalit-setup-card__status {display: inline-flex;align-items: center;gap: 7px;flex-shrink: 0;padding: 4px 10px;border: 1px solid var(--background-modifier-border);border-radius: 7px;font-size: 11px;font-weight: 750;letter-spacing: 0.045em;line-height: 1;text-transform: uppercase}
 
@@ -15942,6 +16039,9 @@ button.journalit-toolbar-button.journalit-setups-detail-performance__chart-mode-
 
   .journalit-fast-datetime__container[data-has-error="true"] {border-color: var(--text-error)}
 
+  .journalit-fast-datetime__date-group,
+  .journalit-fast-datetime__time-group {display: flex;align-items: center;gap: 4px;flex: 0 0 auto}
+
   .journalit-fast-datetime__segment {width: 42px;min-width: 42px;max-width: 42px;padding: 6px 4px;text-align: center;border: 1px solid var(--background-modifier-border);border-radius: 4px;background: var(--background-primary);color: var(--text-normal);font-size: 14px;box-sizing: border-box;flex-shrink: 0;flex-grow: 0}
 
   .journalit-fast-datetime__separator {color: var(--text-muted);padding: 0 1px;user-select: none;flex: 0 0 auto}
@@ -16084,11 +16184,15 @@ button.journalit-toolbar-button.journalit-setups-detail-performance__chart-mode-
 
   .journalit-drilldown-filter__back {width: 28px;height: 28px;padding: 5px}
 
-   .journalit-drilldown-filter .journalit-drilldown-filter__row,
+   .journalit-drilldown-filter .journalit-drilldown-filter__reset,
+  .journalit-drilldown-filter .journalit-drilldown-filter__row,
   .journalit-drilldown-filter .journalit-drilldown-filter__option {width: 100%;height: auto;min-height: 38px;display: flex;align-items: center;justify-content: flex-start;gap: 9px;padding: 8px 10px;border: 0;border-radius: 6px;appearance: none;-webkit-appearance: none;background: transparent;background-color: transparent;color: var(--text-normal);text-align: left;cursor: pointer;box-shadow: none;font-size: 13px;font-weight: 400}
 
+  .journalit-drilldown-filter .journalit-drilldown-filter__reset:hover,
   .journalit-drilldown-filter .journalit-drilldown-filter__row:hover,
   .journalit-drilldown-filter .journalit-drilldown-filter__option:hover {background-color: var(--background-modifier-hover)}
+
+  .journalit-drilldown-filter .journalit-drilldown-filter__reset {min-height: 36px;color: var(--text-muted);font-weight: 500}
 
   .journalit-drilldown-filter__row-icon {display: inline-flex;align-items: center;flex: 0 0 auto;color: var(--text-muted)}
 
@@ -16428,39 +16532,64 @@ button.journalit-toolbar-button.journalit-setups-detail-performance__chart-mode-
 
 .journalit-template-builder-container .widget-picker-icon {flex-shrink: 0;margin-left: 8px;color: var(--text-muted);transition: transform 0.15s ease}
 
-.journalit-template-builder-container .widget-picker-icon--open {transform: rotate(180deg)}
-
 .journalit-template-builder-container .widget-picker-dropdown,
-.widget-picker-dropdown {position: absolute;top: calc(100% + 4px);left: 0;right: 0;max-height: 400px;overflow-y: auto;background: var(--background-primary);border: 1px solid var(--background-modifier-border);border-radius: 6px;box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);z-index: 1000}
+.journalit-widget-picker-dropdown {position: absolute;top: calc(100% + 4px);left: 0;right: 0;max-height: 400px;overflow: hidden;display: flex;flex-direction: column;background: var(--background-primary);border: 1px solid var(--background-modifier-border);border-radius: 6px;box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);z-index: 1000}
 
-.widget-picker-dropdown--floating {position: fixed;top: var(--widget-picker-floating-top, 0px);left: var(--widget-picker-floating-left, 0px);right: auto;width: var(--widget-picker-floating-width, 320px);max-height: var(--widget-picker-floating-max-height, 400px);z-index: 100080}
+.journalit-widget-picker-dropdown.widget-picker-dropdown--floating {position: fixed;top: var(--widget-picker-floating-top, 0px);bottom: auto;left: var(--widget-picker-floating-left, 0px);right: auto;width: var(--widget-picker-floating-width, 320px);max-height: var(--widget-picker-floating-max-height, 400px);z-index: 100080}
+
+.journalit-widget-picker-dropdown.widget-picker-dropdown--floating.widget-picker-dropdown--above {top: auto;bottom: var(--widget-picker-floating-bottom, 0px)}
+
+.journalit-widget-picker-sr-only {position: absolute;width: 1px;height: 1px;padding: 0;margin: -1px;overflow: hidden;white-space: nowrap;border: 0}
+
+.journalit-template-builder-container .widget-picker-search--inline {display: flex;align-items: center;flex: 0 0 auto;gap: 8px;height: 30px;padding: 0 8px;width: 100%;box-sizing: border-box;border: 1px solid var(--background-modifier-border);border-radius: 4px;background: var(--background-primary)}
+
+.journalit-template-builder-container .widget-picker-search-icon {flex: 0 0 auto;color: var(--text-muted)}
+
+.journalit-template-builder-container .widget-picker-search--inline input.widget-picker-search-input {flex: 1;min-width: 0;height: 28px;margin: 0;padding: 0;font-size: 13px;color: var(--text-normal);background: transparent;border: 0;border-radius: 0;box-shadow: none}
+
+.journalit-template-builder-container .widget-picker-search--inline input.widget-picker-search-input:focus {border: 0;box-shadow: none}
+
+.journalit-template-builder-container .widget-picker-search--inline:focus-within {outline: 2px solid var(--background-modifier-border-focus);outline-offset: 1px}
+
+.journalit-template-builder-container .widget-picker-search-clear {display: flex;align-items: center;justify-content: center;flex: 0 0 auto;width: 26px;height: 26px;padding: 0;color: var(--text-muted);background: transparent;border: none;border-radius: 4px;box-shadow: none;cursor: pointer}
+
+.journalit-template-builder-container .widget-picker-search-clear:hover {color: var(--text-normal);background: var(--background-modifier-hover)}
+
+.journalit-widget-picker-dropdown .widget-picker-results {min-height: 0;overflow-y: auto}
+
+.journalit-widget-picker-dropdown .widget-picker-empty {display: block;width: 100%;min-height: 70px;padding: 18px 16px;color: var(--text-muted);font-size: 12px;text-align: center;white-space: normal;background: transparent;border: 0;box-shadow: none;cursor: pointer}
+
+.journalit-widget-picker-dropdown .widget-picker-empty:hover,
+.journalit-widget-picker-dropdown .widget-picker-empty:focus-visible {color: var(--text-normal);background: var(--background-modifier-hover)}
+
+.journalit-widget-picker-dropdown .widget-picker-empty-action {display: block;margin-top: 6px;color: var(--text-accent)}
 
 .journalit-template-builder-container .widget-picker-category,
-.widget-picker-dropdown--floating .widget-picker-category {display: flex;align-items: center;justify-content: center;gap: 10px;padding: 12px 14px;font-size: 10px;font-weight: 600;letter-spacing: 0.5px;text-transform: uppercase;color: var(--text-muted);background: var(--background-primary);position: sticky;top: 0;z-index: 1;border-bottom: none}
+.journalit-widget-picker-dropdown .widget-picker-category {display: flex;align-items: center;justify-content: center;gap: 10px;padding: 12px 14px;font-size: 10px;font-weight: 600;letter-spacing: 0.5px;text-transform: uppercase;color: var(--text-muted);background: var(--background-primary);position: sticky;top: 0;z-index: 1;border-bottom: none}
 
 .journalit-template-builder-container .widget-picker-category::before,
 .journalit-template-builder-container .widget-picker-category::after,
-.widget-picker-dropdown--floating .widget-picker-category::before,
-.widget-picker-dropdown--floating .widget-picker-category::after {content: '';flex: 1;height: 1px;background: var(--background-modifier-border)}
+.journalit-widget-picker-dropdown .widget-picker-category::before,
+.journalit-widget-picker-dropdown .widget-picker-category::after {content: '';flex: 1;height: 1px;background: var(--background-modifier-border)}
 
 .journalit-template-builder-container .widget-picker-item,
-.widget-picker-dropdown--floating .widget-picker-item {display: flex;flex-direction: row;align-items: center;justify-content: space-between;width: 100%;min-height: 50px;padding: 14px 14px;margin: 4px 0;text-align: left;background: transparent;border: none;cursor: pointer;box-sizing: border-box;gap: 0;transition: background 0.1s ease}
+.journalit-widget-picker-dropdown .widget-picker-item {display: flex;flex-direction: row;align-items: center;justify-content: space-between;width: 100%;min-height: 50px;padding: 14px 14px;margin: 4px 0;text-align: left;background: transparent;border: none;border-radius: 4px;box-shadow: none;cursor: pointer;box-sizing: border-box;gap: 0;transition: background 0.1s ease}
 
 .journalit-template-builder-container .widget-picker-item:first-child,
-.widget-picker-dropdown--floating .widget-picker-item:first-child {margin-top: 4px}
+.journalit-widget-picker-dropdown .widget-picker-item:first-child {margin-top: 4px}
 
 .journalit-template-builder-container .widget-picker-item:hover,
-.widget-picker-dropdown--floating .widget-picker-item:hover,
-.widget-picker-dropdown--floating .widget-picker-item--focused {background: var(--background-secondary)}
+.journalit-widget-picker-dropdown .widget-picker-item:hover,
+.journalit-widget-picker-dropdown .widget-picker-item--focused {background: var(--background-secondary)}
 
 .journalit-template-builder-container .widget-picker-item-content,
-.widget-picker-dropdown--floating .widget-picker-item-content {display: flex;flex-direction: column;align-items: flex-start;flex: 1;min-width: 0}
+.journalit-widget-picker-dropdown .widget-picker-item-content {display: flex;flex-direction: column;align-items: flex-start;flex: 1;min-width: 0}
 
 .journalit-template-builder-container .widget-picker-item-name,
-.widget-picker-dropdown--floating .widget-picker-item-name {display: block;width: 100%;font-size: 13px;font-weight: 500;color: var(--text-normal)}
+.journalit-widget-picker-dropdown .widget-picker-item-name {display: block;width: 100%;font-size: 13px;font-weight: 500;color: var(--text-normal)}
 
 .journalit-template-builder-container .widget-picker-item-description,
-.widget-picker-dropdown--floating .widget-picker-item-description {display: block;width: 100%;margin-top: 2px;font-size: 11px;color: var(--text-muted);line-height: 1.4}
+.journalit-widget-picker-dropdown .widget-picker-item-description {display: block;width: 100%;margin-top: 2px;font-size: 11px;color: var(--text-muted);line-height: 1.4}
 
 
 .journalit-template-builder-container .template-toggle {width: 36px;height: 20px;border-radius: 10px;border: none;background: var(--background-modifier-border);position: relative;cursor: pointer;transition: background 0.2s}
@@ -17729,7 +17858,11 @@ button.journalit-toolbar-button.journalit-setups-detail-performance__chart-mode-
 
   .journalit-trade-view .trade-instrument-title-row {display: inline-flex;align-items: center;gap: 0.45rem}
 
+  .journalit-trade-view .trade-instrument-identity {display: inline-flex;align-items: flex-start;gap: 0.3rem}
+
   .journalit-trade-view .trade-instrument-symbol {font-size: clamp(2.25rem, 4.6vw, 3.35rem);line-height: 0.95;font-weight: 750;letter-spacing: -0.055em;margin-left: -0.055em}
+
+  .journalit-trade-view .trade-instrument-sequence {color: var(--text-accent);font-size: clamp(0.78rem, 1.4vw, 0.95rem);font-weight: 700;letter-spacing: 0.025em;line-height: 1;margin-top: 0.08rem}
 
   .journalit-trade-view .trade-instrument-direction {color: var(--text-muted);display: inline-flex;align-items: center;gap: 0.4rem;font-size: 0.78rem;font-weight: 600;letter-spacing: 0.045em;line-height: 1;margin: 0;text-transform: uppercase}
 
@@ -18356,7 +18489,8 @@ button.journalit-toolbar-button.journalit-setups-detail-performance__chart-mode-
 
 .batch-action-toolbar {display: flex;align-items: center;gap: 6px;padding: 12px;background: var(--background-secondary);border-top: 1px solid var(--background-modifier-border);border-bottom: 1px solid var(--background-modifier-border);flex-wrap: wrap;justify-content: flex-start}
 
-  .batch-action-toolbar-actions button {display: inline-flex;align-items: center;justify-content: center;gap: 6px;padding: 6px 10px;border-radius: 6px;font-size: 13px;cursor: pointer;border: 1px solid var(--background-modifier-border);background: var(--interactive-accent);color: var(--text-on-accent);font-weight: 500;transition: background 0.2s ease, opacity 0.2s ease}
+  .batch-action-toolbar-actions button,
+  .batch-action-toolbar-actions button.journalit-batch-action-button {display: inline-flex;align-items: center;justify-content: center;gap: 6px;padding: 6px 10px;border-radius: 6px;font-size: 13px;cursor: pointer;border: 1px solid var(--background-modifier-border);background: var(--interactive-accent);color: var(--text-on-accent);font-weight: 500;transition: background 0.2s ease, opacity 0.2s ease}
 
   .batch-action-toolbar-actions button:hover:not(:disabled) {opacity: 0.85;background: var(--interactive-accent)}
 
@@ -19405,12 +19539,6 @@ button.journalit-toolbar-button.journalit-setups-detail-performance__chart-mode-
 .journalit-tooltip.thesis-tooltip .tooltip-content {white-space: pre-wrap;word-break: break-word;line-height: 1.5;color: var(--text-normal)}
 
 
-@media (max-width: 1440px) {
-  .journalit-dashboard-custom-date-dropdown {right: -250px;width: 300px}
-
-  .journalit-dashboard-custom-date-dropdown.position-left {left: -250px;width: 300px}
-}
-
 @media (max-width: 1200px) {
   
 
@@ -19422,12 +19550,6 @@ button.journalit-toolbar-button.journalit-setups-detail-performance__chart-mode-
   .trade-log-controls {gap: 12px}
 
   .trade-log-view-selector select {min-width: 75px;font-size: 12px}
-}
-
-@media (max-width: 996px) {
-  .journalit-dashboard-custom-date-dropdown {right: -100px}
-
-  .journalit-dashboard-custom-date-dropdown.position-left {left: -100px}
 }
 
 @media (max-width: 900px) {
@@ -19482,10 +19604,6 @@ button.journalit-toolbar-button.journalit-setups-detail-performance__chart-mode-
 
   .trade-log-image-gallery-control-trigger {min-height: 28px;padding: 0 7px 0 8px;font-size: 12px}
 
-  .journalit-dashboard-custom-date-dropdown {position: static;width: 100%;margin-top: 8px;flex-direction: column;box-shadow: none;left: auto;right: auto}
-
-  .journalit-dashboard-custom-date-dropdown.position-left,
-  .journalit-dashboard-custom-date-dropdown.position-below {position: static;left: auto;right: auto}
 }
 
 @media (max-width: 600px) {
@@ -19507,7 +19625,6 @@ button.journalit-toolbar-button.journalit-setups-detail-performance__chart-mode-
 
   .journalit-image-gallery-size-toggle {flex: 0 0 auto}
 
-  .journalit-dashboard-custom-date-dropdown.position-below {max-width: 100%}
 }
 
 @container journalit-trade-log (max-width: 480px) {
@@ -19524,22 +19641,6 @@ button.journalit-toolbar-button.journalit-setups-detail-performance__chart-mode-
   .trade-log-image-gallery-control-trigger {min-height: 28px;padding: 0 7px 0 8px;font-size: 12px}
 
   .journalit-image-gallery-size-toggle {flex: 0 0 auto}
-}
-
-
-.journalit-dashboard-custom-date-dropdown.position-below {top: 100%;left: 0;right: auto;margin-top: 8px;width: 100%;max-width: 360px}
-
-.journalit-trade-log-view-container .journalit-dashboard-date-range-inputs.journalit-dashboard-custom-date-dropdown {width: 300px;max-width: min(300px, calc(100vw - 32px))}
-
-.journalit-trade-log-view-container .journalit-dashboard-date-range-inputs.journalit-dashboard-custom-date-dropdown.position-left {left: auto;right: 0}
-
-@media (max-width: 768px) {
-  .journalit-dashboard-custom-date-anchor {display: flex;flex-direction: column}
-
-  .journalit-trade-log-view-container .journalit-dashboard-date-range-inputs.journalit-dashboard-custom-date-dropdown {width: 100%;max-width: none}
-
-  .journalit-trade-log-view-container .journalit-dashboard-date-range-inputs.journalit-dashboard-custom-date-dropdown.position-left,
-  .journalit-trade-log-view-container .journalit-dashboard-date-range-inputs.journalit-dashboard-custom-date-dropdown.position-below {position: static;left: auto;right: auto}
 }
 
 .journalit-view-guide-overlay {position: fixed;inset: 0;z-index: 100050;pointer-events: none}

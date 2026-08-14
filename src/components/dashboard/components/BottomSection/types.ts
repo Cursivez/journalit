@@ -1,5 +1,7 @@
 
 
+import { t } from '../../../../lang/helpers';
+
 export interface WidgetDefinition {
   id: string;
   name: string;
@@ -81,6 +83,30 @@ export const AVAILABLE_WIDGETS: WidgetDefinition[] = [
     category: 'performance',
     minSize: { w: 4, h: 3 },
     defaultSize: { w: 6, h: 4 },
+  },
+  {
+    id: 'tickerPerformance',
+    name: t('widget.tickerPerformance.name'),
+    description: t('widget.tickerPerformance.description'),
+    category: 'performance',
+    minSize: { w: 6, h: 8 },
+    defaultSize: { w: 6, h: 10 },
+  },
+  {
+    id: 'setupPerformance',
+    name: t('dashboard.widgets.setup-performance.title'),
+    description: t('dashboard.widgets.setup-performance.description'),
+    category: 'performance',
+    minSize: { w: 6, h: 8 },
+    defaultSize: { w: 6, h: 10 },
+  },
+  {
+    id: 'tagPerformance',
+    name: t('dashboard.widgets.tag-performance.title'),
+    description: t('dashboard.widgets.tag-performance.description'),
+    category: 'performance',
+    minSize: { w: 6, h: 8 },
+    defaultSize: { w: 6, h: 10 },
   },
   {
     id: 'drawdownChart',

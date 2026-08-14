@@ -13,6 +13,7 @@ import {
   Tag,
   FlaskConical,
   AlertTriangle,
+  Copy,
   Trash2,
   CheckSquare,
   X,
@@ -39,6 +40,7 @@ interface BatchActionToolbarProps {
   onAddSetups: (setupIds: string[]) => Promise<void>;
   onAddTags: (tags: string[]) => Promise<void>;
   onAddMistakes: (mistakes: string[]) => Promise<void>;
+  onDuplicate: () => Promise<void>;
   onDelete: () => Promise<void>;
   onSelectAll: () => void;
   onClearSelection: () => void;
@@ -481,6 +483,7 @@ export const BatchActionToolbar = memo<BatchActionToolbarProps>(
     onAddSetups,
     onAddTags,
     onAddMistakes,
+    onDuplicate,
     onDelete,
     onSelectAll,
     onClearSelection,
@@ -663,6 +666,23 @@ export const BatchActionToolbar = memo<BatchActionToolbarProps>(
     }, [app, tagOptions, onAddTags, handleSaveTag, plugin]);
 
     
+    const handleDuplicate = useCallback(async () => {
+      try {
+        setIsSubmitting(true);
+        setLoadingAction('duplicate');
+        await onDuplicate();
+      } catch (error) {
+        console.error('Error duplicating trades:', error);
+        new Notice(
+          t('notice.error.duplicate-trades', { error: getErrorMessage(error) })
+        );
+      } finally {
+        setIsSubmitting(false);
+        setLoadingAction(null);
+      }
+    }, [onDuplicate]);
+
+    
     const handleDelete = useCallback(async () => {
       const confirmed = await showConfirmationModal(app, {
         title: t('tradelog.batch.delete-confirm.title'),
@@ -783,6 +803,24 @@ export const BatchActionToolbar = memo<BatchActionToolbarProps>(
             ) : (
               <span className="btn-label">
                 {t('tradelog.batch.add-mistakes.label')}
+              </span>
+            )}
+          </button>
+
+          <button
+            className="batch-action-button journalit-batch-action-button"
+            onClick={() => void handleDuplicate()}
+            disabled={isSubmitting || selectedCount === 0}
+            aria-label={t('tradelog.batch.duplicate.aria')}
+          >
+            <Copy size={18} />
+            {loadingAction === 'duplicate' ? (
+              <span className="btn-label">
+                {t('tradelog.batch.duplicating')}
+              </span>
+            ) : (
+              <span className="btn-label">
+                {t('tradelog.batch.duplicate.label')}
               </span>
             )}
           </button>

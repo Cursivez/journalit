@@ -1,5 +1,12 @@
-import { requestUrl } from 'obsidian';
-import { ApiClient } from '../backend/ApiClient';
+import {
+  requestUrl,
+  type RequestUrlParam,
+  type RequestUrlResponse,
+} from 'obsidian';
+import {
+  ApiClient,
+  AuthenticationRefreshUnavailableError,
+} from '../backend/ApiClient';
 import { clearPersistedBackendAuthSession } from '../backend/BackendAuthFailure';
 import { ApiError } from '../../types/errors';
 import { getPluginInstance } from '../../utils/pluginContext';
@@ -1011,11 +1018,45 @@ function handleTradeImportHttpError(
   }
 }
 
-async function postMultipart(
+async function sendWithAuthRetry<T extends { status: number }>(
+  send: (accessToken: string | null) => Promise<T>
+): Promise<{
+  result: T;
+  requestAuthToken: string | null;
+}> {
+  let requestAuthToken = ApiClient.getAuthToken();
+  let result = await send(requestAuthToken);
+  if (result.status === 401 && requestAuthToken) {
+    const refreshOutcome =
+      await ApiClient.refreshAuthentication(requestAuthToken);
+    if (refreshOutcome === 'refreshed') {
+      requestAuthToken = ApiClient.getAuthToken();
+      result = await send(requestAuthToken);
+    } else if (refreshOutcome === 'unavailable') {
+      throw new AuthenticationRefreshUnavailableError();
+    }
+  }
+  return { result, requestAuthToken };
+}
+
+async function requestWithAuthRetry(
+  buildRequest: (accessToken: string | null) => RequestUrlParam
+): Promise<{
+  response: RequestUrlResponse;
+  requestAuthToken: string | null;
+}> {
+  const { result, requestAuthToken } = await sendWithAuthRetry((accessToken) =>
+    requestUrl(buildRequest(accessToken))
+  );
+  return { response: result, requestAuthToken };
+}
+
+function sendMultipart(
   path: string,
   file: File,
-  request: unknown
-): Promise<unknown> {
+  request: unknown,
+  requestAuthToken: string | null
+): Promise<{ status: number; responseBody: unknown }> {
   const form = new FormData();
   form.append('file', file);
   form.append(
@@ -1023,8 +1064,7 @@ async function postMultipart(
     new Blob([JSON.stringify(request)], { type: 'application/json' })
   );
 
-  return new Promise<unknown>((resolve, reject) => {
-    const requestAuthToken = ApiClient.getAuthToken();
+  return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
     xhr.open('POST', ApiClient.buildUrl(path));
     for (const [key, value] of Object.entries(authHeaders(requestAuthToken)))
@@ -1038,23 +1078,7 @@ async function postMultipart(
       } catch {
         responseBody = xhr.responseText || null;
       }
-      if (xhr.status < 200 || xhr.status >= 300) {
-        handleTradeImportHttpError(xhr.status, requestAuthToken);
-        reject(
-          new ApiError(
-            `Trade Import request failed (${xhr.status})`,
-            xhr.status,
-            {
-              operation: `Trade Import ${path}`,
-              endpoint: path,
-              statusCode: xhr.status,
-              responseBody,
-            }
-          )
-        );
-        return;
-      }
-      resolve(responseBody);
+      resolve({ status: xhr.status, responseBody });
     };
     xhr.onerror = () =>
       reject(new Error('Trade Import network request failed'));
@@ -1062,15 +1086,41 @@ async function postMultipart(
   });
 }
 
+async function postMultipart(
+  path: string,
+  file: File,
+  request: unknown
+): Promise<unknown> {
+  const { result, requestAuthToken } = await sendWithAuthRetry((accessToken) =>
+    sendMultipart(path, file, request, accessToken)
+  );
+
+  if (result.status < 200 || result.status >= 300) {
+    handleTradeImportHttpError(result.status, requestAuthToken);
+    throw new ApiError(
+      `Trade Import request failed (${result.status})`,
+      result.status,
+      {
+        operation: `Trade Import ${path}`,
+        endpoint: path,
+        statusCode: result.status,
+        responseBody: result.responseBody,
+      }
+    );
+  }
+  return result.responseBody;
+}
+
 export class BackendTradeImportService {
   async getCapabilities(): Promise<TradeImportCapabilities> {
-    const requestAuthToken = ApiClient.getAuthToken();
-    const response = await requestUrl({
-      url: ApiClient.buildUrl('/api/v1/trade-import/capabilities'),
-      method: 'GET',
-      headers: authHeaders(requestAuthToken),
-      throw: false,
-    });
+    const { response, requestAuthToken } = await requestWithAuthRetry(
+      (accessToken) => ({
+        url: ApiClient.buildUrl('/api/v1/trade-import/capabilities'),
+        method: 'GET',
+        headers: authHeaders(accessToken),
+        throw: false,
+      })
+    );
     if (response.status < 200 || response.status >= 300) {
       handleTradeImportHttpError(response.status, requestAuthToken);
       throw new ApiError(
@@ -1104,18 +1154,19 @@ export class BackendTradeImportService {
     request: TradeImportCommitRequest,
     idempotencyKey: string
   ): Promise<TradeImportCommitResponse> {
-    const requestAuthToken = ApiClient.getAuthToken();
-    const response = await requestUrl({
-      url: ApiClient.buildUrl(`/api/v1/trade-import/${importId}/commit`),
-      method: 'POST',
-      headers: {
-        ...authHeaders(requestAuthToken),
-        'Content-Type': 'application/json',
-        'Idempotency-Key': idempotencyKey,
-      },
-      body: JSON.stringify(request),
-      throw: false,
-    });
+    const { response, requestAuthToken } = await requestWithAuthRetry(
+      (accessToken) => ({
+        url: ApiClient.buildUrl(`/api/v1/trade-import/${importId}/commit`),
+        method: 'POST',
+        headers: {
+          ...authHeaders(accessToken),
+          'Content-Type': 'application/json',
+          'Idempotency-Key': idempotencyKey,
+        },
+        body: JSON.stringify(request),
+        throw: false,
+      })
+    );
     if (response.status < 200 || response.status >= 300) {
       handleTradeImportHttpError(response.status, requestAuthToken);
       throw new ApiError(

@@ -30,6 +30,7 @@ import { TradeTableWidget } from '../reviewV2/widgets/TradeTableWidget';
 import { PnLChartWidget } from '../reviewV2/widgets/PnLChartWidget';
 import { DrawdownChartWidget } from '../reviewV2/widgets/DrawdownChartWidget';
 import { SetupPerformanceWidget } from '../reviewV2/widgets/SetupPerformanceWidget';
+import { TagPerformanceWidget } from '../reviewV2/widgets/TagPerformanceWidget';
 import { BestWorstTradesWidget } from '../reviewV2/widgets/BestWorstTradesWidget';
 import { BestWorstDaysWidget } from '../reviewV2/widgets/BestWorstDaysWidget';
 import { BestWorstWeeksWidget } from '../reviewV2/widgets/BestWorstWeeksWidget';
@@ -367,6 +368,17 @@ function getWidgetPreviewContent({
           config={widget.config}
           previewData={{ trades }}
         />
+      );
+
+    case 'tag-performance':
+      return (
+        <div className="journalit-widget journalit-tag-performance">
+          <TagPerformanceWidget
+            {...commonProps}
+            config={widget.config}
+            previewData={{ trades }}
+          />
+        </div>
       );
 
     

@@ -335,12 +335,27 @@ export const TRADE_NOTE_STYLES = `
     gap: 0.45rem;
   }
 
+  .journalit-trade-view .trade-instrument-identity {
+    display: inline-flex;
+    align-items: flex-start;
+    gap: 0.3rem;
+  }
+
   .journalit-trade-view .trade-instrument-symbol {
     font-size: clamp(2.25rem, 4.6vw, 3.35rem);
     line-height: 0.95;
     font-weight: 750;
     letter-spacing: -0.055em;
     margin-left: -0.055em;
+  }
+
+  .journalit-trade-view .trade-instrument-sequence {
+    color: var(--text-accent);
+    font-size: clamp(0.78rem, 1.4vw, 0.95rem);
+    font-weight: 700;
+    letter-spacing: 0.025em;
+    line-height: 1;
+    margin-top: 0.08rem;
   }
 
   .journalit-trade-view .trade-instrument-direction {

@@ -674,9 +674,10 @@ const SidebarSearchResults: React.FC<SidebarSearchResultsProps> = ({
   </div>
 );
 
-const useSidebarSearchData = (plugin: JournalitPlugin) => {
+export const useSidebarSearchData = (plugin: JournalitPlugin) => {
   const [dataRefreshVersion, setDataRefreshVersion] = useState(0);
   const tradesRef = useRef<SidebarTrade[]>([]);
+  const tradeLoadGenerationRef = useRef(0);
   const reviewsRef = useRef<ReviewSearchResult[]>([]);
   const tradeDateTokensRef = useRef<Map<string, string[]>>(new Map());
   const reviewSearchIndexRef = useRef<Map<string, ReviewSearchIndexEntry>>(
@@ -684,6 +685,7 @@ const useSidebarSearchData = (plugin: JournalitPlugin) => {
   );
 
   const loadTrades = useCallback(async () => {
+    const loadGeneration = ++tradeLoadGenerationRef.current;
     try {
       const allTrades = (await plugin.tradeService.getTradeData()) as unknown[];
       const filteredTrades = allTrades.filter(
@@ -713,10 +715,12 @@ const useSidebarSearchData = (plugin: JournalitPlugin) => {
         );
       }
 
+      if (loadGeneration !== tradeLoadGenerationRef.current) return;
       tradesRef.current = filteredTrades;
       tradeDateTokensRef.current = tradeDateTokens;
       setDataRefreshVersion((prev) => prev + 1);
     } catch {
+      if (loadGeneration !== tradeLoadGenerationRef.current) return;
       tradesRef.current = [];
       tradeDateTokensRef.current = new Map();
       setDataRefreshVersion((prev) => prev + 1);
@@ -782,6 +786,7 @@ const useSidebarSearchData = (plugin: JournalitPlugin) => {
 
   useEventBus('trade:changed', handleTradeChanged);
   useEventBus('backtest-trade:changed', handleTradeChanged);
+  useEventBus('folder-path:changed', handleTradeChanged);
   useEventBus('review:changed', handleReviewChanged);
 
   return {

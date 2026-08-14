@@ -1,9 +1,18 @@
-import { existsSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
-import { join, relative } from 'node:path';
+import { createHash } from 'node:crypto';
+import {
+  existsSync,
+  mkdirSync,
+  readdirSync,
+  readFileSync,
+  writeFileSync,
+} from 'node:fs';
+import { dirname, join, relative } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 const ROOT = process.cwd();
 const SRC = join(ROOT, 'src');
 const OUT = join(ROOT, 'styles.css');
+const CACHE_FILE = join(ROOT, '.cache', 'styles-css', 'manifest.json');
 
 function walk(dir, files = []) {
   for (const entry of readdirSync(dir, { withFileTypes: true })) {
@@ -12,6 +21,47 @@ function walk(dir, files = []) {
     else if (/\.(ts|tsx)$/.test(entry.name)) files.push(path);
   }
   return files;
+}
+
+function sha256(text) {
+  return createHash('sha256').update(text).digest('hex');
+}
+
+
+
+
+
+
+
+function computeInputsDigest(files) {
+  const digest = createHash('sha256');
+  for (const file of files) {
+    digest.update(relative(ROOT, file));
+    digest.update('\0');
+    digest.update(readFileSync(file));
+    digest.update('\0');
+  }
+  return digest.digest('hex');
+}
+
+const sourceFiles = walk(SRC).sort();
+const scriptHash = sha256(readFileSync(fileURLToPath(import.meta.url), 'utf8'));
+const inputsDigest = computeInputsDigest(sourceFiles);
+
+if (existsSync(CACHE_FILE) && existsSync(OUT)) {
+  try {
+    const manifest = JSON.parse(readFileSync(CACHE_FILE, 'utf8'));
+    if (
+      manifest.scriptHash === scriptHash &&
+      manifest.inputsDigest === inputsDigest &&
+      manifest.outHash === sha256(readFileSync(OUT, 'utf8'))
+    ) {
+      console.log(`${relative(ROOT, OUT)} up to date (cached manifest).`);
+      process.exit(0);
+    }
+  } catch {
+    // intentional
+  }
 }
 
 function readTemplateLiteral(source, start) {
@@ -124,7 +174,7 @@ function scopeFlatpickrCss(css) {
 
 const styleConstants = new Map();
 const styleEntries = [];
-for (const file of walk(SRC).sort()) {
+for (const file of sourceFiles) {
   const source = readFileSync(file, 'utf8');
   const regex =
     /(?:export\s+)?const\s+([A-Za-z0-9_]*(?:STYLES|Styles|styles|CSS|Css))\s*=\s*`/g;
@@ -250,8 +300,22 @@ const chunks = styleEntries.map(({ file, name, css }) =>
 const nextCss = `${sanitizeForObsidianReview(chunks.filter(Boolean).join('\n\n'))}\n`;
 
 if (existsSync(OUT) && readFileSync(OUT, 'utf8') === nextCss) {
-  console.log(`${relative(ROOT, OUT)} unchanged from ${chunks.length} style constants.`);
+  console.log(
+    `${relative(ROOT, OUT)} unchanged from ${chunks.length} style constants.`
+  );
 } else {
   writeFileSync(OUT, nextCss);
-  console.log(`Wrote ${relative(ROOT, OUT)} from ${chunks.length} style constants.`);
+  console.log(
+    `Wrote ${relative(ROOT, OUT)} from ${chunks.length} style constants.`
+  );
 }
+
+mkdirSync(dirname(CACHE_FILE), { recursive: true });
+writeFileSync(
+  CACHE_FILE,
+  `${JSON.stringify(
+    { scriptHash, inputsDigest, outHash: sha256(nextCss) },
+    null,
+    2
+  )}\n`
+);

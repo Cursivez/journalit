@@ -18,17 +18,29 @@ function cloneFrontmatter(
 }
 
 function parseFrontmatterFromContent(content: string): Record<string, unknown> {
-  const frontmatterMatch = content.match(/^---\r?\n([\s\S]*?)\r?\n---/);
-  if (!frontmatterMatch) {
-    return {};
-  }
-
   try {
-    const parsed: unknown = parseYaml(frontmatterMatch[1]);
-    return asRecord(parsed) ?? {};
+    return parseFrontmatterFromContentOrThrow(content);
   } catch {
     return {};
   }
+}
+
+export function parseFrontmatterFromContentOrThrow(
+  content: string
+): Record<string, unknown> {
+  const frontmatterMatch = content.match(
+    /^---\r?\n([\s\S]*?)\r?\n---(?:\r?\n|$)/
+  );
+  if (!frontmatterMatch) {
+    throw new Error('Trade note frontmatter is missing');
+  }
+
+  const parsed: unknown = parseYaml(frontmatterMatch[1]);
+  const record = asRecord(parsed);
+  if (!record) {
+    throw new Error('Trade note frontmatter must be a YAML mapping');
+  }
+  return record;
 }
 
 function snapshotFrontmatter(
@@ -121,18 +133,25 @@ export async function forceMetadataCacheRefresh(
 }
 
 
-export async function readFrontmatterFromDisk(
+export async function readFileContentFromDisk(
   appInstance: App,
   file: TFile
-): Promise<Record<string, unknown>> {
+): Promise<string> {
   const vault = appInstance.vault as typeof appInstance.vault & {
     read?: (targetFile: TFile) => Promise<string>;
   };
 
-  const content =
-    typeof vault.read === 'function'
-      ? await vault.read(file)
-      : await appInstance.vault.cachedRead(file);
+  return typeof vault.read === 'function'
+    ? vault.read(file)
+    : appInstance.vault.cachedRead(file);
+}
+
+
+export async function readFrontmatterFromDisk(
+  appInstance: App,
+  file: TFile
+): Promise<Record<string, unknown>> {
+  const content = await readFileContentFromDisk(appInstance, file);
 
   return cloneFrontmatter(parseFrontmatterFromContent(content));
 }

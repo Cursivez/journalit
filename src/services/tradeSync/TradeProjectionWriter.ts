@@ -716,6 +716,66 @@ export class TradeProjectionWriter {
         '[TradeProjectionWriter] Failed to finalize the projection creation batch:',
         error
       );
+      const survivingCreationPaths = new Set<string>();
+      for (const result of writeResults) {
+        if (
+          !result.failed &&
+          !result.pending &&
+          !result.existed &&
+          result.summary &&
+          this.plugin.app.vault.getAbstractFileByPath(result.summary.filePath)
+        ) {
+          survivingCreationPaths.add(result.summary.filePath);
+        }
+      }
+      creationBatch.retainPaths(survivingCreationPaths);
+      let survivingCreationsFinalized = false;
+      if (survivingCreationPaths.size > 0) {
+        try {
+          await creationBatch.flush();
+          survivingCreationsFinalized = true;
+        } catch (recoveryError) {
+          console.warn(
+            '[TradeProjectionWriter] Failed to finalize surviving projection creations:',
+            recoveryError
+          );
+          creationBatch.abandon();
+        }
+      } else {
+        creationBatch.abandon();
+      }
+      const retainedCommitPaths = new Set<string>();
+      const committedTradesById = new Map(
+        trades.map((trade) => [trade.id, trade])
+      );
+      for (let index = 0; index < writeResults.length; index++) {
+        const result = writeResults[index];
+        const summaryPath = result.summary?.filePath;
+        if (!result.failed && !result.pending && !result.existed) {
+          if (
+            survivingCreationsFinalized &&
+            summaryPath &&
+            survivingCreationPaths.has(summaryPath)
+          ) {
+            retainedCommitPaths.add(summaryPath);
+            continue;
+          }
+          const committedTrade = committedTradesById.get(
+            result.ackResult.tradeId
+          );
+          if (committedTrade) {
+            writeResults[index] = failedProjectionResult(
+              committedTrade,
+              'obsidian_write_failed'
+            );
+          }
+          continue;
+        }
+        if (!result.failed && !result.pending && result.summary) {
+          retainedCommitPaths.add(result.summary.filePath);
+        }
+      }
+      commitEventBatch.retainPaths(retainedCommitPaths);
     }
     try {
       commitEventBatch.flush();

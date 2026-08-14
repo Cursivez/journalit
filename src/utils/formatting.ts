@@ -178,16 +178,11 @@ export function formatPnL(
     } else {
       
       const maxDecimals = Math.min(currencyConfig.decimalPlaces, 2);
-      const formatted = valueInM.toFixed(maxDecimals);
-
-      
-      if (formatted.endsWith('.00')) {
-        result = formatted.slice(0, -3) + 'M';
-      } else if (formatted.endsWith('0') && maxDecimals > 1) {
-        result = formatted.slice(0, -1) + 'M';
-      } else {
-        result = formatted + 'M';
-      }
+      result =
+        valueInM.toLocaleString(currencyConfig.locale, {
+          minimumFractionDigits: 0,
+          maximumFractionDigits: maxDecimals,
+        }) + 'M';
     }
 
     const withCurrency = affixCurrency(result, currencyConfig);
@@ -205,16 +200,11 @@ export function formatPnL(
     } else {
       
       const maxDecimals = Math.min(currencyConfig.decimalPlaces, 2);
-      const formatted = valueInK.toFixed(maxDecimals);
-
-      
-      if (formatted.endsWith('.00')) {
-        result = formatted.slice(0, -3) + 'K';
-      } else if (formatted.endsWith('0') && maxDecimals > 1) {
-        result = formatted.slice(0, -1) + 'K';
-      } else {
-        result = formatted + 'K';
-      }
+      result =
+        valueInK.toLocaleString(currencyConfig.locale, {
+          minimumFractionDigits: 0,
+          maximumFractionDigits: maxDecimals,
+        }) + 'K';
     }
 
     const withCurrency = affixCurrency(result, currencyConfig);

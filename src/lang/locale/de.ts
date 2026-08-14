@@ -741,6 +741,10 @@ const de: Lang = {
   'notice.setups-added': 'Setups zu {count} Trades hinzugefügt',
   'notice.tags-added': 'Added tags to {count} trades',
   'notice.mistakes-added': 'Fehler zu {count} Trades hinzugefügt',
+  'notice.trades-duplicated.one': '{count} Trade dupliziert',
+  'notice.trades-duplicated.few': '{count} Trades dupliziert',
+  'notice.trades-duplicated.many': '{count} Trades dupliziert',
+  'notice.trades-duplicated.other': '{count} Trades dupliziert',
   'notice.trades-deleted.one': '{count} Trade gelöscht',
   'notice.trades-deleted.few': '{count} Trades gelöscht',
   'notice.trades-deleted.many': '{count} Trades gelöscht',
@@ -824,6 +828,8 @@ const de: Lang = {
   'notice.error.add-setups': 'Fehler beim Hinzufügen von Setups: {error}',
   'notice.error.add-tags': 'Error adding tags: {error}',
   'notice.error.add-mistakes': 'Fehler beim Hinzufügen von Fehlern: {error}',
+  'notice.error.duplicate-trades':
+    'Fehler beim Duplizieren von Trades: {error}',
   'notice.error.delete-trades': 'Fehler beim Löschen von Trades: {error}',
   'notice.error.csv-validation':
     'CSV/XLSX/XLS-Validierung fehlgeschlagen: {errors}',
@@ -894,7 +900,7 @@ const de: Lang = {
     'Klicken Sie auf diese Schaltfläche, um mehrere Trades gleichzeitig auszuwählen. Wenn die Mehrfachauswahl aktiviert ist, wählen Zeilenklicks Trades aus, anstatt sie zu öffnen.',
   'tradelog.guide.batch-actions.title': 'Dies sind Ihre Batch-Aktionen',
   'tradelog.guide.batch-actions.description':
-    'Verwenden Sie diese Leiste, um alle sichtbaren Trades auszuwählen, Ihre Auswahl zu löschen, Trades als geprüft zu markieren, Setups hinzuzufügen, Fehler hinzuzufügen oder mehrere Trades gleichzeitig zu löschen. Sie können auch bei gedrückter Umschalttaste klicken, um eine Reihe von Trades auszuwählen.',
+    'Verwenden Sie diese Leiste, um alle sichtbaren Trades auszuwählen, Ihre Auswahl zu löschen, Trades als geprüft zu markieren, Setups hinzuzufügen, Fehler hinzuzufügen, Trades zu duplizieren oder mehrere Trades gleichzeitig zu löschen. Sie können auch bei gedrückter Umschalttaste klicken, um eine Reihe von Trades auszuwählen.',
   'tradelog.guide.column-settings.title': 'Spalteneinstellungen öffnen',
   'tradelog.guide.column-settings.description':
     'Klicken Sie auf diese Schaltfläche, um auszuwählen, welche Spalten angezeigt werden und wie dicht oder detailliert die Tabelle wirken soll.',
@@ -1021,7 +1027,7 @@ const de: Lang = {
     'Dieser Picker zeigt die Widgets an, die Sie für diesen Review-Typ hinzufügen können.',
   'layoutBuilder.guide.choose-widget.title': 'Wählen Sie ein Widget',
   'layoutBuilder.guide.choose-widget.description':
-    'In dieser Liste werden alle Widgets angezeigt, die Sie für diesen Review-Typ hinzufügen können. Wählen Sie ein beliebiges Widget aus oder klicken Sie auf „Weiter“ und Journalit wählt das erste für Sie aus.',
+    'Geben Sie einen Namen, eine Beschreibung oder eine Kategorie in das Suchfeld ein und wählen Sie das Widget aus. Mit „Weiter“ wählt Journalit das erste Ergebnis aus.',
   'layoutBuilder.guide.widget-library-docs.title':
     'Verwenden Sie die Widget-Bibliothek, wenn Sie nicht weiterkommen',
   'layoutBuilder.guide.widget-library-docs.description':
@@ -1166,6 +1172,17 @@ const de: Lang = {
   'tradelog.batch.add-mistakes.label': 'Fehler hinzufügen',
   'tradelog.batch.adding': 'Hinzufügen...',
   'tradelog.batch.add-count': 'Hinzufügen ({count})',
+  'tradelog.batch.duplicate.aria': 'Trades duplizieren',
+  'tradelog.batch.duplicate.label': 'Duplizieren',
+  'tradelog.batch.duplicating': 'Duplizieren...',
+  'tradelog.batch.duplicate-skipped.one':
+    '{count} ausgewählte Notiz kann nicht dupliziert werden',
+  'tradelog.batch.duplicate-skipped.few':
+    '{count} ausgewählte Notizen können nicht dupliziert werden',
+  'tradelog.batch.duplicate-skipped.many':
+    '{count} ausgewählte Notizen können nicht dupliziert werden',
+  'tradelog.batch.duplicate-skipped.other':
+    '{count} ausgewählte Notizen können nicht dupliziert werden',
   'tradelog.batch.delete.aria': 'Trades löschen',
   'tradelog.batch.delete.title': 'Ausgewählte Trades löschen',
   'tradelog.batch.deleting': 'Löschen...',
@@ -1386,6 +1403,39 @@ const de: Lang = {
   'dashboard.widgets.hourly-performance.metric.total-r': 'Gesamt-R',
   'dashboard.widgets.hourly-performance.metric.avg-r': 'Ø R',
   'dashboard.widgets.weekday-performance.tooltip.no-trades': 'Keine Trades',
+  'dashboard.widgets.setup-performance.title': 'Leistung nach Setups',
+  'dashboard.widgets.setup-performance.description':
+    'Sortiertes Balkendiagramm zum Vergleich der Leistung nach Setups',
+  'dashboard.widgets.setup-performance.empty': 'Keine Setup-Leistungsdaten',
+  'dashboard.widgets.setup-performance.masked-label': 'Setups',
+  'dashboard.widgets.tag-performance.title': 'Leistung nach Tags',
+  'dashboard.widgets.tag-performance.description':
+    'Sortiertes Balkendiagramm zum Vergleich der Leistung nach Tags',
+  'dashboard.widgets.tag-performance.empty': 'Keine Tag-Leistungsdaten',
+  'dashboard.widgets.tag-performance.masked-label': 'Schlagworte',
+  'dashboard.widgets.ticker-performance.title': 'Performance nach Ticker',
+  'dashboard.widgets.ticker-performance.metric-aria': 'Metrik',
+  'dashboard.widgets.ticker-performance.view-aria': 'Ansicht',
+  'dashboard.widgets.ticker-performance.view.best-and-worst':
+    'Beste und schlechteste',
+  'dashboard.widgets.ticker-performance.view.best': 'Beste 10',
+  'dashboard.widgets.ticker-performance.view.worst': 'Schlechteste 10',
+  'dashboard.widgets.ticker-performance.metric.total-pnl': 'Gesamt-P&L',
+  'dashboard.widgets.ticker-performance.metric.total-r': 'Gesamt-R',
+  'dashboard.widgets.ticker-performance.metric.win-rate': 'Trefferquote',
+  'dashboard.widgets.ticker-performance.tooltip.ticker': 'Symbol: {ticker}',
+  'dashboard.widgets.ticker-performance.tooltip.trades':
+    'Transaktionen: {count}',
+  'dashboard.widgets.ticker-performance.tooltip.win-rate':
+    'Trefferquote: {rate} ({wins}G / {losses}V)',
+
+  'dashboard.widgets.ticker-performance.empty':
+    'Keine Ticker-Performance-Daten',
+  'dashboard.widgets.ticker-performance.empty-submessage':
+    'Keine geschlossenen Trades mit einem Ticker entsprechen den aktuellen Filtern.',
+  'dashboard.widgets.ticker-performance.masked-ticker': 'Symbol',
+  'dashboard.widgets.ticker-performance.omitted-count': 'Ausgelassen: {count}',
+
   'dashboard.widgets.rollingStats.title':
     'Rollierender durchschnittlicher Gewinn/Verlust',
   'dashboard.widgets.rollingStats.period': 'Zeitraum',
@@ -1450,6 +1500,11 @@ const de: Lang = {
   'home.widget.weekly-summary.name': 'Wöchentliche Zusammenfassung',
   'home.widget.weekly-summary.description':
     'Kennzahlen der aktuellen Woche mit täglichem P&L-Sparkline-Diagramm',
+  'home.widget.key-events.name': 'Wichtige Ereignisse',
+  'home.widget.key-events.description':
+    'Wichtige Nachrichten und Marktereignisse aus dem aktuellen Wochenrückblick',
+  'home.widget.key-events.empty-title': 'Noch keine wichtigen Ereignisse',
+  'home.widget.key-events.open-aria': 'Wochenrückblick dieser Woche öffnen',
   'home.widget.position-size.name': 'Positionsgrößenrechner',
   'home.widget.position-size.description':
     'Berechnen Sie die Positionsgröße basierend auf dem Kontorisikoprozentsatz',
@@ -1951,6 +2006,7 @@ const de: Lang = {
   'datepicker.placeholder.year': 'JJ',
   'datepicker.placeholder.hour': 'HH',
   'datepicker.placeholder.minute': 'MM',
+  'datepicker.placeholder.second': 'SS',
   'common.loading': 'Laden...',
   'common.error': 'Fehler',
   'common.success': 'Erfolg',
@@ -3733,6 +3789,10 @@ const de: Lang = {
     'Anzeige der Zeiten im 24-Stunden-Format (14:30) statt im 12-Stunden-AM/PM-Format (14:30 Uhr)',
   'settings.general.use-24-hour-time-aria':
     'Verwenden Sie das 24-Stunden-Zeitformat',
+  'settings.general.show-seconds': 'Sekunden in Trade-Zeiten anzeigen',
+  'settings.general.show-seconds-desc':
+    'Sekunden bei der Eingabe von Ein- und Ausstiegszeiten anzeigen.',
+  'settings.general.show-seconds-aria': 'Sekunden in Trade-Zeiten anzeigen',
   'settings.general.skip-weekends': 'Wochenenden ausschließen',
   'settings.general.skip-weekends-desc':
     'Wenn aktiviert, behandelt Journalit Wochenenden im gesamten Plugin als handelsfreie Tage. Deaktiviere dies, wenn du samstags und sonntags tradest oder Aktivitäten überprüfst.',
@@ -4435,6 +4495,11 @@ const de: Lang = {
   'widget.header.month-short.10': 'Nov',
   'widget.header.month-short.11': 'Dez',
   'widget.picker.placeholder': 'Wählen Sie ein Widget aus...',
+  'widget.picker.search-placeholder': 'Widgets suchen...',
+  'widget.picker.search-label': 'Widgets suchen',
+  'widget.picker.clear-search': 'Widget-Suche löschen',
+  'widget.picker.results-label': 'Verfügbare Widgets',
+  'widget.picker.no-results': 'Keine Widgets entsprechen Ihrer Suche',
   'widget.category.charts': 'Diagramme',
   'widget.category.statistics': 'Statistiken',
   'widget.category.content': 'Inhalt',
@@ -4574,6 +4639,9 @@ const de: Lang = {
   'widget.account-breakdown.column.pnl': 'Netto-P&L',
   'widget.account-breakdown.column.win-rate': 'Trefferquote',
   'widget.account-breakdown.column.profit-factor': 'Profitfaktor',
+  'widget.tag-performance.name': 'Leistung nach Tags',
+  'widget.tag-performance.description':
+    'Leistungsaufschlüsselung nach Schlagwort',
   'widget.setup-performance.name': 'Setup-Performance',
   'widget.setup-performance.description':
     'Aufschlüsselung der Leistung nach Setup',
@@ -4809,6 +4877,7 @@ const de: Lang = {
   'widget.table.header.pnl': 'P&L',
   'widget.table.header.win-rate': 'Gewinn %',
   'widget.table.header.profit-factor': 'PF',
+  'widget.table.header.tag': 'Schlagwort',
   'widget.table.header.setup': 'Setup',
   'widget.table.header.a-games': 'Ein Spiel',
   'widget.table.header.b-games': 'B-Spiele',
@@ -5603,6 +5672,7 @@ const de: Lang = {
   'home.widget.setups.win-rate': '{rate}% Trefferquote',
   'home.widget.weekly.title': 'Diese Woche',
   'home.widget.weekly.no-trades': 'Diese Woche noch keine Trades',
+  'home.widget.weekly.breakeven': 'diese Woche bisher ausgeglichen',
   'home.widget.weekly.losing-days': '{count} verliert Tage in Folge',
   'home.widget.weekly.winning-days': '{count} gewinnende Tage in Folge',
   'home.widget.weekly.above-average': 'über Ihrem Wochendurchschnitt liegen',
@@ -5633,6 +5703,7 @@ const de: Lang = {
   'calendar.week': 'WOCHE',
   'calendar.trade': '{count} Trade',
   'calendar.trades': '{count} Trades',
+  'calendar.reviewed': 'Überprüft',
   'calendar.month.january': 'Januar',
   'calendar.month.february': 'Februar',
   'calendar.month.march': 'März',
@@ -5775,6 +5846,8 @@ const de: Lang = {
     'Für diesen Zeitraum liegen keine monatlichen Daten vor',
   'widget.empty.no-quarterly-data':
     'Für diesen Zeitraum liegen keine vierteljährlichen Daten vor',
+  'widget.empty.no-tag-data':
+    'Keine Schlagwortdaten für diesen Zeitraum verfügbar',
   'widget.empty.no-setup-data':
     'Für diesen Zeitraum sind keine Setup-Daten verfügbar',
   'widget.empty.no-mental-game-data':
@@ -5892,6 +5965,9 @@ const de: Lang = {
   'widget.hourlyPerformance.name': 'Stündliche Performance',
   'widget.hourlyPerformance.description':
     'Balkendiagramm mit P&L für jede Stunde des Tages',
+  'widget.tickerPerformance.name': 'Performance nach Ticker',
+  'widget.tickerPerformance.description':
+    'Sortiertes Balkendiagramm zum Vergleich der Performance nach Ticker',
   'widget.tradesChart.limit': '{count} Trades',
   'widget.drawdownChart.name': 'Rückgang Chart',
   'widget.drawdownChart.description':
@@ -7745,6 +7821,7 @@ const de: Lang = {
   'home.filters.trade-type': 'Handelstyp',
   'home.filters.accounts': 'Konten',
   'home.filters.back': 'Zurück',
+  'filter.reset': 'Filter zurücksetzen',
   'home.guide.modes.title': 'Noch etwas: das Dashboard',
   'home.guide.modes.description':
     'Übersicht und Dashboard teilen sich diese Seite. Wechsle jetzt zum Dashboard, um mit einer kurzen Tour durch deine Performance-Statistiken fortzufahren.',

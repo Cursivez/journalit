@@ -24,6 +24,7 @@ import { ReviewTemplateService } from '../templates/ReviewTemplateService';
 import { TemplateTransformationService } from '../templates/TemplateTransformationService';
 import { normalizeTradeExecutionForPeriodAnalytics } from '../trade/core/TradeExecutionAnalytics';
 import { eventBus, Unsubscribe } from '../events';
+import { registerPathIndexInvalidator } from '../indexing/pathIndexInvalidator';
 import { safeString } from '../../utils/safeString';
 
 
@@ -38,6 +39,35 @@ function asRecord(value: unknown): Record<string, unknown> | undefined {
 
 function isNewsEvent(value: unknown): value is NewsEvent {
   return Boolean(value && typeof value === 'object' && !Array.isArray(value));
+}
+
+function parseNewsEvents(value: unknown): NewsEvent[] {
+  if (!Array.isArray(value)) return [];
+
+  const events: NewsEvent[] = [];
+  for (const item of value) {
+    const record = asRecord(item);
+    if (!record || typeof record.event !== 'string') continue;
+
+    let color: string | undefined;
+    switch (record.color) {
+      case 'gray':
+      case 'red':
+      case 'orange':
+      case 'yellow':
+        color = record.color;
+        break;
+    }
+
+    events.push({
+      event: record.event,
+      notes: typeof record.notes === 'string' ? record.notes : '',
+      color,
+      day: typeof record.day === 'string' ? record.day : undefined,
+    });
+  }
+
+  return events;
 }
 
 function asStringArray(value: unknown): string[] {
@@ -136,6 +166,15 @@ export class WeeklyReviewService {
   private unsubscribeSettings?: Unsubscribe;
 
   
+  private unsubscribeFns: Unsubscribe[] = [];
+
+  
+  private disposeIndexInvalidator: (() => void) | null = null;
+
+  
+  private reviewedWeeklyReviewPaths: ReadonlySet<string> | null = null;
+
+  
   constructor(
     app: App,
     plugin: JournalitPlugin,
@@ -159,6 +198,73 @@ export class WeeklyReviewService {
       (payload) => {
         void this.onSettingsUpdated(payload);
       }
+    );
+
+    this.unsubscribeFns.push(
+      eventBus.subscribe('review:changed', (payload) => {
+        if (payload.type === 'weekly') {
+          this.invalidateReviewedWeekIndex();
+        }
+      }),
+      eventBus.subscribe('folder-path:changed', () => {
+        this.invalidateReviewedWeekIndex();
+      })
+    );
+
+    this.disposeIndexInvalidator = registerPathIndexInvalidator({
+      app: this.app,
+      matchesPath: (path) => this.isWeeklyReviewMarkdownPath(path),
+      onInvalidate: () => this.invalidateReviewedWeekIndex(),
+    });
+  }
+
+  private invalidateReviewedWeekIndex(): void {
+    this.reviewedWeeklyReviewPaths = null;
+    eventBus.publish('weekly:reviewed-index-invalidated');
+  }
+
+  private isWeeklyReviewMarkdownPath(path: string): boolean {
+    const normalizedPath = normalizePath(path);
+    const journalFolder = normalizePath(this.getJournalFolderPath());
+    if (!normalizedPath.startsWith(`${journalFolder}/`)) return false;
+
+    const filename = normalizedPath.slice(normalizedPath.lastIndexOf('/') + 1);
+    
+    return /^W\d{1,2}-Review\.md$/.test(filename);
+  }
+
+  
+  private getReviewedWeeklyReviewPaths(): ReadonlySet<string> {
+    if (this.reviewedWeeklyReviewPaths) {
+      return this.reviewedWeeklyReviewPaths;
+    }
+
+    const reviewedPaths = new Set<string>();
+
+    for (const file of this.app.vault.getMarkdownFiles()) {
+      if (!this.isWeeklyReviewMarkdownPath(file.path)) continue;
+
+      const frontmatter: unknown =
+        this.app.metadataCache.getFileCache(file)?.frontmatter;
+      if (
+        !isRecord(frontmatter) ||
+        frontmatter.type !== 'weekly-review' ||
+        frontmatter.reviewed !== true
+      ) {
+        continue;
+      }
+
+      reviewedPaths.add(normalizePath(file.path));
+    }
+
+    this.reviewedWeeklyReviewPaths = reviewedPaths;
+    return reviewedPaths;
+  }
+
+  
+  public isWeekReviewed(date: Date): boolean {
+    return this.getReviewedWeeklyReviewPaths().has(
+      this.getWeeklyReviewPath(date)
     );
   }
 
@@ -307,6 +413,20 @@ export class WeeklyReviewService {
     return normalizePath(
       `${this.getJournalFolderPath()}/${year}/${month}/${weekOfMonth}/${filename}`
     );
+  }
+
+  
+  public getKeyEventsForWeek(date: Date): NewsEvent[] {
+    const weeklyReviewPath = this.getWeeklyReviewPath(date);
+    const file = this.app.vault.getAbstractFileByPath(weeklyReviewPath);
+    if (!(file instanceof TFile)) return [];
+
+    const frontmatter = asRecord(
+      this.app.metadataCache.getFileCache(file)?.frontmatter
+    );
+    if (frontmatter?.type !== 'weekly-review') return [];
+
+    return parseNewsEvents(frontmatter?.keyEvents);
   }
 
   
@@ -1138,5 +1258,11 @@ export class WeeklyReviewService {
   
   public cleanup(): void {
     this.unsubscribeSettings?.();
+    for (const unsubscribe of this.unsubscribeFns) {
+      unsubscribe();
+    }
+    this.unsubscribeFns = [];
+    this.disposeIndexInvalidator?.();
+    this.disposeIndexInvalidator = null;
   }
 }

@@ -268,6 +268,15 @@ export const FilterControls = React.memo<FilterControlsProps>(
       let availableCustomFieldFilters: AvailableCustomFieldFilter[] = [];
 
       const tradeLogService = tradeLogServiceRef.current;
+      const authoritativeAccountsPromise = tradeLogService
+        ? tradeLogService.getUniqueAccounts().catch((error) => {
+            console.error(
+              '[DashboardFilterControls] Failed to load authoritative account filter options; using dashboard accounts as fallback:',
+              error
+            );
+            return undefined;
+          })
+        : Promise.resolve(undefined);
 
       try {
         if (tradeLogService) {
@@ -281,6 +290,12 @@ export const FilterControls = React.memo<FilterControlsProps>(
           '[DashboardFilterControls] Failed to load custom field filter options:',
           error
         );
+      }
+
+      let modalAvailableAccounts = availableAccounts;
+      const authoritativeAccounts = await authoritativeAccountsPromise;
+      if (authoritativeAccounts) {
+        modalAvailableAccounts = authoritativeAccounts;
       }
 
       openFilterModal({
@@ -299,7 +314,7 @@ export const FilterControls = React.memo<FilterControlsProps>(
           directions: filters.directions || [],
           customFieldFilters: sanitizedCustomFieldFilters,
         },
-        availableAccounts,
+        availableAccounts: modalAvailableAccounts,
         availableCustomFieldFilters,
         onApply: (newFilters: UnifiedFilters) => {
           const mergedFilters = {

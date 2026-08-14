@@ -373,6 +373,7 @@ export const TradeLogHeader = memo<TradeLogHeaderProps>(
     onToggleMultiSelectMode,
   }) => {
     const [accounts, setAccounts] = useState<string[]>([]);
+    const isMountedRef = useRef(true);
     const [guideVersion, setGuideVersion] = useState(0);
 
     
@@ -417,39 +418,40 @@ export const TradeLogHeader = memo<TradeLogHeaderProps>(
       TRADE_LOG_COLUMN_SETTINGS_BUTTON_TARGET_ID
     );
 
-    const loadAccounts = useCallback(async () => {
+    const loadAccounts = useCallback(async (): Promise<
+      string[] | undefined
+    > => {
       if (!tradeLogService) {
-        return;
+        return undefined;
       }
 
-      const availableAccounts = await tradeLogService.getUniqueAccounts();
-      setAccounts(availableAccounts);
+      try {
+        const availableAccounts = await tradeLogService.getUniqueAccounts();
+        if (isMountedRef.current) {
+          setAccounts(availableAccounts);
+        }
+        return availableAccounts;
+      } catch (error) {
+        console.error(
+          '[TradeLogHeader] Failed to load account filter options:',
+          error
+        );
+        return undefined;
+      }
     }, [tradeLogService]);
 
     
     useEffect(() => {
-      let isMounted = true;
-
-      const loadAccountsSafely = async () => {
-        if (!tradeLogService) {
-          return;
-        }
-
-        const availableAccounts = await tradeLogService.getUniqueAccounts();
-        if (isMounted) {
-          setAccounts(availableAccounts);
-        }
-      };
-
-      void loadAccountsSafely();
+      isMountedRef.current = true;
+      void loadAccounts();
 
       return () => {
-        isMounted = false;
+        isMountedRef.current = false;
         if (tradeLogServiceRef.current) {
           tradeLogServiceRef.current.destroy();
         }
       };
-    }, [tradeLogService]);
+    }, [loadAccounts]);
 
     useEffect(() => {
       if (!plugin.viewGuideService) {
@@ -462,6 +464,9 @@ export const TradeLogHeader = memo<TradeLogHeaderProps>(
     }, [plugin]);
 
     useEventBus('trade:changed', () => {
+      void loadAccounts();
+    });
+    useEventBus('missed-trade:changed', () => {
       void loadAccounts();
     });
     useEventBus('backtest-trade:changed', () => {
@@ -551,6 +556,8 @@ export const TradeLogHeader = memo<TradeLogHeaderProps>(
 
       let availableCustomFieldFilters: AvailableCustomFieldFilter[] = [];
       let availableImageFilterOptions: AvailableImageFilterOptions | undefined;
+      let availableAccounts = accounts;
+      const refreshedAccountsPromise = loadAccounts();
 
       try {
         availableCustomFieldFilters =
@@ -565,6 +572,11 @@ export const TradeLogHeader = memo<TradeLogHeaderProps>(
         }
       } catch (error) {
         console.error('[TradeLogHeader] Failed to load filter options:', error);
+      }
+
+      const refreshedAccounts = await refreshedAccountsPromise;
+      if (refreshedAccounts) {
+        availableAccounts = refreshedAccounts;
       }
 
       if (activeFilterModalRef.current) {
@@ -591,7 +603,7 @@ export const TradeLogHeader = memo<TradeLogHeaderProps>(
           imageAnnotationStatus: filters.imageAnnotationStatus || [],
           imageTags: filters.imageTags || [],
         },
-        availableAccounts: accounts,
+        availableAccounts,
         availableCustomFieldFilters,
         availableImageFilterOptions,
         showImageFilters: mode === 'imageGallery',
@@ -633,6 +645,7 @@ export const TradeLogHeader = memo<TradeLogHeaderProps>(
       emitGuideAction,
       filters,
       imageGalleryService,
+      loadAccounts,
       mode,
       onFilterChange,
       plugin,

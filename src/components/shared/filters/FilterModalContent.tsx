@@ -696,7 +696,6 @@ export const FilterModalContent = React.memo<FilterModalContentProps>(
                     accounts={availableAccounts}
                     selectedAccounts={filters.accounts}
                     onChange={handleAccountChange}
-                    useOnlyProvidedAccounts={false}
                   />
                 </div>
                 <div className="filter-modal-controls">

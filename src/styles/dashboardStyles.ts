@@ -775,7 +775,6 @@ export const DASHBOARD_STYLES = `
     flex-direction: column !important;
     gap: 8px !important;
     min-width: 0 !important;
-    position: relative !important; 
   }
   
   .journalit-dashboard-date-range-presets {
@@ -818,33 +817,33 @@ export const DASHBOARD_STYLES = `
   }
 
   .journalit-dashboard-custom-date-anchor {
-    position: relative !important;
     display: inline-flex !important;
   }
-  
-  .journalit-dashboard-date-range-inputs {
-    display: flex !important;
-    flex-direction: column !important;
-    gap: 16px !important;
-    padding: 20px 24px !important;
+
+  .journalit-dashboard-custom-date-dropdown {
+    display: grid !important;
+    grid-template-columns: max-content minmax(0, max-content) !important;
+    gap: 8px !important;
+    align-items: center !important;
+    padding: 10px 12px !important;
+    box-sizing: border-box !important;
     background-color: var(--background-primary) !important;
     border-radius: 8px !important;
     border: 1px solid var(--background-modifier-border) !important;
-    position: absolute !important;
-    top: 100% !important;
-    left: 0 !important;
-    right: auto !important;
-    margin-top: 8px !important;
-    z-index: 1000 !important;
-    width: 300px !important;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15), 0 2px 8px rgba(0, 0, 0, 0.1) !important;
+    position: fixed;
+    top: var(--journalit-dashboard-date-dropdown-top);
+    left: var(--journalit-dashboard-date-dropdown-left);
+    z-index: 1000;
+    width: max-content;
+    max-width: calc(100vw - 32px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15), 0 2px 8px rgba(0, 0, 0, 0.1);
   }
+
   
-  
-  .journalit-dashboard-date-range-inputs.date-dropdown-visible {
+  .journalit-dashboard-custom-date-dropdown.date-dropdown-visible {
     animation: dateDropdownFadeIn 0.2s ease-out !important;
   }
-  
+
   @keyframes dateDropdownFadeIn {
     from {
       opacity: 0;
@@ -855,42 +854,19 @@ export const DASHBOARD_STYLES = `
       transform: translateY(0);
     }
   }
-  
-  
-  .journalit-dashboard-custom-date-dropdown {
-    position: absolute !important;
-    top: 100% !important;
-    left: 0 !important;
-    right: auto !important;
-    margin-top: 8px !important;
-    z-index: 1000 !important;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15), 0 2px 8px rgba(0, 0, 0, 0.1) !important;
-  }
 
-  .journalit-dashboard-view .journalit-dashboard-date-range-inputs.journalit-dashboard-custom-date-dropdown {
-    width: 300px !important;
-    max-width: min(300px, calc(100vw - 32px)) !important;
-  }
-
-  
-  .journalit-dashboard-custom-date-dropdown.position-left {
-    left: auto !important;
-    right: 0 !important;
-  }
-
-  
-  .journalit-dashboard-custom-date-dropdown.position-below {
-    top: 100% !important;
-    left: 0 !important;
-    right: auto !important;
-    margin-top: 8px !important;
+  .journalit-dashboard-custom-date-dropdown--measuring {
+    visibility: hidden;
+    pointer-events: none;
   }
 
   .journalit-dashboard-date-range-start,
   .journalit-dashboard-date-range-end {
-    display: flex !important;
-    flex-direction: column !important;
-    gap: 6px !important;
+    display: grid !important;
+    grid-column: 1 / -1 !important;
+    grid-template-columns: subgrid !important;
+    gap: 8px !important;
+    align-items: center !important;
   }
   
   .journalit-dashboard-date-range-start label,
@@ -901,25 +877,25 @@ export const DASHBOARD_STYLES = `
     text-transform: uppercase !important;
     letter-spacing: 0.5px !important;
     color: var(--text-muted) !important;
+    white-space: nowrap !important;
+    margin: 0 !important;
   }
   
   
   .journalit-date-picker-input {
-    width: max-content !important;
+    width: auto !important;
+    min-width: 0 !important;
   }
   
   
-  .journalit-date-picker-input > div {
-    width: max-content !important;
-  }
-
   .journalit-date-picker-input .journalit-fast-datetime__container {
-    width: max-content !important;
+    width: 100% !important;
     flex-wrap: nowrap !important;
-  }
-
-  .journalit-date-picker-input .journalit-fast-datetime__container[data-date-only="true"] {
-    padding-right: 8px !important;
+    overflow-x: auto !important;
+    padding: 2px 0 !important;
+    border: none !important;
+    border-radius: 0 !important;
+    background: transparent !important;
   }
   
   .journalit-date-picker-input input {
@@ -947,7 +923,7 @@ export const DASHBOARD_STYLES = `
   .journalit-date-picker-input input:hover {
     border-color: var(--interactive-hover) !important;
   }
-  
+
   
   .journalit-dashboard-account-filter,
   .journalit-dashboard-ticker-filter,
@@ -2373,6 +2349,46 @@ export const DASHBOARD_STYLES = `
     animation: none !important;
     border: 1px solid var(--interactive-accent) !important;
   }
+
+  
+  .journalit-dashboard-calendar-day .journalit-dashboard-calendar-reviewed-badge,
+  .journalit-dashboard-calendar-weekly-pnl .journalit-dashboard-calendar-reviewed-badge {
+    position: absolute !important;
+    top: 3px !important;
+    right: 3px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    color: var(--color-green) !important;
+    opacity: 0.85 !important;
+    pointer-events: none !important;
+  }
+
+  
+  .journalit-dashboard-calendar-day .journalit-dashboard-calendar-reviewed-dot,
+  .journalit-dashboard-calendar-weekly-pnl .journalit-dashboard-calendar-reviewed-dot {
+    display: none !important;
+  }
+
+  .journalit-dashboard-calendar.is-compact .journalit-dashboard-calendar-day .journalit-dashboard-calendar-reviewed-badge,
+  .journalit-dashboard-calendar.is-compact .journalit-dashboard-calendar-weekly-pnl .journalit-dashboard-calendar-reviewed-badge {
+    display: none !important;
+  }
+
+  .journalit-dashboard-calendar.is-compact .journalit-dashboard-calendar-day .journalit-dashboard-calendar-reviewed-dot,
+  .journalit-dashboard-calendar.is-compact .journalit-dashboard-calendar-weekly-pnl .journalit-dashboard-calendar-reviewed-dot {
+    display: block !important;
+    position: absolute !important;
+    
+    top: calc(75% + 1.5px) !important;
+    left: 50% !important;
+    transform: translate(-50%, -50%) !important;
+    width: 4px !important;
+    height: 4px !important;
+    border-radius: 50% !important;
+    background-color: var(--color-green) !important;
+    pointer-events: none !important;
+  }
   
   
   .journalit-dashboard-trades-table {
@@ -2550,11 +2566,6 @@ export const DASHBOARD_STYLES = `
       width: 100% !important;
     }
     
-    
-    .journalit-dashboard-date-range-inputs,
-    .journalit-dashboard-custom-date-dropdown {
-      width: 300px !important;
-    }
   }
   
   
@@ -2594,12 +2605,6 @@ export const DASHBOARD_STYLES = `
 
     .journalit-dashboard-metric-value {
       font-size: 20px !important;
-    }
-
-    
-    .journalit-dashboard-date-range-inputs,
-    .journalit-dashboard-custom-date-dropdown {
-      width: 300px !important;
     }
 
     
@@ -2723,36 +2728,6 @@ export const DASHBOARD_STYLES = `
       margin-right: 0 !important;
       width: 100% !important;
       min-width: auto !important;
-    }
-    
-    .journalit-dashboard-custom-date-anchor {
-      display: flex !important;
-      flex-direction: column !important;
-    }
-
-    
-    .journalit-dashboard-date-range-inputs,
-    .journalit-dashboard-custom-date-dropdown {
-      position: static !important;
-      width: 300px !important;
-      margin-top: 8px !important;
-      flex-direction: column !important;
-      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15), 0 2px 8px rgba(0, 0, 0, 0.1) !important;
-      border: 1px solid var(--background-modifier-border) !important;
-      left: auto !important;
-      right: auto !important;
-    }
-
-    .journalit-dashboard-view .journalit-dashboard-date-range-inputs.journalit-dashboard-custom-date-dropdown {
-      width: 300px !important;
-      max-width: none !important;
-    }
-
-    .journalit-dashboard-custom-date-dropdown.position-left,
-    .journalit-dashboard-custom-date-dropdown.position-below {
-      position: static !important;
-      left: auto !important;
-      right: auto !important;
     }
     
     
@@ -3317,6 +3292,7 @@ export const DASHBOARD_STYLES = `
     min-height: 100px !important;
     background-color: transparent !important;
   }
+
 `;
 
 

@@ -32,6 +32,10 @@ import {
 } from '../../shared/display/CurrencyConversionInfo';
 import { SkeletonBox } from '../../shared/SkeletonBox';
 import { SkeletonText } from '../../shared/SkeletonText';
+import {
+  getTradeSetupGroups,
+  getTradeTagGroups,
+} from '../../../utils/tradeGrouping';
 
 interface SetupLeaderboardWidgetProps {
   plugin: JournalitPlugin;
@@ -153,34 +157,16 @@ const getGroupingValues = (
   dimension: TopBreakdownDimension
 ): string[] => {
   if (dimension === 'setups') {
-    const setups = Array.isArray(trade.setup) ? trade.setup : [];
-    return Array.from(
-      new Set(
-        setups.flatMap((setup) => {
-          const normalized = normalizeText(setup);
-          return normalized ? [normalized] : [];
-        })
-      )
-    );
+    return getTradeSetupGroups(trade);
   }
 
   if (dimension === 'tags') {
-    const rawTags =
-      trade.customTags && trade.customTags.length > 0
-        ? trade.customTags
-        : trade.tags || [];
-
-    return Array.from(
-      new Set(
-        rawTags.flatMap((tag) => {
-          const normalized = normalizeText(tag);
-          return normalized ? [normalized] : [];
-        })
-      )
-    );
+    return getTradeTagGroups(trade);
   }
 
   if (dimension === 'tickers') {
+    
+    
     const ticker = normalizeText(trade.instrument).toUpperCase();
     return ticker ? [ticker] : [];
   }

@@ -42,6 +42,7 @@ import {
   SetupPerformanceWidget,
   SetupPerformanceWidgetConfig,
 } from './widgets/SetupPerformanceWidget';
+import { TagPerformanceWidget } from './widgets/TagPerformanceWidget';
 import { BestWorstTradesWidget } from './widgets/BestWorstTradesWidget';
 import { BestWorstDaysWidget } from './widgets/BestWorstDaysWidget';
 import { BestWorstWeeksWidget } from './widgets/BestWorstWeeksWidget';
@@ -297,6 +298,7 @@ export class WidgetCodeblockProcessor {
 
       
       'setup-performance',
+      'tag-performance',
       'directional-pnl',
       'directional-drawdown',
       'long-drawdown',
@@ -732,7 +734,10 @@ export class WidgetCodeblockProcessor {
     }
 
     
-    if (widgetType === 'setup-performance') {
+    if (
+      widgetType === 'setup-performance' ||
+      widgetType === 'tag-performance'
+    ) {
       const config: SetupPerformanceWidgetConfig = {};
       if (source.trim()) {
         const lines = source.trim().split('\n');
@@ -751,7 +756,11 @@ export class WidgetCodeblockProcessor {
           }
         }
       }
-      return createElement(SetupPerformanceWidget, {
+      const Widget =
+        widgetType === 'setup-performance'
+          ? SetupPerformanceWidget
+          : TagPerformanceWidget;
+      return createElement(Widget, {
         filePath,
         plugin: this.plugin,
         config,

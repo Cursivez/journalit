@@ -49,6 +49,14 @@ export const AVAILABLE_HOME_WIDGETS: HomeWidgetDefinition[] = [
     defaultSize: { w: 6, h: 7 }, 
   },
   {
+    id: 'keyEvents',
+    name: t('home.widget.key-events.name'),
+    description: t('home.widget.key-events.description'),
+    category: 'overview',
+    minSize: { w: 3, h: 4 },
+    defaultSize: { w: 4, h: 6 },
+  },
+  {
     id: 'positionSize',
     name: t('home.widget.position-size.name'),
     description: t('home.widget.position-size.description'),

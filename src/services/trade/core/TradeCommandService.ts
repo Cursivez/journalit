@@ -33,6 +33,15 @@ export class TradeCommitEventBatch {
     this.eventBridge.publishCommittedBatch([...this.payloads]);
     this.payloads.length = 0;
   }
+
+  public retainPaths(filePaths: ReadonlySet<string>): void {
+    if (this.flushed) return;
+    for (let index = this.payloads.length - 1; index >= 0; index--) {
+      if (!filePaths.has(this.payloads[index].receipt.path)) {
+        this.payloads.splice(index, 1);
+      }
+    }
+  }
 }
 
 export interface TradeCreateOptions {
@@ -45,8 +54,14 @@ export interface TradeCreateOptions {
 
 export interface TradeCreationBatch {
   registerCreatedFile(filePath: string): Promise<void>;
+  registerPostCreateTask(
+    filePath: string,
+    task: () => Promise<void>
+  ): Promise<void>;
   requestCacheInvalidation(): Promise<void>;
-  flush(): Promise<void>;
+  retainPaths(filePaths: ReadonlySet<string>): void;
+  abandon(): void;
+  flush(beforePostCreateTasks?: () => void | Promise<void>): Promise<void>;
 }
 
 interface TradeServiceMutator {
