@@ -5,7 +5,7 @@ import { createPortal } from 'react-dom';
 import { TFile } from 'obsidian';
 import JournalitPlugin from '../../../main';
 import { InvalidContextMessage } from './InvalidContextMessage';
-import { SkeletonBox } from '../../shared';
+import { SkeletonBox } from '../../shared/SkeletonBox';
 import type { KeyLevel, KeyLevels } from '../../drc/types';
 import {
   getWeekAnchorDate,
@@ -19,6 +19,7 @@ import {
   type TranslationKey,
 } from '../../../lang/helpers';
 import { cssVars } from '../../../styles/inlineStylePolicy';
+import { mergeClassNames } from '../../../utils/classNames';
 
 
 const MAX_FRONTMATTER_RETRIES = 5;
@@ -58,6 +59,11 @@ interface DisplayKeyLevel extends KeyLevel {
   currentIndex?: number;
   sourcePath?: string;
   sourceLabel?: string;
+}
+
+interface DisplayLevels {
+  support: DisplayKeyLevel[];
+  resistance: DisplayKeyLevel[];
 }
 
 interface EditingState {
@@ -292,10 +298,49 @@ const getMonthLabel = (date: Date): string =>
   date.toLocaleString(getCurrentLanguage(), { month: 'short' });
 
 
+const optionKeys: {
+  value: ImportanceLevel;
+  color: string;
+  labelKey: Parameters<typeof t>[0];
+}[] = [
+  {
+    value: null,
+    color: 'var(--text-faint)',
+    labelKey: 'widget.key-levels.importance.none',
+  },
+  {
+    value: 'High',
+    color: 'var(--color-red)',
+    labelKey: 'widget.key-levels.importance.high',
+  },
+  {
+    value: 'Medium',
+    color: 'var(--color-orange)',
+    labelKey: 'widget.key-levels.importance.medium',
+  },
+  {
+    value: 'Low',
+    color: 'var(--color-blue)',
+    labelKey: 'widget.key-levels.importance.low',
+  },
+];
+
+const getOptions = (): {
+  value: ImportanceLevel;
+  color: string;
+  label: string;
+}[] =>
+  optionKeys.map(({ value, color, labelKey }) => ({
+    value,
+    color,
+    label: t(labelKey),
+  }));
+
 const FlagPicker: React.FC<{
   value: ImportanceLevel;
   onChange: (value: ImportanceLevel) => void;
 }> = ({ value, onChange }) => {
+  const options = getOptions();
   const [menuPosition, setMenuPosition] =
     useState<ImportanceMenuPosition | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -365,29 +410,6 @@ const FlagPicker: React.FC<{
     };
   }, [menuPosition]);
 
-  const options: { value: ImportanceLevel; color: string; label: string }[] = [
-    {
-      value: null,
-      color: 'var(--text-faint)',
-      label: t('widget.key-levels.importance.none'),
-    },
-    {
-      value: 'High',
-      color: 'var(--color-red)',
-      label: t('widget.key-levels.importance.high'),
-    },
-    {
-      value: 'Medium',
-      color: 'var(--color-orange)',
-      label: t('widget.key-levels.importance.medium'),
-    },
-    {
-      value: 'Low',
-      color: 'var(--color-blue)',
-      label: t('widget.key-levels.importance.low'),
-    },
-  ];
-
   const currentOption = options.find((o) => o.value === value) || options[0];
   const portalDocument = containerRef.current?.ownerDocument;
   const menu =
@@ -446,41 +468,41 @@ const FlagPicker: React.FC<{
   );
 };
 
-function KeyLevelsSkeleton() {
-  const getSectionSkeleton = (
-    titleKey: TranslationKey,
-    tone: 'support' | 'resistance'
-  ) => (
-    <div className="key-levels-skeleton-section">
-      <div
-        className={`key-levels-skeleton-header key-levels-skeleton-header--${tone}`}
-      >
-        <SkeletonBox width={12} height={12} borderRadius="2px" />
-        <span className="key-levels-skeleton-title">{t(titleKey)}</span>
-      </div>
-      <div className="key-levels-skeleton-body">
-        {[1, 2].map((rowNumber) => (
-          <div
-            key={`${tone}-skeleton-${rowNumber}`}
-            className={`key-levels-skeleton-row ${
-              rowNumber === 2 ? 'key-levels-skeleton-row--last' : ''
-            }`}
-          >
-            <div className="key-levels-skeleton-row-content">
-              <SkeletonBox
-                width={14}
-                height={14}
-                borderRadius="2px"
-                className="key-levels-skeleton-icon"
-              />
-              <SkeletonBox width={60} height={14} borderRadius="4px" />
-            </div>
-          </div>
-        ))}
-      </div>
+const getSectionSkeleton = (
+  titleKey: TranslationKey,
+  tone: 'support' | 'resistance'
+) => (
+  <div className="key-levels-skeleton-section">
+    <div
+      className={`key-levels-skeleton-header key-levels-skeleton-header--${tone}`}
+    >
+      <SkeletonBox width={12} height={12} borderRadius="2px" />
+      <span className="key-levels-skeleton-title">{t(titleKey)}</span>
     </div>
-  );
+    <div className="key-levels-skeleton-body">
+      {[1, 2].map((rowNumber) => (
+        <div
+          key={`${tone}-skeleton-${rowNumber}`}
+          className={`key-levels-skeleton-row ${
+            rowNumber === 2 ? 'key-levels-skeleton-row--last' : ''
+          }`}
+        >
+          <div className="key-levels-skeleton-row-content">
+            <SkeletonBox
+              width={14}
+              height={14}
+              borderRadius="2px"
+              className="key-levels-skeleton-icon"
+            />
+            <SkeletonBox width={60} height={14} borderRadius="4px" />
+          </div>
+        </div>
+      ))}
+    </div>
+  </div>
+);
 
+function KeyLevelsSkeleton() {
   return (
     <div className={WIDGET_CLASS}>
       {getSectionSkeleton('widget.key-levels.support', 'support')}
@@ -497,10 +519,7 @@ function useKeyLevelsWidgetModel({
 }: KeyLevelsWidgetProps) {
   const [levelsState, setLevelsState] = useState<{
     keyLevels: KeyLevels;
-    displayLevels: {
-      support: DisplayKeyLevel[];
-      resistance: DisplayKeyLevel[];
-    };
+    displayLevels: DisplayLevels;
     loading: boolean;
     isValidContext: boolean;
   }>({
@@ -513,10 +532,7 @@ function useKeyLevelsWidgetModel({
   const setKeyLevels = (updatedKeyLevels: KeyLevels) => {
     setLevelsState((current) => ({ ...current, keyLevels: updatedKeyLevels }));
   };
-  const setDisplayLevels = (updatedDisplayLevels: {
-    support: DisplayKeyLevel[];
-    resistance: DisplayKeyLevel[];
-  }) => {
+  const setDisplayLevels = (updatedDisplayLevels: DisplayLevels) => {
     setLevelsState((current) => ({
       ...current,
       displayLevels: updatedDisplayLevels,
@@ -537,7 +553,9 @@ function useKeyLevelsWidgetModel({
   const resistanceInputRef = useRef<HTMLInputElement>(null);
   const editInputRef = useRef<HTMLInputElement>(null);
   const retryCountRef = useRef(0);
-  const dependencyPathsRef = useRef<Set<string>>(new Set([filePath]));
+  const retryTimeoutRef = useRef<number | null>(null);
+  const loadGenerationRef = useRef(0);
+  const [dependencyPaths] = useState(() => new Set([filePath]));
   const inheritedGroupsRef = useRef<KeyLevelGroup[]>([]);
 
   useEffect(() => {
@@ -572,12 +590,13 @@ function useKeyLevelsWidgetModel({
     }
 
     retryCountRef.current = 0;
-    dependencyPathsRef.current = new Set([filePath]);
+    dependencyPaths.clear();
+    dependencyPaths.add(filePath);
     void loadKeyLevels();
 
     
     const handleMetadataChange = (file: TFile) => {
-      if (dependencyPathsRef.current.has(file.path)) {
+      if (dependencyPaths.has(file.path)) {
         void loadKeyLevels();
       }
     };
@@ -585,6 +604,11 @@ function useKeyLevelsWidgetModel({
     plugin.app.metadataCache.on('changed', handleMetadataChange);
 
     return () => {
+      loadGenerationRef.current += 1;
+      if (retryTimeoutRef.current !== null) {
+        window.clearTimeout(retryTimeoutRef.current);
+        retryTimeoutRef.current = null;
+      }
       plugin.app.metadataCache.off('changed', handleMetadataChange);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps -- loadKeyLevels is intentionally not in deps to prevent infinite loops
@@ -603,8 +627,9 @@ function useKeyLevelsWidgetModel({
     frontmatter: Record<string, unknown>,
     currentLevels: KeyLevels
   ): Promise<{
-    support: DisplayKeyLevel[];
-    resistance: DisplayKeyLevel[];
+    displayLevels: DisplayLevels;
+    dependencyPaths: Set<string>;
+    inheritedGroups: KeyLevelGroup[];
   }> => {
     const date = getDateFromFrontmatter(frontmatter);
     const monthlyDate =
@@ -614,7 +639,7 @@ function useKeyLevelsWidgetModel({
     const groups: KeyLevelGroup[] = [
       { levels: currentLevels, source: 'current' },
     ];
-    const dependencyPaths = new Set<string>([filePath]);
+    const nextDependencyPaths = new Set<string>([filePath]);
 
     if (date && mode === 'drc') {
       const weeklyService = plugin.serviceManager
@@ -622,7 +647,7 @@ function useKeyLevelsWidgetModel({
         : plugin.weeklyReviewService;
       const weeklyPath = weeklyService?.getWeeklyReviewPath(date);
       if (weeklyPath && weeklyPath !== filePath) {
-        dependencyPaths.add(weeklyPath);
+        nextDependencyPaths.add(weeklyPath);
         groups.push({
           levels: getLevelsFromPath(weeklyPath),
           source: 'weekly',
@@ -640,7 +665,7 @@ function useKeyLevelsWidgetModel({
         : plugin.monthlyReviewService;
       const monthlyPath = monthlyService?.getMonthlyReviewPath(monthlyDate);
       if (monthlyPath && monthlyPath !== filePath) {
-        dependencyPaths.add(monthlyPath);
+        nextDependencyPaths.add(monthlyPath);
         groups.push({
           levels: getLevelsFromPath(monthlyPath),
           source: 'monthly',
@@ -650,19 +675,21 @@ function useKeyLevelsWidgetModel({
       }
     }
 
-    dependencyPathsRef.current = dependencyPaths;
-    inheritedGroupsRef.current = groups.filter(
-      (group) => group.source !== 'current'
-    );
     return {
-      support: dedupeLevels('support', groups),
-      resistance: dedupeLevels('resistance', groups),
+      displayLevels: {
+        support: dedupeLevels('support', groups),
+        resistance: dedupeLevels('resistance', groups),
+      },
+      dependencyPaths: nextDependencyPaths,
+      inheritedGroups: groups.filter((group) => group.source !== 'current'),
     };
   };
 
   const loadKeyLevels = async () => {
+    const loadGeneration = ++loadGenerationRef.current;
     const file = plugin.app.vault.getAbstractFileByPath(filePath);
     if (!(file instanceof TFile)) {
+      if (loadGeneration !== loadGenerationRef.current) return;
       setLevelsState((current) => ({
         ...current,
         isValidContext: false,
@@ -678,12 +705,15 @@ function useKeyLevelsWidgetModel({
       
       if (retryCountRef.current < MAX_FRONTMATTER_RETRIES) {
         retryCountRef.current++;
-        window.setTimeout(
-          () => void loadKeyLevels(),
-          FRONTMATTER_RETRY_DELAY_MS
-        );
+        retryTimeoutRef.current = window.setTimeout(() => {
+          retryTimeoutRef.current = null;
+          if (loadGeneration === loadGenerationRef.current) {
+            void loadKeyLevels();
+          }
+        }, FRONTMATTER_RETRY_DELAY_MS);
         return;
       }
+      if (loadGeneration !== loadGenerationRef.current) return;
       setLevelsState((current) => ({
         ...current,
         isValidContext: false,
@@ -694,6 +724,7 @@ function useKeyLevelsWidgetModel({
 
     const mode = parseReviewMode(frontmatter.type);
     if (!mode) {
+      if (loadGeneration !== loadGenerationRef.current) return;
       setLevelsState((current) => ({
         ...current,
         isValidContext: false,
@@ -702,16 +733,19 @@ function useKeyLevelsWidgetModel({
       return;
     }
     const levels = normalizeKeyLevels(frontmatter.keyLevels);
-    const nextDisplayLevels = await buildDisplayLevels(
-      mode,
-      frontmatter,
-      levels
-    );
+    const buildResult = await buildDisplayLevels(mode, frontmatter, levels);
 
+    if (loadGeneration !== loadGenerationRef.current) return;
+
+    dependencyPaths.clear();
+    for (const dependencyPath of buildResult.dependencyPaths) {
+      dependencyPaths.add(dependencyPath);
+    }
+    inheritedGroupsRef.current = buildResult.inheritedGroups;
     setReviewMode(mode);
     setLevelsState({
       keyLevels: levels,
-      displayLevels: nextDisplayLevels,
+      displayLevels: buildResult.displayLevels,
       isValidContext: true,
       loading: false,
     });
@@ -993,7 +1027,10 @@ export const KeyLevelsWidget: React.FC<KeyLevelsWidgetProps> = (props) => {
     return (
       <button
         type="button"
-        className={`key-levels-source-tag key-levels-source-tag--clickable key-levels-source-tag--${level.source}`}
+        className={mergeClassNames(
+          'journalit-native-button',
+          `key-levels-source-tag key-levels-source-tag--clickable key-levels-source-tag--${level.source}`
+        )}
         onClick={() => void openSourceReview(level.sourcePath!)}
         aria-label={t('widget.key-levels.open-source-review', { label })}
       >
@@ -1023,6 +1060,11 @@ export const KeyLevelsWidget: React.FC<KeyLevelsWidgetProps> = (props) => {
           <KeyLevelsFlagIcon importance={level.importance} />
           {isEditing ? (
             <input
+              aria-label={
+                editing.type === 'support'
+                  ? t('widget.key-levels.support')
+                  : t('widget.key-levels.resistance')
+              }
               ref={editInputRef}
               value={editing.value}
               onChange={(e) =>
@@ -1035,10 +1077,9 @@ export const KeyLevelsWidget: React.FC<KeyLevelsWidgetProps> = (props) => {
               className="key-levels-edit-input"
             />
           ) : canEditLevel ? (
-            <span
-              className="key-levels-price key-levels-price--editable"
-              role="button"
-              tabIndex={0}
+            <button
+              type="button"
+              className="journalit-native-button journalit-native-button--unstyled key-levels-price key-levels-price--editable"
               onClick={() => startEditing(type, currentIndex, level)}
               onKeyDown={(event) => {
                 if (event.key !== 'Enter' && event.key !== ' ') return;
@@ -1047,7 +1088,7 @@ export const KeyLevelsWidget: React.FC<KeyLevelsWidgetProps> = (props) => {
               }}
             >
               {level.price}
-            </span>
+            </button>
           ) : (
             <span className="key-levels-price">{level.price}</span>
           )}
@@ -1060,7 +1101,10 @@ export const KeyLevelsWidget: React.FC<KeyLevelsWidgetProps> = (props) => {
                 ? void removeSupportLevel(currentIndex)
                 : void removeResistanceLevel(currentIndex)
             }
-            className={`clickable-icon ${removeButtonClassName}`}
+            className={mergeClassNames(
+              'journalit-native-button',
+              `clickable-icon ${removeButtonClassName}`
+            )}
             aria-label={t('widget.key-levels.remove-level')}
           >
             [x]
@@ -1112,9 +1156,10 @@ export const KeyLevelsWidget: React.FC<KeyLevelsWidgetProps> = (props) => {
               onChange={setSupportImportance}
             />
             <button
+              aria-label={`${t('button.add')} ${t('widget.key-levels.support')}`}
               onClick={() => void addSupportLevel()}
               disabled={!newSupportLevel.trim()}
-              className="key-levels-add-button"
+              className="journalit-native-button key-levels-add-button"
             >
               +
             </button>
@@ -1162,9 +1207,10 @@ export const KeyLevelsWidget: React.FC<KeyLevelsWidgetProps> = (props) => {
               onChange={setResistanceImportance}
             />
             <button
+              aria-label={`${t('button.add')} ${t('widget.key-levels.resistance')}`}
               onClick={() => void addResistanceLevel()}
               disabled={!newResistanceLevel.trim()}
-              className="key-levels-add-button"
+              className="journalit-native-button key-levels-add-button"
             >
               +
             </button>

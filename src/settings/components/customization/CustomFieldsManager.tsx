@@ -25,7 +25,7 @@ import {
   generateUniqueFieldKey,
 } from '../../../types/customFields';
 import { Button } from '../../../components/ui/Button';
-import { useService } from '../../../hooks';
+import { useService } from '../../../hooks/useService';
 import { useOptimizedAccordion } from '../../../hooks/useOptimizedAccordion';
 import { FieldEditor } from './FieldEditor';
 import { t, tPlural } from '../../../lang/helpers';
@@ -89,8 +89,9 @@ const FieldAccordion: React.FC<FieldAccordionProps> = ({
     >
       <div className="setting-item">
         <div className="setting-item-info">
-          <div
-            className="setting-item-name custom-fields-accordion-title"
+          <button
+            type="button"
+            className="journalit-native-button journalit-native-button--unstyled setting-item-name custom-fields-accordion-title"
             onClick={toggleExpanded}
             onKeyDown={(e) => {
               if (e.key !== 'Enter' && e.key !== ' ') {
@@ -100,8 +101,6 @@ const FieldAccordion: React.FC<FieldAccordionProps> = ({
               e.preventDefault();
               toggleExpanded();
             }}
-            role="button"
-            tabIndex={0}
           >
             <svg
               className="custom-fields-accordion-chevron"
@@ -128,7 +127,7 @@ const FieldAccordion: React.FC<FieldAccordionProps> = ({
               )}
               )
             </span>
-          </div>
+          </button>
           <div className="setting-item-description">
             {field.type === CustomFieldType.DROPDOWN
               ? t('settings.customization.custom-fields.type-dropdown')

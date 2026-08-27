@@ -3,7 +3,8 @@
 import { App, TFile, TAbstractFile, TFolder } from 'obsidian';
 import { scheduleIdle } from '../../utils/deferredExecution';
 import type JournalitPlugin from '../../main';
-import { eventBus, type Unsubscribe } from '../events';
+import { eventBus } from '../events/EventBus';
+import type { Unsubscribe } from '../events/types';
 import { safeString } from '../../utils/safeString';
 import {
   getJournalitIndexesPath,
@@ -323,9 +324,9 @@ export class IndexManager {
       return Object.entries(filters).every(([field, value]) => {
         const fieldValue = entry.values[field];
         if (Array.isArray(fieldValue)) {
-          return Array.isArray(value)
-            ? value.some((v) => fieldValue.includes(v))
-            : fieldValue.includes(value);
+          if (!Array.isArray(value)) return fieldValue.includes(value);
+          const fieldValueSet = new Set(fieldValue);
+          return value.some((v) => fieldValueSet.has(v));
         }
         return fieldValue === value;
       });

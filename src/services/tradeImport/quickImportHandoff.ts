@@ -37,3 +37,7 @@ export function consumeQuickImportTradeImportHandoff(): QuickImportTradeImportHa
   pendingQuickImportHandoff = null;
   return handoff;
 }
+
+export function clearQuickImportTradeImportHandoff(): void {
+  pendingQuickImportHandoff = null;
+}

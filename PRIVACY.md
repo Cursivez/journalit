@@ -1,10 +1,10 @@
 # Privacy Policy - Journalit
 
-**Last Updated**: 2026-06-16
+**Last Updated**: 2026-08-21
 
 ## Overview
 
-Journalit is designed with privacy as a core principle. Your trading data stays in your Obsidian vault, and network features are entirely optional.
+Journalit is designed with privacy as a core principle. Your trading data stays in your Obsidian vault. Update notifications use public release metadata by default, while account, import, synchronization, and exchange-rate features remain optional as described below.
 
 ---
 
@@ -58,6 +58,26 @@ Query results and indexes for performance optimization. Stays local, never trans
 ## Optional Network Features
 
 Journalit includes optional features that require network connectivity. Backend synchronization is **disabled by default** and requires explicit authentication.
+
+### Plugin update availability
+
+When update notifications are enabled, Journalit checks its public GitHub `manifest.json` and matching release metadata at most once every 24 hours. The request is used only to compare the installed version with the newest compatible published version.
+
+**What is transmitted:**
+
+- A standard HTTPS request to public Journalit release files hosted by GitHub
+- As with any direct HTTPS connection, GitHub receives standard connection information such as the requesting IP address
+
+**What is NOT transmitted:**
+
+- Vault content or file names
+- Trading or account data
+- Journalit authentication tokens, email addresses, or user IDs
+- Device or vault identifiers
+
+**Control:**
+
+- Disable **Show Update Notifications** in Journalit notification settings to stop the check
 
 ### Authentication (Required for Sync Features)
 

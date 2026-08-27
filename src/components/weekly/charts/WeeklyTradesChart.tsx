@@ -3,7 +3,7 @@
 import React from 'react';
 import type JournalitPlugin from '../../../main';
 import { Trade } from '../../../components/dashboard/utils/dataUtils';
-import { SharedTradesChart } from '../../charts';
+import { SharedTradesChart } from '../../charts/SharedTradesChart';
 import { prepareTradesChartData } from '../../../utils/chartUtils';
 import { usePlugin } from '../../../hooks/usePlugin';
 

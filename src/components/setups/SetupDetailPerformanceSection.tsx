@@ -31,7 +31,7 @@ import {
   MetricValue,
   PercentValue,
   RMultipleValue,
-} from '../shared/display';
+} from '../shared/display/DisplayValue';
 import type {
   SetupDetailAnalysisMode,
   SetupDetailChartMode,

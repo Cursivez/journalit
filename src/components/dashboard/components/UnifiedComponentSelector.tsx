@@ -17,7 +17,7 @@ import {
   saveLayout,
   DashboardLayout,
 } from '../utils/layoutUtils';
-import { eventBus } from '../../../services/events';
+import { eventBus } from '../../../services/events/EventBus';
 import { t } from '../../../lang/helpers';
 import { useGuideTarget } from '../../../guides/GuideRuntimeLayer';
 import { DASHBOARD_WIDGET_PICKER_TARGET_ID } from '../../../guides/dashboardGuideIds';

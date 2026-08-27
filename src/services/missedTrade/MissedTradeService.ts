@@ -17,7 +17,7 @@ import {
 import { calculatePnL } from '../../utils/pnlCalculation';
 import { calculatePersistableRMultiple } from '../../components/forms/trade/validation';
 import { MissedTradeFormData } from '../../components/missedTrade/types';
-import { eventBus } from '../events';
+import { eventBus } from '../events/EventBus';
 import { LossReviewData } from '../backend/types';
 import {
   forceMetadataCacheRefresh,
@@ -28,6 +28,7 @@ import { safeString } from '../../utils/safeString';
 import { getDefaultTradeTemplateMetadata } from '../templates/defaultTradeTemplateMetadata';
 import { serializeIdealExitFrontmatter } from '../trade/core/TradeFrontmatterCodec';
 import type { PreviousTagAssignments } from '../options/CustomOptionsService';
+import { serializeImageAnnotationsForFrontmatter } from '../../utils/imageAnnotations';
 
 function isTradeFolderPath(path: string): boolean {
   return /\/trades\//.test(path);
@@ -468,6 +469,10 @@ export class MissedTradeService extends CustomDataService {
       }
       if (data.mistake?.length) frontmatterData.mistake = data.mistake;
       if (data.images?.length) frontmatterData.images = data.images;
+      if (data.imageAnnotations !== undefined) {
+        frontmatterData.imageAnnotations =
+          serializeImageAnnotationsForFrontmatter(data.imageAnnotations);
+      }
       if (data.useDirectPnLInput !== undefined)
         frontmatterData.useDirectPnLInput = data.useDirectPnLInput;
       if (data.directPnL !== undefined)
@@ -872,6 +877,9 @@ export class MissedTradeService extends CustomDataService {
   
   private generateMissedTradeContent(data: MissedTradeFormData): string {
     const templateMetadata = getDefaultTradeTemplateMetadata(this.getPlugin());
+    const imageAnnotations = serializeImageAnnotationsForFrontmatter(
+      data.imageAnnotations
+    );
 
     
     const frontmatterLines = [
@@ -940,6 +948,9 @@ export class MissedTradeService extends CustomDataService {
       
       data.images?.length
         ? `images: [${data.images.map((img) => `"${img.trim()}"`).join(', ')}]`
+        : null,
+      imageAnnotations
+        ? `imageAnnotations: ${JSON.stringify(imageAnnotations)}`
         : null,
 
       
@@ -1024,6 +1035,7 @@ export class MissedTradeService extends CustomDataService {
       'mistake',
       'account',
       'images',
+      'imageAnnotations',
       'tags',
       'notes',
       'customFields',

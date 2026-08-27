@@ -33,10 +33,10 @@ import {
   LAYOUT_BUILDER_WIDGET_PICKER_TARGET_ID,
   LAYOUT_BUILDER_WIDGET_SELECTED_ACTION_ID,
 } from '../../guides/layoutBuilderGuideIds';
+import { OPEN_FULLSCREEN_PORTAL_SELECTORS } from '../image/fullscreenPortalPresence';
 
 const COMPETING_ESCAPE_SURFACE_SELECTOR = [
-  '#journalit-fullscreen-portal:not(:empty)',
-  '.journalit-fullscreen-portal-container:not(:empty)',
+  ...OPEN_FULLSCREEN_PORTAL_SELECTORS,
   '.journalit-shared-selector-overlay',
   '.journalit-component-selector-overlay',
   '.journalit-modal-overlay',

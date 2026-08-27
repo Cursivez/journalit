@@ -6,6 +6,7 @@ import {
   useLayoutEffect,
   useCallback,
   useMemo,
+  useRef,
 } from 'react';
 import { FilterState } from '../DashboardView';
 import {
@@ -18,7 +19,8 @@ import {
   normalizeDashboardFilters,
 } from '../../../settings/viewFiltersDefaults';
 import { applyAllCalendarFixes } from '../utils/calendarStyles';
-import { usePlugin, useEventBus } from '../../../hooks';
+import { usePlugin } from '../../../hooks/usePlugin';
+import { useEventBus } from '../../../hooks/useEventBus';
 import {
   AVAILABLE_WIDGETS,
   normalizeDashboardWidgetIds,
@@ -35,6 +37,11 @@ export const useDashboard = () => {
   const [filters, setFilters] = useState<FilterState>(() =>
     createDashboardFilters()
   );
+  const filtersRef = useRef(filters);
+  const applyFilters = useCallback((nextFilters: FilterState) => {
+    filtersRef.current = nextFilters;
+    setFilters(nextFilters);
+  }, []);
 
   const [isFiltersHydrated, setIsFiltersHydrated] = useState(false);
 
@@ -46,17 +53,18 @@ export const useDashboard = () => {
     const persisted = plugin.uiStateManager.getState().viewFilters?.dashboard;
     if (persisted) {
       const normalizedPersisted = normalizeDashboardFilters(persisted);
-      setFilters({
+      const hydratedFilters: FilterState = {
         ...normalizedPersisted,
         
         dateRange: [
           persisted.dateRange[0] ? new Date(persisted.dateRange[0]) : null,
           persisted.dateRange[1] ? new Date(persisted.dateRange[1]) : null,
-        ],
-      });
+        ] as [Date | null, Date | null],
+      };
+      applyFilters(hydratedFilters);
     }
     setIsFiltersHydrated(true);
-  }, [isFiltersHydrated, plugin]);
+  }, [applyFilters, isFiltersHydrated, plugin]);
 
   
   const [isEditing, setIsEditing] = useState<boolean>(false);
@@ -86,26 +94,22 @@ export const useDashboard = () => {
 
   const handleAccountChanged = useCallback(
     (payload: AccountChangedPayload) => {
-      setFilters((previousFilters) => {
-        const remappedFilters = remapAccountFilterFromAccountChange(
-          previousFilters,
-          payload
-        );
+      const currentFilters = filtersRef.current;
+      const remappedFilters = remapAccountFilterFromAccountChange(
+        currentFilters,
+        payload
+      );
 
-        if (remappedFilters === previousFilters) {
-          return previousFilters;
-        }
+      if (remappedFilters === currentFilters) return;
 
-        const nextFilters = normalizeDashboardFilters(remappedFilters);
+      const nextFilters = normalizeDashboardFilters(remappedFilters);
+      applyFilters(nextFilters);
 
-        if (plugin) {
-          persistViewFilter(plugin.uiStateManager, 'dashboard', nextFilters);
-        }
-
-        return nextFilters;
-      });
+      if (plugin) {
+        persistViewFilter(plugin.uiStateManager, 'dashboard', nextFilters);
+      }
     },
-    [plugin]
+    [applyFilters, plugin]
   );
 
   
@@ -174,7 +178,7 @@ export const useDashboard = () => {
   const handleFilterChange = useCallback(
     (newFilters: FilterState) => {
       const normalizedFilters = normalizeDashboardFilters(newFilters);
-      setFilters(normalizedFilters);
+      applyFilters(normalizedFilters);
 
       
       if (plugin) {
@@ -185,19 +189,17 @@ export const useDashboard = () => {
         );
       }
     },
-    [plugin]
+    [applyFilters, plugin]
   );
 
   
   const toggleEditMode = useCallback(() => {
-    setIsEditing((prev) => {
-      const newValue = !prev;
-      if (newValue === false && showUnifiedSelector) {
-        setShowUnifiedSelector(false);
-      }
-      return newValue;
-    });
-  }, [showUnifiedSelector]);
+    const nextIsEditing = !isEditing;
+    if (!nextIsEditing && showUnifiedSelector) {
+      setShowUnifiedSelector(false);
+    }
+    setIsEditing(nextIsEditing);
+  }, [isEditing, showUnifiedSelector]);
 
   
   const openUnifiedSelector = useCallback(() => {

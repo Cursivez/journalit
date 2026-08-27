@@ -130,8 +130,9 @@ const UnreviewedTradesWidgetComponent: React.FC<
   
   if (breakdown.total === 0) {
     return (
-      <div
-        className="journalit-home-unreviewed journalit-home-unreviewed--row journalit-home-unreviewed--clickable"
+      <button
+        type="button"
+        className="journalit-native-button journalit-native-button--unstyled journalit-home-unreviewed journalit-home-unreviewed--row journalit-home-unreviewed--clickable"
         onClick={() => void openTradeLog(false)}
         onKeyDown={(e) => {
           if (e.key !== 'Enter' && e.key !== ' ') {
@@ -141,8 +142,6 @@ const UnreviewedTradesWidgetComponent: React.FC<
           e.preventDefault();
           void openTradeLog(false);
         }}
-        role="button"
-        tabIndex={0}
         aria-label={t('command.open-trade-log')}
       >
         <ClipboardCheck
@@ -152,7 +151,7 @@ const UnreviewedTradesWidgetComponent: React.FC<
         <span className="journalit-home-widget__muted">
           {t('home.widget.unreviewed.all-reviewed')}
         </span>
-      </div>
+      </button>
     );
   }
 

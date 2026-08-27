@@ -791,7 +791,7 @@ export const DASHBOARD_STYLES = `
     display: none !important;
   }
   
-  .journalit-dashboard-date-range-presets button {
+  .journalit-dashboard-date-range-presets button.journalit-native-button {
     background-color: var(--background-primary) !important;
     border: 1px solid var(--background-modifier-border) !important;
     border-radius: 4px !important;
@@ -805,12 +805,12 @@ export const DASHBOARD_STYLES = `
     line-height: 1 !important;
   }
   
-  .journalit-dashboard-date-range-presets button:hover {
+  .journalit-dashboard-date-range-presets button.journalit-native-button:hover {
     background-color: var(--background-modifier-hover) !important;
     border-color: var(--interactive-accent) !important;
   }
   
-  .journalit-dashboard-date-range-presets button.active {
+  .journalit-dashboard-date-range-presets button.journalit-native-button.active {
     background-color: var(--interactive-accent) !important;
     color: var(--text-on-accent, white) !important;
     border-color: var(--interactive-accent) !important;
@@ -868,9 +868,17 @@ export const DASHBOARD_STYLES = `
     gap: 8px !important;
     align-items: center !important;
   }
-  
-  .journalit-dashboard-date-range-start label,
-  .journalit-dashboard-date-range-end label {
+
+  .journalit-dashboard-date-range-start > .journalit-fast-datetime,
+  .journalit-dashboard-date-range-end > .journalit-fast-datetime {
+    display: grid !important;
+    grid-column: 1 / -1 !important;
+    grid-template-columns: subgrid !important;
+    align-items: center !important;
+  }
+
+  .journalit-dashboard-date-range-start .journalit-fast-datetime__label,
+  .journalit-dashboard-date-range-end .journalit-fast-datetime__label {
     display: block !important;
     font-size: 11px !important;
     font-weight: 600 !important;
@@ -880,7 +888,12 @@ export const DASHBOARD_STYLES = `
     white-space: nowrap !important;
     margin: 0 !important;
   }
-  
+
+  .journalit-dashboard-date-range-start .journalit-fast-datetime__error,
+  .journalit-dashboard-date-range-end .journalit-fast-datetime__error {
+    grid-column: 2;
+  }
+
   
   .journalit-date-picker-input {
     width: auto !important;
@@ -964,11 +977,11 @@ export const DASHBOARD_STYLES = `
     width: 100% !important;
   }
   
-  .journalit-dashboard-account-summary,
-  .journalit-dashboard-ticker-summary,
-  .journalit-dashboard-setup-summary,
-  .journalit-dashboard-tag-summary,
-  .journalit-dashboard-mistake-summary {
+  button.journalit-native-button.journalit-dashboard-account-summary,
+  button.journalit-native-button.journalit-dashboard-ticker-summary,
+  button.journalit-native-button.journalit-dashboard-setup-summary,
+  button.journalit-native-button.journalit-dashboard-tag-summary,
+  button.journalit-native-button.journalit-dashboard-mistake-summary {
     display: flex !important;
     justify-content: space-between !important;
     align-items: center !important;
@@ -993,20 +1006,20 @@ export const DASHBOARD_STYLES = `
     white-space: nowrap !important;
   }
 
-  .journalit-dashboard-account-summary:hover,
-  .journalit-dashboard-ticker-summary:hover,
-  .journalit-dashboard-setup-summary:hover,
-  .journalit-dashboard-tag-summary:hover,
-  .journalit-dashboard-mistake-summary:hover {
+  button.journalit-native-button.journalit-dashboard-account-summary:hover,
+  button.journalit-native-button.journalit-dashboard-ticker-summary:hover,
+  button.journalit-native-button.journalit-dashboard-setup-summary:hover,
+  button.journalit-native-button.journalit-dashboard-tag-summary:hover,
+  button.journalit-native-button.journalit-dashboard-mistake-summary:hover {
     border-color: var(--interactive-accent) !important;
     background-color: var(--background-modifier-hover) !important;
   }
 
-  .journalit-dashboard-account-summary:focus-visible,
-  .journalit-dashboard-ticker-summary:focus-visible,
-  .journalit-dashboard-setup-summary:focus-visible,
-  .journalit-dashboard-tag-summary:focus-visible,
-  .journalit-dashboard-mistake-summary:focus-visible {
+  button.journalit-native-button.journalit-dashboard-account-summary:focus-visible,
+  button.journalit-native-button.journalit-dashboard-ticker-summary:focus-visible,
+  button.journalit-native-button.journalit-dashboard-setup-summary:focus-visible,
+  button.journalit-native-button.journalit-dashboard-tag-summary:focus-visible,
+  button.journalit-native-button.journalit-dashboard-mistake-summary:focus-visible {
     outline: 2px solid var(--interactive-accent) !important;
     outline-offset: 2px !important;
   }
@@ -2793,7 +2806,7 @@ export const DASHBOARD_STYLES = `
       justify-content: flex-start !important;
     }
     
-    .journalit-dashboard-date-range-presets button {
+    .journalit-dashboard-date-range-presets button.journalit-native-button {
       flex: 0 1 auto !important;
       margin: 2px !important;
       font-size: 11px !important;
@@ -2835,7 +2848,7 @@ export const DASHBOARD_STYLES = `
     }
     
     
-    .journalit-dashboard-date-range-presets button {
+    .journalit-dashboard-date-range-presets button.journalit-native-button {
       padding: 3px 6px !important;
       font-size: 10px !important;
     }

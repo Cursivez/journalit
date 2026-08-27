@@ -389,6 +389,7 @@ export class ApiClient {
       '/api/v1/csv',
       '/api/v1/trade-import',
       '/api/v1/me/entitlements',
+      '/api/v1/economic-events',
     ];
 
     return authEndpoints.some((endpoint) => url.includes(endpoint));

@@ -3,6 +3,7 @@ import { logger } from '../../utils/logger';
 
 import { App, TFile, normalizePath } from 'obsidian';
 import { getApp } from '../../utils/obsidian';
+import { generateUUID } from '../../utils/uuid';
 
 interface ImagePathComponents {
   year: string;
@@ -14,7 +15,23 @@ interface ImagePathComponents {
 const SUPPORTED_MEDIA_FILE_EXTENSION_PATTERN =
   /\.(jpg|jpeg|png|gif|bmp|webp|svg|mp4|webm|mov|m4v|ogv|ogg|3gp|mkv)$/i;
 
-class ImageService {
+
+
+
+const GENERATED_MEDIA_FILE_ID_PATTERN =
+  /-(\d+(?:-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})?)(?:\.[^.]+)?$/i;
+
+function createMediaFileId(): string {
+  return `${Date.now()}-${generateUUID()}`;
+}
+
+export function getGeneratedMediaFileId(fileName: string): string {
+  return (
+    GENERATED_MEDIA_FILE_ID_PATTERN.exec(fileName)?.[1] ?? createMediaFileId()
+  );
+}
+
+export class ImageService {
   private _app: App | null = null;
 
   constructor(app?: App) {
@@ -58,7 +75,9 @@ class ImageService {
       );
 
       
-      const timestamp = Date.now();
+      
+      
+      const fileId = createMediaFileId();
 
       
       let fullPath: string;
@@ -67,14 +86,14 @@ class ImageService {
         
         const { year, month, weekOfMonth } = components;
         const folder = `${basePath}/${year}/${month}/${weekOfMonth}`;
-        const fileName = `${namePrefix}-${timestamp}${fileExt}`;
+        const fileName = `${namePrefix}-${fileId}${fileExt}`;
         fullPath = `${folder}/${fileName}`;
 
         
         await this.app.vault.adapter.mkdir(normalizePath(folder));
       } else {
         
-        const fileName = `${namePrefix}-${timestamp}${fileExt}`;
+        const fileName = `${namePrefix}-${fileId}${fileExt}`;
         fullPath = `${basePath}/${fileName}`;
 
         

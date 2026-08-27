@@ -25,7 +25,7 @@ import {
   PercentValue,
   PnLValue,
   RMultipleValue,
-} from '../shared/display';
+} from '../shared/display/DisplayValue';
 
 import type {
   SetupCompareChartMetric,
@@ -84,8 +84,9 @@ export const SetupComparePage: React.FC<{
     displayRMultiples ? 'r' : 'pnl'
   );
   const effectiveChartMetric = displayRMultiples ? chartMetric : 'pnl';
+  const selectedSetupIdsSet = new Set(selectedSetupIds);
   const selectedModels = viewModels.filter(({ setup }) =>
-    selectedSetupIds.includes(setup.id)
+    selectedSetupIdsSet.has(setup.id)
   );
   const setupTradeMap = tradeIndex.any;
   const compareModels: SetupCompareViewModel[] = selectedModels.map(
@@ -246,22 +247,30 @@ export const SetupComparePage: React.FC<{
 
 SetupComparePage.displayName = 'SetupComparePage';
 
+const optionKeys: Array<{
+  value: SetupCompareChartMetric;
+  labelKey: Parameters<typeof t>[0];
+}> = [
+  {
+    value: 'r',
+    labelKey: 'setups.view.detail.performance.cumulative-r',
+  },
+  {
+    value: 'pnl',
+    labelKey: 'setups.view.detail.performance.cumulative-pnl',
+  },
+];
+
+const getOptions = (): Array<DropdownMenuOption<SetupCompareChartMetric>> =>
+  optionKeys.map(({ value, labelKey }) => ({ value, label: t(labelKey) }));
+
 const SetupCompareChartMetricControl: React.FC<{
   metric: SetupCompareChartMetric;
   onMetricChange: (metric: SetupCompareChartMetric) => void;
 }> = ({ metric, onMetricChange }) => {
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
-  const options: Array<DropdownMenuOption<SetupCompareChartMetric>> = [
-    {
-      value: 'r',
-      label: t('setups.view.detail.performance.cumulative-r'),
-    },
-    {
-      value: 'pnl',
-      label: t('setups.view.detail.performance.cumulative-pnl'),
-    },
-  ];
+  const options = getOptions();
   const currentLabel =
     options.find((option) => option.value === metric)?.label ??
     options[0].label;

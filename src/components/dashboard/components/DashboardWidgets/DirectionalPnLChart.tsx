@@ -2,7 +2,8 @@
 
 import React from 'react';
 import { BaseWidget, BaseWidgetProps } from './BaseWidget';
-import { SharedPnLChart, preparePnLChartData } from '../../../charts';
+import { SharedPnLChart } from '../../../charts/SharedPnLChart';
+import { preparePnLChartData } from '../../../../utils/chartUtils';
 import { usePlugin } from '../../../../hooks/usePlugin';
 import { t } from '../../../../lang/helpers';
 import { isPnlContributingTrade } from '../../../../utils/tradeStatusUtils';

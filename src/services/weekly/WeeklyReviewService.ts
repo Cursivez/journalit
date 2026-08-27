@@ -2,7 +2,12 @@
 
 import { App, TFile, normalizePath, FileView, WorkspaceLeaf } from 'obsidian';
 import { imageService } from '../../services/image/ImageService';
-import { NewsEvent, WeeklyReviewData } from './types';
+import {
+  NewsEvent,
+  WeeklyKeyEventsWriteState,
+  WeeklyReviewData,
+} from './types';
+import { parseNewsEvents } from './parseNewsEvents';
 
 import JournalitPlugin from '../../main';
 import type { NavigationSource } from '../../navigation/types';
@@ -17,15 +22,20 @@ import {
 } from '../../utils/dateUtils';
 import { getTradingDay } from '../../utils/tradingDayUtils';
 import { DRCData } from '../drc/types';
-import { forceMetadataCacheRefresh } from '../../utils/dataRefresh';
+import {
+  forceMetadataCacheRefresh,
+  readFrontmatterFromDisk,
+} from '../../utils/dataRefresh';
 
 import { FolderPathService } from '../core/FolderPathService';
 import { ReviewTemplateService } from '../templates/ReviewTemplateService';
 import { TemplateTransformationService } from '../templates/TemplateTransformationService';
 import { normalizeTradeExecutionForPeriodAnalytics } from '../trade/core/TradeExecutionAnalytics';
-import { eventBus, Unsubscribe } from '../events';
+import { eventBus } from '../events/EventBus';
+import { Unsubscribe } from '../events/types';
 import { registerPathIndexInvalidator } from '../indexing/pathIndexInvalidator';
 import { safeString } from '../../utils/safeString';
+import type { ReviewStreakItem } from '../../utils/reviewStreaks';
 
 
 
@@ -37,43 +47,14 @@ function asRecord(value: unknown): Record<string, unknown> | undefined {
   return isRecord(value) ? value : undefined;
 }
 
-function isNewsEvent(value: unknown): value is NewsEvent {
-  return Boolean(value && typeof value === 'object' && !Array.isArray(value));
-}
-
-function parseNewsEvents(value: unknown): NewsEvent[] {
-  if (!Array.isArray(value)) return [];
-
-  const events: NewsEvent[] = [];
-  for (const item of value) {
-    const record = asRecord(item);
-    if (!record || typeof record.event !== 'string') continue;
-
-    let color: string | undefined;
-    switch (record.color) {
-      case 'gray':
-      case 'red':
-      case 'orange':
-      case 'yellow':
-        color = record.color;
-        break;
-    }
-
-    events.push({
-      event: record.event,
-      notes: typeof record.notes === 'string' ? record.notes : '',
-      color,
-      day: typeof record.day === 'string' ? record.day : undefined,
-    });
-  }
-
-  return events;
-}
-
 function asStringArray(value: unknown): string[] {
   return Array.isArray(value)
     ? value.filter((item): item is string => typeof item === 'string')
     : [];
+}
+
+function parseKeyEventsAutoImported(value: unknown): string[] {
+  return asStringArray(value).filter((key) => key.length > 0);
 }
 
 function getStringRecord(value: unknown): Record<string, string> {
@@ -234,6 +215,46 @@ export class WeeklyReviewService {
   }
 
   
+  private getWeeklyReviewPeriodDate(path: string): Date | null {
+    const normalizedPath = normalizePath(path);
+    const journalFolderPrefix = `${normalizePath(this.getJournalFolderPath())}/`;
+    if (!normalizedPath.startsWith(journalFolderPrefix)) return null;
+
+    const relativeParts = normalizedPath
+      .slice(journalFolderPrefix.length)
+      .split('/');
+    const isoWeekYear = Number(relativeParts[0]);
+    const filename = relativeParts[relativeParts.length - 1] ?? '';
+    const weekMatch = /^W(\d{1,2})-Review\.md$/.exec(filename);
+    const isoWeek = weekMatch ? Number(weekMatch[1]) : NaN;
+    if (
+      !Number.isInteger(isoWeekYear) ||
+      !Number.isInteger(isoWeek) ||
+      isoWeek < 1 ||
+      isoWeek > 53
+    ) {
+      return null;
+    }
+
+    const januaryFourth = new Date(isoWeekYear, 0, 4, 12);
+    const daysSinceMonday = (januaryFourth.getDay() + 6) % 7;
+    const thursday = new Date(januaryFourth);
+    thursday.setDate(
+      januaryFourth.getDate() - daysSinceMonday + (isoWeek - 1) * 7 + 3
+    );
+
+    const expectedWeek = `W${String(isoWeek).padStart(2, '0')}`;
+    if (
+      thursday.getFullYear() !== isoWeekYear ||
+      getWeekStringForDate(thursday) !== expectedWeek
+    ) {
+      return null;
+    }
+
+    return thursday;
+  }
+
+  
   private getReviewedWeeklyReviewPaths(): ReadonlySet<string> {
     if (this.reviewedWeeklyReviewPaths) {
       return this.reviewedWeeklyReviewPaths;
@@ -339,9 +360,10 @@ export class WeeklyReviewService {
         const currentQuestions = Object.keys(currentData.reviewQuestions || {});
         const newQuestions = this.plugin.settings.weekly.reviewQuestions;
 
+        const newQuestionsSet = new Set(newQuestions);
         if (
           currentQuestions.length !== newQuestions.length ||
-          !currentQuestions.every((q) => newQuestions.includes(q))
+          !currentQuestions.every((q) => newQuestionsSet.has(q))
         ) {
           
           const updatedQuestions: Record<string, string> = {};
@@ -417,16 +439,46 @@ export class WeeklyReviewService {
 
   
   public getKeyEventsForWeek(date: Date): NewsEvent[] {
+    return this.getKeyEventsWriteStateForWeek(date).keyEvents;
+  }
+
+  
+  public async readKeyEventsForWeek(date: Date): Promise<NewsEvent[]> {
     const weeklyReviewPath = this.getWeeklyReviewPath(date);
     const file = this.app.vault.getAbstractFileByPath(weeklyReviewPath);
     if (!(file instanceof TFile)) return [];
 
+    try {
+      const frontmatter = await readFrontmatterFromDisk(this.app, file);
+      if (frontmatter.type !== 'weekly-review') return [];
+
+      return parseNewsEvents(frontmatter.keyEvents);
+    } catch {
+      return this.getKeyEventsForWeek(date);
+    }
+  }
+
+  
+  public getKeyEventsWriteStateForWeek(date: Date): WeeklyKeyEventsWriteState {
+    const weeklyReviewPath = this.getWeeklyReviewPath(date);
+    const file = this.app.vault.getAbstractFileByPath(weeklyReviewPath);
+    if (!(file instanceof TFile)) {
+      return { keyEvents: [], keyEventsAutoImported: [] };
+    }
+
     const frontmatter = asRecord(
       this.app.metadataCache.getFileCache(file)?.frontmatter
     );
-    if (frontmatter?.type !== 'weekly-review') return [];
+    if (frontmatter?.type !== 'weekly-review') {
+      return { keyEvents: [], keyEventsAutoImported: [] };
+    }
 
-    return parseNewsEvents(frontmatter?.keyEvents);
+    return {
+      keyEvents: parseNewsEvents(frontmatter.keyEvents),
+      keyEventsAutoImported: parseKeyEventsAutoImported(
+        frontmatter.keyEventsAutoImported
+      ),
+    };
   }
 
   
@@ -620,6 +672,29 @@ export class WeeklyReviewService {
   }
 
   
+  public getReviewStreakItems(): ReviewStreakItem[] {
+    return this.app.vault.getMarkdownFiles().flatMap((file) => {
+      if (!this.isWeeklyReviewMarkdownPath(file.path)) {
+        return [];
+      }
+
+      const frontmatter = asRecord(
+        this.app.metadataCache.getFileCache(file)?.frontmatter
+      );
+      if (!frontmatter || frontmatter.type !== 'weekly-review') {
+        return [];
+      }
+
+      const date = this.getWeeklyReviewPeriodDate(file.path);
+      if (!date) {
+        return [];
+      }
+
+      return [{ date, reviewed: frontmatter.reviewed === true }];
+    });
+  }
+
+  
   public async updateWeeklyReviewFrontmatter(
     filePath: string,
     updates: Partial<Record<string, unknown>>
@@ -683,6 +758,52 @@ export class WeeklyReviewService {
   }
 
   
+  public async updateKeyEventsForWeek(
+    date: Date,
+    update: (current: WeeklyKeyEventsWriteState) => WeeklyKeyEventsWriteState
+  ): Promise<string> {
+    const weeklyReviewPath = this.getWeeklyReviewPath(date);
+
+    if (!(await this.app.vault.adapter.exists(weeklyReviewPath))) {
+      await this.createWeeklyReview(date);
+    }
+
+    const weeklyReviewFile =
+      this.app.vault.getAbstractFileByPath(weeklyReviewPath);
+    if (!(weeklyReviewFile instanceof TFile)) {
+      throw new Error(`Weekly Review file not found: ${weeklyReviewPath}`);
+    }
+
+    await this.app.fileManager.processFrontMatter(
+      weeklyReviewFile,
+      (frontmatter) => {
+        const frontmatterRecord = asRecord(frontmatter) ?? {};
+        const next = update({
+          keyEvents: parseNewsEvents(frontmatterRecord.keyEvents),
+          keyEventsAutoImported: parseKeyEventsAutoImported(
+            frontmatterRecord.keyEventsAutoImported
+          ),
+        });
+        frontmatterRecord.keyEvents = next.keyEvents;
+        if (next.keyEventsAutoImported.length > 0) {
+          frontmatterRecord.keyEventsAutoImported = next.keyEventsAutoImported;
+        } else {
+          delete frontmatterRecord.keyEventsAutoImported;
+        }
+      }
+    );
+
+    await forceMetadataCacheRefresh(this.app, weeklyReviewFile);
+
+    eventBus.publish('review:changed', {
+      type: 'weekly',
+      action: 'updated',
+      filePath: weeklyReviewPath,
+    });
+
+    return weeklyReviewPath;
+  }
+
   public async appendKeyEventToWeeklyReview(
     date: Date,
     event: NewsEvent
@@ -703,9 +824,7 @@ export class WeeklyReviewService {
       weeklyReviewFile,
       (frontmatter) => {
         const frontmatterRecord = asRecord(frontmatter) ?? {};
-        const currentEvents = Array.isArray(frontmatterRecord.keyEvents)
-          ? frontmatterRecord.keyEvents.filter(isNewsEvent)
-          : [];
+        const currentEvents = parseNewsEvents(frontmatterRecord.keyEvents);
         frontmatterRecord.keyEvents = [...currentEvents, event];
       }
     );
@@ -755,11 +874,9 @@ export class WeeklyReviewService {
       weeklyReviewFile,
       (frontmatter) => {
         const frontmatterRecord = asRecord(frontmatter) ?? {};
-        const currentEvents: NewsEvent[] = Array.isArray(
+        const currentEvents: NewsEvent[] = parseNewsEvents(
           frontmatterRecord.keyEvents
-        )
-          ? frontmatterRecord.keyEvents.filter(isNewsEvent)
-          : [];
+        );
         let visibleIndex = -1;
 
         frontmatterRecord.keyEvents = currentEvents.flatMap((currentEvent) => {

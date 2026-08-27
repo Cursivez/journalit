@@ -32,7 +32,7 @@ import {
   useSortable,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { MetricCardSkeleton } from '../../../shared';
+import { MetricCardSkeleton } from '../../../shared/MetricCardSkeleton';
 import { useCurrency } from '../../../../contexts/CurrencyContext';
 import { useDisplayFormatter } from '../../../../hooks/useDisplayPolicy';
 import { ConversionSourceLines } from '../../../shared/display/CurrencyConversionInfo';
@@ -40,7 +40,8 @@ import type {
   DisplayValueKind,
   DisplayValueOptions,
 } from '../../../../services/display/DisplayPolicy';
-import { eventBus, useEventBus } from '../../../../services/events';
+import { eventBus } from '../../../../services/events/EventBus';
+import { useEventBus } from '../../../../hooks/useEventBus';
 import { t } from '../../../../lang/helpers';
 import { dndKitStyle } from '../../../../styles/inlineStylePolicy';
 import {
@@ -511,6 +512,152 @@ const SortableMetricCard: React.FC<{
 };
 
 
+const getMetricDisplayKind = (metric: string): DisplayValueKind => {
+  switch (metric) {
+    case 'netPnL':
+    case 'expectancy':
+    case 'avgWin':
+    case 'avgLoss':
+    case 'largestWin':
+    case 'largestLoss':
+    case 'bestDay':
+      return 'pnl';
+    case 'maxDrawdown':
+      return 'drawdown';
+    case 'winRate':
+    case 'timeInDrawdown':
+      return 'returnPercent';
+    case 'profitFactor':
+    case 'sharpeRatio':
+    case 'avgRR':
+    case 'avgRRRiskBased':
+      return 'metric';
+    default:
+      if (MAE_MFE_METRICS.has(metric)) return 'metric';
+      return 'count';
+  }
+};
+
+const getMetricName = (metric: string): string => {
+  switch (metric) {
+    case 'netPnL':
+      return t('dashboard.metrics.netPnL');
+    case 'winRate':
+      return t('dashboard.metrics.winRate');
+    case 'profitFactor':
+      return t('dashboard.metrics.profitFactor');
+    case 'sharpeRatio':
+      return t('dashboard.metrics.sharpeRatio');
+    case 'expectancy':
+      return t('dashboard.metrics.expectancy');
+    case 'numTrades':
+      return t('dashboard.metrics.numTrades');
+    case 'numWinTrades':
+      return t('dashboard.metrics.numWinTrades');
+    case 'numLossTrades':
+      return t('dashboard.metrics.numLossTrades');
+    case 'avgWin':
+      return t('dashboard.metrics.avgWin');
+    case 'avgLoss':
+      return t('dashboard.metrics.avgLoss');
+    case 'avgRR':
+      return t('dashboard.metrics.avgRR');
+    case 'avgRRRiskBased':
+      return t('dashboard.metrics.avgRRRiskBased');
+    case 'maxDrawdown':
+      return t('dashboard.metrics.maxDrawdown');
+    case 'timeInDrawdown':
+      return t('metric.timeInDrawdown.name');
+    case 'avgRecoveryTime':
+      return t('metric.avgRecoveryTime.name');
+    case 'longestDrawdown':
+      return t('metric.longestDrawdown.name');
+    case 'drawdownEpisodes':
+      return t('metric.drawdownEpisodes.name');
+    case 'bestDay':
+      return t('dashboard.metrics.bestDay');
+    case 'largestWin':
+      return t('dashboard.metrics.largestWin');
+    case 'largestLoss':
+      return t('dashboard.metrics.largestLoss');
+    case 'longestWinStreak':
+      return t('dashboard.metrics.longestWinStreak');
+    case 'longestLossStreak':
+      return t('dashboard.metrics.longestLossStreak');
+    case 'avgHoldTime':
+      return t('dashboard.metrics.avgHoldTime');
+    case 'avgWinHoldTime':
+      return t('dashboard.metrics.avgWinHoldTime');
+    case 'avgLossHoldTime':
+      return t('dashboard.metrics.avgLossHoldTime');
+    case 'avgWinnerHeat':
+      return t('dashboard.metrics.avgWinnerHeat');
+    case 'winnerMaeP90':
+      return t('dashboard.metrics.winnerMaeP90');
+    case 'winnerMaeMedian':
+      return t('dashboard.metrics.winnerMaeMedian');
+    case 'avgLossHeat':
+      return t('dashboard.metrics.avgLossHeat');
+    case 'winnerAvgMfe':
+      return t('dashboard.metrics.winnerAvgMfe');
+    case 'loserAvgMfe':
+      return t('dashboard.metrics.loserAvgMfe');
+    case 'winnerMfeP90':
+      return t('dashboard.metrics.winnerMfeP90');
+    case 'loserMfeP90':
+      return t('dashboard.metrics.loserMfeP90');
+    default:
+      return metric;
+  }
+};
+
+const isPositiveMetric = (
+  metric: string,
+  value: number | undefined
+): boolean | undefined => {
+  if (value === undefined || value === null || isNaN(value)) {
+    return undefined;
+  }
+
+  switch (metric) {
+    case 'netPnL':
+    case 'profitFactor':
+    case 'expectancy':
+    case 'sharpeRatio':
+      return value > 0;
+    case 'avgWin':
+    case 'avgLoss':
+      return undefined;
+    case 'avgRR':
+    case 'avgRRRiskBased':
+      return value === 1 ? undefined : value > 1;
+    case 'winRate':
+      return undefined;
+    case 'maxDrawdown':
+    case 'timeInDrawdown':
+    case 'largestLoss':
+    case 'numLossTrades':
+    case 'bestDay':
+    case 'largestWin':
+    case 'longestWinStreak':
+      return undefined;
+    case 'avgHoldTime':
+    case 'avgWinHoldTime':
+    case 'avgRecoveryTime':
+    case 'longestDrawdown':
+    case 'drawdownEpisodes':
+    case 'numTrades':
+    case 'numWinTrades':
+      return undefined; 
+    case 'avgLossHoldTime':
+      return undefined;
+    case 'longestLossStreak':
+      return undefined;
+    default:
+      return undefined; 
+  }
+};
+
 function useTopSectionModel({ filters }: Pick<TopSectionProps, 'filters'>) {
   const plugin = usePlugin();
   const { currency } = useCurrency();
@@ -693,32 +840,6 @@ function useTopSectionModel({ filters }: Pick<TopSectionProps, 'filters'>) {
       } catch (error) {
         console.error('Error removing metric:', error);
       }
-    }
-  };
-
-  const getMetricDisplayKind = (metric: string): DisplayValueKind => {
-    switch (metric) {
-      case 'netPnL':
-      case 'expectancy':
-      case 'avgWin':
-      case 'avgLoss':
-      case 'largestWin':
-      case 'largestLoss':
-      case 'bestDay':
-        return 'pnl';
-      case 'maxDrawdown':
-        return 'drawdown';
-      case 'winRate':
-      case 'timeInDrawdown':
-        return 'returnPercent';
-      case 'profitFactor':
-      case 'sharpeRatio':
-      case 'avgRR':
-      case 'avgRRRiskBased':
-        return 'metric';
-      default:
-        if (MAE_MFE_METRICS.has(metric)) return 'metric';
-        return 'count';
     }
   };
 
@@ -962,78 +1083,6 @@ function useTopSectionModel({ filters }: Pick<TopSectionProps, 'filters'>) {
   };
 
   
-  const getMetricName = (metric: string): string => {
-    switch (metric) {
-      case 'netPnL':
-        return t('dashboard.metrics.netPnL');
-      case 'winRate':
-        return t('dashboard.metrics.winRate');
-      case 'profitFactor':
-        return t('dashboard.metrics.profitFactor');
-      case 'sharpeRatio':
-        return t('dashboard.metrics.sharpeRatio');
-      case 'expectancy':
-        return t('dashboard.metrics.expectancy');
-      case 'numTrades':
-        return t('dashboard.metrics.numTrades');
-      case 'numWinTrades':
-        return t('dashboard.metrics.numWinTrades');
-      case 'numLossTrades':
-        return t('dashboard.metrics.numLossTrades');
-      case 'avgWin':
-        return t('dashboard.metrics.avgWin');
-      case 'avgLoss':
-        return t('dashboard.metrics.avgLoss');
-      case 'avgRR':
-        return t('dashboard.metrics.avgRR');
-      case 'avgRRRiskBased':
-        return t('dashboard.metrics.avgRRRiskBased');
-      case 'maxDrawdown':
-        return t('dashboard.metrics.maxDrawdown');
-      case 'timeInDrawdown':
-        return t('metric.timeInDrawdown.name');
-      case 'avgRecoveryTime':
-        return t('metric.avgRecoveryTime.name');
-      case 'longestDrawdown':
-        return t('metric.longestDrawdown.name');
-      case 'drawdownEpisodes':
-        return t('metric.drawdownEpisodes.name');
-      case 'bestDay':
-        return t('dashboard.metrics.bestDay');
-      case 'largestWin':
-        return t('dashboard.metrics.largestWin');
-      case 'largestLoss':
-        return t('dashboard.metrics.largestLoss');
-      case 'longestWinStreak':
-        return t('dashboard.metrics.longestWinStreak');
-      case 'longestLossStreak':
-        return t('dashboard.metrics.longestLossStreak');
-      case 'avgHoldTime':
-        return t('dashboard.metrics.avgHoldTime');
-      case 'avgWinHoldTime':
-        return t('dashboard.metrics.avgWinHoldTime');
-      case 'avgLossHoldTime':
-        return t('dashboard.metrics.avgLossHoldTime');
-      case 'avgWinnerHeat':
-        return t('dashboard.metrics.avgWinnerHeat');
-      case 'winnerMaeP90':
-        return t('dashboard.metrics.winnerMaeP90');
-      case 'winnerMaeMedian':
-        return t('dashboard.metrics.winnerMaeMedian');
-      case 'avgLossHeat':
-        return t('dashboard.metrics.avgLossHeat');
-      case 'winnerAvgMfe':
-        return t('dashboard.metrics.winnerAvgMfe');
-      case 'loserAvgMfe':
-        return t('dashboard.metrics.loserAvgMfe');
-      case 'winnerMfeP90':
-        return t('dashboard.metrics.winnerMfeP90');
-      case 'loserMfeP90':
-        return t('dashboard.metrics.loserMfeP90');
-      default:
-        return metric;
-    }
-  };
 
   const createMetricDelta = (metric: string, metricValue: number) => {
     if (!data || !comparisonData) return undefined;
@@ -1369,52 +1418,6 @@ function useTopSectionModel({ filters }: Pick<TopSectionProps, 'filters'>) {
   };
 
   
-  const isPositiveMetric = (
-    metric: string,
-    value: number | undefined
-  ): boolean | undefined => {
-    if (value === undefined || value === null || isNaN(value)) {
-      return undefined;
-    }
-
-    switch (metric) {
-      case 'netPnL':
-      case 'profitFactor':
-      case 'expectancy':
-      case 'sharpeRatio':
-        return value > 0;
-      case 'avgWin':
-      case 'avgLoss':
-        return undefined;
-      case 'avgRR':
-      case 'avgRRRiskBased':
-        return value === 1 ? undefined : value > 1;
-      case 'winRate':
-        return undefined;
-      case 'maxDrawdown':
-      case 'timeInDrawdown':
-      case 'largestLoss':
-      case 'numLossTrades':
-      case 'bestDay':
-      case 'largestWin':
-      case 'longestWinStreak':
-        return undefined;
-      case 'avgHoldTime':
-      case 'avgWinHoldTime':
-      case 'avgRecoveryTime':
-      case 'longestDrawdown':
-      case 'drawdownEpisodes':
-      case 'numTrades':
-      case 'numWinTrades':
-        return undefined; 
-      case 'avgLossHoldTime':
-        return undefined;
-      case 'longestLossStreak':
-        return undefined;
-      default:
-        return undefined; 
-    }
-  };
 
   
   const isCurrencyMetric = (metric: string): boolean => {

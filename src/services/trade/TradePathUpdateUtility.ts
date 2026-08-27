@@ -371,8 +371,9 @@ export class TradePathUpdateUtility {
 
     const filesWithImages = this.app.vault.getMarkdownFiles().filter((file) => {
       const oldPaths = this.getImageBasePaths(file, normalizedNewPath);
+      const normalizedOldPathsSet = new Set(normalizedOldPaths);
       return Array.from(oldPaths).some((oldPath) =>
-        normalizedOldPaths.includes(this.normalizeBasePath(oldPath))
+        normalizedOldPathsSet.has(this.normalizeBasePath(oldPath))
       );
     });
 

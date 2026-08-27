@@ -73,6 +73,7 @@ function normalizeImageGalleryItem(value: unknown): ImageGalleryItem | null {
     outcome,
     tradeStatus:
       value.tradeStatus === 'open' ||
+      value.tradeStatus === 'closed' ||
       value.tradeStatus === 'win' ||
       value.tradeStatus === 'loss' ||
       value.tradeStatus === 'breakeven' ||

@@ -8,7 +8,8 @@ import { FormActions } from './components';
 import { t, tPlural } from '../../../lang/helpers';
 import { usePlugin } from '../../../hooks/usePlugin';
 import { SlidersHorizontal } from '../../shared/icons/ObsidianIcon';
-import { PercentValue, PnLValue } from '../../shared/display';
+import { ForexPnlConversionInfo } from '../../shared/display/CurrencyConversionInfo';
+import { PercentValue, PnLValue } from '../../shared/display/DisplayValue';
 import { openTradeFormLayoutSettingsModal } from './TradeFormLayoutSettingsModal';
 import {
   getResolvedTradeFormLayout,
@@ -71,6 +72,7 @@ const BASIC_TAB_ERROR_FIELDS: Array<keyof TradeFormErrors> = [
   'contractSymbol',
   'lotSize',
   'pipValue',
+  'forexPnlConversionRate',
   'currencyPair',
   'cryptoExchange',
   'tradingPair',
@@ -341,6 +343,20 @@ function TradeFormFooterPnlPreview({
   const hasRealizedComponents = isOpen ? hasRealizedPnLComponents(data) : false;
 
   const pnl = calculatePnL(data);
+  const forexConversionInfo =
+    data.assetType === 'forex' &&
+    data.useDirectPnLInput !== true &&
+    typeof data.lotSize === 'number' &&
+    data.lotSize > 0 &&
+    typeof data.forexPnlConversionRate === 'number' &&
+    data.forexPnlConversionRate > 0 ? (
+      <ForexPnlConversionInfo
+        quoteCurrency={data.forexQuoteCurrency}
+        accountCurrency={currency}
+        rateDate={data.forexPnlConversionRateDate}
+        source={data.forexPnlConversionRateSource}
+      />
+    ) : null;
   const effectiveRiskAmount = resolveEffectiveRiskAmount(
     data,
     defaultRiskAmount
@@ -397,6 +413,7 @@ function TradeFormFooterPnlPreview({
         <span className="calculatedLabel">
           {headlineLabel}
           {hasCosts ? ` ${t('form.field.incl-costs')}` : ''}
+          {forexConversionInfo}
         </span>
         <PnLValue
           className="calculatedAmount"
@@ -449,6 +466,7 @@ function TradeFormFooterPnlPreview({
       <span className="calculatedLabel">
         {t('form.field.profit-loss')}
         {hasCosts ? ` ${t('form.field.incl-costs')}` : ''}
+        {forexConversionInfo}
       </span>
       <PnLValue
         className="calculatedAmount"
@@ -520,6 +538,16 @@ function openLayoutSettingsForTradeForm({
 }
 
 
+const emptyAccounts: Array<{ id: string; name: string }> = [];
+
+const emptySetups: Array<{ id: string; name: string }> = [];
+
+const emptyMistakes: Array<{ id: string; name: string }> = [];
+
+const emptyInstruments: Array<{ id: string; name: string }> = [];
+
+const emptyTags: string[] = [];
+
 export const TradeForm: React.FC<TradeFormProps> = ({
   initialData = EMPTY_INITIAL_TRADE_DATA,
   initialTab = 'basic',
@@ -538,10 +566,9 @@ export const TradeForm: React.FC<TradeFormProps> = ({
     () => layoutOverride ?? getResolvedTradeFormLayout(savedTradeFormLayout),
     [layoutOverride, savedTradeFormLayout]
   );
-  const startedAsOpenTradeRef = useRef(
+  const [startedAsOpenTrade] = useState(() =>
     isOpenTradeFormData(initialData ?? EMPTY_INITIAL_TRADE_DATA)
   );
-  const startedAsOpenTrade = startedAsOpenTradeRef.current;
 
   
   const {
@@ -632,24 +659,16 @@ export const TradeForm: React.FC<TradeFormProps> = ({
     tradeFormLayout.defaultAssetType,
   ]);
 
-  useEffect(() => {
-    if (activeTab === 'details' && !canShowDetailsTab) {
-      setActiveTab('basic');
-      return;
-    }
-
-    if (activeTab === 'advanced' && !canShowAdvancedTab) {
-      setActiveTab('basic');
-    }
-  }, [activeTab, canShowAdvancedTab, canShowDetailsTab]);
+  
+  
+  const effectiveActiveTab =
+    (activeTab === 'details' && !canShowDetailsTab) ||
+    (activeTab === 'advanced' && !canShowAdvancedTab)
+      ? 'basic'
+      : activeTab;
 
   
   
-  const emptyAccounts: Array<{ id: string; name: string }> = [];
-  const emptySetups: Array<{ id: string; name: string }> = [];
-  const emptyMistakes: Array<{ id: string; name: string }> = [];
-  const emptyInstruments: Array<{ id: string; name: string }> = [];
-  const emptyTags: string[] = [];
 
   
 
@@ -677,7 +696,7 @@ export const TradeForm: React.FC<TradeFormProps> = ({
   });
 
   const getTabContent = () => {
-    switch (activeTab) {
+    switch (effectiveActiveTab) {
       case 'basic':
         return (
           <BasicTab
@@ -758,7 +777,7 @@ export const TradeForm: React.FC<TradeFormProps> = ({
       
       <TradeFormTabNav
         tabs={tabs}
-        activeTab={activeTab}
+        activeTab={effectiveActiveTab}
         isEditMode={isEditMode}
         showLayoutSettings={!!plugin}
         onTabChange={handleTabChange}

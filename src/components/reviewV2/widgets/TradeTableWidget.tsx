@@ -32,7 +32,7 @@ import {
 } from '../../../utils/imageMediaUtils';
 import { useCurrency } from '../../../contexts/CurrencyContext';
 import { SetupsBadge, MistakesBadge } from '../../shared/badges';
-import { SkeletonBox } from '../../shared';
+import { SkeletonBox } from '../../shared/SkeletonBox';
 import { Tooltip } from '../../shared/Tooltip';
 import type { ImageNavigationContext } from '../../../types/image';
 import { TradesPreviewData } from '../../../types/reviewV2';
@@ -40,6 +40,8 @@ import { useReviewTrades } from '../hooks/useReviewData';
 import { t } from '../../../lang/helpers';
 import { classifyPnLWithBreakEvenSettings } from '../../../utils/breakEvenRange';
 import { calculateDirectionalPriceDiff } from '../../../utils/pnlCalculation';
+import { calculateAssetAdjustedPriceMoveValue } from '../../../utils/priceMoveValue';
+import { hasUnknownCanonicalPnL } from '../../../services/trade/core/CanonicalProjectionFields';
 import {
   getDistinctAccountNames,
   getTradeAccountNames,
@@ -47,46 +49,61 @@ import {
 import { formatDateDisplay } from '../../../utils/dateUtils';
 import { getReviewTradeDate } from '../utils/reviewTradeDates';
 
-type ReviewTableTrade = Record<string, unknown> & {
-  id?: string | number;
-  path?: string;
-  filePath?: string;
-  entryTime?: string | Date;
-  exitTime?: string | Date | null;
-  entryPrice?: number;
-  exitPrice?: number;
-  positionSize?: number;
-  direction?: string;
-  side?: string;
-  assetType?: string;
-  optionType?: string;
-  instrument?: string;
-  ticker?: string;
-  images?: string[] | string;
-  currency?: string;
-  account?: string | string[];
-  accountId?: string;
-  accountRefs?: unknown[];
-  setup?: string[];
-  mistake?: string[];
-  tradeStatus?: string;
-  pnl?: number | null;
-  directPnL?: number | null;
-  _originalPnlWasNull?: boolean;
-  useDirectPnLInput?: boolean;
-  hasExplicitExitPrice?: boolean;
-  exits?: Array<{
-    time?: string | Date | null;
-    price?: number | null;
-    size?: number | null;
-  }>;
-  entries?: Array<{
-    time?: string | Date | null;
-    price?: number | null;
-    size?: number | null;
-  }>;
-  rMultiple?: number;
-  riskAmount?: number;
+type ReviewTableTrade = Record<string, unknown> &
+  Parameters<typeof calculateAssetAdjustedPriceMoveValue>[0] & {
+    id?: string | number;
+    path?: string;
+    filePath?: string;
+    entryTime?: string | Date;
+    exitTime?: string | Date | null;
+    entryPrice?: number;
+    exitPrice?: number;
+    positionSize?: number;
+    direction?: string;
+    side?: string;
+    optionType?: string;
+    instrument?: string;
+    ticker?: string;
+    images?: string[] | string;
+    currency?: string;
+    account?: string | string[];
+    accountId?: string;
+    accountRefs?: unknown[];
+    setup?: string[];
+    mistake?: string[];
+    tradeStatus?: string;
+    pnl?: number | null;
+    directPnL?: number | null;
+    _originalPnlWasNull?: boolean;
+    useDirectPnLInput?: boolean;
+    hasExplicitExitPrice?: boolean;
+    exits?: Array<{
+      time?: string | Date | null;
+      price?: number | null;
+      size?: number | null;
+    }>;
+    entries?: Array<{
+      time?: string | Date | null;
+      price?: number | null;
+      size?: number | null;
+    }>;
+    rMultiple?: number;
+    riskAmount?: number;
+  };
+
+const reviewTableTradeIds = new WeakMap<ReviewTableTrade, number>();
+let nextReviewTableTradeId = 1;
+
+const getReviewTableTradeKey = (trade: ReviewTableTrade): string => {
+  const storedId = trade.id || trade.path;
+  if (storedId) return String(storedId);
+
+  let generatedId = reviewTableTradeIds.get(trade);
+  if (generatedId === undefined) {
+    generatedId = nextReviewTableTradeId++;
+    reviewTableTradeIds.set(trade, generatedId);
+  }
+  return `trade-row-${generatedId}`;
 };
 
 const asReviewTableTrades = (value: unknown): ReviewTableTrade[] =>
@@ -118,7 +135,9 @@ const calculateFallbackGrossPnL = (trade: ReviewTableTrade): number | null => {
     exitPrice
   );
 
-  return priceDiff === null ? null : priceDiff * positionSize;
+  return priceDiff === null
+    ? null
+    : calculateAssetAdjustedPriceMoveValue(trade, priceDiff, positionSize);
 };
 
 const AccountsTooltipContent = React.memo<{ accounts: string[] }>(
@@ -292,6 +311,39 @@ const DEFAULT_CONFIG: TradeTableWidgetConfig = {
   },
   showOpenTrades: true,
   pageSize: 20, 
+};
+
+const formatDuration = (entryTime: Date, exitTime: Date): string => {
+  const diffMs = exitTime.getTime() - entryTime.getTime();
+  const diffMins = Math.floor(diffMs / (1000 * 60));
+  const diffHours = Math.floor(diffMins / 60);
+  const diffDays = Math.floor(diffHours / 24);
+
+  if (diffDays > 0) {
+    const remainingHours = diffHours % 24;
+    return t('widget.trade-table.duration.days-hours', {
+      days: String(diffDays),
+      hours: String(remainingHours),
+    });
+  } else if (diffHours > 0) {
+    const remainingMins = diffMins % 60;
+    return t('widget.trade-table.duration.hours-mins', {
+      hours: String(diffHours),
+      mins: String(remainingMins),
+    });
+  } else {
+    return t('widget.trade-table.duration.mins', {
+      mins: String(diffMins),
+    });
+  }
+};
+
+const formatEntryTime = (date: Date): string => {
+  return date.toLocaleTimeString([], {
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  });
 };
 
 export const TradeTableWidget: React.FC<TradeTableWidgetProps> = React.memo(
@@ -648,39 +700,8 @@ export const TradeTableWidget: React.FC<TradeTableWidgetProps> = React.memo(
     const { columns } = mergedConfig;
 
     
-    const formatDuration = (entryTime: Date, exitTime: Date): string => {
-      const diffMs = exitTime.getTime() - entryTime.getTime();
-      const diffMins = Math.floor(diffMs / (1000 * 60));
-      const diffHours = Math.floor(diffMins / 60);
-      const diffDays = Math.floor(diffHours / 24);
-
-      if (diffDays > 0) {
-        const remainingHours = diffHours % 24;
-        return t('widget.trade-table.duration.days-hours', {
-          days: String(diffDays),
-          hours: String(remainingHours),
-        });
-      } else if (diffHours > 0) {
-        const remainingMins = diffMins % 60;
-        return t('widget.trade-table.duration.hours-mins', {
-          hours: String(diffHours),
-          mins: String(remainingMins),
-        });
-      } else {
-        return t('widget.trade-table.duration.mins', {
-          mins: String(diffMins),
-        });
-      }
-    };
 
     
-    const formatEntryTime = (date: Date): string => {
-      return date.toLocaleTimeString([], {
-        hour: '2-digit',
-        minute: '2-digit',
-        hour12: false,
-      });
-    };
 
     return (
       <div className="weekly-review-trades-table journalit-reviewv2-table-wrapper">
@@ -733,7 +754,7 @@ export const TradeTableWidget: React.FC<TradeTableWidgetProps> = React.memo(
           </thead>
           <tbody>
             {paginatedTrades.map((trade, index) => {
-              const tradeId = trade.id || `index-${index}`;
+              const tradeId = getReviewTableTradeKey(trade);
 
               
               const isOpen = isTradeOpenWithContext({
@@ -751,7 +772,7 @@ export const TradeTableWidget: React.FC<TradeTableWidgetProps> = React.memo(
               const hasStoredPnL = hasRealizedStoredPnL(trade);
               const rawPnL = hasStoredPnL
                 ? getEffectivePnL(trade)
-                : !isOpen
+                : !isOpen && !hasUnknownCanonicalPnL(trade)
                   ? calculateFallbackGrossPnL(trade)
                   : null;
 
@@ -861,6 +882,13 @@ export const TradeTableWidget: React.FC<TradeTableWidgetProps> = React.memo(
 
               return (
                 <tr
+                  tabIndex={0}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter' || event.key === ' ') {
+                      event.preventDefault();
+                      event.currentTarget.click();
+                    }
+                  }}
                   key={`trade-${tradeId}`}
                   className={rowClassName}
                   onClick={

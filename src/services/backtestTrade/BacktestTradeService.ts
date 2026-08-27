@@ -16,7 +16,8 @@ import JournalitPlugin from '../../main';
 import { FolderPathService } from '../core/FolderPathService';
 import { getQuarterForMonth, getWeekFolderName } from '../../utils/dateUtils';
 import { getTradingDay } from '../../utils/tradingDayUtils';
-import { eventBus, type Unsubscribe } from '../events';
+import { eventBus } from '../events/EventBus';
+import type { Unsubscribe } from '../events/types';
 import { mapCustomFieldsToFrontmatter } from '../../utils/customFieldPersistence';
 import { buildTradeIdentityFields } from '../../utils/tradeIdentity';
 import { Mutex } from '../../utils/mutex';
@@ -25,6 +26,7 @@ import { serializeIdealExitFrontmatter } from '../trade/core/TradeFrontmatterCod
 import { normalizeStringArray } from '../../utils/dataUtils';
 import { readFrontmatterFromDisk } from '../../utils/dataRefresh';
 import type { PreviousTagAssignments } from '../options/CustomOptionsService';
+import { serializeImageAnnotationsForFrontmatter } from '../../utils/imageAnnotations';
 
 function getStringValue(record: Record<string, unknown>, key: string): string {
   const value = record[key];
@@ -338,6 +340,9 @@ export class BacktestTradeService extends CustomDataService {
           const templateMetadata = getDefaultTradeTemplateMetadata(
             this.getPlugin()
           );
+          const imageAnnotations = serializeImageAnnotationsForFrontmatter(
+            data.imageAnnotations
+          );
 
           
           const frontmatter: Record<string, unknown> = {
@@ -386,6 +391,7 @@ export class BacktestTradeService extends CustomDataService {
             
             thesis: data.thesis || '',
             images: data.images,
+            imageAnnotations,
             instrument: data.instrument,
             assetType: data.assetType,
             setup: data.setup,
@@ -565,6 +571,10 @@ export class BacktestTradeService extends CustomDataService {
 
       const existingData = await this.readFrontmatter(file);
       const identityFields = buildTradeIdentityFields(existingData ?? data);
+      const imageAnnotations =
+        data.imageAnnotations !== undefined
+          ? serializeImageAnnotationsForFrontmatter(data.imageAnnotations)
+          : existingData?.imageAnnotations;
 
       
       const frontmatter: Record<string, unknown> = {
@@ -613,6 +623,7 @@ export class BacktestTradeService extends CustomDataService {
         
         thesis: data.thesis || '',
         images: data.images,
+        imageAnnotations,
         instrument: data.instrument,
         assetType: data.assetType,
         setup: data.setup,

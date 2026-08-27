@@ -21,7 +21,7 @@ import { formatLocalizedDateTime } from '../../../utils/localizedDateTime';
 import type JournalitPlugin from '../../../main';
 import { ApiClient } from '../../../services/backend/ApiClient';
 import { BackendTradeImportService } from '../../../services/tradeImport/BackendTradeImportService';
-import { BackendTradeProjectionService } from '../../../services/tradeSync/BackendTradeProjectionService';
+import { TradeProjectionClient } from '../../../services/tradeSync/TradeProjectionClient';
 import {
   clearLocalDeletedTradeProjection,
   countPendingTradeProjectionAcksForCurrentOwner,
@@ -99,14 +99,12 @@ async function loadAccountOptions(
 
 export async function loadTradeProjectionInventoryForCurrentOwner(
   plugin: JournalitPlugin,
-  projectionBackendService: BackendTradeProjectionService,
+  projectionBackendService: TradeProjectionClient,
   vaultId: string
 ): Promise<{
   localAccounts: ImportAccountOption[];
   ownership: TradeProjectionInventoryOwnership;
-  response: Awaited<
-    ReturnType<BackendTradeProjectionService['getAccountInventory']>
-  >;
+  response: Awaited<ReturnType<TradeProjectionClient['getAccountInventory']>>;
 } | null> {
   const initiatingOwnerUserId = getTradeProjectionOwnerId(plugin);
   const shouldStop = createTradeProjectionOwnershipGuard(
@@ -166,11 +164,9 @@ export function selectDefaultLocalAccount(
 
 export async function persistTradeProjectionMappingForInventoryOwner(
   ownership: TradeProjectionInventoryOwnership,
-  projectionBackendService: BackendTradeProjectionService,
+  projectionBackendService: TradeProjectionClient,
   accountId: string,
-  mapping: Parameters<
-    BackendTradeProjectionService['updateAccountVaultMapping']
-  >[1]
+  mapping: Parameters<TradeProjectionClient['updateAccountVaultMapping']>[1]
 ): Promise<void> {
   if (!ownership.isCurrent()) {
     throw new Error('Trade Projection inventory ownership changed');
@@ -539,7 +535,7 @@ export const TradeImportSyncPanel: React.FC<TradeImportSyncPanelProps> = ({
 
   const backendService = useMemo(() => new BackendTradeImportService(), []);
   const projectionBackendService = useMemo(
-    () => new BackendTradeProjectionService(),
+    () => new TradeProjectionClient(),
     []
   );
   const workflowService = useMemo(

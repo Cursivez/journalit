@@ -193,6 +193,13 @@ export const RecentTradesWidget: React.FC<BaseWidgetProps> = ({ filters }) => {
 
                     return (
                       <tr
+                        tabIndex={0}
+                        onKeyDown={(event) => {
+                          if (event.key === 'Enter' || event.key === ' ') {
+                            event.preventDefault();
+                            event.currentTarget.click();
+                          }
+                        }}
                         key={`${trade.path}-${analyticsDate.toISOString()}-${realizedPnL ?? 'trade'}`}
                         onClick={() => openTradeNote(trade.path)}
                         className={`trade-row${tradeIsOpen && !isRealizedEvent ? ' open-trade' : ''}`}

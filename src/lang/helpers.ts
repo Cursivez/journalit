@@ -2,7 +2,7 @@ import { getLanguage } from 'obsidian';
 
 
 import type { TranslationKey, Lang } from './locale/en';
-import { inflateSync, strFromU8 } from 'fflate';
+import { decodeCompressedJson } from '../utils/compressedData';
 import {
   englishPack,
   localePacks,
@@ -26,12 +26,27 @@ type PluralBaseKey =
   | 'csv.results.updated'
   | 'csv.results.skipped'
   | 'csv.results.more-trades'
+  | 'csv.results.history-trades'
+  | 'csv.results.history-symbols'
+  | 'trade-import.preview.upgrade.description'
+  | 'trade-import.preview.found'
+  | 'trade-import.action.activate-pro'
+  | 'quick-import.action.import-count'
   | 'settings.customization.custom-fields.option-count'
   | 'widget.best-worst-days.trade-count'
   | 'widget.trading-score.weeks-to-unlock'
   | 'widget.trading-score.trades-to-unlock'
   | 'widget.trading-score.trades-logged'
-  | 'home.widget.unreviewed.need-review';
+  | 'home.widget.unreviewed.need-review'
+  | 'home.widget.streak.reviewed-trades-in-a-row'
+  | 'home.widget.streak.reviewed-days-in-a-row'
+  | 'home.widget.streak.reviewed-weeks-in-a-row'
+  | 'home.widget.streak.reviewed-months-in-a-row'
+  | 'home.widget.streak.missed-trades'
+  | 'home.widget.streak.missed-days'
+  | 'home.widget.streak.missed-weeks'
+  | 'home.widget.streak.missed-months'
+  | 'view.economic-calendar.import-count';
 
 const localeAliases = {
   pt: 'pt-BR',
@@ -44,6 +59,7 @@ type SupportedLanguageCode =
   | 'de'
   | 'fr'
   | 'vi'
+  | 'hi'
   | 'pt-BR'
   | 'pt'
   | 'zh'
@@ -51,7 +67,9 @@ type SupportedLanguageCode =
   | 'zh-TW'
   | 'ja'
   | 'ko'
-  | 'ru';
+  | 'ru'
+  | 'it'
+  | 'ta';
 
 const supportedLanguageCodes = new Set<string>([
   'en',
@@ -59,6 +77,7 @@ const supportedLanguageCodes = new Set<string>([
   'de',
   'fr',
   'vi',
+  'hi',
   'pt-BR',
   'pt',
   'zh',
@@ -67,53 +86,20 @@ const supportedLanguageCodes = new Set<string>([
   'ja',
   'ko',
   'ru',
+  'it',
+  'ta',
 ]);
 
 const loadedLocales: Partial<Record<SupportedLanguageCode, Partial<Lang>>> = {};
 let englishLocale: Partial<Lang> | null = null;
 const translationsAcrossLocales = new Map<TranslationKey, string[]>();
 
-const BASE64_ALPHABET =
-  'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
-const BASE64_VALUES = new Map(
-  Array.from(BASE64_ALPHABET, (char, index) => [char, index])
-);
-
-function base64ToBytes(base64: string): Uint8Array {
-  const output: number[] = [];
-  let buffer = 0;
-  let bits = 0;
-
-  for (const char of base64) {
-    if (char === '=') break;
-    const value = BASE64_VALUES.get(char);
-    if (value === undefined) continue;
-    buffer = (buffer << 6) | value;
-    bits += 6;
-    if (bits >= 8) {
-      bits -= 8;
-      output.push((buffer >> bits) & 0xff);
-    }
-  }
-
-  return Uint8Array.from(output);
-}
-
-function unpackJson(base64: string): unknown {
-  const bytes = base64ToBytes(base64);
-  const inflateBytes: (data: Uint8Array) => Uint8Array = inflateSync;
-  const decodeText: (data: Uint8Array) => string = strFromU8;
-  const json = decodeText(inflateBytes(bytes));
-  const parsed: unknown = JSON.parse(json);
-  return parsed;
-}
-
 function isRecord(value: unknown): value is Record<string, unknown> {
   return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
 }
 
 function parseEnglishLocale(): Partial<Lang> {
-  const parsed = unpackJson(englishPack);
+  const parsed = decodeCompressedJson(englishPack);
   const locale: Partial<Lang> = {};
   if (!isRecord(parsed)) {
     return locale;
@@ -141,24 +127,27 @@ function parseLocalePack(
     return null;
   }
 
-  const parsedValues = unpackJson(pack.data);
+  const parsedValues = decodeCompressedJson(pack.data);
   if (!Array.isArray(parsedValues)) {
     return null;
   }
   const values = parsedValues.filter(
-    (value): value is string | null =>
-      value === null || typeof value === 'string'
+    (value): value is string | null | 0 =>
+      value === null || value === 0 || typeof value === 'string'
   );
   const englishKeys = getAllTranslationKeys();
   if (values.length !== localeBuildInfo.keyCount) {
     return null;
   }
 
+  const en = getEnglishLocale();
   const locale: Partial<Lang> = {};
+  
+  
   for (let i = 0; i < values.length; i++) {
     const value = values[i];
     if (value !== null) {
-      locale[englishKeys[i]] = value;
+      locale[englishKeys[i]] = value === 0 ? en[englishKeys[i]] : value;
     }
   }
 

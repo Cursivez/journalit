@@ -1,38 +1,25 @@
 
 
 import React, {
-  useCallback,
   useEffect,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
 } from 'react';
 import { TFile } from 'obsidian';
-import type { App } from 'obsidian';
 import JournalitPlugin from '../../../main';
 import { Button } from '../../../components/ui/Button';
 import { NoTooltipButton } from '../../../components/ui/NoTooltipButton';
 import ToggleSwitch from '../../../components/ui/ToggleSwitch';
 import { Tooltip } from '../../../components/shared/Tooltip';
-import { showConfirmationModal } from '../../../components/shared/ConfirmationModal';
-import {
-  StickyHeaderPortal,
-  useStickyHeader,
-} from '../../../components/shared/StickyHeader';
-import {
-  addConnectedTradeGateQuestion,
-  getReachableTradeGateNodeIds,
-} from '../../../components/sessionMode/tradeGateUtils';
-import { TradeGateSimulator } from '../../../components/sessionMode/TradeGateSimulator';
+import { TradeGateSection } from './tradeGate/TradeGateSection';
 import {
   ChevronDown,
   ChevronRight,
   Check,
-  ClockAlert,
   Edit,
   Info,
-  Minus,
-  Play,
   Plus,
   Radio,
   RotateCcw,
@@ -40,10 +27,8 @@ import {
   Trash2,
   X,
 } from '../../../components/shared/icons/ObsidianIcon';
-import { eventBus } from '../../../services/events';
+import { eventBus } from '../../../services/events/EventBus';
 import { t } from '../../../lang/helpers';
-import { cssVars } from '../../../styles/inlineStylePolicy';
-import { openExternalUrl } from '../../../utils/externalLinks';
 import { generateUUID } from '../../../utils/uuid';
 import { DEFAULT_SETTINGS } from '../../types';
 import {
@@ -57,11 +42,7 @@ import type {
   SessionModeConfigurablePhase,
   SessionModeLayoutModuleId,
   SessionModeWindow,
-  TradeGateNode,
-  TradeGateOption,
-  TradeGateOutcomeNode,
-  TradeGateOutcomeType,
-  TradeGateQuestionNode,
+  TradeGateQuestion,
   TradeGateWorkflow,
 } from '../../../types/sessionMode';
 import {
@@ -176,6 +157,7 @@ function ensureSessionModeSettings(plugin: JournalitPlugin): void {
       ...DEFAULT_SETTINGS.sessionMode,
       sessionWindows: [...DEFAULT_SETTINGS.sessionMode.sessionWindows],
       linkedResources: [...DEFAULT_SETTINGS.sessionMode.linkedResources],
+      tradeGateQuestions: [...DEFAULT_SETTINGS.sessionMode.tradeGateQuestions],
       tradeGateWorkflows: [...DEFAULT_SETTINGS.sessionMode.tradeGateWorkflows],
       phaseLayouts: getDefaultSessionModePhaseLayouts(),
     };
@@ -188,87 +170,6 @@ function createDefaultSessionModeWindow(): SessionModeWindow {
     name: '',
     startTime: '09:30',
     endTime: '12:30',
-  };
-}
-
-function createDefaultTradeGateWorkflow(): TradeGateWorkflow {
-  const marketRegimeId = generateUUID();
-  const biasId = generateUUID();
-  const riskId = generateUUID();
-  const greenLightId = generateUUID();
-  const noTradeId = generateUUID();
-  const waitId = generateUUID();
-  return {
-    id: generateUUID(),
-    name: t('settings.session-mode.trade-gate.default-name'),
-    startNodeId: marketRegimeId,
-    nodes: [
-      {
-        id: marketRegimeId,
-        type: 'question',
-        title: t('settings.session-mode.trade-gate.default.market-regime'),
-        prompt: t(
-          'settings.session-mode.trade-gate.default.market-regime-prompt'
-        ),
-        options: [
-          { id: generateUUID(), label: t('common.yes'), targetNodeId: biasId },
-          { id: generateUUID(), label: t('common.no'), targetNodeId: waitId },
-        ],
-      },
-      {
-        id: biasId,
-        type: 'question',
-        title: t('settings.session-mode.trade-gate.default.bias'),
-        prompt: t('settings.session-mode.trade-gate.default.bias-prompt'),
-        options: [
-          { id: generateUUID(), label: t('common.yes'), targetNodeId: riskId },
-          {
-            id: generateUUID(),
-            label: t('common.no'),
-            targetNodeId: noTradeId,
-          },
-        ],
-      },
-      {
-        id: riskId,
-        type: 'question',
-        title: t('settings.session-mode.trade-gate.default.risk'),
-        prompt: t('settings.session-mode.trade-gate.default.risk-prompt'),
-        options: [
-          {
-            id: generateUUID(),
-            label: t('common.yes'),
-            targetNodeId: greenLightId,
-          },
-          {
-            id: generateUUID(),
-            label: t('common.no'),
-            targetNodeId: noTradeId,
-          },
-        ],
-      },
-      {
-        id: greenLightId,
-        type: 'outcome',
-        outcome: 'green-light',
-        title: t('trade-gate.outcome.green-light'),
-        description: t('trade-gate.outcome.green-light-description'),
-      },
-      {
-        id: noTradeId,
-        type: 'outcome',
-        outcome: 'no-trade',
-        title: t('trade-gate.outcome.no-trade'),
-        description: t('trade-gate.outcome.no-trade-description'),
-      },
-      {
-        id: waitId,
-        type: 'outcome',
-        outcome: 'wait',
-        title: t('trade-gate.outcome.wait'),
-        description: t('trade-gate.outcome.wait-description'),
-      },
-    ],
   };
 }
 
@@ -304,60 +205,121 @@ async function saveSessionLogTags(
   });
 }
 
-async function saveSessionModeSettings(params: {
-  plugin: JournalitPlugin;
-  latestSettings: SessionModeSettings;
-  nextWindows: SessionModeWindow[];
-  nextLeadTimeMinutes?: number;
-  nextLinkedResources?: SessionModeLinkedResource[];
-  nextTradeGateWorkflows?: TradeGateWorkflow[];
-  nextPhaseLayouts?: SessionModePhaseLayouts;
-}): Promise<SessionModeSettings> {
-  const nextSettings = {
-    ...params.latestSettings,
-    sessionWindows: params.nextWindows,
-    preparationLeadTimeMinutes:
-      params.nextLeadTimeMinutes ??
-      params.latestSettings.preparationLeadTimeMinutes,
-    linkedResources:
-      params.nextLinkedResources ?? params.latestSettings.linkedResources,
-    tradeGateWorkflows:
-      params.nextTradeGateWorkflows ?? params.latestSettings.tradeGateWorkflows,
-    phaseLayouts: normalizeSessionModePhaseLayouts(
-      params.nextPhaseLayouts ?? params.latestSettings.phaseLayouts
-    ),
-  };
-  params.plugin.settings.sessionMode = nextSettings;
-  await params.plugin.saveSettings();
+async function saveSessionModeSettings(
+  plugin: JournalitPlugin,
+  nextSettings: SessionModeSettings
+): Promise<void> {
+  plugin.settings.sessionMode = nextSettings;
+  await plugin.saveSettings();
   eventBus.publish('settings:changed', {
     section: 'sessionMode',
     source: 'session-mode-settings',
   });
-  return nextSettings;
 }
 
-function buildSessionModeSettings(params: {
-  latestSettings: SessionModeSettings;
-  nextWindows: SessionModeWindow[];
-  nextLeadTimeMinutes?: number;
-  nextLinkedResources?: SessionModeLinkedResource[];
-  nextTradeGateWorkflows?: TradeGateWorkflow[];
-  nextPhaseLayouts?: SessionModePhaseLayouts;
-}): SessionModeSettings {
+type SessionModeSettingsUpdates = Partial<
+  Pick<
+    SessionModeSettings,
+    | 'sessionWindows'
+    | 'preparationLeadTimeMinutes'
+    | 'linkedResources'
+    | 'tradeGateQuestions'
+    | 'tradeGateWorkflows'
+    | 'phaseLayouts'
+  >
+>;
+
+function buildSessionModeSettings(
+  latestSettings: SessionModeSettings,
+  updates: SessionModeSettingsUpdates
+): SessionModeSettings {
+  const merged = { ...latestSettings, ...updates };
   return {
-    ...params.latestSettings,
-    sessionWindows: params.nextWindows,
-    preparationLeadTimeMinutes:
-      params.nextLeadTimeMinutes ??
-      params.latestSettings.preparationLeadTimeMinutes,
-    linkedResources:
-      params.nextLinkedResources ?? params.latestSettings.linkedResources,
-    tradeGateWorkflows:
-      params.nextTradeGateWorkflows ?? params.latestSettings.tradeGateWorkflows,
-    phaseLayouts: normalizeSessionModePhaseLayouts(
-      params.nextPhaseLayouts ?? params.latestSettings.phaseLayouts
-    ),
+    ...merged,
+    phaseLayouts: normalizeSessionModePhaseLayouts(merged.phaseLayouts),
   };
+}
+
+function SessionModeWindowRow({
+  window,
+  stageWindowUpdate,
+  updateWindow,
+  removeWindow,
+}: {
+  window: SessionModeWindow;
+  stageWindowUpdate: (id: string, updates: Partial<SessionModeWindow>) => void;
+  updateWindow: (
+    id: string,
+    updates: Partial<SessionModeWindow>
+  ) => Promise<void>;
+  removeWindow: (id: string) => Promise<void>;
+}) {
+  return (
+    <div className="journalit-session-mode-window-row">
+      <div className="journalit-session-mode-window-field journalit-session-mode-window-name-field">
+        <label
+          className="setting-item-description"
+          htmlFor={`session-mode-window-name-${window.id}`}
+        >
+          {t('settings.session-mode.window-name')}
+        </label>
+        <SessionModeWindowNameInput
+          sessionWindow={window}
+          stageWindowUpdate={stageWindowUpdate}
+          persistWindowUpdate={updateWindow}
+        />
+      </div>
+      <div className="journalit-session-mode-window-field">
+        <label
+          className="setting-item-description"
+          htmlFor={`session-mode-window-start-${window.id}`}
+        >
+          {t('settings.session-mode.start-time')}
+        </label>
+        <input
+          id={`session-mode-window-start-${window.id}`}
+          type="time"
+          value={window.startTime}
+          onChange={(event) =>
+            void updateWindow(window.id, {
+              startTime: event.target.value,
+            })
+          }
+          className="setting-input time-input journalit-settings-input journalit-settings-input--time"
+          aria-label={t('settings.session-mode.start-time')}
+        />
+      </div>
+      <div className="journalit-session-mode-window-field">
+        <label
+          className="setting-item-description"
+          htmlFor={`session-mode-window-end-${window.id}`}
+        >
+          {t('settings.session-mode.end-time')}
+        </label>
+        <input
+          id={`session-mode-window-end-${window.id}`}
+          type="time"
+          value={window.endTime}
+          onChange={(event) =>
+            void updateWindow(window.id, {
+              endTime: event.target.value,
+            })
+          }
+          className="setting-input time-input journalit-settings-input journalit-settings-input--time"
+          aria-label={t('settings.session-mode.end-time')}
+        />
+      </div>
+      <div className="journalit-session-mode-window-delete-field">
+        <NoTooltipButton
+          label={t('button.delete')}
+          className="journalit-session-mode-delete-window-button"
+          onClick={() => void removeWindow(window.id)}
+        >
+          <Trash2 size={24} aria-hidden="true" />
+        </NoTooltipButton>
+      </div>
+    </div>
+  );
 }
 
 function SessionModeSettingsSection({ plugin }: SessionModeTabProps) {
@@ -365,6 +327,7 @@ function SessionModeSettingsSection({ plugin }: SessionModeTabProps) {
   const sessionModeSettings = plugin.settings.sessionMode;
   const sessionWindows = sessionModeSettings.sessionWindows;
   const linkedResources = sessionModeSettings.linkedResources;
+  const tradeGateQuestions = sessionModeSettings.tradeGateQuestions;
   const tradeGateWorkflows = sessionModeSettings.tradeGateWorkflows;
   const phaseLayouts = normalizeSessionModePhaseLayouts(
     sessionModeSettings.phaseLayouts
@@ -372,7 +335,9 @@ function SessionModeSettingsSection({ plugin }: SessionModeTabProps) {
   const sessionLogTags = plugin.settings.drc.sessionLogTags;
   const [resourceSearchQuery, setResourceSearchQuery] = useState('');
   const sessionModeSettingsRef = useRef(sessionModeSettings);
-  sessionModeSettingsRef.current = sessionModeSettings;
+  useLayoutEffect(() => {
+    sessionModeSettingsRef.current = sessionModeSettings;
+  }, [sessionModeSettings]);
 
   const availableResourceFiles = useMemo(
     () =>
@@ -381,31 +346,14 @@ function SessionModeSettingsSection({ plugin }: SessionModeTabProps) {
   );
 
   const persistSessionModeSettings = async (
-    nextWindows: SessionModeWindow[],
-    nextLeadTimeMinutes?: number,
-    nextLinkedResources?: SessionModeLinkedResource[],
-    nextTradeGateWorkflows?: TradeGateWorkflow[],
-    nextPhaseLayouts?: SessionModePhaseLayouts
+    updates: SessionModeSettingsUpdates
   ) => {
-    const latestSettings = sessionModeSettingsRef.current;
-    const optimisticSettings = buildSessionModeSettings({
-      latestSettings,
-      nextWindows,
-      nextLeadTimeMinutes,
-      nextLinkedResources,
-      nextTradeGateWorkflows,
-      nextPhaseLayouts,
-    });
+    const optimisticSettings = buildSessionModeSettings(
+      sessionModeSettingsRef.current,
+      updates
+    );
     sessionModeSettingsRef.current = optimisticSettings;
-    await saveSessionModeSettings({
-      plugin,
-      latestSettings: optimisticSettings,
-      nextWindows: optimisticSettings.sessionWindows,
-      nextLeadTimeMinutes: optimisticSettings.preparationLeadTimeMinutes,
-      nextLinkedResources: optimisticSettings.linkedResources,
-      nextTradeGateWorkflows: optimisticSettings.tradeGateWorkflows,
-      nextPhaseLayouts: optimisticSettings.phaseLayouts,
-    });
+    await saveSessionModeSettings(plugin, optimisticSettings);
     setSettingsVersion((previous) => previous + 1);
   };
 
@@ -414,11 +362,11 @@ function SessionModeSettingsSection({ plugin }: SessionModeTabProps) {
     updates: Partial<SessionModeWindow>
   ) => {
     const latestWindows = sessionModeSettingsRef.current.sessionWindows;
-    await persistSessionModeSettings(
-      latestWindows.map((window) =>
+    await persistSessionModeSettings({
+      sessionWindows: latestWindows.map((window) =>
         window.id === id ? { ...window, ...updates } : window
-      )
-    );
+      ),
+    });
   };
 
   const stageWindowUpdate = (
@@ -438,69 +386,56 @@ function SessionModeSettingsSection({ plugin }: SessionModeTabProps) {
 
   const addWindow = async () => {
     const latestWindows = sessionModeSettingsRef.current.sessionWindows;
-    await persistSessionModeSettings([
-      ...latestWindows,
-      createDefaultSessionModeWindow(),
-    ]);
+    await persistSessionModeSettings({
+      sessionWindows: [...latestWindows, createDefaultSessionModeWindow()],
+    });
   };
 
   const removeWindow = async (id: string) => {
-    await persistSessionModeSettings(
-      sessionModeSettingsRef.current.sessionWindows.filter(
+    await persistSessionModeSettings({
+      sessionWindows: sessionModeSettingsRef.current.sessionWindows.filter(
         (window) => window.id !== id
-      )
-    );
+      ),
+    });
   };
 
   const updateLeadTime = async (value: string) => {
     const parsed = Number(value);
     const normalized = Number.isFinite(parsed) ? Math.max(0, parsed) : 0;
-    await persistSessionModeSettings(
-      sessionModeSettingsRef.current.sessionWindows,
-      normalized
-    );
+    await persistSessionModeSettings({
+      preparationLeadTimeMinutes: normalized,
+    });
   };
 
   const addLinkedResource = async (file: TFile) => {
     const latestSettings = sessionModeSettingsRef.current;
-    await persistSessionModeSettings(
-      latestSettings.sessionWindows,
-      latestSettings.preparationLeadTimeMinutes,
-      [...latestSettings.linkedResources, { path: file.path }]
-    );
+    await persistSessionModeSettings({
+      linkedResources: [...latestSettings.linkedResources, { path: file.path }],
+    });
     setResourceSearchQuery('');
   };
 
   const removeLinkedResource = async (path: string) => {
     const latestSettings = sessionModeSettingsRef.current;
-    await persistSessionModeSettings(
-      latestSettings.sessionWindows,
-      latestSettings.preparationLeadTimeMinutes,
-      latestSettings.linkedResources.filter(
+    await persistSessionModeSettings({
+      linkedResources: latestSettings.linkedResources.filter(
         (resource) => resource.path !== path
-      )
-    );
+      ),
+    });
   };
 
-  const persistTradeGateWorkflows = async (workflows: TradeGateWorkflow[]) => {
-    const latestSettings = sessionModeSettingsRef.current;
-    await persistSessionModeSettings(
-      latestSettings.sessionWindows,
-      latestSettings.preparationLeadTimeMinutes,
-      latestSettings.linkedResources,
-      workflows
-    );
+  const persistTradeGate = async (
+    nextTradeGateQuestions: TradeGateQuestion[],
+    nextTradeGateWorkflows: TradeGateWorkflow[]
+  ) => {
+    await persistSessionModeSettings({
+      tradeGateQuestions: nextTradeGateQuestions,
+      tradeGateWorkflows: nextTradeGateWorkflows,
+    });
   };
 
   const persistPhaseLayouts = async (layouts: SessionModePhaseLayouts) => {
-    const latestSettings = sessionModeSettingsRef.current;
-    await persistSessionModeSettings(
-      latestSettings.sessionWindows,
-      latestSettings.preparationLeadTimeMinutes,
-      latestSettings.linkedResources,
-      latestSettings.tradeGateWorkflows,
-      layouts
-    );
+    await persistSessionModeSettings({ phaseLayouts: layouts });
   };
 
   const persistSessionLogTags = async (tags: SessionLogTagDefinition[]) => {
@@ -550,70 +485,13 @@ function SessionModeSettingsSection({ plugin }: SessionModeTabProps) {
       ) : (
         <div className="journalit-session-mode-window-list">
           {sessionWindows.map((window) => (
-            <div className="journalit-session-mode-window-row" key={window.id}>
-              <div className="journalit-session-mode-window-field journalit-session-mode-window-name-field">
-                <label
-                  className="setting-item-description"
-                  htmlFor={`session-mode-window-name-${window.id}`}
-                >
-                  {t('settings.session-mode.window-name')}
-                </label>
-                <SessionModeWindowNameInput
-                  sessionWindow={window}
-                  stageWindowUpdate={stageWindowUpdate}
-                  persistWindowUpdate={updateWindow}
-                />
-              </div>
-              <div className="journalit-session-mode-window-field">
-                <label
-                  className="setting-item-description"
-                  htmlFor={`session-mode-window-start-${window.id}`}
-                >
-                  {t('settings.session-mode.start-time')}
-                </label>
-                <input
-                  id={`session-mode-window-start-${window.id}`}
-                  type="time"
-                  value={window.startTime}
-                  onChange={(event) =>
-                    void updateWindow(window.id, {
-                      startTime: event.target.value,
-                    })
-                  }
-                  className="setting-input time-input journalit-settings-input journalit-settings-input--time"
-                  aria-label={t('settings.session-mode.start-time')}
-                />
-              </div>
-              <div className="journalit-session-mode-window-field">
-                <label
-                  className="setting-item-description"
-                  htmlFor={`session-mode-window-end-${window.id}`}
-                >
-                  {t('settings.session-mode.end-time')}
-                </label>
-                <input
-                  id={`session-mode-window-end-${window.id}`}
-                  type="time"
-                  value={window.endTime}
-                  onChange={(event) =>
-                    void updateWindow(window.id, {
-                      endTime: event.target.value,
-                    })
-                  }
-                  className="setting-input time-input journalit-settings-input journalit-settings-input--time"
-                  aria-label={t('settings.session-mode.end-time')}
-                />
-              </div>
-              <div className="journalit-session-mode-window-delete-field">
-                <NoTooltipButton
-                  label={t('button.delete')}
-                  className="journalit-session-mode-delete-window-button"
-                  onClick={() => void removeWindow(window.id)}
-                >
-                  <Trash2 size={24} aria-hidden="true" />
-                </NoTooltipButton>
-              </div>
-            </div>
+            <SessionModeWindowRow
+              key={window.id}
+              window={window}
+              stageWindowUpdate={stageWindowUpdate}
+              updateWindow={updateWindow}
+              removeWindow={removeWindow}
+            />
           ))}
         </div>
       )}
@@ -638,10 +516,15 @@ function SessionModeSettingsSection({ plugin }: SessionModeTabProps) {
         persistPhaseLayouts={persistPhaseLayouts}
       />
 
-      <TradeGateWorkflowSettings
+      <TradeGateSection
         app={plugin.app}
+        questions={tradeGateQuestions}
         workflows={tradeGateWorkflows}
-        persistWorkflows={persistTradeGateWorkflows}
+        getLatestTradeGate={() => ({
+          questions: sessionModeSettingsRef.current.tradeGateQuestions,
+          workflows: sessionModeSettingsRef.current.tradeGateWorkflows,
+        })}
+        persistTradeGate={persistTradeGate}
       />
 
       <SessionLogDisplaySettings
@@ -1123,1700 +1006,6 @@ function SessionModeLinkedResourcesSettings({
       )}
     </div>
   );
-}
-
-interface TradeGateWorkflowSettingsProps {
-  app: App;
-  workflows: TradeGateWorkflow[];
-  persistWorkflows: (workflows: TradeGateWorkflow[]) => Promise<void>;
-}
-
-function TradeGateWorkflowSettings({
-  app,
-  workflows,
-  persistWorkflows,
-}: TradeGateWorkflowSettingsProps) {
-  const [expandedWorkflowId, setExpandedWorkflowId] = useState<string | null>(
-    null
-  );
-  const [pendingNewQuestion, setPendingNewQuestion] = useState<{
-    workflowId: string;
-    nodeId: string;
-  } | null>(null);
-  const deletedWorkflowIdsRef = useRef(new Set<string>());
-  const workflowDraftsRef = useRef(new Map<string, TradeGateWorkflow>());
-  const workflowsRef = useRef(workflows);
-
-  useEffect(() => {
-    workflowsRef.current = workflows;
-    const workflowIds = new Set(workflows.map((workflow) => workflow.id));
-    for (const workflowId of workflowDraftsRef.current.keys()) {
-      if (!workflowIds.has(workflowId)) {
-        workflowDraftsRef.current.delete(workflowId);
-      }
-    }
-  }, [workflows]);
-
-  const getDraftMergedWorkflows = (): TradeGateWorkflow[] => {
-    const draftWorkflows = workflowDraftsRef.current;
-    const nextWorkflows: TradeGateWorkflow[] = [];
-    const nextWorkflowIds = new Set<string>();
-    for (const workflow of workflowsRef.current) {
-      if (deletedWorkflowIdsRef.current.has(workflow.id)) continue;
-      const nextWorkflow = draftWorkflows.get(workflow.id) ?? workflow;
-      nextWorkflows.push(nextWorkflow);
-      nextWorkflowIds.add(nextWorkflow.id);
-    }
-    for (const draftWorkflow of draftWorkflows.values()) {
-      if (deletedWorkflowIdsRef.current.has(draftWorkflow.id)) continue;
-      if (!nextWorkflowIds.has(draftWorkflow.id)) {
-        nextWorkflows.push(draftWorkflow);
-        nextWorkflowIds.add(draftWorkflow.id);
-      }
-    }
-    return nextWorkflows;
-  };
-
-  const stageWorkflowDraft = (updatedWorkflow: TradeGateWorkflow) => {
-    if (deletedWorkflowIdsRef.current.has(updatedWorkflow.id)) return;
-    workflowDraftsRef.current.set(updatedWorkflow.id, updatedWorkflow);
-  };
-
-  const persistWorkflow = async (updatedWorkflow: TradeGateWorkflow) => {
-    if (deletedWorkflowIdsRef.current.has(updatedWorkflow.id)) return;
-    stageWorkflowDraft(updatedWorkflow);
-    await persistWorkflows(getDraftMergedWorkflows());
-  };
-
-  const addWorkflow = async () => {
-    const workflow = createDefaultTradeGateWorkflow();
-    deletedWorkflowIdsRef.current.delete(workflow.id);
-    workflowDraftsRef.current.set(workflow.id, workflow);
-    setExpandedWorkflowId(workflow.id);
-    await persistWorkflows(getDraftMergedWorkflows());
-  };
-
-  const removeWorkflow = async (id: string): Promise<boolean> => {
-    const workflow =
-      workflowDraftsRef.current.get(id) ??
-      workflowsRef.current.find((item) => item.id === id);
-    if (!workflow) return false;
-
-    const confirmed = await showConfirmationModal(app, {
-      title: t('settings.session-mode.trade-gate.delete-workflow.title'),
-      message: t('settings.session-mode.trade-gate.delete-workflow.message', {
-        name: workflow.name || t('settings.session-mode.trade-gate.untitled'),
-      }),
-      confirmLabel: t(
-        'settings.session-mode.trade-gate.delete-workflow.confirm'
-      ),
-      cancelLabel: t('button.cancel'),
-      destructive: true,
-    });
-    if (!confirmed) return false;
-
-    deletedWorkflowIdsRef.current.add(id);
-    workflowDraftsRef.current.delete(id);
-    setPendingNewQuestion((current) =>
-      current?.workflowId === id ? null : current
-    );
-    if (expandedWorkflowId === id) setExpandedWorkflowId(null);
-    await persistWorkflows(getDraftMergedWorkflows());
-    return true;
-  };
-
-  return (
-    <>
-      <div className="setting-item setting-item-heading journalit-session-mode-trade-gate-heading">
-        <div className="setting-item-info">
-          <div className="setting-item-name">
-            {t('settings.session-mode.trade-gate.title')}
-          </div>
-          <div className="setting-item-description">
-            {t('settings.session-mode.trade-gate.desc')}{' '}
-            <button
-              type="button"
-              className="journalit-session-mode-trade-gate-learn-more"
-              onClick={() =>
-                openExternalUrl('https://journalit.co/docs/session-mode')
-              }
-            >
-              {t('button.learn-more')}
-            </button>
-          </div>
-        </div>
-        <div className="setting-item-control">
-          <Button size="sm" onClick={() => void addWorkflow()}>
-            <Plus size={15} aria-hidden="true" />
-            {t('button.add')}
-          </Button>
-        </div>
-      </div>
-
-      {workflows.length > 0 && (
-        <div className="journalit-session-mode-trade-gate-list">
-          {workflows.map((workflow) => {
-            const isExpanded = expandedWorkflowId === workflow.id;
-            const editorWorkflow =
-              workflowDraftsRef.current.get(workflow.id) ?? workflow;
-            return (
-              <TradeGateWorkflowEditor
-                key={`${workflow.id}:${isExpanded ? 'expanded' : 'collapsed'}`}
-                workflow={editorWorkflow}
-                isExpanded={isExpanded}
-                setExpanded={() =>
-                  setExpandedWorkflowId(isExpanded ? null : workflow.id)
-                }
-                persistWorkflow={persistWorkflow}
-                stageWorkflowDraft={stageWorkflowDraft}
-                removeWorkflow={removeWorkflow}
-                hasPendingNewQuestion={Boolean(pendingNewQuestion)}
-                pendingNewQuestionId={
-                  pendingNewQuestion?.workflowId === workflow.id
-                    ? pendingNewQuestion.nodeId
-                    : null
-                }
-                setPendingNewQuestionId={(nodeId) =>
-                  setPendingNewQuestion((current) =>
-                    nodeId
-                      ? { workflowId: workflow.id, nodeId }
-                      : current?.workflowId === workflow.id
-                        ? null
-                        : current
-                  )
-                }
-              />
-            );
-          })}
-        </div>
-      )}
-    </>
-  );
-}
-
-interface TradeGateWorkflowEditorProps {
-  workflow: TradeGateWorkflow;
-  isExpanded: boolean;
-  setExpanded: () => void;
-  persistWorkflow: (workflow: TradeGateWorkflow) => Promise<void>;
-  stageWorkflowDraft: (workflow: TradeGateWorkflow) => void;
-  removeWorkflow: (id: string) => Promise<boolean>;
-  hasPendingNewQuestion: boolean;
-  pendingNewQuestionId: string | null;
-  setPendingNewQuestionId: (nodeId: string | null) => void;
-}
-
-function getTradeGateAddQuestionState({
-  hasPendingNewQuestion,
-  questionCount,
-  reachableNodeIds,
-  selectedQuestion,
-}: {
-  hasPendingNewQuestion: boolean;
-  questionCount: number;
-  reachableNodeIds: Set<string>;
-  selectedQuestion: TradeGateQuestionNode | null;
-}): { canAddQuestion: boolean; tooltip: string } {
-  if (hasPendingNewQuestion) {
-    return {
-      canAddQuestion: false,
-      tooltip: t('settings.session-mode.trade-gate.edit-before-branching'),
-    };
-  }
-  if (questionCount === 0) {
-    return {
-      canAddQuestion: true,
-      tooltip: t('settings.session-mode.trade-gate.add-first-question'),
-    };
-  }
-
-  if (!selectedQuestion) {
-    return {
-      canAddQuestion: false,
-      tooltip: t('settings.session-mode.trade-gate.select-question-to-add'),
-    };
-  }
-
-  if (!reachableNodeIds.has(selectedQuestion.id)) {
-    return {
-      canAddQuestion: false,
-      tooltip: t('settings.session-mode.trade-gate.connect-before-branching'),
-    };
-  }
-  return {
-    canAddQuestion: true,
-    tooltip: t('settings.session-mode.trade-gate.add-branch-from', {
-      question:
-        selectedQuestion.title ||
-        t('settings.session-mode.trade-gate.question'),
-    }),
-  };
-}
-
-function scrollTradeGateEditorIntoView({
-  editor,
-  header,
-}: {
-  editor: HTMLDivElement;
-  header: HTMLDivElement | null;
-}): void {
-  const scrollContainer = editor.closest(
-    '.vertical-tab-content.journalit-settings'
-  );
-  if (!(scrollContainer instanceof HTMLElement)) {
-    editor.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
-    return;
-  }
-
-  const containerRect = scrollContainer.getBoundingClientRect();
-  const editorRect = editor.getBoundingClientRect();
-  const headerHeight = header?.getBoundingClientRect().height ?? 48;
-  const visibleTop = containerRect.top + headerHeight + 12;
-  const visibleBottom = containerRect.bottom - 12;
-  const availableHeight = visibleBottom - visibleTop;
-  const visibleEditorHeight = Math.max(
-    0,
-    Math.min(editorRect.bottom, visibleBottom) -
-      Math.max(editorRect.top, visibleTop)
-  );
-  let scrollDelta = 0;
-
-  if (editorRect.height <= availableHeight) {
-    if (editorRect.bottom > visibleBottom) {
-      scrollDelta = editorRect.bottom - visibleBottom;
-    } else if (editorRect.top < visibleTop) {
-      scrollDelta = editorRect.top - visibleTop;
-    }
-  } else if (visibleEditorHeight < Math.min(120, availableHeight * 0.3)) {
-    scrollDelta = editorRect.top - visibleTop;
-  }
-
-  if (Math.abs(scrollDelta) >= 1) {
-    scrollContainer.scrollTo({
-      top: scrollContainer.scrollTop + scrollDelta,
-      behavior: 'smooth',
-    });
-  }
-}
-
-function removeTradeGateNodeFromWorkflow(
-  workflow: TradeGateWorkflow,
-  nodeId: string
-): Pick<TradeGateWorkflow, 'nodes' | 'startNodeId'> {
-  const remainingNodes = workflow.nodes.filter((node) => node.id !== nodeId);
-  const remainingQuestions = remainingNodes.filter(
-    (node): node is TradeGateQuestionNode => node.type === 'question'
-  );
-  const startNodeId =
-    workflow.startNodeId === nodeId
-      ? (remainingQuestions[0]?.id ?? '')
-      : workflow.startNodeId;
-  const nodes = remainingNodes.map((node) => {
-    if (node.type !== 'question') return node;
-    return {
-      ...node,
-      options: node.options.filter((option) => option.targetNodeId !== nodeId),
-    };
-  });
-
-  return { nodes, startNodeId };
-}
-
-function addTradeGateOptionToWorkflow(
-  workflow: TradeGateWorkflow,
-  questionId: string
-): TradeGateWorkflow | null {
-  const normalizedWorkflow = normalizeTradeGateWorkflowOutcomes(workflow);
-  const question = normalizedWorkflow.nodes.find(
-    (node): node is TradeGateQuestionNode =>
-      node.id === questionId && node.type === 'question'
-  );
-  if (!question) return null;
-
-  const targetNodes = normalizedWorkflow.nodes.filter(
-    (target) => target.id !== question.id
-  );
-  const waitOutcome = targetNodes.find(
-    (target): target is TradeGateOutcomeNode =>
-      target.type === 'outcome' && target.outcome === 'wait'
-  );
-  const targetNodeId = waitOutcome?.id ?? targetNodes[0]?.id ?? '';
-  const updatedQuestion: TradeGateQuestionNode = {
-    ...question,
-    options: [
-      ...question.options,
-      {
-        id: generateUUID(),
-        label: t('settings.session-mode.trade-gate.new-option'),
-        targetNodeId,
-      },
-    ],
-  };
-
-  return {
-    ...normalizedWorkflow,
-    nodes: normalizedWorkflow.nodes.map((node) =>
-      node.id === question.id ? updatedQuestion : node
-    ),
-  };
-}
-
-function TradeGateWorkflowEditor({
-  workflow,
-  isExpanded,
-  setExpanded,
-  persistWorkflow,
-  stageWorkflowDraft,
-  removeWorkflow,
-  hasPendingNewQuestion,
-  pendingNewQuestionId,
-  setPendingNewQuestionId,
-}: TradeGateWorkflowEditorProps) {
-  const [draftWorkflow, setDraftWorkflow] = useState(() =>
-    normalizeTradeGateWorkflowOutcomes(workflow)
-  );
-  const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
-  const [isAddingQuestion, setIsAddingQuestion] = useState(false);
-  const [isSimulatorOpen, setIsSimulatorOpen] = useState(false);
-  const workflowRef = useRef<HTMLDivElement | null>(null);
-  const headerRef = useRef<HTMLDivElement | null>(null);
-  const selectedEditorRef = useRef<HTMLDivElement | null>(null);
-  const selectedTitleInputRef = useRef<HTMLInputElement | null>(null);
-  const isAddingQuestionRef = useRef(false);
-  const pendingPersistRef = useRef<TradeGateWorkflow | null>(null);
-  const persistTimerRef = useRef<number | null>(null);
-  const persistWorkflowRef = useRef(persistWorkflow);
-
-  useEffect(() => {
-    persistWorkflowRef.current = persistWorkflow;
-  }, [persistWorkflow]);
-
-  useEffect(
-    () => () => {
-      if (persistTimerRef.current) {
-        window.clearTimeout(persistTimerRef.current);
-      }
-      if (pendingPersistRef.current) {
-        void persistWorkflowRef.current(pendingPersistRef.current);
-      }
-    },
-    []
-  );
-
-  const questionNodes = draftWorkflow.nodes.filter(
-    (node): node is TradeGateQuestionNode => node.type === 'question'
-  );
-  const selectedNode =
-    draftWorkflow.nodes.find((node) => node.id === selectedNodeId) ?? null;
-  const selectedQuestion =
-    selectedNode?.type === 'question' ? selectedNode : null;
-  const reachableNodeIds = getReachableTradeGateNodeIds(draftWorkflow);
-  const unconnectedQuestions = questionNodes.filter(
-    (node) => !reachableNodeIds.has(node.id)
-  );
-  const { canAddQuestion, tooltip: addQuestionTooltip } =
-    getTradeGateAddQuestionState({
-      hasPendingNewQuestion,
-      questionCount: questionNodes.length,
-      reachableNodeIds,
-      selectedQuestion,
-    });
-  const stickyHeader = useStickyHeader({
-    containerRef: workflowRef,
-    enabled: isExpanded,
-    headerRef,
-  });
-
-  const revealSelectedEditor = () => {
-    window.requestAnimationFrame(() => {
-      const editor = selectedEditorRef.current;
-      if (editor) {
-        scrollTradeGateEditorIntoView({
-          editor,
-          header: headerRef.current,
-        });
-      }
-      window.requestAnimationFrame(() => {
-        selectedTitleInputRef.current?.focus({ preventScroll: true });
-      });
-    });
-  };
-
-  const selectNodeForEditing = (nodeId: string) => {
-    setSelectedNodeId(nodeId);
-    revealSelectedEditor();
-  };
-
-  const updateWorkflow = async (updates: Partial<TradeGateWorkflow>) => {
-    const nextWorkflow = normalizeTradeGateWorkflowOutcomes({
-      ...draftWorkflow,
-      ...updates,
-    });
-    setDraftWorkflow(nextWorkflow);
-    stageWorkflowDraft(nextWorkflow);
-    pendingPersistRef.current = nextWorkflow;
-
-    if (persistTimerRef.current) {
-      window.clearTimeout(persistTimerRef.current);
-    }
-
-    persistTimerRef.current = window.setTimeout(() => {
-      pendingPersistRef.current = null;
-      persistTimerRef.current = null;
-      void persistWorkflowRef.current(nextWorkflow);
-    }, 350);
-  };
-
-  const discardPendingPersist = () => {
-    if (persistTimerRef.current) {
-      window.clearTimeout(persistTimerRef.current);
-      persistTimerRef.current = null;
-    }
-    pendingPersistRef.current = null;
-  };
-
-  const updateNode = async (updatedNode: TradeGateNode) => {
-    if (updatedNode.id === pendingNewQuestionId) {
-      setPendingNewQuestionId(null);
-    }
-    await updateWorkflow({
-      nodes: draftWorkflow.nodes.map((node) =>
-        node.id === updatedNode.id ? updatedNode : node
-      ),
-    });
-  };
-
-  const addQuestionNode = async () => {
-    if (!canAddQuestion || isAddingQuestionRef.current) return;
-
-    isAddingQuestionRef.current = true;
-    setIsAddingQuestion(true);
-    try {
-      const node: TradeGateQuestionNode = {
-        id: generateUUID(),
-        type: 'question',
-        title: t('settings.session-mode.trade-gate.new-question-title'),
-        prompt: '',
-        options: [],
-      };
-      const nextWorkflow = selectedQuestion
-        ? addConnectedTradeGateQuestion({
-            workflow: draftWorkflow,
-            parentQuestionId: selectedQuestion.id,
-            question: node,
-            option: {
-              id: generateUUID(),
-              label: t('settings.session-mode.trade-gate.new-option'),
-            },
-          })
-        : addConnectedTradeGateQuestion({
-            workflow: draftWorkflow,
-            parentQuestionId: null,
-            question: node,
-          });
-
-      setPendingNewQuestionId(node.id);
-      selectNodeForEditing(node.id);
-      await updateWorkflow({
-        nodes: nextWorkflow.nodes,
-        startNodeId: nextWorkflow.startNodeId,
-      });
-    } finally {
-      window.requestAnimationFrame(() => {
-        isAddingQuestionRef.current = false;
-        setIsAddingQuestion(false);
-      });
-    }
-  };
-
-  const addOptionToQuestion = async (questionId: string) => {
-    const nextWorkflow = addTradeGateOptionToWorkflow(
-      draftWorkflow,
-      questionId
-    );
-    if (!nextWorkflow) return;
-    if (questionId === pendingNewQuestionId) setPendingNewQuestionId(null);
-    setSelectedNodeId(questionId);
-    await updateWorkflow({ nodes: nextWorkflow.nodes });
-  };
-
-  const removeNode = async (nodeId: string) => {
-    const nextWorkflow = removeTradeGateNodeFromWorkflow(draftWorkflow, nodeId);
-    if (selectedNodeId === nodeId) setSelectedNodeId(null);
-    if (pendingNewQuestionId === nodeId) setPendingNewQuestionId(null);
-    await updateWorkflow(nextWorkflow);
-  };
-
-  const simulationRegionId = `journalit-trade-gate-simulator-${draftWorkflow.id}`;
-  const simulationControl = isExpanded ? (
-    <Tooltip
-      content={t('settings.session-mode.trade-gate.simulation.show')}
-      preferredPosition="bottom"
-    >
-      <Button
-        size="sm"
-        className={`journalit-session-mode-trade-gate-simulate-button${isSimulatorOpen ? ' is-active' : ''}`}
-        aria-label={t('settings.session-mode.trade-gate.simulation.show')}
-        aria-controls={simulationRegionId}
-        aria-expanded={isSimulatorOpen}
-        onClick={() => setIsSimulatorOpen((current) => !current)}
-      >
-        <Play size={15} aria-hidden="true" />
-      </Button>
-    </Tooltip>
-  ) : null;
-
-  return (
-    <div
-      ref={workflowRef}
-      className={`journalit-session-mode-trade-gate-workflow${isExpanded ? ' is-expanded' : ''}`}
-    >
-      <TradeGateWorkflowHeader
-        addQuestionTooltip={addQuestionTooltip}
-        addQuestionNode={addQuestionNode}
-        canAddQuestion={canAddQuestion}
-        discardPendingPersist={discardPendingPersist}
-        draftWorkflow={draftWorkflow}
-        headerRef={headerRef}
-        isAddingQuestion={isAddingQuestion}
-        isExpanded={isExpanded}
-        removeWorkflow={removeWorkflow}
-        setExpanded={setExpanded}
-        simulationControl={simulationControl}
-      />
-
-      <StickyHeaderPortal
-        className="journalit-settings journalit-session-mode-trade-gate-header--sticky-clone"
-        metrics={stickyHeader}
-      >
-        <TradeGateWorkflowHeader
-          addQuestionTooltip={addQuestionTooltip}
-          addQuestionNode={addQuestionNode}
-          canAddQuestion={canAddQuestion}
-          discardPendingPersist={discardPendingPersist}
-          draftWorkflow={draftWorkflow}
-          isAddingQuestion={isAddingQuestion}
-          isExpanded={isExpanded}
-          removeWorkflow={removeWorkflow}
-          setExpanded={setExpanded}
-          simulationControl={simulationControl}
-        />
-      </StickyHeaderPortal>
-
-      {isExpanded && (
-        <div className="journalit-session-mode-trade-gate-editor">
-          <TradeGateWorkflowFields
-            questionNodes={questionNodes}
-            updateWorkflow={updateWorkflow}
-            workflow={draftWorkflow}
-          />
-
-          {isSimulatorOpen && (
-            <TradeGateSimulator
-              id={simulationRegionId}
-              workflow={draftWorkflow}
-            />
-          )}
-
-          <TradeGateFlowMap
-            workflow={draftWorkflow}
-            selectedNodeId={selectedNodeId}
-            selectNode={selectNodeForEditing}
-            unconnectedQuestions={unconnectedQuestions}
-          />
-
-          <TradeGateSelectedNodeEditor
-            addOptionToQuestion={addOptionToQuestion}
-            editorRef={selectedEditorRef}
-            removeNode={removeNode}
-            selectedNode={selectedNode}
-            titleInputRef={selectedTitleInputRef}
-            updateNode={updateNode}
-            workflow={draftWorkflow}
-          />
-        </div>
-      )}
-    </div>
-  );
-}
-
-function TradeGateWorkflowFields({
-  questionNodes,
-  updateWorkflow,
-  workflow,
-}: {
-  questionNodes: TradeGateQuestionNode[];
-  updateWorkflow: (updates: Partial<TradeGateWorkflow>) => Promise<void>;
-  workflow: TradeGateWorkflow;
-}) {
-  return (
-    <div className="journalit-session-mode-trade-gate-editor-grid">
-      <label className="journalit-session-mode-trade-gate-field">
-        <span className="setting-item-description">
-          {t('settings.session-mode.trade-gate.name')}
-        </span>
-        <input
-          type="text"
-          value={workflow.name}
-          placeholder={t('settings.session-mode.trade-gate.name')}
-          onChange={(event) =>
-            void updateWorkflow({ name: event.target.value })
-          }
-          className="setting-input journalit-settings-input journalit-session-mode-trade-gate-workflow-name-input"
-        />
-      </label>
-      <label className="journalit-session-mode-trade-gate-field">
-        <span className="setting-item-description">
-          {t('settings.session-mode.trade-gate.start-node')}
-        </span>
-        <select
-          value={workflow.startNodeId}
-          onChange={(event) =>
-            void updateWorkflow({ startNodeId: event.target.value })
-          }
-          className="dropdown journalit-settings-input"
-        >
-          {questionNodes.map((node) => (
-            <option key={node.id} value={node.id}>
-              {node.title || t('settings.session-mode.trade-gate.question')}
-            </option>
-          ))}
-        </select>
-      </label>
-    </div>
-  );
-}
-
-function TradeGateSelectedNodeEditor({
-  addOptionToQuestion,
-  editorRef,
-  removeNode,
-  selectedNode,
-  titleInputRef,
-  updateNode,
-  workflow,
-}: {
-  addOptionToQuestion: (questionId: string) => Promise<void>;
-  editorRef: React.RefObject<HTMLDivElement | null>;
-  removeNode: (nodeId: string) => Promise<void>;
-  selectedNode: TradeGateNode | null;
-  titleInputRef: React.RefObject<HTMLInputElement | null>;
-  updateNode: (node: TradeGateNode) => Promise<void>;
-  workflow: TradeGateWorkflow;
-}) {
-  if (!selectedNode) return null;
-
-  return (
-    <div
-      ref={editorRef}
-      className="journalit-session-mode-trade-gate-selected-editor"
-    >
-      {selectedNode.type === 'question' ? (
-        <TradeGateQuestionEditor
-          titleInputRef={titleInputRef}
-          node={selectedNode}
-          workflow={workflow}
-          updateNode={updateNode}
-          addOptionToQuestion={addOptionToQuestion}
-          removeNode={removeNode}
-        />
-      ) : (
-        <TradeGateOutcomeEditor
-          node={selectedNode}
-          updateNode={updateNode}
-          removeNode={removeNode}
-        />
-      )}
-    </div>
-  );
-}
-
-function TradeGateWorkflowHeader({
-  addQuestionTooltip,
-  addQuestionNode,
-  canAddQuestion,
-  discardPendingPersist,
-  draftWorkflow,
-  headerRef,
-  isAddingQuestion,
-  isExpanded,
-  removeWorkflow,
-  setExpanded,
-  simulationControl,
-}: {
-  addQuestionTooltip: string;
-  addQuestionNode: () => Promise<void>;
-  canAddQuestion: boolean;
-  discardPendingPersist: () => void;
-  draftWorkflow: TradeGateWorkflow;
-  headerRef?: React.RefObject<HTMLDivElement | null>;
-  isAddingQuestion: boolean;
-  isExpanded: boolean;
-  removeWorkflow: (id: string) => Promise<boolean>;
-  setExpanded: () => void;
-  simulationControl: React.ReactNode;
-}) {
-  const addQuestionLabel = draftWorkflow.nodes.some(
-    (node) => node.type === 'question'
-  )
-    ? t('settings.session-mode.trade-gate.add-branch-question')
-    : t('settings.session-mode.trade-gate.add-question');
-  const isAddQuestionUnavailable = !canAddQuestion || isAddingQuestion;
-
-  return (
-    <div ref={headerRef} className="journalit-session-mode-trade-gate-row">
-      <button
-        type="button"
-        className="journalit-session-mode-trade-gate-expand"
-        onClick={setExpanded}
-        aria-expanded={isExpanded}
-      >
-        <span className="journalit-session-mode-trade-gate-expand__icon">
-          {isExpanded ? (
-            <ChevronDown size={16} aria-hidden="true" />
-          ) : (
-            <ChevronRight size={16} aria-hidden="true" />
-          )}
-        </span>
-        <span className="journalit-session-mode-trade-gate-expand__name">
-          {draftWorkflow.name || t('settings.session-mode.trade-gate.untitled')}
-        </span>
-        <span className="setting-item-description journalit-session-mode-trade-gate-summary">
-          {t('settings.session-mode.trade-gate.summary', {
-            count: String(draftWorkflow.nodes.length),
-          })}
-        </span>
-      </button>
-      {simulationControl}
-      {isExpanded && (
-        <Tooltip content={addQuestionTooltip} preferredPosition="bottom">
-          <Button
-            size="sm"
-            className={isAddQuestionUnavailable ? 'is-disabled' : ''}
-            disabled={isAddingQuestion}
-            aria-disabled={isAddQuestionUnavailable}
-            onClick={() => void addQuestionNode()}
-          >
-            <Plus size={15} aria-hidden="true" />
-            {addQuestionLabel}
-          </Button>
-        </Tooltip>
-      )}
-      <NoTooltipButton
-        label={t('button.delete')}
-        className="journalit-session-mode-delete-window-button"
-        onClick={async () => {
-          const removed = await removeWorkflow(draftWorkflow.id);
-          if (removed) discardPendingPersist();
-        }}
-      >
-        <Trash2 size={24} aria-hidden="true" />
-      </NoTooltipButton>
-    </div>
-  );
-}
-
-interface TradeGateFlowMapProps {
-  workflow: TradeGateWorkflow;
-  selectedNodeId: string | null;
-  selectNode: (nodeId: string) => void;
-  unconnectedQuestions: TradeGateQuestionNode[];
-}
-
-interface TradeGateFlowLayoutNode {
-  occurrenceId: string;
-  node: TradeGateNode;
-  x: number;
-  y: number;
-}
-
-interface TradeGateFlowLayoutEdge {
-  id: string;
-  sourceX: number;
-  sourceY: number;
-  targetX: number;
-  targetY: number;
-  labelX: number;
-  labelY: number;
-  label: string;
-  sourceNodeId: string;
-}
-
-interface TradeGateFlowLayout {
-  nodes: TradeGateFlowLayoutNode[];
-  edges: TradeGateFlowLayoutEdge[];
-  width: number;
-  height: number;
-}
-
-const TRADE_GATE_FLOW_NODE_WIDTH = 132;
-const TRADE_GATE_FLOW_NODE_HEIGHT = 84;
-const TRADE_GATE_FLOW_HORIZONTAL_GAP = 48;
-const TRADE_GATE_FLOW_VERTICAL_GAP = 72;
-const TRADE_GATE_FLOW_PADDING = 60;
-const TRADE_GATE_FLOW_MIN_SCALE = 0.45;
-const TRADE_GATE_FLOW_MAX_SCALE = 1.4;
-const TRADE_GATE_FLOW_ZOOM_STEP = 0.15;
-const TRADE_GATE_FLOW_VIEWPORT_PADDING = 24;
-
-interface TradeGateFlowPanState {
-  x: number;
-  y: number;
-}
-
-interface TradeGateFlowDragState {
-  pointerId: number;
-  startClientX: number;
-  startClientY: number;
-  startPan: TradeGateFlowPanState;
-}
-
-interface TradeGateFlowViewState {
-  scale: number;
-  pan: TradeGateFlowPanState;
-}
-
-function TradeGateFlowMap({
-  workflow,
-  selectedNodeId,
-  selectNode,
-  unconnectedQuestions,
-}: TradeGateFlowMapProps) {
-  const canvasRef = useRef<HTMLDivElement>(null);
-  const dragStateRef = useRef<TradeGateFlowDragState | null>(null);
-  const [viewportSize, setViewportSize] = useState({ width: 0, height: 0 });
-  const [viewState, setViewState] = useState<TradeGateFlowViewState>({
-    scale: 1,
-    pan: { x: 0, y: 0 },
-  });
-  const [isPanning, setIsPanning] = useState(false);
-  const { scale, pan } = viewState;
-  const startNode = workflow.nodes.find(
-    (node) => node.id === workflow.startNodeId
-  );
-  const layout = startNode
-    ? buildTradeGateFlowLayout(workflow, startNode)
-    : null;
-  const layoutWidth = layout?.width ?? 0;
-  const layoutHeight = layout?.height ?? 0;
-
-  const fitFlowToView = useCallback(() => {
-    if (!layoutWidth || !layoutHeight || !viewportSize.width) return;
-
-    const availableWidth = Math.max(
-      viewportSize.width - TRADE_GATE_FLOW_VIEWPORT_PADDING * 2,
-      1
-    );
-    const availableHeight = Math.max(
-      viewportSize.height - TRADE_GATE_FLOW_VIEWPORT_PADDING * 2,
-      1
-    );
-    const nextScale = Math.min(
-      TRADE_GATE_FLOW_MAX_SCALE,
-      Math.max(
-        TRADE_GATE_FLOW_MIN_SCALE,
-        Math.min(
-          availableWidth / layoutWidth,
-          availableHeight / layoutHeight,
-          1
-        )
-      )
-    );
-
-    setViewState({
-      scale: nextScale,
-      pan: {
-        x: Math.max(
-          TRADE_GATE_FLOW_VIEWPORT_PADDING / 2,
-          (viewportSize.width - layoutWidth * nextScale) / 2
-        ),
-        y: Math.max(
-          TRADE_GATE_FLOW_VIEWPORT_PADDING / 2,
-          (viewportSize.height - layoutHeight * nextScale) / 2
-        ),
-      },
-    });
-  }, [layoutHeight, layoutWidth, viewportSize.height, viewportSize.width]);
-
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-
-    const updateViewportSize = () => {
-      setViewportSize({
-        width: canvas.clientWidth,
-        height: canvas.clientHeight,
-      });
-    };
-    updateViewportSize();
-
-    const resizeObserver = new ResizeObserver(updateViewportSize);
-    resizeObserver.observe(canvas);
-    return () => resizeObserver.disconnect();
-  }, []);
-
-  useEffect(() => {
-    fitFlowToView();
-  }, [fitFlowToView]);
-
-  const zoomFlow = (direction: 'in' | 'out') => {
-    const delta =
-      direction === 'in'
-        ? TRADE_GATE_FLOW_ZOOM_STEP
-        : -TRADE_GATE_FLOW_ZOOM_STEP;
-    const centerX = viewportSize.width / 2;
-    const centerY = viewportSize.height / 2;
-
-    setViewState((currentViewState) => {
-      const nextScale = Math.min(
-        TRADE_GATE_FLOW_MAX_SCALE,
-        Math.max(TRADE_GATE_FLOW_MIN_SCALE, currentViewState.scale + delta)
-      );
-      if (nextScale === currentViewState.scale) return currentViewState;
-
-      const ratio = nextScale / currentViewState.scale;
-      return {
-        scale: nextScale,
-        pan: {
-          x: centerX - (centerX - currentViewState.pan.x) * ratio,
-          y: centerY - (centerY - currentViewState.pan.y) * ratio,
-        },
-      };
-    });
-  };
-
-  const handleCanvasPointerDown = (
-    event: React.PointerEvent<HTMLDivElement>
-  ) => {
-    if (event.button !== 0) return;
-    if (event.target instanceof HTMLElement && event.target.closest('button')) {
-      return;
-    }
-
-    dragStateRef.current = {
-      pointerId: event.pointerId,
-      startClientX: event.clientX,
-      startClientY: event.clientY,
-      startPan: pan,
-    };
-    event.currentTarget.setPointerCapture(event.pointerId);
-    setIsPanning(true);
-  };
-
-  const handleCanvasPointerMove = (
-    event: React.PointerEvent<HTMLDivElement>
-  ) => {
-    const dragState = dragStateRef.current;
-    if (!dragState || dragState.pointerId !== event.pointerId) return;
-
-    setViewState((currentViewState) => ({
-      ...currentViewState,
-      pan: {
-        x: dragState.startPan.x + event.clientX - dragState.startClientX,
-        y: dragState.startPan.y + event.clientY - dragState.startClientY,
-      },
-    }));
-  };
-
-  const finishCanvasPan = (event: React.PointerEvent<HTMLDivElement>) => {
-    const dragState = dragStateRef.current;
-    if (!dragState || dragState.pointerId !== event.pointerId) return;
-
-    dragStateRef.current = null;
-    event.currentTarget.releasePointerCapture(event.pointerId);
-    setIsPanning(false);
-  };
-
-  return (
-    <div className="journalit-session-mode-trade-gate-flow-map">
-      <div className="journalit-session-mode-trade-gate-flow-map__toolbar">
-        <div className="journalit-session-mode-trade-gate-flow-canvas__controls">
-          <Button size="sm" onClick={fitFlowToView}>
-            {t('settings.session-mode.trade-gate.flow-fit')}
-          </Button>
-          <Button size="sm" onClick={() => zoomFlow('out')}>
-            <Minus size={15} aria-hidden="true" />
-          </Button>
-          <span className="journalit-session-mode-trade-gate-flow-canvas__zoom">
-            {Math.round(scale * 100)}%
-          </span>
-          <Button size="sm" onClick={() => zoomFlow('in')}>
-            <Plus size={15} aria-hidden="true" />
-          </Button>
-        </div>
-      </div>
-      {!startNode ? (
-        <div className="setting-item-description">
-          {workflow.nodes.some((node) => node.type === 'question')
-            ? t('settings.session-mode.trade-gate.no-paths')
-            : t('settings.session-mode.trade-gate.no-questions')}
-        </div>
-      ) : (
-        <div
-          ref={canvasRef}
-          className={`journalit-session-mode-trade-gate-flow-canvas${isPanning ? ' is-panning' : ''}`}
-          onPointerDown={handleCanvasPointerDown}
-          onPointerMove={handleCanvasPointerMove}
-          onPointerUp={finishCanvasPan}
-          onPointerCancel={finishCanvasPan}
-        >
-          {layout && (
-            <div
-              key={workflow.startNodeId}
-              className="journalit-session-mode-trade-gate-flow-stage"
-              style={cssVars({
-                '--trade-gate-flow-width': `${layout.width}px`,
-                '--trade-gate-flow-height': `${layout.height}px`,
-                '--trade-gate-flow-scale': scale,
-                '--trade-gate-flow-pan-x': `${pan.x}px`,
-                '--trade-gate-flow-pan-y': `${pan.y}px`,
-              })}
-            >
-              <svg
-                className="journalit-session-mode-trade-gate-flow-svg"
-                width={layout.width}
-                height={layout.height}
-                viewBox={`0 0 ${layout.width} ${layout.height}`}
-                role="img"
-                aria-label={t('settings.session-mode.trade-gate.flow-map')}
-              >
-                {layout.edges.map((edge) => (
-                  <TradeGateFlowEdge key={edge.id} edge={edge} />
-                ))}
-              </svg>
-              {layout.edges.map((edge) => (
-                <button
-                  key={`${edge.id}-label`}
-                  type="button"
-                  className="journalit-session-mode-trade-gate-flow-edge-label-button"
-                  onClick={() => selectNode(edge.sourceNodeId)}
-                  style={cssVars({
-                    '--trade-gate-flow-edge-label-left': `${edge.labelX}px`,
-                    '--trade-gate-flow-edge-label-top': `${edge.labelY}px`,
-                  })}
-                >
-                  {truncateFlowLabel(edge.label, 18)}
-                </button>
-              ))}
-              {layout.nodes.map((layoutNode) => (
-                <TradeGateFlowNodeButton
-                  key={layoutNode.occurrenceId}
-                  layoutNode={layoutNode}
-                  isSelected={layoutNode.node.id === selectedNodeId}
-                  selectNode={selectNode}
-                />
-              ))}
-            </div>
-          )}
-          <div className="journalit-session-mode-trade-gate-flow-canvas__hint">
-            {t('settings.session-mode.trade-gate.flow-click-hint')}
-          </div>
-        </div>
-      )}
-      {unconnectedQuestions.length > 0 && (
-        <div className="journalit-session-mode-trade-gate-unconnected">
-          <div className="journalit-session-mode-trade-gate-unconnected__header">
-            <span className="journalit-session-mode-trade-gate-unconnected__title">
-              {t('settings.session-mode.trade-gate.unconnected-title')}
-            </span>
-            <span className="journalit-session-mode-trade-gate-unconnected__count">
-              {String(unconnectedQuestions.length)}
-            </span>
-          </div>
-          <div className="setting-item-description">
-            {t('settings.session-mode.trade-gate.unconnected-desc')}
-          </div>
-          <div className="journalit-session-mode-trade-gate-unconnected__list">
-            {unconnectedQuestions.map((question, index) => (
-              <button
-                key={question.id}
-                type="button"
-                className={`journalit-session-mode-trade-gate-unconnected__item${question.id === selectedNodeId ? ' is-selected' : ''}`}
-                onClick={() => selectNode(question.id)}
-                aria-label={`${question.title || t('settings.session-mode.trade-gate.question')} ${index + 1}`}
-              >
-                <span className="journalit-session-mode-trade-gate-unconnected__item-title">
-                  {question.title ||
-                    t('settings.session-mode.trade-gate.question')}
-                </span>
-                <span className="journalit-session-mode-trade-gate-unconnected__item-index">
-                  #{index + 1}
-                </span>
-                <Edit size={14} aria-hidden="true" />
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
-function TradeGateFlowEdge({ edge }: { edge: TradeGateFlowLayoutEdge }) {
-  const midY = edge.sourceY + (edge.targetY - edge.sourceY) * 0.52;
-  const path = `M ${edge.sourceX} ${edge.sourceY} C ${edge.sourceX} ${midY}, ${edge.targetX} ${midY}, ${edge.targetX} ${edge.targetY}`;
-
-  return (
-    <g className="journalit-session-mode-trade-gate-flow-edge">
-      <path d={path} />
-    </g>
-  );
-}
-
-function TradeGateFlowNodeButton({
-  layoutNode,
-  isSelected,
-  selectNode,
-}: {
-  layoutNode: TradeGateFlowLayoutNode;
-  isSelected: boolean;
-  selectNode: (nodeId: string) => void;
-}) {
-  const { node, x, y } = layoutNode;
-  const label = getFlowNodeTitle(node);
-  const detail = node.type === 'question' ? node.prompt : '';
-
-  return (
-    <button
-      type="button"
-      className={`journalit-session-mode-trade-gate-flow-svg-node journalit-session-mode-trade-gate-flow-button is-${node.type === 'outcome' ? node.outcome : 'question'}${isSelected ? ' is-selected' : ''}`}
-      onClick={() => selectNode(node.id)}
-      style={cssVars({
-        '--trade-gate-flow-node-left': `${x}px`,
-        '--trade-gate-flow-node-top': `${y}px`,
-      })}
-    >
-      <span className="journalit-session-mode-trade-gate-flow-svg-node__icon">
-        {getFlowNodeIcon(node)}
-      </span>
-      <span className="journalit-session-mode-trade-gate-flow-svg-node__content">
-        <span className="journalit-session-mode-trade-gate-flow-svg-node__title">
-          {truncateFlowLabel(label, 18)}
-        </span>
-        {detail && (
-          <span className="journalit-session-mode-trade-gate-flow-svg-node__detail">
-            {detail}
-          </span>
-        )}
-      </span>
-    </button>
-  );
-}
-
-export function buildTradeGateFlowLayout(
-  workflow: TradeGateWorkflow,
-  startNode: TradeGateNode
-): TradeGateFlowLayout {
-  const nodesById = new Map(workflow.nodes.map((node) => [node.id, node]));
-  const layoutNodes: TradeGateFlowLayoutNode[] = [];
-  const edges: TradeGateFlowLayoutEdge[] = [];
-  let leafCursor = 0;
-  let maxDepth = 0;
-
-  const place = (
-    node: TradeGateNode,
-    depth: number,
-    ancestorNodeIds: string[],
-    optionPath: string[]
-  ): { center: number; x: number; y: number } => {
-    maxDepth = Math.max(maxDepth, depth);
-    const occurrenceId = `${node.id}-${optionPath.join('-') || 'root'}`;
-    const isRepeated = ancestorNodeIds.includes(node.id);
-    const targets: Array<{ option: TradeGateOption; target: TradeGateNode }> =
-      [];
-    if (node.type === 'question' && !isRepeated) {
-      for (const option of node.options) {
-        const target = nodesById.get(option.targetNodeId);
-        if (target) targets.push({ option, target });
-      }
-    }
-
-    const childPlacements = targets.map(({ option, target }) =>
-      place(
-        target,
-        depth + 1,
-        [...ancestorNodeIds, node.id],
-        [...optionPath, option.id]
-      )
-    );
-    const childCenters = childPlacements.map((placement) => placement.center);
-    const center =
-      childCenters.length > 0
-        ? (childCenters[0] + childCenters[childCenters.length - 1]) / 2
-        : leafCursor++;
-    const x =
-      TRADE_GATE_FLOW_PADDING +
-      center * (TRADE_GATE_FLOW_NODE_WIDTH + TRADE_GATE_FLOW_HORIZONTAL_GAP);
-    const y =
-      TRADE_GATE_FLOW_PADDING +
-      depth * (TRADE_GATE_FLOW_NODE_HEIGHT + TRADE_GATE_FLOW_VERTICAL_GAP);
-
-    layoutNodes.push({ occurrenceId, node, x, y });
-
-    targets.forEach(({ option }, index) => {
-      const targetLayout = childPlacements[index];
-      const sourceX = x + TRADE_GATE_FLOW_NODE_WIDTH / 2;
-      const sourceY = y + TRADE_GATE_FLOW_NODE_HEIGHT;
-      const targetX = targetLayout.x + TRADE_GATE_FLOW_NODE_WIDTH / 2;
-      const targetY = targetLayout.y;
-      const labelPosition = getTradeGateFlowEdgeLabelPosition({
-        sourceX,
-        sourceY,
-        targetX,
-        targetY,
-      });
-      edges.push({
-        id: `${occurrenceId}-${option.id}`,
-        sourceX,
-        sourceY,
-        targetX,
-        targetY,
-        labelX: labelPosition.x,
-        labelY: labelPosition.y,
-        label: option.label || t('settings.session-mode.trade-gate.option'),
-        sourceNodeId: node.id,
-      });
-    });
-
-    return { center, x, y };
-  };
-
-  place(startNode, 0, [], []);
-
-  const usedLeaves = Math.max(leafCursor, 1);
-  return {
-    nodes: layoutNodes,
-    edges,
-    width:
-      TRADE_GATE_FLOW_PADDING * 2 +
-      usedLeaves * TRADE_GATE_FLOW_NODE_WIDTH +
-      Math.max(0, usedLeaves - 1) * TRADE_GATE_FLOW_HORIZONTAL_GAP,
-    height:
-      TRADE_GATE_FLOW_PADDING * 2 +
-      (maxDepth + 1) * TRADE_GATE_FLOW_NODE_HEIGHT +
-      maxDepth * TRADE_GATE_FLOW_VERTICAL_GAP,
-  };
-}
-
-function getTradeGateFlowEdgeLabelPosition({
-  sourceX,
-  sourceY,
-  targetX,
-  targetY,
-}: Pick<
-  TradeGateFlowLayoutEdge,
-  'sourceX' | 'sourceY' | 'targetX' | 'targetY'
->): { x: number; y: number } {
-  const t = 0.5;
-  const inverseT = 1 - t;
-  const controlY = sourceY + (targetY - sourceY) * 0.52;
-  const x =
-    inverseT ** 3 * sourceX +
-    3 * inverseT ** 2 * t * sourceX +
-    3 * inverseT * t ** 2 * targetX +
-    t ** 3 * targetX;
-  const y =
-    inverseT ** 3 * sourceY +
-    3 * inverseT ** 2 * t * controlY +
-    3 * inverseT * t ** 2 * controlY +
-    t ** 3 * targetY;
-
-  return { x, y: y - 11 };
-}
-
-function truncateFlowLabel(value: string, maxLength: number): string {
-  return value.length > maxLength ? `${value.slice(0, maxLength - 1)}…` : value;
-}
-
-function TradeGateQuestionEditor({
-  titleInputRef,
-  node,
-  workflow,
-  updateNode,
-  addOptionToQuestion,
-  removeNode,
-}: {
-  titleInputRef: React.RefObject<HTMLInputElement | null>;
-  node: TradeGateQuestionNode;
-  workflow: TradeGateWorkflow;
-  updateNode: (node: TradeGateNode) => Promise<void>;
-  addOptionToQuestion: (questionId: string) => Promise<void>;
-  removeNode: (nodeId: string) => Promise<void>;
-}) {
-  const targetNodes = workflow.nodes.filter((target) => target.id !== node.id);
-  const reachableNodeIds = getReachableTradeGateNodeIds(workflow);
-
-  const updateOption = async (
-    optionId: string,
-    updates: Partial<TradeGateOption>
-  ) => {
-    await updateNode({
-      ...node,
-      options: node.options.map((option) =>
-        option.id === optionId ? { ...option, ...updates } : option
-      ),
-    });
-  };
-
-  const removeOption = async (optionId: string) => {
-    await updateNode({
-      ...node,
-      options: node.options.filter((option) => option.id !== optionId),
-    });
-  };
-
-  return (
-    <div className="journalit-session-mode-trade-gate-node is-question">
-      <div className="journalit-session-mode-trade-gate-node__header">
-        <span>{t('settings.session-mode.trade-gate.question')}</span>
-        <NoTooltipButton
-          label={t('button.delete')}
-          className="journalit-session-mode-delete-window-button"
-          onClick={() => void removeNode(node.id)}
-        >
-          <Trash2 size={22} aria-hidden="true" />
-        </NoTooltipButton>
-      </div>
-      <div className="journalit-session-mode-trade-gate-editor-grid">
-        <label className="journalit-session-mode-trade-gate-field">
-          <span className="setting-item-description">
-            {t('settings.session-mode.trade-gate.question-title')}
-          </span>
-          <input
-            ref={titleInputRef}
-            value={node.title}
-            onChange={(event) =>
-              void updateNode({ ...node, title: event.target.value })
-            }
-            className="setting-input journalit-settings-input"
-          />
-        </label>
-        <label className="journalit-session-mode-trade-gate-field journalit-session-mode-trade-gate-field--wide">
-          <span className="setting-item-description">
-            {t('settings.session-mode.trade-gate.prompt')}
-          </span>
-          <textarea
-            value={node.prompt}
-            onChange={(event) =>
-              void updateNode({ ...node, prompt: event.target.value })
-            }
-            className="setting-input journalit-settings-input journalit-session-mode-trade-gate-textarea"
-            rows={2}
-          />
-        </label>
-      </div>
-
-      <div className="journalit-session-mode-trade-gate-options-editor">
-        <div className="journalit-session-mode-trade-gate-options-editor__header">
-          <span>{t('settings.session-mode.trade-gate.options')}</span>
-          <Button size="sm" onClick={() => void addOptionToQuestion(node.id)}>
-            <Plus size={15} aria-hidden="true" />
-            {t('button.add')}
-          </Button>
-        </div>
-        {node.options.map((option) => (
-          <div
-            key={option.id}
-            className="journalit-session-mode-trade-gate-option-row"
-          >
-            <input
-              value={option.label}
-              onChange={(event) =>
-                void updateOption(option.id, { label: event.target.value })
-              }
-              className="setting-input journalit-settings-input"
-              aria-label={t('settings.session-mode.trade-gate.option-label')}
-            />
-            <select
-              value={option.targetNodeId}
-              onChange={(event) =>
-                void updateOption(option.id, {
-                  targetNodeId: event.target.value,
-                })
-              }
-              className="dropdown journalit-settings-input"
-              aria-label={t('settings.session-mode.trade-gate.option-target')}
-            >
-              {targetNodes.map((target) => (
-                <option key={target.id} value={target.id}>
-                  {getNodeDisplayLabel(target)}
-                  {target.type === 'question' &&
-                  !reachableNodeIds.has(target.id)
-                    ? ` · ${t('settings.session-mode.trade-gate.unconnected-label')}`
-                    : ''}
-                </option>
-              ))}
-            </select>
-            <NoTooltipButton
-              label={t('button.delete')}
-              className="journalit-session-mode-delete-window-button"
-              onClick={() => void removeOption(option.id)}
-            >
-              <Trash2 size={20} aria-hidden="true" />
-            </NoTooltipButton>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function TradeGateOutcomeEditor({
-  node,
-  updateNode,
-  removeNode,
-}: {
-  node: TradeGateOutcomeNode;
-  updateNode: (node: TradeGateNode) => Promise<void>;
-  removeNode: (nodeId: string) => Promise<void>;
-}) {
-  return (
-    <div
-      className={`journalit-session-mode-trade-gate-node is-${node.outcome}`}
-    >
-      <div className="journalit-session-mode-trade-gate-node__header">
-        <span>{t('settings.session-mode.trade-gate.outcome')}</span>
-        <NoTooltipButton
-          label={t('button.delete')}
-          className="journalit-session-mode-delete-window-button"
-          onClick={() => void removeNode(node.id)}
-        >
-          <Trash2 size={22} aria-hidden="true" />
-        </NoTooltipButton>
-      </div>
-      <div className="journalit-session-mode-trade-gate-editor-grid">
-        <label className="journalit-session-mode-trade-gate-field">
-          <span className="setting-item-description">
-            {t('settings.session-mode.trade-gate.outcome-type')}
-          </span>
-          <select
-            value={node.outcome}
-            onChange={(event) => {
-              const outcome = getOutcomeFromValue(event.target.value);
-              void updateNode({
-                ...node,
-                outcome,
-              });
-            }}
-            className="dropdown journalit-settings-input"
-          >
-            <option value="green-light">
-              {t('trade-gate.outcome.green-light')}
-            </option>
-            <option value="no-trade">{t('trade-gate.outcome.no-trade')}</option>
-            <option value="wait">{t('trade-gate.outcome.wait')}</option>
-          </select>
-        </label>
-        <label className="journalit-session-mode-trade-gate-field">
-          <span className="setting-item-description">
-            {t('settings.session-mode.trade-gate.result-title')}
-          </span>
-          <input
-            value={node.title}
-            onChange={(event) =>
-              void updateNode({ ...node, title: event.target.value })
-            }
-            className="setting-input journalit-settings-input journalit-session-mode-trade-gate-result-title-input"
-          />
-        </label>
-        <label className="journalit-session-mode-trade-gate-field journalit-session-mode-trade-gate-field--wide">
-          <span className="setting-item-description">
-            {t('settings.session-mode.trade-gate.description')}
-          </span>
-          <textarea
-            value={node.description ?? ''}
-            onChange={(event) =>
-              void updateNode({ ...node, description: event.target.value })
-            }
-            className="setting-input journalit-settings-input journalit-session-mode-trade-gate-textarea"
-            rows={2}
-          />
-        </label>
-      </div>
-    </div>
-  );
-}
-
-function getNodeDisplayLabel(node: TradeGateNode): string {
-  if (node.type === 'question') {
-    return node.title || t('settings.session-mode.trade-gate.question');
-  }
-  const outcomeLabel = getOutcomeLabel(node.outcome);
-  if (!node.title || node.title === outcomeLabel) {
-    return outcomeLabel;
-  }
-  return `${node.title} · ${outcomeLabel}`;
-}
-
-function getFlowNodeTitle(node: TradeGateNode): string {
-  if (node.type === 'question') {
-    return node.title || t('settings.session-mode.trade-gate.question');
-  }
-  return node.title || getOutcomeLabel(node.outcome);
-}
-
-function getFlowNodeIcon(node: TradeGateNode): React.ReactNode {
-  if (node.type === 'question') return '?';
-  switch (node.outcome) {
-    case 'green-light':
-      return '✓';
-    case 'no-trade':
-      return '×';
-    case 'wait':
-      return <ClockAlert size={18} aria-hidden="true" />;
-  }
-}
-
-function normalizeTradeGateWorkflowOutcomes(
-  workflow: TradeGateWorkflow
-): TradeGateWorkflow {
-  const canonicalOutcomeIds = new Map<TradeGateOutcomeType, string>();
-  const duplicateOutcomeIds = new Map<string, string>();
-  const duplicateOutcomeTypes = new Map<string, TradeGateOutcomeType>();
-  const normalizedNodes: TradeGateNode[] = [];
-
-  for (const node of workflow.nodes) {
-    if (node.type === 'question') {
-      normalizedNodes.push(node);
-      continue;
-    }
-
-    const existingCanonicalOutcomeId = canonicalOutcomeIds.get(node.outcome);
-    if (!existingCanonicalOutcomeId) {
-      canonicalOutcomeIds.set(node.outcome, node.id);
-    }
-
-    if (isDefaultOutcomeNode(node)) {
-      if (existingCanonicalOutcomeId) {
-        duplicateOutcomeIds.set(node.id, existingCanonicalOutcomeId);
-        duplicateOutcomeTypes.set(node.id, node.outcome);
-        continue;
-      }
-
-      normalizedNodes.push(node);
-      continue;
-    }
-
-    if (isDuplicateDefaultLikeOutcome(node, canonicalOutcomeIds)) {
-      const canonicalId = canonicalOutcomeIds.get(node.outcome);
-      if (canonicalId) {
-        duplicateOutcomeIds.set(node.id, canonicalId);
-        duplicateOutcomeTypes.set(node.id, node.outcome);
-        continue;
-      }
-    }
-
-    normalizedNodes.push(node);
-  }
-
-  const ensureOutcome = (outcome: TradeGateOutcomeType) => {
-    if (canonicalOutcomeIds.has(outcome)) return;
-    const node: TradeGateOutcomeNode = {
-      id: generateUUID(),
-      type: 'outcome',
-      outcome,
-      title: getDefaultOutcomeTitle(outcome),
-      description: getDefaultOutcomeDescription(outcome),
-    };
-    canonicalOutcomeIds.set(outcome, node.id);
-    normalizedNodes.push(node);
-  };
-
-  ensureOutcome('green-light');
-  ensureOutcome('no-trade');
-  ensureOutcome('wait');
-
-  return {
-    ...workflow,
-    nodes: normalizedNodes.map((node) => {
-      if (node.type !== 'question') return node;
-      return {
-        ...node,
-        options: node.options.map((option) => ({
-          ...option,
-          targetNodeId: getNormalizedTargetNodeId(
-            option,
-            duplicateOutcomeIds,
-            duplicateOutcomeTypes,
-            canonicalOutcomeIds
-          ),
-        })),
-      };
-    }),
-  };
-}
-
-function isDefaultOutcomeNode(node: TradeGateOutcomeNode): boolean {
-  return node.title === getDefaultOutcomeTitle(node.outcome);
-}
-
-function isDuplicateDefaultLikeOutcome(
-  node: TradeGateOutcomeNode,
-  canonicalOutcomeIds: Map<TradeGateOutcomeType, string>
-): boolean {
-  return (
-    canonicalOutcomeIds.has(node.outcome) &&
-    node.title === getDefaultOutcomeTitle(node.outcome)
-  );
-}
-
-function getNormalizedTargetNodeId(
-  option: TradeGateOption,
-  duplicateOutcomeIds: Map<string, string>,
-  duplicateOutcomeTypes: Map<string, TradeGateOutcomeType>,
-  canonicalOutcomeIds: Map<TradeGateOutcomeType, string>
-): string {
-  const duplicateOutcomeType = duplicateOutcomeTypes.get(option.targetNodeId);
-  if (!duplicateOutcomeType) {
-    return duplicateOutcomeIds.get(option.targetNodeId) ?? option.targetNodeId;
-  }
-
-  const label = option.label.trim().toLowerCase();
-  if (duplicateOutcomeType === 'green-light' && label === 'no') {
-    return canonicalOutcomeIds.get('no-trade') ?? option.targetNodeId;
-  }
-  if (duplicateOutcomeType === 'green-light' && label === 'wait') {
-    return canonicalOutcomeIds.get('wait') ?? option.targetNodeId;
-  }
-
-  return duplicateOutcomeIds.get(option.targetNodeId) ?? option.targetNodeId;
-}
-
-function getOutcomeLabel(outcome: TradeGateOutcomeType): string {
-  switch (outcome) {
-    case 'green-light':
-      return t('trade-gate.outcome.green-light');
-    case 'no-trade':
-      return t('trade-gate.outcome.no-trade');
-    case 'wait':
-      return t('trade-gate.outcome.wait');
-  }
-}
-
-function getOutcomeFromValue(value: string): TradeGateOutcomeType {
-  switch (value) {
-    case 'green-light':
-    case 'no-trade':
-    case 'wait':
-      return value;
-    default:
-      return 'wait';
-  }
-}
-
-function getDefaultOutcomeTitle(outcome: TradeGateOutcomeType): string {
-  return getOutcomeLabel(outcome);
-}
-
-function getDefaultOutcomeDescription(outcome: TradeGateOutcomeType): string {
-  switch (outcome) {
-    case 'green-light':
-      return t('trade-gate.outcome.green-light-description');
-    case 'no-trade':
-      return t('trade-gate.outcome.no-trade-description');
-    case 'wait':
-      return t('trade-gate.outcome.wait-description');
-  }
 }
 
 interface SessionLogTagsSettingsProps {

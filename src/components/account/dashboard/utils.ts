@@ -139,19 +139,21 @@ export function calculateDashboardMetrics(
     ?.includeWithdrawalsFromExcluded || { archived: true };
 
   
+  const excludedTypesSet = new Set(excludedTypes);
   const includedAccounts = accounts.filter(
     (account) =>
       account.accountType &&
-      !excludedTypes.includes(account.accountType.toLowerCase())
+      !excludedTypesSet.has(account.accountType.toLowerCase())
   );
 
   
+  const excludedTypesSet2 = new Set(excludedTypes);
   const withdrawalAccounts = [
     ...includedAccounts,
     ...accounts.filter(
       (account) =>
         account.accountType &&
-        excludedTypes.includes(account.accountType.toLowerCase()) &&
+        excludedTypesSet2.has(account.accountType.toLowerCase()) &&
         includeWithdrawalsMap[account.accountType.toLowerCase()]
     ),
   ];
@@ -205,10 +207,11 @@ export function generateAUMChartData(
 
   const excludedTypes = settings?.account?.excludedAccountTypes || ['archived'];
 
+  const excludedTypesSet3 = new Set(excludedTypes);
   const includedAccounts = accounts.filter(
     (account) =>
       account.accountType &&
-      !excludedTypes.includes(account.accountType.toLowerCase())
+      !excludedTypesSet3.has(account.accountType.toLowerCase())
   );
 
   if (includedAccounts.length === 0) return [];
@@ -763,18 +766,20 @@ export function getWithdrawalAccountsForDashboard(
   const includeWithdrawalsMap = settings?.account
     ?.includeWithdrawalsFromExcluded || { archived: true };
 
+  const excludedTypesSet4 = new Set(excludedTypes);
   const includedAccounts = accounts.filter(
     (account) =>
       account.accountType &&
-      !excludedTypes.includes(account.accountType.toLowerCase())
+      !excludedTypesSet4.has(account.accountType.toLowerCase())
   );
 
+  const excludedTypesSet5 = new Set(excludedTypes);
   return [
     ...includedAccounts,
     ...accounts.filter(
       (account) =>
         account.accountType &&
-        excludedTypes.includes(account.accountType.toLowerCase()) &&
+        excludedTypesSet5.has(account.accountType.toLowerCase()) &&
         includeWithdrawalsMap[account.accountType.toLowerCase()]
     ),
   ];

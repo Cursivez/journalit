@@ -1,7 +1,7 @@
 import { TFile, type EventRef } from 'obsidian';
 import type JournalitPlugin from '../../main';
 import { getJournalitCachePath } from '../base/pluginStoragePaths';
-import { eventBus } from '../events';
+import { eventBus } from '../events/EventBus';
 import {
   getMediaKind,
   resolveVaultMediaFile,
@@ -60,9 +60,9 @@ import {
 } from './ImageGalleryProjection';
 import {
   isEmptyPersistedAnnotation,
-  normalizeAnnotationForPersistence,
   publishTradeAnnotationChanged,
 } from './ImageGalleryAnnotations';
+import { serializeImageAnnotation } from '../../utils/imageAnnotations';
 import {
   isMissingFileError,
   normalizePersistedImageGalleryIndex,
@@ -89,11 +89,15 @@ export class ImageGalleryService {
   }
 
   invalidate(): void {
+    this.invalidateMemory();
+    void this.clearPersistedIndex();
+  }
+
+  private invalidateMemory(): void {
     this.cachedItems = null;
     this.pendingLoad = null;
     this.persistedIndexInvalidated = true;
     this.loadGeneration += 1;
-    void this.clearPersistedIndex();
   }
 
   async getItems(filters: TradeLogFilters): Promise<ImageGalleryItem[]> {
@@ -171,6 +175,39 @@ export class ImageGalleryService {
     };
   }
 
+  async getEffectiveImageAnnotation(
+    sourcePath: string,
+    imagePath: string
+  ): Promise<ImageGalleryAnnotation> {
+    const file = this.plugin.app.vault.getAbstractFileByPath(sourcePath);
+    if (!(file instanceof TFile)) {
+      throw new Error(`Source note not found: ${sourcePath}`);
+    }
+
+    const normalizedImagePath = normalizeImagePath(imagePath);
+    const frontmatter =
+      this.plugin.app.metadataCache.getFileCache(file)?.frontmatter;
+    const annotations = isRecord(frontmatter)
+      ? frontmatter.imageAnnotations
+      : undefined;
+
+    if (hasAnnotationEntry(annotations, normalizedImagePath)) {
+      return getAnnotation(annotations, normalizedImagePath);
+    }
+
+    const resolvedMediaFile = resolveVaultMediaFile(
+      this.plugin.app,
+      imagePath,
+      sourcePath
+    );
+    if (!resolvedMediaFile) return { tags: [] };
+
+    return getAnnotation(
+      this.annotations.getAnnotationMap(),
+      resolvedMediaFile.path
+    );
+  }
+
   async updateImageAnnotation(
     sourcePath: string,
     imagePath: string,
@@ -179,7 +216,7 @@ export class ImageGalleryService {
   ): Promise<void> {
     if (sourceType === 'folder') {
       const publishFolderAnnotationChanged = () => {
-        this.invalidate();
+        this.invalidateMemory();
         eventBus.publish('image-gallery:changed');
       };
       await this.annotations.runOwnedWrite(async () => {
@@ -190,6 +227,7 @@ export class ImageGalleryService {
         );
         publishFolderAnnotationChanged();
       });
+      await this.clearPersistedIndex();
       return;
     }
     const file = this.plugin.app.vault.getAbstractFileByPath(sourcePath);
@@ -198,7 +236,7 @@ export class ImageGalleryService {
     }
 
     const normalizedImagePath = normalizeImagePath(imagePath);
-    const persistedAnnotation = normalizeAnnotationForPersistence(annotation);
+    const persistedAnnotation = serializeImageAnnotation(annotation);
     const resolvedMediaFile = resolveVaultMediaFile(
       this.plugin.app,
       imagePath,
@@ -207,7 +245,7 @@ export class ImageGalleryService {
     const hasCentralEntry =
       !!resolvedMediaFile &&
       this.annotations.hasEntryFor(resolvedMediaFile.path, false);
-    let resolvedSourceType: ImageGallerySourceType = 'trade';
+    let resolvedSourceType: ImageGallerySourceType | 'note' = 'note';
     let tradeType: 'regular' | 'missed' | 'backtest' = 'regular';
 
     await this.plugin.app.fileManager.processFrontMatter(
@@ -217,13 +255,20 @@ export class ImageGalleryService {
         const noteType = getString(record.type);
         if (isReviewNoteType(noteType)) {
           resolvedSourceType = REVIEW_TYPE_TO_SOURCE[noteType];
-        } else if (noteType === 'backtest-trade') {
-          tradeType = 'backtest';
         } else if (
           noteType === 'missed-trade' ||
           record.isMissedTrade === true
         ) {
+          resolvedSourceType = 'trade';
           tradeType = 'missed';
+        } else if (
+          noteType === 'backtest-trade' ||
+          record.isBacktestTrade === true
+        ) {
+          resolvedSourceType = 'trade';
+          tradeType = 'backtest';
+        } else if (noteType === 'trade') {
+          resolvedSourceType = 'trade';
         }
 
         const currentAnnotations = isRecord(record.imageAnnotations)
@@ -249,9 +294,13 @@ export class ImageGalleryService {
     );
 
     const publishNoteAnnotationChanged = () => {
-      this.invalidate();
+      this.invalidateMemory();
       if (resolvedSourceType === 'trade') {
         publishTradeAnnotationChanged(sourcePath, tradeType);
+        return;
+      }
+      if (resolvedSourceType === 'note') {
+        eventBus.publish('image-gallery:changed');
         return;
       }
       eventBus.publish('review:changed', {
@@ -266,6 +315,7 @@ export class ImageGalleryService {
       publishNoteAnnotationChanged
     );
     publishNoteAnnotationChanged();
+    await this.clearPersistedIndex();
   }
 
   private async getAllItems(): Promise<ImageGalleryItem[]> {

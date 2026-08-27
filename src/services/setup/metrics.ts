@@ -1,17 +1,11 @@
 
 
 import { TradeService } from '../trade/TradeService';
-import { normalizeTradeExecutionForAnalytics } from '../trade/core/TradeExecutionAnalytics';
 import { Setup, SetupMetrics } from './types';
 import { calculateWinRateExcludingBreakeven } from '../../utils/breakEvenRange';
-import {
-  getEffectivePnL,
-  getResolvedWeightedAverageExitPrice,
-  getWeightedAverageEntryPrice,
-  isPnlContributingTrade,
-} from '../../utils/tradeStatusUtils';
-import { calculateDirectionalPriceDiff } from '../../utils/pnlCalculation';
+import { isPnlContributingTrade } from '../../utils/tradeStatusUtils';
 import { inferStoredTradeType } from '../../utils/tradeTypeRouting';
+import { calculateSetupTradePnl, toSetupTradePnlInput } from './setupTradePnl';
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
@@ -52,6 +46,7 @@ export interface Trade extends Record<string, unknown> {
   directPnL?: number | null;
   dividends?: Array<{ amount?: number | null }>;
   commission?: number | null;
+  commissionType?: 'fixed' | 'percentage';
   swap?: number | null;
   fees?: number | null;
   rebate?: number | null;
@@ -107,24 +102,10 @@ export class SetupMetricsCalculator {
     setup: Setup,
     tradeData: Array<Record<string, unknown>>
   ): SetupMetrics {
-    const normalizedSetupRefs = new Set(
-      [setup.id, setup.name].flatMap((ref) => {
-        const normalizedRef = this.normalizeSetupToken(ref);
-        return normalizedRef ? [normalizedRef] : [];
-      })
+    const trades = this.filterSetupTrades(
+      tradeData,
+      this.buildSetupRefs([setup.id, setup.name])
     );
-    const trades = tradeData.flatMap((trade) => {
-      const normalizedTrade = normalizeSetupMetricTrade(trade);
-      if (
-        !normalizedTrade ||
-        !this.isRegularTrade(normalizedTrade) ||
-        !this.tradeMatchesSetup(normalizedTrade, normalizedSetupRefs) ||
-        !isPnlContributingTrade(normalizedTrade)
-      ) {
-        return [];
-      }
-      return [normalizedTrade];
-    });
     return this.calculateMetricsForTrades(trades);
   }
 
@@ -133,7 +114,9 @@ export class SetupMetricsCalculator {
       return this.getEmptyMetrics();
     }
 
-    const results = trades.map((trade) => this.calculateTradePnL(trade));
+    const results = trades.map((trade) =>
+      calculateSetupTradePnl(toSetupTradePnlInput(trade))
+    );
     const winners = results.filter((r) => r > 0);
     const losers = results.filter((r) => r < 0);
 
@@ -161,49 +144,33 @@ export class SetupMetricsCalculator {
 
   
   private async getSetupTrades(setupTokens: string[]): Promise<Trade[]> {
-    const normalizedSetupRefs = new Set(
+    const tradeData = await this.tradeService.getTradeData();
+    return this.filterSetupTrades(tradeData, this.buildSetupRefs(setupTokens));
+  }
+
+  private buildSetupRefs(setupTokens: string[]): Set<string> {
+    return new Set(
       setupTokens.flatMap((ref) => {
         const normalizedRef = this.normalizeSetupToken(ref);
         return normalizedRef ? [normalizedRef] : [];
       })
     );
-    if (typeof this.tradeService.getTradeData === 'function') {
-      const tradeData = await this.tradeService.getTradeData();
-      if (Array.isArray(tradeData)) {
-        const trades = tradeData.flatMap((trade) => {
-          const normalizedTrade = normalizeSetupMetricTrade(trade);
-          return normalizedTrade ? [normalizedTrade] : [];
-        });
-        return trades.filter((trade) => {
-          return (
-            this.isRegularTrade(trade) &&
-            this.tradeMatchesSetup(trade, normalizedSetupRefs) &&
-            isPnlContributingTrade(trade)
-          );
-        });
-      }
-    }
+  }
 
-    
-    const trades = await this.tradeService.getTrades(new Date(0), new Date());
-
-    return (
-      await Promise.all(
-        trades.map(async (file) => {
-          try {
-            const content = await this.tradeService.readTradeContent(file);
-            const trade = this.parseTrade(content);
-            return this.isRegularTrade(trade) &&
-              this.tradeMatchesSetup(trade, normalizedSetupRefs)
-              ? trade
-              : null;
-          } catch {
-            console.warn(`Invalid trade file: ${file.path}`);
-            return null;
-          }
-        })
-      )
-    ).filter((trade): trade is Trade => trade !== null);
+  private filterSetupTrades(
+    tradeData: Array<Record<string, unknown>>,
+    normalizedSetupRefs: Set<string>
+  ): Trade[] {
+    const trades = tradeData.flatMap((trade) => {
+      const normalizedTrade = normalizeSetupMetricTrade(trade);
+      return normalizedTrade ? [normalizedTrade] : [];
+    });
+    return trades.filter(
+      (trade) =>
+        this.isRegularTrade(trade) &&
+        this.tradeMatchesSetup(trade, normalizedSetupRefs) &&
+        isPnlContributingTrade(trade)
+    );
   }
 
   private tradeMatchesSetup(
@@ -232,36 +199,6 @@ export class SetupMetricsCalculator {
       .normalize('NFKC')
       .toLowerCase()
       .replace(/[^\p{L}\p{N}]+/gu, '');
-  }
-
-  
-  private calculateTradePnL(trade: Trade): number {
-    const hasStoredOrDirectPnL =
-      (trade.pnl !== undefined &&
-        trade.pnl !== null &&
-        Number.isFinite(trade.pnl)) ||
-      (trade.useDirectPnLInput === true &&
-        trade.directPnL !== undefined &&
-        trade.directPnL !== null);
-
-    if (hasStoredOrDirectPnL) {
-      return getEffectivePnL(trade);
-    }
-
-    const entryPrice = getWeightedAverageEntryPrice(trade);
-    const exitPrice = getResolvedWeightedAverageExitPrice(trade);
-    const priceDiff = calculateDirectionalPriceDiff(
-      {
-        assetType: trade.assetType,
-        
-        
-        direction: trade.direction || 'long',
-      },
-      entryPrice,
-      exitPrice
-    );
-
-    return priceDiff === null ? 0 : priceDiff * trade.positionSize;
   }
 
   
@@ -395,64 +332,6 @@ export class SetupMetricsCalculator {
       lastTradeDate: lastTradeDate.toISOString(),
       tradingFrequency: trades.length / monthsSinceFirst,
       inactivityStreak,
-    };
-  }
-
-  
-  private parseTrade(content: string): Trade {
-    const match = content.match(/^---\n([\s\S]*?)\n---/);
-    if (!match) throw new Error('Invalid trade file format');
-
-    const frontmatter = match[1].split('\n').reduce(
-      (acc, line) => {
-        const [key, ...values] = line.split(':').map((s) => s.trim());
-        if (key && values.length) {
-          
-          if (key === 'setup') {
-            acc[key] = values
-              .join(':')
-              .replace(/[[\]]/g, '')
-              .split(',')
-              .map((s) => s.trim());
-          } else {
-            acc[key] = values.join(':');
-          }
-        }
-        return acc;
-      },
-      {} as Record<string, unknown>
-    );
-
-    const normalizedExecution = normalizeTradeExecutionForAnalytics({
-      ...frontmatter,
-      direction:
-        typeof frontmatter.direction === 'string'
-          ? frontmatter.direction
-          : 'long',
-    });
-
-    return {
-      exitPrice: normalizedExecution.exitPrice,
-      entryPrice: normalizedExecution.entryPrice,
-      positionSize: normalizedExecution.positionSize,
-      setup: Array.isArray(frontmatter.setup)
-        ? frontmatter.setup.filter(
-            (item): item is string => typeof item === 'string'
-          )
-        : [],
-      entryTime: normalizedExecution.entryTime.toISOString(),
-      exitTime: normalizedExecution.exitTime.toISOString(),
-      direction:
-        typeof frontmatter.direction === 'string'
-          ? frontmatter.direction
-          : 'long',
-      assetType:
-        typeof frontmatter.assetType === 'string'
-          ? frontmatter.assetType
-          : undefined,
-      type: frontmatter.type,
-      isMissedTrade: frontmatter.isMissedTrade === 'true',
-      isBacktestTrade: frontmatter.isBacktestTrade === 'true',
     };
   }
 }

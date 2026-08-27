@@ -17,6 +17,8 @@ import type { AccountPageService } from '../services/accountPage';
 import type { BackendIntegrationService } from '../services/backend';
 import type { OnboardingService } from '../services/onboarding';
 import type { FolderPathService } from '../services/core/FolderPathService';
+import type { ReviewStreakService } from '../services/reviewStreak/ReviewStreakService';
+import type { EconomicCalendarService } from '../services/economicCalendar/EconomicCalendarService';
 
 
 export interface ServiceRegistry {
@@ -37,6 +39,8 @@ export interface ServiceRegistry {
   backendIntegrationService: BackendIntegrationService;
   onboardingService: OnboardingService;
   folderPathService: FolderPathService;
+  reviewStreakService: ReviewStreakService;
+  economicCalendarService: EconomicCalendarService;
 }
 
 

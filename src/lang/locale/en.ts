@@ -9,9 +9,7 @@ const en = {
     'Reauthorization required',
   'trade-sync.tradovate.status.deleting': 'Deleting cloud data',
   'trade-sync.tradovate.status.error': 'Connection error',
-  'trade-sync.tradovate.sync-complete': 'Tradovate synchronization completed.',
-  'trade-sync.tradovate.sync-partial':
-    'Tradovate synchronization completed with issues. Review the integration status.',
+
   'trade-sync.tradovate.sync-complete-connection':
     '{connection} synchronization completed.',
   'trade-sync.tradovate.sync-partial-connection':
@@ -53,8 +51,6 @@ const en = {
   'trade-sync.tradovate.history-new': 'New trades only',
   'trade-sync.tradovate.start-date': 'Start date',
 
-  'trade-sync.tradovate.account-required':
-    'Select at least one Tradovate account to synchronize.',
   'trade-sync.tradovate.mapping-required':
     'Choose a local vault account for every enabled Tradovate account.',
   'trade-sync.tradovate.custom-date-required':
@@ -120,10 +116,7 @@ const en = {
   'template.switch-title': 'Switch layout',
   'template.switch-trade-title': 'Switch trade layout',
   'template.switch-review-title': 'Switch {type} layout',
-  'template.no-template': 'No layout',
-  'template.label': 'Layout',
-  'template.assign-to-note': 'Assign a layout to this note',
-  'template.switch-action': 'Switch layout',
+
   'template.review-type.drc': 'DRC',
   'template.review-type.weekly': 'weekly',
   'template.review-type.monthly': 'monthly',
@@ -180,65 +173,22 @@ const en = {
   'auth.title.already-logged-in': 'Already logged in',
   'auth.desc.already-logged-in': 'You are already logged in{email}.',
   'auth.title.sign-in': 'Sign in to Journalit',
-  'auth.desc.email':
-    'Enter your email address to receive a verification code for Journalit access.',
+
   'auth.label.email': 'Email address',
-  'auth.placeholder.email': 'your.email@example.com',
+
   'auth.button.send-code': 'Send verification code',
-  'auth.button.sending': 'Sending...',
-  'auth.desc.code':
-    "We've sent a 6-digit verification code to {email}. Please enter it below to complete your sign-in.",
+
   'auth.label.code': 'Verification code',
-  'auth.placeholder.code': '123456',
+
   'auth.button.verify': 'Verify & sign in',
-  'auth.button.verifying': 'Verifying...',
+
   'auth.button.resend': 'Resend code',
-  'auth.footer.trouble':
-    'Having trouble? The verification code expires in 15 minutes.',
-  'auth.footer.resend-wait':
-    ' You can request a new code in {seconds} seconds.',
-  'auth.footer.resend-now':
-    ' You can now resend the code using the button above.',
-  'auth.footer.enter-email':
-    ' Enter your email to receive a verification code.',
-  'auth.error.invalid-email': 'Please enter a valid email address',
-  'auth.error.enter-code': 'Please enter the verification code',
-  'auth.error.code-digits': 'Verification code should be 6 digits',
-  'auth.error.too-many-requests':
-    'You have requested too many codes. Please wait 30 minutes and try again.',
-  'auth.error.send-failed': 'Failed to send verification code',
-  'auth.error.verify-failed': 'Failed to verify code',
-  'auth.error.resend-failed': 'Failed to resend verification code',
-  'auth.error.invalid-code': 'Invalid verification code',
 
   
-  'auth.status.disconnected': 'Signed out',
-  'auth.error.token-expired':
-    'Your session has expired. Please sign in again to continue using Pro features.',
-  'auth.error.failed': 'Unable to authenticate. Please try again.',
-  'auth.error.failed-reason': 'Unable to authenticate: {reason}',
-  'auth.error.token-invalid': 'Token is no longer valid',
-  'auth.error.server-validation-failed': 'Server validation failed',
-  'auth.error.invalid-user-data': 'Invalid user data received',
-  'auth.error.needs-auth':
-    'Sign in to access Pro features. Basic features are still available.',
+
   'auth.error.needs-premium': 'Pro feature',
-  'auth.error.needs-premium-desc':
-    'This is a Pro feature. Visit our website to subscribe and unlock.',
+
   'auth.error.network-error': 'Connection error',
-  'auth.error.network-error-verify':
-    'Unable to verify Pro access. Check your connection or continue with basic features.',
-  'auth.error.network-error-basic':
-    'Working offline. Basic features are still available.',
-  'auth.error.offline-expired':
-    'Offline grace period expired. Please reconnect to continue using Pro features.',
-  'auth.expiry-warning-tomorrow':
-    'Your session expires tomorrow. Please sign in again soon to continue using Pro features.',
-  'auth.expiry-warning-days':
-    'Your session expires in {days} days. Please sign in again to continue using Pro features.',
-  'auth.offline.active':
-    'Working in offline mode. Some Pro features may be limited.',
-  'auth.offline.grace-remaining': 'Offline grace period: {days} days remaining',
 
   
   
@@ -295,10 +245,7 @@ const en = {
   'form.section.take-profits': 'Take Profits',
   'form.section.analysis-thesis': 'Analysis & Thesis',
   'form.section.custom-fields': 'Custom Fields',
-  'form.section.custom-fields-desc':
-    "Custom fields defined in your plugin settings. These fields will be saved to your trade's frontmatter.",
-  'form.section.custom-fields-empty':
-    'No custom fields configured. Go to Settings → Customization → Custom Trade Fields to add custom fields.',
+
   'form.section.custom-fields-empty-title': 'No advanced fields yet.',
   'form.section.custom-fields-empty-desc':
     'Create custom trade fields in Settings → Customization → Custom Trade Fields.',
@@ -318,10 +265,7 @@ const en = {
   'form.layout.customize': 'Customise form',
   'form.layout.modal-title': 'Customise Trade Form',
   'form.layout.settings-title': 'Trade Form Layout',
-  'form.layout.settings-desc':
-    'Choose how you journal trades and which optional blocks appear in the trade form.',
-  'form.layout.core-fields-note':
-    'Trade type, account, asset type, instrument, direction, and the required price or P&L inputs stay visible based on the selected input mode.',
+
   'form.layout.input-mode': 'Input mode',
   'form.layout.input-mode-prices': 'Prices',
   'form.layout.input-mode-pnl-risk': 'P&L + Risk',
@@ -351,13 +295,11 @@ const en = {
     'Account, instrument, direction, and entry/exit inputs stay first.',
   'form.layout.item.asset-specific': 'Asset-specific fields',
   'form.layout.item.pnl-preview': 'P&L preview',
-  'form.layout.item.realized-pnl-preview': 'Partial exit P&L summary',
-  'form.layout.item.realized-pnl-preview-desc':
-    'Only appears for open trades after partial exits; its position is fixed.',
+
   'form.layout.item.trade-currency': 'Trade currency / FX rate',
   'form.layout.item.trade-currency-desc':
     'Enter a trade in another currency with an optional manual FX rate.',
-  'form.layout.manual-fx-rate': 'Manual FX rate input',
+  'form.layout.manual-fx-rate': 'FX rate override',
   'form.layout.result-r': 'Result in R',
   'form.layout.entry-time': 'Trade time',
 
@@ -379,12 +321,7 @@ const en = {
   'form.field.commission-type': 'Type',
   'form.field.rebate': 'Rebate',
   'form.field.swap': 'Swap',
-  'form.field.swap-tooltip.forex':
-    'Interest rate differential between currencies when holding positions overnight',
-  'form.field.swap-tooltip.cfd':
-    'Overnight financing cost for leveraged CFD positions',
-  'form.field.swap-tooltip.default':
-    'Overnight financing cost charged/credited for holding positions',
+
   'form.field.other-fees': 'Other Fees',
   'form.field.stop-loss': 'Stop Loss',
   'form.field.take-profit': 'Take Profit',
@@ -403,7 +340,7 @@ const en = {
   'form.field.trade-thesis': 'Trade Thesis',
   'form.field.time': 'Time',
   'form.field.price': 'Price',
-  'form.field.size': 'Size',
+
   'form.field.entries': 'Entries',
   'form.field.exits': 'Exits',
   'form.field.dividends': 'Dividends',
@@ -456,8 +393,10 @@ const en = {
   'form.field.leverage-ratio': 'Leverage Ratio',
   'form.field.trade-currency': 'Trade Currency',
   'form.field.fx-rate': 'FX Rate to {base}',
+  'form.field.fx-rate-override': 'FX Rate Override ({quote} → {base})',
 
   
+  'form.forex.using-manual-rate': 'Using manual FX rate',
   'form.field.lot-size.standard': 'Standard (100,000)',
   'form.field.lot-size.mini': 'Mini (10,000)',
   'form.field.lot-size.micro': 'Micro (1,000)',
@@ -467,13 +406,11 @@ const en = {
   'form.field.image-url-placeholder': 'Paste media URL or file path...',
   'form.field.image-duplicate-error': 'This image is already added.',
   'form.field.trade-image-alt': 'Trade Image',
-  'image.loading': 'Loading...',
-  'image.load-failed': 'Failed to load image',
+
   'form.field.value-dollar': 'Value ($)',
   'form.field.dollar-amount-placeholder': 'Dollar amount',
   'form.field.direct-pnl-placeholder': 'Enter profit or loss amount',
-  'form.field.mae-dollar-placeholder': 'Max drawdown in dollars',
-  'form.field.mfe-dollar-placeholder': 'Max profit in dollars',
+
   'form.field.mae-placeholder-currency': 'Max drawdown in {currency}',
   'form.field.mfe-placeholder-currency': 'Max profit in {currency}',
 
@@ -494,7 +431,7 @@ const en = {
   'form.placeholder.fx-rate': '1 {currency} = ? {base} (empty: daily rate)',
   'form.placeholder.custom-tag': 'Type a custom tag and press Enter',
   'form.placeholder.thesis': 'Enter your thesis for this trade...',
-  'form.placeholder.pnl': 'Enter total profit or loss',
+
   'form.placeholder.exchange-stock': 'e.g., NYSE, NASDAQ',
   'form.placeholder.exchange-crypto': 'e.g., Binance, Coinbase',
   'form.placeholder.futures-point-value': 'ex: 50 for ES1',
@@ -521,12 +458,11 @@ const en = {
   'form.entry-exit.calc-pnl':
     'Calculate PNL from entry/exit prices and position sizes.',
   'form.ideal-exit.title': 'Ideal exits',
-  'form.ideal-exit.subtitle': 'Hindsight scale-outs for execution review.',
-  'form.ideal-exit.coverage': 'Ideal size',
+
   'form.ideal-exit.price': 'Ideal Price',
   'form.ideal-exit.size': 'Size',
   'form.ideal-exit.remove': 'Remove ideal exit',
-  'form.ideal-exit.add': '+ Add Ideal Exit',
+
   'form.ideal-exit.copy-actual': 'Copy actual exits',
 
   'form.ideal-exit.tooltip':
@@ -566,17 +502,19 @@ const en = {
   
   'button.save': 'Save',
   'button.cancel': 'Cancel',
+  'button.close': 'Close',
   'button.done': 'Done',
   'button.edit': 'Edit',
   'button.delete': 'Delete',
   'button.update': 'Update',
+  'button.open': 'Open',
   'button.add': 'Add',
   'button.create': 'Create',
   'button.reset': 'Reset',
   'button.reset-to-defaults': 'Reset to Defaults',
-  'button.close': 'Close',
+
   'button.confirm': 'Confirm',
-  'button.submit': 'Submit',
+
   'button.back': 'Back',
 
   'button.add-trade': 'Add Trade',
@@ -585,18 +523,15 @@ const en = {
   'button.create-trade': 'Create Trade',
   'button.delete-all': 'Delete All',
   'button.clear-all': 'Clear All',
-  'button.save-name-only': 'Save Name Only',
-  'button.cancel-action': 'Cancel Action',
+
   'button.cancel-reset': 'Cancel Reset',
   'button.proceed-anyway': 'Proceed Anyway',
   'button.mark-reviewed': 'Mark Reviewed',
   'button.maybe-later': 'Maybe later',
   'button.upgrade-now': 'Upgrade now',
-  'button.add-first-goal': 'Add Your First Goal',
-  'button.add-first-event': 'Add Your First Event',
-  'button.create-daily-review': 'Create Daily Review',
+
   'button.apply': 'Apply',
-  'button.apply-settings': 'Apply Settings',
+
   'button.learn-more': 'Learn more',
   'button.upload-image': 'Upload Media',
   'button.discord': 'Discord',
@@ -623,8 +558,7 @@ const en = {
   'validation.advanced-tab-errors.many': 'Advanced tab has {count} errors',
   'validation.advanced-tab-errors.other': 'Advanced tab has {count} errors',
   'validation.complete-required': 'Please complete all required fields',
-  'validation.map-required-fields':
-    'Please map all required fields before importing',
+
   'validation.missed-trade-requires-exit':
     'Missed trades must have exit data with non-zero prices. They represent opportunities that have already passed, so you must specify what the exit price would have been.',
   'trade.validation.entry-required': 'At least one entry is required.',
@@ -668,7 +602,8 @@ const en = {
     'Contract size must be greater than zero.',
   'trade.validation.dollars-per-point-min':
     'Please enter Dollars per point (min 0.01).',
-  'trade.validation.lot-size-nonnegative': 'Lot size cannot be negative.',
+  'trade.validation.lot-size-nonnegative':
+    'Lot size must be greater than zero.',
   'trade.validation.leverage-positive':
     'Leverage ratio must be greater than zero.',
   'trade.validation.commission-type-invalid':
@@ -735,13 +670,16 @@ const en = {
   
   
   
-  'notice.verification-sent': 'Verification code sent! Check your email.',
+
   'notice.login-success': 'Successfully logged in!',
-  'notice.new-verification-sent':
-    'New verification code sent! Check your email.',
+
   'notice.logout-success': 'Successfully signed out',
   'notice.ftp-created': 'FTP credentials created successfully',
   'notice.ftp-reset': 'FTP password reset successfully! Save the new password.',
+  'notice.ftp-password-rotated':
+    'New FTP credentials were generated for this device. FTP sync configured on other devices (e.g. your MetaTrader EA) must be updated with the new password.',
+  'notice.ftp-reused':
+    'Existing FTP credentials loaded from this device. If they no longer work, use Reset password.',
   'notice.template-saved': 'Layout saved',
   'notice.template-created': 'Layout created',
   'notice.template-duplicated': 'Layout duplicated',
@@ -759,24 +697,10 @@ const en = {
   'notice.auto-sync-enabled': 'enabled',
   'notice.auto-sync-disabled': 'disabled',
   'notice.reset-items': 'Reset items to defaults',
-  'notice.reset-timeframes': 'Reset timeframes to defaults',
+
   'notice.custom-fields-imported':
     'Successfully imported {count} custom fields',
-  'notice.csv-parsed': 'CSV/XLSX/XLS parsed successfully: {count} rows',
-  'notice.csv-validation-failed': 'CSV/XLSX/XLS validation failed: {errors}',
-  'notice.csv-parse-failed': 'Failed to parse CSV/XLSX/XLS file: {error}',
-  'notice.csv-complete-fields': 'Please complete all required fields',
-  'notice.csv-invalid-selection': 'Invalid broker/template selection',
-  'notice.csv-import-success': 'Successfully imported {count} trades!',
-  'notice.csv-import-partial':
-    'Imported {count} trades, skipped {duplicates} duplicates',
-  'notice.csv-import-failed': 'Import failed: {error}',
-  'notice.csv-import-report-copy-failed': 'Failed to copy import report',
-  'notice.csv-template-saved':
-    'Template saved. You can now select "{name}" for future imports.',
-  'notice.csv-template-updated': 'Template "{name}" updated successfully',
-  'notice.csv-template-update-failed': 'Failed to update template: {error}',
-  'notice.csv-template-save-failed': 'Failed to save template: {error}',
+
   'notice.csv-template-deleted': 'Template "{name}" deleted',
   'notice.csv-template-delete-failed': 'Failed to delete template: {error}',
   'notice.csv-template-imported': 'Template "{name}" imported successfully',
@@ -806,8 +730,7 @@ const en = {
   
   
   
-  'notice.error.template-name-required': 'Please enter a template name',
-  'notice.error.template-name-exists': 'Template name already exists',
+
   'notice.error.open-journalit':
     'Failed to open Journalit. Please try reloading Obsidian.',
   'notice.error.open-drc': 'Failed to open DRC: {error}',
@@ -824,15 +747,14 @@ const en = {
   'notice.error.open-yearly-review': 'Failed to open Yearly Review: {error}',
   'notice.error.open-onboarding':
     'Failed to open onboarding flow. Check console for details.',
-  'notice.error.sync-trades': 'Failed to sync trades: {error}',
+
   'notice.error.open-release-notes': 'Failed to open release notes: {error}',
   'notice.error.open-update-notification':
     'Failed to open update notification: {error}',
   'notice.error.open-layout-builder': 'Failed to open Layout Builder: {error}',
   'notice.error.switch-template': 'Failed to switch layout: {error}',
   'notice.error.switch-template-generic': 'Failed to switch layout',
-  'notice.error.plugin-not-available': 'Plugin not available',
-  'notice.error.open-template-picker': 'Failed to open layout picker',
+
   'notice.error.no-active-file': 'No active file. Open a note first.',
   'notice.error.no-template-support':
     'This note type does not support layouts.',
@@ -851,15 +773,10 @@ const en = {
   'notice.error.reset-settings':
     'Failed to reset settings. Check console for details.',
 
-  'notice.error.invalid-drc-date': 'Invalid DRC date',
-  'notice.error.invalid-drc-missed':
-    'Invalid DRC date. Cannot create missed trade.',
-  'notice.error.invalid-weekly-review-date':
-    'Invalid weekly review date. Cannot save forecast image.',
   'notice.error.cannot-change-folder-during-sync':
     'Cannot change folder path while sync is in progress. Please wait for sync to complete.',
   'notice.error.file-not-found': 'File not found: {path}',
-  'notice.error.trade-not-found': 'Trade file not found: {path}',
+
   'notice.error.mark-reviewed': 'Error marking trades as reviewed: {error}',
   'notice.error.add-setups': 'Error adding setups: {error}',
   'notice.error.add-tags': 'Error adding tags: {error}',
@@ -880,7 +797,7 @@ const en = {
   
   
   
-  'notice.info.no-sync': 'No sync in progress',
+
   'notice.plugin-updated': 'Journalit updated to v{version}!',
 
   'notice.info.settings-recovered':
@@ -901,7 +818,6 @@ const en = {
   'tradelog.root.all-trades': 'All Trades',
   'tradelog.view.selector.label': 'View',
 
-  'form.layout.guide-trigger-label': 'Customize form',
   'trade-form.guide.customization-modal.title':
     'Tailor the form to your workflow',
   'trade-form.guide.customization-modal.description':
@@ -912,9 +828,9 @@ const en = {
   'tradelog.guide.empty.intro.title': 'Welcome to Trade Log',
   'tradelog.guide.empty.intro.description':
     'This page becomes your main place for browsing, sorting, and reviewing trades. Once you add trades, you will also get the full Trade Log tour.',
-  'tradelog.guide.empty.state.title': 'Start by adding your first trade',
+  'tradelog.guide.empty.state.title': 'No trading data available',
   'tradelog.guide.empty.state.description':
-    'You do not have any trades here yet. Click the Create Trade button to make your first trade, then come back to learn the full table and batch tools.',
+    'Import previous trades to explore your performance now, or record a new trade manually.',
   'tradelog.guide.intro.title': 'This is your Trade Log',
   'tradelog.guide.intro.description':
     'Use this page to review trades one by one, sort them, filter them, and make changes to many trades at once.',
@@ -954,10 +870,10 @@ const en = {
     'In normal mode, clicking a trade opens it. In multi-select mode, clicking selects it instead. Switch between those two behaviours depending on what you want to do.',
   'dashboard.guide.empty.intro.title': 'Welcome to your Dashboard',
   'dashboard.guide.empty.intro.description':
-    'This page gives you a quick view of your trading performance. Once you have trades, it becomes your daily command center.',
-  'dashboard.guide.empty.state.title': 'Start by adding your first trade',
+    'Your Dashboard becomes useful as soon as Journalit has trading history to analyse.',
+  'dashboard.guide.empty.state.title': 'Bring your trading history with you',
   'dashboard.guide.empty.state.description':
-    'You do not have any trades yet. Add a trade manually or import data, then come back to unlock the full Dashboard tour.',
+    'Import previous trades to start with meaningful performance data, or add a trade manually if you are recording your first trades.',
   'dashboard.guide.main.intro.title': 'This is your dashboard',
   'dashboard.guide.main.intro.description':
     'Use this page to track your performance, review your stats, and keep your most useful charts in one place.',
@@ -1133,14 +1049,11 @@ const en = {
   'tradelog.copy-trade.adjustment-description-secondary':
     'Use a negative number for worse fills/costs.',
   'tradelog.copy-trade.adjustment-preview': 'Preview net P&L:',
-  'tradelog.copy-trade.adjustment-prompt':
-    'Enter the manual PnL adjustment for this copied trade. Use a negative number for worse fills/costs.',
+
   'tradelog.copy-trade.adjustment-invalid': 'Enter a valid PnL adjustment.',
   'tradelog.copy-trade.adjustment-saved': 'Copied trade PnL adjustment saved.',
   'tradelog.tooltip.still-open': 'still open',
-  'tradelog.tooltip.performance-trade': '{indicator} performing trade',
-  'tradelog.tooltip.performance-trade-on':
-    '{indicator} performing trade on {date}',
+
   'tradelog.alt.trade-image': '{instrument} Image',
   'tradelog.alt.trade-image-n': '{instrument} Image {n}',
 
@@ -1165,7 +1078,7 @@ const en = {
   'tradelog.batch.selected-count': '{count} SELECTED',
   'tradelog.batch.select-all.title': 'Select all visible trades',
   'tradelog.batch.select-all.label': 'Select All',
-  'tradelog.batch.mark-reviewed.title': 'Mark selected trades as reviewed',
+
   'tradelog.batch.already-reviewed':
     'All {total} selected trades are already reviewed',
   'tradelog.batch.already-reviewed-single':
@@ -1183,13 +1096,13 @@ const en = {
   'tradelog.batch.column-settings': 'Column settings',
   'tradelog.batch.marking-reviewed': 'Marking...',
   'tradelog.batch.add-setups.aria': 'Add setups',
-  'tradelog.batch.add-setups.title': 'Add setups to selected trades',
+
   'tradelog.batch.add-setups.label': 'Add Setups',
   'tradelog.batch.add-tags.aria': 'Add tags',
-  'tradelog.batch.add-tags.title': 'Add tags to selected trades',
+
   'tradelog.batch.add-tags.label': 'Add Tags',
   'tradelog.batch.add-mistakes.aria': 'Add mistakes',
-  'tradelog.batch.add-mistakes.title': 'Add mistakes to selected trades',
+
   'tradelog.batch.add-mistakes.label': 'Add Mistakes',
   'tradelog.batch.adding': 'Adding...',
   'tradelog.batch.add-count': 'Add ({count})',
@@ -1205,10 +1118,10 @@ const en = {
   'tradelog.batch.duplicate-skipped.other':
     '{count} selected notes cannot be duplicated',
   'tradelog.batch.delete.aria': 'Delete trades',
-  'tradelog.batch.delete.title': 'Delete selected trades',
+
   'tradelog.batch.deleting': 'Deleting...',
   'tradelog.batch.clear.aria': 'Clear selection',
-  'tradelog.batch.clear.title': 'Clear selection',
+
   'tradelog.batch.clear.label': 'Clear',
 
   
@@ -1285,7 +1198,9 @@ const en = {
   'dashboard.title': 'Dashboard',
   'dashboard.empty.message': 'No trading data available',
   'dashboard.empty.submessage':
-    'Add some trades to see your dashboard come to life',
+    'Import previous trades to explore your performance now, or record a new trade manually.',
+  'dashboard.empty.import-action': 'Import existing trades',
+  'dashboard.empty.manual-action': 'Add a trade manually',
   'dashboard.empty.filter-hint': 'Try adjusting your filter settings',
   'dashboard.error.load-failed': 'Failed to load data',
   'dashboard.no-data': 'No trading data available',
@@ -1301,7 +1216,7 @@ const en = {
   'dashboard.metrics.sharpeRatio': 'Sharpe Ratio',
   'dashboard.metrics.expectancy': 'Expectancy',
   'dashboard.metrics.numTrades': 'Total Trades',
-  'dashboard.metrics.closedTrades': 'Closed Trades',
+
   'dashboard.metrics.numWinTrades': 'Winning Trades',
   'dashboard.metrics.numLossTrades': 'Losing Trades',
   'dashboard.metrics.avgWin': 'Avg Win',
@@ -1357,7 +1272,7 @@ const en = {
   'dashboard.conversion.title': 'Converted to {currency}',
   'dashboard.conversion.converted-total': 'Converted Total',
   'dashboard.conversion.base': 'Base: {currency}',
-  'dashboard.conversion.rates': 'Rates: ECB ({date})',
+
   'dashboard.conversion.using-ecb': 'Using ECB rates ({date})',
   'dashboard.conversion.using-broker-pnl':
     'Using broker-provided base-currency P&L for {count} {tradeLabel}',
@@ -1372,8 +1287,6 @@ const en = {
   'dashboard.conversion.original-pnl': 'Original P&L',
   'dashboard.conversion.converted-pnl': 'Converted P&L',
   'dashboard.conversion.details-label': 'Currency conversion details',
-  'dashboard.conversion.requires-conversion':
-    'Multi-currency P&L charts require exchange-rate conversion.',
 
   'dashboard.top-section.add-metric': 'Add Metric',
   'dashboard.top-section.remove-metric': 'Remove metric',
@@ -1395,7 +1308,7 @@ const en = {
   'dashboard.filter.accounts.all': 'All Accounts',
   'dashboard.filter.accounts.n-selected': '{count} Accounts',
   'dashboard.filter.accounts.select-all': 'Select All',
-  'dashboard.filter.accounts.select-all-option': '-- Select All --',
+
   'dashboard.filter.accounts.none-found': 'No accounts found',
 
   
@@ -1423,7 +1336,6 @@ const en = {
   'dashboard.filter.setup.none': 'No Setup',
   'dashboard.filter.setup.n-selected': '{count} Setups',
   'dashboard.filter.setup.select-all': 'Select All',
-  'dashboard.filter.setup.none-found': 'No setups found',
 
   
   'dashboard.widgets.daily-performance.title': 'Daily Performance',
@@ -1448,10 +1360,9 @@ const en = {
   'dashboard.widgets.hourly-performance.metric-aria': 'Metric',
   'dashboard.widgets.hourly-performance.metric.total': 'Total',
   'dashboard.widgets.hourly-performance.metric.average': 'Average',
-  'dashboard.widgets.hourly-performance.metric.total-pnl': 'Total P&L',
-  'dashboard.widgets.hourly-performance.metric.avg-pnl': 'Avg P&L',
+
   'dashboard.widgets.hourly-performance.metric.total-r': 'Total R',
-  'dashboard.widgets.hourly-performance.metric.avg-r': 'Avg R',
+
   'dashboard.widgets.setup-performance.title': 'Setup Performance',
   'dashboard.widgets.setup-performance.description':
     'Ranked bar chart comparing performance by setup',
@@ -1512,14 +1423,15 @@ const en = {
     'Calendar showing your trading activity for the year',
   'home.widget.getting-started.name': 'Getting Started',
   'home.widget.getting-started.description':
-    'Checklist to help you add your first trades and activate PRO',
+    'Checklist to help you add trading history and configure Journalit',
   'home.widget.getting-started.progress': '{completed}/{total} completed',
   'home.widget.getting-started.progress.loading': 'Checking progress...',
-  'home.widget.getting-started.item.create.title': 'Create your first trade',
+  'home.widget.getting-started.item.create.title':
+    'Bring in your trading history',
   'home.widget.getting-started.item.create.description':
-    'Unlock your dashboard and journaling flow.',
+    'Import existing trades, connect Trade Sync, or add your first trade manually.',
   'home.widget.getting-started.item.create.time': '30s',
-  'home.widget.getting-started.item.create.cta': 'Create Trade',
+  'home.widget.getting-started.item.create.cta': 'Open Trade Import',
   'home.widget.getting-started.item.tradelog.title': 'Open Trade Log',
   'home.widget.getting-started.item.tradelog.description':
     'Your trade database for analysing all your trades in one place.',
@@ -1556,8 +1468,7 @@ const en = {
   'home.widget.embedded-note.description':
     'Display any markdown note from your vault',
   'home.widget.current-streak.name': 'Current Streak',
-  'home.widget.current-streak.description':
-    'Track your winning and losing streaks',
+  'home.widget.current-streak.description': 'Track trade and review streaks',
   'home.widget.best-hours.name': 'Best Hours',
   'home.widget.best-hours.description':
     'See when you trade best by time of day',
@@ -1620,7 +1531,7 @@ const en = {
   
   
   
-  'view.home': 'Home',
+
   'view.dashboard': 'Dashboard',
   'view.trade-log': 'Trade Log',
   'view.account-dashboard': 'Accounts',
@@ -1634,43 +1545,106 @@ const en = {
   'view.account-page.balance-chart-loading': 'Loading balance chart...',
   'view.layout-builder': 'Layout Builder',
   'view.csv-import': 'Trade Import',
+  'view.economic-calendar.title': 'Economic Calendar',
+  'view.economic-calendar.this-week': 'This Week',
+  'view.economic-calendar.sync.aria': 'Open Economic Calendar settings',
+  'view.economic-calendar.import-count.one': 'Import {count} event',
+  'view.economic-calendar.import-count.few': 'Import {count} events',
+  'view.economic-calendar.import-count.many': 'Import {count} events',
+  'view.economic-calendar.import-count.other': 'Import {count} events',
+  'view.economic-calendar.imported': 'Imported',
+  'view.economic-calendar.update-available': 'Update available',
+  'view.economic-calendar.filter.currency': 'Currency',
+  'view.economic-calendar.filter.impact': 'Impact',
+  'view.economic-calendar.impact.high': 'High',
+  'view.economic-calendar.impact.medium': 'Medium',
+  'view.economic-calendar.impact.low': 'Low',
+  'view.economic-calendar.impact.none': 'None',
+  'view.economic-calendar.pro-required':
+    'Economic calendar requires Journalit Pro',
+  'view.economic-calendar.error.offline':
+    'Unable to load the economic calendar while offline.',
+  'view.economic-calendar.error.generic':
+    'Unable to load the economic calendar.',
+  'view.economic-calendar.empty': 'No economic events for this week.',
+  'view.economic-calendar.refresh': 'Refresh events',
+  'view.economic-calendar.retry': 'Retry',
+  'view.economic-calendar.select-all': 'Select all',
+  'view.economic-calendar.select-aria': 'Select {event}',
+  'view.economic-calendar.impact-aria': 'Impact: {impact}',
+  'view.economic-calendar.all-day': 'All day',
+  'view.economic-calendar.holiday-aria': 'Holiday',
+  'view.economic-calendar.forecast': 'Forecast',
+  'view.economic-calendar.previous': 'Previous',
+  'view.economic-calendar.actual': 'Actual',
+  'view.economic-calendar.import-success':
+    '{imported} imported, {updated} updated',
+  'view.economic-calendar.import-failed': 'Could not import the events.',
+  'view.economic-calendar.restore-missing-events':
+    'Restore missing events ({count})',
+  'economicCalendar.guide.main.intro.description':
+    'Browse the full week here. Journalit can also keep your Weekly Review updated automatically, so manual importing is optional.',
+  'economicCalendar.guide.main.filters.title':
+    'These filters only change this calendar',
+  'economicCalendar.guide.main.filters.description':
+    'Currency and impact filters narrow what you see and select here. They do not change your automatic import rules.',
+  'economicCalendar.guide.main.settings.title':
+    'Configure automatic import in Settings',
+  'economicCalendar.guide.main.settings.description':
+    'Use this button to choose currencies, impact levels, and holidays, then enable automatic import. Journalit syncs the current week into your Weekly Review and refreshes imported readings without re-adding events you deliberately removed.',
+  'economicCalendar.guide.main.manual-import.title':
+    'Manual imports are optional',
+  'economicCalendar.guide.main.manual-import.description':
+    'Select visible rows and use Import events for a one-off import. You do not need to do this every week when automatic import is enabled.',
+  'economicCalendar.guide.main.restore.title':
+    'Restore missing configured events',
+  'economicCalendar.guide.main.restore.description':
+    'This button becomes available when events from your saved automatic-import scope are missing. It stays visible but disabled once the week is complete again.',
+  'economicCalendar.guide.main.summary.title': 'Set it once, then review',
+  'economicCalendar.guide.main.summary.description':
+    'After automatic import is configured, your Weekly Review stays populated. Return here to browse, make one-off imports, or restore missing events.',
+  'view.economic-calendar.pro-benefit':
+    'High-impact events in your weekly note.',
+  'view.economic-calendar.pro-benefit-trial': 'Start with a 14-day free trial.',
+
+  'settings.economic-calendar.title': 'Economic Calendar',
+  'settings.economic-calendar.description':
+    "Auto-imports this week's economic events into your weekly note's Key Events.",
+  'settings.economic-calendar.auto-import': 'Auto-import weekly events',
+  'settings.economic-calendar.auto-import-desc':
+    'Keep the current weekly note in sync with the calendar feed.',
+  'settings.economic-calendar.currencies': 'Currencies',
+  'settings.economic-calendar.currencies-desc':
+    'Import events for these currencies. Select none to include all.',
+  'settings.economic-calendar.impacts': 'Impact levels',
+  'settings.economic-calendar.impacts-desc':
+    'Import events with these impact levels.',
+  'settings.economic-calendar.impacts-empty':
+    'No releases selected. Holidays can still be imported when enabled.',
+  'settings.economic-calendar.include-holidays': 'Include holidays',
+  'settings.economic-calendar.include-holidays-desc':
+    'Import bank holidays and central-bank minutes as all-day entries.',
+  'settings.economic-calendar.open-view': 'Open Economic Calendar',
+  'settings.economic-calendar.open-view-desc':
+    'Review this week and import events by hand.',
+  'settings.economic-calendar.pro-required':
+    'Economic Calendar needs a PRO subscription.',
 
   
   
   
-  'nav.prev-day': 'Previous Day',
-  'nav.prev-week': 'Previous Week',
-  'nav.prev-month': 'Previous Month',
-  'nav.prev-quarter': 'Previous Quarter',
-  'nav.prev-year': 'Previous Year',
-  'nav.drc': 'DRC',
-  'nav.weekly': 'Weekly Review',
-  'nav.monthly': 'Monthly Review',
-  'nav.next-day': 'Next Day',
-  'nav.next-week': 'Next Week',
-  'nav.next-month': 'Next Month',
-  'nav.weekly-review': 'Weekly Review',
-  'nav.monthly-review': 'Monthly Review',
-  'nav.quarterly-review': 'Quarterly Review',
-  'nav.yearly-review': 'Yearly Review',
-  'nav.edit-trade': 'Edit Trade',
 
   
   
   
-  'review.loading': 'Loading {name}...',
-  'review.failed-to-load':
-    'Failed to load {name}. Please try refreshing the page.',
-  'review.date-unknown': 'Unknown',
-  'review.error.failed-to-navigate': 'Failed to navigate to path',
-  'review.error.update-failed': 'Error updating {name}',
-  'review.error.update-file-failed': 'Failed to update {name} in file',
 
   
   
   
-  'status-bar.update-available': 'Update available',
+  'status-bar.update-available-branded': 'Update Journalit',
+  'status-bar.release-notes-branded': 'Journalit · View release notes',
   'status-bar.update-aria-label': 'Journalit {version} - Click to view',
+  'update.available.ready': 'A new version is ready',
 
   
   
@@ -1688,43 +1662,22 @@ const en = {
   'template.editor.loading': 'Loading layout...',
   'template.editor.built-in': 'Built-in',
   'template.editor.unsaved-changes': 'Unsaved changes',
-  'template.editor.review-title': 'Trade Review',
+
   'template.editor.built-in-notice':
     'Built-in layouts cannot be edited. Duplicate this layout or create a new one to customise.',
-  'template.editor.show-review': 'Show Review Section',
+
   'template.editor.show-review-desc':
     'When to display the review section on trade notes',
-  'template.editor.show-review.always': 'Always',
-  'template.editor.show-review.losses-only': 'Losses Only',
-  'template.editor.show-review.never': 'Never',
-  'template.editor.show-missed': 'Show for Missed Trades',
-  'template.editor.show-missed-desc':
-    'Also display review section on missed trade notes',
-  'template.editor.show-backtest': 'Show for Backtest Trades',
-  'template.editor.show-backtest-desc':
-    'Also display review section on backtest trade notes',
-  'template.editor.sections': 'Review Sections',
-  'template.editor.add-section': '+ Add Section',
-  'template.editor.no-sections': 'No review sections configured.',
-  'template.editor.add-section-hint': ' Click "+ Add Section" to create one.',
-  'template.editor.win-sections': 'Win Sections',
-  'template.editor.loss-sections': 'Loss Sections',
-  'template.editor.win-sections-desc': 'Shown on winning and breakeven trades',
-  'template.editor.loss-sections-desc': 'Shown on losing trades',
+
   'template.editor.section-visibility': 'Section Visibility',
   'template.editor.trade-note-layout': 'Trade Note Layout',
-  'template.editor.layout-scope': 'Layout scope',
-  'template.editor.layout-scope-desc':
-    'Choose the default layout or edit one asset type page',
-  'template.editor.all-asset-types': 'All asset types',
+
   'template.editor.other-asset-types': 'Others',
-  'template.editor.default-layout': 'Default',
+
   'template.editor.asset-type-add': 'Asset type',
-  'template.editor.choose-asset-type': 'Choose asset type',
+
   'template.editor.remove-asset-layout': 'Remove asset layout',
-  'template.editor.reset-asset-layout': 'Reset asset layout',
-  'template.editor.reset-asset-layout-desc':
-    'Remove this asset-specific layout and use All asset types',
+
   'template.editor.nav-bar': 'Navigation Bar',
   'template.editor.nav-bar-desc': 'Show trade timeline and review links',
   'template.editor.images': 'Images',
@@ -1747,60 +1700,19 @@ const en = {
   'template.editor.tags': 'Tags',
   'template.editor.custom-fields': 'Custom fields',
   'template.editor.custom-fields-desc': '{count} configured custom fields',
-  'template.editor.asset-type-overrides': 'Asset Type Overrides',
-  'template.editor.asset-type': 'Asset type',
-  'template.editor.asset-type-desc':
-    'Override section order and visibility for one asset class',
-  'template.editor.enable-asset-override': 'Enable {assetType} override',
-  'template.editor.asset-order': '{assetType} order',
-  'template.editor.reviewed-footer': 'Reviewed footer',
+
   'template.editor.metric.position-size': 'Position size',
   'template.editor.metric.execution-breakdown': 'Execution breakdown',
   'template.editor.metric.pnl': 'P&L',
   'template.editor.metric.r-multiple': 'R multiple',
   'template.editor.metric.costs': 'Costs',
-  'template.editor.details': 'Trade Details',
-  'template.editor.details-desc': 'Show entry, exit, and P&L details',
+
   'template.editor.review-button': 'Mark Reviewed Button',
   'template.editor.review-button-desc': 'Show button to mark trade as reviewed',
-  'template.editor.section-type': 'Section Type',
-  'template.editor.type.textarea': 'Text Area',
-  'template.editor.type.checkbox': 'Single Checkbox',
-  'template.editor.type.checkboxList': 'Checkbox List',
-  'template.editor.type.header': 'Header',
-  'template.editor.title-label': 'Title (supports **markdown**)',
-  'template.editor.title-placeholder': 'Section title',
-  'template.editor.content-label': 'Content (supports markdown)',
-  'template.editor.content-placeholder': 'Header content',
-  'template.editor.checkbox-label': 'Checkbox Label (supports markdown)',
-  'template.editor.checkbox-placeholder': 'Checkbox label',
-  'template.editor.placeholder-label': 'Placeholder Text',
-  'template.editor.placeholder-hint': 'Placeholder text shown when empty',
-  'template.editor.items-label': 'Checkbox Items',
-  'template.editor.item-n': 'Item {n}',
-  'template.editor.add-item': '+ Add Item',
-  'template.editor.preview-fallback': '{type} section',
 
   
   
   
-  'csv.uploader.drop-here': 'Drop CSV/XLSX/XLS/HTML file here',
-  'csv.uploader.click-drag': 'Click to upload or drag and drop',
-  'csv.uploader.hint': 'CSV/XLSX/XLS/HTML files only, max 10MB',
-
-  'csv.preview-first-note':
-    'Preview is free. Importing into your vault requires PRO activation.',
-  'csv.preview.header-row.title': 'Header Row Selection',
-  'csv.preview.header-row.help':
-    'If your first row is a title/group row, choose the row that contains real column names.',
-  'csv.preview.header-row.label': 'Header row',
-  'csv.preview.header-row.range': 'Choose a row between 1 and {max}.',
-  'csv.preview.header-row.preview': 'Selected header preview:',
-  'csv.gate.import.title': 'PRO required to import',
-  'csv.gate.import.description':
-    'Importing trades into your vault is a PRO feature. Activate PRO to continue.',
-  'csv.gate.templates.tooltip': 'PRO required (activate to use templates).',
-  'csv.gate.ai.tooltip': 'PRO required (activate to use AI mapping).',
 
   'csv.mapper.title': 'Map Columns to Trade Fields',
   'csv.mapper.subtitle':
@@ -1812,14 +1724,10 @@ const en = {
   'csv.mapper.mode.title': 'Import Mode',
   'csv.mapper.mode.help':
     'Choose how manual rows should be interpreted. Direct PnL mode imports rows as closed trades using mapped PnL values.',
-  'csv.mapper.mode.price-based': 'Price Based (Entry/Exit)',
-  'csv.mapper.mode.direct-pnl': 'Direct PnL',
+
   'csv.mapper.asset-type.help':
     'Select the type of instrument in this file. This determines required fields and parsing logic.',
-  'csv.mapper.date-format.title': 'Date Format in File',
-  'csv.mapper.date-format.help':
-    'How dates appear in your file. Important for ambiguous formats like 01/02/2024 (Jan 2 vs Feb 1).',
-  'csv.mapper.date-format.placeholder': 'Select date format...',
+
   'csv.mapper.tip.title': 'Tip: Map Additional Fields',
   'csv.mapper.tip.desc':
     'Mapping optional fields like commission and profit_loss improves import quality. You can also map multiple columns to list fields such as tags, images, setups, and mistakes.',
@@ -1832,57 +1740,15 @@ const en = {
   'csv.mapper.available-fields.desc':
     'Organized by category with descriptions for asset-specific fields',
 
-  'csv.ai-mapper.header.title': 'Need Help?',
-  'csv.ai-mapper.header.description':
-    'AI can analyze your CSV and suggest field mappings (optional)',
-  'csv.ai-mapper.button.label': 'Suggest Mappings with AI',
-  'csv.ai-mapper.button.tooltip':
-    'Uses AI to suggest column mappings. Requires backend connection.',
-  'csv.ai-mapper.helper-text':
-    'AI suggestions should be verified before importing — always review mappings for accuracy.',
-  'csv.ai-mapper.status.analyzing': 'Analyzing CSV structure',
-  'csv.ai-mapper.status.consulting': 'Consulting AI for column mappings',
-  'csv.ai-mapper.status.processing': 'Processing AI suggestions',
-  'csv.ai-mapper.status.taking-longer':
-    'Taking longer than usual, still working',
-  'csv.ai-mapper.notice.no-suggestions':
-    'AI could not suggest mappings. Please map manually.',
-  'csv.ai-mapper.notice.suggested-count':
-    'AI suggested mappings for {count} columns',
-  'csv.ai-mapper.notice.unavailable':
-    'AI mapping unavailable. Please map columns manually or use a saved template.',
-
-  'csv.template-save.title': 'Save Import Template',
-  'csv.template-save.description':
-    'Save these column mappings as a reusable template for future imports.',
-  'csv.template-save.label.name': 'Template Name',
-  'csv.template-save.placeholder.name': 'e.g., My Broker Format',
-  'csv.template-save.button.save': 'Save Template',
-  'csv.template-save.button.saving': 'Saving...',
-
-  'csv.template-import.title': 'Import Template',
-  'csv.template-import.description':
-    'Paste a template share code (JTT-v1-... or JTT-v2-...) to import it into your vault.',
   'csv.template-import.label.share-code': 'Share Code',
   'csv.template-import.placeholder.share-code': 'JTT-v2-...',
-  'csv.template-import.helper-text':
-    'Template will be added to your local templates',
+
   'csv.template-import.button.import': 'Import Template',
-  'csv.template-import.button.importing': 'Importing...',
+
   'csv.template-import.error.import-failed': 'Failed to import template',
 
-  'csv.template-delete.title': 'Delete Template?',
-  'csv.template-delete.description':
-    'Are you sure you want to delete "{name}"? This action cannot be undone.',
-  'csv.template-delete.button.delete': 'Delete Template',
-  'csv.template-delete.button.deleting': 'Deleting...',
-
-  'csv.export-template.title': 'Export Template: {name}',
-  'csv.export-template.description':
-    'Share this code with others to let them use your template configuration.',
   'csv.export-template.label.share-code': 'Share Code',
-  'csv.export-template.helper-text':
-    'Full code copied to clipboard when you click the button below',
+
   'csv.export-template.button.copied': 'Copied!',
   'csv.export-template.button.copy': 'Copy to Clipboard',
 
@@ -1915,26 +1781,9 @@ const en = {
   
   
   
-  'csv.broker.loading': 'Loading brokers...',
-  'csv.broker.loading-templates': 'Loading templates...',
-  'csv.broker.select-placeholder': 'Select broker or template...',
+
   'csv.broker.label': 'Broker / Import Format',
-  'csv.broker.helper-text':
-    'Choose a supported broker or create a custom format',
-  'csv.broker.hidden-count': '{count} hidden',
-  'csv.broker.manage-hidden': 'Manage hidden brokers',
-  'csv.broker.supported-brokers': 'Supported Brokers',
-  'csv.broker.my-templates': 'My Templates',
-  'csv.broker.show-more': 'Show {count} more',
-  'csv.broker.show-less': 'Show less',
-  'csv.broker.create-new': '+ Create New Format',
-  'csv.broker.favorite-selected': 'Your favorite is auto-selected',
-  'csv.broker.star-hint': 'Star a broker to auto-select it',
-  'csv.broker.hidden-modal-title': 'Hidden Brokers',
-  'csv.broker.no-hidden': 'No hidden brokers',
-  'csv.broker.restore': 'Restore',
-  'csv.broker.restore-all': 'Restore All',
-  'csv.broker.hide-aria': 'Hide this broker',
+
   'csv.broker.remove-favorite-aria': 'Remove from favorites',
   'csv.broker.set-favorite-aria': 'Set as favorite',
 
@@ -1953,82 +1802,30 @@ const en = {
   'csv.broker.rithmic': 'Rithmic',
   'csv.broker.jdr': 'MetaTrader 4 / 5',
 
-  'csv.account-selector.loading': 'Loading accounts...',
-  'csv.account-selector.no-accounts': 'No accounts yet.',
-  'csv.account-selector.create-account-hint':
-    'Create one to start importing trades from CSV.',
-  'csv.account-selector.create-account-cta': 'Create Account',
-  'csv.account-selector.label': 'Select Account',
-  'csv.account-selector.error.load-failed': 'Failed to load accounts',
   'csv.account-selector.favorite.remove': 'Remove from favorites',
   'csv.account-selector.favorite.set': 'Set as favorite',
-  'csv.account-selector.show-less': 'Show less',
-  'csv.account-selector.show-more': 'Show {count} more',
-  'csv.account-selector.favorite.auto-selected':
-    'Your favorite is auto-selected',
-  'csv.account-selector.favorite.star-hint':
-    'Star an account to auto-select it',
 
   
   
   
-  'csv.results.import-successful': 'Import Successful!',
-  'csv.results.successfully-imported-prefix': 'Successfully imported ',
+
   'csv.results.successfully-imported-suffix': ' trades',
-  'csv.results.skipped-duplicates-prefix': 'Skipped ',
-  'csv.results.skipped-duplicates-suffix': ' duplicate trades',
+
   'csv.results.failed-to-import-prefix': 'Failed to import ',
   'csv.results.failed-to-import-suffix': ' rows (see details below)',
   'csv.results.pending-local-writes':
     '{count} trade note write(s) are still pending. Journalit will reconcile completed writes and leave unfinished projections available for restore.',
   'csv.results.pending-title': 'Import still syncing',
-  'csv.results.failed-rows-title': 'Failed Rows:',
-  'csv.results.import-failed': 'Import Failed',
-  'csv.results.import-error-generic': 'An error occurred during import',
-  'csv.results.additional-errors': 'Additional Errors:',
-  'csv.results.button.view-account': 'View Account',
-  'csv.results.button.import-another': 'Import Another CSV',
-  'csv.results.button.try-again': 'Try Again',
 
   
   
   
-  'csv.incomplete-options.title': 'Incomplete Options Data Detected',
-  'csv.incomplete-options.desc-single':
-    'An options trade is missing required metadata:',
-  'csv.incomplete-options.desc-plural':
-    '{count} options trades are missing required metadata:',
-  'csv.incomplete-options.missing-strike-single': 'trade missing strike price',
-  'csv.incomplete-options.missing-strike-plural': 'trades missing strike price',
-  'csv.incomplete-options.missing-expiry-single':
-    'trade missing expiration date',
-  'csv.incomplete-options.missing-expiry-plural':
-    'trades missing expiration date',
-  'csv.incomplete-options.missing-option-type-single':
-    'trade missing option type (call/put)',
-  'csv.incomplete-options.missing-option-type-plural':
-    'trades missing option type (call/put)',
-  'csv.incomplete-options.impact-desc':
-    'These trades will be imported without complete options data, which may affect:',
-  'csv.incomplete-options.impact-analytics': 'Analytics and filtering',
-  'csv.incomplete-options.impact-pl': 'P&L calculations',
-  'csv.incomplete-options.impact-accuracy': 'Trade journal accuracy',
-  'csv.incomplete-options.import-anyway': 'Import Anyway',
-  'csv.incomplete-options.cancel-import': 'Cancel Import',
 
   
   
   
-  'csv.image-review.title': 'Review Image References',
-  'csv.image-review.summary':
-    'Found {imageCount} image references across {tradeCount} trade(s).',
-  'csv.image-review.rows': 'Rows: {rows}',
+
   'csv.image-review.count': '{count} image(s)',
-  'csv.image-review.import-images': 'Import Images',
-  'csv.image-review.discard-all': 'Discard All Images',
-  'csv.image-review.discard-confirmation':
-    'Discard all image references for this import? Trades will still be imported without images.',
-  'csv.image-review.confirm-discard': 'Yes, Discard All',
 
   
   
@@ -2048,20 +1845,18 @@ const en = {
   
   'image.viewer.alt-default': 'Image',
   'image.viewer.description-default': 'Media Preview',
-  'image.viewer.error-load':
-    'Unable to load image. The file might be missing or inaccessible.',
+
   'image.viewer.title-fullscreen': 'Click to view fullscreen',
-  'image.viewer.zoom-indicator': 'Click or hold to enlarge',
+
   'image.viewer.delete-button': 'Delete Media',
   'image.viewer.nav-prev': 'Previous image',
   'image.viewer.nav-next': 'Next image',
   'image.viewer.zoom-in-hint': 'Pinch or click to zoom in',
   'image.viewer.zoom-out-hint': '{scale}x (pinch or click to zoom out)',
-  'image.viewer.no-images': 'No images to display',
-  'image.viewer.thumbnail-alt': 'Thumbnail {n}',
+
   'image.viewer.close-aria': 'Close fullscreen',
   'image.viewer.copy-image': 'Copy image',
-  'image.viewer.copy-success': 'Media copied to clipboard',
+
   'image.viewer.copied': 'Copied',
   'image.viewer.copy-failed': 'Failed to copy image to clipboard',
   'image.viewer.copy-unsupported':
@@ -2079,7 +1874,6 @@ const en = {
   'media.viewer.back-5': 'Back 5 seconds',
   'media.viewer.forward-5': 'Forward 5 seconds',
   'media.viewer.timeline': 'Video timeline',
-  'media.viewer.open-youtube': 'Open on YouTube',
 
   
   
@@ -2105,7 +1899,7 @@ const en = {
   
   
   
-  'datepicker.aria.time': 'Time',
+
   'datepicker.button.clear': 'Clear',
   'datepicker.button.today': 'Today',
   'datepicker.button.now': 'Now',
@@ -2121,16 +1915,15 @@ const en = {
   
   'common.loading': 'Loading...',
   'common.error': 'Error',
-  'common.success': 'Success',
+
   'common.warning': 'Warning',
   'common.info': 'Info',
   'common.yes': 'Yes',
   'common.no': 'No',
   'common.ok': 'OK',
-  'common.search': 'Search...',
-  'common.select': 'Select...',
+
   'common.select-option': 'Select an option',
-  'common.view': 'View',
+
   'common.none': 'None',
   'common.other': 'Other',
   'common.breakdown': 'Breakdown',
@@ -2142,13 +1935,9 @@ const en = {
   'common.n-types': '{count} Types',
   'common.select-item': 'Select {item}',
   'common.header': 'Header',
-  'common.row-n': 'Row {n}: ',
+
   'common.date': 'Date',
-  'common.time': 'Time',
-  'common.today': 'Today',
-  'common.yesterday': 'Yesterday',
-  'common.tomorrow': 'Tomorrow',
-  'common.day': 'Day',
+
   'common.days': 'Days',
   'common.week': 'Week',
   'common.weeks': 'Weeks',
@@ -2158,19 +1947,16 @@ const en = {
   'common.years': 'Years',
   'common.quarter': 'Quarter',
   'common.quarters': 'Quarters',
-  'common.total': 'Total',
-  'common.average': 'Average',
+
   'common.min': 'Min',
   'common.max': 'Max',
   'common.best': 'Best',
   'common.worst': 'Worst',
   'common.profit': 'Profit',
-  'common.loss': 'Loss',
-  'common.win': 'Win',
-  'common.lose': 'Lose',
+
   'common.trade': 'Trade',
   'common.trades': 'Trades',
-  'common.goals': 'Goals',
+
   'common.statuses': 'Statuses',
   'common.enabled': 'enabled',
   'common.disabled': 'disabled',
@@ -2222,12 +2008,12 @@ const en = {
   'chart.tooltip.episode-start': 'Episode Start',
   'chart.tooltip.underwater-days': 'Time Underwater',
   'chart.tooltip.underwater-trades': 'Trades Underwater',
-  'chart.tooltip.distance-to-recovery': 'Distance to Recovery',
+
   'chart.tooltip.drawdown-amount': 'Amount',
   'chart.tooltip.drawdown-percent': 'Drawdown % of {basis}',
   'chart.tooltip.percent-basis': 'Percent Basis',
   'chart.tooltip.trade-pnl': 'Trade P&L',
-  'chart.tooltip.account': 'Account',
+
   'chart.tooltip.accounts-list': '{accounts}',
   'chart.tooltip.more-accounts': '+{count} more',
   'chart.loading': 'Loading chart...',
@@ -2272,9 +2058,6 @@ const en = {
   
   
 
-  'settings.language': 'Language',
-  'settings.language-desc': 'Select the display language for the plugin',
-
   
   
   
@@ -2318,42 +2101,23 @@ const en = {
   
   
   
-  'settings.auth.title': 'Account',
-  'settings.auth.description': 'Manage authentication and connection settings.',
-  'settings.auth.status': 'Status',
-  'settings.auth.status-desc': 'Current connection and subscription status',
+
   'settings.auth.status-offline': 'Offline',
   'settings.auth.status-online': 'Online',
-  'settings.auth.plan-suffix': 'Plan',
-  'settings.auth.authentication': 'Authentication',
-  'settings.auth.sign-in-desc': 'Sign in to access your trading journal',
+
   'settings.auth.signed-in': 'Signed in',
   'settings.auth.sign-in-up': 'Sign in / Sign up',
   'settings.auth.sign-out': 'Sign out',
-  'settings.auth.sign-out-desc': 'Sign out of your account',
+
   'settings.auth.subscription-features': 'Subscription features',
-  'settings.auth.tier-free': 'Free plan with basic features.',
-  'settings.auth.tier-pro':
-    'Pro plan with advanced analytics and unlimited storage.',
-  'settings.auth.tier-enterprise':
-    'Enterprise plan with full feature access and priority support.',
-  'settings.auth.tier-unknown': 'Subscription status unknown.',
-  'settings.auth.error-prefix': 'Error: ',
+
   'settings.auth.offline-mode': 'Offline mode',
-  'settings.auth.offline-desc':
-    'Operating in offline mode. Some features may be limited. Will automatically sync when online.',
-  'settings.auth.grace-period': 'Grace period ends in {days} days',
 
   
   'settings.auth.guest': 'Guest',
-  'settings.auth.actions': 'Actions',
+
   'settings.auth.your-plan': 'Your plan',
-  'settings.auth.feature-basic-trades': 'Basic trade tracking',
-  'settings.auth.feature-basic-analytics': 'Basic analytics',
-  'settings.auth.feature-unlimited-trades': 'Unlimited trades',
-  'settings.auth.feature-advanced-analytics': 'Advanced analytics',
-  'settings.auth.feature-api-access': 'API access',
-  'settings.auth.feature-priority-support': 'Priority support',
+
   'settings.auth.manage-subscription': 'Manage subscription',
 
   
@@ -2361,12 +2125,12 @@ const en = {
   
   'settings.tab.general': 'General',
   'settings.tab.reviews': 'Review',
-  'settings.tab.session-mode': 'Session mode',
+
   'settings.tab.customization': 'Customisation',
-  'settings.tab.journal-setup': 'Journal Setup',
+  'settings.tab.journal-setup': 'Journal',
   'settings.tab.backend': 'Trade sync',
-  'settings.tab.trading': 'Trades',
-  'settings.tab.sync': 'Sync',
+  'settings.tab.trading': 'Trade Defaults',
+  'settings.tab.sync': 'Account & Sync',
   'settings.tab.accounts': 'Account',
 
   
@@ -2381,8 +2145,7 @@ const en = {
 
   
   'settings.reviews.default-templates': 'Default layouts',
-  'settings.reviews.default-templates-desc':
-    'Select which layout to use when creating new notes. You can also set defaults in the Layout Builder.',
+
   'settings.reviews.trade-template': 'Trade layout',
   'settings.reviews.trade-template-desc': 'Layout used for new trade notes',
   'settings.reviews.drc-template': 'DRC layout',
@@ -2461,7 +2224,7 @@ const en = {
     'Auto-create yearly review on navigation',
 
   
-  'settings.reviews.notice.template-updated': 'Default layout updated',
+
   'settings.reviews.notice.builder-not-found':
     'Layout Builder command not found',
   'settings.reviews.notice.global-auto-create':
@@ -2471,12 +2234,8 @@ const en = {
 
   
   'settings.reviews.daily.checklist-title': 'Pre-trade checklist items',
-  'settings.reviews.daily.checklist-desc':
-    'Customise the checklist items that appear in your Daily Report Card. These are tasks you should complete before starting your trading session.',
-  'settings.reviews.daily.checklist-placeholder': 'New checklist item',
+
   'settings.reviews.daily.questions-title': 'Review questions',
-  'settings.reviews.daily.questions-desc':
-    'Customise the reflection questions that appear in the review section. These questions help you reflect on your trading performance.',
 
   
   
@@ -2516,48 +2275,27 @@ const en = {
   'library.option.select-template': '-- Select a layout --',
   'library.button.generate-code': 'Generate share code',
   'library.button.copy-code': 'Copy to clipboard',
-  'settings.reviews.daily.questions-placeholder': 'New review question',
+
   'settings.reviews.daily.timeframes-title': 'Forecast timeframes',
-  'settings.reviews.daily.timeframes-desc':
-    'Customise the timeframes that appear in your Daily Report Card forecasts.',
+
   'settings.reviews.daily.timeframes-placeholder':
     'New timeframe (e.g., 15M, 5M)',
 
   
   'settings.weekly.review-questions': 'Review questions',
-  'settings.weekly.review-questions-desc':
-    'Customise the questions that appear in your weekly review. These questions help you reflect on your trading performance over the week.',
-  'settings.weekly.new-question-placeholder': 'New review question',
+
   'settings.weekly.forecast-timeframes': 'Forecast timeframes',
-  'settings.weekly.forecast-timeframes-desc':
-    'Customise the timeframes that appear in your weekly forecast.',
-  'settings.weekly.new-timeframe-placeholder':
-    'New timeframe (e.g., Weekly, Daily)',
-  'settings.weekly.default-question-1': 'What worked well this week?',
-  'settings.weekly.default-question-2': "What didn't work this week?",
-  'settings.weekly.default-question-3': 'Which setups were most profitable?',
-  'settings.weekly.default-question-4': 'What mistakes cost me the most money?',
-  'settings.weekly.default-question-5': 'What could I improve for next week?',
-  'settings.weekly.default-timeframe-monthly': 'Monthly',
-  'settings.weekly.default-timeframe-weekly': 'Weekly',
-  'settings.weekly.default-timeframe-daily': 'Daily',
 
   
   
   
   'settings.shared.timeframes.title': 'Forecast timeframes',
-  'settings.shared.timeframes.desc':
-    'Customise the timeframes that appear in your forecast',
+
   'settings.shared.timeframes.placeholder': 'New timeframe (e.g., 15M, 5M)',
-  'settings.shared.timeframes.reset-to-defaults': 'Reset to Defaults',
 
   
   
   
-  'shared.goal-tracker.title': 'Goals',
-  'shared.goal-tracker.empty': 'No goals found',
-  'shared.goal-tracker.remove-goal': 'Remove goal',
-  'shared.goal-tracker.add-goal-placeholder': 'Add a new goal',
 
   
   
@@ -2567,15 +2305,13 @@ const en = {
   
   
   
-  'weekly.tab.preparation': 'Preparation',
-  'weekly.tab.overview': 'Overview',
+
   'weekly.tab.review': 'Review',
 
   
   
   
   'weekly.review.drcs.title': 'Daily reviews for this week',
-  'weekly.review.drcs.empty': 'No daily reviews found for this week',
 
   
   
@@ -2680,157 +2416,65 @@ const en = {
   'account.settings.section.inclusion.empty':
     'No account types available to configure.',
   'account.settings.section.order.title': 'Display order',
-  'account.settings.section.order.desc':
-    'Reorder how account types appear in the dashboard.',
-  'account.settings.section.order.empty':
-    'No account types available to order.',
+
   'account.settings.section.order.move-up': 'Move up',
   'account.settings.section.order.move-down': 'Move down',
   'account.settings.button.save': 'Save settings',
   'account.settings.button.saving': 'Saving...',
-  'weekly.review.drcs.empty-sub':
-    "Daily reviews will appear here once you've created them",
-  'weekly.review.drcs.mental': 'Mental',
-  'weekly.review.drcs.technical': 'Technical',
-  'weekly.review.drcs.view-button': 'View DRC',
-  'weekly.review.drcs.no-answer': 'No answer provided',
+
   'weekly.review.performance.title': 'Performance self-assessment',
   'weekly.review.performance.mental': 'Mental performance',
-  'weekly.review.performance.mental-placeholder':
-    'Notes about your mental performance...',
+
   'weekly.review.performance.technical': 'Technical execution',
-  'weekly.review.performance.technical-placeholder':
-    'Notes about your technical execution...',
+
   'weekly.review.questions.title': 'Weekly review questions',
-  'weekly.review.questions.empty': 'No review questions configured',
-  'weekly.review.questions.empty-sub':
-    'Add review questions in the Weekly Review settings tab',
-  'weekly.review.questions.answer-placeholder': 'Your answer here...',
-  'weekly.review.questions.settings-hint':
-    'Review questions can be configured in the Weekly Review settings tab.',
+
   'weekly.review.goals.title': 'Goals for next week',
-  'weekly.review.goals.empty': 'No goals set for next week',
-  'weekly.review.goals.empty-sub': 'Define clear goals to focus your trading',
-  'weekly.review.goals.add-placeholder': 'Add a goal for next week',
-  'weekly.review.goals.add-button': 'Add Goal',
 
   
   
   
   'weekly.preparation.goals.title': 'Weekly goals',
-  'weekly.preparation.goals.empty': 'No goals from previous week',
+
   'weekly.preparation.events.title': 'Key events',
-  'weekly.preparation.events.colour': 'Colour:',
-  'weekly.preparation.events.day': 'Day:',
-  'weekly.preparation.events.day-none': 'None (optional)',
-  'weekly.preparation.events.notes-placeholder': 'Notes about this event',
+
   'weekly.preparation.events.add-button': 'Add event',
-  'weekly.preparation.events.event-label': 'Event',
-  'weekly.preparation.events.event-placeholder': 'Select or create event',
-  'weekly.preparation.events.empty': 'No key events added',
-  'weekly.preparation.events.sub-empty':
-    'Add important market events that might impact your trading',
+
   'weekly.preparation.forecast.title': 'Weekly forecast',
 
   
   
   
   'weekly.overview.pnl-chart.title': 'Weekly cumulative P&L',
-  'weekly.overview.pnl-chart.empty': 'No P&L data to display',
-  'weekly.overview.pnl-chart.empty-sub':
-    "Your cumulative profit/loss will show here once you've logged closed trades",
+
   'weekly.overview.drawdown-chart.title': 'Weekly drawdown',
-  'weekly.overview.drawdown-chart.empty': 'No drawdown data to display',
-  'weekly.overview.drawdown-chart.empty-sub':
-    "Your drawdown metrics will appear here once you've logged closed trades",
+
   'weekly.overview.performance.title': 'Weekly performance',
-  'weekly.overview.metrics.net-pnl': 'Net P&L',
-  'weekly.overview.metrics.win-rate': 'Win Rate',
-  'weekly.overview.metrics.profit-factor': 'Profit Factor',
-  'weekly.overview.metrics.expectancy': 'Expectancy',
-  'weekly.overview.metrics.total-trades': 'Total Trades',
-  'weekly.overview.metrics.avg-win': 'Avg. Win',
-  'weekly.overview.metrics.avg-loss': 'Avg. Loss',
-  'weekly.overview.metrics.pl-ratio': 'P/L Ratio',
+
   'weekly.overview.setup-performance.title': 'Setup performance',
-  'weekly.overview.setup-performance.col-setup': 'Setup',
-  'weekly.overview.setup-performance.col-pnl': 'P&L',
-  'weekly.overview.setup-performance.col-win-rate': 'Win %',
-  'weekly.overview.setup-performance.col-trades': 'Trades',
-  'weekly.overview.setup-performance.empty': 'No setup data available',
-  'weekly.overview.setup-performance.empty-sub':
-    'Add setup tags to your trades to see performance metrics by setup',
+
   'weekly.overview.trades-chart.title': 'Weekly trades',
-  'weekly.overview.trades-chart.empty': 'No trades for this week',
-  'weekly.overview.trades-chart.empty-sub':
-    'Track your individual trades to see them visualized here',
+
   'weekly.overview.best-trade.title': 'Best trade of the week',
-  'weekly.overview.best-trade.empty': 'No winning trades this week',
-  'weekly.overview.best-trade.empty-sub':
-    "Your best trades will appear here once you've logged some profitable trades",
+
   'weekly.overview.worst-trade.title': 'Worst trade of the week',
-  'weekly.overview.worst-trade.empty': 'No losing trades this week',
-  'weekly.overview.worst-trade.empty-sub':
-    'Your least successful trades will appear here to help you learn and improve',
+
   'weekly.overview.daily-performance.title': 'Daily performance',
-  'weekly.overview.daily-performance.col-date': 'Date',
-  'weekly.overview.daily-performance.col-trades': 'Trades',
-  'weekly.overview.daily-performance.col-win-rate': 'Win%',
-  'weekly.overview.daily-performance.col-profit-factor': 'Profit Factor',
-  'weekly.overview.daily-performance.col-pnl': 'P&L',
-  'weekly.overview.daily-performance.empty': 'No trades for this week',
-  'weekly.overview.daily-performance.empty-sub':
-    "Your daily trading performance will appear here once you've logged trades",
-  'weekly.overview.trade.unknown': 'Unknown',
-  'weekly.overview.trade.na': 'N/A',
-  'weekly.overview.trade.label-date': 'Date:',
-  'weekly.overview.trade.label-setup': 'Setup:',
-  'weekly.overview.trade.label-duration': 'Duration:',
-  'weekly.overview.trade.label-tags': 'Tags:',
-  'weekly.overview.trade.label-mistakes': 'Mistakes:',
-  'weekly.overview.trade.duration-format': '{hours}h {minutes}m',
+
   'weekly.overview.button.create-trade': 'Create trade',
   'weekly.overview.button.view-trade-details': 'View trade details',
 
   
   
   
-  'monthly.tab.overview': 'Overview',
+
   'monthly.tab.review': 'Review',
 
   
   
   
-  'monthly.review.demon-tracker.title': 'Demon Tracker',
-  'monthly.review.demon-tracker.description':
-    'Track your recurring mistakes to identify patterns and improve your trading discipline.',
-  'monthly.review.demon-tracker.column.demon': 'DEMON',
-  'monthly.review.demon-tracker.column.stop-trading': 'STOP TRADING',
-  'monthly.review.demon-tracker.summary.unique-mistakes':
-    'Total Unique Mistakes:',
-  'monthly.review.demon-tracker.summary.total-occurrences':
-    'Total Mistake Occurrences:',
-  'monthly.review.demon-tracker.summary.critical-mistakes':
-    'Critical Mistakes (6+):',
-  'monthly.review.demon-tracker.empty': 'No mistakes tracked this month',
-  'monthly.review.demon-tracker.empty-sub':
-    'Mistakes logged in your trades will appear here to help identify patterns',
-  'monthly.review.mental-game-performance': 'Mental Game Performance',
-  'monthly.review.technical-game-performance': 'Technical Game Performance',
 
   
-  'settings.loss-review.title': 'Loss Review Settings',
-  'settings.loss-review.description':
-    'Configure the Loss Review that appears at the bottom of losing trades. This helps you learn from losses and maintain proper trading psychology.',
-  'settings.loss-review.enable': 'Enable Loss Review',
-  'settings.loss-review.enable-desc':
-    'Show Loss Review section for trades with negative P&L',
-  'settings.loss-review.sections-title': 'Loss Review Sections',
-  'settings.loss-review.add-section': 'Add Section',
-  'settings.loss-review.reset-to-defaults': 'Reset to Defaults',
-  'settings.loss-review.new-section-title': 'New Section',
-  'settings.loss-review.empty-state':
-    'No sections configured. Click "Add Section" to create your first section.',
 
   
   
@@ -2840,15 +2484,10 @@ const en = {
     'Set up Trade Sync for MetaTrader (MT4) and Tradovate to keep your vault up to date automatically.',
 
   
-  'trade-sync.gate.signin.title': 'Sign in required',
-  'trade-sync.gate.signin.description':
-    'To enable trade sync, first sign in to your Journalit account.',
-  'trade-sync.gate.signin.cta': 'Sign in',
 
-  'trade-sync.gate.pro.title': 'Pro required',
   'trade-sync.gate.pro.description':
     'Trade Sync is a Pro feature. Upgrade to continue.',
-  'trade-sync.gate.pro.cta': 'Upgrade now',
+
   'trade-sync.gate.feature-unavailable.title': 'Feature unavailable',
   'trade-sync.gate.feature-unavailable.description':
     'This sync feature is not enabled for your Pro account. Refresh your status or contact support if this persists.',
@@ -2863,31 +2502,18 @@ const en = {
     'Free trial available to new subscribers only.',
 
   
-  'premium.gate.cta.activate': 'Activate PRO',
-  'premium.gate.cta.upgrade-now': 'Upgrade now',
-  'premium.gate.cta.signin-continue': 'Sign in & continue',
+
   'premium.gate.cta.continue-pro': 'Continue to PRO',
-  'premium.gate.cta.keep-editing': 'Keep editing',
+
   'premium.gate.cta.refresh': 'Refresh status',
-  'premium.gate.import.state.signin.title':
-    'Save 7 hours a week importing trades',
-  'premium.gate.import.state.signin.description':
-    'Upload broker exports, preview parsed trades privately, and import them into your vault.',
-  'premium.gate.import.state.pro.title': 'Save 7 hours a week importing trades',
-  'premium.gate.import.state.pro.description':
-    'Pro unlocks broker export uploads, private previews, saved templates, and one-click imports.',
-  'premium.gate.import.reassurance': 'Import unlimited trades to your vault.',
-  'premium.gate.trial-hint': 'Start with a 14-day free trial.',
+
   'premium.gate.offline':
     'You appear to be offline. Activation requires internet.',
   'premium.gate.not-pro-yet':
     'You are signed in, but your account is not PRO yet. Upgrade and then refresh.',
 
   
-  'backend.connection.title': 'Connection Settings',
-  'backend.connection.status': 'Connection Status',
-  'backend.connection.status-desc':
-    'Current connection status to the trading server',
+
   'backend.status.connected': 'Connected',
   'backend.status.disconnected': 'Disconnected',
   'backend.status.checking': 'Checking...',
@@ -2905,21 +2531,17 @@ const en = {
     'Create FTP credentials to upload MetaTrader reports. A unique username will be generated automatically.',
   'backend.ftp.create-button': 'Create FTP Credentials',
   'backend.ftp.creating': 'Creating...',
-  'backend.ftp.credentials-title': 'MetaTrader FTP Credentials',
 
   
-  'backend.sync.title': 'Sync Settings',
+
   'backend.sync.auto-sync': 'Enable Auto-Sync',
   'backend.sync.auto-sync-desc':
     'Automatically sync trades from the backend server',
   'backend.sync.auto-sync-info': 'Auto-sync checks for new trades every hour',
   'backend.sync.auto-sync-aria': 'Enable auto-sync',
-  'backend.sync.manual': 'Manual Sync',
-  'backend.sync.manual-desc': 'Force immediate synchronization of trades',
-  'backend.sync.manual-info':
-    'Average wait time: 2-3 minutes (maximum: 5 minutes)',
+
   'backend.sync.syncing': 'Syncing...',
-  'backend.sync.force-button': 'Force Sync Now',
+
   'backend.sync.last-result': 'Last Sync Result',
   'backend.sync.synced-trades': 'Synced {trades} trades ({files} new files)',
   'backend.sync.no-new-trades': 'No new trades to sync',
@@ -2948,7 +2570,7 @@ const en = {
   'backend.notice.sync-failed': '❌ Sync failed: {error}',
 
   
-  'backend.accounts.title': 'Trading Accounts',
+
   'backend.accounts.linked': 'Linked MT Accounts',
   'backend.accounts.linked-desc':
     'MetaTrader accounts detected from synced reports',
@@ -2977,15 +2599,6 @@ const en = {
   'backend.accounts.ignored-at': 'Unlinked',
 
   
-  'backend.progress.title': 'Setup Progress',
-  'backend.progress.connection.label': 'Connect',
-  'backend.progress.connection.desc': 'Link vault to server',
-  'backend.progress.ftp.label': 'FTP',
-  'backend.progress.ftp.desc': 'Create credentials',
-  'backend.progress.sync.label': 'Sync',
-  'backend.progress.sync.desc': 'Enable auto-sync',
-  'backend.progress.accounts.label': 'Accounts',
-  'backend.progress.accounts.desc': 'Link MT accounts',
 
   
   'backend.cards.connection.title': 'Connection',
@@ -3008,8 +2621,10 @@ const en = {
   'settings.auth.feature.csv-import': 'Trade Import',
   'settings.auth.feature.ai-mapping': 'AI CSV Mapping',
   'settings.auth.feature.metatrader-sync': 'MetaTrader Trade Sync',
+  'settings.auth.feature.trade-sync': 'Trade Sync',
+  'settings.auth.feature.economic-calendar': 'Economic Calendar',
   'settings.auth.feature.basic-tracking': 'Basic trade tracking',
-  'settings.auth.feature.manual-csv': 'Manual CSV import',
+
   'settings.auth.feature.manual-entry': 'Manual trade entry',
   'settings.auth.feature.analytics-reviews': 'Analytics and reviews',
   'settings.auth.feature.priority-support': 'Priority Support',
@@ -3023,28 +2638,27 @@ const en = {
   
   
   
-  'csv.title': 'Import Trades from CSV',
-  'csv.subtitle':
-    "Upload your broker's CSV file to import trades into your journal.",
-  'csv.how-to-export': 'How to Export from Your Broker',
-  'csv.processing-file': 'Processing import file...',
-  'csv.importing-trades': 'Importing trades to account...',
+
   'csv.format': 'Import Format: ',
-  'csv.asset-type': 'Asset Type',
-  'csv.asset-type-desc':
-    'Select the type of instrument in this CSV. This determines contract specifications and validation rules.',
+
   'csv.button.export-template': 'Export Template',
   'csv.button.delete-template': 'Delete Template',
-  'csv.button.import-template': 'Import Template',
-  'csv.button.import-rows': 'Import {count} Rows',
-  'csv.button.edit-format': 'Edit Format',
-  'csv.button.continue-mapping': 'Continue to Column Mapping',
-  'csv.button.update-template': 'Update Template',
-  'csv.button.save-template': 'Save as Template',
-  'csv.button.back': 'Back',
+
   'csv.button.import-another': 'Import Another File',
-  'csv.button.view-account': 'View in Account',
+  'csv.button.view-account': 'Explore performance',
   'csv.results.complete': 'Import Complete',
+  'csv.results.history-ready': 'Your trading history is ready',
+  'csv.results.history-trades.one': '{count} trade recovered',
+  'csv.results.history-trades.few': '{count} trades recovered',
+  'csv.results.history-trades.many': '{count} trades recovered',
+  'csv.results.history-trades.other': '{count} trades recovered',
+  'csv.results.history-date-range': '{start} – {end}',
+  'csv.results.history-symbols.one': '{count} symbol',
+  'csv.results.history-symbols.few': '{count} symbols',
+  'csv.results.history-symbols.many': '{count} symbols',
+  'csv.results.history-symbols.other': '{count} symbols',
+  'csv.results.enrichment-note':
+    'Imported performance is ready to review. Add setups, confluences, and notes to recent trades when you want deeper pattern analysis.',
   'csv.results.failed': 'Import Failed',
   'csv.results.success.one':
     'Successfully imported {count} trade to Account: {account}',
@@ -3066,14 +2680,9 @@ const en = {
     'Skipped {count} duplicate trades (already in vault)',
   'csv.results.skipped.other':
     'Skipped {count} duplicate trades (already in vault)',
-  'csv.results.skipped-incomplete':
-    'Skipped {count} incomplete row(s) (missing required values)',
-  'csv.results.custom-field-warnings':
-    'Skipped {count} invalid custom field value(s)',
-  'csv.results.custom-field-warnings-header':
-    'CLICK TO SEE CUSTOM FIELD WARNINGS ({count})',
+
   'csv.results.broker': 'Broker: {broker}',
-  'csv.results.manual-import': 'Manual Import',
+
   'csv.results.preview-header':
     'Recently Imported Trades (showing {shown} of {total})',
   'csv.results.more-trades.one': 'and {count} more trade...',
@@ -3085,260 +2694,77 @@ const en = {
     'Optional: If you need help, click Copy report and paste it in Discord.',
 
   
-  'csv.errors.copy-shareable': 'Copy shareable report',
+
   'csv.errors.copy-report': 'Copy report',
-  'csv.errors.copy-detailed': 'Copy detailed report',
+
   'csv.errors.copied': 'Copied',
   'csv.errors.rows': 'Rows: {rows}',
   'csv.errors.suggestion': 'Suggestion: ',
-  'csv.errors.example': 'Example: ',
-  'csv.errors.raw-errors': 'Raw errors',
+
   'csv.errors.raw-errors-limit': 'Showing first {shown} of {total} errors',
 
-  'csv.errors.group.missing-value':
-    'Missing required value — {field} (column "{column}")',
-  'csv.errors.group.missing-column':
-    'Missing required column — {field} (column "{column}")',
-  'csv.errors.group.invalid-date': 'Could not parse date (column "{column}")',
-  'csv.errors.group.invalid-number':
-    'Invalid number — {field} (column "{column}")',
-  'csv.errors.group.invalid-direction': 'Invalid direction (column "{column}")',
-  'csv.errors.group.template-missing-mappings':
-    'Template is missing required column mappings',
-  'csv.errors.group.batch-parsing-failed': 'Batch parsing failed',
-  'csv.errors.group.no-valid-rows': 'No valid rows were imported',
-  'csv.errors.group.no-trades-parsed': 'No trades could be parsed',
-  'csv.errors.group.close-only': 'Close-only executions were skipped',
-  'csv.errors.group.other': 'Other errors',
-
-  'csv.errors.suggestion.select-date-format':
-    'Select a Date Format in the mapping step, then re-import.',
-  'csv.errors.suggestion.fix-numbers':
-    'Check the column values are numeric (no text) and the correct column is mapped.',
-  'csv.errors.suggestion.fix-direction':
-    'Ensure the Direction column values are Buy/Sell (or map the correct column).',
-  'csv.errors.suggestion.check-mapping':
-    'Review your column mappings and ensure required fields are mapped.',
-  'csv.errors.suggestion.check-broker':
-    'Verify you selected the correct broker/template for this CSV.',
-  'csv.errors.suggestion.check-raw-errors':
-    'Open Raw errors for the exact messages and row numbers.',
-
   
-  'csv.report.title.shareable': 'Journalit CSV Import — Shareable Report',
-  'csv.report.title.detailed': 'Journalit CSV Import — Detailed Report',
-  'csv.report.time': 'Time: {time}',
+
   'csv.report.plugin-version': 'Plugin version: {version}',
-  'csv.report.file': 'File: {file}',
-  'csv.report.account': 'Account: {account}',
+
   'csv.report.broker': 'Broker: {broker}',
-  'csv.report.template': 'Template: {name}',
-  'csv.report.csv-rows': 'CSV rows: {count}',
-  'csv.report.asset-type': 'Asset type: {type}',
-  'csv.report.date-format': 'Date format: {format}',
-  'csv.report.header-row': 'Header row: {row}',
-  'csv.report.result': 'Result: {result}',
-  'csv.report.imported': 'Imported: {count}',
-  'csv.report.updated': 'Updated: {count}',
-  'csv.report.duplicates': 'Duplicates: {count}',
-  'csv.report.skipped-incomplete': 'Skipped incomplete rows: {count}',
-  'csv.report.errors': 'Errors: {count}',
-  'csv.report.custom-field-warnings': 'Custom field warnings: {count}',
-  'csv.report.sanitized-note':
-    'Note: This is a shareable report. It may omit sensitive details.',
+
   'csv.report.top-issues': 'Top issues:',
-  'csv.report.issue-groups': 'Issue groups:',
-  'csv.report.raw-custom-field-warnings': 'Custom field warnings:',
-  'csv.report.raw-errors': 'Raw errors:',
-  'csv.report.more-errors': '...and {count} more error(s)',
-  'csv.unmapped-symbols.title': 'Unmapped Symbols Detected',
-  'csv.unmapped-symbols.desc-singular':
-    'A symbol without instrument specifications was found in your import:',
-  'csv.unmapped-symbols.desc-plural':
-    '{count} symbols without instrument specifications were found in your import:',
-  'csv.unmapped-symbols.map-label': 'Map to base symbol/ticker:',
-  'csv.unmapped-symbols.placeholder': 'e.g., ES, NQ, GC',
-  'csv.unmapped-symbols.warning':
-    'Map these symbols to built-in specs or your custom tickers. Without specifications, trades will not have accurate tick sizes, dollar per point, or P&L calculations.',
-  'csv.unmapped-symbols.validation.not-found':
-    'Symbol "{symbol}" not found in {assetType} specs or custom tickers',
-  'csv.unmapped-symbols.notice.fix-errors':
-    'Please fix validation errors before saving',
-  'csv.unmapped-symbols.notice.save-failed': 'Failed to save mappings',
-  'csv.unmapped-symbols.button.saving': 'Saving...',
-  'csv.unmapped-symbols.button.save': 'Save Mappings',
-  'csv.unmapped-symbols.button.skip': 'Skip',
 
   
   
-  'csv.broker-guide.tradovate.step-1':
-    'Navigate to "Reports" tab on Tradovate website',
+
   'csv.broker-guide.tradovate.step-2':
     'Click on "Orders" tab (NOT Performance tab)',
-  'csv.broker-guide.tradovate.step-3': 'Click "Download CSV" button',
+
   'csv.broker-guide.tradovate.warning.emphasis': 'Important:',
   'csv.broker-guide.tradovate.warning.message':
     'Use Orders tab only. The Performance tab is not compatible.',
-  'csv.broker-guide.tradovate.doc-label': 'View detailed guide',
 
   
-  'csv.broker-guide.ibkr.description': 'One-time Flex Query setup required',
-  'csv.broker-guide.ibkr.step-1':
-    'Navigate to Performance & Statements → Reports → Flex Queries',
-  'csv.broker-guide.ibkr.step-2':
-    'Create new "Trade Confirmation" query (select Orders, deselect Executions)',
-  'csv.broker-guide.ibkr.step-3':
-    'Set format: CSV, Date "yyyyMMdd", Time "HHmmss"',
-  'csv.broker-guide.ibkr.step-4': 'Run query and download CSV file',
+
   'csv.broker-guide.ibkr.warning.emphasis': 'Must use Orders',
-  'csv.broker-guide.ibkr.warning.message':
-    '(not Executions) with specific date/time format',
-  'csv.broker-guide.ibkr.doc-label': 'View detailed setup guide',
 
   
-  'csv.broker-guide.tradezero.step-1':
-    'Export CSV file from TradeZero platform',
-  'csv.broker-guide.tradezero.step-2': 'Verify file is CSV format (NOT XLSX)',
-  'csv.broker-guide.tradezero.step-3': 'Import the file below',
-  'csv.broker-guide.tradezero.warning.emphasis': 'Only CSV format supported.',
-  'csv.broker-guide.tradezero.warning.message':
-    'Excel (XLSX) files will not work.',
-  'csv.broker-guide.tradezero.doc-label': 'View export instructions',
 
   
-  'csv.broker-guide.tradingview.description': 'Paper Trading account only',
-  'csv.broker-guide.tradingview.step-1':
-    'Click on the "Paper Trading" broker type in TradingView',
-  'csv.broker-guide.tradingview.step-2': 'Click "Export data..." button',
+
   'csv.broker-guide.tradingview.step-3':
     'Select "Order History" from the dropdown',
-  'csv.broker-guide.tradingview.warning.emphasis': 'Must use Order History.',
+
   'csv.broker-guide.tradingview.warning.message':
     'Other export types (such as Positions or Orders) will not work for import.',
-  'csv.broker-guide.tradingview.doc-label': 'View detailed guide',
 
   
-  'csv.broker-guide.bybit.description': 'USDT Perpetuals Trade History',
-  'csv.broker-guide.bybit.step-1':
-    'Go to Bybit → Orders → USDT Perpetual → Trade History',
-  'csv.broker-guide.bybit.step-2':
-    'Click "Export" button and select date range',
-  'csv.broker-guide.bybit.step-3':
-    'Download the Trade History CSV file (NOT Closed P&L)',
-  'csv.broker-guide.bybit.warning.emphasis': 'Use Trade History export.',
-  'csv.broker-guide.bybit.warning.message':
-    'The Closed P&L export is missing commission data and individual fills.',
-  'csv.broker-guide.bybit.doc-label': 'View export instructions',
 
   
-  'csv.broker-guide.blofin.description':
-    'Blofin Order History Export (Website only)',
-  'csv.broker-guide.blofin.step-1':
-    'Go to Assets → Order Center → Order History',
-  'csv.broker-guide.blofin.step-2':
-    'Click Download, select Futures, and choose date range (max 180 days)',
-  'csv.broker-guide.blofin.step-3':
-    'Click Export and wait for notification when ready',
-  'csv.broker-guide.blofin.warning.emphasis': 'Website only.',
-  'csv.broker-guide.blofin.warning.message':
-    'Mobile app does not support exports. Files are available for 30 days after export.',
-  'csv.broker-guide.blofin.doc-label': 'View export instructions',
 
   
-  'csv.broker-guide.hyperliquid.description': 'Perpetuals Trade History',
-  'csv.broker-guide.hyperliquid.step-1': 'Connect wallet on Hyperliquid',
-  'csv.broker-guide.hyperliquid.step-2':
-    'Click "Trade history" tab at the bottom of the page',
-  'csv.broker-guide.hyperliquid.step-3': 'Click "Export to CSV" button',
+
   'csv.broker-guide.hyperliquid.warning.emphasis': '10,000 entry limit.',
-  'csv.broker-guide.hyperliquid.warning.message':
-    'Export regularly - older trades beyond 10,000 entries cannot be retrieved.',
-  'csv.broker-guide.hyperliquid.doc-label': 'View export instructions',
 
   
-  'csv.broker-guide.sierrachart.description': 'Futures Trades List Export',
+
   'csv.broker-guide.sierrachart.step-1':
     'Open Trade Activity Log (Trade → Trade Activity Log, or Ctrl+Shift+A)',
-  'csv.broker-guide.sierrachart.step-2':
-    'Click the "Trades" tab at the top of the window',
-  'csv.broker-guide.sierrachart.step-3':
-    'Set date range via [DisplaySettings] button if needed',
-  'csv.broker-guide.sierrachart.step-4':
-    'Go to File → Save Log As and save as .txt file',
-  'csv.broker-guide.sierrachart.warning.emphasis':
-    'Use "Save Log As" not "Export".',
-  'csv.broker-guide.sierrachart.warning.message':
-    'The Export option saves unadjusted prices. Save Log As preserves prices as displayed.',
-  'csv.broker-guide.sierrachart.doc-label': 'View SierraChart documentation',
 
   
-  'csv.broker-guide.motivewave.description':
-    'Export executions from the Account panel in MotiveWave.',
-  'csv.broker-guide.motivewave.step-1':
-    'Open the Account panel and select the Executions tab',
-  'csv.broker-guide.motivewave.step-2':
-    'Click the Export to CSV icon above the executions list',
-  'csv.broker-guide.motivewave.step-3':
-    'Set the "Export Executions Since" date range if needed',
-  'csv.broker-guide.motivewave.step-4': 'Save the CSV file and import it here',
-  'csv.broker-guide.motivewave.warning.emphasis': 'Note:',
-  'csv.broker-guide.motivewave.warning.message':
-    'Some brokers only provide limited execution history. Export regularly or use your broker portal for older trades.',
-  'csv.broker-guide.motivewave.doc-label': 'View MotiveWave documentation',
 
   
-  'csv.broker-guide.fxreplay.step-1':
-    'Open FX Replay → Analytics and select the session or date range',
-  'csv.broker-guide.fxreplay.step-2': 'Click "Export" and choose CSV',
-  'csv.broker-guide.fxreplay.step-3':
-    'Download the analytics CSV and upload it here',
-  'csv.broker-guide.fxreplay.warning.emphasis': 'Pro feature:',
-  'csv.broker-guide.fxreplay.warning.message':
-    'CSV exports are available from the Analytics page and require a paid plan.',
-  'csv.broker-guide.fxreplay.doc-label': 'Open FX Replay export guide',
 
   
-  'csv.broker-guide.atas.description':
-    'Export Statistics → Journal tab (paired trades)',
-  'csv.broker-guide.atas.step-1':
-    'In ATAS, open the Statistics tab and select RealTime or History (set date range if needed)',
-  'csv.broker-guide.atas.step-2':
-    'Click the gear icon (top right) and choose “Export statistics”',
-  'csv.broker-guide.atas.step-3':
-    'Upload the exported XLSX file here and select ATAS in the broker list',
+
   'csv.broker-guide.atas.warning.emphasis': 'Important:',
   'csv.broker-guide.atas.warning.message':
     'Do not edit the exported file. Journalit preserves trades from the “Journal” sheet and, when available, enriches commission using matching fills from the “Executions” sheet.',
-  'csv.broker-guide.atas.doc-label': 'View ATAS export instructions',
 
   
-  'csv.broker-guide.rithmic.description':
-    'R | Trader Pro export from Order History / Completed Orders.',
-  'csv.broker-guide.rithmic.step-1':
-    'Open Order History in R | Trader Pro and filter to Completed/Filled orders for your account/date',
-  'csv.broker-guide.rithmic.step-2':
-    'Use Add/Remove Columns and make sure Side, Symbol, Qty Filled, Avg Fill Price, and Fill/Update Time are visible',
-  'csv.broker-guide.rithmic.step-3':
-    'Click the Export/Clipboard icon to save CSV, then upload it here and select Rithmic',
+
   'csv.broker-guide.rithmic.warning.emphasis': 'Important:',
-  'csv.broker-guide.rithmic.warning.message':
-    'Rithmic exports only visible columns (and often one day at a time). Missing columns can break import.',
-  'csv.broker-guide.rithmic.doc-label':
-    'View R | Trader Pro export walkthrough',
 
   
-  'csv.broker-guide.jdr.description':
-    'MetaTrader HTML statement export for MT4 and MT5 reports.',
-  'csv.broker-guide.jdr.step-1':
-    'In your MetaTrader terminal, open the Account History / History tab for the date range you want to import',
-  'csv.broker-guide.jdr.step-2':
-    'Right-click inside the history table and choose Save as Report (HTML/HTM statement)',
-  'csv.broker-guide.jdr.step-3':
-    'Upload the exported HTML statement here and select MetaTrader 4 / 5 Statement',
+
   'csv.broker-guide.jdr.warning.emphasis': 'Important:',
-  'csv.broker-guide.jdr.warning.message':
-    'Use the HTML statement export. Pending and cancelled orders are ignored automatically.',
-  'csv.broker-guide.jdr.doc-label': 'View broker export guides',
 
   
   'csv.date-format.auto-detect':
@@ -3374,52 +2800,9 @@ const en = {
   
   
   
-  'monthly.overview.cumulative-pnl': 'Monthly Cumulative P&L',
-  'monthly.overview.no-pnl-data': 'No P&L data to display',
-  'monthly.overview.no-pnl-data-sub':
-    "Your cumulative profit/loss will show here once you've logged closed trades",
+
   'monthly.overview.drawdown': 'Monthly Drawdown',
   'monthly.overview.no-drawdown-data': 'No drawdown data to display',
-  'monthly.overview.no-drawdown-data-sub':
-    "Your drawdown metrics will appear here once you've logged closed trades",
-  'monthly.overview.performance': 'Monthly Performance',
-  'monthly.overview.net-pnl': 'Net P&L',
-  'monthly.overview.win-rate': 'Win Rate',
-  'monthly.overview.profit-factor': 'Profit Factor',
-  'monthly.overview.total-trades': 'Total Trades',
-  'monthly.overview.setup-performance': 'Setup Performance',
-  'monthly.overview.biggest-winner': 'Biggest Winner of {month}',
-  'monthly.overview.biggest-loser': 'Biggest Loser of {month}',
-  'monthly.overview.label-date': 'Date:',
-  'monthly.overview.label-setup': 'Setup:',
-  'monthly.overview.view-trade-details': 'View Trade Details',
-  'monthly.overview.no-winning-trades': 'No winning trades this month',
-  'monthly.overview.no-winning-trades-sub': 'Your best trades will appear here',
-  'monthly.overview.no-losing-trades': 'No losing trades this month',
-  'monthly.overview.no-losing-trades-sub': 'Your worst trades will appear here',
-  'monthly.overview.weekly-highlights': 'Weekly Performance Highlights',
-  'monthly.overview.best-week': 'Best Performing Week',
-  'monthly.overview.worst-week': 'Worst Performing Week',
-  'monthly.overview.week-number': 'Week {number}',
-  'monthly.overview.view-week': 'View Week',
-  'monthly.overview.long-performance': 'Long Only Performance',
-  'monthly.overview.no-long-trades': 'No long trades this month',
-  'monthly.overview.no-long-trades-sub':
-    'Your long trade performance will appear here',
-  'monthly.overview.short-performance': 'Short Only Performance',
-  'monthly.overview.no-short-trades': 'No short trades this month',
-  'monthly.overview.no-short-trades-sub':
-    'Your short trade performance will appear here',
-  'monthly.overview.weekly-breakdown': 'Weekly Breakdown',
-  'monthly.overview.table-week': 'Week',
-  'monthly.overview.table-trades': 'Trades',
-  'monthly.overview.table-win-rate': 'Win%',
-  'monthly.overview.table-profit-factor': 'Profit Factor',
-  'monthly.overview.table-pnl': 'P&L',
-  'monthly.overview.week-abbrev': 'W{number}',
-  'monthly.overview.no-weekly-data': 'No weekly data available',
-  'monthly.overview.no-weekly-data-sub':
-    'Your weekly performance breakdown will appear here',
 
   
   
@@ -3601,10 +2984,7 @@ const en = {
     'This section controls the order of account groups',
   'account-dashboard.guide.main.settings-order.description':
     'Use these controls to decide which account types appear first on the dashboard.',
-  'account-dashboard.guide.main.close-settings.title':
-    'Close settings to return to the dashboard',
-  'account-dashboard.guide.main.close-settings.description':
-    'Close this modal when you are done reviewing the dashboard settings.',
+
   'account-dashboard.guide.main.open-account.title':
     'Open any account card to go deeper',
   'account-dashboard.guide.main.open-account.description':
@@ -3671,8 +3051,7 @@ const en = {
   'account.link-modal.option.existing': 'Link to existing account',
   'account.link-modal.no-accounts-available': '(no accounts available)',
   'account.link-modal.select-account': 'Select an account...',
-  'account.link-modal.no-existing-found':
-    'No existing accounts found. Create a new account instead.',
+
   'account.link-modal.option.default': 'Use default name: Account-{id}',
   'account.link-modal.default-name': 'Account-{id}',
   'account.link-modal.button.linking': 'Linking...',
@@ -3686,35 +3065,21 @@ const en = {
   'trade.review.title': 'Trade Review',
 
   
-  'trade.details.direction': 'Direction',
-  'trade.details.position-size': 'Position Size',
-  'trade.details.trading-costs': 'Trading Costs',
-  'trade.details.entry-price': 'Entry Price',
-  'trade.details.exit-price': 'Exit Price',
+
   'trade.details.entry': 'Entry',
   'trade.details.exit': 'Exit',
-  'trade.details.size': 'Size',
+
   'trade.details.duration': 'Duration',
-  'trade.details.instrument': 'Instrument',
-  'trade.details.exit-time': 'Exit Time',
-  'trade.details.entry-time': 'Entry Time',
-  'trade.details.title': 'Trade Details',
+
   'trade.details.thesis': 'Thesis',
-  'trade.details.no-thesis': 'No thesis provided for this trade',
-  'trade.details.add-thesis': "Click 'Edit' to add a thesis",
-  'trade.details.plan': 'Plan',
-  'trade.details.risk': 'risk',
-  'trade.details.execution': 'Execution',
-  'trade.details.show-execution': 'Show breakdown',
-  'trade.details.hide-execution': 'Hide breakdown',
+
   'trade.details.entries-summary': '{count} entries',
   'trade.details.exits-summary': '{count} exits',
   'trade.details.take-profit-count': '{count} targets',
-  'trade.details.close-percent': '{percent}% close',
 
   
   'trade.metadata.account': 'Account:',
-  'trade.metadata.custom-tags': 'Custom Tags:',
+
   'trade.metadata.setups': 'Setups',
   'trade.metadata.mistakes': 'Mistakes',
 
@@ -3724,160 +3089,50 @@ const en = {
   'trade.image.alt-prefix': 'Trade image',
 
   
-  'trade.review.mark-as-reviewed': 'Mark as Reviewed',
+
   'trade.review.reviewed': 'Reviewed',
   'trade.review.reviewed-on': 'Reviewed on {date}',
 
   
   
   
-  'timeline.trade-type.regular': 'Trade',
-  'timeline.trade-type.missed': 'Missed Trade',
-  'timeline.trade-type.backtest': 'Backtest Trade',
-  'timeline.status.open': 'Open',
-  'timeline.status.profit': 'Profit',
+
   'timeline.status.loss': 'Loss',
-  'timeline.status.breakeven': 'Breakeven',
-  'timeline.aria.trade-status': '{ticker} {tradeType} {tradeNumber} ({status})',
+
   'timeline.aria.session-navigation': 'Same-day trade navigation',
   'timeline.aria.previous-trade': 'Previous trade: {trade}',
   'timeline.aria.next-trade': 'Next trade: {trade}',
   'timeline.aria.no-previous-trade': 'No previous trade in this trading day',
   'timeline.aria.no-next-trade': 'No next trade in this trading day',
-  'timeline.title.current-trade':
-    'Current {tradeType}: {ticker} {tradeType} {tradeNumber}',
-  'timeline.title.view-trade':
-    'View {ticker} {tradeType} {tradeNumber} ({status})',
-  'timeline.title.trade-still-open': 'Trade is still open',
 
   
   
   
-  'drc.trades.chart.cumulative-pnl': 'Cumulative P&L',
-  'drc.trades.chart.drawdown': 'Drawdown',
-  'drc.trades.stats.title': 'Daily Trade Statistics',
-  'drc.trades.stats.net-pnl': 'Net P&L',
-  'drc.trades.stats.win-rate': 'Win Rate',
-  'drc.trades.stats.profit-factor': 'Profit Factor',
-  'drc.trades.stats.expectancy': 'Expectancy',
-  'drc.trades.stats.total-trades': 'Total Trades',
-  'drc.trades.stats.avg-win': 'Avg Win',
-  'drc.trades.stats.avg-loss': 'Avg Loss',
-  'drc.trades.stats.pl-ratio': 'P/L Ratio',
-  'drc.trades.log.title': 'Trade Log',
-  'drc.trades.log.empty': 'No trades for this day',
-  'drc.trades.log.empty-sub': 'Trades will appear here once they are added',
-  'drc.trades.table.images': 'Images',
-  'drc.trades.table.entry-exit-time': 'Entry/Exit Time',
-  'drc.trades.table.ticker': 'Ticker',
-  'drc.trades.table.direction': 'Direction',
-  'drc.trades.table.setup': 'Setup',
-  'drc.trades.table.pnl': 'P&L',
-  'drc.trades.table.open': 'OPEN',
-  'drc.trades.table.na': 'N/A',
-  'drc.trades.table.unknown': 'Unknown',
-  'drc.trades.image.alt': 'Trade {id} Image',
-  'drc.trades.image.preview-alt': 'Trade {id} preview',
 
   
   
   
-  'drc.component-name': 'Daily Report Card',
-  'drc.tab.preparation': 'Preparation',
-  'drc.tab.trades': 'Trades',
+
   'drc.tab.review': 'Review',
 
   
   
   
-  'drc.preparation.support-levels': 'Support Levels',
-  'drc.preparation.resistance-levels': 'Resistance Levels',
-  'drc.preparation.enter-price': 'Enter price level',
-  'drc.preparation.select-importance': 'Select importance level',
-  'drc.preparation.add-support': 'Add support level',
-  'drc.preparation.add-resistance': 'Add resistance level',
-  'drc.preparation.remove-level': 'Remove level',
-  'drc.preparation.no-support': 'No support levels defined',
-  'drc.preparation.no-resistance': 'No resistance levels defined',
-  'drc.preparation.importance.none': 'None',
-  'drc.preparation.importance.high': 'High',
-  'drc.preparation.importance.medium': 'Medium',
-  'drc.preparation.importance.low': 'Low',
-  'drc.preparation.checklist.title': 'Pre-Trade Checklist',
-  'drc.preparation.checklist.empty': 'No pre-trade checklist items',
-  'drc.preparation.checklist.sub-apply':
-    'Apply checklist items from plugin settings',
-  'drc.preparation.checklist.sub-add':
-    'Add checklist items in the plugin settings',
-  'drc.preparation.bias.title': 'Market Bias',
-  'drc.preparation.bias.bullish': 'Bullish',
-  'drc.preparation.bias.bearish': 'Bearish',
-  'drc.preparation.bias.neutral': 'Neutral',
-  'drc.preparation.bias.placeholder': 'Select market bias',
-  'drc.preparation.goals.title': 'Daily Goals',
-  'drc.preparation.goals.empty': 'No daily goals from previous day',
-  'drc.preparation.events.title': 'Key Events',
-  'drc.preparation.events.all-week': 'All Week',
-  'drc.preparation.events.empty': 'No key events for today',
-  'drc.preparation.events.sub-empty':
-    'Events can be added in the weekly review',
-  'drc.preparation.forecast.title': 'Daily Forecast',
-  'drc.preparation.media.title': 'Media Links',
-  'drc.preparation.media.youtube': 'YouTube Link',
-  'drc.preparation.media.youtube-placeholder': 'Link to your trading stream',
-  'drc.preparation.error.service-unavailable': 'DRC Service not available',
-  'drc.preparation.error.image-upload': 'Error uploading image',
 
   
   
   
-  'drc.missed-trades.title': 'Missed Trades',
-  'drc.missed-trades.loading': 'Loading missed trades...',
-  'drc.missed-trades.error.service-unavailable':
-    'Missed Trade service not available',
-  'drc.missed-trades.error.load-failed': 'Failed to load missed trades',
-  'drc.missed-trades.error-prefix': 'Error: {error}',
-  'drc.missed-trades.retry': 'Retry',
-  'drc.missed-trades.unknown': 'Unknown',
-  'drc.missed-trades.no-setup': 'No setup specified',
-  'drc.missed-trades.badge': 'MISSED',
-  'drc.missed-trades.open-details-title': 'Open missed trade details',
-  'drc.missed-trades.view-details': 'View Details →',
-  'drc.missed-trades.label.setup': 'Setup:',
+
   'drc.missed-trades.label.reason': 'Reason:',
-  'drc.missed-trades.add-button': '+ Add Missed Trade',
-  'drc.missed-trades.add-title': 'Add a new missed trade',
-  'drc.missed-trades.empty': 'No missed trades for today',
-  'drc.missed-trades.empty-sub':
-    'Track trading opportunities you missed to improve your execution',
 
   
   
   
   'missed-trade.reason-title': 'Why I missed this trade',
-  'missed-trade.reason-kicker': 'Missed opportunity',
-  'missed-trade.loading-navigation': 'Loading navigation...',
 
   
   
   
-  'drc.review.goal-placeholder': 'Your goal for the next session',
-  'drc.review.no-questions':
-    'No reflection questions defined. Add review questions in settings.',
-  'drc.review.answer-placeholder': 'Your answer...',
-  'drc.review.mental-game': 'Mental Game:',
-  'drc.review.mental-game-aria': 'Mental Game Grade',
-  'drc.review.technical-game': 'Technical Game:',
-  'drc.review.technical-game-aria': 'Technical Game Grade',
-  'drc.review.end-of-day-review': 'End of Day Review',
-  'drc.review.performance-grades': 'Performance Grades',
-  'drc.review.reflection-questions': 'Reflection Questions',
-  'drc.review.goals-for-next-session': 'Goals for Next Session',
-  'drc.review.add-goal': 'Add Goal',
-  'drc.review.end-of-day-screenshots': 'End of Day Screenshots',
-  'drc.review.add-screenshots': 'Add screenshots',
-  'drc.review.error.invalid-date':
-    'Invalid DRC date format. Please check the date in your DRC note.',
 
   
   
@@ -3966,13 +3221,10 @@ const en = {
     'Use the same background image in Dashboard mode.',
   'settings.general.home-background-dashboard-aria':
     'Show Home background in Dashboard',
-  'settings.general.home-background-placeholder':
-    'Vault path, e.g. .journalit/home-background.png',
-  'settings.general.home-background-aria': 'Home background image vault path',
+
   'settings.general.home-background-choose': 'Choose image',
   'settings.general.home-background-clear': 'Clear',
-  'settings.general.home-background-invalid':
-    'That path is not a supported image in the vault.',
+
   'settings.general.home-background-invalid-file':
     'Choose a supported image file.',
   'settings.general.home-background-saved': 'Home background image saved.',
@@ -4166,7 +3418,7 @@ const en = {
 
   'settings.general.update-notifications': 'Show Update Notifications',
   'settings.general.update-notifications-desc':
-    'Display a notification when a new plugin update is available',
+    "Check Journalit's public GitHub release metadata daily and notify you when a newer version is available",
   'settings.general.update-notifications-aria': 'Show update notifications',
   'settings.general.update-notifications-toggled':
     'Update notifications {status}',
@@ -4206,12 +3458,11 @@ const en = {
   'settings.customization.trade-form-layout.button': 'Customise layout',
   'settings.customization.tickers-symbols': 'Tickers/Symbols',
   'settings.customization.symbol-mappings': 'Symbol Mappings',
-  'settings.customization.account-types': 'Account Types',
+
   'settings.customization.setups': 'Setups',
   'settings.customization.mistakes': 'Mistakes',
   'settings.customization.tags': 'Tags',
   'settings.customization.events': 'Events',
-  'settings.customization.custom-fields': 'Custom Trade Fields',
 
   
   
@@ -4335,35 +3586,14 @@ const en = {
   
   
   
-  'settings.loss-review.field.content': 'Content',
-  'settings.loss-review.field.checkbox-label': 'Checkbox Label',
-  'settings.loss-review.field.placeholder-text': 'Placeholder Text',
-  'settings.loss-review.field.checkbox-items': 'Checkbox Items',
-  'settings.loss-review.field.section-title': 'Section Title',
-  'settings.loss-review.field.section-type': 'Section Type',
-  'settings.loss-review.placeholder.header-content':
-    'Enter header content (supports markdown)',
-  'settings.loss-review.placeholder.checkbox-label':
-    'Enter checkbox label (supports markdown)',
-  'settings.loss-review.placeholder.textarea-placeholder':
-    'Enter placeholder text for the textarea',
-  'settings.loss-review.placeholder.checkbox-item':
-    'Enter checkbox item (supports markdown)',
-  'settings.loss-review.placeholder.section-title': 'Enter section title',
-  'settings.loss-review.untitled-section': 'Untitled Section',
-  'settings.loss-review.type.header': 'Header',
-  'settings.loss-review.type.checkbox': 'Single Checkbox',
-  'settings.loss-review.type.textarea': 'Text Area',
-  'settings.loss-review.type.checkbox-list': 'Checkbox List',
 
   
   
   
   'button.remove': 'Remove',
-  'button.add-item': 'Add Item',
+
   'button.move-up': 'Move up',
   'button.move-down': 'Move down',
-  'button.remove-section': 'Remove Section',
 
   
   
@@ -4386,7 +3616,7 @@ const en = {
   'settings.customization.custom-fields.no-fields-desc':
     'Custom fields will appear in the "Advanced" tab of the trade form and be saved to your trade notes\' frontmatter.',
   'settings.customization.custom-fields.add-new': 'Add New Field',
-  'settings.customization.custom-fields.edit-field': 'Edit Field',
+
   'settings.customization.custom-fields.edit-field-with-name':
     'Edit “{fieldLabel}”',
   'settings.customization.custom-fields.configure-desc':
@@ -4587,11 +3817,7 @@ const en = {
     'Optional placeholder text shown when entering a local review value',
   'settings.customization.review-fields.editor.placeholder-input':
     'Enter review field placeholder',
-  'settings.customization.review-fields.editor.display-group': 'Display Group',
-  'settings.customization.review-fields.editor.display-group-desc':
-    'Optional group name used by review field widgets',
-  'settings.customization.review-fields.editor.display-group-placeholder':
-    'Planning, Risk, Execution...',
+
   'settings.customization.review-fields.editor.group': 'Field Group',
   'settings.customization.review-fields.editor.group-desc':
     'Choose the review field group this field belongs to.',
@@ -4634,8 +3860,7 @@ const en = {
   'settings.customization.review-fields.editor.sources': 'Inheritance Sources',
   'settings.customization.review-fields.editor.sources-desc':
     'Higher-timeframe review types this field can inherit from',
-  'settings.customization.review-fields.editor.required-desc':
-    'Require a local value when this field is editable on a review note',
+
   'settings.customization.review-fields.editor.options-desc':
     'Available choices for this review field',
   'settings.customization.review-fields.editor.allow-create-desc':
@@ -4658,59 +3883,21 @@ const en = {
   'onboarding.welcome.cta': 'Get Started',
   'onboarding.welcome.chart.week': 'Week {count}',
   'onboarding.view.title': 'Journalit Onboarding',
-  'onboarding.welcome.discover-heading': "What you'll discover:",
-  'onboarding.welcome.tagline': "Let's get you set up in under 60 seconds",
 
   
-  'onboarding.welcome.insight.win-rate.title': 'Win Rate Analysis',
-  'onboarding.welcome.insight.win-rate.content':
-    '"Your breakout setups have an 82% win rate vs 67% for pullbacks"',
-  'onboarding.welcome.insight.timing.title': 'Timing Patterns',
-  'onboarding.welcome.insight.timing.content':
-    '"Trades held 2-4 hours show 3x better risk-reward than scalps"',
-  'onboarding.welcome.insight.psychology.title': 'Psychology Tracking',
-  'onboarding.welcome.insight.psychology.content':
-    '"You take profits 15% too early when up more than $500"',
 
   
-  'onboarding.welcome.trust.data-ownership':
-    'Your data, your device - Complete ownership and control',
-  'onboarding.welcome.trust.any-broker':
-    'Works with any broker - MetaTrader sync + manual entry',
-  'onboarding.welcome.trust.customizable':
-    'Fully customizable - Track what matters to you',
 
   
   
   
   'onboarding.common.continue': 'Continue',
   'onboarding.common.close': 'Close',
-  'onboarding.features.title': 'Select what matches your workflow.',
-  'onboarding.features.feature.mt5-sync.label': 'MT5 Sync',
-  'onboarding.features.feature.mt5-sync.description':
-    'Automatically import trades from MetaTrader 5',
-  'onboarding.features.feature.csv-import.label': 'Trade Import',
-  'onboarding.features.feature.csv-import.description':
-    'Import trades from any broker via CSV files',
-  'onboarding.features.feature.manual-entry.label': 'Manual Entry',
+
   'onboarding.features.feature.manual-entry.description':
     'Log trades manually with full control',
-  'onboarding.features.feature.analytics.label': 'Analytics & Insights',
-  'onboarding.features.feature.analytics.description':
-    'Performance metrics, charts, and trade statistics',
-  'onboarding.features.feature.account-tracking.label': 'Account Tracking',
-  'onboarding.features.feature.account-tracking.description':
-    'Track multiple prop firm and personal accounts',
-  'onboarding.features.feature.trade-journal.label': 'Layout Builder',
-  'onboarding.features.feature.trade-journal.description':
-    'Build custom review layouts with widgets, charts, and notes',
-  'onboarding.features.feature.ai-trading-assistant.label':
-    'AI Trading Assistant',
-  'onboarding.features.feature.ai-trading-assistant.description':
-    'Pattern recognition, insights, and personalized guidance',
-  'onboarding.features.badge.coming-soon': 'Coming Soon',
+
   'onboarding.features.badge.pro': 'PRO',
-  'onboarding.features.trial.pro': 'PRO features include a 14-day free trial',
 
   
   
@@ -4734,61 +3921,53 @@ const en = {
   'onboarding.explore.core.layouts.label': 'Layout Builder',
   'onboarding.explore.core.layouts.description':
     'Customise dashboards and review layouts with widgets and layouts.',
-  'onboarding.explore.imports.title': 'Imports & Sync (PRO)',
-  'onboarding.explore.imports.subtitle':
-    'Preview and setup anytime. Importing/sync requires Pro.',
+  'onboarding.explore.imports.title': 'Imports & Sync',
+
   'onboarding.explore.imports.csv.label': 'Trade Import',
   'onboarding.explore.imports.csv.description':
-    'Preview your CSV and map columns. Importing into your vault requires Pro.',
+    'Preview supported trade-history files free and map columns. Importing into your vault requires Pro.',
   'onboarding.explore.imports.trade-sync.label': 'Trade Sync',
   'onboarding.explore.imports.trade-sync.description':
     'Automatic trade syncing from MetaTrader (MT4) or Tradovate. Requires Pro.',
-  'onboarding.explore.cta.open': 'Open',
+
   'onboarding.explore.cta.manual': 'Open Docs',
 
   
   
   
-  'onboarding.path.kicker': 'Choose Path',
-  'onboarding.path.tip.trial':
-    'Tip: PRO subscriptions include a 14-day free trial.',
-  'onboarding.path.title': 'Choose your first path',
+  'onboarding.path.kicker': 'Your trading history',
+  'onboarding.path.title':
+    'Do you already have trades to bring into Journalit?',
   'onboarding.path.subtitle':
-    'Pick the fastest way to get your first trade in Journalit.',
-  'onboarding.path.option.manual.label': 'Manual Entry (Free)',
+    "Choose an answer and we'll take you straight to the right next step.",
+  'onboarding.path.option.manual.label': "No, I'm starting fresh",
   'onboarding.path.option.manual.description':
-    'Create a trade in seconds with the Add Trade form.',
-  'onboarding.path.option.csv.label': 'Trade Import',
+    'Open the Add Trade form and record your first trade.',
+  'onboarding.path.option.csv.label': 'Yes, I have trading history',
   'onboarding.path.option.csv.description':
-    'Preview your CSV now; import after activating PRO.',
-  'onboarding.path.option.trade-sync.label': 'Trade Sync',
+    'Choose between automatic broker sync and importing a file.',
+  'onboarding.path.method.kicker': 'Bring in your history',
+  'onboarding.path.method.title': 'How do you want to bring it in?',
+  'onboarding.path.method.subtitle':
+    'Choose the option that matches your broker and export.',
+  'onboarding.path.option.trade-sync.label': 'Connect MT4 or Tradovate',
   'onboarding.path.option.trade-sync.description':
-    'Connect MetaTrader (MT4) or Tradovate for automatic trade syncing.',
+    'Set up Trade Sync to keep new trades arriving automatically.',
+  'onboarding.path.option.import.label': 'Import a trade-history file',
+  'onboarding.path.option.import.description':
+    'Upload CSV, Excel, or a supported broker report.',
+  'onboarding.path.option.import.badge': 'Preview free',
 
-  
-  
-  
-  'onboarding.final.manual.title': "You're ready to Journalit",
-
-  'onboarding.final.manual.hotkey.title': 'Suggested hotkey',
-  'onboarding.final.manual.hotkey.value': 'Mod + Alt + A',
-
-  'onboarding.final.manual.cta.change-hotkey': 'Set hotkey',
-  'onboarding.final.manual.hit-hotkey':
+  'onboarding.manual.title': "You're ready to Journalit",
+  'onboarding.manual.subtitle':
+    'Set up the suggested shortcut below to record trades faster.',
+  'onboarding.manual.subtitle-mobile':
+    'Open Add Trade whenever you want to record a trade.',
+  'onboarding.manual.hotkey.title': 'Suggested hotkey',
+  'onboarding.manual.cta.change-hotkey': 'Set hotkey',
+  'onboarding.manual.hit-hotkey':
     'Suggested: {hotkey}. Click Set hotkey to configure it.',
-  'onboarding.final.csv.title': "You're ready to bring in your trades",
-  'onboarding.final.csv.subtitle':
-    'Next, preview your CSV. Importing into your vault requires PRO activation.',
-  'onboarding.final.csv.cta.open': 'Open Trade Import',
-  'onboarding.final.trade-sync.title': "You're ready to set up Trade Sync",
-  'onboarding.final.trade-sync.subtitle':
-    'Next, set up MetaTrader (MT4) or Tradovate sync.',
-  'onboarding.final.trade-sync.cta.open': 'Open Trade Sync Setup',
-  'onboarding.final.trade-sync.hero.source.title': 'MetaTrader + Tradovate',
-  'onboarding.final.trade-sync.hero.source.subtitle': 'Broker trades',
-  'onboarding.final.trade-sync.hero.dest.title': 'Vault',
-  'onboarding.final.trade-sync.hero.dest.subtitle': 'Trade notes',
-  'onboarding.final.finish': 'Finish',
+  'onboarding.manual.add-first-trade': 'Add my first trade',
 
   
   'onboarding.features.graphic.syncing': 'Syncing trades...',
@@ -4802,13 +3981,10 @@ const en = {
   
   
   'onboarding.activation.title': 'Sign In to Journalit',
-  'onboarding.activation.subtitle':
-    'Complete authentication in your browser to access your account',
+
   'onboarding.activation.status.initializing':
     'Generating your authentication code...',
-  'onboarding.activation.status.waiting': 'Waiting for sign-in...',
-  'onboarding.activation.status.expired': 'Code Expired',
-  'onboarding.activation.status.denied': 'Sign-In Denied',
+
   'onboarding.activation.status.error': 'Sign-In Failed',
   'onboarding.activation.error.init':
     'Unable to start sign-in. Please check your internet connection and try again.',
@@ -4824,8 +4000,7 @@ const en = {
     'Connection lost. Please check your internet and try again.',
   'onboarding.activation.notice.invalid-url':
     'Invalid activation URL. Please contact support.',
-  'onboarding.activation.notice.popup-blocked-copied':
-    'Browser popup blocked. Activation URL copied to clipboard - please paste in your browser.',
+
   'onboarding.activation.notice.popup-blocked-manual':
     'Please open this URL in your browser: {url}',
   'onboarding.activation.notice.copy-code-failed':
@@ -4843,29 +4018,17 @@ const en = {
   'onboarding.activation.waiting.title': 'Waiting for sign-in...',
   'onboarding.activation.waiting.hint': 'This usually takes less than a minute',
   'onboarding.activation.success.title': 'Sign In Complete!',
-  'onboarding.activation.success.subtitle':
-    "You're now connected to your Journalit account",
-  'onboarding.activation.features.title': 'Available Features:',
-  'onboarding.activation.features.sync': 'Sync trades across devices',
-  'onboarding.activation.features.analytics': 'Advanced Analytics & Reports',
-  'onboarding.activation.features.mt5': 'MT5 Trade Sync',
-  'onboarding.activation.features.csv': 'Smart CSV Import',
-  'onboarding.activation.auto-advance': 'Auto-continuing in 10 seconds...',
-  'onboarding.activation.skip': 'Activate later',
+
   'onboarding.notice.complete-failed':
     'Failed to save onboarding completion. Please try again later.',
+  'onboarding.notice.trade-sync-open-failed':
+    'Unable to open Trade Sync. Please try again.',
   'onboarding.notice.skip-failed':
     'Failed to save onboarding skip. Please try again later.',
 
   
   
   
-  'onboarding.progress.aria-label': 'Step {current} of {total}',
-  'onboarding.progress.step': 'Step {step}',
-  'onboarding.progress.status.completed': ' (completed)',
-  'onboarding.progress.status.current': ' (current)',
-  'onboarding.progress.announcement':
-    'Step {current} of {total} completed{label}',
 
   
   
@@ -4898,7 +4061,7 @@ const en = {
 
   
   'widget.header.name': 'Header',
-  'widget.header.description': 'Navigation header with context links',
+
   'widget.header.invalid-context':
     "Invalid frontmatter: requires 'type' (drc/weekly-review/monthly-review/quarterly-review/trade) and date field ('date' for reviews, 'entryTime' for trades)",
   'widget.header.aria.mark-reviewed': 'Click to mark as reviewed',
@@ -4968,8 +4131,7 @@ const en = {
   'widget.review-context-fields.description':
     'Editable custom context fields for review notes',
   'widget.review-context-fields.group.default': 'Review Context',
-  'widget.review-context-fields.inherited-title': 'Inherited Context',
-  'widget.review-context-fields.local-title': 'Local Context',
+
   'widget.review-context-fields.empty-title':
     'No review context fields configured for this review type.',
   'widget.review-context-fields.empty-desc':
@@ -4985,8 +4147,7 @@ const en = {
     'This parent review exists but is not a valid review note.',
   'widget.review-context-fields.source-empty':
     'No inherited values are filled in this parent review yet.',
-  'widget.review-context-fields.open-source': 'Open',
-  'widget.review-context-fields.create-source': 'Create',
+
   'widget.review.title': 'Performance Review',
   'widget.review.mental-game': 'Mental Game',
   'widget.review.technical-game': 'Technical Game',
@@ -5009,6 +4170,9 @@ const en = {
   'widget.key-events.color-label': 'Color:',
   'widget.key-events.color-aria': 'Select {color} color',
   'widget.key-events.day-label': 'Day:',
+  'widget.key-events.currency-label': 'Currency:',
+  'widget.key-events.time-label': 'Time:',
+  'widget.key-events.field-unset': 'Not set',
   'widget.key-events.notes-placeholder': 'Notes about this event (optional)',
   'widget.key-events.notes-label': 'Notes',
   'widget.key-events.default-notes-tooltip':
@@ -5016,6 +4180,10 @@ const en = {
   'widget.key-events.add-button': 'Add Event',
   'widget.key-events.empty-state': 'No key events for today',
   'widget.key-events.empty-state-sub': 'Add events in your Weekly Review',
+  'widget.key-events.open-calendar-aria': 'Open Economic Calendar',
+  'widget.key-events.restore-auto-import': 'Restore auto-imported events',
+  'widget.key-events.restore-missing-events':
+    'Restore missing events ({count})',
   'widget.missed-trades.name': 'Missed Trades',
   'widget.missed-trades.description': 'Trades you identified but did not take',
   'widget.images.name': 'Charts & Media',
@@ -5071,8 +4239,7 @@ const en = {
   'widget.stats.no-trades': 'No closed trades for this period',
   'widget.stats.vs-prev': 'vs prev',
   'dashboard.metrics.past-30d': 'past 30d',
-  'widget.stats.no-change': 'No change',
-  'widget.stats.no-previous-data': 'No previous data',
+
   'widget.stats.net-pnl': 'Net P&L',
   'widget.stats.win-rate': 'Win Rate',
   'widget.stats.profit-factor': 'Profit Factor',
@@ -5269,10 +4436,9 @@ const en = {
   'widget.trade-review.image-alt-prefix': 'Trade review image',
   'widget.trade-review.no-image': 'No trade image',
   'widget.trade-review.placeholder.default': 'Write your thoughts...',
-  'widget.trade-review.questions-hidden':
-    'Review questions are hidden for this trade.',
+
   'widget.trade-review.open-trade-note': 'Open trade note',
-  'widget.trade-review.mark-reviewed': 'Mark reviewed',
+
   'widget.trade-review.field.entry': 'Entry',
   'widget.trade-review.field.exit': 'Exit',
   'widget.trade-review.field.duration': 'Duration',
@@ -5318,7 +4484,7 @@ const en = {
   'widget.table.header.week': 'Week',
   'widget.table.header.month': 'Month',
   'widget.table.header.quarter': 'Quarter',
-  'widget.table.header.year': 'Year',
+
   'widget.table.header.trades': 'Trades',
   'widget.table.header.pnl': 'P&L',
   'widget.table.header.win-rate': 'Win%',
@@ -5442,67 +4608,21 @@ const en = {
     'Number of realized drawdown periods in the current filtered trade set',
   'metric.category.performance': 'Performance',
   'metric.category.volume': 'Volume',
-  'metric.category.average': 'Average',
 
   
   
   
-  'onboarding.wizard.cancelled-announcement':
-    'Onboarding cancelled. You can replay onboarding later from the Command Palette by searching for "Journalit: Replay Onboarding".',
-  'onboarding.wizard.error.next-step': 'Failed to go to next step',
-  'onboarding.wizard.error.prev-step': 'Failed to go to previous step',
-  'onboarding.wizard.error.trade-service': 'TradeService not available',
-  'onboarding.wizard.error.account-service': 'AccountPageService not available',
-  'onboarding.wizard.error.create-sample-trade':
-    'Failed to create sample trade',
-  'onboarding.wizard.error.auth-failed': 'Failed to complete authentication',
-  'onboarding.wizard.error.backend-service':
-    'Backend integration service not available',
-  'onboarding.wizard.error.sign-in-required':
-    'Please sign in to generate FTP credentials',
-  'onboarding.wizard.error.ftp-generation':
-    'Failed to generate FTP credentials',
-  'onboarding.wizard.notice.sample-trade-created':
-    'Sample trade created successfully! You can find it in your vault.',
-  'onboarding.wizard.notice.auth-success':
-    'Successfully authenticated! You can now access Pro features.',
-  'onboarding.wizard.notice.ftp-generated':
-    'FTP credentials generated successfully!',
-  'onboarding.wizard.notice.password-masked':
-    'Password is masked and cannot be copied. Please regenerate FTP credentials.',
-  'onboarding.wizard.notice.copied': '{label} copied to clipboard!',
-  'onboarding.wizard.notice.copy-failed': 'Failed to copy {label}',
-  'onboarding.wizard.unknown-step.title': 'Unknown step',
-  'onboarding.wizard.unknown-step.description':
-    'We encountered an unexpected step in the onboarding process.',
-  'onboarding.wizard.footer-default':
-    'Complete the setup to get started with Journalit',
+
   'onboarding.wizard.skip-aria': 'Skip this step',
   'onboarding.wizard.skip-onboarding': 'Skip Onboarding',
-  'onboarding.wizard.skip-step': 'Skip Step',
+
   'guide.skip-guide': 'Skip Guide',
 
   
   
   
-  'account.open-trade-log.error': 'Could not open Trade Log for this account.',
-  'account.linked-trades.title': 'Linked Trades',
-  'account.linked-trades.empty-message': 'No trades linked to this account',
-  'account.linked-trades.empty-submessage':
-    'Trades will appear here once they are added to this account',
-  'account.linked-trades.click-to-open': 'Click to open trade',
-  'account.linked-trades.no-path-available': 'No path available',
-  'account.linked-trades.no-path-warning': 'No file path - cannot open',
-  'account.linked-trades.entry': 'Entry',
-  'account.linked-trades.exit': 'Exit',
-  'account.linked-trades.size': 'Size',
+
   'account.linked-trades.setups': 'Setups',
-  'account.linked-trades.mistakes': 'Mistakes',
-  'account.linked-trades.tags': 'Tags',
-  'account.linked-trades.reviewed': 'Reviewed',
-  'account.linked-trades.not-reviewed': 'Not Reviewed',
-  'account.linked-trades.net-costs': 'Net Costs',
-  'account.linked-trades.net-credit': 'Net Credit',
 
   
   
@@ -5523,8 +4643,7 @@ const en = {
   'account.create.field.currency': 'Currency',
   'account.create.field.currency-desc': "Account's native currency for display",
   'account.create.field.drawdown-type': 'Drawdown Type',
-  'account.create.field.drawdown-type-desc':
-    'None | Fixed | EOD Trailing | Manual',
+
   'account.create.field.drawdown-amount': 'Drawdown Amount',
   'account.create.field.drawdown-amount-desc': 'Maximum drawdown limit',
   'account.create.field.profit-target-desc': 'Set a profit target for account',
@@ -5657,8 +4776,7 @@ const en = {
   'account.edit.field.currency': 'Currency',
   'account.edit.field.currency-desc': "Account's native currency for display",
   'account.edit.field.drawdown-type': 'Drawdown Type',
-  'account.edit.field.drawdown-type-desc':
-    'None | Fixed | EOD Trailing | Manual',
+
   'account.edit.field.drawdown-amount': 'Drawdown Amount',
   'account.edit.field.drawdown-amount-desc':
     'Maximum loss allowed from starting balance',
@@ -5742,15 +4860,13 @@ const en = {
     'You are about to change the creation date for account "{account}" from {oldDate} to {newDate}.',
   'account.edit.modal.change-date.warning':
     'This will update the initial deposit transaction date and may affect account age calculations, monthly billing cycles, and other date-based metrics.',
-  'account.edit.modal.change-date.info':
-    'This will update the initial deposit transaction date to match the new creation date.',
+
   'account.edit.modal.change-date.confirm': 'Update Creation Date',
 
   'account.edit.modal.change-balance.title': 'Change Initial Balance',
   'account.edit.modal.change-balance.message':
     'You are about to change the initial balance from {oldBalance} to {newBalance}.',
-  'account.edit.modal.change-balance.warning':
-    'You are about to change the initial balance of this account.',
+
   'account.edit.modal.change-balance.info':
     'This will affect all balance calculations, P&L percentages, drawdown calculations, and transaction history.',
   'account.edit.modal.change-balance.info2':
@@ -5762,8 +4878,7 @@ const en = {
   'account.edit.modal.delete.title': 'Delete Account',
   'account.edit.modal.delete.question':
     'Are you sure you want to permanently delete the account "{name}"?',
-  'account.edit.modal.delete.warning':
-    'Are you sure you want to permanently delete this account?',
+
   'account.edit.modal.delete.will': 'This action will:',
   'account.edit.modal.delete.item1': 'Remove all account metadata and settings',
   'account.edit.modal.delete.item2':
@@ -5775,8 +4890,7 @@ const en = {
 
   
   'common.note-label': 'Note:',
-  'common.warning-label': 'Warning:',
-  'common.tip-label': 'Tip:',
+
   'common.backups-label': 'Backups:',
   'account.edit.error.name-required': 'Account name is required',
   'account.edit.error.name-exists': 'Account "{name}" already exists',
@@ -5948,6 +5062,7 @@ const en = {
   'home.quick-links.layout-builder': 'Layout Builder',
   'home.quick-links.navigation-sidebar': 'Navigation Sidebar',
   'home.quick-links.session-mode': 'Session Mode',
+  'home.quick-links.economic-calendar': 'Economic Calendar',
   'home.quick-links.move-above': 'Move quick links above widgets',
   'home.quick-links.move-below': 'Move quick links below widgets',
 
@@ -5973,7 +5088,7 @@ const en = {
   'home.period.lifetime': 'All Time',
 
   
-  'home.aria.filter-period': 'Filter Period',
+
   'home.aria.filter-trade-types': 'Filter Trade Types',
   'home.aria.add-widget': 'Add Widget',
   'home.aria.save-layout': 'Save Layout',
@@ -5981,7 +5096,6 @@ const en = {
 
   
   'home.button.add-widget': 'Add Widget',
-  'home.trade-types.all': 'Regular + Backtest',
 
   
   'home.greeting.welcome': 'Welcome to Journalit!',
@@ -6059,7 +5173,7 @@ const en = {
   'home.widget.embedded-note.select-note': 'Select a Note',
   'home.widget.embedded-note.search-placeholder': 'Search notes...',
   'home.widget.embedded-note.no-notes': 'No notes found',
-  'home.widget.embedded-note.select-different': 'Select Different Note',
+
   'home.widget.embedded-note.open-note': 'Click to open note',
   'home.widget.embedded-note.change-note': 'Change note',
   'home.widget.embedded-note.error.not-found': 'File not found: {path}',
@@ -6113,8 +5227,7 @@ const en = {
   'home.widget.best-hours.win-rate-na': 'Win rate unavailable',
   'home.widget.best-hours.days-count': '{count} days',
   'home.widget.best-hours.avg-per-trade': 'avg/trade',
-  'home.widget.best-hours.strongest-entry-window': 'Strongest entry window',
-  'home.widget.best-hours.avg-summary': '{trades} trades · {days} days',
+
   'home.widget.best-hours.hidden': 'Hidden',
   'home.widget.best-hours.hidden-detail': 'Privacy mode',
   'home.widget.best-hours.no-positive-window': 'No positive window',
@@ -6122,7 +5235,6 @@ const en = {
   'home.widget.best-hours.sample-requirement': '{count}/2 sampled windows',
   'home.widget.best-hours.developing': 'developing',
   'home.widget.best-hours.no-positive-detail': 'Sampled windows are negative',
-  'home.widget.best-hours.period-hidden-aria': 'Time-of-day performance hidden',
 
   
   'home.widget.aum.title': 'AUM',
@@ -6187,7 +5299,7 @@ const en = {
   'home.widget.top-breakdown.aria.customize':
     'Click to customise Top {dimension}',
   'home.widget.setups.title': 'Top Setups',
-  'home.widget.setups.no-data': 'No setups recorded yet',
+
   'home.widget.setups.trades-count': '{count} trades',
   'home.widget.setups.win-rate': '{rate}% win rate',
 
@@ -6243,7 +5355,6 @@ const en = {
   'calendar.month.december': 'December',
 
   
-  'trade.loading-navigation': 'Loading navigation...',
 
   
   
@@ -6272,7 +5383,7 @@ const en = {
   'filter.modal.status.breakeven': 'Breakeven',
   'filter.modal.status.open': 'Open',
   'filter.modal.status.closed': 'Closed',
-  'filter.modal.review-status': 'Review Status',
+
   'filter.modal.review-status.reviewed': 'Reviewed',
   'filter.modal.review-status.unreviewed': 'Unreviewed',
   'filter.modal.direction.long-call': 'Long/Call',
@@ -6307,10 +5418,10 @@ const en = {
   'widget.session-mistakes.title': 'Session Mistakes',
   'widget.session-mistakes.subtitle':
     'Log mistakes once for the session instead of repeating them on every trade.',
-  'widget.session-mistakes.field-label': 'Mistakes',
+
   'widget.session-mistakes.placeholder': 'Select or create mistakes',
   'widget.session-mistakes.empty': 'No session mistakes logged',
-  'widget.session-mistakes.count': '{count} selected',
+
   'widget.session-mistakes.invalid-context':
     "Session Mistakes widget requires a DRC note (frontmatter type: 'drc')",
 
@@ -6337,7 +5448,7 @@ const en = {
   'widget.missed-trades.title': 'Missed Trades',
   'widget.missed-trades.add-button': 'Add',
   'widget.missed-trades.add-aria': 'Add missed trade',
-  'widget.missed-trades.missed-badge': 'Missed',
+
   'widget.missed-trades.additional-setups': 'Additional Setups:',
   'widget.missed-trades.no-trades-today': 'None today',
   'widget.missed-trades.no-trades-week': 'No missed trades this week',
@@ -6364,7 +5475,7 @@ const en = {
   'widget.trade-table.status.open': 'OPEN',
   'widget.trade-table.na': 'N/A',
   'widget.trade-table.unknown': 'Unknown',
-  'widget.trade-table.unknown-account': 'Unknown Account',
+
   'widget.trade-table.image-alt': 'Trade {id} preview',
   'widget.trade-table.fullscreen-title': 'Trade {id} Image',
   'widget.trade-table.fullscreen-alt': 'Trade {id} Image {index}',
@@ -6382,8 +5493,6 @@ const en = {
   'widget.pagination.prev': 'Prev',
   'widget.pagination.next': 'Next',
   'widget.pagination.page': 'Page {current} of {total}',
-  'widget.pagination.weeks': 'weeks',
-  'widget.pagination.months': 'months',
 
   
   
@@ -6493,15 +5602,14 @@ const en = {
   'dashboard.selector.hint.navigate': '↑↓ navigate',
   'dashboard.selector.hint.select': '↵ select',
   'dashboard.selector.hint.close': 'esc close',
-  'dashboard.component-selector.title': 'Add Widget',
-  'dashboard.component-selector.added': 'Added',
+
   'dashboard.component-selector.category.performance': 'Performance',
-  'dashboard.component-selector.category.analysis': 'Analysis',
+
   'dashboard.component-selector.category.journal': 'Journal',
 
   
   'widget.pnlChart.name': 'Cumulative P&L',
-  'widget.pnlChart.description': 'Line chart showing cumulative P&L over time',
+
   'widget.longPnLChart.name': 'Long P&L',
   'widget.longPnLChart.description':
     'Cumulative P&L curve for long closed trades only',
@@ -6509,38 +5617,27 @@ const en = {
   'widget.shortPnLChart.description':
     'Cumulative P&L curve for short closed trades only',
   'widget.performanceCalendar.name': 'Performance Calendar',
-  'widget.performanceCalendar.description':
-    'Calendar view showing daily performance',
+
   'widget.dailyPerformance.name': 'Daily Performance',
-  'widget.dailyPerformance.description':
-    'Bar chart showing P&L for each trading day',
+
   'widget.tradesChart.name': 'Trades Chart',
-  'widget.tradesChart.description':
-    'Bar chart showing P&L for each individual trade',
+
   'widget.weekdayPerformance.name': 'Weekday Performance',
-  'widget.weekdayPerformance.description':
-    'Bar chart showing performance for each day of the week',
+
   'widget.hourlyPerformance.name': 'Hourly Performance',
-  'widget.hourlyPerformance.description':
-    'Bar chart showing P&L for each hour of the day',
+
   'widget.tickerPerformance.name': 'Ticker Performance',
   'widget.tickerPerformance.description':
     'Ranked bar chart comparing performance by ticker',
   'widget.tradesChart.limit': '{count} Trades',
   'widget.drawdownChart.name': 'Drawdown Chart',
-  'widget.drawdownChart.description':
-    'Closed-trade drawdown amount from the prior realized P&L high',
+
   'widget.directionalDrawdownChart.name': 'Directional Realized Drawdown',
-  'widget.directionalDrawdownChart.description':
-    'Displays separate long and short closed-trade drawdown amount curves',
+
   'widget.longDrawdownChart.name': 'Long Drawdown',
-  'widget.longDrawdownChart.description':
-    'Displays the closed-trade drawdown amount curve for long trades only',
+
   'widget.shortDrawdownChart.name': 'Short Drawdown',
-  'widget.shortDrawdownChart.description':
-    'Displays the closed-trade drawdown amount curve for short trades only',
-  'widget.drawdownStats.name': 'Realized Drawdown Stats',
-  'widget.drawdownStats.description': 'Realized drawdown and recovery stats',
+
   'widget.drawdownStats.no-conversion':
     'Drawdown stats are unavailable for mixed currencies without FX conversion.',
   'widget.recentTrades.name': 'Recent Trades',
@@ -6555,21 +5652,12 @@ const en = {
     'Try selecting a different date range',
   'widget.recentTrades.unknown': 'Unknown',
   'widget.rollingWinRate.name': 'Rolling Win/Loss Ratio',
-  'widget.rollingWinRate.description':
-    'Shows the ratio of average wins to average losses over a rolling period',
+
   'widget.rollingStats.name': 'Rolling Avg Win/Loss',
-  'widget.rollingStats.description':
-    'Shows average win and loss over a rolling period',
 
   
   
   
-  'forecast.chart-title': '{title} Chart',
-  'forecast.upload-label': 'Upload {title} Chart',
-  'forecast.upload-label-plural': 'Upload {title} Charts',
-  'forecast.alt-text': '{title} Forecast',
-  'forecast.description': '{title} Forecast',
-  'forecast.notes-placeholder': 'Add your {title} notes here...',
 
   
   
@@ -6592,7 +5680,6 @@ const en = {
   
   
   
-  'icon-select.default-title': 'Select an option',
 
   
   
@@ -6700,19 +5787,8 @@ const en = {
   
   
   
-  'datetime.placeholder.time': '1022p or 10:22 AM',
+
   'datetime.aria.open-picker': 'Open date picker',
-  'datetime.error.date-required': 'Date required',
-  'datetime.error.invalid-format': 'Invalid format',
-  'datetime.error.date-6-digits': 'Date must be 6 digits (DDMMYY format)',
-  'datetime.error.invalid-month': 'Invalid month',
-  'datetime.error.invalid-day': 'Invalid day',
-  'datetime.error.invalid-date': 'Invalid date',
-  'datetime.error.invalid-time-format': 'Invalid time format',
-  'datetime.error.time-3-4-digits': 'Time must be 3 or 4 digits',
-  'datetime.error.hours-1-12': 'Hours must be 1-12 with AM/PM',
-  'datetime.error.hours-0-23': 'Hours must be 0-23 in 24-hour format',
-  'datetime.error.minutes-0-59': 'Minutes must be 0-59',
 
   
   
@@ -6734,22 +5810,13 @@ const en = {
   
   
   
-  'monthly.game.header.week': 'Week',
-  'monthly.game.header.a-games': 'A Games',
-  'monthly.game.header.b-games': 'B Games',
-  'monthly.game.header.c-games': 'C Games',
-  'monthly.game.header.rating': 'Rating',
-  'monthly.game.header.notes': 'Notes',
-  'monthly.game.week-label': 'W{week}',
-  'monthly.game.rating-na': 'N/A',
-  'monthly.game.no-data': 'No performance data available for this month',
 
   
   
   
   'release-notes.title': 'Release Notes',
   'release-notes.loading-plugin': 'Loading plugin...',
-  'release-notes.loading': 'Loading release notes...',
+
   'release-notes.no-content': 'No release notes found',
   'release-notes.current-version': 'Current: v{version}',
   'release-notes.version': 'Version {version}',
@@ -6763,7 +5830,7 @@ const en = {
   'skeleton.tradelog.loading': 'Loading trade data',
   'skeleton.dashboard-widget.loading': 'Loading widget data',
   'skeleton.account-page.loading': 'Loading account page',
-  'grid.aria.retry': 'Retry loading grid layout',
+
   'grid.aria.remove-widget': 'Remove widget',
 
   
@@ -6771,17 +5838,10 @@ const en = {
   'csv.broker-guide.tradingtechnologies.description': 'Fills widget CSV export',
   'csv.broker-guide.tradingtechnologies.step-1':
     'Open the Fills widget in TT and switch to Detail, Continuous, or Price with Detail view',
-  'csv.broker-guide.tradingtechnologies.step-2':
-    'Right-click inside the Fills widget, select “Request download”, and choose the time range',
-  'csv.broker-guide.tradingtechnologies.step-3':
-    'When TT shows the download-ready notification, download the CSV and import it here',
+
   'csv.broker-guide.tradingtechnologies.warning.emphasis': 'Important:',
-  'csv.broker-guide.tradingtechnologies.warning.message':
-    'Do not edit the exported file or column order before importing.',
-  'csv.broker-guide.tradingtechnologies.doc-label':
-    'View Trading Technologies export instructions',
+
   'trade.metadata.broker-comment': 'Broker Comment',
-  'trade.metadata.additional-fields': 'Additional fields',
 
   
   
@@ -6809,6 +5869,7 @@ const en = {
   'navigation.items.nav-quick-import': 'Quick Import',
   'navigation.items.nav-csv-import': 'Trade Import',
   'navigation.items.nav-session-mode': 'Session Mode',
+  'navigation.items.nav-economic-calendar': 'Economic Calendar',
   'navigation.items.nav-position-size': 'Position Size Calculator',
   'settings.general.navigation-sidebar': 'Navigation Sidebar',
   'notice.error.open-navigation-sidebar':
@@ -6817,9 +5878,13 @@ const en = {
   'navigation.setting.open.desc':
     "Reveal it now and expand Obsidian's sidebar if it is collapsed.",
   'navigation.setting.open.button': 'Open Sidebar',
+  'calendar.setting.open': 'Open calendar',
+  'calendar.setting.open.button': 'Open Calendar',
+  'notice.error.open-calendar-sidebar':
+    'Failed to open the calendar. Please try again.',
   'navigation.setting.tab-behavior': 'Navigation tab behavior',
   'navigation.setting.tab-behavior.desc':
-    'How to open views when clicked in the navigation sidebar',
+    'How to open views and reviews from Journalit sidebars',
   'navigation.setting.tab-behavior.new-tab': 'Open in new tab',
   'navigation.setting.tab-behavior.replace': 'Replace active tab',
   'navigation.search.placeholder': 'Search trades & reviews...',
@@ -6828,13 +5893,10 @@ const en = {
   'navigation.search.section.reviews': 'Reviews',
   'navigation.search.empty': 'No results found',
   'navigation.search.trade-open': 'Open',
-  'navigation.search.review.drc': 'Daily Review',
-  'navigation.search.review.weekly': 'Weekly Review',
-  'navigation.search.review.monthly': 'Monthly Review',
-  'navigation.search.review.quarterly': 'Quarterly Review',
-  'navigation.search.review.yearly': 'Yearly Review',
+
   'command.open-navigation-sidebar': 'Open navigation sidebar',
   'command.open-calendar-sidebar': 'Open calendar sidebar',
+  'command.open-economic-calendar': 'Open economic calendar',
   'widget.previous-trading-day-context.name': 'Previous Trading Day Context',
   'widget.previous-trading-day-context.description':
     'Read-only context pulled from headings in the previous DRC',
@@ -6854,8 +5916,7 @@ const en = {
   'widget.weekly-drc-context.name': 'Daily Reviews by Weekday',
   'widget.weekly-drc-context.description':
     'Show selected DRC sections for each day in the weekly review',
-  'widget.weekly-drc-context.header-eyebrow': 'Weekly review',
-  'widget.weekly-drc-context.header-title': 'Daily Reviews by Weekday',
+
   'widget.weekly-drc-context.image-alt-prefix': 'Weekly DRC image',
   'widget.weekly-drc-context.no-activity': 'No activity for this day.',
   'widget.weekly-drc-context.no-sections-configured':
@@ -6868,12 +5929,10 @@ const en = {
   'widget.weekly-drc-context.invalid-context':
     'This widget is only available in Weekly Review notes',
   'templateEditor.widget.weekly-drc-day-label': 'Day',
-  'templateEditor.widget.weekly-drc-display-label': 'Display',
+
   'templateEditor.widget.weekly-drc-start-collapsed': 'Start collapsed',
   'templateEditor.widget.weekly-drc-day-all': 'All days',
-  'templateEditor.widget.weekly-drc-style-card': 'Card',
-  'templateEditor.widget.weekly-drc-style-accordion': 'Accordion',
-  'templateEditor.widget.weekly-drc-default-expanded': 'Expanded by default',
+
   'templateEditor.widget.previous-context-sections-label':
     'Sections to include',
   'templateEditor.widget.previous-context-heading-label':
@@ -6895,10 +5954,7 @@ const en = {
     '{count} fields selected',
   'templateEditor.widget.review-context-fields.no-fields':
     'Create review fields in Settings first.',
-  'templateEditor.widget.review-context-fields.show-inherited':
-    'Show inherited context',
-  'templateEditor.widget.review-context-fields.show-local':
-    'Show current review values',
+
   'templateEditor.widget.review-context-fields.context': 'Context',
   'templateEditor.widget.review-context-fields.context.both': 'Both',
   'templateEditor.widget.review-context-fields.inherited': 'Inherited',
@@ -6941,10 +5997,7 @@ const en = {
   'templateEditor.widget.trade-review.condition-option-label':
     'When Q{questionNumber} = {option}',
   'templateEditor.widget.previous-context-add-section': '+ Add section',
-  'templateEditor.widget.previous-context-headings-label':
-    'Headings to include',
-  'templateEditor.widget.previous-context-headings-placeholder':
-    'Heading names separated by comma or |',
+
   'templateEditor.widget.previous-context-fallback-label':
     'Previous DRC fallback',
   'templateEditor.widget.previous-context-fallback-nearest':
@@ -6953,7 +6006,7 @@ const en = {
     'Expected previous trading day only',
   'calendar.aria.open-daily-review': 'Open daily review for {date}',
   'calendar.aria.open-weekly-review': 'Open weekly review for {date}',
-  'trade.header.aria.status': 'Trade status: {status}',
+
   'csv.mapper.aria.map-column': 'Map column {header}',
   'command.quick-import-trades': 'Quick import trades',
   'trade-import.error.file-too-large':
@@ -6967,8 +6020,10 @@ const en = {
   'quick-import.subtitle':
     'Use your favorite Trade Import setup to preview and import a file faster.',
   'quick-import.gate.sign-in':
-    'Sign in to use Quick Import with your saved setup.',
+    'Sign in or create a free Journalit account to preview files in Trade Import. Pro is only required when you import the trades.',
+  'quick-import.gate.sign-in-cta': 'Sign in to preview free',
   'quick-import.gate.pro': 'Quick Import is included with Trade Import Pro.',
+  'quick-import.gate.preview-free': 'Preview your file free',
   'quick-import.message.needs-setup':
     'Choose a favorite broker or template in Trade Import before using Quick Import.',
   'quick-import.message.capabilities-failed':
@@ -6979,15 +6034,12 @@ const en = {
     'This file needs review in the full Trade Import flow.',
   'quick-import.message.no-importable':
     'No importable trades were found. Review this file in Trade Import for details.',
-  'quick-import.notice.consent-required':
-    'Acknowledge processing before uploading.',
-  'quick-import.consent':
-    'I understand this file will be uploaded to Journalit servers for processing.',
+
   'quick-import.privacy-note':
     'Files are uploaded to Journalit servers for processing and are not stored by default.',
   'quick-import.dropzone.title': 'Drop a broker export here',
   'quick-import.dropzone.subtitle': 'Or click to choose a file',
-  'quick-import.status.loading': 'Loading quick setup...',
+
   'quick-import.status.checking-subscription':
     'Checking subscription status...',
   'quick-import.status.analysing': 'Analysing and preparing preview...',
@@ -6998,7 +6050,6 @@ const en = {
   'quick-import.file.processed': 'Processed and ready to write to your vault',
   'quick-import.summary.title': 'Ready to import',
 
-  'quick-import.summary.trades': 'Preview trades',
   'quick-import.summary.to-import': 'To import',
   'quick-import.summary.duplicates': 'Duplicates',
   'quick-import.summary.failed': 'Needs review',
@@ -7012,30 +6063,39 @@ const en = {
   'quick-import.action.setup-in-trade-import': 'Set up in Trade Import',
   'quick-import.action.replace-file': 'Replace file',
   'quick-import.action.import': 'Import trades',
-  'quick-import.action.import-count': 'Import {count} trades',
+  'quick-import.action.import-count.one': 'Import {count} trade',
+  'quick-import.action.import-count.few': 'Import {count} trades',
+  'quick-import.action.import-count.many': 'Import {count} trades',
+  'quick-import.action.import-count.other': 'Import {count} trades',
   'quick-import.preview.more': '+ {count} more processed trades',
 
   'trade-import.notice.capabilities-failed':
     'Unable to load Trade Import capabilities',
+  'trade-import.notice.open-failed': 'Unable to open Trade Import',
   'trade-import.notice.template-exists':
     'A Trade Import template with this name already exists',
   'trade-import.notice.template-saved': 'Trade Import template saved',
   'trade-import.notice.analyse-failed': 'Trade Import analyse failed',
   'trade-import.notice.preview-failed': 'Trade Import preview failed',
+  'trade-import.notice.free-preview-rate-limited':
+    'Free preview limit reached. Start PRO or try again in about {minutes} minutes.',
+  'trade-import.notice.free-preview-storage-limit-reached':
+    'Free preview storage can hold up to {limit} trades. You have {storedItems} stored, and this file would add {requestedItems}. Wait for an earlier preview to expire or start PRO.',
   'trade-import.preview-error.guidance':
     'Check that every required field is mapped, the selected date format matches your file, and numeric columns contain valid trade values.',
   'trade-import.notice.complete':
     'Trade Import complete: {written} written or updated, {duplicateCount} duplicates, {failedCount} failed',
   'trade-import.gate.brand-left': 'Trade',
   'trade-import.gate.brand-right': 'Import',
+  'trade-import.gate.sign-in.title': 'Preview your trading history free',
   'trade-import.gate.sign-in':
-    'Stop typing every fill by hand. Sign in to preview broker exports and turn hours of manual entry into one import.',
-  'trade-import.gate.upgrade':
-    'Stop typing every fill by hand. Pro imports broker exports so you can spend your time reviewing trades instead of entering them.',
-  'trade-import.action.open-settings': 'Open settings',
-  'trade-import.action.manage-subscription': 'Manage subscription',
-  'trade-import.description':
-    'Upload CSV, XLSX, XLS, HTML, or broker statements for backend-powered analysis and preview.',
+    'Sign in or create a free Journalit account to analyse your file. Pro is only required when you import the trades.',
+  'trade-import.gate.sign-in.reassurance':
+    'Your file is processed privately and is not stored by default.',
+  'trade-import.gate.sign-in.no-trial':
+    'No Pro trial is required to analyse and preview.',
+  'trade-import.gate.sign-in.cta': 'Sign in to preview free',
+
   'trade-import.step.select': 'Upload',
   'trade-import.step.privacy': 'Privacy note',
   'trade-import.step.analyse': 'Review',
@@ -7057,8 +6117,7 @@ const en = {
   'trade-import.label.ai-mapping': 'Request AI mapping suggestions',
   'trade-import.privacy.copy':
     'Trade Import uploads the selected broker export to Journalit servers for processing. Broker exports may contain account identifiers, trade history, symbols, timestamps, prices, quantities, fees, balances, and P&L. For preview generation, Journalit also sends your selected account name, mapping/template choices, custom field definitions and saved options, and limited local open-trade context for IBKR open-position matching. Raw files are processed for this import and are not stored by default.',
-  'trade-import.privacy.acknowledge':
-    'I understand and want to upload this export for processing.',
+
   'trade-import.action.analyse': 'Analyse file',
   'trade-import.action.choose-file': 'Click to upload or drag and drop',
   'trade-import.guide.prompt': 'Not sure what to export?',
@@ -7071,13 +6130,21 @@ const en = {
   'trade-import.label.header-row': 'Header row',
   'trade-import.placeholder.auto': 'Auto',
   'trade-import.label.date-format': 'Date format',
-  'trade-import.mapping.unmapped': 'Unmapped',
+
   'trade-import.label.save-template': 'Save mapping template',
   'trade-import.placeholder.template-name': 'Template name',
   'trade-import.action.save-template': 'Save template',
   'trade-import.action.preview': 'Generate preview',
-  'trade-import.preview.summary':
-    '{previewCount} preview trades, {failedCount} failed rows, {incompleteCount} incomplete rows.',
+
+  'trade-import.preview.found.one': 'We found {count} trade',
+  'trade-import.preview.found.few': 'We found {count} trades',
+  'trade-import.preview.found.many': 'We found {count} trades',
+  'trade-import.preview.found.other': 'We found {count} trades',
+  'trade-import.preview.date-range': '{start}–{end}',
+  'trade-import.preview.metric.symbols': 'Symbols',
+  'trade-import.preview.metric.ready': 'Ready to import',
+  'trade-import.preview.metric.duplicates': 'Possible duplicates',
+  'trade-import.preview.metric.attention': 'Need attention',
   'trade-import.preview.completed.message': 'Trades ready to import: {count}.',
   'trade-import.preview.partial.message':
     'Trades ready: {count}. Rows not imported: {failed}. Incomplete rows skipped: {incomplete}.',
@@ -7090,6 +6157,19 @@ const en = {
     'Review the column mappings, date format, selected sheet and header row, and any invalid values below.',
   'trade-import.preview.no-eligible':
     'The file parsed successfully, but no new or updated trades are eligible to import. Review duplicate and classification details below.',
+  'trade-import.preview.upgrade.title': 'Your preview is ready',
+  'trade-import.preview.upgrade.description.one':
+    '{count} trade can be added to your vault when you activate PRO.',
+  'trade-import.preview.upgrade.description.few':
+    '{count} trades can be added to your vault when you activate PRO.',
+  'trade-import.preview.upgrade.description.many':
+    '{count} trades can be added to your vault when you activate PRO.',
+  'trade-import.preview.upgrade.description.other':
+    '{count} trades can be added to your vault when you activate PRO.',
+  'trade-import.preview.upgrade.free-limit':
+    'Free preview access includes {count} analyses and {count} previews per hour.',
+  'trade-import.preview.upgrade.free-storage-limit':
+    'Free previews can store up to {count} trades at a time.',
   'trade-import.preview.diagnostics': 'Review details ({count})',
   'trade-import.preview.affected-rows': 'Affected rows: {count}',
 
@@ -7103,16 +6183,17 @@ const en = {
   'trade-import.table.result': 'Result',
   'trade-import.table.message': 'Message',
   'trade-import.action.confirm': 'Confirm import',
+  'trade-import.action.activate-pro.one':
+    'Activate PRO to import {count} trade',
+  'trade-import.action.activate-pro.few':
+    'Activate PRO to import {count} trades',
+  'trade-import.action.activate-pro.many':
+    'Activate PRO to import {count} trades',
+  'trade-import.action.activate-pro.other':
+    'Activate PRO to import {count} trades',
   'trade-import.action.cancel-preview': 'Cancel preview',
   'trade-import.broker.manual': 'Manual Mapping',
-  'trade-import.preview.message.duplicate-in-file':
-    'Duplicate in selected import file',
-  'trade-import.preview.message.multiple-open-matches':
-    'Multiple matching open trades found for close-only preview',
-  'trade-import.preview.message.quantity-mismatch':
-    'Matching open trade quantity differs from close-only preview',
-  'trade-import.preview.message.no-open-match':
-    'No matching open trade found for close-only preview',
+
   'home.quick-links.quick-import': 'Quick Import',
 
   
@@ -7122,7 +6203,7 @@ const en = {
   'setups.view.error.title': 'Could not load setups',
   'setups.view.error.load-failed': 'Failed to load setup data.',
   'setups.view.action.retry': 'Retry',
-  'setups.view.action.refresh': 'Refresh',
+
   'setups.view.action.create': 'Create setup',
   'setups.view.action.new': 'New setup',
   'setups.create.title': 'Create Setup',
@@ -7186,11 +6267,9 @@ const en = {
   'setups.view.tab.overview': 'Overview',
   'setups.view.tab.compare': 'Compare',
   'setups.view.card.select-for-compare': 'Select setup for comparison',
-  'setups.view.card.open': 'Open setup',
+
   'setups.view.compare.title': 'Compare setups',
-  'setups.view.compare.subtitle':
-    'Compare performance and behavior across selected setups.',
-  'setups.view.compare.select-title': 'Choose setups to compare',
+
   'setups.view.compare.empty': 'Select two setups to compare.',
   'setups.view.compare.empty-submessage':
     'Choose two setup cards from the overview to build a side-by-side report.',
@@ -7198,7 +6277,7 @@ const en = {
   'setups.view.compare.metric': 'Metric',
   'setups.view.compare.edge-column': 'Edge',
   'setups.view.compare.edge-label': 'Winner',
-  'setups.view.compare.edge-hidden': 'Hidden in Privacy Mode',
+
   'setups.view.compare.no-clear-edge': 'No clear edge',
   'setups.view.compare.expectancy-edge': 'Expectancy edge',
   'setups.view.compare.confidence': 'Confidence',
@@ -7226,39 +6305,15 @@ const en = {
   'setups.view.compare.reason.higher.profit-factor': 'Higher Profit Factor',
   'setups.view.compare.reason.lower.profit-factor': 'Lower Profit Factor',
   'setups.view.compare.reason.similar.profit-factor': 'Similar Profit Factor',
-  'setups.view.compare.pnl-bars': 'PnL ranking',
+
   'setups.view.compare.cumulative-title': 'Cumulative performance',
   'setups.view.compare.cumulative-privacy':
     'Cumulative performance is hidden while Privacy Mode is on.',
   'setups.view.compare.cumulative-empty':
     'No cumulative trade data for the selected setups.',
-  'setups.view.advanced.title': 'Advanced analytics',
-  'setups.view.advanced.subtitle': 'Setup combinations and playbook edge.',
-  'setups.view.advanced.broken-trades': 'Broken trades',
-  'setups.view.advanced.no-rule-data': 'No rule data yet.',
-  'setups.view.advanced.rule-break-count': '{count} breaks',
-  'setups.view.advanced.rule-edge-title': 'Rule edge',
-  'setups.view.advanced.no-rule-edge': 'No rule edge data yet.',
-  'setups.view.advanced.needs-attention': 'Needs attention',
-  'setups.view.advanced.no-insights': 'No insights yet.',
-  'setups.view.advanced.severity.info': 'Info',
-  'setups.view.advanced.severity.warning': 'Warning',
-  'setups.view.advanced.severity.critical': 'Critical',
-  'setups.view.advanced.combinations-title': 'Setup combinations',
-  'setups.view.advanced.combinations-subtitle':
-    'Find setup pairs that work well together.',
-  'setups.view.advanced.top-combinations': 'Top combinations',
-  'setups.view.advanced.best-pairs': 'Best pairs',
-  'setups.view.advanced.no-combinations': 'No setup combinations yet.',
-  'setups.view.advanced.performance-privacy':
-    'Performance details are hidden while Privacy Mode is on.',
-  'setups.view.advanced.insight.no-trades':
-    'No trades are linked to this setup yet.',
+
   'setups.view.trade.unknown-instrument': 'Unknown instrument',
-  'setups.view.eyebrow': 'Setups',
-  'setups.guide.empty.intro.title': 'Create your first setup',
-  'setups.guide.empty.intro.description':
-    'Setups connect your playbook notes, rules, screenshots, and linked trades so you can review one trading idea in context.',
+
   'setups.guide.create-new-setup.title': 'Create new setups',
   'setups.guide.create-new-setup.description':
     'Use New setup when you want to add another playbook. The modal walks you through its details, tags, linked notes, and rules.',
@@ -7271,9 +6326,7 @@ const en = {
   'setups.guide.empty.create-setup.title': 'Start with New setup',
   'setups.guide.empty.create-setup.description':
     'Create one setup first. After it exists, this guide will continue with the normal setup walkthrough.',
-  'setups.guide.empty.finish.title': 'Finish creating the setup',
-  'setups.guide.empty.finish.description':
-    'Fill in the setup details and save it. The Setups guide will resume once the setup is available.',
+
   'setups.guide.intro.title': 'Welcome to Setups',
   'setups.guide.intro.description':
     'This view brings your setup playbooks, linked trades, notes, screenshots, and rules into one place.',
@@ -7307,18 +6360,14 @@ const en = {
   'setups.guide.finish.title': 'Setups guide complete',
   'setups.guide.finish.description':
     'You have seen the main Setups surfaces: Overview, Pairs, Compare, and the individual setup page.',
-  'setups.guide.compare.intro.title': 'Compare setup performance',
-  'setups.guide.compare.intro.description':
-    'You now have enough setups to review pairs and compare two playbooks side by side.',
+
   'setups.guide.pairs-mode.title': 'Open setup pairs',
   'setups.guide.pairs-mode.description':
     'Open Pairs to see which setup combinations have enough shared trades to compare.',
   'setups.guide.pairs-chart.title': 'Pair ranking',
   'setups.guide.pairs-chart.description':
     'Pairs mode highlights combinations that may perform better or worse together. Click a bar to open deeper pair insights for that combination.',
-  'setups.guide.return-overview.title': 'Return to Overview',
-  'setups.guide.return-overview.description':
-    'Go back to Overview before choosing setups to compare.',
+
   'setups.guide.compare-mode.title': 'Start compare mode',
   'setups.guide.compare-mode.description':
     'Compare mode lets you select two setup cards for a side-by-side review.',
@@ -7340,38 +6389,19 @@ const en = {
   'setups.guide.back-to-overview.title': 'Back to setup cards',
   'setups.guide.back-to-overview.description':
     'Return to the setup cards when you are finished comparing.',
-  'setups.guide.compare.finish.title': 'Setups comparison guide complete',
-  'setups.guide.compare.finish.description':
-    'You have seen the Pairs and Compare surfaces for reviewing multiple setups together.',
+
   'setups.view.title': 'Setups',
   'setups.view.open-as-markdown': 'Open as Markdown',
   'setups.view.open-as-setup': 'Open as Journalit Setup',
-  'setups.view.subtitle':
-    'Track playbooks, execution quality, and setup performance.',
+
   'setups.view.summary.aria': 'Setup overview summary',
-  'setups.view.summary.total': 'Total setups',
-  'setups.view.summary.active': 'Active',
-  'setups.view.summary.most-traded': 'Most traded',
+
   'setups.view.summary.needs-review': 'Needs review',
   'setups.view.summary.best-performer': 'Best performer',
-  'setups.view.summary.tested': 'Tested',
-  'setups.view.summary.ready': 'Ready',
-  'setups.view.summary.missing-playbooks': 'Missing playbooks',
-  'setups.view.summary.no-trade-data': 'No trade data',
-  'setups.view.summary.awaiting-trades': 'Awaiting trades',
-  'setups.view.summary.of-total': 'of total',
-  'setups.view.summary.require-attention': 'require attention',
-  'setups.view.summary.needs-mapping': 'Need mapping',
-  'setups.view.summary.all-mapped': 'All mapped',
-  'setups.view.summary.previous-unavailable': 'Previous data unavailable',
-  'setups.view.ranking.title': 'Setup performance ranking',
-  'setups.view.ranking.subtitle':
-    'Rank setups by the selected performance metric.',
+
   'setups.view.ranking.metric-aria': 'Performance metric',
-  'setups.view.overview.mode.aria': 'Overview chart mode',
-  'setups.view.overview.mode.setups': 'Setups',
+
   'setups.view.overview.mode.pairs': 'Pairs',
-  'setups.view.pairs.title': 'Setup pairs',
   'setups.view.pairs.summary-aria': 'Setup pairs summary',
   'setups.view.pairs.best': 'Best pair',
   'setups.view.pairs.worst': 'Worst pair',
@@ -7381,18 +6411,15 @@ const en = {
     'Pairs appear after two setups share enough linked trades.',
   'setups.view.pairs.privacy':
     'Pair performance is hidden while Privacy Mode is on.',
-  'setups.view.pairs.edge-tooltip':
-    'Edge compares the pair expectancy against the stronger solo setup baseline.',
+
   'setups.view.pairs.metric-aria': 'Pair metric',
   'setups.view.pairs.metric.edge': 'Pair edge',
   'setups.view.pairs.metric.edge-short': 'edge',
   'setups.view.pairs.metric.expectancy': 'Pair expectancy',
-  'setups.view.pairs.metric.expectancy-short': 'expectancy',
+
   'setups.view.pairs.together': 'Together',
   'setups.view.pairs.table.setup-pair': 'Setup pair',
-  'setups.view.pairs.equity-curve': 'Equity curve',
-  'setups.view.pairs.equity-caption':
-    'Cumulative pair performance over time. Green = positive contribution, red = drawdown.',
+
   'setups.view.pairs.evidence': 'Evidence',
   'setups.view.pairs.edge-comparison': 'Edge comparison',
   'setups.view.pairs.edge-caption': 'Combined edge: {edge}',
@@ -7407,13 +6434,12 @@ const en = {
   'setups.view.overview.tag-filter.empty': 'No setups match these filters',
   'setups.view.overview.tag-filter.empty-submessage':
     'Adjust or clear the filters to show more setups.',
-  'setups.view.overview.pnl-chart.title': 'Setup P&L Curve',
+
   'setups.view.overview.pnl-chart.dropdown-label': 'P&L curve',
-  'setups.view.overview.pnl-chart.subtitle':
-    'Cumulative P&L from setup-linked trades, split by setup and combined.',
+
   'setups.view.overview.pnl-chart.combined': 'All setups',
   'setups.view.overview.pnl-chart.selected-combined': 'Selected setups',
-  'setups.view.overview.pnl-chart.unassigned': 'Unassigned account',
+
   'setups.view.overview.pnl-chart.hidden':
     'Setup P&L over time is hidden while privacy mode is enabled.',
   'setups.view.overview.pnl-chart.trade': 'Trade',
@@ -7423,20 +6449,7 @@ const en = {
   'setups.view.ranking.empty': 'No setup performance data yet.',
   'setups.view.ranking.empty-submessage':
     'Log trades with setups to start ranking performance.',
-  'setups.view.attention.title': 'Needs attention',
-  'setups.view.attention.empty': 'No setup issues found.',
-  'setups.view.attention.incomplete-playbooks': 'Incomplete playbooks',
-  'setups.view.attention.incomplete-playbooks-desc':
-    'Some setups need a written playbook.',
-  'setups.view.attention.missing-rules': 'Missing rules',
-  'setups.view.attention.missing-rules-desc':
-    'Some setups do not have checklist rules.',
-  'setups.view.attention.low-sample-size': 'Low sample size',
-  'setups.view.attention.low-sample-size-desc':
-    'More trades are needed before judging performance.',
-  'setups.view.attention.missing-linked-notes': 'Missing linked notes',
-  'setups.view.attention.missing-linked-notes-desc':
-    'Add examples, screenshots, or references to strengthen the playbook.',
+
   'setups.view.metric.trade-count': 'Trade count',
   'setups.view.metric.trades': 'trades',
   'setups.view.metric.net-pnl': 'Total P&L',
@@ -7445,46 +6458,37 @@ const en = {
   'setups.view.metric.profit-factor': 'Profit factor',
   'setups.view.metric.last-traded': 'Last traded',
   'setups.view.metric.expected-value': 'Expected value',
-  'setups.view.controls.aria': 'Setup filters',
-  'setups.view.search.placeholder': 'Search setups…',
-  'setups.view.search.aria': 'Search setups',
-  'setups.view.status.aria': 'Filter by setup status',
-  'setups.view.status.all': 'All statuses',
+
   'setups.view.status.active': 'Active',
   'setups.view.status.testing': 'Testing',
   'setups.view.status.archived': 'Archived',
-  'setups.view.cards.aria': 'Setup cards',
+
   'setups.view.empty.no-setups':
     'No setups yet. Create your first setup to start tracking playbooks.',
   'setups.view.empty.no-setups-submessage':
     'Setups collect your playbook notes, rules, trades, and performance in one place.',
-  'setups.view.badge.complete': 'Complete',
-  'setups.view.meta.no-model-category': 'No model/category',
+
   'setups.view.detail.back': 'Back',
-  'setups.view.detail.no-description': 'No description yet.',
+
   'setups.view.detail.action.edit': 'Edit setup',
   'setups.view.detail.action.view-trades': 'View in Trade Log',
-  'setups.view.detail.action.archive': 'Archive setup',
-  'setups.view.detail.action.compare': 'Compare setup',
-  'setups.view.detail.metrics-aria': 'Setup metrics',
+
   'setups.view.detail.playbook': 'Playbook',
-  'setups.view.detail.no-playbook': 'No playbook written yet.',
+
   'setups.view.detail.no-playbook-note':
     'Link a playbook note to preview it here.',
   'setups.view.detail.link-playbook-note': 'Link note',
   'setups.view.detail.change-playbook-note': 'Change note',
-  'setups.view.detail.playbook-note-modal.search': 'Search notes...',
+
   'setups.view.detail.playbook-note-modal.empty': 'No matching notes found.',
   'setups.view.detail.empty-playbook-note':
     'The linked playbook note is empty.',
   'setups.view.detail.rules': 'Rules',
-  'setups.view.detail.no-rules':
-    'Start with guided playbook sections, then customize the criteria to match how you trade this setup.',
+
   'setups.view.detail.rules.edit': 'Edit rules',
-  'setups.view.detail.rules.add-first': 'Add playbook rules',
+
   'setups.view.detail.rules.add': 'Add rule',
-  'setups.view.detail.rules.editor-subtitle':
-    'Create and edit the rules that define this setup.',
+
   'setups.view.detail.rules.empty-title': 'Build the setup playbook',
   'setups.view.detail.rules.use-template': 'Use template',
   'setups.view.detail.rules.applying-template': 'Applying template...',
@@ -7524,8 +6528,7 @@ const en = {
   'setups.view.detail.rules.validation-group':
     'Add a group name or remove the blank group before saving.',
   'setups.view.detail.rules.summary': '{count} rules · {groups} groups',
-  'setups.view.detail.rules.group-summary': '{count} · {required} required',
-  'setups.view.detail.rules.more': '+{count} more',
+
   'setups.view.detail.rule.category.context': 'Context',
   'setups.view.detail.rule.category.entry': 'Entry',
   'setups.view.detail.rule.category.exit': 'Exit',
@@ -7534,32 +6537,27 @@ const en = {
   'setups.view.detail.rule.category.invalidation': 'Invalidation',
   'setups.view.detail.rule.category.psychology': 'Psychology',
   'setups.view.detail.rule.required': 'Required',
-  'setups.view.detail.rule.optional': 'Optional',
-  'setups.view.detail.linked-notes': 'Linked notes',
+
   'setups.view.detail.no-linked-notes': 'No linked notes yet.',
-  'setups.view.detail.performance.aria': 'Setup performance',
-  'setups.view.detail.performance.title': 'Performance',
+
   'setups.view.detail.performance.cumulative-pnl': 'Cumulative PnL',
   'setups.view.detail.performance.cumulative-r': 'Cumulative R',
   'setups.view.detail.performance.drawdown': 'Drawdown',
   'setups.view.detail.performance.empty': 'No linked trades yet.',
   'setups.view.detail.performance.empty-submessage':
     'Trades using this setup will appear here once you start logging them.',
-  'setups.view.detail.performance.tooltip-title': 'Trade performance',
+
   'setups.view.detail.analysis.performance': 'Performance',
   'setups.view.detail.analysis.execution-gap': 'Execution Gap',
   'setups.view.detail.analysis.tabs-aria': 'Setup performance tabs',
   'setups.view.detail.brief.linked-notes-add': 'Edit linked notes',
-  'setups.view.detail.execution-gap.title': 'Execution Gap',
-  'setups.view.detail.execution-gap.subtitle':
-    'Captured edge vs missed opportunity',
+
   'setups.view.detail.execution-gap.live-pnl': 'Live PnL',
   'setups.view.detail.execution-gap.live-r': 'Live R',
   'setups.view.detail.execution-gap.missed-edge': 'Missed Edge',
   'setups.view.detail.execution-gap.live-plus-missed': 'Live + Missed',
   'setups.view.detail.execution-gap.backtest': 'Backtest',
-  'setups.view.detail.execution-gap.gap': 'Gap',
-  'setups.view.detail.execution-gap.opportunities': 'Opportunities',
+
   'setups.view.detail.execution-gap.capture-rate': 'Capture Rate',
   'setups.view.detail.execution-gap.capture-rate-tooltip':
     'Live P&L ÷ (Live P&L + missed-trade P&L). Shows how much available edge you captured.',
@@ -7570,20 +6568,7 @@ const en = {
     'Execution gap is hidden in privacy mode.',
   'setups.view.detail.execution-gap.empty':
     'Log missed trades or backtest trades for this setup to analyze execution gaps.',
-  'setups.view.detail.scaffold.performance': 'Performance',
-  'setups.view.detail.scaffold.performance-title': 'Performance snapshot',
-  'setups.view.detail.scaffold.performance-description':
-    'Review PnL, R-multiple, drawdown, and recent trade behavior.',
-  'setups.view.detail.scaffold.evidence': 'Evidence',
-  'setups.view.detail.scaffold.evidence-title': 'Evidence board',
-  'setups.view.detail.scaffold.evidence-description':
-    'Screenshots and linked examples for this setup.',
-  'setups.view.detail.scaffold.playbook-title': 'Playbook notes',
-  'setups.view.detail.scaffold.playbook-description':
-    'Document execution context, triggers, management, and invalidation.',
-  'setups.view.detail.scaffold.rules': 'Rules',
-  'setups.view.detail.scaffold.rules-description':
-    'Checklist-style rules that define the setup.',
+
   'setups.view.detail.brief.health': 'Setup health',
   'setups.view.detail.brief.profile': 'Profile',
   'setups.view.detail.brief.linked-notes': 'Linked notes ({count})',
@@ -7607,7 +6592,7 @@ const en = {
   'setups.view.detail.brief.count.images': '{count} images',
   'setups.view.detail.brief.count.trades': '{count} trades',
   'setups.view.detail.brief.more': '+{count} more',
-  'setups.view.detail.brief.less': 'Show less',
+
   'setups.view.detail.brief.profile.direction': 'Direction',
   'setups.view.detail.brief.profile.sessions': 'Sessions',
   'setups.view.detail.brief.profile.timeframes': 'Timeframes',
@@ -7626,13 +6611,7 @@ const en = {
   'setups.view.detail.attention.no-rules-title': 'Build the execution playbook',
   'setups.view.detail.attention.no-rules-detail':
     'Add criteria for entries, invalidation, risk, and mistakes.',
-  'setups.view.detail.attention.no-invalidation-title':
-    'Add invalidation criteria',
-  'setups.view.detail.attention.no-invalidation-detail':
-    'Define when this setup is no longer valid.',
-  'setups.view.detail.attention.no-risk-title': 'Add risk or management rules',
-  'setups.view.detail.attention.no-risk-detail':
-    'Document how this setup should be managed after entry.',
+
   'setups.view.detail.attention.no-trades-title': 'No live trades yet',
   'setups.view.detail.attention.no-trades-detail':
     'No linked live trade history yet.',
@@ -7655,7 +6634,7 @@ const en = {
   'setups.view.completeness.no-linked-notes': 'No linked notes',
   'setups.view.date.never': 'Never',
   'setups.view.metric.expectancy-r': 'Expectancy (R)',
-  'setups.view.metric.last-reviewed': 'Last reviewed',
+
   'setups.view.card.open-named': 'Open {name}',
   'setups.view.card.sparkline-aria': 'Setup sparkline',
   'setups.view.card.status.active': 'Stable',
@@ -7667,25 +6646,12 @@ const en = {
   'setups.view.date.days-ago': '{count} days ago',
   'settings.general.copy-trading-pnl-toggled': 'Copy trading PnL is {status}',
 
-  'trade-import.restore.title': 'Restore imported trades from backend',
-  'trade-import.restore.description':
-    'Create missing local notes for backend imported trades in this vault. This does not create duplicate backend trades.',
-  'trade-import.restore.vault': 'Current vault identity: {vaultId}',
-  'trade-import.restore.load': 'Restore imported trades from backend',
-  'trade-import.restore.none':
-    'No missing imported trade projections found for this vault.',
-  'trade-import.restore.loaded': 'Found {count} restorable imported trades.',
-  'trade-import.restore.load-failed':
-    'Could not load restorable imported trades.',
-  'trade-import.restore.select-all': 'Select all',
-  'trade-import.restore.restore-selected': 'Restore selected ({count})',
   'trade-import.restore.complete':
     'Restored {written} imported trades; {failed} failed.',
   'trade-import.restore.broker-label': 'Backend restore',
   'trade-sync.source.metatrader': 'MetaTrader',
   'trade-sync.providers.title': 'Trade Sync',
-  'trade-sync.providers.description':
-    'Configure each available provider independently so they can run together.',
+
   'trade-sync.source.trade-import': 'Trade Import',
   'trade-sync.source.tradovate': 'Tradovate',
   'trade-sync.source.metatrader.description':
@@ -7699,46 +6665,100 @@ const en = {
   'trade-sync.tradovate.last-projection': 'Last projection',
   'trade-sync.tradovate.pending-projections': '{count} pending projection(s)',
   'trade-sync.tradovate.pending-acks': '{count} pending local ACK(s)',
+  'trade-sync.source.rithmic': 'Rithmic',
+  'trade-sync.source.rithmic.description':
+    'Synchronize Rithmic trades in the cloud and project them into this vault.',
+  'trade-sync.rithmic.plugin-sync-description':
+    'Connect Rithmic on Journalit.co, then sync here to write your latest Rithmic activity into this vault.',
+  'trade-sync.rithmic.status-failed': 'Unable to load Rithmic status.',
+  'trade-sync.rithmic.status.connecting': 'Connecting',
+  'trade-sync.rithmic.status.paused': 'Paused',
+  'trade-sync.rithmic.status.waiting-for-accounts': 'Waiting for accounts',
+  'trade-sync.rithmic.status.reauthorization-required':
+    'Reauthorization required on Journalit.co',
+  'trade-sync.rithmic.status.error': 'Connection error',
+  'trade-sync.rithmic.no-connections':
+    'Connect a Rithmic account on Journalit.co to synchronize it here.',
+  'trade-sync.rithmic.connect': 'Connect',
+  'trade-sync.rithmic.manage': 'Manage on Journalit.co',
+  'trade-sync.rithmic.system': 'Rithmic system',
+  'trade-sync.rithmic.accounts': 'Accounts',
+  'trade-sync.rithmic.last-sync': 'Last sync',
+  'trade-sync.rithmic.never': 'Never',
+  'trade-sync.rithmic.job.running': 'Synchronization in progress…',
+  'trade-sync.rithmic.job.last': 'Last job: {status}',
+  'trade-sync.job.status.queued': 'Queued',
+  'trade-sync.job.status.running': 'Running',
+  'trade-sync.job.status.succeeded': 'Succeeded',
+  'trade-sync.job.status.partial': 'Partial',
+  'trade-sync.job.status.failed': 'Failed',
+  'trade-sync.job.status.cancelled': 'Cancelled',
+  'trade-sync.job.status.unknown': 'Unknown',
+  'trade-sync.rithmic.sync-to-vault': 'Sync',
+  'trade-sync.rithmic.syncing': 'Syncing…',
+  'trade-sync.rithmic.mapping-required':
+    'Choose a local vault account for every synchronized Rithmic account.',
+  'trade-sync.rithmic.sync-complete-connection':
+    '{connection} synchronization completed.',
+  'trade-sync.rithmic.sync-partial-connection':
+    '{connection} synchronization completed with issues.',
+  'trade-sync.rithmic.sync-all': 'Sync all',
+  'trade-sync.rithmic.sync-all-complete':
+    'Synchronized {succeeded} of {total} Rithmic connections.',
+  'trade-sync.rithmic.sync-all-partial':
+    'Synchronized {succeeded} of {total} Rithmic connections. Review the connections with issues.',
+  'trade-sync.rithmic.error.session-conflict':
+    'Rithmic allows only one active session. Close R|Trader, NinjaTrader or any other platform using this Rithmic login.',
+  'trade-sync.rithmic.error.auto-retry': 'Journalit retries automatically.',
+  'trade-sync.rithmic.error.invalid-credentials':
+    'Rithmic rejected the stored credentials. Update them on Journalit.co and try again.',
+  'trade-sync.rithmic.error.agreements-required':
+    'Rithmic requires the market data agreements to be signed in R|Trader. Sign them, then try again.',
+  'trade-sync.rithmic.error.disabled':
+    'Rithmic synchronization is disabled for this connection. Manage it on Journalit.co.',
+  'trade-sync.rithmic.error.sync-failed':
+    'Rithmic synchronization failed. Review the connection on Journalit.co and try again.',
+  'trade-sync.broker.mapping-unsaved-hint':
+    'Mapping is saved when you synchronize.',
+  'trade-sync.broker.sync-all-blocked.unsaved-changes':
+    'Unsaved account changes. Synchronize that connection to save them.',
+  'trade-sync.broker.sync-all-blocked.mapping-required':
+    'Choose a Journalit account for every account you synchronize first.',
+  'trade-sync.broker.sync-all-blocked.running-job':
+    'A synchronization is already running.',
+  'trade-sync.broker.sync-all-blocked.not-ready':
+    'No connection is ready to synchronize.',
+  'trade-sync.rithmic.connect-another': 'Connect another Rithmic account',
+  'trade-sync.rithmic.error.sync-failed-detail':
+    'Rithmic synchronization failed: {message}',
   'trade-sync.tradovate.never': 'Never',
-  'trade-sync.tradovate.manage': 'Manage on Journalit.co',
-  'trade-sync.tradovate.enabled': 'Enabled',
-  'trade-sync.tradovate.disabled': 'Disabled',
-  'trade-sync.import.title': 'Trade Import Sync',
-  'trade-sync.import.section-title': 'Trade Import backup and restore',
-  'trade-sync.import.section-description':
-    'Keep imported trades backed up in the cloud and restore missing local notes.',
-  'trade-sync.import.description':
-    'Restore imported trades across vaults and recover missing local notes.',
+
   'trade-sync.import.card.connection': 'Connection',
   'trade-sync.import.card.backup': 'Import backup',
   'trade-sync.import.card.restorable': 'Restorable trades',
   'trade-sync.import.card.import': 'Trade Import',
-  'trade-sync.import.card.open-importer': 'Open importer',
+
   'trade-sync.import.card.open-importer-desc': 'Import new broker files there',
   'trade-sync.import.card.inventory-summary':
     '{accounts} account(s) · {trades} trade(s)',
   'trade-sync.import.action.check': 'Check',
-  'trade-sync.import.action.sync-cloud': 'Sync cloud trades',
+
   'trade-sync.import.action.open-import': 'Open Trade Import',
-  'trade-sync.import.action.clear': 'Clear',
-  'trade-sync.import.action.select-all': 'Select all',
-  'trade-sync.import.action.restore-selected': 'Restore selected ({count})',
+
   'trade-sync.import.action.create-local-account': 'Create account',
   'trade-sync.import.action.create-local-account-title':
     'Create a Journalit account using the backend account name.',
   'trade-sync.import.action.save-mapping': 'Save',
   'trade-sync.import.action.save-mapping-title':
     'Save this backend account to local account mapping.',
-  'trade-sync.import.action.mapped': 'Mapped',
+
   'trade-sync.import.action.restore-account': 'Restore',
   'trade-sync.import.action.restore-account-title':
     'Restore missing local trade notes for this backend account.',
   'trade-sync.import.action.restoring': 'Restoring…',
-  'trade-sync.import.label.account': 'Account',
-  'trade-sync.import.vault-pending': 'Vault pending',
+
   'trade-sync.import.pending-acks': '{count} pending ACK(s)',
-  'trade-sync.import.recovery.title': 'Missing local notes',
-  'trade-sync.import.empty': 'This vault is up to date.',
+
   'trade-sync.import.empty-accounts':
     'No backed-up Trade Import accounts found yet.',
   'trade-sync.import.account.restorable-count': '{count} restorable',
@@ -7753,8 +6773,7 @@ const en = {
   'trade-sync.import.account.mapping-hint':
     'Restored trades will be written to this Journalit account.',
   'trade-sync.import.notice.restored': 'Restored {count} imported trade(s).',
-  'trade-sync.import.notice.sync-cloud-queued':
-    'Cloud synchronization queued. Refresh shortly to load new trades.',
+
   'trade-sync.import.notice.sync-cloud-failed':
     'Unable to start cloud synchronization.',
   'trade-sync.import.notice.load-failed':
@@ -7767,20 +6786,17 @@ const en = {
     'Could not restore Trade Import account.',
   'command.open-session-mode': 'Open session mode',
   'view.session-mode': 'Session mode',
-  'session-mode.description':
-    "Prepare for today's trading day and capture execution context live.",
+
   'session-mode.loading': 'Loading Session Mode',
-  'session-mode.section.preparation': 'Preparation',
+
   'session-mode.section.timeline': 'Timeline',
   'session-mode.title.preparation': 'Session preparation',
   'session-mode.title.live': 'Live session',
   'session-mode.title.break': 'Session break',
   'session-mode.title.ended': 'Session ended',
-  'session-mode.title.unconfigured': 'Session mode',
-  'session-mode.prep.goals': 'Goals',
-  'session-mode.prep.checklist': 'Checklist',
+
   'session-mode.prep.resources': 'Resources',
-  'session-mode.action.open-drc': "Open today's DRC",
+
   'session-mode.action.open-drc-for-date': 'Open DRC for {date}',
   'session-mode.ended.helper': 'Log your trades or review the day.',
   'session-mode.ended.action.import-trades': 'Import trades',
@@ -7794,7 +6810,7 @@ const en = {
   'session-mode.waiting.preparation-opens-in':
     'Preparation opens in {remaining}',
   'session-mode.waiting.open-drc': 'Open DRC',
-  'session-mode.break.eyebrow': 'Session break',
+
   'session-mode.break.reset-before': 'Reset before {session}',
   'session-mode.break.reset': 'Reset before the next session',
   'session-mode.break.next-session-meta':
@@ -7830,25 +6846,20 @@ const en = {
     'Your configured trading sessions are finished for now.',
   'session-mode.status.unconfigured':
     'Configure session windows to unlock preparation, live, break, and ended phases. The timeline remains available for today’s DRC.',
-  'session-mode.unconfigured.eyebrow': 'Setup guide',
+
   'session-mode.unconfigured.title': 'Set up Session Mode',
   'session-mode.unconfigured.description':
     'Add your session times to get started.',
   'session-mode.unconfigured.step.window.title': 'Add a session window',
-  'session-mode.unconfigured.step.window.description':
-    'Set when you usually trade.',
+
   'session-mode.unconfigured.step.prep.title': 'Review preparation timing',
-  'session-mode.unconfigured.step.prep.description':
-    'Default: 30 minutes before session start.',
+
   'session-mode.unconfigured.step.gate.title': 'Use the Starter Trade Gate',
-  'session-mode.unconfigured.step.gate.description':
-    'Starter IF/THEN checklist is ready.',
+
   'session-mode.unconfigured.step.log.title': 'Log notes during live sessions',
-  'session-mode.unconfigured.step.log.description':
-    'Capture notes while trading.',
+
   'session-mode.unconfigured.action': 'Configure Session Mode',
-  'session-mode.unconfigured.settings-note':
-    'You can change this anytime in Customisation → Session mode.',
+
   'session-mode.layout.empty.title': 'Nothing enabled for this phase',
   'session-mode.layout.empty.description':
     'Turn modules back on to build this Session Mode phase.',
@@ -7863,33 +6874,21 @@ const en = {
   'settings.session-mode.preparation-lead-time-desc':
     'How early preparation mode starts before a session.',
   'settings.session-mode.windows': 'Session windows',
-  'settings.session-mode.windows-desc':
-    'Define the local-time windows you actually trade. These power preparation, live, break, and ended phases.',
-  'settings.session-mode.add-window': 'Add session window',
+
   'settings.session-mode.add-window-short': 'Add',
   'settings.session-mode.no-windows':
     'No session windows configured yet. The live timeline still works, but phase-aware preparation starts after adding a window.',
   'settings.session-mode.layout.title': 'Phase layout',
-  'settings.session-mode.layout.desc':
-    'Choose which modules appear in each Session Mode phase and set their order.',
-  'settings.session-mode.layout.phase-desc':
-    'Toggle modules on or off, then move enabled modules into the order you want.',
-  'settings.session-mode.layout.phase-desc.waiting':
-    'Choose what appears while Session Mode is waiting for the next configured session.',
+
   'settings.session-mode.layout.phase-desc.preparation':
     'Choose what appears during pre-session preparation before trading starts.',
   'settings.session-mode.layout.phase-desc.live':
     'Choose what appears while a configured trading session is live.',
-  'settings.session-mode.layout.phase-desc.break':
-    'Choose what appears between configured trading sessions.',
+
   'settings.session-mode.layout.phase-desc.ended':
     'Choose what appears after all configured trading sessions have ended.',
   'settings.session-mode.layout.reset-phase': 'Reset',
-  'settings.session-mode.layout.move-up': 'Move up',
-  'settings.session-mode.layout.move-down': 'Move down',
-  'settings.session-mode.layout.module.waiting-status': 'Next session card',
-  'settings.session-mode.layout.module.waiting-status-desc':
-    'Shows the next configured session and when preparation opens.',
+
   'settings.session-mode.layout.module.preparation-resources': 'Resources',
   'settings.session-mode.layout.module.preparation-resources-desc':
     'Shows linked preparation notes and playbooks.',
@@ -7905,9 +6904,7 @@ const en = {
   'settings.session-mode.layout.module.timeline': 'Session timeline',
   'settings.session-mode.layout.module.timeline-desc':
     'Shows current-session notes and trade timeline entries.',
-  'settings.session-mode.layout.module.break-reset': 'Break reset card',
-  'settings.session-mode.layout.module.break-reset-desc':
-    'Shows the rest, hydration, and next-session reset prompt.',
+
   'settings.session-mode.layout.module.ended-actions': 'End-of-session actions',
   'settings.session-mode.layout.module.ended-actions-desc':
     'Shows import, manual trade, and DRC actions after sessions end.',
@@ -7952,11 +6949,10 @@ const en = {
 
   'settings.session-mode.search-resource-placeholder':
     'Search vault files to link…',
-  'settings.session-mode.default-session-name': 'Trading session',
+
   'settings.session-mode.window-name': 'Session name',
   'settings.session-mode.window-name-placeholder': 'e.g. NY AM',
-  'settings.session-mode.window-row-desc':
-    'Use local time. Overnight windows are supported when the end time is earlier than the start time.',
+
   'settings.session-mode.start-time': 'Start time',
   'settings.session-mode.end-time': 'End time',
   'widget.session-log.name': 'Session log',
@@ -7969,7 +6965,7 @@ const en = {
     'Enter a valid session-log timestamp.',
   'session-log.action.auto-time': 'Auto time',
   'session-log.action.set-time': 'Set time',
-  'session-log.placeholder.entry': 'What are you seeing, thinking, or feeling?',
+
   'session-log.composer.tag-label': 'Session log tag',
   'session-log.placeholder.entry-short': 'Add session note...',
   'session-log.action.add-entry': 'Add timestamped entry',
@@ -7985,18 +6981,17 @@ const en = {
   'session-log.loading': 'Loading session log…',
   'session-log.session-group.outside': 'Outside sessions',
   'session-log.lessons.title': 'Lessons learned',
-  'session-log.lessons.title-singular': '1 lesson learned',
-  'session-log.lessons.title-plural': '{count} lessons learned',
+
   'session-log.lessons.badge': 'LSN',
-  'session-log.error.no-drc': "Could not resolve today's DRC.",
+
   'session-log.trade.entered': 'Entered',
   'session-log.trade.exited': 'Exited',
   'session-log.trade.size': 'size',
-  'session-log.status.unresolved': 'unresolved',
+
   'session-log.status.unclassified': 'unclassified',
   'session-log.action.save': 'Save',
   'session-log.action.cancel': 'Cancel',
-  'session-log.action.resolve': 'Resolve',
+
   'session-log.action.classify': 'Classify',
   'session-log.action.edit': 'Edit',
   'session-log.action.delete': 'Delete',
@@ -8005,9 +7000,9 @@ const en = {
     'Session log preview: timestamped notes and trade events will appear here during the session mode.',
   'session-log.alert.tag-concentration':
     '{tag} is {percentage}% of session notes ({count}/{total}). Mindset was a major theme this session.',
-  'trade-gate.title': 'Trade Gate',
+
   'trade-gate.workflow': 'Workflow',
-  'trade-gate.action.start': 'Start trade check',
+
   'trade-gate.action.start-short': 'Start',
   'trade-gate.action.start-another': 'Start another',
   'trade-gate.outcome.green-light': 'Green light',
@@ -8026,67 +7021,59 @@ const en = {
     'Delete “{name}”? This removes every question and branch in this workflow. This action cannot be undone.',
   'settings.session-mode.trade-gate.delete-workflow.confirm': 'Delete workflow',
   'settings.session-mode.trade-gate.name': 'Workflow name',
-  'settings.session-mode.trade-gate.summary': '{count} nodes',
   'settings.session-mode.trade-gate.untitled': 'Untitled workflow',
   'settings.session-mode.trade-gate.start-node': 'Start question',
   'settings.session-mode.trade-gate.simulation.show': 'Simulate',
   'settings.session-mode.trade-gate.simulation.unavailable':
     'Connect the start question to at least one complete outcome before starting the simulation.',
   'settings.session-mode.trade-gate.add-question': 'Add question',
-  'settings.session-mode.trade-gate.add-branch-question': 'Add branch',
-  'settings.session-mode.trade-gate.add-branch-from':
-    'Adds a question after “{question}”.',
-  'settings.session-mode.trade-gate.add-first-question':
-    'Adds the first question in this workflow.',
-  'settings.session-mode.trade-gate.select-question-to-add':
-    'Select a question to add a branch.',
-  'settings.session-mode.trade-gate.connect-before-branching':
-    'Connect this question before adding a branch.',
-  'settings.session-mode.trade-gate.edit-before-branching':
-    'Edit this new question before adding another branch.',
-  'settings.session-mode.trade-gate.unconnected-title': 'Unconnected questions',
-  'settings.session-mode.trade-gate.unconnected-desc':
-    'These questions are not reachable from the start question. Connect them from an active option or delete them.',
-  'settings.session-mode.trade-gate.unconnected-label': 'Unconnected',
-  'settings.session-mode.trade-gate.add-outcome': 'Add outcome',
   'settings.session-mode.trade-gate.question': 'Question',
-  'settings.session-mode.trade-gate.outcome': 'Outcome',
   'settings.session-mode.trade-gate.new-question-title': 'New question',
-  'settings.session-mode.trade-gate.node-title': 'Title',
+  'settings.session-mode.trade-gate.edit-question': 'Edit question',
   'settings.session-mode.trade-gate.question-title': 'Question title',
-  'settings.session-mode.trade-gate.result-title': 'Result title',
   'settings.session-mode.trade-gate.prompt': 'Prompt',
-  'settings.session-mode.trade-gate.description': 'Description',
   'settings.session-mode.trade-gate.options': 'Options',
   'settings.session-mode.trade-gate.option': 'Option',
-  'settings.session-mode.trade-gate.new-option': 'New option',
+  'settings.session-mode.trade-gate.no-options':
+    'Add answer options for this question.',
   'settings.session-mode.trade-gate.option-label': 'Option label',
   'settings.session-mode.trade-gate.option-target': 'Leads to',
-  'settings.session-mode.trade-gate.outcome-type': 'Result behavior',
+  'settings.session-mode.trade-gate.not-wired': 'Not wired yet',
+  'settings.session-mode.trade-gate.not-wired-hint': 'Click to connect',
+  'settings.session-mode.trade-gate.target-group-questions': 'Questions',
+  'settings.session-mode.trade-gate.target-current': 'Current: {title}',
+  'settings.session-mode.trade-gate.target-group-outcomes': 'Outcomes',
+  'settings.session-mode.trade-gate.new-question-target': '+ New question',
+  'settings.session-mode.trade-gate.outcome-note':
+    'Outcome note (this branch only)',
+  'settings.session-mode.trade-gate.remove-from-workflow':
+    'Remove from this workflow',
+  'settings.session-mode.trade-gate.used-in-workflows':
+    'Used in {count} workflow(s)',
+  'settings.session-mode.trade-gate.not-used': 'Not used yet',
+  'settings.session-mode.trade-gate.question-count': '{count} question(s)',
+  'settings.session-mode.trade-gate.library-title': 'Question library',
+  'settings.session-mode.trade-gate.library-search': 'Search questions...',
+  'settings.session-mode.trade-gate.library-empty':
+    'No questions found. Create one to get started.',
+  'settings.session-mode.trade-gate.delete-question.title': 'Delete question?',
+  'settings.session-mode.trade-gate.delete-question.message':
+    'Delete “{name}” from the question library? This action cannot be undone.',
+  'settings.session-mode.trade-gate.delete-question.message-used':
+    'Delete “{name}” from the question library? It is used in: {workflows}. Its branches in those workflows will be removed. This action cannot be undone.',
+  'settings.session-mode.trade-gate.delete-question.confirm': 'Delete question',
+  'settings.session-mode.trade-gate.unplaced-title':
+    'In this workflow, not connected yet',
   'settings.session-mode.trade-gate.flow-map': 'Flow map',
-  'settings.session-mode.trade-gate.flow-map-hint':
-    'Click any card or path label to edit it.',
   'settings.session-mode.trade-gate.flow-fit': 'Fit',
   'settings.session-mode.trade-gate.flow-click-hint':
-    'Click a node or path label to edit it.',
-  'settings.session-mode.trade-gate.edit-selected': 'Edit selected step',
-  'settings.session-mode.trade-gate.results': 'Results',
-  'settings.session-mode.trade-gate.no-paths':
-    'Add options to connect this workflow.',
+    'Click a card, path label, or outcome to edit it.',
+  'settings.session-mode.trade-gate.flow-truncated':
+    'This flow is too large to display fully. Some repeated branches are hidden.',
+  'settings.session-mode.trade-gate.no-start':
+    'Choose a start question to see the flow.',
   'settings.session-mode.trade-gate.no-questions':
     'Add the first question to begin this workflow.',
-  'settings.session-mode.trade-gate.missing-target': 'Missing target',
-  'settings.session-mode.trade-gate.repeated-node': 'Links back to this node.',
-  'settings.session-mode.trade-gate.default-name': 'Basic entry gate',
-  'settings.session-mode.trade-gate.default.market-regime': 'Market regime',
-  'settings.session-mode.trade-gate.default.market-regime-prompt':
-    'Is the current market regime appropriate for your setup?',
-  'settings.session-mode.trade-gate.default.bias': 'Higher timeframe bias',
-  'settings.session-mode.trade-gate.default.bias-prompt':
-    'Is higher timeframe bias aligned with this trade idea?',
-  'settings.session-mode.trade-gate.default.risk': 'Risk parameters',
-  'settings.session-mode.trade-gate.default.risk-prompt':
-    'Is risk defined and acceptable according to your plan?',
   'filter.modal.image.annotation-status': 'Annotation status',
   'filter.modal.image.status.tagged': 'Tagged',
   'filter.modal.image.status.untagged': 'Untagged',
@@ -8097,10 +7084,7 @@ const en = {
   'tradelog.mode.label': 'Trade Log mode',
   'tradelog.mode.trades': 'Trades',
   'tradelog.mode.image-gallery': 'Gallery',
-  'imageGallery.title': 'Gallery',
-  'imageGallery.subtitle-count': '{count} media items',
-  'imageGallery.no-images': 'No media found yet.',
-  'imageGallery.no-filter-results': 'No media matches this filter.',
+
   'imageGallery.empty.error.title': 'Gallery unavailable',
   'imageGallery.empty.no-images.title': 'No media yet',
   'imageGallery.empty.no-images.description':
@@ -8114,20 +7098,11 @@ const en = {
   'imageGallery.empty.action.clear-filters': 'Clear filters',
   'imageGallery.empty.action.show-all': 'Show all media',
   'imageGallery.error.load-failed': 'Could not load gallery.',
-  'imageGallery.grid-aria': 'Gallery',
+
   'imageGallery.open-source': 'Open source',
   'imageGallery.image-alt': '{source} media from {date}',
   'imageGallery.privacy-blurred': 'Blurred for privacy',
-  'imageGallery.filter.label': 'Filter:',
-  'imageGallery.filter-aria': 'Filter gallery',
-  'imageGallery.filter.all': 'All',
-  'imageGallery.filter.winners': 'Winners',
-  'imageGallery.filter.losers': 'Losers',
-  'imageGallery.filter.breakeven': 'Breakeven',
-  'imageGallery.filter.tagged': 'Tagged',
-  'imageGallery.filter.untagged': 'Untagged',
-  'imageGallery.filter.reviewed': 'Reviewed',
-  'imageGallery.filter.unreviewed': 'Unreviewed',
+
   'imageGallery.sort.label': 'Sort:',
   'imageGallery.sort.newest': 'Newest',
   'imageGallery.sort.oldest': 'Oldest',
@@ -8155,14 +7130,14 @@ const en = {
   'imageGallery.source.monthly': 'Monthly reviews',
   'imageGallery.source.quarterly': 'Quarterly reviews',
   'imageGallery.source.yearly': 'Yearly reviews',
-  'imageGallery.annotation.tagged': 'Tagged',
-  'imageGallery.annotation.untagged': 'Untagged',
+
   'imageGallery.annotation.reviewed': 'Reviewed',
   'imageGallery.annotation.unreviewed': 'Unreviewed',
   'imageGallery.date.unknown': 'Unknown date',
   'imageGallery.annotation.tag': 'Tag',
-  'imageGallery.annotation.editor-eyebrow': 'Market structure journal',
+
   'imageGallery.annotation.editor-title': 'Annotate media',
+  'imageGallery.annotation.editor-title-with-file': 'Annotate {fileName}',
   'imageGallery.annotation.tags': 'Tags',
   'imageGallery.annotation.tags-placeholder': 'Breakout, A+ Setup, Mistake',
   'imageGallery.annotation.notes': 'Notes',
@@ -8170,6 +7145,8 @@ const en = {
     'What should future you learn from this chart?',
   'imageGallery.annotation.error.save-failed':
     'Could not save media annotation.',
+  'imageGallery.annotation.error.load-failed':
+    'Could not load media annotation.',
   'imageGallery.annotation.saving': 'Saving...',
   'settings.gallery-folders.section': 'Media Gallery',
   'settings.gallery-folders.description':
@@ -8184,10 +7161,7 @@ const en = {
   'tradelog.guide.switch-to-gallery.title': 'Switch from trades to the Gallery',
   'tradelog.guide.switch-to-gallery.description':
     'Use this mode selector to move between the regular Trade Log and the Gallery. Click Gallery to continue the tour with your images, GIFs, videos, and YouTube links.',
-  'tradelog.guide.gallery-controls.title':
-    'Choose which media you want to review',
-  'tradelog.guide.gallery-controls.description':
-    'Use Grouped for one card per trade or review, or Individual to scan every media item separately. Your choice is remembered.',
+
   'tradelog.guide.gallery-grouping.title': 'Group media by journal entry',
   'tradelog.guide.gallery-grouping.description':
     'Grouped keeps every trade, review, or configured folder together. Individual displays each media item as its own card.',
@@ -8225,31 +7199,14 @@ const en = {
   'tradelog.guide.image-gallery-empty.intro.title': 'No media yet',
   'tradelog.guide.image-gallery-empty.intro.description':
     'Add media to trades or review notes, or configure Media Gallery folders in Trading settings. Once media exists, Journalit will show the full gallery guide for fullscreen review, tags, and notes.',
-  'tradelog.guide.image-gallery-empty.source-sort.description':
-    'Use Source to choose between trade media and review-note media once both exist. Sort will reorder the gallery when media is available.',
-  'tradelog.guide.image-gallery-empty.size.description':
-    'These buttons control how large future media cards appear, from compact scans to larger previews.',
-  'tradelog.guide.image-gallery-empty.filters.description':
-    'Advanced Filters already includes the media filters you will use later, including annotation status and media tags.',
-  'tradelog.guide.image-gallery-empty.finish.title':
-    'Add media, then come back for the full gallery tour',
-  'tradelog.guide.image-gallery-empty.finish.description':
-    'After you attach media to trades or review notes, Journalit will show the full Gallery guide with fullscreen review, tagging, and notes.',
+
   'filter.modal.section.image-gallery': 'Gallery',
   'filter.modal.session-tags.placeholder': 'Session Tags',
   'filter.modal.session-tags.all': 'All Session Tags',
   'filter.modal.session-tags.n-selected': '{count} Session Tags',
   'filter.modal.session-tags.select-all': 'Select All',
   'filter.modal.session-tags.none-found': 'No session tags found',
-  'setups.view.fixture.rule.context-aligned': 'Context aligned',
-  'setups.view.fixture.rule.orb.range-defined': 'Opening range defined',
-  'setups.view.fixture.rule.orb.volume-expansion': 'Volume expansion',
-  'setups.view.fixture.rule.orb.market-aligned': 'Market aligned',
-  'setups.view.fixture.rule.orb.clean-invalidation': 'Clean invalidation',
-  'setups.view.fixture.rule.orb.target-defined': 'Target defined',
-  'setups.view.detail.brief.profile.model': 'Model',
-  'setups.view.detail.brief.profile.category': 'Category',
-  'setups.view.completeness.no-description': 'No description',
+
   'home.mode.overview': 'Overview',
   'home.mode.dashboard': 'Dashboard',
   'home.mode.aria': 'Switch Home mode',
@@ -8270,6 +7227,110 @@ const en = {
   'home.guide.whats-new.done.title': 'Your workspace stays in context',
   'home.guide.whats-new.done.description':
     'Use Overview for your personal widgets and Dashboard for deeper analysis. Each mode keeps its own filters and layout.',
+
+  'view.home': 'Home',
+  'common.lose': 'Lose',
+
+  'dashboard.conversion.requires-conversion':
+    'Multi-currency P&L charts require exchange-rate conversion.',
+
+  'auth.error.invalid-email': 'Please enter a valid email address',
+  'auth.error.invalid-code': 'Invalid verification code',
+  'form.layout.guide-trigger-label': 'Customize form',
+  'dashboard.filter.setup.none-found': 'No setups found',
+  'nav.weekly': 'Weekly Review',
+  'weekly.overview.drawdown-chart.empty': 'No drawdown data to display',
+  'trade-sync.gate.signin.cta': 'Sign in',
+  'backend.progress.ftp.desc': 'Create credentials',
+  'csv.errors.group.close-only': 'Close-only executions were skipped',
+  'csv.report.file': 'File: {file}',
+  'csv.broker-guide.sierrachart.warning.message':
+    'The Export option saves unadjusted prices. Save Log As preserves prices as displayed.',
+  'csv.broker-guide.rithmic.step-1':
+    'Open Order History in R | Trader Pro and filter to Completed/Filled orders for your account/date',
+  'csv.broker-guide.rithmic.step-2':
+    'Use Add/Remove Columns and make sure Side, Symbol, Qty Filled, Avg Fill Price, and Fill/Update Time are visible',
+  'trade.details.execution': 'Execution',
+  'drc.preparation.checklist.title': 'Pre-Trade Checklist',
+  'onboarding.welcome.insight.timing.title': 'Timing Patterns',
+  'onboarding.wizard.error.account-service': 'AccountPageService not available',
+  'account.create.field.drawdown-type-desc':
+    'None | Fixed | EOD Trailing | Manual',
+  'account.edit.field.drawdown-type-desc':
+    'None | Fixed | EOD Trailing | Manual',
+  'monthly.game.header.a-games': 'A Games',
+  'trade-import.preview.message.no-open-match':
+    'No matching open trade found for close-only preview',
+  'setups.view.action.refresh': 'Refresh',
+  'setups.view.detail.no-playbook': 'No playbook written yet.',
+  'setups.view.detail.execution-gap.title': 'Execution Gap',
+  'trade-sync.import.action.sync-cloud': 'Sync cloud trades',
+  'session-mode.unconfigured.step.gate.description':
+    'Starter IF/THEN checklist is ready.',
+  'session-log.placeholder.entry': 'What are you seeing, thinking, or feeling?',
+
+  'home.widget.streak.kind.trade-outcome': 'Trade outcomes',
+  'home.widget.streak.kind.trade-review': 'Trade reviews',
+  'home.widget.streak.kind.drc-review': 'DRC reviews',
+  'home.widget.streak.kind.weekly-review': 'Weekly reviews',
+  'home.widget.streak.kind.monthly-review': 'Monthly reviews',
+  'home.widget.streak.configure': 'Choose streak type',
+  'home.widget.streak.configure-aria': 'Configure {kind} streak',
+  'home.widget.streak.no-review-streak': 'no active review streak',
+  'home.widget.streak.start-reviewing': 'start reviewing to build a streak',
+  'home.widget.streak.keep-reviewing': 'keep reviewing to continue',
+  'home.widget.streak.reviewed-trades-in-a-row.one': 'trade reviewed in a row',
+  'home.widget.streak.reviewed-trades-in-a-row.few': 'trades reviewed in a row',
+  'home.widget.streak.reviewed-trades-in-a-row.many':
+    'trades reviewed in a row',
+  'home.widget.streak.reviewed-trades-in-a-row.other':
+    'trades reviewed in a row',
+  'home.widget.streak.reviewed-days-in-a-row.one': 'day reviewed in a row',
+  'home.widget.streak.reviewed-days-in-a-row.few': 'days reviewed in a row',
+  'home.widget.streak.reviewed-days-in-a-row.many': 'days reviewed in a row',
+  'home.widget.streak.reviewed-days-in-a-row.other': 'days reviewed in a row',
+  'home.widget.streak.reviewed-weeks-in-a-row.one': 'week reviewed in a row',
+  'home.widget.streak.reviewed-weeks-in-a-row.few': 'weeks reviewed in a row',
+  'home.widget.streak.reviewed-weeks-in-a-row.many': 'weeks reviewed in a row',
+  'home.widget.streak.reviewed-weeks-in-a-row.other': 'weeks reviewed in a row',
+  'home.widget.streak.reviewed-months-in-a-row.one': 'month reviewed in a row',
+  'home.widget.streak.reviewed-months-in-a-row.few': 'months reviewed in a row',
+  'home.widget.streak.reviewed-months-in-a-row.many':
+    'months reviewed in a row',
+  'home.widget.streak.reviewed-months-in-a-row.other':
+    'months reviewed in a row',
+  'home.widget.streak.missed-trades.one':
+    'missed {count} trade since your last review',
+  'home.widget.streak.missed-trades.few':
+    'missed {count} trades since your last review',
+  'home.widget.streak.missed-trades.many':
+    'missed {count} trades since your last review',
+  'home.widget.streak.missed-trades.other':
+    'missed {count} trades since your last review',
+  'home.widget.streak.missed-days.one':
+    'missed {count} day since your last review',
+  'home.widget.streak.missed-days.few':
+    'missed {count} days since your last review',
+  'home.widget.streak.missed-days.many':
+    'missed {count} days since your last review',
+  'home.widget.streak.missed-days.other':
+    'missed {count} days since your last review',
+  'home.widget.streak.missed-weeks.one':
+    'missed {count} week since your last review',
+  'home.widget.streak.missed-weeks.few':
+    'missed {count} weeks since your last review',
+  'home.widget.streak.missed-weeks.many':
+    'missed {count} weeks since your last review',
+  'home.widget.streak.missed-weeks.other':
+    'missed {count} weeks since your last review',
+  'home.widget.streak.missed-months.one':
+    'missed {count} month since your last review',
+  'home.widget.streak.missed-months.few':
+    'missed {count} months since your last review',
+  'home.widget.streak.missed-months.many':
+    'missed {count} months since your last review',
+  'home.widget.streak.missed-months.other':
+    'missed {count} months since your last review',
 };
 
 export type TranslationKey = keyof typeof en;

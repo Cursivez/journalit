@@ -22,6 +22,7 @@ import { useBackendProEntitlement } from '../../../hooks/useBackendProEntitlemen
 import { TRADE_LOG_VIEW_TYPE } from '../../../views/TradeLogView';
 import { TEMPLATE_BUILDER_VIEW_TYPE } from '../../../views/TemplateBuilderView';
 import { NAVIGATION_VIEW_TYPE } from '../../../views/NavigationView';
+import { mergeClassNames } from '../../../utils/classNames';
 
 interface GettingStartedWidgetProps {
   plugin: JournalitPlugin;
@@ -94,12 +95,12 @@ export const GettingStartedWidget = memo<GettingStartedWidgetProps>(
       getNavigationSidebarSnapshot
     );
 
-    const handleAddTrade = useCallback(async () => {
+    const handleImportTrades = useCallback(async () => {
       try {
-        await plugin.viewManager.openTradeFormView();
+        await plugin.viewManager.openCSVImportView();
       } catch (error) {
-        console.error('[GettingStarted] Failed to open trade form:', error);
-        new Notice(t('notice.error.open-journalit'));
+        console.error('[GettingStarted] Failed to open Trade Import:', error);
+        new Notice(t('trade-import.notice.open-failed'));
       }
     }, [plugin]);
 
@@ -228,12 +229,12 @@ export const GettingStartedWidget = memo<GettingStartedWidgetProps>(
     const checklistItems = useMemo(
       () => [
         {
-          id: 'create-trade',
+          id: 'add-trading-history',
           title: t('home.widget.getting-started.item.create.title'),
           description: t('home.widget.getting-started.item.create.description'),
           time: t('home.widget.getting-started.item.create.time'),
           cta: t('home.widget.getting-started.item.create.cta'),
-          onClick: () => void handleAddTrade(),
+          onClick: () => void handleImportTrades(),
           completed: hasTrade,
         },
         {
@@ -280,7 +281,7 @@ export const GettingStartedWidget = memo<GettingStartedWidgetProps>(
         },
       ],
       [
-        handleAddTrade,
+        handleImportTrades,
         handleOpenTradeLog,
         handleOpenLayoutBuilder,
         handleOpenNavigationSidebar,
@@ -375,21 +376,23 @@ export const GettingStartedWidget = memo<GettingStartedWidgetProps>(
             }
 
             return (
-              <div
+              <button
+                type="button"
                 key={item.id}
-                role="button"
-                tabIndex={0}
                 onClick={item.onClick}
                 onKeyDown={(e) => {
                   if (e.key !== 'Enter' && e.key !== ' ') return;
                   e.preventDefault();
                   item.onClick();
                 }}
-                className={itemClassName}
+                className={mergeClassNames(
+                  'journalit-native-button journalit-native-button--unstyled',
+                  itemClassName
+                )}
                 aria-label={item.title}
               >
                 {itemContent}
-              </div>
+              </button>
             );
           })}
         </div>

@@ -1,4 +1,4 @@
-import { eventBus } from '../../events';
+import { eventBus } from '../../events/EventBus';
 import type { TradeChange, TradeCommittedPayload } from './tradeCoreTypes';
 
 export class TradeEventBridge {

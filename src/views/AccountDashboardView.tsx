@@ -3,7 +3,7 @@
 import React from 'react';
 import { WorkspaceLeaf } from 'obsidian';
 import JournalitPlugin from '../main';
-import { AccountDashboard } from '../components/account/dashboard';
+import { AccountDashboard } from '../components/account/dashboard/AccountDashboard';
 import { t } from '../lang/helpers';
 import { ReactView } from './ReactView';
 import { RenderFunction } from './types';

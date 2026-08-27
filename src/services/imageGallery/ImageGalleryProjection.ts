@@ -18,6 +18,10 @@ import {
   normalizeTradeAccountIdentity,
 } from '../trade/core/TradeAccountIdentity';
 import {
+  extractCanonicalProjectionPnlFields,
+  hasUnknownCanonicalPnL,
+} from '../trade/core/CanonicalProjectionFields';
+import {
   getBreakEvenAccountBalanceFields,
   resolveBreakEvenAccountBalances,
   type BreakEvenAccountBalanceLookup,
@@ -73,6 +77,7 @@ export function getTradeStatus(
   ) {
     return 'open';
   }
+  if (hasUnknownCanonicalPnL(trade)) return 'closed';
 
   const outcome = classifyPnLWithBreakEvenSettings(
     pnl,
@@ -242,13 +247,16 @@ export function getTradeAccountVariants(
       includeInAllAccounts:
         plugin.settings.trade.includeCopyAccountsInAllAccountsAnalytics ===
         true,
-      pnl: copiedPnl,
-      rMultiple: calculateEffectiveRMultiple(
-        copiedPnl,
-        undefined,
-        copiedRiskAmount,
-        plugin.settings.trade?.defaultRiskAmount
-      ),
+      pnl: copiedPnl ?? 0,
+      rMultiple:
+        copiedPnl === null
+          ? undefined
+          : calculateEffectiveRMultiple(
+              copiedPnl,
+              undefined,
+              copiedRiskAmount,
+              plugin.settings.trade?.defaultRiskAmount
+            ),
     });
   }
 
@@ -265,6 +273,7 @@ function getTradePnlContext(trade: TradeRecord) {
   const storedPnl = getOptionalNumber(trade.pnl);
   const directPnl = getOptionalNumber(trade.directPnL);
   return {
+    ...extractCanonicalProjectionPnlFields(trade),
     tradeStatus: getString(trade.tradeStatus),
     exitTime: getDateString(trade.exitTime) ?? null,
     exitPrice: getOptionalNumber(trade.exitPrice) ?? null,
@@ -287,6 +296,7 @@ export function shouldShowTradePnl(
   tradeStatus: TradeStatus | undefined
 ): boolean {
   return (
+    !hasUnknownCanonicalPnL(trade) &&
     tradeStatus !== undefined &&
     tradeStatus !== 'cancelled' &&
     (tradeStatus !== 'open' || hasRealizedStoredPnL(getTradePnlContext(trade)))

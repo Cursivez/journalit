@@ -1,5 +1,5 @@
 import type JournalitPlugin from '../main';
-import { eventBus } from '../services/events';
+import { eventBus } from '../services/events/EventBus';
 import type { TradeLogFilters } from '../services/tradelog/types';
 import {
   createDashboardFilters,

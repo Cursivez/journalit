@@ -71,7 +71,7 @@ export const IMAGE_STYLES = `
   }
 
   
-  .journalit-image-upload-file-area {
+  button.journalit-native-button.journalit-image-upload-file-area {
     flex: 1;
     display: flex;
     flex-direction: column;
@@ -88,24 +88,24 @@ export const IMAGE_STYLES = `
     padding: 12px;
   }
 
-  .journalit-image-upload-file-area.full-width {
+  button.journalit-native-button.journalit-image-upload-file-area.full-width {
     flex: 1;
     min-width: 100%;
   }
 
-  .journalit-image-upload-file-area:hover {
+  button.journalit-native-button.journalit-image-upload-file-area:hover {
     border-color: var(--interactive-accent);
     background-color: rgba(var(--interactive-accent-rgb, 83, 141, 226), 0.05);
   }
 
-  .journalit-image-upload-file-area:focus {
+  button.journalit-native-button.journalit-image-upload-file-area:focus {
     outline: 2px solid var(--interactive-accent);
     outline-offset: 2px;
     border-color: var(--interactive-accent);
     background-color: rgba(var(--interactive-accent-rgb, 83, 141, 226), 0.08);
   }
 
-  .journalit-image-upload-file-area.dragging-over {
+  button.journalit-native-button.journalit-image-upload-file-area.dragging-over {
     border-color: var(--interactive-accent);
     background-color: rgba(var(--interactive-accent-rgb, 83, 141, 226), 0.1);
     transform: scale(1.02);
@@ -182,7 +182,7 @@ export const IMAGE_STYLES = `
       padding: 12px 16px;
     }
 
-    .journalit-image-upload-file-area {
+    button.journalit-native-button.journalit-image-upload-file-area {
       flex: 1;
       min-height: 70px;
     }
@@ -203,7 +203,7 @@ export const IMAGE_STYLES = `
       font-size: 12px;
     }
 
-    .journalit-image-upload-file-area {
+    button.journalit-native-button.journalit-image-upload-file-area {
       min-height: 60px;
       padding: 8px;
     }
@@ -556,10 +556,12 @@ export const IMAGE_STYLES = `
     position: absolute;
     top: 0.5rem;
     right: 0.5rem;
-    background: rgba(0, 0, 0, 0.6);
-    color: white;
-    border: none;
+    padding: 0;
+    border: 1px solid rgba(var(--mono-rgb-100), 0.18);
     border-radius: 50%;
+    background: rgba(var(--mono-rgb-0), 0.62);
+    color: var(--text-normal);
+    box-shadow: none;
     width: 28px;
     height: 28px;
     cursor: pointer;
@@ -569,10 +571,67 @@ export const IMAGE_STYLES = `
     font-size: 16px;
     line-height: 1;
     z-index: 10;
+    backdrop-filter: blur(8px);
   }
 
-  .journalit-carousel-delete:hover {
-    background: rgba(0, 0, 0, 0.75);
+  .journalit-carousel-delete:hover,
+  .journalit-carousel-delete:focus-visible {
+    border-color: var(--interactive-accent);
+    background: var(--interactive-accent);
+    color: var(--text-on-accent);
+  }
+
+  .journalit-carousel-annotate {
+    position: absolute;
+    top: 0.5rem;
+    right: 2.65rem;
+    z-index: 10;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    border: 1px solid rgba(var(--mono-rgb-100), 0.18);
+    border-radius: 50%;
+    background: rgba(var(--mono-rgb-0), 0.62);
+    color: var(--text-normal);
+    box-shadow: none;
+    cursor: pointer;
+    backdrop-filter: blur(8px);
+  }
+
+  .journalit-carousel-annotate:hover,
+  .journalit-carousel-annotate:focus-visible,
+  .journalit-carousel-annotate.is-annotated {
+    border-color: var(--interactive-accent);
+    background: var(--interactive-accent);
+    color: var(--text-on-accent);
+  }
+
+  .journalit-carousel-annotate__accessible-label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  .journalit-carousel-thumbnail__annotation-indicator {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    width: 7px;
+    height: 7px;
+    border: 1px solid var(--background-primary);
+    border-radius: 50%;
+    background: var(--interactive-accent);
+    box-shadow: 0 0 0 1px rgba(var(--mono-rgb-0), 0.28);
+    pointer-events: none;
   }
 
   .journalit-carousel-image-container button.journalit-carousel-overlay-button {
@@ -673,6 +732,7 @@ export const IMAGE_STYLES = `
   }
 
   .journalit-carousel-thumbnail {
+    position: relative;
     width: 60px;
     height: 60px;
     border: 2px solid var(--background-modifier-border);
@@ -947,6 +1007,110 @@ export const IMAGE_STYLES = `
   }
 
   
+  .journalit-fullscreen-annotation-layout {
+    position: relative;
+    width: 100vw;
+    height: 100vh;
+  }
+
+  .journalit-image-annotation-panel {
+    position: absolute;
+    top: 92px;
+    right: 24px;
+    z-index: 4;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    width: min(360px, calc(100vw - 48px));
+    max-height: calc(100vh - 132px);
+    overflow: auto;
+    padding: 16px;
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 12px;
+    background: var(--background-secondary);
+    box-shadow: var(--shadow-l);
+    cursor: default;
+  }
+
+  .journalit-fullscreen-annotation-actions {
+    position: absolute;
+    right: 24px;
+    bottom: 24px;
+    z-index: 20;
+  }
+
+  .journalit-fullscreen-annotation-actions .journalit-fullscreen-annotation-button.journalit-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 34px;
+    padding: 0 14px;
+    border: 1px solid var(--background-modifier-border) !important;
+    border-radius: 8px;
+    background: var(--background-secondary) !important;
+    color: var(--text-normal) !important;
+    box-shadow: var(--shadow-s) !important;
+    font-size: var(--font-ui-small);
+    font-weight: 700;
+  }
+
+  .journalit-fullscreen-annotation-actions .journalit-fullscreen-annotation-button.journalit-button:hover:not(:disabled),
+  .journalit-fullscreen-annotation-actions .journalit-fullscreen-annotation-button.journalit-button:focus-visible:not(:disabled) {
+    border-color: var(--interactive-accent) !important;
+    background: var(--background-modifier-hover) !important;
+  }
+
+  .journalit-fullscreen-annotation-layout--open .journalit-fullscreen-viewer {
+    width: 100vw;
+    margin-right: 0;
+  }
+
+  .journalit-fullscreen-annotation-layout--open .journalit-fullscreen-image-wrapper {
+    width: 100%;
+    margin-right: 0;
+  }
+
+  .journalit-fullscreen-annotation-layout--open .journalit-fullscreen-zoomable-image,
+  .journalit-fullscreen-annotation-layout--open .journalit-fullscreen-zoomable-media {
+    max-width: 88vw;
+    max-height: 86vh;
+  }
+
+  @media (max-width: 760px) {
+    .journalit-fullscreen-annotation-layout--open .journalit-fullscreen-viewer {
+      width: 100vw;
+      height: 46vh;
+      margin-right: 0;
+    }
+
+    .journalit-fullscreen-annotation-layout--open .journalit-fullscreen-image-wrapper {
+      width: 100%;
+      height: 46vh;
+    }
+
+    .journalit-fullscreen-annotation-layout--open .journalit-fullscreen-zoomable-image,
+    .journalit-fullscreen-annotation-layout--open .journalit-fullscreen-zoomable-media {
+      max-width: calc(100vw - 20px);
+      max-height: 42vh;
+    }
+
+    .journalit-fullscreen-annotation-actions {
+      right: 10px;
+      bottom: 20px;
+    }
+
+    .journalit-image-annotation-panel {
+      top: auto;
+      left: 10px;
+      right: 10px;
+      bottom: 10px;
+      width: auto;
+      max-height: 48vh;
+      padding: 14px;
+      border-radius: 12px;
+    }
+  }
+
   .journalit-fullscreen-viewer {
     position: relative;
     width: 100vw;
@@ -1290,6 +1454,18 @@ export const IMAGE_STYLES = `
     .journalit-fullscreen-video-skip-btn {
       display: none;
     }
+  }
+
+  .journalit-fullscreen-image-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    max-width: 100%;
+    max-height: 100%;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    box-shadow: none;
   }
 
   .journalit-fullscreen-zoomable-image {

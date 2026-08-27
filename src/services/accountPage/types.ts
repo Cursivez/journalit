@@ -13,6 +13,10 @@ export interface AccountTradeData {
   hasExplicitExitPrice?: boolean;
   positionSize: number;
   pnl: number;
+  authoritativePnl?: number | null;
+  canonicalTradeId?: string;
+  canonicalTradeVersion?: number;
+  canonicalProjectionSchemaVersion?: number;
   commission: number;
   commissionType?: 'fixed' | 'percentage';
   swap: number;

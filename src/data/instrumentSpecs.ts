@@ -23,6 +23,8 @@ export interface ForexSpec {
   
   pipSize: number;
   
+  quoteCurrency?: string;
+  
   name: string;
 }
 
@@ -299,66 +301,77 @@ export const FOREX_SPECS: Record<string, ForexSpec> = {
     lotSize: 100000,
     pipValue: 10.0,
     pipSize: 0.0001,
+    quoteCurrency: 'USD',
     name: 'Euro / US Dollar',
   },
   GBPUSD: {
     lotSize: 100000,
     pipValue: 10.0,
     pipSize: 0.0001,
+    quoteCurrency: 'USD',
     name: 'British Pound / US Dollar',
   },
   USDJPY: {
     lotSize: 100000,
     pipValue: 9.09,
     pipSize: 0.01,
+    quoteCurrency: 'JPY',
     name: 'US Dollar / Japanese Yen',
   },
   USDCHF: {
     lotSize: 100000,
     pipValue: 11.0,
     pipSize: 0.0001,
+    quoteCurrency: 'CHF',
     name: 'US Dollar / Swiss Franc',
   },
   AUDUSD: {
     lotSize: 100000,
     pipValue: 10.0,
     pipSize: 0.0001,
+    quoteCurrency: 'USD',
     name: 'Australian Dollar / US Dollar',
   },
   USDCAD: {
     lotSize: 100000,
     pipValue: 7.5,
     pipSize: 0.0001,
+    quoteCurrency: 'CAD',
     name: 'US Dollar / Canadian Dollar',
   },
   NZDUSD: {
     lotSize: 100000,
     pipValue: 10.0,
     pipSize: 0.0001,
+    quoteCurrency: 'USD',
     name: 'New Zealand Dollar / US Dollar',
   },
   EURGBP: {
     lotSize: 100000,
     pipValue: 13.0,
     pipSize: 0.0001,
+    quoteCurrency: 'GBP',
     name: 'Euro / British Pound',
   },
   EURJPY: {
     lotSize: 100000,
     pipValue: 9.09,
     pipSize: 0.01,
+    quoteCurrency: 'JPY',
     name: 'Euro / Japanese Yen',
   },
   GBPJPY: {
     lotSize: 100000,
     pipValue: 9.09,
     pipSize: 0.01,
+    quoteCurrency: 'JPY',
     name: 'British Pound / Japanese Yen',
   },
   XAUUSD: {
     lotSize: 100,
     pipValue: 10.0,
     pipSize: 0.01,
+    quoteCurrency: 'USD',
     name: 'Gold / US Dollar',
   },
 };

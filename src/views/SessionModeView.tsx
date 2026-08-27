@@ -1,6 +1,7 @@
 import React, {
   useCallback,
   useEffect,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -17,13 +18,19 @@ import {
   Trade,
 } from '../components/dashboard/utils/dataUtils';
 import { createDashboardFilters } from '../settings/viewFiltersDefaults';
-import { eventBus } from '../services/events';
+import { eventBus } from '../services/events/EventBus';
 import { SessionLogPanel } from '../components/sessionLog/SessionLogPanel';
 import { GoalsWidget } from '../components/reviewV2/widgets/GoalsWidget';
 import { ChecklistWidget } from '../components/reviewV2/widgets/ChecklistWidget';
 import { Button } from '../components/ui/Button';
 import { TradeGatePanel } from '../components/sessionMode/TradeGatePanel';
-import { getTradeGateRunsFromFile } from '../components/sessionMode/tradeGateUtils';
+import {
+  getActiveTradeGateRunFromFile,
+  getRunnableTradeGateWorkflows,
+  getTradeGateRunsFromFile,
+  isTradeGateRunCompatibleWithWorkflows,
+  isTradeGateRunOutsideSession,
+} from '../components/sessionMode/tradeGateUtils';
 import {
   ArrowUpRightFromSquare,
   ChevronRight,
@@ -44,6 +51,7 @@ import {
 } from '../components/sessionLog/sessionLogUtils';
 import { resolveSessionModePhase } from '../utils/sessionModePhase';
 import type {
+  ResolvedSessionModeWindow,
   SessionModeLayoutModuleId,
   SessionModePhaseState,
 } from '../types/sessionMode';
@@ -226,7 +234,9 @@ const SessionMode: React.FC<{
     ]
   );
   const phaseStateRef = useRef(phaseState);
-  phaseStateRef.current = phaseState;
+  useLayoutEffect(() => {
+    phaseStateRef.current = phaseState;
+  }, [phaseState]);
   const phaseLoadKey = useMemo(() => getPhaseLoadKey(phaseState), [phaseState]);
   const backingDate = getSessionBackingDate(phaseState, plugin);
   const backingTradingDayKey = backingDate
@@ -390,6 +400,7 @@ const SessionMode: React.FC<{
     <TradeGatePanel
       plugin={plugin}
       filePath={resolvedFilePath}
+      questions={plugin.settings.sessionMode.tradeGateQuestions}
       currentSession={phaseState.currentSession}
       onRefresh={() => {
         void loadSession();
@@ -854,6 +865,16 @@ const SessionModePreparationResources: React.FC<{
                     sourcePath: filePath,
                   });
                 }}
+                onFocus={(event) => {
+                  plugin.app.workspace.trigger('hover-link', {
+                    event: event.nativeEvent,
+                    source: 'preview',
+                    hoverParent,
+                    targetEl: event.currentTarget,
+                    linktext: resource.path,
+                    sourcePath: filePath,
+                  });
+                }}
               >
                 {label}
               </button>
@@ -968,7 +989,12 @@ const SessionModePhaseContent: React.FC<{
     plugin.settings.sessionMode.phaseLayouts
   )[phase];
   const hasVisibleModule = moduleIds.some((moduleId) =>
-    isSessionModeModuleVisible(moduleId, plugin)
+    isSessionModeModuleVisible(
+      moduleId,
+      plugin,
+      filePath,
+      phaseState.currentSession
+    )
   );
 
   if (!hasVisibleModule) {
@@ -999,13 +1025,30 @@ const SessionModePhaseContent: React.FC<{
 
 const isSessionModeModuleVisible = (
   moduleId: SessionModeLayoutModuleId,
-  plugin: JournalitPlugin
+  plugin: JournalitPlugin,
+  filePath: string,
+  currentSession: ResolvedSessionModeWindow | undefined
 ): boolean => {
   switch (moduleId) {
     case 'preparationResources':
       return plugin.settings.sessionMode.linkedResources.length > 0;
-    case 'tradeGate':
-      return plugin.settings.sessionMode.tradeGateWorkflows.length > 0;
+    case 'tradeGate': {
+      
+      
+      
+      
+      const workflows = plugin.settings.sessionMode.tradeGateWorkflows;
+      const questions = plugin.settings.sessionMode.tradeGateQuestions;
+      if (getRunnableTradeGateWorkflows(workflows, questions).length > 0) {
+        return true;
+      }
+      const activeRun = getActiveTradeGateRunFromFile(plugin, filePath);
+      return (
+        activeRun !== null &&
+        !isTradeGateRunOutsideSession(activeRun, currentSession) &&
+        isTradeGateRunCompatibleWithWorkflows(activeRun, workflows, questions)
+      );
+    }
     default:
       return true;
   }
@@ -1338,16 +1381,19 @@ const SessionModeEmptyLayoutState: React.FC<{
   </section>
 );
 
+const stepKeys: Parameters<typeof t>[0][] = [
+  'session-mode.unconfigured.step.window.title',
+  'session-mode.unconfigured.step.prep.title',
+  'session-mode.unconfigured.step.gate.title',
+  'session-mode.unconfigured.step.log.title',
+];
+
+const getSteps = () => stepKeys.map((key) => t(key));
+
 const SessionModeUnconfiguredState: React.FC<{ plugin: JournalitPlugin }> = ({
   plugin,
 }) => {
-  const steps = [
-    t('session-mode.unconfigured.step.window.title'),
-    t('session-mode.unconfigured.step.prep.title'),
-    t('session-mode.unconfigured.step.gate.title'),
-    t('session-mode.unconfigured.step.log.title'),
-  ];
-
+  const steps = getSteps();
   return (
     <section className="journalit-session-mode-empty-state">
       <div className="journalit-session-mode-empty-state__title">

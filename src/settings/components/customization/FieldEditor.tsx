@@ -161,6 +161,9 @@ const FieldEditorTradeLogSettings: React.FC<
         </div>
         <div className="setting-item-control">
           <input
+            aria-label={t(
+              'settings.customization.custom-fields.editor.display-as-currency'
+            )}
             type="checkbox"
             checked={editingField.tradeLog?.displayAsCurrency || false}
             onChange={(e) =>
@@ -312,6 +315,9 @@ const FieldEditorValidationSettings: React.FC<
       </div>
       <div className="setting-item-control">
         <input
+          aria-label={t(
+            'settings.customization.custom-fields.editor.validation.required'
+          )}
           type="checkbox"
           checked={editingField.validation?.required || false}
           onChange={(e) =>
@@ -580,6 +586,9 @@ const FieldEditorOptionsConfig: React.FC<FieldEditorOptionsConfigProps> = ({
         </div>
         <div className="setting-item-control">
           <input
+            aria-label={t(
+              'settings.customization.custom-fields.editor.allow-create'
+            )}
             type="checkbox"
             checked={editingField.allowCreateOptions || false}
             onChange={(e) =>

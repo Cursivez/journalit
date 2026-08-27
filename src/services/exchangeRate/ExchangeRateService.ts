@@ -70,7 +70,7 @@ function asCachedExchangeRates(value: unknown): CachedExchangeRates | null {
   };
 }
 
-const FRANKFURTER_BASE_URL = 'https://api.frankfurter.app';
+const FRANKFURTER_BASE_URL = 'https://api.frankfurter.dev/v1';
 const CACHE_TTL_MS = 24 * 60 * 60 * 1000; 
 const CACHE_KEY = 'journalit-exchange-rates';
 

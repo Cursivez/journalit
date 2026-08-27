@@ -6,6 +6,7 @@ import {
   TradeReviewData,
 } from '../../../services/backend/types';
 import { CustomFieldValues } from '../../../types/customFields';
+import type { ImageAnnotations } from '../../../types/imageAnnotations';
 import type { TradeId } from '../../../utils/tradeIdentity';
 
 
@@ -125,6 +126,8 @@ export interface TradeFormData {
   
   images?: string[];
   
+  imageAnnotations?: ImageAnnotations;
+  
   customTags?: string[];
   
   tags?: string[];
@@ -220,6 +223,18 @@ export interface TradeFormData {
   lotSize?: number;
   
   pipValue?: number;
+  
+  pipSize?: number;
+  
+  forexQuoteCurrency?: string;
+  
+  forexPnlConversionRate?: number;
+  
+  forexPnlConversionBaseCurrency?: string;
+  
+  forexPnlConversionRateDate?: string;
+  
+  forexPnlConversionRateSource?: 'automatic' | 'manual';
 
   
   
@@ -312,6 +327,7 @@ export const DEFAULT_TRADE_FORM_DATA: TradeFormData = {
   setupCreationLabels: [],
   thesis: '',
   images: [],
+  imageAnnotations: {},
   customTags: [],
   tags: [], 
   
@@ -351,6 +367,12 @@ export const DEFAULT_TRADE_FORM_DATA: TradeFormData = {
   currencyPair: '',
   lotSize: 0,
   pipValue: 0,
+  pipSize: 0,
+  forexQuoteCurrency: undefined,
+  forexPnlConversionRate: undefined,
+  forexPnlConversionBaseCurrency: undefined,
+  forexPnlConversionRateDate: undefined,
+  forexPnlConversionRateSource: undefined,
 
   
   tradingPair: '',
@@ -462,6 +484,7 @@ export interface TradeFormErrors {
   currencyPair?: string;
   lotSize?: string;
   pipValue?: string;
+  forexPnlConversionRate?: string;
 
   
   tradingPair?: string;

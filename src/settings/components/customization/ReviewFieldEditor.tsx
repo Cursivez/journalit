@@ -1010,27 +1010,31 @@ const ReviewTypeCheckboxes: React.FC<ReviewTypeCheckboxesProps> = ({
   selected,
   options = reviewTypeOptions,
   onToggle,
-}) => (
-  <div className="setting-item custom-review-fields-review-type-setting">
-    <div className="setting-item-info">
-      <div className="setting-item-name">{title}</div>
-      <div className="setting-item-description">{description}</div>
+}) => {
+  const selectedSet = new Set(selected);
+
+  return (
+    <div className="setting-item custom-review-fields-review-type-setting">
+      <div className="setting-item-info">
+        <div className="setting-item-name">{title}</div>
+        <div className="setting-item-description">{description}</div>
+      </div>
+      <div className="setting-item-control custom-review-fields-checkbox-group">
+        {options.map(({ type, label }) => (
+          <label key={type} className="custom-review-fields-checkbox-label">
+            <input
+              type="checkbox"
+              checked={selectedSet.has(type)}
+              onChange={(event) => void onToggle(type, event.target.checked)}
+              className="custom-fields-checkbox"
+            />
+            <span>{label}</span>
+          </label>
+        ))}
+      </div>
     </div>
-    <div className="setting-item-control custom-review-fields-checkbox-group">
-      {options.map(({ type, label }) => (
-        <label key={type} className="custom-review-fields-checkbox-label">
-          <input
-            type="checkbox"
-            checked={selected.includes(type)}
-            onChange={(event) => void onToggle(type, event.target.checked)}
-            className="custom-fields-checkbox"
-          />
-          <span>{label}</span>
-        </label>
-      ))}
-    </div>
-  </div>
-);
+  );
+};
 
 interface NumberSettingProps {
   title: string;
@@ -1087,6 +1091,7 @@ const CheckboxSetting: React.FC<CheckboxSettingProps> = ({
     <div className="setting-item-control">
       <input
         type="checkbox"
+        aria-label={title}
         checked={checked}
         onChange={(event) => void onChange(event.target.checked)}
         className="custom-fields-checkbox"

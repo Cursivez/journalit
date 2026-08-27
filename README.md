@@ -20,7 +20,10 @@ Local-first trading journal for Obsidian.
   <a href="README.ru.md">Русский</a> |
   <a href="README.zh.md">简体中文</a> |
   <a href="README.fr.md">Français</a> |
-  <a href="README.vi.md">Tiếng Việt</a>
+  <a href="README.it.md">Italiano</a> |
+  <a href="README.vi.md">Tiếng Việt</a> |
+  <a href="README.hi.md">हिन्दी</a> |
+  <a href="README.ta.md">தமிழ்</a>
 </p>
 
 [Installation](#installation) · [Supported brokers](#supported-brokers) · [Privacy](PRIVACY.md)
@@ -54,7 +57,7 @@ Community page: https://community.obsidian.md/plugins/journalit
 - **Local-first core**: core journaling works offline and stores your notes and trades inside your Obsidian vault.
 - **Account required for full access**: a Journalit account is required for authentication-backed and subscription-gated features.
 - **Paid features**: a paid Pro subscription is required for full access to Pro features such as MetaTrader sync and Trade Import.
-- **Optional network use**: the plugin only uses Journalit network services when you choose to use network-backed features. Signing in contacts Journalit services for email verification, token validation, and subscription status. If you then use authenticated features such as MetaTrader sync or Trade Import, the plugin also connects to the Journalit backend API for sync coordination, trade retrieval, and optional Trade Import, and MetaTrader sync uses Journalit-managed FTP infrastructure for report uploads. Journalit may also request exchange rates from a third-party exchange-rate service when multi-currency conversion is needed. These network-backed features are opt-in.
+- **Network use**: Journalit checks public GitHub release metadata for updates without sending vault or account data. Other network-backed features are opt-in or require sign-in; see [PRIVACY.md](PRIVACY.md).
 - **Source available, proprietary license**: the plugin is proprietary software with reviewable source.
 - **Privacy details**: see [PRIVACY.md](PRIVACY.md) for data handling, retention, and infrastructure details.
 

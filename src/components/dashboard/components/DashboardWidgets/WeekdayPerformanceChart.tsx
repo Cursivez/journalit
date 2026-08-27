@@ -288,12 +288,33 @@ const WeekdayPerformanceTooltip: React.FC<WeekdayTooltipProps> = ({
   );
 };
 
+const weekdayLabelKeys: Record<WeekdayKey, Parameters<typeof t>[0]> = {
+  mon: 'calendar.day.mon',
+  tue: 'calendar.day.tue',
+  wed: 'calendar.day.wed',
+  thu: 'calendar.day.thu',
+  fri: 'calendar.day.fri',
+  sat: 'calendar.day.sat',
+  sun: 'calendar.day.sun',
+};
+
+const getWeekdayLabelMap = (): Record<WeekdayKey, string> => ({
+  mon: t(weekdayLabelKeys.mon),
+  tue: t(weekdayLabelKeys.tue),
+  wed: t(weekdayLabelKeys.wed),
+  thu: t(weekdayLabelKeys.thu),
+  fri: t(weekdayLabelKeys.fri),
+  sat: t(weekdayLabelKeys.sat),
+  sun: t(weekdayLabelKeys.sun),
+});
+
 export const WeekdayPerformanceChart = React.memo<BaseWidgetProps>(
   ({ filters, dateFormat }) => {
     const chartRef = React.useRef<HTMLDivElement>(null);
     const plugin = usePlugin();
     const { currency } = useCurrency();
     const { formatValue, shouldMask } = useDisplayFormatter();
+    const weekdayLabelMap = getWeekdayLabelMap();
 
     const persistedMetric = normalizeMetric(
       plugin?.settings?.dashboard?.weekdayPerformanceMetric
@@ -336,16 +357,6 @@ export const WeekdayPerformanceChart = React.memo<BaseWidgetProps>(
         plugin?.settings?.trade?.breakEvenThresholdMode ?? 'fixed',
       breakEvenThresholdPercent:
         plugin?.settings?.trade?.breakEvenThresholdPercent,
-    };
-
-    const weekdayLabelMap: Record<WeekdayKey, string> = {
-      mon: t('calendar.day.mon'),
-      tue: t('calendar.day.tue'),
-      wed: t('calendar.day.wed'),
-      thu: t('calendar.day.thu'),
-      fri: t('calendar.day.fri'),
-      sat: t('calendar.day.sat'),
-      sun: t('calendar.day.sun'),
     };
 
     return (

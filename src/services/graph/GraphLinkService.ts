@@ -1,7 +1,8 @@
 import { App, TFile, TFolder } from 'obsidian';
 import type JournalitPlugin from '../../main';
 import { getTradeIdentityNoteType } from '../../utils/tradeIdentity';
-import { eventBus, type Unsubscribe } from '../events';
+import { eventBus } from '../events/EventBus';
+import type { Unsubscribe } from '../events/types';
 import { GeneratedGraphWriteCoordinator } from './GeneratedGraphWriteCoordinator';
 import { GraphFrontmatterReader } from './GraphFrontmatterReader';
 import { GraphIndexBuilder } from './GraphIndexBuilder';

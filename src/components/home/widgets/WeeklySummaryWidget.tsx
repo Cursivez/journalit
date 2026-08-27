@@ -808,19 +808,13 @@ const WeeklySummaryWidgetComponent: React.FC<WeeklySummaryWidgetProps> = ({
   }
 
   return (
-    <div
-      role="button"
-      tabIndex={0}
+    <button
+      type="button"
       onClick={() => void openWeeklyReview()}
-      onKeyDown={(e) => {
-        if (e.key !== 'Enter' && e.key !== ' ') return;
-        e.preventDefault();
-        void openWeeklyReview();
-      }}
-      className="journalit-home-weekly journalit-home-weekly--clickable"
+      className="journalit-native-button journalit-native-button--unstyled journalit-home-weekly journalit-home-weekly--clickable"
     >
       {content}
-    </div>
+    </button>
   );
 };
 

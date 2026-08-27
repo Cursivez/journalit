@@ -25,7 +25,7 @@ interface MediaPreviewProps {
   videoPreload?: 'none' | 'metadata' | 'auto';
   loading?: 'lazy' | 'eager';
   decoding?: 'async' | 'auto' | 'sync';
-  onClick?: () => void;
+  onClick?: (event: React.MouseEvent<HTMLElement>) => void;
   onKeyDown?: (event: React.KeyboardEvent<HTMLElement>) => void;
   role?: string;
   tabIndex?: number;

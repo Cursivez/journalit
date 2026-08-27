@@ -1,6 +1,6 @@
 import type JournalitPlugin from '../../main';
 import { BackendSecretStorage } from '../backend/BackendSecretStorage';
-import { BackendTradeProjectionService } from './BackendTradeProjectionService';
+import { TradeProjectionClient } from './TradeProjectionClient';
 import {
   hasPendingTradeProjectionAckForCurrentOwner,
   persistedProjectionAckBlockReason,
@@ -194,7 +194,7 @@ function resumePendingQueue(
       if (resumeEvidenceIsCurrent(plugin, current, evidence)) {
         scheduleProjectionAckRetry(
           plugin,
-          new BackendTradeProjectionService(),
+          new TradeProjectionClient(),
           Date.now(),
           backgroundStep
         );
@@ -241,7 +241,7 @@ export function initializeProjectionAckRuntime(
       if (current.started) {
         scheduleProjectionAckRetry(
           plugin,
-          new BackendTradeProjectionService(),
+          new TradeProjectionClient(),
           persistedProjectionAckNextAttemptAt(plugin) ?? Date.now(),
           backgroundStep
         );
@@ -412,7 +412,7 @@ export function startProjectionAckRuntime(
   if (persistedProjectionAckBlockReason(plugin)) return;
   scheduleProjectionAckRetry(
     plugin,
-    new BackendTradeProjectionService(),
+    new TradeProjectionClient(),
     persistedProjectionAckNextAttemptAt(plugin) ?? Date.now(),
     backgroundStep
   );

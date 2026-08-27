@@ -201,14 +201,11 @@ export const normalizeBottomSentinelRows = (
 export function useContainerWidth(options?: { initialWidth?: number }): {
   width: number;
   containerRef: React.RefObject<HTMLDivElement | null>;
-  mounted: boolean;
 } {
   const containerRef = useRef<HTMLDivElement>(null);
   const [width, setWidth] = useState(options?.initialWidth ?? 0);
-  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    setMounted(true);
     const container = containerRef.current;
     if (!container || typeof ResizeObserver === 'undefined') {
       return;
@@ -229,5 +226,5 @@ export function useContainerWidth(options?: { initialWidth?: number }): {
     return () => observer.disconnect();
   }, []);
 
-  return { width, containerRef, mounted };
+  return { width, containerRef };
 }

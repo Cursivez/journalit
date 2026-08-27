@@ -11,6 +11,7 @@ import {
   getTradeMfeValue,
   type TradeExcursionInput,
 } from '../../utils/tradeExcursion';
+import { extractPriceMoveValueFields } from '../../utils/priceMoveValue';
 
 type TradeMetricInput = TradeExcursionInput & {
   exitPrice?: number;
@@ -33,7 +34,7 @@ type TradeMetricInput = TradeExcursionInput & {
 const toRiskCalculationInput = (
   trade: TradeMetricInput
 ): Partial<TradeFormData> => ({
-  assetType: trade.assetType,
+  ...extractPriceMoveValueFields(trade),
   entryPrice: trade.entryPrice,
   positionSize: trade.positionSize,
   entries: trade.entries?.reduce<{ price: number; size: number }[]>(
@@ -47,12 +48,6 @@ const toRiskCalculationInput = (
   ),
   stopLoss: trade.stopLoss,
   riskAmount: trade.riskAmount,
-  contractSize: trade.contractSize,
-  dollarPerPoint: trade.dollarPerPoint,
-  lotSize: trade.lotSize,
-  pipValue: trade.pipValue,
-  tickSize: trade.tickSize,
-  tickValue: trade.tickValue,
 });
 
 function normalizeAssetType(assetType: unknown): string {

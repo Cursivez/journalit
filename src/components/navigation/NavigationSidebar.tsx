@@ -23,6 +23,7 @@ import { resolveIcon } from '../../utils/iconResolver';
 import { hasTranslation, t, TranslationKey } from '../../lang/helpers';
 import { SidebarNavItemComponent } from './SidebarNavItem';
 import { SidebarSearch } from './SidebarSearch';
+import { resolveSidebarTabNavigation } from '../../navigation/sidebarTabBehavior';
 
 type Section = 'overview' | 'reviews' | 'tools';
 const SECTIONS: Section[] = ['overview', 'reviews', 'tools'];
@@ -45,6 +46,7 @@ const VIEW_ACTION_MAP: Record<string, string> = {
   openAccountDashboard: 'account-dashboard',
   openCSVImport: 'journalit-csv-import-view',
   openLayoutBuilder: 'journalit-template-builder-view',
+  openEconomicCalendar: 'journalit-economic-calendar-view',
 };
 
 const QUICK_LINK_ACTION_SET: ReadonlySet<string> = new Set(QUICK_LINK_ACTIONS);
@@ -262,14 +264,13 @@ export const NavigationSidebar: React.FC<NavigationSidebarProps> = ({
 
   const handleItemClick = useCallback(
     async (action: string) => {
-      const tabBehavior =
-        plugin.settings.navigation?.tabBehavior || 'replaceActiveTab';
-      const shouldCreateNewLeaf = tabBehavior !== 'replaceActiveTab';
+      const { createNewLeaf, source } = resolveSidebarTabNavigation(plugin);
+      const focusLeaf = false;
 
       if (action === 'openSetups') {
         await plugin.viewManager.openSetupsView(
           { page: 'overview' },
-          { newTab: shouldCreateNewLeaf, focusLeaf: false }
+          { newTab: createNewLeaf, focusLeaf }
         );
         return;
       }
@@ -281,8 +282,8 @@ export const NavigationSidebar: React.FC<NavigationSidebarProps> = ({
         await plugin.viewManager.navigateToView(
           viewType,
           undefined,
-          shouldCreateNewLeaf,
-          false
+          createNewLeaf,
+          focusLeaf
         );
         return;
       }
@@ -290,9 +291,9 @@ export const NavigationSidebar: React.FC<NavigationSidebarProps> = ({
       
       if (isQuickLinkAction(action) && REVIEW_ACTIONS.has(action)) {
         await actionResolver.executeAction(action, {
-          createNewLeaf: shouldCreateNewLeaf,
-          focusLeaf: false,
-          source: 'sidebar',
+          createNewLeaf,
+          focusLeaf,
+          source,
         });
         return;
       }

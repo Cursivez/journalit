@@ -2,13 +2,10 @@ import React from 'react';
 import { Button } from '../../../components/ui';
 import {
   AlertCircle,
-  CheckCircle2,
-  Clock,
   Download,
   RefreshCw,
   RotateCcw,
   Server,
-  Users,
 } from '../../../components/shared/icons/ObsidianIcon';
 import { Tooltip } from '../../../components/shared/Tooltip';
 import { t } from '../../../lang/helpers';
@@ -20,17 +17,29 @@ import type {
 } from '../../../services/tradeSync/types';
 import { openExternalUrl } from '../../../utils/externalLinks';
 import { formatLocalizedDateTime } from '../../../utils/localizedDateTime';
+import {
+  BrokerAccountCard,
+  BrokerActionsRow,
+  BrokerConnectionList,
+  BrokerConnectionStatus,
+  BrokerLocalAccountSelect,
+  BrokerUnsavedMappingHint,
+  BrokerOverviewCard,
+  BrokerStatusPlaceholder,
+  type BrokerConnectionTone,
+  type BrokerStatusState,
+  type LocalAccountOption,
+} from './brokerSyncKit';
 import type {
   AccountDraft,
   AccountDrafts,
   HistoryChoice,
 } from './tradovateSyncPanelDrafts';
 import { tradovateAccountDraftKey } from './tradovateSyncPanelDrafts';
-import type { LocalAccountOption } from './useTradovateSyncPanelModel';
 
 const TRADOVATE_DOCS_URL = 'https://journalit.co/docs/trade-sync-tradovate';
 const TRADOVATE_INTEGRATIONS_URL =
-  'https://journalit.co/dashboard/integrations';
+  'https://journalit.co/dashboard/integrations?provider=tradovate';
 
 function isHistoryChoice(value: string): value is HistoryChoice {
   return (
@@ -77,20 +86,16 @@ function formatConnectionStatus(status: string): string {
   }
 }
 
-function connectionStatusIcon(status: string): React.ReactNode {
-  if (status === 'active' || status === 'setup_required') {
-    return (
-      <CheckCircle2 size={18} className="status-icon status-icon--success" />
-    );
-  }
+function connectionStatusTone(status: string): BrokerConnectionTone {
+  if (status === 'active' || status === 'setup_required') return 'success';
   if (
     status === 'disconnected' ||
     status === 'reauthorization_required' ||
     status === 'error'
   ) {
-    return <AlertCircle size={18} className="status-icon status-icon--error" />;
+    return 'error';
   }
-  return <Clock size={18} className="status-icon status-icon--pending" />;
+  return 'pending';
 }
 
 interface ConnectionUiState {
@@ -101,11 +106,7 @@ interface ConnectionUiState {
   hasRunningJob: boolean;
 }
 
-export type TradovateStatusState =
-  | { kind: 'idle' }
-  | { kind: 'loading' }
-  | { kind: 'loaded'; data: TradovateConnections }
-  | { kind: 'failed' };
+export type TradovateStatusState = BrokerStatusState<TradovateConnections>;
 
 export interface TradovateSyncPanelContentProps {
   statusState: TradovateStatusState;
@@ -116,10 +117,14 @@ export interface TradovateSyncPanelContentProps {
   refreshing: boolean;
   syncAllBusy: boolean;
   syncAllAvailable: boolean;
+  
+  syncAllBlockedMessage?: string;
+  
+  mappingDirty: Record<string, true>;
   restoringAccountIds: Record<string, true>;
   connectionStates: Record<string, ConnectionUiState>;
   pendingAckCount: number;
-  refresh: () => Promise<void>;
+  refresh: (options?: { background?: boolean }) => Promise<boolean | void>;
   syncConnection: (connectionId: string) => Promise<void>;
   syncAll: () => Promise<void>;
   discoverAccounts: (connectionId: string) => Promise<void>;
@@ -146,6 +151,7 @@ interface TradovateAccountCardProps {
   draft: AccountDraft;
   inventoryAccount?: TradeProjectionAccountInventoryItem;
   localAccounts: LocalAccountOption[];
+  mappingUnsaved: boolean;
   busy: boolean;
   canSync: boolean;
   restoringAccountIds: Record<string, true>;
@@ -162,6 +168,7 @@ const TradovateAccountCard: React.FC<TradovateAccountCardProps> = ({
   draft,
   inventoryAccount,
   localAccounts,
+  mappingUnsaved,
   busy,
   canSync,
   restoringAccountIds,
@@ -176,18 +183,10 @@ const TradovateAccountCard: React.FC<TradovateAccountCardProps> = ({
   const claimedElsewhere = Boolean(claimOwnerDisplayName);
 
   return (
-    <article
-      className={`status-card journalit-tradovate-account-card${
-        compact ? ' journalit-tradovate-account-card--single' : ''
-      }`}
-    >
-      <div className="status-card-header journalit-tradovate-account-card__header">
-        <span className="journalit-tradovate-card-header__title">
-          <Users size={20} />
-          <span>
-            {account.displayName ?? t('backend.cards.accounts.title')}
-          </span>
-        </span>
+    <BrokerAccountCard
+      className={compact ? 'journalit-tradovate-account-card--single' : ''}
+      title={account.displayName ?? t('backend.cards.accounts.title')}
+      headerTrailing={
         <label className="journalit-tradovate-account-toggle">
           <input
             type="checkbox"
@@ -201,153 +200,146 @@ const TradovateAccountCard: React.FC<TradovateAccountCardProps> = ({
           />
           {t('trade-sync.tradovate.sync-account')}
         </label>
+      }
+      contentClassName="journalit-tradovate-account-card__content"
+    >
+      <div className="journalit-tradovate-account-summary">
+        <div className="journalit-tradovate-account-identity">
+          <span>{formatAccountMetadata(account)}</span>
+        </div>
+        <span className="journalit-tradovate-account-last-sync">
+          {t('trade-sync.tradovate.last-sync')}:{' '}
+          {formatSyncTime(account.lastSuccessfulSyncAt)}
+        </span>
       </div>
-      <div className="status-card-content journalit-tradovate-account-card__content">
-        <div className="journalit-tradovate-account-summary">
-          <div className="journalit-tradovate-account-identity">
-            <span>{formatAccountMetadata(account)}</span>
-          </div>
-          <span className="journalit-tradovate-account-last-sync">
-            {t('trade-sync.tradovate.last-sync')}:{' '}
-            {formatSyncTime(account.lastSuccessfulSyncAt)}
+      {claimOwnerDisplayName && (
+        <div className="journalit-tradovate-claim-conflict" role="status">
+          <AlertCircle size={15} />
+          <span>
+            {t('trade-sync.tradovate.claimed-by-connection', {
+              connection: claimOwnerDisplayName,
+            })}
           </span>
         </div>
-        {claimOwnerDisplayName && (
-          <div className="journalit-tradovate-claim-conflict" role="status">
-            <AlertCircle size={15} />
-            <span>
-              {t('trade-sync.tradovate.claimed-by-connection', {
-                connection: claimOwnerDisplayName,
-              })}
-            </span>
-          </div>
-        )}
-        <div className="journalit-tradovate-account-mapping">
-          <div className="journalit-tradovate-account-field">
-            <label>
-              <span>{t('trade-sync.tradovate.history-label')}</span>
-              <select
-                value={draft.historyChoice}
-                disabled={busy || historyLocked || !canSync || claimedElsewhere}
-                onChange={(event) => {
-                  if (isHistoryChoice(event.target.value)) {
-                    updateDraft(connection.id, account.id, {
-                      historyChoice: event.target.value,
-                    });
-                  }
-                }}
-              >
-                <option value="all_available">
-                  {t('trade-sync.tradovate.history-all')}
-                </option>
-                <option value="recent_90_days">
-                  {t('trade-sync.tradovate.history-recent')}
-                </option>
-                <option value="custom_date">
-                  {t('trade-sync.tradovate.history-custom')}
-                </option>
-                <option value="new_trades_only">
-                  {t('trade-sync.tradovate.history-new')}
-                </option>
-              </select>
-            </label>
-            {draft.historyChoice === 'custom_date' && (
-              <label>
-                <span>{t('trade-sync.tradovate.start-date')}</span>
-                <input
-                  type="date"
-                  value={draft.historyFrom}
-                  disabled={
-                    busy || historyLocked || !canSync || claimedElsewhere
-                  }
-                  onChange={(event) =>
-                    updateDraft(connection.id, account.id, {
-                      historyFrom: event.target.value,
-                    })
-                  }
-                />
-              </label>
-            )}
-          </div>
-          <div className="journalit-tradovate-account-field journalit-tradovate-local-account-field">
-            <div className="journalit-tradovate-local-account-heading">
-              <label
-                htmlFor={`tradovate-local-account-${connection.id}-${account.id}`}
-              >
-                {t('trade-sync.import.account.local-account')}
-              </label>
-              <button
-                type="button"
-                className="journalit-tradovate-create-local"
-                disabled={
-                  busy ||
-                  !canSync ||
-                  localAccounts.some(
-                    (localAccount) => localAccount.name === account.displayName
-                  )
-                }
-                onClick={() => void createLocalAccount(connection.id, account)}
-              >
-                {t('trade-sync.import.action.create-local-account')}
-              </button>
-            </div>
+      )}
+      <div className="journalit-tradovate-account-mapping">
+        <div className="journalit-tradovate-account-field">
+          <label>
+            <span>{t('trade-sync.tradovate.history-label')}</span>
             <select
-              id={`tradovate-local-account-${connection.id}-${account.id}`}
-              value={draft.localAccountId}
-              disabled={busy || !canSync}
-              onChange={(event) =>
-                updateDraft(
-                  connection.id,
-                  account.id,
-                  { localAccountId: event.target.value },
-                  true
-                )
-              }
+              value={draft.historyChoice}
+              disabled={busy || historyLocked || !canSync || claimedElsewhere}
+              onChange={(event) => {
+                if (isHistoryChoice(event.target.value)) {
+                  updateDraft(connection.id, account.id, {
+                    historyChoice: event.target.value,
+                  });
+                }
+              }}
             >
-              <option value="">{t('account.link-modal.select-account')}</option>
-              {localAccounts.map((localAccount) => (
-                <option key={localAccount.id} value={localAccount.id}>
-                  {localAccount.name}
-                </option>
-              ))}
+              <option value="all_available">
+                {t('trade-sync.tradovate.history-all')}
+              </option>
+              <option value="recent_90_days">
+                {t('trade-sync.tradovate.history-recent')}
+              </option>
+              <option value="custom_date">
+                {t('trade-sync.tradovate.history-custom')}
+              </option>
+              <option value="new_trades_only">
+                {t('trade-sync.tradovate.history-new')}
+              </option>
             </select>
-          </div>
+          </label>
+          {draft.historyChoice === 'custom_date' && (
+            <label>
+              <span>{t('trade-sync.tradovate.start-date')}</span>
+              <input
+                type="date"
+                value={draft.historyFrom}
+                disabled={busy || historyLocked || !canSync || claimedElsewhere}
+                onChange={(event) =>
+                  updateDraft(connection.id, account.id, {
+                    historyFrom: event.target.value,
+                  })
+                }
+              />
+            </label>
+          )}
         </div>
-        {inventoryAccount && restorableCount > 0 && (
-          <div className="journalit-tradovate-account-recovery">
-            <div className="journalit-tradovate-account-recovery__status">
-              <span className="journalit-tradovate-account-recovery__count">
-                {t('trade-sync.tradovate.recovery-count', {
-                  count: String(restorableCount),
-                })}
-              </span>
-              {!draft.localAccountId && (
-                <span className="journalit-tradovate-account-recovery__hint">
-                  {t('trade-sync.tradovate.recovery-select-account')}
-                </span>
-              )}
-            </div>
-            <Button
-              variant="secondary"
-              size="small"
+        <div className="journalit-tradovate-account-field journalit-tradovate-local-account-field">
+          <div className="journalit-tradovate-local-account-heading">
+            <label
+              htmlFor={`tradovate-local-account-${connection.id}-${account.id}`}
+            >
+              {t('trade-sync.import.account.local-account')}
+            </label>
+            <button
+              type="button"
+              className="journalit-tradovate-create-local"
               disabled={
                 busy ||
-                !draft.localAccountId ||
-                Boolean(restoringAccountIds[inventoryAccount.accountId])
+                !canSync ||
+                localAccounts.some(
+                  (localAccount) => localAccount.name === account.displayName
+                )
               }
-              onClick={() =>
-                void restoreAccount(connection.id, account, inventoryAccount)
-              }
+              onClick={() => void createLocalAccount(connection.id, account)}
             >
-              <RotateCcw size={14} />
-              {restoringAccountIds[inventoryAccount.accountId]
-                ? t('trade-sync.import.action.restoring')
-                : t('trade-sync.import.action.restore-account')}
-            </Button>
+              {t('trade-sync.import.action.create-local-account')}
+            </button>
           </div>
-        )}
+          <BrokerLocalAccountSelect
+            id={`tradovate-local-account-${connection.id}-${account.id}`}
+            value={draft.localAccountId}
+            disabled={busy || !canSync}
+            localAccounts={localAccounts}
+            onChange={(value) =>
+              updateDraft(
+                connection.id,
+                account.id,
+                { localAccountId: value },
+                true
+              )
+            }
+          />
+          {mappingUnsaved && <BrokerUnsavedMappingHint />}
+        </div>
       </div>
-    </article>
+      {inventoryAccount && restorableCount > 0 && (
+        <div className="journalit-tradovate-account-recovery">
+          <div className="journalit-tradovate-account-recovery__status">
+            <span className="journalit-tradovate-account-recovery__count">
+              {t('trade-sync.tradovate.recovery-count', {
+                count: String(restorableCount),
+              })}
+            </span>
+            {!draft.localAccountId && (
+              <span className="journalit-tradovate-account-recovery__hint">
+                {t('trade-sync.tradovate.recovery-select-account')}
+              </span>
+            )}
+          </div>
+          <Button
+            variant="secondary"
+            size="small"
+            disabled={
+              busy ||
+              !draft.localAccountId ||
+              Boolean(restoringAccountIds[inventoryAccount.accountId])
+            }
+            onClick={() =>
+              void restoreAccount(connection.id, account, inventoryAccount)
+            }
+          >
+            <RotateCcw size={14} />
+            {restoringAccountIds[inventoryAccount.accountId]
+              ? t('trade-sync.import.action.restoring')
+              : t('trade-sync.import.action.restore-account')}
+          </Button>
+        </div>
+      )}
+    </BrokerAccountCard>
   );
 };
 
@@ -360,6 +352,7 @@ interface TradovateConnectionCardProps {
   drafts: AccountDrafts;
   localAccounts: LocalAccountOption[];
   inventoryAccounts: TradeProjectionAccountInventoryItem[];
+  mappingDirty: Record<string, true>;
   busy: boolean;
   restoringAccountIds: Record<string, true>;
   syncConnection: TradovateSyncPanelContentProps['syncConnection'];
@@ -376,6 +369,7 @@ const TradovateConnectionCard: React.FC<TradovateConnectionCardProps> = ({
   drafts,
   localAccounts,
   inventoryAccounts,
+  mappingDirty,
   busy,
   restoringAccountIds,
   syncConnection,
@@ -386,10 +380,10 @@ const TradovateConnectionCard: React.FC<TradovateConnectionCardProps> = ({
 }) => {
   const hasSingleAccount = connection.accounts.length === 1;
   const connectionStatus = (
-    <span className="journalit-tradovate-connection-status">
-      {connectionStatusIcon(connection.status)}
-      {formatConnectionStatus(connection.status)}
-    </span>
+    <BrokerConnectionStatus
+      tone={connectionStatusTone(connection.status)}
+      label={formatConnectionStatus(connection.status)}
+    />
   );
   const connectionStatusTooltip =
     connection.status === 'reauthorization_required'
@@ -398,7 +392,7 @@ const TradovateConnectionCard: React.FC<TradovateConnectionCardProps> = ({
         ? t('trade-sync.tradovate.discovery-description')
         : null;
   const actions = (
-    <div
+    <BrokerActionsRow
       className={`journalit-tradovate-connection-actions${
         hasSingleAccount
           ? ' journalit-tradovate-connection-actions--single'
@@ -440,7 +434,7 @@ const TradovateConnectionCard: React.FC<TradovateConnectionCardProps> = ({
             : t('trade-sync.tradovate.sync-to-vault')}
         </Button>
       )}
-    </div>
+    </BrokerActionsRow>
   );
 
   return (
@@ -451,7 +445,7 @@ const TradovateConnectionCard: React.FC<TradovateConnectionCardProps> = ({
       open
     >
       <summary className="journalit-tradovate-connection-summary">
-        <span className="journalit-tradovate-card-header__title">
+        <span className="journalit-broker-card-header__title">
           <Server size={20} />
           <strong>{connection.displayName}</strong>
         </span>
@@ -516,6 +510,9 @@ const TradovateConnectionCard: React.FC<TradovateConnectionCardProps> = ({
                   draft={draft}
                   inventoryAccount={inventoryAccount}
                   localAccounts={localAccounts}
+                  mappingUnsaved={Boolean(
+                    mappingDirty[account.canonicalAccountId]
+                  )}
                   busy={busy}
                   canSync={state.canSync}
                   restoringAccountIds={restoringAccountIds}
@@ -548,6 +545,8 @@ export const TradovateSyncPanelContent: React.FC<
   refreshing,
   syncAllBusy,
   syncAllAvailable,
+  syncAllBlockedMessage,
+  mappingDirty,
   restoringAccountIds,
   connectionStates,
   pendingAckCount,
@@ -565,100 +564,89 @@ export const TradovateSyncPanelContent: React.FC<
   const statusUnavailable = statusState.kind === 'failed';
   return (
     <section className="journalit-tradovate-sync-panel">
-      <div className="status-card journalit-tradovate-overview-card">
-        <div className="status-card-header journalit-tradovate-card-header">
-          <span className="journalit-tradovate-card-header__title">
-            <Server size={20} />
-            <span>{t('trade-sync.source.tradovate')}</span>
-          </span>
-          <button
-            type="button"
-            className="journalit-tradovate-manage-link"
-            onClick={() => openExternalUrl(TRADOVATE_DOCS_URL)}
-          >
-            {t('trade-sync.tradovate.setup-guide')}
-          </button>
-        </div>
-        <div className="status-card-content journalit-tradovate-overview-content">
-          <p>{t('trade-sync.tradovate.plugin-sync-description')}</p>
-          {pendingAckCount > 0 && (
+      <BrokerOverviewCard
+        title={t('trade-sync.source.tradovate')}
+        description={t('trade-sync.tradovate.plugin-sync-description')}
+        descriptionExtra={
+          pendingAckCount > 0 && (
             <span className="journalit-tradovate-sync-pending">
               {t('trade-sync.tradovate.pending-acks', {
                 count: String(pendingAckCount),
               })}
             </span>
-          )}
-        </div>
-        <div className="status-card-actions journalit-tradovate-card-actions">
-          {statusLoaded && connections.length === 0 ? (
+          )
+        }
+        manageLink={{
+          label: t('trade-sync.tradovate.setup-guide'),
+          onClick: () => openExternalUrl(TRADOVATE_DOCS_URL),
+        }}
+        actionsHint={syncAllAvailable ? undefined : syncAllBlockedMessage}
+        actions={
+          <>
+            {statusLoaded && connections.length === 0 ? (
+              <Button
+                variant="primary"
+                size="small"
+                onClick={() => openExternalUrl(TRADOVATE_INTEGRATIONS_URL)}
+              >
+                {t('trade-sync.tradovate.connect')}
+              </Button>
+            ) : statusLoaded ? (
+              <Button
+                variant="primary"
+                size="small"
+                disabled={
+                  refreshing ||
+                  syncAllBusy ||
+                  !syncAllAvailable ||
+                  Object.keys(busyConnections).length > 0
+                }
+                title={syncAllAvailable ? undefined : syncAllBlockedMessage}
+                onClick={() => void syncAll()}
+              >
+                <Download size={14} />
+                {t('trade-sync.tradovate.sync-all')}
+              </Button>
+            ) : null}
             <Button
-              variant="primary"
+              variant="secondary"
               size="small"
-              onClick={() => openExternalUrl(TRADOVATE_INTEGRATIONS_URL)}
+              disabled={refreshing || syncAllBusy}
+              onClick={() => void refresh()}
             >
-              {t('trade-sync.tradovate.connect')}
+              <RefreshCw size={14} />
+              {t('backend.cards.connection.refresh')}
             </Button>
-          ) : statusLoaded ? (
-            <Button
-              variant="primary"
-              size="small"
-              disabled={
-                refreshing ||
-                syncAllBusy ||
-                !syncAllAvailable ||
-                Object.keys(busyConnections).length > 0
+          </>
+        }
+        footerLink={
+          statusLoaded && connections.length > 0
+            ? {
+                label: t('trade-sync.tradovate.connect-another'),
+                onClick: () => openExternalUrl(TRADOVATE_INTEGRATIONS_URL),
               }
-              onClick={() => void syncAll()}
-            >
-              <Download size={14} />
-              {t('trade-sync.tradovate.sync-all')}
-            </Button>
-          ) : null}
-          <Button
-            variant="secondary"
-            size="small"
-            disabled={refreshing || syncAllBusy}
-            onClick={() => void refresh()}
-          >
-            <RefreshCw size={14} />
-            {t('backend.cards.connection.refresh')}
-          </Button>
-        </div>
-        {statusLoaded && connections.length > 0 && (
-          <div className="journalit-tradovate-docs-link-row">
-            <button
-              type="button"
-              className="journalit-tradovate-manage-link"
-              onClick={() => openExternalUrl(TRADOVATE_INTEGRATIONS_URL)}
-            >
-              {t('trade-sync.tradovate.connect-another')}
-            </button>
-          </div>
-        )}
-      </div>
+            : undefined
+        }
+      />
 
       {!statusLoaded && (
-        <div
-          className="journalit-trade-import-sync-placeholder"
+        <BrokerStatusPlaceholder
           role={statusUnavailable ? 'alert' : 'status'}
-        >
-          <p>
-            {t(
-              statusUnavailable
-                ? 'trade-sync.tradovate.status-failed'
-                : 'common.loading'
-            )}
-          </p>
-        </div>
+          message={t(
+            statusUnavailable
+              ? 'trade-sync.tradovate.status-failed'
+              : 'common.loading'
+          )}
+        />
       )}
 
       {statusLoaded && connections.length === 0 && (
-        <div className="journalit-trade-import-sync-placeholder">
-          <p>{t('trade-sync.tradovate.no-connections')}</p>
-        </div>
+        <BrokerStatusPlaceholder
+          message={t('trade-sync.tradovate.no-connections')}
+        />
       )}
 
-      <div className="journalit-tradovate-connection-list">
+      <BrokerConnectionList>
         {connections.map((connection) => (
           <TradovateConnectionCard
             key={connection.id}
@@ -668,6 +656,7 @@ export const TradovateSyncPanelContent: React.FC<
             drafts={drafts}
             localAccounts={localAccounts}
             inventoryAccounts={inventoryAccounts}
+            mappingDirty={mappingDirty}
             busy={Boolean(busyConnections[connection.id] || syncAllBusy)}
             restoringAccountIds={restoringAccountIds}
             syncConnection={syncConnection}
@@ -677,7 +666,7 @@ export const TradovateSyncPanelContent: React.FC<
             updateDraft={updateDraft}
           />
         ))}
-      </div>
+      </BrokerConnectionList>
     </section>
   );
 };

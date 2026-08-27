@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { BaseWidget, BaseWidgetProps } from './BaseWidget';
-import { SharedDrawdownChart } from '../../../charts';
+import { SharedDrawdownChart } from '../../../charts/SharedDrawdownChart';
 import {
   getDrawdownChartScaleValue,
   prepareDrawdownChartState,

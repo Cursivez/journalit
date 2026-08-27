@@ -4,10 +4,14 @@ import {
   calculateWeightedAveragePrice,
   normalizeTradeExecution,
 } from '../services/trade/core/TradeExecutionNormalization';
-import { hasCanonicalProjectionIdentity } from '../services/trade/core/CanonicalProjectionFields';
+import { hasUnknownCanonicalPnL } from '../services/trade/core/CanonicalProjectionFields';
 import { calculateTradeDirectionPriceDiff } from '../services/trade/core/TradeDirection';
 import { classifyPnLWithBreakEvenSettings } from './breakEvenRange';
 import { parseTradeTimestampValue } from './dateUtils';
+import {
+  calculateAssetAdjustedPriceMoveValue,
+  type PriceMoveValueInput,
+} from './priceMoveValue';
 
 const SIZE_COMPARISON_TOLERANCE = 1e-9;
 
@@ -81,6 +85,7 @@ interface TradePnLContributionContext {
   canonicalTradeId?: string;
   canonicalTradeVersion?: number;
   canonicalProjectionSchemaVersion?: number;
+  authoritativePnl?: number | null;
   tradeStatus?: string;
   exitTime?: Date | string | null;
   exitPrice?: number | null;
@@ -103,6 +108,58 @@ interface TradePnLContributionContext {
     price?: number | null;
     size?: number | null;
   }>;
+}
+
+type PartialExitSizeInput = Pick<
+  TradePnLContributionContext,
+  'entries' | 'exits'
+>;
+
+function getPartialExitSizeSummary(trade: PartialExitSizeInput): {
+  weightedEntryLegs: Array<{ price: number; size: number }>;
+  totalEntrySize: number;
+  totalExitSize: number;
+  remainingSize: number;
+  normalizedRemainingSize: number;
+  isPartialExit: boolean;
+} {
+  const weightedEntryLegs = (trade.entries ?? []).flatMap((entry) =>
+    typeof entry.price === 'number' &&
+    Number.isFinite(entry.price) &&
+    entry.price > 0 &&
+    typeof entry.size === 'number' &&
+    Number.isFinite(entry.size) &&
+    entry.size > 0
+      ? [{ price: entry.price, size: entry.size }]
+      : []
+  );
+  const totalEntrySize = weightedEntryLegs.reduce(
+    (sum, entry) => sum + entry.size,
+    0
+  );
+  const totalExitSize = (trade.exits ?? []).reduce(
+    (sum, exit) =>
+      typeof exit.size === 'number' &&
+      Number.isFinite(exit.size) &&
+      exit.size > 0
+        ? sum + exit.size
+        : sum,
+    0
+  );
+  const remainingSize = totalEntrySize - totalExitSize;
+  const normalizedRemainingSize =
+    Math.abs(remainingSize) <= SIZE_COMPARISON_TOLERANCE ? 0 : remainingSize;
+
+  return {
+    weightedEntryLegs,
+    totalEntrySize,
+    totalExitSize,
+    remainingSize,
+    normalizedRemainingSize,
+    isPartialExit:
+      totalExitSize > SIZE_COMPARISON_TOLERANCE &&
+      remainingSize > SIZE_COMPARISON_TOLERANCE,
+  };
 }
 
 export function hasRealizedPnLComponents(
@@ -184,6 +241,26 @@ export function hasRealizedStoredPnL(
   );
 }
 
+export function hasDerivableCurrentRealizedPnL(
+  trade: Pick<
+    TradePnLContributionContext,
+    | 'canonicalTradeId'
+    | 'canonicalTradeVersion'
+    | 'canonicalProjectionSchemaVersion'
+    | 'authoritativePnl'
+    | 'tradeStatus'
+    | '_originalPnlWasNull'
+    | 'pnl'
+    | 'entries'
+    | 'exits'
+  >
+): boolean {
+  if (trade.tradeStatus === 'CANCELLED') return false;
+  if (hasUnknownCanonicalPnL(trade)) return false;
+
+  return getPartialExitSizeSummary(trade).isPartialExit;
+}
+
 export function isPnlContributingTrade(
   trade: TradePnLContributionContext
 ): boolean {
@@ -191,10 +268,7 @@ export function isPnlContributingTrade(
     return false;
   }
   if (trade.tradeStatus === 'CLOSED') {
-    return !(
-      trade._originalPnlWasNull === true &&
-      hasCanonicalProjectionIdentity(trade)
-    );
+    return !hasUnknownCanonicalPnL(trade);
   }
 
   return (
@@ -467,12 +541,15 @@ export function getTradeDisplayStatusWithContext(
       size?: number | null;
     }>;
   },
-  settings?: {
-    breakEvenRangeMin?: number;
-    breakEvenRangeMax?: number;
-    breakEvenThresholdMode?: 'fixed' | 'percentage_current_balance';
-    breakEvenThresholdPercent?: number;
-  }
+  settings:
+    | {
+        breakEvenRangeMin?: number;
+        breakEvenRangeMax?: number;
+        breakEvenThresholdMode?: 'fixed' | 'percentage_current_balance';
+        breakEvenThresholdPercent?: number;
+      }
+    | undefined,
+  resolvePnL: () => number
 ):
   | 'open'
   | 'partially_closed'
@@ -501,15 +578,12 @@ export function getTradeDisplayStatusWithContext(
     return 'open';
   }
 
-  if (
-    hasCanonicalProjectionIdentity(trade) &&
-    (trade.authoritativePnl === null || trade._originalPnlWasNull === true)
-  ) {
+  if (hasUnknownCanonicalPnL(trade)) {
     return 'unknown';
   }
 
   
-  const effectivePnL = getEffectivePnL(trade);
+  const effectivePnL = resolvePnL();
   const mode = settings?.breakEvenThresholdMode ?? 'fixed';
 
   if (mode !== 'percentage_current_balance') {
@@ -555,28 +629,23 @@ export interface PartialExitInfo {
 }
 
 
-export function getPartialExitInfo(trade: {
-  entries?: Array<{ price?: number | null; size?: number | null }>;
-  exits?: Array<{
-    time?: Date | string | null;
-    price?: number | null;
-    size?: number | null;
-  }>;
-  direction?: string;
-  assetType?: string;
-  optionType?: string;
-  contractSize?: number;
-  dollarPerPoint?: number;
-  tickValue?: number;
-  tickSize?: number;
-  lotSize?: number;
-  pipValue?: number;
-  commission?: number;
-  commissionType?: 'fixed' | 'percentage';
-  swap?: number;
-  fees?: number;
-  rebate?: number;
-}): PartialExitInfo {
+export function getPartialExitInfo(
+  trade: PriceMoveValueInput & {
+    entries?: Array<{ price?: number | null; size?: number | null }>;
+    exits?: Array<{
+      time?: Date | string | null;
+      price?: number | null;
+      size?: number | null;
+    }>;
+    direction?: string;
+    optionType?: string;
+    commission?: number;
+    commissionType?: 'fixed' | 'percentage';
+    swap?: number;
+    fees?: number;
+    rebate?: number;
+  }
+): PartialExitInfo {
   const defaultResult: PartialExitInfo = {
     isPartialExit: false,
     closedSize: 0,
@@ -586,27 +655,13 @@ export function getPartialExitInfo(trade: {
     exits: [],
   };
 
-  
-  if (!trade.entries || trade.entries.length === 0) {
-    return defaultResult;
-  }
-
-  const isWeightedEntryLeg = (entry: {
-    price?: number | null;
-    size?: number | null;
-  }): entry is { price: number; size: number } =>
-    typeof entry.price === 'number' &&
-    Number.isFinite(entry.price) &&
-    entry.price > 0 &&
-    typeof entry.size === 'number' &&
-    Number.isFinite(entry.size) &&
-    entry.size > 0;
-
-  const weightedEntryLegs = trade.entries.filter(isWeightedEntryLeg);
-  const totalEntrySize = weightedEntryLegs.reduce(
-    (sum, entry) => sum + entry.size,
-    0
-  );
+  const {
+    weightedEntryLegs,
+    totalEntrySize,
+    totalExitSize,
+    normalizedRemainingSize,
+    isPartialExit,
+  } = getPartialExitSizeSummary(trade);
   const totalEntryValue = weightedEntryLegs.reduce(
     (sum, entry) => sum + entry.price * entry.size,
     0
@@ -627,7 +682,6 @@ export function getPartialExitInfo(trade: {
   }
 
   
-  let totalExitSize = 0;
   let totalPnL = 0;
   const exitDetails: Array<{
     time?: Date | string | null;
@@ -642,8 +696,6 @@ export function getPartialExitInfo(trade: {
 
     if (exitSize <= 0) continue;
 
-    totalExitSize += exitSize;
-
     
     const priceDiff = calculateTradeDirectionPriceDiff(
       trade,
@@ -652,43 +704,11 @@ export function getPartialExitInfo(trade: {
     );
     if (priceDiff === null) continue;
 
-    let exitPnL = priceDiff * exitSize;
-
-    
-    if (trade.assetType) {
-      switch (trade.assetType) {
-        case 'options':
-          if (trade.contractSize) {
-            exitPnL = priceDiff * exitSize * trade.contractSize;
-          }
-          break;
-        case 'futures':
-          
-          if (trade.tickValue && trade.tickSize && trade.tickSize > 0) {
-            const ticks = priceDiff / trade.tickSize;
-            exitPnL = ticks * trade.tickValue * exitSize;
-          } else if (trade.dollarPerPoint) {
-            exitPnL = priceDiff * exitSize * trade.dollarPerPoint;
-          }
-          break;
-        case 'forex':
-          if (trade.lotSize && trade.lotSize > 0) {
-            exitPnL = priceDiff * exitSize * trade.lotSize;
-          } else if (trade.pipValue && trade.pipValue > 0) {
-            const pips = priceDiff * 10000;
-            exitPnL = pips * trade.pipValue * exitSize;
-          }
-          break;
-        case 'cfd': {
-          const contractSize =
-            trade.contractSize && trade.contractSize > 0
-              ? trade.contractSize
-              : 1;
-          exitPnL = priceDiff * exitSize * contractSize;
-          break;
-        }
-      }
-    }
+    const exitPnL = calculateAssetAdjustedPriceMoveValue(
+      trade,
+      priceDiff,
+      exitSize
+    );
 
     totalPnL += exitPnL;
     exitDetails.push({
@@ -698,14 +718,6 @@ export function getPartialExitInfo(trade: {
       pnl: exitPnL,
     });
   }
-
-  
-  const remainingSize = totalEntrySize - totalExitSize;
-  const normalizedRemainingSize =
-    Math.abs(remainingSize) <= SIZE_COMPARISON_TOLERANCE ? 0 : remainingSize;
-  const isPartialExit =
-    totalExitSize > SIZE_COMPARISON_TOLERANCE &&
-    remainingSize > SIZE_COMPARISON_TOLERANCE;
 
   
   if (isPartialExit && totalExitSize > 0) {
@@ -754,6 +766,55 @@ export function getPartialExitInfo(trade: {
     realizedPnL: totalPnL,
     exits: exitDetails,
   };
+}
+
+type CurrentRealizedPnLInput = Parameters<typeof getPartialExitInfo>[0] &
+  Parameters<typeof getEffectivePnL>[0] &
+  Parameters<typeof hasRealizedStoredPnL>[0] & {
+    canonicalTradeId?: string;
+    canonicalTradeVersion?: number;
+    canonicalProjectionSchemaVersion?: number;
+    authoritativePnl?: number | null;
+  };
+
+interface CurrentRealizedPnLResolution {
+  pnl: number | null;
+  financialAdjustmentRatio: number;
+}
+
+
+export function resolveCurrentRealizedPnL(
+  trade: CurrentRealizedPnLInput,
+  totalDividends: number,
+  options: { authoritativePnlUnknown?: boolean } = {}
+): CurrentRealizedPnLResolution {
+  if (options.authoritativePnlUnknown || hasUnknownCanonicalPnL(trade)) {
+    return { pnl: null, financialAdjustmentRatio: 0 };
+  }
+
+  if (hasRealizedStoredPnL(trade)) {
+    return { pnl: getEffectivePnL(trade), financialAdjustmentRatio: 1 };
+  }
+
+  const partialExitInfo = getPartialExitInfo(trade);
+  if (!partialExitInfo.isPartialExit) {
+    return { pnl: 0, financialAdjustmentRatio: 0 };
+  }
+
+  return {
+    pnl: partialExitInfo.realizedPnL + totalDividends,
+    financialAdjustmentRatio:
+      partialExitInfo.closedSize / partialExitInfo.totalSize,
+  };
+}
+
+
+export function getCurrentRealizedPnL(
+  trade: CurrentRealizedPnLInput,
+  totalDividends: number,
+  options: { authoritativePnlUnknown?: boolean } = {}
+): number | null {
+  return resolveCurrentRealizedPnL(trade, totalDividends, options).pnl;
 }
 
 interface TradeExecutionCompatibilityInput {

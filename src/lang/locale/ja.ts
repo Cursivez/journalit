@@ -64,61 +64,54 @@ const ja: Partial<Lang> = {
   'onboarding.explore.core.layouts.label': 'Layout Builder',
   'onboarding.explore.core.layouts.description':
     'Customize dashboards and review layouts with widgets and templates.',
-  'onboarding.explore.imports.title': 'Imports & Sync (PRO)',
-  'onboarding.explore.imports.subtitle':
-    'Preview and setup anytime. Importing/sync requires Pro.',
+  'onboarding.explore.imports.title': 'インポートと同期',
+
   'onboarding.explore.imports.csv.label': 'Trade Import',
   'onboarding.explore.imports.csv.description':
-    'Upload CSV, spreadsheet, HTML, and broker statement exports for backend-powered analysis and preview.',
+    '対応する取引履歴ファイルを無料でプレビューし、列をマッピングできます。Vault へのインポートには Pro が必要です。',
   'onboarding.explore.imports.trade-sync.label': 'Trade Sync',
   'onboarding.explore.imports.trade-sync.description':
     'Automatic trade syncing from MetaTrader (MT4) or Tradovate. Requires Pro.',
-  'onboarding.explore.cta.open': 'Open',
+
   'onboarding.explore.cta.manual': 'Open Docs',
 
   
   
   
-  'onboarding.path.kicker': 'Choose Path',
-  'onboarding.path.tip.trial':
-    'Tip: PRO subscriptions include a 14-day free trial.',
-  'onboarding.path.title': 'Choose your first path',
+  'onboarding.path.kicker': 'あなたの取引履歴',
+  'onboarding.path.title': 'Journalit に取り込む取引はすでにありますか？',
   'onboarding.path.subtitle':
-    'Pick the fastest way to get your first trade in Journalit.',
-  'onboarding.path.option.manual.label': 'Manual Entry (Free)',
+    '回答を選ぶと、最適な次のステップへ直接進みます。',
+  'onboarding.path.option.manual.label': 'いいえ、最初から始めます',
   'onboarding.path.option.manual.description':
-    'Create a trade in seconds with the Add Trade form.',
-  'onboarding.path.option.csv.label': 'Trade Import',
+    '「取引を追加」フォームを開き、最初の取引を記録します。',
+  'onboarding.path.option.csv.label': 'はい、取引履歴があります',
   'onboarding.path.option.csv.description':
-    'Use Pro backend-powered analysis for broker export files.',
-  'onboarding.path.option.trade-sync.label': 'Trade Sync',
+    'ブローカーの自動同期またはファイルのインポートを選べます。',
+  'onboarding.path.method.kicker': '取引履歴を取り込む',
+  'onboarding.path.method.title': 'どの方法で取り込みますか？',
+  'onboarding.path.method.subtitle':
+    'ブローカーとエクスポート形式に合う方法を選んでください。',
+  'onboarding.path.option.trade-sync.label': 'MT4 または Tradovate を接続',
   'onboarding.path.option.trade-sync.description':
-    'Connect MetaTrader (MT4) or Tradovate for automatic trade syncing.',
+    'Trade Sync を設定して、新しい取引を自動的に取り込みます。',
+  'onboarding.path.option.import.label': '取引履歴ファイルをインポート',
+  'onboarding.path.option.import.description':
+    'CSV、Excel、または対応するブローカーレポートをアップロードします。',
+  'onboarding.path.option.import.badge': '無料プレビュー',
+  'onboarding.manual.title': 'Journalit を始める準備ができました',
+  'onboarding.manual.subtitle':
+    '取引をすばやく記録できるよう、以下の推奨ショートカットを設定します。',
+  'onboarding.manual.subtitle-mobile':
+    '取引を記録するときは「取引を追加」を開いてください。',
+  'onboarding.manual.hotkey.title': 'おすすめのショートカット',
+  'onboarding.manual.cta.change-hotkey': 'ショートカットを設定',
+  'onboarding.manual.hit-hotkey':
+    'おすすめ: {hotkey}。「ショートカットを設定」をクリックして設定できます。',
+  'onboarding.manual.add-first-trade': '最初の取引を追加',
+  'onboarding.notice.trade-sync-open-failed':
+    'Trade Sync を開けませんでした。もう一度お試しください。',
 
-  
-  
-  
-  'onboarding.final.manual.title': "You're ready to Journalit",
-
-  'onboarding.final.manual.hotkey.title': 'Suggested hotkey',
-  'onboarding.final.manual.hotkey.value': 'Mod + Alt + A',
-
-  'onboarding.final.manual.cta.change-hotkey': 'Set hotkey',
-  'onboarding.final.manual.hit-hotkey':
-    'Suggested: {hotkey}. Click Set hotkey to configure it.',
-  'onboarding.final.csv.title': "You're ready to bring in your trades",
-  'onboarding.final.csv.subtitle':
-    'Next, open Trade Import. Uploading and processing broker exports requires PRO activation.',
-  'onboarding.final.csv.cta.open': 'Open Trade Import',
-  'onboarding.final.trade-sync.title': "You're ready to set up Trade Sync",
-  'onboarding.final.trade-sync.subtitle':
-    'Next, set up MetaTrader (MT4) or Tradovate sync.',
-  'onboarding.final.trade-sync.cta.open': 'Open Trade Sync Setup',
-  'onboarding.final.trade-sync.hero.source.title': 'MetaTrader + Tradovate',
-  'onboarding.final.trade-sync.hero.source.subtitle': 'Broker trades',
-  'onboarding.final.trade-sync.hero.dest.title': 'Vault',
-  'onboarding.final.trade-sync.hero.dest.subtitle': 'Trade notes',
-  'onboarding.final.finish': 'Finish',
   'command.open-release-notes': 'リリースノートを表示',
 
   
@@ -132,7 +125,6 @@ const ja: Partial<Lang> = {
   'auth.desc.already-logged-in': 'You are already logged in{email}.',
   'auth.title.sign-in': 'Sign In to Journalit',
   'auth.label.email': 'Email Address',
-  'auth.placeholder.email': 'your.email@example.com',
 
   
   
@@ -157,10 +149,7 @@ const ja: Partial<Lang> = {
   'form.layout.customize': 'フォームをカスタマイズ',
   'form.layout.modal-title': 'トレードフォームをカスタマイズ',
   'form.layout.settings-title': 'トレードフォームのレイアウト',
-  'form.layout.settings-desc':
-    'トレードの記録方法と、フォームに表示する任意ブロックを選択します。',
-  'form.layout.core-fields-note':
-    'トレード種別、口座、資産タイプ、銘柄、方向、選択した入力モードで必須の価格または P&L 入力は表示されたままになります。',
+
   'form.layout.input-mode': '入力モード',
   'form.layout.input-mode-prices': '価格',
   'form.layout.input-mode-pnl-risk': 'P&L + リスク',
@@ -192,13 +181,11 @@ const ja: Partial<Lang> = {
     '口座、銘柄、方向、エントリー/エグジット入力は先頭に固定されます。',
   'form.layout.item.asset-specific': '資産別フィールド',
   'form.layout.item.pnl-preview': 'P&L プレビュー',
-  'form.layout.item.realized-pnl-preview': '部分決済P&Lサマリー',
-  'form.layout.item.realized-pnl-preview-desc':
-    '部分決済後のオープントレードでのみ表示され、位置は固定です。',
+
   'form.layout.item.trade-currency': 'トレード通貨 / 為替レート',
   'form.layout.item.trade-currency-desc':
     '別の通貨でトレードを入力し、任意で為替レートを手動指定できます。',
-  'form.layout.manual-fx-rate': '手動為替レート入力',
+  'form.layout.manual-fx-rate': 'FXレート上書き',
   'form.layout.result-r': 'R での結果',
   'form.layout.entry-time': 'トレード時刻',
 
@@ -231,7 +218,7 @@ const ja: Partial<Lang> = {
   'form.field.trade-thesis': 'トレード根拠',
   'form.field.time': '時間',
   'form.field.price': '価格',
-  'form.field.size': 'サイズ',
+
   'form.field.entries': 'エントリー',
   'form.field.exits': 'エグジット',
   'form.field.optional': '（任意）',
@@ -267,8 +254,10 @@ const ja: Partial<Lang> = {
   'form.field.leverage-ratio': 'レバレッジ比率',
   'form.field.trade-currency': 'トレード通貨',
   'form.field.fx-rate': '{base}への為替レート',
+  'form.field.fx-rate-override': 'FXレート上書き（{quote} → {base}）',
 
   
+  'form.forex.using-manual-rate': '手動FXレートを使用',
   'form.field.lot-size.standard': 'スタンダード（100,000）',
   'form.field.lot-size.mini': 'ミニ（10,000）',
   'form.field.lot-size.micro': 'マイクロ（1,000）',
@@ -290,7 +279,7 @@ const ja: Partial<Lang> = {
   'form.placeholder.fx-rate': '1 {currency} = ? {base}（空欄: 日次レート）',
   'form.placeholder.custom-tag': 'カスタムタグを入力してEnterを押す',
   'form.placeholder.thesis': 'このトレードの根拠を入力...',
-  'form.placeholder.pnl': '合計損益を入力',
+
   'form.placeholder.exchange-stock': '例: NYSE、NASDAQ',
   'form.placeholder.exchange-crypto': '例: Binance、Coinbase',
   'form.placeholder.futures-point-value': '例: ES1の場合は50',
@@ -313,12 +302,11 @@ const ja: Partial<Lang> = {
   'form.entry-exit.calc-pnl':
     'エントリー/エグジット価格とポジションサイズから損益を計算',
   'form.ideal-exit.title': '理想のエグジット',
-  'form.ideal-exit.subtitle': '執行レビュー用の後知恵スケールアウト。',
-  'form.ideal-exit.coverage': '理想サイズ',
+
   'form.ideal-exit.price': '理想価格',
   'form.ideal-exit.size': 'サイズ',
   'form.ideal-exit.remove': '理想エグジットを削除',
-  'form.ideal-exit.add': '+ 理想エグジットを追加',
+
   'form.ideal-exit.copy-actual': '実際のエグジットをコピー',
 
   'form.ideal-exit.tooltip':
@@ -360,9 +348,8 @@ const ja: Partial<Lang> = {
   'button.add': '追加',
   'button.create': '作成',
   'button.reset': 'リセット',
-  'button.close': '閉じる',
+
   'button.confirm': '確認',
-  'button.submit': '送信',
 
   'button.add-trade': 'トレードを追加',
   'button.update-trade': 'トレードを更新',
@@ -370,15 +357,11 @@ const ja: Partial<Lang> = {
   'button.create-trade': 'トレードを作成',
   'button.delete-all': 'すべて削除',
   'button.clear-all': 'すべてクリア',
-  'button.save-name-only': '名前のみ保存',
-  'button.cancel-action': 'アクションをキャンセル',
+
   'button.cancel-reset': 'リセットをキャンセル',
   'button.proceed-anyway': '続行する',
   'button.mark-reviewed': 'レビュー済みにする',
-  'button.add-first-goal': '最初の目標を追加',
-  'button.add-first-event': '最初のイベントを追加',
-  'button.create-daily-review': 'デイリーレビューを作成',
-  'button.apply-settings': '設定を適用',
+
   'button.learn-more': '詳細を見る',
   'button.upload-image': 'メディアをアップロード',
   'button.discord': 'Discord',
@@ -390,20 +373,20 @@ const ja: Partial<Lang> = {
   'validation.fix-errors': '以下のエラーを修正してください:',
 
   'validation.complete-required': 'すべての必須フィールドを入力してください',
-  'validation.map-required-fields':
-    'インポート前にすべての必須フィールドをマッピングしてください',
 
   
   
   
-  'notice.verification-sent':
-    '確認コードを送信しました！メールをご確認ください。',
+
   'notice.login-success': 'ログインに成功しました！',
-  'notice.new-verification-sent':
-    '新しい確認コードを送信しました！メールをご確認ください。',
+
   'notice.logout-success': 'サインアウトしました',
-  'notice.hotkey-set': 'Hotkey set: {hotkey}',
+  'notice.hotkey-set': 'ショートカットを設定しました: {hotkey}',
   'notice.ftp-created': 'FTP認証情報が正常に作成されました',
+  'notice.ftp-password-rotated':
+    'このデバイス用に新しいFTP認証情報が生成されました。他のデバイス（例：MetaTrader EA）で設定されているFTP同期は、新しいパスワードに更新する必要があります。',
+  'notice.ftp-reused':
+    'このデバイスの既存のFTP認証情報を読み込みました。機能しない場合は、パスワードのリセットを使用してください。',
   'notice.ftp-reset':
     'FTPパスワードがリセットされました！新しいパスワードを保存してください。',
   'notice.template-saved': 'レイアウトを保存しました',
@@ -421,10 +404,10 @@ const ja: Partial<Lang> = {
   'notice.auto-sync-enabled': '有効',
   'notice.auto-sync-disabled': '無効',
   'notice.reset-items': 'アイテムをデフォルトにリセットしました',
-  'notice.reset-timeframes': '時間足をデフォルトにリセットしました',
+
   'notice.custom-fields-imported':
     '{count}件のカスタムフィールドをインポートしました',
-  'notice.csv-parsed': 'CSV/XLSX/XLSの解析に成功: {count}行',
+
   'notice.setups-added': '{count}件のトレードにセットアップを追加しました',
   'notice.tags-added': 'Added tags to {count} trades',
   'notice.mistakes-added': '{count}件のトレードにミスを追加しました',
@@ -443,7 +426,7 @@ const ja: Partial<Lang> = {
   'notice.error.open-quarterly-review':
     '四半期レビューを開けませんでした: {error}',
   'notice.error.open-yearly-review': '年次レビューを開けませんでした: {error}',
-  'notice.error.sync-trades': 'トレードの同期に失敗しました: {error}',
+
   'notice.error.open-release-notes':
     'リリースノートを開けませんでした: {error}',
   'notice.error.open-layout-builder':
@@ -468,10 +451,6 @@ const ja: Partial<Lang> = {
   'notice.error.reset-settings':
     '設定のリセットに失敗しました。詳細はコンソールを確認してください。',
 
-  'notice.error.invalid-drc-date': '無効なDRC日付',
-  'notice.error.invalid-drc-missed':
-    '無効なDRC日付。見逃したトレードを作成できません。',
-  'notice.error.trade-not-found': 'トレードファイルが見つかりません: {path}',
   'notice.error.mark-reviewed': 'レビュー済みマークエラー: {error}',
   'notice.error.add-setups': 'セットアップ追加エラー: {error}',
   'notice.error.add-tags': 'Error adding tags: {error}',
@@ -488,7 +467,6 @@ const ja: Partial<Lang> = {
   
   
   
-  'notice.info.no-sync': '同期が進行中ではありません',
 
   'notice.info.settings-recovered':
     'バックアップから設定を復元しました。最近の変更が失われている可能性があります。',
@@ -501,10 +479,10 @@ const ja: Partial<Lang> = {
   'tradelog.title': 'トレードログ',
   'dashboard.guide.empty.intro.title': 'Welcome to your Dashboard',
   'dashboard.guide.empty.intro.description':
-    'This page gives you a quick view of your trading performance. Once you have trades, it becomes your daily command center.',
-  'dashboard.guide.empty.state.title': 'Start by adding your first trade',
+    'Your Dashboard becomes useful as soon as Journalit has trading history to analyse.',
+  'dashboard.guide.empty.state.title': 'Bring your trading history with you',
   'dashboard.guide.empty.state.description':
-    'You do not have any trades yet. Add a trade manually or import data, then come back to unlock the full Dashboard tour.',
+    'Import previous trades to start with meaningful performance data, or add a trade manually if you are recording your first trades.',
   'dashboard.guide.main.intro.title': 'ダッシュボードです',
   'dashboard.guide.main.intro.description':
     'Use this page to track your performance, review your stats, and keep your most useful charts in one place.',
@@ -610,7 +588,6 @@ const ja: Partial<Lang> = {
   'layoutBuilder.guide.set-default-template.description':
     'Click the star on your new template if you want new review notes to use this layout automatically.',
 
-  'form.layout.guide-trigger-label': 'フォームをカスタマイズ',
   'trade-form.guide.customization-modal.title':
     'フォームをワークフローに合わせる',
   'trade-form.guide.customization-modal.description':
@@ -621,9 +598,9 @@ const ja: Partial<Lang> = {
   'tradelog.guide.empty.intro.title': 'Welcome to Trade Log',
   'tradelog.guide.empty.intro.description':
     'This page becomes your main place for browsing, sorting, and reviewing trades. Once you add trades, you will also get the full Trade Log tour.',
-  'tradelog.guide.empty.state.title': 'Start by adding your first trade',
+  'tradelog.guide.empty.state.title': 'No trading data available',
   'tradelog.guide.empty.state.description':
-    'You do not have any trades here yet. Click the Create Trade button to make your first trade, then come back to learn the full table and batch tools.',
+    'Import previous trades to explore your performance now, or record a new trade manually.',
   'tradelog.guide.intro.title': 'This is your Trade Log',
   'tradelog.guide.intro.description':
     'Use this page to review trades one by one, sort them, filter them, and make changes to many trades at once.',
@@ -675,6 +652,8 @@ const ja: Partial<Lang> = {
   
   'dashboard.title': 'ダッシュボード',
   'dashboard.no-data': 'トレードデータがありません',
+  'dashboard.empty.import-action': 'Import existing trades',
+  'dashboard.empty.manual-action': 'Add a trade manually',
   'dashboard.widgets.setup-performance.title': 'セットアップ別パフォーマンス',
   'dashboard.widgets.setup-performance.description':
     'セットアップ別のパフォーマンスを比較するランキング棒グラフ',
@@ -716,7 +695,7 @@ const ja: Partial<Lang> = {
   'dashboard.filter.accounts.all': 'すべての口座',
   'dashboard.filter.accounts.n-selected': '{count} 件の口座',
   'dashboard.filter.accounts.select-all': 'すべて選択',
-  'dashboard.filter.accounts.select-all-option': '-- すべて選択 --',
+
   'dashboard.filter.accounts.none-found': '口座が見つかりません',
 
   
@@ -729,7 +708,7 @@ const ja: Partial<Lang> = {
   
   
   
-  'view.home': 'ホーム',
+
   'view.dashboard': 'ダッシュボード',
   'view.trade-log': 'トレードログ',
   'view.account-dashboard': '口座',
@@ -740,34 +719,32 @@ const ja: Partial<Lang> = {
   
   
   'csv.results.errors-header': 'CLICK TO SEE ERRORS ({count})',
+  'csv.results.history-ready': 'Your trading history is ready',
+  'csv.results.history-trades.one': '{count} trade recovered',
+  'csv.results.history-trades.few': '{count} trades recovered',
+  'csv.results.history-trades.many': '{count} trades recovered',
+  'csv.results.history-trades.other': '{count} trades recovered',
+  'csv.results.history-date-range': '{start} – {end}',
+  'csv.results.history-symbols.one': '{count} symbol',
+  'csv.results.history-symbols.few': '{count} symbols',
+  'csv.results.history-symbols.many': '{count} symbols',
+  'csv.results.history-symbols.other': '{count} symbols',
+  'csv.results.enrichment-note':
+    'Imported performance is ready to review. Add setups, confluences, and notes to recent trades when you want deeper pattern analysis.',
   'csv.results.discord-note':
     'Optional: If you need help, click Copy report and paste it in Discord.',
 
   
   
   
-  'csv.errors.copy-shareable': '共有可能なレポートをコピー',
+
   'csv.errors.copy-report': 'レポートをコピー',
-  'csv.errors.copy-detailed': '詳細レポートをコピー',
 
   
   
   
-  'csv.account-selector.loading': '口座を読み込み中...',
-  'csv.account-selector.no-accounts': '口座が見つかりません。',
-  'csv.account-selector.create-account-hint':
-    '取引をインポートする前に口座を作成してください。',
-  'csv.account-selector.create-account-cta': '口座を作成',
-  'csv.account-selector.label': '口座を選択',
 
   
-  'csv.preview-first-note':
-    'Preview is free. Importing into your vault requires PRO activation.',
-  'csv.gate.import.title': 'PRO required to import',
-  'csv.gate.import.description':
-    'Importing trades into your vault is a PRO feature. Activate PRO to continue.',
-  'csv.gate.templates.tooltip': 'PRO required (activate to use templates).',
-  'csv.gate.ai.tooltip': 'PRO required (activate to use AI mapping).',
 
   
   
@@ -778,8 +755,6 @@ const ja: Partial<Lang> = {
     '初期残高を {oldBalance} から {newBalance} に変更しようとしています。',
   'account.edit.modal.delete.question':
     'アカウント「{name}」を完全に削除してもよろしいですか？',
-  'account.edit.modal.delete.warning':
-    'このアカウントを完全に削除してもよろしいですか？',
 
   
   'account.edit.error.name-exists': 'アカウント「{name}」は既に存在します',
@@ -790,32 +765,25 @@ const ja: Partial<Lang> = {
   
   'common.loading': '読み込み中...',
   'common.error': 'エラー',
-  'common.success': '成功',
+
   'common.warning': '警告・注意事項',
   'common.info': '情報・お知らせ',
   'common.yes': 'はい',
   'common.no': 'いいえ',
   'common.ok': 'OK',
-  'common.search': '検索...',
-  'common.select': '選択...',
+
   'common.none': 'なし',
   'common.all': 'すべて',
   'common.date': '日付',
-  'common.time': '時間',
-  'common.today': '今日',
-  'common.yesterday': '昨日',
-  'common.tomorrow': '明日',
+
   'common.week': '週',
   'common.month': '月',
   'common.year': '年',
-  'common.total': '合計',
-  'common.average': '平均',
+
   'common.min': '最小',
   'common.max': '最大',
   'common.profit': '利益',
-  'common.loss': '損失',
-  'common.win': '勝ち',
-  'common.lose': '負け',
+
   'common.trade': 'トレード',
   'common.trades': 'トレード',
   'common.color.label': '色',
@@ -825,15 +793,12 @@ const ja: Partial<Lang> = {
   
   
 
-  'settings.language': '言語',
-  'settings.language-desc': 'プラグインの表示言語を選択',
-
   
   'settings.auth.feature.csv-import': 'Trade Import',
   'settings.auth.feature.ai-mapping': 'AI Trade Importマッピング',
   'settings.auth.feature.metatrader-sync': 'MetaTrader同期',
   'settings.auth.feature.basic-tracking': '基本取引追跡',
-  'settings.auth.feature.manual-csv': '手動CSVインポート',
+
   'settings.auth.feature.priority-support': '優先サポート',
 
   
@@ -842,14 +807,15 @@ const ja: Partial<Lang> = {
   
   'home.widget.getting-started.name': 'Getting Started',
   'home.widget.getting-started.description':
-    'Checklist to help you add your first trades and activate PRO',
+    'Checklist to help you add trading history and configure Journalit',
   'home.widget.getting-started.progress': '{completed}/{total} completed',
   'home.widget.getting-started.progress.loading': 'Checking progress...',
-  'home.widget.getting-started.item.create.title': 'Create your first trade',
+  'home.widget.getting-started.item.create.title':
+    'Bring in your trading history',
   'home.widget.getting-started.item.create.description':
-    'Unlock your dashboard and journaling flow.',
+    'Import existing trades, connect Trade Sync, or add your first trade manually.',
   'home.widget.getting-started.item.create.time': '30s',
-  'home.widget.getting-started.item.create.cta': 'Create Trade',
+  'home.widget.getting-started.item.create.cta': 'Open Trade Import',
   'home.widget.getting-started.item.tradelog.title': 'Open Trade Log',
   'home.widget.getting-started.item.tradelog.description':
     'Your trade database for analysing all your trades in one place.',
@@ -880,22 +846,11 @@ const ja: Partial<Lang> = {
   'home.widget.getting-started.item.pro.cta': 'Activate',
 
   
-  'premium.gate.cta.activate': 'Activate PRO',
-  'premium.gate.cta.upgrade-now': 'Upgrade now',
-  'premium.gate.cta.signin-continue': 'サインインして続行',
+
   'premium.gate.cta.continue-pro': 'PROに進む',
-  'premium.gate.cta.keep-editing': '編集を続ける',
+
   'premium.gate.cta.refresh': 'Refresh status',
-  'premium.gate.import.state.signin.title': 'インポートまであと1ステップです',
-  'premium.gate.import.state.signin.description':
-    'ファイルとマッピングの準備ができました。続行するにはサインインしてください。',
-  'premium.gate.import.state.pro.title': 'インポートの準備ができました',
-  'premium.gate.import.state.pro.description':
-    'ファイルとマッピングの準備ができました。インポートはPROに含まれます。',
-  'premium.gate.import.reassurance':
-    '無制限のトレードを保管庫にインポートできます。',
-  'premium.gate.trial-hint':
-    '初回のPRO購読には14日間の無料トライアルが含まれます。',
+
   'premium.gate.offline':
     'You appear to be offline. Activation requires internet.',
   'premium.gate.not-pro-yet':
@@ -906,23 +861,16 @@ const ja: Partial<Lang> = {
   'csv.broker-guide.tradingtechnologies.description': 'Fills widget CSV export',
   'csv.broker-guide.tradingtechnologies.step-1':
     'Open the Fills widget in TT and switch to Detail, Continuous, or Price with Detail view',
-  'csv.broker-guide.tradingtechnologies.step-2':
-    'Right-click inside the Fills widget, select “Request download”, and choose the time range',
-  'csv.broker-guide.tradingtechnologies.step-3':
-    'When TT shows the download-ready notification, download the CSV and import it here',
+
   'csv.broker-guide.tradingtechnologies.warning.emphasis': 'Important:',
-  'csv.broker-guide.tradingtechnologies.warning.message':
-    'Do not edit the exported file or column order before importing.',
-  'csv.broker-guide.tradingtechnologies.doc-label':
-    'View Trading Technologies export instructions',
+  'csv.broker.rithmic': 'Rithmic',
+  'csv.broker-guide.rithmic.step-1':
+    'R | Trader Pro で注文履歴を開き、対象の口座/日付の約定済み(Completed/Filled)注文に絞り込みます',
+  'csv.broker-guide.rithmic.step-2':
+    '列の追加/削除(Add/Remove Columns)で Side、Symbol、Qty Filled、Avg Fill Price、Fill/Update Time が表示されていることを確認します',
+  'csv.broker-guide.rithmic.warning.emphasis': '重要:',
 
   
-  'csv.results.custom-field-warnings':
-    'Skipped {count} invalid custom field value(s)',
-  'csv.results.custom-field-warnings-header':
-    'CLICK TO SEE CUSTOM FIELD WARNINGS ({count})',
-  'csv.report.custom-field-warnings': 'Custom field warnings: {count}',
-  'csv.report.raw-custom-field-warnings': 'Custom field warnings:',
 
   
   'dashboard.metrics.avgRR': '平均RR（ペイオフ）',
@@ -1048,17 +996,11 @@ const ja: Partial<Lang> = {
   'widget.directional-drawdown.empty.no-short':
     'No short closed trades for this period',
   'widget.directionalDrawdownChart.name': 'Directional Realized Drawdown',
-  'widget.directionalDrawdownChart.description':
-    'Displays separate long and short closed-trade drawdown amount curves',
 
   'widget.longDrawdownChart.name': 'Long Drawdown',
-  'widget.longDrawdownChart.description':
-    'Displays the closed-trade drawdown amount curve for long trades only',
+
   'widget.shortDrawdownChart.name': 'Short Drawdown',
-  'widget.shortDrawdownChart.description':
-    'Displays the closed-trade drawdown amount curve for short trades only',
-  'widget.drawdownStats.name': 'Realized Drawdown Stats',
-  'widget.drawdownStats.description': 'Realized drawdown and recovery stats',
+
   'widget.drawdownStats.no-conversion':
     'Drawdown stats are unavailable for mixed currencies without FX conversion.',
 
@@ -1097,8 +1039,7 @@ const ja: Partial<Lang> = {
   'widget.weekly-drc-context.name': 'Daily Reviews by Weekday',
   'widget.weekly-drc-context.description':
     'Show selected DRC sections for each day in the weekly review',
-  'widget.weekly-drc-context.header-eyebrow': 'Weekly review',
-  'widget.weekly-drc-context.header-title': 'Daily Reviews by Weekday',
+
   'widget.weekly-drc-context.image-alt-prefix': 'Weekly DRC image',
   'widget.weekly-drc-context.no-activity': 'No activity for this day.',
   'widget.weekly-drc-context.no-sections-configured':
@@ -1111,12 +1052,10 @@ const ja: Partial<Lang> = {
   'widget.weekly-drc-context.invalid-context':
     'このウィジェットは週次レビューのノートでのみ使用できます',
   'templateEditor.widget.weekly-drc-day-label': '日',
-  'templateEditor.widget.weekly-drc-display-label': '表示',
+
   'templateEditor.widget.weekly-drc-start-collapsed': '折りたたんで開始',
   'templateEditor.widget.weekly-drc-day-all': 'All days',
-  'templateEditor.widget.weekly-drc-style-card': 'カード',
-  'templateEditor.widget.weekly-drc-style-accordion': 'Accordion',
-  'templateEditor.widget.weekly-drc-default-expanded': 'Expanded by default',
+
   'templateEditor.widget.previous-context-sections-label':
     'Sections to include',
   'templateEditor.widget.previous-context-heading-label':
@@ -1124,10 +1063,7 @@ const ja: Partial<Lang> = {
   'templateEditor.widget.previous-context-heading-placeholder':
     'Choose a heading',
   'templateEditor.widget.previous-context-add-section': '+ Add section',
-  'templateEditor.widget.previous-context-headings-label':
-    'Headings to include',
-  'templateEditor.widget.previous-context-headings-placeholder':
-    'Heading names separated by comma or |',
+
   'templateEditor.widget.previous-context-fallback-label':
     'Previous DRC fallback',
   'templateEditor.widget.previous-context-fallback-nearest':
@@ -1137,16 +1073,14 @@ const ja: Partial<Lang> = {
   'dashboard.conversion.original-pnl': '元の損益',
   'dashboard.conversion.converted-pnl': '換算後の損益',
   'dashboard.conversion.details-label': '通貨換算の詳細',
-  'dashboard.conversion.requires-conversion':
-    '複数通貨の損益チャートには為替レート換算が必要です。',
+
   'widget.stats.vs-prev': 'vs prev',
   'dashboard.metrics.past-30d': 'past 30d',
-  'widget.stats.no-change': 'No change',
-  'widget.stats.no-previous-data': 'No previous data',
+
   'chart.tooltip.drawdown-amount': 'Amount',
   'chart.tooltip.drawdown-percent': 'Drawdown % of {basis}',
   'chart.tooltip.percent-basis': 'Percent Basis',
-  'chart.tooltip.account': 'Account',
+
   'chart.tooltip.accounts-list': '{accounts}',
   'chart.tooltip.more-accounts': '+{count} more',
   'widget.tag-performance.name': 'タグ別パフォーマンス',
@@ -1163,7 +1097,7 @@ const ja: Partial<Lang> = {
   'widget.account-breakdown.column.win-rate': 'Win Rate',
   'widget.account-breakdown.column.profit-factor': 'Profit Factor',
   'widget.trade-table.column.account': 'Account',
-  'widget.trade-table.unknown-account': 'Unknown Account',
+
   'trade-import.error.file-too-large':
     'Selected file exceeds the Trade Import size limit',
   'trade-import.error.file-type-unsupported':
@@ -1175,8 +1109,10 @@ const ja: Partial<Lang> = {
   'quick-import.subtitle':
     'Use your favorite Trade Import setup to preview and import a file faster.',
   'quick-import.gate.sign-in':
-    'Sign in to use Quick Import with your saved setup.',
+    'サインインするか無料の Journalit アカウントを作成すると、Trade Import でファイルをプレビューできます。Pro が必要なのは取引をインポートするときだけです。',
+  'quick-import.gate.sign-in-cta': 'サインインして無料でプレビュー',
   'quick-import.gate.pro': 'Quick Import is included with Trade Import Pro.',
+  'quick-import.gate.preview-free': 'ファイルを無料でプレビュー',
   'quick-import.message.needs-setup':
     'Choose a favorite broker or template in Trade Import before using Quick Import.',
   'quick-import.message.capabilities-failed':
@@ -1185,19 +1121,16 @@ const ja: Partial<Lang> = {
     'This file needs column mapping. Open the full Trade Import flow to review mappings.',
   'quick-import.message.preview-failed':
     'This file needs review in the full Trade Import flow.',
-  'quick-import.notice.consent-required':
-    'Acknowledge processing before uploading.',
-  'quick-import.consent':
-    'I understand this file will be uploaded to Journalit servers for processing.',
+
   'quick-import.privacy-note':
     'ファイルは処理のため Journalit サーバーにアップロードされ、既定では保存されません。',
   'quick-import.dropzone.title': 'Drop a broker export here',
   'quick-import.dropzone.subtitle': 'Or click to choose a file',
-  'quick-import.status.loading': 'Loading quick setup...',
+
   'quick-import.status.analysing': 'Analysing and preparing preview...',
   'quick-import.status.importing': 'Importing...',
   'quick-import.summary.title': 'Ready to import',
-  'quick-import.summary.trades': 'Preview trades',
+
   'quick-import.summary.to-import': 'To import',
   'quick-import.summary.duplicates': 'Duplicates',
   'quick-import.summary.failed': 'Needs review',
@@ -1208,28 +1141,38 @@ const ja: Partial<Lang> = {
   'quick-import.action.review-in-trade-import': 'Review in Trade Import',
   'quick-import.action.setup-in-trade-import': 'Set up in Trade Import',
   'quick-import.action.import': 'Import trades',
+  'quick-import.action.import-count.one': '{count} 件の取引をインポート',
+  'quick-import.action.import-count.few': '{count} 件の取引をインポート',
+  'quick-import.action.import-count.many': '{count} 件の取引をインポート',
+  'quick-import.action.import-count.other': '{count} 件の取引をインポート',
 
   'trade-import.notice.capabilities-failed':
     'Unable to load Trade Import capabilities',
+  'trade-import.notice.open-failed': 'Unable to open Trade Import',
   'trade-import.notice.template-exists':
     'A Trade Import template with this name already exists',
   'trade-import.notice.template-saved': 'Trade Import template saved',
   'trade-import.notice.analyse-failed': 'Trade Import analyse failed',
   'trade-import.notice.preview-failed': 'Trade Import preview failed',
+  'trade-import.notice.free-preview-rate-limited':
+    '無料プレビューの上限に達しました。PRO を開始するか、約 {minutes} 分後にもう一度お試しください。',
+  'trade-import.notice.free-preview-storage-limit-reached':
+    '無料プレビューには最大 {limit} 件の取引を保存できます。現在 {storedItems} 件が保存されており、このファイルから {requestedItems} 件が追加されます。以前のプレビューの期限切れを待つか、PRO を開始してください。',
   'trade-import.preview-error.guidance':
     'すべての必須項目がマッピングされ、選択した日付形式がファイルと一致し、数値列に有効な取引値が含まれていることを確認してください。',
   'trade-import.notice.complete':
     'Trade Import complete: {written} written or updated, {duplicateCount} duplicates, {failedCount} failed',
   'trade-import.gate.brand-left': 'トレード',
   'trade-import.gate.brand-right': 'インポート',
+  'trade-import.gate.sign-in.title': '取引履歴を無料でプレビュー',
   'trade-import.gate.sign-in':
-    'Sign in is required before uploading broker exports for Trade Import.',
-  'trade-import.gate.upgrade':
-    'Trade Import is a Pro feature. Upgrade is required before uploading broker exports.',
-  'trade-import.action.open-settings': 'Open settings',
-  'trade-import.action.manage-subscription': 'Manage subscription',
-  'trade-import.description':
-    'Upload CSV, XLSX, XLS, HTML, or broker statements for backend-powered analysis and preview.',
+    'サインインするか無料の Journalit アカウントを作成してファイルを分析できます。Pro が必要なのは取引をインポートするときだけです。',
+  'trade-import.gate.sign-in.reassurance':
+    'ファイルは非公開で処理され、標準では保存されません。',
+  'trade-import.gate.sign-in.no-trial':
+    '分析とプレビューに Pro のトライアルは必要ありません。',
+  'trade-import.gate.sign-in.cta': 'サインインして無料でプレビュー',
+
   'trade-import.step.select': '1. Select import settings',
   'trade-import.step.privacy': '2. Privacy acknowledgement',
   'trade-import.step.analyse': '3. Analyse and map',
@@ -1251,8 +1194,7 @@ const ja: Partial<Lang> = {
   'trade-import.label.ai-mapping': 'Request AI mapping suggestions',
   'trade-import.privacy.copy':
     'Trade Import uploads the selected broker export to Journalit servers for processing. Broker exports may contain account identifiers, trade history, symbols, timestamps, prices, quantities, fees, balances, and P&L. For preview generation, Journalit also sends your selected account name, mapping/template choices, custom field definitions and saved options, and limited local open-trade context for IBKR open-position matching. Raw files are processed for this import and are not stored by default.',
-  'trade-import.privacy.acknowledge':
-    'I understand and want to upload this export for processing.',
+
   'trade-import.action.analyse': 'Analyse file',
   'trade-import.action.choose-file': 'Choose file',
   'trade-import.guide.prompt': '何をエクスポートすればよいですか？',
@@ -1265,13 +1207,34 @@ const ja: Partial<Lang> = {
   'trade-import.label.header-row': 'Header row',
   'trade-import.placeholder.auto': 'Auto',
   'trade-import.label.date-format': 'Date format',
-  'trade-import.mapping.unmapped': 'Unmapped',
+
   'trade-import.label.save-template': 'Save mapping template',
   'trade-import.placeholder.template-name': 'Template name',
   'trade-import.action.save-template': 'Save template',
   'trade-import.action.preview': 'Generate preview',
-  'trade-import.preview.summary':
-    '{previewCount} preview trades, {failedCount} failed rows, {incompleteCount} incomplete rows.',
+
+  'trade-import.preview.found.one': '{count} 件の取引が見つかりました',
+  'trade-import.preview.found.few': '{count} 件の取引が見つかりました',
+  'trade-import.preview.found.many': '{count} 件の取引が見つかりました',
+  'trade-import.preview.found.other': '{count} 件の取引が見つかりました',
+  'trade-import.preview.date-range': '{start}～{end}',
+  'trade-import.preview.metric.symbols': 'シンボル',
+  'trade-import.preview.metric.ready': 'インポート可能',
+  'trade-import.preview.metric.duplicates': '重複の可能性',
+  'trade-import.preview.metric.attention': '確認が必要',
+  'trade-import.preview.upgrade.title': 'Your preview is ready',
+  'trade-import.preview.upgrade.description.one':
+    '{count} trade can be added to your vault when you activate PRO.',
+  'trade-import.preview.upgrade.description.few':
+    '{count} trades can be added to your vault when you activate PRO.',
+  'trade-import.preview.upgrade.description.many':
+    '{count} trades can be added to your vault when you activate PRO.',
+  'trade-import.preview.upgrade.description.other':
+    '{count} trades can be added to your vault when you activate PRO.',
+  'trade-import.preview.upgrade.free-limit':
+    '無料プレビューでは、1 時間あたり {count} 回の分析と {count} 回のプレビューを利用できます。',
+  'trade-import.preview.upgrade.free-storage-limit':
+    '無料プレビューには一度に最大 {count} 件の取引を保存できます。',
   'trade-import.table.status': 'Status',
   'trade-import.table.symbol': 'Symbol',
   'trade-import.table.direction': 'Direction',
@@ -1279,16 +1242,16 @@ const ja: Partial<Lang> = {
   'trade-import.table.quantity': 'Quantity',
   'trade-import.table.message': 'Message',
   'trade-import.action.confirm': 'Confirm import',
+  'trade-import.action.activate-pro.one':
+    'PRO を有効にして {count} 件の取引をインポート',
+  'trade-import.action.activate-pro.few':
+    'PRO を有効にして {count} 件の取引をインポート',
+  'trade-import.action.activate-pro.many':
+    'PRO を有効にして {count} 件の取引をインポート',
+  'trade-import.action.activate-pro.other':
+    'PRO を有効にして {count} 件の取引をインポート',
   'trade-import.action.cancel-preview': 'Cancel preview',
   'trade-import.broker.manual': 'Manual Mapping',
-  'trade-import.preview.message.duplicate-in-file':
-    'Duplicate in selected import file',
-  'trade-import.preview.message.multiple-open-matches':
-    'Multiple matching open trades found for close-only preview',
-  'trade-import.preview.message.quantity-mismatch':
-    'Matching open trade quantity differs from close-only preview',
-  'trade-import.preview.message.no-open-match':
-    'No matching open trade found for close-only preview',
 
   
   'command.open-setups': 'セットアップを開く',
@@ -1349,10 +1312,7 @@ const ja: Partial<Lang> = {
   'setups.view.compare.reason.higher.total-r': '合計Rが高い',
   'setups.view.compare.reason.lower.total-r': '合計Rが低い',
   'setups.view.compare.reason.similar.total-r': '合計Rが同程度',
-  'setups.view.advanced.rule-break-count': '{count}',
-  'setups.guide.empty.intro.title': '最初のセットアップを作成',
-  'setups.guide.empty.intro.description':
-    'セットアップはプレイブックノート、ルール、スクリーンショット、関連トレードを結び付け、1つの取引アイデアを文脈付きで見直せます。',
+
   'setups.guide.create-new-setup.title': '新しいセットアップを作成',
   'setups.guide.create-new-setup.description':
     '別のプレイブックを追加するときは新規セットアップを使います。モーダルで詳細、リンクノート、ルールを設定できます。',
@@ -1365,9 +1325,7 @@ const ja: Partial<Lang> = {
   'setups.guide.empty.create-setup.title': '新規セットアップから開始',
   'setups.guide.empty.create-setup.description':
     'まずセットアップを1つ作成します。作成後、このガイドは通常の案内を続けます。',
-  'setups.guide.empty.finish.title': 'セットアップ作成を完了',
-  'setups.guide.empty.finish.description':
-    '詳細を入力して保存してください。セットアップが利用可能になるとガイドが再開します。',
+
   'setups.guide.intro.title': 'Setups へようこそ',
   'setups.guide.intro.description':
     'このビューでは、セットアップのプレイブック、関連トレード、ノート、スクリーンショット、ルールを1か所にまとめます。',
@@ -1401,18 +1359,14 @@ const ja: Partial<Lang> = {
   'setups.guide.finish.title': 'Setups ガイド完了',
   'setups.guide.finish.description':
     '概要、ペア、比較、個別セットアップページの主要画面を確認しました。',
-  'setups.guide.compare.intro.title': 'セットアップ成績を比較',
-  'setups.guide.compare.intro.description':
-    '十分なセットアップがあるので、ペアを確認し2つのプレイブックを横並びで比較できます。',
+
   'setups.guide.pairs-mode.title': 'セットアップペアを開く',
   'setups.guide.pairs-mode.description':
     'ペアを開き、比較に十分な共有トレードがある組み合わせを確認します。',
   'setups.guide.pairs-chart.title': 'ペアランキング',
   'setups.guide.pairs-chart.description':
     'ペアモードは一緒に良くまたは悪く機能する可能性がある組み合わせを強調します。バーをクリックすると、その組み合わせの詳しい洞察を開けます。',
-  'setups.guide.return-overview.title': '概要に戻る',
-  'setups.guide.return-overview.description':
-    '比較するセットアップを選ぶ前に概要へ戻ります。',
+
   'setups.guide.compare-mode.title': '比較モードを開始',
   'setups.guide.compare-mode.description':
     '比較モードでは2つのセットアップカードを選んで横並びで確認できます。',
@@ -1434,15 +1388,11 @@ const ja: Partial<Lang> = {
   'setups.guide.back-to-overview.title': 'カードに戻る',
   'setups.guide.back-to-overview.description':
     '比較が終わったらセットアップカードに戻ります。',
-  'setups.guide.compare.finish.title': '比較ガイド完了',
-  'setups.guide.compare.finish.description':
-    '複数のセットアップを一緒に確認するためのペアと比較を見ました。',
+
   'setups.view.open-as-markdown': 'Open as Markdown',
   'setups.view.open-as-setup': 'Open as Journalit Setup',
-  'setups.view.overview.mode.aria': 'Overview chart mode',
-  'setups.view.overview.mode.setups': 'Setups',
+
   'setups.view.overview.mode.pairs': 'Pairs',
-  'setups.view.pairs.title': 'Setup pairs',
   'setups.view.pairs.summary-aria': 'Setup pairs summary',
   'setups.view.pairs.best': 'Best pair',
   'setups.view.pairs.worst': 'Worst pair',
@@ -1452,18 +1402,15 @@ const ja: Partial<Lang> = {
     'Pairs appear after two setups share enough linked trades.',
   'setups.view.pairs.privacy':
     'Pair performance is hidden while Privacy Mode is on.',
-  'setups.view.pairs.edge-tooltip':
-    'Edge compares the pair expectancy against the stronger solo setup baseline.',
+
   'setups.view.pairs.metric-aria': 'Pair metric',
   'setups.view.pairs.metric.edge': 'Pair edge',
   'setups.view.pairs.metric.edge-short': 'edge',
   'setups.view.pairs.metric.expectancy': 'Pair expectancy',
-  'setups.view.pairs.metric.expectancy-short': 'expectancy',
+
   'setups.view.pairs.together': 'Together',
   'setups.view.pairs.table.setup-pair': 'Setup pair',
-  'setups.view.pairs.equity-curve': 'Equity curve',
-  'setups.view.pairs.equity-caption':
-    'Cumulative pair performance over time. Green = positive contribution, red = drawdown.',
+
   'setups.view.pairs.evidence': 'Evidence',
   'setups.view.pairs.edge-comparison': 'Edge comparison',
   'setups.view.pairs.edge-caption': 'Combined edge: {edge}',
@@ -1472,13 +1419,12 @@ const ja: Partial<Lang> = {
   'setups.view.overview.setup-filter.aria': 'Choose setups to show',
   'setups.view.overview.setup-filter.select-all': 'Select all',
   'setups.view.overview.setup-filter.clear': 'Clear',
-  'setups.view.overview.pnl-chart.title': 'Setup P&L Over Time',
+
   'setups.view.overview.pnl-chart.dropdown-label': 'Cumulative P&L',
-  'setups.view.overview.pnl-chart.subtitle':
-    'Cumulative P&L from setup-linked trades, split by setup and combined.',
+
   'setups.view.overview.pnl-chart.combined': 'All setups',
   'setups.view.overview.pnl-chart.selected-combined': 'Selected setups',
-  'setups.view.overview.pnl-chart.unassigned': 'Unassigned account',
+
   'setups.view.overview.pnl-chart.hidden':
     'Setup P&L over time is hidden while privacy mode is enabled.',
   'setups.view.overview.pnl-chart.trade': 'Trade',
@@ -1494,16 +1440,13 @@ const ja: Partial<Lang> = {
   'setups.view.detail.analysis.execution-gap': 'Execution Gap',
   'setups.view.detail.analysis.tabs-aria': 'Setup performance tabs',
   'setups.view.detail.brief.linked-notes-add': 'Edit linked notes',
-  'setups.view.detail.execution-gap.title': 'Execution Gap',
-  'setups.view.detail.execution-gap.subtitle':
-    'Captured edge vs missed opportunity',
+
   'setups.view.detail.execution-gap.live-pnl': 'Live PnL',
   'setups.view.detail.execution-gap.live-r': 'ライブR',
   'setups.view.detail.execution-gap.missed-edge': 'Missed Edge',
   'setups.view.detail.execution-gap.live-plus-missed': 'Live + Missed',
   'setups.view.detail.execution-gap.backtest': 'Backtest',
-  'setups.view.detail.execution-gap.gap': 'Gap',
-  'setups.view.detail.execution-gap.opportunities': 'Opportunities',
+
   'setups.view.detail.execution-gap.capture-rate': 'Capture Rate',
   'setups.view.detail.execution-gap.capture-rate-tooltip':
     'Live P&L ÷ (Live P&L + missed-trade P&L). Shows how much available edge you captured.',
@@ -1537,13 +1480,7 @@ const ja: Partial<Lang> = {
   'setups.view.detail.attention.no-rules-title': 'Build the execution playbook',
   'setups.view.detail.attention.no-rules-detail':
     'Add criteria for entries, invalidation, risk, and mistakes.',
-  'setups.view.detail.attention.no-invalidation-title':
-    'Add invalidation criteria',
-  'setups.view.detail.attention.no-invalidation-detail':
-    'Define when this setup is no longer valid.',
-  'setups.view.detail.attention.no-risk-title': 'Add risk or management rules',
-  'setups.view.detail.attention.no-risk-detail':
-    'Document how this setup should be managed after entry.',
+
   'setups.view.detail.attention.no-trades-title': 'No live trades yet',
   'setups.view.detail.attention.no-trades-detail':
     'No linked live trade history yet.',
@@ -1567,18 +1504,6 @@ const ja: Partial<Lang> = {
   'setups.view.card.status.review': 'Review',
   'setups.view.date.days-ago': '{count}',
 
-  'trade-import.restore.title': 'Restore imported trades from backend',
-  'trade-import.restore.description':
-    'Create missing local notes for backend imported trades in this vault. This does not create duplicate backend trades.',
-  'trade-import.restore.vault': 'Current vault identity: {vaultId}',
-  'trade-import.restore.load': 'Restore imported trades from backend',
-  'trade-import.restore.none':
-    'No missing imported trade projections found for this vault.',
-  'trade-import.restore.loaded': 'Found {count} restorable imported trades.',
-  'trade-import.restore.load-failed':
-    'Could not load restorable imported trades.',
-  'trade-import.restore.select-all': 'Select all',
-  'trade-import.restore.restore-selected': 'Restore selected ({count})',
   'trade-import.restore.complete':
     'Restored {written} imported trades; {failed} failed.',
   'trade-import.restore.broker-label': 'Backend restore',
@@ -1619,7 +1544,7 @@ const ja: Partial<Lang> = {
   'media.viewer.mute-video': '動画をミュート',
   'media.viewer.unmute-video': '動画のミュートを解除',
   'media.viewer.volume': '音量',
-  'imageGallery.subtitle-count': '{count} 件のメディア',
+
   'imageGallery.empty.error.title': 'ギャラリーを利用できません',
   'imageGallery.empty.no-images.title': 'まだメディアがありません',
   'imageGallery.empty.no-images.description':
@@ -1638,8 +1563,9 @@ const ja: Partial<Lang> = {
   'imageGallery.annotation.reviewed': 'レビュー済み',
   'imageGallery.annotation.unreviewed': '未レビュー',
   'imageGallery.annotation.tag': 'タグ',
-  'imageGallery.annotation.editor-eyebrow': '市場構造ジャーナル',
+
   'imageGallery.annotation.editor-title': 'メディアに注釈を付ける',
+  'imageGallery.annotation.editor-title-with-file': '{fileName} に注釈を付ける',
   'imageGallery.annotation.tags': 'タグ',
   'imageGallery.annotation.tags-placeholder':
     'ブレイクアウト、A+ セットアップ、ミス',
@@ -1648,6 +1574,8 @@ const ja: Partial<Lang> = {
     '未来の自分はこのチャートから何を学ぶべきですか？',
   'imageGallery.annotation.error.save-failed':
     'メディアの注釈を保存できませんでした。',
+  'imageGallery.annotation.error.load-failed':
+    'メディアの注釈を読み込めませんでした。',
   'imageGallery.annotation.saving': '保存中...',
   'command.replay-current-view-guide': '現在のビューのガイドを再生',
 
@@ -1658,9 +1586,7 @@ const ja: Partial<Lang> = {
     'トレードからギャラリーへ切り替える',
   'tradelog.guide.switch-to-gallery.description':
     'このモードセレクターで通常のトレードログとギャラリーを切り替えます。ギャラリーをクリックして、画像、GIF、動画、YouTubeリンクのツアーを続けます。',
-  'tradelog.guide.gallery-controls.title': '確認したいメディアを選ぶ',
-  'tradelog.guide.gallery-controls.description':
-    'ソースでトレードまたはレビューノートを選び、並び替えでメディアの順序を変え、サイズボタンでコンパクトな一覧と大きめのメディアプレビューを切り替えます。',
+
   'tradelog.guide.gallery-source-sort.title': 'メディアのソースと順序を選ぶ',
   'tradelog.guide.gallery-source-sort.description':
     'ソースで全メディア、トレードの添付、レビューノートのメディアに絞れます。並び替えで新しい、古い、成績の良い、悪いトレードから確認できます。',
@@ -1701,12 +1627,74 @@ const ja: Partial<Lang> = {
   'dashboard.conversion.partial-warning':
     '⚠ {currencies}のコスト/リスクは換算できず除外されています',
   'trade-sync.providers.title': 'トレード同期',
-  'trade-sync.providers.description':
-    '利用可能な各プロバイダーを個別に設定して、同時に実行できます。',
+
   'trade-sync.tradovate.pending-acks': '{count} 件のローカル ACK が保留中',
-  'trade-sync.import.section-title': 'Trade Import のバックアップと復元',
-  'trade-sync.import.section-description':
-    'インポートしたトレードをクラウドにバックアップし、不足しているローカルノートを復元します。',
+
+  'trade-sync.source.rithmic': 'Rithmic',
+  'trade-sync.source.rithmic.description':
+    'Rithmic のトレードをクラウドで同期し、この保管庫に反映します。',
+  'trade-sync.rithmic.plugin-sync-description':
+    'Journalit.co で Rithmic を接続し、ここで同期すると最新の Rithmic の活動がこの保管庫に書き込まれます。',
+  'trade-sync.rithmic.status-failed': 'Rithmic の状態を読み込めません。',
+  'trade-sync.rithmic.status.connecting': '接続中',
+  'trade-sync.rithmic.status.paused': '一時停止中',
+  'trade-sync.rithmic.status.waiting-for-accounts': '口座を待っています',
+  'trade-sync.rithmic.status.reauthorization-required':
+    'Journalit.co での再認証が必要です',
+  'trade-sync.rithmic.status.error': '接続エラー',
+  'trade-sync.rithmic.no-connections':
+    'Journalit.co で Rithmic アカウントを接続すると、ここで同期できます。',
+  'trade-sync.rithmic.connect': '接続',
+  'trade-sync.rithmic.manage': 'Journalit.co で管理',
+  'trade-sync.rithmic.system': 'Rithmic システム',
+  'trade-sync.rithmic.accounts': 'アカウント',
+  'trade-sync.rithmic.last-sync': '最終同期',
+  'trade-sync.rithmic.never': 'なし',
+  'trade-sync.rithmic.job.running': '同期を実行中…',
+  'trade-sync.rithmic.job.last': '直近のジョブ: {status}',
+  'trade-sync.job.status.queued': 'キュー待ち',
+  'trade-sync.job.status.running': '実行中',
+  'trade-sync.job.status.succeeded': '成功',
+  'trade-sync.job.status.partial': '部分的',
+  'trade-sync.job.status.failed': '失敗',
+  'trade-sync.job.status.cancelled': 'キャンセル',
+  'trade-sync.job.status.unknown': '不明',
+  'trade-sync.rithmic.sync-to-vault': '同期',
+  'trade-sync.rithmic.syncing': '同期中…',
+  'trade-sync.rithmic.mapping-required':
+    '同期する Rithmic アカウントごとにローカルの保管庫アカウントを選択してください。',
+  'trade-sync.rithmic.sync-complete-connection':
+    '{connection} の同期が完了しました。',
+  'trade-sync.rithmic.sync-partial-connection':
+    '{connection} の同期は完了しましたが、問題があります。',
+  'trade-sync.rithmic.sync-all': 'すべて同期',
+  'trade-sync.rithmic.sync-all-complete':
+    '{total} 件中 {succeeded} 件の Rithmic 接続を同期しました。',
+  'trade-sync.rithmic.sync-all-partial':
+    '{total} 件中 {succeeded} 件の Rithmic 接続を同期しました。問題のある接続を確認してください。',
+  'trade-sync.rithmic.error.session-conflict':
+    'Rithmic はアクティブなセッションを 1 つしか許可しません。この Rithmic ログインを使用している R|Trader や NinjaTrader などを閉じてください。',
+  'trade-sync.rithmic.error.auto-retry': 'Journalit が自動的に再試行します。',
+  'trade-sync.rithmic.error.invalid-credentials':
+    'Rithmic が保存された認証情報を拒否しました。Journalit.co で更新して再試行してください。',
+  'trade-sync.rithmic.error.agreements-required':
+    'Rithmic では R|Trader でマーケットデータ契約への署名が必要です。署名後に再試行してください。',
+  'trade-sync.rithmic.error.disabled':
+    'この接続では Rithmic の同期が無効です。Journalit.co で管理してください。',
+  'trade-sync.rithmic.error.sync-failed':
+    'Rithmic の同期に失敗しました。Journalit.co で接続を確認して再試行してください。',
+  'trade-sync.broker.mapping-unsaved-hint':
+    'マッピングは同期時に保存されます。',
+  'trade-sync.broker.sync-all-blocked.unsaved-changes':
+    '未保存のアカウント変更があります。その接続を同期すると保存されます。',
+  'trade-sync.broker.sync-all-blocked.mapping-required':
+    '同期する各アカウントに Journalit アカウントを先に選択してください。',
+  'trade-sync.broker.sync-all-blocked.running-job': '同期はすでに実行中です。',
+  'trade-sync.broker.sync-all-blocked.not-ready':
+    '同期できる接続がありません。',
+  'trade-sync.rithmic.connect-another': '別の Rithmic アカウントを接続',
+  'trade-sync.rithmic.error.sync-failed-detail':
+    'Rithmic の同期に失敗しました: {message}',
   'notice.error.canonical-trade-type-change':
     'ブローカー同期済みのトレードは別のトレード種別に変更できません。',
   'trade-sync.import.account.conflict-repair':
@@ -1748,7 +1736,66 @@ const ja: Partial<Lang> = {
   'home.guide.whats-new.done.title': '作業コンテキストを維持',
   'home.guide.whats-new.done.description':
     '個人ウィジェットには概要、詳しい分析にはダッシュボードを使います。各モードは独自のフィルターとレイアウトを保持します。',
+  'home.widget.current-streak.description': '取引とレビューのストリークを追跡',
 
+  'home.widget.streak.kind.trade-outcome': 'トレード結果',
+  'home.widget.streak.kind.trade-review': 'トレードレビュー',
+  'home.widget.streak.kind.drc-review': 'DRCレビュー',
+  'home.widget.streak.kind.weekly-review': '週間レビュー',
+  'home.widget.streak.kind.monthly-review': '月間レビュー',
+  'home.widget.streak.configure': 'ストリークの種類を選択',
+  'home.widget.streak.configure-aria': '{kind}ストリークを設定',
+  'home.widget.streak.no-review-streak': 'アクティブなレビューストリークなし',
+  'home.widget.streak.start-reviewing': 'レビューしてストリークを始めましょう',
+  'home.widget.streak.keep-reviewing': 'レビューを続けて維持しましょう',
+  'home.widget.streak.reviewed-trades-in-a-row.one': '連続レビューした取引',
+  'home.widget.streak.reviewed-trades-in-a-row.few': '連続レビューした取引',
+  'home.widget.streak.reviewed-trades-in-a-row.many': '連続レビューした取引',
+  'home.widget.streak.reviewed-trades-in-a-row.other': '連続レビューした取引',
+  'home.widget.streak.reviewed-days-in-a-row.one': '連続レビューした日数',
+  'home.widget.streak.reviewed-days-in-a-row.few': '連続レビューした日数',
+  'home.widget.streak.reviewed-days-in-a-row.many': '連続レビューした日数',
+  'home.widget.streak.reviewed-days-in-a-row.other': '連続レビューした日数',
+  'home.widget.streak.reviewed-weeks-in-a-row.one': '連続レビューした週数',
+  'home.widget.streak.reviewed-weeks-in-a-row.few': '連続レビューした週数',
+  'home.widget.streak.reviewed-weeks-in-a-row.many': '連続レビューした週数',
+  'home.widget.streak.reviewed-weeks-in-a-row.other': '連続レビューした週数',
+  'home.widget.streak.reviewed-months-in-a-row.one': '連続レビューした月数',
+  'home.widget.streak.reviewed-months-in-a-row.few': '連続レビューした月数',
+  'home.widget.streak.reviewed-months-in-a-row.many': '連続レビューした月数',
+  'home.widget.streak.reviewed-months-in-a-row.other': '連続レビューした月数',
+  'home.widget.streak.missed-trades.one':
+    '前回のレビューから{count}件の取引を逃しています',
+  'home.widget.streak.missed-trades.few':
+    '前回のレビューから{count}件の取引を逃しています',
+  'home.widget.streak.missed-trades.many':
+    '前回のレビューから{count}件の取引を逃しています',
+  'home.widget.streak.missed-trades.other':
+    '前回のレビューから{count}件の取引を逃しています',
+  'home.widget.streak.missed-days.one':
+    '前回のレビューから{count}日を逃しています',
+  'home.widget.streak.missed-days.few':
+    '前回のレビューから{count}日を逃しています',
+  'home.widget.streak.missed-days.many':
+    '前回のレビューから{count}日を逃しています',
+  'home.widget.streak.missed-days.other':
+    '前回のレビューから{count}日を逃しています',
+  'home.widget.streak.missed-weeks.one':
+    '前回のレビューから{count}週を逃しています',
+  'home.widget.streak.missed-weeks.few':
+    '前回のレビューから{count}週を逃しています',
+  'home.widget.streak.missed-weeks.many':
+    '前回のレビューから{count}週を逃しています',
+  'home.widget.streak.missed-weeks.other':
+    '前回のレビューから{count}週を逃しています',
+  'home.widget.streak.missed-months.one':
+    '前回のレビューから{count}か月を逃しています',
+  'home.widget.streak.missed-months.few':
+    '前回のレビューから{count}か月を逃しています',
+  'home.widget.streak.missed-months.many':
+    '前回のレビューから{count}か月を逃しています',
+  'home.widget.streak.missed-months.other':
+    '前回のレビューから{count}か月を逃しています',
   'account-dashboard.title': '口座',
   'home.quick-links.trading-dashboard': 'ダッシュボード',
   'home.quick-links.account-dashboard': '口座',
@@ -1765,6 +1812,17 @@ const ja: Partial<Lang> = {
   'settings.general.show-seconds-desc':
     '取引のエントリー時刻と決済時刻の入力時に秒を表示します。',
   'settings.general.show-seconds-aria': '取引時刻に秒を表示',
+
+  'view.home': 'ホーム',
+  'common.lose': '負け',
+
+  'dashboard.conversion.requires-conversion':
+    '複数通貨の損益チャートには為替レート換算が必要です。',
+
+  'form.layout.guide-trigger-label': 'フォームをカスタマイズ',
+  'trade-import.preview.message.no-open-match':
+    'No matching open trade found for close-only preview',
+  'setups.view.detail.execution-gap.title': 'Execution Gap',
 };
 
 export default ja;

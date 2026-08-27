@@ -63,6 +63,14 @@ interface SharedPnLChartProps extends PnLChartProps {
   isAnimationActive?: boolean;
 }
 
+const DEFAULT_PNL_CHART_MARGIN = {
+  top: 6,
+  right: 5,
+  left: 0,
+  bottom: 10,
+};
+const EMPTY_PNL_TOOLTIP_PROPS: Partial<TooltipProps<number, string>> = {};
+
 
 const renderPnLTooltip = (
   props: PnLChartDataPointTooltipProps,
@@ -122,10 +130,10 @@ export const SharedPnLChart = React.memo<SharedPnLChartProps>(
     minValue,
     maxValue,
     gradientTransitionOffset,
-    margin = { top: 6, right: 5, left: 0, bottom: 10 },
+    margin = DEFAULT_PNL_CHART_MARGIN,
     className = '',
     styleVars,
-    tooltipProps = {},
+    tooltipProps = EMPTY_PNL_TOOLTIP_PROPS,
     showTooltip = true,
     customTooltip,
     fillGradient = true,

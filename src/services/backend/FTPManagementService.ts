@@ -1,12 +1,14 @@
 
 
+import { Notice } from 'obsidian';
 import JournalitPlugin from '../../main';
 import { ApiClient } from './ApiClient';
+import { t } from '../../lang/helpers';
 import {
   BackendIntegrationSettings,
   DEFAULT_SETTINGS,
 } from '../../settings/types';
-import { FTPCredentials } from './types';
+import { FTPCredentials, FTPProvisionedCredentials } from './types';
 import { ErrorHandler, ErrorContext } from '../../utils/errorHandler';
 import { BackendSecretStorage } from './BackendSecretStorage';
 
@@ -84,9 +86,9 @@ export class FTPManagementService {
       }
 
       
+      
       if (error instanceof Error && error.message.includes('404')) {
-        
-        return await this.createFTPUser(username);
+        return null;
       }
 
       
@@ -102,27 +104,13 @@ export class FTPManagementService {
   }
 
   
-  async createOrGetFTPUser(): Promise<FTPCredentials | null> {
+  async createOrGetFTPUser(): Promise<FTPProvisionedCredentials | null> {
     try {
       
-      const authToken = BackendSecretStorage.getAuthToken(this.plugin);
-      const headers: Record<string, string> = {
-        'Content-Type': 'application/json',
-      };
-      if (authToken) {
-        headers['Authorization'] = `Bearer ${authToken}`;
-      }
-
       const url = ApiClient.buildUrl('/api/v1/ftp-users/auto-create');
       const response = await ApiClient.makeRequest<FTPUserResponse>(
         url,
-        {
-          method: 'POST',
-          headers,
-          body: JSON.stringify({
-            username: `journalit${Date.now()}${Math.floor(Math.random() * 1000)}`,
-          }),
-        },
+        { method: 'POST' },
         'create or get FTP user'
       );
 
@@ -131,138 +119,63 @@ export class FTPManagementService {
       }
 
       
-      const credentials: FTPCredentials = {
-        user_id: response.user_id,
-        username: response.username,
-        password: response.password,
-        server: response.server || 'sync.journalit.co',
-        port: response.port || 2121,
-        lastPasswordReset:
-          response.last_password_reset || new Date().toISOString(),
-      };
-
-      
-      if (response.user_id && this.settings) {
+      if (response.user_id) {
         this.settings.ftpUserId = response.user_id;
         await this.plugin.saveSettings();
       }
 
-      return credentials;
+      const toCredentials = (
+        source: FTPProvisionedCredentials['source'],
+        password: string | undefined,
+        lastPasswordReset: string | undefined
+      ): FTPProvisionedCredentials => ({
+        source,
+        user_id: response.user_id,
+        username: response.username,
+        password,
+        server: response.server || 'sync.journalit.co',
+        port: response.port || 2121,
+        lastPasswordReset,
+      });
+
+      if (response.password) {
+        
+        
+        return toCredentials(
+          'created',
+          response.password,
+          response.last_password_reset || new Date().toISOString()
+        );
+      }
+
+      
+      
+      const storedPassword = BackendSecretStorage.getFTPPassword(this.plugin);
+      if (storedPassword && this.settings.ftpUsername === response.username) {
+        return toCredentials(
+          'reused',
+          storedPassword,
+          response.last_password_reset
+        );
+      }
+
+      
+      
+      
+      const rotated = await this.resetFTPPassword(response.username);
+      if (!rotated) {
+        return null;
+      }
+      new Notice(t('notice.ftp-password-rotated'), 10000);
+      return toCredentials(
+        'rotated',
+        rotated.password,
+        rotated.lastPasswordReset
+      );
     } catch (error) {
       const errorContext: ErrorContext = {
         operation: 'create or get FTP user',
         endpoint: '/api/v1/ftp-users/auto-create',
-        statusCode: ErrorHandler.extractStatusCode(error),
-      };
-
-      ErrorHandler.logError(error, errorContext);
-      throw error;
-    }
-  }
-
-  
-  async autoCreateFTPCredentials(
-    username: string
-  ): Promise<FTPCredentials | null> {
-    try {
-      
-      const authToken = BackendSecretStorage.getAuthToken(this.plugin);
-      const headers: Record<string, string> = {
-        'Content-Type': 'application/json',
-      };
-      if (authToken) {
-        headers['Authorization'] = `Bearer ${authToken}`;
-      }
-
-      const url = ApiClient.buildUrl('/api/v1/ftp-users/auto-create');
-      const response = await ApiClient.makeRequest<FTPUserResponse>(
-        url,
-        {
-          method: 'POST',
-          headers,
-          body: JSON.stringify({ username: username }),
-        },
-        'auto-create FTP user'
-      );
-
-      if (!response) {
-        return null;
-      }
-
-      
-      return {
-        username: response.username,
-        password: response.password,
-        server: response.server || 'sync.journalit.co',
-        port: response.port || 2121,
-        lastPasswordReset: new Date().toISOString(),
-      };
-    } catch (error) {
-      const errorContext: ErrorContext = {
-        operation: 'auto-create FTP user',
-        endpoint: '/api/v1/ftp-users/auto-create',
-        statusCode: ErrorHandler.extractStatusCode(error),
-      };
-
-      ErrorHandler.logError(error, errorContext);
-      throw error;
-    }
-  }
-
-  
-  private async createFTPUser(_userId: string): Promise<FTPCredentials | null> {
-    try {
-      
-      const accountId = await this.getFTPUserAccountId();
-      if (!accountId) {
-        const errorContext: ErrorContext = {
-          operation: 'determine account ID for FTP user creation',
-          endpoint: '/api/v1/mt-accounts',
-        };
-
-        ErrorHandler.logError(
-          new Error('Could not determine account ID for FTP user creation'),
-          errorContext
-        );
-        throw new Error('Could not determine account ID for FTP user creation');
-      }
-
-      
-      const authToken = BackendSecretStorage.getAuthToken(this.plugin);
-      const headers: Record<string, string> = {
-        'Content-Type': 'application/json',
-      };
-      if (authToken) {
-        headers['Authorization'] = `Bearer ${authToken}`;
-      }
-
-      const url = ApiClient.buildUrl('/api/v1/ftp-users/create');
-      const response = await ApiClient.makeRequest<FTPUserResponse>(
-        url,
-        {
-          method: 'POST',
-          headers,
-          body: JSON.stringify({ user_id: accountId }),
-        },
-        'create FTP user'
-      );
-
-      if (!response) {
-        return null;
-      }
-
-      
-      return {
-        username: response.username,
-        password: response.password,
-        server: response.server || 'sync.journalit.co',
-        port: response.port || 2121,
-        lastPasswordReset: new Date().toISOString(),
-      };
-    } catch (error) {
-      const errorContext: ErrorContext = {
-        operation: 'create FTP user',
-        endpoint: '/api/v1/ftp-users',
         statusCode: ErrorHandler.extractStatusCode(error),
       };
 
@@ -349,38 +262,5 @@ export class FTPManagementService {
       ErrorHandler.logError(error, errorContext);
       throw error;
     }
-  }
-
-  
-  private async getFTPUserAccountId(): Promise<number | null> {
-    
-    if (this.settings.ftpUserId) {
-      return this.settings.ftpUserId;
-    }
-
-    
-    const ftpUsername = this.settings.ftpUsername;
-    if (ftpUsername) {
-      const credentials = await this.getFTPCredentials(ftpUsername);
-      if (credentials && credentials.user_id) {
-        
-        this.settings.ftpUserId = credentials.user_id;
-        await this.plugin.saveSettings();
-        return credentials.user_id;
-      }
-    }
-
-    const errorContext: ErrorContext = {
-      operation: 'determine FTP user account ID',
-      endpoint: '/api/v1/mt-accounts',
-    };
-
-    ErrorHandler.logError(
-      new Error(
-        `Could not determine FTP user account ID. FTP username: ${ftpUsername}`
-      ),
-      errorContext
-    );
-    return null;
   }
 }

@@ -22,7 +22,7 @@ import {
 import { classifyPnLWithBreakEvenSettings } from '../../../utils/breakEvenRange';
 import type { JournalitSettings } from '../../../settings/types';
 import { getTradeDirectionDisplayKind } from '../../../services/trade/core/TradeDirection';
-import { hasCanonicalProjectionIdentity } from '../../../services/trade/core/CanonicalProjectionFields';
+import { hasUnknownCanonicalPnL } from '../../../services/trade/core/CanonicalProjectionFields';
 import { cssVars } from '../../../styles/inlineStylePolicy';
 
 import { t } from '../../../lang/helpers';
@@ -46,6 +46,8 @@ import {
   type TradeReviewQuestionConfig,
   type TradeReviewWidgetConfig,
 } from './tradeReviewConfig';
+
+const RESOLVED_SAVE_PROMISE = Promise.resolve();
 
 interface TradeReviewWidgetProps {
   filePath: string;
@@ -496,12 +498,7 @@ export function getOutcome(
     entries: trade.entries,
   });
   if (isOpen) return 'open';
-  if (
-    hasCanonicalProjectionIdentity(trade) &&
-    (trade.authoritativePnl === null ||
-      trade.pnl === null ||
-      trade._originalPnlWasNull === true)
-  ) {
+  if (hasUnknownCanonicalPnL(trade)) {
     return 'unknown';
   }
   const pnl = getEffectivePnL(trade);
@@ -989,10 +986,11 @@ function buildMoreContextItems({
   const explicitCustomFields = fields.flatMap((field) =>
     field.startsWith('custom:') ? [field.slice('custom:'.length)] : []
   );
+  const explicitCustomFieldsSet = new Set(explicitCustomFields);
   const includedCustomFields = shouldShow('customFields')
     ? customFieldDefinitions
     : customFieldDefinitions.filter((field) =>
-        explicitCustomFields.includes(field.id)
+        explicitCustomFieldsSet.has(field.id)
       );
   for (const field of includedCustomFields) {
     addMoreContextItem(items, {
@@ -1303,7 +1301,7 @@ function TradeReviewQuestions({
       }
     >
   >({});
-  const saveQueueRef = useRef<Promise<void>>(Promise.resolve());
+  const saveQueueRef = useRef<Promise<void>>(RESOLVED_SAVE_PROMISE);
   const orderedQuestions = useMemo(
     () => orderTradeReviewQuestionsByHierarchy(questions),
     [questions]
@@ -1646,36 +1644,34 @@ function TradeReviewCardHeader({
     <div
       ref={headerRef}
       className="journalit-trade-review-card-header"
-      role="button"
-      tabIndex={0}
-      aria-expanded={isExpanded}
-      onClick={onToggleExpanded}
-      onKeyDown={(event) => {
-        if (event.target !== event.currentTarget) return;
-        if (event.key !== 'Enter' && event.key !== ' ') return;
-        event.preventDefault();
-        onToggleExpanded();
-      }}
+      data-expanded={isExpanded ? 'true' : 'false'}
     >
-      <span
-        className="journalit-weekly-drc-accordion-indicator journalit-trade-review-card-chevron"
-        aria-hidden="true"
+      <button
+        type="button"
+        className="journalit-native-button journalit-native-button--unstyled journalit-trade-review-card-header-toggle"
+        aria-expanded={isExpanded}
+        onClick={onToggleExpanded}
       >
-        <ChevronDown size={16} />
-      </span>
-      <span className="journalit-trade-review-card-title">
-        {title ||
-          t('widget.trade-review.fallback-title', {
-            index: String(index + 1),
-          })}
-      </span>
-      <span className="journalit-trade-review-card-time">
-        {formatTradeTime(trade)}
-      </span>
-      <span className={`journalit-trade-review-card-outcome ${outcomeClass}`}>
-        {preferredOutcome}
-      </span>
-      <span className="journalit-trade-review-card-header-spacer" />
+        <span
+          className="journalit-weekly-drc-accordion-indicator journalit-trade-review-card-chevron"
+          aria-hidden="true"
+        >
+          <ChevronDown size={16} />
+        </span>
+        <span className="journalit-trade-review-card-title">
+          {title ||
+            t('widget.trade-review.fallback-title', {
+              index: String(index + 1),
+            })}
+        </span>
+        <span className="journalit-trade-review-card-time">
+          {formatTradeTime(trade)}
+        </span>
+        <span className={`journalit-trade-review-card-outcome ${outcomeClass}`}>
+          {preferredOutcome}
+        </span>
+        <span className="journalit-trade-review-card-header-spacer" />
+      </button>
       <button
         type="button"
         className={`journalit-weekly-drc-mark-reviewed-button ${isReviewed ? 'journalit-weekly-drc-mark-reviewed-button--reviewed' : ''}`}

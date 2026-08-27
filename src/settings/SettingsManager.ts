@@ -5,11 +5,16 @@ import { App, Notice, PluginManifest } from 'obsidian';
 import {
   JournalitSettings,
   DEFAULT_SETTINGS,
+  DEFAULT_ECONOMIC_CALENDAR_SETTINGS,
+  ECONOMIC_CALENDAR_IMPACTS,
+  type EconomicCalendarImpact,
+  type EconomicCalendarSettings,
   resolveTradeFormLayoutSettings,
   QUICK_LINK_ACTIONS,
   QuickLinkAction,
   SidebarNavItem,
 } from './types';
+import { isEconomicCalendarCurrency } from '../services/economicCalendar/economicCalendarScope';
 import {
   DEFAULT_TRADING_DAY_CUTOFF_TIME,
   TRADING_DAY_CUTOFF_END_OF_DAY_MIGRATION_VERSION,
@@ -21,10 +26,15 @@ import type { SessionLogTagDefinition } from '../types/sessionLog';
 import type {
   SessionModeLinkedResource,
   SessionModePhaseLayouts,
+  TradeGateOutcomeType,
+  TradeGateQuestion,
+  TradeGateQuestionOption,
+  TradeGateRoute,
+  TradeGateRouteTarget,
   SessionModeWindow,
-  TradeGateNode,
   TradeGateWorkflow,
 } from '../types/sessionMode';
+import { getDefaultOutcomeDescription } from '../components/sessionMode/tradeGateUtils';
 import { normalizeSessionModePhaseLayouts } from '../utils/sessionModeLayout';
 import { normalizeGalleryFolders } from './settingsNormalization';
 import { normalizeHomeBackgroundImagePath } from '../components/home/homeBackgroundUtils';
@@ -42,6 +52,47 @@ const BACKUP_FILENAME = 'data.backup.json';
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
+}
+
+function normalizeEconomicCalendarSettings(
+  value: unknown
+): EconomicCalendarSettings {
+  const record = isRecord(value) ? value : {};
+  const currencies: string[] = [];
+  const seenCurrencies = new Set<string>();
+  if (Array.isArray(record.defaultCurrencies)) {
+    for (const item of record.defaultCurrencies) {
+      if (
+        typeof item === 'string' &&
+        isEconomicCalendarCurrency(item) &&
+        !seenCurrencies.has(item)
+      ) {
+        seenCurrencies.add(item);
+        currencies.push(item);
+      }
+    }
+  }
+
+  const impacts: EconomicCalendarImpact[] = [];
+  if (Array.isArray(record.impacts)) {
+    const savedImpacts = new Set<unknown>(record.impacts);
+    for (const impact of ECONOMIC_CALENDAR_IMPACTS) {
+      if (savedImpacts.has(impact)) {
+        impacts.push(impact);
+      }
+    }
+  } else {
+    impacts.push(...DEFAULT_ECONOMIC_CALENDAR_SETTINGS.impacts);
+  }
+
+  return {
+    defaultCurrencies: currencies,
+    impacts,
+    
+    
+    includeHolidays: record.includeHolidays !== false,
+    autoImport: record.autoImport === true,
+  };
 }
 
 function normalizePerformanceBreakdownMetric(
@@ -334,96 +385,377 @@ function getSessionModePreparationLeadTimeMinutes(
     : fallback;
 }
 
-function getTradeGateWorkflows(value: unknown): TradeGateWorkflow[] | null {
+function isTradeGateOutcomeType(value: unknown): value is TradeGateOutcomeType {
+  return value === 'green-light' || value === 'no-trade' || value === 'wait';
+}
+
+function getTradeGateQuestions(value: unknown): TradeGateQuestion[] | null {
   if (!Array.isArray(value)) return null;
+
+  const questions: TradeGateQuestion[] = [];
+  for (const item of value) {
+    if (
+      !isRecord(item) ||
+      typeof item.id !== 'string' ||
+      typeof item.title !== 'string' ||
+      typeof item.prompt !== 'string' ||
+      !Array.isArray(item.options)
+    ) {
+      continue;
+    }
+
+    const options: TradeGateQuestionOption[] = [];
+    for (const option of item.options) {
+      if (
+        !isRecord(option) ||
+        typeof option.id !== 'string' ||
+        typeof option.label !== 'string'
+      ) {
+        continue;
+      }
+      options.push({ id: option.id, label: option.label });
+    }
+
+    questions.push({
+      id: item.id,
+      title: item.title,
+      prompt: item.prompt,
+      options,
+    });
+  }
+  return questions;
+}
+
+function getTradeGateOutcomeTarget(
+  rawTarget: Record<string, unknown>
+): Extract<TradeGateRouteTarget, { kind: 'outcome' }> | null {
+  if (!isTradeGateOutcomeType(rawTarget.outcome)) return null;
+  const target: Extract<TradeGateRouteTarget, { kind: 'outcome' }> = {
+    kind: 'outcome',
+    outcome: rawTarget.outcome,
+  };
+  if (typeof rawTarget.note === 'string') {
+    target.note = rawTarget.note;
+  }
+  return target;
+}
+
+
+function getTradeGateWorkflows(
+  value: unknown,
+  questions: TradeGateQuestion[]
+): TradeGateWorkflow[] | null {
+  if (!Array.isArray(value)) return null;
+
+  const questionsById = new Map<string, TradeGateQuestion>();
+  for (const question of questions) {
+    if (!questionsById.has(question.id)) {
+      questionsById.set(question.id, question);
+    }
+  }
+
   const workflows: TradeGateWorkflow[] = [];
   for (const item of value) {
     if (
       !isRecord(item) ||
       typeof item.id !== 'string' ||
       typeof item.name !== 'string' ||
-      typeof item.startNodeId !== 'string' ||
-      !Array.isArray(item.nodes)
+      !Array.isArray(item.routes)
     ) {
       continue;
     }
-    const parsedNodes: TradeGateNode[] = [];
-    for (const node of item.nodes) {
-      if (!isRecord(node) || typeof node.id !== 'string') continue;
-      if (
-        node.type === 'question' &&
-        typeof node.title === 'string' &&
-        typeof node.prompt === 'string' &&
-        Array.isArray(node.options)
-      ) {
-        const options = [];
-        for (const option of node.options) {
-          if (
-            !isRecord(option) ||
-            typeof option.id !== 'string' ||
-            typeof option.label !== 'string' ||
-            typeof option.targetNodeId !== 'string'
-          ) {
-            continue;
-          }
-          options.push({
-            id: option.id,
-            label: option.label,
-            targetNodeId: option.targetNodeId,
-          });
+
+    let rawNodes: Array<{ id: string; questionId: string }>;
+    let rawStartNodeId: string;
+    let routesKeyedByQuestion: boolean;
+    if (Array.isArray(item.nodes)) {
+      rawNodes = [];
+      for (const node of item.nodes) {
+        if (
+          isRecord(node) &&
+          typeof node.id === 'string' &&
+          typeof node.questionId === 'string'
+        ) {
+          rawNodes.push({ id: node.id, questionId: node.questionId });
         }
-        parsedNodes.push({
-          id: node.id,
-          type: 'question',
-          title: node.title,
-          prompt: node.prompt,
-          options,
-        });
       }
+      rawStartNodeId =
+        typeof item.startNodeId === 'string' ? item.startNodeId : '';
+      routesKeyedByQuestion = false;
+    } else if (Array.isArray(item.questionIds)) {
+      rawNodes = [];
+      for (const questionId of item.questionIds) {
+        if (typeof questionId === 'string') {
+          rawNodes.push({ id: questionId, questionId });
+        }
+      }
+      rawStartNodeId =
+        typeof item.startQuestionId === 'string' ? item.startQuestionId : '';
+      routesKeyedByQuestion = true;
+    } else {
+      continue;
+    }
+
+    const nodes: TradeGateWorkflow['nodes'] = [];
+    const nodeIds = new Set<string>();
+    for (const node of rawNodes) {
+      if (nodeIds.has(node.id) || !questionsById.has(node.questionId)) {
+        continue;
+      }
+      nodes.push({ id: node.id, questionId: node.questionId });
+      nodeIds.add(node.id);
+    }
+    const nodesById = new Map(nodes.map((node) => [node.id, node]));
+
+    const startNodeId = nodeIds.has(rawStartNodeId) ? rawStartNodeId : '';
+
+    const routes: TradeGateRoute[] = [];
+    for (const route of item.routes) {
+      if (!isRecord(route) || typeof route.optionId !== 'string') {
+        continue;
+      }
+      const sourceKey = routesKeyedByQuestion ? route.questionId : route.nodeId;
+      if (typeof sourceKey !== 'string') continue;
+
+      const sourceNode = nodesById.get(sourceKey);
+      const sourceQuestion = sourceNode
+        ? questionsById.get(sourceNode.questionId)
+        : undefined;
       if (
-        node.type === 'outcome' &&
-        (node.outcome === 'green-light' ||
-          node.outcome === 'no-trade' ||
-          node.outcome === 'wait') &&
-        typeof node.title === 'string'
+        !sourceNode ||
+        !sourceQuestion ||
+        !sourceQuestion.options.some((option) => option.id === route.optionId)
       ) {
-        parsedNodes.push({
-          id: node.id,
-          type: 'outcome',
-          outcome: node.outcome,
-          title: node.title,
-          description:
-            typeof node.description === 'string' ? node.description : undefined,
-        });
+        continue;
       }
+
+      const rawTarget = route.target;
+      if (!isRecord(rawTarget) || typeof rawTarget.kind !== 'string') {
+        continue;
+      }
+
+      let target: TradeGateRouteTarget;
+      if (rawTarget.kind === 'node' || rawTarget.kind === 'question') {
+        const targetNodeId =
+          rawTarget.kind === 'node' ? rawTarget.nodeId : rawTarget.questionId;
+        if (typeof targetNodeId !== 'string' || !nodeIds.has(targetNodeId)) {
+          continue;
+        }
+        target = { kind: 'node', nodeId: targetNodeId };
+      } else if (rawTarget.kind === 'outcome') {
+        const outcomeTarget = getTradeGateOutcomeTarget(rawTarget);
+        if (!outcomeTarget) continue;
+        target = outcomeTarget;
+      } else {
+        continue;
+      }
+
+      routes.push({
+        nodeId: sourceNode.id,
+        optionId: route.optionId,
+        target,
+      });
     }
-    const nodeIds = new Set(parsedNodes.map((node) => node.id));
-    const nodes = parsedNodes.map((node): TradeGateNode => {
-      if (node.type !== 'question') return node;
-      return {
-        ...node,
-        options: node.options.filter((option) =>
-          nodeIds.has(option.targetNodeId)
-        ),
-      };
-    });
-    let startNodeId: string | undefined;
-    let fallbackStartNodeId: string | undefined;
-    for (const node of nodes) {
-      if (node.type !== 'question' || node.options.length === 0) continue;
-      if (!fallbackStartNodeId) fallbackStartNodeId = node.id;
-      if (node.id === item.startNodeId) startNodeId = node.id;
-    }
-    startNodeId = startNodeId ?? fallbackStartNodeId;
-    if (!startNodeId) continue;
+
     workflows.push({
       id: item.id,
       name: item.name,
       startNodeId,
       nodes,
+      routes,
     });
   }
   return workflows;
+}
+
+interface LegacyTradeGateQuestionNode {
+  id: string;
+  title: string;
+  prompt: string;
+  options: Array<{
+    id: string;
+    label: string;
+    targetNodeId?: string;
+  }>;
+}
+
+interface LegacyTradeGateOutcomeNode {
+  id: string;
+  outcome: TradeGateOutcomeType;
+  description?: string;
+}
+
+type LegacyTradeGateNode =
+  | { kind: 'question'; node: LegacyTradeGateQuestionNode }
+  | { kind: 'outcome'; node: LegacyTradeGateOutcomeNode };
+
+interface MigratedTradeGateSettings {
+  questions: TradeGateQuestion[];
+  workflows: TradeGateWorkflow[];
+}
+
+function migrateLegacyTradeGateWorkflows(
+  value: unknown
+): MigratedTradeGateSettings | null {
+  if (!Array.isArray(value)) return null;
+
+  
+  
+  
+  
+  
+  
+  const isLegacyWorkflow = (item: unknown): item is Record<string, unknown> =>
+    isRecord(item) &&
+    Array.isArray(item.nodes) &&
+    item.nodes.some((node) => isRecord(node) && typeof node.type === 'string');
+
+  const hasLegacyWorkflow = value.some(isLegacyWorkflow);
+  if (!hasLegacyWorkflow) return null;
+
+  const questions: TradeGateQuestion[] = [];
+  const workflows: TradeGateWorkflow[] = [];
+
+  for (const item of value) {
+    if (
+      !isLegacyWorkflow(item) ||
+      !Array.isArray(item.nodes) ||
+      typeof item.id !== 'string' ||
+      typeof item.name !== 'string'
+    ) {
+      continue;
+    }
+
+    const nodesById = new Map<string, LegacyTradeGateNode>();
+    const questionNodes: LegacyTradeGateQuestionNode[] = [];
+
+    for (const rawNode of item.nodes) {
+      if (
+        !isRecord(rawNode) ||
+        typeof rawNode.id !== 'string' ||
+        typeof rawNode.type !== 'string'
+      ) {
+        continue;
+      }
+
+      if (
+        rawNode.type === 'question' &&
+        typeof rawNode.title === 'string' &&
+        typeof rawNode.prompt === 'string' &&
+        Array.isArray(rawNode.options)
+      ) {
+        const node: LegacyTradeGateQuestionNode = {
+          id: rawNode.id,
+          title: rawNode.title,
+          prompt: rawNode.prompt,
+          options: [],
+        };
+        for (const rawOption of rawNode.options) {
+          if (
+            !isRecord(rawOption) ||
+            typeof rawOption.id !== 'string' ||
+            typeof rawOption.label !== 'string'
+          ) {
+            continue;
+          }
+          node.options.push({
+            id: rawOption.id,
+            label: rawOption.label,
+            ...(typeof rawOption.targetNodeId === 'string'
+              ? { targetNodeId: rawOption.targetNodeId }
+              : {}),
+          });
+        }
+        questionNodes.push(node);
+        if (!nodesById.has(node.id)) {
+          nodesById.set(node.id, { kind: 'question', node });
+        }
+        continue;
+      }
+
+      if (
+        rawNode.type === 'outcome' &&
+        isTradeGateOutcomeType(rawNode.outcome) &&
+        typeof rawNode.title === 'string'
+      ) {
+        const node: LegacyTradeGateOutcomeNode = {
+          id: rawNode.id,
+          outcome: rawNode.outcome,
+          ...(typeof rawNode.description === 'string'
+            ? { description: rawNode.description }
+            : {}),
+        };
+        if (!nodesById.has(node.id)) {
+          nodesById.set(node.id, { kind: 'outcome', node });
+        }
+      }
+    }
+
+    
+    
+    const workflowNodes: TradeGateWorkflow['nodes'] = [];
+    const nodeIds = new Set<string>();
+    for (const question of questionNodes) {
+      questions.push({
+        id: question.id,
+        title: question.title,
+        prompt: question.prompt,
+        options: question.options.map(({ id, label }) => ({ id, label })),
+      });
+      if (!nodeIds.has(question.id)) {
+        workflowNodes.push({ id: question.id, questionId: question.id });
+        nodeIds.add(question.id);
+      }
+    }
+
+    const routes: TradeGateRoute[] = [];
+    for (const question of questionNodes) {
+      for (const option of question.options) {
+        if (!option.targetNodeId) continue;
+        const targetNode = nodesById.get(option.targetNodeId);
+        if (!targetNode) continue;
+
+        let target: TradeGateRouteTarget;
+        if (targetNode.kind === 'question') {
+          if (!nodeIds.has(targetNode.node.id)) continue;
+          target = {
+            kind: 'node',
+            nodeId: targetNode.node.id,
+          };
+        } else {
+          const { outcome, description } = targetNode.node;
+          target = { kind: 'outcome', outcome };
+          if (
+            description !== undefined &&
+            description !== getDefaultOutcomeDescription(outcome)
+          ) {
+            target = { ...target, note: description };
+          }
+        }
+
+        routes.push({
+          nodeId: question.id,
+          optionId: option.id,
+          target,
+        });
+      }
+    }
+
+    const startNodeId =
+      typeof item.startNodeId === 'string' && nodeIds.has(item.startNodeId)
+        ? item.startNodeId
+        : '';
+
+    workflows.push({
+      id: item.id,
+      name: item.name,
+      startNodeId,
+      nodes: workflowNodes,
+      routes,
+    });
+  }
+
+  return { questions, workflows };
 }
 
 function getSessionModePhaseLayouts(
@@ -563,6 +895,20 @@ export class SettingsManager {
     let migrated = false;
 
     const rawRecord = isRecord(rawData) ? rawData : {};
+    const rawSessionMode = isRecord(rawRecord.sessionMode)
+      ? rawRecord.sessionMode
+      : {};
+    const migratedTradeGateSettings = migrateLegacyTradeGateWorkflows(
+      rawSessionMode.tradeGateWorkflows
+    );
+    if (migratedTradeGateSettings) {
+      settings.sessionMode.tradeGateQuestions =
+        migratedTradeGateSettings.questions;
+      settings.sessionMode.tradeGateWorkflows =
+        migratedTradeGateSettings.workflows;
+      migrated = true;
+    }
+
     const rawTradeSettings = isRecord(rawRecord.trade) ? rawRecord.trade : {};
     const rawCutoffTime = rawTradeSettings.tradingDayCutoffTime;
     const cutoffMigrationVersion =
@@ -993,6 +1339,9 @@ export class SettingsManager {
     const sessionModeSource = saved.sessionMode;
     if (isRecord(sessionModeSource)) {
       const sessionModeRecord = sessionModeSource;
+      const tradeGateQuestions =
+        getTradeGateQuestions(sessionModeRecord.tradeGateQuestions) ??
+        defaults.sessionMode.tradeGateQuestions;
       merged.sessionMode = {
         ...defaults.sessionMode,
         ...sessionModeRecord,
@@ -1010,9 +1359,12 @@ export class SettingsManager {
           typeof sessionModeRecord.showTradeExecutionsInSessionLog === 'boolean'
             ? sessionModeRecord.showTradeExecutionsInSessionLog
             : defaults.sessionMode.showTradeExecutionsInSessionLog,
+        tradeGateQuestions,
         tradeGateWorkflows:
-          getTradeGateWorkflows(sessionModeRecord.tradeGateWorkflows) ??
-          defaults.sessionMode.tradeGateWorkflows,
+          getTradeGateWorkflows(
+            sessionModeRecord.tradeGateWorkflows,
+            tradeGateQuestions
+          ) ?? defaults.sessionMode.tradeGateWorkflows,
         phaseLayouts: normalizeSessionModePhaseLayouts(
           getSessionModePhaseLayouts(sessionModeRecord.phaseLayouts)
         ),
@@ -1396,6 +1748,10 @@ export class SettingsManager {
     } else if (defaults.symbolMappings) {
       merged.symbolMappings = defaults.symbolMappings;
     }
+
+    merged.economicCalendar = normalizeEconomicCalendarSettings(
+      saved.economicCalendar ?? defaults.economicCalendar
+    );
 
     
     

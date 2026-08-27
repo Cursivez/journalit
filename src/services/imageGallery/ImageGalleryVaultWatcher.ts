@@ -2,7 +2,7 @@ import { normalizePath, TFile, TFolder, type TAbstractFile } from 'obsidian';
 import type JournalitPlugin from '../../main';
 import { forceMetadataCacheRefresh } from '../../utils/dataRefresh';
 import { getMediaKind } from '../../utils/imageMediaUtils';
-import { eventBus } from '../events';
+import { eventBus } from '../events/EventBus';
 import {
   ImageGalleryAnnotationStore,
   isOwnedAnnotationWriteActive,

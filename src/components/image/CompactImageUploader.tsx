@@ -381,6 +381,7 @@ function CompactImageUploaderControls({
         onChange={(event) => void handleFileSelect(event)}
         className="journalit-compact-uploader-file-input"
         aria-hidden="true"
+        tabIndex={-1}
       />
     </div>
   );

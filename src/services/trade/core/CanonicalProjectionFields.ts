@@ -1,5 +1,41 @@
 const CANONICAL_PROJECTION_SCHEMA_VERSION = 1;
 
+interface CanonicalProjectionPnlFields {
+  canonicalTradeId?: string;
+  canonicalTradeVersion?: number;
+  canonicalProjectionSchemaVersion?: number;
+  authoritativePnl?: number | null;
+}
+
+export function extractCanonicalProjectionPnlFields(
+  value: Record<string, unknown>
+): CanonicalProjectionPnlFields {
+  return {
+    canonicalTradeId:
+      typeof value.canonicalTradeId === 'string' &&
+      value.canonicalTradeId.trim() !== ''
+        ? value.canonicalTradeId
+        : undefined,
+    canonicalTradeVersion:
+      typeof value.canonicalTradeVersion === 'number' &&
+      Number.isInteger(value.canonicalTradeVersion) &&
+      value.canonicalTradeVersion > 0
+        ? value.canonicalTradeVersion
+        : undefined,
+    canonicalProjectionSchemaVersion:
+      value.canonicalProjectionSchemaVersion ===
+      CANONICAL_PROJECTION_SCHEMA_VERSION
+        ? CANONICAL_PROJECTION_SCHEMA_VERSION
+        : undefined,
+    authoritativePnl:
+      value.authoritativePnl === null ||
+      (typeof value.authoritativePnl === 'number' &&
+        Number.isFinite(value.authoritativePnl))
+        ? value.authoritativePnl
+        : undefined,
+  };
+}
+
 export function hasCanonicalProjectionIdentity(value: unknown): value is Record<
   string,
   unknown
@@ -21,6 +57,15 @@ export function hasCanonicalProjectionIdentity(value: unknown): value is Record<
     'canonicalProjectionSchemaVersion' in value &&
     value.canonicalProjectionSchemaVersion ===
       CANONICAL_PROJECTION_SCHEMA_VERSION
+  );
+}
+
+export function hasUnknownCanonicalPnL(value: unknown): boolean {
+  return (
+    hasCanonicalProjectionIdentity(value) &&
+    (value.authoritativePnl === null ||
+      value.pnl == null ||
+      value._originalPnlWasNull === true)
   );
 }
 

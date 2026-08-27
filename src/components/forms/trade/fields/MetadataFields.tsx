@@ -1,19 +1,17 @@
 
 
-import React, {
-  useState,
-  useMemo,
-  useCallback,
-  useEffect,
-  useRef,
-} from 'react';
+import React, { useMemo, useCallback, useEffect, useRef } from 'react';
 import { FormSection } from '../FormSection';
 import { TradeFormData, TradeFormValue } from '../types';
-import { ImageUploader, ImageCarousel } from '../../../image';
+import { ImageUploader } from '../../../image/ImageUploader';
+import { ImageCarousel } from '../../../image/ImageCarousel';
 import { PasteContext } from '../../../../utils/PasteManager';
-import { resolveImageInput } from '../../../../utils/imageMediaUtils';
-import { getApp } from '../../../../utils/obsidian';
 import { t } from '../../../../lang/helpers';
+import { usePlugin } from '../../../../hooks/usePlugin';
+import { hasVisibleImageAnnotation } from '../../../../utils/imageAnnotations';
+import { TradeAttachmentAnnotationEditor } from './TradeAttachmentAnnotationEditor';
+import { TradeAttachmentUrlInput } from './TradeAttachmentUrlInput';
+import { useTradeAttachmentAnnotations } from '../hooks/useTradeAttachmentAnnotations';
 
 interface MetadataFieldsProps {
   
@@ -39,7 +37,11 @@ const MetadataFieldsComponent: React.FC<MetadataFieldsProps> = ({
   onDeleteImage,
   sourcePath = '',
 }) => {
-  const imagesRef = useRef<string[]>([]);
+  const plugin = usePlugin();
+  const imagesRef = useRef<string[]>(
+    Array.isArray(data.images) ? [...data.images] : []
+  );
+
   useEffect(() => {
     imagesRef.current = Array.isArray(data.images) ? [...data.images] : [];
   }, [data.images]);
@@ -51,6 +53,30 @@ const MetadataFieldsComponent: React.FC<MetadataFieldsProps> = ({
     },
     [onChange]
   );
+
+  const handleAnnotationsChange = useCallback(
+    (nextAnnotations: NonNullable<TradeFormData['imageAnnotations']>) =>
+      onChange('imageAnnotations', nextAnnotations),
+    [onChange]
+  );
+  const {
+    annotations: imageAnnotations,
+    editorRef: annotationEditorRef,
+    editingImagePath,
+    annotationDraft,
+    handleDraftChange,
+    getAnnotation,
+    saveAnnotation,
+    handleAnnotateImage,
+    handleSelectedImageChange,
+    handleDone: handleSaveAnnotation,
+    handleCancel: handleCancelAnnotation,
+    removeAnnotation,
+  } = useTradeAttachmentAnnotations({
+    images: data.images ?? [],
+    imageAnnotations: data.imageAnnotations,
+    onChange: handleAnnotationsChange,
+  });
 
   
   const tradeContext = useMemo((): PasteContext => {
@@ -93,8 +119,9 @@ const MetadataFieldsComponent: React.FC<MetadataFieldsProps> = ({
       const currentImages = [...imagesRef.current];
 
       
+      const currentImagesSet = new Set(currentImages);
       const newImagePaths = imagePaths.filter(
-        (path) => !currentImages.includes(path)
+        (path) => !currentImagesSet.has(path)
       );
 
       if (newImagePaths.length > 0) {
@@ -116,6 +143,10 @@ const MetadataFieldsComponent: React.FC<MetadataFieldsProps> = ({
     const updatedImages = currentImages.filter((image) => image !== imagePath);
     updateImages(updatedImages);
 
+    const replacementImagePath =
+      updatedImages[Math.min(index, updatedImages.length - 1)];
+    removeAnnotation(imagePath, replacementImagePath);
+
     
     if (onDeleteImage) {
       try {
@@ -134,53 +165,12 @@ const MetadataFieldsComponent: React.FC<MetadataFieldsProps> = ({
     return await onAddImage(file);
   };
 
-  
-  const [imageUrl, setImageUrl] = useState('');
-  const [urlError, setUrlError] = useState<string | null>(null);
-
-  
-  const handleAddImageUrl = useCallback(() => {
-    const url = imageUrl.trim();
-    if (!url) return;
-
-    let finalUrl: string;
-    try {
-      finalUrl = resolveImageInput(getApp(), url, sourcePath);
-    } catch {
-      setUrlError(t('image.uploader.error-invalid-url'));
-      return;
-    }
-
-    
-    const currentImages = imagesRef.current;
-    if (currentImages.includes(finalUrl)) {
-      setUrlError(t('form.field.image-duplicate-error'));
-      return;
-    }
-
-    
-    void handleImageUploaded(finalUrl);
-    setImageUrl('');
-    setUrlError(null);
-  }, [imageUrl, handleImageUploaded, sourcePath]);
-
-  
-  const handleUrlKeyDown = useCallback(
-    (e: React.KeyboardEvent<HTMLInputElement>) => {
-      if (e.key === 'Enter') {
-        e.preventDefault();
-        handleAddImageUrl();
-      }
-    },
-    [handleAddImageUrl]
-  );
-
   return (
     <FormSection title={t('form.section.attachments')}>
       
       {onAddImage && (
         <div className="field">
-          <label className="label">{t('form.section.attachments')}</label>
+          <div className="label">{t('form.section.attachments')}</div>
 
           
           <ImageUploader
@@ -193,32 +183,11 @@ const MetadataFieldsComponent: React.FC<MetadataFieldsProps> = ({
             pasteContext={tradeContext}
           />
 
-          
-          <div className="journalit-image-url-container">
-            <input
-              type="text"
-              className={`journalit-image-url-input${urlError ? ' has-error' : ''}`}
-              value={imageUrl}
-              onChange={(e) => {
-                setImageUrl(e.target.value);
-                setUrlError(null);
-              }}
-              onKeyDown={handleUrlKeyDown}
-              placeholder={t('form.field.image-url-placeholder')}
-              aria-label={t('image.uploader.url-input-aria')}
-            />
-            <button
-              type="button"
-              className={`journalit-image-url-button${imageUrl.trim() ? ' is-active' : ''}`}
-              onClick={() => void handleAddImageUrl()}
-              disabled={!imageUrl.trim()}
-            >
-              {t('button.add')}
-            </button>
-          </div>
-          {urlError && (
-            <div className="journalit-image-url-error">{urlError}</div>
-          )}
+          <TradeAttachmentUrlInput
+            sourcePath={sourcePath}
+            hasImage={(imagePath) => imagesRef.current.includes(imagePath)}
+            onAddImagePath={handleImageUploaded}
+          />
 
           
           {data.images && data.images.length > 0 && (
@@ -235,9 +204,32 @@ const MetadataFieldsComponent: React.FC<MetadataFieldsProps> = ({
                   enabled: true,
                   onDeleteImage: handleDeleteImage,
                 }}
+                annotationOptions={{
+                  enabled: plugin !== null,
+                  onAnnotateImage: handleAnnotateImage,
+                  isAnnotated: (imagePath) =>
+                    hasVisibleImageAnnotation(imageAnnotations[imagePath]),
+                }}
+                fullscreenAnnotationOptions={{
+                  loadAnnotation: getAnnotation,
+                  saveAnnotation,
+                }}
+                onSelectedImageChange={handleSelectedImageChange}
                 useResolveMediaPath={true}
                 sourcePath={sourcePath}
               />
+              {plugin && editingImagePath ? (
+                <div ref={annotationEditorRef}>
+                  <TradeAttachmentAnnotationEditor
+                    plugin={plugin}
+                    imagePath={editingImagePath}
+                    value={annotationDraft}
+                    onChange={handleDraftChange}
+                    onCancel={handleCancelAnnotation}
+                    onDone={handleSaveAnnotation}
+                  />
+                </div>
+              ) : null}
             </div>
           )}
         </div>

@@ -1,8 +1,9 @@
 
 
+import { OPEN_FULLSCREEN_PORTAL_SELECTORS } from '../components/image/fullscreenPortalPresence';
+
 const ESCAPE_DELEGATED_SURFACE_SELECTORS = [
-  '#journalit-fullscreen-portal:not(:empty)',
-  '.journalit-fullscreen-portal-container:not(:empty)',
+  ...OPEN_FULLSCREEN_PORTAL_SELECTORS,
   '.journalit-shared-selector-overlay',
   '.journalit-component-selector-overlay',
   '.journalit-widget-picker-overlay',

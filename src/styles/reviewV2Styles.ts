@@ -1277,6 +1277,13 @@ ${TRADE_ACCOUNT_CELL_STYLES}
     color: var(--text-normal);
   }
 
+  button.journalit-native-button.journalit-reviewv2-item-text {
+    justify-content: flex-start;
+    color: var(--text-normal);
+    font-size: 0.9em;
+    text-align: left;
+  }
+
   .journalit-reviewv2-item-text--completed {
     text-decoration: line-through;
     color: var(--text-muted);
@@ -2565,6 +2572,10 @@ ${TRADE_ACCOUNT_CELL_STYLES}
     opacity: 0.7;
   }
 
+  button.journalit-native-button--unstyled.reviewed-indicator--disabled {
+    cursor: default;
+  }
+
   .reviewed-indicator:not(.reviewed-indicator--disabled):hover {
     opacity: 0.7;
   }
@@ -2759,6 +2770,21 @@ ${TRADE_ACCOUNT_CELL_STYLES}
     text-transform: uppercase;
     letter-spacing: 0.06em;
     cursor: pointer;
+  }
+
+  button.journalit-native-button--unstyled.journalit-previous-drc-reference-link {
+    flex: 0 0 auto;
+    color: var(--text-accent);
+    font-size: 0.72rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+
+  button.journalit-native-button--unstyled.journalit-previous-drc-reference-date {
+    color: var(--text-normal);
+    font-size: 0.9rem;
+    font-weight: 600;
   }
 
   .journalit-previous-drc-reference-link:hover,
@@ -3046,7 +3072,25 @@ ${TRADE_ACCOUNT_CELL_STYLES}
     color: var(--text-normal);
   }
 
+  .journalit-key-levels-widget button.key-levels-price {
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+    text-align: inherit;
+  }
+
   .key-levels-price--editable {
+    cursor: text;
+  }
+
+  button.journalit-native-button--unstyled.key-levels-price--editable {
+    color: var(--text-normal);
+    font-family: var(--font-monospace);
+    font-size: 0.9rem;
+    font-weight: 500;
+    line-height: 1.4;
     cursor: text;
   }
 
@@ -3843,7 +3887,7 @@ ${TRADE_ACCOUNT_CELL_STYLES}
     background: var(--background-primary);
   }
 
-  .journalit-weekly-drc-day--accordion .journalit-weekly-drc-summary[aria-expanded="true"] {
+  .journalit-weekly-drc-day--accordion .journalit-weekly-drc-summary[data-expanded="true"] {
     box-shadow: 0 1px 0 var(--background-modifier-border);
   }
 
@@ -3992,11 +4036,17 @@ ${TRADE_ACCOUNT_CELL_STYLES}
     color: var(--text-muted);
   }
 
+  button.journalit-native-button--unstyled.journalit-weekly-drc-accordion-indicator {
+    width: 16px;
+    height: 16px;
+    color: var(--text-muted);
+  }
+
   .journalit-weekly-drc-accordion-indicator > svg {
     transition: transform 250ms ease-in-out;
   }
 
-  .journalit-weekly-drc-day--accordion .journalit-weekly-drc-summary[aria-expanded="false"] .journalit-weekly-drc-accordion-indicator > svg {
+  .journalit-weekly-drc-day--accordion .journalit-weekly-drc-summary[data-expanded="false"] .journalit-weekly-drc-accordion-indicator > svg {
     transform: rotate(-90deg);
   }
 
@@ -4072,8 +4122,23 @@ ${TRADE_ACCOUNT_CELL_STYLES}
     box-shadow: none !important;
     font: inherit;
     text-align: left;
-    cursor: pointer;
+    cursor: default;
     appearance: none;
+  }
+
+  .journalit-trade-review-card-header-toggle {
+    display: flex;
+    flex: 1 1 auto;
+    align-items: center;
+    gap: 0.7rem;
+    min-width: 0;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
   }
 
   .journalit-trade-review-card > .journalit-trade-review-card-header {
@@ -4103,7 +4168,7 @@ ${TRADE_ACCOUNT_CELL_STYLES}
     border-bottom-color: transparent;
   }
 
-  .journalit-trade-review-card-header[aria-expanded="true"] {
+  .journalit-trade-review-card-header[data-expanded="true"] {
     border-bottom-color: var(--background-modifier-border);
   }
 
@@ -4112,7 +4177,7 @@ ${TRADE_ACCOUNT_CELL_STYLES}
     transition: transform 0.16s ease;
   }
 
-  .journalit-trade-review-card-header[aria-expanded="false"] .journalit-trade-review-card-chevron {
+  .journalit-trade-review-card-header[data-expanded="false"] .journalit-trade-review-card-chevron {
     transform: rotate(-90deg);
   }
 

@@ -2,7 +2,7 @@
 
 import { App, TFile } from 'obsidian';
 import type { TradeData } from '../../services/trade/TradeService';
-import { eventBus } from '../../services/events';
+import { eventBus } from '../../services/events/EventBus';
 import { getPluginInstance } from '../../utils/pluginContext';
 import {
   ensureTradeIdentityFrontmatter,
@@ -36,9 +36,6 @@ interface BatchOperationResult {
   errors: number;
   total: number;
 }
-
-const isRecord = (value: unknown): value is Record<string, unknown> =>
-  Boolean(value) && typeof value === 'object' && !Array.isArray(value);
 
 interface TradeServiceLike {
   extractTradeData: (
@@ -757,10 +754,9 @@ function buildDuplicateTradeData(
     }
   }
 
-  const imageAnnotations = duplicate.customFields?.imageAnnotations;
-  if (isRecord(imageAnnotations)) {
+  if (duplicate.imageAnnotations) {
     const filteredAnnotations = Object.fromEntries(
-      Object.entries(imageAnnotations).filter(([mediaPath]) => {
+      Object.entries(duplicate.imageAnnotations).filter(([mediaPath]) => {
         if (droppedManagedMediaPaths.has(mediaPath)) return false;
         return !isManagedTradeMediaPath({
           mediaPath,
@@ -769,13 +765,11 @@ function buildDuplicateTradeData(
         });
       })
     );
-    const customFields = { ...duplicate.customFields };
     if (Object.keys(filteredAnnotations).length > 0) {
-      customFields.imageAnnotations = filteredAnnotations;
+      duplicate.imageAnnotations = filteredAnnotations;
     } else {
-      delete customFields.imageAnnotations;
+      delete duplicate.imageAnnotations;
     }
-    duplicate.customFields = customFields;
   }
 
   duplicate.notes = removeTradeNoteMediaReferences(

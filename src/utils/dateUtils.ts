@@ -254,6 +254,7 @@ export function getStandardDayOfWeek(mondayBasedDay: number): number {
 }
 
 const mondayBasedDayNameFormatterCache = new Map<string, Intl.DateTimeFormat>();
+const weekdayLongFormatterCache = new Map<string, Intl.DateTimeFormat>();
 
 function getMondayBasedDayNameFormatter(
   locale: string | undefined,
@@ -266,6 +267,24 @@ function getMondayBasedDayNameFormatter(
     mondayBasedDayNameFormatterCache.set(cacheKey, formatter);
   }
   return formatter;
+}
+
+function getWeekdayLongFormatter(timeZone?: string): Intl.DateTimeFormat {
+  const cacheKey = timeZone ?? '';
+  let formatter = weekdayLongFormatterCache.get(cacheKey);
+  if (!formatter) {
+    formatter = new Intl.DateTimeFormat('en-US', {
+      weekday: 'long',
+      ...(timeZone ? { timeZone } : {}),
+    });
+    weekdayLongFormatterCache.set(cacheKey, formatter);
+  }
+  return formatter;
+}
+
+
+export function formatWeekdayLong(date: Date, timeZone?: string): string {
+  return getWeekdayLongFormatter(timeZone).format(date);
 }
 
 

@@ -41,8 +41,9 @@ export const HomeAccountFilter: React.FC<HomeAccountFilterProps> = React.memo(
         return [];
       }
 
+      const normalizedAccountsSet = new Set(normalizedAccounts);
       return selectedAccounts.filter((account) =>
-        normalizedAccounts.includes(account)
+        normalizedAccountsSet.has(account)
       );
     }, [explicitAllSelected, normalizedAccounts, selectedAccounts]);
 

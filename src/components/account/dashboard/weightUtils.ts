@@ -73,6 +73,7 @@ export function calculateAccountTypeWeights(
   const weightData: AccountTypeWeightData[] = [];
 
   
+  const excludedTypesSet = new Set(excludedTypes);
   accountTypesToDisplay.forEach((type, index) => {
     const typeAccounts = accountsByType[type] || [];
 
@@ -82,7 +83,7 @@ export function calculateAccountTypeWeights(
     }
 
     
-    const isExcluded = excludedTypes.includes(type.toLowerCase());
+    const isExcluded = excludedTypesSet.has(type.toLowerCase());
 
     
     if (isExcluded) {

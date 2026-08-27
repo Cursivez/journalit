@@ -4,7 +4,7 @@ import { TradeFormData } from '../components/forms/trade/types';
 import { LossReviewData, TradeReviewData } from '../services/backend/types';
 
 
-export interface TradeFrontmatter extends TradeFormData {
+interface TradeFrontmatter extends TradeFormData {
   
   tradeStatus?: string;
 

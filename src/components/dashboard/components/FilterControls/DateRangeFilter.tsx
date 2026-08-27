@@ -10,7 +10,7 @@ import React, {
 } from 'react';
 import { createPortal } from 'react-dom';
 import { t } from '../../../../lang/helpers';
-import { useEventBus } from '../../../../hooks';
+import { useEventBus } from '../../../../hooks/useEventBus';
 import { FastDateTimeInput } from '../../../../components/core/FastDateTimeInput';
 import { cssVars } from '../../../../styles/inlineStylePolicy';
 import {
@@ -20,6 +20,7 @@ import {
   getWeekStartDaySetting,
   type WeekStartDaySetting,
 } from '../../../../utils/dateUtils';
+import { mergeClassNames } from '../../../../utils/classNames';
 
 interface DateRangeFilterProps {
   dateRange: [Date | null, Date | null];
@@ -93,7 +94,10 @@ const DatePresetButtons: React.FC<DatePresetButtonsProps> = ({
           <button
             key={btn.id}
             onClick={getButtonClickHandler(btn.id)}
-            className={displayedPreset === btn.id ? 'active' : ''}
+            className={mergeClassNames(
+              'journalit-native-button journalit-native-button--unstyled',
+              displayedPreset === btn.id ? 'active' : ''
+            )}
           >
             {btn.label}
           </button>
@@ -137,8 +141,8 @@ const CustomDateDropdown: React.FC<CustomDateDropdownProps> = ({
     })}
   >
     <div className="journalit-dashboard-date-range-start">
-      <label>{t('dashboard.filter.date.from')}</label>
       <FastDateTimeInput
+        label={t('dashboard.filter.date.from')}
         value={dateRange[0] || undefined}
         onChange={onStartDateChange}
         commitValidSegmentChangesImmediately
@@ -147,8 +151,8 @@ const CustomDateDropdown: React.FC<CustomDateDropdownProps> = ({
     </div>
 
     <div className="journalit-dashboard-date-range-end">
-      <label>{t('dashboard.filter.date.to')}</label>
       <FastDateTimeInput
+        label={t('dashboard.filter.date.to')}
         value={dateRange[1] || undefined}
         onChange={onEndDateChange}
         commitValidSegmentChangesImmediately

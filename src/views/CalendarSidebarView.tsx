@@ -10,7 +10,7 @@ import {
   Trade,
 } from '../components/dashboard/utils/dataUtils';
 import { createDashboardFilters } from '../settings/viewFiltersDefaults';
-import { eventBus } from '../services/events';
+import { eventBus } from '../services/events/EventBus';
 import type { TradeChangedPayload } from '../services/events/types';
 import { t } from '../lang/helpers';
 
@@ -79,7 +79,9 @@ export function useCalendarTrades(plugin: JournalitPlugin): {
   return { trades, isLoading };
 }
 
-const CalendarSidebar: React.FC<{ plugin: JournalitPlugin }> = ({ plugin }) => {
+export const CalendarSidebar: React.FC<{ plugin: JournalitPlugin }> = ({
+  plugin,
+}) => {
   const { trades, isLoading } = useCalendarTrades(plugin);
 
   return (
@@ -91,6 +93,7 @@ const CalendarSidebar: React.FC<{ plugin: JournalitPlugin }> = ({ plugin }) => {
           trades={trades}
           compactWidthThreshold={300}
           compactHeightThreshold={275}
+          navigationSource="sidebar"
         />
       )}
     </div>

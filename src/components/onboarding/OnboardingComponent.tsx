@@ -1,24 +1,37 @@
 
 
 import React, { useEffect, useRef, useState } from 'react';
-import { Notice, type Hotkey } from 'obsidian';
+import { Notice } from 'obsidian';
 import { useEventBus } from '../../hooks/useEventBus';
 import { t } from '../../lang/helpers';
 import { SETTINGS_TAB_IDS } from '../../settings/types';
 import type JournalitPlugin from '../../main';
 import { WelcomeStep } from './steps/WelcomeStep';
 import { ExploreStep } from './steps/ExploreStep';
-import { ChoosePathStep, type OnboardingPath } from './steps/ChoosePathStep';
-import { ContextualFinalStep } from './steps/ContextualFinalStep';
+import {
+  ChoosePathStep,
+  type OnboardingPathOption,
+} from './steps/ChoosePathStep';
+import { Star } from '../shared/icons/ObsidianIcon';
+import { ManualEntryStep } from './steps/ManualEntryStep';
 import { ONBOARDING_VIEW_TYPE } from '../../views/OnboardingView';
 import { openExternalUrl } from '../../utils/externalLinks';
 import { writeClipboardText } from '../../utils/clipboard';
+import {
+  ADD_TRADE_SUGGESTED_HOTKEYS,
+  getAddTradeHotkeyParts,
+  openHotkeySettingsForCommand,
+  setSuggestedHotkeyIfMissing,
+} from '../../utils/obsidianHotkeys';
 
 type OnboardingViewStep =
   | 'welcome'
   | 'explore'
   | 'choose-path'
-  | 'contextual-final';
+  | 'import-method'
+  | 'manual-entry';
+
+export const TRADE_SYNC_SETTINGS_OPEN_DELAY_MS = 50;
 
 interface OnboardingComponentProps {
   plugin: JournalitPlugin;
@@ -26,15 +39,14 @@ interface OnboardingComponentProps {
 
 function useOnboardingModel(plugin: JournalitPlugin) {
   const [currentStep, setCurrentStep] = useState<OnboardingViewStep>('welcome');
-  const [selectedPath, setSelectedPath] = useState<OnboardingPath | null>(null);
+  const [destinationBusy, setDestinationBusy] = useState(false);
 
   const [manualDocsFallbackUrl, setManualDocsFallbackUrl] = useState<
     string | null
   >(null);
   const [manualDocsCopied, setManualDocsCopied] = useState(false);
   const manualDocsCopyTimerRef = useRef<number | null>(null);
-  const hotkeySearchIntervalRef = useRef<number | null>(null);
-
+  const hotkeySettingsCleanupRef = useRef<(() => void) | null>(null);
   const didAutoCompleteManual = useRef(false);
 
   useEffect(() => {
@@ -42,11 +54,7 @@ function useOnboardingModel(plugin: JournalitPlugin) {
       if (manualDocsCopyTimerRef.current) {
         window.clearTimeout(manualDocsCopyTimerRef.current);
       }
-
-      if (hotkeySearchIntervalRef.current) {
-        window.clearInterval(hotkeySearchIntervalRef.current);
-        hotkeySearchIntervalRef.current = null;
-      }
+      hotkeySettingsCleanupRef.current?.();
     };
   }, []);
 
@@ -60,13 +68,6 @@ function useOnboardingModel(plugin: JournalitPlugin) {
 
   const handleExploreBack = () => {
     setCurrentStep('welcome');
-  };
-
-  const handleChoosePathNext = () => {
-    if (!selectedPath) {
-      return;
-    }
-    setCurrentStep('contextual-final');
   };
 
   const closeOnboardingAndOpenHome = async () => {
@@ -117,28 +118,17 @@ function useOnboardingModel(plugin: JournalitPlugin) {
 
   const handleFinish = async () => {
     await completeOnboardingSafe();
-
-    
-    
-
     await closeOnboardingAndOpenHome();
   };
 
   useEventBus(
     'trade-form:opened',
     async (payload) => {
-      if (didAutoCompleteManual.current) {
-        return;
-      }
-
-      if (payload.mode !== 'create') {
-        return;
-      }
-
+      if (didAutoCompleteManual.current || payload.mode !== 'create') return;
       didAutoCompleteManual.current = true;
       await handleFinish();
     },
-    currentStep === 'contextual-final' && selectedPath === 'manual'
+    currentStep === 'manual-entry'
   );
 
   const handleSkip = async () => {
@@ -274,9 +264,42 @@ function useOnboardingModel(plugin: JournalitPlugin) {
     }
   };
 
-  const handleFinalOpenCsv = async () => {
+  const handleChangeHotkey = () => {
+    const commandId = `${plugin.manifest.id}:add-trade`;
+
+    try {
+      const result = setSuggestedHotkeyIfMissing(
+        plugin,
+        commandId,
+        ADD_TRADE_SUGGESTED_HOTKEYS
+      );
+      if (result.wasSet) {
+        const printed = result.display ?? getAddTradeHotkeyParts().join(' + ');
+        new Notice(t('notice.hotkey-set', { hotkey: printed }));
+        return;
+      }
+    } catch (error) {
+      console.warn('[Onboarding] Failed to set hotkey:', error);
+    }
+
+    try {
+      hotkeySettingsCleanupRef.current?.();
+      hotkeySettingsCleanupRef.current = openHotkeySettingsForCommand(
+        plugin,
+        `${plugin.manifest.name}: ${t('command.add-trade')}`
+      );
+    } catch (error) {
+      console.error('[Onboarding] Failed to open hotkey settings:', error);
+    }
+  };
+
+  const handleChooseImport = async () => {
+    if (destinationBusy) return;
+    setDestinationBusy(true);
+
     const didOpen = await openCsvImportViewSafe();
     if (!didOpen) {
+      setDestinationBusy(false);
       return;
     }
 
@@ -284,23 +307,21 @@ function useOnboardingModel(plugin: JournalitPlugin) {
     detachOnboardingLeavesSafe();
   };
 
-  const handleFinalOpenTradeSync = async () => {
-    
-    let didOpenHome = false;
+  const handleChooseTradeSync = async () => {
+    if (destinationBusy) return;
+    setDestinationBusy(true);
 
     try {
       await plugin.viewManager.openHomeView('overview');
-      didOpenHome = true;
     } catch (error) {
       console.error('[Onboarding] Failed to open home view:', error);
-      
+      new Notice(t('onboarding.notice.trade-sync-open-failed'));
+      setDestinationBusy(false);
+      return;
     }
 
     await completeOnboardingSafe();
-
-    if (didOpenHome) {
-      detachOnboardingLeavesSafe();
-    }
+    detachOnboardingLeavesSafe();
 
     
     
@@ -308,114 +329,15 @@ function useOnboardingModel(plugin: JournalitPlugin) {
       try {
         plugin.openSettingsToTab(SETTINGS_TAB_IDS.TRADE_SYNC);
       } catch (error) {
-        console.error(
-          '[Onboarding] Failed to open backend settings tab:',
-          error
-        );
+        console.error('[Onboarding] Failed to open Trade Sync:', error);
+        new Notice(t('onboarding.notice.trade-sync-open-failed'));
       }
-    }, 50);
-  };
-
-  const handleChangeHotkey = () => {
-    const commandId = `${plugin.manifest.id}:add-trade`;
-    const suggestedHotkeys: Hotkey[] = [
-      {
-        modifiers: ['Mod', 'Alt'],
-        key: 'A',
-      },
-    ];
-
-    
-    
-    
-    try {
-      const hotkeyManager = plugin.app.hotkeyManager;
-
-      const existing = hotkeyManager?.getHotkeys?.(commandId) ?? [];
-      if (existing.length === 0 && hotkeyManager?.setHotkeys) {
-        hotkeyManager.setHotkeys(commandId, suggestedHotkeys);
-        hotkeyManager.save?.();
-
-        const printed =
-          hotkeyManager.printHotkeyForCommand?.(commandId) ??
-          t('onboarding.final.manual.hotkey.value');
-
-        new Notice(t('notice.hotkey-set', { hotkey: printed }));
-        return;
-      }
-    } catch (error) {
-      console.warn(
-        '[Onboarding] Failed to set hotkey programmatically:',
-        error
-      );
-    }
-
-    
-    try {
-      plugin.app.setting?.open();
-      plugin.app.setting?.openTabById('hotkeys');
-
-      const query = `Journalit: ${t('command.add-trade')}`;
-      const maxAttempts = 60;
-      let attempts = 0;
-
-      if (hotkeySearchIntervalRef.current) {
-        window.clearInterval(hotkeySearchIntervalRef.current);
-        hotkeySearchIntervalRef.current = null;
-      }
-
-      hotkeySearchIntervalRef.current = window.setInterval(() => {
-        attempts += 1;
-
-        const modal = window.activeDocument.querySelector(
-          '.modal.mod-settings'
-        );
-        const inputs = modal
-          ? Array.from(modal.querySelectorAll('input'))
-          : Array.from(window.activeDocument.querySelectorAll('input'));
-
-        const searchInput = inputs.find((input) => {
-          const placeholder = (
-            input.getAttribute('placeholder') ?? ''
-          ).toLowerCase();
-          const className = (input.className ?? '').toString();
-
-          if (className.includes('setting-search-input')) {
-            return true;
-          }
-
-          return (
-            placeholder.includes('search') || placeholder.includes('filter')
-          );
-        });
-
-        if (searchInput) {
-          searchInput.value = query;
-          searchInput.dispatchEvent(new Event('input', { bubbles: true }));
-          searchInput.focus();
-          if (hotkeySearchIntervalRef.current) {
-            window.clearInterval(hotkeySearchIntervalRef.current);
-            hotkeySearchIntervalRef.current = null;
-          }
-          return;
-        }
-
-        if (attempts >= maxAttempts) {
-          if (hotkeySearchIntervalRef.current) {
-            window.clearInterval(hotkeySearchIntervalRef.current);
-            hotkeySearchIntervalRef.current = null;
-          }
-        }
-      }, 50);
-    } catch (error) {
-      console.error('[Onboarding] Failed to open hotkey settings:', error);
-    }
+    }, TRADE_SYNC_SETTINGS_OPEN_DELAY_MS);
   };
 
   return {
     currentStep,
-    selectedPath,
-    setSelectedPath,
+    destinationBusy,
     setCurrentStep,
     handleWelcomeNext,
     handleSkip,
@@ -431,12 +353,10 @@ function useOnboardingModel(plugin: JournalitPlugin) {
     manualDocsFallbackUrl,
     manualDocsCopied,
     copyManualDocsUrl,
-    handleChoosePathNext,
-    handleFinish,
-    handleChangeHotkey,
     handleAddTrade,
-    handleFinalOpenCsv,
-    handleFinalOpenTradeSync,
+    handleChangeHotkey,
+    handleChooseImport,
+    handleChooseTradeSync,
   };
 }
 
@@ -445,8 +365,7 @@ export const OnboardingComponent: React.FC<OnboardingComponentProps> = ({
 }) => {
   const {
     currentStep,
-    selectedPath,
-    setSelectedPath,
+    destinationBusy,
     setCurrentStep,
     handleWelcomeNext,
     handleSkip,
@@ -462,13 +381,43 @@ export const OnboardingComponent: React.FC<OnboardingComponentProps> = ({
     manualDocsFallbackUrl,
     manualDocsCopied,
     copyManualDocsUrl,
-    handleChoosePathNext,
-    handleFinish,
-    handleChangeHotkey,
     handleAddTrade,
-    handleFinalOpenCsv,
-    handleFinalOpenTradeSync,
+    handleChangeHotkey,
+    handleChooseImport,
+    handleChooseTradeSync,
   } = useOnboardingModel(plugin);
+
+  const historyOptions: OnboardingPathOption[] = [
+    {
+      id: 'has-history',
+      label: t('onboarding.path.option.csv.label'),
+      description: t('onboarding.path.option.csv.description'),
+      onChoose: () => setCurrentStep('import-method'),
+    },
+    {
+      id: 'start-fresh',
+      label: t('onboarding.path.option.manual.label'),
+      description: t('onboarding.path.option.manual.description'),
+      onChoose: () => setCurrentStep('manual-entry'),
+    },
+  ];
+  const importMethodOptions: OnboardingPathOption[] = [
+    {
+      id: 'trade-sync',
+      label: t('onboarding.path.option.trade-sync.label'),
+      description: t('onboarding.path.option.trade-sync.description'),
+      badge: t('onboarding.features.badge.pro'),
+      badgeIcon: <Star size={12} fill="currentColor" />,
+      onChoose: handleChooseTradeSync,
+    },
+    {
+      id: 'file-import',
+      label: t('onboarding.path.option.import.label'),
+      description: t('onboarding.path.option.import.description'),
+      badge: t('onboarding.path.option.import.badge'),
+      onChoose: handleChooseImport,
+    },
+  ];
 
   return (
     <div className="journalit-onboarding-container">
@@ -493,21 +442,29 @@ export const OnboardingComponent: React.FC<OnboardingComponentProps> = ({
       )}
       {currentStep === 'choose-path' && (
         <ChoosePathStep
-          selectedPath={selectedPath}
-          onSelect={setSelectedPath}
-          onNext={handleChoosePathNext}
+          kicker={t('onboarding.path.kicker')}
+          title={t('onboarding.path.title')}
+          subtitle={t('onboarding.path.subtitle')}
+          options={historyOptions}
+          busy={destinationBusy}
           onBack={() => setCurrentStep('explore')}
         />
       )}
-      {currentStep === 'contextual-final' && (
-        <ContextualFinalStep
-          path={selectedPath ?? 'manual'}
+      {currentStep === 'import-method' && (
+        <ChoosePathStep
+          kicker={t('onboarding.path.method.kicker')}
+          title={t('onboarding.path.method.title')}
+          subtitle={t('onboarding.path.method.subtitle')}
+          options={importMethodOptions}
+          busy={destinationBusy}
           onBack={() => setCurrentStep('choose-path')}
-          onFinish={handleFinish}
+        />
+      )}
+      {currentStep === 'manual-entry' && (
+        <ManualEntryStep
+          onBack={() => setCurrentStep('choose-path')}
           onChangeHotkey={handleChangeHotkey}
           onAddTrade={handleAddTrade}
-          onOpenCsv={handleFinalOpenCsv}
-          onOpenTradeSync={handleFinalOpenTradeSync}
         />
       )}
     </div>

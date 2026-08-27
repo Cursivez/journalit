@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { BaseWidget, BaseWidgetProps } from './BaseWidget';
-import { PerformanceCalendar as SharedPerformanceCalendar } from '../../../charts';
+import { PerformanceCalendar as SharedPerformanceCalendar } from '../../../charts/PerformanceCalendar';
 
 
 export const PerformanceCalendar: React.FC<BaseWidgetProps> = ({ filters }) => {

@@ -23,7 +23,7 @@ import {
 } from '../../../services/trade/core/TradeAccountIdentity';
 import { getTradeDirectionDisplayKind } from '../../../services/trade/core/TradeDirection';
 import { createTickerMatcher } from '../../../utils/tickerMatching';
-import { hasCanonicalProjectionIdentity } from '../../../services/trade/core/CanonicalProjectionFields';
+import { hasUnknownCanonicalPnL } from '../../../services/trade/core/CanonicalProjectionFields';
 
 const ALL_SELECTABLE_TRADE_STATUSES = [
   'open',
@@ -177,6 +177,7 @@ export function applyTradeFilters<T extends object>(
   if (filters.tags?.length > 0) {
     const hasNoTagsFilter = filters.tags.includes('__NO_TAGS__');
     const regularTags = filters.tags.filter((tag) => tag !== '__NO_TAGS__');
+    const regularTagsSet = new Set(regularTags);
 
     filtered = filtered.filter((t) => {
       const trade = t as PartialTradeFrontmatter;
@@ -188,7 +189,7 @@ export function applyTradeFilters<T extends object>(
       
       if (
         regularTags.length > 0 &&
-        trade.tags?.some((tag: string) => regularTags.includes(tag))
+        trade.tags?.some((tag: string) => regularTagsSet.has(tag))
       ) {
         return true;
       }
@@ -203,6 +204,7 @@ export function applyTradeFilters<T extends object>(
     const regularMistakes = filters.mistakes.filter(
       (mistake) => mistake !== '__NO_MISTAKES__'
     );
+    const regularMistakesSet = new Set(regularMistakes);
 
     filtered = filtered.filter((t) => {
       const trade = t as PartialTradeFrontmatter;
@@ -217,7 +219,7 @@ export function applyTradeFilters<T extends object>(
       if (hasNoMistakesFilter && hasNoMistakes) return true;
 
       if (regularMistakes.length > 0) {
-        return regularMistakes.some((mistake) => mistakes.includes(mistake));
+        return mistakes.some((mistake) => regularMistakesSet.has(mistake));
       }
 
       return false;
@@ -228,6 +230,7 @@ export function applyTradeFilters<T extends object>(
   
   
   if (filters.tradeTypes?.length > 0) {
+    const tradeTypesSet = new Set(filters.tradeTypes);
     filtered = filtered.filter((t) => {
       const trade = t as T & {
         path?: string;
@@ -242,7 +245,7 @@ export function applyTradeFilters<T extends object>(
         isBacktestTrade: trade.isBacktestTrade,
       });
 
-      return filters.tradeTypes.includes(tradeType);
+      return tradeTypesSet.has(tradeType);
     });
   }
 
@@ -251,22 +254,20 @@ export function applyTradeFilters<T extends object>(
     const explicitlyIncludesAllStatuses = ALL_SELECTABLE_TRADE_STATUSES.every(
       (status) => filters.statuses.includes(status)
     );
+    const statusesSet = new Set(filters.statuses);
     filtered = filtered.filter((t) => {
       if ((t as { tradeStatus?: string }).tradeStatus === 'CANCELLED') {
-        return filters.statuses.includes('cancelled');
+        return statusesSet.has('cancelled');
       }
       const isOpen = options.isTradeOpen
         ? options.isTradeOpen(t)
         : isTradeOpenWithContext(t);
 
       if (isOpen) {
-        return filters.statuses.includes('open');
+        return statusesSet.has('open');
       }
 
-      if (
-        hasCanonicalProjectionIdentity(t) &&
-        (t.authoritativePnl === null || t._originalPnlWasNull === true)
-      ) {
+      if (hasUnknownCanonicalPnL(t)) {
         return explicitlyIncludesAllStatuses;
       }
 
@@ -284,9 +285,7 @@ export function applyTradeFilters<T extends object>(
             ? 'loss'
             : 'breakeven';
 
-      return filters.statuses.includes(
-        outcome === 'unknown' ? 'breakeven' : outcome
-      );
+      return statusesSet.has(outcome === 'unknown' ? 'breakeven' : outcome);
     });
   }
 

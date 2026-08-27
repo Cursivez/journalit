@@ -15,7 +15,7 @@ import { getDisplayPnL, getAccountCount } from '../../../utils/pnlUtils';
 import { formatDateDisplay } from '../../../utils/dateUtils';
 import { TradesPreviewData } from '../../../types/reviewV2';
 import { useReviewTrades } from '../hooks/useReviewData';
-import { SkeletonBox } from '../../shared';
+import { SkeletonBox } from '../../shared/SkeletonBox';
 import { CurrencyConversionInfo } from '../../shared/display/CurrencyConversionInfo';
 import { getBreakEvenBalanceForDisplayTrade } from './shared/breakEvenDisplayUtils';
 import { splitReviewTradeByRealizedPnlEvent } from '../utils/reviewTradeDates';

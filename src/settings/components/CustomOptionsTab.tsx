@@ -50,6 +50,7 @@ import {
   type LabelColor,
 } from '../../types/labelColor';
 import { cssVars } from '../../styles/inlineStylePolicy';
+import { mergeClassNames } from '../../utils/classNames';
 
 interface CustomOptionsTabProps {
   plugin: JournalitPlugin;
@@ -207,7 +208,10 @@ const CommissionAccountDropdown: React.FC<CommissionAccountDropdownProps> = ({
         <div className="custom-options-commission-account-dropdown__menu">
           <button
             type="button"
-            className={`custom-options-commission-account-dropdown__option${value ? '' : ' custom-options-commission-account-dropdown__option--active'}`}
+            className={mergeClassNames(
+              'journalit-native-button',
+              `custom-options-commission-account-dropdown__option${value ? '' : ' custom-options-commission-account-dropdown__option--active'}`
+            )}
             aria-pressed={!value}
             onClick={() => handleSelect('')}
           >
@@ -219,7 +223,10 @@ const CommissionAccountDropdown: React.FC<CommissionAccountDropdownProps> = ({
             <button
               key={account}
               type="button"
-              className={`custom-options-commission-account-dropdown__option${value === account ? ' custom-options-commission-account-dropdown__option--active' : ''}`}
+              className={mergeClassNames(
+                'journalit-native-button',
+                `custom-options-commission-account-dropdown__option${value === account ? ' custom-options-commission-account-dropdown__option--active' : ''}`
+              )}
               aria-pressed={value === account}
               onClick={() => handleSelect(account)}
             >
@@ -728,6 +735,76 @@ const useCustomOptionsTabViewModel = (
   };
 };
 
+const getDisplayName = (type: string): string => {
+  switch (type) {
+    case 'instrument':
+      return t('settings.customization.options.type.tickers');
+    case 'account':
+      return t('settings.customization.options.type.accounts');
+    case 'account_type':
+      return t('settings.customization.options.type.account-types');
+    case 'setup':
+      return t('settings.customization.options.type.setups');
+    case 'mistake':
+      return t('settings.customization.options.type.mistakes');
+    case 'tag':
+      return t('settings.customization.options.type.tags');
+    case 'event':
+      return t('settings.customization.options.type.events');
+    default:
+      return type;
+  }
+};
+
+const getAssetTypeDisplayName = (assetType: string | undefined): string => {
+  if (!assetType) {
+    return t('form.field.asset-type.stock');
+  }
+
+  switch (assetType) {
+    case 'stock':
+      return t('form.field.asset-type.stock');
+    case 'options':
+      return t('form.field.asset-type.options');
+    case 'futures':
+      return t('form.field.asset-type.futures');
+    case 'forex':
+      return t('form.field.asset-type.forex');
+    case 'crypto':
+      return t('form.field.asset-type.crypto');
+    case 'cfd':
+      return t('settings.customization.options.asset-type.cfd');
+    default:
+      return assetType.charAt(0).toUpperCase() + assetType.slice(1);
+  }
+};
+
+const resetFocusState = () => {
+  try {
+    
+    if (window.activeDocument.activeElement instanceof HTMLElement) {
+      window.activeDocument.activeElement.blur();
+    }
+
+    
+    const hiddenInput = window.activeDocument.body.createEl('input');
+    hiddenInput.classList.add('jl-focus-reset-input');
+
+    
+    window.requestAnimationFrame(() => {
+      hiddenInput.focus();
+      window.requestAnimationFrame(() => {
+        hiddenInput.blur();
+        if (window.activeDocument.body.contains(hiddenInput)) {
+          window.activeDocument.body.removeChild(hiddenInput);
+        }
+      });
+    });
+  } catch (error) {
+    console.error('Failed to reset focus state:', error);
+  }
+};
+
 const useCustomOptionsTabController = ({
   plugin,
   filterType,
@@ -775,50 +852,8 @@ const useCustomOptionsTabController = ({
   }, [reloadSymbolMappings]);
 
   
-  const getDisplayName = (type: string): string => {
-    switch (type) {
-      case 'instrument':
-        return t('settings.customization.options.type.tickers');
-      case 'account':
-        return t('settings.customization.options.type.accounts');
-      case 'account_type':
-        return t('settings.customization.options.type.account-types');
-      case 'setup':
-        return t('settings.customization.options.type.setups');
-      case 'mistake':
-        return t('settings.customization.options.type.mistakes');
-      case 'tag':
-        return t('settings.customization.options.type.tags');
-      case 'event':
-        return t('settings.customization.options.type.events');
-      default:
-        return type;
-    }
-  };
 
   
-  const getAssetTypeDisplayName = (assetType: string | undefined): string => {
-    if (!assetType) {
-      return t('form.field.asset-type.stock');
-    }
-
-    switch (assetType) {
-      case 'stock':
-        return t('form.field.asset-type.stock');
-      case 'options':
-        return t('form.field.asset-type.options');
-      case 'futures':
-        return t('form.field.asset-type.futures');
-      case 'forex':
-        return t('form.field.asset-type.forex');
-      case 'crypto':
-        return t('form.field.asset-type.crypto');
-      case 'cfd':
-        return t('settings.customization.options.asset-type.cfd');
-      default:
-        return assetType.charAt(0).toUpperCase() + assetType.slice(1);
-    }
-  };
 
   
   const startEditing = (type: string, optionKey: string) => {
@@ -937,31 +972,6 @@ const useCustomOptionsTabController = ({
   };
 
   
-  const resetFocusState = () => {
-    try {
-      
-      if (window.activeDocument.activeElement instanceof HTMLElement) {
-        window.activeDocument.activeElement.blur();
-      }
-
-      
-      const hiddenInput = window.activeDocument.body.createEl('input');
-      hiddenInput.classList.add('jl-focus-reset-input');
-
-      
-      window.requestAnimationFrame(() => {
-        hiddenInput.focus();
-        window.requestAnimationFrame(() => {
-          hiddenInput.blur();
-          if (window.activeDocument.body.contains(hiddenInput)) {
-            window.activeDocument.body.removeChild(hiddenInput);
-          }
-        });
-      });
-    } catch (error) {
-      console.error('Failed to reset focus state:', error);
-    }
-  };
 
   
   const handleAddOption = async (type: string) => {
@@ -2048,6 +2058,13 @@ const useCustomOptionsTabController = ({
   };
 };
 
+const getCustomOptionFieldId = (
+  type: string,
+  optionKey: string,
+  field: string
+): string =>
+  `journalit-custom-option-${encodeURIComponent(type)}-${encodeURIComponent(optionKey)}-${field}`;
+
 const renderCustomOptionsTab = (
   controller: ReturnType<typeof useCustomOptionsTabController>
 ) => {
@@ -2156,6 +2173,7 @@ const renderCustomOptionsTab = (
                                   )}
                                 />
                                 <select
+                                  aria-label={t('form.field.asset-type')}
                                   className="custom-options-asset-select"
                                   value={
                                     optionInfo.editAssetType ||
@@ -2181,10 +2199,25 @@ const renderCustomOptionsTab = (
                                 instrument.assetType) === 'cfd' && (
                                 <div className="custom-options-cfd-row">
                                   <div>
-                                    <label className="custom-options-spec-label">
+                                    <label
+                                      htmlFor={getCustomOptionFieldId(
+                                        type,
+                                        optionKey,
+                                        'currency'
+                                      )}
+                                      className="custom-options-spec-label"
+                                    >
                                       {t('settings.general.currency')}
                                     </label>
                                     <select
+                                      id={getCustomOptionFieldId(
+                                        type,
+                                        optionKey,
+                                        'currency'
+                                      )}
+                                      aria-label={t(
+                                        'settings.general.currency'
+                                      )}
                                       className="journalit-u-w-full"
                                       value={optionInfo.editCurrency || ''}
                                       onChange={(e) =>
@@ -2212,10 +2245,23 @@ const renderCustomOptionsTab = (
                                     </select>
                                   </div>
                                   <div>
-                                    <label className="custom-options-spec-label">
+                                    <label
+                                      htmlFor={getCustomOptionFieldId(
+                                        type,
+                                        optionKey,
+                                        'contract-size'
+                                      )}
+                                      className="custom-options-spec-label"
+                                    >
                                       {t('form.field.contract-size')}
                                     </label>
                                     <input
+                                      id={getCustomOptionFieldId(
+                                        type,
+                                        optionKey,
+                                        'contract-size'
+                                      )}
+                                      aria-label={t('form.field.contract-size')}
                                       type="number"
                                       value={optionInfo.editContractSize || ''}
                                       onChange={(e) =>
@@ -2263,10 +2309,25 @@ const renderCustomOptionsTab = (
                                 instrument.assetType) === 'futures' && (
                                 <div className="custom-options-spec-grid">
                                   <div>
-                                    <label className="custom-options-spec-label">
+                                    <label
+                                      htmlFor={getCustomOptionFieldId(
+                                        type,
+                                        optionKey,
+                                        'dollars-per-point'
+                                      )}
+                                      className="custom-options-spec-label"
+                                    >
                                       {t('form.field.dollars-per-point')}
                                     </label>
                                     <input
+                                      id={getCustomOptionFieldId(
+                                        type,
+                                        optionKey,
+                                        'dollars-per-point'
+                                      )}
+                                      aria-label={t(
+                                        'form.field.dollars-per-point'
+                                      )}
                                       type="number"
                                       placeholder={t(
                                         'settings.customization.options.placeholder.dollar-per-point'
@@ -2287,10 +2348,23 @@ const renderCustomOptionsTab = (
                                     />
                                   </div>
                                   <div>
-                                    <label className="custom-options-spec-label">
+                                    <label
+                                      htmlFor={getCustomOptionFieldId(
+                                        type,
+                                        optionKey,
+                                        'tick-size'
+                                      )}
+                                      className="custom-options-spec-label"
+                                    >
                                       {t('form.field.tick-size')}
                                     </label>
                                     <input
+                                      id={getCustomOptionFieldId(
+                                        type,
+                                        optionKey,
+                                        'tick-size'
+                                      )}
+                                      aria-label={t('form.field.tick-size')}
                                       type="number"
                                       placeholder={t(
                                         'settings.customization.options.placeholder.tick-size'
@@ -2309,10 +2383,23 @@ const renderCustomOptionsTab = (
                                     />
                                   </div>
                                   <div>
-                                    <label className="custom-options-spec-label">
+                                    <label
+                                      htmlFor={getCustomOptionFieldId(
+                                        type,
+                                        optionKey,
+                                        'tick-value'
+                                      )}
+                                      className="custom-options-spec-label"
+                                    >
                                       {t('form.field.tick-value')}
                                     </label>
                                     <input
+                                      id={getCustomOptionFieldId(
+                                        type,
+                                        optionKey,
+                                        'tick-value'
+                                      )}
+                                      aria-label={t('form.field.tick-value')}
                                       type="number"
                                       placeholder={t(
                                         'settings.customization.options.placeholder.tick-value'
@@ -2338,10 +2425,23 @@ const renderCustomOptionsTab = (
                                 instrument.assetType) === 'forex' && (
                                 <div className="custom-options-spec-grid">
                                   <div>
-                                    <label className="custom-options-spec-label">
+                                    <label
+                                      htmlFor={getCustomOptionFieldId(
+                                        type,
+                                        optionKey,
+                                        'lot-size'
+                                      )}
+                                      className="custom-options-spec-label"
+                                    >
                                       {t('form.field.lot-size')}
                                     </label>
                                     <input
+                                      id={getCustomOptionFieldId(
+                                        type,
+                                        optionKey,
+                                        'lot-size'
+                                      )}
+                                      aria-label={t('form.field.lot-size')}
                                       type="number"
                                       placeholder={t(
                                         'settings.customization.options.placeholder.lot-size'
@@ -2360,10 +2460,23 @@ const renderCustomOptionsTab = (
                                     />
                                   </div>
                                   <div>
-                                    <label className="custom-options-spec-label">
+                                    <label
+                                      htmlFor={getCustomOptionFieldId(
+                                        type,
+                                        optionKey,
+                                        'pip-value'
+                                      )}
+                                      className="custom-options-spec-label"
+                                    >
                                       {t('form.field.pip-value')}
                                     </label>
                                     <input
+                                      id={getCustomOptionFieldId(
+                                        type,
+                                        optionKey,
+                                        'pip-value'
+                                      )}
+                                      aria-label={t('form.field.pip-value')}
                                       type="number"
                                       placeholder={t(
                                         'settings.customization.options.placeholder.pip-value'
@@ -2382,12 +2495,27 @@ const renderCustomOptionsTab = (
                                     />
                                   </div>
                                   <div>
-                                    <label className="custom-options-spec-label">
+                                    <label
+                                      htmlFor={getCustomOptionFieldId(
+                                        type,
+                                        optionKey,
+                                        'pip-size'
+                                      )}
+                                      className="custom-options-spec-label"
+                                    >
                                       {t(
                                         'settings.customization.options.field.pip-size'
                                       )}
                                     </label>
                                     <input
+                                      id={getCustomOptionFieldId(
+                                        type,
+                                        optionKey,
+                                        'pip-size'
+                                      )}
+                                      aria-label={t(
+                                        'settings.customization.options.field.pip-size'
+                                      )}
                                       type="number"
                                       placeholder={t(
                                         'settings.customization.options.placeholder.pip-size'
@@ -2958,11 +3086,14 @@ const renderCustomOptionsTab = (
                                         <button
                                           key={color}
                                           type="button"
-                                          className={`clickable-icon custom-options-color-option${
-                                            optionInfo.editColor === color
-                                              ? ' custom-options-color-option--selected'
-                                              : ''
-                                          }`}
+                                          className={mergeClassNames(
+                                            'journalit-native-button',
+                                            `clickable-icon custom-options-color-option${
+                                              optionInfo.editColor === color
+                                                ? ' custom-options-color-option--selected'
+                                                : ''
+                                            }`
+                                          )}
                                           onClick={() =>
                                             updateEditColor(
                                               type,
@@ -2979,12 +3110,27 @@ const renderCustomOptionsTab = (
                                       );
                                     })}
                                   </div>
-                                  <label className="custom-options-spec-label">
+                                  <label
+                                    htmlFor={getCustomOptionFieldId(
+                                      type,
+                                      optionKey,
+                                      'event-notes'
+                                    )}
+                                    className="custom-options-spec-label"
+                                  >
                                     {t(
                                       'settings.customization.options.field.default-event-notes'
                                     )}
                                   </label>
                                   <textarea
+                                    id={getCustomOptionFieldId(
+                                      type,
+                                      optionKey,
+                                      'event-notes'
+                                    )}
+                                    aria-label={t(
+                                      'settings.customization.options.field.default-event-notes'
+                                    )}
                                     value={optionInfo.editNotes || ''}
                                     onChange={(e) =>
                                       updateEditNotes(
@@ -3268,6 +3414,7 @@ const renderCustomOptionsTab = (
                         className="journalit-u-flex-1"
                       />
                       <select
+                        aria-label={t('form.field.asset-type')}
                         className="custom-options-asset-select"
                         value={newAssetType}
                         onChange={(e) => setNewAssetType(e.target.value)}
@@ -3283,11 +3430,15 @@ const renderCustomOptionsTab = (
                     {newAssetType === 'cfd' && (
                       <div className="custom-options-cfd-row">
                         <div>
-                          <label className="custom-options-spec-label">
+                          <label
+                            htmlFor="journalit-customoptionstab-3293"
+                            className="custom-options-spec-label"
+                          >
                             {t('settings.general.currency')}{' '}
                             {t('settings.customization.options.field.optional')}
                           </label>
                           <select
+                            id="journalit-customoptionstab-3293"
                             className="journalit-u-w-full"
                             value={newTickerSpecs.currency}
                             onChange={(e) =>
@@ -3309,11 +3460,15 @@ const renderCustomOptionsTab = (
                           </select>
                         </div>
                         <div>
-                          <label className="custom-options-spec-label">
+                          <label
+                            htmlFor="journalit-customoptionstab-3319"
+                            className="custom-options-spec-label"
+                          >
                             {t('form.field.contract-size')}{' '}
                             {t('settings.customization.options.field.optional')}
                           </label>
                           <input
+                            id="journalit-customoptionstab-3319"
                             type="number"
                             value={newTickerSpecs.contractSize}
                             onChange={(e) =>
@@ -3345,11 +3500,15 @@ const renderCustomOptionsTab = (
                     {newAssetType === 'futures' && (
                       <div className="custom-options-spec-grid">
                         <div>
-                          <label className="custom-options-spec-label">
+                          <label
+                            htmlFor="journalit-customoptionstab-3355"
+                            className="custom-options-spec-label"
+                          >
                             {t('form.field.dollars-per-point')}{' '}
                             {t('settings.customization.options.field.optional')}
                           </label>
                           <input
+                            id="journalit-customoptionstab-3355"
                             type="number"
                             placeholder={t(
                               'settings.customization.options.placeholder.dollar-per-point'
@@ -3366,11 +3525,15 @@ const renderCustomOptionsTab = (
                           />
                         </div>
                         <div>
-                          <label className="custom-options-spec-label">
+                          <label
+                            htmlFor="journalit-customoptionstab-3376"
+                            className="custom-options-spec-label"
+                          >
                             {t('form.field.tick-size')}{' '}
                             {t('settings.customization.options.field.optional')}
                           </label>
                           <input
+                            id="journalit-customoptionstab-3376"
                             type="number"
                             placeholder={t(
                               'settings.customization.options.placeholder.tick-size'
@@ -3387,11 +3550,15 @@ const renderCustomOptionsTab = (
                           />
                         </div>
                         <div>
-                          <label className="custom-options-spec-label">
+                          <label
+                            htmlFor="journalit-customoptionstab-3397"
+                            className="custom-options-spec-label"
+                          >
                             {t('form.field.tick-value')}{' '}
                             {t('settings.customization.options.field.optional')}
                           </label>
                           <input
+                            id="journalit-customoptionstab-3397"
                             type="number"
                             placeholder={t(
                               'settings.customization.options.placeholder.tick-value'
@@ -3414,11 +3581,15 @@ const renderCustomOptionsTab = (
                     {newAssetType === 'forex' && (
                       <div className="custom-options-spec-grid">
                         <div>
-                          <label className="custom-options-spec-label">
+                          <label
+                            htmlFor="journalit-customoptionstab-3424"
+                            className="custom-options-spec-label"
+                          >
                             {t('form.field.lot-size')}{' '}
                             {t('settings.customization.options.field.optional')}
                           </label>
                           <input
+                            id="journalit-customoptionstab-3424"
                             type="number"
                             placeholder={t(
                               'settings.customization.options.placeholder.lot-size'
@@ -3435,11 +3606,15 @@ const renderCustomOptionsTab = (
                           />
                         </div>
                         <div>
-                          <label className="custom-options-spec-label">
+                          <label
+                            htmlFor="journalit-customoptionstab-3445"
+                            className="custom-options-spec-label"
+                          >
                             {t('form.field.pip-value')}{' '}
                             {t('settings.customization.options.field.optional')}
                           </label>
                           <input
+                            id="journalit-customoptionstab-3445"
                             type="number"
                             placeholder={t(
                               'settings.customization.options.placeholder.pip-value'
@@ -3456,11 +3631,15 @@ const renderCustomOptionsTab = (
                           />
                         </div>
                         <div>
-                          <label className="custom-options-spec-label">
+                          <label
+                            htmlFor="journalit-customoptionstab-3466"
+                            className="custom-options-spec-label"
+                          >
                             {t('settings.customization.options.field.pip-size')}{' '}
                             {t('settings.customization.options.field.optional')}
                           </label>
                           <input
+                            id="journalit-customoptionstab-3466"
                             type="number"
                             placeholder={t(
                               'settings.customization.options.placeholder.pip-size'
@@ -3534,11 +3713,14 @@ const renderCustomOptionsTab = (
                           <button
                             key={color}
                             type="button"
-                            className={`clickable-icon custom-options-color-option${
-                              newEventColor === color
-                                ? ' custom-options-color-option--selected'
-                                : ''
-                            }`}
+                            className={mergeClassNames(
+                              'journalit-native-button',
+                              `clickable-icon custom-options-color-option${
+                                newEventColor === color
+                                  ? ' custom-options-color-option--selected'
+                                  : ''
+                              }`
+                            )}
                             onClick={() => setNewEventColor(color)}
                             aria-label={label}
                           >

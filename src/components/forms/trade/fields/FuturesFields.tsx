@@ -1,7 +1,7 @@
 
 
 import React from 'react';
-import { NumberInput } from '../../../core';
+import { NumberInput } from '../../../core/NumberInput';
 import { TradeFormData, TradeFormErrors, TradeFormValue } from '../types';
 import { t } from '../../../../lang/helpers';
 

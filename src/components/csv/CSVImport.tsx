@@ -10,6 +10,7 @@ import React, {
 import { createPortal } from 'react-dom';
 import {
   BadgeCheck,
+  Check,
   ChevronDown,
   Download,
   ExternalLink,
@@ -33,7 +34,7 @@ import { cssVars } from '../../styles/inlineStylePolicy';
 import { openExternalUrl } from '../../utils/externalLinks';
 import { DeviceFlowSignInModal } from '../auth/DeviceFlowSignInModal';
 import { BackendTradeImportService } from '../../services/tradeImport/BackendTradeImportService';
-import { BackendTradeProjectionService } from '../../services/tradeSync/BackendTradeProjectionService';
+import { TradeProjectionClient } from '../../services/tradeSync/TradeProjectionClient';
 import { isTradeImportBlocked } from '../../services/tradeImport/commitEligibility';
 import { consumeQuickImportTradeImportHandoff } from '../../services/tradeImport/quickImportHandoff';
 import {
@@ -90,26 +91,80 @@ const isTradeField = (value: unknown): value is TradeField =>
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   Boolean(value) && typeof value === 'object' && !Array.isArray(value);
 
+function tradeImportResponseBody(
+  error: unknown
+): Record<string, unknown> | null {
+  if (!isRecord(error) || !isRecord(error.context)) return null;
+  return isRecord(error.context.responseBody)
+    ? error.context.responseBody
+    : null;
+}
+
+function freePreviewRateLimitMessage(error: unknown): string | null {
+  const responseBody = tradeImportResponseBody(error);
+  if (responseBody?.error !== 'free_preview_rate_limited') return null;
+  const details = isRecord(responseBody.details) ? responseBody.details : null;
+  const retryAfterSeconds =
+    typeof details?.retryAfterSeconds === 'number'
+      ? details.retryAfterSeconds
+      : 0;
+  return t('trade-import.notice.free-preview-rate-limited', {
+    minutes: String(Math.max(1, Math.ceil(retryAfterSeconds / 60))),
+  });
+}
+
+function freePreviewStorageLimitMessage(error: unknown): string | null {
+  const responseBody = tradeImportResponseBody(error);
+  if (responseBody?.error !== 'free_preview_storage_limit_reached') return null;
+  const details = isRecord(responseBody.details) ? responseBody.details : null;
+  const limit = typeof details?.limit === 'number' ? details.limit : 0;
+  const storedItems =
+    typeof details?.storedItems === 'number' ? details.storedItems : 0;
+  const requestedItems =
+    typeof details?.requestedItems === 'number' ? details.requestedItems : 0;
+  return t('trade-import.notice.free-preview-storage-limit-reached', {
+    limit: String(limit),
+    storedItems: String(storedItems),
+    requestedItems: String(requestedItems),
+  });
+}
+
+function isFreePreviewCapacityError(error: unknown): boolean {
+  const code = tradeImportResponseBody(error)?.error;
+  return (
+    code === 'free_preview_rate_limited' ||
+    code === 'free_preview_storage_limit_reached'
+  );
+}
+
 function previewErrorMessage(error: unknown): string {
+  const rateLimitMessage = freePreviewRateLimitMessage(error);
+  if (rateLimitMessage) return rateLimitMessage;
+  const storageLimitMessage = freePreviewStorageLimitMessage(error);
+  if (storageLimitMessage) return storageLimitMessage;
   if (error instanceof TradeImportValidationError) return error.message;
-  if (
-    error instanceof Error &&
-    error.message &&
-    !error.message.startsWith('Invalid Trade Import')
-  ) {
-    return error.message;
-  }
   return t('trade-import.notice.preview-failed');
 }
 
 function previewErrorDetails(error: unknown): string | null {
-  if (!isRecord(error)) return null;
-  const context = error.context;
-  if (!isRecord(context)) return null;
-  const responseBody = context.responseBody;
-  if (!isRecord(responseBody)) return null;
+  const responseBody = tradeImportResponseBody(error);
+  if (!responseBody || isFreePreviewCapacityError(error)) {
+    return null;
+  }
   const message = responseBody.message ?? responseBody.error;
   return typeof message === 'string' && message.trim() ? message : null;
+}
+
+export function tradeImportPreviewErrorPresentation(error: unknown): {
+  message: string;
+  details: string | null;
+  showGuidance: boolean;
+} {
+  return {
+    message: previewErrorMessage(error),
+    details: previewErrorDetails(error),
+    showGuidance: !isFreePreviewCapacityError(error),
+  };
 }
 
 const rememberedCsvAssetType = (
@@ -127,9 +182,52 @@ interface DropdownOption {
   label: string;
 }
 
+export const TradeImportSignInGate: React.FC<{ onSignIn: () => void }> = ({
+  onSignIn,
+}) => (
+  <div className="journalit-csv-import journalit-trade-import-gate-view">
+    <div className="journalit-trade-import-gate-card">
+      <div className="journalit-trade-import-gate-brand" aria-hidden="true">
+        <span>{t('trade-import.gate.brand-left')}</span>
+        <div className="journalit-trade-import-gate-icon">
+          <Import size={25} strokeWidth={1.8} />
+        </div>
+        <span>{t('trade-import.gate.brand-right')}</span>
+      </div>
+
+      <div className="journalit-trade-import-gate-copy">
+        <h1>{t('trade-import.gate.sign-in.title')}</h1>
+        <p className="journalit-trade-import-gate-description">
+          {t('trade-import.gate.sign-in')}
+        </p>
+      </div>
+
+      <div className="journalit-trade-import-gate-benefits">
+        <div>
+          <BadgeCheck size={16} />
+          <span>{t('trade-import.gate.sign-in.reassurance')}</span>
+        </div>
+        <div>
+          <BadgeCheck size={16} />
+          <span>{t('trade-import.gate.sign-in.no-trial')}</span>
+        </div>
+      </div>
+
+      <div className="journalit-trade-import-gate-actions">
+        <button
+          type="button"
+          className="journalit-trade-import-gate-primary"
+          onClick={onSignIn}
+        >
+          {t('trade-import.gate.sign-in.cta')}
+        </button>
+      </div>
+    </div>
+  </div>
+);
+
 const PRIVACY_COPY_KEY = 'trade-import.privacy.copy' as const;
 const PRIVACY_URL = 'https://journalit.co/privacy';
-const MAX_RENDERED_PREVIEW_ROWS = 500;
 const LOCAL_WRITE_TIMEOUT_MS = 10000;
 const BROKER_GUIDE_URLS: Record<string, string> = {
   MANUAL: 'https://journalit.co/csv-import',
@@ -332,7 +430,7 @@ const TradeImportDropdown: React.FC<{
                       className="journalit-home-period-option__check"
                       aria-hidden="true"
                     >
-                      {isSelected ? '✓' : ''}
+                      {isSelected ? <Check size={10} strokeWidth={3} /> : null}
                     </span>
                     <span className="journalit-home-period-option__label">
                       {option.label}
@@ -615,7 +713,7 @@ export const CSVImport = memo<CSVImportProps>(({ plugin }) => {
     []
   );
   const backendTradeProjectionService = useMemo(
-    () => new BackendTradeProjectionService(),
+    () => new TradeProjectionClient(),
     []
   );
   const workflowService = useMemo(
@@ -652,10 +750,11 @@ export const CSVImport = memo<CSVImportProps>(({ plugin }) => {
     plugin.settings.csvFavoriteBroker ?? 'MANUAL'
   );
   const [assetType, setAssetType] = useState<AssetType>(
-    rememberedCsvAssetType(
-      plugin,
-      plugin.settings.csvFavoriteBroker ?? 'MANUAL'
-    ) ?? 'stock'
+    () =>
+      rememberedCsvAssetType(
+        plugin,
+        plugin.settings.csvFavoriteBroker ?? 'MANUAL'
+      ) ?? 'stock'
   );
   const [favoriteAccount, setFavoriteAccount] = useState(
     plugin.settings.csvFavoriteAccount ?? ''
@@ -697,7 +796,7 @@ export const CSVImport = memo<CSVImportProps>(({ plugin }) => {
     number | null
   >(null);
   const [selectedDateFormat, setSelectedDateFormat] = useState('');
-  const [aiMappingEnabled, setAiMappingEnabled] = useState(false);
+  const [aiMappingRequested, setAiMappingRequested] = useState(false);
   const [file, setFile] = useState<File | null>(null);
   const [isDraggingFile, setIsDraggingFile] = useState(false);
   const [analyse, setAnalyse] = useState<TradeImportAnalyseResponse | null>(
@@ -715,6 +814,7 @@ export const CSVImport = memo<CSVImportProps>(({ plugin }) => {
   const [previewError, setPreviewError] = useState<{
     message: string;
     details: string | null;
+    showGuidance: boolean;
   } | null>(null);
   const [classified, setClassified] = useState<ClassifiedPreviewTrade[]>([]);
   const [importResult, setImportResult] =
@@ -762,11 +862,7 @@ export const CSVImport = memo<CSVImportProps>(({ plugin }) => {
     'trade import ai mapping toggle',
     'aiMapping'
   );
-
-  useEffect(() => {
-    if (canUseAiMapping) return;
-    setAiMappingEnabled(false);
-  }, [canUseAiMapping]);
+  const aiMappingEnabled = aiMappingRequested && canUseAiMapping;
 
   useEffect(() => {
     if (!templateActionsOpen) return;
@@ -889,7 +985,7 @@ export const CSVImport = memo<CSVImportProps>(({ plugin }) => {
   }, []);
 
   useEffect(() => {
-    if (!canUseTradeImport) return;
+    if (!isAuthenticated) return;
     let cancelled = false;
     void loadAccountOptions(plugin).then((loadedAccountOptions) => {
       if (cancelled) return;
@@ -906,15 +1002,14 @@ export const CSVImport = memo<CSVImportProps>(({ plugin }) => {
     return () => {
       cancelled = true;
     };
-  }, [canUseTradeImport, plugin]);
+  }, [isAuthenticated, plugin]);
 
   useEffect(() => {
-    if (!canUseTradeImport) return;
+    if (!isAuthenticated) return;
     backendTradeImportService
       .getCapabilities()
       .then((loadedCapabilities) => {
         setCapabilities(loadedCapabilities);
-        void flushTradeProjectionAcks(plugin, backendTradeProjectionService);
       })
       .catch(
         (error) =>
@@ -924,10 +1019,15 @@ export const CSVImport = memo<CSVImportProps>(({ plugin }) => {
               : t('trade-import.notice.capabilities-failed')
           )
       );
+  }, [backendTradeImportService, isAuthenticated]);
+
+  useEffect(() => {
+    if (!isAuthenticated || !canUseTradeImport) return;
+    void flushTradeProjectionAcks(plugin, backendTradeProjectionService);
   }, [
-    backendTradeImportService,
     backendTradeProjectionService,
     canUseTradeImport,
+    isAuthenticated,
     plugin,
   ]);
 
@@ -956,14 +1056,16 @@ export const CSVImport = memo<CSVImportProps>(({ plugin }) => {
   const supportsManualMapping =
     isManualMappingFlow &&
     (selectedBrokerCapabilities?.supportsManualMapping ?? broker === 'MANUAL');
-  const renderedClassified = classified.slice(0, MAX_RENDERED_PREVIEW_ROWS);
   const failedPreviewRows = classified.filter((item) =>
     isTradeImportBlocked(item.defaultAction)
   );
 
+  const supportedFileTypesSet = new Set(
+    selectedBrokerCapabilities?.supportedFileTypes ?? []
+  );
   const acceptedExtensionList = selectedBrokerCapabilities
     ? capabilities?.fileTypes.flatMap((type) =>
-        selectedBrokerCapabilities.supportedFileTypes.includes(type.id)
+        supportedFileTypesSet.has(type.id)
           ? type.extensions.map((ext) => `.${ext}`)
           : []
       ) || []
@@ -987,7 +1089,7 @@ export const CSVImport = memo<CSVImportProps>(({ plugin }) => {
     setSelectedSheetName(handoff.sheetName ?? null);
     setSelectedHeaderRowIndex(handoff.headerRowIndex ?? null);
     setColumnMappings(handoff.columnMappings);
-    setAiMappingEnabled(handoff.aiMappingEnabled);
+    setAiMappingRequested(handoff.aiMappingEnabled);
     setFile(handoff.file);
     setAnalyse(handoff.analyse ?? null);
     setPreview(handoff.preview ?? null);
@@ -1120,7 +1222,7 @@ export const CSVImport = memo<CSVImportProps>(({ plugin }) => {
 
   const handleAiMappingChange = useCallback(
     (checked: boolean) => {
-      setAiMappingEnabled(checked);
+      setAiMappingRequested(checked);
       if (!checked && !selectedTemplateId) setColumnMappings({});
       invalidateAnalysis();
     },
@@ -1336,9 +1438,10 @@ export const CSVImport = memo<CSVImportProps>(({ plugin }) => {
       setActiveStep(2);
     } catch (error) {
       new Notice(
-        error instanceof TradeImportValidationError
-          ? error.message
-          : t('trade-import.notice.analyse-failed')
+        freePreviewRateLimitMessage(error) ??
+          (error instanceof TradeImportValidationError
+            ? error.message
+            : t('trade-import.notice.analyse-failed'))
       );
     } finally {
       setBusy(false);
@@ -1385,17 +1488,11 @@ export const CSVImport = memo<CSVImportProps>(({ plugin }) => {
       setActiveStep(3);
     } catch (error) {
       if (requestVersion !== requestVersionRef.current) return;
+      const presentation = tradeImportPreviewErrorPresentation(error);
       setPreview(null);
       setPreviewOwnerUserId(null);
-      setPreviewError({
-        message: previewErrorMessage(error),
-        details: previewErrorDetails(error),
-      });
-      new Notice(
-        error instanceof TradeImportValidationError
-          ? error.message
-          : t('trade-import.notice.preview-failed')
-      );
+      setPreviewError(presentation);
+      new Notice(presentation.message);
     } finally {
       setBusy(false);
     }
@@ -1459,7 +1556,6 @@ export const CSVImport = memo<CSVImportProps>(({ plugin }) => {
           }
           setImportResult(result);
           setImportCompleted(true);
-          setBusy(false);
         },
       });
     } finally {
@@ -1543,76 +1639,13 @@ export const CSVImport = memo<CSVImportProps>(({ plugin }) => {
     openExternalUrl(UPGRADE_URLS.csvImport);
   }, []);
 
-  const renderGate = (
-    state: 'signin' | 'upgrade',
-    primaryAction: () => void
-  ) => {
-    const isSignInState = state === 'signin';
-    return (
-      <div className="journalit-csv-import journalit-trade-import-gate-view">
-        <div className="journalit-trade-import-gate-card">
-          <div className="journalit-trade-import-gate-brand" aria-hidden="true">
-            <span>{t('trade-import.gate.brand-left')}</span>
-            <div className="journalit-trade-import-gate-icon">
-              <Import size={25} strokeWidth={1.8} />
-            </div>
-            <span>{t('trade-import.gate.brand-right')}</span>
-          </div>
-
-          <div className="journalit-trade-import-gate-copy">
-            <h1>
-              {isSignInState
-                ? t('premium.gate.import.state.signin.title')
-                : t('premium.gate.import.state.pro.title')}
-            </h1>
-            <p className="journalit-trade-import-gate-description">
-              {isSignInState
-                ? t('trade-import.gate.sign-in')
-                : t('trade-import.gate.upgrade')}
-            </p>
-          </div>
-
-          <div className="journalit-trade-import-gate-benefits">
-            <div>
-              <BadgeCheck size={16} />
-              <span>{t('premium.gate.import.reassurance')}</span>
-            </div>
-            <div>
-              <BadgeCheck size={16} />
-              <span>{t('premium.gate.trial-hint')}</span>
-            </div>
-          </div>
-
-          <div className="journalit-trade-import-gate-actions">
-            <button
-              type="button"
-              className="journalit-trade-import-gate-primary"
-              onClick={primaryAction}
-            >
-              {isSignInState
-                ? t('premium.gate.cta.signin-continue')
-                : t('premium.gate.cta.continue-pro')}
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  };
-
-  if (!isAuthenticated) return renderGate('signin', handleSignIn);
-  if (isCheckingEntitlement && !canUseTradeImport) {
-    return (
-      <div className="journalit-csv-import journalit-trade-import-simple">
-        <div className="csv-import-header journalit-trade-import-simple-header">
-          <p>{t('backend.status.checking')}</p>
-        </div>
-      </div>
-    );
+  if (!isAuthenticated) {
+    return <TradeImportSignInGate onSignIn={handleSignIn} />;
   }
-  if (!canUseTradeImport) return renderGate('upgrade', handleUpgrade);
 
   const maxStep = importCompleted || preview ? 3 : analyse ? 2 : 1;
 
+  const requiredFieldsForModeSet = new Set(requiredFieldsForMode(manualMode));
   return (
     <div className="journalit-csv-import journalit-trade-import-simple">
       <div className="journalit-trade-import-stepper">
@@ -1692,7 +1725,9 @@ export const CSVImport = memo<CSVImportProps>(({ plugin }) => {
                                 className="journalit-home-period-option__check"
                                 aria-hidden="true"
                               >
-                                {isSelected ? '✓' : ''}
+                                {isSelected ? (
+                                  <Check size={10} strokeWidth={3} />
+                                ) : null}
                               </span>
                               <span className="journalit-home-period-option__label">
                                 {account}
@@ -1761,7 +1796,9 @@ export const CSVImport = memo<CSVImportProps>(({ plugin }) => {
                                 className="journalit-home-period-option__check"
                                 aria-hidden="true"
                               >
-                                {isSelected ? '✓' : ''}
+                                {isSelected ? (
+                                  <Check size={10} strokeWidth={3} />
+                                ) : null}
                               </span>
                               <span className="journalit-home-period-option__label">
                                 {item.label}
@@ -1843,6 +1880,7 @@ export const CSVImport = memo<CSVImportProps>(({ plugin }) => {
               onDrop={handleFileDrop}
             >
               <input
+                aria-label={t('trade-import.action.choose-file')}
                 ref={fileInputRef}
                 type="file"
                 accept={acceptedExtensions}
@@ -1938,7 +1976,9 @@ export const CSVImport = memo<CSVImportProps>(({ plugin }) => {
                                 className="journalit-home-period-option__check"
                                 aria-hidden="true"
                               >
-                                {selectedTemplateId === '' ? '✓' : ''}
+                                {selectedTemplateId === '' ? (
+                                  <Check size={10} strokeWidth={3} />
+                                ) : null}
                               </span>
                               <span className="journalit-home-period-option__label">
                                 {t('trade-import.template.none')}
@@ -1967,7 +2007,9 @@ export const CSVImport = memo<CSVImportProps>(({ plugin }) => {
                                     className="journalit-home-period-option__check"
                                     aria-hidden="true"
                                   >
-                                    {isSelected ? '✓' : ''}
+                                    {isSelected ? (
+                                      <Check size={10} strokeWidth={3} />
+                                    ) : null}
                                   </span>
                                   <span className="journalit-home-period-option__label">
                                     {template.name}
@@ -2384,7 +2426,7 @@ export const CSVImport = memo<CSVImportProps>(({ plugin }) => {
                                 <div className="csv-column-name">
                                   <span>{header}</span>
                                   {isTradeField(selectedField) &&
-                                    requiredFieldsForMode(manualMode).includes(
+                                    requiredFieldsForModeSet.has(
                                       selectedField
                                     ) && (
                                       <span className="csv-required-badge csv-required-badge--source">
@@ -2471,6 +2513,9 @@ export const CSVImport = memo<CSVImportProps>(({ plugin }) => {
                         );
                         const customFields = customFieldDefinitions(plugin);
                         const helpText = fieldHelpText();
+                        const requiredFieldsForModeSet2 = new Set(
+                          requiredFieldsForMode(manualMode)
+                        );
                         return (
                           <div className="csv-mapper-fields-reference">
                             <p className="csv-mapper-fields-desc">
@@ -2495,9 +2540,7 @@ export const CSVImport = memo<CSVImportProps>(({ plugin }) => {
                                     const mapped = mappedFields.has(field);
                                     const required =
                                       isTradeField(field) &&
-                                      requiredFieldsForMode(
-                                        manualMode
-                                      ).includes(field);
+                                      requiredFieldsForModeSet2.has(field);
                                     return (
                                       <div
                                         key={field}
@@ -2563,7 +2606,9 @@ export const CSVImport = memo<CSVImportProps>(({ plugin }) => {
                 <div className="csv-message csv-message--error journalit-trade-import-preview-error">
                   <strong>{previewError.message}</strong>
                   {previewError.details && <p>{previewError.details}</p>}
-                  <p>{t('trade-import.preview-error.guidance')}</p>
+                  {previewError.showGuidance && (
+                    <p>{t('trade-import.preview-error.guidance')}</p>
+                  )}
                 </div>
               )}
               <button
@@ -2647,12 +2692,20 @@ export const CSVImport = memo<CSVImportProps>(({ plugin }) => {
             ) : (
               <TradeImportPreviewReview
                 busy={busy}
+                canCommit={canUseTradeImport}
                 classified={classified}
+                freePreviewRequestsPerHour={
+                  capabilities?.freePreviewLimits?.requestsPerHour
+                }
+                maxStoredPreviewItems={
+                  capabilities?.freePreviewLimits?.maxStoredPreviewItems
+                }
                 importCompleted={importCompleted}
+                isCheckingEntitlement={isCheckingEntitlement}
                 onCancel={() => void cancelPreview()}
                 onConfirm={() => void confirmImport()}
+                onUpgrade={handleUpgrade}
                 preview={preview}
-                visibleClassified={renderedClassified}
               />
             )}
           </section>

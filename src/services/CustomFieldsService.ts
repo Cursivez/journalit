@@ -9,7 +9,7 @@ import {
   CustomFieldsData,
   CustomFieldType,
   CustomFieldOptionsStorage,
-  CANONICAL_PROJECTION_CUSTOM_FIELD_MIGRATION_KEYS,
+  CUSTOM_FIELD_KEY_MIGRATION_KEYS,
   DEFAULT_CUSTOM_FIELDS_DATA,
   generateFieldId,
   validateCustomFieldValue,
@@ -27,8 +27,8 @@ export interface CustomFieldKeyMigration {
   targetKey: string;
 }
 
-const CANONICAL_PROJECTION_CUSTOM_FIELD_MIGRATION_KEY_SET = new Set<string>(
-  CANONICAL_PROJECTION_CUSTOM_FIELD_MIGRATION_KEYS
+const CUSTOM_FIELD_KEY_MIGRATION_KEY_SET = new Set<string>(
+  CUSTOM_FIELD_KEY_MIGRATION_KEYS
 );
 
 
@@ -368,9 +368,7 @@ export class CustomFieldsService {
     );
     const migrations: CustomFieldKeyMigration[] = [];
     for (const field of this.fields.fields) {
-      if (
-        !CANONICAL_PROJECTION_CUSTOM_FIELD_MIGRATION_KEY_SET.has(field.fieldKey)
-      ) {
+      if (!CUSTOM_FIELD_KEY_MIGRATION_KEY_SET.has(field.fieldKey)) {
         continue;
       }
       let targetKey = `${field.fieldKey}_custom`;

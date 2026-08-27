@@ -1,16 +1,16 @@
-import { calculateTotalDividends } from '../../utils/pnlCalculation';
 import {
-  getEffectivePnL,
-  getPartialExitInfo,
-  hasRealizedStoredPnL,
-} from '../../utils/tradeStatusUtils';
+  calculateTotalDividends,
+  resolveRealizedOrTerminalPnL,
+} from '../../utils/pnlCalculation';
+import { getCurrentRealizedPnL } from '../../utils/tradeStatusUtils';
+import type { PartialTradeFrontmatter } from '../../types/TradeFrontmatter';
 import {
   calculateSnapshotRealizedPnL,
   calculateUnrealizedPnL,
 } from '../../utils/unrealizedPnl';
 
 export function getTradeLogFloatingPnL(
-  trade: Record<string, unknown>,
+  trade: PartialTradeFrontmatter & Record<string, unknown>,
   snapshotKeysClaimedByCustomFields: boolean
 ): number | null {
   if (snapshotKeysClaimedByCustomFields) return null;
@@ -18,13 +18,11 @@ export function getTradeLogFloatingPnL(
   const unrealizedPnL = calculateUnrealizedPnL(trade);
   if (unrealizedPnL === null) return null;
 
-  const realizedPnL = getEffectivePnL(trade);
-  const partialExitInfo = getPartialExitInfo(trade);
-  const currentRealizedPnL = hasRealizedStoredPnL(trade)
-    ? realizedPnL
-    : partialExitInfo.isPartialExit
-      ? partialExitInfo.realizedPnL + calculateTotalDividends(trade)
-      : 0;
+  const currentRealizedPnL = getCurrentRealizedPnL(
+    trade,
+    calculateTotalDividends(trade)
+  );
+  if (currentRealizedPnL === null) return null;
 
   return (
     calculateSnapshotRealizedPnL(trade, currentRealizedPnL) + unrealizedPnL
@@ -32,11 +30,14 @@ export function getTradeLogFloatingPnL(
 }
 
 export function getTradeLogDisplayedPnL(
-  trade: Record<string, unknown>,
+  trade: PartialTradeFrontmatter & Record<string, unknown>,
   snapshotKeysClaimedByCustomFields: boolean
 ): number {
-  return (
-    getTradeLogFloatingPnL(trade, snapshotKeysClaimedByCustomFields) ??
-    getEffectivePnL(trade)
+  const floatingPnL = getTradeLogFloatingPnL(
+    trade,
+    snapshotKeysClaimedByCustomFields
   );
+  if (floatingPnL !== null) return floatingPnL;
+
+  return resolveRealizedOrTerminalPnL(trade) ?? 0;
 }

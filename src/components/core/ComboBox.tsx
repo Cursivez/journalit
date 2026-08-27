@@ -548,7 +548,7 @@ function useComboBoxModel({
         true
       );
     };
-  }, [isOpen, portalDropdown, selectedItemsPlacement, setIsOpen]);
+  }, [isOpen, portalDropdown, selectedItemsPlacement]);
 
   
   useEffect(() => {

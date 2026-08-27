@@ -1,18 +1,17 @@
-import React, { useCallback, useEffect, useMemo, useReducer } from 'react';
+import React, { useCallback, useMemo } from 'react';
 import type { App } from 'obsidian';
 import type JournalitPlugin from '../../main';
-import { OptionType } from '../../services/options/CustomOptionsService';
 import type { TradeLogFilters } from '../../services/tradelog/types';
 import { cssVars } from '../../styles/inlineStylePolicy';
 import { t } from '../../lang/helpers';
 import { FullscreenImageViewer } from '../image/FullscreenImageViewer';
 import { MediaPreview } from '../image/MediaPreview';
 import { FullscreenPortal } from '../image/FullscreenPortal';
-import { PnLValue, RMultipleValue } from '../shared/display';
+import { PnLValue, RMultipleValue } from '../shared/display/DisplayValue';
 import { SkeletonBox } from '../shared/SkeletonBox';
+import { ImageAnnotationPanel } from '../shared/imageAnnotation/ImageAnnotationPanel';
 
 import { Button } from '../ui/Button';
-import { ComboBox } from '../core/ComboBox';
 import {
   CheckCircle2,
   Circle,
@@ -342,6 +341,7 @@ export const ImageGalleryFullscreen: React.FC<{
         role="presentation"
       >
         <FullscreenImageViewer
+          annotationOptions={{ enabled: false }}
           alt={getImageGalleryFullscreenTitle(item, dateFormat)}
           imagePath={item.imagePath}
           navigationContext={{
@@ -362,10 +362,17 @@ export const ImageGalleryFullscreen: React.FC<{
         />
         {annotationEditorItem ? (
           <ImageAnnotationPanel
+            key={annotationEditorItem.id}
             plugin={plugin}
-            item={annotationEditorItem}
+            imagePath={annotationEditorItem.imagePath}
+            initialAnnotation={{
+              tags: annotationEditorItem.tags,
+              notes: annotationEditorItem.notes,
+            }}
             onClose={onCloseAnnotation}
-            onSave={onSaveAnnotation}
+            onSave={(annotation) =>
+              onSaveAnnotation(annotationEditorItem, annotation)
+            }
             targetRef={registerAnnotationPanelTarget}
           />
         ) : null}
@@ -639,199 +646,6 @@ const ImageGalleryCard = React.memo(function ImageGalleryCard({
 });
 
 ImageGalleryCard.displayName = 'ImageGalleryCard';
-
-interface ImageAnnotationEditorState {
-  tagsInput: string;
-  notes: string;
-  saving: boolean;
-  error: string | null;
-}
-
-type ImageAnnotationEditorAction =
-  | { type: 'reset'; item: ImageGalleryItem }
-  | { type: 'setTagsInput'; value: string }
-  | { type: 'setNotes'; value: string }
-  | { type: 'saving' }
-  | { type: 'saveFailed'; error: string };
-
-const EMPTY_IMAGE_ANNOTATION_EDITOR_STATE: ImageAnnotationEditorState = {
-  tagsInput: '',
-  notes: '',
-  saving: false,
-  error: null,
-};
-
-function imageAnnotationEditorReducer(
-  state: ImageAnnotationEditorState,
-  action: ImageAnnotationEditorAction
-): ImageAnnotationEditorState {
-  switch (action.type) {
-    case 'reset':
-      return {
-        tagsInput: action.item.tags.join(', '),
-        notes: action.item.notes ?? '',
-        saving: false,
-        error: null,
-      };
-    case 'setTagsInput':
-      return { ...state, tagsInput: action.value };
-    case 'setNotes':
-      return { ...state, notes: action.value };
-    case 'saving':
-      return { ...state, saving: true, error: null };
-    case 'saveFailed':
-      return { ...state, saving: false, error: action.error };
-  }
-}
-
-const ImageAnnotationPanel: React.FC<{
-  plugin: JournalitPlugin;
-  item: ImageGalleryItem;
-  targetRef?: (element: HTMLElement | null) => void;
-  onClose: () => void;
-  onSave: (
-    item: ImageGalleryItem,
-    annotation: ImageGalleryAnnotation
-  ) => Promise<void>;
-}> = ({ plugin, item, targetRef, onClose, onSave }) => {
-  const [state, dispatch] = useReducer(
-    imageAnnotationEditorReducer,
-    EMPTY_IMAGE_ANNOTATION_EDITOR_STATE
-  );
-  const tagOptions = useMemo(() => {
-    try {
-      return plugin.optionsService?.getOptions(OptionType.TAG) || [];
-    } catch (error) {
-      console.error('Failed to load custom tag options:', error);
-      return [];
-    }
-  }, [plugin.optionsService]);
-
-  useEffect(() => {
-    if (!item) return;
-    dispatch({ type: 'reset', item });
-  }, [item]);
-
-  const handleSaveTag = async (option: string) => {
-    try {
-      const optionsService = plugin.optionsService;
-      if (!optionsService) return;
-      const added = await optionsService.addOption(OptionType.TAG, option);
-      if (added) optionsService.notifyOptionsChanged();
-    } catch (error) {
-      console.error('Failed to save custom tag option:', error);
-    }
-  };
-
-  const handleSave = async () => {
-    dispatch({ type: 'saving' });
-    try {
-      await onSave(item, {
-        tags: splitCommaSeparatedInput(state.tagsInput),
-        notes: state.notes,
-      });
-    } catch (saveError) {
-      console.error(
-        '[ImageGallery] Failed to save image annotation:',
-        saveError
-      );
-      dispatch({
-        type: 'saveFailed',
-        error: t('imageGallery.annotation.error.save-failed'),
-      });
-    }
-  };
-
-  return (
-    <aside
-      className="journalit-image-annotation-panel"
-      aria-label={t('imageGallery.annotation.editor-title')}
-      ref={targetRef}
-    >
-      <header className="journalit-image-annotation-editor__header">
-        <div>
-          <h2>{t('imageGallery.annotation.editor-title')}</h2>
-        </div>
-      </header>
-
-      <div className="journalit-image-annotation-editor__field">
-        <ComboBox
-          label={t('imageGallery.annotation.tags')}
-          options={tagOptions}
-          value={splitCommaSeparatedInput(state.tagsInput)}
-          onChange={(value) =>
-            dispatch({
-              type: 'setTagsInput',
-              value: Array.isArray(value) ? value.join(', ') : value,
-            })
-          }
-          isMulti
-          allowCreate
-          placeholder={t('imageGallery.annotation.tags-placeholder')}
-          onSaveOption={handleSaveTag}
-          optionType={OptionType.TAG}
-        />
-      </div>
-
-      <label className="journalit-image-annotation-editor__field">
-        <span>{t('imageGallery.annotation.notes')}</span>
-        <textarea
-          value={state.notes}
-          onChange={(event) =>
-            dispatch({ type: 'setNotes', value: event.target.value })
-          }
-          placeholder={t('imageGallery.annotation.notes-placeholder')}
-          rows={5}
-        />
-      </label>
-
-      {state.error ? (
-        <p className="journalit-image-annotation-editor__error">
-          {state.error}
-        </p>
-      ) : null}
-
-      <footer className="journalit-image-annotation-editor__actions journalit-modal-actions">
-        <Button
-          onClick={onClose}
-          size="medium"
-          variant="secondary"
-          className="journalit-modal-actions__cancel cancel-button"
-        >
-          {t('button.cancel')}
-        </Button>
-        <Button
-          onClick={() => void handleSave()}
-          size="medium"
-          variant="primary"
-          disabled={state.saving}
-          className="journalit-modal-actions__primary accent-button modal-save-accent"
-        >
-          {state.saving
-            ? t('imageGallery.annotation.saving')
-            : t('button.save')}
-        </Button>
-      </footer>
-    </aside>
-  );
-};
-
-ImageAnnotationPanel.displayName = 'ImageAnnotationPanel';
-
-function splitCommaSeparatedInput(value: string): string[] {
-  const seen = new Set<string>();
-  const entries: string[] = [];
-
-  for (const rawEntry of value.split(',')) {
-    const entry = rawEntry.trim();
-    const key = entry.toLowerCase();
-    if (!entry || seen.has(key)) continue;
-    seen.add(key);
-    entries.push(entry);
-  }
-
-  return entries;
-}
 
 export const ImageGallerySkeleton: React.FC<{ size: ImageGallerySize }> = ({
   size,

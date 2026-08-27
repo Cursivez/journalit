@@ -10,7 +10,7 @@ import React, {
 import { t } from '../../../../lang/helpers';
 import { OptionType } from '../../../../services/options/CustomOptionsService';
 import { usePlugin } from '../../../../hooks/usePlugin';
-import { useEventBus } from '../../../../hooks';
+import { useEventBus } from '../../../../hooks/useEventBus';
 import { MistakeFilterProps } from './types';
 
 
@@ -129,17 +129,17 @@ export const MistakeFilter: React.FC<MistakeFilterProps> = React.memo(
       [handleMistakeChange]
     );
 
+    const selectedMistakesSet = new Set(selectedMistakes);
     return (
       <div
         className="journalit-dashboard-mistake-filter journalit-responsive-mistake-filter"
         ref={dropdownRef}
       >
         <div className="journalit-dashboard-mistake-dropdown">
-          <div
-            className="journalit-dashboard-mistake-summary"
+          <button
+            type="button"
+            className="journalit-native-button journalit-native-button--unstyled journalit-dashboard-mistake-summary"
             onClick={toggleDropdown}
-            role="button"
-            tabIndex={0}
             onKeyDown={(e) => {
               if (e.key === 'Enter' || e.key === ' ') {
                 e.preventDefault();
@@ -151,7 +151,7 @@ export const MistakeFilter: React.FC<MistakeFilterProps> = React.memo(
               {mistakeSummary}
             </span>
             <span className="dropdown-arrow">{isOpen ? '▲' : '▼'}</span>
-          </div>
+          </button>
 
           {isOpen && (
             <div className="journalit-dashboard-mistake-options-dropdown">
@@ -209,7 +209,7 @@ export const MistakeFilter: React.FC<MistakeFilterProps> = React.memo(
                           className="journalit-dashboard-mistake-option-item"
                           onClick={getMistakeClickHandler(mistake)}
                           role="checkbox"
-                          aria-checked={selectedMistakes.includes(mistake)}
+                          aria-checked={selectedMistakesSet.has(mistake)}
                           tabIndex={0}
                           onKeyDown={(e) => {
                             if (e.key === 'Enter' || e.key === ' ') {
@@ -219,10 +219,10 @@ export const MistakeFilter: React.FC<MistakeFilterProps> = React.memo(
                           }}
                         >
                           <span
-                            className={`journalit-dashboard-mistake-checkbox${selectedMistakes.includes(mistake) ? ' checked' : ''}`}
+                            className={`journalit-dashboard-mistake-checkbox${selectedMistakesSet.has(mistake) ? ' checked' : ''}`}
                             aria-hidden="true"
                           >
-                            {selectedMistakes.includes(mistake) ? '✓' : ''}
+                            {selectedMistakesSet.has(mistake) ? '✓' : ''}
                           </span>
                           <span>{mistake}</span>
                         </div>

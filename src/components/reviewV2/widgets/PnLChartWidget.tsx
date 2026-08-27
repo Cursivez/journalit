@@ -3,13 +3,13 @@
 import React, { useMemo } from 'react';
 import { isPnlContributingTrade } from '../../../utils/tradeStatusUtils';
 import JournalitPlugin from '../../../main';
-import { SharedPnLChart } from '../../charts';
+import { SharedPnLChart } from '../../charts/SharedPnLChart';
 import type { Trade } from '../../dashboard/utils/dataUtils';
 import { preparePnLChartData } from '../../../utils/chartUtils';
 import { getSingleExplicitCurrency } from '../../../utils/currencyAggregation';
 import { TradesPreviewData } from '../../../types/reviewV2';
 import { useReviewTrades } from '../hooks/useReviewData';
-import { SkeletonBox } from '../../shared';
+import { SkeletonBox } from '../../shared/SkeletonBox';
 import { t } from '../../../lang/helpers';
 import { cssVars } from '../../../styles/inlineStylePolicy';
 import { CurrencyConversionInfo } from '../../shared/display/CurrencyConversionInfo';

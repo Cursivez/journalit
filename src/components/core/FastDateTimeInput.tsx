@@ -6,6 +6,8 @@ import React, {
   useMemo,
   useRef,
   useEffect,
+  useId,
+  useLayoutEffect,
 } from 'react';
 import { CalendarIcon, ClockIcon } from '../shared/icons/ObsidianIcon';
 import flatpickr from 'flatpickr';
@@ -15,12 +17,14 @@ import { Spanish } from 'flatpickr/dist/l10n/es';
 import { German } from 'flatpickr/dist/l10n/de';
 import { French } from 'flatpickr/dist/l10n/fr';
 import { Vietnamese } from 'flatpickr/dist/l10n/vn';
+import { Hindi } from 'flatpickr/dist/l10n/hi';
 import { Portuguese } from 'flatpickr/dist/l10n/pt';
 import { Mandarin } from 'flatpickr/dist/l10n/zh';
 import { MandarinTraditional } from 'flatpickr/dist/l10n/zh-tw';
 import { Japanese } from 'flatpickr/dist/l10n/ja';
 import { Korean } from 'flatpickr/dist/l10n/ko';
 import { Russian } from 'flatpickr/dist/l10n/ru';
+import { Italian } from 'flatpickr/dist/l10n/it';
 import {
   getUserDateFormat,
   getWeekStartDayIndex,
@@ -28,6 +32,57 @@ import {
 } from '../../utils/dateUtils';
 import { parseStoredDateLikeValue } from '../../utils/customFieldPersistence';
 import { getPluginInstance } from '../../utils/pluginContext';
+
+const Tamil: CustomLocale = {
+  weekdays: {
+    shorthand: ['ஞாயி', 'திங்', 'செவ்', 'புத', 'வியா', 'வெள்', 'சனி'],
+    longhand: [
+      'ஞாயிறு',
+      'திங்கள்',
+      'செவ்வாய்',
+      'புதன்',
+      'வியாழன்',
+      'வெள்ளி',
+      'சனி',
+    ],
+  },
+  months: {
+    shorthand: [
+      'ஜன',
+      'பிப்',
+      'மார்',
+      'ஏப்',
+      'மே',
+      'ஜூன்',
+      'ஜூலை',
+      'ஆக',
+      'செப்',
+      'அக்',
+      'நவ',
+      'டிச',
+    ],
+    longhand: [
+      'ஜனவரி',
+      'பிப்ரவரி',
+      'மார்ச்',
+      'ஏப்ரல்',
+      'மே',
+      'ஜூன்',
+      'ஜூலை',
+      'ஆகஸ்ட்',
+      'செப்டம்பர்',
+      'அக்டோபர்',
+      'நவம்பர்',
+      'டிசம்பர்',
+    ],
+  },
+  firstDayOfWeek: 0,
+  rangeSeparator: ' முதல் ',
+  weekAbbreviation: 'வா',
+  scrollTitle: 'மாற்ற உருட்டவும்',
+  toggleTitle: 'மாற்ற கிளிக் செய்யவும்',
+  time_24hr: false,
+};
 
 function getFlatpickrDayDate(value: EventTarget | null): Date | undefined {
   if (typeof value !== 'object' || value === null) return undefined;
@@ -54,12 +109,15 @@ const flatpickrLocales: Record<string, CustomLocale> = {
   de: German,
   fr: French,
   vi: Vietnamese,
+  hi: Hindi,
   'pt-BR': Portuguese,
   zh: Mandarin,
   'zh-TW': MandarinTraditional,
   ja: Japanese,
   ko: Korean,
   ru: Russian,
+  it: Italian,
+  ta: Tamil,
 };
 import { t, getCurrentLanguage } from '../../lang/helpers';
 
@@ -75,6 +133,7 @@ function getUse24HourTime(): boolean {
 
 interface FastDateTimeInputProps {
   label?: string;
+  ariaLabel?: string;
   value?: Date | string;
   onChange?: (date: Date | string | undefined) => void;
   
@@ -83,6 +142,8 @@ interface FastDateTimeInputProps {
   
   showSeconds?: boolean;
   timeOnly?: boolean;
+  
+  use24HourTime?: boolean;
   required?: boolean;
   error?: string;
   placeholder?: string;
@@ -130,12 +191,14 @@ const INITIAL_SEGMENTS: SegmentState = {
 export const FastDateTimeInput: React.FC<FastDateTimeInputProps> = React.memo(
   ({
     label,
+    ariaLabel,
     value,
     onChange,
     commitValidSegmentChangesImmediately = false,
     includeTime = false,
     showSeconds = false,
     timeOnly = false,
+    use24HourTime: use24HourTimeOverride,
     required = false,
     error,
     disabled = false,
@@ -152,7 +215,10 @@ export const FastDateTimeInput: React.FC<FastDateTimeInputProps> = React.memo(
   }) => {
     
     const userDateFormat = getUserDateFormat();
-    const use24HourTime = useMemo(() => getUse24HourTime(), []);
+    const use24HourTime = useMemo(
+      () => use24HourTimeOverride ?? getUse24HourTime(),
+      [use24HourTimeOverride]
+    );
     const shouldShowSeconds = showSeconds && includeTime && !timeOnly;
 
     
@@ -216,18 +282,20 @@ export const FastDateTimeInput: React.FC<FastDateTimeInputProps> = React.memo(
     const lastOpenPickerSignalRef = useRef(0);
     const normalizedValueRef = useRef(normalizedValue);
     const shouldDisplayBlankTimeRef = useRef(shouldDisplayBlankTime);
-    normalizedValueRef.current = normalizedValue;
-    shouldDisplayBlankTimeRef.current = shouldDisplayBlankTime;
 
     
     const hourValueRef = useRef(hour);
     const minuteValueRef = useRef(minute);
     const secondValueRef = useRef(second);
     const ampmValueRef = useRef(ampm);
-    hourValueRef.current = hour;
-    minuteValueRef.current = minute;
-    secondValueRef.current = second;
-    ampmValueRef.current = ampm;
+    useLayoutEffect(() => {
+      normalizedValueRef.current = normalizedValue;
+      shouldDisplayBlankTimeRef.current = shouldDisplayBlankTime;
+      hourValueRef.current = hour;
+      minuteValueRef.current = minute;
+      secondValueRef.current = second;
+      ampmValueRef.current = ampm;
+    }, [ampm, hour, minute, normalizedValue, second, shouldDisplayBlankTime]);
 
     const syncSegmentsWithValue = useCallback(
       (nextValue: Date | undefined, blankTime: boolean) => {
@@ -1032,6 +1100,7 @@ export const FastDateTimeInput: React.FC<FastDateTimeInputProps> = React.memo(
     };
 
     
+    const labelId = useId();
     const hasTimeContent = includeTime || timeOnly;
     const isDateOnly = !hasTimeContent;
 
@@ -1043,16 +1112,19 @@ export const FastDateTimeInput: React.FC<FastDateTimeInputProps> = React.memo(
         data-controller-only={controllerOnly ? 'true' : 'false'}
       >
         {label && (
-          <label className="journalit-fast-datetime__label">
+          <div id={labelId} className="journalit-fast-datetime__label">
             {label}
             {required && (
               <span className="journalit-fast-datetime__required">*</span>
             )}
-          </label>
+          </div>
         )}
 
         <div
           ref={containerRef}
+          role="group"
+          aria-label={label ? undefined : ariaLabel}
+          aria-labelledby={label ? labelId : undefined}
           className="journalit-fast-datetime__container"
           data-date-only={isDateOnly ? 'true' : 'false'}
           data-has-seconds={shouldShowSeconds ? 'true' : 'false'}

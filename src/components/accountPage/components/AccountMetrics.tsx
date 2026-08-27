@@ -8,10 +8,16 @@ import { formatPnLWithCurrency } from '../../../utils/currencyAggregation';
 import { useDisplayFormatter } from '../../../hooks/useDisplayPolicy';
 import { ConversionSourceLines } from '../../shared/display/CurrencyConversionInfo';
 import { t } from '../../../lang/helpers';
-import { Tooltip } from '../../shared';
+import { Tooltip } from '../../shared/Tooltip';
 import { useGuideTarget } from '../../../guides/GuideRuntimeLayer';
 import { ACCOUNT_PAGE_METRICS_SECTION_TARGET_ID } from '../../../guides/accountPageGuideIds';
 
+
+const getMetricClass = (value: number): string => {
+  if (value > 0) return 'positive';
+  if (value < 0) return 'negative';
+  return 'neutral';
+};
 
 export const AccountMetrics: React.FC = () => {
   const registerMetricsSectionTarget = useGuideTarget(
@@ -37,12 +43,6 @@ export const AccountMetrics: React.FC = () => {
       accountPageData?.account.currency ||
       globalCurrency
   );
-
-  const getMetricClass = (value: number): string => {
-    if (value > 0) return 'positive';
-    if (value < 0) return 'negative';
-    return 'neutral';
-  };
 
   return (
     <div className="account-metrics" ref={registerMetricsSectionTarget}>

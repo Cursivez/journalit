@@ -23,6 +23,7 @@ import {
 import JournalitPlugin from '../../main';
 import { useEventBus } from '../../hooks/useEventBus';
 import { t } from '../../lang/helpers';
+import { resolveSidebarTabNavigation } from '../../navigation/sidebarTabBehavior';
 import { calculateEffectiveRMultiple } from '../../utils/formatting';
 import { getAccountCount, getDisplayPnL } from '../../utils/pnlUtils';
 import { useDisplayFormatter } from '../../hooks/useDisplayPolicy';
@@ -1196,12 +1197,11 @@ export const SidebarSearch: React.FC<SidebarSearchProps> = ({
 
   const handleResultClick = useCallback(
     (path: string) => {
-      const tabBehavior =
-        plugin.settings.navigation?.tabBehavior || 'replaceActiveTab';
-      const createNewLeaf = tabBehavior !== 'replaceActiveTab';
+      const { createNewLeaf, source } = resolveSidebarTabNavigation(plugin);
+      const focusLeaf = false;
 
       void (async () => {
-        await plugin.openFile(path, createNewLeaf, false, 'sidebar');
+        await plugin.openFile(path, createNewLeaf, focusLeaf, source);
         window.setTimeout(() => {
           inputRef.current?.focus();
         }, 0);

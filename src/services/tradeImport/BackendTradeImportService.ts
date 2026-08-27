@@ -272,6 +272,13 @@ function validateCommittedPreviewTrade(record: Record<string, unknown>): void {
 const numberValue = (value: unknown, fallback = 0): number =>
   typeof value === 'number' && Number.isFinite(value) ? value : fallback;
 
+const requiredNonNegativeInteger = (value: unknown): number => {
+  if (typeof value !== 'number' || !Number.isInteger(value) || value < 0) {
+    throw new Error('Invalid Trade Import capabilities response');
+  }
+  return value;
+};
+
 const unknownArray = (value: unknown): unknown[] =>
   Array.isArray(value) ? value : [];
 
@@ -746,6 +753,7 @@ const ensureTradeImportCapabilities = (
   }
   const fileLimits = asRecord(record.fileLimits);
   const manualMapping = asRecord(record.manualMapping);
+  const freePreviewLimits = asRecord(record.freePreviewLimits);
   return {
     apiVersion: record.apiVersion,
     schemaVersion: 'trade-import-capabilities-v1',
@@ -795,6 +803,22 @@ const ensureTradeImportCapabilities = (
         return parsed ? [parsed] : [];
       }),
     },
+    freePreviewLimits: freePreviewLimits
+      ? {
+          requestsPerHour: requiredNonNegativeInteger(
+            freePreviewLimits.requestsPerHour
+          ),
+          diagnosticRetentionMinutes: requiredNonNegativeInteger(
+            freePreviewLimits.diagnosticRetentionMinutes
+          ),
+          storedPreviewRetentionHours: requiredNonNegativeInteger(
+            freePreviewLimits.storedPreviewRetentionHours
+          ),
+          maxStoredPreviewItems: requiredNonNegativeInteger(
+            freePreviewLimits.maxStoredPreviewItems
+          ),
+        }
+      : undefined,
     diagnosticVersion:
       typeof record.diagnosticVersion === 'string'
         ? record.diagnosticVersion

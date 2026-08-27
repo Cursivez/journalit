@@ -4,7 +4,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { ImageCarouselProps, ImageNavigationContext } from '../../types/image';
 import { FullscreenPortal } from './FullscreenPortal';
 import { FullscreenImageViewer } from './FullscreenImageViewer';
-import { LeftArrow, RightArrow } from '../shared/icons/ObsidianIcon';
+import { LeftArrow, RightArrow, Tag } from '../shared/icons/ObsidianIcon';
 import { t } from '../../lang/helpers';
 import { getApp } from '../../utils/obsidian';
 import {
@@ -21,6 +21,9 @@ export const ImageCarousel: React.FC<ImageCarouselProps> = ({
   altPrefix = t('image.viewer.alt-default'),
   displayOptions,
   deleteOptions,
+  annotationOptions,
+  fullscreenAnnotationOptions,
+  onSelectedImageChange,
   className = '',
   useResolveMediaPath = false,
   sourcePath = '',
@@ -30,23 +33,47 @@ export const ImageCarousel: React.FC<ImageCarouselProps> = ({
   const enableFullscreen = displayOptions?.enableFullscreen ?? true;
   const enableDelete = deleteOptions?.enabled ?? false;
   const onDeleteImage = deleteOptions?.onDeleteImage;
-  const [selectedIndex, setSelectedIndex] = useState(0);
+  const enableAnnotations = annotationOptions?.enabled ?? false;
+  const onAnnotateImage = annotationOptions?.onAnnotateImage;
+  const isAnnotated = annotationOptions?.isAnnotated;
+  const [selection, setSelection] = useState({
+    imagePath: images[0] ?? null,
+    fallbackPath: images[1] ?? null,
+  });
   const [isFullscreen, setIsFullscreen] = useState(false);
   const thumbnailsRef = useRef<HTMLDivElement | null>(null);
   const shouldScrollThumbnailRef = useRef(false);
 
+  const selectedPathIndex = selection.imagePath
+    ? images.indexOf(selection.imagePath)
+    : -1;
+  const fallbackPathIndex = selection.fallbackPath
+    ? images.indexOf(selection.fallbackPath)
+    : -1;
+  const currentIndex =
+    selectedPathIndex >= 0
+      ? selectedPathIndex
+      : fallbackPathIndex >= 0
+        ? fallbackPathIndex
+        : 0;
+
   const selectUserNavigatedIndex = (index: number) => {
     shouldScrollThumbnailRef.current = true;
-    setSelectedIndex(index);
+    setSelection({
+      imagePath: images[index] ?? null,
+      fallbackPath: images[index + 1] ?? images[index - 1] ?? null,
+    });
+    if (images[index]) {
+      onSelectedImageChange?.(index, images[index]);
+    }
   };
 
   const goToNext = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
     if (images.length <= 1) return;
-    shouldScrollThumbnailRef.current = true;
-    setSelectedIndex((prev) =>
-      Math.min(prev, images.length - 1) === images.length - 1 ? 0 : prev + 1
+    selectUserNavigatedIndex(
+      currentIndex === images.length - 1 ? 0 : currentIndex + 1
     );
   };
 
@@ -54,9 +81,8 @@ export const ImageCarousel: React.FC<ImageCarouselProps> = ({
     e.preventDefault();
     e.stopPropagation();
     if (images.length <= 1) return;
-    shouldScrollThumbnailRef.current = true;
-    setSelectedIndex((prev) =>
-      Math.min(prev, images.length - 1) === 0 ? images.length - 1 : prev - 1
+    selectUserNavigatedIndex(
+      currentIndex === 0 ? images.length - 1 : currentIndex - 1
     );
   };
 
@@ -79,8 +105,19 @@ export const ImageCarousel: React.FC<ImageCarouselProps> = ({
     }
   };
 
-  const handleFullscreenOpen = () => {
+  const handleAnnotate = (index: number, e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    if (onAnnotateImage && images[index]) {
+      onAnnotateImage(index, images[index]);
+    }
+  };
+
+  const handleFullscreenOpen = (event: React.SyntheticEvent) => {
     if (!enableFullscreen) return;
+    event.preventDefault();
+    event.stopPropagation();
     setIsFullscreen(true);
   };
 
@@ -89,8 +126,7 @@ export const ImageCarousel: React.FC<ImageCarouselProps> = ({
       return;
     }
 
-    e.preventDefault();
-    handleFullscreenOpen();
+    handleFullscreenOpen(e);
   };
 
   const handleFullscreenClose = () => {
@@ -102,8 +138,6 @@ export const ImageCarousel: React.FC<ImageCarouselProps> = ({
       selectUserNavigatedIndex(index);
     }
   };
-
-  const currentIndex = Math.min(selectedIndex, Math.max(0, images.length - 1));
 
   useEffect(() => {
     if (!showThumbnails || images.length <= 1) return;
@@ -201,6 +235,21 @@ export const ImageCarousel: React.FC<ImageCarouselProps> = ({
             </button>
           )}
 
+          {enableAnnotations && (
+            <button
+              onClick={(e) => handleAnnotate(currentIndex, e)}
+              type="button"
+              className={`journalit-carousel-annotate${
+                isAnnotated?.(currentImage) ? ' is-annotated' : ''
+              }`}
+            >
+              <Tag size={15} strokeWidth={2.25} />
+              <span className="journalit-carousel-annotate__accessible-label">
+                {t('imageGallery.annotation.editor-title')}
+              </span>
+            </button>
+          )}
+
           {images.length > 1 && (
             <button
               onClick={goToPrevious}
@@ -242,6 +291,7 @@ export const ImageCarousel: React.FC<ImageCarouselProps> = ({
               altPrefix={altPrefix}
               useResolveMediaPath={useResolveMediaPath}
               sourcePath={sourcePath}
+              isAnnotated={isAnnotated?.(img) ?? false}
               onClick={(e) => selectImage(idx, e)}
             />
           ))}
@@ -254,7 +304,7 @@ export const ImageCarousel: React.FC<ImageCarouselProps> = ({
         portalId="journalit-carousel-fullscreen-portal"
       >
         <FullscreenImageViewer
-          key={currentImage}
+          annotationOptions={fullscreenAnnotationOptions}
           imagePath={currentImage}
           alt={currentAlt}
           useResolveMediaPath={useResolveMediaPath}
@@ -274,6 +324,7 @@ interface LazyThumbnailProps {
   altPrefix: string;
   useResolveMediaPath: boolean;
   sourcePath: string;
+  isAnnotated: boolean;
   onClick: (e: React.MouseEvent<HTMLButtonElement>) => void;
 }
 
@@ -285,6 +336,7 @@ const LazyThumbnail: React.FC<LazyThumbnailProps> = React.memo(
     altPrefix,
     useResolveMediaPath,
     sourcePath,
+    isAnnotated,
     onClick,
   }) => {
     const thumbnailRef = useRef<HTMLButtonElement>(null);
@@ -347,6 +399,12 @@ const LazyThumbnail: React.FC<LazyThumbnailProps> = React.memo(
             showVideoBadge={false}
           />
         )}
+        {isAnnotated ? (
+          <span
+            className="journalit-carousel-thumbnail__annotation-indicator"
+            aria-hidden="true"
+          />
+        ) : null}
       </button>
     );
   }

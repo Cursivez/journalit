@@ -33,7 +33,6 @@ export const ACCOUNT_WEIGHT_BAR_STYLES = `
     --journalit-account-weight-segment-color,
     var(--interactive-accent)
   );
-  cursor: pointer;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
   min-width: 3px; 
@@ -46,12 +45,6 @@ export const ACCOUNT_WEIGHT_BAR_STYLES = `
   transform: scaleY(1.1);
   z-index: 2;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-}
-
-
-.account-weight-segment:focus {
-  outline: 2px solid var(--interactive-accent);
-  outline-offset: 2px;
 }
 
 
@@ -129,9 +122,16 @@ export const ACCOUNT_WEIGHT_BAR_STYLES = `
   display: flex;
   flex-wrap: wrap;
   gap: 8px 16px;
+  margin: 0;
   padding: 0;
+  list-style: none;
   align-items: center;
   justify-content: flex-start;
+}
+
+.account-weight-legend > li {
+  margin: 0;
+  padding: 0;
 }
 
 .account-weight-legend-item {

@@ -14,7 +14,7 @@ import {
 import { OptionType } from '../../../services/options/CustomOptionsService';
 import { normalizeAccountLookupKey } from '../../../services/trade/core/TradeAccountIdentity';
 import { Button } from '../../ui/Button';
-import { Checkbox } from '../../ui';
+import Checkbox from '../../ui/Checkbox';
 import { FastDateTimeInput } from '../../core/FastDateTimeInput';
 import {
   formatDateDisplay,
@@ -28,8 +28,8 @@ import {
   parseCuratedCurrencyCode,
 } from '../../../utils/currencyConfig';
 import { ManualDrawdownManager } from './ManualDrawdownManager';
-import { useEventBus } from '../../../hooks';
-import { eventBus } from '../../../services/events';
+import { useEventBus } from '../../../hooks/useEventBus';
+import { eventBus } from '../../../services/events/EventBus';
 import { t } from '../../../lang/helpers';
 import { showActionConfirmationModal } from '../../shared/ConfirmationModal';
 import {
@@ -232,6 +232,7 @@ const AccountIdentityFields: React.FC<AccountIdentityFieldsProps> = ({
       </div>
       <div className="setting-item-control">
         <select
+          aria-label={t('account.edit.field.type')}
           value={editAccount.accountType}
           onChange={(e: React.ChangeEvent<HTMLSelectElement>) => {
             const accountType = e.target.value;
@@ -293,6 +294,7 @@ const AccountBalanceFields: React.FC<AccountBalanceFieldsProps> = ({
         </div>
         <div className="setting-item-control">
           <input
+            aria-label={t('account.edit.field.initial-balance')}
             type="number"
             value={
               editAccount.initialBalance === 0 ? '' : editAccount.initialBalance
@@ -363,6 +365,7 @@ const AccountBalanceFields: React.FC<AccountBalanceFieldsProps> = ({
         </div>
         <div className="setting-item-control">
           <input
+            aria-label={t('account.edit.field.live-balance')}
             type="number"
             value={editAccount.liveBalance}
             onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
@@ -389,6 +392,7 @@ const AccountBalanceFields: React.FC<AccountBalanceFieldsProps> = ({
         </div>
         <div className="setting-item-control">
           <select
+            aria-label={t('account.edit.field.currency')}
             value={editAccount.currency}
             onChange={(e: React.ChangeEvent<HTMLSelectElement>) => {
               const currency = parseCuratedCurrencyCode(e.target.value);
@@ -489,6 +493,7 @@ const DrawdownSection: React.FC<DrawdownSectionProps> = ({
         </div>
         <div className="setting-item-control">
           <input
+            aria-label={t('account.edit.field.drawdown-amount')}
             type="number"
             value={
               editAccount.drawdownAmount === 0 ? '' : editAccount.drawdownAmount
@@ -597,6 +602,7 @@ const ProfitTargetSection: React.FC<ProfitTargetSectionProps> = ({
         </div>
         <div className="setting-item-control">
           <input
+            aria-label={t('account.edit.field.monthly-cost')}
             type="number"
             value={editAccount.monthlyCost === 0 ? '' : editAccount.monthlyCost}
             onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
@@ -633,6 +639,7 @@ const ProfitTargetSection: React.FC<ProfitTargetSectionProps> = ({
             </div>
             <div className="setting-item-control">
               <select
+                aria-label={t('account.edit.field.target-type')}
                 value={editAccount.profitTargetType}
                 onChange={(e: React.ChangeEvent<HTMLSelectElement>) => {
                   const profitTargetType = profitTargetTypeFromSelect(
@@ -669,6 +676,11 @@ const ProfitTargetSection: React.FC<ProfitTargetSectionProps> = ({
             </div>
             <div className="setting-item-control">
               <input
+                aria-label={
+                  editAccount.profitTargetType === ProfitTargetType.PERCENTAGE
+                    ? t('account.edit.field.target-percent')
+                    : t('account.edit.field.target-dollar')
+                }
                 type="number"
                 value={
                   editAccount.profitTarget === 0 ? '' : editAccount.profitTarget
@@ -858,6 +870,7 @@ const CopyTradingSection: React.FC<CopyTradingSectionProps> = ({
               </div>
               <div className="setting-item-control">
                 <select
+                  aria-label={t('account.copy-trading.base-account')}
                   value={editAccount.copyTradingBaseAccount}
                   onChange={(e) =>
                     setEditAccount((currentAccount) => ({
@@ -889,6 +902,7 @@ const CopyTradingSection: React.FC<CopyTradingSectionProps> = ({
               </div>
               <div className="setting-item-control">
                 <input
+                  aria-label={t('account.copy-trading.multiplier')}
                   type="number"
                   min="0.1"
                   max="100"
@@ -935,6 +949,7 @@ const CopyTradingSection: React.FC<CopyTradingSectionProps> = ({
                   </div>
                   <div className="setting-item-control">
                     <input
+                      aria-label={t('account.copy-trading.start-date')}
                       type="date"
                       value={toDateInputValue(editAccount.copyTradingStartDate)}
                       onChange={(e) =>

@@ -2,7 +2,8 @@
 
 import { App, normalizePath } from 'obsidian';
 import JournalitPlugin from '../../main';
-import { eventBus, Unsubscribe } from '../events';
+import { eventBus } from '../events/EventBus';
+import { Unsubscribe } from '../events/types';
 import { getQuarterForMonth, getQuarterString } from '../../utils/dateUtils';
 
 export class FolderPathService {

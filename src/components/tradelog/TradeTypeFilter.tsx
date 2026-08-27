@@ -19,6 +19,7 @@ const DEFAULT_AVAILABLE_TRADE_TYPES: TradeType[] = [
   'missed',
   'backtest',
 ];
+const EMPTY_TRADE_TYPES: TradeType[] = [];
 
 interface TradeTypeFilterProps {
   selectedTradeTypes: TradeType[];
@@ -58,10 +59,17 @@ const getTradeTypeOptions = (availableTradeTypes: TradeType[]) => {
 };
 
 
+const handleKeyDown = (e: React.KeyboardEvent, action: () => void) => {
+  if (e.key === 'Enter' || e.key === ' ') {
+    e.preventDefault();
+    action();
+  }
+};
+
 export const TradeTypeFilter: React.FC<TradeTypeFilterProps> = React.memo(
   ({
     selectedTradeTypes,
-    defaultTradeTypes = [],
+    defaultTradeTypes = EMPTY_TRADE_TYPES,
     availableTradeTypes = DEFAULT_AVAILABLE_TRADE_TYPES,
     showImplicitDefaultAsChecked = false,
     onChange,
@@ -96,18 +104,18 @@ export const TradeTypeFilter: React.FC<TradeTypeFilterProps> = React.memo(
           ? defaultTradeTypes
           : DEFAULT_ALL_TRADE_TYPES;
 
+      const availableTradeTypesSet = new Set(availableTradeTypes);
       return fallbackTradeTypes.filter((tradeType) =>
-        availableTradeTypes.includes(tradeType)
+        availableTradeTypesSet.has(tradeType)
       );
     }, [availableTradeTypes, defaultTradeTypes]);
 
-    const explicitSelectedTradeTypes = useMemo(
-      () =>
-        selectedTradeTypes.filter((tradeType) =>
-          availableTradeTypes.includes(tradeType)
-        ),
-      [availableTradeTypes, selectedTradeTypes]
-    );
+    const explicitSelectedTradeTypes = useMemo(() => {
+      const availableTradeTypesSet2 = new Set(availableTradeTypes);
+      return selectedTradeTypes.filter((tradeType) =>
+        availableTradeTypesSet2.has(tradeType)
+      );
+    }, [availableTradeTypes, selectedTradeTypes]);
 
     const effectiveSelectedTradeTypes = useMemo(() => {
       if (explicitSelectedTradeTypes.length > 0) {
@@ -118,10 +126,11 @@ export const TradeTypeFilter: React.FC<TradeTypeFilterProps> = React.memo(
     }, [effectiveDefaultTradeTypes, explicitSelectedTradeTypes]);
 
     const visualSelectedTradeTypes = useMemo(() => {
+      const availableTradeTypesSet3 = new Set(availableTradeTypes);
       const activeSelection = getActiveTradeTypeSelection(
         selectedTradeTypes,
         effectiveDefaultTradeTypes
-      ).filter((tradeType) => availableTradeTypes.includes(tradeType));
+      ).filter((tradeType) => availableTradeTypesSet3.has(tradeType));
 
       if (activeSelection.length > 0 || !showImplicitDefaultAsChecked) {
         return activeSelection;
@@ -213,20 +222,13 @@ export const TradeTypeFilter: React.FC<TradeTypeFilterProps> = React.memo(
     
     const toggleDropdown = useCallback(() => setIsOpen((prev) => !prev), []);
 
-    const handleKeyDown = (e: React.KeyboardEvent, action: () => void) => {
-      if (e.key === 'Enter' || e.key === ' ') {
-        e.preventDefault();
-        action();
-      }
-    };
-
+    const visualSelectedTradeTypesSet = new Set(visualSelectedTradeTypes);
     return (
       <div className="journalit-tradelog-trade-type-filter" ref={dropdownRef}>
         <div className="journalit-tradelog-trade-type-dropdown">
-          <div
-            className="journalit-tradelog-trade-type-summary"
-            role="button"
-            tabIndex={0}
+          <button
+            type="button"
+            className="journalit-native-button journalit-native-button--unstyled journalit-tradelog-trade-type-summary"
             aria-expanded={isOpen}
             aria-haspopup="true"
             onClick={toggleDropdown}
@@ -234,7 +236,7 @@ export const TradeTypeFilter: React.FC<TradeTypeFilterProps> = React.memo(
           >
             {tradeTypeSummary}
             <span className="dropdown-arrow">{isOpen ? '▲' : '▼'}</span>
-          </div>
+          </button>
 
           {isOpen && (
             <div className="journalit-tradelog-trade-type-options-dropdown">
@@ -270,7 +272,7 @@ export const TradeTypeFilter: React.FC<TradeTypeFilterProps> = React.memo(
                       className="journalit-tradelog-trade-type-option-item"
                       role="checkbox"
                       tabIndex={0}
-                      aria-checked={visualSelectedTradeTypes.includes(
+                      aria-checked={visualSelectedTradeTypesSet.has(
                         option.value
                       )}
                       onClick={() => handleTradeTypeChange(option.value)}
@@ -283,13 +285,13 @@ export const TradeTypeFilter: React.FC<TradeTypeFilterProps> = React.memo(
                     >
                       <span
                         className={`journalit-tradelog-checkbox journalit-tradelog-trade-type-checkbox${
-                          visualSelectedTradeTypes.includes(option.value)
+                          visualSelectedTradeTypesSet.has(option.value)
                             ? ' checked'
                             : ''
                         }`}
                         aria-hidden="true"
                       >
-                        {visualSelectedTradeTypes.includes(option.value)
+                        {visualSelectedTradeTypesSet.has(option.value)
                           ? '✓'
                           : ''}
                       </span>

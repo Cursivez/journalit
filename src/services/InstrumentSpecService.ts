@@ -7,9 +7,11 @@ import {
   ForexSpec,
 } from '../data/instrumentSpecs';
 import { extractBaseSymbol } from '../utils/symbolNormalizer';
+import { resolveForexQuoteCurrency } from '../utils/forexCurrency';
 import type JournalitPlugin from '../main';
 import type { SymbolMapping } from '../settings/types';
-import { eventBus, Unsubscribe } from './events';
+import { eventBus } from './events/EventBus';
+import { Unsubscribe } from './events/types';
 import type { InstrumentData } from './options/CustomOptionsService';
 
 
@@ -139,6 +141,8 @@ export class InstrumentSpecService {
             lotSize: forexData.lotSize,
             pipValue: forexData.pipValue,
             pipSize: forexData.pipSize,
+            quoteCurrency:
+              resolveForexQuoteCurrency(customInstrument.name) ?? undefined,
             name: customInstrument.name,
           };
         }

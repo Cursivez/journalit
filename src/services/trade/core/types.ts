@@ -1,4 +1,5 @@
 import { CustomFieldValues } from '../../../types/customFields';
+import type { ImageAnnotations } from '../../../types/imageAnnotations';
 import type { CanonicalProjectionClearField } from './CanonicalProjectionFields';
 
 interface TradeExecutionInput {
@@ -38,6 +39,7 @@ export interface TradeMutationInput {
   accountId?: string;
   thesis?: string;
   images?: string[];
+  imageAnnotations?: ImageAnnotations;
   instrument?: string;
   assetType?: string;
   account?: string[];
@@ -82,6 +84,11 @@ export interface TradeMutationInput {
   lotSize?: number;
   pipValue?: number;
   pipSize?: number;
+  forexQuoteCurrency?: string;
+  forexPnlConversionRate?: number;
+  forexPnlConversionBaseCurrency?: string;
+  forexPnlConversionRateDate?: string;
+  forexPnlConversionRateSource?: 'automatic' | 'manual';
   cryptoExchange?: string;
   leverageRatio?: number;
   lossReview?: unknown;

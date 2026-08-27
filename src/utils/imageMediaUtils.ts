@@ -27,6 +27,8 @@ const VIDEO_EXTENSIONS = new Set([
   'mkv',
 ]);
 
+const MAX_MEDIA_DISPLAY_NAME_LENGTH = 120;
+
 type JournalitMediaKind =
   | 'image'
   | 'video'
@@ -41,6 +43,37 @@ function normalizeMediaInput(input: string): string {
 
   const linkTarget = wikilinkMatch[1].split('|')[0].trim();
   return linkTarget;
+}
+
+function boundMediaDisplayName(value: string): string {
+  return value.length <= MAX_MEDIA_DISPLAY_NAME_LENGTH
+    ? value
+    : `${value.slice(0, MAX_MEDIA_DISPLAY_NAME_LENGTH - 1)}…`;
+}
+
+export function getMediaDisplayName(pathOrUrl: string): string {
+  const normalized = normalizeMediaInput(pathOrUrl);
+  if (/^data:/i.test(normalized)) {
+    return t('image.viewer.alt-default');
+  }
+
+  if (/^https?:\/\//i.test(normalized)) {
+    try {
+      const parsed = new URL(normalized);
+      const encodedFileName = parsed.pathname.split('/').filter(Boolean).pop();
+      const fileName = encodedFileName
+        ? decodeURIComponent(encodedFileName)
+        : parsed.hostname;
+      return boundMediaDisplayName(
+        fileName.trim() || t('image.viewer.alt-default')
+      );
+    } catch {
+      return t('image.viewer.alt-default');
+    }
+  }
+
+  const fileName = normalized.split('/').pop() || normalized;
+  return boundMediaDisplayName(fileName || t('image.viewer.alt-default'));
 }
 
 export function isExcalidrawFile(file: TFile, app: App): boolean {

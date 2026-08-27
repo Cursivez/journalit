@@ -6,8 +6,9 @@ import JournalitPlugin from '../../../main';
 import { InvalidContextMessage } from './InvalidContextMessage';
 import { ReviewPreviewData } from '../../../types/reviewV2';
 import { eventBus } from '../../../services/events/EventBus';
-import { SkeletonBox } from '../../shared';
+import { SkeletonBox } from '../../shared/SkeletonBox';
 import { t } from '../../../lang/helpers';
+import { mergeClassNames } from '../../../utils/classNames';
 
 interface ReviewWidgetProps {
   filePath: string;
@@ -226,10 +227,9 @@ const LetterGradeSection: React.FC<LetterGradeSectionProps> = ({
           type="button"
           onClick={() => void onUpdateGrade(field, grade)}
           disabled={preview}
-          className={getGradeButtonClass(
-            grade,
-            selectedGrade === grade,
-            preview
+          className={mergeClassNames(
+            'journalit-native-button',
+            getGradeButtonClass(grade, selectedGrade === grade, preview)
           )}
         >
           {grade}
@@ -272,6 +272,7 @@ const StarRatingSection: React.FC<LetterGradeSectionProps> = ({
 
         return (
           <button
+            aria-label={`${label}: ${star}`}
             type="button"
             disabled={preview}
             key={`${field}-${star}`}
@@ -290,7 +291,10 @@ const StarRatingSection: React.FC<LetterGradeSectionProps> = ({
                 void onUpdateGrade(field, halfGrade);
               }
             }}
-            className={starClassName}
+            className={mergeClassNames(
+              'journalit-native-button',
+              starClassName
+            )}
           >
             {isHalf ? (
               <span className="journalit-reviewv2-star-half">

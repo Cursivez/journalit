@@ -1,7 +1,10 @@
 
 
 import { isTradeOpenWithContext } from './tradeStatusUtils';
-import { calculateAssetAdjustedPriceMoveValue } from './priceMoveValue';
+import {
+  calculateAssetAdjustedPriceMoveValue,
+  type PriceMoveValueInput,
+} from './priceMoveValue';
 import { calculateTradeDirectionPriceDiff } from '../services/trade/core/TradeDirection';
 import { normalizeTradeExecution } from '../services/trade/core/TradeExecutionNormalization';
 import { safeParseDateValue } from './dateUtils';
@@ -10,7 +13,7 @@ import type { TradeFormData } from '../components/forms/trade/types';
 
 const SIZE_COMPARISON_TOLERANCE = 1e-9;
 
-interface UnrealizedPnLTradeInput {
+type UnrealizedPnLTradeInput = PriceMoveValueInput & {
   tradeStatus?: string;
   isMissedTrade?: boolean;
   isBacktestTrade?: boolean;
@@ -33,15 +36,8 @@ interface UnrealizedPnLTradeInput {
     hasExplicitPrice?: boolean;
   }>;
   direction?: string;
-  assetType?: string;
   optionType?: string;
-  contractSize?: number;
-  dollarPerPoint?: number;
-  tickSize?: number;
-  tickValue?: number;
-  lotSize?: number;
-  pipValue?: number;
-}
+};
 
 const UNREALIZED_SNAPSHOT_FRONTMATTER_KEYS = [
   'unrealizedPriceSnapshot',

@@ -9,7 +9,7 @@ import React, {
 } from 'react';
 import { OptionType } from '../../../../services/options/CustomOptionsService';
 import { usePlugin } from '../../../../hooks/usePlugin';
-import { useEventBus } from '../../../../hooks';
+import { useEventBus } from '../../../../hooks/useEventBus';
 import { t } from '../../../../lang/helpers';
 
 
@@ -133,17 +133,17 @@ export const TickerFilter: React.FC<TickerFilterProps> = React.memo(
       [handleTickerChange]
     );
 
+    const selectedTickersSet = new Set(selectedTickers);
     return (
       <div
         className="journalit-dashboard-ticker-filter journalit-responsive-ticker-filter"
         ref={dropdownRef}
       >
         <div className="journalit-dashboard-ticker-dropdown">
-          <div
-            className="journalit-dashboard-ticker-summary"
+          <button
+            type="button"
+            className="journalit-native-button journalit-native-button--unstyled journalit-dashboard-ticker-summary"
             onClick={toggleDropdown}
-            role="button"
-            tabIndex={0}
             onKeyDown={(e) => {
               if (e.key === 'Enter' || e.key === ' ') {
                 e.preventDefault();
@@ -155,7 +155,7 @@ export const TickerFilter: React.FC<TickerFilterProps> = React.memo(
               {tickerSummary}
             </span>
             <span className="dropdown-arrow">{isOpen ? '▲' : '▼'}</span>
-          </div>
+          </button>
 
           {isOpen && (
             <div className="journalit-dashboard-ticker-options-dropdown">
@@ -193,7 +193,7 @@ export const TickerFilter: React.FC<TickerFilterProps> = React.memo(
                       className="journalit-dashboard-ticker-option-item"
                       onClick={getTickerClickHandler(ticker)}
                       role="checkbox"
-                      aria-checked={selectedTickers.includes(ticker)}
+                      aria-checked={selectedTickersSet.has(ticker)}
                       tabIndex={0}
                       onKeyDown={(e) => {
                         if (e.key === 'Enter' || e.key === ' ') {
@@ -203,10 +203,10 @@ export const TickerFilter: React.FC<TickerFilterProps> = React.memo(
                       }}
                     >
                       <span
-                        className={`journalit-dashboard-ticker-checkbox${selectedTickers.includes(ticker) ? ' checked' : ''}`}
+                        className={`journalit-dashboard-ticker-checkbox${selectedTickersSet.has(ticker) ? ' checked' : ''}`}
                         aria-hidden="true"
                       >
-                        {selectedTickers.includes(ticker) ? '✓' : ''}
+                        {selectedTickersSet.has(ticker) ? '✓' : ''}
                       </span>
                       <span>{ticker}</span>
                     </div>

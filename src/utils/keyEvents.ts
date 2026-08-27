@@ -1,4 +1,5 @@
 import { t, type TranslationKey } from '../lang/helpers';
+import type { NewsEvent } from '../services/weekly/types';
 
 export const KEY_EVENT_DAYS = [
   'Monday',
@@ -59,6 +60,53 @@ export function isKeyEventDayPast(
 
   const currentDayIndex = (currentDate.getDay() + 6) % 7;
   return dayIndex < currentDayIndex;
+}
+
+export function getKeyEventDateForWeek(
+  weekStartDate: Date,
+  day: string | undefined
+): Date | null {
+  if (!day) return null;
+  const dayIndex = KEY_EVENT_DAYS.findIndex((candidate) => candidate === day);
+  if (dayIndex === -1) return null;
+
+  
+  
+  
+  const targetDayOfWeek = (dayIndex + 1) % 7;
+  const offset = (targetDayOfWeek - weekStartDate.getDay() + 7) % 7;
+  const date = new Date(weekStartDate);
+  date.setHours(0, 0, 0, 0);
+  date.setDate(date.getDate() + offset);
+  return date;
+}
+
+
+export function isKeyEventPast(
+  event: Pick<NewsEvent, 'day' | 'time' | 'eventType'>,
+  weekStartDate: Date | null,
+  currentDate: Date
+): boolean {
+  if (!weekStartDate) return false;
+
+  const today = new Date(currentDate);
+  today.setHours(0, 0, 0, 0);
+
+  if (!event.day) {
+    const weekEnd = new Date(weekStartDate);
+    weekEnd.setHours(0, 0, 0, 0);
+    weekEnd.setDate(weekEnd.getDate() + 7);
+    return weekEnd.getTime() <= today.getTime();
+  }
+
+  const eventDate = getKeyEventDateForWeek(weekStartDate, event.day);
+  if (!eventDate) return false;
+  if (eventDate.getTime() < today.getTime()) return true;
+  if (eventDate.getTime() > today.getTime()) return false;
+  if (event.eventType === 'holiday' || !event.time) return false;
+
+  const scheduledAt = new Date(event.time).getTime();
+  return Number.isFinite(scheduledAt) && scheduledAt < currentDate.getTime();
 }
 
 function getKeyEventDayIndex(day: string | undefined): number {

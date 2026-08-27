@@ -174,7 +174,8 @@ export const ReviewContextFieldsWidget: React.FC<ReviewContextFieldsWidgetProps>
       useState<InheritedReviewContext | null>(null);
     const [errors, setErrors] = useState<Record<string, string>>({});
     const [isEditingLocalContext, setIsEditingLocalContext] = useState(false);
-    const [loading, setLoading] = useState(!preview);
+    const [loading, setLoading] = useState(true);
+    const isLoading = preview ? false : loading;
     const [isValidContext, setIsValidContext] = useState(true);
     const dirtyRef = useRef(false);
     const pendingValuesRef = useRef<Record<string, unknown> | null>(null);
@@ -486,13 +487,11 @@ export const ReviewContextFieldsWidget: React.FC<ReviewContextFieldsWidgetProps>
 
     const handleChange = useCallback(
       (fieldId: string, value: unknown) => {
-        setValues((currentValues) => {
-          const nextValues = { ...currentValues, [fieldId]: value };
-          schedulePersist(nextValues);
-          return nextValues;
-        });
+        const nextValues = { ...values, [fieldId]: value };
+        setValues(nextValues);
+        schedulePersist(nextValues);
       },
-      [schedulePersist]
+      [schedulePersist, values]
     );
 
     const openReviewFieldSettings = useCallback(() => {
@@ -652,7 +651,7 @@ export const ReviewContextFieldsWidget: React.FC<ReviewContextFieldsWidgetProps>
       );
     }
 
-    if (loading) {
+    if (isLoading) {
       return (
         <div className="journalit-widget-loading">{t('common.loading')}</div>
       );

@@ -6,6 +6,7 @@ import React, {
   useRef,
   useMemo,
   useState,
+  useEffectEvent,
 } from 'react';
 import { X, Plus } from '../../shared/icons/ObsidianIcon';
 import { AVAILABLE_HOME_WIDGETS } from '../homeTypes';
@@ -38,11 +39,12 @@ export const HomeWidgetSelector: React.FC<HomeWidgetSelectorProps> = React.memo(
   }) => {
     const [selectedIndex, setSelectedIndex] = useState(0);
     const listRef = useRef<HTMLDivElement>(null);
+    const onCloseEvent = useEffectEvent(onClose);
+    const onAddWidgetEvent = useEffectEvent(onAddWidget);
+    const onRestoreQuickLinkEvent = useEffectEvent(onRestoreQuickLink);
     const registerWidgetSelectorTarget = useGuideTarget(
       HOME_WIDGET_SELECTOR_TARGET_ID
     );
-
-    useEffect(() => {}, []);
 
     
     const instanceCounts = useMemo(() => {
@@ -101,7 +103,7 @@ export const HomeWidgetSelector: React.FC<HomeWidgetSelectorProps> = React.memo(
             e.preventDefault();
             e.stopPropagation();
             e.stopImmediatePropagation(); 
-            onClose();
+            onCloseEvent();
             break;
           case 'ArrowDown':
             e.preventDefault();
@@ -118,9 +120,9 @@ export const HomeWidgetSelector: React.FC<HomeWidgetSelectorProps> = React.memo(
             const item = selectableItems[currentSelectedIndex];
             if (item) {
               if (item.type === 'widget') {
-                void onAddWidget(item.id);
+                void onAddWidgetEvent(item.id);
               } else {
-                void onRestoreQuickLink(item.id);
+                void onRestoreQuickLinkEvent(item.id);
               }
             }
             break;
@@ -135,20 +137,14 @@ export const HomeWidgetSelector: React.FC<HomeWidgetSelectorProps> = React.memo(
           handleKeyDown,
           true
         );
-    }, [
-      onClose,
-      selectableItems,
-      currentSelectedIndex,
-      onAddWidget,
-      onRestoreQuickLink,
-    ]);
+    }, [selectableItems, currentSelectedIndex]);
 
     
     useEffect(() => {
       if (!listRef.current) return;
       const items = listRef.current.querySelectorAll('[data-selectable]');
       const selected = items[currentSelectedIndex];
-      if (selected.instanceOf(HTMLElement)) {
+      if (selected?.instanceOf(HTMLElement)) {
         selected.scrollIntoView({ block: 'nearest' });
       }
     }, [currentSelectedIndex]);

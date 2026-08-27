@@ -1,19 +1,4 @@
-import { eventBus } from '../events';
-import type { ImageGalleryAnnotation } from '../../components/imageGallery/types';
-import { dedupeStrings } from './ImageGalleryInternal';
-
-export function normalizeAnnotationForPersistence(
-  annotation: ImageGalleryAnnotation
-): Record<string, unknown> {
-  const persisted: Record<string, unknown> = {};
-  const tags = dedupeStrings(annotation.tags);
-  const notes = annotation.notes?.trim();
-
-  if (tags.length > 0) persisted.tags = tags;
-  if (notes) persisted.notes = notes;
-
-  return persisted;
-}
+import { eventBus } from '../events/EventBus';
 
 export function isEmptyPersistedAnnotation(
   annotation: Record<string, unknown>

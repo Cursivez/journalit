@@ -29,6 +29,29 @@ function isAuthErrorDetail(
   return value !== null && typeof value === 'object' && 'message' in value;
 }
 
+const getTierBadgeClass = (tierName?: string): string => {
+  switch (tierName?.toLowerCase()) {
+    case 'pro':
+    case 'premium':
+      return 'tier-pro';
+    case 'enterprise':
+      return 'tier-enterprise';
+    case 'free':
+      return 'tier-free';
+    default:
+      return 'tier-unknown';
+  }
+};
+
+const getTierLabel = (tierName?: string): string => {
+  if (!tierName) return '';
+  const normalized = tierName.toLowerCase();
+  if (normalized === 'pro' || normalized === 'premium') return 'PRO';
+  if (normalized === 'enterprise') return 'ENTERPRISE';
+  if (normalized === 'free') return 'FREE';
+  return tierName.charAt(0).toUpperCase() + tierName.slice(1);
+};
+
 function useAuthTabModel({ plugin }: AuthTabProps) {
   const [authState, setAuthState] = useState(() => ({
     isAuthenticated: BackendSecretStorage.hasAuthToken(plugin),
@@ -231,29 +254,6 @@ function useAuthTabModel({ plugin }: AuthTabProps) {
     }
   };
 
-  const getTierBadgeClass = (tierName?: string): string => {
-    switch (tierName?.toLowerCase()) {
-      case 'pro':
-      case 'premium':
-        return 'tier-pro';
-      case 'enterprise':
-        return 'tier-enterprise';
-      case 'free':
-        return 'tier-free';
-      default:
-        return 'tier-unknown';
-    }
-  };
-
-  const getTierLabel = (tierName?: string): string => {
-    if (!tierName) return '';
-    const normalized = tierName.toLowerCase();
-    if (normalized === 'pro' || normalized === 'premium') return 'PRO';
-    if (normalized === 'enterprise') return 'ENTERPRISE';
-    if (normalized === 'free') return 'FREE';
-    return tierName.charAt(0).toUpperCase() + tierName.slice(1);
-  };
-
   const activeError = signOutError ?? authError;
   const activeErrorTitle = signOutError
     ? t('notice.error.sign-out')
@@ -273,6 +273,20 @@ function useAuthTabModel({ plugin }: AuthTabProps) {
     activeErrorTitle,
   };
 }
+
+
+const PRO_FEATURE_KEYS = [
+  'settings.auth.feature.csv-import',
+  'settings.auth.feature.ai-mapping',
+  'settings.auth.feature.trade-sync',
+  'settings.auth.feature.economic-calendar',
+] as const;
+
+const FREE_FEATURE_KEYS = [
+  'settings.auth.feature.basic-tracking',
+  'settings.auth.feature.manual-entry',
+  'settings.auth.feature.analytics-reviews',
+] as const;
 
 const AuthTabComponent: React.FC<AuthTabProps> = ({ plugin }) => {
   const {
@@ -377,57 +391,35 @@ const AuthTabComponent: React.FC<AuthTabProps> = ({ plugin }) => {
           </div>
           <div className="plan-features-inline">
             {(tier.toLowerCase() === 'pro' ||
-              tier.toLowerCase() === 'premium') && (
-              <>
-                <span className="feature-tag">
-                  {t('settings.auth.feature.csv-import')}
+              tier.toLowerCase() === 'premium') &&
+              PRO_FEATURE_KEYS.map((key) => (
+                <span key={key} className="feature-tag">
+                  {t(key)}
                 </span>
-                <span className="feature-tag">
-                  {t('settings.auth.feature.ai-mapping')}
-                </span>
-                <span className="feature-tag">
-                  {t('settings.auth.feature.metatrader-sync')}
-                </span>
-              </>
-            )}
+              ))}
             {tier.toLowerCase() === 'free' && (
               <>
-                <span className="feature-tag">
-                  {t('settings.auth.feature.basic-tracking')}
-                </span>
-                <span className="feature-tag">
-                  {t('settings.auth.feature.manual-entry')}
-                </span>
-                <span className="feature-tag">
-                  {t('settings.auth.feature.analytics-reviews')}
-                </span>
-                <span className="feature-tag feature-tag--locked">
-                  {t('settings.auth.feature.csv-import')}
-                </span>
-                <span className="feature-tag feature-tag--locked">
-                  {t('settings.auth.feature.ai-mapping')}
-                </span>
-                <span className="feature-tag feature-tag--locked">
-                  {t('settings.auth.feature.metatrader-sync')}
-                </span>
+                {FREE_FEATURE_KEYS.map((key) => (
+                  <span key={key} className="feature-tag">
+                    {t(key)}
+                  </span>
+                ))}
+                {PRO_FEATURE_KEYS.map((key) => (
+                  <span key={key} className="feature-tag feature-tag--locked">
+                    {t(key)}
+                  </span>
+                ))}
               </>
             )}
-            {tier.toLowerCase() === 'enterprise' && (
-              <>
-                <span className="feature-tag">
-                  {t('settings.auth.feature.csv-import')}
+            {tier.toLowerCase() === 'enterprise' &&
+              [
+                ...PRO_FEATURE_KEYS,
+                'settings.auth.feature.priority-support' as const,
+              ].map((key) => (
+                <span key={key} className="feature-tag">
+                  {t(key)}
                 </span>
-                <span className="feature-tag">
-                  {t('settings.auth.feature.ai-mapping')}
-                </span>
-                <span className="feature-tag">
-                  {t('settings.auth.feature.metatrader-sync')}
-                </span>
-                <span className="feature-tag">
-                  {t('settings.auth.feature.priority-support')}
-                </span>
-              </>
-            )}
+              ))}
           </div>
         </div>
       )}

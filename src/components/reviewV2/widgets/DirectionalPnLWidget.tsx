@@ -8,7 +8,7 @@ import type { Trade } from '../../dashboard/utils/dataUtils';
 import { preparePnLChartData } from '../../../utils/chartUtils';
 import { TradesPreviewData } from '../../../types/reviewV2';
 import { useReviewTrades } from '../hooks/useReviewData';
-import { SkeletonBox } from '../../shared';
+import { SkeletonBox } from '../../shared/SkeletonBox';
 import { t } from '../../../lang/helpers';
 import { cssVars } from '../../../styles/inlineStylePolicy';
 import { getSingleExplicitCurrency } from '../../../utils/currencyAggregation';

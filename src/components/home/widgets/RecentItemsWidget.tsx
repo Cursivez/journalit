@@ -16,12 +16,82 @@ interface RecentItemsWidgetProps {
   plugin: JournalitPlugin;
 }
 
+const getItemIcon = (
+  item: RecentItem
+): React.ComponentType<{ size?: number; className?: string }> => {
+  if (item.type === 'view' && item.icon) {
+    return resolveIcon(item.icon, File);
+  }
+
+  
+  if (item.type === 'file' && item.title) {
+    const title = item.title.toLowerCase();
+
+    
+    if (title.includes('drc') || title.includes('daily report card')) {
+      return resolveIcon('calendar', FileText);
+    }
+
+    
+    if (
+      title.includes('weekly review') ||
+      title.includes('week review') ||
+      /w\d+-review/.test(title)
+    ) {
+      return resolveIcon('calendar-check', FileText);
+    }
+
+    
+    if (
+      title.includes('monthly review') ||
+      title.includes('month review') ||
+      /^\d+-review/.test(title)
+    ) {
+      return resolveIcon('calendar-range', FileText);
+    }
+  }
+
+  if (item.type === 'file') return resolveIcon('file-text', FileText);
+
+  return resolveIcon('file', File);
+};
+
+const formatDate = (dateString: string): string => {
+  const date = safeParseDateValue(dateString);
+  if (!date) {
+    return t('home.widget.recent.unknown');
+  }
+
+  const now = new Date();
+  const dateTime = safeGetTime(date);
+  const nowTime = safeGetTime(now);
+
+  if (!dateTime || !nowTime) {
+    return t('home.widget.recent.unknown');
+  }
+
+  const diffMs = nowTime - dateTime;
+  const diffMinutes = Math.floor(diffMs / 60000);
+  const diffHours = Math.floor(diffMinutes / 60);
+  const diffDays = Math.floor(diffHours / 24);
+
+  if (diffMinutes < 1) return t('home.widget.recent.just-now');
+  if (diffMinutes < 60)
+    return t('home.widget.recent.minutes-ago', {
+      minutes: String(diffMinutes),
+    });
+  if (diffHours < 24)
+    return t('home.widget.recent.hours-ago', { hours: String(diffHours) });
+  if (diffDays < 7)
+    return t('home.widget.recent.days-ago', { days: String(diffDays) });
+
+  return date.toLocaleDateString();
+};
+
 export const RecentItemsWidget = memo<RecentItemsWidgetProps>(({ plugin }) => {
   const [recentItems, setRecentItems] = useState<RecentItem[]>(
-    plugin.uiStateManager.getState().recentItems || []
+    () => plugin.uiStateManager.getState().recentItems || []
   );
-
-  useEffect(() => {}, []);
 
   
   const [, setJournalPath] = useState<string>('!Journalit');
@@ -75,46 +145,6 @@ export const RecentItemsWidget = memo<RecentItemsWidgetProps>(({ plugin }) => {
     })
     .slice(0, 5);
 
-  const getItemIcon = (
-    item: RecentItem
-  ): React.ComponentType<{ size?: number; className?: string }> => {
-    if (item.type === 'view' && item.icon) {
-      return resolveIcon(item.icon, File);
-    }
-
-    
-    if (item.type === 'file' && item.title) {
-      const title = item.title.toLowerCase();
-
-      
-      if (title.includes('drc') || title.includes('daily report card')) {
-        return resolveIcon('calendar', FileText);
-      }
-
-      
-      if (
-        title.includes('weekly review') ||
-        title.includes('week review') ||
-        /w\d+-review/.test(title)
-      ) {
-        return resolveIcon('calendar-check', FileText);
-      }
-
-      
-      if (
-        title.includes('monthly review') ||
-        title.includes('month review') ||
-        /^\d+-review/.test(title)
-      ) {
-        return resolveIcon('calendar-range', FileText);
-      }
-    }
-
-    if (item.type === 'file') return resolveIcon('file-text', FileText);
-
-    return resolveIcon('file', File);
-  };
-
   const handleItemClick = async (item: RecentItem) => {
     try {
       if (item.type === 'file' && item.path) {
@@ -152,38 +182,6 @@ export const RecentItemsWidget = memo<RecentItemsWidgetProps>(({ plugin }) => {
     } catch (error) {
       console.error('Failed to open recent item:', error);
     }
-  };
-
-  const formatDate = (dateString: string): string => {
-    const date = safeParseDateValue(dateString);
-    if (!date) {
-      return t('home.widget.recent.unknown');
-    }
-
-    const now = new Date();
-    const dateTime = safeGetTime(date);
-    const nowTime = safeGetTime(now);
-
-    if (!dateTime || !nowTime) {
-      return t('home.widget.recent.unknown');
-    }
-
-    const diffMs = nowTime - dateTime;
-    const diffMinutes = Math.floor(diffMs / 60000);
-    const diffHours = Math.floor(diffMinutes / 60);
-    const diffDays = Math.floor(diffHours / 24);
-
-    if (diffMinutes < 1) return t('home.widget.recent.just-now');
-    if (diffMinutes < 60)
-      return t('home.widget.recent.minutes-ago', {
-        minutes: String(diffMinutes),
-      });
-    if (diffHours < 24)
-      return t('home.widget.recent.hours-ago', { hours: String(diffHours) });
-    if (diffDays < 7)
-      return t('home.widget.recent.days-ago', { days: String(diffDays) });
-
-    return date.toLocaleDateString();
   };
 
   return (

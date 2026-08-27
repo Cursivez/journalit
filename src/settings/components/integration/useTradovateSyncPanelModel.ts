@@ -1,12 +1,15 @@
-import { useCallback, useEffect, useMemo, useReducer, useRef } from 'react';
+
+
+import { useCallback, useEffect, useMemo, useReducer } from 'react';
 import { Notice } from 'obsidian';
 import { showConfirmationModal } from '../../../components/shared/ConfirmationModal';
 import { t } from '../../../lang/helpers';
 import type JournalitPlugin from '../../../main';
+import { TradeProjectionClient } from '../../../services/tradeSync/TradeProjectionClient';
 import {
-  BackendTradeProjectionService,
+  TradovateBrokerSyncClient,
   TradovateSyncClaimConflictError,
-} from '../../../services/tradeSync/BackendTradeProjectionService';
+} from '../../../services/tradeSync/TradovateBrokerSyncClient';
 import { TradeProjectionAccountRecoveryService } from '../../../services/tradeSync/TradeProjectionAccountRecoveryService';
 import { getTradeProjectionVaultId } from '../../../services/tradeSync/TradeProjectionAckQueue';
 import {
@@ -14,16 +17,30 @@ import {
   getTradeProjectionOwnerId,
 } from '../../../services/tradeSync/TradeProjectionOwnership';
 import { TradovateClientDiagnosticsService } from '../../../services/tradeSync/TradovateClientDiagnosticsService';
-import { isTradovateJobInProgress } from '../../../services/tradeSync/types';
 import type {
   TradeProjectionAccountInventoryItem,
   TradovateAccountSelection,
-  TradovateClientOperationContext,
+  BrokerClientOperationContext,
   TradovateConnection,
   TradovateConnectionAccount,
   TradovateConnections,
 } from '../../../services/tradeSync/types';
 import { logger } from '../../../utils/logger';
+import {
+  anyConnectionHasRunningJob,
+  connectionHasRunningJob,
+  createAccountMappingIndex,
+  createLocalAccountResolver,
+  loadLocalAccounts,
+  useBrokerRefreshSequence,
+  useBrokerStatusFailureState,
+  useBrokerStatusPolling,
+  useConnectionBusyState,
+  useMappingUpdateQueue,
+  withRateLimitRetry,
+  type BrokerDataOwnership,
+  type LocalAccountOption,
+} from './brokerSyncKit';
 import type {
   TradovateStatusState,
   TradovateSyncPanelContentProps,
@@ -36,11 +53,6 @@ import {
 } from './tradovateSyncPanelDrafts';
 import { useTradovateSyncAll } from './useTradovateSyncAll';
 
-export interface LocalAccountOption {
-  id: string;
-  name: string;
-}
-
 interface TradovatePanelState {
   statusState: TradovateStatusState;
   vaultId: string;
@@ -49,13 +61,9 @@ interface TradovatePanelState {
   drafts: AccountDrafts;
   configurationDirty: Record<string, true>;
   mappingDirty: Record<string, true>;
-  busyConnections: Record<string, true>;
   refreshing: boolean;
   syncAllBusy: boolean;
-  dataOwnership?: {
-    ownerUserId: string;
-    isCurrent: () => boolean;
-  };
+  dataOwnership?: BrokerDataOwnership;
   restoringAccountIds: Record<string, true>;
 }
 
@@ -71,7 +79,6 @@ const INITIAL_PANEL_STATE: TradovatePanelState = {
   drafts: {},
   configurationDirty: {},
   mappingDirty: {},
-  busyConnections: {},
   refreshing: false,
   syncAllBusy: false,
   restoringAccountIds: {},
@@ -81,10 +88,6 @@ const FAILED_PANEL_STATE: TradovatePanelState = {
   ...INITIAL_PANEL_STATE,
   statusState: { kind: 'failed' },
 };
-
-function accountNameKey(name: string): string {
-  return name.trim().toLocaleLowerCase();
-}
 
 function panelReducer(
   state: TradovatePanelState,
@@ -152,21 +155,6 @@ function accountSelection(
   };
 }
 
-async function loadLocalAccounts(
-  plugin: JournalitPlugin
-): Promise<LocalAccountOption[]> {
-  const catalog = await plugin.accountPageService?.getAccountCatalog();
-  const catalogAccounts = (catalog ?? []).flatMap((account) =>
-    !account.archived && account.name
-      ? [{ id: account.id || account.name, name: account.name }]
-      : []
-  );
-  if (catalogAccounts.length) return catalogAccounts;
-  return Object.keys(plugin.settings.account?.accountMetadata ?? {}).map(
-    (name) => ({ id: name, name })
-  );
-}
-
 async function createTradovateLocalAccount(
   plugin: JournalitPlugin,
   account: TradovateConnectionAccount
@@ -210,18 +198,23 @@ function removeKey(
 export function useTradovateSyncPanelModel(
   plugin: JournalitPlugin
 ): TradovateSyncPanelContentProps {
-  const backend = useMemo(() => new BackendTradeProjectionService(), []);
+  const backend = useMemo(() => new TradeProjectionClient(), []);
+  const brokerClient = useMemo(() => new TradovateBrokerSyncClient(), []);
   const recoveryService = useMemo(
     () => new TradeProjectionAccountRecoveryService(plugin, backend),
     [backend, plugin]
   );
   const diagnostics = useMemo(
-    () => new TradovateClientDiagnosticsService(plugin, backend),
-    [backend, plugin]
+    () => new TradovateClientDiagnosticsService(plugin, brokerClient),
+    [brokerClient, plugin]
   );
   const [state, patchState] = useReducer(panelReducer, INITIAL_PANEL_STATE);
-  const refreshSequence = useRef(0);
-  const mappingUpdateQueues = useRef(new Map<string, Promise<void>>());
+  const beginRefresh = useBrokerRefreshSequence(plugin);
+  const mappingUpdates = useMappingUpdateQueue();
+  const { busyConnections, markConnectionBusy, setBusyConnections } =
+    useConnectionBusyState();
+  const failureState = useBrokerStatusFailureState();
+  const { noteRefreshFailure, noteRefreshSuccess } = failureState;
   const currentOwnerUserId = getTradeProjectionOwnerId(plugin);
   const pendingAckCount = currentOwnerUserId
     ? (plugin.settings.backendIntegration?.pendingTradeImportProjectionAcks
@@ -229,176 +222,155 @@ export function useTradovateSyncPanelModel(
         .reduce((count, request) => count + request.results.length, 0) ?? 0)
     : 0;
 
-  const refresh = useCallback(async () => {
-    const sequence = ++refreshSequence.current;
-    const initiatingOwnerUserId = getTradeProjectionOwnerId(plugin);
-    const shouldStop = createTradeProjectionOwnershipGuard(
-      plugin,
-      initiatingOwnerUserId
-    );
-    const isCurrentRefresh = () => refreshSequence.current === sequence;
-    patchState((current) => ({
-      refreshing: true,
-      ...(current.statusState.kind === 'loaded'
-        ? {}
-        : { statusState: { kind: 'loading' } as const }),
-    }));
-    try {
-      void diagnostics.flush();
-      const currentVaultId = await getTradeProjectionVaultId(plugin);
-      const [providerStatus, accounts, inventory] = await Promise.all([
-        backend.getTradovateConnections(),
-        loadLocalAccounts(plugin),
-        backend.getAccountInventory(currentVaultId),
-      ]);
-      if (!isCurrentRefresh()) return;
-      if (shouldStop()) {
-        patchState(FAILED_PANEL_STATE);
-        return;
-      }
-      const mappingByCanonicalAccountId = new Map(
-        inventory.accounts.map((account) => [
-          account.accountId,
-          account.mapping ?? null,
-        ])
-      );
-      const localAccountById = new Map(
-        accounts.map((account) => [account.id, account])
-      );
-      const localAccountByName = new Map(
-        accounts.map((account) => [accountNameKey(account.name), account])
-      );
-      const connectionById = new Map(
-        providerStatus.connections.map((connection) => [
-          connection.id,
-          connection,
-        ])
-      );
-      const inferredMappingIds = new Set<string>();
-      const nextDrafts: AccountDrafts = {};
-      for (const connection of providerStatus.connections) {
-        for (const account of connection.accounts) {
-          const mapping = mappingByCanonicalAccountId.get(
-            account.canonicalAccountId
-          );
-          const mappedLocalAccountById = mapping?.localAccountId
-            ? localAccountById.get(mapping.localAccountId)
-            : undefined;
-          const mappedLocalAccountByName = mapping?.localAccountName
-            ? localAccountByName.get(accountNameKey(mapping.localAccountName))
-            : undefined;
-          const exactLocalAccount = account.displayName
-            ? localAccountByName.get(accountNameKey(account.displayName))
-            : undefined;
-          const resolvedLocalAccount =
-            mappedLocalAccountById ??
-            mappedLocalAccountByName ??
-            exactLocalAccount;
-          if (
-            resolvedLocalAccount &&
-            mapping?.localAccountId !== resolvedLocalAccount.id
-          ) {
-            inferredMappingIds.add(account.canonicalAccountId);
-          }
-          nextDrafts[tradovateAccountDraftKey(connection.id, account.id)] = {
-            syncEnabled: account.syncEnabled,
-            historyChoice: historyChoice(account),
-            historyFrom: account.historyFrom?.slice(0, 10) ?? '',
-            localAccountId: resolvedLocalAccount?.id ?? '',
-          };
+  const refresh = useCallback(
+    async (options?: { background?: boolean }) => {
+      const attempt = beginRefresh();
+      patchState((current) => ({
+        refreshing: true,
+        ...(current.statusState.kind === 'loaded'
+          ? {}
+          : { statusState: { kind: 'loading' } as const }),
+      }));
+      try {
+        void diagnostics.flush();
+        const currentVaultId = await getTradeProjectionVaultId(plugin);
+        const [providerStatus, accounts, inventory] = await Promise.all([
+          withRateLimitRetry(() => brokerClient.getTradovateConnections()),
+          loadLocalAccounts(plugin),
+          withRateLimitRetry(() => backend.getAccountInventory(currentVaultId)),
+        ]);
+        if (!attempt.isCurrent()) return false;
+        if (attempt.shouldStop()) {
+          patchState(FAILED_PANEL_STATE);
+          return false;
         }
-      }
-      patchState((current) => {
-        const drafts = { ...nextDrafts };
-        for (const connectionId of Object.keys(current.configurationDirty)) {
-          const connection = connectionById.get(connectionId);
-          for (const account of connection?.accounts ?? []) {
-            const key = tradovateAccountDraftKey(connectionId, account.id);
+        const mappingByCanonicalAccountId = createAccountMappingIndex(
+          inventory.accounts
+        );
+        const localAccounts = createLocalAccountResolver(accounts);
+        const connectionById = new Map(
+          providerStatus.connections.map((connection) => [
+            connection.id,
+            connection,
+          ])
+        );
+        const inferredMappingIds = new Set<string>();
+        const nextDrafts: AccountDrafts = {};
+        for (const connection of providerStatus.connections) {
+          for (const account of connection.accounts) {
+            const mapping = mappingByCanonicalAccountId.get(
+              account.canonicalAccountId
+            );
+            const resolvedLocalAccount =
+              localAccounts.resolveMapping(mapping) ??
+              localAccounts.byName(account.displayName);
             if (
-              account.syncClaim.state !== 'held_elsewhere' &&
-              current.drafts[key]
+              resolvedLocalAccount &&
+              mapping?.localAccountId !== resolvedLocalAccount.id
             ) {
-              drafts[key] = current.drafts[key];
+              inferredMappingIds.add(account.canonicalAccountId);
             }
+            nextDrafts[tradovateAccountDraftKey(connection.id, account.id)] = {
+              syncEnabled: account.syncEnabled,
+              historyChoice: historyChoice(account),
+              historyFrom: account.historyFrom?.slice(0, 10) ?? '',
+              localAccountId: resolvedLocalAccount?.id ?? '',
+            };
           }
         }
-        for (const canonicalAccountId of Object.keys(current.mappingDirty)) {
-          for (const connection of providerStatus.connections) {
-            for (const account of connection.accounts) {
-              if (account.canonicalAccountId !== canonicalAccountId) continue;
-              const key = tradovateAccountDraftKey(connection.id, account.id);
-              const currentDraft = current.drafts[key];
-              if (currentDraft) {
-                drafts[key] = {
-                  ...drafts[key],
-                  localAccountId: currentDraft.localAccountId,
-                };
+        patchState((current) => {
+          const drafts = { ...nextDrafts };
+          for (const connectionId of Object.keys(current.configurationDirty)) {
+            const connection = connectionById.get(connectionId);
+            for (const account of connection?.accounts ?? []) {
+              const key = tradovateAccountDraftKey(connectionId, account.id);
+              if (
+                account.syncClaim.state !== 'held_elsewhere' &&
+                current.drafts[key]
+              ) {
+                drafts[key] = current.drafts[key];
               }
             }
           }
+          for (const canonicalAccountId of Object.keys(current.mappingDirty)) {
+            for (const connection of providerStatus.connections) {
+              for (const account of connection.accounts) {
+                if (account.canonicalAccountId !== canonicalAccountId) continue;
+                const key = tradovateAccountDraftKey(connection.id, account.id);
+                const currentDraft = current.drafts[key];
+                if (currentDraft) {
+                  drafts[key] = {
+                    ...drafts[key],
+                    localAccountId: currentDraft.localAccountId,
+                  };
+                }
+              }
+            }
+          }
+          return {
+            vaultId: currentVaultId,
+            statusState: { kind: 'loaded', data: providerStatus },
+            dataOwnership: {
+              ownerUserId: attempt.ownerUserId,
+              isCurrent: () => !attempt.shouldStop(),
+            },
+            localAccounts: accounts,
+            inventoryAccounts: inventory.accounts,
+            drafts,
+            mappingDirty: {
+              ...current.mappingDirty,
+              ...Object.fromEntries(
+                Array.from(inferredMappingIds, (id) => [id, true] as const)
+              ),
+            },
+          };
+        });
+        noteRefreshSuccess();
+        return true;
+      } catch (error) {
+        if (!attempt.isCurrent()) return false;
+        if (attempt.shouldStop()) {
+          patchState(FAILED_PANEL_STATE);
+          return false;
         }
-        return {
-          vaultId: currentVaultId,
-          statusState: { kind: 'loaded', data: providerStatus },
-          dataOwnership: {
-            ownerUserId: initiatingOwnerUserId,
-            isCurrent: () => !shouldStop(),
-          },
-          localAccounts: accounts,
-          inventoryAccounts: inventory.accounts,
-          drafts,
-          mappingDirty: {
-            ...current.mappingDirty,
-            ...Object.fromEntries(
-              Array.from(inferredMappingIds, (id) => [id, true] as const)
-            ),
-          },
-        };
-      });
-    } catch (error) {
-      if (!isCurrentRefresh()) return;
-      if (shouldStop()) {
-        patchState(FAILED_PANEL_STATE);
-        return;
+        logger.error('Tradovate connections refresh failed', error);
+        if (noteRefreshFailure(Boolean(options?.background))) {
+          new Notice(t('trade-sync.tradovate.status-failed'));
+        }
+        patchState((current) =>
+          current.statusState.kind === 'loaded'
+            ? {}
+            : { statusState: { kind: 'failed' } }
+        );
+        return false;
+      } finally {
+        if (attempt.isCurrent() && !attempt.shouldStop()) {
+          patchState({ refreshing: false });
+        }
       }
-      logger.error('Tradovate connections refresh failed', error);
-      new Notice(t('trade-sync.tradovate.status-failed'));
-      patchState((current) =>
-        current.statusState.kind === 'loaded'
-          ? {}
-          : { statusState: { kind: 'failed' } }
-      );
-    } finally {
-      if (isCurrentRefresh() && !shouldStop()) {
-        patchState({ refreshing: false });
-      }
-    }
-  }, [backend, diagnostics, plugin]);
+    },
+    [
+      backend,
+      beginRefresh,
+      brokerClient,
+      diagnostics,
+      noteRefreshFailure,
+      noteRefreshSuccess,
+      plugin,
+    ]
+  );
 
   useEffect(() => {
     void refresh();
   }, [refresh]);
 
-  const hasRunningJob = Boolean(
-    loadedTradovateStatus(state.statusState)?.connections.some((connection) =>
-      connection.jobs.some((job) => isTradovateJobInProgress(job.status))
-    )
-  );
-
-  useEffect(() => {
-    if (!hasRunningJob) return;
-    let cancelled = false;
-    let timer: number | undefined;
-    const poll = async () => {
-      await refresh();
-      if (!cancelled) timer = window.setTimeout(() => void poll(), 2000);
-    };
-    timer = window.setTimeout(() => void poll(), 2000);
-    return () => {
-      cancelled = true;
-      if (timer !== undefined) window.clearTimeout(timer);
-    };
-  }, [hasRunningJob, refresh]);
+  useBrokerStatusPolling({
+    hasRunningJob: anyConnectionHasRunningJob(
+      loadedTradovateStatus(state.statusState)?.connections ?? []
+    ),
+    failureState,
+    refresh,
+  });
 
   const updateDraft = useCallback(
     (
@@ -439,10 +411,12 @@ export function useTradovateSyncPanelModel(
           }
           return {
             drafts,
-            mappingDirty: {
-              ...current.mappingDirty,
-              [account.canonicalAccountId]: true,
-            },
+            mappingDirty: patch.localAccountId
+              ? {
+                  ...current.mappingDirty,
+                  [account.canonicalAccountId]: true,
+                }
+              : removeKey(current.mappingDirty, account.canonicalAccountId),
           };
         }
         const key = tradovateAccountDraftKey(connectionId, accountId);
@@ -459,17 +433,6 @@ export function useTradovateSyncPanelModel(
     []
   );
 
-  const markConnectionBusy = useCallback(
-    (connectionId: string, busy: boolean) => {
-      patchState((current) => ({
-        busyConnections: busy
-          ? { ...current.busyConnections, [connectionId]: true }
-          : removeKey(current.busyConnections, connectionId),
-      }));
-    },
-    []
-  );
-
   const discoverAccounts = useCallback(
     async (connectionId: string) => {
       const dataOwnership = state.dataOwnership;
@@ -482,14 +445,15 @@ export function useTradovateSyncPanelModel(
       try {
         const operation = await diagnostics.createConnectionOperation(
           state.vaultId || (await getTradeProjectionVaultId(plugin)),
-          connectionId
+          connectionId,
+          'tradovate'
         );
         const shouldStop = createTradeProjectionOwnershipGuard(
           plugin,
           operation.ownerUserId
         );
         if (shouldStop() || !dataOwnership.isCurrent()) return;
-        const job = await backend.startTradovateSync(
+        const job = await brokerClient.startTradovateSync(
           connectionId,
           'discovery',
           operation
@@ -509,7 +473,7 @@ export function useTradovateSyncPanelModel(
       }
     },
     [
-      backend,
+      brokerClient,
       diagnostics,
       markConnectionBusy,
       plugin,
@@ -522,7 +486,7 @@ export function useTradovateSyncPanelModel(
   const persistMappings = useCallback(
     async (
       connection: TradovateConnection,
-      operation: TradovateClientOperationContext,
+      operation: BrokerClientOperationContext,
       assertOwnership: () => void
     ) => {
       if (!state.vaultId) return;
@@ -544,12 +508,9 @@ export function useTradovateSyncPanelModel(
           account.canonicalAccountId,
           localAccount.id
         );
-        const previousUpdate =
-          mappingUpdateQueues.current.get(account.canonicalAccountId) ??
-          Promise.resolve();
-        const update = previousUpdate
-          .catch(() => undefined)
-          .then(async () => {
+        updates.set(
+          account.canonicalAccountId,
+          mappingUpdates.enqueue(account.canonicalAccountId, async () => {
             assertOwnership();
             await backend.updateAccountVaultMapping(
               account.canonicalAccountId,
@@ -562,24 +523,15 @@ export function useTradovateSyncPanelModel(
                 clientOperationId: operation.clientOperationId,
               }
             );
-          });
-        mappingUpdateQueues.current.set(account.canonicalAccountId, update);
-        const clearCompletedUpdate = () => {
-          if (
-            mappingUpdateQueues.current.get(account.canonicalAccountId) ===
-            update
-          ) {
-            mappingUpdateQueues.current.delete(account.canonicalAccountId);
-          }
-        };
-        void update.then(clearCompletedUpdate, clearCompletedUpdate);
-        updates.set(account.canonicalAccountId, update);
+          })
+        );
       }
       await Promise.all(updates.values());
       return persistedLocalAccountIds;
     },
     [
       backend,
+      mappingUpdates,
       state.drafts,
       state.localAccounts,
       state.mappingDirty,
@@ -665,7 +617,8 @@ export function useTradovateSyncPanelModel(
       markConnectionBusy(connectionId, true);
       try {
         const clientOperation = await diagnostics.createProjectionOperation(
-          state.vaultId
+          state.vaultId,
+          'tradovate'
         );
         if (shouldStop()) return;
         const result = await recoveryService.restoreAccount({
@@ -755,7 +708,8 @@ export function useTradovateSyncPanelModel(
       try {
         const operation = await diagnostics.createConnectionOperation(
           state.vaultId || (await getTradeProjectionVaultId(plugin)),
-          connectionId
+          connectionId,
+          'tradovate'
         );
         const shouldStop = createTradeProjectionOwnershipGuard(
           plugin,
@@ -782,7 +736,7 @@ export function useTradovateSyncPanelModel(
           state.configurationDirty[connectionId] ||
           connection.status === 'setup_required'
         ) {
-          configuration = await backend.configureTradovateAccounts(
+          configuration = await brokerClient.configureTradovateAccounts(
             connectionId,
             validSelections,
             operation
@@ -866,7 +820,7 @@ export function useTradovateSyncPanelModel(
       }
     },
     [
-      backend,
+      brokerClient,
       diagnostics,
       markConnectionBusy,
       persistMappings,
@@ -884,17 +838,22 @@ export function useTradovateSyncPanelModel(
     patchState(INITIAL_PANEL_STATE);
     void refresh();
   }, [refresh]);
-  const { syncAll, syncAllAvailable } = useTradovateSyncAll({
-    plugin,
-    connections: loadedTradovateStatus(state.statusState)?.connections ?? [],
-    configurationDirty: state.configurationDirty,
-    mappingDirty: state.mappingDirty,
-    drafts: state.drafts,
-    dataOwnership: state.dataOwnership,
-    patchState,
-    resetForOwnershipChange,
-    refresh,
-  });
+  const setSyncAllBusy = useCallback((syncAllBusy: boolean) => {
+    patchState({ syncAllBusy });
+  }, []);
+  const { syncAll, syncAllAvailable, syncAllBlockedMessage } =
+    useTradovateSyncAll({
+      plugin,
+      connections: loadedTradovateStatus(state.statusState)?.connections ?? [],
+      configurationDirty: state.configurationDirty,
+      mappingDirty: state.mappingDirty,
+      drafts: state.drafts,
+      dataOwnership: state.dataOwnership,
+      setSyncAllBusy,
+      setBusyConnections,
+      resetForOwnershipChange,
+      refresh,
+    });
 
   const connectionStates = Object.fromEntries(
     (loadedTradovateStatus(state.statusState)?.connections ?? []).map(
@@ -915,9 +874,7 @@ export function useTradovateSyncPanelModel(
                 latestDiscovery?.status === 'partial' ||
                 latestDiscovery?.status === 'failed' ||
                 latestDiscovery?.status === 'cancelled'),
-            hasRunningJob: connection.jobs.some((job) =>
-              isTradovateJobInProgress(job.status)
-            ),
+            hasRunningJob: connectionHasRunningJob(connection),
           },
         ];
       }
@@ -929,10 +886,12 @@ export function useTradovateSyncPanelModel(
     drafts: state.drafts,
     localAccounts: state.localAccounts,
     inventoryAccounts: state.inventoryAccounts,
-    busyConnections: state.busyConnections,
+    busyConnections,
     refreshing: state.refreshing,
     syncAllBusy: state.syncAllBusy,
     syncAllAvailable,
+    syncAllBlockedMessage,
+    mappingDirty: state.mappingDirty,
     restoringAccountIds: state.restoringAccountIds,
     connectionStates,
     pendingAckCount,

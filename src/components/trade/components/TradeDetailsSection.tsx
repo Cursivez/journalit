@@ -12,7 +12,7 @@ import { Tooltip } from '../../shared/Tooltip';
 import { resolveTradeRiskAmount } from '../../../utils/riskCalculation';
 import { FileText } from '../../shared/icons/ObsidianIcon';
 import { calculateTotalCosts } from '../../forms/trade/validation';
-import { calculateEffectiveRMultiple } from '../../../utils';
+import { calculateEffectiveRMultiple } from '../../../utils/formatting';
 
 interface ExecutionItem {
   time?: Date;

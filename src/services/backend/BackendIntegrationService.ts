@@ -32,6 +32,7 @@ import {
   VaultRegistrationData,
   Trade,
   FTPCredentials,
+  FTPProvisionedCredentials,
   TradeSyncMapping,
 } from './types';
 import { debounceAsync } from '../../utils/debounce';
@@ -2321,13 +2322,6 @@ export class BackendIntegrationService {
   }
 
   
-  async autoCreateFTPCredentials(
-    username: string
-  ): Promise<FTPCredentials | null> {
-    return this.ftpManagementService.autoCreateFTPCredentials(username);
-  }
-
-  
   async resetFTPPassword(userId: string): Promise<FTPCredentials | null> {
     return this.ftpManagementService.resetFTPPassword(userId);
   }
@@ -2391,7 +2385,7 @@ export class BackendIntegrationService {
   }
 
   
-  async createOrGetFTPUser(): Promise<FTPCredentials | null> {
+  async createOrGetFTPUser(): Promise<FTPProvisionedCredentials | null> {
     return this.ftpManagementService.createOrGetFTPUser();
   }
 

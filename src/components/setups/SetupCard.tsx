@@ -4,7 +4,11 @@ import { t } from '../../lang/helpers';
 import { useDisplayFormatter } from '../../hooks/useDisplayPolicy';
 
 import { Calendar, CheckCircle2, Circle } from '../shared/icons/ObsidianIcon';
-import { MetricValue, PnLValue, RMultipleValue } from '../shared/display';
+import {
+  MetricValue,
+  PnLValue,
+  RMultipleValue,
+} from '../shared/display/DisplayValue';
 import type {
   SetupCardHealth,
   SetupCardTone,

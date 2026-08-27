@@ -11,7 +11,8 @@ import {
 import type { ReviewTemplateService } from '../../services/templates/ReviewTemplateService';
 import { TradeTemplateService } from '../../services/templates/TradeTemplateService';
 import { Tooltip } from '../shared/Tooltip';
-import { eventBus, DefaultTemplateChangedPayload } from '../../services/events';
+import { eventBus } from '../../services/events/EventBus';
+import { DefaultTemplateChangedPayload } from '../../services/events/types';
 import { t } from '../../lang/helpers';
 import type { TemplatesSettings } from '../../settings/types';
 import { showDeleteTemplateModal } from './UnsavedChangesModal';
@@ -29,6 +30,7 @@ import {
   LAYOUT_BUILDER_SIDEBAR_TARGET_ID,
   LAYOUT_BUILDER_TEMPLATE_DUPLICATED_ACTION_ID,
 } from '../../guides/layoutBuilderGuideIds';
+import { mergeClassNames } from '../../utils/classNames';
 
 
 type SelectionType = 'template' | 'snippet' | 'library';
@@ -73,21 +75,12 @@ const Section: React.FC<SectionProps> = ({
   disabledMessage,
 }) => (
   <div className="template-builder-section">
-    <div
-      onClick={() => void onToggle()}
-      onKeyDown={(e) => {
-        if (e.key !== 'Enter' && e.key !== ' ') {
-          return;
-        }
-
-        e.preventDefault();
-        void onToggle();
-      }}
-      role="button"
-      tabIndex={0}
-      className="template-builder-section-header"
-    >
-      <div className="template-builder-section-title">
+    <div className="template-builder-section-header">
+      <button
+        type="button"
+        onClick={() => void onToggle()}
+        className="journalit-native-button journalit-native-button--unstyled template-builder-section-title"
+      >
         <svg
           width="12"
           height="12"
@@ -102,7 +95,7 @@ const Section: React.FC<SectionProps> = ({
           <polyline points="9 18 15 12 9 6" />
         </svg>
         {title}
-      </div>
+      </button>
       {onAdd && !disabled && (
         <Tooltip content={t('builder.sidebar.new-item', { title })}>
           <button
@@ -173,17 +166,6 @@ const TemplateItem: React.FC<TemplateItemProps> = ({
 }) => (
   <div
     ref={containerRef}
-    onClick={() => void onClick()}
-    onKeyDown={(e) => {
-      if (e.key !== 'Enter' && e.key !== ' ') {
-        return;
-      }
-
-      e.preventDefault();
-      void onClick();
-    }}
-    role="button"
-    tabIndex={0}
     className={`sidebar-template-item ${isSelected ? 'sidebar-template-item--selected' : ''}${forceShowActions ? ' sidebar-template-item--show-actions' : ''}`}
   >
     <div className="sidebar-template-item-content">
@@ -202,7 +184,10 @@ const TemplateItem: React.FC<TemplateItemProps> = ({
             e.stopPropagation();
             if (!isDefault) void onSetDefault();
           }}
-          className={`sidebar-template-item-star${isDefault ? ' is-default' : ''}`}
+          className={mergeClassNames(
+            'journalit-native-button',
+            `sidebar-template-item-star${isDefault ? ' is-default' : ''}`
+          )}
           disabled={isDefault}
           aria-label={
             isDefault
@@ -222,24 +207,31 @@ const TemplateItem: React.FC<TemplateItemProps> = ({
           </svg>
         </button>
       </Tooltip>
-      <span className="sidebar-template-item-name">{template.name}</span>
-      {template.isBuiltIn && (
-        <span className="sidebar-template-item-badge">
-          {t('builder.sidebar.built-in')}
-        </span>
-      )}
+      <button
+        type="button"
+        className="journalit-native-button journalit-native-button--unstyled sidebar-template-item-select"
+        onClick={() => void onClick()}
+      >
+        <span className="sidebar-template-item-name">{template.name}</span>
+        {template.isBuiltIn && (
+          <span className="sidebar-template-item-badge">
+            {t('builder.sidebar.built-in')}
+          </span>
+        )}
+      </button>
     </div>
 
     
     <div className="template-item-actions">
       <Tooltip content={t('builder.sidebar.duplicate')}>
         <button
+          aria-label={t('builder.sidebar.duplicate')}
           ref={duplicateButtonRef}
           onClick={(e) => {
             e.stopPropagation();
             void onDuplicate();
           }}
-          className="template-item-action-button"
+          className="journalit-native-button template-item-action-button"
         >
           <svg
             width="12"
@@ -257,11 +249,12 @@ const TemplateItem: React.FC<TemplateItemProps> = ({
       {!template.isBuiltIn && (
         <Tooltip content={t('builder.sidebar.delete')}>
           <button
+            aria-label={t('builder.sidebar.delete')}
             onClick={(e) => {
               e.stopPropagation();
               void onDelete();
             }}
-            className="template-item-action-button template-item-action-button--danger"
+            className="journalit-native-button template-item-action-button template-item-action-button--danger"
           >
             <svg
               width="12"
@@ -913,9 +906,12 @@ export const BuilderSidebar: React.FC<BuilderSidebarProps> = (props) => {
               onClick={() =>
                 onSelectionChange({ type: 'library', id: 'share' })
               }
-              className={`template-builder-library-button${
-                selection?.type === 'library' ? ' is-selected' : ''
-              }`}
+              className={mergeClassNames(
+                'journalit-native-button',
+                `template-builder-library-button${
+                  selection?.type === 'library' ? ' is-selected' : ''
+                }`
+              )}
             >
               <svg
                 width="14"

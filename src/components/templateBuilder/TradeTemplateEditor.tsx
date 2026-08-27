@@ -241,15 +241,24 @@ function mergeSections(
   };
 }
 
-const Toggle: React.FC<{
+interface ToggleProps {
   checked: boolean;
   onChange: (checked: boolean) => void;
   disabled?: boolean;
-}> = ({ checked, onChange, disabled }) => (
+  ariaLabel?: string;
+}
+
+const Toggle: React.FC<ToggleProps> = ({
+  checked,
+  onChange,
+  disabled,
+  ariaLabel,
+}) => (
   <button
     type="button"
     onClick={() => !disabled && onChange(!checked)}
     className={`journalit-button template-toggle${checked ? ' is-checked' : ''}${disabled ? ' is-disabled' : ''}`}
+    aria-label={ariaLabel}
     aria-pressed={checked}
     disabled={disabled}
   >
@@ -260,7 +269,7 @@ const Toggle: React.FC<{
 const SectionRow: React.FC<{
   label: string;
   description?: string;
-  children: React.ReactNode;
+  children: React.ReactElement<ToggleProps>;
 }> = ({ label, description, children }) => (
   <div className="template-section-row">
     <div className="template-section-row__info">
@@ -269,7 +278,9 @@ const SectionRow: React.FC<{
         <div className="template-section-row__description">{description}</div>
       )}
     </div>
-    <div className="template-section-row__control">{children}</div>
+    <div className="template-section-row__control">
+      {React.cloneElement(children, { ariaLabel: label })}
+    </div>
   </div>
 );
 
@@ -909,6 +920,7 @@ export const TradeTemplateEditor: React.FC<TradeTemplateEditorProps> = ({
         <div className="template-editor-topbar-group template-editor-topbar-group--tight">
           {isEditingNameField && canEdit ? (
             <input
+              aria-label={t('templateEditor.field.template-name')}
               ref={nameInputRef}
               type="text"
               value={editingTemplate.name}

@@ -14,7 +14,7 @@ import { Edit } from '../../../components/shared/icons/ObsidianIcon';
 import JournalitPlugin from '../../../main';
 import { Button } from '../../../components/ui/Button';
 import { Input } from '../../../components/core/Input';
-import { useService } from '../../../hooks';
+import { useService } from '../../../hooks/useService';
 import {
   CustomFieldType,
   generateFieldId,

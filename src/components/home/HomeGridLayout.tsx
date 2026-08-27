@@ -390,7 +390,8 @@ const HomeWidgetContent: React.FC<{
   widgetId: string;
   plugin: JournalitPlugin | null;
   tradeCount: number | null;
-}> = ({ widgetId, plugin, tradeCount }) => {
+  isEditing: boolean;
+}> = ({ widgetId, plugin, tradeCount, isEditing }) => {
   if (!plugin) return null;
 
   switch (widgetId) {
@@ -409,7 +410,13 @@ const HomeWidgetContent: React.FC<{
         </DisplayPolicyProvider>
       );
     case 'currentStreak':
-      return <CurrentStreakWidget plugin={plugin} />;
+      return (
+        <CurrentStreakWidget
+          plugin={plugin}
+          instanceId={widgetId}
+          isEditing={isEditing}
+        />
+      );
     case 'bestHours':
       return <BestHoursWidget />;
     case 'setupLeaderboard':
@@ -431,6 +438,15 @@ const HomeWidgetContent: React.FC<{
     default:
       if (widgetId.startsWith('embeddedNote-')) {
         return <EmbeddedNoteWidget plugin={plugin} instanceId={widgetId} />;
+      }
+      if (widgetId.startsWith('currentStreak-')) {
+        return (
+          <CurrentStreakWidget
+            plugin={plugin}
+            instanceId={widgetId}
+            isEditing={isEditing}
+          />
+        );
       }
       if (widgetId.startsWith('goalsProgress-')) {
         return <GoalsProgressWidget plugin={plugin} instanceId={widgetId} />;
@@ -460,52 +476,56 @@ const HomeResponsiveGrid: React.FC<HomeResponsiveGridProps> = ({
   onResizeStop,
   onWidthChange,
   onBreakpointChange,
-}) => (
-  <ResponsiveGridLayout
-    className="layout"
-    width={gridWidth}
-    layouts={layouts}
-    breakpoints={{ lg: 1200, md: 996, sm: 768, xs: 480, xxs: 0 }}
-    cols={GRID_COLS}
-    allowOverlap={false}
-    preventCollision={false}
-    rowHeight={GRID_ROW_HEIGHT}
-    isDraggable={isEditing}
-    isResizable={isEditing}
-    draggableCancel=".journalit-home-widget-remove, .journalit-home-widget-remove *"
-    resizeConfig={{ enabled: isEditing }}
-    dragConfig={{
-      enabled: isEditing,
-      cancel: '.journalit-home-widget-remove, .journalit-home-widget-remove *',
-    }}
-    onLayoutChange={onLayoutChange}
-    onDragStart={onDragStart}
-    onDragStop={onDragStop}
-    onResizeStart={onResizeStart}
-    onResizeStop={onResizeStop}
-    onWidthChange={onWidthChange}
-    onBreakpointChange={onBreakpointChange}
-    compactType={isEditing ? null : 'vertical'}
-    containerPadding={[0, 0]}
-    margin={[GRID_MARGIN, GRID_MARGIN]}
-  >
-    {widgets.map((widgetId) => (
-      <div key={widgetId}>
-        <GridWidgetItem
-          widgetId={widgetId}
-          isEditing={isEditing}
-          plugin={plugin}
-        >
-          <HomeWidgetContent
+}) => {
+  return (
+    <ResponsiveGridLayout
+      className="layout"
+      width={gridWidth}
+      layouts={layouts}
+      breakpoints={{ lg: 1200, md: 996, sm: 768, xs: 480, xxs: 0 }}
+      cols={GRID_COLS}
+      allowOverlap={false}
+      preventCollision={false}
+      rowHeight={GRID_ROW_HEIGHT}
+      isDraggable={isEditing}
+      isResizable={isEditing}
+      draggableCancel=".journalit-home-widget-remove, .journalit-home-widget-remove *"
+      resizeConfig={{ enabled: isEditing }}
+      dragConfig={{
+        enabled: isEditing,
+        cancel:
+          '.journalit-home-widget-remove, .journalit-home-widget-remove *',
+      }}
+      onLayoutChange={onLayoutChange}
+      onDragStart={onDragStart}
+      onDragStop={onDragStop}
+      onResizeStart={onResizeStart}
+      onResizeStop={onResizeStop}
+      onWidthChange={onWidthChange}
+      onBreakpointChange={onBreakpointChange}
+      compactType={isEditing ? null : 'vertical'}
+      containerPadding={[0, 0]}
+      margin={[GRID_MARGIN, GRID_MARGIN]}
+    >
+      {widgets.map((widgetId) => (
+        <div key={widgetId}>
+          <GridWidgetItem
             widgetId={widgetId}
+            isEditing={isEditing}
             plugin={plugin}
-            tradeCount={tradeCount}
-          />
-        </GridWidgetItem>
-      </div>
-    ))}
-  </ResponsiveGridLayout>
-);
+          >
+            <HomeWidgetContent
+              widgetId={widgetId}
+              plugin={plugin}
+              tradeCount={tradeCount}
+              isEditing={isEditing}
+            />
+          </GridWidgetItem>
+        </div>
+      ))}
+    </ResponsiveGridLayout>
+  );
+};
 
 HomeResponsiveGrid.displayName = 'HomeResponsiveGrid';
 
@@ -527,9 +547,10 @@ const computeLayoutsFromSettings = (
   try {
     const activeLayout = getActiveLayout(plugin);
 
+    const widgetsSet = new Set(widgets);
     const filteredLg = (activeLayout.lg || []).reduce<Layout[]>(
       (acc, item: Layout) => {
-        if (widgets.includes(item.i)) {
+        if (widgetsSet.has(item.i)) {
           acc.push(validateLayoutItem(item));
         }
         return acc;
@@ -537,9 +558,10 @@ const computeLayoutsFromSettings = (
       []
     );
 
+    const widgetsSet2 = new Set(widgets);
     const filteredMd = (activeLayout.md || []).reduce<Layout[]>(
       (acc, item: Layout) => {
-        if (widgets.includes(item.i)) {
+        if (widgetsSet2.has(item.i)) {
           acc.push(validateLayoutItem(item));
         }
         return acc;
@@ -547,9 +569,10 @@ const computeLayoutsFromSettings = (
       []
     );
 
+    const widgetsSet3 = new Set(widgets);
     const filteredSm = (activeLayout.sm || []).reduce<Layout[]>(
       (acc, item: Layout) => {
-        if (widgets.includes(item.i)) {
+        if (widgetsSet3.has(item.i)) {
           acc.push(validateLayoutItem(item));
         }
         return acc;
@@ -557,9 +580,10 @@ const computeLayoutsFromSettings = (
       []
     );
 
+    const widgetsSet4 = new Set(widgets);
     const filteredXs = (activeLayout.xs || []).reduce<Layout[]>(
       (acc, item: Layout) => {
-        if (widgets.includes(item.i)) {
+        if (widgetsSet4.has(item.i)) {
           acc.push(validateLayoutItem(item));
         }
         return acc;
@@ -567,9 +591,10 @@ const computeLayoutsFromSettings = (
       []
     );
 
+    const widgetsSet5 = new Set(widgets);
     const filteredXxs = (activeLayout.xxs || []).reduce<Layout[]>(
       (acc, item: Layout) => {
-        if (widgets.includes(item.i)) {
+        if (widgetsSet5.has(item.i)) {
           acc.push(validateLayoutItem(item));
         }
         return acc;
@@ -764,12 +789,14 @@ function useHomeGridLayoutPersistence({
 
           const bpLayout = newLayout[bp];
           const bpWidgetIds = bpLayout.map((item: Layout) => item.i);
+          const currentWidgetIdsSet = new Set(currentWidgetIds);
           newLayout[bp] = bpLayout.filter((item: Layout) =>
-            currentWidgetIds.includes(item.i)
+            currentWidgetIdsSet.has(item.i)
           );
 
+          const bpWidgetIdsSet = new Set(bpWidgetIds);
           currentWidgetIds.forEach((widgetId) => {
-            if (bpWidgetIds.includes(widgetId)) return;
+            if (bpWidgetIdsSet.has(widgetId)) return;
 
             const currentItem = sanitizedCurrentLayout.find(
               (item) => item.i === widgetId
@@ -931,11 +958,7 @@ const HomeGridLayoutBase: React.FC<HomeGridLayoutProps> = ({
     [locallyRemovedWidgets, widgets]
   );
   const visibleWidgetsKey = visibleWidgets.join('\u0000');
-  const {
-    width: gridWidth,
-    containerRef,
-    mounted: gridWidthMeasured,
-  } = useContainerWidth({
+  const { width: gridWidth, containerRef } = useContainerWidth({
     initialWidth: 0,
   });
 
@@ -1011,8 +1034,9 @@ const HomeGridLayoutBase: React.FC<HomeGridLayoutProps> = ({
   
   useEffect(() => {
     setLocallyRemovedWidgets((current) => {
+      const widgetsSet6 = new Set(widgets);
       const next = new Set(
-        [...current].filter((widgetId) => widgets.includes(widgetId))
+        [...current].filter((widgetId) => widgetsSet6.has(widgetId))
       );
       return next.size === current.size ? current : next;
     });
@@ -1057,7 +1081,7 @@ const HomeGridLayoutBase: React.FC<HomeGridLayoutProps> = ({
       className={`journalit-home-grid-layout ${isEditing ? 'is-editing' : ''} ${isGridResizing ? 'is-resizing' : ''}`}
     >
       <GridLayoutErrorBoundary isEditing={isEditing}>
-        {gridWidthMeasured && gridWidth > 0 && (
+        {gridWidth > 0 && (
           <HomeResponsiveGrid
             isEditing={isEditing}
             widgets={visibleWidgets}

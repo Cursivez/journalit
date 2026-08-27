@@ -1,88 +1,110 @@
 import esbuild from 'esbuild';
+import process from 'process';
 import { builtinModules } from 'node:module';
-import { readFileSync, writeFileSync } from 'node:fs';
+import { readFileSync, realpathSync, writeFileSync } from 'node:fs';
+import { pathToFileURL } from 'node:url';
 
 
 const banner = `
 `;
 
 
-const mode = process.argv[2] || 'dev';
-const prod = mode === 'release';
-const preview = mode === 'preview';
-const entryPoint = prod ? 'src/main.ts' : 'src/main-dev.ts';
-const previewReactProd =
-  preview && process.env.JOURNALIT_PREVIEW_REACT_PROD !== '0';
-const previewMinify = preview && process.env.JOURNALIT_PREVIEW_MINIFY !== '0';
+export function createBuildOptions({
+  outdir = '.',
+  metafile = false,
+  absWorkingDir = process.cwd(),
+} = {}) {
+  const prod = true;
+  const preview = false;
+  const entryPoint = 'src/main.ts';
+  const previewReactProd = false;
+  const previewMinify = false;
 
-
-const context = await esbuild.context({
-  banner: {
-    js: banner,
-  },
-  
-  entryPoints: [entryPoint],
-  
-  bundle: true,
-  
-  external: [
-    'obsidian',
-    'electron',
-    '@codemirror/autocomplete',
-    '@codemirror/collab',
-    '@codemirror/commands',
-    '@codemirror/language',
-    '@codemirror/lint',
-    '@codemirror/search',
-    '@codemirror/state',
-    '@codemirror/view',
-    ...builtinModules,
-  ],
-  
-  format: 'cjs',
-  
-  target: 'es2018',
-  
-  logLevel: 'info',
-  
-  sourcemap: false,
-  
-  define: {
-    'process.env.NODE_ENV': JSON.stringify(
-      prod || previewReactProd ? 'production' : 'development'
-    ),
-  },
-  
-  treeShaking: true,
-  
-  outdir: '.',
-  
-  tsconfigRaw: {
-    compilerOptions: {
-      jsx: 'react-jsx',
-      jsxImportSource: 'react',
-      baseUrl: '.',
-      paths: {
-        'src/*': ['src/*'],
+  return {
+    absWorkingDir,
+    banner: {
+      
+      
+      
+      
+      js: prod ? `${banner}\n` : banner,
+    },
+    
+    entryPoints: [entryPoint],
+    
+    bundle: true,
+    
+    external: [
+      'obsidian',
+      'electron',
+      '@codemirror/autocomplete',
+      '@codemirror/collab',
+      '@codemirror/commands',
+      '@codemirror/language',
+      '@codemirror/lint',
+      '@codemirror/search',
+      '@codemirror/state',
+      '@codemirror/view',
+      
+      
+      
+      
+      '@lezer/common',
+      '@lezer/highlight',
+      ...builtinModules,
+    ],
+    
+    format: 'cjs',
+    
+    
+    
+    
+    
+    target: 'es2020',
+    
+    charset: 'utf8',
+    
+    logLevel: 'info',
+    
+    sourcemap: false,
+    
+    define: {
+      'process.env.NODE_ENV': JSON.stringify('production'),
+    },
+    
+    treeShaking: true,
+    
+    outdir,
+    metafile,
+    
+    tsconfigRaw: {
+      compilerOptions: {
+        jsx: 'react-jsx',
+        jsxImportSource: 'react',
+        baseUrl: '.',
+        paths: {
+          'src/*': ['src/*'],
+        },
       },
     },
-  },
-  entryNames: 'main',
-  
-  jsx: 'automatic',
-  jsxDev: false,
-  jsxImportSource: 'react',
-  loader: {
-    '.tsx': 'tsx',
-    '.ts': 'tsx',
-    '.css': 'css',
-  },
-  
-  minify: true,
-});
+    entryNames: 'main',
+    
+    jsx: 'automatic',
+    jsxDev: false,
+    jsxImportSource: 'react',
+    loader: {
+      '.tsx': 'tsx',
+      '.ts': 'tsx',
+      '.css': 'css',
+    },
+    
+    minify: true,
+  };
+}
 
-function applyObsidianReviewBundleNormalizations() {
-  const outputPath = 'main.js';
+export function applyObsidianReviewBundleNormalizations(
+  outputPath = 'main.js'
+) {
   const source = readFileSync(outputPath, 'utf8');
 
   const replaceExpected = (content, search, replacement, expectedCount) => {
@@ -110,13 +132,28 @@ function applyObsidianReviewBundleNormalizations() {
   }
 }
 
-
-if (prod || preview) {
+async function main() {
   
-  await context.rebuild();
-  if (prod) applyObsidianReviewBundleNormalizations();
-  process.exit(0);
-} else {
+  const prod = true;
+  const preview = false;
+
+  
+  const context = await esbuild.context(createBuildOptions());
+
+  
+  if (prod || preview) {
+    
+    await context.rebuild();
+    if (prod) applyObsidianReviewBundleNormalizations();
+    process.exit(0);
+  }
+
   
   await context.watch();
 }
+
+const isMainModule =
+  process.argv[1] !== undefined &&
+  pathToFileURL(realpathSync(process.argv[1])).href === import.meta.url;
+
+if (isMainModule) await main();

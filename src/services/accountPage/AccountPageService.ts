@@ -8,6 +8,7 @@ import {
 } from '../base/CustomDataService';
 import JournalitPlugin from '../../main';
 import { BackendSecretStorage } from '../backend/BackendSecretStorage';
+import { extractCanonicalProjectionPnlFields } from '../trade/core/CanonicalProjectionFields';
 import {
   AccountCatalogEntry,
   AccountPageData,
@@ -98,8 +99,9 @@ import { FolderPathService } from '../core/FolderPathService';
 import { EnhancedTradeData } from '../../types/EnhancedTradeData';
 import { calculateEffectiveRMultiple } from '../../utils/formatting';
 import { calculateCommissionCost } from '../../utils/pnlUtils';
-import { eventBus, Unsubscribe } from '../events';
-import { ExchangeRateService } from '../exchangeRate';
+import { eventBus } from '../events/EventBus';
+import { Unsubscribe } from '../events/types';
+import { ExchangeRateService } from '../exchangeRate/ExchangeRateService';
 import {
   CurrencyCode,
   parseCuratedCurrencyCode,
@@ -576,9 +578,10 @@ export class AccountPageService extends CustomDataService {
       modified = true;
     }
 
+    const nextAccountValuesSet = new Set(nextAccountValues);
     const removedAccountValues = [
       ...accountValuesBefore.filter(
-        (value) => !nextAccountValues.includes(value)
+        (value) => !nextAccountValuesSet.has(value)
       ),
     ];
 
@@ -818,6 +821,7 @@ export class AccountPageService extends CustomDataService {
       exitPrice: normalizedExecution.exitPrice ?? 0,
       positionSize: normalizedExecution.positionSize ?? 0,
       pnl: typeof trade.pnl === 'number' ? trade.pnl : Number(trade.pnl) || 0,
+      ...extractCanonicalProjectionPnlFields(trade),
       commission:
         typeof trade.commission === 'number'
           ? trade.commission
@@ -966,7 +970,9 @@ export class AccountPageService extends CustomDataService {
     return {
       ...copiedTrade,
       ...scaleCopiedTradeExecutionFields(copiedTrade, multiplier),
-      pnl: copiedPnL,
+      pnl: copiedPnL ?? 0,
+      _originalPnlWasNull:
+        copiedPnL === null ? true : copiedTrade._originalPnlWasNull,
       directPnL:
         copiedTrade.directPnL === undefined
           ? undefined
@@ -977,9 +983,11 @@ export class AccountPageService extends CustomDataService {
       })),
       riskAmount: copiedRiskAmount,
       rMultiple:
-        copiedRiskAmount && copiedRiskAmount !== 0
+        copiedPnL !== null && copiedRiskAmount && copiedRiskAmount !== 0
           ? copiedPnL / copiedRiskAmount
-          : copiedTrade.rMultiple,
+          : copiedPnL === null
+            ? undefined
+            : copiedTrade.rMultiple,
       commission: commission ?? 0,
       commissionType: 'fixed',
       fees: 0,

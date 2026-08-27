@@ -13,7 +13,7 @@ import {
   parseCuratedCurrencyCode,
 } from '../../../utils/currencyConfig';
 import { getTradingDay } from '../../../utils/tradingDayUtils';
-import { usePlugin } from '../../../hooks';
+import { usePlugin } from '../../../hooks/usePlugin';
 import { useDisplayFormatter } from '../../../hooks/useDisplayPolicy';
 import {
   generateNiceAxis,

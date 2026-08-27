@@ -27,7 +27,7 @@ import {
   TrendingUp,
 } from '../shared/icons/ObsidianIcon';
 import { NoteFilePicker } from '../shared/NoteFilePicker';
-import { PercentValue, RMultipleValue } from '../shared/display';
+import { PercentValue, RMultipleValue } from '../shared/display/DisplayValue';
 import type {
   PnLChartDataPoint,
   TradesChartDataPoint,
@@ -37,18 +37,16 @@ import type { Trade as DashboardTrade } from '../dashboard/utils/dataUtils';
 import { formatDateDisplay } from '../../utils/dateUtils';
 import type { AnalyticsDateBasis } from '../../settings/types';
 import { inferStoredTradeType } from '../../utils/tradeTypeRouting';
-import {
-  getEffectivePnL,
-  getResolvedWeightedAverageExitPrice,
-  getWeightedAverageEntryPrice,
-  isPnlContributingTrade,
-} from '../../utils/tradeStatusUtils';
+import { isPnlContributingTrade } from '../../utils/tradeStatusUtils';
 import { getTradeAnalyticsDate } from '../../utils/tradeAnalyticsDate';
 import { calculateEffectiveRMultiple } from '../../utils/formatting';
-import { calculateDirectionalPriceDiff } from '../../utils/pnlCalculation';
 import { calculateWinRateExcludingBreakeven } from '../../utils/breakEvenRange';
 import { getTradeDirectionDisplayLabel } from '../../utils/tradeDirectionDisplay';
 import { useDisplayFormatter } from '../../hooks/useDisplayPolicy';
+import {
+  calculateSetupTradePnl,
+  toSetupTradePnlInput,
+} from '../../services/setup/setupTradePnl';
 import type {
   MetricKey,
   SetupAttentionItem,
@@ -76,7 +74,6 @@ import type {
   SetupSparklineModel,
   SetupTradeIndex,
   SetupViewModel,
-  TradePnlCompareInput,
   TradeRecordForSetups,
 } from './setupsViewTypes';
 
@@ -1326,9 +1323,9 @@ function toSetupLinkedTrade(
 ): SetupLinkedTrade {
   const entryTime = stringifyDateLike(trade.entryTime);
   const exitTime = stringifyDateLike(trade.exitTime) || entryTime;
-  const pnlInput = toTradePnlContributionInput(trade, exitTime);
+  const pnlInput = toSetupTradePnlInput(trade, exitTime);
   const pnlContributing = isPnlContributingTrade(pnlInput);
-  const pnl = pnlContributing ? calculateTradePnlForCompare(pnlInput) : 0;
+  const pnl = pnlContributing ? calculateSetupTradePnl(pnlInput) : 0;
   const analyticsDate = getTradeAnalyticsDate(pnlInput, analyticsDateBasis);
   return {
     path: typeof trade.path === 'string' ? trade.path : '',
@@ -1369,86 +1366,6 @@ function getSetupTradeAccountLabel(account: unknown): string | null {
   }
   const firstAccount = getStringArray(account)[0]?.trim();
   return firstAccount || null;
-}
-
-function toTradePnlContributionInput(
-  trade: TradeRecordForSetups,
-  exitTime: string
-): TradePnlCompareInput {
-  return {
-    tradeStatus: trade.tradeStatus,
-    exitTime: exitTime || null,
-    exitPrice: getOptionalNumber(trade.exitPrice),
-    pnl: typeof trade.pnl === 'number' ? trade.pnl : null,
-    _originalPnlWasNull: trade._originalPnlWasNull === true,
-    useDirectPnLInput: trade.useDirectPnLInput,
-    directPnL: typeof trade.directPnL === 'number' ? trade.directPnL : null,
-    dividends: trade.dividends,
-    commission: trade.commission,
-    swap: trade.swap,
-    fees: trade.fees,
-    rebate: trade.rebate,
-    entries: getTradeExecutions(trade.entries),
-    exits: getTradeExecutions(trade.exits),
-    entryPrice: getOptionalNumber(trade.entryPrice),
-    positionSize: getOptionalNumber(trade.positionSize) ?? 0,
-    direction:
-      typeof trade.direction === 'string' ? trade.direction : undefined,
-    assetType:
-      typeof trade.assetType === 'string' ? trade.assetType : undefined,
-    optionType:
-      typeof trade.optionType === 'string' ? trade.optionType : undefined,
-    hasExplicitExitPrice: trade.hasExplicitExitPrice === true,
-  };
-}
-
-function calculateTradePnlForCompare(trade: TradePnlCompareInput): number {
-  const hasStoredOrDirectPnL =
-    (trade.pnl !== undefined &&
-      trade.pnl !== null &&
-      Number.isFinite(trade.pnl)) ||
-    (trade.useDirectPnLInput === true &&
-      trade.directPnL !== undefined &&
-      trade.directPnL !== null);
-
-  if (hasStoredOrDirectPnL) {
-    return getEffectivePnL(trade);
-  }
-
-  const entryPrice = getWeightedAverageEntryPrice(trade);
-  const exitPrice = getResolvedWeightedAverageExitPrice(trade);
-  const priceDiff = calculateDirectionalPriceDiff(
-    {
-      assetType: trade.assetType,
-      direction: trade.direction || 'long',
-    },
-    entryPrice,
-    exitPrice
-  );
-
-  return priceDiff === null ? 0 : priceDiff * trade.positionSize;
-}
-
-function getTradeExecutions(value: unknown): TradePnlCompareInput['entries'] {
-  if (!Array.isArray(value)) return undefined;
-  return value.flatMap((execution) =>
-    isRecord(execution)
-      ? [
-          {
-            time:
-              execution.time instanceof Date ||
-              typeof execution.time === 'string'
-                ? execution.time
-                : null,
-            price: getOptionalNumber(execution.price),
-            size: getOptionalNumber(execution.size),
-            ...(typeof execution.hasExplicitPrice === 'boolean' && {
-              hasExplicitPrice: execution.hasExplicitPrice,
-            }),
-          },
-        ]
-      : []
-  );
 }
 
 function getOptionalNumber(value: unknown): number | null {

@@ -16,16 +16,61 @@ export const TradeImportCompletionSummary: React.FC<
 > = ({ plugin, result }) => {
   const { formatValue } = useDisplayFormatter();
   const title = result.success
-    ? t('csv.results.complete')
+    ? t('csv.results.history-ready')
     : result.failedCount > 0
       ? t('csv.results.failed')
       : t('csv.results.pending-title');
+  let firstImportedAt = Number.POSITIVE_INFINITY;
+  let lastImportedAt = Number.NEGATIVE_INFINITY;
+  for (const trade of result.importedTrades) {
+    const importedAt = Date.parse(trade.entryTime);
+    if (!Number.isFinite(importedAt)) continue;
+    firstImportedAt = Math.min(firstImportedAt, importedAt);
+    lastImportedAt = Math.max(lastImportedAt, importedAt);
+  }
+  const hasImportedDateRange =
+    Number.isFinite(firstImportedAt) && Number.isFinite(lastImportedAt);
+  const firstImportedDate = hasImportedDateRange
+    ? formatDateDisplay(
+        new Date(firstImportedAt),
+        plugin.settings.trade.dateFormat
+      )
+    : null;
+  const lastImportedDate = hasImportedDateRange
+    ? formatDateDisplay(
+        new Date(lastImportedAt),
+        plugin.settings.trade.dateFormat
+      )
+    : null;
+  const importedDateRange =
+    firstImportedDate && lastImportedDate
+      ? firstImportedDate === lastImportedDate
+        ? firstImportedDate
+        : t('csv.results.history-date-range', {
+            start: firstImportedDate,
+            end: lastImportedDate,
+          })
+      : null;
+  const importedSymbolCount = new Set(
+    result.importedTrades.map((trade) => trade.symbol)
+  ).size;
 
   return (
     <div className="journalit-trade-import-completion">
       <div role="status" aria-live="polite" aria-atomic="true">
         <h3>{title}</h3>
       </div>
+      {result.writtenCount > 0 && importedDateRange && (
+        <div className="journalit-trade-import-history-summary">
+          <strong>
+            {tPlural('csv.results.history-trades', result.writtenCount)}
+          </strong>
+          <span>{importedDateRange}</span>
+          <span>
+            {tPlural('csv.results.history-symbols', importedSymbolCount)}
+          </span>
+        </div>
+      )}
       {result.writtenCount > 0 && (
         <div className="result-item result-success">
           <BadgeCheck className="result-icon" size={20} />
@@ -130,6 +175,11 @@ export const TradeImportCompletionSummary: React.FC<
             ))}
           </div>
         </div>
+      )}
+      {result.writtenCount > 0 && (
+        <p className="journalit-trade-import-enrichment-note">
+          {t('csv.results.enrichment-note')}
+        </p>
       )}
     </div>
   );

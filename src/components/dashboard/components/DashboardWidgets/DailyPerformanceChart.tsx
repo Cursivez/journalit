@@ -12,7 +12,7 @@ import {
   getTradeRealizedPnlEvents,
 } from '../../../../utils/tradeAnalyticsDate';
 import { BaseWidget, BaseWidgetProps } from './BaseWidget';
-import { SharedDailyPerformanceChart } from '../../../charts';
+import { SharedDailyPerformanceChart } from '../../../charts/SharedDailyPerformanceChart';
 import {
   getEffectivePnL,
   isPnlContributingTrade,

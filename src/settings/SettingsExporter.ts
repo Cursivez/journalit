@@ -6,7 +6,7 @@ import JournalitPlugin from '../main';
 import { JournalitSettings, DEFAULT_SETTINGS } from './types';
 import { t } from '../lang/helpers';
 import { BackendSecretStorage } from '../services/backend/BackendSecretStorage';
-import { eventBus } from '../services/events';
+import { eventBus } from '../services/events/EventBus';
 import {
   showActionConfirmationModal,
   showConfirmationModal,

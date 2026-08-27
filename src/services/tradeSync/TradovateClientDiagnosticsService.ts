@@ -1,33 +1,40 @@
 import type JournalitPlugin from '../../main';
 import { ApiError } from '../../types/errors';
-import { generateUUID } from '../../utils/uuid';
 import { ApiClient } from '../backend/ApiClient';
-import { BackendTradeProjectionService } from './BackendTradeProjectionService';
+import { TradovateBrokerSyncClient } from './TradovateBrokerSyncClient';
 import { getTradeProjectionOwnerId } from './TradeProjectionOwnership';
+import {
+  createBrokerConnectionOperation,
+  createBrokerProjectionOperation,
+} from './BrokerClientOperations';
 import type {
-  TradovateClientDiagnosticErrorCode,
-  TradovateClientDiagnosticEvent,
-  TradovateClientDiagnosticEventType,
+  BrokerClientDiagnosticErrorCode,
+  BrokerClientDiagnosticEvent,
+  BrokerClientDiagnosticEventInput,
+  BrokerClientDiagnosticEventType,
   TradovateClientDiagnosticPayload,
-  TradovateClientOperationContext,
+  BrokerClientOperationContext,
+  BrokerSyncProviderId,
 } from './types';
 
 const MAX_QUEUED_OPERATIONS = 25;
 const MAX_EVENT_COUNT = 100_000;
-const DEVICE_STORAGE_KEY = 'journalit.tradovateClientDeviceId';
+
+const FLUSH_DEBOUNCE_MS = 2000;
+
+const RATE_LIMIT_COOLDOWN_MS = 60_000;
 const UUID_PATTERN =
   /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const DIAGNOSTICS_PROVIDER: BrokerSyncProviderId = 'tradovate';
 const workByPlugin = new WeakMap<JournalitPlugin, Promise<void>>();
+const scheduledFlushByPlugin = new WeakMap<JournalitPlugin, number>();
+const deliveryBlockedUntilByPlugin = new WeakMap<JournalitPlugin, number>();
+const disposedPlugins = new WeakSet<JournalitPlugin>();
+const registeredFlushLifecycle = new WeakSet<JournalitPlugin>();
 
 type PersistedBatch = TradovateClientDiagnosticPayload & {
   ownerUserId: string;
 };
-
-interface DiagnosticEventInput {
-  eventType: TradovateClientDiagnosticEventType;
-  errorCode?: TradovateClientDiagnosticErrorCode;
-  count?: number;
-}
 
 function asRecord(value: unknown): Record<string, unknown> | null {
   return value !== null && typeof value === 'object' && !Array.isArray(value)
@@ -43,7 +50,7 @@ function nonEmptyString(value: unknown, maximumLength: number): string | null {
     : null;
 }
 
-function eventType(value: unknown): TradovateClientDiagnosticEventType | null {
+function eventType(value: unknown): BrokerClientDiagnosticEventType | null {
   switch (value) {
     case 'sync_requested':
     case 'job_poll_started':
@@ -60,7 +67,7 @@ function eventType(value: unknown): TradovateClientDiagnosticEventType | null {
 
 function errorCode(
   value: unknown
-): TradovateClientDiagnosticErrorCode | null | undefined {
+): BrokerClientDiagnosticErrorCode | null | undefined {
   if (value === undefined) return undefined;
   switch (value) {
     case 'broker_job_failed':
@@ -84,9 +91,7 @@ function errorCode(
   }
 }
 
-function isVaultScopedEvent(
-  value: TradovateClientDiagnosticEventType
-): boolean {
+function isVaultScopedEvent(value: BrokerClientDiagnosticEventType): boolean {
   return (
     value === 'projection_inventory_loaded' ||
     value === 'projection_write_failed' ||
@@ -94,7 +99,7 @@ function isVaultScopedEvent(
   );
 }
 
-function normalizeEvent(value: unknown): TradovateClientDiagnosticEvent | null {
+function normalizeEvent(value: unknown): BrokerClientDiagnosticEvent | null {
   const candidate = asRecord(value);
   const normalizedEventType = eventType(candidate?.eventType);
   const occurredAtText =
@@ -217,18 +222,6 @@ export function normalizeTradovateClientDiagnosticQueue(
     .slice(-MAX_QUEUED_OPERATIONS);
 }
 
-function deviceIdentifier(plugin: JournalitPlugin): string {
-  try {
-    const stored: unknown = plugin.app.loadLocalStorage(DEVICE_STORAGE_KEY);
-    if (typeof stored === 'string' && UUID_PATTERN.test(stored)) return stored;
-    const created = generateUUID();
-    plugin.app.saveLocalStorage(DEVICE_STORAGE_KEY, created);
-    return created;
-  } catch {
-    return generateUUID();
-  }
-}
-
 function payload(batch: PersistedBatch): TradovateClientDiagnosticPayload {
   return {
     schemaVersion: batch.schemaVersion,
@@ -243,8 +236,32 @@ function payload(batch: PersistedBatch): TradovateClientDiagnosticPayload {
   };
 }
 
-function eventKey(event: TradovateClientDiagnosticEvent): string {
+function eventKey(event: BrokerClientDiagnosticEvent): string {
   return `${event.eventType}:${event.errorCode ?? ''}`;
+}
+
+
+function cancelScheduledFlush(plugin: JournalitPlugin): void {
+  const scheduled = scheduledFlushByPlugin.get(plugin);
+  if (scheduled !== undefined) {
+    window.clearTimeout(scheduled);
+    scheduledFlushByPlugin.delete(plugin);
+  }
+}
+
+function isPluginDisposed(plugin: JournalitPlugin): boolean {
+  return disposedPlugins.has(plugin);
+}
+
+function disposePluginDiagnostics(plugin: JournalitPlugin): void {
+  cancelScheduledFlush(plugin);
+  disposedPlugins.add(plugin);
+}
+
+function ensureFlushLifecycle(plugin: JournalitPlugin): void {
+  if (registeredFlushLifecycle.has(plugin)) return;
+  registeredFlushLifecycle.add(plugin);
+  plugin.register(() => disposePluginDiagnostics(plugin));
 }
 
 async function serialized(
@@ -263,47 +280,53 @@ async function serialized(
 export class TradovateClientDiagnosticsService {
   constructor(
     private readonly plugin: JournalitPlugin,
-    private readonly backend = new BackendTradeProjectionService()
-  ) {}
+    private readonly backend = new TradovateBrokerSyncClient()
+  ) {
+    ensureFlushLifecycle(plugin);
+  }
+
+  
+  dispose(): void {
+    disposePluginDiagnostics(this.plugin);
+  }
 
   async createConnectionOperation(
     vaultId: string,
-    connectionId: string
-  ): Promise<TradovateClientOperationContext> {
-    const operation = {
-      clientOperationId: generateUUID(),
-      ownerUserId: getTradeProjectionOwnerId(this.plugin),
-      pluginVersion: this.plugin.manifest.version,
+    connectionId: string,
+    provider: BrokerSyncProviderId
+  ): Promise<BrokerClientOperationContext> {
+    const operation = createBrokerConnectionOperation(
+      this.plugin,
       vaultId,
-      deviceId: deviceIdentifier(this.plugin),
-      scope: 'connection',
       connectionId,
-    } satisfies TradovateClientOperationContext;
-    void this.flush();
+      provider
+    );
+    this.scheduleFlush();
     return operation;
   }
 
   async createProjectionOperation(
     vaultId: string,
-    syncRunId = generateUUID()
-  ): Promise<TradovateClientOperationContext> {
-    const operation = {
-      clientOperationId: generateUUID(),
-      ownerUserId: getTradeProjectionOwnerId(this.plugin),
-      pluginVersion: this.plugin.manifest.version,
+    provider: BrokerSyncProviderId,
+    syncRunId?: string
+  ): Promise<BrokerClientOperationContext> {
+    const operation = createBrokerProjectionOperation(
+      this.plugin,
       vaultId,
-      deviceId: deviceIdentifier(this.plugin),
-      scope: 'projection',
-      syncRunId,
-    } satisfies TradovateClientOperationContext;
-    void this.flush();
+      provider,
+      syncRunId
+    );
+    this.scheduleFlush();
     return operation;
   }
 
+  
   async record(
-    operation: TradovateClientOperationContext,
-    event: DiagnosticEventInput
+    operation: BrokerClientOperationContext,
+    event: BrokerClientDiagnosticEventInput
   ): Promise<void> {
+    if (isPluginDisposed(this.plugin)) return;
+    if (operation.provider !== DIAGNOSTICS_PROVIDER) return;
     if (
       isVaultScopedEvent(event.eventType) !==
       (operation.scope === 'projection')
@@ -367,10 +390,23 @@ export class TradovateClientDiagnosticsService {
         // intentional
       }
     });
-    void this.flush();
+    this.scheduleFlush();
+  }
+
+  
+  private scheduleFlush(): void {
+    if (isPluginDisposed(this.plugin)) return;
+    if (scheduledFlushByPlugin.has(this.plugin)) return;
+    const timer = window.setTimeout(() => {
+      scheduledFlushByPlugin.delete(this.plugin);
+      void this.flush();
+    }, FLUSH_DEBOUNCE_MS);
+    scheduledFlushByPlugin.set(this.plugin, timer);
   }
 
   async flush(): Promise<void> {
+    if (isPluginDisposed(this.plugin)) return;
+    cancelScheduledFlush(this.plugin);
     await serialized(this.plugin, async () => {
       try {
         const ownerUserId = getTradeProjectionOwnerId(this.plugin);
@@ -385,6 +421,10 @@ export class TradovateClientDiagnosticsService {
         const ownerAuthSessionVersion = ApiClient.getAuthSessionVersion();
         if (!ownerUserId || !ApiClient.getAuthToken()) return;
         const retained: PersistedBatch[] = [];
+        
+        
+        const blockedUntil = deliveryBlockedUntilByPlugin.get(this.plugin) ?? 0;
+        if (Date.now() < blockedUntil) return;
         let deliveryAvailable = true;
         await queue.reduce(
           (delivery, batch) =>
@@ -405,6 +445,12 @@ export class TradovateClientDiagnosticsService {
               } catch (error) {
                 if (error instanceof ApiError && error.statusCode === 400) {
                   return;
+                }
+                if (error instanceof ApiError && error.statusCode === 429) {
+                  deliveryBlockedUntilByPlugin.set(
+                    this.plugin,
+                    Date.now() + RATE_LIMIT_COOLDOWN_MS
+                  );
                 }
                 retained.push(batch);
                 deliveryAvailable = false;

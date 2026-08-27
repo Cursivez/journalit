@@ -11,7 +11,7 @@ import {
 import type { SettingControl, SettingDefinitionItem } from 'obsidian';
 import React, { useEffect, useState } from 'react';
 import { createRoot, Root } from 'react-dom/client';
-import { eventBus } from '../services/events';
+import { eventBus } from '../services/events/EventBus';
 import { t } from '../lang/helpers';
 import JournalitPlugin from '../main';
 import { getBaseCurrencyOptions } from '../utils/currencyConfig';
@@ -28,11 +28,15 @@ import {
   GalleryFoldersSettingsControl,
   HomeBackgroundControls,
   NavigationSidebarOpenControl,
+  CalendarSidebarOpenControl,
 } from './components/general/GeneralTab';
+import { EconomicCalendarSettingsSection } from './components/economicCalendar/EconomicCalendarSettingsSection';
 import { JournalSettingsTab } from './components/journal/JournalSettingsTab';
 import { SyncSettingsTab } from './components/sync/SyncSettingsTab';
+import { AuthTab } from './components/accounts/AuthTab';
 import { openExternalUrl } from '../utils/externalLinks';
 import { JOURNALIT_SETTINGS_RESOURCES } from './settingsResources';
+import { mergeClassNames } from '../utils/classNames';
 
 interface NativeSettingDefinitionPage {
   type: 'page';
@@ -432,6 +436,23 @@ interface SettingsTabContentProps {
 }
 
 
+const tabLabelKeys: Array<{
+  id: SettingsTabId;
+  labelKey: Parameters<typeof t>[0];
+}> = [
+  { id: SETTINGS_TAB_IDS.GENERAL, labelKey: 'settings.tab.general' },
+  { id: SETTINGS_TAB_IDS.SYNC, labelKey: 'settings.tab.sync' },
+  { id: SETTINGS_TAB_IDS.TRADING, labelKey: 'settings.tab.trading' },
+  {
+    id: SETTINGS_TAB_IDS.JOURNAL,
+    labelKey: 'settings.tab.journal-setup',
+  },
+  { id: SETTINGS_TAB_IDS.ADVANCED, labelKey: 'form.tab.advanced' },
+];
+
+const getTabs = () =>
+  tabLabelKeys.map(({ id, labelKey }) => ({ id, label: t(labelKey) }));
+
 const SettingsTabContent: React.FC<SettingsTabContentProps> = React.memo(
   ({
     plugin,
@@ -439,6 +460,7 @@ const SettingsTabContent: React.FC<SettingsTabContentProps> = React.memo(
     showTabs = true,
     isNativeSubPage = false,
   }: SettingsTabContentProps) => {
+    const tabs = getTabs();
     const [tabState, setTabState] = useState(() => ({
       initialTab,
       activeTab: initialTab,
@@ -478,18 +500,6 @@ const SettingsTabContent: React.FC<SettingsTabContentProps> = React.memo(
       };
     }, []);
 
-    
-    const tabs = [
-      { id: SETTINGS_TAB_IDS.GENERAL, label: t('settings.tab.general') },
-      { id: SETTINGS_TAB_IDS.TRADING, label: t('settings.tab.trading') },
-      {
-        id: SETTINGS_TAB_IDS.JOURNAL,
-        label: t('settings.tab.journal-setup'),
-      },
-      { id: SETTINGS_TAB_IDS.SYNC, label: t('settings.tab.sync') },
-      { id: SETTINGS_TAB_IDS.ADVANCED, label: t('form.tab.advanced') },
-    ];
-
     return (
       <div className="settings-tab-container">
         {showTabs && (
@@ -497,7 +507,10 @@ const SettingsTabContent: React.FC<SettingsTabContentProps> = React.memo(
             {tabs.map((tab) => (
               <button
                 key={tab.id}
-                className={`settings-tab-button ${activeTab === tab.id ? 'settings-tab-button--active' : ''}`}
+                className={mergeClassNames(
+                  'journalit-native-button',
+                  `settings-tab-button ${activeTab === tab.id ? 'settings-tab-button--active' : ''}`
+                )}
                 onClick={() => handleTabChange(tab.id)}
               >
                 {tab.label}
@@ -534,18 +547,18 @@ const SettingsTabContent: React.FC<SettingsTabContentProps> = React.memo(
             <SyncSettingsTab
               plugin={plugin}
               initialSection={
-                requestedTab === SETTINGS_TAB_IDS.ACCOUNTS
-                  ? 'account'
-                  : requestedTab === SETTINGS_TAB_IDS.TRADE_IMPORT_SYNC
-                    ? 'tradeImport'
-                    : 'brokerSync'
+                requestedTab === SETTINGS_TAB_IDS.TRADE_IMPORT_SYNC
+                  ? 'tradeImport'
+                  : 'brokerSync'
               }
-              showSectionTabs={!isNativeSubPage}
-              showNotificationsRegardlessOfTier={isNativeSubPage}
+              isNativeSubPage={isNativeSubPage}
             />
           )}
           {activeTab === SETTINGS_TAB_IDS.ADVANCED && (
             <GeneralTab plugin={plugin} scope="advanced" />
+          )}
+          {activeTab === SETTINGS_TAB_IDS.ECONOMIC_CALENDAR && (
+            <EconomicCalendarSettingsSection plugin={plugin} />
           )}
         </div>
       </div>
@@ -622,11 +635,35 @@ function getSettingsPageDefinitions(): SettingsPageDefinition[] {
       ],
     },
     {
+      tabId: SETTINGS_TAB_IDS.SYNC,
+      label: t('settings.tab.sync'),
+      desc: 'Journalit account, subscription, MetaTrader sync, trade import, and economic calendar.',
+      createItems: createSyncNativeSettingItems,
+      aliases: [
+        'account',
+        'sync',
+        'subscription',
+        'billing',
+        'backend',
+        'sign in',
+        'sign out',
+        'MetaTrader',
+        'FTP',
+        'credentials',
+        'account linking',
+        'import trades',
+        'diagnostics',
+        'economic calendar',
+      ],
+    },
+    {
       tabId: SETTINGS_TAB_IDS.TRADING,
       label: t('settings.tab.trading'),
-      desc: 'Trade defaults, date handling, risk, break-even logic, and analytics display preferences.',
+      desc: 'Defaults for new trades, date handling, risk, break-even logic, and analytics display preferences.',
       createItems: createTradingNativeSettingItems,
       aliases: [
+        'trades',
+        'trading',
         'date format',
         'risk amount',
         'R-multiples',
@@ -645,6 +682,7 @@ function getSettingsPageDefinitions(): SettingsPageDefinition[] {
       desc: 'Review templates, automation, custom fields, form layout, symbols, setups, mistakes, tags, and events.',
       createItems: createJournalNativeSettingItems,
       aliases: [
+        'journal setup',
         'daily review',
         'weekly review',
         'review templates',
@@ -657,25 +695,6 @@ function getSettingsPageDefinitions(): SettingsPageDefinition[] {
         'mistakes',
         'tags',
         'events',
-      ],
-    },
-    {
-      tabId: SETTINGS_TAB_IDS.SYNC,
-      label: t('settings.tab.sync'),
-      desc: 'Journalit account, subscription, MetaTrader sync, trade import, and account linking.',
-      createItems: createSyncNativeSettingItems,
-      aliases: [
-        'account',
-        'subscription',
-        'billing',
-        'backend',
-        'sync',
-        'MetaTrader',
-        'FTP',
-        'credentials',
-        'account linking',
-        'import trades',
-        'diagnostics',
       ],
     },
     {
@@ -834,6 +853,20 @@ function createGeneralNativeSettingItems(
           render: (setting) => {
             const root = createRoot(setting.controlEl);
             root.render(<NavigationSidebarOpenControl plugin={tab.plugin} />);
+            return () => root.unmount();
+          },
+        },
+        {
+          name: t('calendar.setting.open'),
+          desc: t('navigation.setting.open.desc'),
+          aliases: [
+            'open calendar sidebar',
+            'show calendar sidebar',
+            'reveal calendar',
+          ],
+          render: (setting) => {
+            const root = createRoot(setting.controlEl);
+            root.render(<CalendarSidebarOpenControl plugin={tab.plugin} />);
             return () => root.unmount();
           },
         },
@@ -1159,13 +1192,36 @@ function createSyncNativeSettingItems(
   tab: JournalitSettingsTab
 ): NativeSettingDefinitionItem[] {
   return [
-    createReactPageDefinition(
-      tab,
-      SETTINGS_TAB_IDS.ACCOUNTS,
-      t('settings.tab.accounts'),
-      'Open Journalit account authentication, subscription, sign in, and sign out.',
-      ['account', 'subscription', 'billing', 'login', 'logout', 'sign in']
-    ),
+    {
+      type: 'group',
+      cls: 'journalit-settings-account-card-group',
+      items: [
+        {
+          
+          
+          
+          name: '',
+          searchable: false,
+          render: (setting) => {
+            setting.settingEl.classList.add(
+              'journalit-settings-account-card-item'
+            );
+            const root = createRoot(setting.controlEl);
+            root.render(
+              <div className="journalit-settings journalit-settings-account-card">
+                <AuthTab plugin={tab.plugin} />
+              </div>
+            );
+            return () => {
+              root.unmount();
+              setting.settingEl.classList.remove(
+                'journalit-settings-account-card-item'
+              );
+            };
+          },
+        },
+      ],
+    },
     createReactPageDefinition(
       tab,
       SETTINGS_TAB_IDS.TRADE_SYNC,
@@ -1194,6 +1250,13 @@ function createSyncNativeSettingItems(
         'restore',
         'account mapping',
       ]
+    ),
+    createReactPageDefinition(
+      tab,
+      SETTINGS_TAB_IDS.ECONOMIC_CALENDAR,
+      t('settings.economic-calendar.title'),
+      t('settings.economic-calendar.description'),
+      ['economic calendar', 'news events', 'key events', 'auto-import']
     ),
   ];
 }

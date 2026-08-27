@@ -3,10 +3,10 @@
 import React, { useState } from 'react';
 import { Notice } from 'obsidian';
 import JournalitPlugin from '../../../main';
-import { ToggleSwitch } from '../../../components/ui';
+import ToggleSwitch from '../../../components/ui/ToggleSwitch';
 import { Accordion } from '../../../components/shared/Accordion';
 import { ItemManager } from '../shared/ItemManager';
-import { eventBus } from '../../../services/events';
+import { eventBus } from '../../../services/events/EventBus';
 import { t } from '../../../lang/helpers';
 import { DEFAULT_SETTINGS } from '../../../settings/types';
 

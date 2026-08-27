@@ -1,6 +1,11 @@
 
 
-import { isTradeOpenWithContext } from './tradeStatusUtils';
+import {
+  getEffectivePnL,
+  hasRealizedStoredPnL,
+  isTradeOpenWithContext,
+  resolveCurrentRealizedPnL,
+} from './tradeStatusUtils';
 import { TradeFormData, AssetType } from '../components/forms/trade/types';
 import { calculateAssetAdjustedPriceMoveValue } from './priceMoveValue';
 import {
@@ -9,6 +14,7 @@ import {
   NormalizedTradeExecution,
 } from '../services/trade/core/TradeExecutionNormalization';
 import { calculateTradeDirectionPriceDiff } from '../services/trade/core/TradeDirection';
+import { hasUnknownCanonicalPnL } from '../services/trade/core/CanonicalProjectionFields';
 
 
 function applyRebateCredit(pnl: number, rebate: number | undefined): number {
@@ -18,7 +24,7 @@ function applyRebateCredit(pnl: number, rebate: number | undefined): number {
   return pnl;
 }
 
-function applyFinancialAdjustments(
+export function applyFinancialAdjustments(
   pnl: number,
   data: Partial<TradeFormData>
 ): number {
@@ -286,4 +292,68 @@ export const calculatePnL = (data: Partial<TradeFormData>): number => {
   }
 
   return applyFinancialAdjustments(0, data) + totalDividends;
+};
+
+type StoredOrCalculatedPnLInput = Partial<TradeFormData> & {
+  canonicalTradeId?: string;
+  canonicalTradeVersion?: number;
+  canonicalProjectionSchemaVersion?: number;
+  authoritativePnl?: number | null;
+};
+
+
+export const getStoredOrCalculatedPnL = (
+  data: StoredOrCalculatedPnLInput,
+  options: { authoritativePnlUnknown?: boolean } = {}
+): number | null => {
+  if (options.authoritativePnlUnknown || hasUnknownCanonicalPnL(data)) {
+    return null;
+  }
+
+  const hasDirectPnL =
+    data.useDirectPnLInput === true &&
+    typeof data.directPnL === 'number' &&
+    Number.isFinite(data.directPnL);
+
+  if (hasRealizedStoredPnL(data) || hasDirectPnL) {
+    return getEffectivePnL(data);
+  }
+
+  return calculatePnL(data);
+};
+
+
+export const resolveRealizedOrTerminalPnL = (
+  data: StoredOrCalculatedPnLInput,
+  options: { authoritativePnlUnknown?: boolean } = {}
+): number | null => resolveRealizedOrTerminalPnLResolution(data, options).pnl;
+
+export interface RealizedOrTerminalPnLResolution {
+  pnl: number | null;
+  financialAdjustmentRatio: number;
+}
+
+export const resolveRealizedOrTerminalPnLResolution = (
+  data: StoredOrCalculatedPnLInput,
+  options: { authoritativePnlUnknown?: boolean } = {}
+): RealizedOrTerminalPnLResolution => {
+  const isOpenTrade = isTradeOpenWithContext({
+    tradeStatus: data.tradeStatus,
+    exitTime: data.exitTime,
+    exitPrice: data.exitPrice,
+    pnl:
+      options.authoritativePnlUnknown || data._originalPnlWasNull
+        ? null
+        : data.pnl,
+    useDirectPnLInput: data.useDirectPnLInput,
+    exits: data.exits,
+    entries: data.entries,
+  });
+
+  return isOpenTrade
+    ? resolveCurrentRealizedPnL(data, calculateTotalDividends(data), options)
+    : {
+        pnl: getStoredOrCalculatedPnL(data, options),
+        financialAdjustmentRatio: 1,
+      };
 };

@@ -13,7 +13,7 @@ import { TemplateSharingService } from '../../../services/templates/TemplateShar
 import { ReviewTemplateService } from '../../../services/templates/ReviewTemplateService';
 import { TradeTemplateService } from '../../../services/templates/TradeTemplateService';
 import type { ReviewTemplate, TradeTemplate } from '../../../types/reviewV2';
-import { eventBus } from '../../../services/events';
+import { eventBus } from '../../../services/events/EventBus';
 import { t } from '../../../lang/helpers';
 import { writeClipboardText } from '../../../utils/clipboard';
 export const LIBRARY_TAB_STYLES = `
@@ -180,6 +180,25 @@ interface ImportPreview {
   name: string;
 }
 
+const getTranslatedType = (type: string) => {
+  switch (type.toLowerCase()) {
+    case 'drc':
+      return t('library.type.drc');
+    case 'weekly':
+      return t('library.type.weekly');
+    case 'monthly':
+      return t('library.type.monthly');
+    case 'quarterly':
+      return t('library.type.quarterly');
+    case 'yearly':
+      return t('library.type.yearly');
+    case 'trade':
+      return t('library.type.trade');
+    default:
+      return type;
+  }
+};
+
 function useLibraryTabModel({
   reviewTemplateService,
   tradeTemplateService,
@@ -275,24 +294,6 @@ function useLibraryTabModel({
   }, [loadTemplates]);
 
   
-  const getTranslatedType = (type: string) => {
-    switch (type.toLowerCase()) {
-      case 'drc':
-        return t('library.type.drc');
-      case 'weekly':
-        return t('library.type.weekly');
-      case 'monthly':
-        return t('library.type.monthly');
-      case 'quarterly':
-        return t('library.type.quarterly');
-      case 'yearly':
-        return t('library.type.yearly');
-      case 'trade':
-        return t('library.type.trade');
-      default:
-        return type;
-    }
-  };
 
   
   useEffect(() => {
@@ -479,10 +480,14 @@ export const LibraryTab: React.FC<LibraryTabProps> = ({
         <p className="setting-item-description">{t('library.desc.import')}</p>
 
         <div className="template-form-field">
-          <label className="template-form-label">
+          <label
+            htmlFor="journalit-librarytab-490"
+            className="template-form-label"
+          >
             {t('library.label.share-code')}
           </label>
           <textarea
+            id="journalit-librarytab-490"
             className="template-form-input library-code-textarea"
             placeholder={t('library.placeholder.import-code')}
             value={importCode}
@@ -560,10 +565,14 @@ export const LibraryTab: React.FC<LibraryTabProps> = ({
         ) : (
           <>
             <div className="template-form-field">
-              <label className="template-form-label">
+              <label
+                htmlFor="journalit-librarytab-571"
+                className="template-form-label"
+              >
                 {t('library.label.select-template')}
               </label>
               <select
+                id="journalit-librarytab-571"
                 className="template-form-input"
                 value={selectedTemplateId || ''}
                 onChange={(e) => {
@@ -596,10 +605,14 @@ export const LibraryTab: React.FC<LibraryTabProps> = ({
         {exportedCode && (
           <div className="library-export-result">
             <div className="template-form-field">
-              <label className="template-form-label">
+              <label
+                htmlFor="journalit-librarytab-607"
+                className="template-form-label"
+              >
                 {t('library.label.share-code')}
               </label>
               <textarea
+                id="journalit-librarytab-607"
                 className="template-form-input library-code-textarea"
                 value={exportedCode}
                 readOnly

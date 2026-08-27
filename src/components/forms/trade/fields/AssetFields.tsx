@@ -8,9 +8,11 @@ import React, {
   useRef,
 } from 'react';
 import { Notice } from 'obsidian';
-import { NumberInput, ComboBox, Select } from '../../../core';
+import { NumberInput } from '../../../core/NumberInput';
+import { ComboBox } from '../../../core/ComboBox';
+import { Select } from '../../../core/Select';
 import { Button } from '../../../ui/Button';
-import { RMultipleValue } from '../../../shared/display';
+import { RMultipleValue } from '../../../shared/display/DisplayValue';
 import { FormSection } from '../FormSection';
 import {
   TradeFormData,
@@ -24,7 +26,7 @@ import {
   canCalculateStopLossRiskAmount,
   resolveEffectiveRiskAmount,
 } from '../validation';
-import { formatPnL } from '../../../../utils';
+import { formatPnL } from '../../../../utils/formatting';
 import { formatCost } from '../../../../utils/formatting';
 import { isTradeOpenWithContext } from '../../../../utils/tradeStatusUtils';
 import { OptionType } from '../../../../services/options';
@@ -34,9 +36,11 @@ import { useCurrency } from '../../../../contexts/CurrencyContext';
 import { getCurrencyOptions } from '../../../../utils/currencyConfig';
 import { debounce } from '../../../../utils/debounce';
 import { calculateAssetAdjustedPriceMoveValue } from '../../../../utils/priceMoveValue';
-import { useEventBus } from '../../../../hooks';
+import { useEventBus } from '../../../../hooks/useEventBus';
 import { t } from '../../../../lang/helpers';
 import { filterActiveCopyAccounts } from '../../../../utils/accountCopyTrading';
+import { normalizeAccountLookupKey } from '../../../../services/trade/core/TradeAccountIdentity';
+import type { AccountCatalogEntry } from '../../../../services/accountPage/types';
 import {
   TradeFormInputMode,
   TradeFormLayoutItemId,
@@ -57,12 +61,48 @@ import { ForexFields } from './ForexFields';
 import { CryptoFields } from './CryptoFields';
 import { CFDFields } from './CFDFields';
 import { EntryExitFields } from './EntryExitFields';
-import { openCreateAccountModal } from '../../../accountPage/components';
+import { openCreateAccountModal } from '../../../accountPage/components/CreateAccountModal';
+import { useForexPnlConversionRate } from './hooks/useForexPnlConversionRate';
 
 const parseCommissionType = (value: string): 'fixed' | 'percentage' =>
   value === 'percentage' ? 'percentage' : 'fixed';
 
 const EMPTY_INSTRUMENTS: Array<{ id: string; name: string }> = [];
+
+export function mergeActiveTradeFormAccountNames(
+  catalogAccounts: ReadonlyArray<
+    Pick<AccountCatalogEntry, 'name' | 'archived'>
+  >,
+  uniqueAccounts: readonly string[]
+): string[] {
+  const archivedLookupKeys = new Set<string>();
+  const activeAccountsByLookupKey = new Map<string, string>();
+
+  for (const account of catalogAccounts) {
+    const lookupKey = normalizeAccountLookupKey(account.name);
+    if (!lookupKey) {
+      continue;
+    }
+    if (account.archived) {
+      archivedLookupKeys.add(lookupKey);
+    } else {
+      activeAccountsByLookupKey.set(lookupKey, account.name);
+    }
+  }
+
+  for (const accountName of uniqueAccounts) {
+    const lookupKey = normalizeAccountLookupKey(accountName);
+    if (
+      lookupKey &&
+      !archivedLookupKeys.has(lookupKey) &&
+      !activeAccountsByLookupKey.has(lookupKey)
+    ) {
+      activeAccountsByLookupKey.set(lookupKey, accountName);
+    }
+  }
+
+  return Array.from(activeAccountsByLookupKey.values());
+}
 
 const ASSET_SPECIFIC_ERROR_FIELDS: Array<keyof TradeFormErrors> = [
   'exchange',
@@ -77,6 +117,7 @@ const ASSET_SPECIFIC_ERROR_FIELDS: Array<keyof TradeFormErrors> = [
   'currencyPair',
   'lotSize',
   'pipValue',
+  'forexPnlConversionRate',
   'tradingPair',
   'cryptoExchange',
   'leverageRatio',
@@ -849,7 +890,8 @@ function AssetSpecificFields({
   data,
   errors,
   onChange,
-}: EntryExitSectionProps) {
+  showManualFxRate,
+}: EntryExitSectionProps & { showManualFxRate: boolean }) {
   if (!data.assetType) return null;
 
   return (
@@ -864,7 +906,12 @@ function AssetSpecificFields({
         <FuturesFields data={data} errors={errors} onChange={onChange} />
       )}
       {data.assetType === 'forex' && (
-        <ForexFields data={data} errors={errors} onChange={onChange} />
+        <ForexFields
+          data={data}
+          errors={errors}
+          onChange={onChange}
+          showManualFxRate={showManualFxRate}
+        />
       )}
       {data.assetType === 'crypto' && (
         <CryptoFields data={data} errors={errors} onChange={onChange} />
@@ -887,10 +934,10 @@ function DirectionField({ data, errors, onChange }: EntryExitSectionProps) {
 
   return (
     <div className="field">
-      <label className="label" id="direction-label">
+      <div className="label" id="direction-label">
         {t('form.field.direction')}
         <span className="required-indicator">*</span>
-      </label>
+      </div>
       <div
         className="direction-container"
         role="radiogroup"
@@ -925,29 +972,35 @@ function DirectionField({ data, errors, onChange }: EntryExitSectionProps) {
   );
 }
 
-function AssetTypeField({ data, errors, onChange }: EntryExitSectionProps) {
-  const assetTypeOptions = [
-    { type: 'stock', label: t('form.field.asset-type.stock') },
-    { type: 'options', label: t('form.field.asset-type.options') },
-    { type: 'futures', label: t('form.field.asset-type.futures') },
-    { type: 'forex', label: t('form.field.asset-type.forex') },
-    { type: 'crypto', label: t('form.field.asset-type.crypto') },
-    { type: 'cfd', label: t('form.field.asset-type.cfd') },
-  ];
+const assetTypeOptionKeys = [
+  { type: 'stock', labelKey: 'form.field.asset-type.stock' },
+  { type: 'options', labelKey: 'form.field.asset-type.options' },
+  { type: 'futures', labelKey: 'form.field.asset-type.futures' },
+  { type: 'forex', labelKey: 'form.field.asset-type.forex' },
+  { type: 'crypto', labelKey: 'form.field.asset-type.crypto' },
+  { type: 'cfd', labelKey: 'form.field.asset-type.cfd' },
+] as const;
 
+const getAssetTypeOptions = () =>
+  assetTypeOptionKeys.map(({ type, labelKey }) => ({
+    type,
+    label: t(labelKey),
+  }));
+
+function AssetTypeField({ data, errors, onChange }: EntryExitSectionProps) {
   return (
     <div className="field">
-      <label className="label" id="assetType-label">
+      <div className="label" id="assetType-label">
         {t('form.field.asset-type')}
         <span className="required-indicator">*</span>
-      </label>
+      </div>
       <div
         className="asset-type-container"
         role="radiogroup"
         aria-labelledby="assetType-label"
         aria-required="true"
       >
-        {assetTypeOptions.map(({ type, label }) => (
+        {getAssetTypeOptions().map(({ type, label }) => (
           <button
             key={type}
             type="button"
@@ -1132,12 +1185,10 @@ function useAssetFieldsModel({
       const uniqueAccounts = tradeService
         ? await tradeService.getUniqueAccounts()
         : [];
-      const allAccountNames = [
-        ...new Set([
-          ...catalogAccounts.map((account: { name: string }) => account.name),
-          ...uniqueAccounts,
-        ]),
-      ];
+      const allAccountNames = mergeActiveTradeFormAccountNames(
+        catalogAccounts,
+        uniqueAccounts
+      );
       const selectableAccountNames = filterActiveCopyAccounts(
         allAccountNames,
         plugin?.settings.account?.accountMetadata,
@@ -1287,6 +1338,8 @@ function useAssetFieldsModel({
         typeof data.contractSize === 'number' ? data.contractSize : undefined;
     }
   }, [data.contractSize, data.assetType]);
+
+  useForexPnlConversionRate({ data, globalCurrency, onChange });
 
   useEffect(() => {
     if (!data.instrument || !data.assetType) {
@@ -1461,15 +1514,18 @@ function useAssetFieldsModel({
         const specs = specService.getSpecsForSymbol(data.instrument, 'forex');
         if (specs && 'lotSize' in specs && 'pipValue' in specs) {
           onChange('pipValue', specs.pipValue);
+          onChange('pipSize', specs.pipSize);
           onChange('lotSize', specs.lotSize);
         } else {
           
           onChange('pipValue', undefined);
+          onChange('pipSize', undefined);
           onChange('lotSize', undefined);
         }
       } else {
         
         onChange('pipValue', undefined);
+        onChange('pipSize', undefined);
         onChange('lotSize', undefined);
       }
     }
@@ -1538,6 +1594,7 @@ function useAssetFieldsModel({
     
     if (data.assetType !== 'forex') {
       if (data.pipValue !== undefined) onChange('pipValue', undefined);
+      if (data.pipSize !== undefined) onChange('pipSize', undefined);
       if (data.lotSize !== undefined) onChange('lotSize', undefined);
     }
 
@@ -1566,6 +1623,7 @@ function useAssetFieldsModel({
     data.assetType,
     data.contractSize,
     data.pipValue,
+    data.pipSize,
     data.lotSize,
     data.dollarPerPoint,
     data.tickSize,
@@ -1701,7 +1759,7 @@ function useAssetFieldsModel({
   return {
     pnlCurrency,
     tradeCurrencyOptions,
-    requiresAccount,
+    isAccountCreationBlocked,
     accountOptions,
     instrumentOptions,
     isLoadingAccounts,
@@ -1803,7 +1861,7 @@ const AssetFieldsComponent: React.FC<AssetFieldsProps> = ({
   const {
     pnlCurrency,
     tradeCurrencyOptions,
-    requiresAccount,
+    isAccountCreationBlocked,
     accountOptions,
     instrumentOptions,
     isLoadingAccounts,
@@ -1918,6 +1976,7 @@ const AssetFieldsComponent: React.FC<AssetFieldsProps> = ({
             data={data}
             errors={errors}
             onChange={onChange}
+            showManualFxRate={layout.showManualFxRate}
           />
         ) : null;
       case 'tradingCosts':
@@ -1986,11 +2045,9 @@ const AssetFieldsComponent: React.FC<AssetFieldsProps> = ({
             onChange={onChange}
           />
         )}
-        {!isLoadingAccounts &&
-          accountOptions.length === 0 &&
-          requiresAccount && (
-            <AccountEmptyState onCreateAccount={handleCreateAccount} />
-          )}
+        {isAccountCreationBlocked && (
+          <AccountEmptyState onCreateAccount={handleCreateAccount} />
+        )}
       </div>
 
       {showAssetTypeSelector && (
@@ -2054,7 +2111,12 @@ const AssetFieldsComponent: React.FC<AssetFieldsProps> = ({
 
       
       {showAssetSpecificFields && (
-        <AssetSpecificFields data={data} errors={errors} onChange={onChange} />
+        <AssetSpecificFields
+          data={data}
+          errors={errors}
+          onChange={onChange}
+          showManualFxRate={layout.showManualFxRate}
+        />
       )}
 
       

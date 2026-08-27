@@ -9,7 +9,8 @@ import {
 } from '../../../../types/customFields';
 import { CustomFieldsRenderer } from '../fields/CustomFieldRenderer';
 import { FormSection } from '../FormSection';
-import { usePlugin, useService } from '../../../../hooks';
+import { usePlugin } from '../../../../hooks/usePlugin';
+import { useService } from '../../../../hooks/useService';
 import { t } from '../../../../lang/helpers';
 import { TradeFormLayoutSettings } from '../../../../settings/types';
 import {

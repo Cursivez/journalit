@@ -2,7 +2,7 @@
 
 import React from 'react';
 import type { TradeFormData } from '../../forms/trade/types';
-import { calculateEffectiveRMultiple } from '../../../utils';
+import { calculateEffectiveRMultiple } from '../../../utils/formatting';
 import { useDisplayFormatter } from '../../../hooks/useDisplayPolicy';
 import {
   hasRealizedStoredPnL,
@@ -19,6 +19,7 @@ import {
 } from '../../../utils/dateUtils';
 import { CheckCircle2, Circle, Edit } from '../../shared/icons/ObsidianIcon';
 import { calculateSnapshotRealizedPnL } from '../../../utils/unrealizedPnl';
+import type { PriceMoveValueInput } from '../../../utils/priceMoveValue';
 
 const HEADER_WEEKDAY_FORMATTER = new Intl.DateTimeFormat(undefined, {
   weekday: 'short',
@@ -153,7 +154,7 @@ export function getDisplayInstrument(
   return instrument.replace(sequencePattern, '');
 }
 
-interface TradeHeaderProps {
+interface TradeHeaderProps extends PriceMoveValueInput {
   instrument: string | undefined;
   direction: string | undefined;
   entryTime?: Date | string | null;
@@ -188,14 +189,7 @@ interface TradeHeaderProps {
   fees?: number | null;
   rebate?: number | null;
   
-  assetType?: string;
   optionType?: 'call' | 'put';
-  contractSize?: number;
-  dollarPerPoint?: number;
-  tickSize?: number;
-  tickValue?: number;
-  lotSize?: number;
-  pipValue?: number;
   rMultiple?: number;
   rMultipleDisplay?: {
     enabled: boolean;
@@ -242,6 +236,8 @@ export const TradeHeader: React.FC<TradeHeaderProps> = ({
   tickValue,
   lotSize,
   pipValue,
+  pipSize,
+  forexPnlConversionRate,
   rMultiple,
   rMultipleDisplay,
   currency: tradeCurrency,
@@ -438,6 +434,17 @@ export const TradeHeader: React.FC<TradeHeaderProps> = ({
   );
 
   const defaultRiskAmount = plugin?.settings?.trade?.defaultRiskAmount;
+  const priceMoveFields = {
+    assetType,
+    contractSize,
+    dollarPerPoint,
+    tickSize,
+    tickValue,
+    lotSize,
+    pipValue,
+    pipSize,
+    forexPnlConversionRate,
+  } satisfies Record<keyof PriceMoveValueInput, unknown>;
 
   const hasRealizedOpenComponents = hasRealizedStoredPnL({
     pnl,
@@ -481,14 +488,8 @@ export const TradeHeader: React.FC<TradeHeaderProps> = ({
                 swap: swap ?? undefined,
                 fees: fees ?? undefined,
                 rebate: rebate ?? undefined,
-                assetType,
                 optionType,
-                contractSize,
-                dollarPerPoint,
-                tickSize,
-                tickValue,
-                lotSize,
-                pipValue,
+                ...priceMoveFields,
                 unrealizedPriceSnapshotTime,
               },
               pnl
@@ -544,9 +545,7 @@ export const TradeHeader: React.FC<TradeHeaderProps> = ({
     : isMissedTrade
       ? t('tradelog.status.missed')
       : isPartiallyClosed
-        ? isPnlMasked
-          ? t('tradelog.status.open')
-          : t('tradelog.status.partially-closed')
+        ? t('tradelog.status.open')
         : isCancelled
           ? t('tradelog.status.cancelled')
           : isOpen
@@ -612,10 +611,9 @@ export const TradeHeader: React.FC<TradeHeaderProps> = ({
                 )}
               </span>
               {onToggleReviewed && (
-                <span
-                  className="trade-header-review-indicator clickable-icon"
-                  role="button"
-                  tabIndex={0}
+                <button
+                  type="button"
+                  className="journalit-native-button journalit-native-button--unstyled trade-header-review-indicator"
                   onClick={onToggleReviewed}
                   onKeyDown={(event) => {
                     if (event.key !== 'Enter' && event.key !== ' ') return;
@@ -639,7 +637,7 @@ export const TradeHeader: React.FC<TradeHeaderProps> = ({
                       className="journalit-header-unreviewed-icon"
                     />
                   )}
-                </span>
+                </button>
               )}
             </span>
           </span>
@@ -698,10 +696,9 @@ export const TradeHeader: React.FC<TradeHeaderProps> = ({
             tradeDaySuffix &&
             tradeDate && (
               <>
-                <span
-                  className="trade-header-context-link"
-                  role="button"
-                  tabIndex={0}
+                <button
+                  type="button"
+                  className="journalit-native-button journalit-native-button--unstyled trade-header-context-link"
                   onClick={() => void handleReviewNavigation('drc')}
                   onKeyDown={(event) =>
                     handleReviewNavigationKeyDown(event, 'drc')
@@ -711,69 +708,65 @@ export const TradeHeader: React.FC<TradeHeaderProps> = ({
                   <span className="trade-header-ordinal-suffix">
                     {tradeDaySuffix}
                   </span>
-                </span>
+                </button>
                 {tradeWeekLabel && (
                   <>
                     <span className="trade-header-context-separator">·</span>
-                    <span
-                      className="trade-header-context-link"
-                      role="button"
-                      tabIndex={0}
+                    <button
+                      type="button"
+                      className="journalit-native-button journalit-native-button--unstyled trade-header-context-link"
                       onClick={() => void handleReviewNavigation('weekly')}
                       onKeyDown={(event) =>
                         handleReviewNavigationKeyDown(event, 'weekly')
                       }
                     >
                       {tradeWeekLabel}
-                    </span>
+                    </button>
                   </>
                 )}
                 {tradeMonthLabel && (
                   <>
                     <span className="trade-header-context-separator">·</span>
-                    <span
-                      className="trade-header-context-link"
-                      role="button"
-                      tabIndex={0}
+                    <button
+                      type="button"
+                      className="journalit-native-button journalit-native-button--unstyled trade-header-context-link"
                       onClick={() => void handleReviewNavigation('monthly')}
                       onKeyDown={(event) =>
                         handleReviewNavigationKeyDown(event, 'monthly')
                       }
                     >
                       {tradeMonthLabel}
-                    </span>
+                    </button>
                   </>
                 )}
                 {tradeQuarterLabel && (
                   <>
                     <span className="trade-header-context-separator">·</span>
-                    <span
-                      className="trade-header-context-link"
-                      role="button"
-                      tabIndex={0}
+                    <button
+                      type="button"
+                      className="journalit-native-button journalit-native-button--unstyled trade-header-context-link"
                       onClick={() => void handleReviewNavigation('quarterly')}
                       onKeyDown={(event) =>
                         handleReviewNavigationKeyDown(event, 'quarterly')
                       }
                     >
                       {tradeQuarterLabel}
-                    </span>
+                    </button>
                   </>
                 )}
                 {tradeYearLabel && (
                   <>
                     <span className="trade-header-context-separator">·</span>
-                    <span
-                      className="trade-header-context-link"
-                      role="button"
-                      tabIndex={0}
+                    <button
+                      type="button"
+                      className="journalit-native-button journalit-native-button--unstyled trade-header-context-link"
                       onClick={() => void handleReviewNavigation('yearly')}
                       onKeyDown={(event) =>
                         handleReviewNavigationKeyDown(event, 'yearly')
                       }
                     >
                       {tradeYearLabel}
-                    </span>
+                    </button>
                   </>
                 )}
               </>

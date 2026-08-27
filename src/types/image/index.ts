@@ -1,5 +1,7 @@
 
 
+import type { ImageAnnotation } from '../imageAnnotations';
+
 
 interface ImageBaseProps {
   
@@ -96,6 +98,16 @@ export interface ImageCarouselProps extends ImageBaseProps {
     onDeleteImage?: (index: number, path: string) => void | Promise<void>;
   };
 
+  annotationOptions?: {
+    enabled: boolean;
+    onAnnotateImage?: (index: number, path: string) => void;
+    isAnnotated?: (path: string) => boolean;
+  };
+
+  fullscreenAnnotationOptions?: FullscreenImageAnnotationOptions;
+
+  onSelectedImageChange?: (index: number, path: string) => void;
+
   
   useResolveMediaPath?: boolean;
 
@@ -146,6 +158,23 @@ export interface ImageNavigationContext {
   indicatorLabel?: string;
 }
 
+type FullscreenImageAnnotationOptions =
+  | {
+      enabled?: boolean;
+      loadAnnotation?: never;
+      saveAnnotation?: never;
+    }
+  | {
+      enabled?: boolean;
+      loadAnnotation: (
+        imagePath: string
+      ) => ImageAnnotation | Promise<ImageAnnotation>;
+      saveAnnotation: (
+        imagePath: string,
+        annotation: ImageAnnotation
+      ) => void | Promise<void>;
+    };
+
 
 export interface ImageZoomState {
   
@@ -162,12 +191,6 @@ export interface ImageZoomState {
 
   
   isPanning: boolean;
-
-  
-  lastMousePos: {
-    x: number;
-    y: number;
-  };
 
   
   initialPinchDistance: number | null;
@@ -192,6 +215,9 @@ export interface FullscreenImageViewerProps {
 
   
   navigationContext?: ImageNavigationContext;
+
+  
+  annotationOptions?: FullscreenImageAnnotationOptions;
 
   
   onClose: () => void;

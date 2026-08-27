@@ -1,6 +1,6 @@
 
 
-import React, { useEffect, useState, useCallback, useMemo } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { FilterState } from '../../DashboardView';
 import {
   getActiveLayout,
@@ -11,7 +11,8 @@ import { usePlugin } from '../../../../hooks/usePlugin';
 import { GridLayout } from './GridLayout';
 import { UnifiedComponentSelector } from '../UnifiedComponentSelector';
 import { AVAILABLE_METRICS } from '../TopSection/types';
-import { eventBus, useEventBus } from '../../../../services/events';
+import { eventBus } from '../../../../services/events/EventBus';
+import { useEventBus } from '../../../../hooks/useEventBus';
 import { t } from '../../../../lang/helpers';
 import { normalizeDashboardWidgetIds } from './types';
 
@@ -21,6 +22,44 @@ interface BottomSectionProps {
   hideAddButton?: boolean;
 }
 
+const ALL_METRIC_IDS = AVAILABLE_METRICS.map((metric) => metric.id);
+
+const BottomSectionEditorControls: React.FC<{
+  activeWidgets: string[];
+}> = ({ activeWidgets }) => {
+  const [showComponentSelector, setShowComponentSelector] = useState(false);
+
+  return (
+    <>
+      <div className="journalit-dashboard-bottom-section-header">
+        <button
+          className="journalit-dashboard-add-widget-button journalit-dashboard-add-widget-button--primary"
+          onClick={() => {
+            setShowComponentSelector((isVisible) => !isVisible);
+          }}
+        >
+          {t('dashboard.button.add-widget')}
+        </button>
+      </div>
+      {showComponentSelector && (
+        <UnifiedComponentSelector
+          activeMetrics={ALL_METRIC_IDS}
+          activeWidgets={activeWidgets}
+          onAddMetric={() => {
+            // intentional
+          }}
+          onAddWidget={() => {
+            setShowComponentSelector(false);
+          }}
+          onClose={() => {
+            setShowComponentSelector(false);
+          }}
+        />
+      )}
+    </>
+  );
+};
+
 
 export const BottomSection: React.FC<BottomSectionProps> = ({
   filters,
@@ -28,8 +67,6 @@ export const BottomSection: React.FC<BottomSectionProps> = ({
   hideAddButton = false,
 }) => {
   const plugin = usePlugin();
-  const [showComponentSelector, setShowComponentSelector] =
-    useState<boolean>(false);
   const [activeWidgets, setActiveWidgets] = useState<string[]>([]);
 
   
@@ -86,23 +123,6 @@ export const BottomSection: React.FC<BottomSectionProps> = ({
   useEventBus('settings:changed', handleSettingsUpdated);
 
   
-  useEffect(() => {
-    if (!isEditing && showComponentSelector) {
-      setShowComponentSelector(false);
-    }
-  }, [isEditing, showComponentSelector]);
-
-  
-  
-  
-  const allMetricIds = useMemo(() => AVAILABLE_METRICS.map((m) => m.id), []);
-
-  const handleWidgetAdded = useCallback((_widgetId: string) => {
-    
-    setShowComponentSelector(false);
-  }, []);
-
-  
   const handleRemoveWidget = (widgetId: string) => {
     if (plugin) {
       try {
@@ -151,40 +171,14 @@ export const BottomSection: React.FC<BottomSectionProps> = ({
   return (
     <div className="journalit-dashboard-bottom-section">
       {isEditing && !hideAddButton && (
-        <div className="journalit-dashboard-bottom-section-header">
-          <button
-            className="journalit-dashboard-add-widget-button journalit-dashboard-add-widget-button--primary"
-            onClick={() => {
-              setShowComponentSelector(!showComponentSelector);
-            }}
-          >
-            {t('dashboard.button.add-widget')}
-          </button>
-        </div>
+        <BottomSectionEditorControls activeWidgets={activeWidgets} />
       )}
-
       <div className="journalit-dashboard-bottom-section-body">
-        {!hideAddButton && showComponentSelector && (
-          <UnifiedComponentSelector
-            activeMetrics={allMetricIds}
-            activeWidgets={activeWidgets}
-            onAddMetric={() => {
-              // intentional
-            }}
-            onAddWidget={handleWidgetAdded}
-            onClose={() => {
-              setShowComponentSelector(false);
-            }}
-          />
-        )}
-
         <GridLayout
           filters={filters}
           isEditing={isEditing}
           widgets={activeWidgets}
-          onRemoveWidget={(widgetId) => {
-            handleRemoveWidget(widgetId);
-          }}
+          onRemoveWidget={handleRemoveWidget}
         />
       </div>
     </div>

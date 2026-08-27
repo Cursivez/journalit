@@ -11,9 +11,9 @@ import {
   X,
 } from '../../../components/shared/icons/ObsidianIcon';
 import { Input } from '../../../components/core/Input';
-import { Button } from '../../../components/ui';
+import { Button } from '../../../components/ui/Button';
 import JournalitPlugin from '../../../main';
-import { eventBus } from '../../../services/events';
+import { eventBus } from '../../../services/events/EventBus';
 import { t } from '../../../lang/helpers';
 
 interface ItemManagerProps {
@@ -39,6 +39,9 @@ function isMutableObject(value: unknown): value is object {
   return value !== null && typeof value === 'object' && !Array.isArray(value);
 }
 
+const isComposingKeyEvent = (event: React.KeyboardEvent<HTMLInputElement>) =>
+  event.nativeEvent.isComposing || event.key === 'Process';
+
 function useItemManagerModel({
   plugin,
   items,
@@ -52,9 +55,6 @@ function useItemManagerModel({
   const [editingValue, setEditingValue] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const isSavingRef = useRef(false);
-
-  const isComposingKeyEvent = (event: React.KeyboardEvent<HTMLInputElement>) =>
-    event.nativeEvent.isComposing || event.key === 'Process';
 
   useEffect(() => {
     if (editingIndex !== null && editingIndex >= items.length) {

@@ -17,7 +17,7 @@ import { openEditAccountModal } from './EditAccountModal';
 import { openAddEventModal } from './AddEventModal';
 import { useCurrency } from '../../../contexts/CurrencyContext';
 import { parseCuratedCurrencyCode } from '../../../utils/currencyConfig';
-import { MoneyValue } from '../../shared/display';
+import { MoneyValue } from '../../shared/display/DisplayValue';
 import { AccountTradeData } from '../../../services/accountPage/types';
 import { t, tPlural } from '../../../lang/helpers';
 import { useGuideTarget } from '../../../guides/GuideRuntimeLayer';

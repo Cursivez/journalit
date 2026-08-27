@@ -2,8 +2,10 @@
 
 import React from 'react';
 import { t } from '../../../../lang/helpers';
-import { NumberInput } from '../../../core';
+import { NumberInput } from '../../../core/NumberInput';
 import { TradeFormData, TradeFormErrors, TradeFormValue } from '../types';
+import { useCurrency } from '../../../../contexts/CurrencyContext';
+import { resolveForexQuoteCurrency } from '../../../../utils/forexCurrency';
 
 interface ForexFieldsProps {
   
@@ -12,6 +14,8 @@ interface ForexFieldsProps {
   errors: TradeFormErrors;
   
   onChange: (field: keyof TradeFormData, value: TradeFormValue) => void;
+  
+  showManualFxRate: boolean;
 }
 
 
@@ -19,7 +23,9 @@ const ForexFieldsComponent: React.FC<ForexFieldsProps> = ({
   data,
   errors,
   onChange,
+  showManualFxRate,
 }) => {
+  const { currency: globalCurrency } = useCurrency();
   
   const standardLotSizes = [100000, 10000, 1000];
 
@@ -28,13 +34,25 @@ const ForexFieldsComponent: React.FC<ForexFieldsProps> = ({
     data.lotSize !== undefined &&
     data.lotSize !== null &&
     !standardLotSizes.includes(data.lotSize);
+  const quoteCurrency =
+    data.forexQuoteCurrency ?? resolveForexQuoteCurrency(data.instrument);
+  const pnlCurrency = data.currency || globalCurrency;
+  const needsForexConversion =
+    data.useDirectPnLInput !== true &&
+    quoteCurrency !== null &&
+    quoteCurrency !== pnlCurrency;
+  const showFxRateOverride =
+    needsForexConversion &&
+    (showManualFxRate ||
+      data.forexPnlConversionRateSource === 'manual' ||
+      Boolean(errors.forexPnlConversionRate));
 
   return (
     <>
       <div className="field">
-        <label className="label" id="lotSize-label">
+        <div className="label" id="lotSize-label">
           {t('form.field.lot-size')}
-        </label>
+        </div>
         <div
           className="asset-type-container"
           role="radiogroup"
@@ -92,17 +110,33 @@ const ForexFieldsComponent: React.FC<ForexFieldsProps> = ({
         </div>
       )}
 
-      <div className="field">
-        <NumberInput
-          label={t('form.field.pip-value')}
-          value={data.pipValue}
-          onChange={(value) => onChange('pipValue', value)}
-          error={errors.pipValue}
-          min={0}
-          precision={4}
-          allowDecimal={true}
-        />
-      </div>
+      {showFxRateOverride && (
+        <div className="field">
+          <NumberInput
+            label={t('form.field.fx-rate-override', {
+              quote: quoteCurrency,
+              base: pnlCurrency,
+            })}
+            value={
+              data.forexPnlConversionRateSource === 'manual'
+                ? data.forexPnlConversionRate
+                : undefined
+            }
+            onChange={(value) => {
+              onChange('forexQuoteCurrency', quoteCurrency);
+              onChange('forexPnlConversionRate', value);
+              onChange('forexPnlConversionBaseCurrency', pnlCurrency);
+              onChange('forexPnlConversionRateDate', undefined);
+              onChange('forexPnlConversionRateSource', 'manual');
+            }}
+            error={errors.forexPnlConversionRate}
+            min={0}
+            precision={9}
+            allowDecimal={true}
+            required={Boolean(errors.forexPnlConversionRate)}
+          />
+        </div>
+      )}
     </>
   );
 };

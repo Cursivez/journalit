@@ -25,8 +25,8 @@ import { TradesPreviewData } from '../../../types/reviewV2';
 import { BestWorstCard } from './shared/BestWorstCard';
 import { InvalidContextMessage } from './InvalidContextMessage';
 import { useReviewTrades } from '../hooks/useReviewData';
-import { useEventBus } from '../../../hooks';
-import { SkeletonBox } from '../../shared';
+import { useEventBus } from '../../../hooks/useEventBus';
+import { SkeletonBox } from '../../shared/SkeletonBox';
 import { t, tPlural } from '../../../lang/helpers';
 
 type ReviewBestWorstTrade = Record<string, unknown> & {
@@ -99,6 +99,39 @@ interface DayStats {
     currency?: string;
   }>;
 }
+
+const renderSkeletonCard = (
+  isPositive: boolean,
+  titleKey:
+    | 'widget.best-worst-days.best-day'
+    | 'widget.best-worst-days.worst-day'
+) => (
+  <div>
+    <div className="journalit-reviewv2-bestworst-label">{t(titleKey)}</div>
+    <div
+      className={[
+        'journalit-reviewv2-bestworst-card',
+        isPositive
+          ? 'journalit-reviewv2-bestworst-card--positive'
+          : 'journalit-reviewv2-bestworst-card--negative',
+        'journalit-reviewv2-bestworst-card--preview',
+      ]
+        .filter(Boolean)
+        .join(' ')}
+    >
+      <div className="journalit-reviewv2-bestworst-pnl-col">
+        <SkeletonBox width={70} height={20} borderRadius="4px" />
+      </div>
+      <div className="journalit-reviewv2-bestworst-details">
+        <SkeletonBox width={140} height={16} borderRadius="4px" />
+        <div className="journalit-u-flex journalit-u-gap-8 journalit-u-mt-4">
+          <SkeletonBox width={50} height={12} borderRadius="4px" />
+          <SkeletonBox width={70} height={12} borderRadius="4px" />
+        </div>
+      </div>
+    </div>
+  </div>
+);
 
 export const BestWorstDaysWidget: React.FC<BestWorstDaysWidgetProps> =
   React.memo(
@@ -338,41 +371,6 @@ export const BestWorstDaysWidget: React.FC<BestWorstDaysWidgetProps> =
       if (loading) {
         const showBoth = Boolean(
           mergedConfig.showBest && mergedConfig.showWorst
-        );
-
-        const renderSkeletonCard = (
-          isPositive: boolean,
-          titleKey:
-            | 'widget.best-worst-days.best-day'
-            | 'widget.best-worst-days.worst-day'
-        ) => (
-          <div>
-            <div className="journalit-reviewv2-bestworst-label">
-              {t(titleKey)}
-            </div>
-            <div
-              className={[
-                'journalit-reviewv2-bestworst-card',
-                isPositive
-                  ? 'journalit-reviewv2-bestworst-card--positive'
-                  : 'journalit-reviewv2-bestworst-card--negative',
-                'journalit-reviewv2-bestworst-card--preview',
-              ]
-                .filter(Boolean)
-                .join(' ')}
-            >
-              <div className="journalit-reviewv2-bestworst-pnl-col">
-                <SkeletonBox width={70} height={20} borderRadius="4px" />
-              </div>
-              <div className="journalit-reviewv2-bestworst-details">
-                <SkeletonBox width={140} height={16} borderRadius="4px" />
-                <div className="journalit-u-flex journalit-u-gap-8 journalit-u-mt-4">
-                  <SkeletonBox width={50} height={12} borderRadius="4px" />
-                  <SkeletonBox width={70} height={12} borderRadius="4px" />
-                </div>
-              </div>
-            </div>
-          </div>
         );
 
         return (

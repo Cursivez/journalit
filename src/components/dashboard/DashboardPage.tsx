@@ -9,7 +9,9 @@ import {
   DashboardDataProvider,
   useDashboardData,
 } from './context/DashboardDataContext';
-import { useDebounced, useEventBusMultiple, usePlugin } from '../../hooks';
+import { useDebounced } from '../../hooks/useDebounced';
+import { useEventBusMultiple } from '../../hooks/useEventBus';
+import { usePlugin } from '../../hooks/usePlugin';
 import {
   useGuideAction,
   useGuideBackHandler,

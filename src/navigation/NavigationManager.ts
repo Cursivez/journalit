@@ -5,11 +5,11 @@ import { App, TFile, WorkspaceLeaf, FileView } from 'obsidian';
 import { isViewWithTFile } from '../types/obsidian-extensions';
 import { RecentItem } from '../settings/types';
 import { HOME_VIEW_TYPE } from '../views/HomeView';
-import { NAVIGATION_VIEW_TYPE } from '../views/NavigationView';
 import { ViewManager } from '../views/ViewManager';
 import JournalitPlugin from '../main';
 import { eventBus } from '../services/events/EventBus';
 import type { NavigationSource } from './types';
+import { resolveNavigationTargetLeaf } from './navigationTargetLeaf';
 
 export class NavigationManager {
   private plugin: JournalitPlugin;
@@ -73,24 +73,14 @@ export class NavigationManager {
 
         
         let leaf: WorkspaceLeaf;
-        if (createNewLeaf) {
-          leaf = this.app.workspace.getLeaf('tab');
-        } else if (source === 'sidebar') {
+        if (source === 'sidebar') {
           
           
-          const mostRecent = this.app.workspace.getMostRecentLeaf();
-          if (
-            mostRecent &&
-            mostRecent.getRoot() === this.app.workspace.rootSplit &&
-            mostRecent.view.getViewType() !== NAVIGATION_VIEW_TYPE
-          ) {
-            leaf = mostRecent;
-          } else {
-            leaf = this.app.workspace.getLeaf('tab');
-          }
+          leaf = resolveNavigationTargetLeaf(this.app.workspace, createNewLeaf);
         } else {
-          
-          leaf = this.app.workspace.getLeaf();
+          leaf = createNewLeaf
+            ? this.app.workspace.getLeaf('tab')
+            : this.app.workspace.getLeaf();
         }
 
         await leaf.openFile(file);

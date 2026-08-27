@@ -19,8 +19,10 @@ import { forceMetadataCacheRefresh } from '../../utils/dataRefresh';
 import { FolderPathService } from '../core/FolderPathService';
 import { parseTradeFinancialFields } from '../../utils/tradeUtils';
 import { ReviewTemplateService } from '../templates/ReviewTemplateService';
-import { eventBus, ReviewChangedPayload } from '../events';
+import { eventBus } from '../events/EventBus';
+import { ReviewChangedPayload } from '../events/types';
 import { TemplateTransformationService } from '../templates/TemplateTransformationService';
+import { extractCanonicalProjectionPnlFields } from '../trade/core/CanonicalProjectionFields';
 import {
   getQuarterForMonth,
   getQuarterStartDate,
@@ -446,6 +448,7 @@ export class YearlyReviewService extends CustomDataService {
                     ? [frontmatter.account]
                     : [],
                 path: file.path,
+                ...extractCanonicalProjectionPnlFields(frontmatter),
                 tradeStatus: getStringValue(frontmatter, 'tradeStatus'),
                 useDirectPnLInput: getBooleanValue(
                   frontmatter,

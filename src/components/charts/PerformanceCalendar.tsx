@@ -8,7 +8,8 @@ import React, {
   useCallback,
   useState,
 } from 'react';
-import { useEventBus, useReviewedCalendarData } from '../../hooks';
+import { useEventBus } from '../../hooks/useEventBus';
+import { useReviewedCalendarData } from '../../hooks/useReviewedCalendarData';
 import { CheckCircle2 } from '../shared/icons/ObsidianIcon';
 import { usePlugin } from '../../hooks/usePlugin';
 import { calculateEffectiveRMultiple } from '../../utils/formatting';
@@ -39,10 +40,37 @@ import { useDisplayFormatter } from '../../hooks/useDisplayPolicy';
 import { getDisplayPnL, getAccountCount } from '../../utils/pnlUtils';
 import { hasTranslation, t } from '../../lang/helpers';
 import { cssVars } from '../../styles/inlineStylePolicy';
+import type { NavigationSource } from '../../navigation/types';
+import { resolveSidebarTabNavigation } from '../../navigation/sidebarTabBehavior';
+import type JournalitPlugin from '../../main';
 
 
 
 const applyAccountCountMultiplier = false;
+
+function resolveCalendarReviewNavigation(
+  plugin: JournalitPlugin | null,
+  navigationSource: NavigationSource | undefined
+): {
+  createNewLeaf: boolean;
+  focusLeaf: boolean;
+  source: NavigationSource;
+} {
+  if (navigationSource === 'sidebar' && plugin) {
+    const { createNewLeaf, source } = resolveSidebarTabNavigation(plugin);
+    return {
+      createNewLeaf,
+      focusLeaf: true,
+      source,
+    };
+  }
+
+  return {
+    createNewLeaf: true,
+    focusLeaf: true,
+    source: 'standard',
+  };
+}
 
 
 interface PerformanceCalendarProps {
@@ -53,6 +81,7 @@ interface PerformanceCalendarProps {
   height?: number | string;
   compactWidthThreshold?: number;
   compactHeightThreshold?: number;
+  navigationSource?: NavigationSource;
 }
 
 
@@ -198,6 +227,7 @@ export const PerformanceCalendar = memo<PerformanceCalendarProps>(
     height = '100%',
     compactWidthThreshold = 320,
     compactHeightThreshold = 300,
+    navigationSource,
   }) => {
     const plugin = usePlugin();
     const { currency } = useCurrency();
@@ -645,11 +675,17 @@ export const PerformanceCalendar = memo<PerformanceCalendarProps>(
           
           onDayClick(date);
         } else if (plugin) {
-          
-          void plugin.drcService?.openDRC(date);
+          const { createNewLeaf, focusLeaf, source } =
+            resolveCalendarReviewNavigation(plugin, navigationSource);
+          void plugin.drcService?.openDRC(
+            date,
+            createNewLeaf,
+            focusLeaf,
+            source
+          );
         }
       },
-      [onDayClick, plugin]
+      [navigationSource, onDayClick, plugin]
     );
 
     
@@ -658,16 +694,27 @@ export const PerformanceCalendar = memo<PerformanceCalendarProps>(
         
         onWeekClick(date);
       } else if (plugin) {
+        const { createNewLeaf, focusLeaf, source } =
+          resolveCalendarReviewNavigation(plugin, navigationSource);
         
         if (plugin.weeklyReviewService) {
-          
-          void plugin.weeklyReviewService.openWeeklyReview(date);
+          void plugin.weeklyReviewService.openWeeklyReview(
+            date,
+            createNewLeaf,
+            focusLeaf,
+            source
+          );
         } else if (plugin.drcService) {
           
           console.warn(
             'WeeklyReviewService not found, falling back to DRCService'
           );
-          void plugin.drcService.openDRC(date);
+          void plugin.drcService.openDRC(
+            date,
+            createNewLeaf,
+            focusLeaf,
+            source
+          );
         }
       }
     };
@@ -675,19 +722,40 @@ export const PerformanceCalendar = memo<PerformanceCalendarProps>(
     const handleMonthClick = async () => {
       const monthlyReviewService =
         await plugin?.serviceManager?.getMonthlyReviewService?.();
-      await monthlyReviewService?.openMonthlyReview(visibleMonth);
+      const { createNewLeaf, focusLeaf, source } =
+        resolveCalendarReviewNavigation(plugin, navigationSource);
+      await monthlyReviewService?.openMonthlyReview(
+        visibleMonth,
+        createNewLeaf,
+        focusLeaf,
+        source
+      );
     };
 
     const handleQuarterClick = async () => {
       const quarterlyReviewService =
         await plugin?.serviceManager?.getQuarterlyReviewService?.();
-      await quarterlyReviewService?.openQuarterlyReview(visibleMonth);
+      const { createNewLeaf, focusLeaf, source } =
+        resolveCalendarReviewNavigation(plugin, navigationSource);
+      await quarterlyReviewService?.openQuarterlyReview(
+        visibleMonth,
+        createNewLeaf,
+        focusLeaf,
+        source
+      );
     };
 
     const handleYearClick = async () => {
       const yearlyReviewService =
         await plugin?.serviceManager?.getYearlyReviewService?.();
-      await yearlyReviewService?.openYearlyReview(visibleMonth);
+      const { createNewLeaf, focusLeaf, source } =
+        resolveCalendarReviewNavigation(plugin, navigationSource);
+      await yearlyReviewService?.openYearlyReview(
+        visibleMonth,
+        createNewLeaf,
+        focusLeaf,
+        source
+      );
     };
 
     return (

@@ -7,6 +7,7 @@ import {
   type ReviewCurrencyConversionMetadata,
   type CurrencyConversionTrade,
 } from '../../../shared/display/CurrencyConversionInfo';
+import { mergeClassNames } from '../../../../utils/classNames';
 
 
 const MAX_CHIPS = 3;
@@ -168,11 +169,13 @@ export const BestWorstCard: React.FC<BestWorstCardProps> = ({
         />
       </div>
       {onClick ? (
-        <div
-          className={cardClassName}
+        <button
+          type="button"
+          className={mergeClassNames(
+            'journalit-native-button journalit-native-button--unstyled',
+            cardClassName
+          )}
           onClick={onClick}
-          role="button"
-          tabIndex={0}
           onKeyDown={(e) => {
             if (e.key !== 'Enter' && e.key !== ' ') return;
             e.preventDefault();
@@ -180,7 +183,7 @@ export const BestWorstCard: React.FC<BestWorstCardProps> = ({
           }}
         >
           {cardContent}
-        </div>
+        </button>
       ) : (
         <div className={cardClassName}>{cardContent}</div>
       )}

@@ -24,8 +24,8 @@ import { BestWorstCard } from './shared/BestWorstCard';
 import { InvalidContextMessage } from './InvalidContextMessage';
 import { TradesPreviewData } from '../../../types/reviewV2';
 import { useReviewTrades } from '../hooks/useReviewData';
-import { useEventBus } from '../../../hooks';
-import { SkeletonBox } from '../../shared';
+import { useEventBus } from '../../../hooks/useEventBus';
+import { SkeletonBox } from '../../shared/SkeletonBox';
 import { t } from '../../../lang/helpers';
 import { classifyPnLWithBreakEvenSettings } from '../../../utils/breakEvenRange';
 import { getBreakEvenBalanceForDisplayTrade } from './shared/breakEvenDisplayUtils';
@@ -102,6 +102,38 @@ interface QuarterStats {
     currency?: string;
   }>;
 }
+
+const formatQuarterName = (quarterData: QuarterStats): string => {
+  return `Q${quarterData.quarter} ${quarterData.year}`;
+};
+
+const renderSkeletonCard = (isPositive: boolean, title: string) => (
+  <div>
+    <div className="journalit-reviewv2-bestworst-label">{title}</div>
+    <div
+      className={[
+        'journalit-reviewv2-bestworst-card',
+        isPositive
+          ? 'journalit-reviewv2-bestworst-card--positive'
+          : 'journalit-reviewv2-bestworst-card--negative',
+        'journalit-reviewv2-bestworst-card--preview',
+      ]
+        .filter(Boolean)
+        .join(' ')}
+    >
+      <div className="journalit-reviewv2-bestworst-pnl-col">
+        <SkeletonBox width={70} height={20} borderRadius="4px" />
+      </div>
+      <div className="journalit-reviewv2-bestworst-details">
+        <SkeletonBox width={80} height={16} borderRadius="4px" />
+        <div className="journalit-u-flex journalit-u-gap-8 journalit-u-mt-4">
+          <SkeletonBox width={50} height={12} borderRadius="4px" />
+          <SkeletonBox width={70} height={12} borderRadius="4px" />
+        </div>
+      </div>
+    </div>
+  </div>
+);
 
 export const BestWorstQuartersWidget: React.FC<BestWorstQuartersWidgetProps> =
   React.memo(
@@ -329,41 +361,10 @@ export const BestWorstQuartersWidget: React.FC<BestWorstQuartersWidgetProps> =
       ]);
 
       
-      const formatQuarterName = (quarterData: QuarterStats): string => {
-        return `Q${quarterData.quarter} ${quarterData.year}`;
-      };
 
       if (loading) {
         const showBoth = Boolean(
           mergedConfig.showBest && mergedConfig.showWorst
-        );
-
-        const renderSkeletonCard = (isPositive: boolean, title: string) => (
-          <div>
-            <div className="journalit-reviewv2-bestworst-label">{title}</div>
-            <div
-              className={[
-                'journalit-reviewv2-bestworst-card',
-                isPositive
-                  ? 'journalit-reviewv2-bestworst-card--positive'
-                  : 'journalit-reviewv2-bestworst-card--negative',
-                'journalit-reviewv2-bestworst-card--preview',
-              ]
-                .filter(Boolean)
-                .join(' ')}
-            >
-              <div className="journalit-reviewv2-bestworst-pnl-col">
-                <SkeletonBox width={70} height={20} borderRadius="4px" />
-              </div>
-              <div className="journalit-reviewv2-bestworst-details">
-                <SkeletonBox width={80} height={16} borderRadius="4px" />
-                <div className="journalit-u-flex journalit-u-gap-8 journalit-u-mt-4">
-                  <SkeletonBox width={50} height={12} borderRadius="4px" />
-                  <SkeletonBox width={70} height={12} borderRadius="4px" />
-                </div>
-              </div>
-            </div>
-          </div>
         );
 
         return (

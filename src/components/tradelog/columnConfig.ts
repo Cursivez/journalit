@@ -476,9 +476,11 @@ export function buildDefaultTradeLogSettings(
     (column) => column.id
   );
 
+  const allColumnIdsSet = new Set(allColumnIds);
+  const defaultOrderSet = new Set(defaultOrder);
   const columnOrder: TradeLogColumnId[] = [
-    ...defaultOrder.filter((id) => allColumnIds.includes(id)),
-    ...allColumnIds.filter((id) => !defaultOrder.includes(id)),
+    ...defaultOrder.filter((id) => allColumnIdsSet.has(id)),
+    ...allColumnIds.filter((id) => !defaultOrderSet.has(id)),
   ];
 
   const columnVisibility: Partial<Record<TradeLogColumnId, boolean>> = {};

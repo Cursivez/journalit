@@ -4,7 +4,7 @@ import React, { useRef, useState } from 'react';
 import { App, Modal, Notice, TFile } from 'obsidian';
 import { createRoot, Root } from 'react-dom/client';
 import JournalitPlugin from '../../../main';
-import { TradeForm } from '.';
+import { TradeForm } from './TradeForm';
 import { TradeFormData, TradeFormOpenOptions } from './types';
 import {
   resolveFormExitExplicitness,
@@ -17,7 +17,7 @@ import type { TradeData } from '../../../services/trade/TradeService';
 import { CurrencyProvider } from '../../../contexts/CurrencyContext';
 import { DisplayPolicyProvider } from '../../../contexts/DisplayPolicyContext';
 import { t } from '../../../lang/helpers';
-import { eventBus } from '../../../services/events';
+import { eventBus } from '../../../services/events/EventBus';
 import { showConfirmationModal } from '../../shared/ConfirmationModal';
 import {
   getRequestedTradeType,
@@ -26,6 +26,7 @@ import {
 } from '../../../utils/tradeTypeRouting';
 import { TradeFormGuide } from './TradeFormGuide';
 import { canonicalizeTradeTagSelection } from '../../../utils/tradeTagNormalization';
+import { hasOpenFullscreenPortal } from '../../image/fullscreenPortalPresence';
 
 type TradeFormSubmissionData = TradeFormData &
   Record<string, unknown> & {
@@ -135,7 +136,15 @@ export class TradeFormModal extends Modal {
   }
 
   
+  
+  
   close(): void {
+    
+    
+    if (hasOpenFullscreenPortal(this.containerEl.ownerDocument)) {
+      return;
+    }
+
     void this.closeIfConfirmed();
   }
 
@@ -160,7 +169,7 @@ export class TradeFormModal extends Modal {
   
   closeAfterSuccessfulSubmit(): void {
     this.shouldBypassUnsavedCheck = true;
-    this.close();
+    void this.closeIfConfirmed();
   }
 
   onOpen(): void {
@@ -246,6 +255,38 @@ interface TradeFormModalContentModelParams {
   onModalClose: () => Promise<boolean>;
   onSuccessfulSubmit: () => void;
 }
+
+const publishSourceTypeChangeIfNeeded = (
+  originalType: 'regular' | 'missed' | 'backtest',
+  nextType: 'regular' | 'missed' | 'backtest',
+  originalFilePath: string,
+  currentFilePath: string
+): void => {
+  if (originalType === nextType) {
+    return;
+  }
+
+  const payload = {
+    action: 'deleted' as const,
+    filePath: originalFilePath || currentFilePath,
+    timestamp: Date.now(),
+  };
+
+  if (originalType === 'missed') {
+    eventBus.publish('missed-trade:changed', payload);
+    return;
+  }
+
+  if (originalType === 'backtest') {
+    eventBus.publish('backtest-trade:changed', payload);
+    return;
+  }
+
+  eventBus.publish('trade:changed', {
+    action: 'deleted',
+    filePaths: [originalFilePath || currentFilePath],
+  });
+};
 
 export function useTradeFormModalContentModel({
   plugin,
@@ -364,38 +405,6 @@ export function useTradeFormModalContentModel({
     return nextPath;
   };
 
-  const publishSourceTypeChangeIfNeeded = (
-    originalType: 'regular' | 'missed' | 'backtest',
-    nextType: 'regular' | 'missed' | 'backtest',
-    originalFilePath: string,
-    currentFilePath: string
-  ): void => {
-    if (originalType === nextType) {
-      return;
-    }
-
-    const payload = {
-      action: 'deleted' as const,
-      filePath: originalFilePath || currentFilePath,
-      timestamp: Date.now(),
-    };
-
-    if (originalType === 'missed') {
-      eventBus.publish('missed-trade:changed', payload);
-      return;
-    }
-
-    if (originalType === 'backtest') {
-      eventBus.publish('backtest-trade:changed', payload);
-      return;
-    }
-
-    eventBus.publish('trade:changed', {
-      action: 'deleted',
-      filePaths: [originalFilePath || currentFilePath],
-    });
-  };
-
   const handleSubmit = async (data: TradeFormData): Promise<boolean> => {
     try {
       setIsSubmitting(true);
@@ -495,6 +504,7 @@ export function useTradeFormModalContentModel({
         dividends: data.dividends || [],
         thesis: data.thesis,
         images: data.images,
+        imageAnnotations: data.imageAnnotations,
         instrument: data.instrument,
         assetType: data.assetType,
         setup: data.setup,
@@ -533,7 +543,28 @@ export function useTradeFormModalContentModel({
           : hasPreservableForeignBaseFxRate
             ? data.fxRateBaseCurrency
             : undefined,
+        forexQuoteCurrency:
+          data.assetType === 'forex' && !data.useDirectPnLInput
+            ? data.forexQuoteCurrency
+            : undefined,
+        forexPnlConversionRate:
+          data.assetType === 'forex' && !data.useDirectPnLInput
+            ? data.forexPnlConversionRate
+            : undefined,
+        forexPnlConversionBaseCurrency:
+          data.assetType === 'forex' && !data.useDirectPnLInput
+            ? data.forexPnlConversionBaseCurrency
+            : undefined,
+        forexPnlConversionRateDate:
+          data.assetType === 'forex' && !data.useDirectPnLInput
+            ? data.forexPnlConversionRateDate
+            : undefined,
+        forexPnlConversionRateSource:
+          data.assetType === 'forex' && !data.useDirectPnLInput
+            ? data.forexPnlConversionRateSource
+            : undefined,
         clearUnsetCurrencyFields: true,
+        clearUnsetForexPnlConversionFields: true,
         mtComment: data.mtComment,
       };
 
@@ -556,6 +587,7 @@ export function useTradeFormModalContentModel({
       } else if (data.assetType === 'forex') {
         if (data.lotSize !== undefined) tradeData.lotSize = data.lotSize;
         if (data.pipValue !== undefined) tradeData.pipValue = data.pipValue;
+        if (data.pipSize !== undefined) tradeData.pipSize = data.pipSize;
       } else if (data.assetType === 'crypto') {
         if (data.cryptoExchange) tradeData.cryptoExchange = data.cryptoExchange;
       } else if (data.assetType === 'cfd') {
@@ -728,8 +760,9 @@ export function useTradeFormModalContentModel({
           }
         )
       );
-      setIsSubmitting(false);
       return false;
+    } finally {
+      setIsSubmitting(false);
     }
   };
 

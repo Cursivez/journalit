@@ -5,7 +5,7 @@ import type JournalitPlugin from '../main';
 import { TradeFormModal } from '../components/forms/trade/TradeFormModal';
 import { PositionSizeCalculatorModal } from '../components/modals/PositionSizeCalculatorModal';
 import { openQuickTradeImportModal } from '../components/csv/QuickTradeImportModal';
-import { eventBus } from '../services/events';
+import { eventBus } from '../services/events/EventBus';
 import {
   ensureTradeIdentityFrontmatter,
   isTradeIdentityEligibleNote,
@@ -254,6 +254,14 @@ export class CommandRegistry {
       name: t('command.open-calendar-sidebar'),
       callback: async () => {
         await this.plugin.openCalendarSidebar();
+      },
+    });
+
+    this.plugin.addCommand({
+      id: 'open-economic-calendar',
+      name: t('command.open-economic-calendar'),
+      callback: async () => {
+        await this.plugin.viewManager.openEconomicCalendarView();
       },
     });
 

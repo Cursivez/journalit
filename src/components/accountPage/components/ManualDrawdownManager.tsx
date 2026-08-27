@@ -10,7 +10,7 @@ import {
   parseLocalDateSafe,
 } from '../../../utils/dateUtils';
 import { formatPnL } from '../../../utils/formatting';
-import { FastDateTimeInput } from '../../core';
+import { FastDateTimeInput } from '../../core/FastDateTimeInput';
 import { t } from '../../../lang/helpers';
 import { showActionConfirmationModal } from '../../shared/ConfirmationModal';
 
@@ -459,6 +459,7 @@ const DrawdownSnapshotForm: React.FC<DrawdownSnapshotFormProps> = ({
         </div>
         <div className="setting-item-control">
           <input
+            aria-label="0"
             type="number"
             value={formDrawdownLimit}
             onChange={(e: React.ChangeEvent<HTMLInputElement>) => {

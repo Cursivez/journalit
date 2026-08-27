@@ -7,15 +7,16 @@ import { BackendSecretStorage } from '../../../services/backend/BackendSecretSto
 import { AuthTab } from '../accounts/AuthTab';
 import { TradeSyncTab } from '../integration/TradeSyncTab';
 import { SyncNotificationSettingsSection } from '../general/GeneralTab';
+import { EconomicCalendarSettingsSection } from '../economicCalendar/EconomicCalendarSettingsSection';
 
 interface SyncSettingsTabProps {
   plugin: JournalitPlugin;
   initialSection?: SyncSettingsSection;
-  showSectionTabs?: boolean;
-  showNotificationsRegardlessOfTier?: boolean;
+  
+  isNativeSubPage?: boolean;
 }
 
-type SyncSettingsSection = 'account' | 'brokerSync' | 'tradeImport';
+type SyncSettingsSection = 'brokerSync' | 'tradeImport';
 
 const METATRADER_SOURCE = 'metatrader';
 const TRADE_IMPORT_SOURCE = 'tradeImport';
@@ -23,9 +24,12 @@ const TRADE_IMPORT_SOURCE = 'tradeImport';
 export const SyncSettingsTab: React.FC<SyncSettingsTabProps> = ({
   plugin,
   initialSection = 'brokerSync',
-  showSectionTabs = true,
-  showNotificationsRegardlessOfTier = false,
+  isNativeSubPage = false,
 }) => {
+  const showSectionTabs = !isNativeSubPage;
+  const showAccountCard = !isNativeSubPage;
+  const showNotificationsRegardlessOfTier = isNativeSubPage;
+  const showEconomicCalendar = !isNativeSubPage;
   const subscribeToAuthentication = useCallback((onStoreChange: () => void) => {
     window.addEventListener('journalit:subscription-changed', onStoreChange);
     return () => {
@@ -73,19 +77,13 @@ export const SyncSettingsTab: React.FC<SyncSettingsTabProps> = ({
 
   return (
     <div className="journalit-settings-tab sync-settings">
+      {showAccountCard && <AuthTab plugin={plugin} />}
       {!isAuthenticated ? (
         <TradeSyncTab plugin={plugin} source={METATRADER_SOURCE} />
       ) : (
         <>
           {showSectionTabs && (
             <nav className="settings-tab-nav journalit-settings-subnav">
-              <button
-                type="button"
-                className={`journalit-button journalit-settings-tab-button settings-tab-button ${activeSection === 'account' ? 'settings-tab-button--active' : ''}`}
-                onClick={() => selectSection('account')}
-              >
-                {t('settings.tab.accounts')}
-              </button>
               <button
                 type="button"
                 className={`journalit-button journalit-settings-tab-button settings-tab-button ${activeSection === 'brokerSync' ? 'settings-tab-button--active' : ''}`}
@@ -103,12 +101,14 @@ export const SyncSettingsTab: React.FC<SyncSettingsTabProps> = ({
             </nav>
           )}
 
-          {activeSection === 'account' && <AuthTab plugin={plugin} />}
           {activeSection === 'brokerSync' && (
             <>
               <TradeSyncTab plugin={plugin} />
               {shouldShowNotifications && (
                 <SyncNotificationSettingsSection plugin={plugin} />
+              )}
+              {showEconomicCalendar && (
+                <EconomicCalendarSettingsSection plugin={plugin} />
               )}
             </>
           )}

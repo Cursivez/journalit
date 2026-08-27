@@ -166,6 +166,11 @@ class AddEventModal extends Modal {
 }
 
 
+const getCurrentLocalDateForInput = () => {
+  const today = new Date();
+  return today.toISOString().split('T')[0];
+};
+
 const AddEventModalContent: React.FC<
   AddEventModalProps & { onModalClose: () => void }
 > = ({ app, plugin, accountName, onSave, onModalClose }) => {
@@ -187,10 +192,6 @@ const AddEventModalContent: React.FC<
 
   
   
-  const getCurrentLocalDateForInput = () => {
-    const today = new Date();
-    return today.toISOString().split('T')[0];
-  };
 
   
   const [eventData, setEventData] = useState({
@@ -304,6 +305,7 @@ const AddEventModalContent: React.FC<
           </div>
           <div className="setting-item-control">
             <select
+              aria-label={t('account.add-event.field.type')}
               value={eventData.type}
               onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
                 setEventData((currentData) => ({
@@ -334,6 +336,7 @@ const AddEventModalContent: React.FC<
           </div>
           <div className="setting-item-control">
             <input
+              aria-label={t('account.add-event.field.amount')}
               type="number"
               value={eventData.amount}
               onChange={(e: React.ChangeEvent<HTMLInputElement>) =>

@@ -8,7 +8,7 @@ import {
   DEFAULT_SETTINGS,
   GoalConfig,
 } from '../../settings/types';
-import { eventBus } from '../events';
+import { eventBus } from '../events/EventBus';
 import { normalizeAccountLookupKey } from '../trade/core/TradeAccountIdentity';
 
 interface ApiAccountInfo {

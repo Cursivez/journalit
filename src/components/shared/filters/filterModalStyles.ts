@@ -242,25 +242,6 @@ export const FILTER_MODAL_STYLES = `
   position: relative;
 }
 
-.journalit-tradelog-trade-type-summary {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 5px 10px;
-  background-color: var(--background-primary);
-  border: 1px solid var(--background-modifier-border);
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 0.9em;
-  white-space: nowrap;
-  gap: 8px;
-}
-
-.journalit-tradelog-trade-type-summary:hover {
-  border-color: var(--interactive-accent);
-  background-color: var(--background-modifier-hover);
-}
-
 .journalit-tradelog-trade-type-options-dropdown {
   position: absolute;
   top: 100%;
@@ -323,25 +304,6 @@ export const FILTER_MODAL_STYLES = `
 
 .journalit-tradelog-status-dropdown {
   position: relative;
-}
-
-.journalit-tradelog-status-summary {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 5px 10px;
-  background-color: var(--background-primary);
-  border: 1px solid var(--background-modifier-border);
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 0.9em;
-  white-space: nowrap;
-  gap: 8px;
-}
-
-.journalit-tradelog-status-summary:hover {
-  border-color: var(--interactive-accent);
-  background-color: var(--background-modifier-hover);
 }
 
 .journalit-tradelog-status-options-dropdown {
@@ -420,7 +382,7 @@ export const FILTER_MODAL_STYLES = `
   position: relative;
 }
 
-.journalit-tradelog-custom-field-summary {
+button.journalit-native-button.journalit-tradelog-custom-field-summary {
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -437,12 +399,12 @@ export const FILTER_MODAL_STYLES = `
   min-width: 0;
 }
 
-.journalit-tradelog-custom-field-summary:hover {
+button.journalit-native-button.journalit-tradelog-custom-field-summary:hover {
   border-color: var(--interactive-accent);
   background-color: var(--background-modifier-hover);
 }
 
-.journalit-tradelog-custom-field-summary:focus-visible {
+button.journalit-native-button.journalit-tradelog-custom-field-summary:focus-visible {
   outline: 2px solid var(--interactive-accent);
   outline-offset: 2px;
 }

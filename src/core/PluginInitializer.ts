@@ -22,7 +22,7 @@ const LEGACY_DERIVED_STORAGE_FOLDERS = [
 ];
 import { scheduleSequence } from '../utils/deferredExecution';
 import { GlobalPasteManager } from '../utils/GlobalPasteManager';
-import { injectDropdownFixScript } from '../utils';
+import { injectDropdownFixScript } from '../utils/domUtils';
 import { CommandRegistry } from '../commands/commandRegistry';
 import { RibbonManager } from '../ui/ribbonManager';
 import { OnboardingManager } from '../onboarding/onboardingManager';
@@ -36,7 +36,7 @@ import {
   RELEASE_NOTES_VIEW_TYPE,
 } from '../components/release-notes/ReleaseNotesView';
 import { ReviewDataCache } from '../services/reviewV2/ReviewDataCache';
-import { EventBus, eventBus } from '../services/events';
+import { EventBus, eventBus } from '../services/events/EventBus';
 import { ONBOARDING_VIEW_TYPE } from '../views/OnboardingView';
 import { TEMPLATE_BUILDER_VIEW_TYPE } from '../views/TemplateBuilderView';
 import { SETUPS_VIEW_TYPE } from '../views/SetupsView';
@@ -55,6 +55,7 @@ import { registerAccountDashboardMainGuide } from '../guides/accountDashboardMai
 import { registerAccountPageEmptyGuide } from '../guides/accountPageEmptyGuide';
 import { registerAccountPageMainGuide } from '../guides/accountPageMainGuide';
 import { registerSetupsMainGuide } from '../guides/setupsMainGuide';
+import { registerEconomicCalendarMainGuide } from '../guides/economicCalendarMainGuide';
 import { ViewGuideService } from '../guides/ViewGuideService';
 import {
   getJournalitCachePath,
@@ -239,6 +240,7 @@ export class PluginInitializer {
     registerAccountPageEmptyGuide(this.plugin.guideRegistry);
     registerAccountPageMainGuide(this.plugin.guideRegistry);
     registerSetupsMainGuide(this.plugin.guideRegistry);
+    registerEconomicCalendarMainGuide(this.plugin.guideRegistry);
 
     this.plugin.viewGuideService = new ViewGuideService(this.plugin);
     await this.plugin.viewGuideService.initialize();
@@ -302,6 +304,7 @@ export class PluginInitializer {
     this.plugin.updateNotificationService = new UpdateNotificationService(
       this.plugin
     );
+    this.plugin.updateNotificationService.startPeriodicAvailabilityChecks();
   }
 
   private async initializeCanonicalProjectionMigration(): Promise<void> {
@@ -588,6 +591,7 @@ export class PluginInitializer {
       this.plugin.viewManager.registerTemplateBuilderView(),
       this.plugin.viewManager.registerSetupsView(),
       this.plugin.viewManager.registerCalendarSidebarView(),
+      this.plugin.viewManager.registerEconomicCalendarView(),
       this.plugin.viewManager.registerSessionModeView(),
     ]);
 
@@ -763,6 +767,20 @@ export class PluginInitializer {
             } catch (error) {
               console.error('Error checking for plugin updates:', error);
             }
+
+            
+            
+            void this.plugin.serviceManager
+              .getEconomicCalendarService()
+              .then((service) => {
+                service.startAutoImport();
+              })
+              .catch((error) => {
+                logger.debug(
+                  '[Journalit] Economic calendar auto-import start failed',
+                  error
+                );
+              });
           },
         ],
         30

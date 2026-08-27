@@ -9,14 +9,17 @@ import {
 } from '../../../utils/dateUtils';
 import { formatDuration } from '../../../utils/formatting';
 import {
-  getEffectivePnL,
+  getCurrentRealizedPnL,
   getResolvedWeightedAverageExitPrice,
   getWeightedAverageEntryPrice,
-  hasRealizedStoredPnL,
   isTradeOpenWithContext,
 } from '../../../utils/tradeStatusUtils';
 import { classifyPnLWithBreakEvenSettings } from '../../../utils/breakEvenRange';
-import { calculateDirectionalPriceDiff } from '../../../utils/pnlCalculation';
+import {
+  calculateDirectionalPriceDiff,
+  calculateTotalDividends,
+  getStoredOrCalculatedPnL,
+} from '../../../utils/pnlCalculation';
 
 interface UseTradeMetricsProps {
   data: PartialTradeFrontmatter;
@@ -43,6 +46,29 @@ interface UseTradeMetricsReturn {
   formatDate: (date: Date | string | undefined) => string;
   formatTime: (date: Date | string | undefined) => string;
 }
+
+const formatDate = (date: Date | string | undefined) => {
+  if (!date) return 'N/A';
+  const dateObj = new Date(date);
+  if (isNaN(dateObj.getTime())) return 'N/A';
+  const userDateFormat = getUserDateFormat();
+  const datePart = formatDateDisplay(dateObj, userDateFormat);
+  const timePart = dateObj.toLocaleTimeString([], {
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+  return `${datePart} ${timePart}`;
+};
+
+const formatTime = (date: Date | string | undefined) => {
+  if (!date) return 'N/A';
+  const dateObj = new Date(date);
+  if (isNaN(dateObj.getTime())) return 'N/A';
+  return dateObj.toLocaleTimeString([], {
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+};
 
 export const useTradeMetrics = ({
   data,
@@ -79,43 +105,47 @@ export const useTradeMetrics = ({
         hasExplicitExitPrice: data.hasExplicitExitPrice,
         useDirectPnLInput: data.useDirectPnLInput,
       }) ?? 0;
-    const positionSize = data.positionSize || 0;
     const priceDiff = calculateDirectionalPriceDiff(
       { assetType: data.assetType, direction: data.direction },
       entryPrice,
       exitPrice
     );
 
-    const effectivePnL = getEffectivePnL({
-      pnl: data.pnl,
-      directPnL: data.directPnL,
-      useDirectPnLInput: data.useDirectPnLInput,
-      dividends: data.dividends,
-      commission: data.commission,
-      swap: data.swap,
-      fees: data.fees,
-      rebate: data.rebate,
-    });
-
     
     if (isOpenTrade) {
-      const realizedStoredPnL = hasRealizedStoredPnL({
-        _originalPnlWasNull: data._originalPnlWasNull,
-        tradeStatus: data.tradeStatus,
-        pnl: data.pnl,
-        useDirectPnLInput: data.useDirectPnLInput,
-        directPnL: data.directPnL,
-        dividends: data.dividends,
-        commission: data.commission,
-        swap: data.swap,
-        fees: data.fees,
-        rebate: data.rebate,
-        exits: data.exits,
-      })
-        ? effectivePnL
-        : 0;
+      const realizedPnL =
+        getCurrentRealizedPnL(
+          {
+            _originalPnlWasNull: data._originalPnlWasNull,
+            tradeStatus: data.tradeStatus,
+            pnl: data.pnl,
+            useDirectPnLInput: data.useDirectPnLInput,
+            directPnL: data.directPnL,
+            dividends: data.dividends,
+            commission: data.commission,
+            commissionType: data.commissionType,
+            swap: data.swap,
+            fees: data.fees,
+            rebate: data.rebate,
+            entries: data.entries,
+            exits: data.exits,
+            direction: data.direction,
+            optionType: data.optionType,
+            assetType: data.assetType,
+            contractSize: data.contractSize,
+            dollarPerPoint: data.dollarPerPoint,
+            tickSize: data.tickSize,
+            tickValue: data.tickValue,
+            lotSize: data.lotSize,
+            pipValue: data.pipValue,
+            pipSize: data.pipSize,
+            forexPnlConversionRate: data.forexPnlConversionRate,
+          },
+          calculateTotalDividends({ dividends: data.dividends }),
+          { authoritativePnlUnknown: data._originalPnlWasNull === true }
+        ) ?? 0;
       const outcome = classifyPnLWithBreakEvenSettings(
-        realizedStoredPnL,
+        realizedPnL,
         {
           breakEvenRangeMin,
           breakEvenRangeMax,
@@ -127,7 +157,7 @@ export const useTradeMetrics = ({
       const normalizedOutcome = outcome === 'unknown' ? 'breakeven' : outcome;
 
       return {
-        pnl: realizedStoredPnL,
+        pnl: realizedPnL,
         percentChange: 0,
         duration: '',
         isProfit: normalizedOutcome === 'win',
@@ -137,12 +167,40 @@ export const useTradeMetrics = ({
     }
 
     const pnl =
-      data.pnl !== undefined ||
-      (data.useDirectPnLInput && data.directPnL !== undefined)
-        ? effectivePnL
-        : priceDiff !== null
-          ? priceDiff * positionSize
-          : 0;
+      getStoredOrCalculatedPnL(
+        {
+          tradeStatus: data.tradeStatus,
+          entryTime: data.entryTime,
+          exitTime: data.exitTime,
+          entryPrice: data.entryPrice,
+          exitPrice: data.exitPrice,
+          hasExplicitExitPrice: data.hasExplicitExitPrice,
+          positionSize: data.positionSize,
+          direction: data.direction,
+          assetType: data.assetType,
+          optionType: data.optionType,
+          entries: data.entries,
+          exits: data.exits,
+          pnl: data.pnl,
+          useDirectPnLInput: data.useDirectPnLInput,
+          directPnL: data.directPnL,
+          dividends: data.dividends,
+          commission: data.commission,
+          commissionType: data.commissionType,
+          swap: data.swap,
+          fees: data.fees,
+          rebate: data.rebate,
+          contractSize: data.contractSize,
+          dollarPerPoint: data.dollarPerPoint,
+          tickSize: data.tickSize,
+          tickValue: data.tickValue,
+          lotSize: data.lotSize,
+          pipValue: data.pipValue,
+          pipSize: data.pipSize,
+          forexPnlConversionRate: data.forexPnlConversionRate,
+        },
+        { authoritativePnlUnknown: data._originalPnlWasNull === true }
+      ) ?? 0;
 
     const percentChange =
       entryPrice > 0 && priceDiff !== null ? (priceDiff / entryPrice) * 100 : 0;
@@ -183,10 +241,12 @@ export const useTradeMetrics = ({
     data.exitPrice,
     data.positionSize,
     data.direction,
+    data.optionType,
     data.pnl,
     data.directPnL,
     data.dividends,
     data.commission,
+    data.commissionType,
     data.swap,
     data.fees,
     data.rebate,
@@ -199,6 +259,14 @@ export const useTradeMetrics = ({
     data.entries,
     data._originalPnlWasNull,
     data.assetType,
+    data.contractSize,
+    data.dollarPerPoint,
+    data.tickSize,
+    data.tickValue,
+    data.lotSize,
+    data.pipValue,
+    data.pipSize,
+    data.forexPnlConversionRate,
     breakEvenRangeMin,
     breakEvenRangeMax,
     breakEvenThresholdMode,
@@ -207,29 +275,8 @@ export const useTradeMetrics = ({
   ]);
 
   
-  const formatDate = (date: Date | string | undefined) => {
-    if (!date) return 'N/A';
-    const dateObj = new Date(date);
-    if (isNaN(dateObj.getTime())) return 'N/A';
-    const userDateFormat = getUserDateFormat();
-    const datePart = formatDateDisplay(dateObj, userDateFormat);
-    const timePart = dateObj.toLocaleTimeString([], {
-      hour: '2-digit',
-      minute: '2-digit',
-    });
-    return `${datePart} ${timePart}`;
-  };
 
   
-  const formatTime = (date: Date | string | undefined) => {
-    if (!date) return 'N/A';
-    const dateObj = new Date(date);
-    if (isNaN(dateObj.getTime())) return 'N/A';
-    return dateObj.toLocaleTimeString([], {
-      hour: '2-digit',
-      minute: '2-digit',
-    });
-  };
 
   return {
     metrics,

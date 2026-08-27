@@ -19,22 +19,11 @@ import { usePlugin } from '../../hooks/usePlugin';
 import { useDisplayFormatter } from '../../hooks/useDisplayPolicy';
 import { ColumnDefinition } from './columnConfig';
 import { t } from '../../lang/helpers';
-import { DEFAULT_TRADE_FORM_DATA } from '../forms/trade/types';
 import { cssVars } from '../../styles/inlineStylePolicy';
 import { Tooltip } from '../shared/Tooltip';
 import { Tag } from '../shared/icons/ObsidianIcon';
 import { getSessionLogTags } from '../sessionLog/sessionLogUtils';
-
-type TradeDetailsRowTrade = React.ComponentProps<
-  typeof TradeDetailsRow
->['trade'];
-
-const completeTradeDetailsRowTrade = (
-  trade: NonNullable<TimeNode['trade']>
-): TradeDetailsRowTrade => ({
-  ...DEFAULT_TRADE_FORM_DATA,
-  ...trade,
-});
+import { mergeClassNames } from '../../utils/classNames';
 
 interface TradeLogNodeProps {
   node: TimeNode;
@@ -111,11 +100,10 @@ export const TradeLogNode = memo<TradeLogNodeProps>(
       if (!rawTrade) {
         return null;
       }
-      const trade = completeTradeDetailsRowTrade(rawTrade);
       const tradeId = rawTrade.file?.path || rawTrade.filePath || '';
       return (
         <TradeDetailsRow
-          trade={trade}
+          trade={rawTrade}
           depth={depth}
           isLastChild={isLastChild}
           onClick={() => onNodeClick(node)}
@@ -159,7 +147,10 @@ export const TradeLogNode = memo<TradeLogNodeProps>(
             <div className="tree-expand-wrapper">
               {canExpand ? (
                 <button
-                  className={`node-chevron ${isExpanded ? 'expanded' : ''}`}
+                  className={mergeClassNames(
+                    'journalit-native-button',
+                    `node-chevron ${isExpanded ? 'expanded' : ''}`
+                  )}
                   onClick={handleToggle}
                   aria-label={
                     isExpanded
@@ -211,10 +202,9 @@ export const TradeLogNode = memo<TradeLogNodeProps>(
             </div>
 
             
-            <span
-              className="node-label clickable-icon"
-              role="button"
-              tabIndex={0}
+            <button
+              type="button"
+              className="journalit-native-button journalit-native-button--unstyled node-label"
               onClick={navigateToReviewNode}
               onKeyDown={(e) => {
                 if (e.key !== 'Enter' && e.key !== ' ') return;
@@ -316,7 +306,7 @@ export const TradeLogNode = memo<TradeLogNodeProps>(
                   )}
                 </span>
               )}
-            </span>
+            </button>
 
             {sessionLogTags.length > 0 && (
               <Tooltip

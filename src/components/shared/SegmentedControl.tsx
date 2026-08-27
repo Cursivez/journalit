@@ -23,6 +23,30 @@ interface SegmentedControlProps<T extends string> {
   ) => ((element: HTMLButtonElement | null) => void) | undefined;
 }
 
+const sizeStyles = {
+  small: {
+    padding: '4px 10px',
+    fontSize: '12px',
+    gap: '2px',
+    containerPadding: '2px',
+    borderRadius: '4px',
+  },
+  medium: {
+    padding: '6px 14px',
+    fontSize: '13px',
+    gap: '2px',
+    containerPadding: '3px',
+    borderRadius: '5px',
+  },
+  large: {
+    padding: '8px 18px',
+    fontSize: '14px',
+    gap: '3px',
+    containerPadding: '4px',
+    borderRadius: '6px',
+  },
+};
+
 export function SegmentedControl<T extends string>({
   options,
   value,
@@ -35,30 +59,6 @@ export function SegmentedControl<T extends string>({
   ariaLabelledBy,
   getOptionRef,
 }: SegmentedControlProps<T>): React.ReactElement {
-  const sizeStyles = {
-    small: {
-      padding: '4px 10px',
-      fontSize: '12px',
-      gap: '2px',
-      containerPadding: '2px',
-      borderRadius: '4px',
-    },
-    medium: {
-      padding: '6px 14px',
-      fontSize: '13px',
-      gap: '2px',
-      containerPadding: '3px',
-      borderRadius: '5px',
-    },
-    large: {
-      padding: '8px 18px',
-      fontSize: '14px',
-      gap: '3px',
-      containerPadding: '4px',
-      borderRadius: '6px',
-    },
-  };
-
   const styles = sizeStyles[size];
   const containerRef = useRef<HTMLDivElement>(null);
   const [thumb, setThumb] = useState<{ left: number; width: number } | null>(

@@ -810,7 +810,7 @@ export class CustomDataService {
 
       if (cache?.frontmatter) {
         
-        const cloned: unknown = JSON.parse(JSON.stringify(cache.frontmatter));
+        const cloned: unknown = structuredClone(cache.frontmatter);
         return isRecord(cloned) ? cloned : {};
       }
 

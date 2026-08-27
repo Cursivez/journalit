@@ -74,12 +74,13 @@ function useFTPCredentialsSectionModel({
           : null;
         if (savedPassword && !creds.password) {
           
+          
           setIsPasswordMasked(true);
-          creds.password = ''; 
+          setCredentials({ ...creds, password: '' });
         } else {
           setIsPasswordMasked(false);
+          setCredentials(creds);
         }
-        setCredentials(creds);
       } else {
         setCredentials(null);
         setIsPasswordMasked(false);

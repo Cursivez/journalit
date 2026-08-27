@@ -585,7 +585,14 @@ function useBackendIntegrationTabModel(props: BackendIntegrationTabProps) {
         await updateSetting('ftpPassword', credentials.password || '');
         setFtpState((prev) => ({ ...prev, hasCredentials: true }));
         setFtpErrorDetails(null);
-        new Notice(t('notice.ftp-created'));
+        if (credentials.source === 'reused') {
+          
+          
+          new Notice(t('notice.ftp-reused'));
+        } else if (credentials.source === 'created') {
+          new Notice(t('notice.ftp-created'));
+        }
+        
 
         const event = new CustomEvent('ftp-credentials-created', {
           detail: { credentials },

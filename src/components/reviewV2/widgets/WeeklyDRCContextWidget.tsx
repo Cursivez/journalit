@@ -23,7 +23,7 @@ import {
 } from '../../../utils/markdownSectionExtractor';
 import { ImageCarousel } from '../../image/ImageCarousel';
 import { t } from '../../../lang/helpers';
-import { eventBus } from '../../../services/events';
+import { eventBus } from '../../../services/events/EventBus';
 import { StickyHeaderPortal, useStickyHeader } from '../../shared/StickyHeader';
 import { InvalidContextMessage } from './InvalidContextMessage';
 import { scrollToNextReviewItemAfterCollapse } from './shared/reviewScrollUtils';
@@ -203,6 +203,11 @@ function buildContentBlocks(
   return blocks;
 }
 
+const preventEmbeddedMutation = (event: React.SyntheticEvent) => {
+  event.preventDefault();
+  event.stopPropagation();
+};
+
 const MarkdownBlock: React.FC<{
   markdown: string;
   plugin: JournalitPlugin;
@@ -242,11 +247,6 @@ const MarkdownBlock: React.FC<{
       component.unload();
     };
   }, [markdown, plugin, sourcePath]);
-
-  const preventEmbeddedMutation = (event: React.SyntheticEvent) => {
-    event.preventDefault();
-    event.stopPropagation();
-  };
 
   return (
     <div
@@ -303,20 +303,14 @@ function WeeklyDRCAccordionHeader({
       ]
         .filter(Boolean)
         .join(' ')}
-      role="button"
-      tabIndex={0}
-      aria-expanded={isOpen}
-      onClick={() => setIsOpen((current) => !current)}
-      onKeyDown={(event) => {
-        if (event.target !== event.currentTarget) return;
-        if (event.key !== 'Enter' && event.key !== ' ') return;
-        event.preventDefault();
-        setIsOpen((current) => !current);
-      }}
+      data-expanded={isOpen}
     >
-      <span
-        className="journalit-weekly-drc-accordion-indicator"
-        aria-hidden="true"
+      <button
+        type="button"
+        className="journalit-native-button journalit-native-button--unstyled journalit-weekly-drc-accordion-indicator"
+        aria-label={title}
+        aria-expanded={isOpen}
+        onClick={() => setIsOpen((current) => !current)}
       >
         <svg
           width="16"
@@ -330,17 +324,16 @@ function WeeklyDRCAccordionHeader({
         >
           <path d="m6 9 6 6 6-6" />
         </svg>
-      </span>
+      </button>
       <span className="journalit-previous-drc-reference-title-group">
-        <span
-          className="journalit-previous-drc-reference-date journalit-weekly-drc-reference-date-link"
-          role="link"
-          tabIndex={preview ? -1 : 0}
+        <button
+          type="button"
+          className="journalit-native-button journalit-native-button--unstyled journalit-previous-drc-reference-date journalit-weekly-drc-reference-date-link"
           onClick={(event) => void openSourceDRC(event)}
           onKeyDown={(event) => void handleOpenSourceKeyDown(event)}
         >
           {title}
-        </span>
+        </button>
       </span>
       <span className="journalit-weekly-drc-header-spacer" />
       {!preview && (

@@ -3,7 +3,7 @@
 import React, { useCallback, useEffect, useState, useRef } from 'react';
 import { normalizePath, Notice, setIcon, TFile, TFolder } from 'obsidian';
 import JournalitPlugin from '../../../main';
-import { ToggleSwitch } from '../../../components/ui';
+import ToggleSwitch from '../../../components/ui/ToggleSwitch';
 import { Button } from '../../../components/ui/Button';
 import { ExternalLinkButton } from '../../../components/ui/ExternalLinkButton';
 import { Select } from '../../../components/core/Select';
@@ -19,7 +19,7 @@ import {
 import { useDebouncedFunction } from '../../../hooks/useDebounced';
 import { useEventBus } from '../../../hooks/useEventBus';
 import { TradePathUpdateUtility } from '../../../services/trade/TradePathUpdateUtility';
-import { eventBus } from '../../../services/events';
+import { eventBus } from '../../../services/events/EventBus';
 import { SettingsExporter } from '../../SettingsExporter';
 import { t } from '../../../lang/helpers';
 import {
@@ -47,6 +47,7 @@ import { JOURNALIT_SETTINGS_RESOURCES } from '../../settingsResources';
 
 type HomeStartupBehavior = 'always' | 'ifNone' | 'never';
 type MaeMfeInputMode = 'price' | 'dollar';
+const RESOLVED_SETTINGS_SAVE_PROMISE = Promise.resolve();
 
 function parseWeekStartDay(value: string): WeekStartDay {
   switch (value) {
@@ -129,8 +130,106 @@ function SettingsSectionOrAccordion({
   );
 }
 
+const dateFormatOptionKeys = [
+  { value: 'DDMMYY', labelKey: 'settings.general.date-format-ddmmyy' },
+  { value: 'MMDDYY', labelKey: 'settings.general.date-format-mmddyy' },
+  { value: 'YYMMDD', labelKey: 'settings.general.date-format-yymmdd' },
+] as const;
+
+const weekStartDayLabelKeys: Record<WeekStartDay, Parameters<typeof t>[0]> = {
+  sunday: 'calendar.day.sun',
+  monday: 'calendar.day.mon',
+  tuesday: 'calendar.day.tue',
+  wednesday: 'calendar.day.wed',
+  thursday: 'calendar.day.thu',
+  friday: 'calendar.day.fri',
+  saturday: 'calendar.day.sat',
+};
+
+const getDateFormatOptions = () =>
+  dateFormatOptionKeys.map(({ value, labelKey }) => ({
+    value,
+    label: t(labelKey),
+  }));
+
+const getWeekStartDayLabelMap = (): Record<WeekStartDay, string> => ({
+  sunday: t(weekStartDayLabelKeys.sunday),
+  monday: t(weekStartDayLabelKeys.monday),
+  tuesday: t(weekStartDayLabelKeys.tuesday),
+  wednesday: t(weekStartDayLabelKeys.wednesday),
+  thursday: t(weekStartDayLabelKeys.thursday),
+  friday: t(weekStartDayLabelKeys.friday),
+  saturday: t(weekStartDayLabelKeys.saturday),
+});
+
+const breakEvenModeOptionKeys = [
+  {
+    value: 'fixed',
+    labelKey: 'settings.general.break-even-mode-fixed',
+  },
+  {
+    value: 'percentage_current_balance',
+    labelKey: 'settings.general.break-even-mode-percent',
+  },
+] as const;
+
+const analyticsDateBasisOptionKeys = [
+  {
+    value: 'entry',
+    labelKey: 'settings.general.analytics-date-basis-entry',
+  },
+  {
+    value: 'exit',
+    labelKey: 'settings.general.analytics-date-basis-exit',
+  },
+] as const;
+
+const handleBreakEvenRangeBlur = () => {
+  new Notice(t('settings.general.break-even-updated'));
+};
+
+const maeMfeInputModeOptionKeys = [
+  { value: 'price', labelKey: 'settings.general.mae-mfe-input-mode-price' },
+  { value: 'dollar', labelKey: 'settings.general.mae-mfe-input-mode-dollar' },
+] as const;
+
+const maeMfeDisplayUnitOptionKeys = [
+  { value: 'dollar', labelKey: 'settings.general.mae-mfe-display-dollar' },
+  { value: 'ticks', labelKey: 'settings.general.mae-mfe-display-ticks' },
+] as const;
+
+const getBreakEvenModeOptions = () =>
+  breakEvenModeOptionKeys.map(({ value, labelKey }) => ({
+    value,
+    label: t(labelKey),
+  }));
+
+const getAnalyticsDateBasisOptions = () =>
+  analyticsDateBasisOptionKeys.map(({ value, labelKey }) => ({
+    value,
+    label: t(labelKey),
+  }));
+
+const getMaeMfeInputModeOptions = () =>
+  maeMfeInputModeOptionKeys.map(({ value, labelKey }) => ({
+    value,
+    label: t(labelKey),
+  }));
+
+const getMaeMfeDisplayUnitOptions = () =>
+  maeMfeDisplayUnitOptionKeys.map(({ value, labelKey }) => ({
+    value,
+    label: t(labelKey),
+  }));
+
 function useGeneralTabModel(props: GeneralTabProps) {
   const { plugin } = props;
+  const dateFormatOptions = getDateFormatOptions();
+  const weekStartDayLabelMap = getWeekStartDayLabelMap();
+  const breakEvenModeOptions = getBreakEvenModeOptions();
+  const analyticsDateBasisOptions = getAnalyticsDateBasisOptions();
+  const maeMfeInputModeOptions = getMaeMfeInputModeOptions();
+  const maeMfeDisplayUnitOptions = getMaeMfeDisplayUnitOptions();
   
   if (!plugin.settings.general) {
     plugin.settings.general = {
@@ -169,7 +268,7 @@ function useGeneralTabModel(props: GeneralTabProps) {
   const [isResetting, setIsResetting] = useState(false);
 
   
-  const settingsExporter = useRef(new SettingsExporter(plugin));
+  const [settingsExporter] = useState(() => new SettingsExporter(plugin));
 
   
   useEffect(() => {
@@ -261,21 +360,6 @@ function useGeneralTabModel(props: GeneralTabProps) {
   }, []);
 
   
-  const dateFormatOptions = [
-    { value: 'DDMMYY', label: t('settings.general.date-format-ddmmyy') },
-    { value: 'MMDDYY', label: t('settings.general.date-format-mmddyy') },
-    { value: 'YYMMDD', label: t('settings.general.date-format-yymmdd') },
-  ];
-
-  const weekStartDayLabelMap: Record<WeekStartDay, string> = {
-    sunday: t('calendar.day.sun'),
-    monday: t('calendar.day.mon'),
-    tuesday: t('calendar.day.tue'),
-    wednesday: t('calendar.day.wed'),
-    thursday: t('calendar.day.thu'),
-    friday: t('calendar.day.fri'),
-    saturday: t('calendar.day.sat'),
-  };
 
   const weekStartDayOptions = (
     [
@@ -291,28 +375,6 @@ function useGeneralTabModel(props: GeneralTabProps) {
     value: day,
     label: weekStartDayLabelMap[day],
   }));
-
-  const breakEvenModeOptions = [
-    {
-      value: 'fixed',
-      label: t('settings.general.break-even-mode-fixed'),
-    },
-    {
-      value: 'percentage_current_balance',
-      label: t('settings.general.break-even-mode-percent'),
-    },
-  ];
-
-  const analyticsDateBasisOptions = [
-    {
-      value: 'entry',
-      label: t('settings.general.analytics-date-basis-entry'),
-    },
-    {
-      value: 'exit',
-      label: t('settings.general.analytics-date-basis-exit'),
-    },
-  ];
 
   
   const handleAutoOpenToggle = async (newValue: boolean) => {
@@ -797,9 +859,6 @@ function useGeneralTabModel(props: GeneralTabProps) {
   };
 
   
-  const handleBreakEvenRangeBlur = () => {
-    new Notice(t('settings.general.break-even-updated'));
-  };
 
   
   const handleDefaultRiskAmountChange = async (
@@ -866,15 +925,6 @@ function useGeneralTabModel(props: GeneralTabProps) {
       })
     );
   };
-
-  const maeMfeInputModeOptions = [
-    { value: 'price', label: t('settings.general.mae-mfe-input-mode-price') },
-    { value: 'dollar', label: t('settings.general.mae-mfe-input-mode-dollar') },
-  ];
-  const maeMfeDisplayUnitOptions = [
-    { value: 'dollar', label: t('settings.general.mae-mfe-display-dollar') },
-    { value: 'ticks', label: t('settings.general.mae-mfe-display-ticks') },
-  ];
 
   const handleMaeMfeInputModeChange = async (newValue: string) => {
     plugin.settings.trade.maeMfeInputMode = parseMaeMfeInputMode(newValue);
@@ -1631,7 +1681,7 @@ export function GalleryFoldersSettingsControl({
     () => plugin.settings.trade.galleryFolders ?? []
   );
   const foldersRef = useRef(folders);
-  const saveQueueRef = useRef<Promise<void>>(Promise.resolve());
+  const saveQueueRef = useRef<Promise<void>>(RESOLVED_SETTINGS_SAVE_PROMISE);
   const latestMutationIdRef = useRef(0);
   const pendingSavesRef = useRef(0);
   const [selectedPath, setSelectedPath] = useState('');
@@ -1833,6 +1883,9 @@ export function SyncNotificationSettingsSection({
     const backendIntegration = ensureBackendIntegrationSettings();
     backendIntegration[key] = value;
     await plugin.saveSettings();
+    if (key === 'showUpdateNotifications') {
+      plugin.updateNotificationService?.handleNotificationSettingChanged();
+    }
     setNotificationSettings((current) => ({
       ...current,
       [key]: value,
@@ -2009,7 +2062,7 @@ function GeneralDataManagementSection({
                   void (async () => {
                     setIsExporting(true);
                     try {
-                      await settingsExporter.current.exportSettings();
+                      await settingsExporter.exportSettings();
                     } finally {
                       setIsExporting(false);
                     }
@@ -2043,10 +2096,10 @@ function GeneralDataManagementSection({
                     setIsImporting(true);
                     try {
                       const file =
-                        await settingsExporter.current.openImportFilePicker();
+                        await settingsExporter.openImportFilePicker();
                       if (file) {
                         const success =
-                          await settingsExporter.current.importSettings(file);
+                          await settingsExporter.importSettings(file);
                         if (success) {
                           setSettingsVersion((prev) => prev + 1);
                         }
@@ -2087,10 +2140,9 @@ function GeneralDataManagementSection({
                   void (async () => {
                     setIsResetting(true);
                     try {
-                      const success =
-                        await settingsExporter.current.resetToDefaults(
-                          plugin.app
-                        );
+                      const success = await settingsExporter.resetToDefaults(
+                        plugin.app
+                      );
                       if (success) {
                         setSettingsVersion((prev) => prev + 1);
                       }
@@ -2384,6 +2436,7 @@ export function HomeBackgroundControls({
         onChange={(event) => void handleFileChange(event)}
         className="journalit-home-background-file-input"
         aria-hidden="true"
+        tabIndex={-1}
       />
     </div>
   );
@@ -2410,6 +2463,31 @@ export function NavigationSidebarOpenControl({
   return (
     <Button variant="primary" size="small" onClick={handleOpen}>
       {t('navigation.setting.open.button')}
+    </Button>
+  );
+}
+
+export function CalendarSidebarOpenControl({
+  plugin,
+}: {
+  plugin: JournalitPlugin;
+}) {
+  const handleOpen = async () => {
+    try {
+      await plugin.openCalendarSidebar();
+      plugin.app.setting?.close();
+    } catch (error) {
+      console.error(
+        '[Journalit] Failed to open calendar sidebar from settings:',
+        error
+      );
+      new Notice(t('notice.error.open-calendar-sidebar'));
+    }
+  };
+
+  return (
+    <Button variant="primary" size="small" onClick={handleOpen}>
+      {t('calendar.setting.open.button')}
     </Button>
   );
 }
@@ -2681,6 +2759,20 @@ function GeneralCoreSettingsSection({
           </div>
           <div className="setting-item-control">
             <NavigationSidebarOpenControl plugin={plugin} />
+          </div>
+        </div>
+
+        <div className="setting-item">
+          <div className="setting-item-info">
+            <div className="setting-item-name">
+              {t('calendar.setting.open')}
+            </div>
+            <div className="setting-item-description">
+              {t('navigation.setting.open.desc')}
+            </div>
+          </div>
+          <div className="setting-item-control">
+            <CalendarSidebarOpenControl plugin={plugin} />
           </div>
         </div>
 

@@ -4,6 +4,7 @@ import React, {
   useState,
   useCallback,
   useEffect,
+  useLayoutEffect,
   useMemo,
   useRef,
 } from 'react';
@@ -74,6 +75,7 @@ import {
   isValidTradeReviewQuestionGraph,
   TRADE_REVIEW_QUESTION_CONFIG_KEY_LIST,
 } from '../reviewV2/widgets/tradeReviewConfig';
+import { mergeClassNames } from '../../utils/classNames';
 
 interface TemplateEditorProps {
   plugin: JournalitPlugin;
@@ -351,6 +353,33 @@ const buildPreviousContextConfig = (
   };
 };
 
+type ReviewContextDisplayMode = 'both' | 'inherited' | 'current';
+
+const reviewContextDisplayOptionKeys: Array<{
+  value: ReviewContextDisplayMode;
+  labelKey: Parameters<typeof t>[0];
+}> = [
+  {
+    value: 'both',
+    labelKey: 'templateEditor.widget.review-context-fields.context.both',
+  },
+  {
+    value: 'inherited',
+    labelKey: 'templateEditor.widget.review-context-fields.inherited',
+  },
+  {
+    value: 'current',
+    labelKey: 'templateEditor.widget.review-context-fields.current',
+  },
+];
+
+const getReviewContextDisplayOptions =
+  (): SegmentOption<ReviewContextDisplayMode>[] =>
+    reviewContextDisplayOptionKeys.map(({ value, labelKey }) => ({
+      value,
+      label: t(labelKey),
+    }));
+
 function useSortableWidgetItemContent({
   id,
   index,
@@ -366,6 +395,7 @@ function useSortableWidgetItemContent({
   onDuplicate,
   onRemove,
 }: SortableWidgetItemProps): React.ReactNode {
+  const reviewContextDisplayOptions = getReviewContextDisplayOptions();
   const {
     attributes,
     listeners,
@@ -653,7 +683,6 @@ function useSortableWidgetItemContent({
       ...updates,
     });
   };
-  type ReviewContextDisplayMode = 'both' | 'inherited' | 'current';
   const reviewContextDisplayMode: ReviewContextDisplayMode =
     (reviewContextConfig?.showInherited ?? true) &&
     (reviewContextConfig?.showLocal ?? true)
@@ -661,21 +690,6 @@ function useSortableWidgetItemContent({
       : reviewContextConfig?.showInherited === false
         ? 'current'
         : 'inherited';
-  const reviewContextDisplayOptions: SegmentOption<ReviewContextDisplayMode>[] =
-    [
-      {
-        value: 'both',
-        label: t('templateEditor.widget.review-context-fields.context.both'),
-      },
-      {
-        value: 'inherited',
-        label: t('templateEditor.widget.review-context-fields.inherited'),
-      },
-      {
-        value: 'current',
-        label: t('templateEditor.widget.review-context-fields.current'),
-      },
-    ];
 
   return (
     <div
@@ -690,12 +704,14 @@ function useSortableWidgetItemContent({
       <div className="template-widget-row">
         
         {!widget.locked && (
-          <div
+          <button
+            type="button"
             {...attributes}
             {...listeners}
-            role="button"
-            tabIndex={isEditing ? 0 : -1}
-            className={`template-section-handle${isEditing ? ' is-editing' : ''}`}
+            className={mergeClassNames(
+              'journalit-native-button journalit-native-button--unstyled',
+              `template-section-handle${isEditing ? ' is-editing' : ''}`
+            )}
             onClick={(e) => e.stopPropagation()}
             onKeyDown={(e) => e.stopPropagation()}
           >
@@ -707,7 +723,7 @@ function useSortableWidgetItemContent({
               <circle cx="9" cy="18" r="2" />
               <circle cx="15" cy="18" r="2" />
             </svg>
-          </div>
+          </button>
         )}
         
         {widget.locked && <div className="template-widget-handle-spacer" />}
@@ -786,6 +802,7 @@ function useSortableWidgetItemContent({
       {widget.type === 'markdown-header' && isEditing && (
         <div className="template-widget-config-row">
           <select
+            aria-label={t('widget.markdown-header.name')}
             value={headerLevel}
             onChange={(e) =>
               onConfigChange(index, {
@@ -848,6 +865,9 @@ function useSortableWidgetItemContent({
             </div>
             <div className="template-review-context-config-control">
               <select
+                aria-label={t(
+                  'templateEditor.widget.review-context-fields.selection'
+                )}
                 value={reviewContextSelectionMode}
                 onChange={(event) =>
                   updateReviewContextConfig({
@@ -886,6 +906,9 @@ function useSortableWidgetItemContent({
               </div>
               <div className="template-review-context-config-control">
                 <select
+                  aria-label={t(
+                    'templateEditor.widget.review-context-fields.group'
+                  )}
                   value={reviewContextConfig?.groupId || ''}
                   onChange={(event) =>
                     updateReviewContextConfig({ groupId: event.target.value })
@@ -1251,6 +1274,9 @@ function useSortableWidgetItemContent({
               >
                 <div className="template-previous-context-select-wrapper">
                   <select
+                    aria-label={t(
+                      'templateEditor.widget.previous-context-heading-label'
+                    )}
                     value={heading}
                     onChange={(e) =>
                       updateWeeklyDrcHeading(headingIndex, e.target.value)
@@ -1449,7 +1475,28 @@ function useTemplateEditorModel({
   const [template, setTemplate] = useState<ReviewTemplate | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>('preview');
   const [editingName, setEditingName] = useState('');
-  const [editingWidgets, setEditingWidgets] = useState<WidgetPlacement[]>([]);
+  const [editingWidgets, setEditingWidgetsState] = useState<WidgetPlacement[]>(
+    []
+  );
+  const editingWidgetsRef = useRef(editingWidgets);
+  useLayoutEffect(() => {
+    editingWidgetsRef.current = editingWidgets;
+  }, [editingWidgets]);
+  const commitEditingWidgets = useCallback(
+    (
+      update:
+        | WidgetPlacement[]
+        | ((currentWidgets: WidgetPlacement[]) => WidgetPlacement[])
+    ) => {
+      const nextWidgets =
+        typeof update === 'function'
+          ? update(editingWidgetsRef.current)
+          : update;
+      editingWidgetsRef.current = nextWidgets;
+      setEditingWidgetsState(nextWidgets);
+    },
+    []
+  );
   const widgetEditorIdsRef = useRef<WeakMap<WidgetPlacement, string>>(
     new WeakMap()
   );
@@ -1481,9 +1528,9 @@ function useTemplateEditorModel({
     if (found) {
       setTemplate(found);
       setEditingName(found.name);
-      setEditingWidgets(cloneWidgetPlacements(found.widgets));
+      commitEditingWidgets(cloneWidgetPlacements(found.widgets));
     }
-  }, [templateService, templateId, templateType]);
+  }, [commitEditingWidgets, templateService, templateId, templateType]);
 
   useEffect(() => {
     loadTemplate();
@@ -1591,35 +1638,35 @@ function useTemplateEditorModel({
   const handleDiscard = useCallback(() => {
     if (template) {
       setEditingName(template.name);
-      setEditingWidgets(cloneWidgetPlacements(template.widgets));
+      commitEditingWidgets(cloneWidgetPlacements(template.widgets));
     }
-  }, [template]);
+  }, [commitEditingWidgets, template]);
 
   
   const handleAddWidget = useCallback(() => {
-    setEditingWidgets((currentWidgets) => {
-      guideAddedWidgetIndexRef.current = currentWidgets.length;
-      return [...currentWidgets, { type: '' }];
-    });
+    guideAddedWidgetIndexRef.current = editingWidgetsRef.current.length;
+    commitEditingWidgets((currentWidgets) => [...currentWidgets, { type: '' }]);
     emitGuideAction(LAYOUT_BUILDER_WIDGET_ADDED_ACTION_ID);
-  }, [emitGuideAction]);
+  }, [commitEditingWidgets, emitGuideAction]);
 
   const handleRemoveWidget = useCallback(
     (index: number) => {
-      if (editingWidgets[index].locked) {
+      const currentWidgets = editingWidgetsRef.current;
+      if (currentWidgets[index].locked) {
         new Notice(t('notice.info.cannot-remove-locked'));
         return;
       }
-      const newWidgets = [...editingWidgets];
+      const newWidgets = [...currentWidgets];
       newWidgets.splice(index, 1);
-      setEditingWidgets(newWidgets);
+      commitEditingWidgets(newWidgets);
     },
-    [editingWidgets]
+    [commitEditingWidgets]
   );
 
   const handleDuplicateWidget = useCallback(
     (index: number) => {
-      const sourceWidget = editingWidgets[index];
+      const currentWidgets = editingWidgetsRef.current;
+      const sourceWidget = currentWidgets[index];
       if (!sourceWidget || sourceWidget.locked) {
         new Notice(t('notice.error.duplicate-to-customize'));
         return;
@@ -1633,16 +1680,16 @@ function useTemplateEditorModel({
         duplicatedWidget.id = `${duplicatedWidget.type}-${generateUUID()}`;
       }
 
-      const newWidgets = [...editingWidgets];
+      const newWidgets = [...currentWidgets];
       newWidgets.splice(index + 1, 0, duplicatedWidget);
-      setEditingWidgets(newWidgets);
+      commitEditingWidgets(newWidgets);
     },
-    [editingWidgets]
+    [commitEditingWidgets]
   );
 
   const handleWidgetChange = useCallback(
     (index: number, widgetDef: WidgetDefinition) => {
-      const newWidgets = [...editingWidgets];
+      const newWidgets = [...editingWidgetsRef.current];
       
       
       
@@ -1664,23 +1711,23 @@ function useTemplateEditorModel({
         getWidgetEditorId(newWidgets[index])
       );
       newWidgets[index] = nextWidget;
-      setEditingWidgets(newWidgets);
+      commitEditingWidgets(newWidgets);
     },
-    [editingWidgets, getWidgetEditorId]
+    [commitEditingWidgets, getWidgetEditorId]
   );
 
   const handleWidgetConfigChange = useCallback(
     (index: number, config: Record<string, unknown>) => {
-      const newWidgets = [...editingWidgets];
+      const newWidgets = [...editingWidgetsRef.current];
       const nextWidget = { ...newWidgets[index], config };
       widgetEditorIdsRef.current.set(
         nextWidget,
         getWidgetEditorId(newWidgets[index])
       );
       newWidgets[index] = nextWidget;
-      setEditingWidgets(newWidgets);
+      commitEditingWidgets(newWidgets);
     },
-    [editingWidgets, getWidgetEditorId]
+    [commitEditingWidgets, getWidgetEditorId]
   );
 
   
@@ -1689,7 +1736,7 @@ function useTemplateEditorModel({
       const { active, over } = event;
       if (!over || active.id === over.id) return;
 
-      setEditingWidgets((prevWidgets) => {
+      commitEditingWidgets((prevWidgets) => {
         const oldIndex = prevWidgets.findIndex(
           (widget) => getWidgetEditorId(widget) === active.id
         );
@@ -1716,7 +1763,7 @@ function useTemplateEditorModel({
         return newWidgets;
       });
     },
-    [getWidgetEditorId]
+    [commitEditingWidgets, getWidgetEditorId]
   );
 
   const handleGuideBack = useCallback(
@@ -1748,7 +1795,7 @@ function useTemplateEditorModel({
       const guideAddedWidgetIndex = guideAddedWidgetIndexRef.current;
 
       if (toStepId === 'add-widget' && guideAddedWidgetIndex !== null) {
-        setEditingWidgets((currentWidgets) =>
+        commitEditingWidgets((currentWidgets) =>
           currentWidgets.filter((_, index) => index !== guideAddedWidgetIndex)
         );
         guideAddedWidgetIndexRef.current = null;
@@ -1756,7 +1803,7 @@ function useTemplateEditorModel({
       }
 
       if (toStepId === 'choose-widget' && guideAddedWidgetIndex !== null) {
-        setEditingWidgets((currentWidgets) =>
+        commitEditingWidgets((currentWidgets) =>
           currentWidgets.map((widget, index) =>
             index === guideAddedWidgetIndex ? { ...widget, type: '' } : widget
           )
@@ -1768,7 +1815,7 @@ function useTemplateEditorModel({
         return { toStepId: 'widget-library-docs' };
       }
     },
-    [hasChanges]
+    [commitEditingWidgets, hasChanges]
   );
 
   useGuideBackHandler(handleGuideBack);
@@ -1924,10 +1971,14 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = (props) => {
 
             
             <div className="template-editor-field">
-              <label className="template-editor-field-label">
+              <label
+                htmlFor="journalit-templateeditor-1956"
+                className="template-editor-field-label"
+              >
                 {t('templateEditor.field.template-name')}
               </label>
               <input
+                id="journalit-templateeditor-1956"
                 type="text"
                 value={editingName}
                 onChange={(e) => setEditingName(e.target.value)}
@@ -1945,11 +1996,11 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = (props) => {
             
             <div>
               <div className="template-editor-widget-header">
-                <label className="template-editor-widget-label">
+                <div className="template-editor-widget-label">
                   {t('templateEditor.field.widgets', {
                     count: String(editingWidgets.length),
                   })}
-                </label>
+                </div>
                 {canEdit && (
                   <div className="template-editor-widget-actions">
                     <button

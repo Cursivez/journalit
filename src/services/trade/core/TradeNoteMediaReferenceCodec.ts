@@ -1,5 +1,4 @@
 import { normalizePath } from 'obsidian';
-import { decodeHTMLStrict } from 'entities';
 import {
   isExternalMediaTarget,
   splitTradeMediaTargetSuffix,
@@ -16,8 +15,33 @@ import {
 import { mapMarkdownTradeNoteMediaReferences } from './TradeNoteMarkdownMediaReferenceCodec';
 import type { MediaReferenceTransform } from './TradeNoteMediaReferenceTypes';
 
+const HTML_CHARACTER_REFERENCE_PATTERN =
+  /&(?:#\d+|#[xX][0-9a-fA-F]+|[a-zA-Z][a-zA-Z0-9]*);/g;
+const decodedHtmlCharacterReferences = new Map<string, string>();
+const HTML_CHARACTER_REFERENCE_ATTRIBUTE = 'data-journalit-character-reference';
+let htmlCharacterReferenceParser: DOMParser | undefined;
+
 function decodeHtmlCharacterReferences(value: string): string {
-  return decodeHTMLStrict(value);
+  return value.replace(
+    HTML_CHARACTER_REFERENCE_PATTERN,
+    (characterReference) => {
+      const cached = decodedHtmlCharacterReferences.get(characterReference);
+      if (cached !== undefined) return cached;
+
+      const parser = (htmlCharacterReferenceParser ??= new DOMParser());
+      const decoded =
+        parser
+          .parseFromString(
+            `<span ${HTML_CHARACTER_REFERENCE_ATTRIBUTE}="${characterReference}"></span>`,
+            'text/html'
+          )
+          .body.firstElementChild?.getAttribute(
+            HTML_CHARACTER_REFERENCE_ATTRIBUTE
+          ) ?? characterReference;
+      decodedHtmlCharacterReferences.set(characterReference, decoded);
+      return decoded;
+    }
+  );
 }
 
 function normalizeMediaReferenceTarget(target: string): string {

@@ -9,17 +9,19 @@ import type JournalitPlugin from '../../main';
 import { t } from '../../lang/helpers';
 import type {
   ResolvedSessionModeWindow,
+  TradeGateQuestion,
   TradeGateRun,
-  TradeGateWorkflow,
 } from '../../types/sessionMode';
 import {
   advanceTradeGateRun,
   completeTradeGateRun,
   createTradeGateRun,
   getActiveTradeGateRunFromFile,
+  getRunnableTradeGateWorkflows,
   getTradeGateRunsFromFile,
-  getTradeGateOutcomeNode,
   hasRunnableTradeGateQuestion,
+  isTradeGateRunCompatibleWithWorkflows,
+  isTradeGateRunOutsideSession,
   persistActiveTradeGateRun,
 } from './tradeGateUtils';
 import { TradeGateRunView } from './TradeGateRunView';
@@ -28,6 +30,7 @@ import { TradeGateLauncher } from './TradeGateLauncher';
 interface TradeGatePanelProps {
   plugin: JournalitPlugin;
   filePath: string;
+  questions: TradeGateQuestion[];
   currentSession?: ResolvedSessionModeWindow;
   onRefresh: () => void;
 }
@@ -52,56 +55,36 @@ const isPersistedRunBehindLocalState = (
   );
 };
 
-const isRunOutsideSession = (
-  run: TradeGateRun,
-  currentSession: ResolvedSessionModeWindow | undefined
-): boolean => {
-  if (!currentSession) return false;
-  const startedAt = new Date(run.startedAt);
-  const startedAtMs = startedAt.getTime();
-  return (
-    Number.isNaN(startedAtMs) ||
-    startedAtMs < currentSession.start.getTime() ||
-    startedAtMs >= currentSession.end.getTime()
-  );
-};
-
-const isTradeGateRunCompatibleWithWorkflows = (
-  run: TradeGateRun,
-  workflows: TradeGateWorkflow[]
-): boolean => {
-  const workflow = workflows.find((item) => item.id === run.workflowId);
-  if (!workflow) return false;
-
-  if (run.status === 'in-progress') {
-    return hasRunnableTradeGateQuestion(workflow, run.currentNodeId);
-  }
-
-  if (run.status === 'completed') {
-    return Boolean(getTradeGateOutcomeNode(workflow, run.currentNodeId));
-  }
-
-  return true;
-};
-
 export const TradeGatePanel: React.FC<TradeGatePanelProps> = React.memo(
-  ({ plugin, filePath, currentSession, onRefresh }) => {
+  ({ plugin, filePath, questions, currentSession, onRefresh }) => {
     const workflows = plugin.settings.sessionMode.tradeGateWorkflows;
+    const runnableWorkflows = useMemo(
+      () => getRunnableTradeGateWorkflows(workflows, questions),
+      [questions, workflows]
+    );
     const workflowPickerRef = useRef<HTMLDivElement>(null);
     const syncedFilePathRef = useRef(filePath);
     const [isWorkflowPickerOpen, setIsWorkflowPickerOpen] = useState(false);
     const [panelState, setPanelState] = useState<TradeGatePanelState>({
-      selectedWorkflowId: workflows[0]?.id ?? '',
+      selectedWorkflowId: runnableWorkflows[0]?.id ?? '',
       activeRun: null,
     });
     const { selectedWorkflowId, activeRun } = panelState;
-    const selectedWorkflow = useMemo(
-      () =>
-        workflows.find((workflow) => workflow.id === selectedWorkflowId) ??
-        workflows[0] ??
-        null,
-      [selectedWorkflowId, workflows]
-    );
+    const selectedWorkflow = useMemo(() => {
+      if (activeRun) {
+        return (
+          workflows.find((workflow) => workflow.id === selectedWorkflowId) ??
+          null
+        );
+      }
+      return (
+        runnableWorkflows.find(
+          (workflow) => workflow.id === selectedWorkflowId
+        ) ??
+        runnableWorkflows[0] ??
+        null
+      );
+    }, [activeRun, runnableWorkflows, selectedWorkflowId, workflows]);
     useEffect(() => {
       const ownerDocument =
         workflowPickerRef.current?.ownerDocument ?? window.activeDocument;
@@ -124,8 +107,12 @@ export const TradeGatePanel: React.FC<TradeGatePanelProps> = React.memo(
       const persisted = getActiveTradeGateRunFromFile(plugin, filePath);
       const persistedIsStale = Boolean(
         persisted &&
-        (isRunOutsideSession(persisted, currentSession) ||
-          !isTradeGateRunCompatibleWithWorkflows(persisted, workflows))
+        (isTradeGateRunOutsideSession(persisted, currentSession) ||
+          !isTradeGateRunCompatibleWithWorkflows(
+            persisted,
+            workflows,
+            questions
+          ))
       );
       const validPersisted = persistedIsStale ? null : persisted;
       if (persistedIsStale) {
@@ -136,8 +123,12 @@ export const TradeGatePanel: React.FC<TradeGatePanelProps> = React.memo(
         if (
           !filePathChanged &&
           current.activeRun &&
-          !isRunOutsideSession(current.activeRun, currentSession) &&
-          isTradeGateRunCompatibleWithWorkflows(current.activeRun, workflows) &&
+          !isTradeGateRunOutsideSession(current.activeRun, currentSession) &&
+          isTradeGateRunCompatibleWithWorkflows(
+            current.activeRun,
+            workflows,
+            questions
+          ) &&
           (!validPersisted ||
             isPersistedRunBehindLocalState(current.activeRun, validPersisted))
         ) {
@@ -151,8 +142,8 @@ export const TradeGatePanel: React.FC<TradeGatePanelProps> = React.memo(
           ).filter(
             (run) =>
               run.status === 'completed' &&
-              !isRunOutsideSession(run, currentSession) &&
-              isTradeGateRunCompatibleWithWorkflows(run, workflows)
+              !isTradeGateRunOutsideSession(run, currentSession) &&
+              isTradeGateRunCompatibleWithWorkflows(run, workflows, questions)
           );
           const latestCompletedRun =
             completedRuns[completedRuns.length - 1] ?? null;
@@ -163,14 +154,14 @@ export const TradeGatePanel: React.FC<TradeGatePanelProps> = React.memo(
             };
           }
 
-          const selectedStillExists = workflows.some(
+          const selectedStillExists = runnableWorkflows.some(
             (workflow) => workflow.id === current.selectedWorkflowId
           );
           return {
             activeRun: null,
             selectedWorkflowId: selectedStillExists
               ? current.selectedWorkflowId
-              : (workflows[0]?.id ?? ''),
+              : (runnableWorkflows[0]?.id ?? ''),
           };
         }
 
@@ -179,13 +170,21 @@ export const TradeGatePanel: React.FC<TradeGatePanelProps> = React.memo(
           selectedWorkflowId: validPersisted.workflowId,
         };
       });
-    }, [currentSession, filePath, plugin, workflows]);
+    }, [
+      currentSession,
+      filePath,
+      plugin,
+      questions,
+      runnableWorkflows,
+      workflows,
+    ]);
 
     const startRun = useCallback(async () => {
       if (!selectedWorkflow) return;
       if (
         !hasRunnableTradeGateQuestion(
           selectedWorkflow,
+          questions,
           selectedWorkflow.startNodeId
         )
       ) {
@@ -193,10 +192,13 @@ export const TradeGatePanel: React.FC<TradeGatePanelProps> = React.memo(
       }
       const nextRun = createTradeGateRun(selectedWorkflow);
       setIsWorkflowPickerOpen(false);
-      setPanelState((current) => ({ ...current, activeRun: nextRun }));
+      setPanelState({
+        selectedWorkflowId: selectedWorkflow.id,
+        activeRun: nextRun,
+      });
       await persistActiveTradeGateRun({ plugin, filePath, run: nextRun });
       onRefresh();
-    }, [filePath, onRefresh, plugin, selectedWorkflow]);
+    }, [filePath, onRefresh, plugin, questions, selectedWorkflow]);
 
     const changeWorkflow = useCallback(
       async (workflowId: string) => {
@@ -207,7 +209,13 @@ export const TradeGatePanel: React.FC<TradeGatePanelProps> = React.memo(
           selectedWorkflowId: workflowId,
         }));
         if (!workflow) return;
-        if (!hasRunnableTradeGateQuestion(workflow, workflow.startNodeId)) {
+        if (
+          !hasRunnableTradeGateQuestion(
+            workflow,
+            questions,
+            workflow.startNodeId
+          )
+        ) {
           return;
         }
         if (
@@ -220,7 +228,7 @@ export const TradeGatePanel: React.FC<TradeGatePanelProps> = React.memo(
           onRefresh();
         }
       },
-      [activeRun, filePath, onRefresh, plugin, workflows]
+      [activeRun, filePath, onRefresh, plugin, questions, workflows]
     );
 
     const selectOption = useCallback(
@@ -228,6 +236,7 @@ export const TradeGatePanel: React.FC<TradeGatePanelProps> = React.memo(
         if (!selectedWorkflow || !activeRun) return;
         const nextRun = advanceTradeGateRun({
           workflow: selectedWorkflow,
+          questions,
           run: activeRun,
           optionId,
         });
@@ -242,10 +251,10 @@ export const TradeGatePanel: React.FC<TradeGatePanelProps> = React.memo(
         await persistActiveTradeGateRun({ plugin, filePath, run: nextRun });
         onRefresh();
       },
-      [activeRun, filePath, onRefresh, plugin, selectedWorkflow]
+      [activeRun, filePath, onRefresh, plugin, questions, selectedWorkflow]
     );
 
-    if (workflows.length === 0) {
+    if (!activeRun && runnableWorkflows.length === 0) {
       return null;
     }
 
@@ -268,7 +277,7 @@ export const TradeGatePanel: React.FC<TradeGatePanelProps> = React.memo(
               role="listbox"
               aria-label={t('trade-gate.workflow')}
             >
-              {workflows.map((workflow) => (
+              {runnableWorkflows.map((workflow) => (
                 <button
                   key={workflow.id}
                   type="button"
@@ -299,6 +308,7 @@ export const TradeGatePanel: React.FC<TradeGatePanelProps> = React.memo(
         {activeRun && selectedWorkflow && (
           <TradeGateRunView
             workflow={selectedWorkflow}
+            questions={questions}
             run={activeRun}
             copySource="run-snapshot"
             onSelectOption={(optionId) => void selectOption(optionId)}

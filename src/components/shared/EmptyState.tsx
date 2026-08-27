@@ -16,7 +16,13 @@ interface EmptyStateProps {
   
   actionButtonText?: string;
   
+  actionIcon?: React.ReactNode;
+  
   onActionButtonClick?: () => void;
+  
+  secondaryActionButtonText?: string;
+  
+  onSecondaryActionButtonClick?: () => void;
 }
 
 
@@ -28,7 +34,10 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
   iconSize = 48,
   subMessage,
   actionButtonText,
+  actionIcon,
   onActionButtonClick,
+  secondaryActionButtonText,
+  onSecondaryActionButtonClick,
 }) => {
   return (
     <div className={`journalit-empty-state ${className}`}>
@@ -40,14 +49,32 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
         {subMessage && (
           <p className="journalit-empty-state-submessage">{subMessage}</p>
         )}
-        {actionButtonText && onActionButtonClick && (
-          <button
-            className="journalit-empty-state-action-button"
-            onClick={onActionButtonClick}
-          >
-            <Plus size={16} className="journalit-empty-state-action-icon" />
-            {actionButtonText}
-          </button>
+        {(actionButtonText || secondaryActionButtonText) && (
+          <div className="journalit-empty-state-actions">
+            {actionButtonText && onActionButtonClick && (
+              <button
+                className="journalit-empty-state-action-button"
+                onClick={onActionButtonClick}
+              >
+                {actionIcon ?? (
+                  <Plus
+                    size={16}
+                    className="journalit-empty-state-action-icon"
+                  />
+                )}
+                {actionButtonText}
+              </button>
+            )}
+            {secondaryActionButtonText && onSecondaryActionButtonClick && (
+              <button
+                className="journalit-empty-state-secondary-action-button"
+                onClick={onSecondaryActionButtonClick}
+              >
+                <Plus size={16} className="journalit-empty-state-action-icon" />
+                {secondaryActionButtonText}
+              </button>
+            )}
+          </div>
         )}
       </div>
     </div>

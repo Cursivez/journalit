@@ -35,6 +35,20 @@ export const TRADE_LOG_STYLES = `
   min-height: 0; 
 }
 
+.journalit-trade-log-empty-container {
+  display: flex;
+  flex: 1;
+  justify-content: center;
+  width: 100%;
+  min-height: 0;
+  padding: 0;
+  overflow-y: auto;
+}
+
+.journalit-trade-log-empty-container .journalit-empty-state {
+  border-radius: 0;
+}
+
 
 .trade-log-header {
   padding: 12px 16px 6px 16px;
@@ -468,7 +482,7 @@ export const TRADE_LOG_STYLES = `
   width: 100% !important;
 }
 
-.journalit-tradelog-trade-type-summary {
+button.journalit-native-button.journalit-tradelog-trade-type-summary {
   display: flex !important;
   justify-content: space-between !important;
   align-items: center !important;
@@ -485,12 +499,12 @@ export const TRADE_LOG_STYLES = `
   gap: 8px !important;
 }
 
-.journalit-tradelog-trade-type-summary:hover {
+button.journalit-native-button.journalit-tradelog-trade-type-summary:hover {
   border-color: var(--interactive-accent) !important;
   background-color: var(--background-modifier-hover) !important;
 }
 
-.journalit-tradelog-trade-type-summary:focus-visible {
+button.journalit-native-button.journalit-tradelog-trade-type-summary:focus-visible {
   outline: 2px solid var(--interactive-accent) !important;
   outline-offset: 2px !important;
 }
@@ -637,7 +651,7 @@ export const TRADE_LOG_STYLES = `
   width: 100% !important;
 }
 
-.journalit-tradelog-status-summary {
+button.journalit-native-button.journalit-tradelog-status-summary {
   display: flex !important;
   justify-content: space-between !important;
   align-items: center !important;
@@ -654,12 +668,12 @@ export const TRADE_LOG_STYLES = `
   gap: 8px !important;
 }
 
-.journalit-tradelog-status-summary:hover {
+button.journalit-native-button.journalit-tradelog-status-summary:hover {
   border-color: var(--interactive-accent) !important;
   background-color: var(--background-modifier-hover) !important;
 }
 
-.journalit-tradelog-status-summary:focus-visible {
+button.journalit-native-button.journalit-tradelog-status-summary:focus-visible {
   outline: 2px solid var(--interactive-accent) !important;
   outline-offset: 2px !important;
 }
@@ -1184,6 +1198,16 @@ export const TRADE_LOG_STYLES = `
   transition: color 0.2s ease;
 }
 
+button.journalit-native-button--unstyled.node-label {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--text-normal);
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
 .node-label:hover {
   color: var(--text-accent);
   background-color: transparent;
@@ -1416,13 +1440,26 @@ export const TRADE_LOG_STYLES = `
   transition: color 0.2s ease;
 }
 
-.header-cell.sortable:hover {
+.trade-log-header-row button.journalit-native-button.header-cell {
+  height: auto;
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  color: inherit;
+  font: inherit;
+  text-align: inherit;
+}
+
+.trade-log-header-row button.journalit-native-button.header-cell.sortable:hover {
   color: var(--text-normal);
-  background-color: var(--background-modifier-hover);
+  background: var(--background-modifier-hover);
   border-radius: 4px;
 }
 
-.header-cell.sorted {
+.trade-log-header-row button.journalit-native-button.header-cell.sorted {
   color: var(--interactive-accent);
   font-weight: 700;
 }
@@ -1740,6 +1777,13 @@ export const TRADE_LOG_STYLES = `
 }
 
 .journalit-trade-log-view-container .trade-pnl-copy-adjust-trigger {
+  height: auto;
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  color: inherit;
   cursor: pointer;
 }
 

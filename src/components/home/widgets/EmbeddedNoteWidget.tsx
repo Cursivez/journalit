@@ -103,10 +103,9 @@ export const EmbeddedNoteWidget = memo<EmbeddedNoteWidgetProps>(
     return (
       <div className="journalit-home-embedded-note">
         <div className="journalit-home-embedded-note__header journalit-home-embedded-note__header--spaced">
-          <div
-            className="journalit-home-widget__eyebrow journalit-home-embedded-note__header-label journalit-home-embedded-note__header-label--interactive"
-            role="button"
-            tabIndex={0}
+          <button
+            type="button"
+            className="journalit-native-button journalit-native-button--unstyled journalit-home-widget__eyebrow journalit-home-embedded-note__header-label journalit-home-embedded-note__header-label--interactive"
             onClick={() => void plugin.openFile(filePath, true)}
             onKeyDown={(event) => {
               if (event.key !== 'Enter' && event.key !== ' ') return;
@@ -116,7 +115,7 @@ export const EmbeddedNoteWidget = memo<EmbeddedNoteWidgetProps>(
             aria-label={t('home.widget.embedded-note.open-note')}
           >
             {displayTitle}
-          </div>
+          </button>
           <button
             onClick={() => setShowFilePicker(true)}
             className="jl-icon-button-hover clickable-icon journalit-home-embedded-note__icon-button"

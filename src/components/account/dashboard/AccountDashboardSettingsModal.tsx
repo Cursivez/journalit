@@ -9,7 +9,7 @@ import JournalitPlugin from '../../../main';
 import { OptionType } from '../../../services/options/CustomOptionsService';
 import { Button } from '../../ui/Button';
 import { AccountType, DrawdownType } from '../../../services/account/types';
-import { eventBus } from '../../../services/events';
+import { eventBus } from '../../../services/events/EventBus';
 import type { AccountCatalogEntry } from '../../../services/accountPage/types';
 import { useEventBus } from '../../../hooks/useEventBus';
 import {
@@ -84,6 +84,83 @@ export class AccountDashboardSettingsModal extends Modal {
     );
   }
 }
+
+const formatAccountType = (type: string): string => {
+  return type
+    .split('_')
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join(' ');
+};
+
+const isArchivedAccountType = (type: string): boolean =>
+  type.trim().toLowerCase() === 'archived';
+
+const moveArchivedToEnd = (types: string[]): string[] => {
+  const archivedIndex = types.findIndex((type) => isArchivedAccountType(type));
+
+  if (archivedIndex === -1) {
+    return types;
+  }
+
+  const archivedType = types[archivedIndex];
+  return [...types.filter((_, index) => index !== archivedIndex), archivedType];
+};
+
+const dispatchAccountTypeChangedEvent = (
+  action: 'added' | 'deleted' | 'migrated',
+  accountType: string,
+
+  details?: AccountTypeChangedDetails
+) => {
+  try {
+    
+    eventBus.publish('account:changed', {
+      action: 'type-changed',
+      timestamp: Date.now(),
+      accountType,
+      ...details,
+    });
+  } catch (error) {
+    console.error('Error dispatching account type changed event:', error);
+  }
+};
+
+const handleOperationWithRetry = async (
+  operation: () => Promise<void>,
+  operationName: string,
+  maxRetries: number = 2
+): Promise<boolean> => {
+  let lastError: Error | null = null;
+
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      await operation();
+      return true;
+    } catch (error) {
+      lastError = error instanceof Error ? error : new Error(String(error));
+      console.warn(
+        `${operationName} failed (attempt ${attempt}/${maxRetries}):`,
+        error
+      );
+
+      if (attempt < maxRetries) {
+        
+        await new Promise((resolve) =>
+          window.setTimeout(resolve, attempt * 1000)
+        );
+      }
+    }
+  }
+
+  
+  new Notice(
+    t('account.settings.notice.operation-failed', {
+      operation: operationName,
+      error: lastError?.message || t('common.unknown-error'),
+    })
+  );
+  return false;
+};
 
 function useAccountDashboardSettingsModel({
   plugin,
@@ -207,32 +284,6 @@ function useAccountDashboardSettingsModel({
       onModalClose();
     }
   }, [guideVersion, onModalClose, plugin]);
-
-  const formatAccountType = (type: string): string => {
-    return type
-      .split('_')
-      .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-      .join(' ');
-  };
-
-  const isArchivedAccountType = (type: string): boolean =>
-    type.trim().toLowerCase() === 'archived';
-
-  const moveArchivedToEnd = (types: string[]): string[] => {
-    const archivedIndex = types.findIndex((type) =>
-      isArchivedAccountType(type)
-    );
-
-    if (archivedIndex === -1) {
-      return types;
-    }
-
-    const archivedType = types[archivedIndex];
-    return [
-      ...types.filter((_, index) => index !== archivedIndex),
-      archivedType,
-    ];
-  };
 
   
   const handleAddAccountType = async () => {
@@ -941,62 +992,8 @@ function useAccountDashboardSettingsModel({
   };
 
   
-  const dispatchAccountTypeChangedEvent = (
-    action: 'added' | 'deleted' | 'migrated',
-    accountType: string,
-
-    details?: AccountTypeChangedDetails
-  ) => {
-    try {
-      
-      eventBus.publish('account:changed', {
-        action: 'type-changed',
-        timestamp: Date.now(),
-        accountType,
-        ...details,
-      });
-    } catch (error) {
-      console.error('Error dispatching account type changed event:', error);
-    }
-  };
 
   
-  const handleOperationWithRetry = async (
-    operation: () => Promise<void>,
-    operationName: string,
-    maxRetries: number = 2
-  ): Promise<boolean> => {
-    let lastError: Error | null = null;
-
-    for (let attempt = 1; attempt <= maxRetries; attempt++) {
-      try {
-        await operation();
-        return true;
-      } catch (error) {
-        lastError = error instanceof Error ? error : new Error(String(error));
-        console.warn(
-          `${operationName} failed (attempt ${attempt}/${maxRetries}):`,
-          error
-        );
-
-        if (attempt < maxRetries) {
-          
-          await new Promise((resolve) =>
-            window.setTimeout(resolve, attempt * 1000)
-          );
-        }
-      }
-    }
-
-    
-    new Notice(
-      t('account.settings.notice.operation-failed', {
-        operation: operationName,
-        error: lastError?.message || t('common.unknown-error'),
-      })
-    );
-    return false;
-  };
 
   const availableMigrationTypes = accountTypeToDelete
     ? customAccountTypes.filter(
@@ -1587,6 +1584,9 @@ function DashboardInclusionSection({
     }));
   };
 
+  const excludedAccountTypesSet = new Set(
+    dashboardSettings.excludedAccountTypes
+  );
   return (
     <>
       
@@ -1609,8 +1609,7 @@ function DashboardInclusionSection({
                   const canMoveDown =
                     !isArchivedAccountType(lowerType) &&
                     index < lastMovableIndex;
-                  const isExcluded =
-                    dashboardSettings.excludedAccountTypes.includes(lowerType);
+                  const isExcluded = excludedAccountTypesSet.has(lowerType);
                   const includeWithdrawals =
                     dashboardSettings.includeWithdrawalsFromExcluded[
                       lowerType

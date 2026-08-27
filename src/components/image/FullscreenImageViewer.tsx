@@ -11,7 +11,11 @@ import {
   Copy,
   LeftArrow,
   RightArrow,
+  Tag,
 } from '../shared/icons/ObsidianIcon';
+import { Button } from '../ui/Button';
+import { ImageAnnotationPanel } from '../shared/imageAnnotation/ImageAnnotationPanel';
+import { useFullscreenImageAnnotation } from './useFullscreenImageAnnotation';
 import {
   canWriteClipboardItems,
   writeClipboardImage,
@@ -30,6 +34,7 @@ import {
 import { ExcalidrawMediaEmbed } from './ExcalidrawMediaEmbed';
 import { FullscreenVideoPlayer } from './FullscreenVideoPlayer';
 import { FullscreenYouTubeEmbed } from './FullscreenYouTubeEmbed';
+import { mergeClassNames } from '../../utils/classNames';
 
 const PAN_CLICK_SUPPRESSION_THRESHOLD = 2;
 
@@ -44,7 +49,6 @@ const createInitialZoomState = (): ImageZoomState => ({
   scale: 1.0,
   panOffset: { x: 0, y: 0 },
   isPanning: false,
-  lastMousePos: { x: 0, y: 0 },
   initialPinchDistance: null,
   initialPinchScale: 1.0,
 });
@@ -74,6 +78,8 @@ function useFullscreenImageViewerModel({
   
   const suppressNextClickRef = useRef(false);
   const didPanDuringGestureRef = useRef(false);
+  const mousePanActiveRef = useRef(false);
+  const panPointerPositionRef = useRef({ x: 0, y: 0 });
 
   
   const resolvedSourcePath = navigationContext?.sourcePath ?? sourcePath;
@@ -97,6 +103,7 @@ function useFullscreenImageViewerModel({
   useEffect(() => {
     suppressNextClickRef.current = false;
     didPanDuringGestureRef.current = false;
+    panPointerPositionRef.current = { x: 0, y: 0 };
     if (contextMenuCloseTimeoutRef.current !== null) {
       window.clearTimeout(contextMenuCloseTimeoutRef.current);
       contextMenuCloseTimeoutRef.current = null;
@@ -246,11 +253,12 @@ function useFullscreenImageViewerModel({
       e.stopPropagation();
 
       didPanDuringGestureRef.current = false;
+      mousePanActiveRef.current = true;
+      panPointerPositionRef.current = { x: e.clientX, y: e.clientY };
 
       setZoomState((prev) => ({
         ...prev,
         isPanning: true,
-        lastMousePos: { x: e.clientX, y: e.clientY },
       }));
     },
     [zoomState.scale]
@@ -258,6 +266,7 @@ function useFullscreenImageViewerModel({
 
   
   const handlePanEnd = useCallback(() => {
+    mousePanActiveRef.current = false;
     if (didPanDuringGestureRef.current) {
       suppressNextClickRef.current = true;
       didPanDuringGestureRef.current = false;
@@ -310,12 +319,13 @@ function useFullscreenImageViewerModel({
   }, [handleNavigate, mediaKind]);
 
   
-  const handleGlobalMouseMove = useCallback((e: MouseEvent) => {
-    setZoomState((prev) => {
-      if (!prev.isPanning || prev.scale <= 1) return prev;
+  const handleGlobalMouseMove = useCallback(
+    (e: MouseEvent) => {
+      if (!mousePanActiveRef.current || zoomState.scale <= 1) return;
 
-      const deltaX = e.clientX - prev.lastMousePos.x;
-      const deltaY = e.clientY - prev.lastMousePos.y;
+      const deltaX = e.clientX - panPointerPositionRef.current.x;
+      const deltaY = e.clientY - panPointerPositionRef.current.y;
+      panPointerPositionRef.current = { x: e.clientX, y: e.clientY };
 
       if (
         Math.abs(deltaX) > PAN_CLICK_SUPPRESSION_THRESHOLD ||
@@ -326,21 +336,19 @@ function useFullscreenImageViewerModel({
 
       
       const sensitivity = 0.8;
-      const smoothDeltaX = deltaX * sensitivity;
-      const smoothDeltaY = deltaY * sensitivity;
-
-      return {
-        ...prev,
+      setZoomState((current) => ({
+        ...current,
         panOffset: {
-          x: prev.panOffset.x + smoothDeltaX,
-          y: prev.panOffset.y + smoothDeltaY,
+          x: current.panOffset.x + deltaX * sensitivity,
+          y: current.panOffset.y + deltaY * sensitivity,
         },
-        lastMousePos: { x: e.clientX, y: e.clientY },
-      };
-    });
-  }, []);
+      }));
+    },
+    [zoomState]
+  );
 
   const handleGlobalMouseUp = useCallback(() => {
+    mousePanActiveRef.current = false;
     if (didPanDuringGestureRef.current) {
       suppressNextClickRef.current = true;
       didPanDuringGestureRef.current = false;
@@ -421,10 +429,13 @@ function useFullscreenImageViewerModel({
         e.preventDefault();
         didPanDuringGestureRef.current = false;
         const touch = e.touches[0];
+        panPointerPositionRef.current = {
+          x: touch.clientX,
+          y: touch.clientY,
+        };
         setZoomState((prev) => ({
           ...prev,
           isPanning: true,
-          lastMousePos: { x: touch.clientX, y: touch.clientY },
         }));
       }
     },
@@ -457,31 +468,29 @@ function useFullscreenImageViewerModel({
         
         e.preventDefault(); 
         const touch = e.touches[0];
-        setZoomState((prev) => {
-          if (!prev.isPanning || prev.scale <= 1) return prev;
+        const deltaX = touch.clientX - panPointerPositionRef.current.x;
+        const deltaY = touch.clientY - panPointerPositionRef.current.y;
+        panPointerPositionRef.current = {
+          x: touch.clientX,
+          y: touch.clientY,
+        };
 
-          const deltaX = touch.clientX - prev.lastMousePos.x;
-          const deltaY = touch.clientY - prev.lastMousePos.y;
+        if (
+          Math.abs(deltaX) > PAN_CLICK_SUPPRESSION_THRESHOLD ||
+          Math.abs(deltaY) > PAN_CLICK_SUPPRESSION_THRESHOLD
+        ) {
+          didPanDuringGestureRef.current = true;
+        }
 
-          if (
-            Math.abs(deltaX) > PAN_CLICK_SUPPRESSION_THRESHOLD ||
-            Math.abs(deltaY) > PAN_CLICK_SUPPRESSION_THRESHOLD
-          ) {
-            didPanDuringGestureRef.current = true;
-          }
-
-          
-          const sensitivity = 0.8;
-
-          return {
-            ...prev,
-            panOffset: {
-              x: prev.panOffset.x + deltaX * sensitivity,
-              y: prev.panOffset.y + deltaY * sensitivity,
-            },
-            lastMousePos: { x: touch.clientX, y: touch.clientY },
-          };
-        });
+        
+        const sensitivity = 0.8;
+        setZoomState((current) => ({
+          ...current,
+          panOffset: {
+            x: current.panOffset.x + deltaX * sensitivity,
+            y: current.panOffset.y + deltaY * sensitivity,
+          },
+        }));
       }
     },
     [
@@ -519,9 +528,13 @@ function useFullscreenImageViewerModel({
       });
     } else if (e.touches.length === 1) {
       
+      const touch = e.touches[0];
+      panPointerPositionRef.current = {
+        x: touch.clientX,
+        y: touch.clientY,
+      };
       setZoomState((prev) => {
         const finalScale = prev.scale < 1.1 ? 1.0 : prev.scale;
-        const touch = e.touches[0];
         return {
           ...prev,
           initialPinchDistance: null,
@@ -530,7 +543,6 @@ function useFullscreenImageViewerModel({
           isZoomed: finalScale > 1.0,
           
           isPanning: finalScale > 1.0,
-          lastMousePos: { x: touch.clientX, y: touch.clientY },
           panOffset: finalScale <= 1.0 ? { x: 0, y: 0 } : prev.panOffset,
         };
       });
@@ -683,12 +695,14 @@ function FullscreenImageElement({
         className="journalit-fullscreen-image-wrapper"
         onContextMenu={handleImageContextMenu}
       >
-        <div
-          className={zoomableClassName}
+        <button
+          type="button"
+          className={mergeClassNames(
+            'journalit-native-button journalit-native-button--unstyled',
+            zoomableClassName
+          )}
           onClick={handleImageClick}
           onKeyDown={handleMediaKeyDown}
-          role="button"
-          tabIndex={0}
           onMouseDown={handlePanStart}
           onMouseUp={handlePanEnd}
           onMouseLeave={handlePanEnd}
@@ -703,7 +717,7 @@ function FullscreenImageElement({
             sourcePath={sourcePath}
             fullscreen={true}
           />
-        </div>
+        </button>
       </div>
     );
   }
@@ -713,28 +727,11 @@ function FullscreenImageElement({
       className="journalit-fullscreen-image-wrapper"
       onContextMenu={handleImageContextMenu}
     >
-      <img
-        ref={imageRef}
-        src={imageUrl}
-        alt={alt}
-        className={[
-          'journalit-fullscreen-zoomable-image',
-          zoomState.scale > 1
-            ? 'journalit-fullscreen-zoomable-image--zoomed'
-            : '',
-          zoomState.isPanning
-            ? 'journalit-fullscreen-zoomable-image--panning'
-            : '',
-          zoomState.isPanning || isPinching
-            ? 'journalit-fullscreen-zoomable-image--transform-active'
-            : '',
-        ]
-          .filter(Boolean)
-          .join(' ')}
+      <button
+        type="button"
+        className="journalit-native-button journalit-native-button--unstyled journalit-fullscreen-image-button"
         onClick={handleImageClick}
         onKeyDown={handleMediaKeyDown}
-        role="button"
-        tabIndex={0}
         onMouseDown={handlePanStart}
         onMouseUp={handlePanEnd}
         onMouseLeave={handlePanEnd}
@@ -742,8 +739,28 @@ function FullscreenImageElement({
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
         onTouchCancel={handleTouchEnd}
-        style={dndKitStyle(imageTransform, zoomTransition)}
-      />
+      >
+        <img
+          ref={imageRef}
+          src={imageUrl}
+          alt={alt}
+          className={[
+            'journalit-fullscreen-zoomable-image',
+            zoomState.scale > 1
+              ? 'journalit-fullscreen-zoomable-image--zoomed'
+              : '',
+            zoomState.isPanning
+              ? 'journalit-fullscreen-zoomable-image--panning'
+              : '',
+            zoomState.isPanning || isPinching
+              ? 'journalit-fullscreen-zoomable-image--transform-active'
+              : '',
+          ]
+            .filter(Boolean)
+            .join(' ')}
+          style={dndKitStyle(imageTransform, zoomTransition)}
+        />
+      </button>
     </div>
   );
 }
@@ -840,6 +857,7 @@ export const FullscreenImageViewer: React.FC<FullscreenImageViewerProps> = ({
   useResolveMediaPath = false,
   sourcePath = '',
   navigationContext,
+  annotationOptions,
 }) => {
   const resolvedNavigationContext = navigationContext
     ? {
@@ -854,25 +872,72 @@ export const FullscreenImageViewer: React.FC<FullscreenImageViewerProps> = ({
     navigationContext: resolvedNavigationContext,
   });
   const { containerRef, mediaKind } = model;
+  const annotation = useFullscreenImageAnnotation({
+    annotationOptions,
+    imagePath,
+    sourcePath: resolvedNavigationContext?.sourcePath ?? sourcePath,
+  });
 
   return (
-    <div className="journalit-fullscreen-viewer" ref={containerRef}>
-      <FullscreenNavigationButtons
-        navigationContext={navigationContext}
-        onNavigate={model.handleNavigate}
-      />
+    <div
+      className={`journalit-fullscreen-annotation-layout${
+        annotation.isAnnotating
+          ? ' journalit-fullscreen-annotation-layout--open'
+          : ''
+      }`}
+    >
+      <div className="journalit-fullscreen-viewer" ref={containerRef}>
+        <FullscreenNavigationButtons
+          navigationContext={navigationContext}
+          onNavigate={model.handleNavigate}
+        />
 
-      <FullscreenImageElement model={model} alt={alt} />
+        <FullscreenImageElement model={model} alt={alt} />
 
-      {mediaKind !== 'video' && mediaKind !== 'youtube' && (
-        <FullscreenZoomIndicator zoomState={model.zoomState} />
-      )}
+        {mediaKind !== 'video' && mediaKind !== 'youtube' && (
+          <FullscreenZoomIndicator zoomState={model.zoomState} />
+        )}
 
-      <FullscreenNavigationIndicator navigationContext={navigationContext} />
+        <FullscreenNavigationIndicator navigationContext={navigationContext} />
 
-      {mediaKind !== 'video' && mediaKind !== 'youtube' && (
-        <FullscreenCopyImageMenu model={model} />
-      )}
+        {mediaKind !== 'video' && mediaKind !== 'youtube' && (
+          <FullscreenCopyImageMenu model={model} />
+        )}
+      </div>
+
+      {annotation.canAnnotate && !annotation.isAnnotating ? (
+        <div
+          className="journalit-fullscreen-annotation-actions"
+          onClick={(event) => event.stopPropagation()}
+          onKeyDown={(event) => event.stopPropagation()}
+          role="presentation"
+        >
+          <Button
+            className="journalit-fullscreen-annotation-button"
+            disabled={annotation.isLoading}
+            onClick={annotation.open}
+            size="small"
+            variant="secondary"
+          >
+            <Tag size={14} />
+            <span>{t('imageGallery.annotation.tag')}</span>
+          </Button>
+        </div>
+      ) : null}
+
+      {annotation.target && annotation.plugin ? (
+        <ImageAnnotationPanel
+          key={JSON.stringify([
+            annotation.target.sourcePath,
+            annotation.target.imagePath,
+          ])}
+          plugin={annotation.plugin}
+          imagePath={annotation.target.imagePath}
+          initialAnnotation={annotation.target.annotation}
+          onClose={annotation.close}
+          onSave={annotation.save}
+        />
+      ) : null}
     </div>
   );
 };

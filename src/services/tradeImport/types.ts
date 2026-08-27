@@ -32,6 +32,12 @@ export interface TradeImportCapabilities {
     mappingVersion: number;
     modes: TradeImportManualMode[];
   };
+  freePreviewLimits?: {
+    requestsPerHour: number;
+    diagnosticRetentionMinutes: number;
+    storedPreviewRetentionHours: number;
+    maxStoredPreviewItems: number;
+  };
   diagnosticVersion: string;
 }
 

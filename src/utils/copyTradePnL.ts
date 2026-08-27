@@ -1,7 +1,8 @@
-import JournalitPlugin from '../main';
+import type JournalitPlugin from '../main';
 import { calculateActualCommission } from './pnlCalculation';
 import { getEffectivePnL } from './tradeStatusUtils';
 import { safeString } from './safeString';
+import { hasUnknownCanonicalPnL } from '../services/trade/core/CanonicalProjectionFields';
 
 type CopyTradeInput = {
   tradeId?: unknown;
@@ -103,15 +104,28 @@ export function getCopyTradeAdjustment(
   ];
 }
 
-export function calculateCopiedTradePnL(input: {
+type CopiedTradePnLInput = {
   plugin: JournalitPlugin;
   baseTrade: CopyTradeInput;
   copyAccountName: string;
   copyAccountLookupKey: string;
   multiplier: number;
-}): { pnl: number; commission?: number; adjustment: number } {
+  resolvedBaseNetPnL?: number;
+  resolvedBaseFinancialAdjustmentRatio?: number;
+};
+
+export function calculateCopiedTradePnL(input: CopiedTradePnLInput): {
+  pnl: number | null;
+  commission?: number;
+  adjustment: number;
+} {
   const baseTradePnlInput = buildCopyTradePnlInput(input.baseTrade);
-  const baseNetPnL = getEffectivePnL(baseTradePnlInput);
+  const baseNetPnL = hasUnknownCanonicalPnL(input.baseTrade)
+    ? null
+    : typeof input.resolvedBaseNetPnL === 'number' &&
+        Number.isFinite(input.resolvedBaseNetPnL)
+      ? input.resolvedBaseNetPnL
+      : getEffectivePnL(baseTradePnlInput);
   const positionSize = Number(input.baseTrade.positionSize ?? 0);
   const commission = input.plugin.optionsService?.calculateInstrumentCommission(
     {
@@ -138,12 +152,22 @@ export function calculateCopiedTradePnL(input: {
     )?.pnlAdjustment ?? 0;
 
   const basePnLForCopy =
-    commission === undefined
-      ? baseNetPnL
-      : baseNetPnL + Math.abs(calculateActualCommission(baseTradePnlInput));
+    baseNetPnL === null
+      ? null
+      : commission === undefined
+        ? baseNetPnL
+        : baseNetPnL +
+          Math.abs(calculateActualCommission(baseTradePnlInput)) *
+            (typeof input.resolvedBaseFinancialAdjustmentRatio === 'number' &&
+            Number.isFinite(input.resolvedBaseFinancialAdjustmentRatio)
+              ? input.resolvedBaseFinancialAdjustmentRatio
+              : 1);
 
   return {
-    pnl: basePnLForCopy * input.multiplier - (commission ?? 0) + adjustment,
+    pnl:
+      basePnLForCopy === null
+        ? null
+        : basePnLForCopy * input.multiplier - (commission ?? 0) + adjustment,
     commission,
     adjustment,
   };

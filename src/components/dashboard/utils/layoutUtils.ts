@@ -8,7 +8,7 @@ import {
   type DashboardSettings,
 } from '../../../settings/types';
 import { AVAILABLE_METRICS } from '../components/TopSection/types';
-import { eventBus } from '../../../services/events';
+import { eventBus } from '../../../services/events/EventBus';
 
 
 let saveLayoutTimer: number | null = null;

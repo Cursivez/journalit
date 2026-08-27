@@ -390,11 +390,25 @@
 
   .upgrade-modal .upgrade-modal-actions {display: flex;justify-content: flex-end;gap: 10px;border-top: 1px solid var(--background-modifier-border);padding-top: 15px}
 
-.journalit-update-toast {background: var(--background-primary);border: 1px solid var(--background-modifier-border);border-radius: 8px;box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);padding: 0;font-family: var(--font-interface);position: absolute;bottom: 24px;left: 24px;z-index: 10000;max-width: 400px;opacity: 0;transform: translateX(-100%);transition: opacity 0.3s ease-out, transform 0.3s ease-out;overflow: hidden}
+.journalit-update-toast {background: var(--background-primary);border: 1px solid var(--background-modifier-border);border-radius: 8px;box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);padding: 0;font-family: var(--font-interface);position: fixed;bottom: 24px;left: 24px;z-index: 10000;max-width: 400px;opacity: 0;transform: translateX(-100%);transition: opacity 0.3s ease-out, transform 0.3s ease-out;overflow: hidden}
 
 .journalit-update-toast--visible {opacity: 1;transform: translateX(0)}
 
-.journalit-update-toast-container {position: relative}
+.journalit-update-toast--available {width: 360px;max-width: calc(100% - 48px);padding: 16px 52px 16px 18px;display: grid;grid-template-columns: minmax(0, 1fr) auto;grid-template-areas:
+    "title actions"
+    "description actions";align-items: center;row-gap: 3px}
+
+.journalit-update-toast--available .journalit-update-toast-title {grid-area: title;min-width: 0;margin: 0;padding: 0;font-size: 15px;font-weight: 600;line-height: 1.4;white-space: nowrap;overflow: hidden;text-overflow: ellipsis}
+
+.journalit-update-toast--available .journalit-update-toast-description {grid-area: description;min-width: 0;margin: 0;padding: 0;font-size: 13px;line-height: 1.4;white-space: nowrap;overflow: hidden;text-overflow: ellipsis}
+
+.journalit-update-toast--available .journalit-update-toast-close {top: 10px;right: 10px}
+
+.journalit-update-toast--available .journalit-update-toast-button-container {grid-area: actions;align-self: end;padding: 0;flex: 0 0 auto}
+
+.journalit-update-toast--available .journalit-update-toast-button {background-color: var(--interactive-accent);color: var(--text-on-accent)}
+
+.journalit-update-toast--available .journalit-update-toast-button:hover {background-color: var(--interactive-accent-hover)}
 
 .journalit-update-toast-title {color: var(--text-normal);font-size: 18px;font-weight: 500;margin: 0 0 12px 0;padding: 0 20px;letter-spacing: -0.02em;line-height: 1.3}
 
@@ -412,27 +426,33 @@
 
 .journalit-update-toast-button-container {padding: 0 20px 16px 20px;display: flex;justify-content: space-between;align-items: center}
 
+.journalit-update-toast-button-container--single {justify-content: flex-end}
+
 .journalit-update-toast-button {background: var(--interactive-accent);color: var(--text-on-accent);border: none;border-radius: 6px;padding: 6px 12px;font-size: 12px;font-weight: 500;cursor: pointer;transition: background 0.2s ease;letter-spacing: 0.01em;display: flex;align-items: center;gap: 6px}
 
 .journalit-update-toast-button:hover {background: var(--interactive-accent-hover)}
 
-.journalit-update-toast-discord-button {background: transparent;color: var(--text-muted);border: 1px solid var(--background-modifier-border);border-radius: 6px;padding: 6px 10px;font-size: 12px;font-weight: 500;cursor: pointer;transition: color 0.2s ease;display: flex;align-items: center;gap: 6px}
+.journalit-update-toast-secondary-button {background: transparent;color: var(--text-muted);border: 1px solid var(--background-modifier-border);border-radius: 6px;padding: 6px 10px;font-size: 12px;font-weight: 500;cursor: pointer;transition: color 0.2s ease;display: flex;align-items: center;gap: 6px}
 
-.journalit-update-toast-discord-button:hover {background: var(--background-secondary);color: var(--text-normal);border-color: var(--background-modifier-border-hover)}
+.journalit-update-toast-secondary-button:hover {background: var(--background-secondary);color: var(--text-normal);border-color: var(--background-modifier-border-hover)}
 
 .journalit-update-toast-button-icon {width: 14px;height: 14px;display: flex;align-items: center;justify-content: center}
 
 @media (max-width: 768px) {
   .journalit-update-toast {bottom: 80px;left: 12px;right: 12px;max-width: calc(100vw - 24px)}
+
+  .journalit-update-toast--available {width: auto}
+
+  .journalit-update-toast--available .journalit-update-toast-description {white-space: normal;overflow: visible}
 }
 
 .journalit-collapsible-section {border: 1px solid var(--background-modifier-border);border-radius: 6px;background: var(--background-primary);margin-bottom: 12px}
 
-.journalit-collapsible-header {display: flex;align-items: center;justify-content: space-between;width: 100%;padding: 10px 12px;background: transparent;border: none;cursor: pointer;color: var(--text-normal);font-size: 13px;font-weight: 600;text-align: left;transition: background-color 0.15s ease;border-radius: 6px}
+button.journalit-native-button.journalit-collapsible-header {display: flex;align-items: center;justify-content: space-between;width: 100%;padding: 10px 12px;background: transparent;border: none;cursor: pointer;color: var(--text-normal);font-size: 13px;font-weight: 600;text-align: left;transition: background-color 0.15s ease;border-radius: 6px}
 
-.journalit-collapsible-header:hover {background: var(--background-modifier-hover)}
+button.journalit-native-button.journalit-collapsible-header:hover {background: var(--background-modifier-hover)}
 
-.journalit-collapsible-header:focus {outline: 2px solid var(--interactive-accent);outline-offset: -2px}
+button.journalit-native-button.journalit-collapsible-header:focus {outline: 2px solid var(--interactive-accent);outline-offset: -2px}
 
 .journalit-collapsible-header-left {display: flex;align-items: center;gap: 8px}
 
@@ -625,10 +645,6 @@
 
 .journalit-tradelog-trade-type-dropdown {position: relative}
 
-.journalit-tradelog-trade-type-summary {display: flex;justify-content: space-between;align-items: center;padding: 5px 10px;background-color: var(--background-primary);border: 1px solid var(--background-modifier-border);border-radius: 4px;cursor: pointer;font-size: 0.9em;white-space: nowrap;gap: 8px}
-
-.journalit-tradelog-trade-type-summary:hover {border-color: var(--interactive-accent);background-color: var(--background-modifier-hover)}
-
 .journalit-tradelog-trade-type-options-dropdown {position: absolute;top: 100%;left: 0;right: 0;margin-top: 4px;background-color: var(--background-primary);border: 1px solid var(--background-modifier-border);border-radius: 4px;box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);max-height: 300px;overflow-y: auto;z-index: 100}
 
 .journalit-tradelog-trade-type-option-item {display: flex;align-items: center;padding: 6px 10px;cursor: pointer;gap: 8px}
@@ -645,10 +661,6 @@
 .journalit-tradelog-status-filter {display: flex;flex-direction: column;position: relative;min-width: 140px}
 
 .journalit-tradelog-status-dropdown {position: relative}
-
-.journalit-tradelog-status-summary {display: flex;justify-content: space-between;align-items: center;padding: 5px 10px;background-color: var(--background-primary);border: 1px solid var(--background-modifier-border);border-radius: 4px;cursor: pointer;font-size: 0.9em;white-space: nowrap;gap: 8px}
-
-.journalit-tradelog-status-summary:hover {border-color: var(--interactive-accent);background-color: var(--background-modifier-hover)}
 
 .journalit-tradelog-status-options-dropdown {position: absolute;top: 100%;left: 0;right: 0;margin-top: 4px;background-color: var(--background-primary);border: 1px solid var(--background-modifier-border);border-radius: 4px;box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);max-height: 300px;overflow-y: auto;z-index: 100}
 
@@ -671,11 +683,11 @@
 
 .journalit-tradelog-custom-field-dropdown {position: relative}
 
-.journalit-tradelog-custom-field-summary {display: flex;justify-content: space-between;align-items: center;padding: 5px 10px;background-color: var(--background-primary);border: 1px solid var(--background-modifier-border);border-radius: 4px;cursor: pointer;font-size: 0.9em;white-space: nowrap;gap: 8px;overflow: hidden;text-overflow: ellipsis;min-width: 0}
+button.journalit-native-button.journalit-tradelog-custom-field-summary {display: flex;justify-content: space-between;align-items: center;padding: 5px 10px;background-color: var(--background-primary);border: 1px solid var(--background-modifier-border);border-radius: 4px;cursor: pointer;font-size: 0.9em;white-space: nowrap;gap: 8px;overflow: hidden;text-overflow: ellipsis;min-width: 0}
 
-.journalit-tradelog-custom-field-summary:hover {border-color: var(--interactive-accent);background-color: var(--background-modifier-hover)}
+button.journalit-native-button.journalit-tradelog-custom-field-summary:hover {border-color: var(--interactive-accent);background-color: var(--background-modifier-hover)}
 
-.journalit-tradelog-custom-field-summary:focus-visible {outline: 2px solid var(--interactive-accent);outline-offset: 2px}
+button.journalit-native-button.journalit-tradelog-custom-field-summary:focus-visible {outline: 2px solid var(--interactive-accent);outline-offset: 2px}
 
 .journalit-tradelog-custom-field-summary .dropdown-arrow {font-size: 10px;color: var(--text-muted);transition: transform 0.2s ease}
 
@@ -759,6 +771,123 @@
 .journalit-update-status-icon svg {width: 14px;height: 14px}
 
 .journalit-update-status-text {font-size: 12px;color: var(--text-muted)}
+
+.journalit-rithmic-attribution {margin-top: 16px;padding-top: 14px;border-top: 1px solid var(--background-modifier-border)}
+
+  .journalit-rithmic-attribution__marks {display: flex;flex-wrap: wrap;align-items: center;gap: 8px 20px}
+
+  .journalit-rithmic-attribution__mark {height: 20px;width: auto;max-width: 100%}
+
+  .journalit-rithmic-attribution__notices {margin-top: 12px;display: flex;flex-direction: column;gap: 4px}
+
+  .journalit-rithmic-attribution__notice {margin: 0;font-size: var(--font-smallest);line-height: 1.4;color: var(--text-muted);white-space: pre-wrap}
+
+.journalit-settings .journalit-session-mode-trade-gate-expand__summary {flex: 0 0 auto;color: var(--text-muted);font-size: var(--font-ui-smaller);white-space: nowrap}
+
+  
+  .journalit-settings
+    .journalit-session-mode-trade-gate-flow-edge.is-unwired
+    path {stroke-dasharray: 5 4;opacity: 0.7}
+
+  
+  .journalit-settings button.journalit-trade-gate-flow-outcome {position: absolute;left: var(--trade-gate-flow-node-left);top: var(--trade-gate-flow-node-top);display: inline-flex;width: 132px;height: auto;min-height: 0;align-items: center;justify-content: center;gap: var(--size-2-1);padding: var(--size-2-2) var(--size-2-3);border: 1px solid var(--background-modifier-border);border-radius: 999px;background: var(--background-secondary);font-size: var(--font-ui-smaller);font-weight: var(--font-semibold);cursor: pointer}
+
+  .journalit-settings button.journalit-trade-gate-flow-outcome.is-green-light {border-color: rgba(var(--color-green-rgb), 0.55);background: rgba(var(--color-green-rgb), 0.12);color: var(--color-green)}
+
+  .journalit-settings button.journalit-trade-gate-flow-outcome.is-no-trade {border-color: rgba(var(--color-red-rgb), 0.55);background: rgba(var(--color-red-rgb), 0.12);color: var(--color-red)}
+
+  .journalit-settings button.journalit-trade-gate-flow-outcome.is-wait {border-color: rgba(var(--color-yellow-rgb), 0.55);background: rgba(var(--color-yellow-rgb), 0.12);color: var(--color-yellow)}
+
+  .journalit-settings button.journalit-trade-gate-flow-outcome:hover {filter: brightness(1.1)}
+
+  
+  .journalit-settings button.journalit-trade-gate-flow-unwired {position: absolute;left: var(--trade-gate-flow-node-left);top: var(--trade-gate-flow-node-top);display: inline-flex;width: 132px;height: auto;min-height: 0;flex-direction: column;align-items: center;gap: 2px;padding: var(--size-2-2) var(--size-2-3);border: 1px dashed rgba(var(--color-yellow-rgb), 0.75);border-radius: var(--radius-m);background: rgba(var(--color-yellow-rgb), 0.08);color: var(--color-yellow);cursor: pointer}
+
+  .journalit-settings button.journalit-trade-gate-flow-unwired:hover {background: rgba(var(--color-yellow-rgb), 0.16)}
+
+  .journalit-settings .journalit-trade-gate-flow-unwired__label {font-size: var(--font-ui-smaller);font-weight: var(--font-semibold)}
+
+  .journalit-settings .journalit-trade-gate-flow-unwired__hint {color: var(--text-muted);font-size: 10px}
+
+  
+  .journalit-settings .journalit-trade-gate-unplaced {display: flex;flex-direction: column;gap: var(--size-2-2);padding: var(--size-2-3);border: 1px dashed var(--background-modifier-border-hover);border-radius: var(--radius-m)}
+
+  .journalit-settings .journalit-trade-gate-unplaced__title {color: var(--text-muted);font-size: var(--font-ui-smaller);font-weight: var(--font-semibold);text-transform: uppercase;letter-spacing: 0.04em}
+
+  .journalit-settings .journalit-trade-gate-unplaced__list {display: flex;flex-wrap: wrap;gap: var(--size-2-2)}
+
+  .journalit-settings button.journalit-trade-gate-unplaced__chip {display: inline-flex;width: auto;height: auto;min-height: 0;align-items: center;padding: var(--size-2-1) var(--size-2-3);border: 1px solid var(--background-modifier-border);border-radius: 999px;background: var(--background-secondary);font-size: var(--font-ui-smaller);cursor: pointer}
+
+  .journalit-settings button.journalit-trade-gate-unplaced__chip:hover {background: var(--background-modifier-hover)}
+
+  
+  .journalit-trade-gate-question-modal-host {width: min(560px, 92vw)}
+
+  .journalit-trade-gate-question-modal {display: flex;flex-direction: column;gap: var(--size-2-3)}
+
+  .journalit-trade-gate-question-modal__field {display: flex;flex-direction: column;gap: var(--size-2-1)}
+
+  .journalit-trade-gate-question-modal__field input,
+  .journalit-trade-gate-question-modal__option-row input,
+  .journalit-trade-gate-question-modal__note textarea,
+  .journalit-trade-gate-question-modal__textarea {width: 100%}
+
+  .journalit-trade-gate-question-modal__textarea {min-height: 56px;resize: vertical}
+
+  .journalit-trade-gate-question-modal__options-header {display: flex;align-items: center;justify-content: space-between;margin-top: var(--size-2-2);font-weight: var(--font-semibold)}
+
+  .journalit-trade-gate-question-modal__options {display: flex;flex-direction: column;gap: var(--size-2-3)}
+
+  .journalit-trade-gate-question-modal__option {display: flex;flex-direction: column;gap: var(--size-2-2);padding: var(--size-2-2);border: 1px solid var(--background-modifier-border);border-radius: var(--radius-s);background: var(--background-secondary)}
+
+  .journalit-trade-gate-question-modal__option-row {display: grid;grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;gap: var(--size-2-2);align-items: center}
+
+  .journalit-trade-gate-question-modal__option-row--no-routing {grid-template-columns: minmax(0, 1fr) auto}
+
+  .journalit-trade-gate-question-modal__note {display: flex;flex-direction: column;gap: var(--size-2-1)}
+
+  .journalit-trade-gate-question-modal__footer {display: flex;align-items: center;justify-content: space-between;gap: var(--size-2-3);margin-top: var(--size-2-3);padding-top: var(--size-2-3);border-top: 1px solid var(--background-modifier-border)}
+
+  .journalit-trade-gate-question-modal__footer-info {display: flex;min-width: 0;flex-direction: column;gap: var(--size-2-1);align-items: flex-start}
+
+  .journalit-trade-gate-question-modal__footer-actions {display: flex;flex: 0 0 auto;gap: var(--size-2-2)}
+
+  .journalit-trade-gate-question-modal button.journalit-trade-gate-question-modal__remove {display: inline;width: auto;height: auto;min-height: 0;padding: 0;border: 0;background: transparent;box-shadow: none;color: var(--text-error);font-size: var(--font-ui-smaller);cursor: pointer}
+
+  
+  .journalit-trade-gate-library-modal-host {width: min(600px, 92vw)}
+
+  .journalit-trade-gate-library {display: flex;flex-direction: column;gap: var(--size-2-3)}
+
+  .journalit-trade-gate-library__toolbar {display: flex;gap: var(--size-2-2);align-items: center}
+
+  .journalit-trade-gate-library__toolbar input {flex: 1 1 auto}
+
+  .journalit-trade-gate-library__list {display: flex;flex-direction: column}
+
+  .journalit-trade-gate-library__row {display: grid;grid-template-columns: minmax(0, 1fr) auto auto;gap: var(--size-2-3);align-items: center;padding: var(--size-2-3) var(--size-2-1);border-bottom: 1px solid var(--background-modifier-border)}
+
+  .journalit-trade-gate-library__row:last-child {border-bottom: 0}
+
+  .journalit-trade-gate-library__row-main {display: flex;min-width: 0;flex-direction: column;gap: var(--size-2-1)}
+
+  .journalit-trade-gate-library__row-title {overflow: hidden;font-weight: var(--font-semibold);text-overflow: ellipsis;white-space: nowrap}
+
+  .journalit-trade-gate-library__row-chips {display: flex;flex-wrap: wrap;gap: var(--size-2-1)}
+
+  .journalit-trade-gate-library__chip {padding: 1px var(--size-2-2);border: 1px solid var(--background-modifier-border);border-radius: 999px;color: var(--text-muted);font-size: var(--font-ui-smaller)}
+
+  .journalit-trade-gate-library__usage {flex: 0 0 auto;padding: 2px var(--size-2-2);border-radius: var(--radius-s);background: var(--background-modifier-hover);color: var(--text-muted);font-size: var(--font-ui-smaller);white-space: nowrap}
+
+  .journalit-trade-gate-library__usage.is-unused {border: 1px dashed var(--background-modifier-border-hover);background: transparent}
+
+  .journalit-trade-gate-library__row-actions {display: flex;flex: 0 0 auto;gap: var(--size-2-1);align-items: center}
+
+  .journalit-trade-gate-library__row-actions
+    button.journalit-trade-gate-library__icon-button {width: auto;height: auto;min-height: 0;padding: var(--size-2-1);border: 0;background: transparent;box-shadow: none;color: var(--text-muted);cursor: pointer}
+
+  .journalit-trade-gate-library__row-actions
+    button.journalit-trade-gate-library__icon-button:hover {color: var(--text-normal)}
 
 .journalit-settings-accordion {margin-bottom: 16px;border: 1px solid var(--background-modifier-border);border-radius: 6px;overflow: hidden;transition: box-shadow 150ms ease-out}
 
@@ -1601,13 +1730,10 @@
 .account-weight-segment {height: 100%;width: auto;flex: var(--journalit-account-weight-segment-ratio, 0) 1 0;background-color: var(
     --journalit-account-weight-segment-color,
     var(--interactive-accent)
-  );cursor: pointer;transition: color 0.3s cubic-bezier(0.4, 0, 0.2, 1);position: relative;min-width: 3px;border-radius: 4px}
+  );transition: color 0.3s cubic-bezier(0.4, 0, 0.2, 1);position: relative;min-width: 3px;border-radius: 4px}
 
 
 .account-weight-segment:hover {opacity: 0.8;transform: scaleY(1.1);z-index: 2;box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15)}
-
-
-.account-weight-segment:focus {outline: 2px solid var(--interactive-accent);outline-offset: 2px}
 
 
 .account-weight-tooltip {background-color: var(--background-primary);border: 1px solid var(--background-modifier-border);border-radius: 8px;box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);padding: 0;max-width: 280px;min-width: 220px;font-size: 14px;line-height: 1.4;z-index: 1000;backdrop-filter: blur(8px)}
@@ -1631,7 +1757,9 @@
 
 .account-weight-legend-container {width: 100%;margin-top: 0px;padding-top: 0px}
 
-.account-weight-legend {display: flex;flex-wrap: wrap;gap: 8px 16px;padding: 0;align-items: center;justify-content: flex-start}
+.account-weight-legend {display: flex;flex-wrap: wrap;gap: 8px 16px;margin: 0;padding: 0;list-style: none;align-items: center;justify-content: flex-start}
+
+.account-weight-legend > li {margin: 0;padding: 0}
 
 .account-weight-legend-item {display: flex;align-items: center;gap: 8px;font-size: 13px;line-height: 1.3;color: var(--text-normal);transition: opacity 0.2s ease;cursor: default;width: 100%;max-width: 200px}
 
@@ -2811,8 +2939,14 @@ button.journalit-button,
   button.journalit-icon-button,
   button.journalit-no-tooltip-button {min-width: 28px;min-height: 28px;padding: 6px;background-color: transparent;border-color: transparent;color: var(--text-muted)}
 
+  button.journalit-no-tooltip-button {position: relative;box-sizing: content-box;margin: 0 2px}
+
   button.journalit-icon-button:hover:not(:disabled),
   button.journalit-no-tooltip-button:hover:not(:disabled) {background-color: var(--background-modifier-hover);color: var(--text-normal)}
+
+  button.journalit-no-tooltip-button:active:not(:disabled) {background-color: var(--background-modifier-active);transform: translateY(1px)}
+
+  button.journalit-no-tooltip-button svg {width: 18px;height: 18px;pointer-events: none;fill: none}
 
   button.journalit-toolbar-icon-button {display: inline-flex;align-items: center;justify-content: center;flex-shrink: 0;gap: 4px;width: auto;height: 28px;min-width: 24px;min-height: 24px;padding: 5px 10px;border: 1px solid var(--background-modifier-border);border-radius: 4px;background-color: var(--background-primary);color: var(--text-normal);font-size: 12px;font-weight: 500;line-height: 1;white-space: nowrap}
 
@@ -3093,8 +3227,6 @@ button.journalit-button,
 
 .journalit-csv-import .journalit-trade-import-gate-icon {display: inline-flex;align-items: center;justify-content: center;color: var(--interactive-accent)}
 
-.journalit-csv-import .journalit-trade-import-gate-eyebrow {margin: 0 0 8px 0;color: var(--text-accent);font-size: 12px;font-weight: 700;letter-spacing: 0.08em;text-transform: uppercase}
-
 .journalit-csv-import .journalit-trade-import-gate-copy h1 {margin: 0;color: var(--text-normal);font-size: 25px;font-weight: 700;letter-spacing: -0.02em}
 
 .journalit-csv-import .journalit-trade-import-gate-description {max-width: 430px;margin: 12px auto 0 auto;color: var(--text-muted);font-size: 15px;line-height: 1.5}
@@ -3107,14 +3239,9 @@ button.journalit-button,
 
 .journalit-csv-import .journalit-trade-import-gate-actions {display: flex;justify-content: center;gap: 10px;flex-wrap: wrap}
 
-.journalit-csv-import .journalit-trade-import-gate-primary,
-.journalit-csv-import .journalit-trade-import-gate-secondary {min-height: 38px;padding: 8px 20px;border-radius: 8px;font-weight: 600}
-
-.journalit-csv-import .journalit-trade-import-gate-primary {border-color: var(--interactive-accent);background: var(--interactive-accent);color: var(--text-on-accent)}
+.journalit-csv-import .journalit-trade-import-gate-primary {min-height: 38px;padding: 8px 20px;border-radius: 8px;font-weight: 600;border-color: var(--interactive-accent);background: var(--interactive-accent);color: var(--text-on-accent)}
 
 .journalit-csv-import .journalit-trade-import-gate-primary:hover {border-color: var(--interactive-accent-hover);background: var(--interactive-accent-hover)}
-
-.journalit-csv-import .journalit-trade-import-gate-secondary {border-color: var(--background-modifier-border-hover);background: var(--background-primary);color: var(--text-normal)}
 
 .journalit-csv-import .csv-import-header {margin-bottom: 24px}
 
@@ -3241,9 +3368,6 @@ button.journalit-button,
 .journalit-csv-import .journalit-trade-import-favorite-option:focus-within {background: var(--background-modifier-hover)}
 
 .journalit-csv-import .journalit-trade-import-favorite-option__select {display: flex;align-items: center;gap: 8px;min-width: 0;flex: 1 1 auto;min-height: 34px;padding: 6px 0 6px 8px;border: 0;background: transparent;box-shadow: none;color: inherit;font: inherit;text-align: left;cursor: pointer}
-
-.journalit-csv-import .journalit-trade-import-favorite-option .journalit-home-period-option__check,
-.journalit-trade-import-dropdown-menu--portal .journalit-trade-import-favorite-option .journalit-home-period-option__check {display: inline-flex;align-items: center;justify-content: flex-start;flex: 0 0 16px;width: 16px;min-width: 16px;color: var(--interactive-accent)}
 
 .journalit-csv-import .journalit-trade-import-favorite-option__select:hover,
 .journalit-csv-import .journalit-trade-import-favorite-option__select:focus-visible {background: transparent;box-shadow: none}
@@ -3449,6 +3573,12 @@ button.journalit-button,
 
 .journalit-csv-import .journalit-trade-import-results h3 {margin: 0 0 4px;font-size: 20px}
 
+.journalit-csv-import .journalit-trade-import-history-summary {display: flex;flex-wrap: wrap;gap: 8px 16px;padding: 12px 14px;border: 1px solid var(--interactive-accent);border-radius: 8px;background: var(--background-secondary)}
+
+.journalit-csv-import .journalit-trade-import-history-summary span {color: var(--text-muted)}
+
+.journalit-csv-import .journalit-trade-import-enrichment-note {margin: 0;color: var(--text-muted);font-size: 13px}
+
 .journalit-csv-import .result-item {display: flex;align-items: center;gap: 10px;padding: 12px 14px;border: 1px solid var(--background-modifier-border);border-radius: 8px;background: var(--background-primary)}
 
 .journalit-csv-import .result-success {border-color: rgba(var(--color-green-rgb, 67, 160, 71), 0.4);background: rgba(var(--color-green-rgb, 67, 160, 71), 0.1)}
@@ -3512,11 +3642,23 @@ button.journalit-button,
 
 .journalit-csv-import .journalit-trade-import-outcome p {margin: 4px 0 0;color: var(--text-muted)}
 
+.journalit-csv-import .journalit-trade-import-preview-overview-meta {display: flex;flex-wrap: wrap;gap: 6px 16px;margin-top: 5px;color: var(--text-muted)}
+
+.journalit-csv-import .journalit-trade-import-preview-overview-meta strong {display: inline;margin: 0;color: var(--text-normal)}
+
 .journalit-csv-import .journalit-trade-import-preview-counts {display: grid;grid-template-columns: 1fr auto;gap: 6px 18px;margin-bottom: 14px;padding: 12px 14px;border: 1px solid var(--background-modifier-border);border-radius: 8px;color: var(--text-muted)}
 
 .journalit-csv-import .journalit-trade-import-preview-counts strong {color: var(--text-normal)}
 
 .journalit-csv-import .journalit-trade-import-preview-diagnostics {margin-bottom: 14px}
+
+.journalit-csv-import .journalit-trade-import-preview-upgrade {display: flex;flex-direction: column;gap: 4px;margin-bottom: 14px;padding: 12px 14px;border: 1px solid var(--interactive-accent);border-radius: 8px;background: var(--background-secondary)}
+
+.journalit-csv-import .journalit-trade-import-preview-upgrade span {color: var(--text-muted)}
+
+.journalit-quick-import-modal .journalit-quick-import-gate-actions {display: flex;flex-wrap: wrap;gap: 8px}
+
+.journalit-quick-import-modal .journalit-quick-import-preview-free-button {border-color: var(--background-modifier-border-hover);background: var(--background-primary);color: var(--text-normal)}
 
 .journalit-csv-import .journalit-trade-import-cancel-preview-button {color: var(--text-muted)}
 
@@ -3992,11 +4134,11 @@ button.journalit-button,
 
   .journalit-dashboard-date-range-presets::-webkit-scrollbar {display: none}
   
-  .journalit-dashboard-date-range-presets button {background-color: var(--background-primary);border: 1px solid var(--background-modifier-border);border-radius: 4px;padding: 5px 10px;font-size: 12px;font-weight: 500;color: var(--text-normal);cursor: pointer;transition: color 0.2s ease;height: 28px;line-height: 1}
+  .journalit-dashboard-date-range-presets button.journalit-native-button {background-color: var(--background-primary);border: 1px solid var(--background-modifier-border);border-radius: 4px;padding: 5px 10px;font-size: 12px;font-weight: 500;color: var(--text-normal);cursor: pointer;transition: color 0.2s ease;height: 28px;line-height: 1}
   
-  .journalit-dashboard-date-range-presets button:hover {background-color: var(--background-modifier-hover);border-color: var(--interactive-accent)}
+  .journalit-dashboard-date-range-presets button.journalit-native-button:hover {background-color: var(--background-modifier-hover);border-color: var(--interactive-accent)}
   
-  .journalit-dashboard-date-range-presets button.active {background-color: var(--interactive-accent);color: var(--text-on-accent, white);border-color: var(--interactive-accent)}
+  .journalit-dashboard-date-range-presets button.journalit-native-button.active {background-color: var(--interactive-accent);color: var(--text-on-accent, white);border-color: var(--interactive-accent)}
 
   .journalit-dashboard-custom-date-anchor {display: inline-flex}
 
@@ -4014,10 +4156,16 @@ button.journalit-button,
 
   .journalit-dashboard-date-range-start,
   .journalit-dashboard-date-range-end {display: grid;grid-column: 1 / -1;grid-template-columns: subgrid;gap: 8px;align-items: center}
-  
-  .journalit-dashboard-date-range-start label,
-  .journalit-dashboard-date-range-end label {display: block;font-size: 11px;font-weight: 600;text-transform: uppercase;letter-spacing: 0.5px;color: var(--text-muted);white-space: nowrap;margin: 0}
-  
+
+  .journalit-dashboard-date-range-start > .journalit-fast-datetime,
+  .journalit-dashboard-date-range-end > .journalit-fast-datetime {display: grid;grid-column: 1 / -1;grid-template-columns: subgrid;align-items: center}
+
+  .journalit-dashboard-date-range-start .journalit-fast-datetime__label,
+  .journalit-dashboard-date-range-end .journalit-fast-datetime__label {display: block;font-size: 11px;font-weight: 600;text-transform: uppercase;letter-spacing: 0.5px;color: var(--text-muted);white-space: nowrap;margin: 0}
+
+  .journalit-dashboard-date-range-start .journalit-fast-datetime__error,
+  .journalit-dashboard-date-range-end .journalit-fast-datetime__error {grid-column: 2}
+
   
   .journalit-date-picker-input {width: auto;min-width: 0}
   
@@ -4052,25 +4200,25 @@ button.journalit-button,
   .journalit-dashboard-tag-dropdown,
   .journalit-dashboard-mistake-dropdown {position: relative;width: 100%}
   
-  .journalit-dashboard-account-summary,
-  .journalit-dashboard-ticker-summary,
-  .journalit-dashboard-setup-summary,
-  .journalit-dashboard-tag-summary,
-  .journalit-dashboard-mistake-summary {display: flex;justify-content: space-between;align-items: center;padding: 5px 10px;background-color: var(--background-primary);border: 1px solid var(--background-modifier-border);border-radius: 4px;cursor: pointer;font-size: 0.9em;white-space: nowrap;gap: 8px;overflow: hidden;text-overflow: ellipsis;min-width: 0}
+  button.journalit-native-button.journalit-dashboard-account-summary,
+  button.journalit-native-button.journalit-dashboard-ticker-summary,
+  button.journalit-native-button.journalit-dashboard-setup-summary,
+  button.journalit-native-button.journalit-dashboard-tag-summary,
+  button.journalit-native-button.journalit-dashboard-mistake-summary {display: flex;justify-content: space-between;align-items: center;padding: 5px 10px;background-color: var(--background-primary);border: 1px solid var(--background-modifier-border);border-radius: 4px;cursor: pointer;font-size: 0.9em;white-space: nowrap;gap: 8px;overflow: hidden;text-overflow: ellipsis;min-width: 0}
 
   .journalit-dashboard-summary-text {flex: 1;min-width: 0;overflow: hidden;text-overflow: ellipsis;white-space: nowrap}
 
-  .journalit-dashboard-account-summary:hover,
-  .journalit-dashboard-ticker-summary:hover,
-  .journalit-dashboard-setup-summary:hover,
-  .journalit-dashboard-tag-summary:hover,
-  .journalit-dashboard-mistake-summary:hover {border-color: var(--interactive-accent);background-color: var(--background-modifier-hover)}
+  button.journalit-native-button.journalit-dashboard-account-summary:hover,
+  button.journalit-native-button.journalit-dashboard-ticker-summary:hover,
+  button.journalit-native-button.journalit-dashboard-setup-summary:hover,
+  button.journalit-native-button.journalit-dashboard-tag-summary:hover,
+  button.journalit-native-button.journalit-dashboard-mistake-summary:hover {border-color: var(--interactive-accent);background-color: var(--background-modifier-hover)}
 
-  .journalit-dashboard-account-summary:focus-visible,
-  .journalit-dashboard-ticker-summary:focus-visible,
-  .journalit-dashboard-setup-summary:focus-visible,
-  .journalit-dashboard-tag-summary:focus-visible,
-  .journalit-dashboard-mistake-summary:focus-visible {outline: 2px solid var(--interactive-accent);outline-offset: 2px}
+  button.journalit-native-button.journalit-dashboard-account-summary:focus-visible,
+  button.journalit-native-button.journalit-dashboard-ticker-summary:focus-visible,
+  button.journalit-native-button.journalit-dashboard-setup-summary:focus-visible,
+  button.journalit-native-button.journalit-dashboard-tag-summary:focus-visible,
+  button.journalit-native-button.journalit-dashboard-mistake-summary:focus-visible {outline: 2px solid var(--interactive-accent);outline-offset: 2px}
   
   .journalit-dashboard-account-summary .dropdown-arrow,
   .journalit-dashboard-ticker-summary .dropdown-arrow,
@@ -4771,7 +4919,7 @@ button.journalit-button,
     
     .journalit-dashboard-date-range-presets {flex-wrap: nowrap;justify-content: flex-start}
     
-    .journalit-dashboard-date-range-presets button {flex: 0 1 auto;margin: 2px;font-size: 11px;padding: 4px 8px}
+    .journalit-dashboard-date-range-presets button.journalit-native-button {flex: 0 1 auto;margin: 2px;font-size: 11px;padding: 4px 8px}
     
     
     .journalit-dashboard-component-selector {width: 90vw;max-height: 80vh;margin-top: 50px}
@@ -4794,7 +4942,7 @@ button.journalit-button,
     .journalit-dashboard-bottom-section {padding: 2px}
     
     
-    .journalit-dashboard-date-range-presets button {padding: 3px 6px;font-size: 10px}
+    .journalit-dashboard-date-range-presets button.journalit-native-button {padding: 3px 6px;font-size: 10px}
   }
 
   
@@ -5527,6 +5675,223 @@ button.journalit-button,
 
   .journalit-tooltip.setups-tooltip .tooltip-title {color: var(--interactive-accent)}
 
+.journalit-economic-calendar-view-container .view-content {padding: 0;overflow: hidden}
+
+.journalit-econ-calendar {--journalit-econ-high: var(--color-red, #e53935);--journalit-econ-medium: var(--color-orange, #fb8c00);--journalit-econ-low: var(--color-yellow, #fdd835);--journalit-econ-none: var(--text-faint, #888888);--journalit-econ-columns: 22px 62px 34px 10px minmax(0, 1fr) 62px 62px 62px;--journalit-econ-column-gap: 10px;container-type: inline-size;container-name: journalit-econ;height: 100%;width: 100%;max-width: 900px;margin: 0 auto;padding: 20px 24px 0;display: flex;flex-direction: column;box-sizing: border-box}
+
+.journalit-econ-header {display: flex;align-items: center;justify-content: space-between;gap: 12px;flex: 0 0 auto}
+
+.journalit-econ-header__titles {display: flex;flex-direction: column;gap: 2px;min-width: 0}
+
+.journalit-econ-header__heading {display: flex;align-items: baseline;gap: 10px;min-width: 0}
+
+.journalit-econ-header__actions {display: flex;align-items: center;gap: 2px;flex: 0 0 auto}
+
+.journalit-econ-header__title {margin: 0;color: var(--text-normal);font-size: 18px;font-weight: 600;line-height: 1.2}
+
+.journalit-econ-header__week {color: var(--text-faint);font-size: 11px;font-weight: 500;letter-spacing: 0.5px;text-transform: uppercase}
+
+.journalit-econ-header__refresh {display: inline-flex;align-items: center;justify-content: center;padding: 5px;border: none;border-radius: 5px;background: transparent;box-shadow: none;color: var(--text-muted);cursor: pointer}
+
+.journalit-econ-header__refresh:hover:not(:disabled) {background-color: var(--background-modifier-hover);color: var(--text-normal)}
+
+.journalit-econ-header__refresh:disabled {opacity: 0.5;cursor: default}
+
+.journalit-econ-filters {display: flex;flex-wrap: wrap;align-items: center;gap: 8px 16px;flex: 0 0 auto;margin-top: 14px;padding-bottom: 12px;border-bottom: 1px solid var(--background-modifier-border)}
+
+.journalit-econ-filter-controls {display: flex;flex-wrap: wrap;gap: 8px 16px;align-items: center;min-width: 0}
+
+.journalit-econ-filter-group {display: flex;align-items: center;gap: 8px;min-width: 0}
+
+.journalit-econ-filter-group__label {color: var(--text-faint);font-size: 10px;font-weight: 500;letter-spacing: 0.5px;text-transform: uppercase}
+
+.journalit-econ-chips {display: flex;flex-wrap: wrap;gap: 5px}
+
+.journalit-econ-chip {display: inline-flex;align-items: center;gap: 5px;height: 22px;padding: 0 9px;border: 1px solid var(--background-modifier-border);border-radius: 11px;background: transparent;box-shadow: none;color: var(--text-muted);font-size: 11px;line-height: 1;cursor: pointer}
+
+.journalit-econ-chip:hover {color: var(--text-normal)}
+
+.journalit-econ-chip[aria-pressed='true'] {border-color: var(--interactive-accent);background-color: var(--background-modifier-hover);color: var(--text-normal)}
+
+.journalit-econ-select-all {display: inline-flex;align-items: center;gap: 6px;margin-left: auto;color: var(--text-muted);font-size: 11px;cursor: pointer}
+
+.journalit-econ-select-all--disabled {color: var(--text-faint);cursor: default}
+
+.journalit-econ-select-all--disabled input {cursor: default}
+
+.journalit-econ-list {flex: 1;min-height: 0;overflow-y: auto;scrollbar-gutter: stable;padding: 0 0 12px}
+
+.journalit-econ-day + .journalit-econ-day {margin-top: 10px}
+
+.journalit-econ-day__label {display: flex;align-items: baseline;gap: 8px;margin: 0;padding: 6px 0 4px;font-size: 10px;font-weight: 500;letter-spacing: 0.5px;text-transform: uppercase}
+
+.journalit-econ-day__weekday {color: var(--text-muted)}
+
+.journalit-econ-day__date {color: var(--text-faint)}
+
+
+.journalit-econ-columns {position: sticky;top: 0;z-index: 1;display: grid;grid-template-columns: var(--journalit-econ-columns);gap: var(--journalit-econ-column-gap);align-items: center;padding: 8px 6px 6px;background-color: var(--background-primary)}
+
+.journalit-econ-columns__label {color: var(--text-faint);font-size: 9px;font-weight: 500;letter-spacing: 0.3px;text-transform: uppercase;text-align: right}
+
+
+.journalit-econ-columns .skeleton-shimmer {justify-self: end}
+
+.journalit-econ-columns__label--actual {grid-column: 6}
+
+.journalit-econ-columns__label--forecast {grid-column: 7}
+
+.journalit-econ-columns__label--previous {grid-column: 8}
+
+.journalit-econ-row {display: grid;grid-template-columns: var(--journalit-econ-columns);align-items: center;gap: var(--journalit-econ-column-gap);min-height: 30px;padding: 3px 6px;border-radius: 5px}
+
+.journalit-econ-row:hover {background-color: var(--background-modifier-hover)}
+
+.journalit-econ-row__select {display: flex;align-items: center}
+
+.journalit-econ-row__checkbox {margin: 0;cursor: pointer}
+
+.journalit-econ-row__imported-status {color: var(--text-faint)}
+
+.journalit-econ-row__time {color: var(--text-muted);font-size: 11px;font-variant-numeric: tabular-nums;white-space: nowrap}
+
+.journalit-econ-row__currency {display: inline-flex;align-items: center;justify-content: center;height: 18px;border-radius: 3px;background-color: var(--background-modifier-border);color: var(--text-muted);font-size: 10px;font-weight: 600;letter-spacing: 0.3px}
+
+.journalit-econ-impact {width: 8px;height: 8px;border-radius: 50%;display: inline-block;flex: 0 0 auto}
+
+.journalit-econ-impact--high {background-color: var(--journalit-econ-high)}
+
+.journalit-econ-impact--medium {background-color: var(--journalit-econ-medium)}
+
+.journalit-econ-impact--low {background-color: var(--journalit-econ-low)}
+
+.journalit-econ-impact--none {background-color: var(--journalit-econ-none)}
+
+
+.journalit-econ-row__holiday-icon {display: inline-flex;align-items: center;justify-content: center;flex: 0 0 auto;margin-left: -1px;color: var(--journalit-econ-none)}
+
+.journalit-econ-row--holiday .journalit-econ-row__time,
+.journalit-econ-row--holiday .journalit-econ-row__title {color: var(--text-muted)}
+
+.journalit-econ-row--holiday .journalit-econ-row__time {font-variant-numeric: normal}
+
+
+.journalit-econ-row--past .journalit-econ-row__time,
+.journalit-econ-row--past .journalit-econ-row__currency,
+.journalit-econ-row--past .journalit-econ-reading__value {color: var(--text-faint)}
+
+.journalit-econ-row--past .journalit-econ-row__title,
+.journalit-econ-row--past
+  .journalit-econ-reading--actual
+  .journalit-econ-reading__value {color: var(--text-muted)}
+
+
+.journalit-econ-row--past .journalit-econ-impact {opacity: 0.55}
+
+.journalit-econ-chip .journalit-econ-impact {width: 6px;height: 6px}
+
+.journalit-econ-row__name {display: flex;align-items: center;gap: 8px;min-width: 0}
+
+.journalit-econ-row__title {overflow: hidden;color: var(--text-normal);font-size: 13px;text-overflow: ellipsis;white-space: nowrap}
+
+.journalit-econ-badge {display: inline-flex;align-items: center;height: 16px;padding: 0 6px;border-radius: 8px;font-size: 9px;font-weight: 600;letter-spacing: 0.3px;text-transform: uppercase;white-space: nowrap}
+
+.journalit-econ-badge--update {background-color: var(--background-modifier-hover);color: var(--text-accent)}
+
+
+.journalit-econ-row__readings {display: grid;grid-column: 6 / span 3;grid-template-columns: subgrid;gap: var(--journalit-econ-column-gap);align-items: center}
+
+.journalit-econ-reading {display: flex;align-items: baseline;justify-content: flex-end;gap: 4px;min-width: 0;font-size: 11px;white-space: nowrap}
+
+
+.journalit-econ-reading__label {position: absolute;width: 1px;height: 1px;margin: -1px;padding: 0;overflow: hidden;clip: rect(0, 0, 0, 0);white-space: nowrap;border: 0}
+
+.journalit-econ-reading__value {overflow: hidden;color: var(--text-muted);font-variant-numeric: tabular-nums;text-overflow: ellipsis}
+
+.journalit-econ-reading--actual .journalit-econ-reading__value {color: var(--text-normal);font-weight: 600}
+
+
+@container journalit-econ (max-width: 620px) {
+  .journalit-econ-columns {display: none}
+
+  
+  .journalit-econ-list {padding-top: 8px}
+
+  .journalit-econ-row {grid-template-columns: auto auto auto 10px minmax(0, 1fr);grid-template-areas:
+      'select time currency impact name'
+      'readings readings readings readings readings';row-gap: 1px;padding: 5px 6px}
+
+  .journalit-econ-row__select {grid-area: select}
+
+  .journalit-econ-row__time {grid-area: time}
+
+  .journalit-econ-row__currency {grid-area: currency;padding: 0 5px}
+
+  .journalit-econ-row .journalit-econ-impact,
+  .journalit-econ-row__holiday-icon {grid-area: impact}
+
+  .journalit-econ-row__name {grid-area: name}
+
+  .journalit-econ-row__readings {display: flex;grid-area: readings;flex-wrap: wrap;gap: 4px 12px;padding-left: 2px}
+
+  
+  .journalit-econ-reading:empty {display: none}
+
+  .journalit-econ-reading {justify-content: flex-start}
+
+  .journalit-econ-reading__label {position: static;width: auto;height: auto;margin: 0;overflow: visible;clip: auto;color: var(--text-faint);font-size: 9px;letter-spacing: 0.3px;text-transform: uppercase}
+
+  .journalit-econ-filters {gap: 8px 12px}
+
+  .journalit-econ-filter-controls {gap: 8px 12px}
+}
+
+.journalit-econ-footer {display: flex;justify-content: space-between;gap: 10px;align-items: center;flex: 0 0 auto;padding: 10px 0 16px;border-top: 1px solid var(--background-modifier-border)}
+
+.journalit-econ-footer__restore,
+.journalit-econ-footer__import {display: inline-flex;gap: 6px;align-items: center;padding: 6px 14px;border-radius: 5px;font-size: 12px;font-weight: 600;cursor: pointer}
+
+.journalit-econ-footer__restore {border: 1px solid var(--background-modifier-border);background-color: transparent;color: var(--text-muted)}
+
+.journalit-econ-footer__restore:hover:not(:disabled) {border-color: var(--background-modifier-border-hover);background-color: var(--background-modifier-hover);color: var(--text-normal)}
+
+.journalit-econ-footer__import {margin-left: auto;border: none;background-color: var(--interactive-accent);color: var(--text-on-accent)}
+
+.journalit-econ-footer__import:hover:not(:disabled) {background-color: var(--interactive-accent-hover)}
+
+.journalit-econ-footer__restore:disabled,
+.journalit-econ-footer__import:disabled {opacity: 0.45;cursor: default}
+
+
+.journalit-econ-loading {display: flex;flex-direction: column;flex: 1;min-height: 0}
+
+.journalit-econ-loading__select-all {display: inline-flex;align-items: center;margin-left: auto}
+
+
+.journalit-econ-row--skeleton:hover {background-color: transparent}
+
+.journalit-econ-message {display: flex;flex: 1;flex-direction: column;align-items: center;justify-content: center;gap: 10px;color: var(--text-faint);text-align: center}
+
+.journalit-econ-message__text {margin: 0;color: var(--text-muted);font-size: 13px}
+
+.journalit-econ-message__action {padding: 5px 12px;border: 1px solid var(--background-modifier-border);border-radius: 5px;background: transparent;box-shadow: none;color: var(--text-normal);font-size: 12px;cursor: pointer}
+
+.journalit-econ-message__action:hover {background-color: var(--background-modifier-hover)}
+
+.journalit-econ-gate {display: flex;flex: 1;flex-direction: column;align-items: center;justify-content: center;gap: 14px;padding: 24px;text-align: center}
+
+.journalit-econ-gate__icon {display: inline-flex;align-items: center;justify-content: center;width: 46px;height: 46px;border-radius: 50%;background-color: var(--background-modifier-hover);color: var(--text-accent)}
+
+.journalit-econ-gate__title {margin: 0;color: var(--text-normal);font-size: 17px;font-weight: 600}
+
+.journalit-econ-gate__benefits {display: flex;flex-direction: column;gap: 6px;color: var(--text-muted);font-size: 12px}
+
+.journalit-econ-gate__benefits > div {display: flex;align-items: center;gap: 6px}
+
+.journalit-econ-gate__cta {padding: 7px 18px;border: none;border-radius: 5px;background-color: var(--interactive-accent);color: var(--text-on-accent);font-size: 12px;font-weight: 600;cursor: pointer}
+
+.journalit-econ-gate__cta:hover {background-color: var(--interactive-accent-hover)}
+
 .trade-form-view-container .entries-section,
     .trade-form-view-container .exits-section,
     .trade-form-view-container .dividends-section {margin-bottom: 16px;padding: 12px;border: 1px solid var(--background-modifier-border);border-radius: 4px;background-color: var(--background-primary)}
@@ -6080,12 +6445,14 @@ button.journalit-button,
   .journalit-home-page--custom-background
     .journalit-home-widget
     button:not(.journalit-home-goals__save-button):not(
-      .journalit-home-goals__chip--active
+      .journalit-home-widget__option--active
     ):not(.journalit-home-goals__period-button--active):not(
       .journalit-home-setups__save-button
     ):not(.journalit-home-setups__chip--active):not(
-      .journalit-home-heatmap__year-button--active
-    ):not(.journalit-home-embedded-note__error-button):not(
+      .journalit-home-streak__config-save
+    ):not(.journalit-home-heatmap__year-button--active):not(
+      .journalit-home-embedded-note__error-button
+    ):not(
       .journalit-home-widget-remove
     ) {background-color: color-mix(
       in srgb,
@@ -6374,6 +6741,25 @@ button.journalit-button,
 
   .journalit-home-widget__faint {font-size: 11px;color: var(--text-faint)}
 
+  .journalit-home-widget__option-list {display: flex;gap: 4px;flex-wrap: wrap}
+
+  .journalit-home-widget__option {padding: 4px 8px;font-size: 11px;border: 1px solid var(--background-modifier-border);border-radius: 4px;background-color: transparent;color: var(--text-muted);cursor: pointer;transition: color 0.15s ease}
+
+  .journalit-home-widget__option:disabled {cursor: not-allowed;opacity: 0.6}
+
+  .journalit-home-page
+    .journalit-home-widget
+    button.journalit-home-widget__option--active {border-color: var(
+      --journalit-home-widget-option-active-border,
+      var(--interactive-accent)
+    );background-color: var(
+      --journalit-home-widget-option-active-background,
+      var(--interactive-accent)
+    );color: var(
+      --journalit-home-widget-option-active-color,
+      var(--text-on-accent)
+    )}
+
   
   .journalit-home-score {--journalit-score-excellent: #0ea5e9;--journalit-score-phase-established: var(--journalit-score-excellent, #0ea5e9);height: 100%;display: flex;flex-direction: column}
 
@@ -6602,7 +6988,20 @@ button.journalit-button,
 
   .journalit-home-goals--empty {align-items: center;justify-content: center;cursor: pointer;color: var(--text-muted)}
 
+  button.journalit-native-button.journalit-home-goals {height: 100%;display: flex;flex-direction: column}
+
+  button.journalit-native-button.journalit-home-goals--empty {align-items: center;justify-content: center;color: var(--text-muted)}
+
+  button.journalit-native-button.journalit-home-goals--scope-mismatch {gap: 6px;padding: 16px}
+
   .journalit-home-goals--active {padding: 12px;gap: 12px;cursor: pointer;position: relative}
+
+  .journalit-home-goals__loading-header,
+  .journalit-home-goals__display-header {display: flex;align-items: center;justify-content: space-between;gap: 8px}
+
+  .journalit-home-goals__display-actions {display: flex;align-items: center;gap: 6px;flex-shrink: 0}
+
+  .journalit-home-goals__header-chevron {flex-shrink: 0;color: var(--text-faint)}
 
   .journalit-home-goals__header {display: flex;align-items: center;justify-content: space-between}
 
@@ -6615,12 +7014,6 @@ button.journalit-button,
   .journalit-home-goals__save-button:disabled {background-color: var(--background-modifier-border);color: var(--text-muted);cursor: not-allowed}
 
   .journalit-home-goals__cancel-button {padding: 4px;border: none;background-color: transparent;color: var(--text-muted);cursor: pointer;border-radius: 4px;display: flex;align-items: center}
-
-  .journalit-home-goals__chip-list {display: flex;gap: 4px;flex-wrap: wrap}
-
-  .journalit-home-goals__chip {padding: 4px 8px;font-size: 11px;border: 1px solid var(--background-modifier-border);border-radius: 4px;background-color: transparent;color: var(--text-muted);cursor: pointer;transition: color 0.15s ease}
-
-  .journalit-home-goals__chip--active {border-color: var(--interactive-accent);background-color: var(--interactive-accent);color: var(--text-on-accent)}
 
   .journalit-home-goals__target-row {display: flex;align-items: center;gap: 8px}
 
@@ -6672,7 +7065,7 @@ button.journalit-button,
 
   .journalit-home-goals__percent {font-size: 13px;font-weight: 500;color: var(--journalit-goals-progress-color)}
 
-  .journalit-home-goals__complete {position: absolute;top: 8px;right: 8px;background-color: var(--color-green);color: white;padding: 4px 8px;border-radius: 4px;font-size: 10px;line-height: 1;font-weight: 600;text-transform: uppercase;letter-spacing: 0.5px;display: inline-flex;align-items: center;justify-content: center;gap: 4px}
+  .journalit-home-goals__complete {background-color: var(--color-green);color: white;padding: 4px 8px;border-radius: 4px;font-size: 10px;line-height: 1;font-weight: 600;text-transform: uppercase;letter-spacing: 0.5px;display: inline-flex;align-items: center;justify-content: center;gap: 4px}
 
   .journalit-home-goals__complete svg {display: block;flex-shrink: 0}
 
@@ -6745,7 +7138,9 @@ button.journalit-button,
   
   .journalit-home-weekly {height: 100%;display: flex;flex-direction: column;padding: 12px;gap: 8px}
 
-  .journalit-home-weekly--clickable {cursor: pointer}
+  button.journalit-native-button.journalit-home-weekly {height: 100%;display: flex;flex-direction: column;align-items: stretch;justify-content: normal;padding: 12px;gap: 8px}
+
+  .journalit-home-weekly--clickable {appearance: none;width: 100%;border: 0;background: transparent;box-shadow: none;color: inherit;font: inherit;text-align: inherit;cursor: pointer}
 
   .journalit-home-weekly__hero {display: flex;flex-direction: column;align-items: center;justify-content: center;flex: 1;min-height: 0;gap: 2px}
 
@@ -6882,6 +7277,10 @@ button.journalit-button,
 
   .journalit-home-unreviewed--clickable {cursor: pointer}
 
+  button.journalit-native-button.journalit-home-unreviewed {height: 100%;display: flex;flex-direction: column;align-items: center;justify-content: center;padding: 12px;gap: 4px}
+
+  button.journalit-native-button.journalit-home-unreviewed--row {flex-direction: row;gap: 8px}
+
   .journalit-home-unreviewed__line {display: flex;align-items: center;justify-content: center;gap: 6px}
 
   .journalit-home-unreviewed__dot {width: 8px;height: 8px;border-radius: 50%;flex-shrink: 0;background-color: var(--journalit-home-unreviewed-dot-color, var(--text-muted))}
@@ -6941,6 +7340,8 @@ button.journalit-button,
   .journalit-home-embedded-note__header-label {display: flex;align-items: center;gap: 6px}
 
   .journalit-home-embedded-note__header-label--interactive {cursor: pointer}
+
+  button.journalit-native-button.journalit-home-embedded-note__header-label {display: flex;align-items: center;justify-content: flex-start;gap: 6px;color: var(--text-faint);font-size: 11px;font-weight: 500;text-transform: uppercase;letter-spacing: 0.5px}
 
   .journalit-home-embedded-note__icon-button {padding: 4px;border: none;background-color: transparent;color: var(--text-muted);cursor: pointer;border-radius: 4px;display: flex;align-items: center;justify-content: center}
 
@@ -7010,11 +7411,17 @@ button.journalit-button,
 
   .journalit-home-getting-started__progress {font-size: 11px;color: var(--text-muted)}
 
-  .journalit-home-getting-started__list {display: flex;flex-direction: column;gap: 10px;flex: 1;overflow: auto}
+  .journalit-home-getting-started__list {display: flex;flex-direction: column;gap: 10px;flex: 1;min-height: 0;overflow: auto}
 
-  .journalit-home-getting-started__item {display: flex;gap: 10px;padding: 10px 12px;border-radius: 8px;border: 1px solid var(--background-modifier-border);align-items: flex-start;transition: background-color 0.15s ease}
+  .journalit-home-getting-started__item {display: flex;flex: 0 0 auto;gap: 10px;padding: 10px 12px;border-radius: 8px;border: 1px solid var(--background-modifier-border);align-items: flex-start;transition: background-color 0.15s ease}
 
   .journalit-home-getting-started__item--clickable {cursor: pointer;background-color: var(--background-primary)}
+
+  button.journalit-native-button.journalit-home-getting-started__item {display: flex;align-items: flex-start;gap: 10px;padding: 10px 12px;border: 1px solid var(--background-modifier-border);border-radius: 8px}
+
+  button.journalit-native-button.journalit-home-getting-started__item--clickable {background-color: var(--background-primary)}
+
+  button.journalit-native-button.journalit-home-getting-started__item--static {background-color: var(--background-secondary);cursor: default}
 
   .journalit-home-getting-started__item--static {cursor: default;background-color: var(--background-secondary)}
 
@@ -7045,7 +7452,11 @@ button.journalit-button,
 
   .journalit-home-streak__header {display: flex;justify-content: space-between;align-items: center;font-size: 11px;font-weight: 500;color: var(--text-faint);text-transform: uppercase;letter-spacing: 0.5px}
 
+  .journalit-home-streak__header-actions {display: flex;align-items: center;gap: 4px;min-width: 0}
+
   .journalit-home-streak__header-stats {text-transform: none;letter-spacing: 0}
+
+  .journalit-home-streak__header-chevron {flex-shrink: 0;color: var(--text-faint)}
 
   .journalit-home-streak__hero {display: flex;flex-direction: column;align-items: center;justify-content: center;flex: 1;min-height: 0;gap: 4px;color: var(--journalit-home-streak-color, var(--text-normal))}
 
@@ -7057,7 +7468,30 @@ button.journalit-button,
 
   .journalit-home-streak__label {font-size: 14px;opacity: 0.9}
 
-  .journalit-home-streak__insight {font-size: 12px;color: var(--text-muted);margin-top: 4px}
+  .journalit-home-streak__insight {width: 100%;font-size: 12px;color: var(--text-muted);margin-top: 4px;text-align: center;line-height: 1.35;text-wrap: balance}
+
+  .journalit-home-streak--clickable {cursor: pointer}
+
+  button.journalit-native-button.journalit-home-streak {width: 100%;height: 100%;display: flex;flex-direction: column;align-items: stretch;justify-content: normal;padding: 12px;gap: 8px}
+
+  .journalit-home-streak--configuring {gap: 10px;min-height: 0;overflow-x: hidden;overflow-y: auto;box-sizing: border-box;scrollbar-gutter: stable}
+
+  .journalit-home-streak__config-header {width: 100%;margin-bottom: 0;display: flex;align-items: center;justify-content: space-between;gap: 8px}
+
+  .journalit-home-streak__config-title {min-width: 0}
+
+  .journalit-home-streak__config-actions {display: flex;gap: 4px}
+
+  .journalit-home-streak__config-save,
+  .journalit-home-streak__config-cancel {display: flex;align-items: center;justify-content: center;padding: 4px;border: 0;border-radius: 4px}
+
+  .journalit-home-streak__config-save:not(:disabled) {background: var(--color-green);color: var(--text-on-accent);cursor: pointer}
+
+  .journalit-home-streak__config-save:disabled {background: var(--background-modifier-border);color: var(--text-muted);cursor: not-allowed}
+
+  .journalit-home-streak__config-cancel {background: transparent;color: var(--text-muted);cursor: pointer}
+
+  .journalit-home-streak__kind-list {flex-direction: column;align-items: flex-start;flex-wrap: nowrap}
 
   
   .journalit-home-setups {height: 100%;display: flex;flex-direction: column;padding: 12px;gap: 10px}
@@ -7156,15 +7590,23 @@ button.journalit-button,
 
   .journalit-home-account-progress__state-icon {color: var(--text-muted);opacity: 0.5}
 
-  .journalit-home-key-events {--journalit-home-key-events-red: var(--color-red, #e53935);--journalit-home-key-events-orange: var(--color-orange, #fb8c00);--journalit-home-key-events-yellow: var(--color-yellow, #fdd835);--journalit-home-key-events-gray: var(--text-muted, #888888);height: 100%;display: flex;flex-direction: column;padding: 0;box-sizing: border-box;cursor: pointer;border-radius: 5px;outline: none}
+  .journalit-home-key-events {--journalit-home-key-events-red: var(--color-red, #e53935);--journalit-home-key-events-orange: var(--color-orange, #fb8c00);--journalit-home-key-events-yellow: var(--color-yellow, #fdd835);--journalit-home-key-events-gray: var(--text-muted, #888888);height: 100%;display: flex;flex-direction: column;padding: 0;box-sizing: border-box;border-radius: 5px}
 
-  .journalit-home-key-events:focus-visible {box-shadow: inset 0 0 0 2px var(--interactive-accent)}
+  button.journalit-native-button.journalit-home-key-events__open {appearance: none;display: flex;align-items: center;justify-content: space-between;gap: 8px;flex: 1 1 auto;min-width: 0;padding: 0;border: 0;background: transparent;box-shadow: none;color: inherit;font: inherit;text-align: left;cursor: pointer}
+
+  button.journalit-native-button.journalit-home-key-events__open:focus-visible {border-radius: 4px;box-shadow: inset 0 0 0 2px var(--interactive-accent)}
 
   .journalit-home-key-events__header {display: flex;align-items: center;justify-content: space-between;gap: 8px;flex: 0 0 auto;margin-bottom: 8px}
 
   .journalit-home-key-events__header-title {display: flex;align-items: center;gap: 6px;min-width: 0}
 
   .journalit-home-key-events__count {min-width: 20px;height: 18px;display: inline-flex;align-items: center;justify-content: center;padding: 0 6px;border-radius: 3px;background-color: var(--background-modifier-hover);color: var(--text-muted);font-size: 11px;font-weight: 600;line-height: 1;box-sizing: border-box}
+
+  .journalit-home-key-events__header-actions {display: flex;align-items: center;gap: 4px;flex: 0 0 auto}
+
+  .journalit-home-key-events__calendar {display: inline-flex;align-items: center;justify-content: center;width: 20px;height: 20px;padding: 0;border: none;border-radius: 4px;background: transparent;box-shadow: none;color: var(--text-faint);cursor: pointer}
+
+  .journalit-home-key-events__calendar:hover {background: var(--background-modifier-hover);color: var(--text-normal)}
 
   .journalit-home-key-events__chevron {flex: 0 0 auto;color: var(--text-faint)}
 
@@ -7475,8 +7917,6 @@ button.journalit-button,
 
 .journalit-image-gallery-fullscreen-actions .journalit-image-gallery-open-source-button.journalit-button svg {color: var(--text-muted)}
 
-.journalit-image-annotation-panel {position: absolute;top: 92px;right: 24px;z-index: 4;display: flex;flex-direction: column;gap: 12px;width: min(360px, calc(100vw - 48px));max-height: calc(100vh - 132px);overflow: auto;padding: 16px;border: 1px solid var(--background-modifier-border);border-radius: 12px;background: var(--background-secondary);box-shadow: var(--shadow-l);cursor: default}
-
 @media (max-width: 760px) {
   .journalit-image-gallery-fullscreen-layout--annotating .journalit-fullscreen-viewer {width: 100vw;height: 46vh;margin-right: 0}
 
@@ -7484,8 +7924,6 @@ button.journalit-button,
 
   .journalit-image-gallery-fullscreen-layout--annotating .journalit-fullscreen-zoomable-image,
   .journalit-image-gallery-fullscreen-layout--annotating .journalit-fullscreen-zoomable-media {max-width: calc(100vw - 20px);max-height: 42vh}
-
-  .journalit-image-annotation-panel {top: auto;left: 10px;right: 10px;bottom: 10px;width: auto;max-height: 48vh;padding: 14px;border-radius: 12px}
 
   .journalit-image-gallery-fullscreen-actions {right: 10px;bottom: calc(48vh + 20px)}
 }
@@ -7524,6 +7962,8 @@ button.journalit-button,
 .journalit-image-annotation-editor__fields-section button:hover {background: var(--background-modifier-hover);color: var(--text-normal)}
 
 .journalit-image-annotation-editor__field {display: flex;flex-direction: column;gap: 5px}
+
+.journalit-image-annotation-fields {display: flex;flex-direction: column;gap: 12px}
 
 .journalit-image-annotation-editor__field > span,
 .journalit-image-annotation-editor__section-label {color: var(--text-muted);font-size: 12px;font-weight: 700}
@@ -7567,15 +8007,15 @@ button.journalit-button,
   .journalit-image-upload-paste-area .paste-text {font-size: 12px;text-align: center;line-height: 1.2}
 
   
-  .journalit-image-upload-file-area {flex: 1;display: flex;flex-direction: column;align-items: center;justify-content: center;min-height: 80px;border: 2px dashed var(--background-modifier-border);border-radius: 6px;cursor: pointer;transition: color 0.2s ease;position: relative;overflow: hidden;background-color: var(--background-secondary);padding: 12px}
+  button.journalit-native-button.journalit-image-upload-file-area {flex: 1;display: flex;flex-direction: column;align-items: center;justify-content: center;min-height: 80px;border: 2px dashed var(--background-modifier-border);border-radius: 6px;cursor: pointer;transition: color 0.2s ease;position: relative;overflow: hidden;background-color: var(--background-secondary);padding: 12px}
 
-  .journalit-image-upload-file-area.full-width {flex: 1;min-width: 100%}
+  button.journalit-native-button.journalit-image-upload-file-area.full-width {flex: 1;min-width: 100%}
 
-  .journalit-image-upload-file-area:hover {border-color: var(--interactive-accent);background-color: rgba(var(--interactive-accent-rgb, 83, 141, 226), 0.05)}
+  button.journalit-native-button.journalit-image-upload-file-area:hover {border-color: var(--interactive-accent);background-color: rgba(var(--interactive-accent-rgb, 83, 141, 226), 0.05)}
 
-  .journalit-image-upload-file-area:focus {outline: 2px solid var(--interactive-accent);outline-offset: 2px;border-color: var(--interactive-accent);background-color: rgba(var(--interactive-accent-rgb, 83, 141, 226), 0.08)}
+  button.journalit-native-button.journalit-image-upload-file-area:focus {outline: 2px solid var(--interactive-accent);outline-offset: 2px;border-color: var(--interactive-accent);background-color: rgba(var(--interactive-accent-rgb, 83, 141, 226), 0.08)}
 
-  .journalit-image-upload-file-area.dragging-over {border-color: var(--interactive-accent);background-color: rgba(var(--interactive-accent-rgb, 83, 141, 226), 0.1);transform: scale(1.02);box-shadow: 0 0 12px rgba(var(--interactive-accent-rgb, 83, 141, 226), 0.3)}
+  button.journalit-native-button.journalit-image-upload-file-area.dragging-over {border-color: var(--interactive-accent);background-color: rgba(var(--interactive-accent-rgb, 83, 141, 226), 0.1);transform: scale(1.02);box-shadow: 0 0 12px rgba(var(--interactive-accent-rgb, 83, 141, 226), 0.3)}
 
   .journalit-image-upload-label {font-size: 14px;color: var(--text-muted);cursor: pointer;transition: color 0.2s ease;text-align: center;line-height: 1.3}
 
@@ -7604,7 +8044,7 @@ button.journalit-button,
 
     .journalit-image-upload-paste-area {flex: 0 0 auto;min-height: 60px;flex-direction: row;gap: 8px;padding: 12px 16px}
 
-    .journalit-image-upload-file-area {flex: 1;min-height: 70px}
+    button.journalit-native-button.journalit-image-upload-file-area {flex: 1;min-height: 70px}
 
     .journalit-image-upload-paste-area .paste-text {font-size: 13px}
   }
@@ -7614,7 +8054,7 @@ button.journalit-button,
 
     .journalit-image-upload-paste-area {min-height: 50px;padding: 10px 12px;font-size: 12px}
 
-    .journalit-image-upload-file-area {min-height: 60px;padding: 8px}
+    button.journalit-native-button.journalit-image-upload-file-area {min-height: 60px;padding: 8px}
 
     .journalit-image-upload-label {font-size: 13px}
 
@@ -7707,9 +8147,20 @@ button.journalit-button,
   .journalit-excalidraw-media--fullscreen .journalit-excalidraw-media__embed .excalidraw-embedded-img svg {width: 100%;height: auto}
 
 
-  .journalit-carousel-delete {position: absolute;top: 0.5rem;right: 0.5rem;background: rgba(0, 0, 0, 0.6);color: white;border: none;border-radius: 50%;width: 28px;height: 28px;cursor: pointer;display: flex;align-items: center;justify-content: center;font-size: 16px;line-height: 1;z-index: 10}
+  .journalit-carousel-delete {position: absolute;top: 0.5rem;right: 0.5rem;padding: 0;border: 1px solid rgba(var(--mono-rgb-100), 0.18);border-radius: 50%;background: rgba(var(--mono-rgb-0), 0.62);color: var(--text-normal);box-shadow: none;width: 28px;height: 28px;cursor: pointer;display: flex;align-items: center;justify-content: center;font-size: 16px;line-height: 1;z-index: 10;backdrop-filter: blur(8px)}
 
-  .journalit-carousel-delete:hover {background: rgba(0, 0, 0, 0.75)}
+  .journalit-carousel-delete:hover,
+  .journalit-carousel-delete:focus-visible {border-color: var(--interactive-accent);background: var(--interactive-accent);color: var(--text-on-accent)}
+
+  .journalit-carousel-annotate {position: absolute;top: 0.5rem;right: 2.65rem;z-index: 10;display: inline-flex;align-items: center;justify-content: center;width: 28px;height: 28px;padding: 0;border: 1px solid rgba(var(--mono-rgb-100), 0.18);border-radius: 50%;background: rgba(var(--mono-rgb-0), 0.62);color: var(--text-normal);box-shadow: none;cursor: pointer;backdrop-filter: blur(8px)}
+
+  .journalit-carousel-annotate:hover,
+  .journalit-carousel-annotate:focus-visible,
+  .journalit-carousel-annotate.is-annotated {border-color: var(--interactive-accent);background: var(--interactive-accent);color: var(--text-on-accent)}
+
+  .journalit-carousel-annotate__accessible-label {position: absolute;width: 1px;height: 1px;padding: 0;margin: -1px;overflow: hidden;clip: rect(0, 0, 0, 0);white-space: nowrap;border: 0}
+
+  .journalit-carousel-thumbnail__annotation-indicator {position: absolute;top: 4px;right: 4px;width: 7px;height: 7px;border: 1px solid var(--background-primary);border-radius: 50%;background: var(--interactive-accent);box-shadow: 0 0 0 1px rgba(var(--mono-rgb-0), 0.28);pointer-events: none}
 
   .journalit-carousel-image-container button.journalit-carousel-overlay-button {position: absolute;top: 50%;transform: translateY(-50%);background: rgba(0, 0, 0, 0.35);background-color: rgba(0, 0, 0, 0.35);color: white;border: none;border-radius: 50%;width: 32px;height: 32px;min-width: 32px;min-height: 32px;padding: 0;cursor: pointer;display: flex;align-items: center;justify-content: center;line-height: 1;box-shadow: none;appearance: none;z-index: 10}
 
@@ -7735,7 +8186,7 @@ button.journalit-button,
 
   .journalit-carousel-thumbnails {display: flex;flex-wrap: wrap;gap: 6px;margin-top: 4px;justify-content: center}
 
-  .journalit-carousel-thumbnail {width: 60px;height: 60px;border: 2px solid var(--background-modifier-border);border-radius: 4px;overflow: hidden;cursor: pointer;transition: color 0.2s ease}
+  .journalit-carousel-thumbnail {position: relative;width: 60px;height: 60px;border: 2px solid var(--background-modifier-border);border-radius: 4px;overflow: hidden;cursor: pointer;transition: color 0.2s ease}
 
   .journalit-carousel-thumbnail:hover {transform: translateY(-2px);box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15)}
 
@@ -7820,6 +8271,37 @@ button.journalit-button,
   .journalit-image-container:hover .journalit-image-zoom-indicator {opacity: 1}
 
   
+  .journalit-fullscreen-annotation-layout {position: relative;width: 100vw;height: 100vh}
+
+  .journalit-image-annotation-panel {position: absolute;top: 92px;right: 24px;z-index: 4;display: flex;flex-direction: column;gap: 12px;width: min(360px, calc(100vw - 48px));max-height: calc(100vh - 132px);overflow: auto;padding: 16px;border: 1px solid var(--background-modifier-border);border-radius: 12px;background: var(--background-secondary);box-shadow: var(--shadow-l);cursor: default}
+
+  .journalit-fullscreen-annotation-actions {position: absolute;right: 24px;bottom: 24px;z-index: 20}
+
+  .journalit-fullscreen-annotation-actions .journalit-fullscreen-annotation-button.journalit-button {display: inline-flex;align-items: center;gap: 8px;min-height: 34px;padding: 0 14px;border: 1px solid var(--background-modifier-border);border-radius: 8px;background: var(--background-secondary);color: var(--text-normal);box-shadow: var(--shadow-s);font-size: var(--font-ui-small);font-weight: 700}
+
+  .journalit-fullscreen-annotation-actions .journalit-fullscreen-annotation-button.journalit-button:hover:not(:disabled),
+  .journalit-fullscreen-annotation-actions .journalit-fullscreen-annotation-button.journalit-button:focus-visible:not(:disabled) {border-color: var(--interactive-accent);background: var(--background-modifier-hover)}
+
+  .journalit-fullscreen-annotation-layout--open .journalit-fullscreen-viewer {width: 100vw;margin-right: 0}
+
+  .journalit-fullscreen-annotation-layout--open .journalit-fullscreen-image-wrapper {width: 100%;margin-right: 0}
+
+  .journalit-fullscreen-annotation-layout--open .journalit-fullscreen-zoomable-image,
+  .journalit-fullscreen-annotation-layout--open .journalit-fullscreen-zoomable-media {max-width: 88vw;max-height: 86vh}
+
+  @media (max-width: 760px) {
+    .journalit-fullscreen-annotation-layout--open .journalit-fullscreen-viewer {width: 100vw;height: 46vh;margin-right: 0}
+
+    .journalit-fullscreen-annotation-layout--open .journalit-fullscreen-image-wrapper {width: 100%;height: 46vh}
+
+    .journalit-fullscreen-annotation-layout--open .journalit-fullscreen-zoomable-image,
+    .journalit-fullscreen-annotation-layout--open .journalit-fullscreen-zoomable-media {max-width: calc(100vw - 20px);max-height: 42vh}
+
+    .journalit-fullscreen-annotation-actions {right: 10px;bottom: 20px}
+
+    .journalit-image-annotation-panel {top: auto;left: 10px;right: 10px;bottom: 10px;width: auto;max-height: 48vh;padding: 14px;border-radius: 12px}
+  }
+
   .journalit-fullscreen-viewer {position: relative;width: 100vw;height: 100vh;display: flex;align-items: center;justify-content: center;overflow: hidden;contain: layout style paint;isolation: isolate}
 
   .journalit-fullscreen-copy-menu {position: fixed;left: var(--journalit-image-copy-menu-x);top: var(--journalit-image-copy-menu-y);z-index: 100;display: flex;align-items: center;gap: 8px;min-width: 132px;padding: 9px 12px;border: 1px solid var(--background-modifier-border);border-radius: 8px;background: var(--background-secondary);color: var(--text-normal);font-size: 14px;line-height: 1.2;box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);cursor: pointer;pointer-events: auto}
@@ -7907,6 +8389,8 @@ button.journalit-button,
   @media (max-width: 480px) {
     .journalit-fullscreen-video-skip-btn {display: none}
   }
+
+  .journalit-fullscreen-image-button {display: flex;align-items: center;justify-content: center;max-width: 100%;max-height: 100%;padding: 0;border: 0;background: transparent;box-shadow: none}
 
   .journalit-fullscreen-zoomable-image {max-width: 90vw;max-height: 90vh;object-fit: contain;user-select: none;-webkit-user-select: none;-moz-user-select: none;-ms-user-select: none;transform-origin: center;transform: none;cursor: zoom-in;transition: transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);will-change: auto;box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);touch-action: none;-webkit-touch-callout: none}
 
@@ -8084,6 +8568,8 @@ button.journalit-button,
 .journalit-weekly-widget:hover .journalit-weekly-label {
 }
 
+.journalit-key-events-calendar-button {border: none;background: transparent;box-shadow: none;color: var(--text-faint);cursor: pointer}
+
 .journalit-key-events .key-events-wrapper {display: flex;justify-content: center;width: 100%}
 
 .journalit-key-events .key-events-widget {position: relative;z-index: 1;margin-bottom: 14px;max-width: 600px;width: 100%;--journalit-key-events-color-red: var(
@@ -8100,7 +8586,13 @@ button.journalit-button,
     var(--text-muted, #888888)
   )}
 
-.journalit-key-events .key-events-header {display: flex;justify-content: center;align-items: center;margin-bottom: 0.5rem;gap: 6px}
+.journalit-key-events .key-events-header {display: grid;grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);align-items: center;margin-bottom: 0.5rem}
+
+.journalit-key-events .key-events-title-group {grid-column: 2;display: inline-flex;align-items: center;justify-content: center;gap: 6px}
+
+.journalit-key-events .key-events-header-actions {grid-column: 3;justify-self: end;display: flex;align-items: center;gap: 4px}
+
+.journalit-key-events .key-events-header--skeleton .skeleton-shimmer {grid-column: 2}
 
 .journalit-key-events .key-events-title {font-size: 0.7rem;font-weight: 500;color: var(--text-muted);text-transform: uppercase;letter-spacing: 0.5px;text-align: center}
 
@@ -8141,6 +8633,55 @@ button.journalit-button,
 .journalit-key-events .key-events-header-add-button {display: flex;align-items: center;gap: 2px;padding: 2px 6px;border-radius: 4px;border: none;background: transparent;color: var(--text-muted);font-size: 11px;cursor: pointer}
 
 .journalit-key-events .key-events-header-add-button:hover {background: var(--background-modifier-hover);color: var(--text-normal)}
+
+.journalit-key-events .key-events-source-actions {display: flex;flex-wrap: wrap;align-items: center;gap: 6px}
+
+.journalit-key-events .journalit-key-events-source-button {display: inline-flex;align-items: center;justify-content: center;gap: 5px;min-height: 26px;padding: 3px 8px;border: 1px solid var(--background-modifier-border);border-radius: 4px;background: transparent;box-shadow: none;color: var(--text-muted);font-size: 11px;cursor: pointer}
+
+.journalit-key-events .journalit-key-events-source-button:hover:not(:disabled) {background: var(--background-modifier-hover);color: var(--text-normal)}
+
+.journalit-key-events .key-events-source-button--calendar {color: var(--text-normal)}
+
+.journalit-key-events .key-events-source-button--restore {margin-left: auto;border-color: transparent;color: var(--text-muted)}
+
+.journalit-key-events .journalit-key-events-source-button:focus-visible {outline: 2px solid var(--interactive-accent);outline-offset: 1px}
+
+.journalit-key-events .journalit-key-events-source-button:disabled {cursor: wait;opacity: 0.45}
+
+.journalit-key-events .key-events-meta-row {display: flex;flex-wrap: wrap;align-items: flex-end;gap: 8px;margin: 6px 0}
+
+.journalit-key-events .key-events-meta-field {display: flex;flex-direction: column;gap: 2px;min-width: 84px}
+
+.journalit-key-events .key-events-meta-field--time {min-width: 0}
+
+.journalit-key-events .key-events-meta-label {color: var(--text-faint);font-size: 9px;letter-spacing: 0.3px;text-transform: uppercase}
+
+.journalit-key-events .key-events-meta-select {height: 26px;padding: 0 6px;border: 1px solid var(--background-modifier-border);border-radius: 4px;background: var(--background-primary);color: var(--text-normal);font-size: 12px}
+
+.journalit-key-events .key-events-meta-time-input .journalit-fast-datetime__label {color: var(--text-faint);font-size: 9px;font-weight: var(--font-normal);line-height: normal;letter-spacing: 0.3px;margin-bottom: 0;text-transform: uppercase}
+
+.journalit-key-events .key-events-meta-time-input {gap: 2px;width: auto}
+
+.journalit-key-events .key-events-meta-time-input .journalit-fast-datetime__container {width: fit-content;height: 26px;min-height: 26px;gap: 2px;padding: 2px 4px;border-radius: 4px}
+
+.journalit-key-events .key-events-meta-time-input .journalit-fast-datetime__time-group {gap: 2px}
+
+.journalit-key-events .key-events-meta-time-input .journalit-fast-datetime__segment {width: 28px;min-width: 28px;max-width: 28px;height: 20px;padding: 0 2px;border-radius: 3px;font-size: 12px}
+
+.journalit-key-events .key-events-meta-time-input .journalit-fast-datetime__separator {padding: 0;font-size: 12px}
+
+.journalit-key-events .key-events-meta-time-input .journalit-fast-datetime__ampm-button {min-width: 30px;height: 20px;margin-left: 2px;padding: 0 4px;border-radius: 3px;font-size: 10px}
+
+
+.journalit-key-events .key-events-item-readings {display: flex;flex-wrap: wrap;align-items: baseline;gap: 10px;margin-top: 3px}
+
+.journalit-key-events .key-events-reading {display: inline-flex;align-items: baseline;gap: 4px;font-size: 11px;white-space: nowrap}
+
+.journalit-key-events .key-events-reading__label {color: var(--text-faint);font-size: 9px;letter-spacing: 0.3px;text-transform: uppercase}
+
+.journalit-key-events .key-events-reading__value {color: var(--text-muted);font-variant-numeric: tabular-nums}
+
+.journalit-key-events .key-events-reading--actual .key-events-reading__value {color: var(--text-normal);font-weight: 600}
 
 .journalit-key-events .key-events-form-actions {display: flex;align-items: center;justify-content: space-between;gap: 8px}
 
@@ -8197,6 +8738,19 @@ button.journalit-button,
 
 .journalit-key-events .key-events-list {display: flex;flex-direction: column;gap: 0}
 
+.journalit-key-events .key-events-day-group + .key-events-day-group {margin-top: 10px}
+
+.journalit-key-events .key-events-day-group__label {display: flex;align-items: baseline;gap: 8px;margin: 0;padding: 6px 4px 4px;font-size: 10px;font-weight: 500;letter-spacing: 0.5px;text-transform: uppercase}
+
+.journalit-key-events .key-events-day-group__weekday {color: var(--text-muted)}
+
+.journalit-key-events .key-events-day-group__date {color: var(--text-faint)}
+
+.journalit-key-events .key-events-day-group--past .key-events-day-group__weekday,
+.journalit-key-events .key-events-day-group--past .key-events-day-group__date {color: var(--text-faint)}
+
+.journalit-key-events .key-events-day-group__events {overflow: hidden;border-radius: 6px}
+
 .journalit-key-events .key-events-item {padding: 7px 10px;border-radius: 0;background: rgba(var(--background-secondary-rgb, 34, 34, 34), 0.72);border-left: 3px solid var(--journalit-key-events-color-gray);border-bottom: 1px solid var(--background-modifier-border-hover)}
 
 .journalit-key-events .key-events-item:first-child {border-top-left-radius: 6px;border-top-right-radius: 6px}
@@ -8211,11 +8765,29 @@ button.journalit-button,
 
 .journalit-key-events .key-events-item.event-color-gray {border-left-color: var(--journalit-key-events-color-gray)}
 
+.journalit-key-events .key-events-item--past .key-events-item-time,
+.journalit-key-events .key-events-item--past .key-events-currency-badge,
+.journalit-key-events .key-events-item--past .key-events-item-title h4,
+.journalit-key-events .key-events-item--past .key-events-reading__label,
+.journalit-key-events .key-events-item--past .key-events-reading__value,
+.journalit-key-events .key-events-item--past .key-events-item-notes {color: var(--text-faint)}
+
+.journalit-key-events .key-events-item--past .key-events-currency-badge {background: var(--background-primary-alt)}
+
+.journalit-key-events
+  .key-events-item--past
+  .key-events-reading--actual
+  .key-events-reading__value {color: var(--text-muted)}
+
 .journalit-key-events .key-events-item-header {display: flex;justify-content: space-between;align-items: center;gap: 8px}
 
 .journalit-key-events .key-events-item-title {display: flex;align-items: center;gap: 8px;flex-wrap: wrap}
 
 .journalit-key-events .key-events-item-title h4 {margin: 0;font-size: 14px;font-weight: 600}
+
+.journalit-key-events .key-events-item-time {color: var(--text-muted);font-size: 11px;font-variant-numeric: tabular-nums;white-space: nowrap}
+
+.journalit-key-events .key-events-currency-badge {padding: 1px 6px;border-radius: 3px;background: var(--background-modifier-border);color: var(--text-muted);font-size: 10px;font-weight: 600;letter-spacing: 0.3px}
 
 .journalit-key-events .key-events-day-badge {font-size: 11px;padding: 2px 8px;background: var(--background-modifier-border);border-radius: 4px;color: var(--text-muted)}
 
@@ -8603,37 +9175,6 @@ button.journalit-button,
 
   .theme-light .journalit-onboarding-view-container .success-resources {border-color: rgba(0, 0, 0, 0.1)}
 
-  .theme-light .journalit-onboarding-view-container .trade-sync-hero-node--dest {border-color: rgba(76, 175, 80, 0.4);background: linear-gradient(
-      135deg,
-      rgba(76, 175, 80, 0.08) 0%,
-      var(--background-primary) 100%
-    );box-shadow:
-      0 0 0 1px rgba(76, 175, 80, 0.2),
-      0 1px 3px rgba(0, 0, 0, 0.05)}
-
-  .theme-light .journalit-onboarding-view-container .contextual-final-hero-glow {background: radial-gradient(
-      circle,
-      rgba(76, 175, 80, 0.08) 0%,
-      rgba(76, 175, 80, 0.04) 40%,
-      transparent 70%
-    )}
-
-  .theme-light .journalit-onboarding-view-container .contextual-final-manual .contextual-final-hero-glow {background: radial-gradient(
-      circle,
-      rgba(76, 175, 80, 0.18) 0%,
-      rgba(76, 175, 80, 0.10) 25%,
-      rgba(76, 175, 80, 0.04) 50%,
-      rgba(76, 175, 80, 0.01) 75%,
-      transparent 90%
-    )}
-
-  .theme-light .journalit-onboarding-view-container .contextual-final-hotkey-key--center {box-shadow:
-      0 2px 6px rgba(76, 175, 80, 0.25),
-      0 6px 18px rgba(76, 175, 80, 0.15),
-      inset 0 1px 0 rgba(255, 255, 255, 0.2)}
-
-  .theme-light .journalit-onboarding-view-container .contextual-final-hotkey-plus {color: rgba(0, 0, 0, 0.4)}
-
   .journalit-onboarding-view-container {width: 100%;height: 100%;overflow: hidden;padding: 0;background-color: var(--background-primary);background-size: 20px 20px;background-position: 0 0;display: flex;flex-direction: column;min-height: 0}
 
   
@@ -8701,6 +9242,14 @@ button.journalit-button,
 
   .journalit-onboarding-view-container .feature-card:hover {border-color: var(--interactive-accent);transform: translateX(2px);box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08)}
 
+  .journalit-onboarding-view-container .journalit-onboarding-choice-card {width: 100%;height: auto;min-height: 72px;color: var(--text-normal);font: inherit;text-align: left;white-space: normal}
+
+  .journalit-onboarding-view-container .journalit-onboarding-choice-card:disabled {cursor: wait;opacity: 0.65;transform: none}
+
+  .journalit-onboarding-view-container .onboarding-choice-arrow {flex: 0 0 auto;color: var(--text-muted);font-size: 1.15rem;line-height: 1;transition: transform 0.2s ease, color 0.2s ease}
+
+  .journalit-onboarding-view-container .journalit-onboarding-choice-card:hover .onboarding-choice-arrow {color: var(--text-accent);transform: translateX(2px)}
+
   .journalit-onboarding-view-container .feature-card.static {cursor: default}
 
   .journalit-onboarding-view-container .feature-card.static:hover {border-color: var(--background-modifier-border);transform: none;box-shadow: none}
@@ -8733,7 +9282,7 @@ button.journalit-button,
 
   .journalit-onboarding-view-container .feature-description {font-size: 0.8rem;color: var(--text-muted);line-height: 1.4;margin: 0}
 
-  .journalit-onboarding-view-container .premium-badge {display: flex;align-items: center;gap: 0.25rem;padding: 0.25rem 0.5rem;background: var(--text-accent);color: white;font-size: 0.7rem;font-weight: 600;border-radius: 4px;text-transform: uppercase;letter-spacing: 0.5px;flex-shrink: 0}
+  .journalit-onboarding-view-container .premium-badge {display: flex;align-items: center;gap: 0.25rem;padding: 0.25rem 0.5rem;background: var(--background-primary);color: var(--text-accent);border: 1px solid var(--text-accent);box-shadow: none;font-size: 0.7rem;font-weight: 600;border-radius: 4px;text-transform: uppercase;letter-spacing: 0.5px;flex-shrink: 0}
 
   .journalit-onboarding-view-container .coming-soon-badge {display: flex;align-items: center;padding: 0.25rem 0.5rem;background: var(--background-modifier-border);color: var(--text-muted);font-size: 0.7rem;font-weight: 600;border-radius: 4px;text-transform: uppercase;letter-spacing: 0.5px;flex-shrink: 0}
 
@@ -8771,11 +9320,35 @@ button.journalit-button,
 
   .journalit-onboarding-view-container .choose-path-step .step-header .step-subtitle {margin-top: 0.6rem}
 
-  .journalit-onboarding-view-container .choose-path-step .choose-path-tip {margin-top: 0.55rem;display: inline-flex;align-items: center;gap: 0.5rem;color: var(--text-muted);font-size: 0.85rem;line-height: 1.35;max-width: 62ch}
-
-  .journalit-onboarding-view-container .choose-path-step .choose-path-tip-icon {flex-shrink: 0;color: var(--text-accent)}
-
   .journalit-onboarding-view-container .choose-path-step .step-actions {justify-content: flex-start;margin-top: 0.9rem}
+
+  .journalit-onboarding-view-container .manual-entry-step {min-height: 100%;padding: 2rem;display: flex;align-items: center;justify-content: center}
+
+  .journalit-onboarding-view-container .manual-entry-content {width: min(880px, 100%);display: flex;flex-direction: column;align-items: center;gap: 2rem;text-align: center}
+
+  .journalit-onboarding-view-container .manual-entry-header h1 {margin: 0;font-size: 2.6rem;font-weight: 650;letter-spacing: -0.02em;color: var(--text-normal)}
+
+  .journalit-onboarding-view-container .manual-entry-header p {margin: 0.65rem 0 0;color: var(--text-muted);font-size: 1rem;line-height: 1.6}
+
+  .journalit-onboarding-view-container .manual-entry-hero {position: relative;display: flex;flex-direction: column;align-items: center;gap: 1.25rem;width: 100%}
+
+  .journalit-onboarding-view-container .manual-entry-glow {position: absolute;width: 420px;height: 240px;border-radius: 50%;background: var(--interactive-accent);opacity: 0.08;filter: blur(48px);pointer-events: none}
+
+  .journalit-onboarding-view-container .manual-entry-hint {position: relative;margin: 0;color: var(--text-muted);font-size: 0.9rem}
+
+  .journalit-onboarding-view-container .manual-entry-hotkey-keys {position: relative;display: flex;align-items: center;justify-content: center;gap: 0.85rem;flex-wrap: wrap}
+
+  .journalit-onboarding-view-container .manual-entry-hotkey-key {min-width: 64px;padding: 0.95rem 1.35rem;border-radius: 14px;background: var(--background-secondary);border: 1px solid var(--background-modifier-border);box-shadow:
+      0 10px 28px rgba(0, 0, 0, 0.28),
+      inset 0 1px 0 rgba(255, 255, 255, 0.08);color: var(--text-normal);font-size: 1.05rem;font-weight: 600;text-align: center}
+
+  .journalit-onboarding-view-container .manual-entry-hotkey-plus {color: var(--text-muted);font-size: 0.95rem;font-weight: 700}
+
+  .journalit-onboarding-view-container .manual-entry-change-hotkey {color: var(--text-accent);text-underline-offset: 3px}
+
+  .journalit-onboarding-view-container .manual-entry-actions {display: flex;align-items: center;justify-content: center;gap: 0.75rem;flex-wrap: wrap}
+
+  .journalit-onboarding-view-container .manual-entry-actions button {padding: 0.7rem 1.5rem;min-width: 110px;font-size: 0.95rem}
 
   .journalit-onboarding-view-container .explore-step .button-icon-left {margin-right: 8px}
 
@@ -8888,234 +9461,6 @@ button.journalit-button,
   .journalit-onboarding-view-container .create-account-step {display: flex;flex-direction: column;gap: 2rem;padding: 2rem;min-height: 500px}
 
   .journalit-onboarding-view-container .auth-container {max-width: 500px;margin: 2rem auto;width: 100%}
-
-  
-  .journalit-onboarding-view-container .contextual-final-step {display: flex;flex-direction: column;padding: 2rem;height: 100%;min-height: 100%;flex: 1;justify-content: center;position: relative;overflow: hidden;box-sizing: border-box}
-
-  .journalit-onboarding-view-container .contextual-final-step--manual {justify-content: center}
-
-  .journalit-onboarding-view-container .contextual-final-step--manual .contextual-final-header h1 {text-align: center}
-
-  .journalit-onboarding-view-container .contextual-final-content {max-width: 880px;margin: 0 auto;width: 100%;display: flex;flex-direction: column;gap: 1.5rem;align-items: center;text-align: center;position: relative;z-index: 1}
-
-  .journalit-onboarding-view-container .contextual-final-content--manual {gap: 2.25rem}
-
-  .journalit-onboarding-view-container .contextual-final-content--manual {flex: 1;justify-content: center}
-
-  .journalit-onboarding-view-container .contextual-final-header h1 {margin: 0;font-size: 2.6rem;font-weight: 650;color: var(--text-normal);letter-spacing: -0.02em}
-
-  .journalit-onboarding-view-container .contextual-final-subtitle {margin: 0.5rem 0 0;color: var(--text-muted);font-size: 1rem;line-height: 1.6}
-
-  .journalit-onboarding-view-container .contextual-final-description {margin: 0;color: var(--text-muted);font-size: 0.95rem;line-height: 1.6;max-width: 560px}
-
-  .journalit-onboarding-view-container .contextual-final-manual {display: flex;flex-direction: column;align-items: center;justify-content: center;gap: 1.25rem;width: min(880px, calc(100% - 4rem))}
-
-  .journalit-onboarding-view-container .contextual-final-change-hotkey {padding: 0.25rem 0.5rem;font-size: 0.9rem;border-radius: 10px;opacity: 0.85;background: transparent;border: none;box-shadow: none;color: var(--text-muted);text-underline-offset: 3px}
-
-  .journalit-onboarding-view-container .contextual-final-change-hotkey:hover {background: var(--background-modifier-hover);color: var(--text-normal)}
-
-  .journalit-onboarding-view-container .contextual-final-finish-link {display: inline-flex;align-items: center;justify-content: center;padding: 0.25rem 0.5rem;font-size: 0.9rem;line-height: 1.2;border-radius: 10px;opacity: 0.85;background: transparent;border: none;box-shadow: none;color: var(--text-muted);text-underline-offset: 3px}
-
-  .journalit-onboarding-view-container .contextual-final-finish-link:hover {background: var(--background-modifier-hover);color: var(--text-normal)}
-
-  .journalit-onboarding-view-container .contextual-final-manual-footer {display: flex;flex-direction: column;align-items: center;gap: 0.75rem}
-
-  .journalit-onboarding-view-container .contextual-final-manual-hint {color: var(--text-muted);font-size: 0.9rem;opacity: 0.65;text-align: center;max-width: 520px}
-
-  .journalit-onboarding-view-container .contextual-final-manual-hint--above {margin-bottom: 0.75rem}
-
-  .journalit-onboarding-view-container .contextual-final-manual-actions {display: flex;justify-content: center;gap: 0.75rem;flex-wrap: wrap}
-
-  .journalit-onboarding-view-container .contextual-final-simple {display: flex;flex-direction: column;align-items: center;gap: 1rem}
-
-  .journalit-onboarding-view-container .contextual-final-hero {width: min(360px, 100%);display: flex;flex-direction: column;align-items: center;position: relative}
-
-  .journalit-onboarding-view-container .contextual-final-hero-card {width: 100%;background: var(--background-secondary);border: 1px solid var(--background-modifier-border);border-radius: 14px;padding: 0.9rem 1rem;box-shadow: 0 20px 45px rgba(0, 0, 0, 0.18)}
-
-  
-  .journalit-onboarding-view-container .contextual-final-hero-glow {position: absolute;width: 280px;height: 280px;background: radial-gradient(
-      circle,
-      rgba(76, 175, 80, 0.12) 0%,
-      rgba(76, 175, 80, 0.06) 40%,
-      transparent 70%
-    );border-radius: 50%;pointer-events: none;z-index: -1;top: 50%;left: 50%;transform: translate(-50%, -50%)}
-
-  .journalit-onboarding-view-container .contextual-final-manual {position: relative;display: flex;flex-direction: column;align-items: center;gap: 1.5rem}
-
-  .journalit-onboarding-view-container .contextual-final-manual .contextual-final-hero-glow {width: 700px;height: 700px;background: radial-gradient(
-      circle,
-      rgba(76, 175, 80, 0.15) 0%,
-      rgba(76, 175, 80, 0.08) 25%,
-      rgba(76, 175, 80, 0.03) 50%,
-      rgba(76, 175, 80, 0.01) 75%,
-      transparent 90%
-    );top: 50%;left: 50%;transform: translate(-50%, -50%)}
-
-  .journalit-onboarding-view-container .contextual-final-hotkey-keys {position: relative;z-index: 1}
-
-  .journalit-onboarding-view-container .contextual-final-hotkey-key--center {box-shadow:
-      0 2px 8px rgba(76, 175, 80, 0.25),
-      0 8px 24px rgba(76, 175, 80, 0.15),
-      inset 0 1px 0 rgba(255, 255, 255, 0.12)}
-
-  
-  .journalit-onboarding-view-container .csv-hero-meta {display: flex;align-items: center;justify-content: center;gap: 0.5rem;color: var(--text-muted);font-size: 0.8rem;margin-bottom: 0.6rem}
-
-  .journalit-onboarding-view-container .csv-hero-file {font-family: var(--font-monospace);font-size: 0.75rem;padding: 0.15rem 0.45rem;border-radius: 999px;background: var(--background-primary);border: 1px solid var(--background-modifier-border);color: var(--text-muted)}
-
-  .journalit-onboarding-view-container .csv-hero-meta-sep {opacity: 0.6;font-size: 0.7rem}
-
-  .journalit-onboarding-view-container .csv-hero-count {font-variant-numeric: tabular-nums;color: var(--text-normal);font-size: 0.8rem}
-
-  .journalit-onboarding-view-container .csv-hero-deck {position: relative;width: min(320px, 92%);height: 100px;margin: 0 auto}
-
-  .journalit-onboarding-view-container .csv-hero-card {position: absolute;inset: 0;margin: 0 auto;width: 100%;max-width: 320px;background: var(--background-primary);border: 1px solid var(--background-modifier-border);border-radius: 10px;padding: 0.55rem 0.7rem;display: flex;flex-direction: column;justify-content: space-between;box-shadow:
-      0 1px 3px rgba(0, 0, 0, 0.08),
-      0 8px 24px rgba(0, 0, 0, 0.12)}
-
-  .journalit-onboarding-view-container .csv-hero-card--back {transform: translate(-32px, 12px) rotate(-8deg) scale(0.92);opacity: 0.7;box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15)}
-
-  .journalit-onboarding-view-container .csv-hero-card--mid {transform: translate(-14px, 6px) rotate(-3deg) scale(0.96);opacity: 0.88;box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12)}
-
-  .journalit-onboarding-view-container .csv-hero-card--front {transform: translate(4px, 0px);opacity: 1;box-shadow:
-      0 2px 6px rgba(0, 0, 0, 0.12),
-      0 8px 24px rgba(0, 0, 0, 0.18)}
-
-  .journalit-onboarding-view-container .csv-hero-card-top {display: flex;align-items: center;justify-content: space-between;gap: 0.75rem;color: var(--text-muted);font-size: 0.78rem;line-height: 1}
-
-  .journalit-onboarding-view-container .csv-hero-date {font-variant-numeric: tabular-nums;opacity: 0.9}
-
-  .journalit-onboarding-view-container .csv-hero-symbol {color: var(--text-normal);font-weight: 700;letter-spacing: 0.02em;font-size: 0.85rem}
-
-  .journalit-onboarding-view-container .csv-hero-card-bottom {display: flex;align-items: center;gap: 0.35rem;font-size: 0.95rem;font-variant-numeric: tabular-nums;line-height: 1}
-
-  .journalit-onboarding-view-container .csv-hero-dir {font-size: 0.75rem;font-weight: 700;opacity: 0.9}
-
-  .journalit-onboarding-view-container .csv-hero-dir--up {color: var(--color-green)}
-
-  .journalit-onboarding-view-container .csv-hero-dir--down {color: var(--color-red)}
-
-  .journalit-onboarding-view-container .csv-hero-pnl {font-weight: 700;font-size: 0.95rem}
-
-  .journalit-onboarding-view-container .csv-hero-pnl--pos {color: var(--color-green)}
-
-  .journalit-onboarding-view-container .csv-hero-pnl--neg {color: var(--color-red)}
-
-  
-  @media (max-width: 480px) {
-    .journalit-onboarding-view-container .csv-hero-deck {width: min(280px, 88%);height: 90px}
-
-    .journalit-onboarding-view-container .csv-hero-card {max-width: 280px;padding: 0.5rem 0.6rem}
-
-    .journalit-onboarding-view-container .csv-hero-card--back {transform: translate(-20px, 8px) rotate(-6deg) scale(0.92);opacity: 0.7;box-shadow: 0 3px 10px rgba(0, 0, 0, 0.15)}
-
-    .journalit-onboarding-view-container .csv-hero-card--mid {transform: translate(-10px, 4px) rotate(-2deg) scale(0.96);opacity: 0.88;box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12)}
-
-    .journalit-onboarding-view-container .csv-hero-card--front {transform: translate(2px, 0px)}
-
-    .journalit-onboarding-view-container .csv-hero-card-top {font-size: 0.72rem}
-
-    .journalit-onboarding-view-container .csv-hero-symbol {font-size: 0.78rem}
-
-    .journalit-onboarding-view-container .csv-hero-card-bottom {font-size: 0.85rem}
-
-    .journalit-onboarding-view-container .csv-hero-pnl {font-size: 0.88rem}
-  }
-
-  
-  .journalit-onboarding-view-container .trade-sync-hero {display: flex;align-items: center;justify-content: center;gap: 0.6rem}
-
-  .journalit-onboarding-view-container .trade-sync-hero-node {background: var(--background-primary);border: 1px solid var(--background-modifier-border);border-radius: 10px;padding: 0.65rem 0.8rem;min-height: 72px;min-width: 140px;display: flex;gap: 0.6rem;align-items: center;box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08)}
-
-  .journalit-onboarding-view-container .trade-sync-hero-node--source {border-color: var(--background-modifier-border)}
-
-  .journalit-onboarding-view-container .trade-sync-hero-node--dest {border-color: rgba(76, 175, 80, 0.35);background: linear-gradient(
-      135deg,
-      rgba(76, 175, 80, 0.06) 0%,
-      var(--background-primary) 100%
-    );box-shadow:
-      0 0 0 1px rgba(76, 175, 80, 0.15),
-      0 1px 3px rgba(0, 0, 0, 0.08)}
-
-  .journalit-onboarding-view-container .trade-sync-hero-node-icon {width: 26px;height: 26px;display: flex;align-items: center;justify-content: center;flex-shrink: 0}
-
-  .journalit-onboarding-view-container .trade-sync-hero-node-icon--source {color: var(--text-accent)}
-
-  .journalit-onboarding-view-container .trade-sync-hero-node-icon--vault {color: var(--color-green)}
-
-  .journalit-onboarding-view-container .trade-sync-hero-node-text {display: flex;flex-direction: column;gap: 0.2rem;width: 100%}
-
-  .journalit-onboarding-view-container .trade-sync-hero-node-title {font-size: 0.82rem;font-weight: 700;color: var(--text-normal);line-height: 1.2}
-
-  .journalit-onboarding-view-container .trade-sync-hero-node-sub {font-size: 0.72rem;line-height: 1.3;color: var(--text-muted);opacity: 0.85}
-
-  .journalit-onboarding-view-container .trade-sync-hero-link {position: relative;width: 48px;height: 24px;display: flex;align-items: center;justify-content: center;flex-shrink: 0}
-
-  .journalit-onboarding-view-container .trade-sync-hero-line {position: relative;width: 100%;height: 2px;border-radius: 999px;background: linear-gradient(
-      90deg,
-      var(--background-modifier-border) 0%,
-      var(--interactive-accent) 100%
-    );opacity: 0.7}
-
-  .journalit-onboarding-view-container .trade-sync-hero-arrow {position: absolute;right: -3px;width: 0;height: 0;border-left: 6px solid var(--interactive-accent);border-top: 4px solid transparent;border-bottom: 4px solid transparent;opacity: 0.85}
-
-  .journalit-onboarding-view-container .trade-sync-hero-packet {position: absolute;top: 50%;left: 0%;width: 6px;height: 6px;border-radius: 999px;background: var(--interactive-accent);transform: translate(-50%, -50%);opacity: 0;animation: tradeSyncPacket 2s infinite ease-in-out}
-
-  .journalit-onboarding-view-container .trade-sync-hero-packet:nth-child(2) {animation-delay: 0.65s}
-
-  .journalit-onboarding-view-container .trade-sync-hero-packet:nth-child(3) {animation-delay: 1.3s}
-
-  @keyframes tradeSyncPacket {
-    0% {left: 0%;opacity: 0;transform: translate(-50%, -50%) scale(0.8)}
-    12% {opacity: 0.7}
-    88% {opacity: 0.7}
-    100% {left: 100%;opacity: 0;transform: translate(-50%, -50%) scale(1.1)}
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    .journalit-onboarding-view-container .trade-sync-hero-packet {animation: none;display: none}
-  }
-
-  
-  @media (max-width: 560px) {
-    .journalit-onboarding-view-container .trade-sync-hero {flex-direction: column;gap: 0.5rem}
-
-    .journalit-onboarding-view-container .trade-sync-hero-link {width: 24px;height: 32px;transform: rotate(90deg)}
-
-    .journalit-onboarding-view-container .trade-sync-hero-node {min-width: 160px;min-height: 64px}
-  }
-
-
-  .journalit-onboarding-view-container .contextual-final-hotkey-keys {display: flex;align-items: center;justify-content: center;gap: 0.85rem;flex-wrap: wrap}
-
-  .journalit-onboarding-view-container .contextual-final-hotkey-key {position: relative;padding: 0.95rem 1.35rem;border-radius: 14px;min-width: 64px;text-align: center;color: var(--text-normal);font-weight: 600;font-size: 1.05rem;background:
-      linear-gradient(
-        180deg,
-        rgba(255, 255, 255, 0.14) 0%,
-        rgba(255, 255, 255, 0.06) 45%,
-        rgba(0, 0, 0, 0.22) 100%
-      ),
-      var(--background-secondary);border: 1px solid var(--background-modifier-border);border-top-color: rgba(255, 255, 255, 0.16);border-bottom-color: rgba(0, 0, 0, 0.55);box-shadow:
-      0 1px 2px rgba(0, 0, 0, 0.16),
-      0 14px 30px rgba(0, 0, 0, 0.42),
-      inset 0 1px 0 rgba(255, 255, 255, 0.12),
-      inset 0 -1px 0 rgba(0, 0, 0, 0.32),
-      inset 0 -10px 18px rgba(0, 0, 0, 0.18)}
-
-  .journalit-onboarding-view-container .contextual-final-hotkey-key::before {content: '';position: absolute;left: 1px;right: 1px;top: 1px;height: 45%;border-radius: 13px 13px 10px 10px;background: linear-gradient(
-      180deg,
-      rgba(255, 255, 255, 0.1) 0%,
-      rgba(255, 255, 255, 0) 100%
-    );pointer-events: none}
-
-
-  .journalit-onboarding-view-container .contextual-final-hotkey-plus {color: rgba(255, 255, 255, 0.45);font-weight: 700;font-size: 0.95rem}
-
-
-  .journalit-onboarding-view-container .contextual-final-cta-row {display: flex;justify-content: center;gap: 0.75rem;flex-wrap: wrap}
-
-
-  .journalit-onboarding-view-container .contextual-final-actions {margin-top: 0.85rem}
 
   
   .journalit-onboarding-view-container .success-step-container {display: flex;align-items: center;justify-content: center;min-height: 100%;padding: 2rem;animation: fadeInUp 0.4s ease-out 0.1s both}
@@ -9375,7 +9720,7 @@ button.journalit-button,
 
     .journalit-onboarding-view-container .choose-path-step .features-grid {gap: 0.65rem}
 
-    .journalit-onboarding-view-container .choose-path-step .step-actions {position: sticky;bottom: 0;z-index: 5;background: var(--background-primary);padding: 0.75rem 0 1rem;margin-top: 0.75rem}
+    .journalit-onboarding-view-container .choose-path-step .step-actions {margin-top: 0.75rem}
   }
 
   
@@ -9388,8 +9733,7 @@ button.journalit-button,
   .journalit-onboarding-view-container .feature-selection-step,
   .journalit-onboarding-view-container .create-account-step,
   .journalit-onboarding-view-container .success-step-container,
-  .journalit-onboarding-view-container .device-activation-step,
-  .journalit-onboarding-view-container .contextual-final-step {animation: fadeInUp 0.4s ease-out 0.1s both}
+  .journalit-onboarding-view-container .device-activation-step {animation: fadeInUp 0.4s ease-out 0.1s both}
 
   
   .journalit-onboarding-view-container .device-activation-step {display: flex;align-items: center;justify-content: center;min-height: 100%;padding: 2rem}
@@ -10085,6 +10429,8 @@ button.journalit-button,
 
   .journalit-reviewv2-item-text {flex: 1;cursor: pointer;font-size: 0.9em;color: var(--text-normal)}
 
+  button.journalit-native-button.journalit-reviewv2-item-text {justify-content: flex-start;color: var(--text-normal);font-size: 0.9em;text-align: left}
+
   .journalit-reviewv2-item-text--completed {color: var(--text-muted)}
 
   .journalit-reviewv2-edit-input {flex: 1;min-width: 0;padding: 0.25rem 0.5rem;background: var(--background-primary);border: 1px solid var(--interactive-accent);border-radius: var(--radius-s);color: var(--text-normal);font-size: 0.9em}
@@ -10480,6 +10826,8 @@ button.journalit-button,
 
   .reviewed-indicator--disabled {cursor: default;opacity: 0.7}
 
+  button.journalit-native-button--unstyled.reviewed-indicator--disabled {cursor: default}
+
   .reviewed-indicator:not(.reviewed-indicator--disabled):hover {opacity: 0.7}
 
   .journalit-key-levels-importance {position: relative}
@@ -10527,6 +10875,10 @@ button.journalit-button,
   .journalit-previous-drc-reference-date {font-size: 0.9rem;font-weight: 600;color: var(--text-normal)}
 
   .journalit-previous-drc-reference-link {flex: 0 0 auto;font-size: 0.72rem;font-weight: 600;color: var(--text-accent);text-transform: uppercase;letter-spacing: 0.06em;cursor: pointer}
+
+  button.journalit-native-button--unstyled.journalit-previous-drc-reference-link {flex: 0 0 auto;color: var(--text-accent);font-size: 0.72rem;font-weight: 600;text-transform: uppercase;letter-spacing: 0.06em}
+
+  button.journalit-native-button--unstyled.journalit-previous-drc-reference-date {color: var(--text-normal);font-size: 0.9rem;font-weight: 600}
 
   .journalit-previous-drc-reference-link:hover,
   .journalit-previous-drc-reference-link:focus-visible {color: var(--text-accent-hover);outline: none}
@@ -10629,7 +10981,11 @@ button.journalit-button,
 
   .key-levels-price {font-weight: 500;font-family: var(--font-monospace);font-size: 0.9rem;line-height: 1.4;color: var(--text-normal)}
 
+  .journalit-key-levels-widget button.key-levels-price {margin: 0;padding: 0;border: 0;background: transparent;box-shadow: none;text-align: inherit}
+
   .key-levels-price--editable {cursor: text}
+
+  button.journalit-native-button--unstyled.key-levels-price--editable {color: var(--text-normal);font-family: var(--font-monospace);font-size: 0.9rem;font-weight: 500;line-height: 1.4;cursor: text}
 
   .key-levels-price--editable:hover {color: var(--text-normal);text-underline-offset: 0.2rem}
 
@@ -10878,7 +11234,7 @@ button.journalit-button,
 
   .journalit-weekly-drc-summary:hover {background: var(--background-primary)}
 
-  .journalit-weekly-drc-day--accordion .journalit-weekly-drc-summary[aria-expanded="true"] {box-shadow: 0 1px 0 var(--background-modifier-border)}
+  .journalit-weekly-drc-day--accordion .journalit-weekly-drc-summary[data-expanded="true"] {box-shadow: 0 1px 0 var(--background-modifier-border)}
 
   .journalit-weekly-drc-context .journalit-weekly-drc-summary,
   .journalit-weekly-drc-summary--sticky-clone,
@@ -10938,9 +11294,11 @@ button.journalit-button,
 
   .journalit-weekly-drc-accordion-indicator {display: flex;align-items: center;justify-content: center;flex: 0 0 auto;width: 16px;height: 16px;color: var(--text-muted)}
 
+  button.journalit-native-button--unstyled.journalit-weekly-drc-accordion-indicator {width: 16px;height: 16px;color: var(--text-muted)}
+
   .journalit-weekly-drc-accordion-indicator > svg {transition: transform 250ms ease-in-out}
 
-  .journalit-weekly-drc-day--accordion .journalit-weekly-drc-summary[aria-expanded="false"] .journalit-weekly-drc-accordion-indicator > svg {transform: rotate(-90deg)}
+  .journalit-weekly-drc-day--accordion .journalit-weekly-drc-summary[data-expanded="false"] .journalit-weekly-drc-accordion-indicator > svg {transform: rotate(-90deg)}
 
   .journalit-weekly-drc-summary .journalit-previous-drc-reference-title-group,
   .journalit-weekly-drc-summary--sticky-clone .journalit-previous-drc-reference-title-group {margin-left: 8px;flex: 0 0 auto;width: max-content;max-width: max-content}
@@ -10964,7 +11322,9 @@ button.journalit-button,
 
   .journalit-trade-review-card {overflow: hidden;border: 1px solid var(--background-modifier-border);border-radius: var(--radius-m);background: var(--background-primary)}
 
-  .journalit-trade-review-card-header {display: flex;align-items: center;gap: 0.7rem;width: 100%;min-height: 48px;padding: 0.65rem 0.8rem;border: 0;border-bottom: 1px solid transparent;background: transparent;background-color: transparent;color: var(--text-normal);box-shadow: none;font: inherit;text-align: left;cursor: pointer;appearance: none}
+  .journalit-trade-review-card-header {display: flex;align-items: center;gap: 0.7rem;width: 100%;min-height: 48px;padding: 0.65rem 0.8rem;border: 0;border-bottom: 1px solid transparent;background: transparent;background-color: transparent;color: var(--text-normal);box-shadow: none;font: inherit;text-align: left;cursor: default;appearance: none}
+
+  .journalit-trade-review-card-header-toggle {display: flex;flex: 1 1 auto;align-items: center;gap: 0.7rem;min-width: 0;padding: 0;border: 0;background: transparent;color: inherit;font: inherit;text-align: left;cursor: pointer}
 
   .journalit-trade-review-card > .journalit-trade-review-card-header {background: transparent;background-color: transparent}
 
@@ -10976,11 +11336,11 @@ button.journalit-button,
   .journalit-sticky-header-clone.journalit-trade-review-card-header--sticky-clone
     .journalit-trade-review-card-header {border-bottom-color: transparent}
 
-  .journalit-trade-review-card-header[aria-expanded="true"] {border-bottom-color: var(--background-modifier-border)}
+  .journalit-trade-review-card-header[data-expanded="true"] {border-bottom-color: var(--background-modifier-border)}
 
   .journalit-trade-review-card-chevron {display: inline-flex;transition: transform 0.16s ease}
 
-  .journalit-trade-review-card-header[aria-expanded="false"] .journalit-trade-review-card-chevron {transform: rotate(-90deg)}
+  .journalit-trade-review-card-header[data-expanded="false"] .journalit-trade-review-card-chevron {transform: rotate(-90deg)}
 
   .journalit-trade-review-card-title {min-width: max-content;color: var(--text-normal);font-size: 0.95rem;font-weight: 650}
 
@@ -12033,6 +12393,26 @@ button.journalit-button,
   .journalit-session-log-edit-form textarea {flex-basis: 100%;order: 3}
 }
 
+.journalit-settings-econ .journalit-settings-econ__intro {margin: 0 0 12px;color: var(--text-muted)}
+
+.journalit-settings-econ .journalit-settings-econ__gate {display: flex;align-items: center;flex-wrap: wrap;gap: 8px;margin-bottom: 12px;padding: 8px 10px;border: 1px solid var(--background-modifier-border);border-radius: 6px;background: var(--background-secondary)}
+
+.journalit-settings-econ .journalit-settings-econ__pro-tag {display: inline-flex;align-items: center;gap: 3px;flex: 0 0 auto;padding: 1px 5px;border-radius: 3px;background: var(--text-accent);color: var(--text-on-accent, #ffffff);font-size: 10px;font-weight: 600;letter-spacing: 0.5px;text-transform: uppercase}
+
+.journalit-settings-econ .journalit-settings-econ__gate-text {flex: 1;min-width: 160px;color: var(--text-muted);font-size: 12px}
+
+.journalit-settings-econ .journalit-settings-econ__gate-cta {flex: 0 0 auto;padding: 3px 10px;border: none;border-radius: 4px;background: var(--interactive-accent);color: var(--text-on-accent, #ffffff);font-size: 12px;cursor: pointer}
+
+.journalit-settings-econ .journalit-settings-econ__chips {display: flex;flex-wrap: wrap;justify-content: flex-end;gap: 4px;max-width: 240px}
+
+.journalit-settings-econ .journalit-settings-econ__chip {display: inline-flex;align-items: center;height: 22px;padding: 0 9px;border: 1px solid var(--background-modifier-border);border-radius: 11px;background: transparent;box-shadow: none;color: var(--text-muted);font-size: 11px;line-height: 1;cursor: pointer}
+
+.journalit-settings-econ .journalit-settings-econ__chip:hover:not(:disabled) {color: var(--text-normal)}
+
+.journalit-settings-econ .journalit-settings-econ__chip[aria-pressed='true'] {border-color: var(--interactive-accent);background-color: var(--background-modifier-hover);color: var(--text-normal)}
+
+.journalit-settings-econ .journalit-settings-econ__chip:disabled {opacity: 0.5;cursor: not-allowed}
+
 .journalit-settings-wrapper,
   .journalit-settings .settings-tab-container {width: 100%;box-sizing: border-box}
 
@@ -12164,14 +12544,6 @@ button.journalit-button,
 
   .journalit-settings .journalit-session-mode-trade-gate-row > .tooltip-trigger {min-width: 0}
 
-  .journalit-settings .journalit-session-mode-trade-gate-row button.is-disabled {opacity: 0.55;cursor: not-allowed}
-
-  .journalit-sticky-header-clone.journalit-session-mode-trade-gate-header--sticky-clone {border: 1px solid var(--background-modifier-border);border-radius: var(--radius-m) var(--radius-m) 0 0;background: var(--background-secondary);box-shadow:
-      0 0 0 4px var(--background-primary),
-      0 8px 18px rgba(0, 0, 0, 0.16);overflow: hidden}
-
-  .journalit-session-mode-trade-gate-header--sticky-clone .journalit-session-mode-trade-gate-row {display: grid;grid-template-columns: minmax(0, 1fr) auto auto auto;border: 0;border-radius: 0}
-
   .journalit-settings button.journalit-session-mode-trade-gate-expand {display: grid;height: auto;min-width: 0;min-height: 38px;grid-template-columns: auto minmax(0, 1fr) auto;align-items: center;gap: var(--size-2-2);padding: var(--size-2-1) var(--size-2-2);border: 0;background: transparent;box-shadow: none;line-height: 1.35;text-align: left}
 
   .journalit-settings button.journalit-session-mode-trade-gate-expand:hover {background: transparent}
@@ -12179,8 +12551,6 @@ button.journalit-button,
   .journalit-settings .journalit-session-mode-trade-gate-expand__name {width: 100%;overflow: hidden;color: var(--text-normal);font-weight: var(--font-medium);text-overflow: ellipsis;white-space: nowrap}
 
   .journalit-settings .journalit-session-mode-trade-gate-expand__icon {display: inline-flex;color: var(--text-muted)}
-
-  .journalit-settings .journalit-session-mode-trade-gate-summary {white-space: nowrap}
 
   .journalit-settings .journalit-session-mode-trade-gate-editor {display: flex;flex-direction: column;gap: var(--size-4-2);padding: var(--size-2-3)}
 
@@ -12201,93 +12571,16 @@ button.journalit-button,
 
   .journalit-settings .journalit-session-mode-trade-gate-textarea {min-height: 64px;resize: vertical}
 
-  .journalit-settings .journalit-session-mode-trade-gate-editor-actions {display: flex;flex-wrap: wrap;gap: var(--size-2-2)}
-
-  .journalit-settings .journalit-session-mode-trade-gate-outcome-summary {display: flex;flex-direction: column;align-items: flex-start;gap: var(--size-2-1)}
-
-  .journalit-settings .journalit-session-mode-trade-gate-outcome-summary__buttons {display: flex;flex-wrap: wrap;justify-content: flex-start;gap: var(--size-2-1)}
-
-  .journalit-settings .journalit-session-mode-trade-gate-outcome-chip {height: 28px;min-height: 28px;padding: 0 var(--size-2-3);border: 1px solid var(--background-modifier-border-hover);border-radius: 999px;background: var(--background-secondary);box-shadow: none;color: var(--text-muted);font-size: var(--font-ui-smaller);font-weight: var(--font-semibold);line-height: 26px}
-
-  .journalit-settings .journalit-session-mode-trade-gate-outcome-chip:hover,
-  .journalit-settings .journalit-session-mode-trade-gate-outcome-chip.is-selected {color: var(--text-normal)}
-
-  .journalit-settings .journalit-session-mode-trade-gate-outcome-chip.is-green-light {border-color: rgba(var(--color-green-rgb, 67, 160, 71), 0.55)}
-
-  .journalit-settings .journalit-session-mode-trade-gate-outcome-chip.is-no-trade {border-color: rgba(var(--color-red-rgb, 233, 49, 71), 0.55)}
-
-  .journalit-settings .journalit-session-mode-trade-gate-outcome-chip.is-wait {border-color: rgba(var(--color-yellow-rgb, 224, 175, 72), 0.55)}
-
-  .journalit-settings .journalit-session-mode-trade-gate-results-panel {display: flex;flex-direction: column;gap: var(--size-2-3);padding: var(--size-2-3);border: 1px solid var(--background-modifier-border-hover);border-radius: var(--radius-m);background: var(--background-primary-alt)}
-
-  .journalit-settings .journalit-session-mode-trade-gate-results-panel.is-compact {position: absolute;z-index: 5;top: calc(100% + var(--size-2-1));right: 0;width: min(260px, calc(100vw - 64px));max-height: 360px;overflow: auto;box-shadow: var(--shadow-l)}
-
-  .journalit-settings .journalit-session-mode-trade-gate-results-panel.is-compact .journalit-session-mode-trade-gate-results-panel__grid,
-  .journalit-settings .journalit-session-mode-trade-gate-results-panel.is-compact .journalit-session-mode-trade-gate-results-panel__custom-list {display: flex;flex-direction: column;gap: var(--size-2-1)}
-
-  .journalit-settings .journalit-session-mode-trade-gate-results-panel.is-compact .journalit-session-mode-trade-gate-result-button {min-height: 34px;padding: var(--size-2-1) var(--size-2-2)}
-
-  .journalit-settings .journalit-session-mode-trade-gate-results-panel__header {display: flex;align-items: center;justify-content: space-between;gap: var(--size-2-3)}
-
-  .journalit-settings .journalit-session-mode-trade-gate-results-panel__title {color: var(--text-normal);font-size: var(--font-ui-small);font-weight: var(--font-semibold)}
-
-  .journalit-settings .journalit-session-mode-trade-gate-results-panel__group {display: flex;flex-direction: column;gap: var(--size-2-1)}
-
-  .journalit-settings .journalit-session-mode-trade-gate-results-panel__label {color: var(--text-faint);font-size: var(--font-ui-smaller);font-weight: var(--font-semibold);letter-spacing: 0.04em;text-transform: uppercase}
-
-  .journalit-settings .journalit-session-mode-trade-gate-results-panel__grid {display: grid;grid-template-columns: repeat(3, minmax(0, 1fr));gap: var(--size-2-2)}
-
-  .journalit-settings .journalit-session-mode-trade-gate-results-panel__custom-list {display: grid;max-height: 160px;overflow: auto;gap: var(--size-2-2)}
-
-  .journalit-settings .journalit-session-mode-trade-gate-result-button {display: flex;height: auto;min-height: 54px;flex-direction: column;align-items: flex-start;justify-content: center;gap: 2px;padding: var(--size-2-2);border: 1px solid var(--background-modifier-border-hover);border-radius: var(--radius-s);background: var(--background-secondary);box-shadow: none;line-height: 1.25;text-align: left}
-
-  .journalit-settings .journalit-session-mode-trade-gate-result-button:hover,
-  .journalit-settings .journalit-session-mode-trade-gate-result-button.is-selected {border-color: var(--interactive-accent)}
-
-  .journalit-settings .journalit-session-mode-trade-gate-result-button.is-green-light {border-color: var(--background-modifier-border-hover)}
-
-  .journalit-settings .journalit-session-mode-trade-gate-result-button.is-no-trade {border-color: var(--background-modifier-border-hover)}
-
-  .journalit-settings .journalit-session-mode-trade-gate-result-button.is-wait {border-color: var(--background-modifier-border-hover)}
-
-  .journalit-settings .journalit-session-mode-trade-gate-result-button.is-green-light .journalit-session-mode-trade-gate-result-button__title::before,
-  .journalit-settings .journalit-session-mode-trade-gate-result-button.is-no-trade .journalit-session-mode-trade-gate-result-button__title::before,
-  .journalit-settings .journalit-session-mode-trade-gate-result-button.is-wait .journalit-session-mode-trade-gate-result-button__title::before {display: inline-block;width: 7px;height: 7px;margin-right: var(--size-2-2);border-radius: 999px;content: '';vertical-align: 1px}
-
-  .journalit-settings .journalit-session-mode-trade-gate-result-button.is-green-light .journalit-session-mode-trade-gate-result-button__title::before {background: var(--color-green)}
-
-  .journalit-settings .journalit-session-mode-trade-gate-result-button.is-no-trade .journalit-session-mode-trade-gate-result-button__title::before {background: var(--color-red)}
-
-  .journalit-settings .journalit-session-mode-trade-gate-result-button.is-wait .journalit-session-mode-trade-gate-result-button__title::before {background: var(--color-yellow)}
-
-  .journalit-settings .journalit-session-mode-trade-gate-result-button__title,
-  .journalit-settings .journalit-session-mode-trade-gate-result-button__description {max-width: 100%;overflow: hidden;text-overflow: ellipsis;white-space: nowrap}
-
-  .journalit-settings .journalit-session-mode-trade-gate-result-button__title {color: var(--text-normal);font-weight: var(--font-semibold)}
-
-  .journalit-settings .journalit-session-mode-trade-gate-result-button__description {color: var(--text-muted);font-size: var(--font-ui-smaller)}
-
-  .journalit-settings .journalit-session-mode-trade-gate-editor select,
-  .journalit-settings .journalit-session-mode-trade-gate-option-row select {height: 36px;min-height: 36px;padding-top: 6px;padding-bottom: 6px;line-height: 20px}
-
-  .journalit-settings .journalit-session-mode-trade-gate-option-row input {height: 36px;min-height: 36px}
+  .journalit-settings .journalit-session-mode-trade-gate-editor select {height: 36px;min-height: 36px;padding-top: 6px;padding-bottom: 6px;line-height: 20px}
 
   .journalit-settings input.journalit-session-mode-trade-gate-workflow-name-input {height: 36px;min-height: 36px}
-
-  .journalit-settings input.journalit-session-mode-trade-gate-result-title-input {height: 36px;min-height: 36px}
 
   .journalit-settings .journalit-session-mode-trade-gate-flow-map {display: flex;flex-direction: column;gap: var(--size-2-3);padding: var(--size-2-3);border: 1px solid var(--background-modifier-border-hover);border-radius: var(--radius-m);background: var(--background-primary-alt)}
 
   .journalit-settings .journalit-session-mode-trade-gate-flow-map__toolbar {display: flex;align-items: center;justify-content: flex-start;gap: var(--size-2-3)}
 
-  .journalit-settings .journalit-session-mode-trade-gate-flow-map__actions {display: flex;flex-wrap: wrap;gap: var(--size-2-2)}
 
-
-  .journalit-settings .journalit-session-mode-trade-gate-flow-map__header {display: flex;justify-content: space-between;gap: var(--size-2-3);align-items: baseline}
-
-  .journalit-settings .journalit-session-mode-trade-gate-flow-map__title {color: var(--text-muted);font-size: var(--font-ui-small);font-weight: var(--font-semibold)}
-
-  .journalit-settings .journalit-session-mode-trade-gate-flow-canvas {position: relative;overflow: hidden;min-height: 420px;padding: 0;border-radius: var(--radius-s);background: var(--background-primary);cursor: grab;touch-action: none}
+  .journalit-settings .journalit-session-mode-trade-gate-flow-canvas {position: relative;overflow: hidden;height: var(--trade-gate-flow-canvas-height, 320px);padding: 0;border-radius: var(--radius-s);background: var(--background-primary);cursor: grab;touch-action: none}
 
   .journalit-settings .journalit-session-mode-trade-gate-flow-canvas.is-panning {cursor: grabbing}
 
@@ -12299,26 +12592,7 @@ button.journalit-button,
 
   .journalit-settings .journalit-session-mode-trade-gate-flow-canvas__hint {position: absolute;left: var(--size-2-3);bottom: var(--size-2-2);color: var(--text-faint);font-size: var(--font-ui-smaller);pointer-events: none}
 
-  .journalit-settings .journalit-session-mode-trade-gate-unconnected {display: flex;flex-direction: column;gap: var(--size-2-2);padding: var(--size-2-3);border: 1px dashed var(--background-modifier-border-hover);border-radius: var(--radius-s);background: var(--background-secondary)}
-
-  .journalit-settings .journalit-session-mode-trade-gate-unconnected__header {display: flex;align-items: center;justify-content: space-between;gap: var(--size-2-2)}
-
-  .journalit-settings .journalit-session-mode-trade-gate-unconnected__title {color: var(--text-normal);font-size: var(--font-ui-small);font-weight: var(--font-semibold)}
-
-  .journalit-settings .journalit-session-mode-trade-gate-unconnected__count {display: inline-flex;min-width: 22px;height: 22px;align-items: center;justify-content: center;padding: 0 var(--size-2-1);border-radius: 999px;background: var(--background-modifier-hover);color: var(--text-muted);font-size: var(--font-ui-smaller);font-variant-numeric: tabular-nums}
-
-  .journalit-settings .journalit-session-mode-trade-gate-unconnected__list {display: grid;max-height: 146px;grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));gap: var(--size-2-1);overflow-y: auto}
-
-  .journalit-settings button.journalit-session-mode-trade-gate-unconnected__item {display: grid;min-width: 0;min-height: 34px;grid-template-columns: minmax(0, 1fr) auto auto;align-items: center;justify-content: initial;gap: var(--size-2-2);padding: var(--size-2-1) var(--size-2-2);border: 1px solid var(--background-modifier-border);background: var(--background-primary);box-shadow: none;color: var(--text-muted);text-align: left}
-
-  .journalit-settings button.journalit-session-mode-trade-gate-unconnected__item:hover,
-  .journalit-settings button.journalit-session-mode-trade-gate-unconnected__item.is-selected {border-color: var(--interactive-accent);color: var(--text-normal)}
-
-  .journalit-settings .journalit-session-mode-trade-gate-unconnected__item-title {min-width: 0;overflow: hidden;text-overflow: ellipsis;white-space: nowrap}
-
-  .journalit-settings .journalit-session-mode-trade-gate-unconnected__item-index {color: var(--text-faint);font-size: var(--font-ui-smaller);font-variant-numeric: tabular-nums}
-
-  .journalit-settings .journalit-session-mode-trade-gate-flow-stage {position: relative;width: var(--trade-gate-flow-width);height: var(--trade-gate-flow-height);margin: 0;transform: translate(
+  .journalit-settings .journalit-session-mode-trade-gate-flow-stage {position: absolute;top: 0;left: 0;width: var(--trade-gate-flow-width);height: var(--trade-gate-flow-height);margin: 0;transform: translate(
         var(--trade-gate-flow-pan-x, 0),
         var(--trade-gate-flow-pan-y, 0)
       )
@@ -12334,134 +12608,16 @@ button.journalit-button,
       0 10px 28px rgba(0, 0, 0, 0.22),
       inset 0 1px 0 rgba(255, 255, 255, 0.03);line-height: 1.2;text-align: center}
 
-  .journalit-settings .journalit-session-mode-trade-gate-flow-svg-node.is-selected {border-color: var(--interactive-accent);box-shadow:
-      0 0 0 2px var(--interactive-accent),
-      0 0 0 4px rgba(var(--mono-rgb-100), 0.08),
-      0 10px 26px rgba(0, 0, 0, 0.24),
-      inset 0 1px 0 rgba(255, 255, 255, 0.04)}
-
-  .journalit-settings .journalit-session-mode-trade-gate-flow-svg-node.is-selected::after {position: absolute;top: var(--size-2-1);right: var(--size-2-1);width: 7px;height: 7px;border: 2px solid var(--background-primary);border-radius: 999px;background: var(--interactive-accent);content: ''}
-
   .journalit-settings .journalit-session-mode-trade-gate-flow-svg-node.is-question {background: rgba(var(--color-blue-rgb, 72, 138, 224), 0.08)}
-
-  .journalit-settings .journalit-session-mode-trade-gate-flow-svg-node.is-question .journalit-session-mode-trade-gate-flow-svg-node__icon {position: absolute;top: -16px;left: calc(50% - 16px)}
-
-  .journalit-settings .journalit-session-mode-trade-gate-flow-svg-node.is-green-light {border-color: rgba(var(--color-green-rgb, 67, 160, 71), 0.65);background: rgba(var(--color-green-rgb, 67, 160, 71), 0.1);box-shadow:
-      0 10px 28px rgba(0, 0, 0, 0.22),
-      inset 0 1px 0 rgba(255, 255, 255, 0.03)}
-
-  .journalit-settings .journalit-session-mode-trade-gate-flow-svg-node.is-no-trade {border-color: rgba(var(--color-red-rgb, 233, 49, 71), 0.65);background: rgba(var(--color-red-rgb, 233, 49, 71), 0.1)}
-
-  .journalit-settings .journalit-session-mode-trade-gate-flow-svg-node.is-wait {border-color: rgba(var(--color-yellow-rgb, 224, 175, 72), 0.65);background: rgba(var(--color-yellow-rgb, 224, 175, 72), 0.12)}
-
-  .journalit-settings .journalit-session-mode-trade-gate-flow-svg-node.is-selected {border-color: var(--interactive-accent);box-shadow:
-      0 0 0 2px var(--interactive-accent),
-      0 0 0 4px rgba(var(--mono-rgb-100), 0.08),
-      0 10px 26px rgba(0, 0, 0, 0.24),
-      inset 0 1px 0 rgba(255, 255, 255, 0.04)}
-
-  .journalit-settings .journalit-session-mode-trade-gate-flow-svg-node__icon {display: inline-flex;width: 28px;height: 28px;flex: 0 0 auto;align-items: center;justify-content: center;border-radius: 999px;background: var(--background-modifier-hover);color: var(--text-muted);font-size: 15px;font-weight: var(--font-bold)}
-
-  .journalit-settings .journalit-session-mode-trade-gate-flow-svg-node.is-question .journalit-session-mode-trade-gate-flow-svg-node__icon {border: 1px solid rgba(var(--color-blue-rgb, 72, 138, 224), 0.55);background: var(--background-secondary);color: var(--text-normal)}
-
-  .journalit-settings .journalit-session-mode-trade-gate-flow-svg-node.is-green-light .journalit-session-mode-trade-gate-flow-svg-node__icon {background: rgba(var(--color-green-rgb, 67, 160, 71), 0.2);color: var(--color-green)}
-
-  .journalit-settings .journalit-session-mode-trade-gate-flow-svg-node.is-no-trade .journalit-session-mode-trade-gate-flow-svg-node__icon {background: rgba(var(--color-red-rgb, 233, 49, 71), 0.2);color: var(--color-red);font-size: 22px;line-height: 1}
-
-  .journalit-settings .journalit-session-mode-trade-gate-flow-svg-node.is-wait .journalit-session-mode-trade-gate-flow-svg-node__icon {background: rgba(var(--color-yellow-rgb, 224, 175, 72), 0.2);color: var(--color-yellow)}
 
   .journalit-settings .journalit-session-mode-trade-gate-flow-svg-node__content {display: flex;min-width: 0;flex-direction: column;align-items: center;gap: 2px}
 
   .journalit-settings .journalit-session-mode-trade-gate-flow-svg-node__title {max-width: 100%;overflow: hidden;color: var(--text-normal);font-size: 12px;font-weight: 700;text-overflow: ellipsis;white-space: nowrap}
 
-  .journalit-settings .journalit-session-mode-trade-gate-flow-svg-node.is-green-light .journalit-session-mode-trade-gate-flow-svg-node__title,
-  .journalit-settings .journalit-session-mode-trade-gate-flow-svg-node.is-no-trade .journalit-session-mode-trade-gate-flow-svg-node__title,
-  .journalit-settings .journalit-session-mode-trade-gate-flow-svg-node.is-wait .journalit-session-mode-trade-gate-flow-svg-node__title {display: -webkit-box;-webkit-box-orient: vertical;-webkit-line-clamp: 2;white-space: normal}
-
   .journalit-settings .journalit-session-mode-trade-gate-flow-svg-node__detail {max-width: 100%;overflow: hidden;color: var(--text-muted);font-size: 10px;display: -webkit-box;-webkit-box-orient: vertical;-webkit-line-clamp: 2;white-space: normal}
 
-  .journalit-settings .journalit-session-mode-trade-gate-selected-editor {position: relative;display: flex;flex-direction: column;gap: var(--size-2-3);padding: var(--size-2-2) var(--size-2-2) 0;border-top: 1px solid var(--background-modifier-border-hover)}
-
-  .journalit-settings .journalit-session-mode-trade-gate-selected-editor__header {display: flex;align-items: center;justify-content: space-between;color: var(--text-muted)}
-
-  .journalit-settings .journalit-session-mode-trade-gate-selected-editor__summary {display: flex;align-items: center;gap: var(--size-2-2)}
-
-  .journalit-settings .journalit-session-mode-trade-gate-selected-editor__status {display: inline-flex;width: 9px;height: 9px;flex: 0 0 auto;border-radius: 999px;background: var(--interactive-accent)}
-
-  .journalit-settings .journalit-session-mode-trade-gate-selected-editor__status.is-green-light {background: var(--color-green)}
-
-  .journalit-settings .journalit-session-mode-trade-gate-selected-editor__status.is-no-trade {background: var(--color-red)}
-
-  .journalit-settings .journalit-session-mode-trade-gate-selected-editor__status.is-wait {background: var(--color-yellow)}
-
-  .journalit-settings .journalit-session-mode-trade-gate-selected-editor__eyebrow {color: var(--text-faint);font-size: var(--font-ui-smaller);font-weight: var(--font-semibold);letter-spacing: 0.04em;text-transform: uppercase}
-
-  .journalit-settings .journalit-session-mode-trade-gate-selected-editor__title {color: var(--text-normal);font-size: var(--font-ui-small);font-weight: var(--font-semibold)}
-
-  .journalit-settings .journalit-session-mode-trade-gate-selected-editor__type {color: var(--text-muted);font-size: var(--font-ui-smaller)}
-
-  .journalit-settings .journalit-session-mode-trade-gate-flow-map__rows {display: flex;flex-direction: column;gap: var(--size-2-1)}
-
-  .journalit-settings .journalit-session-mode-trade-gate-flow-map__row {display: flex;flex-wrap: wrap;align-items: center;gap: var(--size-2-1);min-width: 0;color: var(--text-muted);font-size: var(--font-ui-small)}
-
-  .journalit-settings .journalit-session-mode-trade-gate-flow-map__node,
-  .journalit-settings .journalit-session-mode-trade-gate-flow-map__target,
-  .journalit-settings .journalit-session-mode-trade-gate-flow-map__option {max-width: 100%;overflow: hidden;padding: 2px 6px;border-radius: var(--radius-s);text-overflow: ellipsis;white-space: nowrap}
-
-  .journalit-settings .journalit-session-mode-trade-gate-flow-map__node {background: rgba(var(--color-blue-rgb, 72, 138, 224), 0.12);color: var(--text-normal)}
-
-  .journalit-settings .journalit-session-mode-trade-gate-flow-map__option {background: var(--background-modifier-hover);color: var(--text-normal)}
-
-  .journalit-settings .journalit-session-mode-trade-gate-flow-map__target {background: rgba(var(--color-green-rgb, 67, 160, 71), 0.12);color: var(--text-normal)}
-
-  .journalit-settings .journalit-session-mode-trade-gate-flow-map__arrow {color: var(--text-faint)}
-
-  .journalit-settings .journalit-session-mode-trade-gate-flow-tree {overflow-x: auto;padding-bottom: var(--size-2-1)}
-
-  .journalit-settings .journalit-session-mode-trade-gate-flow-node {display: inline-flex;min-width: 150px;flex-direction: column;gap: var(--size-2-2);padding: var(--size-2-2);border: 1px solid var(--background-modifier-border);border-radius: var(--radius-s);background: var(--background-secondary);vertical-align: top}
-
-  .journalit-settings .journalit-session-mode-trade-gate-flow-node.is-question {border-color: rgba(var(--color-blue-rgb, 72, 138, 224), 0.35)}
-
-  .journalit-settings .journalit-session-mode-trade-gate-flow-node.is-green-light {border-color: rgba(var(--color-green-rgb, 67, 160, 71), 0.45);background: rgba(var(--color-green-rgb, 67, 160, 71), 0.08)}
-
-  .journalit-settings .journalit-session-mode-trade-gate-flow-node.is-no-trade {border-color: rgba(var(--color-red-rgb, 233, 49, 71), 0.45);background: rgba(var(--color-red-rgb, 233, 49, 71), 0.08)}
-
-  .journalit-settings .journalit-session-mode-trade-gate-flow-node.is-wait {border-color: rgba(var(--color-yellow-rgb, 224, 175, 72), 0.45);background: rgba(var(--color-yellow-rgb, 224, 175, 72), 0.08)}
-
-  .journalit-settings .journalit-session-mode-trade-gate-flow-node.is-missing {border-style: dashed;color: var(--text-error)}
-
-  .journalit-settings .journalit-session-mode-trade-gate-flow-node__label {overflow: hidden;font-size: var(--font-ui-small);font-weight: var(--font-semibold);text-overflow: ellipsis;white-space: nowrap}
-
-  .journalit-settings .journalit-session-mode-trade-gate-flow-branches {display: flex;gap: var(--size-2-2);align-items: flex-start;padding-top: var(--size-2-2);border-top: 1px solid var(--background-modifier-border-hover)}
-
-  .journalit-settings .journalit-session-mode-trade-gate-flow-branch {display: flex;min-width: 160px;flex-direction: column;align-items: center;gap: var(--size-2-1)}
-
-  .journalit-settings .journalit-session-mode-trade-gate-flow-branch__option {max-width: 160px;overflow: hidden;padding: 2px 8px;border-radius: var(--radius-s);background: var(--background-modifier-hover);color: var(--text-normal);font-size: var(--font-ui-smaller);text-overflow: ellipsis;white-space: nowrap}
-
-  .journalit-settings .journalit-session-mode-trade-gate-flow-repeat {color: var(--text-muted);font-size: var(--font-ui-smaller)}
-
-  .journalit-settings .journalit-session-mode-trade-gate-node-list {display: flex;flex-direction: column;gap: var(--size-2-3)}
-
-  .journalit-settings .journalit-session-mode-trade-gate-node {display: flex;flex-direction: column;gap: var(--size-2-3);padding: var(--size-2-3);border: 0;border-radius: var(--radius-m);background: transparent}
-
-  .journalit-settings .journalit-session-mode-trade-gate-node__header,
-  .journalit-settings .journalit-session-mode-trade-gate-options-editor__header {display: flex;align-items: center;justify-content: space-between;gap: var(--size-2-2);color: var(--text-muted);font-size: var(--font-ui-small);font-weight: var(--font-semibold)}
-
-  .journalit-settings .journalit-session-mode-trade-gate-selected-editor .journalit-session-mode-trade-gate-node {position: relative;padding: 0}
-
-  .journalit-settings .journalit-session-mode-trade-gate-selected-editor .journalit-session-mode-trade-gate-node__header {position: absolute;top: 31px;right: 0}
-
-  .journalit-settings .journalit-session-mode-trade-gate-selected-editor .journalit-session-mode-trade-gate-editor-grid {padding-right: 42px}
-
-  .journalit-settings .journalit-session-mode-trade-gate-selected-editor .journalit-session-mode-trade-gate-node__header > span {display: none}
-
-  .journalit-settings .journalit-session-mode-trade-gate-options-editor {display: flex;flex-direction: column;gap: var(--size-2-2)}
-
-  .journalit-settings .journalit-session-mode-trade-gate-option-row {display: grid;grid-template-columns: minmax(120px, 0.75fr) minmax(160px, 1fr) auto;gap: var(--size-2-2);align-items: center}
-
   @media (max-width: 720px) {
-    .journalit-settings .journalit-session-mode-trade-gate-editor-grid,
-    .journalit-settings .journalit-session-mode-trade-gate-option-row {grid-template-columns: 1fr}
+    .journalit-settings .journalit-session-mode-trade-gate-editor-grid {grid-template-columns: 1fr}
   }
 
   
@@ -12555,6 +12711,25 @@ button.journalit-button,
   .journalit-gallery-folders-add .journalit-folder-browser-input {box-sizing: border-box;height: 100%}
 
   .journalit-gallery-folders-add > .journalit-button {flex: 0 0 auto;height: var(--journalit-gallery-folder-control-height)}
+
+  
+  .journalit-settings-account-card-group .setting-items,
+  .journalit-settings-account-card-group .setting-group-search {background-color: transparent;border: none;box-shadow: none;padding-left: 0;padding-right: 0}
+
+  .journalit-settings-account-card-item {display: block;padding-top: 0;padding-bottom: 0}
+
+  .journalit-settings-account-card-item .setting-item-info {display: none}
+
+  .journalit-settings-account-card-item .setting-item-control {display: block;width: 100%;text-align: start}
+
+  .journalit-settings-account-card .account-email {overflow-wrap: anywhere}
+
+  .journalit-settings-account-card .account-profile-card {margin-bottom: 0}
+
+  .journalit-settings-account-card .account-section {margin-top: 16px}
+
+  .journalit-settings-account-card .account-section:last-child,
+  .journalit-settings-account-card > :last-child {margin-bottom: 0}
 
   .journalit-settings-gallery-folders-item {display: block}
 
@@ -13036,13 +13211,13 @@ button.journalit-button,
 
   .backend-integration-settings .journalit-tradovate-status-card {min-width: 0}
 
-  .backend-integration-settings .journalit-tradovate-overview-card {margin-bottom: 12px}
+  .backend-integration-settings .journalit-broker-overview-card {margin-bottom: 12px}
 
-  .backend-integration-settings .journalit-tradovate-overview-content {display: flex;flex-direction: column;gap: 8px}
+  .backend-integration-settings .journalit-broker-overview-content {display: flex;flex-direction: column;gap: 8px}
 
-  .backend-integration-settings .journalit-tradovate-overview-content p {margin: 0;color: var(--text-muted);font-size: 12px;line-height: 1.45}
+  .backend-integration-settings .journalit-broker-overview-content p {margin: 0;color: var(--text-muted);font-size: 12px;line-height: 1.45}
 
-  .backend-integration-settings .journalit-tradovate-connection-list {display: grid;gap: 12px}
+  .backend-integration-settings .journalit-broker-connection-list {display: grid;gap: 12px}
 
   .backend-integration-settings .journalit-tradovate-connection-card {overflow: hidden;border: 1px solid var(--background-modifier-border);border-radius: 8px;background: var(--background-secondary)}
 
@@ -13050,13 +13225,15 @@ button.journalit-button,
 
   .backend-integration-settings .journalit-tradovate-connection-summary::marker {color: var(--text-muted)}
 
-  .backend-integration-settings .journalit-tradovate-connection-status {display: inline-flex;align-items: center;gap: 6px;color: var(--text-muted);font-size: 12px;white-space: nowrap}
+  .backend-integration-settings .journalit-broker-connection-status {display: inline-flex;align-items: center;gap: 6px;color: var(--text-muted);font-size: 12px;white-space: nowrap}
 
   .backend-integration-settings .journalit-tradovate-connection-body {padding: 0 14px 14px;border-top: 1px solid var(--background-modifier-border)}
 
   .backend-integration-settings .journalit-tradovate-connection-meta {display: flex;flex-wrap: wrap;gap: 6px 16px;padding-top: 12px;color: var(--text-muted);font-size: 11px}
 
-  .backend-integration-settings .journalit-tradovate-connection-actions {display: flex;flex-wrap: wrap;justify-content: flex-end;gap: 8px;margin-top: 12px}
+  .backend-integration-settings .journalit-broker-actions-row {display: flex;justify-content: flex-end;gap: 8px}
+
+  .backend-integration-settings .journalit-tradovate-connection-actions {flex-wrap: wrap;margin-top: 12px}
 
   .backend-integration-settings .journalit-tradovate-connection-actions--single {margin-top: 14px;padding-top: 0;border-top: 0}
 
@@ -13068,38 +13245,40 @@ button.journalit-button,
 
   .backend-integration-settings .journalit-tradovate-status-cards {grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);margin-bottom: 12px}
 
-  .backend-integration-settings .journalit-tradovate-card-header,
-  .backend-integration-settings .journalit-tradovate-account-card__header {align-items: center;justify-content: space-between;gap: 8px}
+  .backend-integration-settings .journalit-broker-card-header,
+  .backend-integration-settings .journalit-broker-account-card__header {align-items: center;justify-content: space-between;gap: 8px}
 
-  .backend-integration-settings .journalit-tradovate-card-header__title {display: inline-flex;flex: 1 1 auto;min-width: 0;align-items: center;gap: 8px}
+  .backend-integration-settings .journalit-broker-card-header__title {display: inline-flex;flex: 1 1 auto;min-width: 0;align-items: center;gap: 8px}
+
+  .backend-integration-settings .journalit-broker-mapping-hint {margin: 4px 0 0;color: var(--text-muted);font-size: var(--font-ui-smaller);line-height: 1.3}
 
 
-  .backend-integration-settings button.journalit-tradovate-manage-link {width: auto;min-width: 0;height: auto;min-height: 0;margin-left: auto;padding: 2px 0;border: 0;background: transparent;box-shadow: none;color: var(--text-accent-hover);font-size: 11px;font-weight: 500;letter-spacing: normal;line-height: 1.3;text-transform: none;white-space: nowrap;cursor: pointer}
+  .backend-integration-settings button.journalit-broker-manage-link {width: auto;min-width: 0;height: auto;min-height: 0;margin-left: auto;padding: 2px 0;border: 0;background: transparent;box-shadow: none;color: var(--text-accent-hover);font-size: 11px;font-weight: 500;letter-spacing: normal;line-height: 1.3;text-transform: none;white-space: nowrap;cursor: pointer}
 
-  .backend-integration-settings .journalit-tradovate-docs-link-row {margin-top: 6px}
+  .backend-integration-settings .journalit-broker-docs-link-row {margin-top: 6px}
 
   .backend-integration-settings
-    .journalit-tradovate-docs-link-row
-    button.journalit-tradovate-manage-link {margin-left: 0}
+    .journalit-broker-docs-link-row
+    button.journalit-broker-manage-link {margin-left: 0}
 
-  .backend-integration-settings button.journalit-tradovate-manage-link:hover,
-  .backend-integration-settings button.journalit-tradovate-manage-link:focus-visible {background: transparent;box-shadow: none;color: var(--text-accent-hover)}
+  .backend-integration-settings button.journalit-broker-manage-link:hover,
+  .backend-integration-settings button.journalit-broker-manage-link:focus-visible {background: transparent;box-shadow: none;color: var(--text-accent-hover)}
 
-  .backend-integration-settings .journalit-tradovate-card-actions {display: grid;grid-template-columns: repeat(2, minmax(0, 1fr));gap: 8px}
+  .backend-integration-settings .journalit-broker-card-actions {display: grid;grid-template-columns: repeat(2, minmax(0, 1fr));gap: 8px}
 
-  .backend-integration-settings .journalit-tradovate-card-actions .journalit-button {width: auto}
+  .backend-integration-settings .journalit-broker-card-actions .journalit-button {width: auto}
 
   .backend-integration-settings .journalit-tradovate-connection-help {margin-top: 8px}
 
   .backend-integration-settings .journalit-tradovate-sync-panel > .journalit-trade-import-account-grid {grid-template-columns: 1fr;margin-top: 0}
 
-  .backend-integration-settings .journalit-tradovate-account-card {min-width: 0}
+  .backend-integration-settings .journalit-broker-account-card {min-width: 0}
 
   .backend-integration-settings .journalit-tradovate-account-card--single {padding: 0;border: 0;border-radius: 0;background: transparent;box-shadow: none}
 
   .backend-integration-settings
     .journalit-tradovate-account-card--single
-    .journalit-tradovate-account-card__header {margin-bottom: 0;padding: 6px 0 4px}
+    .journalit-broker-account-card__header {margin-bottom: 0;padding: 6px 0 4px}
 
   .backend-integration-settings
     .journalit-tradovate-account-card--single
@@ -13151,6 +13330,28 @@ button.journalit-button,
 
   .backend-integration-settings .journalit-tradovate-account-recovery__hint {color: var(--text-muted);font-size: 11px;line-height: 1.35}
 
+  .backend-integration-settings .journalit-rithmic-connection-card {display: grid;gap: 10px;padding: 12px 14px;border: 1px solid var(--background-modifier-border);border-radius: 8px;background: var(--background-secondary)}
+
+  .backend-integration-settings .journalit-rithmic-connection-summary {display: flex;align-items: center;justify-content: space-between;gap: 12px}
+
+  .backend-integration-settings .journalit-rithmic-connection-meta {display: flex;flex-wrap: wrap;gap: 4px 14px;color: var(--text-muted);font-size: 11px;line-height: 1.4}
+
+  .backend-integration-settings .journalit-rithmic-connection-job {color: var(--text-accent)}
+
+  .backend-integration-settings .journalit-rithmic-connection-error {display: flex;align-items: flex-start;gap: 6px;padding: 8px 10px;border-radius: 6px;background: var(--background-modifier-error-hover);color: var(--text-normal);font-size: 11px;line-height: 1.4}
+
+  .backend-integration-settings .journalit-rithmic-connection-accounts {display: grid;gap: 8px}
+
+  .backend-integration-settings .journalit-rithmic-account-state {color: var(--text-muted);font-size: 11px;white-space: nowrap}
+
+  .backend-integration-settings .journalit-rithmic-account-summary {display: flex;flex-wrap: wrap;gap: 4px 12px;color: var(--text-muted);font-size: 11px}
+
+  .backend-integration-settings .journalit-rithmic-account-field {display: grid;gap: 4px;margin-top: 8px}
+
+  .backend-integration-settings .journalit-rithmic-account-field label {color: var(--text-muted);font-size: 11px}
+
+  .backend-integration-settings .journalit-rithmic-account-field select {width: 100%}
+
 
   @media (max-width: 620px) {
     .backend-integration-settings .journalit-tradovate-status-cards {grid-template-columns: 1fr}
@@ -13161,10 +13362,12 @@ button.journalit-button,
 
     .backend-integration-settings .journalit-tradovate-connection-summary {align-items: flex-start;flex-direction: column}
 
-    .backend-integration-settings .journalit-tradovate-connection-actions {align-items: stretch;flex-direction: column}
+    .backend-integration-settings .journalit-broker-actions-row {align-items: stretch;flex-direction: column}
+
+    .backend-integration-settings .journalit-rithmic-connection-summary {align-items: flex-start;flex-direction: column}
 
     .backend-integration-settings
-      .journalit-tradovate-connection-actions
+      .journalit-broker-actions-row
       .journalit-button {width: 100%}
 
   }
@@ -13651,7 +13854,7 @@ button.journalit-button,
 
   .journalit-settings-tab .custom-fields-manager .custom-fields-accordion {margin-left: 16px}
 
-  .journalit-settings-tab .custom-fields-manager .custom-fields-accordion-title {cursor: pointer;display: flex;align-items: center;gap: 8px}
+  .journalit-settings-tab .custom-fields-manager .custom-fields-accordion-title {cursor: pointer;display: flex;align-items: center;gap: 8px;color: var(--text-normal);font: inherit;font-size: var(--font-ui-medium);font-weight: var(--font-semibold);line-height: var(--line-height-tight);text-align: left}
 
   .journalit-settings-tab .custom-fields-manager .custom-fields-danger-outline {color: var(--text-error)}
 
@@ -13983,10 +14186,6 @@ button.journalit-button,
 
 .journalit-setups-performance-widget__heading {min-width: 0}
 
-.journalit-setups-performance-widget .journalit-chart-widget__title {color: var(--text-normal);text-align: left;font-size: 16px;font-weight: 650}
-
-.journalit-setups-performance-widget__title-row {display: flex;align-items: center;gap: 10px;min-width: 0;flex-wrap: wrap}
-
 .journalit-setups-performance-widget .journalit-chart-widget__selector {position: static;flex: 0 0 auto;display: flex;gap: 8px;overflow: visible}
 
 .journalit-setups-performance-widget__metric-menu {position: relative;z-index: 5;display: inline-flex;overflow: visible}
@@ -14028,11 +14227,7 @@ button.journalit-toolbar-button.journalit-setups-performance-widget__setup-trigg
 
 .journalit-setups-performance-widget--pairs {border: 0;background: transparent;box-shadow: none;margin-top: -6px}
 
-.journalit-setups-performance-widget--pairs .journalit-setups-performance-widget__header {align-items: center;padding: 0 0 4px;border-bottom: 0}
-
 .journalit-setups-performance-widget--pairs .journalit-setups-performance-summary {margin-top: 0}
-
-.journalit-setups-performance-widget--pairs .journalit-chart-widget__title {display: none}
 
 .journalit-setups-performance-widget__body {flex: none;min-height: 0;padding: 6px 10px 8px 0}
 
@@ -14041,14 +14236,20 @@ button.journalit-toolbar-button.journalit-setups-performance-widget__setup-trigg
 .journalit-setups-pairs-split {display: grid;grid-template-columns: minmax(0, 0.82fr) minmax(0, 1.18fr);gap: 16px;padding: 4px 0 0}
 
 .journalit-setups-pairs-table,
-.journalit-setups-pairs-evidence {overflow: hidden;border: 1px solid color-mix(in srgb, var(--background-modifier-border) 82%, transparent);border-radius: 5px;background:
+.journalit-setups-pairs-evidence {border: 1px solid color-mix(in srgb, var(--background-modifier-border) 82%, var(--background-primary));border-radius: 5px;background:
     linear-gradient(180deg, color-mix(in srgb, var(--background-secondary) 72%, transparent), transparent),
-    color-mix(in srgb, var(--background-primary) 88%, black 12%)}
+    color-mix(in srgb, var(--background-primary) 88%, black 12%);background-clip: padding-box}
+
+.journalit-setups-pairs-table {overflow: hidden}
+
+.journalit-setups-pairs-evidence {overflow: visible}
 
 .theme-light .journalit-setups-pairs-table,
-.theme-light .journalit-setups-pairs-evidence {border-color: color-mix(in srgb, var(--background-modifier-border) 88%, transparent);background:
+.theme-light .journalit-setups-pairs-evidence {border-color: color-mix(in srgb, var(--background-modifier-border) 88%, var(--background-primary));background:
     linear-gradient(180deg, color-mix(in srgb, var(--background-secondary) 55%, transparent), transparent 42%),
-    var(--background-primary);box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.72)}
+    var(--background-primary);background-clip: padding-box;box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.72)}
+
+.journalit-setups-pairs-table__summary {padding: 10px;border-bottom: 1px solid color-mix(in srgb, var(--background-modifier-border) 72%, transparent)}
 
 .theme-light .journalit-setups-view button.journalit-setups-pairs-row--selected {background: color-mix(in srgb, var(--interactive-accent) 9%, var(--background-modifier-hover) 52%)}
 
@@ -14069,6 +14270,8 @@ button.journalit-toolbar-button.journalit-setups-performance-widget__setup-trigg
 .journalit-setups-pairs-table--trade-count-metric .journalit-setups-pairs-row {grid-template-columns: 44px minmax(104px, 0.48fr) minmax(160px, 1.52fr)}
 
 .journalit-setups-view button.journalit-setups-pairs-row {appearance: none;display: grid;grid-template-columns: 44px minmax(104px, 0.58fr) minmax(132px, 1.42fr) 34px;gap: 8px;align-items: center;width: 100%;min-height: 44px;padding: 0 10px;border: 0;border-bottom: 1px solid color-mix(in srgb, var(--background-modifier-border) 62%, transparent);border-radius: 0;background: transparent;box-shadow: none;color: var(--text-normal);cursor: pointer;font-size: var(--font-ui-small);text-align: left}
+
+.journalit-setups-view button.journalit-setups-pairs-row:last-child {border-bottom: 0}
 
 .journalit-setups-view button.journalit-setups-pairs-row:hover,
 .journalit-setups-view button.journalit-setups-pairs-row:focus-visible {background: color-mix(in srgb, var(--background-modifier-hover) 42%, transparent);box-shadow: none}
@@ -14110,9 +14313,11 @@ button.journalit-toolbar-button.journalit-setups-performance-widget__setup-trigg
 
 .journalit-setups-pairs-evidence--empty {display: flex;align-items: center;justify-content: center;min-height: 440px}
 
-.journalit-setups-pairs-evidence__header {padding-bottom: 14px;border-bottom: 1px solid color-mix(in srgb, var(--background-modifier-border) 72%, transparent)}
+.journalit-setups-pairs-evidence__header {display: flex;align-items: center;justify-content: space-between;gap: 16px;padding-bottom: 14px;border-bottom: 1px solid color-mix(in srgb, var(--background-modifier-border) 72%, transparent)}
 
-.journalit-setups-pairs-evidence__header h3 {margin: 0;color: var(--text-normal);font-size: 20px;font-weight: 700;letter-spacing: -0.01em}
+.journalit-setups-pairs-evidence__header .journalit-setups-performance-widget__metric-menu {flex: 0 0 auto}
+
+.journalit-setups-pairs-evidence__header h3 {min-width: 0;margin: 0;color: var(--text-normal);font-size: 20px;font-weight: 700;letter-spacing: -0.01em}
 
 .journalit-setups-pairs-evidence__content {display: grid;grid-template-columns: minmax(280px, 1.3fr) minmax(180px, 0.7fr);gap: 16px;padding-top: 20px}
 
@@ -14175,12 +14380,6 @@ button.journalit-toolbar-button.journalit-setups-performance-widget__setup-trigg
   .journalit-setups-pairs-evidence__content {grid-template-columns: minmax(280px, 1.25fr) minmax(180px, 0.75fr)}
 }
 
-@media (max-width: 920px) {
-  .journalit-setups-performance-widget--pairs .journalit-setups-performance-widget__header {align-items: flex-start;flex-direction: column;gap: 8px}
-
-  .journalit-setups-performance-widget--pairs .journalit-chart-widget__selector {align-self: flex-end}
-}
-
 @media (max-width: 760px) {
   .journalit-setups-pairs-table__header,
   .journalit-setups-view button.journalit-setups-pairs-row {grid-template-columns: 28px minmax(0, 0.8fr) minmax(128px, 1.2fr)}
@@ -14218,12 +14417,6 @@ button.journalit-toolbar-button.journalit-setups-performance-widget__setup-trigg
   .journalit-setups-pairs-split {grid-template-columns: 1fr}
 
   .journalit-setups-pairs-evidence__content {grid-template-columns: minmax(280px, 1.25fr) minmax(180px, 0.75fr)}
-}
-
-@container (max-width: 920px) {
-  .journalit-setups-performance-widget--pairs .journalit-setups-performance-widget__header {align-items: flex-start;flex-direction: column;gap: 8px}
-
-  .journalit-setups-performance-widget--pairs .journalit-chart-widget__selector {align-self: flex-end}
 }
 
 @container (max-width: 760px) {
@@ -14854,10 +15047,10 @@ button.journalit-toolbar-button.journalit-setups-performance-widget__setup-trigg
 .journalit-setups-brief__note-link:hover,
 .journalit-setups-brief__note-link:focus-visible {color: var(--text-accent);outline: none;text-underline-offset: 2px}
 
-.journalit-setups-brief__more-note {display: inline;width: fit-content;max-width: 100%;color: var(--text-muted);cursor: pointer;font-family: var(--font-interface);font-size: var(--font-ui-smaller);font-weight: 400;line-height: 1.2;margin: 0;text-align: left;white-space: nowrap}
+button.journalit-native-button.journalit-setups-brief__more-note {display: inline;width: fit-content;max-width: 100%;color: var(--text-muted);cursor: pointer;font-family: var(--font-interface);font-size: var(--font-ui-smaller);font-weight: 400;line-height: 1.2;margin: 0;text-align: left;white-space: nowrap}
 
-.journalit-setups-brief__more-note:hover,
-.journalit-setups-brief__more-note:focus-visible {color: var(--text-accent);background: transparent;box-shadow: none;outline: none;text-underline-offset: 2px}
+button.journalit-native-button.journalit-setups-brief__more-note:hover,
+button.journalit-native-button.journalit-setups-brief__more-note:focus-visible {color: var(--text-accent);background: transparent;box-shadow: none;outline: none;text-underline-offset: 2px}
 
 .journalit-setups-brief__screenshot-grid {display: grid;grid-template-columns: repeat(3, minmax(0, 1fr));gap: 4px}
 
@@ -15489,11 +15682,16 @@ button.journalit-toolbar-button.journalit-setups-detail-performance__chart-mode-
 
 .journalit-tooltip.accounts-tooltip .tooltip-title {color: var(--text-accent)}
 
-.journalit-tooltip__sr-only {position: absolute;width: 1px;height: 1px;padding: 0;margin: -1px;overflow: hidden;white-space: nowrap;border: 0}
+button:where(.journalit-native-button) {appearance: none}
 
-  .journalit-multi-select-dropdown-filter__trigger,
-  .journalit-multi-select-dropdown-filter__reset,
-  .journalit-multi-select-dropdown-filter__option {appearance: none}
+  button.journalit-native-button--unstyled {-webkit-appearance: none;appearance: none;height: auto;min-height: 0;margin: 0;padding: 0;border: 0;border-radius: 0;background: none;box-shadow: none;color: inherit;font: inherit;text-align: inherit;white-space: normal;cursor: pointer}
+
+  button.journalit-native-button--unstyled:hover,
+  button.journalit-native-button--unstyled:active {background: none;box-shadow: none}
+
+  button.journalit-native-button--unstyled:focus-visible {outline: 2px solid var(--interactive-accent);outline-offset: 2px}
+
+  .journalit-tooltip__sr-only {position: absolute;width: 1px;height: 1px;padding: 0;margin: -1px;overflow: hidden;white-space: nowrap;border: 0}
 
   .journalit-sticky-header-clone {position: fixed;z-index: 1000;top: var(--journalit-sticky-top);left: var(--journalit-sticky-left);width: var(--journalit-sticky-width);box-sizing: border-box}
 
@@ -15629,6 +15827,8 @@ button.journalit-toolbar-button.journalit-setups-detail-performance__chart-mode-
 
   .journalit-embedded-markdown-note__media-button {display: block;width: 100%;min-height: 0;cursor: zoom-in;text-align: left}
 
+  button.journalit-native-button--unstyled.journalit-embedded-markdown-note__media-button {cursor: zoom-in;text-align: left}
+
   .journalit-embedded-markdown-note__media-button:focus-visible {outline: 2px solid var(--interactive-accent);outline-offset: 2px}
 
   
@@ -15723,7 +15923,7 @@ button.journalit-toolbar-button.journalit-setups-detail-performance__chart-mode-
   .shared-goal-text.completed {opacity: 0.7;color: var(--text-muted)}
   
   
-.journalit-empty-state {display: flex;flex-direction: column;align-items: center;justify-content: center;padding: 24px;text-align: center;background-color: var(--background-secondary);border-radius: 8px;min-height: 160px;width: 100%;height: 100%;color: var(--text-muted);animation: fadeIn 0.3s ease-out;margin: 0 auto}
+.journalit-empty-state {display: flex;flex-direction: column;align-items: center;justify-content: safe center;padding: 24px;text-align: center;background-color: var(--background-secondary);border-radius: 8px;min-height: 160px;width: 100%;height: 100%;color: var(--text-muted);animation: fadeIn 0.3s ease-out;margin: 0 auto}
 
 .journalit-empty-state-icon {margin-bottom: 16px;opacity: 0.6;color: var(--text-muted);display: flex;justify-content: center}
 
@@ -15733,11 +15933,22 @@ button.journalit-toolbar-button.journalit-setups-detail-performance__chart-mode-
 
   .journalit-empty-state-submessage {font-size: 13px;opacity: 0.8;margin: 0 0 16px 0;color: var(--text-muted)}
   
-  .journalit-empty-state-action-button {background-color: var(--interactive-accent);color: var(--text-on-accent);border: none;border-radius: 6px;padding: 0 16px;font-size: 14px;font-weight: 600;cursor: pointer;transition: color 0.2s ease;box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);margin-top: 16px;display: flex;align-items: center;justify-content: center;min-width: 120px;height: 36px;line-height: 1}
+  .journalit-empty-state .journalit-empty-state-actions button.journalit-empty-state-action-button {background-color: var(--interactive-accent);color: var(--text-on-accent);border: none;border-radius: 6px;padding: 0 16px;font-size: 14px;font-weight: 600;cursor: pointer;transition:
+      background-color 0.2s ease,
+      transform 0.2s ease,
+      box-shadow 0.2s ease;box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);margin-top: 16px;display: flex;align-items: center;justify-content: center;min-width: 120px;height: 36px;line-height: 1}
   
-  .journalit-empty-state-action-button:hover {background-color: var(--interactive-accent-hover);transform: translateY(-1px);box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15)}
+  .journalit-empty-state .journalit-empty-state-actions button.journalit-empty-state-action-button:hover,
+  .journalit-empty-state .journalit-empty-state-actions button.journalit-empty-state-action-button:focus-visible {background-color: var(--interactive-accent-hover);transform: translateY(-1px);box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15)}
 
   .journalit-empty-state-action-icon {margin-right: 6px;display: inline-flex;align-items: center;justify-content: center}
+
+  .journalit-empty-state-actions {display: flex;flex-wrap: wrap;justify-content: center;gap: 8px}
+
+  .journalit-empty-state button.journalit-empty-state-secondary-action-button {min-width: 120px;height: 36px;margin-top: 16px;padding: 0 16px;display: flex;align-items: center;justify-content: center;border: 1px solid var(--background-modifier-border);border-radius: 6px;background-color: var(--background-secondary);color: var(--text-normal);font-size: 14px;font-weight: 600;line-height: 1;cursor: pointer}
+
+  .journalit-empty-state button.journalit-empty-state-secondary-action-button:hover,
+  .journalit-empty-state button.journalit-empty-state-secondary-action-button:focus-visible {border-color: var(--background-modifier-border-hover);background-color: var(--background-modifier-hover)}
 
   
   @keyframes fadeIn {
@@ -16109,6 +16320,8 @@ button.journalit-toolbar-button.journalit-setups-detail-performance__chart-mode-
   .journalit-toolbar-icon-button:disabled {opacity: 0.6;cursor: not-allowed}
 
   
+  button.journalit-native-button.tooltip-trigger {margin: 0;padding: 0;border: 0;background: transparent;box-shadow: none;color: inherit;font: inherit;text-align: inherit}
+
   .tooltip-trigger--block {display: block;width: 100%}
 
   .tooltip-trigger--inline {display: inline-flex;align-items: center;justify-content: center}
@@ -17062,7 +17275,7 @@ button.journalit-toolbar-button.journalit-setups-detail-performance__chart-mode-
 
 .journalit-template-builder-container .template-builder-section-header {display: flex;align-items: center;justify-content: space-between;padding: 4px 12px;cursor: pointer;user-select: none;color: var(--text-muted);font-size: 11px;font-weight: 600;text-transform: uppercase;letter-spacing: 0.05em}
 
-.journalit-template-builder-container .template-builder-section-title {display: flex;align-items: center;gap: 6px;line-height: 1.2}
+.journalit-template-builder-container .template-builder-section-title {display: flex;flex: 1 1 auto;align-items: center;justify-content: flex-start;gap: 6px;padding: 0;border: 0;background: transparent;color: inherit;font: inherit;text-align: left;text-transform: inherit;letter-spacing: inherit;line-height: 1.2}
 
 .journalit-template-builder-container .template-builder-section-chevron {align-self: center;display: block;flex: 0 0 auto;height: 12px;transition: transform 0.15s ease;transform-origin: center;width: 12px}
 
@@ -17109,6 +17322,8 @@ button.journalit-toolbar-button.journalit-setups-detail-performance__chart-mode-
 .journalit-template-builder-container .sidebar-template-item--selected .sidebar-template-item-star.is-default {color: var(--text-on-accent)}
 
 .journalit-template-builder-container .sidebar-template-item-name {font-size: 13px;overflow: hidden;text-overflow: ellipsis;white-space: nowrap}
+
+.journalit-template-builder-container .sidebar-template-item-select {display: flex;flex: 1 1 auto;align-items: center;justify-content: flex-start;gap: 6px;min-width: 0;padding: 0;border: 0;background: transparent;color: inherit;font: inherit;text-align: left}
 
 .journalit-template-builder-container .sidebar-template-item-badge {font-size: 9px;padding: 1px 4px;background: var(--background-modifier-border);border-radius: 3px;flex-shrink: 0}
 
@@ -17213,25 +17428,6 @@ button.journalit-toolbar-button.journalit-setups-detail-performance__chart-mode-
   .drc-note-grade-value,
   .drc-note-grade-dropdown select,
   .drc-note-grade-dropdown option {text-align: center;text-align-last: center}
-
-  
-  .journalit-no-tooltip-button {position: relative;background: none;border: none;cursor: pointer;display: inline-flex;align-items: center;justify-content: center;padding: 6px;border-radius: 4px;transition: color 0.2s ease;color: var(--text-muted);width: 30px;height: 30px;margin: 0 2px;box-sizing: content-box}
-
-  
-  .journalit-no-tooltip-button:hover {background-color: var(--background-modifier-hover);color: var(--text-normal)}
-
-  
-  .journalit-no-tooltip-button:active {background-color: var(--background-modifier-active);transform: translateY(1px)}
-
-  
-
-  
-  .journalit-no-tooltip-button svg {width: 18px;height: 18px;pointer-events: none;fill: none}
-
-  
-  .journalit-no-tooltip-button.debug {outline: 1px solid red}
-
-  .journalit-no-tooltip-button:hover.debug {outline: 2px solid green}
 
 .journalit-trade-form-layout-modal {display: flex;flex-direction: column;max-height: 90vh}
 
@@ -17646,7 +17842,7 @@ button.journalit-toolbar-button.journalit-setups-detail-performance__chart-mode-
 
   .trade-form-view-container .trade-form-attachments .journalit-carousel-counter {position: absolute;top: 0.65rem;left: 0.65rem;right: auto;z-index: 2;margin: 0;padding: 0.25rem 0.55rem;border: 1px solid rgba(var(--mono-rgb-100), 0.14);border-radius: var(--radius-s, 6px);background: rgba(var(--mono-rgb-0), 0.52);color: var(--text-normal);font-size: 0.75rem;font-weight: 600;line-height: 1;backdrop-filter: blur(8px)}
 
-  .trade-form-view-container .trade-form-attachments .journalit-carousel-thumbnails {display: flex;flex-wrap: nowrap;justify-content: flex-start;gap: 0.5rem;overflow-x: auto;overflow-y: hidden;padding: 0.65rem 0 0;margin: 0;border-top: 0;background: transparent;scrollbar-color: var(--scrollbar-thumb-bg, var(--background-modifier-border-hover)) transparent;scrollbar-width: thin}
+  .trade-form-view-container .trade-form-attachments .journalit-carousel-thumbnails {display: flex;flex-wrap: nowrap;justify-content: flex-start;gap: 0.5rem;overflow-x: auto;overflow-y: hidden;padding: 0.65rem 0.25rem 0.4rem;margin: 0;border-top: 0;background: transparent;scrollbar-color: var(--scrollbar-thumb-bg, var(--background-modifier-border-hover)) transparent;scrollbar-width: thin}
 
   .trade-form-view-container .trade-form-attachments .journalit-carousel-thumbnails::-webkit-scrollbar {height: 4px}
 
@@ -17659,6 +17855,14 @@ button.journalit-toolbar-button.journalit-setups-detail-performance__chart-mode-
   .trade-form-view-container .trade-form-attachments .journalit-carousel-thumbnails::-webkit-scrollbar-thumb:hover {background-color: var(--scrollbar-active-thumb-bg, rgba(var(--mono-rgb-100), 0.34))}
 
   .trade-form-view-container .trade-form-attachments .journalit-carousel-thumbnail {width: 4.5rem;height: 3rem;flex: 0 0 auto;border-radius: var(--radius-s, 6px);background: transparent;scroll-snap-align: center}
+
+  .trade-form-view-container .journalit-trade-attachment-annotation {display: flex;flex-direction: column;gap: 14px;margin-top: 12px;padding: 14px;border: 1px solid var(--background-modifier-border);border-radius: var(--radius-m, 8px);background: var(--background-secondary)}
+
+  .trade-form-view-container .journalit-trade-attachment-annotation__header {display: flex;align-items: center;justify-content: space-between;gap: 12px}
+
+  .trade-form-view-container .journalit-trade-attachment-annotation__header h3 {max-width: min(72vw, 420px);margin: 0;overflow: hidden;color: var(--text-normal);font-size: var(--font-ui-medium);font-weight: 600;text-overflow: ellipsis;white-space: nowrap}
+
+  .trade-form-view-container .journalit-trade-attachment-annotation__actions {display: flex;justify-content: flex-end;gap: 8px}
 
   @keyframes errorPulse {
     0% {transform: scale(1)}
@@ -18724,6 +18928,10 @@ button.journalit-toolbar-button.journalit-setups-detail-performance__chart-mode-
 
 .journalit-trade-log {display: flex;flex-direction: column;container-name: journalit-trade-log;container-type: inline-size;height: 100%;background: var(--background-primary);color: var(--text-normal);overflow: hidden;min-height: 0}
 
+.journalit-trade-log-empty-container {display: flex;flex: 1;justify-content: center;width: 100%;min-height: 0;padding: 0;overflow-y: auto}
+
+.journalit-trade-log-empty-container .journalit-empty-state {border-radius: 0}
+
 
 .trade-log-header {padding: 12px 16px 6px 16px;border-bottom: 1px solid var(--background-modifier-border);background: var(--background-secondary)}
 
@@ -18854,11 +19062,11 @@ button.journalit-toolbar-button.journalit-setups-detail-performance__chart-mode-
 
 .journalit-tradelog-trade-type-dropdown {position: relative;width: 100%}
 
-.journalit-tradelog-trade-type-summary {display: flex;justify-content: space-between;align-items: center;padding: 5px 10px;background-color: var(--background-primary);border: 1px solid var(--background-modifier-border);border-radius: 4px;cursor: pointer;font-size: 0.9em;transition: color 0.2s ease;height: 28px;line-height: 1;white-space: nowrap;gap: 8px}
+button.journalit-native-button.journalit-tradelog-trade-type-summary {display: flex;justify-content: space-between;align-items: center;padding: 5px 10px;background-color: var(--background-primary);border: 1px solid var(--background-modifier-border);border-radius: 4px;cursor: pointer;font-size: 0.9em;transition: color 0.2s ease;height: 28px;line-height: 1;white-space: nowrap;gap: 8px}
 
-.journalit-tradelog-trade-type-summary:hover {border-color: var(--interactive-accent);background-color: var(--background-modifier-hover)}
+button.journalit-native-button.journalit-tradelog-trade-type-summary:hover {border-color: var(--interactive-accent);background-color: var(--background-modifier-hover)}
 
-.journalit-tradelog-trade-type-summary:focus-visible {outline: 2px solid var(--interactive-accent);outline-offset: 2px}
+button.journalit-native-button.journalit-tradelog-trade-type-summary:focus-visible {outline: 2px solid var(--interactive-accent);outline-offset: 2px}
 
 .journalit-tradelog-trade-type-summary .dropdown-arrow {font-size: 10px;color: var(--text-muted);transition: transform 0.2s ease}
 
@@ -18901,11 +19109,11 @@ button.journalit-toolbar-button.journalit-setups-detail-performance__chart-mode-
 
 .journalit-tradelog-status-dropdown {position: relative;width: 100%}
 
-.journalit-tradelog-status-summary {display: flex;justify-content: space-between;align-items: center;padding: 5px 10px;background-color: var(--background-primary);border: 1px solid var(--background-modifier-border);border-radius: 4px;cursor: pointer;font-size: 0.9em;transition: color 0.2s ease;height: 28px;line-height: 1;white-space: nowrap;gap: 8px}
+button.journalit-native-button.journalit-tradelog-status-summary {display: flex;justify-content: space-between;align-items: center;padding: 5px 10px;background-color: var(--background-primary);border: 1px solid var(--background-modifier-border);border-radius: 4px;cursor: pointer;font-size: 0.9em;transition: color 0.2s ease;height: 28px;line-height: 1;white-space: nowrap;gap: 8px}
 
-.journalit-tradelog-status-summary:hover {border-color: var(--interactive-accent);background-color: var(--background-modifier-hover)}
+button.journalit-native-button.journalit-tradelog-status-summary:hover {border-color: var(--interactive-accent);background-color: var(--background-modifier-hover)}
 
-.journalit-tradelog-status-summary:focus-visible {outline: 2px solid var(--interactive-accent);outline-offset: 2px}
+button.journalit-native-button.journalit-tradelog-status-summary:focus-visible {outline: 2px solid var(--interactive-accent);outline-offset: 2px}
 
 .journalit-tradelog-status-summary .dropdown-arrow {font-size: 10px;color: var(--text-muted);transition: transform 0.2s ease}
 
@@ -19077,6 +19285,8 @@ button.journalit-toolbar-button.journalit-setups-detail-performance__chart-mode-
 
 .node-label {flex: 0 0 auto;display: inline-flex;align-items: center;gap: 4px;padding: 0;border-radius: 0;cursor: pointer;font-weight: 700;text-transform: uppercase;color: var(--text-normal);transition: color 0.2s ease}
 
+button.journalit-native-button--unstyled.node-label {flex: 0 0 auto;display: inline-flex;align-items: center;gap: 4px;color: var(--text-normal);font-weight: 700;text-transform: uppercase}
+
 .node-label:hover {color: var(--text-accent);background-color: transparent}
 
 
@@ -19158,9 +19368,11 @@ button.journalit-toolbar-button.journalit-setups-detail-performance__chart-mode-
 
 .header-cell.sortable {cursor: pointer;user-select: none;display: flex;align-items: center;justify-content: center;gap: 4px;transition: color 0.2s ease}
 
-.header-cell.sortable:hover {color: var(--text-normal);background-color: var(--background-modifier-hover);border-radius: 4px}
+.trade-log-header-row button.journalit-native-button.header-cell {height: auto;min-height: 0;padding: 0;border: 0;border-radius: 0;background: transparent;box-shadow: none;color: inherit;font: inherit;text-align: inherit}
 
-.header-cell.sorted {color: var(--interactive-accent);font-weight: 700}
+.trade-log-header-row button.journalit-native-button.header-cell.sortable:hover {color: var(--text-normal);background: var(--background-modifier-hover);border-radius: 4px}
+
+.trade-log-header-row button.journalit-native-button.header-cell.sorted {color: var(--interactive-accent);font-weight: 700}
 
 .header-cell:not(.sortable) > span {display: block;width: 100%;text-align: center}
 
@@ -19277,7 +19489,7 @@ button.journalit-toolbar-button.journalit-setups-detail-performance__chart-mode-
 
 .trade-pnl-cell {display: flex;align-items: center;justify-content: center}
 
-.journalit-trade-log-view-container .trade-pnl-copy-adjust-trigger {cursor: pointer}
+.journalit-trade-log-view-container .trade-pnl-copy-adjust-trigger {height: auto;min-height: 0;padding: 0;border: 0;background: transparent;box-shadow: none;color: inherit;cursor: pointer}
 
 .journalit-trade-log-view-container .trade-pnl-copy-multiplier {margin-left: 3px;color: var(--text-muted);opacity: 0.65;font-size: 0.68em;font-weight: var(--font-normal);font-family: var(--font-interface);vertical-align: super}
 

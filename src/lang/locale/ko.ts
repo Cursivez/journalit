@@ -64,61 +64,54 @@ const ko: Partial<Lang> = {
   'onboarding.explore.core.layouts.label': 'Layout Builder',
   'onboarding.explore.core.layouts.description':
     'Customize dashboards and review layouts with widgets and templates.',
-  'onboarding.explore.imports.title': 'Imports & Sync (PRO)',
-  'onboarding.explore.imports.subtitle':
-    'Preview and setup anytime. Importing/sync requires Pro.',
+  'onboarding.explore.imports.title': '가져오기 및 동기화',
+
   'onboarding.explore.imports.csv.label': 'Trade Import',
   'onboarding.explore.imports.csv.description':
-    'Upload CSV, spreadsheet, HTML, and broker statement exports for backend-powered analysis and preview.',
+    '지원되는 거래 기록 파일을 무료로 미리 보고 열을 매핑하세요. 보관함으로 가져오려면 Pro가 필요합니다.',
   'onboarding.explore.imports.trade-sync.label': 'Trade Sync',
   'onboarding.explore.imports.trade-sync.description':
     'Automatic trade syncing from MetaTrader (MT4) or Tradovate. Requires Pro.',
-  'onboarding.explore.cta.open': 'Open',
+
   'onboarding.explore.cta.manual': 'Open Docs',
 
   
   
   
-  'onboarding.path.kicker': 'Choose Path',
-  'onboarding.path.tip.trial':
-    'Tip: PRO subscriptions include a 14-day free trial.',
-  'onboarding.path.title': 'Choose your first path',
+  'onboarding.path.kicker': '내 거래 기록',
+  'onboarding.path.title': 'Journalit으로 가져올 기존 거래가 있나요?',
   'onboarding.path.subtitle':
-    'Pick the fastest way to get your first trade in Journalit.',
-  'onboarding.path.option.manual.label': 'Manual Entry (Free)',
+    '답을 선택하면 알맞은 다음 단계로 바로 이동합니다.',
+  'onboarding.path.option.manual.label': '아니요, 처음부터 시작할게요',
   'onboarding.path.option.manual.description':
-    'Create a trade in seconds with the Add Trade form.',
-  'onboarding.path.option.csv.label': 'Trade Import',
+    '거래 추가 양식을 열고 첫 거래를 기록합니다.',
+  'onboarding.path.option.csv.label': '예, 기존 거래 기록이 있어요',
   'onboarding.path.option.csv.description':
-    'Use Pro backend-powered analysis for broker export files.',
-  'onboarding.path.option.trade-sync.label': 'Trade Sync',
+    '브로커 자동 동기화와 파일 가져오기 중에서 선택합니다.',
+  'onboarding.path.method.kicker': '거래 기록 가져오기',
+  'onboarding.path.method.title': '어떤 방법으로 가져올까요?',
+  'onboarding.path.method.subtitle':
+    '브로커와 내보낸 파일에 맞는 옵션을 선택하세요.',
+  'onboarding.path.option.trade-sync.label': 'MT4 또는 Tradovate 연결',
   'onboarding.path.option.trade-sync.description':
-    'Connect MetaTrader (MT4) or Tradovate for automatic trade syncing.',
+    'Trade Sync를 설정해 새 거래를 자동으로 가져옵니다.',
+  'onboarding.path.option.import.label': '거래 기록 파일 가져오기',
+  'onboarding.path.option.import.description':
+    'CSV, Excel 또는 지원되는 브로커 보고서를 업로드합니다.',
+  'onboarding.path.option.import.badge': '무료 미리보기',
+  'onboarding.manual.title': 'Journalit을 시작할 준비가 되었습니다',
+  'onboarding.manual.subtitle':
+    '아래의 추천 단축키를 설정하여 거래를 더 빠르게 기록하세요.',
+  'onboarding.manual.subtitle-mobile':
+    '거래를 기록할 때마다 거래 추가를 여세요.',
+  'onboarding.manual.hotkey.title': '추천 단축키',
+  'onboarding.manual.cta.change-hotkey': '단축키 설정',
+  'onboarding.manual.hit-hotkey':
+    '추천: {hotkey}. 단축키 설정을 클릭해 구성하세요.',
+  'onboarding.manual.add-first-trade': '첫 거래 추가',
+  'onboarding.notice.trade-sync-open-failed':
+    'Trade Sync를 열 수 없습니다. 다시 시도하세요.',
 
-  
-  
-  
-  'onboarding.final.manual.title': "You're ready to Journalit",
-
-  'onboarding.final.manual.hotkey.title': 'Suggested hotkey',
-  'onboarding.final.manual.hotkey.value': 'Mod + Alt + A',
-
-  'onboarding.final.manual.cta.change-hotkey': 'Set hotkey',
-  'onboarding.final.manual.hit-hotkey':
-    'Suggested: {hotkey}. Click Set hotkey to configure it.',
-  'onboarding.final.csv.title': "You're ready to bring in your trades",
-  'onboarding.final.csv.subtitle':
-    'Next, open Trade Import. Uploading and processing broker exports requires PRO activation.',
-  'onboarding.final.csv.cta.open': 'Open Trade Import',
-  'onboarding.final.trade-sync.title': "You're ready to set up Trade Sync",
-  'onboarding.final.trade-sync.subtitle':
-    'Next, set up MetaTrader (MT4) or Tradovate sync.',
-  'onboarding.final.trade-sync.cta.open': 'Open Trade Sync Setup',
-  'onboarding.final.trade-sync.hero.source.title': 'MetaTrader + Tradovate',
-  'onboarding.final.trade-sync.hero.source.subtitle': 'Broker trades',
-  'onboarding.final.trade-sync.hero.dest.title': 'Vault',
-  'onboarding.final.trade-sync.hero.dest.subtitle': 'Trade notes',
-  'onboarding.final.finish': 'Finish',
   'command.open-release-notes': '릴리스 노트 보기',
 
   
@@ -132,7 +125,6 @@ const ko: Partial<Lang> = {
   'auth.desc.already-logged-in': 'You are already logged in{email}.',
   'auth.title.sign-in': 'Sign In to Journalit',
   'auth.label.email': 'Email Address',
-  'auth.placeholder.email': 'your.email@example.com',
 
   
   
@@ -157,10 +149,7 @@ const ko: Partial<Lang> = {
   'form.layout.customize': '양식 사용자 지정',
   'form.layout.modal-title': '거래 양식 사용자 지정',
   'form.layout.settings-title': '거래 양식 레이아웃',
-  'form.layout.settings-desc':
-    '거래를 기록하는 방식과 거래 양식에 표시할 선택 블록을 고르세요.',
-  'form.layout.core-fields-note':
-    '거래 유형, 계정, 자산 유형, 종목, 방향, 선택한 입력 모드에 필요한 가격 또는 P&L 입력은 계속 표시됩니다.',
+
   'form.layout.input-mode': '입력 모드',
   'form.layout.input-mode-prices': '가격',
   'form.layout.input-mode-pnl-risk': 'P&L + 리스크',
@@ -192,13 +181,11 @@ const ko: Partial<Lang> = {
     '계좌, 종목, 방향, 진입/청산 입력은 항상 먼저 표시됩니다.',
   'form.layout.item.asset-specific': '자산별 필드',
   'form.layout.item.pnl-preview': 'P&L 미리보기',
-  'form.layout.item.realized-pnl-preview': '부분 청산 P&L 요약',
-  'form.layout.item.realized-pnl-preview-desc':
-    '부분 청산 후 열린 거래에서만 표시되며 위치는 고정됩니다.',
+
   'form.layout.item.trade-currency': '거래 통화 / 환율',
   'form.layout.item.trade-currency-desc':
     '다른 통화로 거래를 입력하고 선택적으로 환율을 직접 지정할 수 있습니다.',
-  'form.layout.manual-fx-rate': '수동 환율 입력',
+  'form.layout.manual-fx-rate': '환율 재정의',
   'form.layout.result-r': 'R 결과',
   'form.layout.entry-time': '거래 시간',
 
@@ -231,7 +218,7 @@ const ko: Partial<Lang> = {
   'form.field.trade-thesis': '거래 논거',
   'form.field.time': '시간',
   'form.field.price': '가격',
-  'form.field.size': '수량',
+
   'form.field.entries': '진입',
   'form.field.exits': '청산',
   'form.field.optional': '(선택사항)',
@@ -267,8 +254,10 @@ const ko: Partial<Lang> = {
   'form.field.leverage-ratio': '레버리지 비율',
   'form.field.trade-currency': '거래 통화',
   'form.field.fx-rate': '{base} 환율',
+  'form.field.fx-rate-override': '환율 재정의 ({quote} → {base})',
 
   
+  'form.forex.using-manual-rate': '수동 환율 사용',
   'form.field.lot-size.standard': '스탠다드 (100,000)',
   'form.field.lot-size.mini': '미니 (10,000)',
   'form.field.lot-size.micro': '마이크로 (1,000)',
@@ -291,7 +280,7 @@ const ko: Partial<Lang> = {
     '1 {currency} = ? {base} (비워두면 일일 환율 사용)',
   'form.placeholder.custom-tag': '사용자 태그를 입력하고 Enter를 누르세요',
   'form.placeholder.thesis': '이 거래에 대한 논거를 입력하세요...',
-  'form.placeholder.pnl': '총 손익 입력',
+
   'form.placeholder.exchange-stock': '예: NYSE, NASDAQ',
   'form.placeholder.exchange-crypto': '예: Binance, Coinbase',
   'form.placeholder.futures-point-value': '예: ES1의 경우 50',
@@ -313,12 +302,11 @@ const ko: Partial<Lang> = {
     '총 손익을 직접 입력하세요. 수수료와 비용은 여전히 차감됩니다.',
   'form.entry-exit.calc-pnl': '진입/청산 가격과 포지션 크기로 손익 계산',
   'form.ideal-exit.title': '이상적인 청산',
-  'form.ideal-exit.subtitle': '실행 리뷰를 위한 사후 분할 청산.',
-  'form.ideal-exit.coverage': '이상적 크기',
+
   'form.ideal-exit.price': '이상 가격',
   'form.ideal-exit.size': '크기',
   'form.ideal-exit.remove': '이상 청산 삭제',
-  'form.ideal-exit.add': '+ 이상 청산 추가',
+
   'form.ideal-exit.copy-actual': '실제 청산 복사',
 
   'form.ideal-exit.tooltip':
@@ -358,9 +346,8 @@ const ko: Partial<Lang> = {
   'button.add': '추가',
   'button.create': '생성',
   'button.reset': '초기화',
-  'button.close': '닫기',
+
   'button.confirm': '확인',
-  'button.submit': '제출',
 
   'button.add-trade': '거래 추가',
   'button.update-trade': '거래 업데이트',
@@ -368,15 +355,11 @@ const ko: Partial<Lang> = {
   'button.create-trade': '거래 생성',
   'button.delete-all': '전체 삭제',
   'button.clear-all': '전체 지우기',
-  'button.save-name-only': '이름만 저장',
-  'button.cancel-action': '작업 취소',
+
   'button.cancel-reset': '초기화 취소',
   'button.proceed-anyway': '그래도 진행',
   'button.mark-reviewed': '검토 완료로 표시',
-  'button.add-first-goal': '첫 번째 목표 추가',
-  'button.add-first-event': '첫 번째 이벤트 추가',
-  'button.create-daily-review': '일일 리뷰 생성',
-  'button.apply-settings': '설정 적용',
+
   'button.learn-more': '더 알아보기',
   'button.upload-image': '미디어 업로드',
   'button.discord': 'Discord',
@@ -388,20 +371,20 @@ const ko: Partial<Lang> = {
   'validation.fix-errors': '다음 오류를 수정해주세요:',
 
   'validation.complete-required': '모든 필수 필드를 완성해주세요',
-  'validation.map-required-fields':
-    '가져오기 전에 모든 필수 필드를 매핑해주세요',
 
   
   
   
-  'notice.verification-sent':
-    '인증 코드가 전송되었습니다! 이메일을 확인하세요.',
+
   'notice.login-success': '로그인 성공!',
-  'notice.new-verification-sent':
-    '새 인증 코드가 전송되었습니다! 이메일을 확인하세요.',
+
   'notice.logout-success': '로그아웃 완료',
-  'notice.hotkey-set': 'Hotkey set: {hotkey}',
+  'notice.hotkey-set': '단축키 설정됨: {hotkey}',
   'notice.ftp-created': 'FTP 자격 증명이 성공적으로 생성되었습니다',
+  'notice.ftp-password-rotated':
+    '이 기기에 대한 새 FTP 자격 증명이 생성되었습니다. 다른 기기(예: MetaTrader EA)에 구성된 FTP 동기화는 새 비밀번호로 업데이트해야 합니다.',
+  'notice.ftp-reused':
+    '이 기기의 기존 FTP 자격 증명을 불러왔습니다. 더 이상 작동하지 않으면 비밀번호 재설정을 사용하세요.',
   'notice.ftp-reset':
     'FTP 비밀번호가 성공적으로 재설정되었습니다! 새 비밀번호를 저장하세요.',
   'notice.template-saved': '레이아웃 저장됨',
@@ -419,10 +402,10 @@ const ko: Partial<Lang> = {
   'notice.auto-sync-enabled': '활성화됨',
   'notice.auto-sync-disabled': '비활성화됨',
   'notice.reset-items': '항목을 기본값으로 초기화함',
-  'notice.reset-timeframes': '타임프레임을 기본값으로 초기화함',
+
   'notice.custom-fields-imported':
     '{count}개의 사용자 정의 필드를 성공적으로 가져왔습니다',
-  'notice.csv-parsed': 'CSV/XLSX/XLS 파싱 성공: {count}개 행',
+
   'notice.setups-added': '{count}개 거래에 셋업 추가됨',
   'notice.tags-added': 'Added tags to {count} trades',
   'notice.mistakes-added': '{count}개 거래에 실수 추가됨',
@@ -440,7 +423,7 @@ const ko: Partial<Lang> = {
   'notice.error.open-monthly-review': '월간 리뷰 열기 실패: {error}',
   'notice.error.open-quarterly-review': '분기 리뷰 열기 실패: {error}',
   'notice.error.open-yearly-review': '연간 리뷰 열기 실패: {error}',
-  'notice.error.sync-trades': '거래 동기화 실패: {error}',
+
   'notice.error.open-release-notes': '릴리스 노트 열기 실패: {error}',
   'notice.error.open-layout-builder': '레이아웃 빌더 열기 실패: {error}',
   'notice.error.switch-template': '레이아웃 전환 실패: {error}',
@@ -461,10 +444,6 @@ const ko: Partial<Lang> = {
   'notice.error.reset-settings':
     '설정 초기화 실패. 자세한 내용은 콘솔을 확인하세요.',
 
-  'notice.error.invalid-drc-date': '잘못된 DRC 날짜',
-  'notice.error.invalid-drc-missed':
-    '잘못된 DRC 날짜. 놓친 거래를 생성할 수 없습니다.',
-  'notice.error.trade-not-found': '거래 파일을 찾을 수 없음: {path}',
   'notice.error.mark-reviewed': '거래 검토 표시 오류: {error}',
   'notice.error.add-setups': '셋업 추가 오류: {error}',
   'notice.error.add-tags': 'Error adding tags: {error}',
@@ -481,7 +460,6 @@ const ko: Partial<Lang> = {
   
   
   
-  'notice.info.no-sync': '진행 중인 동기화가 없습니다',
 
   'notice.info.settings-recovered':
     '설정이 백업에서 복구되었습니다. 일부 최근 변경사항이 손실될 수 있습니다.',
@@ -493,10 +471,10 @@ const ko: Partial<Lang> = {
   'tradelog.title': '거래 기록',
   'dashboard.guide.empty.intro.title': 'Welcome to your Dashboard',
   'dashboard.guide.empty.intro.description':
-    'This page gives you a quick view of your trading performance. Once you have trades, it becomes your daily command center.',
-  'dashboard.guide.empty.state.title': 'Start by adding your first trade',
+    'Your Dashboard becomes useful as soon as Journalit has trading history to analyse.',
+  'dashboard.guide.empty.state.title': 'Bring your trading history with you',
   'dashboard.guide.empty.state.description':
-    'You do not have any trades yet. Add a trade manually or import data, then come back to unlock the full Dashboard tour.',
+    'Import previous trades to start with meaningful performance data, or add a trade manually if you are recording your first trades.',
   'dashboard.guide.main.intro.title': '대시보드입니다',
   'dashboard.guide.main.intro.description':
     'Use this page to track your performance, review your stats, and keep your most useful charts in one place.',
@@ -602,7 +580,6 @@ const ko: Partial<Lang> = {
   'layoutBuilder.guide.set-default-template.description':
     'Click the star on your new template if you want new review notes to use this layout automatically.',
 
-  'form.layout.guide-trigger-label': '양식 사용자 지정',
   'trade-form.guide.customization-modal.title': '양식을 내 워크플로에 맞추세요',
   'trade-form.guide.customization-modal.description':
     '여기에서 선택 블록을 표시, 숨김, 재정렬할 수 있습니다. 실제로 사용하는 필드에만 양식을 집중하세요.',
@@ -612,9 +589,9 @@ const ko: Partial<Lang> = {
   'tradelog.guide.empty.intro.title': 'Welcome to Trade Log',
   'tradelog.guide.empty.intro.description':
     'This page becomes your main place for browsing, sorting, and reviewing trades. Once you add trades, you will also get the full Trade Log tour.',
-  'tradelog.guide.empty.state.title': 'Start by adding your first trade',
+  'tradelog.guide.empty.state.title': 'No trading data available',
   'tradelog.guide.empty.state.description':
-    'You do not have any trades here yet. Click the Create Trade button to make your first trade, then come back to learn the full table and batch tools.',
+    'Import previous trades to explore your performance now, or record a new trade manually.',
   'tradelog.guide.intro.title': 'This is your Trade Log',
   'tradelog.guide.intro.description':
     'Use this page to review trades one by one, sort them, filter them, and make changes to many trades at once.',
@@ -666,6 +643,8 @@ const ko: Partial<Lang> = {
   
   'dashboard.title': '대시보드',
   'dashboard.no-data': '사용 가능한 거래 데이터가 없습니다',
+  'dashboard.empty.import-action': 'Import existing trades',
+  'dashboard.empty.manual-action': 'Add a trade manually',
   'dashboard.widgets.setup-performance.title': '셋업 성과',
   'dashboard.widgets.setup-performance.description':
     '셋업별 성과를 비교하는 순위 막대 차트',
@@ -704,7 +683,7 @@ const ko: Partial<Lang> = {
   'dashboard.filter.accounts.all': '모든 계좌',
   'dashboard.filter.accounts.n-selected': '{count}개 계좌',
   'dashboard.filter.accounts.select-all': '모두 선택',
-  'dashboard.filter.accounts.select-all-option': '-- 모두 선택 --',
+
   'dashboard.filter.accounts.none-found': '계좌를 찾을 수 없습니다',
 
   
@@ -717,7 +696,7 @@ const ko: Partial<Lang> = {
   
   
   
-  'view.home': '홈',
+
   'view.dashboard': '대시보드',
   'view.trade-log': '거래 기록',
   'view.account-dashboard': '계정',
@@ -728,34 +707,32 @@ const ko: Partial<Lang> = {
   
   
   'csv.results.errors-header': 'CLICK TO SEE ERRORS ({count})',
+  'csv.results.history-ready': 'Your trading history is ready',
+  'csv.results.history-trades.one': '{count} trade recovered',
+  'csv.results.history-trades.few': '{count} trades recovered',
+  'csv.results.history-trades.many': '{count} trades recovered',
+  'csv.results.history-trades.other': '{count} trades recovered',
+  'csv.results.history-date-range': '{start} – {end}',
+  'csv.results.history-symbols.one': '{count} symbol',
+  'csv.results.history-symbols.few': '{count} symbols',
+  'csv.results.history-symbols.many': '{count} symbols',
+  'csv.results.history-symbols.other': '{count} symbols',
+  'csv.results.enrichment-note':
+    'Imported performance is ready to review. Add setups, confluences, and notes to recent trades when you want deeper pattern analysis.',
   'csv.results.discord-note':
     'Optional: If you need help, click Copy report and paste it in Discord.',
 
   
   
   
-  'csv.errors.copy-shareable': '공유 가능한 보고서 복사',
+
   'csv.errors.copy-report': '보고서 복사',
-  'csv.errors.copy-detailed': '상세 보고서 복사',
 
   
   
   
-  'csv.account-selector.loading': '계좌 불러오는 중...',
-  'csv.account-selector.no-accounts': '계좌를 찾을 수 없습니다.',
-  'csv.account-selector.create-account-hint':
-    '거래를 가져오기 전에 계좌를 생성해주세요.',
-  'csv.account-selector.create-account-cta': '계좌 생성',
-  'csv.account-selector.label': '계좌 선택',
 
   
-  'csv.preview-first-note':
-    'Preview is free. Importing into your vault requires PRO activation.',
-  'csv.gate.import.title': 'PRO required to import',
-  'csv.gate.import.description':
-    'Importing trades into your vault is a PRO feature. Activate PRO to continue.',
-  'csv.gate.templates.tooltip': 'PRO required (activate to use templates).',
-  'csv.gate.ai.tooltip': 'PRO required (activate to use AI mapping).',
 
   
   
@@ -764,12 +741,10 @@ const ko: Partial<Lang> = {
     '계정 "{account}"의 생성 날짜를 {oldDate}에서 {newDate}(으)로 변경하려고 합니다.',
   'account.edit.modal.change-date.warning':
     '이 작업은 초기 입금 거래 날짜를 업데이트하며 계좌 연수 계산, 월간 청구 주기 및 기타 날짜 기반 지표에 영향을 줄 수 있습니다.',
-  'account.edit.modal.change-date.info':
-    '이 작업은 초기 입금 거래 날짜를 새 생성 날짜와 일치하도록 업데이트합니다.',
+
   'account.edit.modal.change-balance.message':
     '초기 잔고를 {oldBalance}에서 {newBalance}(으)로 변경하려고 합니다.',
-  'account.edit.modal.change-balance.warning':
-    '이 계정의 초기 잔고를 변경하려고 합니다.',
+
   'account.edit.modal.change-balance.info':
     '이 작업은 모든 잔고 계산, 손익 비율, 드로다운 계산 및 거래 내역에 영향을 미칩니다.',
   'account.edit.modal.change-balance.info2':
@@ -778,8 +753,6 @@ const ko: Partial<Lang> = {
     '이 변경은 계정 지표 및 과거 데이터의 정확성에 상당한 영향을 미칠 수 있습니다.',
   'account.edit.modal.delete.question':
     '계정 "{name}"을(를) 영구적으로 삭제하시겠습니까?',
-  'account.edit.modal.delete.warning':
-    '이 계정을 영구적으로 삭제하시겠습니까? 이 작업은 취소할 수 없습니다.',
 
   
   'account.edit.error.name-exists': '계정 "{name}"이(가) 이미 존재합니다',
@@ -790,32 +763,25 @@ const ko: Partial<Lang> = {
   
   'common.loading': '로딩 중...',
   'common.error': '오류',
-  'common.success': '성공',
+
   'common.warning': '경고 및 주의사항',
   'common.info': '정보 및 안내',
   'common.yes': '예',
   'common.no': '아니오',
   'common.ok': '확인',
-  'common.search': '검색...',
-  'common.select': '선택...',
+
   'common.none': '없음',
   'common.all': '전체',
   'common.date': '날짜',
-  'common.time': '시간',
-  'common.today': '오늘',
-  'common.yesterday': '어제',
-  'common.tomorrow': '내일',
+
   'common.week': '주',
   'common.month': '월',
   'common.year': '년',
-  'common.total': '합계',
-  'common.average': '평균',
+
   'common.min': '최소',
   'common.max': '최대',
   'common.profit': '수익',
-  'common.loss': '손실',
-  'common.win': '승리',
-  'common.lose': '패배',
+
   'common.trade': '거래',
   'common.trades': '거래',
   'common.color.label': '색상',
@@ -825,15 +791,12 @@ const ko: Partial<Lang> = {
   
   
 
-  'settings.language': '언어',
-  'settings.language-desc': '플러그인 표시 언어 선택',
-
   
   'settings.auth.feature.csv-import': 'Trade Import',
   'settings.auth.feature.ai-mapping': 'AI Trade Import 매핑',
   'settings.auth.feature.metatrader-sync': 'MetaTrader 동기화',
   'settings.auth.feature.basic-tracking': '기본 거래 추적',
-  'settings.auth.feature.manual-csv': '수동 Trade Import',
+
   'settings.auth.feature.priority-support': '우선 지원',
 
   
@@ -842,14 +805,15 @@ const ko: Partial<Lang> = {
   
   'home.widget.getting-started.name': 'Getting Started',
   'home.widget.getting-started.description':
-    'Checklist to help you add your first trades and activate PRO',
+    'Checklist to help you add trading history and configure Journalit',
   'home.widget.getting-started.progress': '{completed}/{total} completed',
   'home.widget.getting-started.progress.loading': 'Checking progress...',
-  'home.widget.getting-started.item.create.title': 'Create your first trade',
+  'home.widget.getting-started.item.create.title':
+    'Bring in your trading history',
   'home.widget.getting-started.item.create.description':
-    'Unlock your dashboard and journaling flow.',
+    'Import existing trades, connect Trade Sync, or add your first trade manually.',
   'home.widget.getting-started.item.create.time': '30s',
-  'home.widget.getting-started.item.create.cta': 'Create Trade',
+  'home.widget.getting-started.item.create.cta': 'Open Trade Import',
   'home.widget.getting-started.item.tradelog.title': 'Open Trade Log',
   'home.widget.getting-started.item.tradelog.description':
     'Your trade database for analysing all your trades in one place.',
@@ -879,20 +843,11 @@ const ko: Partial<Lang> = {
   'home.widget.getting-started.item.pro.cta': 'Activate',
 
   
-  'premium.gate.cta.activate': 'Activate PRO',
-  'premium.gate.cta.upgrade-now': 'Upgrade now',
-  'premium.gate.cta.signin-continue': '로그인하고 계속',
+
   'premium.gate.cta.continue-pro': 'PRO로 계속',
-  'premium.gate.cta.keep-editing': '계속 편집',
+
   'premium.gate.cta.refresh': 'Refresh status',
-  'premium.gate.import.state.signin.title': '가져오기까지 한 단계만 남았어요',
-  'premium.gate.import.state.signin.description':
-    '파일과 매핑이 준비되었습니다. 계속하려면 로그인하세요.',
-  'premium.gate.import.state.pro.title': '가져올 준비가 되었습니다',
-  'premium.gate.import.state.pro.description':
-    '파일과 매핑이 준비되었습니다. 가져오기는 PRO 기능입니다.',
-  'premium.gate.import.reassurance': '미리보기와 열 매핑은 그대로 유지됩니다.',
-  'premium.gate.trial-hint': '첫 PRO 구독에는 14일 무료 체험이 포함됩니다.',
+
   'premium.gate.offline':
     'You appear to be offline. Activation requires internet.',
   'premium.gate.not-pro-yet':
@@ -903,23 +858,16 @@ const ko: Partial<Lang> = {
   'csv.broker-guide.tradingtechnologies.description': 'Fills widget CSV export',
   'csv.broker-guide.tradingtechnologies.step-1':
     'Open the Fills widget in TT and switch to Detail, Continuous, or Price with Detail view',
-  'csv.broker-guide.tradingtechnologies.step-2':
-    'Right-click inside the Fills widget, select “Request download”, and choose the time range',
-  'csv.broker-guide.tradingtechnologies.step-3':
-    'When TT shows the download-ready notification, download the CSV and import it here',
+
   'csv.broker-guide.tradingtechnologies.warning.emphasis': 'Important:',
-  'csv.broker-guide.tradingtechnologies.warning.message':
-    'Do not edit the exported file or column order before importing.',
-  'csv.broker-guide.tradingtechnologies.doc-label':
-    'View Trading Technologies export instructions',
+  'csv.broker.rithmic': 'Rithmic',
+  'csv.broker-guide.rithmic.step-1':
+    'R | Trader Pro에서 주문 내역(Order History)을 열고 해당 계좌/날짜의 체결 완료(Completed/Filled) 주문으로 필터링하세요',
+  'csv.broker-guide.rithmic.step-2':
+    '열 추가/제거(Add/Remove Columns)에서 Side, Symbol, Qty Filled, Avg Fill Price, Fill/Update Time 열이 표시되는지 확인하세요',
+  'csv.broker-guide.rithmic.warning.emphasis': '중요:',
 
   
-  'csv.results.custom-field-warnings':
-    'Skipped {count} invalid custom field value(s)',
-  'csv.results.custom-field-warnings-header':
-    'CLICK TO SEE CUSTOM FIELD WARNINGS ({count})',
-  'csv.report.custom-field-warnings': 'Custom field warnings: {count}',
-  'csv.report.raw-custom-field-warnings': 'Custom field warnings:',
 
   
   'dashboard.metrics.avgRR': '평균 RR (페이오프)',
@@ -1045,17 +993,11 @@ const ko: Partial<Lang> = {
   'widget.directional-drawdown.empty.no-short':
     'No short closed trades for this period',
   'widget.directionalDrawdownChart.name': 'Directional Realized Drawdown',
-  'widget.directionalDrawdownChart.description':
-    'Displays separate long and short closed-trade drawdown amount curves',
 
   'widget.longDrawdownChart.name': 'Long Drawdown',
-  'widget.longDrawdownChart.description':
-    'Displays the closed-trade drawdown amount curve for long trades only',
+
   'widget.shortDrawdownChart.name': 'Short Drawdown',
-  'widget.shortDrawdownChart.description':
-    'Displays the closed-trade drawdown amount curve for short trades only',
-  'widget.drawdownStats.name': 'Realized Drawdown Stats',
-  'widget.drawdownStats.description': 'Realized drawdown and recovery stats',
+
   'widget.drawdownStats.no-conversion':
     'Drawdown stats are unavailable for mixed currencies without FX conversion.',
 
@@ -1094,8 +1036,7 @@ const ko: Partial<Lang> = {
   'widget.weekly-drc-context.name': 'Daily Reviews by Weekday',
   'widget.weekly-drc-context.description':
     'Show selected DRC sections for each day in the weekly review',
-  'widget.weekly-drc-context.header-eyebrow': 'Weekly review',
-  'widget.weekly-drc-context.header-title': 'Daily Reviews by Weekday',
+
   'widget.weekly-drc-context.image-alt-prefix': 'Weekly DRC image',
   'widget.weekly-drc-context.no-activity': 'No activity for this day.',
   'widget.weekly-drc-context.no-sections-configured':
@@ -1108,12 +1049,10 @@ const ko: Partial<Lang> = {
   'widget.weekly-drc-context.invalid-context':
     '이 위젯은 주간 리뷰 노트에서만 사용할 수 있습니다',
   'templateEditor.widget.weekly-drc-day-label': '요일',
-  'templateEditor.widget.weekly-drc-display-label': '표시',
+
   'templateEditor.widget.weekly-drc-start-collapsed': '접힌 상태로 시작',
   'templateEditor.widget.weekly-drc-day-all': 'All days',
-  'templateEditor.widget.weekly-drc-style-card': '카드',
-  'templateEditor.widget.weekly-drc-style-accordion': 'Accordion',
-  'templateEditor.widget.weekly-drc-default-expanded': 'Expanded by default',
+
   'templateEditor.widget.previous-context-sections-label':
     'Sections to include',
   'templateEditor.widget.previous-context-heading-label':
@@ -1121,10 +1060,7 @@ const ko: Partial<Lang> = {
   'templateEditor.widget.previous-context-heading-placeholder':
     'Choose a heading',
   'templateEditor.widget.previous-context-add-section': '+ Add section',
-  'templateEditor.widget.previous-context-headings-label':
-    'Headings to include',
-  'templateEditor.widget.previous-context-headings-placeholder':
-    'Heading names separated by comma or |',
+
   'templateEditor.widget.previous-context-fallback-label':
     'Previous DRC fallback',
   'templateEditor.widget.previous-context-fallback-nearest':
@@ -1134,16 +1070,14 @@ const ko: Partial<Lang> = {
   'dashboard.conversion.original-pnl': '원래 손익',
   'dashboard.conversion.converted-pnl': '환산 손익',
   'dashboard.conversion.details-label': '통화 변환 세부 정보',
-  'dashboard.conversion.requires-conversion':
-    '다중 통화 손익 차트에는 환율 변환이 필요합니다.',
+
   'widget.stats.vs-prev': 'vs prev',
   'dashboard.metrics.past-30d': 'past 30d',
-  'widget.stats.no-change': 'No change',
-  'widget.stats.no-previous-data': 'No previous data',
+
   'chart.tooltip.drawdown-amount': 'Amount',
   'chart.tooltip.drawdown-percent': 'Drawdown % of {basis}',
   'chart.tooltip.percent-basis': 'Percent Basis',
-  'chart.tooltip.account': 'Account',
+
   'chart.tooltip.accounts-list': '{accounts}',
   'chart.tooltip.more-accounts': '+{count} more',
   'widget.tag-performance.name': '태그 성과',
@@ -1160,7 +1094,7 @@ const ko: Partial<Lang> = {
   'widget.account-breakdown.column.win-rate': 'Win Rate',
   'widget.account-breakdown.column.profit-factor': 'Profit Factor',
   'widget.trade-table.column.account': 'Account',
-  'widget.trade-table.unknown-account': 'Unknown Account',
+
   'trade-import.error.file-too-large':
     'Selected file exceeds the Trade Import size limit',
   'trade-import.error.file-type-unsupported':
@@ -1172,8 +1106,10 @@ const ko: Partial<Lang> = {
   'quick-import.subtitle':
     'Use your favorite Trade Import setup to preview and import a file faster.',
   'quick-import.gate.sign-in':
-    'Sign in to use Quick Import with your saved setup.',
+    '로그인하거나 무료 Journalit 계정을 만들어 Trade Import에서 파일을 미리 보세요. Pro는 거래를 가져올 때만 필요합니다.',
+  'quick-import.gate.sign-in-cta': '로그인하고 무료로 미리보기',
   'quick-import.gate.pro': 'Quick Import is included with Trade Import Pro.',
+  'quick-import.gate.preview-free': '파일 무료 미리보기',
   'quick-import.message.needs-setup':
     'Choose a favorite broker or template in Trade Import before using Quick Import.',
   'quick-import.message.capabilities-failed':
@@ -1182,19 +1118,16 @@ const ko: Partial<Lang> = {
     'This file needs column mapping. Open the full Trade Import flow to review mappings.',
   'quick-import.message.preview-failed':
     'This file needs review in the full Trade Import flow.',
-  'quick-import.notice.consent-required':
-    'Acknowledge processing before uploading.',
-  'quick-import.consent':
-    'I understand this file will be uploaded to Journalit servers for processing.',
+
   'quick-import.privacy-note':
     '파일은 처리를 위해 Journalit 서버에 업로드되며 기본적으로 저장되지 않습니다.',
   'quick-import.dropzone.title': 'Drop a broker export here',
   'quick-import.dropzone.subtitle': 'Or click to choose a file',
-  'quick-import.status.loading': 'Loading quick setup...',
+
   'quick-import.status.analysing': 'Analysing and preparing preview...',
   'quick-import.status.importing': 'Importing...',
   'quick-import.summary.title': 'Ready to import',
-  'quick-import.summary.trades': 'Preview trades',
+
   'quick-import.summary.to-import': 'To import',
   'quick-import.summary.duplicates': 'Duplicates',
   'quick-import.summary.failed': 'Needs review',
@@ -1205,28 +1138,38 @@ const ko: Partial<Lang> = {
   'quick-import.action.review-in-trade-import': 'Review in Trade Import',
   'quick-import.action.setup-in-trade-import': 'Set up in Trade Import',
   'quick-import.action.import': 'Import trades',
+  'quick-import.action.import-count.one': '거래 {count}개 가져오기',
+  'quick-import.action.import-count.few': '거래 {count}개 가져오기',
+  'quick-import.action.import-count.many': '거래 {count}개 가져오기',
+  'quick-import.action.import-count.other': '거래 {count}개 가져오기',
 
   'trade-import.notice.capabilities-failed':
     'Unable to load Trade Import capabilities',
+  'trade-import.notice.open-failed': 'Unable to open Trade Import',
   'trade-import.notice.template-exists':
     'A Trade Import template with this name already exists',
   'trade-import.notice.template-saved': 'Trade Import template saved',
   'trade-import.notice.analyse-failed': 'Trade Import analyse failed',
   'trade-import.notice.preview-failed': 'Trade Import preview failed',
+  'trade-import.notice.free-preview-rate-limited':
+    '무료 미리보기 한도에 도달했습니다. PRO를 시작하거나 약 {minutes}분 후 다시 시도하세요.',
+  'trade-import.notice.free-preview-storage-limit-reached':
+    '무료 미리보기 저장 공간에는 최대 {limit}개의 거래를 보관할 수 있습니다. 현재 {storedItems}개가 저장되어 있으며 이 파일은 {requestedItems}개를 추가합니다. 이전 미리보기가 만료될 때까지 기다리거나 PRO를 시작하세요.',
   'trade-import.preview-error.guidance':
     '모든 필수 필드가 매핑되어 있고, 선택한 날짜 형식이 파일과 일치하며, 숫자 열에 유효한 거래 값이 포함되어 있는지 확인하세요.',
   'trade-import.notice.complete':
     'Trade Import complete: {written} written or updated, {duplicateCount} duplicates, {failedCount} failed',
   'trade-import.gate.brand-left': '거래',
   'trade-import.gate.brand-right': '가져오기',
+  'trade-import.gate.sign-in.title': '거래 기록 무료 미리보기',
   'trade-import.gate.sign-in':
-    'Sign in is required before uploading broker exports for Trade Import.',
-  'trade-import.gate.upgrade':
-    'Trade Import is a Pro feature. Upgrade is required before uploading broker exports.',
-  'trade-import.action.open-settings': 'Open settings',
-  'trade-import.action.manage-subscription': 'Manage subscription',
-  'trade-import.description':
-    'Upload CSV, XLSX, XLS, HTML, or broker statements for backend-powered analysis and preview.',
+    '로그인하거나 무료 Journalit 계정을 만들어 파일을 분석하세요. 거래를 가져올 때만 Pro가 필요합니다.',
+  'trade-import.gate.sign-in.reassurance':
+    '파일은 비공개로 처리되며 기본적으로 저장되지 않습니다.',
+  'trade-import.gate.sign-in.no-trial':
+    '분석과 미리보기에 Pro 체험은 필요하지 않습니다.',
+  'trade-import.gate.sign-in.cta': '로그인하고 무료로 미리보기',
+
   'trade-import.step.select': '1. Select import settings',
   'trade-import.step.privacy': '2. Privacy acknowledgement',
   'trade-import.step.analyse': '3. Analyse and map',
@@ -1248,8 +1191,7 @@ const ko: Partial<Lang> = {
   'trade-import.label.ai-mapping': 'Request AI mapping suggestions',
   'trade-import.privacy.copy':
     'Trade Import uploads the selected broker export to Journalit servers for processing. Broker exports may contain account identifiers, trade history, symbols, timestamps, prices, quantities, fees, balances, and P&L. For preview generation, Journalit also sends your selected account name, mapping/template choices, custom field definitions and saved options, and limited local open-trade context for IBKR open-position matching. Raw files are processed for this import and are not stored by default.',
-  'trade-import.privacy.acknowledge':
-    'I understand and want to upload this export for processing.',
+
   'trade-import.action.analyse': 'Analyse file',
   'trade-import.action.choose-file': 'Choose file',
   'trade-import.guide.prompt': '무엇을 내보내야 할지 모르겠나요?',
@@ -1262,13 +1204,34 @@ const ko: Partial<Lang> = {
   'trade-import.label.header-row': 'Header row',
   'trade-import.placeholder.auto': 'Auto',
   'trade-import.label.date-format': 'Date format',
-  'trade-import.mapping.unmapped': 'Unmapped',
+
   'trade-import.label.save-template': 'Save mapping template',
   'trade-import.placeholder.template-name': 'Template name',
   'trade-import.action.save-template': 'Save template',
   'trade-import.action.preview': 'Generate preview',
-  'trade-import.preview.summary':
-    '{previewCount} preview trades, {failedCount} failed rows, {incompleteCount} incomplete rows.',
+
+  'trade-import.preview.found.one': '{count}개의 거래를 찾았습니다',
+  'trade-import.preview.found.few': '{count}개의 거래를 찾았습니다',
+  'trade-import.preview.found.many': '{count}개의 거래를 찾았습니다',
+  'trade-import.preview.found.other': '{count}개의 거래를 찾았습니다',
+  'trade-import.preview.date-range': '{start}~{end}',
+  'trade-import.preview.metric.symbols': '종목',
+  'trade-import.preview.metric.ready': '가져오기 준비 완료',
+  'trade-import.preview.metric.duplicates': '중복 가능성',
+  'trade-import.preview.metric.attention': '확인 필요',
+  'trade-import.preview.upgrade.title': 'Your preview is ready',
+  'trade-import.preview.upgrade.description.one':
+    '{count} trade can be added to your vault when you activate PRO.',
+  'trade-import.preview.upgrade.description.few':
+    '{count} trades can be added to your vault when you activate PRO.',
+  'trade-import.preview.upgrade.description.many':
+    '{count} trades can be added to your vault when you activate PRO.',
+  'trade-import.preview.upgrade.description.other':
+    '{count} trades can be added to your vault when you activate PRO.',
+  'trade-import.preview.upgrade.free-limit':
+    '무료 미리보기에서는 시간당 {count}회 분석과 {count}회 미리보기를 사용할 수 있습니다.',
+  'trade-import.preview.upgrade.free-storage-limit':
+    '무료 미리보기에는 한 번에 최대 {count}개의 거래를 저장할 수 있습니다.',
   'trade-import.table.status': 'Status',
   'trade-import.table.symbol': 'Symbol',
   'trade-import.table.direction': 'Direction',
@@ -1276,16 +1239,16 @@ const ko: Partial<Lang> = {
   'trade-import.table.quantity': 'Quantity',
   'trade-import.table.message': 'Message',
   'trade-import.action.confirm': 'Confirm import',
+  'trade-import.action.activate-pro.one':
+    'PRO를 활성화하여 거래 {count}개 가져오기',
+  'trade-import.action.activate-pro.few':
+    'PRO를 활성화하여 거래 {count}개 가져오기',
+  'trade-import.action.activate-pro.many':
+    'PRO를 활성화하여 거래 {count}개 가져오기',
+  'trade-import.action.activate-pro.other':
+    'PRO를 활성화하여 거래 {count}개 가져오기',
   'trade-import.action.cancel-preview': 'Cancel preview',
   'trade-import.broker.manual': 'Manual Mapping',
-  'trade-import.preview.message.duplicate-in-file':
-    'Duplicate in selected import file',
-  'trade-import.preview.message.multiple-open-matches':
-    'Multiple matching open trades found for close-only preview',
-  'trade-import.preview.message.quantity-mismatch':
-    'Matching open trade quantity differs from close-only preview',
-  'trade-import.preview.message.no-open-match':
-    'No matching open trade found for close-only preview',
 
   
   'command.open-setups': '셋업 열기',
@@ -1346,10 +1309,7 @@ const ko: Partial<Lang> = {
   'setups.view.compare.reason.higher.total-r': '총 R 높음',
   'setups.view.compare.reason.lower.total-r': '총 R 낮음',
   'setups.view.compare.reason.similar.total-r': '총 R 유사',
-  'setups.view.advanced.rule-break-count': '{count}',
-  'setups.guide.empty.intro.title': '첫 셋업 만들기',
-  'setups.guide.empty.intro.description':
-    '셋업은 플레이북 노트, 규칙, 스크린샷, 연결된 거래를 묶어 하나의 거래 아이디어를 맥락 속에서 검토하게 합니다.',
+
   'setups.guide.create-new-setup.title': '새 셋업 만들기',
   'setups.guide.create-new-setup.description':
     '다른 플레이북을 추가하려면 새 셋업을 사용하세요. 모달에서 세부 정보, 연결 노트, 규칙을 설정할 수 있습니다.',
@@ -1362,9 +1322,7 @@ const ko: Partial<Lang> = {
   'setups.guide.empty.create-setup.title': '새 셋업으로 시작',
   'setups.guide.empty.create-setup.description':
     '먼저 셋업을 하나 만드세요. 생성되면 이 가이드가 일반 흐름을 이어갑니다.',
-  'setups.guide.empty.finish.title': '셋업 생성 완료',
-  'setups.guide.empty.finish.description':
-    '세부 정보를 입력하고 저장하세요. 셋업이 준비되면 가이드가 다시 이어집니다.',
+
   'setups.guide.intro.title': 'Setups에 오신 것을 환영합니다',
   'setups.guide.intro.description':
     '이 보기에서는 셋업 플레이북, 연결된 거래, 노트, 스크린샷, 규칙을 한곳에 모읍니다.',
@@ -1398,18 +1356,14 @@ const ko: Partial<Lang> = {
   'setups.guide.finish.title': 'Setups 가이드 완료',
   'setups.guide.finish.description':
     '개요, 페어, 비교, 개별 셋업 페이지의 주요 화면을 모두 보았습니다.',
-  'setups.guide.compare.intro.title': '셋업 성과 비교',
-  'setups.guide.compare.intro.description':
-    '이제 충분한 셋업이 있어 페어를 검토하고 두 플레이북을 나란히 비교할 수 있습니다.',
+
   'setups.guide.pairs-mode.title': '셋업 페어 열기',
   'setups.guide.pairs-mode.description':
     '페어를 열어 비교할 만큼 공유 거래가 있는 조합을 확인합니다.',
   'setups.guide.pairs-chart.title': '페어 순위',
   'setups.guide.pairs-chart.description':
     '페어 모드는 함께 더 좋거나 나쁠 수 있는 조합을 강조합니다. 막대를 클릭하면 해당 조합의 더 깊은 인사이트를 열 수 있습니다.',
-  'setups.guide.return-overview.title': '개요로 돌아가기',
-  'setups.guide.return-overview.description':
-    '비교할 셋업을 고르기 전에 개요로 돌아갑니다.',
+
   'setups.guide.compare-mode.title': '비교 모드 시작',
   'setups.guide.compare-mode.description':
     '비교 모드에서는 두 셋업 카드를 선택해 나란히 검토합니다.',
@@ -1431,15 +1385,11 @@ const ko: Partial<Lang> = {
   'setups.guide.back-to-overview.title': '셋업 카드로 돌아가기',
   'setups.guide.back-to-overview.description':
     '비교를 마치면 셋업 카드로 돌아갑니다.',
-  'setups.guide.compare.finish.title': '셋업 비교 가이드 완료',
-  'setups.guide.compare.finish.description':
-    '여러 셋업을 함께 검토하는 페어와 비교 화면을 보았습니다.',
+
   'setups.view.open-as-markdown': 'Open as Markdown',
   'setups.view.open-as-setup': 'Open as Journalit Setup',
-  'setups.view.overview.mode.aria': 'Overview chart mode',
-  'setups.view.overview.mode.setups': 'Setups',
+
   'setups.view.overview.mode.pairs': 'Pairs',
-  'setups.view.pairs.title': 'Setup pairs',
   'setups.view.pairs.summary-aria': 'Setup pairs summary',
   'setups.view.pairs.best': 'Best pair',
   'setups.view.pairs.worst': 'Worst pair',
@@ -1449,18 +1399,15 @@ const ko: Partial<Lang> = {
     'Pairs appear after two setups share enough linked trades.',
   'setups.view.pairs.privacy':
     'Pair performance is hidden while Privacy Mode is on.',
-  'setups.view.pairs.edge-tooltip':
-    'Edge compares the pair expectancy against the stronger solo setup baseline.',
+
   'setups.view.pairs.metric-aria': 'Pair metric',
   'setups.view.pairs.metric.edge': 'Pair edge',
   'setups.view.pairs.metric.edge-short': 'edge',
   'setups.view.pairs.metric.expectancy': 'Pair expectancy',
-  'setups.view.pairs.metric.expectancy-short': 'expectancy',
+
   'setups.view.pairs.together': 'Together',
   'setups.view.pairs.table.setup-pair': 'Setup pair',
-  'setups.view.pairs.equity-curve': 'Equity curve',
-  'setups.view.pairs.equity-caption':
-    'Cumulative pair performance over time. Green = positive contribution, red = drawdown.',
+
   'setups.view.pairs.evidence': 'Evidence',
   'setups.view.pairs.edge-comparison': 'Edge comparison',
   'setups.view.pairs.edge-caption': 'Combined edge: {edge}',
@@ -1469,13 +1416,12 @@ const ko: Partial<Lang> = {
   'setups.view.overview.setup-filter.aria': 'Choose setups to show',
   'setups.view.overview.setup-filter.select-all': 'Select all',
   'setups.view.overview.setup-filter.clear': 'Clear',
-  'setups.view.overview.pnl-chart.title': 'Setup P&L Over Time',
+
   'setups.view.overview.pnl-chart.dropdown-label': 'Cumulative P&L',
-  'setups.view.overview.pnl-chart.subtitle':
-    'Cumulative P&L from setup-linked trades, split by setup and combined.',
+
   'setups.view.overview.pnl-chart.combined': 'All setups',
   'setups.view.overview.pnl-chart.selected-combined': 'Selected setups',
-  'setups.view.overview.pnl-chart.unassigned': 'Unassigned account',
+
   'setups.view.overview.pnl-chart.hidden':
     'Setup P&L over time is hidden while privacy mode is enabled.',
   'setups.view.overview.pnl-chart.trade': 'Trade',
@@ -1491,16 +1437,13 @@ const ko: Partial<Lang> = {
   'setups.view.detail.analysis.execution-gap': 'Execution Gap',
   'setups.view.detail.analysis.tabs-aria': 'Setup performance tabs',
   'setups.view.detail.brief.linked-notes-add': 'Edit linked notes',
-  'setups.view.detail.execution-gap.title': 'Execution Gap',
-  'setups.view.detail.execution-gap.subtitle':
-    'Captured edge vs missed opportunity',
+
   'setups.view.detail.execution-gap.live-pnl': 'Live PnL',
   'setups.view.detail.execution-gap.live-r': '실거래 R',
   'setups.view.detail.execution-gap.missed-edge': 'Missed Edge',
   'setups.view.detail.execution-gap.live-plus-missed': 'Live + Missed',
   'setups.view.detail.execution-gap.backtest': 'Backtest',
-  'setups.view.detail.execution-gap.gap': 'Gap',
-  'setups.view.detail.execution-gap.opportunities': 'Opportunities',
+
   'setups.view.detail.execution-gap.capture-rate': 'Capture Rate',
   'setups.view.detail.execution-gap.capture-rate-tooltip':
     'Live P&L ÷ (Live P&L + missed-trade P&L). Shows how much available edge you captured.',
@@ -1533,13 +1476,7 @@ const ko: Partial<Lang> = {
   'setups.view.detail.attention.no-rules-title': 'Build the execution playbook',
   'setups.view.detail.attention.no-rules-detail':
     'Add criteria for entries, invalidation, risk, and mistakes.',
-  'setups.view.detail.attention.no-invalidation-title':
-    'Add invalidation criteria',
-  'setups.view.detail.attention.no-invalidation-detail':
-    'Define when this setup is no longer valid.',
-  'setups.view.detail.attention.no-risk-title': 'Add risk or management rules',
-  'setups.view.detail.attention.no-risk-detail':
-    'Document how this setup should be managed after entry.',
+
   'setups.view.detail.attention.no-trades-title': 'No live trades yet',
   'setups.view.detail.attention.no-trades-detail':
     'No linked live trade history yet.',
@@ -1563,18 +1500,6 @@ const ko: Partial<Lang> = {
   'setups.view.card.status.review': 'Review',
   'setups.view.date.days-ago': '{count}',
 
-  'trade-import.restore.title': 'Restore imported trades from backend',
-  'trade-import.restore.description':
-    'Create missing local notes for backend imported trades in this vault. This does not create duplicate backend trades.',
-  'trade-import.restore.vault': 'Current vault identity: {vaultId}',
-  'trade-import.restore.load': 'Restore imported trades from backend',
-  'trade-import.restore.none':
-    'No missing imported trade projections found for this vault.',
-  'trade-import.restore.loaded': 'Found {count} restorable imported trades.',
-  'trade-import.restore.load-failed':
-    'Could not load restorable imported trades.',
-  'trade-import.restore.select-all': 'Select all',
-  'trade-import.restore.restore-selected': 'Restore selected ({count})',
   'trade-import.restore.complete':
     'Restored {written} imported trades; {failed} failed.',
   'trade-import.restore.broker-label': 'Backend restore',
@@ -1615,7 +1540,7 @@ const ko: Partial<Lang> = {
   'media.viewer.mute-video': '동영상 음소거',
   'media.viewer.unmute-video': '동영상 음소거 해제',
   'media.viewer.volume': '볼륨',
-  'imageGallery.subtitle-count': '미디어 {count}개',
+
   'imageGallery.empty.error.title': '갤러리를 사용할 수 없습니다',
   'imageGallery.empty.no-images.title': '아직 미디어가 없습니다',
   'imageGallery.empty.no-images.description':
@@ -1633,8 +1558,9 @@ const ko: Partial<Lang> = {
   'imageGallery.annotation.reviewed': '검토됨',
   'imageGallery.annotation.unreviewed': '미검토',
   'imageGallery.annotation.tag': '태그',
-  'imageGallery.annotation.editor-eyebrow': '시장 구조 저널',
+
   'imageGallery.annotation.editor-title': '미디어 주석 달기',
+  'imageGallery.annotation.editor-title-with-file': '{fileName}에 주석 달기',
   'imageGallery.annotation.tags': '태그',
   'imageGallery.annotation.tags-placeholder': '브레이크아웃, A+ 셋업, 실수',
   'imageGallery.annotation.notes': '메모',
@@ -1642,6 +1568,8 @@ const ko: Partial<Lang> = {
     '미래의 나는 이 차트에서 무엇을 배워야 할까요?',
   'imageGallery.annotation.error.save-failed':
     '미디어 주석을 저장할 수 없습니다.',
+  'imageGallery.annotation.error.load-failed':
+    '미디어 주석을 불러올 수 없습니다.',
   'imageGallery.annotation.saving': '저장 중...',
   'command.replay-current-view-guide': '현재 보기 가이드 다시 보기',
 
@@ -1651,9 +1579,7 @@ const ko: Partial<Lang> = {
   'tradelog.guide.switch-to-gallery.title': '거래에서 갤러리로 전환하기',
   'tradelog.guide.switch-to-gallery.description':
     '이 모드 선택기로 일반 Trade Log와 갤러리를 오갈 수 있습니다. 갤러리를 클릭해 이미지, GIF, 동영상, YouTube 링크 안내를 계속하세요.',
-  'tradelog.guide.gallery-controls.title': '검토할 미디어를 선택하세요',
-  'tradelog.guide.gallery-controls.description':
-    '소스에서 거래 또는 리뷰 노트를 선택하고, 정렬로 미디어 순서를 바꾸며, 크기 버튼으로 compact 보기와 더 큰 미디어 미리보기를 전환합니다.',
+
   'tradelog.guide.gallery-source-sort.title': '미디어 소스와 순서 선택하기',
   'tradelog.guide.gallery-source-sort.description':
     '소스로 전체 미디어, 거래 첨부 파일 또는 리뷰 노트 미디어를 선택하세요. 정렬로 최신, 오래된, 최고 또는 최악의 거래를 먼저 볼 수 있습니다.',
@@ -1693,12 +1619,75 @@ const ko: Partial<Lang> = {
   'dashboard.conversion.partial-warning':
     '⚠ {currencies}의 비용/리스크는 환산할 수 없어 제외되었습니다',
   'trade-sync.providers.title': '거래 동기화',
-  'trade-sync.providers.description':
-    '사용 가능한 각 제공자를 개별적으로 설정하여 함께 실행하세요.',
+
   'trade-sync.tradovate.pending-acks': '대기 중인 로컬 ACK {count}개',
-  'trade-sync.import.section-title': 'Trade Import 백업 및 복원',
-  'trade-sync.import.section-description':
-    '가져온 거래를 클라우드에 백업하고 누락된 로컬 노트를 복원하세요.',
+
+  'trade-sync.source.rithmic': 'Rithmic',
+  'trade-sync.source.rithmic.description':
+    'Rithmic 거래를 클라우드에서 동기화하고 이 보관함에 반영합니다.',
+  'trade-sync.rithmic.plugin-sync-description':
+    'Journalit.co에서 Rithmic을 연결한 뒤 여기서 동기화하면 최신 Rithmic 활동이 이 보관함에 기록됩니다.',
+  'trade-sync.rithmic.status-failed': 'Rithmic 상태를 불러올 수 없습니다.',
+  'trade-sync.rithmic.status.connecting': '연결 중',
+  'trade-sync.rithmic.status.paused': '일시 중지됨',
+  'trade-sync.rithmic.status.waiting-for-accounts': '계좌 대기 중',
+  'trade-sync.rithmic.status.reauthorization-required':
+    'Journalit.co에서 재인증이 필요합니다',
+  'trade-sync.rithmic.status.error': '연결 오류',
+  'trade-sync.rithmic.no-connections':
+    'Journalit.co에서 Rithmic 계정을 연결하면 여기서 동기화할 수 있습니다.',
+  'trade-sync.rithmic.connect': '연결',
+  'trade-sync.rithmic.manage': 'Journalit.co에서 관리',
+  'trade-sync.rithmic.system': 'Rithmic 시스템',
+  'trade-sync.rithmic.accounts': '계정',
+  'trade-sync.rithmic.last-sync': '마지막 동기화',
+  'trade-sync.rithmic.never': '없음',
+  'trade-sync.rithmic.job.running': '동기화 진행 중…',
+  'trade-sync.rithmic.job.last': '최근 작업: {status}',
+  'trade-sync.job.status.queued': '대기 중',
+  'trade-sync.job.status.running': '실행 중',
+  'trade-sync.job.status.succeeded': '성공',
+  'trade-sync.job.status.partial': '부분 완료',
+  'trade-sync.job.status.failed': '실패',
+  'trade-sync.job.status.cancelled': '취소됨',
+  'trade-sync.job.status.unknown': '알 수 없음',
+  'trade-sync.rithmic.sync-to-vault': '동기화',
+  'trade-sync.rithmic.syncing': '동기화 중…',
+  'trade-sync.rithmic.mapping-required':
+    '동기화하는 각 Rithmic 계정에 로컬 보관함 계정을 선택하세요.',
+  'trade-sync.rithmic.sync-complete-connection':
+    '{connection} 동기화가 완료되었습니다.',
+  'trade-sync.rithmic.sync-partial-connection':
+    '{connection} 동기화가 완료되었지만 문제가 있습니다.',
+  'trade-sync.rithmic.sync-all': '모두 동기화',
+  'trade-sync.rithmic.sync-all-complete':
+    '{total}개 중 {succeeded}개의 Rithmic 연결을 동기화했습니다.',
+  'trade-sync.rithmic.sync-all-partial':
+    '{total}개 중 {succeeded}개의 Rithmic 연결을 동기화했습니다. 문제가 있는 연결을 확인하세요.',
+  'trade-sync.rithmic.error.session-conflict':
+    'Rithmic은 활성 세션을 하나만 허용합니다. 이 Rithmic 로그인을 사용하는 R|Trader, NinjaTrader 등을 닫아 주세요.',
+  'trade-sync.rithmic.error.auto-retry':
+    'Journalit이 자동으로 다시 시도합니다.',
+  'trade-sync.rithmic.error.invalid-credentials':
+    'Rithmic이 저장된 자격 증명을 거부했습니다. Journalit.co에서 업데이트한 뒤 다시 시도하세요.',
+  'trade-sync.rithmic.error.agreements-required':
+    'Rithmic은 R|Trader에서 시장 데이터 계약 서명을 요구합니다. 서명한 뒤 다시 시도하세요.',
+  'trade-sync.rithmic.error.disabled':
+    '이 연결에서는 Rithmic 동기화가 비활성화되어 있습니다. Journalit.co에서 관리하세요.',
+  'trade-sync.rithmic.error.sync-failed':
+    'Rithmic 동기화에 실패했습니다. Journalit.co에서 연결을 확인한 뒤 다시 시도하세요.',
+  'trade-sync.broker.mapping-unsaved-hint': '매핑은 동기화할 때 저장됩니다.',
+  'trade-sync.broker.sync-all-blocked.unsaved-changes':
+    '저장되지 않은 계정 변경 사항이 있습니다. 해당 연결을 동기화하면 저장됩니다.',
+  'trade-sync.broker.sync-all-blocked.mapping-required':
+    '먼저 동기화할 각 계정에 Journalit 계정을 선택하세요.',
+  'trade-sync.broker.sync-all-blocked.running-job':
+    '이미 동기화가 실행 중입니다.',
+  'trade-sync.broker.sync-all-blocked.not-ready':
+    '동기화할 수 있는 연결이 없습니다.',
+  'trade-sync.rithmic.connect-another': '다른 Rithmic 계정 연결',
+  'trade-sync.rithmic.error.sync-failed-detail':
+    'Rithmic 동기화에 실패했습니다: {message}',
   'notice.error.canonical-trade-type-change':
     '브로커와 동기화된 트레이드는 다른 트레이드 유형으로 변경할 수 없습니다.',
   'trade-sync.import.account.conflict-repair':
@@ -1739,7 +1728,66 @@ const ko: Partial<Lang> = {
   'home.guide.whats-new.done.title': '작업 공간의 맥락을 유지합니다',
   'home.guide.whats-new.done.description':
     '개인 위젯에는 개요를, 심층 분석에는 대시보드를 사용하세요. 각 모드는 자체 필터와 레이아웃을 유지합니다.',
+  'home.widget.current-streak.description': '거래 및 리뷰 스트릭 추적',
 
+  'home.widget.streak.kind.trade-outcome': '거래 결과',
+  'home.widget.streak.kind.trade-review': '거래 리뷰',
+  'home.widget.streak.kind.drc-review': 'DRC 리뷰',
+  'home.widget.streak.kind.weekly-review': '주간 리뷰',
+  'home.widget.streak.kind.monthly-review': '월간 리뷰',
+  'home.widget.streak.configure': '스트릭 유형 선택',
+  'home.widget.streak.configure-aria': '{kind} 스트릭 구성',
+  'home.widget.streak.no-review-streak': '활성 리뷰 스트릭 없음',
+  'home.widget.streak.start-reviewing': '리뷰를 시작해 스트릭을 만드세요',
+  'home.widget.streak.keep-reviewing': '계속 리뷰해 스트릭을 유지하세요',
+  'home.widget.streak.reviewed-trades-in-a-row.one': '연속 리뷰한 거래',
+  'home.widget.streak.reviewed-trades-in-a-row.few': '연속 리뷰한 거래',
+  'home.widget.streak.reviewed-trades-in-a-row.many': '연속 리뷰한 거래',
+  'home.widget.streak.reviewed-trades-in-a-row.other': '연속 리뷰한 거래',
+  'home.widget.streak.reviewed-days-in-a-row.one': '연속 리뷰한 일수',
+  'home.widget.streak.reviewed-days-in-a-row.few': '연속 리뷰한 일수',
+  'home.widget.streak.reviewed-days-in-a-row.many': '연속 리뷰한 일수',
+  'home.widget.streak.reviewed-days-in-a-row.other': '연속 리뷰한 일수',
+  'home.widget.streak.reviewed-weeks-in-a-row.one': '연속 리뷰한 주 수',
+  'home.widget.streak.reviewed-weeks-in-a-row.few': '연속 리뷰한 주 수',
+  'home.widget.streak.reviewed-weeks-in-a-row.many': '연속 리뷰한 주 수',
+  'home.widget.streak.reviewed-weeks-in-a-row.other': '연속 리뷰한 주 수',
+  'home.widget.streak.reviewed-months-in-a-row.one': '연속 리뷰한 개월 수',
+  'home.widget.streak.reviewed-months-in-a-row.few': '연속 리뷰한 개월 수',
+  'home.widget.streak.reviewed-months-in-a-row.many': '연속 리뷰한 개월 수',
+  'home.widget.streak.reviewed-months-in-a-row.other': '연속 리뷰한 개월 수',
+  'home.widget.streak.missed-trades.one':
+    '마지막 리뷰 이후 거래 {count}개를 놓쳤습니다',
+  'home.widget.streak.missed-trades.few':
+    '마지막 리뷰 이후 거래 {count}개를 놓쳤습니다',
+  'home.widget.streak.missed-trades.many':
+    '마지막 리뷰 이후 거래 {count}개를 놓쳤습니다',
+  'home.widget.streak.missed-trades.other':
+    '마지막 리뷰 이후 거래 {count}개를 놓쳤습니다',
+  'home.widget.streak.missed-days.one':
+    '마지막 리뷰 이후 {count}일을 놓쳤습니다',
+  'home.widget.streak.missed-days.few':
+    '마지막 리뷰 이후 {count}일을 놓쳤습니다',
+  'home.widget.streak.missed-days.many':
+    '마지막 리뷰 이후 {count}일을 놓쳤습니다',
+  'home.widget.streak.missed-days.other':
+    '마지막 리뷰 이후 {count}일을 놓쳤습니다',
+  'home.widget.streak.missed-weeks.one':
+    '마지막 리뷰 이후 {count}주를 놓쳤습니다',
+  'home.widget.streak.missed-weeks.few':
+    '마지막 리뷰 이후 {count}주를 놓쳤습니다',
+  'home.widget.streak.missed-weeks.many':
+    '마지막 리뷰 이후 {count}주를 놓쳤습니다',
+  'home.widget.streak.missed-weeks.other':
+    '마지막 리뷰 이후 {count}주를 놓쳤습니다',
+  'home.widget.streak.missed-months.one':
+    '마지막 리뷰 이후 {count}개월을 놓쳤습니다',
+  'home.widget.streak.missed-months.few':
+    '마지막 리뷰 이후 {count}개월을 놓쳤습니다',
+  'home.widget.streak.missed-months.many':
+    '마지막 리뷰 이후 {count}개월을 놓쳤습니다',
+  'home.widget.streak.missed-months.other':
+    '마지막 리뷰 이후 {count}개월을 놓쳤습니다',
   'account-dashboard.title': '계정',
   'home.quick-links.trading-dashboard': '대시보드',
   'home.quick-links.account-dashboard': '계정',
@@ -1756,6 +1804,17 @@ const ko: Partial<Lang> = {
   'settings.general.show-seconds-desc':
     '거래 진입 및 청산 시간을 입력할 때 초를 표시합니다.',
   'settings.general.show-seconds-aria': '거래 시간에 초 표시',
+
+  'view.home': '홈',
+  'common.lose': '패배',
+
+  'dashboard.conversion.requires-conversion':
+    '다중 통화 손익 차트에는 환율 변환이 필요합니다.',
+
+  'form.layout.guide-trigger-label': '양식 사용자 지정',
+  'trade-import.preview.message.no-open-match':
+    'No matching open trade found for close-only preview',
+  'setups.view.detail.execution-gap.title': 'Execution Gap',
 };
 
 export default ko;

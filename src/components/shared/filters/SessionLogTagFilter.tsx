@@ -106,14 +106,14 @@ export const SessionLogTagFilter: React.FC<SessionLogTagFilterProps> =
       [onChange, selectedTags]
     );
 
+    const selectedTagsSet = new Set(selectedTags);
     return (
       <div className="journalit-session-log-tag-filter" ref={dropdownRef}>
         <div className="journalit-dashboard-mistake-dropdown journalit-session-log-tag-dropdown">
-          <div
-            className="journalit-dashboard-mistake-summary journalit-session-log-tag-summary"
+          <button
+            type="button"
+            className="journalit-native-button journalit-native-button--unstyled journalit-dashboard-mistake-summary journalit-session-log-tag-summary"
             onClick={toggleDropdown}
-            role="button"
-            tabIndex={0}
             onKeyDown={(event) => {
               if (event.key === 'Enter' || event.key === ' ') {
                 event.preventDefault();
@@ -123,7 +123,7 @@ export const SessionLogTagFilter: React.FC<SessionLogTagFilterProps> =
           >
             <span className="journalit-dashboard-summary-text">{summary}</span>
             <span className="dropdown-arrow">{isOpen ? '▲' : '▼'}</span>
-          </div>
+          </button>
 
           {isOpen && (
             <div className="journalit-dashboard-mistake-options-dropdown journalit-session-log-tag-options-dropdown">
@@ -152,7 +152,7 @@ export const SessionLogTagFilter: React.FC<SessionLogTagFilterProps> =
                   </div>
                   <div className="journalit-dashboard-mistake-divider"></div>
                   {tags.map((tag) => {
-                    const isSelected = selectedTags.includes(tag.id);
+                    const isSelected = selectedTagsSet.has(tag.id);
                     return (
                       <div
                         key={tag.id}

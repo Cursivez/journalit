@@ -38,25 +38,14 @@ const WeightBarSegment: React.FC<{
   const segmentWidth = isPercentageMasked
     ? 1
     : Math.max(data.aumWeightPercent, minimumWidth);
-  const ariaLabel = isPercentageMasked
-    ? data.displayName
-    : t('account-dashboard.weight-bar.segment-aria', {
-        name: data.displayName,
-        percent: data.aumWeightPercent.toFixed(1),
-      });
-
   return (
-    <div
+    <span
       className="account-weight-segment"
       style={cssVars({
         '--journalit-account-weight-segment-ratio': `${segmentWidth}`,
         '--journalit-account-weight-segment-color': data.color,
       })}
-      role="progressbar"
-      aria-valuenow={isPercentageMasked ? undefined : data.aumWeightPercent}
-      aria-valuemin={0}
-      aria-valuemax={100}
-      aria-label={ariaLabel}
+      aria-hidden="true"
     />
   );
 };
@@ -72,6 +61,9 @@ export const AccountTypeWeightBar: React.FC<AccountTypeWeightBarProps> = ({
   showLegend = true,
   minimumSegmentWidth = 2,
 }) => {
+  const { shouldMask } = useDisplayFormatter();
+  const isPercentageMasked = shouldMask('percentage');
+
   
   const weightData = useMemo(() => {
     return calculateAccountTypeWeights(
@@ -100,13 +92,20 @@ export const AccountTypeWeightBar: React.FC<AccountTypeWeightBarProps> = ({
     return null;
   }
 
+  const barAriaLabel = isPercentageMasked
+    ? t('account-dashboard.weight-bar.aria')
+    : segments
+        .map((segment) =>
+          t('account-dashboard.weight-bar.segment-aria', {
+            name: segment.displayName,
+            percent: segment.aumWeightPercent.toFixed(1),
+          })
+        )
+        .join(', ');
+
   return (
     <div className={`account-weight-bar-container ${className}`}>
-      <div
-        className="account-weight-bar"
-        role="progressbar"
-        aria-label={t('account-dashboard.weight-bar.aria')}
-      >
+      <div className="account-weight-bar" role="img" aria-label={barAriaLabel}>
         {segments.map((segmentData) => (
           <WeightBarSegment
             key={segmentData.type}

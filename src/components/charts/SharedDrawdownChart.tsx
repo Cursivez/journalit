@@ -44,6 +44,13 @@ interface SharedDrawdownChartProps extends DrawdownChartProps {
 }
 
 let drawdownChartIdCounter = 0;
+const DEFAULT_DRAWDOWN_CHART_MARGIN = {
+  top: 6,
+  right: 5,
+  left: 0,
+  bottom: 10,
+};
+const EMPTY_DRAWDOWN_TOOLTIP_PROPS: Partial<TooltipProps<number, string>> = {};
 
 const isDrawdownTooltipPayloadItem = (
   value: unknown
@@ -204,10 +211,10 @@ export const SharedDrawdownChart = React.memo<SharedDrawdownChartProps>(
     width = '100%',
     minValue,
     maxValue,
-    margin = { top: 6, right: 5, left: 0, bottom: 10 },
+    margin = DEFAULT_DRAWDOWN_CHART_MARGIN,
     className = '',
     styleVars,
-    tooltipProps = {},
+    tooltipProps = EMPTY_DRAWDOWN_TOOLTIP_PROPS,
     showTooltip = true,
     customTooltip,
     autoRange: _autoRange = true,

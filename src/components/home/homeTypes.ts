@@ -80,6 +80,7 @@ export const AVAILABLE_HOME_WIDGETS: HomeWidgetDefinition[] = [
     category: 'overview',
     minSize: { w: 3, h: 4 },
     defaultSize: { w: 4, h: 5 }, 
+    configurable: true,
   },
   {
     id: 'bestHours',

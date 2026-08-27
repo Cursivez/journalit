@@ -19,7 +19,7 @@ import { aggregatePnLByCurrency } from '../../utils/currencyAggregation';
 import { resolvePreConversionExcursionFields } from '../../utils/tradeExcursion';
 import { ExchangeRateService } from '../exchangeRate/ExchangeRateService';
 import { resolveScopedConversionRateDate } from '../exchangeRate/conversionAttribution';
-import { eventBus } from '../events';
+import { eventBus } from '../events/EventBus';
 import type {
   Unsubscribe,
   TradeChangedPayload,
@@ -207,6 +207,8 @@ function toExcursionMetricInput(trade: Record<string, unknown>) {
     tickValue: finiteNumber(trade.tickValue),
     lotSize: finiteNumber(trade.lotSize),
     pipValue: finiteNumber(trade.pipValue),
+    pipSize: finiteNumber(trade.pipSize),
+    forexPnlConversionRate: finiteNumber(trade.forexPnlConversionRate),
     entries: Array.isArray(trade.entries)
       ? trade.entries.flatMap((entry) =>
           isRecord(entry)
@@ -732,16 +734,18 @@ export class ReviewDataCache {
         ],
         accountLookupKeys: [copyAccountLookupKey],
         accountNamesNormalized: [copyAccountName],
-        pnl: copiedPnL,
+        pnl: copiedPnL ?? undefined,
         directPnL:
           typeof baseTrade.directPnL === 'number'
             ? baseTrade.directPnL * copyPeriod.multiplier
             : baseTrade.directPnL,
         riskAmount: copiedRiskAmount,
         rMultiple:
-          copiedRiskAmount && copiedRiskAmount !== 0
+          copiedPnL !== null && copiedRiskAmount && copiedRiskAmount !== 0
             ? copiedPnL / copiedRiskAmount
-            : baseTrade.rMultiple,
+            : copiedPnL === null
+              ? undefined
+              : baseTrade.rMultiple,
         commission: commission ?? 0,
         commissionType: 'fixed',
         fees: 0,

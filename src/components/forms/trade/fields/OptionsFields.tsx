@@ -1,7 +1,8 @@
 
 
 import React from 'react';
-import { NumberInput, FastDateTimeInput } from '../../../core';
+import { NumberInput } from '../../../core/NumberInput';
+import { FastDateTimeInput } from '../../../core/FastDateTimeInput';
 import { TradeFormData, TradeFormErrors, TradeFormValue } from '../types';
 import { getPricePrecision } from '../utils';
 import { t } from '../../../../lang/helpers';
@@ -49,10 +50,10 @@ const OptionsFieldsComponent: React.FC<OptionsFieldsProps> = ({
       </div>
 
       <div className="field">
-        <label className="label" id="optionType-label">
+        <div className="label" id="optionType-label">
           {t('form.field.option-type')}
           <span className="required-indicator">*</span>
-        </label>
+        </div>
         <div
           className="direction-container"
           role="radiogroup"

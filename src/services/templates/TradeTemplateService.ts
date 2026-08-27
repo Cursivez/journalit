@@ -4,7 +4,7 @@ import type { App } from 'obsidian';
 import type { JournalitSettings } from '../../settings/types';
 import { TradeTemplate } from '../../types/reviewV2';
 import { generateUUID } from '../../utils/uuid';
-import { eventBus } from '../events';
+import { eventBus } from '../events/EventBus';
 
 type JournalitPluginInstance = {
   app: App;

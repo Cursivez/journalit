@@ -21,7 +21,8 @@ import {
   safeGetTime,
   safeParseDateValue,
 } from '../../utils/dateUtils';
-import { eventBus, FolderPathChangedPayload, Unsubscribe } from '../events';
+import { eventBus } from '../events/EventBus';
+import { FolderPathChangedPayload, Unsubscribe } from '../events/types';
 import { t } from '../../lang/helpers';
 import { getTradeIdentityNoteType } from '../../utils/tradeIdentity';
 import { normalizeTradeExecution } from '../trade/core/TradeExecutionNormalization';
