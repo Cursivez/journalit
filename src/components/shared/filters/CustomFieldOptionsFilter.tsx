@@ -4,6 +4,7 @@ import React, {
   useRef,
   useMemo,
   useCallback,
+  useId,
 } from 'react';
 import { t } from '../../../lang/helpers';
 import type { DropdownOption } from '../../../types/customFields';
@@ -20,6 +21,7 @@ const SELECT_ALL_SENTINEL = '__CUSTOM_FIELD_FILTER_ALL__';
 export const CustomFieldOptionsFilter: React.FC<CustomFieldOptionsFilterProps> =
   React.memo(({ label, options, selectedValues, onChange }) => {
     const [isOpen, setIsOpen] = useState(false);
+    const labelId = useId();
     const dropdownRef = useRef<HTMLDivElement>(null);
 
     const optionMap = useMemo(() => {
@@ -104,15 +106,18 @@ export const CustomFieldOptionsFilter: React.FC<CustomFieldOptionsFilterProps> =
 
     const toggleDropdown = useCallback(() => setIsOpen((prev) => !prev), []);
 
+    const selectedValuesSet = new Set(selectedValues);
     return (
       <div className="journalit-tradelog-custom-field-filter" ref={dropdownRef}>
-        <label className="filter-modal-custom-field-label">{label}</label>
+        <div id={labelId} className="filter-modal-custom-field-label">
+          {label}
+        </div>
         <div className="journalit-tradelog-custom-field-dropdown">
-          <div
-            className="journalit-tradelog-custom-field-summary"
+          <button
+            type="button"
+            aria-labelledby={labelId}
+            className="journalit-native-button journalit-native-button--unstyled journalit-tradelog-custom-field-summary"
             onClick={toggleDropdown}
-            role="button"
-            tabIndex={0}
             onKeyDown={(e) => {
               if (e.key === 'Enter' || e.key === ' ') {
                 e.preventDefault();
@@ -124,7 +129,7 @@ export const CustomFieldOptionsFilter: React.FC<CustomFieldOptionsFilterProps> =
               {summaryText}
             </span>
             <span className="dropdown-arrow">{isOpen ? '▲' : '▼'}</span>
-          </div>
+          </button>
 
           {isOpen && (
             <div className="journalit-tradelog-custom-field-options-dropdown">
@@ -158,7 +163,7 @@ export const CustomFieldOptionsFilter: React.FC<CustomFieldOptionsFilterProps> =
                       className="journalit-tradelog-custom-field-option-item"
                       onClick={() => handleValueToggle(option.value)}
                       role="checkbox"
-                      aria-checked={selectedValues.includes(option.value)}
+                      aria-checked={selectedValuesSet.has(option.value)}
                       tabIndex={0}
                       onKeyDown={(e) => {
                         if (e.key === 'Enter' || e.key === ' ') {
@@ -168,10 +173,10 @@ export const CustomFieldOptionsFilter: React.FC<CustomFieldOptionsFilterProps> =
                       }}
                     >
                       <span
-                        className={`journalit-tradelog-custom-field-checkbox${selectedValues.includes(option.value) ? ' checked' : ''}`}
+                        className={`journalit-tradelog-custom-field-checkbox${selectedValuesSet.has(option.value) ? ' checked' : ''}`}
                         aria-hidden="true"
                       >
-                        {selectedValues.includes(option.value) ? '✓' : ''}
+                        {selectedValuesSet.has(option.value) ? '✓' : ''}
                       </span>
                       <span>{option.label}</span>
                     </div>

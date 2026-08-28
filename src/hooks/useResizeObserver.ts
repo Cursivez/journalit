@@ -29,15 +29,17 @@ export function useViewportThreshold(threshold: number = 768): boolean {
     window.addEventListener('resize', debouncedResize);
 
     
-    
-    if (plugin) {
-      plugin.registerEvent(plugin.app.workspace.on('resize', debouncedResize));
-    }
+    const workspaceResizeRef = plugin?.app.workspace.on(
+      'resize',
+      debouncedResize
+    );
 
     return () => {
       window.clearTimeout(timeoutId);
       window.removeEventListener('resize', debouncedResize);
-      
+      if (workspaceResizeRef && plugin) {
+        plugin.app.workspace.offref(workspaceResizeRef);
+      }
     };
   }, [threshold, plugin]);
 

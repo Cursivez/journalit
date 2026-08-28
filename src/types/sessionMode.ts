@@ -14,44 +14,81 @@ export interface SessionModeSettings {
   preparationLeadTimeMinutes: number;
   showTradeExecutionsInSessionLog: boolean;
   linkedResources: SessionModeLinkedResource[];
+  tradeGateQuestions: TradeGateQuestion[];
   tradeGateWorkflows: TradeGateWorkflow[];
   phaseLayouts: SessionModePhaseLayouts;
 }
 
 export type TradeGateOutcomeType = 'green-light' | 'no-trade' | 'wait';
 
-export interface TradeGateOption {
+export interface TradeGateQuestionOption {
   id: string;
   label: string;
-  targetNodeId: string;
 }
 
-export interface TradeGateQuestionNode {
+export interface TradeGateQuestion {
   id: string;
-  type: 'question';
   title: string;
   prompt: string;
-  options: TradeGateOption[];
+  options: TradeGateQuestionOption[];
 }
 
-export interface TradeGateOutcomeNode {
+export type TradeGateRouteTarget =
+  | { kind: 'node'; nodeId: string }
+  | { kind: 'outcome'; outcome: TradeGateOutcomeType; note?: string };
+
+
+export interface TradeGateWorkflowNode {
   id: string;
-  type: 'outcome';
-  outcome: TradeGateOutcomeType;
-  title: string;
-  description?: string;
+  questionId: string;
 }
 
-export type TradeGateNode = TradeGateQuestionNode | TradeGateOutcomeNode;
+export interface TradeGateRoute {
+  nodeId: string;
+  optionId: string;
+  target: TradeGateRouteTarget;
+}
 
 export interface TradeGateWorkflow {
   id: string;
   name: string;
   startNodeId: string;
-  nodes: TradeGateNode[];
+  nodes: TradeGateWorkflowNode[];
+  routes: TradeGateRoute[];
 }
 
-const DEFAULT_TRADE_GATE_WORKFLOWS: TradeGateWorkflow[] = [
+export const DEFAULT_TRADE_GATE_QUESTIONS: TradeGateQuestion[] = [
+  {
+    id: 'default-trade-gate-setup',
+    title: 'Setup quality',
+    prompt: 'Is there a clear, valid setup according to your plan?',
+    options: [
+      { id: 'default-trade-gate-setup-yes', label: 'Yes' },
+      { id: 'default-trade-gate-setup-no', label: 'No' },
+    ],
+  },
+  {
+    id: 'default-trade-gate-risk',
+    title: 'Risk defined',
+    prompt: 'Are entry, invalidation, target, and position risk defined?',
+    options: [
+      { id: 'default-trade-gate-risk-yes', label: 'Yes' },
+      { id: 'default-trade-gate-risk-no', label: 'No' },
+    ],
+  },
+  {
+    id: 'default-trade-gate-conditions',
+    title: 'Conditions acceptable',
+    prompt:
+      'Are current volatility, news, and execution conditions acceptable?',
+    options: [
+      { id: 'default-trade-gate-conditions-yes', label: 'Yes' },
+      { id: 'default-trade-gate-conditions-no', label: 'No' },
+    ],
+  },
+];
+
+export const DEFAULT_TRADE_GATE_WORKFLOWS: TradeGateWorkflow[] = [
   {
     id: 'default-trade-gate-workflow',
     name: 'Starter Trade Gate',
@@ -59,82 +96,66 @@ const DEFAULT_TRADE_GATE_WORKFLOWS: TradeGateWorkflow[] = [
     nodes: [
       {
         id: 'default-trade-gate-setup',
-        type: 'question',
-        title: 'Setup quality',
-        prompt: 'Is there a clear, valid setup according to your plan?',
-        options: [
-          {
-            id: 'default-trade-gate-setup-yes',
-            label: 'Yes',
-            targetNodeId: 'default-trade-gate-risk',
-          },
-          {
-            id: 'default-trade-gate-setup-no',
-            label: 'No',
-            targetNodeId: 'default-trade-gate-wait',
-          },
-        ],
+        questionId: 'default-trade-gate-setup',
       },
-      {
-        id: 'default-trade-gate-risk',
-        type: 'question',
-        title: 'Risk defined',
-        prompt: 'Are entry, invalidation, target, and position risk defined?',
-        options: [
-          {
-            id: 'default-trade-gate-risk-yes',
-            label: 'Yes',
-            targetNodeId: 'default-trade-gate-conditions',
-          },
-          {
-            id: 'default-trade-gate-risk-no',
-            label: 'No',
-            targetNodeId: 'default-trade-gate-no-trade',
-          },
-        ],
-      },
+      { id: 'default-trade-gate-risk', questionId: 'default-trade-gate-risk' },
       {
         id: 'default-trade-gate-conditions',
-        type: 'question',
-        title: 'Conditions acceptable',
-        prompt:
-          'Are current volatility, news, and execution conditions acceptable?',
-        options: [
-          {
-            id: 'default-trade-gate-conditions-yes',
-            label: 'Yes',
-            targetNodeId: 'default-trade-gate-green-light',
-          },
-          {
-            id: 'default-trade-gate-conditions-no',
-            label: 'No',
-            targetNodeId: 'default-trade-gate-wait',
-          },
-        ],
+        questionId: 'default-trade-gate-conditions',
+      },
+    ],
+    routes: [
+      {
+        nodeId: 'default-trade-gate-setup',
+        optionId: 'default-trade-gate-setup-yes',
+        target: {
+          kind: 'node',
+          nodeId: 'default-trade-gate-risk',
+        },
       },
       {
-        id: 'default-trade-gate-green-light',
-        type: 'outcome',
-        outcome: 'green-light',
-        title: 'Green light',
-        description:
-          'Plan is valid, risk is defined, and conditions support execution.',
+        nodeId: 'default-trade-gate-setup',
+        optionId: 'default-trade-gate-setup-no',
+        target: {
+          kind: 'outcome',
+          outcome: 'wait',
+          note: 'Conditions are not ready yet. Wait for confirmation before acting.',
+        },
       },
       {
-        id: 'default-trade-gate-wait',
-        type: 'outcome',
-        outcome: 'wait',
-        title: 'Wait',
-        description:
-          'Conditions are not ready yet. Wait for confirmation before acting.',
+        nodeId: 'default-trade-gate-risk',
+        optionId: 'default-trade-gate-risk-yes',
+        target: {
+          kind: 'node',
+          nodeId: 'default-trade-gate-conditions',
+        },
       },
       {
-        id: 'default-trade-gate-no-trade',
-        type: 'outcome',
-        outcome: 'no-trade',
-        title: 'No trade',
-        description:
-          'The setup or risk definition is not strong enough to take the trade.',
+        nodeId: 'default-trade-gate-risk',
+        optionId: 'default-trade-gate-risk-no',
+        target: {
+          kind: 'outcome',
+          outcome: 'no-trade',
+          note: 'The setup or risk definition is not strong enough to take the trade.',
+        },
+      },
+      {
+        nodeId: 'default-trade-gate-conditions',
+        optionId: 'default-trade-gate-conditions-yes',
+        target: {
+          kind: 'outcome',
+          outcome: 'green-light',
+          note: 'Plan is valid, risk is defined, and conditions support execution.',
+        },
+      },
+      {
+        nodeId: 'default-trade-gate-conditions',
+        optionId: 'default-trade-gate-conditions-no',
+        target: {
+          kind: 'outcome',
+          outcome: 'wait',
+          note: 'Conditions are not ready yet. Wait for confirmation before acting.',
+        },
       },
     ],
   },
@@ -212,6 +233,7 @@ export const DEFAULT_SESSION_MODE_SETTINGS: SessionModeSettings = {
   preparationLeadTimeMinutes: 30,
   showTradeExecutionsInSessionLog: true,
   linkedResources: [],
+  tradeGateQuestions: DEFAULT_TRADE_GATE_QUESTIONS,
   tradeGateWorkflows: DEFAULT_TRADE_GATE_WORKFLOWS,
   phaseLayouts: {
     preparation: [

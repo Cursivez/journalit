@@ -31,12 +31,12 @@ interface TradeTypeSelectorProps {
 }
 
 
-const TradeTypeIcon: React.FC<{ type: TradeType }> = ({ type }) => {
-  const iconProps = {
-    size: 16,
-    className: 'journalit-trade-type-selector__icon',
-  };
+const iconProps = {
+  size: 16,
+  className: 'journalit-trade-type-selector__icon',
+};
 
+const TradeTypeIcon: React.FC<{ type: TradeType }> = ({ type }) => {
   switch (type) {
     case 'regular':
       return <TrendingUp {...iconProps} />;
@@ -162,9 +162,9 @@ const TradeTypeSelectorComponent: React.FC<TradeTypeSelectorProps> = ({
           className="journalit-trade-type-selector__header"
         >
           <div className="journalit-trade-type-selector__header-main">
-            <label className="journalit-trade-type-selector__title">
+            <span className="journalit-trade-type-selector__title">
               {t('form.trade-type.title')}
-            </label>
+            </span>
             <span className="journalit-trade-type-selector__current">
               <TradeTypeIcon type={currentTradeType} />
               {currentLabel}
@@ -217,10 +217,14 @@ const TradeTypeSelectorComponent: React.FC<TradeTypeSelectorProps> = ({
             
             {currentTradeType === 'missed' && (
               <div className="field journalit-trade-type-selector__missed-field">
-                <label className="label">
+                <label
+                  htmlFor="journalit-tradetypeselector-234"
+                  className="label"
+                >
                   {t('form.trade-type.missed-reason')}
                 </label>
                 <textarea
+                  id="journalit-tradetypeselector-234"
                   value={data.missedReason || ''}
                   onChange={handleMissedReasonChange}
                   placeholder={t('form.trade-type.missed-reason-placeholder')}

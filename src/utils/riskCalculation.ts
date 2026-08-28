@@ -1,5 +1,8 @@
-import { TradeFormData, AssetType } from '../components/forms/trade/types';
-import { calculateAssetAdjustedPriceMoveValue } from './priceMoveValue';
+import { TradeFormData } from '../components/forms/trade/types';
+import {
+  calculateAssetAdjustedPriceMoveValue,
+  hasAuthoritativePriceMoveMultiplier,
+} from './priceMoveValue';
 import { normalizeTradeExecution } from '../services/trade/core/TradeExecutionNormalization';
 
 interface StopLossRiskContext {
@@ -80,21 +83,7 @@ const hasAuthoritativeStopLossRiskContext = (
     return false;
   }
 
-  switch (data.assetType) {
-    case AssetType.OPTIONS:
-      return !!(data.contractSize && data.contractSize > 0);
-    case AssetType.FUTURES:
-      return !!(data.dollarPerPoint && data.dollarPerPoint > 0);
-    case AssetType.FOREX:
-      return !!(
-        (data.lotSize && data.lotSize > 0) ||
-        (data.pipValue && data.pipValue > 0)
-      );
-    case AssetType.CFD:
-      return !!(data.contractSize && data.contractSize > 0);
-    default:
-      return true;
-  }
+  return hasAuthoritativePriceMoveMultiplier(data);
 };
 
 const isValidPositiveRiskAmount = (value: unknown): value is number =>

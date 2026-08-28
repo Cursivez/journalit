@@ -23,8 +23,8 @@ import JournalitPlugin from '../../../main';
 import { TradesPreviewData } from '../../../types/reviewV2';
 import { Trade } from '../../drc/types';
 import { useReviewTrades } from '../hooks/useReviewData';
-import { useEventBus } from '../../../hooks';
-import { SkeletonBox } from '../../shared';
+import { useEventBus } from '../../../hooks/useEventBus';
+import { SkeletonBox } from '../../shared/SkeletonBox';
 import { InvalidContextMessage } from './InvalidContextMessage';
 import { classifyPnLWithBreakEvenSettings } from '../../../utils/breakEvenRange';
 import { getBreakEvenBalanceForDisplayTrade } from './shared/breakEvenDisplayUtils';
@@ -1132,6 +1132,13 @@ export const BreakdownTableWidget: React.FC<BreakdownTableWidgetProps> =
 
                 return (
                   <tr
+                    tabIndex={0}
+                    onKeyDown={(event) => {
+                      if (event.key === 'Enter' || event.key === ' ') {
+                        event.preventDefault();
+                        event.currentTarget.click();
+                      }
+                    }}
                     key={day.rawDate.toISOString()}
                     className="weekly-review-trade-row journalit-reviewv2-table-row journalit-reviewv2-table-row--interactive"
                     onClick={() =>
@@ -1231,6 +1238,13 @@ export const BreakdownTableWidget: React.FC<BreakdownTableWidgetProps> =
 
                 return (
                   <tr
+                    tabIndex={0}
+                    onKeyDown={(event) => {
+                      if (event.key === 'Enter' || event.key === ' ') {
+                        event.preventDefault();
+                        event.currentTarget.click();
+                      }
+                    }}
                     key={week.weeklyPath ?? week.firstDate.toISOString()}
                     className="weekly-review-trade-row journalit-reviewv2-table-row journalit-reviewv2-table-row--interactive"
                     onClick={() =>
@@ -1330,6 +1344,13 @@ export const BreakdownTableWidget: React.FC<BreakdownTableWidgetProps> =
 
                 return (
                   <tr
+                    tabIndex={0}
+                    onKeyDown={(event) => {
+                      if (event.key === 'Enter' || event.key === ' ') {
+                        event.preventDefault();
+                        event.currentTarget.click();
+                      }
+                    }}
                     key={month.monthlyPath ?? month.monthStart.toISOString()}
                     className="weekly-review-trade-row journalit-reviewv2-table-row journalit-reviewv2-table-row--interactive"
                     onClick={() =>
@@ -1432,6 +1453,13 @@ export const BreakdownTableWidget: React.FC<BreakdownTableWidgetProps> =
 
                 return (
                   <tr
+                    tabIndex={0}
+                    onKeyDown={(event) => {
+                      if (event.key === 'Enter' || event.key === ' ') {
+                        event.preventDefault();
+                        event.currentTarget.click();
+                      }
+                    }}
                     key={
                       quarter.quarterlyPath ??
                       quarter.quarterStart.toISOString()

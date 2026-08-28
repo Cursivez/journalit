@@ -4,12 +4,10 @@ import React, { useEffect } from 'react';
 import { WorkspaceLeaf } from 'obsidian';
 import { useAccountPageData } from './context/AccountPageDataContext';
 import { EmptyState } from '../shared/EmptyState';
-import {
-  AccountHeader,
-  AccountMetrics,
-  AccountBalanceSection,
-  AccountRiskMetricsSection,
-} from './components';
+import { AccountHeader } from './components/AccountHeader';
+import { AccountMetrics } from './components/AccountMetrics';
+import { AccountBalanceSection } from './components/AccountBalanceSection';
+import { AccountRiskMetricsSection } from './components/AccountRiskMetricsSection';
 import { DepositsWithdrawalsSection } from './components/DepositsWithdrawalsSection';
 import { AccountPageSkeleton } from './AccountPageSkeleton';
 import { t } from '../../lang/helpers';

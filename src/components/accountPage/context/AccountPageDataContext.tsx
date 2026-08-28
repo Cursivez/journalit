@@ -29,11 +29,11 @@ import {
   classifyPnLWithBreakEvenSettings,
   type BreakEvenRangeSettings,
 } from '../../../utils/breakEvenRange';
+import { useEventBus } from '../../../hooks/useEventBus';
 import {
-  useEventBus,
   AccountChangedPayload,
   TradeChangedPayload,
-} from '../../../services/events';
+} from '../../../services/events/types';
 import type { TradeCommittedPayload } from '../../../services/trade/core/tradeCoreTypes';
 import { normalizeAccountLookupKey } from '../../../services/trade/core/TradeAccountIdentity';
 import { calculateCommissionCost } from '../../../utils/pnlUtils';
@@ -136,21 +136,20 @@ const filterAccountTrades = (
   }
 
   if (filters.instruments && filters.instruments.length > 0) {
-    filtered = filtered.filter((trade) =>
-      filters.instruments!.includes(trade.instrument)
-    );
+    const instrumentsSet = new Set(filters.instruments);
+    filtered = filtered.filter((trade) => instrumentsSet.has(trade.instrument));
   }
 
   if (filters.setups && filters.setups.length > 0) {
+    const setupsSet = new Set(filters.setups);
     filtered = filtered.filter((trade) =>
-      trade.setup.some((setup) => filters.setups!.includes(setup))
+      trade.setup.some((setup) => setupsSet.has(setup))
     );
   }
 
   if (filters.directions && filters.directions.length > 0) {
-    filtered = filtered.filter((trade) =>
-      filters.directions!.includes(trade.direction)
-    );
+    const directionsSet = new Set(filters.directions);
+    filtered = filtered.filter((trade) => directionsSet.has(trade.direction));
   }
 
   if (filters.reviewed !== undefined) {

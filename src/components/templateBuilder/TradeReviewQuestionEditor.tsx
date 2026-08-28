@@ -519,6 +519,19 @@ function withoutVisibleWhen(
   return copy;
 }
 
+const clearConditionsReferencing = (
+  list: TradeReviewQuestionConfig[],
+  matches: (
+    condition: NonNullable<TradeReviewQuestionConfig['visibleWhen']>
+  ) => boolean
+): TradeReviewQuestionConfig[] =>
+  list.map((question) => {
+    if (!question.visibleWhen || !matches(question.visibleWhen)) {
+      return question;
+    }
+    return withoutVisibleWhen(question);
+  });
+
 export const TradeReviewQuestionEditor: React.FC<
   TradeReviewQuestionEditorProps
 > = ({ config, onChange, onReset }) => {
@@ -539,19 +552,6 @@ export const TradeReviewQuestionEditor: React.FC<
       )
     );
   };
-
-  const clearConditionsReferencing = (
-    list: TradeReviewQuestionConfig[],
-    matches: (
-      condition: NonNullable<TradeReviewQuestionConfig['visibleWhen']>
-    ) => boolean
-  ): TradeReviewQuestionConfig[] =>
-    list.map((question) => {
-      if (!question.visibleWhen || !matches(question.visibleWhen)) {
-        return question;
-      }
-      return withoutVisibleWhen(question);
-    });
 
   const setQuestionType = (
     questionIndex: number,

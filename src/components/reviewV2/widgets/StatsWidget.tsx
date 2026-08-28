@@ -20,9 +20,9 @@ import { classifyPnLWithBreakEvenSettings } from '../../../utils/breakEvenRange'
 import JournalitPlugin from '../../../main';
 import { TradesPreviewData } from '../../../types/reviewV2';
 import { useReviewData } from '../hooks/useReviewData';
-import { useEventBus } from '../../../hooks';
+import { useEventBus } from '../../../hooks/useEventBus';
 import { useDisplayFormatter } from '../../../hooks/useDisplayPolicy';
-import { SkeletonBox } from '../../shared';
+import { SkeletonBox } from '../../shared/SkeletonBox';
 import {
   CurrencyConversionInfo,
   type CurrencyConversionTrade,

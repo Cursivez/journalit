@@ -18,7 +18,7 @@ import {
   type DisplayValueKind,
   type DisplayValueOptions,
 } from '../services/display/DisplayPolicy';
-import { eventBus } from '../services/events';
+import { eventBus } from '../services/events/EventBus';
 import { usePlugin } from '../hooks/usePlugin';
 import { getPluginInstance } from '../utils/pluginContext';
 

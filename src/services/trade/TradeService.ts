@@ -26,6 +26,8 @@ import {
 import type { AnalyticsDateBasis } from '../../settings/types';
 import { LossReviewData, TradeReviewData } from '../backend/types';
 import { CustomFieldValues } from '../../types/customFields';
+import type { ImageAnnotations } from '../../types/imageAnnotations';
+import { parseImageAnnotations } from '../../utils/imageAnnotations';
 import { AccountPageService } from '../accountPage/AccountPageService';
 import {
   forceMetadataCacheRefresh,
@@ -60,7 +62,8 @@ import {
 } from '../options/CustomOptionsService';
 import { parseTradeDividendTransactions } from '../../utils/tradeUtils';
 import { getPluginInstance } from '../../utils/pluginContext';
-import { eventBus, OptionsChangedPayload, Unsubscribe } from '../events';
+import { eventBus } from '../events/EventBus';
+import { OptionsChangedPayload, Unsubscribe } from '../events/types';
 import {
   acknowledgeLocalDeletedTradeProjection,
   clearLocalDeletedTradeProjection,
@@ -416,6 +419,11 @@ interface TradeFinancialFrontmatter extends Record<string, unknown> {
   lotSize?: number;
   pipValue?: number;
   pipSize?: number;
+  forexQuoteCurrency?: string;
+  forexPnlConversionRate?: number;
+  forexPnlConversionBaseCurrency?: string;
+  forexPnlConversionRateDate?: string;
+  forexPnlConversionRateSource?: 'automatic' | 'manual';
   leverageRatio?: number;
   lastBrokerSyncAt?: string;
 }
@@ -813,6 +821,7 @@ export interface TradeData {
   accountId?: string; 
   thesis?: string;
   images?: string[];
+  imageAnnotations?: ImageAnnotations;
   instrument?: string;
   assetType?: string;
   account?: string[];
@@ -863,6 +872,11 @@ export interface TradeData {
   lotSize?: number;
   pipValue?: number;
   pipSize?: number;
+  forexQuoteCurrency?: string;
+  forexPnlConversionRate?: number;
+  forexPnlConversionBaseCurrency?: string;
+  forexPnlConversionRateDate?: string;
+  forexPnlConversionRateSource?: 'automatic' | 'manual';
 
   
   tradingPair?: string;
@@ -900,6 +914,8 @@ export interface TradeData {
   
   
   clearUnsetCurrencyFields?: boolean;
+  
+  clearUnsetForexPnlConversionFields?: boolean;
 
   
   useDirectPnLInput?: boolean;
@@ -1289,6 +1305,8 @@ export class TradeService extends CustomDataService {
               existingFrontmatter.lotSize !== normalizedForComparison.lotSize ||
               existingFrontmatter.pipValue !==
                 normalizedForComparison.pipValue ||
+              existingFrontmatter.forexPnlConversionRate !==
+                normalizedForComparison.forexPnlConversionRate ||
               existingFrontmatter.leverageRatio !==
                 normalizedForComparison.leverageRatio ||
               existingFrontmatter.riskAmount !==
@@ -1575,6 +1593,23 @@ export class TradeService extends CustomDataService {
           frontmatterData.fxRate = undefined;
           frontmatterData.fxRateBaseCurrency = undefined;
         }
+      }
+
+      if (
+        data.clearUnsetForexPnlConversionFields &&
+        data.forexPnlConversionRate === undefined
+      ) {
+        frontmatterData.forexQuoteCurrency = undefined;
+        frontmatterData.forexPnlConversionRate = undefined;
+        frontmatterData.forexPnlConversionBaseCurrency = undefined;
+        frontmatterData.forexPnlConversionRateDate = undefined;
+        frontmatterData.forexPnlConversionRateSource = undefined;
+      } else if (
+        data.clearUnsetForexPnlConversionFields &&
+        data.forexPnlConversionRateSource === 'manual' &&
+        data.forexPnlConversionRateDate === undefined
+      ) {
+        frontmatterData.forexPnlConversionRateDate = undefined;
       }
 
       const storedCurrency =
@@ -3478,6 +3513,9 @@ export class TradeService extends CustomDataService {
               lotSize: parseNumber(frontmatterData.lotSize),
               pipValue: parseNumber(frontmatterData.pipValue),
               pipSize: parseNumber(frontmatterData.pipSize),
+              forexPnlConversionRate: parseNumber(
+                frontmatterData.forexPnlConversionRate
+              ),
             };
 
             const newPnL = calculatePnL(pnlData);
@@ -4332,11 +4370,6 @@ export class TradeService extends CustomDataService {
   }
 
   
-  public async readTradeContent(file: TFile): Promise<string> {
-    return this.app.vault.read(file);
-  }
-
-  
 
   public async extractTradeData(
     file: TFile,
@@ -4475,6 +4508,7 @@ export class TradeService extends CustomDataService {
         'mistakeIds',
         'thesis',
         'images',
+        'imageAnnotations',
         'tags',
         'assetType',
         'exchange',
@@ -4513,6 +4547,11 @@ export class TradeService extends CustomDataService {
         'currency',
         'fxRate',
         'fxRateBaseCurrency',
+        'forexQuoteCurrency',
+        'forexPnlConversionRate',
+        'forexPnlConversionBaseCurrency',
+        'forexPnlConversionRateDate',
+        'forexPnlConversionRateSource',
         'brokerBaseCurrencyPnl',
         'brokerBaseCurrency',
         'brokerBaseCurrencyPnlSource',
@@ -4855,6 +4894,7 @@ export class TradeService extends CustomDataService {
               (image): image is string => typeof image === 'string'
             )
           : [],
+        imageAnnotations: parseImageAnnotations(frontmatter.imageAnnotations),
         customTags,
         tags: customTags,
         assetType:
@@ -4919,6 +4959,26 @@ export class TradeService extends CustomDataService {
         fxRateBaseCurrency:
           typeof frontmatter.fxRateBaseCurrency === 'string'
             ? frontmatter.fxRateBaseCurrency
+            : undefined,
+        forexQuoteCurrency:
+          typeof frontmatter.forexQuoteCurrency === 'string'
+            ? frontmatter.forexQuoteCurrency
+            : undefined,
+        forexPnlConversionRate: this.parseFiniteNumber(
+          frontmatter.forexPnlConversionRate
+        ),
+        forexPnlConversionBaseCurrency:
+          typeof frontmatter.forexPnlConversionBaseCurrency === 'string'
+            ? frontmatter.forexPnlConversionBaseCurrency
+            : undefined,
+        forexPnlConversionRateDate:
+          typeof frontmatter.forexPnlConversionRateDate === 'string'
+            ? frontmatter.forexPnlConversionRateDate
+            : undefined,
+        forexPnlConversionRateSource:
+          frontmatter.forexPnlConversionRateSource === 'automatic' ||
+          frontmatter.forexPnlConversionRateSource === 'manual'
+            ? frontmatter.forexPnlConversionRateSource
             : undefined,
         brokerBaseCurrencyPnl: this.parseFiniteNumber(
           frontmatter.brokerBaseCurrencyPnl

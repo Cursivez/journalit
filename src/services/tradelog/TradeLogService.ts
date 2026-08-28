@@ -1,7 +1,6 @@
 
 
 import { TradeService } from '../trade/TradeService';
-import { ServiceManager } from '../ServiceManager';
 import {
   formatDateDisplay,
   getQuarter,
@@ -25,20 +24,23 @@ import {
   SELECTABLE_TRADE_TYPES_COUNT,
 } from './types';
 import {
+  getCurrentRealizedPnL,
   getTradeDisplayStatusWithContext,
-  getEffectivePnL,
-  getPartialExitInfo,
-  hasRealizedStoredPnL,
+  hasDerivableCurrentRealizedPnL,
   isPnlContributingTrade,
 } from '../../utils/tradeStatusUtils';
-import { calculateTotalDividends } from '../../utils/pnlCalculation';
+import {
+  calculateTotalDividends,
+  resolveRealizedOrTerminalPnLResolution,
+  type RealizedOrTerminalPnLResolution,
+} from '../../utils/pnlCalculation';
 import {
   areSnapshotKeysClaimedByCustomFields,
   calculateSnapshotRealizedPnL,
   calculateUnrealizedPnL,
 } from '../../utils/unrealizedPnl';
 import { calculateEffectiveRMultiple } from '../../utils/formatting';
-import { eventBus } from '../events';
+import { eventBus } from '../events/EventBus';
 import type {
   TradeChangedPayload,
   TradeCommittedPayload,
@@ -258,6 +260,10 @@ export class TradeLogService {
   
   private tradeCommitRevisionToken: number = 0;
   private missedTradeAccountOptionsCache: string[] | null = null;
+  private resolvedTradePnLCache = new WeakMap<
+    object,
+    RealizedOrTerminalPnLResolution
+  >();
 
   
   private cachedTradingDayCutoffTime: string | null = null;
@@ -331,13 +337,14 @@ export class TradeLogService {
 
   constructor(plugin: JournalitPlugin) {
     this.plugin = plugin;
-    this.tradeService = ServiceManager.getInstance(
-      plugin.app,
-      plugin
-    ).getTradeService();
+    this.tradeService = plugin.tradeService;
 
     
     this.cacheTradingDaySettings();
+  }
+
+  connect(): void {
+    if (this.unsubscribeFns.length > 0) return;
 
     const bumpTradeRevisionAndClearCache = () => {
       this.tradeCommitRevisionToken++;
@@ -521,7 +528,7 @@ export class TradeLogService {
               account: Array.isArray(copiedRow.account)
                 ? String(copiedRow.account[0] || '')
                 : String(copiedRow.account || ''),
-              pnl: getEffectivePnL(copiedRow),
+              pnl: this.getResolvedTradePnL(copiedRow),
               multiplier: copiedRow.copyMultiplier ?? 0,
             })),
           }
@@ -660,6 +667,7 @@ export class TradeLogService {
       return [];
     }
 
+    const resolvedBasePnL = this.getResolvedTradePnLResolution(baseTrade);
     const copiedRows: TradeLogData[] = [];
     for (const [copyAccountName, copyMetadata] of Object.entries(
       accountMetadata
@@ -706,17 +714,17 @@ export class TradeLogService {
       const copyBaseTradeKey = String(
         baseTrade.filePath ?? baseTrade.path ?? baseTrade.tradeId ?? 'trade'
       );
-      const {
-        pnl: copiedPnL,
-        commission,
-        adjustment,
-      } = calculateCopiedTradePnL({
+      const copyPnlResult = calculateCopiedTradePnL({
         plugin: this.plugin,
         baseTrade: { ...baseTrade, copyBaseTradeKey },
         copyAccountName,
         copyAccountLookupKey,
         multiplier: copyPeriod.multiplier,
+        resolvedBaseNetPnL: resolvedBasePnL.pnl ?? undefined,
+        resolvedBaseFinancialAdjustmentRatio:
+          resolvedBasePnL.financialAdjustmentRatio,
       });
+      const { pnl: copiedPnL, commission, adjustment } = copyPnlResult;
       const baseRiskAmount =
         typeof baseTrade.riskAmount === 'number'
           ? baseTrade.riskAmount
@@ -734,16 +742,18 @@ export class TradeLogService {
         filePath: copiedTradeRowId,
         path: copiedTradeRowId,
         account: [copyAccountName],
-        pnl: copiedPnL,
+        pnl: copiedPnL ?? undefined,
         directPnL:
           typeof baseTrade.directPnL === 'number'
             ? baseTrade.directPnL * copyPeriod.multiplier
             : baseTrade.directPnL,
         riskAmount: copiedRiskAmount,
         rMultiple:
-          copiedRiskAmount && copiedRiskAmount !== 0
+          copiedPnL !== null && copiedRiskAmount && copiedRiskAmount !== 0
             ? copiedPnL / copiedRiskAmount
-            : baseTrade.rMultiple,
+            : copiedPnL === null
+              ? undefined
+              : baseTrade.rMultiple,
         commission: commission ?? 0,
         fees: 0,
         currency: baseTrade.currency ?? copyMetadata.currency,
@@ -1281,7 +1291,7 @@ export class TradeLogService {
     pnl: number;
     includesUnrealized: boolean;
   } {
-    const realizedPnL = getEffectivePnL(trade);
+    const realizedPnL = this.getResolvedTradePnL(trade);
     if (
       !this.plugin.settings.trade.includeUnrealizedPnLInCalculations ||
       snapshotKeysClaimedByCustomFields
@@ -1294,12 +1304,13 @@ export class TradeLogService {
       return { pnl: realizedPnL, includesUnrealized: false };
     }
 
-    const partialExitInfo = getPartialExitInfo(trade);
-    const currentRealizedPnL = hasRealizedStoredPnL(trade)
-      ? realizedPnL
-      : partialExitInfo.isPartialExit
-        ? partialExitInfo.realizedPnL + calculateTotalDividends(trade)
-        : 0;
+    const currentRealizedPnL = getCurrentRealizedPnL(
+      trade,
+      calculateTotalDividends(trade)
+    );
+    if (currentRealizedPnL === null) {
+      return { pnl: realizedPnL, includesUnrealized: false };
+    }
     const displayedRealizedPnL = calculateSnapshotRealizedPnL(
       trade,
       currentRealizedPnL
@@ -1308,6 +1319,39 @@ export class TradeLogService {
       pnl: displayedRealizedPnL + unrealizedPnL,
       includesUnrealized: true,
     };
+  }
+
+  private getMetricContributionTrades(
+    trades: TradeLogData[],
+    snapshotKeysClaimedByCustomFields: boolean
+  ): {
+    pnlContributingTrades: TradeLogData[];
+    outcomeContributingTrades: TradeLogData[];
+  } {
+    const pnlContributingTrades: TradeLogData[] = [];
+    const outcomeContributingTrades: TradeLogData[] = [];
+
+    for (const trade of trades) {
+      if (trade.isMissedTrade) continue;
+
+      const contributesStoredPnL = isPnlContributingTrade(trade);
+      const includesUnrealized = this.getGroupedDisplayPnL(
+        trade,
+        snapshotKeysClaimedByCustomFields
+      ).includesUnrealized;
+      if (
+        contributesStoredPnL ||
+        hasDerivableCurrentRealizedPnL(trade) ||
+        includesUnrealized
+      ) {
+        pnlContributingTrades.push(trade);
+      }
+      if (contributesStoredPnL || includesUnrealized) {
+        outcomeContributingTrades.push(trade);
+      }
+    }
+
+    return { pnlContributingTrades, outcomeContributingTrades };
   }
 
   
@@ -1329,18 +1373,15 @@ export class TradeLogService {
       areSnapshotKeysClaimedByCustomFields(
         this.plugin.customFieldsService?.getFields()
       );
-    const pnlContributingTrades = trades.filter((trade) => {
-      if (trade.isMissedTrade) return false;
-      return (
-        isPnlContributingTrade(trade) ||
-        this.getGroupedDisplayPnL(trade, snapshotKeysClaimedByCustomFields)
-          .includesUnrealized
+    const { pnlContributingTrades, outcomeContributingTrades } =
+      this.getMetricContributionTrades(
+        trades,
+        snapshotKeysClaimedByCustomFields
       );
-    });
 
     let wins = 0;
     let losses = 0;
-    for (const trade of pnlContributingTrades) {
+    for (const trade of outcomeContributingTrades) {
       const outcome = this.getOutcomeFromPnL(trade);
       if (outcome === 'win') {
         wins++;
@@ -1355,7 +1396,7 @@ export class TradeLogService {
         this.getGroupedDisplayPnL(trade, snapshotKeysClaimedByCustomFields).pnl,
       0
     );
-    const totalRMultiple = pnlContributingTrades.reduce((sum, trade) => {
+    const totalRMultiple = outcomeContributingTrades.reduce((sum, trade) => {
       const displayPnL = this.getGroupedDisplayPnL(
         trade,
         snapshotKeysClaimedByCustomFields
@@ -1429,18 +1470,15 @@ export class TradeLogService {
       areSnapshotKeysClaimedByCustomFields(
         this.plugin.customFieldsService?.getFields()
       );
-    const pnlContributingTrades = trades.filter((trade) => {
-      if (trade.isMissedTrade) return false;
-      return (
-        isPnlContributingTrade(trade) ||
-        this.getGroupedDisplayPnL(trade, snapshotKeysClaimedByCustomFields)
-          .includesUnrealized
+    const { pnlContributingTrades, outcomeContributingTrades } =
+      this.getMetricContributionTrades(
+        trades,
+        snapshotKeysClaimedByCustomFields
       );
-    });
 
     let wins = 0;
     let losses = 0;
-    for (const trade of pnlContributingTrades) {
+    for (const trade of outcomeContributingTrades) {
       const outcome = this.getOutcomeFromPnL(trade);
       if (outcome === 'win') {
         wins++;
@@ -1455,7 +1493,7 @@ export class TradeLogService {
         this.getGroupedDisplayPnL(trade, snapshotKeysClaimedByCustomFields).pnl,
       0
     );
-    const totalRMultiple = pnlContributingTrades.reduce((sum, trade) => {
+    const totalRMultiple = outcomeContributingTrades.reduce((sum, trade) => {
       const displayPnL = this.getGroupedDisplayPnL(
         trade,
         snapshotKeysClaimedByCustomFields
@@ -1541,6 +1579,24 @@ export class TradeLogService {
   }
 
   
+  private getResolvedTradePnLResolution(
+    trade: PartialTradeFrontmatter & Record<string, unknown>
+  ): RealizedOrTerminalPnLResolution {
+    const cached = this.resolvedTradePnLCache.get(trade);
+    if (cached !== undefined) return cached;
+
+    const resolved = resolveRealizedOrTerminalPnLResolution(trade);
+    this.resolvedTradePnLCache.set(trade, resolved);
+    return resolved;
+  }
+
+  private getResolvedTradePnL(
+    trade: PartialTradeFrontmatter & Record<string, unknown>
+  ): number {
+    return this.getResolvedTradePnLResolution(trade).pnl ?? 0;
+  }
+
+  
   private getTradeStatus(
     trade: TradeLogData
   ):
@@ -1553,11 +1609,15 @@ export class TradeLogService {
     | 'partially_closed'
     | 'cancelled'
     | 'backtest' {
-    return getTradeDisplayStatusWithContext(trade, this.plugin.settings.trade);
+    return getTradeDisplayStatusWithContext(
+      trade,
+      this.plugin.settings.trade,
+      () => this.getResolvedTradePnL(trade)
+    );
   }
 
   private getOutcomeFromPnL(trade: TradeLogData): 'win' | 'loss' | 'breakeven' {
-    const effectivePnL = getEffectivePnL(trade);
+    const effectivePnL = this.getResolvedTradePnL(trade);
     const breakEvenBalance =
       trade.breakEvenAccountCurrentBalanceTotal ??
       trade.breakEvenAccountCurrentBalance;
@@ -1924,6 +1984,10 @@ export class TradeLogService {
   clearCache(): void {
     this.cache.clear();
     this.tradingDayStringCache.clear();
+    this.resolvedTradePnLCache = new WeakMap<
+      object,
+      RealizedOrTerminalPnLResolution
+    >();
     this.missedTradeAccountOptionsCache = null;
     this.cachedEnrichedTrades = null; 
     this.cachedEnrichedTradesCacheKey = null;
@@ -2006,8 +2070,8 @@ export class TradeLogService {
     let worstPnL = Infinity;
 
     trades.forEach((node: TimeNode) => {
-      const tradeRecord = asTradeLogRecord(node.trade);
-      const pnl = tradeRecord ? getEffectivePnL(tradeRecord) : 0;
+      const tradeRecord = node.trade;
+      const pnl = tradeRecord ? this.getResolvedTradePnL(tradeRecord) : 0;
 
       
       if (pnl > 0 && pnl > bestPnL) {
@@ -2025,8 +2089,8 @@ export class TradeLogService {
     
     if (trades.length === 1) {
       const trade = trades[0];
-      const tradeRecord = asTradeLogRecord(trade.trade);
-      const pnl = tradeRecord ? getEffectivePnL(tradeRecord) : 0;
+      const tradeRecord = trade.trade;
+      const pnl = tradeRecord ? this.getResolvedTradePnL(tradeRecord) : 0;
       if (pnl > 0) {
         if (tradeRecord) tradeRecord.performanceIndicator = 'best';
       } else if (pnl < 0) {
@@ -2073,7 +2137,7 @@ export class TradeLogService {
         const tradeStatus = this.getTradeStatus(trade);
         const isOpenTrade =
           tradeStatus === 'open' || tradeStatus === 'partially_closed';
-        const pnl = getEffectivePnL(trade);
+        const pnl = this.getResolvedTradePnL(trade);
         const instrument = trade.instrument || 'Unknown';
 
         const label = `${instrument} - ${formattedDate}${isOpenTrade ? ' (OPEN)' : ''}`;
@@ -2115,7 +2179,7 @@ export class TradeLogService {
         const tradeStatus = this.getTradeStatus(trade);
         const isOpenTrade =
           tradeStatus === 'open' || tradeStatus === 'partially_closed';
-        const pnl = getEffectivePnL(trade);
+        const pnl = this.getResolvedTradePnL(trade);
         const instrument = trade.instrument || 'Unknown';
 
         const label = `${instrument} - ${formattedDate}${isOpenTrade ? ' (OPEN)' : ''}`;
@@ -2339,7 +2403,7 @@ export class TradeLogService {
       const tradeStatus = this.getTradeStatus(trade);
       const isOpenTrade =
         tradeStatus === 'open' || tradeStatus === 'partially_closed';
-      const pnl = getEffectivePnL(trade);
+      const pnl = this.getResolvedTradePnL(trade);
       const instrument = trade.instrument || 'Unknown';
 
       const label = `${instrument} - ${formattedDate}${isOpenTrade ? ' (OPEN)' : ''}`;
@@ -2381,7 +2445,7 @@ export class TradeLogService {
         const tradeStatus = this.getTradeStatus(trade);
         const isOpenTrade =
           tradeStatus === 'open' || tradeStatus === 'partially_closed';
-        const pnl = getEffectivePnL(trade);
+        const pnl = this.getResolvedTradePnL(trade);
         const instrument = trade.instrument || 'Unknown';
 
         
@@ -2667,6 +2731,10 @@ export class TradeLogService {
     
     this.tradingDayStringCache.clear();
     this.cache.clear();
+    this.resolvedTradePnLCache = new WeakMap<
+      object,
+      RealizedOrTerminalPnLResolution
+    >();
     this.latestTradeRevisionById.clear();
     this.pendingLegacyMirrors.clear();
     this.missedTradeAccountOptionsCache = null;

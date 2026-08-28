@@ -82,17 +82,17 @@ export const AccountFilter: React.FC<AccountFilterProps> = React.memo(
     
     const toggleDropdown = useCallback(() => setIsOpen((prev) => !prev), []);
 
+    const selectedAccountsSet = new Set(selectedAccounts);
     return (
       <div
         className="journalit-dashboard-account-filter journalit-responsive-account-filter"
         ref={dropdownRef}
       >
         <div className="journalit-dashboard-account-dropdown">
-          <div
-            className="journalit-dashboard-account-summary"
+          <button
+            type="button"
+            className="journalit-native-button journalit-native-button--unstyled journalit-dashboard-account-summary"
             onClick={toggleDropdown}
-            role="button"
-            tabIndex={0}
             onKeyDown={(e) => {
               if (e.key === 'Enter' || e.key === ' ') {
                 e.preventDefault();
@@ -104,7 +104,7 @@ export const AccountFilter: React.FC<AccountFilterProps> = React.memo(
               {accountSummary}
             </span>
             <span className="dropdown-arrow">{isOpen ? '▲' : '▼'}</span>
-          </div>
+          </button>
 
           {isOpen && (
             <div className="journalit-dashboard-account-options-dropdown">
@@ -142,7 +142,7 @@ export const AccountFilter: React.FC<AccountFilterProps> = React.memo(
                       className="journalit-dashboard-account-option-item"
                       onClick={() => handleAccountChange(account)}
                       role="checkbox"
-                      aria-checked={selectedAccounts.includes(account)}
+                      aria-checked={selectedAccountsSet.has(account)}
                       tabIndex={0}
                       onKeyDown={(e) => {
                         if (e.key === 'Enter' || e.key === ' ') {
@@ -152,10 +152,10 @@ export const AccountFilter: React.FC<AccountFilterProps> = React.memo(
                       }}
                     >
                       <span
-                        className={`journalit-dashboard-account-checkbox${selectedAccounts.includes(account) ? ' checked' : ''}`}
+                        className={`journalit-dashboard-account-checkbox${selectedAccountsSet.has(account) ? ' checked' : ''}`}
                         aria-hidden="true"
                       >
-                        {selectedAccounts.includes(account) ? '✓' : ''}
+                        {selectedAccountsSet.has(account) ? '✓' : ''}
                       </span>
                       <span>{account}</span>
                     </div>

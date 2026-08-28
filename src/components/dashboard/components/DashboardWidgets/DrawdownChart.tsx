@@ -2,7 +2,8 @@
 
 import React from 'react';
 import { BaseWidget, BaseWidgetProps } from './BaseWidget';
-import { SharedDrawdownChart, prepareDrawdownChartData } from '../../../charts';
+import { SharedDrawdownChart } from '../../../charts/SharedDrawdownChart';
+import { prepareDrawdownChartData } from '../../../../utils/chartUtils';
 import { mapTradesToDisplayPnL } from '../../../../utils/pnlUtils';
 import { usePlugin } from '../../../../hooks/usePlugin';
 import { resolveDrawdownCapitalBasis } from '../../../../utils/drawdownAnalytics';

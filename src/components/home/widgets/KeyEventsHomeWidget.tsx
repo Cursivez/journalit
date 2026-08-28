@@ -12,9 +12,12 @@ import { TFile } from 'obsidian';
 import type JournalitPlugin from '../../../main';
 import type { NewsEvent } from '../../../services/weekly/types';
 import type { ReviewChangedPayload } from '../../../services/events/types';
+import { useBackendProEntitlement } from '../../../hooks/useBackendProEntitlement';
 import { useEventBus } from '../../../hooks/useEventBus';
 import { ChevronRight } from '../../shared/icons/ObsidianIcon';
-import { SkeletonBox, SkeletonText } from '../../shared';
+import { KeyEventsCalendarButton } from '../../shared/keyEvents/KeyEventsCalendarButton';
+import { SkeletonBox } from '../../shared/SkeletonBox';
+import { SkeletonText } from '../../shared/SkeletonText';
 import { t } from '../../../lang/helpers';
 import {
   compareKeyEventDays,
@@ -22,6 +25,10 @@ import {
   getKeyEventDayLabel,
   isKeyEventDayPast,
 } from '../../../utils/keyEvents';
+import {
+  formatIsoTimeOfDay,
+  getUse24HourTimeSetting,
+} from '../../../utils/timeFormat';
 
 interface KeyEventsHomeWidgetProps {
   plugin: JournalitPlugin;
@@ -44,6 +51,8 @@ const KeyEventsHomeWidgetComponent: React.FC<KeyEventsHomeWidgetProps> = ({
   const [currentDate, setCurrentDate] = useState<Date | null>(null);
   const isMountedRef = useRef(false);
   const weeklyReviewPathRef = useRef<string | null>(null);
+  const use24HourTime = getUse24HourTimeSetting(plugin);
+  const { isPro } = useBackendProEntitlement(plugin, 'home key events widget');
 
   const loadEvents = useCallback(async (): Promise<void> => {
     try {
@@ -164,38 +173,39 @@ const KeyEventsHomeWidgetComponent: React.FC<KeyEventsHomeWidgetProps> = ({
     return groups;
   }, [sortedEvents]);
 
-  const handleKeyDown = (event: React.KeyboardEvent<HTMLDivElement>): void => {
-    if (event.target !== event.currentTarget) return;
-    if (event.key !== 'Enter' && event.key !== ' ') return;
-    event.preventDefault();
-    void openWeeklyReview();
-  };
-
   return (
-    <div
-      className="journalit-home-key-events"
-      role="button"
-      tabIndex={0}
-      aria-label={t('home.widget.key-events.open-aria')}
-      onClick={() => void openWeeklyReview()}
-      onKeyDown={handleKeyDown}
-    >
+    <div className="journalit-home-key-events">
       <div className="journalit-home-key-events__header">
-        <div className="journalit-home-key-events__header-title">
-          <span className="journalit-home-widget__eyebrow">
-            {t('widget.key-events.title')}
-          </span>
-          {!loading && events.length > 0 && (
-            <span className="journalit-home-key-events__count">
-              {events.length}
+        <button
+          type="button"
+          className="journalit-native-button journalit-native-button--unstyled journalit-home-key-events__open"
+          aria-label={t('home.widget.key-events.open-aria')}
+          onClick={() => void openWeeklyReview()}
+        >
+          <span className="journalit-home-key-events__header-title">
+            <span className="journalit-home-widget__eyebrow">
+              {t('widget.key-events.title')}
             </span>
-          )}
-        </div>
-        <ChevronRight
-          className="journalit-home-key-events__chevron"
-          size={15}
-          aria-hidden="true"
-        />
+            {!loading && events.length > 0 && (
+              <span className="journalit-home-key-events__count">
+                {events.length}
+              </span>
+            )}
+          </span>
+          <ChevronRight
+            className="journalit-home-key-events__chevron"
+            size={15}
+            aria-hidden="true"
+          />
+        </button>
+        {isPro && (
+          <div className="journalit-home-key-events__header-actions">
+            <KeyEventsCalendarButton
+              plugin={plugin}
+              className="journalit-home-key-events__calendar"
+            />
+          </div>
+        )}
       </div>
 
       {loading ? (
@@ -237,6 +247,19 @@ const KeyEventsHomeWidgetComponent: React.FC<KeyEventsHomeWidgetProps> = ({
               </div>
               {group.events.map((event) => {
                 const color = getKeyEventColor(event.color);
+                
+                
+                
+                const scheduledTime = formatIsoTimeOfDay(
+                  event.time,
+                  use24HourTime
+                );
+                const trailingText =
+                  event.eventType === 'holiday'
+                    ? t('view.economic-calendar.all-day')
+                    : event.source
+                      ? scheduledTime || event.notes
+                      : event.notes || scheduledTime;
 
                 return (
                   <div
@@ -249,9 +272,9 @@ const KeyEventsHomeWidgetComponent: React.FC<KeyEventsHomeWidgetProps> = ({
                     <div className="journalit-home-key-events__item-title">
                       {event.event}
                     </div>
-                    {event.notes && (
+                    {trailingText && (
                       <span className="journalit-home-key-events__item-time">
-                        {event.notes}
+                        {trailingText}
                       </span>
                     )}
                   </div>

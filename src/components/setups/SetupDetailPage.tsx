@@ -390,12 +390,12 @@ export const SetupPlaybookPanel: React.FC<{
             imagePath={fullscreenPlaybookMediaPath}
             onClose={() => setFullscreenPlaybookMediaPath(null)}
             useResolveMediaPath
-            sourcePath={selectedPlaybookNotePath}
+            sourcePath={fullscreenPlaybookMediaPath}
             navigationContext={{
               images: [fullscreenPlaybookMediaPath],
               currentIndex: 0,
               onNavigate: () => undefined,
-              sourcePath: selectedPlaybookNotePath,
+              sourcePath: fullscreenPlaybookMediaPath,
             }}
           />
         </FullscreenPortal>
@@ -586,6 +586,16 @@ export const SetupBriefPanel: React.FC<{
                         sourcePath: setup.filePath ?? '',
                       })
                     }
+                    onFocus={(event) =>
+                      triggerSetupLinkedNoteHover({
+                        plugin,
+                        event: new MouseEvent('mouseover'),
+                        hoverParent,
+                        targetEl: event.currentTarget,
+                        linktext: note,
+                        sourcePath: setup.filePath ?? '',
+                      })
+                    }
                   >
                     {note}
                   </a>
@@ -593,10 +603,9 @@ export const SetupBriefPanel: React.FC<{
               ))}
               {hasHiddenNotes ? (
                 <li>
-                  <span
-                    className="journalit-setups-brief__more-note"
-                    role="button"
-                    tabIndex={0}
+                  <button
+                    type="button"
+                    className="journalit-native-button journalit-native-button--unstyled journalit-setups-brief__more-note"
                     onClick={() =>
                       openSetupLinkedNotesModal(
                         plugin,
@@ -619,7 +628,7 @@ export const SetupBriefPanel: React.FC<{
                     {t('setups.view.detail.brief.more', {
                       count: String(hiddenNotes.length),
                     })}
-                  </span>
+                  </button>
                 </li>
               ) : null}
             </ul>

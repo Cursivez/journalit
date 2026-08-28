@@ -57,6 +57,21 @@ import { SessionMistakesWidget } from '../reviewV2/widgets/SessionMistakesWidget
 import { PreviousTradingDayContextWidget } from '../reviewV2/widgets/PreviousTradingDayContextWidget';
 import { WeeklyDRCContextWidget } from '../reviewV2/widgets/WeeklyDRCContextWidget';
 import { TradeReviewWidget } from '../reviewV2/widgets/TradeReviewWidget';
+
+const previewWidgetIds = new WeakMap<WidgetPlacement, number>();
+let nextPreviewWidgetId = 1;
+
+const getPreviewWidgetKey = (widget: WidgetPlacement): string => {
+  if (widget.id) return `${widget.type}-${widget.id}`;
+
+  let previewId = previewWidgetIds.get(widget);
+  if (previewId === undefined) {
+    previewId = nextPreviewWidgetId++;
+    previewWidgetIds.set(widget, previewId);
+  }
+  return `${widget.type}-preview-${previewId}`;
+};
+
 export const TEMPLATE_PREVIEW_WIDGET_HOVER_STYLES = `
           .journalit-template-builder-container .template-preview-widget {
             position: relative;
@@ -106,17 +121,17 @@ const getDemonTrackerPreviewNoteType = (
 };
 
 
+const formatName = (type: string) => {
+  return type
+    .split('-')
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
+};
+
 const WidgetPlaceholder: React.FC<{
   widgetType: string;
   description?: string;
 }> = ({ widgetType, description }) => {
-  const formatName = (type: string) => {
-    return type
-      .split('-')
-      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-      .join(' ');
-  };
-
   return (
     <div className="template-preview-placeholder">
       <div
@@ -870,7 +885,7 @@ export const TemplatePreview: React.FC<TemplatePreviewProps> = React.memo(
 
               return (
                 <Tooltip
-                  key={`${widget.type}-${widget.id || index}`}
+                  key={getPreviewWidgetKey(widget)}
                   content={
                     <WidgetTooltipContent
                       name={widgetName}

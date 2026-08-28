@@ -10,7 +10,7 @@ import {
   AccountTypeMetrics,
 } from './utils';
 import { WithdrawalBreakdownTooltip } from './WithdrawalBreakdownTooltip';
-import { Tooltip } from '../../shared';
+import { Tooltip } from '../../shared/Tooltip';
 import { AccountData } from '../../../services/account/types';
 import { useCurrency } from '../../../contexts/CurrencyContext';
 import { useDisplayFormatter } from '../../../hooks/useDisplayPolicy';

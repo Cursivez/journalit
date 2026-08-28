@@ -3,6 +3,40 @@
 
 
 export const SHARED_COMPONENT_STYLES = `
+  
+  button:where(.journalit-native-button) {
+    appearance: none;
+  }
+
+  button.journalit-native-button--unstyled {
+    -webkit-appearance: none;
+    appearance: none;
+    height: auto;
+    min-height: 0;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: none;
+    box-shadow: none;
+    color: inherit;
+    font: inherit;
+    text-align: inherit;
+    white-space: normal;
+    cursor: pointer;
+  }
+
+  button.journalit-native-button--unstyled:hover,
+  button.journalit-native-button--unstyled:active {
+    background: none;
+    box-shadow: none;
+  }
+
+  button.journalit-native-button--unstyled:focus-visible {
+    outline: 2px solid var(--interactive-accent);
+    outline-offset: 2px;
+  }
+
   .journalit-tooltip__sr-only {
     position: absolute;
     width: 1px;
@@ -12,12 +46,6 @@ export const SHARED_COMPONENT_STYLES = `
     overflow: hidden;
     white-space: nowrap;
     border: 0;
-  }
-
-  .journalit-multi-select-dropdown-filter__trigger,
-  .journalit-multi-select-dropdown-filter__reset,
-  .journalit-multi-select-dropdown-filter__option {
-    appearance: none;
   }
 
   .journalit-sticky-header-clone {
@@ -477,6 +505,11 @@ export const SHARED_COMPONENT_STYLES = `
     text-align: left;
   }
 
+  button.journalit-native-button--unstyled.journalit-embedded-markdown-note__media-button {
+    cursor: zoom-in;
+    text-align: left;
+  }
+
   .journalit-embedded-markdown-note__media-button:focus-visible {
     outline: 2px solid var(--interactive-accent);
     outline-offset: 2px;
@@ -798,7 +831,7 @@ export const SHARED_COMPONENT_STYLES = `
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
+  justify-content: safe center;
   padding: 24px;
   text-align: center;
   background-color: var(--background-secondary);
@@ -841,30 +874,34 @@ export const SHARED_COMPONENT_STYLES = `
     color: var(--text-muted);
   }
   
-  .journalit-empty-state-action-button {
-    background-color: var(--interactive-accent) !important;
-    color: var(--text-on-accent) !important;
-    border: none !important;
-    border-radius: 6px !important;
-    padding: 0 16px !important;
-    font-size: 14px !important;
-    font-weight: 600 !important;
-    cursor: pointer !important;
-    transition: all 0.2s ease !important;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
-    margin-top: 16px !important;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    min-width: 120px !important;
-    height: 36px !important;
-    line-height: 1 !important;
+  .journalit-empty-state .journalit-empty-state-actions button.journalit-empty-state-action-button {
+    background-color: var(--interactive-accent);
+    color: var(--text-on-accent);
+    border: none;
+    border-radius: 6px;
+    padding: 0 16px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition:
+      background-color 0.2s ease,
+      transform 0.2s ease,
+      box-shadow 0.2s ease;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    margin-top: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 120px;
+    height: 36px;
+    line-height: 1;
   }
   
-  .journalit-empty-state-action-button:hover {
-    background-color: var(--interactive-accent-hover) !important;
-    transform: translateY(-1px) !important;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15) !important;
+  .journalit-empty-state .journalit-empty-state-actions button.journalit-empty-state-action-button:hover,
+  .journalit-empty-state .journalit-empty-state-actions button.journalit-empty-state-action-button:focus-visible {
+    background-color: var(--interactive-accent-hover);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
   }
 
   .journalit-empty-state-action-icon {
@@ -872,6 +909,37 @@ export const SHARED_COMPONENT_STYLES = `
     display: inline-flex;
     align-items: center;
     justify-content: center;
+  }
+
+  .journalit-empty-state-actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 8px;
+  }
+
+  .journalit-empty-state button.journalit-empty-state-secondary-action-button {
+    min-width: 120px;
+    height: 36px;
+    margin-top: 16px;
+    padding: 0 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 6px;
+    background-color: var(--background-secondary);
+    color: var(--text-normal);
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 1;
+    cursor: pointer;
+  }
+
+  .journalit-empty-state button.journalit-empty-state-secondary-action-button:hover,
+  .journalit-empty-state button.journalit-empty-state-secondary-action-button:focus-visible {
+    border-color: var(--background-modifier-border-hover);
+    background-color: var(--background-modifier-hover);
   }
 
   
@@ -1777,6 +1845,17 @@ export const SHARED_COMPONENT_STYLES = `
   }
 
   
+  button.journalit-native-button.tooltip-trigger {
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+    color: inherit;
+    font: inherit;
+    text-align: inherit;
+  }
+
   .tooltip-trigger--block {
     display: block;
     width: 100%;

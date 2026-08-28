@@ -16,6 +16,7 @@ import {
   ChevronRight,
   Folder,
 } from '../shared/icons/ObsidianIcon';
+import { mergeClassNames } from '../../utils/classNames';
 
 
 const CLASS_NAMES = {
@@ -232,23 +233,17 @@ function useFolderBrowserModel({
   );
 
   
-  const handleToggleExpansion = useCallback(
-    (folderPath: string, event: React.MouseEvent) => {
-      event.preventDefault();
-      event.stopPropagation();
-
-      setExpandedFolders((prev) => {
-        const newSet = new Set(prev);
-        if (newSet.has(folderPath)) {
-          newSet.delete(folderPath);
-        } else {
-          newSet.add(folderPath);
-        }
-        return newSet;
-      });
-    },
-    []
-  );
+  const toggleExpansion = useCallback((folderPath: string) => {
+    setExpandedFolders((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(folderPath)) {
+        newSet.delete(folderPath);
+      } else {
+        newSet.add(folderPath);
+      }
+      return newSet;
+    });
+  }, []);
 
   
   const handleClear = useCallback(() => {
@@ -268,8 +263,12 @@ function useFolderBrowserModel({
 
       if (folderItem && browserRef.current?.contains(target)) {
         
-        const isToggle = target.closest('[data-folder-toggle="true"]');
-        if (isToggle) return; 
+        const toggle = target.closest('[data-folder-toggle="true"]');
+        if (toggle) {
+          const folderPath = toggle.getAttribute('data-folder-path');
+          if (folderPath) toggleExpansion(folderPath);
+          return;
+        }
 
         isSelectingFolder.current = true;
 
@@ -297,7 +296,7 @@ function useFolderBrowserModel({
         true
       );
     };
-  }, [handleSelect]);
+  }, [handleSelect, toggleExpansion]);
 
   
   useEffect(() => {
@@ -358,14 +357,47 @@ function useFolderBrowserModel({
         case 'ArrowDown':
           e.preventDefault();
           setIsOpen(true);
+          if (folderCount === 0) break;
           setHighlightedIndex((prev) => (prev + 1) % folderCount);
           break;
 
         case 'ArrowUp':
           e.preventDefault();
           setIsOpen(true);
+          if (folderCount === 0) break;
           setHighlightedIndex((prev) => (prev - 1 + folderCount) % folderCount);
           break;
+
+        case 'ArrowRight': {
+          if (!isOpen) break;
+          const item = filteredFolders[highlightedIndex];
+          if (!item?.hasChildren || item.isExpanded) break;
+          e.preventDefault();
+          toggleExpansion(item.path);
+          break;
+        }
+
+        case 'ArrowLeft': {
+          if (!isOpen) break;
+          const item = filteredFolders[highlightedIndex];
+          if (!item) break;
+
+          if (item.hasChildren && item.isExpanded) {
+            e.preventDefault();
+            toggleExpansion(item.path);
+            break;
+          }
+
+          const parentPath = item.folder.parent?.path;
+          const parentIndex = filteredFolders.findIndex(
+            (folder) => folder.path === parentPath
+          );
+          if (parentIndex >= 0) {
+            e.preventDefault();
+            setHighlightedIndex(parentIndex);
+          }
+          break;
+        }
 
         case 'Enter':
           e.preventDefault();
@@ -396,8 +428,10 @@ function useFolderBrowserModel({
       highlightedIndex,
       handleSelect,
       inputValue,
+      isOpen,
       selectedPath,
       onChange,
+      toggleExpansion,
     ]
   );
 
@@ -468,24 +502,18 @@ function useFolderBrowserModel({
 
         
         {item.hasChildren ? (
-          <button
-            type="button"
+          <span
             className="journalit-folder-browser-toggle"
-            onClick={(e) => handleToggleExpansion(item.path, e)}
             data-folder-toggle="true"
-            aria-expanded={item.isExpanded}
+            data-folder-path={item.path}
+            aria-hidden="true"
           >
             {item.isExpanded ? (
               <ChevronDown aria-hidden="true" size={14} />
             ) : (
               <ChevronRight aria-hidden="true" size={14} />
             )}
-            <span className="journalit-folder-browser-sr-only">
-              {item.isExpanded
-                ? t('ui.folder-browser.collapse-folder')
-                : t('ui.folder-browser.expand-folder')}
-            </span>
-          </button>
+          </span>
         ) : (
           <span
             aria-hidden="true"
@@ -506,7 +534,7 @@ function useFolderBrowserModel({
         </span>
       </li>
     ));
-  }, [filteredFolders, highlightedIndex, handleToggleExpansion]);
+  }, [filteredFolders, highlightedIndex]);
 
   
   useEffect(() => {}, []);
@@ -614,7 +642,10 @@ export const FolderBrowser: React.FC<FolderBrowserProps> = ({
         {selectedPath && (
           <button
             type="button"
-            className={`${CLASS_NAMES.CLEAR_BUTTON} clickable-icon`}
+            className={mergeClassNames(
+              'journalit-native-button',
+              `${CLASS_NAMES.CLEAR_BUTTON} clickable-icon`
+            )}
             onClick={handleClear}
             aria-label={t('ui.folder-browser.clear-aria')}
           >

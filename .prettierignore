@@ -1,3 +1,5 @@
 src/lang/compressedLocales.generated.ts
 
 src/services/csv/xlsxCompressed.generated.ts
+
+src/data/compressedData.generated.ts

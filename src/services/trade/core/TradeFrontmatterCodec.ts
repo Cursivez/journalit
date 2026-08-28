@@ -5,6 +5,7 @@ import { CustomFieldDefinition } from '../../../types/customFields';
 import { shouldShowTradeDividends } from '../../../components/forms/trade/types';
 import { areSnapshotKeysClaimedByCustomFields } from '../../../utils/unrealizedPnl';
 import { TradeMutationInput } from './types';
+import { serializeImageAnnotationsForFrontmatter } from '../../../utils/imageAnnotations';
 
 export const CANONICAL_EXECUTION_MIGRATION_VERSION =
   '2026-05-canonical-execution-v2';
@@ -326,6 +327,24 @@ export function buildTradeFrontmatter(
   if (data.fxRateBaseCurrency !== undefined) {
     frontmatterData.fxRateBaseCurrency = data.fxRateBaseCurrency;
   }
+  if (data.forexQuoteCurrency !== undefined) {
+    frontmatterData.forexQuoteCurrency = data.forexQuoteCurrency;
+  }
+  if (data.forexPnlConversionRate !== undefined) {
+    frontmatterData.forexPnlConversionRate = data.forexPnlConversionRate;
+  }
+  if (data.forexPnlConversionBaseCurrency !== undefined) {
+    frontmatterData.forexPnlConversionBaseCurrency =
+      data.forexPnlConversionBaseCurrency;
+  }
+  if (data.forexPnlConversionRateDate !== undefined) {
+    frontmatterData.forexPnlConversionRateDate =
+      data.forexPnlConversionRateDate;
+  }
+  if (data.forexPnlConversionRateSource !== undefined) {
+    frontmatterData.forexPnlConversionRateSource =
+      data.forexPnlConversionRateSource;
+  }
   if (data.brokerBaseCurrencyPnl !== undefined) {
     frontmatterData.brokerBaseCurrencyPnl = data.brokerBaseCurrencyPnl;
   }
@@ -386,6 +405,11 @@ export function buildTradeFrontmatter(
     frontmatterData.images = data.images.length
       ? normalizeImageList(data.images)
       : [];
+  }
+  if (data.imageAnnotations !== undefined) {
+    frontmatterData.imageAnnotations = serializeImageAnnotationsForFrontmatter(
+      data.imageAnnotations
+    );
   }
 
   frontmatterData.tags = normalizeTagList(data.tags || []);
@@ -907,6 +931,7 @@ function appendYamlField(
   if (value === undefined || value === null) {
     return;
   }
+  const renderedKey = formatYamlKey(key);
 
   if (Array.isArray(value)) {
     const useInlineArrays =
@@ -914,7 +939,7 @@ function appendYamlField(
       (options.arrayStyle === 'inline' || options.inlineArrayKeys.has(key));
 
     if (value.length === 0) {
-      lines.push(`${indent}${key}: []`);
+      lines.push(`${indent}${renderedKey}: []`);
       return;
     }
 
@@ -926,11 +951,11 @@ function appendYamlField(
             : serializeYamlInlineValue(item)
         )
         .join(', ');
-      lines.push(`${indent}${key}: [${rendered}]`);
+      lines.push(`${indent}${renderedKey}: [${rendered}]`);
       return;
     }
 
-    lines.push(`${indent}${key}:`);
+    lines.push(`${indent}${renderedKey}:`);
     value.forEach((item) =>
       appendYamlArrayItem(lines, item, `${indent}  `, options)
     );
@@ -938,14 +963,21 @@ function appendYamlField(
   }
 
   if (isPlainObject(value)) {
-    lines.push(`${indent}${key}:`);
+    const hasSerializableEntries = Object.values(value).some(
+      (nestedValue) => nestedValue !== undefined && nestedValue !== null
+    );
+    if (!hasSerializableEntries) {
+      lines.push(`${indent}${renderedKey}: {}`);
+      return;
+    }
+    lines.push(`${indent}${renderedKey}:`);
     appendYamlObject(lines, value, `${indent}  `, options);
     return;
   }
 
   if (typeof value === 'string' && /\r|\n/.test(value)) {
     lines.push(
-      `${indent}${key}: ${
+      `${indent}${renderedKey}: ${
         options.scalarStyle === 'inline' ? formatYamlBlockScalar(value) : '|-'
       }`
     );
@@ -961,7 +993,7 @@ function appendYamlField(
       : options.scalarStyle === 'inline'
         ? serializeYamlInlineValue(value)
         : formatYamlScalar(value);
-  lines.push(`${indent}${key}: ${scalar}`);
+  lines.push(`${indent}${renderedKey}: ${scalar}`);
 }
 
 function appendYamlArrayItem(
@@ -996,7 +1028,7 @@ function appendYamlArrayItem(
         options.scalarStyle === 'inline'
           ? serializeYamlInlineValue(firstValue)
           : formatYamlScalar(firstValue);
-      lines.push(`${indent}- ${firstKey}: ${scalar}`);
+      lines.push(`${indent}- ${formatYamlKey(firstKey)}: ${scalar}`);
       entries.slice(1).forEach(([nestedKey, nestedValue]) => {
         appendYamlField(lines, nestedKey, nestedValue, `${indent}  `, options);
       });
@@ -1036,6 +1068,10 @@ function appendYamlObject(
 
 function isPlainObject(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+function formatYamlKey(key: string): string {
+  return formatYamlScalar(key);
 }
 
 function formatYamlScalar(value: unknown): string {

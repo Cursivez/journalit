@@ -26,8 +26,8 @@ import { BestWorstCard } from './shared/BestWorstCard';
 import { InvalidContextMessage } from './InvalidContextMessage';
 import { TradesPreviewData } from '../../../types/reviewV2';
 import { useReviewTrades } from '../hooks/useReviewData';
-import { useEventBus } from '../../../hooks';
-import { SkeletonBox } from '../../shared';
+import { useEventBus } from '../../../hooks/useEventBus';
+import { SkeletonBox } from '../../shared/SkeletonBox';
 import { getBreakEvenBalanceForDisplayTrade } from './shared/breakEvenDisplayUtils';
 
 type ReviewBestWorstTrade = Record<string, unknown> & {
@@ -103,6 +103,34 @@ interface WeekStats {
     pnl?: number | null;
   }>;
 }
+
+const renderSkeletonCard = (isPositive: boolean, title: string) => (
+  <div>
+    <div className="journalit-reviewv2-bestworst-label">{title}</div>
+    <div
+      className={[
+        'journalit-reviewv2-bestworst-card',
+        isPositive
+          ? 'journalit-reviewv2-bestworst-card--positive'
+          : 'journalit-reviewv2-bestworst-card--negative',
+        'journalit-reviewv2-bestworst-card--preview',
+      ]
+        .filter(Boolean)
+        .join(' ')}
+    >
+      <div className="journalit-reviewv2-bestworst-pnl-col">
+        <SkeletonBox width={70} height={20} borderRadius="4px" />
+      </div>
+      <div className="journalit-reviewv2-bestworst-details">
+        <SkeletonBox width={160} height={16} borderRadius="4px" />
+        <div className="journalit-u-flex journalit-u-gap-8 journalit-u-mt-4">
+          <SkeletonBox width={50} height={12} borderRadius="4px" />
+          <SkeletonBox width={70} height={12} borderRadius="4px" />
+        </div>
+      </div>
+    </div>
+  </div>
+);
 
 export const BestWorstWeeksWidget: React.FC<BestWorstWeeksWidgetProps> =
   React.memo(
@@ -354,34 +382,6 @@ export const BestWorstWeeksWidget: React.FC<BestWorstWeeksWidgetProps> =
       if (loading) {
         const showBoth = Boolean(
           mergedConfig.showBest && mergedConfig.showWorst
-        );
-
-        const renderSkeletonCard = (isPositive: boolean, title: string) => (
-          <div>
-            <div className="journalit-reviewv2-bestworst-label">{title}</div>
-            <div
-              className={[
-                'journalit-reviewv2-bestworst-card',
-                isPositive
-                  ? 'journalit-reviewv2-bestworst-card--positive'
-                  : 'journalit-reviewv2-bestworst-card--negative',
-                'journalit-reviewv2-bestworst-card--preview',
-              ]
-                .filter(Boolean)
-                .join(' ')}
-            >
-              <div className="journalit-reviewv2-bestworst-pnl-col">
-                <SkeletonBox width={70} height={20} borderRadius="4px" />
-              </div>
-              <div className="journalit-reviewv2-bestworst-details">
-                <SkeletonBox width={160} height={16} borderRadius="4px" />
-                <div className="journalit-u-flex journalit-u-gap-8 journalit-u-mt-4">
-                  <SkeletonBox width={50} height={12} borderRadius="4px" />
-                  <SkeletonBox width={70} height={12} borderRadius="4px" />
-                </div>
-              </div>
-            </div>
-          </div>
         );
 
         return (

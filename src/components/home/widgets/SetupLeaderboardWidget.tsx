@@ -4,7 +4,7 @@ import React, { memo, useCallback, useEffect, useMemo, useState } from 'react';
 import { Check, X } from '../../shared/icons/ObsidianIcon';
 import JournalitPlugin from '../../../main';
 import { useEventBus } from '../../../hooks/useEventBus';
-import { eventBus } from '../../../services/events';
+import { eventBus } from '../../../services/events/EventBus';
 import { useDashboardData } from '../../dashboard/context/DashboardDataContext';
 import { useFilteredByPeriod } from '../context/HomePeriodContext';
 import { useCurrency } from '../../../contexts/CurrencyContext';

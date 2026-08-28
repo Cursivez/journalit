@@ -6,6 +6,8 @@ export const UPGRADE_URLS = {
     'https://journalit.co/login?intent=subscribe&billingPeriod=yearly&utm_source=journalit_plugin&utm_medium=product&utm_campaign=pro_upgrade&utm_content=quick_trade_import',
   metatraderSync:
     'https://journalit.co/login?intent=subscribe&billingPeriod=yearly&utm_source=journalit_plugin&utm_medium=product&utm_campaign=pro_upgrade&utm_content=metatrader_sync',
+  economicCalendar:
+    'https://journalit.co/login?intent=subscribe&billingPeriod=yearly&utm_source=journalit_plugin&utm_medium=product&utm_campaign=pro_upgrade&utm_content=economic_calendar',
   genericUpgradeModal:
     'https://journalit.co/login?intent=subscribe&billingPeriod=yearly&utm_source=journalit_plugin&utm_medium=product&utm_campaign=pro_upgrade&utm_content=generic_upgrade_modal',
 } as const;

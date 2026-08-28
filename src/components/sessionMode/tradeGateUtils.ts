@@ -1,119 +1,173 @@
 import { TFile } from 'obsidian';
 import type JournalitPlugin from '../../main';
 import type {
-  TradeGateNode,
-  TradeGateOption,
-  TradeGateOutcomeNode,
-  TradeGateQuestionNode,
+  ResolvedSessionModeWindow,
+  TradeGateOutcomeType,
+  TradeGateQuestion,
+  TradeGateQuestionOption,
   TradeGateRun,
   TradeGateWorkflow,
 } from '../../types/sessionMode';
+import { t } from '../../lang/helpers';
 import { generateUUID } from '../../utils/uuid';
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   Boolean(value) && typeof value === 'object' && !Array.isArray(value);
 
-function getTradeGateNode(
+
+export function getTradeGateQuestion(
   workflow: TradeGateWorkflow,
+  questions: TradeGateQuestion[],
   nodeId: string | undefined
-): TradeGateNode | null {
+): TradeGateQuestion | null {
   if (!nodeId) return null;
-  return workflow.nodes.find((node) => node.id === nodeId) ?? null;
+  const node = workflow.nodes.find((candidate) => candidate.id === nodeId);
+  if (!node) return null;
+  return questions.find((question) => question.id === node.questionId) ?? null;
 }
 
-export function getTradeGateQuestionNode(
+function getTradeGateRoute(
   workflow: TradeGateWorkflow,
-  nodeId: string | undefined
-): TradeGateQuestionNode | null {
-  const node = getTradeGateNode(workflow, nodeId);
-  return node?.type === 'question' ? node : null;
-}
-
-export function getTradeGateOutcomeNode(
-  workflow: TradeGateWorkflow,
-  nodeId: string | undefined
-): TradeGateOutcomeNode | null {
-  const node = getTradeGateNode(workflow, nodeId);
-  return node?.type === 'outcome' ? node : null;
-}
-
-export function hasRunnableTradeGateQuestion(
-  workflow: TradeGateWorkflow,
-  nodeId: string | undefined,
-  visitedNodeIds = new Set<string>()
-): boolean {
-  const question = getTradeGateQuestionNode(workflow, nodeId);
-  if (!question || visitedNodeIds.has(question.id)) return false;
-
-  const nextVisitedNodeIds = new Set(visitedNodeIds);
-  nextVisitedNodeIds.add(question.id);
-
-  return (
-    getRunnableTradeGateOptions(workflow, question.options, nextVisitedNodeIds)
-      .length > 0
+  nodeId: string,
+  optionId: string
+) {
+  return workflow.routes.find(
+    (route) => route.nodeId === nodeId && route.optionId === optionId
   );
 }
 
-function isRunnableTradeGateTarget(
+function canReachTradeGateOutcome(
   workflow: TradeGateWorkflow,
-  targetNodeId: string,
+  questions: TradeGateQuestion[],
+  nodeId: string,
   visitedNodeIds: Set<string>
 ): boolean {
-  if (getTradeGateOutcomeNode(workflow, targetNodeId)) return true;
-  return hasRunnableTradeGateQuestion(workflow, targetNodeId, visitedNodeIds);
+  const question = getTradeGateQuestion(workflow, questions, nodeId);
+  if (!question || visitedNodeIds.has(nodeId)) return false;
+
+  const nextVisitedNodeIds = new Set(visitedNodeIds);
+  nextVisitedNodeIds.add(nodeId);
+  return question.options.some((option) =>
+    isRunnableTradeGateOption(
+      workflow,
+      questions,
+      nodeId,
+      option,
+      nextVisitedNodeIds
+    )
+  );
+}
+
+function isRunnableTradeGateOption(
+  workflow: TradeGateWorkflow,
+  questions: TradeGateQuestion[],
+  nodeId: string,
+  option: TradeGateQuestionOption,
+  visitedNodeIds: Set<string>
+): boolean {
+  if (!option.id || !option.label) return false;
+  const route = getTradeGateRoute(workflow, nodeId, option.id);
+  if (!route) return false;
+  if (route.target.kind === 'outcome') return true;
+  return canReachTradeGateOutcome(
+    workflow,
+    questions,
+    route.target.nodeId,
+    visitedNodeIds
+  );
 }
 
 export function getRunnableTradeGateOptions(
   workflow: TradeGateWorkflow,
-  options: TradeGateOption[],
+  questions: TradeGateQuestion[],
+  nodeId: string | undefined,
   visitedNodeIds = new Set<string>()
-): TradeGateOption[] {
-  return options.filter((option) => {
-    if (!option.id || !option.label || !option.targetNodeId) return false;
-    return isRunnableTradeGateTarget(
+): TradeGateQuestionOption[] {
+  const question = getTradeGateQuestion(workflow, questions, nodeId);
+  if (!question || !nodeId || visitedNodeIds.has(nodeId)) return [];
+
+  const nextVisitedNodeIds = new Set(visitedNodeIds);
+  nextVisitedNodeIds.add(nodeId);
+  return question.options.filter((option) =>
+    isRunnableTradeGateOption(
       workflow,
-      option.targetNodeId,
-      visitedNodeIds
-    );
-  });
+      questions,
+      nodeId,
+      option,
+      nextVisitedNodeIds
+    )
+  );
+}
+
+export function hasRunnableTradeGateQuestion(
+  workflow: TradeGateWorkflow,
+  questions: TradeGateQuestion[],
+  nodeId: string | undefined,
+  visitedNodeIds = new Set<string>()
+): boolean {
+  return canReachTradeGateOutcome(
+    workflow,
+    questions,
+    nodeId ?? '',
+    visitedNodeIds
+  );
+}
+
+export function getRunnableTradeGateWorkflows(
+  workflows: TradeGateWorkflow[],
+  questions: TradeGateQuestion[]
+): TradeGateWorkflow[] {
+  return workflows.filter((workflow) =>
+    hasRunnableTradeGateQuestion(workflow, questions, workflow.startNodeId)
+  );
 }
 
 export function getTradeGateRoutingSignature(
-  workflow: TradeGateWorkflow
+  workflow: TradeGateWorkflow,
+  questions: TradeGateQuestion[]
 ): string {
+  const questionById = new Map(
+    questions.map((question) => [question.id, question])
+  );
   const nodeSignatures = workflow.nodes.map((node) => {
-    if (node.type === 'outcome') {
-      return `outcome:${node.id}:${node.outcome}`;
-    }
+    const question = questionById.get(node.questionId);
+    if (!question) return `node:${node.id}:${node.questionId}:missing`;
     
-    const optionSignatures = node.options.map(
-      (option) =>
-        `${option.id}>${option.targetNodeId}:${option.label ? 'labeled' : 'unlabeled'}`
+    const optionSignatures = question.options.map(
+      (option) => `${option.id}:${option.label ? 'labeled' : 'unlabeled'}`
     );
-    return `question:${node.id}:${optionSignatures.join(',')}`;
+    return `node:${node.id}:${question.id}:${optionSignatures.join(',')}`;
+  });
+  const routeSignatures = workflow.routes.map((route) => {
+    const target =
+      route.target.kind === 'node'
+        ? `node:${route.target.nodeId}`
+        : `outcome:${route.target.outcome}`;
+    return `${route.nodeId}:${route.optionId}>${target}`;
   });
 
-  return `${workflow.startNodeId}|${nodeSignatures.join('|')}`;
+  return `${workflow.startNodeId}|${nodeSignatures.join('|')}|routes:${routeSignatures.join('|')}`;
 }
 
 export function getReachableTradeGateNodeIds(
-  workflow: TradeGateWorkflow
+  workflow: TradeGateWorkflow,
+  questions: TradeGateQuestion[]
 ): Set<string> {
-  const nodesById = new Map(workflow.nodes.map((node) => [node.id, node]));
   const reachableNodeIds = new Set<string>();
   const pendingNodeIds = workflow.startNodeId ? [workflow.startNodeId] : [];
 
   while (pendingNodeIds.length > 0) {
-    const nodeId = pendingNodeIds.pop();
+    const nodeId = pendingNodeIds.shift();
     if (!nodeId || reachableNodeIds.has(nodeId)) continue;
 
-    const node = nodesById.get(nodeId);
-    if (!node) continue;
+    const question = getTradeGateQuestion(workflow, questions, nodeId);
+    if (!question) continue;
     reachableNodeIds.add(nodeId);
 
-    if (node.type === 'question') {
-      for (const option of node.options) {
-        pendingNodeIds.push(option.targetNodeId);
+    for (const option of question.options) {
+      const route = getTradeGateRoute(workflow, nodeId, option.id);
+      if (route?.target.kind === 'node') {
+        pendingNodeIds.push(route.target.nodeId);
       }
     }
   }
@@ -121,62 +175,37 @@ export function getReachableTradeGateNodeIds(
   return reachableNodeIds;
 }
 
-export function addConnectedTradeGateQuestion(
-  params: {
-    workflow: TradeGateWorkflow;
-    question: TradeGateQuestionNode;
-  } & (
-    | { parentQuestionId: null }
-    | {
-        parentQuestionId: string;
-        option: Omit<TradeGateOption, 'targetNodeId'>;
-      }
-  )
-): TradeGateWorkflow {
-  const { question, workflow } = params;
-  const parentQuestionId = params.parentQuestionId;
-  const existingQuestions = workflow.nodes.filter(
-    (node): node is TradeGateQuestionNode => node.type === 'question'
+export function isTradeGateRunOutsideSession(
+  run: TradeGateRun,
+  currentSession: ResolvedSessionModeWindow | undefined
+): boolean {
+  if (!currentSession) return false;
+  const startedAtMs = new Date(run.startedAt).getTime();
+  return (
+    Number.isNaN(startedAtMs) ||
+    startedAtMs < currentSession.start.getTime() ||
+    startedAtMs >= currentSession.end.getTime()
   );
+}
 
-  if (parentQuestionId === null) {
-    if (existingQuestions.length > 0) {
-      throw new Error('A parent question is required for a workflow branch');
-    }
-    return {
-      ...workflow,
-      startNodeId: question.id,
-      nodes: [...workflow.nodes, question],
-    };
+
+export function isTradeGateRunCompatibleWithWorkflows(
+  run: TradeGateRun,
+  workflows: TradeGateWorkflow[],
+  questions: TradeGateQuestion[]
+): boolean {
+  const workflow = workflows.find((item) => item.id === run.workflowId);
+  if (!workflow) return false;
+
+  if (run.status === 'in-progress') {
+    return hasRunnableTradeGateQuestion(workflow, questions, run.currentNodeId);
   }
 
-  const parentQuestion = existingQuestions.find(
-    (node) => node.id === parentQuestionId
+  return hasRunnableTradeGateQuestion(
+    workflow,
+    questions,
+    workflow.startNodeId
   );
-  if (
-    !parentQuestion ||
-    !getReachableTradeGateNodeIds(workflow).has(parentQuestion.id)
-  ) {
-    throw new Error('The parent question must be reachable from the start');
-  }
-
-  return {
-    ...workflow,
-    nodes: [
-      ...workflow.nodes.map((node) =>
-        node.id === parentQuestion.id
-          ? {
-              ...parentQuestion,
-              options: [
-                ...parentQuestion.options,
-                { ...params.option, targetNodeId: question.id },
-              ],
-            }
-          : node
-      ),
-      question,
-    ],
-  };
 }
 
 export function createTradeGateRun(workflow: TradeGateWorkflow): TradeGateRun {
@@ -191,57 +220,103 @@ export function createTradeGateRun(workflow: TradeGateWorkflow): TradeGateRun {
   };
 }
 
+export function getDefaultOutcomeTitle(outcome: TradeGateOutcomeType): string {
+  switch (outcome) {
+    case 'green-light':
+      return t('trade-gate.outcome.green-light');
+    case 'no-trade':
+      return t('trade-gate.outcome.no-trade');
+    case 'wait':
+      return t('trade-gate.outcome.wait');
+  }
+}
+
+export function getDefaultOutcomeDescription(
+  outcome: TradeGateOutcomeType
+): string {
+  switch (outcome) {
+    case 'green-light':
+      return t('trade-gate.outcome.green-light-description');
+    case 'no-trade':
+      return t('trade-gate.outcome.no-trade-description');
+    case 'wait':
+      return t('trade-gate.outcome.wait-description');
+  }
+}
+
+function getTradeGateOutcomeRunTargetId(outcome: TradeGateOutcomeType): string {
+  return `outcome:${outcome}`;
+}
+
 export function advanceTradeGateRun(params: {
   workflow: TradeGateWorkflow;
+  questions: TradeGateQuestion[];
   run: TradeGateRun;
   optionId: string;
   timestamp?: string;
 }): TradeGateRun | null {
   if (params.run.status !== 'in-progress') return null;
 
-  const currentNode = getTradeGateQuestionNode(
+  const currentNodeId = params.run.currentNodeId;
+  const currentQuestion = getTradeGateQuestion(
     params.workflow,
-    params.run.currentNodeId
+    params.questions,
+    currentNodeId
   );
-  const option = currentNode?.options.find(
+  const option = currentQuestion?.options.find(
     (candidate) => candidate.id === params.optionId
   );
-  if (!currentNode || !option) return null;
-  if (!getRunnableTradeGateOptions(params.workflow, [option]).length) {
+  if (!currentNodeId || !currentQuestion || !option) return null;
+  const answeredNodeIds = new Set(
+    params.run.answers.map((answer) => answer.nodeId)
+  );
+  if (
+    !getRunnableTradeGateOptions(
+      params.workflow,
+      params.questions,
+      currentNodeId,
+      answeredNodeIds
+    ).some((candidate) => candidate.id === option.id)
+  ) {
     return null;
   }
 
+  const route = getTradeGateRoute(params.workflow, currentNodeId, option.id);
+  if (!route) return null;
+
+  const timestamp = params.timestamp ?? new Date().toISOString();
+  const targetNodeId =
+    route.target.kind === 'node'
+      ? route.target.nodeId
+      : getTradeGateOutcomeRunTargetId(route.target.outcome);
+
   const answer = {
-    nodeId: currentNode.id,
-    nodeTitle: currentNode.title,
-    prompt: currentNode.prompt,
+    nodeId: currentNodeId,
+    nodeTitle: currentQuestion.title,
+    prompt: currentQuestion.prompt,
     selectedOptionId: option.id,
     selectedOptionLabel: option.label,
-    targetNodeId: option.targetNodeId,
-    timestamp: params.timestamp ?? new Date().toISOString(),
+    targetNodeId,
+    timestamp,
   };
-  const targetOutcome = getTradeGateOutcomeNode(
-    params.workflow,
-    option.targetNodeId
-  );
 
-  if (targetOutcome) {
+  if (route.target.kind === 'outcome') {
     return {
       ...params.run,
       answers: [...params.run.answers, answer],
       status: 'completed',
       completedAt: answer.timestamp,
-      currentNodeId: targetOutcome.id,
-      outcome: targetOutcome.outcome,
-      outcomeTitle: targetOutcome.title,
-      outcomeDescription: targetOutcome.description,
+      currentNodeId: targetNodeId,
+      outcome: route.target.outcome,
+      outcomeTitle: getDefaultOutcomeTitle(route.target.outcome),
+      outcomeDescription: route.target.note,
     };
   }
 
   return {
     ...params.run,
     answers: [...params.run.answers, answer],
-    currentNodeId: option.targetNodeId,
+    currentNodeId: route.target.nodeId,
   };
 }
 

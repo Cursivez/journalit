@@ -55,6 +55,9 @@ interface VisibilityEditorProps {
   className?: string;
 }
 
+const canRemoveUnlockedItem = (item: VisibilityEditorItem): boolean =>
+  !item.locked;
+
 export const VisibilityEditor: React.FC<VisibilityEditorProps> = ({
   activeItems,
   availableItems,
@@ -72,7 +75,7 @@ export const VisibilityEditor: React.FC<VisibilityEditorProps> = ({
   onReorder,
   onAdd,
   onRemove,
-  canRemoveItem = (item) => !item.locked,
+  canRemoveItem = canRemoveUnlockedItem,
   groupActiveByCategory = false,
   className = '',
 }) => {

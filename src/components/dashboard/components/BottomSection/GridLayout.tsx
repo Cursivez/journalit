@@ -455,13 +455,11 @@ const useDashboardGridLayoutState = ({
   plugin,
   widgets,
   isEditing,
-  gridWidthMeasured,
   gridWidth,
 }: {
   plugin: JournalitPlugin | null;
   widgets: string[];
   isEditing: boolean;
-  gridWidthMeasured: boolean;
   gridWidth: number;
 }) => {
   type DashboardLayouts = {
@@ -881,13 +879,15 @@ const useDashboardGridLayoutState = ({
             const bpWidgetIds = bpLayout.map((item: Layout) => item.i);
 
             
+            const currentWidgetIdsSet = new Set(currentWidgetIds);
             newLayout.bottomSection[bp] = bpLayout.filter((item: Layout) =>
-              currentWidgetIds.includes(item.i)
+              currentWidgetIdsSet.has(item.i)
             );
 
             
+            const bpWidgetIdsSet = new Set(bpWidgetIds);
             currentWidgetIds.forEach((widgetId) => {
-              if (!bpWidgetIds.includes(widgetId)) {
+              if (!bpWidgetIdsSet.has(widgetId)) {
                 
                 const currentItem = sanitizedCurrentLayout.find(
                   (item) => item.i === widgetId
@@ -1035,7 +1035,7 @@ const useDashboardGridLayoutState = ({
   }, [layouts, sanitizeBreakpointLayout]);
 
   useEffect(() => {
-    if (isEditing || !layoutsReady || !gridWidthMeasured || gridWidth <= 0) {
+    if (isEditing || !layoutsReady || gridWidth <= 0) {
       dispatchStaticGridReady(false);
       return;
     }
@@ -1054,7 +1054,7 @@ const useDashboardGridLayoutState = ({
         window.cancelAnimationFrame(secondFrameId);
       }
     };
-  }, [gridWidth, gridWidthMeasured, isEditing, layoutsReady]);
+  }, [gridWidth, isEditing, layoutsReady]);
 
   const handleDragStart = useCallback(
     (_layout: Layout[], _oldItem: Layout | null, newItem: Layout | null) => {
@@ -1117,11 +1117,7 @@ export const GridLayout: React.FC<GridLayoutProps> = ({
   onRemoveWidget,
 }) => {
   const plugin = usePlugin();
-  const {
-    width: gridWidth,
-    containerRef,
-    mounted: gridWidthMeasured,
-  } = useContainerWidth({
+  const { width: gridWidth, containerRef } = useContainerWidth({
     initialWidth: 0,
   });
   const { dashboardData } = useDashboardData();
@@ -1144,7 +1140,6 @@ export const GridLayout: React.FC<GridLayoutProps> = ({
     plugin,
     widgets,
     isEditing,
-    gridWidthMeasured,
     gridWidth,
   });
 
@@ -1209,7 +1204,7 @@ export const GridLayout: React.FC<GridLayoutProps> = ({
       className={`journalit-dashboard-grid-layout ${isEditing ? 'is-editing' : ''} ${isGridResizing ? 'is-resizing' : ''}`}
     >
       <GridLayoutErrorBoundary isEditing={isEditing}>
-        {isEditing && layoutsReady && gridWidthMeasured && gridWidth > 0 && (
+        {isEditing && layoutsReady && gridWidth > 0 && (
           <ResponsiveGridLayout
             className="layout"
             style={cssVars({

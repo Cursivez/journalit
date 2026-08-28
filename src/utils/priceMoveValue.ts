@@ -1,5 +1,5 @@
 import { safeString } from './safeString';
-type PriceMoveValueInput = {
+export type PriceMoveValueInput = {
   assetType?: string;
   contractSize?: number;
   dollarPerPoint?: number;
@@ -7,10 +7,80 @@ type PriceMoveValueInput = {
   tickValue?: number;
   lotSize?: number;
   pipValue?: number;
+  pipSize?: number;
+  forexPnlConversionRate?: number;
 };
+
+export type PriceMoveValueSource = {
+  [K in keyof PriceMoveValueInput]?: unknown;
+};
+
+export function extractPriceMoveValueFields(
+  value: PriceMoveValueSource
+): PriceMoveValueInput {
+  const getFiniteNumber = (field: keyof PriceMoveValueInput) => {
+    const candidate = value[field];
+    return typeof candidate === 'number' && Number.isFinite(candidate)
+      ? candidate
+      : undefined;
+  };
+
+  return {
+    assetType:
+      typeof value.assetType === 'string' ? value.assetType : undefined,
+    contractSize: getFiniteNumber('contractSize'),
+    dollarPerPoint: getFiniteNumber('dollarPerPoint'),
+    tickSize: getFiniteNumber('tickSize'),
+    tickValue: getFiniteNumber('tickValue'),
+    lotSize: getFiniteNumber('lotSize'),
+    pipValue: getFiniteNumber('pipValue'),
+    pipSize: getFiniteNumber('pipSize'),
+    forexPnlConversionRate: getFiniteNumber('forexPnlConversionRate'),
+  } satisfies Record<keyof PriceMoveValueInput, unknown>;
+}
 
 function normalizeAssetType(assetType: unknown): string {
   return safeString(assetType).toLowerCase();
+}
+
+const isPositiveFiniteNumber = (value: unknown): value is number =>
+  typeof value === 'number' && Number.isFinite(value) && value > 0;
+
+type FuturesTickEconomics = PriceMoveValueInput & {
+  tickSize: number;
+  tickValue: number;
+};
+
+const hasFuturesTickEconomics = (
+  trade: PriceMoveValueInput
+): trade is FuturesTickEconomics =>
+  isPositiveFiniteNumber(trade.tickSize) &&
+  isPositiveFiniteNumber(trade.tickValue);
+
+
+export function hasAuthoritativePriceMoveMultiplier(
+  trade: PriceMoveValueInput
+): boolean {
+  switch (normalizeAssetType(trade.assetType)) {
+    case 'options':
+      return isPositiveFiniteNumber(trade.contractSize);
+    case 'futures':
+      return (
+        hasFuturesTickEconomics(trade) ||
+        isPositiveFiniteNumber(trade.dollarPerPoint)
+      );
+    case 'forex':
+      return (
+        isPositiveFiniteNumber(trade.lotSize) ||
+        isPositiveFiniteNumber(trade.pipValue)
+      );
+    case 'cfd':
+      
+      
+      return isPositiveFiniteNumber(trade.contractSize);
+    default:
+      return true;
+  }
 }
 
 
@@ -23,64 +93,42 @@ export function calculateAssetAdjustedPriceMoveValue(
 
   switch (normalizeAssetType(trade.assetType)) {
     case 'options': {
-      if (
-        typeof trade.contractSize === 'number' &&
-        Number.isFinite(trade.contractSize) &&
-        trade.contractSize > 0
-      ) {
+      if (isPositiveFiniteNumber(trade.contractSize)) {
         value = priceDiff * size * trade.contractSize;
       }
       break;
     }
 
     case 'futures': {
-      if (
-        typeof trade.dollarPerPoint === 'number' &&
-        Number.isFinite(trade.dollarPerPoint) &&
-        trade.dollarPerPoint > 0
-      ) {
+      if (hasFuturesTickEconomics(trade)) {
+        const ticks = priceDiff / trade.tickSize;
+        value = ticks * trade.tickValue * size;
+      } else if (isPositiveFiniteNumber(trade.dollarPerPoint)) {
         value = priceDiff * size * trade.dollarPerPoint;
-
-        if (
-          typeof trade.tickValue === 'number' &&
-          Number.isFinite(trade.tickValue) &&
-          trade.tickValue > 0 &&
-          typeof trade.tickSize === 'number' &&
-          Number.isFinite(trade.tickSize) &&
-          trade.tickSize > 0
-        ) {
-          const ticks = priceDiff / trade.tickSize;
-          value = ticks * trade.tickValue * size;
-        }
       }
       break;
     }
 
     case 'forex': {
-      if (
-        typeof trade.lotSize === 'number' &&
-        Number.isFinite(trade.lotSize) &&
-        trade.lotSize > 0
-      ) {
+      if (isPositiveFiniteNumber(trade.lotSize)) {
         value = priceDiff * size * trade.lotSize;
-      } else if (
-        typeof trade.pipValue === 'number' &&
-        Number.isFinite(trade.pipValue) &&
-        trade.pipValue > 0
-      ) {
-        const pips = priceDiff * 10000;
+        if (isPositiveFiniteNumber(trade.forexPnlConversionRate)) {
+          value *= trade.forexPnlConversionRate;
+        }
+      } else if (isPositiveFiniteNumber(trade.pipValue)) {
+        const pipSize = isPositiveFiniteNumber(trade.pipSize)
+          ? trade.pipSize
+          : 0.0001;
+        const pips = priceDiff / pipSize;
         value = pips * trade.pipValue * size;
       }
       break;
     }
 
     case 'cfd': {
-      const contractSize =
-        typeof trade.contractSize === 'number' &&
-        Number.isFinite(trade.contractSize) &&
-        trade.contractSize > 0
-          ? trade.contractSize
-          : 1;
+      const contractSize = isPositiveFiniteNumber(trade.contractSize)
+        ? trade.contractSize
+        : 1;
       value = priceDiff * size * contractSize;
       break;
     }

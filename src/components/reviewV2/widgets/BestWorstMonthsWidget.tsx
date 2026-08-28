@@ -19,8 +19,8 @@ import { BestWorstCard } from './shared/BestWorstCard';
 import { InvalidContextMessage } from './InvalidContextMessage';
 import { TradesPreviewData } from '../../../types/reviewV2';
 import { useReviewTrades } from '../hooks/useReviewData';
-import { useEventBus } from '../../../hooks';
-import { SkeletonBox } from '../../shared';
+import { useEventBus } from '../../../hooks/useEventBus';
+import { SkeletonBox } from '../../shared/SkeletonBox';
 import { t, type TranslationKey } from '../../../lang/helpers';
 import { classifyPnLWithBreakEvenSettings } from '../../../utils/breakEvenRange';
 import { getBreakEvenBalanceForDisplayTrade } from './shared/breakEvenDisplayUtils';
@@ -123,6 +123,38 @@ const getMonthBounds = (
   const end = new Date(year, month + 1, 0, 23, 59, 59, 999); 
   return { start, end };
 };
+
+const formatMonthName = (monthData: MonthStats): string => {
+  return `${t(MONTH_KEYS[monthData.month])} ${monthData.year}`;
+};
+
+const renderSkeletonCard = (isPositive: boolean, titleKey: TranslationKey) => (
+  <div>
+    <div className="journalit-reviewv2-bestworst-label">{t(titleKey)}</div>
+    <div
+      className={[
+        'journalit-reviewv2-bestworst-card',
+        isPositive
+          ? 'journalit-reviewv2-bestworst-card--positive'
+          : 'journalit-reviewv2-bestworst-card--negative',
+        'journalit-reviewv2-bestworst-card--preview',
+      ]
+        .filter(Boolean)
+        .join(' ')}
+    >
+      <div className="journalit-reviewv2-bestworst-pnl-col">
+        <SkeletonBox width={70} height={20} borderRadius="4px" />
+      </div>
+      <div className="journalit-reviewv2-bestworst-details">
+        <SkeletonBox width={120} height={16} borderRadius="4px" />
+        <div className="journalit-u-flex journalit-u-gap-8 journalit-u-mt-4">
+          <SkeletonBox width={50} height={12} borderRadius="4px" />
+          <SkeletonBox width={70} height={12} borderRadius="4px" />
+        </div>
+      </div>
+    </div>
+  </div>
+);
 
 export const BestWorstMonthsWidget: React.FC<BestWorstMonthsWidgetProps> =
   React.memo(
@@ -351,46 +383,10 @@ export const BestWorstMonthsWidget: React.FC<BestWorstMonthsWidgetProps> =
       ]);
 
       
-      const formatMonthName = (monthData: MonthStats): string => {
-        return `${t(MONTH_KEYS[monthData.month])} ${monthData.year}`;
-      };
 
       if (loading) {
         const showBoth = Boolean(
           mergedConfig.showBest && mergedConfig.showWorst
-        );
-
-        const renderSkeletonCard = (
-          isPositive: boolean,
-          titleKey: TranslationKey
-        ) => (
-          <div>
-            <div className="journalit-reviewv2-bestworst-label">
-              {t(titleKey)}
-            </div>
-            <div
-              className={[
-                'journalit-reviewv2-bestworst-card',
-                isPositive
-                  ? 'journalit-reviewv2-bestworst-card--positive'
-                  : 'journalit-reviewv2-bestworst-card--negative',
-                'journalit-reviewv2-bestworst-card--preview',
-              ]
-                .filter(Boolean)
-                .join(' ')}
-            >
-              <div className="journalit-reviewv2-bestworst-pnl-col">
-                <SkeletonBox width={70} height={20} borderRadius="4px" />
-              </div>
-              <div className="journalit-reviewv2-bestworst-details">
-                <SkeletonBox width={120} height={16} borderRadius="4px" />
-                <div className="journalit-u-flex journalit-u-gap-8 journalit-u-mt-4">
-                  <SkeletonBox width={50} height={12} borderRadius="4px" />
-                  <SkeletonBox width={70} height={12} borderRadius="4px" />
-                </div>
-              </div>
-            </div>
-          </div>
         );
 
         return (

@@ -9,7 +9,7 @@ import React, {
   useState,
 } from 'react';
 import { useEventBus } from '../../../hooks/useEventBus';
-import { X, Check } from '../../shared/icons/ObsidianIcon';
+import { Check, ChevronRight, X } from '../../shared/icons/ObsidianIcon';
 import JournalitPlugin from '../../../main';
 import { useDashboardData } from '../../dashboard/context/DashboardDataContext';
 import { useCurrency } from '../../../contexts/CurrencyContext';
@@ -676,8 +676,9 @@ const GoalSettingModal: React.FC<{
   existingConfig,
   currency,
 }) => {
+  const accountTargetAccountsSet = new Set(accountTargetAccounts);
   const availableAccounts = accountNames.filter(
-    (account) => !accountTargetAccounts.includes(account)
+    (account) => !accountTargetAccountsSet.has(account)
   );
   const targetSuffix =
     goalType === 'pnl'
@@ -718,7 +719,7 @@ const GoalSettingModal: React.FC<{
       </div>
 
       
-      <div className="journalit-home-goals__chip-list">
+      <div className="journalit-home-widget__option-list">
         {getGoalTypeOptions().map((option) => (
           <button
             key={option.value}
@@ -729,7 +730,7 @@ const GoalSettingModal: React.FC<{
                 setPeriod('weekly');
               }
             }}
-            className={`journalit-home-goals__chip ${goalType === option.value ? 'journalit-home-goals__chip--active' : ''}`}
+            className={`journalit-home-widget__option ${goalType === option.value ? 'journalit-home-widget__option--active' : ''}`}
           >
             {option.label}
           </button>
@@ -750,10 +751,14 @@ const GoalSettingModal: React.FC<{
 
       {!accountAware || usesRMultiplesForPnl ? (
         <div className="journalit-home-goals__target-row">
-          <label className="journalit-home-goals__target-label">
+          <label
+            htmlFor="journalit-goalsprogresswidget-769"
+            className="journalit-home-goals__target-label"
+          >
             {t('home.widget.goals-progress.target')}
           </label>
           <input
+            id="journalit-goalsprogresswidget-769"
             type="number"
             value={target}
             onChange={(e) => setTarget(e.target.value)}
@@ -779,6 +784,7 @@ const GoalSettingModal: React.FC<{
               {t('home.widget.goals-progress.account-scope')}
             </span>
             <select
+              aria-label={t('home.widget.goals-progress.account-scope')}
               value=""
               onChange={(e) => {
                 const nextAccount = e.target.value;
@@ -888,7 +894,10 @@ const GoalSettingModal: React.FC<{
 const GoalLoadingSkeleton: React.FC = () => (
   <div className="journalit-home-goals journalit-home-goals--loading">
     
-    <SkeletonText width="70px" height="11px" />
+    <div className="journalit-home-goals__loading-header">
+      <SkeletonText width="70px" height="11px" />
+      <SkeletonBox width={12} height={12} borderRadius="3px" />
+    </div>
 
     
     <div className="journalit-home-goals__hero">
@@ -908,34 +917,26 @@ const GoalLoadingSkeleton: React.FC = () => (
 const GoalEmptyState: React.FC<{
   onSetGoal: () => void;
 }> = ({ onSetGoal }) => (
-  <div
+  <button
+    type="button"
     onClick={onSetGoal}
-    role="button"
-    tabIndex={0}
-    onKeyDown={(e) => {
-      if (e.key === 'Enter' || e.key === ' ') onSetGoal();
-    }}
-    className="journalit-home-goals journalit-home-goals--empty"
+    className="journalit-native-button journalit-native-button--unstyled journalit-home-goals journalit-home-goals--empty"
     aria-label={t('home.widget.goals-progress.aria.set-goal')}
   >
     <span className="journalit-home-goals__empty-text">
       {t('home.widget.goals-progress.click-to-set')}
     </span>
-  </div>
+  </button>
 );
 
 const GoalScopeMismatchState: React.FC<{
   configuredAccounts: string[];
   onEdit: () => void;
 }> = ({ configuredAccounts, onEdit }) => (
-  <div
+  <button
+    type="button"
     onClick={onEdit}
-    role="button"
-    tabIndex={0}
-    onKeyDown={(e) => {
-      if (e.key === 'Enter' || e.key === ' ') onEdit();
-    }}
-    className="journalit-home-goals journalit-home-goals--empty journalit-home-goals--scope-mismatch"
+    className="journalit-native-button journalit-native-button--unstyled journalit-home-goals journalit-home-goals--empty journalit-home-goals--scope-mismatch"
     aria-label={t('home.widget.goals-progress.aria.change-goal')}
   >
     <span className="journalit-home-goals__empty-text">
@@ -948,7 +949,7 @@ const GoalScopeMismatchState: React.FC<{
           })
         : t('home.widget.goals-progress.click-to-set')}
     </span>
-  </div>
+  </button>
 );
 
 
@@ -1007,20 +1008,35 @@ const GoalProgressDisplay: React.FC<{
       aria-label={t('home.widget.goals-progress.aria.change-goal')}
     >
       
-      <div className="journalit-home-widget__eyebrow">
-        {existingConfig?.type === 'pnl'
-          ? t('home.widget.goals-progress.header.pnl')
-          : existingConfig?.type === 'tradesJournaled'
-            ? t('home.widget.goals-progress.header.trades')
-            : t('home.widget.goals-progress.header.win-rate')}
-        {existingConfig?.type === 'pnl' && !existingConfig.useRMultiples && (
-          <CurrencyConversionInfo
-            metadata={buildCurrencyConversionMetadata(
-              dashboardData.dashboardData?.metrics
-            )}
-            trades={progress.trades}
+      <div className="journalit-home-goals__display-header">
+        <div className="journalit-home-widget__eyebrow">
+          {existingConfig?.type === 'pnl'
+            ? t('home.widget.goals-progress.header.pnl')
+            : existingConfig?.type === 'tradesJournaled'
+              ? t('home.widget.goals-progress.header.trades')
+              : t('home.widget.goals-progress.header.win-rate')}
+          {existingConfig?.type === 'pnl' && !existingConfig.useRMultiples && (
+            <CurrencyConversionInfo
+              metadata={buildCurrencyConversionMetadata(
+                dashboardData.dashboardData?.metrics
+              )}
+              trades={progress.trades}
+            />
+          )}
+        </div>
+        <div className="journalit-home-goals__display-actions">
+          {progress.isComplete && !isSensitiveGoalMasked && (
+            <div className="journalit-home-goals__complete">
+              <Check size={12} />
+              {t('home.widget.goals-progress.goal-reached')}
+            </div>
+          )}
+          <ChevronRight
+            size={12}
+            className="journalit-home-goals__header-chevron"
+            aria-hidden="true"
           />
-        )}
+        </div>
       </div>
 
       
@@ -1053,14 +1069,6 @@ const GoalProgressDisplay: React.FC<{
           {progressPercentLabel}
         </div>
       </div>
-
-      
-      {progress.isComplete && !isSensitiveGoalMasked && (
-        <div className="journalit-home-goals__complete">
-          <Check size={12} />
-          {t('home.widget.goals-progress.goal-reached')}
-        </div>
-      )}
     </div>
   );
 };

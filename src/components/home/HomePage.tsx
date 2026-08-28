@@ -57,7 +57,6 @@ import {
   HOME_FILTER_POPOVER_OPENED_ACTION_ID,
   HOME_GRID_TARGET_ID,
   HOME_MAIN_GUIDE_ID,
-  HOME_MAIN_GUIDE_MERGED_MODES_VERSION,
   HOME_MODE_DASHBOARD_ENABLED_ACTION_ID,
   HOME_MODE_TOGGLE_DASHBOARD_OPTION_TARGET_ID,
   HOME_MODE_TOGGLE_TARGET_ID,
@@ -66,6 +65,7 @@ import {
   HOME_WIDGET_SELECTOR_OPENED_ACTION_ID,
   HOME_WHATS_NEW_DASHBOARD_TOGGLE_GUIDE_ID,
 } from '../../guides/homeGuideIds';
+import { useHomeGuideResolution } from '../../guides/useHomeGuideResolution';
 import {
   collectAvailableHomeAccounts,
   DEFAULT_HOME_FILTERS,
@@ -425,8 +425,9 @@ function useHomePageModel(plugin: JournalitPlugin, isActive: boolean) {
     );
 
     
+    const knownWidgetIdsSet = new Set(knownWidgetIds);
     const unknownWidgetIds = allWidgetIds.filter(
-      (id) => !knownWidgetIds.includes(id)
+      (id) => !knownWidgetIdsSet.has(id)
     );
     if (unknownWidgetIds.length > 0) {
       console.warn(
@@ -491,7 +492,14 @@ function useHomePageModel(plugin: JournalitPlugin, isActive: boolean) {
       return;
     }
 
-    if (currentGuideStepId !== 'move-and-resize' || !showWidgetSelector) {
+    if (
+      currentGuideStepId !== 'move-and-resize' &&
+      currentGuideStepId !== 'save-layout'
+    ) {
+      return;
+    }
+
+    if (!showWidgetSelector) {
       return;
     }
 
@@ -1329,7 +1337,7 @@ function useHomePageModel(plugin: JournalitPlugin, isActive: boolean) {
         setActiveWidgets(getWidgetsFromLayout());
       }
     },
-    [plugin, getWidgetsFromLayout]
+    [getWidgetsFromLayout, plugin]
   );
 
   useEffect(() => {
@@ -1385,6 +1393,14 @@ function useHomePageModel(plugin: JournalitPlugin, isActive: boolean) {
           plugin.settings.home.topBreakdowns
         ) {
           delete plugin.settings.home.topBreakdowns[widgetId];
+        }
+
+        if (
+          (widgetId === 'currentStreak' ||
+            widgetId.startsWith('currentStreak-')) &&
+          plugin.settings.home.streaks
+        ) {
+          delete plugin.settings.home.streaks[widgetId];
         }
 
         if (widgetId === 'gettingStarted') {
@@ -1734,6 +1750,7 @@ const HomeOverviewPanel: React.FC<HomeOverviewPanelProps> = ({
 
 interface HomeOverviewSectionProps {
   plugin: JournalitPlugin;
+  leaf: WorkspaceLeaf;
   isActive: boolean;
   modeToggle: React.ReactNode;
 }
@@ -1741,10 +1758,16 @@ interface HomeOverviewSectionProps {
 
 const HomeOverviewSection: React.FC<HomeOverviewSectionProps> = ({
   plugin,
+  leaf,
   isActive,
   modeToggle,
 }) => {
   const model = useHomePageModel(plugin, isActive);
+  useHomeGuideResolution({
+    guideService: plugin.viewGuideService,
+    leaf,
+    isActive,
+  });
 
   return (
     <>
@@ -1819,26 +1842,6 @@ const HomePageComponent: React.FC<HomePageProps> = ({
     });
   }, [emitGuideAction, modeEventTarget]);
 
-  useEffect(() => {
-    if (!isOverviewPanelActive || !plugin.viewGuideService) return;
-    const homeGuideState =
-      plugin.viewGuideService.getPersistedGuideState(HOME_MAIN_GUIDE_ID);
-    const hasFinishedHomeGuide =
-      homeGuideState?.status === 'completed' ||
-      homeGuideState?.status === 'skipped';
-    
-    
-    const finishedBeforeMergedModes =
-      hasFinishedHomeGuide &&
-      homeGuideState.guideVersion < HOME_MAIN_GUIDE_MERGED_MODES_VERSION;
-    plugin.viewGuideService.setResolvedGuideForLeaf(
-      leaf,
-      finishedBeforeMergedModes
-        ? HOME_WHATS_NEW_DASHBOARD_TOGGLE_GUIDE_ID
-        : HOME_MAIN_GUIDE_ID
-    );
-  }, [isOverviewPanelActive, leaf, plugin]);
-
   const showHomeBackground = shouldShowHomeBackground(
     homeBackgroundResourcePath,
     panelMode,
@@ -1882,6 +1885,7 @@ const HomePageComponent: React.FC<HomePageProps> = ({
           {overviewMounted && (
             <HomeOverviewSection
               plugin={plugin}
+              leaf={leaf}
               isActive={isLeafActive && isOverviewPanelActive}
               modeToggle={overviewToggle}
             />

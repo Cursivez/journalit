@@ -11,6 +11,7 @@ import {
   hasCanonicalProjectionIdentity,
 } from '../trade/core/CanonicalProjectionFields';
 import { mapProjectionTradeToTradeData } from './canonicalTradeMapper';
+import { applyInstrumentCostRulesToProjection } from './projectionCostRules';
 import {
   clearLocalDeletedTradeProjection,
   getTradeProjectionVaultId,
@@ -39,8 +40,8 @@ import type {
   TradeProjectionPersistedTradeSummary,
   TradeProjectionRequestOptions,
   TradeProjectionWriteResult,
-  TradovateClientDiagnosticErrorCode,
-  TradovateClientOperationContext,
+  BrokerClientDiagnosticErrorCode,
+  BrokerClientOperationContext,
 } from './types';
 
 interface TradeProjectionWriteInput {
@@ -52,7 +53,7 @@ interface TradeProjectionWriteInput {
   requestOptions?: TradeProjectionRequestOptions;
   shouldStop?: () => boolean;
   localTradeDataByTradeId?: Map<string, TradeData>;
-  clientOperation?: TradovateClientOperationContext;
+  clientOperation?: BrokerClientOperationContext;
   localWriteTimeoutMs?: number;
 }
 
@@ -216,7 +217,8 @@ function projectionClearFields(
 
 function summaryFor(
   filePath: string,
-  projectionTrade: NonNullable<TradeProjectionCommittedTrade['previewTrade']>
+  projectionTrade: NonNullable<TradeProjectionCommittedTrade['previewTrade']>,
+  canonicalNetProfitLoss: number | null | undefined
 ): TradeProjectionPersistedTradeSummary {
   return {
     filePath,
@@ -224,7 +226,7 @@ function summaryFor(
     direction: projectionTrade.direction,
     quantity: projectionTrade.quantity,
     entryPrice: projectionTrade.entryPrice,
-    profitLoss: projectionTrade.profitLoss ?? undefined,
+    profitLoss: canonicalNetProfitLoss ?? undefined,
     entryTime: projectionTrade.entryTime,
     status: projectionTrade.status,
   };
@@ -402,17 +404,16 @@ export class TradeProjectionWriter {
           'stale_projection_response'
         );
       }
-      const canonicalTradeData = mapProjectionTradeToTradeData(
-        projectionTrade,
-        accountName,
-        {
+      const canonicalTradeData = applyInstrumentCostRulesToProjection(
+        mapProjectionTradeToTradeData(projectionTrade, accountName, {
           backendTradeId: committedTrade.id,
           backendVersion: committedTrade.version,
           projectionGeneration: effectiveGeneration,
           accountId: committedTrade.accountId,
           accountBroker: committedTrade.broker,
           accountDisplayName: committedTrade.accountDisplayName,
-        }
+        }),
+        this.plugin.optionsService
       );
       const localTradeData = localTradeDataByTradeId?.get(committedTrade.id);
       const tradeData =
@@ -526,7 +527,8 @@ export class TradeProjectionWriter {
               String(lateFilePath),
               effectiveCommittedTrade,
               projectionTrade,
-              existingPath
+              existingPath,
+              canonicalTradeData.authoritativePnl
             ),
           () =>
             failedProjectionResult(
@@ -540,7 +542,8 @@ export class TradeProjectionWriter {
         String(writeOutcome.value),
         effectiveCommittedTrade,
         projectionTrade,
-        existingPath
+        existingPath,
+        canonicalTradeData.authoritativePnl
       );
     } catch {
       return failedProjectionResult(committedTrade, 'obsidian_write_failed');
@@ -551,7 +554,8 @@ export class TradeProjectionWriter {
     filePath: string,
     committedTrade: TradeProjectionCommittedTrade,
     projectionTrade: NonNullable<TradeProjectionCommittedTrade['previewTrade']>,
-    existingPath: string | undefined
+    existingPath: string | undefined,
+    canonicalNetProfitLoss: number | null | undefined
   ): Promise<ProjectionSingleWriteResult> {
     try {
       if (
@@ -569,7 +573,7 @@ export class TradeProjectionWriter {
         await clearLocalDeletedTradeProjection(this.plugin, committedTrade.id);
       }
       return {
-        summary: summaryFor(filePath, projectionTrade),
+        summary: summaryFor(filePath, projectionTrade, canonicalNetProfitLoss),
         ackResult: {
           tradeId: committedTrade.id,
           backendTradeVersion: committedTrade.version,
@@ -799,9 +803,11 @@ export class TradeProjectionWriter {
     const failedCount = writeResults.filter((result) => result.failed).length;
     const pendingCount = writeResults.filter((result) => result.pending).length;
 
-    if (clientOperation) {
+    
+    
+    if (clientOperation?.provider === 'tradovate') {
       const diagnostics = new TradovateClientDiagnosticsService(this.plugin);
-      const diagnosticCodes: TradovateClientDiagnosticErrorCode[] = [
+      const diagnosticCodes: BrokerClientDiagnosticErrorCode[] = [
         'obsidian_write_timeout',
         'blocked_by_obsidian_write_timeout',
         'obsidian_write_failed',
@@ -853,7 +859,7 @@ export class TradeProjectionWriter {
     ackResults: TradeProjectionAckRequest['results'],
     requestOptions: TradeProjectionRequestOptions,
     ownerUserId: string | undefined,
-    clientOperation: TradovateClientOperationContext | undefined
+    clientOperation: BrokerClientOperationContext | undefined
   ): Promise<number> {
     if (ackResults.length === 0) return 0;
     const uniqueAckResults = Array.from(
@@ -872,6 +878,7 @@ export class TradeProjectionWriter {
           clientOperation?.scope === 'projection'
             ? clientOperation.syncRunId
             : undefined,
+        diagnosticProvider: clientOperation?.provider,
         results: uniqueAckResults,
       },
       requestOptions,

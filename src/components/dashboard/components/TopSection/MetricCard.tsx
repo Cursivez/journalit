@@ -7,7 +7,7 @@ import {
   ArrowUp,
   Info,
 } from '../../../shared/icons/ObsidianIcon';
-import { Tooltip } from '../../../shared';
+import { Tooltip } from '../../../shared/Tooltip';
 import { t } from '../../../../lang/helpers';
 import type { StatDelta } from '../../../../utils/previousPeriodDelta';
 

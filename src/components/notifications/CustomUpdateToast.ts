@@ -2,7 +2,6 @@
 
 import { setIcon } from 'obsidian';
 import { t } from '../../lang/helpers';
-import { openExternalUrl } from '../../utils/externalLinks';
 
 export const UPDATE_TOAST_STYLES = `
 .journalit-update-toast {
@@ -12,7 +11,7 @@ export const UPDATE_TOAST_STYLES = `
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   padding: 0;
   font-family: var(--font-interface);
-  position: absolute;
+  position: fixed;
   bottom: 24px;
   left: 24px;
   z-index: 10000;
@@ -28,8 +27,64 @@ export const UPDATE_TOAST_STYLES = `
   transform: translateX(0);
 }
 
-.journalit-update-toast-container {
-  position: relative;
+.journalit-update-toast--available {
+  width: 360px;
+  max-width: calc(100% - 48px);
+  padding: 16px 52px 16px 18px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas:
+    "title actions"
+    "description actions";
+  align-items: center;
+  column-gap: 20px;
+  row-gap: 3px;
+}
+
+.journalit-update-toast--available .journalit-update-toast-title {
+  grid-area: title;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.4;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.journalit-update-toast--available .journalit-update-toast-description {
+  grid-area: description;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  font-size: 13px;
+  line-height: 1.4;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.journalit-update-toast--available .journalit-update-toast-close {
+  top: 10px;
+  right: 10px;
+}
+
+.journalit-update-toast--available .journalit-update-toast-button-container {
+  grid-area: actions;
+  align-self: end;
+  padding: 0;
+  flex: 0 0 auto;
+}
+
+.journalit-update-toast--available .journalit-update-toast-button {
+  background-color: var(--interactive-accent);
+  color: var(--text-on-accent);
+}
+
+.journalit-update-toast--available .journalit-update-toast-button:hover {
+  background-color: var(--interactive-accent-hover);
 }
 
 .journalit-update-toast-title {
@@ -111,6 +166,10 @@ export const UPDATE_TOAST_STYLES = `
   align-items: center;
 }
 
+.journalit-update-toast-button-container--single {
+  justify-content: flex-end;
+}
+
 .journalit-update-toast-button {
   background: var(--interactive-accent);
   color: var(--text-on-accent);
@@ -131,7 +190,7 @@ export const UPDATE_TOAST_STYLES = `
   background: var(--interactive-accent-hover);
 }
 
-.journalit-update-toast-discord-button {
+.journalit-update-toast-secondary-button {
   background: transparent;
   color: var(--text-muted);
   border: 1px solid var(--background-modifier-border);
@@ -146,7 +205,7 @@ export const UPDATE_TOAST_STYLES = `
   gap: 6px;
 }
 
-.journalit-update-toast-discord-button:hover {
+.journalit-update-toast-secondary-button:hover {
   background: var(--background-secondary);
   color: var(--text-normal);
   border-color: var(--background-modifier-border-hover);
@@ -167,16 +226,34 @@ export const UPDATE_TOAST_STYLES = `
     right: 12px;
     max-width: calc(100vw - 24px);
   }
+
+  .journalit-update-toast--available {
+    width: auto;
+  }
+
+  .journalit-update-toast--available .journalit-update-toast-description {
+    white-space: normal;
+    overflow: visible;
+  }
 }
 `;
 
+interface ToastAction {
+  label: string;
+  icon: string;
+  onClick: () => void;
+  dismissAfterClick?: boolean;
+  persistDismissalAfterClick?: boolean;
+}
+
 interface ToastOptions {
-  version: string;
+  version?: string;
   title: string;
-  description: string;
+  description?: string;
   imageUrl?: string;
-  parentContainer?: HTMLElement; 
-  onViewReleaseNotes: () => void;
+  layout?: 'full' | 'available';
+  primaryAction: ToastAction;
+  secondaryAction?: ToastAction;
   
   onDismiss?: () => void | Promise<void>;
 }
@@ -210,11 +287,16 @@ export class CustomUpdateToast {
     }
 
     this.containerEl!.empty();
+    this.containerEl!.classList.toggle(
+      'journalit-update-toast--available',
+      options.layout === 'available'
+    );
 
     
     const closeBtn = this.containerEl!.createEl('button', {
       cls: 'journalit-update-toast-close',
       text: '×',
+      attr: { 'aria-label': t('button.close') },
     });
     closeBtn.addEventListener('click', () => this.hide());
 
@@ -227,11 +309,12 @@ export class CustomUpdateToast {
       }
     }
 
-    
-    this.containerEl!.createDiv({
-      cls: 'journalit-update-toast-version',
-      text: options.version,
-    });
+    if (options.version) {
+      this.containerEl!.createDiv({
+        cls: 'journalit-update-toast-version',
+        text: options.version,
+      });
+    }
 
     
     this.containerEl!.createEl('h3', {
@@ -239,68 +322,76 @@ export class CustomUpdateToast {
       text: options.title,
     });
 
-    
-    this.containerEl!.createDiv({
-      cls: 'journalit-update-toast-description',
-      text: options.description,
-    });
+    if (options.description) {
+      this.containerEl!.createDiv({
+        cls: 'journalit-update-toast-description',
+        text: options.description,
+      });
+    }
 
-    
-    this.containerEl!.createDiv({ cls: 'journalit-update-toast-separator' });
+    if (options.layout !== 'available') {
+      this.containerEl!.createDiv({
+        cls: 'journalit-update-toast-separator',
+      });
+    }
 
     
     const buttonContainer = this.containerEl!.createDiv({
       cls: 'journalit-update-toast-button-container',
     });
 
-    
-    const discordButton = buttonContainer.createEl('button', {
-      cls: 'journalit-update-toast-discord-button',
-    });
-
-    
-    const discordIconSpan = discordButton.createSpan({
-      cls: 'journalit-update-toast-button-icon',
-    });
-    setIcon(discordIconSpan, 'messages-square');
-
-    
-    discordButton.appendText(t('button.discord'));
-
-    discordButton.addEventListener('click', () => {
-      openExternalUrl('https://discord.gg/AkSw3D9h8b');
-    });
+    if (options.secondaryAction) {
+      const secondaryButton = buttonContainer.createEl('button', {
+        cls: 'journalit-update-toast-secondary-button',
+      });
+      const secondaryIconSpan = secondaryButton.createSpan({
+        cls: 'journalit-update-toast-button-icon',
+      });
+      setIcon(secondaryIconSpan, options.secondaryAction.icon);
+      secondaryButton.appendText(options.secondaryAction.label);
+      secondaryButton.addEventListener('click', () => {
+        options.secondaryAction?.onClick();
+        if (options.secondaryAction?.dismissAfterClick) {
+          this.hide(
+            options.secondaryAction.persistDismissalAfterClick !== false
+          );
+        }
+      });
+    } else {
+      buttonContainer.addClass(
+        'journalit-update-toast-button-container--single'
+      );
+    }
 
     
     const button = buttonContainer.createEl('button', {
       cls: 'journalit-update-toast-button',
-      text: t('button.learn-more'),
     });
 
     
     const iconSpan = button.createSpan({
       cls: 'journalit-update-toast-button-icon',
     });
-    setIcon(iconSpan, 'corner-down-right');
+    setIcon(iconSpan, options.primaryAction.icon);
+    button.appendText(options.primaryAction.label);
 
     button.addEventListener('click', () => {
-      options.onViewReleaseNotes();
-      this.hide();
+      options.primaryAction.onClick();
+      if (options.primaryAction.dismissAfterClick !== false) {
+        this.hide(options.primaryAction.persistDismissalAfterClick !== false);
+      }
     });
 
     
-    if (!this.containerEl!.parentElement) {
-      const parent = options.parentContainer || window.activeDocument.body;
-      parent.appendChild(this.containerEl!);
-    }
-
-    
+    const container = this.containerEl;
     window.requestAnimationFrame(() => {
-      this.containerEl!.classList.add('journalit-update-toast--visible');
+      if (this.containerEl === container && container?.isConnected) {
+        container.classList.add('journalit-update-toast--visible');
+      }
     });
   }
 
-  hide(): void {
+  hide(persistDismissal = true): void {
     if (this.dismissed || !this.containerEl) {
       return;
     }
@@ -308,7 +399,7 @@ export class CustomUpdateToast {
     this.dismissed = true;
 
     
-    if (this.onDismissCallback) {
+    if (persistDismissal && this.onDismissCallback) {
       try {
         const result = this.onDismissCallback();
         if (result instanceof Promise) {
@@ -319,8 +410,8 @@ export class CustomUpdateToast {
       } catch (err) {
         console.error('[CustomUpdateToast] Dismiss callback error:', err);
       }
-      this.onDismissCallback = null;
     }
+    this.onDismissCallback = null;
 
     
     this.containerEl.classList.remove('journalit-update-toast--visible');

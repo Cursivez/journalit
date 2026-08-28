@@ -11,7 +11,7 @@ import { CustomFieldDefinition } from '../../types/customFields';
 import { parseTradeDividendTransactions } from '../../utils/tradeUtils';
 import { normalizeTradeExecution } from '../../services/trade/core/TradeExecutionNormalization';
 import { safeString } from '../../utils/safeString';
-import { hasCanonicalProjectionIdentity } from '../../services/trade/core/CanonicalProjectionFields';
+import { hasUnknownCanonicalPnL } from '../../services/trade/core/CanonicalProjectionFields';
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === 'object';
@@ -504,10 +504,7 @@ export class TradeNoteRenderer extends BaseComponentRenderer {
       tradeData.dividends = parsedDividends;
     }
 
-    if (
-      frontmatter._originalPnlWasNull === true ||
-      (frontmatter.pnl == null && hasCanonicalProjectionIdentity(frontmatter))
-    ) {
+    if (hasUnknownCanonicalPnL(frontmatter)) {
       tradeData._originalPnlWasNull = true;
     }
 

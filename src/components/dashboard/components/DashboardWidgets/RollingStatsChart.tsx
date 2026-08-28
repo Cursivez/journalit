@@ -235,6 +235,8 @@ const calculateRollingWindowStats = (
 };
 
 
+const periodOptions = [10, 20, 30, 50];
+
 export const RollingStatsChart = React.memo<BaseWidgetProps>(
   ({ filters, dateFormat }) => {
     const chartRef = React.useRef<HTMLDivElement>(null);
@@ -248,7 +250,6 @@ export const RollingStatsChart = React.memo<BaseWidgetProps>(
     const isPnlMasked = shouldMask('pnl');
 
     
-    const periodOptions = [10, 20, 30, 50];
 
     return (
       <BaseWidget

@@ -36,6 +36,7 @@ import {
 import { Tooltip } from '../shared/Tooltip';
 import { ImageNavigationContext } from '../../types/image';
 import {
+  getCurrentRealizedPnL,
   isTradeOpenWithContext,
   getTradeDisplayStatusWithContext,
   getEffectivePnL,
@@ -52,6 +53,7 @@ import {
   calculateTradeMaxR,
   calculateTradeReturnPercent,
 } from './tradeMetricUtils';
+import { hasUnknownCanonicalPnL } from '../../services/trade/core/CanonicalProjectionFields';
 import { getTradeLogDisplayedPnL, getTradeLogFloatingPnL } from './tradeLogPnl';
 import {
   getTradeMaeTicks,
@@ -80,7 +82,7 @@ import {
 } from '../../utils/riskCalculation';
 import { calculateTotalDividends } from '../../utils/pnlCalculation';
 import { ColumnDefinition } from './columnConfig';
-import { TradeFrontmatter } from '../../types/TradeFrontmatter';
+import type { TradeLogTrade } from '../../services/tradelog/types';
 import JournalitPlugin from '../../main';
 import { CustomFieldType } from '../../types/customFields';
 import { parseStoredDateLikeValue } from '../../utils/customFieldPersistence';
@@ -96,7 +98,7 @@ import {
   getCopyTradeBaseKey,
 } from '../../utils/copyTradePnL';
 import { normalizeAccountLookupKey } from '../../services/trade/core/TradeAccountIdentity';
-import { eventBus } from '../../services/events';
+import { eventBus } from '../../services/events/EventBus';
 import { safeString } from '../../utils/safeString';
 import {
   getSetupLabelColor,
@@ -107,9 +109,10 @@ import {
   getLabelColorClassName,
   getLabelColorForeground,
 } from '../../types/labelColor';
+import { mergeClassNames } from '../../utils/classNames';
 
 
-type TradeWithPath = TradeFrontmatter & {
+type TradeWithPath = TradeLogTrade & {
   filePath?: string;
   path?: string;
   isCopiedTrade?: boolean;
@@ -712,9 +715,12 @@ const TradeDetailsContent = memo<{
         }),
       [trade]
     );
+    const isUnknownCanonicalPnL = hasUnknownCanonicalPnL(trade);
 
     
     const effectiveRMultiple = useMemo(() => {
+      if (isUnknownCanonicalPnL) return undefined;
+
       const tradeRMultiple = isTradeOpenForR ? undefined : trade.rMultiple;
 
       return calculateEffectiveRMultiple(
@@ -727,6 +733,7 @@ const TradeDetailsContent = memo<{
       trade,
       defaultRiskAmount,
       isTradeOpenForR,
+      isUnknownCanonicalPnL,
       snapshotKeysClaimedByCustomFields,
     ]);
 
@@ -752,13 +759,23 @@ const TradeDetailsContent = memo<{
 
     
     const getMultipliedPnL = useMemo(() => {
-      const basePnL = getEffectivePnL(trade);
+      if (isUnknownCanonicalPnL) return null;
+
+      const basePnL = getTradeLogDisplayedPnL(
+        trade,
+        snapshotKeysClaimedByCustomFields
+      );
       if (!applyAccountCountMultiplier) {
         return basePnL;
       }
       const accountCount = getAccountCount(trade);
       return getDisplayPnL(basePnL, accountCount, applyAccountCountMultiplier);
-    }, [trade, applyAccountCountMultiplier]);
+    }, [
+      trade,
+      applyAccountCountMultiplier,
+      isUnknownCanonicalPnL,
+      snapshotKeysClaimedByCustomFields,
+    ]);
 
     
     const mistakesArray = useMemo(() => {
@@ -1155,19 +1172,14 @@ const TradeDetailsContent = memo<{
               status.kind === 'win' ||
               status.kind === 'loss' ||
               status.kind === 'breakeven';
-            const isProgressStatus = status.kind === 'partially_closed';
             const statusLabel =
-              isPnlMasked && isProgressStatus
-                ? t('tradelog.status.open')
-                : isPnlMasked && isOutcomeStatus
-                  ? t('tradelog.filter.closed').toUpperCase()
-                  : status.label;
+              isPnlMasked && isOutcomeStatus
+                ? t('tradelog.filter.closed').toUpperCase()
+                : status.label;
             const statusClassName =
-              isPnlMasked && isProgressStatus
-                ? 'status-open'
-                : isPnlMasked && isOutcomeStatus
-                  ? 'status-closed'
-                  : status.className;
+              isPnlMasked && isOutcomeStatus
+                ? 'status-closed'
+                : status.className;
 
             return (
               <div key="status" className="trade-status-cell">
@@ -1179,6 +1191,11 @@ const TradeDetailsContent = memo<{
           }
 
           case 'pnl': {
+            const openPnlPlaceholder = (
+              <div key="pnl" className="trade-pnl-cell">
+                <span className="trade-pnl open">-</span>
+              </div>
+            );
             
             
             const openUnrealizedPnL =
@@ -1187,11 +1204,13 @@ const TradeDetailsContent = memo<{
                 ? calculateUnrealizedPnL(trade)
                 : null;
             if (openUnrealizedPnL !== null) {
-              const currentRealizedPnL = hasRealizedStoredPnL(trade)
-                ? getEffectivePnL(trade)
-                : partialExitInfo.isPartialExit
-                  ? partialExitInfo.realizedPnL + totalDividends
-                  : 0;
+              const currentRealizedPnL = getCurrentRealizedPnL(
+                trade,
+                totalDividends
+              );
+              if (currentRealizedPnL === null) {
+                return openPnlPlaceholder;
+              }
               const openRealizedPnL = calculateSnapshotRealizedPnL(
                 trade,
                 currentRealizedPnL
@@ -1258,10 +1277,12 @@ const TradeDetailsContent = memo<{
               });
               const openPnlContent =
                 trade.isCopiedTrade && !isPnlMasked ? (
-                  <span
-                    role="button"
-                    tabIndex={0}
-                    className={`${openPnlClassName} trade-pnl-copy-adjust-trigger`}
+                  <button
+                    type="button"
+                    className={mergeClassNames(
+                      'journalit-native-button journalit-native-button--unstyled',
+                      `${openPnlClassName} trade-pnl-copy-adjust-trigger`
+                    )}
                     onClick={handleAdjustCopiedPnL}
                     onKeyDown={handleAdjustCopiedPnLKeyDown}
                     aria-label={t('tradelog.copy-trade.adjustment-action')}
@@ -1270,7 +1291,7 @@ const TradeDetailsContent = memo<{
                     <span className="trade-pnl-copy-multiplier">
                       {trade.copyMultiplier ?? ''}x
                     </span>
-                  </span>
+                  </button>
                 ) : (
                   <span className={openPnlClassName}>{openPnlText}~</span>
                 );
@@ -1292,9 +1313,10 @@ const TradeDetailsContent = memo<{
               status.className === 'status-open' &&
               partialExitInfo.isPartialExit
             ) {
-              const partialPnL = hasRealizedStoredPnL(trade)
-                ? getEffectivePnL(trade)
-                : partialExitInfo.realizedPnL + totalDividends;
+              const partialPnL = getCurrentRealizedPnL(trade, totalDividends);
+              if (partialPnL === null) {
+                return openPnlPlaceholder;
+              }
               
               const partialRMultiple = calculateEffectiveRMultiple(
                 partialPnL,
@@ -1346,21 +1368,19 @@ const TradeDetailsContent = memo<{
               status.className === 'status-open' &&
               !hasRealizedStoredPnL(trade)
             ) {
-              return (
-                <div key="pnl" className="trade-pnl-cell">
-                  <span className="trade-pnl open">-</span>
-                </div>
-              );
+              return openPnlPlaceholder;
             }
 
             const pnlClassName = `trade-pnl ${
               isPnlMasked
                 ? 'journalit-privacy-mask'
-                : getMultipliedPnL > 0
-                  ? 'positive'
-                  : getMultipliedPnL < 0
-                    ? 'negative'
-                    : 'neutral'
+                : getMultipliedPnL === null
+                  ? 'neutral'
+                  : getMultipliedPnL > 0
+                    ? 'positive'
+                    : getMultipliedPnL < 0
+                      ? 'negative'
+                      : 'neutral'
             }`;
 
             
@@ -1387,16 +1407,18 @@ const TradeDetailsContent = memo<{
 
             const pnlContent =
               trade.isCopiedTrade && !isPnlMasked ? (
-                <span
-                  role="button"
-                  tabIndex={0}
-                  className={`${pnlClassName} trade-pnl-copy-adjust-trigger`}
+                <button
+                  type="button"
+                  className={mergeClassNames(
+                    'journalit-native-button journalit-native-button--unstyled',
+                    `${pnlClassName} trade-pnl-copy-adjust-trigger`
+                  )}
                   onClick={handleAdjustCopiedPnL}
                   onKeyDown={handleAdjustCopiedPnLKeyDown}
                   aria-label={t('tradelog.copy-trade.adjustment-action')}
                 >
                   {pnlTextContent}
-                </span>
+                </button>
               ) : (
                 <span className={pnlClassName}>{pnlTextContent}</span>
               );
@@ -2505,12 +2527,17 @@ export const TradeDetailsRow = memo<TradeDetailsRowProps>(
     const plugin = usePlugin();
     const [isFullscreenOpen, setIsFullscreenOpen] = useState(false);
     const [currentImageIndex, setCurrentImageIndex] = useState(0);
+    const snapshotKeysClaimedByCustomFields =
+      areSnapshotKeysClaimedByCustomFields(
+        plugin?.customFieldsService?.getFields()
+      );
 
     
     const status = useMemo(() => {
       const displayStatus = getTradeDisplayStatusWithContext(
         trade,
-        plugin?.settings.trade
+        plugin?.settings.trade,
+        () => getTradeLogDisplayedPnL(trade, snapshotKeysClaimedByCustomFields)
       );
 
       switch (displayStatus) {
@@ -2535,7 +2562,7 @@ export const TradeDetailsRow = memo<TradeDetailsRowProps>(
         case 'partially_closed':
           return {
             kind: displayStatus,
-            label: t('tradelog.status.partially-closed'),
+            label: t('tradelog.status.open'),
             className: 'status-open',
           };
         case 'cancelled':
@@ -2570,7 +2597,7 @@ export const TradeDetailsRow = memo<TradeDetailsRowProps>(
             className: 'status-breakeven',
           };
       }
-    }, [trade, plugin?.settings.trade]);
+    }, [trade, plugin?.settings.trade, snapshotKeysClaimedByCustomFields]);
 
     const duration = useMemo(() => {
       if (!trade.entryTime) return 'N/A';
@@ -2676,7 +2703,7 @@ export const TradeDetailsRow = memo<TradeDetailsRowProps>(
           currentIndex: currentImageIndex,
           onNavigate: handleImageNavigate,
           altPrefix: t('tradelog.alt.trade-image', {
-            instrument: trade.instrument,
+            instrument: trade.instrument || t('common.unknown'),
           }),
           useResolveMediaPath: true,
           sourcePath,
@@ -2707,6 +2734,11 @@ export const TradeDetailsRow = memo<TradeDetailsRowProps>(
       },
       [isMultiSelectMode, onClick, onToggleSelection, trade]
     );
+    const rowAriaLabel = useMemo(
+      () =>
+        `${trade.instrument || t('common.unknown')} - ${formatDateDisplay(safeParseDateValue(trade.entryTime), plugin?.settings.trade.dateFormat, ' ')}`,
+      [plugin?.settings.trade.dateFormat, trade.entryTime, trade.instrument]
+    );
 
     return (
       <>
@@ -2734,7 +2766,8 @@ export const TradeDetailsRow = memo<TradeDetailsRowProps>(
           {viewLevel === 'trades' ? (
             <div
               className="trade-details-row trades-view-row"
-              role="button"
+              role="group"
+              aria-label={rowAriaLabel}
               tabIndex={0}
               onClick={handleTradeCellActivate}
               onKeyDown={(event) => {
@@ -2766,7 +2799,8 @@ export const TradeDetailsRow = memo<TradeDetailsRowProps>(
             
             <div
               className="trade-details-row tree-view-row"
-              role="button"
+              role="group"
+              aria-label={rowAriaLabel}
               tabIndex={0}
               onClick={handleTradeCellActivate}
               onKeyDown={(event) => {
@@ -2810,14 +2844,13 @@ export const TradeDetailsRow = memo<TradeDetailsRowProps>(
           <FullscreenPortal
             isOpen={isFullscreenOpen}
             onClose={closeFullscreen}
-            title={`${trade.instrument} - ${formatDateDisplay(safeParseDateValue(trade.entryTime), plugin?.settings.trade.dateFormat, ' ')}`}
+            title={rowAriaLabel}
             portalId="trade-log-image-portal"
           >
             <FullscreenImageViewer
-              key={images[currentImageIndex]}
               imagePath={images[currentImageIndex]}
               alt={t('tradelog.alt.trade-image-n', {
-                instrument: trade.instrument,
+                instrument: trade.instrument || t('common.unknown'),
                 n: (currentImageIndex + 1).toString(),
               })}
               useResolveMediaPath={true}

@@ -4,19 +4,11 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { WorkspaceLeaf, setIcon } from 'obsidian';
 import { ReleaseNotesView } from './ReleaseNotesView';
 import { usePlugin } from '../../hooks/usePlugin';
-import releasesData from '../../../changelog/releases.json';
+import { getReleasesData } from '../../data/releasesData';
 import { t } from '../../lang/helpers';
 import { compareReleaseVersions } from './versionSort';
 import { openExternalUrl } from '../../utils/externalLinks';
 import { Accordion } from '../shared/Accordion';
-
-interface ReleaseEntry {
-  title: string;
-  description: string;
-  imageUrl?: string;
-  features: string[];
-  content?: string;
-}
 
 interface Props {
   leaf: WorkspaceLeaf;
@@ -338,7 +330,7 @@ function ReleaseMarkdown({ content }: { content: string }) {
 
 const loadBundledChangelogs = (): ChangelogEntry[] => {
   try {
-    const releases = releasesData as Record<string, ReleaseEntry>;
+    const releases = getReleasesData();
     const entries: ChangelogEntry[] = [];
     for (const [version, release] of Object.entries(releases)) {
       if (release.content) {

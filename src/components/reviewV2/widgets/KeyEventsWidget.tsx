@@ -10,30 +10,56 @@ import React, {
 import { TFile } from 'obsidian';
 import type JournalitPlugin from '../../../main';
 import type { NewsEvent } from '../../../services/weekly/types';
+import { parseNewsEvents } from '../../../services/weekly/parseNewsEvents';
 import type { ReviewChangedPayload } from '../../../services/events/types';
 import {
+  CalendarRange,
   Edit,
   Ghost,
+  Import,
   Info,
   Plus,
   Trash,
 } from '../../shared/icons/ObsidianIcon';
 import { Tooltip } from '../../shared/Tooltip';
+import { useKeyEventRestore } from './useKeyEventRestore';
+import { useCachedBackendProEntitlement } from '../../../hooks/useBackendProEntitlement';
 import { ComboBox } from '../../core/ComboBox';
-import { SkeletonBox } from '../../shared';
+import { FastDateTimeInput } from '../../core/FastDateTimeInput';
+import { SkeletonBox } from '../../shared/SkeletonBox';
 import { InvalidContextMessage } from './InvalidContextMessage';
 import { OptionType } from '../../../services/options/CustomOptionsService';
 import { useEventBus } from '../../../hooks/useEventBus';
-import { parseLocalDateSafe } from '../../../utils/dateUtils';
+import {
+  formatDateDisplay,
+  getUserDateFormat,
+  parseLocalDateSafe,
+} from '../../../utils/dateUtils';
+import {
+  formatIsoTimeOfDay,
+  getUse24HourTimeSetting,
+} from '../../../utils/timeFormat';
 import { t } from '../../../lang/helpers';
 import {
   compareKeyEventDays,
+  getKeyEventDateForWeek,
   getKeyEventColor,
   getKeyEventDayLabel,
+  isKeyEventPast,
   KEY_EVENT_COLORS,
   KEY_EVENT_DAYS,
   type KeyEventColor,
 } from '../../../utils/keyEvents';
+import {
+  applyManualKeyEventFields,
+  EMPTY_MANUAL_KEY_EVENT_DRAFT,
+  hasKeyEventReadings,
+  KEY_EVENT_CURRENCIES,
+  resolveManualKeyEventDate,
+  timeOfDayInputValue,
+  type ManualKeyEventDraft,
+} from './keyEventFields';
+import { mergeClassNames } from '../../../utils/classNames';
 
 
 interface KeyEventsPreviewData {
@@ -52,6 +78,23 @@ interface KeyEventsWidgetProps {
 
 type ReviewMode = 'weekly-review' | 'drc';
 
+interface KeyEventListEntry {
+  event: NewsEvent;
+  originalIndex: number;
+  key: string;
+}
+
+interface WeeklyKeyEventListEntry extends KeyEventListEntry {
+  isPast: boolean;
+}
+
+interface KeyEventDayGroup {
+  key: string;
+  day: string | undefined;
+  date: Date | null;
+  entries: WeeklyKeyEventListEntry[];
+}
+
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   Boolean(value) && typeof value === 'object' && !Array.isArray(value);
 
@@ -68,13 +111,13 @@ const getReviewMode = (value: unknown): ReviewMode | null => {
   }
 };
 
-const asNewsEvents = (value: unknown): NewsEvent[] =>
-  Array.isArray(value)
-    ? value.filter((item): item is NewsEvent => {
-        const record = asRecord(item);
-        return Boolean(record && typeof record.event === 'string');
-      })
-    : [];
+const eventTimeSortValue = (event: NewsEvent): number => {
+  if (!event.time) return Number.NEGATIVE_INFINITY;
+  const timestamp = new Date(event.time).getTime();
+  return Number.isFinite(timestamp) ? timestamp : Number.NEGATIVE_INFINITY;
+};
+
+const asNewsEvents = (value: unknown): NewsEvent[] => parseNewsEvents(value);
 
 const parseFrontmatterDate = (value: unknown): Date | null =>
   typeof value === 'string' ||
@@ -99,6 +142,99 @@ function getNewsEventKeyBase(event: NewsEvent): string {
   ].join('|');
 }
 
+interface KeyEventReadingProps {
+  label: string;
+  value: number | undefined;
+  emphasised?: boolean;
+}
+
+
+const KeyEventReading: React.FC<KeyEventReadingProps> = ({
+  label,
+  value,
+  emphasised = false,
+}) => {
+  if (value === undefined) return null;
+
+  return (
+    <span
+      className={`key-events-reading${
+        emphasised ? ' key-events-reading--actual' : ''
+      }`}
+    >
+      <span className="key-events-reading__label">{label}</span>
+      <span className="key-events-reading__value">{value}</span>
+    </span>
+  );
+};
+
+KeyEventReading.displayName = 'KeyEventReading';
+
+interface KeyEventMetaFieldsProps {
+  idPrefix: string;
+  draft: ManualKeyEventDraft;
+  onChange: (draft: ManualKeyEventDraft) => void;
+  
+  showTime: boolean;
+  use24HourTime: boolean;
+}
+
+const KeyEventMetaFields: React.FC<KeyEventMetaFieldsProps> = ({
+  idPrefix,
+  draft,
+  onChange,
+  showTime,
+  use24HourTime,
+}) => {
+  return (
+    <div className="key-events-meta-row">
+      <div className="key-events-meta-field">
+        <label
+          className="key-events-meta-label"
+          htmlFor={`${idPrefix}-currency`}
+        >
+          {t('widget.key-events.currency-label')}
+        </label>
+        <select
+          id={`${idPrefix}-currency`}
+          className="key-events-meta-select"
+          value={draft.currency}
+          onChange={(e) => onChange({ ...draft, currency: e.target.value })}
+        >
+          <option value="">{t('widget.key-events.field-unset')}</option>
+          {KEY_EVENT_CURRENCIES.map((currency) => (
+            <option key={currency} value={currency}>
+              {currency}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      {showTime && (
+        <div className="key-events-meta-field key-events-meta-field--time">
+          <FastDateTimeInput
+            label={t('widget.key-events.time-label')}
+            value={draft.timeOfDay}
+            onChange={(value) =>
+              onChange({
+                ...draft,
+                timeOfDay: typeof value === 'string' ? value : '',
+              })
+            }
+            commitValidSegmentChangesImmediately
+            timeOnly
+            use24HourTime={use24HourTime}
+            hidePickerButton
+            className="key-events-meta-time-input"
+          />
+        </div>
+      )}
+    </div>
+  );
+};
+
+KeyEventMetaFields.displayName = 'KeyEventMetaFields';
+
 export const KeyEventsWidget: React.FC<KeyEventsWidgetProps> = React.memo(
   ({ filePath, plugin, preview, previewData }) => {
     
@@ -107,6 +243,8 @@ export const KeyEventsWidget: React.FC<KeyEventsWidgetProps> = React.memo(
     const [isValidContext, setIsValidContext] = useState(true);
     const [reviewMode, setReviewMode] = useState<ReviewMode | null>(null);
     const [drcDate, setDrcDate] = useState<Date | null>(null);
+    const [weekStartDate, setWeekStartDate] = useState<Date | null>(null);
+    const [currentDateTime, setCurrentDateTime] = useState(() => new Date());
     const [isSavingEvent, setIsSavingEvent] = useState(false);
     const [isAddFormOpen, setIsAddFormOpen] = useState(false);
 
@@ -115,6 +253,9 @@ export const KeyEventsWidget: React.FC<KeyEventsWidgetProps> = React.memo(
     const [selectedColor, setSelectedColor] = useState<KeyEventColor>('gray');
     const [selectedDay, setSelectedDay] = useState('');
     const [eventNotes, setEventNotes] = useState('');
+    const [eventDraft, setEventDraft] = useState<ManualKeyEventDraft>(
+      EMPTY_MANUAL_KEY_EVENT_DRAFT
+    );
     const [eventOptions, setEventOptions] = useState<string[]>([]);
     const [editingEventIndex, setEditingEventIndex] = useState<number | null>(
       null
@@ -123,6 +264,9 @@ export const KeyEventsWidget: React.FC<KeyEventsWidgetProps> = React.memo(
     const [editEventColor, setEditEventColor] = useState<KeyEventColor>('gray');
     const [editEventDay, setEditEventDay] = useState('');
     const [editEventNotes, setEditEventNotes] = useState('');
+    const [editEventDraft, setEditEventDraft] = useState<ManualKeyEventDraft>(
+      EMPTY_MANUAL_KEY_EVENT_DRAFT
+    );
 
     const retryCountRef = useRef(0);
     const retryTimeoutRef = useRef<number | null>(null);
@@ -139,6 +283,19 @@ export const KeyEventsWidget: React.FC<KeyEventsWidgetProps> = React.memo(
       };
     }, []);
 
+    useEffect(() => {
+      if (reviewMode !== 'weekly-review') return;
+
+      setCurrentDateTime(new Date());
+      const interval = window.setInterval(() => {
+        setCurrentDateTime(new Date());
+      }, 60_000);
+      return () => window.clearInterval(interval);
+    }, [reviewMode]);
+
+    const { isPro } = useCachedBackendProEntitlement(plugin);
+    const use24HourTime = getUse24HourTimeSetting(plugin);
+
     
     const isWeeklyEditable = reviewMode === 'weekly-review' && !preview;
     const canAddFromDrc = reviewMode === 'drc' && !preview && drcDate !== null;
@@ -148,7 +305,6 @@ export const KeyEventsWidget: React.FC<KeyEventsWidgetProps> = React.memo(
       canAddEvent && (events.length === 0 || isAddFormOpen);
     const shouldShowCompactAdd =
       canAddEvent && events.length > 0 && !isAddFormOpen;
-
     
     useEffect(() => {
       if (!plugin.optionsService) return;
@@ -213,6 +369,9 @@ export const KeyEventsWidget: React.FC<KeyEventsWidgetProps> = React.memo(
       if (type === 'weekly-review') {
         
         const keyEvents = asNewsEvents(frontmatter.keyEvents);
+        
+        
+        setWeekStartDate(parseFrontmatterDate(frontmatter.date));
         setEvents(keyEvents);
         setIsValidContext(true);
         setLoading(false);
@@ -255,6 +414,22 @@ export const KeyEventsWidget: React.FC<KeyEventsWidgetProps> = React.memo(
         setLoading(false);
       }
     }, [filePath, plugin, preview, previewData]);
+
+    const {
+      check: restoreCheck,
+      isRestoring: isRestoringAutoImport,
+      restore: handleRestoreAutoImport,
+    } = useKeyEventRestore({
+      plugin,
+      events,
+      enabled: shouldShowAddForm && isWeeklyEditable && isPro,
+      weekStartDate,
+      reloadEvents: loadEvents,
+    });
+    const showRestoreAutoImport =
+      isWeeklyEditable &&
+      isPro &&
+      (restoreCheck.status === 'missing' || restoreCheck.status === 'error');
 
     
     useEffect(() => {
@@ -299,7 +474,7 @@ export const KeyEventsWidget: React.FC<KeyEventsWidgetProps> = React.memo(
 
     
     
-    const sortedEvents = useMemo(() => {
+    const sortedEvents = useMemo<KeyEventListEntry[]>(() => {
       const seenEventKeys = new Map<string, number>();
       return events
         .map((event, originalIndex) => {
@@ -308,8 +483,50 @@ export const KeyEventsWidget: React.FC<KeyEventsWidgetProps> = React.memo(
           seenEventKeys.set(keyBase, occurrence);
           return { event, originalIndex, key: `${keyBase}|${occurrence}` };
         })
-        .sort((a, b) => compareKeyEventDays(a.event.day, b.event.day));
+        .sort((a, b) => {
+          const dayComparison = compareKeyEventDays(a.event.day, b.event.day);
+          if (dayComparison !== 0) return dayComparison;
+          return eventTimeSortValue(a.event) - eventTimeSortValue(b.event);
+        });
     }, [events]);
+
+    const weeklyEventGroups = useMemo<KeyEventDayGroup[]>(() => {
+      if (reviewMode !== 'weekly-review') return [];
+
+      const groups = new Map<string, KeyEventDayGroup>();
+      for (const entry of sortedEvents) {
+        const eventDay = entry.event.day;
+        const key = eventDay ?? 'all-week';
+        const groupedEntry: WeeklyKeyEventListEntry = {
+          ...entry,
+          isPast: isKeyEventPast(entry.event, weekStartDate, currentDateTime),
+        };
+        const existing = groups.get(key);
+        if (existing) {
+          existing.entries.push(groupedEntry);
+          continue;
+        }
+
+        groups.set(key, {
+          key,
+          day: eventDay,
+          date: weekStartDate
+            ? getKeyEventDateForWeek(weekStartDate, eventDay)
+            : null,
+          entries: [groupedEntry],
+        });
+      }
+      
+      
+      return [...groups.values()].sort((first, second) => {
+        if (first.date && second.date) {
+          return first.date.getTime() - second.date.getTime();
+        }
+        if (!first.day) return -1;
+        if (!second.day) return 1;
+        return compareKeyEventDays(first.day, second.day);
+      });
+    }, [currentDateTime, reviewMode, sortedEvents, weekStartDate]);
 
     
     const getWeeklyReviewService = async () => {
@@ -374,14 +591,23 @@ export const KeyEventsWidget: React.FC<KeyEventsWidgetProps> = React.memo(
           );
         }
 
-        const newEvent: NewsEvent = {
-          event: eventName,
-          notes: eventNotes,
-          color: selectedColor,
-          day: canAddFromDrc
-            ? getEventDayForDrc(drcDate)
-            : selectedDay || undefined,
-        };
+        const day = canAddFromDrc
+          ? getEventDayForDrc(drcDate)
+          : selectedDay || undefined;
+        const newEvent = applyManualKeyEventFields(
+          {
+            event: eventName,
+            notes: eventNotes,
+            color: selectedColor,
+            day,
+          },
+          eventDraft,
+          resolveManualKeyEventDate({
+            day,
+            weekStart: weekStartDate,
+            eventDate: canAddFromDrc ? drcDate : null,
+          })
+        );
 
         if (canAddFromDrc) {
           await addDrcEventToWeeklyReview(newEvent, drcDate);
@@ -399,6 +625,7 @@ export const KeyEventsWidget: React.FC<KeyEventsWidgetProps> = React.memo(
         setEventNotes('');
         setSelectedColor('gray');
         setSelectedDay('');
+        setEventDraft(EMPTY_MANUAL_KEY_EVENT_DRAFT);
         if (hadExistingEvents) {
           setIsAddFormOpen(false);
         }
@@ -414,6 +641,7 @@ export const KeyEventsWidget: React.FC<KeyEventsWidgetProps> = React.memo(
       setEventNotes('');
       setSelectedColor('gray');
       setSelectedDay('');
+      setEventDraft(EMPTY_MANUAL_KEY_EVENT_DRAFT);
       setIsAddFormOpen(false);
     };
 
@@ -423,6 +651,11 @@ export const KeyEventsWidget: React.FC<KeyEventsWidgetProps> = React.memo(
       setEditEventColor(getKeyEventColor(event.color));
       setEditEventDay(event.day || '');
       setEditEventNotes(event.notes || '');
+      setEditEventDraft({
+        currency: event.currency ?? '',
+        timeOfDay:
+          event.eventType === 'holiday' ? '' : timeOfDayInputValue(event.time),
+      });
     };
 
     const handleCancelEditEvent = () => {
@@ -431,6 +664,7 @@ export const KeyEventsWidget: React.FC<KeyEventsWidgetProps> = React.memo(
       setEditEventColor('gray');
       setEditEventDay('');
       setEditEventNotes('');
+      setEditEventDraft(EMPTY_MANUAL_KEY_EVENT_DRAFT);
     };
 
     const handleSaveEditEvent = async () => {
@@ -443,15 +677,24 @@ export const KeyEventsWidget: React.FC<KeyEventsWidgetProps> = React.memo(
         );
       }
 
-      const updatedEvent: NewsEvent = {
-        ...events[editingEventIndex],
-        event: editEventName.trim(),
-        notes: editEventNotes,
-        color: editEventColor,
-        day: isDrcEditable
-          ? events[editingEventIndex].day
-          : editEventDay || undefined,
-      };
+      const day = isDrcEditable
+        ? events[editingEventIndex].day
+        : editEventDay || undefined;
+      const updatedEvent = applyManualKeyEventFields(
+        {
+          ...events[editingEventIndex],
+          event: editEventName.trim(),
+          notes: editEventNotes,
+          color: editEventColor,
+          day,
+        },
+        editEventDraft,
+        resolveManualKeyEventDate({
+          day,
+          weekStart: weekStartDate,
+          eventDate: isDrcEditable ? drcDate : null,
+        })
+      );
 
       const updatedEvents = events.map((event, index) =>
         index === editingEventIndex ? updatedEvent : event
@@ -557,14 +800,19 @@ export const KeyEventsWidget: React.FC<KeyEventsWidgetProps> = React.memo(
     }
 
     
-    const renderEventCard = (event: NewsEvent, index: number, key: string) => {
+    const renderEventCard = (
+      event: NewsEvent,
+      index: number,
+      key: string,
+      knownIsPast?: boolean
+    ) => {
       const colorClass = event.color
         ? `event-color-${event.color}`
         : 'event-color-gray';
 
       
       
-      const showDayBadge = reviewMode === 'weekly-review' || !event.day;
+      const showDayBadge = reviewMode === 'drc' && !event.day;
 
       const dayLabel = event.day ? getKeyEventDayLabel(event.day) : '';
 
@@ -609,7 +857,10 @@ export const KeyEventsWidget: React.FC<KeyEventsWidgetProps> = React.memo(
                   <button
                     type="button"
                     key={color}
-                    className={`key-events-color-option ${editEventColor === color ? 'selected' : ''}`}
+                    className={mergeClassNames(
+                      'journalit-native-button',
+                      `key-events-color-option ${editEventColor === color ? 'selected' : ''}`
+                    )}
                     onClick={() => setEditEventColor(color)}
                     aria-label={t('widget.key-events.color-aria', {
                       color: color.charAt(0).toUpperCase() + color.slice(1),
@@ -630,6 +881,7 @@ export const KeyEventsWidget: React.FC<KeyEventsWidgetProps> = React.memo(
                     {t('widget.key-events.day-label')}
                   </span>
                   <select
+                    aria-label={t('widget.key-events.day-label')}
                     value={editEventDay}
                     onChange={(e) => setEditEventDay(e.target.value)}
                     className="key-events-day-select"
@@ -643,6 +895,19 @@ export const KeyEventsWidget: React.FC<KeyEventsWidgetProps> = React.memo(
                   </select>
                 </div>
               )}
+
+              <KeyEventMetaFields
+                idPrefix="key-events-edit"
+                draft={editEventDraft}
+                onChange={setEditEventDraft}
+                use24HourTime={use24HourTime}
+                showTime={
+                  event.eventType !== 'holiday' &&
+                  (isDrcEditable
+                    ? event.day !== undefined
+                    : editEventDay !== '')
+                }
+              />
 
               <textarea
                 value={editEventNotes}
@@ -671,10 +936,35 @@ export const KeyEventsWidget: React.FC<KeyEventsWidgetProps> = React.memo(
         );
       }
 
+      
+      
+      
+      const scheduledTime =
+        event.eventType === 'holiday'
+          ? t('view.economic-calendar.all-day')
+          : formatIsoTimeOfDay(event.time, use24HourTime);
+      const isPast =
+        knownIsPast ??
+        (reviewMode === 'weekly-review' &&
+          isKeyEventPast(event, weekStartDate, currentDateTime));
+
       return (
-        <div key={key} className={`key-events-item ${colorClass}`}>
+        <div
+          key={key}
+          className={`key-events-item ${colorClass}${
+            isPast ? ' key-events-item--past' : ''
+          }`}
+        >
           <div className="key-events-item-header">
             <div className="key-events-item-title">
+              {scheduledTime && (
+                <span className="key-events-item-time">{scheduledTime}</span>
+              )}
+              {event.currency && (
+                <span className="key-events-currency-badge">
+                  {event.currency}
+                </span>
+              )}
               <h4>{event.event}</h4>
               {showDayBadge &&
                 (event.day ? (
@@ -704,6 +994,23 @@ export const KeyEventsWidget: React.FC<KeyEventsWidgetProps> = React.memo(
               </div>
             )}
           </div>
+          {hasKeyEventReadings(event) && (
+            <div className="key-events-item-readings">
+              <KeyEventReading
+                label={t('view.economic-calendar.actual')}
+                value={event.actual}
+                emphasised
+              />
+              <KeyEventReading
+                label={t('view.economic-calendar.forecast')}
+                value={event.forecast}
+              />
+              <KeyEventReading
+                label={t('view.economic-calendar.previous')}
+                value={event.previous}
+              />
+            </div>
+          )}
           {event.notes && (
             <span className="key-events-item-notes">{event.notes}</span>
           )}
@@ -716,34 +1023,38 @@ export const KeyEventsWidget: React.FC<KeyEventsWidgetProps> = React.memo(
         <div className="key-events-widget">
           
           <div className="key-events-header">
-            <span className="key-events-title">
-              {t('widget.key-events.title')}{' '}
-              {events.length > 0 && `(${events.length})`}
-            </span>
-            {reviewMode === 'drc' && (
-              <Tooltip
-                content={
-                  <div className="key-events-tooltip-content">
-                    {t('widget.key-events.tooltip')}
-                  </div>
-                }
-                preferredPosition="top"
-              >
-                <Info
-                  className="key-events-tooltip-icon"
-                  size={13}
-                  aria-hidden="true"
-                />
-              </Tooltip>
-            )}
+            <div className="key-events-title-group">
+              <span className="key-events-title">
+                {t('widget.key-events.title')}{' '}
+                {events.length > 0 && `(${events.length})`}
+              </span>
+              {reviewMode === 'drc' && (
+                <Tooltip
+                  content={
+                    <div className="key-events-tooltip-content">
+                      {t('widget.key-events.tooltip')}
+                    </div>
+                  }
+                  preferredPosition="top"
+                >
+                  <Info
+                    className="key-events-tooltip-icon"
+                    size={13}
+                    aria-hidden="true"
+                  />
+                </Tooltip>
+              )}
+            </div>
             {shouldShowCompactAdd && (
-              <button
-                className="key-events-header-add-button"
-                onClick={() => setIsAddFormOpen(true)}
-              >
-                <Plus size={12} aria-hidden="true" />
-                {t('widget.key-events.add-button')}
-              </button>
+              <div className="key-events-header-actions">
+                <button
+                  className="key-events-header-add-button"
+                  onClick={() => setIsAddFormOpen(true)}
+                >
+                  <Plus size={12} aria-hidden="true" />
+                  {t('widget.key-events.add-button')}
+                </button>
+              </div>
             )}
           </div>
 
@@ -752,6 +1063,35 @@ export const KeyEventsWidget: React.FC<KeyEventsWidgetProps> = React.memo(
             <div
               className={`key-events-form ${canAddFromDrc ? 'key-events-form--drc' : ''}`}
             >
+              {isWeeklyEditable && (
+                <div className="key-events-source-actions">
+                  <button
+                    type="button"
+                    className="journalit-key-events-source-button key-events-source-button--calendar"
+                    onClick={() =>
+                      void plugin.viewManager.openEconomicCalendarView()
+                    }
+                  >
+                    <CalendarRange size={13} aria-hidden="true" />
+                    {t('view.economic-calendar.title')}
+                  </button>
+                  {showRestoreAutoImport && (
+                    <button
+                      type="button"
+                      className="journalit-key-events-source-button key-events-source-button--restore"
+                      disabled={isRestoringAutoImport || weekStartDate === null}
+                      onClick={() => void handleRestoreAutoImport()}
+                    >
+                      <Import size={13} aria-hidden="true" />
+                      {restoreCheck.status === 'missing'
+                        ? t('widget.key-events.restore-missing-events', {
+                            count: String(restoreCheck.missingCount),
+                          })
+                        : t('widget.key-events.restore-auto-import')}
+                    </button>
+                  )}
+                </div>
+              )}
               <div className="key-events-form-row">
                 <div className="key-events-event-selector">
                   <ComboBox
@@ -781,7 +1121,10 @@ export const KeyEventsWidget: React.FC<KeyEventsWidgetProps> = React.memo(
                   <button
                     type="button"
                     key={color}
-                    className={`key-events-color-option ${selectedColor === color ? 'selected' : ''}`}
+                    className={mergeClassNames(
+                      'journalit-native-button',
+                      `key-events-color-option ${selectedColor === color ? 'selected' : ''}`
+                    )}
                     onClick={() => setSelectedColor(color)}
                     aria-label={t('widget.key-events.color-aria', {
                       color: color.charAt(0).toUpperCase() + color.slice(1),
@@ -802,6 +1145,7 @@ export const KeyEventsWidget: React.FC<KeyEventsWidgetProps> = React.memo(
                     {t('widget.key-events.day-label')}
                   </span>
                   <select
+                    aria-label={t('widget.key-events.day-label')}
                     value={selectedDay}
                     onChange={(e) => setSelectedDay(e.target.value)}
                     className="key-events-day-select"
@@ -815,6 +1159,14 @@ export const KeyEventsWidget: React.FC<KeyEventsWidgetProps> = React.memo(
                   </select>
                 </div>
               )}
+
+              <KeyEventMetaFields
+                idPrefix="key-events-add"
+                draft={eventDraft}
+                onChange={setEventDraft}
+                use24HourTime={use24HourTime}
+                showTime={canAddFromDrc || selectedDay !== ''}
+              />
 
               
               <div className="key-events-notes-header">
@@ -867,9 +1219,37 @@ export const KeyEventsWidget: React.FC<KeyEventsWidgetProps> = React.memo(
           
           {events.length > 0 ? (
             <div className="key-events-list">
-              {sortedEvents.map(({ event, originalIndex, key }) =>
-                renderEventCard(event, originalIndex, key)
-              )}
+              {reviewMode === 'weekly-review'
+                ? weeklyEventGroups.map((group) => (
+                    <section
+                      key={group.key}
+                      className={`key-events-day-group${
+                        group.entries.every(({ isPast }) => isPast)
+                          ? ' key-events-day-group--past'
+                          : ''
+                      }`}
+                    >
+                      <h3 className="key-events-day-group__label">
+                        <span className="key-events-day-group__weekday">
+                          {getKeyEventDayLabel(group.day)}
+                        </span>
+                        {group.date && (
+                          <span className="key-events-day-group__date">
+                            {formatDateDisplay(group.date, getUserDateFormat())}
+                          </span>
+                        )}
+                      </h3>
+                      <div className="key-events-day-group__events">
+                        {group.entries.map(
+                          ({ event, originalIndex, key, isPast }) =>
+                            renderEventCard(event, originalIndex, key, isPast)
+                        )}
+                      </div>
+                    </section>
+                  ))
+                : sortedEvents.map(({ event, originalIndex, key }) =>
+                    renderEventCard(event, originalIndex, key)
+                  )}
             </div>
           ) : reviewMode === 'drc' && !canAddFromDrc ? (
             

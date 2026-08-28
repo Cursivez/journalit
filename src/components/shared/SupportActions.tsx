@@ -1,6 +1,6 @@
 import React from 'react';
 import { Copy, MessagesSquare, Info } from './icons/ObsidianIcon';
-import { Button } from '../ui';
+import { Button } from '../ui/Button';
 
 type SupportActionVariant = 'primary' | 'secondary';
 

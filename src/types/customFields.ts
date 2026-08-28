@@ -121,6 +121,13 @@ export const CANONICAL_PROJECTION_CUSTOM_FIELD_MIGRATION_KEYS = [
   'tradeImportAccountDisplayName',
 ] as const;
 
+const FIRST_CLASS_CUSTOM_FIELD_MIGRATION_KEYS = ['imageAnnotations'] as const;
+
+export const CUSTOM_FIELD_KEY_MIGRATION_KEYS = [
+  ...CANONICAL_PROJECTION_CUSTOM_FIELD_MIGRATION_KEYS,
+  ...FIRST_CLASS_CUSTOM_FIELD_MIGRATION_KEYS,
+] as const;
+
 export const RESERVED_FRONTMATTER_KEYS = new Set([
   'type',
   'entryTime',
@@ -197,7 +204,7 @@ export const RESERVED_FRONTMATTER_KEYS = new Set([
   'currency',
   'customFields',
   'customTags',
-  ...CANONICAL_PROJECTION_CUSTOM_FIELD_MIGRATION_KEYS,
+  ...CUSTOM_FIELD_KEY_MIGRATION_KEYS,
 ]);
 
 

@@ -1,12 +1,13 @@
 
 
 import React, { useState, useMemo, useCallback } from 'react';
-import { Input, ComboBox } from '../../../core';
+import { Input } from '../../../core/Input';
+import { ComboBox } from '../../../core/ComboBox';
 import { FormSection } from '../FormSection';
 import { TradeFormData, TradeFormErrors, TradeFormValue } from '../types';
 import { getPluginInstance } from '../../../../utils/pluginContext';
 import { CustomOptionsService, OptionType } from '../../../../services/options';
-import { useEventBus } from '../../../../hooks';
+import { useEventBus } from '../../../../hooks/useEventBus';
 import { t } from '../../../../lang/helpers';
 import { TradeFormLayoutItemId } from '../../../../settings/types';
 import { canonicalizeTradeTagSelection } from '../../../../utils/tradeTagNormalization';
@@ -47,6 +48,45 @@ interface CommonFieldsProps {
   fieldOrder: TradeFormLayoutItemId[];
 }
 
+
+const handleSaveTag = async (option: string) => {
+  try {
+    const optionsService = getOptionsService();
+    const added = await optionsService.addOption(OptionType.TAG, option);
+    if (added) {
+      
+      optionsService.notifyOptionsChanged();
+    }
+  } catch (error) {
+    console.error('Failed to save custom tag option:', error);
+  }
+};
+
+const handleSaveSetup = async (option: string) => {
+  try {
+    const optionsService = getOptionsService();
+    const added = await optionsService.addOption(OptionType.SETUP, option);
+    if (added) {
+      
+      optionsService.notifyOptionsChanged();
+    }
+  } catch (error) {
+    console.error('Failed to save custom setup option:', error);
+  }
+};
+
+const handleSaveMistake = async (option: string) => {
+  try {
+    const optionsService = getOptionsService();
+    const added = await optionsService.addOption(OptionType.MISTAKE, option);
+    if (added) {
+      
+      optionsService.notifyOptionsChanged();
+    }
+  } catch (error) {
+    console.error('Failed to save custom mistake option:', error);
+  }
+};
 
 const CommonFieldsComponent: React.FC<CommonFieldsProps> = ({
   data,
@@ -103,46 +143,10 @@ const CommonFieldsComponent: React.FC<CommonFieldsProps> = ({
   useEventBus('options:changed', handleOptionsChanged);
 
   
-  const handleSaveTag = async (option: string) => {
-    try {
-      const optionsService = getOptionsService();
-      const added = await optionsService.addOption(OptionType.TAG, option);
-      if (added) {
-        
-        optionsService.notifyOptionsChanged();
-      }
-    } catch (error) {
-      console.error('Failed to save custom tag option:', error);
-    }
-  };
 
   
-  const handleSaveSetup = async (option: string) => {
-    try {
-      const optionsService = getOptionsService();
-      const added = await optionsService.addOption(OptionType.SETUP, option);
-      if (added) {
-        
-        optionsService.notifyOptionsChanged();
-      }
-    } catch (error) {
-      console.error('Failed to save custom setup option:', error);
-    }
-  };
 
   
-  const handleSaveMistake = async (option: string) => {
-    try {
-      const optionsService = getOptionsService();
-      const added = await optionsService.addOption(OptionType.MISTAKE, option);
-      if (added) {
-        
-        optionsService.notifyOptionsChanged();
-      }
-    } catch (error) {
-      console.error('Failed to save custom mistake option:', error);
-    }
-  };
 
   const renderField = (fieldId: TradeFormLayoutItemId) => {
     switch (fieldId) {

@@ -13,6 +13,7 @@ import { SegmentedControl } from '../../../components/shared/SegmentedControl';
 import { BackendIntegrationTab } from './BackendIntegrationTab';
 import { TradeImportSyncPanel } from './TradeImportSyncPanel';
 import { TradovateSyncPanel } from './TradovateSyncPanel';
+import { RithmicSyncPanel } from './RithmicSyncPanel';
 import { useBackendProEntitlement } from '../../../hooks/useBackendProEntitlement';
 import { LoadingSpinner } from '../../../components/shared/LoadingSpinner';
 import { Check } from '../../../components/shared/icons/ObsidianIcon';
@@ -24,7 +25,7 @@ interface TradeSyncTabProps {
   displayMode?: 'default' | 'upgrade-only';
 }
 
-type TradeSyncSource = 'metatrader' | 'tradovate' | 'tradeImport';
+type TradeSyncSource = 'metatrader' | 'tradovate' | 'rithmic' | 'tradeImport';
 
 interface TrialOfferProps {
   onRedeem: () => void;
@@ -117,6 +118,7 @@ FeatureUnavailable.displayName = 'FeatureUnavailable';
 interface TradeSyncEntitlements {
   metatrader: boolean;
   tradovate: boolean;
+  rithmic: boolean;
 }
 
 interface EntitlementGateProps {
@@ -151,7 +153,7 @@ interface ProviderSectionProps {
   onRefresh: (source: TradeSyncSource) => Promise<void>;
 }
 
-type TradeSyncProvider = 'metatrader' | 'tradovate';
+type TradeSyncProvider = 'metatrader' | 'tradovate' | 'rithmic';
 
 const PROVIDER_STORAGE_KEY = 'journalit:trade-sync-provider';
 
@@ -162,11 +164,13 @@ const ProviderSection: React.FC<ProviderSectionProps> = ({
   isPro,
   onRefresh,
 }) => {
-  const [provider, setProvider] = useState<TradeSyncProvider>(() =>
-    plugin.app.loadLocalStorage(PROVIDER_STORAGE_KEY) === 'tradovate'
-      ? 'tradovate'
-      : 'metatrader'
-  );
+  const [provider, setProvider] = useState<TradeSyncProvider>(() => {
+    const storedProvider: unknown =
+      plugin.app.loadLocalStorage(PROVIDER_STORAGE_KEY);
+    if (storedProvider === 'tradovate') return 'tradovate';
+    if (storedProvider === 'rithmic') return 'rithmic';
+    return 'metatrader';
+  });
   const selectProvider = (next: TradeSyncProvider) => {
     setProvider(next);
     plugin.app.saveLocalStorage(PROVIDER_STORAGE_KEY, next);
@@ -185,6 +189,10 @@ const ProviderSection: React.FC<ProviderSectionProps> = ({
             value: 'tradovate',
             label: t('trade-sync.source.tradovate'),
           },
+          {
+            value: 'rithmic',
+            label: t('trade-sync.source.rithmic'),
+          },
         ]}
         value={provider}
         onChange={selectProvider}
@@ -197,8 +205,10 @@ const ProviderSection: React.FC<ProviderSectionProps> = ({
       {enabled &&
         (provider === 'metatrader' ? (
           <BackendIntegrationTab plugin={plugin} embedded contentMode={mode} />
-        ) : (
+        ) : provider === 'tradovate' ? (
           <TradovateSyncPanel plugin={plugin} />
+        ) : (
+          <RithmicSyncPanel plugin={plugin} />
         ))}
     </section>
   );
@@ -229,7 +239,9 @@ const FocusedTradeSyncContent: React.FC<FocusedTradeSyncContentProps> = ({
         ? t('trade-sync.source.metatrader.description')
         : source === 'tradovate'
           ? t('trade-sync.source.tradovate.description')
-          : t('trade-sync.source.trade-import.description')}
+          : source === 'rithmic'
+            ? t('trade-sync.source.rithmic.description')
+            : t('trade-sync.source.trade-import.description')}
     </p>
     <EntitlementGate enabled={enabled} isPro={isPro} onRefresh={onRefresh} />
     {enabled &&
@@ -237,6 +249,8 @@ const FocusedTradeSyncContent: React.FC<FocusedTradeSyncContentProps> = ({
         <BackendIntegrationTab plugin={plugin} embedded contentMode={mode} />
       ) : source === 'tradovate' ? (
         <TradovateSyncPanel plugin={plugin} />
+      ) : source === 'rithmic' ? (
+        <RithmicSyncPanel plugin={plugin} />
       ) : (
         <TradeImportSyncPanel plugin={plugin} />
       ))}
@@ -269,18 +283,30 @@ export const TradeSyncTab: React.FC<TradeSyncTabProps> = ({
     'trade import sync settings open',
     'tradeImport'
   );
+  const {
+    isFeatureEnabled: canUseRithmicSync,
+    isChecking: isCheckingRithmicEntitlement,
+  } = useBackendProEntitlement(
+    plugin,
+    'rithmic sync settings open',
+    'rithmicSync'
+  );
 
   const selectedSourceEnabled = source
     ? source === 'metatrader'
       ? canUseMetatraderSync
       : source === 'tradovate'
         ? isPro
-        : canUseTradeImportSync
+        : source === 'rithmic'
+          ? canUseRithmicSync
+          : canUseTradeImportSync
     : true;
   const isCheckingSelectedEntitlement = source
     ? source === 'tradeImport'
       ? isCheckingTradeImportEntitlement
-      : isCheckingMetatraderEntitlement
+      : source === 'rithmic'
+        ? isCheckingRithmicEntitlement
+        : isCheckingMetatraderEntitlement
     : isCheckingMetatraderEntitlement;
 
   const handleSignIn = useCallback(() => {
@@ -329,7 +355,9 @@ export const TradeSyncTab: React.FC<TradeSyncTabProps> = ({
           ? result.entitlements?.features.metatraderSync.enabled === true
           : selectedSource === 'tradovate'
             ? result.status === 'premium'
-            : result.entitlements?.features.tradeImport.enabled === true;
+            : selectedSource === 'rithmic'
+              ? result.entitlements?.features.rithmicSync.enabled === true
+              : result.entitlements?.features.tradeImport.enabled === true;
 
       if (!selectedFeatureEnabled) {
         new Notice(
@@ -403,6 +431,7 @@ export const TradeSyncTab: React.FC<TradeSyncTabProps> = ({
           entitlements={{
             metatrader: canUseMetatraderSync,
             tradovate: isPro,
+            rithmic: canUseRithmicSync,
           }}
           isPro={isPro}
           onRefresh={handleRefresh}

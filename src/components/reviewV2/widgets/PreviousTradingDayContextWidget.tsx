@@ -409,15 +409,14 @@ export const PreviousTradingDayContextWidget: React.FC<PreviousTradingDayContext
               {formatPreviousDRCDate(context.sourceDate)}
             </div>
           </div>
-          <span
-            className="journalit-previous-drc-reference-link"
-            role="link"
-            tabIndex={0}
+          <button
+            type="button"
+            className="journalit-native-button journalit-native-button--unstyled journalit-previous-drc-reference-link"
             onClick={() => void openSourceDRC()}
             onKeyDown={(event) => void handleSourceHeaderKeyDown(event)}
           >
             {t('widget.previous-trading-day-context.open-source')}
-          </span>
+          </button>
         </div>
         <div className="journalit-previous-drc-reference-body">
           {context.sections.map((section, index) => {

@@ -16,7 +16,7 @@ import type {
   GradeDistribution,
 } from '../../../services/monthly/types';
 import { InvalidContextMessage } from './InvalidContextMessage';
-import { SkeletonBox } from '../../shared';
+import { SkeletonBox } from '../../shared/SkeletonBox';
 import { parseLocalDateSafe } from '../../../utils/dateUtils';
 
 interface TechnicalGameWidgetProps {
@@ -122,6 +122,22 @@ const getMonthName = (monthIndex: number): string => {
   return hasTranslation(key) ? t(key) : key;
 };
 
+const formatRating = (rating: number | undefined): string => {
+  if (rating === undefined || rating === null) return 'N/A';
+  return rating.toFixed(1);
+};
+
+const renderWithHeader = (children: React.ReactNode) => (
+  <div>
+    <div className="journalit-reviewv2-card-header journalit-reviewv2-card-header--center">
+      <div className="journalit-reviewv2-card-title journalit-reviewv2-card-title--uppercase">
+        {t('widget.technical-game.name')}
+      </div>
+    </div>
+    {children}
+  </div>
+);
+
 export const TechnicalGameWidget: React.FC<TechnicalGameWidgetProps> =
   React.memo(
     ({ filePath, plugin, config = {}, preview = false, previewData }) => {
@@ -193,12 +209,20 @@ export const TechnicalGameWidget: React.FC<TechnicalGameWidgetProps> =
 
       
       useEffect(() => {
+        let cancelled = false;
+        let retryTimeout: number | null = null;
         retryCountRef.current = 0;
+        const dispatchCurrent = (
+          action: Parameters<typeof dispatchDataState>[0]
+        ) => {
+          if (!cancelled) dispatchDataState(action);
+        };
 
         const loadData = async () => {
+          if (cancelled) return;
           
           if (preview && previewData) {
-            dispatchDataState({
+            dispatchCurrent({
               weeks: previewData.weeks,
               noteType: previewData.noteType ?? null,
               monthlyData: previewData.monthlyData ?? [],
@@ -210,7 +234,7 @@ export const TechnicalGameWidget: React.FC<TechnicalGameWidgetProps> =
           try {
             const file = plugin.app.vault.getAbstractFileByPath(filePath);
             if (!(file instanceof TFile)) {
-              dispatchDataState({ loading: false });
+              dispatchCurrent({ loading: false });
               return;
             }
 
@@ -220,22 +244,22 @@ export const TechnicalGameWidget: React.FC<TechnicalGameWidgetProps> =
               
               if (retryCountRef.current < MAX_FRONTMATTER_RETRIES) {
                 retryCountRef.current++;
-                window.setTimeout(
+                retryTimeout = window.setTimeout(
                   () => void loadData(),
                   FRONTMATTER_RETRY_DELAY_MS
                 );
                 return;
               }
-              dispatchDataState({ loading: false });
+              dispatchCurrent({ loading: false });
               return;
             }
 
             const type = getAllowedNoteType(frontmatter.type);
-            dispatchDataState({ noteType: type });
+            dispatchCurrent({ noteType: type });
 
             
             if (!type) {
-              dispatchDataState({ loading: false });
+              dispatchCurrent({ loading: false });
               return;
             }
 
@@ -248,7 +272,7 @@ export const TechnicalGameWidget: React.FC<TechnicalGameWidgetProps> =
               console.warn(
                 '[TechnicalGameWidget] MonthlyReviewService not available'
               );
-              dispatchDataState({ loading: false });
+              dispatchCurrent({ loading: false });
               return;
             }
 
@@ -270,7 +294,7 @@ export const TechnicalGameWidget: React.FC<TechnicalGameWidgetProps> =
                   year,
                   month
                 );
-                dispatchDataState({ weeks: data });
+                dispatchCurrent({ weeks: data });
               }
             } else if (type === 'quarterly-review') {
               
@@ -313,7 +337,7 @@ export const TechnicalGameWidget: React.FC<TechnicalGameWidgetProps> =
                   new Date(a.weekStartDate).getTime() -
                   new Date(b.weekStartDate).getTime()
               );
-              dispatchDataState({ weeks: allWeeks });
+              dispatchCurrent({ weeks: allWeeks });
             } else if (type === 'yearly-review') {
               
               const parsedDate = parseRecordDate(frontmatter, 'date');
@@ -356,12 +380,12 @@ export const TechnicalGameWidget: React.FC<TechnicalGameWidgetProps> =
                   };
                 }
               );
-              dispatchDataState({ monthlyData: monthlyAggregated });
+              dispatchCurrent({ monthlyData: monthlyAggregated });
             }
           } catch (error) {
             console.error('[TechnicalGameWidget] Error loading data:', error);
           } finally {
-            dispatchDataState({ loading: false });
+            dispatchCurrent({ loading: false });
           }
         };
 
@@ -377,15 +401,13 @@ export const TechnicalGameWidget: React.FC<TechnicalGameWidgetProps> =
         plugin.app.metadataCache.on('changed', handleMetadataChange);
 
         return () => {
+          cancelled = true;
+          if (retryTimeout !== null) window.clearTimeout(retryTimeout);
           plugin.app.metadataCache.off('changed', handleMetadataChange);
         };
       }, [filePath, plugin, preview, previewData]);
 
       
-      const formatRating = (rating: number | undefined): string => {
-        if (rating === undefined || rating === null) return 'N/A';
-        return rating.toFixed(1);
-      };
 
       
       const openWeeklyReview = async (week: WeeklyGamePerformance) => {
@@ -432,17 +454,6 @@ export const TechnicalGameWidget: React.FC<TechnicalGameWidgetProps> =
           );
         }
       };
-
-      const renderWithHeader = (children: React.ReactNode) => (
-        <div>
-          <div className="journalit-reviewv2-card-header journalit-reviewv2-card-header--center">
-            <div className="journalit-reviewv2-card-title journalit-reviewv2-card-title--uppercase">
-              {t('widget.technical-game.name')}
-            </div>
-          </div>
-          {children}
-        </div>
-      );
 
       if (loading) {
         const rowCount = Math.min(pageSize, 5);
@@ -554,6 +565,13 @@ export const TechnicalGameWidget: React.FC<TechnicalGameWidgetProps> =
               <tbody>
                 {paginatedMonths.map((monthData) => (
                   <tr
+                    tabIndex={0}
+                    onKeyDown={(event) => {
+                      if (event.key === 'Enter' || event.key === ' ') {
+                        event.preventDefault();
+                        event.currentTarget.click();
+                      }
+                    }}
                     key={`month-${monthData.month}`}
                     className="journalit-reviewv2-table-row journalit-reviewv2-table-row--interactive journalit-game-performance-row"
                     onClick={() => void openMonthlyReview(monthData)}
@@ -654,6 +672,13 @@ export const TechnicalGameWidget: React.FC<TechnicalGameWidgetProps> =
 
                 return (
                   <tr
+                    tabIndex={0}
+                    onKeyDown={(event) => {
+                      if (event.key === 'Enter' || event.key === ' ') {
+                        event.preventDefault();
+                        event.currentTarget.click();
+                      }
+                    }}
                     key={`week-${week.weekNumber}-${week.weekStartDate.toISOString()}`}
                     className={[
                       'journalit-reviewv2-table-row',

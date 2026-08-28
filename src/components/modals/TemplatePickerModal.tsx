@@ -7,6 +7,7 @@ import { Check, Lock, Star } from '../shared/icons/ObsidianIcon';
 import type { ReviewTemplate, TradeTemplate } from '../../types/reviewV2';
 import { Button } from '../ui/Button';
 import { t } from '../../lang/helpers';
+import { mergeClassNames } from '../../utils/classNames';
 
 type TemplateType = ReviewTemplate | TradeTemplate;
 
@@ -124,7 +125,10 @@ const TemplatePickerContent: React.FC<
                 itemRefs.current[index] = el;
               }}
               tabIndex={-1}
-              className={`template-picker-item ${isCurrent ? 'template-picker-item--current' : ''} ${isFocused ? 'template-picker-item--focused' : ''}`}
+              className={mergeClassNames(
+                'journalit-native-button',
+                `template-picker-item ${isCurrent ? 'template-picker-item--current' : ''} ${isFocused ? 'template-picker-item--focused' : ''}`
+              )}
               onClick={() => handleSelect(template)}
               onMouseDown={() => listRef.current?.focus()}
               onMouseEnter={() => setFocusedIndex(index)}

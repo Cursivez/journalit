@@ -7,10 +7,8 @@ import {
 import type { ImageGalleryAnnotation } from '../../components/imageGallery/types';
 import { isRecord, normalizeImagePath } from './ImageGalleryInternal';
 import type { AnnotationNoteSignature } from './ImageGalleryInternal';
-import {
-  isEmptyPersistedAnnotation,
-  normalizeAnnotationForPersistence,
-} from './ImageGalleryAnnotations';
+import { isEmptyPersistedAnnotation } from './ImageGalleryAnnotations';
+import { serializeImageAnnotation } from '../../utils/imageAnnotations';
 import { refreshMetadataWithRecovery } from './ImageGalleryMetadataRefresh';
 
 const ownedAnnotationWriteCounts = new Map<string, number>();
@@ -153,7 +151,7 @@ export class ImageGalleryAnnotationStore {
   ): Promise<void> {
     const note = await this.ensureNote();
     const normalizedImagePath = normalizeImagePath(imagePath);
-    const persistedAnnotation = normalizeAnnotationForPersistence(annotation);
+    const persistedAnnotation = serializeImageAnnotation(annotation);
     await this.plugin.app.fileManager.processFrontMatter(
       note,
       (frontmatter) => {

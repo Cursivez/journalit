@@ -138,6 +138,7 @@ const IMAGE_GALLERY_SORT_OPTIONS: Array<DropdownMenuOption<ImageGallerySort>> =
 interface TradeLogHeaderProps {
   app: App;
   plugin: JournalitPlugin;
+  tradeLogService: TradeLogService;
   imageGalleryService: ImageGalleryService;
   leaf: WorkspaceLeaf;
   filters: TradeLogFilters;
@@ -360,6 +361,7 @@ export const TradeLogHeader = memo<TradeLogHeaderProps>(
   ({
     app,
     plugin,
+    tradeLogService,
     imageGalleryService,
     leaf,
     filters,
@@ -376,12 +378,6 @@ export const TradeLogHeader = memo<TradeLogHeaderProps>(
     const isMountedRef = useRef(true);
     const [guideVersion, setGuideVersion] = useState(0);
 
-    
-    const tradeLogServiceRef = useRef<TradeLogService | null>(null);
-    if (!tradeLogServiceRef.current) {
-      tradeLogServiceRef.current = new TradeLogService(plugin);
-    }
-    const tradeLogService = tradeLogServiceRef.current;
     const activeFilterModalRef = useRef<Modal | null>(null);
     const activeSettingsModalRef = useRef<TradeLogSettingsModal | null>(null);
     const isClosingGuideFilterModalRef = useRef(false);
@@ -421,10 +417,6 @@ export const TradeLogHeader = memo<TradeLogHeaderProps>(
     const loadAccounts = useCallback(async (): Promise<
       string[] | undefined
     > => {
-      if (!tradeLogService) {
-        return undefined;
-      }
-
       try {
         const availableAccounts = await tradeLogService.getUniqueAccounts();
         if (isMountedRef.current) {
@@ -447,9 +439,6 @@ export const TradeLogHeader = memo<TradeLogHeaderProps>(
 
       return () => {
         isMountedRef.current = false;
-        if (tradeLogServiceRef.current) {
-          tradeLogServiceRef.current.destroy();
-        }
       };
     }, [loadAccounts]);
 

@@ -7,7 +7,8 @@ import React, {
   useRef,
   useState,
 } from 'react';
-import { NumberInput, FastDateTimeInput } from '../../../core';
+import { NumberInput } from '../../../core/NumberInput';
+import { FastDateTimeInput } from '../../../core/FastDateTimeInput';
 import { Button } from '../../../ui/Button';
 import { Tooltip } from '../../../shared/Tooltip';
 import { Info } from '../../../shared/icons/ObsidianIcon';
@@ -40,7 +41,7 @@ import { calculateUnrealizedPnL } from '../../../../utils/unrealizedPnl';
 import { formatDateDisplay } from '../../../../utils/dateUtils';
 import { isTradeOpenWithContext } from '../../../../utils/tradeStatusUtils';
 import { resolveEffectiveRiskAmount } from '../validation';
-import { PnLValue } from '../../../shared/display';
+import { PnLValue } from '../../../shared/display/DisplayValue';
 
 type TransactionFieldValue = number | Date | string | undefined | boolean;
 type IdealExitFieldValue = number | string | undefined;
@@ -1690,10 +1691,10 @@ const EntryExitFieldsComponent: React.FC<EntryExitFieldsProps> = ({
               <div className="dividend-fields">
                 <div className="time-field-wrapper">
                   <div className="time-field-header">
-                    <label className="time-field-label">
+                    <div className="time-field-label">
                       {t('form.field.time')}
                       <span className="required-star">*</span>
-                    </label>
+                    </div>
                     {(data.dividends?.length || 0) > 0 && (
                       <button
                         type="button"
@@ -1706,6 +1707,7 @@ const EntryExitFieldsComponent: React.FC<EntryExitFieldsProps> = ({
                     )}
                   </div>
                   <FastDateTimeInput
+                    ariaLabel={t('form.field.time')}
                     value={dividend.time}
                     onChange={(value) =>
                       handleDividendChange(index, 'time', value)

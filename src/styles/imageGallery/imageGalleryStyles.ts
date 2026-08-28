@@ -905,25 +905,6 @@ export const imageGalleryStyles = `
   color: var(--text-muted);
 }
 
-.journalit-image-annotation-panel {
-  position: absolute;
-  top: 92px;
-  right: 24px;
-  z-index: 4;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  width: min(360px, calc(100vw - 48px));
-  max-height: calc(100vh - 132px);
-  overflow: auto;
-  padding: 16px;
-  border: 1px solid var(--background-modifier-border);
-  border-radius: 12px;
-  background: var(--background-secondary);
-  box-shadow: var(--shadow-l);
-  cursor: default;
-}
-
 @media (max-width: 760px) {
   .journalit-image-gallery-fullscreen-layout--annotating .journalit-fullscreen-viewer {
     width: 100vw;
@@ -940,17 +921,6 @@ export const imageGalleryStyles = `
   .journalit-image-gallery-fullscreen-layout--annotating .journalit-fullscreen-zoomable-media {
     max-width: calc(100vw - 20px);
     max-height: 42vh;
-  }
-
-  .journalit-image-annotation-panel {
-    top: auto;
-    left: 10px;
-    right: 10px;
-    bottom: 10px;
-    width: auto;
-    max-height: 48vh;
-    padding: 14px;
-    border-radius: 12px;
   }
 
   .journalit-image-gallery-fullscreen-actions {
@@ -1113,6 +1083,12 @@ export const imageGalleryStyles = `
   display: flex;
   flex-direction: column;
   gap: 5px;
+}
+
+.journalit-image-annotation-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
 
 .journalit-image-annotation-editor__field > span,

@@ -1,12 +1,6 @@
 
 
-import React, {
-  useState,
-  useCallback,
-  memo,
-  useLayoutEffect,
-  useEffect,
-} from 'react';
+import React, { useState, useCallback, memo, useLayoutEffect } from 'react';
 import { Notice, Modal, App } from 'obsidian';
 import {
   CheckCircle2,
@@ -33,6 +27,12 @@ const asStringArray = (value: unknown): string[] =>
 
 const getErrorMessage = (error: unknown): string =>
   error instanceof Error ? error.message : String(error);
+
+const readOptions = (
+  plugin: JournalitPlugin,
+  optionType: OptionType,
+  fallback: string[]
+): string[] => plugin.optionsService?.getOptions(optionType) ?? fallback;
 
 interface BatchActionToolbarProps {
   selectedCount: number;
@@ -69,21 +69,13 @@ const SetupsModalContent: React.FC<SetupsModalContentProps> = ({
 }) => {
   const [selectedSetups, setSelectedSetups] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [setupOptions, setSetupOptions] = useState<string[]>([]);
+  const [setupOptions, setSetupOptions] = useState(() =>
+    readOptions(plugin, OptionType.SETUP, initialSetupOptions)
+  );
 
   const loadSetupOptions = useCallback(() => {
-    if (plugin.optionsService) {
-      const options = plugin.optionsService.getOptions(OptionType.SETUP);
-      setSetupOptions(options);
-    } else {
-      setSetupOptions(initialSetupOptions);
-    }
-  }, [initialSetupOptions, plugin.optionsService]);
-
-  
-  useEffect(() => {
-    loadSetupOptions();
-  }, [loadSetupOptions]);
+    setSetupOptions(readOptions(plugin, OptionType.SETUP, initialSetupOptions));
+  }, [initialSetupOptions, plugin]);
 
   
   useEventBus('options:changed', loadSetupOptions);
@@ -213,19 +205,13 @@ const TagsModalContent: React.FC<TagsModalContentProps> = ({
 }) => {
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [tagOptions, setTagOptions] = useState<string[]>([]);
+  const [tagOptions, setTagOptions] = useState(() =>
+    readOptions(plugin, OptionType.TAG, initialTagOptions)
+  );
 
   const loadTagOptions = useCallback(() => {
-    if (plugin.optionsService) {
-      setTagOptions(plugin.optionsService.getOptions(OptionType.TAG));
-    } else {
-      setTagOptions(initialTagOptions);
-    }
-  }, [initialTagOptions, plugin.optionsService]);
-
-  useEffect(() => {
-    loadTagOptions();
-  }, [loadTagOptions]);
+    setTagOptions(readOptions(plugin, OptionType.TAG, initialTagOptions));
+  }, [initialTagOptions, plugin]);
 
   useEventBus('options:changed', loadTagOptions);
 
@@ -348,21 +334,15 @@ const MistakesModalContent: React.FC<MistakesModalContentProps> = ({
 }) => {
   const [selectedMistakes, setSelectedMistakes] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [mistakeOptions, setMistakeOptions] = useState<string[]>([]);
+  const [mistakeOptions, setMistakeOptions] = useState(() =>
+    readOptions(plugin, OptionType.MISTAKE, initialMistakeOptions)
+  );
 
   const loadMistakeOptions = useCallback(() => {
-    if (plugin.optionsService) {
-      const options = plugin.optionsService.getOptions(OptionType.MISTAKE);
-      setMistakeOptions(options);
-    } else {
-      setMistakeOptions(initialMistakeOptions);
-    }
-  }, [initialMistakeOptions, plugin.optionsService]);
-
-  
-  useEffect(() => {
-    loadMistakeOptions();
-  }, [loadMistakeOptions]);
+    setMistakeOptions(
+      readOptions(plugin, OptionType.MISTAKE, initialMistakeOptions)
+    );
+  }, [initialMistakeOptions, plugin]);
 
   
   useEventBus('options:changed', loadMistakeOptions);

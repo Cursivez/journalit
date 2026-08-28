@@ -71,15 +71,13 @@ export const AccountTypeWeightLegend: React.FC<
 
   return (
     <div className={`account-weight-legend-container ${className}`}>
-      <div
+      <ul
         className="account-weight-legend"
-        role="list"
         aria-label={t('account.weight-legend.aria-label')}
       >
         {orderedData.map((data) => (
-          <div
+          <li
             key={data.type}
-            role="listitem"
             aria-label={
               showPercentages
                 ? t('account.weight-legend.item-aria-label', {
@@ -99,9 +97,9 @@ export const AccountTypeWeightLegend: React.FC<
               dotSize={dotSize}
               showPercentage={showPercentages}
             />
-          </div>
+          </li>
         ))}
-      </div>
+      </ul>
     </div>
   );
 };

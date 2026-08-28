@@ -24,7 +24,7 @@ import { AccountTypeWeights } from './AccountTypeWeights';
 import { AccountDashboardSkeleton } from './AccountDashboardSkeleton';
 import { Button } from '../../ui/Button';
 import { IconButton } from '../../ui/IconButton';
-import { openCreateAccountModal } from '../../accountPage/components';
+import { openCreateAccountModal } from '../../accountPage/components/CreateAccountModal';
 import {
   AccountDashboardSettingsModal,
   openAccountDashboardSettingsModal,
@@ -38,7 +38,7 @@ import {
   groupAccountsByType,
   getWithdrawalAccountsForDashboard,
 } from './utils';
-import { useEventBus, useEventBusMultiple } from '../../../hooks';
+import { useEventBus, useEventBusMultiple } from '../../../hooks/useEventBus';
 import { useLeafActive } from '../../../hooks/useLeafActive';
 import type { EventMap } from '../../../services/events/types';
 import { RegularBacktestTradeTypeFilter } from '../../shared/RegularBacktestTradeTypeFilter';
@@ -519,17 +519,16 @@ const useAccountDashboardDerivedData = (
     () => plugin.settings?.account?.excludedAccountTypes || ['archived'],
     [plugin.settings]
   );
-  const totalAUM = useMemo(
-    () =>
-      displayableAccounts
-        .filter(
-          (account) =>
-            account.accountType &&
-            !excludedTypes.includes(account.accountType.toLowerCase())
-        )
-        .reduce((sum, account) => sum + account.currentBalance, 0),
-    [displayableAccounts, excludedTypes]
-  );
+  const totalAUM = useMemo(() => {
+    const excludedTypesSet = new Set(excludedTypes);
+    return displayableAccounts
+      .filter(
+        (account) =>
+          account.accountType &&
+          !excludedTypesSet.has(account.accountType.toLowerCase())
+      )
+      .reduce((sum, account) => sum + account.currentBalance, 0);
+  }, [displayableAccounts, excludedTypes]);
   const aumChartData = useMemo(
     () => generateAUMChartData(displayableAccounts, plugin.settings),
     [displayableAccounts, plugin.settings]

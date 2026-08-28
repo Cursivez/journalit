@@ -130,30 +130,28 @@ export const useOptimizedAccordion = (
   }, [isExpanded, isCollapsing]);
 
   const toggleExpanded = useCallback(() => {
-    setExpandedState(() => {
-      if (isExpanded) {
-        
-        setIsCollapsing(true);
+    if (isExpanded) {
+      
+      setIsCollapsing(true);
 
-        if (collapseTimeoutRef.current) {
-          window.clearTimeout(collapseTimeoutRef.current);
-        }
-
-        
-        collapseTimeoutRef.current = window.setTimeout(() => {
-          setIsCollapsing(false);
-          collapseTimeoutRef.current = null;
-        }, animationConfig.duration.close + 10);
-      } else {
-        
-        setIsCollapsing(false);
-        if (collapseTimeoutRef.current) {
-          window.clearTimeout(collapseTimeoutRef.current);
-          collapseTimeoutRef.current = null;
-        }
+      if (collapseTimeoutRef.current) {
+        window.clearTimeout(collapseTimeoutRef.current);
       }
-      return { initialExpanded, isExpanded: !isExpanded };
-    });
+
+      
+      collapseTimeoutRef.current = window.setTimeout(() => {
+        setIsCollapsing(false);
+        collapseTimeoutRef.current = null;
+      }, animationConfig.duration.close + 10);
+    } else {
+      
+      setIsCollapsing(false);
+      if (collapseTimeoutRef.current) {
+        window.clearTimeout(collapseTimeoutRef.current);
+        collapseTimeoutRef.current = null;
+      }
+    }
+    setExpandedState({ initialExpanded, isExpanded: !isExpanded });
   }, [animationConfig.duration.close, initialExpanded, isExpanded]);
 
   const handleKeyDown = useCallback(

@@ -3,7 +3,7 @@ import { Info } from '../../shared/icons/ObsidianIcon';
 import { DashboardMetricsProps } from './types';
 import { getWithdrawalsByMonth } from './utils';
 import { WithdrawalBreakdownTooltip } from './WithdrawalBreakdownTooltip';
-import { Tooltip } from '../../shared';
+import { Tooltip } from '../../shared/Tooltip';
 import { useCurrency } from '../../../contexts/CurrencyContext';
 import { useDisplayFormatter } from '../../../hooks/useDisplayPolicy';
 import { t } from '../../../lang/helpers';

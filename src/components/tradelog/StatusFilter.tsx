@@ -65,6 +65,13 @@ const getStatusOptions = (): Array<{
 ];
 
 
+const handleKeyDown = (e: React.KeyboardEvent, action: () => void) => {
+  if (e.key === 'Enter' || e.key === ' ') {
+    e.preventDefault();
+    action();
+  }
+};
+
 export const StatusFilter: React.FC<StatusFilterProps> = React.memo(
   ({ selectedStatuses, onChange }) => {
     const [isOpen, setIsOpen] = useState(false);
@@ -174,20 +181,13 @@ export const StatusFilter: React.FC<StatusFilterProps> = React.memo(
     
     const toggleDropdown = useCallback(() => setIsOpen((prev) => !prev), []);
 
-    const handleKeyDown = (e: React.KeyboardEvent, action: () => void) => {
-      if (e.key === 'Enter' || e.key === ' ') {
-        e.preventDefault();
-        action();
-      }
-    };
-
+    const selectedStatusesSet = new Set(selectedStatuses);
     return (
       <div className="journalit-tradelog-status-filter" ref={dropdownRef}>
         <div className="journalit-tradelog-status-dropdown">
-          <div
-            className="journalit-tradelog-status-summary"
-            role="button"
-            tabIndex={0}
+          <button
+            type="button"
+            className="journalit-native-button journalit-native-button--unstyled journalit-tradelog-status-summary"
             aria-expanded={isOpen}
             aria-haspopup="true"
             onClick={toggleDropdown}
@@ -195,7 +195,7 @@ export const StatusFilter: React.FC<StatusFilterProps> = React.memo(
           >
             {statusSummary}
             <span className="dropdown-arrow">{isOpen ? '▲' : '▼'}</span>
-          </div>
+          </button>
 
           {isOpen && (
             <div className="journalit-tradelog-status-options-dropdown">
@@ -265,7 +265,7 @@ export const StatusFilter: React.FC<StatusFilterProps> = React.memo(
                         aria-description={option.description}
                         role="checkbox"
                         tabIndex={0}
-                        aria-checked={selectedStatuses.includes(option.value)}
+                        aria-checked={selectedStatusesSet.has(option.value)}
                         onKeyDown={(e) =>
                           handleKeyDown(e, () =>
                             handleStatusChange(option.value)
@@ -274,13 +274,13 @@ export const StatusFilter: React.FC<StatusFilterProps> = React.memo(
                       >
                         <span
                           className={`journalit-tradelog-checkbox journalit-tradelog-status-checkbox${
-                            selectedStatuses.includes(option.value)
+                            selectedStatusesSet.has(option.value)
                               ? ' checked'
                               : ''
                           }`}
                           aria-hidden="true"
                         >
-                          {selectedStatuses.includes(option.value) ? '✓' : ''}
+                          {selectedStatusesSet.has(option.value) ? '✓' : ''}
                         </span>
                         <span>{option.label}</span>
                       </div>
@@ -295,7 +295,7 @@ export const StatusFilter: React.FC<StatusFilterProps> = React.memo(
                         aria-description={option.description}
                         role="checkbox"
                         tabIndex={0}
-                        aria-checked={selectedStatuses.includes(option.value)}
+                        aria-checked={selectedStatusesSet.has(option.value)}
                         onKeyDown={(e) =>
                           handleKeyDown(e, () =>
                             handleStatusChange(option.value)
@@ -304,13 +304,13 @@ export const StatusFilter: React.FC<StatusFilterProps> = React.memo(
                       >
                         <span
                           className={`journalit-tradelog-checkbox journalit-tradelog-status-checkbox${
-                            selectedStatuses.includes(option.value)
+                            selectedStatusesSet.has(option.value)
                               ? ' checked'
                               : ''
                           }`}
                           aria-hidden="true"
                         >
-                          {selectedStatuses.includes(option.value) ? '✓' : ''}
+                          {selectedStatusesSet.has(option.value) ? '✓' : ''}
                         </span>
                         <span>{option.label}</span>
                       </div>

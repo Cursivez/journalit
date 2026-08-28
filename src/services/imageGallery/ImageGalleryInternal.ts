@@ -30,7 +30,7 @@ export type ImageGallerySourceType =
   | 'quarterly'
   | 'yearly';
 
-export const IMAGE_GALLERY_INDEX_VERSION = 11;
+export const IMAGE_GALLERY_INDEX_VERSION = 12;
 export const IMAGE_GALLERY_INDEX_TTL_MS = 60 * 60 * 1000;
 export const REVIEW_METADATA_READY_TIMEOUT_MS = 5000;
 export const SELECTABLE_TRADE_STATUSES: TradeStatus[] = [
@@ -270,17 +270,4 @@ export function isImageGallerySourceType(
     value === 'quarterly' ||
     value === 'yearly'
   );
-}
-
-export function dedupeStrings(values: string[]): string[] {
-  const seen = new Set<string>();
-  const result: string[] = [];
-  for (const value of values) {
-    const trimmed = value.trim();
-    const key = trimmed.toLowerCase();
-    if (!trimmed || seen.has(key)) continue;
-    seen.add(key);
-    result.push(trimmed);
-  }
-  return result;
 }

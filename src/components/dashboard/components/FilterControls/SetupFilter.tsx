@@ -103,14 +103,14 @@ const SetupFilterComponent: React.FC<SetupFilterProps> = ({
 
   const isAllSelected = selected.length === allOptions.length;
 
+  const selectedSet = new Set(selected);
   return (
     <div className="journalit-dashboard-setup-filter" ref={dropdownRef}>
       <div className="journalit-dashboard-setup-dropdown">
-        <div
-          className="journalit-dashboard-setup-summary"
+        <button
+          type="button"
+          className="journalit-native-button journalit-native-button--unstyled journalit-dashboard-setup-summary"
           onClick={toggleDropdown}
-          role="button"
-          tabIndex={0}
           onKeyDown={(e) => {
             if (e.key === 'Enter' || e.key === ' ') {
               e.preventDefault();
@@ -122,7 +122,7 @@ const SetupFilterComponent: React.FC<SetupFilterProps> = ({
             {summaryText}
           </span>
           <span className="dropdown-arrow">{isOpen ? '▲' : '▼'}</span>
-        </div>
+        </button>
 
         {isOpen && (
           <div className="journalit-dashboard-setup-options-dropdown">
@@ -178,7 +178,7 @@ const SetupFilterComponent: React.FC<SetupFilterProps> = ({
                     className="journalit-dashboard-setup-option-item"
                     onClick={() => handleSetupChange(setup)}
                     role="checkbox"
-                    aria-checked={selected.includes(setup)}
+                    aria-checked={selectedSet.has(setup)}
                     tabIndex={0}
                     onKeyDown={(e) => {
                       if (e.key === 'Enter' || e.key === ' ') {
@@ -188,10 +188,10 @@ const SetupFilterComponent: React.FC<SetupFilterProps> = ({
                     }}
                   >
                     <span
-                      className={`journalit-dashboard-setup-checkbox${selected.includes(setup) ? ' checked' : ''}`}
+                      className={`journalit-dashboard-setup-checkbox${selectedSet.has(setup) ? ' checked' : ''}`}
                       aria-hidden="true"
                     >
-                      {selected.includes(setup) ? '✓' : ''}
+                      {selectedSet.has(setup) ? '✓' : ''}
                     </span>
                     <span>{setup}</span>
                   </div>

@@ -1037,7 +1037,7 @@ export const TRADE_FORM_STYLES = `
     gap: 0.5rem !important;
     overflow-x: auto !important;
     overflow-y: hidden !important;
-    padding: 0.65rem 0 0 !important;
+    padding: 0.65rem 0.25rem 0.4rem !important;
     margin: 0 !important;
     border-top: 0 !important;
     background: transparent !important;
@@ -1075,6 +1075,41 @@ export const TRADE_FORM_STYLES = `
     border-radius: var(--radius-s, 6px) !important;
     background: transparent !important;
     scroll-snap-align: center !important;
+  }
+
+  .trade-form-view-container .journalit-trade-attachment-annotation {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    margin-top: 12px;
+    padding: 14px;
+    border: 1px solid var(--background-modifier-border);
+    border-radius: var(--radius-m, 8px);
+    background: var(--background-secondary);
+  }
+
+  .trade-form-view-container .journalit-trade-attachment-annotation__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  .trade-form-view-container .journalit-trade-attachment-annotation__header h3 {
+    max-width: min(72vw, 420px);
+    margin: 0;
+    overflow: hidden;
+    color: var(--text-normal);
+    font-size: var(--font-ui-medium);
+    font-weight: 600;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .trade-form-view-container .journalit-trade-attachment-annotation__actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
   }
 
   @keyframes errorPulse {

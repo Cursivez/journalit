@@ -2732,8 +2732,18 @@ export const TEMPLATE_BUILDER_STYLES = `
 
 .journalit-template-builder-container .template-builder-section-title {
   display: flex;
+  flex: 1 1 auto;
   align-items: center;
+  justify-content: flex-start;
   gap: 6px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  text-transform: inherit;
+  letter-spacing: inherit;
   line-height: 1.2;
 }
 
@@ -2899,6 +2909,21 @@ export const TEMPLATE_BUILDER_STYLES = `
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.journalit-template-builder-container .sidebar-template-item-select {
+  display: flex;
+  flex: 1 1 auto;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 6px;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
 }
 
 .journalit-template-builder-container .sidebar-template-item-badge {

@@ -1,12 +1,7 @@
 import { calculateWinRateExcludingBreakeven } from '../../utils/breakEvenRange';
-import { calculateDirectionalPriceDiff } from '../../utils/pnlCalculation';
-import {
-  getEffectivePnL,
-  getResolvedWeightedAverageExitPrice,
-  getWeightedAverageEntryPrice,
-  isPnlContributingTrade,
-} from '../../utils/tradeStatusUtils';
+import { isPnlContributingTrade } from '../../utils/tradeStatusUtils';
 import { inferStoredTradeType } from '../../utils/tradeTypeRouting';
+import { calculateSetupTradePnl, toSetupTradePnlInput } from './setupTradePnl';
 import type {
   Setup,
   SetupMissedReasonCount,
@@ -23,6 +18,10 @@ interface SetupOpportunityRecord {
   setup?: unknown;
   missedReason?: unknown;
   pnl?: number | null;
+  authoritativePnl?: number | null;
+  canonicalTradeId?: string;
+  canonicalTradeVersion?: number;
+  canonicalProjectionSchemaVersion?: number;
   rMultiple?: unknown;
   riskAmount?: unknown;
   entryPrice?: unknown;
@@ -36,6 +35,7 @@ interface SetupOpportunityRecord {
   useDirectPnLInput?: boolean;
   dividends?: Array<{ amount?: number | null }>;
   commission?: number | null;
+  commissionType?: 'fixed' | 'percentage';
   swap?: number | null;
   fees?: number | null;
   rebate?: number | null;
@@ -45,28 +45,6 @@ interface SetupOpportunityRecord {
   exits?: unknown;
   _originalPnlWasNull?: unknown;
 }
-
-type TradePnlInput = Parameters<typeof isPnlContributingTrade>[0] & {
-  entryPrice?: number | null;
-  exitPrice?: number | null;
-  positionSize: number;
-  direction?: string;
-  assetType?: string;
-  optionType?: string;
-  hasExplicitExitPrice?: boolean;
-  entries?: Array<{
-    time?: Date | string | null;
-    price?: number | null;
-    size?: number | null;
-    hasExplicitPrice?: boolean;
-  }>;
-  exits?: Array<{
-    time?: Date | string | null;
-    price?: number | null;
-    size?: number | null;
-    hasExplicitPrice?: boolean;
-  }>;
-};
 
 interface AttributedOpportunityTrade {
   setupIds: string[];
@@ -204,9 +182,9 @@ function toAttributedOpportunityTrade(
   const trade: SetupOpportunityRecord = isRecord(rawTrade) ? rawTrade : {};
   const setupIds = getAnySetupIdsForTrade(trade, setupById, resolveToken);
   if (setupIds.length === 0) return null;
-  const pnlInput = toTradePnlInput(trade);
+  const pnlInput = toSetupTradePnlInput(trade);
   const pnlContributing = isPnlContributingTrade(pnlInput);
-  const pnl = pnlContributing ? calculateTradePnl(pnlInput) : 0;
+  const pnl = pnlContributing ? calculateSetupTradePnl(pnlInput) : 0;
 
   return {
     setupIds,
@@ -295,56 +273,6 @@ function normalizeSetupToken(value: string): string {
     .replace(/[^\p{L}\p{N}]+/gu, '');
 }
 
-function toTradePnlInput(trade: SetupOpportunityRecord): TradePnlInput {
-  return {
-    tradeStatus:
-      typeof trade.tradeStatus === 'string' ? trade.tradeStatus : undefined,
-    exitTime: stringifyDateLike(trade.exitTime) || null,
-    exitPrice: getOptionalNumber(trade.exitPrice),
-    pnl: typeof trade.pnl === 'number' ? trade.pnl : null,
-    _originalPnlWasNull: trade._originalPnlWasNull === true,
-    useDirectPnLInput: trade.useDirectPnLInput,
-    directPnL: typeof trade.directPnL === 'number' ? trade.directPnL : null,
-    dividends: trade.dividends,
-    commission: trade.commission,
-    swap: trade.swap,
-    fees: trade.fees,
-    rebate: trade.rebate,
-    entries: getTradeExecutions(trade.entries),
-    exits: getTradeExecutions(trade.exits),
-    entryPrice: getOptionalNumber(trade.entryPrice),
-    positionSize: getOptionalNumber(trade.positionSize) ?? 0,
-    direction:
-      typeof trade.direction === 'string' ? trade.direction : undefined,
-    assetType:
-      typeof trade.assetType === 'string' ? trade.assetType : undefined,
-    optionType:
-      typeof trade.optionType === 'string' ? trade.optionType : undefined,
-    hasExplicitExitPrice: trade.hasExplicitExitPrice === true,
-  };
-}
-
-function calculateTradePnl(trade: TradePnlInput): number {
-  const hasStoredOrDirectPnL =
-    (trade.pnl !== undefined &&
-      trade.pnl !== null &&
-      Number.isFinite(trade.pnl)) ||
-    (trade.useDirectPnLInput === true &&
-      trade.directPnL !== undefined &&
-      trade.directPnL !== null);
-
-  if (hasStoredOrDirectPnL) return getEffectivePnL(trade);
-
-  const entryPrice = getWeightedAverageEntryPrice(trade);
-  const exitPrice = getResolvedWeightedAverageExitPrice(trade);
-  const priceDiff = calculateDirectionalPriceDiff(
-    { assetType: trade.assetType, direction: trade.direction || 'long' },
-    entryPrice,
-    exitPrice
-  );
-  return priceDiff === null ? 0 : priceDiff * trade.positionSize;
-}
-
 function calculateEffectiveRMultiple(
   pnl: number,
   storedRMultiple: number | null,
@@ -357,35 +285,8 @@ function calculateEffectiveRMultiple(
   return pnl / effectiveRisk;
 }
 
-function getTradeExecutions(value: unknown): TradePnlInput['entries'] {
-  if (!Array.isArray(value)) return undefined;
-  return value.flatMap((execution) =>
-    isRecord(execution)
-      ? [
-          {
-            time:
-              execution.time instanceof Date ||
-              typeof execution.time === 'string'
-                ? execution.time
-                : null,
-            price: getOptionalNumber(execution.price),
-            size: getOptionalNumber(execution.size),
-            ...(typeof execution.hasExplicitPrice === 'boolean' && {
-              hasExplicitPrice: execution.hasExplicitPrice,
-            }),
-          },
-        ]
-      : []
-  );
-}
-
 function getOptionalNumber(value: unknown): number | null {
   return typeof value === 'number' && Number.isFinite(value) ? value : null;
-}
-
-function stringifyDateLike(value: unknown): string {
-  if (value instanceof Date) return value.toISOString();
-  return typeof value === 'string' ? value : '';
 }
 
 function getStringArray(value: unknown): string[] {

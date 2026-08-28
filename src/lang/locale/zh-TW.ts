@@ -64,61 +64,50 @@ const zhTW: Partial<Lang> = {
   'onboarding.explore.core.layouts.label': 'Layout Builder',
   'onboarding.explore.core.layouts.description':
     'Customize dashboards and review layouts with widgets and templates.',
-  'onboarding.explore.imports.title': 'Imports & Sync (PRO)',
-  'onboarding.explore.imports.subtitle':
-    'Preview and setup anytime. Importing/sync requires Pro.',
+  'onboarding.explore.imports.title': '匯入與同步',
+
   'onboarding.explore.imports.csv.label': 'Trade Import',
   'onboarding.explore.imports.csv.description':
-    'Upload CSV, spreadsheet, HTML, and broker statement exports for backend-powered analysis and preview.',
+    '免費預覽支援的交易歷史檔案並對應欄位。匯入到你的庫需要 Pro。',
   'onboarding.explore.imports.trade-sync.label': 'Trade Sync',
   'onboarding.explore.imports.trade-sync.description':
     'Automatic trade syncing from MetaTrader (MT4) or Tradovate. Requires Pro.',
-  'onboarding.explore.cta.open': 'Open',
+
   'onboarding.explore.cta.manual': 'Open Docs',
 
   
   
   
-  'onboarding.path.kicker': 'Choose Path',
-  'onboarding.path.tip.trial':
-    'Tip: PRO subscriptions include a 14-day free trial.',
-  'onboarding.path.title': 'Choose your first path',
-  'onboarding.path.subtitle':
-    'Pick the fastest way to get your first trade in Journalit.',
-  'onboarding.path.option.manual.label': 'Manual Entry (Free)',
+  'onboarding.path.kicker': '你的交易歷史',
+  'onboarding.path.title': '你是否已有要匯入 Journalit 的交易？',
+  'onboarding.path.subtitle': '選擇一個答案，我們會直接帶你進入合適的下一步。',
+  'onboarding.path.option.manual.label': '沒有，我要從頭開始',
   'onboarding.path.option.manual.description':
-    'Create a trade in seconds with the Add Trade form.',
-  'onboarding.path.option.csv.label': 'Trade Import',
-  'onboarding.path.option.csv.description':
-    'Use Pro backend-powered analysis for broker export files.',
-  'onboarding.path.option.trade-sync.label': 'Trade Sync',
+    '開啟「新增交易」表單並記錄第一筆交易。',
+  'onboarding.path.option.csv.label': '有，我已有交易歷史',
+  'onboarding.path.option.csv.description': '選擇自動同步券商或匯入檔案。',
+  'onboarding.path.method.kicker': '匯入你的歷史',
+  'onboarding.path.method.title': '你想如何匯入？',
+  'onboarding.path.method.subtitle': '選擇與你的券商和匯出檔案相符的方式。',
+  'onboarding.path.option.trade-sync.label': '連接 MT4 或 Tradovate',
   'onboarding.path.option.trade-sync.description':
-    'Connect MetaTrader (MT4) or Tradovate for automatic trade syncing.',
+    '設定 Trade Sync，自動接收新的交易。',
+  'onboarding.path.option.import.label': '匯入交易歷史檔案',
+  'onboarding.path.option.import.description':
+    '上傳 CSV、Excel 或支援的券商報告。',
+  'onboarding.path.option.import.badge': '免費預覽',
+  'onboarding.manual.title': 'Journalit 已準備就緒',
+  'onboarding.manual.subtitle': '設定下方建議的快捷鍵，以便更快記錄交易。',
+  'onboarding.manual.subtitle-mobile':
+    '每當你想記錄交易時，請開啟「新增交易」。',
+  'onboarding.manual.hotkey.title': '建議的快捷鍵',
+  'onboarding.manual.cta.change-hotkey': '設定快捷鍵',
+  'onboarding.manual.hit-hotkey':
+    '建議使用 {hotkey}。點擊「設定快捷鍵」進行設定。',
+  'onboarding.manual.add-first-trade': '新增我的第一筆交易',
+  'onboarding.notice.trade-sync-open-failed':
+    '無法開啟 Trade Sync。請再試一次。',
 
-  
-  
-  
-  'onboarding.final.manual.title': "You're ready to Journalit",
-
-  'onboarding.final.manual.hotkey.title': 'Suggested hotkey',
-  'onboarding.final.manual.hotkey.value': 'Mod + Alt + A',
-
-  'onboarding.final.manual.cta.change-hotkey': 'Set hotkey',
-  'onboarding.final.manual.hit-hotkey':
-    'Suggested: {hotkey}. Click Set hotkey to configure it.',
-  'onboarding.final.csv.title': "You're ready to bring in your trades",
-  'onboarding.final.csv.subtitle':
-    'Next, open Trade Import. Uploading and processing broker exports requires PRO activation.',
-  'onboarding.final.csv.cta.open': 'Open Trade Import',
-  'onboarding.final.trade-sync.title': "You're ready to set up Trade Sync",
-  'onboarding.final.trade-sync.subtitle':
-    'Next, set up MetaTrader (MT4) or Tradovate sync.',
-  'onboarding.final.trade-sync.cta.open': 'Open Trade Sync Setup',
-  'onboarding.final.trade-sync.hero.source.title': 'MetaTrader + Tradovate',
-  'onboarding.final.trade-sync.hero.source.subtitle': 'Broker trades',
-  'onboarding.final.trade-sync.hero.dest.title': 'Vault',
-  'onboarding.final.trade-sync.hero.dest.subtitle': 'Journalit notes',
-  'onboarding.final.finish': 'Finish',
   'command.open-release-notes': '檢視版本說明',
 
   
@@ -132,7 +121,6 @@ const zhTW: Partial<Lang> = {
   'auth.desc.already-logged-in': 'You are already logged in{email}.',
   'auth.title.sign-in': 'Sign In to Journalit',
   'auth.label.email': 'Email Address',
-  'auth.placeholder.email': 'your.email@example.com',
 
   
   
@@ -157,10 +145,7 @@ const zhTW: Partial<Lang> = {
   'form.layout.customize': '自訂表單',
   'form.layout.modal-title': '自訂交易表單',
   'form.layout.settings-title': '交易表單版面',
-  'form.layout.settings-desc':
-    '選擇你的交易記錄方式，以及哪些選用區塊顯示在交易表單中。',
-  'form.layout.core-fields-note':
-    '交易類型、帳戶、資產類型、商品、方向，以及所選輸入模式需要的價格或 P&L 輸入會保持可見。',
+
   'form.layout.input-mode': '輸入模式',
   'form.layout.input-mode-prices': '價格',
   'form.layout.input-mode-pnl-risk': 'P&L + 風險',
@@ -189,13 +174,11 @@ const zhTW: Partial<Lang> = {
     '帳戶、標的、方向和進出場輸入會固定在最前。',
   'form.layout.item.asset-specific': '資產專屬欄位',
   'form.layout.item.pnl-preview': 'P&L 預覽',
-  'form.layout.item.realized-pnl-preview': '部分平倉 P&L 摘要',
-  'form.layout.item.realized-pnl-preview-desc':
-    '僅在未平倉交易發生部分平倉後顯示；位置固定。',
+
   'form.layout.item.trade-currency': '交易貨幣 / 匯率',
   'form.layout.item.trade-currency-desc':
     '以其他貨幣輸入交易，並可選擇手動指定匯率。',
-  'form.layout.manual-fx-rate': '手動匯率輸入',
+  'form.layout.manual-fx-rate': '覆寫匯率',
   'form.layout.result-r': 'R 結果',
   'form.layout.entry-time': '交易時間',
 
@@ -228,7 +211,7 @@ const zhTW: Partial<Lang> = {
   'form.field.trade-thesis': '交易論點',
   'form.field.time': '時間',
   'form.field.price': '價格',
-  'form.field.size': '數量',
+
   'form.field.entries': '進場',
   'form.field.exits': '出場',
   'form.field.optional': '（選填）',
@@ -264,8 +247,10 @@ const zhTW: Partial<Lang> = {
   'form.field.leverage-ratio': '槓桿比率',
   'form.field.trade-currency': '交易貨幣',
   'form.field.fx-rate': '兌{base}匯率',
+  'form.field.fx-rate-override': '覆寫匯率（{quote} → {base}）',
 
   
+  'form.forex.using-manual-rate': '使用手動匯率',
   'form.field.lot-size.standard': '標準手（100,000）',
   'form.field.lot-size.mini': '迷你手（10,000）',
   'form.field.lot-size.micro': '微型手（1,000）',
@@ -287,7 +272,7 @@ const zhTW: Partial<Lang> = {
   'form.placeholder.fx-rate': '1 {currency} = ? {base}（留空：使用每日匯率）',
   'form.placeholder.custom-tag': '輸入自訂標籤後按 Enter',
   'form.placeholder.thesis': '輸入此筆交易的論點...',
-  'form.placeholder.pnl': '輸入總損益',
+
   'form.placeholder.exchange-stock': '例如：NYSE、NASDAQ',
   'form.placeholder.exchange-crypto': '例如：Binance、Coinbase',
   'form.placeholder.futures-point-value': '例如：ES1 為 50',
@@ -309,12 +294,11 @@ const zhTW: Partial<Lang> = {
     '直接輸入總損益。手續費和其他費用仍會扣除。',
   'form.entry-exit.calc-pnl': '從進場/出場價格和部位大小計算損益。',
   'form.ideal-exit.title': '理想出場',
-  'form.ideal-exit.subtitle': '用於執行回顧的事後分批出場。',
-  'form.ideal-exit.coverage': '理想數量',
+
   'form.ideal-exit.price': '理想價格',
   'form.ideal-exit.size': '數量',
   'form.ideal-exit.remove': '移除理想出場',
-  'form.ideal-exit.add': '+ 新增理想出場',
+
   'form.ideal-exit.copy-actual': '複製實際出場',
 
   'form.ideal-exit.tooltip':
@@ -352,9 +336,8 @@ const zhTW: Partial<Lang> = {
   'button.add': '新增',
   'button.create': '建立',
   'button.reset': '重設',
-  'button.close': '關閉',
+
   'button.confirm': '確認',
-  'button.submit': '提交',
 
   'button.add-trade': '新增交易',
   'button.update-trade': '更新交易',
@@ -362,15 +345,11 @@ const zhTW: Partial<Lang> = {
   'button.create-trade': '建立交易',
   'button.delete-all': '全部刪除',
   'button.clear-all': '全部清除',
-  'button.save-name-only': '僅儲存名稱',
-  'button.cancel-action': '取消操作',
+
   'button.cancel-reset': '取消重設',
   'button.proceed-anyway': '仍要繼續',
   'button.mark-reviewed': '標記為已檢閱',
-  'button.add-first-goal': '新增您的第一個目標',
-  'button.add-first-event': '新增您的第一個事件',
-  'button.create-daily-review': '建立每日回顧',
-  'button.apply-settings': '套用設定',
+
   'button.learn-more': '了解更多',
   'button.upload-image': '上傳媒體',
   'button.discord': 'Discord',
@@ -382,17 +361,20 @@ const zhTW: Partial<Lang> = {
   'validation.fix-errors': '請修正以下錯誤：',
 
   'validation.complete-required': '請完成所有必填欄位',
-  'validation.map-required-fields': '匯入前請對應所有必填欄位',
 
   
   
   
-  'notice.verification-sent': '驗證碼已發送！請檢查您的電子郵件。',
+
   'notice.login-success': '登入成功！',
-  'notice.new-verification-sent': '新驗證碼已發送！請檢查您的電子郵件。',
+
   'notice.logout-success': '已成功登出',
-  'notice.hotkey-set': 'Hotkey set: {hotkey}',
+  'notice.hotkey-set': '快捷鍵已設定：{hotkey}',
   'notice.ftp-created': 'FTP 憑證建立成功',
+  'notice.ftp-password-rotated':
+    '已為此裝置產生新的 FTP 憑證。在其他裝置上設定的 FTP 同步（例如您的 MetaTrader EA）必須更新為新密碼。',
+  'notice.ftp-reused':
+    '已載入此裝置上現有的 FTP 憑證。如果它們不再有效，請使用重設密碼。',
   'notice.ftp-reset': 'FTP 密碼重設成功！請儲存新密碼。',
   'notice.template-saved': '版面已儲存',
   'notice.template-created': '版面已建立',
@@ -409,9 +391,9 @@ const zhTW: Partial<Lang> = {
   'notice.auto-sync-enabled': '啟用',
   'notice.auto-sync-disabled': '停用',
   'notice.reset-items': '已重設項目為預設值',
-  'notice.reset-timeframes': '已重設時間週期為預設值',
+
   'notice.custom-fields-imported': '已成功匯入 {count} 個自訂欄位',
-  'notice.csv-parsed': 'CSV/XLSX/XLS 解析成功：{count} 筆資料',
+
   'notice.setups-added': '已為 {count} 筆交易新增交易策略',
   'notice.tags-added': 'Added tags to {count} trades',
   'notice.mistakes-added': '已為 {count} 筆交易新增錯誤標記',
@@ -429,7 +411,7 @@ const zhTW: Partial<Lang> = {
   'notice.error.open-monthly-review': '無法開啟月回顧：{error}',
   'notice.error.open-quarterly-review': '無法開啟季回顧：{error}',
   'notice.error.open-yearly-review': '無法開啟年回顧：{error}',
-  'notice.error.sync-trades': '同步交易失敗：{error}',
+
   'notice.error.open-release-notes': '無法開啟版本說明：{error}',
   'notice.error.open-layout-builder': '無法開啟版面配置建構器：{error}',
   'notice.error.switch-template': '切換版面失敗：{error}',
@@ -445,9 +427,6 @@ const zhTW: Partial<Lang> = {
   'notice.error.import-settings': '匯入設定失敗：{error}',
   'notice.error.reset-settings': '重設設定失敗。請查看主控台以取得詳細資訊。',
 
-  'notice.error.invalid-drc-date': '無效的 DRC 日期',
-  'notice.error.invalid-drc-missed': '無效的 DRC 日期。無法建立錯過的交易。',
-  'notice.error.trade-not-found': '找不到交易檔案：{path}',
   'notice.error.mark-reviewed': '標記交易為已檢閱時發生錯誤：{error}',
   'notice.error.add-setups': '新增交易策略時發生錯誤：{error}',
   'notice.error.add-tags': 'Error adding tags: {error}',
@@ -463,7 +442,6 @@ const zhTW: Partial<Lang> = {
   
   
   
-  'notice.info.no-sync': '目前沒有同步作業',
 
   'notice.info.settings-recovered': '設定已從備份復原。部分近期變更可能遺失。',
   'notice.info.cannot-remove-locked': '無法移除鎖定的小工具',
@@ -474,10 +452,10 @@ const zhTW: Partial<Lang> = {
   'tradelog.title': '交易紀錄',
   'dashboard.guide.empty.intro.title': 'Welcome to your Dashboard',
   'dashboard.guide.empty.intro.description':
-    'This page gives you a quick view of your trading performance. Once you have trades, it becomes your daily command center.',
-  'dashboard.guide.empty.state.title': 'Start by adding your first trade',
+    'Your Dashboard becomes useful as soon as Journalit has trading history to analyse.',
+  'dashboard.guide.empty.state.title': 'Bring your trading history with you',
   'dashboard.guide.empty.state.description':
-    'You do not have any trades yet. Add a trade manually or import data, then come back to unlock the full Dashboard tour.',
+    'Import previous trades to start with meaningful performance data, or add a trade manually if you are recording your first trades.',
   'dashboard.guide.main.intro.title': '這是您的儀表板',
   'dashboard.guide.main.intro.description':
     'Use this page to track your performance, review your stats, and keep your most useful charts in one place.',
@@ -583,7 +561,6 @@ const zhTW: Partial<Lang> = {
   'layoutBuilder.guide.set-default-template.description':
     'Click the star on your new template if you want new review notes to use this layout automatically.',
 
-  'form.layout.guide-trigger-label': '自訂表單',
   'trade-form.guide.customization-modal.title': '讓表單符合你的工作流程',
   'trade-form.guide.customization-modal.description':
     '你可以在這裡顯示、隱藏和重新排序選用區塊。讓表單專注於你真正使用的欄位。',
@@ -593,9 +570,9 @@ const zhTW: Partial<Lang> = {
   'tradelog.guide.empty.intro.title': 'Welcome to Trade Log',
   'tradelog.guide.empty.intro.description':
     'This page becomes your main place for browsing, sorting, and reviewing trades. Once you add trades, you will also get the full Trade Log tour.',
-  'tradelog.guide.empty.state.title': 'Start by adding your first trade',
+  'tradelog.guide.empty.state.title': 'No trading data available',
   'tradelog.guide.empty.state.description':
-    'You do not have any trades here yet. Click the Create Trade button to make your first trade, then come back to learn the full table and batch tools.',
+    'Import previous trades to explore your performance now, or record a new trade manually.',
   'tradelog.guide.intro.title': 'This is your Trade Log',
   'tradelog.guide.intro.description':
     'Use this page to review trades one by one, sort them, filter them, and make changes to many trades at once.',
@@ -647,6 +624,8 @@ const zhTW: Partial<Lang> = {
   
   'dashboard.title': '儀表板',
   'dashboard.no-data': '沒有可用的交易資料',
+  'dashboard.empty.import-action': 'Import existing trades',
+  'dashboard.empty.manual-action': 'Add a trade manually',
   'dashboard.widgets.setup-performance.title': '策略績效',
   'dashboard.widgets.setup-performance.description':
     '按交易策略比較績效的排名長條圖',
@@ -682,7 +661,7 @@ const zhTW: Partial<Lang> = {
   'dashboard.filter.accounts.all': '所有帳戶',
   'dashboard.filter.accounts.n-selected': '{count} 個帳戶',
   'dashboard.filter.accounts.select-all': '全選',
-  'dashboard.filter.accounts.select-all-option': '-- 全選 --',
+
   'dashboard.filter.accounts.none-found': '未找到帳戶',
 
   
@@ -695,7 +674,7 @@ const zhTW: Partial<Lang> = {
   
   
   
-  'view.home': '首頁',
+
   'view.dashboard': '儀表板',
   'view.trade-log': '交易紀錄',
   'view.account-dashboard': '帳戶',
@@ -706,33 +685,32 @@ const zhTW: Partial<Lang> = {
   
   
   'csv.results.errors-header': 'CLICK TO SEE ERRORS ({count})',
+  'csv.results.history-ready': 'Your trading history is ready',
+  'csv.results.history-trades.one': '{count} trade recovered',
+  'csv.results.history-trades.few': '{count} trades recovered',
+  'csv.results.history-trades.many': '{count} trades recovered',
+  'csv.results.history-trades.other': '{count} trades recovered',
+  'csv.results.history-date-range': '{start} – {end}',
+  'csv.results.history-symbols.one': '{count} symbol',
+  'csv.results.history-symbols.few': '{count} symbols',
+  'csv.results.history-symbols.many': '{count} symbols',
+  'csv.results.history-symbols.other': '{count} symbols',
+  'csv.results.enrichment-note':
+    'Imported performance is ready to review. Add setups, confluences, and notes to recent trades when you want deeper pattern analysis.',
   'csv.results.discord-note':
     'Optional: If you need help, click Copy report and paste it in Discord.',
 
   
   
   
-  'csv.errors.copy-shareable': '複製可分享報告',
+
   'csv.errors.copy-report': '複製報告',
-  'csv.errors.copy-detailed': '複製詳細報告',
 
   
   
   
-  'csv.account-selector.loading': '正在載入帳戶...',
-  'csv.account-selector.no-accounts': '找不到帳戶。',
-  'csv.account-selector.create-account-hint': '請先建立帳戶再匯入交易。',
-  'csv.account-selector.create-account-cta': '建立帳戶',
-  'csv.account-selector.label': '選擇帳戶',
 
   
-  'csv.preview-first-note':
-    'Preview is free. Importing into your vault requires PRO activation.',
-  'csv.gate.import.title': 'PRO required to import',
-  'csv.gate.import.description':
-    'Importing trades into your vault is a PRO feature. Activate PRO to continue.',
-  'csv.gate.templates.tooltip': 'PRO required (activate to use templates).',
-  'csv.gate.ai.tooltip': 'PRO required (activate to use AI mapping).',
 
   
   
@@ -741,17 +719,13 @@ const zhTW: Partial<Lang> = {
     '您即將將帳戶「{account}」的建立日期從 {oldDate} 變更為 {newDate}。',
   'account.edit.modal.change-date.warning':
     '這將更新初始存款交易日期，並可能影響帳戶年齡計算、每月結算週期和其他基於日期的指標。',
-  'account.edit.modal.change-date.info':
-    '這將更新初始存款交易日期，使其與新的建立日期相符。',
+
   'account.edit.modal.change-balance.message':
     '您即將將初始餘額從 {oldBalance} 變更為 {newBalance}。',
-  'account.edit.modal.change-balance.warning':
-    '您即將變更此帳戶的初始餘額。此操作將對您的歷史數據產生重要影響。',
+
   'account.edit.modal.change-balance.info':
     '這將影響所有餘額計算、損益百分比、回撤計算以及完整的交易歷史紀錄。',
   'account.edit.modal.delete.question': '您確定要永久刪除帳戶「{name}」嗎？',
-  'account.edit.modal.delete.warning':
-    '您確定要永久刪除此帳戶嗎？所有相關數據都將遺失，且此操作無法復原。',
 
   
   'account.edit.error.name-exists': '帳戶「{name}」已存在',
@@ -762,32 +736,25 @@ const zhTW: Partial<Lang> = {
   
   'common.loading': '載入中...',
   'common.error': '錯誤',
-  'common.success': '成功',
+
   'common.warning': '警告',
   'common.info': '資訊',
   'common.yes': '是',
   'common.no': '否',
   'common.ok': '確定',
-  'common.search': '搜尋...',
-  'common.select': '選擇...',
+
   'common.none': '無',
   'common.all': '全部',
   'common.date': '日期',
-  'common.time': '時間',
-  'common.today': '今天',
-  'common.yesterday': '昨天',
-  'common.tomorrow': '明天',
+
   'common.week': '週',
   'common.month': '月',
   'common.year': '年',
-  'common.total': '總計',
-  'common.average': '平均',
+
   'common.min': '最小',
   'common.max': '最大',
   'common.profit': '獲利',
-  'common.loss': '虧損',
-  'common.win': '盈',
-  'common.lose': '虧',
+
   'common.trade': '交易',
   'common.trades': '交易',
   'common.color.label': '色彩',
@@ -797,15 +764,12 @@ const zhTW: Partial<Lang> = {
   
   
 
-  'settings.language': '語言',
-  'settings.language-desc': '選擇外掛程式的顯示語言',
-
   
   'settings.auth.feature.csv-import': 'Trade Import',
   'settings.auth.feature.ai-mapping': 'AI Trade Import 對應',
   'settings.auth.feature.metatrader-sync': 'MetaTrader 同步',
   'settings.auth.feature.basic-tracking': '基礎交易追踨',
-  'settings.auth.feature.manual-csv': '手動 Trade Import',
+
   'settings.auth.feature.priority-support': '優先支援',
 
   
@@ -814,14 +778,15 @@ const zhTW: Partial<Lang> = {
   
   'home.widget.getting-started.name': 'Getting Started',
   'home.widget.getting-started.description':
-    'Checklist to help you add your first trades and activate PRO',
+    'Checklist to help you add trading history and configure Journalit',
   'home.widget.getting-started.progress': '{completed}/{total} completed',
   'home.widget.getting-started.progress.loading': 'Checking progress...',
-  'home.widget.getting-started.item.create.title': 'Create your first trade',
+  'home.widget.getting-started.item.create.title':
+    'Bring in your trading history',
   'home.widget.getting-started.item.create.description':
-    'Unlock your dashboard and journaling flow.',
+    'Import existing trades, connect Trade Sync, or add your first trade manually.',
   'home.widget.getting-started.item.create.time': '30s',
-  'home.widget.getting-started.item.create.cta': 'Create Trade',
+  'home.widget.getting-started.item.create.cta': 'Open Trade Import',
   'home.widget.getting-started.item.tradelog.title': 'Open Trade Log',
   'home.widget.getting-started.item.tradelog.description':
     'Your trade database for analysing all your trades in one place.',
@@ -850,20 +815,11 @@ const zhTW: Partial<Lang> = {
   'home.widget.getting-started.item.pro.cta': 'Activate',
 
   
-  'premium.gate.cta.activate': 'Activate PRO',
-  'premium.gate.cta.upgrade-now': 'Upgrade now',
-  'premium.gate.cta.signin-continue': '登入並繼續',
+
   'premium.gate.cta.continue-pro': '繼續開通 PRO',
-  'premium.gate.cta.keep-editing': '繼續編輯',
+
   'premium.gate.cta.refresh': 'Refresh status',
-  'premium.gate.import.state.signin.title': '距離匯入只差一步',
-  'premium.gate.import.state.signin.description':
-    '你的檔案與對應已準備就緒。請先登入以繼續。',
-  'premium.gate.import.state.pro.title': '已準備好匯入',
-  'premium.gate.import.state.pro.description':
-    '你的檔案與對應已準備就緒。匯入屬於 PRO 功能。',
-  'premium.gate.import.reassurance': '你的預覽與欄位對應會維持原樣。',
-  'premium.gate.trial-hint': '首次訂閱 PRO 可享 14 天免費試用。',
+
   'premium.gate.offline':
     'You appear to be offline. Activation requires internet.',
   'premium.gate.not-pro-yet':
@@ -874,23 +830,16 @@ const zhTW: Partial<Lang> = {
   'csv.broker-guide.tradingtechnologies.description': 'Fills widget CSV export',
   'csv.broker-guide.tradingtechnologies.step-1':
     'Open the Fills widget in TT and switch to Detail, Continuous, or Price with Detail view',
-  'csv.broker-guide.tradingtechnologies.step-2':
-    'Right-click inside the Fills widget, select “Request download”, and choose the time range',
-  'csv.broker-guide.tradingtechnologies.step-3':
-    'When TT shows the download-ready notification, download the CSV and import it here',
+
   'csv.broker-guide.tradingtechnologies.warning.emphasis': 'Important:',
-  'csv.broker-guide.tradingtechnologies.warning.message':
-    'Do not edit the exported file or column order before importing.',
-  'csv.broker-guide.tradingtechnologies.doc-label':
-    'View Trading Technologies export instructions',
+  'csv.broker.rithmic': 'Rithmic',
+  'csv.broker-guide.rithmic.step-1':
+    '在 R | Trader Pro 開啟委託歷史(Order History),並篩選出您帳戶/日期的已完成(Completed/Filled)委託',
+  'csv.broker-guide.rithmic.step-2':
+    '使用 Add/Remove Columns 確認 Side、Symbol、Qty Filled、Avg Fill Price 與 Fill/Update Time 欄位皆已顯示',
+  'csv.broker-guide.rithmic.warning.emphasis': '重要:',
 
   
-  'csv.results.custom-field-warnings':
-    'Skipped {count} invalid custom field value(s)',
-  'csv.results.custom-field-warnings-header':
-    'CLICK TO SEE CUSTOM FIELD WARNINGS ({count})',
-  'csv.report.custom-field-warnings': 'Custom field warnings: {count}',
-  'csv.report.raw-custom-field-warnings': 'Custom field warnings:',
 
   
   'dashboard.metrics.avgRR': '平均風險回報比（盈虧）',
@@ -1016,17 +965,11 @@ const zhTW: Partial<Lang> = {
   'widget.directional-drawdown.empty.no-short':
     'No short closed trades for this period',
   'widget.directionalDrawdownChart.name': 'Directional Realized Drawdown',
-  'widget.directionalDrawdownChart.description':
-    'Displays separate long and short closed-trade drawdown amount curves',
 
   'widget.longDrawdownChart.name': 'Long Drawdown',
-  'widget.longDrawdownChart.description':
-    'Displays the closed-trade drawdown amount curve for long trades only',
+
   'widget.shortDrawdownChart.name': 'Short Drawdown',
-  'widget.shortDrawdownChart.description':
-    'Displays the closed-trade drawdown amount curve for short trades only',
-  'widget.drawdownStats.name': 'Realized Drawdown Stats',
-  'widget.drawdownStats.description': 'Realized drawdown and recovery stats',
+
   'widget.drawdownStats.no-conversion':
     'Drawdown stats are unavailable for mixed currencies without FX conversion.',
 
@@ -1065,8 +1008,7 @@ const zhTW: Partial<Lang> = {
   'widget.weekly-drc-context.name': 'Daily Reviews by Weekday',
   'widget.weekly-drc-context.description':
     'Show selected DRC sections for each day in the weekly review',
-  'widget.weekly-drc-context.header-eyebrow': 'Weekly review',
-  'widget.weekly-drc-context.header-title': 'Daily Reviews by Weekday',
+
   'widget.weekly-drc-context.image-alt-prefix': 'Weekly DRC image',
   'widget.weekly-drc-context.no-activity': 'No activity for this day.',
   'widget.weekly-drc-context.no-sections-configured':
@@ -1078,12 +1020,10 @@ const zhTW: Partial<Lang> = {
   'widget.weekly-drc-context.load-error': 'Failed to load weekly DRC review.',
   'widget.weekly-drc-context.invalid-context': '此元件僅適用於週度複盤筆記',
   'templateEditor.widget.weekly-drc-day-label': '日期',
-  'templateEditor.widget.weekly-drc-display-label': '顯示',
+
   'templateEditor.widget.weekly-drc-start-collapsed': '預設收合',
   'templateEditor.widget.weekly-drc-day-all': 'All days',
-  'templateEditor.widget.weekly-drc-style-card': '卡片',
-  'templateEditor.widget.weekly-drc-style-accordion': 'Accordion',
-  'templateEditor.widget.weekly-drc-default-expanded': 'Expanded by default',
+
   'templateEditor.widget.previous-context-sections-label':
     'Sections to include',
   'templateEditor.widget.previous-context-heading-label':
@@ -1091,10 +1031,7 @@ const zhTW: Partial<Lang> = {
   'templateEditor.widget.previous-context-heading-placeholder':
     'Choose a heading',
   'templateEditor.widget.previous-context-add-section': '+ Add section',
-  'templateEditor.widget.previous-context-headings-label':
-    'Headings to include',
-  'templateEditor.widget.previous-context-headings-placeholder':
-    'Heading names separated by comma or |',
+
   'templateEditor.widget.previous-context-fallback-label':
     'Previous DRC fallback',
   'templateEditor.widget.previous-context-fallback-nearest':
@@ -1104,15 +1041,14 @@ const zhTW: Partial<Lang> = {
   'dashboard.conversion.original-pnl': '原始損益',
   'dashboard.conversion.converted-pnl': '轉換後損益',
   'dashboard.conversion.details-label': '貨幣轉換詳情',
-  'dashboard.conversion.requires-conversion': '多貨幣損益圖表需要匯率轉換。',
+
   'widget.stats.vs-prev': 'vs prev',
   'dashboard.metrics.past-30d': 'past 30d',
-  'widget.stats.no-change': 'No change',
-  'widget.stats.no-previous-data': 'No previous data',
+
   'chart.tooltip.drawdown-amount': 'Amount',
   'chart.tooltip.drawdown-percent': 'Drawdown % of {basis}',
   'chart.tooltip.percent-basis': 'Percent Basis',
-  'chart.tooltip.account': 'Account',
+
   'chart.tooltip.accounts-list': '{accounts}',
   'chart.tooltip.more-accounts': '+{count} more',
   'widget.tag-performance.name': '標籤績效',
@@ -1129,7 +1065,7 @@ const zhTW: Partial<Lang> = {
   'widget.account-breakdown.column.win-rate': 'Win Rate',
   'widget.account-breakdown.column.profit-factor': 'Profit Factor',
   'widget.trade-table.column.account': 'Account',
-  'widget.trade-table.unknown-account': 'Unknown Account',
+
   'trade-import.error.file-too-large':
     'Selected file exceeds the Trade Import size limit',
   'trade-import.error.file-type-unsupported':
@@ -1141,8 +1077,10 @@ const zhTW: Partial<Lang> = {
   'quick-import.subtitle':
     'Use your favorite Trade Import setup to preview and import a file faster.',
   'quick-import.gate.sign-in':
-    'Sign in to use Quick Import with your saved setup.',
+    '登入或建立免費的 Journalit 帳戶，即可在 Trade Import 中預覽檔案。只有匯入交易時才需要 Pro。',
+  'quick-import.gate.sign-in-cta': '登入並免費預覽',
   'quick-import.gate.pro': 'Quick Import is included with Trade Import Pro.',
+  'quick-import.gate.preview-free': '免費預覽檔案',
   'quick-import.message.needs-setup':
     'Choose a favorite broker or template in Trade Import before using Quick Import.',
   'quick-import.message.capabilities-failed':
@@ -1151,19 +1089,16 @@ const zhTW: Partial<Lang> = {
     'This file needs column mapping. Open the full Trade Import flow to review mappings.',
   'quick-import.message.preview-failed':
     'This file needs review in the full Trade Import flow.',
-  'quick-import.notice.consent-required':
-    'Acknowledge processing before uploading.',
-  'quick-import.consent':
-    'I understand this file will be uploaded to Journalit servers for processing.',
+
   'quick-import.privacy-note':
     '檔案會上傳到 Journalit 伺服器進行處理，預設不會儲存。',
   'quick-import.dropzone.title': 'Drop a broker export here',
   'quick-import.dropzone.subtitle': 'Or click to choose a file',
-  'quick-import.status.loading': 'Loading quick setup...',
+
   'quick-import.status.analysing': 'Analysing and preparing preview...',
   'quick-import.status.importing': 'Importing...',
   'quick-import.summary.title': 'Ready to import',
-  'quick-import.summary.trades': 'Preview trades',
+
   'quick-import.summary.to-import': 'To import',
   'quick-import.summary.duplicates': 'Duplicates',
   'quick-import.summary.failed': 'Needs review',
@@ -1174,28 +1109,37 @@ const zhTW: Partial<Lang> = {
   'quick-import.action.review-in-trade-import': 'Review in Trade Import',
   'quick-import.action.setup-in-trade-import': 'Set up in Trade Import',
   'quick-import.action.import': 'Import trades',
+  'quick-import.action.import-count.one': '匯入 {count} 筆交易',
+  'quick-import.action.import-count.few': '匯入 {count} 筆交易',
+  'quick-import.action.import-count.many': '匯入 {count} 筆交易',
+  'quick-import.action.import-count.other': '匯入 {count} 筆交易',
 
   'trade-import.notice.capabilities-failed':
     'Unable to load Trade Import capabilities',
+  'trade-import.notice.open-failed': 'Unable to open Trade Import',
   'trade-import.notice.template-exists':
     'A Trade Import template with this name already exists',
   'trade-import.notice.template-saved': 'Trade Import template saved',
   'trade-import.notice.analyse-failed': 'Trade Import analyse failed',
   'trade-import.notice.preview-failed': 'Trade Import preview failed',
+  'trade-import.notice.free-preview-rate-limited':
+    '已達免費預覽限制。請啟用 PRO，或約 {minutes} 分鐘後再試。',
+  'trade-import.notice.free-preview-storage-limit-reached':
+    '免費預覽最多可儲存 {limit} 筆交易。你已儲存 {storedItems} 筆，此檔案將新增 {requestedItems} 筆。請等待較早的預覽到期或啟用 PRO。',
   'trade-import.preview-error.guidance':
     '請檢查所有必填欄位是否已對應，所選日期格式是否符合檔案，且數字欄位是否包含有效的交易數值。',
   'trade-import.notice.complete':
     'Trade Import complete: {written} written or updated, {duplicateCount} duplicates, {failedCount} failed',
   'trade-import.gate.brand-left': '交易',
   'trade-import.gate.brand-right': '匯入',
+  'trade-import.gate.sign-in.title': '免費預覽你的交易歷史',
   'trade-import.gate.sign-in':
-    'Sign in is required before uploading broker exports for Trade Import.',
-  'trade-import.gate.upgrade':
-    'Trade Import is a Pro feature. Upgrade is required before uploading broker exports.',
-  'trade-import.action.open-settings': 'Open settings',
-  'trade-import.action.manage-subscription': 'Manage subscription',
-  'trade-import.description':
-    'Upload CSV, XLSX, XLS, HTML, or broker statements for backend-powered analysis and preview.',
+    '登入或建立免費的 Journalit 帳戶即可分析檔案。只有匯入交易時才需要 Pro。',
+  'trade-import.gate.sign-in.reassurance':
+    '你的檔案會以私密方式處理，預設不會儲存。',
+  'trade-import.gate.sign-in.no-trial': '分析與預覽不需要啟用 Pro 試用。',
+  'trade-import.gate.sign-in.cta': '登入並免費預覽',
+
   'trade-import.step.select': '1. Select import settings',
   'trade-import.step.privacy': '2. Privacy acknowledgement',
   'trade-import.step.analyse': '3. Analyse and map',
@@ -1217,8 +1161,7 @@ const zhTW: Partial<Lang> = {
   'trade-import.label.ai-mapping': 'Request AI mapping suggestions',
   'trade-import.privacy.copy':
     'Trade Import uploads the selected broker export to Journalit servers for processing. Broker exports may contain account identifiers, trade history, symbols, timestamps, prices, quantities, fees, balances, and P&L. For preview generation, Journalit also sends your selected account name, mapping/template choices, custom field definitions and saved options, and limited local open-trade context for IBKR open-position matching. Raw files are processed for this import and are not stored by default.',
-  'trade-import.privacy.acknowledge':
-    'I understand and want to upload this export for processing.',
+
   'trade-import.action.analyse': 'Analyse file',
   'trade-import.action.choose-file': 'Choose file',
   'trade-import.guide.prompt': '不確定要匯出什麼？',
@@ -1231,13 +1174,34 @@ const zhTW: Partial<Lang> = {
   'trade-import.label.header-row': 'Header row',
   'trade-import.placeholder.auto': 'Auto',
   'trade-import.label.date-format': 'Date format',
-  'trade-import.mapping.unmapped': 'Unmapped',
+
   'trade-import.label.save-template': 'Save mapping template',
   'trade-import.placeholder.template-name': 'Template name',
   'trade-import.action.save-template': 'Save template',
   'trade-import.action.preview': 'Generate preview',
-  'trade-import.preview.summary':
-    '{previewCount} preview trades, {failedCount} failed rows, {incompleteCount} incomplete rows.',
+
+  'trade-import.preview.found.one': '找到 {count} 筆交易',
+  'trade-import.preview.found.few': '找到 {count} 筆交易',
+  'trade-import.preview.found.many': '找到 {count} 筆交易',
+  'trade-import.preview.found.other': '找到 {count} 筆交易',
+  'trade-import.preview.date-range': '{start} 至 {end}',
+  'trade-import.preview.metric.symbols': '商品',
+  'trade-import.preview.metric.ready': '可匯入',
+  'trade-import.preview.metric.duplicates': '可能重複',
+  'trade-import.preview.metric.attention': '需要處理',
+  'trade-import.preview.upgrade.title': 'Your preview is ready',
+  'trade-import.preview.upgrade.description.one':
+    '{count} trade can be added to your vault when you activate PRO.',
+  'trade-import.preview.upgrade.description.few':
+    '{count} trades can be added to your vault when you activate PRO.',
+  'trade-import.preview.upgrade.description.many':
+    '{count} trades can be added to your vault when you activate PRO.',
+  'trade-import.preview.upgrade.description.other':
+    '{count} trades can be added to your vault when you activate PRO.',
+  'trade-import.preview.upgrade.free-limit':
+    '免費預覽每小時包含 {count} 次分析和 {count} 次預覽。',
+  'trade-import.preview.upgrade.free-storage-limit':
+    '免費預覽最多可同時儲存 {count} 筆交易。',
   'trade-import.table.status': 'Status',
   'trade-import.table.symbol': 'Symbol',
   'trade-import.table.direction': 'Direction',
@@ -1245,16 +1209,12 @@ const zhTW: Partial<Lang> = {
   'trade-import.table.quantity': 'Quantity',
   'trade-import.table.message': 'Message',
   'trade-import.action.confirm': 'Confirm import',
+  'trade-import.action.activate-pro.one': '啟用 PRO 以匯入 {count} 筆交易',
+  'trade-import.action.activate-pro.few': '啟用 PRO 以匯入 {count} 筆交易',
+  'trade-import.action.activate-pro.many': '啟用 PRO 以匯入 {count} 筆交易',
+  'trade-import.action.activate-pro.other': '啟用 PRO 以匯入 {count} 筆交易',
   'trade-import.action.cancel-preview': 'Cancel preview',
   'trade-import.broker.manual': 'Manual Mapping',
-  'trade-import.preview.message.duplicate-in-file':
-    'Duplicate in selected import file',
-  'trade-import.preview.message.multiple-open-matches':
-    'Multiple matching open trades found for close-only preview',
-  'trade-import.preview.message.quantity-mismatch':
-    'Matching open trade quantity differs from close-only preview',
-  'trade-import.preview.message.no-open-match':
-    'No matching open trade found for close-only preview',
 
   
   'command.open-setups': '開啟設定形態',
@@ -1314,10 +1274,7 @@ const zhTW: Partial<Lang> = {
   'setups.view.compare.reason.higher.total-r': '較高的總 R',
   'setups.view.compare.reason.lower.total-r': '較低的總 R',
   'setups.view.compare.reason.similar.total-r': '相近的總 R',
-  'setups.view.advanced.rule-break-count': '{count}',
-  'setups.guide.empty.intro.title': '创建第一个设置',
-  'setups.guide.empty.intro.description':
-    '设置会连接剧本笔记、规则、截图和关联交易，方便你在上下文中复盘一个交易思路。',
+
   'setups.guide.create-new-setup.title': '建立新設定',
   'setups.guide.create-new-setup.description':
     '想新增另一個劇本時使用「新建設定」。彈窗會引導你填寫詳情、關聯筆記和規則。',
@@ -1330,9 +1287,7 @@ const zhTW: Partial<Lang> = {
   'setups.guide.empty.create-setup.title': '从“新建设置”开始',
   'setups.guide.empty.create-setup.description':
     '先创建一个设置。创建后，本指南会继续正常的设置流程。',
-  'setups.guide.empty.finish.title': '完成设置创建',
-  'setups.guide.empty.finish.description':
-    '填写详情并保存。设置可用后，指南会继续。',
+
   'setups.guide.intro.title': '歡迎使用 Setups',
   'setups.guide.intro.description':
     '此檢視把設定劇本、關聯交易、筆記、截圖和規則集中在一個地方。',
@@ -1366,18 +1321,14 @@ const zhTW: Partial<Lang> = {
   'setups.guide.finish.title': 'Setups 指南已完成',
   'setups.guide.finish.description':
     '你已查看主要頁面：概覽、組合、比較和單個設定詳情頁。',
-  'setups.guide.compare.intro.title': '比较设置表现',
-  'setups.guide.compare.intro.description':
-    '你现在有足够的设置，可以查看组合并并排比较两个剧本。',
+
   'setups.guide.pairs-mode.title': '打开设置组合',
   'setups.guide.pairs-mode.description':
     '打开组合，查看哪些设置组合有足够的共同交易可供比较。',
   'setups.guide.pairs-chart.title': '组合排名',
   'setups.guide.pairs-chart.description':
     '組合模式會突出可能一起表現更好或更差的設定組合。點擊柱條可開啟該組合的更深入洞察。',
-  'setups.guide.return-overview.title': '返回概览',
-  'setups.guide.return-overview.description':
-    '在选择要比较的设置前，先回到概览。',
+
   'setups.guide.compare-mode.title': '开始比较模式',
   'setups.guide.compare-mode.description':
     '比较模式可选择两张设置卡片进行并排复盘。',
@@ -1397,15 +1348,11 @@ const zhTW: Partial<Lang> = {
     '當有錯過交易或回測資料時，此標籤會將已捕捉的執行與錯過或基準機會進行比較。',
   'setups.guide.back-to-overview.title': '返回设置卡片',
   'setups.guide.back-to-overview.description': '比较完成后返回设置卡片。',
-  'setups.guide.compare.finish.title': '设置比较指南已完成',
-  'setups.guide.compare.finish.description':
-    '你已查看用于一起复盘多个设置的组合和比较页面。',
+
   'setups.view.open-as-markdown': 'Open as Markdown',
   'setups.view.open-as-setup': 'Open as Journalit Setup',
-  'setups.view.overview.mode.aria': 'Overview chart mode',
-  'setups.view.overview.mode.setups': 'Setups',
+
   'setups.view.overview.mode.pairs': 'Pairs',
-  'setups.view.pairs.title': 'Setup pairs',
   'setups.view.pairs.summary-aria': 'Setup pairs summary',
   'setups.view.pairs.best': 'Best pair',
   'setups.view.pairs.worst': 'Worst pair',
@@ -1415,18 +1362,15 @@ const zhTW: Partial<Lang> = {
     'Pairs appear after two setups share enough linked trades.',
   'setups.view.pairs.privacy':
     'Pair performance is hidden while Privacy Mode is on.',
-  'setups.view.pairs.edge-tooltip':
-    'Edge compares the pair expectancy against the stronger solo setup baseline.',
+
   'setups.view.pairs.metric-aria': 'Pair metric',
   'setups.view.pairs.metric.edge': 'Pair edge',
   'setups.view.pairs.metric.edge-short': 'edge',
   'setups.view.pairs.metric.expectancy': 'Pair expectancy',
-  'setups.view.pairs.metric.expectancy-short': 'expectancy',
+
   'setups.view.pairs.together': 'Together',
   'setups.view.pairs.table.setup-pair': 'Setup pair',
-  'setups.view.pairs.equity-curve': 'Equity curve',
-  'setups.view.pairs.equity-caption':
-    'Cumulative pair performance over time. Green = positive contribution, red = drawdown.',
+
   'setups.view.pairs.evidence': 'Evidence',
   'setups.view.pairs.edge-comparison': 'Edge comparison',
   'setups.view.pairs.edge-caption': 'Combined edge: {edge}',
@@ -1435,13 +1379,12 @@ const zhTW: Partial<Lang> = {
   'setups.view.overview.setup-filter.aria': 'Choose setups to show',
   'setups.view.overview.setup-filter.select-all': 'Select all',
   'setups.view.overview.setup-filter.clear': 'Clear',
-  'setups.view.overview.pnl-chart.title': 'Setup P&L Over Time',
+
   'setups.view.overview.pnl-chart.dropdown-label': 'Cumulative P&L',
-  'setups.view.overview.pnl-chart.subtitle':
-    'Cumulative P&L from setup-linked trades, split by setup and combined.',
+
   'setups.view.overview.pnl-chart.combined': 'All setups',
   'setups.view.overview.pnl-chart.selected-combined': 'Selected setups',
-  'setups.view.overview.pnl-chart.unassigned': 'Unassigned account',
+
   'setups.view.overview.pnl-chart.hidden':
     'Setup P&L over time is hidden while privacy mode is enabled.',
   'setups.view.overview.pnl-chart.trade': 'Trade',
@@ -1457,16 +1400,13 @@ const zhTW: Partial<Lang> = {
   'setups.view.detail.analysis.execution-gap': 'Execution Gap',
   'setups.view.detail.analysis.tabs-aria': 'Setup performance tabs',
   'setups.view.detail.brief.linked-notes-add': 'Edit linked notes',
-  'setups.view.detail.execution-gap.title': 'Execution Gap',
-  'setups.view.detail.execution-gap.subtitle':
-    'Captured edge vs missed opportunity',
+
   'setups.view.detail.execution-gap.live-pnl': 'Live PnL',
   'setups.view.detail.execution-gap.live-r': '實盤 R',
   'setups.view.detail.execution-gap.missed-edge': 'Missed Edge',
   'setups.view.detail.execution-gap.live-plus-missed': 'Live + Missed',
   'setups.view.detail.execution-gap.backtest': 'Backtest',
-  'setups.view.detail.execution-gap.gap': 'Gap',
-  'setups.view.detail.execution-gap.opportunities': 'Opportunities',
+
   'setups.view.detail.execution-gap.capture-rate': 'Capture Rate',
   'setups.view.detail.execution-gap.capture-rate-tooltip':
     'Live P&L ÷ (Live P&L + missed-trade P&L). Shows how much available edge you captured.',
@@ -1499,13 +1439,7 @@ const zhTW: Partial<Lang> = {
   'setups.view.detail.attention.no-rules-title': 'Build the execution playbook',
   'setups.view.detail.attention.no-rules-detail':
     'Add criteria for entries, invalidation, risk, and mistakes.',
-  'setups.view.detail.attention.no-invalidation-title':
-    'Add invalidation criteria',
-  'setups.view.detail.attention.no-invalidation-detail':
-    'Define when this setup is no longer valid.',
-  'setups.view.detail.attention.no-risk-title': 'Add risk or management rules',
-  'setups.view.detail.attention.no-risk-detail':
-    'Document how this setup should be managed after entry.',
+
   'setups.view.detail.attention.no-trades-title': 'No live trades yet',
   'setups.view.detail.attention.no-trades-detail':
     'No linked live trade history yet.',
@@ -1529,18 +1463,6 @@ const zhTW: Partial<Lang> = {
   'setups.view.card.status.review': 'Review',
   'setups.view.date.days-ago': '{count}',
 
-  'trade-import.restore.title': 'Restore imported trades from backend',
-  'trade-import.restore.description':
-    'Create missing local notes for backend imported trades in this vault. This does not create duplicate backend trades.',
-  'trade-import.restore.vault': 'Current vault identity: {vaultId}',
-  'trade-import.restore.load': 'Restore imported trades from backend',
-  'trade-import.restore.none':
-    'No missing imported trade projections found for this vault.',
-  'trade-import.restore.loaded': 'Found {count} restorable imported trades.',
-  'trade-import.restore.load-failed':
-    'Could not load restorable imported trades.',
-  'trade-import.restore.select-all': 'Select all',
-  'trade-import.restore.restore-selected': 'Restore selected ({count})',
   'trade-import.restore.complete':
     'Restored {written} imported trades; {failed} failed.',
   'trade-import.restore.broker-label': 'Backend restore',
@@ -1581,7 +1503,7 @@ const zhTW: Partial<Lang> = {
   'media.viewer.mute-video': '將影片靜音',
   'media.viewer.unmute-video': '取消影片靜音',
   'media.viewer.volume': '音量',
-  'imageGallery.subtitle-count': '{count} 個媒體項目',
+
   'imageGallery.empty.error.title': '圖庫無法使用',
   'imageGallery.empty.no-images.title': '尚無媒體',
   'imageGallery.empty.no-images.description':
@@ -1599,21 +1521,21 @@ const zhTW: Partial<Lang> = {
   'imageGallery.annotation.reviewed': '已檢視',
   'imageGallery.annotation.unreviewed': '未檢視',
   'imageGallery.annotation.tag': '標籤',
-  'imageGallery.annotation.editor-eyebrow': '市場結構日誌',
+
   'imageGallery.annotation.editor-title': '標註媒體',
+  'imageGallery.annotation.editor-title-with-file': '標註 {fileName}',
   'imageGallery.annotation.tags': '標籤',
   'imageGallery.annotation.tags-placeholder': '突破、A+ 設定、錯誤',
   'imageGallery.annotation.notes': '備註',
   'imageGallery.annotation.notes-placeholder': '未來的你應該從這張圖學到什麼？',
   'imageGallery.annotation.error.save-failed': '無法儲存媒體註解。',
+  'imageGallery.annotation.error.load-failed': '無法載入媒體註解。',
   'imageGallery.annotation.saving': '儲存中...',
   'command.replay-current-view-guide': '重播目前視圖指南',
   'tradelog.guide.switch-to-gallery.title': '從交易切換到圖庫',
   'tradelog.guide.switch-to-gallery.description':
     '使用這個模式選擇器在一般交易日誌和圖庫之間切換。點擊圖庫，繼續透過圖片、GIF、影片和 YouTube 連結了解導覽。',
-  'tradelog.guide.gallery-controls.title': '選擇要複盤的媒體',
-  'tradelog.guide.gallery-controls.description':
-    '使用來源選擇交易或複盤筆記，使用排序調整媒體順序，並用尺寸按鈕在緊湊瀏覽和較大的媒體預覽之間切換。',
+
   'tradelog.guide.gallery-source-sort.title': '選擇媒體來源和順序',
   'tradelog.guide.gallery-source-sort.description':
     '使用來源聚焦所有媒體、交易附件或複盤筆記媒體。使用排序優先查看最新、最舊、最好或最差的交易。',
@@ -1648,12 +1570,70 @@ const zhTW: Partial<Lang> = {
   'dashboard.conversion.partial-warning':
     '⚠ {currencies}的成本/風險無法換算，已被排除',
   'trade-sync.providers.title': '交易同步',
-  'trade-sync.providers.description':
-    '分別設定可用的提供者，讓它們可以同時運作。',
+
   'trade-sync.tradovate.pending-acks': '{count} 個本機 ACK 待處理',
-  'trade-sync.import.section-title': 'Trade Import 備份與還原',
-  'trade-sync.import.section-description':
-    '將匯入的交易備份到雲端，並還原缺少的本機筆記。',
+
+  'trade-sync.source.rithmic': 'Rithmic',
+  'trade-sync.source.rithmic.description':
+    '在雲端同步 Rithmic 交易，並投射到此保管庫。',
+  'trade-sync.rithmic.plugin-sync-description':
+    '先在 Journalit.co 連接 Rithmic，然後在此同步，將最新的 Rithmic 活動寫入此保管庫。',
+  'trade-sync.rithmic.status-failed': '無法載入 Rithmic 狀態。',
+  'trade-sync.rithmic.status.connecting': '連線中',
+  'trade-sync.rithmic.status.paused': '已暫停',
+  'trade-sync.rithmic.status.waiting-for-accounts': '正在等待帳戶',
+  'trade-sync.rithmic.status.reauthorization-required':
+    '需要在 Journalit.co 重新授權',
+  'trade-sync.rithmic.status.error': '連線錯誤',
+  'trade-sync.rithmic.no-connections':
+    '請在 Journalit.co 連接 Rithmic 帳戶，然後在此同步。',
+  'trade-sync.rithmic.connect': '連接',
+  'trade-sync.rithmic.manage': '在 Journalit.co 管理',
+  'trade-sync.rithmic.system': 'Rithmic 系統',
+  'trade-sync.rithmic.accounts': '帳戶',
+  'trade-sync.rithmic.last-sync': '上次同步',
+  'trade-sync.rithmic.never': '從未',
+  'trade-sync.rithmic.job.running': '正在同步…',
+  'trade-sync.rithmic.job.last': '最近工作：{status}',
+  'trade-sync.job.status.queued': '排隊中',
+  'trade-sync.job.status.running': '執行中',
+  'trade-sync.job.status.succeeded': '成功',
+  'trade-sync.job.status.partial': '部分完成',
+  'trade-sync.job.status.failed': '失敗',
+  'trade-sync.job.status.cancelled': '已取消',
+  'trade-sync.job.status.unknown': '未知',
+  'trade-sync.rithmic.sync-to-vault': '同步',
+  'trade-sync.rithmic.syncing': '同步中…',
+  'trade-sync.rithmic.mapping-required':
+    '請為每個同步的 Rithmic 帳戶選擇一個本機保管庫帳戶。',
+  'trade-sync.rithmic.sync-complete-connection': '{connection} 同步完成。',
+  'trade-sync.rithmic.sync-partial-connection':
+    '{connection} 同步完成，但有問題。',
+  'trade-sync.rithmic.sync-all': '全部同步',
+  'trade-sync.rithmic.sync-all-complete':
+    '已同步 {succeeded}/{total} 個 Rithmic 連線。',
+  'trade-sync.rithmic.sync-all-partial':
+    '已同步 {succeeded}/{total} 個 Rithmic 連線。請檢查有問題的連線。',
+  'trade-sync.rithmic.error.session-conflict':
+    'Rithmic 僅允許一個作用中的工作階段。請關閉使用此 Rithmic 登入的 R|Trader、NinjaTrader 或其他平台。',
+  'trade-sync.rithmic.error.auto-retry': 'Journalit 會自動重試。',
+  'trade-sync.rithmic.error.invalid-credentials':
+    'Rithmic 拒絕了已儲存的憑證。請在 Journalit.co 更新後再試一次。',
+  'trade-sync.rithmic.error.agreements-required':
+    'Rithmic 要求先在 R|Trader 簽署行情資料協議。簽署後請再試一次。',
+  'trade-sync.rithmic.error.disabled':
+    '此連線的 Rithmic 同步已停用。請在 Journalit.co 管理。',
+  'trade-sync.rithmic.error.sync-failed':
+    'Rithmic 同步失敗。請在 Journalit.co 檢查連線後再試一次。',
+  'trade-sync.broker.mapping-unsaved-hint': '對應會在同步時儲存。',
+  'trade-sync.broker.sync-all-blocked.unsaved-changes':
+    '帳戶變更尚未儲存。同步該連接即可儲存。',
+  'trade-sync.broker.sync-all-blocked.mapping-required':
+    '請先為每個要同步的帳戶選擇一個 Journalit 帳戶。',
+  'trade-sync.broker.sync-all-blocked.running-job': '已有同步正在進行。',
+  'trade-sync.broker.sync-all-blocked.not-ready': '沒有連接可以同步。',
+  'trade-sync.rithmic.connect-another': '連接另一個 Rithmic 帳戶',
+  'trade-sync.rithmic.error.sync-failed-detail': 'Rithmic 同步失敗：{message}',
   'notice.error.canonical-trade-type-change':
     '經紀商同步的交易不能變更為其他交易類型。',
   'trade-sync.import.account.conflict-repair':
@@ -1693,7 +1673,50 @@ const zhTW: Partial<Lang> = {
   'home.guide.whats-new.done.title': '保留工作區脈絡',
   'home.guide.whats-new.done.description':
     '使用總覽查看個人小工具，使用儀表板進行深入分析。每種模式都會保留自己的篩選與版面。',
+  'home.widget.current-streak.description': '追蹤交易與複盤連勝',
 
+  'home.widget.streak.kind.trade-outcome': '交易結果',
+  'home.widget.streak.kind.trade-review': '交易複盤',
+  'home.widget.streak.kind.drc-review': 'DRC 複盤',
+  'home.widget.streak.kind.weekly-review': '週複盤',
+  'home.widget.streak.kind.monthly-review': '月複盤',
+  'home.widget.streak.configure': '選擇連勝類型',
+  'home.widget.streak.configure-aria': '設定 {kind} 連勝',
+  'home.widget.streak.no-review-streak': '目前沒有活躍的複盤連勝',
+  'home.widget.streak.start-reviewing': '開始複盤以建立連勝',
+  'home.widget.streak.keep-reviewing': '繼續複盤以維持連勝',
+  'home.widget.streak.reviewed-trades-in-a-row.one': '連續複盤交易',
+  'home.widget.streak.reviewed-trades-in-a-row.few': '連續複盤交易',
+  'home.widget.streak.reviewed-trades-in-a-row.many': '連續複盤交易',
+  'home.widget.streak.reviewed-trades-in-a-row.other': '連續複盤交易',
+  'home.widget.streak.reviewed-days-in-a-row.one': '連續複盤天數',
+  'home.widget.streak.reviewed-days-in-a-row.few': '連續複盤天數',
+  'home.widget.streak.reviewed-days-in-a-row.many': '連續複盤天數',
+  'home.widget.streak.reviewed-days-in-a-row.other': '連續複盤天數',
+  'home.widget.streak.reviewed-weeks-in-a-row.one': '連續複盤週數',
+  'home.widget.streak.reviewed-weeks-in-a-row.few': '連續複盤週數',
+  'home.widget.streak.reviewed-weeks-in-a-row.many': '連續複盤週數',
+  'home.widget.streak.reviewed-weeks-in-a-row.other': '連續複盤週數',
+  'home.widget.streak.reviewed-months-in-a-row.one': '連續複盤月數',
+  'home.widget.streak.reviewed-months-in-a-row.few': '連續複盤月數',
+  'home.widget.streak.reviewed-months-in-a-row.many': '連續複盤月數',
+  'home.widget.streak.reviewed-months-in-a-row.other': '連續複盤月數',
+  'home.widget.streak.missed-trades.one': '自上次複盤以來漏了 {count} 筆交易',
+  'home.widget.streak.missed-trades.few': '自上次複盤以來漏了 {count} 筆交易',
+  'home.widget.streak.missed-trades.many': '自上次複盤以來漏了 {count} 筆交易',
+  'home.widget.streak.missed-trades.other': '自上次複盤以來漏了 {count} 筆交易',
+  'home.widget.streak.missed-days.one': '自上次複盤以來漏了 {count} 天',
+  'home.widget.streak.missed-days.few': '自上次複盤以來漏了 {count} 天',
+  'home.widget.streak.missed-days.many': '自上次複盤以來漏了 {count} 天',
+  'home.widget.streak.missed-days.other': '自上次複盤以來漏了 {count} 天',
+  'home.widget.streak.missed-weeks.one': '自上次複盤以來漏了 {count} 週',
+  'home.widget.streak.missed-weeks.few': '自上次複盤以來漏了 {count} 週',
+  'home.widget.streak.missed-weeks.many': '自上次複盤以來漏了 {count} 週',
+  'home.widget.streak.missed-weeks.other': '自上次複盤以來漏了 {count} 週',
+  'home.widget.streak.missed-months.one': '自上次複盤以來漏了 {count} 個月',
+  'home.widget.streak.missed-months.few': '自上次複盤以來漏了 {count} 個月',
+  'home.widget.streak.missed-months.many': '自上次複盤以來漏了 {count} 個月',
+  'home.widget.streak.missed-months.other': '自上次複盤以來漏了 {count} 個月',
   'account-dashboard.title': '帳戶',
   'home.quick-links.trading-dashboard': '儀表板',
   'home.quick-links.account-dashboard': '帳戶',
@@ -1709,6 +1732,16 @@ const zhTW: Partial<Lang> = {
   'settings.general.show-seconds': '在交易時間中顯示秒',
   'settings.general.show-seconds-desc': '輸入交易進場和出場時間時顯示秒。',
   'settings.general.show-seconds-aria': '在交易時間中顯示秒',
+
+  'view.home': '首頁',
+  'common.lose': '虧',
+
+  'dashboard.conversion.requires-conversion': '多貨幣損益圖表需要匯率轉換。',
+
+  'form.layout.guide-trigger-label': '自訂表單',
+  'trade-import.preview.message.no-open-match':
+    'No matching open trade found for close-only preview',
+  'setups.view.detail.execution-gap.title': 'Execution Gap',
 };
 
 export default zhTW;

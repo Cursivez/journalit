@@ -16,7 +16,7 @@ import {
   haveSameRelevantTransactions,
 } from './utils';
 import { WithdrawalBreakdownTooltip } from './WithdrawalBreakdownTooltip';
-import { Tooltip } from '../../shared';
+import { Tooltip } from '../../shared/Tooltip';
 import { AccountCardProps } from './types';
 import { AccountData, DrawdownType } from '../../../services/account/types';
 import { useCurrency } from '../../../contexts/CurrencyContext';

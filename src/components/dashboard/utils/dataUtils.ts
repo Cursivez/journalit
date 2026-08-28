@@ -43,7 +43,7 @@ import {
 } from '../../../utils/dateUtils';
 import { parseTradeDividendTransactions } from '../../../utils/tradeUtils';
 import { aggregatePnLByCurrency } from '../../../utils/currencyAggregation';
-import { ExchangeRateService } from '../../../services/exchangeRate';
+import { ExchangeRateService } from '../../../services/exchangeRate/ExchangeRateService';
 import { resolveScopedConversionRateDate } from '../../../services/exchangeRate/conversionAttribution';
 import { calculateHistoricalStreaks } from '../../../utils/tradeStreaks';
 import { inferStoredTradeType } from '../../../utils/tradeTypeRouting';
@@ -66,6 +66,7 @@ import {
   normalizeAccountLookupKey,
   normalizeTradeAccountIdentity,
 } from '../../../services/trade/core/TradeAccountIdentity';
+import { extractCanonicalProjectionPnlFields } from '../../../services/trade/core/CanonicalProjectionFields';
 import {
   type BreakEvenAccountBalanceLookup,
   type BreakEvenAccountBalanceSnapshot,
@@ -133,6 +134,13 @@ const getStringField = (
   key: string
 ): string | undefined =>
   typeof frontmatter[key] === 'string' ? frontmatter[key] : undefined;
+
+const getForexPnlConversionRateSource = (
+  frontmatter: Record<string, unknown>
+): 'automatic' | 'manual' | undefined => {
+  const source = getStringField(frontmatter, 'forexPnlConversionRateSource');
+  return source === 'automatic' || source === 'manual' ? source : undefined;
+};
 
 const getCommissionTypeField = (
   frontmatter: Record<string, unknown>
@@ -707,6 +715,7 @@ export interface Trade {
   direction: string;
   pnl: number;
   directPnL?: number;
+  authoritativePnl?: number | null;
   canonicalTradeId?: string;
   canonicalTradeVersion?: number;
   canonicalProjectionSchemaVersion?: number;
@@ -774,6 +783,12 @@ export interface Trade {
   tickValue?: number;
   lotSize?: number;
   pipValue?: number;
+  pipSize?: number;
+  forexQuoteCurrency?: string;
+  forexPnlConversionRate?: number;
+  forexPnlConversionBaseCurrency?: string;
+  forexPnlConversionRateDate?: string;
+  forexPnlConversionRateSource?: 'automatic' | 'manual';
   currency?: string; 
   fxRate?: number; 
   fxRateBaseCurrency?: string; 
@@ -882,6 +897,12 @@ const TRADE_PROPERTY_KEYS = new Set<string>([
   'tickValue',
   'lotSize',
   'pipValue',
+  'pipSize',
+  'forexQuoteCurrency',
+  'forexPnlConversionRate',
+  'forexPnlConversionBaseCurrency',
+  'forexPnlConversionRateDate',
+  'forexPnlConversionRateSource',
   'currency',
   'fxRate',
   'fxRateBaseCurrency',
@@ -1113,15 +1134,7 @@ const fetchTradeData = async (
             Number.isFinite(Number(frontmatter.directPnL))
               ? Number(frontmatter.directPnL)
               : undefined,
-          canonicalTradeId: getStringField(frontmatter, 'canonicalTradeId'),
-          canonicalTradeVersion:
-            typeof frontmatter.canonicalTradeVersion === 'number' &&
-            Number.isInteger(frontmatter.canonicalTradeVersion) &&
-            frontmatter.canonicalTradeVersion > 0
-              ? frontmatter.canonicalTradeVersion
-              : undefined,
-          canonicalProjectionSchemaVersion:
-            frontmatter.canonicalProjectionSchemaVersion === 1 ? 1 : undefined,
+          ...extractCanonicalProjectionPnlFields(frontmatter),
           tradeStatus: getStringField(frontmatter, 'tradeStatus'),
           useDirectPnLInput: getBooleanField(frontmatter, 'useDirectPnLInput'),
           dividends: parseTradeDividendTransactions(frontmatter.dividends),
@@ -1233,6 +1246,25 @@ const fetchTradeData = async (
             frontmatter.pipValue !== undefined
               ? Number(frontmatter.pipValue)
               : undefined,
+          pipSize:
+            frontmatter.pipSize !== undefined
+              ? Number(frontmatter.pipSize)
+              : undefined,
+          forexQuoteCurrency: getStringField(frontmatter, 'forexQuoteCurrency'),
+          forexPnlConversionRate:
+            frontmatter.forexPnlConversionRate !== undefined
+              ? Number(frontmatter.forexPnlConversionRate)
+              : undefined,
+          forexPnlConversionBaseCurrency: getStringField(
+            frontmatter,
+            'forexPnlConversionBaseCurrency'
+          ),
+          forexPnlConversionRateDate: getStringField(
+            frontmatter,
+            'forexPnlConversionRateDate'
+          ),
+          forexPnlConversionRateSource:
+            getForexPnlConversionRateSource(frontmatter),
           currency: getStringField(frontmatter, 'currency'),
           fxRate:
             frontmatter.fxRate !== undefined
@@ -1467,16 +1499,20 @@ const createCopiedDashboardTrades = (
       ],
       accountLookupKeys: [copyAccountLookupKey],
       accountNamesNormalized: [copyAccountName],
-      pnl: copiedPnL,
+      pnl: copiedPnL ?? 0,
+      _originalPnlWasNull:
+        copiedPnL === null ? true : baseTrade._originalPnlWasNull,
       directPnL:
         baseTrade.directPnL === undefined
           ? undefined
           : baseTrade.directPnL * copyPeriod.multiplier,
       riskAmount: copiedRiskAmount,
       rMultiple:
-        copiedRiskAmount && copiedRiskAmount !== 0
+        copiedPnL !== null && copiedRiskAmount && copiedRiskAmount !== 0
           ? copiedPnL / copiedRiskAmount
-          : baseTrade.rMultiple,
+          : copiedPnL === null
+            ? undefined
+            : baseTrade.rMultiple,
       commission: commission ?? 0,
       commissionType: 'fixed',
       fees: 0,

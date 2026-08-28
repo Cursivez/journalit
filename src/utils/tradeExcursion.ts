@@ -1,11 +1,14 @@
-import { calculateAssetAdjustedPriceMoveValue } from './priceMoveValue';
+import {
+  calculateAssetAdjustedPriceMoveValue,
+  type PriceMoveValueInput,
+} from './priceMoveValue';
 import { calculateDirectionalPriceDiff } from './pnlCalculation';
 import {
   getTotalEntrySize,
   getWeightedAverageEntryPrice,
 } from './tradeStatusUtils';
 
-export interface TradeExcursionInput {
+export type TradeExcursionInput = PriceMoveValueInput & {
   mae?: number;
   mfe?: number;
   maePrice?: number;
@@ -13,25 +16,18 @@ export interface TradeExcursionInput {
   entryPrice?: number;
   positionSize?: number;
   direction?: string;
-  assetType?: string;
-  contractSize?: number;
-  dollarPerPoint?: number;
-  tickSize?: number;
-  tickValue?: number;
   originalMaeBeforeConversion?: number;
   originalMfeBeforeConversion?: number;
   maeAmountDerivedFromPrice?: boolean;
   mfeAmountDerivedFromPrice?: boolean;
   maeTicksBeforeConversion?: number;
   mfeTicksBeforeConversion?: number;
-  lotSize?: number;
-  pipValue?: number;
   entries?: Array<{
     time?: Date | string | null;
     price?: number | null;
     size?: number | null;
   }>;
-}
+};
 
 function getTradeExcursionTicks(
   trade: TradeExcursionInput | undefined,

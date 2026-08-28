@@ -1,27 +1,20 @@
-import { useCallback, useMemo } from 'react';
-import { Notice } from 'obsidian';
+
+
+import { useCallback } from 'react';
 import { t } from '../../../lang/helpers';
 import type JournalitPlugin from '../../../main';
-import { createTradeProjectionOwnershipGuard } from '../../../services/tradeSync/TradeProjectionOwnership';
+import type { TradovateConnection } from '../../../services/tradeSync/types';
 import {
-  isTradovateJobInProgress,
-  type TradovateConnection,
-} from '../../../services/tradeSync/types';
-import { logger } from '../../../utils/logger';
+  connectionHasRunningJob,
+  useBrokerSyncAll,
+  type BrokerDataOwnership,
+  type BrokerSyncAllEligibility,
+  type BrokerSyncAllSummary,
+} from './brokerSyncKit';
 import {
   type AccountDrafts,
   tradovateAccountDraftKey,
 } from './tradovateSyncPanelDrafts';
-
-interface DataOwnershipFence {
-  ownerUserId: string;
-  isCurrent: () => boolean;
-}
-
-interface SyncAllStatePatch {
-  syncAllBusy: boolean;
-  busyConnections: Record<string, true>;
-}
 
 interface UseTradovateSyncAllOptions {
   plugin: JournalitPlugin;
@@ -29,33 +22,44 @@ interface UseTradovateSyncAllOptions {
   configurationDirty: Record<string, true>;
   mappingDirty: Record<string, true>;
   drafts: AccountDrafts;
-  dataOwnership?: DataOwnershipFence;
-  patchState: (patch: SyncAllStatePatch) => void;
+  dataOwnership?: BrokerDataOwnership;
+  setSyncAllBusy: (syncAllBusy: boolean) => void;
+  setBusyConnections: (busyConnections: Record<string, true>) => void;
   resetForOwnershipChange: () => void;
-  refresh: () => Promise<void>;
+  refresh: () => Promise<boolean | void>;
 }
 
-function connectionIsSyncAllEligible(
+
+function connectionSyncAllEligibility(
   connection: TradovateConnection,
   configurationDirty: Record<string, true>,
   mappingDirty: Record<string, true>,
   drafts: AccountDrafts
-): boolean {
-  return (
-    connection.status === 'active' &&
-    connection.accounts.some((account) => account.syncEnabled) &&
-    !connection.accounts.some(
+): BrokerSyncAllEligibility {
+  if (connectionHasRunningJob(connection)) return 'running-job';
+  if (connection.status !== 'active') return 'not-ready';
+  if (
+    configurationDirty[connection.id] ||
+    connection.accounts.some(
+      (account) => mappingDirty[account.canonicalAccountId]
+    )
+  ) {
+    return 'unsaved-changes';
+  }
+  if (
+    connection.accounts.some(
       (account) =>
         account.syncEnabled &&
         !drafts[tradovateAccountDraftKey(connection.id, account.id)]
           ?.localAccountId
-    ) &&
-    !connection.jobs.some((job) => isTradovateJobInProgress(job.status)) &&
-    !configurationDirty[connection.id] &&
-    !connection.accounts.some(
-      (account) => mappingDirty[account.canonicalAccountId]
     )
-  );
+  ) {
+    return 'mapping-required';
+  }
+  if (!connection.accounts.some((account) => account.syncEnabled)) {
+    return 'not-ready';
+  }
+  return true;
 }
 
 export function useTradovateSyncAll({
@@ -65,92 +69,53 @@ export function useTradovateSyncAll({
   mappingDirty,
   drafts,
   dataOwnership,
-  patchState,
+  setSyncAllBusy,
+  setBusyConnections,
   resetForOwnershipChange,
   refresh,
 }: UseTradovateSyncAllOptions): {
   syncAll: () => Promise<void>;
   syncAllAvailable: boolean;
+  syncAllBlockedMessage?: string;
 } {
-  const eligibleConnections = useMemo(
-    () =>
-      connections.filter((connection) =>
-        connectionIsSyncAllEligible(
-          connection,
-          configurationDirty,
-          mappingDirty,
-          drafts
-        )
+  const isEligible = useCallback(
+    (connection: TradovateConnection) =>
+      connectionSyncAllEligibility(
+        connection,
+        configurationDirty,
+        mappingDirty,
+        drafts
       ),
-    [configurationDirty, connections, drafts, mappingDirty]
+    [configurationDirty, drafts, mappingDirty]
   );
 
-  const syncAll = useCallback(async () => {
-    const ownershipChanged = createTradeProjectionOwnershipGuard(
-      plugin,
-      dataOwnership?.ownerUserId
-    );
-    const panelOwnerChanged = () =>
-      !dataOwnership?.isCurrent() || ownershipChanged();
-    if (panelOwnerChanged()) {
-      resetForOwnershipChange();
-      return;
-    }
-    if (eligibleConnections.length === 0) return;
-    patchState({
-      syncAllBusy: true,
-      busyConnections: Object.fromEntries(
-        eligibleConnections.map((connection) => [connection.id, true] as const)
-      ),
-    });
-    try {
-      const result = await plugin
-        .ensureTradeProjectionSyncService()
-        .syncAll(eligibleConnections.map((connection) => connection.id));
-      if (panelOwnerChanged()) {
-        resetForOwnershipChange();
-        return;
-      }
-      const synchronizedCount = result.outcomes.filter(
-        (outcome) =>
-          outcome.status === 'succeeded' || outcome.status === 'partial'
-      ).length;
-      const issueCount = result.outcomes.filter(
-        (outcome) => outcome.status !== 'succeeded'
-      ).length;
-      new Notice(
-        t(
-          issueCount > 0 || result.projection.failedCount > 0
-            ? 'trade-sync.tradovate.sync-all-partial'
-            : 'trade-sync.tradovate.sync-all-complete',
-          {
-            succeeded: String(synchronizedCount),
-            total: String(result.outcomes.length),
-          }
-        )
-      );
-      await refresh();
-    } catch (error) {
-      if (panelOwnerChanged()) {
-        resetForOwnershipChange();
-        return;
-      }
-      logger.error('Tradovate sync all failed', error);
-      new Notice(t('trade-sync.import.notice.sync-cloud-failed'));
-    } finally {
-      patchState({ syncAllBusy: false, busyConnections: {} });
-    }
-  }, [
-    dataOwnership,
-    eligibleConnections,
-    patchState,
-    plugin,
-    refresh,
-    resetForOwnershipChange,
-  ]);
+  const syncConnections = useCallback(
+    (connectionIds: string[]) =>
+      plugin.ensureTradeProjectionSyncService().syncAll(connectionIds),
+    [plugin]
+  );
 
-  return {
-    syncAll,
-    syncAllAvailable: eligibleConnections.length > 0,
-  };
+  const completionNotice = useCallback(
+    ({ succeeded, total, hasIssues }: BrokerSyncAllSummary) =>
+      t(
+        hasIssues
+          ? 'trade-sync.tradovate.sync-all-partial'
+          : 'trade-sync.tradovate.sync-all-complete',
+        { succeeded: String(succeeded), total: String(total) }
+      ),
+    []
+  );
+
+  return useBrokerSyncAll({
+    plugin,
+    connections,
+    isEligible,
+    dataOwnership,
+    syncConnections,
+    completionNotice,
+    setSyncAllBusy,
+    setBusyConnections,
+    resetForOwnershipChange,
+    refresh,
+  });
 }

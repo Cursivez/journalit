@@ -11,13 +11,13 @@ import {
 import { isViewWithTFile } from '../../types/obsidian-extensions';
 import { TradeNoteRenderer } from './TradeNoteRenderer';
 import { BaseComponentProcessor } from '../base/BaseComponentProcessor';
+import { eventBus } from '../../services/events/EventBus';
 import {
-  eventBus,
   TradeChangedPayload,
   BacktestTradeChangedPayload,
   MissedTradeChangedPayload,
   Unsubscribe,
-} from '../../services/events';
+} from '../../services/events/types';
 import { readFrontmatterFromDisk } from '../../utils/dataRefresh';
 
 const READING_RENDER_GRACE_PERIOD_MS = 3000;

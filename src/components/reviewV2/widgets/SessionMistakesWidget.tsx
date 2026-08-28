@@ -1,10 +1,16 @@
 
 
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, {
+  useCallback,
+  useEffect,
+  useEffectEvent,
+  useRef,
+  useState,
+} from 'react';
 import { TFile } from 'obsidian';
 import type JournalitPlugin from '../../../main';
 import { ComboBox } from '../../core/ComboBox';
-import { SkeletonBox } from '../../shared';
+import { SkeletonBox } from '../../shared/SkeletonBox';
 import { InvalidContextMessage } from './InvalidContextMessage';
 import { OptionType } from '../../../services/options/CustomOptionsService';
 import { useEventBus } from '../../../hooks/useEventBus';
@@ -144,12 +150,14 @@ export const SessionMistakesWidget: React.FC<SessionMistakesWidgetProps> =
       };
     }, [loadSessionMistakes, loadOptions]);
 
+    const loadSessionMistakesEvent = useEffectEvent(loadSessionMistakes);
+
     useEffect(() => {
       if (preview) return;
 
       const handleMetadataChanged = (file: TFile) => {
         if (file.path === filePath) {
-          void loadSessionMistakes();
+          void loadSessionMistakesEvent();
         }
       };
 
@@ -158,7 +166,7 @@ export const SessionMistakesWidget: React.FC<SessionMistakesWidgetProps> =
       return () => {
         plugin.app.metadataCache.off('changed', handleMetadataChanged);
       };
-    }, [filePath, loadSessionMistakes, plugin, preview]);
+    }, [filePath, plugin, preview]);
 
     useEventBus(
       'options:changed',

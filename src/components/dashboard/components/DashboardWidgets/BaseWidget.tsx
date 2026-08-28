@@ -3,11 +3,11 @@
 import React, { useEffect } from 'react';
 import { FilterState } from '../../DashboardView';
 import { DashboardData } from '../../utils/dataUtils';
-import { usePlugin } from '../../../../hooks';
+import { usePlugin } from '../../../../hooks/usePlugin';
 import { getUserDateFormat } from '../../../../utils/dateUtils';
 import { t } from '../../../../lang/helpers';
 import { TradeFormModal } from '../../../forms/trade/TradeFormModal';
-import { EmptyState } from '../../../shared';
+import { EmptyState } from '../../../shared/EmptyState';
 import { useDashboardData } from '../../context/DashboardDataContext';
 import { DashboardWidgetSkeleton } from './DashboardWidgetSkeleton';
 

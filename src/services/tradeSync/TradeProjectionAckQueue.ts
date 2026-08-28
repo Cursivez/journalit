@@ -2,7 +2,7 @@ import type JournalitPlugin from '../../main';
 import { generateUUID } from '../../utils/uuid';
 import { logger } from '../../utils/logger';
 import { ApiClient } from '../backend/ApiClient';
-import { BackendTradeProjectionService } from './BackendTradeProjectionService';
+import { TradeProjectionClient } from './TradeProjectionClient';
 import {
   consumeActiveProjectionAckPermanentFailures,
   deliverProjectionAck,
@@ -733,7 +733,7 @@ export async function acknowledgeLocalDeletedTradeProjection(
     settings?.canonicalTradeProjectionOwners?.[tradeId]?.trim() ?? '';
   await sendTradeProjectionAckWithStatus(
     plugin,
-    new BackendTradeProjectionService(),
+    new TradeProjectionClient(),
     {
       vaultId,
       results: [

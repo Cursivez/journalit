@@ -109,10 +109,11 @@ function AccountTypeSelect({
 }: AccountTypeSelectProps) {
   return (
     <div className="account-type-select">
-      <label className="field-label">
+      <label htmlFor="journalit-accountlinkmodal-122" className="field-label">
         {t('account.link-modal.account-type')}
       </label>
       <select
+        id="journalit-accountlinkmodal-122"
         value={selectedAccountType}
         onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
           onChange(e.target.value)
@@ -161,9 +162,7 @@ function LinkOptionsForm({
   return (
     <div className="link-options">
       <div className="modal-field">
-        <label className="section-label">
-          {t('account.link-modal.question')}
-        </label>
+        <div className="section-label">{t('account.link-modal.question')}</div>
 
         <div className="link-option-group">
           <label className="link-option">
@@ -216,6 +215,7 @@ function LinkOptionsForm({
           {linkOption === 'existing' && hasExistingAccounts && (
             <div className="existing-account-select">
               <select
+                aria-label={t('account.link-modal.option.existing')}
                 value={selectedAccount}
                 onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
                   onSelectedAccountChange(e.target.value)

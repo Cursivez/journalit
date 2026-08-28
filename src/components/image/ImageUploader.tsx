@@ -278,7 +278,7 @@ function useImageUploaderModel({
   };
 
   
-  const handleDragEnter = (e: React.DragEvent<HTMLDivElement>) => {
+  const handleDragEnter = (e: React.DragEvent<HTMLButtonElement>) => {
     if (!enableDragDrop) return;
 
     e.preventDefault();
@@ -292,7 +292,7 @@ function useImageUploaderModel({
     }
   };
 
-  const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
+  const handleDragLeave = (e: React.DragEvent<HTMLButtonElement>) => {
     if (!enableDragDrop) return;
 
     e.preventDefault();
@@ -306,14 +306,14 @@ function useImageUploaderModel({
     }
   };
 
-  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+  const handleDragOver = (e: React.DragEvent<HTMLButtonElement>) => {
     if (!enableDragDrop) return;
 
     e.preventDefault();
     e.stopPropagation();
   };
 
-  const handleDrop = async (e: React.DragEvent<HTMLDivElement>) => {
+  const handleDrop = async (e: React.DragEvent<HTMLButtonElement>) => {
     if (!enableDragDrop) return;
 
     e.preventDefault();
@@ -404,19 +404,18 @@ function ImageUploadControls({
   return (
     <div className="journalit-image-upload-layout">
       
-      <div
-        className={`journalit-image-upload-file-area ${isDraggingOver ? draggingOverClass : ''} ${!enablePaste || !pasteSupported ? 'full-width' : ''}`}
+      <button
+        type="button"
+        className={`journalit-native-button journalit-native-button--unstyled journalit-image-upload-file-area ${isDraggingOver ? draggingOverClass : ''} ${!enablePaste || !pasteSupported ? 'full-width' : ''}`}
         onClick={() => void handleUploadAreaClick()}
         onKeyDown={(event) => void handleUploadAreaKeyDown(event)}
-        role="button"
-        tabIndex={0}
         onDragEnter={handleDragEnter}
         onDragLeave={handleDragLeave}
         onDragOver={handleDragOver}
         onDrop={(event) => void handleDrop(event)}
       >
-        <label className="journalit-image-upload-label">{label}</label>
-      </div>
+        <span className="journalit-image-upload-label">{label}</span>
+      </button>
 
       
       {enablePaste && pasteSupported && (
@@ -489,6 +488,7 @@ export const ImageUploader: React.FC<ImageUploadProps> = ({
       />
 
       <input
+        aria-label={label}
         id={actualInputId}
         type="file"
         accept="image/*,video/*,.mp4,.webm,.mov,.m4v,.ogv,.ogg,.3gp,.mkv"

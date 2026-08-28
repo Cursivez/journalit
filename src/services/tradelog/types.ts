@@ -1,6 +1,7 @@
 
 
 import type { CustomFieldFilterSelections } from '../../types/customFields';
+import type { PartialTradeFrontmatter } from '../../types/TradeFrontmatter';
 
 export type ViewLevel =
   | 'years'
@@ -53,6 +54,13 @@ export interface TradeLogMetrics {
   primaryCurrency?: string;
 }
 
+export type TradeLogTrade = PartialTradeFrontmatter &
+  Record<string, unknown> & {
+    filePath?: string;
+    path?: string;
+    file?: { path?: string };
+  };
+
 export interface TimeNode {
   type: NodeType;
   id: string;
@@ -60,11 +68,7 @@ export interface TimeNode {
   metrics: TradeLogMetrics;
   sessionLogTagIds?: string[];
   children?: TimeNode[];
-  trade?: Record<string, unknown> & {
-    filePath?: string;
-    path?: string;
-    file?: { path?: string };
-  };
+  trade?: TradeLogTrade;
   expanded: boolean;
   dataLoaded: boolean;
   performanceIndicator?: 'best' | 'worst'; 

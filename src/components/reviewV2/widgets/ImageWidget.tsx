@@ -11,7 +11,7 @@ import { FullscreenImageViewer } from '../../image/FullscreenImageViewer';
 import { ExcalidrawMediaEmbed } from '../../image/ExcalidrawMediaEmbed';
 import { MediaPreview } from '../../image/MediaPreview';
 import { eventBus } from '../../../services/events/EventBus';
-import { SkeletonBox } from '../../shared';
+import { SkeletonBox } from '../../shared/SkeletonBox';
 
 import { t } from '../../../lang/helpers';
 import { generateUUID } from '../../../utils/uuid';
@@ -850,6 +850,7 @@ export const ImageWidget: React.FC<ImageWidgetProps> = React.memo(
               enabled: !preview,
               onDeleteImage: handleDeleteImage,
             }}
+            fullscreenAnnotationOptions={{ enabled: !preview }}
             useResolveMediaPath={true}
             sourcePath={filePath}
             className={images.length === 1 ? 'single-image-carousel' : ''}
@@ -876,11 +877,10 @@ export const ImageWidget: React.FC<ImageWidgetProps> = React.memo(
                   className="journalit-stacked-image-container journalit-reviewv2-images-stacked__item"
                 >
                   {isExcalidraw ? (
-                    <div
-                      className="journalit-reviewv2-images-stacked__excalidraw"
+                    <button
+                      type="button"
+                      className="journalit-native-button journalit-native-button--unstyled journalit-reviewv2-images-stacked__excalidraw"
                       onClick={() => setFullscreenIndex(index)}
-                      tabIndex={0}
-                      role="button"
                       aria-label={t('widget.images.open-fullscreen', {
                         index: String(index + 1),
                       })}
@@ -895,7 +895,7 @@ export const ImageWidget: React.FC<ImageWidgetProps> = React.memo(
                         path={imagePath}
                         sourcePath={filePath}
                       />
-                    </div>
+                    </button>
                   ) : (
                     <MediaPreview
                       app={plugin.app}
@@ -943,6 +943,7 @@ export const ImageWidget: React.FC<ImageWidgetProps> = React.memo(
         >
           {fullscreenIndex !== null && (
             <FullscreenImageViewer
+              annotationOptions={{ enabled: !preview }}
               imagePath={images[fullscreenIndex]}
               onClose={() => setFullscreenIndex(null)}
               useResolveMediaPath={true}

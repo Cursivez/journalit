@@ -113,6 +113,7 @@ export const CalendarCheck: ObsidianIconComponent =
 export const CalendarHeart: ObsidianIconComponent =
   createIcon('calendar-heart');
 export const CalendarIcon: ObsidianIconComponent = createIcon('calendar');
+export const CalendarOff: ObsidianIconComponent = createIcon('calendar-off');
 export const CalendarRange: ObsidianIconComponent =
   createIcon('calendar-range');
 export const CalendarSearch: ObsidianIconComponent =
@@ -171,7 +172,6 @@ export const Lock: ObsidianIconComponent = createIcon('lock');
 export const MessagesSquare: ObsidianIconComponent =
   createIcon('messages-square');
 export const Minus: ObsidianIconComponent = createIcon('minus');
-export const Monitor: ObsidianIconComponent = createIcon('monitor');
 export const MoreHorizontal: ObsidianIconComponent =
   createIcon('more-horizontal');
 export const MoveLeft: ObsidianIconComponent = createIcon('lucide-move-left');

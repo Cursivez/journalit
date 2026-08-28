@@ -8,14 +8,18 @@ import { getTradeProjectionOwnerId } from './TradeProjectionOwnership';
 import type { CustomFieldKeyMigration } from '../CustomFieldsService';
 import {
   CANONICAL_PROJECTION_CUSTOM_FIELD_MIGRATION_KEYS,
+  CUSTOM_FIELD_KEY_MIGRATION_KEYS,
   validateFieldKey,
 } from '../../types/customFields';
 import { getTradeIdentityNoteType } from '../../utils/tradeIdentity';
 
 const CANONICAL_PROJECTION_SCHEMA_VERSION = 1;
-const CANONICAL_PROJECTION_MIGRATION_VERSION = 2;
-const MIGRATABLE_CUSTOM_FIELD_KEYS = new Set<string>(
+const CANONICAL_PROJECTION_MIGRATION_VERSION = 3;
+const PROJECTION_OWNED_CUSTOM_FIELD_MIGRATION_KEYS = new Set<string>(
   CANONICAL_PROJECTION_CUSTOM_FIELD_MIGRATION_KEYS
+);
+const MIGRATABLE_CUSTOM_FIELD_KEYS = new Set<string>(
+  CUSTOM_FIELD_KEY_MIGRATION_KEYS
 );
 
 type ProjectionIdentity = {
@@ -206,7 +210,10 @@ function migrateCustomFieldValues(
     if (!hasTarget) {
       frontmatter[migration.targetKey] = frontmatter[migration.sourceKey];
     }
-    if (!preserveProjectionOwnedSources) {
+    if (
+      !preserveProjectionOwnedSources ||
+      !PROJECTION_OWNED_CUSTOM_FIELD_MIGRATION_KEYS.has(migration.sourceKey)
+    ) {
       delete frontmatter[migration.sourceKey];
     }
   }
@@ -377,8 +384,9 @@ export class CanonicalProjectionMigrationService {
               ownerUserId
           )
         : [];
+      const claimableResultsSet = new Set(claimableResults);
       const quarantinedResults = duplicateResults.filter(
-        (result) => !claimableResults.includes(result)
+        (result) => !claimableResultsSet.has(result)
       );
       if (claimableResults.length > 0) {
         await queueTradeProjectionAck(this.plugin, {
@@ -428,7 +436,8 @@ export class CanonicalProjectionMigrationService {
         ownerUserId
     );
     if (claimable.length === 0) return;
-    const quarantined = pending.filter((result) => !claimable.includes(result));
+    const claimableSet = new Set(claimable);
+    const quarantined = pending.filter((result) => !claimableSet.has(result));
     await queueTradeProjectionAck(this.plugin, {
       vaultId: await getTradeProjectionVaultId(this.plugin),
       results: claimable,

@@ -2,7 +2,8 @@
 
 import React, { useState } from 'react';
 import { BaseWidget, BaseWidgetProps } from './BaseWidget';
-import { SharedTradesChart, prepareTradesChartData } from '../../../charts';
+import { SharedTradesChart } from '../../../charts/SharedTradesChart';
+import { prepareTradesChartData } from '../../../../utils/chartUtils';
 import { usePlugin } from '../../../../hooks/usePlugin';
 import { t } from '../../../../lang/helpers';
 import {
@@ -84,6 +85,7 @@ export const TradesChart: React.FC<BaseWidgetProps> = ({
               </div>
               <div className="journalit-dashboard-trades-chart__selector">
                 <select
+                  aria-label={t('widget.tradesChart.name')}
                   value={selectedLimit}
                   onChange={(e) => {
                     const limit = parseTradeLimit(Number(e.target.value));

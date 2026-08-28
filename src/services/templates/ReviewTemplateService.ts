@@ -13,7 +13,7 @@ import {
   ReviewTemplateType,
 } from '../../types/reviewV2';
 import { generateUUID } from '../../utils/uuid';
-import { eventBus } from '../events';
+import { eventBus } from '../events/EventBus';
 
 
 interface JournalitPluginInstance extends Plugin {

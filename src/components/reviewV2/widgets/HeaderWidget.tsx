@@ -21,12 +21,13 @@ import { openFilterModal, UnifiedFilters } from '../../shared/filters';
 import type { AvailableCustomFieldFilter } from '../../shared/filters/types';
 import { HeaderPreviewData } from '../../../types/reviewV2';
 import { eventBus } from '../../../services/events/EventBus';
-import { useEventBus } from '../../../hooks';
+import { useEventBus } from '../../../hooks/useEventBus';
 import type {
   AccountChangedPayload,
   ReviewChangedPayload,
 } from '../../../services/events/types';
-import { SkeletonBox, SkeletonCircle } from '../../shared';
+import { SkeletonBox } from '../../shared/SkeletonBox';
+import { SkeletonCircle } from '../../shared/SkeletonCircle';
 import {
   getWeekNumberForDate,
   getWeekStartDaySetting,
@@ -40,12 +41,13 @@ import {
 } from '../../../settings/viewFiltersDefaults';
 import {
   type CustomFieldDefinition,
-  type CustomFieldFilterSelections,
   isDiscreteCustomFieldFilterable,
 } from '../../../types/customFields';
-import { TradeLogService } from '../../../services/tradelog';
+import { TradeLogService } from '../../../services/tradelog/TradeLogService';
 import { remapAccountFilterFromAccountChange } from '../../shared/filters/remapSelectedAccounts';
 import { persistViewFilter } from '../../shared/filters/viewFilterPersistence';
+import { mergeClassNames } from '../../../utils/classNames';
+import { sanitizeCustomFieldFilters } from '../../shared/filters/sanitizeCustomFieldFilters';
 
 const SHORT_WEEKDAY_FORMATTER = new Intl.DateTimeFormat(undefined, {
   weekday: 'short',
@@ -66,29 +68,6 @@ interface HeaderWidgetProps {
   preview?: boolean;
   previewData?: HeaderPreviewData;
 }
-
-const sanitizeCustomFieldFilters = (
-  customFieldFilters: CustomFieldFilterSelections | undefined,
-  customFields: CustomFieldDefinition[]
-): CustomFieldFilterSelections => {
-  const filterableFieldIds = new Set<string>();
-  for (const field of customFields) {
-    if (isDiscreteCustomFieldFilterable(field)) {
-      filterableFieldIds.add(field.id);
-    }
-  }
-
-  return Object.fromEntries(
-    Object.entries(customFieldFilters || {}).flatMap(([fieldId, values]) => {
-      if (!filterableFieldIds.has(fieldId) || !Array.isArray(values)) {
-        return [];
-      }
-
-      const sanitizedValues = [...new Set(values.filter(Boolean))];
-      return sanitizedValues.length > 0 ? [[fieldId, sanitizedValues]] : [];
-    })
-  );
-};
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
@@ -196,6 +175,26 @@ interface HeaderData {
 const MAX_FRONTMATTER_RETRIES = 5;
 const FRONTMATTER_RETRY_DELAY_MS = 150;
 
+const getFrontmatterNumber = (
+  frontmatter: Record<string, unknown>,
+  key: string
+): number | null => {
+  const value = frontmatter[key];
+
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return value;
+  }
+
+  if (typeof value === 'string') {
+    const parsed = Number.parseInt(value, 10);
+    if (Number.isFinite(parsed)) {
+      return parsed;
+    }
+  }
+
+  return null;
+};
+
 export const HeaderWidget: React.FC<HeaderWidgetProps> = React.memo(
   ({ filePath, plugin, preview, previewData }) => {
     const [headerData, setHeaderData] = useState<HeaderData | null>(null);
@@ -207,6 +206,11 @@ export const HeaderWidget: React.FC<HeaderWidgetProps> = React.memo(
         plugin.uiStateManager.getState().viewFilters?.reviews
       );
     });
+    const filtersRef = useRef(filters);
+    const applyFilters = useCallback((nextFilters: UnifiedFilters) => {
+      filtersRef.current = nextFilters;
+      setFilters(nextFilters);
+    }, []);
     const [reviewed, setReviewed] = useState<boolean>(false);
     const [customFields, setCustomFields] = useState<CustomFieldDefinition[]>(
       () => plugin.customFieldsService?.getFields() || []
@@ -248,23 +252,28 @@ export const HeaderWidget: React.FC<HeaderWidgetProps> = React.memo(
           filters.customFieldFilters,
           discreteCustomFields
         ),
-      [filters.customFieldFilters, discreteCustomFields]
+      [discreteCustomFields, filters.customFieldFilters]
     );
 
     useEffect(() => {
+      
+      const currentFilters = filtersRef.current;
+      const latestSanitizedCustomFieldFilters = sanitizeCustomFieldFilters(
+        currentFilters.customFieldFilters,
+        discreteCustomFields
+      );
       if (
-        JSON.stringify(filters.customFieldFilters || {}) ===
-        JSON.stringify(sanitizedCustomFieldFilters)
+        JSON.stringify(currentFilters.customFieldFilters || {}) ===
+        JSON.stringify(latestSanitizedCustomFieldFilters)
       ) {
         return;
       }
 
       const mergedFilters = normalizeReviewFilters({
-        ...filters,
-        customFieldFilters: sanitizedCustomFieldFilters,
+        ...currentFilters,
+        customFieldFilters: latestSanitizedCustomFieldFilters,
       });
-
-      setFilters(mergedFilters);
+      applyFilters(mergedFilters);
 
       persistViewFilter(plugin.uiStateManager, 'reviews', mergedFilters);
 
@@ -277,7 +286,13 @@ export const HeaderWidget: React.FC<HeaderWidgetProps> = React.memo(
         sourceFilePath: filePath,
         filters: mergedFilters,
       });
-    }, [plugin, filters, sanitizedCustomFieldFilters, filePath]);
+    }, [
+      applyFilters,
+      discreteCustomFields,
+      filePath,
+      filters.customFieldFilters,
+      plugin,
+    ]);
 
     
     const loadReviewedStatus = useCallback(() => {
@@ -325,41 +340,38 @@ export const HeaderWidget: React.FC<HeaderWidgetProps> = React.memo(
       (payload: { sourceFilePath: string; filters: UnifiedFilters }) => {
         
         if (payload.sourceFilePath !== filePath) {
-          setFilters(normalizeReviewFilters(payload.filters));
+          const nextFilters = normalizeReviewFilters(payload.filters);
+          applyFilters(nextFilters);
         }
       },
-      [filePath]
+      [applyFilters, filePath]
     );
 
     useEventBus('review:filter-sync', handleFilterSync);
 
     const handleAccountChanged = useCallback(
       (payload: AccountChangedPayload) => {
-        setFilters((previousFilters) => {
-          const normalizedPreviousFilters =
-            normalizeReviewFilters(previousFilters);
-          const remappedFilters = remapAccountFilterFromAccountChange(
-            normalizedPreviousFilters,
-            payload
-          );
+        const normalizedPreviousFilters = normalizeReviewFilters(
+          filtersRef.current
+        );
+        const remappedFilters = remapAccountFilterFromAccountChange(
+          normalizedPreviousFilters,
+          payload
+        );
 
-          if (remappedFilters === normalizedPreviousFilters) {
-            return previousFilters;
-          }
+        if (remappedFilters === normalizedPreviousFilters) return;
 
-          const nextFilters = normalizeReviewFilters(remappedFilters);
+        const nextFilters = normalizeReviewFilters(remappedFilters);
+        applyFilters(nextFilters);
 
-          persistViewFilter(plugin.uiStateManager, 'reviews', nextFilters);
+        persistViewFilter(plugin.uiStateManager, 'reviews', nextFilters);
 
-          eventBus.publish('review:filter-sync', {
-            sourceFilePath: filePath,
-            filters: nextFilters,
-          });
-
-          return nextFilters;
+        eventBus.publish('review:filter-sync', {
+          sourceFilePath: filePath,
+          filters: nextFilters,
         });
       },
-      [filePath, plugin]
+      [applyFilters, filePath, plugin]
     );
 
     useEventBus('account:changed', handleAccountChanged);
@@ -640,7 +652,8 @@ export const HeaderWidget: React.FC<HeaderWidgetProps> = React.memo(
       const persistedFilters =
         plugin.uiStateManager.getState().viewFilters?.reviews;
       if (persistedFilters) {
-        setFilters(normalizeReviewFilters(persistedFilters));
+        const nextFilters = normalizeReviewFilters(persistedFilters);
+        applyFilters(nextFilters);
       }
 
       
@@ -663,6 +676,7 @@ export const HeaderWidget: React.FC<HeaderWidgetProps> = React.memo(
 
       setLoading(false);
     }, [
+      applyFilters,
       filePath,
       plugin,
       preview,
@@ -795,26 +809,6 @@ export const HeaderWidget: React.FC<HeaderWidgetProps> = React.memo(
         
         setReviewed(!newReviewed);
       }
-    };
-
-    const getFrontmatterNumber = (
-      frontmatter: Record<string, unknown>,
-      key: string
-    ): number | null => {
-      const value = frontmatter[key];
-
-      if (typeof value === 'number' && Number.isFinite(value)) {
-        return value;
-      }
-
-      if (typeof value === 'string') {
-        const parsed = Number.parseInt(value, 10);
-        if (Number.isFinite(parsed)) {
-          return parsed;
-        }
-      }
-
-      return null;
     };
 
     const getContextDate = (): Date => {
@@ -1056,8 +1050,7 @@ export const HeaderWidget: React.FC<HeaderWidgetProps> = React.memo(
               discreteCustomFields
             ),
           });
-
-          setFilters(mergedFilters);
+          applyFilters(mergedFilters);
 
           persistViewFilter(plugin.uiStateManager, 'reviews', mergedFilters);
 
@@ -1076,6 +1069,7 @@ export const HeaderWidget: React.FC<HeaderWidgetProps> = React.memo(
         onClose: () => {},
       });
     }, [
+      applyFilters,
       plugin,
       filters,
       filePath,
@@ -1158,10 +1152,12 @@ export const HeaderWidget: React.FC<HeaderWidgetProps> = React.memo(
         case 'drc':
           return (
             <>
-              <span
-                className={`context-link ${preview ? 'disabled' : ''}`}
-                role="button"
-                tabIndex={preview ? -1 : 0}
+              <button
+                type="button"
+                className={mergeClassNames(
+                  'journalit-native-button journalit-native-button--unstyled',
+                  `context-link ${preview ? 'disabled' : ''}`
+                )}
                 aria-disabled={preview || undefined}
                 onKeyDown={(e) => {
                   if (e.key !== 'Enter' && e.key !== ' ') return;
@@ -1177,12 +1173,14 @@ export const HeaderWidget: React.FC<HeaderWidgetProps> = React.memo(
                 }}
               >
                 {t('widget.header.week', { number: String(weekNum) })}
-              </span>
+              </button>
               <span className="context-separator">·</span>
-              <span
-                className={`context-link ${preview ? 'disabled' : ''}`}
-                role="button"
-                tabIndex={preview ? -1 : 0}
+              <button
+                type="button"
+                className={mergeClassNames(
+                  'journalit-native-button journalit-native-button--unstyled',
+                  `context-link ${preview ? 'disabled' : ''}`
+                )}
                 aria-disabled={preview || undefined}
                 onKeyDown={(e) => {
                   if (e.key !== 'Enter' && e.key !== ' ') return;
@@ -1199,17 +1197,19 @@ export const HeaderWidget: React.FC<HeaderWidgetProps> = React.memo(
                 }}
               >
                 {monthName}
-              </span>
+              </button>
             </>
           );
 
         case 'weekly-review':
           return (
             <>
-              <span
-                className={`context-link ${preview ? 'disabled' : ''}`}
-                role="button"
-                tabIndex={preview ? -1 : 0}
+              <button
+                type="button"
+                className={mergeClassNames(
+                  'journalit-native-button journalit-native-button--unstyled',
+                  `context-link ${preview ? 'disabled' : ''}`
+                )}
                 aria-disabled={preview || undefined}
                 onKeyDown={(e) => {
                   if (e.key !== 'Enter' && e.key !== ' ') return;
@@ -1226,12 +1226,14 @@ export const HeaderWidget: React.FC<HeaderWidgetProps> = React.memo(
                 }}
               >
                 {monthName}
-              </span>
+              </button>
               <span className="context-separator">·</span>
-              <span
-                className={`context-link ${preview ? 'disabled' : ''}`}
-                role="button"
-                tabIndex={preview ? -1 : 0}
+              <button
+                type="button"
+                className={mergeClassNames(
+                  'journalit-native-button journalit-native-button--unstyled',
+                  `context-link ${preview ? 'disabled' : ''}`
+                )}
                 aria-disabled={preview || undefined}
                 onKeyDown={(e) => {
                   if (e.key !== 'Enter' && e.key !== ' ') return;
@@ -1256,12 +1258,14 @@ export const HeaderWidget: React.FC<HeaderWidgetProps> = React.memo(
                 }}
               >
                 {quarterLabel}
-              </span>
+              </button>
               <span className="context-separator">·</span>
-              <span
-                className={`context-link ${preview ? 'disabled' : ''}`}
-                role="button"
-                tabIndex={preview ? -1 : 0}
+              <button
+                type="button"
+                className={mergeClassNames(
+                  'journalit-native-button journalit-native-button--unstyled',
+                  `context-link ${preview ? 'disabled' : ''}`
+                )}
                 aria-disabled={preview || undefined}
                 onKeyDown={(e) => {
                   if (e.key !== 'Enter' && e.key !== ' ') return;
@@ -1280,17 +1284,19 @@ export const HeaderWidget: React.FC<HeaderWidgetProps> = React.memo(
                 }}
               >
                 {year}
-              </span>
+              </button>
             </>
           );
 
         case 'monthly-review':
           return (
             <>
-              <span
-                className={`context-link ${preview ? 'disabled' : ''}`}
-                role="button"
-                tabIndex={preview ? -1 : 0}
+              <button
+                type="button"
+                className={mergeClassNames(
+                  'journalit-native-button journalit-native-button--unstyled',
+                  `context-link ${preview ? 'disabled' : ''}`
+                )}
                 aria-disabled={preview || undefined}
                 onKeyDown={(e) => {
                   if (e.key !== 'Enter' && e.key !== ' ') return;
@@ -1315,12 +1321,14 @@ export const HeaderWidget: React.FC<HeaderWidgetProps> = React.memo(
                 }}
               >
                 {quarterLabel}
-              </span>
+              </button>
               <span className="context-separator">·</span>
-              <span
-                className={`context-link ${preview ? 'disabled' : ''}`}
-                role="button"
-                tabIndex={preview ? -1 : 0}
+              <button
+                type="button"
+                className={mergeClassNames(
+                  'journalit-native-button journalit-native-button--unstyled',
+                  `context-link ${preview ? 'disabled' : ''}`
+                )}
                 aria-disabled={preview || undefined}
                 onKeyDown={(e) => {
                   if (e.key !== 'Enter' && e.key !== ' ') return;
@@ -1339,17 +1347,19 @@ export const HeaderWidget: React.FC<HeaderWidgetProps> = React.memo(
                 }}
               >
                 {year}
-              </span>
+              </button>
             </>
           );
 
         case 'quarterly-review':
           return (
             <>
-              <span
-                className={`context-link ${preview ? 'disabled' : ''}`}
-                role="button"
-                tabIndex={preview ? -1 : 0}
+              <button
+                type="button"
+                className={mergeClassNames(
+                  'journalit-native-button journalit-native-button--unstyled',
+                  `context-link ${preview ? 'disabled' : ''}`
+                )}
                 aria-disabled={preview || undefined}
                 onKeyDown={(e) => {
                   if (e.key !== 'Enter' && e.key !== ' ') return;
@@ -1368,7 +1378,7 @@ export const HeaderWidget: React.FC<HeaderWidgetProps> = React.memo(
                 }}
               >
                 {year}
-              </span>
+              </button>
             </>
           );
 
@@ -1379,10 +1389,12 @@ export const HeaderWidget: React.FC<HeaderWidgetProps> = React.memo(
               {[1, 2, 3, 4].map((q, idx) => (
                 <React.Fragment key={q}>
                   {idx > 0 && <span className="context-separator">·</span>}
-                  <span
-                    className={`context-link ${preview ? 'disabled' : ''}`}
-                    role="button"
-                    tabIndex={preview ? -1 : 0}
+                  <button
+                    type="button"
+                    className={mergeClassNames(
+                      'journalit-native-button journalit-native-button--unstyled',
+                      `context-link ${preview ? 'disabled' : ''}`
+                    )}
                     aria-disabled={preview || undefined}
                     onKeyDown={(e) => {
                       if (e.key !== 'Enter' && e.key !== ' ') return;
@@ -1413,7 +1425,7 @@ export const HeaderWidget: React.FC<HeaderWidgetProps> = React.memo(
                     }}
                   >
                     {t('widget.header.quarter', { number: String(q) })}
-                  </span>
+                  </button>
                 </React.Fragment>
               ))}
             </>
@@ -1422,10 +1434,12 @@ export const HeaderWidget: React.FC<HeaderWidgetProps> = React.memo(
         case 'trade':
           return (
             <>
-              <span
-                className={`context-link ${preview ? 'disabled' : ''}`}
-                role="button"
-                tabIndex={preview ? -1 : 0}
+              <button
+                type="button"
+                className={mergeClassNames(
+                  'journalit-native-button journalit-native-button--unstyled',
+                  `context-link ${preview ? 'disabled' : ''}`
+                )}
                 aria-disabled={preview || undefined}
                 onKeyDown={(e) => {
                   if (e.key !== 'Enter' && e.key !== ' ') return;
@@ -1441,12 +1455,14 @@ export const HeaderWidget: React.FC<HeaderWidgetProps> = React.memo(
                 }}
               >
                 {t('widget.header.drc')}
-              </span>
+              </button>
               <span className="context-separator">·</span>
-              <span
-                className={`context-link ${preview ? 'disabled' : ''}`}
-                role="button"
-                tabIndex={preview ? -1 : 0}
+              <button
+                type="button"
+                className={mergeClassNames(
+                  'journalit-native-button journalit-native-button--unstyled',
+                  `context-link ${preview ? 'disabled' : ''}`
+                )}
                 aria-disabled={preview || undefined}
                 onKeyDown={(e) => {
                   if (e.key !== 'Enter' && e.key !== ' ') return;
@@ -1462,7 +1478,7 @@ export const HeaderWidget: React.FC<HeaderWidgetProps> = React.memo(
                 }}
               >
                 {t('widget.header.week', { number: String(weekNum) })}
-              </span>
+              </button>
             </>
           );
 
@@ -1495,12 +1511,14 @@ export const HeaderWidget: React.FC<HeaderWidgetProps> = React.memo(
             )}
             
             {headerData.type !== 'trade' && (
-              <span
-                className={`reviewed-indicator clickable-icon ${
-                  preview ? 'reviewed-indicator--disabled' : ''
-                }`}
-                role="button"
-                tabIndex={preview ? -1 : 0}
+              <button
+                type="button"
+                className={mergeClassNames(
+                  'journalit-native-button journalit-native-button--unstyled',
+                  `reviewed-indicator ${
+                    preview ? 'reviewed-indicator--disabled' : ''
+                  }`
+                )}
                 aria-disabled={preview || undefined}
                 onKeyDown={(e) => {
                   if (e.key !== 'Enter' && e.key !== ' ') return;
@@ -1525,7 +1543,7 @@ export const HeaderWidget: React.FC<HeaderWidgetProps> = React.memo(
                     className="journalit-header-unreviewed-icon"
                   />
                 )}
-              </span>
+              </button>
             )}
           </div>
           {headerData.subtitle && (
@@ -1572,10 +1590,12 @@ export const HeaderWidget: React.FC<HeaderWidgetProps> = React.memo(
                   <Repeat2 size={16} aria-hidden="true" />
                 </button>
               )}
-              <span
-                className={`nav-link ${preview ? 'disabled' : ''}`}
-                role="button"
-                tabIndex={preview ? -1 : 0}
+              <button
+                type="button"
+                className={mergeClassNames(
+                  'journalit-native-button journalit-native-button--unstyled',
+                  `nav-link ${preview ? 'disabled' : ''}`
+                )}
                 aria-disabled={preview || undefined}
                 onKeyDown={(e) => {
                   if (e.key !== 'Enter' && e.key !== ' ') return;
@@ -1587,11 +1607,13 @@ export const HeaderWidget: React.FC<HeaderWidgetProps> = React.memo(
                 }}
               >
                 {t('widget.header.nav.prev')}
-              </span>
-              <span
-                className={`nav-link ${preview ? 'disabled' : ''}`}
-                role="button"
-                tabIndex={preview ? -1 : 0}
+              </button>
+              <button
+                type="button"
+                className={mergeClassNames(
+                  'journalit-native-button journalit-native-button--unstyled',
+                  `nav-link ${preview ? 'disabled' : ''}`
+                )}
                 aria-disabled={preview || undefined}
                 onKeyDown={(e) => {
                   if (e.key !== 'Enter' && e.key !== ' ') return;
@@ -1603,7 +1625,7 @@ export const HeaderWidget: React.FC<HeaderWidgetProps> = React.memo(
                 }}
               >
                 {t('widget.header.nav.next')}
-              </span>
+              </button>
             </div>
           </div>
         </div>

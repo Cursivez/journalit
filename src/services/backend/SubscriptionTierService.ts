@@ -18,6 +18,7 @@ export type BackendFeatureKey =
   | 'tradeImport'
   | 'quickTradeImport'
   | 'metatraderSync'
+  | 'rithmicSync'
   | 'aiMapping';
 
 interface BackendFeatureEntitlement {

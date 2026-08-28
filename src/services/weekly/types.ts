@@ -16,11 +16,30 @@ interface WeeklyForecast {
 }
 
 
+export type NewsEventImpact = 'none' | 'low' | 'medium' | 'high';
+
 export interface NewsEvent {
   event: string;
   notes: string;
   color?: string; 
   day?: string; 
+  
+  time?: string;
+  currency?: string;
+  
+  eventType?: 'holiday';
+  impact?: NewsEventImpact;
+  forecast?: number;
+  previous?: number;
+  actual?: number;
+  source?: string;
+  seriesId?: number;
+}
+
+
+export interface WeeklyKeyEventsWriteState {
+  keyEvents: NewsEvent[];
+  keyEventsAutoImported: string[];
 }
 
 
@@ -71,6 +90,9 @@ export interface WeeklyReviewData {
 
   
   keyEvents?: NewsEvent[];
+
+  
+  keyEventsAutoImported?: string[];
 
   
   forecast?: WeeklyForecast;

@@ -3,6 +3,7 @@
 import { App, TFile, normalizePath, FileView, WorkspaceLeaf } from 'obsidian';
 import { DRCData } from './types';
 import { NewsEvent } from '../weekly/types';
+import { parseNewsEvents } from '../weekly/parseNewsEvents';
 
 import JournalitPlugin from '../../main';
 import type { NavigationSource } from '../../navigation/types';
@@ -25,11 +26,12 @@ import { forceMetadataCacheRefresh } from '../../utils/dataRefresh';
 import { FolderPathService } from '../core/FolderPathService';
 import { ReviewTemplateService } from '../templates/ReviewTemplateService';
 import { TemplateTransformationService } from '../templates/TemplateTransformationService';
-import { eventBus } from '../events';
+import { eventBus } from '../events/EventBus';
 import { registerPathIndexInvalidator } from '../indexing/pathIndexInvalidator';
 import type { Unsubscribe } from '../events/types';
 import { normalizeTradeExecutionForPeriodAnalytics } from '../trade/core/TradeExecutionAnalytics';
 import { safeString } from '../../utils/safeString';
+import type { ReviewStreakItem } from '../../utils/reviewStreaks';
 import {
   extractJournalitImageWidgetIds,
   extractMarkdownSectionsByHeading,
@@ -97,10 +99,6 @@ function getBooleanRecord(
 
 function getGradeValue(value: unknown): 'A' | 'B' | 'C' {
   return value === 'A' || value === 'B' || value === 'C' ? value : 'C';
-}
-
-function isNewsEvent(value: unknown): value is NewsEvent {
-  return Boolean(value && typeof value === 'object' && !Array.isArray(value));
 }
 
 export class DRCService {
@@ -201,21 +199,32 @@ export class DRCService {
   }
 
   
-  private getDRCFrontmatter(
-    file: TFile
-  ): { dayKey: string; frontmatter: Record<string, unknown> } | null {
+  private getDRCFrontmatter(file: TFile): {
+    dayKey: string;
+    date: Date;
+    frontmatter: Record<string, unknown>;
+  } | null {
     const frontmatter: unknown =
       this.app.metadataCache.getFileCache(file)?.frontmatter;
     if (
       !isRecord(frontmatter) ||
       frontmatter.type !== 'drc' ||
       typeof frontmatter.date !== 'string' ||
-      !/^\d{4}-\d{2}-\d{2}$/.test(frontmatter.date) ||
-      !parseLocalDateSafe(frontmatter.date)
+      !/^\d{4}-\d{2}-\d{2}$/.test(frontmatter.date)
     ) {
       return null;
     }
-    return { dayKey: frontmatter.date, frontmatter };
+    const date = parseLocalDateSafe(frontmatter.date);
+    if (!date) return null;
+    return {
+      dayKey: frontmatter.date,
+      date,
+      frontmatter,
+    };
+  }
+
+  private isDRCReviewed(frontmatter: Record<string, unknown>): boolean {
+    return asRecord(frontmatter.endOfDayReview)?.reviewed === true;
   }
 
   private getDRCMarkdownFiles(): TFile[] {
@@ -264,14 +273,30 @@ export class DRCService {
       const drcNote = this.getDRCFrontmatter(file);
       if (!drcNote) continue;
 
-      const eodReview = drcNote.frontmatter.endOfDayReview;
-      if (isRecord(eodReview) && eodReview.reviewed === true) {
+      if (this.isDRCReviewed(drcNote.frontmatter)) {
         dayKeys.add(drcNote.dayKey);
       }
     }
 
     this.reviewedDayKeys = dayKeys;
     return dayKeys;
+  }
+
+  
+  public getReviewStreakItems(): ReviewStreakItem[] {
+    return this.getDRCMarkdownFiles().flatMap((file) => {
+      const drcNote = this.getDRCFrontmatter(file);
+      if (!drcNote) {
+        return [];
+      }
+
+      return [
+        {
+          date: drcNote.date,
+          reviewed: this.isDRCReviewed(drcNote.frontmatter),
+        },
+      ];
+    });
   }
 
   
@@ -1352,9 +1377,7 @@ export class DRCService {
       }
 
       
-      const allEvents = Array.isArray(frontmatter.keyEvents)
-        ? frontmatter.keyEvents.filter(isNewsEvent)
-        : [];
+      const allEvents = parseNewsEvents(frontmatter.keyEvents);
 
       
       

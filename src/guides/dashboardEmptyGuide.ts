@@ -12,7 +12,7 @@ export function registerDashboardEmptyGuide(
   guideRegistry.registerGuide({
     id: DASHBOARD_EMPTY_GUIDE_ID,
     viewType: HOME_VIEW_TYPE,
-    version: 2,
+    version: 3,
     autoShow: true,
     priority: 100,
     initialStepId: 'intro',

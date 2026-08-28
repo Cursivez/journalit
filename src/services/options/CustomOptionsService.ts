@@ -18,7 +18,8 @@ import {
   isTradeIdentityEligibleNote,
 } from '../../utils/tradeIdentity';
 import { inferStoredTradeType } from '../../utils/tradeTypeRouting';
-import { eventBus, OptionsChangedPayload } from '../events';
+import { eventBus } from '../events/EventBus';
+import { OptionsChangedPayload } from '../events/types';
 import { LabelColor, normalizeLabelColor } from '../../types/labelColor';
 import { SETUP_FRONTMATTER_KEY } from '../setup/constants';
 

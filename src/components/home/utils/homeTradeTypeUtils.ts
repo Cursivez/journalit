@@ -70,8 +70,9 @@ export const normalizeHomeAccountSelection = (
     };
   }
 
+  const normalizedAvailableAccountsSet = new Set(normalizedAvailableAccounts);
   const normalizedSelectedAccounts = dedupedSelectedAccounts.filter((account) =>
-    normalizedAvailableAccounts.includes(account)
+    normalizedAvailableAccountsSet.has(account)
   );
 
   const hasFullAccountSelection =

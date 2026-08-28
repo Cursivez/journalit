@@ -18,6 +18,21 @@ export function mapProjectionTradeToTradeData(
     accountDisplayName?: string | null;
   }
 ): TradeData {
+  
+  
+  
+  
+  
+  
+  
+  const resolveBrokerAuthoritativePnl = (): number | null | undefined => {
+    const net = definedNumber(trade.profitLoss);
+    if (net !== undefined) return net;
+    const gross = definedNumber(trade.grossProfitLoss);
+    if (gross !== undefined) return gross;
+    return trade.profitLoss === null ? null : undefined;
+  };
+  const brokerAuthoritativePnl = resolveBrokerAuthoritativePnl();
   return {
     entryTime: new Date(trade.entryTime),
     exitTime: toDate(trade.exitTime),
@@ -53,14 +68,13 @@ export function mapProjectionTradeToTradeData(
     mtComment: trade.brokerComment?.trim() || undefined,
     notes: trade.notes ?? undefined,
     thesis: trade.thesis ?? undefined,
-    authoritativePnl:
-      trade.profitLoss === null ? null : definedNumber(trade.profitLoss),
+    authoritativePnl: brokerAuthoritativePnl,
     useDirectPnLInput: trade.useDirectPnLInput,
     
     
     
     directPnL:
-      trade.profitLoss === null
+      brokerAuthoritativePnl === null || brokerAuthoritativePnl === undefined
         ? undefined
         : definedNumber(trade.grossProfitLoss ?? trade.directPnL),
     entries: trade.entries?.map((entry) => ({

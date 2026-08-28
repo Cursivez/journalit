@@ -35,6 +35,8 @@ export const AccountLinkingManager: React.FC<AccountLinkingManagerProps> = ({
 
   
   useEffect(() => {
+    let cancelled = false;
+
     const loadObsidianAccounts = async () => {
       if (!plugin.accountPageService) return;
 
@@ -44,13 +46,17 @@ export const AccountLinkingManager: React.FC<AccountLinkingManagerProps> = ({
           id: acc.id,
           name: acc.name,
         }));
-        setObsidianAccounts(accountOptions);
+        if (!cancelled) setObsidianAccounts(accountOptions);
       } catch (error) {
         console.error('Failed to load Obsidian accounts:', error);
       }
     };
 
     void loadObsidianAccounts();
+
+    return () => {
+      cancelled = true;
+    };
   }, [plugin]);
 
   const handleRelinkAccount = async () => {

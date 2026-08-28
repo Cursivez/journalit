@@ -10,7 +10,7 @@ export function registerTradeLogEmptyGuide(guideRegistry: GuideRegistry): void {
   guideRegistry.registerGuide({
     id: TRADE_LOG_EMPTY_GUIDE_ID,
     viewType: TRADE_LOG_VIEW_TYPE,
-    version: 1,
+    version: 2,
     autoShow: true,
     priority: 100,
     initialStepId: 'intro',

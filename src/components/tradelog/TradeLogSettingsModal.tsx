@@ -33,7 +33,7 @@ import {
   VisibilityEditorCategory,
   VisibilityEditorItem,
 } from '../shared/visibilityEditor';
-import { eventBus } from '../../services/events';
+import { eventBus } from '../../services/events/EventBus';
 import ToggleSwitch from '../ui/ToggleSwitch';
 import { showConfirmationModal } from '../shared/ConfirmationModal';
 
@@ -613,6 +613,12 @@ function useTradeLogSettingsModalModel({
   };
 }
 
+const toEditorItem = (column: ColumnWithVisibility): VisibilityEditorItem => ({
+  id: column.id,
+  label: getColumnLabel(column),
+  category: column.category,
+});
+
 const TradeLogSettingsModalContent: React.FC<
   TradeLogSettingsModalProps & {
     modalInstance: TradeLogSettingsModal;
@@ -647,13 +653,6 @@ const TradeLogSettingsModalContent: React.FC<
       label: getColumnCategoryLabel(category.id),
     })
   );
-  const toEditorItem = (
-    column: ColumnWithVisibility
-  ): VisibilityEditorItem => ({
-    id: column.id,
-    label: getColumnLabel(column),
-    category: column.category,
-  });
 
   return (
     <div className="tradelog-settings-modal-container">

@@ -125,6 +125,51 @@ export const ConversionSourceLines: React.FC<{
   );
 };
 
+interface ForexPnlConversionInfoProps {
+  quoteCurrency?: string | null;
+  accountCurrency?: string | null;
+  rateDate?: string;
+  source?: 'automatic' | 'manual';
+}
+
+
+export const ForexPnlConversionInfo: React.FC<ForexPnlConversionInfoProps> = ({
+  quoteCurrency,
+  accountCurrency,
+  rateDate,
+  source,
+}) => {
+  if (!quoteCurrency || !accountCurrency || quoteCurrency === accountCurrency) {
+    return null;
+  }
+
+  const tooltip = (
+    <div className="journalit-dashboard-metric-tooltip">
+      <div className="journalit-dashboard-metric-tooltip__title">
+        {t('dashboard.conversion.title', { currency: accountCurrency })}
+      </div>
+      <div>
+        {quoteCurrency} → {accountCurrency}
+      </div>
+      {source === 'automatic' && rateDate && (
+        <div>{t('dashboard.conversion.using-ecb', { date: rateDate })}</div>
+      )}
+      {source === 'manual' && <div>{t('form.forex.using-manual-rate')}</div>}
+    </div>
+  );
+
+  return (
+    <Tooltip content={tooltip} delay={200} preferredPosition="bottom">
+      <span
+        className="journalit-dashboard-metric-info journalit-currency-conversion-info"
+        aria-label={t('dashboard.conversion.details-label')}
+      >
+        <Info size={10} />
+      </span>
+    </Tooltip>
+  );
+};
+
 export function buildCurrencyConversionMetadata(
   metrics?: CurrencyConversionMetricsLike | null
 ): ReviewCurrencyConversionMetadata | null {

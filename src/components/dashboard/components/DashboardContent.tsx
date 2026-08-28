@@ -2,7 +2,8 @@
 
 import React from 'react';
 import { EmptyState } from '../../shared/EmptyState';
-import { TopSection } from './TopSection';
+import { Import } from '../../shared/icons/ObsidianIcon';
+import { TopSection } from './TopSection/TopSection';
 import { BottomSection } from './BottomSection';
 import { UnifiedComponentSelector } from './UnifiedComponentSelector';
 import { FilterState } from '../DashboardView';
@@ -80,6 +81,11 @@ export const DashboardContent: React.FC<DashboardContentProps> = React.memo(
       modal.open();
     };
 
+    const handleOpenTradeImport = () => {
+      if (!plugin) return;
+      void plugin.viewManager.openCSVImportView();
+    };
+
     
     if (
       !isLoading &&
@@ -93,8 +99,13 @@ export const DashboardContent: React.FC<DashboardContentProps> = React.memo(
             message={t('dashboard.empty.message')}
             subMessage={t('dashboard.empty.submessage')}
             iconSize={56}
-            actionButtonText={t('button.add-trade')}
-            onActionButtonClick={handleOpenTradeForm}
+            actionButtonText={t('dashboard.empty.import-action')}
+            actionIcon={
+              <Import size={16} className="journalit-empty-state-action-icon" />
+            }
+            onActionButtonClick={handleOpenTradeImport}
+            secondaryActionButtonText={t('dashboard.empty.manual-action')}
+            onSecondaryActionButtonClick={handleOpenTradeForm}
           />
         </DashboardEmptyStateGuideTarget>
       );

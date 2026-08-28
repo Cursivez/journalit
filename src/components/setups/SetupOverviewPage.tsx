@@ -284,6 +284,9 @@ export const SetupOverviewPage: React.FC<{
     });
   };
 
+  const effectiveVisibleSelectedSetupIdsSet = new Set(
+    effectiveVisibleSelectedSetupIds
+  );
   return (
     <div className="journalit-setups-view">
       <SetupOverviewHeader
@@ -363,13 +366,13 @@ export const SetupOverviewPage: React.FC<{
                 plugin.settings.trade?.displayRMultiples ?? false
               }
               compareMode={effectiveIsCompareSelecting}
-              compareSelected={effectiveVisibleSelectedSetupIds.includes(
+              compareSelected={effectiveVisibleSelectedSetupIdsSet.has(
                 viewModel.setup.id
               )}
               compareDisabled={
                 effectiveIsCompareSelecting &&
                 effectiveVisibleSelectedSetupIds.length >= 2 &&
-                !effectiveVisibleSelectedSetupIds.includes(viewModel.setup.id)
+                !effectiveVisibleSelectedSetupIdsSet.has(viewModel.setup.id)
               }
               onOpen={() => {
                 emitGuideAction(SETUPS_DETAIL_OPENED_ACTION_ID);

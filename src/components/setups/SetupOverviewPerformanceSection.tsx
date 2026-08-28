@@ -18,7 +18,11 @@ import type { DropdownMenuOption } from '../shared/DropdownMenu';
 import { EmptyState } from '../shared/EmptyState';
 import { ToolbarButton } from '../shared/ToolbarButton';
 import { ChevronDown } from '../shared/icons/ObsidianIcon';
-import { DisplayValue, MetricValue, PercentValue } from '../shared/display';
+import {
+  DisplayValue,
+  MetricValue,
+  PercentValue,
+} from '../shared/display/DisplayValue';
 import {
   METRIC_OPTIONS,
   OVERVIEW_R_METRIC_KEYS,
@@ -29,7 +33,7 @@ import {
 import {
   SetupPairMetricSelect,
   SetupPairsSplitInsight,
-  SetupPairsSummary,
+  SetupPairsSummaryPanel,
   SetupPerformanceMetricSelect,
 } from './SetupPairsPanel';
 import type {
@@ -38,7 +42,6 @@ import type {
   SetupOverviewPnlChartModel,
   SetupOverviewPnlSeries,
   SetupPairMetricKey,
-  SetupPairSummary,
   SetupTradeIndex,
   SetupViewModel,
 } from './setupsViewTypes';
@@ -315,7 +318,6 @@ export const SetupPerformanceChartSection: React.FC<{
     : isCumulativeMetric
       ? pnlChartModel.data.length === 0
       : chartData.length === 0;
-  const title = isPairsMode ? t('setups.view.pairs.title') : null;
   const chartHeight = getOverviewChartHeight(filteredViewModels.length);
   const performanceLeader = useMemo(
     () =>
@@ -344,12 +346,8 @@ export const SetupPerformanceChartSection: React.FC<{
     [filteredViewModels]
   );
   const headerSummaryMode = getSetupPerformanceHeaderSummaryMode({
-    displayRMultiples,
     isChartMasked,
     isCumulativeMetric,
-    isPairChartMasked,
-    isPairSummaryMasked,
-    isPairsMode,
   });
   const headerSummary = (
     <SetupPerformanceHeaderSummary
@@ -358,30 +356,19 @@ export const SetupPerformanceChartSection: React.FC<{
       metric={metric}
       mode={headerSummaryMode}
       needsReviewCount={needsReviewCount}
-      pairSummary={pairSummary}
       pnlSeries={pnlChartModel.series}
     />
   );
-  const metricOptions = useMemo<Array<DropdownMenuOption<MetricKey>>>(() => {
-    const options: Array<DropdownMenuOption<MetricKey>> = [];
-    for (const option of METRIC_OPTIONS) {
-      if (displayRMultiples || !OVERVIEW_R_METRIC_KEYS.has(option.key)) {
-        options.push({ value: option.key, label: t(option.labelKey) });
-      }
-    }
-    return options;
-  }, [displayRMultiples]);
-  const pairMetricOptions = useMemo<
-    Array<DropdownMenuOption<SetupPairMetricKey>>
-  >(() => {
-    const options: Array<DropdownMenuOption<SetupPairMetricKey>> = [];
-    for (const option of SETUP_PAIR_METRIC_OPTIONS) {
-      if (displayRMultiples || !PAIR_R_METRIC_KEYS.has(option.key)) {
-        options.push({ value: option.key, label: t(option.labelKey) });
-      }
-    }
-    return options;
-  }, [displayRMultiples]);
+  const pairSummaryContent = (
+    <SetupPairsSummaryPanel
+      displayRMultiples={displayRMultiples}
+      isMasked={isPairChartMasked}
+      isSummaryMasked={isPairSummaryMasked}
+      summary={pairSummary}
+    />
+  );
+  const { metricOptions, pairMetricOptions } =
+    useSetupPerformanceMetricOptions(displayRMultiples);
   const currentMetricLabel = t(metric.labelKey);
   const currentPairMetricLabel = t(pairMetric.labelKey);
   const setupSelectionLabel =
@@ -398,29 +385,25 @@ export const SetupPerformanceChartSection: React.FC<{
       className={`journalit-chart-widget journalit-setups-performance-widget${isPairsMode ? ' journalit-setups-performance-widget--pairs' : ''}`}
       ref={registerChartTarget}
     >
-      <SetupPerformanceWidgetHeader
-        currentMetricLabel={currentMetricLabel}
-        currentPairMetricLabel={currentPairMetricLabel}
-        effectiveSelectedSetupIds={effectiveSelectedSetupIds}
-        headerSummary={headerSummary}
-        isPairsMode={isPairsMode}
-        metricKey={effectiveMetricKey}
-        metricMenuOpen={metricMenuOpen}
-        metricMenuRef={metricMenuRef}
-        metricOptions={metricOptions}
-        pairMetricKey={effectivePairMetricKey}
-        pairMetricOptions={pairMetricOptions}
-        setupMenuOpen={setupMenuOpen}
-        setupMenuRef={setupMenuRef}
-        setupSelectionLabel={setupSelectionLabel}
-        setups={viewModels.map(({ setup }) => setup)}
-        title={title}
-        onMetricKeyChange={onMetricKeyChange}
-        onMetricMenuOpenChange={handleMetricMenuOpenChange}
-        onPairMetricKeyChange={onPairMetricKeyChange}
-        onSelectedSetupIdsChange={onSelectedSetupIdsChange}
-        onSetupMenuOpenChange={handleSetupMenuOpenChange}
-      />
+      {!isPairsMode ? (
+        <SetupPerformanceWidgetHeader
+          currentMetricLabel={currentMetricLabel}
+          effectiveSelectedSetupIds={effectiveSelectedSetupIds}
+          headerSummary={headerSummary}
+          metricKey={effectiveMetricKey}
+          metricMenuOpen={metricMenuOpen}
+          metricMenuRef={metricMenuRef}
+          metricOptions={metricOptions}
+          setupMenuOpen={setupMenuOpen}
+          setupMenuRef={setupMenuRef}
+          setupSelectionLabel={setupSelectionLabel}
+          setups={viewModels.map(({ setup }) => setup)}
+          onMetricKeyChange={onMetricKeyChange}
+          onMetricMenuOpenChange={handleMetricMenuOpenChange}
+          onSelectedSetupIdsChange={onSelectedSetupIdsChange}
+          onSetupMenuOpenChange={handleSetupMenuOpenChange}
+        />
+      ) : null}
       {isEmpty ||
       (!hasUsableData && !(isPairsMode ? isPairChartMasked : isChartMasked)) ? (
         <EmptyState
@@ -451,8 +434,20 @@ export const SetupPerformanceChartSection: React.FC<{
           <SetupPairsSplitInsight
             isMasked={isPairChartMasked}
             metric={pairMetric}
+            metricSelector={
+              <SetupPairMetricSelect
+                menuOpen={metricMenuOpen}
+                metricKey={effectivePairMetricKey}
+                metricLabel={currentPairMetricLabel}
+                menuRef={metricMenuRef}
+                onMetricKeyChange={onPairMetricKeyChange}
+                onMenuOpenChange={handleMetricMenuOpenChange}
+                options={pairMetricOptions}
+              />
+            }
             pairs={sortedPairModels}
             selectedPair={selectedPair}
+            summary={pairSummaryContent}
             onPairSelected={setSelectedPairKey}
           />
         ) : (
@@ -477,13 +472,35 @@ export const SetupPerformanceChartSection: React.FC<{
 
 SetupPerformanceChartSection.displayName = 'SetupPerformanceChartSection';
 
-type SetupPerformanceHeaderSummaryMode =
-  | {
-      kind: 'pairs';
-      displayRMultiples: boolean;
-      isMasked: boolean;
-      isSummaryMasked: boolean;
+function useSetupPerformanceMetricOptions(displayRMultiples: boolean): {
+  metricOptions: Array<DropdownMenuOption<MetricKey>>;
+  pairMetricOptions: Array<DropdownMenuOption<SetupPairMetricKey>>;
+} {
+  const metricOptions = useMemo<Array<DropdownMenuOption<MetricKey>>>(() => {
+    const options: Array<DropdownMenuOption<MetricKey>> = [];
+    for (const option of METRIC_OPTIONS) {
+      if (displayRMultiples || !OVERVIEW_R_METRIC_KEYS.has(option.key)) {
+        options.push({ value: option.key, label: t(option.labelKey) });
+      }
     }
+    return options;
+  }, [displayRMultiples]);
+  const pairMetricOptions = useMemo<
+    Array<DropdownMenuOption<SetupPairMetricKey>>
+  >(() => {
+    const options: Array<DropdownMenuOption<SetupPairMetricKey>> = [];
+    for (const option of SETUP_PAIR_METRIC_OPTIONS) {
+      if (displayRMultiples || !PAIR_R_METRIC_KEYS.has(option.key)) {
+        options.push({ value: option.key, label: t(option.labelKey) });
+      }
+    }
+    return options;
+  }, [displayRMultiples]);
+
+  return { metricOptions, pairMetricOptions };
+}
+
+type SetupPerformanceHeaderSummaryMode =
   | { kind: 'cumulative'; isMasked: boolean }
   | { kind: 'ranking' };
 
@@ -492,28 +509,12 @@ function getOverviewChartHeight(setupCount: number): number {
 }
 
 function getSetupPerformanceHeaderSummaryMode({
-  displayRMultiples,
   isChartMasked,
   isCumulativeMetric,
-  isPairChartMasked,
-  isPairSummaryMasked,
-  isPairsMode,
 }: {
-  displayRMultiples: boolean;
   isChartMasked: boolean;
   isCumulativeMetric: boolean;
-  isPairChartMasked: boolean;
-  isPairSummaryMasked: boolean;
-  isPairsMode: boolean;
 }): SetupPerformanceHeaderSummaryMode {
-  if (isPairsMode) {
-    return {
-      kind: 'pairs',
-      displayRMultiples,
-      isMasked: isPairChartMasked,
-      isSummaryMasked: isPairSummaryMasked,
-    };
-  }
   return isCumulativeMetric
     ? { kind: 'cumulative', isMasked: isChartMasked }
     : { kind: 'ranking' };
@@ -525,7 +526,6 @@ export const SetupPerformanceHeaderSummary: React.FC<{
   metric: (typeof METRIC_OPTIONS)[number];
   mode: SetupPerformanceHeaderSummaryMode;
   needsReviewCount: number;
-  pairSummary: SetupPairSummary;
   pnlSeries: SetupOverviewPnlSeries[];
 }> = ({
   leader,
@@ -533,16 +533,8 @@ export const SetupPerformanceHeaderSummary: React.FC<{
   metric,
   mode,
   needsReviewCount,
-  pairSummary,
   pnlSeries,
 }) => {
-  if (mode.kind === 'pairs') {
-    return mode.isMasked ||
-      mode.isSummaryMasked ||
-      !mode.displayRMultiples ? null : (
-      <SetupPairsSummary summary={pairSummary} />
-    );
-  }
   if (mode.kind === 'cumulative') {
     if (mode.isMasked) return null;
     return (
@@ -591,92 +583,61 @@ const SetupOverviewPnlHeaderLegend: React.FC<{
 SetupOverviewPnlHeaderLegend.displayName = 'SetupOverviewPnlHeaderLegend';
 
 const SetupPerformanceWidgetHeader: React.FC<{
-  title: string | null;
-  isPairsMode: boolean;
   headerSummary: React.ReactNode;
   metricMenuOpen: boolean;
   setupMenuOpen: boolean;
   metricKey: MetricKey;
-  pairMetricKey: SetupPairMetricKey;
   currentMetricLabel: string;
-  currentPairMetricLabel: string;
   metricMenuRef: React.RefObject<HTMLDivElement | null>;
   setupMenuRef: React.RefObject<HTMLDivElement | null>;
   metricOptions: Array<DropdownMenuOption<MetricKey>>;
-  pairMetricOptions: Array<DropdownMenuOption<SetupPairMetricKey>>;
   effectiveSelectedSetupIds: string[];
   setupSelectionLabel: string;
   setups: Setup[];
   onMetricKeyChange: (metricKey: MetricKey) => void;
-  onPairMetricKeyChange: (metricKey: SetupPairMetricKey) => void;
   onMetricMenuOpenChange: (open: boolean) => void;
   onSetupMenuOpenChange: (open: boolean) => void;
   onSelectedSetupIdsChange: (setupIds: string[] | undefined) => void;
 }> = ({
-  title,
-  isPairsMode,
   headerSummary,
   metricMenuOpen,
   setupMenuOpen,
   metricKey,
-  pairMetricKey,
   currentMetricLabel,
-  currentPairMetricLabel,
   metricMenuRef,
   setupMenuRef,
   metricOptions,
-  pairMetricOptions,
   effectiveSelectedSetupIds,
   setupSelectionLabel,
   setups,
   onMetricKeyChange,
-  onPairMetricKeyChange,
   onMetricMenuOpenChange,
   onSetupMenuOpenChange,
   onSelectedSetupIdsChange,
 }) => (
   <div className="journalit-setups-performance-widget__header">
     <div className="journalit-setups-performance-widget__heading">
-      {title ? (
-        <div className="journalit-setups-performance-widget__title-row">
-          <div className="journalit-chart-widget__title">{title}</div>
-        </div>
-      ) : null}
       {headerSummary}
     </div>
     <div className="journalit-chart-widget__selector">
-      {isPairsMode ? (
-        <SetupPairMetricSelect
-          menuOpen={metricMenuOpen}
-          metricKey={pairMetricKey}
-          metricLabel={currentPairMetricLabel}
-          menuRef={metricMenuRef}
-          onMetricKeyChange={onPairMetricKeyChange}
-          onMenuOpenChange={onMetricMenuOpenChange}
-          options={pairMetricOptions}
-        />
-      ) : (
-        <>
-          <SetupPerformanceMetricSelect
-            menuOpen={metricMenuOpen}
-            metricKey={metricKey}
-            metricLabel={currentMetricLabel}
-            menuRef={metricMenuRef}
-            onMetricKeyChange={onMetricKeyChange}
-            onMenuOpenChange={onMetricMenuOpenChange}
-            options={metricOptions}
-          />
-          <SetupOverviewSetupSelector
-            menuOpen={setupMenuOpen}
-            menuRef={setupMenuRef}
-            selectedSetupIds={effectiveSelectedSetupIds}
-            label={setupSelectionLabel}
-            setups={setups}
-            onMenuOpenChange={onSetupMenuOpenChange}
-            onSelectedSetupIdsChange={onSelectedSetupIdsChange}
-          />
-        </>
-      )}
+      <SetupPerformanceMetricSelect
+        menuOpen={metricMenuOpen}
+        metricKey={metricKey}
+        metricLabel={currentMetricLabel}
+        menuRef={metricMenuRef}
+        onMetricKeyChange={onMetricKeyChange}
+        onMenuOpenChange={onMetricMenuOpenChange}
+        options={metricOptions}
+      />
+      <SetupOverviewSetupSelector
+        menuOpen={setupMenuOpen}
+        menuRef={setupMenuRef}
+        selectedSetupIds={effectiveSelectedSetupIds}
+        label={setupSelectionLabel}
+        setups={setups}
+        onMenuOpenChange={onSetupMenuOpenChange}
+        onSelectedSetupIdsChange={onSelectedSetupIdsChange}
+      />
     </div>
   </div>
 );

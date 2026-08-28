@@ -3,6 +3,7 @@
 import React, { useState, useRef, useEffect, useCallback, useId } from 'react';
 import { createPortal } from 'react-dom';
 import { cssVars } from '../../styles/inlineStylePolicy';
+import { mergeClassNames } from '../../utils/classNames';
 
 interface TooltipProps {
   content: React.ReactNode;
@@ -40,7 +41,10 @@ export const Tooltip = React.memo<TooltipProps>(
     const timeoutRef = useRef<number | null>(null);
     const unmountTimeoutRef = useRef<number | null>(null);
     const tooltipRef = useRef<HTMLDivElement>(null);
-    const triggerRef = useRef<HTMLSpanElement>(null);
+    const triggerRef = useRef<HTMLElement | null>(null);
+    const setTriggerRef = useCallback((element: HTMLElement | null) => {
+      triggerRef.current = element;
+    }, []);
     const tooltipId = useId();
     const disclosureLabelId = `${tooltipId}-label`;
 
@@ -259,13 +263,12 @@ export const Tooltip = React.memo<TooltipProps>(
             >
               {disclosureLabel}
             </span>
-            <span
-              ref={triggerRef}
+            <button
+              type="button"
+              ref={setTriggerRef}
               aria-controls={tooltipId}
               aria-expanded={isVisible}
               aria-labelledby={disclosureLabelId}
-              role="button"
-              tabIndex={0}
               onClick={handleDisclosureClick}
               onKeyDown={handleDisclosureKeyDown}
               onMouseEnter={showTooltip}
@@ -273,14 +276,17 @@ export const Tooltip = React.memo<TooltipProps>(
               onMouseMove={handleMouseMove}
               onFocus={scheduleShowTooltip}
               onBlur={hideTooltip}
-              className={`tooltip-trigger ${block ? 'tooltip-trigger--block' : 'tooltip-trigger--inline'} ${triggerClassName}`.trim()}
+              className={mergeClassNames(
+                'journalit-native-button journalit-native-button--unstyled',
+                `tooltip-trigger ${block ? 'tooltip-trigger--block' : 'tooltip-trigger--inline'} ${triggerClassName}`.trim()
+              )}
             >
               {children}
-            </span>
+            </button>
           </>
         ) : (
           <span
-            ref={triggerRef}
+            ref={setTriggerRef}
             onMouseEnter={showTooltip}
             onMouseLeave={hideTooltip}
             onMouseMove={handleMouseMove}

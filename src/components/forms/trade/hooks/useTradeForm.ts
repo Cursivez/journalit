@@ -6,6 +6,7 @@ import { t } from '../../../../lang/helpers';
 import {
   useState,
   useEffect,
+  useLayoutEffect,
   useRef,
   useMemo,
   useCallback,
@@ -13,7 +14,10 @@ import {
 } from 'react';
 import { normalizePath, TFile } from 'obsidian';
 import { CustomOptionsService, OptionType } from '../../../../services/options';
-import { imageService } from '../../../../services/image/ImageService';
+import {
+  getGeneratedMediaFileId,
+  imageService,
+} from '../../../../services/image/ImageService';
 import {
   TradeFormData,
   TradeFormErrors,
@@ -28,7 +32,7 @@ import {
   validateCustomFields,
 } from '../validation';
 import { deriveRawDirectPnLFromStoredCombinedPnL } from '../../../../utils/pnlCalculation';
-import { usePlugin } from '../../../../hooks';
+import { usePlugin } from '../../../../hooks/usePlugin';
 import { getTradingDay } from '../../../../utils/tradingDayUtils';
 import { isTradeOpenWithContext } from '../../../../utils/tradeStatusUtils';
 import {
@@ -45,6 +49,10 @@ import {
   getTradeMediaOwner,
   isManagedTradeMediaPath,
 } from '../../../../services/trade/core/TradeMediaOwnership';
+import {
+  rekeyImageAnnotations,
+  serializeImageAnnotations,
+} from '../../../../utils/imageAnnotations';
 
 interface UseTradeFormProps {
   initialData?: Partial<TradeFormData>;
@@ -706,6 +714,23 @@ export const useTradeForm = ({
 
     return mergedData;
   });
+  const formDataRef = useRef(formData);
+  useLayoutEffect(() => {
+    formDataRef.current = formData;
+  }, [formData]);
+  const commitFormData = useCallback(
+    (
+      update:
+        | Partial<TradeFormData>
+        | ((current: Partial<TradeFormData>) => Partial<TradeFormData>)
+    ) => {
+      const nextFormData =
+        typeof update === 'function' ? update(formDataRef.current) : update;
+      formDataRef.current = nextFormData;
+      setFormData(nextFormData);
+    },
+    []
+  );
 
   
   
@@ -812,7 +837,7 @@ export const useTradeForm = ({
 
       
       
-      setFormData((prevData) => {
+      commitFormData((prevData) => {
         const currentImages = Array.isArray(prevData.images)
           ? [...prevData.images]
           : [];
@@ -853,81 +878,79 @@ export const useTradeForm = ({
 
   const handleFieldChange = useCallback(
     (field: keyof TradeFormData, value: TradeFormValue) => {
-      setFormData((prevData) => {
-        
-        const newData = {
-          ...prevData,
-          [field]: value,
-        };
+      
+      const currentFormData = formDataRef.current;
+      const newData = {
+        ...currentFormData,
+        [field]: value,
+      };
 
-        if (field === 'commission') {
-          newData.hasExplicitCommission = true;
-        }
+      if (field === 'commission') {
+        newData.hasExplicitCommission = true;
+      }
 
-        
-        
-        
-        if (field === 'currency' && value !== prevData.currency) {
-          newData.fxRate = undefined;
-          newData.fxRateBaseCurrency = undefined;
-        }
-        if (field === 'fxRate') {
-          newData.fxRateBaseCurrency =
-            value === undefined
-              ? undefined
-              : plugin.settings?.general?.currency || 'USD';
-        }
+      
+      
+      
+      if (field === 'currency' && value !== currentFormData.currency) {
+        newData.fxRate = undefined;
+        newData.fxRateBaseCurrency = undefined;
+      }
+      if (field === 'fxRate') {
+        newData.fxRateBaseCurrency =
+          value === undefined
+            ? undefined
+            : plugin.settings?.general?.currency || 'USD';
+      }
 
-        let executionsChanged = false;
-        if (
-          (field === 'entries' || field === 'exits') &&
-          prevData.unrealizedPriceSnapshot !== undefined &&
-          prevData.unrealizedPriceSnapshot !== null
-        ) {
-          const referenceDate = new Date();
-          executionsChanged = shouldInvalidateUnrealizedSnapshot(
-            withCurrentTimeForBlankTradeTimes(
-              withResolvedSnapshotExitExplicitness(prevData),
-              isEditMode,
-              referenceDate
-            ),
-            withCurrentTimeForBlankTradeTimes(
-              withResolvedSnapshotExitExplicitness(newData),
-              isEditMode,
-              referenceDate
-            )
-          );
-        }
+      let executionsChanged = false;
+      if (
+        (field === 'entries' || field === 'exits') &&
+        currentFormData.unrealizedPriceSnapshot !== undefined &&
+        currentFormData.unrealizedPriceSnapshot !== null
+      ) {
+        const referenceDate = new Date();
+        executionsChanged = shouldInvalidateUnrealizedSnapshot(
+          withCurrentTimeForBlankTradeTimes(
+            withResolvedSnapshotExitExplicitness(currentFormData),
+            isEditMode,
+            referenceDate
+          ),
+          withCurrentTimeForBlankTradeTimes(
+            withResolvedSnapshotExitExplicitness(newData),
+            isEditMode,
+            referenceDate
+          )
+        );
+      }
 
-        if (
-          executionsChanged ||
-          hasQuoteContextChanged(field, prevData[field], value) ||
-          (field === 'useDirectPnLInput' && value !== prevData[field])
-        ) {
-          newData.unrealizedPriceSnapshot = undefined;
-          newData.unrealizedPriceSnapshotTime = undefined;
-        }
-        if (
-          field === 'unrealizedPriceSnapshotTime' &&
-          (value === undefined || value === null)
-        ) {
-          newData.unrealizedPriceSnapshot = undefined;
-        }
+      if (
+        executionsChanged ||
+        hasQuoteContextChanged(field, currentFormData[field], value) ||
+        (field === 'useDirectPnLInput' && value !== currentFormData[field])
+      ) {
+        newData.unrealizedPriceSnapshot = undefined;
+        newData.unrealizedPriceSnapshotTime = undefined;
+      }
+      if (
+        field === 'unrealizedPriceSnapshotTime' &&
+        (value === undefined || value === null)
+      ) {
+        newData.unrealizedPriceSnapshot = undefined;
+      }
 
-        const nextData = shouldRefreshAutoCommission(field)
-          ? applyAutoCommission(newData, plugin.optionsService, prevData)
-          : newData;
+      const nextData = shouldRefreshAutoCommission(field)
+        ? applyAutoCommission(newData, plugin.optionsService, currentFormData)
+        : newData;
 
-        if (formSubmitted) {
-          runValidation(
-            withCurrentTimeForBlankTradeTimes(nextData, isEditMode)
-          );
-        }
+      commitFormData(nextData);
 
-        return nextData;
-      });
+      if (formSubmitted) {
+        runValidation(withCurrentTimeForBlankTradeTimes(nextData, isEditMode));
+      }
     },
     [
+      commitFormData,
       formSubmitted,
       isEditMode,
       plugin.optionsService,
@@ -1432,11 +1455,8 @@ export const useTradeForm = ({
                   const extensionIndex = file.name.lastIndexOf('.');
                   const extension =
                     extensionIndex >= 0 ? file.name.slice(extensionIndex) : '';
-                  const timestampMatch = file.name.match(/-(\d+)(\.[^.]+)?$/);
-                  const timestamp = timestampMatch
-                    ? timestampMatch[1]
-                    : String(Date.now());
-                  const newFileName = `${fileNamePrefix}-${timestamp}${extension}`;
+                  const fileId = getGeneratedMediaFileId(file.name);
+                  const newFileName = `${fileNamePrefix}-${fileId}${extension}`;
                   const newPath = normalizePath(`${baseFolder}/${newFileName}`);
 
                   try {
@@ -1455,11 +1475,20 @@ export const useTradeForm = ({
             const updatedTempImages = tempImages.map(
               (imagePath) => tempImageMap.get(imagePath) || imagePath
             );
+            const updatedImageAnnotations = rekeyImageAnnotations(
+              dataToSubmit.imageAnnotations,
+              tempImageMap
+            );
 
             dataToSubmit.images = updatedImages;
-            setFormData((prevData) => ({
+            dataToSubmit.imageAnnotations = updatedImageAnnotations;
+            commitFormData((prevData) => ({
               ...prevData,
               images: updatedImages,
+              imageAnnotations: rekeyImageAnnotations(
+                prevData.imageAnnotations,
+                tempImageMap
+              ),
             }));
             setTempImages(updatedTempImages);
             nextTempImages = updatedTempImages;
@@ -1646,6 +1675,19 @@ export const useTradeForm = ({
     const fxRateBaseCurrencyChanged =
       (formData.fxRateBaseCurrency || '').trim() !==
       (initial.fxRateBaseCurrency || '').trim();
+    const trackForexPnlConversionChange =
+      formData.forexPnlConversionRateSource === 'manual' ||
+      initial.forexPnlConversionRateSource === 'manual';
+    const forexPnlConversionRateChanged =
+      trackForexPnlConversionChange &&
+      normalizeOptionalNumber(formData.forexPnlConversionRate) !==
+        normalizeOptionalNumber(initial.forexPnlConversionRate);
+    const forexPnlConversionContextChanged =
+      trackForexPnlConversionChange &&
+      ((formData.forexQuoteCurrency || '').trim() !==
+        (initial.forexQuoteCurrency || '').trim() ||
+        (formData.forexPnlConversionBaseCurrency || '').trim() !==
+          (initial.forexPnlConversionBaseCurrency || '').trim());
     const directPnLChanged =
       normalizeOptionalNumber(formData.directPnL) !==
       normalizeOptionalNumber(initial.directPnL);
@@ -1770,14 +1812,14 @@ export const useTradeForm = ({
       normalizeTakeProfitSnapshot(formData.takeProfits) !==
       normalizeTakeProfitSnapshot(initial.takeProfits);
 
-    
-    const currentImages = Array.isArray(formData.images)
-      ? formData.images.length
-      : 0;
-    const initialImages = Array.isArray(initial.images)
-      ? initial.images.length
-      : 0;
-    const imagesChanged = currentImages !== initialImages;
+    const imagesChanged =
+      JSON.stringify(formData.images ?? []) !==
+      JSON.stringify(initial.images ?? []);
+    const imageAnnotationsChanged =
+      JSON.stringify(
+        serializeImageAnnotations(formData.imageAnnotations ?? {})
+      ) !==
+      JSON.stringify(serializeImageAnnotations(initial.imageAnnotations ?? {}));
 
     return (
       instrumentChanged ||
@@ -1787,6 +1829,8 @@ export const useTradeForm = ({
       currencyChanged ||
       fxRateChanged ||
       fxRateBaseCurrencyChanged ||
+      forexPnlConversionRateChanged ||
+      forexPnlConversionContextChanged ||
       directPnLChanged ||
       riskAmountChanged ||
       stopLossChanged ||
@@ -1799,6 +1843,7 @@ export const useTradeForm = ({
       idealExitsChanged ||
       thesisChanged ||
       imagesChanged ||
+      imageAnnotationsChanged ||
       directionChanged ||
       dividendsChanged ||
       takeProfitsChanged
@@ -1811,6 +1856,10 @@ export const useTradeForm = ({
     formData.currency,
     formData.fxRate,
     formData.fxRateBaseCurrency,
+    formData.forexQuoteCurrency,
+    formData.forexPnlConversionRate,
+    formData.forexPnlConversionBaseCurrency,
+    formData.forexPnlConversionRateSource,
     formData.directPnL,
     formData.riskAmount,
     formData.stopLoss,
@@ -1823,6 +1872,7 @@ export const useTradeForm = ({
     formData.idealExits,
     formData.thesis,
     formData.images,
+    formData.imageAnnotations,
     formData.direction,
     formData.dividends,
     formData.takeProfits,

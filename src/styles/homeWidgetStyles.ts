@@ -20,6 +20,45 @@ export const HOME_WIDGET_STYLES = `
     color: var(--text-faint);
   }
 
+  .journalit-home-widget__option-list {
+    display: flex;
+    gap: 4px;
+    flex-wrap: wrap;
+  }
+
+  .journalit-home-widget__option {
+    padding: 4px 8px;
+    font-size: 11px;
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 4px;
+    background-color: transparent;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: color 0.15s ease;
+  }
+
+  .journalit-home-widget__option:disabled {
+    cursor: not-allowed;
+    opacity: 0.6;
+  }
+
+  .journalit-home-page
+    .journalit-home-widget
+    button.journalit-home-widget__option--active {
+    border-color: var(
+      --journalit-home-widget-option-active-border,
+      var(--interactive-accent)
+    );
+    background-color: var(
+      --journalit-home-widget-option-active-background,
+      var(--interactive-accent)
+    );
+    color: var(
+      --journalit-home-widget-option-active-color,
+      var(--text-on-accent)
+    );
+  }
+
   
   .journalit-home-score {
     --journalit-score-excellent: #0ea5e9;
@@ -749,11 +788,48 @@ export const HOME_WIDGET_STYLES = `
     color: var(--text-muted);
   }
 
+  button.journalit-native-button.journalit-home-goals {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+  }
+
+  button.journalit-native-button.journalit-home-goals--empty {
+    align-items: center;
+    justify-content: center;
+    color: var(--text-muted);
+  }
+
+  button.journalit-native-button.journalit-home-goals--scope-mismatch {
+    gap: 6px;
+    padding: 16px;
+  }
+
   .journalit-home-goals--active {
     padding: 12px;
     gap: 12px;
     cursor: pointer;
     position: relative;
+  }
+
+  .journalit-home-goals__loading-header,
+  .journalit-home-goals__display-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+  }
+
+  .journalit-home-goals__display-actions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+  }
+
+  .journalit-home-goals__header-chevron {
+    flex-shrink: 0;
+    color: var(--text-faint);
   }
 
   .journalit-home-goals__header {
@@ -796,29 +872,6 @@ export const HOME_WIDGET_STYLES = `
     border-radius: 4px;
     display: flex;
     align-items: center;
-  }
-
-  .journalit-home-goals__chip-list {
-    display: flex;
-    gap: 4px;
-    flex-wrap: wrap;
-  }
-
-  .journalit-home-goals__chip {
-    padding: 4px 8px;
-    font-size: 11px;
-    border: 1px solid var(--background-modifier-border);
-    border-radius: 4px;
-    background-color: transparent;
-    color: var(--text-muted);
-    cursor: pointer;
-    transition: all 0.15s ease;
-  }
-
-  .journalit-home-goals__chip--active {
-    border-color: var(--interactive-accent);
-    background-color: var(--interactive-accent);
-    color: var(--text-on-accent);
   }
 
   .journalit-home-goals__target-row {
@@ -1011,9 +1064,6 @@ export const HOME_WIDGET_STYLES = `
   }
 
   .journalit-home-goals__complete {
-    position: absolute;
-    top: 8px;
-    right: 8px;
     background-color: var(--color-green);
     color: white;
     padding: 4px 8px;
@@ -1229,7 +1279,25 @@ export const HOME_WIDGET_STYLES = `
     gap: 8px;
   }
 
+  button.journalit-native-button.journalit-home-weekly {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: normal;
+    padding: 12px;
+    gap: 8px;
+  }
+
   .journalit-home-weekly--clickable {
+    appearance: none;
+    width: 100%;
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+    color: inherit;
+    font: inherit;
+    text-align: inherit;
     cursor: pointer;
   }
 
@@ -1645,6 +1713,21 @@ export const HOME_WIDGET_STYLES = `
     cursor: pointer;
   }
 
+  button.journalit-native-button.journalit-home-unreviewed {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 12px;
+    gap: 4px;
+  }
+
+  button.journalit-native-button.journalit-home-unreviewed--row {
+    flex-direction: row;
+    gap: 8px;
+  }
+
   .journalit-home-unreviewed__line {
     display: flex;
     align-items: center;
@@ -1827,6 +1910,18 @@ export const HOME_WIDGET_STYLES = `
 
   .journalit-home-embedded-note__header-label--interactive {
     cursor: pointer;
+  }
+
+  button.journalit-native-button.journalit-home-embedded-note__header-label {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 6px;
+    color: var(--text-faint);
+    font-size: 11px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
   }
 
   .journalit-home-embedded-note__icon-button {
@@ -2073,11 +2168,13 @@ export const HOME_WIDGET_STYLES = `
     flex-direction: column;
     gap: 10px;
     flex: 1;
+    min-height: 0;
     overflow: auto;
   }
 
   .journalit-home-getting-started__item {
     display: flex;
+    flex: 0 0 auto;
     gap: 10px;
     padding: 10px 12px;
     border-radius: 8px;
@@ -2089,6 +2186,24 @@ export const HOME_WIDGET_STYLES = `
   .journalit-home-getting-started__item--clickable {
     cursor: pointer;
     background-color: var(--background-primary);
+  }
+
+  button.journalit-native-button.journalit-home-getting-started__item {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 10px 12px;
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 8px;
+  }
+
+  button.journalit-native-button.journalit-home-getting-started__item--clickable {
+    background-color: var(--background-primary);
+  }
+
+  button.journalit-native-button.journalit-home-getting-started__item--static {
+    background-color: var(--background-secondary);
+    cursor: default;
   }
 
   .journalit-home-getting-started__item--static {
@@ -2176,9 +2291,21 @@ export const HOME_WIDGET_STYLES = `
     letter-spacing: 0.5px;
   }
 
+  .journalit-home-streak__header-actions {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    min-width: 0;
+  }
+
   .journalit-home-streak__header-stats {
     text-transform: none;
     letter-spacing: 0;
+  }
+
+  .journalit-home-streak__header-chevron {
+    flex-shrink: 0;
+    color: var(--text-faint);
   }
 
   .journalit-home-streak__hero {
@@ -2212,9 +2339,89 @@ export const HOME_WIDGET_STYLES = `
   }
 
   .journalit-home-streak__insight {
+    width: 100%;
     font-size: 12px;
     color: var(--text-muted);
     margin-top: 4px;
+    text-align: center;
+    line-height: 1.35;
+    text-wrap: balance;
+  }
+
+  .journalit-home-streak--clickable {
+    cursor: pointer;
+  }
+
+  button.journalit-native-button.journalit-home-streak {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: normal;
+    padding: 12px;
+    gap: 8px;
+  }
+
+  .journalit-home-streak--configuring {
+    gap: 10px;
+    min-height: 0;
+    overflow-x: hidden;
+    overflow-y: auto;
+    box-sizing: border-box;
+    scrollbar-gutter: stable;
+  }
+
+  .journalit-home-streak__config-header {
+    width: 100%;
+    margin-bottom: 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+  }
+
+  .journalit-home-streak__config-title {
+    min-width: 0;
+  }
+
+  .journalit-home-streak__config-actions {
+    display: flex;
+    gap: 4px;
+  }
+
+  .journalit-home-streak__config-save,
+  .journalit-home-streak__config-cancel {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 4px;
+    border: 0;
+    border-radius: 4px;
+  }
+
+  .journalit-home-streak__config-save:not(:disabled) {
+    background: var(--color-green);
+    color: var(--text-on-accent);
+    cursor: pointer;
+  }
+
+  .journalit-home-streak__config-save:disabled {
+    background: var(--background-modifier-border);
+    color: var(--text-muted);
+    cursor: not-allowed;
+  }
+
+  .journalit-home-streak__config-cancel {
+    background: transparent;
+    color: var(--text-muted);
+    cursor: pointer;
+  }
+
+  .journalit-home-streak__kind-list {
+    flex-direction: column;
+    align-items: flex-start;
+    flex-wrap: nowrap;
   }
 
   
@@ -2553,12 +2760,29 @@ export const HOME_WIDGET_STYLES = `
     flex-direction: column;
     padding: 0;
     box-sizing: border-box;
-    cursor: pointer;
     border-radius: 5px;
-    outline: none;
   }
 
-  .journalit-home-key-events:focus-visible {
+  button.journalit-native-button.journalit-home-key-events__open {
+    appearance: none;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    flex: 1 1 auto;
+    min-width: 0;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+    color: inherit;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+  }
+
+  button.journalit-native-button.journalit-home-key-events__open:focus-visible {
+    border-radius: 4px;
     box-shadow: inset 0 0 0 2px var(--interactive-accent);
   }
 
@@ -2592,6 +2816,33 @@ export const HOME_WIDGET_STYLES = `
     font-weight: 600;
     line-height: 1;
     box-sizing: border-box;
+  }
+
+  .journalit-home-key-events__header-actions {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex: 0 0 auto;
+  }
+
+  .journalit-home-key-events__calendar {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    padding: 0;
+    border: none;
+    border-radius: 4px;
+    background: transparent;
+    box-shadow: none;
+    color: var(--text-faint);
+    cursor: pointer;
+  }
+
+  .journalit-home-key-events__calendar:hover {
+    background: var(--background-modifier-hover);
+    color: var(--text-normal);
   }
 
   .journalit-home-key-events__chevron {

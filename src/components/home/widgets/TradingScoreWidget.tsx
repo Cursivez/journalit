@@ -110,7 +110,7 @@ const EMPTY_TRADES: Trade[] = [];
 const getAccountFilterKey = (accounts: string[]): string =>
   accounts.join('\u0000');
 
-const getTradeAccountLookupKeys = (trade: Trade): string[] => {
+const getTradeAccountLookupKeys = (trade: Trade): Set<string> => {
   const lookupKeys = new Set<string>();
 
   for (const key of trade.accountLookupKeys ?? []) {
@@ -130,7 +130,7 @@ const getTradeAccountLookupKeys = (trade: Trade): string[] => {
     lookupKeys.add(normalizeAccountLookupKey(accountValue));
   }
 
-  return [...lookupKeys];
+  return lookupKeys;
 };
 
 const getAccountScoreResultsFromTrades = (
@@ -140,7 +140,7 @@ const getAccountScoreResultsFromTrades = (
   accounts.flatMap((account) => {
     const accountLookupKey = normalizeAccountLookupKey(account);
     const accountTrades = trades.filter((trade) =>
-      getTradeAccountLookupKeys(trade).includes(accountLookupKey)
+      getTradeAccountLookupKeys(trade).has(accountLookupKey)
     );
 
     return accountTrades.length > 0

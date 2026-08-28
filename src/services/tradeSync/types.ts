@@ -17,7 +17,7 @@ export interface TradovateConnectionAccount {
     | { state: 'held_elsewhere'; holderConnectionId: string };
 }
 
-export interface TradovateSyncJob {
+export interface BrokerSyncJob {
   id: string;
   connectionId: string;
   kind: string;
@@ -25,15 +25,15 @@ export interface TradovateSyncJob {
   errorCode?: string;
 }
 
-const TRADOVATE_IN_PROGRESS_JOB_STATUSES = new Set([
+const IN_PROGRESS_JOB_STATUSES = new Set([
   'queued',
   'running',
   'pending',
   'processing',
 ]);
 
-export function isTradovateJobInProgress(status: string): boolean {
-  return TRADOVATE_IN_PROGRESS_JOB_STATUSES.has(status.toLowerCase());
+export function isBrokerSyncJobInProgress(status: string): boolean {
+  return IN_PROGRESS_JOB_STATUSES.has(status.toLowerCase());
 }
 
 export interface TradovateConnection {
@@ -47,7 +47,7 @@ export interface TradovateConnection {
   nextSyncAt?: string;
   reconciliationIssueCount: number;
   accounts: TradovateConnectionAccount[];
-  jobs: TradovateSyncJob[];
+  jobs: BrokerSyncJob[];
 }
 
 export interface TradovateConnections {
@@ -62,16 +62,49 @@ export interface TradovateAccountSelection {
   historyFrom: string | null;
 }
 
-interface TradovateClientOperationBase {
+export interface RithmicConnectionAccount {
+  id: string;
+  connectionId: string;
+  canonicalAccountId: string;
+  displayName?: string;
+  currency?: string;
+  syncEnabled: boolean;
+  lastSuccessfulSyncAt?: string;
+}
+
+export interface RithmicConnection {
+  id: string;
+  displayName: string;
+  systemName: string;
+  status: string;
+  connectedAt?: string;
+  lastSuccessfulSyncAt?: string;
+  lastErrorCode?: string;
+  lastErrorAt?: string;
+  accounts: RithmicConnectionAccount[];
+  jobs: BrokerSyncJob[];
+}
+
+export interface RithmicConnections {
+  schemaVersion: 'rithmic-connections-v1';
+  connections: RithmicConnection[];
+}
+
+
+export type BrokerSyncProviderId = 'tradovate' | 'rithmic';
+
+interface BrokerClientOperationBase {
   clientOperationId: string;
   ownerUserId: string;
+  
+  provider: BrokerSyncProviderId;
   pluginVersion: string;
   vaultId: string;
   deviceId?: string;
   jobId?: string;
 }
 
-export type TradovateClientOperationContext = TradovateClientOperationBase &
+export type BrokerClientOperationContext = BrokerClientOperationBase &
   (
     | {
         scope: 'connection';
@@ -83,7 +116,7 @@ export type TradovateClientOperationContext = TradovateClientOperationBase &
       }
   );
 
-export type TradovateClientDiagnosticEventType =
+export type BrokerClientDiagnosticEventType =
   | 'sync_requested'
   | 'job_poll_started'
   | 'job_poll_completed'
@@ -92,7 +125,7 @@ export type TradovateClientDiagnosticEventType =
   | 'projection_write_failed'
   | 'projection_ack_queued';
 
-export type TradovateClientDiagnosticErrorCode =
+export type BrokerClientDiagnosticErrorCode =
   | 'broker_job_failed'
   | 'broker_job_cancelled'
   | 'job_poll_request_failed'
@@ -102,10 +135,16 @@ export type TradovateClientDiagnosticErrorCode =
   | 'obsidian_write_failed'
   | 'trade_cache_lookup_failed';
 
-export interface TradovateClientDiagnosticEvent {
-  eventType: TradovateClientDiagnosticEventType;
+export interface BrokerClientDiagnosticEvent {
+  eventType: BrokerClientDiagnosticEventType;
   occurredAt: string;
-  errorCode?: TradovateClientDiagnosticErrorCode;
+  errorCode?: BrokerClientDiagnosticErrorCode;
+  count?: number;
+}
+
+export interface BrokerClientDiagnosticEventInput {
+  eventType: BrokerClientDiagnosticEventType;
+  errorCode?: BrokerClientDiagnosticErrorCode;
   count?: number;
 }
 
@@ -118,16 +157,16 @@ export interface TradovateClientDiagnosticPayload {
   operationId: string;
   connectionId?: string;
   syncRunId?: string;
-  events: TradovateClientDiagnosticEvent[];
+  events: BrokerClientDiagnosticEvent[];
 }
 
-export interface TradovateConnectionSyncOutcome {
+export interface BrokerConnectionSyncOutcome {
   connectionId: string;
   status: 'succeeded' | 'partial' | 'failed' | 'cancelled' | 'request_failed';
 }
 
-export interface TradovateSyncAllResult {
-  outcomes: TradovateConnectionSyncOutcome[];
+export interface BrokerSyncAllResult {
+  outcomes: BrokerConnectionSyncOutcome[];
   projection: TradeProjectionSyncResult;
 }
 
@@ -244,6 +283,8 @@ export interface TradeProjectionAckRequest {
   clientOperationId?: string;
   
   diagnosticSyncRunId?: string;
+  
+  diagnosticProvider?: BrokerSyncProviderId;
   results: Array<{
     tradeId: string;
     backendTradeVersion: number;
@@ -268,7 +309,7 @@ export interface TradeProjectionAckClient {
   ): Promise<void>;
 }
 
-export interface TradeProjectionClient extends TradeProjectionAckClient {
+export interface TradeProjectionReadClient extends TradeProjectionAckClient {
   getRestorableProjections(
     request: TradeProjectionRequest,
     options?: TradeProjectionRequestOptions
@@ -293,7 +334,7 @@ export interface TradeProjectionRestoreInput {
   ownerUserId?: string;
   requestOptions?: TradeProjectionRequestOptions;
   shouldStop?: () => boolean;
-  clientOperation?: TradovateClientOperationContext;
+  clientOperation?: BrokerClientOperationContext;
   onComplete?: (result: TradeProjectionRestoreResult) => void;
 }
 

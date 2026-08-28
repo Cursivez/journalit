@@ -1,7 +1,7 @@
 
 
 import { useEffect, useRef } from 'react';
-import { eventBus } from '../services/events';
+import { eventBus } from '../services/events/EventBus';
 import type { EventName, EventMap, EventCallback } from '../services/events';
 
 type EventBusHandler<K extends EventName> = EventMap[K] extends void

@@ -12,7 +12,8 @@ import { t } from '../../../../lang/helpers';
 import { DateRangeFilter } from './DateRangeFilter';
 import { FilterControlsProps } from './types';
 import { saveLastUsedFilters } from '../../utils/filterUtils';
-import { usePlugin, useViewportThreshold } from '../../../../hooks';
+import { usePlugin } from '../../../../hooks/usePlugin';
+import { useViewportThreshold } from '../../../../hooks/useResizeObserver';
 import { Button } from '../../../../components/ui/Button';
 import { FilterButton } from '../../../shared/FilterButton';
 import { openFilterModal, UnifiedFilters } from '../../../shared/filters';
@@ -20,10 +21,9 @@ import type { AvailableCustomFieldFilter } from '../../../shared/filters/types';
 import { SELECTABLE_STATUSES_COUNT } from '../../../../services/tradelog/types';
 import {
   type CustomFieldDefinition,
-  type CustomFieldFilterSelections,
   isDiscreteCustomFieldFilterable,
 } from '../../../../types/customFields';
-import { TradeLogService } from '../../../../services/tradelog';
+import { TradeLogService } from '../../../../services/tradelog/TradeLogService';
 import { useDashboardData } from '../../context/DashboardDataContext';
 import {
   createDashboardFilters,
@@ -39,31 +39,7 @@ import {
   normalizeAccountLookupKey,
   normalizeTradeAccountIdentity,
 } from '../../../../services/trade/core/TradeAccountIdentity';
-
-const sanitizeCustomFieldFilters = (
-  customFieldFilters: CustomFieldFilterSelections | undefined,
-  customFields: CustomFieldDefinition[]
-): CustomFieldFilterSelections => {
-  const filterableFieldIds = new Set(
-    customFields.reduce((acc: string[], field) => {
-      if (isDiscreteCustomFieldFilterable(field)) {
-        acc.push(field.id);
-      }
-      return acc;
-    }, [])
-  );
-
-  return Object.fromEntries(
-    Object.entries(customFieldFilters || {}).flatMap(([fieldId, values]) => {
-      if (!filterableFieldIds.has(fieldId) || !Array.isArray(values)) {
-        return [];
-      }
-
-      const sanitizedValues = [...new Set(values.filter(Boolean))];
-      return sanitizedValues.length > 0 ? [[fieldId, sanitizedValues]] : [];
-    })
-  );
-};
+import { sanitizeCustomFieldFilters } from '../../../shared/filters/sanitizeCustomFieldFilters';
 
 
 
@@ -99,6 +75,7 @@ export const FilterControls = React.memo<FilterControlsProps>(
     useEffect(() => {
       if (plugin && !tradeLogServiceRef.current) {
         tradeLogServiceRef.current = new TradeLogService(plugin);
+        tradeLogServiceRef.current.connect();
       }
 
       return () => {

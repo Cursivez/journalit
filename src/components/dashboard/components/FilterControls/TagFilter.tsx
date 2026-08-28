@@ -10,7 +10,7 @@ import React, {
 import { t } from '../../../../lang/helpers';
 import { OptionType } from '../../../../services/options/CustomOptionsService';
 import { usePlugin } from '../../../../hooks/usePlugin';
-import { useEventBus } from '../../../../hooks';
+import { useEventBus } from '../../../../hooks/useEventBus';
 import { TagFilterProps } from './types';
 
 
@@ -135,17 +135,17 @@ export const TagFilter: React.FC<TagFilterProps> = React.memo(
       [handleTagChange]
     );
 
+    const selectedTagsSet = new Set(selectedTags);
     return (
       <div
         className="journalit-dashboard-tag-filter journalit-responsive-tag-filter"
         ref={dropdownRef}
       >
         <div className="journalit-dashboard-tag-dropdown">
-          <div
-            className="journalit-dashboard-tag-summary"
+          <button
+            type="button"
+            className="journalit-native-button journalit-native-button--unstyled journalit-dashboard-tag-summary"
             onClick={toggleDropdown}
-            role="button"
-            tabIndex={0}
             onKeyDown={(e) => {
               if (e.key === 'Enter' || e.key === ' ') {
                 e.preventDefault();
@@ -157,7 +157,7 @@ export const TagFilter: React.FC<TagFilterProps> = React.memo(
               {tagSummary}
             </span>
             <span className="dropdown-arrow">{isOpen ? '▲' : '▼'}</span>
-          </div>
+          </button>
 
           {isOpen && (
             <div className="journalit-dashboard-tag-options-dropdown">
@@ -215,7 +215,7 @@ export const TagFilter: React.FC<TagFilterProps> = React.memo(
                           className="journalit-dashboard-tag-option-item"
                           onClick={getTagClickHandler(tag)}
                           role="checkbox"
-                          aria-checked={selectedTags.includes(tag)}
+                          aria-checked={selectedTagsSet.has(tag)}
                           tabIndex={0}
                           onKeyDown={(e) => {
                             if (e.key === 'Enter' || e.key === ' ') {
@@ -225,10 +225,10 @@ export const TagFilter: React.FC<TagFilterProps> = React.memo(
                           }}
                         >
                           <span
-                            className={`journalit-dashboard-tag-checkbox${selectedTags.includes(tag) ? ' checked' : ''}`}
+                            className={`journalit-dashboard-tag-checkbox${selectedTagsSet.has(tag) ? ' checked' : ''}`}
                             aria-hidden="true"
                           >
-                            {selectedTags.includes(tag) ? '✓' : ''}
+                            {selectedTagsSet.has(tag) ? '✓' : ''}
                           </span>
                           <span>{tag}</span>
                         </div>

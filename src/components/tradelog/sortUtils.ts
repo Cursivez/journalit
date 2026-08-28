@@ -21,7 +21,10 @@ import {
   getTradeMfeValue,
 } from '../../utils/tradeExcursion';
 import type { MaeMfeDisplayUnit } from '../../settings/types';
-import { TimeNode } from '../../services/tradelog/types';
+import {
+  type TimeNode,
+  type TradeLogTrade,
+} from '../../services/tradelog/types';
 import { ColumnDefinition } from './columnConfig';
 import {
   CustomFieldType,
@@ -67,12 +70,6 @@ function compareValues<T extends number | string>(
       : textCollator.compare(String(valueA), String(valueB));
 
   return direction === 'asc' ? comparison : -comparison;
-}
-
-function asTradeRecord(trade: unknown): Record<string, unknown> | undefined {
-  return trade && typeof trade === 'object' && !Array.isArray(trade)
-    ? Object.fromEntries(Object.entries(trade))
-    : undefined;
 }
 
 function getTradeNumber(
@@ -239,16 +236,16 @@ function sortByCustomField(
       }
 
       return compareCustomDropdownValues(
-        getCustomDropdownSortValue(asTradeRecord(a.trade), column),
-        getCustomDropdownSortValue(asTradeRecord(b.trade), column),
+        getCustomDropdownSortValue(a.trade, column),
+        getCustomDropdownSortValue(b.trade, column),
         sortMode,
         direction,
         column
       );
     }
 
-    const valueA = getSortValue(asTradeRecord(a.trade));
-    const valueB = getSortValue(asTradeRecord(b.trade));
+    const valueA = getSortValue(a.trade);
+    const valueB = getSortValue(b.trade);
 
     return compareValues(valueA, valueB, direction);
   });
@@ -256,7 +253,7 @@ function sortByCustomField(
 
 
 function getSortablePnL(
-  trade: Record<string, unknown>,
+  trade: TradeLogTrade,
   snapshotKeysClaimedByCustomFields: boolean
 ): number {
   return getTradeLogDisplayedPnL(trade, snapshotKeysClaimedByCustomFields);
@@ -270,14 +267,12 @@ function sortByPnL(
   return [...nodes].sort((a, b) => {
     if (a.type !== 'trade' || b.type !== 'trade') return 0;
 
-    const pnlA = getSortablePnL(
-      asTradeRecord(a.trade) ?? {},
-      snapshotKeysClaimedByCustomFields
-    );
-    const pnlB = getSortablePnL(
-      asTradeRecord(b.trade) ?? {},
-      snapshotKeysClaimedByCustomFields
-    );
+    const tradeA = a.trade;
+    const tradeB = b.trade;
+    if (!tradeA || !tradeB) return 0;
+
+    const pnlA = getSortablePnL(tradeA, snapshotKeysClaimedByCustomFields);
+    const pnlB = getSortablePnL(tradeB, snapshotKeysClaimedByCustomFields);
 
     return direction === 'asc' ? pnlA - pnlB : pnlB - pnlA;
   });
@@ -290,8 +285,8 @@ function sortByDividends(
   return [...nodes].sort((a, b) => {
     if (a.type !== 'trade' || b.type !== 'trade') return 0;
 
-    const dividendsA = calculateTotalDividends(asTradeRecord(a.trade) ?? {});
-    const dividendsB = calculateTotalDividends(asTradeRecord(b.trade) ?? {});
+    const dividendsA = calculateTotalDividends(a.trade ?? {});
+    const dividendsB = calculateTotalDividends(b.trade ?? {});
 
     return direction === 'asc'
       ? dividendsA - dividendsB
@@ -304,10 +299,8 @@ function sortByDate(nodes: TimeNode[], direction: SortDirection): TimeNode[] {
   return [...nodes].sort((a, b) => {
     if (a.type !== 'trade' || b.type !== 'trade') return 0;
 
-    const dateA =
-      getFirstEntryTime(asTradeRecord(a.trade) ?? {})?.getTime() ?? 0;
-    const dateB =
-      getFirstEntryTime(asTradeRecord(b.trade) ?? {})?.getTime() ?? 0;
+    const dateA = getFirstEntryTime(a.trade ?? {})?.getTime() ?? 0;
+    const dateB = getFirstEntryTime(b.trade ?? {})?.getTime() ?? 0;
 
     return direction === 'asc' ? dateA - dateB : dateB - dateA;
   });
@@ -321,8 +314,8 @@ function sortByPositionSize(
   return [...nodes].sort((a, b) => {
     if (a.type !== 'trade' || b.type !== 'trade') return 0;
 
-    const sizeA = getTotalEntrySize(asTradeRecord(a.trade) ?? {}) ?? 0;
-    const sizeB = getTotalEntrySize(asTradeRecord(b.trade) ?? {}) ?? 0;
+    const sizeA = getTotalEntrySize(a.trade ?? {}) ?? 0;
+    const sizeB = getTotalEntrySize(b.trade ?? {}) ?? 0;
 
     return direction === 'asc' ? sizeA - sizeB : sizeB - sizeA;
   });
@@ -345,8 +338,8 @@ function sortByDuration(
       return exit - entry; 
     };
 
-    const durationA = getDuration(asTradeRecord(a.trade));
-    const durationB = getDuration(asTradeRecord(b.trade));
+    const durationA = getDuration(a.trade);
+    const durationB = getDuration(b.trade);
 
     return direction === 'asc' ? durationA - durationB : durationB - durationA;
   });
@@ -360,8 +353,8 @@ function sortByExitDate(
   return [...nodes].sort((a, b) => {
     if (a.type !== 'trade' || b.type !== 'trade') return 0;
 
-    const exitA = getLastExitTime(asTradeRecord(a.trade) ?? {});
-    const exitB = getLastExitTime(asTradeRecord(b.trade) ?? {});
+    const exitA = getLastExitTime(a.trade ?? {});
+    const exitB = getLastExitTime(b.trade ?? {});
 
     
     if (!exitA && !exitB) return 0;
@@ -386,8 +379,8 @@ function sortByRMultiple(
   return [...nodes].sort((a, b) => {
     if (a.type !== 'trade' || b.type !== 'trade') return 0;
 
-    const tradeA = asTradeRecord(a.trade) ?? {};
-    const tradeB = asTradeRecord(b.trade) ?? {};
+    const tradeA = a.trade ?? {};
+    const tradeB = b.trade ?? {};
     const floatingPnlA = getTradeLogFloatingPnL(
       tradeA,
       snapshotKeysClaimedByCustomFields
@@ -427,12 +420,8 @@ function sortByMaxR(
   return [...nodes].sort((a, b) => {
     if (a.type !== 'trade' || b.type !== 'trade') return 0;
 
-    const maxRA =
-      calculateTradeMaxR(asTradeRecord(a.trade) ?? {}, defaultRiskAmount) ??
-      null;
-    const maxRB =
-      calculateTradeMaxR(asTradeRecord(b.trade) ?? {}, defaultRiskAmount) ??
-      null;
+    const maxRA = calculateTradeMaxR(a.trade ?? {}, defaultRiskAmount) ?? null;
+    const maxRB = calculateTradeMaxR(b.trade ?? {}, defaultRiskAmount) ?? null;
 
     if (maxRA === null && maxRB === null) return 0;
     if (maxRA === null) return 1;
@@ -449,10 +438,8 @@ function sortByPriceMove(
   return [...nodes].sort((a, b) => {
     if (a.type !== 'trade' || b.type !== 'trade') return 0;
 
-    const priceMoveA =
-      calculateTradePriceMove(asTradeRecord(a.trade) ?? {}) ?? null;
-    const priceMoveB =
-      calculateTradePriceMove(asTradeRecord(b.trade) ?? {}) ?? null;
+    const priceMoveA = calculateTradePriceMove(a.trade ?? {}) ?? null;
+    const priceMoveB = calculateTradePriceMove(b.trade ?? {}) ?? null;
 
     return compareValues(priceMoveA, priceMoveB, direction);
   });
@@ -465,8 +452,8 @@ function sortByReturnPercent(
   return [...nodes].sort((a, b) => {
     if (a.type !== 'trade' || b.type !== 'trade') return 0;
 
-    const returnA = calculateTradeReturnPercent(asTradeRecord(a.trade)) ?? null;
-    const returnB = calculateTradeReturnPercent(asTradeRecord(b.trade)) ?? null;
+    const returnA = calculateTradeReturnPercent(a.trade) ?? null;
+    const returnB = calculateTradeReturnPercent(b.trade) ?? null;
 
     if (returnA === null && returnB === null) return 0;
     if (returnA === null) return 1;
@@ -485,8 +472,8 @@ function sortByMae(
   const getter = displayUnit === 'ticks' ? getTradeMaeTicks : getTradeMaeValue;
   return [...nodes].sort((a, b) => {
     if (a.type !== 'trade' || b.type !== 'trade') return 0;
-    const maeA = getter(asTradeRecord(a.trade)) ?? null;
-    const maeB = getter(asTradeRecord(b.trade)) ?? null;
+    const maeA = getter(a.trade) ?? null;
+    const maeB = getter(b.trade) ?? null;
 
     if (maeA === null && maeB === null) return 0;
     if (maeA === null) return 1;
@@ -504,8 +491,8 @@ function sortByMfe(
   const getter = displayUnit === 'ticks' ? getTradeMfeTicks : getTradeMfeValue;
   return [...nodes].sort((a, b) => {
     if (a.type !== 'trade' || b.type !== 'trade') return 0;
-    const mfeA = getter(asTradeRecord(a.trade)) ?? null;
-    const mfeB = getter(asTradeRecord(b.trade)) ?? null;
+    const mfeA = getter(a.trade) ?? null;
+    const mfeB = getter(b.trade) ?? null;
 
     if (mfeA === null && mfeB === null) return 0;
     if (mfeA === null) return 1;
@@ -522,8 +509,8 @@ function sortByMaePrice(
   return [...nodes].sort((a, b) => {
     if (a.type !== 'trade' || b.type !== 'trade') return 0;
 
-    const priceA = getTradeNumber(asTradeRecord(a.trade), 'maePrice');
-    const priceB = getTradeNumber(asTradeRecord(b.trade), 'maePrice');
+    const priceA = getTradeNumber(a.trade, 'maePrice');
+    const priceB = getTradeNumber(b.trade, 'maePrice');
 
     if (priceA === undefined && priceB === undefined) return 0;
     if (priceA === undefined) return 1;
@@ -540,8 +527,8 @@ function sortByMfePrice(
   return [...nodes].sort((a, b) => {
     if (a.type !== 'trade' || b.type !== 'trade') return 0;
 
-    const priceA = getTradeNumber(asTradeRecord(a.trade), 'mfePrice');
-    const priceB = getTradeNumber(asTradeRecord(b.trade), 'mfePrice');
+    const priceA = getTradeNumber(a.trade, 'mfePrice');
+    const priceB = getTradeNumber(b.trade, 'mfePrice');
 
     if (priceA === undefined && priceB === undefined) return 0;
     if (priceA === undefined) return 1;
@@ -635,7 +622,7 @@ function sortByMaeMfePercent(
     percentByNode.set(
       node,
       node.type === 'trade'
-        ? getMaeMfePercent(asTradeRecord(node.trade), valueField, priceField)
+        ? getMaeMfePercent(node.trade, valueField, priceField)
         : null
     );
   }
@@ -671,8 +658,8 @@ function sortByReviewed(
   return [...nodes].sort((a, b) => {
     if (a.type !== 'trade' || b.type !== 'trade') return 0;
 
-    const reviewedA = asTradeRecord(a.trade)?.reviewed === true ? 1 : 0;
-    const reviewedB = asTradeRecord(b.trade)?.reviewed === true ? 1 : 0;
+    const reviewedA = a.trade?.reviewed === true ? 1 : 0;
+    const reviewedB = b.trade?.reviewed === true ? 1 : 0;
 
     return direction === 'asc' ? reviewedA - reviewedB : reviewedB - reviewedA;
   });
@@ -702,8 +689,8 @@ function sortByDirection(
   return [...nodes].sort((a, b) => {
     if (a.type !== 'trade' || b.type !== 'trade') return 0;
 
-    const valueA = getTradeDirectionDisplayKind(asTradeRecord(a.trade) ?? {});
-    const valueB = getTradeDirectionDisplayKind(asTradeRecord(b.trade) ?? {});
+    const valueA = getTradeDirectionDisplayKind(a.trade ?? {});
+    const valueB = getTradeDirectionDisplayKind(b.trade ?? {});
     const rankA = directionRank[valueA];
     const rankB = directionRank[valueB];
 
@@ -781,8 +768,8 @@ export function applySorting(
       return [...nodes].sort((a, b) => {
         if (a.type !== 'trade' || b.type !== 'trade') return 0;
 
-        const dateA = asTradeRecord(a.trade)?.expirationDate;
-        const dateB = asTradeRecord(b.trade)?.expirationDate;
+        const dateA = a.trade?.expirationDate;
+        const dateB = b.trade?.expirationDate;
 
         if (!dateA && !dateB) return 0;
         if (!dateA) return 1;
@@ -798,8 +785,8 @@ export function applySorting(
       return [...nodes].sort((a, b) => {
         if (a.type !== 'trade' || b.type !== 'trade') return 0;
 
-        const expiryA = asTradeRecord(a.trade)?.expirationDate;
-        const expiryB = asTradeRecord(b.trade)?.expirationDate;
+        const expiryA = a.trade?.expirationDate;
+        const expiryB = b.trade?.expirationDate;
 
         const dteA = expiryA ? getDaysToExpiry(safeString(expiryA)) : null;
         const dteB = expiryB ? getDaysToExpiry(safeString(expiryB)) : null;

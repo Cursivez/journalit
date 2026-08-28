@@ -121,10 +121,28 @@ export const BUTTON_STYLES = `
     color: var(--text-muted);
   }
 
+  button.journalit-no-tooltip-button {
+    position: relative;
+    box-sizing: content-box;
+    margin: 0 2px;
+  }
+
   button.journalit-icon-button:hover:not(:disabled),
   button.journalit-no-tooltip-button:hover:not(:disabled) {
     background-color: var(--background-modifier-hover);
     color: var(--text-normal);
+  }
+
+  button.journalit-no-tooltip-button:active:not(:disabled) {
+    background-color: var(--background-modifier-active);
+    transform: translateY(1px);
+  }
+
+  button.journalit-no-tooltip-button svg {
+    width: 18px;
+    height: 18px;
+    pointer-events: none;
+    fill: none;
   }
 
   button.journalit-toolbar-icon-button {

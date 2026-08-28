@@ -12,7 +12,7 @@ import {
 } from '../../../utils/tradeStatusUtils';
 import { classifyPnLWithBreakEvenSettings } from '../../../utils/breakEvenRange';
 import { getSingleExplicitCurrency } from '../../../utils/currencyAggregation';
-import { SkeletonBox } from '../../shared';
+import { SkeletonBox } from '../../shared/SkeletonBox';
 import { Tooltip } from '../../shared/Tooltip';
 import {
   getTradeAccountNames,

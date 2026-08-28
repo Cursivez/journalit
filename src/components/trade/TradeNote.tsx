@@ -48,6 +48,7 @@ import { DisplayPolicyProvider } from '../../contexts/DisplayPolicyContext';
 import { CircleHelp } from '../shared/icons/ObsidianIcon';
 import { CustomFieldDefinition } from '../../types/customFields';
 import { useTradeLabelColorData } from '../../hooks/useTradeLabelColorData';
+import { extractPriceMoveValueFields } from '../../utils/priceMoveValue';
 
 const TRADE_NAV_CACHE_PREFIX = 'trade-nav-';
 
@@ -742,14 +743,8 @@ export const TradeNote: React.FC<TradeNoteProps> = React.memo(
         swap={data.swap}
         fees={data.fees}
         rebate={data.rebate}
-        assetType={data.assetType}
         optionType={data.optionType}
-        contractSize={data.contractSize}
-        dollarPerPoint={data.dollarPerPoint}
-        tickSize={data.tickSize}
-        tickValue={data.tickValue}
-        lotSize={data.lotSize}
-        pipValue={data.pipValue}
+        {...extractPriceMoveValueFields(data)}
         rMultiple={data.rMultiple}
         rMultipleDisplay={{
           enabled: plugin?.settings?.trade?.displayRMultiples ?? false,

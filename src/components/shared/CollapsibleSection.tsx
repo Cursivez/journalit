@@ -23,7 +23,7 @@ export const COLLAPSIBLE_SECTION_STYLES = `
   margin-bottom: 12px;
 }
 
-.journalit-collapsible-header {
+button.journalit-native-button.journalit-collapsible-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -40,11 +40,11 @@ export const COLLAPSIBLE_SECTION_STYLES = `
   border-radius: 6px;
 }
 
-.journalit-collapsible-header:hover {
+button.journalit-native-button.journalit-collapsible-header:hover {
   background: var(--background-modifier-hover);
 }
 
-.journalit-collapsible-header:focus {
+button.journalit-native-button.journalit-collapsible-header:focus {
   outline: 2px solid var(--interactive-accent);
   outline-offset: -2px;
 }
@@ -155,7 +155,7 @@ export const CollapsibleSection = memo<CollapsibleSectionProps>(
         ref={containerRef}
       >
         <button
-          className={`journalit-collapsible-header ${badge && badge > 0 ? 'has-active-filters' : ''}`}
+          className={`journalit-native-button journalit-native-button--unstyled journalit-collapsible-header ${badge && badge > 0 ? 'has-active-filters' : ''}`}
           onClick={handleToggle}
           onKeyDown={handleKeyDown}
           aria-expanded={isOpen}

@@ -1,6 +1,10 @@
 import React, { useCallback, useState } from 'react';
 import { t } from '../../lang/helpers';
-import type { TradeGateRun, TradeGateWorkflow } from '../../types/sessionMode';
+import type {
+  TradeGateQuestion,
+  TradeGateRun,
+  TradeGateWorkflow,
+} from '../../types/sessionMode';
 import {
   advanceTradeGateRun,
   createTradeGateRun,
@@ -11,6 +15,7 @@ import { TradeGateRunView } from './TradeGateRunView';
 
 interface TradeGateSimulatorProps {
   id: string;
+  questions: TradeGateQuestion[];
   workflow: TradeGateWorkflow;
 }
 
@@ -20,12 +25,13 @@ interface TradeGateSimulationState {
 }
 
 export const TradeGateSimulator: React.FC<TradeGateSimulatorProps> = React.memo(
-  ({ id, workflow }) => {
+  ({ id, questions, workflow }) => {
     const canStart = hasRunnableTradeGateQuestion(
       workflow,
+      questions,
       workflow.startNodeId
     );
-    const routingSignature = getTradeGateRoutingSignature(workflow);
+    const routingSignature = getTradeGateRoutingSignature(workflow, questions);
     const [simulationState, setSimulationState] =
       useState<TradeGateSimulationState>(() => ({
         routingSignature,
@@ -46,12 +52,13 @@ export const TradeGateSimulator: React.FC<TradeGateSimulatorProps> = React.memo(
       (optionId: string) => {
         const nextRun = advanceTradeGateRun({
           workflow,
+          questions,
           run,
           optionId,
         });
         if (nextRun) setSimulationState({ routingSignature, run: nextRun });
       },
-      [routingSignature, run, workflow]
+      [questions, routingSignature, run, workflow]
     );
 
     if (simulationState.routingSignature !== routingSignature) {
@@ -77,6 +84,7 @@ export const TradeGateSimulator: React.FC<TradeGateSimulatorProps> = React.memo(
       <section id={id} className="journalit-trade-gate-simulator">
         <TradeGateRunView
           workflow={workflow}
+          questions={questions}
           run={run}
           copySource="current-workflow"
           onSelectOption={selectOption}

@@ -1,7 +1,7 @@
 
 
 import React from 'react';
-import { Input } from '../../../core';
+import { Input } from '../../../core/Input';
 import { t } from '../../../../lang/helpers';
 import { TradeFormData, TradeFormErrors, TradeFormValue } from '../types';
 

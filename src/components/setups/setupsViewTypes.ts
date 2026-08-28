@@ -184,6 +184,10 @@ export interface TradeRecordForSetups {
   setup?: unknown;
   account?: unknown;
   pnl?: number | null;
+  authoritativePnl?: number | null;
+  canonicalTradeId?: string;
+  canonicalTradeVersion?: number;
+  canonicalProjectionSchemaVersion?: number;
   entryPrice?: unknown;
   exitPrice?: unknown;
   positionSize?: unknown;
@@ -197,6 +201,7 @@ export interface TradeRecordForSetups {
   useDirectPnLInput?: boolean;
   dividends?: Array<{ amount?: number | null }>;
   commission?: number | null;
+  commissionType?: 'fixed' | 'percentage';
   swap?: number | null;
   fees?: number | null;
   rebate?: number | null;
@@ -206,30 +211,6 @@ export interface TradeRecordForSetups {
   exits?: unknown;
   _originalPnlWasNull?: unknown;
 }
-
-export type TradePnlCompareInput = Parameters<
-  typeof import('../../utils/tradeStatusUtils').isPnlContributingTrade
->[0] & {
-  entryPrice?: number | null;
-  exitPrice?: number | null;
-  positionSize: number;
-  direction?: string;
-  assetType?: string;
-  optionType?: string;
-  hasExplicitExitPrice?: boolean;
-  entries?: Array<{
-    time?: Date | string | null;
-    price?: number | null;
-    size?: number | null;
-    hasExplicitPrice?: boolean;
-  }>;
-  exits?: Array<{
-    time?: Date | string | null;
-    price?: number | null;
-    size?: number | null;
-    hasExplicitPrice?: boolean;
-  }>;
-};
 
 export type SetupCardHealth = 'good' | 'monitor' | 'review';
 export type SetupCardTone = 'positive' | 'negative' | 'neutral';

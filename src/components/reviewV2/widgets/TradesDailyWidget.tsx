@@ -2,7 +2,7 @@
 
 import React, { useMemo } from 'react';
 import JournalitPlugin from '../../../main';
-import { SharedDailyPerformanceChart } from '../../charts';
+import { SharedDailyPerformanceChart } from '../../charts/SharedDailyPerformanceChart';
 import { InvalidContextMessage } from './InvalidContextMessage';
 import {
   formatLocalDateString,
@@ -21,7 +21,7 @@ import {
 } from '../../../utils/tradeStatusUtils';
 import { TradesPreviewData } from '../../../types/reviewV2';
 import { useReviewTrades } from '../hooks/useReviewData';
-import { SkeletonBox } from '../../shared';
+import { SkeletonBox } from '../../shared/SkeletonBox';
 import { t } from '../../../lang/helpers';
 import { cssVars } from '../../../styles/inlineStylePolicy';
 import { getSingleExplicitCurrency } from '../../../utils/currencyAggregation';

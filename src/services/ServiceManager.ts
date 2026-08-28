@@ -20,12 +20,14 @@ import { ReviewContextInheritanceService } from './ReviewContextInheritanceServi
 import { CustomDataService } from './base/CustomDataService';
 
 import { BackendIntegrationService } from './backend';
-import { OnboardingService } from './onboarding';
+import { OnboardingService } from './onboarding/OnboardingService';
 import { MissedTradeService } from './missedTrade/MissedTradeService';
 import { BacktestTradeService } from './backtestTrade/BacktestTradeService';
 import { AccountPageService } from './accountPage';
 import { FolderPathService } from './core/FolderPathService';
+import { EconomicCalendarService } from './economicCalendar/EconomicCalendarService';
 import { ImageGalleryVaultWatcher } from './imageGallery/ImageGalleryVaultWatcher';
+import { ReviewStreakService } from './reviewStreak/ReviewStreakService';
 import { ServiceName, ServiceRegistry } from '../types/ServiceRegistry';
 
 interface ServiceInitQueue {
@@ -40,6 +42,7 @@ interface ServiceInitQueue {
   accountPageService?: Promise<AccountPageService>;
   backendIntegrationService?: Promise<BackendIntegrationService>;
   onboardingService?: Promise<OnboardingService>;
+  economicCalendarService?: Promise<EconomicCalendarService>;
 }
 
 export class ServiceManager {
@@ -71,6 +74,8 @@ export class ServiceManager {
   private _backendIntegrationService: BackendIntegrationService | null = null;
   private _onboardingService: OnboardingService | null = null;
   private _accountPageService: AccountPageService | null = null;
+  private _reviewStreakService: ReviewStreakService | null = null;
+  private _economicCalendarService: EconomicCalendarService | null = null;
 
   
   private initializedServices: Set<string> = new Set();
@@ -133,6 +138,10 @@ export class ServiceManager {
         return await this.getOnboardingService();
       case 'folderPathService':
         return this.getFolderPathService();
+      case 'reviewStreakService':
+        return this.getReviewStreakService();
+      case 'economicCalendarService':
+        return await this.getEconomicCalendarService();
     }
   }
 
@@ -217,6 +226,16 @@ export class ServiceManager {
       this.initializedServices.add('folderPathService');
     }
     return this._folderPathService;
+  }
+
+  
+  public getReviewStreakService(): ReviewStreakService {
+    if (!this._reviewStreakService) {
+      this._reviewStreakService = new ReviewStreakService(this.plugin);
+      this.initializedServices.add('reviewStreakService');
+    }
+
+    return this._reviewStreakService;
   }
 
   
@@ -327,6 +346,35 @@ export class ServiceManager {
     
     this.serviceInitQueue.weeklyReviewService = initPromise;
 
+    return initPromise;
+  }
+
+  
+  public async getEconomicCalendarService(): Promise<EconomicCalendarService> {
+    if (this._economicCalendarService) {
+      return this._economicCalendarService;
+    }
+
+    const existingPromise = this.serviceInitQueue.economicCalendarService;
+    if (existingPromise) {
+      return existingPromise;
+    }
+
+    const initPromise = (async () => {
+      const weeklyReviewService = await this.getWeeklyReviewService();
+      const service = await lazyLoad(
+        () => new EconomicCalendarService(this.plugin, weeklyReviewService),
+        'EconomicCalendarService'
+      );
+
+      this._economicCalendarService = service;
+      this.initializedServices.add('economicCalendarService');
+      delete this.serviceInitQueue.economicCalendarService;
+
+      return service;
+    })();
+
+    this.serviceInitQueue.economicCalendarService = initPromise;
     return initPromise;
   }
 
@@ -768,6 +816,8 @@ export class ServiceManager {
       this._accountPageService = null;
     }
 
+    this._reviewStreakService = null;
+
     
     
     try {
@@ -779,6 +829,11 @@ export class ServiceManager {
     if (this._weeklyReviewService) {
       this._weeklyReviewService.cleanup();
       this._weeklyReviewService = null;
+    }
+
+    if (this._economicCalendarService) {
+      this._economicCalendarService.cleanup();
+      this._economicCalendarService = null;
     }
 
     if (this._drcService) {

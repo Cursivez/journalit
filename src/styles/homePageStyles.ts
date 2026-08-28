@@ -161,12 +161,14 @@ export const HOME_PAGE_STYLES = `
   .journalit-home-page--custom-background
     .journalit-home-widget
     button:not(.journalit-home-goals__save-button):not(
-      .journalit-home-goals__chip--active
+      .journalit-home-widget__option--active
     ):not(.journalit-home-goals__period-button--active):not(
       .journalit-home-setups__save-button
     ):not(.journalit-home-setups__chip--active):not(
-      .journalit-home-heatmap__year-button--active
-    ):not(.journalit-home-embedded-note__error-button):not(
+      .journalit-home-streak__config-save
+    ):not(.journalit-home-heatmap__year-button--active):not(
+      .journalit-home-embedded-note__error-button
+    ):not(
       .journalit-home-widget-remove
     ) {
     background-color: color-mix(

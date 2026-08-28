@@ -12,7 +12,7 @@ import {
   PercentValue,
   PnLValue,
   RMultipleValue,
-} from '../shared/display';
+} from '../shared/display/DisplayValue';
 import { SETUP_PAIR_METRIC_OPTIONS } from './setupOverviewMetrics';
 import type {
   MetricKey,
@@ -39,7 +39,7 @@ const LazySetupPairTrendChart = React.lazy(async () => {
   return { default: module.SetupPairTrendChart };
 });
 
-export const SetupPairsSummary: React.FC<{
+const SetupPairsSummary: React.FC<{
   summary: SetupPairSummary;
 }> = ({ summary }) => (
   <div
@@ -89,6 +89,20 @@ export const SetupPairsSummary: React.FC<{
 );
 
 SetupPairsSummary.displayName = 'SetupPairsSummary';
+
+export const SetupPairsSummaryPanel: React.FC<{
+  displayRMultiples: boolean;
+  isMasked: boolean;
+  isSummaryMasked: boolean;
+  summary: SetupPairSummary;
+}> = ({ displayRMultiples, isMasked, isSummaryMasked, summary }) =>
+  displayRMultiples && !isMasked && !isSummaryMasked ? (
+    <div className="journalit-setups-pairs-table__summary">
+      <SetupPairsSummary summary={summary} />
+    </div>
+  ) : null;
+
+SetupPairsSummaryPanel.displayName = 'SetupPairsSummaryPanel';
 
 export const SetupPerformanceMetricSelect: React.FC<{
   menuOpen: boolean;
@@ -197,10 +211,20 @@ SetupPairMetricSelect.displayName = 'SetupPairMetricSelect';
 export const SetupPairsSplitInsight: React.FC<{
   isMasked: boolean;
   metric: (typeof SETUP_PAIR_METRIC_OPTIONS)[number];
+  metricSelector: React.ReactNode;
   pairs: SetupPairViewModel[];
   selectedPair: SetupPairViewModel | null;
+  summary: React.ReactNode;
   onPairSelected: (pairKey: string) => void;
-}> = ({ isMasked, metric, pairs, selectedPair, onPairSelected }) => {
+}> = ({
+  isMasked,
+  metric,
+  metricSelector,
+  pairs,
+  selectedPair,
+  summary,
+  onPairSelected,
+}) => {
   const rankedPairs = useMemo(
     () =>
       isMasked ? pairs.slice(0, 6) : getSetupPairChartModels(pairs, metric.key),
@@ -222,8 +246,8 @@ export const SetupPairsSplitInsight: React.FC<{
     <div className="journalit-setups-pairs-split">
       <div
         className={`journalit-setups-pairs-table${metric.key === 'totalTrades' ? ' journalit-setups-pairs-table--trade-count-metric' : ''}`}
-        role="list"
       >
+        {summary}
         <div className="journalit-setups-pairs-table__header">
           <span>#</span>
           <span>{t('setups.view.pairs.table.setup-pair')}</span>
@@ -262,6 +286,7 @@ export const SetupPairsSplitInsight: React.FC<{
       <SetupPairEvidencePanel
         isMasked={isMasked}
         metric={metric}
+        metricSelector={metricSelector}
         pair={selectedPair}
       />
     </div>
@@ -475,8 +500,9 @@ function formatSetupPairEvidenceMetricValue(
 const SetupPairEvidencePanel: React.FC<{
   isMasked: boolean;
   metric: (typeof SETUP_PAIR_METRIC_OPTIONS)[number];
+  metricSelector: React.ReactNode;
   pair: SetupPairViewModel | null;
-}> = ({ isMasked, metric, pair }) => {
+}> = ({ isMasked, metric, metricSelector, pair }) => {
   if (!pair) {
     return (
       <div className="journalit-setups-pairs-evidence journalit-setups-pairs-evidence--empty">
@@ -494,6 +520,7 @@ const SetupPairEvidencePanel: React.FC<{
       <aside className="journalit-setups-pairs-evidence">
         <div className="journalit-setups-pairs-evidence__header">
           <h3>{pair.setupNames.join(' + ')}</h3>
+          {metricSelector}
         </div>
         <p className="journalit-setups-privacy-note">
           {t('setups.view.pairs.privacy')}
@@ -535,6 +562,7 @@ const SetupPairEvidencePanel: React.FC<{
     <aside className="journalit-setups-pairs-evidence">
       <div className="journalit-setups-pairs-evidence__header">
         <h3>{pair.setupNames.join(' + ')}</h3>
+        {metricSelector}
       </div>
       <div className="journalit-setups-pairs-evidence__content">
         <div className="journalit-setups-pairs-evidence__chart-block">

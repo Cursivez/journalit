@@ -9,3 +9,6 @@ onlyBuiltDependencies:
 peerDependencyRules:
   allowedVersions:
     obsidian: 1.12.3
+
+# Reject package-resolution metadata that weakens previously established trust.
+trustPolicy: no-downgrade

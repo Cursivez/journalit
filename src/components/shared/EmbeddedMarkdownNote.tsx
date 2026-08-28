@@ -350,20 +350,19 @@ export const EmbeddedMarkdownNote = memo<EmbeddedMarkdownNoteProps>(
       return (
         <div className={rootClassName}>
           {onOpenMedia ? (
-            <div
-              className="journalit-embedded-markdown-note__media-button"
+            <button
+              type="button"
+              className="journalit-native-button journalit-native-button--unstyled journalit-embedded-markdown-note__media-button"
               onClick={() => onOpenMedia(file.path)}
               onKeyDown={(event) => {
                 if (event.key !== 'Enter' && event.key !== ' ') return;
                 event.preventDefault();
                 onOpenMedia(file.path);
               }}
-              role="button"
-              tabIndex={0}
               aria-label={t('image.viewer.title-fullscreen')}
             >
               {embed}
-            </div>
+            </button>
           ) : (
             embed
           )}

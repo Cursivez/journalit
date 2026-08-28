@@ -18,6 +18,7 @@ import { t } from '../../../lang/helpers';
 import { normalizeTradeExecution } from '../../../services/trade/core/TradeExecutionNormalization';
 import { isUnrealizedSnapshotExecutionValid } from '../../../utils/unrealizedPnl';
 import { resolveFormExitExplicitness } from './exitExplicitness';
+import { resolveForexQuoteCurrency } from '../../../utils/forexCurrency';
 
 
 import {
@@ -480,12 +481,49 @@ export const validateTradeForm = (
         }
         break;
 
-      case 'forex':
+      case 'forex': {
         
-        if (data.lotSize !== undefined && data.lotSize < 0) {
+        const hasPipValueFallback =
+          typeof data.pipValue === 'number' &&
+          Number.isFinite(data.pipValue) &&
+          data.pipValue > 0 &&
+          typeof data.pipSize === 'number' &&
+          Number.isFinite(data.pipSize) &&
+          data.pipSize > 0;
+        if (
+          data.lotSize !== undefined &&
+          (data.lotSize < 0 || (data.lotSize === 0 && !hasPipValueFallback))
+        ) {
           errors.lotSize = t('trade.validation.lot-size-nonnegative');
         }
+        const resolvedQuoteCurrency = resolveForexQuoteCurrency(
+          data.instrument
+        );
+        const conversionContextMismatch =
+          (resolvedQuoteCurrency !== null &&
+            data.forexQuoteCurrency !== resolvedQuoteCurrency) ||
+          (typeof data.currency === 'string' &&
+            data.forexPnlConversionBaseCurrency !== data.currency);
+        const canCalculateForexPriceMove =
+          (typeof data.lotSize === 'number' && data.lotSize > 0) ||
+          hasPipValueFallback;
+        if (
+          data.useDirectPnLInput !== true &&
+          canCalculateForexPriceMove &&
+          data.forexQuoteCurrency &&
+          data.forexPnlConversionBaseCurrency &&
+          data.forexQuoteCurrency !== data.forexPnlConversionBaseCurrency &&
+          (conversionContextMismatch ||
+            typeof data.forexPnlConversionRate !== 'number' ||
+            !Number.isFinite(data.forexPnlConversionRate) ||
+            data.forexPnlConversionRate <= 0)
+        ) {
+          errors.forexPnlConversionRate = t(
+            'trade.validation.fx-rate-positive'
+          );
+        }
         break;
+      }
 
       case 'crypto':
         

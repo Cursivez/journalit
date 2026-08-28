@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { t } from '../../../lang/helpers';
-import { ImageCarousel } from '../../image';
+import { ImageCarousel } from '../../image/ImageCarousel';
 import { Image } from '../../shared/icons/ObsidianIcon';
 
 interface TradeImageSectionProps {

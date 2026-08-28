@@ -11,7 +11,7 @@ import {
   normalizeSetupLinkedNotePath,
 } from '../../services/setup/linkedNotePaths';
 import { t } from '../../lang/helpers';
-import { useEventBus } from '../../hooks';
+import { useEventBus } from '../../hooks/useEventBus';
 import { showConfirmationModal } from '../shared/ConfirmationModal';
 
 import { AlertTriangle, Info, Trash } from '../shared/icons/ObsidianIcon';
@@ -745,6 +745,7 @@ const CreateSetupStatusField: React.FC<{
     </div>
     <div className="setting-item-control">
       <select
+        aria-label={t('setups.create.field.status')}
         value={form.status}
         onChange={(event) =>
           onChange('status', parseCreateSetupStatus(event.target.value))
@@ -775,6 +776,7 @@ const CreateSetupDirectionField: React.FC<{
     </div>
     <div className="setting-item-control">
       <select
+        aria-label={t('setups.create.field.direction')}
         value={form.direction}
         onChange={(event) =>
           onChange('direction', parseCreateSetupDirection(event.target.value))

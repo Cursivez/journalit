@@ -10,7 +10,9 @@ import {
   TradeLogSettings,
   PersistedViewFilters,
   JournalitSettings,
+  type EconomicCalendarViewFilters,
 } from './types';
+import { normalizeEconomicCalendarViewFilters } from '../services/economicCalendar/economicCalendarScope';
 import type { TradeType } from '../services/tradelog/types';
 import type { SetupDirection } from '../services/setup/types';
 import { migrateLegacyAllStatusSelection } from './viewFiltersDefaults';
@@ -137,6 +139,13 @@ interface UIState {
     | 'winRate'
     | 'profitFactor'
     | 'totalTrades';
+
+  
+  economicCalendar?: {
+    lastAutoImportAt?: string;
+    lastAutoImportWeekKey?: string;
+    viewFilters?: EconomicCalendarViewFilters;
+  };
 }
 
 
@@ -171,6 +180,31 @@ function normalizeSetupOverviewSelectedDirections(
     (entry): entry is SetupDirection | 'unspecified' =>
       typeof entry === 'string' && allowed.has(entry)
   );
+}
+
+function normalizeEconomicCalendarUiState(
+  value: unknown
+): UIState['economicCalendar'] {
+  if (!isRecord(value)) return undefined;
+  const next: NonNullable<UIState['economicCalendar']> = {};
+  if (
+    typeof value.lastAutoImportAt === 'string' &&
+    value.lastAutoImportAt.length > 0 &&
+    !Number.isNaN(Date.parse(value.lastAutoImportAt))
+  ) {
+    next.lastAutoImportAt = value.lastAutoImportAt;
+  }
+  if (
+    typeof value.lastAutoImportWeekKey === 'string' &&
+    value.lastAutoImportWeekKey.length > 0
+  ) {
+    next.lastAutoImportWeekKey = value.lastAutoImportWeekKey;
+  }
+  const viewFilters = normalizeEconomicCalendarViewFilters(value.viewFilters);
+  if (viewFilters) next.viewFilters = viewFilters;
+  return next.lastAutoImportAt || next.lastAutoImportWeekKey || next.viewFilters
+    ? next
+    : undefined;
 }
 
 const DEFAULT_UI_STATE: UIState = {
@@ -279,6 +313,9 @@ export class UIStateManager {
           normalizeSetupOverviewSelectedDirections(
             persistedState.setupOverviewSelectedDirections
           ),
+        economicCalendar: normalizeEconomicCalendarUiState(
+          persistedState.economicCalendar
+        ),
       };
       if (
         this.state.statusFilterCancelledMigrationVersion !==

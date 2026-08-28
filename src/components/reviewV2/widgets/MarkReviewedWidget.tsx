@@ -8,8 +8,10 @@ import { InvalidContextMessage } from './InvalidContextMessage';
 import { MarkReviewedPreviewData } from '../../../types/reviewV2';
 import { formatDateDisplay, getUserDateFormat } from '../../../utils/dateUtils';
 import { eventBus } from '../../../services/events/EventBus';
-import { SkeletonBox, SkeletonCircle } from '../../shared';
+import { SkeletonBox } from '../../shared/SkeletonBox';
+import { SkeletonCircle } from '../../shared/SkeletonCircle';
 import { t } from '../../../lang/helpers';
+import { mergeClassNames } from '../../../utils/classNames';
 
 interface MarkReviewedWidgetProps {
   filePath: string;
@@ -358,7 +360,7 @@ export const MarkReviewedWidget: React.FC<MarkReviewedWidgetProps> = ({
       <button
         onClick={() => void toggleReviewStatus()}
         disabled={preview}
-        className={buttonClassName}
+        className={mergeClassNames('journalit-native-button', buttonClassName)}
       >
         {reviewed
           ? t('widget.mark-reviewed.button.undo')

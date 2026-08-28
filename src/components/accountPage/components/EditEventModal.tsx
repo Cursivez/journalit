@@ -343,7 +343,11 @@ function EditEventForm({
             </div>
           </div>
           <div className="setting-item-control">
-            <select defaultValue={eventData.type} disabled={true}>
+            <select
+              aria-label={t('account.edit-event.field.type')}
+              defaultValue={eventData.type}
+              disabled={true}
+            >
               <option value={TransactionType.DEPOSIT}>
                 {t('account.add-event.type.deposit')}
               </option>
@@ -364,6 +368,7 @@ function EditEventForm({
           </div>
           <div className="setting-item-control">
             <input
+              aria-label="0.00"
               type="number"
               value={eventData.amount}
               onChange={(e: React.ChangeEvent<HTMLInputElement>) =>

@@ -317,6 +317,11 @@ interface SetupOverviewFilterProps {
   onReset: () => void;
 }
 
+const directionLabel = (direction: SetupDirectionFilter) =>
+  direction === 'unspecified'
+    ? t('setups.create.direction.any')
+    : t(`setups.create.direction.${direction}`);
+
 export const SetupOverviewFilter: React.FC<SetupOverviewFilterProps> = ({
   availableTags,
   selectedTags,
@@ -386,10 +391,6 @@ export const SetupOverviewFilter: React.FC<SetupOverviewFilterProps> = ({
         : [...selectedDirections, direction]
     );
   };
-  const directionLabel = (direction: SetupDirectionFilter) =>
-    direction === 'unspecified'
-      ? t('setups.create.direction.any')
-      : t(`setups.create.direction.${direction}`);
   const activePanel =
     panel === 'tags'
       ? {
@@ -429,10 +430,8 @@ export const SetupOverviewFilter: React.FC<SetupOverviewFilterProps> = ({
         ariaLabelledBy={triggerLabelId}
         className="journalit-setups-filter-button"
         onClick={() => {
-          setIsOpen((current) => {
-            if (current) setPanel('root');
-            return !current;
-          });
+          if (isOpen) setPanel('root');
+          setIsOpen(!isOpen);
         }}
       />
       {isOpen ? (

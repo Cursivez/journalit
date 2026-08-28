@@ -65,15 +65,6 @@ export const CSV_IMPORT_STYLES = `
 	color: var(--interactive-accent);
 }
 
-.journalit-csv-import .journalit-trade-import-gate-eyebrow {
-	margin: 0 0 8px 0;
-	color: var(--text-accent);
-	font-size: 12px;
-	font-weight: 700;
-	letter-spacing: 0.08em;
-	text-transform: uppercase;
-}
-
 .journalit-csv-import .journalit-trade-import-gate-copy h1 {
 	margin: 0;
 	color: var(--text-normal);
@@ -126,15 +117,11 @@ export const CSV_IMPORT_STYLES = `
 	flex-wrap: wrap;
 }
 
-.journalit-csv-import .journalit-trade-import-gate-primary,
-.journalit-csv-import .journalit-trade-import-gate-secondary {
+.journalit-csv-import .journalit-trade-import-gate-primary {
 	min-height: 38px;
 	padding: 8px 20px;
 	border-radius: 8px;
 	font-weight: 600;
-}
-
-.journalit-csv-import .journalit-trade-import-gate-primary {
 	border-color: var(--interactive-accent);
 	background: var(--interactive-accent);
 	color: var(--text-on-accent);
@@ -143,12 +130,6 @@ export const CSV_IMPORT_STYLES = `
 .journalit-csv-import .journalit-trade-import-gate-primary:hover {
 	border-color: var(--interactive-accent-hover);
 	background: var(--interactive-accent-hover);
-}
-
-.journalit-csv-import .journalit-trade-import-gate-secondary {
-	border-color: var(--background-modifier-border-hover);
-	background: var(--background-primary);
-	color: var(--text-normal);
 }
 
 .journalit-csv-import .csv-import-header {
@@ -523,17 +504,6 @@ export const CSV_IMPORT_STYLES = `
 	font: inherit;
 	text-align: left;
 	cursor: pointer;
-}
-
-.journalit-csv-import .journalit-trade-import-favorite-option .journalit-home-period-option__check,
-.journalit-trade-import-dropdown-menu--portal .journalit-trade-import-favorite-option .journalit-home-period-option__check {
-	display: inline-flex;
-	align-items: center;
-	justify-content: flex-start;
-	flex: 0 0 16px;
-	width: 16px;
-	min-width: 16px;
-	color: var(--interactive-accent);
 }
 
 .journalit-csv-import .journalit-trade-import-favorite-option__select:hover,
@@ -1218,6 +1188,26 @@ export const CSV_IMPORT_STYLES = `
 	font-size: 20px;
 }
 
+.journalit-csv-import .journalit-trade-import-history-summary {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px 16px;
+	padding: 12px 14px;
+	border: 1px solid var(--interactive-accent);
+	border-radius: 8px;
+	background: var(--background-secondary);
+}
+
+.journalit-csv-import .journalit-trade-import-history-summary span {
+	color: var(--text-muted);
+}
+
+.journalit-csv-import .journalit-trade-import-enrichment-note {
+	margin: 0;
+	color: var(--text-muted);
+	font-size: 13px;
+}
+
 .journalit-csv-import .result-item {
 	display: flex;
 	align-items: center;
@@ -1400,6 +1390,20 @@ export const CSV_IMPORT_STYLES = `
 	color: var(--text-muted);
 }
 
+.journalit-csv-import .journalit-trade-import-preview-overview-meta {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px 16px;
+	margin-top: 5px;
+	color: var(--text-muted);
+}
+
+.journalit-csv-import .journalit-trade-import-preview-overview-meta strong {
+	display: inline;
+	margin: 0;
+	color: var(--text-normal);
+}
+
 .journalit-csv-import .journalit-trade-import-preview-counts {
 	display: grid;
 	grid-template-columns: 1fr auto;
@@ -1417,6 +1421,33 @@ export const CSV_IMPORT_STYLES = `
 
 .journalit-csv-import .journalit-trade-import-preview-diagnostics {
 	margin-bottom: 14px;
+}
+
+.journalit-csv-import .journalit-trade-import-preview-upgrade {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+	margin-bottom: 14px;
+	padding: 12px 14px;
+	border: 1px solid var(--interactive-accent);
+	border-radius: 8px;
+	background: var(--background-secondary);
+}
+
+.journalit-csv-import .journalit-trade-import-preview-upgrade span {
+	color: var(--text-muted);
+}
+
+.journalit-quick-import-modal .journalit-quick-import-gate-actions {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+}
+
+.journalit-quick-import-modal .journalit-quick-import-preview-free-button {
+	border-color: var(--background-modifier-border-hover);
+	background: var(--background-primary);
+	color: var(--text-normal);
 }
 
 .journalit-csv-import .journalit-trade-import-cancel-preview-button {

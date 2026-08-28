@@ -20,7 +20,8 @@ import {
 import { validateSetupData, validateSetupId } from './validation';
 import { SetupMetricsCalculator } from './metrics';
 import { TradeService } from '../trade/TradeService';
-import { eventBus, type Unsubscribe } from '../events';
+import { eventBus } from '../events/EventBus';
+import type { Unsubscribe } from '../events/types';
 import {
   OptionType,
   type PreviousTagAssignments,

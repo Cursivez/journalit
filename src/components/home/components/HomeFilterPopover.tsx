@@ -83,10 +83,11 @@ export const HomeFilterPopover: React.FC<HomeFilterPopoverProps> = ({
   const allTradeTypesSelected = TRADE_TYPES.every((tradeType) =>
     normalizedTradeTypes.includes(tradeType)
   );
+  const normalizedTradeTypesSet = new Set(normalizedTradeTypes);
   const defaultTradeTypesSelected =
     normalizedTradeTypes.length === DEFAULT_HOME_FILTERS.tradeTypes.length &&
     DEFAULT_HOME_FILTERS.tradeTypes.every((tradeType) =>
-      normalizedTradeTypes.includes(tradeType)
+      normalizedTradeTypesSet.has(tradeType)
     );
   const allAccountsSelected =
     explicitAllAccountsSelected || selectedAccounts.length === 0;
@@ -119,13 +120,11 @@ export const HomeFilterPopover: React.FC<HomeFilterPopoverProps> = ({
   }, []);
 
   const togglePopover = useCallback(() => {
-    setIsOpen((current) => {
-      const next = !current;
-      if (next) onOpen?.();
-      else setPanel('root');
-      return next;
-    });
-  }, [onOpen]);
+    const nextIsOpen = !isOpen;
+    if (nextIsOpen) onOpen?.();
+    else setPanel('root');
+    setIsOpen(nextIsOpen);
+  }, [isOpen, onOpen]);
 
   const toggleTradeType = useCallback(
     (tradeType: TradeType) => {
@@ -175,6 +174,7 @@ export const HomeFilterPopover: React.FC<HomeFilterPopoverProps> = ({
           count: selectedAccounts.length.toString(),
         });
 
+  const selectedAccountsSet = new Set(selectedAccounts);
   return (
     <div className="journalit-drilldown-filter" ref={popoverRef}>
       <FilterButton
@@ -287,7 +287,7 @@ export const HomeFilterPopover: React.FC<HomeFilterPopoverProps> = ({
               {normalizedAccounts.length > 0 ? (
                 normalizedAccounts.map((account) => {
                   const selected =
-                    allAccountsSelected || selectedAccounts.includes(account);
+                    allAccountsSelected || selectedAccountsSet.has(account);
                   return (
                     <DrilldownFilterOption
                       key={account}

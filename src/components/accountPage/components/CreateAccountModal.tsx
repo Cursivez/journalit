@@ -17,14 +17,14 @@ import {
 } from '../../../utils/currencyConfig';
 import { OptionType } from '../../../services/options/CustomOptionsService';
 import { Button } from '../../ui/Button';
-import { Checkbox } from '../../ui';
+import Checkbox from '../../ui/Checkbox';
 import { FastDateTimeInput } from '../../core/FastDateTimeInput';
 import {
   isValidDate,
   parseLocalDateSafe,
   formatLocalDateString,
 } from '../../../utils/dateUtils';
-import { useEventBus } from '../../../hooks';
+import { useEventBus } from '../../../hooks/useEventBus';
 import { eventBus } from '../../../services/events/EventBus';
 import { t } from '../../../lang/helpers';
 import type { CopyTradingPeriod } from '../../../settings/types';
@@ -211,6 +211,7 @@ function AccountIdentityFields({
         </div>
         <div className="setting-item-control">
           <select
+            aria-label={t('account.create.field.type')}
             value={account.accountType}
             onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
               onChange({
@@ -270,6 +271,7 @@ function InitialBalanceDateFields({
         </div>
         <div className="setting-item-control">
           <input
+            aria-label={t('account.create.field.initial-balance')}
             type="number"
             value={account.initialBalance === 0 ? '' : account.initialBalance}
             onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
@@ -356,6 +358,7 @@ function LiveBalanceCurrencyFields({
         </div>
         <div className="setting-item-control">
           <input
+            aria-label={t('account.create.field.live-balance')}
             type="number"
             value={account.liveBalance}
             onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
@@ -378,6 +381,7 @@ function LiveBalanceCurrencyFields({
         </div>
         <div className="setting-item-control">
           <select
+            aria-label={t('account.create.field.currency')}
             value={account.currency}
             onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
               onChange({
@@ -454,6 +458,7 @@ function DrawdownFields({ account, isSaving, onChange }: DrawdownFieldsProps) {
           </div>
           <div className="setting-item-control">
             <input
+              aria-label={t('account.create.field.drawdown-amount')}
               type="number"
               value={account.drawdownAmount === 0 ? '' : account.drawdownAmount}
               onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
@@ -532,6 +537,7 @@ function ProfitTargetFields({
           </div>
           <div className="setting-item-control">
             <input
+              aria-label={t('account.create.field.monthly-cost')}
               type="number"
               value={account.monthlyCost === 0 ? '' : account.monthlyCost}
               onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
@@ -569,6 +575,7 @@ function ProfitTargetFields({
               </div>
               <div className="setting-item-control">
                 <select
+                  aria-label={t('account.create.field.target-type')}
                   value={account.profitTargetType}
                   onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
                     onChange({
@@ -604,6 +611,11 @@ function ProfitTargetFields({
               </div>
               <div className="setting-item-control">
                 <input
+                  aria-label={
+                    account.profitTargetType === ProfitTargetType.PERCENTAGE
+                      ? t('account.create.field.target-percent')
+                      : t('account.create.field.target-dollar')
+                  }
                   type="number"
                   value={account.profitTarget === 0 ? '' : account.profitTarget}
                   onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
@@ -693,6 +705,39 @@ interface CopyTradingFieldsProps {
   onChange: (account: CreateAccountFormState) => void;
 }
 
+const CopyTradingMultiplierInput: React.FC<{
+  value: number;
+  disabled: boolean;
+  onChange: (value: number) => void;
+}> = ({ value, disabled, onChange }) => {
+  const [draft, setDraft] = useState(() => String(value));
+
+  return (
+    <input
+      aria-label={t('account.copy-trading.multiplier')}
+      type="number"
+      min="0.1"
+      max="100"
+      step="0.1"
+      value={draft}
+      onChange={(event) => {
+        const nextDraft = event.currentTarget.value;
+        setDraft(nextDraft);
+        const multiplier = Number(nextDraft);
+        if (nextDraft !== '' && Number.isFinite(multiplier)) {
+          onChange(multiplier);
+        }
+      }}
+      onBlur={() => {
+        if (draft === '' || !Number.isFinite(Number(draft))) {
+          setDraft(String(value));
+        }
+      }}
+      disabled={disabled}
+    />
+  );
+};
+
 function CopyTradingFields({
   account,
   plugin,
@@ -756,6 +801,7 @@ function CopyTradingFields({
               </div>
               <div className="setting-item-control">
                 <select
+                  aria-label={t('account.copy-trading.base-account')}
                   value={account.copyTradingBaseAccount}
                   onChange={(e) =>
                     onChange({
@@ -786,18 +832,14 @@ function CopyTradingFields({
                 </div>
               </div>
               <div className="setting-item-control">
-                <input
-                  type="number"
-                  min="0.1"
-                  max="100"
-                  step="0.1"
+                <CopyTradingMultiplierInput
                   value={account.copyTradingMultiplier}
-                  onChange={(e) =>
+                  onChange={(multiplier) => {
                     onChange({
                       ...account,
-                      copyTradingMultiplier: Number(e.target.value),
-                    })
-                  }
+                      copyTradingMultiplier: multiplier,
+                    });
+                  }}
                   disabled={isSaving}
                 />
               </div>
@@ -832,6 +874,7 @@ function CopyTradingFields({
                 </div>
                 <div className="setting-item-control">
                   <input
+                    aria-label={t('account.copy-trading.start-date')}
                     type="date"
                     value={toDateInputValue(account.copyTradingStartDate)}
                     onChange={(e) =>

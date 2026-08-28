@@ -20,7 +20,10 @@ Diario de trading local-first para Obsidian.
   <a href="README.ru.md">Русский</a> |
   <a href="README.zh.md">简体中文</a> |
   <a href="README.fr.md">Français</a> |
-  <a href="README.vi.md">Tiếng Việt</a>
+  <a href="README.it.md">Italiano</a> |
+  <a href="README.vi.md">Tiếng Việt</a> |
+  <a href="README.hi.md">हिन्दी</a> |
+  <a href="README.ta.md">தமிழ்</a>
 </p>
 
 [Instalación](#installation) · [Brokers compatibles](#supported-brokers) · [Privacidad](PRIVACY.md)

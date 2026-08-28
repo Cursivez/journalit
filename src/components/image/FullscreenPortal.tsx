@@ -1,6 +1,12 @@
 
 
-import React, { ReactNode, useEffect, useState, useRef } from 'react';
+import React, {
+  ReactNode,
+  useEffect,
+  useLayoutEffect,
+  useState,
+  useRef,
+} from 'react';
 import ReactDOM from 'react-dom';
 import { t } from '../../lang/helpers';
 
@@ -42,8 +48,11 @@ export const FullscreenPortal: React.FC<FullscreenPortalProps> = ({
 
   
   const isOpenRef = useRef(isOpen);
-  isOpenRef.current = isOpen;
   const onCloseRef = useRef(onClose);
+
+  useLayoutEffect(() => {
+    isOpenRef.current = isOpen;
+  }, [isOpen]);
 
   useEffect(() => {
     onCloseRef.current = onClose;

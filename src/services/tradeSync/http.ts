@@ -9,9 +9,35 @@ import {
 } from '../backend/ApiClient';
 import { clearPersistedBackendAuthSession } from '../backend/BackendAuthFailure';
 import { getPluginInstance } from '../../utils/pluginContext';
+import { ApiError } from '../../types/errors';
 
 export function authHeaders(token: string | null): Record<string, string> {
   return token ? { Authorization: `Bearer ${token}` } : {};
+}
+
+export function tradeSyncApiErrorCode(value: unknown): string | null {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
+  if (!('error' in value)) return null;
+  return typeof value.error === 'string' ? value.error : null;
+}
+
+type BrokerProviderUnavailableReason = 'disabled' | 'tier';
+
+
+export function brokerProviderUnavailableReason(
+  error: unknown,
+  options: { allowRithmicDisabled?: boolean } = {}
+): BrokerProviderUnavailableReason | null {
+  if (!(error instanceof ApiError) || error.statusCode == null) return null;
+  if (error.statusCode === 402 || error.statusCode === 403) return 'tier';
+  if (
+    Boolean(options.allowRithmicDisabled) &&
+    error.statusCode === 404 &&
+    tradeSyncApiErrorCode(error.context?.responseBody) === 'rithmic_disabled'
+  ) {
+    return 'disabled';
+  }
+  return null;
 }
 
 export async function requestTradeSyncWithAuthRetry(

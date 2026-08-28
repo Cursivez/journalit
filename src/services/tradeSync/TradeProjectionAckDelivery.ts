@@ -39,6 +39,9 @@ export async function recordProjectionAckQueuedDiagnostic(
     {
       clientOperationId: request.clientOperationId,
       ownerUserId,
+      
+      
+      provider: request.diagnosticProvider ?? 'tradovate',
       pluginVersion: request.pluginVersion,
       vaultId: request.vaultId,
       deviceId: request.deviceId,

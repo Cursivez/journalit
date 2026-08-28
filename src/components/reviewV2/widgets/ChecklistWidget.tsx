@@ -5,7 +5,9 @@ import { TFile } from 'obsidian';
 import JournalitPlugin from '../../../main';
 import { InvalidContextMessage } from './InvalidContextMessage';
 import { ChecklistPreviewData } from '../../../types/reviewV2';
-import { SkeletonBox, SkeletonCircle, Tooltip } from '../../shared';
+import { SkeletonBox } from '../../shared/SkeletonBox';
+import { SkeletonCircle } from '../../shared/SkeletonCircle';
+import { Tooltip } from '../../shared/Tooltip';
 import { Edit, Trash2 } from '../../shared/icons/ObsidianIcon';
 import { NoTooltipButton } from '../../ui/NoTooltipButton';
 import { t } from '../../../lang/helpers';
@@ -448,6 +450,7 @@ export const ChecklistWidget: React.FC<ChecklistWidgetProps> = React.memo(
               >
                 
                 <input
+                  aria-label={item.text}
                   type="checkbox"
                   checked={item.checked}
                   onChange={() => void handleToggleItem(index)}
@@ -459,6 +462,7 @@ export const ChecklistWidget: React.FC<ChecklistWidgetProps> = React.memo(
                 {editingIndex === index ? (
                   <>
                     <input
+                      aria-label={t('widget.checklist.edit-item')}
                       ref={editInputRef}
                       type="text"
                       value={editText}
@@ -482,23 +486,22 @@ export const ChecklistWidget: React.FC<ChecklistWidgetProps> = React.memo(
                     </button>
                   </>
                 ) : (
-                  <span
-                    role="button"
-                    tabIndex={0}
+                  <button
+                    type="button"
                     onClick={() => void handleToggleItem(index)}
                     onKeyDown={(e) => {
                       if (e.key !== 'Enter' && e.key !== ' ') return;
                       e.preventDefault();
                       void handleToggleItem(index);
                     }}
-                    className={`journalit-reviewv2-item-text ${
+                    className={`journalit-native-button journalit-native-button--unstyled journalit-reviewv2-item-text ${
                       item.checked
                         ? 'journalit-reviewv2-item-text--completed'
                         : ''
                     }`}
                   >
                     {item.text}
-                  </span>
+                  </button>
                 )}
 
                 

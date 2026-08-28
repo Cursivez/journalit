@@ -85,36 +85,36 @@ const haveDashboardFiltersChanged = (
       (ticker, idx) => ticker !== currentFilters.tickers[idx]
     );
 
+  const setupsSet = new Set(currentFilters.setups);
   const setupsChanged =
     prevFilters.setups.length !== currentFilters.setups.length ||
-    !prevFilters.setups.every((s) => currentFilters.setups.includes(s));
+    !prevFilters.setups.every((s) => setupsSet.has(s));
 
+  const tradeTypesSet = new Set(currentFilters.tradeTypes);
   const tradeTypesChanged =
     prevFilters.tradeTypes.length !== currentFilters.tradeTypes.length ||
-    !prevFilters.tradeTypes.every((t) => currentFilters.tradeTypes.includes(t));
+    !prevFilters.tradeTypes.every((t) => tradeTypesSet.has(t));
 
+  const statusesSet = new Set(currentFilters.statuses);
   const statusesChanged =
     prevFilters.statuses.length !== currentFilters.statuses.length ||
-    !prevFilters.statuses.every((s) => currentFilters.statuses.includes(s));
+    !prevFilters.statuses.every((s) => statusesSet.has(s));
 
+  const directionsSet = new Set(currentFilters.directions);
   const directionsChanged =
     prevFilters.directions.length !== currentFilters.directions.length ||
-    !prevFilters.directions.every((direction) =>
-      currentFilters.directions.includes(direction)
-    );
+    !prevFilters.directions.every((direction) => directionsSet.has(direction));
 
+  const mistakesSet = new Set(currentFilters.mistakes || []);
   const mistakesChanged =
     (prevFilters.mistakes?.length || 0) !==
       (currentFilters.mistakes?.length || 0) ||
-    !(prevFilters.mistakes || []).every((mistake) =>
-      (currentFilters.mistakes || []).includes(mistake)
-    );
+    !(prevFilters.mistakes || []).every((mistake) => mistakesSet.has(mistake));
 
+  const tagsSet = new Set(currentFilters.tags || []);
   const tagsChanged =
     (prevFilters.tags?.length || 0) !== (currentFilters.tags?.length || 0) ||
-    !(prevFilters.tags || []).every((t) =>
-      (currentFilters.tags || []).includes(t)
-    );
+    !(prevFilters.tags || []).every((t) => tagsSet.has(t));
 
   const customFieldFiltersChanged =
     JSON.stringify(prevFilters.customFieldFilters || {}) !==

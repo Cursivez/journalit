@@ -6,13 +6,13 @@ import {
   clearLocalDeletedTradeProjection,
   restoreTradeProjectionAtomically,
 } from './TradeProjectionAckQueue';
-import { BackendTradeProjectionService } from './BackendTradeProjectionService';
+import { TradeProjectionClient } from './TradeProjectionClient';
 import { loadAllProjectionPages } from './TradeProjectionPagination';
 import { createTradeProjectionOwnershipGuard } from './TradeProjectionOwnership';
 import type {
   TradeProjection,
   TradeProjectionAccountInventoryItem,
-  TradovateClientOperationContext,
+  BrokerClientOperationContext,
 } from './types';
 
 const RESTORE_PAGE_LIMIT = 100;
@@ -45,7 +45,7 @@ interface RestoreProjectionAccountOptions {
   localAccountId: string;
   localAccountName: string;
   brokerLabel: string;
-  clientOperation: TradovateClientOperationContext;
+  clientOperation: BrokerClientOperationContext;
 }
 
 type RecoveryResult = Awaited<
@@ -57,7 +57,7 @@ export class TradeProjectionAccountRecoveryService {
 
   constructor(
     private readonly plugin: JournalitPlugin,
-    private readonly projectionBackendService = new BackendTradeProjectionService()
+    private readonly projectionBackendService = new TradeProjectionClient()
   ) {
     this.workflowService = new TradeImportWorkflowService(
       plugin,

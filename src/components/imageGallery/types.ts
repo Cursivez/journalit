@@ -1,4 +1,5 @@
 import type { TradeStatus } from '../../services/tradelog/types';
+import type { ImageAnnotation } from '../../types/imageAnnotations';
 
 export type ImageGallerySourceType =
   | 'all'
@@ -17,10 +18,7 @@ export type ImageGallerySize = 'small' | 'medium' | 'large';
 export type ImageGallerySort = 'newest' | 'oldest' | 'best' | 'worst';
 export type ImageGalleryViewMode = 'grouped' | 'individual';
 
-export interface ImageGalleryAnnotation {
-  tags: string[];
-  notes?: string;
-}
+export type ImageGalleryAnnotation = ImageAnnotation;
 
 export interface ImageGalleryItem {
   id: string;

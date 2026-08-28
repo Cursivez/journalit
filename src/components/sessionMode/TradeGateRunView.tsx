@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react';
 import { t } from '../../lang/helpers';
 import type {
+  TradeGateQuestion,
   TradeGateOutcomeType,
   TradeGateRun,
   TradeGateWorkflow,
@@ -13,13 +14,15 @@ import {
   X,
 } from '../shared/icons/ObsidianIcon';
 import {
-  getTradeGateOutcomeNode,
+  getDefaultOutcomeDescription,
+  getDefaultOutcomeTitle,
   getRunnableTradeGateOptions,
-  getTradeGateQuestionNode,
+  getTradeGateQuestion,
 } from './tradeGateUtils';
 
 interface TradeGateRunViewProps {
   workflow: TradeGateWorkflow;
+  questions: TradeGateQuestion[];
   run: TradeGateRun;
   copySource: 'run-snapshot' | 'current-workflow';
   onSelectOption: (optionId: string) => void;
@@ -41,35 +44,57 @@ const getOutcomeIcon = (outcome: TradeGateOutcomeType | undefined) => {
 
 export const TradeGateRunView: React.FC<TradeGateRunViewProps> = ({
   workflow,
+  questions,
   run,
   copySource,
   onSelectOption,
   onRestart,
 }) => {
-  const currentQuestion = getTradeGateQuestionNode(workflow, run.currentNodeId);
-  
-  const currentOutcome =
-    copySource === 'current-workflow'
-      ? getTradeGateOutcomeNode(workflow, run.currentNodeId)
-      : null;
-  const outcomeTitle = currentOutcome ? currentOutcome.title : run.outcomeTitle;
-  const outcomeDescription = currentOutcome
-    ? currentOutcome.description
-    : run.outcomeDescription;
-  const runnableOptions = useMemo(
-    () =>
-      currentQuestion
-        ? getRunnableTradeGateOptions(workflow, currentQuestion.options)
-        : [],
-    [currentQuestion, workflow]
+  const currentQuestion = getTradeGateQuestion(
+    workflow,
+    questions,
+    run.currentNodeId
   );
+  
+  
+  const lastAnswer = run.answers[run.answers.length - 1];
+  const currentOutcomeTarget =
+    copySource === 'current-workflow' && run.status === 'completed'
+      ? workflow.routes.find(
+          (route) =>
+            route.nodeId === lastAnswer?.nodeId &&
+            route.optionId === lastAnswer?.selectedOptionId
+        )?.target
+      : undefined;
+  const currentOutcome =
+    currentOutcomeTarget?.kind === 'outcome' ? currentOutcomeTarget : null;
+  const outcomeTitle =
+    run.outcomeTitle ??
+    (run.outcome ? getDefaultOutcomeTitle(run.outcome) : undefined);
+  const outcomeDescription = currentOutcome
+    ? (currentOutcome.note ??
+      getDefaultOutcomeDescription(currentOutcome.outcome))
+    : (run.outcomeDescription ??
+      (run.outcome ? getDefaultOutcomeDescription(run.outcome) : undefined));
+  
+  
+  const runnableOptions = useMemo(() => {
+    if (!currentQuestion) return [];
+    const answeredNodeIds = new Set(run.answers.map((answer) => answer.nodeId));
+    return getRunnableTradeGateOptions(
+      workflow,
+      questions,
+      run.currentNodeId,
+      answeredNodeIds
+    );
+  }, [currentQuestion, questions, run.answers, run.currentNodeId, workflow]);
 
   return (
     <div className="journalit-trade-gate-accordion">
       {run.answers.map((answer) => {
         const answerQuestion =
           copySource === 'current-workflow'
-            ? getTradeGateQuestionNode(workflow, answer.nodeId)
+            ? getTradeGateQuestion(workflow, questions, answer.nodeId)
             : null;
         const answerOption = answerQuestion?.options.find(
           (option) => option.id === answer.selectedOptionId

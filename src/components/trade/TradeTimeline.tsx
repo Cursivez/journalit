@@ -11,7 +11,7 @@ import {
 } from '../../utils/tradeStatusUtils';
 import { t } from '../../lang/helpers';
 import { parseTradeDividendTransactions } from '../../utils/tradeUtils';
-import { usePlugin } from '../../hooks';
+import { usePlugin } from '../../hooks/usePlugin';
 
 interface TradeTimelineProps {
   trades: TFile[];

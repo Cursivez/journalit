@@ -14,6 +14,7 @@ import {
 } from '../../shared/icons/ObsidianIcon';
 import { Button } from '../../ui/Button';
 import { t } from '../../../lang/helpers';
+import { mergeClassNames } from '../../../utils/classNames';
 
 interface ExploreStepProps {
   onBack: () => void | Promise<void>;
@@ -38,6 +39,32 @@ interface ExploreCard {
   isPremium?: boolean;
   onOpen: () => void | Promise<void>;
 }
+
+const renderTile = (tile: ExploreCard) => (
+  <div
+    key={tile.id}
+    className={`feature-card explore-feature-tile ${tile.isPremium ? 'premium' : ''}`}
+    role="button"
+    tabIndex={0}
+    onClick={() => void tile.onOpen()}
+    onKeyDown={(e) => {
+      if (e.key !== 'Enter' && e.key !== ' ') return;
+      e.preventDefault();
+      void tile.onOpen();
+    }}
+  >
+    <div className="explore-feature-icon">{tile.icon}</div>
+    <div className="explore-feature-content">
+      <div className="explore-feature-title">{tile.label}</div>
+      <div className="explore-feature-description">{tile.description}</div>
+    </div>
+    {tile.isPremium && (
+      <span className="premium-badge">
+        {t('onboarding.features.badge.pro')}
+      </span>
+    )}
+  </div>
+);
 
 export const ExploreStep: React.FC<ExploreStepProps> = ({
   onBack,
@@ -100,32 +127,6 @@ export const ExploreStep: React.FC<ExploreStepProps> = ({
     },
   ];
 
-  const renderTile = (tile: ExploreCard) => (
-    <div
-      key={tile.id}
-      className={`feature-card explore-feature-tile ${tile.isPremium ? 'premium' : ''}`}
-      role="button"
-      tabIndex={0}
-      onClick={() => void tile.onOpen()}
-      onKeyDown={(e) => {
-        if (e.key !== 'Enter' && e.key !== ' ') return;
-        e.preventDefault();
-        void tile.onOpen();
-      }}
-    >
-      <div className="explore-feature-icon">{tile.icon}</div>
-      <div className="explore-feature-content">
-        <div className="explore-feature-title">{tile.label}</div>
-        <div className="explore-feature-description">{tile.description}</div>
-      </div>
-      {tile.isPremium && (
-        <span className="premium-badge">
-          {t('onboarding.features.badge.pro')}
-        </span>
-      )}
-    </div>
-  );
-
   return (
     <div className="feature-selection-step explore-step">
       <div className="feature-content-wrapper">
@@ -164,7 +165,10 @@ export const ExploreStep: React.FC<ExploreStepProps> = ({
                 {manualLinkFallbackUrl}
               </button>
               <button
-                className={`onboarding-link-fallback-copy ${manualLinkCopied ? 'copied' : ''}`}
+                className={mergeClassNames(
+                  'journalit-native-button',
+                  `onboarding-link-fallback-copy ${manualLinkCopied ? 'copied' : ''}`
+                )}
                 onClick={() => void onManualLinkCopy?.(manualLinkFallbackUrl)}
                 aria-label={
                   manualLinkCopied

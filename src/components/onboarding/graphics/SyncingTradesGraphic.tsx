@@ -116,8 +116,31 @@ const animationReducer = (
   }
 };
 
+const directionLabelKeys: Record<Trade['direction'], Parameters<typeof t>[0]> =
+  {
+    LONG: 'onboarding.features.graphic.direction.long',
+    SHORT: 'onboarding.features.graphic.direction.short',
+  };
+
+const statusLabelKeys: Record<Trade['status'], Parameters<typeof t>[0]> = {
+  WIN: 'onboarding.features.graphic.status.win',
+  LOSS: 'onboarding.features.graphic.status.loss',
+};
+
+const getDirectionLabels = (): Record<Trade['direction'], string> => ({
+  LONG: t(directionLabelKeys.LONG),
+  SHORT: t(directionLabelKeys.SHORT),
+});
+
+const getStatusLabels = (): Record<Trade['status'], string> => ({
+  WIN: t(statusLabelKeys.WIN),
+  LOSS: t(statusLabelKeys.LOSS),
+});
+
 const SyncingTradesGraphicComponent: React.FC = () => {
   const prefersReducedMotion = usePrefersReducedMotion();
+  const directionLabels = getDirectionLabels();
+  const statusLabels = getStatusLabels();
   const [animationState, dispatchAnimation] = useReducer(animationReducer, {
     syncingState: 'syncing',
     visibleTrades: [],
@@ -191,16 +214,6 @@ const SyncingTradesGraphicComponent: React.FC = () => {
       timeoutsRef.current = [];
     };
   }, [prefersReducedMotion]);
-
-  const directionLabels: Record<Trade['direction'], string> = {
-    LONG: t('onboarding.features.graphic.direction.long'),
-    SHORT: t('onboarding.features.graphic.direction.short'),
-  };
-
-  const statusLabels: Record<Trade['status'], string> = {
-    WIN: t('onboarding.features.graphic.status.win'),
-    LOSS: t('onboarding.features.graphic.status.loss'),
-  };
 
   return (
     <div className="syncing-trades-graphic">

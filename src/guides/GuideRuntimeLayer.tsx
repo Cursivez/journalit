@@ -297,8 +297,6 @@ function useGuideRuntimeModel({
   const backHandlersRef = useRef(new Set<GuideBackHandler>());
   const [, setVersion] = useState(0);
 
-  useEffect(() => {}, []);
-
   useEffect(() => {
     if (!guideService) {
       return;
@@ -444,7 +442,7 @@ function useGuideRuntimeModel({
     return true;
   }, []);
 
-  const findAvailableStepIndex = useCallback(
+  const findNavigableStepIndex = useCallback(
     (fromIndex: number, direction: 1 | -1): number => {
       if (!guide) {
         return -1;
@@ -569,7 +567,7 @@ function useGuideRuntimeModel({
         return;
       }
 
-      const nextStepIndex = findAvailableStepIndex(stepIndex + 1, 1);
+      const nextStepIndex = findNavigableStepIndex(stepIndex + 1, 1);
       const nextStep = nextStepIndex >= 0 ? guide.steps[nextStepIndex] : null;
       if (!nextStep) {
         lastAdvancedStepKeyRef.current = null;
@@ -589,7 +587,7 @@ function useGuideRuntimeModel({
       throw error;
     }
   }, [
-    findAvailableStepIndex,
+    findNavigableStepIndex,
     guideService,
     guide,
     session,
@@ -670,7 +668,7 @@ function useGuideRuntimeModel({
       return;
     }
 
-    const previousStepIndex = findAvailableStepIndex(stepIndex - 1, -1);
+    const previousStepIndex = findNavigableStepIndex(stepIndex - 1, -1);
     const previousStep =
       previousStepIndex >= 0 ? guide.steps[previousStepIndex] : null;
     if (!previousStep) {
@@ -704,7 +702,7 @@ function useGuideRuntimeModel({
 
     void runBack();
   }, [
-    findAvailableStepIndex,
+    findNavigableStepIndex,
     guideService,
     guide,
     session,

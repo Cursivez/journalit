@@ -5,7 +5,9 @@ import { TFile } from 'obsidian';
 import JournalitPlugin from '../../../main';
 import { InvalidContextMessage } from './InvalidContextMessage';
 import { GoalsPreviewData } from '../../../types/reviewV2';
-import { SkeletonBox, SkeletonCircle, Tooltip } from '../../shared';
+import { SkeletonBox } from '../../shared/SkeletonBox';
+import { SkeletonCircle } from '../../shared/SkeletonCircle';
+import { Tooltip } from '../../shared/Tooltip';
 import { Edit, Trash2 } from '../../shared/icons/ObsidianIcon';
 import { NoTooltipButton } from '../../ui/NoTooltipButton';
 import { t } from '../../../lang/helpers';
@@ -522,6 +524,7 @@ export const GoalsWidget: React.FC<GoalsWidgetProps> = React.memo(
               >
                 
                 <input
+                  aria-label={goal.text}
                   type="checkbox"
                   checked={goal.checked}
                   onChange={() => void handleToggleGoal(index)}
@@ -532,6 +535,7 @@ export const GoalsWidget: React.FC<GoalsWidgetProps> = React.memo(
                 {editingIndex === index ? (
                   <>
                     <input
+                      aria-label={t('widget.goals.aria.edit')}
                       ref={editInputRef}
                       type="text"
                       value={editText}
@@ -555,23 +559,22 @@ export const GoalsWidget: React.FC<GoalsWidgetProps> = React.memo(
                     </button>
                   </>
                 ) : (
-                  <span
-                    role="button"
-                    tabIndex={0}
+                  <button
+                    type="button"
                     onClick={() => void handleToggleGoal(index)}
                     onKeyDown={(e) => {
                       if (e.key !== 'Enter' && e.key !== ' ') return;
                       e.preventDefault();
                       void handleToggleGoal(index);
                     }}
-                    className={`journalit-reviewv2-item-text ${
+                    className={`journalit-native-button journalit-native-button--unstyled journalit-reviewv2-item-text ${
                       goal.checked
                         ? 'journalit-reviewv2-item-text--completed'
                         : ''
                     }`}
                   >
                     {goal.text}
-                  </span>
+                  </button>
                 )}
 
                 

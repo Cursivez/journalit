@@ -5,7 +5,7 @@ import JournalitPlugin from '../../../main';
 import { t } from '../../../lang/helpers';
 import { useReviewTrades } from '../hooks';
 import { InvalidContextMessage } from './InvalidContextMessage';
-import { SkeletonBox } from '../../shared';
+import { SkeletonBox } from '../../shared/SkeletonBox';
 import type { DemonTrackerEntry } from '../../../services/monthly/types';
 import type { DemonTrackerWidgetConfig } from '../../../types/reviewV2';
 import type { PartialTradeFrontmatter } from '../../../types/TradeFrontmatter';

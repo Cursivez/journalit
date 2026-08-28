@@ -13,7 +13,7 @@ function cloneFrontmatter(
   if (!frontmatter) {
     return {};
   }
-  const cloned: unknown = JSON.parse(JSON.stringify(frontmatter));
+  const cloned: unknown = structuredClone(frontmatter);
   return asRecord(cloned) ?? {};
 }
 

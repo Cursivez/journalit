@@ -3,6 +3,7 @@ import type JournalitPlugin from '../../main';
 import type { TradeData } from '../trade/TradeService';
 import { generateUUID } from '../../utils/uuid';
 import { mapProjectionTradeToTradeData } from '../tradeSync/canonicalTradeMapper';
+import { applyInstrumentCostRulesToProjection } from '../tradeSync/projectionCostRules';
 import {
   isTradeImportCommitEligible,
   isTradeImportSkipped,
@@ -16,14 +17,14 @@ import type {
   TradeImportManualMode,
   TradeImportPreviewResponse,
 } from './types';
-import { BackendTradeProjectionService } from '../tradeSync/BackendTradeProjectionService';
+import { TradeProjectionClient } from '../tradeSync/TradeProjectionClient';
 import { BackendTradeImportService } from './BackendTradeImportService';
 import type {
   TradeProjection,
-  TradeProjectionClient,
+  TradeProjectionReadClient,
   TradeProjectionPersistedTradeSummary,
   TradeProjectionRequest,
-  TradovateClientOperationContext,
+  BrokerClientOperationContext,
 } from '../tradeSync/types';
 import { getTradeProjectionVaultId } from '../tradeSync/TradeProjectionAckQueue';
 import { TradeProjectionRestoreService } from '../tradeSync/TradeProjectionRestoreService';
@@ -32,6 +33,7 @@ import {
   createTradeProjectionOwnershipGuard,
   getTradeProjectionOwnerId,
 } from '../tradeSync/TradeProjectionOwnership';
+import { getTradeImportTimeZone } from './timeZone';
 
 export class TradeImportValidationError extends Error {
   constructor(message: string) {
@@ -99,11 +101,11 @@ interface TradeImportRestoreInput {
   localWriteTimeoutMs: number;
   ownerUserId?: string;
   shouldStop?: () => boolean;
-  clientOperation?: TradovateClientOperationContext;
+  clientOperation?: BrokerClientOperationContext;
   onComplete?: (result: TradeImportCompletionResult) => void;
 }
 
-type TradeProjectionBackend = TradeProjectionClient;
+type TradeProjectionBackend = TradeProjectionReadClient;
 
 function hasProjectionAck(
   value: object
@@ -152,10 +154,6 @@ function projectionBackendFrom(value: unknown): TradeProjectionBackend | null {
 
 function pluginVersion(plugin: JournalitPlugin): string {
   return plugin.manifest.version;
-}
-
-function timeZone(): string {
-  return Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
 }
 
 function fileTypeFor(file: File): TradeImportFileType {
@@ -284,7 +282,7 @@ export class TradeImportWorkflowService {
     this.projectionBackend =
       projectionBackend ??
       projectionBackendFrom(importBackend) ??
-      new BackendTradeProjectionService();
+      new TradeProjectionClient();
     this.restoreService = new TradeProjectionRestoreService(
       plugin,
       this.projectionBackend
@@ -323,7 +321,7 @@ export class TradeImportWorkflowService {
       requestedFileType: fileTypeFor(file),
       sheetName,
       headerRowIndex,
-      timeZone: timeZone(),
+      timeZone: getTradeImportTimeZone(),
       sampleRowLimit: capabilities.fileLimits.sampleRowLimit,
       aiMapping: {
         enabled: aiMappingEnabled && !!brokerCapabilities?.supportsAiMapping,
@@ -381,7 +379,7 @@ export class TradeImportWorkflowService {
       fileType: fileTypeFor(file),
       sheetName,
       headerRowIndex,
-      timeZone: timeZone(),
+      timeZone: getTradeImportTimeZone(),
       accountName,
       assetType,
       manualMode,
@@ -394,7 +392,10 @@ export class TradeImportWorkflowService {
     const classifiedTrades = response.items.map((item) => ({
       itemId: item.itemId,
       preview: item.previewTrade,
-      tradeData: mapProjectionTradeToTradeData(item.previewTrade, accountName),
+      tradeData: applyInstrumentCostRulesToProjection(
+        mapProjectionTradeToTradeData(item.previewTrade, accountName),
+        this.plugin.optionsService
+      ),
       classification: item.classification,
       defaultAction: item.defaultAction,
       matchedTradeId: item.matchedTradeId,

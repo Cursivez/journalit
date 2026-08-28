@@ -10,13 +10,13 @@ import React, {
   useMemo,
 } from 'react';
 import JournalitPlugin from '../../main';
-import { TradeLogService } from '../../services/tradelog';
+import { TradeLogService } from '../../services/tradelog/TradeLogService';
 import { ServiceManager } from '../../services/ServiceManager';
 import { TimeNode, TradeLogFilters } from '../../services/tradelog/types';
 import { TradeLogHeader } from './TradeLogHeader';
+import { TradeLogEmptyState } from './TradeLogEmptyState';
 import { TRADE_LOG_MAIN_GUIDE_VERSION } from '../../guides/tradeLogMainGuide';
 import { TradeLogTree } from './TradeLogTree';
-import { EmptyState } from '../shared';
 import { TradeLogSkeleton } from './TradeLogSkeleton';
 import {
   ImageGallery,
@@ -26,7 +26,8 @@ import {
   normalizeImageGallerySourceType,
   normalizeImageGalleryViewMode,
 } from '../imageGallery/ImageGallery';
-import { useDebounced, useEventBus, useEventBusMultiple } from '../../hooks';
+import { useDebounced } from '../../hooks/useDebounced';
+import { useEventBus, useEventBusMultiple } from '../../hooks/useEventBus';
 import { useLeafActive } from '../../hooks/useLeafActive';
 import { TradeFormModal } from '../forms/trade/TradeFormModal';
 import { Notice, WorkspaceLeaf } from 'obsidian';
@@ -68,11 +69,7 @@ import { getTradeIdsInRange } from './selectionUtils';
 import { createTradingDayFromString } from '../../utils/tradingDayUtils';
 import { areSnapshotKeysClaimedByCustomFields } from '../../utils/unrealizedPnl';
 import { cssVars } from '../../styles/inlineStylePolicy';
-import {
-  CustomFieldDefinition,
-  CustomFieldType,
-  isDiscreteCustomFieldFilterable,
-} from '../../types/customFields';
+import { CustomFieldType } from '../../types/customFields';
 import {
   getCustomFieldDisplayValues,
   getCustomFieldRawValue,
@@ -100,7 +97,7 @@ import {
 } from '../../services/events/types';
 import { remapAccountFilterFromAccountChange } from '../shared/filters/remapSelectedAccounts';
 import { persistViewFilter } from '../shared/filters/viewFilterPersistence';
-import { ImageGalleryService } from '../../services/imageGallery';
+import { ImageGalleryService } from '../../services/imageGallery/ImageGalleryService';
 import {
   getSetupLabelColor,
   getTagLabelColor,
@@ -120,6 +117,8 @@ import {
   type TradeLogMode,
 } from './tradeLogStateUtils';
 import { getSessionLogTags } from '../sessionLog/sessionLogUtils';
+import { mergeClassNames } from '../../utils/classNames';
+import { sanitizeCustomFieldFilters } from '../shared/filters/sanitizeCustomFieldFilters';
 
 interface TradeLogProps {
   plugin: JournalitPlugin;
@@ -136,8 +135,16 @@ function getDuplicateAwareStringKeys(values: string[]): string[] {
 }
 
 const GUIDE_REFRESH_EVENTS: Array<
-  'trade:changed' | 'backtest-trade:changed' | 'folder-path:changed'
-> = ['trade:changed', 'backtest-trade:changed', 'folder-path:changed'];
+  | 'trade:changed'
+  | 'missed-trade:changed'
+  | 'backtest-trade:changed'
+  | 'folder-path:changed'
+> = [
+  'trade:changed',
+  'missed-trade:changed',
+  'backtest-trade:changed',
+  'folder-path:changed',
+];
 
 const TRADE_DATA_CHANGE_EVENTS: Array<
   | 'trade:committed'
@@ -158,6 +165,11 @@ const TRADE_DATA_CHANGE_EVENTS: Array<
 type TradeLogFilterSyncWindow = Window & {
   journalitSyncTradeLogFilters?: () => void;
 };
+
+type TradeCountResolution =
+  | { status: 'loading' }
+  | { status: 'ready'; count: number }
+  | { status: 'failed' };
 
 const TRADE_LOG_GUIDE_TRADE_MODE_STEPS = new Set([
   'intro',
@@ -289,31 +301,6 @@ const getTreeHorizontalWidthOffset = (
   const treeIndicatorGridGap = 6;
 
   return treeStructureWidth + treeIndicatorColumnWidth + treeIndicatorGridGap;
-};
-
-const sanitizeCustomFieldFilters = (
-  customFieldFilters: TradeLogFilters['customFieldFilters'],
-  customFields: CustomFieldDefinition[]
-): TradeLogFilters['customFieldFilters'] => {
-  const filterableFieldIds = new Set(
-    customFields.reduce<string[]>((acc, field) => {
-      if (isDiscreteCustomFieldFilterable(field)) {
-        acc.push(field.id);
-      }
-      return acc;
-    }, [])
-  );
-
-  return Object.fromEntries(
-    Object.entries(customFieldFilters || {}).flatMap(([fieldId, values]) => {
-      if (!filterableFieldIds.has(fieldId) || !Array.isArray(values)) {
-        return [];
-      }
-
-      const sanitizedValues = [...new Set(values.filter(Boolean))];
-      return sanitizedValues.length > 0 ? [[fieldId, sanitizedValues]] : [];
-    })
-  );
 };
 
 function asRecord(value: unknown): Record<string, unknown> | undefined {
@@ -525,26 +512,9 @@ const TradeLogColumnHeaders: React.FC<TradeLogColumnHeadersProps> = ({
         const IconComponent = iconName ? ICON_COMPONENTS[iconName] : null;
         const label = col.id === 'select' ? '' : getColumnLabel(col);
         const isMoneyColumn = col.id === 'fees' || col.id === 'dividends';
-
-        return (
-          <div
-            key={col.id}
-            className={`header-cell header-${col.id} ${isMoneyColumn ? 'header-money-cell' : ''} ${isClickable ? 'sortable' : ''} ${isSorted ? 'sorted' : ''}`}
-            onClick={isClickable ? () => onSort(col.id) : undefined}
-            onKeyDown={(event) => {
-              if (
-                !isClickable ||
-                (event.key !== 'Enter' && event.key !== ' ')
-              ) {
-                return;
-              }
-
-              event.preventDefault();
-              onSort(col.id);
-            }}
-            role="button"
-            tabIndex={isClickable ? 0 : undefined}
-          >
+        const className = `header-cell header-${col.id} ${isMoneyColumn ? 'header-money-cell' : ''} ${isClickable ? 'sortable' : ''} ${isSorted ? 'sorted' : ''}`;
+        const content = (
+          <>
             <span>{label}</span>
 
             {IconComponent && (
@@ -555,7 +525,29 @@ const TradeLogColumnHeaders: React.FC<TradeLogColumnHeadersProps> = ({
                 }
               />
             )}
-          </div>
+          </>
+        );
+
+        if (!isClickable) {
+          return (
+            <div key={col.id} className={className}>
+              {content}
+            </div>
+          );
+        }
+
+        return (
+          <button
+            type="button"
+            key={col.id}
+            className={mergeClassNames(
+              'journalit-native-button journalit-native-button--unstyled',
+              className
+            )}
+            onClick={() => onSort(col.id)}
+          >
+            {content}
+          </button>
         );
       })}
     </div>
@@ -572,6 +564,11 @@ const useTradeLogController = ({ plugin, leaf }: TradeLogProps) => {
   const [filters, setFilters] = useState<TradeLogFilters>(
     () => loadPersistedTradeLogFilters(plugin) ?? createTradeLogFilters()
   );
+  const filtersRef = useRef(filters);
+  const applyFilters = useCallback((nextFilters: TradeLogFilters) => {
+    filtersRef.current = nextFilters;
+    setFilters(nextFilters);
+  }, []);
   const [tradeLogMode, setTradeLogMode] = useState<TradeLogMode>(() =>
     normalizeTradeLogMode(plugin.uiStateManager.getState().tradeLogMode)
   );
@@ -607,7 +604,14 @@ const useTradeLogController = ({ plugin, leaf }: TradeLogProps) => {
   const [isMultiSelectMode, setIsMultiSelectMode] = useState(false);
   const [guideVersion, setGuideVersion] = useState(0);
   const [optionsVersion, setOptionsVersion] = useState(0);
-  const [totalTradeCount, setTotalTradeCount] = useState<number | null>(null);
+  const [tradeCountResolution, setTradeCountResolution] =
+    useState<TradeCountResolution>({ status: 'loading' });
+  const totalTradeCount =
+    tradeCountResolution.status === 'ready' ? tradeCountResolution.count : null;
+  const isTradeCountResolved = tradeCountResolution.status !== 'loading';
+  const hasExistingTrades =
+    tradeCountResolution.status === 'failed' ||
+    (tradeCountResolution.status === 'ready' && tradeCountResolution.count > 0);
   const [imageGalleryItemCount, setImageGalleryItemCount] = useState<
     number | null
   >(null);
@@ -651,12 +655,12 @@ const useTradeLogController = ({ plugin, leaf }: TradeLogProps) => {
   const syncFiltersFromPersistedState = useCallback(() => {
     const persistedFilters = getPersistedTradeLogFilters();
     if (persistedFilters) {
-      setFilters(persistedFilters);
+      applyFilters(persistedFilters);
     }
     setTradeLogMode(
       normalizeTradeLogMode(plugin.uiStateManager.getState().tradeLogMode)
     );
-  }, [getPersistedTradeLogFilters, plugin.uiStateManager]);
+  }, [applyFilters, getPersistedTradeLogFilters, plugin.uiStateManager]);
 
   const persistFilters = useCallback(
     (nextFilters: TradeLogFilters) => {
@@ -666,6 +670,14 @@ const useTradeLogController = ({ plugin, leaf }: TradeLogProps) => {
     [plugin]
   );
 
+  const commitFilters = useCallback(
+    (nextFilters: TradeLogFilters) => {
+      applyFilters(nextFilters);
+      persistFilters(nextFilters);
+    },
+    [applyFilters, persistFilters]
+  );
+
   const handleModeChange = useCallback(
     (nextMode: TradeLogMode) => {
       setTradeLogMode(nextMode);
@@ -673,34 +685,30 @@ const useTradeLogController = ({ plugin, leaf }: TradeLogProps) => {
         setIsMultiSelectMode(false);
         setSelectedTrades(new Set());
       }
-      setFilters((currentFilters) => {
-        const nextFilters = clearInactiveTreeSessionLogTags(
-          currentFilters,
-          nextMode
-        );
-        if (nextFilters !== currentFilters) {
-          persistFilters(nextFilters);
-        }
-        return nextFilters;
-      });
+      const currentFilters = filtersRef.current;
+      const nextFilters = clearInactiveTreeSessionLogTags(
+        currentFilters,
+        nextMode
+      );
+      if (nextFilters !== currentFilters) {
+        commitFilters(nextFilters);
+      }
       void plugin.uiStateManager.updateStateImmediate({
         tradeLogMode: nextMode,
       });
     },
-    [persistFilters, plugin.uiStateManager]
+    [commitFilters, plugin.uiStateManager]
   );
 
   const handleImageGalleryControlsChange = useCallback(
     (updates: Partial<ImageGalleryControls>) => {
-      setImageGalleryControls((current) => {
-        const nextControls = { ...current, ...updates };
-        void plugin.uiStateManager.updateStateImmediate({
-          imageGallery: nextControls,
-        });
-        return nextControls;
+      const nextControls = { ...imageGalleryControls, ...updates };
+      setImageGalleryControls(nextControls);
+      void plugin.uiStateManager.updateStateImmediate({
+        imageGallery: nextControls,
       });
     },
-    [plugin.uiStateManager]
+    [imageGalleryControls, plugin.uiStateManager]
   );
 
   useEffect(() => {
@@ -748,11 +756,15 @@ const useTradeLogController = ({ plugin, leaf }: TradeLogProps) => {
   );
 
   useEffect(() => {
+    
+    const currentFilters = filtersRef.current;
     const sanitizedCustomFieldFilters = sanitizeCustomFieldFilters(
-      filters.customFieldFilters,
+      currentFilters.customFieldFilters,
       customFields
     );
-    const currentEntries = Object.entries(filters.customFieldFilters || {});
+    const currentEntries = Object.entries(
+      currentFilters.customFieldFilters || {}
+    );
     const sanitizedEntries = Object.entries(sanitizedCustomFieldFilters);
 
     let filtersAreUnchanged = currentEntries.length === sanitizedEntries.length;
@@ -780,17 +792,12 @@ const useTradeLogController = ({ plugin, leaf }: TradeLogProps) => {
       return;
     }
 
-    setFilters((prev) => {
-      const nextFilters = normalizeTradeLogFilters({
-        ...prev,
-        customFieldFilters: sanitizedCustomFieldFilters,
-      });
-
-      persistViewFilter(plugin.uiStateManager, 'tradelog', nextFilters);
-
-      return nextFilters;
+    const nextFilters = normalizeTradeLogFilters({
+      ...currentFilters,
+      customFieldFilters: sanitizedCustomFieldFilters,
     });
-  }, [customFields, filters.customFieldFilters, plugin]);
+    commitFilters(nextFilters);
+  }, [commitFilters, customFields, filters.customFieldFilters]);
 
   const effectiveSortConfig = useMemo<SortConfig>(() => {
     if (!sortConfig.column) {
@@ -991,17 +998,12 @@ const useTradeLogController = ({ plugin, leaf }: TradeLogProps) => {
     );
   }, [visibleColumns, isExpandedMode, measuredWidths, filters.viewLevel]);
 
-  
-
-  const tradeLogServiceRef = useRef<TradeLogService | null>(null);
-  if (!tradeLogServiceRef.current) {
-    tradeLogServiceRef.current = new TradeLogService(plugin);
-  }
-  const tradeLogService = tradeLogServiceRef.current;
-  const imageGalleryServiceRef = useRef<ImageGalleryService | null>(null);
-  if (!imageGalleryServiceRef.current) {
-    imageGalleryServiceRef.current = new ImageGalleryService(plugin);
-  }
+  const [tradeLogService] = useState(() => new TradeLogService(plugin));
+  useEffect(() => {
+    tradeLogService.connect();
+    return () => tradeLogService.destroy();
+  }, [tradeLogService]);
+  const [imageGalleryService] = useState(() => new ImageGalleryService(plugin));
 
   
   const debouncedFilters = useDebounced(filters, 150);
@@ -1023,11 +1025,27 @@ const useTradeLogController = ({ plugin, leaf }: TradeLogProps) => {
           await plugin.tradeService.waitForTradeDataReady();
         }
 
-        const count = await plugin.tradeService.getTradeCount();
+        const tradeCount = await plugin.tradeService.getTradeCount();
+        let count = tradeCount;
+
+        if (tradeCount === 0) {
+          const serviceManager = ServiceManager.getInstance(plugin.app, plugin);
+          const missedTradeService =
+            await serviceManager.getMissedTradeService();
+          count += await missedTradeService.getMissedTradeCount();
+        }
+
         if (!ignoreUnmount || !ignoreUnmount()) {
-          setTotalTradeCount(count);
+          setTradeCountResolution({ status: 'ready', count });
         }
       } catch (error) {
+        if (!ignoreUnmount || !ignoreUnmount()) {
+          setTradeCountResolution((previousResolution) =>
+            previousResolution.status === 'ready'
+              ? previousResolution
+              : { status: 'failed' }
+          );
+        }
         console.error(
           requireReady
             ? '[TradeLog] Failed to resolve trade count:'
@@ -1086,7 +1104,7 @@ const useTradeLogController = ({ plugin, leaf }: TradeLogProps) => {
         return;
       }
 
-      imageGalleryServiceRef.current?.invalidate();
+      imageGalleryService.invalidate();
       setImageGalleryItemCount(null);
     }
   );
@@ -1467,9 +1485,10 @@ const useTradeLogController = ({ plugin, leaf }: TradeLogProps) => {
       return;
     }
 
-    setFilters(persistedFilters);
+    applyFilters(persistedFilters);
     void loadDataForFilters(persistedFilters);
   }, [
+    applyFilters,
     getPersistedTradeLogFilters,
     loadData,
     loadDataForFilters,
@@ -1955,17 +1974,14 @@ const useTradeLogController = ({ plugin, leaf }: TradeLogProps) => {
         const configuredTagIds = new Set(
           getSessionLogTags(plugin).map((tag) => tag.id)
         );
-        setFilters((currentFilters) => {
-          const nextFilters = pruneUnknownSessionLogTags(
-            currentFilters,
-            configuredTagIds
-          );
-          if (nextFilters === currentFilters) {
-            return currentFilters;
-          }
-          persistFilters(nextFilters);
-          return nextFilters;
-        });
+        const currentFilters = filtersRef.current;
+        const nextFilters = pruneUnknownSessionLogTags(
+          currentFilters,
+          configuredTagIds
+        );
+        if (nextFilters !== currentFilters) {
+          commitFilters(nextFilters);
+        }
       }
     },
     isActive
@@ -1976,16 +1992,6 @@ const useTradeLogController = ({ plugin, leaf }: TradeLogProps) => {
     return () => {
       if (reloadTimerRef.current) {
         window.clearTimeout(reloadTimerRef.current);
-      }
-    };
-  }, []);
-
-  
-  useEffect(() => {
-    return () => {
-      
-      if (tradeLogServiceRef.current) {
-        tradeLogServiceRef.current.destroy();
       }
     };
   }, []);
@@ -2182,16 +2188,21 @@ const useTradeLogController = ({ plugin, leaf }: TradeLogProps) => {
   );
 
   const handleClearImageGalleryFilters = useCallback(() => {
-    setFilters((currentFilters) => {
-      const nextFilters = {
-        ...createTradeLogFilters(),
-        viewLevel: currentFilters.viewLevel,
-      };
-      persistFilters(nextFilters);
-      return nextFilters;
-    });
+    const nextFilters = {
+      ...createTradeLogFilters(),
+      viewLevel: filtersRef.current.viewLevel,
+    };
+    commitFilters(nextFilters);
     handleImageGalleryControlsChange({ sourceType: 'all' });
-  }, [handleImageGalleryControlsChange, persistFilters]);
+  }, [commitFilters, handleImageGalleryControlsChange]);
+
+  const handleClearTradeFilters = useCallback(() => {
+    const nextFilters = {
+      ...createTradeLogFilters(),
+      viewLevel: filtersRef.current.viewLevel,
+    };
+    commitFilters(nextFilters);
+  }, [commitFilters]);
 
   const handleShowAllImageGallerySources = useCallback(() => {
     handleImageGalleryControlsChange({ sourceType: 'all' });
@@ -2200,36 +2211,28 @@ const useTradeLogController = ({ plugin, leaf }: TradeLogProps) => {
   
   const handleFilterChange = useCallback(
     (newFilters: Partial<TradeLogFilters>) => {
-      setFilters((prev) => {
-        const nextFilters = clearInactiveTreeSessionLogTags(
-          normalizeTradeLogFilters({ ...prev, ...newFilters }),
-          tradeLogMode
-        );
-        persistFilters(nextFilters);
-        return nextFilters;
-      });
+      const nextFilters = clearInactiveTreeSessionLogTags(
+        normalizeTradeLogFilters({ ...filtersRef.current, ...newFilters }),
+        tradeLogMode
+      );
+      commitFilters(nextFilters);
     },
-    [persistFilters, tradeLogMode]
+    [commitFilters, tradeLogMode]
   );
 
   const handleAccountChanged = useCallback(
     (payload: AccountChangedPayload) => {
-      setFilters((previousFilters) => {
-        const remappedFilters = remapAccountFilterFromAccountChange(
-          previousFilters,
-          payload
-        );
+      const remappedFilters = remapAccountFilterFromAccountChange(
+        filtersRef.current,
+        payload
+      );
 
-        if (remappedFilters === previousFilters) {
-          return previousFilters;
-        }
+      if (remappedFilters === filtersRef.current) return;
 
-        const nextFilters = normalizeTradeLogFilters(remappedFilters);
-        persistFilters(nextFilters);
-        return nextFilters;
-      });
+      const nextFilters = normalizeTradeLogFilters(remappedFilters);
+      commitFilters(nextFilters);
     },
-    [persistFilters]
+    [commitFilters]
   );
 
   useEventBus('account:changed', handleAccountChanged);
@@ -2253,46 +2256,47 @@ const useTradeLogController = ({ plugin, leaf }: TradeLogProps) => {
     setRequestedScrollOffset(null);
   }, []);
 
-  const treeContent = !isDataLoaded ? (
-    <TradeLogSkeleton
-      visibleColumns={visibleColumns}
-      gridTemplate={gridTemplate}
-      containerHeight={containerHeight}
-    />
-  ) : (
-    <div className="trade-log-tree-wrapper">
-      {!isTreeReady && (
-        <TradeLogSkeleton
-          visibleColumns={visibleColumns}
-          gridTemplate={gridTemplate}
-          containerHeight={containerHeight}
-        />
-      )}
-      <div
-        className={`trade-log-tree-container ${isTreeReady ? 'trade-log-tree-container--visible' : 'trade-log-tree-container--hidden'}`}
-      >
-        <TradeLogTree
-          nodes={sortedNodes}
-          expandedNodes={expandedNodes}
-          onToggleExpand={(path) => void handleToggleExpand(path)}
-          onNodeClick={(node) => void handleNodeClick(node)}
-          onTreeReady={handleTreeReady}
-          onScrollbarWidthChange={setHeaderScrollbarWidth}
-          viewLevel={filters.viewLevel}
-          visibleColumns={visibleColumns}
-          gridTemplate={gridTemplate}
-          selectedTrades={selectedTrades}
-          onToggleTradeSelection={handleToggleTradeSelection}
-          isMultiSelectMode={isMultiSelectMode}
-          isExpandedMode={isExpandedMode}
-          requestedScrollOffset={requestedScrollOffset}
-          onScrollOffsetChange={(offset) => {
-            scrollOffsetRef.current = offset;
-          }}
-        />
+  const treeContent =
+    !isDataLoaded || (nodes.length === 0 && !isTradeCountResolved) ? (
+      <TradeLogSkeleton
+        visibleColumns={visibleColumns}
+        gridTemplate={gridTemplate}
+        containerHeight={containerHeight}
+      />
+    ) : (
+      <div className="trade-log-tree-wrapper">
+        {!isTreeReady && (
+          <TradeLogSkeleton
+            visibleColumns={visibleColumns}
+            gridTemplate={gridTemplate}
+            containerHeight={containerHeight}
+          />
+        )}
+        <div
+          className={`trade-log-tree-container ${isTreeReady ? 'trade-log-tree-container--visible' : 'trade-log-tree-container--hidden'}`}
+        >
+          <TradeLogTree
+            nodes={sortedNodes}
+            expandedNodes={expandedNodes}
+            onToggleExpand={(path) => void handleToggleExpand(path)}
+            onNodeClick={(node) => void handleNodeClick(node)}
+            onTreeReady={handleTreeReady}
+            onScrollbarWidthChange={setHeaderScrollbarWidth}
+            viewLevel={filters.viewLevel}
+            visibleColumns={visibleColumns}
+            gridTemplate={gridTemplate}
+            selectedTrades={selectedTrades}
+            onToggleTradeSelection={handleToggleTradeSelection}
+            isMultiSelectMode={isMultiSelectMode}
+            isExpandedMode={isExpandedMode}
+            requestedScrollOffset={requestedScrollOffset}
+            onScrollOffsetChange={(offset) => {
+              scrollOffsetRef.current = offset;
+            }}
+          />
+        </div>
       </div>
-    </div>
-  );
+    );
 
   const expandedModeSizerRow = (
     <ExpandedModeSizerRow
@@ -2309,13 +2313,17 @@ const useTradeLogController = ({ plugin, leaf }: TradeLogProps) => {
     leaf,
     isDataLoaded,
     nodes,
+    isTradeCountResolved,
+    hasExistingTrades,
     filters,
     tradeLogMode,
     handleModeChange,
     imageGalleryControls,
-    imageGalleryService: imageGalleryServiceRef.current,
+    imageGalleryService,
+    tradeLogService,
     handleImageGalleryControlsChange,
     handleClearImageGalleryFilters,
+    handleClearTradeFilters,
     setImageGalleryItemCount,
     handleShowAllImageGallerySources,
     handleFilterChange,
@@ -2356,13 +2364,17 @@ const TradeLogContent: React.FC<{
     leaf,
     isDataLoaded,
     nodes,
+    isTradeCountResolved,
+    hasExistingTrades,
     filters,
     tradeLogMode,
     handleModeChange,
     imageGalleryControls,
     imageGalleryService,
+    tradeLogService,
     handleImageGalleryControlsChange,
     handleClearImageGalleryFilters,
+    handleClearTradeFilters,
     setImageGalleryItemCount,
     handleShowAllImageGallerySources,
     handleFilterChange,
@@ -2395,12 +2407,27 @@ const TradeLogContent: React.FC<{
   } = controller;
 
   
-  if (tradeLogMode === 'trades' && isDataLoaded && nodes.length === 0) {
+  if (
+    tradeLogMode === 'trades' &&
+    isDataLoaded &&
+    nodes.length === 0 &&
+    isTradeCountResolved
+  ) {
+    const handleOpenTradeForm = () => {
+      const modal = new TradeFormModal({ app: plugin.app, plugin });
+      modal.open();
+    };
+
+    const handleOpenTradeImport = () => {
+      void plugin.viewManager.openCSVImportView();
+    };
+
     return (
       <div className="journalit-trade-log">
         <TradeLogHeader
           app={plugin.app}
           plugin={plugin}
+          tradeLogService={tradeLogService}
           imageGalleryService={imageGalleryService}
           leaf={leaf}
           filters={filters}
@@ -2413,17 +2440,15 @@ const TradeLogContent: React.FC<{
           isMultiSelectMode={isMultiSelectMode}
           onToggleMultiSelectMode={handleToggleMultiSelectMode}
         />
-        <div ref={registerEmptyStateTarget}>
-          <EmptyState
-            message={t('tradelog.empty')}
-            subMessage={t('tradelog.empty.submessage')}
-            actionButtonText={t('button.create-trade')}
-            onActionButtonClick={() => {
-              void (async () => {
-                const modal = new TradeFormModal({ app: plugin.app, plugin });
-                modal.open();
-              })();
-            }}
+        <div
+          ref={registerEmptyStateTarget}
+          className="journalit-trade-log-empty-container"
+        >
+          <TradeLogEmptyState
+            hasExistingTrades={hasExistingTrades}
+            onImportTrades={handleOpenTradeImport}
+            onAddTradeManually={handleOpenTradeForm}
+            onClearFilters={handleClearTradeFilters}
           />
         </div>
       </div>
@@ -2435,6 +2460,7 @@ const TradeLogContent: React.FC<{
       <TradeLogHeader
         app={plugin.app}
         plugin={plugin}
+        tradeLogService={tradeLogService}
         imageGalleryService={imageGalleryService}
         leaf={leaf}
         filters={filters}

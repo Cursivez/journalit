@@ -6,7 +6,7 @@ import React, {
   useRef,
 } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
-import { App, Modal } from 'obsidian';
+import { App, Modal, Notice } from 'obsidian';
 import {
   AlertTriangle,
   CheckCircle,
@@ -17,7 +17,7 @@ import {
   Upload,
 } from '../shared/icons/ObsidianIcon';
 import type JournalitPlugin from '../../main';
-import { t } from '../../lang/helpers';
+import { t, tPlural } from '../../lang/helpers';
 import { PnLValue } from '../shared/display/DisplayValue';
 import { DisplayPolicyProvider } from '../../contexts/DisplayPolicyContext';
 import { formatDateDisplay } from '../../utils/dateUtils';
@@ -27,7 +27,7 @@ import { openExternalUrl } from '../../utils/externalLinks';
 import { DeviceFlowSignInModal } from '../auth/DeviceFlowSignInModal';
 import { useBackendProEntitlement } from '../../hooks/useBackendProEntitlement';
 import { BackendTradeImportService } from '../../services/tradeImport/BackendTradeImportService';
-import { BackendTradeProjectionService } from '../../services/tradeSync/BackendTradeProjectionService';
+import { TradeProjectionClient } from '../../services/tradeSync/TradeProjectionClient';
 import {
   TradeImportValidationError,
   TradeImportWorkflowService,
@@ -50,7 +50,10 @@ import {
   type TradeImportQuickImportState,
   type TradeImportQuickSetup,
 } from '../../services/tradeImport/quickImportSetup';
-import { setQuickImportTradeImportHandoff } from '../../services/tradeImport/quickImportHandoff';
+import {
+  clearQuickImportTradeImportHandoff,
+  setQuickImportTradeImportHandoff,
+} from '../../services/tradeImport/quickImportHandoff';
 
 const LOCAL_WRITE_TIMEOUT_MS = 10000;
 const PRIVACY_URL = 'https://journalit.co/privacy';
@@ -136,10 +139,16 @@ const QuickImportClassificationIcon: React.FC<{
 };
 
 const QuickImportPnlCell: React.FC<{
-  preview: ClassifiedPreviewTrade['preview'];
+  item: ClassifiedPreviewTrade;
   plugin: JournalitPlugin;
-}> = ({ preview, plugin }) => {
-  const value = preview.profitLoss ?? preview.directPnL;
+}> = ({ item, plugin }) => {
+  const { preview, tradeData } = item;
+  
+  
+  const value =
+    typeof tradeData.authoritativePnl === 'number'
+      ? tradeData.authoritativePnl
+      : (preview.profitLoss ?? preview.directPnL);
   const outcome =
     typeof value === 'number' && Number.isFinite(value)
       ? classifyPnLWithBreakEvenSettings(value, {
@@ -280,7 +289,7 @@ const QuickImportPreviewSummary: React.FC<QuickImportPreviewSummaryProps> = ({
                 <td>{item.preview.symbol}</td>
                 <td>{formatQuickImportDate(item.preview, plugin)}</td>
                 <td>
-                  <QuickImportPnlCell preview={item.preview} plugin={plugin} />
+                  <QuickImportPnlCell item={item} plugin={plugin} />
                 </td>
                 <td>{item.preview.status}</td>
                 <td>
@@ -378,6 +387,7 @@ const QuickImportDropzone: React.FC<QuickImportDropzoneProps> = ({
         </strong>
         <span>{t('quick-import.dropzone.subtitle')}</span>
         <input
+          aria-label={t('quick-import.dropzone.title')}
           ref={fileInputRef}
           type="file"
           className="journalit-quick-import-file-input"
@@ -423,6 +433,7 @@ const QuickImportSelectedFileCard: React.FC<
       </button>
     )}
     <input
+      aria-label={t('quick-import.action.replace-file')}
       ref={fileInputRef}
       type="file"
       className="journalit-quick-import-file-input"
@@ -627,9 +638,7 @@ export const QuickImportMainContent: React.FC<QuickImportMainContentProps> = ({
             >
               {state.phase === 'importing'
                 ? t('quick-import.status.importing')
-                : t('quick-import.action.import-count', {
-                    count: String(writableCount),
-                  })}
+                : tPlural('quick-import.action.import-count', writableCount)}
             </button>
           )}
         </div>
@@ -642,14 +651,16 @@ interface QuickImportAccessGateProps {
   canUseQuickTradeImport: boolean;
   isAuthenticated: boolean;
   isCheckingEntitlement: boolean;
+  onPreviewFree: () => void;
   onSignIn: () => void;
   onUpgrade: () => void;
 }
 
-function renderQuickImportAccessGate({
+export function renderQuickImportAccessGate({
   canUseQuickTradeImport,
   isAuthenticated,
   isCheckingEntitlement,
+  onPreviewFree,
   onSignIn,
   onUpgrade,
 }: QuickImportAccessGateProps): React.ReactElement | null {
@@ -658,7 +669,7 @@ function renderQuickImportAccessGate({
       <div className="journalit-quick-import-modal">
         <p>{t('quick-import.gate.sign-in')}</p>
         <button type="button" className="mod-cta" onClick={onSignIn}>
-          {t('premium.gate.cta.signin-continue')}
+          {t('quick-import.gate.sign-in-cta')}
         </button>
       </div>
     );
@@ -676,9 +687,18 @@ function renderQuickImportAccessGate({
     return (
       <div className="journalit-quick-import-modal">
         <p>{t('quick-import.gate.pro')}</p>
-        <button type="button" className="mod-cta" onClick={onUpgrade}>
-          {t('premium.gate.cta.continue-pro')}
-        </button>
+        <div className="journalit-quick-import-gate-actions">
+          <button type="button" className="mod-cta" onClick={onUpgrade}>
+            {t('premium.gate.cta.continue-pro')}
+          </button>
+          <button
+            type="button"
+            className="journalit-quick-import-preview-free-button"
+            onClick={onPreviewFree}
+          >
+            {t('quick-import.gate.preview-free')}
+          </button>
+        </div>
       </div>
     );
   }
@@ -771,7 +791,7 @@ const QuickTradeImportModalContent: React.FC<
 > = ({ plugin, closeModal }) => {
   const backendService = useMemo(() => new BackendTradeImportService(), []);
   const projectionBackendService = useMemo(
-    () => new BackendTradeProjectionService(),
+    () => new TradeProjectionClient(),
     []
   );
   const workflowService = useMemo(
@@ -871,8 +891,14 @@ const QuickTradeImportModalContent: React.FC<
       });
     }
     closeModal();
-    await plugin.viewManager.openCSVImportView();
-    window.dispatchEvent(new Event('journalit:quick-import-handoff-ready'));
+    try {
+      await plugin.viewManager.openCSVImportView();
+      window.dispatchEvent(new Event('journalit:quick-import-handoff-ready'));
+    } catch (error) {
+      clearQuickImportTradeImportHandoff();
+      console.error('[Quick Import] Failed to open Trade Import:', error);
+      new Notice(t('trade-import.notice.open-failed'));
+    }
   }, [
     analyse,
     classified,
@@ -1049,6 +1075,7 @@ const QuickTradeImportModalContent: React.FC<
     canUseQuickTradeImport,
     isAuthenticated,
     isCheckingEntitlement,
+    onPreviewFree: () => void openFullTradeImport(),
     onSignIn: () => void handleSignIn(),
     onUpgrade: () => void handleUpgrade(),
   });

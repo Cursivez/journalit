@@ -42,7 +42,7 @@ import {
 } from './sessionLogUtils';
 import { t } from '../../lang/helpers';
 import { cssVars } from '../../styles/inlineStylePolicy';
-import { eventBus } from '../../services/events';
+import { eventBus } from '../../services/events/EventBus';
 
 interface SessionLogPanelProps {
   plugin: JournalitPlugin;
@@ -329,11 +329,9 @@ export const SessionLogPanel: React.FC<SessionLogPanelProps> = React.memo(
     }, []);
 
     const toggleFilterMenu = useCallback(() => {
-      setIsFilterMenuOpen((value) => {
-        if (!value) updateFilterMenuPosition();
-        return !value;
-      });
-    }, [updateFilterMenuPosition]);
+      if (!isFilterMenuOpen) updateFilterMenuPosition();
+      setIsFilterMenuOpen(!isFilterMenuOpen);
+    }, [isFilterMenuOpen, updateFilterMenuPosition]);
 
     const updateTagMenuPosition = useCallback(() => {
       const trigger = tagButtonRef.current;
@@ -758,15 +756,13 @@ export const SessionLogPanel: React.FC<SessionLogPanelProps> = React.memo(
                 : 'journalit-session-log-icon-button'
             }
             onClick={() => {
-              setManualTimestampEnabled((value) => {
-                if (!value) {
-                  setManualTimestamp(
-                    getDefaultEntryTimestamp(timestampSessionWindow)
-                  );
-                  setManualTimestampPickerSignal((signal) => signal + 1);
-                }
-                return !value;
-              });
+              if (!manualTimestampEnabled) {
+                setManualTimestamp(
+                  getDefaultEntryTimestamp(timestampSessionWindow)
+                );
+                setManualTimestampPickerSignal((signal) => signal + 1);
+              }
+              setManualTimestampEnabled(!manualTimestampEnabled);
             }}
             aria-label={
               manualTimestampEnabled
@@ -1029,6 +1025,7 @@ export const SessionLogPanel: React.FC<SessionLogPanelProps> = React.memo(
                             )}
                           </div>
                           <textarea
+                            aria-label={t('session-log.action.edit')}
                             value={editText}
                             rows={1}
                             onChange={(event) =>
@@ -1102,7 +1099,14 @@ export const SessionLogPanel: React.FC<SessionLogPanelProps> = React.memo(
                                     plugin,
                                     filePath,
                                     entryId: entry.id,
-                                  }).then(onRefresh)
+                                  })
+                                    .then(onRefresh)
+                                    .catch((error) => {
+                                      console.error(
+                                        'Failed to delete session log entry:',
+                                        error
+                                      );
+                                    })
                                 }
                                 aria-label={t('session-log.action.delete')}
                               >

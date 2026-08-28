@@ -3,7 +3,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Notice } from 'obsidian';
 import JournalitPlugin from '../../../main';
-import { Select } from '../../core';
+import { Select } from '../../core/Select';
 import { SegmentedControl } from '../../shared/SegmentedControl';
 import { Tooltip } from '../../shared/Tooltip';
 import {
@@ -14,7 +14,7 @@ import {
 import { Info } from '../../shared/icons/ObsidianIcon';
 import { Button } from '../../ui/Button';
 import { t } from '../../../lang/helpers';
-import { eventBus } from '../../../services/events';
+import { eventBus } from '../../../services/events/EventBus';
 import {
   DEFAULT_TRADE_FORM_LAYOUT_SETTINGS,
   TradeFormAssetTypeMode,
@@ -313,6 +313,7 @@ const CostFieldsVisibilitySelector: React.FC<
     return items;
   }, []);
 
+  const visibleItemsSet = new Set(layout.visibleItems);
   return (
     <div className="journalit-trade-form-layout-editor__risk-fields">
       {costItems.map((item) => (
@@ -322,7 +323,7 @@ const CostFieldsVisibilitySelector: React.FC<
         >
           <input
             type="checkbox"
-            checked={layout.visibleItems.includes(item.id)}
+            checked={visibleItemsSet.has(item.id)}
             onChange={(event) => onChange(item.id, event.currentTarget.checked)}
           />
           <span>{item.label}</span>
@@ -344,6 +345,7 @@ const RiskFieldsVisibilitySelector: React.FC<
     return items;
   }, []);
 
+  const visibleItemsSet2 = new Set(layout.visibleItems);
   return (
     <div className="journalit-trade-form-layout-editor__risk-fields">
       {riskItems.map((item) => (
@@ -353,7 +355,7 @@ const RiskFieldsVisibilitySelector: React.FC<
         >
           <input
             type="checkbox"
-            checked={layout.visibleItems.includes(item.id)}
+            checked={visibleItemsSet2.has(item.id)}
             onChange={(event) => onChange(item.id, event.currentTarget.checked)}
           />
           <span>{item.label}</span>

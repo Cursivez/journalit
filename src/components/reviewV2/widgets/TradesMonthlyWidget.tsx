@@ -2,7 +2,7 @@
 
 import React, { useMemo } from 'react';
 import JournalitPlugin from '../../../main';
-import { SharedDailyPerformanceChart } from '../../charts';
+import { SharedDailyPerformanceChart } from '../../charts/SharedDailyPerformanceChart';
 import { InvalidContextMessage } from './InvalidContextMessage';
 import { calculateEffectiveRMultiple } from '../../../utils/formatting';
 import { getDisplayPnL, getAccountCount } from '../../../utils/pnlUtils';
@@ -16,7 +16,7 @@ import {
   getReviewTradeTradingDay,
 } from '../utils/reviewTradeDates';
 import { useReviewTrades } from '../hooks/useReviewData';
-import { SkeletonBox } from '../../shared';
+import { SkeletonBox } from '../../shared/SkeletonBox';
 import { hasTranslation, t } from '../../../lang/helpers';
 import { cssVars } from '../../../styles/inlineStylePolicy';
 import { getSingleExplicitCurrency } from '../../../utils/currencyAggregation';

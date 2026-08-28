@@ -15,6 +15,7 @@ export const SETTINGS_TAB_IDS = {
   JOURNAL: 'journal',
   SYNC: 'sync',
   ADVANCED: 'advanced',
+  ECONOMIC_CALENDAR: 'economicCalendar',
   
   REVIEWS: 'reviews',
   CUSTOMIZATION: 'customization',
@@ -110,6 +111,11 @@ export interface FTPCredentials {
   server: string;
   port: number;
   lastPasswordReset?: string;
+}
+
+
+export interface FTPProvisionedCredentials extends FTPCredentials {
+  source: 'created' | 'reused' | 'rotated';
 }
 
 
@@ -535,6 +541,7 @@ export const QUICK_LINK_ACTIONS = [
   'openQuarterlyReview',
   'openYearlyReview',
   'openPositionSizeCalculator',
+  'openEconomicCalendar',
 ] as const;
 
 export type QuickLinkAction = (typeof QUICK_LINK_ACTIONS)[number];
@@ -722,6 +729,15 @@ const DEFAULT_NAVIGATION_ITEMS: SidebarNavItem[] = [
     visible: true,
     order: 5,
   },
+  {
+    id: 'nav-economic-calendar',
+    label: 'Economic Calendar',
+    icon: 'calendar-range',
+    action: 'openEconomicCalendar',
+    section: 'tools',
+    visible: true,
+    order: 6,
+  },
 ];
 
 export function createDefaultNavigationSettings(): NavigationSettings {
@@ -810,7 +826,21 @@ export interface TopBreakdownConfig {
 }
 
 
-interface HomeSettings {
+export type CurrentStreakKind =
+  | 'trade-outcome'
+  | 'trade-review'
+  | 'drc-review'
+  | 'weekly-review'
+  | 'monthly-review';
+
+
+export interface CurrentStreakConfig {
+  kind: CurrentStreakKind;
+  createdAt: string;
+}
+
+
+export interface HomeSettings {
   
   layouts: {
     
@@ -843,6 +873,8 @@ interface HomeSettings {
   goals?: Record<string, GoalConfig>;
   
   topBreakdowns?: Record<string, TopBreakdownConfig>;
+  
+  streaks?: Record<string, CurrentStreakConfig>;
   
   selectedPeriod?: HomePeriod;
   
@@ -944,6 +976,14 @@ export interface BackendIntegrationSettings {
   lastSeenVersion?: string;
   
   dismissedVersion?: string;
+  
+  lastAvailableUpdateCheckAt?: string;
+  
+  lastAvailableUpdateAttemptAt?: string;
+  
+  lastKnownAvailableVersion?: string;
+  
+  dismissedAvailableVersion?: string;
   showUpdateNotifications?: boolean;
   
   tradeSyncMapping?: { [tradeId: number]: string };
@@ -973,6 +1013,7 @@ export interface BackendIntegrationSettings {
     pluginVersion?: string;
     clientOperationId?: string;
     diagnosticSyncRunId?: string;
+    diagnosticProvider?: 'tradovate' | 'rithmic';
     results: Array<{
       tradeId: string;
       backendTradeVersion: number;
@@ -1191,6 +1232,49 @@ export interface PersistedViewFilters {
   reviews: UnifiedFilters;
 }
 
+export type EconomicCalendarImpact = 'none' | 'low' | 'medium' | 'high';
+
+
+export const ECONOMIC_CALENDAR_IMPACTS: EconomicCalendarImpact[] = [
+  'none',
+  'low',
+  'medium',
+  'high',
+];
+
+
+export const ECONOMIC_CALENDAR_IMPACTS_DISPLAY_ORDER: EconomicCalendarImpact[] =
+  [...ECONOMIC_CALENDAR_IMPACTS].reverse();
+
+
+export interface EconomicCalendarViewFilters {
+  currencies: string[];
+  impacts: EconomicCalendarImpact[];
+}
+
+export interface EconomicCalendarSettings {
+  
+  defaultCurrencies: string[];
+  
+  impacts: EconomicCalendarImpact[];
+  
+  includeHolidays: boolean;
+  
+  autoImport: boolean;
+}
+
+export function createDefaultEconomicCalendarSettings(): EconomicCalendarSettings {
+  return {
+    defaultCurrencies: [],
+    impacts: ['low', 'medium', 'high'],
+    includeHolidays: true,
+    autoImport: false,
+  };
+}
+
+export const DEFAULT_ECONOMIC_CALENDAR_SETTINGS: EconomicCalendarSettings =
+  createDefaultEconomicCalendarSettings();
+
 
 export interface JournalitSettings {
   
@@ -1259,6 +1343,8 @@ export interface JournalitSettings {
   symbolMappings?: SymbolMapping[];
   
   navigation?: NavigationSettings;
+  
+  economicCalendar?: EconomicCalendarSettings;
   
   copyTradeAdjustments?: Record<
     string,
@@ -1731,12 +1817,24 @@ export const DEFAULT_SETTINGS: JournalitSettings = {
         visible: true,
         order: 14,
       },
+      {
+        
+        
+        id: 'economic-calendar',
+        label: 'Economic Calendar',
+        icon: 'calendar-range',
+        color: 'var(--text-accent)',
+        action: 'openEconomicCalendar',
+        visible: false,
+        order: 15,
+      },
     ],
     quickLinksPosition: 'belowWidgets',
     activeWidgets: ['recentItems', 'yearHeatmap'],
     embeddedNotes: {},
     goals: {},
     topBreakdowns: {},
+    streaks: {},
     positionSizeDefaults: {
       riskPercentage: 1,
       accountBalance: undefined,
@@ -1774,6 +1872,10 @@ export const DEFAULT_SETTINGS: JournalitSettings = {
     showUpdateNotifications: true,
     lastSeenVersion: '',
     dismissedVersion: '',
+    lastAvailableUpdateCheckAt: '',
+    lastAvailableUpdateAttemptAt: '',
+    lastKnownAvailableVersion: '',
+    dismissedAvailableVersion: '',
     
     userEmail: '',
     subscriptionTier: 'free',
@@ -1787,6 +1889,7 @@ export const DEFAULT_SETTINGS: JournalitSettings = {
   initializedOptionTypes: [],
   symbolMappings: [],
   navigation: createDefaultNavigationSettings(),
+  economicCalendar: createDefaultEconomicCalendarSettings(),
 };
 
 export {};

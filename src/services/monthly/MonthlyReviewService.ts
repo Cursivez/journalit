@@ -33,8 +33,11 @@ import {
 import { FolderPathService } from '../core/FolderPathService';
 import { parseTradeFinancialFields } from '../../utils/tradeUtils';
 import { ReviewTemplateService } from '../templates/ReviewTemplateService';
-import { eventBus, ReviewChangedPayload } from '../events';
+import { eventBus } from '../events/EventBus';
+import { ReviewChangedPayload } from '../events/types';
 import { TemplateTransformationService } from '../templates/TemplateTransformationService';
+import { extractCanonicalProjectionPnlFields } from '../trade/core/CanonicalProjectionFields';
+import type { ReviewStreakItem } from '../../utils/reviewStreaks';
 
 interface MonthlyDataOptimizedResult {
   trades: Trade[];
@@ -130,6 +133,7 @@ function createTradeFromFrontmatter(
         ? [frontmatter.account]
         : [],
     path,
+    ...extractCanonicalProjectionPnlFields(frontmatter),
     tradeStatus: getStringValue(frontmatter, 'tradeStatus'),
     useDirectPnLInput: getBooleanValue(frontmatter, 'useDirectPnLInput'),
     _originalPnlWasNull: originalPnlWasNull,
@@ -270,6 +274,39 @@ export class MonthlyReviewService extends CustomDataService {
   }
 
   
+  public getReviewStreakItems(): ReviewStreakItem[] {
+    const journalFolder = normalizePath(this.getJournalFolderPath());
+    const journalFolderPrefix = `${journalFolder}/`;
+    const items: ReviewStreakItem[] = [];
+
+    for (const file of this.app.vault.getMarkdownFiles()) {
+      if (!file.path.startsWith(journalFolderPrefix)) {
+        continue;
+      }
+
+      const frontmatter = asRecord(
+        this.app.metadataCache.getFileCache(file)?.frontmatter
+      );
+      if (!frontmatter || !this.isValidType(frontmatter)) {
+        continue;
+      }
+
+      const dateValue = getStringValue(frontmatter, 'date');
+      const date = dateValue ? parseLocalDateSafe(dateValue) : null;
+      if (!date) {
+        continue;
+      }
+
+      items.push({
+        date,
+        reviewed: getBooleanValue(frontmatter, 'reviewed') === true,
+      });
+    }
+
+    return items;
+  }
+
+  
   private async ensureDirectoryExists(filePath: string): Promise<void> {
     
     const dirPath = filePath.substring(0, filePath.lastIndexOf('/'));
@@ -349,6 +386,12 @@ export class MonthlyReviewService extends CustomDataService {
     
     try {
       const file = await this.app.vault.create(filePath, content);
+      await forceMetadataCacheRefresh(this.app, file);
+      eventBus.publish('review:changed', {
+        type: 'monthly',
+        action: 'created',
+        filePath: file.path,
+      });
       return file;
     } catch (error) {
       console.error('Error creating monthly review:', error);

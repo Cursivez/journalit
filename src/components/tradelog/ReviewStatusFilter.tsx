@@ -23,6 +23,13 @@ const REVIEW_STATUS_OPTIONS: Array<{
   { value: 'unreviewed', labelKey: 'filter.modal.review-status.unreviewed' },
 ];
 
+const handleKeyDown = (event: React.KeyboardEvent, action: () => void) => {
+  if (event.key === 'Enter' || event.key === ' ') {
+    event.preventDefault();
+    action();
+  }
+};
+
 export const ReviewStatusFilter: React.FC<ReviewStatusFilterProps> = React.memo(
   ({ selectedReviewStatus, onChange }) => {
     const [isOpen, setIsOpen] = useState(false);
@@ -75,20 +82,12 @@ export const ReviewStatusFilter: React.FC<ReviewStatusFilterProps> = React.memo(
       [onChange, selectedReviewStatus]
     );
 
-    const handleKeyDown = (event: React.KeyboardEvent, action: () => void) => {
-      if (event.key === 'Enter' || event.key === ' ') {
-        event.preventDefault();
-        action();
-      }
-    };
-
     return (
       <div className="journalit-tradelog-status-filter" ref={dropdownRef}>
         <div className="journalit-tradelog-status-dropdown">
-          <div
-            className="journalit-tradelog-status-summary"
-            role="button"
-            tabIndex={0}
+          <button
+            type="button"
+            className="journalit-native-button journalit-native-button--unstyled journalit-tradelog-status-summary"
             aria-expanded={isOpen}
             aria-haspopup="true"
             onClick={toggleDropdown}
@@ -96,7 +95,7 @@ export const ReviewStatusFilter: React.FC<ReviewStatusFilterProps> = React.memo(
           >
             {summary}
             <span className="dropdown-arrow">{isOpen ? '▲' : '▼'}</span>
-          </div>
+          </button>
 
           {isOpen && (
             <div className="journalit-tradelog-status-options-dropdown">

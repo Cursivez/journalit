@@ -1,16 +1,15 @@
 import React, {
   useCallback,
   useEffect,
+  useLayoutEffect,
   useMemo,
   useReducer,
   useRef,
   useState,
 } from 'react';
 import type JournalitPlugin from '../../main';
-import {
-  ImageGalleryService,
-  matchesImageGalleryTradeLogFilters,
-} from '../../services/imageGallery';
+import { ImageGalleryService } from '../../services/imageGallery/ImageGalleryService';
+import { matchesImageGalleryTradeLogFilters } from '../../services/imageGallery/ImageGalleryFilters';
 import { useDisplayFormatter } from '../../hooks/useDisplayPolicy';
 import { useEventBus, useEventBusMultiple } from '../../hooks/useEventBus';
 import { t } from '../../lang/helpers';
@@ -355,7 +354,9 @@ export const ImageGallery: React.FC<ImageGalleryProps> = ({
         annotation,
         item.sourceType
       );
-      setAnnotationEditorItem(null);
+      setAnnotationEditorItem((currentItem) =>
+        currentItem?.id === item.id ? null : currentItem
+      );
       await loadItems();
     },
     [loadItems]
@@ -433,6 +434,10 @@ export const ImageGallery: React.FC<ImageGalleryProps> = ({
     [fullscreenItemIdRef, fullscreenItems, handleCloseFullscreen]
   );
 
+  const handleCloseAnnotation = useCallback(() => {
+    setAnnotationEditorItem(null);
+  }, []);
+
   useGuideBackHandler(handleGuideBack);
 
   return (
@@ -483,7 +488,7 @@ export const ImageGallery: React.FC<ImageGalleryProps> = ({
         onClose={handleCloseFullscreen}
         onNavigate={handleNavigateFullscreen}
         onEditAnnotation={handleEditAnnotation}
-        onCloseAnnotation={() => setAnnotationEditorItem(null)}
+        onCloseAnnotation={handleCloseAnnotation}
         onSaveAnnotation={handleSaveAnnotation}
         onOpenSource={handleOpenSource}
         registerActionsTarget={registerFullscreenActionsTarget}
@@ -533,12 +538,14 @@ function useImageGalleryLoader(input: {
     tradeLogFilters,
     viewMode,
   });
-  presentationRef.current = {
-    sort,
-    sourceType,
-    tradeLogFilters,
-    viewMode,
-  };
+  useLayoutEffect(() => {
+    presentationRef.current = {
+      sort,
+      sourceType,
+      tradeLogFilters,
+      viewMode,
+    };
+  }, [sort, sourceType, tradeLogFilters, viewMode]);
 
   const loadItems = useCallback(async () => {
     const loadGeneration = loadGenerationRef.current + 1;

@@ -770,21 +770,6 @@ export const SETUPS_VIEW_STYLES = `
   min-width: 0;
 }
 
-.journalit-setups-performance-widget .journalit-chart-widget__title {
-  color: var(--text-normal);
-  text-align: left;
-  font-size: 16px;
-  font-weight: 650;
-}
-
-.journalit-setups-performance-widget__title-row {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  min-width: 0;
-  flex-wrap: wrap;
-}
-
 .journalit-setups-performance-widget .journalit-chart-widget__selector {
   position: static;
   flex: 0 0 auto;
@@ -933,18 +918,8 @@ button.journalit-toolbar-button.journalit-setups-performance-widget__setup-trigg
   margin-top: -6px;
 }
 
-.journalit-setups-performance-widget--pairs .journalit-setups-performance-widget__header {
-  align-items: center;
-  padding: 0 0 4px;
-  border-bottom: 0;
-}
-
 .journalit-setups-performance-widget--pairs .journalit-setups-performance-summary {
   margin-top: 0;
-}
-
-.journalit-setups-performance-widget--pairs .journalit-chart-widget__title {
-  display: none;
 }
 
 .journalit-setups-performance-widget__body {
@@ -966,21 +941,35 @@ button.journalit-toolbar-button.journalit-setups-performance-widget__setup-trigg
 
 .journalit-setups-pairs-table,
 .journalit-setups-pairs-evidence {
-  overflow: hidden;
-  border: 1px solid color-mix(in srgb, var(--background-modifier-border) 82%, transparent);
+  border: 1px solid color-mix(in srgb, var(--background-modifier-border) 82%, var(--background-primary));
   border-radius: 5px;
   background:
     linear-gradient(180deg, color-mix(in srgb, var(--background-secondary) 72%, transparent), transparent),
     color-mix(in srgb, var(--background-primary) 88%, black 12%);
+  background-clip: padding-box;
+}
+
+.journalit-setups-pairs-table {
+  overflow: hidden;
+}
+
+.journalit-setups-pairs-evidence {
+  overflow: visible;
 }
 
 .theme-light .journalit-setups-pairs-table,
 .theme-light .journalit-setups-pairs-evidence {
-  border-color: color-mix(in srgb, var(--background-modifier-border) 88%, transparent);
+  border-color: color-mix(in srgb, var(--background-modifier-border) 88%, var(--background-primary));
   background:
     linear-gradient(180deg, color-mix(in srgb, var(--background-secondary) 55%, transparent), transparent 42%),
     var(--background-primary);
+  background-clip: padding-box;
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.72);
+}
+
+.journalit-setups-pairs-table__summary {
+  padding: 10px;
+  border-bottom: 1px solid color-mix(in srgb, var(--background-modifier-border) 72%, transparent);
 }
 
 .theme-light .journalit-setups-view button.journalit-setups-pairs-row--selected {
@@ -1044,6 +1033,10 @@ button.journalit-toolbar-button.journalit-setups-performance-widget__setup-trigg
   cursor: pointer;
   font-size: var(--font-ui-small);
   text-align: left;
+}
+
+.journalit-setups-view button.journalit-setups-pairs-row:last-child {
+  border-bottom: 0;
 }
 
 .journalit-setups-view button.journalit-setups-pairs-row:hover,
@@ -1169,11 +1162,20 @@ button.journalit-toolbar-button.journalit-setups-performance-widget__setup-trigg
 }
 
 .journalit-setups-pairs-evidence__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
   padding-bottom: 14px;
   border-bottom: 1px solid color-mix(in srgb, var(--background-modifier-border) 72%, transparent);
 }
 
+.journalit-setups-pairs-evidence__header .journalit-setups-performance-widget__metric-menu {
+  flex: 0 0 auto;
+}
+
 .journalit-setups-pairs-evidence__header h3 {
+  min-width: 0;
   margin: 0;
   color: var(--text-normal);
   font-size: 20px;
@@ -1358,18 +1360,6 @@ button.journalit-toolbar-button.journalit-setups-performance-widget__setup-trigg
   }
 }
 
-@media (max-width: 920px) {
-  .journalit-setups-performance-widget--pairs .journalit-setups-performance-widget__header {
-    align-items: flex-start;
-    flex-direction: column;
-    gap: 8px;
-  }
-
-  .journalit-setups-performance-widget--pairs .journalit-chart-widget__selector {
-    align-self: flex-end;
-  }
-}
-
 @media (max-width: 760px) {
   .journalit-setups-pairs-table__header,
   .journalit-setups-view button.journalit-setups-pairs-row {
@@ -1444,18 +1434,6 @@ button.journalit-toolbar-button.journalit-setups-performance-widget__setup-trigg
 
   .journalit-setups-pairs-evidence__content {
     grid-template-columns: minmax(280px, 1.25fr) minmax(180px, 0.75fr);
-  }
-}
-
-@container (max-width: 920px) {
-  .journalit-setups-performance-widget--pairs .journalit-setups-performance-widget__header {
-    align-items: flex-start;
-    flex-direction: column;
-    gap: 8px;
-  }
-
-  .journalit-setups-performance-widget--pairs .journalit-chart-widget__selector {
-    align-self: flex-end;
   }
 }
 
@@ -3434,7 +3412,7 @@ button.journalit-toolbar-button.journalit-setups-performance-widget__setup-trigg
   text-underline-offset: 2px;
 }
 
-.journalit-setups-brief__more-note {
+button.journalit-native-button.journalit-setups-brief__more-note {
   all: unset;
   display: inline;
   width: fit-content;
@@ -3451,8 +3429,8 @@ button.journalit-toolbar-button.journalit-setups-performance-widget__setup-trigg
   white-space: nowrap;
 }
 
-.journalit-setups-brief__more-note:hover,
-.journalit-setups-brief__more-note:focus-visible {
+button.journalit-native-button.journalit-setups-brief__more-note:hover,
+button.journalit-native-button.journalit-setups-brief__more-note:focus-visible {
   color: var(--text-accent);
   background: transparent !important;
   box-shadow: none !important;

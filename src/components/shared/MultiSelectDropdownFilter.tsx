@@ -105,7 +105,7 @@ export const MultiSelectDropdownFilter: React.FC<MultiSelectDropdownFilterProps>
             <button
               type="button"
               onClick={() => setIsOpen((prev) => !prev)}
-              className={`journalit-multi-select-dropdown-filter__trigger ${classNamePrefix}__trigger clickable-icon`}
+              className={`journalit-native-button journalit-multi-select-dropdown-filter__trigger ${classNamePrefix}__trigger clickable-icon`}
               aria-expanded={isOpen}
               aria-haspopup="true"
               aria-label={ariaLabel || summary}
@@ -133,7 +133,7 @@ export const MultiSelectDropdownFilter: React.FC<MultiSelectDropdownFilterProps>
                 <div className={`${classNamePrefix}__header`}>
                   <span>{header.title}</span>
                   <button
-                    className={`journalit-multi-select-dropdown-filter__reset ${classNamePrefix}__reset`}
+                    className={`journalit-native-button journalit-multi-select-dropdown-filter__reset ${classNamePrefix}__reset`}
                     type="button"
                     onClick={header.onReset}
                   >
@@ -148,7 +148,7 @@ export const MultiSelectDropdownFilter: React.FC<MultiSelectDropdownFilterProps>
                       <button
                         type="button"
                         onClick={toggleAll}
-                        className={`journalit-multi-select-dropdown-filter__option ${classNamePrefix}__option ${classNamePrefix}__option--select-all${allSelected ? ` ${classNamePrefix}__option--active` : ''}`}
+                        className={`journalit-native-button journalit-multi-select-dropdown-filter__option ${classNamePrefix}__option ${classNamePrefix}__option--select-all${allSelected ? ` ${classNamePrefix}__option--active` : ''}`}
                         aria-pressed={allSelected}
                       >
                         <span
@@ -172,7 +172,7 @@ export const MultiSelectDropdownFilter: React.FC<MultiSelectDropdownFilterProps>
                         key={option.value}
                         type="button"
                         onClick={() => toggleValue(option.value)}
-                        className={`journalit-multi-select-dropdown-filter__option ${classNamePrefix}__option${isSelected ? ` ${classNamePrefix}__option--active` : ''}`}
+                        className={`journalit-native-button journalit-multi-select-dropdown-filter__option ${classNamePrefix}__option${isSelected ? ` ${classNamePrefix}__option--active` : ''}`}
                         aria-pressed={isSelected}
                       >
                         <span

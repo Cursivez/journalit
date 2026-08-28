@@ -52,6 +52,7 @@ const EMPTY_IMAGE_FILTER_OPTIONS: AvailableImageFilterOptions = {
 };
 const EMPTY_IMAGE_ANNOTATION_STATUS: ImageAnnotationStatusFilter[] = [];
 const EMPTY_STRING_VALUES: string[] = [];
+const EMPTY_CUSTOM_FIELD_FILTERS: AvailableCustomFieldFilter[] = [];
 
 const IMAGE_ANNOTATION_STATUS_OPTIONS: Array<{
   value: ImageAnnotationStatusFilter;
@@ -114,8 +115,8 @@ export const FilterModalContent = React.memo<FilterModalContentProps>(
     currentFilters,
     onApply,
     onModalClose,
-    availableAccounts = [],
-    availableCustomFieldFilters = [],
+    availableAccounts = EMPTY_STRING_VALUES,
+    availableCustomFieldFilters = EMPTY_CUSTOM_FIELD_FILTERS,
     availableImageFilterOptions = EMPTY_IMAGE_FILTER_OPTIONS,
     showImageFilters = false,
     showSessionLogFilters = false,

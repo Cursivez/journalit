@@ -20,6 +20,7 @@ import { t } from '../../lang/helpers';
 import { openExternalUrl } from '../../utils/externalLinks';
 import { createDefaultBackendIntegrationSettings } from '../../settings/types';
 import { writeClipboardText } from '../../utils/clipboard';
+import { mergeClassNames } from '../../utils/classNames';
 
 interface DeviceFlowSignInModalProps {
   plugin: JournalitPlugin;
@@ -520,9 +521,9 @@ function DeviceFlowWaiting({ model }: { model: DeviceFlowSignInModel }) {
     <div className="activation-content">
       <div className="activation-left">
         <div className="device-code-container">
-          <label className="device-code-label">
+          <div className="device-code-label">
             {t('onboarding.activation.label.code')}
-          </label>
+          </div>
           <div className="device-code-box">
             <div className="device-code">{deviceCode || '----'}</div>
             <Tooltip
@@ -534,7 +535,10 @@ function DeviceFlowWaiting({ model }: { model: DeviceFlowSignInModel }) {
               preferredPosition="top"
             >
               <button
-                className={`copy-button ${copySuccess ? 'copied' : ''}`}
+                className={mergeClassNames(
+                  'journalit-native-button',
+                  `copy-button ${copySuccess ? 'copied' : ''}`
+                )}
                 onClick={() => void handleCopyCode()}
                 disabled={!deviceCode}
                 type="button"
@@ -604,7 +608,10 @@ function DeviceFlowWaiting({ model }: { model: DeviceFlowSignInModel }) {
               preferredPosition="top"
             >
               <button
-                className={`copy-button onboarding-link-fallback-copy ${copyUrlSuccess ? 'copied' : ''}`}
+                className={mergeClassNames(
+                  'journalit-native-button',
+                  `copy-button onboarding-link-fallback-copy ${copyUrlSuccess ? 'copied' : ''}`
+                )}
                 onClick={() =>
                   void handleCopyActivationUrl(activationUrlFallback)
                 }

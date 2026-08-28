@@ -16,7 +16,7 @@ import JournalitPlugin from '../main';
 import {
   DASHBOARD_VIEW_TYPE,
   LegacyDashboardRedirectView,
-} from '../components/dashboard';
+} from '../components/dashboard/DashboardView';
 import { AccountDashboardView } from './AccountDashboardView';
 import { TRADE_LOG_VIEW_TYPE, TradeLogView } from './TradeLogView';
 import { ACCOUNT_PAGE_VIEW_TYPE, AccountPageView } from './AccountPageView';
@@ -33,6 +33,10 @@ import {
   CALENDAR_SIDEBAR_VIEW_TYPE,
   CalendarSidebarView,
 } from './CalendarSidebarView';
+import {
+  ECONOMIC_CALENDAR_VIEW_TYPE,
+  EconomicCalendarView,
+} from './EconomicCalendarView';
 import { SESSION_MODE_VIEW_TYPE, SessionModeView } from './SessionModeView';
 import { TradeFormModal } from '../components/forms/trade/TradeFormModal';
 import {
@@ -42,6 +46,7 @@ import {
 import { t } from '../lang/helpers';
 import type { SetupsViewState } from '../components/setups/setupsViewTypes';
 import type { HomeViewMode } from '../settings/types';
+import { resolveNavigationTargetLeaf } from '../navigation/navigationTargetLeaf';
 
 
 const ACCOUNT_DASHBOARD_VIEW_TYPE = 'account-dashboard';
@@ -573,6 +578,11 @@ export class ViewManager {
           label: t('settings.customization.setups'),
           icon: 'flask-conical',
         };
+      case ECONOMIC_CALENDAR_VIEW_TYPE:
+        return {
+          label: t('view.economic-calendar.title'),
+          icon: 'calendar-range',
+        };
       default:
         return undefined;
     }
@@ -612,6 +622,9 @@ export class ViewManager {
         return;
       case CALENDAR_SIDEBAR_VIEW_TYPE:
         await this.registerCalendarSidebarView();
+        return;
+      case ECONOMIC_CALENDAR_VIEW_TYPE:
+        await this.registerEconomicCalendarView();
         return;
       case SESSION_MODE_VIEW_TYPE:
         await this.registerSessionModeView();
@@ -1068,6 +1081,55 @@ export class ViewManager {
         CSV_IMPORT_VIEW_TYPE,
         t('view.csv-import'),
         'import'
+      );
+    }
+  }
+
+  
+  public async registerEconomicCalendarView(): Promise<void> {
+    if (this.registeredViews.has(ECONOMIC_CALENDAR_VIEW_TYPE)) {
+      return;
+    }
+
+    try {
+      this.plugin.registerView(
+        ECONOMIC_CALENDAR_VIEW_TYPE,
+        (leaf) => new EconomicCalendarView(leaf, this.plugin)
+      );
+
+      this.registeredViews.add(ECONOMIC_CALENDAR_VIEW_TYPE);
+    } catch (e) {
+      console.error('Error registering economic calendar view:', e);
+    }
+  }
+
+  
+  public async openEconomicCalendarView(): Promise<void> {
+    await this.registerEconomicCalendarView();
+
+    if (
+      await this.revealExistingFunctionalLeaf(ECONOMIC_CALENDAR_VIEW_TYPE, {
+        label: t('view.economic-calendar.title'),
+        icon: 'calendar-range',
+      })
+    ) {
+      return;
+    }
+
+    const leaf = this.plugin.app.workspace.getLeaf('tab');
+    if (leaf) {
+      await leaf.setViewState({
+        type: ECONOMIC_CALENDAR_VIEW_TYPE,
+        active: true,
+      });
+      this.syncGuideContextForLeaf(leaf);
+      await Promise.resolve(this.plugin.app.workspace.revealLeaf(leaf));
+      this.syncGuideContextForLeaf(leaf);
+
+      this.trackRecentView(
+        ECONOMIC_CALENDAR_VIEW_TYPE,
+        t('view.economic-calendar.title'),
+        'calendar-range'
       );
     }
   }
@@ -1894,19 +1956,6 @@ export class ViewManager {
   }
 
   private getNavigationTargetLeaf(newTab: boolean): WorkspaceLeaf {
-    if (newTab) {
-      return this.plugin.app.workspace.getLeaf('tab');
-    }
-
-    const mostRecent = this.plugin.app.workspace.getMostRecentLeaf();
-    if (
-      mostRecent &&
-      mostRecent.getRoot() === this.plugin.app.workspace.rootSplit &&
-      mostRecent.view.getViewType() !== NAVIGATION_VIEW_TYPE
-    ) {
-      return mostRecent;
-    }
-
-    return this.plugin.app.workspace.getLeaf('tab');
+    return resolveNavigationTargetLeaf(this.plugin.app.workspace, newTab);
   }
 }

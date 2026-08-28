@@ -67,6 +67,10 @@ export async function relocateManagedTradeMedia({
   const relocated: RelocatedManagedTradeMedia[] = [];
   
   
+  
+  
+  
+  
   for (const [sourcePath, destinationPath] of plannedPaths) {
     try {
       if (await app.vault.adapter.exists(destinationPath)) {
@@ -85,7 +89,7 @@ export async function relocateManagedTradeMedia({
         destinationPath.lastIndexOf('/')
       );
       await ensureDirectory(destinationDirectory);
-      await app.fileManager.renameFile(mediaFile, destinationPath);
+      await app.vault.rename(mediaFile, destinationPath);
       relocated.push({ sourcePath, destinationPath });
     } catch (error) {
       const detail = error instanceof Error ? error.message : String(error);
@@ -171,6 +175,7 @@ export async function rollbackRelocatedManagedTradeMedia(
 ): Promise<void> {
   const failures: string[] = [];
   
+  
   for (const { sourcePath, destinationPath } of [...relocatedMedia].reverse()) {
     try {
       const mediaFile = app.vault.getAbstractFileByPath(destinationPath);
@@ -181,7 +186,7 @@ export async function rollbackRelocatedManagedTradeMedia(
 
       const sourceDirectory = sourcePath.slice(0, sourcePath.lastIndexOf('/'));
       await ensureDirectory(sourceDirectory);
-      await app.fileManager.renameFile(mediaFile, sourcePath);
+      await app.vault.rename(mediaFile, sourcePath);
     } catch (error) {
       const detail = error instanceof Error ? error.message : String(error);
       failures.push(`${destinationPath}: ${detail}`);

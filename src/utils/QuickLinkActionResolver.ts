@@ -149,6 +149,10 @@ export class QuickLinkActionResolver {
         }
         break;
 
+      case 'openEconomicCalendar':
+        await this.plugin.viewManager.openEconomicCalendarView();
+        break;
+
       case 'openPositionSizeCalculator': {
         const modal = new PositionSizeCalculatorModal(
           this.plugin.app,

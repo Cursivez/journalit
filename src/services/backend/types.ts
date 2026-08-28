@@ -1,6 +1,9 @@
 
 
-import { FTPCredentials } from '../../settings/types';
+import {
+  FTPCredentials,
+  FTPProvisionedCredentials,
+} from '../../settings/types';
 
 export type {
   SyncResponse,
@@ -71,4 +74,4 @@ export interface TradeMetadata {
   tradeReview?: TradeReviewData;
 }
 
-export type { FTPCredentials };
+export type { FTPCredentials, FTPProvisionedCredentials };

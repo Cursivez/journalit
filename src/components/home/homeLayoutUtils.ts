@@ -6,7 +6,7 @@ import {
   normalizeLayoutForSave as sharedNormalizeLayout,
   LAYOUT_BOTTOM_POSITION,
 } from '../shared/gridLayout/gridLayoutUtils';
-import { eventBus } from '../../services/events';
+import { eventBus } from '../../services/events/EventBus';
 
 
 let saveLayoutTimer: number | null = null;

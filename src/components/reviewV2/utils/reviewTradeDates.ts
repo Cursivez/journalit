@@ -9,6 +9,7 @@ import {
   type AnalyticsDateTradeLike,
   type RealizedPnlEvent,
 } from '../../../utils/tradeAnalyticsDate';
+import { hasUnknownCanonicalPnL } from '../../../services/trade/core/CanonicalProjectionFields';
 
 type ReviewRangeTrade = AnalyticsDateTradeLike & {
   _analyticsRangeStart?: Date;
@@ -73,6 +74,10 @@ export const splitReviewTradeByRealizedPnlEvent = <T extends ReviewRangeTrade>(
   trade: T,
   plugin: JournalitPlugin | null | undefined
 ): Array<T & { _reviewBreakdownDate?: Date }> => {
+  if (hasUnknownCanonicalPnL(trade)) {
+    return [];
+  }
+
   const allEvents = getAllocatedRealizedPnlEvents(
     trade,
     getReviewAnalyticsDateBasis(plugin),

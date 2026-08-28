@@ -10,10 +10,13 @@ import type {
   TradeProjectionAccountVaultMappingRequest,
   TradeProjectionRequest,
   TradeProjectionResponse,
+  RithmicConnection,
+  RithmicConnectionAccount,
+  RithmicConnections,
   TradovateConnection,
   TradovateConnectionAccount,
   TradovateConnections,
-  TradovateSyncJob,
+  BrokerSyncJob,
 } from './types';
 
 const asRecord = (value: unknown): Record<string, unknown> | null =>
@@ -174,18 +177,25 @@ const projectionGeneration = (value: unknown): string | undefined => {
   return value;
 };
 
-function scopedIdentifier(value: unknown, field: string): string {
+function scopedIdentifier(
+  value: unknown,
+  field: string,
+  provider = 'Tradovate'
+): string {
   if (
     typeof value !== 'string' ||
     value.trim() === '' ||
     value !== value.trim()
   ) {
-    throw new Error(`Invalid Tradovate ${field} response`);
+    throw new Error(`Invalid ${provider} ${field} response`);
   }
   return value;
 }
 
-function normalizeTradovateJob(value: unknown): TradovateSyncJob {
+function normalizeBrokerSyncJob(
+  value: unknown,
+  provider = 'Tradovate'
+): BrokerSyncJob {
   const job = asRecord(value);
   if (
     !job ||
@@ -194,11 +204,15 @@ function normalizeTradovateJob(value: unknown): TradovateSyncJob {
     job.kind !== job.kind.trim() ||
     typeof job.status !== 'string'
   ) {
-    throw new Error('Invalid Tradovate job response');
+    throw new Error(`Invalid ${provider} job response`);
   }
   return {
-    id: scopedIdentifier(job.id, 'job'),
-    connectionId: scopedIdentifier(job.connectionId, 'job connection scope'),
+    id: scopedIdentifier(job.id, 'job', provider),
+    connectionId: scopedIdentifier(
+      job.connectionId,
+      'job connection scope',
+      provider
+    ),
     kind: job.kind,
     status: job.status,
     errorCode: typeof job.errorCode === 'string' ? job.errorCode : undefined,
@@ -719,7 +733,7 @@ export function decodeRestoreProjectionResponse(
 export function decodeTradovateSyncJobResponse(
   value: unknown,
   connectionId: string
-): TradovateSyncJob {
+): BrokerSyncJob {
   const record = asRecord(value);
   if (
     record?.schemaVersion !== 'tradovate-sync-job-v2' ||
@@ -727,7 +741,7 @@ export function decodeTradovateSyncJobResponse(
   ) {
     throw new Error('Invalid Tradovate sync response scope');
   }
-  const job = normalizeTradovateJob(record.job);
+  const job = normalizeBrokerSyncJob(record.job);
   if (job.connectionId !== connectionId) {
     throw new Error('Invalid Tradovate sync response scope');
   }
@@ -738,7 +752,7 @@ export function decodeTradovateAccountSetupResponse(
   value: unknown,
   connectionId: string
 ): {
-  job: TradovateSyncJob | null;
+  job: BrokerSyncJob | null;
   created: boolean;
 } {
   const record = asRecord(value);
@@ -749,7 +763,7 @@ export function decodeTradovateAccountSetupResponse(
   ) {
     throw new Error('Invalid Tradovate account setup response');
   }
-  const job = record.job ? normalizeTradovateJob(record.job) : null;
+  const job = record.job ? normalizeBrokerSyncJob(record.job) : null;
   if (job && job.connectionId !== connectionId) {
     throw new Error('Invalid Tradovate account setup response scope');
   }
@@ -763,7 +777,7 @@ export function decodeTradovateJobResponse(
   value: unknown,
   connectionId: string,
   jobId: string
-): TradovateSyncJob {
+): BrokerSyncJob {
   const record = asRecord(value);
   if (
     record?.schemaVersion !== 'tradovate-job-v2' ||
@@ -771,7 +785,7 @@ export function decodeTradovateJobResponse(
   ) {
     throw new Error('Invalid Tradovate job response scope');
   }
-  const job = normalizeTradovateJob(record.job);
+  const job = normalizeBrokerSyncJob(record.job);
   if (job.id !== jobId || job.connectionId !== connectionId) {
     throw new Error('Invalid Tradovate job response scope');
   }
@@ -893,7 +907,7 @@ function normalizeTradovateConnection(value: unknown): TradovateConnection {
   });
   const jobIds = new Set<string>();
   const jobs = connection.jobs.map((item) => {
-    const job = normalizeTradovateJob(item);
+    const job = normalizeBrokerSyncJob(item);
     if (job.connectionId !== id || jobIds.has(job.id)) {
       throw new Error('Invalid Tradovate job status response');
     }
@@ -1017,4 +1031,160 @@ export function decodeTradovateClientDiagnosticsResponse(value: unknown): void {
   if (record?.schemaVersion !== 'tradovate-client-diagnostics-v2') {
     throw new ApiError('Invalid Tradovate client diagnostics response', 502);
   }
+}
+
+function normalizeRithmicAccount(
+  value: unknown,
+  connectionId: string
+): RithmicConnectionAccount {
+  const account = asRecord(value);
+  if (
+    !account ||
+    account.connectionId !== connectionId ||
+    typeof account.syncEnabled !== 'boolean'
+  ) {
+    throw new Error('Invalid Rithmic account status response');
+  }
+  return {
+    id: scopedIdentifier(account.id, 'account identity', 'Rithmic'),
+    connectionId,
+    canonicalAccountId: scopedIdentifier(
+      account.canonicalAccountId,
+      'canonical account identity',
+      'Rithmic'
+    ),
+    displayName:
+      typeof account.displayName === 'string' ? account.displayName : undefined,
+    currency:
+      typeof account.currency === 'string' ? account.currency : undefined,
+    syncEnabled: account.syncEnabled,
+    lastSuccessfulSyncAt:
+      nullableProjectionTimestamp(
+        account.lastSuccessfulSyncAt,
+        'account lastSuccessfulSyncAt'
+      ) ?? undefined,
+  };
+}
+
+function normalizeRithmicConnection(value: unknown): RithmicConnection {
+  const connection = asRecord(value);
+  if (
+    !connection ||
+    typeof connection.displayName !== 'string' ||
+    connection.displayName.trim() === '' ||
+    typeof connection.systemName !== 'string' ||
+    connection.systemName.trim() === '' ||
+    typeof connection.status !== 'string' ||
+    connection.status.trim() === '' ||
+    connection.status !== connection.status.trim() ||
+    !Array.isArray(connection.accounts) ||
+    !Array.isArray(connection.jobs)
+  ) {
+    throw new Error('Invalid Rithmic connection response');
+  }
+  const id = scopedIdentifier(connection.id, 'connection identity', 'Rithmic');
+  const accountIds = new Set<string>();
+  const canonicalAccountIds = new Set<string>();
+  const accounts = connection.accounts.map((item) => {
+    const account = normalizeRithmicAccount(item, id);
+    if (
+      accountIds.has(account.id) ||
+      canonicalAccountIds.has(account.canonicalAccountId)
+    ) {
+      throw new Error('Invalid Rithmic account status response');
+    }
+    accountIds.add(account.id);
+    canonicalAccountIds.add(account.canonicalAccountId);
+    return account;
+  });
+  const jobIds = new Set<string>();
+  const jobs = connection.jobs.map((item) => {
+    const job = normalizeBrokerSyncJob(item, 'Rithmic');
+    if (job.connectionId !== id || jobIds.has(job.id)) {
+      throw new Error('Invalid Rithmic job status response');
+    }
+    jobIds.add(job.id);
+    return job;
+  });
+  return {
+    id,
+    displayName: connection.displayName.trim(),
+    systemName: connection.systemName.trim(),
+    status: connection.status,
+    connectedAt:
+      nullableProjectionTimestamp(connection.connectedAt, 'connectedAt') ??
+      undefined,
+    lastSuccessfulSyncAt:
+      nullableProjectionTimestamp(
+        connection.lastSuccessfulSyncAt,
+        'connection lastSuccessfulSyncAt'
+      ) ?? undefined,
+    lastErrorCode:
+      nullableProjectionString(connection.lastErrorCode, 'lastErrorCode') ??
+      undefined,
+    lastErrorAt:
+      nullableProjectionTimestamp(connection.lastErrorAt, 'lastErrorAt') ??
+      undefined,
+    accounts,
+    jobs,
+  };
+}
+
+export function decodeRithmicConnectionsResponse(
+  value: unknown
+): RithmicConnections {
+  const record = asRecord(value);
+  if (
+    record?.schemaVersion !== 'rithmic-connections-v1' ||
+    !Array.isArray(record.connections)
+  ) {
+    throw new Error('Invalid Rithmic connections response');
+  }
+  const connectionIds = new Set<string>();
+  const connections = record.connections.map((item) => {
+    const connection = normalizeRithmicConnection(item);
+    if (connectionIds.has(connection.id)) {
+      throw new Error('Invalid Rithmic connections response');
+    }
+    connectionIds.add(connection.id);
+    return connection;
+  });
+  return { schemaVersion: 'rithmic-connections-v1', connections };
+}
+
+export function decodeRithmicSyncJobResponse(
+  value: unknown,
+  connectionId: string
+): BrokerSyncJob {
+  const record = asRecord(value);
+  if (
+    record?.schemaVersion !== 'rithmic-sync-job-v1' ||
+    record.connectionId !== connectionId
+  ) {
+    throw new Error('Invalid Rithmic sync response scope');
+  }
+  const job = normalizeBrokerSyncJob(record.job, 'Rithmic');
+  if (job.connectionId !== connectionId) {
+    throw new Error('Invalid Rithmic sync response scope');
+  }
+  return job;
+}
+
+export function decodeRithmicJobResponse(
+  value: unknown,
+  connectionId: string,
+  jobId: string
+): BrokerSyncJob {
+  const record = asRecord(value);
+  if (
+    record?.schemaVersion !== 'rithmic-job-v1' ||
+    record.connectionId !== connectionId
+  ) {
+    throw new Error('Invalid Rithmic job response scope');
+  }
+  const job = normalizeBrokerSyncJob(record.job, 'Rithmic');
+  if (job.id !== jobId || job.connectionId !== connectionId) {
+    throw new Error('Invalid Rithmic job response scope');
+  }
+  return job;
 }
