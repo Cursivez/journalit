@@ -1,7 +1,7 @@
 <div align="center">
 
 <img
-  src="https://github.com/user-attachments/assets/ab7232d4-1352-4658-a284-86029c0246f1"
+  src="https://raw.githubusercontent.com/Cursivez/journalit/main/assets/readme/journalit-logo.png"
   alt="Journalit"
   width="420"
   style="max-width: 100%; height: auto;"
@@ -30,7 +30,7 @@ Nhật ký giao dịch ưu tiên lưu trữ cục bộ cho Obsidian.
 
 </div>
 
-![Giao diện Home](https://github.com/user-attachments/assets/8ef38dac-c932-4530-aa06-4a382e5ba827)
+![Giao diện Home](https://raw.githubusercontent.com/Cursivez/journalit/main/assets/readme/home-view.png)
 
 ## Cài đặt
 
@@ -65,39 +65,39 @@ Trang cộng đồng: https://community.obsidian.md/plugins/journalit
 
 ### Bảng điều khiển giao dịch
 
-![Bảng điều khiển giao dịch](https://github.com/user-attachments/assets/ebb402c3-c8da-41dc-9317-73f6a50d0a93)
+![Bảng điều khiển giao dịch](https://raw.githubusercontent.com/Cursivez/journalit/main/assets/readme/trading-dashboard.png)
 
 ### Setup
 
-![Tổng quan setup](https://github.com/user-attachments/assets/09976a8b-8500-4629-b790-6cb834c84b24)
+![Tổng quan setup](https://raw.githubusercontent.com/Cursivez/journalit/main/assets/readme/setup-overview.png)
 
-![Các cặp setup](https://github.com/user-attachments/assets/bb7b66fc-db1b-4e1c-a174-32bc6bea49c6)
+![Các cặp setup](https://raw.githubusercontent.com/Cursivez/journalit/main/assets/readme/setup-pairs.png)
 
-![So sánh setup](https://github.com/user-attachments/assets/8eaf5509-cf27-4e73-8c8c-2a9cf0da6c43)
+![So sánh setup](https://raw.githubusercontent.com/Cursivez/journalit/main/assets/readme/setup-comparison.png)
 
 ### Trình tạo bố cục
 
-![Trình tạo bố cục](https://github.com/user-attachments/assets/48bcc59a-2b17-4478-98b3-dce8677cca47)
+![Trình tạo bố cục](https://raw.githubusercontent.com/Cursivez/journalit/main/assets/readme/layout-builder.png)
 
-![Trình tạo bố cục](https://github.com/user-attachments/assets/66744217-b3b1-46ec-bb65-ca2debcd72da)
+![Trình tạo bố cục](https://raw.githubusercontent.com/Cursivez/journalit/main/assets/readme/layout-builder-preview.png)
 
 ### Nhật ký giao dịch & Thư viện ảnh
 
-![Nhật ký giao dịch](https://github.com/user-attachments/assets/09586646-50a2-4fd1-970f-83e926cab19a)
+![Nhật ký giao dịch](https://raw.githubusercontent.com/Cursivez/journalit/main/assets/readme/trade-log.png)
 
-![Thư viện ảnh](https://github.com/user-attachments/assets/1bb496ab-a165-43c6-83f0-500565f2a1c3)
+![Thư viện ảnh](https://raw.githubusercontent.com/Cursivez/journalit/main/assets/readme/gallery.png)
 
 ### Trade Import
 
-![Trade Import](https://github.com/user-attachments/assets/68121823-8b24-4024-b676-a4199c81f207)
+![Trade Import](https://raw.githubusercontent.com/Cursivez/journalit/main/assets/readme/trade-import.png)
 
 ### Bảng điều khiển tài khoản
 
-![Bảng điều khiển tài khoản](https://github.com/user-attachments/assets/dbd1cd69-3f8b-4af8-883c-460dbfb8944b)
+![Bảng điều khiển tài khoản](https://raw.githubusercontent.com/Cursivez/journalit/main/assets/readme/account-dashboard.png)
 
 ### Trang tài khoản
 
-![Trang tài khoản](https://github.com/user-attachments/assets/8eeb0f2d-a8d8-412e-bf23-cb21e3a0401b)
+![Trang tài khoản](https://raw.githubusercontent.com/Cursivez/journalit/main/assets/readme/account-pages.png)
 
 ## Broker được hỗ trợ
 
