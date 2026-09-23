@@ -25,6 +25,7 @@ interface TradeFrontmatter extends TradeFormData {
   canonicalTradeVersion?: number;
   canonicalProjectionGeneration?: string;
   canonicalAccountId?: string;
+  canonicalAccountIdentity?: 'broker' | 'name';
   canonicalBroker?: string;
   canonicalAccountDisplayName?: string;
   canonicalProjectionSchemaVersion?: number;

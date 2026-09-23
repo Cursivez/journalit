@@ -20,6 +20,9 @@ import {
 import { CheckCircle2, Circle, Edit } from '../../shared/icons/ObsidianIcon';
 import { calculateSnapshotRealizedPnL } from '../../../utils/unrealizedPnl';
 import type { PriceMoveValueInput } from '../../../utils/priceMoveValue';
+import { Notice } from 'obsidian';
+import { openReviewPeriod } from '../../../services/tradeOperations/reviewNavigation';
+import type { ReviewPeriodLevel } from '../../../services/tradeOperations/periodGrouping';
 
 const HEADER_WEEKDAY_FORMATTER = new Intl.DateTimeFormat(undefined, {
   weekday: 'short',
@@ -36,32 +39,13 @@ type HeaderReviewNavigationTarget =
   | 'quarterly'
   | 'yearly';
 
-function shouldAutoCreateReviewOnNavigation(
-  target: HeaderReviewNavigationTarget,
-  plugin: ReturnType<typeof usePlugin> | null
-): boolean {
-  switch (target) {
-    case 'drc':
-      return plugin?.settings?.drc?.autoCreateDRCOnNavigation ?? true;
-    case 'weekly':
-      return (
-        plugin?.settings?.weekly?.autoCreateWeeklyReviewOnNavigation ?? true
-      );
-    case 'monthly':
-      return (
-        plugin?.settings?.monthly?.autoCreateMonthlyReviewOnNavigation ?? true
-      );
-    case 'quarterly':
-      return (
-        plugin?.settings?.quarterly?.autoCreateQuarterlyReviewOnNavigation ??
-        true
-      );
-    case 'yearly':
-      return (
-        plugin?.settings?.yearly?.autoCreateYearlyReviewOnNavigation ?? true
-      );
-  }
-}
+const REVIEW_PERIOD_LEVEL_BY_TARGET = {
+  drc: 'days',
+  weekly: 'weeks',
+  monthly: 'months',
+  quarterly: 'quarters',
+  yearly: 'years',
+} satisfies Record<HeaderReviewNavigationTarget, ReviewPeriodLevel>;
 
 function getOrdinalSuffix(day: number): string {
   const mod100 = day % 100;
@@ -337,88 +321,24 @@ export const TradeHeader: React.FC<TradeHeaderProps> = ({
 
       isNavigatingRef.current = true;
       try {
-        let reviewPath: string | null = null;
-        const canCreateMissingReview = shouldAutoCreateReviewOnNavigation(
-          target,
-          plugin
+        const outcome = await openReviewPeriod(
+          plugin,
+          REVIEW_PERIOD_LEVEL_BY_TARGET[target],
+          tradeDate,
+          { createNewLeaf: false }
         );
-
-        switch (target) {
-          case 'drc': {
-            const drcService = plugin.serviceManager
-              ? await plugin.serviceManager.getDRCService()
-              : plugin.drcService;
-            reviewPath = drcService.getDRCNotePath(tradeDate);
-            if (!(await plugin.app.vault.adapter.exists(reviewPath))) {
-              if (!canCreateMissingReview) return;
-              await drcService.createDRC(tradeDate);
-            }
-            break;
-          }
-          case 'weekly': {
-            const weeklyService = plugin.serviceManager
-              ? await plugin.serviceManager.getWeeklyReviewService()
-              : plugin.weeklyReviewService;
-            reviewPath = weeklyService.getWeeklyReviewPath(tradeDate);
-            if (!(await plugin.app.vault.adapter.exists(reviewPath))) {
-              if (!canCreateMissingReview) return;
-              await weeklyService.createWeeklyReview(tradeDate);
-            }
-            break;
-          }
-          case 'monthly': {
-            const monthlyService = plugin.serviceManager
-              ? await plugin.serviceManager.getMonthlyReviewService()
-              : plugin.monthlyReviewService;
-            reviewPath = monthlyService.getMonthlyReviewPath(tradeDate);
-            if (!(await plugin.app.vault.adapter.exists(reviewPath))) {
-              if (!canCreateMissingReview) return;
-              await monthlyService.createMonthlyReview(tradeDate);
-            }
-            break;
-          }
-          case 'quarterly': {
-            const quarterlyService =
-              await plugin.serviceManager.getQuarterlyReviewService();
-            reviewPath =
-              await quarterlyService.getQuarterlyReviewPath(tradeDate);
-            if (!(await plugin.app.vault.adapter.exists(reviewPath))) {
-              if (!canCreateMissingReview) return;
-              await quarterlyService.createQuarterlyReview(tradeDate);
-            }
-            break;
-          }
-          case 'yearly': {
-            const yearlyService =
-              await plugin.serviceManager.getYearlyReviewService();
-            reviewPath = await yearlyService.getYearlyReviewPath(tradeDate);
-            if (!(await plugin.app.vault.adapter.exists(reviewPath))) {
-              if (!canCreateMissingReview) return;
-              await yearlyService.createYearlyReview(tradeDate);
-            }
-            break;
-          }
+        if (outcome === 'creation-disabled') {
+          new Notice(t('trade-handoff.review.creation-disabled'));
+        } else if (outcome === 'failed') {
+          new Notice(t('trade-handoff.review.open-failed'));
         }
-
-        if (!reviewPath) return;
-
-        if (plugin.openFile) {
-          await plugin.openFile(reviewPath, false);
-          return;
-        }
-
-        await plugin.app.workspace.openLinkText(
-          reviewPath,
-          sourcePath || '',
-          false
-        );
       } catch (error) {
         console.error('[TradeHeader] Failed to navigate to review:', error);
       } finally {
         isNavigatingRef.current = false;
       }
     },
-    [plugin, sourcePath, tradeDate]
+    [plugin, tradeDate]
   );
 
   const handleReviewNavigationKeyDown = React.useCallback(

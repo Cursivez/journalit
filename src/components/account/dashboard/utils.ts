@@ -374,13 +374,7 @@ export function groupAccountsByType(
   return result;
 }
 
-
-export function formatAccountType(type: string): string {
-  return type
-    .split('_')
-    .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-    .join(' ');
-}
+export { formatAccountTypeLabel as formatAccountType } from '../../../utils/accountTypeLabel';
 
 
 export function calculateAccountAge(createdDate: Date): string {
@@ -597,7 +591,10 @@ export function formatDrawdownRemaining(
 }
 
 
-export function calculateTotalCosts(account: AccountData): number {
+export function calculateTotalCosts(
+  account: AccountData,
+  asOf: Date = new Date()
+): number {
   if (!account.monthlyCost || account.monthlyCost <= 0) {
     return 0;
   }
@@ -621,7 +618,7 @@ export function calculateTotalCosts(account: AccountData): number {
     }
   } else {
     
-    endDate = new Date();
+    endDate = asOf;
   }
 
   

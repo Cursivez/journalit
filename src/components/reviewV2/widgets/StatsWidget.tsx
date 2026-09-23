@@ -788,10 +788,14 @@ function shiftRangeByDays(
   end: Date,
   days: number
 ): CachedReviewData['dateRange'] {
-  const offsetMs = days * 24 * 60 * 60 * 1000;
+  
+  const shiftedStart = new Date(start);
+  const shiftedEnd = new Date(end);
+  shiftedStart.setDate(shiftedStart.getDate() + days);
+  shiftedEnd.setDate(shiftedEnd.getDate() + days);
   return {
-    start: new Date(start.getTime() + offsetMs),
-    end: new Date(end.getTime() + offsetMs),
+    start: shiftedStart,
+    end: shiftedEnd,
   };
 }
 

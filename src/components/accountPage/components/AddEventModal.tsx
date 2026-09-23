@@ -38,12 +38,19 @@ interface EventData {
   description: string;
 }
 
+interface AddEventInitialValues {
+  type: TransactionType;
+  amount?: number;
+  description?: string;
+}
+
 interface AddEventModalProps {
   app: App;
   plugin: JournalitPlugin;
   accountName: string;
   onClose: () => void;
   onSave: () => void;
+  initial?: AddEventInitialValues;
 }
 
 interface AddEventConfirmationOptions {
@@ -173,7 +180,7 @@ const getCurrentLocalDateForInput = () => {
 
 const AddEventModalContent: React.FC<
   AddEventModalProps & { onModalClose: () => void }
-> = ({ app, plugin, accountName, onSave, onModalClose }) => {
+> = ({ app, plugin, accountName, onSave, onModalClose, initial }) => {
   const [isSaving, setIsSaving] = useState(false);
   const { currency: globalCurrency } = useCurrency();
 
@@ -195,10 +202,10 @@ const AddEventModalContent: React.FC<
 
   
   const [eventData, setEventData] = useState({
-    type: TransactionType.DEPOSIT,
-    amount: '',
+    type: initial?.type ?? TransactionType.DEPOSIT,
+    amount: initial?.amount !== undefined ? initial.amount.toFixed(2) : '',
     date: getCurrentLocalDateForInput(),
-    description: '',
+    description: initial?.description ?? '',
   });
 
   const handleSave = async () => {
@@ -459,7 +466,8 @@ export function openAddEventModal(
   app: App,
   plugin: JournalitPlugin,
   accountName: string,
-  onSave: () => void
+  onSave: () => void,
+  initial?: AddEventInitialValues
 ): void {
   const modal = new AddEventModal({
     app,
@@ -467,6 +475,7 @@ export function openAddEventModal(
     accountName,
     onClose: () => {}, 
     onSave,
+    ...(initial ? { initial } : {}),
   });
   modal.open();
 }

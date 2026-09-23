@@ -3,6 +3,101 @@
 import type { Lang } from './en';
 
 const zh: Lang = {
+  'account.profiles.correction-title': '目录勘误',
+  'account.profiles.correction-source': '规则来源',
+  'account.profiles.correction-period': '受影响的历史',
+  'account.profiles.correction-guide':
+    '目录勘误需经您批准后才会重新计算受影响的历史。',
+  'account.profiles.correction-history': '勘误历史',
+  'account.profiles.correction-stale': '账户历史已更改。请重新打开审核。',
+  'account.profiles.correction-result': '硬性规则评估',
+  'account.profiles.no-hard-breach': '未发现硬性违规',
+  'account.profiles.correction-consent': '重新计算历史',
+  'account.profiles.correction-details': '详情',
+  'account.profiles.correction-apply': '应用修正',
+  'account.profiles.purchase-date': '最初购买日期',
+  'account.profiles.save-purchase': '保存购买日期',
+  'account.profiles.purchase-needed': '输入最初购买日期以核实这些条款。',
+  'account.profiles.purchase-excluded': '此购买继续适用原有条款。',
+  'account.profiles.purchase-uncertain': '适用性需由公司确认。规则保持不变。',
+  'account.profiles.initial-terms':
+    '这些条款自购买时或本阶段开始前适用。请单独检查初始设置；历史保持不变。',
+  'account.profiles.announcement': '公司公告',
+  'account.profiles.firm-effective': '公司确认的生效日期',
+  'account.profiles.published-date': '公告中的生效日期',
+  'account.profiles.applicability-checking': '正在核实适用性…',
+  'account.profiles.no-matching-phase': '此配置没有匹配的阶段。',
+  'account.profiles.history-unchanged': '此前历史保持不变。',
+  'account.profiles.notice-title': '挑战配置有更新',
+  'account.profiles.notice-description':
+    '来源配置与已保存的配置不同。账户规则尚未更改。',
+  'account.profiles.review-changes': '审核更改',
+  'account.profiles.check-failed': '无法检查规则更新。',
+  'account.profiles.retry': '重试',
+  'account.profiles.source-changed':
+    '审核期间来源配置已更改。请重新打开审核后再应用。',
+  'account.profiles.retain': '保留当前规则',
+  'account.profiles.retain-help':
+    '保留账户规则并忽略此次来源更改。后续规则更改仍可再次提醒。',
+  'account.profiles.comparison-help':
+    '仅显示差异。展开规则可查看字段。本地自定义也可能造成差异。',
+  'account.profiles.added': '新增',
+  'account.profiles.removed': '移除',
+  'account.profiles.changed': '已更改',
+  'account.profiles.not-configured': '未配置',
+  'account.profiles.no-rule-changes': '此阶段的规则和提款政策没有差异。',
+  'account.profiles.accept': '应用更新',
+  'account.profiles.cached': '正在使用缓存配置；无法核实最新规则。',
+  'account.profiles.guide':
+    '依据已公布或公司确认的适用条款审核规则变更。按提示填写最初购买日期。在编辑账户的我的公司配置中保存模板。',
+  'account.profiles.account-phase': '账户阶段',
+  'account.profiles.choose': '选择已保存的配置',
+  'account.profiles.completed': '已完成阶段保留原有规则。',
+  'account.profiles.confirm': '这些规则适用于我的账户。',
+  'account.profiles.currency': '应用前请选择与配置一致的账户币种。',
+  'account.profiles.current': '账户当前规则',
+  'account.profiles.custom-transition': '自定义过渡条款',
+  'account.profiles.cycle-start': '出金周期开始时间（本地时间）',
+  'account.profiles.delete-help': '删除此配置？已使用它的账户不会改变。',
+  'account.profiles.effective': '生效时间（本地时间）',
+  'account.profiles.error': '无法保存配置。请检查数值后重试。',
+  'account.profiles.floor': '过渡时的回撤底线',
+  'account.profiles.history': '规则历史',
+  'account.profiles.history-help':
+    '旧规则会保留。请通过审核配置更新进行修改；为保护历史记录，直接编辑已锁定。',
+  'account.profiles.incoming': '新配置规则',
+  'account.profiles.independent':
+    '配置保存在本地库中。应用后创建独立的账户快照；保存新版本不会改变现有账户。',
+  'account.profiles.keep-help':
+    '勾选的规则保留本地值，不使用同类新规则。取消勾选以接受新值。新规则类型将被添加。',
+  'account.profiles.keep-local': '保留我的规则：',
+  'account.profiles.keep-payout': '保留当前出金政策',
+  'account.profiles.library': '我的公司配置',
+  'account.profiles.locked': '回撤底线已锁定',
+  'account.profiles.missing': '此已保存配置已不存在。',
+  'account.profiles.peak': '保留的峰值余额',
+  'account.profiles.review': '审核配置更新',
+  'account.profiles.link-source': '关联公司配置',
+  'account.profiles.save-new': '另存为新配置',
+  'account.profiles.save-revision': '保存所选配置的新版本',
+  'account.profiles.source-phase': '来源配置阶段',
+  'account.profiles.transition-help':
+    '未提供已验证的过渡默认值。请输入公司确认的底线、峰值和周期开始时间，并标记为自定义。阶段利润和累计出金次数保留；旧交易继续使用原有规则。',
+  'account.profiles.transition-source': '公司确认或参考资料',
+  'account.profiles.unknown-baseline':
+    '此旧账户没有原始来源快照。请逐项审核差异；无法自动识别本地修改。',
+  'account.profiles.update-available':
+    '配置差异需要审核。账户仍使用已保存规则。',
+  'account.profiles.up-to-date':
+    '此阶段使用最近审核的配置定义；本地修改仍保持独立。',
+  'widget.mfeScatter.name': 'MFE 与已实现盈亏',
+  'widget.mfeScatter.description': '已平仓交易的最大有利变动与已实现净盈亏对比',
+  'widget.mfeScatter.y': '已实现盈亏（{unit}）',
+  'widget.mfeScatter.winners': '盈利',
+  'widget.mfeScatter.losers': '亏损',
+  'widget.mfeScatter.breakeven': '保本',
+  'widget.mfeScatter.empty': '没有具备此单位有效 MFE 的已平仓交易。',
+
   'trade.broker-synced-at': '券商同步于 {date}',
   'trade-sync.tradovate.status.connecting': '正在连接',
   'trade-sync.tradovate.status.setup-required': '需要设置账户',
@@ -29,6 +124,8 @@ const zh: Lang = {
   'trade-sync.tradovate.reconciliation-issues': '{count} 个对账问题',
   'trade-sync.tradovate.website-connection-description':
     '在 Journalit.co 上安全连接或重新授权 Tradovate，然后返回此处选择账户并同步此 vault。',
+  'trade-sync.tradovate.paused-website-description':
+    '此 Tradovate 连接已暂停。请前往 Journalit.co 管理、查看或恢复连接。',
   'trade-sync.tradovate.plugin-sync-description':
     '一次同步会获取最新的 Tradovate 活动，并将生成的交易写入此 vault。',
   'trade-sync.tradovate.connect': '连接',
@@ -61,6 +158,87 @@ const zh: Lang = {
   'trade-sync.tradovate.recovery-confirm':
     '将 {count} 条交易笔记恢复到 {account}？',
 
+  'trade-sync.ctrader.status.setup-required': '需要设置账户',
+  'trade-sync.ctrader.status.connecting': '正在连接',
+  'trade-sync.ctrader.status.paused': '已暂停',
+  'trade-sync.ctrader.status.reauthorization-required': '需要重新授权',
+  'trade-sync.ctrader.status.deleting': '正在删除云端数据',
+  'trade-sync.ctrader.status.error': '连接错误',
+  'trade-sync.ctrader.sync-complete-connection': '{connection} 同步已完成。',
+  'trade-sync.ctrader.sync-partial-connection':
+    '{connection} 同步完成，但存在问题。',
+  'trade-sync.ctrader.sync-all': '全部同步',
+  'trade-sync.ctrader.sync-all-complete':
+    '已同步 {succeeded}/{total} 个 cTrader 连接。',
+  'trade-sync.ctrader.sync-all-partial':
+    '已同步 {succeeded}/{total} 个 cTrader 连接。请检查存在问题的连接。',
+  'trade-sync.ctrader.connect-another': '连接另一个 cTrader 账户',
+  'trade-sync.ctrader.no-connections':
+    '请先在 Journalit.co 连接 cTrader 账户，然后在此处配置并同步。',
+  'trade-sync.ctrader.claimed-by-connection':
+    '此账户已通过 {connection} 启用同步。切换前请先在该连接中停用同步。',
+  'trade-sync.ctrader.claim-conflict':
+    '另一个 cTrader 连接已取得此账户的同步权限。请检查刷新后的连接卡片再重试。',
+  'trade-sync.ctrader.reconciliation-issues': '{count} 个对账问题',
+  'trade-sync.ctrader.website-connection-description':
+    '在 Journalit.co 上安全连接或重新授权 cTrader，然后返回此处选择账户并同步此 vault。',
+  'trade-sync.ctrader.plugin-sync-description':
+    '一次同步会获取最新的 cTrader 活动，并将生成的交易写入此 vault。',
+  'trade-sync.ctrader.connect': '连接',
+  'trade-sync.ctrader.manage-connection': '管理连接',
+  'trade-sync.ctrader.setup-guide': '设置指南',
+  'trade-sync.ctrader.setup-and-sync': '完成设置并同步',
+  'trade-sync.ctrader.sync-to-vault': '同步',
+  'trade-sync.ctrader.discovery-description':
+    'Journalit 需要发现 cTrader 连接中可用的 Demo 和 Live 账户。',
+  'trade-sync.ctrader.discover-accounts': '发现 cTrader 账户',
+  'trade-sync.ctrader.discovering': '正在发现账户…',
+  'trade-sync.ctrader.discovery-failed':
+    'cTrader 账户发现失败。请重试，或在 Journalit.co 上管理连接。',
+  'trade-sync.ctrader.sync-account': '纳入同步',
+  'trade-sync.ctrader.history-label': '初始历史记录',
+  'trade-sync.ctrader.history-all': '所有可用历史记录',
+  'trade-sync.ctrader.history-recent': '最近 90 天',
+  'trade-sync.ctrader.history-custom': '从指定日期开始',
+  'trade-sync.ctrader.history-new': '仅新交易',
+  'trade-sync.ctrader.start-date': '开始日期',
+  'trade-sync.ctrader.mapping-required':
+    '为每个启用的 cTrader 账户选择一个本地 vault 账户。',
+  'trade-sync.ctrader.custom-date-required':
+    '为每个自定义历史记录选择开始日期。',
+  'trade-sync.ctrader.recovery-title': '恢复缺失的交易笔记',
+  'trade-sync.ctrader.recovery-count': '{count} 条交易笔记可恢复',
+  'trade-sync.ctrader.recovery-select-account':
+    '请先选择本地账户再恢复交易笔记。',
+  'trade-sync.ctrader.recovery-confirm':
+    '将 {count} 条交易笔记恢复到 {account}？',
+  'trade-sync.oauth.remap.title': 'Change account',
+  'trade-sync.oauth.remap.message':
+    'Use {newAccount} for existing notes too? Otherwise, only future broker updates will use it.',
+  'trade-sync.oauth.remap.update-notes': 'Update notes',
+  'trade-sync.oauth.remap.future-only': 'Future updates only',
+  'trade-sync.oauth.remap.unavailable':
+    'Account remapping is unavailable. Update the Journalit server and try again.',
+  'trade-sync.oauth.remap.restore-in-progress':
+    'Wait for Restore to finish, then try again.',
+  'trade-sync.oauth.remap.operation-conflict':
+    'That remap request conflicted with an earlier attempt. Try again.',
+  'trade-sync.oauth.remap.account-busy':
+    'This account is busy synchronizing. Retry shortly.',
+  'trade-sync.oauth.remap.account-unavailable':
+    'This account is no longer available. Refresh and try again.',
+  'trade-sync.oauth.remap.preserved-conflicts':
+    '{count} existing conflict(s) were left unchanged.',
+  'trade-sync.oauth.remap.notes-pending':
+    '{count} existing note update(s) are still pending. Synchronize again to retry.',
+  'trade-sync.source.ctrader': 'cTrader',
+  'trade-sync.source.ctrader.description':
+    'Synchronize cTrader trades in the cloud and project them into this vault.',
+  'trade-sync.ctrader.status-failed': 'Unable to load cTrader status.',
+  'trade-sync.ctrader.last-sync': 'Last sync',
+  'trade-sync.ctrader.pending-acks': '{count} 个本地 ACK 待处理',
+  'trade-sync.ctrader.never': 'Never',
+
   
   
   
@@ -82,25 +260,23 @@ const zh: Lang = {
   'command.open-account-dashboard': '打开账户',
   'command.open-trade-log': '打开交易日志',
   'command.open-home': '打开主页',
+  'command.open-settings': '打开设置',
   'command.open-position-size-calculator': '打开仓位大小计算器',
 
   
 
   
-  'command.rebuild-graph-links': '重建 Journalit 图谱链接',
   'command.replay-onboarding': '重新播放新手引导',
   'command.replay-current-view-guide': '重播当前视图指南',
   'command.open-release-notes': '查看更新日志',
 
   
   'command.open-layout-builder': '打开布局编辑器',
-  'command.switch-template': '切换模板',
 
   
   
   
   'template.switch-title': '切换布局',
-  'template.switch-trade-title': '切换交易布局',
   'template.switch-review-title': '切换{type}布局',
 
   'template.review-type.drc': '每日报告卡',
@@ -244,6 +420,9 @@ const zh: Lang = {
   'form.layout.item.trade-currency': '交易货币 / 汇率',
   'form.layout.item.trade-currency-desc':
     '以其他货币录入交易，并可选择手动指定汇率。',
+  'form.layout.item.exchange-desc': '股票和加密货币交易的交易所字段。',
+  'form.layout.item.direct-pnl-toggle-desc':
+    '将单笔交易切换为直接输入总盈亏，而不是填写出场价格。',
   'form.layout.manual-fx-rate': '覆盖汇率',
   'form.layout.result-r': 'R 结果',
   'form.layout.entry-time': '交易时间',
@@ -252,6 +431,8 @@ const zh: Lang = {
   
   
   'form.field.account': '账户',
+  'form.field.prop-challenge-phase': '阶段：{name}',
+  'form.field.prop-challenge-phase.none': '此时没有阶段',
   'form.field.asset-type': '资产类型',
   'form.field.direction': '方向',
   'form.field.direction.long': '做多',
@@ -266,6 +447,15 @@ const zh: Lang = {
   'form.field.take-profit-short': 'TP',
   'form.field.target-price': 'Target Price',
   'form.field.close-percent': 'Close %',
+  'form.field.close-size': '平仓数量',
+  'form.placeholder.close-size': '0.5',
+  'form.layout.take-profit-unit': '止盈平仓数量单位',
+  'form.layout.take-profit-unit-percent': 'Close %',
+  'form.layout.take-profit-unit-size': '数量',
+  'trade.validation.take-profit-size-number': '止盈数量必须是有效数字。',
+  'trade.validation.take-profit-size-positive': '止盈数量必须大于 0。',
+  'trade.validation.take-profit-total-size-range':
+    '止盈数量总和不能超过仓位大小。',
   'form.field.risk-amount': '风险金额',
   'form.field.profit-loss': '盈亏',
   'form.field.total-pnl': '总盈亏',
@@ -542,6 +732,7 @@ const zh: Lang = {
   
 
   'notice.login-success': '登录成功!',
+  'notice.pro-access-ready': 'PRO 权限已就绪。',
 
   'notice.logout-success': '已成功退出登录',
   'notice.hotkey-set': '快捷键已设置：{hotkey}',
@@ -578,7 +769,6 @@ const zh: Lang = {
   
   'notice.error.open-journalit': '无法打开Journalit。请尝试重新加载Obsidian。',
   'notice.error.open-drc': '无法打开DRC:{error}',
-  'notice.error.open-dashboard': 'Failed to open dashboard: {error}',
   'notice.error.open-trade-log': 'Failed to open Trade Log: {error}',
   'notice.error.open-csv-import': 'Failed to open Trade Import: {error}',
   'notice.error.open-weekly-review': '无法打开周度回顾:{error}',
@@ -593,10 +783,6 @@ const zh: Lang = {
   'notice.guide.no-guide-for-view': '当前视图尚未注册指南（{viewType}）。',
   'notice.guide.replay-failed': '无法启动该指南，请重试。',
   'notice.guide.replay-started': '已为当前视图重新启动指南。',
-  'notice.graph-links.rebuild-complete':
-    '图谱链接已重建：已更新 {updated} 个，未更改 {unchanged} 个，需要处理 {conflicted} 个。',
-  'notice.graph-links.rebuild-failed':
-    '无法重建 Journalit 图谱链接。请查看控制台了解详情。',
   'notice.error.open-layout-builder': '无法打开布局编辑器：{error}',
   'notice.error.switch-template': '切换布局失败：{error}',
   'notice.error.no-active-file': '没有活动文件。请先打开一个笔记。',
@@ -669,6 +855,9 @@ const zh: Lang = {
   'tradelog.guide.sorting.title': 'Click column headers to sort the table',
   'tradelog.guide.sorting.description':
     'In Trades view, click a sortable column header to reorder the table. For example, click Net P&L to sort by your biggest win and biggest loss.',
+  'tradelog.guide.gallery-mode.title': '还有图片画廊',
+  'tradelog.guide.gallery-mode.description':
+    '在此切换模式，以画廊方式浏览交易截图。首次打开时会有简短指南。',
   'tradelog.guide.multi-select.title': 'Turn on multi-select',
   'tradelog.guide.multi-select.description':
     'Click this button to select several trades at once. When multi-select is on, row clicks select trades instead of opening them.',
@@ -730,6 +919,8 @@ const zh: Lang = {
   'home.guide.filters.title': 'These buttons change what your widgets show',
   'home.guide.filters.description':
     'Use these to switch the time period, trade type, or account so your Home widgets show the data you want to look at.',
+  'home.guide.settings.title': 'Journalit 设置始终触手可及',
+  'home.guide.settings.description': '使用此按钮可直接打开 Journalit 设置。',
   'home.guide.customize.title': 'Turn on edit mode to customise Home',
   'home.guide.customize.description':
     'Click this button to start customising. Edit mode unlocks moving, resizing, removing, and adding widgets.',
@@ -743,12 +934,12 @@ const zh: Lang = {
   'home.guide.move-and-resize.title': 'Move and resize your widgets',
   'home.guide.widget-picker.title': 'Add widgets here',
   'home.guide.widget-picker.description':
-    'This picker lets you add more widgets and bring back quick links that you previously hid.',
+    '添加组件、恢复快捷链接，或添加账户和交易设置快捷方式。',
   'home.guide.move-and-resize.description':
     'This is the main area you can rearrange in edit mode. Drag widgets to move them, or drag a widget from its bottom-right corner to resize it.',
-  'home.guide.add-widget.title': 'Add widgets or bring back hidden quick links',
+  'home.guide.add-widget.title': '向首页添加项目',
   'home.guide.add-widget.description':
-    'Click Add Widget to open the picker, where you can add more widgets and restore quick links that you previously hid.',
+    '打开“添加小组件”以添加组件、快捷链接或账户和交易设置快捷方式。',
   'home.guide.save-layout.title': 'Save your layout when you are done',
   'home.guide.save-layout.description':
     'When you are happy with the layout, click this button to save your changes and leave edit mode.',
@@ -804,7 +995,6 @@ const zh: Lang = {
   'tradelog.empty.submessage': '开始创建交易笔记,它们将显示在您的交易日志中。',
   'tradelog.processing': '正在处理交易数据...',
   'tradelog.node.file-not-found': '未找到交易文件:{path}',
-  'tradelog.node.no-review-available': '{type}没有可用的复盘:{id}',
   'tradelog.node.expand': '展开',
   'tradelog.node.collapse': '折叠',
   'tradelog.node.navigate-to-review': '前往{type}复盘',
@@ -1121,6 +1311,7 @@ const zh: Lang = {
   'dashboard.filter.accounts.select-all': '全选',
 
   'dashboard.filter.accounts.none-found': '未找到账户',
+  'dashboard.filter.accounts.phase-now': '至今',
 
   
   'dashboard.filter.tags.all': '所有标签',
@@ -1613,7 +1804,7 @@ const zh: Lang = {
 
   'form.section.custom-fields-empty-title': '还没有高级字段。',
   'form.section.custom-fields-empty-desc':
-    '请在 设置 → 自定义 → 自定义交易字段 中创建自定义交易字段。',
+    '记录内置字段未涵盖的任何内容，例如交易时段、周期或形态评级。自定义字段会随每笔交易一起保存，并可成为交易记录中可排序的列。',
   'form.section.attachments': '附件',
   'form.field.asset-type.stock': '股票',
   'form.field.asset-type.options': '期权',
@@ -1627,7 +1818,9 @@ const zh: Lang = {
   'form.field.commission-type.fixed': '固定',
   'form.field.commission-type.percentage': '百分比(%)',
   'form.calculated': '已计算',
-  'form.account-empty-state.title': '请先创建账户,再添加交易',
+  'form.account-empty-state.title': '设置你的第一个账户',
+  'form.account-empty-state.description':
+    '账户用于记录余额，让 Journalit 能够计算收益、风险和回撤。创建账户只需要一个名称。',
   'form.account-empty-state.create-account': '创建账户',
   'form.account-empty-state.submit-disabled': '请先创建账户,再保存这笔交易。',
   'form.field.option-type': '期权类型',
@@ -1996,6 +2189,11 @@ const zh: Lang = {
   'account.settings.section.available-types.add-aria': '添加新账户类型',
   'account.settings.section.available-types.delete-aria': '删除{name}',
   'account.settings.section.available-types.empty': '未定义自定义账户类型。',
+  'account.settings.section.challenge-stages.title': '挑战阶段',
+  'account.settings.section.challenge-stages.desc':
+    '挑战达到该阶段时应用的账户类型。',
+  'account.settings.section.challenge-stages.no-change': '不更改',
+  'account.settings.section.challenge-stages.aria': '{stage} 的账户类型',
   'account.settings.section.inclusion.title': '仪表盘包含设置',
   'account.settings.section.inclusion.desc':
     '选择要包含在仪表盘计算中的账户类型。同时配置每种账户类型的出金是否计入总出金指标。',
@@ -2046,6 +2244,7 @@ const zh: Lang = {
   'account.create.success': '账户"{name}"创建成功',
   'account.create.error.name-required': '账户名称为必填项',
   'account.create.error.name-exists': '名为"{name}"的账户已存在',
+  'account.create.error.rule-incomplete': '每条启用的规则都需要大于零的数值',
   'account.create.error.balance-negative': '初始余额不能为负数',
   'account.create.error.invalid-live-balance': '实时余额无效',
   'account.create.error.drawdown-required': '启用回撤类型时必须填写回撤金额',
@@ -2116,6 +2315,121 @@ const zh: Lang = {
     'This account is currently the base for another copy account.',
   'account.copy-trading.base-account-is-copied-desc-secondary':
     'Base accounts cannot also be copy accounts.',
+  'account.prop-challenge.summary.status.archived': '已归档',
+  'account.prop-challenge.summary.status.hidden': '已隐藏',
+  'account.prop-challenge.actions.progress-to': '进入{phase}',
+  'account.prop-challenge.actions.progress': '进入下一阶段',
+  'account.prop-challenge.actions.mark-passed': '标记挑战通过',
+  'account.prop-challenge.actions.mark-failed': '标记为失败',
+  'account.prop-challenge.actions.archive': '归档挑战',
+  'account.prop-challenge.actions.reopen': '重新打开',
+  'account.prop-challenge.view-trades': '查看 {phase} 的交易',
+  'account.prop-challenge.actions.manual': '手动操作',
+  'account.prop-challenge.notice.failed-title': '{phase} 未通过',
+  'account.prop-challenge.notice.failed-description': '{date} 违反了{rule}',
+  'account.prop-challenge.notice.failed-manual': '已标记为未通过',
+  'account.prop-challenge.notice.keep-open': '保持开启',
+  'account.prop-challenge.notice.target-title': '已达到 {phase} 目标',
+  'account.prop-challenge.notice.target-description':
+    '已满足所有通过条件。进入 {next}？',
+  'account.prop-challenge.notice.breach-after-reached':
+    '在 {time} 达到目标后规则被打破。请设置过渡时间，以便这些交易不计入本阶段。',
+  'account.prop-challenge.notice.not-yet': '暂不',
+  'account.prop-challenge.notice.passed-title': '考核已通过',
+  'account.prop-challenge.notice.passed-description':
+    '已满足所有条件。将挑战标记为通过？',
+  'account.prop-challenge.notice.payout-title': '可出金：{amount}',
+  'account.prop-challenge.notice.payout-plan': '你的计划：出金 {amount}',
+  'account.prop-challenge.notice.record-payout': '记录出金',
+  'account.prop-challenge.notice.skip-cycle': '跳过本周期',
+  'account.prop-challenge.notice.payout-description': '出金',
+  'account.prop-challenge.notice.lost-title': '出金资格已失效',
+  'account.prop-challenge.notice.lost-description': '未满足：{requirements}',
+  'account.prop-challenge.notice.dismiss': '忽略',
+  'account.prop-challenge.notice.unknown-title': '新账户 {label}',
+  'account.prop-challenge.notice.unknown-description':
+    '自 {date} 起有 {count} 笔交易未分配到阶段。',
+  'account.prop-challenge.notice.unknown-description-one':
+    '自 {date} 起有 1 笔交易未分配到任何阶段。',
+  'account.prop-challenge.notice.same-phase': '同一阶段',
+  'account.prop-challenge.notice.not-now': '稍后再说',
+  'account.prop-challenge.notice.error': '无法更新提醒。',
+  'account.prop-challenge.notice.type-changed': '账户类型已设为 {accountType}',
+  'account.prop-challenge.payout.plan.title': '出金计划',
+  'account.prop-challenge.payout.plan.notify-minimum':
+    '可出金不少于时提醒（{currency}）',
+  'account.prop-challenge.payout.plan.withdrawal': '建议出金',
+  'account.prop-challenge.payout.plan.full': '全部金额',
+  'account.prop-challenge.payout.plan.percent': '可出金的百分比',
+  'account.prop-challenge.payout.plan.amount': '固定金额',
+  'account.prop-challenge.payout.plan.percent-invalid':
+    '请输入 1 到 100 之间的百分比。',
+  'account.prop-challenge.payout.plan.amount-invalid': '请输入大于零的金额。',
+  'account.prop-challenge.payout.plan.percent-value': '百分比',
+  'account.prop-challenge.payout.plan.amount-value': '金额（{currency}）',
+  'account.prop-challenge.payout.plan.save': '保存计划',
+  'account.prop-challenge.payout.plan.saved': '出金计划已保存。',
+  'account.prop-challenge.payout.plan.summary-notify': '≥ {amount} 时提醒',
+  'account.prop-challenge.payout.plan.summary-percent': '建议 {percent}%',
+  'account.prop-challenge.payout.plan.summary-amount': '建议 {amount}',
+  'account.prop-challenge.payout.plan.summary-full': '全额',
+  'account.prop-challenge.actions.error': '无法更新道具公司挑战。',
+  'account.prop-challenge.confirm.advance': '确认此阶段结果并继续挑战？',
+  'account.prop-challenge.confirm.advance-with-promotion':
+    'This will advance the challenge and change the account type to {accountType}.',
+  'account.prop-challenge.confirm.fail':
+    '将 {account} 标记为失败？挑战“{challenge}”将在{phase}结束。',
+  'account.prop-challenge.confirm.archive-failed':
+    '归档 {account}？挑战“{challenge}”已失败。账户将移至已归档。',
+  'account.prop-challenge.confirm.archive-passed':
+    '归档 {account}？挑战“{challenge}”已通过。账户将移至已归档。',
+  'account.prop-challenge.transition.route': '{account} · {from} → {to}',
+  'account.prop-challenge.transition.route-passed':
+    '{account} · {from} → 挑战通过',
+  'account.prop-challenge.confirm.reopen':
+    '重新打开 {account}？挑战“{challenge}”将回到{phase}。',
+  'account.prop-challenge.transition.time': '过渡时间',
+  'account.prop-challenge.transition.now': '现在',
+  'account.prop-challenge.transition.when-target-reached': '达到目标时',
+  'account.prop-challenge.transition.too-early':
+    '过渡时间不能早于该阶段的开始时间。',
+  'account.prop-challenge.costs.title': '一次性费用',
+  'account.prop-challenge.costs.description': '单独记录购买、重置和激活费用。',
+  'account.prop-challenge.costs.kind': '类型',
+  'account.prop-challenge.costs.kind.purchase': '购买',
+  'account.prop-challenge.costs.kind.reset': '重置',
+  'account.prop-challenge.costs.kind.activation': '激活',
+  'account.prop-challenge.costs.kind.other': '其他',
+  'account.prop-challenge.costs.date': '日期',
+  'account.prop-challenge.costs.amount': '金额',
+  'account.prop-challenge.costs.note': '备注（可选）',
+  'account.prop-challenge.costs.add': '添加费用',
+  'account.header.copies': '复制自',
+  'account.header.copied-by-more': '+{count} 个',
+  'account.header.created': '创建于：',
+  'account.summary.current-balance': '当前余额',
+  'account.summary.net-cash-flow': '净现金流',
+  'account.summary.payouts': '出金',
+  'account.performance.title': '绩效表现',
+  'account-page.guide.whats-new.cockpit.intro.title': '账户页面的新变化',
+  'account-page.guide.whats-new.cockpit.intro.description':
+    '账户分析现在从余额图表开始。图表下方是统一指标面板，紧接着显示自营挑战规则。',
+  'account-page.guide.whats-new.cockpit.cockpit.title':
+    '挑战规则位于绩效指标之后',
+  'account-page.guide.whats-new.cockpit.cockpit.description':
+    '对于自营账户，可在指标面板下方的规则标题中选择阶段，查看每项要求及其进度。生命周期操作仍位于旁边的菜单中。',
+  'account-page.guide.whats-new.cockpit.summary.title': '统一的指标面板',
+  'account-page.guide.whats-new.cockpit.summary.description':
+    '账户状态与详细表现现已共用图表下方的同一区域：先是余额、净盈亏和现金流，其余指标在同一网格中继续。',
+  'account-page.guide.whats-new.cockpit.risk.title': '唯一权威的风险来源',
+  'account-page.guide.whats-new.cockpit.risk.description':
+    '当挑战处于进行中、已通过或已失败时，仅显示其阶段规则，避免第二个回撤数字与之冲突。普通账户或已归档账户会重新显示通用风险。',
+  'account-page.guide.main.challenge.title': '一眼掌握挑战进度',
+  'account-page.guide.main.challenge.description':
+    '在统一指标面板下方，从规则标题中选择挑战阶段，然后查看每项要求的进度和状态。生命周期操作位于选择器旁边。',
+  'account-page.guide.main.summary.title': '一眼掌握账户状态',
+  'account-page.guide.main.summary.description':
+    '统一指标面板以余额、净盈亏、增长率、交易数、胜率和净现金流开始；自营账户显示的则是出金。',
   'account.edit.field.target-type': '目标类型',
   'account.edit.field.target-type-desc': '绝对值或百分比',
   'account.edit.field.target-percent': '目标 (%)',
@@ -2198,6 +2512,7 @@ const zh: Lang = {
 
   
   'account.header.title': '账户:{name}',
+  'account.header.back-to-dashboard': '返回仪表板',
   'account.header.add-event.aria': '添加入金/出金',
   'account.header.edit-account.aria': '编辑账户',
   'account.header.view-trades.aria': 'View trades in Trade Log',
@@ -2213,8 +2528,20 @@ const zh: Lang = {
     '发现{count}笔交易在账户创建日期之前',
   'account.header.warning.trades-before-creation.other':
     '发现{count}笔交易在账户创建日期之前',
+  'account.header.warning.trades-before-phase.one':
+    '发现{count}笔交易在第一阶段开始之前',
+  'account.header.warning.trades-before-phase.few':
+    '发现{count}笔交易在第一阶段开始之前',
+  'account.header.warning.trades-before-phase.many':
+    '发现{count}笔交易在第一阶段开始之前',
+  'account.header.warning.trades-before-phase.other':
+    '发现{count}笔交易在第一阶段开始之前',
+  'account.header.warning.earliest-trade-phase':
+    '最早交易日期:{date}。阶段开始之前的交易不计入挑战。',
+  'account.header.notice.phase-start-updated': '第一阶段开始时间已更改为{date}',
   'account.header.warning.earliest-trade':
     '最早交易日期:{date}。这可能导致余额计算不正确。',
+  'account.header.warning.fix-phase-start.aria': '修复第一阶段开始时间',
   'account.header.warning.fix-date.aria': '修复账户创建日期',
   'account.header.warning.fixing': '修复中...',
   'account.header.warning.fix-date': '修复日期',
@@ -2288,20 +2615,37 @@ const zh: Lang = {
   'account.transaction.deposit': '入金',
   'account.transaction.withdrawal': '出金',
   'account.transaction.click-to-edit': '点击编辑或删除此交易',
-  'account.transaction.description': '描述',
-  'account.transaction.balance-after': '交易后余额',
+  'account.transaction.edit-row-label': '编辑或删除此交易：{date}，{amount}',
 
   
-  'account.deposits-withdrawals.title': '入金与出金({count})',
+  'account.deposits-withdrawals.title': '入金与出金',
   'account.deposits-withdrawals.empty': '暂无手动入金或出金记录。',
   'account.deposits-withdrawals.empty-sub':
     '点击标题栏的 + 按钮添加您的第一笔交易。',
+  'account.deposits-withdrawals.summary':
+    '入金 {deposits} · 出金 {withdrawn} · 最近 {date}',
+  'account.payouts.title': '分润出金',
+  'account.payouts.summary': '{count} 笔出金 · {total} · 最近 {date}',
+  'account.payouts.summary-masked': '数值被隐藏时，支付记录同样隐藏',
+  'account.payouts.summary-one': '1 笔出金 · {total} · 最近 {date}',
+  'account.payouts.empty': '暂无分润出金记录',
+  'account.payouts.empty-sub': '点击标题栏的 + 按钮记录一笔出金。',
+  'account.ledger.column.date': '日期',
+  'account.ledger.column.type': '类型',
+  'account.ledger.column.payout': '出金',
+  'account.ledger.column.description': '说明',
+  'account.ledger.column.amount': '金额',
+  'account.ledger.column.balance-after': '结余',
 
   
   'account.chart.event.added': '账户已添加',
   'account.chart.event.archived': '账户已归档',
 
   
+  'account.balance-chart.drawdown-floor-off-scale':
+    '回撤下限 {value}（低 {distance}）',
+  'account.balance-chart.profit-target-off-scale':
+    '盈利目标 {value}（高 {distance}）',
   'account.balance-chart.empty': '未找到交易',
   'account.balance-chart.empty-sub': '该账户暂无交易活动',
 
@@ -2325,9 +2669,9 @@ const zh: Lang = {
   'account-page.guide.empty.add-event.description':
     'Use this button whenever money moves in or out of the account outside of normal trades.',
   'account-page.guide.empty.transactions.title':
-    'Deposits and withdrawals are tracked here',
+    'Cash movements are tracked here',
   'account-page.guide.empty.transactions.description':
-    'This section keeps a history of manual deposits and withdrawals. When it is empty, use Add Event to create the first one.',
+    'This section keeps a row-by-row record of manual deposits and withdrawals, shown as Payouts on a prop-challenge account. When it is empty, use Add Event to create the first one.',
   'account-page.guide.empty.trade-log.title': 'Linked trades will appear here',
   'account-page.guide.empty.trade-log.description':
     'Trades show up here when they are assigned to this account. Once you have linked trades, this page becomes your full account breakdown.',
@@ -2341,11 +2685,11 @@ const zh: Lang = {
   'account-page.guide.main.metrics.title':
     'These metrics summarise this account only',
   'account-page.guide.main.metrics.description':
-    'These numbers are calculated from trades linked to this account, so you can judge this account on its own.',
+    '统一指标面板显示利润因子、平均结果、盈利与亏损交易数、佣金、费用、已配置的一次性成本和预计定期账户成本。',
   'account-page.guide.main.risk.title':
     'Risk progress is tracked separately here',
   'account-page.guide.main.risk.description':
-    'Use this section to see drawdown usage and profit-target progress, especially for funded or evaluation accounts with hard rules.',
+    '此部分显示回撤和盈利目标进度。如果账户启用了交易考核挑战，当前阶段及其规则会显示在下方。',
   'account-page.guide.main.add-event.title':
     'Add Event records deposits and withdrawals',
   'account-page.guide.main.add-event.description':
@@ -2355,19 +2699,20 @@ const zh: Lang = {
   'account-page.guide.main.edit-account.description':
     'This is where you update the account details and risk rules if they change over time.',
   'account-page.guide.main.transactions.title':
-    'Deposits and withdrawals stay in their own section',
+    'Cash movements stay in their own section',
   'account-page.guide.main.transactions.description':
-    'Each entry here can be reviewed later, so you can separate cash movements from trading performance.',
+    'Each row records one cash movement with its amount and the balance after it, so you can separate cash from trading performance. On a prop-challenge account the same table is shown as numbered Payouts.',
   'account-page.guide.main.trade-log.title':
     'Linked trades open the actual trade note',
   'account-page.guide.main.trade-log.description':
-    'Click any linked trade to open the trade itself. This makes the account page the bridge between account-level review and individual trades.',
+    '打开交易日志并已选中此账户。在多阶段挑战中，按钮会跟随你正在查看的阶段；箭头可选择其他阶段或整个账户。',
 
   
   'account-dashboard.title': '账户',
   'account-dashboard.copy-badge.base': '基础',
   'account-dashboard.copy-badge.copy': '跟单',
   'account-dashboard.copy-badge.copied-by': '复制账户',
+  'account-dashboard.copy-badge.copies-tooltip-masked': '复制 {account}',
   'account-dashboard.copy-badge.copies-tooltip':
     '以 {multiplier}x 复制 {account}',
   'account-dashboard.error.init': '多次尝试后,账户页面服务仍未初始化',
@@ -2403,10 +2748,6 @@ const zh: Lang = {
   'account-dashboard.guide.main.intro.title': '这些是您的账户',
   'account-dashboard.guide.main.intro.description':
     'Use this page to compare accounts, watch totals across all accounts, and jump into a single account when you need more detail.',
-  'account-dashboard.guide.main.trade-filter.title':
-    'This filter changes the whole dashboard',
-  'account-dashboard.guide.main.trade-filter.description':
-    'Use this filter to switch the dashboard between regular trades, backtests, or both.',
   'account-dashboard.guide.main.aum-chart.title':
     'AUM means assets under management',
   'account-dashboard.guide.main.aum-chart.description':
@@ -2415,22 +2756,22 @@ const zh: Lang = {
     'These metrics summarise all visible accounts',
   'account-dashboard.guide.main.metrics.description':
     'Use these stats for a quick account-level snapshot before drilling into specific account types or specific accounts.',
-  'account-dashboard.guide.main.sections.title':
-    'Accounts are grouped by account type',
-  'account-dashboard.guide.main.sections.description':
-    'These sections help you compare similar accounts together. Each card is clickable and opens the full page for that account.',
+  'account-dashboard.guide.main.mode-switch.title':
+    '概览和挑战是同一批账户的两种视图',
+  'account-dashboard.guide.main.mode-switch.description':
+    '概览保留 AUM 图表和投资组合总计。切换到挑战可查看自营挑战的经济数据：通过率、成本、出金以及所有挑战账户的阶段瓶颈。',
   'account-dashboard.guide.main.create-account.title':
     'You can create another account from here at any time',
   'account-dashboard.guide.main.create-account.description':
     'Use this button whenever you want to add a new account to the dashboard.',
-  'account-dashboard.guide.main.settings.title':
-    'Settings control how this dashboard is organised',
-  'account-dashboard.guide.main.settings.description':
-    'Open dashboard settings to manage account types, what counts in totals, and the order of the sections.',
   'account-dashboard.guide.main.settings-types.title':
     'Settings can manage available account types',
   'account-dashboard.guide.main.settings-types.description':
     'Inside settings, you can add custom account types and remove old ones if your workflow changes.',
+  'account-dashboard.guide.main.settings-stages.title':
+    '挑战阶段可设置账户类型',
+  'account-dashboard.guide.main.settings-stages.description':
+    '选择挑战达到评估、模拟 funded 或真实 funded 时应用的账户类型。将某个阶段设为“不更改”即可保持当前账户类型。',
   'account-dashboard.guide.main.settings-inclusion.title':
     'Settings can change what counts in totals',
   'account-dashboard.guide.main.settings-inclusion.description':
@@ -2443,7 +2784,31 @@ const zh: Lang = {
   'account-dashboard.guide.main.open-account.title':
     'Open any account card to go deeper',
   'account-dashboard.guide.main.open-account.description':
-    'When you want the full breakdown for one account, open its card. The Account Page guide will take over there.',
+    '账户按类型分组，便于比较同类账户。打开任意卡片查看完整明细，账户页指南会在那里继续。',
+  'account-dashboard.guide.whats-new.prop-challenges.intro.title':
+    '新功能：多阶段 Prop 挑战',
+  'account-dashboard.guide.whats-new.prop-challenges.intro.description':
+    'Prop 挑战进度现已直接整合到账户仪表板中，并显示阶段带、挑战收支以及原有的账户分组。',
+  'account-dashboard.guide.whats-new.prop-challenges.enable.title':
+    '创建或编辑账户时启用跟踪',
+  'account-dashboard.guide.whats-new.prop-challenges.enable.description':
+    '在“创建账户”或“编辑账户”中启用 Prop 挑战跟踪。默认模板提供一个可重命名和调整的多阶段起点。',
+  'account-dashboard.guide.whats-new.prop-challenges.overview.title':
+    '快速查看挑战表现',
+  'account-dashboard.guide.whats-new.prop-challenges.overview.description':
+    '顶部记分卡汇总进行中的挑战、通过率、成本、出金和净额。洞察表格会比较阶段瓶颈；当你跟踪多家公司时，还会按自营交易公司比较表现。',
+  'account-dashboard.guide.whats-new.prop-challenges.ribbons.title':
+    '阶段带让每个挑战一目了然',
+  'account-dashboard.guide.whats-new.prop-challenges.ribbons.description':
+    'Prop 账户卡片会显示已完成、当前、待进行和失败阶段，并展示利润目标、回撤、单日亏损和交易天数进度。',
+  'account-dashboard.guide.whats-new.prop-challenges.mode.title':
+    '在投资组合与挑战分析之间切换',
+  'account-dashboard.guide.whats-new.prop-challenges.mode.description':
+    '选择“挑战”可查看汇总的成本效益、阶段洞察和多公司比较；“概览”则专注于 AUM 和投资组合指标。',
+  'account-dashboard.guide.whats-new.prop-challenges.account-page.title':
+    '转换后的账户仍保留在同一流程中',
+  'account-dashboard.guide.whats-new.prop-challenges.account-page.description':
+    '挑战晋级或转换为 funded 账户后，账户类型和阶段历史仍保持关联。打开卡片即可处理决策、生命周期操作并查看完整规则。',
   'account-dashboard.metrics.total-accounts': '账户总数',
   'account-dashboard.metrics.total-aum': '总资产管理规模',
   'account-dashboard.metrics.total-growth': '总增长',
@@ -2461,11 +2826,6 @@ const zh: Lang = {
   'account-dashboard.type-header.trade': '交易',
   'account-dashboard.type-header.trades': '交易',
   'account-dashboard.type-header.growth': '增长({percent})',
-
-  
-  'account-card.status.breached': '已爆仓',
-  'account-card.status.in-progress': '进行中',
-  'account-card.status.achieved': '已达成',
   'account-card.metric.trades': '交易',
   'account-card.metric.withdrawals': '出金',
   'account-card.metric.age': '账龄',
@@ -2474,6 +2834,11 @@ const zh: Lang = {
   'account-card.progress.not-set': '未设置',
   'account-card.footer.monthly': '月度:',
   'account-card.footer.total-costs': '总成本:',
+  'account.metrics.total-account-costs': '预计总成本',
+  'account.metrics.total-costs': '总成本',
+  'account.metrics.one-time-costs': '一次性成本',
+  'account.metrics.recurring-costs-to-date': '截至目前的定期成本',
+  'account.metrics.monthly-cost': '每月成本',
 
   
   
@@ -2645,10 +3010,10 @@ const zh: Lang = {
   
 
   
-  'home.aria.add-widget': '添加小组件',
   'home.aria.customize': '自定义',
 
   'home.aria.filter-trade-types': '筛选交易类型',
+  'home.aria.open-settings': '打开 Journalit 设置',
   'home.aria.save-layout': '保存布局',
   'home.button.add-widget': '添加小组件',
 
@@ -2671,6 +3036,7 @@ const zh: Lang = {
   'home.greeting.good-evening': '晚上好',
   'home.greeting.good-morning': '早上好',
   'home.greeting.good-to-see-you': '很高兴见到你',
+  'home.greeting.welcome': '欢迎使用 Journalit!',
   'home.greeting.hey': '嘿',
   'home.greeting.hey-there': '你好呀',
   'home.greeting.how-did-today-go': '今天怎么样?',
@@ -2684,8 +3050,9 @@ const zh: Lang = {
   'home.greeting.rise-and-shine': '早安,新的一天',
   'home.greeting.still-up': '还没睡?',
   'home.greeting.time-to-reflect': '复盘时间',
-  'home.greeting.welcome': '欢迎使用 Journalit!',
   'home.greeting.welcome-back': '欢迎回来',
+  'home.greeting.name-placeholder': '你的名字',
+  'home.greeting.edit-name-aria': '{name}。编辑显示名称',
   'home.greeting.winding-down': '准备休息了?',
   'home.subtitle.agenda-today': '今天有什么计划?',
   'home.subtitle.check-progress': '来看看你的进展',
@@ -2699,7 +3066,6 @@ const zh: Lang = {
   
   'home.quick-links.account-dashboard': '账户',
   'home.quick-links.add-trade': '添加交易',
-  'home.quick-links.all-hidden': '所有快捷链接已隐藏。使用"添加组件"恢复。',
   'home.quick-links.quick-import': 'Quick Import',
   'home.quick-links.csv-import': 'Trade Import',
   'home.quick-links.hide': '隐藏快捷链接',
@@ -2718,12 +3084,12 @@ const zh: Lang = {
   'home.quick-links.move-below': '将快捷链接移到组件下方',
 
   
-  'home.widget-selector.empty': '所有组件已添加',
+  'home.widget-selector.add-shortcut': '添加账户/交易设置快捷方式',
   'home.widget-selector.hint.close': 'esc 关闭',
   'home.widget-selector.hint.navigate': '↑↓ 导航',
   'home.widget-selector.hint.select': '↵ 选择',
   'home.widget-selector.restore': '恢复',
-  'home.widget-selector.section.quick-links': '已隐藏的快捷链接',
+  'home.widget-selector.section.quick-links': '快捷链接',
   'home.widget-selector.section.widgets': '组件',
   'home.widget-selector.title': '添加到首页',
 
@@ -2761,6 +3127,11 @@ const zh: Lang = {
   'home.widget.year-heatmap.description': '可视化展示您的交易活动',
   'home.widget.profit-target-widget.name': '盈利目标',
   'home.widget.profit-target-widget.description': '跟踪各账户的盈利目标进度',
+  'home.widget.eval-roi.name': '考核 ROI',
+  'home.widget.challenge-alerts.name': '挑战提醒',
+  'home.widget.challenge-alerts.description':
+    '需要处理的 Prop 挑战账户：未通过、已通过或可出金',
+  'home.widget.eval-roi.description': '各 Prop 挑战账户的考核费用与出金对比',
 
   
   'home.widget.getting-started.name': 'Getting Started',
@@ -2768,6 +3139,11 @@ const zh: Lang = {
     '帮助你添加交易历史并配置 Journalit 的清单',
   'home.widget.getting-started.progress': '{completed}/{total} completed',
   'home.widget.getting-started.progress.loading': 'Checking progress...',
+  'home.widget.getting-started.item.account.title': '设置你的交易账户',
+  'home.widget.getting-started.item.account.description':
+    '交易会记录到用于跟踪余额的账户中。没有账户就无法计算收益和回撤。',
+  'home.widget.getting-started.item.account.time': '15s',
+  'home.widget.getting-started.item.account.cta': '设置账户',
   'home.widget.getting-started.item.create.title': '导入你的交易历史',
   'home.widget.getting-started.item.create.description':
     '导入现有交易、连接 Trade Sync，或手动添加第一笔交易。',
@@ -2790,7 +3166,7 @@ const zh: Lang = {
   'home.widget.getting-started.item.sidebar.cta': '打开侧栏',
   'home.widget.getting-started.item.pro.title': 'Activate PRO',
   'home.widget.getting-started.item.pro.description':
-    'Enable Trade Import, MetaTrader sync, and AI mapping.',
+    '启用 Trade Import、Trade Sync 和经济日历。',
   'home.widget.getting-started.item.pro.time': '1 min',
   'home.widget.getting-started.item.pro.cta': 'Activate',
 
@@ -2880,6 +3256,28 @@ const zh: Lang = {
   'home.widget.profit-target.remaining': '剩余',
   'home.widget.profit-target.unable-to-load': '无法加载',
   'home.widget.profit-target.no-accounts': '暂无设置目标的账户',
+  'home.widget.eval-roi.title': '考核 ROI',
+  'home.widget.eval-roi.unable-to-load': '无法加载',
+  'home.widget.eval-roi.no-challenges': '暂无 Prop 挑战',
+  'home.widget.eval-roi.challenge-count': '{count} 个考核',
+  'home.widget.eval-roi.challenge-count-plural': '{count} 个考核',
+  'home.widget.eval-roi.net': '净额',
+  'home.widget.eval-roi.spent': '已花费',
+  'home.widget.eval-roi.payouts': '出金',
+  'home.widget.eval-roi.break-even': '盈亏平衡',
+  'home.widget.challenge-alerts.title': '挑战提醒',
+  'home.widget.challenge-alerts.unable-to-load': '无法检查挑战提醒',
+  'home.widget.challenge-alerts.empty': '暂无挑战提醒',
+  'home.widget.challenge-alerts.count': '{count} 条提醒',
+  'home.widget.challenge-alerts.count-plural': '{count} 条提醒',
+  'home.widget.challenge-alerts.more': '还有 {count} 条',
+  'home.widget.challenge-alerts.kind.failed': '未通过',
+  'home.widget.challenge-alerts.kind.target': '已达目标',
+  'home.widget.challenge-alerts.kind.passed': '已通过',
+  'home.widget.challenge-alerts.kind.payout': '可出金',
+  'home.widget.challenge-alerts.kind.lost': '出金资格失效',
+  'home.widget.challenge-alerts.kind.unknown-account': '新账户 {label}',
+  'home.widget.eval-roi.roi-aria': '考核费用回报率',
   'home.widget.drawdown.remaining': '剩余',
   'home.widget.drawdown.title': 'Drawdown Limit',
   'home.widget.drawdown.unable-to-load': '无法加载',
@@ -3714,17 +4112,7 @@ const zh: Lang = {
 
   'csv.results.complete': '导入完成',
   'csv.results.history-ready': '你的交易历史已准备就绪',
-  'csv.results.history-trades.one': '已恢复 {count} 笔交易',
-  'csv.results.history-trades.few': '已恢复 {count} 笔交易',
-  'csv.results.history-trades.many': '已恢复 {count} 笔交易',
-  'csv.results.history-trades.other': '已恢复 {count} 笔交易',
-  'csv.results.history-date-range': '{start} – {end}',
-  'csv.results.history-symbols.one': '{count} 个交易品种',
-  'csv.results.history-symbols.few': '{count} 个交易品种',
-  'csv.results.history-symbols.many': '{count} 个交易品种',
-  'csv.results.history-symbols.other': '{count} 个交易品种',
-  'csv.results.enrichment-note':
-    '导入的表现数据已可供查看。需要深入分析模式时，可以为近期交易补充策略、汇合因素和笔记。',
+  'csv.results.completed-with-issues': '导入完成，但存在问题',
   'csv.results.failed': '导入失败',
   'csv.results.success.one': '成功导入 {count} 笔交易到账户:{account}',
   'csv.results.success.few': '成功导入 {count} 笔交易到账户:{account}',
@@ -3741,7 +4129,6 @@ const zh: Lang = {
 
   'csv.results.broker': '券商:{broker}',
 
-  'csv.results.preview-header': '最近导入的交易(显示 {shown} / {total})',
   'csv.results.more-trades.one': '还有 {count} 笔交易...',
   'csv.results.more-trades.few': '还有 {count} 笔交易...',
   'csv.results.more-trades.many': '还有 {count} 笔交易...',
@@ -3778,8 +4165,7 @@ const zh: Lang = {
   
   
   'backend.title': '交易同步',
-  'backend.description':
-    '设置 MetaTrader (MT4) 和 Tradovate Trade Sync，自动保持 Vault 最新。',
+  'backend.description': '为受支持的经纪商设置 Trade Sync，自动保持仓库最新。',
 
   
 
@@ -3909,7 +4295,6 @@ const zh: Lang = {
   
   'settings.auth.feature.csv-import': 'Trade Import',
   'settings.auth.feature.ai-mapping': 'AI Trade Import 映射',
-  'settings.auth.feature.metatrader-sync': 'MetaTrader 同步',
   'settings.auth.feature.trade-sync': '交易同步',
   'settings.auth.feature.economic-calendar': '财经日历',
   'settings.auth.feature.basic-tracking': '基础交易追踪',
@@ -3932,7 +4317,6 @@ const zh: Lang = {
   'csv.button.delete-template': '删除模板',
 
   'csv.button.import-another': '导入另一个文件',
-  'csv.button.view-account': '查看表现',
 
   
 
@@ -4154,6 +4538,11 @@ const zh: Lang = {
   'settings.general.filter-recent-desc': '在最近文件部分仅显示 Journalit 文件',
   'settings.general.filter-recent-aria': '筛选最近项目为 Journalit 文件',
   'settings.general.filter-recent-toggled': '最近文件筛选已{status}',
+  'settings.general.home-widget-opacity': '小组件不透明度',
+  'settings.general.home-widget-opacity-desc':
+    '使用背景图片时的小组件背景：0% 为完全透明，100% 为完全不透明。应用于当前主题；浅色和深色主题的数值分别保存。',
+  'settings.general.home-widget-opacity-save-failed':
+    '无法保存小组件不透明度，请重试。',
   'settings.general.home-background': '主页背景图片',
   'settings.general.home-background-desc':
     '使用仓库中的图片，或从电脑选择图片并复制到仓库。',
@@ -4352,6 +4741,12 @@ const zh: Lang = {
   'settings.reviews.template-builder': '布局构建器',
   'settings.reviews.template-builder-desc': '创建和自定义笔记布局',
   'settings.reviews.open-builder': '打开布局构建器',
+  'settings.general.review-links-new-tab': '在新标签页中打开复盘小组件链接',
+  'settings.general.review-links-new-tab-desc':
+    '关闭后，链接会替换当前标签页。',
+  'settings.general.review-links-new-tab-aria':
+    '在新标签页中打开复盘小组件的笔记链接',
+  'settings.general.tab-behavior': '标签页行为',
   'settings.reviews.recurring-goals': '周期性目标',
   'settings.reviews.recurring-goals-desc': '每日或每周重复的目标',
   'settings.reviews.daily-goals': '每日目标',
@@ -4554,7 +4949,7 @@ const zh: Lang = {
     '映射到 {base}(使用 {base} 的规格)',
   'settings.customization.options.instrument.no-specs': '(未设置规格)',
   'settings.customization.custom-fields.description':
-    '创建在交易表单中显示的自定义字段。字段将保存到交易笔记的前置元数据中。',
+    '为每笔交易添加你自己的字段，例如交易时段、周期或形态评级。它们会显示在交易表单的“高级”标签页中，保存到交易笔记的 frontmatter，并可成为交易记录中可排序、可筛选的列。',
   'settings.customization.custom-fields.title': '自定义字段({count})',
   'settings.customization.custom-fields.manage-desc': '管理自定义交易表单字段',
   'settings.customization.custom-fields.type-dropdown': '下拉选择',
@@ -4566,7 +4961,7 @@ const zh: Lang = {
   'settings.customization.custom-fields.option-count.other': '{count}个选项',
   'settings.customization.custom-fields.no-fields': '未定义自定义字段',
   'settings.customization.custom-fields.no-fields-desc':
-    '添加自定义字段以收集额外的交易数据',
+    '先从一个你之后真的会复盘的字段开始，例如你交易的时段，或该形态与计划的吻合程度。',
   'settings.customization.custom-fields.add-new': '添加新字段',
 
   'settings.customization.custom-fields.edit-field-with-name':
@@ -4775,11 +5170,20 @@ const zh: Lang = {
     '{featureName} 是专业版功能。升级以解锁高级自动化和功能。',
   'upgrade.benefits-title': '专业版功能包括:',
   'upgrade.benefit.csv': '带 AI 列映射的 Trade Import',
-  'upgrade.benefit.templates': '无限自定义模板与模板分享',
-  'upgrade.benefit.trade-sync': 'MetaTrader (MT4) 和 Tradovate 交易同步',
+  'upgrade.benefit.economic-calendar': '自动导入每周事件的经济日历',
+  'upgrade.benefit.trade-sync': '受支持经纪商的 Trade Sync',
   'upgrade.benefit.multi-account': '多账户支持',
-  'upgrade.benefit.analytics': '高级分析与指标',
-  'upgrade.benefit.layouts': '自定义仪表盘布局',
+  'upgrade.prop-profiles.message-firms':
+    'Journalit 已备好 {count} 家自营交易公司的规则，可直接预填到你的挑战中。',
+  'upgrade.prop-profiles.message-firm':
+    'Journalit 已备好每个 {firm} 挑战的规则，可直接预填。',
+  'upgrade.prop-profiles.message':
+    'Journalit 已准备好各家自营交易公司的规则，可直接填入你的挑战。',
+  'upgrade.prop-profiles.benefits-title': 'Pro 帮你填好：',
+  'upgrade.benefit.prop.rules': '回撤与每日亏损上限，直接取自你所在公司的规则',
+  'upgrade.benefit.prop.payout': '出金门槛与资格条件',
+  'upgrade.benefit.prop.phases': '所选挑战的阶段目标与进度',
+  'upgrade.benefit.prop.updates': '公司修改规则时自动更新',
   'upgrade.trial-notice':
     '获取 2 周免费试用,可导入全部历史交易并无风险体验所有专业版功能。',
 
@@ -4814,12 +5218,13 @@ const zh: Lang = {
   'library.notice.template-not-found': '未找到布局',
   'library.notice.code-generated': '分享码已生成!',
   'library.error.export-failed': '导出布局失败',
+  'library.error.export-too-large': '此布局过大，无法导出为分享码。',
   'library.notice.copied': '分享码已复制到剪贴板!',
   'library.error.copy-failed': '复制到剪贴板失败',
   'library.title.import': '导入布局',
-  'library.desc.import': '粘贴 JRT-v1 分享码以导入其他用户的布局。',
+  'library.desc.import': '粘贴 JRT 分享码以导入其他用户的布局。',
   'library.label.share-code': '分享码',
-  'library.placeholder.import-code': '在此粘贴 JRT-v1-... 分享码',
+  'library.placeholder.import-code': '在此粘贴 JRT-... 分享码',
   'library.button.validating': '验证中...',
   'library.button.validate': '验证',
   'library.button.import': '导入布局',
@@ -4986,8 +5391,8 @@ const zh: Lang = {
   
   
   'onboarding.welcome.title': '欢迎使用 Journalit',
-  'onboarding.welcome.subtitle': '掌控你的交易数据。打造属于你的工作流程。',
-  'onboarding.welcome.cta': '开始使用',
+  'onboarding.welcome.subtitle': '一个存放在您设备上的交易日志。',
+  'onboarding.welcome.cta': '设置我的日志',
   'onboarding.welcome.chart.week': '第 {count} 周',
   'onboarding.view.title': 'Journalit 引导',
   'onboarding.wizard.skip-aria': '跳过此步骤',
@@ -4996,74 +5401,15 @@ const zh: Lang = {
   'onboarding.common.continue': '继续',
   'onboarding.common.close': '关闭',
 
-  'onboarding.features.feature.manual-entry.description':
-    '手动记录交易并完全掌控',
-
   'onboarding.features.badge.pro': 'PRO',
 
   
   
   
-  'onboarding.explore.title': 'Explore',
-  'onboarding.explore.subtitle':
-    'Journalit turns your vault into a full trading journal with dashboards, trade log, account tracking, and customisable layouts.',
-  'onboarding.explore.subtitle2':
-    'Designed to adapt to your workflow, not force you into ours.',
-  'onboarding.explore.tagline': 'Your journal, your rules.',
-  'onboarding.explore.section.out-of-box.title': 'Core views & tools',
-  'onboarding.explore.core.dashboard.label': '仪表盘',
-  'onboarding.explore.core.dashboard.description':
-    'Your performance at a glance - P&L, win rate, drawdowns, and more.',
-  'onboarding.explore.core.tradelog.label': 'Trade Log',
-  'onboarding.explore.core.tradelog.description':
-    'Browse trades by year/month/week/day and drill down instantly.',
-  'onboarding.explore.core.accounts.label': 'Account Tracking',
-  'onboarding.explore.core.accounts.description':
-    'Track multiple accounts and view account-specific performance pages.',
-  'onboarding.explore.core.layouts.label': 'Layout Builder',
-  'onboarding.explore.core.layouts.description':
-    'Customize dashboards and review layouts with widgets and templates.',
-  'onboarding.explore.imports.title': '导入与同步',
-
-  'onboarding.explore.imports.csv.label': 'Trade Import',
-  'onboarding.explore.imports.csv.description':
-    '免费预览受支持的交易历史文件并映射列。导入到你的库需要 Pro。',
-  'onboarding.explore.imports.trade-sync.label': 'Trade Sync',
-  'onboarding.explore.imports.trade-sync.description':
-    'Automatic trade syncing from MetaTrader (MT4) or Tradovate. Requires Pro.',
-
-  'onboarding.explore.cta.manual': 'Open Docs',
 
   
   
   
-  'onboarding.path.kicker': '你的交易历史',
-  'onboarding.path.title': '你是否已有要导入 Journalit 的交易？',
-  'onboarding.path.subtitle': '选择一个答案，我们会直接带你进入合适的下一步。',
-  'onboarding.path.option.manual.label': '没有，我要从头开始',
-  'onboarding.path.option.manual.description':
-    '打开“添加交易”表单并记录第一笔交易。',
-  'onboarding.path.option.csv.label': '有，我已有交易历史',
-  'onboarding.path.option.csv.description': '选择自动同步券商或导入文件。',
-  'onboarding.path.method.kicker': '导入你的历史',
-  'onboarding.path.method.title': '你想如何导入？',
-  'onboarding.path.method.subtitle': '选择与你的券商和导出文件相匹配的方式。',
-  'onboarding.path.option.trade-sync.label': '连接 MT4 或 Tradovate',
-  'onboarding.path.option.trade-sync.description':
-    '设置 Trade Sync，自动接收新的交易。',
-  'onboarding.path.option.import.label': '导入交易历史文件',
-  'onboarding.path.option.import.description':
-    '上传 CSV、Excel 或受支持的券商报告。',
-  'onboarding.path.option.import.badge': '免费预览',
-
-  'onboarding.manual.title': 'Journalit 已准备就绪',
-  'onboarding.manual.subtitle': '设置下方建议的快捷键，以便更快地记录交易。',
-  'onboarding.manual.subtitle-mobile': '每当你想记录交易时，请打开“添加交易”。',
-  'onboarding.manual.hotkey.title': '建议的快捷键',
-  'onboarding.manual.cta.change-hotkey': '设置快捷键',
-  'onboarding.manual.hit-hotkey':
-    '建议使用 {hotkey}。点击“设置快捷键”进行配置。',
-  'onboarding.manual.add-first-trade': '添加我的第一笔交易',
 
   'onboarding.features.graphic.syncing': '同步交易中...',
   'onboarding.features.graphic.complete': '同步完成',
@@ -5101,6 +5447,127 @@ const zh: Lang = {
   'onboarding.activation.success.title': '登录完成!',
 
   'onboarding.notice.complete-failed': '无法保存新手引导完成状态。请稍后再试。',
+  'onboarding.notice.completed': '您的日志已设置完成。新手引导已完成。',
+  'onboarding.familiarity.kicker': '快速提问',
+  'onboarding.familiarity.title': '您以前用过 Obsidian 吗？',
+  'onboarding.familiarity.subtitle':
+    'Journalit 运行在 Obsidian 内。如果您是新手，我们只展示必要的内容。',
+  'onboarding.familiarity.option.yes.label': '用过，我很熟悉',
+  'onboarding.familiarity.option.yes.description': '跳过入门介绍。',
+  'onboarding.familiarity.option.no.label': '没有，我是 Obsidian 新手',
+  'onboarding.familiarity.option.no.description':
+    '仅一个简短页面，无引导游览。',
+  'onboarding.orientation.kicker': 'Obsidian 新手',
+  'onboarding.orientation.title': '需要了解的四件事',
+  'onboarding.orientation.subtitle': '了解这些就足以使用 Journalit。',
+  'onboarding.orientation.inside.title': 'Journalit 运行在 Obsidian 内',
+  'onboarding.orientation.inside.body':
+    '无需先学习 Obsidian。当前页面就是一个 Journalit 视图。',
+  'onboarding.orientation.sidebar.title': '侧边栏用于导航',
+  'onboarding.orientation.sidebar.body':
+    '首页、仪表板、交易日志和复盘都在那里。',
+  'onboarding.orientation.sidebar.action': '显示侧边栏',
+  'onboarding.orientation.sidebar.action-mobile': '打开侧边栏',
+  'onboarding.orientation.sidebar.hint': '就在左侧。此页面保持打开。',
+  'onboarding.orientation.sidebar.hint-mobile':
+    '它会覆盖在此页面上。滑动或点击外部即可返回。',
+  'onboarding.orientation.tabs.title': '视图以标签页打开',
+  'onboarding.orientation.tabs.body': '就像这个一样。在顶部切换。',
+  'onboarding.orientation.privacy.title': '您的日志保存在您的设备上',
+  'onboarding.orientation.privacy.body':
+    '笔记、截图和复盘都是您自己的文件。只有导入或同步的交易会经过 Journalit 服务器。',
+  'onboarding.orientation.continue': '明白了',
+  'onboarding.data-source.kicker': '您的交易',
+  'onboarding.data-source.title': '您的交易现在在哪里？',
+  'onboarding.data-source.subtitle':
+    '您的历史记录是您优势的一部分。带上它，统计数据从第一天起就有意义，而不必等待数月积累新交易。',
+  'onboarding.data-source.option.broker.label': '在我的券商或平台上',
+  'onboarding.data-source.option.broker.description':
+    '连接它，或导入其导出文件。',
+  'onboarding.data-source.option.file.label': '在电子表格或文件中',
+  'onboarding.data-source.option.file.description':
+    'CSV、Excel 或 HTML 导出文件。',
+  'onboarding.data-source.option.fresh.label': '还没有，我从零开始',
+  'onboarding.data-source.option.fresh.description': '边交易边记录。',
+  'onboarding.data-source.option.sample.label': '还没有，先看看示例',
+  'onboarding.data-source.option.sample.description':
+    '在添加自己的交易之前，先浏览一个现成的日志。',
+  'onboarding.broker.kicker': '您的券商',
+  'onboarding.broker.title': '哪家券商或平台？',
+  'onboarding.awaiting.sign-in.action': '登录以继续',
+  'onboarding.awaiting.sign-in.body':
+    '请先登录或创建免费的 Journalit 账户。之后您的交易就会进入日志。',
+  'onboarding.broker.badge.sync': '自动同步',
+  'onboarding.broker.search': '搜索券商和平台',
+  'onboarding.broker.subtitle': '我们会选择最佳方式导入您的交易。',
+  'onboarding.broker.option.unlisted.label': '不在列表中',
+  'onboarding.broker.option.metatrader4.label': 'MetaTrader 4',
+  'onboarding.broker.option.metatrader5.label': 'MetaTrader 5',
+  'onboarding.broker.request.title': '还没有列出？告诉我们你的券商',
+  'onboarding.broker.request.body':
+    '新券商按需求添加。告诉我们是哪家（附导出样本更好）；在此之前可手动映射导出文件。',
+  'onboarding.broker.request.discord': '在 Discord 上申请',
+  'onboarding.broker.request.continue': '继续手动导入',
+  'onboarding.broker.loading': '正在检查支持的券商...',
+  'onboarding.broker.offline':
+    '无法加载完整列表。您仍可连接受支持的券商或导入文件。',
+  'onboarding.personalise.kicker': '设置您的日志',
+  'onboarding.personalise.title': '几个快速选择',
+  'onboarding.personalise.subtitle': '我们会根据您的回答个性化 Journalit。',
+  'onboarding.personalise.style.question': '您如何交易？',
+  'onboarding.personalise.style.scalping': '每天很多笔交易',
+  'onboarding.personalise.style.intraday': '每天几笔，不隔夜',
+  'onboarding.personalise.style.swing': '持仓数天或数周',
+  'onboarding.personalise.style.position': '持仓数周或数月',
+  'onboarding.personalise.account.question': '什么类型的账户？',
+  'onboarding.personalise.account.personal': '个人',
+  'onboarding.personalise.account.practice': '模拟或练习',
+  'onboarding.personalise.account.prop': '自营公司挑战或已获资金',
+  'onboarding.personalise.asset.question': '您主要交易什么？',
+  'onboarding.personalise.asset.stock': '股票',
+  'onboarding.personalise.asset.futures': '期货',
+  'onboarding.personalise.asset.forex': '外汇',
+  'onboarding.personalise.asset.crypto': '加密货币',
+  'onboarding.personalise.asset.options': '期权',
+  'onboarding.personalise.asset.mixed': '混合',
+  'onboarding.first-trade.kicker': '即将完成',
+  'onboarding.first-trade.title': '添加您的第一笔交易',
+  'onboarding.first-trade.subtitle':
+    '您的日志已就绪。记录一笔交易，Journalit 就会开始工作。',
+  'onboarding.first-trade.cta': '添加我的第一笔交易',
+  'onboarding.first-trade.sample': '用示例数据探索',
+  'onboarding.preparing-sample.title': '正在准备示例日志',
+  'onboarding.preparing-sample.body':
+    '只需几秒钟。写入笔记期间 Obsidian 可能略有卡顿。',
+  'onboarding.preparing-sample.starting': '正在开始…',
+  'onboarding.preparing-sample.hint': '随时可以通过角落的标记移除示例日志。',
+  'onboarding.preparing-sample.failed.title': '无法创建示例日志',
+  'onboarding.preparing-sample.failed.body': '可以重试，或选择其他方式开始。',
+  'onboarding.preparing-sample.retry': '重试',
+  'onboarding.sample-exploring.kicker': '示例日志',
+  'onboarding.sample-exploring.title': '你正在浏览示例日志',
+  'onboarding.sample-exploring.body':
+    '慢慢来。退出示例后，我们会从这里继续：个性化你自己的日志并添加第一笔交易。',
+  'onboarding.sample-exploring.exit': '退出示例并继续',
+  'onboarding.sample-exploring.failed.title': '无法恢复示例日志',
+  'onboarding.sample-exploring.failed.body':
+    '退出示例以清除残留内容，然后继续设置你自己的日志。',
+  'onboarding.awaiting.kicker': '等待您的第一批交易',
+  'onboarding.awaiting.first-sync.title': '完成券商连接',
+  'onboarding.awaiting.first-sync.body':
+    '请在设置 > Trade Sync 中完成连接。第一批交易同步后，此设置页面会自动关闭。',
+  'onboarding.awaiting.first-sync.action': '打开 Trade Sync',
+  'onboarding.awaiting.first-import.title': '导入您的文件',
+  'onboarding.awaiting.first-import.body':
+    '请在 Trade Import 标签页中完成导入。第一批交易导入后，此设置页面会自动关闭。',
+  'onboarding.awaiting.first-import.action': '打开 Trade Import',
+  'onboarding.awaiting.first-trade.title': '保存您的第一笔交易',
+  'onboarding.awaiting.first-trade.body':
+    '第一笔交易保存后，此设置页面会自动关闭。',
+  'onboarding.awaiting.first-trade.action': '添加交易',
+  'onboarding.awaiting.change-route': '选择其他方式',
+  'onboarding.notice.personalise-failed':
+    '无法应用您的设置选择。您可以稍后在设置中调整。',
   'onboarding.notice.trade-sync-open-failed': '无法打开 Trade Sync。请重试。',
   'onboarding.notice.skip-failed': '无法保存跳过新手引导。请稍后再试。',
 
@@ -5124,6 +5591,18 @@ const zh: Lang = {
   'navigation.edit-mode.hide-item': '隐藏导航项',
   'navigation.edit-mode.restore-section': '已隐藏项目',
   'navigation.edit-mode.restore': '恢复',
+  'navigation.items.nav-settings': '设置',
+  'navigation.shortcuts.add': '添加快捷方式',
+  'navigation.shortcuts.remove': '移除快捷方式',
+  'navigation.shortcuts.close': '关闭快捷方式选择器',
+  'navigation.shortcuts.search': '搜索账户和交易策略',
+  'navigation.shortcuts.accounts': '账户',
+  'navigation.shortcuts.setups': '交易策略',
+  'navigation.shortcuts.empty': '没有可用的账户或交易策略',
+  'navigation.shortcuts.unavailable': '不可用',
+  'navigation.shortcuts.added': '已添加',
+  'navigation.shortcuts.parent-required':
+    '隐藏此导航项目前，请先移除其快捷方式。',
   'navigation.items.nav-home': '首页',
   'navigation.items.nav-dashboard': '仪表盘',
   'navigation.items.nav-trade-log': '交易日志',
@@ -5415,8 +5894,11 @@ const zh: Lang = {
 
   'calendar.aria.open-daily-review': '打开 {date} 的每日复盘',
   'calendar.aria.open-weekly-review': '打开 {date} 的每周复盘',
+  'calendar.aria.open-monthly-review': '打开 {date} 的月度复盘',
+  'calendar.aria.open-quarterly-review': '打开 {date} 的季度复盘',
 
   'csv.mapper.aria.map-column': '映射列 {header}',
+  'trade-import.error.file-empty': '此文件为空。请重新导出文件后再试。',
   'trade-import.error.file-too-large':
     'Selected file exceeds the Trade Import size limit',
   'trade-import.error.file-type-unsupported':
@@ -5510,7 +5992,7 @@ const zh: Lang = {
   'trade-import.label.template-actions': 'Template actions',
   'trade-import.template.none': 'No template',
   'trade-import.label.account': 'Account',
-  'trade-import.label.broker': 'Broker',
+  'trade-import.label.broker': '导出来源 / 平台',
   'trade-import.label.asset-type': 'Asset type',
   'trade-import.asset.stock': 'Stock',
   'trade-import.asset.options': 'Options',
@@ -5559,21 +6041,44 @@ const zh: Lang = {
   'trade-import.preview.failed.message': '未能从此文件生成任何待导入交易。',
   'trade-import.preview.failed.guidance':
     '请检查列映射、日期格式、所选工作表和标题行，以及下方的无效值。',
+  'trade-import.preview.tradovate-performance.title': 'Tradovate 报告不正确',
+  'trade-import.preview.tradovate-performance.message':
+    '这似乎是 Tradovate 的 Performance 导出。Journalit 需要导入 Orders 报告，才能准确重建您的成交记录。请在 Tradovate 中前往 Reports > Orders 并下载 CSV。',
+  'trade-import.preview.tradovate-performance.guide': '查看 Tradovate 导出指南',
+  'trade-import.preview.metatrader-statement.title':
+    '不支持的 MetaTrader 对账单',
+  'trade-import.preview.metatrader-statement.message':
+    'Journalit 会导入原始的 MetaTrader 账户历史报告。请将 MetaTrader 设置为英文，打开 Account History / History，选择 Save as Report，然后上传未经编辑或转换的原始 .html 或 .htm 文件。',
+  'trade-import.preview.metatrader-statement.guide': '查看 MetaTrader 导出指南',
+  'trade-import.preview.tradingview-export.title': 'TradingView 导出文件不正确',
+  'trade-import.preview.tradingview-export.message':
+    'Journalit 需要 TradingView 模拟交易的 Order History / History CSV。请勿使用 Account History、图表数据、策略导出或其他 TradingView CSV 文件。',
+  'trade-import.preview.tradingview-export.guide': '查看 TradingView 导出指南',
+  'trade-import.source-recovery.deepcharts.title':
+    '此文件看起来是 DeepCharts 导出文件',
+  'trade-import.source-recovery.deepcharts.rithmic-message':
+    '即使账户通过 Rithmic 执行交易，该文件仍来自 DeepCharts。请使用 DeepCharts，让带正负号的 Quantity 正确判断多头或空头。',
+  'trade-import.source-recovery.deepcharts.manual-message':
+    '请使用 DeepCharts 导入器。DeepCharts 通过 Quantity 的正负号记录方向，因此不要将 Quantity 映射为手动方向字段。',
+  'trade-import.source-recovery.deepcharts.switch': '切换到 DeepCharts',
+  'trade-import.source-recovery.deepcharts.guide': '查看 DeepCharts 导出指南',
+  'trade-import.source-recovery.motivewave.title':
+    '此文件看起来是 MotiveWave 成交执行导出文件',
+  'trade-import.source-recovery.motivewave.message':
+    '请使用 MotiveWave，以便 Journalit 将执行记录正确配对为完整交易。',
+  'trade-import.source-recovery.motivewave.switch': '切换到 MotiveWave',
+  'trade-import.source-recovery.motivewave.guide': '查看 MotiveWave 导出指南',
+  'quick-import.message.source-mismatch':
+    'Journalit 检测到不同的导出来源。请在 Trade Import 中检查并切换来源，无需重新上传文件。',
   'trade-import.preview.no-eligible':
     '文件解析成功，但没有符合导入条件的新增或更新交易。请查看下方的重复项和分类详情。',
-  'trade-import.preview.upgrade.title': '预览已准备就绪',
-  'trade-import.preview.upgrade.description.one':
-    '激活 PRO 后，可将 {count} 笔交易添加到你的仓库中。',
-  'trade-import.preview.upgrade.description.few':
-    '激活 PRO 后，可将 {count} 笔交易添加到你的仓库中。',
-  'trade-import.preview.upgrade.description.many':
-    '激活 PRO 后，可将 {count} 笔交易添加到你的仓库中。',
-  'trade-import.preview.upgrade.description.other':
-    '激活 PRO 后，可将 {count} 笔交易添加到你的仓库中。',
-  'trade-import.preview.upgrade.free-limit':
-    '免费预览每小时包含 {count} 次分析和 {count} 次预览。',
-  'trade-import.preview.upgrade.free-storage-limit':
-    '免费预览最多可同时存储 {count} 笔交易。',
+  'trade-import.pro-gate.title.one': '{count} 笔交易可导入',
+  'trade-import.pro-gate.title.few': '{count} 笔交易可导入',
+  'trade-import.pro-gate.title.many': '{count} 笔交易可导入',
+  'trade-import.pro-gate.title.other': '{count} 笔交易可导入',
+  'trade-import.pro-gate.subtitle':
+    '激活 PRO 即可将它们作为交易笔记写入你的仓库。',
+  'trade-import.pro-gate.cta': '激活 PRO',
   'trade-import.preview.diagnostics': '查看详情（{count}）',
   'trade-import.preview.affected-rows': '受影响的行：{count}',
   'trade-import.table.status': 'Status',
@@ -5681,7 +6186,7 @@ const zh: Lang = {
     '卡片用关键指标、状态、最近交易日期和小型表现趋势总结每个设置。',
   'setups.guide.open-detail.title': '打开设置页面',
   'setups.guide.open-detail.description':
-    '打开一张设置卡片，查看包含图表、上下文、剧本资料和执行规则的专属页面。',
+    '准备好后，打开一个策略卡片查看其页面，那里会有一段简短的指南。',
   'setups.guide.detail-performance.title': '详情表现',
   'setups.guide.detail-performance.description':
     'Performance 标签显示该设置随时间的图表和关键指标，包括 P&L、胜率、期望值和回撤。',
@@ -6016,6 +6521,9 @@ const zh: Lang = {
     'Could not create local account.',
   'trade-sync.import.notice.restore-failed':
     'Could not restore Trade Import account.',
+  'trade-sync.rate-limit.action.mapping': '账户映射',
+  'trade-sync.import.notice.rate-limited':
+    '{action}：请求过于频繁。请在 {seconds} 秒后重试。',
   'setups.view.loading': '正在加载设置…',
   'settings.general.copy-trading-pnl-toggled': 'Copy trading PnL is {status}',
   'setups.view.trade.unknown-instrument': '未知品种',
@@ -6080,6 +6588,28 @@ const zh: Lang = {
   'session-mode.ended.action.import-trades': '导入交易',
   'session-mode.ended.action.add-trade-manually': '手动添加交易',
   'session-mode.ended.action.open-drc': '打开 DRC',
+  'session-log.session-group.unplanned': '计划外 @ {time}',
+  'session-mode.unplanned.name': '计划外交易时段',
+  'session-mode.unplanned.start': '开始计划外交易时段',
+  'session-mode.unplanned.stop': '结束时段',
+  'session-mode.unplanned.badge': '计划外',
+  'session-mode.unplanned.status.live': '{time} 开始 · 已进行 {elapsed}',
+  'session-mode.unplanned.ended.summary':
+    '计划外交易时段 · {start}–{end} · {duration}',
+  'session-mode.unplanned.modal.title': '开始计划外交易时段',
+  'session-mode.unplanned.modal.description':
+    '当前不在你计划的交易时段内。此时段将在每日复盘中标记为计划外。请写下你现在交易的原因。',
+  'session-mode.unplanned.modal.reason-label': '原因',
+  'session-mode.unplanned.modal.reason-placeholder':
+    '例如：14:00 FOMC、错过了上午时段',
+  'session-mode.unplanned.modal.reason-required': '开始前请填写原因。',
+  'session-mode.unplanned.notice.started': '计划外交易时段已开始。',
+  'session-mode.unplanned.notice.stopped': '计划外交易时段已结束。',
+  'session-mode.unplanned.notice.blocked-live': '已有一个交易时段正在进行。',
+  'session-mode.unplanned.notice.none-running':
+    '当前没有进行中的计划外交易时段。',
+  'session-mode.unplanned.notice.failed':
+    '无法更新计划外交易时段。请查看控制台了解详情。',
   'session-mode.ended.stat.trades': '交易',
   'session-mode.ended.stat.notes': '笔记',
   'session-mode.ended.stat.gate-checks': 'Gate 检查',
@@ -6135,6 +6665,64 @@ const zh: Lang = {
   'session-mode.unconfigured.step.log.title': 'Log notes during live sessions',
 
   'session-mode.unconfigured.action': '配置会话模式',
+  'session-mode.guide.why.title': '按计划交易，而不是凭心情',
+  'session-mode.guide.why.description':
+    '交易时段模式在每个时段前帮你准备，进行中用 Trade Gate 让你守住规则，并保存带时间戳的日志以便回放这一天。设置只需两分钟。',
+  'session-mode.guide.configure.title': '现在就设置',
+  'session-mode.guide.configure.description':
+    '添加你的时段时间并创建第一个 Trade Gate。设置页里会有简短的引导。',
+  'session-mode.guide.preparation.countdown.title': '你的时段即将开始',
+  'session-mode.guide.preparation.countdown.description':
+    '这是准备阶段。倒计时显示何时进入进行中，页面会自动切换到进行中模式。',
+  'session-mode.guide.preparation.goals.title': '设定今天的目标',
+  'session-mode.guide.preparation.goals.description':
+    '开盘前写下怎样才算一个好时段，给自己一个可以对照的标准。',
+  'session-mode.guide.preparation.checklist.title': '过一遍清单',
+  'session-mode.guide.preparation.checklist.description':
+    '在这里勾选你的时段前例行事项。勾选的内容会保存到今天的复盘笔记。',
+  'session-mode.guide.preparation.next.title': '进入进行中后',
+  'session-mode.guide.preparation.next.description':
+    '你的 Trade Gate 和时段日志会出现在这里。第一次我们会带你看一遍。',
+  'session-mode.guide.live.trade-gate.title': '每笔交易前先过 Trade Gate',
+  'session-mode.guide.live.trade-gate.description':
+    '点击开始并回答根据你的标准生成的问题。闸门以绿灯、等待或不交易结束，让你只做系统允许的交易。',
+  'session-mode.guide.live.session-log.title': '记录你的所见所感',
+  'session-mode.guide.live.session-log.description':
+    '随时记下形态、情绪和决定。每条记录都有时间戳，之后可以准确回放当时发生了什么。',
+  'session-mode.guide.live.settings.title': '随时调整',
+  'session-mode.guide.live.settings.description':
+    '“编辑”会打开时段模式设置：时段时间、阶段布局、Trade Gate 流程和日志标签。',
+  'session-mode.guide.ended.review.title': '现在复盘这个时段',
+  'session-mode.guide.ended.review.description':
+    '打开今天的 DRC 进行复盘。把时段日志小组件加入 DRC 布局，每条带时间戳的记录都会显示在那里。',
+  'settings.session-mode.guide.setting-name': '引导',
+  'settings.session-mode.guide.setting-desc':
+    '这些设置的简短导览，从时段时间到你的第一个 Trade Gate。',
+  'settings.session-mode.guide.replay': '显示引导',
+  'settings.session-mode.guide.intro.title': '来设置交易时段模式',
+  'settings.session-mode.guide.intro.description':
+    '四件事：时段何时进行、每个阶段显示什么、你的 Trade Gate，以及时段日志标签。',
+  'settings.session-mode.guide.lead-time.title': '准备提前时间',
+  'settings.session-mode.guide.lead-time.description':
+    '准备阶段在时段开始前多少分钟开启。',
+  'settings.session-mode.guide.windows.title': '添加你的时段窗口',
+  'settings.session-mode.guide.windows.description':
+    '每个交易时段一个窗口，包含名称、开始和结束时间。时段模式据此判断何时准备、何时进行中。',
+  'settings.session-mode.guide.layout.title': '选择每个阶段显示的内容',
+  'settings.session-mode.guide.layout.description':
+    '按阶段开关模块：准备阶段的资源、目标和清单；进行中的 Trade Gate 和时段时间线。',
+  'settings.session-mode.guide.trade-gate.title': '创建你的 Trade Gate',
+  'settings.session-mode.guide.trade-gate.description':
+    '首次点击“添加”会用常见问题生成一个入门流程，之后创建空流程；“库”里有现成的问题。每个问题指向下一个问题或一个结果：绿灯、等待或不交易。',
+  'settings.session-mode.guide.editor.title': '问题与结果',
+  'settings.session-mode.guide.editor.description':
+    '展开一个流程来添加问题，并设定每个答案通向哪里。播放按钮会按时段中的实际方式运行它。',
+  'settings.session-mode.guide.tags.title': '时段日志的标签',
+  'settings.session-mode.guide.tags.description':
+    '记录时为笔记打上标签，例如情绪或策略，方便在复盘中筛选。',
+  'settings.session-mode.guide.finish.title': '设置完成',
+  'settings.session-mode.guide.finish.description':
+    '从侧栏或首页打开时段模式。把时段日志小组件加入 DRC 布局，即可在每次复盘中查看记录。',
 
   'session-mode.layout.empty.title': 'Nothing enabled for this phase',
   'session-mode.layout.empty.description':
@@ -6541,6 +7129,384 @@ const zh: Lang = {
   'filter.modal.session-tags.n-selected': '{count} 个会话标签',
   'filter.modal.session-tags.select-all': '全选',
   'filter.modal.session-tags.none-found': '未找到会话标签',
+  'account.prop-challenge.title': '交易考核挑战',
+  'account.prop-challenge.identity': '挑战信息',
+  'account.prop-challenge.prefill.heading-link': '从你的商号预填',
+  'account.prop-challenge.prefill.phase-link': '使用 PRO 预填规则',
+  'account.prop-challenge.prefill.phase-link-firm':
+    '使用 PRO 预填 {firm} 的规则',
+  'account.prop-challenge.prefill.heading-link-firms':
+    '{firms} 等 +{count} 家，PRO 自动填入规则',
+  'account.prop-challenge.prefill.heading-link-firms-all':
+    '{firms}，PRO 自动填入规则',
+  'account.prop-challenge.prefill.match':
+    '我们有 {firm}：{count} 个挑战，规则已就绪',
+  'account.prop-challenge.rules.empty':
+    '尚未添加规则。使用“添加规则”来定义此阶段。',
+  'account.prop-challenge.rules': '规则',
+  'account.prop-challenge.costs.empty': '尚未添加费用。',
+  'account.prop-challenge.description':
+    '跟踪此账户完成多阶段交易公司考核挑战。',
+  'account.prop-challenge.enable': '启用挑战跟踪',
+  'account.prop-challenge.challenge-name': '挑战名称',
+  'account.prop-challenge.challenge-name-placeholder': '例如：25K 评估',
+  'account.prop-challenge.firm-name': '公司名称（可选）',
+  'account.prop-challenge.firm-name-placeholder': '例如：Apex Trader Funding',
+  'account.prop-challenge.profile.title': '应用公司配置文件',
+  'account.prop-challenge.profile.firm': '公司',
+  'account.prop-challenge.profile.challenge': '挑战',
+  'account.prop-challenge.profile.apply': '应用',
+  'account.prop-challenge.profile.loading': '正在加载公司配置文件…',
+  'account.prop-challenge.profile.refreshing': '正在检查配置文件更新…',
+  'account.prop-challenge.profile.unavailable': '离线时无法使用公司配置文件。',
+
+  'account.prop-challenge.profile.confirm-title': '替换挑战设置？',
+  'account.prop-challenge.profile.confirm-message':
+    '应用此配置文件将替换当前配置的阶段和规则。',
+  'account.prop-challenge.current-phase': '当前阶段',
+  'account.prop-challenge.phase-rules': '{phase}规则',
+  'account.prop-challenge.next-phase': '下一阶段：{phase}',
+  'account.prop-challenge.view-phase': '查看阶段',
+  'account.prop-challenge.unnamed-phase': '未命名阶段',
+  'account.prop-challenge.phase-name': '阶段名称',
+  'account.prop-challenge.phase-type': '阶段类型',
+  'account.prop-challenge.phase-type.evaluation': '考核',
+  'account.prop-challenge.phase-type.verification': '验证',
+  'account.prop-challenge.phase-type.sim_funded': '模拟资助',
+  'account.prop-challenge.phase-type.live_funded': '实盘资助',
+  'account.prop-challenge.phase-type.custom': '自定义',
+  'account.prop-challenge.starting-balance': '起始余额',
+  'account.prop-challenge.broker-account-id': '经纪账户',
+  'account.prop-challenge.broker-accounts.assigned': '已分配给 {phase}',
+  'account.prop-challenge.broker-accounts.trades': '{count} 笔交易',
+  'account.prop-challenge.broker-accounts.trade-one': '1 笔交易',
+  'account.prop-challenge.phase-started': '开始时间',
+  'account.prop-challenge.phase-completed': '结束时间',
+  'account.prop-challenge.timeline.completed-before-started':
+    '{phase} 的结束时间必须不早于开始时间。',
+  'account.prop-challenge.timeline.out-of-order':
+    '{phase} 必须在 {next} 开始时或之前结束。',
+  'account.prop-challenge.timeline.policy-history-conflict':
+    '{phase} 的开始时间晚于后续规则变更。请将开始时间前移。',
+  'account.prop-challenge.default-phase-name': '阶段 {number}',
+  'account.prop-challenge.add-phase': '添加阶段',
+  'account.prop-challenge.remove-phase': '删除阶段',
+  'account.prop-challenge.add-rule': '添加规则',
+  'account.prop-challenge.rule.enabled': '规则已启用',
+  'account.prop-challenge.rule.amount': '金额',
+  'account.prop-challenge.rule.target-type': '目标类型',
+  'account.prop-challenge.rule.credit-withdrawals': '将提款计入目标',
+  'account.prop-challenge.rule.drawdown-mode': '回撤模式',
+  'account.prop-challenge.rule.lock-at-balance': '锁定余额',
+  'account.prop-challenge.rule.daily-loss-model': 'Daily loss amount',
+  'account.prop-challenge.rule.daily-loss-model.fixed': 'Fixed amount',
+  'account.prop-challenge.rule.daily-loss-model.threshold':
+    'Increases at account profit threshold',
+  'account.prop-challenge.rule.daily-loss-model.peak-eod-profit':
+    '按最高日终利润调整',
+  'account.prop-challenge.rule.daily-loss-peak-eod-help':
+    '在账户以激活余额收盘前使用固定限额。从下一交易日起，限额按最高日终账户利润的设定百分比计算，且不会下降。',
+  'account.prop-challenge.rule.scale-at-balance': '激活余额',
+  'account.prop-challenge.rule.scaled-percent-of-peak-eod-profit':
+    '用作限额的最高日终利润比例 (%)',
+  'account.prop-challenge.rule.peak-eod-profit-percent-summary':
+    '最高日终利润的 {value}',
+  'account.prop-challenge.rule.daily-loss-tiered-summary':
+    '按上一交易日收盘余额分级',
+  'account.prop-challenge.rule.daily-loss-model.profit-tiers':
+    '上一交易日收盘利润分级',
+  'account.prop-challenge.rule.daily-loss-tiers-help':
+    '使用“利润:亏损限额”组合。根据上一交易日收盘账户利润确定下一交易时段的限额。',
+  'account.prop-challenge.rule.loss-tiers': '利润层级与亏损限额',
+  'account.prop-challenge.rule.daily-loss-threshold-help':
+    'The higher daily loss amount activates permanently when lifetime account profit first reaches the configured percentage of starting balance.',
+  'account.prop-challenge.rule.profit-threshold-percent':
+    'Account profit threshold (%)',
+  'account.prop-challenge.rule.amount-after-threshold':
+    'Daily loss amount after threshold',
+  'account.prop-challenge.rule.breach-action': '触及限额时的处理',
+  'account.prop-challenge.rule.breach-action.hard': '判定账户失败',
+  'account.prop-challenge.rule.breach-action.soft': '暂停至下一交易时段',
+  'account.prop-challenge.rule.days': '交易天数',
+  'account.prop-challenge.rule.minimum-daily-profit': '每日最低利润',
+  'account.prop-challenge.rule.minimum-daily-profit-summary': '每日 {value}+',
+  'account.prop-challenge.rule.best-day-percent': '最佳日最高占比（%）',
+  'account.prop-challenge.rule.position-limit-model': 'Position limit model',
+  'account.prop-challenge.rule.position-limit-model.fixed': 'Fixed limit',
+  'account.prop-challenge.rule.position-limit-model.eod-profit-tiers':
+    'EOD profit tiers',
+  'account.prop-challenge.rule.position-profit-basis': '仓位扩展利润基准',
+  'account.prop-challenge.rule.position-profit-basis.cumulative':
+    '累计交易利润（出金不会降低）',
+  'account.prop-challenge.rule.position-profit-basis.current-account':
+    '当前账户利润（出金会降低）',
+  'account.prop-challenge.rule.position-limit-model.eod-profit':
+    'Scales with EOD profit',
+  'account.prop-challenge.rule.position-tiers': 'Profit tiers',
+  'account.prop-challenge.rule.position-tiers-help':
+    'Enter each completed EOD profit threshold and its new contract limit as profit:contracts, separated by commas. A tier applies from the next trading day.',
+  'account.prop-challenge.rule.position-scaling-help':
+    'Each completed profit step adds one contract starting on the next trading day, up to the maximum.',
+  'account.prop-challenge.rule.initial-contracts': 'Initial contracts',
+  'account.prop-challenge.rule.profit-per-contract':
+    'EOD profit per additional contract',
+  'account.prop-challenge.rule.maximum-contracts':
+    'Maximum contracts after scaling',
+  'account.prop-challenge.rule.max-contracts': '最大合约数',
+  'account.prop-challenge.rule.profit_target': '盈利目标',
+  'account.prop-challenge.rule.drawdown': '回撤',
+  'account.prop-challenge.rule.daily_loss_limit': '每日亏损限额',
+  'account.prop-challenge.rule.live_review_daily_profit': '实盘审核单日盈利',
+  'account.prop-challenge.rule.best-profitable-day': '单日盈利触发值',
+  'account.prop-challenge.rule.daily_profit_cap': '每日计入利润上限',
+  'account.prop-challenge.rule.per-trading-day': '每个交易日',
+  'account.prop-challenge.rule.minimum_trading_days': '最少交易天数',
+  'account.prop-challenge.rule.minimum_profitable_days': '最少盈利天数',
+  'account.prop-challenge.rule.consistency-cushion-percent':
+    '一致性缓冲（百分点）',
+  'account.prop-challenge.rule.consistency-cushion-short': '缓冲',
+  'account.prop-challenge.rule.consistency': '一致性',
+  'account.prop-challenge.rule.max_position_size': '最大持仓规模',
+  'account.prop-challenge.drawdown.static': '固定',
+  'account.prop-challenge.drawdown.eod-trailing': '日终跟踪',
+  'account.prop-challenge.drawdown.intraday-trailing': '日内跟踪',
+  'account.prop-challenge.summary.status.active': '进行中',
+  'account.prop-challenge.summary.status.passed': '已通过',
+  'account.prop-challenge.summary.status.failed': '未通过',
+  'account.prop-challenge.summary.status.pending': '待开始',
+  'account.prop-challenge.summary.status.warning': '接近限额',
+  'account.prop-challenge.summary.phase-status.pending': '待开始',
+  'account.prop-challenge.summary.phase-status.active': '进行中',
+  'account.prop-challenge.summary.phase-status.passed': '已通过',
+  'account.prop-challenge.summary.phase-status.failed': '未通过',
+  'account.prop-challenge.summary.rule.profit_target': '盈利目标',
+  'account.prop-challenge.summary.rule.drawdown': '回撤',
+  'account.prop-challenge.summary.rule.drawdown-static': '静态回撤',
+  'account.prop-challenge.summary.rule.drawdown-eod_trailing': '日终回撤',
+  'account.prop-challenge.summary.rule.drawdown-intraday_trailing': '日内回撤',
+  'account.prop-challenge.summary.rule.daily_loss_limit': '单日亏损',
+  'account.prop-challenge.summary.rule.live_review_daily_profit': '实盘审核',
+  'account.prop-challenge.summary.rule.daily_profit_cap': '每日计入利润',
+  'account.prop-challenge.summary.rule.minimum_trading_days': '交易天数',
+  'account.prop-challenge.summary.rule.minimum_profitable_days': '盈利天数',
+  'account.prop-challenge.summary.rule.consistency': '最佳日一致性',
+  'account.prop-challenge.summary.rule.max_position_size': '持仓规模',
+  'account.prop-challenge.ledger.value.of': '{current} / {target}',
+  'account.prop-challenge.ledger.section.payout': '出金条件',
+  'account.prop-challenge.ledger.requirement.minimum': '下限 {value}',
+  'account.prop-challenge.ledger.requirement.maximum': '上限 {value}',
+  'account.prop-challenge.ledger.value.ratio': '{current} / {target}',
+  'account.prop-challenge.payout.met-of-total': '已满足 {met} / {total} 项条件',
+  'account.prop-challenge.ledger.value.of-today': '今日 {current} / {target}',
+  'account.prop-challenge.ledger.value.credited-profit':
+    '实际利润 {actual} 中计入 {credited}',
+  'account.prop-challenge.ledger.value.used': '已用 {used}',
+  'account.prop-challenge.ledger.value.consistency-goal':
+    '一致性目标 {current} / {target}',
+  'account.prop-challenge.ledger.value.best-day-share': '最佳日占利润 {value}',
+  'account.prop-challenge.ledger.value.no-profit': '尚无利润',
+  'account.prop-challenge.ledger.requirement.best-day':
+    '最佳日 ≤ 总利润的 {value}',
+  'account.prop-challenge.ledger.state.needs-profit': '需要利润',
+  'account.prop-challenge.ledger.tooltip.open': '说明{rule}',
+  'account.prop-challenge.ledger.tooltip.consistency.description':
+    '限制阶段总利润中来自单个最赚钱交易日的比例。',
+  'account.prop-challenge.ledger.tooltip.consistency.formula':
+    '最佳日利润 ÷ 阶段总利润 × 100',
+  'account.prop-challenge.ledger.tooltip.consistency.best-day':
+    '最佳日：{value}',
+  'account.prop-challenge.ledger.tooltip.consistency.total-profit':
+    '总利润：{value}',
+  'account.prop-challenge.ledger.tooltip.consistency.share':
+    '{best} ÷ {total} × 100 = {share}',
+  'account.prop-challenge.ledger.tooltip.consistency.goal':
+    '一致性目标：{best} ÷ {maximum} = {goal}',
+  'account.prop-challenge.ledger.tooltip.consistency.goal-hint':
+    '在其他交易日累积利润会降低该比例，但出现更大的最佳日会抬高目标。',
+  'account.prop-challenge.ledger.tooltip.consistency.within':
+    '{share} ≤ {maximum}——符合规则',
+  'account.prop-challenge.ledger.tooltip.consistency.pending':
+    '阶段总利润转正后才开始计算。',
+  'account.prop-challenge.ledger.tooltip.consistency.no-maximum':
+    '一致性目标需要大于 0% 的最大值。',
+  'account.prop-challenge.ledger.help.open': '关于{rule}',
+  'account.prop-challenge.ledger.help.profit_target':
+    '把账户增加这个金额以通过该阶段。只计算已平仓交易。',
+  'account.prop-challenge.ledger.help.profit_target.example':
+    '此账户需要 {target} 利润：目前 {current}，还差 {remaining}。',
+  'account.prop-challenge.ledger.help.profit_target.example-done':
+    '已达目标：{current} / {target}。',
+  'account.prop-challenge.ledger.help.drawdown.static':
+    '余额相对起始余额最多可下跌的幅度。下限不会移动。',
+  'account.prop-challenge.ledger.help.drawdown.static.example':
+    '此账户下限为 {floor}；余额必须保持在其上方。限额 {limit} 还剩 {buffer}。',
+  'account.prop-challenge.ledger.help.drawdown.eod_trailing':
+    '下限跟随你最高的日终余额，只会上升，直到锁定在公司的锁定水平。',
+  'account.prop-challenge.ledger.help.drawdown.eod_trailing.example':
+    '当前下限为 {floor}（最高收盘减去 {limit}），并随更高收盘上移。还剩 {buffer}。',
+  'account.prop-challenge.ledger.help.drawdown.intraday_trailing':
+    '底线随时跟踪你的最高余额，包括浮动盈利。Journalit 只看到已平仓交易，因此这里的底线跟踪每次平仓后的最佳余额；持仓期间达到的峰值不会计入。请以公司的数据为准。',
+  'account.prop-challenge.ledger.help.drawdown.intraday_trailing.example':
+    '当前下限为 {floor}（平仓后最佳余额减去 {limit}）。还剩 {buffer}；公司实时数字可能更紧。',
+  'account.prop-challenge.ledger.help.daily_loss_limit':
+    '单个交易日最多可亏损的金额。触及后会判定阶段失败，或暂停至下一交易时段，视公司而定。',
+  'account.prop-challenge.ledger.help.daily_loss_limit.example':
+    '今日：日亏损限额 {limit} 已用 {used}，还剩 {left}。',
+  'account.prop-challenge.ledger.help.daily_profit_cap':
+    '每日利润只有一部分计入目标。超过上限的利润会保留，但不计入。',
+  'account.prop-challenge.ledger.help.daily_profit_cap.example':
+    '一天利润只计入 {cap}；超过上限已赚的 {excluded} 不计入。',
+  'account.prop-challenge.ledger.help.live_review_daily_profit':
+    '任意一个交易日达到或超过该利润，账户即有资格接受实盘审核。',
+  'account.prop-challenge.ledger.help.live_review_daily_profit.example':
+    '有一天达到 {trigger} 或以上即合格；目前最佳日 {bestDay}。',
+  'account.prop-challenge.ledger.help.minimum_trading_days':
+    '至少有一笔已平仓交易的天数。无论多快达到目标，未满该天数都不能通过阶段。',
+  'account.prop-challenge.ledger.help.minimum_trading_days.example':
+    '已完成 {current} / {target} 个交易日，还差 {remaining}。',
+  'account.prop-challenge.ledger.help.minimum_profitable_days':
+    '收盘利润达到或超过公司最低日利润的交易日。打平或更小的盈利不计。',
+  'account.prop-challenge.ledger.help.minimum_profitable_days.example':
+    '已有 {current} / {target} 天收盘达到 {minimum} 或以上，还差 {remaining}。',
+  'account.prop-challenge.ledger.help.consistency':
+    '单日最佳利润不得超过阶段总利润的该比例。应靠其他日子多赚来修复，而不是靠亏损。',
+  'account.prop-challenge.ledger.help.consistency.example':
+    '最佳日 {bestDay} 占总利润 {total} 的 {share}；总利润需达到 {goal} 才能落在 {maximum}。',
+  'account.prop-challenge.ledger.help.consistency.example-done':
+    '最佳日 {bestDay} 占总利润的 {share}，在 {maximum} 限额内。',
+  'account.prop-challenge.ledger.help.consistency.example-none':
+    '尚无利润，因此没有可比较的最佳日。',
+  'account.prop-challenge.ledger.help.max_position_size':
+    '所有未平仓持仓合计最多可持有的合约数。有些公司随利润增加会提高限额。',
+  'account.prop-challenge.ledger.help.max_position_size.example':
+    '当前最多同时 {maximum} 手；迄今最大仓位 {current}。',
+  'account.prop-challenge.ledger.help.payout.cycle_days':
+    '当前出金周期内的交易日。批准出金后重新计数。',
+  'account.prop-challenge.ledger.help.payout.cycle_days.example':
+    '本周期交易日 {current} / {target}，还差 {remaining}。',
+  'account.prop-challenge.ledger.help.payout.qualifying_days':
+    '本周期内收盘利润达到或超过公司最低日利润的交易日。',
+  'account.prop-challenge.ledger.help.payout.qualifying_days.example':
+    '本周期达到 {minimum} 或以上的天数 {current} / {target}，还差 {remaining}。',
+  'account.prop-challenge.ledger.help.payout.cycle_profit':
+    '自周期开始以来的利润必须达到该金额才能申请。',
+  'account.prop-challenge.ledger.help.payout.cycle_profit.example':
+    '本周期已赚 {current}，需要 {target}。',
+  'account.prop-challenge.ledger.help.payout.minimum_balance':
+    '申请时余额必须达到或高于该水平。',
+  'account.prop-challenge.ledger.help.payout.minimum_balance.example':
+    '余额 {current}；必须至少 {target}。',
+  'account.prop-challenge.ledger.help.payout.positive_cycle_profit':
+    '首次出金之后，每个新周期必须先盈利才能再次申请。',
+  'account.prop-challenge.ledger.help.payout.positive_cycle_profit.example':
+    '周期利润为 {current}；必须大于零。',
+  'account.prop-challenge.ledger.help.payout.consistency':
+    '最佳日不得超过周期利润的该比例。',
+  'account.prop-challenge.ledger.help.payout.consistency.example':
+    '最佳单日 {bestDay} 占周期利润 {total} 的 {share}；周期利润需达到 {goal}，该比例才会落在 {maximum}。',
+  'account.prop-challenge.ledger.help.payout.consistency.example-done':
+    '最佳单日 {bestDay} 占周期利润的 {share}，在 {maximum} 限制以内。',
+  'account.prop-challenge.ledger.help.payout.consistency.example-none':
+    '周期尚无利润，因此没有可比较的最佳单日。',
+  'account.prop-challenge.ledger.help.payout.minimum_request':
+    '公司接受的最小出金。可用金额必须先达到该值。',
+  'account.prop-challenge.ledger.help.payout.minimum_request.example':
+    '可用 {current}；公司最低申请额为 {target}。',
+  'account.prop-challenge.ledger.help.payout.payout_count':
+    '本阶段允许的出金次数。用完额度即完成该阶段。',
+  'account.prop-challenge.ledger.help.payout.payout_count.example':
+    '本阶段已用 {current} / {target} 次出金。',
+  'account.prop-challenge.ledger.help.payout.request_window':
+    '只在这些工作日、按公司时区接受申请。',
+  'account.prop-challenge.ledger.help.payout.request_window.example':
+    '今天是 {today}；申请开放日为 {days}（{timeZone}）。',
+  'account.prop-challenge.ledger.help.payout.elapsed_hours':
+    '自本周期第一笔交易起的时间必须达到该值才能申请。',
+  'account.prop-challenge.ledger.help.payout.elapsed_hours.example':
+    '自周期首笔交易起已过 {current} / {target} 小时。',
+  'account.prop-challenge.ledger.help.payout.lifetime_qualifying_days':
+    '整个有资阶段的合格天数，不只是本周期。达到后解锁出金。',
+  'account.prop-challenge.ledger.help.payout.lifetime_qualifying_days.example':
+    '整个阶段合格日 {current} / {target}。',
+  'account.prop-challenge.ledger.requirement.target': '目标 {value}',
+  'account.prop-challenge.ledger.requirement.buffer': '缓冲 {value}',
+  'account.prop-challenge.ledger.requirement.max': '上限 {value}',
+  'account.prop-challenge.ledger.requirement.daily-cap':
+    '每个交易日最多计入 {value}',
+  'account.prop-challenge.ledger.requirement.profitable-days':
+    '{days} 天达到 {profit}+',
+  'account.prop-challenge.ledger.requirement.days': '{value} 天',
+  'account.prop-challenge.ledger.requirement.at-most': '≤ {value}',
+  'account.prop-challenge.ledger.state.not-started': '未开始',
+  'account.prop-challenge.ledger.state.in-progress': '进行中',
+  'account.prop-challenge.ledger.state.reached': '已达成',
+  'account.prop-challenge.ledger.state.met': '已满足',
+  'account.prop-challenge.ledger.state.eligible': '符合资格',
+  'account.prop-challenge.ledger.state.safe': '安全',
+  'account.prop-challenge.ledger.state.clear': '未触及',
+  'account.prop-challenge.ledger.state.within-rule': '符合规则',
+  'account.prop-challenge.ledger.state.near-limit': '接近上限',
+  'account.prop-challenge.ledger.state.limit-reached': '已触及限额',
+  'account.prop-challenge.ledger.state.cap-applied': '已应用上限',
+  'account.prop-challenge.ledger.state.within-cap': '未超过上限',
+  'account.prop-challenge.ledger.state.breached': '已违规',
+  'account-dashboard.prop.metrics.total': '挑战',
+  'account-dashboard.prop.metrics.pass-rate': '通过率',
+  'account-dashboard.prop.metrics.costs': '挑战成本',
+  'account-dashboard.prop.metrics.payouts': '出金',
+  'account-dashboard.prop.metrics.net': '净额',
+  'account-dashboard.prop.tabs.overview': '概览',
+  'account-dashboard.mode.selector': '账户仪表盘模式',
+  'account-dashboard.mode.account-overview': '概览',
+  'account-dashboard.mode.challenges': '挑战',
+  'account-dashboard.prop.metrics.active': '进行中的挑战',
+  'account-dashboard.prop.economics.title': '成本效益',
+  'account-dashboard.prop.economics.roi': '投资回报率',
+  'account-dashboard.prop.economics.roi-no-cost': '无成本',
+  'account-dashboard.prop.economics.average-cost-per-attempt':
+    '每次尝试平均成本',
+  'account-dashboard.prop.economics.cost-per-funded-account':
+    '每个资助账户成本',
+  'account-dashboard.prop.economics.payout-conversion': '出金转化率',
+  'account-dashboard.prop.insights.title': '挑战洞察',
+  'account-dashboard.prop.phases.title': '阶段洞察',
+  'account-dashboard.prop.phases.phase': '阶段',
+  'account-dashboard.prop.phases.average-duration': '平均时长',
+  'account-dashboard.prop.phases.show-more': '再显示 {count} 个',
+  'account-dashboard.prop.phases.show-fewer': '收起',
+  'account-dashboard.prop.tooltip.open-explanation': '说明 {metric} 的计算方式',
+  'account-dashboard.prop.tooltip.calculation-unavailable':
+    '尚无足够的已完成数据',
+  'account-dashboard.prop.tooltip.pass-rate.description':
+    '已完成挑战中通过的比例。不计入进行中的挑战，以及没有结果的已归档挑战。',
+  'account-dashboard.prop.tooltip.pass-rate.formula':
+    '已通过挑战 ÷ 已完成挑战 × 100',
+  'account-dashboard.prop.tooltip.roi.description':
+    '出金净回报（出金减去挑战成本）相对于挑战成本的比例。仅当所有挑战使用同一币种时计算。',
+  'account-dashboard.prop.tooltip.roi.formula':
+    '（出金 − 挑战成本）÷ 挑战成本 × 100',
+  'account-dashboard.prop.tooltip.roi.no-cost':
+    '这些挑战没有成本，因此没有可用于相除的成本基数。净回报即 {payouts} 的出金。',
+  'account-dashboard.prop.tooltip.average-cost.description':
+    '每次挑战尝试的平均成本，按币种分别计算。',
+  'account-dashboard.prop.tooltip.average-cost.formula':
+    '挑战成本 ÷ 挑战尝试总数',
+  'account-dashboard.prop.tooltip.funded-cost.description':
+    '每个已通过挑战所需的平均成本，按币种分别计算。',
+  'account-dashboard.prop.tooltip.funded-cost.formula': '挑战成本 ÷ 已通过挑战',
+  'account-dashboard.prop.tooltip.payout-conversion.description':
+    '已通过挑战中至少产生过一次出金的比例。',
+  'account-dashboard.prop.tooltip.payout-conversion.formula':
+    '有出金的已通过挑战 ÷ 已通过挑战 × 100',
+  'account-dashboard.prop.tabs.phases': '阶段',
+  'account-dashboard.prop.tabs.firms': '交易公司',
+  'account-dashboard.prop.firms.firm': '公司',
+  'account-dashboard.prop.firms.attempts': '尝试次数',
+  'account-dashboard.prop.phases.most-failed': '失败最多',
+  'account-dashboard.prop.phases.days': '{count} 天',
+  'account-dashboard.prop.phases.empty': '暂无已完成的阶段',
+  'account.challenge.toggle.label': '交易考核挑战',
+  'account.challenge.toggle.help': '跟踪该账户的考核阶段、公司规则和出金。',
 
   'notice.error.canonical-trade-type-change':
     '经纪商同步的交易不能更改为其他交易类型。',
@@ -6581,6 +7547,334 @@ const zh: Lang = {
   'home.guide.whats-new.done.title': '保持工作区上下文',
   'home.guide.whats-new.done.description':
     '使用概览查看个人组件，使用仪表盘进行深入分析。每种模式都会保留自己的筛选和布局。',
+  'account.prop-challenge.summary.status.payout_ready': 'Payout ready',
+  'account.prop-challenge.ribbon.passed': '{phase}已通过',
+  'account.prop-challenge.ribbon.failed': '{phase}未通过',
+  'account.prop-challenge.ribbon.action.advance': '进入{phase}',
+  'account.prop-challenge.ribbon.action.advance-short': '进入',
+  'account.prop-challenge.ribbon.action.mark-passed': '标记为通过',
+  'account.prop-challenge.ribbon.action.archive': '归档',
+  'account.prop-challenge.actions.stale':
+    '此挑战已在其他位置更新。请检查后重试。',
+  'account.prop-challenge.ribbon.action.record-payout': '记录出金',
+  'account.prop-challenge.ribbon.action.record-payout-short': '出金',
+  'account.prop-challenge.payout.title': 'Payout readiness',
+  'account.prop-challenge.payout.eligible': 'Payout ready',
+  'account.prop-challenge.payout.available': 'Available now',
+  'account.prop-challenge.payout.cycle-profit': 'Cycle profit',
+  'account.prop-challenge.payout.history': 'Payouts',
+  'account.prop-challenge.payout.lifetime-qualifying-days': '累计合格交易日',
+  'account.prop-challenge.payout.requirement.days': 'Trading days',
+  'account.prop-challenge.payout.requirement.qualifying-days':
+    'Qualifying days',
+  'account.prop-challenge.payout.requirement.minimum-balance':
+    'Minimum account balance',
+  'account.prop-challenge.payout.requirement.positive-cycle-profit':
+    'Positive cycle profit',
+  'account.prop-challenge.payout.requirement.cycle-profit': 'Cycle profit',
+  'account.prop-challenge.payout.requirement.consistency': 'Consistency',
+  'account.prop-challenge.payout.requirement.minimum': 'Minimum available',
+  'account.prop-challenge.payout.requirement.payouts': 'Payout allowance',
+  'account.prop-challenge.payout.requirement.request-window': 'Request window',
+  'account.prop-challenge.payout.timezone-invalid': '不是已知时区。',
+  'account.prop-challenge.payout.preview-amount': '预览出金',
+  'account.prop-challenge.payout.you-receive': '交易者份额',
+  'account.prop-challenge.payout.balance-after': '出金后余额',
+  'account.prop-challenge.payout.drawdown-floor': '回撤下限',
+  'account.prop-challenge.payout.buffer-after': 'Room before breach',
+  'account.prop-challenge.payout.request-not-allowed': '此金额不符合条件',
+  'account.prop-challenge.payout.immediate-breach':
+    'This payout would leave the account at or below its drawdown floor.',
+  'account.prop-challenge.payout.account-concludes':
+    'This payout completes the configured simulated-funded payout cycle.',
+  'account.prop-challenge.payout.next-stage-after-payout':
+    'This payout advances the account to its next configured stage.',
+  'account.prop-challenge.payout.live-review-after-payout':
+    'This payout makes the account eligible for live-account review.',
+  'account.prop-challenge.payout.cycle-resets':
+    'Payout progress resets after an approved payout.',
+  'account.prop-challenge.payout.cycle-continues':
+    'Payout progress continues after an approved payout.',
+  'account.prop-challenge.payout.drawdown.unchanged':
+    'The current drawdown floor remains in place.',
+  'account.prop-challenge.payout.drawdown.lock_at_balance':
+    'The drawdown floor locks after payout.',
+  'account.prop-challenge.payout.drawdown.reset_from_starting_balance':
+    'The account and drawdown limits reset after payout.',
+  'account-page.guide.whats-new.cockpit.payout.title':
+    'Know when a funded payout is safe',
+  'account-page.guide.whats-new.cockpit.payout.description':
+    'Funded accounts with verified rules now show payout requirements, the amount available, and a preview of the balance and drawdown consequences before you request money.',
+  'account-page.guide.main.payout.title': 'Plan funded payouts',
+  'account-page.guide.main.payout.description':
+    'When the funded phase has verified payout rules, this panel tracks eligibility and previews the account impact of a requested amount.',
+  'account.prop-challenge.stage': 'Stage type',
+  'account.prop-challenge.stage.evaluation': 'Evaluation',
+  'account.prop-challenge.stage.sim-funded': 'Sim funded',
+  'account.prop-challenge.stage.live-funded': 'Live funded',
+  'account.prop-challenge.payout-rules.title': 'Payout rules',
+  'account.prop-challenge.payout-rules.add': 'Add payout rules',
+  'account.prop-challenge.payout-rules.remove': 'Remove payout rules',
+  'account.prop-challenge.payout-rules.cycle': 'Eligibility cycle',
+  'account.prop-challenge.payout-rules.request-window': 'Request timing',
+  'account.prop-challenge.payout-rules.request-window.anytime': 'Any day',
+  'account.prop-challenge.payout-rules.request-window.weekdays':
+    'Specific weekdays',
+  'account.prop-challenge.payout-rules.request-window.time-zone': 'Time zone',
+  'account.prop-challenge.payout-rules.request-window.allowed-days':
+    'Allowed request days',
+  'account.prop-challenge.payout-rules.cycle.none': 'No waiting cycle',
+  'account.prop-challenge.payout-rules.cycle.trading-days': 'Trading days',
+  'account.prop-challenge.payout-rules.cycle.qualifying-days':
+    'Qualifying days',
+  'account.prop-challenge.payout-rules.cycle.calendar-days': 'Calendar days',
+  'account.prop-challenge.payout-rules.days': 'Required days',
+  'account.prop-challenge.payout-rules.minimum-daily-profit':
+    'Minimum daily profit',
+  'account.prop-challenge.payout-rules.anchor': 'Cycle starts from',
+  'account.prop-challenge.payout-rules.anchor.phase-start': 'Stage start',
+  'account.prop-challenge.payout-rules.anchor.first-trade': 'First trade',
+  'account.prop-challenge.payout-rules.minimum-balance':
+    'Minimum account balance',
+  'account.prop-challenge.payout-rules.minimum-cycle-profit':
+    'Minimum cycle profit',
+  'account.prop-challenge.payout-rules.minimum-cycle-profit-schedule':
+    '按出金次数的最低周期利润',
+  'account.prop-challenge.payout-rules.positive-cycle-after-first':
+    'Require positive cycle profit after first payout',
+  'account.prop-challenge.payout-rules.consistency-percent':
+    'Maximum best-day share (%)',
+  'account.prop-challenge.payout-rules.consistency-percent-schedule':
+    '按出金次数的最佳单日最高占比 (%)',
+  'account.prop-challenge.payout-rules.availability': 'Available profit',
+  'account.prop-challenge.payout-rules.availability.starting-balance':
+    'Above starting balance',
+  'account.prop-challenge.payout-rules.availability.balance-floor':
+    'Above balance floor',
+  'account.prop-challenge.payout-rules.balance-floor': 'Balance floor',
+  'account.prop-challenge.payout-rules.request-percent':
+    'Withdrawable share (%)',
+  'account.prop-challenge.payout-rules.new-profit-percent':
+    'New profit required from each request (%)',
+  'account.prop-challenge.payout-rules.new-profit-percent-help':
+    'Caps the request so the configured percentage is backed by profit earned during the current payout cycle. For example, 50% allows a request up to twice current-cycle profit.',
+  'account.prop-challenge.payout-rules.minimum-request': 'Minimum request',
+  'account.prop-challenge.payout-rules.maximum': 'Maximum request',
+  'account.prop-challenge.payout-rules.maximum.none': 'No maximum',
+  'account.prop-challenge.payout-rules.maximum.fixed': 'Fixed maximum',
+  'account.prop-challenge.payout-rules.maximum.first-fixed-then-none':
+    '仅首次提现上限',
+  'account.prop-challenge.payout-rules.maximum.schedule':
+    'Maximum by payout number',
+  'account.prop-challenge.payout-rules.maximum.cycle-profit-percent':
+    '周期利润百分比',
+  'account.prop-challenge.payout-rules.maximum-amount': 'Maximum amount',
+  'account.prop-challenge.payout-rules.maximum-first-amount': '首次提现上限',
+  'account.prop-challenge.payout-rules.maximum-cycle-profit-percent':
+    '最大周期利润 (%)',
+  'account.prop-challenge.payout-rules.schedule-repeat-last':
+    'Keep using the final amount for later payouts',
+  'account.prop-challenge.payout-rules.schedule-repeat-value':
+    '后续出金继续使用最终值',
+  'account.prop-challenge.payout-rules.schedule': 'Amounts by payout number',
+  'account.prop-challenge.payout-rules.profit-split': 'Trader profit share (%)',
+  'account.prop-challenge.payout-rules.lifetime-unlock':
+    '累计合格交易日达标后更改限制',
+  'account.prop-challenge.payout-rules.lifetime-unlock-help':
+    '统计整个资助阶段的合格交易日，即使出款周期已重置也会保留累计值。',
+  'account.prop-challenge.payout-rules.lifetime-unlock-days':
+    '所需累计合格交易日',
+  'account.prop-challenge.payout-rules.lifetime-unlock-availability':
+    '解锁后的可用规则',
+  'account.prop-challenge.payout-rules.lifetime-unlock-balance-floor':
+    '解锁后的余额底线',
+  'account.prop-challenge.payout-rules.lifetime-unlock-request-percent':
+    '解锁后的可用利润 (%)',
+  'account.prop-challenge.payout-rules.lifetime-unlock-maximum':
+    '解锁后的最高申请额',
+  'account.prop-challenge.payout-rules.lifetime-unlock-maximum-amount':
+    '解锁后的最高金额',
+  'account.prop-challenge.payout-rules.lifetime-unlock-maximum-schedule':
+    '解锁后的最高金额计划',
+  'account.prop-challenge.payout-rules.lifetime-unlock-maximum-cycle-profit-percent':
+    '解锁后的周期利润最高百分比',
+  'account.prop-challenge.payout-rules.profit-split-model': '利润分成模式',
+  'account.prop-challenge.payout-rules.profit-split.fixed': '固定百分比',
+  'account.prop-challenge.payout-rules.profit-split.threshold':
+    '累计出金后调整',
+  'account.prop-challenge.payout-rules.profit-split.initial':
+    '交易者初始分成 (%)',
+  'account.prop-challenge.payout-rules.profit-split.threshold-amount':
+    '累计出金阈值',
+  'account.prop-challenge.payout-rules.profit-split.thereafter':
+    '超过阈值后的分成 (%)',
+  'account.prop-challenge.payout-rules.maximum-payouts': 'Maximum payouts',
+  'account.prop-challenge.payout-rules.maximum-payout-outcome':
+    'After final payout',
+  'account.prop-challenge.payout-rules.maximum-payout-outcome.continue':
+    'Continue account',
+  'account.prop-challenge.payout-rules.maximum-payout-outcome.conclude':
+    'Conclude account',
+  'account.prop-challenge.payout-rules.maximum-payout-outcome.promote':
+    'Advance to next stage',
+  'account.prop-challenge.payout-rules.maximum-payout-outcome.live-review':
+    'Eligible for live review',
+  'account.prop-challenge.payout-rules.aftermath': 'After an approved payout',
+  'account.prop-challenge.payout-rules.aftermath.unchanged':
+    'Deduct payout; keep drawdown floor',
+  'account.prop-challenge.payout-rules.aftermath.lock':
+    'Deduct payout; lock drawdown floor',
+  'account.prop-challenge.payout-rules.aftermath.reset':
+    'Reset account and drawdown',
+  'account.prop-challenge.payout-rules.drawdown-floor':
+    'Drawdown floor after payout',
+  'account.prop-challenge.payout-rules.first-payout-exempt':
+    'First payout ignores minimum cycle profit',
+  'account.prop-challenge.payout-rules.reset-cycle':
+    'Reset eligibility cycle after payout',
+  'account.prop-challenge.payout-rules.group.eligibility': 'Eligibility',
+  'account.prop-challenge.payout-rules.group.availability': 'Available payout',
+  'account.prop-challenge.payout-rules.group.terms': 'Payout terms',
+  'account.prop-challenge.payout-rules.group.aftermath': 'After payout',
+  'account.prop-challenge.payout.requirement.elapsed-hours': 'Elapsed time',
+  'account.prop-challenge.payout-rules.profit-split.account-profit-threshold':
+    'Changes by account profit',
+  'account.prop-challenge.payout-rules.profit-split.account-profit-help':
+    'Lifetime account profit equals current balance minus starting balance plus prior withdrawals. The below or at/above percentage applies to the entire request.',
+  'account.prop-challenge.payout-rules.profit-split.below':
+    'Trader share below threshold (%)',
+  'account.prop-challenge.payout-rules.profit-split.threshold-profit':
+    'Account profit threshold',
+  'account.prop-challenge.payout-rules.profit-split.at-or-above':
+    'Trader share at or above threshold (%)',
+  'account.prop-challenge.payout-rules.minimum-elapsed-hours':
+    'Minimum elapsed hours',
+
+  
+  'account.merge.challenge.move-earlier': '将 {account} 前移',
+  'account.merge.challenge.move-later': '将 {account} 后移',
+  'account.merge.warning.use-profile-balance': '使用档案余额',
+  'account.merge.warning.edit-phases': '编辑阶段',
+  'account.merge.title': '挑战设置',
+  'account.merge.loading': '加载中...',
+  'account.merge.step.accounts': '账户',
+  'account.merge.step.phases': '阶段',
+  'account.merge.step.review': '检查',
+  'account.merge.accounts.title': '要合并的账户',
+  'account.merge.accounts.show-archived': '显示已归档',
+  'account.merge.accounts.empty': '没有符合条件的账户',
+  'account.merge.target.title': '目标账户',
+  'account.merge.target.keep': '保留',
+  'account.merge.target.new': '新名称',
+  'account.merge.phase.name': '阶段名称',
+  'account.merge.phase.status': '状态',
+  'account.merge.phase.started': '开始',
+  'account.merge.phase.completed': '结束',
+  'account.merge.phase.no-rules': '无',
+  'account.merge.review.notes': '已迁移交易',
+  'account.merge.review.identities': '经纪商账户',
+  'account.merge.warning.trade-outside-window': '交易不在其阶段区间内',
+  'account.merge.warning.identity-shared': '标识被多个账户占用',
+  'account.merge.warning.copy-trading-dropped': '已丢弃跟单周期',
+  'account.merge.error.too-few-sources': '请至少选择两个账户。',
+  'account.merge.error.duplicate-source': '某个账户重复出现。',
+  'account.merge.error.target-exists': '该名称属于另一个账户。',
+  'account.merge.error.currency-mismatch': '账户使用了不同的货币。',
+  'account.merge.error.timeline-not-monotonic': '各阶段开始时间必须递增。',
+  'account.merge.error.invalid-override': '请检查该阶段的日期。',
+  'account.merge.error.source-missing': '某个账户没有已保存的设置。',
+  'account.merge.error.unknown': '合并失败。',
+  'account.merge.action.merge': '合并',
+  'account.merge.action.undo': '撤销',
+  'account.merge.action.delete': '删除旧账户',
+  'account.merge.notice.converted': '已转换为挑战',
+  'account.merge.notice.title': '合并自 {accounts}',
+  'account.merge.notice.error': '操作失败。',
+  'account.merge.undo.title': '撤销合并',
+  'account.merge.undo.message': '恢复旧账户及其交易。',
+  'account.merge.delete.title': '删除旧账户',
+  'account.merge.delete.message': '删除已归档的旧账户，此操作无法撤销。',
+  'command.open-legacy-challenge-onboarding': '设置 Prop 挑战',
+  'account.merge.step.challenge': '挑战',
+  'account.merge.action.convert': '转换',
+  'account.merge.profile.applied': '已应用：{firm} · {challenge}',
+  'account.merge.profile.remove': '移除',
+  'account.merge.phase.apply-profile': '应用公司资料',
+  'account.merge.profile.replace-rules.title': '替换手动输入的规则？',
+  'account.merge.profile.replace-rules.body':
+    '{firm} 的资料定义了每个阶段的规则。你在此页输入的规则将被替换。',
+  'account.merge.profile.replace-rules.confirm': '替换规则',
+  'guide.legacy-setup.list.title': '这里列出了每个尚无挑战的账户',
+  'guide.legacy-setup.list.description':
+    '逐个账户决定。“保持原样”会让它完全不变；之后随时可以在仪表盘设置中再设置。',
+  'guide.legacy-setup.assign.title': '把同一挑战的各阶段归为一组',
+  'guide.legacy-setup.assign.description':
+    '曾是同一挑战各阶段的账户放入同一组（我们会根据相似名称给出建议）。单独的账户会成为单阶段挑战。',
+  'guide.legacy-setup.continue.title': '每个挑战一次简短设置',
+  'guide.legacy-setup.continue.description':
+    '“继续”会依次为每个组打开挑战设置。在你逐一确认之前不会有任何改动。',
+  'guide.merge-wizard.target.title': '由一个账户保留历史',
+  'guide.merge-wizard.target.description':
+    '目标账户保留并附带所有阶段。其他账户会被归档而非删除，其交易会移到目标账户。',
+  'guide.merge-wizard.identity.title': '为公司和挑战命名',
+  'guide.merge-wizard.identity.description':
+    '应用公司资料会填入真实规则和获资阶段。没有资料时，各阶段没有规则，直到你在账户页面添加。',
+  'guide.merge-wizard.phases.title': '检查每个阶段',
+  'guide.merge-wizard.phases.description':
+    '设置阶段类型，把已完成的阶段标为“已通过”、当前阶段标为“进行中”，并确认日期。',
+  'guide.merge-wizard.review.title': '确认之前不会有任何改动',
+  'guide.merge-wizard.review.description':
+    '检查移动的交易、归档的账户和所有警告。“合并”会应用全部更改；可在账户页面撤销。',
+  'account.merge.challenge.accounts': '账户',
+  'account.merge.challenge.order-hint': '最早的阶段在前',
+  'account.merge.challenge.single-hint': '此账户将单独成为一个挑战',
+  'account.merge.phase.identities-count': '{count} 个标识',
+  'account.merge.phase.pending': '待定',
+  'account.merge.review.phases': '个阶段',
+  'account.merge.review.archived': '已归档',
+  'account.merge.review.open': '进行中',
+  'account.merge.sequence': '挑战 {index} / {total}',
+  'account.merge.warning.balance-differs': '起始余额与公司档案不一致',
+  'account.merge.error.profile-phase-mismatch':
+    '账户数量多于公司档案中的阶段数',
+  'account.merge.error.profile-currency-mismatch': '档案货币与这些账户不一致。',
+  'account.merge.error.source-changed': '有账户已更改。请重新检查合并。',
+  'account.merge.error.multiple-active-phases':
+    '只能是最后一个账户仍处于进行中。',
+  'account.merge.error.phases-after-failed-source':
+    '失败的账户会结束挑战，因此必须放在最后选择。',
+  'account.merge.error.copy-trading-overlap':
+    '跟单周期重叠。请先结束其中一个。',
+  'onboarding.legacy-challenge.legend':
+    '将曾是同一挑战各阶段的账户归为一组。单独的账户会成为一个独立挑战。',
+  'onboarding.legacy-challenge.assign.leave': '保持不变',
+  'onboarding.legacy-challenge.assign.own': '独立挑战',
+  'onboarding.legacy-challenge.assign.group': '挑战 {letter}',
+  'onboarding.legacy-challenge.assign.new-group': '新建挑战…',
+  'onboarding.legacy-challenge.action.continue': '继续',
+  'onboarding.legacy-challenge.action.continue-count': '设置 {count} 个',
+  'guide.action-step.dismiss': '暂不',
+  'guide.legacy-challenge.title': '你的现有账户',
+  'guide.legacy-challenge.description':
+    '合并曾是同一挑战各阶段的账户，或将某个账户设为独立挑战。',
+  'guide.legacy-challenge.action': '设置我的账户',
+  'account-dashboard.challenges.empty.title': '还没有挑战',
+  'account-dashboard.challenges.empty.message':
+    '将自营交易公司的挑战作为一个包含阶段、规则和出金的账户来跟踪。',
+  'account-dashboard.challenges.empty.create': '新建挑战',
+  'account-dashboard.challenges.empty.setup': '设置现有账户',
+  'onboarding.legacy-challenge.title': 'Prop 挑战',
+  'onboarding.legacy-challenge.action.skip': '跳过',
+  'onboarding.legacy-challenge.accounts.show-archived': '显示已归档',
+  'onboarding.legacy-challenge.accounts.empty': '没有需要设置的账户',
+  'onboarding.legacy-challenge.loading': '加载中...',
+  'onboarding.legacy-challenge.suggested': '推荐',
+  'onboarding.legacy-challenge.row.aria': '{account} 的操作',
+  'onboarding.legacy-challenge.status.combined': '已合并',
+  'onboarding.legacy-challenge.status.converted': '已转换',
+  'onboarding.legacy-challenge.entry.name': 'Prop 挑战',
+  'onboarding.legacy-challenge.entry.desc': '将现有账户合并或转换为挑战。',
+  'onboarding.legacy-challenge.entry.action': '设置',
 
   'view.home': '主页',
   'common.lose': '亏',
@@ -6662,6 +7956,86 @@ const zh: Lang = {
   'home.widget.streak.missed-months.few': '自上次复盘以来漏了 {count} 个月',
   'home.widget.streak.missed-months.many': '自上次复盘以来漏了 {count} 个月',
   'home.widget.streak.missed-months.other': '自上次复盘以来漏了 {count} 个月',
+  'trade-sync.quick.started': '正在同步已启用的交易来源…',
+  'trade-sync.quick.running': '正在同步…',
+  'trade-sync.quick.offline': '交易同步需要互联网连接。请在联网后重试。',
+  'trade-sync.quick.no-sources':
+    '未找到已启用的交易同步来源。请在设置中配置 Trade Sync。',
+  'trade-sync.quick.complete':
+    '交易同步完成：已同步 {sources} 个来源，并导入或更新 {imported} 笔交易。',
+  'trade-sync.quick.partial':
+    '交易同步完成但存在问题：{total} 个来源中有 {completed} 个完成，并导入或更新 {imported} 笔交易。',
+  'trade-sync.quick.failed':
+    '无法完成 {sources} 个来源的交易同步。请检查 Trade Sync 设置后重试。',
+  'navigation.items.nav-sync-trades': '同步交易',
+  'command.sync-trades-now': '同步交易',
+  'home.quick-links.sync-trades': '同步交易',
+  'trade-sync.quick.not-ready':
+    '当前没有已启用的交易同步来源可用。请等待正在进行的同步完成，或检查 Trade Sync 设置。',
+  'trade-sync.quick.mapping-required':
+    '已导入或更新 {imported} 笔交易。请在“设置 → Trade Sync”中完成 {providers} 的账户映射，然后重试。',
+  'trade-handoff.action.view-trades-count.one': '查看 {count} 笔交易',
+  'trade-handoff.action.view-trades-count.few': '查看 {count} 笔交易',
+  'trade-handoff.action.view-trades-count.many': '查看 {count} 笔交易',
+  'trade-handoff.action.view-trades-count.other': '查看 {count} 笔交易',
+  'trade-handoff.action.review-now': '立即复盘',
+  'trade-handoff.action.open-period': '打开 {period} 复盘',
+  'trade-handoff.review.creation-disabled':
+    '该复盘不存在，且自动创建复盘已关闭。',
+  'trade-handoff.review.open-failed': '无法打开该复盘。',
+  'trade-handoff.trades.open-failed': '无法打开交易日志。',
+  'trade-handoff.scope.label': '正在显示 {accounts} 最近一次操作中的 {trades}',
+  'trade-handoff.scope.exit': '退出操作视图',
+  'trade-handoff.trade-count.one': '{count} 笔交易',
+  'trade-handoff.trade-count.few': '{count} 笔交易',
+  'trade-handoff.trade-count.many': '{count} 笔交易',
+  'trade-handoff.trade-count.other': '{count} 笔交易',
+  'trade-handoff.title.sync': '同步完成',
+  'trade-handoff.summary.import-complete': '已导入{trades}',
+  'trade-handoff.summary.import-partial': '已导入{trades}，但存在问题',
+  'trade-handoff.summary.sync-complete': '已同步{trades}',
+  'trade-handoff.summary.sync-partial': '已同步{trades}，但存在问题',
+  'trade-handoff.periods.choose': '选择其他复盘周期',
+  'trade-handoff.periods.recommended': '推荐',
+  'trade-handoff.action.dismiss': '关闭最近的交易结果',
+  'sample.action.try': '试用示例日志',
+  'sample.action.reset': '重置示例',
+  'sample.popout.title': '示例日志',
+  'sample.popout.action.exit': '退出',
+  'sample.popout.description': '此处的更改仅用于练习。',
+  'sample.popout.closed': '练习日志已保存并关闭。',
+  'sample.popout.recovery': '练习日志需要恢复。',
+  'sample.notice.sync-blocked': '你正在编辑虚构的示例数据。后端同步已暂停。',
+  'sample.notice.folder-locked': '示例日志处于活动状态时，无法更改日志文件夹。',
+  'sample.empty.description':
+    '浏览已填充的虚构日志，而不会更改你的日志文件或设置。',
+  'sample.progress.creating': '正在创建示例日志：已完成 {completed}/{total} 项',
+  'sample.progress.removing': '正在移除示例日志：{completed}/{total} 项',
+  'sample.progress.verifying': '正在检查示例日志：{completed} / {total} 项',
+  'sample.exit.title': '退出示例日志？',
+  'sample.exit.remove-warning':
+    '移除会删除已确认归属于示例的文件中的编辑。无法证明示例所有权的文件将被保留。',
+  'sample.exit.remove': '退出并移除',
+  'sample.reset.title': '要重置示例日志吗？',
+  'sample.reset.message':
+    '这会将所有示例文件和仅用于示例的设置恢复为原始虚构数据包。',
+  'sample.reset.warning': '你在示例日志中的编辑将被删除。',
+  'sample.collision.title': '示例文件夹已存在',
+  'sample.collision.message':
+    'Journalit 不会覆盖现有文件夹。是否改为在“{path}”创建示例日志？',
+  'sample.collision.confirm': '使用可用文件夹',
+  'sample.notice.ready': '示例日志已准备就绪。',
+  'sample.notice.reset': '示例日志已恢复。',
+  'sample.notice.reset-preserved':
+    '示例日志已恢复。已保留 {count} 个无法证明所有权的文件。',
+  'sample.notice.removed': '示例日志已移除。',
+  'sample.notice.removed-preserved':
+    '示例日志已移除。已保留 {count} 个无法证明所有权的文件。',
+  'sample.notice.error': '示例日志操作失败：{error}',
+  'command.open-sample-journal': '打开示例日志',
+  'command.exit-sample-journal': '退出示例日志',
+  'command.reset-sample-journal': '重置示例日志',
+  'sample.notice.busy': '另一项示例日志操作正在进行中。',
 };
 
 export default zh;

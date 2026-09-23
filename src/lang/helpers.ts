@@ -22,13 +22,12 @@ type PluralBaseKey =
   | 'tradelog.batch.delete-confirm.message'
   | 'tradelog.batch.errors-count'
   | 'account.header.warning.trades-before-creation'
+  | 'account.header.warning.trades-before-phase'
   | 'csv.results.success'
   | 'csv.results.updated'
   | 'csv.results.skipped'
   | 'csv.results.more-trades'
-  | 'csv.results.history-trades'
-  | 'csv.results.history-symbols'
-  | 'trade-import.preview.upgrade.description'
+  | 'trade-import.pro-gate.title'
   | 'trade-import.preview.found'
   | 'trade-import.action.activate-pro'
   | 'quick-import.action.import-count'
@@ -46,7 +45,9 @@ type PluralBaseKey =
   | 'home.widget.streak.missed-days'
   | 'home.widget.streak.missed-weeks'
   | 'home.widget.streak.missed-months'
-  | 'view.economic-calendar.import-count';
+  | 'view.economic-calendar.import-count'
+  | 'trade-handoff.trade-count'
+  | 'trade-handoff.action.view-trades-count';
 
 const localeAliases = {
   pt: 'pt-BR',

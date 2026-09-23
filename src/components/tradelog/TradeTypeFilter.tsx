@@ -1,18 +1,13 @@
 
 
-import React, {
-  useState,
-  useEffect,
-  useRef,
-  useMemo,
-  useCallback,
-} from 'react';
+import React, { useState, useRef, useMemo, useCallback } from 'react';
 import { TradeType } from '../../services/tradelog/types';
 import { t } from '../../lang/helpers';
 import {
   DEFAULT_ALL_TRADE_TYPES,
   getActiveTradeTypeSelection,
 } from '../../settings/viewFiltersDefaults';
+import { AnchoredMenu } from '../shared/menus/AnchoredMenu';
 
 const DEFAULT_AVAILABLE_TRADE_TYPES: TradeType[] = [
   'regular',
@@ -76,27 +71,6 @@ export const TradeTypeFilter: React.FC<TradeTypeFilterProps> = React.memo(
   }) => {
     const [isOpen, setIsOpen] = useState(false);
     const dropdownRef = useRef<HTMLDivElement>(null);
-
-    
-    useEffect(() => {
-      const handleClickOutside = (event: MouseEvent) => {
-        const target = event.target;
-        if (
-          dropdownRef.current &&
-          (!(target instanceof Node) || !dropdownRef.current.contains(target))
-        ) {
-          setIsOpen(false);
-        }
-      };
-
-      window.activeDocument.addEventListener('mousedown', handleClickOutside);
-      return () => {
-        window.activeDocument.removeEventListener(
-          'mousedown',
-          handleClickOutside
-        );
-      };
-    }, []);
 
     const effectiveDefaultTradeTypes = useMemo(() => {
       const fallbackTradeTypes =
@@ -238,69 +212,68 @@ export const TradeTypeFilter: React.FC<TradeTypeFilterProps> = React.memo(
             <span className="dropdown-arrow">{isOpen ? '▲' : '▼'}</span>
           </button>
 
-          {isOpen && (
-            <div className="journalit-tradelog-trade-type-options-dropdown">
-              <div
-                className="journalit-tradelog-trade-type-option-item select-all"
-                role="checkbox"
-                tabIndex={0}
-                aria-checked={allTypesSelected}
-                onClick={() => handleTradeTypeChange('all')}
-                onKeyDown={(e) =>
-                  handleKeyDown(e, () => handleTradeTypeChange('all'))
-                }
+          <AnchoredMenu
+            isOpen={isOpen}
+            triggerRef={dropdownRef}
+            onClose={() => setIsOpen(false)}
+            className="journalit-tradelog-trade-type-options-dropdown"
+          >
+            <div
+              className="journalit-tradelog-trade-type-option-item select-all"
+              role="checkbox"
+              tabIndex={0}
+              aria-checked={allTypesSelected}
+              onClick={() => handleTradeTypeChange('all')}
+              onKeyDown={(e) =>
+                handleKeyDown(e, () => handleTradeTypeChange('all'))
+              }
+            >
+              <span
+                className={`journalit-tradelog-checkbox journalit-tradelog-trade-type-checkbox${
+                  allTypesSelected ? ' checked' : ''
+                }`}
+                aria-hidden="true"
               >
-                <span
-                  className={`journalit-tradelog-checkbox journalit-tradelog-trade-type-checkbox${
-                    allTypesSelected ? ' checked' : ''
-                  }`}
-                  aria-hidden="true"
-                >
-                  {allTypesSelected ? '✓' : ''}
-                </span>
-                <span>{t('common.select-all')}</span>
-              </div>
-              <div className="journalit-tradelog-trade-type-divider"></div>
-              {getTradeTypeOptions(availableTradeTypes)
-                .slice(1)
-                .map(
-                  (
-                    option 
-                  ) => (
-                    <div
-                      key={option.value}
-                      className="journalit-tradelog-trade-type-option-item"
-                      role="checkbox"
-                      tabIndex={0}
-                      aria-checked={visualSelectedTradeTypesSet.has(
-                        option.value
-                      )}
-                      onClick={() => handleTradeTypeChange(option.value)}
-                      onKeyDown={(e) =>
-                        handleKeyDown(e, () =>
-                          handleTradeTypeChange(option.value)
-                        )
-                      }
-                      aria-description={option.description}
-                    >
-                      <span
-                        className={`journalit-tradelog-checkbox journalit-tradelog-trade-type-checkbox${
-                          visualSelectedTradeTypesSet.has(option.value)
-                            ? ' checked'
-                            : ''
-                        }`}
-                        aria-hidden="true"
-                      >
-                        {visualSelectedTradeTypesSet.has(option.value)
-                          ? '✓'
-                          : ''}
-                      </span>
-                      <span>{option.label}</span>
-                    </div>
-                  )
-                )}
+                {allTypesSelected ? '✓' : ''}
+              </span>
+              <span>{t('common.select-all')}</span>
             </div>
-          )}
+            <div className="journalit-tradelog-trade-type-divider"></div>
+            {getTradeTypeOptions(availableTradeTypes)
+              .slice(1)
+              .map(
+                (
+                  option 
+                ) => (
+                  <div
+                    key={option.value}
+                    className="journalit-tradelog-trade-type-option-item"
+                    role="checkbox"
+                    tabIndex={0}
+                    aria-checked={visualSelectedTradeTypesSet.has(option.value)}
+                    onClick={() => handleTradeTypeChange(option.value)}
+                    onKeyDown={(e) =>
+                      handleKeyDown(e, () =>
+                        handleTradeTypeChange(option.value)
+                      )
+                    }
+                    aria-description={option.description}
+                  >
+                    <span
+                      className={`journalit-tradelog-checkbox journalit-tradelog-trade-type-checkbox${
+                        visualSelectedTradeTypesSet.has(option.value)
+                          ? ' checked'
+                          : ''
+                      }`}
+                      aria-hidden="true"
+                    >
+                      {visualSelectedTradeTypesSet.has(option.value) ? '✓' : ''}
+                    </span>
+                    <span>{option.label}</span>
+                  </div>
+                )
+              )}
+          </AnchoredMenu>
         </div>
       </div>
     );

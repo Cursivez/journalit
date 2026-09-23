@@ -10,7 +10,6 @@ import {
 } from '../../types/reviewV2';
 import type { ReviewTemplateService } from '../../services/templates/ReviewTemplateService';
 import { TradeTemplateService } from '../../services/templates/TradeTemplateService';
-import { Tooltip } from '../shared/Tooltip';
 import { eventBus } from '../../services/events/EventBus';
 import { DefaultTemplateChangedPayload } from '../../services/events/types';
 import { t } from '../../lang/helpers';
@@ -19,6 +18,7 @@ import { showDeleteTemplateModal } from './UnsavedChangesModal';
 import {
   useGuideAction,
   useGuideBackHandler,
+  useGuideContextValue,
   useGuideCurrentStepId,
   useGuideTarget,
 } from '../../guides/GuideRuntimeLayer';
@@ -26,9 +26,12 @@ import {
   LAYOUT_BUILDER_DEFAULT_TEMPLATE_SET_ACTION_ID,
   LAYOUT_BUILDER_DEFAULT_TEMPLATE_STAR_TARGET_ID,
   LAYOUT_BUILDER_DRC_BUILTIN_TEMPLATE_TARGET_ID,
-  LAYOUT_BUILDER_DRC_DUPLICATE_BUTTON_TARGET_ID,
+  LAYOUT_BUILDER_BUILTIN_DUPLICATE_BUTTON_TARGET_ID,
   LAYOUT_BUILDER_SIDEBAR_TARGET_ID,
   LAYOUT_BUILDER_TEMPLATE_DUPLICATED_ACTION_ID,
+  LAYOUT_BUILDER_TEMPLATE_SELECTED_ACTION_ID,
+  LAYOUT_BUILDER_SELECTED_TEMPLATE_IS_BUILT_IN_CONTEXT_KEY,
+  LAYOUT_BUILDER_SELECTED_TEMPLATE_IS_DEFAULT_CONTEXT_KEY,
 } from '../../guides/layoutBuilderGuideIds';
 import { mergeClassNames } from '../../utils/classNames';
 
@@ -97,29 +100,27 @@ const Section: React.FC<SectionProps> = ({
         {title}
       </button>
       {onAdd && !disabled && (
-        <Tooltip content={t('builder.sidebar.new-item', { title })}>
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              void onAdd();
-            }}
-            className="journalit-button template-builder-section-add"
-            aria-label={t('builder.sidebar.new-item', { title })}
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            void onAdd();
+          }}
+          className="journalit-button template-builder-section-add"
+          aria-label={t('builder.sidebar.new-item', { title })}
+        >
+          <svg
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
           >
-            <svg
-              width="14"
-              height="14"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-            >
-              <line x1="12" y1="5" x2="12" y2="19" />
-              <line x1="5" y1="12" x2="19" y2="12" />
-            </svg>
-          </button>
-        </Tooltip>
+            <line x1="12" y1="5" x2="12" y2="19" />
+            <line x1="5" y1="12" x2="19" y2="12" />
+          </svg>
+        </button>
       )}
     </div>
     {isExpanded && (
@@ -170,46 +171,39 @@ const TemplateItem: React.FC<TemplateItemProps> = ({
   >
     <div className="sidebar-template-item-content">
       
-      <Tooltip
-        content={
+      <button
+        ref={defaultStarRef}
+        type="button"
+        onClick={(e) => {
+          e.stopPropagation();
+          if (!isDefault) void onSetDefault();
+        }}
+        className={mergeClassNames(
+          'journalit-native-button',
+          `sidebar-template-item-star${isDefault ? ' is-default' : ''}`
+        )}
+        disabled={isDefault}
+        aria-label={
           isDefault
             ? t('builder.sidebar.default-template')
             : t('builder.sidebar.set-as-default')
         }
       >
-        <button
-          ref={defaultStarRef}
-          type="button"
-          onClick={(e) => {
-            e.stopPropagation();
-            if (!isDefault) void onSetDefault();
-          }}
-          className={mergeClassNames(
-            'journalit-native-button',
-            `sidebar-template-item-star${isDefault ? ' is-default' : ''}`
-          )}
-          disabled={isDefault}
-          aria-label={
-            isDefault
-              ? t('builder.sidebar.default-template')
-              : t('builder.sidebar.set-as-default')
-          }
+        <svg
+          width="12"
+          height="12"
+          viewBox="0 0 24 24"
+          fill={isDefault ? 'currentColor' : 'none'}
+          stroke="currentColor"
+          strokeWidth="2"
         >
-          <svg
-            width="12"
-            height="12"
-            viewBox="0 0 24 24"
-            fill={isDefault ? 'currentColor' : 'none'}
-            stroke="currentColor"
-            strokeWidth="2"
-          >
-            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
-          </svg>
-        </button>
-      </Tooltip>
+          <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+        </svg>
+      </button>
       <button
         type="button"
         className="journalit-native-button journalit-native-button--unstyled sidebar-template-item-select"
+        data-guide-primary-action
         onClick={() => void onClick()}
       >
         <span className="sidebar-template-item-name">{template.name}</span>
@@ -223,15 +217,35 @@ const TemplateItem: React.FC<TemplateItemProps> = ({
 
     
     <div className="template-item-actions">
-      <Tooltip content={t('builder.sidebar.duplicate')}>
+      <button
+        aria-label={t('builder.sidebar.duplicate')}
+        ref={duplicateButtonRef}
+        onClick={(e) => {
+          e.stopPropagation();
+          void onDuplicate();
+        }}
+        className="journalit-native-button template-item-action-button"
+      >
+        <svg
+          width="12"
+          height="12"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+        >
+          <rect x="9" y="9" width="13" height="13" rx="2" />
+          <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+        </svg>
+      </button>
+      {!template.isBuiltIn && (
         <button
-          aria-label={t('builder.sidebar.duplicate')}
-          ref={duplicateButtonRef}
+          aria-label={t('builder.sidebar.delete')}
           onClick={(e) => {
             e.stopPropagation();
-            void onDuplicate();
+            void onDelete();
           }}
-          className="journalit-native-button template-item-action-button"
+          className="journalit-native-button template-item-action-button template-item-action-button--danger"
         >
           <svg
             width="12"
@@ -241,38 +255,26 @@ const TemplateItem: React.FC<TemplateItemProps> = ({
             stroke="currentColor"
             strokeWidth="2"
           >
-            <rect x="9" y="9" width="13" height="13" rx="2" />
-            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+            <polyline points="3 6 5 6 21 6" />
+            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
           </svg>
         </button>
-      </Tooltip>
-      {!template.isBuiltIn && (
-        <Tooltip content={t('builder.sidebar.delete')}>
-          <button
-            aria-label={t('builder.sidebar.delete')}
-            onClick={(e) => {
-              e.stopPropagation();
-              void onDelete();
-            }}
-            className="journalit-native-button template-item-action-button template-item-action-button--danger"
-          >
-            <svg
-              width="12"
-              height="12"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-            >
-              <polyline points="3 6 5 6 21 6" />
-              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-            </svg>
-          </button>
-        </Tooltip>
       )}
     </div>
   </div>
 );
+
+
+function isDefaultTemplate(
+  defaultIds: Record<string, string | null>,
+  type: string,
+  templates: readonly { id: string; isBuiltIn: boolean }[],
+  templateId: string
+): boolean {
+  const explicitDefault = defaultIds[type];
+  if (explicitDefault) return explicitDefault === templateId;
+  return templates.find((item) => item.isBuiltIn)?.id === templateId;
+}
 
 function useBuilderSidebarModel({
   plugin,
@@ -291,13 +293,12 @@ function useBuilderSidebarModel({
   const registerDrcBuiltInTemplateTarget = useGuideTarget(
     LAYOUT_BUILDER_DRC_BUILTIN_TEMPLATE_TARGET_ID
   );
-  const registerDrcDuplicateButtonTarget = useGuideTarget(
-    LAYOUT_BUILDER_DRC_DUPLICATE_BUTTON_TARGET_ID
+  const registerBuiltInDuplicateButtonTarget = useGuideTarget(
+    LAYOUT_BUILDER_BUILTIN_DUPLICATE_BUTTON_TARGET_ID
   );
   const registerDefaultTemplateStarTarget = useGuideTarget(
     LAYOUT_BUILDER_DEFAULT_TEMPLATE_STAR_TARGET_ID
   );
-  const guideDuplicatedTemplateIdRef = useRef<string | null>(null);
 
   
   const [expandedSections, setExpandedSections] = useState<
@@ -505,35 +506,21 @@ function useBuilderSidebarModel({
     new Notice(t('notice.default-trade-template-updated'));
   };
 
-  useEffect(() => {
-    if (
-      currentGuideStepId === null ||
-      currentGuideStepId === 'intro' ||
-      currentGuideStepId === 'sidebar-overview' ||
-      currentGuideStepId === 'pick-built-in-template'
-    ) {
-      guideDuplicatedTemplateIdRef.current = null;
-    }
-  }, [currentGuideStepId]);
+  const reviewTemplatesByType: Record<ReviewTemplateType, ReviewTemplate[]> = {
+    drc: drcTemplates,
+    weekly: weeklyTemplates,
+    monthly: monthlyTemplates,
+    quarterly: quarterlyTemplates,
+    yearly: yearlyTemplates,
+  };
 
   
   const handleDuplicate = async (id: string, type: ReviewTemplateType) => {
-    const templatesByType: Record<ReviewTemplateType, ReviewTemplate[]> = {
-      drc: drcTemplates,
-      weekly: weeklyTemplates,
-      monthly: monthlyTemplates,
-      quarterly: quarterlyTemplates,
-      yearly: yearlyTemplates,
-    };
-    const templates = templatesByType[type];
+    const templates = reviewTemplatesByType[type];
     const template = templates.find((t) => t.id === id);
     if (!template) return;
 
     try {
-      if (currentGuideStepId === 'duplicate-template') {
-        guideDuplicatedTemplateIdRef.current = null;
-      }
-
       const duplicated = await templateService.duplicateTemplate(
         id,
         `${template.name} ${t('builder.sidebar.copy-suffix')}`
@@ -545,9 +532,6 @@ function useBuilderSidebarModel({
         templateType: type,
       });
       onTemplatesChange?.();
-      if (currentGuideStepId === 'duplicate-template') {
-        guideDuplicatedTemplateIdRef.current = duplicated.id;
-      }
       emitGuideAction(LAYOUT_BUILDER_TEMPLATE_DUPLICATED_ACTION_ID);
       new Notice(t('notice.template-duplicated'));
     } catch (error) {
@@ -560,17 +544,8 @@ function useBuilderSidebarModel({
     async ({ toStepId }: { toStepId: string }) => {
       if (
         toStepId === 'sidebar-overview' ||
-        toStepId === 'pick-built-in-template' ||
-        toStepId === 'duplicate-template'
+        toStepId === 'pick-built-in-template'
       ) {
-        const duplicatedId = guideDuplicatedTemplateIdRef.current;
-        if (duplicatedId) {
-          await templateService.deleteTemplate(duplicatedId);
-          guideDuplicatedTemplateIdRef.current = null;
-          loadAllTemplates();
-          onTemplatesChange?.();
-        }
-
         onSelectionChange({
           type: 'template',
           id: 'builtin-drc-standard',
@@ -578,7 +553,7 @@ function useBuilderSidebarModel({
         });
       }
     },
-    [loadAllTemplates, onSelectionChange, onTemplatesChange, templateService]
+    [onSelectionChange]
   );
 
   useGuideBackHandler(handleGuideBack);
@@ -609,14 +584,7 @@ function useBuilderSidebarModel({
 
   
   const handleDelete = async (id: string, type: ReviewTemplateType) => {
-    const templatesByType: Record<ReviewTemplateType, ReviewTemplate[]> = {
-      drc: drcTemplates,
-      weekly: weeklyTemplates,
-      monthly: monthlyTemplates,
-      quarterly: quarterlyTemplates,
-      yearly: yearlyTemplates,
-    };
-    const templates = templatesByType[type];
+    const templates = reviewTemplatesByType[type];
     const template = templates.find((t) => t.id === id);
     if (!template || template.isBuiltIn) {
       new Notice(t('notice.error.cannot-delete-builtin'));
@@ -686,35 +654,39 @@ function useBuilderSidebarModel({
       );
     }
 
-    
     const firstBuiltIn = templates.find((t) => t.isBuiltIn);
 
     return templates.map((template) => {
-      
-      const isDefault = defaultIds[type]
-        ? defaultIds[type] === template.id
-        : template.id === firstBuiltIn?.id;
+      const isDefault = isDefaultTemplate(
+        defaultIds,
+        type,
+        templates,
+        template.id
+      );
 
       const isGuideDrcBuiltIn =
         type === 'drc' &&
         template.id === firstBuiltIn?.id &&
         template.isBuiltIn;
 
+      const isSelected =
+        selection?.type === 'template' && selection.id === template.id;
+      const isGuideBuiltInSelection = template.isBuiltIn && isSelected;
+
       return (
         <TemplateItem
           key={template.id}
           template={template}
-          isSelected={
-            selection?.type === 'template' && selection.id === template.id
-          }
+          isSelected={isSelected}
           isDefault={isDefault}
-          onClick={() =>
+          onClick={() => {
+            emitGuideAction(LAYOUT_BUILDER_TEMPLATE_SELECTED_ACTION_ID);
             onSelectionChange({
               type: 'template',
               id: template.id,
               templateType: type,
-            })
-          }
+            });
+          }}
           onSetDefault={() => handleSetDefault(template.id, type)}
           onDuplicate={() => handleDuplicate(template.id, type)}
           onDelete={() => handleDelete(template.id, type)}
@@ -723,17 +695,19 @@ function useBuilderSidebarModel({
           }
           defaultStarRef={
             !template.isBuiltIn &&
-            selection?.type === 'template' &&
-            selection.id === template.id &&
+            isSelected &&
             currentGuideStepId === 'set-default-template'
               ? registerDefaultTemplateStarTarget
               : undefined
           }
           duplicateButtonRef={
-            isGuideDrcBuiltIn ? registerDrcDuplicateButtonTarget : undefined
+            isGuideBuiltInSelection
+              ? registerBuiltInDuplicateButtonTarget
+              : undefined
           }
           forceShowActions={
-            isGuideDrcBuiltIn && currentGuideStepId === 'duplicate-template'
+            isGuideBuiltInSelection &&
+            currentGuideStepId === 'duplicate-template'
           }
         />
       );
@@ -750,14 +724,13 @@ function useBuilderSidebarModel({
       );
     }
 
-    
-    const firstBuiltIn = tradeTemplates.find((t) => t.isBuiltIn);
-
     return tradeTemplates.map((template) => {
-      
-      const isDefault = defaultIds.trade
-        ? defaultIds.trade === template.id
-        : template.id === firstBuiltIn?.id;
+      const isDefault = isDefaultTemplate(
+        defaultIds,
+        'trade',
+        tradeTemplates,
+        template.id
+      );
 
       return (
         <TemplateItem
@@ -781,6 +754,35 @@ function useBuilderSidebarModel({
       );
     });
   };
+
+  const selectedReviewType =
+    selection?.type === 'template' &&
+    selection.templateType &&
+    selection.templateType !== 'trade'
+      ? selection.templateType
+      : null;
+  const selectedReviewTemplate =
+    selectedReviewType && selection?.type === 'template'
+      ? (reviewTemplatesByType[selectedReviewType].find(
+          (item) => item.id === selection.id
+        ) ?? null)
+      : null;
+  
+  useGuideContextValue(
+    LAYOUT_BUILDER_SELECTED_TEMPLATE_IS_BUILT_IN_CONTEXT_KEY,
+    selectedReviewTemplate?.isBuiltIn === true
+  );
+  useGuideContextValue(
+    LAYOUT_BUILDER_SELECTED_TEMPLATE_IS_DEFAULT_CONTEXT_KEY,
+    selectedReviewType !== null &&
+      selectedReviewTemplate !== null &&
+      isDefaultTemplate(
+        defaultIds,
+        selectedReviewType,
+        reviewTemplatesByType[selectedReviewType],
+        selectedReviewTemplate.id
+      )
+  );
 
   return {
     selection,

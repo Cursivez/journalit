@@ -1837,21 +1837,12 @@ export const TEMPLATE_BUILDER_STYLES = `
   gap: 4px;
 }
 
-.journalit-template-builder-container .journalit-template-widget-config-info-button {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0;
-  border: 0;
-  background: transparent;
+.journalit-template-builder-container .journalit-template-widget-config-info {
   color: var(--text-faint);
-  cursor: help;
 }
 
 .journalit-template-builder-container
-  .journalit-template-widget-config-info-button:hover,
-.journalit-template-builder-container
-  .journalit-template-widget-config-info-button:focus-visible {
+  .journalit-template-widget-config-info:hover {
   color: var(--text-muted);
 }
 

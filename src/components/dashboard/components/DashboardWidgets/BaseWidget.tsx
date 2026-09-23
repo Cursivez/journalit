@@ -14,21 +14,23 @@ import { DashboardWidgetSkeleton } from './DashboardWidgetSkeleton';
 export interface BaseWidgetProps {
   filters: FilterState;
   dateFormat?: string; 
-  skeletonType?:
-    | 'chart'
-    | 'area-chart'
-    | 'line-chart'
-    | 'bar-chart'
-    | 'table'
-    | 'calendar';
+  skeletonType?: React.ComponentProps<typeof DashboardWidgetSkeleton>['type'];
 }
 
 
 export const BaseWidget: React.FC<
   BaseWidgetProps & {
+    
+    tradeSource?: 'trades' | 'excursionTrades';
     children: (data: DashboardData, dateFormat: string) => React.ReactNode;
   }
-> = ({ filters: _filters, dateFormat, skeletonType = 'chart', children }) => {
+> = ({
+  filters: _filters,
+  dateFormat,
+  skeletonType = 'chart',
+  tradeSource = 'trades',
+  children,
+}) => {
   const plugin = usePlugin();
 
   
@@ -58,7 +60,7 @@ export const BaseWidget: React.FC<
           {(typeof error === 'string' ? error : error?.message) ||
             t('dashboard.error.load-failed')}
         </div>
-      ) : !dashboardData || dashboardData.trades.length === 0 ? (
+      ) : !dashboardData || (dashboardData[tradeSource]?.length ?? 0) === 0 ? (
         <div className="journalit-dashboard-widget-body">
           <EmptyState
             message={t('widget.empty.no-data')}

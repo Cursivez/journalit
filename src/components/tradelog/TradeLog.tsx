@@ -1,4 +1,3 @@
-import { logger } from '../../utils/logger';
 
 
 import React, {
@@ -29,8 +28,9 @@ import {
 import { useDebounced } from '../../hooks/useDebounced';
 import { useEventBus, useEventBusMultiple } from '../../hooks/useEventBus';
 import { useLeafActive } from '../../hooks/useLeafActive';
+import { useTradeOperationResult } from '../../hooks/useTradeOperationResult';
 import { TradeFormModal } from '../forms/trade/TradeFormModal';
-import { Notice, WorkspaceLeaf } from 'obsidian';
+import { Notice, WorkspaceLeaf, setTooltip } from 'obsidian';
 import { t, tPlural } from '../../lang/helpers';
 import {
   createTradeLogFilters,
@@ -53,6 +53,7 @@ import {
   ArrowUpNarrowWide,
   ArrowDownWideNarrow,
   ArrowUpDown,
+  ListFilter,
   type ObsidianIconComponent,
 } from '../shared/icons/ObsidianIcon';
 import { BatchActionToolbar } from './BatchActionToolbar';
@@ -67,6 +68,7 @@ import {
 import { OptionType } from '../../services/options';
 import { getTradeIdsInRange } from './selectionUtils';
 import { createTradingDayFromString } from '../../utils/tradingDayUtils';
+import { openReviewPeriod } from '../../services/tradeOperations/reviewNavigation';
 import { areSnapshotKeysClaimedByCustomFields } from '../../utils/unrealizedPnl';
 import { cssVars } from '../../styles/inlineStylePolicy';
 import { CustomFieldType } from '../../types/customFields';
@@ -114,8 +116,12 @@ import {
   getActiveTreeSessionLogTags,
   pruneUnknownSessionLogTags,
   refreshSessionLogTagDefinitionNodeIdentities,
+  shouldShowTradeLogFilteredEmptyState,
+  type TradeCountResolution,
   type TradeLogMode,
 } from './tradeLogStateUtils';
+import { mergeUserTradeLogFilterChange } from './tradeLogFilterChanges';
+import { clearDrilldownBasisForTradeLogMode } from './tradeLogFilterChanges';
 import { getSessionLogTags } from '../sessionLog/sessionLogUtils';
 import { mergeClassNames } from '../../utils/classNames';
 import { sanitizeCustomFieldFilters } from '../shared/filters/sanitizeCustomFieldFilters';
@@ -166,22 +172,11 @@ type TradeLogFilterSyncWindow = Window & {
   journalitSyncTradeLogFilters?: () => void;
 };
 
-type TradeCountResolution =
-  | { status: 'loading' }
-  | { status: 'ready'; count: number }
-  | { status: 'failed' };
-
 const TRADE_LOG_GUIDE_TRADE_MODE_STEPS = new Set([
   'intro',
   'view-selector',
   'filters',
-  'filter-modal',
   'sorting',
-  'multi-select',
-  'batch-actions',
-  'column-settings',
-  'active-columns',
-  'available-columns',
   'open-trades',
   'switch-to-gallery',
 ]);
@@ -189,13 +184,8 @@ const TRADE_LOG_GUIDE_TRADE_MODE_STEPS = new Set([
 const TRADE_LOG_GUIDE_IMAGE_GALLERY_STEPS = new Set([
   'gallery-source-sort',
   'gallery-grouping',
-  'gallery-size',
   'gallery-filters',
-  'gallery-filter-modal',
   'gallery-grid',
-  'gallery-fullscreen-actions',
-  'gallery-open-annotation',
-  'gallery-annotation-panel',
   'gallery-finish',
 ]);
 
@@ -211,6 +201,16 @@ function isTerminalGuideState(state: PersistedGuideState | null): boolean {
 
 function normalizeTradeLogMode(value: unknown): TradeLogMode {
   return value === 'imageGallery' ? 'imageGallery' : 'trades';
+}
+
+function showReviewNavigationNotice(
+  outcome: Awaited<ReturnType<typeof openReviewPeriod>>
+): void {
+  if (outcome === 'creation-disabled') {
+    new Notice(t('trade-handoff.review.creation-disabled'));
+  } else if (outcome === 'failed') {
+    new Notice(t('trade-handoff.review.open-failed'));
+  }
 }
 
 function loadPersistedTradeLogFilters(
@@ -528,9 +528,19 @@ const TradeLogColumnHeaders: React.FC<TradeLogColumnHeadersProps> = ({
           </>
         );
 
+        
+        
+        
+        
+        const attachHeaderTooltip = (el: HTMLElement | null) => {
+          if (el) {
+            setTooltip(el, label, { placement: 'top' });
+          }
+        };
+
         if (!isClickable) {
           return (
-            <div key={col.id} className={className}>
+            <div key={col.id} className={className} ref={attachHeaderTooltip}>
               {content}
             </div>
           );
@@ -544,6 +554,7 @@ const TradeLogColumnHeaders: React.FC<TradeLogColumnHeadersProps> = ({
               'journalit-native-button journalit-native-button--unstyled',
               className
             )}
+            ref={attachHeaderTooltip}
             onClick={() => onSort(col.id)}
           >
             {content}
@@ -556,6 +567,8 @@ const TradeLogColumnHeaders: React.FC<TradeLogColumnHeadersProps> = ({
 
 const useTradeLogController = ({ plugin, leaf }: TradeLogProps) => {
   const isActive = useLeafActive(leaf);
+  const tradeOperationSnapshot = useTradeOperationResult(plugin);
+  const activeTradeLogScope = tradeOperationSnapshot.activeTradeLogScope;
   
   const [isDataLoaded, setIsDataLoaded] = useState(false);
   const [isTreeReady, setIsTreeReady] = useState(false);
@@ -602,6 +615,37 @@ const useTradeLogController = ({ plugin, leaf }: TradeLogProps) => {
   
   const [selectedTrades, setSelectedTrades] = useState<Set<string>>(new Set());
   const [isMultiSelectMode, setIsMultiSelectMode] = useState(false);
+  const operationScopeIdRef = useRef<string | null>(null);
+  const operationScopeTransitionFiltersRef = useRef<TradeLogFilters | null>(
+    null
+  );
+  
+  
+  useEffect(() => {
+    const nextScopeId = activeTradeLogScope?.operationId ?? null;
+    if (nextScopeId === operationScopeIdRef.current) return;
+    operationScopeIdRef.current = nextScopeId;
+    setTradeLogMode(
+      nextScopeId
+        ? 'trades'
+        : normalizeTradeLogMode(plugin.uiStateManager.getState().tradeLogMode)
+    );
+    setIsMultiSelectMode(false);
+    setSelectedTrades(new Set());
+    if (nextScopeId) {
+      const scopedFilters = {
+        ...createTradeLogFilters(),
+        viewLevel: 'trades' as const,
+      };
+      operationScopeTransitionFiltersRef.current = scopedFilters;
+      applyFilters(scopedFilters);
+      return;
+    }
+    const persistedFilters =
+      loadPersistedTradeLogFilters(plugin) ?? createTradeLogFilters();
+    operationScopeTransitionFiltersRef.current = persistedFilters;
+    applyFilters(persistedFilters);
+  }, [activeTradeLogScope?.operationId, applyFilters, plugin]);
   const [guideVersion, setGuideVersion] = useState(0);
   const [optionsVersion, setOptionsVersion] = useState(0);
   const [tradeCountResolution, setTradeCountResolution] =
@@ -609,9 +653,6 @@ const useTradeLogController = ({ plugin, leaf }: TradeLogProps) => {
   const totalTradeCount =
     tradeCountResolution.status === 'ready' ? tradeCountResolution.count : null;
   const isTradeCountResolved = tradeCountResolution.status !== 'loading';
-  const hasExistingTrades =
-    tradeCountResolution.status === 'failed' ||
-    (tradeCountResolution.status === 'ready' && tradeCountResolution.count > 0);
   const [imageGalleryItemCount, setImageGalleryItemCount] = useState<
     number | null
   >(null);
@@ -644,8 +685,10 @@ const useTradeLogController = ({ plugin, leaf }: TradeLogProps) => {
   
   const hasLoadedOnceRef = useRef(false);
   const lastViewLevelRef = useRef<TradeLogFilters['viewLevel']>('trades');
+  const lastOperationScopeIdRef = useRef<string | null>(null);
   
   const isLoadingRef = useRef(false);
+  const nodeNavigationInFlightRef = useRef(false);
 
   const getPersistedTradeLogFilters =
     useCallback((): TradeLogFilters | null => {
@@ -653,6 +696,9 @@ const useTradeLogController = ({ plugin, leaf }: TradeLogProps) => {
     }, [plugin]);
 
   const syncFiltersFromPersistedState = useCallback(() => {
+    if (activeTradeLogScope) {
+      return;
+    }
     const persistedFilters = getPersistedTradeLogFilters();
     if (persistedFilters) {
       applyFilters(persistedFilters);
@@ -660,7 +706,12 @@ const useTradeLogController = ({ plugin, leaf }: TradeLogProps) => {
     setTradeLogMode(
       normalizeTradeLogMode(plugin.uiStateManager.getState().tradeLogMode)
     );
-  }, [applyFilters, getPersistedTradeLogFilters, plugin.uiStateManager]);
+  }, [
+    activeTradeLogScope,
+    applyFilters,
+    getPersistedTradeLogFilters,
+    plugin.uiStateManager,
+  ]);
 
   const persistFilters = useCallback(
     (nextFilters: TradeLogFilters) => {
@@ -673,9 +724,11 @@ const useTradeLogController = ({ plugin, leaf }: TradeLogProps) => {
   const commitFilters = useCallback(
     (nextFilters: TradeLogFilters) => {
       applyFilters(nextFilters);
-      persistFilters(nextFilters);
+      if (!activeTradeLogScope) {
+        persistFilters(nextFilters);
+      }
     },
-    [applyFilters, persistFilters]
+    [activeTradeLogScope, applyFilters, persistFilters]
   );
 
   const handleModeChange = useCallback(
@@ -686,8 +739,12 @@ const useTradeLogController = ({ plugin, leaf }: TradeLogProps) => {
         setSelectedTrades(new Set());
       }
       const currentFilters = filtersRef.current;
-      const nextFilters = clearInactiveTreeSessionLogTags(
+      const modeFilters = clearDrilldownBasisForTradeLogMode(
         currentFilters,
+        nextMode
+      );
+      const nextFilters = clearInactiveTreeSessionLogTags(
+        modeFilters,
         nextMode
       );
       if (nextFilters !== currentFilters) {
@@ -985,7 +1042,7 @@ const useTradeLogController = ({ plugin, leaf }: TradeLogProps) => {
         }
         return sum + col.width; 
       }
-      const w = col.width === 0 ? 320 : col.width;
+      const w = col.width === 0 ? 240 : col.width; 
       return sum + w;
     }, 0);
     const gap = Math.max(0, visibleColumns.length - 1) * 8; 
@@ -1007,6 +1064,12 @@ const useTradeLogController = ({ plugin, leaf }: TradeLogProps) => {
 
   
   const debouncedFilters = useDebounced(filters, 150);
+
+  useEffect(() => {
+    if (operationScopeTransitionFiltersRef.current === debouncedFilters) {
+      operationScopeTransitionFiltersRef.current = null;
+    }
+  }, [debouncedFilters]);
 
   const refreshTradeCount = useCallback(
     async ({
@@ -1384,9 +1447,11 @@ const useTradeLogController = ({ plugin, leaf }: TradeLogProps) => {
     async (activeFilters: TradeLogFilters) => {
       const loadGeneration = loadGenerationRef.current + 1;
       loadGenerationRef.current = loadGeneration;
+      const activeOperationScopeId = activeTradeLogScope?.operationId ?? null;
       const shouldBlockForLoad =
         !hasLoadedOnceRef.current ||
-        lastViewLevelRef.current !== activeFilters.viewLevel;
+        lastViewLevelRef.current !== activeFilters.viewLevel ||
+        lastOperationScopeIdRef.current !== activeOperationScopeId;
 
       
       
@@ -1396,6 +1461,7 @@ const useTradeLogController = ({ plugin, leaf }: TradeLogProps) => {
       if (shouldBlockForLoad) {
         setIsDataLoaded(false);
         setIsTreeReady(false);
+        setNodes([]);
       }
 
       try {
@@ -1416,7 +1482,10 @@ const useTradeLogController = ({ plugin, leaf }: TradeLogProps) => {
           activeFilters.customFieldFilters,
           activeFilters.reviewStatus,
           activeFilters.directions,
-          getActiveTreeSessionLogTags(activeFilters)
+          getActiveTreeSessionLogTags(activeFilters),
+          activeFilters.analyticsDateBasis,
+          activeTradeLogScope?.filePaths,
+          activeFilters.accountPhases
         );
 
         if (loadGenerationRef.current !== loadGeneration) {
@@ -1435,6 +1504,7 @@ const useTradeLogController = ({ plugin, leaf }: TradeLogProps) => {
           setExpandedNodes(new Set());
         }
         lastViewLevelRef.current = activeFilters.viewLevel;
+        lastOperationScopeIdRef.current = activeOperationScopeId;
 
         
         setIsDataLoaded(true);
@@ -1457,14 +1527,23 @@ const useTradeLogController = ({ plugin, leaf }: TradeLogProps) => {
         }
       }
     },
-    [tradeLogService]
+    [
+      activeTradeLogScope?.filePaths,
+      activeTradeLogScope?.operationId,
+      tradeLogService,
+    ]
   );
 
   const loadData = useCallback(async () => {
-    await loadDataForFilters(debouncedFilters);
+    await loadDataForFilters(
+      operationScopeTransitionFiltersRef.current ?? debouncedFilters
+    );
   }, [debouncedFilters, loadDataForFilters]);
 
   const syncAndLoadPersistedFilters = useCallback(() => {
+    if (activeTradeLogScope) {
+      return;
+    }
     const persistedState = plugin.uiStateManager.getState();
     setTradeLogMode(normalizeTradeLogMode(persistedState.tradeLogMode));
     const persistedImageGallery = persistedState.imageGallery;
@@ -1488,6 +1567,7 @@ const useTradeLogController = ({ plugin, leaf }: TradeLogProps) => {
     applyFilters(persistedFilters);
     void loadDataForFilters(persistedFilters);
   }, [
+    activeTradeLogScope,
     applyFilters,
     getPersistedTradeLogFilters,
     loadData,
@@ -2011,7 +2091,9 @@ const useTradeLogController = ({ plugin, leaf }: TradeLogProps) => {
         
         if (!node.dataLoaded && node.type !== 'trade') {
           try {
-            const children = await tradeLogService.getNodeChildren(node);
+            const children = await tradeLogService.getNodeChildren(node, {
+              operationFilePaths: activeTradeLogScope?.filePaths,
+            });
 
             
             
@@ -2039,14 +2121,12 @@ const useTradeLogController = ({ plugin, leaf }: TradeLogProps) => {
         }
       }
     },
-    [expandedNodes, tradeLogService]
+    [activeTradeLogScope?.filePaths, expandedNodes, tradeLogService]
   );
 
   
-  const handleNodeClick = useCallback(
+  const navigateToNode = useCallback(
     async (node: TimeNode) => {
-      const serviceManager = ServiceManager.getInstance(plugin.app, plugin);
-
       switch (node.type) {
         case 'trade': {
           
@@ -2086,105 +2166,70 @@ const useTradeLogController = ({ plugin, leaf }: TradeLogProps) => {
         }
 
         case 'day': {
-          
-          
           const date = createTradingDayFromString(node.id);
-          const drcService = await serviceManager.getDRCService();
-          const drcPath = drcService.getDRCNotePath(date);
-
-          
-          const file = plugin.app.vault.getAbstractFileByPath(drcPath);
-          if (file) {
-            await plugin.openFile(drcPath, true);
-          } else if (plugin.settings.drc.autoCreateDRCOnNavigation) {
-            
-            await drcService.createDRC(date);
-            await plugin.openFile(drcPath, true);
-          }
-          
+          const outcome = await openReviewPeriod(plugin, 'days', date);
+          showReviewNavigationNotice(outcome);
           break;
         }
 
         case 'week': {
-          
-          
-          
-          const parts = node.id.split('-W');
-          const weekStr = parts[1]; 
-          const yearMonth = parts[0]; 
-          const yearStr = yearMonth.split('-')[0]; 
-          const year = parseInt(yearStr);
-          const week = parseInt(weekStr);
-
-          
-          const jan1 = new Date(year, 0, 1);
-          const dayOfWeek = jan1.getDay();
-          const daysToMonday = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
-          const firstMonday = new Date(year, 0, 1 + daysToMonday);
-          const weekDate = new Date(
-            firstMonday.getTime() + (week - 1) * 7 * 24 * 60 * 60 * 1000
+          if (!node.anchorDate) break;
+          const outcome = await openReviewPeriod(
+            plugin,
+            'weeks',
+            createTradingDayFromString(node.anchorDate)
           );
-
-          const weeklyService = await serviceManager.getWeeklyReviewService();
-          const weekPath = weeklyService.getWeeklyReviewPath(weekDate);
-
-          
-          const file = plugin.app.vault.getAbstractFileByPath(weekPath);
-          if (file) {
-            await plugin.openFile(weekPath, true);
-          } else if (
-            plugin.settings.weekly.autoCreateWeeklyReviewOnNavigation
-          ) {
-            
-            await weeklyService.createWeeklyReview(weekDate);
-            await plugin.openFile(weekPath, true);
-          }
-          
+          showReviewNavigationNotice(outcome);
           break;
         }
 
         case 'month': {
-          
-          
           const [yearStr, monthStr] = node.id.split('-');
           const year = parseInt(yearStr);
-          const month = parseInt(monthStr) - 1; 
+          const month = parseInt(monthStr) - 1;
           const monthDate = new Date(year, month, 1);
-
-          const monthlyService = await serviceManager.getMonthlyReviewService();
-          const monthPath = monthlyService.getMonthlyReviewPath(monthDate);
-
-          
-          const file = plugin.app.vault.getAbstractFileByPath(monthPath);
-          if (file) {
-            await plugin.openFile(monthPath, true);
-          } else if (
-            plugin.settings.monthly?.autoCreateMonthlyReviewOnNavigation
-          ) {
-            
-            const createdFile =
-              await monthlyService.createMonthlyReview(monthDate);
-            if (createdFile) {
-              await plugin.openFile(monthPath, true);
-            }
-          }
-          
+          const outcome = await openReviewPeriod(plugin, 'months', monthDate);
+          showReviewNavigationNotice(outcome);
           break;
         }
 
-        case 'quarter':
-        case 'year':
-          
-          logger.debug(
-            t('tradelog.node.no-review-available', {
-              type: node.type,
-              id: node.id,
-            })
+        case 'quarter': {
+          const [yearStr, quarterStr] = node.id.split('-Q');
+          const date = new Date(
+            parseInt(yearStr),
+            (parseInt(quarterStr) - 1) * 3,
+            1
           );
+          const outcome = await openReviewPeriod(plugin, 'quarters', date);
+          showReviewNavigationNotice(outcome);
           break;
+        }
+
+        case 'year': {
+          const outcome = await openReviewPeriod(
+            plugin,
+            'years',
+            new Date(parseInt(node.id), 0, 1)
+          );
+          showReviewNavigationNotice(outcome);
+          break;
+        }
       }
     },
     [plugin]
+  );
+
+  const handleNodeClick = useCallback(
+    async (node: TimeNode) => {
+      if (nodeNavigationInFlightRef.current) return;
+      nodeNavigationInFlightRef.current = true;
+      try {
+        await navigateToNode(node);
+      } finally {
+        nodeNavigationInFlightRef.current = false;
+      }
+    },
+    [navigateToNode]
   );
 
   const handleClearImageGalleryFilters = useCallback(() => {
@@ -2212,7 +2257,7 @@ const useTradeLogController = ({ plugin, leaf }: TradeLogProps) => {
   const handleFilterChange = useCallback(
     (newFilters: Partial<TradeLogFilters>) => {
       const nextFilters = clearInactiveTreeSessionLogTags(
-        normalizeTradeLogFilters({ ...filtersRef.current, ...newFilters }),
+        mergeUserTradeLogFilterChange(filtersRef.current, newFilters),
         tradeLogMode
       );
       commitFilters(nextFilters);
@@ -2314,7 +2359,10 @@ const useTradeLogController = ({ plugin, leaf }: TradeLogProps) => {
     isDataLoaded,
     nodes,
     isTradeCountResolved,
-    hasExistingTrades,
+    activeTradeLogScope,
+    clearTradeLogOperationScope: () =>
+      plugin.ensureTradeOperationResultService().clearTradeLogScope(),
+    tradeCountResolution,
     filters,
     tradeLogMode,
     handleModeChange,
@@ -2365,7 +2413,9 @@ const TradeLogContent: React.FC<{
     isDataLoaded,
     nodes,
     isTradeCountResolved,
-    hasExistingTrades,
+    activeTradeLogScope,
+    clearTradeLogOperationScope,
+    tradeCountResolution,
     filters,
     tradeLogMode,
     handleModeChange,
@@ -2406,6 +2456,30 @@ const TradeLogContent: React.FC<{
     treeContent,
   } = controller;
 
+  const operationScopeBanner = activeTradeLogScope ? (
+    <div className="journalit-trade-log-operation-scope" role="status">
+      <div className="journalit-trade-log-operation-scope__label">
+        <ListFilter size={16} aria-hidden="true" />
+        <span>
+          {t('trade-handoff.scope.label', {
+            trades: tPlural(
+              'trade-handoff.trade-count',
+              activeTradeLogScope.filePaths.length
+            ),
+            accounts: activeTradeLogScope.accountNames.join(', '),
+          })}
+        </span>
+      </div>
+      <button
+        type="button"
+        className="journalit-trade-log-operation-scope__exit"
+        onClick={clearTradeLogOperationScope}
+      >
+        {t('trade-handoff.scope.exit')}
+      </button>
+    </div>
+  ) : null;
+
   
   if (
     tradeLogMode === 'trades' &&
@@ -2423,7 +2497,7 @@ const TradeLogContent: React.FC<{
     };
 
     return (
-      <div className="journalit-trade-log">
+      <div className="journalit-trade-log journalit-trade-log--operation-scope">
         <TradeLogHeader
           app={plugin.app}
           plugin={plugin}
@@ -2439,13 +2513,19 @@ const TradeLogContent: React.FC<{
           onSettingsChange={handleSettingsChange}
           isMultiSelectMode={isMultiSelectMode}
           onToggleMultiSelectMode={handleToggleMultiSelectMode}
+          tradeOnly={Boolean(activeTradeLogScope)}
         />
+        {operationScopeBanner}
         <div
           ref={registerEmptyStateTarget}
           className="journalit-trade-log-empty-container"
         >
           <TradeLogEmptyState
-            hasExistingTrades={hasExistingTrades}
+            isFilteredEmpty={shouldShowTradeLogFilteredEmptyState(
+              tradeCountResolution,
+              filters,
+              Boolean(activeTradeLogScope)
+            )}
             onImportTrades={handleOpenTradeImport}
             onAddTradeManually={handleOpenTradeForm}
             onClearFilters={handleClearTradeFilters}
@@ -2456,7 +2536,9 @@ const TradeLogContent: React.FC<{
   }
 
   return (
-    <div className="journalit-trade-log">
+    <div
+      className={`journalit-trade-log${activeTradeLogScope ? ' journalit-trade-log--operation-scope' : ''}`}
+    >
       <TradeLogHeader
         app={plugin.app}
         plugin={plugin}
@@ -2472,7 +2554,10 @@ const TradeLogContent: React.FC<{
         onSettingsChange={handleSettingsChange}
         isMultiSelectMode={isMultiSelectMode}
         onToggleMultiSelectMode={handleToggleMultiSelectMode}
+        tradeOnly={Boolean(activeTradeLogScope)}
       />
+
+      {operationScopeBanner}
 
       {tradeLogMode === 'trades' && isMultiSelectMode && (
         <div ref={registerBatchToolbarTarget}>

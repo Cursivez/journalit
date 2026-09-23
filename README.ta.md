@@ -47,17 +47,17 @@ Obsidian Community Plugins-இலிருந்து Journalit-ஐ நிற�
 - **உள்ளூர் முதல்**: முக்கிய பதிவேடு உங்கள் Obsidian vault-க்குள்ளேயே இருக்கும்.
 - **முகப்பு டாஷ்போர்டு**: இழுத்து விடும் விட்ஜெட்கள் + டிரேட் heatmap.
 - **டிரேட் டாஷ்போர்டு**: செயல்திறன் மற்றும் வடிவங்களை ஒரு பார்வையில் கண்காணிக்கவும்.
-- **கணக்கு டாஷ்போர்டு**: prop firm லாப இலக்குகள் மற்றும் drawdown-களுக்காக உருவாக்கப்பட்டது.
+- **[ப்ராப் சவால்கள்](https://journalit.co/docs/prop-challenges)**: evaluation மற்றும் funded கட்டங்கள், drawdown, தினசரி இழப்பு, லாப இலக்குகள் மற்றும் payout விதிகளைக் கண்காணிக்கவும்; அமைக்க firm profile-கள் உள்ளன.
 - **மதிப்பாய்வு அமைப்பு (V2)**: தினசரி → ஆண்டு வார்ப்புருக்கள் மற்றும் தளவமைப்பு உருவாக்கி.
 - **[Trade Import](https://journalit.co/csv-import)**: CSV, விரிதாள், HTML மற்றும் broker அறிக்கைகளுக்கான backend இறக்கு.
-- **[Trade Sync](https://journalit.co/docs/trade-sync)**: Tradovate மற்றும் MT4-க்கான தானியங்கி டிரேட் ஒத்திசைவு.
+- **[Trade Sync](https://journalit.co/docs/trade-sync)**: ஆதரிக்கப்படும் தரகர்களுக்கான தானியங்கி டிரேட் ஒத்திசைவு.
 
 ## முக்கிய தகவல்கள்
 
 - **உள்ளூர் முதல் கோர்**: முக்கிய பதிவேடு ஆஃப்லைனில் வேலை செய்து, உங்கள் குறிப்புகளையும் டிரேட்களையும் Obsidian vault-க்குள் சேமிக்கும்.
 - **முழு அணுகலுக்கு கணக்கு தேவை**: அங்கீகாரம் மற்றும் சந்தா அடிப்படையிலான அம்சங்களுக்கு Journalit கணக்கு தேவை.
-- **கட்டண அம்சங்கள்**: MetaTrader ஒத்திசைவு மற்றும் Trade Import போன்ற Pro அம்சங்களுக்கு கட்டண Pro சந்தா தேவை.
-- **விருப்ப பிணைய பயன்பாடு**: நீங்கள் பிணைய அம்சங்களைத் தேர்ந்தெடுக்கும்போது மட்டுமே plugin Journalit பிணைய சேவைகளைப் பயன்படுத்தும். உள்நுழைவு, மின்னஞ்சல் சரிபார்ப்பு, டோக்கன் சரிபார்ப்பு மற்றும் சந்தா நிலைக்காக Journalit சேவைகளைத் தொடர்பு கொள்ளும். அதன் பிறகு MetaTrader ஒத்திசைவு அல்லது Trade Import போன்ற அங்கீகரிக்கப்பட்ட அம்சங்களைப் பயன்படுத்தினால், ஒத்திசைவு ஒருங்கிணைப்பு, டிரேட் பெறுதல் மற்றும் விருப்ப Trade Import-க்காக Journalit backend API-யுடன் இணைக்கும்; MetaTrader ஒத்திசைவு அறிக்கை பதிவேற்றத்திற்கு Journalit நிர்வகிக்கும் FTP கட்டமைப்பைப் பயன்படுத்தும். பல நாணய மாற்றம் தேவைப்படும்போது Journalit மூன்றாம் தரப்பு மாற்று விகித சேவையிலிருந்தும் விகிதங்களைக் கேட்கலாம். இந்த பிணைய அம்சங்கள் அனைத்தும் விருப்பமானவை.
+- **கட்டண அம்சங்கள்**: Trade Sync, Trade Import, பொருளாதார நாட்காட்டி மற்றும் முன்நிரப்பப்பட்ட prop firm profile-கள் போன்ற Pro அம்சங்களுக்கு கட்டண Pro சந்தா தேவை.
+- **பிணைய பயன்பாடு**: புதுப்பிப்புகளுக்காக Journalit இயல்பாக பொதுப் GitHub வெளியீட்டு மெட்டாடேட்டாவைச் சரிபார்க்கிறது; vault அல்லது account தரவு அனுப்பப்படாது. உள்நுழைந்த அம்சங்கள் Journalit சேவைகளைப் பயன்படுத்தலாம்; MT4 ஒத்திசைவு நிர்வகிக்கப்படும் FTP-ஐப் பயன்படுத்துகிறது, மேலும் நாணய மாற்றம் மூன்றாம் தரப்பு மாற்று விகித சேவையைப் பயன்படுத்தலாம். [PRIVACY.md](PRIVACY.md)-ஐப் பார்க்கவும்.
 - **மூலத்தைப் பார்க்கலாம், உரிமம் தனியுரிமை**: plugin என்பது பார்க்கக்கூடிய மூலத்துடன் கூடிய தனியுரிமை மென்பொருள்.
 - **தனியுரிமை விவரங்கள்**: தரவு கையாளல், தக்கவைப்பு மற்றும் கட்டமைப்பு விவரங்களுக்கு [PRIVACY.md](PRIVACY.md) பார்க்கவும்.
 
@@ -75,6 +75,12 @@ Obsidian Community Plugins-இலிருந்து Journalit-ஐ நிற�
 
 ![Setup ஒப்பீடு](https://raw.githubusercontent.com/Cursivez/journalit/main/assets/readme/setup-comparison.png)
 
+### கணக்குகள் & ப்ராப் சவால்கள்
+
+![கணக்கு டாஷ்போர்டு](https://raw.githubusercontent.com/Cursivez/journalit/main/assets/readme/account-dashboard.png)
+
+![கணக்கு பக்கங்கள்](https://raw.githubusercontent.com/Cursivez/journalit/main/assets/readme/account-pages.png)
+
 ### தளவமைப்பு உருவாக்கி
 
 ![தளவமைப்பு உருவாக்கி](https://raw.githubusercontent.com/Cursivez/journalit/main/assets/readme/layout-builder.png)
@@ -90,14 +96,6 @@ Obsidian Community Plugins-இலிருந்து Journalit-ஐ நிற�
 ### Trade Import
 
 ![Trade Import](https://raw.githubusercontent.com/Cursivez/journalit/main/assets/readme/trade-import.png)
-
-### கணக்கு டாஷ்போர்டு
-
-![கணக்கு டாஷ்போர்டு](https://raw.githubusercontent.com/Cursivez/journalit/main/assets/readme/account-dashboard.png)
-
-### கணக்கு பக்கங்கள்
-
-![கணக்கு பக்கங்கள்](https://raw.githubusercontent.com/Cursivez/journalit/main/assets/readme/account-pages.png)
 
 ## ஆதரிக்கப்படும் Broker-கள்
 
@@ -124,7 +122,7 @@ Obsidian Community Plugins-இலிருந்து Journalit-ஐ நிற�
 <details>
 <summary>தேடல் சொற்கள்</summary>
 
-சொற்கள்: obsidian trading journal, trading plugin, trade tracker, obsidian trading template, trading analytics, MetaTrader, MT4 sync, MT5 sync, Trade Import, prop firm, prop firms, funded account, profit target, trailing drawdown, max drawdown
+சொற்கள்: obsidian trading journal, trading plugin, trade tracker, obsidian trading template, trading analytics, MetaTrader, MT4 sync, MT5 sync, Trade Import, prop firm, prop firms, funded account, profit target, trailing drawdown, max drawdown, prop challenge, evaluation, funded phase, payout rules, daily loss limit
 
 </details>
 
@@ -135,6 +133,7 @@ Obsidian Community Plugins-இலிருந்து Journalit-ஐ நிற�
 - [Trade Import மேலோட்டம்](https://journalit.co/csv-import)
 - [MetaTrader ஒத்திசைவு மேலோட்டம்](https://journalit.co/metatrader-trading-journal)
 - [பிற பதிவேடுகளுடன் ஒப்பீடு](https://journalit.co/compare)
+- [ப்ராப் சவால்கள் வழிகாட்டி](https://journalit.co/docs/prop-challenges)
 
 </details>
 

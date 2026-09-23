@@ -1271,6 +1271,266 @@ export const HOME_WIDGET_STYLES = `
   }
 
   
+  .journalit-home-challenge-alerts {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    padding: 12px;
+    gap: 8px;
+    min-height: 0;
+  }
+
+  
+  .journalit-home-challenge-alerts--empty {
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+
+  .journalit-home-challenge-alerts__check {
+    color: var(--text-muted);
+    flex-shrink: 0;
+  }
+
+  .journalit-home-challenge-alerts__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .journalit-home-challenge-alerts__body {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .journalit-home-challenge-alerts__list {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-height: 0;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .journalit-home-challenge-alerts__row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+    padding: 2px 0;
+    font-size: 13px;
+    border-radius: 4px;
+  }
+
+  .journalit-home-challenge-alerts__row--clickable {
+    cursor: pointer;
+  }
+
+  .journalit-home-challenge-alerts__row--clickable:focus-visible {
+    outline: none;
+  }
+
+  .journalit-home-challenge-alerts__dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    background: var(--text-muted);
+  }
+
+  .journalit-home-challenge-alerts__dot.is-failed {
+    background: var(--color-red);
+  }
+
+  .journalit-home-challenge-alerts__dot.is-passed {
+    background: var(--color-green);
+  }
+
+  
+  .journalit-home-challenge-alerts__dot.is-payout {
+    background: var(--color-cyan);
+  }
+
+  .journalit-home-challenge-alerts__dot.is-unknown {
+    background: var(--text-accent);
+  }
+
+  .journalit-home-challenge-alerts__dot.is-masked {
+    background: var(--text-faint);
+  }
+
+  .journalit-home-challenge-alerts__account {
+    font-weight: 500;
+    color: var(--text-normal);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    min-width: 0;
+  }
+
+  .journalit-home-challenge-alerts__label {
+    flex: 1;
+    color: var(--text-muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    min-width: 0;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .journalit-home-challenge-alerts__chevron {
+    color: var(--text-faint);
+    flex-shrink: 0;
+    transition: color 0.1s ease;
+  }
+
+  .journalit-home-challenge-alerts__row--clickable:hover .journalit-home-challenge-alerts__chevron,
+  .journalit-home-challenge-alerts__row--clickable:focus-visible .journalit-home-challenge-alerts__chevron {
+    color: var(--text-normal);
+  }
+
+  
+  .journalit-home-eval-roi {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    padding: 12px;
+    gap: 8px;
+    cursor: pointer;
+  }
+
+  .journalit-home-eval-roi--loading {
+    cursor: default;
+  }
+
+  .journalit-home-eval-roi__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .journalit-home-eval-roi__body {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .journalit-home-eval-roi__gauge {
+    position: relative;
+    flex: 0 0 auto;
+    width: 132px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .journalit-home-eval-roi__gauge-svg {
+    display: block;
+    width: 100%;
+    height: auto;
+    overflow: visible;
+  }
+
+  .journalit-home-eval-roi__gauge-track {
+    stroke: var(--background-modifier-border);
+  }
+
+  .journalit-home-eval-roi__gauge-fill {
+    transition: stroke-dasharray 0.3s ease;
+  }
+
+  .journalit-home-eval-roi__gauge-fill--empty {
+    stroke: transparent;
+  }
+
+  .journalit-home-eval-roi__gauge-tick {
+    stroke: var(--text-faint);
+  }
+
+  .journalit-home-eval-roi__hero {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    text-align: center;
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--text-normal);
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .journalit-home-eval-roi__tone--positive {
+    color: var(--color-green);
+    stroke: var(--color-green);
+  }
+
+  .journalit-home-eval-roi__tone--negative {
+    color: var(--color-red);
+    stroke: var(--color-red);
+  }
+
+  .journalit-home-eval-roi__ledger {
+    flex: 1;
+    min-width: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .journalit-home-eval-roi__ledger-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 8px;
+  }
+
+  .journalit-home-eval-roi__ledger-row--net {
+    margin-top: 2px;
+    padding-top: 6px;
+    border-top: 1px solid var(--background-modifier-border);
+  }
+
+  .journalit-home-eval-roi__ledger-label {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin: 0;
+  }
+
+  .journalit-home-eval-roi__ledger-value {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-normal);
+    margin: 0;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+
+  .journalit-home-eval-roi__ledger-value--muted {
+    color: var(--text-muted);
+    font-weight: 400;
+  }
+
+  .journalit-home-eval-roi__empty {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+
+  
   .journalit-home-weekly {
     height: 100%;
     display: flex;
@@ -1726,6 +1986,11 @@ export const HOME_WIDGET_STYLES = `
   button.journalit-native-button.journalit-home-unreviewed--row {
     flex-direction: row;
     gap: 8px;
+  }
+
+  button.journalit-native-button.journalit-home-unreviewed--complete {
+    box-sizing: border-box;
+    width: 100%;
   }
 
   .journalit-home-unreviewed__line {

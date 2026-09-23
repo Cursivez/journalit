@@ -45,6 +45,7 @@ interface ConfirmationModalOptions {
 class ConfirmationModal<TResult> extends Modal {
   private settled = false;
   private cleanupContent: (() => void) | null = null;
+  private initialFocusButton: HTMLButtonElement | null = null;
 
   constructor(
     app: App,
@@ -60,6 +61,13 @@ class ConfirmationModal<TResult> extends Modal {
     }
   }
 
+  open(): void {
+    super.open();
+    
+    
+    this.initialFocusButton?.focus({ preventScroll: true });
+  }
+
   onOpen(): void {
     this.contentEl.empty();
     this.modalEl.addClass('journalit-confirmation-modal');
@@ -69,7 +77,7 @@ class ConfirmationModal<TResult> extends Modal {
     const actions = this.contentEl.createDiv({
       cls: 'journalit-modal-actions journalit-confirmation-modal__actions',
     });
-    let initialFocusButton: HTMLButtonElement | null = null;
+    this.initialFocusButton = null;
     for (const action of this.options.actions) {
       const button = actions.createEl('button', {
         type: 'button',
@@ -79,10 +87,9 @@ class ConfirmationModal<TResult> extends Modal {
       button.disabled = action.disabled ?? false;
       button.addEventListener('click', () => this.settle(action.value));
       if (action.initialFocus) {
-        initialFocusButton = button;
+        this.initialFocusButton = button;
       }
     }
-    (initialFocusButton ?? actions.querySelector('button'))?.focus();
   }
 
   onClose(): void {
@@ -92,6 +99,7 @@ class ConfirmationModal<TResult> extends Modal {
     }
     this.cleanupContent?.();
     this.cleanupContent = null;
+    this.initialFocusButton = null;
     this.contentEl.empty();
   }
 

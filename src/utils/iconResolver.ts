@@ -22,6 +22,8 @@ import {
   Zap,
   Radio,
   PanelLeftOpen,
+  RefreshCw,
+  Settings,
   ObsidianIconComponent,
 } from '../components/shared/icons/ObsidianIcon';
 
@@ -49,6 +51,8 @@ const iconMap: Record<string, ObsidianIconComponent> = {
   zap: Zap,
   radio: Radio,
   'panel-left-open': PanelLeftOpen,
+  'refresh-cw': RefreshCw,
+  settings: Settings,
 };
 
 

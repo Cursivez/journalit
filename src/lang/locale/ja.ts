@@ -45,70 +45,10 @@ const ja: Partial<Lang> = {
   
   
   
-  'onboarding.explore.title': 'Explore',
-  'onboarding.explore.subtitle':
-    'Journalit turns your vault into a full trading journal with dashboards, trade log, account tracking, and customisable layouts.',
-  'onboarding.explore.subtitle2':
-    'Designed to adapt to your workflow, not force you into ours.',
-  'onboarding.explore.tagline': 'Your journal, your rules.',
-  'onboarding.explore.section.out-of-box.title': 'Core views & tools',
-  'onboarding.explore.core.dashboard.label': 'ダッシュボード',
-  'onboarding.explore.core.dashboard.description':
-    'Your performance at a glance — P&L, win rate, drawdowns, and more.',
-  'onboarding.explore.core.tradelog.label': 'Trade Log',
-  'onboarding.explore.core.tradelog.description':
-    'Browse trades by year/month/week/day and drill down instantly.',
-  'onboarding.explore.core.accounts.label': 'Account Tracking',
-  'onboarding.explore.core.accounts.description':
-    'Track multiple accounts and view account-specific performance pages.',
-  'onboarding.explore.core.layouts.label': 'Layout Builder',
-  'onboarding.explore.core.layouts.description':
-    'Customize dashboards and review layouts with widgets and templates.',
-  'onboarding.explore.imports.title': 'インポートと同期',
-
-  'onboarding.explore.imports.csv.label': 'Trade Import',
-  'onboarding.explore.imports.csv.description':
-    '対応する取引履歴ファイルを無料でプレビューし、列をマッピングできます。Vault へのインポートには Pro が必要です。',
-  'onboarding.explore.imports.trade-sync.label': 'Trade Sync',
-  'onboarding.explore.imports.trade-sync.description':
-    'Automatic trade syncing from MetaTrader (MT4) or Tradovate. Requires Pro.',
-
-  'onboarding.explore.cta.manual': 'Open Docs',
 
   
   
   
-  'onboarding.path.kicker': 'あなたの取引履歴',
-  'onboarding.path.title': 'Journalit に取り込む取引はすでにありますか？',
-  'onboarding.path.subtitle':
-    '回答を選ぶと、最適な次のステップへ直接進みます。',
-  'onboarding.path.option.manual.label': 'いいえ、最初から始めます',
-  'onboarding.path.option.manual.description':
-    '「取引を追加」フォームを開き、最初の取引を記録します。',
-  'onboarding.path.option.csv.label': 'はい、取引履歴があります',
-  'onboarding.path.option.csv.description':
-    'ブローカーの自動同期またはファイルのインポートを選べます。',
-  'onboarding.path.method.kicker': '取引履歴を取り込む',
-  'onboarding.path.method.title': 'どの方法で取り込みますか？',
-  'onboarding.path.method.subtitle':
-    'ブローカーとエクスポート形式に合う方法を選んでください。',
-  'onboarding.path.option.trade-sync.label': 'MT4 または Tradovate を接続',
-  'onboarding.path.option.trade-sync.description':
-    'Trade Sync を設定して、新しい取引を自動的に取り込みます。',
-  'onboarding.path.option.import.label': '取引履歴ファイルをインポート',
-  'onboarding.path.option.import.description':
-    'CSV、Excel、または対応するブローカーレポートをアップロードします。',
-  'onboarding.path.option.import.badge': '無料プレビュー',
-  'onboarding.manual.title': 'Journalit を始める準備ができました',
-  'onboarding.manual.subtitle':
-    '取引をすばやく記録できるよう、以下の推奨ショートカットを設定します。',
-  'onboarding.manual.subtitle-mobile':
-    '取引を記録するときは「取引を追加」を開いてください。',
-  'onboarding.manual.hotkey.title': 'おすすめのショートカット',
-  'onboarding.manual.cta.change-hotkey': 'ショートカットを設定',
-  'onboarding.manual.hit-hotkey':
-    'おすすめ: {hotkey}。「ショートカットを設定」をクリックして設定できます。',
-  'onboarding.manual.add-first-trade': '最初の取引を追加',
   'onboarding.notice.trade-sync-open-failed':
     'Trade Sync を開けませんでした。もう一度お試しください。',
 
@@ -116,7 +56,6 @@ const ja: Partial<Lang> = {
 
   
   'command.open-layout-builder': 'レイアウトビルダーを開く',
-  'command.switch-template': 'テンプレートを切り替え',
 
   
   
@@ -185,6 +124,9 @@ const ja: Partial<Lang> = {
   'form.layout.item.trade-currency': 'トレード通貨 / 為替レート',
   'form.layout.item.trade-currency-desc':
     '別の通貨でトレードを入力し、任意で為替レートを手動指定できます。',
+  'form.layout.item.exchange-desc': '株式・暗号資産取引の取引所フィールド。',
+  'form.layout.item.direct-pnl-toggle-desc':
+    '個別のトレードを、決済価格ではなく損益合計の入力に切り替えます。',
   'form.layout.manual-fx-rate': 'FXレート上書き',
   'form.layout.result-r': 'R での結果',
   'form.layout.entry-time': 'トレード時刻',
@@ -329,8 +271,9 @@ const ja: Partial<Lang> = {
   'form.trade-type.missed-reason-placeholder':
     'このトレード機会を見逃した理由を説明...',
 
-  'form.account-empty-state.title':
-    'トレードを追加する前に口座を作成してください',
+  'form.account-empty-state.title': '最初のアカウントを設定',
+  'form.account-empty-state.description':
+    'アカウントは残高を記録し、Journalit がリターン、リスク、ドローダウンを計算できるようにします。作成に必要なのは名前だけです。',
   'form.account-empty-state.create-account': '口座を作成',
   'form.account-empty-state.submit-disabled':
     'このトレードを保存するには先に口座を作成してください。',
@@ -379,6 +322,7 @@ const ja: Partial<Lang> = {
   
 
   'notice.login-success': 'ログインに成功しました！',
+  'notice.pro-access-ready': 'PROアクセスの準備ができました。',
 
   'notice.logout-success': 'サインアウトしました',
   'notice.hotkey-set': 'ショートカットを設定しました: {hotkey}',
@@ -418,7 +362,6 @@ const ja: Partial<Lang> = {
   'notice.error.open-journalit':
     'Journalitを開けませんでした。Obsidianを再読み込みしてください。',
   'notice.error.open-drc': 'DRCを開けませんでした: {error}',
-  'notice.error.open-dashboard': 'Failed to open dashboard: {error}',
   'notice.error.open-trade-log': 'Failed to open Trade Log: {error}',
   'notice.error.open-csv-import': 'Failed to open Trade Import: {error}',
   'notice.error.open-weekly-review': '週次レビューを開けませんでした: {error}',
@@ -720,17 +663,6 @@ const ja: Partial<Lang> = {
   
   'csv.results.errors-header': 'CLICK TO SEE ERRORS ({count})',
   'csv.results.history-ready': 'Your trading history is ready',
-  'csv.results.history-trades.one': '{count} trade recovered',
-  'csv.results.history-trades.few': '{count} trades recovered',
-  'csv.results.history-trades.many': '{count} trades recovered',
-  'csv.results.history-trades.other': '{count} trades recovered',
-  'csv.results.history-date-range': '{start} – {end}',
-  'csv.results.history-symbols.one': '{count} symbol',
-  'csv.results.history-symbols.few': '{count} symbols',
-  'csv.results.history-symbols.many': '{count} symbols',
-  'csv.results.history-symbols.other': '{count} symbols',
-  'csv.results.enrichment-note':
-    'Imported performance is ready to review. Add setups, confluences, and notes to recent trades when you want deeper pattern analysis.',
   'csv.results.discord-note':
     'Optional: If you need help, click Copy report and paste it in Discord.',
 
@@ -796,7 +728,6 @@ const ja: Partial<Lang> = {
   
   'settings.auth.feature.csv-import': 'Trade Import',
   'settings.auth.feature.ai-mapping': 'AI Trade Importマッピング',
-  'settings.auth.feature.metatrader-sync': 'MetaTrader同期',
   'settings.auth.feature.basic-tracking': '基本取引追跡',
 
   'settings.auth.feature.priority-support': '優先サポート',
@@ -810,6 +741,11 @@ const ja: Partial<Lang> = {
     'Checklist to help you add trading history and configure Journalit',
   'home.widget.getting-started.progress': '{completed}/{total} completed',
   'home.widget.getting-started.progress.loading': 'Checking progress...',
+  'home.widget.getting-started.item.account.title': '取引アカウントを設定',
+  'home.widget.getting-started.item.account.description':
+    'トレードは残高を記録するアカウントに紐づきます。アカウントがないとリターンやドローダウンを計算できません。',
+  'home.widget.getting-started.item.account.time': '15s',
+  'home.widget.getting-started.item.account.cta': 'アカウントを設定',
   'home.widget.getting-started.item.create.title':
     'Bring in your trading history',
   'home.widget.getting-started.item.create.description':
@@ -841,7 +777,7 @@ const ja: Partial<Lang> = {
   'navigation.setting.open.button': 'サイドバーを開く',
   'home.widget.getting-started.item.pro.title': 'Activate PRO',
   'home.widget.getting-started.item.pro.description':
-    'Enable Trade Import, MetaTrader sync, and AI mapping.',
+    'Trade Import、Trade Sync、経済カレンダーを有効にします。',
   'home.widget.getting-started.item.pro.time': '1 min',
   'home.widget.getting-started.item.pro.cta': 'Activate',
 
@@ -1181,7 +1117,7 @@ const ja: Partial<Lang> = {
   'trade-import.label.template-actions': 'Template actions',
   'trade-import.template.none': 'No template',
   'trade-import.label.account': 'Account',
-  'trade-import.label.broker': 'Broker',
+  'trade-import.label.broker': 'エクスポート元 / プラットフォーム',
   'trade-import.label.asset-type': 'Asset type',
   'trade-import.asset.stock': 'Stock',
   'trade-import.asset.options': 'Options',
@@ -1222,19 +1158,6 @@ const ja: Partial<Lang> = {
   'trade-import.preview.metric.ready': 'インポート可能',
   'trade-import.preview.metric.duplicates': '重複の可能性',
   'trade-import.preview.metric.attention': '確認が必要',
-  'trade-import.preview.upgrade.title': 'Your preview is ready',
-  'trade-import.preview.upgrade.description.one':
-    '{count} trade can be added to your vault when you activate PRO.',
-  'trade-import.preview.upgrade.description.few':
-    '{count} trades can be added to your vault when you activate PRO.',
-  'trade-import.preview.upgrade.description.many':
-    '{count} trades can be added to your vault when you activate PRO.',
-  'trade-import.preview.upgrade.description.other':
-    '{count} trades can be added to your vault when you activate PRO.',
-  'trade-import.preview.upgrade.free-limit':
-    '無料プレビューでは、1 時間あたり {count} 回の分析と {count} 回のプレビューを利用できます。',
-  'trade-import.preview.upgrade.free-storage-limit':
-    '無料プレビューには一度に最大 {count} 件の取引を保存できます。',
   'trade-import.table.status': 'Status',
   'trade-import.table.symbol': 'Symbol',
   'trade-import.table.direction': 'Direction',
@@ -1618,6 +1541,15 @@ const ja: Partial<Lang> = {
     'トレードログの2つのモードを確認しました',
   'tradelog.guide.gallery-finish.description':
     '表と一括操作が必要なときはトレードを使います。ジャーナル全体の画像、GIF、動画、YouTubeリンク、市場構造、チャート注釈を確認したいときはギャラリーを使います。',
+  'account.prop-challenge.prefill.heading-link': 'Prefill from your firm',
+  'account.prop-challenge.prefill.heading-link-firms':
+    '{firms} +{count} more, rules prefilled with PRO',
+  'account.prop-challenge.prefill.heading-link-firms-all':
+    '{firms}, rules prefilled with PRO',
+  'account.prop-challenge.prefill.match':
+    'We have {firm}: {count} challenges with rules ready',
+  'account.prop-challenge.rules.empty':
+    'ルールはまだ追加されていません。「ルールを追加」からこのフェーズを設定してください。',
   'trade.validation.fx-rate-number':
     '為替レートは有効な数値である必要があります。',
   'trade.validation.fx-rate-positive':
@@ -1812,6 +1744,354 @@ const ja: Partial<Lang> = {
   'settings.general.show-seconds-desc':
     '取引のエントリー時刻と決済時刻の入力時に秒を表示します。',
   'settings.general.show-seconds-aria': '取引時刻に秒を表示',
+  'account.prop-challenge.summary.status.payout_ready': 'Payout ready',
+  'account.prop-challenge.ribbon.passed': '{phase} 合格',
+  'account.prop-challenge.ribbon.failed': '{phase} 不合格',
+  'account.prop-challenge.ribbon.action.advance': '{phase}へ進む',
+  'account.prop-challenge.ribbon.action.advance-short': '進む',
+  'account.prop-challenge.ribbon.action.mark-passed': '合格にする',
+  'account.prop-challenge.ribbon.action.archive': 'アーカイブ',
+  'account.prop-challenge.actions.stale':
+    'このチャレンジは別の場所で更新されました。確認してからもう一度お試しください。',
+  'account.prop-challenge.confirm.reopen':
+    '{account}を再開しますか？チャレンジ「{challenge}」は{phase}に戻ります。',
+  'account.prop-challenge.confirm.fail':
+    '{account}を失敗にしますか？チャレンジ「{challenge}」は{phase}で終了します。',
+  'account.prop-challenge.confirm.archive-failed':
+    '{account}をアーカイブしますか？チャレンジ「{challenge}」は失敗しました。口座はアーカイブに移動します。',
+  'account.prop-challenge.confirm.archive-passed':
+    '{account}をアーカイブしますか？チャレンジ「{challenge}」は合格しました。口座はアーカイブに移動します。',
+  'account.prop-challenge.transition.route': '{account} · {from} → {to}',
+  'account.prop-challenge.transition.route-passed':
+    '{account} · {from} → チャレンジ合格',
+  'account.prop-challenge.ribbon.action.record-payout': '出金を記録',
+  'account.prop-challenge.ribbon.action.record-payout-short': '出金',
+  'account.prop-challenge.payout.title': 'Payout readiness',
+  'account.prop-challenge.payout.eligible': 'Payout ready',
+  'account.prop-challenge.payout.available': 'Available now',
+  'account.prop-challenge.payout.cycle-profit': 'Cycle profit',
+  'account.prop-challenge.payout.history': 'Payouts',
+  'account.prop-challenge.payout.requirement.days': 'Trading days',
+  'account.prop-challenge.payout.requirement.qualifying-days':
+    'Qualifying days',
+  'account.prop-challenge.payout.requirement.cycle-profit': 'Cycle profit',
+  'account.prop-challenge.payout.requirement.consistency': 'Consistency',
+  'account.prop-challenge.payout.requirement.minimum': 'Minimum available',
+  'account.prop-challenge.payout.requirement.payouts': 'Payout allowance',
+  'account.prop-challenge.payout.requirement.request-window': 'Request window',
+  'account.prop-challenge.payout.timezone-invalid':
+    '既知のタイムゾーンではありません。',
+  'account.prop-challenge.payout.preview-amount': 'Preview payout amount',
+  'account.prop-challenge.payout.you-receive': 'Estimated trader share',
+  'account.prop-challenge.payout.balance-after': 'Balance after payout',
+  'account.prop-challenge.payout.drawdown-floor': 'Drawdown floor after',
+  'account.prop-challenge.payout.buffer-after': 'Room before breach',
+  'account.prop-challenge.payout.request-not-allowed':
+    'This amount is not currently eligible under the configured payout rules.',
+  'account.prop-challenge.payout.immediate-breach':
+    'This payout would leave the account at or below its drawdown floor.',
+  'account.prop-challenge.payout.account-concludes':
+    'This payout completes the configured simulated-funded payout cycle.',
+  'account.prop-challenge.payout.next-stage-after-payout':
+    'This payout advances the account to its next configured stage.',
+  'account.prop-challenge.payout.live-review-after-payout':
+    'This payout makes the account eligible for live-account review.',
+  'account.prop-challenge.payout.cycle-resets':
+    'Payout progress resets after an approved payout.',
+  'account.prop-challenge.payout.cycle-continues':
+    'Payout progress continues after an approved payout.',
+  'account.prop-challenge.payout.drawdown.unchanged':
+    'The current drawdown floor remains in place.',
+  'account.prop-challenge.payout.drawdown.lock_at_balance':
+    'The drawdown floor locks after payout.',
+  'account.prop-challenge.payout.drawdown.reset_from_starting_balance':
+    'The account and drawdown limits reset after payout.',
+  'account-page.guide.whats-new.cockpit.payout.title':
+    'Know when a funded payout is safe',
+  'account-page.guide.whats-new.cockpit.payout.description':
+    'Funded accounts with verified rules now show payout requirements, the amount available, and a preview of the balance and drawdown consequences before you request money.',
+  'account-page.guide.main.payout.title': 'Plan funded payouts',
+  'account-page.guide.main.payout.description':
+    'When the funded phase has verified payout rules, this panel tracks eligibility and previews the account impact of a requested amount.',
+  'account-page.guide.main.trade-log.description':
+    'この口座が選択された状態でトレードログを開きます。複数フェーズのチャレンジでは、ボタンは表示中のフェーズに従い、矢印から他のフェーズまたは口座全体を選べます。',
+  'account.prop-challenge.stage': 'Stage type',
+  'account.prop-challenge.stage.evaluation': 'Evaluation',
+  'account.prop-challenge.stage.sim-funded': 'Sim funded',
+  'account.prop-challenge.stage.live-funded': 'Live funded',
+  'account.prop-challenge.payout-rules.title': 'Payout rules',
+  'account.prop-challenge.payout-rules.add': 'Add payout rules',
+  'account.prop-challenge.payout-rules.remove': 'Remove payout rules',
+  'account.prop-challenge.payout-rules.cycle': 'Eligibility cycle',
+  'account.prop-challenge.payout-rules.request-window': 'Request timing',
+  'account.prop-challenge.payout-rules.request-window.anytime': 'Any day',
+  'account.prop-challenge.payout-rules.request-window.weekdays':
+    'Specific weekdays',
+  'account.prop-challenge.payout-rules.request-window.time-zone': 'Time zone',
+  'account.prop-challenge.payout-rules.request-window.allowed-days':
+    'Allowed request days',
+  'account.prop-challenge.payout-rules.cycle.none': 'No waiting cycle',
+  'account.prop-challenge.payout-rules.cycle.trading-days': 'Trading days',
+  'account.prop-challenge.payout-rules.cycle.qualifying-days':
+    'Qualifying days',
+  'account.prop-challenge.payout-rules.cycle.calendar-days': 'Calendar days',
+  'account.prop-challenge.payout-rules.days': 'Required days',
+  'account.prop-challenge.payout-rules.minimum-daily-profit':
+    'Minimum daily profit',
+  'account.prop-challenge.payout-rules.anchor': 'Cycle starts from',
+  'account.prop-challenge.payout-rules.anchor.phase-start': 'Stage start',
+  'account.prop-challenge.payout-rules.anchor.first-trade': 'First trade',
+  'account.prop-challenge.payout-rules.minimum-cycle-profit':
+    'Minimum cycle profit',
+  'account.prop-challenge.payout-rules.consistency-percent':
+    'Maximum best-day share (%)',
+  'account.prop-challenge.payout-rules.availability': 'Available profit',
+  'account.prop-challenge.payout-rules.availability.starting-balance':
+    'Above starting balance',
+  'account.prop-challenge.payout-rules.availability.balance-floor':
+    'Above balance floor',
+  'account.prop-challenge.payout-rules.balance-floor': 'Balance floor',
+  'account.prop-challenge.payout-rules.request-percent':
+    'Withdrawable share (%)',
+  'account.prop-challenge.payout-rules.minimum-request': 'Minimum request',
+  'account.prop-challenge.payout-rules.maximum': 'Maximum request',
+  'account.prop-challenge.payout-rules.maximum.none': 'No maximum',
+  'account.prop-challenge.payout-rules.maximum.fixed': 'Fixed maximum',
+  'account.prop-challenge.payout-rules.maximum.schedule':
+    'Maximum by payout number',
+  'account.prop-challenge.payout-rules.maximum-amount': 'Maximum amount',
+  'account.prop-challenge.payout-rules.schedule': 'Amounts by payout number',
+  'account.prop-challenge.payout-rules.profit-split': 'Trader profit share (%)',
+  'account.prop-challenge.payout-rules.maximum-payouts': 'Maximum payouts',
+  'account.prop-challenge.payout-rules.maximum-payout-outcome':
+    'After final payout',
+  'account.prop-challenge.payout-rules.maximum-payout-outcome.continue':
+    'Continue account',
+  'account.prop-challenge.payout-rules.maximum-payout-outcome.conclude':
+    'Conclude account',
+  'account.prop-challenge.payout-rules.maximum-payout-outcome.promote':
+    'Advance to next stage',
+  'account.prop-challenge.payout-rules.maximum-payout-outcome.live-review':
+    'Eligible for live review',
+  'account.prop-challenge.payout-rules.aftermath': 'After an approved payout',
+  'account.prop-challenge.payout-rules.aftermath.unchanged':
+    'Deduct payout; keep drawdown floor',
+  'account.prop-challenge.payout-rules.aftermath.lock':
+    'Deduct payout; lock drawdown floor',
+  'account.prop-challenge.payout-rules.aftermath.reset':
+    'Reset account and drawdown',
+  'account.prop-challenge.payout-rules.drawdown-floor':
+    'Drawdown floor after payout',
+  'account.prop-challenge.payout-rules.first-payout-exempt':
+    'First payout ignores minimum cycle profit',
+  'account.prop-challenge.payout-rules.reset-cycle':
+    'Reset eligibility cycle after payout',
+  'account.prop-challenge.payout-rules.group.eligibility': 'Eligibility',
+  'account.prop-challenge.payout-rules.group.availability': 'Available payout',
+  'account.prop-challenge.payout-rules.group.terms': 'Payout terms',
+  'account.prop-challenge.payout-rules.group.aftermath': 'After payout',
+  'account.prop-challenge.payout.requirement.elapsed-hours': 'Elapsed time',
+  'account.prop-challenge.payout-rules.minimum-elapsed-hours':
+    'Minimum elapsed hours',
+
+  'account.prop-challenge.ledger.help.open': '{rule}について',
+  'account.prop-challenge.ledger.help.profit_target':
+    'この金額だけ口座を増やしてフェーズに合格します。決済済みのトレードだけが対象です。',
+  'account.prop-challenge.ledger.help.profit_target.example':
+    'この口座は利益 {target} が必要です。これまでに {current}、残り {remaining}。',
+  'account.prop-challenge.ledger.help.profit_target.example-done':
+    '目標達成: {current} / {target}。',
+  'account.prop-challenge.ledger.help.drawdown.static':
+    '開始残高よりどれだけ下がってよいかの上限です。下限は動きません。',
+  'account.prop-challenge.ledger.help.drawdown.static.example':
+    'この口座の下限は {floor} です。残高はそれを上回る必要があります。上限 {limit} のうち {buffer} が残っています。',
+  'account.prop-challenge.ledger.help.drawdown.eod_trailing':
+    '下限は最高の終日残高に追随し、上がるだけで、会社のロック水準で固定されます。',
+  'account.prop-challenge.ledger.help.drawdown.eod_trailing.example':
+    '現在の下限は {floor}（最高終値 − {limit}）で、より高い終値のたびに上がります。残り {buffer}。',
+  'account.prop-challenge.ledger.help.drawdown.intraday_trailing':
+    'フロアは含み益を含む常時の最高残高に追随します。Journalitは決済済みトレードしか見ないため、このフロアは各決済後の最高残高に追随し、保有中に達したピークは数えません。プロップファームの数値を確認してください。',
+  'account.prop-challenge.ledger.help.drawdown.intraday_trailing.example':
+    '現在の下限は {floor}（決済後の最良残高 − {limit}）です。残り {buffer}。会社のライブ数値の方が厳しい場合があります。',
+  'account.prop-challenge.ledger.help.daily_loss_limit':
+    '1取引日に失ってよい上限です。到達するとフェーズ失敗、または次セッションまで停止します（会社による）。',
+  'account.prop-challenge.ledger.help.daily_loss_limit.example':
+    '今日: 日次上限 {limit} のうち {used} 損失、残り {left}。',
+  'account.prop-challenge.ledger.help.daily_profit_cap':
+    '各日の利益の一部だけが目標に算入されます。上限超は手元に残りますが数えません。',
+  'account.prop-challenge.ledger.help.daily_profit_cap.example':
+    '1日の利益のうち {cap} だけが算入されます。上限を超えて得た {excluded} はこれまで算入されません。',
+  'account.prop-challenge.ledger.help.live_review_daily_profit':
+    'この利益以上の取引日が1日あれば、ライブ口座審査の対象になります。',
+  'account.prop-challenge.ledger.help.live_review_daily_profit.example':
+    '{trigger} 以上の日が1日あれば資格あり。これまでの最良日は {bestDay}。',
+  'account.prop-challenge.ledger.help.minimum_trading_days':
+    '決済トレードが1件以上ある日数。目標を早く達成しても、この日数までは合格できません。',
+  'account.prop-challenge.ledger.help.minimum_trading_days.example':
+    '取引日 {current} / {target} 完了、残り {remaining}。',
+  'account.prop-challenge.ledger.help.minimum_profitable_days':
+    '会社の最低日次利益以上で終えた取引日。損益トントンやそれ未満は数えません。',
+  'account.prop-challenge.ledger.help.minimum_profitable_days.example':
+    '{minimum} 以上で終えた日 {current} / {target}、残り {remaining}。',
+  'account.prop-challenge.ledger.help.consistency':
+    '最良の1日がフェーズ利益全体に占める割合の上限です。他の日で稼いで直し、損では直しません。',
+  'account.prop-challenge.ledger.help.consistency.example':
+    '最良日 {bestDay} は総利益 {total} の {share}。{maximum} に収めるには総利益が {goal} 必要です。',
+  'account.prop-challenge.ledger.help.consistency.example-done':
+    '最良日 {bestDay} は総利益の {share} で、上限 {maximum} 以内です。',
+  'account.prop-challenge.ledger.help.consistency.example-none':
+    'まだ利益がないため、比較する最良日はありません。',
+  'account.prop-challenge.ledger.help.max_position_size':
+    '未決済をすべて合わせて一度に持てる契約数の上限です。利益が増えると上限を上げる会社もあります。',
+  'account.prop-challenge.ledger.help.max_position_size.example':
+    '現在は同時に最大 {maximum} 枚。これまでの最大ポジションは {current}。',
+  'account.prop-challenge.ledger.help.payout.cycle_days':
+    '現在の出金サイクルの取引日です。承認後にカウントがリセットされます。',
+  'account.prop-challenge.ledger.help.payout.cycle_days.example':
+    'このサイクルの取引日 {current} / {target}、残り {remaining}。',
+  'account.prop-challenge.ledger.help.payout.qualifying_days':
+    'このサイクルで会社の最低日次利益以上で終えた取引日です。',
+  'account.prop-challenge.ledger.help.payout.qualifying_days.example':
+    'このサイクルで {minimum} 以上の日 {current} / {target}、残り {remaining}。',
+  'account.prop-challenge.ledger.help.payout.cycle_profit':
+    'サイクル開始後の利益がこの金額に達してから申請できます。',
+  'account.prop-challenge.ledger.help.payout.cycle_profit.example':
+    'このサイクルの獲得 {current}、必要額は {target}。',
+  'account.prop-challenge.ledger.help.payout.minimum_balance':
+    '申請時の残高がこの水準以上である必要があります。',
+  'account.prop-challenge.ledger.help.payout.minimum_balance.example':
+    '残高 {current}。少なくとも {target} 必要です。',
+  'account.prop-challenge.ledger.help.payout.positive_cycle_profit':
+    '初回出金の後、次の申請前に新しいサイクルは利益である必要があります。',
+  'account.prop-challenge.ledger.help.payout.positive_cycle_profit.example':
+    'サイクル利益は {current}。0 を超える必要があります。',
+  'account.prop-challenge.ledger.help.payout.consistency':
+    '最良日がサイクル利益に占める割合の上限です。',
+  'account.prop-challenge.ledger.help.payout.consistency.example':
+    '最良日{bestDay}はサイクル利益{total}の{share}です。{maximum}に収めるにはサイクル利益が{goal}に達する必要があります。',
+  'account.prop-challenge.ledger.help.payout.consistency.example-done':
+    '最良日{bestDay}はサイクル利益の{share}で、上限{maximum}以内です。',
+  'account.prop-challenge.ledger.help.payout.consistency.example-none':
+    'サイクル利益がまだないため、比較する最良日はありません。',
+  'account.prop-challenge.ledger.help.payout.minimum_request':
+    '会社が受け付ける最小出金額です。利用可能額が先にそれに達する必要があります。',
+  'account.prop-challenge.ledger.help.payout.minimum_request.example':
+    '利用可能 {current}。会社の最低申請額は {target}。',
+  'account.prop-challenge.ledger.help.payout.payout_count':
+    'このステージで許可される出金回数です。枠を使い切るとステージ完了です。',
+  'account.prop-challenge.ledger.help.payout.payout_count.example':
+    'このステージの出金 {current} / {target} を使用済み。',
+  'account.prop-challenge.ledger.help.payout.request_window':
+    '申請はこれらの曜日のみ、会社のタイムゾーンで受け付けます。',
+  'account.prop-challenge.ledger.help.payout.request_window.example':
+    '今日は {today}。申請は {days}（{timeZone}）。',
+  'account.prop-challenge.ledger.help.payout.elapsed_hours':
+    'サイクル最初のトレードからの経過時間がこれに達してから申請できます。',
+  'account.prop-challenge.ledger.help.payout.elapsed_hours.example':
+    'サイクル最初のトレードから {current} / {target} 時間。',
+  'account.prop-challenge.ledger.help.payout.lifetime_qualifying_days':
+    'このサイクルだけでなく、資金化フェーズ全体の適格日数です。達すると出金が解除されます。',
+  'account.prop-challenge.ledger.help.payout.lifetime_qualifying_days.example':
+    'フェーズ全体の適格日 {current} / {target}。',
+  
+  'account.merge.challenge.move-earlier': '{account} を前へ',
+  'account.merge.challenge.move-later': '{account} を後ろへ',
+  'account.merge.warning.use-profile-balance': 'プロファイルの残高を使用',
+  'account.merge.warning.edit-phases': 'フェーズを編集',
+  'account.merge.title': 'チャレンジの設定',
+  'account.merge.loading': '読み込み中...',
+  'account.merge.step.accounts': 'アカウント',
+  'account.merge.step.phases': 'フェーズ',
+  'account.merge.step.review': '確認',
+  'account.merge.accounts.title': '統合するアカウント',
+  'account.merge.accounts.show-archived': 'アーカイブ済みを表示',
+  'account.merge.accounts.empty': '対象のアカウントがありません',
+  'account.merge.target.title': '統合先アカウント',
+  'account.merge.target.keep': 'そのまま使う',
+  'account.merge.target.new': '新しい名前',
+  'account.merge.phase.name': 'フェーズ名',
+  'account.merge.phase.status': 'ステータス',
+  'account.merge.phase.started': '開始',
+  'account.merge.phase.completed': '終了',
+  'account.merge.phase.no-rules': 'なし',
+  'account.merge.review.notes': '移動したトレード',
+  'account.merge.review.identities': 'ブローカー口座',
+  'account.merge.warning.trade-outside-window': 'フェーズ期間外のトレード',
+  'account.merge.warning.identity-shared': '複数のアカウントが同じ識別子を使用',
+  'account.merge.warning.copy-trading-dropped':
+    'コピートレード期間を破棄しました',
+  'account.merge.error.too-few-sources': 'アカウントを2つ以上選んでください。',
+  'account.merge.error.duplicate-source': '同じアカウントが重複しています。',
+  'account.merge.error.target-exists': 'その名前は別のアカウントのものです。',
+  'account.merge.error.currency-mismatch': 'アカウントの通貨が一致しません。',
+  'account.merge.error.timeline-not-monotonic':
+    'フェーズの開始時刻は昇順である必要があります。',
+  'account.merge.error.invalid-override':
+    'このフェーズの日付を確認してください。',
+  'account.merge.error.source-missing':
+    '設定が保存されていないアカウントがあります。',
+  'account.merge.error.unknown': '統合に失敗しました。',
+  'account.merge.action.merge': '統合',
+  'account.merge.action.undo': '元に戻す',
+  'account.merge.action.delete': '旧アカウントを削除',
+  'account.merge.notice.converted': 'チャレンジに変換済み',
+  'account.merge.notice.title': '{accounts} から統合',
+  'account.merge.notice.error': '操作に失敗しました。',
+  'account.merge.undo.title': '統合を元に戻す',
+  'account.merge.undo.message': '旧アカウントとそのトレードを復元します。',
+  'account.merge.delete.title': '旧アカウントを削除',
+  'account.merge.delete.message':
+    'アーカイブ済みの旧アカウントを削除します。元に戻せません。',
+  'command.open-legacy-challenge-onboarding': 'プロップチャレンジを設定',
+  'account.merge.step.challenge': 'チャレンジ',
+  'account.merge.action.convert': '変換',
+  'account.merge.challenge.accounts': '口座',
+  'account.merge.challenge.order-hint': '最も古いフェーズを先頭に',
+  'account.merge.challenge.single-hint': 'この口座は単独のチャレンジになります',
+  'account.merge.phase.identities-count': '{count} 件の識別子',
+  'account.merge.phase.pending': '保留',
+  'account.merge.review.phases': 'フェーズ',
+  'account.merge.review.archived': 'アーカイブ',
+  'account.merge.review.open': '進行中',
+  'account.merge.sequence': 'チャレンジ {index} / {total}',
+  'account.merge.warning.balance-differs':
+    '初期残高が会社プロファイルと異なります',
+  'account.merge.error.profile-phase-mismatch':
+    '会社プロファイルのフェーズ数より口座が多いです',
+  'account.merge.error.profile-currency-mismatch':
+    'プロファイルの通貨がこれらの口座と異なります。',
+  'account.merge.error.source-changed':
+    'アカウントが変更されました。統合を再確認してください。',
+  'account.merge.error.multiple-active-phases':
+    'アクティブなままにできるのは最後の口座だけです。',
+  'account.merge.error.copy-trading-overlap':
+    'コピートレード期間が重複しています。先に1つ終了してください。',
+  'onboarding.legacy-challenge.legend':
+    '同じチャレンジのフェーズだった口座をまとめます。単独の口座はそれ自体がチャレンジになります。',
+  'onboarding.legacy-challenge.assign.leave': 'そのまま',
+  'onboarding.legacy-challenge.assign.own': '単独のチャレンジ',
+  'onboarding.legacy-challenge.assign.group': 'チャレンジ {letter}',
+  'onboarding.legacy-challenge.assign.new-group': '新しいチャレンジ…',
+  'onboarding.legacy-challenge.action.continue': '続行',
+  'onboarding.legacy-challenge.action.continue-count': '{count} 件を設定',
+  'guide.action-step.dismiss': '今はしない',
+  'guide.legacy-challenge.title': '既存の口座',
+  'guide.legacy-challenge.description':
+    '同じチャレンジのフェーズだった口座をまとめるか、口座を単独のチャレンジにします。',
+  'guide.legacy-challenge.action': '口座を設定',
+  'onboarding.legacy-challenge.title': 'プロップチャレンジ',
+  'onboarding.legacy-challenge.action.skip': 'スキップ',
+  'onboarding.legacy-challenge.accounts.show-archived': 'アーカイブ済みを表示',
+  'onboarding.legacy-challenge.accounts.empty': '設定する口座はありません',
+  'onboarding.legacy-challenge.loading': '読み込み中...',
+  'onboarding.legacy-challenge.suggested': '推奨',
+  'onboarding.legacy-challenge.row.aria': '{account} の操作',
+  'onboarding.legacy-challenge.status.combined': '統合済み',
+  'onboarding.legacy-challenge.status.converted': '変換済み',
+  'onboarding.legacy-challenge.entry.name': 'プロップチャレンジ',
+  'onboarding.legacy-challenge.entry.desc':
+    '既存の口座を統合または変換してチャレンジにします。',
+  'onboarding.legacy-challenge.entry.action': '設定',
 
   'view.home': 'ホーム',
   'common.lose': '負け',
@@ -1823,6 +2103,34 @@ const ja: Partial<Lang> = {
   'trade-import.preview.message.no-open-match':
     'No matching open trade found for close-only preview',
   'setups.view.detail.execution-gap.title': 'Execution Gap',
+  'session-log.session-group.unplanned': '予定外 @ {time}',
+  'session-mode.unplanned.name': '予定外セッション',
+  'session-mode.unplanned.start': '予定外セッションを開始',
+  'session-mode.unplanned.stop': 'セッションを終了',
+  'session-mode.unplanned.badge': '予定外',
+  'session-mode.unplanned.status.live': '{time} に開始 · 経過 {elapsed}',
+  'session-mode.unplanned.ended.summary':
+    '予定外セッション · {start}–{end} · {duration}',
+  'session-mode.unplanned.modal.title': '予定外セッションを開始する',
+  'session-mode.unplanned.modal.description':
+    '現在は予定したセッション時間外です。このセッションはデイリーレビューで予定外として記録されます。今トレードする理由を書いてください。',
+  'session-mode.unplanned.modal.reason-label': '理由',
+  'session-mode.unplanned.modal.reason-placeholder':
+    '例: 14:00 の FOMC、午前セッションを逃した',
+  'session-mode.unplanned.modal.reason-required':
+    '開始前に理由を入力してください。',
+  'session-mode.unplanned.notice.started': '予定外セッションを開始しました。',
+  'session-mode.unplanned.notice.stopped': '予定外セッションを終了しました。',
+  'session-mode.unplanned.notice.blocked-live':
+    'すでにセッションが進行中です。',
+  'session-mode.unplanned.notice.none-running':
+    '進行中の予定外セッションはありません。',
+  'session-mode.unplanned.notice.failed':
+    '予定外セッションを更新できませんでした。詳細はコンソールを確認してください。',
+  'calendar.aria.open-daily-review': '{date} の日次レビューを開く',
+  'calendar.aria.open-weekly-review': '{date} の週次レビューを開く',
+  'calendar.aria.open-monthly-review': '{date} の月次レビューを開く',
+  'calendar.aria.open-quarterly-review': '{date} の四半期レビューを開く',
 };
 
 export default ja;

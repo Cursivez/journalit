@@ -74,7 +74,7 @@ const COLUMN_DEFINITIONS: ColumnDefinition[] = [
   },
   {
     id: 'account',
-    width: 100,
+    width: 90,
     sortable: false,
     defaultVisible: true,
     type: 'text',
@@ -82,7 +82,7 @@ const COLUMN_DEFINITIONS: ColumnDefinition[] = [
   },
   {
     id: 'ticker',
-    width: 120,
+    width: 92,
     sortable: false,
     defaultVisible: true,
     type: 'text',
@@ -90,7 +90,7 @@ const COLUMN_DEFINITIONS: ColumnDefinition[] = [
   },
   {
     id: 'exchange',
-    width: 100,
+    width: 78,
     sortable: false,
     defaultVisible: false,
     type: 'text',
@@ -98,7 +98,7 @@ const COLUMN_DEFINITIONS: ColumnDefinition[] = [
   },
   {
     id: 'status',
-    width: 100,
+    width: 88,
     sortable: false,
     defaultVisible: true,
     type: 'text',
@@ -106,7 +106,7 @@ const COLUMN_DEFINITIONS: ColumnDefinition[] = [
   },
   {
     id: 'direction',
-    width: 100,
+    width: 86,
     sortable: true,
     defaultVisible: true,
     type: 'text',
@@ -116,7 +116,7 @@ const COLUMN_DEFINITIONS: ColumnDefinition[] = [
   
   {
     id: 'date',
-    width: 100,
+    width: 88,
     sortable: true,
     defaultVisible: true,
     type: 'date',
@@ -124,7 +124,7 @@ const COLUMN_DEFINITIONS: ColumnDefinition[] = [
   },
   {
     id: 'entryTime',
-    width: 90,
+    width: 80,
     sortable: false,
     defaultVisible: false,
     type: 'text',
@@ -132,7 +132,7 @@ const COLUMN_DEFINITIONS: ColumnDefinition[] = [
   },
   {
     id: 'exitDate',
-    width: 100,
+    width: 88,
     sortable: true,
     defaultVisible: false,
     type: 'date',
@@ -140,7 +140,7 @@ const COLUMN_DEFINITIONS: ColumnDefinition[] = [
   },
   {
     id: 'exitTime',
-    width: 90,
+    width: 80,
     sortable: false,
     defaultVisible: false,
     type: 'text',
@@ -148,7 +148,7 @@ const COLUMN_DEFINITIONS: ColumnDefinition[] = [
   },
   {
     id: 'duration',
-    width: 120,
+    width: 84,
     sortable: true,
     defaultVisible: false,
     type: 'duration',
@@ -156,7 +156,7 @@ const COLUMN_DEFINITIONS: ColumnDefinition[] = [
   },
   {
     id: 'expirationDate',
-    width: 110,
+    width: 76,
     sortable: true,
     defaultVisible: false,
     type: 'date',
@@ -164,7 +164,7 @@ const COLUMN_DEFINITIONS: ColumnDefinition[] = [
   },
   {
     id: 'daysToExpiry',
-    width: 80,
+    width: 56,
     sortable: true,
     defaultVisible: false,
     type: 'number',
@@ -174,7 +174,7 @@ const COLUMN_DEFINITIONS: ColumnDefinition[] = [
   
   {
     id: 'entryPrice',
-    width: 100,
+    width: 76,
     sortable: false,
     defaultVisible: false,
     type: 'currency',
@@ -182,7 +182,7 @@ const COLUMN_DEFINITIONS: ColumnDefinition[] = [
   },
   {
     id: 'exitPrice',
-    width: 100,
+    width: 76,
     sortable: false,
     defaultVisible: false,
     type: 'currency',
@@ -190,7 +190,7 @@ const COLUMN_DEFINITIONS: ColumnDefinition[] = [
   },
   {
     id: 'priceMove',
-    width: 110,
+    width: 88,
     sortable: true,
     defaultVisible: false,
     type: 'number',
@@ -198,7 +198,7 @@ const COLUMN_DEFINITIONS: ColumnDefinition[] = [
   },
   {
     id: 'stopLoss',
-    width: 100,
+    width: 80,
     sortable: false,
     defaultVisible: false,
     type: 'currency',
@@ -208,7 +208,7 @@ const COLUMN_DEFINITIONS: ColumnDefinition[] = [
   
   {
     id: 'slDistanceDollar',
-    width: 90,
+    width: 74,
     sortable: false,
     defaultVisible: false,
     type: 'currency',
@@ -216,7 +216,7 @@ const COLUMN_DEFINITIONS: ColumnDefinition[] = [
   },
   {
     id: 'slDistancePercent',
-    width: 90,
+    width: 74,
     sortable: false,
     defaultVisible: false,
     type: 'percentage',
@@ -224,7 +224,7 @@ const COLUMN_DEFINITIONS: ColumnDefinition[] = [
   },
   {
     id: 'riskAmount',
-    width: 90,
+    width: 68,
     sortable: false,
     defaultVisible: false,
     type: 'currency',
@@ -232,7 +232,7 @@ const COLUMN_DEFINITIONS: ColumnDefinition[] = [
   },
   {
     id: 'rMultiple',
-    width: 70,
+    width: 56,
     sortable: true,
     defaultVisible: false,
     type: 'number',
@@ -240,7 +240,7 @@ const COLUMN_DEFINITIONS: ColumnDefinition[] = [
   },
   {
     id: 'maxR',
-    width: 80,
+    width: 62,
     sortable: true,
     defaultVisible: false,
     type: 'number',
@@ -248,7 +248,7 @@ const COLUMN_DEFINITIONS: ColumnDefinition[] = [
   },
   {
     id: 'maePrice',
-    width: 100,
+    width: 82,
     sortable: true,
     defaultVisible: false,
     type: 'currency',
@@ -256,7 +256,7 @@ const COLUMN_DEFINITIONS: ColumnDefinition[] = [
   },
   {
     id: 'mfePrice',
-    width: 100,
+    width: 82,
     sortable: true,
     defaultVisible: false,
     type: 'currency',
@@ -264,7 +264,7 @@ const COLUMN_DEFINITIONS: ColumnDefinition[] = [
   },
   {
     id: 'mae',
-    width: 90,
+    width: 74,
     sortable: true,
     defaultVisible: false,
     type: 'currency',
@@ -272,7 +272,7 @@ const COLUMN_DEFINITIONS: ColumnDefinition[] = [
   },
   {
     id: 'mfe',
-    width: 90,
+    width: 74,
     sortable: true,
     defaultVisible: false,
     type: 'currency',
@@ -280,7 +280,7 @@ const COLUMN_DEFINITIONS: ColumnDefinition[] = [
   },
   {
     id: 'maePercent',
-    width: 80,
+    width: 64,
     sortable: true,
     defaultVisible: false,
     type: 'percentage',
@@ -288,7 +288,7 @@ const COLUMN_DEFINITIONS: ColumnDefinition[] = [
   },
   {
     id: 'mfePercent',
-    width: 80,
+    width: 64,
     sortable: true,
     defaultVisible: false,
     type: 'percentage',
@@ -298,7 +298,7 @@ const COLUMN_DEFINITIONS: ColumnDefinition[] = [
   
   {
     id: 'positionSize',
-    width: 90,
+    width: 76,
     sortable: true,
     defaultVisible: false,
     type: 'number',
@@ -306,7 +306,7 @@ const COLUMN_DEFINITIONS: ColumnDefinition[] = [
   },
   {
     id: 'positionValue',
-    width: 100,
+    width: 84,
     sortable: false,
     defaultVisible: false,
     type: 'currency',
@@ -314,7 +314,7 @@ const COLUMN_DEFINITIONS: ColumnDefinition[] = [
   },
   {
     id: 'fees',
-    width: 80,
+    width: 60,
     sortable: false,
     defaultVisible: false,
     type: 'currency',
@@ -322,7 +322,7 @@ const COLUMN_DEFINITIONS: ColumnDefinition[] = [
   },
   {
     id: 'dividends',
-    width: 100,
+    width: 84,
     sortable: true,
     defaultVisible: false,
     type: 'currency',
@@ -330,7 +330,7 @@ const COLUMN_DEFINITIONS: ColumnDefinition[] = [
   },
   {
     id: 'pnl',
-    width: 120,
+    width: 88,
     sortable: true,
     defaultVisible: true,
     type: 'currency',
@@ -338,7 +338,7 @@ const COLUMN_DEFINITIONS: ColumnDefinition[] = [
   },
   {
     id: 'returnPercent',
-    width: 100,
+    width: 76,
     sortable: true,
     defaultVisible: false,
     type: 'percentage',
@@ -348,7 +348,7 @@ const COLUMN_DEFINITIONS: ColumnDefinition[] = [
   
   {
     id: 'setups',
-    width: 100,
+    width: 64,
     sortable: false,
     defaultVisible: true,
     type: 'text',
@@ -356,7 +356,7 @@ const COLUMN_DEFINITIONS: ColumnDefinition[] = [
   },
   {
     id: 'mistakes',
-    width: 100,
+    width: 72,
     sortable: false,
     defaultVisible: true,
     type: 'text',
@@ -364,7 +364,7 @@ const COLUMN_DEFINITIONS: ColumnDefinition[] = [
   },
   {
     id: 'tags',
-    width: 100,
+    width: 56,
     sortable: false,
     defaultVisible: true,
     type: 'text',
@@ -372,7 +372,7 @@ const COLUMN_DEFINITIONS: ColumnDefinition[] = [
   },
   {
     id: 'reviewed',
-    width: 100,
+    width: 78,
     sortable: true,
     defaultVisible: true,
     type: 'boolean',
@@ -425,17 +425,17 @@ function isCustomColumnSortable(field: CustomFieldDefinition): boolean {
 function getCustomColumnWidth(fieldType: CustomFieldType): number {
   switch (fieldType) {
     case CustomFieldType.NUMBER:
-      return 100;
+      return 80;
     case CustomFieldType.DATE:
-      return 110;
+      return 90;
     case CustomFieldType.DATETIME:
-      return 140;
+      return 124;
     case CustomFieldType.TIME:
-      return 95;
+      return 74;
     case CustomFieldType.MULTISELECT:
-      return 120;
+      return 96;
     default:
-      return 140;
+      return 110;
   }
 }
 
@@ -594,7 +594,7 @@ export function generateGridTemplate(
   const columnTemplate = columns
     .map((col) => {
       if (col.width === 0) {
-        return 'minmax(320px, 2fr)'; 
+        return 'minmax(240px, 2fr)'; 
       }
       if (col.id === 'select') {
         return '40px'; 

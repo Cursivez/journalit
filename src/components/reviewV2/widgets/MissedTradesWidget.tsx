@@ -7,11 +7,16 @@ import { SkeletonBox } from '../../shared/SkeletonBox';
 import { Tooltip } from '../../shared/Tooltip';
 import { useEventBus } from '../../../hooks/useEventBus';
 import { getTradingDay } from '../../../utils/tradingDayUtils';
-import { parseLocalDateSafe } from '../../../utils/dateUtils';
+import {
+  getWeekStartDaySetting,
+  safeParseDateValue,
+} from '../../../utils/dateUtils';
+import { getWeeklyReviewDateRange } from '../../../utils/weeklyReviewDateRange';
 import { t, TranslationKey } from '../../../lang/helpers';
 import { parseDisplayText } from '../../../utils/tagSchema';
 import type { TradeFormData } from '../../forms/trade/types';
 import type JournalitPlugin from '../../../main';
+import { openReviewWidgetFile } from '../reviewWidgetNavigation';
 
 
 const MAX_FRONTMATTER_RETRIES = 5;
@@ -62,13 +67,6 @@ const getSupportedNoteType = (
       return null;
   }
 };
-
-const parseFrontmatterDate = (value: unknown): Date | null =>
-  typeof value === 'string' ||
-  typeof value === 'number' ||
-  value instanceof Date
-    ? parseLocalDateSafe(value)
-    : null;
 
 
 type MissedTradesWidgetConfig = object;
@@ -397,7 +395,7 @@ export const MissedTradesWidget: React.FC<MissedTradesWidgetProps> = memo(
       let endDate: Date;
 
       if (type === 'drc') {
-        const drcDate = parseFrontmatterDate(frontmatter.date);
+        const drcDate = safeParseDateValue(frontmatter.date);
         if (!drcDate) {
           setIsValidContext(false);
           setLoading(false);
@@ -410,31 +408,18 @@ export const MissedTradesWidget: React.FC<MissedTradesWidgetProps> = memo(
         endDate = new Date(tradingDay);
         endDate.setHours(23, 59, 59, 999);
       } else if (type === 'weekly-review') {
-        if (frontmatter.weekStart && frontmatter.weekEnd) {
-          const parsedStart = parseFrontmatterDate(frontmatter.weekStart);
-          const parsedEnd = parseFrontmatterDate(frontmatter.weekEnd);
-          if (!parsedStart || !parsedEnd) {
-            setIsValidContext(false);
-            setLoading(false);
-            return;
-          }
-          startDate = parsedStart;
-          endDate = parsedEnd;
-          endDate.setHours(23, 59, 59, 999);
-          setNoteDate(startDate);
-        } else {
-          const weekDate = parseFrontmatterDate(frontmatter.date);
-          if (!weekDate) {
-            setIsValidContext(false);
-            setLoading(false);
-            return;
-          }
-          setNoteDate(weekDate);
-          startDate = new Date(weekDate);
-          startDate.setHours(0, 0, 0, 0);
-          endDate = new Date(weekDate.getTime() + 7 * 24 * 60 * 60 * 1000);
-          endDate.setHours(23, 59, 59, 999);
+        const weekDate = safeParseDateValue(frontmatter.date);
+        if (!weekDate) {
+          setIsValidContext(false);
+          setLoading(false);
+          return;
         }
+        ({ start: startDate, end: endDate } = getWeeklyReviewDateRange(
+          weekDate,
+          getWeekStartDaySetting(plugin),
+          frontmatter
+        ));
+        setNoteDate(startDate);
       } else {
         setIsValidContext(false);
         setLoading(false);
@@ -495,10 +480,19 @@ export const MissedTradesWidget: React.FC<MissedTradesWidgetProps> = memo(
     }, [loadMissedTrades]);
 
     useEventBus('missed-trade:changed', handleMissedTradeChanged, !preview);
+    useEventBus(
+      'settings:changed',
+      (payload) => {
+        if (payload.section === 'trade' || payload.source === 'week-start') {
+          void loadMissedTrades();
+        }
+      },
+      !preview
+    );
 
     const handleOpenMissedTrade = useCallback(
       (path: string) => {
-        void plugin.app.workspace.openLinkText(path, '', true);
+        void openReviewWidgetFile(plugin, path);
       },
       [plugin]
     );

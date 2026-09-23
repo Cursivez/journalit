@@ -43,6 +43,7 @@ export class TradeProjectionRestoreService {
             direction: projection.direction,
             status: projection.status,
             accountId: projection.accountId,
+            accountIdentity: projection.accountIdentity,
             accountDisplayName: projection.accountName,
             broker: projection.broker,
             importId: projection.importId,

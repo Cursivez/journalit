@@ -2,6 +2,7 @@
 
 import { WorkspaceLeaf } from 'obsidian';
 import { AccountData } from '../../../services/account/types';
+import type { AccountPageData } from '../../../services/accountPage/types';
 
 
 export interface DashboardMetricsData {
@@ -29,7 +30,8 @@ export interface AUMChartDataPoint {
 
 export interface AUMChartProps {
   data: AUMChartDataPoint[];
-  height?: number;
+  
+  height?: number | string;
   plugin?: import('../../../main').default;
 }
 
@@ -49,11 +51,15 @@ export interface AccountSectionProps {
   ) => void | Promise<void>;
   totalAUM?: number; 
   excludedTypes?: string[]; 
+  propChallengeDataByAccountId?: ReadonlyMap<string, AccountPageData>;
+  tradingDayCutoffTime?: string;
 }
 
 
 export interface AccountCardProps {
   account: AccountData;
+  propChallengeData?: AccountPageData;
+  tradingDayCutoffTime?: string;
   onClick: () => void;
 }
 
@@ -68,6 +74,8 @@ export interface AccountSectionsProps {
   refreshTrigger?: number;
   totalAUM?: number; 
   excludedTypes?: string[]; 
+  propChallengeDataByAccountId?: ReadonlyMap<string, AccountPageData>;
+  tradingDayCutoffTime?: string;
 }
 
 

@@ -20,9 +20,15 @@ interface EmptyStateProps {
   
   onActionButtonClick?: () => void;
   
+  actionButtonRef?: React.Ref<HTMLButtonElement>;
+  
   secondaryActionButtonText?: string;
   
   onSecondaryActionButtonClick?: () => void;
+  
+  additionalAction?: React.ReactNode;
+  
+  actionsLayout?: 'row' | 'stacked';
 }
 
 
@@ -36,8 +42,11 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
   actionButtonText,
   actionIcon,
   onActionButtonClick,
+  actionButtonRef,
   secondaryActionButtonText,
   onSecondaryActionButtonClick,
+  additionalAction,
+  actionsLayout = 'row',
 }) => {
   return (
     <div className={`journalit-empty-state ${className}`}>
@@ -49,10 +58,16 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
         {subMessage && (
           <p className="journalit-empty-state-submessage">{subMessage}</p>
         )}
-        {(actionButtonText || secondaryActionButtonText) && (
-          <div className="journalit-empty-state-actions">
+        {(actionButtonText ||
+          secondaryActionButtonText ||
+          additionalAction) && (
+          <div
+            className={`journalit-empty-state-actions${actionsLayout === 'stacked' ? ' journalit-empty-state-actions--stacked' : ''}`}
+          >
             {actionButtonText && onActionButtonClick && (
               <button
+                ref={actionButtonRef}
+                type="button"
                 className="journalit-empty-state-action-button"
                 onClick={onActionButtonClick}
               >
@@ -67,6 +82,7 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
             )}
             {secondaryActionButtonText && onSecondaryActionButtonClick && (
               <button
+                type="button"
                 className="journalit-empty-state-secondary-action-button"
                 onClick={onSecondaryActionButtonClick}
               >
@@ -74,6 +90,7 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
                 {secondaryActionButtonText}
               </button>
             )}
+            {additionalAction}
           </div>
         )}
       </div>

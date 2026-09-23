@@ -49,17 +49,17 @@
 - **本地优先**：核心日志保留在你的 Obsidian 仓库中。
 - **Home View 仪表盘**：可拖拽小组件 + 交易热力图。
 - **交易仪表盘**：一目了然地跟踪表现和交易模式。
-- **账户仪表盘**：为 prop firm 盈利目标和回撤控制而构建。
+- **[Prop 挑战](https://journalit.co/docs/prop-challenges)**：跟踪考核与资金账户阶段、回撤、每日亏损、盈利目标和出金规则，并可使用机构配置快速设置。
 - **复盘系统 (V2)**：从每日到每年的模板，并带有布局构建器。
 - **[Trade Import](https://journalit.co/csv-import)**：由后端驱动，支持 CSV、电子表格、HTML 和经纪商报表导入。
-- **[Trade Sync](https://journalit.co/docs/trade-sync)**：自动同步 Tradovate 和 MT4 的交易。
+- **[Trade Sync](https://journalit.co/docs/trade-sync)**：自动同步受支持经纪商的交易。
 
 ## 重要说明
 
 - **本地优先核心**：核心日志可离线工作，并将你的笔记和交易保存在 Obsidian 仓库中。
 - **完整访问需要账户**：需要 Journalit 账户才能使用基于身份验证和订阅限制的功能。
-- **付费功能**：完整使用 MetaTrader 同步、Trade Import 等 Pro 功能需要 Pro 订阅。
-- **可选网络使用**：只有当你选择使用依赖网络的功能时，插件才会使用 Journalit 网络服务。登录会联系 Journalit 服务以进行邮箱验证、令牌验证和订阅状态检查。若随后使用 MetaTrader sync 或 Trade Import，插件还会连接 Journalit 后端 API，用于同步协调、交易获取和可选的 Trade Import；MetaTrader sync 使用 Journalit 管理的 FTP 基础设施上传报表。当需要多币种换算时，Journalit 也可能向第三方汇率服务请求汇率。这些依赖网络的功能均为可选。
+- **付费功能**：完整使用 Trade Sync、Trade Import、经济日历、预填 prop firm 配置等 Pro 功能需要 Pro 订阅。
+- **网络使用**：Journalit 默认检查 GitHub 上的公开版本元数据以获取更新，不会发送 vault 或账户数据。登录后使用的功能可能会调用 Journalit 服务；MT4 同步使用托管 FTP，货币换算可能会使用第三方汇率服务。请参阅 [PRIVACY.md](PRIVACY.md)。
 - **源码可查看，专有许可证**：该插件是专有软件，但源码可供审查。
 - **隐私详情**：请参阅 [PRIVACY.md](PRIVACY.md)，了解数据处理、保留和基础设施的详细信息。
 
@@ -79,6 +79,12 @@
 
 ![策略对比](https://raw.githubusercontent.com/Cursivez/journalit/main/assets/readme/setup-comparison.png)
 
+### 账户与 Prop 挑战
+
+![Account Dashboard](https://raw.githubusercontent.com/Cursivez/journalit/main/assets/readme/account-dashboard.png)
+
+![Account Pages](https://raw.githubusercontent.com/Cursivez/journalit/main/assets/readme/account-pages.png)
+
 ### 布局构建器
 
 ![Layout Builder](https://raw.githubusercontent.com/Cursivez/journalit/main/assets/readme/layout-builder.png)
@@ -94,14 +100,6 @@
 ### Trade Import
 
 ![Trade Import](https://raw.githubusercontent.com/Cursivez/journalit/main/assets/readme/trade-import.png)
-
-### 账户仪表盘
-
-![Account Dashboard](https://raw.githubusercontent.com/Cursivez/journalit/main/assets/readme/account-dashboard.png)
-
-### 账户页面
-
-![Account Pages](https://raw.githubusercontent.com/Cursivez/journalit/main/assets/readme/account-pages.png)
 
 <a id="supported-brokers"></a>
 
@@ -130,7 +128,7 @@
 <details>
 <summary>搜索关键词</summary>
 
-Keywords: obsidian trading journal, trading plugin, trade tracker, obsidian trading template, trading analytics, MetaTrader, MT4 sync, MT5 sync, Trade Import, prop firm, prop firms, funded account, profit target, trailing drawdown, max drawdown
+Keywords: obsidian trading journal, trading plugin, trade tracker, obsidian trading template, trading analytics, MetaTrader, MT4 sync, MT5 sync, Trade Import, prop firm, prop firms, funded account, profit target, trailing drawdown, max drawdown, prop challenge, evaluation, funded phase, payout rules, daily loss limit
 
 </details>
 
@@ -141,6 +139,7 @@ Keywords: obsidian trading journal, trading plugin, trade tracker, obsidian trad
 - [Trade Import 概览](https://journalit.co/csv-import)
 - [MetaTrader 同步概览](https://journalit.co/metatrader-trading-journal)
 - [与其他日志比较](https://journalit.co/compare)
+- [Prop 挑战指南](https://journalit.co/docs/prop-challenges)
 
 </details>
 

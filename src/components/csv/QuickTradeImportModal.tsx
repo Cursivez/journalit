@@ -20,15 +20,15 @@ import type JournalitPlugin from '../../main';
 import { t, tPlural } from '../../lang/helpers';
 import { PnLValue } from '../shared/display/DisplayValue';
 import { DisplayPolicyProvider } from '../../contexts/DisplayPolicyContext';
-import { formatDateDisplay } from '../../utils/dateUtils';
 import { classifyPnLWithBreakEvenSettings } from '../../utils/breakEvenRange';
-import { UPGRADE_URLS } from '../../constants';
+import { resolveUpgradeUrl } from '../../services/upgrade/upgradeOrigin';
 import { openExternalUrl } from '../../utils/externalLinks';
 import { DeviceFlowSignInModal } from '../auth/DeviceFlowSignInModal';
 import { useBackendProEntitlement } from '../../hooks/useBackendProEntitlement';
 import { BackendTradeImportService } from '../../services/tradeImport/BackendTradeImportService';
 import { TradeProjectionClient } from '../../services/tradeSync/TradeProjectionClient';
 import {
+  TradeImportMappingValidationError,
   TradeImportValidationError,
   TradeImportWorkflowService,
 } from '../../services/tradeImport/TradeImportWorkflowService';
@@ -54,6 +54,14 @@ import {
   clearQuickImportTradeImportHandoff,
   setQuickImportTradeImportHandoff,
 } from '../../services/tradeImport/quickImportHandoff';
+import {
+  resolveBrokerImportAnalyseRecovery,
+  resolveBrokerImportRecovery,
+} from './brokerImportRecovery';
+import { TradeOperationResultCard } from '../tradeOperations/TradeOperationResultCard';
+import { buildImportOperationResult } from '../../services/tradeOperations/resultBuilders';
+import type { TradeOperationResult } from '../../services/tradeOperations/types';
+import { formatTradeImportPreviewDate } from './tradeImportPreviewDate';
 
 const LOCAL_WRITE_TIMEOUT_MS = 10000;
 const PRIVACY_URL = 'https://journalit.co/privacy';
@@ -187,9 +195,10 @@ function formatQuickImportDate(
       : dateBasis === 'entry'
         ? preview.entryTime
         : null;
-  return dateValue
-    ? formatDateDisplay(dateValue, plugin.settings.trade.dateFormat)
-    : '—';
+  return formatTradeImportPreviewDate(
+    dateValue,
+    plugin.settings.trade.dateFormat
+  );
 }
 
 interface QuickImportPreviewSummaryProps {
@@ -200,6 +209,7 @@ interface QuickImportPreviewSummaryProps {
   plugin: JournalitPlugin;
   preview: TradeImportPreviewResponse;
   previewRows: ClassifiedPreviewTrade[];
+  recovery: ReturnType<typeof resolveBrokerImportRecovery>;
   writableCount: number;
 }
 
@@ -211,107 +221,118 @@ const QuickImportPreviewSummary: React.FC<QuickImportPreviewSummaryProps> = ({
   plugin,
   preview,
   previewRows,
+  recovery,
   writableCount,
-}) => (
-  <div className="journalit-quick-import-summary">
-    <h3>
-      {preview.outcome === 'completed'
-        ? t('quick-import.summary.title')
-        : t('quick-import.summary.failed')}
-    </h3>
-    {preview.outcome === 'partially_completed' && (
-      <div className="journalit-quick-import-outcome-callout journalit-quick-import-outcome-callout--warning">
-        <AlertTriangle size={16} />
-        <span>
-          {t('trade-import.preview.partial.message', {
-            count: String(writableCount),
-            failed: String(preview.summary.failedRowCount),
-            incomplete: String(preview.summary.skippedIncompleteCount),
-          })}
-        </span>
-      </div>
-    )}
-    {preview.outcome === 'failed' && (
-      <div className="journalit-quick-import-outcome-callout journalit-quick-import-outcome-callout--error">
-        <AlertTriangle size={16} />
-        <span>{t('trade-import.preview.failed.message')}</span>
-      </div>
-    )}
-    <div className="journalit-quick-import-summary__grid">
-      <span>{t('quick-import.summary.to-import')}</span>
-      <strong>{String(writableCount)}</strong>
-      {duplicateCount > 0 && (
-        <>
-          <span>{t('quick-import.summary.duplicates')}</span>
-          <strong>{String(duplicateCount)}</strong>
-        </>
-      )}
-      {failedCount > 0 && (
-        <>
-          <span>{t('quick-import.summary.failed')}</span>
-          <strong>{String(failedCount)}</strong>
-        </>
-      )}
-      {preview.summary.failedRowCount > 0 && (
-        <>
-          <span>{t('quick-import.summary.failed-rows')}</span>
-          <strong>{String(preview.summary.failedRowCount)}</strong>
-        </>
-      )}
-      {preview.summary.skippedIncompleteCount > 0 && (
-        <>
-          <span>{t('quick-import.summary.incomplete-rows')}</span>
-          <strong>{String(preview.summary.skippedIncompleteCount)}</strong>
-        </>
-      )}
-    </div>
-    {noImportablePreview && (
-      <div className="journalit-quick-import-callout">
-        <FileText size={16} />
-        <span>{t('quick-import.message.no-importable')}</span>
-      </div>
-    )}
-    {previewRows.length > 0 && (
-      <div className="journalit-quick-import-preview-table-wrap">
-        <table className="journalit-quick-import-preview-table">
-          <thead>
-            <tr>
-              <th>{t('trade-import.table.symbol')}</th>
-              <th>{t('trade-import.table.date')}</th>
-              <th>{t('chart.tooltip.pnl')}</th>
-              <th>{t('trade-import.table.status')}</th>
-              <th>{t('trade-import.table.result')}</th>
-            </tr>
-          </thead>
-          <tbody>
-            {previewRows.map((item) => (
-              <tr key={item.itemId}>
-                <td>{item.preview.symbol}</td>
-                <td>{formatQuickImportDate(item.preview, plugin)}</td>
-                <td>
-                  <QuickImportPnlCell item={item} plugin={plugin} />
-                </td>
-                <td>{item.preview.status}</td>
-                <td>
-                  <QuickImportClassificationIcon
-                    classification={item.classification}
-                  />
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-        {classified.length > previewRows.length && (
-          <p className="journalit-quick-import-preview-more">
-            {t('quick-import.preview.more', {
-              count: String(classified.length - previewRows.length),
+}) => {
+  const RecoveryNotice = recovery?.Notice;
+
+  return (
+    <div className="journalit-quick-import-summary">
+      <h3>
+        {preview.outcome === 'completed'
+          ? t('quick-import.summary.title')
+          : t('quick-import.summary.failed')}
+      </h3>
+      {preview.outcome === 'partially_completed' && (
+        <div className="journalit-quick-import-outcome-callout journalit-quick-import-outcome-callout--warning">
+          <AlertTriangle size={16} />
+          <span>
+            {t('trade-import.preview.partial.message', {
+              count: String(writableCount),
+              failed: String(preview.summary.failedRowCount),
+              incomplete: String(preview.summary.skippedIncompleteCount),
             })}
-          </p>
+          </span>
+        </div>
+      )}
+      {preview.outcome === 'failed' && !recovery && (
+        <div className="journalit-quick-import-outcome-callout journalit-quick-import-outcome-callout--error">
+          <AlertTriangle size={16} />
+          <span>{t('trade-import.preview.failed.message')}</span>
+        </div>
+      )}
+      {RecoveryNotice && (
+        <RecoveryNotice
+          className="journalit-quick-import-outcome-callout journalit-quick-import-outcome-callout--error"
+          iconSize={16}
+        />
+      )}
+      <div className="journalit-quick-import-summary__grid">
+        <span>{t('quick-import.summary.to-import')}</span>
+        <strong>{String(writableCount)}</strong>
+        {duplicateCount > 0 && (
+          <>
+            <span>{t('quick-import.summary.duplicates')}</span>
+            <strong>{String(duplicateCount)}</strong>
+          </>
+        )}
+        {failedCount > 0 && (
+          <>
+            <span>{t('quick-import.summary.failed')}</span>
+            <strong>{String(failedCount)}</strong>
+          </>
+        )}
+        {preview.summary.failedRowCount > 0 && (
+          <>
+            <span>{t('quick-import.summary.failed-rows')}</span>
+            <strong>{String(preview.summary.failedRowCount)}</strong>
+          </>
+        )}
+        {preview.summary.skippedIncompleteCount > 0 && (
+          <>
+            <span>{t('quick-import.summary.incomplete-rows')}</span>
+            <strong>{String(preview.summary.skippedIncompleteCount)}</strong>
+          </>
         )}
       </div>
-    )}
-  </div>
-);
+      {noImportablePreview && !recovery && (
+        <div className="journalit-quick-import-callout">
+          <FileText size={16} />
+          <span>{t('quick-import.message.no-importable')}</span>
+        </div>
+      )}
+      {previewRows.length > 0 && (
+        <div className="journalit-quick-import-preview-table-wrap">
+          <table className="journalit-quick-import-preview-table">
+            <thead>
+              <tr>
+                <th>{t('trade-import.table.symbol')}</th>
+                <th>{t('trade-import.table.date')}</th>
+                <th>{t('chart.tooltip.pnl')}</th>
+                <th>{t('trade-import.table.status')}</th>
+                <th>{t('trade-import.table.result')}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {previewRows.map((item) => (
+                <tr key={item.itemId}>
+                  <td>{item.preview.symbol}</td>
+                  <td>{formatQuickImportDate(item.preview, plugin)}</td>
+                  <td>
+                    <QuickImportPnlCell item={item} plugin={plugin} />
+                  </td>
+                  <td>{item.preview.status}</td>
+                  <td>
+                    <QuickImportClassificationIcon
+                      classification={item.classification}
+                    />
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          {classified.length > previewRows.length && (
+            <p className="journalit-quick-import-preview-more">
+              {t('quick-import.preview.more', {
+                count: String(classified.length - previewRows.length),
+              })}
+            </p>
+          )}
+        </div>
+      )}
+    </div>
+  );
+};
 
 interface QuickImportDropzoneProps {
   fileInputRef: React.RefObject<HTMLInputElement | null>;
@@ -453,10 +474,12 @@ interface QuickImportMainContentProps {
   handleFileSelected: (file: File | null) => void;
   handleImport: () => Promise<void>;
   isDragging: boolean;
+  onBeforeNavigate: () => void;
   openFullTradeImport: () => Promise<void>;
   plugin: JournalitPlugin;
   preview: TradeImportPreviewResponse | null;
   result: TradeImportCompletionResult | null;
+  operationResult: TradeOperationResult | null;
   setDragging: (isDragging: boolean) => void;
   setup: TradeImportQuickSetup | null;
   state: TradeImportQuickImportState;
@@ -470,10 +493,12 @@ export const QuickImportMainContent: React.FC<QuickImportMainContentProps> = ({
   handleFileSelected,
   handleImport,
   isDragging,
+  onBeforeNavigate,
   openFullTradeImport,
   plugin,
   preview,
   result,
+  operationResult,
   setDragging,
   setup,
   state,
@@ -512,6 +537,10 @@ export const QuickImportMainContent: React.FC<QuickImportMainContentProps> = ({
       : t('quick-import.action.open-full');
   const previewRows = classified.slice(0, 5);
   const selectedFile = file;
+  const recovery =
+    state.phase === 'ready_to_import' && preview
+      ? resolveBrokerImportRecovery(preview)
+      : null;
 
   return (
     <div className="journalit-quick-import-modal">
@@ -591,24 +620,44 @@ export const QuickImportMainContent: React.FC<QuickImportMainContentProps> = ({
           plugin={plugin}
           preview={preview}
           previewRows={previewRows}
+          recovery={recovery}
           writableCount={writableCount}
         />
       )}
 
       {result && state.phase === 'complete' && (
-        <div className="journalit-quick-import-summary">
-          <h3>
-            {result.pendingCount > 0
-              ? t('csv.results.pending-title')
-              : t('quick-import.complete.title')}
-          </h3>
-          <p>
-            {t('quick-import.complete.message', {
-              written: String(result.writtenCount),
-              duplicates: String(result.duplicateCount),
-              failed: String(result.failedCount),
-            })}
-          </p>
+        <div
+          className={`journalit-quick-import-summary${
+            operationResult
+              ? ' journalit-quick-import-summary--operation-result'
+              : ''
+          }`}
+        >
+          {operationResult ? (
+            <TradeOperationResultCard
+              plugin={plugin}
+              result={operationResult}
+              presentation="inline-compact"
+              onBeforeNavigate={onBeforeNavigate}
+            />
+          ) : (
+            <h3>
+              {result.pendingCount > 0
+                ? t('csv.results.pending-title')
+                : t('quick-import.complete.title')}
+            </h3>
+          )}
+          {(!operationResult ||
+            result.duplicateCount > 0 ||
+            result.failedCount > 0) && (
+            <p>
+              {t('quick-import.complete.message', {
+                written: String(result.writtenCount),
+                duplicates: String(result.duplicateCount),
+                failed: String(result.failedCount),
+              })}
+            </p>
+          )}
           {result.pendingCount > 0 && (
             <p>
               {t('csv.results.pending-local-writes', {
@@ -620,6 +669,15 @@ export const QuickImportMainContent: React.FC<QuickImportMainContentProps> = ({
       )}
 
       <div className="journalit-quick-import-actions">
+        {recovery?.showQuickImportAnotherFileAction && (
+          <button
+            type="button"
+            className="journalit-quick-import-another-file-button"
+            onClick={() => fileInputRef.current?.click()}
+          >
+            {t('csv.button.import-another')}
+          </button>
+        )}
         {showFullTradeImportAction && (
           <button type="button" onClick={() => void openFullTradeImport()}>
             {fullTradeImportActionLabel}
@@ -834,6 +892,7 @@ const QuickTradeImportModalContent: React.FC<
         previewOwnerUserId: string | null;
         classified: ClassifiedPreviewTrade[];
         result: TradeImportCompletionResult | null;
+        operationResult: TradeOperationResult | null;
         isDragging: boolean;
       },
       update: Partial<{
@@ -843,6 +902,7 @@ const QuickTradeImportModalContent: React.FC<
         previewOwnerUserId: string | null;
         classified: ClassifiedPreviewTrade[];
         result: TradeImportCompletionResult | null;
+        operationResult: TradeOperationResult | null;
         isDragging: boolean;
       }>
     ) => ({ ...state, ...update }),
@@ -853,6 +913,7 @@ const QuickTradeImportModalContent: React.FC<
       previewOwnerUserId: null,
       classified: [],
       result: null,
+      operationResult: null,
       isDragging: false,
     }
   );
@@ -863,6 +924,7 @@ const QuickTradeImportModalContent: React.FC<
     previewOwnerUserId,
     classified,
     result,
+    operationResult,
     isDragging,
   } = importState;
 
@@ -882,6 +944,8 @@ const QuickTradeImportModalContent: React.FC<
         dateFormat: setup.dateFormat,
         sheetName: setup.sheetName,
         headerRowIndex: setup.headerRowIndex,
+        templateId: setup.templateId,
+        templateName: setup.templateName,
         columnMappings: setup.columnMappings,
         aiMappingEnabled: setup.aiMappingEnabled,
         analyse,
@@ -921,7 +985,7 @@ const QuickTradeImportModalContent: React.FC<
   }, [plugin]);
 
   const handleUpgrade = useCallback(() => {
-    openExternalUrl(UPGRADE_URLS.quickTradeImport);
+    openExternalUrl(resolveUpgradeUrl('quickTradeImport'));
   }, []);
 
   const runQuickPreview = useCallback(
@@ -942,6 +1006,7 @@ const QuickTradeImportModalContent: React.FC<
         previewOwnerUserId: null,
         classified: [],
         result: null,
+        operationResult: null,
       });
       updateQuickImportState({ phase: 'analysing' });
       try {
@@ -956,6 +1021,18 @@ const QuickTradeImportModalContent: React.FC<
         });
         if (requestVersionRef.current !== requestVersion) return;
         dispatchImportState({ analyse: analyseResult.response });
+        if (
+          resolveBrokerImportAnalyseRecovery(
+            analyseResult.response,
+            setup.broker
+          )
+        ) {
+          updateQuickImportState({
+            phase: 'needs_full_import',
+            message: t('quick-import.message.source-mismatch'),
+          });
+          return;
+        }
         const nextSheetName =
           analyseResult.response.selectedSheet ??
           analyseResult.response.suggestedSheet ??
@@ -968,17 +1045,6 @@ const QuickTradeImportModalContent: React.FC<
           Object.keys(setup.columnMappings).length > 0
             ? setup.columnMappings
             : analyseResult.suggestedColumnMappings;
-
-        if (
-          setup.broker === 'MANUAL' &&
-          Object.keys(columnMappings).length === 0
-        ) {
-          updateQuickImportState({
-            phase: 'needs_full_import',
-            message: t('quick-import.message.mapping-required'),
-          });
-          return;
-        }
 
         const previewResult = await workflowService.previewFile({
           file: selectedFile,
@@ -993,6 +1059,8 @@ const QuickTradeImportModalContent: React.FC<
           manualMode: setup.manualMode,
           dateFormat: setup.dateFormat,
           columnMappings,
+          manualMappingRequired:
+            setup.broker === 'MANUAL' || setup.source === 'favorite-template',
         });
         if (requestVersionRef.current !== requestVersion) return;
         dispatchImportState({
@@ -1005,13 +1073,17 @@ const QuickTradeImportModalContent: React.FC<
         if (requestVersionRef.current !== requestVersion) return;
         updateQuickImportState({
           phase:
-            error instanceof TradeImportValidationError
-              ? 'error'
-              : 'needs_full_import',
+            error instanceof TradeImportMappingValidationError
+              ? 'needs_full_import'
+              : error instanceof TradeImportValidationError
+                ? 'error'
+                : 'needs_full_import',
           message:
-            error instanceof TradeImportValidationError
-              ? error.message
-              : t('quick-import.message.preview-failed'),
+            error instanceof TradeImportMappingValidationError
+              ? t('quick-import.message.mapping-required')
+              : error instanceof TradeImportValidationError
+                ? error.message
+                : t('quick-import.message.preview-failed'),
         });
       }
     },
@@ -1060,10 +1132,21 @@ const QuickTradeImportModalContent: React.FC<
       brokerLabel: setup.brokerLabel,
       localWriteTimeoutMs: LOCAL_WRITE_TIMEOUT_MS,
     });
-    dispatchImportState({ result: writeResult });
+    const nextOperationResult = buildImportOperationResult({
+      result: writeResult,
+      source: 'quick-import',
+      ownerUserId: previewOwnerUserId,
+    });
+    dispatchImportState({
+      result: writeResult,
+      operationResult: plugin
+        .ensureTradeOperationResultService()
+        .record(nextOperationResult),
+    });
     updateQuickImportState({ phase: 'complete' });
   }, [
     classified,
+    plugin,
     preview,
     previewOwnerUserId,
     setup,
@@ -1092,10 +1175,12 @@ const QuickTradeImportModalContent: React.FC<
       handleFileSelected={handleFileSelected}
       handleImport={handleImport}
       isDragging={isDragging}
+      onBeforeNavigate={closeModal}
       openFullTradeImport={openFullTradeImport}
       plugin={plugin}
       preview={preview}
       result={result}
+      operationResult={operationResult}
       setDragging={(nextIsDragging) =>
         dispatchImportState({ isDragging: nextIsDragging })
       }

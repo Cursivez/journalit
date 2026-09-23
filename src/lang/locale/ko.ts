@@ -45,70 +45,10 @@ const ko: Partial<Lang> = {
   
   
   
-  'onboarding.explore.title': 'Explore',
-  'onboarding.explore.subtitle':
-    'Journalit turns your vault into a full trading journal with dashboards, trade log, account tracking, and customisable layouts.',
-  'onboarding.explore.subtitle2':
-    'Designed to adapt to your workflow, not force you into ours.',
-  'onboarding.explore.tagline': 'Your journal, your rules.',
-  'onboarding.explore.section.out-of-box.title': 'Core views & tools',
-  'onboarding.explore.core.dashboard.label': '대시보드',
-  'onboarding.explore.core.dashboard.description':
-    'Your performance at a glance — P&L, win rate, drawdowns, and more.',
-  'onboarding.explore.core.tradelog.label': 'Trade Log',
-  'onboarding.explore.core.tradelog.description':
-    'Browse trades by year/month/week/day and drill down instantly.',
-  'onboarding.explore.core.accounts.label': 'Account Tracking',
-  'onboarding.explore.core.accounts.description':
-    'Track multiple accounts and view account-specific performance pages.',
-  'onboarding.explore.core.layouts.label': 'Layout Builder',
-  'onboarding.explore.core.layouts.description':
-    'Customize dashboards and review layouts with widgets and templates.',
-  'onboarding.explore.imports.title': '가져오기 및 동기화',
-
-  'onboarding.explore.imports.csv.label': 'Trade Import',
-  'onboarding.explore.imports.csv.description':
-    '지원되는 거래 기록 파일을 무료로 미리 보고 열을 매핑하세요. 보관함으로 가져오려면 Pro가 필요합니다.',
-  'onboarding.explore.imports.trade-sync.label': 'Trade Sync',
-  'onboarding.explore.imports.trade-sync.description':
-    'Automatic trade syncing from MetaTrader (MT4) or Tradovate. Requires Pro.',
-
-  'onboarding.explore.cta.manual': 'Open Docs',
 
   
   
   
-  'onboarding.path.kicker': '내 거래 기록',
-  'onboarding.path.title': 'Journalit으로 가져올 기존 거래가 있나요?',
-  'onboarding.path.subtitle':
-    '답을 선택하면 알맞은 다음 단계로 바로 이동합니다.',
-  'onboarding.path.option.manual.label': '아니요, 처음부터 시작할게요',
-  'onboarding.path.option.manual.description':
-    '거래 추가 양식을 열고 첫 거래를 기록합니다.',
-  'onboarding.path.option.csv.label': '예, 기존 거래 기록이 있어요',
-  'onboarding.path.option.csv.description':
-    '브로커 자동 동기화와 파일 가져오기 중에서 선택합니다.',
-  'onboarding.path.method.kicker': '거래 기록 가져오기',
-  'onboarding.path.method.title': '어떤 방법으로 가져올까요?',
-  'onboarding.path.method.subtitle':
-    '브로커와 내보낸 파일에 맞는 옵션을 선택하세요.',
-  'onboarding.path.option.trade-sync.label': 'MT4 또는 Tradovate 연결',
-  'onboarding.path.option.trade-sync.description':
-    'Trade Sync를 설정해 새 거래를 자동으로 가져옵니다.',
-  'onboarding.path.option.import.label': '거래 기록 파일 가져오기',
-  'onboarding.path.option.import.description':
-    'CSV, Excel 또는 지원되는 브로커 보고서를 업로드합니다.',
-  'onboarding.path.option.import.badge': '무료 미리보기',
-  'onboarding.manual.title': 'Journalit을 시작할 준비가 되었습니다',
-  'onboarding.manual.subtitle':
-    '아래의 추천 단축키를 설정하여 거래를 더 빠르게 기록하세요.',
-  'onboarding.manual.subtitle-mobile':
-    '거래를 기록할 때마다 거래 추가를 여세요.',
-  'onboarding.manual.hotkey.title': '추천 단축키',
-  'onboarding.manual.cta.change-hotkey': '단축키 설정',
-  'onboarding.manual.hit-hotkey':
-    '추천: {hotkey}. 단축키 설정을 클릭해 구성하세요.',
-  'onboarding.manual.add-first-trade': '첫 거래 추가',
   'onboarding.notice.trade-sync-open-failed':
     'Trade Sync를 열 수 없습니다. 다시 시도하세요.',
 
@@ -116,7 +56,6 @@ const ko: Partial<Lang> = {
 
   
   'command.open-layout-builder': '레이아웃 빌더 열기',
-  'command.switch-template': '템플릿 전환',
 
   
   
@@ -185,6 +124,10 @@ const ko: Partial<Lang> = {
   'form.layout.item.trade-currency': '거래 통화 / 환율',
   'form.layout.item.trade-currency-desc':
     '다른 통화로 거래를 입력하고 선택적으로 환율을 직접 지정할 수 있습니다.',
+  'form.layout.item.exchange-desc':
+    '주식 및 암호화폐 거래의 거래소 필드입니다.',
+  'form.layout.item.direct-pnl-toggle-desc':
+    '개별 거래를 청산 가격 대신 총 손익 입력 방식으로 전환합니다.',
   'form.layout.manual-fx-rate': '환율 재정의',
   'form.layout.result-r': 'R 결과',
   'form.layout.entry-time': '거래 시간',
@@ -328,7 +271,9 @@ const ko: Partial<Lang> = {
   'form.trade-type.missed-reason-placeholder':
     '이 거래 기회를 놓친 이유를 설명하세요...',
 
-  'form.account-empty-state.title': '거래를 추가하기 전에 계좌를 만드세요',
+  'form.account-empty-state.title': '첫 계좌를 설정하세요',
+  'form.account-empty-state.description':
+    '계좌는 잔액을 기록해 Journalit이 수익률, 리스크, 드로다운을 계산할 수 있게 합니다. 만드는 데는 이름만 있으면 됩니다.',
   'form.account-empty-state.create-account': '계좌 만들기',
   'form.account-empty-state.submit-disabled':
     '이 거래를 저장하려면 먼저 계좌를 만드세요.',
@@ -377,6 +322,7 @@ const ko: Partial<Lang> = {
   
 
   'notice.login-success': '로그인 성공!',
+  'notice.pro-access-ready': 'PRO 액세스가 준비되었습니다.',
 
   'notice.logout-success': '로그아웃 완료',
   'notice.hotkey-set': '단축키 설정됨: {hotkey}',
@@ -416,7 +362,6 @@ const ko: Partial<Lang> = {
   'notice.error.open-journalit':
     'Journalit을 열지 못했습니다. Obsidian을 다시 로드해보세요.',
   'notice.error.open-drc': 'DRC 열기 실패: {error}',
-  'notice.error.open-dashboard': 'Failed to open dashboard: {error}',
   'notice.error.open-trade-log': 'Failed to open Trade Log: {error}',
   'notice.error.open-csv-import': 'Failed to open Trade Import: {error}',
   'notice.error.open-weekly-review': '주간 리뷰 열기 실패: {error}',
@@ -708,17 +653,6 @@ const ko: Partial<Lang> = {
   
   'csv.results.errors-header': 'CLICK TO SEE ERRORS ({count})',
   'csv.results.history-ready': 'Your trading history is ready',
-  'csv.results.history-trades.one': '{count} trade recovered',
-  'csv.results.history-trades.few': '{count} trades recovered',
-  'csv.results.history-trades.many': '{count} trades recovered',
-  'csv.results.history-trades.other': '{count} trades recovered',
-  'csv.results.history-date-range': '{start} – {end}',
-  'csv.results.history-symbols.one': '{count} symbol',
-  'csv.results.history-symbols.few': '{count} symbols',
-  'csv.results.history-symbols.many': '{count} symbols',
-  'csv.results.history-symbols.other': '{count} symbols',
-  'csv.results.enrichment-note':
-    'Imported performance is ready to review. Add setups, confluences, and notes to recent trades when you want deeper pattern analysis.',
   'csv.results.discord-note':
     'Optional: If you need help, click Copy report and paste it in Discord.',
 
@@ -794,7 +728,6 @@ const ko: Partial<Lang> = {
   
   'settings.auth.feature.csv-import': 'Trade Import',
   'settings.auth.feature.ai-mapping': 'AI Trade Import 매핑',
-  'settings.auth.feature.metatrader-sync': 'MetaTrader 동기화',
   'settings.auth.feature.basic-tracking': '기본 거래 추적',
 
   'settings.auth.feature.priority-support': '우선 지원',
@@ -808,6 +741,11 @@ const ko: Partial<Lang> = {
     'Checklist to help you add trading history and configure Journalit',
   'home.widget.getting-started.progress': '{completed}/{total} completed',
   'home.widget.getting-started.progress.loading': 'Checking progress...',
+  'home.widget.getting-started.item.account.title': '거래 계좌를 설정하세요',
+  'home.widget.getting-started.item.account.description':
+    '거래는 잔액을 추적하는 계좌에 기록됩니다. 계좌가 없으면 수익률과 드로다운을 계산할 수 없습니다.',
+  'home.widget.getting-started.item.account.time': '15s',
+  'home.widget.getting-started.item.account.cta': '계좌 설정',
   'home.widget.getting-started.item.create.title':
     'Bring in your trading history',
   'home.widget.getting-started.item.create.description':
@@ -838,7 +776,7 @@ const ko: Partial<Lang> = {
   'navigation.setting.open.button': '사이드바 열기',
   'home.widget.getting-started.item.pro.title': 'Activate PRO',
   'home.widget.getting-started.item.pro.description':
-    'Enable Trade Import, MetaTrader sync, and AI mapping.',
+    'Trade Import, Trade Sync 및 경제 캘린더를 활성화하세요.',
   'home.widget.getting-started.item.pro.time': '1 min',
   'home.widget.getting-started.item.pro.cta': 'Activate',
 
@@ -1178,7 +1116,7 @@ const ko: Partial<Lang> = {
   'trade-import.label.template-actions': 'Template actions',
   'trade-import.template.none': 'No template',
   'trade-import.label.account': 'Account',
-  'trade-import.label.broker': 'Broker',
+  'trade-import.label.broker': '내보내기 소스 / 플랫폼',
   'trade-import.label.asset-type': 'Asset type',
   'trade-import.asset.stock': 'Stock',
   'trade-import.asset.options': 'Options',
@@ -1219,19 +1157,6 @@ const ko: Partial<Lang> = {
   'trade-import.preview.metric.ready': '가져오기 준비 완료',
   'trade-import.preview.metric.duplicates': '중복 가능성',
   'trade-import.preview.metric.attention': '확인 필요',
-  'trade-import.preview.upgrade.title': 'Your preview is ready',
-  'trade-import.preview.upgrade.description.one':
-    '{count} trade can be added to your vault when you activate PRO.',
-  'trade-import.preview.upgrade.description.few':
-    '{count} trades can be added to your vault when you activate PRO.',
-  'trade-import.preview.upgrade.description.many':
-    '{count} trades can be added to your vault when you activate PRO.',
-  'trade-import.preview.upgrade.description.other':
-    '{count} trades can be added to your vault when you activate PRO.',
-  'trade-import.preview.upgrade.free-limit':
-    '무료 미리보기에서는 시간당 {count}회 분석과 {count}회 미리보기를 사용할 수 있습니다.',
-  'trade-import.preview.upgrade.free-storage-limit':
-    '무료 미리보기에는 한 번에 최대 {count}개의 거래를 저장할 수 있습니다.',
   'trade-import.table.status': 'Status',
   'trade-import.table.symbol': 'Symbol',
   'trade-import.table.direction': 'Direction',
@@ -1612,6 +1537,15 @@ const ko: Partial<Lang> = {
     '이제 Trade Log의 두 모드를 알게 되었습니다',
   'tradelog.guide.gallery-finish.description':
     '표와 일괄 도구가 필요할 때는 거래 모드를 사용하세요. 저널 전체의 이미지, GIF, 동영상, YouTube 링크, 시장 구조와 차트 주석을 검토할 때는 갤러리를 사용하세요.',
+  'account.prop-challenge.prefill.heading-link': 'Prefill from your firm',
+  'account.prop-challenge.prefill.heading-link-firms':
+    '{firms} +{count} more, rules prefilled with PRO',
+  'account.prop-challenge.prefill.heading-link-firms-all':
+    '{firms}, rules prefilled with PRO',
+  'account.prop-challenge.prefill.match':
+    'We have {firm}: {count} challenges with rules ready',
+  'account.prop-challenge.rules.empty':
+    '아직 추가된 규칙이 없습니다. 규칙 추가를 사용해 이 단계를 설정하세요.',
   'trade.validation.fx-rate-number': '환율은 유효한 숫자여야 합니다.',
   'trade.validation.fx-rate-positive': '환율은 0보다 커야 합니다.',
   'dashboard.conversion.using-manual-rate':
@@ -1804,6 +1738,350 @@ const ko: Partial<Lang> = {
   'settings.general.show-seconds-desc':
     '거래 진입 및 청산 시간을 입력할 때 초를 표시합니다.',
   'settings.general.show-seconds-aria': '거래 시간에 초 표시',
+  'account.prop-challenge.summary.status.payout_ready': 'Payout ready',
+  'account.prop-challenge.ribbon.passed': '{phase} 통과',
+  'account.prop-challenge.ribbon.failed': '{phase} 실패',
+  'account.prop-challenge.ribbon.action.advance': '{phase}(으)로 진행',
+  'account.prop-challenge.ribbon.action.advance-short': '진행',
+  'account.prop-challenge.ribbon.action.mark-passed': '통과로 표시',
+  'account.prop-challenge.ribbon.action.archive': '보관',
+  'account.prop-challenge.actions.stale':
+    '이 챌린지가 다른 곳에서 업데이트되었습니다. 확인 후 다시 시도하세요.',
+  'account.prop-challenge.confirm.reopen':
+    '{account}을(를) 다시 열까요? 챌린지 “{challenge}”이(가) {phase}(으)로 돌아갑니다.',
+  'account.prop-challenge.confirm.fail':
+    '{account}을(를) 실패로 표시할까요? 챌린지 “{challenge}”이(가) {phase}에서 종료됩니다.',
+  'account.prop-challenge.confirm.archive-failed':
+    '{account}을(를) 보관할까요? 챌린지 “{challenge}”에 실패했습니다. 계정이 보관됨으로 이동합니다.',
+  'account.prop-challenge.confirm.archive-passed':
+    '{account}을(를) 보관할까요? 챌린지 “{challenge}”을(를) 통과했습니다. 계정이 보관됨으로 이동합니다.',
+  'account.prop-challenge.transition.route': '{account} · {from} → {to}',
+  'account.prop-challenge.transition.route-passed':
+    '{account} · {from} → 챌린지 통과',
+  'account.prop-challenge.ribbon.action.record-payout': '출금 기록',
+  'account.prop-challenge.ribbon.action.record-payout-short': '출금',
+  'account.prop-challenge.payout.title': 'Payout readiness',
+  'account.prop-challenge.payout.eligible': 'Payout ready',
+  'account.prop-challenge.payout.available': 'Available now',
+  'account.prop-challenge.payout.cycle-profit': 'Cycle profit',
+  'account.prop-challenge.payout.history': 'Payouts',
+  'account.prop-challenge.payout.requirement.days': 'Trading days',
+  'account.prop-challenge.payout.requirement.qualifying-days':
+    'Qualifying days',
+  'account.prop-challenge.payout.requirement.cycle-profit': 'Cycle profit',
+  'account.prop-challenge.payout.requirement.consistency': 'Consistency',
+  'account.prop-challenge.payout.requirement.minimum': 'Minimum available',
+  'account.prop-challenge.payout.requirement.payouts': 'Payout allowance',
+  'account.prop-challenge.payout.requirement.request-window': 'Request window',
+  'account.prop-challenge.payout.timezone-invalid': '알 수 없는 시간대입니다.',
+  'account.prop-challenge.payout.preview-amount': 'Preview payout amount',
+  'account.prop-challenge.payout.you-receive': 'Estimated trader share',
+  'account.prop-challenge.payout.balance-after': 'Balance after payout',
+  'account.prop-challenge.payout.drawdown-floor': 'Drawdown floor after',
+  'account.prop-challenge.payout.buffer-after': 'Room before breach',
+  'account.prop-challenge.payout.request-not-allowed':
+    'This amount is not currently eligible under the configured payout rules.',
+  'account.prop-challenge.payout.immediate-breach':
+    'This payout would leave the account at or below its drawdown floor.',
+  'account.prop-challenge.payout.account-concludes':
+    'This payout completes the configured simulated-funded payout cycle.',
+  'account.prop-challenge.payout.next-stage-after-payout':
+    'This payout advances the account to its next configured stage.',
+  'account.prop-challenge.payout.live-review-after-payout':
+    'This payout makes the account eligible for live-account review.',
+  'account.prop-challenge.payout.cycle-resets':
+    'Payout progress resets after an approved payout.',
+  'account.prop-challenge.payout.cycle-continues':
+    'Payout progress continues after an approved payout.',
+  'account.prop-challenge.payout.drawdown.unchanged':
+    'The current drawdown floor remains in place.',
+  'account.prop-challenge.payout.drawdown.lock_at_balance':
+    'The drawdown floor locks after payout.',
+  'account.prop-challenge.payout.drawdown.reset_from_starting_balance':
+    'The account and drawdown limits reset after payout.',
+  'account-page.guide.whats-new.cockpit.payout.title':
+    'Know when a funded payout is safe',
+  'account-page.guide.whats-new.cockpit.payout.description':
+    'Funded accounts with verified rules now show payout requirements, the amount available, and a preview of the balance and drawdown consequences before you request money.',
+  'account-page.guide.main.payout.title': 'Plan funded payouts',
+  'account-page.guide.main.payout.description':
+    'When the funded phase has verified payout rules, this panel tracks eligibility and previews the account impact of a requested amount.',
+  'account-page.guide.main.trade-log.description':
+    '이 계정이 선택된 상태로 트레이드 로그를 엽니다. 다단계 챌린지에서는 버튼이 보고 있는 단계를 따르며, 화살표에서 다른 단계 또는 전체 계정을 선택할 수 있습니다.',
+  'account.prop-challenge.stage': 'Stage type',
+  'account.prop-challenge.stage.evaluation': 'Evaluation',
+  'account.prop-challenge.stage.sim-funded': 'Sim funded',
+  'account.prop-challenge.stage.live-funded': 'Live funded',
+  'account.prop-challenge.payout-rules.title': 'Payout rules',
+  'account.prop-challenge.payout-rules.add': 'Add payout rules',
+  'account.prop-challenge.payout-rules.remove': 'Remove payout rules',
+  'account.prop-challenge.payout-rules.cycle': 'Eligibility cycle',
+  'account.prop-challenge.payout-rules.request-window': 'Request timing',
+  'account.prop-challenge.payout-rules.request-window.anytime': 'Any day',
+  'account.prop-challenge.payout-rules.request-window.weekdays':
+    'Specific weekdays',
+  'account.prop-challenge.payout-rules.request-window.time-zone': 'Time zone',
+  'account.prop-challenge.payout-rules.request-window.allowed-days':
+    'Allowed request days',
+  'account.prop-challenge.payout-rules.cycle.none': 'No waiting cycle',
+  'account.prop-challenge.payout-rules.cycle.trading-days': 'Trading days',
+  'account.prop-challenge.payout-rules.cycle.qualifying-days':
+    'Qualifying days',
+  'account.prop-challenge.payout-rules.cycle.calendar-days': 'Calendar days',
+  'account.prop-challenge.payout-rules.days': 'Required days',
+  'account.prop-challenge.payout-rules.minimum-daily-profit':
+    'Minimum daily profit',
+  'account.prop-challenge.payout-rules.anchor': 'Cycle starts from',
+  'account.prop-challenge.payout-rules.anchor.phase-start': 'Stage start',
+  'account.prop-challenge.payout-rules.anchor.first-trade': 'First trade',
+  'account.prop-challenge.payout-rules.minimum-cycle-profit':
+    'Minimum cycle profit',
+  'account.prop-challenge.payout-rules.consistency-percent':
+    'Maximum best-day share (%)',
+  'account.prop-challenge.payout-rules.availability': 'Available profit',
+  'account.prop-challenge.payout-rules.availability.starting-balance':
+    'Above starting balance',
+  'account.prop-challenge.payout-rules.availability.balance-floor':
+    'Above balance floor',
+  'account.prop-challenge.payout-rules.balance-floor': 'Balance floor',
+  'account.prop-challenge.payout-rules.request-percent':
+    'Withdrawable share (%)',
+  'account.prop-challenge.payout-rules.minimum-request': 'Minimum request',
+  'account.prop-challenge.payout-rules.maximum': 'Maximum request',
+  'account.prop-challenge.payout-rules.maximum.none': 'No maximum',
+  'account.prop-challenge.payout-rules.maximum.fixed': 'Fixed maximum',
+  'account.prop-challenge.payout-rules.maximum.schedule':
+    'Maximum by payout number',
+  'account.prop-challenge.payout-rules.maximum-amount': 'Maximum amount',
+  'account.prop-challenge.payout-rules.schedule': 'Amounts by payout number',
+  'account.prop-challenge.payout-rules.profit-split': 'Trader profit share (%)',
+  'account.prop-challenge.payout-rules.maximum-payouts': 'Maximum payouts',
+  'account.prop-challenge.payout-rules.maximum-payout-outcome':
+    'After final payout',
+  'account.prop-challenge.payout-rules.maximum-payout-outcome.continue':
+    'Continue account',
+  'account.prop-challenge.payout-rules.maximum-payout-outcome.conclude':
+    'Conclude account',
+  'account.prop-challenge.payout-rules.maximum-payout-outcome.promote':
+    'Advance to next stage',
+  'account.prop-challenge.payout-rules.maximum-payout-outcome.live-review':
+    'Eligible for live review',
+  'account.prop-challenge.payout-rules.aftermath': 'After an approved payout',
+  'account.prop-challenge.payout-rules.aftermath.unchanged':
+    'Deduct payout; keep drawdown floor',
+  'account.prop-challenge.payout-rules.aftermath.lock':
+    'Deduct payout; lock drawdown floor',
+  'account.prop-challenge.payout-rules.aftermath.reset':
+    'Reset account and drawdown',
+  'account.prop-challenge.payout-rules.drawdown-floor':
+    'Drawdown floor after payout',
+  'account.prop-challenge.payout-rules.first-payout-exempt':
+    'First payout ignores minimum cycle profit',
+  'account.prop-challenge.payout-rules.reset-cycle':
+    'Reset eligibility cycle after payout',
+  'account.prop-challenge.payout-rules.group.eligibility': 'Eligibility',
+  'account.prop-challenge.payout-rules.group.availability': 'Available payout',
+  'account.prop-challenge.payout-rules.group.terms': 'Payout terms',
+  'account.prop-challenge.payout-rules.group.aftermath': 'After payout',
+  'account.prop-challenge.payout.requirement.elapsed-hours': 'Elapsed time',
+  'account.prop-challenge.payout-rules.minimum-elapsed-hours':
+    'Minimum elapsed hours',
+
+  'account.prop-challenge.ledger.help.open': '{rule} 안내',
+  'account.prop-challenge.ledger.help.profit_target':
+    '이 금액만큼 계정을 불려야 단계를 통과합니다. 청산된 거래만 반영됩니다.',
+  'account.prop-challenge.ledger.help.profit_target.example':
+    '이 계좌는 이익 {target}이 필요합니다. 지금까지 {current}, 남은 금액 {remaining}.',
+  'account.prop-challenge.ledger.help.profit_target.example-done':
+    '목표 달성: {current} / {target}.',
+  'account.prop-challenge.ledger.help.drawdown.static':
+    '잔액이 시작 잔액보다 내려갈 수 있는 최대 폭입니다. 하한은 움직이지 않습니다.',
+  'account.prop-challenge.ledger.help.drawdown.static.example':
+    '이 계좌의 하한은 {floor}입니다. 잔액은 그 위를 유지해야 합니다. 한도 {limit} 중 {buffer}가 남았습니다.',
+  'account.prop-challenge.ledger.help.drawdown.eod_trailing':
+    '하한은 최고 일말 잔액을 따르며 올라가기만 하고, 업체의 잠금 수준에서 고정됩니다.',
+  'account.prop-challenge.ledger.help.drawdown.eod_trailing.example':
+    '지금 하한은 {floor}(최고 종가 − {limit})이며 더 높은 종가마다 올라갑니다. {buffer} 남음.',
+  'account.prop-challenge.ledger.help.drawdown.intraday_trailing':
+    '플로어는 미실현 이익을 포함해 언제든 최고 잔고를 따라갑니다. Journalit은 청산된 거래만 보므로 이 플로어는 각 청산 후 최고 잔고를 따라가며, 보유 중 도달한 고점은 반영되지 않습니다. 회사의 수치를 확인하세요.',
+  'account.prop-challenge.ledger.help.drawdown.intraday_trailing.example':
+    '지금 하한은 {floor}(청산 후 최고 잔액 − {limit})입니다. {buffer} 남음. 업체의 실시간 수치가 더 타이트할 수 있습니다.',
+  'account.prop-challenge.ledger.help.daily_loss_limit':
+    '한 거래일에 잃을 수 있는 최대 금액입니다. 도달하면 단계 실패이거나 다음 세션까지 중단됩니다(업체마다 다름).',
+  'account.prop-challenge.ledger.help.daily_loss_limit.example':
+    '오늘: 일일 한도 {limit} 중 {used} 손실, {left} 남음.',
+  'account.prop-challenge.ledger.help.daily_profit_cap':
+    '하루 이익의 일부만 목표에 반영됩니다. 상한을 넘는 이익은 보유되지만 집계되지 않습니다.',
+  'account.prop-challenge.ledger.help.daily_profit_cap.example':
+    '하루 이익 중 {cap}만 반영됩니다. 상한을 넘어 번 {excluded}는 지금까지 반영되지 않습니다.',
+  'account.prop-challenge.ledger.help.live_review_daily_profit':
+    '이 이익 이상의 거래일이 하루면 실계좌 심사 대상이 됩니다.',
+  'account.prop-challenge.ledger.help.live_review_daily_profit.example':
+    '{trigger} 이상인 날이 하루면 자격. 지금까지 최고일은 {bestDay}.',
+  'account.prop-challenge.ledger.help.minimum_trading_days':
+    '청산 거래가 하루 한 건 이상인 날입니다. 목표를 빨리 달성해도 이 일수 전에는 통과할 수 없습니다.',
+  'account.prop-challenge.ledger.help.minimum_trading_days.example':
+    '거래일 {current} / {target} 완료, {remaining} 남음.',
+  'account.prop-challenge.ledger.help.minimum_profitable_days':
+    '업체의 최소 일일 이익 이상으로 마감한 거래일입니다. 본전이거나 더 작은 이익은 세지 않습니다.',
+  'account.prop-challenge.ledger.help.minimum_profitable_days.example':
+    '{minimum} 이상으로 마감한 날 {current} / {target}, {remaining} 남음.',
+  'account.prop-challenge.ledger.help.consistency':
+    '최고 하루가 단계 총이익에서 차지하는 비중의 상한입니다. 다른 날에 더 벌어 맞추고, 손실로 맞추지 마세요.',
+  'account.prop-challenge.ledger.help.consistency.example':
+    '최고일 {bestDay}은 총이익 {total}의 {share}입니다. {maximum}에 맞추려면 총이익이 {goal}에 도달해야 합니다.',
+  'account.prop-challenge.ledger.help.consistency.example-done':
+    '최고일 {bestDay}은 총이익의 {share}이며 {maximum} 한도 이내입니다.',
+  'account.prop-challenge.ledger.help.consistency.example-none':
+    '아직 이익이 없어 비교할 최고일이 없습니다.',
+  'account.prop-challenge.ledger.help.max_position_size':
+    '모든 미청산을 합쳐 한 번에 보유할 수 있는 최대 계약 수입니다. 일부 업체는 이익이 늘면 한도를 올립니다.',
+  'account.prop-challenge.ledger.help.max_position_size.example':
+    '지금은 한 번에 최대 {maximum}계약. 지금까지 가장 큰 포지션은 {current}.',
+  'account.prop-challenge.ledger.help.payout.cycle_days':
+    '현재 출금 주기의 거래일입니다. 승인된 출금 후 다시 셉니다.',
+  'account.prop-challenge.ledger.help.payout.cycle_days.example':
+    '이 주기의 거래일 {current} / {target}, {remaining} 남음.',
+  'account.prop-challenge.ledger.help.payout.qualifying_days':
+    '이 주기에서 업체의 최소 일일 이익 이상으로 마감한 거래일입니다.',
+  'account.prop-challenge.ledger.help.payout.qualifying_days.example':
+    '이 주기에서 {minimum} 이상인 날 {current} / {target}, {remaining} 남음.',
+  'account.prop-challenge.ledger.help.payout.cycle_profit':
+    '주기 시작 이후 이익이 이 금액에 도달해야 신청할 수 있습니다.',
+  'account.prop-challenge.ledger.help.payout.cycle_profit.example':
+    '이 주기 수익 {current}, 필요 금액 {target}.',
+  'account.prop-challenge.ledger.help.payout.minimum_balance':
+    '신청 시 잔액이 이 수준 이상이어야 합니다.',
+  'account.prop-challenge.ledger.help.payout.minimum_balance.example':
+    '잔액 {current}. 최소 {target}이어야 합니다.',
+  'account.prop-challenge.ledger.help.payout.positive_cycle_profit':
+    '첫 출금 이후 새 주기는 다시 신청하기 전에 이익이어야 합니다.',
+  'account.prop-challenge.ledger.help.payout.positive_cycle_profit.example':
+    '주기 이익은 {current}입니다. 0보다 커야 합니다.',
+  'account.prop-challenge.ledger.help.payout.consistency':
+    '최고일이 주기 이익에서 차지하는 비중의 상한입니다.',
+  'account.prop-challenge.ledger.help.payout.consistency.example':
+    '최고 수익일 {bestDay}은(는) 사이클 수익 {total}의 {share}입니다. {maximum}에 맞추려면 사이클 수익이 {goal}에 도달해야 합니다.',
+  'account.prop-challenge.ledger.help.payout.consistency.example-done':
+    '최고 수익일 {bestDay}은(는) 사이클 수익의 {share}로 한도 {maximum} 이내입니다.',
+  'account.prop-challenge.ledger.help.payout.consistency.example-none':
+    '아직 사이클 수익이 없어 비교할 최고 수익일이 없습니다.',
+  'account.prop-challenge.ledger.help.payout.minimum_request':
+    '업체가 받는 최소 출금액입니다. 가용 금액이 먼저 그 값에 도달해야 합니다.',
+  'account.prop-challenge.ledger.help.payout.minimum_request.example':
+    '{current} 사용 가능. 업체의 최소 신청액은 {target}.',
+  'account.prop-challenge.ledger.help.payout.payout_count':
+    '이 단계에서 허용하는 출금 횟수입니다. 한도를 쓰면 단계가 끝납니다.',
+  'account.prop-challenge.ledger.help.payout.payout_count.example':
+    '이 단계의 출금 {current} / {target} 사용.',
+  'account.prop-challenge.ledger.help.payout.request_window':
+    '신청은 이 평일에만, 업체 시간대로 받습니다.',
+  'account.prop-challenge.ledger.help.payout.request_window.example':
+    '오늘은 {today}입니다. 신청은 {days}({timeZone}).',
+  'account.prop-challenge.ledger.help.payout.elapsed_hours':
+    '주기 첫 거래 이후 시간이 이 값에 도달해야 신청할 수 있습니다.',
+  'account.prop-challenge.ledger.help.payout.elapsed_hours.example':
+    '주기 첫 거래 이후 {current} / {target}시간.',
+  'account.prop-challenge.ledger.help.payout.lifetime_qualifying_days':
+    '이 주기만이 아니라 펀디드 단계 전체의 적격 일수입니다. 도달하면 출금이 열립니다.',
+  'account.prop-challenge.ledger.help.payout.lifetime_qualifying_days.example':
+    '전체 단계의 적격일 {current} / {target}.',
+  
+  'account.merge.challenge.move-earlier': '{account} 앞으로',
+  'account.merge.challenge.move-later': '{account} 뒤로',
+  'account.merge.warning.use-profile-balance': '프로필 잔액 사용',
+  'account.merge.warning.edit-phases': '단계 편집',
+  'account.merge.title': '챌린지 설정',
+  'account.merge.loading': '불러오는 중...',
+  'account.merge.step.accounts': '계정',
+  'account.merge.step.phases': '단계',
+  'account.merge.step.review': '검토',
+  'account.merge.accounts.title': '병합할 계정',
+  'account.merge.accounts.show-archived': '보관된 계정 표시',
+  'account.merge.accounts.empty': '대상 계정이 없습니다',
+  'account.merge.target.title': '대상 계정',
+  'account.merge.target.keep': '유지',
+  'account.merge.target.new': '새 이름',
+  'account.merge.phase.name': '단계 이름',
+  'account.merge.phase.status': '상태',
+  'account.merge.phase.started': '시작',
+  'account.merge.phase.completed': '종료',
+  'account.merge.phase.no-rules': '없음',
+  'account.merge.review.notes': '이동된 거래',
+  'account.merge.review.identities': '브로커 계좌',
+  'account.merge.warning.trade-outside-window': '단계 기간을 벗어난 거래',
+  'account.merge.warning.identity-shared': '여러 계정이 같은 식별자를 사용',
+  'account.merge.warning.copy-trading-dropped': '카피 트레이딩 기간이 삭제됨',
+  'account.merge.error.too-few-sources': '계정을 두 개 이상 선택하세요.',
+  'account.merge.error.duplicate-source': '같은 계정이 중복되었습니다.',
+  'account.merge.error.target-exists': '그 이름은 다른 계정의 것입니다.',
+  'account.merge.error.currency-mismatch': '계정의 통화가 서로 다릅니다.',
+  'account.merge.error.timeline-not-monotonic':
+    '단계 시작 시각은 오름차순이어야 합니다.',
+  'account.merge.error.invalid-override': '이 단계의 날짜를 확인하세요.',
+  'account.merge.error.source-missing': '설정이 저장되지 않은 계정이 있습니다.',
+  'account.merge.error.unknown': '병합에 실패했습니다.',
+  'account.merge.action.merge': '병합',
+  'account.merge.action.undo': '실행 취소',
+  'account.merge.action.delete': '이전 계정 삭제',
+  'account.merge.notice.converted': '챌린지로 변환됨',
+  'account.merge.notice.title': '{accounts} 에서 병합',
+  'account.merge.notice.error': '작업에 실패했습니다.',
+  'account.merge.undo.title': '병합 실행 취소',
+  'account.merge.undo.message': '이전 계정과 거래를 복원합니다.',
+  'account.merge.delete.title': '이전 계정 삭제',
+  'account.merge.delete.message':
+    '보관된 이전 계정을 삭제합니다. 되돌릴 수 없습니다.',
+  'command.open-legacy-challenge-onboarding': '프롭 챌린지 설정',
+  'account.merge.step.challenge': '챌린지',
+  'account.merge.action.convert': '변환',
+  'account.merge.challenge.accounts': '계좌',
+  'account.merge.challenge.order-hint': '가장 오래된 단계부터',
+  'account.merge.challenge.single-hint': '이 계좌는 단독 챌린지가 됩니다',
+  'account.merge.phase.identities-count': '식별자 {count}개',
+  'account.merge.phase.pending': '대기 중',
+  'account.merge.review.phases': '단계',
+  'account.merge.review.archived': '보관됨',
+  'account.merge.review.open': '진행 중',
+  'account.merge.sequence': '챌린지 {index} / {total}',
+  'account.merge.warning.balance-differs':
+    '시작 잔액이 프롭사 프로필과 다릅니다',
+  'account.merge.error.profile-phase-mismatch':
+    '프롭사 프로필의 단계 수보다 계좌가 많습니다',
+  'account.merge.error.profile-currency-mismatch':
+    '프로필 통화가 이 계정들과 다릅니다.',
+  'account.merge.error.source-changed':
+    '계정이 변경되었습니다. 병합을 다시 검토하세요.',
+  'account.merge.error.multiple-active-phases':
+    '활성 상태로 남을 수 있는 계정은 마지막 계정뿐입니다.',
+  'account.merge.error.copy-trading-overlap':
+    '카피 트레이딩 기간이 겹칩니다. 먼저 하나를 종료하세요.',
+  'onboarding.legacy-challenge.legend':
+    '한 챌린지의 단계였던 계좌들을 묶으세요. 단독 계좌는 그 자체로 챌린지가 됩니다.',
+  'onboarding.legacy-challenge.assign.leave': '그대로 두기',
+  'onboarding.legacy-challenge.assign.own': '단독 챌린지',
+  'onboarding.legacy-challenge.assign.group': '챌린지 {letter}',
+  'onboarding.legacy-challenge.assign.new-group': '새 챌린지…',
+  'onboarding.legacy-challenge.action.continue': '계속',
+  'onboarding.legacy-challenge.action.continue-count': '{count}개 설정',
+  'guide.action-step.dismiss': '나중에',
+  'guide.legacy-challenge.title': '기존 계좌',
+  'guide.legacy-challenge.description':
+    '한 챌린지의 단계였던 계좌들을 합치거나, 계좌 하나를 단독 챌린지로 만드세요.',
+  'guide.legacy-challenge.action': '계좌 설정',
+  'onboarding.legacy-challenge.title': '프롭 챌린지',
+  'onboarding.legacy-challenge.action.skip': '건너뛰기',
+  'onboarding.legacy-challenge.accounts.show-archived': '보관된 항목 표시',
+  'onboarding.legacy-challenge.accounts.empty': '설정할 계정이 없습니다',
+  'onboarding.legacy-challenge.loading': '불러오는 중...',
+  'onboarding.legacy-challenge.suggested': '추천',
+  'onboarding.legacy-challenge.row.aria': '{account} 작업',
+  'onboarding.legacy-challenge.status.combined': '병합됨',
+  'onboarding.legacy-challenge.status.converted': '변환됨',
+  'onboarding.legacy-challenge.entry.name': '프롭 챌린지',
+  'onboarding.legacy-challenge.entry.desc':
+    '기존 계정을 챌린지로 병합하거나 변환합니다.',
+  'onboarding.legacy-challenge.entry.action': '설정',
 
   'view.home': '홈',
   'common.lose': '패배',
@@ -1815,6 +2093,34 @@ const ko: Partial<Lang> = {
   'trade-import.preview.message.no-open-match':
     'No matching open trade found for close-only preview',
   'setups.view.detail.execution-gap.title': 'Execution Gap',
+  'session-log.session-group.unplanned': '계획 외 @ {time}',
+  'session-mode.unplanned.name': '계획되지 않은 세션',
+  'session-mode.unplanned.start': '계획되지 않은 세션 시작',
+  'session-mode.unplanned.stop': '세션 종료',
+  'session-mode.unplanned.badge': '계획 외',
+  'session-mode.unplanned.status.live': '{time}에 시작 · {elapsed} 경과',
+  'session-mode.unplanned.ended.summary':
+    '계획되지 않은 세션 · {start}–{end} · {duration}',
+  'session-mode.unplanned.modal.title': '계획되지 않은 세션 시작',
+  'session-mode.unplanned.modal.description':
+    '현재 계획된 세션 시간대가 아닙니다. 이 세션은 일일 리뷰에 계획 외 세션으로 표시됩니다. 지금 거래하는 이유를 적어 주세요.',
+  'session-mode.unplanned.modal.reason-label': '이유',
+  'session-mode.unplanned.modal.reason-placeholder':
+    '예: 14:00 FOMC, 오전 세션을 놓침',
+  'session-mode.unplanned.modal.reason-required':
+    '시작하기 전에 이유를 입력하세요.',
+  'session-mode.unplanned.notice.started': '계획되지 않은 세션을 시작했습니다.',
+  'session-mode.unplanned.notice.stopped': '계획되지 않은 세션을 종료했습니다.',
+  'session-mode.unplanned.notice.blocked-live':
+    '이미 진행 중인 세션이 있습니다.',
+  'session-mode.unplanned.notice.none-running':
+    '진행 중인 계획 외 세션이 없습니다.',
+  'session-mode.unplanned.notice.failed':
+    '계획되지 않은 세션을 업데이트하지 못했습니다. 자세한 내용은 콘솔을 확인하세요.',
+  'calendar.aria.open-daily-review': '{date} 일일 리뷰 열기',
+  'calendar.aria.open-weekly-review': '{date} 주간 리뷰 열기',
+  'calendar.aria.open-monthly-review': '{date} 월간 리뷰 열기',
+  'calendar.aria.open-quarterly-review': '{date} 분기 리뷰 열기',
 };
 
 export default ko;

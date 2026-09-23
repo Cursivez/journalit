@@ -2187,9 +2187,29 @@ export const SETTINGS_TAB_STYLES = `
     gap: 12px;
   }
 
-  .backend-integration-settings .journalit-trade-sync-providers
-    > .segmented-control {
+  .backend-integration-settings
+    .journalit-trade-sync-providers
+    > .journalit-trade-sync-provider-scroller {
     align-self: center;
+    min-inline-size: 0;
+    max-inline-size: 100%;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+  }
+
+  .backend-integration-settings
+    .journalit-trade-sync-provider-switcher.journalit-segmented-control {
+    display: flex;
+    width: max-content;
+    flex-wrap: nowrap;
+  }
+
+  .backend-integration-settings
+    .journalit-trade-sync-provider-switcher.journalit-segmented-control
+    .segmented-control-option {
+    flex: none;
+    min-height: 36px;
+    white-space: nowrap;
   }
 
   .backend-integration-settings .journalit-tradovate-sync-pending {
@@ -2807,7 +2827,7 @@ export const SETTINGS_TAB_STYLES = `
     font-weight: 600;
   }
 
-  .backend-integration-settings .journalit-tradovate-account-recovery__hint {
+  .backend-integration-settings .journalit-broker-account-action__hint {
     color: var(--text-muted);
     font-size: 11px;
     line-height: 1.35;
@@ -4077,6 +4097,23 @@ export const SETTINGS_TAB_STYLES = `
 
   .journalit-home-background-file-input {
     display: none;
+  }
+
+  .journalit-home-widget-opacity-control {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .journalit-home-widget-opacity-control input[type="range"] {
+    width: 140px;
+    max-width: 30vw;
+  }
+
+  .journalit-home-widget-opacity-control output {
+    min-width: 4ch;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
   }
 
   .journalit-settings .general-settings .journalit-settings-action-button.journalit-button:disabled {

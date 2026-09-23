@@ -8,6 +8,7 @@ import {
   getJournalitCachePath,
   isPathWithinDirectory,
 } from './pluginStoragePaths';
+import { CoalescedWriter } from './CoalescedWriter';
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
@@ -77,12 +78,15 @@ interface QueryOptions {
 export class CustomDataService {
   
   private static readonly DEFAULT_CACHE_TTL = 5 * 60 * 1000; 
+  private static readonly PERSISTENT_CACHE_SAVE_DELAY_MS = 1000;
+  private static readonly PERSISTENT_CACHE_MAX_SAVE_DELAY_MS = 30_000;
 
   
   private cache: Map<string, CacheEntry<unknown>>;
   private isCacheInvalidated: boolean;
   
   private cacheGeneration: number = 0;
+  private persistentCacheWriter: CoalescedWriter;
   private config: Required<
     CustomDataServiceConfig & {
       enableIndexing: boolean;
@@ -109,9 +113,9 @@ export class CustomDataService {
   protected plugin: JournalitPlugin | null = null;
 
   
-  public static unloadSharedIndexManager(): void {
+  public static async unloadSharedIndexManager(): Promise<void> {
     if (CustomDataService.sharedIndexManager) {
-      CustomDataService.sharedIndexManager.unload();
+      await CustomDataService.sharedIndexManager.unload();
       CustomDataService.sharedIndexManager = null;
     }
   }
@@ -136,6 +140,17 @@ export class CustomDataService {
 
     this.cache = new Map();
     this.isCacheInvalidated = false;
+    this.persistentCacheWriter = new CoalescedWriter({
+      delayMs: CustomDataService.PERSISTENT_CACHE_SAVE_DELAY_MS,
+      maxDelayMs: CustomDataService.PERSISTENT_CACHE_MAX_SAVE_DELAY_MS,
+      writeSnapshot: () => this.writePersistentCacheSnapshot(),
+      onScheduledWriteError: (error) => {
+        console.warn(
+          `Failed to save persistent cache for namespace ${this.config.namespace}:`,
+          error instanceof Error ? error.message : 'Unknown error'
+        );
+      },
+    });
 
     
     this.boundHandleFileChange = (file: TAbstractFile, oldPath?: string) =>
@@ -226,6 +241,13 @@ export class CustomDataService {
   
   protected setMonitoredFolder(folder: string): void {
     this.config.folder = folder;
+  }
+
+  
+  protected isPathInMonitoredFolder(path: string): boolean {
+    return (
+      !this.config.folder || isPathWithinDirectory(path, this.config.folder)
+    );
   }
 
   
@@ -426,7 +448,7 @@ export class CustomDataService {
 
     
     if (this.config.persistCache) {
-      void this.savePersistentCache();
+      this.persistentCacheWriter.markDirty();
     }
   }
 
@@ -468,28 +490,24 @@ export class CustomDataService {
     }
   }
 
+  private serializePersistentCache(): string {
+    const namespacedEntries = Array.from(this.cache.entries()).filter(([key]) =>
+      key.startsWith(`${this.config.namespace}:`)
+    );
+    return JSON.stringify(Object.fromEntries(namespacedEntries));
+  }
+
+  private async writePersistentCacheSnapshot(): Promise<void> {
+    const cachePath = this.getCacheFilePath();
+    const serializedCache = this.serializePersistentCache();
+    await this.app.vault.adapter.mkdir(getJournalitCachePath(this.app));
+    await this.app.vault.adapter.write(cachePath, serializedCache);
+  }
+
   
-  private async savePersistentCache(): Promise<void> {
-    try {
-      const cachePath = this.getCacheFilePath();
-
-      
-      await this.app.vault.adapter.mkdir(getJournalitCachePath(this.app));
-
-      
-      const namespacedEntries = Array.from(this.cache.entries()).filter(
-        ([key]) => key.startsWith(`${this.config.namespace}:`)
-      );
-
-      
-      const cacheData = Object.fromEntries(namespacedEntries);
-      await this.app.vault.adapter.write(cachePath, JSON.stringify(cacheData));
-    } catch (error) {
-      console.warn(
-        `Failed to save persistent cache for namespace ${this.config.namespace}:`,
-        error instanceof Error ? error.message : 'Unknown error'
-      );
-    }
+  public async flushPersistentCache(): Promise<void> {
+    if (!this.config.persistCache) return;
+    await this.persistentCacheWriter.flush();
   }
 
   
@@ -632,15 +650,7 @@ export class CustomDataService {
 
     
     if (this.config.persistCache) {
-      try {
-        const cachePath = this.getCacheFilePath();
-        await this.app.vault.adapter.write(cachePath, JSON.stringify({}));
-      } catch (error) {
-        console.warn(
-          `Failed to clear persistent cache for namespace ${this.config.namespace}:`,
-          error instanceof Error ? error.message : 'Unknown error'
-        );
-      }
+      this.persistentCacheWriter.markDirty();
     }
   }
 
@@ -657,7 +667,7 @@ export class CustomDataService {
     if (deleted) {
       
       if (this.config.persistCache) {
-        await this.savePersistentCache();
+        this.persistentCacheWriter.markDirty();
       }
     }
   }
@@ -687,7 +697,7 @@ export class CustomDataService {
     if (keysDeleted) {
       
       if (this.config.persistCache) {
-        await this.savePersistentCache();
+        this.persistentCacheWriter.markDirty();
       }
     }
   }
@@ -722,7 +732,7 @@ export class CustomDataService {
     if (keysDeleted) {
       
       if (this.config.persistCache) {
-        await this.savePersistentCache();
+        this.persistentCacheWriter.markDirty();
       }
     }
   }
@@ -788,13 +798,31 @@ export class CustomDataService {
     return this.config.enableIndexing && this.indexManager !== null;
   }
 
+  public get cacheNamespace(): string {
+    return this.config.namespace;
+  }
+
   
-  public cleanup(): void {
+  public async cleanup(): Promise<void> {
     
 
     
+    
+    this.cacheGeneration += 1;
+    this.pendingQueries.clear();
+
+    try {
+      await this.persistentCacheWriter.dispose();
+    } catch (error) {
+      console.warn(
+        `Failed to flush persistent cache for namespace ${this.config.namespace} during cleanup:`,
+        error instanceof Error ? error.message : 'Unknown error'
+      );
+    }
+
+    
     if (this.indexManager) {
-      this.indexManager.unload();
+      await this.indexManager.unload();
       this.indexManager = null;
     }
   }

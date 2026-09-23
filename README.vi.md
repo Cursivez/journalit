@@ -47,17 +47,17 @@ Trang cộng đồng: https://community.obsidian.md/plugins/journalit
 - **Ưu tiên lưu trữ cục bộ**: phần ghi nhật ký cốt lõi nằm trong vault Obsidian của bạn.
 - **Bảng điều khiển Home View**: widget kéo-thả + heatmap giao dịch.
 - **Bảng điều khiển giao dịch**: theo dõi hiệu suất và các mẫu hình chỉ trong nháy mắt.
-- **Bảng điều khiển tài khoản**: được xây dựng cho mục tiêu lợi nhuận và drawdown của prop firm.
+- **[Prop challenge](https://journalit.co/docs/prop-challenges)**: theo dõi giai đoạn evaluation và funded, drawdown, lỗ trong ngày, mục tiêu lợi nhuận và quy tắc payout, với hồ sơ firm để thiết lập.
 - **Hệ thống đánh giá (V2)**: mẫu từ hằng ngày → hằng năm với trình tạo bố cục.
 - **[Trade Import](https://journalit.co/csv-import)**: nhập giao dịch qua backend cho CSV, bảng tính, HTML và báo cáo broker.
-- **[Trade Sync](https://journalit.co/docs/trade-sync)**: tự động đồng bộ giao dịch cho Tradovate và MT4.
+- **[Trade Sync](https://journalit.co/docs/trade-sync)**: tự động đồng bộ giao dịch cho các nhà môi giới được hỗ trợ.
 
 ## Thông tin quan trọng
 
 - **Cốt lõi ưu tiên lưu trữ cục bộ**: tính năng ghi nhật ký cốt lõi hoạt động offline và lưu ghi chú cùng giao dịch trong vault Obsidian của bạn.
 - **Cần tài khoản để truy cập đầy đủ**: cần có tài khoản Journalit cho các tính năng yêu cầu xác thực và các tính năng bị giới hạn bởi gói đăng ký.
-- **Tính năng trả phí**: cần gói Pro trả phí để truy cập đầy đủ các tính năng Pro như đồng bộ MetaTrader và Trade Import.
-- **Sử dụng mạng tùy chọn**: plugin chỉ sử dụng dịch vụ mạng của Journalit khi bạn chọn dùng các tính năng dựa trên mạng. Đăng nhập sẽ liên hệ dịch vụ Journalit để xác minh email, kiểm tra token và trạng thái đăng ký. Nếu sau đó bạn dùng các tính năng đã xác thực như đồng bộ MetaTrader hoặc Trade Import, plugin cũng kết nối tới backend API của Journalit để điều phối đồng bộ, truy xuất giao dịch và Trade Import tùy chọn; đồng bộ MetaTrader sử dụng hạ tầng FTP do Journalit quản lý để tải báo cáo lên. Journalit cũng có thể yêu cầu tỷ giá từ dịch vụ tỷ giá bên thứ ba khi cần chuyển đổi đa tiền tệ. Các tính năng dựa trên mạng này đều là tùy chọn.
+- **Tính năng trả phí**: cần gói Pro trả phí để truy cập đầy đủ các tính năng Pro như Trade Sync, Trade Import, lịch kinh tế và hồ sơ prop firm điền sẵn.
+- **Sử dụng mạng**: theo mặc định, Journalit kiểm tra siêu dữ liệu bản phát hành công khai trên GitHub để tìm bản cập nhật mà không gửi dữ liệu vault hoặc tài khoản. Các tính năng sau khi đăng nhập có thể dùng dịch vụ Journalit; đồng bộ MT4 dùng FTP được quản lý và chuyển đổi tiền tệ có thể dùng dịch vụ tỷ giá bên thứ ba. Xem [PRIVACY.md](PRIVACY.md).
 - **Có mã nguồn để xem, giấy phép độc quyền**: plugin là phần mềm độc quyền có mã nguồn có thể xem xét.
 - **Chi tiết quyền riêng tư**: xem [PRIVACY.md](PRIVACY.md) để biết chi tiết về xử lý dữ liệu, lưu giữ dữ liệu và hạ tầng.
 
@@ -75,6 +75,12 @@ Trang cộng đồng: https://community.obsidian.md/plugins/journalit
 
 ![So sánh setup](https://raw.githubusercontent.com/Cursivez/journalit/main/assets/readme/setup-comparison.png)
 
+### Tài khoản & Prop challenge
+
+![Bảng điều khiển tài khoản](https://raw.githubusercontent.com/Cursivez/journalit/main/assets/readme/account-dashboard.png)
+
+![Trang tài khoản](https://raw.githubusercontent.com/Cursivez/journalit/main/assets/readme/account-pages.png)
+
 ### Trình tạo bố cục
 
 ![Trình tạo bố cục](https://raw.githubusercontent.com/Cursivez/journalit/main/assets/readme/layout-builder.png)
@@ -90,14 +96,6 @@ Trang cộng đồng: https://community.obsidian.md/plugins/journalit
 ### Trade Import
 
 ![Trade Import](https://raw.githubusercontent.com/Cursivez/journalit/main/assets/readme/trade-import.png)
-
-### Bảng điều khiển tài khoản
-
-![Bảng điều khiển tài khoản](https://raw.githubusercontent.com/Cursivez/journalit/main/assets/readme/account-dashboard.png)
-
-### Trang tài khoản
-
-![Trang tài khoản](https://raw.githubusercontent.com/Cursivez/journalit/main/assets/readme/account-pages.png)
 
 ## Broker được hỗ trợ
 
@@ -124,7 +122,7 @@ Chưa thấy broker của bạn? Tham gia [Discord](https://discord.gg/AkSw3D9h8
 <details>
 <summary>Từ khóa tìm kiếm</summary>
 
-Từ khóa: obsidian trading journal, trading plugin, trade tracker, obsidian trading template, trading analytics, MetaTrader, MT4 sync, MT5 sync, Trade Import, prop firm, prop firms, funded account, profit target, trailing drawdown, max drawdown
+Từ khóa: obsidian trading journal, trading plugin, trade tracker, obsidian trading template, trading analytics, MetaTrader, MT4 sync, MT5 sync, Trade Import, prop firm, prop firms, funded account, profit target, trailing drawdown, max drawdown, prop challenge, evaluation, funded phase, payout rules, daily loss limit
 
 </details>
 
@@ -135,6 +133,7 @@ Từ khóa: obsidian trading journal, trading plugin, trade tracker, obsidian tr
 - [Tổng quan Trade Import](https://journalit.co/csv-import)
 - [Tổng quan đồng bộ MetaTrader](https://journalit.co/metatrader-trading-journal)
 - [So sánh với các nhật ký khác](https://journalit.co/compare)
+- [Hướng dẫn prop challenge](https://journalit.co/docs/prop-challenges)
 
 </details>
 

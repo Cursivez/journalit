@@ -23,6 +23,31 @@ import { TRADE_LOG_VIEW_TYPE } from '../../../views/TradeLogView';
 import { TEMPLATE_BUILDER_VIEW_TYPE } from '../../../views/TemplateBuilderView';
 import { NAVIGATION_VIEW_TYPE } from '../../../views/NavigationView';
 import { mergeClassNames } from '../../../utils/classNames';
+import { openCreateAccountModal } from '../../accountPage/components/CreateAccountModal';
+
+interface AccountSetupState {
+  
+  hasConfiguredAccount: boolean;
+  
+  hasUnconfiguredAccount: boolean;
+}
+
+
+export function resolveAccountSetupState(
+  catalogAccountNames: readonly string[],
+  accountMetadataKeys: readonly string[]
+): AccountSetupState {
+  const configuredKeys = new Set(
+    accountMetadataKeys.map((key) => key.trim().toLowerCase())
+  );
+
+  return {
+    hasConfiguredAccount: configuredKeys.size > 0,
+    hasUnconfiguredAccount: catalogAccountNames.some(
+      (name) => !configuredKeys.has(name.trim().toLowerCase())
+    ),
+  };
+}
 
 interface GettingStartedWidgetProps {
   plugin: JournalitPlugin;
@@ -52,6 +77,51 @@ export const GettingStartedWidget = memo<GettingStartedWidgetProps>(
     );
     const hasTrade = tradeCount !== null && tradeCount > 0;
     const isProComplete = isPro;
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    const [accountSetup, setAccountSetup] = useState({
+      hasConfiguredAccount: false,
+      hasUnconfiguredAccount: false,
+    });
+
+    const refreshAccountSetup =
+      useCallback(async (): Promise<AccountSetupState | null> => {
+        try {
+          const catalog =
+            (await plugin.accountPageService?.getAccountCatalog()) ?? [];
+          const metadata = plugin.settings.account?.accountMetadata ?? {};
+
+          const setup = resolveAccountSetupState(
+            catalog.map((account) => account.name),
+            Object.keys(metadata)
+          );
+          setAccountSetup(setup);
+          return setup;
+        } catch (error) {
+          console.error('[GettingStarted] Failed to load accounts:', error);
+          return null;
+        }
+      }, [plugin]);
+
+    useEffect(() => {
+      void refreshAccountSetup();
+    }, [refreshAccountSetup]);
+
+    useEventBus('account:changed', () => {
+      void refreshAccountSetup();
+    });
+    useEventBus('trade:changed', () => {
+      void refreshAccountSetup();
+    });
 
     const markOpenedTradeLog = useCallback(() => {
       setOpenedTradeLog(true);
@@ -94,6 +164,34 @@ export const GettingStartedWidget = memo<GettingStartedWidgetProps>(
       getNavigationSidebarSnapshot,
       getNavigationSidebarSnapshot
     );
+
+    const handleSetUpAccount = useCallback(async () => {
+      
+      
+      
+      
+      
+      const setup = (await refreshAccountSetup()) ?? accountSetup;
+
+      
+      
+      
+      
+      if (setup.hasUnconfiguredAccount) {
+        void plugin.viewManager.openAccountDashboardView();
+        return;
+      }
+
+      openCreateAccountModal(
+        plugin.app,
+        plugin,
+        () => {
+          void refreshAccountSetup();
+        },
+        
+        { navigateOnSave: false }
+      );
+    }, [plugin, accountSetup, refreshAccountSetup]);
 
     const handleImportTrades = useCallback(async () => {
       try {
@@ -166,11 +264,11 @@ export const GettingStartedWidget = memo<GettingStartedWidgetProps>(
         
         import('../../modals/UpgradeModal')
           .then(({ openUpgradeModal }) => {
-            openUpgradeModal(
-              plugin.app,
+            openUpgradeModal({
+              app: plugin.app,
               plugin,
-              t('home.widget.getting-started.item.pro.title')
-            );
+              featureName: t('home.widget.getting-started.item.pro.title'),
+            });
           })
           .catch((error) => {
             console.error(
@@ -229,6 +327,17 @@ export const GettingStartedWidget = memo<GettingStartedWidgetProps>(
     const checklistItems = useMemo(
       () => [
         {
+          id: 'create-account',
+          title: t('home.widget.getting-started.item.account.title'),
+          description: t(
+            'home.widget.getting-started.item.account.description'
+          ),
+          time: t('home.widget.getting-started.item.account.time'),
+          cta: t('home.widget.getting-started.item.account.cta'),
+          onClick: () => void handleSetUpAccount(),
+          completed: accountSetup.hasConfiguredAccount,
+        },
+        {
           id: 'add-trading-history',
           title: t('home.widget.getting-started.item.create.title'),
           description: t('home.widget.getting-started.item.create.description'),
@@ -281,6 +390,8 @@ export const GettingStartedWidget = memo<GettingStartedWidgetProps>(
         },
       ],
       [
+        handleSetUpAccount,
+        accountSetup.hasConfiguredAccount,
         handleImportTrades,
         handleOpenTradeLog,
         handleOpenLayoutBuilder,

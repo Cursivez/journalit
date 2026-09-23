@@ -6,10 +6,15 @@ import React, {
   useMemo,
   useRef,
   useState,
+  useSyncExternalStore,
 } from 'react';
 import { WorkspaceLeaf } from 'obsidian';
 import { createPortal } from 'react-dom';
 import { getPluginInstance } from '../utils/pluginContext';
+import {
+  resolveContextualGuideId,
+  type ContextualGuideCandidate,
+} from './contextualGuideResolution';
 import { GuideDefinition, GuideStepDefinition } from './types';
 import { cssVars } from '../styles/inlineStylePolicy';
 import { t } from '../lang/helpers';
@@ -39,6 +44,10 @@ interface GuideRuntimeContextValue {
   registerContextValue: (key: string, value: string | number | boolean) => void;
   notifyAction: (actionId: string) => void;
   registerBackHandler: (handler: GuideBackHandler) => () => void;
+  
+  leaf: WorkspaceLeaf;
+  
+  setResolvedGuide: (guideId: string | null) => void;
   currentStepId: string | null;
 }
 
@@ -48,6 +57,27 @@ const GuideRuntimeContext = createContext<GuideRuntimeContextValue | null>(
 
 const NOOP = (): void => {
   // intentional
+};
+
+const hasModalGuideOverlay = (doc: Document): boolean =>
+  doc.querySelector('[data-journalit-modal-guide-overlay]') !== null;
+
+const useModalGuideOpen = (leaf: WorkspaceLeaf): boolean => {
+  const doc = leaf.view.containerEl?.ownerDocument ?? window.activeDocument;
+  const [isOpen, setIsOpen] = useState(() => hasModalGuideOverlay(doc));
+
+  useEffect(() => {
+    const update = () => setIsOpen(hasModalGuideOverlay(doc));
+    update();
+    const observer = new MutationObserver(update);
+    observer.observe(doc.body, {
+      childList: true,
+      subtree: true,
+    });
+    return () => observer.disconnect();
+  }, [doc]);
+
+  return isOpen;
 };
 
 const externalTargets = new Map<string, HTMLElement>();
@@ -262,6 +292,87 @@ export const useGuideCurrentStepId = (): string | null => {
   return context?.currentStepId ?? null;
 };
 
+
+export const useResolvedViewGuide = (guideId: string | null): void => {
+  const context = use(GuideRuntimeContext);
+  const setResolvedGuide = context?.setResolvedGuide ?? null;
+
+  useEffect(() => {
+    if (!setResolvedGuide) return;
+    setResolvedGuide(guideId);
+  }, [guideId, setResolvedGuide]);
+
+  useEffect(() => {
+    return () => {
+      setResolvedGuide?.(null);
+    };
+  }, [setResolvedGuide]);
+};
+
+
+export const useContextualGuideResolution = ({
+  baseGuideId,
+  contextualGuides,
+}: {
+  baseGuideId: string;
+  contextualGuides: readonly ContextualGuideCandidate[];
+}): void => {
+  const context = use(GuideRuntimeContext);
+  const plugin = getPluginInstance();
+  const guideService = plugin?.viewGuideService ?? null;
+  const leaf = context?.leaf ?? null;
+  const setResolvedGuide = context?.setResolvedGuide ?? null;
+
+  const subscribeToGuideChanges = useCallback(
+    (listener: () => void) =>
+      guideService?.subscribe(listener) ?? (() => undefined),
+    [guideService]
+  );
+  const getGuideStateSnapshot = useCallback(() => {
+    if (!guideService || !leaf) return '';
+    return [baseGuideId, ...contextualGuides.map((c) => c.guideId)]
+      .map((guideId) => {
+        const state = guideService.getPersistedGuideState(guideId);
+        const session = guideService.getSessionForGuideAndLeaf(guideId, leaf);
+        return `${guideId}:${state?.status ?? ''}:${session?.status ?? ''}`;
+      })
+      .join('|');
+  }, [baseGuideId, contextualGuides, guideService, leaf]);
+  const guideStateSnapshot = useSyncExternalStore(
+    subscribeToGuideChanges,
+    getGuideStateSnapshot,
+    () => ''
+  );
+
+  const resolvedGuideId = useMemo(() => {
+    void guideStateSnapshot;
+    if (!guideService || !leaf) return null;
+    const activeSessionGuideId =
+      [baseGuideId, ...contextualGuides.map((c) => c.guideId)]
+        .map((guideId) => guideService.getSessionForGuideAndLeaf(guideId, leaf))
+        .find((session) => session && session.status !== 'ended')?.guideId ??
+      null;
+    return resolveContextualGuideId({
+      baseGuideId,
+      contextualGuides,
+      activeSessionGuideId,
+      getPersistedState: (guideId) =>
+        guideService.getPersistedGuideState(guideId),
+    });
+  }, [baseGuideId, contextualGuides, guideService, guideStateSnapshot, leaf]);
+
+  useEffect(() => {
+    if (!setResolvedGuide || !resolvedGuideId) return;
+    setResolvedGuide(resolvedGuideId);
+  }, [resolvedGuideId, setResolvedGuide]);
+
+  useEffect(() => {
+    return () => {
+      setResolvedGuide?.(null);
+    };
+  }, [setResolvedGuide]);
+};
+
 const OFFSCREEN_MARGIN = 24;
 
 const isTargetOffscreen = (targetRect: DOMRect): boolean => {
@@ -314,6 +425,7 @@ function useGuideRuntimeModel({
   const lastAdvancedStepKeyRef = useRef<string | null>(null);
 
   const activeLeaf = guideService?.getActiveLeaf() ?? null;
+  const autoShowSuppressed = guideService?.isAutoShowSuppressed() ?? false;
   const guidesForView = guideRegistry?.getGuidesForView(viewType) || [];
   const guideIdsForView = guidesForView.map((candidate) => candidate.id);
 
@@ -359,7 +471,7 @@ function useGuideRuntimeModel({
         : resolvedGuide;
 
   useEffect(() => {
-    if (!guide || !guideService || !guide.autoShow) {
+    if (!guide || !guideService || !guide.autoShow || autoShowSuppressed) {
       return;
     }
 
@@ -381,7 +493,7 @@ function useGuideRuntimeModel({
       leaf,
       initialStepId: guide.initialStepId,
     });
-  }, [activeLeaf, guide, guideService, leaf, session]);
+  }, [activeLeaf, autoShowSuppressed, guide, guideService, leaf, session]);
 
   const visible =
     !!guide && !!session && !!guideService?.isSessionVisible(session.sessionId);
@@ -391,9 +503,6 @@ function useGuideRuntimeModel({
 
   const stepIndex =
     guide && session ? getStepIndex(guide.steps, session.currentStepId) : -1;
-
-  const isLastStep =
-    !!guide && stepIndex >= 0 && stepIndex === guide.steps.length - 1;
 
   const registerTarget = useCallback(
     (targetId: string, element: HTMLElement | null) => {
@@ -442,8 +551,28 @@ function useGuideRuntimeModel({
     return true;
   }, []);
 
-  const findNavigableStepIndex = useCallback(
-    (fromIndex: number, direction: 1 | -1): number => {
+  const hasMountedTarget = useCallback(
+    (step: GuideStepDefinition): boolean =>
+      !step.targetId ||
+      !!targetsRef.current.get(step.targetId) ||
+      !!externalTargets.get(step.targetId),
+    []
+  );
+
+  
+  const isStepReachable = useCallback(
+    (step: GuideStepDefinition): boolean =>
+      isStepAvailable(step) &&
+      (!step.skipIfTargetMissing || hasMountedTarget(step)),
+    [hasMountedTarget, isStepAvailable]
+  );
+
+  const findAvailableStepIndex = useCallback(
+    (
+      fromIndex: number,
+      direction: 1 | -1,
+      options: { skipMissingTargets: boolean } = { skipMissingTargets: true }
+    ): number => {
       if (!guide) {
         return -1;
       }
@@ -453,15 +582,40 @@ function useGuideRuntimeModel({
         index >= 0 && index < guide.steps.length;
         index += direction
       ) {
-        if (isStepAvailable(guide.steps[index])) {
+        const step = guide.steps[index];
+        const reachable = options.skipMissingTargets
+          ? isStepReachable(step)
+          : isStepAvailable(step);
+        if (reachable) {
           return index;
         }
       }
 
       return -1;
     },
-    [guide, isStepAvailable]
+    [guide, isStepAvailable, isStepReachable]
   );
+
+  
+  
+  
+  const isLastStep =
+    !!guide &&
+    stepIndex >= 0 &&
+    isStepAvailable(guide.steps[stepIndex]) &&
+    findAvailableStepIndex(stepIndex + 1, 1) < 0;
+
+  
+  
+  const reachableSteps = guide
+    ? guide.steps.filter(
+        (step, index) =>
+          index === stepIndex ||
+          (isStepAvailable(step) &&
+            (!step.skipIfTargetMissing || hasMountedTarget(step)))
+      )
+    : [];
+  const reachableIndex = currentStep ? reachableSteps.indexOf(currentStep) : -1;
 
   const registerBackHandler = useCallback((handler: GuideBackHandler) => {
     backHandlersRef.current.add(handler);
@@ -554,7 +708,12 @@ function useGuideRuntimeModel({
       return;
     }
 
-    const currentStepKey = `${session.sessionId}:${session.currentStepId}`;
+    
+    
+    
+    
+    
+    const currentStepKey = `${session.sessionId}:${guide.steps[stepIndex].id}`;
     if (lastAdvancedStepKeyRef.current === currentStepKey) {
       return;
     }
@@ -567,7 +726,13 @@ function useGuideRuntimeModel({
         return;
       }
 
-      const nextStepIndex = findNavigableStepIndex(stepIndex + 1, 1);
+      
+      
+      
+      const nextStepIndex = findAvailableStepIndex(stepIndex + 1, 1, {
+        skipMissingTargets:
+          guide.steps[stepIndex]?.progression !== 'action-required',
+      });
       const nextStep = nextStepIndex >= 0 ? guide.steps[nextStepIndex] : null;
       if (!nextStep) {
         lastAdvancedStepKeyRef.current = null;
@@ -587,7 +752,7 @@ function useGuideRuntimeModel({
       throw error;
     }
   }, [
-    findNavigableStepIndex,
+    findAvailableStepIndex,
     guideService,
     guide,
     session,
@@ -668,7 +833,7 @@ function useGuideRuntimeModel({
       return;
     }
 
-    const previousStepIndex = findNavigableStepIndex(stepIndex - 1, -1);
+    const previousStepIndex = findAvailableStepIndex(stepIndex - 1, -1);
     const previousStep =
       previousStepIndex >= 0 ? guide.steps[previousStepIndex] : null;
     if (!previousStep) {
@@ -702,7 +867,7 @@ function useGuideRuntimeModel({
 
     void runBack();
   }, [
-    findNavigableStepIndex,
+    findAvailableStepIndex,
     guideService,
     guide,
     session,
@@ -759,8 +924,30 @@ function useGuideRuntimeModel({
       return;
     }
 
+    
+    
+    
+    
+    for (const step of guide?.steps ?? []) {
+      step.onDismiss?.();
+    }
+
     void guideService.skipSession(session.sessionId);
-  }, [guideService, session]);
+  }, [guide, guideService, session]);
+
+  const handleStepAction = useCallback(() => {
+    if (!currentStep?.action || !guideService || !session) {
+      return;
+    }
+
+    currentStep.action.run();
+    void guideService.completeSession(session.sessionId);
+  }, [currentStep, guideService, session]);
+
+  const handleStepDismiss = useCallback(() => {
+    currentStep?.onDismiss?.();
+    void advanceStep();
+  }, [advanceStep, currentStep]);
 
   useEffect(() => {
     if (!visible || !isWaitingForTarget || !currentStep?.targetId) {
@@ -771,9 +958,11 @@ function useGuideRuntimeModel({
       return;
     }
 
+    
+    
     const timeout = window.setTimeout(() => {
       void advanceStep();
-    }, 2000);
+    }, 600);
 
     return () => {
       window.clearTimeout(timeout);
@@ -819,20 +1008,31 @@ function useGuideRuntimeModel({
     };
   })();
 
+  const setResolvedGuide = useCallback(
+    (guideId: string | null) => {
+      guideService?.setResolvedGuideForLeaf(leaf, guideId);
+    },
+    [guideService, leaf]
+  );
+
   const contextValue = useMemo<GuideRuntimeContextValue>(
     () => ({
       registerTarget,
       registerContextValue,
       notifyAction,
       registerBackHandler,
+      leaf,
+      setResolvedGuide,
       currentStepId: currentStep?.id ?? null,
     }),
     [
       currentStep?.id,
+      leaf,
       notifyAction,
       registerBackHandler,
       registerContextValue,
       registerTarget,
+      setResolvedGuide,
     ]
   );
 
@@ -844,11 +1044,13 @@ function useGuideRuntimeModel({
     showOffscreenPrompt,
     isWaitingForTarget,
     offscreenDirection,
-    stepIndex,
-    guide,
+    reachableIndex,
+    reachableSteps,
     isLastStep,
     isFirstStep,
     handleSkip,
+    handleStepAction,
+    handleStepDismiss,
     handleBack,
     handlePrimaryClick,
   };
@@ -859,6 +1061,7 @@ export const GuideRuntimeLayer: React.FC<GuideRuntimeLayerProps> = ({
   viewType,
   children,
 }) => {
+  const modalGuideOpen = useModalGuideOpen(leaf);
   const {
     contextValue,
     visible,
@@ -867,11 +1070,13 @@ export const GuideRuntimeLayer: React.FC<GuideRuntimeLayerProps> = ({
     showOffscreenPrompt,
     isWaitingForTarget,
     offscreenDirection,
-    stepIndex,
-    guide,
+    reachableIndex,
+    reachableSteps,
     isLastStep,
     isFirstStep,
     handleSkip,
+    handleStepAction,
+    handleStepDismiss,
     handleBack,
     handlePrimaryClick,
   } = useGuideRuntimeModel({ leaf, viewType });
@@ -881,6 +1086,7 @@ export const GuideRuntimeLayer: React.FC<GuideRuntimeLayerProps> = ({
       {children}
 
       {visible &&
+        !modalGuideOpen &&
         currentStep &&
         createPortal(
           <div className="journalit-view-guide-overlay">
@@ -932,37 +1138,64 @@ export const GuideRuntimeLayer: React.FC<GuideRuntimeLayerProps> = ({
 
               <div className="journalit-view-guide-footer">
                 <span className="journalit-view-guide-step">
-                  {`${stepIndex + 1}/${guide?.steps.length ?? 1}`}
+                  {`${reachableIndex + 1}/${reachableSteps.length || 1}`}
                 </span>
 
                 <div className="journalit-view-guide-actions">
-                  {!isLastStep && (
-                    <button
-                      className="journalit-view-guide-button journalit-view-guide-button--secondary"
-                      onClick={handleSkip}
-                    >
-                      {t('guide.skip-guide')}
-                    </button>
+                  {currentStep.action ? (
+                    <>
+                      <button
+                        className="journalit-view-guide-button journalit-view-guide-button--secondary"
+                        onClick={handleStepDismiss}
+                      >
+                        {t('guide.action-step.dismiss')}
+                      </button>
+                      {!isFirstStep && (
+                        <button
+                          className="journalit-view-guide-button journalit-view-guide-button--back"
+                          onClick={handleBack}
+                        >
+                          {t('button.back')}
+                        </button>
+                      )}
+                      <button
+                        className="journalit-view-guide-button journalit-view-guide-button--primary"
+                        onClick={handleStepAction}
+                      >
+                        {currentStep.action.label}
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      {!isLastStep && (
+                        <button
+                          className="journalit-view-guide-button journalit-view-guide-button--secondary"
+                          onClick={handleSkip}
+                        >
+                          {t('guide.skip-guide')}
+                        </button>
+                      )}
+                      {!isFirstStep && (
+                        <button
+                          className="journalit-view-guide-button journalit-view-guide-button--back"
+                          onClick={handleBack}
+                        >
+                          {t('button.back')}
+                        </button>
+                      )}
+                      <button
+                        className="journalit-view-guide-button journalit-view-guide-button--primary"
+                        onClick={handlePrimaryClick}
+                        disabled={isWaitingForTarget}
+                      >
+                        {showOffscreenPrompt
+                          ? t('guide.scroll-to-target.button')
+                          : isLastStep
+                            ? t('button.done')
+                            : t('button.next')}
+                      </button>
+                    </>
                   )}
-                  {!isFirstStep && (
-                    <button
-                      className="journalit-view-guide-button journalit-view-guide-button--back"
-                      onClick={handleBack}
-                    >
-                      {t('button.back')}
-                    </button>
-                  )}
-                  <button
-                    className="journalit-view-guide-button journalit-view-guide-button--primary"
-                    onClick={handlePrimaryClick}
-                    disabled={isWaitingForTarget}
-                  >
-                    {showOffscreenPrompt
-                      ? t('guide.scroll-to-target.button')
-                      : isLastStep
-                        ? t('button.done')
-                        : t('button.next')}
-                  </button>
                 </div>
               </div>
             </div>

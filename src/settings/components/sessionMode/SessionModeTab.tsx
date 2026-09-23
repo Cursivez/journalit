@@ -14,6 +14,7 @@ import { NoTooltipButton } from '../../../components/ui/NoTooltipButton';
 import ToggleSwitch from '../../../components/ui/ToggleSwitch';
 import { Tooltip } from '../../../components/shared/Tooltip';
 import { TradeGateSection } from './tradeGate/TradeGateSection';
+import { SessionModeSettingsGuide } from './SessionModeSettingsGuide';
 import {
   ChevronDown,
   ChevronRight,
@@ -449,8 +450,33 @@ function SessionModeSettingsSection({ plugin }: SessionModeTabProps) {
     setSettingsVersion((previous) => previous + 1);
   };
 
+  const [guideReplayToken, setGuideReplayToken] = useState(0);
+
   return (
     <div className="journalit-session-mode-settings">
+      <div className="setting-item journalit-session-mode-guide-setting">
+        <div className="setting-item-info">
+          <div className="setting-item-name">
+            {t('settings.session-mode.guide.setting-name')}
+          </div>
+          <div className="setting-item-description">
+            {t('settings.session-mode.guide.setting-desc')}
+          </div>
+        </div>
+        <div className="setting-item-control">
+          <Button
+            size="sm"
+            onClick={() => setGuideReplayToken((token) => token + 1)}
+          >
+            {t('settings.session-mode.guide.replay')}
+          </Button>
+        </div>
+      </div>
+      <SessionModeSettingsGuide
+        key={guideReplayToken}
+        plugin={plugin}
+        startImmediately={guideReplayToken > 0}
+      />
       <SessionModeLeadTimeSetting
         value={sessionModeSettings.preparationLeadTimeMinutes}
         updateLeadTime={updateLeadTime}
@@ -604,7 +630,10 @@ function SessionModeLeadTimeSetting({
   updateLeadTime: (value: string) => Promise<void>;
 }) {
   return (
-    <div className="setting-item">
+    <div
+      data-journalit-guide-target="session-mode.lead-time"
+      className="setting-item"
+    >
       <div className="setting-item-info">
         <div className="setting-item-name">
           {t('settings.session-mode.preparation-lead-time')}

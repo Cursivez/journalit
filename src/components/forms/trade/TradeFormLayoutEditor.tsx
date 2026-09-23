@@ -22,6 +22,7 @@ import {
   TradeFormInputMode,
   TradeFormLayoutItemId,
   TradeFormLayoutSettings,
+  TradeFormTakeProfitUnit,
   resolveTradeFormLayoutSettings,
 } from '../../../settings/types';
 import {
@@ -29,11 +30,25 @@ import {
   getTradeFormLayoutItemDefinitions,
 } from './tradeFormLayoutConfig';
 
+
+
+
+
+
+const PNL_RISK_UNAVAILABLE_LAYOUT_ITEMS = new Set<string>([
+  'idealExits',
+  'directPnlToggle',
+]);
+
 const NON_REORDERABLE_LAYOUT_ITEMS = new Set<string>([
   
   'importShortcut',
   
   'assetSpecific',
+  
+  'exchange',
+  
+  'directPnlToggle',
   
   'idealExits',
   
@@ -86,8 +101,14 @@ const EXECUTION_EMBEDDED_LAYOUT_ITEM_ORDER = [
   'dividends',
 ];
 
+
+
+
+
 const FIXED_TOP_LAYOUT_ITEMS = new Set<string>([
   'assetSpecific',
+  'exchange',
+  'directPnlToggle',
   'tradeCurrency',
 ]);
 const FIXED_BOTTOM_LAYOUT_ITEMS = new Set<string>([
@@ -141,7 +162,8 @@ const createEditorItems = (
 } => {
   const definitions = getTradeFormLayoutItemDefinitions().filter(
     (definition) =>
-      layout.inputMode !== 'pnl-risk' || definition.id !== 'idealExits'
+      layout.inputMode !== 'pnl-risk' ||
+      !PNL_RISK_UNAVAILABLE_LAYOUT_ITEMS.has(definition.id)
   );
   const definitionById = new Map(definitions.map((item) => [item.id, item]));
   const visibleSet = new Set<string>(layout.visibleItems);
@@ -296,6 +318,7 @@ const parseDefaultAssetType = (
 interface RiskFieldsVisibilitySelectorProps {
   layout: TradeFormLayoutSettings;
   onChange: (itemId: string, isVisible: boolean) => void;
+  onTakeProfitUnitChange: (unit: TradeFormTakeProfitUnit) => void;
 }
 
 interface CostFieldsVisibilitySelectorProps {
@@ -337,7 +360,7 @@ CostFieldsVisibilitySelector.displayName = 'CostFieldsVisibilitySelector';
 
 const RiskFieldsVisibilitySelector: React.FC<
   RiskFieldsVisibilitySelectorProps
-> = ({ layout, onChange }) => {
+> = ({ layout, onChange, onTakeProfitUnitChange }) => {
   const riskItems = getTradeFormLayoutItemDefinitions().reduce<
     ReturnType<typeof getTradeFormLayoutItemDefinitions>
   >((items, item) => {
@@ -349,17 +372,41 @@ const RiskFieldsVisibilitySelector: React.FC<
   return (
     <div className="journalit-trade-form-layout-editor__risk-fields">
       {riskItems.map((item) => (
-        <label
-          key={item.id}
-          className="journalit-trade-form-layout-editor__risk-field"
-        >
-          <input
-            type="checkbox"
-            checked={visibleItemsSet2.has(item.id)}
-            onChange={(event) => onChange(item.id, event.currentTarget.checked)}
-          />
-          <span>{item.label}</span>
-        </label>
+        <React.Fragment key={item.id}>
+          <label className="journalit-trade-form-layout-editor__risk-field">
+            <input
+              type="checkbox"
+              checked={visibleItemsSet2.has(item.id)}
+              onChange={(event) =>
+                onChange(item.id, event.currentTarget.checked)
+              }
+            />
+            <span>{item.label}</span>
+          </label>
+          {item.id === 'takeProfits' && visibleItemsSet2.has('takeProfits') && (
+            <div className="journalit-trade-form-layout-editor__take-profit-unit">
+              <span className="journalit-trade-form-layout-editor__take-profit-unit-label">
+                {t('form.layout.take-profit-unit')}
+              </span>
+              <SegmentedControl<TradeFormTakeProfitUnit>
+                options={[
+                  {
+                    value: 'percent',
+                    label: t('form.layout.take-profit-unit-percent'),
+                  },
+                  {
+                    value: 'size',
+                    label: t('form.layout.take-profit-unit-size'),
+                  },
+                ]}
+                value={layout.takeProfitUnit}
+                onChange={onTakeProfitUnitChange}
+                size="small"
+                fullWidth={false}
+              />
+            </div>
+          )}
+        </React.Fragment>
       ))}
     </div>
   );
@@ -516,6 +563,7 @@ const LayoutEditorFooter: React.FC<LayoutEditorFooterProps> = ({
         type="button"
         variant="plain"
         className="cancel-button"
+        data-journalit-guide-target="trade-form.layout-cancel"
         onClick={onCancel}
         disabled={isSaving}
       >
@@ -711,6 +759,12 @@ export const TradeFormLayoutEditor: React.FC<TradeFormLayoutEditorProps> = ({
     setLayout((previous) => ({ ...previous, showManualFxRate }));
   };
 
+  const handleTakeProfitUnitChange = (
+    takeProfitUnit: TradeFormTakeProfitUnit
+  ) => {
+    setLayout((previous) => ({ ...previous, takeProfitUnit }));
+  };
+
   const { activeItems, availableItems } = useMemo(
     () =>
       createEditorItems(
@@ -722,6 +776,7 @@ export const TradeFormLayoutEditor: React.FC<TradeFormLayoutEditorProps> = ({
         <RiskFieldsVisibilitySelector
           layout={layout}
           onChange={handleRiskGroupVisibilityChange}
+          onTakeProfitUnitChange={handleTakeProfitUnitChange}
         />,
         <ManualFxRateToggle
           layout={layout}

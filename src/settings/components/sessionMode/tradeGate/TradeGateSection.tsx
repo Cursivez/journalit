@@ -13,7 +13,6 @@ import {
 } from '../../../../components/shared/icons/ObsidianIcon';
 import { Button } from '../../../../components/ui/Button';
 import { NoTooltipButton } from '../../../../components/ui/NoTooltipButton';
-import { Tooltip } from '../../../../components/shared/Tooltip';
 import { TradeGateSimulator } from '../../../../components/sessionMode/TradeGateSimulator';
 import { t } from '../../../../lang/helpers';
 import type {
@@ -467,6 +466,9 @@ function TradeGateWorkflowEditor({
   return (
     <div
       className={`journalit-session-mode-trade-gate-workflow${isExpanded ? ' is-expanded' : ''}`}
+      data-journalit-guide-target={
+        isExpanded ? 'session-mode.trade-gate-editor' : undefined
+      }
     >
       <div className="journalit-session-mode-trade-gate-row">
         <button
@@ -491,23 +493,16 @@ function TradeGateWorkflowEditor({
         </button>
         {isExpanded && (
           <>
-            <Tooltip
-              content={t('settings.session-mode.trade-gate.simulation.show')}
-              preferredPosition="bottom"
+            <Button
+              size="sm"
+              className={`journalit-session-mode-trade-gate-simulate-button${isSimulatorOpen ? ' is-active' : ''}`}
+              aria-label={t('settings.session-mode.trade-gate.simulation.show')}
+              aria-controls={simulationRegionId}
+              aria-expanded={isSimulatorOpen}
+              onClick={() => setIsSimulatorOpen((current) => !current)}
             >
-              <Button
-                size="sm"
-                className={`journalit-session-mode-trade-gate-simulate-button${isSimulatorOpen ? ' is-active' : ''}`}
-                aria-label={t(
-                  'settings.session-mode.trade-gate.simulation.show'
-                )}
-                aria-controls={simulationRegionId}
-                aria-expanded={isSimulatorOpen}
-                onClick={() => setIsSimulatorOpen((current) => !current)}
-              >
-                <Play size={15} aria-hidden="true" />
-              </Button>
-            </Tooltip>
+              <Play size={15} aria-hidden="true" />
+            </Button>
             <Button size="sm" onClick={openQuestionPicker}>
               <Plus size={15} aria-hidden="true" />
               {t('settings.session-mode.trade-gate.add-question')}

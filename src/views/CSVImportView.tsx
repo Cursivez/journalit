@@ -6,6 +6,7 @@ import { ReactView } from './ReactView';
 import { RenderFunction } from './types';
 import JournalitPlugin from '../main';
 import { CSVImport } from '../components/csv/CSVImport';
+import { clearOnboardingUpgradeOrigin } from '../services/upgrade/upgradeOrigin';
 import { t } from '../lang/helpers';
 
 export const CSV_IMPORT_VIEW_TYPE = 'journalit-csv-import-view';
@@ -41,6 +42,13 @@ export class CSVImportView extends ReactView {
     } catch (error) {
       console.error('[CSVImportView] Failed to initialize:', error);
     }
+  }
+
+  async onClose(): Promise<void> {
+    
+    
+    clearOnboardingUpgradeOrigin('csvImport');
+    await super.onClose();
   }
 
   protected getRenderFunction(): RenderFunction {

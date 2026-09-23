@@ -8,11 +8,14 @@ import type {
   TradeProjectionAccountInventoryResponse,
   TradeProjectionAccountVaultMapping,
   TradeProjectionAccountVaultMappingRequest,
+  TradeProjectionAccountVaultRemapRequest,
+  TradeProjectionAccountVaultRemapResponse,
   TradeProjectionRequest,
   TradeProjectionResponse,
   RithmicConnection,
   RithmicConnectionAccount,
   RithmicConnections,
+  CTraderConnections,
   TradovateConnection,
   TradovateConnectionAccount,
   TradovateConnections,
@@ -109,6 +112,12 @@ const nullableProjectionString = (
     throw new Error(`Invalid Trade Projection ${field} response`);
   }
   return value;
+};
+
+const projectionAccountIdentity = (value: unknown): 'broker' | 'name' => {
+  if (value === undefined || value === null) return 'name';
+  if (value === 'broker' || value === 'name') return value;
+  throw new Error('Invalid Trade Projection accountIdentity response');
 };
 
 const isParseableTimestamp = (value: unknown): value is string =>
@@ -487,6 +496,9 @@ function normalizeMissingProjection(
         ? record.accountDisplayName
         : null,
     accountId: typeof record.accountId === 'string' ? record.accountId : null,
+    accountIdentity: projectionAccountIdentity(
+      projectionTrade?.accountIdentity ?? record.accountIdentity
+    ),
     importId: typeof record.importId === 'string' ? record.importId : '',
     correlationId:
       typeof record.correlationId === 'string'
@@ -552,6 +564,7 @@ function normalizeProjectionResponse(value: unknown): TradeProjectionResponse {
           typeof projection.accountId === 'string'
             ? projection.accountId
             : null,
+        accountIdentity: projectionAccountIdentity(projection.accountIdentity),
         importId:
           typeof projection.importId === 'string' ? projection.importId : '',
         correlationId:
@@ -569,6 +582,9 @@ function normalizeProjectionResponse(value: unknown): TradeProjectionResponse {
           'importedAt'
         ),
         projectionStatus: projectionSyncStatus(projection.projectionStatus),
+        projectionGeneration: projectionGeneration(
+          projection.projectionGeneration
+        ),
         previewTrade,
       } satisfies TradeProjection;
     }),
@@ -794,7 +810,8 @@ export function decodeTradovateJobResponse(
 
 function normalizeTradovateAccount(
   value: unknown,
-  connectionId: string
+  connectionId: string,
+  provider = 'Tradovate'
 ): TradovateConnectionAccount {
   const account = asRecord(value);
   const historyMode = account?.historyMode;
@@ -819,7 +836,7 @@ function normalizeTradovateAccount(
       rawClaim.state !== 'held' &&
       rawClaim.state !== 'held_elsewhere')
   ) {
-    throw new Error('Invalid Tradovate account status response');
+    throw new Error(`Invalid ${provider} account status response`);
   }
   const syncClaim =
     rawClaim.state === 'available'
@@ -830,7 +847,8 @@ function normalizeTradovateAccount(
           state: rawClaim.state,
           holderConnectionId: scopedIdentifier(
             rawClaim.holderConnectionId,
-            'account sync claim scope'
+            'account sync claim scope',
+            provider
           ),
         } as const);
   if (
@@ -846,14 +864,15 @@ function normalizeTradovateAccount(
     (syncClaim.state === 'held_elsewhere' &&
       syncClaim.holderConnectionId === connectionId)
   ) {
-    throw new Error('Invalid Tradovate account sync claim response');
+    throw new Error(`Invalid ${provider} account sync claim response`);
   }
   return {
-    id: scopedIdentifier(account.id, 'account identity'),
+    id: scopedIdentifier(account.id, 'account identity', provider),
     connectionId,
     canonicalAccountId: scopedIdentifier(
       account.canonicalAccountId,
-      'canonical account identity'
+      'canonical account identity',
+      provider
     ),
     displayName:
       typeof account.displayName === 'string' ? account.displayName : undefined,
@@ -872,7 +891,10 @@ function normalizeTradovateAccount(
   };
 }
 
-function normalizeTradovateConnection(value: unknown): TradovateConnection {
+function normalizeTradovateConnection(
+  value: unknown,
+  provider = 'Tradovate'
+): TradovateConnection {
   const connection = asRecord(value);
   if (
     !connection ||
@@ -888,18 +910,18 @@ function normalizeTradovateConnection(value: unknown): TradovateConnection {
     !Array.isArray(connection.accounts) ||
     !Array.isArray(connection.jobs)
   ) {
-    throw new Error('Invalid Tradovate connection response');
+    throw new Error(`Invalid ${provider} connection response`);
   }
-  const id = scopedIdentifier(connection.id, 'connection identity');
+  const id = scopedIdentifier(connection.id, 'connection identity', provider);
   const accountIds = new Set<string>();
   const canonicalAccountIds = new Set<string>();
   const accounts = connection.accounts.map((item) => {
-    const account = normalizeTradovateAccount(item, id);
+    const account = normalizeTradovateAccount(item, id, provider);
     if (
       accountIds.has(account.id) ||
       canonicalAccountIds.has(account.canonicalAccountId)
     ) {
-      throw new Error('Invalid Tradovate account status response');
+      throw new Error(`Invalid ${provider} account status response`);
     }
     accountIds.add(account.id);
     canonicalAccountIds.add(account.canonicalAccountId);
@@ -907,9 +929,9 @@ function normalizeTradovateConnection(value: unknown): TradovateConnection {
   });
   const jobIds = new Set<string>();
   const jobs = connection.jobs.map((item) => {
-    const job = normalizeBrokerSyncJob(item);
+    const job = normalizeBrokerSyncJob(item, provider);
     if (job.connectionId !== id || jobIds.has(job.id)) {
-      throw new Error('Invalid Tradovate job status response');
+      throw new Error(`Invalid ${provider} job status response`);
     }
     jobIds.add(job.id);
     return job;
@@ -991,6 +1013,118 @@ export function decodeTradovateConnectionsResponse(
   return { schemaVersion: 'tradovate-connections-v2', connections };
 }
 
+export function decodeCTraderSyncJobResponse(
+  value: unknown,
+  connectionId: string
+): BrokerSyncJob {
+  const record = asRecord(value);
+  if (
+    record?.schemaVersion !== 'ctrader-sync-job-v2' ||
+    record.connectionId !== connectionId
+  ) {
+    throw new Error('Invalid cTrader sync response scope');
+  }
+  const job = normalizeBrokerSyncJob(record.job, 'cTrader');
+  if (job.connectionId !== connectionId) {
+    throw new Error('Invalid cTrader sync response scope');
+  }
+  return job;
+}
+
+export function decodeCTraderAccountSetupResponse(
+  value: unknown,
+  connectionId: string
+): {
+  job: BrokerSyncJob | null;
+  created: boolean;
+} {
+  const record = asRecord(value);
+  if (
+    record?.schemaVersion !== 'ctrader-account-selection-v2' ||
+    record.connectionId !== connectionId ||
+    typeof record.created !== 'boolean'
+  ) {
+    throw new Error('Invalid cTrader account setup response');
+  }
+  const job = record.job ? normalizeBrokerSyncJob(record.job, 'cTrader') : null;
+  if (job && job.connectionId !== connectionId) {
+    throw new Error('Invalid cTrader account setup response scope');
+  }
+  return {
+    job,
+    created: record.created,
+  };
+}
+
+export function decodeCTraderJobResponse(
+  value: unknown,
+  connectionId: string,
+  jobId: string
+): BrokerSyncJob {
+  const record = asRecord(value);
+  if (
+    record?.schemaVersion !== 'ctrader-job-v2' ||
+    record.connectionId !== connectionId
+  ) {
+    throw new Error('Invalid cTrader job response scope');
+  }
+  const job = normalizeBrokerSyncJob(record.job, 'cTrader');
+  if (job.id !== jobId || job.connectionId !== connectionId) {
+    throw new Error('Invalid cTrader job response scope');
+  }
+  return job;
+}
+
+export function decodeCTraderConnectionsResponse(
+  value: unknown
+): CTraderConnections {
+  const record = asRecord(value);
+  if (
+    record?.schemaVersion !== 'ctrader-connections-v2' ||
+    !Array.isArray(record.connections)
+  ) {
+    throw new Error('Invalid cTrader connections response');
+  }
+  const connectionIds = new Set<string>();
+  const connections = record.connections.map((item) => {
+    const connection = normalizeTradovateConnection(item, 'cTrader');
+    if (connectionIds.has(connection.id)) {
+      throw new Error('Invalid cTrader connections response');
+    }
+    connectionIds.add(connection.id);
+    return connection;
+  });
+  const claimHolderByCanonicalAccountId = new Map<string, string | null>();
+  for (const connection of connections) {
+    for (const account of connection.accounts) {
+      if (
+        account.syncClaim.state !== 'available' &&
+        !connectionIds.has(account.syncClaim.holderConnectionId)
+      ) {
+        throw new Error('Invalid cTrader account sync claim response');
+      }
+      const holderConnectionId =
+        account.syncClaim.state === 'available'
+          ? null
+          : account.syncClaim.holderConnectionId;
+      const existingHolder = claimHolderByCanonicalAccountId.get(
+        account.canonicalAccountId
+      );
+      if (
+        claimHolderByCanonicalAccountId.has(account.canonicalAccountId) &&
+        existingHolder !== holderConnectionId
+      ) {
+        throw new Error('Invalid cTrader account sync claim response');
+      }
+      claimHolderByCanonicalAccountId.set(
+        account.canonicalAccountId,
+        holderConnectionId
+      );
+    }
+  }
+  return { schemaVersion: 'ctrader-connections-v2', connections };
+}
+
 export function decodeTradeProjectionResponse(
   value: unknown,
   request: TradeProjectionRequest
@@ -1024,6 +1158,87 @@ export function decodeTradeProjectionMappingResponse(
     throw new Error('Invalid Trade Projection mapping local account response');
   }
   return mapping;
+}
+
+export function decodeTradeProjectionAccountRemapResponse(
+  value: unknown,
+  request: TradeProjectionAccountVaultRemapRequest,
+  accountId: string
+): TradeProjectionAccountVaultRemapResponse {
+  const record = asRecord(value);
+  if (!record || record.schemaVersion !== 'trade-projection-account-remap-v1') {
+    throw new Error('Invalid Trade Projection account remap response');
+  }
+  const existingNotes = record.existingNotes;
+  if (
+    (existingNotes !== 'update' && existingNotes !== 'leave') ||
+    existingNotes !== request.existingNotes
+  ) {
+    throw new Error('Invalid Trade Projection account remap response');
+  }
+  if (
+    typeof record.clientOperationId !== 'string' ||
+    record.clientOperationId !== request.clientOperationId
+  ) {
+    throw new Error('Invalid Trade Projection account remap response');
+  }
+  const requiredRemapCount = (count: unknown): number => {
+    if (typeof count !== 'number' || !Number.isInteger(count) || count < 0) {
+      throw new Error('Invalid Trade Projection account remap response');
+    }
+    return count;
+  };
+  const scheduledCount = requiredRemapCount(record.scheduledCount);
+  const preservedLocalDeletedCount = requiredRemapCount(
+    record.preservedLocalDeletedCount
+  );
+  const preservedConflictCount = requiredRemapCount(
+    record.preservedConflictCount
+  );
+  let generation: string | undefined;
+  if (existingNotes === 'leave') {
+    if (scheduledCount !== 0 || record.generation !== undefined) {
+      throw new Error('Invalid Trade Projection account remap response');
+    }
+  } else if (scheduledCount > 0) {
+    if (
+      typeof record.generation !== 'string' ||
+      !record.generation.startsWith('fresh_') ||
+      !isTradeProjectionGeneration(record.generation)
+    ) {
+      throw new Error('Invalid Trade Projection account remap response');
+    }
+    generation = record.generation;
+  } else if (record.generation !== undefined) {
+    throw new Error('Invalid Trade Projection account remap response');
+  }
+  const mappingRecord = asRecord(record.mapping);
+  if (
+    !mappingRecord ||
+    mappingRecord.accountId !== accountId ||
+    mappingRecord.mappingStatus !== 'mapped'
+  ) {
+    throw new Error('Invalid Trade Projection account remap response');
+  }
+  const mapping = decodeTradeProjectionMappingResponse(mappingRecord, {
+    vaultId: request.vaultId,
+    localAccountId: request.localAccountId,
+    localAccountName: request.localAccountName,
+    mappingStatus: 'mapped',
+  });
+  return {
+    schemaVersion: 'trade-projection-account-remap-v1',
+    mapping: {
+      accountId,
+      ...mapping,
+    },
+    existingNotes,
+    clientOperationId: record.clientOperationId,
+    scheduledCount,
+    preservedLocalDeletedCount,
+    preservedConflictCount,
+    ...(generation ? { generation } : {}),
+  };
 }
 
 export function decodeTradovateClientDiagnosticsResponse(value: unknown): void {

@@ -1,6 +1,6 @@
 
 
-import React from 'react';
+import React, { useCallback } from 'react';
 import JournalitPlugin from '../../../main';
 import { WeeklyTradesChart } from '../../weekly/charts/WeeklyTradesChart';
 import type { Trade } from '../../dashboard/utils/dataUtils';
@@ -11,6 +11,7 @@ import { t } from '../../../lang/helpers';
 import { cssVars } from '../../../styles/inlineStylePolicy';
 import { getSingleExplicitCurrency } from '../../../utils/currencyAggregation';
 import { CurrencyConversionInfo } from '../../shared/display/CurrencyConversionInfo';
+import { openReviewWidgetFile } from '../reviewWidgetNavigation';
 
 const asScatterTrades = (value: unknown): Trade[] =>
   Array.isArray(value)
@@ -54,6 +55,12 @@ export const TradesScatterWidget: React.FC<TradesScatterWidgetProps> = ({
   const loading = preview ? false : cacheLoading;
 
   const height = config.height ?? 300;
+  const handleTradeClick = useCallback(
+    (path: string) => {
+      void openReviewWidgetFile(plugin, path);
+    },
+    [plugin]
+  );
 
   if (loading) {
     return (
@@ -140,6 +147,7 @@ export const TradesScatterWidget: React.FC<TradesScatterWidgetProps> = ({
           plugin={plugin}
           height={height}
           currencyOverride={getSingleExplicitCurrency(trades)}
+          onTradeClick={preview ? undefined : handleTradeClick}
         />
       </div>
     </div>

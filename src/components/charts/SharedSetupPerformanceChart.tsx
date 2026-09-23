@@ -22,6 +22,8 @@ import { generateNiceAxis, calculateYAxisWidth } from '../../utils/chartUtils';
 import type JournalitPlugin from '../../main';
 import { t } from '../../lang/helpers';
 import { cssVars } from '../../styles/inlineStylePolicy';
+import { useTwoStageTouchNavigation } from './useTwoStageTouchNavigation';
+import { handleRovingChartMarkKeyDown } from './chartKeyboardNavigation';
 
 const EPSILON = 1e-6; 
 const SVG_TEXT_ANCHOR_START = 'start';
@@ -430,6 +432,7 @@ interface SetupPerformanceRankingChartProps {
 }
 
 interface SetupPerformanceBarShapeProps {
+  index?: number;
   x?: number;
   y?: number;
   width?: number;
@@ -438,11 +441,22 @@ interface SetupPerformanceBarShapeProps {
   stroke?: string;
   strokeWidth?: string | number;
   strokeOpacity?: string | number;
-  isChartMasked: boolean;
-  metricKey: string;
 }
 
-const SetupPerformanceBarShape: React.FC<SetupPerformanceBarShapeProps> = ({
+interface SetupPerformanceBarInteractionProps {
+  isChartMasked: boolean;
+  metricKey: string;
+  isInteractive?: boolean;
+  isInitialTabStop?: boolean;
+  onKeyboardActivate?: (
+    point: SetupPerformanceRankingPoint,
+    event: React.KeyboardEvent<SVGRectElement>
+  ) => void;
+}
+
+const SetupPerformanceBarShape: React.FC<
+  SetupPerformanceBarShapeProps & SetupPerformanceBarInteractionProps
+> = ({
   x = 0,
   y = 0,
   width = 0,
@@ -453,9 +467,13 @@ const SetupPerformanceBarShape: React.FC<SetupPerformanceBarShapeProps> = ({
   strokeOpacity,
   isChartMasked,
   metricKey,
+  isInteractive = false,
+  isInitialTabStop = false,
+  onKeyboardActivate,
 }) => {
   const adjustedWidth = width < 0 ? Math.abs(width) : width;
   const adjustedX = width < 0 ? x + width : x;
+  const canActivate = isInteractive && payload;
 
   return (
     <rect
@@ -473,6 +491,23 @@ const SetupPerformanceBarShape: React.FC<SetupPerformanceBarShapeProps> = ({
       strokeOpacity={strokeOpacity}
       rx={2}
       ry={2}
+      cursor={isInteractive ? 'pointer' : undefined}
+      role={isInteractive ? 'button' : undefined}
+      tabIndex={isInteractive ? (isInitialTabStop ? 0 : -1) : undefined}
+      data-journalit-chart-mark={isInteractive ? 'true' : undefined}
+      aria-label={
+        isInteractive && payload
+          ? t('setups.view.card.open-named', { name: payload.name })
+          : undefined
+      }
+      onKeyDown={
+        canActivate
+          ? (event) =>
+              handleRovingChartMarkKeyDown(event, () =>
+                onKeyboardActivate?.(payload, event)
+              )
+          : undefined
+      }
     />
   );
 };
@@ -491,8 +526,15 @@ export const SetupPerformanceRankingChart: React.FC<
   onPointClick,
 }) => {
   const chartRef = React.useRef<HTMLDivElement>(null);
+  const touchResetKey = React.useMemo(
+    () => data.map((point) => point.id).join('\u0000'),
+    [data]
+  );
+  const { handleClick, handleKeyDown, recordTouch } =
+    useTwoStageTouchNavigation<string>(touchResetKey);
   const { formatValue } = useDisplayFormatter();
   const chartHeight = height ?? Math.max(240, data.length * 30 + 48);
+  const canNavigate = Boolean(onPointClick) && !isChartMasked;
 
   const formatMetric = React.useCallback(
     (value: number): string =>
@@ -609,12 +651,17 @@ export const SetupPerformanceRankingChart: React.FC<
           dataKey="value"
           barSize={16}
           fill="var(--interactive-accent)"
-          cursor={onPointClick ? 'pointer' : undefined}
-          onClick={(point) => {
-            if (!onPointClick || !isSetupPerformanceRankingPoint(point)) {
+          cursor={canNavigate ? 'pointer' : undefined}
+          onClick={(point, _index, event) => {
+            if (!canNavigate || !isSetupPerformanceRankingPoint(point)) {
               return;
             }
-            onPointClick(point.id);
+            handleClick(point.id, event, () => onPointClick?.(point.id));
+          }}
+          onTouchEnd={(point) => {
+            if (canNavigate && isSetupPerformanceRankingPoint(point)) {
+              recordTouch(point.id);
+            }
           }}
           minPointSize={0}
           isAnimationActive={true}
@@ -623,12 +670,18 @@ export const SetupPerformanceRankingChart: React.FC<
           stroke="var(--background-primary)"
           strokeWidth={0.8}
           strokeOpacity={0.5}
-          shape={
+          shape={(props: SetupPerformanceBarShapeProps) => (
             <SetupPerformanceBarShape
+              {...props}
               isChartMasked={isChartMasked}
               metricKey={metricKey}
+              isInteractive={canNavigate}
+              isInitialTabStop={props.index === 0}
+              onKeyboardActivate={(point, event) =>
+                handleKeyDown(event, () => onPointClick?.(point.id))
+              }
             />
-          }
+          )}
         />
       </BarChart>
     </ChartBase>

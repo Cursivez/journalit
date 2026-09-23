@@ -19,6 +19,12 @@ import { normalizeTradeExecutionForPeriodAnalytics } from '../trade/core/TradeEx
 
 import { getTradingDay } from '../../utils/tradingDayUtils';
 import { forceMetadataCacheRefresh } from '../../utils/dataRefresh';
+import {
+  addSampleOwnershipToMarkdown,
+  appendSampleReviewBody,
+  materializeSampleReviewFrontmatter,
+  type SampleReviewMaterialization,
+} from '../../demo/DemoOwnership';
 
 import { FolderPathService } from '../core/FolderPathService';
 import { parseTradeFinancialFields } from '../../utils/tradeUtils';
@@ -309,7 +315,10 @@ export class QuarterlyReviewService extends CustomDataService {
   }
 
   
-  async createQuarterlyReview(date: Date): Promise<TFile | null> {
+  async createQuarterlyReview(
+    date: Date,
+    options: { sampleMaterialization?: SampleReviewMaterialization } = {}
+  ): Promise<TFile | null> {
     const filePath = await this.getQuarterlyReviewPath(date);
 
     
@@ -332,11 +341,27 @@ export class QuarterlyReviewService extends CustomDataService {
     };
 
     
-    const content = this.generateInitialContent(frontmatter);
+    const generatedContent = this.generateInitialContent(
+      frontmatter,
+      options.sampleMaterialization
+    );
+    const claimedOwnership = options.sampleMaterialization
+      ? null
+      : this.plugin?.demoSessionService?.claimNewOwnership('review');
+    const content = claimedOwnership
+      ? addSampleOwnershipToMarkdown(generatedContent, claimedOwnership)
+      : generatedContent;
 
     
     try {
       const file = await this.app.vault.create(filePath, content);
+      if (claimedOwnership) {
+        await this.plugin?.demoSessionService?.adoptCreatedMarkdownFile(
+          filePath,
+          claimedOwnership
+        );
+      }
+      options.sampleMaterialization?.creationBatch.register(file, 'quarterly');
       return file;
     } catch (error) {
       console.error('Error creating quarterly review:', error);
@@ -423,7 +448,8 @@ export class QuarterlyReviewService extends CustomDataService {
 
   
   private generateInitialContent(
-    frontmatter: QuarterlyReviewFrontmatter
+    frontmatter: QuarterlyReviewFrontmatter,
+    sampleMaterialization?: SampleReviewMaterialization
   ): string {
     
     const quarterlyData: Record<string, unknown> = {
@@ -440,7 +466,16 @@ export class QuarterlyReviewService extends CustomDataService {
     quarterlyData.templateId = template.id;
     quarterlyData.templateVersion = template.version;
 
-    return transformService.generateNoteFromTemplate(template, quarterlyData);
+    const authoredData = sampleMaterialization
+      ? materializeSampleReviewFrontmatter(quarterlyData, sampleMaterialization)
+      : quarterlyData;
+    const content = transformService.generateNoteFromTemplate(
+      template,
+      authoredData
+    );
+    return sampleMaterialization
+      ? appendSampleReviewBody(content, sampleMaterialization.appendBody)
+      : content;
   }
 
   

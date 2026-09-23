@@ -2,12 +2,15 @@
 
 import type { Layout } from '../components/shared/gridLayout/reactGridLayoutCompat';
 import { DEFAULT_PRIVACY_MASK } from '../constants';
+import { DEFAULT_HOME_WIDGET_OPACITY } from './homeWidgetOpacity';
 import {
   DEFAULT_TRADING_DAY_CUTOFF_TIME,
   TRADING_DAY_CUTOFF_END_OF_DAY_MIGRATION_VERSION,
 } from '../utils/tradingDayUtils';
 import { FilterState } from '../components/dashboard/DashboardView';
 import type { TradeLogFilters } from '../services/tradelog/types';
+import type { PersonalPropFirmProfile } from '../services/propChallenge/PersonalPropFirmProfiles';
+import type { BrokerSyncProviderId } from '../services/tradeSync/types';
 
 export const SETTINGS_TAB_IDS = {
   GENERAL: 'general',
@@ -50,6 +53,14 @@ import {
 } from '../types/reviewCustomFields';
 import { CurrencyCode } from '../utils/currencyConfig';
 import type { LocalCSVTemplate } from '../services/csv/types';
+import type {
+  PropChallengeConfig,
+  PropChallengeStage,
+  PropFirmIndexCache,
+  PropFirmProfileCatalogCache,
+} from '../services/propChallenge/types';
+import { DEFAULT_CHALLENGE_STAGE_ACCOUNT_TYPES } from '../services/propChallenge/stageAccountTypes';
+import type { AccountMergeRecord } from '../services/accountMerge/types';
 
 import type {
   CustomWidgetType,
@@ -129,8 +140,6 @@ interface WeeklyReviewSettings {
   
   checklistItems?: string[];
   
-  autoCreateOnFirstTrade?: boolean;
-  
   autoCreateWeeklyReviewOnNavigation?: boolean;
 }
 
@@ -140,8 +149,6 @@ interface MonthlyReviewSettings {
   reviewQuestions: string[];
   
   customTimeframes?: string[];
-  
-  autoCreateOnFirstTrade?: boolean;
   
   autoCreateMonthlyReviewOnNavigation?: boolean;
 }
@@ -153,8 +160,6 @@ interface QuarterlyReviewSettings {
   
   customTimeframes?: string[];
   
-  autoCreateOnFirstTrade?: boolean;
-  
   autoCreateQuarterlyReviewOnNavigation?: boolean;
 }
 
@@ -165,13 +170,8 @@ interface YearlyReviewSettings {
   
   customTimeframes?: string[];
   
-  autoCreateOnFirstTrade?: boolean;
-  
   autoCreateYearlyReviewOnNavigation?: boolean;
 }
-
-
-type UICustomizationSettings = object;
 
 
 
@@ -195,6 +195,8 @@ export type AnalyticsDateBasis = 'entry' | 'exit';
 
 export type TradeFormInputMode = 'prices' | 'pnl-risk';
 export type TradeFormAssetTypeMode = 'show' | 'fixed';
+
+export type TradeFormTakeProfitUnit = 'percent' | 'size';
 const TRADE_FORM_DEFAULT_ASSET_TYPES = [
   'stock',
   'options',
@@ -208,6 +210,8 @@ export type TradeFormDefaultAssetType =
 
 const TRADE_FORM_LAYOUT_ITEM_IDS = [
   'assetSpecific',
+  'exchange',
+  'directPnlToggle',
   'tradingCosts',
   'tradingCostRebate',
   'tradingCostSwap',
@@ -244,7 +248,58 @@ export interface TradeFormLayoutSettings {
   visibleItems: TradeFormLayoutItemId[];
   
   showManualFxRate: boolean;
+  
+  takeProfitUnit: TradeFormTakeProfitUnit;
 }
+
+
+const TRADE_FORM_LAYOUT_ITEMS_HIDDEN_ON_FRESH_INSTALL: readonly TradeFormLayoutItemId[] =
+  [
+    'idealExits',
+    'unrealizedSnapshot',
+    'dividends',
+    'tradeCurrency',
+    
+    'maeMfe',
+    
+    'tradingCostFees',
+    
+    'takeProfits',
+    
+    
+    'exchange',
+    
+    'directPnlToggle',
+  ];
+
+
+export const LEGACY_TRADE_FORM_LAYOUT_VISIBLE_ITEMS: readonly TradeFormLayoutItemId[] =
+  [
+    'assetSpecific',
+    'exchange',
+    'directPnlToggle',
+    'tradingCosts',
+    'tradingCostRebate',
+    'tradingCostSwap',
+    'tradingCostFees',
+    'riskPlanning',
+    'takeProfits',
+    'maeMfe',
+    'pnlPreview',
+    'importShortcut',
+    'setup',
+    'mistake',
+    'customTags',
+    'thesis',
+    'attachments',
+    'customFields',
+  ];
+
+
+const TRADE_FORM_LAYOUT_ITEM_SPLIT_SOURCES: ReadonlyMap<
+  TradeFormLayoutItemId,
+  TradeFormLayoutItemId
+> = new Map([['exchange', 'assetSpecific']]);
 
 export const DEFAULT_TRADE_FORM_LAYOUT_SETTINGS: TradeFormLayoutSettings = {
   inputMode: 'prices',
@@ -253,12 +308,10 @@ export const DEFAULT_TRADE_FORM_LAYOUT_SETTINGS: TradeFormLayoutSettings = {
   itemOrder: [...TRADE_FORM_LAYOUT_ITEM_IDS],
   visibleItems: TRADE_FORM_LAYOUT_ITEM_IDS.filter(
     (itemId) =>
-      itemId !== 'idealExits' &&
-      itemId !== 'unrealizedSnapshot' &&
-      itemId !== 'dividends' &&
-      itemId !== 'tradeCurrency'
+      !TRADE_FORM_LAYOUT_ITEMS_HIDDEN_ON_FRESH_INSTALL.includes(itemId)
   ),
   showManualFxRate: false,
+  takeProfitUnit: 'percent',
 };
 
 const TRADE_FORM_LAYOUT_ITEM_ID_SET = new Set<string>(
@@ -276,10 +329,9 @@ function uniqueTradeFormLayoutItems(value: unknown): TradeFormLayoutItemId[] {
   const seen = new Set<TradeFormLayoutItemId>();
   const items: TradeFormLayoutItemId[] = [];
   for (const item of value) {
-    const itemId = normalizeTradeFormLayoutItemId(item);
-    if (!itemId || seen.has(itemId)) continue;
-    seen.add(itemId);
-    items.push(itemId);
+    if (!isTradeFormLayoutItemId(item) || seen.has(item)) continue;
+    seen.add(item);
+    items.push(item);
   }
   return items;
 }
@@ -291,20 +343,6 @@ function containsRetiredRealizedPnlPreview(value: unknown): boolean {
     if (item === 'realizedPnlPreview') return true;
   }
   return false;
-}
-
-function normalizeTradeFormLayoutItemId(
-  value: unknown
-): TradeFormLayoutItemId | null {
-  if (isTradeFormLayoutItemId(value)) return value;
-
-  
-  
-  
-  if (value === 'stopLoss' || value === 'riskAmount') return 'riskPlanning';
-  if (value === 'mae' || value === 'mfe') return 'maeMfe';
-
-  return null;
 }
 
 function resolveTradeFormDefaultAssetType(
@@ -321,17 +359,28 @@ function resolveTradeFormDefaultAssetType(
   return DEFAULT_TRADE_FORM_LAYOUT_SETTINGS.defaultAssetType;
 }
 
+interface ResolveTradeFormLayoutOptions {
+  
+  existingInstall?: boolean;
+}
+
 export function resolveTradeFormLayoutSettings(
-  settings: Partial<TradeFormLayoutSettings> | null | undefined
+  settings: Partial<TradeFormLayoutSettings> | null | undefined,
+  options?: ResolveTradeFormLayoutOptions
 ): TradeFormLayoutSettings {
+  const baselineVisibleItems = options?.existingInstall
+    ? LEGACY_TRADE_FORM_LAYOUT_VISIBLE_ITEMS
+    : DEFAULT_TRADE_FORM_LAYOUT_SETTINGS.visibleItems;
+
   if (!settings) {
     return {
       inputMode: DEFAULT_TRADE_FORM_LAYOUT_SETTINGS.inputMode,
       assetTypeMode: DEFAULT_TRADE_FORM_LAYOUT_SETTINGS.assetTypeMode,
       defaultAssetType: DEFAULT_TRADE_FORM_LAYOUT_SETTINGS.defaultAssetType,
       itemOrder: [...DEFAULT_TRADE_FORM_LAYOUT_SETTINGS.itemOrder],
-      visibleItems: [...DEFAULT_TRADE_FORM_LAYOUT_SETTINGS.visibleItems],
+      visibleItems: [...baselineVisibleItems],
       showManualFxRate: DEFAULT_TRADE_FORM_LAYOUT_SETTINGS.showManualFxRate,
+      takeProfitUnit: DEFAULT_TRADE_FORM_LAYOUT_SETTINGS.takeProfitUnit,
     };
   }
 
@@ -347,18 +396,37 @@ export function resolveTradeFormLayoutSettings(
   const hasSavedVisibleItems = Array.isArray(settings.visibleItems);
   const savedVisible = uniqueTradeFormLayoutItems(settings.visibleItems);
   const visibleSet = new Set(
-    hasSavedVisibleItems
-      ? savedVisible
-      : DEFAULT_TRADE_FORM_LAYOUT_SETTINGS.visibleItems
+    hasSavedVisibleItems ? savedVisible : baselineVisibleItems
   );
   if (containsRetiredRealizedPnlPreview(settings.visibleItems)) {
     visibleSet.add('pnlPreview');
   }
 
-  for (const itemId of DEFAULT_TRADE_FORM_LAYOUT_SETTINGS.visibleItems) {
-    if (!savedOrderSet.has(itemId)) {
-      visibleSet.add(itemId);
+  
+  
+  
+  
+  const introducedVisibleItems = options?.existingInstall
+    ? new Set<TradeFormLayoutItemId>([
+        ...LEGACY_TRADE_FORM_LAYOUT_VISIBLE_ITEMS,
+        ...DEFAULT_TRADE_FORM_LAYOUT_SETTINGS.visibleItems,
+      ])
+    : DEFAULT_TRADE_FORM_LAYOUT_SETTINGS.visibleItems;
+
+  for (const itemId of introducedVisibleItems) {
+    if (savedOrderSet.has(itemId)) continue;
+
+    const splitSource = TRADE_FORM_LAYOUT_ITEM_SPLIT_SOURCES.get(itemId);
+    if (splitSource && savedOrderSet.has(splitSource)) {
+      
+      
+      if (visibleSet.has(splitSource)) {
+        visibleSet.add(itemId);
+      }
+      continue;
     }
+
+    visibleSet.add(itemId);
   }
 
   const inputMode = settings.inputMode === 'pnl-risk' ? 'pnl-risk' : 'prices';
@@ -378,6 +446,7 @@ export function resolveTradeFormLayoutSettings(
         ? resolvedVisibleItems.filter((itemId) => itemId !== 'idealExits')
         : resolvedVisibleItems,
     showManualFxRate: settings.showManualFxRate === true,
+    takeProfitUnit: settings.takeProfitUnit === 'size' ? 'size' : 'percent',
   };
 }
 
@@ -437,8 +506,6 @@ interface TradeSettings {
   
   galleryFolders: string[];
   
-  graphLinkMigrationVersion?: string;
-  
   tradeReviewLayoutMigrationVersion?: string;
 }
 
@@ -452,8 +519,6 @@ interface DRCSettings {
   customTimeframes: string[];
   
   recurringGoals: string[];
-  
-  autoCreateOnFirstTrade: boolean;
   
   autoCreateDRCOnNavigation: boolean;
   
@@ -534,6 +599,7 @@ export const QUICK_LINK_ACTIONS = [
   'openMonthlyReview',
   'openCSVImport',
   'openQuickTradeImport',
+  'syncTradesNow',
   'openLayoutBuilder',
   'openNavigationSidebar',
   'openSessionMode',
@@ -542,9 +608,21 @@ export const QUICK_LINK_ACTIONS = [
   'openYearlyReview',
   'openPositionSizeCalculator',
   'openEconomicCalendar',
+  'openSettings',
 ] as const;
 
 export type QuickLinkAction = (typeof QUICK_LINK_ACTIONS)[number];
+
+export type EntityShortcutTarget =
+  | { kind: 'account'; accountName: string }
+  | { kind: 'setup'; setupId: string };
+
+
+export interface EntityShortcut {
+  id: string;
+  target: EntityShortcutTarget;
+  order: number;
+}
 
 
 export interface QuickLinkButton {
@@ -581,6 +659,7 @@ export type SidebarTabBehavior = 'newTab' | 'replaceActiveTab';
 
 interface NavigationSettings {
   items: SidebarNavItem[];
+  entityShortcuts: EntityShortcut[];
   tabBehavior: SidebarTabBehavior;
 }
 
@@ -685,13 +764,22 @@ const DEFAULT_NAVIGATION_ITEMS: SidebarNavItem[] = [
     order: 0,
   },
   {
+    id: 'nav-sync-trades',
+    label: 'Sync Trades',
+    icon: 'refresh-cw',
+    action: 'syncTradesNow',
+    section: 'tools',
+    visible: true,
+    order: 1,
+  },
+  {
     id: 'nav-layout-builder',
     label: 'Layout Builder',
     icon: 'lucide-blocks',
     action: 'openLayoutBuilder',
     section: 'tools',
     visible: true,
-    order: 1,
+    order: 2,
   },
   {
     id: 'nav-quick-import',
@@ -700,7 +788,7 @@ const DEFAULT_NAVIGATION_ITEMS: SidebarNavItem[] = [
     action: 'openQuickTradeImport',
     section: 'tools',
     visible: true,
-    order: 2,
+    order: 3,
   },
   {
     id: 'nav-csv-import',
@@ -709,7 +797,7 @@ const DEFAULT_NAVIGATION_ITEMS: SidebarNavItem[] = [
     action: 'openCSVImport',
     section: 'tools',
     visible: true,
-    order: 3,
+    order: 4,
   },
   {
     id: 'nav-position-size',
@@ -718,7 +806,7 @@ const DEFAULT_NAVIGATION_ITEMS: SidebarNavItem[] = [
     action: 'openPositionSizeCalculator',
     section: 'tools',
     visible: true,
-    order: 4,
+    order: 5,
   },
   {
     id: 'nav-session-mode',
@@ -727,7 +815,7 @@ const DEFAULT_NAVIGATION_ITEMS: SidebarNavItem[] = [
     action: 'openSessionMode',
     section: 'tools',
     visible: true,
-    order: 5,
+    order: 6,
   },
   {
     id: 'nav-economic-calendar',
@@ -736,7 +824,16 @@ const DEFAULT_NAVIGATION_ITEMS: SidebarNavItem[] = [
     action: 'openEconomicCalendar',
     section: 'tools',
     visible: true,
-    order: 6,
+    order: 7,
+  },
+  {
+    id: 'nav-settings',
+    label: 'Settings',
+    icon: 'settings',
+    action: 'openSettings',
+    section: 'tools',
+    visible: true,
+    order: 8,
   },
 ];
 
@@ -744,6 +841,7 @@ export function createDefaultNavigationSettings(): NavigationSettings {
   return {
     tabBehavior: 'replaceActiveTab',
     items: DEFAULT_NAVIGATION_ITEMS.map((item) => ({ ...item })),
+    entityShortcuts: [],
   };
 }
 
@@ -862,6 +960,8 @@ export interface HomeSettings {
   
   quickLinks?: QuickLinkButton[];
   
+  entityShortcuts?: EntityShortcut[];
+  
   quickLinksPosition?: HomeQuickLinksPosition;
   
   activeWidgets?: string[];
@@ -879,6 +979,9 @@ export interface HomeSettings {
   selectedPeriod?: HomePeriod;
   
   backgroundImagePath?: string;
+  
+  widgetOpacityLight?: number;
+  widgetOpacityDark?: number;
   
   showBackgroundInDashboard?: boolean;
 }
@@ -919,6 +1022,12 @@ export interface AccountMetadata {
   currency?: CurrencyCode;
   
   copyTradingPeriods?: CopyTradingPeriod[];
+  
+  propChallenge?: PropChallengeConfig;
+  
+  propChallengeQuarantine?: unknown;
+  
+  mergedInto?: string;
 }
 
 export interface CopyTradingPeriod {
@@ -949,7 +1058,27 @@ export interface AccountSettings {
   
   accountTypeOrder?: string[];
   
+  challengeStageAccountTypes?: Partial<Record<PropChallengeStage, string>>;
+  
   accountMetadata?: Record<string, AccountMetadata>;
+  
+  accountMerges?: Record<string, AccountMergeRecord>;
+  
+  legacyChallengeOnboarding?: LegacyChallengeOnboardingState;
+}
+
+
+export type LegacyChallengeOnboardingStatus =
+  | 'pending'
+  | 'completed'
+  | 'skipped';
+
+export interface LegacyChallengeOnboardingState {
+  status: LegacyChallengeOnboardingStatus;
+  
+  detectedAt: string;
+  
+  fromVersion: string;
 }
 
 
@@ -1013,7 +1142,7 @@ export interface BackendIntegrationSettings {
     pluginVersion?: string;
     clientOperationId?: string;
     diagnosticSyncRunId?: string;
-    diagnosticProvider?: 'tradovate' | 'rithmic';
+    diagnosticProvider?: BrokerSyncProviderId;
     results: Array<{
       tradeId: string;
       backendTradeVersion: number;
@@ -1099,6 +1228,10 @@ export interface BackendIntegrationSettings {
   userEmail?: string;
   
   subscriptionTier?: 'free' | 'premium';
+  
+  propFirmProfileCatalogCache?: PropFirmProfileCatalogCache;
+  
+  propFirmIndexCache?: PropFirmIndexCache;
 }
 
 export function createDefaultBackendIntegrationSettings(): BackendIntegrationSettings {
@@ -1199,6 +1332,8 @@ export interface TradeLogSettings {
 
 interface ReviewV2Settings {
   
+  openNoteLinksInNewTab?: boolean;
+  
   customWidgetTypes: CustomWidgetType[];
   
   templates?: ReviewTemplate[];
@@ -1275,8 +1410,16 @@ export function createDefaultEconomicCalendarSettings(): EconomicCalendarSetting
 export const DEFAULT_ECONOMIC_CALENDAR_SETTINGS: EconomicCalendarSettings =
   createDefaultEconomicCalendarSettings();
 
+export const CURRENT_SETTINGS_SCHEMA_VERSION = 1;
+
 
 export interface JournalitSettings {
+  
+  personalPropFirmProfiles?: PersonalPropFirmProfile[];
+  
+  personalPropFirmProfilesQuarantine?: unknown;
+  
+  settingsSchemaVersion: number;
   
   general?: GeneralSettings;
   
@@ -1308,8 +1451,6 @@ export interface JournalitSettings {
   home?: HomeSettings;
   
   viewFilters?: PersistedViewFilters;
-  
-  uiCustomization?: UICustomizationSettings;
   
   customOptions?: CustomOptionsData;
   
@@ -1407,6 +1548,7 @@ export const DEFAULT_DASHBOARD_LAYOUT: DashboardSettings['layouts'][string] = {
 
 
 export const DEFAULT_SETTINGS: JournalitSettings = {
+  settingsSchemaVersion: CURRENT_SETTINGS_SCHEMA_VERSION,
   general: {
     currency: CurrencyCode.USD, 
     displayName: '',
@@ -1496,6 +1638,7 @@ export const DEFAULT_SETTINGS: JournalitSettings = {
     columnWidths: {},
   },
   reviewV2: {
+    openNoteLinksInNewTab: true,
     customWidgetTypes: [],
     templates: [],
     tradeTemplates: [],
@@ -1510,9 +1653,6 @@ export const DEFAULT_SETTINGS: JournalitSettings = {
   },
   reviews: {
     globalAutoCreate: true,
-  },
-  uiCustomization: {
-    
   },
   customOptions: DEFAULT_OPTIONS_DATA, 
   customTradeFields: DEFAULT_CUSTOM_FIELDS_DATA, 
@@ -1534,7 +1674,6 @@ export const DEFAULT_SETTINGS: JournalitSettings = {
       'Build weekly plan',
       'Prepare HTF narrative',
     ],
-    autoCreateOnFirstTrade: true, 
     autoCreateWeeklyReviewOnNavigation: true, 
   },
   monthly: {
@@ -1546,7 +1685,6 @@ export const DEFAULT_SETTINGS: JournalitSettings = {
       'How can I improve my risk management?',
     ],
     customTimeframes: ['Quarterly', 'Monthly', 'Weekly'],
-    autoCreateOnFirstTrade: true, 
     autoCreateMonthlyReviewOnNavigation: true, 
   },
   quarterly: {
@@ -1558,7 +1696,6 @@ export const DEFAULT_SETTINGS: JournalitSettings = {
       'How has my trading evolved compared to previous quarters?',
     ],
     customTimeframes: ['Yearly', 'Quarterly', 'Monthly'],
-    autoCreateOnFirstTrade: true, 
     autoCreateQuarterlyReviewOnNavigation: true, 
   },
   yearly: {
@@ -1571,7 +1708,6 @@ export const DEFAULT_SETTINGS: JournalitSettings = {
       'What key lessons did I learn this year?',
     ],
     customTimeframes: ['Yearly', 'Quarterly', 'Monthly'],
-    autoCreateOnFirstTrade: true, 
     autoCreateYearlyReviewOnNavigation: true, 
   },
   drc: {
@@ -1589,7 +1725,6 @@ export const DEFAULT_SETTINGS: JournalitSettings = {
     
     customTimeframes: ['Daily', '4H', '1H', '30M'],
     recurringGoals: [],
-    autoCreateOnFirstTrade: true, 
     autoCreateDRCOnNavigation: true, 
     sessionLogTags: DEFAULT_SESSION_LOG_TAGS,
     sessionLogAlertRule: DEFAULT_SESSION_LOG_ALERT_RULE,
@@ -1610,6 +1745,7 @@ export const DEFAULT_SETTINGS: JournalitSettings = {
     defaultFilters: {
       dateRange: [null, null],
       accounts: [],
+      accountPhases: [],
       tickers: [],
       setups: [],
       tags: [],
@@ -1623,6 +1759,7 @@ export const DEFAULT_SETTINGS: JournalitSettings = {
     lastUsedFilters: {
       dateRange: [null, null],
       accounts: [],
+      accountPhases: [],
       tickers: [],
       setups: [],
       tags: [],
@@ -1681,6 +1818,7 @@ export const DEFAULT_SETTINGS: JournalitSettings = {
     },
     activeLayout: 'Default',
     recentItems: [],
+    entityShortcuts: [],
     quickLinks: [
       {
         id: 'add-trade',
@@ -1690,6 +1828,15 @@ export const DEFAULT_SETTINGS: JournalitSettings = {
         action: 'addTrade',
         visible: true,
         order: 0,
+      },
+      {
+        id: 'sync-trades',
+        label: 'Sync Trades',
+        icon: 'refresh-cw',
+        color: 'var(--interactive-accent)',
+        action: 'syncTradesNow',
+        visible: true,
+        order: 1,
       },
       {
         id: 'trade-log',
@@ -1844,6 +1991,8 @@ export const DEFAULT_SETTINGS: JournalitSettings = {
     },
     selectedPeriod: 'lifetime',
     backgroundImagePath: '',
+    widgetOpacityLight: DEFAULT_HOME_WIDGET_OPACITY,
+    widgetOpacityDark: DEFAULT_HOME_WIDGET_OPACITY,
     showBackgroundInDashboard: false,
   },
   viewFilters: {
@@ -1859,6 +2008,7 @@ export const DEFAULT_SETTINGS: JournalitSettings = {
     excludedAccountTypes: ['archived'],
     includeWithdrawalsFromExcluded: { archived: true, demo: false },
     accountTypeOrder: ['funded', 'evaluation', 'demo', 'archived'],
+    challengeStageAccountTypes: DEFAULT_CHALLENGE_STAGE_ACCOUNT_TYPES,
     accountMetadata: {},
   },
 

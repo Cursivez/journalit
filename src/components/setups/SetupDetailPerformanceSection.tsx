@@ -16,8 +16,9 @@ import {
   useGuideTarget,
 } from '../../guides/GuideRuntimeLayer';
 import { SETUPS_DETAIL_PERFORMANCE_TARGET_ID } from '../../guides/setupsGuideIds';
-import { SETUPS_DETAIL_HAS_EXECUTION_GAP_CONTEXT_KEY } from '../../guides/setupsMainGuide';
+import { SETUPS_DETAIL_HAS_EXECUTION_GAP_CONTEXT_KEY } from '../../guides/setupsGuideIds';
 import { analyzeDrawdown } from '../../utils/drawdownAnalytics';
+import { getTradeNotePath } from '../../utils/chartUtils';
 import { SharedDrawdownChart } from '../charts/SharedDrawdownChart';
 import { SharedPnLChart } from '../charts/SharedPnLChart';
 import { SharedTradesChart } from '../charts/SharedTradesChart';
@@ -381,6 +382,12 @@ export const SetupDetailPerformanceSection: React.FC<{
               valueMode={useRMultiples ? 'rMultiple' : 'pnl'}
               height="100%"
               margin={{ top: 8, right: 8, bottom: 2, left: 0 }}
+              onPointClick={(point) => {
+                if (point.path) {
+                  const tradeNotePath = getTradeNotePath(point.path);
+                  void plugin.openFile(tradeNotePath, true);
+                }
+              }}
             />
           ) : chartMode === 'drawdown' ? (
             <SharedDrawdownChart

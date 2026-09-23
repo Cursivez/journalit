@@ -638,6 +638,7 @@ const DUPLICATE_EXCLUDED_FIELDS = [
   'canonicalTradeVersion',
   'canonicalProjectionGeneration',
   'canonicalAccountId',
+  'canonicalAccountIdentity',
   'canonicalBroker',
   'canonicalAccountDisplayName',
   'canonicalProjectionSchemaVersion',
@@ -678,6 +679,8 @@ const DUPLICATE_EXCLUDED_FIELDS = [
   
   
   'filePath',
+  'journalitSampleInstance',
+  'journalitSampleEntityId',
 ] as const;
 
 function buildDuplicateTradeData(

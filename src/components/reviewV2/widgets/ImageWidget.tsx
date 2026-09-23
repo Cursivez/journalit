@@ -11,6 +11,7 @@ import { FullscreenImageViewer } from '../../image/FullscreenImageViewer';
 import { ExcalidrawMediaEmbed } from '../../image/ExcalidrawMediaEmbed';
 import { MediaPreview } from '../../image/MediaPreview';
 import { eventBus } from '../../../services/events/EventBus';
+import { reviewChangeAffectsPath } from '../../../services/events/reviewChangedPaths';
 import { SkeletonBox } from '../../shared/SkeletonBox';
 
 import { t } from '../../../lang/helpers';
@@ -159,7 +160,7 @@ export const ImageWidget: React.FC<ImageWidgetProps> = React.memo(
       if (preview) return;
 
       const unsubscribe = eventBus.subscribe('review:changed', (payload) => {
-        if (payload.filePath === filePath) {
+        if (reviewChangeAffectsPath(payload, filePath)) {
           void loadImages();
         }
       });

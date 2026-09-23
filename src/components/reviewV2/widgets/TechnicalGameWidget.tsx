@@ -18,6 +18,11 @@ import type {
 import { InvalidContextMessage } from './InvalidContextMessage';
 import { SkeletonBox } from '../../shared/SkeletonBox';
 import { parseLocalDateSafe } from '../../../utils/dateUtils';
+import {
+  openReviewWidgetFile,
+  shouldOpenReviewWidgetNotesInNewTab,
+} from '../reviewWidgetNavigation';
+import { resolveYearlyReviewYear } from '../../../utils/yearlyReviewYear';
 
 interface TechnicalGameWidgetProps {
   filePath: string;
@@ -340,11 +345,10 @@ export const TechnicalGameWidget: React.FC<TechnicalGameWidgetProps> =
               dispatchCurrent({ weeks: allWeeks });
             } else if (type === 'yearly-review') {
               
-              const parsedDate = parseRecordDate(frontmatter, 'date');
-              const year =
-                getNumberValue(frontmatter, 'year') ??
-                parsedDate?.getFullYear() ??
-                new Date().getFullYear();
+              const year = resolveYearlyReviewYear(
+                frontmatter,
+                new Date().getFullYear()
+              );
 
               const monthlyResults = await Promise.all(
                 Array.from({ length: 12 }, (_unused, index) => {
@@ -418,14 +422,14 @@ export const TechnicalGameWidget: React.FC<TechnicalGameWidgetProps> =
             week.weeklyReviewPath
           );
           if (file) {
-            await plugin.openFile(week.weeklyReviewPath, true);
+            await openReviewWidgetFile(plugin, week.weeklyReviewPath);
           } else if (
             plugin.settings?.weekly?.autoCreateWeeklyReviewOnNavigation
           ) {
             await plugin.weeklyReviewService?.createWeeklyReview(
               week.weekStartDate
             );
-            await plugin.openFile(week.weeklyReviewPath, true);
+            await openReviewWidgetFile(plugin, week.weeklyReviewPath);
           }
         } catch (error) {
           console.error(
@@ -444,7 +448,8 @@ export const TechnicalGameWidget: React.FC<TechnicalGameWidgetProps> =
             : plugin.monthlyReviewService;
           if (monthlyService) {
             await monthlyService.openMonthlyReview(
-              new Date(monthData.year, monthData.month - 1, 1)
+              new Date(monthData.year, monthData.month - 1, 1),
+              shouldOpenReviewWidgetNotesInNewTab(plugin)
             );
           }
         } catch (error) {

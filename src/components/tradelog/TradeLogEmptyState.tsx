@@ -2,21 +2,22 @@ import React from 'react';
 import { t } from '../../lang/helpers';
 import { EmptyState } from '../shared/EmptyState';
 import { Import, RotateCcw } from '../shared/icons/ObsidianIcon';
+import { SampleJournalEntryButton } from '../shared/SampleJournalControls';
 
 interface TradeLogEmptyStateProps {
-  hasExistingTrades: boolean;
+  isFilteredEmpty: boolean;
   onImportTrades: () => void;
   onAddTradeManually: () => void;
   onClearFilters: () => void;
 }
 
 export const TradeLogEmptyState: React.FC<TradeLogEmptyStateProps> = ({
-  hasExistingTrades,
+  isFilteredEmpty,
   onImportTrades,
   onAddTradeManually,
   onClearFilters,
 }) => {
-  if (hasExistingTrades) {
+  if (isFilteredEmpty) {
     return (
       <EmptyState
         message={t('tradelog.empty')}
@@ -43,6 +44,8 @@ export const TradeLogEmptyState: React.FC<TradeLogEmptyStateProps> = ({
       onActionButtonClick={onImportTrades}
       secondaryActionButtonText={t('dashboard.empty.manual-action')}
       onSecondaryActionButtonClick={onAddTradeManually}
+      additionalAction={<SampleJournalEntryButton />}
+      actionsLayout="stacked"
     />
   );
 };

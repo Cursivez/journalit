@@ -2,6 +2,7 @@
 
 import { useCallback, useRef } from 'react';
 import type JournalitPlugin from '../../../../main';
+import { ApiClient } from '../../../../services/backend/ApiClient';
 import {
   createTradeProjectionOwnershipGuard,
   getTradeProjectionOwnerId,
@@ -10,6 +11,10 @@ import {
 interface BrokerRefreshAttempt {
   
   ownerUserId: string;
+  
+  authSessionVersion: number;
+  
+  generation: number;
   
   isCurrent: () => boolean;
   
@@ -24,11 +29,19 @@ export function useBrokerRefreshSequence(
   return useCallback(() => {
     const sequence = ++refreshSequence.current;
     const ownerUserId = getTradeProjectionOwnerId(plugin);
-    const shouldStop = createTradeProjectionOwnershipGuard(plugin, ownerUserId);
+    const authSessionVersion = ApiClient.getAuthSessionVersion();
+    const ownerChanged = createTradeProjectionOwnershipGuard(
+      plugin,
+      ownerUserId
+    );
     return {
       ownerUserId,
+      authSessionVersion,
+      generation: sequence,
       isCurrent: () => refreshSequence.current === sequence,
-      shouldStop,
+      shouldStop: () =>
+        ownerChanged() ||
+        ApiClient.getAuthSessionVersion() !== authSessionVersion,
     };
   }, [plugin]);
 }

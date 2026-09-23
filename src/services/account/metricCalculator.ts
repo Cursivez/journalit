@@ -8,6 +8,7 @@ import {
 } from './types';
 import { TradeService } from '../trade/TradeService';
 import { calculateWinRateExcludingBreakeven } from '../../utils/breakEvenRange';
+import { calculateProfitFactor } from '../../utils/profitFactor';
 
 interface AccountMetricTrade {
   account?: string[];
@@ -191,15 +192,10 @@ export async function calculateAccountMetrics(
       calculateWinRateExcludingBreakeven(winningTrades, losingTrades) * 100;
 
     
-    let profitFactor = 0;
-    if (totalLossAmount > 0) {
-      profitFactor = totalWinAmount / totalLossAmount;
-    } else if (totalWinAmount > 0) {
-      profitFactor = 999; 
-    }
+    let profitFactor = calculateProfitFactor(totalWinAmount, totalLossAmount);
 
     
-    if (isNaN(profitFactor) || !isFinite(profitFactor)) {
+    if (isNaN(profitFactor)) {
       console.error(
         'Invalid profit factor calculated:',
         profitFactor,

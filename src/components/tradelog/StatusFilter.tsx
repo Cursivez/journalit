@@ -1,14 +1,9 @@
 
 
-import React, {
-  useState,
-  useEffect,
-  useRef,
-  useMemo,
-  useCallback,
-} from 'react';
+import React, { useState, useRef, useMemo, useCallback } from 'react';
 import { TradeStatus } from '../../services/tradelog/types';
 import { t } from '../../lang/helpers';
+import { AnchoredMenu } from '../shared/menus/AnchoredMenu';
 
 interface StatusFilterProps {
   selectedStatuses: TradeStatus[];
@@ -16,6 +11,7 @@ interface StatusFilterProps {
 }
 
 const CLOSED_STATUSES: TradeStatus[] = ['win', 'loss', 'breakeven'];
+const CLOSED_STATUS_SET = new Set<TradeStatus>(CLOSED_STATUSES);
 const ALL_SELECTABLE_STATUSES: TradeStatus[] = [
   'open',
   ...CLOSED_STATUSES,
@@ -78,27 +74,6 @@ export const StatusFilter: React.FC<StatusFilterProps> = React.memo(
     const dropdownRef = useRef<HTMLDivElement>(null);
 
     
-    useEffect(() => {
-      const handleClickOutside = (event: MouseEvent) => {
-        if (
-          dropdownRef.current &&
-          event.target instanceof Node &&
-          !dropdownRef.current.contains(event.target)
-        ) {
-          setIsOpen(false);
-        }
-      };
-
-      window.activeDocument.addEventListener('mousedown', handleClickOutside);
-      return () => {
-        window.activeDocument.removeEventListener(
-          'mousedown',
-          handleClickOutside
-        );
-      };
-    }, []);
-
-    
     const handleStatusChange = useCallback(
       (status: TradeStatus) => {
         if (status === 'all') {
@@ -118,9 +93,7 @@ export const StatusFilter: React.FC<StatusFilterProps> = React.memo(
 
           if (hasAllClosed) {
             
-            onChange(
-              selectedStatuses.filter((s) => !CLOSED_STATUSES.includes(s))
-            );
+            onChange(selectedStatuses.filter((s) => !CLOSED_STATUS_SET.has(s)));
           } else {
             
             const newStatuses = [
@@ -174,14 +147,14 @@ export const StatusFilter: React.FC<StatusFilterProps> = React.memo(
       selectedStatuses.length === ALL_SELECTABLE_STATUSES.length; 
 
     
+    const selectedStatusesSet = new Set(selectedStatuses);
     const closedSelected = CLOSED_STATUSES.every((s) =>
-      selectedStatuses.includes(s)
+      selectedStatusesSet.has(s)
     );
 
     
     const toggleDropdown = useCallback(() => setIsOpen((prev) => !prev), []);
 
-    const selectedStatusesSet = new Set(selectedStatuses);
     return (
       <div className="journalit-tradelog-status-filter" ref={dropdownRef}>
         <div className="journalit-tradelog-status-dropdown">
@@ -197,128 +170,123 @@ export const StatusFilter: React.FC<StatusFilterProps> = React.memo(
             <span className="dropdown-arrow">{isOpen ? '▲' : '▼'}</span>
           </button>
 
-          {isOpen && (
-            <div className="journalit-tradelog-status-options-dropdown">
-              <div
-                className="journalit-tradelog-status-option-item select-all"
-                onClick={() => handleStatusChange('all')}
-                role="checkbox"
-                tabIndex={0}
-                aria-checked={allStatusesSelected}
-                onKeyDown={(e) =>
-                  handleKeyDown(e, () => handleStatusChange('all'))
-                }
+          <AnchoredMenu
+            isOpen={isOpen}
+            triggerRef={dropdownRef}
+            onClose={() => setIsOpen(false)}
+            className="journalit-tradelog-status-options-dropdown"
+          >
+            <div
+              className="journalit-tradelog-status-option-item select-all"
+              onClick={() => handleStatusChange('all')}
+              role="checkbox"
+              tabIndex={0}
+              aria-checked={allStatusesSelected}
+              onKeyDown={(e) =>
+                handleKeyDown(e, () => handleStatusChange('all'))
+              }
+            >
+              <span
+                className={`journalit-tradelog-checkbox journalit-tradelog-status-checkbox${
+                  allStatusesSelected ? ' checked' : ''
+                }`}
+                aria-hidden="true"
               >
-                <span
-                  className={`journalit-tradelog-checkbox journalit-tradelog-status-checkbox${
-                    allStatusesSelected ? ' checked' : ''
-                  }`}
-                  aria-hidden="true"
-                >
-                  {allStatusesSelected ? '✓' : ''}
-                </span>
-                <span>{t('common.select-all')}</span>
-              </div>
-
-              <div className="journalit-tradelog-status-divider"></div>
-
-              {getStatusOptions()
-                .slice(1)
-                .map((option) => {
-                  if (option.value === 'closed') {
-                    
-                    return (
-                      <div
-                        key={option.value}
-                        className="journalit-tradelog-status-option-item"
-                        onClick={() => handleStatusChange(option.value)}
-                        aria-description={option.description}
-                        role="checkbox"
-                        tabIndex={0}
-                        aria-checked={closedSelected}
-                        onKeyDown={(e) =>
-                          handleKeyDown(e, () =>
-                            handleStatusChange(option.value)
-                          )
-                        }
-                      >
-                        <span
-                          className={`journalit-tradelog-checkbox journalit-tradelog-status-checkbox${
-                            closedSelected ? ' checked' : ''
-                          }`}
-                          aria-hidden="true"
-                        >
-                          {closedSelected ? '✓' : ''}
-                        </span>
-                        <span>{option.label}</span>
-                      </div>
-                    );
-                  } else if (
-                    ['win', 'loss', 'breakeven'].includes(option.value)
-                  ) {
-                    
-                    return (
-                      <div
-                        key={option.value}
-                        className="journalit-tradelog-status-option-item sub-option"
-                        onClick={() => handleStatusChange(option.value)}
-                        aria-description={option.description}
-                        role="checkbox"
-                        tabIndex={0}
-                        aria-checked={selectedStatusesSet.has(option.value)}
-                        onKeyDown={(e) =>
-                          handleKeyDown(e, () =>
-                            handleStatusChange(option.value)
-                          )
-                        }
-                      >
-                        <span
-                          className={`journalit-tradelog-checkbox journalit-tradelog-status-checkbox${
-                            selectedStatusesSet.has(option.value)
-                              ? ' checked'
-                              : ''
-                          }`}
-                          aria-hidden="true"
-                        >
-                          {selectedStatusesSet.has(option.value) ? '✓' : ''}
-                        </span>
-                        <span>{option.label}</span>
-                      </div>
-                    );
-                  } else {
-                    
-                    return (
-                      <div
-                        key={option.value}
-                        className="journalit-tradelog-status-option-item"
-                        onClick={() => handleStatusChange(option.value)}
-                        aria-description={option.description}
-                        role="checkbox"
-                        tabIndex={0}
-                        aria-checked={selectedStatusesSet.has(option.value)}
-                        onKeyDown={(e) =>
-                          handleKeyDown(e, () =>
-                            handleStatusChange(option.value)
-                          )
-                        }
-                      >
-                        <span
-                          className={`journalit-tradelog-checkbox journalit-tradelog-status-checkbox${
-                            selectedStatusesSet.has(option.value)
-                              ? ' checked'
-                              : ''
-                          }`}
-                          aria-hidden="true"
-                        >
-                          {selectedStatusesSet.has(option.value) ? '✓' : ''}
-                        </span>
-                        <span>{option.label}</span>
-                      </div>
-                    );
-                  }
-                })}
+                {allStatusesSelected ? '✓' : ''}
+              </span>
+              <span>{t('common.select-all')}</span>
             </div>
-          )}
+
+            <div className="journalit-tradelog-status-divider"></div>
+
+            {getStatusOptions()
+              .slice(1)
+              .map((option) => {
+                if (option.value === 'closed') {
+                  
+                  return (
+                    <div
+                      key={option.value}
+                      className="journalit-tradelog-status-option-item"
+                      onClick={() => handleStatusChange(option.value)}
+                      aria-description={option.description}
+                      role="checkbox"
+                      tabIndex={0}
+                      aria-checked={closedSelected}
+                      onKeyDown={(e) =>
+                        handleKeyDown(e, () => handleStatusChange(option.value))
+                      }
+                    >
+                      <span
+                        className={`journalit-tradelog-checkbox journalit-tradelog-status-checkbox${
+                          closedSelected ? ' checked' : ''
+                        }`}
+                        aria-hidden="true"
+                      >
+                        {closedSelected ? '✓' : ''}
+                      </span>
+                      <span>{option.label}</span>
+                    </div>
+                  );
+                } else if (CLOSED_STATUS_SET.has(option.value)) {
+                  
+                  return (
+                    <div
+                      key={option.value}
+                      className="journalit-tradelog-status-option-item sub-option"
+                      onClick={() => handleStatusChange(option.value)}
+                      aria-description={option.description}
+                      role="checkbox"
+                      tabIndex={0}
+                      aria-checked={selectedStatusesSet.has(option.value)}
+                      onKeyDown={(e) =>
+                        handleKeyDown(e, () => handleStatusChange(option.value))
+                      }
+                    >
+                      <span
+                        className={`journalit-tradelog-checkbox journalit-tradelog-status-checkbox${
+                          selectedStatusesSet.has(option.value)
+                            ? ' checked'
+                            : ''
+                        }`}
+                        aria-hidden="true"
+                      >
+                        {selectedStatusesSet.has(option.value) ? '✓' : ''}
+                      </span>
+                      <span>{option.label}</span>
+                    </div>
+                  );
+                } else {
+                  
+                  return (
+                    <div
+                      key={option.value}
+                      className="journalit-tradelog-status-option-item"
+                      onClick={() => handleStatusChange(option.value)}
+                      aria-description={option.description}
+                      role="checkbox"
+                      tabIndex={0}
+                      aria-checked={selectedStatusesSet.has(option.value)}
+                      onKeyDown={(e) =>
+                        handleKeyDown(e, () => handleStatusChange(option.value))
+                      }
+                    >
+                      <span
+                        className={`journalit-tradelog-checkbox journalit-tradelog-status-checkbox${
+                          selectedStatusesSet.has(option.value)
+                            ? ' checked'
+                            : ''
+                        }`}
+                        aria-hidden="true"
+                      >
+                        {selectedStatusesSet.has(option.value) ? '✓' : ''}
+                      </span>
+                      <span>{option.label}</span>
+                    </div>
+                  );
+                }
+              })}
+          </AnchoredMenu>
         </div>
       </div>
     );

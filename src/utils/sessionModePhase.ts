@@ -2,9 +2,15 @@ import type {
   SessionModePhaseState,
   SessionModeSettings,
   SessionModeWindow,
+  ResolvedScheduledSessionWindow,
   ResolvedSessionModeWindow,
+  ResolvedUnplannedSessionWindow,
 } from '../types/sessionMode';
-import { getNextBusinessDay, isWeekend } from './dateUtils';
+import {
+  formatLocalDateString,
+  getNextBusinessDay,
+  isWeekend,
+} from './dateUtils';
 
 const TIME_PATTERN = /^(\d{2}):(\d{2})$/;
 const POST_CUTOFF_ENDED_SESSION_GRACE_MS = 60 * 60 * 1000;
@@ -37,7 +43,7 @@ function isAfterLocalDate(date: Date, comparison: Date): boolean {
 function resolveWindowForDate(
   window: SessionModeWindow,
   date: Date
-): ResolvedSessionModeWindow | null {
+): ResolvedScheduledSessionWindow | null {
   const startMinutes = parseTimeToMinutes(window.startTime);
   const endMinutes = parseTimeToMinutes(window.endTime);
   if (startMinutes === null || endMinutes === null) return null;
@@ -49,17 +55,48 @@ function resolveWindowForDate(
     end.setDate(end.getDate() + 1);
   }
 
-  return { ...window, start, end };
+  return { ...window, kind: 'scheduled', start, end };
 }
 
-export function resolveSessionModeWindowsForDate(
+function resolveSessionModeWindowsForDate(
   date: Date,
   windows: SessionModeWindow[]
-): ResolvedSessionModeWindow[] {
-  const resolved: ResolvedSessionModeWindow[] = [];
+): ResolvedScheduledSessionWindow[] {
+  const resolved: ResolvedScheduledSessionWindow[] = [];
   for (const window of windows) {
     const resolvedWindow = resolveWindowForDate(window, date);
     if (resolvedWindow) resolved.push(resolvedWindow);
+  }
+  return resolved.sort((a, b) => a.start.getTime() - b.start.getTime());
+}
+
+
+export function resolveSessionModeWindowsForTradingDay(
+  tradingDay: Date,
+  windows: SessionModeWindow[],
+  unplannedWindows: readonly ResolvedUnplannedSessionWindow[],
+  getTradingDayFor: (date: Date) => Date
+): ResolvedSessionModeWindow[] {
+  const previousDate = new Date(tradingDay);
+  previousDate.setDate(previousDate.getDate() - 1);
+  const tradingDayKey = formatLocalDateString(tradingDay);
+  const candidates: ResolvedSessionModeWindow[] = [
+    ...resolveSessionModeWindowsForDate(previousDate, windows),
+    ...resolveSessionModeWindowsForDate(tradingDay, windows),
+    ...unplannedWindows,
+  ];
+  const seen = new Set<string>();
+  const resolved: ResolvedSessionModeWindow[] = [];
+  for (const window of candidates) {
+    if (
+      formatLocalDateString(getTradingDayFor(window.start)) !== tradingDayKey
+    ) {
+      continue;
+    }
+    const key = `${window.id}:${window.start.getTime()}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    resolved.push(window);
   }
   return resolved.sort((a, b) => a.start.getTime() - b.start.getTime());
 }
@@ -69,12 +106,12 @@ function resolveWindowsAroundNow(
   windows: SessionModeWindow[],
   phaseDate: Date = now,
   preparationLeadTimeMs = 0
-): ResolvedSessionModeWindow[] {
+): ResolvedScheduledSessionWindow[] {
   const currentDate = new Date(phaseDate);
   const previousDate = new Date(phaseDate);
   previousDate.setDate(previousDate.getDate() - 1);
 
-  const resolved: ResolvedSessionModeWindow[] = [];
+  const resolved: ResolvedScheduledSessionWindow[] = [];
   for (const window of windows) {
     const currentWindow = resolveWindowForDate(window, currentDate);
     if (currentWindow) resolved.push(currentWindow);
@@ -112,7 +149,7 @@ function resolveWindowsAroundNow(
 function getNextWeekdaySession(
   fromDate: Date,
   windows: SessionModeWindow[]
-): ResolvedSessionModeWindow | null {
+): ResolvedScheduledSessionWindow | null {
   let nextDate = new Date(fromDate);
   nextDate.setHours(0, 0, 0, 0);
   while (isWeekend(nextDate)) {
@@ -123,11 +160,69 @@ function getNextWeekdaySession(
   return nextWindows[0] ?? null;
 }
 
+interface ResolveSessionModePhaseOptions {
+  skipWeekends?: boolean;
+  
+  unplannedSession?: ResolvedUnplannedSessionWindow;
+}
+
 export function resolveSessionModePhase(
   now: Date,
   settings: SessionModeSettings,
   phaseDate: Date = now,
-  options: { skipWeekends?: boolean } = {}
+  options: ResolveSessionModePhaseOptions = {}
+): SessionModePhaseState {
+  const nowMs = now.getTime();
+  const unplannedSession = options.unplannedSession;
+  if (
+    unplannedSession?.isRunning &&
+    nowMs >= unplannedSession.start.getTime() &&
+    nowMs < unplannedSession.end.getTime()
+  ) {
+    return {
+      phase: 'live',
+      now,
+      currentSession: unplannedSession,
+      timeSinceStartMs: nowMs - unplannedSession.start.getTime(),
+      timeUntilEndMs: unplannedSession.end.getTime() - nowMs,
+    };
+  }
+
+  const scheduledState = resolveScheduledSessionModePhase(
+    now,
+    settings,
+    phaseDate,
+    options
+  );
+  
+  
+  
+  const scheduledPreviousEndMs =
+    scheduledState.previousSession?.end.getTime() ?? Number.NEGATIVE_INFINITY;
+  if (
+    unplannedSession &&
+    scheduledState.phase !== 'live' &&
+    scheduledState.phase !== 'preparation' &&
+    nowMs >= unplannedSession.end.getTime() &&
+    nowMs - unplannedSession.end.getTime() <=
+      POST_CUTOFF_ENDED_SESSION_GRACE_MS &&
+    unplannedSession.end.getTime() >= scheduledPreviousEndMs
+  ) {
+    return {
+      phase: 'ended',
+      now,
+      previousSession: unplannedSession,
+      timeSinceEndMs: nowMs - unplannedSession.end.getTime(),
+    };
+  }
+  return scheduledState;
+}
+
+function resolveScheduledSessionModePhase(
+  now: Date,
+  settings: SessionModeSettings,
+  phaseDate: Date,
+  options: ResolveSessionModePhaseOptions
 ): SessionModePhaseState {
   const leadTimeMs = Math.max(
     0,

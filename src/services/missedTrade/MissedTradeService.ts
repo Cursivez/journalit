@@ -18,6 +18,7 @@ import { calculatePnL } from '../../utils/pnlCalculation';
 import { calculatePersistableRMultiple } from '../../components/forms/trade/validation';
 import { MissedTradeFormData } from '../../components/missedTrade/types';
 import { eventBus } from '../events/EventBus';
+import type { Unsubscribe } from '../events/types';
 import { LossReviewData } from '../backend/types';
 import {
   forceMetadataCacheRefresh,
@@ -29,6 +30,10 @@ import { getDefaultTradeTemplateMetadata } from '../templates/defaultTradeTempla
 import { serializeIdealExitFrontmatter } from '../trade/core/TradeFrontmatterCodec';
 import type { PreviousTagAssignments } from '../options/CustomOptionsService';
 import { serializeImageAnnotationsForFrontmatter } from '../../utils/imageAnnotations';
+import {
+  SAMPLE_ENTITY_ID_FRONTMATTER_KEY,
+  SAMPLE_INSTANCE_FRONTMATTER_KEY,
+} from '../../demo/DemoOwnership';
 
 function isTradeFolderPath(path: string): boolean {
   return /\/trades\//.test(path);
@@ -53,6 +58,7 @@ export class MissedTradeService extends CustomDataService {
   private readonly creationMutex = new Mutex();
   private readonly tradesFolder = 'trades';
   private folderPathService: MissedTradeFolderPathService;
+  private unsubscribeFolderPathChanged?: Unsubscribe;
 
   constructor(
     app: App,
@@ -97,6 +103,12 @@ export class MissedTradeService extends CustomDataService {
           ].join('/')
         ),
     };
+  }
+
+  public override async cleanup(): Promise<void> {
+    this.unsubscribeFolderPathChanged?.();
+    this.unsubscribeFolderPathChanged = undefined;
+    await super.cleanup();
   }
 
   private getAssignedTags(data: MissedTradeFormData): string[] {
@@ -170,14 +182,23 @@ export class MissedTradeService extends CustomDataService {
   public setPlugin(plugin: JournalitPlugin): void {
     super.setPlugin(plugin);
 
+    this.unsubscribeFolderPathChanged?.();
+    this.unsubscribeFolderPathChanged = eventBus.subscribe(
+      'folder-path:changed',
+      (payload) => {
+        this.setMonitoredFolder(payload.value);
+        void this.clearCache();
+      }
+    );
+
     
     plugin.registerEvent(
       plugin.app.vault.on('delete', async (file: TAbstractFile) => {
         
-        if (file.path.endsWith('.md') && /-M\d+\.md$/.test(file.path)) {
-          const normalizedPath = normalizePath(file.path);
-          await this.handleMissedTradeDeletion(normalizedPath);
-        }
+        if (!file.path.endsWith('.md') || !/-M\d+\.md$/.test(file.path)) return;
+        const normalizedPath = normalizePath(file.path);
+        if (!this.isPathInMonitoredFolder(normalizedPath)) return;
+        await this.handleMissedTradeDeletion(normalizedPath);
       })
     );
   }
@@ -187,9 +208,27 @@ export class MissedTradeService extends CustomDataService {
     data: MissedTradeFormData,
     options?: { suppressAutoOpen?: boolean; deferPostCreateTasks?: boolean }
   ): Promise<string> {
-    return this.runWithTagAssignments(data, () =>
-      this.createMissedTradeInternal(data, options)
+    const ownership =
+      !data.journalitSampleInstance || !data.journalitSampleEntityId
+        ? this.plugin?.demoSessionService?.claimNewOwnership('missed-trade')
+        : null;
+    const ownedData = ownership
+      ? {
+          ...data,
+          journalitSampleInstance: ownership.instanceId,
+          journalitSampleEntityId: ownership.entityId,
+        }
+      : data;
+    const filePath = await this.runWithTagAssignments(ownedData, () =>
+      this.createMissedTradeInternal(ownedData, options)
     );
+    if (ownership) {
+      await this.plugin?.demoSessionService?.recordCreatedEntity(
+        filePath,
+        ownership
+      );
+    }
+    return filePath;
   }
 
   private async createMissedTradeInternal(
@@ -356,6 +395,7 @@ export class MissedTradeService extends CustomDataService {
       }
 
       
+      const existingFrontmatter = await readFrontmatterFromDisk(this.app, file);
       if (data.entryPrice === undefined) data.entryPrice = 0;
       if (data.exitPrice === undefined) data.exitPrice = 0;
       if (data.positionSize === undefined) data.positionSize = 0;
@@ -385,6 +425,12 @@ export class MissedTradeService extends CustomDataService {
         pnl,
         rMultiple: calculatePersistableRMultiple(data),
       };
+      frontmatterData[SAMPLE_INSTANCE_FRONTMATTER_KEY] =
+        data.journalitSampleInstance ??
+        existingFrontmatter?.[SAMPLE_INSTANCE_FRONTMATTER_KEY];
+      frontmatterData[SAMPLE_ENTITY_ID_FRONTMATTER_KEY] =
+        data.journalitSampleEntityId ??
+        existingFrontmatter?.[SAMPLE_ENTITY_ID_FRONTMATTER_KEY];
 
       if (Array.isArray(data.entries)) {
         const validEntries = data.entries.flatMap((entry) =>
@@ -817,12 +863,10 @@ export class MissedTradeService extends CustomDataService {
     
     this.invalidateCache();
 
-    
-    const tradingStartDate = getTradingDay(startDate, this.plugin);
-    const tradingEndDate = getTradingDay(endDate, this.plugin);
-
-    
-    tradingEndDate.setHours(23, 59, 59, 999);
+    const rangeStartDay = new Date(startDate);
+    rangeStartDay.setHours(0, 0, 0, 0);
+    const rangeEndDay = new Date(endDate);
+    rangeEndDay.setHours(23, 59, 59, 999);
 
     
     const allFiles = this.getAllMissedTradeFiles();
@@ -861,7 +905,7 @@ export class MissedTradeService extends CustomDataService {
           
           const tradingDay = getTradingDay(entryTime, this.plugin);
           const matches =
-            tradingDay >= tradingStartDate && tradingDay <= tradingEndDate;
+            tradingDay >= rangeStartDay && tradingDay <= rangeEndDay;
 
           return matches ? file : null;
         } catch (error) {
@@ -888,6 +932,12 @@ export class MissedTradeService extends CustomDataService {
       'isMissedTrade: true',
       `templateId: ${templateMetadata.templateId}`,
       `templateVersion: ${templateMetadata.templateVersion}`,
+      data.journalitSampleInstance
+        ? `${SAMPLE_INSTANCE_FRONTMATTER_KEY}: ${JSON.stringify(data.journalitSampleInstance)}`
+        : null,
+      data.journalitSampleEntityId
+        ? `${SAMPLE_ENTITY_ID_FRONTMATTER_KEY}: ${JSON.stringify(data.journalitSampleEntityId)}`
+        : null,
       `entryTime: ${this.formatDateForFrontmatter(data.entryTime)}`,
       `exitTime: ${this.formatDateForFrontmatter(data.exitTime || data.entryTime)}`,
       `entryPrice: ${data.entryPrice || 0}`,
@@ -1041,6 +1091,8 @@ export class MissedTradeService extends CustomDataService {
       'customFields',
       'entries',
       'exits',
+      SAMPLE_INSTANCE_FRONTMATTER_KEY,
+      SAMPLE_ENTITY_ID_FRONTMATTER_KEY,
     ]);
 
     

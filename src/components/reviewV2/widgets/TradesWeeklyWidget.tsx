@@ -23,6 +23,17 @@ import { getSingleExplicitCurrency } from '../../../utils/currencyAggregation';
 import { CurrencyConversionInfo } from '../../shared/display/CurrencyConversionInfo';
 import { getTradeAccountNames } from './shared/accountDisplay';
 import { formatAccountTooltipSummary } from './shared/accountTooltipSummary';
+import {
+  formatLocalDateString,
+  getWeekNumberForDate,
+  getWeekStartDate,
+  getWeekStartDaySetting,
+  parseLocalDateSafe,
+} from '../../../utils/dateUtils';
+import {
+  getReviewWidgetPeriodAriaLabel,
+  openReviewWidgetPeriod,
+} from '../reviewWidgetNavigation';
 
 type ReviewPeriodTrade = Record<string, unknown> & {
   tradeId?: string;
@@ -82,17 +93,6 @@ interface WeeklyDataPoint {
   accountSummary?: string;
 }
 
-
-function getWeekNumber(date: Date): number {
-  const d = new Date(
-    Date.UTC(date.getFullYear(), date.getMonth(), date.getDate())
-  );
-  const dayNum = d.getUTCDay() || 7;
-  d.setUTCDate(d.getUTCDate() + 4 - dayNum);
-  const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
-  return Math.ceil(((d.getTime() - yearStart.getTime()) / 86400000 + 1) / 7);
-}
-
 export const TradesWeeklyWidget: React.FC<TradesWeeklyWidgetProps> = ({
   filePath,
   plugin,
@@ -125,14 +125,16 @@ export const TradesWeeklyWidget: React.FC<TradesWeeklyWidgetProps> = ({
     if (trades.length === 0) return [];
 
     const weeklyMap = new Map<
-      number,
+      string,
       {
         pnl: number;
         tradeIds: Set<string>;
         rMultiple: number;
         accounts: Set<string>;
+        weekNumber: number;
       }
     >();
+    const weekStartDay = getWeekStartDaySetting(plugin);
 
     for (const [tradeIndex, trade] of trades
       .filter((item) => isPnlContributingTrade(item))
@@ -162,12 +164,14 @@ export const TradesWeeklyWidget: React.FC<TradesWeeklyWidgetProps> = ({
           continue;
         }
 
-        const weekNum = getWeekNumber(event.tradingDay);
-        const existing = weeklyMap.get(weekNum) || {
+        const weekStart = getWeekStartDate(event.tradingDay, weekStartDay);
+        const weekKey = formatLocalDateString(weekStart);
+        const existing = weeklyMap.get(weekKey) || {
           pnl: 0,
           tradeIds: new Set<string>(),
           rMultiple: 0,
           accounts: new Set<string>(),
+          weekNumber: getWeekNumberForDate(event.tradingDay, weekStartDay),
         };
         existing.pnl += getDisplayPnL(
           event.pnl,
@@ -185,19 +189,19 @@ export const TradesWeeklyWidget: React.FC<TradesWeeklyWidgetProps> = ({
             trade.riskAmount,
             defaultRiskAmount
           ) ?? 0;
-        weeklyMap.set(weekNum, existing);
+        weeklyMap.set(weekKey, existing);
       }
     }
 
     
     const result: WeeklyDataPoint[] = [];
-    const sortedWeeks = Array.from(weeklyMap.keys()).sort((a, b) => a - b);
+    const sortedWeeks = Array.from(weeklyMap.keys()).sort();
 
-    for (const weekNum of sortedWeeks) {
-      const data = weeklyMap.get(weekNum)!;
+    for (const weekKey of sortedWeeks) {
+      const data = weeklyMap.get(weekKey)!;
       result.push({
-        date: `W${weekNum}`,
-        originalDate: `week-${weekNum}`,
+        date: `W${data.weekNumber}`,
+        originalDate: weekKey,
         pnl: data.pnl,
         fill: data.pnl >= 0 ? 'var(--chart-positive)' : 'var(--chart-negative)',
         trades: data.tradeIds.size,
@@ -298,6 +302,21 @@ export const TradesWeeklyWidget: React.FC<TradesWeeklyWidgetProps> = ({
           data={chartData}
           height={height}
           currencyOverride={getSingleExplicitCurrency(trades)}
+          navigation={
+            preview
+              ? undefined
+              : {
+                  getPointAriaLabel: (point) =>
+                    getReviewWidgetPeriodAriaLabel('weekly', point.date),
+                  onPointClick: (point) => {
+                    if (!point.originalDate) return;
+                    const date = parseLocalDateSafe(point.originalDate);
+                    if (date) {
+                      void openReviewWidgetPeriod(plugin, 'weekly', date);
+                    }
+                  },
+                }
+          }
         />
       </div>
     </div>

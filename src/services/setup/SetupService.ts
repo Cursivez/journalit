@@ -2,6 +2,10 @@
 
 import { App, TFile, TFolder, normalizePath, parseYaml } from 'obsidian';
 import type JournalitPlugin from '../../main';
+import type {
+  DemoJournalMutationContext,
+  DemoSessionService,
+} from '../../demo/DemoSessionService';
 import {
   CustomDataService,
   CustomDataServiceConfig,
@@ -38,7 +42,17 @@ import { getSetupHistoryDateRange } from './setupHistoryRange';
 import { normalizeLabelColor, type LabelColor } from '../../types/labelColor';
 import { normalizeSetupKey } from './setupIdentity';
 import { SETUP_FRONTMATTER_KEY } from './constants';
+import {
+  getSampleEntityId,
+  getSampleInstanceId,
+  SAMPLE_ENTITY_ID_FRONTMATTER_KEY,
+  SAMPLE_INSTANCE_FRONTMATTER_KEY,
+} from '../../demo/DemoOwnership';
 import { deduplicateOptions } from '../../utils/stringNormalization';
+import {
+  remapSetupEntityShortcuts,
+  restoreEntityShortcuts,
+} from '../../utils/entityShortcutTargets';
 
 const SETUPS_FOLDER_NAME = 'Setups';
 const FRONTMATTER_BLOCK_PATTERN = /^---\r?\n([\s\S]*?)\r?\n---/;
@@ -201,10 +215,10 @@ export class SetupService extends CustomDataService {
     );
   }
 
-  public override cleanup(): void {
+  public override async cleanup(): Promise<void> {
     this.tradeCacheUnsubscribers.forEach((unsubscribe) => unsubscribe());
     this.tradeCacheUnsubscribers = [];
-    super.cleanup();
+    await super.cleanup();
   }
 
   public async getSetupMetrics(id: string): Promise<SetupMetrics> {
@@ -371,7 +385,8 @@ export class SetupService extends CustomDataService {
     });
   }
 
-  public async createSetup(data: SetupData): Promise<Setup> {
+  public async createSetup(inputData: SetupData): Promise<Setup> {
+    const { data, ownership } = this.prepareSetupOwnership(inputData);
     const errors = validateSetupData(data);
     if (errors.length) {
       throw new Error(
@@ -403,6 +418,7 @@ export class SetupService extends CustomDataService {
         this.clearCache(),
         this.plugin?.optionsService?.addOption?.(OptionType.SETUP, name),
       ]);
+      await this.recordSetupOwnership(filePath, ownership);
       const setup = await this.parseSetupFile(file);
       this.publishChanged('created', setup);
       return setup;
@@ -414,6 +430,10 @@ export class SetupService extends CustomDataService {
     data: Partial<SetupData>
   ): Promise<Setup> {
     validateSetupId(id);
+    const plugin = this.plugin;
+    if (!plugin) {
+      throw new Error('Plugin not initialized - cannot update setup');
+    }
     const record = await this.requireSetupFileRecord(id);
     const existing = record.setup;
 
@@ -454,26 +474,105 @@ export class SetupService extends CustomDataService {
           ...data,
           name: nextName,
         });
-        await replaceFileContent(this.app, record.file, nextContent);
-
-        let targetFile = record.file;
-        if (nextName !== existing.name) {
-          const newPath = this.getRenamedSetupPath(record.file.path, nextName);
-          if (newPath !== record.file.path) {
-            await this.app.fileManager.renameFile(record.file, newPath);
-            const renamed = this.app.vault.getAbstractFileByPath(newPath);
-            if (renamed instanceof TFile) targetFile = renamed;
+        const shortcutRemap =
+          nextName !== existing.name
+            ? remapSetupEntityShortcuts(plugin.settings, existing.id, nextName)
+            : null;
+        if (shortcutRemap?.changedSurfaces.length) {
+          try {
+            await plugin.saveSettings();
+          } catch (error) {
+            restoreEntityShortcuts(plugin.settings, shortcutRemap);
+            throw error;
           }
-          await this.updateTradeSetupName(existing.name, nextName);
         }
 
-        await Promise.all([
-          forceMetadataCacheRefresh(this.app, targetFile),
-          this.clearCache(),
-        ]);
-        const updated = await this.parseSetupFile(targetFile);
-        this.publishChanged('updated', updated);
-        return updated;
+        const originalPath = record.file.path;
+        let targetFile = record.file;
+        let setupWriteStarted = false;
+        let tradeRenameCompleted = false;
+        try {
+          setupWriteStarted = true;
+          await replaceFileContent(this.app, record.file, nextContent);
+
+          if (nextName !== existing.name) {
+            const newPath = this.getRenamedSetupPath(
+              record.file.path,
+              nextName
+            );
+            if (newPath !== record.file.path) {
+              await this.app.fileManager.renameFile(record.file, newPath);
+              const renamed = this.app.vault.getAbstractFileByPath(newPath);
+              if (renamed instanceof TFile) targetFile = renamed;
+            }
+            await this.updateTradeSetupName(existing.name, nextName);
+            tradeRenameCompleted = true;
+          }
+
+          await Promise.all([
+            forceMetadataCacheRefresh(this.app, targetFile),
+            this.clearCache(),
+          ]);
+          const updated = await this.parseSetupFile(targetFile);
+          if (shortcutRemap?.changedSurfaces.length) {
+            eventBus.publish('entity-shortcuts:changed', { surface: 'all' });
+          }
+          this.publishChanged('updated', updated);
+          if (targetFile.path !== originalPath) {
+            await plugin.demoSessionService?.recordMovedEntity(
+              originalPath,
+              targetFile.path
+            );
+          }
+          return updated;
+        } catch (error) {
+          const rollbackErrors: unknown[] = [];
+          if (tradeRenameCompleted) {
+            try {
+              await this.updateTradeSetupName(nextName, existing.name);
+            } catch (rollbackError) {
+              rollbackErrors.push(rollbackError);
+            }
+          }
+          if (setupWriteStarted) {
+            try {
+              if (targetFile.path !== originalPath) {
+                await this.app.fileManager.renameFile(targetFile, originalPath);
+              }
+              const restoredFile =
+                this.app.vault.getAbstractFileByPath(originalPath);
+              if (!(restoredFile instanceof TFile)) {
+                throw new Error(
+                  `Failed to restore setup file after update error: ${originalPath}`
+                );
+              }
+              await replaceFileContent(this.app, restoredFile, currentContent);
+              await forceMetadataCacheRefresh(this.app, restoredFile);
+            } catch (rollbackError) {
+              rollbackErrors.push(rollbackError);
+            }
+          }
+          if (shortcutRemap?.changedSurfaces.length) {
+            restoreEntityShortcuts(plugin.settings, shortcutRemap);
+            try {
+              await plugin.saveSettings();
+            } catch (rollbackError) {
+              rollbackErrors.push(rollbackError);
+            }
+          }
+          try {
+            await this.clearCache();
+          } catch (rollbackError) {
+            rollbackErrors.push(rollbackError);
+          }
+          if (rollbackErrors.length > 0) {
+            throw new AggregateError(
+              [error, ...rollbackErrors],
+              `Failed to update setup and fully restore ${existing.name}`
+            );
+          }
+          throw error;
+        }
       },
       async () =>
         this.normalizeSetupTags(
@@ -580,7 +679,47 @@ export class SetupService extends CustomDataService {
       : operation();
   }
 
+  private getJournalMutationContext(): DemoJournalMutationContext {
+    return (
+      this.plugin?.demoSessionService?.getJournalMutationContext() ?? 'real'
+    );
+  }
+
+  private prepareSetupOwnership(inputData: SetupData): {
+    data: SetupData;
+    ownership: ReturnType<DemoSessionService['claimNewOwnership']>;
+  } {
+    const ownership =
+      !inputData.journalitSampleInstance || !inputData.journalitSampleEntityId
+        ? (this.plugin?.demoSessionService?.claimNewOwnership('setup') ?? null)
+        : null;
+    return {
+      data: ownership
+        ? {
+            ...inputData,
+            journalitSampleInstance: ownership.instanceId,
+            journalitSampleEntityId: ownership.entityId,
+          }
+        : inputData,
+      ownership,
+    };
+  }
+
+  private async recordSetupOwnership(
+    filePath: string,
+    ownership: ReturnType<DemoSessionService['claimNewOwnership']>
+  ): Promise<void> {
+    if (!ownership) return;
+    await this.plugin?.demoSessionService?.recordCreatedEntity(
+      filePath,
+      ownership
+    );
+  }
+
   private async materializeTradeSetupsNow(): Promise<void> {
+    const mutationContext = this.getJournalMutationContext();
+    if (mutationContext === 'deferred') return;
+
     const [labels, discovery] = await Promise.all([
       this.collectSetupLabels(),
       this.discoverSetupFileRecords(),
@@ -604,16 +743,28 @@ export class SetupService extends CustomDataService {
 
     if (namesToCreate.length > 0) {
       const folder = await this.ensureSetupFolder();
-      const createdFilePaths = await Promise.all(
-        namesToCreate.map(async (name) => {
+      
+      
+      const createdFilePaths = await namesToCreate.reduce<Promise<string[]>>(
+        async (previousPaths, name) => {
+          const paths = await previousPaths;
+          if (this.getJournalMutationContext() !== mutationContext) {
+            return paths;
+          }
+          const { data, ownership } = this.prepareSetupOwnership({
+            name,
+            playbookMarkdown: '',
+          });
           const filePath = this.getUniqueSetupFilePath(folder.path, name);
-          await this.app.vault.create(
-            filePath,
-            this.serializeNewSetup({ name, playbookMarkdown: '' })
-          );
-          return filePath;
-        })
+          await this.app.vault.create(filePath, this.serializeNewSetup(data));
+          await this.recordSetupOwnership(filePath, ownership);
+          return [...paths, filePath];
+        },
+        Promise.resolve([])
       );
+
+      if (this.getJournalMutationContext() !== mutationContext) return;
+
       await Promise.all(
         createdFilePaths.map(async (filePath) => {
           const file = this.app.vault.getAbstractFileByPath(filePath);
@@ -621,9 +772,10 @@ export class SetupService extends CustomDataService {
             await forceMetadataCacheRefresh(this.app, file);
         })
       );
-
       await this.clearCache();
     }
+
+    if (this.getJournalMutationContext() !== mutationContext) return;
 
     const optionsService = this.plugin?.optionsService;
     if (optionsService) {
@@ -766,6 +918,8 @@ export class SetupService extends CustomDataService {
       createdAt: timestamps.createdAt,
       updatedAt: timestamps.updatedAt,
       order: 0,
+      journalitSampleInstance: getSampleInstanceId(frontmatter) ?? undefined,
+      journalitSampleEntityId: getSampleEntityId(frontmatter) ?? undefined,
     };
   }
 
@@ -791,6 +945,16 @@ export class SetupService extends CustomDataService {
     return [
       '---',
       `${SETUP_FRONTMATTER_KEY}: true`,
+      ...(data.journalitSampleInstance
+        ? [
+            `${SAMPLE_INSTANCE_FRONTMATTER_KEY}: ${JSON.stringify(data.journalitSampleInstance)}`,
+          ]
+        : []),
+      ...(data.journalitSampleEntityId
+        ? [
+            `${SAMPLE_ENTITY_ID_FRONTMATTER_KEY}: ${JSON.stringify(data.journalitSampleEntityId)}`,
+          ]
+        : []),
       `tags: ${JSON.stringify(tags)}`,
       '---',
       '',
@@ -1058,10 +1222,7 @@ export class SetupService extends CustomDataService {
     const folderPathService =
       this.plugin?.serviceManager?.getFolderPathService?.();
     if (folderPathService) return folderPathService.getPath(...segments);
-    const configured = this.plugin?.settings?.general?.journalFolderPath;
-    const root =
-      configured && configured.trim() ? configured.trim() : '!Journalit';
-    return normalizePath([root, ...segments].join('/'));
+    throw new Error('FolderPathService is unavailable');
   }
 
   private getUniqueSetupFilePath(folderPath: string, name: string): string {

@@ -3,6 +3,119 @@
 import type { Lang } from './en';
 
 const de: Lang = {
+  'account.profiles.correction-title': 'Katalogkorrektur',
+  'account.profiles.correction-source': 'Regelquelle',
+  'account.profiles.correction-period': 'Betroffener Verlauf',
+  'account.profiles.correction-guide':
+    'Katalogkorrekturen erfordern eine Bestätigung vor der Neuberechnung des Verlaufs.',
+  'account.profiles.correction-history': 'Korrekturverlauf',
+  'account.profiles.correction-stale':
+    'Der Kontoverlauf hat sich geändert. Öffne die Prüfung erneut.',
+  'account.profiles.correction-result': 'Prüfung harter Regeln',
+  'account.profiles.no-hard-breach': 'Kein harter Regelverstoß erkannt',
+  'account.profiles.correction-consent': 'Verlauf neu berechnen',
+  'account.profiles.correction-details': 'Einzelheiten',
+  'account.profiles.correction-apply': 'Korrektur anwenden',
+  'account.profiles.purchase-date': 'Ursprüngliches Kaufdatum',
+  'account.profiles.save-purchase': 'Kaufdatum speichern',
+  'account.profiles.purchase-needed':
+    'Gib das ursprüngliche Kaufdatum ein, um diese Bedingungen zu prüfen.',
+  'account.profiles.purchase-excluded':
+    'Für diesen Kauf bleiben die bisherigen Bedingungen bestehen.',
+  'account.profiles.purchase-uncertain':
+    'Die Firma muss die Anwendbarkeit bestätigen. Die Regeln bleiben unverändert.',
+  'account.profiles.initial-terms':
+    'Diese Bedingungen gelten ab Kauf oder vor dieser Phase. Prüfe die Ersteinrichtung separat; der Verlauf bleibt unverändert.',
+  'account.profiles.announcement': 'Mitteilung der Firma',
+  'account.profiles.firm-effective':
+    'Von der Firma bestätigtes Gültigkeitsdatum',
+  'account.profiles.published-date': 'Veröffentlichtes Gültigkeitsdatum',
+  'account.profiles.applicability-checking': 'Anwendbarkeit wird geprüft…',
+  'account.profiles.no-matching-phase':
+    'Keine passende Phase in diesem Profil.',
+  'account.profiles.history-unchanged':
+    'Der bisherige Verlauf bleibt unverändert.',
+  'account.profiles.notice-title': 'Aktualisiertes Challenge-Profil verfügbar',
+  'account.profiles.notice-description':
+    'Das Quellprofil unterscheidet sich vom gespeicherten Profil. Deine Kontoregeln wurden nicht geändert.',
+  'account.profiles.review-changes': 'Änderungen prüfen',
+  'account.profiles.check-failed':
+    'Regelaktualisierungen konnten nicht geprüft werden.',
+  'account.profiles.retry': 'Erneut versuchen',
+  'account.profiles.source-changed':
+    'Das Quellprofil wurde während der Prüfung geändert. Öffne die Prüfung erneut, bevor du Änderungen übernimmst.',
+  'account.profiles.retain': 'Aktuelle Regeln behalten',
+  'account.profiles.retain-help':
+    'Behalte die Kontoregeln und blende diese Quelländerungen aus. Spätere Regeländerungen können erneut gemeldet werden.',
+  'account.profiles.comparison-help':
+    'Nur Unterschiede werden angezeigt. Klappe eine Regel auf, um ihre Felder zu prüfen. Lokale Anpassungen können Unterschiede erklären.',
+  'account.profiles.added': 'Hinzugefügt',
+  'account.profiles.removed': 'Entfernt',
+  'account.profiles.changed': 'Geändert',
+  'account.profiles.not-configured': 'Nicht konfiguriert',
+  'account.profiles.no-rule-changes':
+    'Keine Unterschiede bei Regeln oder Auszahlungsbedingungen für diese Phase.',
+  'account.profiles.accept': 'Aktualisierung übernehmen',
+  'account.profiles.cached':
+    'Zwischengespeicherte Profile werden verwendet; die neuesten Regeln konnten nicht geprüft werden.',
+  'account.profiles.guide':
+    'Prüfe Regeländerungen anhand veröffentlichter oder firmenbestätigter Bedingungen. Gib bei Bedarf das ursprüngliche Kaufdatum an. Vorlagen findest du unter Meine Firmenprofile in Konto bearbeiten.',
+  'account.profiles.account-phase': 'Kontophase',
+  'account.profiles.choose': 'Gespeichertes Profil wählen',
+  'account.profiles.completed':
+    'Abgeschlossene Phasen behalten ihre ursprünglichen Regeln.',
+  'account.profiles.confirm': 'Diese Regeln gelten für mein Konto.',
+  'account.profiles.currency':
+    'Wähle vor der Anwendung eine Kontowährung, die zum Profil passt.',
+  'account.profiles.current': 'Aktuelle Kontoregeln',
+  'account.profiles.custom-transition': 'Eigene Übergangsbedingungen',
+  'account.profiles.cycle-start': 'Beginn des Auszahlungszyklus (Ortszeit)',
+  'account.profiles.delete-help':
+    'Dieses gespeicherte Profil löschen? Bestehende Konten bleiben unverändert.',
+  'account.profiles.effective': 'Gültig ab (Ortszeit)',
+  'account.profiles.error':
+    'Profil konnte nicht gespeichert werden. Prüfe die Werte und versuche es erneut.',
+  'account.profiles.floor': 'Drawdown-Untergrenze beim Übergang',
+  'account.profiles.history': 'Regelverlauf',
+  'account.profiles.history-help':
+    'Frühere Regeln bleiben erhalten. Nutze Profilaktualisierung prüfen für Änderungen; direktes Bearbeiten ist zum Schutz des Verlaufs gesperrt.',
+  'account.profiles.incoming': 'Neue Profilregeln',
+  'account.profiles.independent':
+    'Profile werden lokal im Vault gespeichert. Ihre Anwendung erstellt eine unabhängige Kontokopie; neue Revisionen ändern bestehende Konten nicht.',
+  'account.profiles.keep-help':
+    'Markierte Regeln behalten deine lokalen Werte statt der neuen Regel desselben Typs. Entferne die Markierung zum Übernehmen. Neue Regeltypen werden hinzugefügt.',
+  'account.profiles.keep-local': 'Meine Regel behalten:',
+  'account.profiles.keep-payout': 'Aktuelle Auszahlungsrichtlinie behalten',
+  'account.profiles.library': 'Meine Firmenprofile',
+  'account.profiles.locked': 'Drawdown-Untergrenze ist bereits gesperrt',
+  'account.profiles.missing':
+    'Dieses gespeicherte Profil existiert nicht mehr.',
+  'account.profiles.peak': 'Übernommener Höchstsaldo',
+  'account.profiles.review': 'Profilaktualisierung prüfen',
+  'account.profiles.link-source': 'Firmenprofil verknüpfen',
+  'account.profiles.save-new': 'Als neues Profil speichern',
+  'account.profiles.save-revision':
+    'Neue Revision des gewählten Profils speichern',
+  'account.profiles.source-phase': 'Phase des Quellprofils',
+  'account.profiles.transition-help':
+    'Keine verifizierten Übergangsvorgaben vorhanden. Trage bestätigte Untergrenze, Höchstsaldo und Zyklusbeginn ein. Diese gelten als benutzerdefiniert. Phasengewinn und gesamte Auszahlungsanzahl bleiben erhalten; ältere Trades behalten ihre Regeln.',
+  'account.profiles.transition-source': 'Bestätigung der Firma oder Referenz',
+  'account.profiles.unknown-baseline':
+    'Dieses ältere Konto hat keine ursprüngliche Quellkopie. Prüfe jede Änderung; lokale Abweichungen lassen sich nicht automatisch erkennen.',
+  'account.profiles.update-available':
+    'Profilunterschiede müssen geprüft werden. Das Konto nutzt weiterhin seine gespeicherten Regeln.',
+  'account.profiles.up-to-date':
+    'Diese Phase nutzt die zuletzt geprüfte Profildefinition; lokale Abweichungen bleiben unabhängig.',
+  'widget.mfeScatter.name': 'MFE vs. realisierter Gewinn/Verlust',
+  'widget.mfeScatter.description':
+    'Maximale günstige Kursbewegung im Vergleich zum realisierten Nettogewinn/-verlust abgeschlossener Trades',
+  'widget.mfeScatter.y': 'Realisierter G/V ({unit})',
+  'widget.mfeScatter.winners': 'Gewinner',
+  'widget.mfeScatter.losers': 'Verlierer',
+  'widget.mfeScatter.breakeven': 'Gewinnschwelle',
+  'widget.mfeScatter.empty':
+    'Keine abgeschlossenen Trades mit nutzbarer MFE in dieser Einheit.',
+
   'trade.broker-synced-at': 'Broker synchronisiert {date}',
   'trade-sync.tradovate.status.setup-required': 'Kontoeinrichtung erforderlich',
   'trade-sync.tradovate.status.connecting': 'Verbindung wird hergestellt',
@@ -31,6 +144,8 @@ const de: Lang = {
   'trade-sync.tradovate.reconciliation-issues': '{count} Abstimmungsproblem(e)',
   'trade-sync.tradovate.website-connection-description':
     'Verbinde Tradovate sicher auf Journalit.co oder autorisiere es erneut. Kehre dann hierher zurück, um Konten auszuwählen und deinen Vault zu synchronisieren.',
+  'trade-sync.tradovate.paused-website-description':
+    'Diese Tradovate-Verbindung ist pausiert. Verwalte sie auf Journalit.co, um sie zu prüfen oder fortzusetzen.',
   'trade-sync.tradovate.plugin-sync-description':
     'Eine Synchronisierung ruft deine neuesten Tradovate-Aktivitäten ab und schreibt die daraus entstehenden Trades in diesen Vault.',
   'trade-sync.tradovate.connect': 'Verbinden',
@@ -66,6 +181,92 @@ const de: Lang = {
   'trade-sync.tradovate.recovery-confirm':
     '{count} Trade-Notiz(en) in {account} wiederherstellen?',
 
+  'trade-sync.ctrader.status.setup-required': 'Kontoeinrichtung erforderlich',
+  'trade-sync.ctrader.status.connecting': 'Verbindung wird hergestellt',
+  'trade-sync.ctrader.status.paused': 'Pausiert',
+  'trade-sync.ctrader.status.reauthorization-required':
+    'Erneute Autorisierung erforderlich',
+  'trade-sync.ctrader.status.deleting': 'Cloud-Daten werden gelöscht',
+  'trade-sync.ctrader.status.error': 'Verbindungsfehler',
+  'trade-sync.ctrader.sync-complete-connection':
+    'Synchronisierung für {connection} abgeschlossen.',
+  'trade-sync.ctrader.sync-partial-connection':
+    'Synchronisierung für {connection} mit Problemen abgeschlossen.',
+  'trade-sync.ctrader.sync-all': 'Alle synchronisieren',
+  'trade-sync.ctrader.sync-all-complete':
+    '{succeeded} von {total} cTrader-Verbindungen synchronisiert.',
+  'trade-sync.ctrader.sync-all-partial':
+    '{succeeded} von {total} cTrader-Verbindungen synchronisiert. Überprüfe die Verbindungen mit Problemen.',
+  'trade-sync.ctrader.connect-another': 'Weiteres cTrader-Konto verbinden',
+  'trade-sync.ctrader.no-connections':
+    'Verbinde ein cTrader-Konto auf Journalit.co, um es hier zu konfigurieren und zu synchronisieren.',
+  'trade-sync.ctrader.claimed-by-connection':
+    'Die Synchronisierung ist über {connection} aktiviert. Deaktiviere sie dort, bevor du dieses Konto wechselst.',
+  'trade-sync.ctrader.claim-conflict':
+    'Eine andere cTrader-Verbindung hat dieses Konto beansprucht. Prüfe die aktualisierten Verbindungskarten, bevor du es erneut versuchst.',
+  'trade-sync.ctrader.reconciliation-issues': '{count} Abstimmungsproblem(e)',
+  'trade-sync.ctrader.website-connection-description':
+    'Verbinde cTrader sicher auf Journalit.co oder autorisiere es erneut. Kehre dann hierher zurück, um Konten auszuwählen und deinen Vault zu synchronisieren.',
+  'trade-sync.ctrader.plugin-sync-description':
+    'Eine Synchronisierung ruft deine neuesten cTrader-Aktivitäten ab und schreibt die daraus entstehenden Trades in diesen Vault.',
+  'trade-sync.ctrader.connect': 'Verbinden',
+  'trade-sync.ctrader.manage-connection': 'Verbindung verwalten',
+  'trade-sync.ctrader.setup-guide': 'Einrichtungsanleitung',
+  'trade-sync.ctrader.setup-and-sync':
+    'Einrichtung abschließen und synchronisieren',
+  'trade-sync.ctrader.sync-to-vault': 'Synchronisieren',
+  'trade-sync.ctrader.discovery-description':
+    'Journalit muss die über deine cTrader-Verbindung verfügbaren Demo- und Live-Konten ermitteln.',
+  'trade-sync.ctrader.discover-accounts': 'cTrader-Konten ermitteln',
+  'trade-sync.ctrader.discovering': 'Konten werden ermittelt…',
+  'trade-sync.ctrader.discovery-failed':
+    'Die Ermittlung der cTrader-Konten ist fehlgeschlagen. Versuche es erneut oder verwalte die Verbindung auf Journalit.co.',
+  'trade-sync.ctrader.sync-account': 'In Synchronisierung aufnehmen',
+  'trade-sync.ctrader.history-label': 'Anfangsverlauf',
+  'trade-sync.ctrader.history-all': 'Gesamter verfügbarer Verlauf',
+  'trade-sync.ctrader.history-recent': 'Letzte 90 Tage',
+  'trade-sync.ctrader.history-custom': 'Ab einem bestimmten Datum',
+  'trade-sync.ctrader.history-new': 'Nur neue Trades',
+  'trade-sync.ctrader.start-date': 'Startdatum',
+  'trade-sync.ctrader.mapping-required':
+    'Wähle für jedes aktivierte cTrader-Konto ein lokales Vault-Konto.',
+  'trade-sync.ctrader.custom-date-required':
+    'Wähle für jede benutzerdefinierte Verlaufsauswahl ein Startdatum.',
+  'trade-sync.ctrader.recovery-title':
+    'Fehlende Trade-Notizen wiederherstellen',
+  'trade-sync.ctrader.recovery-count':
+    '{count} Trade-Notiz(en) wiederherzustellen',
+  'trade-sync.ctrader.recovery-select-account':
+    'Wähle vor der Wiederherstellung von Trade-Notizen ein lokales Konto aus.',
+  'trade-sync.ctrader.recovery-confirm':
+    '{count} Trade-Notiz(en) in {account} wiederherstellen?',
+  'trade-sync.oauth.remap.title': 'Change account',
+  'trade-sync.oauth.remap.message':
+    'Use {newAccount} for existing notes too? Otherwise, only future broker updates will use it.',
+  'trade-sync.oauth.remap.update-notes': 'Update notes',
+  'trade-sync.oauth.remap.future-only': 'Future updates only',
+  'trade-sync.oauth.remap.unavailable':
+    'Account remapping is unavailable. Update the Journalit server and try again.',
+  'trade-sync.oauth.remap.restore-in-progress':
+    'Wait for Restore to finish, then try again.',
+  'trade-sync.oauth.remap.operation-conflict':
+    'That remap request conflicted with an earlier attempt. Try again.',
+  'trade-sync.oauth.remap.account-busy':
+    'This account is busy synchronizing. Retry shortly.',
+  'trade-sync.oauth.remap.account-unavailable':
+    'This account is no longer available. Refresh and try again.',
+  'trade-sync.oauth.remap.preserved-conflicts':
+    '{count} existing conflict(s) were left unchanged.',
+  'trade-sync.oauth.remap.notes-pending':
+    '{count} existing note update(s) are still pending. Synchronize again to retry.',
+  'trade-sync.source.ctrader': 'cTrader',
+  'trade-sync.source.ctrader.description':
+    'Synchronize cTrader trades in the cloud and project them into this vault.',
+  'trade-sync.ctrader.status-failed': 'Unable to load cTrader status.',
+  'trade-sync.ctrader.last-sync': 'Letzte Synchronisierung',
+  'trade-sync.ctrader.pending-acks': '{count} ausstehende lokale ACK(s)',
+  'trade-sync.ctrader.never': 'Nie',
+
   'command.add-trade': 'Neuen Trade hinzufügen',
   'command.quick-import-trades': 'Trades schnell importieren',
   'command.import-trades-csv': 'Trade Import öffnen',
@@ -79,14 +280,13 @@ const de: Lang = {
   'command.open-trade-log': 'Trade-Log öffnen',
   'command.open-economic-calendar': 'Wirtschaftskalender öffnen',
   'command.open-home': 'Home-Ansicht öffnen',
+  'command.open-settings': 'Einstellungen öffnen',
   'command.open-position-size-calculator': 'Positionsgrößenrechner öffnen',
-  'command.rebuild-graph-links': 'Journalit-Graphverknüpfungen neu erstellen',
   'command.replay-onboarding': 'Wiederholen Sie den Onboarding-Ablauf',
   'command.replay-current-view-guide':
     'Wiedergabeanleitung für die aktuelle Ansicht',
   'command.open-release-notes': 'Versionshinweise anzeigen',
   'command.open-layout-builder': 'Öffnen Sie den Layout-Builder',
-  'command.switch-template': 'Vorlage wechseln',
   'notice.guide.replay-unavailable':
     'Das Guide-System ist noch nicht fertig. Bitte versuchen Sie es erneut.',
   'notice.guide.no-active-view':
@@ -97,12 +297,7 @@ const de: Lang = {
     'Der Guide konnte nicht gestartet werden. Bitte versuchen Sie es erneut.',
   'notice.guide.replay-started':
     'Der Guide wurde für diese Ansicht neu gestartet.',
-  'notice.graph-links.rebuild-complete':
-    'Graphverknüpfungen neu erstellt: {updated} aktualisiert, {unchanged} unverändert, {conflicted} benötigen Aufmerksamkeit.',
-  'notice.graph-links.rebuild-failed':
-    'Journalit-Graphverknüpfungen konnten nicht neu erstellt werden. Details finden Sie in der Konsole.',
   'template.switch-title': 'Layout wechseln',
-  'template.switch-trade-title': 'Trade-Layout wechseln',
   'template.switch-review-title': '{type}-Layout wechseln',
 
   'template.review-type.drc': 'DRC',
@@ -220,7 +415,7 @@ const de: Lang = {
 
   'form.section.custom-fields-empty-title': 'Noch keine erweiterten Felder.',
   'form.section.custom-fields-empty-desc':
-    'Erstellen Sie benutzerdefinierte Trade-Felder unter Einstellungen → Anpassung → Benutzerdefinierte Trade-Felder.',
+    'Erfassen Sie alles, was die integrierten Felder auslassen, etwa Session, Zeitrahmen oder Setup-Bewertung. Eigene Felder werden mit jedem Trade gespeichert und können zu sortierbaren Spalten im Trade-Log werden.',
   'form.section.attachments': 'Anhänge',
   'form.tab.basic': 'Basis',
   'form.tab.details': 'Einzelheiten',
@@ -269,10 +464,15 @@ const de: Lang = {
   'form.layout.item.trade-currency': 'Handelswährung / Wechselkurs',
   'form.layout.item.trade-currency-desc':
     'Trade in einer anderen Währung mit optionalem manuellem Wechselkurs erfassen.',
+  'form.layout.item.exchange-desc': 'Börsenfeld für Aktien- und Krypto-Trades.',
+  'form.layout.item.direct-pnl-toggle-desc':
+    'Einen einzelnen Trade auf die Eingabe eines Gesamt-P&L statt Ausstiegskursen umstellen.',
   'form.layout.manual-fx-rate': 'FX-Kurs-Override',
   'form.layout.result-r': 'Ergebnis in R',
   'form.layout.entry-time': 'Trade-Zeit',
   'form.field.account': 'Konto',
+  'form.field.prop-challenge-phase': 'Zugeordnete Phase: {name}',
+  'form.field.prop-challenge-phase.none': 'Keine Phase zu diesem Zeitpunkt',
   'form.field.asset-type': 'Asset-Typ',
   'form.field.asset-type.stock': 'Aktie',
   'form.field.asset-type.options': 'Optionen',
@@ -294,6 +494,17 @@ const de: Lang = {
   'form.field.take-profit-short': 'Ziel',
   'form.field.target-price': 'Zielpreis',
   'form.field.close-percent': 'Schließen %',
+  'form.field.close-size': 'Schließgröße',
+  'form.placeholder.close-size': '0.5',
+  'form.layout.take-profit-unit': 'Gewinnziel-Schließmenge als',
+  'form.layout.take-profit-unit-percent': 'Schließen %',
+  'form.layout.take-profit-unit-size': 'Größe',
+  'trade.validation.take-profit-size-number':
+    'Take-Profit-Größe muss eine gültige Zahl sein.',
+  'trade.validation.take-profit-size-positive':
+    'Take-Profit-Größe muss größer als 0 sein.',
+  'trade.validation.take-profit-total-size-range':
+    'Take-Profit-Größen dürfen die Positionsgröße nicht überschreiten.',
   'form.field.risk-amount': 'Risikobetrag',
   'form.field.profit-loss': 'Gewinn/Verlust',
   'form.field.total-pnl': 'Trade-G/V',
@@ -317,8 +528,9 @@ const de: Lang = {
   'form.field.commission-type.fixed': 'Behoben',
   'form.field.commission-type.percentage': 'Prozentsatz (%)',
   'form.calculated': 'Berechnet',
-  'form.account-empty-state.title':
-    'Erstellen Sie ein Konto, bevor Sie einen Trade hinzufügen',
+  'form.account-empty-state.title': 'Richten Sie Ihr erstes Konto ein',
+  'form.account-empty-state.description':
+    'Konten verfolgen Ihren Kontostand, damit Journalit Rendite, Risiko und Drawdown berechnen kann. Für die Erstellung genügt ein Name.',
   'form.account-empty-state.create-account': 'Konto erstellen',
   'form.account-empty-state.submit-disabled':
     'Erstellen Sie zunächst ein Konto, um diesen Trade zu speichern.',
@@ -609,6 +821,7 @@ const de: Lang = {
   'validation.custom-field.time-values': '{label} enthält ungültige Zeitwerte',
 
   'notice.login-success': 'Erfolgreich eingeloggt!',
+  'notice.pro-access-ready': 'Der PRO-Zugang ist bereit.',
 
   'notice.logout-success': 'Erfolgreich abgemeldet',
   'notice.ftp-created': 'FTP-Anmeldeinformationen erfolgreich erstellt',
@@ -671,8 +884,6 @@ const de: Lang = {
   'notice.error.open-journalit':
     'Journalit konnte nicht geöffnet werden. Bitte versuchen Sie, Obsidian neu zu laden.',
   'notice.error.open-drc': 'Fehler beim Öffnen der DRC: {error}',
-  'notice.error.open-dashboard':
-    'Das Dashboard konnte nicht geöffnet werden: {error}',
   'notice.error.open-trade-log': 'Fehler beim Öffnen des Trade-Logs: {error}',
   'notice.error.open-csv-import':
     'Fehler beim Öffnen des Trade Imports: {error}',
@@ -799,6 +1010,9 @@ const de: Lang = {
     'Klicken Sie auf die Spaltenüberschriften, um die Tabelle zu sortieren',
   'tradelog.guide.sorting.description':
     'Klicken Sie in der Trades-Ansicht auf eine sortierbare Spaltenüberschrift, um die Tabelle neu anzuordnen. Klicken Sie beispielsweise auf Netto P&L, um nach Ihrem größten Gewinn und Ihrem größten Verlust zu sortieren.',
+  'tradelog.guide.gallery-mode.title': 'Es gibt auch eine Bildergalerie',
+  'tradelog.guide.gallery-mode.description':
+    'Wechsle hier den Modus, um deine Trade-Screenshots als Galerie zu durchstöbern. Beim ersten Öffnen zeigt dir ein kurzer Guide alles.',
   'tradelog.guide.multi-select.title': 'Aktivieren Sie die Mehrfachauswahl',
   'tradelog.guide.multi-select.description':
     'Klicken Sie auf diese Schaltfläche, um mehrere Trades gleichzeitig auszuwählen. Wenn die Mehrfachauswahl aktiviert ist, wählen Zeilenklicks Trades aus, anstatt sie zu öffnen.',
@@ -864,6 +1078,10 @@ const de: Lang = {
     'Diese Schaltflächen ändern, was Ihre Widgets anzeigen',
   'home.guide.filters.description':
     'Verwenden Sie diese, um den Zeitraum, den Trade-Typ oder das Konto zu ändern, sodass Ihre Home-Widgets die Daten anzeigen, die Sie anzeigen möchten.',
+  'home.guide.settings.title':
+    'Deine Journalit-Einstellungen sind immer griffbereit',
+  'home.guide.settings.description':
+    'Mit dieser Schaltfläche öffnest du die Journalit-Einstellungen direkt.',
   'home.guide.customize.title':
     'Aktivieren Sie den Bearbeitungsmodus, um die Startseite anzupassen',
   'home.guide.customize.description':
@@ -880,13 +1098,12 @@ const de: Lang = {
     'Verschieben Sie Ihre Widgets und ändern Sie ihre Größe',
   'home.guide.widget-picker.title': 'Fügen Sie hier Widgets hinzu',
   'home.guide.widget-picker.description':
-    'Mit dieser Auswahl können Sie weitere Widgets hinzufügen und Schnelllinks wiederherstellen, die Sie zuvor ausgeblendet haben.',
+    'Widgets hinzufügen, Schnelllinks wiederherstellen oder Konto- und Setup-Verknüpfungen hinzufügen.',
   'home.guide.move-and-resize.description':
     'Dies ist der Hauptbereich, den Sie im Bearbeitungsmodus neu anordnen können. Ziehen Sie Widgets, um sie zu verschieben, oder ziehen Sie ein Widget aus der unteren rechten Ecke, um seine Größe zu ändern.',
-  'home.guide.add-widget.title':
-    'Fügen Sie Widgets hinzu oder holen Sie ausgeblendete Schnelllinks zurück',
+  'home.guide.add-widget.title': 'Elemente zur Startseite hinzufügen',
   'home.guide.add-widget.description':
-    'Klicken Sie auf Widget hinzufügen, um die Auswahl zu öffnen, in der Sie weitere Widgets hinzufügen und zuvor ausgeblendete Schnelllinks wiederherstellen können.',
+    'Öffnen Sie Widget hinzufügen, um Widgets, Schnelllinks oder Konto- und Setup-Verknüpfungen hinzuzufügen.',
   'home.guide.save-layout.title':
     'Speichern Sie Ihr Layout, wenn Sie fertig sind',
   'home.guide.save-layout.description':
@@ -947,7 +1164,6 @@ const de: Lang = {
     'Beginnen Sie mit der Erstellung von Trade-Notizen, damit diese in Ihrem Trade-Log angezeigt werden.',
   'tradelog.processing': 'Trading-Daten werden verarbeitet...',
   'tradelog.node.file-not-found': 'Trade-Datei nicht gefunden: {path}',
-  'tradelog.node.no-review-available': 'Für {type}: {id} liegt kein Review vor',
   'tradelog.node.expand': 'Expandieren',
   'tradelog.node.collapse': 'Zusammenbruch',
   'tradelog.node.navigate-to-review': 'Navigieren Sie zum {type}-Review',
@@ -1256,6 +1472,7 @@ const de: Lang = {
   'dashboard.filter.accounts.select-all': 'Wählen Sie „Alle“ aus',
 
   'dashboard.filter.accounts.none-found': 'Keine Konten gefunden',
+  'dashboard.filter.accounts.phase-now': 'jetzt',
   'dashboard.filter.tags.all': 'Alle Tags',
   'dashboard.filter.tags.none': 'Keine Tags',
   'dashboard.filter.tags.n-selected': '{count}-Tags',
@@ -1366,6 +1583,12 @@ const de: Lang = {
     'Checkliste zum Hinzufügen deines Handelsverlaufs und Einrichten von Journalit',
   'home.widget.getting-started.progress': '{completed}/{total} abgeschlossen',
   'home.widget.getting-started.progress.loading': 'Fortschritt wird geprüft...',
+  'home.widget.getting-started.item.account.title':
+    'Richten Sie Ihr Handelskonto ein',
+  'home.widget.getting-started.item.account.description':
+    'Trades werden einem Konto zugeordnet, das Ihren Kontostand verfolgt. Ohne Konto lassen sich Rendite und Drawdown nicht berechnen.',
+  'home.widget.getting-started.item.account.time': '15s',
+  'home.widget.getting-started.item.account.cta': 'Konto einrichten',
   'home.widget.getting-started.item.create.title':
     'Übernimm deinen Handelsverlauf',
   'home.widget.getting-started.item.create.description':
@@ -1392,7 +1615,7 @@ const de: Lang = {
   'home.widget.getting-started.item.sidebar.cta': 'Seitenleiste öffnen',
   'home.widget.getting-started.item.pro.title': 'Aktivieren Sie PRO',
   'home.widget.getting-started.item.pro.description':
-    'Aktivieren Sie den Trade Import, die MetaTrader-Synchronisierung und die KI-Zuordnung.',
+    'Aktivieren Sie Trade Import, Trade Sync und den Wirtschaftskalender.',
   'home.widget.getting-started.item.pro.time': '1 Minute',
   'home.widget.getting-started.item.pro.cta': 'Aktivieren',
   'home.widget.weekly-summary.name': 'Wöchentliche Zusammenfassung',
@@ -1434,6 +1657,7 @@ const de: Lang = {
   'home.widget.drawdown-monitor.description':
     'Verfolgen Sie den Drawdown-Status über Konten hinweg mit konfigurierten Limits',
   'account.header.title': 'Konto: {name}',
+  'account.header.back-to-dashboard': 'Zurück zum Dashboard',
   'account.header.add-event.aria': 'Einzahlung/Auszahlung hinzufügen',
   'account.header.edit-account.aria': 'Konto bearbeiten',
   'account.header.view-trades.aria': 'Trades im Trade Log anzeigen',
@@ -1449,8 +1673,22 @@ const de: Lang = {
     '{count} Trades wurden vor dem Kontoerstellungsdatum gefunden',
   'account.header.warning.trades-before-creation.other':
     '{count} Trades wurden vor dem Kontoerstellungsdatum gefunden',
+  'account.header.warning.trades-before-phase.one':
+    '{count} Trade vor dem Start von Phase 1 gefunden',
+  'account.header.warning.trades-before-phase.few':
+    '{count} Trades vor dem Start von Phase 1 gefunden',
+  'account.header.warning.trades-before-phase.many':
+    '{count} Trades vor dem Start von Phase 1 gefunden',
+  'account.header.warning.trades-before-phase.other':
+    '{count} Trades vor dem Start von Phase 1 gefunden',
+  'account.header.warning.earliest-trade-phase':
+    'Frühester Trade: {date}. Trades vor dem Phasenstart zählen nicht für die Challenge.',
+  'account.header.notice.phase-start-updated':
+    'Start von Phase 1 auf {date} verschoben',
   'account.header.warning.earliest-trade':
     'Frühester Trade: {date}. Dies kann zu falschen Saldoberechnungen führen.',
+  'account.header.warning.fix-phase-start.aria':
+    'Start von Phase 1 korrigieren',
   'account.header.warning.fix-date.aria':
     'Korrigieren Sie das Erstellungsdatum des Kontos',
   'account.header.warning.fixing': 'Festsetzung...',
@@ -1997,6 +2235,13 @@ const de: Lang = {
   'settings.reviews.template-builder-desc':
     'Erstellen, bearbeiten und verwalten Sie Ihre Layouts visuell. In der Builder-Ansicht können Sie Abschnitte per Drag-and-Drop verschieben, Optionen konfigurieren und eine Vorschau Ihrer Layouts in Echtzeit anzeigen.',
   'settings.reviews.open-builder': 'Öffnen Sie den Layout-Builder',
+  'settings.general.review-links-new-tab':
+    'Links aus Review-Widgets in neuen Tabs öffnen',
+  'settings.general.review-links-new-tab-desc':
+    'Wenn deaktiviert, ersetzen Links den aktuellen Tab.',
+  'settings.general.review-links-new-tab-aria':
+    'Notizlinks aus Review-Widgets in neuen Tabs öffnen',
+  'settings.general.tab-behavior': 'Tab-Verhalten',
   'settings.reviews.recurring-goals': 'Wiederkehrende Ziele',
   'settings.reviews.recurring-goals-desc':
     'Definieren Sie Ziele, die automatisch bei jedem neuen Review erscheinen. Diese werden beim Erstellen des Reviews kopiert und können pro Review bearbeitet werden.',
@@ -2073,14 +2318,16 @@ const de: Lang = {
   'library.notice.template-not-found': 'Layout nicht gefunden',
   'library.notice.code-generated': 'Freigabecode generiert!',
   'library.error.export-failed': 'Layout konnte nicht exportiert werden',
+  'library.error.export-too-large':
+    'Dieses Layout ist zu groß, um als Freigabecode exportiert zu werden.',
   'library.notice.copied': 'Freigabecode in Zwischenablage kopiert!',
   'library.error.copy-failed': 'Kopieren in die Zwischenablage fehlgeschlagen',
   'library.title.import': 'Layout importieren',
   'library.desc.import':
-    'Fügen Sie einen JRT-v1-Freigabecode ein, um eine Vorlage von einem anderen Benutzer zu importieren.',
+    'Fügen Sie einen JRT-Freigabecode ein, um eine Vorlage von einem anderen Benutzer zu importieren.',
   'library.label.share-code': 'Code teilen',
   'library.placeholder.import-code':
-    'Fügen Sie hier den Freigabecode JRT-v1-... ein',
+    'Fügen Sie hier den Freigabecode JRT-... ein',
   'library.button.validating': 'Validierung...',
   'library.button.validate': 'Bestätigen',
   'library.button.import': 'Layout importieren',
@@ -2219,6 +2466,11 @@ const de: Lang = {
   'account.settings.section.available-types.delete-aria': 'Löschen Sie {name}',
   'account.settings.section.available-types.empty':
     'Keine benutzerdefinierten Kontotypen definiert.',
+  'account.settings.section.challenge-stages.title': 'Challenge-Phasen',
+  'account.settings.section.challenge-stages.desc':
+    'Kontotyp, der angewendet wird, wenn eine Challenge diese Phase erreicht.',
+  'account.settings.section.challenge-stages.no-change': 'Keine Änderung',
+  'account.settings.section.challenge-stages.aria': 'Kontotyp für {stage}',
   'account.settings.section.inclusion.title':
     'Einstellungen zur Dashboard-Einbindung',
   'account.settings.section.inclusion.desc':
@@ -2274,7 +2526,7 @@ const de: Lang = {
 
   'backend.title': 'Trade Synchronisierung',
   'backend.description':
-    'Richten Sie Trade Sync für MetaTrader (MT4) und Tradovate ein, um Ihren Vault automatisch auf dem neuesten Stand zu halten.',
+    'Richten Sie Trade Sync für unterstützte Broker ein, um Ihren Vault automatisch auf dem neuesten Stand zu halten.',
 
   'trade-sync.gate.pro.description':
     'Trade Sync ist eine Pro-Funktion. Aktualisieren Sie, um fortzufahren.',
@@ -2396,7 +2648,6 @@ const de: Lang = {
   'backend.section.accounts.title': 'Kontoverwaltung',
   'settings.auth.feature.csv-import': 'Trade Import',
   'settings.auth.feature.ai-mapping': 'KI-Trade-Import-Zuordnung',
-  'settings.auth.feature.metatrader-sync': 'MetaTrader Trade Synchronisierung',
   'settings.auth.feature.trade-sync': 'Trade Synchronisierung',
   'settings.auth.feature.economic-calendar': 'Wirtschaftskalender',
   'settings.auth.feature.basic-tracking': 'Grundlegende Trade-Tracking',
@@ -2415,20 +2666,9 @@ const de: Lang = {
   'csv.button.delete-template': 'Vorlage löschen',
 
   'csv.button.import-another': 'Importieren Sie eine andere Datei',
-  'csv.button.view-account': 'Leistung ansehen',
   'csv.results.complete': 'Import abgeschlossen',
   'csv.results.history-ready': 'Dein Handelsverlauf ist bereit',
-  'csv.results.history-trades.one': '{count} Trade wiederhergestellt',
-  'csv.results.history-trades.few': '{count} Trades wiederhergestellt',
-  'csv.results.history-trades.many': '{count} Trades wiederhergestellt',
-  'csv.results.history-trades.other': '{count} Trades wiederhergestellt',
-  'csv.results.history-date-range': '{start} bis {end}',
-  'csv.results.history-symbols.one': '{count} Handelssymbol',
-  'csv.results.history-symbols.few': '{count} Symbole',
-  'csv.results.history-symbols.many': '{count} Symbole',
-  'csv.results.history-symbols.other': '{count} Symbole',
-  'csv.results.enrichment-note':
-    'Die importierte Leistung kann jetzt ausgewertet werden. Ergänze Setups, Konfluenzfaktoren und Notizen zu aktuellen Trades, wenn du eine tiefere Musteranalyse möchtest.',
+  'csv.results.completed-with-issues': 'Import mit Problemen abgeschlossen',
   'csv.results.failed': 'Import fehlgeschlagen',
   'csv.results.success.one':
     'Der {count} Trade wurde erfolgreich in das Konto {account} importiert',
@@ -2453,8 +2693,6 @@ const de: Lang = {
 
   'csv.results.broker': 'Broker: {broker}',
 
-  'csv.results.preview-header':
-    'Kürzlich importiertes Trades (zeigt {shown} von {total})',
   'csv.results.more-trades.one': 'und {count} weiterer Trade...',
   'csv.results.more-trades.few': 'und {count} weitere Trades...',
   'csv.results.more-trades.many': 'und {count} weitere Trades...',
@@ -2526,12 +2764,25 @@ const de: Lang = {
     '{featureName} ist eine Pro-Funktion. Führen Sie ein Upgrade durch, um erweiterte Automatisierung und Funktionen freizuschalten.',
   'upgrade.benefits-title': 'Zu den Pro-Funktionen gehören:',
   'upgrade.benefit.csv': 'Trade Import mit KI-unterstützter Spaltenzuordnung',
-  'upgrade.benefit.templates':
-    'Unbegrenzte benutzerdefinierte Vorlagen und Vorlagenfreigabe',
-  'upgrade.benefit.trade-sync': 'Trade Sync für MetaTrader (MT4) und Tradovate',
+  'upgrade.benefit.economic-calendar':
+    'Wirtschaftskalender mit automatischen wöchentlichen Ereignisimporten',
+  'upgrade.benefit.trade-sync': 'Trade Sync für unterstützte Broker',
   'upgrade.benefit.multi-account': 'Unterstützung mehrerer Konten',
-  'upgrade.benefit.analytics': 'Erweiterte Analysen und Metriken',
-  'upgrade.benefit.layouts': 'Benutzerdefinierte Dashboard-Layouts',
+  'upgrade.prop-profiles.message-firms':
+    'Journalit hält die Regeln von {count} Prop-Firmen bereit, um deine Challenge vorauszufüllen.',
+  'upgrade.prop-profiles.message-firm':
+    'Journalit hat die Regeln für jede {firm}-Challenge bereit zum Vorausfüllen.',
+  'upgrade.prop-profiles.message':
+    'Journalit hält Prop-Firm-Regeln bereit, um sie in deine Challenge einzufügen.',
+  'upgrade.prop-profiles.benefits-title': 'Was Pro für dich ausfüllt:',
+  'upgrade.benefit.prop.rules':
+    'Drawdown- und Tagesverlustgrenzen direkt aus den Regeln deiner Firma',
+  'upgrade.benefit.prop.payout':
+    'Auszahlungsschwellen und Anspruchsbedingungen',
+  'upgrade.benefit.prop.phases':
+    'Phasenziele und Fortschritt für die gewählte Challenge',
+  'upgrade.benefit.prop.updates':
+    'Regelaktualisierungen, wenn deine Firma sie ändert',
   'upgrade.trial-notice':
     'Holen Sie sich eine zweiwöchige kostenlose Testversion, um alle Ihre historischen Trades zu importieren und alle Pro-Funktionen risikofrei auszuprobieren.',
 
@@ -2590,9 +2841,9 @@ const de: Lang = {
   'account-page.guide.empty.add-event.description':
     'Verwenden Sie diese Schaltfläche immer dann, wenn außerhalb normaler Trades Geld auf das Konto ein- oder abgebucht wird.',
   'account-page.guide.empty.transactions.title':
-    'Ein- und Auszahlungen werden hier verfolgt',
+    'Geldbewegungen werden hier verfolgt',
   'account-page.guide.empty.transactions.description':
-    'In diesem Abschnitt wird der Verlauf manueller Ein- und Auszahlungen gespeichert. Wenn es leer ist, verwenden Sie „Ereignis hinzufügen“, um das erste zu erstellen.',
+    'In diesem Abschnitt wird jede manuelle Ein- und Auszahlung Zeile für Zeile festgehalten – bei einem Prop-Challenge-Konto als Auszahlungen. Wenn es leer ist, verwenden Sie „Ereignis hinzufügen“, um das erste zu erstellen.',
   'account-page.guide.empty.trade-log.title':
     'Verknüpfte Trades werden hier angezeigt',
   'account-page.guide.empty.trade-log.description':
@@ -2608,19 +2859,19 @@ const de: Lang = {
   'account-page.guide.main.metrics.title':
     'Diese Messwerte fassen nur dieses Konto zusammen',
   'account-page.guide.main.metrics.description':
-    'Diese Zahlen werden aus den mit diesem Konto verknüpften Trades berechnet, sodass Sie dieses Konto selbst beurteilen können.',
+    'Der verbundene Kennzahlenbereich zeigt Profitfaktor, durchschnittliche Ergebnisse, Gewinn- und Verlusttrades, Provisionen, Gebühren, konfigurierte einmalige Kosten sowie geschätzte laufende Kontokosten.',
   'account-page.guide.main.risk.title':
     'Der Risikofortschritt wird hier gesondert verfolgt',
   'account-page.guide.main.risk.description':
-    'In diesem Abschnitt wird angezeigt, wie nah das Konto an seinem Drawdown-Limit oder Gewinnziel ist. Sie legen diese Regeln unter „Konto bearbeiten“ fest, die wir als Nächstes zeigen.',
+    'Dieser Abschnitt zeigt den Drawdown- und Gewinnzielfortschritt. Wenn das Konto eine Prop-Prüfung verfolgt, erscheinen die aktuelle Phase und ihre Regeln direkt darunter.',
   'account-page.guide.main.transactions.title':
-    'Ein- und Auszahlungen bleiben in einem eigenen Bereich',
+    'Geldbewegungen bleiben in einem eigenen Bereich',
   'account-page.guide.main.transactions.description':
-    'Jeder Eintrag hier kann später geprüft werden, sodass Sie Cashflows von der Trading-Performance trennen können.',
+    'Jede Zeile erfasst eine Geldbewegung mit Betrag und dem Saldo danach, sodass Sie Cashflows von der Trading-Performance trennen können. Bei einem Prop-Challenge-Konto erscheint dieselbe Tabelle als nummerierte Auszahlungen.',
   'account-page.guide.main.trade-log.title':
     'Verknüpfte Trades öffnen die eigentliche Trade-Notiz',
   'account-page.guide.main.trade-log.description':
-    'Klicken Sie auf einen verknüpften Trade, um den Trade selbst zu öffnen. Dadurch wird die Kontoseite zur Brücke zwischen der Review auf Kontoebene und einzelnen Trades.',
+    'Öffnet das Trade Log mit diesem Konto bereits ausgewählt. Bei einer mehrphasigen Challenge folgt die Schaltfläche der Phase, die Sie gerade ansehen; der Pfeil bietet die anderen Phasen oder das gesamte Konto.',
   'account-page.guide.main.add-event.title':
     'Fügen Sie Ein- und Auszahlungen für Ereignisaufzeichnungen hinzu',
   'account-page.guide.main.add-event.description':
@@ -2633,6 +2884,7 @@ const de: Lang = {
   'account-dashboard.copy-badge.base': 'BASIS',
   'account-dashboard.copy-badge.copy': 'KOPIERER',
   'account-dashboard.copy-badge.copied-by': 'Kopiert von',
+  'account-dashboard.copy-badge.copies-tooltip-masked': 'Kopiert {account}',
   'account-dashboard.copy-badge.copies-tooltip':
     'Kopiert {account} mit {multiplier}x',
   'account-dashboard.error.init':
@@ -2640,6 +2892,11 @@ const de: Lang = {
   'account-dashboard.error.loading': 'Fehler beim Laden der Konten: {error}',
   'account-dashboard.error.retry':
     'AccountPageService nicht bereit, erneuter Versuch in {delay}ms (Versuch {attempt}/{max})',
+  'account-dashboard.challenges.empty.title': 'Noch keine Challenges',
+  'account-dashboard.challenges.empty.message':
+    'Verfolge eine Prop-Firm-Challenge als ein Konto mit Phasen, Regeln und Auszahlungen.',
+  'account-dashboard.challenges.empty.create': 'Neue Challenge',
+  'account-dashboard.challenges.empty.setup': 'Bestehende Konten einrichten',
   'account-dashboard.empty.title': 'Keine Konten gefunden',
   'account-dashboard.empty.message':
     'Erstellen Sie ein Konto, um Ihre Trading-Performance zu verfolgen',
@@ -2671,10 +2928,6 @@ const de: Lang = {
   'account-dashboard.guide.main.intro.title': 'Dies sind Ihre Konten',
   'account-dashboard.guide.main.intro.description':
     'Verwenden Sie diese Seite, um Konten zu vergleichen, die Gesamtsummen aller Konten anzuzeigen und zu einem einzelnen Konto zu springen, wenn Sie weitere Details benötigen.',
-  'account-dashboard.guide.main.trade-filter.title':
-    'Dieser Filter verändert das gesamte Dashboard',
-  'account-dashboard.guide.main.trade-filter.description':
-    'Verwenden Sie diesen Filter, um das Dashboard zwischen regulären Trades, Backtests oder beidem umzuschalten.',
   'account-dashboard.guide.main.aum-chart.title':
     'AUM bedeutet verwaltetes Vermögen',
   'account-dashboard.guide.main.aum-chart.description':
@@ -2683,22 +2936,22 @@ const de: Lang = {
     'Diese Metriken fassen alle sichtbaren Konten zusammen',
   'account-dashboard.guide.main.metrics.description':
     'Verwenden Sie diese Statistiken für eine schnelle Momentaufnahme auf Kontoebene, bevor Sie näher auf bestimmte Kontotypen oder bestimmte Konten eingehen.',
-  'account-dashboard.guide.main.sections.title':
-    'Konten werden nach Kontotyp gruppiert',
-  'account-dashboard.guide.main.sections.description':
-    'Diese Abschnitte helfen Ihnen, ähnliche Konten miteinander zu vergleichen. Jede Karte ist anklickbar und öffnet die vollständige Seite für dieses Konto.',
+  'account-dashboard.guide.main.mode-switch.title':
+    'Übersicht und Challenges sind zwei Ansichten derselben Konten',
+  'account-dashboard.guide.main.mode-switch.description':
+    'Die Übersicht behält das AUM-Diagramm und die Portfolio-Summen. Wechsle zu Challenges für die Ökonomie deiner Prop-Challenges: Bestehensquote, Kosten, Auszahlungen und Phasen-Engpässe über alle Challenge-Konten.',
   'account-dashboard.guide.main.create-account.title':
     'Sie können von hier aus jederzeit ein weiteres Konto erstellen',
   'account-dashboard.guide.main.create-account.description':
     'Verwenden Sie diese Schaltfläche, wenn Sie dem Dashboard ein neues Konto hinzufügen möchten.',
-  'account-dashboard.guide.main.settings.title':
-    'Die Einstellungen steuern, wie dieses Dashboard organisiert ist',
-  'account-dashboard.guide.main.settings.description':
-    'Öffnen Sie die Dashboard-Einstellungen, um Kontotypen, die Gesamtzahl und die Reihenfolge der Abschnitte zu verwalten.',
   'account-dashboard.guide.main.settings-types.title':
     'Die Einstellungen können verfügbare Kontotypen verwalten',
   'account-dashboard.guide.main.settings-types.description':
     'In den Einstellungen können Sie benutzerdefinierte Kontotypen hinzufügen und alte entfernen, wenn sich Ihr Workflow ändert.',
+  'account-dashboard.guide.main.settings-stages.title':
+    'Challenge-Phasen können den Kontotyp festlegen',
+  'account-dashboard.guide.main.settings-stages.description':
+    'Wähle den Kontotyp, der angewendet wird, wenn eine Challenge die Bewertung, Sim-Finanzierung oder Live-Finanzierung erreicht. Lass eine Phase auf „Keine Änderung“, um den Kontotyp beizubehalten.',
   'account-dashboard.guide.main.settings-inclusion.title':
     'Durch Einstellungen kann geändert werden, was in den Gesamtsummen zählt',
   'account-dashboard.guide.main.settings-inclusion.description':
@@ -2711,7 +2964,31 @@ const de: Lang = {
   'account-dashboard.guide.main.open-account.title':
     'Öffnen Sie eine beliebige Kontokarte, um tiefer einzusteigen',
   'account-dashboard.guide.main.open-account.description':
-    'Wenn Sie die vollständige Aufschlüsselung für ein Konto wünschen, öffnen Sie dessen Karte. Dort wird der Guide zur Kontoseite übernommen.',
+    'Konten sind nach Typ gruppiert, damit du ähnliche vergleichen kannst. Öffne eine Karte für die vollständige Aufschlüsselung; dort übernimmt der Kontoseiten-Guide.',
+  'account-dashboard.guide.whats-new.prop-challenges.intro.title':
+    'Neu: mehrphasige Prop-Challenges',
+  'account-dashboard.guide.whats-new.prop-challenges.intro.description':
+    'Der Fortschritt von Prop-Challenges ist jetzt direkt in das Account Dashboard integriert – mit Phasenbändern, Challenge-Kennzahlen und den vertrauten Kontogruppen.',
+  'account-dashboard.guide.whats-new.prop-challenges.enable.title':
+    'Tracking beim Erstellen oder Bearbeiten aktivieren',
+  'account-dashboard.guide.whats-new.prop-challenges.enable.description':
+    'Aktiviere das Prop-Challenge-Tracking in „Konto erstellen“ oder „Konto bearbeiten“. Die Standardvorlage bietet einen mehrphasigen Ausgangspunkt, den du umbenennen und anpassen kannst.',
+  'account-dashboard.guide.whats-new.prop-challenges.overview.title':
+    'Challenge-Leistung auf einen Blick',
+  'account-dashboard.guide.whats-new.prop-challenges.overview.description':
+    'Die obere Übersicht zeigt aktive Challenges, Bestehensquote, Kosten, Auszahlungen und Nettoergebnis. Die Einblickstabellen vergleichen Phasenengpässe und bei mehreren erfassten Firmen die Leistung nach Prop-Firma.',
+  'account-dashboard.guide.whats-new.prop-challenges.ribbons.title':
+    'Phasenbänder machen jede Challenge schnell erfassbar',
+  'account-dashboard.guide.whats-new.prop-challenges.ribbons.description':
+    'Prop-Kontokarten zeigen abgeschlossene, aktuelle, ausstehende und fehlgeschlagene Phasen sowie den Fortschritt bei Ziel, Drawdown, Tagesverlust und Handelstagen.',
+  'account-dashboard.guide.whats-new.prop-challenges.mode.title':
+    'Zwischen Portfolio- und Challenge-Analyse wechseln',
+  'account-dashboard.guide.whats-new.prop-challenges.mode.description':
+    'Wähle Challenges für zusammengefasste Wirtschaftlichkeit sowie Phasen- und Multi-Firmen-Einblicke. Die Übersicht bleibt auf AUM und Portfoliowerte fokussiert.',
+  'account-dashboard.guide.whats-new.prop-challenges.account-page.title':
+    'Umgewandelte Konten bleiben im selben Ablauf',
+  'account-dashboard.guide.whats-new.prop-challenges.account-page.description':
+    'Wenn eine Challenge fortschreitet oder in ein finanziertes Konto umgewandelt wird, bleiben Kontotyp und Phasenverlauf verbunden. Öffne die Karte für Entscheidungen, Aktionen und die vollständige Regelübersicht.',
   'account-dashboard.metrics.total-accounts': 'Gesamtkonten',
   'account-dashboard.metrics.total-aum': 'Gesamt-AUM',
   'account-dashboard.metrics.total-growth': 'Gesamtwachstum',
@@ -2729,9 +3006,6 @@ const de: Lang = {
   'account-dashboard.type-header.trade': 'Trade',
   'account-dashboard.type-header.trades': 'Trades',
   'account-dashboard.type-header.growth': 'Wachstum ({percent})',
-  'account-card.status.breached': 'VERLETZT',
-  'account-card.status.in-progress': 'IM GANGE',
-  'account-card.status.achieved': 'ERREICHT',
   'account-card.metric.trades': 'Trades',
   'account-card.metric.withdrawals': 'Auszahlungen',
   'account-card.metric.age': 'Alter',
@@ -2740,8 +3014,17 @@ const de: Lang = {
   'account-card.progress.not-set': 'Nicht festgelegt',
   'account-card.footer.monthly': 'Monatlich:',
   'account-card.footer.total-costs': 'Gesamtkosten:',
+  'account.metrics.total-account-costs': 'Geschätzte Gesamtkosten',
+  'account.metrics.total-costs': 'Gesamtkosten',
+  'account.metrics.one-time-costs': 'Einmalige Kosten',
+  'account.metrics.recurring-costs-to-date': 'Laufende Kosten bis heute',
+  'account.metrics.monthly-cost': 'Monatliche Kosten',
   'account.chart.event.added': 'Konto hinzugefügt',
   'account.chart.event.archived': 'Konto archiviert',
+  'account.balance-chart.drawdown-floor-off-scale':
+    'Drawdown-Limit {value} ({distance} darunter)',
+  'account.balance-chart.profit-target-off-scale':
+    'Gewinnziel {value} ({distance} darüber)',
   'account.balance-chart.empty': 'Keine Trades gefunden',
   'account.balance-chart.empty-sub':
     'Für dieses Konto sind keine Trading-Aktivitäten verfügbar',
@@ -2872,6 +3155,12 @@ const de: Lang = {
   'home.widget.profit-target-widget.name': 'Gewinnziel',
   'home.widget.profit-target-widget.description':
     'Verfolge Gewinnziel-Fortschritt über Konten',
+  'home.widget.eval-roi.name': 'Eval-Rendite',
+  'home.widget.challenge-alerts.name': 'Challenge-Hinweise',
+  'home.widget.challenge-alerts.description':
+    'Prop-Challenge-Konten, die eine Entscheidung brauchen: nicht bestanden, bestanden oder Auszahlung bereit',
+  'home.widget.eval-roi.description':
+    'Evaluierungskosten vs. Auszahlungen über Prop-Challenge-Konten',
   'form.ideal-exit.title': 'Ideale Exits',
 
   'form.ideal-exit.price': 'Idealer Preis',
@@ -2917,6 +3206,11 @@ const de: Lang = {
     'Filtern Sie aktuelle Elemente in Journalit-Dateien',
   'settings.general.filter-recent-toggled':
     'Aktuelle Elemente nach Journalit-Dateien {status} filtern',
+  'settings.general.home-widget-opacity': 'Widget-Deckkraft',
+  'settings.general.home-widget-opacity-desc':
+    'Widget-Hintergründe mit Bild: 0% ist transparent, 100% ist deckend. Gilt für das aktuelle Design; helle und dunkle Werte werden getrennt gespeichert.',
+  'settings.general.home-widget-opacity-save-failed':
+    'Die Widget-Deckkraft konnte nicht gespeichert werden. Bitte erneut versuchen.',
   'settings.general.home-background': 'Home-Hintergrundbild',
   'settings.general.home-background-desc':
     'Verwende ein Bild aus deinem Vault oder wähle eines von deinem Computer aus, um es in den Vault zu kopieren.',
@@ -3257,7 +3551,7 @@ const de: Lang = {
   'button.move-down': 'Bewegen Sie sich nach unten',
 
   'settings.customization.custom-fields.description':
-    'Erstellen Sie benutzerdefinierte Felder, die auf der Registerkarte „Erweitert“ des Trade-Formulars angezeigt werden. Diese Felder werden im Frontmatter Ihres Trades gespeichert.',
+    'Ergänzen Sie jeden Trade um eigene Felder, etwa Session, Zeitrahmen oder Setup-Bewertung. Sie erscheinen im Tab „Erweitert“ des Trade-Formulars, werden im Frontmatter der Trade-Notiz gespeichert und können zu sortier- und filterbaren Spalten im Trade-Log werden.',
   'settings.customization.custom-fields.title':
     'Benutzerdefinierte Felder ({count})',
   'settings.customization.custom-fields.manage-desc':
@@ -3272,7 +3566,7 @@ const de: Lang = {
   'settings.customization.custom-fields.no-fields':
     'Noch keine benutzerdefinierten Felder definiert',
   'settings.customization.custom-fields.no-fields-desc':
-    'Benutzerdefinierte Felder werden auf der Registerkarte „Erweitert“ des Trade-Formulars angezeigt und in der Startseite Ihrer Trade-Notizen gespeichert.',
+    'Beginnen Sie mit einem Feld, das Sie später wirklich auswerten, etwa die gehandelte Session oder wie gut das Setup Ihrem Plan entsprach.',
   'settings.customization.custom-fields.add-new': 'Neues Feld hinzufügen',
 
   'settings.customization.custom-fields.edit-field-with-name':
@@ -3414,80 +3708,16 @@ const de: Lang = {
     'Sind Sie sicher, dass Sie ALLE gespeicherten Optionen für „{fieldLabel}“ löschen möchten?',
   'onboarding.welcome.title': 'Willkommen bei Journalit',
   'onboarding.welcome.subtitle':
-    'Besitzen Sie Ihre Trading-Daten. Gestalten Sie Ihren eigenen Workflow.',
-  'onboarding.welcome.cta': 'Legen Sie los',
+    'Ein Trading-Journal, das auf Ihrem Gerät lebt.',
+  'onboarding.welcome.cta': 'Mein Journal einrichten',
   'onboarding.welcome.chart.week': 'Woche {count}',
   'onboarding.view.title': 'Journalit Onboarding',
 
   'onboarding.common.continue': 'Weitermachen',
   'onboarding.common.close': 'Schließen',
 
-  'onboarding.features.feature.manual-entry.description':
-    'Protokollieren Sie Trades manuell mit voller Kontrolle',
-
   'onboarding.features.badge.pro': 'PRO',
 
-  'onboarding.explore.title': 'Erkunden',
-  'onboarding.explore.subtitle':
-    'Journalit verwandelt Ihren Vault in ein vollständiges Trading-Journal mit Dashboards, Trade-Log, Kontoverfolgung und anpassbaren Layouts.',
-  'onboarding.explore.subtitle2':
-    'Entwickelt, um sich an Ihren Arbeitsablauf anzupassen und Sie nicht zu unserem zu zwingen.',
-  'onboarding.explore.tagline': 'Dein Tagebuch, deine Regeln.',
-  'onboarding.explore.section.out-of-box.title': 'Kernansichten und Tools',
-  'onboarding.explore.core.dashboard.label': 'Auswertung',
-  'onboarding.explore.core.dashboard.description':
-    'Ihre Leistung auf einen Blick – P&L, Win Rate, Drawdowns und mehr.',
-  'onboarding.explore.core.tradelog.label': 'Trade-Log',
-  'onboarding.explore.core.tradelog.description':
-    'Durchsuchen Sie Trades nach Jahr/Monat/Woche/Tag und führen Sie sofort einen Drilldown durch.',
-  'onboarding.explore.core.accounts.label': 'Kontoverfolgung',
-  'onboarding.explore.core.accounts.description':
-    'Verfolgen Sie mehrere Konten und zeigen Sie kontospezifische Leistungsseiten an.',
-  'onboarding.explore.core.layouts.label': 'Layout-Builder',
-  'onboarding.explore.core.layouts.description':
-    'Passen Sie Dashboards an und überprüfen Sie Layouts mit Widgets und Vorlagen.',
-  'onboarding.explore.imports.title': 'Importe & Sync',
-
-  'onboarding.explore.imports.csv.label': 'Trade Import',
-  'onboarding.explore.imports.csv.description':
-    'Unterstützte Dateien mit Trading-Historie kostenlos ansehen und Spalten zuordnen. Für den Import in deinen Vault ist Pro erforderlich.',
-  'onboarding.explore.imports.trade-sync.label': 'Trade Sync',
-  'onboarding.explore.imports.trade-sync.description':
-    'Automatische Trade-Synchronisierung von MetaTrader (MT4) oder Tradovate. Erfordert Pro.',
-
-  'onboarding.explore.cta.manual': 'Öffnen Sie Dokumente',
-  'onboarding.path.kicker': 'Dein Handelsverlauf',
-  'onboarding.path.title':
-    'Hast du bereits Trades, die du in Journalit übernehmen möchtest?',
-  'onboarding.path.subtitle':
-    'Wähle eine Antwort und wir bringen dich direkt zum passenden nächsten Schritt.',
-  'onboarding.path.option.manual.label': 'Nein, ich fange neu an',
-  'onboarding.path.option.manual.description':
-    'Öffne das Formular „Trade hinzufügen“ und erfasse deinen ersten Trade.',
-  'onboarding.path.option.csv.label': 'Ja, ich habe einen Handelsverlauf',
-  'onboarding.path.option.csv.description':
-    'Wähle zwischen automatischer Broker-Synchronisierung und Dateiimport.',
-  'onboarding.path.method.kicker': 'Handelsverlauf übernehmen',
-  'onboarding.path.method.title': 'Wie möchtest du ihn übernehmen?',
-  'onboarding.path.method.subtitle':
-    'Wähle die Option, die zu deinem Broker und Export passt.',
-  'onboarding.path.option.trade-sync.label': 'MT4 oder Tradovate verbinden',
-  'onboarding.path.option.trade-sync.description':
-    'Richte Trade Sync ein, damit neue Trades automatisch übernommen werden.',
-  'onboarding.path.option.import.label': 'Datei mit Handelsverlauf importieren',
-  'onboarding.path.option.import.description':
-    'Lade eine CSV-/Excel-Datei oder einen unterstützten Brokerbericht hoch.',
-  'onboarding.path.option.import.badge': 'Vorschau kostenlos',
-  'onboarding.manual.title': 'Sie sind bereit für Journalit',
-  'onboarding.manual.subtitle':
-    'Richte die vorgeschlagene Tastenkombination ein, um Trades schneller zu erfassen.',
-  'onboarding.manual.subtitle-mobile':
-    'Öffne „Trade hinzufügen“, wenn du einen Trade erfassen möchtest.',
-  'onboarding.manual.hotkey.title': 'Vorgeschlagener Hotkey',
-  'onboarding.manual.cta.change-hotkey': 'Hotkey festlegen',
-  'onboarding.manual.hit-hotkey':
-    'Empfohlen: {hotkey}. Klicken Sie auf Hotkey festlegen, um ihn zu konfigurieren.',
-  'onboarding.manual.add-first-trade': 'Meinen ersten Trade hinzufügen',
   'onboarding.features.graphic.syncing': 'Trades werden synchronisiert...',
   'onboarding.features.graphic.complete': 'Synchronisierung abgeschlossen',
   'onboarding.features.graphic.direction.long': 'LANG',
@@ -3539,6 +3769,144 @@ const de: Lang = {
 
   'onboarding.notice.complete-failed':
     'Der Onboarding-Abschluss konnte nicht gespeichert werden. Bitte versuchen Sie es später noch einmal.',
+  'onboarding.notice.completed':
+    'Ihr Journal ist eingerichtet. Onboarding abgeschlossen.',
+  'onboarding.familiarity.kicker': 'Kurze Frage',
+  'onboarding.familiarity.title': 'Haben Sie Obsidian schon einmal benutzt?',
+  'onboarding.familiarity.subtitle':
+    'Journalit läuft in Obsidian. Wenn das neu für Sie ist, zeigen wir nur das Nötigste.',
+  'onboarding.familiarity.option.yes.label': 'Ja, ich kenne mich aus',
+  'onboarding.familiarity.option.yes.description': 'Orientierung überspringen.',
+  'onboarding.familiarity.option.no.label': 'Nein, Obsidian ist neu für mich',
+  'onboarding.familiarity.option.no.description':
+    'Ein kurzer Bildschirm, keine Tour.',
+  'onboarding.orientation.kicker': 'Neu bei Obsidian',
+  'onboarding.orientation.title': 'Vier Dinge, die Sie wissen sollten',
+  'onboarding.orientation.subtitle':
+    'Mehr brauchen Sie nicht, um Journalit zu nutzen.',
+  'onboarding.orientation.inside.title': 'Journalit läuft in Obsidian',
+  'onboarding.orientation.inside.body':
+    'Sie müssen Obsidian nicht zuerst lernen. Dieser Bildschirm ist eine Journalit-Ansicht.',
+  'onboarding.orientation.sidebar.title':
+    'Über die Seitenleiste bewegen Sie sich',
+  'onboarding.orientation.sidebar.body':
+    'Home, Dashboard, Trade-Log und Ihre Reviews finden Sie dort.',
+  'onboarding.orientation.sidebar.action': 'Seitenleiste zeigen',
+  'onboarding.orientation.sidebar.action-mobile': 'Seitenleiste öffnen',
+  'onboarding.orientation.sidebar.hint':
+    'Das ist sie, links. Dieser Bildschirm bleibt offen.',
+  'onboarding.orientation.sidebar.hint-mobile':
+    'Sie öffnet sich über diesem Bildschirm. Wischen oder außerhalb tippen, um zurückzukehren.',
+  'onboarding.orientation.tabs.title': 'Ansichten öffnen sich als Tabs',
+  'onboarding.orientation.tabs.body':
+    'So wie dieser. Wechseln Sie oben zwischen ihnen.',
+  'onboarding.orientation.privacy.title': 'Ihr Journal bleibt auf Ihrem Gerät',
+  'onboarding.orientation.privacy.body':
+    'Notizen, Screenshots und Reviews sind Ihre eigenen Dateien. Nur importierte oder synchronisierte Trades laufen über die Journalit-Server.',
+  'onboarding.orientation.continue': 'Verstanden',
+  'onboarding.data-source.kicker': 'Ihre Trades',
+  'onboarding.data-source.title': 'Wo sind Ihre Trades gerade?',
+  'onboarding.data-source.subtitle':
+    'Ihre Historie ist Teil Ihres Vorteils. Nehmen Sie sie mit, und Ihre Statistiken sind ab dem ersten Tag aussagekräftig, statt monatelang auf neue Trades zu warten.',
+  'onboarding.data-source.option.broker.label':
+    'Bei meinem Broker oder meiner Plattform',
+  'onboarding.data-source.option.broker.description':
+    'Verbinden oder den Export importieren.',
+  'onboarding.data-source.option.file.label': 'In einer Tabelle oder Datei',
+  'onboarding.data-source.option.file.description':
+    'CSV-, Excel- oder HTML-Exporte.',
+  'onboarding.data-source.option.fresh.label':
+    'Noch nirgends, ich fange neu an',
+  'onboarding.data-source.option.fresh.description':
+    'Trades erfassen, während Sie sie machen.',
+  'onboarding.data-source.option.sample.label':
+    'Noch nirgends, ich schaue mir ein Beispiel an',
+  'onboarding.data-source.option.sample.description':
+    'Sieh dir ein fertiges Journal an, bevor du eigene Trades hinzufügst.',
+  'onboarding.broker.kicker': 'Ihr Broker',
+  'onboarding.broker.title': 'Welcher Broker oder welche Plattform?',
+  'onboarding.awaiting.sign-in.action': 'Anmelden, um fortzufahren',
+  'onboarding.awaiting.sign-in.body':
+    'Melden Sie sich zuerst an oder erstellen Sie ein kostenloses Journalit-Konto. Ihre Trades landen dann in Ihrem Journal.',
+  'onboarding.broker.badge.sync': 'Auto-Sync',
+  'onboarding.broker.search': 'Broker und Plattformen suchen',
+  'onboarding.broker.subtitle':
+    'Wir wählen den besten Weg, Ihre Trades zu übernehmen.',
+  'onboarding.broker.option.unlisted.label': 'Nicht aufgeführt',
+  'onboarding.broker.option.metatrader4.label': 'MetaTrader 4',
+  'onboarding.broker.option.metatrader5.label': 'MetaTrader 5',
+  'onboarding.broker.request.title': 'Noch nicht dabei? Sag uns welchen Broker',
+  'onboarding.broker.request.body':
+    'Neue Broker werden auf Anfrage ergänzt. Nenne uns deinen (ein Export-Beispiel hilft); bis dahin lässt sich ein Dateiexport manuell zuordnen.',
+  'onboarding.broker.request.discord': 'Auf Discord anfragen',
+  'onboarding.broker.request.continue': 'Mit manuellem Import fortfahren',
+  'onboarding.broker.loading': 'Unterstützte Broker werden geprüft...',
+  'onboarding.broker.offline':
+    'Die vollständige Liste konnte nicht geladen werden. Sie können trotzdem einen unterstützten Broker verbinden oder eine Datei importieren.',
+  'onboarding.personalise.kicker': 'Journal einrichten',
+  'onboarding.personalise.title': 'Ein paar schnelle Entscheidungen',
+  'onboarding.personalise.subtitle':
+    'Wir passen Journalit anhand Ihrer Antworten an.',
+  'onboarding.personalise.style.question': 'Wie traden Sie?',
+  'onboarding.personalise.style.scalping': 'Viele Trades pro Tag',
+  'onboarding.personalise.style.intraday':
+    'Wenige Trades pro Tag, nichts über Nacht',
+  'onboarding.personalise.style.swing': 'Tage bis Wochen gehalten',
+  'onboarding.personalise.style.position': 'Wochen bis Monate gehalten',
+  'onboarding.personalise.account.question': 'Welche Art von Konto?',
+  'onboarding.personalise.account.personal': 'Privat',
+  'onboarding.personalise.account.practice': 'Demo oder Übung',
+  'onboarding.personalise.account.prop': 'Prop-Firm-Challenge oder Funded',
+  'onboarding.personalise.asset.question': 'Was traden Sie hauptsächlich?',
+  'onboarding.personalise.asset.stock': 'Aktien',
+  'onboarding.personalise.asset.futures': 'Futures',
+  'onboarding.personalise.asset.forex': 'Forex',
+  'onboarding.personalise.asset.crypto': 'Krypto',
+  'onboarding.personalise.asset.options': 'Optionen',
+  'onboarding.personalise.asset.mixed': 'Gemischt',
+  'onboarding.first-trade.kicker': 'Fast geschafft',
+  'onboarding.first-trade.title': 'Ersten Trade hinzufügen',
+  'onboarding.first-trade.subtitle':
+    'Ihr Journal ist bereit. Erfassen Sie einen Trade, und Journalit arbeitet damit.',
+  'onboarding.first-trade.cta': 'Meinen ersten Trade hinzufügen',
+  'onboarding.first-trade.sample': 'Mit Beispieldaten erkunden',
+  'onboarding.preparing-sample.title': 'Dein Beispiel-Journal wird vorbereitet',
+  'onboarding.preparing-sample.body':
+    'Das dauert nur ein paar Sekunden. Obsidian kann sich etwas langsam anfühlen, während die Notizen geschrieben werden.',
+  'onboarding.preparing-sample.starting': 'Wird gestartet…',
+  'onboarding.preparing-sample.hint':
+    'Du kannst das Beispiel-Journal jederzeit über sein Abzeichen in der Ecke entfernen.',
+  'onboarding.preparing-sample.failed.title':
+    'Das Beispiel-Journal konnte nicht erstellt werden',
+  'onboarding.preparing-sample.failed.body':
+    'Du kannst es erneut versuchen oder einen anderen Start wählen.',
+  'onboarding.preparing-sample.retry': 'Erneut versuchen',
+  'onboarding.sample-exploring.kicker': 'Beispiel-Journal',
+  'onboarding.sample-exploring.title':
+    'Du erkundest gerade das Beispiel-Journal',
+  'onboarding.sample-exploring.body':
+    'Lass dir Zeit. Wenn du das Beispiel verlässt, machen wir hier weiter: dein eigenes Journal personalisieren und deinen ersten Trade hinzufügen.',
+  'onboarding.sample-exploring.exit': 'Beispiel verlassen und weitermachen',
+  'onboarding.sample-exploring.failed.title':
+    'Das Beispiel-Journal konnte nicht wiederhergestellt werden',
+  'onboarding.sample-exploring.failed.body':
+    'Verlasse das Beispiel, um die Reste zu entfernen, und richte dann dein eigenes Journal weiter ein.',
+  'onboarding.awaiting.kicker': 'Warten auf Ihre ersten Trades',
+  'onboarding.awaiting.first-sync.title': 'Broker-Verbindung abschließen',
+  'onboarding.awaiting.first-sync.body':
+    'Schließen Sie die Verbindung unter Einstellungen > Trade Sync ab. Sobald Ihre ersten Trades synchronisiert sind, schließt sich diese Einrichtung von selbst.',
+  'onboarding.awaiting.first-sync.action': 'Trade Sync öffnen',
+  'onboarding.awaiting.first-import.title': 'Datei importieren',
+  'onboarding.awaiting.first-import.body':
+    'Schließen Sie den Import im Tab Trade Import ab. Sobald Ihre ersten Trades da sind, schließt sich diese Einrichtung von selbst.',
+  'onboarding.awaiting.first-import.action': 'Trade Import öffnen',
+  'onboarding.awaiting.first-trade.title': 'Ersten Trade speichern',
+  'onboarding.awaiting.first-trade.body':
+    'Sobald Ihr erster Trade gespeichert ist, schließt sich diese Einrichtung von selbst.',
+  'onboarding.awaiting.first-trade.action': 'Trade hinzufügen',
+  'onboarding.awaiting.change-route': 'Anderen Weg wählen',
+  'onboarding.notice.personalise-failed':
+    'Ihre Einrichtungsauswahl konnte nicht angewendet werden. Sie können sie später in den Einstellungen anpassen.',
   'onboarding.notice.trade-sync-open-failed':
     'Trade Sync konnte nicht geöffnet werden. Bitte versuche es erneut.',
   'onboarding.notice.skip-failed':
@@ -4176,6 +4544,8 @@ const de: Lang = {
   'account.create.error.name-required': 'Kontoname ist erforderlich',
   'account.create.error.name-exists':
     'Es existiert bereits ein Konto mit dem Namen „{name}“.',
+  'account.create.error.rule-incomplete':
+    'Jede aktivierte Regel braucht einen Wert über null',
   'account.create.error.balance-negative':
     'Der Anfangssaldo darf nicht negativ sein',
   'account.create.error.invalid-live-balance': 'Das Live-Guthaben ist ungültig',
@@ -4319,6 +4689,137 @@ const de: Lang = {
     'Dieses Konto ist derzeit die Basis für ein anderes Kopierkonto.',
   'account.copy-trading.base-account-is-copied-desc-secondary':
     'Basiskonten können nicht gleichzeitig Kopierkonten sein.',
+  'account.prop-challenge.summary.status.archived': 'Archiviert',
+  'account.prop-challenge.summary.status.hidden': 'Ausgeblendet',
+  'account.prop-challenge.actions.progress-to': 'Weiter zu {phase}',
+  'account.prop-challenge.actions.progress': 'Zur nächsten Phase',
+  'account.prop-challenge.actions.mark-passed':
+    'Challenge als bestanden markieren',
+  'account.prop-challenge.actions.mark-failed': 'Als fehlgeschlagen markieren',
+  'account.prop-challenge.actions.archive': 'Challenge archivieren',
+  'account.prop-challenge.actions.stale':
+    'Diese Challenge wurde an anderer Stelle aktualisiert. Prüfe sie und versuche es erneut.',
+  'account.prop-challenge.actions.reopen': 'Wieder öffnen',
+  'account.prop-challenge.view-trades': 'Trades für {phase} anzeigen',
+  'account.prop-challenge.actions.manual': 'Manuelle Aktionen',
+  'account.prop-challenge.notice.failed-title': '{phase} nicht bestanden',
+  'account.prop-challenge.notice.failed-description':
+    '{rule} am {date} verletzt',
+  'account.prop-challenge.notice.failed-manual': 'Als nicht bestanden markiert',
+  'account.prop-challenge.notice.keep-open': 'Offen lassen',
+  'account.prop-challenge.notice.target-title': 'Ziel von {phase} erreicht',
+  'account.prop-challenge.notice.target-description':
+    'Alle Bestehensanforderungen sind erfüllt. Weiter zu {next}?',
+  'account.prop-challenge.notice.breach-after-reached':
+    'Regeln wurden nach Erreichen des Ziels um {time} verletzt. Setze die Übergangszeit, damit diese Trades nicht in dieser Phase bleiben.',
+  'account.prop-challenge.notice.not-yet': 'Noch nicht',
+  'account.prop-challenge.notice.passed-title': 'Evaluierung bestanden',
+  'account.prop-challenge.notice.passed-description':
+    'Alle Anforderungen sind erfüllt. Challenge als bestanden markieren?',
+  'account.prop-challenge.notice.payout-title':
+    'Auszahlung verfügbar: {amount}',
+  'account.prop-challenge.notice.payout-plan': 'Dein Plan: {amount} auszahlen',
+  'account.prop-challenge.notice.record-payout': 'Auszahlung erfassen',
+  'account.prop-challenge.notice.skip-cycle': 'Diesen Zyklus überspringen',
+  'account.prop-challenge.notice.payout-description': 'Auszahlung',
+  'account.prop-challenge.notice.lost-title': 'Auszahlung nicht mehr verfügbar',
+  'account.prop-challenge.notice.lost-description':
+    'Nicht erfüllt: {requirements}',
+  'account.prop-challenge.notice.dismiss': 'Schließen',
+  'account.prop-challenge.notice.unknown-title': 'Neues Konto {label}',
+  'account.prop-challenge.notice.unknown-description':
+    '{count} Trades seit {date} sind keiner Phase zugeordnet.',
+  'account.prop-challenge.notice.unknown-description-one':
+    '1 Trade seit {date} ist keiner Phase zugeordnet.',
+  'account.prop-challenge.notice.same-phase': 'Gleiche Phase',
+  'account.prop-challenge.notice.not-now': 'Nicht jetzt',
+  'account.prop-challenge.notice.error':
+    'Hinweis konnte nicht aktualisiert werden.',
+  'account.prop-challenge.notice.type-changed':
+    'Kontotyp auf {accountType} gesetzt',
+  'account.prop-challenge.payout.plan.title': 'Auszahlungsplan',
+  'account.prop-challenge.payout.plan.notify-minimum':
+    'Benachrichtigen ab ({currency})',
+  'account.prop-challenge.payout.plan.withdrawal': 'Vorgeschlagene Auszahlung',
+  'account.prop-challenge.payout.plan.full': 'Gesamter Betrag',
+  'account.prop-challenge.payout.plan.percent': 'Prozent des Verfügbaren',
+  'account.prop-challenge.payout.plan.amount': 'Fester Betrag',
+  'account.prop-challenge.payout.plan.percent-invalid':
+    'Gib einen Prozentsatz zwischen 1 und 100 ein.',
+  'account.prop-challenge.payout.plan.amount-invalid':
+    'Gib einen Betrag über null ein.',
+  'account.prop-challenge.payout.plan.percent-value': 'Prozent',
+  'account.prop-challenge.payout.plan.amount-value': 'Betrag ({currency})',
+  'account.prop-challenge.payout.plan.save': 'Plan speichern',
+  'account.prop-challenge.payout.plan.saved': 'Auszahlungsplan gespeichert.',
+  'account.prop-challenge.payout.plan.summary-notify': 'ab {amount} melden',
+  'account.prop-challenge.payout.plan.summary-percent':
+    '{percent}% vorschlagen',
+  'account.prop-challenge.payout.plan.summary-amount': '{amount} vorschlagen',
+  'account.prop-challenge.payout.plan.summary-full': 'voller Betrag',
+  'account.prop-challenge.actions.error':
+    'Die Prop-Challenge konnte nicht aktualisiert werden.',
+  'account.prop-challenge.confirm.advance':
+    'Dieses Phasenergebnis bestätigen und fortfahren?',
+  'account.prop-challenge.confirm.advance-with-promotion':
+    'Dies setzt die Challenge fort und ändert den Kontotyp zu {accountType}.',
+  'account.prop-challenge.confirm.fail':
+    '{account} als gescheitert markieren? Die Challenge „{challenge}“ endet bei {phase}.',
+  'account.prop-challenge.confirm.archive-failed':
+    '{account} archivieren? Die Challenge „{challenge}“ ist gescheitert. Das Konto wird archiviert.',
+  'account.prop-challenge.confirm.archive-passed':
+    '{account} archivieren? Die Challenge „{challenge}“ wurde bestanden. Das Konto wird archiviert.',
+  'account.prop-challenge.transition.route': '{account} · {from} → {to}',
+  'account.prop-challenge.transition.route-passed':
+    '{account} · {from} → Challenge bestanden',
+  'account.prop-challenge.confirm.reopen':
+    '{account} wieder öffnen? Die Challenge „{challenge}“ kehrt zu {phase} zurück.',
+  'account.prop-challenge.transition.time': 'Übergangszeit',
+  'account.prop-challenge.transition.now': 'Jetzt',
+  'account.prop-challenge.transition.when-target-reached':
+    'Als das Ziel erreicht wurde',
+  'account.prop-challenge.transition.too-early':
+    'Die Übergangszeit darf nicht vor dem Phasenstart liegen.',
+  'account.prop-challenge.costs.title': 'Einmalige Kosten',
+  'account.prop-challenge.costs.description':
+    'Kauf-, Reset- und Aktivierungsgebühren separat erfassen.',
+  'account.prop-challenge.costs.kind': 'Typ',
+  'account.prop-challenge.costs.kind.purchase': 'Kauf',
+  'account.prop-challenge.costs.kind.reset': 'Zurücksetzung',
+  'account.prop-challenge.costs.kind.activation': 'Aktivierung',
+  'account.prop-challenge.costs.kind.other': 'Sonstige',
+  'account.prop-challenge.costs.date': 'Datum',
+  'account.prop-challenge.costs.amount': 'Betrag',
+  'account.prop-challenge.costs.note': 'Notiz (optional)',
+  'account.prop-challenge.costs.add': 'Kosten hinzufügen',
+  'account.header.copies': 'Kopiert',
+  'account.header.copied-by-more': '+{count} mehr',
+  'account.header.created': 'Erstellt:',
+  'account.summary.current-balance': 'Aktueller Kontostand',
+  'account.summary.net-cash-flow': 'Netto-Kapitalfluss',
+  'account.summary.payouts': 'Auszahlungen',
+  'account.performance.title': 'Wertentwicklung',
+  'account-page.guide.whats-new.cockpit.intro.title': 'Neu auf der Kontoseite',
+  'account-page.guide.whats-new.cockpit.intro.description':
+    'Das Kontodiagramm führt jetzt die Analyse an. Darunter folgen ein verbundener Kennzahlenbereich und direkt anschließend die Prop-Challenge-Regeln.',
+  'account-page.guide.whats-new.cockpit.cockpit.title':
+    'Challenge-Regeln folgen der Kontoperformance',
+  'account-page.guide.whats-new.cockpit.cockpit.description':
+    'Wähle bei Prop-Konten unter dem Kennzahlenbereich eine Phase im Regelkopf, um alle Anforderungen und ihren Fortschritt zu prüfen. Die Verwaltungsaktionen bleiben im Menü daneben.',
+  'account-page.guide.whats-new.cockpit.summary.title':
+    'Ein verbundener Kennzahlenbereich',
+  'account-page.guide.whats-new.cockpit.summary.description':
+    'Kontostand und detaillierte Performance teilen sich jetzt eine Fläche unter dem Chart: Saldo, Netto-P&L und Cashflow zuerst, die übrigen Kennzahlen folgen im selben Raster.',
+  'account-page.guide.whats-new.cockpit.risk.title':
+    'Nur eine maßgebliche Risikoquelle',
+  'account-page.guide.whats-new.cockpit.risk.description':
+    'Solange eine Challenge aktiv, bestanden oder gescheitert ist, gelten allein ihre Phasenregeln, damit kein zweiter Drawdown-Wert widerspricht. Das allgemeine Kontorisiko erscheint wieder bei normalen oder archivierten Konten.',
+  'account-page.guide.main.challenge.title': 'Deine Challenge auf einen Blick',
+  'account-page.guide.main.challenge.description':
+    'Wähle unter dem verbundenen Kennzahlenbereich eine Challenge-Phase im Regelkopf und prüfe jede Anforderung mit Fortschritt und Status. Die Verwaltungsaktionen stehen neben der Auswahl.',
+  'account-page.guide.main.summary.title': 'Kontostatus auf einen Blick',
+  'account-page.guide.main.summary.description':
+    'Der verbundene Kennzahlenbereich beginnt mit Kontostand, Netto-P&L, Wachstum, Trades, Gewinnrate und Netto-Cashflow – bei einem Prop-Konto stattdessen Auszahlungen.',
   'account.edit.field.target-type': 'Zieltyp',
   'account.edit.field.target-type-desc': 'Absolut oder prozentual',
   'account.edit.field.target-percent': 'Ziel (%)',
@@ -4486,13 +4987,29 @@ const de: Lang = {
   'account.transaction.withdrawal': 'Rückzug',
   'account.transaction.click-to-edit':
     'Klicken Sie hier, um diese Transaktion zu bearbeiten oder zu löschen',
-  'account.transaction.description': 'Beschreibung',
-  'account.transaction.balance-after': 'Ausgleich danach',
-  'account.deposits-withdrawals.title': 'Ein- und Auszahlungen ({count})',
+  'account.transaction.edit-row-label':
+    'Diese Transaktion bearbeiten oder löschen: {date}, {amount}',
+  'account.deposits-withdrawals.title': 'Ein- und Auszahlungen',
   'account.deposits-withdrawals.empty':
     'Es wurden keine manuellen Ein- oder Auszahlungen erfasst.',
   'account.deposits-withdrawals.empty-sub':
     'Klicken Sie in der Kopfzeile auf die Schaltfläche „+“, um Ihre erste Transaktion hinzuzufügen.',
+  'account.deposits-withdrawals.summary':
+    '{deposits} eingezahlt · {withdrawn} ausgezahlt · zuletzt {date}',
+  'account.payouts.title': 'Auszahlungen',
+  'account.payouts.summary': '{count} Auszahlungen · {total} · zuletzt {date}',
+  'account.payouts.summary-masked':
+    'Auszahlungsverlauf ist ausgeblendet, solange Werte maskiert sind',
+  'account.payouts.summary-one': '1 Auszahlung · {total} · zuletzt {date}',
+  'account.payouts.empty': 'Noch keine Auszahlungen',
+  'account.payouts.empty-sub':
+    'Erfassen Sie eine Auszahlung über die Schaltfläche „+“ in der Kopfzeile.',
+  'account.ledger.column.date': 'Datum',
+  'account.ledger.column.type': 'Typ',
+  'account.ledger.column.payout': 'Auszahlung',
+  'account.ledger.column.description': 'Beschreibung',
+  'account.ledger.column.amount': 'Betrag',
+  'account.ledger.column.balance-after': 'Saldo danach',
   'settings.reset.modal.title': 'Einstellungen auf Standard zurücksetzen?',
   'settings.reset.modal.explanation':
     'Dadurch werden ALLE Plugin-Einstellungen auf ihre Standardwerte zurückgesetzt. Dazu gehört:',
@@ -4518,8 +5035,6 @@ const de: Lang = {
   'notice.settings-reset-no-backup':
     'Einstellungen auf Standardwerte zurückgesetzt. Es wurde kein Backup erstellt. Starten Sie Obsidian neu, um alle Änderungen zu übernehmen.',
   'home.quick-links.hide': 'Schnelllink ausblenden',
-  'home.quick-links.all-hidden':
-    'Alle Quicklinks sind ausgeblendet. Verwenden Sie „Widget hinzufügen“, um sie wiederherzustellen.',
   'home.quick-links.add-trade': 'Trade hinzufügen',
   'home.quick-links.trade-log': 'Trade-Log',
   'home.quick-links.trading-dashboard': 'Auswertung',
@@ -4539,9 +5054,9 @@ const de: Lang = {
   'home.quick-links.move-below': 'Verschieben Sie Quicklinks unter Widgets',
   'home.widget-selector.title': 'Zur Startseite hinzufügen',
   'home.widget-selector.section.widgets': 'Widgets',
-  'home.widget-selector.section.quick-links': 'Versteckte Quicklinks',
+  'home.widget-selector.section.quick-links': 'Schnelllinks',
   'home.widget-selector.restore': 'wiederherstellen',
-  'home.widget-selector.empty': 'Alle Widgets wurden hinzugefügt',
+  'home.widget-selector.add-shortcut': 'Konto-/Setup-Verknüpfung hinzufügen',
   'home.widget-selector.hint.navigate': '↑↓ navigieren',
   'home.widget-selector.hint.select': 'Enter auswählen',
   'home.widget-selector.hint.close': 'esc schließen',
@@ -4551,7 +5066,7 @@ const de: Lang = {
   'home.period.lifetime': 'Alle Zeit',
 
   'home.aria.filter-trade-types': 'Filtern Sie Trade-Typen',
-  'home.aria.add-widget': 'Widget hinzufügen',
+  'home.aria.open-settings': 'Journalit-Einstellungen öffnen',
   'home.aria.save-layout': 'Layout speichern',
   'home.aria.customize': 'Anpassen',
   'home.button.add-widget': 'Widget hinzufügen',
@@ -4578,6 +5093,8 @@ const de: Lang = {
   'home.greeting.how-did-today-go': 'Wie ist es heute gelaufen?',
   'home.greeting.time-to-reflect': 'Zeit zum Nachdenken',
   'home.greeting.welcome-back': 'Willkommen zurück',
+  'home.greeting.name-placeholder': 'Dein Name',
+  'home.greeting.edit-name-aria': '{name}. Anzeigenamen bearbeiten',
   'home.greeting.hey-there': 'Hallo',
   'home.greeting.good-to-see-you': 'Schön dich zu sehen',
   'home.subtitle.first-time': 'Lassen Sie uns Ihre Trading-Reise beginnen',
@@ -4717,6 +5234,29 @@ const de: Lang = {
   'home.widget.profit-target.remaining': 'übrig',
   'home.widget.profit-target.unable-to-load': 'Konnte nicht geladen werden',
   'home.widget.profit-target.no-accounts': 'Keine Konten mit Zielen',
+  'home.widget.eval-roi.title': 'Eval-Rendite',
+  'home.widget.eval-roi.unable-to-load': 'Konnte nicht geladen werden',
+  'home.widget.eval-roi.no-challenges': 'Keine Prop-Challenges',
+  'home.widget.eval-roi.challenge-count': '{count} Bewertung',
+  'home.widget.eval-roi.challenge-count-plural': '{count} Bewertungen',
+  'home.widget.eval-roi.net': 'Netto',
+  'home.widget.eval-roi.spent': 'Ausgegeben',
+  'home.widget.eval-roi.payouts': 'Auszahlungen',
+  'home.widget.eval-roi.break-even': 'Gewinnschwelle',
+  'home.widget.challenge-alerts.title': 'Challenge-Hinweise',
+  'home.widget.challenge-alerts.unable-to-load':
+    'Challenge-Hinweise konnten nicht geprüft werden',
+  'home.widget.challenge-alerts.empty': 'Keine Challenge-Hinweise',
+  'home.widget.challenge-alerts.count': '{count} Hinweis',
+  'home.widget.challenge-alerts.count-plural': '{count} Hinweise',
+  'home.widget.challenge-alerts.more': '+{count} weitere',
+  'home.widget.challenge-alerts.kind.failed': 'Nicht bestanden',
+  'home.widget.challenge-alerts.kind.target': 'Ziel erreicht',
+  'home.widget.challenge-alerts.kind.passed': 'Bestanden',
+  'home.widget.challenge-alerts.kind.payout': 'Auszahlung bereit',
+  'home.widget.challenge-alerts.kind.lost': 'Auszahlung nicht mehr verfügbar',
+  'home.widget.challenge-alerts.kind.unknown-account': 'Neues Konto {label}',
+  'home.widget.eval-roi.roi-aria': 'Rendite auf Evaluierungskosten',
   'home.widget.recent.title': 'Jüngste',
   'home.widget.recent.unknown': 'Unbekannt',
   'home.widget.recent.just-now': 'Soeben',
@@ -5196,6 +5736,18 @@ const de: Lang = {
   'navigation.edit-mode.hide-item': 'Navigationselement ausblenden',
   'navigation.edit-mode.restore-section': 'Versteckte Gegenstände',
   'navigation.edit-mode.restore': 'Wiederherstellen',
+  'navigation.items.nav-settings': 'Einstellungen',
+  'navigation.shortcuts.add': 'Verknüpfung hinzufügen',
+  'navigation.shortcuts.remove': 'Verknüpfung entfernen',
+  'navigation.shortcuts.close': 'Auswahl schließen',
+  'navigation.shortcuts.search': 'Konten und Handels-Setups durchsuchen',
+  'navigation.shortcuts.accounts': 'Konten',
+  'navigation.shortcuts.setups': 'Handels-Setups',
+  'navigation.shortcuts.empty': 'Keine Konten oder Handels-Setups verfügbar',
+  'navigation.shortcuts.unavailable': 'Nicht verfügbar',
+  'navigation.shortcuts.added': 'Hinzugefügt',
+  'navigation.shortcuts.parent-required':
+    'Entferne zuerst die Verknüpfungen, bevor du diesen Navigationseintrag ausblendest.',
   'navigation.items.nav-home': 'Heim',
   'navigation.items.nav-dashboard': 'Auswertung',
   'navigation.items.nav-trade-log': 'Trade-Log',
@@ -5488,8 +6040,12 @@ const de: Lang = {
     'Auch alle mit diesem Konto verknüpften Trades aus meinem Vault löschen',
   'calendar.aria.open-daily-review': 'Tagesrückblick für {date} öffnen',
   'calendar.aria.open-weekly-review': 'Wochenrückblick für {date} öffnen',
+  'calendar.aria.open-monthly-review': 'Monatsrückblick für {date} öffnen',
+  'calendar.aria.open-quarterly-review': 'Quartalsrückblick für {date} öffnen',
 
   'csv.mapper.aria.map-column': 'Spalte {header} zuordnen',
+  'trade-import.error.file-empty':
+    'Diese Datei ist leer. Exportiere sie erneut und versuche es noch einmal.',
   'trade-import.error.file-too-large':
     'Die ausgewählte Datei überschreitet die Größenbeschränkung für Trade Import',
   'trade-import.error.file-type-unsupported':
@@ -5588,7 +6144,7 @@ const de: Lang = {
   'trade-import.label.template-actions': 'Vorlagenaktionen',
   'trade-import.template.none': 'Keine Vorlage',
   'trade-import.label.account': 'Konto',
-  'trade-import.label.broker': 'Broker',
+  'trade-import.label.broker': 'Exportquelle / Plattform',
   'trade-import.label.asset-type': 'Asset-Typ',
   'trade-import.asset.stock': 'Aktie',
   'trade-import.asset.options': 'Optionen',
@@ -5639,21 +6195,51 @@ const de: Lang = {
     'Aus dieser Datei konnten keine Trades vorbereitet werden.',
   'trade-import.preview.failed.guidance':
     'Prüfe die Spaltenzuordnungen, das Datumsformat, das ausgewählte Blatt und die ausgewählte Header-Zeile sowie die unten aufgeführten ungültigen Werte.',
+  'trade-import.preview.tradovate-performance.title':
+    'Falscher Tradovate-Bericht',
+  'trade-import.preview.tradovate-performance.message':
+    'Dies scheint ein Tradovate-Performance-Export zu sein. Journalit importiert den Orders-Bericht, damit deine Ausführungen genau rekonstruiert werden können. Gehe in Tradovate zu Reports > Orders und lade die CSV-Datei herunter.',
+  'trade-import.preview.tradovate-performance.guide':
+    'Tradovate-Exportanleitung anzeigen',
+  'trade-import.preview.metatrader-statement.title':
+    'Nicht unterstützter MetaTrader-Kontoauszug',
+  'trade-import.preview.metatrader-statement.message':
+    'Journalit importiert den originalen MetaTrader-Kontoverlaufsbericht. Stelle MetaTrader auf Englisch, öffne Account History / History, wähle Save as Report und lade anschließend die unveränderte, nicht konvertierte Originaldatei im Format .html oder .htm hoch.',
+  'trade-import.preview.metatrader-statement.guide':
+    'MetaTrader-Exportanleitung anzeigen',
+  'trade-import.preview.tradingview-export.title':
+    'Falscher TradingView-Export',
+  'trade-import.preview.tradingview-export.message':
+    'Journalit erwartet die CSV Order History / History aus TradingView Paper Trading. Verwende nicht Account History, Chart-Daten, Strategie-Exporte oder andere TradingView-CSV-Dateien.',
+  'trade-import.preview.tradingview-export.guide':
+    'TradingView-Exportanleitung anzeigen',
+  'trade-import.source-recovery.deepcharts.title':
+    'Diese Datei sieht wie ein DeepCharts-Export aus',
+  'trade-import.source-recovery.deepcharts.rithmic-message':
+    'Die Datei stammt aus DeepCharts, auch wenn das Konto über Rithmic ausgeführt wird. Verwende DeepCharts, damit die vorzeichenbehaftete Quantity Long oder Short korrekt bestimmt.',
+  'trade-import.source-recovery.deepcharts.manual-message':
+    'Verwende den DeepCharts-Importer. DeepCharts speichert die Richtung in der vorzeichenbehafteten Quantity; Quantity darf daher nicht als manuelles Richtungsfeld zugeordnet werden.',
+  'trade-import.source-recovery.deepcharts.switch': 'Zu DeepCharts wechseln',
+  'trade-import.source-recovery.deepcharts.guide':
+    'DeepCharts-Exportanleitung anzeigen',
+  'trade-import.source-recovery.motivewave.title':
+    'Diese Datei sieht wie ein MotiveWave-Ausführungsexport aus',
+  'trade-import.source-recovery.motivewave.message':
+    'Verwende MotiveWave, damit Journalit die Ausführungszeilen korrekt zu abgeschlossenen Trades zusammenführen kann.',
+  'trade-import.source-recovery.motivewave.switch': 'Zu MotiveWave wechseln',
+  'trade-import.source-recovery.motivewave.guide':
+    'MotiveWave-Exportanleitung anzeigen',
+  'quick-import.message.source-mismatch':
+    'Journalit hat eine andere Exportquelle erkannt. Prüfe die Datei in Trade Import, um die Quelle ohne erneutes Hochladen zu wechseln.',
   'trade-import.preview.no-eligible':
     'Die Datei wurde erfolgreich eingelesen, aber es gibt keine neuen oder aktualisierten Trades, die importiert werden können. Prüfe unten die Details zu Duplikaten und zur Klassifizierung.',
-  'trade-import.preview.upgrade.title': 'Deine Vorschau ist bereit',
-  'trade-import.preview.upgrade.description.one':
-    '{count} Trade kann nach der Aktivierung von PRO zu deinem Vault hinzugefügt werden.',
-  'trade-import.preview.upgrade.description.few':
-    '{count} Trades können nach der Aktivierung von PRO zu deinem Vault hinzugefügt werden.',
-  'trade-import.preview.upgrade.description.many':
-    '{count} Trades können nach der Aktivierung von PRO zu deinem Vault hinzugefügt werden.',
-  'trade-import.preview.upgrade.description.other':
-    '{count} Trades können nach der Aktivierung von PRO zu deinem Vault hinzugefügt werden.',
-  'trade-import.preview.upgrade.free-limit':
-    'Der kostenlose Vorschauzugang umfasst {count} Analysen und {count} Vorschauen pro Stunde.',
-  'trade-import.preview.upgrade.free-storage-limit':
-    'Kostenlose Vorschauen können bis zu {count} Trades gleichzeitig speichern.',
+  'trade-import.pro-gate.title.one': '{count} Trade ist bereit zum Import',
+  'trade-import.pro-gate.title.few': '{count} Trades sind bereit zum Import',
+  'trade-import.pro-gate.title.many': '{count} Trades sind bereit zum Import',
+  'trade-import.pro-gate.title.other': '{count} Trades sind bereit zum Import',
+  'trade-import.pro-gate.subtitle':
+    'Aktiviere PRO, um sie als Trade-Notizen in deinen Vault zu schreiben.',
+  'trade-import.pro-gate.cta': 'PRO aktivieren',
   'trade-import.preview.diagnostics': 'Prüfdetails ({count})',
   'trade-import.preview.affected-rows': 'Betroffene Zeilen: {count}',
   'trade-import.table.status': 'Status',
@@ -5768,7 +6354,7 @@ const de: Lang = {
     'Karten fassen jedes Setup mit Kennzahlen, Status, letztem Trade und kleinem Performance-Trend zusammen.',
   'setups.guide.open-detail.title': 'Setup-Seite öffnen',
   'setups.guide.open-detail.description':
-    'Öffne eine Setup-Karte, um die eigene Seite mit Diagramm, Kontext, Playbook-Material und Ausführungsregeln zu prüfen.',
+    'Wenn du bereit bist, öffne eine Setup-Karte, um ihre Seite zu sehen. Dort erwartet dich ein kurzer Guide.',
   'setups.guide.detail-performance.title': 'Detail-Performance',
   'setups.guide.detail-performance.description':
     'Der Performance-Tab zeigt Chart und Kennzahlen im Zeitverlauf, darunter P&L, Trefferquote, Erwartung und Drawdown.',
@@ -6260,6 +6846,9 @@ const de: Lang = {
     'Lokales Konto konnte nicht erstellt werden.',
   'trade-sync.import.notice.restore-failed':
     'Trade-Import-Konto konnte nicht wiederhergestellt werden.',
+  'trade-sync.rate-limit.action.mapping': 'Kontozuordnung',
+  'trade-sync.import.notice.rate-limited':
+    '{action}: Zu viele Anfragen. Bitte in {seconds} s erneut versuchen.',
   'setups.view.loading': 'Loading setups…',
   'settings.general.copy-trading-pnl-toggled': 'Copy-Trading-PnL ist {status}',
   'setups.view.trade.unknown-instrument': 'Unknown instrument',
@@ -6328,6 +6917,31 @@ const de: Lang = {
   'session-mode.ended.action.import-trades': 'Trades importieren',
   'session-mode.ended.action.add-trade-manually': 'Trade manuell hinzufügen',
   'session-mode.ended.action.open-drc': 'DRC öffnen',
+  'session-log.session-group.unplanned': 'Ungeplant @ {time}',
+  'session-mode.unplanned.name': 'Ungeplante Sitzung',
+  'session-mode.unplanned.start': 'Ungeplante Sitzung starten',
+  'session-mode.unplanned.stop': 'Sitzung beenden',
+  'session-mode.unplanned.badge': 'Ungeplant',
+  'session-mode.unplanned.status.live':
+    'Gestartet {time} · {elapsed} vergangen',
+  'session-mode.unplanned.ended.summary':
+    'Ungeplante Sitzung · {start}–{end} · {duration}',
+  'session-mode.unplanned.modal.title': 'Ungeplante Sitzung starten',
+  'session-mode.unplanned.modal.description':
+    'Du befindest dich außerhalb deiner geplanten Sitzungsfenster. Diese Sitzung wird in deiner Tagesauswertung als ungeplant markiert. Schreibe auf, warum du jetzt handelst.',
+  'session-mode.unplanned.modal.reason-label': 'Grund',
+  'session-mode.unplanned.modal.reason-placeholder':
+    'z. B. FOMC um 14:00, Vormittagssitzung verpasst',
+  'session-mode.unplanned.modal.reason-required':
+    'Gib vor dem Start einen Grund ein.',
+  'session-mode.unplanned.notice.started': 'Ungeplante Sitzung gestartet.',
+  'session-mode.unplanned.notice.stopped': 'Ungeplante Sitzung beendet.',
+  'session-mode.unplanned.notice.blocked-live':
+    'Es läuft bereits eine Sitzung.',
+  'session-mode.unplanned.notice.none-running':
+    'Es läuft keine ungeplante Sitzung.',
+  'session-mode.unplanned.notice.failed':
+    'Die ungeplante Sitzung konnte nicht aktualisiert werden. Details in der Konsole.',
   'session-mode.ended.stat.trades': 'Trades',
   'session-mode.ended.stat.notes': 'Notizen',
   'session-mode.ended.stat.gate-checks': 'Gate-Checks',
@@ -6385,6 +6999,68 @@ const de: Lang = {
   'session-mode.unconfigured.step.log.title': 'Log notes during live sessions',
 
   'session-mode.unconfigured.action': 'Sitzungsmodus konfigurieren',
+  'session-mode.guide.why.title': 'Handle deinen Plan, nicht deine Stimmung',
+  'session-mode.guide.why.description':
+    'Der Session-Modus bereitet dich vor jeder Session vor, hält dich mit einem Trade Gate an deine Regeln, während sie läuft, und führt ein Protokoll mit Zeitstempeln, damit du den Tag nachspielen kannst. Die Einrichtung dauert zwei Minuten.',
+  'session-mode.guide.configure.title': 'Jetzt einrichten',
+  'session-mode.guide.configure.description':
+    'Trage deine Session-Zeiten ein und baue dein erstes Trade Gate. Ein kurzer Rundgang begleitet dich in den Einstellungen.',
+  'session-mode.guide.preparation.countdown.title': 'Deine Session steht bevor',
+  'session-mode.guide.preparation.countdown.description':
+    'Das ist die Vorbereitungsphase. Der Countdown zeigt, wann du live gehst, und diese Seite wechselt von selbst in den Live-Modus.',
+  'session-mode.guide.preparation.goals.title': 'Ziele für heute setzen',
+  'session-mode.guide.preparation.goals.description':
+    'Schreib vor der Eröffnung auf, wie eine gute Session aussieht, damit du dich an etwas messen kannst.',
+  'session-mode.guide.preparation.checklist.title': 'Checkliste abarbeiten',
+  'session-mode.guide.preparation.checklist.description':
+    'Hake hier deine Routine vor der Session ab. Alles, was du abhakst, wird in der heutigen Review-Notiz gespeichert.',
+  'session-mode.guide.preparation.next.title': 'Wenn du live gehst',
+  'session-mode.guide.preparation.next.description':
+    'Dein Trade Gate und das Session-Log erscheinen hier. Beim ersten Mal zeigen wir dir beides.',
+  'session-mode.guide.live.trade-gate.title':
+    'Vor jedem Trade das Trade Gate durchlaufen',
+  'session-mode.guide.live.trade-gate.description':
+    'Drücke Start und beantworte die Fragen aus deinen Kriterien. Das Gate endet mit grünem Licht, warten oder kein Trade, sodass du nur Trades nimmst, die dein System erlaubt.',
+  'session-mode.guide.live.session-log.title':
+    'Notiere, was du siehst und fühlst',
+  'session-mode.guide.live.session-log.description':
+    'Halte Setups, Emotionen und Entscheidungen fest, während sie passieren. Jede Notiz hat einen Zeitstempel, sodass du später genau nachvollziehen kannst, was los war.',
+  'session-mode.guide.live.settings.title': 'Jederzeit anpassen',
+  'session-mode.guide.live.settings.description':
+    'Bearbeiten öffnet die Session-Modus-Einstellungen: Session-Zeiten, Phasen-Layout, Trade-Gate-Workflows und Log-Tags.',
+  'session-mode.guide.ended.review.title': 'Jetzt die Session reviewen',
+  'session-mode.guide.ended.review.description':
+    'Öffne das heutige DRC zum Review. Füge das Session-Log-Widget zu deinem DRC-Layout hinzu, und jede Notiz mit Zeitstempel erscheint dort.',
+  'settings.session-mode.guide.setting-name': 'Rundgang',
+  'settings.session-mode.guide.setting-desc':
+    'Eine kurze Tour durch diese Einstellungen, von den Session-Zeiten bis zu deinem ersten Trade Gate.',
+  'settings.session-mode.guide.replay': 'Guide anzeigen',
+  'settings.session-mode.guide.intro.title':
+    'Richten wir den Session-Modus ein',
+  'settings.session-mode.guide.intro.description':
+    'Vier Dinge: wann deine Sessions laufen, was jede Phase zeigt, dein Trade Gate und deine Session-Log-Tags.',
+  'settings.session-mode.guide.lead-time.title': 'Vorlaufzeit der Vorbereitung',
+  'settings.session-mode.guide.lead-time.description':
+    'Wie viele Minuten vor einer Session die Vorbereitungsphase öffnet.',
+  'settings.session-mode.guide.windows.title':
+    'Füge deine Session-Fenster hinzu',
+  'settings.session-mode.guide.windows.description':
+    'Ein Fenster pro Session, die du handelst, mit Name, Start und Ende. Daran erkennt der Session-Modus, wann vorbereitet wird und wann du live bist.',
+  'settings.session-mode.guide.layout.title': 'Wähle, was jede Phase zeigt',
+  'settings.session-mode.guide.layout.description':
+    'Schalte Module pro Phase ein oder aus: Ressourcen, Ziele und Checkliste für die Vorbereitung; Trade Gate und Session-Timeline im Live-Betrieb.',
+  'settings.session-mode.guide.trade-gate.title': 'Baue dein Trade Gate',
+  'settings.session-mode.guide.trade-gate.description':
+    'Hinzufügen erstellt beim ersten Mal einen Starter-Workflow aus gängigen Fragen, danach einen leeren; die Bibliothek enthält fertige Fragen. Jede Frage führt zur nächsten oder zu einem Ergebnis: grünes Licht, warten oder kein Trade.',
+  'settings.session-mode.guide.editor.title': 'Fragen und Ergebnisse',
+  'settings.session-mode.guide.editor.description':
+    'Klappe einen Workflow auf, um Fragen hinzuzufügen und festzulegen, wohin jede Antwort führt. Die Abspielen-Schaltfläche führt ihn genau so aus wie in der Session.',
+  'settings.session-mode.guide.tags.title': 'Tags für dein Session-Log',
+  'settings.session-mode.guide.tags.description':
+    'Tagge Notizen beim Protokollieren, etwa nach Emotion oder Setup, damit du sie im Review filtern kannst.',
+  'settings.session-mode.guide.finish.title': 'Fertig',
+  'settings.session-mode.guide.finish.description':
+    'Öffne den Session-Modus über die Leiste oder Home. Füge das Session-Log-Widget zu deinem DRC-Layout hinzu, um deine Notizen in jedem Review zu sehen.',
 
   'session-mode.layout.empty.title': 'Nothing enabled for this phase',
   'session-mode.layout.empty.description':
@@ -6693,6 +7369,405 @@ const de: Lang = {
   'filter.modal.session-tags.n-selected': '{count} Sitzungs-Tags',
   'filter.modal.session-tags.select-all': 'Alle auswählen',
   'filter.modal.session-tags.none-found': 'Keine Sitzungs-Tags gefunden',
+  'account.challenge.toggle.label': 'Prop-Firmen-Prüfung',
+  'account.challenge.toggle.help':
+    'Verfolge Prüfungsphasen, Firmenregeln und Auszahlungen für dieses Konto.',
+  'account.prop-challenge.title': 'Prop-Firmen-Prüfung',
+  'account.prop-challenge.identity': 'Challenge-Details',
+  'account.prop-challenge.prefill.heading-link': 'Von deiner Firma vorbefüllen',
+  'account.prop-challenge.prefill.phase-link': 'Regeln mit PRO vorausfüllen',
+  'account.prop-challenge.prefill.phase-link-firm':
+    'Regeln von {firm} mit PRO vorausfüllen',
+  'account.prop-challenge.prefill.heading-link-firms':
+    '{firms} +{count} weitere, Regeln mit PRO vorbefüllt',
+  'account.prop-challenge.prefill.heading-link-firms-all':
+    '{firms}, Regeln mit PRO vorbefüllt',
+  'account.prop-challenge.prefill.match':
+    'Wir haben {firm}: {count} Challenges mit fertigen Regeln',
+  'account.prop-challenge.rules.empty':
+    'Noch keine Regeln hinzugefügt. Verwende Regel hinzufügen, um diese Phase zu definieren.',
+  'account.prop-challenge.rules': 'Regeln',
+  'account.prop-challenge.costs.empty': 'Noch keine Kosten hinzugefügt.',
+  'account.prop-challenge.description':
+    'Mehrphasige Prop-Firm-Challenge für dieses Konto verfolgen.',
+  'account.prop-challenge.enable': 'Prop-Challenge-Tracking aktivieren',
+  'account.prop-challenge.challenge-name': 'Prüfungsname',
+  'account.prop-challenge.challenge-name-placeholder': 'z. B. 25K-Prüfung',
+  'account.prop-challenge.firm-name': 'Firmenname (optional)',
+  'account.prop-challenge.firm-name-placeholder': 'z. B. Apex Trader Funding',
+  'account.prop-challenge.profile.title': 'Firmenprofil anwenden',
+  'account.prop-challenge.profile.firm': 'Firma',
+  'account.prop-challenge.profile.challenge': 'Prüfung',
+  'account.prop-challenge.profile.apply': 'Anwenden',
+  'account.prop-challenge.profile.loading': 'Firmenprofile werden geladen…',
+  'account.prop-challenge.profile.refreshing':
+    'Profilaktualisierungen werden gesucht…',
+  'account.prop-challenge.profile.unavailable':
+    'Firmenprofile sind offline nicht verfügbar.',
+
+  'account.prop-challenge.profile.confirm-title':
+    'Challenge-Einrichtung ersetzen?',
+  'account.prop-challenge.profile.confirm-message':
+    'Durch Anwenden dieses Profils werden die derzeit konfigurierten Phasen und Regeln ersetzt.',
+  'account.prop-challenge.current-phase': 'Aktuelle Phase',
+  'account.prop-challenge.phase-rules': 'Regeln für {phase}',
+  'account.prop-challenge.next-phase': 'Als Nächstes: {phase}',
+  'account.prop-challenge.view-phase': 'Phase anzeigen',
+  'account.prop-challenge.unnamed-phase': 'Unbenannte Phase',
+  'account.prop-challenge.phase-name': 'Phasenname',
+  'account.prop-challenge.phase-type': 'Phasentyp',
+  'account.prop-challenge.phase-type.evaluation': 'Bewertung',
+  'account.prop-challenge.phase-type.verification': 'Verifizierung',
+  'account.prop-challenge.phase-type.sim_funded': 'Simuliert finanziert',
+  'account.prop-challenge.phase-type.live_funded': 'Live finanziert',
+  'account.prop-challenge.phase-type.custom': 'Benutzerdefiniert',
+  'account.prop-challenge.starting-balance': 'Startguthaben',
+  'account.prop-challenge.broker-account-id': 'Brokerkonten',
+  'account.prop-challenge.broker-accounts.assigned': 'Zugewiesen zu {phase}',
+  'account.prop-challenge.broker-accounts.trades': '{count} Abschlüsse',
+  'account.prop-challenge.broker-accounts.trade-one': '1 Trade',
+  'account.prop-challenge.phase-started': 'Gestartet',
+  'account.prop-challenge.phase-completed': 'Abgeschlossen',
+  'account.prop-challenge.timeline.completed-before-started':
+    'Abschluss muss für {phase} auf oder nach dem Start liegen.',
+  'account.prop-challenge.timeline.out-of-order':
+    '{phase} muss enden, bevor oder wenn {next} beginnt.',
+  'account.prop-challenge.timeline.policy-history-conflict':
+    '{phase} beginnt nach einer späteren Regeländerung. Start zurücksetzen.',
+  'account.prop-challenge.default-phase-name': 'Phase Nr. {number}',
+  'account.prop-challenge.add-phase': 'Phase hinzufügen',
+  'account.prop-challenge.remove-phase': 'Phase entfernen',
+  'account.prop-challenge.add-rule': 'Regel hinzufügen',
+  'account.prop-challenge.rule.enabled': 'Regel aktiviert',
+  'account.prop-challenge.rule.amount': 'Betrag',
+  'account.prop-challenge.rule.target-type': 'Zieltyp',
+  'account.prop-challenge.rule.credit-withdrawals':
+    'Auszahlungen auf das Ziel anrechnen',
+  'account.prop-challenge.rule.drawdown-mode': 'Drawdown-Modus',
+  'account.prop-challenge.rule.lock-at-balance': 'Sperrsaldo',
+  'account.prop-challenge.rule.daily-loss-model': 'Täglicher Verlustbetrag',
+  'account.prop-challenge.rule.daily-loss-model.fixed': 'Fester Betrag',
+  'account.prop-challenge.rule.daily-loss-model.threshold':
+    'Erhöht sich ab Kontogewinnschwelle',
+  'account.prop-challenge.rule.daily-loss-model.peak-eod-profit':
+    'Skaliert mit dem höchsten EOD-Gewinn',
+  'account.prop-challenge.rule.daily-loss-peak-eod-help':
+    'Verwendet das feste Limit, bis das Konto mit dem Aktivierungssaldo schließt. Ab dem nächsten Handelstag entspricht das Limit dem konfigurierten Prozentsatz des höchsten Tagesendgewinns und sinkt nicht mehr.',
+  'account.prop-challenge.rule.scale-at-balance': 'Aktivierungssaldo',
+  'account.prop-challenge.rule.scaled-percent-of-peak-eod-profit':
+    'Höchster EOD-Gewinn als Limit (%)',
+  'account.prop-challenge.rule.peak-eod-profit-percent-summary':
+    '{value} des höchsten EOD-Gewinns',
+  'account.prop-challenge.rule.daily-loss-tiered-summary':
+    'Gewinnstufen aus dem vorherigen EOD-Saldo',
+  'account.prop-challenge.rule.daily-loss-model.profit-tiers':
+    'Gewinnstufen nach vorherigem EOD',
+  'account.prop-challenge.rule.daily-loss-tiers-help':
+    'Verwende Gewinn:Verlustlimit-Paare. Die Stufe aus dem vorherigen EOD-Kontogewinn gilt für die nächste Sitzung.',
+  'account.prop-challenge.rule.loss-tiers': 'Gewinnstufen und Verlustlimits',
+  'account.prop-challenge.rule.daily-loss-threshold-help':
+    'Der höhere tägliche Verlustbetrag wird dauerhaft aktiviert, sobald der lebenslange Kontogewinn erstmals den konfigurierten Prozentsatz des Startguthabens erreicht.',
+  'account.prop-challenge.rule.profit-threshold-percent':
+    'Kontogewinnschwelle (%)',
+  'account.prop-challenge.rule.amount-after-threshold':
+    'Täglicher Verlustbetrag nach Schwelle',
+  'account.prop-challenge.rule.breach-action': 'Verhalten bei Überschreitung',
+  'account.prop-challenge.rule.breach-action.hard': 'Konto nicht bestanden',
+  'account.prop-challenge.rule.breach-action.soft':
+    'Bis zur nächsten Sitzung pausieren',
+  'account.prop-challenge.rule.days': 'Handelstage',
+  'account.prop-challenge.rule.minimum-daily-profit': 'Mindestgewinn pro Tag',
+  'account.prop-challenge.rule.minimum-daily-profit-summary':
+    '{value}+ pro Tag',
+  'account.prop-challenge.rule.best-day-percent': 'Maximaler bester Tag (%)',
+  'account.prop-challenge.rule.position-limit-model':
+    'Modell für Positionslimit',
+  'account.prop-challenge.rule.position-limit-model.fixed': 'Festes Limit',
+  'account.prop-challenge.rule.position-limit-model.eod-profit-tiers':
+    'EOD-Gewinnstufen',
+  'account.prop-challenge.rule.position-profit-basis':
+    'Gewinnbasis für Positionsskalierung',
+  'account.prop-challenge.rule.position-profit-basis.cumulative':
+    'Kumulierter Handelsgewinn (Auszahlungen reduzieren nicht)',
+  'account.prop-challenge.rule.position-profit-basis.current-account':
+    'Aktueller Kontogewinn (Auszahlungen reduzieren)',
+  'account.prop-challenge.rule.position-limit-model.eod-profit':
+    'Skaliert mit EOD-Gewinn',
+  'account.prop-challenge.rule.position-tiers': 'Gewinnstufen',
+  'account.prop-challenge.rule.position-tiers-help':
+    'Gib jede erreichte EOD-Gewinnschwelle und das neue Kontraktlimit als Gewinn:Kontrakte ein, durch Kommas getrennt. Eine Stufe gilt ab dem nächsten Handelstag.',
+  'account.prop-challenge.rule.position-scaling-help':
+    'Jede erreichte Gewinnstufe erhöht die Anzahl der Kontrakte ab dem nächsten Handelstag um eins, bis zum Maximum.',
+  'account.prop-challenge.rule.initial-contracts': 'Anfängliche Kontrakte',
+  'account.prop-challenge.rule.profit-per-contract':
+    'EOD-Gewinn pro zusätzlichem Kontrakt',
+  'account.prop-challenge.rule.maximum-contracts':
+    'Maximale Kontrakte nach Skalierung',
+  'account.prop-challenge.rule.max-contracts': 'Maximale Kontrakte',
+  'account.prop-challenge.rule.profit_target': 'Gewinnziel',
+  'account.prop-challenge.rule.drawdown': 'Verlustgrenze',
+  'account.prop-challenge.rule.daily_loss_limit': 'Tägliches Verlustlimit',
+  'account.prop-challenge.rule.live_review_daily_profit':
+    'Tagesgewinn für Live-Prüfung',
+  'account.prop-challenge.rule.best-profitable-day': 'Gewinnschwelle pro Tag',
+  'account.prop-challenge.rule.daily_profit_cap':
+    'Tägliche Gewinnanrechnungsgrenze',
+  'account.prop-challenge.rule.per-trading-day': 'Pro Handelstag',
+  'account.prop-challenge.rule.minimum_trading_days': 'Mindesthandelstage',
+  'account.prop-challenge.rule.minimum_profitable_days':
+    'Mindestanzahl profitabler Tage',
+  'account.prop-challenge.rule.consistency-cushion-percent':
+    'Konsistenzpuffer (Prozentpunkte)',
+  'account.prop-challenge.rule.consistency-cushion-short': 'Puffer',
+  'account.prop-challenge.rule.consistency': 'Konsistenz',
+  'account.prop-challenge.rule.max_position_size': 'Maximale Positionsgröße',
+  'account.prop-challenge.drawdown.static': 'Statisch',
+  'account.prop-challenge.drawdown.eod-trailing': 'EOD nachlaufend',
+  'account.prop-challenge.drawdown.intraday-trailing': 'Intraday nachlaufend',
+  'account.prop-challenge.summary.status.active': 'Aktiv',
+  'account.prop-challenge.summary.status.passed': 'Bestanden',
+  'account.prop-challenge.summary.status.failed': 'Nicht bestanden',
+  'account.prop-challenge.summary.status.pending': 'Ausstehend',
+  'account.prop-challenge.summary.status.warning': 'Nahe am Limit',
+  'account.prop-challenge.summary.phase-status.pending': 'Ausstehend',
+  'account.prop-challenge.summary.phase-status.active': 'Aktiv',
+  'account.prop-challenge.summary.phase-status.passed': 'Bestanden',
+  'account.prop-challenge.summary.phase-status.failed': 'Nicht bestanden',
+  'account.prop-challenge.summary.rule.profit_target': 'Gewinnziel',
+  'account.prop-challenge.summary.rule.drawdown': 'Verlustgrenze',
+  'account.prop-challenge.summary.rule.drawdown-static': 'Statischer Drawdown',
+  'account.prop-challenge.summary.rule.drawdown-eod_trailing': 'EOD-Drawdown',
+  'account.prop-challenge.summary.rule.drawdown-intraday_trailing':
+    'Intraday-Drawdown',
+  'account.prop-challenge.summary.rule.daily_loss_limit': 'Tagesverlust',
+  'account.prop-challenge.summary.rule.live_review_daily_profit':
+    'Live-Prüfung',
+  'account.prop-challenge.summary.rule.daily_profit_cap':
+    'Tägliche Gewinnanrechnung',
+  'account.prop-challenge.summary.rule.minimum_trading_days': 'Handelstage',
+  'account.prop-challenge.summary.rule.minimum_profitable_days':
+    'Profitable Tage',
+  'account.prop-challenge.summary.rule.consistency': 'Best-Tag-Konsistenz',
+  'account.prop-challenge.summary.rule.max_position_size': 'Positionsgröße',
+  'account.prop-challenge.ledger.value.of': '{current} von {target}',
+  'account.prop-challenge.ledger.section.payout': 'Auszahlungsanforderungen',
+  'account.prop-challenge.ledger.requirement.minimum': 'ab {value}',
+  'account.prop-challenge.ledger.requirement.maximum': 'bis {value}',
+  'account.prop-challenge.ledger.value.ratio': '{current} / {target}',
+  'account.prop-challenge.payout.met-of-total':
+    '{met} von {total} Anforderungen',
+  'account.prop-challenge.ledger.value.of-today':
+    '{current} von {target} heute',
+  'account.prop-challenge.ledger.value.credited-profit':
+    '{credited} von {actual} tatsächlichem Gewinn angerechnet',
+  'account.prop-challenge.ledger.value.used': '{used} genutzt',
+  'account.prop-challenge.ledger.value.consistency-goal':
+    '{current} von {target} Konsistenzziel',
+  'account.prop-challenge.ledger.value.best-day-share':
+    'Bester Tag {value} des Gewinns',
+  'account.prop-challenge.ledger.value.no-profit': 'Noch kein Gewinn',
+  'account.prop-challenge.ledger.requirement.best-day':
+    'Bester Tag ≤ {value} des Gesamtgewinns',
+  'account.prop-challenge.ledger.state.needs-profit': 'Gewinn nötig',
+  'account.prop-challenge.ledger.tooltip.open': '{rule} erklären',
+  'account.prop-challenge.ledger.tooltip.consistency.description':
+    'Begrenzt, wie viel des gesamten Phasengewinns aus dem profitabelsten Handelstag stammen darf.',
+  'account.prop-challenge.ledger.tooltip.consistency.formula':
+    'Gewinn des besten Tages ÷ gesamter Phasengewinn × 100',
+  'account.prop-challenge.ledger.tooltip.consistency.best-day':
+    'Bester Tag: {value}',
+  'account.prop-challenge.ledger.tooltip.consistency.total-profit':
+    'Gesamtgewinn: {value}',
+  'account.prop-challenge.ledger.tooltip.consistency.share':
+    '{best} ÷ {total} × 100 = {share}',
+  'account.prop-challenge.ledger.tooltip.consistency.goal':
+    'Konsistenzziel: {best} ÷ {maximum} = {goal}',
+  'account.prop-challenge.ledger.tooltip.consistency.goal-hint':
+    'Der Anteil sinkt mit Gewinn an anderen Tagen, ein neuer größerer bester Tag hebt das Ziel jedoch an.',
+  'account.prop-challenge.ledger.tooltip.consistency.within':
+    '{share} ≤ {maximum} – regelkonform',
+  'account.prop-challenge.ledger.tooltip.consistency.pending':
+    'Die Berechnung beginnt, sobald der Phasengewinn positiv ist.',
+  'account.prop-challenge.ledger.tooltip.consistency.no-maximum':
+    'Ein Konsistenzziel erfordert ein Maximum über 0 %.',
+  'account.prop-challenge.ledger.help.open': 'Info zu {rule}',
+  'account.prop-challenge.ledger.help.profit_target':
+    'Das Konto um diesen Betrag wachsen lassen, um die Phase zu bestehen. Nur geschlossene Trades zählen.',
+  'account.prop-challenge.ledger.help.profit_target.example':
+    'Dieses Konto braucht {target} Gewinn: bisher {current}, noch {remaining}.',
+  'account.prop-challenge.ledger.help.profit_target.example-done':
+    'Ziel erreicht: {current} von {target}.',
+  'account.prop-challenge.ledger.help.drawdown.static':
+    'So weit darf der Kontostand unter den Startsaldo fallen. Die Untergrenze bewegt sich nie.',
+  'account.prop-challenge.ledger.help.drawdown.static.example':
+    'Die Untergrenze dieses Kontos liegt bei {floor}; der Kontostand muss darüber bleiben. Vom Limit {limit} sind noch {buffer} übrig.',
+  'account.prop-challenge.ledger.help.drawdown.eod_trailing':
+    'Die Untergrenze folgt dem höchsten Tagesschlusssaldo und steigt nur, bis sie auf dem Sperrlevel der Firma festgesetzt wird.',
+  'account.prop-challenge.ledger.help.drawdown.eod_trailing.example':
+    'Aktuell liegt die Untergrenze bei {floor} (höchster Schluss minus {limit}) und sie steigt mit jedem höheren Schluss. Noch {buffer} übrig.',
+  'account.prop-challenge.ledger.help.drawdown.intraday_trailing':
+    'Die Untergrenze folgt jederzeit deinem höchsten Kontostand, inklusive offenem Gewinn. Journalit sieht nur geschlossene Trades: Diese Untergrenze folgt dem besten Stand nach jedem Schluss; ein Hoch innerhalb eines offenen Trades zählt nicht. Prüfe den Wert der Firma.',
+  'account.prop-challenge.ledger.help.drawdown.intraday_trailing.example':
+    'Aktuell liegt die Untergrenze bei {floor} (bester Kontostand nach geschlossenen Trades minus {limit}). Noch {buffer} übrig; die Live-Zahl der Firma kann enger sein.',
+  'account.prop-challenge.ledger.help.daily_loss_limit':
+    'So viel darf an einem Handelstag verloren werden. Das Erreichen lässt die Phase scheitern oder pausiert den Handel bis zur nächsten Sitzung, je nach Firma.',
+  'account.prop-challenge.ledger.help.daily_loss_limit.example':
+    'Heute: {used} vom Tageslimit {limit} verloren, noch {left} übrig.',
+  'account.prop-challenge.ledger.help.daily_profit_cap':
+    'Nur ein Teil des Tagesgewinns wird auf das Ziel angerechnet. Gewinn über der Obergrenze bleibt, zählt aber nicht.',
+  'account.prop-challenge.ledger.help.daily_profit_cap.example':
+    'Nur {cap} des Tagesgewinns werden angerechnet; {excluded} über der Obergrenze zählen bisher nicht.',
+  'account.prop-challenge.ledger.help.live_review_daily_profit':
+    'Ein Handelstag mit mindestens diesem Gewinn macht das Konto für eine Prüfung auf ein Live-Konto berechtigt.',
+  'account.prop-challenge.ledger.help.live_review_daily_profit.example':
+    'Ein Tag mit {trigger} oder mehr qualifiziert; bester Tag bisher {bestDay}.',
+  'account.prop-challenge.ledger.help.minimum_trading_days':
+    'Tage mit mindestens einem geschlossenen Trade. Die Phase kann nicht bestanden werden, bevor diese Anzahl erreicht ist, egal wie schnell das Ziel fällt.',
+  'account.prop-challenge.ledger.help.minimum_trading_days.example':
+    '{current} von {target} Handelstagen erledigt, noch {remaining}.',
+  'account.prop-challenge.ledger.help.minimum_profitable_days':
+    'Handelstage, die auf oder über dem Mindesttagesgewinn der Firma schließen. Break-even oder kleinere Gewinne zählen nicht.',
+  'account.prop-challenge.ledger.help.minimum_profitable_days.example':
+    '{current} von {target} Tagen mit {minimum} oder mehr geschlossen, noch {remaining}.',
+  'account.prop-challenge.ledger.help.consistency':
+    'Der beste einzelne Tag darf diesen Anteil am gesamten Phasengewinn nicht überschreiten. Beheben durch mehr Gewinn an anderen Tagen, nicht durch Verluste.',
+  'account.prop-challenge.ledger.help.consistency.example':
+    'Bester Tag {bestDay} macht {share} von {total} Gesamtgewinn aus; der Gesamtgewinn muss {goal} erreichen, damit er bei {maximum} liegt.',
+  'account.prop-challenge.ledger.help.consistency.example-done':
+    'Bester Tag {bestDay} macht {share} des Gesamtgewinns aus, innerhalb des Limits von {maximum}.',
+  'account.prop-challenge.ledger.help.consistency.example-none':
+    'Noch kein Gewinn, daher gibt es keinen besten Tag zum Vergleich.',
+  'account.prop-challenge.ledger.help.max_position_size':
+    'Die meisten Kontrakte, die gleichzeitig gehalten werden dürfen, über alle offenen Positionen. Manche Firmen heben das Limit mit steigendem Gewinn an.',
+  'account.prop-challenge.ledger.help.max_position_size.example':
+    'Derzeit bis zu {maximum} Kontrakte gleichzeitig; größte Position bisher {current}.',
+  'account.prop-challenge.ledger.help.payout.cycle_days':
+    'Handelstage im aktuellen Auszahlungszyklus. Der Zähler startet nach einer genehmigten Auszahlung neu.',
+  'account.prop-challenge.ledger.help.payout.cycle_days.example':
+    '{current} von {target} Handelstagen in diesem Zyklus, noch {remaining}.',
+  'account.prop-challenge.ledger.help.payout.qualifying_days':
+    'Handelstage in diesem Zyklus, die auf oder über dem Mindesttagesgewinn der Firma schließen.',
+  'account.prop-challenge.ledger.help.payout.qualifying_days.example':
+    '{current} von {target} Tagen mit {minimum} oder mehr in diesem Zyklus, noch {remaining}.',
+  'account.prop-challenge.ledger.help.payout.cycle_profit':
+    'Der Gewinn seit Zyklusbeginn muss diesen Betrag erreichen, bevor eine Anforderung möglich ist.',
+  'account.prop-challenge.ledger.help.payout.cycle_profit.example':
+    '{current} in diesem Zyklus verdient von den benötigten {target}.',
+  'account.prop-challenge.ledger.help.payout.minimum_balance':
+    'Der Kontostand muss bei der Anforderung auf oder über diesem Niveau liegen.',
+  'account.prop-challenge.ledger.help.payout.minimum_balance.example':
+    'Kontostand {current}; er muss mindestens {target} betragen.',
+  'account.prop-challenge.ledger.help.payout.positive_cycle_profit':
+    'Nach der ersten Auszahlung muss jeder neue Zyklus im Plus sein, bevor erneut angefordert wird.',
+  'account.prop-challenge.ledger.help.payout.positive_cycle_profit.example':
+    'Zyklusgewinn ist {current}; er muss über null liegen.',
+  'account.prop-challenge.ledger.help.payout.consistency':
+    'Der beste Tag darf diesen Anteil am Zyklusgewinn nicht überschreiten.',
+  'account.prop-challenge.ledger.help.payout.consistency.example':
+    'Bester Tag {bestDay} entspricht {share} von {total} Zyklusgewinn; der Zyklusgewinn muss {goal} erreichen, damit er bei {maximum} liegt.',
+  'account.prop-challenge.ledger.help.payout.consistency.example-done':
+    'Bester Tag {bestDay} entspricht {share} des Zyklusgewinns, innerhalb der Grenze von {maximum}.',
+  'account.prop-challenge.ledger.help.payout.consistency.example-none':
+    'Noch kein Zyklusgewinn, also kein bester Tag zum Vergleich.',
+  'account.prop-challenge.ledger.help.payout.minimum_request':
+    'Die kleinste Auszahlung, die die Firma akzeptiert. Der verfügbare Betrag muss sie zuerst erreichen.',
+  'account.prop-challenge.ledger.help.payout.minimum_request.example':
+    '{current} verfügbar; die Mindestauszahlung der Firma beträgt {target}.',
+  'account.prop-challenge.ledger.help.payout.payout_count':
+    'Wie viele Auszahlungen diese Stufe erlaubt. Das Ausschöpfen des Kontingents schließt die Stufe ab.',
+  'account.prop-challenge.ledger.help.payout.payout_count.example':
+    '{current} von {target} Auszahlungen in dieser Stufe genutzt.',
+  'account.prop-challenge.ledger.help.payout.request_window':
+    'Anforderungen werden nur an diesen Wochentagen in der Zeitzone der Firma angenommen.',
+  'account.prop-challenge.ledger.help.payout.request_window.example':
+    'Heute ist {today}; Anforderungen sind an {days} möglich ({timeZone}).',
+  'account.prop-challenge.ledger.help.payout.elapsed_hours':
+    'Die Zeit seit dem ersten Trade des Zyklus muss dies erreichen, bevor angefordert werden kann.',
+  'account.prop-challenge.ledger.help.payout.elapsed_hours.example':
+    '{current} von {target} Stunden seit dem ersten Trade des Zyklus.',
+  'account.prop-challenge.ledger.help.payout.lifetime_qualifying_days':
+    'Qualifizierende Tage über die gesamte Funded-Phase, nicht nur diesen Zyklus. Auszahlungen werden frei, sobald erreicht.',
+  'account.prop-challenge.ledger.help.payout.lifetime_qualifying_days.example':
+    '{current} von {target} Qualifikationstagen über die gesamte Phase.',
+  'account.prop-challenge.ledger.requirement.target': 'Ziel {value}',
+  'account.prop-challenge.ledger.requirement.buffer': 'Puffer {value}',
+  'account.prop-challenge.ledger.requirement.max': 'max. {value}',
+  'account.prop-challenge.ledger.requirement.daily-cap':
+    '{value} Anrechnung pro Handelstag',
+  'account.prop-challenge.ledger.requirement.profitable-days':
+    '{days} Tage mit mindestens {profit}',
+  'account.prop-challenge.ledger.requirement.days': '{value} Tage',
+  'account.prop-challenge.ledger.requirement.at-most': '≤ {value}',
+  'account.prop-challenge.ledger.state.not-started': 'Nicht begonnen',
+  'account.prop-challenge.ledger.state.in-progress': 'Läuft',
+  'account.prop-challenge.ledger.state.reached': 'Erreicht',
+  'account.prop-challenge.ledger.state.met': 'Erfüllt',
+  'account.prop-challenge.ledger.state.eligible': 'Berechtigt',
+  'account.prop-challenge.ledger.state.safe': 'Sicher',
+  'account.prop-challenge.ledger.state.clear': 'Unbelastet',
+  'account.prop-challenge.ledger.state.within-rule': 'Regelkonform',
+  'account.prop-challenge.ledger.state.near-limit': 'Nahe am Limit',
+  'account.prop-challenge.ledger.state.limit-reached': 'Limit erreicht',
+  'account.prop-challenge.ledger.state.cap-applied': 'Grenze angewendet',
+  'account.prop-challenge.ledger.state.within-cap': 'Innerhalb der Grenze',
+  'account.prop-challenge.ledger.state.breached': 'Verletzt',
+  'account-dashboard.prop.metrics.total': 'Prüfungen',
+  'account-dashboard.prop.metrics.pass-rate': 'Bestehensquote',
+  'account-dashboard.prop.metrics.costs': 'Challenge-Kosten',
+  'account-dashboard.prop.metrics.payouts': 'Auszahlungen',
+  'account-dashboard.prop.metrics.net': 'Netto',
+  'account-dashboard.prop.tabs.overview': 'Übersicht',
+  'account-dashboard.mode.selector': 'Kontodashboard-Modus',
+  'account-dashboard.mode.account-overview': 'Übersicht',
+  'account-dashboard.mode.challenges': 'Prop-Challenges',
+  'account-dashboard.prop.metrics.active': 'Aktive Challenges',
+  'account-dashboard.prop.economics.title': 'Wirtschaftlichkeit',
+  'account-dashboard.prop.economics.roi': 'Kapitalrendite',
+  'account-dashboard.prop.economics.roi-no-cost': 'Ohne Kosten',
+  'account-dashboard.prop.economics.average-cost-per-attempt':
+    'Durchschnittskosten pro Versuch',
+  'account-dashboard.prop.economics.cost-per-funded-account':
+    'Kosten pro finanziertem Konto',
+  'account-dashboard.prop.economics.payout-conversion': 'Auszahlungsquote',
+  'account-dashboard.prop.insights.title': 'Challenge-Einblicke',
+  'account-dashboard.prop.phases.title': 'Phasen-Einblicke',
+  'account-dashboard.prop.phases.phase': 'Abschnitt',
+  'account-dashboard.prop.phases.average-duration': 'Ø Dauer',
+  'account-dashboard.prop.phases.show-more': 'Weitere {count} anzeigen',
+  'account-dashboard.prop.phases.show-fewer': 'Weniger anzeigen',
+  'account-dashboard.prop.tooltip.open-explanation':
+    'Berechnung für {metric} erklären',
+  'account-dashboard.prop.tooltip.calculation-unavailable':
+    'Noch nicht genügend abgeschlossene Daten',
+  'account-dashboard.prop.tooltip.pass-rate.description':
+    'Anteil der abgeschlossenen Challenges, die bestanden wurden. Aktive Challenges und archivierte Challenges ohne Ergebnis werden nicht berücksichtigt.',
+  'account-dashboard.prop.tooltip.pass-rate.formula':
+    'Bestandene Challenges ÷ abgeschlossene Challenges × 100',
+  'account-dashboard.prop.tooltip.roi.description':
+    'Nettoertrag aus Auszahlungen (Auszahlungen minus Challenge-Kosten) im Verhältnis zu den Challenge-Kosten. Die Kapitalrendite wird nur bei einer gemeinsamen Währung berechnet.',
+  'account-dashboard.prop.tooltip.roi.formula':
+    '(Auszahlungen − Challenge-Kosten) ÷ Challenge-Kosten × 100',
+  'account-dashboard.prop.tooltip.roi.no-cost':
+    'Diese Challenges haben nichts gekostet, es gibt also keine Kostenbasis zum Teilen. Die Nettorendite entspricht den Auszahlungen von {payouts}.',
+  'account-dashboard.prop.tooltip.average-cost.description':
+    'Durchschnittliche Challenge-Kosten pro Versuch, getrennt nach Währung berechnet.',
+  'account-dashboard.prop.tooltip.average-cost.formula':
+    'Challenge-Kosten ÷ gesamte Challenge-Versuche',
+  'account-dashboard.prop.tooltip.funded-cost.description':
+    'Durchschnittliche Challenge-Kosten pro bestandener Challenge, getrennt nach Währung berechnet.',
+  'account-dashboard.prop.tooltip.funded-cost.formula':
+    'Challenge-Kosten ÷ bestandene Challenges',
+  'account-dashboard.prop.tooltip.payout-conversion.description':
+    'Anteil der bestandenen Challenges, die mindestens eine Auszahlung erzeugt haben.',
+  'account-dashboard.prop.tooltip.payout-conversion.formula':
+    'Bestandene Challenges mit Auszahlung ÷ bestandene Challenges × 100',
+  'account-dashboard.prop.tabs.phases': 'Phasen',
+  'account-dashboard.prop.tabs.firms': 'Firmen',
+  'account-dashboard.prop.firms.firm': 'Firma',
+  'account-dashboard.prop.firms.attempts': 'Versuche',
+  'account-dashboard.prop.phases.most-failed': 'Häufigste Fehlphase',
+  'account-dashboard.prop.phases.days': '{count} Tage',
+  'account-dashboard.prop.phases.empty': 'Noch keine abgeschlossenen Phasen',
 
   'setups.create.field.tags': 'Tags',
   'setups.create.placeholder.tags': 'Momentum, Ausbruch, Morgen',
@@ -6731,6 +7806,354 @@ const de: Lang = {
   'home.guide.whats-new.done.title': 'Dein Arbeitskontext bleibt erhalten',
   'home.guide.whats-new.done.description':
     'Nutze die Übersicht für persönliche Widgets und das Dashboard für tiefere Analysen. Jeder Modus behält eigene Filter und Layouts.',
+  'account.prop-challenge.summary.status.payout_ready': 'Auszahlungsbereit',
+  'account.prop-challenge.ribbon.passed': '{phase} bestanden',
+  'account.prop-challenge.ribbon.failed': '{phase} nicht bestanden',
+  'account.prop-challenge.ribbon.action.advance': 'Weiter zu {phase}',
+  'account.prop-challenge.ribbon.action.advance-short': 'Weiter',
+  'account.prop-challenge.ribbon.action.mark-passed': 'Als bestanden markieren',
+  'account.prop-challenge.ribbon.action.archive': 'Archivieren',
+  'account.prop-challenge.ribbon.action.record-payout': 'Auszahlung erfassen',
+  'account.prop-challenge.ribbon.action.record-payout-short': 'Auszahlung',
+  'account.prop-challenge.payout.title': 'Auszahlungsbereitschaft',
+  'account.prop-challenge.payout.eligible': 'Auszahlungsbereit',
+  'account.prop-challenge.payout.available': 'Jetzt verfügbar',
+  'account.prop-challenge.payout.cycle-profit': 'Zyklusgewinn',
+  'account.prop-challenge.payout.history': 'Auszahlungen',
+  'account.prop-challenge.payout.lifetime-qualifying-days':
+    'Lebenslange qualifizierende Tage',
+  'account.prop-challenge.payout.requirement.days': 'Handelstage',
+  'account.prop-challenge.payout.requirement.qualifying-days':
+    'Qualifizierende Tage',
+  'account.prop-challenge.payout.requirement.minimum-balance':
+    'Mindestkontostand',
+  'account.prop-challenge.payout.requirement.positive-cycle-profit':
+    'Positiver Zyklusgewinn',
+  'account.prop-challenge.payout.requirement.cycle-profit': 'Zyklusgewinn',
+  'account.prop-challenge.payout.requirement.consistency': 'Konsistenz',
+  'account.prop-challenge.payout.requirement.minimum':
+    'Verfügbarer Mindestbetrag',
+  'account.prop-challenge.payout.requirement.payouts': 'Auszahlungslimit',
+  'account.prop-challenge.payout.requirement.request-window': 'Antragsfenster',
+  'account.prop-challenge.payout.timezone-invalid': 'Unbekannte Zeitzone.',
+  'account.prop-challenge.payout.preview-amount': 'Auszahlung prüfen',
+  'account.prop-challenge.payout.you-receive': 'Händleranteil',
+  'account.prop-challenge.payout.balance-after': 'Kontostand danach',
+  'account.prop-challenge.payout.drawdown-floor': 'Drawdown-Untergrenze',
+  'account.prop-challenge.payout.buffer-after': 'Abstand zum Regelverstoß',
+  'account.prop-challenge.payout.request-not-allowed':
+    'Bei diesem Betrag nicht zulässig',
+  'account.prop-challenge.payout.immediate-breach':
+    'Diese Auszahlung würde das Konto auf oder unter seine Drawdown-Untergrenze bringen.',
+  'account.prop-challenge.payout.account-concludes':
+    'Diese Auszahlung schließt den konfigurierten simulierten Funded-Auszahlungszyklus ab.',
+  'account.prop-challenge.payout.next-stage-after-payout':
+    'Diese Auszahlung versetzt das Konto in die nächste konfigurierte Phase.',
+  'account.prop-challenge.payout.live-review-after-payout':
+    'Diese Auszahlung macht das Konto für die Prüfung auf ein Live-Konto berechtigt.',
+  'account.prop-challenge.payout.cycle-resets':
+    'Der Auszahlungsfortschritt wird nach einer genehmigten Auszahlung zurückgesetzt.',
+  'account.prop-challenge.payout.cycle-continues':
+    'Der Auszahlungsfortschritt wird nach einer genehmigten Auszahlung fortgesetzt.',
+  'account.prop-challenge.payout.drawdown.unchanged':
+    'Die aktuelle Drawdown-Untergrenze bleibt bestehen.',
+  'account.prop-challenge.payout.drawdown.lock_at_balance':
+    'Die Drawdown-Untergrenze wird nach der Auszahlung fixiert.',
+  'account.prop-challenge.payout.drawdown.reset_from_starting_balance':
+    'Konto- und Drawdown-Limits werden nach der Auszahlung zurückgesetzt.',
+  'account-page.guide.whats-new.cockpit.payout.title':
+    'Erkenne sichere Funded-Auszahlungen',
+  'account-page.guide.whats-new.cockpit.payout.description':
+    'Funded-Konten mit geprüften Regeln zeigen jetzt Auszahlungsanforderungen, den verfügbaren Betrag sowie eine Vorschau der Folgen für Kontostand und Drawdown.',
+  'account-page.guide.main.payout.title': 'Funded-Auszahlungen planen',
+  'account-page.guide.main.payout.description':
+    'Wenn für die Funded-Phase geprüfte Auszahlungsregeln vorliegen, verfolgt dieser Bereich die Berechtigung und zeigt die Kontofolgen des gewünschten Betrags.',
+  'account.prop-challenge.stage': 'Stufentyp',
+  'account.prop-challenge.stage.evaluation': 'Evaluierung',
+  'account.prop-challenge.stage.sim-funded': 'Simuliert finanziert',
+  'account.prop-challenge.stage.live-funded': 'Live finanziert',
+  'account.prop-challenge.payout-rules.title': 'Auszahlungsregeln',
+  'account.prop-challenge.payout-rules.add': 'Auszahlungsregeln hinzufügen',
+  'account.prop-challenge.payout-rules.remove': 'Auszahlungsregeln entfernen',
+  'account.prop-challenge.payout-rules.cycle': 'Berechtigungszyklus',
+  'account.prop-challenge.payout-rules.request-window':
+    'Zeitpunkt des Auszahlungsantrags',
+  'account.prop-challenge.payout-rules.request-window.anytime': 'Jeder Tag',
+  'account.prop-challenge.payout-rules.request-window.weekdays':
+    'Bestimmte Wochentage',
+  'account.prop-challenge.payout-rules.request-window.time-zone': 'Zeitzone',
+  'account.prop-challenge.payout-rules.request-window.allowed-days':
+    'Zulässige Antragstage',
+  'account.prop-challenge.payout-rules.cycle.none': 'Kein Wartezyklus',
+  'account.prop-challenge.payout-rules.cycle.trading-days': 'Handelstage',
+  'account.prop-challenge.payout-rules.cycle.qualifying-days':
+    'Qualifizierende Tage',
+  'account.prop-challenge.payout-rules.cycle.calendar-days': 'Kalendertage',
+  'account.prop-challenge.payout-rules.days': 'Erforderliche Tage',
+  'account.prop-challenge.payout-rules.minimum-daily-profit':
+    'Mindest-Tagesgewinn',
+  'account.prop-challenge.payout-rules.anchor': 'Zyklus beginnt ab',
+  'account.prop-challenge.payout-rules.anchor.phase-start': 'Stufenbeginn',
+  'account.prop-challenge.payout-rules.anchor.first-trade': 'Erster Trade',
+  'account.prop-challenge.payout-rules.minimum-balance': 'Mindestkontostand',
+  'account.prop-challenge.payout-rules.minimum-cycle-profit':
+    'Mindest-Zyklusgewinn',
+  'account.prop-challenge.payout-rules.minimum-cycle-profit-schedule':
+    'Mindestzyklusgewinn nach Auszahlungsnummer',
+  'account.prop-challenge.payout-rules.positive-cycle-after-first':
+    'Nach der ersten Auszahlung positiven Zyklusgewinn verlangen',
+  'account.prop-challenge.payout-rules.consistency-percent':
+    'Maximaler Anteil des besten Tages (%)',
+  'account.prop-challenge.payout-rules.consistency-percent-schedule':
+    'Maximaler Anteil des besten Tages nach Auszahlungsnummer (%)',
+  'account.prop-challenge.payout-rules.availability': 'Verfügbarer Gewinn',
+  'account.prop-challenge.payout-rules.availability.starting-balance':
+    'Über dem Startguthaben',
+  'account.prop-challenge.payout-rules.availability.balance-floor':
+    'Über der Kontostand-Untergrenze',
+  'account.prop-challenge.payout-rules.balance-floor': 'Kontostand-Untergrenze',
+  'account.prop-challenge.payout-rules.request-percent':
+    'Auszahlbarer Anteil (%)',
+  'account.prop-challenge.payout-rules.new-profit-percent':
+    'Erforderlicher neuer Gewinn je Antrag (%)',
+  'account.prop-challenge.payout-rules.new-profit-percent-help':
+    'Begrenzt den Antrag so, dass der konfigurierte Prozentsatz durch den im aktuellen Auszahlungszyklus erzielten Gewinn gedeckt ist. Beispiel: 50 % erlaubt einen Antrag bis zum Doppelten des aktuellen Zyklusgewinns.',
+  'account.prop-challenge.payout-rules.minimum-request': 'Mindestauszahlung',
+  'account.prop-challenge.payout-rules.maximum': 'Maximale Auszahlung',
+  'account.prop-challenge.payout-rules.maximum.none': 'Kein Maximum',
+  'account.prop-challenge.payout-rules.maximum.fixed': 'Festes Maximum',
+  'account.prop-challenge.payout-rules.maximum.first-fixed-then-none':
+    'Höchstbetrag nur für die erste Auszahlung',
+  'account.prop-challenge.payout-rules.maximum.schedule':
+    'Maximum nach Auszahlungsnummer',
+  'account.prop-challenge.payout-rules.maximum.cycle-profit-percent':
+    'Prozentsatz des Zyklusgewinns',
+  'account.prop-challenge.payout-rules.maximum-amount': 'Maximalbetrag',
+  'account.prop-challenge.payout-rules.maximum-first-amount':
+    'Höchstbetrag der ersten Auszahlung',
+  'account.prop-challenge.payout-rules.maximum-cycle-profit-percent':
+    'Maximaler Zyklusgewinn (%)',
+  'account.prop-challenge.payout-rules.schedule-repeat-last':
+    'Endbetrag für spätere Auszahlungen weiterverwenden',
+  'account.prop-challenge.payout-rules.schedule-repeat-value':
+    'Letzten Wert für spätere Auszahlungen weiterverwenden',
+  'account.prop-challenge.payout-rules.schedule':
+    'Beträge nach Auszahlungsnummer',
+  'account.prop-challenge.payout-rules.profit-split':
+    'Gewinnanteil des Traders (%)',
+  'account.prop-challenge.payout-rules.lifetime-unlock':
+    'Limits nach lebenslangen qualifizierenden Tagen ändern',
+  'account.prop-challenge.payout-rules.lifetime-unlock-help':
+    'Zählt qualifizierende Tage über die gesamte Funded-Phase, auch wenn Auszahlungszyklen zurückgesetzt werden.',
+  'account.prop-challenge.payout-rules.lifetime-unlock-days':
+    'Erforderliche lebenslange qualifizierende Tage',
+  'account.prop-challenge.payout-rules.lifetime-unlock-availability':
+    'Verfügbarkeit nach Freischaltung',
+  'account.prop-challenge.payout-rules.lifetime-unlock-balance-floor':
+    'Kontostand-Untergrenze nach Freischaltung',
+  'account.prop-challenge.payout-rules.lifetime-unlock-request-percent':
+    'Verfügbarer Gewinn nach Freischaltung (%)',
+  'account.prop-challenge.payout-rules.lifetime-unlock-maximum':
+    'Maximale Anfrage nach Freischaltung',
+  'account.prop-challenge.payout-rules.lifetime-unlock-maximum-amount':
+    'Maximalbetrag nach Freischaltung',
+  'account.prop-challenge.payout-rules.lifetime-unlock-maximum-schedule':
+    'Maximalplan nach Freischaltung',
+  'account.prop-challenge.payout-rules.lifetime-unlock-maximum-cycle-profit-percent':
+    'Maximaler Zyklusgewinn-Prozentsatz nach Freischaltung',
+  'account.prop-challenge.payout-rules.profit-split-model':
+    'Gewinnaufteilungsmodell',
+  'account.prop-challenge.payout-rules.profit-split.fixed':
+    'Fester Prozentsatz',
+  'account.prop-challenge.payout-rules.profit-split.threshold':
+    'Änderung nach kumulierten Auszahlungen',
+  'account.prop-challenge.payout-rules.profit-split.initial':
+    'Anfänglicher Händleranteil (%)',
+  'account.prop-challenge.payout-rules.profit-split.threshold-amount':
+    'Kumulierte Auszahlungsschwelle',
+  'account.prop-challenge.payout-rules.profit-split.thereafter':
+    'Händleranteil nach Schwelle (%)',
+  'account.prop-challenge.payout-rules.maximum-payouts':
+    'Maximale Auszahlungen',
+  'account.prop-challenge.payout-rules.maximum-payout-outcome':
+    'Nach der letzten Auszahlung',
+  'account.prop-challenge.payout-rules.maximum-payout-outcome.continue':
+    'Konto fortführen',
+  'account.prop-challenge.payout-rules.maximum-payout-outcome.conclude':
+    'Konto abschließen',
+  'account.prop-challenge.payout-rules.maximum-payout-outcome.promote':
+    'Zur nächsten Phase wechseln',
+  'account.prop-challenge.payout-rules.maximum-payout-outcome.live-review':
+    'Für Live-Prüfung berechtigt',
+  'account.prop-challenge.payout-rules.aftermath':
+    'Nach einer genehmigten Auszahlung',
+  'account.prop-challenge.payout-rules.aftermath.unchanged':
+    'Auszahlung abziehen; Drawdown-Untergrenze beibehalten',
+  'account.prop-challenge.payout-rules.aftermath.lock':
+    'Auszahlung abziehen; Drawdown-Untergrenze fixieren',
+  'account.prop-challenge.payout-rules.aftermath.reset':
+    'Konto und Drawdown zurücksetzen',
+  'account.prop-challenge.payout-rules.drawdown-floor':
+    'Drawdown-Untergrenze nach Auszahlung',
+  'account.prop-challenge.payout-rules.first-payout-exempt':
+    'Erste Auszahlung ignoriert den Mindest-Zyklusgewinn',
+  'account.prop-challenge.payout-rules.reset-cycle':
+    'Berechtigungszyklus nach Auszahlung zurücksetzen',
+  'account.prop-challenge.payout-rules.group.eligibility': 'Berechtigung',
+  'account.prop-challenge.payout-rules.group.availability':
+    'Verfügbare Auszahlung',
+  'account.prop-challenge.payout-rules.group.terms': 'Auszahlungsbedingungen',
+  'account.prop-challenge.payout-rules.group.aftermath': 'Nach der Auszahlung',
+  'account.prop-challenge.payout.requirement.elapsed-hours':
+    'Verstrichene Zeit',
+  'account.prop-challenge.payout-rules.profit-split.account-profit-threshold':
+    'Ändert sich nach Kontogewinn',
+  'account.prop-challenge.payout-rules.profit-split.account-profit-help':
+    'Der lebenslange Kontogewinn entspricht dem aktuellen Saldo minus Startguthaben plus früheren Auszahlungen. Der Prozentsatz unterhalb bzw. ab der Schwelle gilt für den gesamten Antrag.',
+  'account.prop-challenge.payout-rules.profit-split.below':
+    'Händleranteil unterhalb der Schwelle (%)',
+  'account.prop-challenge.payout-rules.profit-split.threshold-profit':
+    'Kontogewinnschwelle',
+  'account.prop-challenge.payout-rules.profit-split.at-or-above':
+    'Händleranteil ab der Schwelle (%)',
+  'account.prop-challenge.payout-rules.minimum-elapsed-hours':
+    'Mindestanzahl verstrichener Stunden',
+
+  
+  'account.merge.challenge.move-earlier': '{account} nach vorn',
+  'account.merge.challenge.move-later': '{account} nach hinten',
+  'account.merge.warning.use-profile-balance': 'Profil-Startguthaben verwenden',
+  'account.merge.warning.edit-phases': 'Phasen bearbeiten',
+  'account.merge.title': 'Challenge einrichten',
+  'account.merge.loading': 'Wird geladen...',
+  'account.merge.step.accounts': 'Konten',
+  'account.merge.step.phases': 'Phasen',
+  'account.merge.step.review': 'Prüfen',
+  'account.merge.accounts.title': 'Zusammenzuführende Konten',
+  'account.merge.accounts.show-archived': 'Archivierte anzeigen',
+  'account.merge.accounts.empty': 'Keine geeigneten Konten',
+  'account.merge.target.title': 'Zielkonto',
+  'account.merge.target.keep': 'Beibehalten',
+  'account.merge.target.new': 'Neuer Name',
+  'account.merge.phase.name': 'Phasenname',
+  'account.merge.phase.status': 'Status',
+  'account.merge.phase.started': 'Beginn',
+  'account.merge.phase.completed': 'Abschluss',
+  'account.merge.phase.no-rules': 'Keine',
+  'account.merge.review.notes': 'verschobene Trades',
+  'account.merge.review.identities': 'Broker-Konten',
+  'account.merge.warning.trade-outside-window':
+    'Trades außerhalb ihres Phasenzeitraums',
+  'account.merge.warning.identity-shared':
+    'Kennung von mehreren Konten beansprucht',
+  'account.merge.warning.copy-trading-dropped':
+    'Copy-Trading-Zeiträume verworfen',
+  'account.merge.error.too-few-sources': 'Wähle mindestens zwei Konten.',
+  'account.merge.error.duplicate-source': 'Ein Konto ist doppelt aufgeführt.',
+  'account.merge.error.target-exists':
+    'Dieser Name gehört zu einem anderen Konto.',
+  'account.merge.error.currency-mismatch':
+    'Die Konten nutzen unterschiedliche Währungen.',
+  'account.merge.error.timeline-not-monotonic':
+    'Die Phasenstarts müssen aufsteigend sein.',
+  'account.merge.error.invalid-override': 'Prüfe die Daten dieser Phase.',
+  'account.merge.error.source-missing':
+    'Für ein Konto sind keine Einstellungen gespeichert.',
+  'account.merge.error.unknown': 'Zusammenführen fehlgeschlagen.',
+  'account.merge.action.merge': 'Zusammenführen',
+  'account.merge.action.undo': 'Rückgängig',
+  'account.merge.action.delete': 'Alte Konten löschen',
+  'account.merge.notice.converted': 'In eine Challenge umgewandelt',
+  'account.merge.notice.title': 'Zusammengeführt aus {accounts}',
+  'account.merge.notice.error': 'Aktion fehlgeschlagen.',
+  'account.merge.undo.title': 'Zusammenführung rückgängig machen',
+  'account.merge.undo.message':
+    'Stellt die alten Konten und ihre Trades wieder her.',
+  'account.merge.delete.title': 'Alte Konten löschen',
+  'account.merge.delete.message':
+    'Löscht die archivierten alten Konten. Das lässt sich nicht rückgängig machen.',
+  'command.open-legacy-challenge-onboarding': 'Prop-Challenges einrichten',
+  'account.merge.step.challenge': 'Challenge',
+  'account.merge.action.convert': 'Umwandeln',
+  'account.merge.profile.applied': 'Angewendet: {firm} · {challenge}',
+  'account.merge.profile.remove': 'Entfernen',
+  'account.merge.phase.apply-profile': 'Firmenprofil anwenden',
+  'account.merge.profile.replace-rules.title':
+    'Manuell eingegebene Regeln ersetzen?',
+  'account.merge.profile.replace-rules.body':
+    'Das Profil von {firm} legt die Regeln jeder Phase fest. Die auf dieser Seite eingegebenen Regeln werden ersetzt.',
+  'account.merge.profile.replace-rules.confirm': 'Regeln ersetzen',
+  'guide.legacy-setup.list.title': 'Hier steht jedes Konto ohne Challenge',
+  'guide.legacy-setup.list.description':
+    'Entscheide pro Konto. „Unverändert lassen“ behält es genau so, wie es ist; du kannst es später jederzeit in den Dashboard-Einstellungen einrichten.',
+  'guide.legacy-setup.assign.title': 'Phasen einer Challenge zusammenfassen',
+  'guide.legacy-setup.assign.description':
+    'Konten, die Phasen derselben Challenge waren, kommen in eine Gruppe (Vorschläge entstehen aus passenden Namen). Ein einzelnes Konto wird zu einer Challenge mit einer Phase.',
+  'guide.legacy-setup.continue.title': 'Eine kurze Einrichtung pro Challenge',
+  'guide.legacy-setup.continue.description':
+    '„Weiter“ öffnet die Challenge-Einrichtung nacheinander für jede Gruppe. Nichts ändert sich, bevor du jede bestätigst.',
+  'guide.merge-wizard.target.title': 'Ein Konto behält den Verlauf',
+  'guide.merge-wizard.target.description':
+    'Das Zielkonto bleibt mit allen Phasen bestehen. Die anderen werden archiviert, nicht gelöscht, und ihre Trades wandern zum Zielkonto.',
+  'guide.merge-wizard.identity.title': 'Firma und Challenge benennen',
+  'guide.merge-wizard.identity.description':
+    'Ein Firmenprofil trägt die echten Regeln und die finanzierte Phase ein. Ohne Profil haben Phasen keine Regeln, bis du sie auf der Kontoseite ergänzt.',
+  'guide.merge-wizard.phases.title': 'Jede Phase prüfen',
+  'guide.merge-wizard.phases.description':
+    'Lege den Stufentyp fest, markiere abgeschlossene Phasen als „Bestanden“ und die aktuelle als „Aktiv“ und prüfe die Daten.',
+  'guide.merge-wizard.review.title': 'Nichts passiert, bevor du bestätigst',
+  'guide.merge-wizard.review.description':
+    'Prüfe die verschobenen Trades, die archivierten Konten und alle Warnungen. „Zusammenführen“ wendet alles an; auf der Kontoseite kannst du es rückgängig machen.',
+  'account.merge.challenge.accounts': 'Konten',
+  'account.merge.challenge.order-hint': 'Älteste Phase zuerst',
+  'account.merge.challenge.single-hint':
+    'Dieses Konto wird eine eigene Challenge',
+  'account.merge.phase.identities-count': '{count} Identitäten',
+  'account.merge.phase.pending': 'Ausstehend',
+  'account.merge.review.phases': 'Phasen',
+  'account.merge.review.archived': 'archiviert',
+  'account.merge.review.open': 'offen',
+  'account.merge.sequence': 'Challenge {index} von {total}',
+  'account.merge.warning.balance-differs':
+    'Startguthaben weicht vom Firmenprofil ab',
+  'account.merge.error.profile-phase-mismatch':
+    'Mehr Konten als Phasen im Firmenprofil',
+  'account.merge.error.profile-currency-mismatch':
+    'Die Profilwährung weicht von diesen Konten ab.',
+  'account.merge.error.source-changed':
+    'Ein Konto hat sich geändert. Prüfe die Zusammenführung erneut.',
+  'account.merge.error.multiple-active-phases':
+    'Nur das letzte Konto darf noch aktiv sein.',
+  'account.merge.error.phases-after-failed-source':
+    'Ein gescheitertes Konto beendet die Challenge und muss daher zuletzt ausgewählt werden.',
+  'account.merge.error.copy-trading-overlap':
+    'Copy-Trading-Zeiträume überschneiden sich. Schließe zuerst einen.',
+  'onboarding.legacy-challenge.legend':
+    'Gruppiere Konten, die Phasen einer Challenge waren. Ein einzelnes Konto wird zu einer eigenen Challenge.',
+  'onboarding.legacy-challenge.assign.leave': 'So lassen',
+  'onboarding.legacy-challenge.assign.own': 'Eigene Challenge',
+  'onboarding.legacy-challenge.assign.group': 'Challenge {letter}',
+  'onboarding.legacy-challenge.assign.new-group': 'Neue Challenge…',
+  'onboarding.legacy-challenge.action.continue': 'Weiter',
+  'onboarding.legacy-challenge.action.continue-count': '{count} einrichten',
+  'guide.action-step.dismiss': 'Nicht jetzt',
+  'guide.legacy-challenge.title': 'Deine bestehenden Konten',
+  'guide.legacy-challenge.description':
+    'Kombiniere Konten, die Phasen einer Challenge waren, oder mache ein Konto zu einer eigenen Challenge.',
+  'guide.legacy-challenge.action': 'Konten einrichten',
+  'onboarding.legacy-challenge.title': 'Prop-Challenges',
+  'onboarding.legacy-challenge.action.skip': 'Überspringen',
+  'onboarding.legacy-challenge.accounts.show-archived': 'Archivierte anzeigen',
+  'onboarding.legacy-challenge.accounts.empty': 'Keine Konten zum Einrichten',
+  'onboarding.legacy-challenge.loading': 'Wird geladen...',
+  'onboarding.legacy-challenge.suggested': 'Vorschlag',
+  'onboarding.legacy-challenge.row.aria': 'Aktion für {account}',
+  'onboarding.legacy-challenge.status.combined': 'Zusammengeführt',
+  'onboarding.legacy-challenge.status.converted': 'Umgewandelt',
+  'onboarding.legacy-challenge.entry.name': 'Prop-Challenges',
+  'onboarding.legacy-challenge.entry.desc':
+    'Bestehende Konten zu Challenges zusammenführen oder umwandeln.',
+  'onboarding.legacy-challenge.entry.action': 'Einrichten',
 
   'view.home': 'Heim',
   'common.lose': 'Verlieren',
@@ -6841,5 +8264,97 @@ const de: Lang = {
     'seit deinem letzten Review fehlen {count} Monate',
   'home.widget.streak.missed-months.other':
     'seit deinem letzten Review fehlen {count} Monate',
+  'trade-sync.quick.started': 'Aktivierte Trade-Quellen werden synchronisiert…',
+  'trade-sync.quick.running': 'Wird synchronisiert…',
+  'trade-sync.quick.offline':
+    'Die Trade-Synchronisierung benötigt eine Internetverbindung. Versuche es erneut, sobald du online bist.',
+  'trade-sync.quick.no-sources':
+    'Keine aktivierten Trade-Sync-Quellen gefunden. Richte Trade Sync in den Einstellungen ein.',
+  'trade-sync.quick.complete':
+    'Trade-Synchronisierung abgeschlossen: {sources} Quellen synchronisiert und {imported} Trades importiert oder aktualisiert.',
+  'trade-sync.quick.partial':
+    'Trade-Synchronisierung mit Problemen beendet: {completed} von {total} Quellen abgeschlossen und {imported} Trades importiert oder aktualisiert.',
+  'trade-sync.quick.failed':
+    'Die Trade-Synchronisierung konnte für {sources} Quellen nicht abgeschlossen werden. Prüfe deine Trade-Sync-Einstellungen und versuche es erneut.',
+  'navigation.items.nav-sync-trades': 'Trades synchronisieren',
+  'command.sync-trades-now': 'Trades synchronisieren',
+  'home.quick-links.sync-trades': 'Trades synchronisieren',
+  'trade-sync.quick.not-ready':
+    'Keine aktivierten Trade-Sync-Quellen sind derzeit bereit. Warte auf laufende Synchronisierungen oder prüfe die Trade-Sync-Einstellungen.',
+  'trade-sync.quick.mapping-required':
+    '{imported} Trades wurden importiert oder aktualisiert. Schließe die Kontozuordnung für {providers} unter Einstellungen → Trade Sync ab und versuche es erneut.',
+  'trade-handoff.action.view-trades-count.one': '{count} Trade anzeigen',
+  'trade-handoff.action.view-trades-count.few': '{count} Trades anzeigen',
+  'trade-handoff.action.view-trades-count.many': '{count} Trades anzeigen',
+  'trade-handoff.action.view-trades-count.other': '{count} Trades anzeigen',
+  'trade-handoff.action.review-now': 'Jetzt überprüfen',
+  'trade-handoff.action.open-period': 'Review für {period} öffnen',
+  'trade-handoff.review.creation-disabled':
+    'Dieser Review existiert nicht und die automatische Review-Erstellung ist deaktiviert.',
+  'trade-handoff.review.open-failed':
+    'Dieser Review konnte nicht geöffnet werden.',
+  'trade-handoff.trades.open-failed':
+    'Das Trade Log konnte nicht geöffnet werden.',
+  'trade-handoff.scope.label':
+    '{trades} aus dem letzten Vorgang für {accounts} werden angezeigt',
+  'trade-handoff.scope.exit': 'Vorgangsansicht verlassen',
+  'trade-handoff.trade-count.one': '{count} Trade',
+  'trade-handoff.trade-count.few': '{count} Trades',
+  'trade-handoff.trade-count.many': '{count} Trades',
+  'trade-handoff.trade-count.other': '{count} Trades',
+  'trade-handoff.title.sync': 'Synchronisierung abgeschlossen',
+  'trade-handoff.summary.import-complete': '{trades} importiert',
+  'trade-handoff.summary.import-partial': '{trades} mit Problemen importiert',
+  'trade-handoff.summary.sync-complete': '{trades} synchronisiert',
+  'trade-handoff.summary.sync-partial': '{trades} mit Problemen synchronisiert',
+  'trade-handoff.periods.choose': 'Anderen Überprüfungszeitraum auswählen',
+  'trade-handoff.periods.recommended': 'Empfohlen',
+  'trade-handoff.action.dismiss': 'Letztes Trade-Ergebnis schließen',
+  'sample.action.try': 'Beispieljournal ausprobieren',
+  'sample.action.reset': 'Beispiel zurücksetzen',
+  'sample.popout.title': 'Beispieljournal',
+  'sample.popout.action.exit': 'Verlassen',
+  'sample.popout.description': 'Änderungen hier dienen nur zum Üben.',
+  'sample.popout.closed': 'Übungsjournal gespeichert und geschlossen.',
+  'sample.popout.recovery': 'Übungsjournal muss wiederhergestellt werden.',
+  'sample.notice.sync-blocked':
+    'Du bearbeitest fiktive Beispieldaten. Die Backend-Synchronisierung ist pausiert.',
+  'sample.notice.folder-locked':
+    'Der Journal-Ordner kann nicht geändert werden, solange das Beispiel-Journal aktiv ist.',
+  'sample.empty.description':
+    'Erkunde ein ausgefülltes fiktives Journal, ohne deine Journaldateien oder Einstellungen zu ändern.',
+  'sample.progress.creating':
+    'Beispieljournal wird erstellt: {completed} von {total} Elementen',
+  'sample.progress.removing':
+    'Beispieljournal wird entfernt: {completed} von {total} Elementen',
+  'sample.progress.verifying':
+    'Beispieljournal wird geprüft: {completed} von {total} Einträgen',
+  'sample.exit.title': 'Beispieljournal verlassen?',
+  'sample.exit.remove-warning':
+    'Beim Entfernen werden Änderungen in nachweislich zum Beispiel gehörenden Dateien gelöscht. Dateien ohne nachweisbare Beispielzugehörigkeit bleiben erhalten.',
+  'sample.exit.remove': 'Verlassen und entfernen',
+  'sample.reset.title': 'Beispieljournal zurücksetzen?',
+  'sample.reset.message':
+    'Dadurch werden alle Beispieldateien und beispielspezifischen Einstellungen auf das ursprüngliche fiktive Paket zurückgesetzt.',
+  'sample.reset.warning':
+    'Deine Änderungen im Beispieljournal werden gelöscht.',
+  'sample.collision.title': 'Beispielordner ist bereits vorhanden',
+  'sample.collision.message':
+    'Journalit überschreibt den vorhandenen Ordner nicht. Soll das Beispieljournal stattdessen unter „{path}“ erstellt werden?',
+  'sample.collision.confirm': 'Verfügbaren Ordner verwenden',
+  'sample.notice.ready': 'Das Beispieljournal ist bereit.',
+  'sample.notice.reset': 'Beispieljournal wiederhergestellt.',
+  'sample.notice.reset-preserved':
+    'Beispieljournal wiederhergestellt. {count} Dateien ohne nachweisbare Eigentümerschaft wurden beibehalten.',
+  'sample.notice.removed': 'Beispieljournal entfernt.',
+  'sample.notice.removed-preserved':
+    'Beispieljournal entfernt. {count} Dateien ohne nachweisbare Eigentümerschaft wurden beibehalten.',
+  'sample.notice.error':
+    'Vorgang für das Beispieljournal fehlgeschlagen: {error}',
+  'command.open-sample-journal': 'Beispieljournal öffnen',
+  'command.exit-sample-journal': 'Beispieljournal verlassen',
+  'command.reset-sample-journal': 'Beispieljournal zurücksetzen',
+  'sample.notice.busy':
+    'Ein anderer Vorgang für das Beispieljournal wird bereits ausgeführt.',
 };
 export default de;

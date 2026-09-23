@@ -10,6 +10,7 @@ import { TradeSyncService } from './TradeSyncService';
 import { t } from '../../lang/helpers';
 import { isPnlContributingTrade } from '../../utils/tradeStatusUtils';
 import { backgroundIssuesStore } from '../diagnostics/BackgroundIssuesStore';
+import { hasSampleMarkerInMarkdown } from '../../demo/DemoOwnership';
 
 function asRecord(value: unknown): Record<string, unknown> | undefined {
   return value && typeof value === 'object' && !Array.isArray(value)
@@ -185,6 +186,9 @@ export class FileWatcherService {
       }
 
       const latestMarkdown = await this.plugin.app.vault.read(file);
+      if (hasSampleMarkerInMarkdown(latestMarkdown)) {
+        return;
+      }
 
       
       

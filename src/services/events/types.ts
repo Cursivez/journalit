@@ -52,6 +52,7 @@ export interface ReviewChangedPayload {
   type: 'drc' | 'weekly' | 'monthly' | 'quarterly' | 'yearly' | 'migration';
   action: 'created' | 'updated' | 'deleted' | 'opened' | 'bulk-migrated';
   filePath?: string;
+  filePaths?: string[];
   source?: string;
   count?: number;
 }
@@ -62,6 +63,10 @@ export interface SettingsChangedPayload {
   section?: string;
   source?: string;
   settings?: unknown;
+}
+
+export interface EntityShortcutsChangedPayload {
+  surface: 'home' | 'navigation' | 'all';
 }
 
 
@@ -191,6 +196,9 @@ export interface EventMap {
 
   
   'settings:changed': SettingsChangedPayload;
+  'entity-shortcuts:changed': EntityShortcutsChangedPayload;
+  
+  'home:widget-opacity-changed': void;
   'options:changed': OptionsChangedPayload;
   'default-template:changed': DefaultTemplateChangedPayload;
   'trade-template:changed': void;

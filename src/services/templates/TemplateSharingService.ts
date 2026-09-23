@@ -11,6 +11,7 @@ import {
 } from '../../components/reviewV2/widgets/tradeReviewConfig';
 import type { ReviewTemplateService } from './ReviewTemplateService';
 import type { TradeTemplateService } from './TradeTemplateService';
+import { encodeBase64Utf8 } from '../../utils/base64';
 
 
 interface ReviewTemplateExportPayload {
@@ -31,6 +32,25 @@ interface TradeTemplateExportPayload {
 type TemplateExportPayload =
   | ReviewTemplateExportPayload
   | TradeTemplateExportPayload;
+
+type ShareCodeVersion = 'v1' | 'v2';
+
+const SUPPORTED_SHARE_CODE_VERSIONS: readonly ShareCodeVersion[] = ['v1', 'v2'];
+
+function isSupportedShareCodeVersion(value: string): value is ShareCodeVersion {
+  return SUPPORTED_SHARE_CODE_VERSIONS.some((version) => version === value);
+}
+
+function decodeBase64Utf8(encoded: string): string {
+  const binaryString = atob(encoded);
+  const bytes = new Uint8Array(binaryString.length);
+
+  for (let index = 0; index < binaryString.length; index++) {
+    bytes[index] = binaryString.charCodeAt(index);
+  }
+
+  return new TextDecoder('utf-8', { fatal: true }).decode(bytes);
+}
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
@@ -133,10 +153,17 @@ interface ImportValidationResult {
   templateType?: string;
 }
 
+export class LayoutShareCodeTooLargeError extends Error {
+  constructor() {
+    super('Layout share code exceeds maximum size');
+    this.name = 'LayoutShareCodeTooLargeError';
+  }
+}
+
 
 export class TemplateSharingService {
   private static readonly SHARE_CODE_PREFIX = 'JRT-';
-  private static readonly CURRENT_VERSION = 'v1';
+  private static readonly CURRENT_VERSION: ShareCodeVersion = 'v2';
   private static readonly MAX_PAYLOAD_LENGTH = 50000; 
 
   
@@ -189,10 +216,10 @@ export class TemplateSharingService {
     const encodedPayload = parts.slice(1).join('-');
 
     
-    if (version !== TemplateSharingService.CURRENT_VERSION) {
+    if (!isSupportedShareCodeVersion(version)) {
       return {
         valid: false,
-        error: `Unsupported version: ${version}. Only ${TemplateSharingService.CURRENT_VERSION} is supported.`,
+        error: `Unsupported version: ${version}. Supported versions: ${SUPPORTED_SHARE_CODE_VERSIONS.join(', ')}.`,
       };
     }
 
@@ -205,7 +232,7 @@ export class TemplateSharingService {
     }
 
     
-    const payload = this.decodePayload(encodedPayload);
+    const payload = this.decodePayload(encodedPayload, version);
     if (!payload) {
       return {
         valid: false,
@@ -326,14 +353,23 @@ export class TemplateSharingService {
   
   private encodePayload(payload: TemplateExportPayload): string {
     const jsonString = JSON.stringify(payload);
-    const base64 = btoa(jsonString);
+    const base64 = encodeBase64Utf8(jsonString);
+
+    if (base64.length > TemplateSharingService.MAX_PAYLOAD_LENGTH) {
+      throw new LayoutShareCodeTooLargeError();
+    }
+
     return `${TemplateSharingService.SHARE_CODE_PREFIX}${TemplateSharingService.CURRENT_VERSION}-${base64}`;
   }
 
   
-  private decodePayload(encoded: string): TemplateExportPayload | null {
+  private decodePayload(
+    encoded: string,
+    version: ShareCodeVersion
+  ): TemplateExportPayload | null {
     try {
-      const jsonString = atob(encoded);
+      const jsonString =
+        version === 'v1' ? atob(encoded) : decodeBase64Utf8(encoded);
       const payload: unknown = JSON.parse(jsonString);
       return parseTemplateExportPayload(payload);
     } catch (error) {

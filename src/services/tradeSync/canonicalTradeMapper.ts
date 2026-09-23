@@ -14,6 +14,7 @@ export function mapProjectionTradeToTradeData(
     backendVersion?: number;
     projectionGeneration?: string;
     accountId?: string | null;
+    accountIdentity?: 'broker' | 'name';
     accountBroker?: string | null;
     accountDisplayName?: string | null;
   }
@@ -95,6 +96,7 @@ export function mapProjectionTradeToTradeData(
     canonicalTradeVersion: metadata?.backendVersion,
     canonicalProjectionGeneration: metadata?.projectionGeneration,
     canonicalAccountId: metadata?.accountId ?? undefined,
+    canonicalAccountIdentity: metadata?.accountIdentity,
     canonicalBroker: metadata?.accountBroker ?? undefined,
     canonicalAccountDisplayName: metadata?.accountDisplayName ?? undefined,
     canonicalProjectionSchemaVersion: 1,

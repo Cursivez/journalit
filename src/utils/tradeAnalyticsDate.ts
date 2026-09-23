@@ -4,6 +4,7 @@ import {
   getFirstEntryTime,
   getLastExitTime,
   getPartialExitInfo,
+  getWeightedAverageEntryPrice,
   isTradeOpenWithContext,
 } from './tradeStatusUtils';
 import { parseTradeTimestampValue } from './dateUtils';
@@ -55,6 +56,11 @@ export interface RealizedPnlEvent {
   pnlKnown: boolean;
   size?: number;
   source: 'entry' | 'exit';
+  execution?: {
+    time?: Date | string | null;
+    price: number;
+    size: number;
+  };
 }
 
 interface AllocatedRealizedPnlEvent {
@@ -67,6 +73,21 @@ type BrokerPnlTrade = AnalyticsDateTradeLike & {
   brokerBaseCurrencyPnl?: number | null;
   originalPnlBeforeConversion?: number | null;
 };
+
+interface ProjectableRealizedTrade extends BrokerPnlTrade {
+  brokerBaseCurrency?: string;
+  brokerBaseCurrencyPnlSource?: string;
+  rMultiple?: number;
+  entryPrice?: number | null;
+  exitPrice?: number | null;
+  hasExplicitExitPrice?: boolean;
+}
+
+interface ProjectedRealizedEventTrade<T extends ProjectableRealizedTrade> {
+  trade: T;
+  event: RealizedPnlEvent;
+  originalIndex: number;
+}
 
 export function getAnalyticsDateBasis(settings?: {
   trade?: { analyticsDateBasis?: AnalyticsDateBasis };
@@ -325,6 +346,11 @@ export function getTradeRealizedPnlEvents(
       pnlKnown: true,
       size: exit.size,
       source: 'exit',
+      execution: {
+        time: exit.time,
+        price: exit.price,
+        size: exit.size,
+      },
     });
   }
 
@@ -433,4 +459,49 @@ export function getAllocatedRealizedPnlEvents(
             ? brokerPnl
             : 0,
   }));
+}
+
+
+export function getProjectedRealizedEventTrades<
+  T extends ProjectableRealizedTrade,
+>(
+  trade: T,
+  plugin: Parameters<typeof getTradeRealizedPnlEvents>[2]
+): ProjectedRealizedEventTrade<T>[] {
+  return getAllocatedRealizedPnlEvents(trade, 'exit', plugin).map(
+    ({ event, originalIndex, brokerBaseCurrencyPnl }) => ({
+      trade: {
+        ...trade,
+        tradeStatus: 'CLOSED',
+        pnl: event.pnl,
+        brokerBaseCurrencyPnl,
+        brokerBaseCurrency:
+          brokerBaseCurrencyPnl !== undefined
+            ? trade.brokerBaseCurrency
+            : undefined,
+        brokerBaseCurrencyPnlSource:
+          brokerBaseCurrencyPnl !== undefined
+            ? trade.brokerBaseCurrencyPnlSource
+            : undefined,
+        directPnL: undefined,
+        useDirectPnLInput: false,
+        rMultiple: undefined,
+        exitTime: event.date,
+        exitPrice: event.execution?.price ?? trade.exitPrice,
+        hasExplicitExitPrice:
+          event.execution !== undefined ? true : trade.hasExplicitExitPrice,
+        
+        
+        
+        
+        entryPrice: getWeightedAverageEntryPrice(trade) ?? trade.entryPrice,
+        entries: undefined,
+        exits: event.execution ? [event.execution] : undefined,
+        _originalPnlWasNull:
+          trade._originalPnlWasNull === true && !event.pnlKnown,
+      },
+      event,
+      originalIndex,
+    })
+  );
 }

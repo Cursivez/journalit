@@ -10,6 +10,7 @@ import React, {
 import { AccountCard } from './AccountCard';
 import { AccountData } from '../../../services/account/types';
 import { cssVars, virtualItemStyle } from '../../../styles/inlineStylePolicy';
+import type { AccountPageData } from '../../../services/accountPage/types';
 
 interface VirtualizedAccountListProps {
   accounts: AccountData[];
@@ -22,6 +23,8 @@ interface VirtualizedAccountListProps {
   overscan?: number;
   columns?: number; 
   minColumnWidth?: number; 
+  propChallengeDataByAccountId?: ReadonlyMap<string, AccountPageData>;
+  tradingDayCutoffTime?: string;
 }
 
 
@@ -35,6 +38,8 @@ export const VirtualizedAccountList: React.FC<VirtualizedAccountListProps> =
       overscan = 3, 
       columns, 
       minColumnWidth = 300, 
+      propChallengeDataByAccountId,
+      tradingDayCutoffTime,
     }) => {
       const [scrollTop, setScrollTop] = useState(0);
       const [containerWidth, setContainerWidth] = useState(0);
@@ -162,6 +167,10 @@ export const VirtualizedAccountList: React.FC<VirtualizedAccountListProps> =
                     <AccountCard
                       key={account.id}
                       account={account}
+                      propChallengeData={propChallengeDataByAccountId?.get(
+                        account.id
+                      )}
+                      tradingDayCutoffTime={tradingDayCutoffTime}
                       onClick={() => void openAccount(account.name, account)}
                     />
                   ))}
@@ -181,7 +190,10 @@ export const VirtualizedAccountList: React.FC<VirtualizedAccountListProps> =
         prevProps.containerHeight === nextProps.containerHeight &&
         prevProps.overscan === nextProps.overscan &&
         prevProps.columns === nextProps.columns &&
-        prevProps.minColumnWidth === nextProps.minColumnWidth
+        prevProps.minColumnWidth === nextProps.minColumnWidth &&
+        prevProps.propChallengeDataByAccountId ===
+          nextProps.propChallengeDataByAccountId &&
+        prevProps.tradingDayCutoffTime === nextProps.tradingDayCutoffTime
       );
     }
   );

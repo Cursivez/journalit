@@ -21,7 +21,10 @@ import {
 } from './TradeProjectionAckQueue';
 import { getTradeProjectionOwnerId } from './TradeProjectionOwnership';
 import { TradovateClientDiagnosticsService } from './TradovateClientDiagnosticsService';
-import { parseTradeProjectionGenerationOrder } from './TradeProjectionGeneration';
+import {
+  isRestoreTradeProjectionGeneration,
+  parseTradeProjectionGenerationOrder,
+} from './TradeProjectionGeneration';
 import {
   areSnapshotKeysClaimedByCustomFields,
   shouldInvalidateUnrealizedSnapshot,
@@ -217,11 +220,17 @@ function projectionClearFields(
 
 function summaryFor(
   filePath: string,
+  accountName: string,
+  brokerLabel: string | undefined,
+  change: 'created' | 'updated',
   projectionTrade: NonNullable<TradeProjectionCommittedTrade['previewTrade']>,
   canonicalNetProfitLoss: number | null | undefined
 ): TradeProjectionPersistedTradeSummary {
   return {
     filePath,
+    accountName,
+    brokerLabel,
+    change,
     symbol: projectionTrade.symbol,
     direction: projectionTrade.direction,
     quantity: projectionTrade.quantity,
@@ -410,6 +419,7 @@ export class TradeProjectionWriter {
           backendVersion: committedTrade.version,
           projectionGeneration: effectiveGeneration,
           accountId: committedTrade.accountId,
+          accountIdentity: committedTrade.accountIdentity ?? 'name',
           accountBroker: committedTrade.broker,
           accountDisplayName: committedTrade.accountDisplayName,
         }),
@@ -527,6 +537,7 @@ export class TradeProjectionWriter {
               String(lateFilePath),
               effectiveCommittedTrade,
               projectionTrade,
+              accountName,
               existingPath,
               canonicalTradeData.authoritativePnl
             ),
@@ -542,6 +553,7 @@ export class TradeProjectionWriter {
         String(writeOutcome.value),
         effectiveCommittedTrade,
         projectionTrade,
+        accountName,
         existingPath,
         canonicalTradeData.authoritativePnl
       );
@@ -554,6 +566,7 @@ export class TradeProjectionWriter {
     filePath: string,
     committedTrade: TradeProjectionCommittedTrade,
     projectionTrade: NonNullable<TradeProjectionCommittedTrade['previewTrade']>,
+    accountName: string,
     existingPath: string | undefined,
     canonicalNetProfitLoss: number | null | undefined
   ): Promise<ProjectionSingleWriteResult> {
@@ -569,11 +582,20 @@ export class TradeProjectionWriter {
         }
         return failedProjectionResult(committedTrade, 'local_deleted');
       }
-      if (committedTrade.projectionGeneration?.startsWith('restore_')) {
+      if (
+        isRestoreTradeProjectionGeneration(committedTrade.projectionGeneration)
+      ) {
         await clearLocalDeletedTradeProjection(this.plugin, committedTrade.id);
       }
       return {
-        summary: summaryFor(filePath, projectionTrade, canonicalNetProfitLoss),
+        summary: summaryFor(
+          filePath,
+          accountName,
+          committedTrade.broker ?? undefined,
+          existingPath ? 'updated' : 'created',
+          projectionTrade,
+          canonicalNetProfitLoss
+        ),
         ackResult: {
           tradeId: committedTrade.id,
           backendTradeVersion: committedTrade.version,

@@ -1,4 +1,7 @@
 export const HOME_MAIN_GUIDE_ID = 'home.main';
+export const HOME_MAIN_GUIDE_VERSION = 7;
+
+export const HOME_CUSTOMIZE_GUIDE_ID = 'home.customize';
 
 export const HOME_MAIN_GUIDE_MERGED_MODES_VERSION = 5;
 export const HOME_WHATS_NEW_DASHBOARD_TOGGLE_GUIDE_ID =
@@ -12,6 +15,7 @@ export const HOME_EDIT_BUTTON_TARGET_ID = 'home.edit-button';
 export const HOME_QUICK_LINKS_POSITION_BUTTON_TARGET_ID =
   'home.quick-links-position-button';
 export const HOME_QUICK_LINKS_TARGET_ID = 'home.quick-links';
+export const HOME_SETTINGS_BUTTON_TARGET_ID = 'home.settings-button';
 export const HOME_ADD_WIDGET_BUTTON_TARGET_ID = 'home.add-widget-button';
 export const HOME_WIDGET_SELECTOR_TARGET_ID = 'home.widget-selector';
 export const HOME_GRID_TARGET_ID = 'home.grid';

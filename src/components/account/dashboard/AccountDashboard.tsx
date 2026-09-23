@@ -14,6 +14,7 @@ import { Plus, MoreHorizontal } from '../../shared/icons/ObsidianIcon';
 import { t } from '../../../lang/helpers';
 import { EmptyState } from '../../shared/EmptyState';
 import { AccountData } from '../../../services/account/types';
+import type { AccountPageData } from '../../../services/accountPage/types';
 import { OptionType } from '../../../services/options/CustomOptionsService';
 import type { TradeType } from '../../../services/tradelog/types';
 import { AccountDashboardProps } from './types';
@@ -22,7 +23,6 @@ import { DashboardMetrics } from './DashboardMetrics';
 import { AccountSections } from './AccountSection';
 import { AccountTypeWeights } from './AccountTypeWeights';
 import { AccountDashboardSkeleton } from './AccountDashboardSkeleton';
-import { Button } from '../../ui/Button';
 import { IconButton } from '../../ui/IconButton';
 import { openCreateAccountModal } from '../../accountPage/components/CreateAccountModal';
 import {
@@ -42,30 +42,44 @@ import { useEventBus, useEventBusMultiple } from '../../../hooks/useEventBus';
 import { useLeafActive } from '../../../hooks/useLeafActive';
 import type { EventMap } from '../../../services/events/types';
 import { RegularBacktestTradeTypeFilter } from '../../shared/RegularBacktestTradeTypeFilter';
+import { SegmentedControl } from '../../shared/SegmentedControl';
 import { normalizeHomeTradeTypes } from '../../home/utils/homeTradeTypeUtils';
+import { SampleJournalEntryButton } from '../../shared/SampleJournalControls';
+import { ChallengeOverview } from './ChallengeOverview';
+import { ChallengeEmptyState } from './ChallengeEmptyState';
+import { openLegacyChallengeOnboardingModal } from '../../onboarding/legacyChallenge/LegacyChallengeOnboardingModal';
+import { useGuideContextValue } from '../../../guides/GuideRuntimeLayer';
+import { LEGACY_CHALLENGE_ONBOARDING_GUIDE_CONTEXT_KEY } from '../../../services/accountMerge/LegacyChallengeOnboarding';
 import {
   useGuideAction,
-  useGuideBackHandler,
+  useGuideCurrentStepId,
   useGuideTarget,
 } from '../../../guides/GuideRuntimeLayer';
 import {
   ACCOUNT_DASHBOARD_ACCOUNT_OPENED_ACTION_ID,
+  ACCOUNT_DASHBOARD_CHALLENGES_SELECTED_ACTION_ID,
   ACCOUNT_DASHBOARD_AUM_CHART_TARGET_ID,
   ACCOUNT_DASHBOARD_CREATE_ACCOUNT_BUTTON_TARGET_ID,
   ACCOUNT_DASHBOARD_CREATE_ACCOUNT_OPENED_ACTION_ID,
   ACCOUNT_DASHBOARD_CREATE_BUTTON_TARGET_ID,
-  ACCOUNT_DASHBOARD_EMPTY_GUIDE_ID,
   ACCOUNT_DASHBOARD_EMPTY_STATE_TARGET_ID,
   ACCOUNT_DASHBOARD_MAIN_GUIDE_ID,
+  ACCOUNT_DASHBOARD_WHATS_NEW_PROP_CHALLENGES_GUIDE_ID,
   ACCOUNT_DASHBOARD_METRICS_TARGET_ID,
   ACCOUNT_DASHBOARD_SECTIONS_TARGET_ID,
   ACCOUNT_DASHBOARD_SETTINGS_BUTTON_TARGET_ID,
   ACCOUNT_DASHBOARD_SETTINGS_INCLUSION_TARGET_ID,
+  ACCOUNT_DASHBOARD_SETTINGS_GUIDE_ID,
   ACCOUNT_DASHBOARD_SETTINGS_OPENED_ACTION_ID,
   ACCOUNT_DASHBOARD_SETTINGS_ORDER_TARGET_ID,
+  ACCOUNT_DASHBOARD_SETTINGS_STAGES_TARGET_ID,
   ACCOUNT_DASHBOARD_SETTINGS_TYPES_TARGET_ID,
   ACCOUNT_DASHBOARD_TRADE_TYPE_FILTER_TARGET_ID,
+  ACCOUNT_DASHBOARD_CHALLENGE_OVERVIEW_TARGET_ID,
+  ACCOUNT_DASHBOARD_MODE_SWITCH_TARGET_ID,
 } from '../../../guides/accountDashboardGuideIds';
+import { resolveContextualGuideId } from '../../../guides/contextualGuideResolution';
+import { resolveAccountDashboardBaseGuideId } from '../../../guides/accountDashboardGuideResolution';
 
 
 
@@ -81,6 +95,12 @@ const DASHBOARD_EVENTS: (keyof EventMap)[] = [
   'backtest-trade:changed',
 ];
 
+type AccountDashboardMode = 'accountOverview' | 'challenges';
+
+function normalizeAccountDashboardMode(value: unknown): AccountDashboardMode {
+  return value === 'challenges' ? 'challenges' : 'accountOverview';
+}
+
 
 const AccountDashboardGuideCoordinator: React.FC<{
   plugin: AccountDashboardProps['plugin'];
@@ -88,7 +108,15 @@ const AccountDashboardGuideCoordinator: React.FC<{
   isLoading: boolean;
   error: string | null;
   accountsCount: number;
-}> = ({ plugin, leaf, isLoading, error, accountsCount }) => {
+  isSettingsModalOpen: boolean;
+}> = ({
+  plugin,
+  leaf,
+  isLoading,
+  error,
+  accountsCount,
+  isSettingsModalOpen,
+}) => {
   useEffect(() => {
     const guideService = plugin.viewGuideService;
     if (!guideService) {
@@ -100,21 +128,43 @@ const AccountDashboardGuideCoordinator: React.FC<{
       return;
     }
 
-    const resolvedGuideId =
-      accountsCount === 0
-        ? ACCOUNT_DASHBOARD_EMPTY_GUIDE_ID
-        : ACCOUNT_DASHBOARD_MAIN_GUIDE_ID;
-
     const activeSession = guideService.getSessionForLeaf(
       leaf,
       ACCOUNT_DASHBOARD_VIEW_TYPE
     );
-    if (activeSession && activeSession.guideId !== resolvedGuideId) {
+    const baseGuideId = resolveAccountDashboardBaseGuideId({
+      accountsCount,
+      mainGuideState: guideService.getPersistedGuideState(
+        ACCOUNT_DASHBOARD_MAIN_GUIDE_ID
+      ),
+      whatsNewGuideState: guideService.getPersistedGuideState(
+        ACCOUNT_DASHBOARD_WHATS_NEW_PROP_CHALLENGES_GUIDE_ID
+      ),
+    });
+    const resolvedGuideId = resolveContextualGuideId({
+      baseGuideId,
+      contextualGuides: [
+        {
+          guideId: ACCOUNT_DASHBOARD_SETTINGS_GUIDE_ID,
+          active: isSettingsModalOpen,
+        },
+      ],
+      activeSessionGuideId: activeSession?.guideId ?? null,
+      getPersistedState: (guideId) =>
+        guideService.getPersistedGuideState(guideId),
+    });
+
+    if (
+      activeSession &&
+      activeSession.guideId !== resolvedGuideId &&
+      activeSession.guideId !== ACCOUNT_DASHBOARD_SETTINGS_GUIDE_ID &&
+      resolvedGuideId !== ACCOUNT_DASHBOARD_SETTINGS_GUIDE_ID
+    ) {
       void guideService.clearGuideState(activeSession.guideId);
     }
 
     guideService.setResolvedGuideForLeaf(leaf, resolvedGuideId);
-  }, [accountsCount, error, isLoading, leaf, plugin]);
+  }, [accountsCount, error, isLoading, isSettingsModalOpen, leaf, plugin]);
 
   useEffect(() => {
     return () => {
@@ -126,28 +176,71 @@ const AccountDashboardGuideCoordinator: React.FC<{
 };
 
 interface AccountDashboardHeaderProps {
+  mode: AccountDashboardMode;
+  showModeSwitch: boolean;
+  onModeChange: (mode: AccountDashboardMode) => void | Promise<void>;
   selectedTradeTypes: TradeType[];
   onTradeTypeFilterChange: (tradeTypes: TradeType[]) => void | Promise<void>;
   onCreateAccount: () => void | Promise<void>;
   onOpenSettings: () => void | Promise<void>;
   registerTradeTypeFilterTarget: React.Ref<HTMLDivElement>;
+  registerModeSwitchTarget: React.Ref<HTMLDivElement>;
   registerCreateButtonTarget: React.Ref<HTMLDivElement>;
   registerSettingsButtonTarget: React.Ref<HTMLDivElement>;
 }
 
+const markGuidePrimaryAction = (element: HTMLButtonElement | null): void => {
+  element?.setAttribute('data-guide-primary-action', '');
+};
+
 const AccountDashboardHeader: React.FC<AccountDashboardHeaderProps> = ({
+  mode,
+  showModeSwitch,
+  onModeChange,
   selectedTradeTypes,
   onTradeTypeFilterChange,
   onCreateAccount,
   onOpenSettings,
   registerTradeTypeFilterTarget,
+  registerModeSwitchTarget,
   registerCreateButtonTarget,
   registerSettingsButtonTarget,
 }) => (
-  <div className="dashboard-header">
-    <div className="dashboard-title">
-      <h2>{t('account-dashboard.title')}</h2>
-    </div>
+  <div
+    className={`dashboard-header${showModeSwitch ? ' has-mode-switch' : ''}`}
+  >
+    <div aria-hidden="true" className="dashboard-header-spacer" />
+    {showModeSwitch && (
+      <div
+        className="journalit-account-dashboard-mode-switch"
+        ref={registerModeSwitchTarget}
+      >
+        <SegmentedControl
+          ariaLabel={t('account-dashboard.mode.selector')}
+          className="journalit-account-dashboard-mode-control"
+          fullWidth
+          groupRole="radiogroup"
+          
+          
+          getOptionRef={(value) =>
+            value === 'challenges' ? markGuidePrimaryAction : undefined
+          }
+          onChange={(nextMode) => void onModeChange(nextMode)}
+          options={[
+            {
+              value: 'accountOverview',
+              label: t('account-dashboard.mode.account-overview'),
+            },
+            {
+              value: 'challenges',
+              label: t('account-dashboard.mode.challenges'),
+            },
+          ]}
+          size="medium"
+          value={mode}
+        />
+      </div>
+    )}
     <div className="dashboard-actions">
       <div ref={registerTradeTypeFilterTarget}>
         <RegularBacktestTradeTypeFilter
@@ -183,8 +276,8 @@ const AccountDashboardHeader: React.FC<AccountDashboardHeaderProps> = ({
 interface AccountDashboardEmptyStateProps {
   header: React.ReactNode;
   onCreateAccount: () => void | Promise<void>;
-  registerEmptyStateTarget: React.Ref<HTMLDivElement>;
-  registerCreateAccountButtonTarget: React.Ref<HTMLDivElement>;
+  registerEmptyStateTarget: (element: HTMLElement | null) => void;
+  registerCreateAccountButtonTarget: (element: HTMLElement | null) => void;
 }
 
 const AccountDashboardEmptyState: React.FC<AccountDashboardEmptyStateProps> = ({
@@ -195,40 +288,46 @@ const AccountDashboardEmptyState: React.FC<AccountDashboardEmptyStateProps> = ({
 }) => (
   <div className="dashboard-content">
     {header}
-    <div className="empty-state-with-action" ref={registerEmptyStateTarget}>
+    <div ref={registerEmptyStateTarget}>
       <EmptyState
+        className="journalit-account-dashboard-empty-state"
         message={t('account-dashboard.empty.title')}
         subMessage={t('account-dashboard.empty.message')}
+        iconSize={56}
+        actionButtonText={t('account-dashboard.button.create-first')}
+        onActionButtonClick={() => void onCreateAccount()}
+        actionButtonRef={registerCreateAccountButtonTarget}
+        additionalAction={<SampleJournalEntryButton />}
+        actionsLayout="stacked"
       />
-      <div className="empty-state-actions">
-        <div ref={registerCreateAccountButtonTarget}>
-          <Button
-            variant="primary"
-            onClick={() => void onCreateAccount()}
-            className="create-account-primary-button"
-          >
-            {t('account-dashboard.button.create-first')}
-          </Button>
-        </div>
-      </div>
     </div>
   </div>
 );
 
 interface AccountDashboardMainContentProps {
+  onCreateChallenge: () => void;
+  onSetUpExisting: () => void;
+  hasLegacyAccounts: boolean;
   header: React.ReactNode;
+  mode: AccountDashboardMode;
   aumChartData: ReturnType<typeof generateAUMChartData>;
   plugin: AccountDashboardProps['plugin'];
   metrics: ReturnType<typeof calculateDashboardMetrics>;
   withdrawalAccounts: AccountData[];
   accounts: AccountData[];
   accountsByType: ReturnType<typeof groupAccountsByType>;
+  challengeAccountsByType: ReturnType<typeof groupAccountsByType>;
   accountTypesToDisplay: string[];
   totalAUM: number;
+  challengeTotalAUM: number;
   excludedTypes: string[];
   openAccount: (accountName: string, accountData?: unknown) => Promise<void>;
   refreshTrigger: number;
+  propChallengeAccounts: AccountPageData[];
+  propChallengeDataByAccountId: ReadonlyMap<string, AccountPageData>;
+  tradingDayCutoffTime?: string;
   registerAumChartTarget: React.Ref<HTMLDivElement>;
+  registerChallengeOverviewTarget: React.Ref<HTMLDivElement>;
   registerMetricsTarget: React.Ref<HTMLDivElement>;
   registerSectionsTarget: React.Ref<HTMLDivElement>;
 }
@@ -237,138 +336,172 @@ const AccountDashboardMainContent: React.FC<
   AccountDashboardMainContentProps
 > = ({
   header,
+  mode,
   aumChartData,
   plugin,
   metrics,
   withdrawalAccounts,
   accounts,
   accountsByType,
+  challengeAccountsByType,
   accountTypesToDisplay,
   totalAUM,
+  challengeTotalAUM,
   excludedTypes,
   openAccount,
   refreshTrigger,
+  propChallengeAccounts,
+  propChallengeDataByAccountId,
+  tradingDayCutoffTime,
   registerAumChartTarget,
+  registerChallengeOverviewTarget,
   registerMetricsTarget,
   registerSectionsTarget,
+  onCreateChallenge,
+  onSetUpExisting,
+  hasLegacyAccounts,
 }) => (
   <div className="dashboard-content">
     {header}
-    <div ref={registerAumChartTarget}>
-      <AUMChart data={aumChartData} plugin={plugin} />
-    </div>
-    <div ref={registerMetricsTarget}>
-      <DashboardMetrics
-        metrics={metrics}
-        withdrawalAccounts={withdrawalAccounts}
-      />
-    </div>
-    <AccountTypeWeights
-      accounts={accounts}
-      accountsByType={accountsByType}
-      accountTypesToDisplay={accountTypesToDisplay}
-      totalAUM={totalAUM}
-      excludedTypes={excludedTypes}
-      showLegend={true}
-    />
-    <div ref={registerSectionsTarget}>
-      <AccountSections
-        accountsByType={accountsByType}
-        openAccount={openAccount}
-        plugin={plugin}
-        refreshTrigger={refreshTrigger}
-        totalAUM={totalAUM}
-        excludedTypes={excludedTypes}
-      />
-    </div>
+    {mode === 'accountOverview' ? (
+      <>
+        <div className="journalit-account-dashboard-hero">
+          <div
+            className="journalit-account-dashboard-hero-chart"
+            ref={registerAumChartTarget}
+          >
+            <AUMChart data={aumChartData} plugin={plugin} />
+          </div>
+        </div>
+        <div ref={registerMetricsTarget}>
+          <DashboardMetrics
+            metrics={metrics}
+            withdrawalAccounts={withdrawalAccounts}
+          />
+        </div>
+        <AccountTypeWeights
+          accounts={accounts}
+          accountsByType={accountsByType}
+          accountTypesToDisplay={accountTypesToDisplay}
+          totalAUM={totalAUM}
+          excludedTypes={excludedTypes}
+          showLegend={true}
+        />
+      </>
+    ) : propChallengeAccounts.length === 0 ? (
+      <div>
+        <ChallengeEmptyState
+          onCreateChallenge={onCreateChallenge}
+          onSetUpExisting={hasLegacyAccounts ? onSetUpExisting : undefined}
+        />
+      </div>
+    ) : (
+      <div ref={registerChallengeOverviewTarget}>
+        <ChallengeOverview accounts={propChallengeAccounts} />
+      </div>
+    )}
+    {mode === 'challenges' && propChallengeAccounts.length === 0 ? null : (
+      <div ref={registerSectionsTarget}>
+        <AccountSections
+          accountsByType={
+            mode === 'challenges' ? challengeAccountsByType : accountsByType
+          }
+          openAccount={openAccount}
+          plugin={plugin}
+          refreshTrigger={refreshTrigger}
+          totalAUM={mode === 'challenges' ? challengeTotalAUM : totalAUM}
+          excludedTypes={excludedTypes}
+          propChallengeDataByAccountId={propChallengeDataByAccountId}
+          tradingDayCutoffTime={tradingDayCutoffTime}
+        />
+      </div>
+    )}
   </div>
 );
 
-const useAccountDashboardGuideSettingsFlow = ({
-  plugin,
-  leaf,
-  handleOpenSettings,
-  closeSettingsModalForGuide,
-  isSettingsModalActive,
-}: {
+interface AccountDashboardLoadedContentProps extends AccountDashboardMainContentProps {
+  leaf: WorkspaceLeaf;
+  isSettingsModalOpen: boolean;
+}
+
+const AccountDashboardLoadedContent: React.FC<
+  AccountDashboardLoadedContentProps
+> = ({ leaf, isSettingsModalOpen, ...mainContentProps }) => {
+  return (
+    <>
+      <AccountDashboardGuideCoordinator
+        plugin={mainContentProps.plugin}
+        leaf={leaf}
+        isLoading={false}
+        error={null}
+        accountsCount={mainContentProps.accounts.length}
+        isSettingsModalOpen={isSettingsModalOpen}
+      />
+      <div className="journalit-account-dashboard">
+        <AccountDashboardMainContent {...mainContentProps} />
+      </div>
+    </>
+  );
+};
+
+const AccountDashboardNonDataState: React.FC<{
   plugin: AccountDashboardProps['plugin'];
   leaf: WorkspaceLeaf;
-  handleOpenSettings: () => Promise<void>;
-  closeSettingsModalForGuide: () => void;
-  isSettingsModalActive: () => boolean;
-}) => {
-  const [guideVersion, setGuideVersion] = useState(0);
-
-  const handleGuideBack = useCallback(
-    async ({ toStepId }: { toStepId: string }) => {
-      if (
-        toStepId === 'settings-types' ||
-        toStepId === 'settings-inclusion' ||
-        toStepId === 'settings-order'
-      ) {
-        if (!isSettingsModalActive()) {
-          await handleOpenSettings();
-          await new Promise((resolve) => window.setTimeout(resolve, 0));
-        }
-        return;
-      }
-
-      closeSettingsModalForGuide();
-    },
-    [closeSettingsModalForGuide, handleOpenSettings, isSettingsModalActive]
-  );
-
-  useGuideBackHandler(handleGuideBack);
-
-  useEffect(() => {
-    const guideService = plugin.viewGuideService;
-    if (!guideService) return;
-
-    return guideService.subscribe(() => {
-      setGuideVersion((prev) => prev + 1);
-    });
-  }, [plugin]);
-
-  useEffect(() => {
-    if (guideVersion < 0) return;
-
-    const guideService = plugin.viewGuideService;
-    if (!guideService) return;
-
-    const session = guideService.getSessionForLeaf(
-      leaf,
-      ACCOUNT_DASHBOARD_VIEW_TYPE
-    );
-
-    if (!session || session.guideId !== ACCOUNT_DASHBOARD_MAIN_GUIDE_ID) return;
-
-    if (
-      session.currentStepId === 'settings-types' ||
-      session.currentStepId === 'settings-inclusion' ||
-      session.currentStepId === 'settings-order'
-    ) {
-      if (!isSettingsModalActive()) {
-        void handleOpenSettings();
-      }
-      return;
-    }
-
-    closeSettingsModalForGuide();
-  }, [
-    closeSettingsModalForGuide,
-    guideVersion,
-    handleOpenSettings,
-    isSettingsModalActive,
-    leaf,
-    plugin,
-  ]);
-};
+  isLoading: boolean;
+  error: string | null;
+  accountsCount: number;
+  isSettingsModalOpen: boolean;
+  header: React.ReactNode;
+  onCreateAccount: () => void | Promise<void>;
+  
+  registerEmptyStateTarget: (element: HTMLElement | null) => void;
+  registerCreateAccountButtonTarget: (element: HTMLElement | null) => void;
+}> = ({
+  plugin,
+  leaf,
+  isLoading,
+  error,
+  accountsCount,
+  isSettingsModalOpen,
+  header,
+  onCreateAccount,
+  registerEmptyStateTarget,
+  registerCreateAccountButtonTarget,
+}) => (
+  <>
+    <AccountDashboardGuideCoordinator
+      plugin={plugin}
+      leaf={leaf}
+      isLoading={isLoading}
+      error={error}
+      accountsCount={accountsCount}
+      isSettingsModalOpen={isSettingsModalOpen}
+    />
+    <div className={`journalit-account-dashboard${error ? ' error' : ''}`}>
+      {isLoading ? (
+        <AccountDashboardSkeleton />
+      ) : error ? (
+        <div className="error-message">{error}</div>
+      ) : (
+        <AccountDashboardEmptyState
+          header={header}
+          onCreateAccount={onCreateAccount}
+          registerEmptyStateTarget={registerEmptyStateTarget}
+          registerCreateAccountButtonTarget={registerCreateAccountButtonTarget}
+        />
+      )}
+    </div>
+  </>
+);
 
 const useAccountDashboardAccounts = (
   plugin: AccountDashboardProps['plugin'],
   selectedTradeTypes: TradeType[]
 ) => {
   const [accounts, setAccounts] = useState<AccountData[]>([]);
+  const [propChallengeAccounts, setPropChallengeAccounts] = useState<
+    AccountPageData[]
+  >([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const retryAttemptsRef = useRef(0);
@@ -413,10 +546,26 @@ const useAccountDashboardAccounts = (
         await plugin.accountPageService.getAllEnhancedAccounts(
           selectedTradeTypes
         );
+      
+      
+      
+      
+      
+      const propChallengeRequests: Promise<AccountPageData | null>[] = [];
+      for (const account of enhancedAccounts) {
+        if (!account.propChallenge) continue;
+        propChallengeRequests.push(
+          plugin.accountPageService.getAccountPageData(account.name)
+        );
+      }
+      const propChallengeData = await Promise.all(propChallengeRequests);
 
       if (requestSequence !== loadRequestSequenceRef.current) return;
 
       setAccounts(enhancedAccounts);
+      setPropChallengeAccounts(
+        propChallengeData.flatMap((data) => (data ? [data] : []))
+      );
       hasLoadedAccountsRef.current = true;
     } catch (err) {
       if (requestSequence !== loadRequestSequenceRef.current) return;
@@ -446,12 +595,24 @@ const useAccountDashboardAccounts = (
     };
   }, [loadAccountsWithRetry]);
 
-  return { accounts, isLoading, error, loadAccountsWithRetry };
+  return {
+    accounts,
+    propChallengeAccounts,
+    isLoading,
+    error,
+    loadAccountsWithRetry,
+  };
 };
 
 const useAccountDashboardGuideTargets = () => ({
   registerTradeTypeFilterTarget: useGuideTarget(
     ACCOUNT_DASHBOARD_TRADE_TYPE_FILTER_TARGET_ID
+  ),
+  registerModeSwitchTarget: useGuideTarget(
+    ACCOUNT_DASHBOARD_MODE_SWITCH_TARGET_ID
+  ),
+  registerChallengeOverviewTarget: useGuideTarget(
+    ACCOUNT_DASHBOARD_CHALLENGE_OVERVIEW_TARGET_ID
   ),
   registerCreateAccountButtonTarget: useGuideTarget(
     ACCOUNT_DASHBOARD_CREATE_ACCOUNT_BUTTON_TARGET_ID
@@ -470,6 +631,9 @@ const useAccountDashboardGuideTargets = () => ({
   registerSectionsTarget: useGuideTarget(ACCOUNT_DASHBOARD_SECTIONS_TARGET_ID),
   registerSettingsTypesTarget: useGuideTarget(
     ACCOUNT_DASHBOARD_SETTINGS_TYPES_TARGET_ID
+  ),
+  registerSettingsStagesTarget: useGuideTarget(
+    ACCOUNT_DASHBOARD_SETTINGS_STAGES_TARGET_ID
   ),
   registerSettingsInclusionTarget: useGuideTarget(
     ACCOUNT_DASHBOARD_SETTINGS_INCLUSION_TARGET_ID
@@ -567,12 +731,18 @@ const useAccountDashboardDerivedData = (
   };
 };
 
+
+
 const AccountDashboardComponent: React.FC<AccountDashboardProps> = ({
   plugin,
   leaf,
 }) => {
   const isActive = useLeafActive(leaf);
   const wasActiveRef = useRef(isActive);
+  useGuideContextValue(
+    LEGACY_CHALLENGE_ONBOARDING_GUIDE_CONTEXT_KEY,
+    plugin.settings.account?.legacyChallengeOnboarding?.status === 'pending'
+  );
   
   const [searchTerm] = useState('');
   const [selectedTradeTypes, setSelectedTradeTypes] = useState<TradeType[]>(
@@ -581,9 +751,16 @@ const AccountDashboardComponent: React.FC<AccountDashboardProps> = ({
         plugin.uiStateManager.getState().selectedAccountDashboardTradeTypes
       )
   );
+  const [mode, setMode] = useState<AccountDashboardMode>(() =>
+    normalizeAccountDashboardMode(
+      plugin.uiStateManager.getState().accountDashboardMode
+    )
+  );
   const emitGuideAction = useGuideAction();
   const {
     registerTradeTypeFilterTarget,
+    registerModeSwitchTarget,
+    registerChallengeOverviewTarget,
     registerCreateAccountButtonTarget,
     registerCreateButtonTarget,
     registerSettingsButtonTarget,
@@ -592,12 +769,14 @@ const AccountDashboardComponent: React.FC<AccountDashboardProps> = ({
     registerMetricsTarget,
     registerSectionsTarget,
     registerSettingsTypesTarget,
+    registerSettingsStagesTarget,
     registerSettingsInclusionTarget,
     registerSettingsOrderTarget,
   } = useAccountDashboardGuideTargets();
 
   
   const [refreshTrigger, setRefreshTrigger] = useState(0);
+  const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
   const activeSettingsModalRef = useRef<AccountDashboardSettingsModal | null>(
     null
   );
@@ -605,8 +784,18 @@ const AccountDashboardComponent: React.FC<AccountDashboardProps> = ({
   
   const [, startTransition] = useTransition();
   const deferredSearchTerm = useDeferredValue(searchTerm);
-  const { accounts, isLoading, error, loadAccountsWithRetry } =
-    useAccountDashboardAccounts(plugin, selectedTradeTypes);
+  const {
+    accounts,
+    propChallengeAccounts,
+    isLoading,
+    error,
+    loadAccountsWithRetry,
+  } = useAccountDashboardAccounts(plugin, selectedTradeTypes);
+  const propChallengeDataByAccountId = useMemo(
+    () => new Map(propChallengeAccounts.map((data) => [data.account.id, data])),
+    [propChallengeAccounts]
+  );
+  const effectiveMode = mode;
 
   
   const handleAccountChanged = useCallback(async () => {
@@ -663,6 +852,32 @@ const AccountDashboardComponent: React.FC<AccountDashboardProps> = ({
     [plugin]
   );
 
+  const handleModeChange = useCallback(
+    async (nextMode: AccountDashboardMode) => {
+      setMode(nextMode);
+      if (nextMode === 'challenges') {
+        emitGuideAction(ACCOUNT_DASHBOARD_CHALLENGES_SELECTED_ACTION_ID);
+      }
+      await plugin.uiStateManager.updateStateImmediate({
+        accountDashboardMode: nextMode,
+      });
+    },
+    [emitGuideAction, plugin]
+  );
+
+  
+  
+  
+  const currentGuideStepId = useGuideCurrentStepId();
+  useEffect(() => {
+    if (
+      currentGuideStepId === 'mode-switch' &&
+      effectiveMode === 'challenges'
+    ) {
+      emitGuideAction(ACCOUNT_DASHBOARD_CHALLENGES_SELECTED_ACTION_ID);
+    }
+  }, [currentGuideStepId, effectiveMode, emitGuideAction]);
+
   const {
     metrics,
     withdrawalAccounts,
@@ -677,6 +892,32 @@ const AccountDashboardComponent: React.FC<AccountDashboardProps> = ({
     refreshTrigger,
     deferredSearchTerm
   );
+  const challengeAccountsByType = useMemo(() => {
+    const grouped: Record<string, AccountData[]> = {};
+    for (const [accountType, typeAccounts] of Object.entries(accountsByType)) {
+      const challengeAccounts = typeAccounts.filter((account) =>
+        propChallengeDataByAccountId.has(account.id)
+      );
+      if (challengeAccounts.length > 0) {
+        grouped[accountType] = challengeAccounts;
+      }
+    }
+    return grouped;
+  }, [accountsByType, propChallengeDataByAccountId]);
+  const challengeTotalAUM = useMemo(() => {
+    const excludedTypesSet = new Set(excludedTypes);
+    return Object.entries(challengeAccountsByType).reduce(
+      (total, [accountType, typeAccounts]) =>
+        excludedTypesSet.has(accountType.toLowerCase())
+          ? total
+          : total +
+            typeAccounts.reduce(
+              (typeTotal, account) => typeTotal + account.currentBalance,
+              0
+            ),
+      0
+    );
+  }, [challengeAccountsByType, excludedTypes]);
 
   
   const openAccount = useCallback(
@@ -685,6 +926,31 @@ const AccountDashboardComponent: React.FC<AccountDashboardProps> = ({
       void plugin.viewManager.openAccountPageView(accountName);
     },
     [emitGuideAction, plugin.viewManager]
+  );
+
+  const handleCreateChallenge = useCallback(() => {
+    openCreateAccountModal(
+      plugin.app,
+      plugin,
+      () => {
+        void handleAccountChanged();
+      },
+      { initialPropChallenge: true }
+    );
+  }, [handleAccountChanged, plugin]);
+
+  const handleSetUpExisting = useCallback(() => {
+    void openLegacyChallengeOnboardingModal(plugin.app, plugin);
+  }, [plugin]);
+
+  const hasLegacyAccounts = useMemo(
+    () =>
+      accounts.some(
+        (account) =>
+          !account.propChallenge &&
+          account.accountType?.toLowerCase() !== 'archived'
+      ),
+    [accounts]
   );
 
   
@@ -699,16 +965,6 @@ const AccountDashboardComponent: React.FC<AccountDashboardProps> = ({
   const isSettingsModalActive = useCallback((): boolean => {
     return activeSettingsModalRef.current?.modalEl.isConnected === true;
   }, []);
-
-  const closeSettingsModalForGuide = useCallback(() => {
-    if (!isSettingsModalActive()) {
-      activeSettingsModalRef.current = null;
-      return;
-    }
-
-    activeSettingsModalRef.current?.close();
-    activeSettingsModalRef.current = null;
-  }, [isSettingsModalActive]);
 
   
   const handleOpenSettings = useCallback(async () => {
@@ -729,13 +985,16 @@ const AccountDashboardComponent: React.FC<AccountDashboardProps> = ({
       {
         onClose: () => {
           activeSettingsModalRef.current = null;
+          setIsSettingsModalOpen(false);
         },
         registerTypesTarget: registerSettingsTypesTarget,
+        registerStagesTarget: registerSettingsStagesTarget,
         registerInclusionTarget: registerSettingsInclusionTarget,
         registerOrderTarget: registerSettingsOrderTarget,
       }
     );
     activeSettingsModalRef.current = modal;
+    setIsSettingsModalOpen(true);
     emitGuideAction(ACCOUNT_DASHBOARD_SETTINGS_OPENED_ACTION_ID);
   }, [
     emitGuideAction,
@@ -744,83 +1003,39 @@ const AccountDashboardComponent: React.FC<AccountDashboardProps> = ({
     plugin,
     registerSettingsInclusionTarget,
     registerSettingsOrderTarget,
+    registerSettingsStagesTarget,
     registerSettingsTypesTarget,
   ]);
 
-  useAccountDashboardGuideSettingsFlow({
-    plugin,
-    leaf,
-    handleOpenSettings,
-    closeSettingsModalForGuide,
-    isSettingsModalActive,
-  });
-
   const dashboardHeader = (
     <AccountDashboardHeader
+      mode={effectiveMode}
+      showModeSwitch={true}
+      onModeChange={handleModeChange}
       selectedTradeTypes={selectedTradeTypes}
       onTradeTypeFilterChange={handleTradeTypeFilterChange}
       onCreateAccount={() => void handleCreateAccount()}
       onOpenSettings={() => void handleOpenSettings()}
       registerTradeTypeFilterTarget={registerTradeTypeFilterTarget}
+      registerModeSwitchTarget={registerModeSwitchTarget}
       registerCreateButtonTarget={registerCreateButtonTarget}
       registerSettingsButtonTarget={registerSettingsButtonTarget}
     />
   );
 
   
-  if (isLoading) {
-    return (
-      <>
-        <AccountDashboardGuideCoordinator
-          plugin={plugin}
-          leaf={leaf}
-          isLoading={isLoading}
-          error={error}
-          accountsCount={accounts.length}
-        />
-        <div className="journalit-account-dashboard">
-          <AccountDashboardSkeleton />
-        </div>
-      </>
-    );
-  }
-
   
-  if (error) {
-    return (
-      <>
-        <AccountDashboardGuideCoordinator
-          plugin={plugin}
-          leaf={leaf}
-          isLoading={isLoading}
-          error={error}
-          accountsCount={accounts.length}
-        />
-        <div className="journalit-account-dashboard error">
-          <div className="error-message">{error}</div>
-        </div>
-      </>
-    );
-  }
-
   
-  if (accounts.length === 0) {
+  
+  if (!isLoading && !error && accounts.length === 0 && mode === 'challenges') {
     return (
       <>
-        <AccountDashboardGuideCoordinator
-          plugin={plugin}
-          leaf={leaf}
-          isLoading={isLoading}
-          error={error}
-          accountsCount={accounts.length}
-        />
-        <div className="journalit-account-dashboard">
-          <AccountDashboardEmptyState
-            header={dashboardHeader}
-            onCreateAccount={() => void handleCreateAccount()}
-            registerEmptyStateTarget={registerEmptyStateTarget}
-            registerCreateAccountButtonTarget={
-              registerCreateAccountButtonTarget
+        {dashboardHeader}
+        <div>
+          <ChallengeEmptyState
+            onCreateChallenge={() => void handleCreateChallenge()}
+            onSetUpExisting={
+              hasLegacyAccounts ? () => void handleSetUpExisting() : undefined
             }
           />
         </div>
@@ -828,36 +1043,54 @@ const AccountDashboardComponent: React.FC<AccountDashboardProps> = ({
     );
   }
 
-  
-  return (
-    <>
-      <AccountDashboardGuideCoordinator
+  if (isLoading || error || accounts.length === 0) {
+    return (
+      <AccountDashboardNonDataState
         plugin={plugin}
         leaf={leaf}
         isLoading={isLoading}
         error={error}
         accountsCount={accounts.length}
+        isSettingsModalOpen={isSettingsModalOpen}
+        header={dashboardHeader}
+        onCreateAccount={() => void handleCreateAccount()}
+        registerEmptyStateTarget={registerEmptyStateTarget}
+        registerCreateAccountButtonTarget={registerCreateAccountButtonTarget}
       />
-      <div className="journalit-account-dashboard">
-        <AccountDashboardMainContent
-          header={dashboardHeader}
-          aumChartData={aumChartData}
-          plugin={plugin}
-          metrics={metrics}
-          withdrawalAccounts={withdrawalAccounts}
-          accounts={accounts}
-          accountsByType={accountsByType}
-          accountTypesToDisplay={accountTypesToDisplay}
-          totalAUM={totalAUM}
-          excludedTypes={excludedTypes}
-          openAccount={openAccount}
-          refreshTrigger={refreshTrigger}
-          registerAumChartTarget={registerAumChartTarget}
-          registerMetricsTarget={registerMetricsTarget}
-          registerSectionsTarget={registerSectionsTarget}
-        />
-      </div>
-    </>
+    );
+  }
+
+  
+  return (
+    <AccountDashboardLoadedContent
+      isSettingsModalOpen={isSettingsModalOpen}
+      header={dashboardHeader}
+      mode={effectiveMode}
+      aumChartData={aumChartData}
+      plugin={plugin}
+      metrics={metrics}
+      withdrawalAccounts={withdrawalAccounts}
+      accounts={accounts}
+      accountsByType={accountsByType}
+      challengeAccountsByType={challengeAccountsByType}
+      onCreateChallenge={handleCreateChallenge}
+      onSetUpExisting={handleSetUpExisting}
+      hasLegacyAccounts={hasLegacyAccounts}
+      accountTypesToDisplay={accountTypesToDisplay}
+      totalAUM={totalAUM}
+      challengeTotalAUM={challengeTotalAUM}
+      excludedTypes={excludedTypes}
+      openAccount={openAccount}
+      refreshTrigger={refreshTrigger}
+      propChallengeAccounts={propChallengeAccounts}
+      propChallengeDataByAccountId={propChallengeDataByAccountId}
+      tradingDayCutoffTime={plugin.settings.trade?.tradingDayCutoffTime}
+      registerAumChartTarget={registerAumChartTarget}
+      registerChallengeOverviewTarget={registerChallengeOverviewTarget}
+      registerMetricsTarget={registerMetricsTarget}
+      registerSectionsTarget={registerSectionsTarget}
+      leaf={leaf}
+    />
   );
 };
 

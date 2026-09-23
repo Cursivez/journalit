@@ -3,11 +3,15 @@ export const TRADE_ACCOUNT_CELL_STYLES = `
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 4px 8px;
+  padding: 4px 2px;
 }
 
 .trade-account-text {
   display: inline-block;
+  box-sizing: border-box;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
   padding: 2px 8px;
   border-radius: 3px;
   font-size: 12px;

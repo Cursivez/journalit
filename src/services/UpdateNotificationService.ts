@@ -10,6 +10,7 @@ import {
 import { CustomUpdateToast } from '../components/notifications/CustomUpdateToast';
 import { RELEASE_NOTES_VIEW_TYPE } from '../components/release-notes/ReleaseNotesView';
 import { getReleasesData, type ReleaseMetadata } from '../data/releasesData';
+import { DemoSyncGate } from '../demo/DemoSyncGate';
 import { t } from '../lang/helpers';
 import type JournalitPlugin from '../main';
 import {
@@ -181,6 +182,7 @@ export class UpdateNotificationService {
   
   async checkForUpdates(): Promise<void> {
     if (this.disposed) return;
+    if (DemoSyncGate.isActive()) return;
     if (this.isCheckingForUpdates) return;
     if (!this.plugin.settings.backendIntegration?.showUpdateNotifications) {
       return;
@@ -208,6 +210,7 @@ export class UpdateNotificationService {
 
   async refreshAvailableUpdate(): Promise<void> {
     if (this.disposed) return;
+    if (DemoSyncGate.isActive()) return;
     if (this.isCheckingForUpdates) return;
     if (!this.plugin.settings.backendIntegration?.showUpdateNotifications) {
       return;
@@ -438,6 +441,7 @@ export class UpdateNotificationService {
   }
 
   private async requestText(url: string): Promise<string | null> {
+    if (DemoSyncGate.isActive()) return null;
     try {
       const response = await requestUrl({ url, method: 'GET', throw: false });
       if (response.status < 200 || response.status >= 300) return null;

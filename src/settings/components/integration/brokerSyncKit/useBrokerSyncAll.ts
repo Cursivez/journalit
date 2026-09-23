@@ -5,7 +5,9 @@ import { Notice } from 'obsidian';
 import { t } from '../../../../lang/helpers';
 import type JournalitPlugin from '../../../../main';
 import { createTradeProjectionOwnershipGuard } from '../../../../services/tradeSync/TradeProjectionOwnership';
+import type { TradeSyncConnectionEligibility } from '../../../../services/tradeSync/TradeSyncEligibility';
 import type { BrokerSyncAllResult } from '../../../../services/tradeSync/types';
+import { recordBrokerPanelHandoff } from '../../../../services/tradeOperations/recordBrokerPanelHandoff';
 import { logger } from '../../../../utils/logger';
 import type { BrokerDataOwnership } from './types';
 
@@ -15,14 +17,10 @@ interface BrokerIdentifiedConnection {
 }
 
 
-type BrokerSyncAllBlockedReason =
-  | 'unsaved-changes'
-  | 'mapping-required'
-  | 'running-job'
-  | 'not-ready';
+type BrokerSyncAllBlockedReason = Exclude<TradeSyncConnectionEligibility, true>;
 
 
-export type BrokerSyncAllEligibility = true | BrokerSyncAllBlockedReason;
+export type BrokerSyncAllEligibility = TradeSyncConnectionEligibility;
 
 
 const BLOCKED_REASON_PRIORITY: BrokerSyncAllBlockedReason[] = [
@@ -135,15 +133,23 @@ export function useBrokerSyncAll<
       const issueCount = result.outcomes.filter(
         (outcome) => outcome.status !== 'succeeded'
       ).length;
-      new Notice(
-        completionNotice({
-          succeeded: synchronizedCount,
-          total: result.outcomes.length,
-          hasIssues:
-            issueCount > 0 ||
-            result.projection.failedCount > 0 ||
-            result.projection.pendingCount > 0,
-        })
+      const hasIssues =
+        issueCount > 0 ||
+        result.projection.failedCount > 0 ||
+        result.projection.pendingCount > 0 ||
+        (result.projection.ackFailedCount ?? 0) > 0;
+      const message = completionNotice({
+        succeeded: synchronizedCount,
+        total: result.outcomes.length,
+        hasIssues,
+      });
+      recordBrokerPanelHandoff(
+        plugin,
+        {
+          ...result.projection,
+          partial: result.projection.partial || hasIssues,
+        },
+        message
       );
       await refresh();
     } catch (error) {

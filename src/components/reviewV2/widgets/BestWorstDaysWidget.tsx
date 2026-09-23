@@ -28,6 +28,7 @@ import { useReviewTrades } from '../hooks/useReviewData';
 import { useEventBus } from '../../../hooks/useEventBus';
 import { SkeletonBox } from '../../shared/SkeletonBox';
 import { t, tPlural } from '../../../lang/helpers';
+import { openReviewWidgetFile } from '../reviewWidgetNavigation';
 
 type ReviewBestWorstTrade = Record<string, unknown> & {
   pnl?: number | null;
@@ -404,13 +405,13 @@ export const BestWorstDaysWidget: React.FC<BestWorstDaysWidgetProps> =
           
           const file = plugin.app.vault.getAbstractFileByPath(drcPath);
           if (file) {
-            await plugin.openFile(drcPath, false);
+            await openReviewWidgetFile(plugin, drcPath);
           } else if (plugin.settings.drc.autoCreateDRCOnNavigation) {
             
             await plugin.drcService.createDRC(date);
             
             const newPath = plugin.drcService?.getDRCNotePath(date);
-            if (newPath) await plugin.openFile(newPath, false);
+            if (newPath) await openReviewWidgetFile(plugin, newPath);
           }
         } catch (error) {
           console.error('[BestWorstDaysWidget] Error opening DRC:', error);

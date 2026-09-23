@@ -2,6 +2,8 @@
 
 import type * as React from 'react';
 import { FilterState } from '../../DashboardView';
+import type { AccountPhaseOptionGroup } from '../../../shared/filters/accountPhaseScope';
+import type { AccountPhaseScope } from '../../../shared/filters/types';
 
 
 export interface AccountFilterProps {
@@ -13,6 +15,18 @@ export interface AccountFilterProps {
 
   
   onChange: (accounts: string[]) => void;
+
+  
+  phaseOptions?: AccountPhaseOptionGroup[];
+
+  
+  selectedPhases?: AccountPhaseScope[];
+
+  
+  onPhasesChange?: (phases: AccountPhaseScope[]) => void;
+
+  
+  dateFormat?: string;
 }
 
 

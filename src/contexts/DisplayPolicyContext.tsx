@@ -61,9 +61,15 @@ export const DisplayPolicyProvider: React.FC<DisplayPolicyProviderProps> = ({
     refreshPolicyRef.current = refreshPolicy;
   }, [refreshPolicy]);
 
+  
+  
+  
+  
+  
+  const pluginAvailable = Boolean(plugin);
   useEffect(() => {
-    refreshPolicy();
-  }, [refreshPolicy]);
+    refreshPolicyRef.current();
+  }, [pluginAvailable, privacyModeOverride]);
 
   useEffect(() => {
     const refreshCurrentPolicy = () => {

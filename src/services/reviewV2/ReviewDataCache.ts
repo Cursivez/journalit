@@ -6,20 +6,28 @@ import type JournalitPlugin from '../../main';
 import type { UnifiedFilters } from '../../components/shared/filters/types';
 import { applyTradeFilters } from '../../components/shared/filters/filterUtils';
 import {
+  accountsRequiringCopiedRows,
+  resolveAccountPhaseWindowsFromPlugin,
+} from '../../components/shared/filters/accountPhaseScope';
+import {
   createTradingDayFromString,
   getTradingDay,
   getTradingDayRange,
 } from '../../utils/tradingDayUtils';
 import {
   formatLocalDateString,
+  getWeekStartDaySetting,
   parseLocalDateSafe,
   parseTradeTimestampValue,
 } from '../../utils/dateUtils';
+import { getWeeklyReviewDateRange } from '../../utils/weeklyReviewDateRange';
+import { resolveYearlyReviewYear } from '../../utils/yearlyReviewYear';
 import { aggregatePnLByCurrency } from '../../utils/currencyAggregation';
 import { resolvePreConversionExcursionFields } from '../../utils/tradeExcursion';
 import { ExchangeRateService } from '../exchangeRate/ExchangeRateService';
 import { resolveScopedConversionRateDate } from '../exchangeRate/conversionAttribution';
 import { eventBus } from '../events/EventBus';
+import { getReviewChangedPaths } from '../events/reviewChangedPaths';
 import type {
   Unsubscribe,
   TradeChangedPayload,
@@ -46,7 +54,7 @@ import {
   isPnlContributingTrade,
 } from '../../utils/tradeStatusUtils';
 import { normalizeTradeExecutionForPeriodAnalytics } from '../trade/core/TradeExecutionAnalytics';
-import { resolveSessionModeWindowsForDate } from '../../utils/sessionModePhase';
+import { resolveSessionModeWindowsForTradingDay } from '../../utils/sessionModePhase';
 import type { ResolvedSessionModeWindow } from '../../types/sessionMode';
 import { normalizeReviewFilters } from '../../settings/viewFiltersDefaults';
 import {
@@ -83,14 +91,6 @@ const getStringValue = (
     value instanceof Date
     ? String(value)
     : undefined;
-};
-
-const getNumberValue = (
-  record: Record<string, unknown>,
-  key: string
-): number | undefined => {
-  const value = record[key];
-  return typeof value === 'number' ? value : undefined;
 };
 
 const isReviewNoteType = (
@@ -249,38 +249,16 @@ function materializeExcursionAmounts(
   });
 }
 
-const getLocalDateKey = (date: Date): string =>
-  `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
-
 function getSessionWindowsForTradingDay(
   tradingDay: Date,
   plugin: JournalitPlugin
 ): ResolvedSessionModeWindow[] {
-  const previousDate = new Date(tradingDay);
-  previousDate.setDate(previousDate.getDate() - 1);
-  const tradingDayKey = getLocalDateKey(tradingDay);
-  const windows = [
-    ...resolveSessionModeWindowsForDate(
-      previousDate,
-      plugin.settings.sessionMode.sessionWindows
-    ),
-    ...resolveSessionModeWindowsForDate(
-      tradingDay,
-      plugin.settings.sessionMode.sessionWindows
-    ),
-  ];
-  const seen = new Set<string>();
-  return windows.filter((window) => {
-    if (
-      getLocalDateKey(getTradingDay(window.start, plugin)) !== tradingDayKey
-    ) {
-      return false;
-    }
-    const key = `${window.id}:${window.start.getTime()}`;
-    if (seen.has(key)) return false;
-    seen.add(key);
-    return true;
-  });
+  return resolveSessionModeWindowsForTradingDay(
+    tradingDay,
+    plugin.settings.sessionMode.sessionWindows,
+    [],
+    (date) => getTradingDay(date, plugin)
+  );
 }
 
 function getPayloadTradeFilePaths(payload: TradeChangedPayload): string[] {
@@ -569,7 +547,7 @@ export class ReviewDataCache {
 
     scopedTrades = this.expandCopiedTradesForReviewFilters(
       scopedTrades,
-      filters.accounts
+      accountsRequiringCopiedRows(filters.accounts, filters.accountPhases)
     );
 
     const breakEvenThresholdMode =
@@ -606,6 +584,10 @@ export class ReviewDataCache {
     return applyTradeFilters(scopedTrades, filters, customFieldDefinitions, {
       resolveAccountIdDisplayName: (accountId) =>
         this.plugin.settings.backendIntegration?.accountMapping?.[accountId],
+      accountPhaseWindows: resolveAccountPhaseWindowsFromPlugin(
+        filters.accountPhases,
+        this.plugin
+      ),
     });
   }
 
@@ -957,20 +939,19 @@ export class ReviewDataCache {
         return;
       }
 
-      if (!payload.filePath) {
+      const changedPaths = getReviewChangedPaths(payload);
+      if (changedPaths.length !== 1) {
         this.invalidateAll();
         return;
       }
+      const [filePath] = changedPaths;
 
       const previousSessionTradingDayStr =
-        this.getSessionMistakesTradingDayForFile(payload.filePath);
+        this.getSessionMistakesTradingDayForFile(filePath);
 
       
       this.invalidateSessionMistakesIndex();
-      this.invalidateByDRCReviewChange(
-        payload.filePath,
-        previousSessionTradingDayStr
-      );
+      this.invalidateByDRCReviewChange(filePath, previousSessionTradingDayStr);
     };
 
     
@@ -1510,14 +1491,11 @@ export class ReviewDataCache {
       start = tradingDayRange.start;
       end = new Date(tradingDayRange.end.getTime() - 1);
     } else if (noteType === 'weekly-review') {
-      
-      const weekStart = getStringValue(frontmatter, 'weekStart');
-      const weekEnd = getStringValue(frontmatter, 'weekEnd');
-      start = weekStart ? (parseLocalDateSafe(weekStart) ?? date) : date;
-      end = weekEnd
-        ? (parseLocalDateSafe(weekEnd) ??
-          new Date(start.getTime() + 7 * 24 * 60 * 60 * 1000))
-        : new Date(start.getTime() + 7 * 24 * 60 * 60 * 1000);
+      ({ start, end } = getWeeklyReviewDateRange(
+        date,
+        getWeekStartDaySetting(this.plugin),
+        frontmatter
+      ));
     } else if (noteType === 'monthly-review') {
       start = new Date(date.getFullYear(), date.getMonth(), 1);
       end = new Date(
@@ -1564,7 +1542,7 @@ export class ReviewDataCache {
         end.setHours(23, 59, 59, 999);
       } else {
         
-        const year = getNumberValue(frontmatter, 'year') ?? date.getFullYear();
+        const year = resolveYearlyReviewYear(frontmatter, date.getFullYear());
         start = new Date(year, 0, 1, 0, 0, 0, 0);
         end = new Date(year, 11, 31, 23, 59, 59, 999);
       }
@@ -1602,7 +1580,12 @@ export class ReviewDataCache {
           (await this.plugin.tradeService.getTradeData({
             fresh: false,
           })) as Array<PartialTradeFrontmatter & Record<string, unknown>>;
-        const missedTrades = await this.getMissedTradeReviewData(start, end);
+        
+        
+        const missedTrades = await this.getMissedTradeReviewData(
+          noteType === 'drc' ? date : start,
+          noteType === 'drc' ? date : end
+        );
         const allTrades = this.mergeReviewTradeSources(
           regularAndBacktestTrades,
           missedTrades
@@ -1773,20 +1756,24 @@ export class ReviewDataCache {
           )
         );
 
+        const copyMaterializationAccounts = accountsRequiringCopiedRows(
+          filters.accounts,
+          filters.accountPhases
+        );
         scopedTrades = this.expandCopiedTradesForReviewFilters(
           scopedTrades,
-          filters.accounts || []
+          copyMaterializationAccounts
         );
         analyticsBasisTrades =
           analyticsDateBasis === 'entry'
             ? scopedTrades
             : this.expandCopiedTradesForReviewFilters(
                 analyticsBasisTrades,
-                filters.accounts || []
+                copyMaterializationAccounts
               );
         executionBasisTrades = this.expandCopiedTradesForReviewFilters(
           executionBasisTrades,
-          filters.accounts || []
+          copyMaterializationAccounts
         );
 
         const breakEvenThresholdMode =
@@ -1937,16 +1924,21 @@ export class ReviewDataCache {
         }
 
         
+        const reviewTradeFilterOptions = {
+          resolveAccountIdDisplayName: (accountId: string) =>
+            this.plugin.settings.backendIntegration?.accountMapping?.[
+              accountId
+            ],
+          accountPhaseWindows: resolveAccountPhaseWindowsFromPlugin(
+            filters.accountPhases,
+            this.plugin
+          ),
+        };
         trades = applyTradeFilters(
           scopedTrades,
           filters,
           customFieldDefinitions,
-          {
-            resolveAccountIdDisplayName: (accountId) =>
-              this.plugin.settings.backendIntegration?.accountMapping?.[
-                accountId
-              ],
-          }
+          reviewTradeFilterOptions
         );
         analyticsBasisTrades =
           analyticsDateBasis === 'entry'
@@ -1955,23 +1947,13 @@ export class ReviewDataCache {
                 analyticsBasisTrades,
                 filters,
                 customFieldDefinitions,
-                {
-                  resolveAccountIdDisplayName: (accountId) =>
-                    this.plugin.settings.backendIntegration?.accountMapping?.[
-                      accountId
-                    ],
-                }
+                reviewTradeFilterOptions
               );
         executionBasisTrades = applyTradeFilters(
           executionBasisTrades,
           filters,
           customFieldDefinitions,
-          {
-            resolveAccountIdDisplayName: (accountId) =>
-              this.plugin.settings.backendIntegration?.accountMapping?.[
-                accountId
-              ],
-          }
+          reviewTradeFilterOptions
         );
 
         if (successfulConversion) {
@@ -1981,12 +1963,7 @@ export class ReviewDataCache {
             originalScopedTrades,
             filters,
             customFieldDefinitions,
-            {
-              resolveAccountIdDisplayName: (accountId) =>
-                this.plugin.settings.backendIntegration?.accountMapping?.[
-                  accountId
-                ],
-            }
+            reviewTradeFilterOptions
           ).filter((trade) => isPnlContributingTrade(trade));
           const pnlContributingTrades = trades.filter((trade) =>
             isPnlContributingTrade(trade)
@@ -1996,12 +1973,7 @@ export class ReviewDataCache {
                 originalAnalyticsBasisTrades,
                 filters,
                 customFieldDefinitions,
-                {
-                  resolveAccountIdDisplayName: (accountId) =>
-                    this.plugin.settings.backendIntegration?.accountMapping?.[
-                      accountId
-                    ],
-                }
+                reviewTradeFilterOptions
               )
             : [];
           const exitEventOriginalTrades: Array<

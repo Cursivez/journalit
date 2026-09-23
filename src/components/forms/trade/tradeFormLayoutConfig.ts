@@ -59,6 +59,18 @@ export function getTradeFormLayoutItemDefinitions(): TradeFormLayoutItemDefiniti
       label: t('form.layout.item.asset-specific'),
     },
     {
+      id: 'exchange',
+      category: 'basic',
+      label: t('form.field.exchange'),
+      description: t('form.layout.item.exchange-desc'),
+    },
+    {
+      id: 'directPnlToggle',
+      category: 'basic',
+      label: t('form.entry-exit.direct-pnl'),
+      description: t('form.layout.item.direct-pnl-toggle-desc'),
+    },
+    {
       id: 'tradingCosts',
       category: 'basic',
       label: t('form.layout.item.trading-costs.commission'),
@@ -211,9 +223,15 @@ export function hasPopulatedTradeFormLayoutItem(
   customFieldValues?: CustomFieldValues
 ): boolean {
   switch (itemId) {
-    case 'assetSpecific':
+    case 'exchange':
       return Boolean(
         hasNonEmptyString(data.exchange) ||
+        hasNonEmptyString(data.cryptoExchange)
+      );
+    case 'directPnlToggle':
+      return data.useDirectPnLInput === true;
+    case 'assetSpecific':
+      return Boolean(
         data.expirationDate ||
         hasNumber(data.strikePrice) ||
         hasNonEmptyString(data.optionType) ||
@@ -226,7 +244,6 @@ export function hasPopulatedTradeFormLayoutItem(
         hasNumber(data.lotSize) ||
         hasNumber(data.pipValue) ||
         hasNonEmptyString(data.tradingPair) ||
-        hasNonEmptyString(data.cryptoExchange) ||
         hasNumber(data.leverageRatio)
       );
     case 'tradingCosts':

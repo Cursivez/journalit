@@ -23,6 +23,10 @@ import { getSingleExplicitCurrency } from '../../../utils/currencyAggregation';
 import { CurrencyConversionInfo } from '../../shared/display/CurrencyConversionInfo';
 import { getTradeAccountNames } from './shared/accountDisplay';
 import { formatAccountTooltipSummary } from './shared/accountTooltipSummary';
+import {
+  getReviewWidgetPeriodAriaLabel,
+  openReviewWidgetPeriod,
+} from '../reviewWidgetNavigation';
 
 type ReviewPeriodTrade = Record<string, unknown> & {
   tradeId?: string;
@@ -85,6 +89,12 @@ interface QuarterlyDataPoint {
 
 function getQuarter(month: number): number {
   return Math.floor(month / 3) + 1;
+}
+
+function getQuarterStartDate(quarterKey: string): Date | null {
+  const match = /^(\d{4})-Q([1-4])$/.exec(quarterKey);
+  if (!match) return null;
+  return new Date(Number(match[1]), (Number(match[2]) - 1) * 3, 1);
 }
 
 export const TradesQuarterlyWidget: React.FC<TradesQuarterlyWidgetProps> = ({
@@ -301,6 +311,21 @@ export const TradesQuarterlyWidget: React.FC<TradesQuarterlyWidgetProps> = ({
           data={chartData}
           height={height}
           currencyOverride={getSingleExplicitCurrency(trades)}
+          navigation={
+            preview
+              ? undefined
+              : {
+                  getPointAriaLabel: (point) =>
+                    getReviewWidgetPeriodAriaLabel('quarterly', point.date),
+                  onPointClick: (point) => {
+                    if (!point.originalDate) return;
+                    const date = getQuarterStartDate(point.originalDate);
+                    if (date) {
+                      void openReviewWidgetPeriod(plugin, 'quarterly', date);
+                    }
+                  },
+                }
+          }
         />
       </div>
     </div>

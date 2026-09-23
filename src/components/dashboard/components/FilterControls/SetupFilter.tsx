@@ -1,15 +1,10 @@
 
 
-import React, {
-  useState,
-  useRef,
-  useEffect,
-  useCallback,
-  useMemo,
-} from 'react';
+import React, { useState, useRef, useCallback, useMemo } from 'react';
 import { t } from '../../../../lang/helpers';
 import type { CustomOptionsService } from '../../../../services/options/CustomOptionsService';
 import { OptionType } from '../../../../services/options/CustomOptionsService';
+import { AnchoredMenu } from '../../../shared/menus/AnchoredMenu';
 
 interface SetupFilterProps {
   selected: string[];
@@ -30,27 +25,6 @@ const SetupFilterComponent: React.FC<SetupFilterProps> = ({
   const setupOptions = useMemo(() => {
     return optionsService.getOptions(OptionType.SETUP);
   }, [optionsService]);
-
-  
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      const target = event.target;
-      if (
-        dropdownRef.current &&
-        (!(target instanceof Node) || !dropdownRef.current.contains(target))
-      ) {
-        setIsOpen(false);
-      }
-    };
-
-    window.activeDocument.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      window.activeDocument.removeEventListener(
-        'mousedown',
-        handleClickOutside
-      );
-    };
-  }, []);
 
   const allOptions = useMemo(
     () => ['__NO_SETUP__', ...setupOptions],
@@ -124,82 +98,85 @@ const SetupFilterComponent: React.FC<SetupFilterProps> = ({
           <span className="dropdown-arrow">{isOpen ? '▲' : '▼'}</span>
         </button>
 
-        {isOpen && (
-          <div className="journalit-dashboard-setup-options-dropdown">
-            <div
-              className="journalit-dashboard-setup-option-item journalit-dashboard-setup-option-all"
-              onClick={() => handleSetupChange('all')}
-              role="checkbox"
-              aria-checked={isAllSelected}
-              tabIndex={0}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' || e.key === ' ') {
-                  e.preventDefault();
-                  handleSetupChange('all');
-                }
-              }}
+        <AnchoredMenu
+          isOpen={isOpen}
+          triggerRef={dropdownRef}
+          onClose={() => setIsOpen(false)}
+          className="journalit-dashboard-setup-options-dropdown"
+        >
+          <div
+            className="journalit-dashboard-setup-option-item journalit-dashboard-setup-option-all"
+            onClick={() => handleSetupChange('all')}
+            role="checkbox"
+            aria-checked={isAllSelected}
+            tabIndex={0}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                handleSetupChange('all');
+              }
+            }}
+          >
+            <span
+              className={`journalit-dashboard-setup-checkbox${isAllSelected ? ' checked' : ''}`}
+              aria-hidden="true"
             >
-              <span
-                className={`journalit-dashboard-setup-checkbox${isAllSelected ? ' checked' : ''}`}
-                aria-hidden="true"
-              >
-                {isAllSelected ? '✓' : ''}
-              </span>
-              <span>{t('dashboard.filter.setup.select-all')}</span>
-            </div>
-            <div className="journalit-dashboard-setup-divider"></div>
-            <div
-              className="journalit-dashboard-setup-option-item"
-              onClick={() => handleSetupChange('__NO_SETUP__')}
-              role="checkbox"
-              aria-checked={selected.includes('__NO_SETUP__')}
-              tabIndex={0}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' || e.key === ' ') {
-                  e.preventDefault();
-                  handleSetupChange('__NO_SETUP__');
-                }
-              }}
-            >
-              <span
-                className={`journalit-dashboard-setup-checkbox${selected.includes('__NO_SETUP__') ? ' checked' : ''}`}
-                aria-hidden="true"
-              >
-                {selected.includes('__NO_SETUP__') ? '✓' : ''}
-              </span>
-              <span>{t('dashboard.filter.setup.none')}</span>
-            </div>
-            {setupOptions.length > 0 && (
-              <>
-                <div className="journalit-dashboard-setup-divider"></div>
-                {setupOptions.map((setup) => (
-                  <div
-                    key={setup}
-                    className="journalit-dashboard-setup-option-item"
-                    onClick={() => handleSetupChange(setup)}
-                    role="checkbox"
-                    aria-checked={selectedSet.has(setup)}
-                    tabIndex={0}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' || e.key === ' ') {
-                        e.preventDefault();
-                        handleSetupChange(setup);
-                      }
-                    }}
-                  >
-                    <span
-                      className={`journalit-dashboard-setup-checkbox${selectedSet.has(setup) ? ' checked' : ''}`}
-                      aria-hidden="true"
-                    >
-                      {selectedSet.has(setup) ? '✓' : ''}
-                    </span>
-                    <span>{setup}</span>
-                  </div>
-                ))}
-              </>
-            )}
+              {isAllSelected ? '✓' : ''}
+            </span>
+            <span>{t('dashboard.filter.setup.select-all')}</span>
           </div>
-        )}
+          <div className="journalit-dashboard-setup-divider"></div>
+          <div
+            className="journalit-dashboard-setup-option-item"
+            onClick={() => handleSetupChange('__NO_SETUP__')}
+            role="checkbox"
+            aria-checked={selectedSet.has('__NO_SETUP__')}
+            tabIndex={0}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                handleSetupChange('__NO_SETUP__');
+              }
+            }}
+          >
+            <span
+              className={`journalit-dashboard-setup-checkbox${selectedSet.has('__NO_SETUP__') ? ' checked' : ''}`}
+              aria-hidden="true"
+            >
+              {selectedSet.has('__NO_SETUP__') ? '✓' : ''}
+            </span>
+            <span>{t('dashboard.filter.setup.none')}</span>
+          </div>
+          {setupOptions.length > 0 && (
+            <>
+              <div className="journalit-dashboard-setup-divider"></div>
+              {setupOptions.map((setup) => (
+                <div
+                  key={setup}
+                  className="journalit-dashboard-setup-option-item"
+                  onClick={() => handleSetupChange(setup)}
+                  role="checkbox"
+                  aria-checked={selectedSet.has(setup)}
+                  tabIndex={0}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      handleSetupChange(setup);
+                    }
+                  }}
+                >
+                  <span
+                    className={`journalit-dashboard-setup-checkbox${selectedSet.has(setup) ? ' checked' : ''}`}
+                    aria-hidden="true"
+                  >
+                    {selectedSet.has(setup) ? '✓' : ''}
+                  </span>
+                  <span>{setup}</span>
+                </div>
+              ))}
+            </>
+          )}
+        </AnchoredMenu>
       </div>
     </div>
   );

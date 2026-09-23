@@ -6,55 +6,85 @@ import {
   createManualTimelineEntries,
   createTradeTimelineEntries,
   filterAutomaticTradeTimelineEntries,
+  findOwningSessionWindow,
   getSessionLogTags,
   isTimelineEntryInSessionWindow,
   normalizeSessionLogEntries,
   sortSessionTimeline,
 } from '../../sessionLog/sessionLogUtils';
 import type { SessionLogTimelineEntry } from '../../../types/sessionLog';
-import { parseLocalDateSafe } from '../../../utils/dateUtils';
+import {
+  formatLocalDateString,
+  parseLocalDateSafe,
+} from '../../../utils/dateUtils';
 import {
   getTradingDay,
   getTradingDayRange,
 } from '../../../utils/tradingDayUtils';
-import { resolveSessionModeWindowsForDate } from '../../../utils/sessionModePhase';
+import { resolveSessionModeWindowsForTradingDay } from '../../../utils/sessionModePhase';
 import { t } from '../../../lang/helpers';
-import type { ResolvedSessionModeWindow } from '../../../types/sessionMode';
+import type {
+  ResolvedSessionModeWindow,
+  UnplannedSession,
+} from '../../../types/sessionMode';
+import { normalizeUnplannedSessions } from '../../../types/sessionMode';
+import { resolveUnplannedSessionWindow } from '../../sessionMode/unplannedSessionUtils';
 import { useEventBus } from '../../../hooks/useEventBus';
-
-const getLocalDateKey = (date: Date): string =>
-  `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+import { Tooltip } from '../../shared/Tooltip';
+import { Info } from '../../shared/icons/ObsidianIcon';
 
 const getSessionWindowsForTradingDay = (
   tradingDay: Date,
-  plugin: JournalitPlugin
+  plugin: JournalitPlugin,
+  unplannedSessions: UnplannedSession[]
 ): ResolvedSessionModeWindow[] => {
-  const previousDate = new Date(tradingDay);
-  previousDate.setDate(previousDate.getDate() - 1);
-  const tradingDayKey = getLocalDateKey(tradingDay);
-  const windows = [
-    ...resolveSessionModeWindowsForDate(
-      previousDate,
-      plugin.settings.sessionMode.sessionWindows
+  const now = new Date();
+  return resolveSessionModeWindowsForTradingDay(
+    tradingDay,
+    plugin.settings.sessionMode.sessionWindows,
+    unplannedSessions.map((session) =>
+      resolveUnplannedSessionWindow(session, now, plugin)
     ),
-    ...resolveSessionModeWindowsForDate(
-      tradingDay,
-      plugin.settings.sessionMode.sessionWindows
-    ),
-  ];
-  const seen = new Set<string>();
-  return windows.filter((window) => {
-    if (
-      getLocalDateKey(getTradingDay(window.start, plugin)) !== tradingDayKey
-    ) {
-      return false;
-    }
-    const key = `${window.id}:${window.start.getTime()}`;
-    if (seen.has(key)) return false;
-    seen.add(key);
-    return true;
-  });
+    (date) => getTradingDay(date, plugin)
+  );
 };
+
+const getSessionGroupLabel = (
+  window: ResolvedSessionModeWindow,
+  use24HourTime: boolean
+): string =>
+  window.kind === 'unplanned'
+    ? t('session-log.session-group.unplanned', {
+        time: window.start.toLocaleTimeString(undefined, {
+          hour: '2-digit',
+          minute: '2-digit',
+          hour12: !use24HourTime,
+        }),
+      })
+    : window.name;
+
+const SessionGroupHeader: React.FC<{
+  window: ResolvedSessionModeWindow;
+  use24HourTime: boolean;
+}> = ({ window, use24HourTime }) => (
+  <div className="journalit-session-log-session-group__header">
+    <span>{getSessionGroupLabel(window, use24HourTime)}</span>
+    {window.kind === 'unplanned' && (
+      <Tooltip
+        content={window.reason}
+        className="journalit-session-log-session-group__tooltip"
+        preferredPosition="top"
+        disclosureLabel={t('session-mode.unplanned.modal.reason-label')}
+      >
+        <Info
+          className="journalit-session-log-session-group__info"
+          size={12}
+          aria-hidden="true"
+        />
+      </Tooltip>
+    )}
+  </div>
+);
 
 const createOutsideSessionWindow = (
   tradingDay: Date,
@@ -96,6 +126,7 @@ const createOutsideSessionWindow = (
   const outsideWindow = activeGap ?? gaps[0] ?? { start, end: start };
 
   return {
+    kind: 'scheduled',
     id: 'outside-sessions',
     name: t('session-log.session-group.outside'),
     startTime: '00:00',
@@ -108,10 +139,15 @@ const createOutsideSessionWindow = (
 const createTradeTimelineEntriesForDRC = (
   trades: unknown[],
   drcDate: Date,
-  plugin: JournalitPlugin
+  plugin: JournalitPlugin,
+  unplannedSessions: UnplannedSession[]
 ): SessionLogTimelineEntry[] => {
-  const drcTradingDayKey = getLocalDateKey(drcDate);
-  const sessionWindows = getSessionWindowsForTradingDay(drcDate, plugin);
+  const drcTradingDayKey = formatLocalDateString(drcDate);
+  const sessionWindows = getSessionWindowsForTradingDay(
+    drcDate,
+    plugin,
+    unplannedSessions
+  );
   const tradingDays = new Map<string, Date>([[drcTradingDayKey, drcDate]]);
   for (const window of sessionWindows) {
     const windowEnd = new Date(window.end.getTime() - 1);
@@ -119,13 +155,14 @@ const createTradeTimelineEntriesForDRC = (
       getTradingDay(window.start, plugin),
       getTradingDay(windowEnd, plugin),
     ]) {
-      tradingDays.set(getLocalDateKey(tradingDay), tradingDay);
+      tradingDays.set(formatLocalDateString(tradingDay), tradingDay);
     }
   }
 
   const timelineEntriesById = new Map<string, SessionLogTimelineEntry>();
   for (const tradingDay of tradingDays.values()) {
-    const isDRCTradingDay = getLocalDateKey(tradingDay) === drcTradingDayKey;
+    const isDRCTradingDay =
+      formatLocalDateString(tradingDay) === drcTradingDayKey;
     for (const entry of createTradeTimelineEntries(
       trades,
       tradingDay,
@@ -229,7 +266,14 @@ export const SessionLogWidget: React.FC<SessionLogWidgetProps> = React.memo(
       const executionTrades = data.executionBasisTrades ?? data.trades;
       const tradeEntries =
         drcDate && plugin.settings.sessionMode.showTradeExecutionsInSessionLog
-          ? createTradeTimelineEntriesForDRC(executionTrades, drcDate, plugin)
+          ? createTradeTimelineEntriesForDRC(
+              executionTrades,
+              drcDate,
+              plugin,
+              normalizeUnplannedSessions(
+                data.frontmatter.sessionModeUnplannedSessions
+              )
+            )
           : [];
       return filterAutomaticTradeTimelineEntries(
         sortSessionTimeline([...manualEntries, ...tradeEntries]),
@@ -248,7 +292,13 @@ export const SessionLogWidget: React.FC<SessionLogWidgetProps> = React.memo(
           : null;
       if (!drcDate) return [];
 
-      const windows = getSessionWindowsForTradingDay(drcDate, plugin);
+      const windows = getSessionWindowsForTradingDay(
+        drcDate,
+        plugin,
+        normalizeUnplannedSessions(
+          data.frontmatter.sessionModeUnplannedSessions
+        )
+      );
       if (windows.length === 0) return [];
 
       const groups: Array<{
@@ -260,23 +310,33 @@ export const SessionLogWidget: React.FC<SessionLogWidgetProps> = React.memo(
         id: window.id,
         label: window.name,
         sessionWindow: window,
-        entries: timelineEntries.filter((entry) =>
-          isTimelineEntryInSessionWindow(entry, window)
-        ),
+        entries: [],
       }));
-
-      const outsideEntries = timelineEntries.filter(
-        (entry) =>
-          !windows.some((window) =>
-            isTimelineEntryInSessionWindow(entry, window)
-          )
+      const groupsByWindow = new Map(
+        windows.map((window, index) => [window, groups[index]])
       );
-      groups.push({
-        id: 'outside-sessions',
-        label: t('session-log.session-group.outside'),
-        sessionWindow: createOutsideSessionWindow(drcDate, plugin, windows),
-        entries: outsideEntries,
-      });
+
+      const outsideEntries: SessionLogTimelineEntry[] = [];
+      for (const entry of timelineEntries) {
+        const owner = findOwningSessionWindow(entry, windows);
+        const group = owner ? groupsByWindow.get(owner) : undefined;
+        if (group) {
+          group.entries.push(entry);
+        } else {
+          outsideEntries.push(entry);
+        }
+      }
+      
+      
+      
+      if (outsideEntries.length > 0) {
+        groups.push({
+          id: 'outside-sessions',
+          label: t('session-log.session-group.outside'),
+          sessionWindow: createOutsideSessionWindow(drcDate, plugin, windows),
+          entries: outsideEntries,
+        });
+      }
 
       return groups;
     }, [data, plugin, timelineEntries]);
@@ -342,9 +402,16 @@ export const SessionLogWidget: React.FC<SessionLogWidgetProps> = React.memo(
               key={group.id}
               className="journalit-session-log-session-group"
             >
-              <div className="journalit-session-log-session-group__header">
-                {group.label}
-              </div>
+              {group.id === 'outside-sessions' ? (
+                <div className="journalit-session-log-session-group__header">
+                  <span>{group.label}</span>
+                </div>
+              ) : (
+                <SessionGroupHeader
+                  window={group.sessionWindow}
+                  use24HourTime={plugin.settings.trade.use24HourTime ?? false}
+                />
+              )}
               <SessionLogPanel
                 plugin={plugin}
                 filePath={filePath}

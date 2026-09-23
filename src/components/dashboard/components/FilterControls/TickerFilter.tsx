@@ -11,6 +11,7 @@ import { OptionType } from '../../../../services/options/CustomOptionsService';
 import { usePlugin } from '../../../../hooks/usePlugin';
 import { useEventBus } from '../../../../hooks/useEventBus';
 import { t } from '../../../../lang/helpers';
+import { AnchoredMenu } from '../../../shared/menus/AnchoredMenu';
 
 
 interface TickerFilterProps {
@@ -60,27 +61,6 @@ export const TickerFilter: React.FC<TickerFilterProps> = React.memo(
 
     
     const hasTickers = combinedTickers.length > 0;
-
-    
-    useEffect(() => {
-      const handleClickOutside = (event: MouseEvent) => {
-        const target = event.target;
-        if (
-          dropdownRef.current &&
-          (!(target instanceof Node) || !dropdownRef.current.contains(target))
-        ) {
-          setIsOpen(false);
-        }
-      };
-
-      window.activeDocument.addEventListener('mousedown', handleClickOutside);
-      return () => {
-        window.activeDocument.removeEventListener(
-          'mousedown',
-          handleClickOutside
-        );
-      };
-    }, []);
 
     
     const handleTickerChange = useCallback(
@@ -157,68 +137,71 @@ export const TickerFilter: React.FC<TickerFilterProps> = React.memo(
             <span className="dropdown-arrow">{isOpen ? '▲' : '▼'}</span>
           </button>
 
-          {isOpen && (
-            <div className="journalit-dashboard-ticker-options-dropdown">
-              {hasTickers ? (
-                <>
-                  <div
-                    className="journalit-dashboard-ticker-option-item select-all"
-                    onClick={handleSelectAllClick}
-                    role="checkbox"
-                    aria-checked={
-                      selectedTickers.length === combinedTickers.length
+          <AnchoredMenu
+            isOpen={isOpen}
+            triggerRef={dropdownRef}
+            onClose={() => setIsOpen(false)}
+            className="journalit-dashboard-ticker-options-dropdown"
+          >
+            {hasTickers ? (
+              <>
+                <div
+                  className="journalit-dashboard-ticker-option-item select-all"
+                  onClick={handleSelectAllClick}
+                  role="checkbox"
+                  aria-checked={
+                    selectedTickers.length === combinedTickers.length
+                  }
+                  tabIndex={0}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      handleSelectAllClick();
                     }
+                  }}
+                >
+                  <span
+                    className={`journalit-dashboard-ticker-checkbox${selectedTickers.length === combinedTickers.length ? ' checked' : ''}`}
+                    aria-hidden="true"
+                  >
+                    {selectedTickers.length === combinedTickers.length
+                      ? '✓'
+                      : ''}
+                  </span>
+                  <span>{t('dashboard.filter.tickers.select-all')}</span>
+                </div>
+                <div className="journalit-dashboard-ticker-divider"></div>
+                {combinedTickers.map((ticker) => (
+                  <div
+                    key={ticker}
+                    className="journalit-dashboard-ticker-option-item"
+                    onClick={getTickerClickHandler(ticker)}
+                    role="checkbox"
+                    aria-checked={selectedTickersSet.has(ticker)}
                     tabIndex={0}
                     onKeyDown={(e) => {
                       if (e.key === 'Enter' || e.key === ' ') {
                         e.preventDefault();
-                        handleSelectAllClick();
+                        handleTickerChange(ticker);
                       }
                     }}
                   >
                     <span
-                      className={`journalit-dashboard-ticker-checkbox${selectedTickers.length === combinedTickers.length ? ' checked' : ''}`}
+                      className={`journalit-dashboard-ticker-checkbox${selectedTickersSet.has(ticker) ? ' checked' : ''}`}
                       aria-hidden="true"
                     >
-                      {selectedTickers.length === combinedTickers.length
-                        ? '✓'
-                        : ''}
+                      {selectedTickersSet.has(ticker) ? '✓' : ''}
                     </span>
-                    <span>{t('dashboard.filter.tickers.select-all')}</span>
+                    <span>{ticker}</span>
                   </div>
-                  <div className="journalit-dashboard-ticker-divider"></div>
-                  {combinedTickers.map((ticker) => (
-                    <div
-                      key={ticker}
-                      className="journalit-dashboard-ticker-option-item"
-                      onClick={getTickerClickHandler(ticker)}
-                      role="checkbox"
-                      aria-checked={selectedTickersSet.has(ticker)}
-                      tabIndex={0}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' || e.key === ' ') {
-                          e.preventDefault();
-                          handleTickerChange(ticker);
-                        }
-                      }}
-                    >
-                      <span
-                        className={`journalit-dashboard-ticker-checkbox${selectedTickersSet.has(ticker) ? ' checked' : ''}`}
-                        aria-hidden="true"
-                      >
-                        {selectedTickersSet.has(ticker) ? '✓' : ''}
-                      </span>
-                      <span>{ticker}</span>
-                    </div>
-                  ))}
-                </>
-              ) : (
-                <div className="journalit-dashboard-no-tickers">
-                  {t('dashboard.filter.tickers.none-found')}
-                </div>
-              )}
-            </div>
-          )}
+                ))}
+              </>
+            ) : (
+              <div className="journalit-dashboard-no-tickers">
+                {t('dashboard.filter.tickers.none-found')}
+              </div>
+            )}
+          </AnchoredMenu>
         </div>
       </div>
     );

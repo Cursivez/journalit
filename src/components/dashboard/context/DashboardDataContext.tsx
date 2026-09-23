@@ -63,7 +63,7 @@ interface DashboardDataProviderProps {
 
 const DEFAULT_CACHE_DURATION = 5000;
 
-const haveDashboardFiltersChanged = (
+export const haveDashboardFiltersChanged = (
   prevFilters: FilterState,
   currentFilters: FilterState
 ): boolean => {
@@ -77,6 +77,16 @@ const haveDashboardFiltersChanged = (
     prevFilters.accounts.length !== currentFilters.accounts.length ||
     prevFilters.accounts.some(
       (acc, idx) => acc !== currentFilters.accounts[idx]
+    );
+
+  const prevAccountPhases = prevFilters.accountPhases || [];
+  const currentAccountPhases = currentFilters.accountPhases || [];
+  const accountPhasesChanged =
+    prevAccountPhases.length !== currentAccountPhases.length ||
+    prevAccountPhases.some(
+      (scope, idx) =>
+        scope.account !== currentAccountPhases[idx].account ||
+        scope.phaseId !== currentAccountPhases[idx].phaseId
     );
 
   const tickersChanged =
@@ -123,6 +133,7 @@ const haveDashboardFiltersChanged = (
   return (
     dateRangeChanged ||
     accountsChanged ||
+    accountPhasesChanged ||
     tickersChanged ||
     setupsChanged ||
     tradeTypesChanged ||
@@ -284,6 +295,7 @@ export const DashboardDataProvider: React.FC<DashboardDataProviderProps> = ({
   const wasActiveRef = useRef(isActive);
   const isActiveRef = useRef(isActive);
   const pendingInvalidationRef = useRef(false);
+  const completedFetchRef = useRef({ hasData: false, timestamp: 0 });
 
   React.useEffect(() => {
     isActiveRef.current = isActive;
@@ -297,17 +309,23 @@ export const DashboardDataProvider: React.FC<DashboardDataProviderProps> = ({
   
   const isCacheValid = useCallback(
     (maxAge: number = DEFAULT_CACHE_DURATION) => {
-      return Date.now() - lastFetchTime < maxAge;
+      return Date.now() - completedFetchRef.current.timestamp < maxAge;
     },
-    [lastFetchTime]
+    []
   );
 
   
   const refreshData = useCallback(
     async (forceRefresh: boolean = false) => {
       
+      
       if (fetchingRef.current) {
-        pendingForceRefreshRef.current = true;
+        pendingForceRefreshRef.current ||=
+          forceRefresh ||
+          haveDashboardFiltersChanged(
+            previousFiltersRef.current,
+            filtersRef.current
+          );
         await activeRefreshPromiseRef.current;
         return;
       }
@@ -326,7 +344,7 @@ export const DashboardDataProvider: React.FC<DashboardDataProviderProps> = ({
           if (
             !shouldForceRefresh &&
             !filtersChanged &&
-            dashboardData &&
+            completedFetchRef.current.hasData &&
             isCacheValid()
           ) {
             return;
@@ -349,9 +367,11 @@ export const DashboardDataProvider: React.FC<DashboardDataProviderProps> = ({
                 freshTradeQuery: dataReadyRef.current,
               }
             );
+            const timestamp = Date.now();
+            completedFetchRef.current = { hasData: true, timestamp };
             dispatchState({
               dashboardData: data,
-              lastFetchTime: Date.now(),
+              lastFetchTime: timestamp,
               isStale: false,
             });
           } catch (err) {
@@ -381,7 +401,7 @@ export const DashboardDataProvider: React.FC<DashboardDataProviderProps> = ({
         }
       }
     },
-    [app, tradeService, isCacheValid, dashboardData, defaultRiskAmount, plugin]
+    [app, tradeService, isCacheValid, defaultRiskAmount, plugin]
   );
   const refreshDataRef = useRef(refreshData);
 
@@ -409,7 +429,7 @@ export const DashboardDataProvider: React.FC<DashboardDataProviderProps> = ({
       filters
     );
 
-    if (filtersChanged && dashboardData) {
+    if (filtersChanged && completedFetchRef.current.hasData) {
       
       dispatchState({ isStale: true });
     }
@@ -425,7 +445,7 @@ export const DashboardDataProvider: React.FC<DashboardDataProviderProps> = ({
     }, 100);
 
     return () => window.clearTimeout(timeoutId);
-  }, [filters, dashboardData, isActive]);
+  }, [filters, isActive]);
 
   
   

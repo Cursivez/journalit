@@ -57,6 +57,7 @@ export interface TradeMutationInput {
   takeProfits?: Array<{
     price?: number;
     closePercent?: number;
+    size?: number;
   }>;
   riskAmount?: number;
   currency?: string;
@@ -117,6 +118,7 @@ export interface TradeMutationInput {
   canonicalTradeVersion?: number;
   canonicalProjectionGeneration?: string;
   canonicalAccountId?: string;
+  canonicalAccountIdentity?: 'broker' | 'name';
   canonicalBroker?: string;
   canonicalAccountDisplayName?: string;
   canonicalProjectionSchemaVersion?: number;
@@ -127,6 +129,8 @@ export interface TradeMutationInput {
   tradeRevision?: number;
   templateId?: string;
   templateVersion?: number;
+  journalitSampleInstance?: string;
+  journalitSampleEntityId?: string;
   customFields?: CustomFieldValues;
   [key: string]: unknown;
 }

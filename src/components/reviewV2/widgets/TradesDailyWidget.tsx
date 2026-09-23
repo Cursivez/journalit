@@ -28,6 +28,10 @@ import { getSingleExplicitCurrency } from '../../../utils/currencyAggregation';
 import { CurrencyConversionInfo } from '../../shared/display/CurrencyConversionInfo';
 import { getTradeAccountNames } from './shared/accountDisplay';
 import { formatAccountTooltipSummary } from './shared/accountTooltipSummary';
+import {
+  getReviewWidgetPeriodAriaLabel,
+  openReviewWidgetPeriod,
+} from '../reviewWidgetNavigation';
 
 type ReviewDailyTrade = Record<string, unknown> & {
   tradeId?: string;
@@ -299,6 +303,21 @@ export const TradesDailyWidget: React.FC<TradesDailyWidgetProps> = ({
           data={chartData}
           height={height}
           currencyOverride={getSingleExplicitCurrency(trades)}
+          navigation={
+            preview
+              ? undefined
+              : {
+                  getPointAriaLabel: (point) =>
+                    getReviewWidgetPeriodAriaLabel('daily', point.date),
+                  onPointClick: (point) => {
+                    if (!point.originalDate) return;
+                    const date = parseLocalDateSafe(point.originalDate);
+                    if (date) {
+                      void openReviewWidgetPeriod(plugin, 'daily', date);
+                    }
+                  },
+                }
+          }
         />
       </div>
     </div>

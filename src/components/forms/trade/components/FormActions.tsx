@@ -86,12 +86,6 @@ export const FormActions: React.FC<FormActionsProps> = ({
           </Button>
         </div>
       </div>
-
-      {disabledReason && (
-        <div className="formSubmitHelperText" role="status">
-          {disabledReason}
-        </div>
-      )}
     </div>
   );
 };

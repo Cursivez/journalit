@@ -12,6 +12,7 @@ import { OptionType } from '../../../../services/options/CustomOptionsService';
 import { usePlugin } from '../../../../hooks/usePlugin';
 import { useEventBus } from '../../../../hooks/useEventBus';
 import { TagFilterProps } from './types';
+import { AnchoredMenu } from '../../../shared/menus/AnchoredMenu';
 
 
 export const TagFilter: React.FC<TagFilterProps> = React.memo(
@@ -54,27 +55,6 @@ export const TagFilter: React.FC<TagFilterProps> = React.memo(
       () => ['__NO_TAGS__', ...combinedTags],
       [combinedTags]
     );
-
-    
-    useEffect(() => {
-      const handleClickOutside = (event: MouseEvent) => {
-        const target = event.target;
-        if (
-          dropdownRef.current &&
-          (!(target instanceof Node) || !dropdownRef.current.contains(target))
-        ) {
-          setIsOpen(false);
-        }
-      };
-
-      window.activeDocument.addEventListener('mousedown', handleClickOutside);
-      return () => {
-        window.activeDocument.removeEventListener(
-          'mousedown',
-          handleClickOutside
-        );
-      };
-    }, []);
 
     
     const handleTagChange = useCallback(
@@ -159,90 +139,93 @@ export const TagFilter: React.FC<TagFilterProps> = React.memo(
             <span className="dropdown-arrow">{isOpen ? '▲' : '▼'}</span>
           </button>
 
-          {isOpen && (
-            <div className="journalit-dashboard-tag-options-dropdown">
-              {hasTags || selectedTags.includes('__NO_TAGS__') ? (
-                <>
-                  <div
-                    className="journalit-dashboard-tag-option-item select-all"
-                    onClick={handleSelectAllClick}
-                    role="checkbox"
-                    aria-checked={selectedTags.length === allOptions.length}
-                    tabIndex={0}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' || e.key === ' ') {
-                        e.preventDefault();
-                        handleSelectAllClick();
-                      }
-                    }}
+          <AnchoredMenu
+            isOpen={isOpen}
+            triggerRef={dropdownRef}
+            onClose={() => setIsOpen(false)}
+            className="journalit-dashboard-tag-options-dropdown"
+          >
+            {hasTags || selectedTagsSet.has('__NO_TAGS__') ? (
+              <>
+                <div
+                  className="journalit-dashboard-tag-option-item select-all"
+                  onClick={handleSelectAllClick}
+                  role="checkbox"
+                  aria-checked={selectedTags.length === allOptions.length}
+                  tabIndex={0}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      handleSelectAllClick();
+                    }
+                  }}
+                >
+                  <span
+                    className={`journalit-dashboard-tag-checkbox${selectedTags.length === allOptions.length ? ' checked' : ''}`}
+                    aria-hidden="true"
                   >
-                    <span
-                      className={`journalit-dashboard-tag-checkbox${selectedTags.length === allOptions.length ? ' checked' : ''}`}
-                      aria-hidden="true"
-                    >
-                      {selectedTags.length === allOptions.length ? '✓' : ''}
-                    </span>
-                    <span>{t('dashboard.filter.tags.select-all')}</span>
-                  </div>
-                  <div className="journalit-dashboard-tag-divider"></div>
-                  <div
-                    className="journalit-dashboard-tag-option-item"
-                    onClick={getTagClickHandler('__NO_TAGS__')}
-                    role="checkbox"
-                    aria-checked={selectedTags.includes('__NO_TAGS__')}
-                    tabIndex={0}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' || e.key === ' ') {
-                        e.preventDefault();
-                        handleTagChange('__NO_TAGS__');
-                      }
-                    }}
-                  >
-                    <span
-                      className={`journalit-dashboard-tag-checkbox${selectedTags.includes('__NO_TAGS__') ? ' checked' : ''}`}
-                      aria-hidden="true"
-                    >
-                      {selectedTags.includes('__NO_TAGS__') ? '✓' : ''}
-                    </span>
-                    <span>{t('dashboard.filter.tags.none')}</span>
-                  </div>
-                  {hasTags && (
-                    <>
-                      <div className="journalit-dashboard-tag-divider"></div>
-                      {combinedTags.map((tag) => (
-                        <div
-                          key={tag}
-                          className="journalit-dashboard-tag-option-item"
-                          onClick={getTagClickHandler(tag)}
-                          role="checkbox"
-                          aria-checked={selectedTagsSet.has(tag)}
-                          tabIndex={0}
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter' || e.key === ' ') {
-                              e.preventDefault();
-                              handleTagChange(tag);
-                            }
-                          }}
-                        >
-                          <span
-                            className={`journalit-dashboard-tag-checkbox${selectedTagsSet.has(tag) ? ' checked' : ''}`}
-                            aria-hidden="true"
-                          >
-                            {selectedTagsSet.has(tag) ? '✓' : ''}
-                          </span>
-                          <span>{tag}</span>
-                        </div>
-                      ))}
-                    </>
-                  )}
-                </>
-              ) : (
-                <div className="journalit-dashboard-no-tags">
-                  {t('dashboard.filter.tags.none-found')}
+                    {selectedTags.length === allOptions.length ? '✓' : ''}
+                  </span>
+                  <span>{t('dashboard.filter.tags.select-all')}</span>
                 </div>
-              )}
-            </div>
-          )}
+                <div className="journalit-dashboard-tag-divider"></div>
+                <div
+                  className="journalit-dashboard-tag-option-item"
+                  onClick={getTagClickHandler('__NO_TAGS__')}
+                  role="checkbox"
+                  aria-checked={selectedTagsSet.has('__NO_TAGS__')}
+                  tabIndex={0}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      handleTagChange('__NO_TAGS__');
+                    }
+                  }}
+                >
+                  <span
+                    className={`journalit-dashboard-tag-checkbox${selectedTagsSet.has('__NO_TAGS__') ? ' checked' : ''}`}
+                    aria-hidden="true"
+                  >
+                    {selectedTagsSet.has('__NO_TAGS__') ? '✓' : ''}
+                  </span>
+                  <span>{t('dashboard.filter.tags.none')}</span>
+                </div>
+                {hasTags && (
+                  <>
+                    <div className="journalit-dashboard-tag-divider"></div>
+                    {combinedTags.map((tag) => (
+                      <div
+                        key={tag}
+                        className="journalit-dashboard-tag-option-item"
+                        onClick={getTagClickHandler(tag)}
+                        role="checkbox"
+                        aria-checked={selectedTagsSet.has(tag)}
+                        tabIndex={0}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault();
+                            handleTagChange(tag);
+                          }
+                        }}
+                      >
+                        <span
+                          className={`journalit-dashboard-tag-checkbox${selectedTagsSet.has(tag) ? ' checked' : ''}`}
+                          aria-hidden="true"
+                        >
+                          {selectedTagsSet.has(tag) ? '✓' : ''}
+                        </span>
+                        <span>{tag}</span>
+                      </div>
+                    ))}
+                  </>
+                )}
+              </>
+            ) : (
+              <div className="journalit-dashboard-no-tags">
+                {t('dashboard.filter.tags.none-found')}
+              </div>
+            )}
+          </AnchoredMenu>
         </div>
       </div>
     );

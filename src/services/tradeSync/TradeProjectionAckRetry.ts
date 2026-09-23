@@ -1,3 +1,5 @@
+import { parseRetryAfterFromHeaders } from './retryAfter';
+
 export type AckQueueBlockReason = 'authentication' | 'entitlement';
 
 export type RetryableAckFailure =
@@ -15,18 +17,6 @@ function errorStatusCode(error: unknown): number | undefined {
     : undefined;
 }
 
-function responseHeader(headers: unknown, name: string): string | undefined {
-  if (typeof headers !== 'object' || !headers || Array.isArray(headers)) {
-    return undefined;
-  }
-  for (const [key, value] of Object.entries(headers)) {
-    if (key.toLowerCase() === name.toLowerCase()) {
-      return typeof value === 'string' ? value : undefined;
-    }
-  }
-  return undefined;
-}
-
 function retryAfterMs(error: unknown, now: number): number | undefined {
   if (errorStatusCode(error) !== 429 || typeof error !== 'object' || !error) {
     return undefined;
@@ -39,12 +29,8 @@ function retryAfterMs(error: unknown, now: number): number | undefined {
   ) {
     return undefined;
   }
-  const value = responseHeader(context.responseHeaders, 'retry-after');
-  if (!value) return undefined;
-  const seconds = Number(value);
-  if (Number.isFinite(seconds) && seconds >= 0) return seconds * 1000;
-  const retryAt = Date.parse(value);
-  return Number.isFinite(retryAt) ? Math.max(0, retryAt - now) : undefined;
+  const parsed = parseRetryAfterFromHeaders(context.responseHeaders, now);
+  return parsed.kind === 'delay' ? parsed.retryAfterMs : undefined;
 }
 
 export function retryableProjectionAckFailure(

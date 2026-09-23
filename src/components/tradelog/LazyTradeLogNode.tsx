@@ -99,7 +99,10 @@ export const LazyTradeLogNode = memo<LazyTradeLogNodeProps>(
 
     if (!isVisible) {
       
-      const nodeHeight = node.type === 'trade' ? 60 : 48;
+      
+      
+      
+      const nodeHeight = node.type === 'trade-group-header' ? 32 : 48;
 
       return (
         <div

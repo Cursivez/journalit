@@ -130,6 +130,7 @@ export const CANONICAL_PROJECTION_CLEAR_FIELDS = [
   'canonicalTradeVersion',
   'canonicalProjectionGeneration',
   'canonicalAccountId',
+  'canonicalAccountIdentity',
   'canonicalBroker',
   'canonicalAccountDisplayName',
   'canonicalProjectionSchemaVersion',

@@ -18,7 +18,7 @@ interface ChartBaseProps extends BaseChartProps {
   
   children: ReactElement<{ width?: number; height?: number }>;
   chartRef?: React.RefObject<HTMLDivElement | null>;
-  skeletonVariant?: 'area' | 'line' | 'bar';
+  skeletonVariant?: React.ComponentProps<typeof ChartSkeleton>['variant'];
 }
 
 
@@ -178,6 +178,10 @@ export const ChartBase = React.memo<ChartBaseProps>(
         for (const entry of entries) {
           const width = Math.floor(entry.contentRect.width);
           const height = Math.floor(entry.contentRect.height);
+          
+          
+          
+          if (width <= 0 || height <= 0) continue;
           dispatchMeasurement({ type: 'measured', width, height });
 
           if (DEBUG_CHARTS) {

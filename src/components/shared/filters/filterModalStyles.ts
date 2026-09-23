@@ -116,14 +116,6 @@ export const FILTER_MODAL_STYLES = `
   max-width: none;
 }
 
-.journalit-filter-modal .filter-modal-section-grid-3col-auto .journalit-dashboard-setup-options-dropdown,
-.journalit-filter-modal .filter-modal-section-grid-3col-auto .journalit-dashboard-tag-options-dropdown,
-.journalit-filter-modal .filter-modal-section-grid-3col-auto .journalit-dashboard-mistake-options-dropdown,
-.journalit-filter-modal .filter-modal-section-grid-3col-auto .journalit-session-log-tag-options-dropdown,
-.journalit-filter-modal .filter-modal-section-grid-3col-auto .journalit-tradelog-custom-field-options-dropdown {
-  width: 100%;
-}
-
 
 .journalit-filter-modal .filter-modal-controls {
   display: flex;
@@ -217,20 +209,6 @@ export const FILTER_MODAL_STYLES = `
 }
 
 
-.journalit-filter-modal .filter-modal-controls .journalit-dashboard-account-options-dropdown,
-.journalit-filter-modal .filter-modal-controls .journalit-dashboard-ticker-options-dropdown,
-.journalit-filter-modal .filter-modal-controls .journalit-dashboard-setup-options-dropdown,
-.journalit-filter-modal .filter-modal-controls .journalit-dashboard-tag-options-dropdown,
-.journalit-filter-modal .filter-modal-controls .journalit-dashboard-mistake-options-dropdown,
-.journalit-filter-modal .filter-modal-controls .journalit-tradelog-status-options-dropdown,
-.journalit-filter-modal .filter-modal-controls .journalit-tradelog-trade-type-options-dropdown,
-.journalit-filter-modal .filter-modal-controls .journalit-tradelog-custom-field-options-dropdown {
-  max-height: none !important;
-  width: 150px;
-  overflow: visible !important;
-}
-
-
 .journalit-tradelog-trade-type-filter {
   display: flex;
   flex-direction: column;
@@ -240,6 +218,25 @@ export const FILTER_MODAL_STYLES = `
 
 .journalit-tradelog-trade-type-dropdown {
   position: relative;
+}
+
+.journalit-tradelog-trade-type-summary {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 5px 10px;
+  background-color: var(--background-primary);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.9em;
+  white-space: nowrap;
+  gap: 8px;
+}
+
+.journalit-tradelog-trade-type-summary:hover {
+  border-color: var(--interactive-accent);
+  background-color: var(--background-modifier-hover);
 }
 
 .journalit-tradelog-trade-type-options-dropdown {
@@ -304,6 +301,25 @@ export const FILTER_MODAL_STYLES = `
 
 .journalit-tradelog-status-dropdown {
   position: relative;
+}
+
+.journalit-tradelog-status-summary {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 5px 10px;
+  background-color: var(--background-primary);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.9em;
+  white-space: nowrap;
+  gap: 8px;
+}
+
+.journalit-tradelog-status-summary:hover {
+  border-color: var(--interactive-accent);
+  background-color: var(--background-modifier-hover);
 }
 
 .journalit-tradelog-status-options-dropdown {
@@ -413,21 +429,6 @@ button.journalit-native-button.journalit-tradelog-custom-field-summary:focus-vis
   font-size: 10px;
   color: var(--text-muted);
   transition: transform 0.2s ease;
-}
-
-.journalit-tradelog-custom-field-options-dropdown {
-  position: absolute;
-  top: 100%;
-  left: 0;
-  right: 0;
-  margin-top: 4px;
-  background-color: var(--background-primary);
-  border: 1px solid var(--background-modifier-border);
-  border-radius: 4px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-  max-height: 300px;
-  overflow-y: auto;
-  z-index: 100;
 }
 
 .journalit-tradelog-custom-field-option-item {

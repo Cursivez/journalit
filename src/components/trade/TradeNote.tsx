@@ -35,6 +35,7 @@ import {
   TradeTemplateAssetType,
 } from '../../types/reviewV2';
 import {
+  getTradingDay,
   getTradingDayRange,
   getTradingDayString,
 } from '../../utils/tradingDayUtils';
@@ -937,7 +938,11 @@ const TradeNavigationSection: React.FC<{
     
     const { start, end } = getTradingDayRange(entryDate, plugin);
 
-    return { startDate: start, endDate: end };
+    return {
+      startDate: start,
+      endDate: end,
+      tradingDay: getTradingDay(entryDate, plugin),
+    };
   }, [entryDate, plugin]);
 
   
@@ -1103,8 +1108,8 @@ const TradeNavigationSection: React.FC<{
                 if (plugin.missedTradeService?.getMissedTrades) {
                   dayMissedTrades =
                     await plugin.missedTradeService.getMissedTrades(
-                      dateRange.startDate,
-                      dateRange.endDate
+                      dateRange.tradingDay,
+                      dateRange.tradingDay
                     );
                 }
               } catch (error) {

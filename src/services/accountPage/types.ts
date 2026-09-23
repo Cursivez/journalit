@@ -32,6 +32,14 @@ export interface AccountTradeData {
   mistake: string[];
   tags: string[];
   reviewed: boolean;
+  
+  accountId?: string;
+  
+  canonicalAccountId?: string;
+  
+  canonicalAccountIdentity?: 'broker' | 'name';
+  
+  canonicalAccountDisplayName?: string;
   assetType?: string;
   optionType?: string;
   rMultiple?: number;

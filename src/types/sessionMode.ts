@@ -212,10 +212,84 @@ export type SessionModePhaseLayouts = Record<
   SessionModeLayoutModuleId[]
 >;
 
-export interface ResolvedSessionModeWindow extends SessionModeWindow {
+
+export interface UnplannedSession {
+  id: string;
+  reason: string;
+  startedAt: string;
+  stoppedAt?: string;
+}
+
+function isUnplannedSessionRecord(
+  value: unknown
+): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
+}
+
+function isValidIsoTimestamp(value: unknown): value is string {
+  return typeof value === 'string' && !Number.isNaN(new Date(value).getTime());
+}
+
+export function normalizeUnplannedSessions(value: unknown): UnplannedSession[] {
+  if (!Array.isArray(value)) return [];
+
+  const sessions: UnplannedSession[] = [];
+  for (const item of value) {
+    if (!isUnplannedSessionRecord(item)) continue;
+    if (
+      typeof item.id !== 'string' ||
+      typeof item.reason !== 'string' ||
+      !isValidIsoTimestamp(item.startedAt)
+    ) {
+      continue;
+    }
+    if (item.stoppedAt !== undefined && item.stoppedAt !== null) {
+      if (!isValidIsoTimestamp(item.stoppedAt)) continue;
+      if (
+        new Date(item.stoppedAt).getTime() < new Date(item.startedAt).getTime()
+      ) {
+        continue;
+      }
+      sessions.push({
+        id: item.id,
+        reason: item.reason,
+        startedAt: item.startedAt,
+        stoppedAt: item.stoppedAt,
+      });
+      continue;
+    }
+    sessions.push({
+      id: item.id,
+      reason: item.reason,
+      startedAt: item.startedAt,
+    });
+  }
+
+  return sessions.sort(
+    (a, b) => new Date(a.startedAt).getTime() - new Date(b.startedAt).getTime()
+  );
+}
+
+export interface ResolvedScheduledSessionWindow extends SessionModeWindow {
+  kind: 'scheduled';
   start: Date;
   end: Date;
 }
+
+
+export interface ResolvedUnplannedSessionWindow {
+  kind: 'unplanned';
+  id: string;
+  name: string;
+  reason: string;
+  start: Date;
+  end: Date;
+  isRunning: boolean;
+}
+
+export type ResolvedSessionModeWindow =
+  | ResolvedScheduledSessionWindow
+  | ResolvedUnplannedSessionWindow;
 
 export interface SessionModePhaseState {
   phase: SessionModePhase;
@@ -226,6 +300,8 @@ export interface SessionModePhaseState {
   timeUntilStartMs?: number;
   timeUntilEndMs?: number;
   timeSinceEndMs?: number;
+  
+  timeSinceStartMs?: number;
 }
 
 export const DEFAULT_SESSION_MODE_SETTINGS: SessionModeSettings = {

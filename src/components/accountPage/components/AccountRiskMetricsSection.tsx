@@ -59,18 +59,6 @@ function calculateDrawdownAmounts(account: AccountData): DrawdownAmounts {
   };
 }
 
-function SectionHeader() {
-  return (
-    <div className="section-header-centered">
-      <span className="section-header-line"></span>
-      <h3 className="section-header-title">
-        {t('account.risk-metrics.title')}
-      </h3>
-      <span className="section-header-line"></span>
-    </div>
-  );
-}
-
 function HorizontalProgressBar({
   value,
   className,
@@ -79,10 +67,10 @@ function HorizontalProgressBar({
   className: string;
 }) {
   return (
-    <div className="horizontal-bar-container">
-      <div className="horizontal-bar-track">
+    <div className="journalit-account-risk-bar">
+      <div className="journalit-account-risk-bar-track">
         <div
-          className={`horizontal-bar-fill ${className}`}
+          className={`journalit-account-risk-bar-fill ${className}`}
           style={cssVars({
             '--journalit-horizontal-bar-fill-width': `${Math.min(100, value)}%`,
           })}
@@ -96,12 +84,12 @@ function DetailRow({
   label,
   children,
 }: {
-  label?: string;
+  label: string;
   children: React.ReactNode;
 }) {
   return (
-    <div className="detail-row">
-      {label && <span className="detail-label">{label}</span>}
+    <div className="journalit-account-risk-detail-row">
+      <span className="journalit-account-risk-detail-label">{label}</span>
       {children}
     </div>
   );
@@ -112,7 +100,6 @@ interface DrawdownMetricBoxProps {
   currency: string;
   defaultRiskAmount: number;
   drawdownUsed: number;
-  hasDrawdownSet: boolean;
   status: DrawdownStatus | null;
   isRiskProgressMasked: boolean;
   formatValue: FormatDisplayValue;
@@ -123,108 +110,91 @@ function DrawdownMetricBox({
   currency,
   defaultRiskAmount,
   drawdownUsed,
-  hasDrawdownSet,
   status,
   isRiskProgressMasked,
   formatValue,
 }: DrawdownMetricBoxProps) {
-  const amounts = hasDrawdownSet ? calculateDrawdownAmounts(account) : null;
+  const amounts = calculateDrawdownAmounts(account);
 
   return (
-    <div className={`risk-metric-box ${!hasDrawdownSet ? 'not-set' : ''}`}>
-      <div className="risk-metric-header">
-        <div className="header-left">
-          <div className="title-with-badge">
-            <h4 className="risk-metric-title">
-              {t('account.risk-metrics.drawdown-used')}
-            </h4>
-            {status && (
-              <span
-                className={`risk-status-badge ${status === 'BREACHED' ? 'breached' : 'in-progress'}`}
-              >
-                {status === 'BREACHED'
-                  ? t('account.risk-metrics.status.breached')
-                  : t('account.risk-metrics.status.in-progress')}
-              </span>
-            )}
-          </div>
+    <div className="journalit-account-risk-metric">
+      <div className="journalit-account-risk-metric-header">
+        <div className="journalit-account-risk-metric-title-row">
+          <h4 className="journalit-account-risk-metric-title">
+            {t('account.risk-metrics.drawdown-used')}
+          </h4>
+          {status && (
+            <span
+              className={`journalit-account-risk-badge ${status === 'BREACHED' ? 'is-breached' : 'is-in-progress'}`}
+            >
+              {status === 'BREACHED'
+                ? t('account.risk-metrics.status.breached')
+                : t('account.risk-metrics.status.in-progress')}
+            </span>
+          )}
         </div>
-        <div
-          className={`risk-metric-percentage ${!hasDrawdownSet ? 'not-set' : ''}`}
-        >
-          {hasDrawdownSet
-            ? formatValue({
-                kind: 'percentage',
-                value: drawdownUsed,
-                precision: 1,
-              })
-            : t('account.risk-metrics.not-set')}
+        <div className="journalit-account-risk-metric-value">
+          {formatValue({
+            kind: 'percentage',
+            value: drawdownUsed,
+            precision: 1,
+          })}
         </div>
       </div>
 
-      {hasDrawdownSet && !isRiskProgressMasked && (
+      {!isRiskProgressMasked && (
         <HorizontalProgressBar
           value={drawdownUsed}
           className={
             drawdownUsed >= 75
-              ? 'critical'
+              ? 'is-critical'
               : drawdownUsed >= 50
-                ? 'warning'
-                : 'safe'
+                ? 'is-warning'
+                : 'is-safe'
           }
         />
       )}
 
-      <div className="risk-metric-details">
-        {amounts ? (
-          <>
-            <DetailRow label={t('account.risk-metrics.label.used')}>
-              <span className="detail-value">
-                {formatValue({
-                  kind: 'drawdown',
-                  value: amounts.usedAmount,
-                  currencyCode: currency,
-                  rMultiple:
-                    defaultRiskAmount > 0
-                      ? amounts.usedAmount / defaultRiskAmount
-                      : undefined,
-                })}
-              </span>
-            </DetailRow>
-            <DetailRow label={t('account.risk-metrics.label.limit')}>
-              <span className="detail-value">
-                {formatValue({
-                  kind: 'drawdown',
-                  value: amounts.displayLimit,
-                  currencyCode: currency,
-                  rMultiple:
-                    defaultRiskAmount > 0
-                      ? amounts.displayLimit / defaultRiskAmount
-                      : undefined,
-                })}
-              </span>
-            </DetailRow>
-            <DetailRow label={t('account.risk-metrics.label.remaining')}>
-              <span className="detail-value">
-                {formatValue({
-                  kind: 'drawdown',
-                  value: amounts.remainingAmount,
-                  currencyCode: currency,
-                  rMultiple:
-                    defaultRiskAmount > 0
-                      ? amounts.remainingAmount / defaultRiskAmount
-                      : undefined,
-                })}
-              </span>
-            </DetailRow>
-          </>
-        ) : (
-          <DetailRow>
-            <span className="detail-value no-limit">
-              {t('account.risk-metrics.no-drawdown')}
-            </span>
-          </DetailRow>
-        )}
+      <div className="journalit-account-risk-details">
+        <DetailRow label={t('account.risk-metrics.label.used')}>
+          <span className="journalit-account-risk-detail-value">
+            {formatValue({
+              kind: 'drawdown',
+              value: amounts.usedAmount,
+              currencyCode: currency,
+              rMultiple:
+                defaultRiskAmount > 0
+                  ? amounts.usedAmount / defaultRiskAmount
+                  : undefined,
+            })}
+          </span>
+        </DetailRow>
+        <DetailRow label={t('account.risk-metrics.label.limit')}>
+          <span className="journalit-account-risk-detail-value">
+            {formatValue({
+              kind: 'drawdown',
+              value: amounts.displayLimit,
+              currencyCode: currency,
+              rMultiple:
+                defaultRiskAmount > 0
+                  ? amounts.displayLimit / defaultRiskAmount
+                  : undefined,
+            })}
+          </span>
+        </DetailRow>
+        <DetailRow label={t('account.risk-metrics.label.remaining')}>
+          <span className="journalit-account-risk-detail-value">
+            {formatValue({
+              kind: 'drawdown',
+              value: amounts.remainingAmount,
+              currencyCode: currency,
+              rMultiple:
+                defaultRiskAmount > 0
+                  ? amounts.remainingAmount / defaultRiskAmount
+                  : undefined,
+            })}
+          </span>
+        </DetailRow>
       </div>
     </div>
   );
@@ -237,7 +207,6 @@ interface ProfitTargetMetricBoxProps {
   profitTargetProgress: number;
   progressAmount: number;
   profitTargetAmount: number;
-  hasProfitTargetSet: boolean;
   status: ProfitTargetStatus | null;
   isRiskProgressMasked: boolean;
   formatValue: FormatDisplayValue;
@@ -250,106 +219,90 @@ function ProfitTargetMetricBox({
   profitTargetProgress,
   progressAmount,
   profitTargetAmount,
-  hasProfitTargetSet,
   status,
   isRiskProgressMasked,
   formatValue,
 }: ProfitTargetMetricBoxProps) {
   return (
-    <div className={`risk-metric-box ${!hasProfitTargetSet ? 'not-set' : ''}`}>
-      <div className="risk-metric-header">
-        <div className="header-left">
-          <div className="title-with-badge">
-            <h4 className="risk-metric-title">
-              {t('account.risk-metrics.profit-target')}
-            </h4>
-            {status && (
-              <span
-                className={`risk-status-badge ${status === 'ACHIEVED' ? 'achieved' : 'in-progress'}`}
-              >
-                {status === 'ACHIEVED'
-                  ? t('account.risk-metrics.status.achieved')
-                  : t('account.risk-metrics.status.in-progress')}
-              </span>
-            )}
-          </div>
+    <div className="journalit-account-risk-metric">
+      <div className="journalit-account-risk-metric-header">
+        <div className="journalit-account-risk-metric-title-row">
+          <h4 className="journalit-account-risk-metric-title">
+            {t('account.risk-metrics.profit-target')}
+          </h4>
+          {status && (
+            <span
+              className={`journalit-account-risk-badge ${status === 'ACHIEVED' ? 'is-achieved' : 'is-in-progress'}`}
+            >
+              {status === 'ACHIEVED'
+                ? t('account.risk-metrics.status.achieved')
+                : t('account.risk-metrics.status.in-progress')}
+            </span>
+          )}
         </div>
-        <div
-          className={`risk-metric-percentage ${!hasProfitTargetSet ? 'not-set' : ''}`}
-        >
-          {hasProfitTargetSet
-            ? formatValue({
-                kind: 'returnPercent',
-                value: profitTargetProgress,
-                precision: 1,
-                signed: false,
-              })
-            : t('account.risk-metrics.not-set')}
+        <div className="journalit-account-risk-metric-value">
+          {formatValue({
+            kind: 'returnPercent',
+            value: profitTargetProgress,
+            precision: 1,
+            signed: false,
+          })}
         </div>
       </div>
 
-      {hasProfitTargetSet && !isRiskProgressMasked && (
+      {!isRiskProgressMasked && (
         <HorizontalProgressBar
           value={profitTargetProgress}
-          className={profitTargetProgress >= 100 ? 'complete' : 'progress'}
+          className={
+            profitTargetProgress >= 100 ? 'is-complete' : 'is-progress'
+          }
         />
       )}
 
-      <div className="risk-metric-details">
-        {hasProfitTargetSet ? (
-          <>
-            <DetailRow label={t('account.risk-metrics.label.progress')}>
-              <span className="detail-value">
-                {formatValue({
-                  kind: 'pnl',
-                  value: progressAmount,
-                  currencyCode: currency,
-                  rMultiple:
-                    defaultRiskAmount > 0
-                      ? progressAmount / defaultRiskAmount
-                      : undefined,
-                })}
-              </span>
-            </DetailRow>
-            <DetailRow label={t('account.risk-metrics.label.target')}>
-              <span className="detail-value">
-                {formatValue({
-                  kind: 'pnl',
-                  value: profitTargetAmount,
-                  currencyCode: currency,
-                  rMultiple:
-                    defaultRiskAmount > 0
-                      ? profitTargetAmount / defaultRiskAmount
-                      : undefined,
-                })}
-              </span>
-            </DetailRow>
-            <DetailRow label={t('account.risk-metrics.label.remaining')}>
-              <span className="detail-value">
-                {formatValue({
-                  kind: 'pnl',
-                  value: profitTargetAmount - progressAmount,
-                  currencyCode: currency,
-                  rMultiple:
-                    defaultRiskAmount > 0
-                      ? (profitTargetAmount - progressAmount) /
-                        defaultRiskAmount
-                      : undefined,
-                })}
-              </span>
-            </DetailRow>
-            {account.profitTargetDate && (
-              <DetailRow label={t('account.risk-metrics.label.target-date')}>
-                <span className="detail-value">
-                  {formatDateDisplay(new Date(account.profitTargetDate))}
-                </span>
-              </DetailRow>
-            )}
-          </>
-        ) : (
-          <DetailRow>
-            <span className="detail-value no-target">
-              {t('account.risk-metrics.no-profit-target')}
+      <div className="journalit-account-risk-details">
+        <DetailRow label={t('account.risk-metrics.label.progress')}>
+          <span className="journalit-account-risk-detail-value">
+            {formatValue({
+              kind: 'pnl',
+              value: progressAmount,
+              currencyCode: currency,
+              rMultiple:
+                defaultRiskAmount > 0
+                  ? progressAmount / defaultRiskAmount
+                  : undefined,
+            })}
+          </span>
+        </DetailRow>
+        <DetailRow label={t('account.risk-metrics.label.target')}>
+          <span className="journalit-account-risk-detail-value">
+            {formatValue({
+              kind: 'pnl',
+              value: profitTargetAmount,
+              currencyCode: currency,
+              rMultiple:
+                defaultRiskAmount > 0
+                  ? profitTargetAmount / defaultRiskAmount
+                  : undefined,
+            })}
+          </span>
+        </DetailRow>
+        <DetailRow label={t('account.risk-metrics.label.remaining')}>
+          <span className="journalit-account-risk-detail-value">
+            {formatValue({
+              kind: 'pnl',
+              value: profitTargetAmount - progressAmount,
+              currencyCode: currency,
+              rMultiple:
+                defaultRiskAmount > 0
+                  ? (profitTargetAmount - progressAmount) / defaultRiskAmount
+                  : undefined,
+            })}
+          </span>
+        </DetailRow>
+        {account.profitTargetDate && (
+          <DetailRow label={t('account.risk-metrics.label.target-date')}>
+            <span className="journalit-account-risk-detail-value">
+              {formatDateDisplay(new Date(account.profitTargetDate))}
             </span>
           </DetailRow>
         )}
@@ -360,7 +313,7 @@ function ProfitTargetMetricBox({
 
 
 export const AccountRiskMetricsSection: React.FC = () => {
-  const { accountPageData, isLoading } = useAccountPageData();
+  const { accountPageData } = useAccountPageData();
   const registerRiskSectionTarget = useGuideTarget(
     ACCOUNT_PAGE_RISK_SECTION_TARGET_ID
   );
@@ -369,32 +322,36 @@ export const AccountRiskMetricsSection: React.FC = () => {
   const { formatValue, shouldMask } = useDisplayFormatter();
   const isRiskProgressMasked = shouldMask('percentage');
 
-  
-  const currency =
-    accountPageData?.metrics.isMultiCurrency &&
-    accountPageData?.metrics.conversionBaseCurrency
-      ? parseCuratedCurrencyCode(accountPageData.metrics.conversionBaseCurrency)
-      : accountPageData?.account.currency || globalCurrency;
-
-  if (isLoading || !accountPageData) {
-    return (
-      <div
-        className="account-risk-metrics-section"
-        ref={registerRiskSectionTarget}
-      >
-        <div className="risk-metrics-loading">
-          <p>{t('account.risk-metrics.loading')}</p>
-        </div>
-      </div>
-    );
+  if (!accountPageData) {
+    return null;
   }
 
   const { account } = accountPageData;
 
-  
-  const defaultRiskAmount = plugin?.settings?.trade?.defaultRiskAmount ?? 0;
+  const hasDrawdownSet =
+    account.drawdownType !== DrawdownType.NONE &&
+    Boolean(
+      account.drawdownAmount > 0 ||
+      (account.drawdownType === DrawdownType.MANUAL &&
+        account.currentDrawdownSnapshot)
+    );
+  const hasProfitTargetSet =
+    account.hasProfitTarget && account.profitTarget > 0;
+
+  if (!hasDrawdownSet && !hasProfitTargetSet) {
+    return null;
+  }
 
   
+  
+  const currency =
+    accountPageData.metrics.isMultiCurrency &&
+    accountPageData.metrics.conversionBaseCurrency
+      ? parseCuratedCurrencyCode(accountPageData.metrics.conversionBaseCurrency)
+      : account.currency || globalCurrency;
+
+  const defaultRiskAmount = plugin?.settings?.trade?.defaultRiskAmount ?? 0;
+
   const drawdownUsed = calculateDrawdownUsed(account);
   const profitTargetProgress = calculateProfitTargetProgress(account);
   const progressAmount = calculateAccountGrowthAmount(account);
@@ -403,20 +360,6 @@ export const AccountRiskMetricsSection: React.FC = () => {
       ? (account.initialBalance * account.profitTarget) / 100
       : account.profitTarget;
 
-  
-  const hasDrawdownSet =
-    account.drawdownType !== DrawdownType.NONE &&
-    Boolean(
-      account.drawdownAmount > 0 ||
-      (account.drawdownType === DrawdownType.MANUAL &&
-        account.currentDrawdownSnapshot)
-    );
-
-  
-  const hasProfitTargetSet =
-    account.hasProfitTarget && account.profitTarget > 0;
-
-  
   const drawdownStatus =
     !isRiskProgressMasked && hasDrawdownSet
       ? drawdownUsed >= 100
@@ -431,37 +374,48 @@ export const AccountRiskMetricsSection: React.FC = () => {
       : null;
 
   return (
-    <div
-      className="account-risk-metrics-section"
-      ref={registerRiskSectionTarget}
-    >
-      <SectionHeader />
-
-      <div className="risk-metrics-container">
-        <DrawdownMetricBox
-          account={account}
-          currency={currency}
-          defaultRiskAmount={defaultRiskAmount}
-          drawdownUsed={drawdownUsed}
-          hasDrawdownSet={hasDrawdownSet}
-          status={drawdownStatus}
-          isRiskProgressMasked={isRiskProgressMasked}
-          formatValue={formatValue}
+    <section className="journalit-account-risk" ref={registerRiskSectionTarget}>
+      <div className="journalit-account-section-header-centered">
+        <span
+          className="journalit-account-section-header-centered-line"
+          aria-hidden="true"
         />
-
-        <ProfitTargetMetricBox
-          account={account}
-          currency={currency}
-          defaultRiskAmount={defaultRiskAmount}
-          profitTargetProgress={profitTargetProgress}
-          progressAmount={progressAmount}
-          profitTargetAmount={profitTargetAmount}
-          hasProfitTargetSet={hasProfitTargetSet}
-          status={profitTargetStatus}
-          isRiskProgressMasked={isRiskProgressMasked}
-          formatValue={formatValue}
+        <h3 className="journalit-account-section-header-centered-title">
+          {t('account.risk-metrics.title')}
+        </h3>
+        <span
+          className="journalit-account-section-header-centered-line"
+          aria-hidden="true"
         />
       </div>
-    </div>
+
+      <div className="journalit-account-risk-grid">
+        {hasDrawdownSet && (
+          <DrawdownMetricBox
+            account={account}
+            currency={currency}
+            defaultRiskAmount={defaultRiskAmount}
+            drawdownUsed={drawdownUsed}
+            status={drawdownStatus}
+            isRiskProgressMasked={isRiskProgressMasked}
+            formatValue={formatValue}
+          />
+        )}
+
+        {hasProfitTargetSet && (
+          <ProfitTargetMetricBox
+            account={account}
+            currency={currency}
+            defaultRiskAmount={defaultRiskAmount}
+            profitTargetProgress={profitTargetProgress}
+            progressAmount={progressAmount}
+            profitTargetAmount={profitTargetAmount}
+            status={profitTargetStatus}
+            isRiskProgressMasked={isRiskProgressMasked}
+            formatValue={formatValue}
+          />
+        )}
+      </div>
+    </section>
   );
 };

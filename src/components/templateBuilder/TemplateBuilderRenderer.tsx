@@ -1,6 +1,11 @@
 
 
 import React, { useState, useMemo, useCallback, useRef } from 'react';
+import { useContextualGuideResolution } from '../../guides/GuideRuntimeLayer';
+import {
+  LAYOUT_BUILDER_EDITOR_GUIDE_ID,
+  LAYOUT_BUILDER_MAIN_GUIDE_ID,
+} from '../../guides/layoutBuilderGuideIds';
 import { WorkspaceLeaf, ItemView } from 'obsidian';
 import { usePlugin } from '../../hooks/usePlugin';
 import { BuilderSidebar, Selection } from './BuilderSidebar';
@@ -24,6 +29,27 @@ const TemplateBuilderRenderer: React.FC<TemplateBuilderProps> = (
   const plugin = usePlugin();
   const [selection, setSelection] = useState<Selection | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [isEditorOpen, setIsEditorOpen] = useState(false);
+  const handleEditorViewModeChange = useCallback(
+    (viewMode: 'editor' | 'preview') => setIsEditorOpen(viewMode === 'editor'),
+    []
+  );
+  const isReviewTemplateSelected =
+    selection?.type === 'template' && selection.templateType !== 'trade';
+  
+  const contextualGuides = useMemo(
+    () => [
+      {
+        guideId: LAYOUT_BUILDER_EDITOR_GUIDE_ID,
+        active: isEditorOpen && isReviewTemplateSelected,
+      },
+    ],
+    [isEditorOpen, isReviewTemplateSelected]
+  );
+  useContextualGuideResolution({
+    baseGuideId: LAYOUT_BUILDER_MAIN_GUIDE_ID,
+    contextualGuides,
+  });
 
   
   const templateService = useMemo(() => {
@@ -164,6 +190,7 @@ const TemplateBuilderRenderer: React.FC<TemplateBuilderProps> = (
           templateType={selection.templateType}
           onTemplateChange={handleTemplatesChange}
           onDirtyStateChange={handleDirtyStateChange}
+          onViewModeChange={handleEditorViewModeChange}
         />
       );
     }

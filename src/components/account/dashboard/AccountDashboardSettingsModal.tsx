@@ -16,6 +16,29 @@ import {
   ConfirmationPanel,
   type ConfirmationPanelAction,
 } from '../../shared/ConfirmationPanel';
+import { DropdownSelect } from '../../shared/DropdownSelect';
+import { openLegacyChallengeOnboardingModal } from '../../onboarding/legacyChallenge/LegacyChallengeOnboardingModal';
+import { hasLegacyChallengeCandidates } from '../../../services/accountMerge/LegacyChallengeOnboarding';
+import {
+  DEFAULT_CHALLENGE_STAGE_ACCOUNT_TYPES,
+  normalizeChallengeStageAccountTypes,
+  removeAccountTypeFromStageMapping,
+  resolveStageAccountType,
+} from '../../../services/propChallenge/stageAccountTypes';
+import type { PropChallengeStage } from '../../../services/propChallenge/types';
+import { formatAccountTypeLabel } from '../../../utils/accountTypeLabel';
+
+const CHALLENGE_STAGE_ROWS: ReadonlyArray<{
+  stage: PropChallengeStage;
+  labelKey: Parameters<typeof t>[0];
+}> = [
+  { stage: 'evaluation', labelKey: 'account.prop-challenge.stage.evaluation' },
+  { stage: 'sim_funded', labelKey: 'account.prop-challenge.stage.sim-funded' },
+  {
+    stage: 'live_funded',
+    labelKey: 'account.prop-challenge.stage.live-funded',
+  },
+];
 
 const getErrorMessage = (error: unknown): string =>
   error instanceof Error ? error.message : String(error);
@@ -27,6 +50,7 @@ type AccountMigrationAction = 'cancel' | 'migrate';
 interface AccountDashboardGuideBindings {
   onClose?: () => void;
   registerTypesTarget?: (element: HTMLElement | null) => void;
+  registerStagesTarget?: (element: HTMLElement | null) => void;
   registerInclusionTarget?: (element: HTMLElement | null) => void;
   registerOrderTarget?: (element: HTMLElement | null) => void;
 }
@@ -84,13 +108,6 @@ export class AccountDashboardSettingsModal extends Modal {
     );
   }
 }
-
-const formatAccountType = (type: string): string => {
-  return type
-    .split('_')
-    .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-    .join(' ');
-};
 
 const isArchivedAccountType = (type: string): boolean =>
   type.trim().toLowerCase() === 'archived';
@@ -205,10 +222,12 @@ function useAccountDashboardSettingsModel({
     excludedAccountTypes: string[];
     includeWithdrawalsFromExcluded: Record<string, boolean>;
     accountTypeOrder: string[];
+    challengeStageAccountTypes: Partial<Record<PropChallengeStage, string>>;
   }>({
     excludedAccountTypes: [],
     includeWithdrawalsFromExcluded: {},
     accountTypeOrder: [],
+    challengeStageAccountTypes: {},
   });
   const [guideVersion, setGuideVersion] = useState(0);
 
@@ -236,6 +255,9 @@ function useAccountDashboardSettingsModel({
             'archived',
           ]),
         ],
+        challengeStageAccountTypes: normalizeChallengeStageAccountTypes(
+          plugin.settings.account.challengeStageAccountTypes
+        ),
       });
     }
   }, [plugin.optionsService, plugin.settings]);
@@ -302,7 +324,7 @@ function useAccountDashboardSettingsModel({
     ) {
       new Notice(
         t('account.settings.notice.type-exists', {
-          name: formatAccountType(trimmedName),
+          name: formatAccountTypeLabel(trimmedName),
         })
       );
       return;
@@ -312,7 +334,7 @@ function useAccountDashboardSettingsModel({
     if (isArchivedAccountType(trimmedName)) {
       new Notice(
         t('account.settings.notice.reserved-name', {
-          name: formatAccountType(trimmedName),
+          name: formatAccountTypeLabel(trimmedName),
         })
       );
       return;
@@ -359,7 +381,7 @@ function useAccountDashboardSettingsModel({
 
       new Notice(
         t('account.settings.notice.type-added', {
-          name: formatAccountType(trimmedName),
+          name: formatAccountTypeLabel(trimmedName),
         })
       );
     } catch (error) {
@@ -472,11 +494,18 @@ function useAccountDashboardSettingsModel({
     delete newWithdrawalSettings[lowerType];
 
     
+    const newStageAccountTypes = removeAccountTypeFromStageMapping(
+      dashboardSettings.challengeStageAccountTypes,
+      deletedAccountType
+    );
+
+    
     const newDashboardSettings = {
       ...dashboardSettings,
       excludedAccountTypes: newExcludedTypes,
       accountTypeOrder: newDisplayOrder,
       includeWithdrawalsFromExcluded: newWithdrawalSettings,
+      challengeStageAccountTypes: newStageAccountTypes,
     };
 
     
@@ -492,6 +521,9 @@ function useAccountDashboardSettingsModel({
         excludedAccountTypes: [],
         includeWithdrawalsFromExcluded: {},
         accountTypeOrder: [],
+        challengeStageAccountTypes: {
+          ...DEFAULT_CHALLENGE_STAGE_ACCOUNT_TYPES,
+        },
         accountMetadata: {},
       };
     }
@@ -501,6 +533,7 @@ function useAccountDashboardSettingsModel({
     plugin.settings.account.accountTypeOrder = newDisplayOrder;
     plugin.settings.account.includeWithdrawalsFromExcluded =
       newWithdrawalSettings;
+    plugin.settings.account.challengeStageAccountTypes = newStageAccountTypes;
 
     return {
       settings: newDashboardSettings,
@@ -555,7 +588,7 @@ function useAccountDashboardSettingsModel({
       if (deletionImpact && deletionImpact.affectedAccounts > 0) {
         new Notice(
           t('account.settings.notice.cannot-delete-has-accounts', {
-            name: formatAccountType(accountTypeToDelete),
+            name: formatAccountTypeLabel(accountTypeToDelete),
             count: deletionImpact.affectedAccounts.toString(),
           })
         );
@@ -588,6 +621,9 @@ function useAccountDashboardSettingsModel({
           excludedAccountTypes: [],
           includeWithdrawalsFromExcluded: {},
           accountTypeOrder: [],
+          challengeStageAccountTypes: {
+            ...DEFAULT_CHALLENGE_STAGE_ACCOUNT_TYPES,
+          },
           accountMetadata: {},
         };
       }
@@ -599,6 +635,8 @@ function useAccountDashboardSettingsModel({
       plugin.settings.account.accountTypeOrder = moveArchivedToEnd(
         cleanupResult.settings.accountTypeOrder
       );
+      plugin.settings.account.challengeStageAccountTypes =
+        cleanupResult.settings.challengeStageAccountTypes;
 
       await plugin.saveSettings();
 
@@ -642,14 +680,14 @@ function useAccountDashboardSettingsModel({
       if (cleanupActions.length > 0) {
         new Notice(
           t('account.settings.notice.type-deleted-with-cleanup', {
-            name: formatAccountType(accountTypeToDelete),
+            name: formatAccountTypeLabel(accountTypeToDelete),
             actions: cleanupActions.join(', '),
           })
         );
       } else {
         new Notice(
           t('account.settings.notice.type-deleted', {
-            name: formatAccountType(accountTypeToDelete),
+            name: formatAccountTypeLabel(accountTypeToDelete),
           })
         );
       }
@@ -778,7 +816,7 @@ function useAccountDashboardSettingsModel({
       switch (migrationOption) {
         case 'reassign':
           actionText = t('account.settings.migration.action.reassigned', {
-            target: formatAccountType(migrationTargetType),
+            target: formatAccountTypeLabel(migrationTargetType),
           });
           break;
         case 'archive':
@@ -791,7 +829,7 @@ function useAccountDashboardSettingsModel({
 
       new Notice(
         t('account.settings.notice.type-deleted-migrated', {
-          name: formatAccountType(accountTypeToDelete),
+          name: formatAccountTypeLabel(accountTypeToDelete),
           count: migrationResult.migratedCount.toString(),
           action: actionText,
         }),
@@ -944,6 +982,9 @@ function useAccountDashboardSettingsModel({
           excludedAccountTypes: [],
           includeWithdrawalsFromExcluded: {},
           accountTypeOrder: [],
+          challengeStageAccountTypes: {
+            ...DEFAULT_CHALLENGE_STAGE_ACCOUNT_TYPES,
+          },
           accountMetadata: {},
         };
       }
@@ -957,6 +998,8 @@ function useAccountDashboardSettingsModel({
       plugin.settings.account.includeWithdrawalsFromExcluded =
         dashboardSettings.includeWithdrawalsFromExcluded;
       plugin.settings.account.accountTypeOrder = normalizedOrder;
+      plugin.settings.account.challengeStageAccountTypes =
+        dashboardSettings.challengeStageAccountTypes;
 
       await plugin.saveSettings();
 
@@ -969,6 +1012,8 @@ function useAccountDashboardSettingsModel({
           includeWithdrawalsFromExcluded:
             dashboardSettings.includeWithdrawalsFromExcluded,
           accountTypeOrder: normalizedOrder,
+          challengeStageAccountTypes:
+            dashboardSettings.challengeStageAccountTypes,
         },
       });
 
@@ -1042,7 +1087,7 @@ function useAccountDashboardSettingsModel({
               <p>
                 <strong>
                   {t('account.settings.migration.warning', {
-                    name: formatAccountType(accountTypeToDelete),
+                    name: formatAccountTypeLabel(accountTypeToDelete),
                     count: deletionImpact.affectedAccounts.toString(),
                   })}
                 </strong>
@@ -1117,7 +1162,7 @@ function useAccountDashboardSettingsModel({
                     >
                       {availableMigrationTypes.map((type) => (
                         <option key={type} value={type}>
-                          {formatAccountType(type)}
+                          {formatAccountTypeLabel(type)}
                         </option>
                       ))}
                     </select>
@@ -1256,7 +1301,7 @@ function useAccountDashboardSettingsModel({
               <p>
                 <strong>
                   {t('account.settings.delete.confirm-question', {
-                    name: formatAccountType(accountTypeToDelete),
+                    name: formatAccountTypeLabel(accountTypeToDelete),
                   })}
                 </strong>
               </p>
@@ -1340,7 +1385,7 @@ function useAccountDashboardSettingsModel({
     setNewTypeName,
     setHoveredTypeIndex,
     setDashboardSettings,
-    formatAccountType,
+    formatAccountTypeLabel,
     isArchivedAccountType,
     moveArchivedToEnd,
     handleAddAccountType,
@@ -1371,7 +1416,7 @@ function AvailableAccountTypesSection({
     hoveredTypeIndex,
     setNewTypeName,
     setHoveredTypeIndex,
-    formatAccountType,
+    formatAccountTypeLabel,
     isArchivedAccountType,
     handleAddAccountType,
     handleCancelAddAccountType,
@@ -1404,17 +1449,17 @@ function AvailableAccountTypesSection({
                     onMouseLeave={() => setHoveredTypeIndex(null)}
                   >
                     <div className="account-type-badge">
-                      {formatAccountType(type)}
+                      {formatAccountTypeLabel(type)}
                       
                       {hoveredTypeIndex === index &&
                         !isArchivedAccountType(type) && (
                           <button
-                            className="account-type-delete-btn clickable-icon"
+                            className="journalit-account-type-delete-btn clickable-icon"
                             onClick={() => void handleDeleteAccountType(type)}
                             aria-label={t(
                               'account.settings.section.available-types.delete-aria',
                               {
-                                name: formatAccountType(type),
+                                name: formatAccountTypeLabel(type),
                               }
                             )}
                             disabled={isSaving}
@@ -1509,7 +1554,7 @@ function AvailableAccountTypesSection({
   );
 }
 
-function DashboardInclusionSection({
+function ChallengeStagesSection({
   model,
   registerTarget,
 }: {
@@ -1517,10 +1562,94 @@ function DashboardInclusionSection({
   registerTarget?: (element: HTMLElement | null) => void;
 }) {
   const {
+    isSaving,
     customAccountTypes,
     dashboardSettings,
     setDashboardSettings,
-    formatAccountType,
+    formatAccountTypeLabel,
+  } = model;
+
+  const options = [
+    {
+      value: '',
+      label: t('account.settings.section.challenge-stages.no-change'),
+    },
+    ...customAccountTypes.map((type) => ({
+      value: type,
+      label: formatAccountTypeLabel(type),
+    })),
+  ];
+
+  const handleStageChange = (stage: PropChallengeStage, value: string) => {
+    setDashboardSettings((previous) => {
+      const nextMapping = { ...previous.challengeStageAccountTypes };
+      if (value) {
+        nextMapping[stage] = value;
+      } else {
+        delete nextMapping[stage];
+      }
+      return { ...previous, challengeStageAccountTypes: nextMapping };
+    });
+  };
+
+  return (
+    <div className="setting-item" ref={registerTarget}>
+      <div className="setting-item-info">
+        <div className="setting-item-name">
+          {t('account.settings.section.challenge-stages.title')}
+        </div>
+        <div className="setting-item-description">
+          {t('account.settings.section.challenge-stages.desc')}
+        </div>
+      </div>
+      <div className="setting-item-control">
+        <div className="challenge-stage-type-rows">
+          {CHALLENGE_STAGE_ROWS.map(({ stage, labelKey }) => {
+            const stageLabel = t(labelKey);
+            const selectedType =
+              resolveStageAccountType(
+                dashboardSettings.challengeStageAccountTypes,
+                stage,
+                customAccountTypes
+              ) ?? '';
+
+            return (
+              <div className="challenge-stage-type-row" key={stage}>
+                <div className="challenge-stage-type-label">{stageLabel}</div>
+                <DropdownSelect
+                  value={selectedType}
+                  options={options}
+                  onChange={(value) => handleStageChange(stage, value)}
+                  ariaLabel={t(
+                    'account.settings.section.challenge-stages.aria',
+                    { stage: stageLabel }
+                  )}
+                  disabled={isSaving}
+                  className="challenge-stage-type-dropdown"
+                />
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function DashboardInclusionSection({
+  model,
+  registerTarget,
+  registerOrderTarget,
+}: {
+  model: AccountDashboardSettingsModel;
+  registerTarget?: (element: HTMLElement | null) => void;
+  registerOrderTarget?: (element: HTMLElement | null) => void;
+}) {
+  const {
+    customAccountTypes,
+    dashboardSettings,
+    setDashboardSettings,
+    formatAccountTypeLabel,
     isArchivedAccountType,
     moveArchivedToEnd,
   } = model;
@@ -1541,7 +1670,7 @@ function DashboardInclusionSection({
   customAccountTypes.forEach((type) => labelMap.set(type.toLowerCase(), type));
   orderWithArchived.forEach((typeKey) => {
     if (!labelMap.has(typeKey)) {
-      labelMap.set(typeKey, formatAccountType(typeKey));
+      labelMap.set(typeKey, formatAccountTypeLabel(typeKey));
     }
   });
   const orderedTypeKeys: string[] = [];
@@ -1618,7 +1747,7 @@ function DashboardInclusionSection({
                   return (
                     <div key={lowerType} className="account-type-setting-row">
                       <div className="account-type-name">
-                        {formatAccountType(
+                        {formatAccountTypeLabel(
                           labelMap.get(lowerType) ?? lowerType
                         )}
                       </div>
@@ -1685,7 +1814,10 @@ function DashboardInclusionSection({
                             )}
                           </span>
                         </label>
-                        <div className="order-controls account-type-setting-order-controls">
+                        <div
+                          className="order-controls account-type-setting-order-controls"
+                          ref={index === 0 ? registerOrderTarget : undefined}
+                        >
                           {!isArchivedAccountType(lowerType) && (
                             <>
                               <button
@@ -1727,6 +1859,43 @@ function DashboardInclusionSection({
         </div>
       </div>
     </>
+  );
+}
+
+
+function LegacyChallengeOnboardingSection({
+  app,
+  plugin,
+  onModalClose,
+}: {
+  app: App;
+  plugin: JournalitPlugin;
+  onModalClose: () => void;
+}) {
+  if (!hasLegacyChallengeCandidates(plugin.settings.account?.accountMetadata)) {
+    return null;
+  }
+
+  return (
+    <div className="setting-item journalit-legacy-challenge-entry">
+      <div className="setting-item-info">
+        <div className="setting-item-name">
+          {t('onboarding.legacy-challenge.entry.name')}
+        </div>
+      </div>
+      <div className="setting-item-control">
+        <Button
+          variant="secondary"
+          title={t('onboarding.legacy-challenge.entry.desc')}
+          onClick={() => {
+            onModalClose();
+            void openLegacyChallengeOnboardingModal(app, plugin);
+          }}
+        >
+          {t('onboarding.legacy-challenge.entry.action')}
+        </Button>
+      </div>
+    </div>
   );
 }
 
@@ -1789,9 +1958,21 @@ const AccountDashboardSettingsModalContent: React.FC<
         registerTarget={guideBindings?.registerTypesTarget}
       />
 
+      <ChallengeStagesSection
+        model={model}
+        registerTarget={guideBindings?.registerStagesTarget}
+      />
+
       <DashboardInclusionSection
         model={model}
         registerTarget={guideBindings?.registerInclusionTarget}
+        registerOrderTarget={guideBindings?.registerOrderTarget}
+      />
+
+      <LegacyChallengeOnboardingSection
+        app={_app}
+        plugin={plugin}
+        onModalClose={onModalClose}
       />
 
       <SettingsModalActions model={model} onModalClose={onModalClose} />

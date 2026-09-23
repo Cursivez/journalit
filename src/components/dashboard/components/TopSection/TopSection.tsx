@@ -1,12 +1,6 @@
 
 
-import React, {
-  useEffect,
-  useState,
-  useCallback,
-  useLayoutEffect,
-  useReducer,
-} from 'react';
+import React, { useEffect, useState, useCallback, useReducer } from 'react';
 import { FilterState } from '../../DashboardView';
 import { formatDuration } from '../../../../utils/formatting';
 import { parseCuratedCurrencyCode } from '../../../../utils/currencyConfig';
@@ -18,7 +12,10 @@ import {
 import { formatHoldTime } from '../../utils/analyticsUtils';
 import { getActiveLayout, saveLayout } from '../../utils/layoutUtils';
 import { usePlugin } from '../../../../hooks/usePlugin';
-import { useDashboardData } from '../../context/DashboardDataContext';
+import {
+  haveDashboardFiltersChanged,
+  useDashboardData,
+} from '../../context/DashboardDataContext';
 import { MetricCard } from './MetricCard';
 import {
   DndContext,
@@ -112,6 +109,20 @@ const RATIO_DELTA_METRICS = new Set([
   'avgRR',
   'avgRRRiskBased',
 ]);
+
+export function formatTopSectionProfitFactor({
+  value,
+  masked,
+  formatValue,
+}: {
+  value: number;
+  masked: boolean;
+  formatValue: (options: DisplayValueOptions) => string;
+}): string {
+  return !masked && Number.isFinite(value) && value > 999
+    ? '999+'
+    : formatValue({ kind: 'metric', value, precision: 2 });
+}
 
 export function formatTopSectionRatioOrExcursionDelta({
   metric,
@@ -674,30 +685,42 @@ function useTopSectionModel({ filters }: Pick<TopSectionProps, 'filters'>) {
     : null;
   const [comparisonState, dispatchComparisonState] = useReducer(
     (
-      _state: { data: DashboardData | null; mode: 'previous' | 'past30d' },
-      action: { data: DashboardData | null; mode: 'previous' | 'past30d' }
+      _state: {
+        data: DashboardData | null;
+        mode: 'previous' | 'past30d';
+        filters: FilterState;
+      },
+      action: {
+        data: DashboardData | null;
+        mode: 'previous' | 'past30d';
+        filters: FilterState;
+      }
     ) => action,
-    { data: null, mode: 'previous' as const }
+    { data: null, mode: 'previous' as const, filters }
   );
-  const comparisonData = comparisonState.data;
+  
+  
+  const comparisonData = !haveDashboardFiltersChanged(
+    comparisonState.filters,
+    filters
+  )
+    ? comparisonState.data
+    : null;
   const comparisonMode = comparisonState.mode;
 
-  
-  useLayoutEffect(() => {
-    return () => {};
-  }, []);
-
   useEffect(() => {
-    if (!plugin?.tradeService || !data) {
-      dispatchComparisonState({ data: null, mode: comparisonMode });
-      return;
-    }
-
     const comparisonRange = getDashboardComparisonDateRange(
       filters,
-      getWeekStartDaySetting(plugin)
+      getWeekStartDaySetting(plugin ?? undefined)
     );
-    dispatchComparisonState({ data: null, mode: comparisonRange.mode });
+    if (!plugin?.tradeService || !data) {
+      dispatchComparisonState({
+        data: null,
+        mode: comparisonRange.mode,
+        filters,
+      });
+      return;
+    }
 
     let isMounted = true;
     fetchDashboardData(
@@ -713,6 +736,7 @@ function useTopSectionModel({ filters }: Pick<TopSectionProps, 'filters'>) {
           dispatchComparisonState({
             data: nextComparisonData,
             mode: comparisonRange.mode,
+            filters,
           });
         }
       })
@@ -722,14 +746,18 @@ function useTopSectionModel({ filters }: Pick<TopSectionProps, 'filters'>) {
           comparisonError
         );
         if (isMounted) {
-          dispatchComparisonState({ data: null, mode: comparisonRange.mode });
+          dispatchComparisonState({
+            data: null,
+            mode: comparisonRange.mode,
+            filters,
+          });
         }
       });
 
     return () => {
       isMounted = false;
     };
-  }, [comparisonMode, data, filters, plugin]);
+  }, [data, filters, plugin]);
 
   
   useEffect(() => {
@@ -1036,11 +1064,11 @@ function useTopSectionModel({ filters }: Pick<TopSectionProps, 'filters'>) {
       case 'timeInDrawdown':
         return formatValue({ kind, value, signed: false, precision: 1 });
       case 'profitFactor':
-        return shouldMask(kind)
-          ? formatValue({ kind, value, precision: 2 })
-          : value === Infinity || value > 999
-            ? '999+'
-            : value.toFixed(2);
+        return formatTopSectionProfitFactor({
+          value,
+          masked: shouldMask(kind),
+          formatValue,
+        });
       case 'sharpeRatio':
       case 'avgRR':
       case 'avgRRRiskBased':

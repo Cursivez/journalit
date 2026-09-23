@@ -97,6 +97,8 @@ export class ViewGuideService {
   private saveQueue: Promise<void> = Promise.resolve();
   private listeners = new Set<() => void>();
   private resolvedGuideByLeafId = new Map<string, string>();
+  
+  private autoShowGate: (() => boolean) | null = null;
 
   constructor(plugin: JournalitPlugin) {
     this.plugin = plugin;
@@ -221,7 +223,25 @@ export class ViewGuideService {
     return null;
   }
 
+  
+  setAutoShowGate(gate: (() => boolean) | null): void {
+    this.autoShowGate = gate;
+    this.emitChange();
+  }
+
+  
+  notifyAutoShowGateChanged(): void {
+    this.emitChange();
+  }
+
+  isAutoShowSuppressed(): boolean {
+    return this.autoShowGate ? !this.autoShowGate() : false;
+  }
+
   shouldAutoShowGuide(guideId: string, guideVersion: number): boolean {
+    if (this.isAutoShowSuppressed()) {
+      return false;
+    }
     const persisted = this.data.guides[guideId];
 
     if (!persisted) {
@@ -241,6 +261,22 @@ export class ViewGuideService {
 
   getPersistedGuideState(guideId: string): PersistedGuideState | null {
     return this.data.guides[guideId] ?? null;
+  }
+
+  async prepareContextSwitch(): Promise<void> {
+    await this.saveData();
+    for (const session of this.sessions.values()) {
+      session.status = 'ended';
+    }
+    this.sessions.clear();
+    this.guideToSessionId.clear();
+    this.resolvedGuideByLeafId.clear();
+    this.emitChange();
+  }
+
+  async loadActiveContext(): Promise<void> {
+    await this.loadData();
+    this.emitChange();
   }
 
   getSession(sessionId: string): ViewGuideSession | null {
@@ -509,7 +545,15 @@ export class ViewGuideService {
     return derivedId;
   }
 
+  
   private getCurrentActiveLeaf(): WorkspaceLeaf | null {
+    const known = this.activeLeaf;
+    if (
+      known?.view &&
+      this.isLeafIdStillOpen(this.getLeafId(known), known.view.getViewType())
+    ) {
+      return known;
+    }
     return this.plugin.app.workspace.getMostRecentLeaf();
   }
 
@@ -630,6 +674,16 @@ export class ViewGuideService {
 
   private async loadData(): Promise<void> {
     try {
+      if (this.plugin.settingsManager?.isSampleContextActive()) {
+        const persisted = parsePersistedViewGuideData(
+          this.plugin.settingsManager.getSampleLocalMetaSection(
+            VIEW_GUIDES_DATA_KEY
+          )
+        );
+        this.data = persisted ?? createDefaultViewGuideData();
+        return;
+      }
+
       const pluginData = asRecord(await this.plugin.loadData()) ?? {};
       const localMeta = asRecord(pluginData.localMeta);
       const persisted = parsePersistedViewGuideData(
@@ -655,23 +709,12 @@ export class ViewGuideService {
 
   private async saveDataInternal(): Promise<void> {
     try {
-      if (this.plugin.settingsManager?.updateLocalMetaSection) {
-        await this.plugin.settingsManager.updateLocalMetaSection(
-          VIEW_GUIDES_DATA_KEY,
-          this.data
-        );
-        return;
-      }
-
-      const pluginData = asRecord(await this.plugin.loadData()) ?? {};
-      const localMeta = asRecord(pluginData.localMeta) ?? {};
-
-      localMeta[VIEW_GUIDES_DATA_KEY] = this.data;
-
-      await this.plugin.saveData({
-        ...pluginData,
-        localMeta,
-      });
+      
+      
+      await this.plugin.settingsManager.updateLocalMetaSection(
+        VIEW_GUIDES_DATA_KEY,
+        this.data
+      );
     } catch (error) {
       console.error('[ViewGuideService] Failed to save guide data:', error);
     }

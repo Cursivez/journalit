@@ -4,9 +4,12 @@ import { ACCOUNT_PAGE_VIEW_TYPE } from '../views/AccountPageView';
 import {
   ACCOUNT_PAGE_ADD_EVENT_BUTTON_TARGET_ID,
   ACCOUNT_PAGE_BALANCE_SECTION_TARGET_ID,
+  ACCOUNT_PAGE_CHALLENGE_SECTION_TARGET_ID,
+  ACCOUNT_PAGE_SUMMARY_BAND_TARGET_ID,
   ACCOUNT_PAGE_EDIT_ACCOUNT_BUTTON_TARGET_ID,
   ACCOUNT_PAGE_MAIN_GUIDE_ID,
   ACCOUNT_PAGE_METRICS_SECTION_TARGET_ID,
+  ACCOUNT_PAGE_PAYOUT_SECTION_TARGET_ID,
   ACCOUNT_PAGE_RISK_SECTION_TARGET_ID,
   ACCOUNT_PAGE_TRANSACTIONS_SECTION_TARGET_ID,
   ACCOUNT_PAGE_VIEW_TRADES_BUTTON_TARGET_ID,
@@ -18,7 +21,7 @@ export function registerAccountPageMainGuide(
   guideRegistry.registerGuide({
     id: ACCOUNT_PAGE_MAIN_GUIDE_ID,
     viewType: ACCOUNT_PAGE_VIEW_TYPE,
-    version: 2,
+    version: 11,
     autoShow: true,
     priority: 110,
     initialStepId: 'intro',
@@ -38,6 +41,16 @@ export function registerAccountPageMainGuide(
         targetId: ACCOUNT_PAGE_BALANCE_SECTION_TARGET_ID,
       },
       {
+        
+        
+        id: 'summary',
+        title: t('account-page.guide.main.summary.title'),
+        description: t('account-page.guide.main.summary.description'),
+        progression: 'manual',
+        targetId: ACCOUNT_PAGE_SUMMARY_BAND_TARGET_ID,
+        skipIfTargetMissing: true,
+      },
+      {
         id: 'metrics',
         title: t('account-page.guide.main.metrics.title'),
         description: t('account-page.guide.main.metrics.description'),
@@ -45,11 +58,32 @@ export function registerAccountPageMainGuide(
         targetId: ACCOUNT_PAGE_METRICS_SECTION_TARGET_ID,
       },
       {
+        
+        id: 'challenge',
+        title: t('account-page.guide.main.challenge.title'),
+        description: `${t('account-page.guide.main.challenge.description')} ${t('account.profiles.guide')} ${t('account.profiles.correction-guide')}`,
+        progression: 'manual',
+        targetId: ACCOUNT_PAGE_CHALLENGE_SECTION_TARGET_ID,
+        skipIfTargetMissing: true,
+      },
+      {
+        
+        id: 'payout-readiness',
+        title: t('account-page.guide.main.payout.title'),
+        description: t('account-page.guide.main.payout.description'),
+        progression: 'manual',
+        targetId: ACCOUNT_PAGE_PAYOUT_SECTION_TARGET_ID,
+        skipIfTargetMissing: true,
+      },
+      {
+        
+        
         id: 'risk',
         title: t('account-page.guide.main.risk.title'),
         description: t('account-page.guide.main.risk.description'),
         progression: 'manual',
         targetId: ACCOUNT_PAGE_RISK_SECTION_TARGET_ID,
+        skipIfTargetMissing: true,
       },
       {
         id: 'transactions',

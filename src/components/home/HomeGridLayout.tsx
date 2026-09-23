@@ -48,6 +48,8 @@ import { TradingScoreWidget } from './widgets/TradingScoreWidget';
 import { AUMWidget } from './widgets/AUMWidget';
 import { DrawdownMonitorWidget } from './widgets/DrawdownMonitorWidget';
 import { ProfitTargetWidget } from './widgets/ProfitTargetWidget';
+import { EvalRoiWidget } from './widgets/EvalRoiWidget';
+import { ChallengeAlertsWidget } from './widgets/ChallengeAlertsWidget';
 import { GettingStartedWidget } from './widgets/GettingStartedWidget';
 import { KeyEventsHomeWidget } from './widgets/KeyEventsHomeWidget';
 
@@ -433,6 +435,10 @@ const HomeWidgetContent: React.FC<{
       return <DrawdownMonitorWidget plugin={plugin} />;
     case 'profitTarget':
       return <ProfitTargetWidget plugin={plugin} />;
+    case 'evalRoi':
+      return <EvalRoiWidget plugin={plugin} />;
+    case 'challengeAlerts':
+      return <ChallengeAlertsWidget plugin={plugin} />;
     case 'gettingStarted':
       return <GettingStartedWidget plugin={plugin} tradeCount={tradeCount} />;
     default:

@@ -5,10 +5,12 @@ import type {
   ReviewStatusFilter,
 } from '../../services/tradelog/types';
 import type { CustomFieldFilterSelections } from '../../types/customFields';
+import type { AccountPhaseScope } from '../shared/filters/types';
 
 export interface FilterState {
   dateRange: [Date | null, Date | null];
   accounts: string[];
+  accountPhases: AccountPhaseScope[];
   tickers: string[];
   setups: string[];
   tags: string[];

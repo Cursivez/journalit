@@ -94,6 +94,7 @@ export const CANONICAL_PROJECTION_CUSTOM_FIELD_MIGRATION_KEYS = [
   'canonicalTradeId',
   'canonicalTradeVersion',
   'canonicalAccountId',
+  'canonicalAccountIdentity',
   'canonicalBroker',
   'canonicalAccountDisplayName',
   'canonicalProjectionSchemaVersion',
@@ -121,7 +122,11 @@ export const CANONICAL_PROJECTION_CUSTOM_FIELD_MIGRATION_KEYS = [
   'tradeImportAccountDisplayName',
 ] as const;
 
-const FIRST_CLASS_CUSTOM_FIELD_MIGRATION_KEYS = ['imageAnnotations'] as const;
+const FIRST_CLASS_CUSTOM_FIELD_MIGRATION_KEYS = [
+  'imageAnnotations',
+  'journalitSampleInstance',
+  'journalitSampleEntityId',
+] as const;
 
 export const CUSTOM_FIELD_KEY_MIGRATION_KEYS = [
   ...CANONICAL_PROJECTION_CUSTOM_FIELD_MIGRATION_KEYS,

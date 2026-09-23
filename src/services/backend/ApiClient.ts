@@ -5,6 +5,10 @@ import { requestUrl } from 'obsidian';
 import { ErrorHandler, ErrorContext } from '../../utils/errorHandler';
 import { ApiError } from '../../types/errors';
 import { getPluginInstance } from '../../utils/pluginContext';
+import {
+  DemoSyncGate,
+  SampleJournalNetworkBlockedError,
+} from '../../demo/DemoSyncGate';
 
 const DEFAULT_BACKEND_SERVER_URL = 'https://api.journalit.co';
 const APPROVED_BACKEND_HOSTS = new Set([
@@ -244,6 +248,23 @@ interface QueuedRequest<T> {
   throwOnPremiumRequired?: boolean;
   
   propagateErrors?: boolean;
+  acceptedStatuses?: readonly number[];
+  maxRetryAttempts?: number;
+  onResponse?: (metadata: ApiResponseMetadata) => void;
+}
+
+interface ApiResponseMetadata {
+  status: number;
+  getHeader: (name: string) => string | undefined;
+}
+
+interface ApiRequestConfig {
+  suppressPremiumRequiredEvent?: boolean;
+  throwOnPremiumRequired?: boolean;
+  propagateErrors?: boolean;
+  acceptedStatuses?: readonly number[];
+  maxRetryAttempts?: number;
+  onResponse?: (metadata: ApiResponseMetadata) => void;
 }
 
 export type AuthTokenRefreshResult =
@@ -292,6 +313,7 @@ export class ApiClient {
   
   private static authToken: string | null = null;
   private static authSessionVersion = 0;
+  private static readonly authSessionListeners = new Set<() => void>();
   private static authFailureDispatched = false;
   private static tokenRefresher: AuthTokenRefresher | null = null;
   private static lastTokenRefresh: {
@@ -301,13 +323,19 @@ export class ApiClient {
 
   
   static setAuthToken(token: string | null): void {
-    if (this.authToken !== token) {
+    const sessionChanged = this.authToken !== token;
+    if (sessionChanged) {
       this.authSessionVersion++;
       this.lastTokenRefresh = null;
     }
     this.authToken = token;
     if (token) {
       this.authFailureDispatched = false;
+    }
+    if (sessionChanged) {
+      for (const listener of this.authSessionListeners) {
+        listener();
+      }
     }
   }
 
@@ -376,6 +404,13 @@ export class ApiClient {
     return this.authSessionVersion;
   }
 
+  static subscribeAuthSessionChanges(listener: () => void): () => void {
+    this.authSessionListeners.add(listener);
+    return () => {
+      this.authSessionListeners.delete(listener);
+    };
+  }
+
   
   private static requiresAuth(url: string): boolean {
     
@@ -389,6 +424,7 @@ export class ApiClient {
       '/api/v1/csv',
       '/api/v1/trade-import',
       '/api/v1/me/entitlements',
+      '/api/v1/prop-firm-profiles',
       '/api/v1/economic-events',
     ];
 
@@ -435,12 +471,10 @@ export class ApiClient {
     options: RequestInit = {},
     context: string = 'API call',
     priority: number = 0,
-    config?: {
-      suppressPremiumRequiredEvent?: boolean;
-      throwOnPremiumRequired?: boolean;
-      propagateErrors?: boolean;
-    }
+    config?: ApiRequestConfig
   ): Promise<T | null> {
+    DemoSyncGate.assertNetworkAllowed();
+
     
     if (options.method === 'GET' || !options.method) {
       const cached = this.getCachedResponse<T>(url);
@@ -469,6 +503,9 @@ export class ApiClient {
         suppressPremiumRequiredEvent: config?.suppressPremiumRequiredEvent,
         throwOnPremiumRequired: config?.throwOnPremiumRequired,
         propagateErrors: config?.propagateErrors,
+        acceptedStatuses: config?.acceptedStatuses,
+        maxRetryAttempts: config?.maxRetryAttempts,
+        onResponse: config?.onResponse,
       };
 
       this.requestQueue.push(queueItem);
@@ -527,6 +564,7 @@ export class ApiClient {
   ): Promise<void> {
     let requestAuthToken: string | null = null;
     try {
+      DemoSyncGate.assertNetworkAllowed();
       if (
         this.requiresAuth(request.url) &&
         request.authTokenAtQueue !== this.authToken
@@ -579,11 +617,23 @@ export class ApiClient {
         return key ? headers[key] : undefined;
       };
 
-      if (response.status < 200 || response.status >= 300) {
+      request.onResponse?.({
+        status: response.status,
+        getHeader: (name) => getHeader(response.headers, name),
+      });
+
+      const acceptedStatus = request.acceptedStatuses?.includes(
+        response.status
+      );
+      if (
+        (response.status < 200 || response.status >= 300) &&
+        !acceptedStatus
+      ) {
         
         if (
           (response.status === 429 || response.status >= 500) &&
-          request.retryCount < this.MAX_RETRY_ATTEMPTS
+          request.retryCount <
+            (request.maxRetryAttempts ?? this.MAX_RETRY_ATTEMPTS)
         ) {
           await this.retryRequest(request, requestAuthToken);
           return;
@@ -702,12 +752,19 @@ export class ApiClient {
       }
 
       
-      if (request.options.method === 'GET' || !request.options.method) {
+      if (
+        response.status !== 304 &&
+        (request.options.method === 'GET' || !request.options.method)
+      ) {
         this.setCachedResponse(request.url, data);
       }
 
       request.resolve(data);
     } catch (error) {
+      if (error instanceof SampleJournalNetworkBlockedError) {
+        request.reject(error);
+        return;
+      }
       
       if (
         (error instanceof Error &&
@@ -741,7 +798,8 @@ export class ApiClient {
 
       
       if (
-        request.retryCount < this.MAX_RETRY_ATTEMPTS &&
+        request.retryCount <
+          (request.maxRetryAttempts ?? this.MAX_RETRY_ATTEMPTS) &&
         ((error instanceof Error && error.name === 'TypeError') ||
           (error instanceof Error && error.message?.includes('fetch')))
       ) {
@@ -897,6 +955,7 @@ export class ApiClient {
 
   
   static async checkHealth(): Promise<boolean> {
+    if (DemoSyncGate.isActive()) return false;
     try {
       const response = await requestUrl({
         url: ApiClient.buildUrl('/api/v1/health'),

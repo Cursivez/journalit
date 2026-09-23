@@ -27,6 +27,12 @@ import { normalizeStringArray } from '../../utils/dataUtils';
 import { readFrontmatterFromDisk } from '../../utils/dataRefresh';
 import type { PreviousTagAssignments } from '../options/CustomOptionsService';
 import { serializeImageAnnotationsForFrontmatter } from '../../utils/imageAnnotations';
+import {
+  getSampleEntityId,
+  getSampleInstanceId,
+  SAMPLE_ENTITY_ID_FRONTMATTER_KEY,
+  SAMPLE_INSTANCE_FRONTMATTER_KEY,
+} from '../../demo/DemoOwnership';
 
 function getStringValue(record: Record<string, unknown>, key: string): string {
   const value = record[key];
@@ -152,6 +158,8 @@ function createBacktestTradeData(
           ? false
           : undefined,
     idealExits: getIdealExits(frontmatter, 'idealExits'),
+    journalitSampleInstance: getSampleInstanceId(frontmatter) ?? undefined,
+    journalitSampleEntityId: getSampleEntityId(frontmatter) ?? undefined,
     filePath,
     isBacktestTrade: true,
   };
@@ -243,18 +251,18 @@ export class BacktestTradeService extends CustomDataService {
     plugin.registerEvent(
       plugin.app.vault.on('delete', async (file: TAbstractFile) => {
         
-        if (file.path.endsWith('.md') && /-B\d+\.md$/.test(file.path)) {
-          const normalizedPath = normalizePath(file.path);
-          await this.handleBacktestTradeDeletion(normalizedPath);
-        }
+        if (!file.path.endsWith('.md') || !/-B\d+\.md$/.test(file.path)) return;
+        const normalizedPath = normalizePath(file.path);
+        if (!this.isPathInMonitoredFolder(normalizedPath)) return;
+        await this.handleBacktestTradeDeletion(normalizedPath);
       })
     );
   }
 
-  public override cleanup(): void {
+  public override async cleanup(): Promise<void> {
     this.unsubscribeFolderPathChanged?.();
     this.unsubscribeFolderPathChanged = undefined;
-    super.cleanup();
+    await super.cleanup();
   }
 
   
@@ -268,9 +276,27 @@ export class BacktestTradeService extends CustomDataService {
       customFields?: Record<string, unknown>;
     } = {}
   ): Promise<TFile | null> {
-    return this.runWithTagAssignments(data, () =>
-      this.createBacktestTradeInternal(data, options)
+    const ownership =
+      !data.journalitSampleInstance || !data.journalitSampleEntityId
+        ? this.plugin?.demoSessionService?.claimNewOwnership('backtest-trade')
+        : null;
+    const ownedData = ownership
+      ? {
+          ...data,
+          journalitSampleInstance: ownership.instanceId,
+          journalitSampleEntityId: ownership.entityId,
+        }
+      : data;
+    const file = await this.runWithTagAssignments(ownedData, () =>
+      this.createBacktestTradeInternal(ownedData, options)
     );
+    if (file && ownership) {
+      await this.plugin?.demoSessionService?.recordCreatedEntity(
+        file.path,
+        ownership
+      );
+    }
+    return file;
   }
 
   private async createBacktestTradeInternal(
@@ -352,6 +378,8 @@ export class BacktestTradeService extends CustomDataService {
             templateId: templateMetadata.templateId,
             templateVersion: templateMetadata.templateVersion,
             isBacktestTrade: true,
+            [SAMPLE_INSTANCE_FRONTMATTER_KEY]: data.journalitSampleInstance,
+            [SAMPLE_ENTITY_ID_FRONTMATTER_KEY]: data.journalitSampleEntityId,
             
             entryTime: data.entryTime
               ? this.formatDateForFrontmatter(data.entryTime)
@@ -584,6 +612,12 @@ export class BacktestTradeService extends CustomDataService {
         backendTradeId: undefined,
         isBacktestTrade: true,
         isMissedTrade: undefined,
+        [SAMPLE_INSTANCE_FRONTMATTER_KEY]:
+          data.journalitSampleInstance ??
+          existingData?.[SAMPLE_INSTANCE_FRONTMATTER_KEY],
+        [SAMPLE_ENTITY_ID_FRONTMATTER_KEY]:
+          data.journalitSampleEntityId ??
+          existingData?.[SAMPLE_ENTITY_ID_FRONTMATTER_KEY],
         
         entryTime: data.entryTime
           ? this.formatDateForFrontmatter(data.entryTime)

@@ -82,7 +82,7 @@ function parseCreateSetupDirection(
   return '';
 }
 
-export function mergeSetupProfileOptions(
+function mergeSetupProfileOptions(
   availableOptions: string[],
   selectedOptions: string[]
 ): string[] {

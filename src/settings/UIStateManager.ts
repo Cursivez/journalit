@@ -16,6 +16,12 @@ import { normalizeEconomicCalendarViewFilters } from '../services/economicCalend
 import type { TradeType } from '../services/tradelog/types';
 import type { SetupDirection } from '../services/setup/types';
 import { migrateLegacyAllStatusSelection } from './viewFiltersDefaults';
+import type { JournalSettingsContext } from '../demo/DemoSettingsScope';
+import {
+  ensureDemoStateDirectory,
+  getDemoStateDirectoryPath,
+} from '../demo/DemoManifest';
+import { Mutex } from '../utils/mutex';
 
 
 const UI_STATE_FILENAME = 'ui-state.json';
@@ -54,6 +60,9 @@ interface UIState {
 
   
   selectedAccountDashboardTradeTypes?: TradeType[];
+
+  
+  accountDashboardMode?: 'accountOverview' | 'challenges';
 
   
   homeAccountFilterSelectAllActive?: boolean;
@@ -222,6 +231,10 @@ const DEFAULT_UI_STATE: UIState = {
   gettingStartedOpenedNavigationSidebar: false,
 };
 
+function createDefaultUIState(): UIState {
+  return structuredClone(DEFAULT_UI_STATE);
+}
+
 const STATUS_FILTER_CANCELLED_MIGRATION_VERSION = 1;
 
 function migratePersistedViewFilters(
@@ -263,8 +276,10 @@ function migratePersistedViewFilters(
 
 export class UIStateManager {
   private plugin: Plugin;
-  private state: UIState = { ...DEFAULT_UI_STATE };
+  private state: UIState = createDefaultUIState();
   private loadedFromDisk: boolean = false;
+  private activeContext: JournalSettingsContext = 'real';
+  private readonly saveMutex = new Mutex();
   private debouncedSave: (() => Promise<void>) & {
     cancel: () => void;
     flush: () => Promise<void | undefined>;
@@ -279,7 +294,38 @@ export class UIStateManager {
 
   
   private getStatePath(): string {
+    if (this.activeContext === 'sample') {
+      return this.getSampleStatePath();
+    }
     return `${this.plugin.app.vault.configDir}/plugins/${this.plugin.manifest.id}/${UI_STATE_FILENAME}`;
+  }
+
+  private getSampleStatePath(): string {
+    return `${getDemoStateDirectoryPath(this.plugin)}/${UI_STATE_FILENAME}`;
+  }
+
+  getActiveContext(): JournalSettingsContext {
+    return this.activeContext;
+  }
+
+  async activateContext(context: JournalSettingsContext): Promise<UIState> {
+    if (context === this.activeContext) {
+      return this.state;
+    }
+    await this.flush();
+    await this.saveMutex.withLock(async () => undefined);
+    this.debouncedSave.cancel();
+    this.activeContext = context;
+    this.state = createDefaultUIState();
+    this.loadedFromDisk = false;
+    return this.loadState();
+  }
+
+  async removeSampleState(): Promise<void> {
+    const path = this.getSampleStatePath();
+    if (await this.plugin.app.vault.adapter.exists(path)) {
+      await this.plugin.app.vault.adapter.remove(path);
+    }
   }
 
   
@@ -290,7 +336,7 @@ export class UIStateManager {
 
       if (!exists) {
         this.state = {
-          ...DEFAULT_UI_STATE,
+          ...createDefaultUIState(),
           statusFilterCancelledMigrationVersion:
             STATUS_FILTER_CANCELLED_MIGRATION_VERSION,
         };
@@ -304,7 +350,7 @@ export class UIStateManager {
 
       
       this.state = {
-        ...DEFAULT_UI_STATE,
+        ...createDefaultUIState(),
         ...persistedState,
         setupOverviewSelectedTags: normalizeSetupOverviewSelectedTags(
           persistedState.setupOverviewSelectedTags
@@ -317,6 +363,18 @@ export class UIStateManager {
           persistedState.economicCalendar
         ),
       };
+      let shouldPersistNormalizedState = false;
+      const persistedViewFilters = this.state.viewFilters;
+      if (persistedViewFilters?.tradelog?.analyticsDateBasis !== undefined) {
+        this.state.viewFilters = {
+          ...persistedViewFilters,
+          tradelog: {
+            ...persistedViewFilters.tradelog,
+            analyticsDateBasis: undefined,
+          },
+        };
+        shouldPersistNormalizedState = true;
+      }
       if (
         this.state.statusFilterCancelledMigrationVersion !==
         STATUS_FILTER_CANCELLED_MIGRATION_VERSION
@@ -328,6 +386,9 @@ export class UIStateManager {
         }
         this.state.statusFilterCancelledMigrationVersion =
           STATUS_FILTER_CANCELLED_MIGRATION_VERSION;
+        shouldPersistNormalizedState = true;
+      }
+      if (shouldPersistNormalizedState) {
         await this.saveStateInternal();
       }
       this.loadedFromDisk = true;
@@ -338,7 +399,7 @@ export class UIStateManager {
         'UIStateManager: Failed to load UI state, using defaults:',
         error
       );
-      this.state = { ...DEFAULT_UI_STATE };
+      this.state = createDefaultUIState();
       this.loadedFromDisk = false;
       return this.state;
     }
@@ -456,15 +517,18 @@ export class UIStateManager {
 
   
   private async saveStateInternal(): Promise<void> {
-    try {
-      const statePath = this.getStatePath();
-      await this.plugin.app.vault.adapter.write(
-        statePath,
-        JSON.stringify(this.state, null, 2)
-      );
-    } catch (error) {
-      console.error('UIStateManager: Failed to save UI state:', error);
-    }
+    await this.saveMutex.withLock(async () => {
+      try {
+        const statePath = this.getStatePath();
+        const serializedState = JSON.stringify(this.state, null, 2);
+        if (this.activeContext === 'sample') {
+          await ensureDemoStateDirectory(this.plugin);
+        }
+        await this.plugin.app.vault.adapter.write(statePath, serializedState);
+      } catch (error) {
+        console.error('UIStateManager: Failed to save UI state:', error);
+      }
+    });
   }
 
   

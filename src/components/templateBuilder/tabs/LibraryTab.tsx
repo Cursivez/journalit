@@ -9,7 +9,10 @@ import React, {
 } from 'react';
 import { Notice } from 'obsidian';
 import type JournalitPlugin from '../../../main';
-import { TemplateSharingService } from '../../../services/templates/TemplateSharingService';
+import {
+  LayoutShareCodeTooLargeError,
+  TemplateSharingService,
+} from '../../../services/templates/TemplateSharingService';
 import { ReviewTemplateService } from '../../../services/templates/ReviewTemplateService';
 import { TradeTemplateService } from '../../../services/templates/TradeTemplateService';
 import type { ReviewTemplate, TradeTemplate } from '../../../types/reviewV2';
@@ -404,9 +407,11 @@ function useLibraryTabModel({
       new Notice(t('library.notice.code-generated'));
     } catch (error) {
       const errorMessage =
-        error instanceof Error
-          ? error.message
-          : t('library.error.export-failed');
+        error instanceof LayoutShareCodeTooLargeError
+          ? t('library.error.export-too-large')
+          : error instanceof Error
+            ? error.message
+            : t('library.error.export-failed');
       new Notice(errorMessage, 5000);
     }
   };

@@ -22,6 +22,9 @@ export interface UnifiedFilters {
   accounts: string[];
 
   
+  accountPhases: AccountPhaseScope[];
+
+  
   tickers: string[];
 
   
@@ -54,6 +57,11 @@ export interface UnifiedFilters {
   
   imageAnnotationStatus?: ImageAnnotationStatusFilter[];
   imageTags?: string[];
+}
+
+export interface AccountPhaseScope {
+  account: string;
+  phaseId: string;
 }
 
 export interface AvailableImageFilterOptions {

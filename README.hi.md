@@ -49,17 +49,17 @@ Journalit को Obsidian Community Plugins से इंस्टॉल कर�
 - **लोकल-फ़र्स्ट**: मुख्य जर्नलिंग आपके Obsidian वॉल्ट में ही रहती है।
 - **होम व्यू डैशबोर्ड**: खींचकर व्यवस्थित किए जा सकने वाले विजेट्स और ट्रेडिंग हीटमैप।
 - **ट्रेडिंग डैशबोर्ड**: परफॉर्मेंस और पैटर्न एक नज़र में देखें।
-- **अकाउंट डैशबोर्ड**: प्रॉप फ़र्म प्रॉफिट टारगेट और ड्रॉडाउन के लिए बनाया गया।
+- **[प्रॉप चैलेंज](https://journalit.co/docs/prop-challenges)**: इवैल्युएशन और फंडेड फेज, ड्रॉडाउन, डेली लॉस, प्रॉफिट टारगेट और पेआउट नियम ट्रैक करें, सेटअप के लिए फ़र्म प्रोफ़ाइल के साथ।
 - **रिव्यू सिस्टम (V2)**: डेली से इयरली टेम्पलेट्स, लेआउट बिल्डर के साथ।
 - **[Trade Import](https://journalit.co/csv-import)**: CSV, स्प्रेडशीट, HTML और ब्रोकर स्टेटमेंट के लिए बैकएंड-पावर्ड इंपोर्ट।
-- **[Trade Sync](https://journalit.co/docs/trade-sync)**: Tradovate और MT4 के लिए ऑटोमेटेड ट्रेड सिंक।
+- **[Trade Sync](https://journalit.co/docs/trade-sync)**: समर्थित ब्रोकरों के लिए ऑटोमेटेड ट्रेड सिंक।
 
 ## ज़रूरी जानकारी
 
 - **लोकल-फ़र्स्ट कोर**: मुख्य जर्नलिंग ऑफ़लाइन काम करती है और नोट्स व ट्रेड्स आपके Obsidian वॉल्ट में स्टोर होते हैं।
 - **पूरी ऐक्सेस के लिए अकाउंट चाहिए**: ऑथेंटिकेशन और सब्सक्रिप्शन वाली सुविधाओं के लिए Journalit अकाउंट आवश्यक है।
-- **पेड फीचर्स**: MetaTrader सिंक और Trade Import जैसी पूरी Pro सुविधाओं के लिए पेड Pro सब्सक्रिप्शन चाहिए।
-- **वैकल्पिक नेटवर्क उपयोग**: प्लगइन Journalit नेटवर्क सेवाओं का उपयोग तभी करता है जब आप नेटवर्क वाली सुविधाएँ चुनते हैं। साइन इन करने पर ईमेल वेरिफिकेशन, टोकन वैलिडेशन और सब्सक्रिप्शन स्टेटस के लिए Journalit सेवाएँ संपर्क होती हैं। अगर इसके बाद आप MetaTrader सिंक या Trade Import जैसी ऑथेंटिकेटेड सुविधाएँ इस्तेमाल करते हैं, तो प्लगइन सिंक कोऑर्डिनेशन, ट्रेड रिट्रीवल और वैकल्पिक Trade Import के लिए Journalit बैकएंड API से भी जुड़ता है; MetaTrader सिंक रिपोर्ट अपलोड के लिए Journalit-प्रबंधित FTP इंफ्रास्ट्रक्चर का उपयोग करता है। मल्टी-करेंसी कनवर्ज़न के लिए Journalit किसी थर्ड-पार्टी एक्सचेंज-रेट सेवा से दरें भी माँग सकता है। ये नेटवर्क फीचर्स ऑप्ट-इन हैं।
+- **पेड फीचर्स**: Trade Sync, Trade Import, आर्थिक कैलेंडर और पहले से भरी प्रॉप फ़र्म प्रोफ़ाइल जैसी पूरी Pro सुविधाओं के लिए पेड Pro सब्सक्रिप्शन चाहिए।
+- **नेटवर्क उपयोग**: Journalit अपडेट के लिए डिफ़ॉल्ट रूप से सार्वजनिक GitHub रिलीज़ मेटाडेटा जाँचता है और vault या account डेटा नहीं भेजता। साइन-इन सुविधाएँ Journalit सेवाओं का उपयोग कर सकती हैं; MT4 सिंक प्रबंधित FTP का उपयोग करता है और मुद्रा रूपांतरण किसी थर्ड-पार्टी एक्सचेंज-रेट सेवा का उपयोग कर सकता है। [PRIVACY.md](PRIVACY.md) देखें।
 - **सोर्स उपलब्ध, प्रोप्राइटरी लाइसेंस**: प्लगइन प्रोप्राइटरी सॉफ़्टवेयर है जिसका सोर्स रिव्यू किया जा सकता है।
 - **प्राइवेसी विवरण**: डेटा हैंडलिंग, रिटेंशन और इंफ्रास्ट्रक्चर के लिए [PRIVACY.md](PRIVACY.md) देखें।
 
@@ -79,6 +79,12 @@ Journalit को Obsidian Community Plugins से इंस्टॉल कर�
 
 ![सेटअप तुलना](https://raw.githubusercontent.com/Cursivez/journalit/main/assets/readme/setup-comparison.png)
 
+### अकाउंट और प्रॉप चैलेंज
+
+![अकाउंट डैशबोर्ड](https://raw.githubusercontent.com/Cursivez/journalit/main/assets/readme/account-dashboard.png)
+
+![अकाउंट पेज](https://raw.githubusercontent.com/Cursivez/journalit/main/assets/readme/account-pages.png)
+
 ### लेआउट बिल्डर
 
 ![लेआउट बिल्डर](https://raw.githubusercontent.com/Cursivez/journalit/main/assets/readme/layout-builder.png)
@@ -94,14 +100,6 @@ Journalit को Obsidian Community Plugins से इंस्टॉल कर�
 ### Trade Import
 
 ![Trade Import](https://raw.githubusercontent.com/Cursivez/journalit/main/assets/readme/trade-import.png)
-
-### अकाउंट डैशबोर्ड
-
-![अकाउंट डैशबोर्ड](https://raw.githubusercontent.com/Cursivez/journalit/main/assets/readme/account-dashboard.png)
-
-### अकाउंट पेज
-
-![अकाउंट पेज](https://raw.githubusercontent.com/Cursivez/journalit/main/assets/readme/account-pages.png)
 
 <a id="supported-brokers"></a>
 
@@ -130,7 +128,7 @@ Journalit को Obsidian Community Plugins से इंस्टॉल कर�
 <details>
 <summary>सर्च कीवर्ड्स</summary>
 
-Keywords: obsidian trading journal, trading plugin, trade tracker, obsidian trading template, trading analytics, MetaTrader, MT4 sync, MT5 sync, Trade Import, prop firm, prop firms, funded account, profit target, trailing drawdown, max drawdown, ट्रेडिंग जर्नल, ट्रेड लॉग
+Keywords: obsidian trading journal, trading plugin, trade tracker, obsidian trading template, trading analytics, MetaTrader, MT4 sync, MT5 sync, Trade Import, prop firm, prop firms, funded account, profit target, trailing drawdown, max drawdown, prop challenge, evaluation, funded phase, payout rules, daily loss limit, ट्रेडिंग जर्नल, ट्रेड लॉग
 
 </details>
 
@@ -141,6 +139,7 @@ Keywords: obsidian trading journal, trading plugin, trade tracker, obsidian trad
 - [Trade Import ओवरव्यू](https://journalit.co/csv-import)
 - [MetaTrader सिंक ओवरव्यू](https://journalit.co/metatrader-trading-journal)
 - [अन्य जर्नल्स से तुलना](https://journalit.co/compare)
+- [प्रॉप चैलेंज गाइड](https://journalit.co/docs/prop-challenges)
 
 </details>
 

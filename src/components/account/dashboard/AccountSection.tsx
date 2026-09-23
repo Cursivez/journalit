@@ -19,6 +19,8 @@ const AccountSectionComponent: React.FC<AccountSectionProps> = ({
   openAccount,
   totalAUM = 0,
   excludedTypes = EMPTY_EXCLUDED_TYPES,
+  propChallengeDataByAccountId,
+  tradingDayCutoffTime,
 }) => {
   
   const sortedAccounts = useMemo(
@@ -56,8 +58,10 @@ const AccountSectionComponent: React.FC<AccountSectionProps> = ({
             accounts={sortedAccounts}
             openAccount={openAccount}
             containerHeight={600}
-            itemHeight={380} 
+            itemHeight={405} 
             minColumnWidth={300} 
+            propChallengeDataByAccountId={propChallengeDataByAccountId}
+            tradingDayCutoffTime={tradingDayCutoffTime}
           />
         </div>
       ) : (
@@ -66,6 +70,8 @@ const AccountSectionComponent: React.FC<AccountSectionProps> = ({
             <AccountCard
               key={account.id}
               account={account}
+              propChallengeData={propChallengeDataByAccountId?.get(account.id)}
+              tradingDayCutoffTime={tradingDayCutoffTime}
               onClick={() => void openAccount(account.name, account)}
             />
           ))}
@@ -86,6 +92,8 @@ const AccountSectionsComponent: React.FC<AccountSectionsProps> = ({
   refreshTrigger = 0,
   totalAUM = 0,
   excludedTypes = EMPTY_EXCLUDED_TYPES,
+  propChallengeDataByAccountId,
+  tradingDayCutoffTime,
 }) => {
   
   const plugin = passedPlugin;
@@ -114,6 +122,8 @@ const AccountSectionsComponent: React.FC<AccountSectionsProps> = ({
           openAccount={openAccount}
           totalAUM={totalAUM}
           excludedTypes={excludedTypes}
+          propChallengeDataByAccountId={propChallengeDataByAccountId}
+          tradingDayCutoffTime={tradingDayCutoffTime}
         />
       ))}
     </div>

@@ -1,4 +1,8 @@
 import { logger } from '../utils/logger';
+import {
+  DemoSyncGate,
+  SampleJournalNetworkBlockedError,
+} from '../demo/DemoSyncGate';
 
 
 import { MarkdownView, Notice, TFile } from 'obsidian';
@@ -28,6 +32,7 @@ import { RibbonManager } from '../ui/ribbonManager';
 import { OnboardingManager } from '../onboarding/onboardingManager';
 
 import { imageService } from '../services/image/ImageService';
+import { AccountMergeService } from '../services/accountMerge/AccountMergeService';
 import { RecentItem } from '../settings/types';
 import { NavigationManager } from '../navigation/NavigationManager';
 import { UpdateNotificationService } from '../services/UpdateNotificationService';
@@ -37,11 +42,18 @@ import {
 } from '../components/release-notes/ReleaseNotesView';
 import { ReviewDataCache } from '../services/reviewV2/ReviewDataCache';
 import { EventBus, eventBus } from '../services/events/EventBus';
+import { startSessionPhaseBodyAttribute } from '../services/sessionMode/sessionPhaseBodyAttribute';
 import { ONBOARDING_VIEW_TYPE } from '../views/OnboardingView';
 import { TEMPLATE_BUILDER_VIEW_TYPE } from '../views/TemplateBuilderView';
 import { SETUPS_VIEW_TYPE } from '../views/SetupsView';
 import { GuideRegistry } from '../guides/GuideRegistry';
 import { registerHomeMainGuide } from '../guides/homeMainGuide';
+import { registerHomeCustomizeGuide } from '../guides/homeCustomizeGuide';
+import { registerDashboardCustomizeGuide } from '../guides/dashboardCustomizeGuide';
+import { registerLayoutBuilderEditorGuide } from '../guides/layoutBuilderEditorGuide';
+import { registerAccountDashboardSettingsGuide } from '../guides/accountDashboardSettingsGuide';
+import { registerSetupsDetailGuide } from '../guides/setupsDetailGuide';
+import { registerSetupsCompareGuide } from '../guides/setupsCompareGuide';
 import { registerHomeWhatsNewDashboardToggleGuide } from '../guides/homeWhatsNewDashboardToggleGuide';
 import { registerTradeLogEmptyGuide } from '../guides/tradeLogEmptyGuide';
 import { registerTradeLogImageGalleryEmptyGuide } from '../guides/tradeLogImageGalleryEmptyGuide';
@@ -52,15 +64,25 @@ import { registerDashboardMainGuide } from '../guides/dashboardMainGuide';
 import { registerLayoutBuilderMainGuide } from '../guides/layoutBuilderMainGuide';
 import { registerAccountDashboardEmptyGuide } from '../guides/accountDashboardEmptyGuide';
 import { registerAccountDashboardMainGuide } from '../guides/accountDashboardMainGuide';
+import { registerAccountDashboardWhatsNewPropChallengesGuide } from '../guides/accountDashboardWhatsNewPropChallengesGuide';
+import { registerAccountPageWhatsNewCockpitGuide } from '../guides/accountPageWhatsNewCockpitGuide';
 import { registerAccountPageEmptyGuide } from '../guides/accountPageEmptyGuide';
 import { registerAccountPageMainGuide } from '../guides/accountPageMainGuide';
 import { registerSetupsMainGuide } from '../guides/setupsMainGuide';
 import { registerEconomicCalendarMainGuide } from '../guides/economicCalendarMainGuide';
+import type { OnboardingStatus } from '../services/onboarding/types';
+
+export const isOnboardingGuideGateOpen = (
+  status: OnboardingStatus | undefined
+): boolean => status === 'completed' || status === 'skipped';
+import { registerSessionModeGuides } from '../guides/sessionModeGuides';
 import { ViewGuideService } from '../guides/ViewGuideService';
+import { evaluateLegacyChallengeOnboarding } from '../services/accountMerge/LegacyChallengeOnboarding';
 import {
   getJournalitCachePath,
   getJournalitIndexesPath,
 } from '../services/base/pluginStoragePaths';
+import { DemoSessionService } from '../demo/DemoSessionService';
 
 
 interface JournalitPluginInternal extends JournalitPlugin {
@@ -70,9 +92,33 @@ interface JournalitPluginInternal extends JournalitPlugin {
 
 export class PluginInitializer {
   private plugin: JournalitPlugin;
+  private startupTradeMigrations: Promise<void> = Promise.resolve();
+  private realContextBackgroundQueue: Promise<void> = Promise.resolve();
+  private realContextNetworkTasksStarted = false;
+
+  
+  private unloaded = false;
 
   constructor(plugin: JournalitPlugin) {
     this.plugin = plugin;
+  }
+
+  waitForStartupTradeMigrations(): Promise<void> {
+    return this.startupTradeMigrations;
+  }
+
+  initializeRealContextBackgroundServices(
+    resumeFromSample = false
+  ): Promise<void> {
+    const operation = this.realContextBackgroundQueue.then(() =>
+      this.initializeRealContextBackgroundServicesInternal(resumeFromSample)
+    );
+    this.realContextBackgroundQueue = operation.catch(() => undefined);
+    return operation;
+  }
+
+  waitForRealContextBackgroundServices(): Promise<void> {
+    return this.realContextBackgroundQueue;
   }
 
   
@@ -80,6 +126,10 @@ export class PluginInitializer {
     
     const startTime = Date.now();
     window.__obsidianStartTime = startTime;
+
+    this.plugin.register(() => {
+      this.unloaded = true;
+    });
 
     
     await this.initializeCriticalPath();
@@ -93,6 +143,8 @@ export class PluginInitializer {
 
     
     
+    await this.plugin.demoSessionService?.initialize();
+    
     await this.initializeCanonicalProjectionMigration();
 
     
@@ -102,14 +154,20 @@ export class PluginInitializer {
     await this.registerCoreFunctionality();
 
     
+    
+    
+    this.plugin.onboardingManager = new OnboardingManager(this.plugin);
+
     this.plugin.app.workspace.onLayoutReady(() => {
       void this.plugin.viewManager.migrateLegacyDashboardLeaves();
       void this.initializeNonCriticalComponents();
 
-      
-      window.setTimeout(() => {
-        void this.openHomeOnStartup();
-      }, 100); 
+      if (this.plugin.demoSessionService?.isActive()) {
+        void this.plugin.viewManager.openHomeView();
+        void this.plugin.onboardingManager.ensureCompletionWatcher();
+      } else {
+        this.scheduleStartupOnboarding();
+      }
     });
 
     this.plugin.registerEvent(
@@ -227,6 +285,7 @@ export class PluginInitializer {
     
     this.plugin.guideRegistry = new GuideRegistry();
     registerHomeMainGuide(this.plugin.guideRegistry);
+    registerHomeCustomizeGuide(this.plugin.guideRegistry);
     registerHomeWhatsNewDashboardToggleGuide(this.plugin.guideRegistry);
     registerTradeLogEmptyGuide(this.plugin.guideRegistry);
     registerTradeLogImageGalleryEmptyGuide(this.plugin.guideRegistry);
@@ -234,15 +293,39 @@ export class PluginInitializer {
     registerTradeLogMainGuide(this.plugin.guideRegistry);
     registerDashboardEmptyGuide(this.plugin.guideRegistry);
     registerDashboardMainGuide(this.plugin.guideRegistry);
+    registerDashboardCustomizeGuide(this.plugin.guideRegistry);
     registerLayoutBuilderMainGuide(this.plugin.guideRegistry);
+    registerLayoutBuilderEditorGuide(this.plugin.guideRegistry);
     registerAccountDashboardEmptyGuide(this.plugin.guideRegistry);
+    registerAccountDashboardWhatsNewPropChallengesGuide(
+      this.plugin.guideRegistry
+    );
     registerAccountDashboardMainGuide(this.plugin.guideRegistry);
+    registerAccountDashboardSettingsGuide(this.plugin.guideRegistry);
     registerAccountPageEmptyGuide(this.plugin.guideRegistry);
     registerAccountPageMainGuide(this.plugin.guideRegistry);
+    registerAccountPageWhatsNewCockpitGuide(this.plugin.guideRegistry);
     registerSetupsMainGuide(this.plugin.guideRegistry);
+    registerSetupsDetailGuide(this.plugin.guideRegistry);
+    registerSetupsCompareGuide(this.plugin.guideRegistry);
     registerEconomicCalendarMainGuide(this.plugin.guideRegistry);
+    registerSessionModeGuides(this.plugin.guideRegistry);
 
     this.plugin.viewGuideService = new ViewGuideService(this.plugin);
+    
+    
+    
+    this.plugin.viewGuideService.setAutoShowGate(() => {
+      const onboarding =
+        this.plugin.serviceManager.getInitializedOnboardingService();
+      if (!onboarding) return false;
+      
+      
+      return (
+        isOnboardingGuideGateOpen(onboarding.getState().status) ||
+        this.plugin.settingsManager.isSampleContextActive()
+      );
+    });
     await this.plugin.viewGuideService.initialize();
   }
 
@@ -271,16 +354,18 @@ export class PluginInitializer {
       this.plugin
     );
 
+    this.plugin.demoSessionService = new DemoSessionService(this.plugin);
+    this.plugin.demoSessionService.initializePopout();
+
     
     
     
-    void this.plugin.tradeService
+    this.startupTradeMigrations = this.plugin.tradeService
       .waitForTradeDataReady()
       .then(async () => {
         await this.plugin.tradeService.getTradeData({ fresh: true });
         await this.runCanonicalExecutionMigrationIfNeeded();
         await this.runTradeReviewMigrations();
-        await this.runGraphLinkMigration();
       })
       .catch((err) => {
         console.error('[Journalit] Failed to pre-warm trade cache:', err);
@@ -417,21 +502,6 @@ export class PluginInitializer {
     ) {
       logger.info(
         `[Journalit] Repaired ${result.repairedTrades} migrated trade reviews and ${result.migratedDrcs} historical DRCs`
-      );
-    }
-  }
-
-  private async runGraphLinkMigration(): Promise<void> {
-    const result = await this.plugin.graphLinkService.runMigrationIfNeeded();
-    if (result.failed > 0) {
-      console.warn(
-        `[Journalit] Graph-link migration completed with ${result.failed} failures`,
-        result.errors
-      );
-    }
-    if (result.updated > 0) {
-      logger.info(
-        `[Journalit] Added native graph links to ${result.updated} notes`
       );
     }
   }
@@ -610,22 +680,8 @@ export class PluginInitializer {
 
       
       
-      
       try {
-        
         this.plugin.serviceManager.preInitializeServices(['onboardingService']);
-
-        
-        
-        const scheduleOnboardingCheck = () => {
-          void this.plugin.onboardingManager?.checkAndShowOnboarding();
-        };
-
-        if (typeof window.requestIdleCallback === 'function') {
-          window.requestIdleCallback(scheduleOnboardingCheck);
-        } else {
-          window.setTimeout(scheduleOnboardingCheck, 100);
-        }
       } catch (err) {
         console.warn('[Journalit] Failed to warm-up onboarding modules:', err);
       }
@@ -636,7 +692,6 @@ export class PluginInitializer {
       
       this.plugin.commandRegistry = new CommandRegistry(this.plugin);
       this.plugin.ribbonManager = new RibbonManager(this.plugin);
-      this.plugin.onboardingManager = new OnboardingManager(this.plugin);
 
       
       
@@ -716,8 +771,30 @@ export class PluginInitializer {
               
               this.plugin.accountPageService =
                 await this.plugin.serviceManager.getAccountPageService();
+              this.plugin.accountMergeService = new AccountMergeService(
+                this.plugin
+              );
             } catch (error) {
               console.error('Error initializing background services:', error);
+            }
+
+            
+            
+            
+            try {
+              if (!this.unloaded) {
+                const stopSessionPhaseBodyAttribute =
+                  startSessionPhaseBodyAttribute(
+                    this.plugin,
+                    this.plugin.ensureSessionPhaseWatcher()
+                  );
+                this.plugin.register(stopSessionPhaseBodyAttribute);
+              }
+            } catch (error) {
+              console.error(
+                'Error starting the Session Mode phase indicator:',
+                error
+              );
             }
           },
 
@@ -742,51 +819,101 @@ export class PluginInitializer {
               );
             }
 
-            
-            try {
-              if (this.plugin.settings.backendIntegration?.syncEnabled) {
-                const backendService =
-                  await this.plugin.serviceManager.getBackendIntegrationService();
-
-                
-                this.plugin.backendIntegrationService = backendService;
-
-                
-                await backendService.registerVault({
-                  suppressPremiumPrompt: true,
-                });
-              }
-            } catch (error) {
-              console.error('Error initializing backend integration:', error);
-              
-            }
-
-            
-            try {
-              await this.plugin.updateNotificationService?.checkForUpdates();
-            } catch (error) {
-              console.error('Error checking for plugin updates:', error);
-            }
-
-            
-            
-            void this.plugin.serviceManager
-              .getEconomicCalendarService()
-              .then((service) => {
-                service.startAutoImport();
-              })
-              .catch((error) => {
-                logger.debug(
-                  '[Journalit] Economic calendar auto-import start failed',
-                  error
-                );
-              });
+            await this.initializeRealContextBackgroundServices();
           },
         ],
         30
       ); 
     } catch (error) {
       console.error('Error during non-critical initialization:', error);
+    }
+  }
+
+  private async initializeRealContextBackgroundServicesInternal(
+    resumeFromSample: boolean
+  ): Promise<void> {
+    if (DemoSyncGate.isActive()) return;
+
+    try {
+      await this.plugin.canonicalProjectionMigrationService?.run();
+    } catch (error) {
+      console.error(
+        '[Journalit] Deferred canonical projection migration failed:',
+        error
+      );
+    }
+
+    try {
+      const initializedBackendService =
+        this.plugin.serviceManager.getBackendIntegrationServiceIfInitialized();
+      let backendService = initializedBackendService;
+      if (
+        !backendService &&
+        this.plugin.settings.backendIntegration?.syncEnabled
+      ) {
+        backendService =
+          await this.plugin.serviceManager.getBackendIntegrationService();
+      }
+      if (backendService) {
+        this.plugin.backendIntegrationService = backendService;
+        if (resumeFromSample && initializedBackendService) {
+          await backendService.resumeAfterSampleContext();
+        }
+      }
+    } catch (error) {
+      if (error instanceof SampleJournalNetworkBlockedError) return;
+      console.error('Error initializing backend integration:', error);
+    }
+
+    if (DemoSyncGate.isActive()) return;
+    if (!this.realContextNetworkTasksStarted) {
+      this.realContextNetworkTasksStarted = true;
+      await this.runRealContextNetworkTasks();
+    }
+
+    try {
+      const economicCalendarService =
+        await this.plugin.serviceManager.getEconomicCalendarService();
+      if (!DemoSyncGate.isActive()) {
+        economicCalendarService.startAutoImport();
+      }
+    } catch (error) {
+      logger.debug(
+        '[Journalit] Economic calendar auto-import start failed',
+        error
+      );
+    }
+  }
+
+  private async runRealContextNetworkTasks(): Promise<void> {
+    try {
+      if (this.plugin.settings.backendIntegration?.syncEnabled) {
+        const backendService =
+          await this.plugin.serviceManager.getBackendIntegrationService();
+        this.plugin.backendIntegrationService = backendService;
+        await backendService.registerVault({ suppressPremiumPrompt: true });
+      }
+    } catch (error) {
+      if (error instanceof SampleJournalNetworkBlockedError) {
+        this.realContextNetworkTasksStarted = false;
+        return;
+      }
+      console.error('Error initializing backend integration:', error);
+    }
+
+    if (DemoSyncGate.isActive()) {
+      this.realContextNetworkTasksStarted = false;
+      return;
+    }
+    try {
+      
+      await evaluateLegacyChallengeOnboarding(this.plugin);
+      await this.plugin.updateNotificationService?.checkForUpdates();
+    } catch (error) {
+      console.error('Error checking for plugin updates:', error);
+    }
+    if (DemoSyncGate.isActive()) {
+      this.realContextNetworkTasksStarted = false;
     }
   }
 
@@ -810,6 +937,25 @@ export class PluginInitializer {
   }
 
   
+  private async openHomeThenOnboarding(): Promise<void> {
+    
+    
+    
+    const onboardingLaunched =
+      await this.plugin.onboardingManager.checkAndShowOnboarding();
+    if (!onboardingLaunched) {
+      await this.openHomeOnStartup();
+    }
+  }
+
+  
+  private scheduleStartupOnboarding(): void {
+    window.setTimeout(() => {
+      if (this.unloaded) return;
+      void this.openHomeThenOnboarding();
+    }, 100);
+  }
+
   private async openHomeOnStartup(): Promise<void> {
     await this.plugin.navigationManager.openHomeOnStartup();
   }

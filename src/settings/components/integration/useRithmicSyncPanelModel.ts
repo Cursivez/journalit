@@ -9,17 +9,28 @@ import { RithmicBrokerSyncClient } from '../../../services/tradeSync/RithmicBrok
 import { getTradeProjectionVaultId } from '../../../services/tradeSync/TradeProjectionAckQueue';
 import { createTradeProjectionOwnershipGuard } from '../../../services/tradeSync/TradeProjectionOwnership';
 import { createBrokerConnectionOperation } from '../../../services/tradeSync/BrokerClientOperations';
+import {
+  createTradeSyncAccountMappingIndex,
+  createTradeSyncLocalAccountResolver,
+  loadTradeSyncLocalAccounts,
+} from '../../../services/tradeSync/TradeSyncAccountMappings';
+import {
+  anyConnectionHasRunningJob,
+  connectionHasRunningJob,
+  rithmicConnectionSyncEligibility,
+} from '../../../services/tradeSync/TradeSyncEligibility';
+import {
+  isRateLimitActive,
+  isTradeSyncRateLimitError,
+  tradeSyncRateLimitMessage,
+} from '../../../services/tradeSync/TradeSyncRateLimit';
 import type {
   RithmicConnection,
   RithmicConnections,
 } from '../../../services/tradeSync/types';
 import { logger } from '../../../utils/logger';
 import {
-  anyConnectionHasRunningJob,
-  connectionHasRunningJob,
-  createAccountMappingIndex,
-  createLocalAccountResolver,
-  loadLocalAccounts,
+  useAuthRefreshRecovery,
   useBrokerRefreshSequence,
   useBrokerStatusFailureState,
   useBrokerStatusPolling,
@@ -41,6 +52,7 @@ import type {
   RithmicStatusState,
   RithmicSyncPanelContentProps,
 } from './RithmicSyncPanelContent';
+import { recordBrokerPanelHandoff } from '../../../services/tradeOperations/recordBrokerPanelHandoff';
 
 interface RithmicPanelState {
   statusState: RithmicStatusState;
@@ -49,6 +61,7 @@ interface RithmicPanelState {
   
   accountMappings: Record<string, string>;
   mappingDirty: Record<string, true>;
+  mappingRetryAtByAccountId: Record<string, number>;
   refreshing: boolean;
   syncAllBusy: boolean;
   dataOwnership?: BrokerDataOwnership;
@@ -64,6 +77,7 @@ const INITIAL_PANEL_STATE: RithmicPanelState = {
   localAccounts: [],
   accountMappings: {},
   mappingDirty: {},
+  mappingRetryAtByAccountId: {},
   refreshing: false,
   syncAllBusy: false,
 };
@@ -103,28 +117,13 @@ function connectionSyncAllEligibility(
   accountMappings: Record<string, string>,
   mappingDirty: Record<string, true>
 ): BrokerSyncAllEligibility {
-  if (connectionHasRunningJob(connection)) return 'running-job';
-  if (connection.status === 'setup_required') return true;
-  if (connection.status !== 'active') return 'not-ready';
-  if (
-    connection.accounts.some(
-      (account) => mappingDirty[account.canonicalAccountId]
-    )
-  ) {
-    return 'unsaved-changes';
-  }
-  if (
-    connection.accounts.some(
-      (account) =>
-        account.syncEnabled && !accountMappings[account.canonicalAccountId]
-    )
-  ) {
-    return 'mapping-required';
-  }
-  if (!connection.accounts.some((account) => account.syncEnabled)) {
-    return 'not-ready';
-  }
-  return true;
+  return rithmicConnectionSyncEligibility(connection, {
+    hasUnsavedChanges: connection.accounts.some((account) =>
+      Boolean(mappingDirty[account.canonicalAccountId])
+    ),
+    isAccountMapped: (canonicalAccountId) =>
+      Boolean(accountMappings[canonicalAccountId]),
+  });
 }
 
 export function useRithmicSyncPanelModel(
@@ -153,7 +152,7 @@ export function useRithmicSyncPanelModel(
         const currentVaultId = await getTradeProjectionVaultId(plugin);
         const [providerStatus, accounts, inventory] = await Promise.all([
           withRateLimitRetry(() => brokerClient.getRithmicConnections()),
-          loadLocalAccounts(plugin),
+          loadTradeSyncLocalAccounts(plugin),
           withRateLimitRetry(() =>
             projectionClient.getAccountInventory(currentVaultId)
           ),
@@ -163,8 +162,8 @@ export function useRithmicSyncPanelModel(
           patchState(FAILED_PANEL_STATE);
           return false;
         }
-        const localAccounts = createLocalAccountResolver(accounts);
-        const mappingByCanonicalAccountId = createAccountMappingIndex(
+        const localAccounts = createTradeSyncLocalAccountResolver(accounts);
+        const mappingByCanonicalAccountId = createTradeSyncAccountMappingIndex(
           inventory.accounts
         );
         const nextMappings: Record<string, string> = {};
@@ -233,6 +232,8 @@ export function useRithmicSyncPanelModel(
     void refresh();
   }, [refresh]);
 
+  useAuthRefreshRecovery(plugin, refresh);
+
   useBrokerStatusPolling({
     hasRunningJob: anyConnectionHasRunningJob(
       loadedRithmicStatus(state.statusState)?.connections ?? []
@@ -268,6 +269,17 @@ export function useRithmicSyncPanelModel(
         state.statusState
       )?.connections.find((candidate) => candidate.id === connectionId);
       if (!connection || !connectionCanSync(connection)) return;
+      if (
+        connection.accounts.some(
+          (account) =>
+            state.mappingDirty[account.canonicalAccountId] &&
+            isRateLimitActive(
+              state.mappingRetryAtByAccountId[account.canonicalAccountId]
+            )
+        )
+      ) {
+        return;
+      }
       const dataOwnership = state.dataOwnership;
       if (!dataOwnership?.isCurrent()) {
         patchState(INITIAL_PANEL_STATE);
@@ -327,17 +339,29 @@ export function useRithmicSyncPanelModel(
             account.canonicalAccountId,
             mappingUpdates.enqueue(account.canonicalAccountId, async () => {
               assertOwnership();
-              await projectionClient.updateAccountVaultMapping(
-                account.canonicalAccountId,
-                {
-                  vaultId,
-                  localAccountId: localAccount.id,
-                  localAccountName: localAccount.name,
-                  mappingStatus: 'mapped',
-                  pluginVersion: operation.pluginVersion,
-                  clientOperationId: operation.clientOperationId,
+              try {
+                await projectionClient.updateAccountVaultMapping(
+                  account.canonicalAccountId,
+                  {
+                    vaultId,
+                    localAccountId: localAccount.id,
+                    localAccountName: localAccount.name,
+                    mappingStatus: 'mapped',
+                    pluginVersion: operation.pluginVersion,
+                    clientOperationId: operation.clientOperationId,
+                  }
+                );
+              } catch (error) {
+                if (isTradeSyncRateLimitError(error)) {
+                  patchState((current) => ({
+                    mappingRetryAtByAccountId: {
+                      ...current.mappingRetryAtByAccountId,
+                      [account.canonicalAccountId]: error.retryAt,
+                    },
+                  }));
                 }
-              );
+                throw error;
+              }
             })
           );
         }
@@ -354,7 +378,9 @@ export function useRithmicSyncPanelModel(
             .ensureTradeProjectionSyncService()
             .syncRithmicConnection(connectionId, operation);
           assertOwnership();
-          new Notice(
+          recordBrokerPanelHandoff(
+            plugin,
+            result,
             t(
               result.partial ||
                 result.failedCount > 0 ||
@@ -384,10 +410,12 @@ export function useRithmicSyncPanelModel(
       } catch (error) {
         logger.error('Rithmic connection synchronization failed', error);
         new Notice(
-          rithmicSyncErrorMessage(
-            rithmicSyncErrorCode(error),
-            rithmicSyncErrorDetail(error)
-          )
+          isTradeSyncRateLimitError(error)
+            ? tradeSyncRateLimitMessage(error.retryAt, error.action)
+            : rithmicSyncErrorMessage(
+                rithmicSyncErrorCode(error),
+                rithmicSyncErrorDetail(error)
+              )
         );
         await refresh();
       } finally {
@@ -404,6 +432,7 @@ export function useRithmicSyncPanelModel(
       state.dataOwnership,
       state.localAccounts,
       state.mappingDirty,
+      state.mappingRetryAtByAccountId,
       state.statusState,
       state.vaultId,
     ]
@@ -474,6 +503,7 @@ export function useRithmicSyncPanelModel(
     localAccounts: state.localAccounts,
     accountMappings: state.accountMappings,
     mappingDirty: state.mappingDirty,
+    mappingRetryAtByAccountId: state.mappingRetryAtByAccountId,
     busyConnections,
     refreshing: state.refreshing,
     syncAllBusy: state.syncAllBusy,

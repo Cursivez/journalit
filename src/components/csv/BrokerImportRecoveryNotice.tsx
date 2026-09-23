@@ -1,0 +1,63 @@
+import React from 'react';
+
+import { openExternalUrl } from '../../utils/externalLinks';
+import { AlertTriangle, ExternalLink } from '../shared/icons/ObsidianIcon';
+
+export interface BrokerImportRecoveryPresentationProps {
+  className: string;
+  disabled?: boolean;
+  iconSize: number;
+  onSwitchSource?: () => void;
+  selectedSource?: string;
+}
+
+interface BrokerImportRecoveryNoticeProps extends BrokerImportRecoveryPresentationProps {
+  actionLabel?: string;
+  guideLabel: string;
+  guideUrl: string;
+  message: string;
+  title: string;
+}
+
+export const BrokerImportRecoveryNotice: React.FC<
+  BrokerImportRecoveryNoticeProps
+> = ({
+  className,
+  actionLabel,
+  disabled = false,
+  guideLabel,
+  guideUrl,
+  iconSize,
+  message,
+  onSwitchSource,
+  title,
+}) => (
+  <div className={className}>
+    <AlertTriangle size={iconSize} />
+    <div className="journalit-broker-import-recovery-guidance">
+      <strong>{title}</strong>
+      <p>{message}</p>
+      <div className="journalit-broker-import-recovery-actions">
+        {actionLabel && onSwitchSource && (
+          <button
+            type="button"
+            className="journalit-trade-import-recovery-switch"
+            disabled={disabled}
+            onClick={onSwitchSource}
+          >
+            {actionLabel}
+          </button>
+        )}
+        <button
+          type="button"
+          className="journalit-trade-import-guide-link"
+          disabled={disabled}
+          onClick={() => openExternalUrl(guideUrl)}
+        >
+          {guideLabel}
+          <ExternalLink size={13} aria-hidden="true" />
+        </button>
+      </div>
+    </div>
+  </div>
+);

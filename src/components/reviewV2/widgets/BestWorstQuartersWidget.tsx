@@ -29,6 +29,7 @@ import { SkeletonBox } from '../../shared/SkeletonBox';
 import { t } from '../../../lang/helpers';
 import { classifyPnLWithBreakEvenSettings } from '../../../utils/breakEvenRange';
 import { getBreakEvenBalanceForDisplayTrade } from './shared/breakEvenDisplayUtils';
+import { openReviewWidgetFile } from '../reviewWidgetNavigation';
 
 type ReviewBestWorstTrade = Record<string, unknown> & {
   pnl?: number | null;
@@ -407,7 +408,7 @@ export const BestWorstQuartersWidget: React.FC<BestWorstQuartersWidgetProps> =
           
           const file = plugin.app.vault.getAbstractFileByPath(quarterlyPath);
           if (file) {
-            await plugin.openFile(quarterlyPath, false);
+            await openReviewWidgetFile(plugin, quarterlyPath);
           } else if (
             plugin.settings.quarterly?.autoCreateQuarterlyReviewOnNavigation
           ) {
@@ -420,7 +421,7 @@ export const BestWorstQuartersWidget: React.FC<BestWorstQuartersWidgetProps> =
               await plugin.quarterlyReviewService?.getQuarterlyReviewPath(
                 quarterData.quarterStart
               );
-            if (newPath) await plugin.openFile(newPath, false);
+            if (newPath) await openReviewWidgetFile(plugin, newPath);
           }
         } catch (error) {
           console.error(

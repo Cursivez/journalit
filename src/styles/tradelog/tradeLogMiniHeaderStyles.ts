@@ -6,6 +6,9 @@ export const TRADE_LOG_MINI_HEADER_STYLES = `
 .trade-log-mini-header {
   display: flex;
   align-items: center;
+  box-sizing: border-box;
+  
+  height: 32px;
   min-height: 32px;
   padding: 6px 0;
   opacity: 0.7;

@@ -19,11 +19,20 @@ import {
   QuickLinkButton,
   QuickLinkAction,
   DEFAULT_SETTINGS,
+  type EntityShortcut,
+  type EntityShortcutTarget,
 } from '../../settings/types';
 import { QuickLinkActionResolver } from '../../utils/QuickLinkActionResolver';
 import { resolveIcon } from '../../utils/iconResolver';
 import { hasTranslation, t } from '../../lang/helpers';
 import { cssVars, dndKitStyle } from '../../styles/inlineStylePolicy';
+import { EntityShortcutPicker } from '../shared/navigation/EntityShortcutPicker';
+import { useEntityShortcuts } from '../../hooks/useEntityShortcuts';
+import { getDisplayedEntityShortcuts } from '../../hooks/entityShortcutDisplay';
+import { useTradeSyncNowState } from '../../hooks/useTradeSyncNowState';
+import { useSessionIndicatorPhase } from '../../hooks/useSessionIndicatorPhase';
+import type { SessionIndicatorPhase } from '../../services/sessionMode/SessionPhaseWatcher';
+import { getSessionIndicatorLabel } from '../navigation/sessionIndicatorLabel';
 
 export function mergeQuickLinksWithDefaults(
   currentQuickLinks: QuickLinkButton[]
@@ -65,15 +74,19 @@ interface QuickLinksRowProps {
   quickLinks?: QuickLinkButton[];
   
   onQuickLinksChange?: (quickLinks: QuickLinkButton[]) => void;
+  shortcutPickerOpen: boolean;
+  onShortcutPickerClose: () => void;
 }
 
 
 const SortableQuickLinkButton: React.FC<{
   quickLink: QuickLinkButton;
   isEditing: boolean;
+  isBusy: boolean;
+  sessionPhase: SessionIndicatorPhase;
   onRemove: (id: string) => void;
   onClick: (action: QuickLinkAction) => void;
-}> = ({ quickLink, isEditing, onRemove, onClick }) => {
+}> = ({ quickLink, isEditing, isBusy, sessionPhase, onRemove, onClick }) => {
   const { attributes, listeners, setNodeRef, transform, transition } =
     useSortable({
       id: quickLink.id,
@@ -97,13 +110,17 @@ const SortableQuickLinkButton: React.FC<{
   );
 
   const handleButtonClick = useCallback(() => {
-    if (!isEditing) {
+    if (!isEditing && !isBusy) {
       onClick(quickLink.action);
     }
-  }, [isEditing, onClick, quickLink.action]);
+  }, [isBusy, isEditing, onClick, quickLink.action]);
 
   const labelKey = `home.quick-links.${quickLink.id}`;
-  const label = hasTranslation(labelKey) ? t(labelKey) : labelKey;
+  const label = isBusy
+    ? t('trade-sync.quick.running')
+    : hasTranslation(labelKey)
+      ? t(labelKey)
+      : labelKey;
 
   return (
     <div
@@ -126,12 +143,20 @@ const SortableQuickLinkButton: React.FC<{
             disabled={isEditing}
             className="journalit-quick-link-button jl-quick-link-hover"
             style={cssVars({ '--link-color': quickLink.color })}
-            aria-label={label}
+            aria-label={
+              sessionPhase
+                ? `${label} (${getSessionIndicatorLabel(sessionPhase)})`
+                : label
+            }
+            aria-busy={isBusy}
+            aria-disabled={isBusy}
+            data-trade-sync-running={isBusy ? 'true' : undefined}
+            data-session-phase={sessionPhase ?? undefined}
             type="button"
           >
             <IconComponent
               size={16}
-              className="journalit-quick-link-icon"
+              className="journalit-quick-link-icon journalit-session-indicator-icon"
               aria-hidden="true"
             />
             <span className="journalit-quick-link-label">{label}</span>
@@ -153,12 +178,75 @@ const SortableQuickLinkButton: React.FC<{
   );
 };
 
+const EntityQuickLinkButton: React.FC<{
+  shortcut: EntityShortcut;
+  target: EntityShortcutTarget;
+  label: string;
+  icon: string;
+  unavailable?: boolean;
+  isEditing: boolean;
+  onRemove: (id: string) => void;
+  onClick: (target: EntityShortcutTarget) => void;
+}> = ({
+  shortcut,
+  target,
+  label,
+  icon,
+  unavailable = false,
+  isEditing,
+  onRemove,
+  onClick,
+}) => {
+  const IconComponent = resolveIcon(icon);
+  return (
+    <div className="journalit-quick-link-item">
+      <div
+        className="journalit-quick-link-wrapper"
+        data-editing={isEditing ? 'true' : 'false'}
+      >
+        <button
+          onClick={() => onClick(target)}
+          disabled={isEditing}
+          className="journalit-quick-link-button jl-quick-link-hover"
+          style={cssVars({ '--link-color': 'var(--text-accent)' })}
+          aria-label={label}
+          type="button"
+        >
+          <IconComponent
+            size={16}
+            className="journalit-quick-link-icon"
+            aria-hidden="true"
+          />
+          <span className="journalit-quick-link-label">
+            {label}
+            {unavailable ? ` (${t('navigation.shortcuts.unavailable')})` : ''}
+          </span>
+        </button>
+        {isEditing && (
+          <button
+            className="journalit-quick-link-remove"
+            onClick={() => onRemove(shortcut.id)}
+            aria-label={t('navigation.shortcuts.remove')}
+            type="button"
+          >
+            <X size={12} />
+          </button>
+        )}
+      </div>
+    </div>
+  );
+};
+
 const QuickLinksRowComponent: React.FC<QuickLinksRowProps> = ({
   plugin,
   isEditing = false,
   quickLinks: propQuickLinks,
   onQuickLinksChange,
+  shortcutPickerOpen,
+  onShortcutPickerClose,
 }) => {
+  const tradeSyncState = useTradeSyncNowState(plugin);
+  const sessionPhase = useSessionIndicatorPhase(plugin);
   const resolveInitialQuickLinks = () => {
     if (propQuickLinks && propQuickLinks.length > 0) {
       return mergeQuickLinksWithDefaults(propQuickLinks);
@@ -171,6 +259,25 @@ const QuickLinksRowComponent: React.FC<QuickLinksRowProps> = ({
   };
   const [localQuickLinks, setLocalQuickLinks] = useState<QuickLinkButton[]>(
     resolveInitialQuickLinks
+  );
+  const {
+    shortcuts: entityShortcuts,
+    shortcutEntries,
+    catalogItems,
+    catalogLoading,
+    catalogError,
+    catalogErrors,
+    addShortcut: handleAddEntityShortcut,
+    removeShortcut: handleRemoveEntityShortcut,
+  } = useEntityShortcuts(plugin, 'home', shortcutPickerOpen);
+  const displayedEntityShortcuts = useMemo(
+    () =>
+      getDisplayedEntityShortcuts(shortcutEntries, {
+        editing: isEditing,
+        loading: catalogLoading,
+        errors: catalogErrors,
+      }),
+    [catalogErrors, catalogLoading, isEditing, shortcutEntries]
   );
   const quickLinks = useMemo(
     () => mergeQuickLinksWithDefaults(propQuickLinks ?? localQuickLinks),
@@ -306,37 +413,79 @@ const QuickLinksRowComponent: React.FC<QuickLinksRowProps> = ({
     [actionResolver]
   );
 
-  if (visibleQuickLinks.length === 0) {
-    return (
-      <div className="journalit-quick-links-row journalit-quick-links-row--empty">
-        {t('home.quick-links.all-hidden')}
-      </div>
-    );
-  }
+  const handleEntityShortcutClick = useCallback(
+    async (target: EntityShortcutTarget) => {
+      try {
+        await actionResolver.executeEntityShortcut(target);
+      } catch (error) {
+        console.error('Failed to execute entity shortcut:', error);
+      }
+    },
+    [actionResolver]
+  );
+
+  const hasRowContent =
+    visibleQuickLinks.length > 0 || displayedEntityShortcuts.length > 0;
 
   return (
-    <div className="journalit-quick-links-row">
-      <DndContext
-        collisionDetection={closestCenter}
-        onDragEnd={handleDragEnd}
-        modifiers={[restrictToHorizontalAxis]}
-      >
-        <SortableContext
-          items={visibleQuickLinks.map((q) => q.id)}
-          strategy={horizontalListSortingStrategy}
-        >
-          {visibleQuickLinks.map((quickLink) => (
-            <SortableQuickLinkButton
-              key={quickLink.id}
-              quickLink={quickLink}
-              isEditing={isEditing}
-              onRemove={handleRemoveQuickLink}
-              onClick={(quickLink) => void handleQuickLinkClick(quickLink)}
-            />
-          ))}
-        </SortableContext>
-      </DndContext>
-    </div>
+    <>
+      {hasRowContent && (
+        <div className="journalit-quick-links-row">
+          <DndContext
+            collisionDetection={closestCenter}
+            onDragEnd={handleDragEnd}
+            modifiers={[restrictToHorizontalAxis]}
+          >
+            <SortableContext
+              items={visibleQuickLinks.map((q) => q.id)}
+              strategy={horizontalListSortingStrategy}
+            >
+              {visibleQuickLinks.map((quickLink) => (
+                <SortableQuickLinkButton
+                  key={quickLink.id}
+                  quickLink={quickLink}
+                  isEditing={isEditing}
+                  isBusy={
+                    quickLink.action === 'syncTradesNow' &&
+                    tradeSyncState.status === 'running'
+                  }
+                  sessionPhase={
+                    quickLink.action === 'openSessionMode' ? sessionPhase : null
+                  }
+                  onRemove={handleRemoveQuickLink}
+                  onClick={(quickLink) => void handleQuickLinkClick(quickLink)}
+                />
+              ))}
+            </SortableContext>
+          </DndContext>
+          {displayedEntityShortcuts.map(
+            ({ shortcut, target, label, icon, unavailable }) => (
+              <EntityQuickLinkButton
+                key={shortcut.id}
+                shortcut={shortcut}
+                target={target}
+                label={label}
+                icon={icon}
+                unavailable={unavailable}
+                isEditing={isEditing}
+                onRemove={handleRemoveEntityShortcut}
+                onClick={(target) => void handleEntityShortcutClick(target)}
+              />
+            )
+          )}
+        </div>
+      )}
+      {shortcutPickerOpen && (
+        <EntityShortcutPicker
+          shortcuts={entityShortcuts}
+          items={catalogItems}
+          loading={catalogLoading}
+          error={catalogError}
+          onAdd={handleAddEntityShortcut}
+          onClose={onShortcutPickerClose}
+        />
+      )}
+    </>
   );
 };
 

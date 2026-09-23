@@ -2,7 +2,7 @@
 
 import { t } from '../../lang/helpers';
 
-export interface HomeWidgetDefinition {
+interface HomeWidgetDefinition {
   id: string;
   name: string;
   description: string;
@@ -147,6 +147,22 @@ export const AVAILABLE_HOME_WIDGETS: HomeWidgetDefinition[] = [
     category: 'overview',
     minSize: { w: 3, h: 3 },
     defaultSize: { w: 4, h: 4 }, 
+  },
+  {
+    id: 'evalRoi',
+    name: t('home.widget.eval-roi.name'),
+    description: t('home.widget.eval-roi.description'),
+    category: 'overview',
+    minSize: { w: 3, h: 3 },
+    defaultSize: { w: 4, h: 3 }, 
+  },
+  {
+    id: 'challengeAlerts',
+    name: t('home.widget.challenge-alerts.name'),
+    description: t('home.widget.challenge-alerts.description'),
+    category: 'overview',
+    minSize: { w: 3, h: 2 },
+    defaultSize: { w: 4, h: 3 }, 
   },
 ];
 

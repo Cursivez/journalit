@@ -1,7 +1,9 @@
 
 
 import type { CustomFieldFilterSelections } from '../../types/customFields';
+import type { AccountPhaseScope } from '../../components/shared/filters/types';
 import type { PartialTradeFrontmatter } from '../../types/TradeFrontmatter';
+import type { AnalyticsDateBasis } from '../../settings/types';
 
 export type ViewLevel =
   | 'years'
@@ -71,6 +73,10 @@ export interface TimeNode {
   trade?: TradeLogTrade;
   expanded: boolean;
   dataLoaded: boolean;
+  
+  anchorDate?: string;
+  
+  parentPeriodId?: string;
   performanceIndicator?: 'best' | 'worst'; 
 }
 
@@ -102,10 +108,12 @@ export const SELECTABLE_STATUSES_COUNT = 5;
 
 export interface TradeLogFilters {
   dateRange: [Date | null, Date | null];
+  analyticsDateBasis?: AnalyticsDateBasis;
   viewLevel: ViewLevel;
   tradeTypes: TradeType[];
   statuses: TradeStatus[];
   accounts: string[];
+  accountPhases: AccountPhaseScope[];
   directions: DirectionFilter[];
   sessionLogTags: string[];
   tickers: string[];

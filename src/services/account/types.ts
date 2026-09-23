@@ -2,6 +2,7 @@
 
 import { CurrencyCode } from '../../utils/currencyConfig';
 import type { CopyTradingPeriod } from '../../settings/types';
+import type { PropChallengeConfig } from '../propChallenge/types';
 
 
 export enum AccountType {
@@ -121,6 +122,7 @@ export interface AccountData {
   notePath: string; 
   currency?: CurrencyCode; 
   copyTradingPeriods?: CopyTradingPeriod[]; 
+  propChallenge?: PropChallengeConfig;
 }
 
 

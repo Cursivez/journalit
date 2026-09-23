@@ -36,6 +36,7 @@ import {
 import { isPnlContributingTrade } from '../../../../utils/tradeStatusUtils';
 import { StaticWidgetGrid } from '../../../shared/gridLayout/StaticWidgetGrid';
 import { cssVars } from '../../../../styles/inlineStylePolicy';
+import { shouldShowDashboardWidgetMinimalHeader } from './widgetHeaderVisibility';
 
 
 class GridLayoutErrorBoundary extends React.Component<
@@ -194,6 +195,7 @@ import { DirectionalPnLChart } from '../DashboardWidgets/DirectionalPnLChart';
 import { PerformanceCalendar } from '../DashboardWidgets/PerformanceCalendar';
 import { DailyPerformanceChart } from '../DashboardWidgets/DailyPerformanceChart';
 import { TradesChart } from '../DashboardWidgets/TradesChart';
+import { MfeScatter } from '../DashboardWidgets/MfeScatter';
 import { DrawdownChart } from '../DashboardWidgets/DrawdownChart';
 import { DirectionalDrawdownChart } from '../DashboardWidgets/DirectionalDrawdownChart';
 import { RecentTradesWidget } from '../DashboardWidgets/RecentTradesWidget';
@@ -250,17 +252,6 @@ const calculateGridPixelHeight = (layout: Layout[]): number => {
   return rowCount * GRID_ROW_HEIGHT + Math.max(0, rowCount - 1) * GRID_MARGIN;
 };
 
-
-
-const WIDGETS_WITH_HEADERS = [
-  'pnlChart',
-  'longPnLChart',
-  'shortPnLChart',
-  'drawdownChart',
-  'longDrawdownChart',
-  'shortDrawdownChart',
-];
-
 interface GridLayoutProps {
   filters: FilterState;
   isEditing: boolean;
@@ -315,6 +306,8 @@ const DashboardWidgetRenderer: React.FC<DashboardWidgetRendererProps> = ({
       );
     case 'tradesChart':
       return <TradesChart filters={filters} dateFormat={dateFormat} />;
+    case 'mfeScatter':
+      return <MfeScatter filters={filters} dateFormat={dateFormat} />;
     case 'drawdownChart':
       return <DrawdownChart filters={filters} dateFormat={dateFormat} />;
     case 'longDrawdownChart':
@@ -374,7 +367,7 @@ const DashboardWidgetRenderer: React.FC<DashboardWidgetRendererProps> = ({
   }
 };
 
-const DashboardWidgetCard: React.FC<DashboardWidgetCardProps> = ({
+export const DashboardWidgetCard: React.FC<DashboardWidgetCardProps> = ({
   widgetId,
   filters,
   dateFormat,
@@ -383,12 +376,17 @@ const DashboardWidgetCard: React.FC<DashboardWidgetCardProps> = ({
   currencyConversion,
   getConversionTradesForWidget,
 }) => {
+  const { dashboardData, error } = useDashboardData();
   const handleRemoveClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     onRemoveWidget(widgetId);
   };
 
-  const showMinimalHeader = WIDGETS_WITH_HEADERS.includes(widgetId);
+  const showMinimalHeader = shouldShowDashboardWidgetMinimalHeader({
+    widgetId,
+    hasDashboardData: dashboardData !== null,
+    hasError: error !== null,
+  });
   const widgetNameKey = `widget.${widgetId}.name`;
   const widgetName = hasTranslation(widgetNameKey)
     ? t(widgetNameKey)

@@ -1,13 +1,7 @@
-import React, {
-  useState,
-  useEffect,
-  useRef,
-  useMemo,
-  useCallback,
-  useId,
-} from 'react';
+import React, { useState, useRef, useMemo, useCallback, useId } from 'react';
 import { t } from '../../../lang/helpers';
 import type { DropdownOption } from '../../../types/customFields';
+import { AnchoredMenu } from '../menus/AnchoredMenu';
 
 interface CustomFieldOptionsFilterProps {
   label: string;
@@ -41,26 +35,6 @@ export const CustomFieldOptionsFilter: React.FC<CustomFieldOptionsFilterProps> =
       });
       return merged;
     }, [options, selectedValues, optionMap]);
-
-    useEffect(() => {
-      const handleClickOutside = (event: MouseEvent) => {
-        const target = event.target;
-        if (
-          dropdownRef.current &&
-          (!(target instanceof Node) || !dropdownRef.current.contains(target))
-        ) {
-          setIsOpen(false);
-        }
-      };
-
-      window.activeDocument.addEventListener('mousedown', handleClickOutside);
-      return () => {
-        window.activeDocument.removeEventListener(
-          'mousedown',
-          handleClickOutside
-        );
-      };
-    }, []);
 
     const isAllSelected =
       allOptions.length > 0 && selectedValues.length === allOptions.length;
@@ -131,64 +105,67 @@ export const CustomFieldOptionsFilter: React.FC<CustomFieldOptionsFilterProps> =
             <span className="dropdown-arrow">{isOpen ? '▲' : '▼'}</span>
           </button>
 
-          {isOpen && (
-            <div className="journalit-tradelog-custom-field-options-dropdown">
-              <div
-                className="journalit-tradelog-custom-field-option-item journalit-tradelog-custom-field-option-all"
-                onClick={() => handleValueToggle(SELECT_ALL_SENTINEL)}
-                role="checkbox"
-                aria-checked={isAllSelected}
-                tabIndex={0}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' || e.key === ' ') {
-                    e.preventDefault();
-                    handleValueToggle(SELECT_ALL_SENTINEL);
-                  }
-                }}
+          <AnchoredMenu
+            isOpen={isOpen}
+            triggerRef={dropdownRef}
+            onClose={() => setIsOpen(false)}
+            className="journalit-tradelog-custom-field-options-dropdown"
+          >
+            <div
+              className="journalit-tradelog-custom-field-option-item journalit-tradelog-custom-field-option-all"
+              onClick={() => handleValueToggle(SELECT_ALL_SENTINEL)}
+              role="checkbox"
+              aria-checked={isAllSelected}
+              tabIndex={0}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  handleValueToggle(SELECT_ALL_SENTINEL);
+                }
+              }}
+            >
+              <span
+                className={`journalit-tradelog-custom-field-checkbox${isAllSelected ? ' checked' : ''}`}
+                aria-hidden="true"
               >
-                <span
-                  className={`journalit-tradelog-custom-field-checkbox${isAllSelected ? ' checked' : ''}`}
-                  aria-hidden="true"
-                >
-                  {isAllSelected ? '✓' : ''}
-                </span>
-                <span>{t('common.select-all')}</span>
-              </div>
-              {allOptions.length > 0 ? (
-                <>
-                  <div className="journalit-tradelog-custom-field-divider"></div>
-                  {allOptions.map((option) => (
-                    <div
-                      key={option.value}
-                      className="journalit-tradelog-custom-field-option-item"
-                      onClick={() => handleValueToggle(option.value)}
-                      role="checkbox"
-                      aria-checked={selectedValuesSet.has(option.value)}
-                      tabIndex={0}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' || e.key === ' ') {
-                          e.preventDefault();
-                          handleValueToggle(option.value);
-                        }
-                      }}
-                    >
-                      <span
-                        className={`journalit-tradelog-custom-field-checkbox${selectedValuesSet.has(option.value) ? ' checked' : ''}`}
-                        aria-hidden="true"
-                      >
-                        {selectedValuesSet.has(option.value) ? '✓' : ''}
-                      </span>
-                      <span>{option.label}</span>
-                    </div>
-                  ))}
-                </>
-              ) : (
-                <div className="journalit-tradelog-custom-field-empty">
-                  {t('filter.modal.custom-field.none-available')}
-                </div>
-              )}
+                {isAllSelected ? '✓' : ''}
+              </span>
+              <span>{t('common.select-all')}</span>
             </div>
-          )}
+            {allOptions.length > 0 ? (
+              <>
+                <div className="journalit-tradelog-custom-field-divider"></div>
+                {allOptions.map((option) => (
+                  <div
+                    key={option.value}
+                    className="journalit-tradelog-custom-field-option-item"
+                    onClick={() => handleValueToggle(option.value)}
+                    role="checkbox"
+                    aria-checked={selectedValuesSet.has(option.value)}
+                    tabIndex={0}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        handleValueToggle(option.value);
+                      }
+                    }}
+                  >
+                    <span
+                      className={`journalit-tradelog-custom-field-checkbox${selectedValuesSet.has(option.value) ? ' checked' : ''}`}
+                      aria-hidden="true"
+                    >
+                      {selectedValuesSet.has(option.value) ? '✓' : ''}
+                    </span>
+                    <span>{option.label}</span>
+                  </div>
+                ))}
+              </>
+            ) : (
+              <div className="journalit-tradelog-custom-field-empty">
+                {t('filter.modal.custom-field.none-available')}
+              </div>
+            )}
+          </AnchoredMenu>
         </div>
       </div>
     );

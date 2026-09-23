@@ -506,7 +506,7 @@ export const ChecklistWidget: React.FC<ChecklistWidgetProps> = React.memo(
 
                 
                 {!preview && editingIndex !== index && (
-                  <>
+                  <div className="journalit-reviewv2-item-actions">
                     <NoTooltipButton
                       onClick={() => void handleStartEdit(index)}
                       label={t('widget.checklist.edit-item')}
@@ -521,7 +521,7 @@ export const ChecklistWidget: React.FC<ChecklistWidgetProps> = React.memo(
                     >
                       <Trash2 size={24} aria-hidden="true" />
                     </NoTooltipButton>
-                  </>
+                  </div>
                 )}
               </div>
             ))}

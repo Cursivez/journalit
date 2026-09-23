@@ -15,6 +15,12 @@ export const ASSET_FIELDS_STYLES = `
       margin-bottom: 8px;
     }
 
+    .trade-form-view-container .journalit-prop-challenge-phase-hint {
+      margin-top: 4px;
+      color: var(--text-muted);
+      font-size: var(--font-ui-smaller);
+    }
+
     
     .trade-form-view-container .asset-error-message {
       font-size: 12px;
@@ -22,12 +28,20 @@ export const ASSET_FIELDS_STYLES = `
       margin-top: 4px;
     }
 
+    
     .trade-form-view-container .trade-form-account-empty-state {
       margin-top: 8px;
       padding: 10px 12px;
-      border: 1px solid rgba(var(--color-error-rgb, 229, 57, 53), 0.24);
+      border: 1px solid var(--background-modifier-border);
       border-radius: 8px;
-      background: rgba(var(--color-error-rgb, 229, 57, 53), 0.08);
+      background: var(--background-secondary);
+    }
+
+    .trade-form-view-container .trade-form-account-empty-state-description {
+      margin-top: 6px;
+      font-size: 12px;
+      line-height: 1.4;
+      color: var(--text-muted);
     }
 
     .trade-form-view-container .trade-form-account-empty-state-header {

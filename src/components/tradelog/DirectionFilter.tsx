@@ -1,12 +1,7 @@
-import React, {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from 'react';
+import React, { useCallback, useMemo, useRef, useState } from 'react';
 import { t } from '../../lang/helpers';
 import type { DirectionFilter as DirectionFilterValue } from '../../services/tradelog/types';
+import { AnchoredMenu } from '../shared/menus/AnchoredMenu';
 
 interface DirectionFilterProps {
   selectedDirections: DirectionFilterValue[];
@@ -34,26 +29,6 @@ export const DirectionFilter: React.FC<DirectionFilterProps> = React.memo(
   ({ selectedDirections, onChange }) => {
     const [isOpen, setIsOpen] = useState(false);
     const dropdownRef = useRef<HTMLDivElement>(null);
-
-    useEffect(() => {
-      const handleClickOutside = (event: MouseEvent) => {
-        if (
-          dropdownRef.current &&
-          event.target instanceof Node &&
-          !dropdownRef.current.contains(event.target)
-        ) {
-          setIsOpen(false);
-        }
-      };
-
-      window.activeDocument.addEventListener('mousedown', handleClickOutside);
-      return () => {
-        window.activeDocument.removeEventListener(
-          'mousedown',
-          handleClickOutside
-        );
-      };
-    }, []);
 
     const summary = useMemo(() => {
       if (selectedDirections.length === 0 || selectedDirections.length === 2) {
@@ -110,61 +85,64 @@ export const DirectionFilter: React.FC<DirectionFilterProps> = React.memo(
             <span className="dropdown-arrow">{isOpen ? '▲' : '▼'}</span>
           </button>
 
-          {isOpen && (
-            <div className="journalit-tradelog-status-options-dropdown">
-              <div
-                className="journalit-tradelog-status-option-item select-all"
-                onClick={() => handleDirectionChange('all')}
-                role="checkbox"
-                tabIndex={0}
-                aria-checked={allSelected}
-                onKeyDown={(event) =>
-                  handleKeyDown(event, () => handleDirectionChange('all'))
-                }
+          <AnchoredMenu
+            isOpen={isOpen}
+            triggerRef={dropdownRef}
+            onClose={() => setIsOpen(false)}
+            className="journalit-tradelog-status-options-dropdown"
+          >
+            <div
+              className="journalit-tradelog-status-option-item select-all"
+              onClick={() => handleDirectionChange('all')}
+              role="checkbox"
+              tabIndex={0}
+              aria-checked={allSelected}
+              onKeyDown={(event) =>
+                handleKeyDown(event, () => handleDirectionChange('all'))
+              }
+            >
+              <span
+                className={`journalit-tradelog-checkbox journalit-tradelog-status-checkbox${
+                  allSelected ? ' checked' : ''
+                }`}
+                aria-hidden="true"
               >
-                <span
-                  className={`journalit-tradelog-checkbox journalit-tradelog-status-checkbox${
-                    allSelected ? ' checked' : ''
-                  }`}
-                  aria-hidden="true"
-                >
-                  {allSelected ? '✓' : ''}
-                </span>
-                <span>{t('common.select-all')}</span>
-              </div>
-
-              <div className="journalit-tradelog-status-divider"></div>
-
-              {DIRECTION_OPTIONS.map((option) => {
-                const checked = selectedDirections.includes(option.value);
-                return (
-                  <div
-                    key={option.value}
-                    className="journalit-tradelog-status-option-item"
-                    onClick={() => handleDirectionChange(option.value)}
-                    role="checkbox"
-                    tabIndex={0}
-                    aria-checked={checked}
-                    onKeyDown={(event) =>
-                      handleKeyDown(event, () =>
-                        handleDirectionChange(option.value)
-                      )
-                    }
-                  >
-                    <span
-                      className={`journalit-tradelog-checkbox journalit-tradelog-status-checkbox${
-                        checked ? ' checked' : ''
-                      }`}
-                      aria-hidden="true"
-                    >
-                      {checked ? '✓' : ''}
-                    </span>
-                    <span>{t(option.labelKey)}</span>
-                  </div>
-                );
-              })}
+                {allSelected ? '✓' : ''}
+              </span>
+              <span>{t('common.select-all')}</span>
             </div>
-          )}
+
+            <div className="journalit-tradelog-status-divider"></div>
+
+            {DIRECTION_OPTIONS.map((option) => {
+              const checked = selectedDirections.includes(option.value);
+              return (
+                <div
+                  key={option.value}
+                  className="journalit-tradelog-status-option-item"
+                  onClick={() => handleDirectionChange(option.value)}
+                  role="checkbox"
+                  tabIndex={0}
+                  aria-checked={checked}
+                  onKeyDown={(event) =>
+                    handleKeyDown(event, () =>
+                      handleDirectionChange(option.value)
+                    )
+                  }
+                >
+                  <span
+                    className={`journalit-tradelog-checkbox journalit-tradelog-status-checkbox${
+                      checked ? ' checked' : ''
+                    }`}
+                    aria-hidden="true"
+                  >
+                    {checked ? '✓' : ''}
+                  </span>
+                  <span>{t(option.labelKey)}</span>
+                </div>
+              );
+            })}
+          </AnchoredMenu>
         </div>
       </div>
     );

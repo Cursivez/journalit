@@ -15,6 +15,12 @@ import type { Trade } from '../../components/dashboard/utils/dataUtils';
 import { normalizeTradeExecutionForPeriodAnalytics } from '../trade/core/TradeExecutionAnalytics';
 import { getTradingDay } from '../../utils/tradingDayUtils';
 import { forceMetadataCacheRefresh } from '../../utils/dataRefresh';
+import {
+  addSampleOwnershipToMarkdown,
+  appendSampleReviewBody,
+  materializeSampleReviewFrontmatter,
+  type SampleReviewMaterialization,
+} from '../../demo/DemoOwnership';
 
 import { FolderPathService } from '../core/FolderPathService';
 import { parseTradeFinancialFields } from '../../utils/tradeUtils';
@@ -258,7 +264,10 @@ export class YearlyReviewService extends CustomDataService {
   }
 
   
-  async createYearlyReview(date: Date): Promise<TFile | null> {
+  async createYearlyReview(
+    date: Date,
+    options: { sampleMaterialization?: SampleReviewMaterialization } = {}
+  ): Promise<TFile | null> {
     const filePath = await this.getYearlyReviewPath(date);
 
     
@@ -280,11 +289,27 @@ export class YearlyReviewService extends CustomDataService {
     };
 
     
-    const content = this.generateInitialContent(frontmatter);
+    const generatedContent = this.generateInitialContent(
+      frontmatter,
+      options.sampleMaterialization
+    );
+    const claimedOwnership = options.sampleMaterialization
+      ? null
+      : this.plugin?.demoSessionService?.claimNewOwnership('review');
+    const content = claimedOwnership
+      ? addSampleOwnershipToMarkdown(generatedContent, claimedOwnership)
+      : generatedContent;
 
     
     try {
       const file = await this.app.vault.create(filePath, content);
+      if (claimedOwnership) {
+        await this.plugin?.demoSessionService?.adoptCreatedMarkdownFile(
+          filePath,
+          claimedOwnership
+        );
+      }
+      options.sampleMaterialization?.creationBatch.register(file, 'yearly');
       return file;
     } catch (error) {
       console.error('Error creating yearly review:', error);
@@ -368,7 +393,10 @@ export class YearlyReviewService extends CustomDataService {
   }
 
   
-  private generateInitialContent(frontmatter: YearlyReviewFrontmatter): string {
+  private generateInitialContent(
+    frontmatter: YearlyReviewFrontmatter,
+    sampleMaterialization?: SampleReviewMaterialization
+  ): string {
     
 
     const yearlyData: Record<string, unknown> = {
@@ -384,7 +412,16 @@ export class YearlyReviewService extends CustomDataService {
     yearlyData.templateId = template.id;
     yearlyData.templateVersion = template.version;
 
-    return transformService.generateNoteFromTemplate(template, yearlyData);
+    const authoredData = sampleMaterialization
+      ? materializeSampleReviewFrontmatter(yearlyData, sampleMaterialization)
+      : yearlyData;
+    const content = transformService.generateNoteFromTemplate(
+      template,
+      authoredData
+    );
+    return sampleMaterialization
+      ? appendSampleReviewBody(content, sampleMaterialization.appendBody)
+      : content;
   }
 
   

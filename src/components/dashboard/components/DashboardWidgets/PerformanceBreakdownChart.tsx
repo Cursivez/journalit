@@ -32,6 +32,7 @@ import {
   getCategoryAxisWidth,
   getDisplayValue,
   getMetricLabel,
+  getPerformanceBreakdownLabel,
   getViewModeLabel,
   insertDividerPoint,
   isPerformanceBreakdownTooltipContent,
@@ -63,6 +64,8 @@ import {
   usePerformanceBreakdownPreferences,
   type PerformanceBreakdownKind,
 } from './usePerformanceBreakdownPreferences';
+import { useTwoStageTouchNavigation } from '../../../charts/useTwoStageTouchNavigation';
+import { openDashboardPerformanceBreakdownTarget } from '../../performanceBreakdownNavigation';
 
 interface PerformanceBreakdownChartProps extends BaseWidgetProps {
   kind: PerformanceBreakdownKind;
@@ -161,6 +164,18 @@ export const PerformanceBreakdownChart =
         selectedViewMode,
         handleViewModeChange,
       } = usePerformanceBreakdownPreferences(kind);
+      const touchResetKey = React.useMemo(
+        () =>
+          JSON.stringify({
+            kind,
+            selectedMetric,
+            selectedViewMode,
+            filters,
+          }),
+        [filters, kind, selectedMetric, selectedViewMode]
+      );
+      const { handleClick, handleKeyDown, recordTouch } =
+        useTwoStageTouchNavigation<string>(touchResetKey);
       const { currency } = useCurrency();
       const { formatValue, shouldMask } = useDisplayFormatter();
 
@@ -290,6 +305,19 @@ export const PerformanceBreakdownChart =
                     dividerLabel
                   )
                 : chartData;
+            const canNavigate = Boolean(plugin) && !isMasked;
+            const openBreakdown = (label: string) => {
+              if (!plugin) return;
+              void openDashboardPerformanceBreakdownTarget({
+                plugin,
+                kind,
+                label,
+                filters,
+                analyticsDateBasis,
+                sourceTrades,
+                getGroups,
+              });
+            };
             const axisConfig = getAxisConfig(chartData, selectedMetric);
             const formatXAxisTick = (value: number): string => {
               if (selectedMetric === 'winRate') {
@@ -431,11 +459,62 @@ export const PerformanceBreakdownChart =
                         strokeWidth={0.8}
                         strokeOpacity={0.5}
                         radius={[2, 2, 2, 2]}
+                        cursor={canNavigate ? 'pointer' : undefined}
+                        activeBar={
+                          canNavigate
+                            ? {
+                                stroke: 'var(--interactive-accent)',
+                                strokeOpacity: 0.65,
+                                strokeWidth: 1.2,
+                                cursor: 'pointer',
+                              }
+                            : false
+                        }
+                        onClick={
+                          canNavigate
+                            ? (bar, _index, event) => {
+                                const payload: unknown = bar.payload;
+                                const label =
+                                  getPerformanceBreakdownLabel(payload);
+                                if (!label) return;
+                                handleClick(label, event, () =>
+                                  openBreakdown(label)
+                                );
+                              }
+                            : undefined
+                        }
+                        onTouchEnd={
+                          canNavigate
+                            ? (bar) => {
+                                const payload: unknown = bar.payload;
+                                const label =
+                                  getPerformanceBreakdownLabel(payload);
+                                if (label) recordTouch(label);
+                              }
+                            : undefined
+                        }
                         shape={(props: PerformanceBreakdownBarShapeProps) => (
                           <PerformanceBreakdownBarShape
                             {...props}
-                            isMasked={isMasked}
-                            isNetMetric={selectedMetric === 'net'}
+                            fillMode={
+                              isMasked
+                                ? 'masked'
+                                : selectedMetric === 'net'
+                                  ? 'net'
+                                  : 'neutral'
+                            }
+                            navigationTabIndex={
+                              canNavigate
+                                ? props.index === 0
+                                  ? 0
+                                  : -1
+                                : undefined
+                            }
+                            onKeyboardActivate={(point, event) =>
+                              handleKeyDown(event, () =>
+                                openBreakdown(point.label)
+                              )
+                            }
                           />
                         )}
                       />

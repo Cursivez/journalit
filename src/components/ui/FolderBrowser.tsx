@@ -56,6 +56,9 @@ interface FolderBrowserProps {
   onInputChange?: (value: string) => void;
 
   
+  resetToken?: unknown;
+
+  
   placeholder?: string;
 
   
@@ -82,11 +85,17 @@ function useFolderBrowserModel({
   selectedPath = '',
   onChange,
   onInputChange,
+  resetToken,
   app,
   includeJournalitTree = false,
 }: Pick<
   FolderBrowserProps,
-  'selectedPath' | 'onChange' | 'onInputChange' | 'app' | 'includeJournalitTree'
+  | 'selectedPath'
+  | 'onChange'
+  | 'onInputChange'
+  | 'resetToken'
+  | 'app'
+  | 'includeJournalitTree'
 >) {
   
   const uniqueId = useId();
@@ -98,10 +107,12 @@ function useFolderBrowserModel({
   
   const [inputState, setInputState] = useState(() => ({
     selectedPath,
+    resetToken,
     inputValue: selectedPath,
   }));
   const inputValue =
-    inputState.selectedPath === selectedPath
+    inputState.selectedPath === selectedPath &&
+    inputState.resetToken === resetToken
       ? inputState.inputValue
       : selectedPath;
   const [isOpen, setIsOpen] = useState(false);
@@ -213,23 +224,23 @@ function useFolderBrowserModel({
   
   const handleInputChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
-      setInputState({ selectedPath, inputValue: e.target.value });
+      setInputState({ selectedPath, resetToken, inputValue: e.target.value });
       setIsOpen(true);
       setHighlightedIndex(-1);
       onInputChange?.(e.target.value);
     },
-    [selectedPath, onInputChange]
+    [selectedPath, resetToken, onInputChange]
   );
 
   
   const handleSelect = useCallback(
     (folderPath: string) => {
-      setInputState({ selectedPath, inputValue: folderPath });
+      setInputState({ selectedPath, resetToken, inputValue: folderPath });
       onChange(folderPath);
       setIsOpen(false);
       setHighlightedIndex(-1);
     },
-    [onChange, selectedPath]
+    [onChange, resetToken, selectedPath]
   );
 
   
@@ -247,10 +258,10 @@ function useFolderBrowserModel({
 
   
   const handleClear = useCallback(() => {
-    setInputState({ selectedPath, inputValue: '' });
+    setInputState({ selectedPath, resetToken, inputValue: '' });
     onChange('');
     setIsOpen(false);
-  }, [onChange, selectedPath]);
+  }, [onChange, resetToken, selectedPath]);
 
   
   useEffect(() => {
@@ -564,6 +575,7 @@ export const FolderBrowser: React.FC<FolderBrowserProps> = ({
   selectedPath = '',
   onChange,
   onInputChange,
+  resetToken,
   placeholder = t('ui.folder-browser.placeholder'),
   label,
   error,
@@ -594,6 +606,7 @@ export const FolderBrowser: React.FC<FolderBrowserProps> = ({
     selectedPath,
     onChange,
     onInputChange,
+    resetToken,
     app,
     includeJournalitTree,
   });

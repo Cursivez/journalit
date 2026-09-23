@@ -30,15 +30,7 @@ function useReviewsTabModel(props: ReviewsTabProps) {
     plugin.settings.weekly?.checklistItems || []
   );
   const [globalAutoCreate, setGlobalAutoCreate] = useState(() => {
-    if (plugin.settings.reviews?.globalAutoCreate === undefined) {
-      if (!plugin.settings.reviews) {
-        plugin.settings.reviews = { globalAutoCreate: true };
-      } else {
-        plugin.settings.reviews.globalAutoCreate = true;
-      }
-      return true;
-    }
-    return plugin.settings.reviews.globalAutoCreate;
+    return plugin.settings.reviews?.globalAutoCreate ?? true;
   });
   const [settingsVersion, setSettingsVersion] = useState(0);
   void settingsVersion; 
@@ -62,23 +54,6 @@ function useReviewsTabModel(props: ReviewsTabProps) {
       plugin.settings.reviews = { globalAutoCreate: newValue };
     } else {
       plugin.settings.reviews.globalAutoCreate = newValue;
-    }
-
-    
-    if (plugin.settings.drc) {
-      plugin.settings.drc.autoCreateOnFirstTrade = newValue;
-    }
-    if (plugin.settings.weekly) {
-      plugin.settings.weekly.autoCreateOnFirstTrade = newValue;
-    }
-    if (plugin.settings.monthly) {
-      plugin.settings.monthly.autoCreateOnFirstTrade = newValue;
-    }
-    if (plugin.settings.quarterly) {
-      plugin.settings.quarterly.autoCreateOnFirstTrade = newValue;
-    }
-    if (plugin.settings.yearly) {
-      plugin.settings.yearly.autoCreateOnFirstTrade = newValue;
     }
 
     await plugin.saveSettings();
@@ -132,7 +107,6 @@ function useReviewsTabModel(props: ReviewsTabProps) {
       plugin.settings.monthly = {
         reviewQuestions: [],
         customTimeframes: [],
-        autoCreateOnFirstTrade: true,
         autoCreateMonthlyReviewOnNavigation: newValue,
       };
     } else {
@@ -157,7 +131,6 @@ function useReviewsTabModel(props: ReviewsTabProps) {
       plugin.settings.quarterly = {
         reviewQuestions: [],
         customTimeframes: [],
-        autoCreateOnFirstTrade: true,
         autoCreateQuarterlyReviewOnNavigation: newValue,
       };
     } else {
@@ -183,7 +156,6 @@ function useReviewsTabModel(props: ReviewsTabProps) {
       plugin.settings.yearly = {
         reviewQuestions: [],
         customTimeframes: [],
-        autoCreateOnFirstTrade: true,
         autoCreateYearlyReviewOnNavigation: newValue,
       };
     } else {

@@ -10,7 +10,7 @@ export function registerTradeLogEmptyGuide(guideRegistry: GuideRegistry): void {
   guideRegistry.registerGuide({
     id: TRADE_LOG_EMPTY_GUIDE_ID,
     viewType: TRADE_LOG_VIEW_TYPE,
-    version: 2,
+    version: 3,
     autoShow: true,
     priority: 100,
     initialStepId: 'intro',
@@ -25,7 +25,7 @@ export function registerTradeLogEmptyGuide(guideRegistry: GuideRegistry): void {
       {
         id: 'empty-state',
         title: t('tradelog.guide.empty.state.title'),
-        description: t('tradelog.guide.empty.state.description'),
+        description: `${t('tradelog.guide.empty.state.description')} ${t('sample.empty.description')}`,
         progression: 'manual',
         targetId: TRADE_LOG_EMPTY_STATE_TARGET_ID,
       },

@@ -49,6 +49,7 @@ import { resolveDemonTrackerOptions } from '../reviewV2/widgets/shared/demonTrac
 
 import {
   useGuideAction,
+  useGuideCurrentStepId,
   useGuideBackHandler,
   useGuideTarget,
 } from '../../guides/GuideRuntimeLayer';
@@ -84,6 +85,8 @@ interface TemplateEditorProps {
   templateType: ReviewTemplateType;
   onTemplateChange?: () => void;
   onDirtyStateChange?: (isDirty: boolean) => void;
+  
+  onViewModeChange?: (viewMode: 'editor' | 'preview') => void;
 }
 
 const parseReviewContextFieldsSelectionMode = (
@@ -531,6 +534,8 @@ function useSortableWidgetItemContent({
 
   const demonConfig = widget.config as DemonTrackerWidgetConfig | undefined;
   const demonOptions = resolveDemonTrackerOptions(demonConfig);
+  const demonTrackingMethodDescription =
+    getDemonTrackerTrackingMethodDescription(demonOptions.trackingMethod);
   const demonTrackingMethodSelectId = `${id}-demon-tracking-method`;
   const reviewContextConfig = widget.config as
     | ReviewContextFieldsWidgetConfig
@@ -753,25 +758,23 @@ function useSortableWidgetItemContent({
 
         {isEditing && !widget.locked && (
           <div className="template-section-actions">
-            <Tooltip content={t('builder.sidebar.duplicate')}>
-              <button
-                onClick={() => onDuplicate(index)}
-                className="template-section-action template-section-duplicate"
-                aria-label={t('builder.sidebar.duplicate')}
+            <button
+              onClick={() => onDuplicate(index)}
+              className="template-section-action template-section-duplicate"
+              aria-label={t('builder.sidebar.duplicate')}
+            >
+              <svg
+                width="12"
+                height="12"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
               >
-                <svg
-                  width="12"
-                  height="12"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                >
-                  <rect x="9" y="9" width="13" height="13" rx="2" />
-                  <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-                </svg>
-              </button>
-            </Tooltip>
+                <rect x="9" y="9" width="13" height="13" rx="2" />
+                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+              </svg>
+            </button>
             <button
               onClick={() => onRemove(index)}
               className="template-section-action template-section-remove"
@@ -1384,20 +1387,16 @@ function useSortableWidgetItemContent({
                 {t('templateEditor.widget.demon-tracker.tracking-method')}
               </label>
               <Tooltip
-                content={getDemonTrackerTrackingMethodDescription(
-                  demonOptions.trackingMethod
-                )}
+                content={demonTrackingMethodDescription}
                 preferredPosition="top"
+                disclosureLabel={demonTrackingMethodDescription}
               >
-                <button
-                  type="button"
-                  className="journalit-template-widget-config-info-button"
-                  aria-label={getDemonTrackerTrackingMethodDescription(
-                    demonOptions.trackingMethod
-                  )}
+                <span
+                  className="journalit-template-widget-config-info journalit-dashboard-metric-info"
+                  aria-hidden="true"
                 >
-                  <Info size={13} aria-hidden="true" />
-                </button>
+                  <Info size={13} />
+                </span>
               </Tooltip>
             </span>
             <select
@@ -1470,10 +1469,14 @@ function useTemplateEditorModel({
   templateType,
   onTemplateChange,
   onDirtyStateChange,
+  onViewModeChange,
 }: TemplateEditorProps) {
   
   const [template, setTemplate] = useState<ReviewTemplate | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>('preview');
+  useEffect(() => {
+    onViewModeChange?.(viewMode);
+  }, [onViewModeChange, viewMode]);
   const [editingName, setEditingName] = useState('');
   const [editingWidgets, setEditingWidgetsState] = useState<WidgetPlacement[]>(
     []
@@ -1502,6 +1505,7 @@ function useTemplateEditorModel({
   );
   const guideAddedWidgetIndexRef = useRef<number | null>(null);
   const emitGuideAction = useGuideAction();
+  const currentGuideStepId = useGuideCurrentStepId();
   const registerEditorModeButtonTarget = useGuideTarget(
     LAYOUT_BUILDER_EDITOR_MODE_BUTTON_TARGET_ID
   );
@@ -1772,7 +1776,6 @@ function useTemplateEditorModel({
         toStepId === 'intro' ||
         toStepId === 'sidebar-overview' ||
         toStepId === 'pick-built-in-template' ||
-        toStepId === 'duplicate-template' ||
         toStepId === 'preview-template'
       ) {
         setViewMode('preview');
@@ -1782,6 +1785,7 @@ function useTemplateEditorModel({
       if (
         toStepId === 'switch-to-editor' ||
         toStepId === 'editor-overview' ||
+        toStepId === 'duplicate-template' ||
         toStepId === 'add-widget' ||
         toStepId === 'open-widget-picker' ||
         toStepId === 'choose-widget' ||
@@ -1829,6 +1833,15 @@ function useTemplateEditorModel({
     },
     [emitGuideAction]
   );
+
+  
+  
+  
+  useEffect(() => {
+    if (currentGuideStepId === 'switch-to-editor' && viewMode === 'editor') {
+      emitGuideAction(LAYOUT_BUILDER_EDITOR_MODE_OPENED_ACTION_ID);
+    }
+  }, [currentGuideStepId, emitGuideAction, viewMode]);
 
   const handleOpenWidgetLibraryDocs = useCallback(() => {
     openExternalUrl('https://journalit.co/docs/layout-builder#widget-library');

@@ -790,48 +790,12 @@ export const SESSION_MODE_STYLES = `
   line-height: 1.45;
 }
 
-.journalit-session-mode-empty-state__button {
-  margin-top: var(--size-2-2);
-}
-
-.journalit-session-mode button.journalit-session-mode-empty-state__button {
-  appearance: none;
-  box-sizing: border-box;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 36px;
-  padding: 0 var(--size-4-5);
-  border: 1px solid var(--interactive-accent);
-  border-radius: var(--radius-m);
-  background: color-mix(in srgb, var(--interactive-accent) 18%, transparent);
-  box-shadow: none;
-  color: var(--text-normal);
-  cursor: pointer;
-  font-size: var(--font-ui-small);
-  font-weight: var(--font-semibold);
-  line-height: 1;
-  transition:
-    background-color 120ms ease,
-    border-color 120ms ease,
-    transform 120ms ease;
-}
-
-.journalit-session-mode button.journalit-session-mode-empty-state__button:hover,
-.journalit-session-mode button.journalit-session-mode-empty-state__button:focus-visible {
-  border-color: var(--interactive-accent-hover);
-  background: color-mix(in srgb, var(--interactive-accent) 28%, transparent);
-  box-shadow: none;
-  color: var(--text-normal);
-}
-
-.journalit-session-mode button.journalit-session-mode-empty-state__button:focus-visible {
-  outline: 2px solid color-mix(in srgb, var(--interactive-accent) 35%, transparent);
-  outline-offset: 2px;
-}
-
-.journalit-session-mode button.journalit-session-mode-empty-state__button:active {
-  transform: translateY(1px);
+.journalit-session-mode-empty-state__actions {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
+  width: min(100%, 28rem);
+  gap: var(--size-4-2);
+  margin-top: var(--size-4-2);
 }
 
 .journalit-session-mode-empty-state__steps {
@@ -1133,6 +1097,14 @@ export const SESSION_MODE_STYLES = `
   line-height: 1.4;
 }
 
+.journalit-session-mode-waiting-state__actions {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
+  width: min(100%, 26rem);
+  gap: var(--size-2-2);
+  margin-top: var(--size-2-3);
+}
+
 .journalit-session-mode-waiting-state .journalit-session-mode-waiting-state__action {
   all: unset;
   box-sizing: border-box;
@@ -1140,8 +1112,8 @@ export const SESSION_MODE_STYLES = `
   align-items: center;
   justify-content: center;
   gap: var(--size-2-2);
+  width: 100%;
   min-height: 36px;
-  margin-top: var(--size-2-3);
   padding: var(--size-2-2) var(--size-4-3);
   border: 1px solid var(--background-modifier-border);
   border-radius: var(--radius-m);
@@ -1221,6 +1193,14 @@ export const SESSION_MODE_STYLES = `
   line-height: 1.45;
 }
 
+.journalit-session-mode-break-state__actions {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
+  width: min(100%, 26rem);
+  gap: var(--size-2-2);
+  margin-top: var(--size-2-3);
+}
+
 .journalit-session-mode-break-state .journalit-session-mode-break-state__action {
   all: unset;
   box-sizing: border-box;
@@ -1228,8 +1208,8 @@ export const SESSION_MODE_STYLES = `
   align-items: center;
   justify-content: center;
   gap: var(--size-2-2);
+  width: 100%;
   min-height: 36px;
-  margin-top: var(--size-2-2);
   padding: var(--size-2-2) var(--size-4-3);
   border: 1px solid var(--background-modifier-border);
   border-radius: var(--radius-m);
@@ -1476,6 +1456,10 @@ export const SESSION_MODE_STYLES = `
 }
 
 .journalit-session-log-session-group__header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--size-2-1);
   color: var(--text-muted);
   font-size: var(--font-ui-smaller);
   font-weight: var(--font-semibold);
@@ -2989,5 +2973,144 @@ export const SESSION_MODE_STYLES = `
     flex-basis: 100%;
     order: 3;
   }
+}
+
+.journalit-session-mode-unplanned-strip {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--size-2-2) var(--size-4-2);
+  width: 100%;
+  padding: var(--size-2-3) var(--size-4-2);
+  border: 1px solid var(--background-modifier-border);
+  border-left: 3px solid var(--color-orange);
+  border-radius: var(--radius-m);
+  background: var(--background-secondary);
+}
+
+.journalit-session-mode-unplanned-strip__body {
+  display: flex;
+  flex: 1 1 200px;
+  min-width: 0;
+  flex-direction: column;
+  gap: var(--size-2-1);
+}
+
+.journalit-session-mode-unplanned-strip__badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--size-2-1);
+  color: var(--color-orange);
+  font-size: var(--font-ui-smaller);
+  font-weight: var(--font-semibold);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.journalit-session-mode-unplanned-strip__reason {
+  overflow: hidden;
+  color: var(--text-normal);
+  font-size: var(--font-ui-small);
+  overflow-wrap: anywhere;
+}
+
+.journalit-session-mode-unplanned-strip__meta {
+  color: var(--text-muted);
+  font-size: var(--font-ui-smaller);
+  font-variant-numeric: tabular-nums;
+}
+
+.journalit-session-mode .journalit-session-mode-unplanned-strip__stop {
+  all: unset;
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--size-2-2);
+  min-height: 32px;
+  padding: 0 var(--size-4-2);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: var(--radius-m);
+  color: var(--text-normal);
+  cursor: pointer;
+  font-size: var(--font-ui-small);
+  font-weight: var(--font-medium);
+  line-height: 1;
+  white-space: nowrap;
+  transition:
+    border-color 120ms ease,
+    color 120ms ease;
+}
+
+.journalit-session-mode .journalit-session-mode-unplanned-strip__stop:hover,
+.journalit-session-mode .journalit-session-mode-unplanned-strip__stop:focus-visible {
+  border-color: var(--background-modifier-border-hover);
+  color: var(--text-error);
+}
+
+.journalit-session-mode .journalit-session-mode-unplanned-strip__stop:focus-visible {
+  box-shadow: 0 0 0 2px var(--background-modifier-border-focus);
+}
+
+.journalit-session-mode-ended-summary__unplanned {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--size-2-2);
+  margin: 0 0 var(--size-2-3);
+  padding: var(--size-2-2) var(--size-4-2);
+  border-left: 3px solid var(--color-orange);
+  border-radius: var(--radius-s);
+  background: var(--background-secondary);
+  color: var(--text-muted);
+  font-size: var(--font-ui-smaller);
+  text-align: left;
+}
+
+.journalit-session-mode-ended-summary__unplanned-reason {
+  color: var(--text-normal);
+  overflow-wrap: anywhere;
+}
+
+
+.journalit-unplanned-session-modal__description {
+  margin: 0 0 var(--size-4-2);
+  color: var(--text-muted);
+}
+
+.journalit-unplanned-session-modal__label {
+  display: block;
+  margin-bottom: var(--size-2-1);
+  color: var(--text-muted);
+  font-size: var(--font-ui-smaller);
+  font-weight: var(--font-medium);
+}
+
+.journalit-unplanned-session-modal .journalit-unplanned-session-modal__input {
+  width: 100%;
+  margin-bottom: var(--size-4-2);
+}
+
+.journalit-session-log-session-group__info {
+  display: inline-flex;
+  color: var(--text-faint);
+  cursor: help;
+}
+
+.journalit-session-log-session-group__header .tooltip-trigger:hover .journalit-session-log-session-group__info,
+.journalit-session-log-session-group__header .tooltip-trigger:focus-visible .journalit-session-log-session-group__info {
+  color: var(--text-muted);
+}
+
+.journalit-session-log-session-group__tooltip {
+  max-width: 280px;
+  text-transform: none;
+  letter-spacing: normal;
+  white-space: normal;
+  text-align: left;
+}
+
+
+.journalit-session-mode .journalit-session-mode-guide-section {
+	display: block;
+	min-width: 0;
 }
 `;

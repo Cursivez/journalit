@@ -103,6 +103,8 @@ export interface DRCData {
   sessionModeTradeGateActiveRun?:
     | import('../../types/sessionMode').TradeGateRun
     | null;
+  
+  sessionModeUnplannedSessions?: import('../../types/sessionMode').UnplannedSession[];
 
   
   missedTrades: MissedTrade[];

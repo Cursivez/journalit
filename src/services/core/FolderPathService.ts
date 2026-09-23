@@ -5,6 +5,7 @@ import JournalitPlugin from '../../main';
 import { eventBus } from '../events/EventBus';
 import { Unsubscribe } from '../events/types';
 import { getQuarterForMonth, getQuarterString } from '../../utils/dateUtils';
+import type { JournalSettingsContext } from '../../demo/DemoSettingsScope';
 
 export class FolderPathService {
   private app: App;
@@ -12,6 +13,7 @@ export class FolderPathService {
   private _currentPath: string;
   private _callbacks: Set<(newPath: string) => void> = new Set();
   private unsubscribeSettings?: Unsubscribe;
+  private activeContext: JournalSettingsContext = 'real';
 
   constructor(app: App, plugin: JournalitPlugin) {
     this.app = app;
@@ -32,6 +34,34 @@ export class FolderPathService {
     return this._currentPath;
   }
 
+  public get context(): JournalSettingsContext {
+    return this.activeContext;
+  }
+
+  public activateContext(
+    context: JournalSettingsContext,
+    sampleRoot?: string
+  ): void {
+    const nextPath =
+      context === 'sample'
+        ? normalizePath(sampleRoot?.trim() ?? '')
+        : this.getConfiguredPath();
+
+    if (!this.isValidPath(nextPath) || !nextPath) {
+      throw new Error(`Invalid ${context} journal folder path: ${nextPath}`);
+    }
+
+    this.activeContext = context;
+    if (nextPath === this._currentPath) return;
+
+    this._currentPath = nextPath;
+    this.notifyPathChange(nextPath);
+    eventBus.publish('folder-path:changed', {
+      type: 'changed',
+      value: nextPath,
+    });
+  }
+
   
   private getConfiguredPath(): string {
     const configuredPath = this.plugin.settings.general?.journalFolderPath;
@@ -47,6 +77,12 @@ export class FolderPathService {
 
   
   public async updatePath(newPath: string): Promise<void> {
+    if (this.activeContext === 'sample') {
+      throw new Error(
+        'The real journal folder cannot be changed while the sample journal is active'
+      );
+    }
+
     const normalizedPath = normalizePath(newPath.trim());
 
     
@@ -214,6 +250,10 @@ export class FolderPathService {
   private async onSettingsUpdated(payload?: {
     source?: string;
   }): Promise<void> {
+    if (this.activeContext === 'sample') {
+      return;
+    }
+
     
     if (payload?.source === 'user-input') {
       return;

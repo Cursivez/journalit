@@ -3,7 +3,11 @@ import { logger } from '../utils/logger';
 
 import { Notice, App } from 'obsidian';
 import JournalitPlugin from '../main';
-import { JournalitSettings, DEFAULT_SETTINGS } from './types';
+import {
+  JournalitSettings,
+  DEFAULT_SETTINGS,
+  resolveTradeFormLayoutSettings,
+} from './types';
 import { t } from '../lang/helpers';
 import { BackendSecretStorage } from '../services/backend/BackendSecretStorage';
 import { eventBus } from '../services/events/EventBus';
@@ -13,6 +17,8 @@ import {
 } from '../components/shared/ConfirmationModal';
 import { normalizeGalleryFolders } from './settingsNormalization';
 import { normalizeHomeBackgroundImagePath } from '../components/home/homeBackgroundUtils';
+import { normalizeHomeWidgetOpacity } from './homeWidgetOpacity';
+import { migrateSettingsSchema } from './settingsSchema';
 
 export function redactSettingsSecretsForExport(value: unknown): unknown {
   if (Array.isArray(value)) {
@@ -149,8 +155,24 @@ export class SettingsExporter {
         mergedSettings.trade.galleryFolders = normalizeGalleryFolders(
           mergedSettings.trade.galleryFolders
         );
+        
+        
+        
+        
+        
+        
+        mergedSettings.trade.tradeFormLayout = resolveTradeFormLayoutSettings(
+          mergedSettings.trade.tradeFormLayout,
+          { existingInstall: true }
+        );
       }
       if (mergedSettings.home) {
+        mergedSettings.home.widgetOpacityLight = normalizeHomeWidgetOpacity(
+          mergedSettings.home.widgetOpacityLight
+        );
+        mergedSettings.home.widgetOpacityDark = normalizeHomeWidgetOpacity(
+          mergedSettings.home.widgetOpacityDark
+        );
         mergedSettings.home.backgroundImagePath =
           normalizeHomeBackgroundImagePath(
             mergedSettings.home.backgroundImagePath,
@@ -172,6 +194,10 @@ export class SettingsExporter {
           this.plugin.settings.sessionMode?.showTradeExecutionsInSessionLog ??
           DEFAULT_SETTINGS.sessionMode.showTradeExecutionsInSessionLog;
       }
+
+      migrateSettingsSchema(mergedSettings, importData.settings, {
+        mode: 'import',
+      });
 
       
       this.plugin.settings = mergedSettings;

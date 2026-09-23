@@ -1,5 +1,13 @@
 export const SETUPS_MAIN_GUIDE_ID = 'setups.main';
 
+export const SETUPS_DETAIL_GUIDE_ID = 'setups.detail';
+
+export const SETUPS_COMPARE_GUIDE_ID = 'setups.compare';
+
+export const SETUPS_COUNT_CONTEXT_KEY = 'setups.count';
+export const SETUPS_DETAIL_HAS_EXECUTION_GAP_CONTEXT_KEY =
+  'setups.detail.hasExecutionGap';
+
 export const SETUPS_VIEW_TABS_TARGET_ID = 'setups.view-tabs';
 export const SETUPS_PAIRS_TAB_TARGET_ID = 'setups.pairs-tab';
 export const SETUPS_OVERVIEW_TAB_TARGET_ID = 'setups.overview-tab';
@@ -23,4 +31,3 @@ export const SETUPS_PAIRS_OPENED_ACTION_ID = 'setups.pairs-opened';
 export const SETUPS_OVERVIEW_OPENED_ACTION_ID = 'setups.overview-opened';
 export const SETUPS_COMPARE_SELECTING_ACTION_ID = 'setups.compare-selecting';
 export const SETUPS_COMPARE_OPENED_ACTION_ID = 'setups.compare-opened';
-export const SETUPS_DETAIL_OPENED_ACTION_ID = 'setups.detail-opened';

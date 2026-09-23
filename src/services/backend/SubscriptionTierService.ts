@@ -7,6 +7,7 @@ import { BackendSecretStorage } from './BackendSecretStorage';
 import { clearPersistedBackendAuthSession } from './BackendAuthFailure';
 import { ApiError } from '../../types/errors';
 import { t } from '../../lang/helpers';
+import { DemoSyncGate } from '../../demo/DemoSyncGate';
 
 export type SubscriptionTierRefreshStatus =
   | 'premium'
@@ -20,6 +21,13 @@ export type BackendFeatureKey =
   | 'metatraderSync'
   | 'rithmicSync'
   | 'aiMapping';
+
+
+export type OptionalBackendFeatureKey = 'ctraderSync';
+
+export type AnyBackendFeatureKey =
+  | BackendFeatureKey
+  | OptionalBackendFeatureKey;
 
 interface BackendFeatureEntitlement {
   enabled: boolean;
@@ -51,7 +59,8 @@ interface BackendEntitlementsResponse {
       source: string | null;
     };
   };
-  features: Record<BackendFeatureKey, BackendFeatureEntitlement>;
+  features: Record<BackendFeatureKey, BackendFeatureEntitlement> &
+    Partial<Record<OptionalBackendFeatureKey, BackendFeatureEntitlement>>;
   limits: {
     tradeImport: {
       maxFileBytes: number;
@@ -61,7 +70,7 @@ interface BackendEntitlementsResponse {
   };
 }
 
-interface SubscriptionTierRefreshResult {
+export interface SubscriptionTierRefreshResult {
   status: SubscriptionTierRefreshStatus;
   entitlements?: BackendEntitlementsResponse;
 }
@@ -78,6 +87,9 @@ export class SubscriptionTierService {
 
   
   async refreshTier(reason: string): Promise<SubscriptionTierRefreshResult> {
+    if (DemoSyncGate.isActive()) {
+      return { status: 'unverified' };
+    }
     const authToken = BackendSecretStorage.getAuthToken(this.plugin);
     ApiClient.setAuthToken(authToken);
     const authSessionVersion = ApiClient.getAuthSessionVersion();

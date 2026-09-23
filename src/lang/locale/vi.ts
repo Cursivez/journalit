@@ -3,6 +3,115 @@
 import type { Lang } from './en';
 
 const vi: Lang = {
+  'account.profiles.correction-title': 'Sửa lỗi danh mục',
+  'account.profiles.correction-source': 'Nguồn quy tắc',
+  'account.profiles.correction-period': 'Lịch sử bị ảnh hưởng',
+  'account.profiles.correction-guide':
+    'Cần phê duyệt bản sửa trước khi tính lại lịch sử bị ảnh hưởng.',
+  'account.profiles.correction-history': 'Lịch sử sửa lỗi',
+  'account.profiles.correction-stale':
+    'Lịch sử tài khoản đã thay đổi. Hãy mở lại phần xem xét.',
+  'account.profiles.correction-result': 'Đánh giá quy tắc bắt buộc',
+  'account.profiles.no-hard-breach': 'Không phát hiện vi phạm bắt buộc',
+  'account.profiles.correction-consent': 'Tính lại lịch sử',
+  'account.profiles.correction-details': 'Chi tiết',
+  'account.profiles.correction-apply': 'Áp dụng bản sửa',
+  'account.profiles.purchase-date': 'Ngày mua ban đầu',
+  'account.profiles.save-purchase': 'Lưu ngày mua',
+  'account.profiles.purchase-needed':
+    'Nhập ngày mua ban đầu để kiểm tra các điều khoản này.',
+  'account.profiles.purchase-excluded':
+    'Giao dịch mua này giữ nguyên điều khoản hiện tại.',
+  'account.profiles.purchase-uncertain':
+    'Cần công ty xác nhận việc áp dụng. Quy tắc không thay đổi.',
+  'account.profiles.initial-terms':
+    'Các điều khoản này áp dụng từ lúc mua hoặc trước giai đoạn này. Kiểm tra riêng thiết lập ban đầu; lịch sử không thay đổi.',
+  'account.profiles.announcement': 'Thông báo của công ty',
+  'account.profiles.firm-effective': 'Ngày hiệu lực do công ty xác nhận',
+  'account.profiles.published-date': 'Ngày hiệu lực đã công bố',
+  'account.profiles.applicability-checking': 'Đang kiểm tra việc áp dụng…',
+  'account.profiles.no-matching-phase':
+    'Không có giai đoạn phù hợp trong hồ sơ này.',
+  'account.profiles.history-unchanged': 'Lịch sử trước đó không thay đổi.',
+  'account.profiles.notice-title': 'Có hồ sơ thử thách được cập nhật',
+  'account.profiles.notice-description':
+    'Hồ sơ nguồn khác với hồ sơ đã lưu. Quy tắc tài khoản của bạn chưa thay đổi.',
+  'account.profiles.review-changes': 'Xem xét thay đổi',
+  'account.profiles.check-failed': 'Không thể kiểm tra cập nhật quy tắc.',
+  'account.profiles.retry': 'Thử lại',
+  'account.profiles.source-changed':
+    'Hồ sơ nguồn đã thay đổi trong khi xem xét. Hãy mở lại phần xem xét trước khi áp dụng.',
+  'account.profiles.retain': 'Giữ quy tắc hiện tại',
+  'account.profiles.retain-help':
+    'Giữ quy tắc tài khoản và ẩn những thay đổi nguồn này. Các thay đổi quy tắc sau này vẫn có thể được thông báo.',
+  'account.profiles.comparison-help':
+    'Chỉ hiển thị khác biệt. Mở rộng quy tắc để xem các trường. Tùy chỉnh cục bộ có thể là nguyên nhân của khác biệt.',
+  'account.profiles.added': 'Đã thêm',
+  'account.profiles.removed': 'Đã xóa',
+  'account.profiles.changed': 'Đã thay đổi',
+  'account.profiles.not-configured': 'Chưa cấu hình',
+  'account.profiles.no-rule-changes':
+    'Không có khác biệt về quy tắc hoặc chính sách rút tiền cho giai đoạn này.',
+  'account.profiles.accept': 'Áp dụng cập nhật',
+  'account.profiles.cached':
+    'Đang dùng hồ sơ đã lưu tạm; không thể kiểm tra quy tắc mới nhất.',
+  'account.profiles.guide':
+    'Xem thay đổi theo điều khoản được công bố hoặc công ty xác nhận. Nhập ngày mua ban đầu khi được yêu cầu. Lưu mẫu trong Hồ sơ công ty của tôi khi chỉnh sửa tài khoản.',
+  'account.profiles.account-phase': 'Giai đoạn tài khoản',
+  'account.profiles.choose': 'Chọn hồ sơ đã lưu',
+  'account.profiles.completed':
+    'Giai đoạn đã hoàn thành giữ nguyên quy tắc cũ.',
+  'account.profiles.confirm': 'Các quy tắc này áp dụng cho tài khoản của tôi.',
+  'account.profiles.currency':
+    'Chọn loại tiền tài khoản khớp với hồ sơ trước khi áp dụng.',
+  'account.profiles.current': 'Quy tắc tài khoản hiện tại',
+  'account.profiles.custom-transition': 'Điều khoản chuyển đổi tùy chỉnh',
+  'account.profiles.cycle-start': 'Bắt đầu chu kỳ rút tiền (giờ địa phương)',
+  'account.profiles.delete-help':
+    'Xóa hồ sơ đã lưu này? Các tài khoản đang dùng hồ sơ sẽ không thay đổi.',
+  'account.profiles.effective': 'Có hiệu lực từ (giờ địa phương)',
+  'account.profiles.error':
+    'Không thể lưu hồ sơ. Kiểm tra các giá trị và thử lại.',
+  'account.profiles.floor': 'Mức sàn sụt giảm khi chuyển đổi',
+  'account.profiles.history': 'Lịch sử quy tắc',
+  'account.profiles.history-help':
+    'Quy tắc cũ được giữ lại. Dùng Xem xét cập nhật hồ sơ để thay đổi; chỉnh sửa trực tiếp bị khóa để bảo vệ lịch sử.',
+  'account.profiles.incoming': 'Quy tắc hồ sơ mới',
+  'account.profiles.independent':
+    'Hồ sơ được lưu cục bộ trong kho. Áp dụng tạo bản sao tài khoản độc lập; lưu phiên bản mới không thay đổi tài khoản hiện có.',
+  'account.profiles.keep-help':
+    'Quy tắc được chọn giữ giá trị cục bộ thay cho quy tắc mới cùng loại. Bỏ chọn để chấp nhận giá trị mới. Các loại quy tắc mới được thêm vào.',
+  'account.profiles.keep-local': 'Giữ quy tắc của tôi:',
+  'account.profiles.keep-payout': 'Giữ chính sách rút tiền hiện tại',
+  'account.profiles.library': 'Hồ sơ công ty của tôi',
+  'account.profiles.locked': 'Mức sàn sụt giảm đã được khóa',
+  'account.profiles.missing': 'Hồ sơ đã lưu này không còn tồn tại.',
+  'account.profiles.peak': 'Số dư đỉnh chuyển tiếp',
+  'account.profiles.review': 'Xem xét cập nhật hồ sơ',
+  'account.profiles.link-source': 'Liên kết hồ sơ công ty',
+  'account.profiles.save-new': 'Lưu thành hồ sơ mới',
+  'account.profiles.save-revision': 'Lưu phiên bản mới của hồ sơ đã chọn',
+  'account.profiles.source-phase': 'Giai đoạn hồ sơ nguồn',
+  'account.profiles.transition-help':
+    'Chưa có điều khoản chuyển đổi đã xác minh. Nhập mức sàn, đỉnh và ngày bắt đầu chu kỳ do công ty xác nhận. Chúng được đánh dấu tùy chỉnh. Lợi nhuận giai đoạn và tổng số lần rút được giữ lại; giao dịch cũ vẫn dùng quy tắc cũ.',
+  'account.profiles.transition-source':
+    'Xác nhận của công ty hoặc nguồn tham chiếu',
+  'account.profiles.unknown-baseline':
+    'Tài khoản cũ này không có bản sao nguồn ban đầu. Hãy xem xét từng khác biệt; không thể tự động nhận biết các thay đổi cục bộ.',
+  'account.profiles.update-available':
+    'Cần xem xét khác biệt hồ sơ. Tài khoản vẫn dùng quy tắc đã lưu.',
+  'account.profiles.up-to-date':
+    'Giai đoạn này dùng định nghĩa hồ sơ được xem xét gần nhất; thay đổi cục bộ vẫn độc lập.',
+  'widget.mfeScatter.name': 'MFE và lãi/lỗ đã thực hiện',
+  'widget.mfeScatter.description':
+    'Biến động thuận lợi tối đa so với lãi/lỗ ròng đã thực hiện của các giao dịch đã đóng',
+  'widget.mfeScatter.y': 'Lãi/lỗ đã thực hiện ({unit})',
+  'widget.mfeScatter.winners': 'Lãi',
+  'widget.mfeScatter.losers': 'Lỗ',
+  'widget.mfeScatter.breakeven': 'Hòa vốn',
+  'widget.mfeScatter.empty':
+    'Không có giao dịch đã đóng với MFE khả dụng theo đơn vị này.',
+
   'trade.broker-synced-at': 'Đã đồng bộ nhà môi giới {date}',
   'trade-sync.tradovate.status.connecting': 'Đang kết nối',
   'trade-sync.tradovate.status.setup-required': 'Cần thiết lập tài khoản',
@@ -30,6 +139,8 @@ const vi: Lang = {
   'trade-sync.tradovate.reconciliation-issues': '{count} sự cố đối soát',
   'trade-sync.tradovate.website-connection-description':
     'Kết nối hoặc ủy quyền lại Tradovate an toàn trên Journalit.co, sau đó quay lại đây để chọn tài khoản và đồng bộ vault.',
+  'trade-sync.tradovate.paused-website-description':
+    'Kết nối Tradovate này đang tạm dừng. Hãy quản lý kết nối trên Journalit.co để xem lại hoặc tiếp tục.',
   'trade-sync.tradovate.plugin-sync-description':
     'Mỗi lần đồng bộ sẽ lấy hoạt động Tradovate mới nhất và ghi các giao dịch tương ứng vào vault này.',
   'trade-sync.tradovate.connect': 'Kết nối',
@@ -63,6 +174,89 @@ const vi: Lang = {
   'trade-sync.tradovate.recovery-confirm':
     'Khôi phục {count} ghi chú giao dịch vào {account}?',
 
+  'trade-sync.ctrader.status.setup-required': 'Cần thiết lập tài khoản',
+  'trade-sync.ctrader.status.connecting': 'Đang kết nối',
+  'trade-sync.ctrader.status.paused': 'Đã tạm dừng',
+  'trade-sync.ctrader.status.reauthorization-required': 'Cần ủy quyền lại',
+  'trade-sync.ctrader.status.deleting': 'Đang xóa dữ liệu đám mây',
+  'trade-sync.ctrader.status.error': 'Lỗi kết nối',
+  'trade-sync.ctrader.sync-complete-connection':
+    'Đã đồng bộ xong {connection}.',
+  'trade-sync.ctrader.sync-partial-connection':
+    'Đã đồng bộ {connection} nhưng có sự cố.',
+  'trade-sync.ctrader.sync-all': 'Đồng bộ tất cả',
+  'trade-sync.ctrader.sync-all-complete':
+    'Đã đồng bộ {succeeded}/{total} kết nối cTrader.',
+  'trade-sync.ctrader.sync-all-partial':
+    'Đã đồng bộ {succeeded}/{total} kết nối cTrader. Hãy kiểm tra các kết nối gặp sự cố.',
+  'trade-sync.ctrader.connect-another': 'Kết nối thêm tài khoản cTrader',
+  'trade-sync.ctrader.no-connections':
+    'Kết nối tài khoản cTrader trên Journalit.co để cấu hình và đồng bộ tại đây.',
+  'trade-sync.ctrader.claimed-by-connection':
+    'Đồng bộ đang được bật qua {connection}. Hãy tắt tại đó trước khi chuyển tài khoản này.',
+  'trade-sync.ctrader.claim-conflict':
+    'Một kết nối cTrader khác đã giữ quyền đồng bộ tài khoản này. Hãy xem lại các thẻ kết nối đã làm mới trước khi thử lại.',
+  'trade-sync.ctrader.reconciliation-issues': '{count} sự cố đối soát',
+  'trade-sync.ctrader.website-connection-description':
+    'Kết nối hoặc ủy quyền lại cTrader an toàn trên Journalit.co, sau đó quay lại đây để chọn tài khoản và đồng bộ vault.',
+  'trade-sync.ctrader.plugin-sync-description':
+    'Mỗi lần đồng bộ sẽ lấy hoạt động cTrader mới nhất và ghi các giao dịch tương ứng vào vault này.',
+  'trade-sync.ctrader.connect': 'Kết nối',
+  'trade-sync.ctrader.manage-connection': 'Quản lý kết nối',
+  'trade-sync.ctrader.setup-guide': 'Hướng dẫn thiết lập',
+  'trade-sync.ctrader.setup-and-sync': 'Hoàn tất thiết lập và đồng bộ',
+  'trade-sync.ctrader.sync-to-vault': 'Đồng bộ',
+  'trade-sync.ctrader.discovery-description':
+    'Journalit cần tìm các tài khoản Demo và Live có sẵn qua kết nối cTrader của bạn.',
+  'trade-sync.ctrader.discover-accounts': 'Tìm tài khoản cTrader',
+  'trade-sync.ctrader.discovering': 'Đang tìm tài khoản…',
+  'trade-sync.ctrader.discovery-failed':
+    'Không thể tìm tài khoản cTrader. Hãy thử lại hoặc quản lý kết nối trên Journalit.co.',
+  'trade-sync.ctrader.sync-account': 'Đưa vào đồng bộ',
+  'trade-sync.ctrader.history-label': 'Lịch sử ban đầu',
+  'trade-sync.ctrader.history-all': 'Toàn bộ lịch sử hiện có',
+  'trade-sync.ctrader.history-recent': '90 ngày gần đây',
+  'trade-sync.ctrader.history-custom': 'Từ một ngày cụ thể',
+  'trade-sync.ctrader.history-new': 'Chỉ giao dịch mới',
+  'trade-sync.ctrader.start-date': 'Ngày bắt đầu',
+  'trade-sync.ctrader.mapping-required':
+    'Chọn tài khoản cục bộ trong vault cho mỗi tài khoản cTrader đã bật.',
+  'trade-sync.ctrader.custom-date-required':
+    'Chọn ngày bắt đầu cho mỗi lựa chọn lịch sử tùy chỉnh.',
+  'trade-sync.ctrader.recovery-title': 'Khôi phục ghi chú giao dịch bị thiếu',
+  'trade-sync.ctrader.recovery-count':
+    '{count} ghi chú giao dịch cần khôi phục',
+  'trade-sync.ctrader.recovery-select-account':
+    'Chọn tài khoản cục bộ trước khi khôi phục ghi chú giao dịch.',
+  'trade-sync.ctrader.recovery-confirm':
+    'Khôi phục {count} ghi chú giao dịch vào {account}?',
+  'trade-sync.oauth.remap.title': 'Change account',
+  'trade-sync.oauth.remap.message':
+    'Use {newAccount} for existing notes too? Otherwise, only future broker updates will use it.',
+  'trade-sync.oauth.remap.update-notes': 'Update notes',
+  'trade-sync.oauth.remap.future-only': 'Future updates only',
+  'trade-sync.oauth.remap.unavailable':
+    'Account remapping is unavailable. Update the Journalit server and try again.',
+  'trade-sync.oauth.remap.restore-in-progress':
+    'Wait for Restore to finish, then try again.',
+  'trade-sync.oauth.remap.operation-conflict':
+    'That remap request conflicted with an earlier attempt. Try again.',
+  'trade-sync.oauth.remap.account-busy':
+    'This account is busy synchronizing. Retry shortly.',
+  'trade-sync.oauth.remap.account-unavailable':
+    'This account is no longer available. Refresh and try again.',
+  'trade-sync.oauth.remap.preserved-conflicts':
+    '{count} existing conflict(s) were left unchanged.',
+  'trade-sync.oauth.remap.notes-pending':
+    '{count} existing note update(s) are still pending. Synchronize again to retry.',
+  'trade-sync.source.ctrader': 'cTrader',
+  'trade-sync.source.ctrader.description':
+    'Synchronize cTrader trades in the cloud and project them into this vault.',
+  'trade-sync.ctrader.status-failed': 'Unable to load cTrader status.',
+  'trade-sync.ctrader.last-sync': 'Lần đồng bộ gần nhất',
+  'trade-sync.ctrader.pending-acks': '{count} ACK cục bộ đang chờ',
+  'trade-sync.ctrader.never': 'Chưa bao giờ',
+
   'command.add-trade': 'Thêm giao dịch mới',
   'command.import-trades-csv': 'Mở Trade Import',
   'command.create-drc': 'Mở DRC (thẻ báo cáo hàng ngày)',
@@ -75,14 +269,13 @@ const vi: Lang = {
   'command.open-trade-log': 'Mở nhật ký giao dịch',
   'command.open-economic-calendar': 'Mở lịch kinh tế',
   'command.open-home': 'Mở Trang chủ',
+  'command.open-settings': 'Mở cài đặt',
   'command.open-position-size-calculator': 'Mở máy tính kích thước vị thế',
-  'command.rebuild-graph-links': 'Xây dựng lại liên kết đồ thị Journalit',
   'command.replay-onboarding': 'Phát lại quy trình giới thiệu',
   'command.replay-current-view-guide':
     'Hướng dẫn phát lại cho chế độ xem hiện tại',
   'command.open-release-notes': 'Xem ghi chú phát hành',
   'command.open-layout-builder': 'Mở trình tạo bố cục',
-  'command.switch-template': 'Chuyển đổi bố cục',
   'notice.guide.replay-unavailable':
     'Hệ thống hướng dẫn chưa sẵn sàng. Vui lòng thử lại.',
   'notice.guide.no-active-view':
@@ -93,12 +286,7 @@ const vi: Lang = {
     'Không thể bắt đầu hướng dẫn. Vui lòng thử lại.',
   'notice.guide.replay-started':
     'Hướng dẫn đã khởi động lại cho chế độ xem này.',
-  'notice.graph-links.rebuild-complete':
-    'Đã xây dựng lại liên kết đồ thị: cập nhật {updated}, không đổi {unchanged}, cần xem lại {conflicted}.',
-  'notice.graph-links.rebuild-failed':
-    'Không thể xây dựng lại liên kết đồ thị Journalit. Hãy xem bảng điều khiển để biết chi tiết.',
   'template.switch-title': 'Chuyển đổi bố cục',
-  'template.switch-trade-title': 'Chuyển đổi bố cục giao dịch',
   'template.switch-review-title': 'Chuyển đổi bố cục {type}',
 
   'template.review-type.drc': 'DRC',
@@ -210,7 +398,7 @@ const vi: Lang = {
 
   'form.section.custom-fields-empty-title': 'Chưa có trường nâng cao nào.',
   'form.section.custom-fields-empty-desc':
-    'Tạo các trường giao dịch tùy chỉnh trong Cài đặt → Tùy chỉnh → Trường giao dịch tùy chỉnh.',
+    'Ghi lại mọi thứ mà các trường có sẵn bỏ sót, như phiên, khung thời gian hay chất lượng setup. Trường tùy chỉnh được lưu cùng mọi lệnh và có thể trở thành cột sắp xếp được trong nhật ký giao dịch.',
   'form.section.take-profits': 'Chốt lời',
   'form.section.attachments': 'Tệp đính kèm',
   'form.tab.basic': 'Cơ bản',
@@ -260,10 +448,17 @@ const vi: Lang = {
   'form.layout.item.trade-currency': 'Tiền tệ giao dịch / Tỷ giá',
   'form.layout.item.trade-currency-desc':
     'Nhập giao dịch bằng loại tiền tệ khác với tỷ giá thủ công tùy chọn.',
+  'form.layout.item.exchange-desc':
+    'Trường sàn giao dịch cho lệnh cổ phiếu và crypto.',
+  'form.layout.item.direct-pnl-toggle-desc':
+    'Chuyển một lệnh sang nhập tổng P&L thay vì giá thoát.',
   'form.layout.manual-fx-rate': 'Ghi đè tỷ giá',
   'form.layout.result-r': 'Kết quả theo R',
   'form.layout.entry-time': 'Thời gian giao dịch',
   'form.field.account': 'Tài khoản',
+  'form.field.prop-challenge-phase': 'Giai đoạn: {name}',
+  'form.field.prop-challenge-phase.none':
+    'Không có giai đoạn tại thời điểm này',
   'form.field.asset-type': 'Loại tài sản',
   'form.field.asset-type.stock': 'Cổ phiếu',
   'form.field.asset-type.options': 'Quyền chọn',
@@ -285,6 +480,17 @@ const vi: Lang = {
   'form.field.take-profit-short': 'TP',
   'form.field.target-price': 'Giá mục tiêu',
   'form.field.close-percent': '% đóng',
+  'form.field.close-size': 'Khối lượng đóng',
+  'form.placeholder.close-size': '0.5',
+  'form.layout.take-profit-unit': 'Lượng đóng chốt lời theo',
+  'form.layout.take-profit-unit-percent': '% đóng',
+  'form.layout.take-profit-unit-size': 'Khối lượng',
+  'trade.validation.take-profit-size-number':
+    'Khối lượng chốt lời phải là số hợp lệ.',
+  'trade.validation.take-profit-size-positive':
+    'Khối lượng chốt lời phải lớn hơn 0.',
+  'trade.validation.take-profit-total-size-range':
+    'Tổng khối lượng chốt lời không được vượt quá kích thước vị thế.',
   'form.field.risk-amount': 'Số tiền rủi ro',
   'form.field.profit-loss': 'Lãi/Lỗ',
   'form.field.total-pnl': 'P&L giao dịch gốc',
@@ -308,7 +514,9 @@ const vi: Lang = {
   'form.field.commission-type.fixed': 'Cố định',
   'form.field.commission-type.percentage': 'Tỷ lệ phần trăm (%)',
   'form.calculated': 'Đã tính toán',
-  'form.account-empty-state.title': 'Tạo tài khoản trước khi thêm giao dịch',
+  'form.account-empty-state.title': 'Thiết lập tài khoản đầu tiên của bạn',
+  'form.account-empty-state.description':
+    'Tài khoản theo dõi số dư để Journalit tính được lợi nhuận, rủi ro và mức sụt giảm. Tạo một tài khoản chỉ cần một cái tên.',
   'form.account-empty-state.create-account': 'Tạo tài khoản',
   'form.account-empty-state.submit-disabled':
     'Trước tiên hãy tạo một tài khoản để lưu giao dịch này.',
@@ -568,6 +776,7 @@ const vi: Lang = {
     '{label} chứa các giá trị thời gian không hợp lệ',
 
   'notice.login-success': 'Đăng nhập thành công!',
+  'notice.pro-access-ready': 'Quyền truy cập PRO đã sẵn sàng.',
 
   'notice.logout-success': 'Đã đăng xuất thành công',
   'notice.ftp-created': 'Thông tin đăng nhập FTP được tạo thành công',
@@ -630,7 +839,6 @@ const vi: Lang = {
   'notice.error.open-journalit':
     'Không thể mở Journalit. Vui lòng thử tải lại Obsidian.',
   'notice.error.open-drc': 'Không mở được DRC: {error}',
-  'notice.error.open-dashboard': 'Không mở được bảng điều khiển: {error}',
   'notice.error.open-trade-log': 'Không thể mở Nhật ký giao dịch: {error}',
   'notice.error.open-csv-import': 'Không thể mở Nhập giao dịch: {error}',
   'notice.error.open-account-dashboard': 'Không thể mở Tài khoản: {error}',
@@ -736,6 +944,9 @@ const vi: Lang = {
   'tradelog.guide.sorting.title': 'Nhấp vào tiêu đề cột để sắp xếp bảng',
   'tradelog.guide.sorting.description':
     'Trong chế độ xem Giao dịch, hãy nhấp vào tiêu đề cột có thể sắp xếp để sắp xếp lại bảng. Ví dụ: nhấp vào P&L ròng để sắp xếp theo số tiền thắng lớn nhất và khoản lỗ lớn nhất của bạn.',
+  'tradelog.guide.gallery-mode.title': 'Còn có thư viện ảnh',
+  'tradelog.guide.gallery-mode.description':
+    'Chuyển chế độ tại đây để duyệt ảnh chụp giao dịch dưới dạng thư viện. Một hướng dẫn ngắn sẽ giới thiệu khi bạn mở lần đầu.',
   'tradelog.guide.multi-select.title': 'Bật chọn nhiều',
   'tradelog.guide.multi-select.description':
     'Nhấp vào nút này để chọn nhiều giao dịch cùng một lúc. Khi bật nhiều lựa chọn, nhấp chuột vào hàng sẽ chọn giao dịch thay vì mở chúng.',
@@ -801,6 +1012,9 @@ const vi: Lang = {
     'Các nút này thay đổi nội dung hiển thị của tiện ích của bạn',
   'home.guide.filters.description':
     'Sử dụng những thứ này để chuyển đổi khoảng thời gian, loại giao dịch hoặc tài khoản để các tiện ích Trang chủ của bạn hiển thị dữ liệu bạn muốn xem.',
+  'home.guide.settings.title': 'Cài đặt Journalit luôn ở ngay gần',
+  'home.guide.settings.description':
+    'Dùng nút này để mở trực tiếp cài đặt Journalit.',
   'home.guide.customize.title': 'Bật chế độ chỉnh sửa để tùy chỉnh Trang chủ',
   'home.guide.customize.description':
     'Bấm vào nút này để bắt đầu tùy chỉnh. Chế độ chỉnh sửa mở khóa việc di chuyển, thay đổi kích thước, xóa và thêm tiện ích.',
@@ -816,13 +1030,12 @@ const vi: Lang = {
     'Di chuyển và thay đổi kích thước các vật dụng của bạn',
   'home.guide.widget-picker.title': 'Thêm tiện ích tại đây',
   'home.guide.widget-picker.description':
-    'Bộ chọn này cho phép bạn thêm nhiều tiện ích hơn và khôi phục các liên kết nhanh mà trước đây bạn đã ẩn.',
+    'Thêm widget, khôi phục Liên kết Nhanh hoặc thêm lối tắt tài khoản và thiết lập.',
   'home.guide.move-and-resize.description':
     'Đây là khu vực chính bạn có thể sắp xếp lại trong chế độ chỉnh sửa. Kéo tiện ích để di chuyển chúng hoặc kéo tiện ích từ góc dưới bên phải để thay đổi kích thước.',
-  'home.guide.add-widget.title':
-    'Thêm tiện ích hoặc khôi phục các liên kết nhanh bị ẩn',
+  'home.guide.add-widget.title': 'Thêm mục vào Trang chủ',
   'home.guide.add-widget.description':
-    'Nhấp vào Thêm tiện ích để mở bộ chọn, nơi bạn có thể thêm nhiều tiện ích khác và khôi phục các liên kết nhanh mà bạn đã ẩn trước đó.',
+    'Mở Thêm tiện ích để thêm widget, Liên kết Nhanh hoặc lối tắt tài khoản và thiết lập.',
   'home.guide.save-layout.title': 'Lưu bố cục của bạn khi bạn hoàn tất',
   'home.guide.save-layout.description':
     'Khi bạn hài lòng với bố cục, hãy nhấp vào nút này để lưu các thay đổi của bạn và thoát khỏi chế độ chỉnh sửa.',
@@ -878,7 +1091,6 @@ const vi: Lang = {
     'Bắt đầu tạo ghi chú giao dịch để xem chúng xuất hiện trong nhật ký giao dịch của bạn.',
   'tradelog.processing': 'Xử lý dữ liệu giao dịch...',
   'tradelog.node.file-not-found': 'Không tìm thấy tệp giao dịch: {path}',
-  'tradelog.node.no-review-available': 'Không có đánh giá nào cho {type}: {id}',
   'tradelog.node.expand': 'Mở rộng',
   'tradelog.node.collapse': 'Thu gọn',
   'tradelog.node.navigate-to-review': 'Điều hướng đến bài đánh giá {type}',
@@ -1188,6 +1400,7 @@ const vi: Lang = {
   'dashboard.filter.accounts.select-all': 'Chọn tất cả',
 
   'dashboard.filter.accounts.none-found': 'Không tìm thấy tài khoản nào',
+  'dashboard.filter.accounts.phase-now': 'hiện tại',
   'dashboard.filter.tags.all': 'Tất cả các thẻ',
   'dashboard.filter.tags.none': 'Không có thẻ',
   'dashboard.filter.tags.n-selected': '{count} Tags',
@@ -1296,6 +1509,12 @@ const vi: Lang = {
     'Danh sách bước giúp bạn thêm lịch sử giao dịch và thiết lập Journalit',
   'home.widget.getting-started.progress': '{completed}/{total} đã hoàn thành',
   'home.widget.getting-started.progress.loading': 'Đang kiểm tra tiến độ...',
+  'home.widget.getting-started.item.account.title':
+    'Thiết lập tài khoản giao dịch của bạn',
+  'home.widget.getting-started.item.account.description':
+    'Lệnh được ghi vào một tài khoản theo dõi số dư. Không có tài khoản thì không tính được lợi nhuận và mức sụt giảm.',
+  'home.widget.getting-started.item.account.time': '15s',
+  'home.widget.getting-started.item.account.cta': 'Thiết lập tài khoản',
   'home.widget.getting-started.item.create.title':
     'Đưa lịch sử giao dịch của bạn vào',
   'home.widget.getting-started.item.create.description':
@@ -1319,7 +1538,7 @@ const vi: Lang = {
   'home.widget.getting-started.item.sidebar.cta': 'Mở thanh bên',
   'home.widget.getting-started.item.pro.title': 'Kích hoạt PRO',
   'home.widget.getting-started.item.pro.description':
-    'Cho phép nhập CSV, đồng bộ hóa MetaTrader và ánh xạ AI.',
+    'Bật Trade Import, Trade Sync và Lịch kinh tế.',
   'home.widget.getting-started.item.pro.time': '1 phút',
   'home.widget.getting-started.item.pro.cta': 'Kích hoạt',
   'home.widget.weekly-summary.name': 'Tóm tắt hàng tuần',
@@ -1360,6 +1579,7 @@ const vi: Lang = {
   'home.widget.drawdown-monitor.description':
     'Theo dõi trạng thái drawdown trên các tài khoản có giới hạn được định cấu hình',
   'account.header.title': 'Tài khoản: {name}',
+  'account.header.back-to-dashboard': 'Quay lại bảng điều khiển',
   'account.header.add-event.aria': 'Thêm tiền gửi/rút tiền',
   'account.header.edit-account.aria': 'Chỉnh sửa tài khoản',
   'account.header.view-trades.aria': 'Xem giao dịch trong Nhật ký giao dịch',
@@ -1375,8 +1595,22 @@ const vi: Lang = {
     'Giao dịch {count} được tìm thấy trước ngày tạo tài khoản',
   'account.header.warning.trades-before-creation.other':
     'Giao dịch {count} được tìm thấy trước ngày tạo tài khoản',
+  'account.header.warning.trades-before-phase.one':
+    'Giao dịch {count} được tìm thấy trước khi Giai đoạn 1 bắt đầu',
+  'account.header.warning.trades-before-phase.few':
+    'Giao dịch {count} được tìm thấy trước khi Giai đoạn 1 bắt đầu',
+  'account.header.warning.trades-before-phase.many':
+    'Giao dịch {count} được tìm thấy trước khi Giai đoạn 1 bắt đầu',
+  'account.header.warning.trades-before-phase.other':
+    'Giao dịch {count} được tìm thấy trước khi Giai đoạn 1 bắt đầu',
+  'account.header.warning.earliest-trade-phase':
+    'Giao dịch sớm nhất: {date}. Giao dịch trước khi giai đoạn bắt đầu không được tính vào thử thách.',
+  'account.header.notice.phase-start-updated':
+    'Thời điểm bắt đầu Giai đoạn 1 đã được chuyển sang {date}',
   'account.header.warning.earliest-trade':
     'Giao dịch sớm nhất: {date}. Điều này có thể gây ra việc tính toán số dư không chính xác.',
+  'account.header.warning.fix-phase-start.aria':
+    'Sửa thời điểm bắt đầu Giai đoạn 1',
   'account.header.warning.fix-date.aria': 'Sửa ngày tạo tài khoản',
   'account.header.warning.fixing': 'Đang sửa...',
   'account.header.warning.fix-date': 'Sửa ngày',
@@ -1906,6 +2140,13 @@ const vi: Lang = {
   'settings.reviews.template-builder-desc':
     'Tạo, chỉnh sửa và quản lý bố cục của bạn một cách trực quan. Chế độ xem Trình xây dựng cho phép bạn kéo và thả các phần, định cấu hình tùy chọn và xem trước bố cục của mình trong thời gian thực.',
   'settings.reviews.open-builder': 'Mở trình tạo bố cục',
+  'settings.general.review-links-new-tab':
+    'Mở liên kết từ tiện ích đánh giá trong tab mới',
+  'settings.general.review-links-new-tab-desc':
+    'Khi tắt, liên kết sẽ thay thế tab hiện tại.',
+  'settings.general.review-links-new-tab-aria':
+    'Mở liên kết ghi chú từ tiện ích đánh giá trong tab mới',
+  'settings.general.tab-behavior': 'Hành vi tab',
   'settings.reviews.recurring-goals': 'Mục tiêu định kỳ',
   'settings.reviews.recurring-goals-desc':
     'Xác định mục tiêu tự động xuất hiện trên mỗi đánh giá mới. Chúng được sao chép khi đánh giá được tạo và có thể được chỉnh sửa cho mỗi lần đánh giá.',
@@ -1984,13 +2225,15 @@ const vi: Lang = {
   'library.notice.template-not-found': 'Không tìm thấy bố cục',
   'library.notice.code-generated': 'Chia sẻ mã được tạo!',
   'library.error.export-failed': 'Không xuất được bố cục',
+  'library.error.export-too-large':
+    'Bố cục này quá lớn để xuất dưới dạng mã chia sẻ.',
   'library.notice.copied': 'Chia sẻ mã được sao chép vào clipboard!',
   'library.error.copy-failed': 'Không sao chép được vào bảng nhớ tạm',
   'library.title.import': 'Nhập bố cục',
   'library.desc.import':
-    'Dán mã chia sẻ JRT-v1 để nhập bố cục từ người dùng khác.',
+    'Dán mã chia sẻ JRT để nhập bố cục từ người dùng khác.',
   'library.label.share-code': 'Chia sẻ mã',
-  'library.placeholder.import-code': 'Dán mã chia sẻ JRT-v1-... vào đây',
+  'library.placeholder.import-code': 'Dán mã chia sẻ JRT-... vào đây',
   'library.button.validating': 'Đang xác thực...',
   'library.button.validate': 'Xác thực',
   'library.button.import': 'Nhập bố cục',
@@ -2120,6 +2363,12 @@ const vi: Lang = {
   'account.settings.section.available-types.delete-aria': 'Xóa {name}',
   'account.settings.section.available-types.empty':
     'Không có loại tài khoản tùy chỉnh nào được xác định.',
+  'account.settings.section.challenge-stages.title': 'Giai đoạn thử thách',
+  'account.settings.section.challenge-stages.desc':
+    'Loại tài khoản được áp dụng khi thử thách đạt tới giai đoạn này.',
+  'account.settings.section.challenge-stages.no-change': 'Không thay đổi',
+  'account.settings.section.challenge-stages.aria':
+    'Loại tài khoản cho {stage}',
   'account.settings.section.inclusion.title':
     'Các loại tài khoản trên trang tổng quan',
   'account.settings.section.inclusion.desc':
@@ -2175,7 +2424,7 @@ const vi: Lang = {
 
   'backend.title': 'Đồng bộ hóa giao dịch',
   'backend.description':
-    'Thiết lập Trade Sync cho MetaTrader (MT4) và Tradovate để tự động cập nhật vault của bạn.',
+    'Thiết lập Trade Sync cho các nhà môi giới được hỗ trợ để tự động cập nhật vault của bạn.',
 
   'trade-sync.gate.pro.description':
     'Trade Sync là một tính năng Pro. Nâng cấp để tiếp tục.',
@@ -2295,7 +2544,6 @@ const vi: Lang = {
   'backend.section.accounts.title': 'Quản lý tài khoản',
   'settings.auth.feature.csv-import': 'Trade Import',
   'settings.auth.feature.ai-mapping': 'Ánh xạ AI CSV',
-  'settings.auth.feature.metatrader-sync': 'Đồng bộ hóa giao dịch MetaTrader',
   'settings.auth.feature.trade-sync': 'Đồng bộ giao dịch',
   'settings.auth.feature.economic-calendar': 'Lịch kinh tế',
   'settings.auth.feature.basic-tracking': 'Theo dõi giao dịch cơ bản',
@@ -2314,20 +2562,10 @@ const vi: Lang = {
   'csv.button.delete-template': 'Xóa mẫu',
 
   'csv.button.import-another': 'Nhập tệp khác',
-  'csv.button.view-account': 'Khám phá hiệu suất',
   'csv.results.complete': 'Nhập hoàn tất',
   'csv.results.history-ready': 'Lịch sử giao dịch của bạn đã sẵn sàng',
-  'csv.results.history-trades.one': 'Đã khôi phục {count} giao dịch',
-  'csv.results.history-trades.few': 'Đã khôi phục {count} giao dịch',
-  'csv.results.history-trades.many': 'Đã khôi phục {count} giao dịch',
-  'csv.results.history-trades.other': 'Đã khôi phục {count} giao dịch',
-  'csv.results.history-date-range': 'Từ {start} đến {end}',
-  'csv.results.history-symbols.one': '{count} mã giao dịch',
-  'csv.results.history-symbols.few': '{count} mã giao dịch',
-  'csv.results.history-symbols.many': '{count} mã giao dịch',
-  'csv.results.history-symbols.other': '{count} mã giao dịch',
-  'csv.results.enrichment-note':
-    'Hiệu suất đã nhập sẵn sàng để xem lại. Hãy thêm setup, yếu tố hợp lưu và ghi chú cho các giao dịch gần đây khi bạn muốn phân tích mô hình sâu hơn.',
+  'csv.results.completed-with-issues':
+    'Đã hoàn tất nhập dữ liệu nhưng có vấn đề',
   'csv.results.failed': 'Nhập không thành công',
   'csv.results.success.one':
     'Đã nhập thành công giao dịch {count} vào Tài khoản: {account}',
@@ -2352,8 +2590,6 @@ const vi: Lang = {
 
   'csv.results.broker': 'Nhà môi giới: {broker}',
 
-  'csv.results.preview-header':
-    'Các giao dịch được nhập gần đây (hiển thị {shown} của {total})',
   'csv.results.more-trades.one': 'và {count} giao dịch nhiều hơn...',
   'csv.results.more-trades.few': 'và {count} nhiều giao dịch hơn...',
   'csv.results.more-trades.many': 'và {count} nhiều giao dịch hơn...',
@@ -2427,12 +2663,23 @@ const vi: Lang = {
     '{featureName} là một tính năng Pro. Nâng cấp để mở khóa các tính năng và tự động hóa nâng cao.',
   'upgrade.benefits-title': 'Các tính năng chuyên nghiệp bao gồm:',
   'upgrade.benefit.csv': 'Nhập CSV với ánh xạ cột được AI hỗ trợ',
-  'upgrade.benefit.templates':
-    'Bố cục tùy chỉnh và chia sẻ bố cục không giới hạn',
-  'upgrade.benefit.trade-sync': 'Trade Sync cho MetaTrader (MT4) và Tradovate',
+  'upgrade.benefit.economic-calendar':
+    'Lịch kinh tế với tính năng tự động nhập sự kiện hằng tuần',
+  'upgrade.benefit.trade-sync': 'Trade Sync cho các nhà môi giới được hỗ trợ',
   'upgrade.benefit.multi-account': 'Hỗ trợ nhiều tài khoản',
-  'upgrade.benefit.analytics': 'Phân tích và số liệu nâng cao',
-  'upgrade.benefit.layouts': 'Bố cục bảng điều khiển tùy chỉnh',
+  'upgrade.prop-profiles.message-firms':
+    'Journalit luôn sẵn quy tắc của {count} prop firm để điền trước vào thử thách của bạn.',
+  'upgrade.prop-profiles.message-firm':
+    'Journalit có sẵn quy tắc cho mọi thử thách {firm} để điền trước.',
+  'upgrade.prop-profiles.message':
+    'Journalit luôn sẵn quy tắc của các prop firm để điền vào thử thách của bạn.',
+  'upgrade.prop-profiles.benefits-title': 'Pro điền sẵn cho bạn:',
+  'upgrade.benefit.prop.rules':
+    'Giới hạn drawdown và lỗ hằng ngày, lấy thẳng từ quy tắc của firm bạn',
+  'upgrade.benefit.prop.payout': 'Ngưỡng payout và điều kiện đủ tiêu chuẩn',
+  'upgrade.benefit.prop.phases':
+    'Mục tiêu và tiến trình từng giai đoạn của thử thách bạn chọn',
+  'upgrade.benefit.prop.updates': 'Cập nhật quy tắc khi firm thay đổi',
   'upgrade.trial-notice':
     'Nhận bản dùng thử miễn phí 2 tuần để nhập tất cả các giao dịch lịch sử của bạn và thử tất cả các tính năng Pro mà không gặp rủi ro.',
 
@@ -2491,9 +2738,9 @@ const vi: Lang = {
   'account-page.guide.empty.add-event.description':
     'Sử dụng nút này bất cứ khi nào tiền vào hoặc ra khỏi tài khoản ngoài các giao dịch thông thường.',
   'account-page.guide.empty.transactions.title':
-    'Tiền gửi và rút tiền được theo dõi tại đây',
+    'Các khoản tiền ra vào được theo dõi tại đây',
   'account-page.guide.empty.transactions.description':
-    'Phần này lưu giữ lịch sử gửi và rút tiền thủ công. Khi nó trống, hãy sử dụng Thêm sự kiện để tạo sự kiện đầu tiên.',
+    'Phần này lưu từng dòng cho mỗi lần gửi và rút tiền thủ công, hiển thị dưới dạng rút lợi nhuận với tài khoản prop challenge. Khi nó trống, hãy sử dụng Thêm sự kiện để tạo mục đầu tiên.',
   'account-page.guide.empty.trade-log.title':
     'Mở tài khoản này trong Nhật ký giao dịch',
   'account-page.guide.empty.trade-log.description':
@@ -2509,19 +2756,19 @@ const vi: Lang = {
   'account-page.guide.main.metrics.title':
     'Các số liệu này chỉ tóm tắt tài khoản này',
   'account-page.guide.main.metrics.description':
-    'Những con số này được tính toán cho tài khoản này, vì vậy bạn có thể tự đánh giá hiệu suất của nó.',
+    'Bảng chỉ số liền mạch hiển thị hệ số lợi nhuận, kết quả trung bình, giao dịch thắng và thua, hoa hồng, phí, chi phí một lần đã cấu hình cùng chi phí định kỳ ước tính.',
   'account-page.guide.main.risk.title':
     'Tiến trình rủi ro được theo dõi riêng ở đây',
   'account-page.guide.main.risk.description':
-    'Phần này cho thấy mức độ gần của tài khoản với giới hạn rút vốn hoặc mục tiêu lợi nhuận. Bạn đặt các quy tắc đó trong Chỉnh sửa tài khoản mà chúng tôi sẽ hiển thị tiếp theo.',
+    'Phần này hiển thị tiến độ sụt giảm và mục tiêu lợi nhuận. Nếu tài khoản theo dõi thử thách quỹ cấp vốn, giai đoạn hiện tại và các quy tắc sẽ xuất hiện ngay bên dưới.',
   'account-page.guide.main.transactions.title':
-    'Tiền gửi và rút tiền ở trong phần riêng của họ',
+    'Các khoản tiền ra vào nằm trong phần riêng',
   'account-page.guide.main.transactions.description':
-    'Mỗi mục ở đây có thể được xem xét sau, do đó bạn có thể tách biệt các chuyển động tiền mặt khỏi hiệu suất giao dịch.',
+    'Mỗi hàng ghi lại một lần tiền ra vào cùng số tiền và số dư sau đó, giúp bạn tách dòng tiền khỏi hiệu suất giao dịch. Với tài khoản prop challenge, cùng bảng này hiển thị dưới dạng các lần rút lợi nhuận được đánh số.',
   'account-page.guide.main.trade-log.title':
     'Xem giao dịch của tài khoản này trong Nhật ký giao dịch',
   'account-page.guide.main.trade-log.description':
-    'Mở Nhật ký giao dịch với tài khoản này đã được chọn để xem xét giao dịch tập trung.',
+    'Mở Nhật ký giao dịch với tài khoản này đã được chọn. Trong thử thách nhiều giai đoạn, nút theo giai đoạn bạn đang xem; mũi tên cho phép chọn các giai đoạn khác hoặc toàn bộ tài khoản.',
   'account-page.guide.main.add-event.title':
     'Thêm vào hồ sơ sự kiện gửi và rút tiền',
   'account-page.guide.main.add-event.description':
@@ -2534,6 +2781,7 @@ const vi: Lang = {
   'account-dashboard.copy-badge.base': 'GỐC',
   'account-dashboard.copy-badge.copy': 'COPY',
   'account-dashboard.copy-badge.copied-by': 'Sao chép bởi',
+  'account-dashboard.copy-badge.copies-tooltip-masked': 'Sao chép {account}',
   'account-dashboard.copy-badge.copies-tooltip':
     'Sao chép {account} tại {multiplier}x',
   'account-dashboard.error.init':
@@ -2571,10 +2819,6 @@ const vi: Lang = {
   'account-dashboard.guide.main.intro.title': 'Đây là các tài khoản của bạn',
   'account-dashboard.guide.main.intro.description':
     'Sử dụng trang này để so sánh các tài khoản, xem tổng số trên tất cả các tài khoản và chuyển sang một tài khoản khi bạn cần thêm chi tiết.',
-  'account-dashboard.guide.main.trade-filter.title':
-    'Bộ lọc này thay đổi toàn bộ bảng điều khiển',
-  'account-dashboard.guide.main.trade-filter.description':
-    'Sử dụng bộ lọc này để chuyển đổi bảng điều khiển giữa các giao dịch thông thường, kiểm tra ngược hoặc cả hai.',
   'account-dashboard.guide.main.aum-chart.title':
     'AUM có nghĩa là tài sản được quản lý',
   'account-dashboard.guide.main.aum-chart.description':
@@ -2583,22 +2827,22 @@ const vi: Lang = {
     'Các số liệu này tóm tắt tất cả các tài khoản hiển thị',
   'account-dashboard.guide.main.metrics.description':
     'Sử dụng các thống kê này để có ảnh chụp nhanh cấp tài khoản trước khi đi sâu vào các loại tài khoản cụ thể hoặc các tài khoản cụ thể.',
-  'account-dashboard.guide.main.sections.title':
-    'Tài khoản được nhóm theo loại tài khoản',
-  'account-dashboard.guide.main.sections.description':
-    'Những phần này giúp bạn so sánh các tài khoản tương tự với nhau. Mỗi thẻ có thể nhấp vào và mở toàn bộ trang cho tài khoản đó.',
+  'account-dashboard.guide.main.mode-switch.title':
+    'Tổng quan và Thử thách là hai góc nhìn của cùng các tài khoản',
+  'account-dashboard.guide.main.mode-switch.description':
+    'Tổng quan giữ biểu đồ AUM và tổng danh mục. Chuyển sang Thử thách để xem kinh tế của các thử thách prop: tỷ lệ đạt, chi phí, khoản rút và điểm nghẽn theo giai đoạn trên mọi tài khoản thử thách.',
   'account-dashboard.guide.main.create-account.title':
     'Bạn có thể tạo một tài khoản khác từ đây bất cứ lúc nào',
   'account-dashboard.guide.main.create-account.description':
     'Sử dụng nút này bất cứ khi nào bạn muốn thêm tài khoản mới vào bảng điều khiển.',
-  'account-dashboard.guide.main.settings.title':
-    'Cài đặt kiểm soát cách tổ chức trang tổng quan này',
-  'account-dashboard.guide.main.settings.description':
-    'Mở cài đặt trang tổng quan để quản lý các loại tài khoản, những gì được tính trong tổng số và thứ tự của các phần.',
   'account-dashboard.guide.main.settings-types.title':
     'Cài đặt có thể quản lý các loại tài khoản có sẵn',
   'account-dashboard.guide.main.settings-types.description':
     'Bên trong cài đặt, bạn có thể thêm các loại tài khoản tùy chỉnh và xóa các loại tài khoản cũ nếu quy trình làm việc của bạn thay đổi.',
+  'account-dashboard.guide.main.settings-stages.title':
+    'Giai đoạn thử thách có thể đặt loại tài khoản',
+  'account-dashboard.guide.main.settings-stages.description':
+    'Chọn loại tài khoản được áp dụng khi thử thách đạt tới giai đoạn đánh giá, funded mô phỏng hoặc funded thật. Để một giai đoạn ở «Không thay đổi» nếu muốn giữ nguyên loại tài khoản.',
   'account-dashboard.guide.main.settings-inclusion.title':
     'Cài đặt có thể thay đổi số lượng được tính trong tổng số',
   'account-dashboard.guide.main.settings-inclusion.description':
@@ -2611,7 +2855,31 @@ const vi: Lang = {
   'account-dashboard.guide.main.open-account.title':
     'Mở bất kỳ thẻ tài khoản nào để đi sâu hơn',
   'account-dashboard.guide.main.open-account.description':
-    'Khi bạn muốn có thông tin chi tiết đầy đủ về một tài khoản, hãy mở thẻ của tài khoản đó. Hướng dẫn Trang tài khoản sẽ tiếp quản ở đó.',
+    'Tài khoản được nhóm theo loại để bạn so sánh các tài khoản tương tự. Mở bất kỳ thẻ nào để xem chi tiết đầy đủ; hướng dẫn Trang tài khoản sẽ tiếp tục ở đó.',
+  'account-dashboard.guide.whats-new.prop-challenges.intro.title':
+    'Tính năng mới: thử thách prop nhiều giai đoạn',
+  'account-dashboard.guide.whats-new.prop-challenges.intro.description':
+    'Tiến độ thử thách prop giờ được tích hợp trực tiếp vào Bảng điều khiển tài khoản, với dải giai đoạn, số liệu kinh tế và các nhóm tài khoản quen thuộc.',
+  'account-dashboard.guide.whats-new.prop-challenges.enable.title':
+    'Bật theo dõi khi tạo hoặc chỉnh sửa tài khoản',
+  'account-dashboard.guide.whats-new.prop-challenges.enable.description':
+    'Trong Tạo tài khoản hoặc Chỉnh sửa tài khoản, hãy bật theo dõi thử thách prop. Mẫu mặc định cung cấp một điểm khởi đầu nhiều giai đoạn để bạn đổi tên và điều chỉnh.',
+  'account-dashboard.guide.whats-new.prop-challenges.overview.title':
+    'Hiệu suất thử thách trong một lần xem',
+  'account-dashboard.guide.whats-new.prop-challenges.overview.description':
+    'Bảng điểm phía trên tóm tắt thử thách đang hoạt động, tỷ lệ đạt, chi phí, khoản rút và kết quả ròng. Các bảng phân tích so sánh điểm nghẽn theo giai đoạn và hiệu suất theo công ty khi bạn theo dõi nhiều công ty prop.',
+  'account-dashboard.guide.whats-new.prop-challenges.ribbons.title':
+    'Dải giai đoạn giúp xem nhanh từng thử thách',
+  'account-dashboard.guide.whats-new.prop-challenges.ribbons.description':
+    'Thẻ tài khoản prop hiển thị các giai đoạn đã hoàn thành, hiện tại, đang chờ và thất bại, cùng tiến độ mục tiêu, drawdown, lỗ trong ngày và số ngày giao dịch.',
+  'account-dashboard.guide.whats-new.prop-challenges.mode.title':
+    'Chuyển giữa phân tích danh mục và thử thách',
+  'account-dashboard.guide.whats-new.prop-challenges.mode.description':
+    'Chọn Thử thách để xem hiệu quả chi phí tổng hợp cùng phân tích theo giai đoạn và nhiều công ty. Tổng quan tập trung vào AUM và số liệu danh mục.',
+  'account-dashboard.guide.whats-new.prop-challenges.account-page.title':
+    'Tài khoản chuyển đổi vẫn ở trong cùng quy trình',
+  'account-dashboard.guide.whats-new.prop-challenges.account-page.description':
+    'Khi thử thách tiến lên hoặc chuyển thành tài khoản funded, loại tài khoản và lịch sử giai đoạn vẫn được liên kết. Mở thẻ để xử lý quyết định, hành động và xem đầy đủ quy tắc.',
   'account-dashboard.metrics.total-accounts': 'Tổng số tài khoản',
   'account-dashboard.metrics.total-aum': 'Tổng AUM',
   'account-dashboard.metrics.total-growth': 'Tổng mức tăng trưởng',
@@ -2629,9 +2897,6 @@ const vi: Lang = {
   'account-dashboard.type-header.trade': 'Giao dịch',
   'account-dashboard.type-header.trades': 'Giao dịch',
   'account-dashboard.type-header.growth': 'Tăng trưởng ({percent})',
-  'account-card.status.breached': 'BỊ VI PHẠM',
-  'account-card.status.in-progress': 'ĐANG TIẾN HÀNH',
-  'account-card.status.achieved': 'ĐẠT ĐƯỢC',
   'account-card.metric.trades': 'Giao dịch',
   'account-card.metric.withdrawals': 'Rút tiền',
   'account-card.metric.age': 'Tuổi',
@@ -2640,8 +2905,17 @@ const vi: Lang = {
   'account-card.progress.not-set': 'Chưa đặt',
   'account-card.footer.monthly': 'hàng tháng:',
   'account-card.footer.total-costs': 'Tổng chi phí:',
+  'account.metrics.total-account-costs': 'Tổng chi phí ước tính',
+  'account.metrics.total-costs': 'Tổng chi phí',
+  'account.metrics.one-time-costs': 'Chi phí một lần',
+  'account.metrics.recurring-costs-to-date': 'Chi phí định kỳ đến nay',
+  'account.metrics.monthly-cost': 'Chi phí hằng tháng',
   'account.chart.event.added': 'Đã thêm tài khoản',
   'account.chart.event.archived': 'Tài khoản đã lưu trữ',
+  'account.balance-chart.drawdown-floor-off-scale':
+    'Ngưỡng drawdown {value} ({distance} bên dưới)',
+  'account.balance-chart.profit-target-off-scale':
+    'Mục tiêu lợi nhuận {value} ({distance} bên trên)',
   'account.balance-chart.empty': 'Không tìm thấy giao dịch nào',
   'account.balance-chart.empty-sub':
     'Không có hoạt động giao dịch nào cho tài khoản này',
@@ -2775,6 +3049,11 @@ const vi: Lang = {
     'Lọc các mục gần đây vào tệp Journalit',
   'settings.general.filter-recent-toggled':
     'Lọc các mục gần đây vào tệp Journalit {status}',
+  'settings.general.home-widget-opacity': 'Độ mờ của tiện ích',
+  'settings.general.home-widget-opacity-desc':
+    'Nền tiện ích có ảnh: 0% là trong suốt, 100% là đục hoàn toàn. Áp dụng cho giao diện hiện tại; giá trị của giao diện sáng và tối được lưu riêng.',
+  'settings.general.home-widget-opacity-save-failed':
+    'Không thể lưu độ mờ của tiện ích. Vui lòng thử lại.',
   'settings.general.home-background': 'Ảnh nền Home',
   'settings.general.home-background-desc':
     'Dùng ảnh trong vault hoặc chọn ảnh từ máy tính để sao chép vào vault.',
@@ -3125,7 +3404,7 @@ const vi: Lang = {
 
   'settings.customization.trade-fields': 'Trường giao dịch tùy chỉnh',
   'settings.customization.custom-fields.description':
-    'Tạo các trường tùy chỉnh sẽ xuất hiện trong tab Nâng cao của biểu mẫu giao dịch. Các trường này sẽ được lưu vào tài liệu chính của giao dịch của bạn.',
+    'Thêm trường của riêng bạn vào mọi lệnh, như phiên, khung thời gian hay chất lượng setup. Chúng xuất hiện ở tab Nâng cao của biểu mẫu, được lưu vào frontmatter của ghi chú và có thể trở thành cột sắp xếp và lọc được trong nhật ký giao dịch.',
   'settings.customization.custom-fields.title': 'Trường tùy chỉnh ({count})',
   'settings.customization.custom-fields.manage-desc':
     'Quản lý các trường biểu mẫu giao dịch tùy chỉnh của bạn',
@@ -3139,7 +3418,7 @@ const vi: Lang = {
   'settings.customization.custom-fields.no-fields':
     'Chưa có trường tùy chỉnh nào được xác định',
   'settings.customization.custom-fields.no-fields-desc':
-    'Các trường tùy chỉnh sẽ xuất hiện trong tab "Nâng cao" của biểu mẫu giao dịch và được lưu vào phần đầu của ghi chú giao dịch của bạn.',
+    'Hãy bắt đầu với một trường mà bạn thực sự sẽ xem lại sau, như phiên bạn đã giao dịch hoặc mức độ setup khớp với kế hoạch của bạn.',
   'settings.customization.custom-fields.add-new': 'Thêm trường mới',
 
   'settings.customization.custom-fields.edit-field-with-name':
@@ -3388,80 +3667,16 @@ const vi: Lang = {
     'Kế thừa và cục bộ',
   'onboarding.welcome.title': 'Chào mừng đến với Journalit',
   'onboarding.welcome.subtitle':
-    'Sở hữu dữ liệu giao dịch của bạn. Định hình quy trình làm việc của riêng bạn.',
-  'onboarding.welcome.cta': 'Bắt đầu',
+    'Một nhật ký giao dịch nằm ngay trên thiết bị của bạn.',
+  'onboarding.welcome.cta': 'Thiết lập nhật ký của tôi',
   'onboarding.welcome.chart.week': 'Tuần {count}',
   'onboarding.view.title': 'Giới thiệu Journalit',
 
   'onboarding.common.continue': 'Tiếp tục',
   'onboarding.common.close': 'Đóng',
 
-  'onboarding.features.feature.manual-entry.description':
-    'Ghi lại giao dịch thủ công với toàn quyền kiểm soát',
-
   'onboarding.features.badge.pro': 'CHUYÊN NGHIỆP',
 
-  'onboarding.explore.title': 'Khám phá',
-  'onboarding.explore.subtitle':
-    'Journalit biến vault Obsidian của bạn thành một nhật ký giao dịch đầy đủ với bảng điều khiển, nhật ký giao dịch, theo dõi tài khoản và bố cục có thể tùy chỉnh.',
-  'onboarding.explore.subtitle2':
-    'Được thiết kế để thích ứng với quy trình làm việc của bạn chứ không buộc bạn phải làm theo quy trình của chúng tôi.',
-  'onboarding.explore.tagline': 'Journalit của bạn, quy tắc của bạn.',
-  'onboarding.explore.section.out-of-box.title':
-    'Các công cụ và chế độ xem cốt lõi',
-  'onboarding.explore.core.dashboard.label': 'Bảng điều khiển',
-  'onboarding.explore.core.dashboard.description':
-    'Sơ lược về hiệu suất của bạn — P&L, tỷ lệ thắng, tỷ lệ rút vốn, v.v.',
-  'onboarding.explore.core.tradelog.label': 'Nhật ký giao dịch',
-  'onboarding.explore.core.tradelog.description':
-    'Duyệt các giao dịch theo năm/tháng/tuần/ngày và tìm hiểu chi tiết ngay lập tức.',
-  'onboarding.explore.core.accounts.label': 'Theo dõi tài khoản',
-  'onboarding.explore.core.accounts.description':
-    'Theo dõi nhiều tài khoản và xem các trang hiệu suất dành riêng cho tài khoản.',
-  'onboarding.explore.core.layouts.label': 'Trình tạo bố cục',
-  'onboarding.explore.core.layouts.description':
-    'Tùy chỉnh trang tổng quan và xem lại bố cục bằng các tiện ích và bố cục.',
-  'onboarding.explore.imports.title': 'Nhập & Đồng bộ',
-
-  'onboarding.explore.imports.csv.label': 'Trade Import',
-  'onboarding.explore.imports.csv.description':
-    'Xem trước miễn phí các tệp lịch sử giao dịch được hỗ trợ và ánh xạ cột. Cần Pro để nhập vào kho của bạn.',
-  'onboarding.explore.imports.trade-sync.label': 'Trade Sync',
-  'onboarding.explore.imports.trade-sync.description':
-    'Tự động đồng bộ giao dịch từ MetaTrader (MT4) hoặc Tradovate. Yêu cầu Pro.',
-
-  'onboarding.explore.cta.manual': 'Mở Tài liệu',
-  'onboarding.path.kicker': 'Lịch sử giao dịch của bạn',
-  'onboarding.path.title': 'Bạn đã có giao dịch để đưa vào Journalit chưa?',
-  'onboarding.path.subtitle':
-    'Chọn một câu trả lời và chúng tôi sẽ đưa bạn thẳng đến bước tiếp theo phù hợp.',
-  'onboarding.path.option.manual.label': 'Chưa, tôi sẽ bắt đầu từ đầu',
-  'onboarding.path.option.manual.description':
-    'Mở biểu mẫu Thêm giao dịch và ghi lại giao dịch đầu tiên.',
-  'onboarding.path.option.csv.label': 'Có, tôi đã có lịch sử giao dịch',
-  'onboarding.path.option.csv.description':
-    'Chọn đồng bộ broker tự động hoặc nhập từ tệp.',
-  'onboarding.path.method.kicker': 'Đưa lịch sử vào Journalit',
-  'onboarding.path.method.title': 'Bạn muốn đưa lịch sử vào bằng cách nào?',
-  'onboarding.path.method.subtitle':
-    'Chọn tùy chọn phù hợp với broker và tệp xuất của bạn.',
-  'onboarding.path.option.trade-sync.label': 'Kết nối MT4 hoặc Tradovate',
-  'onboarding.path.option.trade-sync.description':
-    'Thiết lập Trade Sync để tự động nhận các giao dịch mới.',
-  'onboarding.path.option.import.label': 'Nhập tệp lịch sử giao dịch',
-  'onboarding.path.option.import.description':
-    'Tải lên tệp CSV, Excel hoặc báo cáo broker được hỗ trợ.',
-  'onboarding.path.option.import.badge': 'Xem trước miễn phí',
-  'onboarding.manual.title': 'Bạn đã sẵn sàng dùng Journalit',
-  'onboarding.manual.subtitle':
-    'Thiết lập phím tắt được đề xuất bên dưới để ghi lại giao dịch nhanh hơn.',
-  'onboarding.manual.subtitle-mobile':
-    'Mở Thêm giao dịch mỗi khi bạn muốn ghi lại một giao dịch.',
-  'onboarding.manual.hotkey.title': 'Phím nóng được đề xuất',
-  'onboarding.manual.cta.change-hotkey': 'Đặt phím nóng',
-  'onboarding.manual.hit-hotkey':
-    'Đề xuất: {hotkey}. Nhấp chuột Đặt phím nóng để cấu hình nó.',
-  'onboarding.manual.add-first-trade': 'Thêm giao dịch đầu tiên của tôi',
   'onboarding.features.graphic.syncing': 'Đang đồng bộ hóa giao dịch...',
   'onboarding.features.graphic.complete': 'Đồng bộ hóa hoàn tất',
   'onboarding.features.graphic.direction.long': 'LONG',
@@ -3510,6 +3725,139 @@ const vi: Lang = {
 
   'onboarding.notice.complete-failed':
     'Không lưu được quá trình hoàn tất quá trình giới thiệu. Vui lòng thử lại sau.',
+  'onboarding.notice.completed':
+    'Nhật ký của bạn đã sẵn sàng. Quá trình giới thiệu đã hoàn tất.',
+  'onboarding.familiarity.kicker': 'Câu hỏi nhanh',
+  'onboarding.familiarity.title': 'Bạn đã dùng Obsidian bao giờ chưa?',
+  'onboarding.familiarity.subtitle':
+    'Journalit chạy bên trong Obsidian. Nếu bạn chưa quen, chúng tôi chỉ hiển thị những gì cần thiết.',
+  'onboarding.familiarity.option.yes.label': 'Rồi, tôi đã quen',
+  'onboarding.familiarity.option.yes.description': 'Bỏ qua phần làm quen.',
+  'onboarding.familiarity.option.no.label': 'Chưa, tôi mới dùng Obsidian',
+  'onboarding.familiarity.option.no.description':
+    'Một màn hình ngắn, không có tour.',
+  'onboarding.orientation.kicker': 'Mới dùng Obsidian',
+  'onboarding.orientation.title': 'Bốn điều cần biết',
+  'onboarding.orientation.subtitle': 'Chỉ cần vậy là dùng được Journalit.',
+  'onboarding.orientation.inside.title': 'Journalit chạy bên trong Obsidian',
+  'onboarding.orientation.inside.body':
+    'Không cần học Obsidian trước. Màn hình này là một màn hình của Journalit.',
+  'onboarding.orientation.sidebar.title': 'Thanh bên là cách bạn di chuyển',
+  'onboarding.orientation.sidebar.body':
+    'Trang chủ, Bảng điều khiển, Nhật ký giao dịch và các đánh giá đều ở đó.',
+  'onboarding.orientation.sidebar.action': 'Cho tôi xem thanh bên',
+  'onboarding.orientation.sidebar.action-mobile': 'Mở thanh bên',
+  'onboarding.orientation.sidebar.hint': 'Nó ở bên trái. Màn hình này vẫn mở.',
+  'onboarding.orientation.sidebar.hint-mobile':
+    'Nó mở đè lên màn hình này. Vuốt hoặc chạm bên ngoài để quay lại.',
+  'onboarding.orientation.tabs.title': 'Các màn hình mở dưới dạng tab',
+  'onboarding.orientation.tabs.body':
+    'Như tab này. Chuyển giữa chúng ở phía trên.',
+  'onboarding.orientation.privacy.title':
+    'Nhật ký của bạn ở trên thiết bị của bạn',
+  'onboarding.orientation.privacy.body':
+    'Ghi chú, ảnh chụp và đánh giá là tệp của bạn. Chỉ giao dịch bạn nhập hoặc đồng bộ mới đi qua máy chủ Journalit.',
+  'onboarding.orientation.continue': 'Đã hiểu',
+  'onboarding.data-source.kicker': 'Giao dịch của bạn',
+  'onboarding.data-source.title': 'Giao dịch của bạn hiện đang ở đâu?',
+  'onboarding.data-source.subtitle':
+    'Lịch sử của bạn là một phần lợi thế. Mang nó theo và số liệu có ý nghĩa ngay từ ngày đầu, thay vì chờ nhiều tháng tích lũy giao dịch mới.',
+  'onboarding.data-source.option.broker.label': 'Ở sàn hoặc nền tảng của tôi',
+  'onboarding.data-source.option.broker.description':
+    'Kết nối, hoặc nhập tệp xuất từ đó.',
+  'onboarding.data-source.option.file.label': 'Trong bảng tính hoặc tệp',
+  'onboarding.data-source.option.file.description':
+    'Tệp xuất CSV, Excel hoặc HTML.',
+  'onboarding.data-source.option.fresh.label': 'Chưa có, tôi bắt đầu từ đầu',
+  'onboarding.data-source.option.fresh.description':
+    'Thêm giao dịch khi bạn thực hiện.',
+  'onboarding.data-source.option.sample.label':
+    'Chưa có ở đâu, cho tôi xem một mẫu',
+  'onboarding.data-source.option.sample.description':
+    'Xem thử một nhật ký có sẵn trước khi thêm giao dịch của bạn.',
+  'onboarding.broker.kicker': 'Sàn của bạn',
+  'onboarding.broker.title': 'Sàn hoặc nền tảng nào?',
+  'onboarding.awaiting.sign-in.action': 'Đăng nhập để tiếp tục',
+  'onboarding.awaiting.sign-in.body':
+    'Hãy đăng nhập hoặc tạo tài khoản Journalit miễn phí trước. Sau đó giao dịch sẽ vào nhật ký của bạn.',
+  'onboarding.broker.badge.sync': 'Tự động đồng bộ',
+  'onboarding.broker.search': 'Tìm sàn và nền tảng',
+  'onboarding.broker.subtitle':
+    'Chúng tôi sẽ chọn cách tốt nhất để đưa giao dịch của bạn vào.',
+  'onboarding.broker.option.unlisted.label': 'Không có trong danh sách',
+  'onboarding.broker.option.metatrader4.label': 'MetaTrader 4',
+  'onboarding.broker.option.metatrader5.label': 'MetaTrader 5',
+  'onboarding.broker.request.title':
+    'Chưa có trong danh sách? Cho chúng tôi biết sàn của bạn',
+  'onboarding.broker.request.body':
+    'Sàn mới được thêm theo yêu cầu. Cho chúng tôi biết sàn của bạn (mẫu xuất dữ liệu sẽ hữu ích); trong lúc đó, tệp xuất có thể được ánh xạ thủ công.',
+  'onboarding.broker.request.discord': 'Yêu cầu trên Discord',
+  'onboarding.broker.request.continue': 'Tiếp tục với nhập thủ công',
+  'onboarding.broker.loading': 'Đang kiểm tra các sàn được hỗ trợ...',
+  'onboarding.broker.offline':
+    'Không tải được danh sách đầy đủ. Bạn vẫn có thể kết nối sàn được hỗ trợ hoặc nhập tệp.',
+  'onboarding.personalise.kicker': 'Thiết lập nhật ký',
+  'onboarding.personalise.title': 'Vài lựa chọn nhanh',
+  'onboarding.personalise.subtitle':
+    'Chúng tôi cá nhân hóa Journalit dựa trên câu trả lời của bạn.',
+  'onboarding.personalise.style.question': 'Bạn giao dịch như thế nào?',
+  'onboarding.personalise.style.scalping': 'Nhiều giao dịch mỗi ngày',
+  'onboarding.personalise.style.intraday':
+    'Vài giao dịch mỗi ngày, không giữ qua đêm',
+  'onboarding.personalise.style.swing': 'Giữ vài ngày hoặc vài tuần',
+  'onboarding.personalise.style.position': 'Giữ vài tuần hoặc vài tháng',
+  'onboarding.personalise.account.question': 'Loại tài khoản nào?',
+  'onboarding.personalise.account.personal': 'Cá nhân',
+  'onboarding.personalise.account.practice': 'Demo hoặc luyện tập',
+  'onboarding.personalise.account.prop':
+    'Thử thách prop firm hoặc đã được cấp vốn',
+  'onboarding.personalise.asset.question': 'Bạn chủ yếu giao dịch gì?',
+  'onboarding.personalise.asset.stock': 'Cổ phiếu',
+  'onboarding.personalise.asset.futures': 'Hợp đồng tương lai',
+  'onboarding.personalise.asset.forex': 'Forex',
+  'onboarding.personalise.asset.crypto': 'Tiền mã hóa',
+  'onboarding.personalise.asset.options': 'Quyền chọn',
+  'onboarding.personalise.asset.mixed': 'Nhiều loại',
+  'onboarding.first-trade.kicker': 'Sắp xong',
+  'onboarding.first-trade.title': 'Thêm giao dịch đầu tiên của bạn',
+  'onboarding.first-trade.subtitle':
+    'Nhật ký đã sẵn sàng. Ghi một giao dịch và Journalit bắt đầu làm việc từ đó.',
+  'onboarding.first-trade.cta': 'Thêm giao dịch đầu tiên',
+  'onboarding.first-trade.sample': 'Khám phá với dữ liệu mẫu',
+  'onboarding.preparing-sample.title': 'Đang chuẩn bị nhật ký mẫu',
+  'onboarding.preparing-sample.body':
+    'Chỉ mất vài giây. Obsidian có thể hơi chậm trong lúc ghi các ghi chú.',
+  'onboarding.preparing-sample.starting': 'Đang bắt đầu…',
+  'onboarding.preparing-sample.hint':
+    'Bạn có thể gỡ nhật ký mẫu bất cứ lúc nào từ huy hiệu ở góc.',
+  'onboarding.preparing-sample.failed.title': 'Không thể tạo nhật ký mẫu',
+  'onboarding.preparing-sample.failed.body':
+    'Bạn có thể thử lại hoặc chọn cách bắt đầu khác.',
+  'onboarding.preparing-sample.retry': 'Thử lại',
+  'onboarding.sample-exploring.kicker': 'Nhật ký mẫu',
+  'onboarding.sample-exploring.title': 'Bạn đang khám phá nhật ký mẫu',
+  'onboarding.sample-exploring.body':
+    'Cứ thong thả. Khi bạn thoát khỏi mẫu, chúng ta sẽ tiếp tục tại đây: cá nhân hóa nhật ký của bạn và thêm giao dịch đầu tiên.',
+  'onboarding.sample-exploring.exit': 'Thoát mẫu và tiếp tục',
+  'onboarding.sample-exploring.failed.title': 'Không thể khôi phục nhật ký mẫu',
+  'onboarding.sample-exploring.failed.body':
+    'Thoát khỏi mẫu để xóa phần còn lại, rồi tiếp tục thiết lập nhật ký của bạn.',
+  'onboarding.awaiting.kicker': 'Đang chờ những giao dịch đầu tiên',
+  'onboarding.awaiting.first-sync.title': 'Hoàn tất kết nối sàn',
+  'onboarding.awaiting.first-sync.body':
+    'Hoàn tất kết nối trong Cài đặt > Trade Sync. Khi giao dịch đầu tiên được đồng bộ, màn hình thiết lập này sẽ tự đóng.',
+  'onboarding.awaiting.first-sync.action': 'Mở Trade Sync',
+  'onboarding.awaiting.first-import.title': 'Nhập tệp của bạn',
+  'onboarding.awaiting.first-import.body':
+    'Hoàn tất việc nhập trong tab Trade Import. Khi giao dịch đầu tiên được nhập, màn hình thiết lập này sẽ tự đóng.',
+  'onboarding.awaiting.first-import.action': 'Mở Trade Import',
+  'onboarding.awaiting.first-trade.title': 'Lưu giao dịch đầu tiên',
+  'onboarding.awaiting.first-trade.body':
+    'Khi giao dịch đầu tiên được lưu, màn hình thiết lập này sẽ tự đóng.',
+  'onboarding.awaiting.first-trade.action': 'Thêm giao dịch',
+  'onboarding.awaiting.change-route': 'Chọn cách khác',
+  'onboarding.notice.personalise-failed':
+    'Không áp dụng được lựa chọn thiết lập của bạn. Bạn có thể điều chỉnh sau trong Cài đặt.',
   'onboarding.notice.trade-sync-open-failed':
     'Không thể mở Trade Sync. Vui lòng thử lại.',
   'onboarding.notice.skip-failed':
@@ -4124,6 +4472,8 @@ const vi: Lang = {
   'account.create.success': 'Tài khoản "{name}" được tạo thành công',
   'account.create.error.name-required': 'Tên tài khoản là bắt buộc',
   'account.create.error.name-exists': 'Đã tồn tại tài khoản có tên "{name}"',
+  'account.create.error.rule-incomplete':
+    'Mỗi quy tắc đang bật cần một giá trị lớn hơn không',
   'account.create.error.balance-negative': 'Số dư ban đầu không thể âm',
   'account.create.error.invalid-live-balance': 'Số dư trực tiếp không hợp lệ',
   'account.create.error.drawdown-required':
@@ -4262,6 +4612,130 @@ const vi: Lang = {
     'Tài khoản này hiện là cơ sở cho một tài khoản sao chép khác.',
   'account.copy-trading.base-account-is-copied-desc-secondary':
     'Tài khoản cơ sở cũng không thể là tài khoản sao chép.',
+  'account.prop-challenge.summary.status.archived': 'Đã lưu trữ',
+  'account.prop-challenge.summary.status.hidden': 'Đã ẩn',
+  'account.prop-challenge.actions.progress-to': 'Chuyển sang {phase}',
+  'account.prop-challenge.actions.progress': 'Chuyển sang giai đoạn tiếp theo',
+  'account.prop-challenge.actions.mark-passed': 'Đánh dấu thử thách đã đạt',
+  'account.prop-challenge.actions.mark-failed': 'Đánh dấu thất bại',
+  'account.prop-challenge.actions.archive': 'Lưu trữ thử thách',
+  'account.prop-challenge.actions.reopen': 'Mở lại',
+  'account.prop-challenge.view-trades': 'Xem giao dịch của {phase}',
+  'account.prop-challenge.actions.manual': 'Thao tác thủ công',
+  'account.prop-challenge.notice.failed-title': '{phase} thất bại',
+  'account.prop-challenge.notice.failed-description':
+    '{rule} bị vi phạm ngày {date}',
+  'account.prop-challenge.notice.failed-manual': 'Đã đánh dấu thất bại',
+  'account.prop-challenge.notice.keep-open': 'Giữ mở',
+  'account.prop-challenge.notice.target-title': 'Đã đạt mục tiêu {phase}',
+  'account.prop-challenge.notice.target-description':
+    'Đã đáp ứng mọi yêu cầu. Chuyển sang {next}?',
+  'account.prop-challenge.notice.breach-after-reached':
+    'Quy tắc bị phá sau khi đạt mục tiêu lúc {time}. Đặt thời điểm chuyển để các lệnh đó không thuộc pha này.',
+  'account.prop-challenge.notice.not-yet': 'Chưa',
+  'account.prop-challenge.notice.passed-title': 'Đã vượt qua đánh giá',
+  'account.prop-challenge.notice.passed-description':
+    'Đã đáp ứng mọi yêu cầu. Đánh dấu challenge đã vượt qua?',
+  'account.prop-challenge.notice.payout-title': 'Có thể rút: {amount}',
+  'account.prop-challenge.notice.payout-plan': 'Kế hoạch của bạn: rút {amount}',
+  'account.prop-challenge.notice.record-payout': 'Ghi nhận khoản rút',
+  'account.prop-challenge.notice.skip-cycle': 'Bỏ qua chu kỳ này',
+  'account.prop-challenge.notice.payout-description': 'Khoản rút',
+  'account.prop-challenge.notice.lost-title': 'Không còn đủ điều kiện rút',
+  'account.prop-challenge.notice.lost-description': 'Chưa đạt: {requirements}',
+  'account.prop-challenge.notice.dismiss': 'Bỏ qua',
+  'account.prop-challenge.notice.unknown-title': 'Tài khoản mới {label}',
+  'account.prop-challenge.notice.unknown-description':
+    '{count} lệnh từ {date} chưa được gán cho giai đoạn nào.',
+  'account.prop-challenge.notice.unknown-description-one':
+    '1 giao dịch từ {date} chưa được gán vào giai đoạn nào.',
+  'account.prop-challenge.notice.same-phase': 'Cùng giai đoạn',
+  'account.prop-challenge.notice.not-now': 'Để sau',
+  'account.prop-challenge.notice.error': 'Không thể cập nhật thông báo.',
+  'account.prop-challenge.notice.type-changed':
+    'Loại tài khoản đã đặt thành {accountType}',
+  'account.prop-challenge.payout.plan.title': 'Kế hoạch rút tiền',
+  'account.prop-challenge.payout.plan.notify-minimum':
+    'Thông báo khi đạt ít nhất ({currency})',
+  'account.prop-challenge.payout.plan.withdrawal': 'Khoản rút đề xuất',
+  'account.prop-challenge.payout.plan.full': 'Toàn bộ',
+  'account.prop-challenge.payout.plan.percent': 'Phần trăm khả dụng',
+  'account.prop-challenge.payout.plan.amount': 'Số tiền cố định',
+  'account.prop-challenge.payout.plan.percent-invalid':
+    'Nhập phần trăm từ 1 đến 100.',
+  'account.prop-challenge.payout.plan.amount-invalid':
+    'Nhập số tiền lớn hơn không.',
+  'account.prop-challenge.payout.plan.percent-value': 'Phần trăm',
+  'account.prop-challenge.payout.plan.amount-value': 'Số tiền ({currency})',
+  'account.prop-challenge.payout.plan.save': 'Lưu kế hoạch',
+  'account.prop-challenge.payout.plan.saved': 'Đã lưu kế hoạch rút tiền.',
+  'account.prop-challenge.payout.plan.summary-notify': 'báo khi ≥ {amount}',
+  'account.prop-challenge.payout.plan.summary-percent': 'đề xuất {percent}%',
+  'account.prop-challenge.payout.plan.summary-amount': 'đề xuất {amount}',
+  'account.prop-challenge.payout.plan.summary-full': 'toàn bộ số tiền',
+  'account.prop-challenge.actions.error':
+    'Không thể cập nhật thử thách prop firm.',
+  'account.prop-challenge.confirm.advance':
+    'Xác nhận kết quả giai đoạn và tiếp tục thử thách?',
+  'account.prop-challenge.confirm.advance-with-promotion':
+    'Thao tác này sẽ chuyển giai đoạn và đổi loại tài khoản thành {accountType}.',
+  'account.prop-challenge.confirm.fail':
+    'Đánh dấu {account} là thất bại? Thử thách “{challenge}” kết thúc ở {phase}.',
+  'account.prop-challenge.confirm.archive-failed':
+    'Lưu trữ {account}? Thử thách “{challenge}” đã thất bại. Tài khoản chuyển sang Đã lưu trữ.',
+  'account.prop-challenge.confirm.archive-passed':
+    'Lưu trữ {account}? Thử thách “{challenge}” đã vượt qua. Tài khoản chuyển sang Đã lưu trữ.',
+  'account.prop-challenge.transition.route': '{account} · {from} → {to}',
+  'account.prop-challenge.transition.route-passed':
+    '{account} · {from} → vượt qua thử thách',
+  'account.prop-challenge.confirm.reopen':
+    'Mở lại {account}? Thử thách “{challenge}” quay về {phase}.',
+  'account.prop-challenge.transition.time': 'Thời điểm chuyển',
+  'account.prop-challenge.transition.now': 'Bây giờ',
+  'account.prop-challenge.transition.when-target-reached': 'Khi đạt mục tiêu',
+  'account.prop-challenge.transition.too-early':
+    'Thời điểm chuyển pha không được trước lúc pha bắt đầu.',
+  'account.prop-challenge.costs.title': 'Chi phí một lần',
+  'account.prop-challenge.costs.description':
+    'Theo dõi riêng phí mua, đặt lại và kích hoạt.',
+  'account.prop-challenge.costs.kind': 'Loại',
+  'account.prop-challenge.costs.kind.purchase': 'Mua',
+  'account.prop-challenge.costs.kind.reset': 'Đặt lại',
+  'account.prop-challenge.costs.kind.activation': 'Kích hoạt',
+  'account.prop-challenge.costs.kind.other': 'Khác',
+  'account.prop-challenge.costs.date': 'Ngày',
+  'account.prop-challenge.costs.amount': 'Số tiền',
+  'account.prop-challenge.costs.note': 'Ghi chú (tùy chọn)',
+  'account.prop-challenge.costs.add': 'Thêm chi phí',
+  'account.header.copies': 'Sao chép',
+  'account.header.copied-by-more': '+{count} nữa',
+  'account.header.created': 'Đã tạo:',
+  'account.summary.current-balance': 'Số dư hiện tại',
+  'account.summary.net-cash-flow': 'Dòng tiền ròng',
+  'account.summary.payouts': 'Rút tiền',
+  'account.performance.title': 'Hiệu suất giao dịch',
+  'account-page.guide.whats-new.cockpit.intro.title':
+    'Có gì mới ở trang tài khoản',
+  'account-page.guide.whats-new.cockpit.intro.description':
+    'Biểu đồ số dư giờ đây mở đầu phần phân tích tài khoản. Bảng chỉ số liền mạch nằm ngay bên dưới, tiếp theo là các quy tắc thử thách prop.',
+  'account-page.guide.whats-new.cockpit.cockpit.title':
+    'Quy tắc thử thách theo sau hiệu suất',
+  'account-page.guide.whats-new.cockpit.cockpit.description':
+    'Với tài khoản prop, hãy chọn một giai đoạn trong tiêu đề quy tắc bên dưới bảng chỉ số để xem từng yêu cầu và tiến độ. Các thao tác vòng đời vẫn nằm trong menu bên cạnh.',
+  'account-page.guide.whats-new.cockpit.summary.title':
+    'Một bảng chỉ số liền mạch',
+  'account-page.guide.whats-new.cockpit.summary.description':
+    'Trạng thái tài khoản và hiệu suất chi tiết giờ dùng chung một bề mặt dưới biểu đồ: số dư, P&L ròng và dòng tiền trước, các chỉ số còn lại tiếp tục trong cùng lưới.',
+  'account-page.guide.whats-new.cockpit.risk.title':
+    'Chỉ một nguồn rủi ro chuẩn',
+  'account-page.guide.whats-new.cockpit.risk.description':
+    'Khi thử thách đang chạy, đã đạt hoặc đã trượt, chỉ các quy tắc giai đoạn của nó được hiển thị, nên không có con số sụt giảm thứ hai gây mâu thuẫn. Rủi ro tài khoản chung quay lại với tài khoản thường hoặc đã lưu trữ.',
+  'account-page.guide.main.challenge.title': 'Toàn cảnh thử thách của bạn',
+  'account-page.guide.main.challenge.description':
+    'Bên dưới bảng chỉ số liền mạch, hãy chọn một giai đoạn thử thách trong tiêu đề quy tắc rồi xem từng yêu cầu cùng tiến độ và trạng thái. Các thao tác nằm cạnh bộ chọn.',
+  'account-page.guide.main.summary.title': 'Toàn cảnh trạng thái tài khoản',
+  'account-page.guide.main.summary.description':
+    'Bảng chỉ số liền mạch bắt đầu với số dư, P&L ròng, tăng trưởng, số giao dịch, tỷ lệ thắng và dòng tiền ròng — hoặc rút tiền với tài khoản prop.',
   'account.edit.field.target-type': 'Loại mục tiêu',
   'account.edit.field.target-type-desc': 'Tuyệt đối hoặc phần trăm',
   'account.edit.field.target-percent': 'Mục tiêu (%)',
@@ -4419,13 +4893,28 @@ const vi: Lang = {
   'account.transaction.withdrawal': 'Rút tiền',
   'account.transaction.click-to-edit':
     'Nhấp để chỉnh sửa hoặc xóa giao dịch này',
-  'account.transaction.description': 'Mô tả',
-  'account.transaction.balance-after': 'Cân bằng sau',
-  'account.deposits-withdrawals.title': 'Gửi và rút tiền ({count})',
+  'account.transaction.edit-row-label':
+    'Sửa hoặc xóa giao dịch này: {date}, {amount}',
+  'account.deposits-withdrawals.title': 'Gửi và rút tiền',
   'account.deposits-withdrawals.empty':
     'Không có khoản tiền gửi hoặc rút tiền thủ công nào được ghi lại.',
   'account.deposits-withdrawals.empty-sub':
     'Nhấp vào nút + trong tiêu đề để thêm giao dịch tài khoản đầu tiên của bạn.',
+  'account.deposits-withdrawals.summary':
+    'Gửi {deposits} · Rút {withdrawn} · gần nhất {date}',
+  'account.payouts.title': 'Rút lợi nhuận',
+  'account.payouts.summary': '{count} lần rút · {total} · gần nhất {date}',
+  'account.payouts.summary-masked':
+    'Lịch sử chi trả được ẩn khi các giá trị bị che',
+  'account.payouts.summary-one': '1 lần rút · {total} · gần nhất {date}',
+  'account.payouts.empty': 'Chưa có khoản rút lợi nhuận nào',
+  'account.payouts.empty-sub': 'Ghi nhận khoản rút bằng nút + trên tiêu đề.',
+  'account.ledger.column.date': 'Ngày',
+  'account.ledger.column.type': 'Loại',
+  'account.ledger.column.payout': 'Khoản rút',
+  'account.ledger.column.description': 'Mô tả',
+  'account.ledger.column.amount': 'Số tiền',
+  'account.ledger.column.balance-after': 'Số dư sau',
   'settings.reset.modal.title': 'Đặt lại cài đặt về mặc định?',
   'settings.reset.modal.explanation':
     'Điều này sẽ đặt lại TẤT CẢ cài đặt plugin về giá trị mặc định của chúng. Điều này bao gồm:',
@@ -4451,8 +4940,6 @@ const vi: Lang = {
   'notice.settings-reset-no-backup':
     'Cài đặt lại về mặc định. Không có bản sao lưu nào được tạo. Khởi động lại Obsidian để áp dụng tất cả các thay đổi.',
   'home.quick-links.hide': 'Ẩn liên kết nhanh',
-  'home.quick-links.all-hidden':
-    'Tất cả các liên kết nhanh đều bị ẩn. Sử dụng "Thêm Widget" để khôi phục chúng.',
   'home.quick-links.add-trade': 'Thêm giao dịch',
   'home.quick-links.trade-log': 'Nhật ký giao dịch',
   'home.quick-links.trading-dashboard': 'Bảng điều khiển',
@@ -4473,9 +4960,9 @@ const vi: Lang = {
     'Di chuyển các liên kết nhanh bên dưới các widget',
   'home.widget-selector.title': 'Thêm vào Trang chủ',
   'home.widget-selector.section.widgets': 'Widget',
-  'home.widget-selector.section.quick-links': 'Liên kết nhanh ẩn',
+  'home.widget-selector.section.quick-links': 'Liên kết Nhanh',
   'home.widget-selector.restore': 'khôi phục',
-  'home.widget-selector.empty': 'Tất cả tiện ích đã được thêm vào',
+  'home.widget-selector.add-shortcut': 'Thêm lối tắt tài khoản/thiết lập',
   'home.widget-selector.hint.navigate': '↑↓ điều hướng',
   'home.widget-selector.hint.select': '↵ chọn',
   'home.widget-selector.hint.close': 'esc đóng',
@@ -4485,7 +4972,7 @@ const vi: Lang = {
   'home.period.lifetime': 'Toàn bộ thời gian',
 
   'home.aria.filter-trade-types': 'Lọc các loại giao dịch',
-  'home.aria.add-widget': 'Thêm tiện ích',
+  'home.aria.open-settings': 'Mở cài đặt Journalit',
   'home.aria.save-layout': 'Lưu bố cục',
   'home.aria.customize': 'Tùy chỉnh',
   'home.button.add-widget': 'Thêm tiện ích',
@@ -4512,6 +4999,8 @@ const vi: Lang = {
   'home.greeting.how-did-today-go': 'ngày hôm nay diễn ra thế nào?',
   'home.greeting.time-to-reflect': 'Thời gian để phản ánh',
   'home.greeting.welcome-back': 'Chào mừng trở lại',
+  'home.greeting.name-placeholder': 'Tên của bạn',
+  'home.greeting.edit-name-aria': '{name}. Chỉnh sửa tên hiển thị',
   'home.greeting.hey-there': 'Này đằng kia',
   'home.greeting.good-to-see-you': 'Rất vui được gặp bạn',
   'home.subtitle.first-time': 'Hãy bắt đầu hành trình giao dịch của bạn',
@@ -4671,6 +5160,29 @@ const vi: Lang = {
   'home.widget.profit-target.remaining': 'còn lại',
   'home.widget.profit-target.unable-to-load': 'Không thể tải',
   'home.widget.profit-target.no-accounts': 'Không có tài khoản nào có mục tiêu',
+  'home.widget.eval-roi.title': 'ROI đánh giá',
+  'home.widget.eval-roi.unable-to-load': 'Không thể tải',
+  'home.widget.eval-roi.no-challenges': 'Không có prop challenge',
+  'home.widget.eval-roi.challenge-count': '{count} đánh giá',
+  'home.widget.eval-roi.challenge-count-plural': '{count} đánh giá',
+  'home.widget.eval-roi.net': 'Ròng',
+  'home.widget.eval-roi.spent': 'Đã chi',
+  'home.widget.eval-roi.payouts': 'Khoản rút',
+  'home.widget.eval-roi.break-even': 'Hòa vốn',
+  'home.widget.challenge-alerts.title': 'Cảnh báo challenge',
+  'home.widget.challenge-alerts.unable-to-load':
+    'Không thể kiểm tra cảnh báo thử thách',
+  'home.widget.challenge-alerts.empty': 'Không có cảnh báo',
+  'home.widget.challenge-alerts.count': '{count} cảnh báo',
+  'home.widget.challenge-alerts.count-plural': '{count} cảnh báo',
+  'home.widget.challenge-alerts.more': '+{count} nữa',
+  'home.widget.challenge-alerts.kind.failed': 'Thất bại',
+  'home.widget.challenge-alerts.kind.target': 'Đạt mục tiêu',
+  'home.widget.challenge-alerts.kind.passed': 'Vượt qua',
+  'home.widget.challenge-alerts.kind.payout': 'Sẵn sàng rút',
+  'home.widget.challenge-alerts.kind.lost': 'Không còn đủ điều kiện rút',
+  'home.widget.challenge-alerts.kind.unknown-account': 'Tài khoản mới {label}',
+  'home.widget.eval-roi.roi-aria': 'Lợi nhuận trên chi phí đánh giá',
   'home.widget.recent.title': 'Gần đây',
   'home.widget.recent.unknown': 'Không xác định',
   'home.widget.recent.just-now': 'Vừa rồi',
@@ -5144,6 +5656,18 @@ const vi: Lang = {
   'navigation.edit-mode.hide-item': 'Ẩn mục điều hướng',
   'navigation.edit-mode.restore-section': 'Mục ẩn',
   'navigation.edit-mode.restore': 'Khôi phục',
+  'navigation.items.nav-settings': 'Cài đặt',
+  'navigation.shortcuts.add': 'Thêm lối tắt',
+  'navigation.shortcuts.remove': 'Xóa lối tắt',
+  'navigation.shortcuts.close': 'Đóng trình chọn lối tắt',
+  'navigation.shortcuts.search': 'Tìm kiếm tài khoản và thiết lập',
+  'navigation.shortcuts.accounts': 'Tài khoản',
+  'navigation.shortcuts.setups': 'Thiết lập',
+  'navigation.shortcuts.empty': 'Không có tài khoản hoặc thiết lập nào',
+  'navigation.shortcuts.unavailable': 'Không khả dụng',
+  'navigation.shortcuts.added': 'Đã thêm',
+  'navigation.shortcuts.parent-required':
+    'Hãy xóa các lối tắt trước khi ẩn mục điều hướng này.',
   'navigation.items.nav-home': 'Trang chủ',
   'navigation.items.nav-dashboard': 'Bảng điều khiển',
   'navigation.items.nav-trade-log': 'Nhật ký giao dịch',
@@ -5299,9 +5823,13 @@ const vi: Lang = {
     'Dự kiến ​​chỉ ngày giao dịch trước đó',
   'calendar.aria.open-daily-review': 'Mở bài đánh giá hàng ngày cho {date}',
   'calendar.aria.open-weekly-review': 'Mở bài đánh giá hàng tuần cho {date}',
+  'calendar.aria.open-monthly-review': 'Mở bài đánh giá hàng tháng cho {date}',
+  'calendar.aria.open-quarterly-review': 'Mở bài đánh giá hàng quý cho {date}',
 
   'csv.mapper.aria.map-column': 'Ánh xạ cột {header}',
   'command.quick-import-trades': 'Nhập nhanh giao dịch',
+  'trade-import.error.file-empty':
+    'Tệp này trống. Hãy xuất lại tệp rồi thử lại.',
   'trade-import.error.file-too-large':
     'Tệp đã chọn vượt quá giới hạn kích thước Nhập giao dịch',
   'trade-import.error.file-type-unsupported':
@@ -5397,7 +5925,7 @@ const vi: Lang = {
   'trade-import.label.template-actions': 'Hành động mẫu',
   'trade-import.template.none': 'Không có mẫu',
   'trade-import.label.account': 'Tài khoản',
-  'trade-import.label.broker': 'Nhà môi giới',
+  'trade-import.label.broker': 'Nguồn xuất / nền tảng',
   'trade-import.label.asset-type': 'Loại tài sản',
   'trade-import.asset.stock': 'Cổ phiếu',
   'trade-import.asset.options': 'Quyền chọn',
@@ -5449,21 +5977,49 @@ const vi: Lang = {
     'Không thể chuẩn bị giao dịch nào từ tệp này.',
   'trade-import.preview.failed.guidance':
     'Kiểm tra lại ánh xạ cột, định dạng ngày, trang tính và hàng tiêu đề đã chọn, cùng các giá trị không hợp lệ bên dưới.',
+  'trade-import.preview.tradovate-performance.title': 'Sai báo cáo Tradovate',
+  'trade-import.preview.tradovate-performance.message':
+    'Tệp này có vẻ là bản xuất Performance của Tradovate. Journalit nhập báo cáo Orders để tái tạo chính xác các lệnh khớp của bạn. Trong Tradovate, hãy vào Reports > Orders và tải tệp CSV xuống.',
+  'trade-import.preview.tradovate-performance.guide':
+    'Xem hướng dẫn xuất dữ liệu Tradovate',
+  'trade-import.preview.metatrader-statement.title':
+    'Báo cáo MetaTrader không được hỗ trợ',
+  'trade-import.preview.metatrader-statement.message':
+    'Journalit nhập báo cáo lịch sử tài khoản MetaTrader gốc. Hãy đặt MetaTrader sang tiếng Anh, mở Account History / History, chọn Save as Report, rồi tải lên tệp .html hoặc .htm gốc mà không chỉnh sửa hay chuyển đổi.',
+  'trade-import.preview.metatrader-statement.guide':
+    'Xem hướng dẫn xuất MetaTrader',
+  'trade-import.preview.tradingview-export.title': 'Sai tệp xuất TradingView',
+  'trade-import.preview.tradingview-export.message':
+    'Journalit yêu cầu tệp CSV Order History / History của TradingView Paper Trading. Không dùng Account History, dữ liệu biểu đồ, tệp xuất chiến lược hoặc các tệp CSV TradingView khác.',
+  'trade-import.preview.tradingview-export.guide':
+    'Xem hướng dẫn xuất TradingView',
+  'trade-import.source-recovery.deepcharts.title':
+    'Tệp này có vẻ là bản xuất từ DeepCharts',
+  'trade-import.source-recovery.deepcharts.rithmic-message':
+    'Tệp được xuất từ DeepCharts ngay cả khi tài khoản khớp lệnh qua Rithmic. Hãy dùng DeepCharts để Quantity có dấu xác định đúng lệnh mua hoặc bán.',
+  'trade-import.source-recovery.deepcharts.manual-message':
+    'Hãy dùng trình nhập DeepCharts. DeepCharts lưu hướng giao dịch trong Quantity có dấu, vì vậy không nên ánh xạ Quantity thành trường Hướng thủ công.',
+  'trade-import.source-recovery.deepcharts.switch': 'Chuyển sang DeepCharts',
+  'trade-import.source-recovery.deepcharts.guide':
+    'Xem hướng dẫn xuất DeepCharts',
+  'trade-import.source-recovery.motivewave.title':
+    'Tệp này có vẻ là bản xuất khớp lệnh MotiveWave',
+  'trade-import.source-recovery.motivewave.message':
+    'Hãy dùng MotiveWave để Journalit ghép chính xác các dòng khớp lệnh thành giao dịch đã hoàn tất.',
+  'trade-import.source-recovery.motivewave.switch': 'Chuyển sang MotiveWave',
+  'trade-import.source-recovery.motivewave.guide':
+    'Xem hướng dẫn xuất MotiveWave',
+  'quick-import.message.source-mismatch':
+    'Journalit đã xác định một nguồn xuất khác. Hãy xem lại trong Trade Import để đổi nguồn mà không cần tải tệp lên lại.',
   'trade-import.preview.no-eligible':
     'Tệp đã được xử lý thành công, nhưng không có giao dịch mới hoặc đã cập nhật nào đủ điều kiện để nhập. Kiểm tra chi tiết về trùng lặp và phân loại bên dưới.',
-  'trade-import.preview.upgrade.title': 'Bản xem trước của bạn đã sẵn sàng',
-  'trade-import.preview.upgrade.description.one':
-    '{count} giao dịch có thể được thêm vào vault sau khi bạn kích hoạt PRO.',
-  'trade-import.preview.upgrade.description.few':
-    '{count} giao dịch có thể được thêm vào vault sau khi bạn kích hoạt PRO.',
-  'trade-import.preview.upgrade.description.many':
-    '{count} giao dịch có thể được thêm vào vault sau khi bạn kích hoạt PRO.',
-  'trade-import.preview.upgrade.description.other':
-    '{count} giao dịch có thể được thêm vào vault sau khi bạn kích hoạt PRO.',
-  'trade-import.preview.upgrade.free-limit':
-    'Quyền xem trước miễn phí gồm {count} lần phân tích và {count} lần xem trước mỗi giờ.',
-  'trade-import.preview.upgrade.free-storage-limit':
-    'Bản xem trước miễn phí có thể lưu tối đa {count} giao dịch cùng lúc.',
+  'trade-import.pro-gate.title.one': '{count} giao dịch đã sẵn sàng để nhập',
+  'trade-import.pro-gate.title.few': '{count} giao dịch đã sẵn sàng để nhập',
+  'trade-import.pro-gate.title.many': '{count} giao dịch đã sẵn sàng để nhập',
+  'trade-import.pro-gate.title.other': '{count} giao dịch đã sẵn sàng để nhập',
+  'trade-import.pro-gate.subtitle':
+    'Kích hoạt PRO để ghi chúng vào vault dưới dạng ghi chú giao dịch.',
+  'trade-import.pro-gate.cta': 'Kích hoạt PRO',
   'trade-import.preview.diagnostics': 'Chi tiết cần xem lại ({count})',
   'trade-import.preview.affected-rows': 'Hàng bị ảnh hưởng: {count}',
   'trade-import.table.status': 'Trạng thái',
@@ -5578,7 +6134,7 @@ const vi: Lang = {
     'Thẻ tóm tắt từng thiết lập với chỉ số chính, trạng thái, ngày giao dịch gần nhất và xu hướng hiệu suất nhỏ.',
   'setups.guide.open-detail.title': 'Mở trang thiết lập',
   'setups.guide.open-detail.description':
-    'Mở một thẻ thiết lập để xem trang riêng với biểu đồ, bối cảnh, tài liệu playbook và quy tắc thực thi.',
+    'Khi sẵn sàng, hãy mở một thẻ setup để xem trang của nó. Một hướng dẫn ngắn sẽ chờ bạn ở đó.',
   'setups.guide.detail-performance.title': 'Hiệu suất chi tiết',
   'setups.guide.detail-performance.description':
     'Tab Hiệu suất hiển thị biểu đồ và chỉ số chính theo thời gian, gồm P&L, win rate, kỳ vọng và drawdown.',
@@ -5801,7 +6357,12 @@ const vi: Lang = {
   'home.widget.profit-target-widget.name': 'Mục tiêu lợi nhuận',
   'home.widget.profit-target-widget.description':
     'Theo dõi tiến độ mục tiêu lợi nhuận trên các tài khoản',
-
+  'home.widget.eval-roi.name': 'ROI đánh giá',
+  'home.widget.challenge-alerts.name': 'Cảnh báo challenge',
+  'home.widget.challenge-alerts.description':
+    'Tài khoản prop challenge cần quyết định: thất bại, vượt qua hoặc sẵn sàng rút',
+  'home.widget.eval-roi.description':
+    'Chi phí đánh giá so với khoản rút trên các tài khoản prop challenge',
   'trade-import.restore.complete':
     'Đã khôi phục {written} giao dịch đã nhập; {failed} thất bại.',
   'trade-import.restore.broker-label': 'Khôi phục backend',
@@ -5936,6 +6497,9 @@ const vi: Lang = {
     'Không thể tạo tài khoản cục bộ.',
   'trade-sync.import.notice.restore-failed':
     'Không thể khôi phục tài khoản Trade Import.',
+  'trade-sync.rate-limit.action.mapping': 'Ánh xạ tài khoản',
+  'trade-sync.import.notice.rate-limited':
+    '{action}: Quá nhiều yêu cầu. Thử lại sau {seconds} giây.',
   'setups.view.loading': 'Loading setups…',
   'settings.general.copy-trading-pnl-toggled': 'Copy trading PnL is {status}',
   'setups.view.trade.unknown-instrument': 'Unknown instrument',
@@ -5958,6 +6522,30 @@ const vi: Lang = {
   'session-mode.ended.action.import-trades': 'Nhập giao dịch',
   'session-mode.ended.action.add-trade-manually': 'Thêm giao dịch thủ công',
   'session-mode.ended.action.open-drc': 'Mở DRC',
+  'session-log.session-group.unplanned': 'Ngoài kế hoạch @ {time}',
+  'session-mode.unplanned.name': 'Phiên ngoài kế hoạch',
+  'session-mode.unplanned.start': 'Bắt đầu phiên ngoài kế hoạch',
+  'session-mode.unplanned.stop': 'Dừng phiên',
+  'session-mode.unplanned.badge': 'Ngoài kế hoạch',
+  'session-mode.unplanned.status.live':
+    'Bắt đầu lúc {time} · đã trôi qua {elapsed}',
+  'session-mode.unplanned.ended.summary':
+    'Phiên ngoài kế hoạch · {start}–{end} · {duration}',
+  'session-mode.unplanned.modal.title': 'Bắt đầu một phiên ngoài kế hoạch',
+  'session-mode.unplanned.modal.description':
+    'Bạn đang ở ngoài các khung phiên đã lên kế hoạch. Phiên này sẽ được đánh dấu là ngoài kế hoạch trong bài đánh giá hằng ngày. Hãy ghi lại lý do bạn giao dịch lúc này.',
+  'session-mode.unplanned.modal.reason-label': 'Lý do',
+  'session-mode.unplanned.modal.reason-placeholder':
+    'ví dụ: FOMC lúc 14:00, bỏ lỡ phiên sáng',
+  'session-mode.unplanned.modal.reason-required':
+    'Nhập lý do trước khi bắt đầu.',
+  'session-mode.unplanned.notice.started': 'Đã bắt đầu phiên ngoài kế hoạch.',
+  'session-mode.unplanned.notice.stopped': 'Đã dừng phiên ngoài kế hoạch.',
+  'session-mode.unplanned.notice.blocked-live': 'Đã có một phiên đang diễn ra.',
+  'session-mode.unplanned.notice.none-running':
+    'Không có phiên ngoài kế hoạch nào đang diễn ra.',
+  'session-mode.unplanned.notice.failed':
+    'Không thể cập nhật phiên ngoài kế hoạch. Xem bảng điều khiển để biết chi tiết.',
   'session-mode.ended.stat.trades': 'Giao dịch',
   'session-mode.ended.stat.notes': 'Ghi chú',
   'session-mode.ended.stat.gate-checks': 'Lần kiểm tra Gate',
@@ -6014,6 +6602,66 @@ const vi: Lang = {
   'session-mode.unconfigured.step.log.title': 'Log notes during live sessions',
 
   'session-mode.unconfigured.action': 'Configure Session Mode',
+  'session-mode.guide.why.title': 'Giao dịch theo kế hoạch, không theo cảm xúc',
+  'session-mode.guide.why.description':
+    'Chế độ phiên giúp bạn chuẩn bị trước mỗi phiên, giữ bạn theo quy tắc bằng Trade Gate khi phiên đang diễn ra, và lưu nhật ký có dấu thời gian để bạn xem lại cả ngày. Thiết lập chỉ mất hai phút.',
+  'session-mode.guide.configure.title': 'Thiết lập ngay',
+  'session-mode.guide.configure.description':
+    'Thêm giờ phiên và dựng Trade Gate đầu tiên. Một hướng dẫn ngắn sẽ dẫn bạn trong Cài đặt.',
+  'session-mode.guide.preparation.countdown.title': 'Phiên của bạn sắp bắt đầu',
+  'session-mode.guide.preparation.countdown.description':
+    'Đây là giai đoạn chuẩn bị. Đồng hồ đếm ngược cho biết khi nào bạn vào phiên, và trang này sẽ tự chuyển sang chế độ đang giao dịch.',
+  'session-mode.guide.preparation.goals.title': 'Đặt mục tiêu hôm nay',
+  'session-mode.guide.preparation.goals.description':
+    'Viết ra thế nào là một phiên tốt trước khi thị trường mở, để bạn có thứ để bám vào.',
+  'session-mode.guide.preparation.checklist.title': 'Rà danh sách kiểm tra',
+  'session-mode.guide.preparation.checklist.description':
+    'Đánh dấu thói quen trước phiên của bạn ở đây. Mọi mục bạn đánh dấu được lưu vào ghi chú đánh giá hôm nay.',
+  'session-mode.guide.preparation.next.title': 'Khi bạn vào phiên',
+  'session-mode.guide.preparation.next.description':
+    'Trade Gate và nhật ký phiên sẽ xuất hiện ở đây. Lần đầu chúng tôi sẽ chỉ cho bạn.',
+  'session-mode.guide.live.trade-gate.title': 'Chạy Trade Gate trước mỗi lệnh',
+  'session-mode.guide.live.trade-gate.description':
+    'Nhấn Bắt đầu và trả lời các câu hỏi dựng từ tiêu chí của bạn. Cổng kết thúc bằng đèn xanh, chờ, hoặc không giao dịch, để bạn chỉ vào những lệnh hệ thống cho phép.',
+  'session-mode.guide.live.session-log.title':
+    'Ghi lại điều bạn thấy và cảm nhận',
+  'session-mode.guide.live.session-log.description':
+    'Ghi nhanh setup, cảm xúc và quyết định khi chúng diễn ra. Mỗi ghi chú có dấu thời gian, để sau này bạn xem lại chính xác chuyện gì đã xảy ra.',
+  'session-mode.guide.live.settings.title': 'Tinh chỉnh bất cứ lúc nào',
+  'session-mode.guide.live.settings.description':
+    'Chỉnh sửa mở cài đặt chế độ phiên: giờ phiên, bố cục giai đoạn, quy trình Trade Gate và thẻ nhật ký.',
+  'session-mode.guide.ended.review.title': 'Giờ hãy đánh giá phiên',
+  'session-mode.guide.ended.review.description':
+    'Mở DRC hôm nay để đánh giá. Thêm widget Nhật ký phiên vào bố cục DRC và mọi ghi chú có dấu thời gian sẽ hiện ở đó.',
+  'settings.session-mode.guide.setting-name': 'Hướng dẫn',
+  'settings.session-mode.guide.setting-desc':
+    'Một chuyến tham quan ngắn qua các cài đặt này, từ giờ phiên đến Trade Gate đầu tiên.',
+  'settings.session-mode.guide.replay': 'Hiện hướng dẫn',
+  'settings.session-mode.guide.intro.title': 'Cùng thiết lập chế độ phiên',
+  'settings.session-mode.guide.intro.description':
+    'Bốn việc: phiên diễn ra khi nào, mỗi giai đoạn hiển thị gì, Trade Gate của bạn và thẻ nhật ký phiên.',
+  'settings.session-mode.guide.lead-time.title': 'Thời gian chuẩn bị trước',
+  'settings.session-mode.guide.lead-time.description':
+    'Giai đoạn chuẩn bị mở trước phiên bao nhiêu phút.',
+  'settings.session-mode.guide.windows.title': 'Thêm khung giờ phiên',
+  'settings.session-mode.guide.windows.description':
+    'Mỗi phiên bạn giao dịch là một khung giờ, có tên, giờ bắt đầu và kết thúc. Chế độ phiên dựa vào đó để biết khi nào chuẩn bị và khi nào bạn đang giao dịch.',
+  'settings.session-mode.guide.layout.title':
+    'Chọn nội dung cho từng giai đoạn',
+  'settings.session-mode.guide.layout.description':
+    'Bật hoặc tắt mô-đun theo giai đoạn: tài nguyên, mục tiêu và danh sách kiểm tra khi chuẩn bị; Trade Gate và dòng thời gian khi đang giao dịch.',
+  'settings.session-mode.guide.trade-gate.title': 'Dựng Trade Gate của bạn',
+  'settings.session-mode.guide.trade-gate.description':
+    'Lần đầu, Thêm tạo một quy trình khởi đầu từ các câu hỏi thường gặp, sau đó tạo quy trình trống; Thư viện có sẵn câu hỏi. Mỗi câu hỏi dẫn đến câu tiếp theo hoặc một kết quả: đèn xanh, chờ, hoặc không giao dịch.',
+  'settings.session-mode.guide.editor.title': 'Câu hỏi và kết quả',
+  'settings.session-mode.guide.editor.description':
+    'Mở rộng một quy trình để thêm câu hỏi và đặt mỗi câu trả lời dẫn tới đâu. Nút phát chạy nó đúng như bạn sẽ thấy trong phiên.',
+  'settings.session-mode.guide.tags.title': 'Thẻ cho nhật ký phiên',
+  'settings.session-mode.guide.tags.description':
+    'Gắn thẻ ghi chú khi ghi, ví dụ theo cảm xúc hoặc setup, để lọc chúng trong bản đánh giá.',
+  'settings.session-mode.guide.finish.title': 'Xong rồi',
+  'settings.session-mode.guide.finish.description':
+    'Mở chế độ phiên từ thanh bên hoặc Trang chủ. Thêm widget Nhật ký phiên vào bố cục DRC để thấy ghi chú trong mọi bản đánh giá.',
 
   'session-mode.layout.empty.title': 'Nothing enabled for this phase',
   'session-mode.layout.empty.description':
@@ -6490,6 +7138,408 @@ const vi: Lang = {
   'filter.modal.session-tags.n-selected': '{count} thẻ phiên',
   'filter.modal.session-tags.select-all': 'Chọn tất cả',
   'filter.modal.session-tags.none-found': 'Không tìm thấy thẻ phiên',
+  'account.prop-challenge.title': 'Thử thách quỹ cấp vốn',
+  'account.prop-challenge.identity': 'Thông tin thử thách',
+  'account.prop-challenge.prefill.heading-link': 'Điền sẵn từ firm của bạn',
+  'account.prop-challenge.prefill.phase-link': 'Điền sẵn quy tắc với PRO',
+  'account.prop-challenge.prefill.phase-link-firm':
+    'Điền sẵn quy tắc của {firm} với PRO',
+  'account.prop-challenge.prefill.heading-link-firms':
+    '{firms} +{count} nữa, quy tắc điền sẵn với PRO',
+  'account.prop-challenge.prefill.heading-link-firms-all':
+    '{firms}, quy tắc điền sẵn với PRO',
+  'account.prop-challenge.prefill.match':
+    'Chúng tôi có {firm}: {count} thử thách với quy tắc sẵn sàng',
+  'account.prop-challenge.rules.empty':
+    'Chưa có quy tắc nào. Hãy dùng Thêm quy tắc để thiết lập giai đoạn này.',
+  'account.prop-challenge.rules': 'Quy tắc',
+  'account.prop-challenge.costs.empty': 'Chưa có chi phí nào.',
+  'account.prop-challenge.description':
+    'Theo dõi tài khoản qua thử thách nhiều giai đoạn.',
+  'account.prop-challenge.enable': 'Bật theo dõi thử thách',
+  'account.prop-challenge.challenge-name': 'Tên thử thách',
+  'account.prop-challenge.challenge-name-placeholder': 'Ví dụ: Đánh giá 25K',
+  'account.prop-challenge.firm-name': 'Tên công ty (không bắt buộc)',
+  'account.prop-challenge.firm-name-placeholder': 'Ví dụ: Apex Trader Funding',
+  'account.prop-challenge.profile.title': 'Áp dụng hồ sơ công ty',
+  'account.prop-challenge.profile.firm': 'Công ty',
+  'account.prop-challenge.profile.challenge': 'Thử thách',
+  'account.prop-challenge.profile.apply': 'Áp dụng',
+  'account.prop-challenge.profile.loading': 'Đang tải hồ sơ công ty…',
+  'account.prop-challenge.profile.refreshing': 'Đang kiểm tra cập nhật hồ sơ…',
+  'account.prop-challenge.profile.unavailable':
+    'Hồ sơ công ty không khả dụng khi ngoại tuyến.',
+
+  'account.prop-challenge.profile.confirm-title':
+    'Thay thế thiết lập thử thách?',
+  'account.prop-challenge.profile.confirm-message':
+    'Áp dụng hồ sơ này sẽ thay thế các giai đoạn và quy tắc hiện được cấu hình.',
+  'account.prop-challenge.current-phase': 'Giai đoạn hiện tại',
+  'account.prop-challenge.phase-rules': 'Quy tắc cho {phase}',
+  'account.prop-challenge.next-phase': 'Tiếp theo: {phase}',
+  'account.prop-challenge.view-phase': 'Xem giai đoạn',
+  'account.prop-challenge.unnamed-phase': 'Giai đoạn chưa đặt tên',
+  'account.prop-challenge.phase-name': 'Tên giai đoạn',
+  'account.prop-challenge.phase-type': 'Loại giai đoạn',
+  'account.prop-challenge.phase-type.evaluation': 'Đánh giá',
+  'account.prop-challenge.phase-type.verification': 'Xác minh',
+  'account.prop-challenge.phase-type.sim_funded': 'Cấp vốn mô phỏng',
+  'account.prop-challenge.phase-type.live_funded': 'Cấp vốn thực',
+  'account.prop-challenge.phase-type.custom': 'Tùy chỉnh',
+  'account.prop-challenge.starting-balance': 'Số dư ban đầu',
+  'account.prop-challenge.broker-account-id': 'Tài khoản môi giới',
+  'account.prop-challenge.broker-accounts.assigned': 'Đã gán cho {phase}',
+  'account.prop-challenge.broker-accounts.trades': '{count} lệnh',
+  'account.prop-challenge.broker-accounts.trade-one': '1 giao dịch',
+  'account.prop-challenge.phase-started': 'Bắt đầu',
+  'account.prop-challenge.phase-completed': 'Kết thúc',
+  'account.prop-challenge.timeline.completed-before-started':
+    'Thời điểm kết thúc phải từ lúc bắt đầu trở đi đối với {phase}.',
+  'account.prop-challenge.timeline.out-of-order':
+    '{phase} phải kết thúc trước hoặc khi {next} bắt đầu.',
+  'account.prop-challenge.timeline.policy-history-conflict':
+    '{phase} bắt đầu sau một thay đổi quy tắc muộn hơn. Hãy lùi ngày bắt đầu.',
+  'account.prop-challenge.default-phase-name': 'Giai đoạn {number}',
+  'account.prop-challenge.add-phase': 'Thêm giai đoạn',
+  'account.prop-challenge.remove-phase': 'Xóa giai đoạn',
+  'account.prop-challenge.add-rule': 'Thêm quy tắc',
+  'account.prop-challenge.rule.enabled': 'Đã bật quy tắc',
+  'account.prop-challenge.rule.amount': 'Số tiền',
+  'account.prop-challenge.rule.target-type': 'Loại mục tiêu',
+  'account.prop-challenge.rule.credit-withdrawals':
+    'Tính khoản rút tiền vào mục tiêu',
+  'account.prop-challenge.rule.drawdown-mode': 'Chế độ sụt giảm',
+  'account.prop-challenge.rule.lock-at-balance': 'Số dư khóa',
+  'account.prop-challenge.rule.daily-loss-model': 'Mức lỗ hằng ngày',
+  'account.prop-challenge.rule.daily-loss-model.fixed': 'Số tiền cố định',
+  'account.prop-challenge.rule.daily-loss-model.threshold':
+    'Tăng khi đạt ngưỡng lợi nhuận tài khoản',
+  'account.prop-challenge.rule.daily-loss-model.peak-eod-profit':
+    'Thay đổi theo lợi nhuận EOD cao nhất',
+  'account.prop-challenge.rule.daily-loss-peak-eod-help':
+    'Dùng giới hạn cố định cho đến khi tài khoản đóng cửa tại số dư kích hoạt. Từ ngày giao dịch tiếp theo, giới hạn bằng tỷ lệ đã đặt của lợi nhuận cuối ngày cao nhất và không giảm.',
+  'account.prop-challenge.rule.scale-at-balance': 'Số dư kích hoạt',
+  'account.prop-challenge.rule.scaled-percent-of-peak-eod-profit':
+    'Lợi nhuận EOD cao nhất dùng làm giới hạn (%)',
+  'account.prop-challenge.rule.peak-eod-profit-percent-summary':
+    '{value} của lợi nhuận EOD cao nhất',
+  'account.prop-challenge.rule.daily-loss-tiered-summary':
+    'Bậc lợi nhuận theo số dư EOD trước',
+  'account.prop-challenge.rule.daily-loss-model.profit-tiers':
+    'Bậc theo EOD trước',
+  'account.prop-challenge.rule.daily-loss-tiers-help':
+    'Dùng cặp lợi nhuận:giới hạn lỗ. Bậc từ lợi nhuận EOD trước áp dụng cho phiên tiếp theo.',
+  'account.prop-challenge.rule.loss-tiers': 'Bậc lợi nhuận và giới hạn lỗ',
+  'account.prop-challenge.rule.daily-loss-threshold-help':
+    'Mức lỗ hằng ngày cao hơn được kích hoạt vĩnh viễn khi lợi nhuận trọn đời của tài khoản lần đầu đạt tỷ lệ phần trăm đã cấu hình của số dư ban đầu.',
+  'account.prop-challenge.rule.profit-threshold-percent':
+    'Ngưỡng lợi nhuận tài khoản (%)',
+  'account.prop-challenge.rule.amount-after-threshold':
+    'Mức lỗ hằng ngày sau ngưỡng',
+  'account.prop-challenge.rule.breach-action': 'Xử lý khi chạm giới hạn',
+  'account.prop-challenge.rule.breach-action.hard': 'Đánh trượt tài khoản',
+  'account.prop-challenge.rule.breach-action.soft':
+    'Tạm dừng đến phiên tiếp theo',
+  'account.prop-challenge.rule.days': 'Ngày giao dịch',
+  'account.prop-challenge.rule.minimum-daily-profit':
+    'Lợi nhuận tối thiểu mỗi ngày',
+  'account.prop-challenge.rule.minimum-daily-profit-summary':
+    '{value}+ mỗi ngày',
+  'account.prop-challenge.rule.best-day-percent': 'Ngày tốt nhất tối đa (%)',
+  'account.prop-challenge.rule.position-limit-model': 'Mô hình giới hạn vị thế',
+  'account.prop-challenge.rule.position-limit-model.fixed': 'Giới hạn cố định',
+  'account.prop-challenge.rule.position-limit-model.eod-profit-tiers':
+    'Các bậc lợi nhuận cuối ngày',
+  'account.prop-challenge.rule.position-profit-basis':
+    'Cơ sở lợi nhuận để tăng quy mô vị thế',
+  'account.prop-challenge.rule.position-profit-basis.cumulative':
+    'Lợi nhuận giao dịch tích lũy (chi trả không làm giảm)',
+  'account.prop-challenge.rule.position-profit-basis.current-account':
+    'Lợi nhuận tài khoản hiện tại (chi trả làm giảm)',
+  'account.prop-challenge.rule.position-limit-model.eod-profit':
+    'Tăng theo lợi nhuận cuối ngày',
+  'account.prop-challenge.rule.position-tiers': 'Các bậc lợi nhuận',
+  'account.prop-challenge.rule.position-tiers-help':
+    'Nhập từng ngưỡng lợi nhuận cuối ngày đã hoàn thành và giới hạn hợp đồng mới theo dạng lợi_nhuận:hợp_đồng, phân cách bằng dấu phẩy. Bậc mới áp dụng từ ngày giao dịch tiếp theo.',
+  'account.prop-challenge.rule.position-scaling-help':
+    'Mỗi bậc lợi nhuận hoàn thành sẽ thêm một hợp đồng từ ngày giao dịch tiếp theo, tối đa đến giới hạn.',
+  'account.prop-challenge.rule.initial-contracts': 'Số hợp đồng ban đầu',
+  'account.prop-challenge.rule.profit-per-contract':
+    'Lợi nhuận cuối ngày cho mỗi hợp đồng bổ sung',
+  'account.prop-challenge.rule.maximum-contracts':
+    'Số hợp đồng tối đa sau khi tăng quy mô',
+  'account.prop-challenge.rule.max-contracts': 'Số hợp đồng tối đa',
+  'account.prop-challenge.rule.profit_target': 'Mục tiêu lợi nhuận',
+  'account.prop-challenge.rule.drawdown': 'Sụt giảm',
+  'account.prop-challenge.rule.daily_loss_limit': 'Giới hạn lỗ hàng ngày',
+  'account.prop-challenge.rule.live_review_daily_profit':
+    'Lợi nhuận ngày để xét duyệt live',
+  'account.prop-challenge.rule.best-profitable-day':
+    'Ngưỡng lợi nhuận trong ngày',
+  'account.prop-challenge.rule.daily_profit_cap':
+    'Giới hạn lợi nhuận được tính mỗi ngày',
+  'account.prop-challenge.rule.per-trading-day': 'Mỗi ngày giao dịch',
+  'account.prop-challenge.rule.minimum_trading_days':
+    'Số ngày giao dịch tối thiểu',
+  'account.prop-challenge.rule.minimum_profitable_days':
+    'Số ngày có lợi nhuận tối thiểu',
+  'account.prop-challenge.rule.consistency-cushion-percent':
+    'Biên độ nhất quán (điểm phần trăm)',
+  'account.prop-challenge.rule.consistency-cushion-short': 'biên độ',
+  'account.prop-challenge.rule.consistency': 'Tính nhất quán',
+  'account.prop-challenge.rule.max_position_size': 'Quy mô vị thế tối đa',
+  'account.prop-challenge.drawdown.static': 'Cố định',
+  'account.prop-challenge.drawdown.eod-trailing': 'Bám cuối ngày',
+  'account.prop-challenge.drawdown.intraday-trailing': 'Bám trong ngày',
+  'account.prop-challenge.summary.status.active': 'Đang hoạt động',
+  'account.prop-challenge.summary.status.passed': 'Đã đạt',
+  'account.prop-challenge.summary.status.failed': 'Không đạt',
+  'account.prop-challenge.summary.status.pending': 'Chờ bắt đầu',
+  'account.prop-challenge.summary.status.warning': 'Gần giới hạn',
+  'account.prop-challenge.summary.phase-status.pending': 'Chờ xử lý',
+  'account.prop-challenge.summary.phase-status.active': 'Đang hoạt động',
+  'account.prop-challenge.summary.phase-status.passed': 'Đã đạt',
+  'account.prop-challenge.summary.phase-status.failed': 'Không đạt',
+  'account.prop-challenge.summary.rule.profit_target': 'Mục tiêu lợi nhuận',
+  'account.prop-challenge.summary.rule.drawdown': 'Sụt giảm',
+  'account.prop-challenge.summary.rule.drawdown-static': 'Drawdown cố định',
+  'account.prop-challenge.summary.rule.drawdown-eod_trailing':
+    'Drawdown cuối ngày',
+  'account.prop-challenge.summary.rule.drawdown-intraday_trailing':
+    'Drawdown trong ngày',
+  'account.prop-challenge.summary.rule.daily_loss_limit': 'Lỗ trong ngày',
+  'account.prop-challenge.summary.rule.live_review_daily_profit':
+    'Xét duyệt live',
+  'account.prop-challenge.summary.rule.daily_profit_cap':
+    'Lợi nhuận ngày được tính',
+  'account.prop-challenge.summary.rule.minimum_trading_days': 'Ngày giao dịch',
+  'account.prop-challenge.summary.rule.minimum_profitable_days':
+    'Ngày có lợi nhuận',
+  'account.prop-challenge.summary.rule.consistency':
+    'Tính nhất quán ngày tốt nhất',
+  'account.prop-challenge.summary.rule.max_position_size': 'Quy mô vị thế',
+  'account.prop-challenge.ledger.value.of': '{current} trên {target}',
+  'account.prop-challenge.ledger.section.payout': 'Điều kiện rút tiền',
+  'account.prop-challenge.ledger.requirement.minimum': 'tối thiểu {value}',
+  'account.prop-challenge.ledger.requirement.maximum': 'tối đa {value}',
+  'account.prop-challenge.ledger.value.ratio': '{current} / {target}',
+  'account.prop-challenge.payout.met-of-total': '{met} trên {total} điều kiện',
+  'account.prop-challenge.ledger.value.of-today':
+    '{current} trên {target} hôm nay',
+  'account.prop-challenge.ledger.value.credited-profit':
+    'Được tính {credited} trên {actual} lợi nhuận thực tế',
+  'account.prop-challenge.ledger.value.used': 'đã dùng {used}',
+  'account.prop-challenge.ledger.value.consistency-goal':
+    '{current} trên {target} mục tiêu nhất quán',
+  'account.prop-challenge.ledger.value.best-day-share':
+    'Ngày tốt nhất {value} lợi nhuận',
+  'account.prop-challenge.ledger.value.no-profit': 'Chưa có lợi nhuận',
+  'account.prop-challenge.ledger.requirement.best-day':
+    'Ngày tốt nhất ≤ {value} tổng lợi nhuận',
+  'account.prop-challenge.ledger.state.needs-profit': 'Cần lợi nhuận',
+  'account.prop-challenge.ledger.tooltip.open': 'Giải thích {rule}',
+  'account.prop-challenge.ledger.tooltip.consistency.description':
+    'Giới hạn phần lợi nhuận của cả giai đoạn được phép đến từ một ngày giao dịch lãi nhất.',
+  'account.prop-challenge.ledger.tooltip.consistency.formula':
+    'Lợi nhuận ngày tốt nhất ÷ tổng lợi nhuận giai đoạn × 100',
+  'account.prop-challenge.ledger.tooltip.consistency.best-day':
+    'Ngày tốt nhất: {value}',
+  'account.prop-challenge.ledger.tooltip.consistency.total-profit':
+    'Tổng lợi nhuận: {value}',
+  'account.prop-challenge.ledger.tooltip.consistency.share':
+    '{best} ÷ {total} × 100 = {share}',
+  'account.prop-challenge.ledger.tooltip.consistency.goal':
+    'Mục tiêu nhất quán: {best} ÷ {maximum} = {goal}',
+  'account.prop-challenge.ledger.tooltip.consistency.goal-hint':
+    'Tỷ lệ giảm khi bạn kiếm thêm lợi nhuận vào các ngày khác, nhưng một ngày tốt nhất mới lớn hơn sẽ nâng mục tiêu lên.',
+  'account.prop-challenge.ledger.tooltip.consistency.within':
+    '{share} ≤ {maximum} — trong quy tắc',
+  'account.prop-challenge.ledger.tooltip.consistency.pending':
+    'Phép tính bắt đầu khi tổng lợi nhuận giai đoạn dương.',
+  'account.prop-challenge.ledger.tooltip.consistency.no-maximum':
+    'Mục tiêu nhất quán cần mức tối đa lớn hơn 0%.',
+  'account.prop-challenge.ledger.help.open': 'Giới thiệu {rule}',
+  'account.prop-challenge.ledger.help.profit_target':
+    'Tăng tài khoản thêm số này để vượt giai đoạn. Chỉ lệnh đã đóng mới được tính.',
+  'account.prop-challenge.ledger.help.profit_target.example':
+    'Tài khoản này cần {target} lợi nhuận: đã có {current}, còn {remaining}.',
+  'account.prop-challenge.ledger.help.profit_target.example-done':
+    'Đã đạt mục tiêu: {current} trên {target}.',
+  'account.prop-challenge.ledger.help.drawdown.static':
+    'Mức tối đa số dư được phép giảm dưới số dư ban đầu. Ngưỡng sàn không bao giờ dịch chuyển.',
+  'account.prop-challenge.ledger.help.drawdown.static.example':
+    'Sàn của tài khoản này là {floor}; số dư phải giữ trên mức đó. Còn {buffer} trong hạn {limit}.',
+  'account.prop-challenge.ledger.help.drawdown.eod_trailing':
+    'Ngưỡng sàn theo số dư đóng cửa cao nhất trong ngày và chỉ đi lên, cho đến khi khóa ở mức của công ty.',
+  'account.prop-challenge.ledger.help.drawdown.eod_trailing.example':
+    'Hiện sàn là {floor} (đóng cửa cao nhất trừ {limit}) và sẽ tăng theo mỗi lần đóng cửa cao hơn. Còn {buffer}.',
+  'account.prop-challenge.ledger.help.drawdown.intraday_trailing':
+    'Mức sàn theo số dư cao nhất tại mọi thời điểm, gồm cả lợi nhuận mở. Journalit chỉ thấy các giao dịch đã đóng, nên mức sàn này theo số dư tốt nhất sau mỗi lần đóng; đỉnh đạt được trong giao dịch đang mở không được tính. Hãy đối chiếu số liệu của công ty.',
+  'account.prop-challenge.ledger.help.drawdown.intraday_trailing.example':
+    'Hiện sàn là {floor} (số dư tốt nhất sau lệnh đã đóng trừ {limit}). Còn {buffer}; con số trực tiếp của công ty có thể chặt hơn.',
+  'account.prop-challenge.ledger.help.daily_loss_limit':
+    'Mức lỗ tối đa trong một ngày giao dịch. Chạm mức này sẽ trượt giai đoạn hoặc tạm dừng đến phiên sau, tùy công ty.',
+  'account.prop-challenge.ledger.help.daily_loss_limit.example':
+    'Hôm nay: đã lỗ {used} trong hạn ngày {limit}, còn {left}.',
+  'account.prop-challenge.ledger.help.daily_profit_cap':
+    'Chỉ một phần lợi nhuận mỗi ngày được tính vào mục tiêu. Phần vượt trần vẫn giữ nhưng không được tính.',
+  'account.prop-challenge.ledger.help.daily_profit_cap.example':
+    'Chỉ {cap} lợi nhuận một ngày được tính; {excluded} vượt trần từ trước đến nay không được tính.',
+  'account.prop-challenge.ledger.help.live_review_daily_profit':
+    'Một ngày giao dịch đạt lợi nhuận này trở lên làm tài khoản đủ điều kiện xét duyệt tài khoản live.',
+  'account.prop-challenge.ledger.help.live_review_daily_profit.example':
+    'Một ngày đạt {trigger} trở lên là đủ điều kiện; ngày tốt nhất đến nay {bestDay}.',
+  'account.prop-challenge.ledger.help.minimum_trading_days':
+    'Những ngày có ít nhất một lệnh đã đóng. Giai đoạn không thể vượt trước khi đủ số ngày này, dù đạt mục tiêu nhanh đến đâu.',
+  'account.prop-challenge.ledger.help.minimum_trading_days.example':
+    '{current} / {target} ngày giao dịch đã xong, còn {remaining}.',
+  'account.prop-challenge.ledger.help.minimum_profitable_days':
+    'Ngày giao dịch đóng cửa đạt hoặc vượt lợi nhuận tối thiểu mỗi ngày của công ty. Hòa vốn hoặc lãi nhỏ hơn không được tính.',
+  'account.prop-challenge.ledger.help.minimum_profitable_days.example':
+    '{current} / {target} ngày đóng ở {minimum} trở lên, còn {remaining}.',
+  'account.prop-challenge.ledger.help.consistency':
+    'Ngày tốt nhất không được vượt quá tỷ lệ này trên tổng lợi nhuận giai đoạn. Khắc phục bằng cách lãi thêm ngày khác, không phải bằng cách lỗ.',
+  'account.prop-challenge.ledger.help.consistency.example':
+    'Ngày tốt nhất {bestDay} chiếm {share} của tổng lợi nhuận {total}; tổng lợi nhuận phải đạt {goal} để nằm ở {maximum}.',
+  'account.prop-challenge.ledger.help.consistency.example-done':
+    'Ngày tốt nhất {bestDay} chiếm {share} tổng lợi nhuận, trong hạn {maximum}.',
+  'account.prop-challenge.ledger.help.consistency.example-none':
+    'Chưa có lợi nhuận nên không có ngày tốt nhất để so sánh.',
+  'account.prop-challenge.ledger.help.max_position_size':
+    'Số hợp đồng tối đa được giữ cùng lúc, trên mọi vị thế đang mở. Một số công ty tăng hạn mức khi lợi nhuận tăng.',
+  'account.prop-challenge.ledger.help.max_position_size.example':
+    'Hiện tối đa {maximum} hợp đồng cùng lúc; vị thế lớn nhất đến nay {current}.',
+  'account.prop-challenge.ledger.help.payout.cycle_days':
+    'Ngày giao dịch trong chu kỳ rút hiện tại. Bộ đếm reset sau lần rút được duyệt.',
+  'account.prop-challenge.ledger.help.payout.cycle_days.example':
+    '{current} / {target} ngày giao dịch chu kỳ này, còn {remaining}.',
+  'account.prop-challenge.ledger.help.payout.qualifying_days':
+    'Ngày giao dịch trong chu kỳ này đóng cửa đạt hoặc vượt lợi nhuận tối thiểu mỗi ngày của công ty.',
+  'account.prop-challenge.ledger.help.payout.qualifying_days.example':
+    '{current} / {target} ngày đạt {minimum} trở lên chu kỳ này, còn {remaining}.',
+  'account.prop-challenge.ledger.help.payout.cycle_profit':
+    'Lợi nhuận từ khi chu kỳ bắt đầu phải đạt số này trước khi được yêu cầu rút.',
+  'account.prop-challenge.ledger.help.payout.cycle_profit.example':
+    '{current} đã kiếm trong chu kỳ này trên {target} cần có.',
+  'account.prop-challenge.ledger.help.payout.minimum_balance':
+    'Số dư phải ở mức này trở lên khi yêu cầu rút.',
+  'account.prop-challenge.ledger.help.payout.minimum_balance.example':
+    'Số dư {current}; phải ít nhất {target}.',
+  'account.prop-challenge.ledger.help.payout.positive_cycle_profit':
+    'Sau lần rút đầu, mỗi chu kỳ mới phải có lãi trước khi yêu cầu lần nữa.',
+  'account.prop-challenge.ledger.help.payout.positive_cycle_profit.example':
+    'Lợi nhuận chu kỳ là {current}; phải lớn hơn không.',
+  'account.prop-challenge.ledger.help.payout.consistency':
+    'Ngày tốt nhất không được vượt quá tỷ lệ này trên lợi nhuận chu kỳ.',
+  'account.prop-challenge.ledger.help.payout.consistency.example':
+    'Ngày tốt nhất {bestDay} chiếm {share} của {total} lợi nhuận chu kỳ; lợi nhuận chu kỳ phải đạt {goal} để tỷ lệ về {maximum}.',
+  'account.prop-challenge.ledger.help.payout.consistency.example-done':
+    'Ngày tốt nhất {bestDay} chiếm {share} lợi nhuận chu kỳ, trong giới hạn {maximum}.',
+  'account.prop-challenge.ledger.help.payout.consistency.example-none':
+    'Chưa có lợi nhuận chu kỳ nên chưa có ngày tốt nhất để so sánh.',
+  'account.prop-challenge.ledger.help.payout.minimum_request':
+    'Khoản rút nhỏ nhất công ty chấp nhận. Số khả dụng phải đạt mức đó trước.',
+  'account.prop-challenge.ledger.help.payout.minimum_request.example':
+    '{current} khả dụng; mức yêu cầu tối thiểu của công ty là {target}.',
+  'account.prop-challenge.ledger.help.payout.payout_count':
+    'Số lần rút giai đoạn này cho phép. Dùng hết hạn mức là hoàn thành giai đoạn.',
+  'account.prop-challenge.ledger.help.payout.payout_count.example':
+    '{current} / {target} lần rút đã dùng ở giai đoạn này.',
+  'account.prop-challenge.ledger.help.payout.request_window':
+    'Chỉ nhận yêu cầu vào các ngày trong tuần này, theo múi giờ của công ty.',
+  'account.prop-challenge.ledger.help.payout.request_window.example':
+    'Hôm nay là {today}; yêu cầu mở vào {days} ({timeZone}).',
+  'account.prop-challenge.ledger.help.payout.elapsed_hours':
+    'Thời gian từ lệnh đầu tiên của chu kỳ phải đạt mức này trước khi được yêu cầu rút.',
+  'account.prop-challenge.ledger.help.payout.elapsed_hours.example':
+    '{current} / {target} giờ kể từ lệnh đầu của chu kỳ.',
+  'account.prop-challenge.ledger.help.payout.lifetime_qualifying_days':
+    'Ngày đủ điều kiện trên cả giai đoạn funded, không chỉ chu kỳ này. Rút được mở khóa khi đạt.',
+  'account.prop-challenge.ledger.help.payout.lifetime_qualifying_days.example':
+    '{current} / {target} ngày đủ điều kiện trên toàn giai đoạn.',
+  'account.prop-challenge.ledger.requirement.target': 'mục tiêu {value}',
+  'account.prop-challenge.ledger.requirement.buffer': 'đệm {value}',
+  'account.prop-challenge.ledger.requirement.max': 'tối đa {value}',
+  'account.prop-challenge.ledger.requirement.daily-cap':
+    'Tính tối đa {value} mỗi ngày giao dịch',
+  'account.prop-challenge.ledger.requirement.profitable-days':
+    '{days} ngày đạt {profit}+',
+  'account.prop-challenge.ledger.requirement.days': '{value} ngày',
+  'account.prop-challenge.ledger.requirement.at-most': '≤ {value}',
+  'account.prop-challenge.ledger.state.not-started': 'Chưa bắt đầu',
+  'account.prop-challenge.ledger.state.in-progress': 'Đang tiến hành',
+  'account.prop-challenge.ledger.state.reached': 'Đã đạt',
+  'account.prop-challenge.ledger.state.met': 'Đã hoàn thành',
+  'account.prop-challenge.ledger.state.eligible': 'Đủ điều kiện',
+  'account.prop-challenge.ledger.state.safe': 'An toàn',
+  'account.prop-challenge.ledger.state.clear': 'Chưa dùng',
+  'account.prop-challenge.ledger.state.within-rule': 'Trong quy tắc',
+  'account.prop-challenge.ledger.state.near-limit': 'Gần giới hạn',
+  'account.prop-challenge.ledger.state.limit-reached': 'Đã chạm giới hạn',
+  'account.prop-challenge.ledger.state.cap-applied': 'Đã áp dụng giới hạn',
+  'account.prop-challenge.ledger.state.within-cap': 'Trong giới hạn',
+  'account.prop-challenge.ledger.state.breached': 'Vi phạm',
+  'account-dashboard.prop.metrics.total': 'Thử thách',
+  'account-dashboard.prop.metrics.pass-rate': 'Tỷ lệ đạt',
+  'account-dashboard.prop.metrics.costs': 'Chi phí thử thách',
+  'account-dashboard.prop.metrics.payouts': 'Khoản rút',
+  'account-dashboard.prop.metrics.net': 'Ròng',
+  'account-dashboard.prop.tabs.overview': 'Tổng quan',
+  'account-dashboard.mode.selector': 'Chế độ bảng điều khiển tài khoản',
+  'account-dashboard.mode.account-overview': 'Tổng quan',
+  'account-dashboard.mode.challenges': 'Thử thách',
+  'account-dashboard.prop.metrics.active': 'Thử thách đang hoạt động',
+  'account-dashboard.prop.economics.title': 'Hiệu quả chi phí',
+  'account-dashboard.prop.economics.roi': 'Lợi tức',
+  'account-dashboard.prop.economics.roi-no-cost': 'Không tốn phí',
+  'account-dashboard.prop.economics.average-cost-per-attempt':
+    'Chi phí trung bình mỗi lần thử',
+  'account-dashboard.prop.economics.cost-per-funded-account':
+    'Chi phí mỗi tài khoản được cấp vốn',
+  'account-dashboard.prop.economics.payout-conversion':
+    'Tỷ lệ chuyển đổi thành khoản rút',
+  'account-dashboard.prop.insights.title': 'Phân tích thử thách',
+  'account-dashboard.prop.phases.title': 'Thông tin giai đoạn',
+  'account-dashboard.prop.phases.phase': 'Giai đoạn',
+  'account-dashboard.prop.phases.average-duration': 'Thời lượng TB',
+  'account-dashboard.prop.phases.show-more': 'Hiện thêm {count}',
+  'account-dashboard.prop.phases.show-fewer': 'Hiện ít hơn',
+  'account-dashboard.prop.tooltip.open-explanation':
+    'Giải thích cách tính {metric}',
+  'account-dashboard.prop.tooltip.calculation-unavailable':
+    'Chưa có đủ dữ liệu đã hoàn thành',
+  'account-dashboard.prop.tooltip.pass-rate.description':
+    'Tỷ lệ thử thách đã hoàn thành và đạt. Không tính thử thách đang hoạt động hoặc đã lưu trữ nhưng chưa có kết quả.',
+  'account-dashboard.prop.tooltip.pass-rate.formula':
+    'Thử thách đạt ÷ thử thách đã hoàn thành × 100',
+  'account-dashboard.prop.tooltip.roi.description':
+    'Lợi nhuận ròng từ khoản rút (khoản rút trừ chi phí thử thách) so với chi phí. Chỉ tính khi tất cả thử thách dùng cùng một loại tiền.',
+  'account-dashboard.prop.tooltip.roi.formula':
+    '(Khoản rút − chi phí thử thách) ÷ chi phí thử thách × 100',
+  'account-dashboard.prop.tooltip.roi.no-cost':
+    'Các thử thách này không tốn chi phí nên không có cơ sở chi phí để chia. Lợi nhuận ròng là {payouts} tiền chi trả.',
+  'account-dashboard.prop.tooltip.average-cost.description':
+    'Chi phí trung bình cho mỗi lần thử, được tính riêng theo từng loại tiền.',
+  'account-dashboard.prop.tooltip.average-cost.formula':
+    'Chi phí thử thách ÷ tổng số lần thử',
+  'account-dashboard.prop.tooltip.funded-cost.description':
+    'Chi phí trung bình cho mỗi thử thách đạt, được tính riêng theo từng loại tiền.',
+  'account-dashboard.prop.tooltip.funded-cost.formula':
+    'Chi phí thử thách ÷ thử thách đạt',
+  'account-dashboard.prop.tooltip.payout-conversion.description':
+    'Tỷ lệ thử thách đạt đã tạo ra ít nhất một khoản rút.',
+  'account-dashboard.prop.tooltip.payout-conversion.formula':
+    'Thử thách đạt có khoản rút ÷ thử thách đạt × 100',
+  'account-dashboard.prop.tabs.phases': 'Giai đoạn',
+  'account-dashboard.prop.tabs.firms': 'Công ty',
+  'account-dashboard.prop.firms.firm': 'Công ty',
+  'account-dashboard.prop.firms.attempts': 'Lần thử',
+  'account-dashboard.prop.phases.most-failed': 'Thất bại nhiều nhất',
+  'account-dashboard.prop.phases.days': '{count} ngày',
+  'account-dashboard.prop.phases.empty': 'Chưa có giai đoạn nào hoàn tất',
+  'account.challenge.toggle.label': 'Thử thách quỹ cấp vốn',
+  'account.challenge.toggle.help':
+    'Theo dõi các giai đoạn đánh giá, quy tắc của quỹ và các khoản chi trả cho tài khoản này.',
 
   'notice.error.canonical-trade-type-change':
     'Không thể đổi giao dịch đã đồng bộ với nhà môi giới sang loại giao dịch khác.',
@@ -6532,6 +7582,361 @@ const vi: Lang = {
   'home.guide.whats-new.done.title': 'Không mất ngữ cảnh làm việc',
   'home.guide.whats-new.done.description':
     'Dùng Tổng quan cho các tiện ích cá nhân và Bảng điều khiển để phân tích sâu hơn. Mỗi chế độ giữ bộ lọc và bố cục riêng.',
+  'account.prop-challenge.summary.status.payout_ready': 'Sẵn sàng rút tiền',
+  'account.prop-challenge.ribbon.passed': '{phase} đã đạt',
+  'account.prop-challenge.ribbon.failed': '{phase} đã trượt',
+  'account.prop-challenge.ribbon.action.advance': 'Chuyển sang {phase}',
+  'account.prop-challenge.ribbon.action.advance-short': 'Chuyển',
+  'account.prop-challenge.ribbon.action.mark-passed': 'Đánh dấu đã đạt',
+  'account.prop-challenge.ribbon.action.archive': 'Lưu trữ',
+  'account.prop-challenge.actions.stale':
+    'Thử thách này đã được cập nhật ở nơi khác. Hãy kiểm tra và thử lại.',
+  'account.prop-challenge.ribbon.action.record-payout': 'Ghi nhận khoản rút',
+  'account.prop-challenge.ribbon.action.record-payout-short': 'Rút tiền',
+  'account.prop-challenge.payout.title': 'Điều kiện rút tiền',
+  'account.prop-challenge.payout.eligible': 'Sẵn sàng rút tiền',
+  'account.prop-challenge.payout.available': 'Có thể rút ngay',
+  'account.prop-challenge.payout.cycle-profit': 'Lợi nhuận chu kỳ',
+  'account.prop-challenge.payout.history': 'Các lần rút tiền',
+  'account.prop-challenge.payout.lifetime-qualifying-days':
+    'Ngày đủ điều kiện tích lũy',
+  'account.prop-challenge.payout.requirement.days': 'Ngày giao dịch',
+  'account.prop-challenge.payout.requirement.qualifying-days':
+    'Ngày đủ điều kiện',
+  'account.prop-challenge.payout.requirement.minimum-balance':
+    'Số dư tài khoản tối thiểu',
+  'account.prop-challenge.payout.requirement.positive-cycle-profit':
+    'Lợi nhuận chu kỳ dương',
+  'account.prop-challenge.payout.requirement.cycle-profit': 'Lợi nhuận chu kỳ',
+  'account.prop-challenge.payout.requirement.consistency': 'Tính nhất quán',
+  'account.prop-challenge.payout.requirement.minimum':
+    'Số tiền tối thiểu khả dụng',
+  'account.prop-challenge.payout.requirement.payouts': 'Giới hạn lượt rút',
+  'account.prop-challenge.payout.requirement.request-window':
+    'Khung thời gian yêu cầu',
+  'account.prop-challenge.payout.timezone-invalid':
+    'Không phải múi giờ hợp lệ.',
+  'account.prop-challenge.payout.preview-amount': 'Xem trước rút tiền',
+  'account.prop-challenge.payout.you-receive': 'Phần của trader',
+  'account.prop-challenge.payout.balance-after': 'Số dư sau',
+  'account.prop-challenge.payout.drawdown-floor': 'Mức sàn drawdown',
+  'account.prop-challenge.payout.buffer-after': 'Khoảng cách trước khi vi phạm',
+  'account.prop-challenge.payout.request-not-allowed':
+    'Số tiền này không đủ điều kiện',
+  'account.prop-challenge.payout.immediate-breach':
+    'Khoản rút này sẽ khiến tài khoản chạm hoặc thấp hơn mức sàn drawdown.',
+  'account.prop-challenge.payout.account-concludes':
+    'Khoản rút này kết thúc chu kỳ rút tiền của tài khoản funded mô phỏng đã cấu hình.',
+  'account.prop-challenge.payout.next-stage-after-payout':
+    'Khoản rút này chuyển tài khoản sang giai đoạn tiếp theo đã cấu hình.',
+  'account.prop-challenge.payout.live-review-after-payout':
+    'Khoản rút này giúp tài khoản đủ điều kiện được xét duyệt lên tài khoản thật.',
+  'account.prop-challenge.payout.cycle-resets':
+    'Tiến độ rút tiền được đặt lại sau khi khoản rút được duyệt.',
+  'account.prop-challenge.payout.cycle-continues':
+    'Tiến độ rút tiền tiếp tục sau khi khoản rút được duyệt.',
+  'account.prop-challenge.payout.drawdown.unchanged':
+    'Mức sàn drawdown hiện tại được giữ nguyên.',
+  'account.prop-challenge.payout.drawdown.lock_at_balance':
+    'Mức sàn drawdown được khóa sau khi rút tiền.',
+  'account.prop-challenge.payout.drawdown.reset_from_starting_balance':
+    'Tài khoản và giới hạn drawdown được đặt lại sau khi rút tiền.',
+  'account-page.guide.whats-new.cockpit.payout.title':
+    'Biết khi nào khoản rút funded là an toàn',
+  'account-page.guide.whats-new.cockpit.payout.description':
+    'Tài khoản funded có quy tắc đã xác minh giờ hiển thị yêu cầu rút tiền, số tiền khả dụng và bản xem trước tác động đến số dư và drawdown.',
+  'account-page.guide.main.payout.title': 'Lập kế hoạch rút tiền funded',
+  'account-page.guide.main.payout.description':
+    'Khi giai đoạn funded có quy tắc rút tiền đã xác minh, bảng này theo dõi điều kiện và xem trước tác động của số tiền yêu cầu lên tài khoản.',
+  'account.prop-challenge.stage': 'Loại giai đoạn',
+  'account.prop-challenge.stage.evaluation': 'Đánh giá',
+  'account.prop-challenge.stage.sim-funded': 'Funded mô phỏng',
+  'account.prop-challenge.stage.live-funded': 'Funded thực',
+  'account.prop-challenge.payout-rules.title': 'Quy tắc rút tiền',
+  'account.prop-challenge.payout-rules.add': 'Thêm quy tắc rút tiền',
+  'account.prop-challenge.payout-rules.remove': 'Xóa quy tắc rút tiền',
+  'account.prop-challenge.payout-rules.cycle': 'Chu kỳ đủ điều kiện',
+  'account.prop-challenge.payout-rules.request-window': 'Thời điểm yêu cầu',
+  'account.prop-challenge.payout-rules.request-window.anytime':
+    'Bất kỳ ngày nào',
+  'account.prop-challenge.payout-rules.request-window.weekdays':
+    'Các ngày cụ thể trong tuần',
+  'account.prop-challenge.payout-rules.request-window.time-zone': 'Múi giờ',
+  'account.prop-challenge.payout-rules.request-window.allowed-days':
+    'Các ngày được phép yêu cầu',
+  'account.prop-challenge.payout-rules.cycle.none': 'Không có chu kỳ chờ',
+  'account.prop-challenge.payout-rules.cycle.trading-days': 'Ngày giao dịch',
+  'account.prop-challenge.payout-rules.cycle.qualifying-days':
+    'Ngày đủ điều kiện',
+  'account.prop-challenge.payout-rules.cycle.calendar-days': 'Ngày theo lịch',
+  'account.prop-challenge.payout-rules.days': 'Số ngày yêu cầu',
+  'account.prop-challenge.payout-rules.minimum-daily-profit':
+    'Lợi nhuận ngày tối thiểu',
+  'account.prop-challenge.payout-rules.anchor': 'Chu kỳ bắt đầu từ',
+  'account.prop-challenge.payout-rules.anchor.phase-start': 'Bắt đầu giai đoạn',
+  'account.prop-challenge.payout-rules.anchor.first-trade':
+    'Giao dịch đầu tiên',
+  'account.prop-challenge.payout-rules.minimum-balance':
+    'Số dư tài khoản tối thiểu',
+  'account.prop-challenge.payout-rules.minimum-cycle-profit':
+    'Lợi nhuận chu kỳ tối thiểu',
+  'account.prop-challenge.payout-rules.minimum-cycle-profit-schedule':
+    'Lợi nhuận chu kỳ tối thiểu theo số lần chi trả',
+  'account.prop-challenge.payout-rules.positive-cycle-after-first':
+    'Yêu cầu lợi nhuận chu kỳ dương sau lần rút đầu tiên',
+  'account.prop-challenge.payout-rules.consistency-percent':
+    'Tỷ trọng ngày tốt nhất tối đa (%)',
+  'account.prop-challenge.payout-rules.consistency-percent-schedule':
+    'Tỷ lệ ngày tốt nhất tối đa theo số lần chi trả (%)',
+  'account.prop-challenge.payout-rules.availability': 'Lợi nhuận khả dụng',
+  'account.prop-challenge.payout-rules.availability.starting-balance':
+    'Trên số dư ban đầu',
+  'account.prop-challenge.payout-rules.availability.balance-floor':
+    'Trên mức sàn số dư',
+  'account.prop-challenge.payout-rules.balance-floor': 'Mức sàn số dư',
+  'account.prop-challenge.payout-rules.request-percent': 'Tỷ lệ có thể rút (%)',
+  'account.prop-challenge.payout-rules.new-profit-percent':
+    'Lợi nhuận mới cần có cho mỗi yêu cầu (%)',
+  'account.prop-challenge.payout-rules.new-profit-percent-help':
+    'Giới hạn yêu cầu để tỷ lệ phần trăm đã cấu hình được bảo đảm bằng lợi nhuận kiếm được trong chu kỳ rút tiền hiện tại. Ví dụ, 50% cho phép yêu cầu tối đa gấp đôi lợi nhuận của chu kỳ hiện tại.',
+  'account.prop-challenge.payout-rules.minimum-request': 'Yêu cầu tối thiểu',
+  'account.prop-challenge.payout-rules.maximum': 'Yêu cầu tối đa',
+  'account.prop-challenge.payout-rules.maximum.none': 'Không giới hạn',
+  'account.prop-challenge.payout-rules.maximum.fixed': 'Mức tối đa cố định',
+  'account.prop-challenge.payout-rules.maximum.first-fixed-then-none':
+    'Chỉ giới hạn tối đa lần chi trả đầu tiên',
+  'account.prop-challenge.payout-rules.maximum.schedule':
+    'Mức tối đa theo lần rút',
+  'account.prop-challenge.payout-rules.maximum.cycle-profit-percent':
+    'Phần trăm lợi nhuận chu kỳ',
+  'account.prop-challenge.payout-rules.maximum-amount': 'Số tiền tối đa',
+  'account.prop-challenge.payout-rules.maximum-first-amount':
+    'Giới hạn lần chi trả đầu tiên',
+  'account.prop-challenge.payout-rules.maximum-cycle-profit-percent':
+    'Lợi nhuận chu kỳ tối đa (%)',
+  'account.prop-challenge.payout-rules.schedule-repeat-last':
+    'Tiếp tục dùng số tiền cuối cùng cho các lần rút sau',
+  'account.prop-challenge.payout-rules.schedule-repeat-value':
+    'Tiếp tục dùng giá trị cuối cho các lần chi trả sau',
+  'account.prop-challenge.payout-rules.schedule': 'Số tiền theo lần rút',
+  'account.prop-challenge.payout-rules.profit-split':
+    'Phần lợi nhuận của nhà giao dịch (%)',
+  'account.prop-challenge.payout-rules.lifetime-unlock':
+    'Thay đổi giới hạn sau số ngày đủ điều kiện tích lũy',
+  'account.prop-challenge.payout-rules.lifetime-unlock-help':
+    'Tính các ngày đủ điều kiện trong toàn bộ giai đoạn được cấp vốn, kể cả khi chu kỳ chi trả được đặt lại.',
+  'account.prop-challenge.payout-rules.lifetime-unlock-days':
+    'Số ngày đủ điều kiện tích lũy bắt buộc',
+  'account.prop-challenge.payout-rules.lifetime-unlock-availability':
+    'Khả dụng sau khi mở khóa',
+  'account.prop-challenge.payout-rules.lifetime-unlock-balance-floor':
+    'Mức sàn số dư sau khi mở khóa',
+  'account.prop-challenge.payout-rules.lifetime-unlock-request-percent':
+    'Lợi nhuận khả dụng sau khi mở khóa (%)',
+  'account.prop-challenge.payout-rules.lifetime-unlock-maximum':
+    'Yêu cầu tối đa sau khi mở khóa',
+  'account.prop-challenge.payout-rules.lifetime-unlock-maximum-amount':
+    'Số tiền tối đa sau khi mở khóa',
+  'account.prop-challenge.payout-rules.lifetime-unlock-maximum-schedule':
+    'Lịch mức tối đa sau khi mở khóa',
+  'account.prop-challenge.payout-rules.lifetime-unlock-maximum-cycle-profit-percent':
+    'Tỷ lệ phần trăm lợi nhuận chu kỳ tối đa sau khi mở khóa',
+  'account.prop-challenge.payout-rules.profit-split-model':
+    'Mô hình chia lợi nhuận',
+  'account.prop-challenge.payout-rules.profit-split.fixed': 'Tỷ lệ cố định',
+  'account.prop-challenge.payout-rules.profit-split.threshold':
+    'Thay đổi sau tổng tiền đã rút',
+  'account.prop-challenge.payout-rules.profit-split.initial':
+    'Phần ban đầu của trader (%)',
+  'account.prop-challenge.payout-rules.profit-split.threshold-amount':
+    'Ngưỡng tổng tiền đã rút',
+  'account.prop-challenge.payout-rules.profit-split.thereafter':
+    'Phần của trader sau ngưỡng (%)',
+  'account.prop-challenge.payout-rules.maximum-payouts': 'Số lần rút tối đa',
+  'account.prop-challenge.payout-rules.maximum-payout-outcome':
+    'Sau khoản rút cuối cùng',
+  'account.prop-challenge.payout-rules.maximum-payout-outcome.continue':
+    'Tiếp tục tài khoản',
+  'account.prop-challenge.payout-rules.maximum-payout-outcome.conclude':
+    'Kết thúc tài khoản',
+  'account.prop-challenge.payout-rules.maximum-payout-outcome.promote':
+    'Chuyển sang giai đoạn tiếp theo',
+  'account.prop-challenge.payout-rules.maximum-payout-outcome.live-review':
+    'Đủ điều kiện xét duyệt lên tài khoản thật',
+  'account.prop-challenge.payout-rules.aftermath':
+    'Sau khi khoản rút được duyệt',
+  'account.prop-challenge.payout-rules.aftermath.unchanged':
+    'Trừ khoản rút; giữ nguyên mức sàn drawdown',
+  'account.prop-challenge.payout-rules.aftermath.lock':
+    'Trừ khoản rút; khóa mức sàn drawdown',
+  'account.prop-challenge.payout-rules.aftermath.reset':
+    'Đặt lại tài khoản và drawdown',
+  'account.prop-challenge.payout-rules.drawdown-floor':
+    'Mức sàn drawdown sau khi rút',
+  'account.prop-challenge.payout-rules.first-payout-exempt':
+    'Lần rút đầu bỏ qua lợi nhuận chu kỳ tối thiểu',
+  'account.prop-challenge.payout-rules.reset-cycle':
+    'Đặt lại chu kỳ đủ điều kiện sau khi rút',
+  'account.prop-challenge.payout-rules.group.eligibility': 'Điều kiện',
+  'account.prop-challenge.payout-rules.group.availability':
+    'Khoản rút khả dụng',
+  'account.prop-challenge.payout-rules.group.terms': 'Điều khoản rút tiền',
+  'account.prop-challenge.payout-rules.group.aftermath': 'Sau khi rút',
+  'account.prop-challenge.payout.requirement.elapsed-hours':
+    'Thời gian đã trôi qua',
+  'account.prop-challenge.payout-rules.profit-split.account-profit-threshold':
+    'Thay đổi theo lợi nhuận tài khoản',
+  'account.prop-challenge.payout-rules.profit-split.account-profit-help':
+    'Lợi nhuận trọn đời của tài khoản bằng số dư hiện tại trừ số dư ban đầu cộng các khoản rút trước đó. Tỷ lệ dưới hoặc từ ngưỡng trở lên áp dụng cho toàn bộ yêu cầu.',
+  'account.prop-challenge.payout-rules.profit-split.below':
+    'Phần của nhà giao dịch dưới ngưỡng (%)',
+  'account.prop-challenge.payout-rules.profit-split.threshold-profit':
+    'Ngưỡng lợi nhuận tài khoản',
+  'account.prop-challenge.payout-rules.profit-split.at-or-above':
+    'Phần của nhà giao dịch từ ngưỡng trở lên (%)',
+  'account.prop-challenge.payout-rules.minimum-elapsed-hours':
+    'Số giờ tối thiểu đã trôi qua',
+
+  
+  'account.merge.challenge.move-earlier': 'Chuyển {account} lên trước',
+  'account.merge.challenge.move-later': 'Chuyển {account} ra sau',
+  'account.merge.warning.use-profile-balance': 'Dùng số dư hồ sơ',
+  'account.merge.warning.edit-phases': 'Chỉnh sửa giai đoạn',
+  'account.merge.title': 'Thiết lập thử thách',
+  'account.merge.loading': 'Đang tải...',
+  'account.merge.step.accounts': 'Tài khoản',
+  'account.merge.step.phases': 'Giai đoạn',
+  'account.merge.step.review': 'Xem lại',
+  'account.merge.accounts.title': 'Tài khoản cần gộp',
+  'account.merge.accounts.show-archived': 'Hiện tài khoản đã lưu trữ',
+  'account.merge.accounts.empty': 'Không có tài khoản phù hợp',
+  'account.merge.target.title': 'Tài khoản đích',
+  'account.merge.target.keep': 'Giữ lại',
+  'account.merge.target.new': 'Tên mới',
+  'account.merge.phase.name': 'Tên giai đoạn',
+  'account.merge.phase.status': 'Trạng thái',
+  'account.merge.phase.started': 'Bắt đầu',
+  'account.merge.phase.completed': 'Kết thúc',
+  'account.merge.phase.no-rules': 'Không có',
+  'account.merge.review.notes': 'giao dịch đã chuyển',
+  'account.merge.review.identities': 'tài khoản sàn',
+  'account.merge.warning.trade-outside-window':
+    'Lệnh nằm ngoài khoảng thời gian của giai đoạn',
+  'account.merge.warning.identity-shared':
+    'Định danh được nhiều tài khoản nhận',
+  'account.merge.warning.copy-trading-dropped': 'Đã bỏ các kỳ copy trading',
+  'account.merge.error.too-few-sources': 'Hãy chọn ít nhất hai tài khoản.',
+  'account.merge.error.duplicate-source': 'Một tài khoản bị liệt kê hai lần.',
+  'account.merge.error.target-exists': 'Tên này thuộc về một tài khoản khác.',
+  'account.merge.error.currency-mismatch':
+    'Các tài khoản dùng tiền tệ khác nhau.',
+  'account.merge.error.timeline-not-monotonic':
+    'Thời điểm bắt đầu các giai đoạn phải tăng dần.',
+  'account.merge.error.invalid-override':
+    'Hãy kiểm tra ngày của giai đoạn này.',
+  'account.merge.error.source-missing':
+    'Một tài khoản chưa có thiết lập được lưu.',
+  'account.merge.error.unknown': 'Gộp thất bại.',
+  'account.merge.action.merge': 'Gộp',
+  'account.merge.action.undo': 'Hoàn tác',
+  'account.merge.action.delete': 'Xóa tài khoản cũ',
+  'account.merge.notice.converted': 'Đã chuyển thành thử thách',
+  'account.merge.notice.title': 'Đã gộp từ {accounts}',
+  'account.merge.notice.error': 'Thao tác thất bại.',
+  'account.merge.undo.title': 'Hoàn tác việc gộp',
+  'account.merge.undo.message': 'Khôi phục các tài khoản cũ và lệnh của chúng.',
+  'account.merge.delete.title': 'Xóa tài khoản cũ',
+  'account.merge.delete.message':
+    'Xóa các tài khoản cũ đã lưu trữ. Không thể hoàn tác.',
+  'command.open-legacy-challenge-onboarding': 'Thiết lập prop challenge',
+  'account.merge.step.challenge': 'Thử thách',
+  'account.merge.action.convert': 'Chuyển đổi',
+  'account.merge.profile.applied': 'Đã áp dụng: {firm} · {challenge}',
+  'account.merge.profile.remove': 'Gỡ',
+  'account.merge.phase.apply-profile': 'Áp dụng hồ sơ công ty',
+  'account.merge.profile.replace-rules.title': 'Thay thế các quy tắc nhập tay?',
+  'account.merge.profile.replace-rules.body':
+    'Hồ sơ của {firm} xác định quy tắc của mọi giai đoạn. Các quy tắc bạn nhập trên trang này sẽ bị thay thế.',
+  'account.merge.profile.replace-rules.confirm': 'Thay thế quy tắc',
+  'guide.legacy-setup.list.title': 'Mọi tài khoản chưa có thử thách đều ở đây',
+  'guide.legacy-setup.list.description':
+    'Quyết định cho từng tài khoản. “Giữ nguyên” giữ đúng như hiện tại; bạn luôn có thể thiết lập sau từ cài đặt bảng điều khiển.',
+  'guide.legacy-setup.assign.title': 'Gộp các giai đoạn của cùng một thử thách',
+  'guide.legacy-setup.assign.description':
+    'Các tài khoản từng là giai đoạn của cùng một thử thách vào chung một nhóm (chúng tôi gợi ý nhóm theo tên trùng khớp). Tài khoản đứng riêng trở thành thử thách một giai đoạn.',
+  'guide.legacy-setup.continue.title': 'Một thiết lập ngắn cho mỗi thử thách',
+  'guide.legacy-setup.continue.description':
+    'Tiếp tục mở thiết lập thử thách cho từng nhóm lần lượt. Không có gì thay đổi cho đến khi bạn xác nhận từng nhóm.',
+  'guide.merge-wizard.target.title': 'Một tài khoản giữ lịch sử',
+  'guide.merge-wizard.target.description':
+    'Tài khoản đích tồn tại với mọi giai đoạn. Các tài khoản còn lại được lưu trữ, không bị xóa, và giao dịch của chúng chuyển sang tài khoản đích.',
+  'guide.merge-wizard.identity.title': 'Đặt tên công ty và thử thách',
+  'guide.merge-wizard.identity.description':
+    'Áp dụng hồ sơ công ty sẽ điền quy tắc thật và giai đoạn được cấp vốn. Không có hồ sơ, các giai đoạn không có quy tắc cho đến khi bạn thêm trên trang tài khoản.',
+  'guide.merge-wizard.phases.title': 'Kiểm tra từng giai đoạn',
+  'guide.merge-wizard.phases.description':
+    'Đặt loại chặng, đánh dấu giai đoạn đã hoàn thành là Đạt và giai đoạn hiện tại là Đang hoạt động, rồi xác nhận ngày.',
+  'guide.merge-wizard.review.title':
+    'Không có gì xảy ra cho đến khi bạn xác nhận',
+  'guide.merge-wizard.review.description':
+    'Kiểm tra giao dịch đã chuyển, tài khoản đã lưu trữ và mọi cảnh báo. Gộp áp dụng tất cả; bạn có thể hoàn tác từ trang tài khoản.',
+  'account.merge.challenge.accounts': 'Tài khoản',
+  'account.merge.challenge.order-hint': 'Giai đoạn cũ nhất trước',
+  'account.merge.challenge.single-hint':
+    'Tài khoản này trở thành một thử thách riêng',
+  'account.merge.phase.identities-count': '{count} định danh',
+  'account.merge.phase.pending': 'Đang chờ',
+  'account.merge.review.phases': 'giai đoạn',
+  'account.merge.review.archived': 'đã lưu trữ',
+  'account.merge.review.open': 'đang mở',
+  'account.merge.sequence': 'Thử thách {index} / {total}',
+  'account.merge.warning.balance-differs':
+    'Số dư ban đầu khác với hồ sơ công ty',
+  'account.merge.error.profile-phase-mismatch':
+    'Nhiều tài khoản hơn số giai đoạn trong hồ sơ công ty',
+  'account.merge.error.profile-currency-mismatch':
+    'Tiền tệ của hồ sơ khác với các tài khoản này.',
+  'account.merge.error.source-changed':
+    'Một tài khoản đã thay đổi. Hãy xem lại việc gộp.',
+  'account.merge.error.multiple-active-phases':
+    'Chỉ tài khoản cuối cùng có thể vẫn đang hoạt động.',
+  'account.merge.error.phases-after-failed-source':
+    'Tài khoản thất bại kết thúc thử thách, nên phải được chọn sau cùng.',
+  'account.merge.error.copy-trading-overlap':
+    'Các giai đoạn copy trading bị chồng lấn. Hãy đóng một giai đoạn trước.',
+  'onboarding.legacy-challenge.legend':
+    'Gộp các tài khoản từng là giai đoạn của cùng một thử thách. Tài khoản đứng riêng sẽ là một thử thách độc lập.',
+  'onboarding.legacy-challenge.assign.leave': 'Giữ nguyên',
+  'onboarding.legacy-challenge.assign.own': 'Thử thách riêng',
+  'onboarding.legacy-challenge.assign.group': 'Thử thách {letter}',
+  'onboarding.legacy-challenge.assign.new-group': 'Thử thách mới…',
+  'onboarding.legacy-challenge.action.continue': 'Tiếp tục',
+  'onboarding.legacy-challenge.action.continue-count': 'Thiết lập {count}',
+  'guide.action-step.dismiss': 'Để sau',
+  'guide.legacy-challenge.title': 'Các tài khoản hiện có',
+  'guide.legacy-challenge.description':
+    'Gộp các tài khoản từng là giai đoạn của một thử thách, hoặc biến một tài khoản thành thử thách độc lập.',
+  'guide.legacy-challenge.action': 'Thiết lập tài khoản',
+  'account-dashboard.challenges.empty.title': 'Chưa có thử thách nào',
+  'account-dashboard.challenges.empty.message':
+    'Theo dõi thử thách prop firm như một tài khoản với các giai đoạn, quy tắc và thanh toán.',
+  'account-dashboard.challenges.empty.create': 'Thử thách mới',
+  'account-dashboard.challenges.empty.setup': 'Thiết lập tài khoản hiện có',
+  'onboarding.legacy-challenge.title': 'Prop challenge',
+  'onboarding.legacy-challenge.action.skip': 'Bỏ qua',
+  'onboarding.legacy-challenge.accounts.show-archived':
+    'Hiện tài khoản đã lưu trữ',
+  'onboarding.legacy-challenge.accounts.empty':
+    'Không có tài khoản cần thiết lập',
+  'onboarding.legacy-challenge.loading': 'Đang tải...',
+  'onboarding.legacy-challenge.suggested': 'Gợi ý',
+  'onboarding.legacy-challenge.row.aria': 'Hành động cho {account}',
+  'onboarding.legacy-challenge.status.combined': 'Đã gộp',
+  'onboarding.legacy-challenge.status.converted': 'Đã chuyển đổi',
+  'onboarding.legacy-challenge.entry.name': 'Prop challenge',
+  'onboarding.legacy-challenge.entry.desc':
+    'Gộp hoặc chuyển đổi tài khoản hiện có thành challenge.',
+  'onboarding.legacy-challenge.entry.action': 'Thiết lập',
 
   'view.home': 'Trang chủ',
   'common.lose': 'Thua',
@@ -6648,5 +8053,90 @@ const vi: Lang = {
     'bỏ lỡ {count} tháng kể từ lần đánh giá gần nhất',
   'home.widget.streak.missed-months.other':
     'bỏ lỡ {count} tháng kể từ lần đánh giá gần nhất',
+  'trade-sync.quick.started': 'Đang đồng bộ các nguồn giao dịch đã bật…',
+  'trade-sync.quick.running': 'Đang đồng bộ…',
+  'trade-sync.quick.offline':
+    'Đồng bộ giao dịch cần kết nối Internet. Hãy thử lại khi bạn trực tuyến.',
+  'trade-sync.quick.no-sources':
+    'Không tìm thấy nguồn đồng bộ giao dịch nào được bật. Hãy cấu hình Trade Sync trong Cài đặt.',
+  'trade-sync.quick.complete':
+    'Đồng bộ hoàn tất: đã đồng bộ {sources} nguồn và nhập hoặc cập nhật {imported} giao dịch.',
+  'trade-sync.quick.partial':
+    'Đồng bộ hoàn tất nhưng có sự cố: {completed}/{total} nguồn hoàn tất và {imported} giao dịch được nhập hoặc cập nhật.',
+  'trade-sync.quick.failed':
+    'Không thể hoàn tất đồng bộ cho {sources} nguồn. Hãy kiểm tra cài đặt Trade Sync và thử lại.',
+  'navigation.items.nav-sync-trades': 'Đồng bộ giao dịch',
+  'command.sync-trades-now': 'Đồng bộ giao dịch',
+  'home.quick-links.sync-trades': 'Đồng bộ giao dịch',
+  'trade-sync.quick.not-ready':
+    'Hiện không có nguồn đồng bộ giao dịch nào sẵn sàng. Hãy chờ các lượt đồng bộ đang chạy hoặc kiểm tra cài đặt Trade Sync.',
+  'trade-sync.quick.mapping-required':
+    'Đã nhập hoặc cập nhật {imported} giao dịch. Hoàn tất ánh xạ tài khoản cho {providers} trong Cài đặt → Trade Sync rồi thử lại.',
+  'trade-handoff.action.view-trades-count.one': 'Xem {count} giao dịch',
+  'trade-handoff.action.view-trades-count.few': 'Xem {count} giao dịch',
+  'trade-handoff.action.view-trades-count.many': 'Xem {count} giao dịch',
+  'trade-handoff.action.view-trades-count.other': 'Xem {count} giao dịch',
+  'trade-handoff.action.review-now': 'Xem lại ngay',
+  'trade-handoff.action.open-period': 'Mở bản đánh giá {period}',
+  'trade-handoff.review.creation-disabled':
+    'Bản đánh giá này không tồn tại và tính năng tự động tạo bản đánh giá đang bị tắt.',
+  'trade-handoff.review.open-failed': 'Không thể mở bản đánh giá đó.',
+  'trade-handoff.trades.open-failed': 'Không thể mở nhật ký giao dịch.',
+  'trade-handoff.scope.label':
+    'Đang hiển thị {trades} từ thao tác gần nhất cho {accounts}',
+  'trade-handoff.scope.exit': 'Thoát chế độ xem thao tác',
+  'trade-handoff.trade-count.one': '{count} giao dịch',
+  'trade-handoff.trade-count.few': '{count} giao dịch',
+  'trade-handoff.trade-count.many': '{count} giao dịch',
+  'trade-handoff.trade-count.other': '{count} giao dịch',
+  'trade-handoff.title.sync': 'Hoàn tất đồng bộ',
+  'trade-handoff.summary.import-complete': 'Đã nhập {trades}',
+  'trade-handoff.summary.import-partial': 'Đã nhập {trades} nhưng có vấn đề',
+  'trade-handoff.summary.sync-complete': 'Đã đồng bộ {trades}',
+  'trade-handoff.summary.sync-partial': 'Đã đồng bộ {trades} nhưng có vấn đề',
+  'trade-handoff.periods.choose': 'Chọn kỳ đánh giá khác',
+  'trade-handoff.periods.recommended': 'Đề xuất',
+  'trade-handoff.action.dismiss': 'Ẩn kết quả giao dịch gần đây',
+  'sample.action.try': 'Dùng thử nhật ký mẫu',
+  'sample.action.reset': 'Đặt lại bản mẫu',
+  'sample.popout.title': 'Nhật ký mẫu',
+  'sample.popout.action.exit': 'Thoát',
+  'sample.popout.description': 'Các thay đổi ở đây chỉ dùng để thực hành.',
+  'sample.popout.closed': 'Nhật ký thực hành đã được lưu và đóng.',
+  'sample.popout.recovery': 'Nhật ký thực hành cần được khôi phục.',
+  'sample.notice.sync-blocked':
+    'Bạn đang chỉnh sửa dữ liệu mẫu hư cấu. Đồng bộ máy chủ đã tạm dừng.',
+  'sample.notice.folder-locked':
+    'Không thể thay đổi thư mục nhật ký khi nhật ký mẫu đang hoạt động.',
+  'sample.empty.description':
+    'Khám phá một nhật ký hư cấu đã có sẵn dữ liệu mà không thay đổi tệp hoặc cài đặt nhật ký của bạn.',
+  'sample.progress.creating': 'Đang tạo nhật ký mẫu: {completed}/{total} mục',
+  'sample.progress.removing': 'Đang xóa nhật ký mẫu: {completed}/{total} mục',
+  'sample.progress.verifying':
+    'Đang kiểm tra nhật ký mẫu: {completed} trên {total} mục',
+  'sample.exit.title': 'Thoát nhật ký mẫu?',
+  'sample.exit.remove-warning':
+    'Việc xóa sẽ loại bỏ các chỉnh sửa trong những tệp đã được xác minh thuộc mẫu. Các tệp không thể chứng minh quyền sở hữu mẫu sẽ được giữ lại.',
+  'sample.exit.remove': 'Thoát và xóa',
+  'sample.reset.title': 'Đặt lại nhật ký mẫu?',
+  'sample.reset.message':
+    'Thao tác này khôi phục mọi tệp mẫu và cài đặt chỉ dành cho bản mẫu về gói hư cấu ban đầu.',
+  'sample.reset.warning': 'Các chỉnh sửa của bạn trong nhật ký mẫu sẽ bị xóa.',
+  'sample.collision.title': 'Thư mục mẫu đã tồn tại',
+  'sample.collision.message':
+    'Journalit sẽ không ghi đè thư mục hiện có. Thay vào đó, tạo nhật ký mẫu tại “{path}”?',
+  'sample.collision.confirm': 'Dùng thư mục khả dụng',
+  'sample.notice.ready': 'Nhật ký mẫu đã sẵn sàng.',
+  'sample.notice.reset': 'Đã khôi phục nhật ký mẫu.',
+  'sample.notice.reset-preserved':
+    'Đã khôi phục nhật ký mẫu. Đã giữ lại {count} tệp không thể xác minh quyền sở hữu.',
+  'sample.notice.removed': 'Đã xóa nhật ký mẫu.',
+  'sample.notice.removed-preserved':
+    'Đã xóa nhật ký mẫu. Đã giữ lại {count} tệp không thể xác minh quyền sở hữu.',
+  'sample.notice.error': 'Thao tác nhật ký mẫu thất bại: {error}',
+  'command.open-sample-journal': 'Mở nhật ký mẫu',
+  'command.exit-sample-journal': 'Thoát nhật ký mẫu',
+  'command.reset-sample-journal': 'Đặt lại nhật ký mẫu',
+  'sample.notice.busy': 'Một thao tác khác với nhật ký mẫu đang diễn ra.',
 };
 export default vi;

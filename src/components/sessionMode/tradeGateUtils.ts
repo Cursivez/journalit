@@ -10,6 +10,7 @@ import type {
 } from '../../types/sessionMode';
 import { t } from '../../lang/helpers';
 import { generateUUID } from '../../utils/uuid';
+import { enqueueFileMutation } from '../../utils/fileMutationQueue';
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   Boolean(value) && typeof value === 'object' && !Array.isArray(value);
@@ -419,24 +420,10 @@ async function getDRCService(plugin: JournalitPlugin) {
     : await plugin.serviceManager.getDRCService();
 }
 
-const tradeGateMutationQueues = new Map<string, Promise<void>>();
-
-async function enqueueTradeGateMutation(
+const enqueueTradeGateMutation = (
   filePath: string,
   task: () => Promise<void>
-): Promise<void> {
-  const previousTask =
-    tradeGateMutationQueues.get(filePath) ?? Promise.resolve();
-  const nextTask = previousTask.catch(() => undefined).then(task);
-  tradeGateMutationQueues.set(filePath, nextTask);
-  try {
-    await nextTask;
-  } finally {
-    if (tradeGateMutationQueues.get(filePath) === nextTask) {
-      tradeGateMutationQueues.delete(filePath);
-    }
-  }
-}
+): Promise<void> => enqueueFileMutation('trade-gate', filePath, task);
 
 export async function persistActiveTradeGateRun(params: {
   plugin: JournalitPlugin;

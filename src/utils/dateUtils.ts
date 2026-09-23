@@ -241,33 +241,7 @@ export function getAdjacentBusinessDay(
   return result;
 }
 
-
-export function getMondayBasedDayOfWeek(day: number): number {
-  
-  return day === 0 ? 6 : day - 1;
-}
-
-
-export function getStandardDayOfWeek(mondayBasedDay: number): number {
-  
-  return mondayBasedDay === 6 ? 0 : mondayBasedDay + 1;
-}
-
-const mondayBasedDayNameFormatterCache = new Map<string, Intl.DateTimeFormat>();
 const weekdayLongFormatterCache = new Map<string, Intl.DateTimeFormat>();
-
-function getMondayBasedDayNameFormatter(
-  locale: string | undefined,
-  format: 'long' | 'short'
-): Intl.DateTimeFormat {
-  const cacheKey = `${locale ?? ''}:${format}`;
-  let formatter = mondayBasedDayNameFormatterCache.get(cacheKey);
-  if (!formatter) {
-    formatter = new Intl.DateTimeFormat(locale, { weekday: format });
-    mondayBasedDayNameFormatterCache.set(cacheKey, formatter);
-  }
-  return formatter;
-}
 
 function getWeekdayLongFormatter(timeZone?: string): Intl.DateTimeFormat {
   const cacheKey = timeZone ?? '';
@@ -285,24 +259,6 @@ function getWeekdayLongFormatter(timeZone?: string): Intl.DateTimeFormat {
 
 export function formatWeekdayLong(date: Date, timeZone?: string): string {
   return getWeekdayLongFormatter(timeZone).format(date);
-}
-
-
-export function getMondayBasedDayNames(
-  locale?: string,
-  format: 'long' | 'short' = 'long'
-): string[] {
-  const days = [];
-  const formatter = getMondayBasedDayNameFormatter(locale, format);
-
-  
-  for (let i = 1; i <= 7; i++) {
-    const day = i % 7; 
-    const date = new Date(2021, 0, 3 + day); 
-    days.push(formatter.format(date));
-  }
-
-  return days;
 }
 
 

@@ -22,6 +22,11 @@ import { eventBus } from '../events/EventBus';
 import { OptionsChangedPayload } from '../events/types';
 import { LabelColor, normalizeLabelColor } from '../../types/labelColor';
 import { SETUP_FRONTMATTER_KEY } from '../setup/constants';
+import {
+  normalizeChallengeStageAccountTypes,
+  removeAccountTypeFromStageMapping,
+  replaceAccountTypeInStageMapping,
+} from '../propChallenge/stageAccountTypes';
 
 interface PluginWithSettings {
   app: App;
@@ -32,6 +37,11 @@ interface PluginWithSettings {
   loadData(): Promise<unknown>;
   saveData(data: unknown): Promise<void>;
   saveSettings?: () => Promise<void>;
+  serviceManager?: {
+    getFolderPathService(): {
+      isJournalPath(path: string): boolean;
+    };
+  };
 }
 
 interface OptionNoteSnapshot {
@@ -595,6 +605,44 @@ export class CustomOptionsService {
     accountSettings.accountTypeOrder = accountTypeOrder.filter(
       (type) => type.toLowerCase() !== normalizedAccountType
     );
+  }
+
+  private removeAccountTypeFromChallengeStageMapping(
+    accountType: string
+  ): void {
+    const accountSettings = asRecord(asRecord(this.plugin.settings)?.account);
+
+    if (!accountSettings) {
+      return;
+    }
+
+    accountSettings.challengeStageAccountTypes =
+      removeAccountTypeFromStageMapping(
+        normalizeChallengeStageAccountTypes(
+          accountSettings.challengeStageAccountTypes
+        ),
+        accountType
+      );
+  }
+
+  private replaceAccountTypeInChallengeStageMapping(
+    oldAccountType: string,
+    newAccountType: string
+  ): void {
+    const accountSettings = asRecord(asRecord(this.plugin.settings)?.account);
+
+    if (!accountSettings) {
+      return;
+    }
+
+    accountSettings.challengeStageAccountTypes =
+      replaceAccountTypeInStageMapping(
+        normalizeChallengeStageAccountTypes(
+          accountSettings.challengeStageAccountTypes
+        ),
+        oldAccountType,
+        newAccountType
+      );
   }
 
   private normalizeEventOptions(rawOptions: unknown): EventOptionData[] {
@@ -1670,6 +1718,7 @@ export class CustomOptionsService {
     if (removed) {
       if (type === OptionType.ACCOUNT_TYPE) {
         this.removeAccountTypeFromDashboardOrder(value);
+        this.removeAccountTypeFromChallengeStageMapping(value);
       }
 
       
@@ -1982,6 +2031,10 @@ export class CustomOptionsService {
 
         if (type === OptionType.ACCOUNT_TYPE) {
           this.replaceAccountTypeInDashboardOrder(oldValue, cleanNewValue);
+          this.replaceAccountTypeInChallengeStageMapping(
+            oldValue,
+            cleanNewValue
+          );
         }
 
         success = true;
@@ -2429,24 +2482,13 @@ export class CustomOptionsService {
     try {
       
       const files = this.getApp().vault.getMarkdownFiles();
-      const generalSettings = asRecord(asRecord(this.plugin.settings)?.general);
-      const configuredJournalFolderPath = generalSettings?.journalFolderPath;
-      const journalFolderPath =
-        typeof configuredJournalFolderPath === 'string' &&
-        configuredJournalFolderPath.length > 0
-          ? configuredJournalFolderPath
-          : '!Journalit';
-      const isJournalPath = (filePath: string): boolean => {
-        const normalizedPath = filePath.replace(/\\/g, '/');
-        const normalizedJournalFolder = journalFolderPath
-          .replace(/\\/g, '/')
-          .replace(/^\/+|\/+$/g, '');
-        if (normalizedPath.includes('-backup-')) return false;
-        return (
-          normalizedPath === normalizedJournalFolder ||
-          normalizedPath.startsWith(`${normalizedJournalFolder}/`)
-        );
-      };
+      const folderPathService =
+        this.plugin.serviceManager?.getFolderPathService();
+      if (!folderPathService) {
+        throw new Error('FolderPathService is unavailable');
+      }
+      const isJournalPath = (filePath: string): boolean =>
+        folderPathService.isJournalPath(filePath);
 
       
       
@@ -2472,10 +2514,7 @@ export class CustomOptionsService {
 
       
       for (const file of files) {
-        if (
-          (type === OptionType.TAG || type === OptionType.SETUP) &&
-          !isJournalPath(file.path)
-        ) {
+        if (!isJournalPath(file.path)) {
           continue;
         }
 

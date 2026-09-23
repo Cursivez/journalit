@@ -544,6 +544,7 @@ export function calculateTradingScore(trades: Trade[]): TradingScoreResult {
     losers.reduce((sum, t) => sum + getEffectivePnL(t), 0)
   );
 
+  
   const profitFactor =
     grossLoss > 0 ? grossProfit / grossLoss : grossProfit > 0 ? 999 : 0;
   const winRate = calculateWinRateExcludingBreakeven(

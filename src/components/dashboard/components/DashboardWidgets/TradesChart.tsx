@@ -3,7 +3,10 @@
 import React, { useState } from 'react';
 import { BaseWidget, BaseWidgetProps } from './BaseWidget';
 import { SharedTradesChart } from '../../../charts/SharedTradesChart';
-import { prepareTradesChartData } from '../../../../utils/chartUtils';
+import {
+  getTradeNotePath,
+  prepareTradesChartData,
+} from '../../../../utils/chartUtils';
 import { usePlugin } from '../../../../hooks/usePlugin';
 import { t } from '../../../../lang/helpers';
 import {
@@ -110,6 +113,11 @@ export const TradesChart: React.FC<BaseWidgetProps> = ({
                 data={chartData}
                 currencyOverride={currencyOverride}
                 className="dashboard-trades-chart journalit-dashboard-trades-chart__chart"
+                onPointClick={(point) => {
+                  if (plugin && point.path) {
+                    void plugin.openFile(getTradeNotePath(point.path), true);
+                  }
+                }}
               />
             </div>
           </div>

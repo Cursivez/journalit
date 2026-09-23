@@ -13,6 +13,7 @@ import {
   type PerformanceBreakdownCategoryTickProps,
   type PerformanceBreakdownTooltipProps,
 } from './performanceBreakdownChartModel';
+import { handleRovingChartMarkKeyDown } from '../../../charts/chartKeyboardNavigation';
 
 interface PerformanceBreakdownDividerLabelProps {
   dividerLabel: string;
@@ -167,8 +168,15 @@ export const PerformanceBreakdownTooltip: React.FC<
 
 export const PerformanceBreakdownBarShape: React.FC<
   PerformanceBreakdownBarShapeProps & {
-    isMasked: boolean;
-    isNetMetric: boolean;
+    fillMode: 'masked' | 'net' | 'neutral';
+    navigationTabIndex?: 0 | -1;
+    onKeyboardActivate?: (
+      point: Exclude<
+        NonNullable<PerformanceBreakdownBarShapeProps['payload']>,
+        { kind: 'divider' }
+      >,
+      event: React.KeyboardEvent<SVGRectElement>
+    ) => void;
   }
 > = ({
   x,
@@ -179,13 +187,14 @@ export const PerformanceBreakdownBarShape: React.FC<
   stroke,
   strokeWidth,
   strokeOpacity,
-  isMasked,
-  isNetMetric,
+  fillMode,
+  navigationTabIndex,
+  onKeyboardActivate,
 }) => {
   if (!payload || payload.kind === 'divider') return null;
 
   const fill =
-    isMasked || !isNetMetric
+    fillMode !== 'net'
       ? 'var(--text-muted)'
       : payload.displayValue > 0
         ? 'var(--chart-positive)'
@@ -194,6 +203,7 @@ export const PerformanceBreakdownBarShape: React.FC<
           : 'var(--chart-neutral)';
   const safeWidth = width ?? 0;
   const adjustedX = safeWidth < 0 ? (x ?? 0) + safeWidth : (x ?? 0);
+  const isInteractive = navigationTabIndex !== undefined;
 
   return (
     <rect
@@ -207,6 +217,23 @@ export const PerformanceBreakdownBarShape: React.FC<
       strokeOpacity={strokeOpacity}
       rx={2}
       ry={2}
+      cursor={isInteractive ? 'pointer' : undefined}
+      role={isInteractive ? 'button' : undefined}
+      tabIndex={navigationTabIndex}
+      data-journalit-chart-mark={isInteractive ? 'true' : undefined}
+      aria-label={
+        isInteractive
+          ? t('setups.view.card.open-named', { name: payload.label })
+          : undefined
+      }
+      onKeyDown={
+        isInteractive && onKeyboardActivate
+          ? (event) =>
+              handleRovingChartMarkKeyDown(event, () =>
+                onKeyboardActivate(payload, event)
+              )
+          : undefined
+      }
     />
   );
 };

@@ -20,6 +20,7 @@ import {
   AccountTradeFilter,
 } from '../../../services/accountPage/types';
 import { calculateEffectiveRMultiple } from '../../../utils/formatting';
+import { calculateProfitFactor } from '../../../utils/profitFactor';
 import {
   getEffectivePnL,
   isPnlContributingTrade,
@@ -29,13 +30,9 @@ import {
   classifyPnLWithBreakEvenSettings,
   type BreakEvenRangeSettings,
 } from '../../../utils/breakEvenRange';
-import { useEventBus } from '../../../hooks/useEventBus';
-import {
-  AccountChangedPayload,
-  TradeChangedPayload,
-} from '../../../services/events/types';
-import type { TradeCommittedPayload } from '../../../services/trade/core/tradeCoreTypes';
-import { normalizeAccountLookupKey } from '../../../services/trade/core/TradeAccountIdentity';
+import { TradeChangedPayload } from '../../../services/events/types';
+import { usePhaseScopedTrades } from './usePhaseScopedTrades';
+import { useAccountPageDataEvents } from './useAccountPageDataEvents';
 import { calculateCommissionCost } from '../../../utils/pnlUtils';
 
 interface AccountPageDataContextValue {
@@ -52,8 +49,13 @@ interface AccountPageDataContextValue {
   filters: AccountTradeFilter;
 
   
+  selectedPhaseId: string | null;
+
+  
   refreshData: () => Promise<void>;
   setFilters: (filters: AccountTradeFilter) => void;
+  
+  setSelectedPhaseId: (phaseId: string | undefined) => void;
 
   
   lastFetchTime: number;
@@ -185,7 +187,8 @@ const createEmptyAccountMetrics = (): AccountMetrics => ({
 
 interface FilteredMetricsOptions extends BreakEvenRangeSettings {
   defaultRiskAmount?: number;
-  filters?: AccountTradeFilter;
+  
+  filteredExcludedTrades: AccountTradeData[];
 }
 
 
@@ -293,11 +296,9 @@ const calculateFilteredAccountMetrics = (
 
   
   
+  
   const excludedTrades = accountPageData.excludedTrades ?? [];
-  const filteredExcludedTrades = filterAccountTrades(
-    excludedTrades,
-    options.filters ?? {}
-  );
+  const { filteredExcludedTrades } = options;
 
   if (
     filteredTrades.length === accountPageData.trades.length &&
@@ -416,12 +417,7 @@ const calculateFilteredAccountMetrics = (
         losingTradesR.length
       : undefined;
 
-  let profitFactor = 0;
-  if (totalLossAmount > 0) {
-    profitFactor = totalWinAmount / totalLossAmount;
-  } else if (totalWinAmount > 0) {
-    profitFactor = 999;
-  }
+  const profitFactor = calculateProfitFactor(totalWinAmount, totalLossAmount);
 
   const filteredMetrics: AccountMetrics = {
     totalTrades,
@@ -459,6 +455,11 @@ export const AccountPageDataProvider: React.FC<
   );
   const { accountPageData, isLoading, isStale, error, lastFetchTime } = state;
   const [filters, setFiltersState] = useState<AccountTradeFilter>({});
+  
+  
+  const [selectedPhaseId, setSelectedPhaseIdState] = useState<
+    string | undefined
+  >(undefined);
 
   
   const fetchingRef = useRef(false);
@@ -528,14 +529,32 @@ export const AccountPageDataProvider: React.FC<
     }
   }, [accountPageService]);
 
+  const setSelectedPhaseId = useCallback((phaseId: string | undefined) => {
+    setSelectedPhaseIdState(phaseId);
+  }, []);
+
   const setFilters = useCallback((newFilters: AccountTradeFilter) => {
     setFiltersState(newFilters);
   }, []);
 
-  const filteredTrades = useMemo<AccountTradeData[]>(
-    () => filterAccountTrades(accountPageData?.trades, filters),
-    [accountPageData?.trades, filters]
-  );
+  const {
+    effectivePhaseId,
+    trades: filteredTrades,
+    excludedTrades: filteredExcludedTrades,
+  } = usePhaseScopedTrades({
+    accountPageData,
+    accountName,
+    plugin,
+    selectedPhaseId,
+    trades: useMemo(
+      () => filterAccountTrades(accountPageData?.trades, filters),
+      [accountPageData?.trades, filters]
+    ),
+    excludedTrades: useMemo(
+      () => filterAccountTrades(accountPageData?.excludedTrades, filters),
+      [accountPageData?.excludedTrades, filters]
+    ),
+  });
 
   const breakEvenThresholdMode =
     plugin?.settings?.trade?.breakEvenThresholdMode;
@@ -553,12 +572,12 @@ export const AccountPageDataProvider: React.FC<
         breakEvenRangeMin,
         breakEvenRangeMax,
         defaultRiskAmount,
-        filters,
+        filteredExcludedTrades,
       }),
     [
       accountPageData,
       filteredTrades,
-      filters,
+      filteredExcludedTrades,
       breakEvenThresholdMode,
       breakEvenThresholdPercent,
       breakEvenRangeMin,
@@ -629,74 +648,11 @@ export const AccountPageDataProvider: React.FC<
     []
   );
 
-  
-  const handleTradeDataChanged = useCallback(async () => {
-    await refreshData();
-  }, [refreshData]);
-
-  const handleTradeCommitted = useCallback(
-    async (payload: TradeCommittedPayload) => {
-      const changedPaths = [
-        payload.change.path,
-        payload.change.previousPath,
-      ].filter((path): path is string => Boolean(path));
-
-      if (payload.legacyTradeChangedExpected) {
-        rememberCommittedTradeChange(changedPaths);
-      }
-
-      await refreshData();
-    },
-    [refreshData, rememberCommittedTradeChange]
-  );
-
-  const handleLegacyTradeChanged = useCallback(
-    async (payload: TradeChangedPayload) => {
-      if (wasExpectedLegacyMirror(payload)) {
-        return;
-      }
-
-      await handleTradeDataChanged();
-    },
-    [handleTradeDataChanged, wasExpectedLegacyMirror]
-  );
-
-  
-  const handleAccountChanged = useCallback(
-    async (payload: AccountChangedPayload) => {
-      
-      const currentAccountLookupKey = normalizeAccountLookupKey(accountName);
-      if (payload.accountNames && payload.accountNames.length > 0) {
-        const payloadLookupKeys = new Set(
-          payload.accountNames.map((name) => normalizeAccountLookupKey(name))
-        );
-        if (!payloadLookupKeys.has(currentAccountLookupKey)) {
-          return; 
-        }
-      } else if (payload.accountName) {
-        if (
-          normalizeAccountLookupKey(payload.accountName) !==
-          currentAccountLookupKey
-        ) {
-          return; 
-        }
-      }
-      
-      await refreshData();
-    },
-    [refreshData, accountName]
-  );
-
-  
-  useEventBus('trade:changed', handleLegacyTradeChanged);
-  useEventBus('trade:committed', handleTradeCommitted);
-  useEventBus('missed-trade:changed', handleTradeDataChanged);
-  useEventBus('folder-path:changed', handleTradeDataChanged);
-  useEventBus('account:changed', handleAccountChanged);
-  useEventBus('settings:changed', (payload) => {
-    if (payload?.section === 'copyTradeAdjustments') {
-      void refreshData();
-    }
+  useAccountPageDataEvents({
+    accountName,
+    refreshData,
+    rememberCommittedTradeChange,
+    wasExpectedLegacyMirror,
   });
 
   
@@ -715,8 +671,10 @@ export const AccountPageDataProvider: React.FC<
       error,
       accountName,
       filters,
+      selectedPhaseId: effectivePhaseId,
       refreshData,
       setFilters,
+      setSelectedPhaseId,
       lastFetchTime,
       isCacheValid,
       getFilteredTrades,
@@ -729,8 +687,10 @@ export const AccountPageDataProvider: React.FC<
       error,
       accountName,
       filters,
+      effectivePhaseId,
       refreshData,
       setFilters,
+      setSelectedPhaseId,
       lastFetchTime,
       isCacheValid,
       getFilteredTrades,
@@ -755,5 +715,7 @@ export const useAccountPageData = () => {
   }
   return context;
 };
+
+export const useOptionalAccountPageData = () => use(AccountPageDataContext);
 
 export {};

@@ -6,6 +6,7 @@ import { removeDropdownFixScript } from '../utils/domUtils';
 import { resetPluginHookState } from '../hooks/usePlugin';
 import { EventBus } from '../services/events/EventBus';
 import { clearTokenManager } from '../services/backend/TokenManager';
+import { cleanupBottomLeftNotificationHost } from '../components/notifications/BottomLeftNotificationHost';
 
 
 interface ElementWithEmpty {
@@ -22,6 +23,11 @@ export class PluginCleanupManager {
   
   async cleanup(): Promise<void> {
     this.plugin.graphLinkService?.destroy();
+    this.plugin.tradeSyncCoordinator?.destroy();
+    this.plugin.tradeSyncCoordinator = null;
+    this.plugin.tradeOperationSyncToast?.cleanup();
+    this.plugin.tradeOperationSyncToast = null;
+    this.plugin.demoSessionService?.cleanup();
 
     
     if (this.plugin.uiStateManager) {
@@ -141,7 +147,7 @@ export class PluginCleanupManager {
 
     
     if (this.plugin.serviceManager) {
-      this.plugin.serviceManager.cleanupServices();
+      await this.plugin.serviceManager.cleanupServices();
     } else {
       this.plugin.backendIntegrationService?.cleanup();
 
@@ -170,6 +176,11 @@ export class PluginCleanupManager {
 
     
     
+    this.plugin.tradeOperationResultService?.destroy();
+    this.plugin.tradeOperationResultService = null;
+
+    
+    
     
     clearTokenManager(this.plugin);
 
@@ -178,6 +189,9 @@ export class PluginCleanupManager {
       this.plugin.reviewDataCache.destroy();
       this.plugin.reviewDataCache = null;
     }
+
+    
+    this.plugin.onboardingManager?.destroy();
 
     
     try {
@@ -191,5 +205,6 @@ export class PluginCleanupManager {
       this.plugin.updateNotificationService.cleanup();
       this.plugin.updateNotificationService = null;
     }
+    cleanupBottomLeftNotificationHost();
   }
 }
