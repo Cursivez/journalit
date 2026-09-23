@@ -15,6 +15,7 @@ import {
   createTradeProjectionOwnershipGuard,
   getTradeProjectionOwnerId,
 } from './TradeProjectionOwnership';
+import { isRestoreTradeProjectionGeneration } from './TradeProjectionGeneration';
 import { TradeProjectionRestoreService } from './TradeProjectionRestoreService';
 import type {
   BrokerSyncAccountBinding,
@@ -24,6 +25,7 @@ import type {
 import type {
   BrokerClientOperationContext,
   TradeProjection,
+  TradeProjectionAccountInventoryItem,
   TradeProjectionSyncResult,
 } from './types';
 
@@ -58,6 +60,21 @@ export class TradeProjectionRestoreRunner {
 
   async run(
     operation?: BrokerClientOperationContext
+  ): Promise<TradeProjectionSyncResult> {
+    return this.restoreAccounts(operation);
+  }
+
+  
+  async runForRemappedAccounts(
+    accountBindings: BrokerSyncAccountBinding[],
+    operation?: BrokerClientOperationContext
+  ): Promise<TradeProjectionSyncResult> {
+    return this.restoreAccounts(operation, accountBindings);
+  }
+
+  private async restoreAccounts(
+    operation?: BrokerClientOperationContext,
+    accountBindings?: BrokerSyncAccountBinding[]
   ): Promise<TradeProjectionSyncResult> {
     await this.plugin.canonicalProjectionMigrationService?.run();
     if (this.isStopped()) return emptyTradeProjectionSyncResult();
@@ -105,7 +122,9 @@ export class TradeProjectionRestoreRunner {
         this.mappings.getInventory(vaultId, {
           interactiveEntitlement: false,
         }),
-        this.loadAccountBindings(),
+        accountBindings
+          ? Promise.resolve(this.indexAccountBindings(accountBindings))
+          : this.loadAccountBindings(),
       ])
     );
     if (!inventoryResult) return emptyTradeProjectionSyncResult();
@@ -118,13 +137,36 @@ export class TradeProjectionRestoreRunner {
           : {}),
       });
     }
-    const brokerAccounts = inventory.accounts.flatMap((account) => {
+    const projectionAccounts: Array<{
+      account: TradeProjectionAccountInventoryItem;
+      binding?: BrokerSyncAccountBinding;
+    }> = [];
+    for (const account of inventory.accounts) {
       const binding = connectionIdByCanonicalAccountId.get(account.accountId);
-      return binding ? [{ account, binding }] : [];
-    });
+      if (binding) {
+        projectionAccounts.push({ account, binding });
+        continue;
+      }
+      
+      
+      
+      if (
+        (account.pendingCount > 0 ||
+          account.failedCount > 0 ||
+          account.needsRewriteCount > 0 ||
+          account.staleCount > 0) &&
+        account.mapping
+      ) {
+        projectionAccounts.push({ account });
+      }
+    }
     let writtenCount = 0;
     let failedCount = 0;
     let pendingCount = 0;
+    let ackFailedCount = 0;
+    const importedTrades: NonNullable<
+      TradeProjectionSyncResult['importedTrades']
+    > = [];
     const catalog = await this.plugin.accountPageService?.getAccountCatalog();
     const catalogById = new Map<string, NonNullable<typeof catalog>[number]>();
     const catalogByName = new Map<
@@ -166,7 +208,7 @@ export class TradeProjectionRestoreRunner {
     }
     
     
-    for (const { account, binding } of brokerAccounts) {
+    for (const { account, binding } of projectionAccounts) {
       if (shouldStop()) return emptyTradeProjectionSyncResult();
       const mappedCatalogAccountById = account.mapping?.localAccountId
         ? catalogById.get(account.mapping.localAccountId)
@@ -177,11 +219,18 @@ export class TradeProjectionRestoreRunner {
         await recordMappingMissing(account.accountId);
         continue;
       }
-      const projections = await this.loadAccountProjections(
+      const loadedProjections = await this.loadAccountProjections(
         vaultId,
         account.accountId,
         shouldStop
       );
+      const projections = binding
+        ? loadedProjections
+        : 
+          
+          loadedProjections.filter((projection) =>
+            isRestoreTradeProjectionGeneration(projection.projectionGeneration)
+          );
       if (projections.length === 0) continue;
       const mappedCatalogAccount = catalog?.length
         ? (mappedCatalogAccountById ??
@@ -209,19 +258,24 @@ export class TradeProjectionRestoreRunner {
         ownerUserId: initiatingUserId,
         requestOptions: { interactiveEntitlement: false },
         shouldStop,
-        clientOperation: operation
-          ? { ...operation, provider: binding.provider }
-          : undefined,
+        clientOperation:
+          operation && binding
+            ? { ...operation, provider: binding.provider }
+            : undefined,
       });
       writtenCount += result.writtenCount + result.duplicateCount;
-      failedCount += result.failedCount + result.ackFailedCount;
+      failedCount += result.failedCount;
       pendingCount += result.pendingCount;
+      ackFailedCount += result.ackFailedCount;
+      importedTrades.push(...result.importedTrades);
     }
     return {
-      accountCount: brokerAccounts.length,
+      accountCount: projectionAccounts.length,
       writtenCount,
       failedCount,
       pendingCount,
+      ...(ackFailedCount > 0 ? { ackFailedCount } : {}),
+      ...(importedTrades.length > 0 ? { importedTrades } : {}),
     };
   }
 
@@ -234,17 +288,24 @@ export class TradeProjectionRestoreRunner {
         provider.listSyncEnabledAccountBindings()
       )
     );
+    const bindings: BrokerSyncAccountBinding[] = [];
+    for (const providerBindings of bindingLists) {
+      for (const binding of providerBindings) {
+        bindings.push(binding);
+      }
+    }
+    return this.indexAccountBindings(bindings);
+  }
+
+  private indexAccountBindings(
+    bindings: BrokerSyncAccountBinding[]
+  ): Map<string, BrokerSyncAccountBinding> {
     const connectionIdByCanonicalAccountId = new Map<
       string,
       BrokerSyncAccountBinding
     >();
-    for (const bindings of bindingLists) {
-      for (const binding of bindings) {
-        connectionIdByCanonicalAccountId.set(
-          binding.canonicalAccountId,
-          binding
-        );
-      }
+    for (const binding of bindings) {
+      connectionIdByCanonicalAccountId.set(binding.canonicalAccountId, binding);
     }
     return connectionIdByCanonicalAccountId;
   }

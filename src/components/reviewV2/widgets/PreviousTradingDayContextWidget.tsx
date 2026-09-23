@@ -7,7 +7,7 @@ import React, {
   useReducer,
   useRef,
 } from 'react';
-import { Component, MarkdownRenderer, TFile } from 'obsidian';
+import { Component, MarkdownRenderer, TFile, type App } from 'obsidian';
 import JournalitPlugin from '../../../main';
 import { parseLocalDateSafe } from '../../../utils/dateUtils';
 import { ImageCarousel } from '../../image/ImageCarousel';
@@ -15,6 +15,7 @@ import { createSvgPlaceholderDataUri } from '../../../utils/placeholderImage';
 import type { PreviousTradingDayContextResult } from '../../../services/drc/DRCService';
 import { t } from '../../../lang/helpers';
 import { forceMetadataCacheRefresh } from '../../../utils/dataRefresh';
+import { openReviewWidgetFile } from '../reviewWidgetNavigation';
 
 interface PreviousTradingDayContextConfig {
   headings?: string;
@@ -34,6 +35,28 @@ interface PreviousTradingDayContextWidgetProps {
   plugin: JournalitPlugin;
   config?: PreviousTradingDayContextConfig;
   preview?: boolean;
+}
+
+export function resolvePreviousDRCInternalLinkPath(
+  app: {
+    metadataCache: Pick<App['metadataCache'], 'getFirstLinkpathDest'>;
+  },
+  target: EventTarget | null,
+  sourcePath: string
+): string | null {
+  if (!(target instanceof Element)) return null;
+
+  const link = target.closest('a.internal-link');
+  if (!(link instanceof HTMLAnchorElement)) return null;
+
+  const linkText = link.dataset.href?.trim();
+  if (!linkText) return null;
+
+  const linkedFile = app.metadataCache.getFirstLinkpathDest(
+    linkText,
+    sourcePath
+  );
+  return linkedFile instanceof TFile ? linkedFile.path : null;
 }
 
 const PREVIEW_HEADING = 'Forecast';
@@ -259,6 +282,33 @@ export const PreviousTradingDayContextWidget: React.FC<PreviousTradingDayContext
           const component = new Component();
           component.load();
           componentRefs.current.push(component);
+          component.registerDomEvent(
+            container,
+            'click',
+            (event) => {
+              if (
+                event.button !== 0 ||
+                event.metaKey ||
+                event.ctrlKey ||
+                event.shiftKey ||
+                event.altKey
+              ) {
+                return;
+              }
+
+              const linkedPath = resolvePreviousDRCInternalLinkPath(
+                plugin.app,
+                event.target,
+                context.sourcePath
+              );
+              if (!linkedPath) return;
+
+              event.preventDefault();
+              event.stopPropagation();
+              void openReviewWidgetFile(plugin, linkedPath);
+            },
+            { capture: true }
+          );
           void MarkdownRenderer.render(
             plugin.app,
             block.markdown,
@@ -273,12 +323,12 @@ export const PreviousTradingDayContextWidget: React.FC<PreviousTradingDayContext
         componentRefs.current.forEach((component) => component.unload());
         componentRefs.current = [];
       };
-    }, [context, plugin.app, sectionBlocks]);
+    }, [context, plugin, sectionBlocks]);
 
     const openSourceDRC = useCallback(async () => {
       if (!context) return;
-      await plugin.app.workspace.openLinkText(context.sourcePath, filePath);
-    }, [context, filePath, plugin.app.workspace]);
+      await openReviewWidgetFile(plugin, context.sourcePath);
+    }, [context, plugin]);
 
     const handleSourceHeaderKeyDown = useCallback(
       (event: React.KeyboardEvent<HTMLSpanElement>) => {

@@ -16,11 +16,13 @@ import { useDisplayFormatter } from '../../hooks/useDisplayPolicy';
 import { ChartBase } from './ChartBase';
 import { RechartsPortalTooltip } from './RechartsPortalTooltip';
 import { generateNiceAxis, calculateYAxisWidth } from '../../utils/chartUtils';
+import { handleRovingChartMarkKeyDown } from './chartKeyboardNavigation';
+import { useTwoStageTouchNavigation } from './useTwoStageTouchNavigation';
 
 const EPSILON = 1e-6; 
 
 
-interface DailyPerformanceDataPoint {
+export interface DailyPerformanceDataPoint {
   date: string;
   originalDate?: string; 
   pnl: number;
@@ -31,6 +33,10 @@ interface DailyPerformanceDataPoint {
   accountSummary?: string;
 }
 
+interface DailyPerformanceNavigation {
+  onPointClick: (point: DailyPerformanceDataPoint, index: number) => void;
+  getPointAriaLabel: (point: DailyPerformanceDataPoint) => string;
+}
 
 interface SharedDailyPerformanceChartProps {
   data: DailyPerformanceDataPoint[];
@@ -38,7 +44,103 @@ interface SharedDailyPerformanceChartProps {
   minValue?: number;
   maxValue?: number;
   currencyOverride?: string;
+  navigation?: DailyPerformanceNavigation;
 }
+
+const isDailyPerformanceDataPoint = (
+  value: unknown
+): value is DailyPerformanceDataPoint => {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
+  if (!('date' in value) || !('pnl' in value) || !('fill' in value)) {
+    return false;
+  }
+  return (
+    typeof value.date === 'string' &&
+    typeof value.pnl === 'number' &&
+    typeof value.fill === 'string'
+  );
+};
+
+interface DailyPerformanceBarShapeProps {
+  x?: number;
+  y?: number;
+  width?: number;
+  height?: number;
+  payload?: DailyPerformanceDataPoint;
+  index?: number;
+  fill?: string;
+  stroke?: string;
+  strokeWidth?: string | number;
+  strokeOpacity?: string | number;
+  fillOpacity?: string | number;
+  filter?: string;
+}
+
+const DailyPerformanceBarShape: React.FC<
+  DailyPerformanceBarShapeProps & {
+    isInteractive: boolean;
+    isInitialTabStop: boolean;
+    onKeyboardActivate?: (
+      point: DailyPerformanceDataPoint,
+      index: number,
+      event: React.KeyboardEvent<SVGRectElement>
+    ) => void;
+    ariaLabel?: string;
+  }
+> = ({
+  x = 0,
+  y = 0,
+  width = 0,
+  height = 0,
+  payload,
+  index,
+  fill,
+  stroke,
+  strokeWidth,
+  strokeOpacity,
+  fillOpacity,
+  filter,
+  isInteractive,
+  isInitialTabStop,
+  onKeyboardActivate,
+  ariaLabel,
+}) => {
+  const adjustedHeight = height < 0 ? Math.abs(height) : height;
+  const adjustedY = height < 0 ? y + height : y;
+  const canActivate = isInteractive && payload && index !== undefined;
+
+  return (
+    <rect
+      x={x}
+      y={adjustedY}
+      width={Math.max(width, 0)}
+      height={Math.max(adjustedHeight, 0)}
+      fill={payload?.fill ?? fill}
+      stroke={stroke}
+      strokeWidth={strokeWidth}
+      strokeOpacity={strokeOpacity}
+      fillOpacity={fillOpacity}
+      filter={filter}
+      rx={2}
+      ry={2}
+      cursor={isInteractive ? 'pointer' : undefined}
+      role={isInteractive ? 'button' : undefined}
+      tabIndex={isInteractive ? (isInitialTabStop ? 0 : -1) : undefined}
+      data-journalit-chart-mark={isInteractive ? 'true' : undefined}
+      aria-label={isInteractive && payload ? ariaLabel : undefined}
+      onKeyDown={
+        canActivate
+          ? (event) =>
+              handleRovingChartMarkKeyDown(event, () =>
+                onKeyboardActivate?.(payload, index, event)
+              )
+          : undefined
+      }
+    />
+  );
+};
+
+DailyPerformanceBarShape.displayName = 'DailyPerformanceBarShape';
 
 
 interface CustomTooltipContentProps extends TooltipProps<number, string> {
@@ -100,8 +202,22 @@ const CustomTooltip: React.FC<CustomTooltipContentProps> = ({
 
 export const SharedDailyPerformanceChart =
   React.memo<SharedDailyPerformanceChartProps>(
-    ({ data, height = '100%', minValue, maxValue, currencyOverride }) => {
+    ({
+      data,
+      height = '100%',
+      minValue,
+      maxValue,
+      currencyOverride,
+      navigation,
+    }) => {
       const chartRef = React.useRef<HTMLDivElement>(null);
+      const touchResetKey = React.useMemo(
+        () =>
+          data.map((point) => point.originalDate ?? point.date).join('\u0000'),
+        [data]
+      );
+      const { handleClick, handleKeyDown, recordTouch } =
+        useTwoStageTouchNavigation<string>(touchResetKey);
       const { currency: globalCurrency } = useCurrency();
       const currency = currencyOverride || globalCurrency;
       const plugin = usePlugin();
@@ -109,6 +225,7 @@ export const SharedDailyPerformanceChart =
       const displayRMultiples =
         plugin?.settings?.trade?.displayRMultiples ?? false;
       const isPnlMasked = shouldMask('pnl');
+      const canNavigate = Boolean(navigation) && !isPnlMasked;
 
       const displayData = React.useMemo(
         () =>
@@ -301,8 +418,7 @@ export const SharedDailyPerformanceChart =
               strokeWidth={0.8} 
               strokeOpacity={0.5} 
               filter="url(#dailyPerformanceBarShadow)" 
-              
-              radius={[2, 2, 0, 0]}
+              cursor={canNavigate ? 'pointer' : undefined}
               
               activeBar={{
                 filter: isPnlMasked
@@ -310,7 +426,47 @@ export const SharedDailyPerformanceChart =
                   : 'url(#dailyPerformanceBarGlow)',
                 strokeWidth: 1.2,
                 strokeOpacity: isPnlMasked ? 0.4 : 0.8,
+                cursor: canNavigate ? 'pointer' : undefined,
               }}
+              onClick={
+                canNavigate && navigation
+                  ? (bar, index, event) => {
+                      const pointLike: unknown = bar.payload;
+                      if (!isDailyPerformanceDataPoint(pointLike)) return;
+                      const point = pointLike;
+                      handleClick(point.originalDate ?? point.date, event, () =>
+                        navigation.onPointClick(point, index)
+                      );
+                    }
+                  : undefined
+              }
+              onTouchEnd={
+                canNavigate
+                  ? (bar) => {
+                      const pointLike: unknown = bar.payload;
+                      if (isDailyPerformanceDataPoint(pointLike)) {
+                        recordTouch(pointLike.originalDate ?? pointLike.date);
+                      }
+                    }
+                  : undefined
+              }
+              shape={(props: DailyPerformanceBarShapeProps) => (
+                <DailyPerformanceBarShape
+                  {...props}
+                  isInteractive={canNavigate}
+                  isInitialTabStop={props.index === 0}
+                  ariaLabel={
+                    props.payload && navigation
+                      ? navigation.getPointAriaLabel(props.payload)
+                      : undefined
+                  }
+                  onKeyboardActivate={(point, index, event) =>
+                    handleKeyDown(event, () =>
+                      navigation?.onPointClick(point, index)
+                    )
+                  }
+                />
+              )}
             />
           </BarChart>
         </ChartBase>

@@ -19,6 +19,7 @@ import { SkeletonBox } from '../../shared/SkeletonBox';
 import { CurrencyConversionInfo } from '../../shared/display/CurrencyConversionInfo';
 import { getBreakEvenBalanceForDisplayTrade } from './shared/breakEvenDisplayUtils';
 import { splitReviewTradeByRealizedPnlEvent } from '../utils/reviewTradeDates';
+import { openReviewWidgetFile } from '../reviewWidgetNavigation';
 
 interface TradeWithDisplay extends Record<string, unknown> {
   path: string;
@@ -195,7 +196,7 @@ export const BestWorstTradesWidget: React.FC<BestWorstTradesWidgetProps> =
 
       try {
         
-        await plugin.openFile(path, false);
+        await openReviewWidgetFile(plugin, path);
       } catch (error) {
         console.error('[BestWorstTradesWidget] Error opening note:', error);
       }

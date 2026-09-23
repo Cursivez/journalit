@@ -12,6 +12,11 @@ interface ImagePathComponents {
   formattedDate?: string;
 }
 
+type SampleMediaOwnershipHandler = (
+  path: string,
+  content: ArrayBuffer
+) => Promise<void>;
+
 const SUPPORTED_MEDIA_FILE_EXTENSION_PATTERN =
   /\.(jpg|jpeg|png|gif|bmp|webp|svg|mp4|webm|mov|m4v|ogv|ogg|3gp|mkv)$/i;
 
@@ -33,6 +38,8 @@ export function getGeneratedMediaFileId(fileName: string): string {
 
 export class ImageService {
   private _app: App | null = null;
+  private sampleMediaOwnershipHandler: SampleMediaOwnershipHandler | null =
+    null;
 
   constructor(app?: App) {
     if (app) {
@@ -42,6 +49,12 @@ export class ImageService {
 
   public setApp(app: App): void {
     this._app = app;
+  }
+
+  public setSampleMediaOwnershipHandler(
+    handler: SampleMediaOwnershipHandler | null
+  ): void {
+    this.sampleMediaOwnershipHandler = handler;
   }
 
   private get app(): App {
@@ -58,6 +71,7 @@ export class ImageService {
     namePrefix: string,
     components?: ImagePathComponents
   ): Promise<string> {
+    let createdPath: string | null = null;
     try {
       if (
         !file.type.startsWith('image/') &&
@@ -105,9 +119,24 @@ export class ImageService {
 
       
       await this.app.vault.createBinary(normalizePath(fullPath), arrayBuffer);
+      createdPath = normalizePath(fullPath);
+      await this.sampleMediaOwnershipHandler?.(createdPath, arrayBuffer);
 
       return fullPath;
     } catch (error) {
+      if (createdPath) {
+        try {
+          const createdFile = this.app.vault.getAbstractFileByPath(createdPath);
+          if (createdFile) {
+            await this.app.fileManager.trashFile(createdFile);
+          }
+        } catch (cleanupError) {
+          console.error(
+            `Failed to roll back media file ${createdPath}:`,
+            cleanupError
+          );
+        }
+      }
       console.error('Error saving image:', error);
       throw error;
     }

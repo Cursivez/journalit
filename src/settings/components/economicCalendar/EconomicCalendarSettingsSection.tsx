@@ -2,7 +2,7 @@
 
 import React, { useCallback, useState } from 'react';
 import type JournalitPlugin from '../../../main';
-import { UPGRADE_URLS } from '../../../constants';
+import { resolveUpgradeUrl } from '../../../services/upgrade/upgradeOrigin';
 import { Button } from '../../../components/ui/Button';
 import ToggleSwitch from '../../../components/ui/ToggleSwitch';
 import {
@@ -161,7 +161,9 @@ export const EconomicCalendarSettingsSection: React.FC<
           <button
             type="button"
             className="journalit-settings-econ__gate-cta"
-            onClick={() => openExternalUrl(UPGRADE_URLS.economicCalendar)}
+            onClick={() =>
+              openExternalUrl(resolveUpgradeUrl('economicCalendar'))
+            }
           >
             {t('premium.gate.cta.continue-pro')}
           </button>

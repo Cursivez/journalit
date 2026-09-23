@@ -579,7 +579,7 @@ export const GoalsWidget: React.FC<GoalsWidgetProps> = React.memo(
 
                 
                 {!preview && editingIndex !== index && (
-                  <>
+                  <div className="journalit-reviewv2-item-actions">
                     <NoTooltipButton
                       onClick={() => void handleStartEdit(index)}
                       label={t('widget.goals.aria.edit')}
@@ -594,7 +594,7 @@ export const GoalsWidget: React.FC<GoalsWidgetProps> = React.memo(
                     >
                       <Trash2 size={24} aria-hidden="true" />
                     </NoTooltipButton>
-                  </>
+                  </div>
                 )}
               </div>
             ))}

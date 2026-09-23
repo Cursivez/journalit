@@ -39,11 +39,16 @@ import {
   persistGalleryFolderMutation,
   type GalleryFolderMutation,
 } from '../../galleryFolderMutations';
+import { saveDisplayName } from '../../displayName';
 import {
   isSupportedHomeBackgroundFile,
   saveHomeBackgroundFile,
 } from '../../../components/home/homeBackgroundUtils';
 import { JOURNALIT_SETTINGS_RESOURCES } from '../../settingsResources';
+import { HomeWidgetOpacityControl } from './HomeWidgetOpacityControl';
+import { ensureHomeSettings } from '../../homeSettings';
+import type { JournalSettingsContext } from '../../../demo/DemoSettingsScope';
+import { canApplyJournalFolderEdit } from './journalFolderEditContext';
 
 type HomeStartupBehavior = 'always' | 'ifNone' | 'never';
 type MaeMfeInputMode = 'price' | 'dollar';
@@ -258,6 +263,7 @@ function useGeneralTabModel(props: GeneralTabProps) {
   const [journalFolderPath, setJournalFolderPath] = useState(
     plugin.settings.general?.journalFolderPath || ''
   );
+  const [journalFolderResetVersion, setJournalFolderResetVersion] = useState(0);
 
   
   const [isUpdatingImages, setIsUpdatingImages] = useState(false);
@@ -343,7 +349,6 @@ function useGeneralTabModel(props: GeneralTabProps) {
         plugin.settings.monthly = {
           reviewQuestions: [],
           customTimeframes: [],
-          autoCreateOnFirstTrade: true,
           autoCreateMonthlyReviewOnNavigation: true,
         };
       } else {
@@ -399,6 +404,11 @@ function useGeneralTabModel(props: GeneralTabProps) {
     
     plugin.settings.trade.dateFormat = newValue;
     await plugin.saveSettings();
+
+    eventBus.publish('settings:changed', {
+      section: 'trade',
+      source: 'date-format',
+    });
 
     new Notice(t('settings.general.date-format-changed', { format: newValue }));
   };
@@ -570,27 +580,8 @@ function useGeneralTabModel(props: GeneralTabProps) {
   
   const handleDisplayNameConfirm = async () => {
     try {
-      
-      if (!plugin.settings.general) {
-        plugin.settings.general = {
-          currency: CurrencyCode.USD,
-          displayName: displayName,
-        };
-      } else {
-        plugin.settings.general.displayName = displayName;
-      }
-
-      await plugin.saveSettings();
+      await saveDisplayName(plugin, displayName);
       setDisplayNameDirty(false);
-
-      
-      const homeRefreshEvent = new CustomEvent(
-        'journalit:display-name-changed',
-        {
-          detail: { displayName: displayName },
-        }
-      );
-      window.dispatchEvent(homeRefreshEvent);
 
       new Notice(
         displayName
@@ -610,24 +601,34 @@ function useGeneralTabModel(props: GeneralTabProps) {
   };
 
   
-  const handleJournalFolderPathChange = useDebouncedFunction(
-    async (newPath: string) => {
+  const applyJournalFolderPathChange = useDebouncedFunction(
+    async (request: {
+      newPath: string;
+      originContext: JournalSettingsContext;
+    }) => {
+      const { newPath, originContext } = request;
+      const folderPathService = plugin.serviceManager?.getFolderPathService();
+      const currentPath = folderPathService?.journalFolderPath || '!Journalit';
+      const contextChanged = () =>
+        !folderPathService ||
+        !canApplyJournalFolderEdit(originContext, folderPathService.context);
+      if (contextChanged()) {
+        new Notice(t('sample.notice.folder-locked'), 5000);
+        setJournalFolderPath(currentPath);
+        setJournalFolderResetVersion((version) => version + 1);
+        return;
+      }
+
       
       const backendService =
         await plugin.serviceManager.getBackendIntegrationService();
       if (backendService?.getIsSyncing()) {
         new Notice(t('notice.error.cannot-change-folder-during-sync'), 5000);
         
-        const folderPathService = plugin.serviceManager?.getFolderPathService();
-        const currentPath =
-          folderPathService?.journalFolderPath || '!Journalit';
         setJournalFolderPath(currentPath);
+        setJournalFolderResetVersion((version) => version + 1);
         return;
       }
-
-      
-      const folderPathService = plugin.serviceManager?.getFolderPathService();
-      const currentPath = folderPathService?.journalFolderPath || '!Journalit';
 
       if (newPath === currentPath) {
         return; 
@@ -662,6 +663,12 @@ function useGeneralTabModel(props: GeneralTabProps) {
         effectiveNewPath = `${normalizedNewPath}/!Journalit`;
       }
 
+      if (contextChanged()) {
+        setJournalFolderPath(currentPath);
+        setJournalFolderResetVersion((version) => version + 1);
+        return;
+      }
+
       openPathChangeInstructionModal(
         plugin.app,
         plugin,
@@ -671,20 +678,19 @@ function useGeneralTabModel(props: GeneralTabProps) {
         async () => {
           
           try {
-            
-            if (!plugin.settings.general) {
-              plugin.settings.general = {
-                currency: CurrencyCode.USD,
-                journalFolderPath: effectiveNewPath,
-              };
-            } else {
-              plugin.settings.general.journalFolderPath = effectiveNewPath;
+            if (
+              !folderPathService ||
+              !canApplyJournalFolderEdit(
+                originContext,
+                folderPathService.context
+              )
+            ) {
+              throw new Error('Journal context changed before folder update');
             }
-
-            await plugin.saveSettings();
+            await folderPathService.updatePath(effectiveNewPath);
 
             
-            eventBus.publish('settings:changed', {});
+            eventBus.publish('settings:changed', { source: 'user-input' });
 
             
             setJournalFolderPath(effectiveNewPath);
@@ -701,17 +707,24 @@ function useGeneralTabModel(props: GeneralTabProps) {
               })
             );
             setJournalFolderPath(currentPath); 
+            setJournalFolderResetVersion((version) => version + 1);
           }
         },
         () => {
           
           setJournalFolderPath(currentPath);
+          setJournalFolderResetVersion((version) => version + 1);
         }
       );
     },
     2000, 
     { leading: false, trailing: true }
   );
+
+  const handleJournalFolderPathChange = (newPath: string) => {
+    const originContext = plugin.serviceManager.getFolderPathService().context;
+    applyJournalFolderPathChange({ newPath, originContext });
+  };
 
   
   const handleHomeStartupBehaviorChange = async (newValue: string) => {
@@ -1001,6 +1014,7 @@ function useGeneralTabModel(props: GeneralTabProps) {
     isResetting,
     isUpdatingImages,
     journalFolderPath,
+    journalFolderResetVersion,
     maeMfeDisplayUnitOptions,
     maeMfeInputModeOptions,
     plugin,
@@ -2169,6 +2183,7 @@ function GeneralDataManagementSection({
 function GeneralFolderSettingsSection({
   plugin,
   journalFolderPath,
+  journalFolderResetVersion,
   handleJournalFolderPathChange,
   setIsUpdatingImages,
   isUpdatingImages,
@@ -2177,10 +2192,13 @@ function GeneralFolderSettingsSection({
   GeneralTabModel,
   | 'plugin'
   | 'journalFolderPath'
+  | 'journalFolderResetVersion'
   | 'handleJournalFolderPathChange'
   | 'setIsUpdatingImages'
   | 'isUpdatingImages'
 > & { flat?: boolean }) {
+  const isSampleContext =
+    plugin.serviceManager.getFolderPathService().context === 'sample';
   return (
     <SettingsSectionOrAccordion
       title={t('settings.general.folder-section')}
@@ -2201,6 +2219,7 @@ function GeneralFolderSettingsSection({
         <div className="setting-item-control">
           <FolderBrowser
             selectedPath={journalFolderPath}
+            resetToken={journalFolderResetVersion}
             onChange={handleJournalFolderPathChange}
             placeholder={
               journalFolderPath
@@ -2226,6 +2245,12 @@ function GeneralFolderSettingsSection({
           <Button
             variant="primary"
             onClick={() => {
+              if (
+                plugin.serviceManager.getFolderPathService().context ===
+                'sample'
+              ) {
+                return;
+              }
               void (async () => {
                 setIsUpdatingImages(true);
                 try {
@@ -2323,7 +2348,7 @@ function GeneralFolderSettingsSection({
                 }
               })();
             }}
-            disabled={isUpdatingImages}
+            disabled={isUpdatingImages || isSampleContext}
             className="journalit-settings-action-button"
           >
             {isUpdatingImages
@@ -2334,18 +2359,6 @@ function GeneralFolderSettingsSection({
       </div>
     </SettingsSectionOrAccordion>
   );
-}
-
-function ensureHomeSettings(plugin: JournalitPlugin) {
-  if (!plugin.settings.home) {
-    plugin.settings.home = {
-      ...DEFAULT_SETTINGS.home!,
-      layouts: {},
-      activeLayout: 'Default',
-    };
-  }
-
-  return plugin.settings.home;
 }
 
 export function HomeBackgroundControls({
@@ -2359,7 +2372,8 @@ export function HomeBackgroundControls({
 
   const persistPath = useCallback(
     async (nextPath: string) => {
-      ensureHomeSettings(plugin).backgroundImagePath = nextPath || undefined;
+      ensureHomeSettings(plugin.settings).backgroundImagePath =
+        nextPath || undefined;
       await plugin.saveSettings();
       eventBus.publish('settings:changed', {
         section: 'home',
@@ -2492,14 +2506,26 @@ export function CalendarSidebarOpenControl({
   );
 }
 
-function HomeBackgroundSettings({ plugin }: { plugin: JournalitPlugin }) {
+export function HomeBackgroundSettings({
+  plugin,
+}: {
+  plugin: JournalitPlugin;
+}) {
+  const [hasBackground, setHasBackground] = useState(
+    Boolean(plugin.settings.home?.backgroundImagePath)
+  );
+  useEventBus('settings:changed', (payload) => {
+    if (payload.section === 'home' || payload.section === 'all') {
+      setHasBackground(Boolean(plugin.settings.home?.backgroundImagePath));
+    }
+  });
   const [showInDashboard, setShowInDashboard] = useState(
     plugin.settings.home?.showBackgroundInDashboard ?? false
   );
 
   const handleDashboardVisibilityChange = useCallback(
     async (newValue: boolean) => {
-      ensureHomeSettings(plugin).showBackgroundInDashboard = newValue;
+      ensureHomeSettings(plugin.settings).showBackgroundInDashboard = newValue;
       setShowInDashboard(newValue);
       await plugin.saveSettings();
       eventBus.publish('settings:changed', {
@@ -2544,9 +2570,59 @@ function HomeBackgroundSettings({ plugin }: { plugin: JournalitPlugin }) {
           />
         </div>
       </div>
+      {hasBackground && (
+        <div className="setting-item">
+          <div className="setting-item-info">
+            <div className="setting-item-name">
+              {t('settings.general.home-widget-opacity')}
+            </div>
+            <div className="setting-item-description">
+              {t('settings.general.home-widget-opacity-desc')}
+            </div>
+          </div>
+          <div className="setting-item-control">
+            <HomeWidgetOpacityControl plugin={plugin} />
+          </div>
+        </div>
+      )}
     </>
   );
 }
+
+const ReviewWidgetNavigationSetting: React.FC<{
+  plugin: JournalitPlugin;
+  onSaved: () => void;
+}> = ({ plugin, onSaved }) => (
+  <div className="setting-item">
+    <div className="setting-item-info">
+      <div className="setting-item-name">
+        {t('settings.general.review-links-new-tab')}
+      </div>
+      <div className="setting-item-description">
+        {t('settings.general.review-links-new-tab-desc')}
+      </div>
+    </div>
+    <div className="setting-item-control">
+      <ToggleSwitch
+        checked={plugin.settings.reviewV2?.openNoteLinksInNewTab ?? true}
+        onChange={async (newValue) => {
+          if (!plugin.settings.reviewV2) {
+            plugin.settings.reviewV2 = {
+              ...DEFAULT_SETTINGS.reviewV2!,
+              openNoteLinksInNewTab: newValue,
+            };
+          } else {
+            plugin.settings.reviewV2.openNoteLinksInNewTab = newValue;
+          }
+          await plugin.saveSettings();
+          onSaved();
+        }}
+        id="review-widget-note-links-new-tab-toggle"
+        ariaLabel={t('settings.general.review-links-new-tab-aria')}
+      />
+    </div>
+  </div>
+);
 
 function GeneralCoreSettingsSection({
   plugin,
@@ -2563,6 +2639,7 @@ function GeneralCoreSettingsSection({
   handleFilterRecentItemsToggle,
   setSettingsVersion,
   journalFolderPath,
+  journalFolderResetVersion,
   handleJournalFolderPathChange,
   setIsUpdatingImages,
   isUpdatingImages,
@@ -2584,6 +2661,7 @@ function GeneralCoreSettingsSection({
   | 'handleFilterRecentItemsToggle'
   | 'setSettingsVersion'
   | 'journalFolderPath'
+  | 'journalFolderResetVersion'
   | 'handleJournalFolderPathChange'
   | 'setIsUpdatingImages'
   | 'isUpdatingImages'
@@ -2775,7 +2853,12 @@ function GeneralCoreSettingsSection({
             <CalendarSidebarOpenControl plugin={plugin} />
           </div>
         </div>
+      </SettingsSectionOrAccordion>
 
+      <SettingsSectionOrAccordion
+        title={t('settings.general.tab-behavior')}
+        flat={flat}
+      >
         <div className="setting-item">
           <div className="setting-item-info">
             <div className="setting-item-name">
@@ -2817,12 +2900,18 @@ function GeneralCoreSettingsSection({
             />
           </div>
         </div>
+
+        <ReviewWidgetNavigationSetting
+          plugin={plugin}
+          onSaved={() => setSettingsVersion((prev) => prev + 1)}
+        />
       </SettingsSectionOrAccordion>
 
       {showFolderSettings && (
         <GeneralFolderSettingsSection
           plugin={plugin}
           journalFolderPath={journalFolderPath}
+          journalFolderResetVersion={journalFolderResetVersion}
           handleJournalFolderPathChange={handleJournalFolderPathChange}
           setIsUpdatingImages={setIsUpdatingImages}
           isUpdatingImages={isUpdatingImages}
@@ -2874,6 +2963,7 @@ export const GeneralTab: React.FC<GeneralTabProps> = (props) => {
     isResetting,
     isUpdatingImages,
     journalFolderPath,
+    journalFolderResetVersion,
     maeMfeDisplayUnitOptions,
     maeMfeInputModeOptions,
     plugin,
@@ -2904,6 +2994,7 @@ export const GeneralTab: React.FC<GeneralTabProps> = (props) => {
           handleFilterRecentItemsToggle={handleFilterRecentItemsToggle}
           setSettingsVersion={setSettingsVersion}
           journalFolderPath={journalFolderPath}
+          journalFolderResetVersion={journalFolderResetVersion}
           handleJournalFolderPathChange={handleJournalFolderPathChange}
           setIsUpdatingImages={setIsUpdatingImages}
           isUpdatingImages={isUpdatingImages}
@@ -2967,6 +3058,7 @@ export const GeneralTab: React.FC<GeneralTabProps> = (props) => {
             <GeneralFolderSettingsSection
               plugin={plugin}
               journalFolderPath={journalFolderPath}
+              journalFolderResetVersion={journalFolderResetVersion}
               handleJournalFolderPathChange={handleJournalFolderPathChange}
               setIsUpdatingImages={setIsUpdatingImages}
               isUpdatingImages={isUpdatingImages}

@@ -1,11 +1,13 @@
 
 
-import React, { useLayoutEffect, useRef, useState } from 'react';
+import React, { useId, useLayoutEffect, useRef, useState } from 'react';
 import { cssVars } from '../../styles/inlineStylePolicy';
 
 export interface SegmentOption<T extends string> {
   value: T;
   label: string;
+  
+  disabled?: boolean;
 }
 
 interface SegmentedControlProps<T extends string> {
@@ -14,6 +16,8 @@ interface SegmentedControlProps<T extends string> {
   onChange: (value: T) => void;
   size?: 'small' | 'medium' | 'large';
   fullWidth?: boolean;
+  
+  disabled?: boolean;
   className?: string;
   groupRole?: 'group' | 'radiogroup';
   ariaLabel?: string;
@@ -53,6 +57,7 @@ export function SegmentedControl<T extends string>({
   onChange,
   size = 'medium',
   fullWidth = false,
+  disabled = false,
   className = '',
   groupRole = 'group',
   ariaLabel,
@@ -64,6 +69,13 @@ export function SegmentedControl<T extends string>({
   const [thumb, setThumb] = useState<{ left: number; width: number } | null>(
     null
   );
+  
+  
+  
+  const generatedLabelId = useId();
+  const hasHiddenLabel = Boolean(ariaLabel) && !ariaLabelledBy;
+  const labelledBy =
+    ariaLabelledBy ?? (hasHiddenLabel ? generatedLabelId : undefined);
 
   
   
@@ -107,18 +119,34 @@ export function SegmentedControl<T extends string>({
     event: React.KeyboardEvent<HTMLButtonElement>,
     optionIndex: number
   ): void => {
-    if (groupRole !== 'radiogroup') return;
+    if (groupRole !== 'radiogroup' || disabled) return;
     let nextIndex: number | undefined;
+    
+    
+    
+    
+    
+    let step = 1;
     if (event.key === 'ArrowRight' || event.key === 'ArrowDown') {
       nextIndex = (optionIndex + 1) % options.length;
     } else if (event.key === 'ArrowLeft' || event.key === 'ArrowUp') {
+      step = -1;
       nextIndex = (optionIndex - 1 + options.length) % options.length;
     } else if (event.key === 'Home') {
       nextIndex = 0;
     } else if (event.key === 'End') {
+      step = -1;
       nextIndex = options.length - 1;
     }
     if (nextIndex === undefined) return;
+    
+    
+    let guard = 0;
+    while (options[nextIndex]?.disabled && guard < options.length) {
+      nextIndex = (nextIndex + step + options.length) % options.length;
+      guard += 1;
+    }
+    if (options[nextIndex]?.disabled || nextIndex === optionIndex) return;
     event.preventDefault();
     onChange(options[nextIndex].value);
     const radios =
@@ -128,13 +156,24 @@ export function SegmentedControl<T extends string>({
     radios?.[nextIndex]?.focus();
   };
 
+  
+  
+  
+  
+  
+  const selectedIndex = options.findIndex((option) => option.value === value);
+  const firstEnabledIndex = options.findIndex((option) => !option.disabled);
+  const tabStopIndex =
+    selectedIndex >= 0 && !options[selectedIndex]?.disabled
+      ? selectedIndex
+      : firstEnabledIndex;
+
   return (
     <div
       ref={containerRef}
       className={`journalit-segmented-control segmented-control ${className}`}
       role={groupRole}
-      aria-label={ariaLabel}
-      aria-labelledby={ariaLabelledBy}
+      aria-labelledby={labelledBy}
       data-full-width={fullWidth ? 'true' : 'false'}
       style={cssVars({
         '--journalit-seg-gap': styles.gap,
@@ -144,6 +183,11 @@ export function SegmentedControl<T extends string>({
         '--journalit-seg-option-font-size': styles.fontSize,
       })}
     >
+      {hasHiddenLabel && (
+        <span className="journalit-sr-only" id={generatedLabelId}>
+          {ariaLabel}
+        </span>
+      )}
       {thumb && (
         <span
           className="journalit-segmented-control-thumb"
@@ -160,14 +204,26 @@ export function SegmentedControl<T extends string>({
           <button
             key={option.value}
             ref={getOptionRef?.(option.value)}
-            onClick={() => onChange(option.value)}
+            onClick={() => {
+              
+              
+              
+              
+              if (groupRole === 'radiogroup' && isActive) return;
+              onChange(option.value);
+            }}
             className={`journalit-segmented-control-option segmented-control-option ${isActive ? 'is-active' : ''}`}
             type="button"
+            disabled={disabled || option.disabled}
             role={groupRole === 'radiogroup' ? 'radio' : undefined}
             aria-checked={groupRole === 'radiogroup' ? isActive : undefined}
             aria-pressed={groupRole === 'group' ? isActive : undefined}
             tabIndex={
-              groupRole === 'radiogroup' ? (isActive ? 0 : -1) : undefined
+              groupRole === 'radiogroup'
+                ? optionIndex === tabStopIndex
+                  ? 0
+                  : -1
+                : undefined
             }
             onKeyDown={(event) => handleRadioKeyDown(event, optionIndex)}
           >

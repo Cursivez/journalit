@@ -25,6 +25,7 @@ import {
   shouldShowTradeDividends,
 } from '../types';
 import {
+  isEmptyExitPlaceholder,
   resolveFormExitExplicitness,
   resolveFormHasExplicitExitPrice,
 } from '../exitExplicitness';
@@ -115,13 +116,21 @@ interface EntryExitFieldsProps {
   
   inputMode: TradeFormInputMode;
   
-  showIdealExits?: boolean;
-  
-  showUnrealizedSnapshot?: boolean;
-  
-  showDividends?: boolean;
+  visibility: EntryExitVisibility;
   
   pnlCurrency?: string;
+}
+
+
+interface EntryExitVisibility {
+  
+  idealExits: boolean;
+  
+  unrealizedSnapshot: boolean;
+  
+  dividends: boolean;
+  
+  directPnlToggle: boolean;
 }
 
 interface PnLModeToggleProps {
@@ -152,7 +161,11 @@ function PnLModeToggle({ useDirectPnLInput, onToggle }: PnLModeToggleProps) {
   );
 }
 
-interface DirectPnLSectionProps extends EntryExitFieldsProps {
+interface DirectPnLSectionProps {
+  data: Partial<TradeFormData>;
+  errors: TradeFormErrors;
+  onChange: (field: keyof TradeFormData, value: TradeFormValue) => void;
+  inputMode: TradeFormInputMode;
   showSeconds: boolean;
 }
 
@@ -1380,6 +1393,18 @@ function ExitsSection({
     exits: data.exits,
     entries: data.entries,
   });
+  const isFormExecutionOpen = isTradeOpenWithContext({
+    tradeStatus: data.tradeStatus,
+    exitTime: data.exitTime,
+    pnl: null,
+    useDirectPnLInput: data.useDirectPnLInput,
+    exits: data.exits,
+    entries: data.entries,
+  });
+  const isExitRowRequired = (exit: ExitTransaction): boolean =>
+    !data.isMissedTrade &&
+    !data.useDirectPnLInput &&
+    (!isFormExecutionOpen || !isEmptyExitPlaceholder(exit));
 
   return (
     <div className="exits-section">
@@ -1403,7 +1428,7 @@ function ExitsSection({
               <div className="time-field-header">
                 <label className="time-field-label">
                   {t('form.field.time')}
-                  {!data.isMissedTrade && !data.useDirectPnLInput && (
+                  {isExitRowRequired(exit) && (
                     <span className="required-star">*</span>
                   )}
                 </label>
@@ -1446,7 +1471,7 @@ function ExitsSection({
               min={0}
               precision={pricePrecision}
               allowDecimal={true}
-              required={!data.isMissedTrade && !data.useDirectPnLInput}
+              required={isExitRowRequired(exit)}
               className="price-field"
             />
 
@@ -1465,7 +1490,7 @@ function ExitsSection({
                   min={0}
                   precision={2}
                   allowDecimal={true}
-                  required={!data.isMissedTrade && !data.useDirectPnLInput}
+                  required={isExitRowRequired(exit)}
                   placeholder={t('form.field.dollar-amount-placeholder')}
                   className="size-field"
                 />
@@ -1487,7 +1512,7 @@ function ExitsSection({
                 error={errors.exits?.[index]?.size}
                 min={0}
                 precision={sizePrecision}
-                required={!data.isMissedTrade && !data.useDirectPnLInput}
+                required={isExitRowRequired(exit)}
                 className="size-field"
               />
             )}
@@ -1505,15 +1530,17 @@ function ExitsSection({
       </Button>
 
       
-      <div
-        className={`remaining-size ${remainingSize > 0 ? 'positive' : 'neutral'}`}
-      >
-        {t('form.entry-exit.remaining-position')}{' '}
-        {remainingSize.toFixed(sizePrecision)}{' '}
-        {remainingSize > 0
-          ? t('form.entry-exit.open')
-          : t('form.entry-exit.closed')}
-      </div>
+      {totalEntrySize > 0 && (
+        <div
+          className={`remaining-size ${remainingSize > 0 ? 'positive' : 'neutral'}`}
+        >
+          {t('form.entry-exit.remaining-position')}{' '}
+          {remainingSize.toFixed(sizePrecision)}{' '}
+          {remainingSize > 0
+            ? t('form.entry-exit.open')
+            : t('form.entry-exit.closed')}
+        </div>
+      )}
 
       {showUnrealizedSnapshot &&
         isOperationallyOpen &&
@@ -1553,9 +1580,7 @@ const EntryExitFieldsComponent: React.FC<EntryExitFieldsProps> = ({
   errors,
   onChange,
   inputMode,
-  showIdealExits = true,
-  showUnrealizedSnapshot = false,
-  showDividends = false,
+  visibility,
   pnlCurrency = 'USD',
 }) => {
   const {
@@ -1602,12 +1627,12 @@ const EntryExitFieldsComponent: React.FC<EntryExitFieldsProps> = ({
   
   const showDividendsSection =
     supportsDividends &&
-    (hasDividendRows || Boolean(errors.dividends) || showDividends);
+    (hasDividendRows || Boolean(errors.dividends) || visibility.dividends);
 
   return (
     <>
       
-      {showPriceExecutionFields && (
+      {showPriceExecutionFields && visibility.directPnlToggle && (
         <PnLModeToggle
           useDirectPnLInput={data.useDirectPnLInput}
           onToggle={(value) => void handlePnLModeToggle(value)}
@@ -1653,8 +1678,8 @@ const EntryExitFieldsComponent: React.FC<EntryExitFieldsProps> = ({
           showSeconds={showSeconds}
           pricePrecision={pricePrecision}
           sizePrecision={sizePrecision}
-          showIdealExits={showIdealExits}
-          showUnrealizedSnapshot={showUnrealizedSnapshot}
+          showIdealExits={visibility.idealExits}
+          showUnrealizedSnapshot={visibility.unrealizedSnapshot}
           pnlCurrency={pnlCurrency}
           totalEntrySize={totalEntrySize}
           remainingSize={remainingSize}

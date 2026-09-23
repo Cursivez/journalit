@@ -7,6 +7,7 @@ import React, {
 } from 'react';
 import { Component, MarkdownRenderer, TFile } from 'obsidian';
 
+import { IconButton } from '../ui/IconButton';
 import type JournalitPlugin from '../../main';
 import type { Setup } from '../../services/setup/types';
 import { replaceSetupLinkedNotePath } from '../../services/setup/linkedNotePaths';
@@ -107,12 +108,15 @@ export const SetupDetailPage: React.FC<{
       >
         <div className="journalit-setups-detail-header__back">
           <button
+            type="button"
             className="journalit-setups-detail-back-button"
             onClick={handleBack}
             ref={registerBackButtonTarget}
           >
             <MoveLeft size={15} strokeWidth={2} aria-hidden="true" />
-            {t('setups.view.detail.back')}
+            <span className="journalit-setups-detail-back-button-label">
+              {t('setups.view.detail.back')}
+            </span>
           </button>
         </div>
         <div className="journalit-setups-detail-header__identity">
@@ -126,27 +130,27 @@ export const SetupDetailPage: React.FC<{
             className="journalit-setups-detail-header__action-buttons"
             ref={registerDetailActionsTarget}
           >
-            <button
-              aria-label={t('setups.view.detail.action.view-trades')}
-              className="journalit-setups-icon-button journalit-setups-detail-action-icon"
+            <IconButton
+              ariaLabel={t('setups.view.detail.action.view-trades')}
+              variant="toolbar"
               onClick={handleViewTrades}
             >
-              <ScanSearch size={15} />
-            </button>
-            <button
-              aria-label={t('setups.view.detail.action.gallery')}
-              className="journalit-setups-icon-button journalit-setups-detail-action-icon"
+              <ScanSearch size={16} />
+            </IconButton>
+            <IconButton
+              ariaLabel={t('setups.view.detail.action.gallery')}
+              variant="toolbar"
               onClick={handleViewGallery}
             >
-              <Image size={15} />
-            </button>
-            <button
-              aria-label={t('setups.view.detail.action.edit')}
-              className="journalit-setups-icon-button journalit-setups-detail-action-icon journalit-setups-detail-action-icon--primary"
+              <Image size={16} />
+            </IconButton>
+            <IconButton
+              ariaLabel={t('setups.view.detail.action.edit')}
+              variant="toolbar"
               onClick={() => onEditSetup(setup)}
             >
-              <Edit size={15} />
-            </button>
+              <Edit size={16} />
+            </IconButton>
           </div>
         </div>
       </header>

@@ -21,7 +21,10 @@ import {
   UnifiedFilters,
   FilterModalProps,
   AvailableCustomFieldFilter,
+  AccountPhaseScope,
 } from './types';
+import { listAccountPhaseOptions } from './accountPhaseScope';
+import { normalizeAccountLookupKey } from '../../../services/trade/core/TradeAccountIdentity';
 import {
   ImageAnnotationStatusFilter,
   TradeType,
@@ -162,10 +165,44 @@ export const FilterModalContent = React.memo<FilterModalContentProps>(
       return ['regular', 'backtest'] as TradeType[];
     }, [context]);
 
+    const phaseOptions = useMemo(
+      () => listAccountPhaseOptions(plugin.settings.account?.accountMetadata),
+      [plugin]
+    );
+
     
     const handleAccountChange = useCallback((accounts: string[]) => {
-      setFilters((prev) => ({ ...prev, accounts }));
+      setFilters((prev) => {
+        const addedKeys = new Set<string>();
+        const previousAccounts = new Set(prev.accounts);
+        accounts.forEach((account) => {
+          if (!previousAccounts.has(account)) {
+            const key = normalizeAccountLookupKey(account);
+            if (key) {
+              addedKeys.add(key);
+            }
+          }
+        });
+
+        
+        const accountPhases =
+          addedKeys.size > 0
+            ? prev.accountPhases.filter(
+                (scope) =>
+                  !addedKeys.has(normalizeAccountLookupKey(scope.account))
+              )
+            : prev.accountPhases;
+
+        return { ...prev, accounts, accountPhases };
+      });
     }, []);
+
+    const handleAccountPhasesChange = useCallback(
+      (accountPhases: AccountPhaseScope[]) => {
+        setFilters((prev) => ({ ...prev, accountPhases }));
+      },
+      []
+    );
 
     const handleTickerChange = useCallback((tickers: string[]) => {
       setFilters((prev) => ({ ...prev, tickers }));
@@ -261,6 +298,7 @@ export const FilterModalContent = React.memo<FilterModalContentProps>(
 
       setFilters({
         accounts: [],
+        accountPhases: [],
         tickers: [],
         setups: [],
         tags: [],
@@ -322,6 +360,36 @@ export const FilterModalContent = React.memo<FilterModalContentProps>(
               setFilters((prev) => ({
                 ...prev,
                 accounts: prev.accounts.filter((a) => a !== account),
+              }));
+            },
+          });
+        });
+      }
+
+      
+      if (filters.accountPhases.length > 0) {
+        filters.accountPhases.forEach((scope) => {
+          const group = phaseOptions.find(
+            (option) =>
+              normalizeAccountLookupKey(option.account) ===
+              normalizeAccountLookupKey(scope.account)
+          );
+          const phase = group?.phases.find(
+            (option) => option.id === scope.phaseId
+          );
+
+          chips.push({
+            key: `account-phase-${scope.account}-${scope.phaseId}`,
+            label: `${scope.account} · ${phase ? phase.name : scope.phaseId}`,
+            onRemove: () => {
+              setFilters((prev) => ({
+                ...prev,
+                accountPhases: prev.accountPhases.filter(
+                  (entry) =>
+                    entry.phaseId !== scope.phaseId ||
+                    normalizeAccountLookupKey(entry.account) !==
+                      normalizeAccountLookupKey(scope.account)
+                ),
               }));
             },
           });
@@ -598,6 +666,7 @@ export const FilterModalContent = React.memo<FilterModalContentProps>(
       imageAnnotationStatus,
       imageTags,
       mergedCustomFieldFilters,
+      phaseOptions,
       showImageFilters,
       showSessionLogFilters,
       sessionLogTags,
@@ -606,7 +675,9 @@ export const FilterModalContent = React.memo<FilterModalContentProps>(
 
     
     const tradingDataBadgeCount =
-      filters.accounts.length + filters.tickers.length;
+      filters.accounts.length +
+      filters.tickers.length +
+      filters.accountPhases.length;
 
     const classificationBadgeCount = useMemo(() => {
       return (
@@ -697,6 +768,10 @@ export const FilterModalContent = React.memo<FilterModalContentProps>(
                     accounts={availableAccounts}
                     selectedAccounts={filters.accounts}
                     onChange={handleAccountChange}
+                    phaseOptions={phaseOptions}
+                    selectedPhases={filters.accountPhases}
+                    onPhasesChange={handleAccountPhasesChange}
+                    dateFormat={plugin.settings.trade.dateFormat}
                   />
                 </div>
                 <div className="filter-modal-controls">

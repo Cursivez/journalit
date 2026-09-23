@@ -47,6 +47,10 @@ const AccountTypeHeaderComponent: React.FC<AccountTypeHeaderProps> = ({
 
   
   const isGrowthMasked = shouldMask('pnl') || shouldMask('returnPercent');
+  
+  
+  const showWithdrawalBreakdown =
+    withdrawalsByMonth.length > 0 && !shouldMask('money');
   const growthClass = isGrowthMasked
     ? ''
     : metrics.totalGrowthAmount >= 0
@@ -99,7 +103,7 @@ const AccountTypeHeaderComponent: React.FC<AccountTypeHeaderProps> = ({
         </div>
 
         
-        {withdrawalsByMonth.length > 0 ? (
+        {showWithdrawalBreakdown ? (
           <Tooltip
             content={
               <WithdrawalBreakdownTooltip

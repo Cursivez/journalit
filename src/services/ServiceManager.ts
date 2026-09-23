@@ -29,6 +29,9 @@ import { EconomicCalendarService } from './economicCalendar/EconomicCalendarServ
 import { ImageGalleryVaultWatcher } from './imageGallery/ImageGalleryVaultWatcher';
 import { ReviewStreakService } from './reviewStreak/ReviewStreakService';
 import { ServiceName, ServiceRegistry } from '../types/ServiceRegistry';
+import type { JournalSettingsContext } from '../demo/DemoSettingsScope';
+import { PropFirmProfileCatalogService } from './propChallenge/PropFirmProfileCatalogService';
+import { BackendSecretStorage } from './backend/BackendSecretStorage';
 
 interface ServiceInitQueue {
   setupService?: Promise<SetupService>;
@@ -42,6 +45,7 @@ interface ServiceInitQueue {
   accountPageService?: Promise<AccountPageService>;
   backendIntegrationService?: Promise<BackendIntegrationService>;
   onboardingService?: Promise<OnboardingService>;
+  propFirmProfileCatalogService?: Promise<PropFirmProfileCatalogService>;
   economicCalendarService?: Promise<EconomicCalendarService>;
 }
 
@@ -74,6 +78,8 @@ export class ServiceManager {
   private _backendIntegrationService: BackendIntegrationService | null = null;
   private _onboardingService: OnboardingService | null = null;
   private _accountPageService: AccountPageService | null = null;
+  private _propFirmProfileCatalogService: PropFirmProfileCatalogService | null =
+    null;
   private _reviewStreakService: ReviewStreakService | null = null;
   private _economicCalendarService: EconomicCalendarService | null = null;
 
@@ -138,6 +144,8 @@ export class ServiceManager {
         return await this.getOnboardingService();
       case 'folderPathService':
         return this.getFolderPathService();
+      case 'propFirmProfileCatalogService':
+        return await this.getPropFirmProfileCatalogService();
       case 'reviewStreakService':
         return this.getReviewStreakService();
       case 'economicCalendarService':
@@ -607,6 +615,47 @@ export class ServiceManager {
     return this._optionsService;
   }
 
+  public async activateFolderContext(
+    context: JournalSettingsContext,
+    sampleRoot?: string
+  ): Promise<void> {
+    this.getFolderPathService().activateContext(context, sampleRoot);
+    await this.clearFolderScopedCaches();
+  }
+
+  public async clearFolderScopedCaches(): Promise<void> {
+    const services = new Set(
+      Object.values(this).filter(
+        (service): service is CustomDataService =>
+          service instanceof CustomDataService
+      )
+    );
+    await Promise.all(Array.from(services, (service) => service.clearCache()));
+    await Promise.all(
+      Array.from(services, async (service) => {
+        try {
+          await service.flushPersistentCache();
+        } catch (error) {
+          console.warn(
+            `Failed to flush ${service.cacheNamespace} persistent cache:`,
+            error
+          );
+        }
+      })
+    );
+  }
+
+  private async cleanupDataService(service: CustomDataService): Promise<void> {
+    try {
+      await service.cleanup();
+    } catch (error) {
+      console.error(
+        `Error cleaning up ${service.cacheNamespace} data service:`,
+        error
+      );
+    }
+  }
+
   
   public isServiceInitialized(serviceName: string): boolean {
     return this.initializedServices.has(serviceName);
@@ -693,7 +742,35 @@ export class ServiceManager {
     return initPromise;
   }
 
+  public async getPropFirmProfileCatalogService(): Promise<PropFirmProfileCatalogService> {
+    if (this._propFirmProfileCatalogService) {
+      return this._propFirmProfileCatalogService;
+    }
+    const existingPromise = this.serviceInitQueue.propFirmProfileCatalogService;
+    if (existingPromise) return existingPromise;
+
+    const initPromise = lazyLoad(
+      () =>
+        new PropFirmProfileCatalogService(this.plugin, () =>
+          BackendSecretStorage.getAuthToken(this.plugin)
+        ),
+      'PropFirmProfileCatalogService'
+    ).then((service) => {
+      this._propFirmProfileCatalogService = service;
+      this.initializedServices.add('propFirmProfileCatalogService');
+      delete this.serviceInitQueue.propFirmProfileCatalogService;
+      return service;
+    });
+    this.serviceInitQueue.propFirmProfileCatalogService = initPromise;
+    return initPromise;
+  }
+
   
+  
+  public getInitializedOnboardingService(): OnboardingService | null {
+    return this._onboardingService;
+  }
+
   public async getOnboardingService(): Promise<OnboardingService> {
     if (this._onboardingService) {
       return this._onboardingService;
@@ -773,45 +850,45 @@ export class ServiceManager {
   }
 
   
-  public cleanupServices(): void {
+  public async cleanupServices(): Promise<void> {
     
     if (this._tradeService) {
-      this._tradeService.cleanup();
+      await this.cleanupDataService(this._tradeService);
       this._tradeService = null;
     }
 
     if (this._setupService) {
-      this._setupService.cleanup();
+      await this.cleanupDataService(this._setupService);
       this._setupService = null;
     }
 
     if (this._monthlyReviewService) {
-      this._monthlyReviewService.cleanup();
+      await this.cleanupDataService(this._monthlyReviewService);
       this._monthlyReviewService = null;
     }
 
     if (this._quarterlyReviewService) {
-      this._quarterlyReviewService.cleanup();
+      await this.cleanupDataService(this._quarterlyReviewService);
       this._quarterlyReviewService = null;
     }
 
     if (this._yearlyReviewService) {
-      this._yearlyReviewService.cleanup();
+      await this.cleanupDataService(this._yearlyReviewService);
       this._yearlyReviewService = null;
     }
 
     if (this._missedTradeService) {
-      this._missedTradeService.cleanup();
+      await this.cleanupDataService(this._missedTradeService);
       this._missedTradeService = null;
     }
 
     if (this._backtestTradeService) {
-      this._backtestTradeService.cleanup();
+      await this.cleanupDataService(this._backtestTradeService);
       this._backtestTradeService = null;
     }
 
     if (this._accountPageService) {
-      this._accountPageService.cleanup();
+      await this.cleanupDataService(this._accountPageService);
       this._accountPageService.destroy();
       this._accountPageService = null;
     }
@@ -821,7 +898,7 @@ export class ServiceManager {
     
     
     try {
-      CustomDataService.unloadSharedIndexManager();
+      await CustomDataService.unloadSharedIndexManager();
     } catch (error) {
       console.error('Error cleaning up CustomDataService:', error);
     }
@@ -852,6 +929,7 @@ export class ServiceManager {
       this._backendIntegrationService.cleanup();
       this._backendIntegrationService = null;
     }
+    this._propFirmProfileCatalogService = null;
 
     
     if (this._onboardingService) {

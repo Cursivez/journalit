@@ -5,6 +5,7 @@ import { generateUUID } from '../../utils/uuid';
 import { mapProjectionTradeToTradeData } from '../tradeSync/canonicalTradeMapper';
 import { applyInstrumentCostRulesToProjection } from '../tradeSync/projectionCostRules';
 import {
+  isTradeImportBlocked,
   isTradeImportCommitEligible,
   isTradeImportSkipped,
 } from './commitEligibility';
@@ -34,11 +35,23 @@ import {
   getTradeProjectionOwnerId,
 } from '../tradeSync/TradeProjectionOwnership';
 import { getTradeImportTimeZone } from './timeZone';
+import {
+  missingRequiredFieldsForMappings,
+  normalizeManualColumnMappings,
+} from './manualMappingValidation';
+import type { TradeField } from '../csv/types';
 
 export class TradeImportValidationError extends Error {
   constructor(message: string) {
     super(message);
     this.name = 'TradeImportValidationError';
+  }
+}
+
+export class TradeImportMappingValidationError extends TradeImportValidationError {
+  constructor(public readonly missingRequiredFields: TradeField[]) {
+    super(t('notice.csv-missing-fields'));
+    this.name = 'TradeImportMappingValidationError';
   }
 }
 
@@ -71,6 +84,7 @@ interface TradeImportPreviewInput {
   manualMode: TradeImportManualMode;
   dateFormat: string;
   columnMappings: Record<string, string[]>;
+  manualMappingRequired: boolean;
 }
 
 export interface TradeImportCompletionResult {
@@ -169,6 +183,9 @@ function validateSelectedFile(
   capabilities: TradeImportCapabilities,
   brokerCapabilities?: TradeImportBrokerCapabilities
 ): string | null {
+  if (file.size === 0) {
+    return t('trade-import.error.file-empty');
+  }
   if (file.size > capabilities.fileLimits.maxFileBytes) {
     return t('trade-import.error.file-too-large');
   }
@@ -345,7 +362,7 @@ export class TradeImportWorkflowService {
     file,
     capabilities,
     brokerCapabilities,
-    analyse: _analyse,
+    analyse,
     broker,
     sheetName,
     headerRowIndex,
@@ -354,6 +371,7 @@ export class TradeImportWorkflowService {
     manualMode,
     dateFormat,
     columnMappings,
+    manualMappingRequired,
   }: TradeImportPreviewInput): Promise<{
     response: TradeImportPreviewResponse;
     classifiedTrades: ClassifiedPreviewTrade[];
@@ -365,6 +383,21 @@ export class TradeImportWorkflowService {
       brokerCapabilities
     );
     if (validationError) throw new TradeImportValidationError(validationError);
+
+    const normalizedColumnMappings = normalizeManualColumnMappings(
+      columnMappings,
+      analyse.headers
+    );
+    if (manualMappingRequired) {
+      const missingRequiredFields = missingRequiredFieldsForMappings(
+        manualMode,
+        columnMappings,
+        analyse.headers
+      );
+      if (missingRequiredFields.length > 0) {
+        throw new TradeImportMappingValidationError(missingRequiredFields);
+      }
+    }
 
     const ownerUserId = getTradeProjectionOwnerId(this.plugin);
     const shouldStop = createTradeProjectionOwnershipGuard(
@@ -385,7 +418,7 @@ export class TradeImportWorkflowService {
       manualMode,
       dateFormat,
       mappingVersion: capabilities.manualMapping.mappingVersion,
-      columnMappings,
+      columnMappings: normalizedColumnMappings,
       customFields: customFieldDefinitions(this.plugin),
     });
     if (shouldStop()) throw new Error('Trade Import ownership changed');
@@ -603,21 +636,24 @@ export class TradeImportWorkflowService {
       projectionResult.writtenCount + projectionResult.alreadyPresentCount;
     failed = projectionResult.failedCount + projectionResult.ackFailedCount;
 
-    const duplicateCount = commit.itemResults.filter((result) => {
-      if (result.result === 'skipped_user') return true;
-      if (result.result === 'skipped_duplicate') return true;
-      if (result.result !== 'skipped') return false;
+    let duplicateCount = 0;
+    let failedSkippedResults = 0;
+    for (const result of commit.itemResults) {
+      if (result.result === 'skipped_duplicate') {
+        duplicateCount += 1;
+        continue;
+      }
+      if (result.result !== 'skipped' && result.result !== 'skipped_user') {
+        continue;
+      }
       const item = previewByItemId.get(result.itemId);
-      return item?.defaultAction === 'skip';
-    }).length;
-    const failedSkippedResults = commit.itemResults.filter((result) => {
-      if (result.result !== 'skipped') return false;
-      const item = previewByItemId.get(result.itemId);
-      return (
-        item?.defaultAction === 'blocked' ||
-        item?.defaultAction === 'manual_review'
-      );
-    }).length;
+      if (!item) continue;
+      if (isTradeImportSkipped(item.defaultAction)) {
+        duplicateCount += 1;
+      } else if (isTradeImportBlocked(item.defaultAction)) {
+        failedSkippedResults += 1;
+      }
+    }
     const failedCommitResults = commit.itemResults.filter(
       (result) => result.result === 'blocked' || result.result === 'conflict'
     ).length;

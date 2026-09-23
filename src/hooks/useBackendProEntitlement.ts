@@ -8,7 +8,7 @@ import {
 } from 'react';
 import type JournalitPlugin from '../main';
 import {
-  type BackendFeatureKey,
+  type AnyBackendFeatureKey,
   SubscriptionTierService,
   type SubscriptionTierRefreshStatus,
 } from '../services/backend/SubscriptionTierService';
@@ -19,6 +19,8 @@ interface BackendProEntitlementState {
   isChecking: boolean;
   isPro: boolean;
   isFeatureEnabled: boolean;
+  
+  entitlementStatus: SubscriptionTierRefreshStatus | null;
 }
 
 interface BackendProEntitlementRefreshState {
@@ -81,17 +83,19 @@ const subscribeToSubscriptionChanged = (
 export function useBackendProEntitlement(
   plugin: JournalitPlugin,
   reason: string,
-  feature?: BackendFeatureKey
+  feature?: AnyBackendFeatureKey
 ): BackendProEntitlementState {
-  const authToken = BackendSecretStorage.getAuthToken(plugin);
-  const [subscriptionVersion, setSubscriptionVersion] = useState(0);
+  const authToken = useSyncExternalStore(subscribeToSubscriptionChanged, () =>
+    BackendSecretStorage.getAuthToken(plugin)
+  );
+  const [returnRefreshVersion, setReturnRefreshVersion] = useState(0);
   const lastReturnRefreshAtRef = useRef(0);
   const returnRefreshTimeoutRef = useRef<number | null>(null);
   const wasAwayFromObsidianRef = useRef(false);
   const [refreshState, dispatchRefresh] = useReducer(
     refreshReducer,
     undefined,
-    () => {
+    (): BackendProEntitlementRefreshState => {
       const hasAuthToken = !!authToken;
       const cachedTier =
         plugin.settings.backendIntegration?.subscriptionTier ?? null;
@@ -106,21 +110,6 @@ export function useBackendProEntitlement(
       };
     }
   );
-
-  useEffect(() => {
-    const handleSubscriptionChanged = () =>
-      setSubscriptionVersion((v) => v + 1);
-    window.addEventListener(
-      'journalit:subscription-changed',
-      handleSubscriptionChanged
-    );
-    return () => {
-      window.removeEventListener(
-        'journalit:subscription-changed',
-        handleSubscriptionChanged
-      );
-    };
-  }, []);
 
   const isAuthenticated = !!authToken;
 
@@ -141,7 +130,7 @@ export function useBackendProEntitlement(
     );
     const requestRefresh = () => {
       lastReturnRefreshAtRef.current = Date.now();
-      setSubscriptionVersion((version) => version + 1);
+      setReturnRefreshVersion((version) => version + 1);
     };
     const refreshAfterReturn = () => {
       if (!wasAwayFromObsidianRef.current) return;
@@ -206,11 +195,16 @@ export function useBackendProEntitlement(
     }
 
     let cancelled = false;
-    dispatchRefresh({ type: 'checking' });
-    void new SubscriptionTierService(plugin)
-      .refreshTier(reason)
-      .then((result) => {
-        if (!cancelled) {
+    let generation = 0;
+
+    const refresh = () => {
+      const requestGeneration = ++generation;
+      void new SubscriptionTierService(plugin)
+        .refreshTier(reason)
+        .then((result) => {
+          if (cancelled || requestGeneration !== generation) {
+            return;
+          }
           dispatchRefresh({
             type: 'resolved',
             refreshStatus: result.status,
@@ -218,16 +212,27 @@ export function useBackendProEntitlement(
               ? result.entitlements?.features[feature]?.enabled === true
               : result.status === 'premium',
           });
-        }
-      })
-      .catch(() => {
-        if (!cancelled) {
+        })
+        .catch(() => {
+          if (cancelled || requestGeneration !== generation) {
+            return;
+          }
           dispatchRefresh({ type: 'failed' });
-        }
-      });
+        });
+    };
+
+    dispatchRefresh({ type: 'checking' });
+    
+    
+    
+    window.addEventListener('journalit:subscription-changed', refresh);
+    window.addEventListener('journalit:entitlements-refreshed', refresh);
+    refresh();
 
     return () => {
       cancelled = true;
+      window.removeEventListener('journalit:subscription-changed', refresh);
+      window.removeEventListener('journalit:entitlements-refreshed', refresh);
     };
   }, [
     authToken,
@@ -235,7 +240,7 @@ export function useBackendProEntitlement(
     isAuthenticated,
     plugin,
     reason,
-    subscriptionVersion,
+    returnRefreshVersion,
   ]);
 
   return useMemo(() => {
@@ -245,6 +250,7 @@ export function useBackendProEntitlement(
       isChecking,
       isPro: isAuthenticated && refreshStatus === 'premium',
       isFeatureEnabled: isAuthenticated && isFeatureEnabled,
+      entitlementStatus: isAuthenticated ? refreshStatus : 'signed_out',
     };
   }, [isAuthenticated, refreshState]);
 }
@@ -268,5 +274,12 @@ export function useCachedBackendProEntitlement(
     isChecking: false,
     isPro,
     isFeatureEnabled: isPro,
+    entitlementStatus: !isAuthenticated
+      ? 'signed_out'
+      : tier === 'premium'
+        ? 'premium'
+        : tier === 'free'
+          ? 'free'
+          : null,
   };
 }

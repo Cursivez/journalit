@@ -1,7 +1,7 @@
 <div align="center">
 
 <img
-  src="https://github.com/user-attachments/assets/ab7232d4-1352-4658-a284-86029c0246f1"
+  src="https://raw.githubusercontent.com/Cursivez/journalit/main/assets/readme/journalit-logo.png"
   alt="Journalit"
   width="420"
   style="max-width: 100%; height: auto;"
@@ -30,7 +30,7 @@ Obsidian के लिए लोकल-फ़र्स्ट ट्रेडि�
 
 </div>
 
-![होम व्यू](https://github.com/user-attachments/assets/8ef38dac-c932-4530-aa06-4a382e5ba827)
+![होम व्यू](https://raw.githubusercontent.com/Cursivez/journalit/main/assets/readme/home-view.png)
 
 <a id="installation"></a>
 
@@ -52,14 +52,14 @@ Journalit को Obsidian Community Plugins से इंस्टॉल कर�
 - **अकाउंट डैशबोर्ड**: प्रॉप फ़र्म प्रॉफिट टारगेट और ड्रॉडाउन के लिए बनाया गया।
 - **रिव्यू सिस्टम (V2)**: डेली से इयरली टेम्पलेट्स, लेआउट बिल्डर के साथ।
 - **[Trade Import](https://journalit.co/csv-import)**: CSV, स्प्रेडशीट, HTML और ब्रोकर स्टेटमेंट के लिए बैकएंड-पावर्ड इंपोर्ट।
-- **[Trade Sync](https://journalit.co/docs/trade-sync)**: Tradovate और MT4 के लिए ऑटोमेटेड ट्रेड सिंक।
+- **[Trade Sync](https://journalit.co/docs/trade-sync)**: समर्थित ब्रोकरों के लिए ऑटोमेटेड ट्रेड सिंक।
 
 ## ज़रूरी जानकारी
 
 - **लोकल-फ़र्स्ट कोर**: मुख्य जर्नलिंग ऑफ़लाइन काम करती है और नोट्स व ट्रेड्स आपके Obsidian वॉल्ट में स्टोर होते हैं।
 - **पूरी ऐक्सेस के लिए अकाउंट चाहिए**: ऑथेंटिकेशन और सब्सक्रिप्शन वाली सुविधाओं के लिए Journalit अकाउंट आवश्यक है।
-- **पेड फीचर्स**: MetaTrader सिंक और Trade Import जैसी पूरी Pro सुविधाओं के लिए पेड Pro सब्सक्रिप्शन चाहिए।
-- **वैकल्पिक नेटवर्क उपयोग**: प्लगइन Journalit नेटवर्क सेवाओं का उपयोग तभी करता है जब आप नेटवर्क वाली सुविधाएँ चुनते हैं। साइन इन करने पर ईमेल वेरिफिकेशन, टोकन वैलिडेशन और सब्सक्रिप्शन स्टेटस के लिए Journalit सेवाएँ संपर्क होती हैं। अगर इसके बाद आप MetaTrader सिंक या Trade Import जैसी ऑथेंटिकेटेड सुविधाएँ इस्तेमाल करते हैं, तो प्लगइन सिंक कोऑर्डिनेशन, ट्रेड रिट्रीवल और वैकल्पिक Trade Import के लिए Journalit बैकएंड API से भी जुड़ता है; MetaTrader सिंक रिपोर्ट अपलोड के लिए Journalit-प्रबंधित FTP इंफ्रास्ट्रक्चर का उपयोग करता है। मल्टी-करेंसी कनवर्ज़न के लिए Journalit किसी थर्ड-पार्टी एक्सचेंज-रेट सेवा से दरें भी माँग सकता है। ये नेटवर्क फीचर्स ऑप्ट-इन हैं।
+- **पेड फीचर्स**: Trade Sync और Trade Import जैसी पूरी Pro सुविधाओं के लिए पेड Pro सब्सक्रिप्शन चाहिए।
+- **नेटवर्क उपयोग**: Journalit अपडेट के लिए डिफ़ॉल्ट रूप से सार्वजनिक GitHub रिलीज़ मेटाडेटा जाँचता है और vault या account डेटा नहीं भेजता। साइन-इन सुविधाएँ Journalit सेवाओं का उपयोग कर सकती हैं; MT4 सिंक प्रबंधित FTP का उपयोग करता है और मुद्रा रूपांतरण किसी थर्ड-पार्टी एक्सचेंज-रेट सेवा का उपयोग कर सकता है। [PRIVACY.md](PRIVACY.md) देखें।
 - **सोर्स उपलब्ध, प्रोप्राइटरी लाइसेंस**: प्लगइन प्रोप्राइटरी सॉफ़्टवेयर है जिसका सोर्स रिव्यू किया जा सकता है।
 - **प्राइवेसी विवरण**: डेटा हैंडलिंग, रिटेंशन और इंफ्रास्ट्रक्चर के लिए [PRIVACY.md](PRIVACY.md) देखें।
 
@@ -69,39 +69,39 @@ Journalit को Obsidian Community Plugins से इंस्टॉल कर�
 
 ### ट्रेडिंग डैशबोर्ड
 
-![ट्रेडिंग डैशबोर्ड](https://github.com/user-attachments/assets/ebb402c3-c8da-41dc-9317-73f6a50d0a93)
+![ट्रेडिंग डैशबोर्ड](https://raw.githubusercontent.com/Cursivez/journalit/main/assets/readme/trading-dashboard.png)
 
 ### सेटअप्स
 
-![सेटअप ओवरव्यू](https://github.com/user-attachments/assets/09976a8b-8500-4629-b790-6cb834c84b24)
+![सेटअप ओवरव्यू](https://raw.githubusercontent.com/Cursivez/journalit/main/assets/readme/setup-overview.png)
 
-![सेटअप पेयर्स](https://github.com/user-attachments/assets/bb7b66fc-db1b-4e1c-a174-32bc6bea49c6)
+![सेटअप पेयर्स](https://raw.githubusercontent.com/Cursivez/journalit/main/assets/readme/setup-pairs.png)
 
-![सेटअप तुलना](https://github.com/user-attachments/assets/8eaf5509-cf27-4e73-8c8c-2a9cf0da6c43)
+![सेटअप तुलना](https://raw.githubusercontent.com/Cursivez/journalit/main/assets/readme/setup-comparison.png)
 
 ### लेआउट बिल्डर
 
-![लेआउट बिल्डर](https://github.com/user-attachments/assets/48bcc59a-2b17-4478-98b3-dce8677cca47)
+![लेआउट बिल्डर](https://raw.githubusercontent.com/Cursivez/journalit/main/assets/readme/layout-builder.png)
 
-![लेआउट बिल्डर](https://github.com/user-attachments/assets/66744217-b3b1-46ec-bb65-ca2debcd72da)
+![लेआउट बिल्डर](https://raw.githubusercontent.com/Cursivez/journalit/main/assets/readme/layout-builder-preview.png)
 
 ### ट्रेड लॉग और गैलरी
 
-![ट्रेड लॉग](https://github.com/user-attachments/assets/09586646-50a2-4fd1-970f-83e926cab19a)
+![ट्रेड लॉग](https://raw.githubusercontent.com/Cursivez/journalit/main/assets/readme/trade-log.png)
 
-![गैलरी](https://github.com/user-attachments/assets/1bb496ab-a165-43c6-83f0-500565f2a1c3)
+![गैलरी](https://raw.githubusercontent.com/Cursivez/journalit/main/assets/readme/gallery.png)
 
 ### Trade Import
 
-![Trade Import](https://github.com/user-attachments/assets/68121823-8b24-4024-b676-a4199c81f207)
+![Trade Import](https://raw.githubusercontent.com/Cursivez/journalit/main/assets/readme/trade-import.png)
 
 ### अकाउंट डैशबोर्ड
 
-![अकाउंट डैशबोर्ड](https://github.com/user-attachments/assets/dbd1cd69-3f8b-4af8-883c-460dbfb8944b)
+![अकाउंट डैशबोर्ड](https://raw.githubusercontent.com/Cursivez/journalit/main/assets/readme/account-dashboard.png)
 
 ### अकाउंट पेज
 
-![अकाउंट पेज](https://github.com/user-attachments/assets/8eeb0f2d-a8d8-412e-bf23-cb21e3a0401b)
+![अकाउंट पेज](https://raw.githubusercontent.com/Cursivez/journalit/main/assets/readme/account-pages.png)
 
 <a id="supported-brokers"></a>
 

@@ -1,4 +1,7 @@
 import { logger } from '../../utils/logger';
+import { sameProfileContent } from '../propChallenge/PropChallengePolicyHistory';
+import type { PropChallengeConfig } from '../propChallenge/types';
+import { calculateProfitFactor } from '../../utils/profitFactor';
 
 
 import { App, TFile, TFolder } from 'obsidian';
@@ -122,13 +125,31 @@ import {
 } from '../trade/core/TradeAccountIdentity';
 import { normalizeTradeExecution } from '../trade/core/TradeExecutionNormalization';
 import { TradeType } from '../tradelog/types';
+import {
+  remapAccountEntityShortcuts,
+  restoreEntityShortcuts,
+} from '../../utils/entityShortcutTargets';
 import type { TradeData } from '../trade/TradeService';
 import { OptionType } from '../options/CustomOptionsService';
 import { isPathWithinDirectory } from '../base/pluginStoragePaths';
+import {
+  repointAccountReferences,
+  revertAccountReferences,
+} from './accountReferences';
 
 const ACCOUNT_DELETION_REQUIRED_ACCOUNT_ERROR =
   /At least one account is required/;
 
+
+
+export class AccountMetadataConflictError extends Error {
+  constructor() {
+    super(
+      'Account rules changed while the review was open. Reopen the review before saving.'
+    );
+    this.name = 'AccountMetadataConflictError';
+  }
+}
 
 export class AccountPageService extends CustomDataService {
   private folderPathService: FolderPathService | null = null;
@@ -170,7 +191,6 @@ export class AccountPageService extends CustomDataService {
     super(app, {
       
       
-      
       cacheTTL: 2 * 60 * 1000, 
       persistCache: true,
       namespace: config.namespace || 'accountPage',
@@ -201,7 +221,10 @@ export class AccountPageService extends CustomDataService {
     );
     this.unsubscribeFolderPathChanged = eventBus.subscribe(
       'folder-path:changed',
-      handleTradeDataChange
+      (payload) => {
+        this.setMonitoredFolder(payload.value);
+        handleTradeDataChange();
+      }
     );
     this.unsubscribeSettingsChanged = eventBus.subscribe(
       'settings:changed',
@@ -224,6 +247,9 @@ export class AccountPageService extends CustomDataService {
     super.setPlugin(plugin);
     this.folderPathService =
       plugin.serviceManager?.getFolderPathService() || null;
+    if (this.folderPathService) {
+      this.setMonitoredFolder(this.folderPathService.journalFolderPath);
+    }
     if (!this.folderRenameListenerRegistered) {
       this.folderRenameListenerRegistered = true;
       plugin.registerEvent(
@@ -847,6 +873,26 @@ export class AccountPageService extends CustomDataService {
       mistake,
       tags,
       reviewed: trade.reviewed === true,
+      accountId:
+        typeof trade.accountId === 'string'
+          ? trade.accountId.trim() || undefined
+          : typeof trade.accountId === 'number' &&
+              Number.isFinite(trade.accountId)
+            ? String(trade.accountId)
+            : undefined,
+      canonicalAccountId:
+        typeof trade.canonicalAccountId === 'string'
+          ? trade.canonicalAccountId.trim() || undefined
+          : undefined,
+      canonicalAccountIdentity:
+        trade.canonicalAccountIdentity === 'broker' ||
+        trade.canonicalAccountIdentity === 'name'
+          ? trade.canonicalAccountIdentity
+          : undefined,
+      canonicalAccountDisplayName:
+        typeof trade.canonicalAccountDisplayName === 'string'
+          ? trade.canonicalAccountDisplayName.trim() || undefined
+          : undefined,
       assetType:
         typeof trade.assetType === 'string' ? trade.assetType : undefined,
       optionType:
@@ -1503,6 +1549,15 @@ export class AccountPageService extends CustomDataService {
     return undefined;
   }
 
+  public getAccountMetadataEntry(accountName: string):
+    | {
+        key: string;
+        metadata: AccountMetadata;
+      }
+    | undefined {
+    return this.findAccountMetadataEntry(accountName);
+  }
+
   
   private getAccountMetadata(accountName: string): AccountMetadata | undefined {
     const metadataEntry = this.findAccountMetadataEntry(accountName);
@@ -1598,9 +1653,41 @@ export class AccountPageService extends CustomDataService {
             return [snapshot];
           })
         : undefined,
+
+      
+      copyTradingPeriods: rawMetadata.copyTradingPeriods
+        ? rawMetadata.copyTradingPeriods.flatMap((period) => {
+            if (period === null || period === undefined) return [];
+            const startDate = this.safeParseDate(period.startDate);
+            if (!startDate) {
+              console.warn(
+                'AccountPageService: Skipping copy trading period with invalid start date:',
+                period
+              );
+              return [];
+            }
+            const endDate = period.endDate
+              ? this.safeParseDate(period.endDate)
+              : undefined;
+            return [
+              {
+                ...period,
+                startDate,
+                ...(endDate ? { endDate } : {}),
+              },
+            ];
+          })
+        : undefined,
     };
 
     return metadata;
+  }
+
+  
+  public getRevivedAccountMetadata(
+    accountName: string
+  ): AccountMetadata | undefined {
+    return this.getAccountMetadata(accountName);
   }
 
   
@@ -1670,8 +1757,16 @@ export class AccountPageService extends CustomDataService {
       manualTransactions: existingMetadata?.manualTransactions,
       manualDrawdownSnapshots: existingMetadata?.manualDrawdownSnapshots,
       copyTradingPeriods: existingMetadata?.copyTradingPeriods,
+      propChallenge: existingMetadata?.propChallenge,
+      propChallengeQuarantine: existingMetadata?.propChallengeQuarantine,
       currency: existingMetadata?.currency,
       ...updates,
+      
+      
+      
+      ...(updates.propChallenge !== undefined
+        ? { propChallengeQuarantine: undefined }
+        : {}),
       liveBalanceAdjustment: normalizeLiveBalanceAdjustment(
         Object.prototype.hasOwnProperty.call(updates, 'liveBalanceAdjustment')
           ? updates.liveBalanceAdjustment
@@ -1718,9 +1813,32 @@ export class AccountPageService extends CustomDataService {
 
   public async updateAccountMetadata(
     accountName: string,
-    updates: Partial<AccountMetadata>
+    updates: Partial<AccountMetadata>,
+    options?: {
+      expectedPropChallenge: PropChallengeConfig;
+      expectedCurrency?: CurrencyCode;
+    }
   ): Promise<void> {
     const existingMetadata = this.getAccountMetadata(accountName);
+    if (
+      options &&
+      !sameProfileContent(
+        existingMetadata?.propChallenge,
+        options.expectedPropChallenge
+      )
+    ) {
+      throw new AccountMetadataConflictError();
+    }
+    if (
+      options?.expectedCurrency !== undefined &&
+      (existingMetadata?.currency ??
+        this.plugin?.settings.general?.currency ??
+        CurrencyCode.USD) !== options.expectedCurrency
+    ) {
+      throw new Error(
+        'Account currency changed while the review was open. Reopen the review before saving.'
+      );
+    }
     const metadata = this.buildAccountMetadata(
       accountName,
       existingMetadata,
@@ -1752,7 +1870,20 @@ export class AccountPageService extends CustomDataService {
 
     const accountMetadata = this.plugin.settings.account?.accountMetadata;
     if (!accountMetadata) {
-      await this.saveAccountMetadata(newAccountName, metadata);
+      const shortcutRemap = remapAccountEntityShortcuts(
+        this.plugin.settings,
+        oldAccountName,
+        newAccountName
+      );
+      try {
+        await this.saveAccountMetadata(newAccountName, metadata);
+      } catch (error) {
+        restoreEntityShortcuts(this.plugin.settings, shortcutRemap);
+        throw error;
+      }
+      if (shortcutRemap.changedSurfaces.length > 0) {
+        eventBus.publish('entity-shortcuts:changed', { surface: 'all' });
+      }
       await this.refreshAllAccountData();
       return;
     }
@@ -1764,6 +1895,12 @@ export class AccountPageService extends CustomDataService {
       throw new Error(`Account "${newAccountName}" already exists`);
     }
 
+    const shortcutRemap = remapAccountEntityShortcuts(
+      this.plugin.settings,
+      oldAccountName,
+      newAccountName
+    );
+
     const newMetadataKey = newAccountName;
     const previousNewMetadata =
       newMetadataKey === oldMetadataKey
@@ -1773,153 +1910,16 @@ export class AccountPageService extends CustomDataService {
     delete accountMetadata[oldMetadataKey];
     accountMetadata[newMetadataKey] = metadata;
 
-    const copyTradingPeriodRollbacks: Array<{
-      metadataKey: string;
-      previousPeriods: AccountMetadata['copyTradingPeriods'];
-    }> = [];
-    const oldLookupKeyForCopyPeriods =
-      normalizeAccountLookupKey(oldAccountName);
-    const newLookupKeyForCopyAdjustments =
-      normalizeAccountLookupKey(newAccountName);
-    for (const [metadataKey, accountEntry] of Object.entries(accountMetadata)) {
-      if (!accountEntry.copyTradingPeriods?.length) {
-        continue;
-      }
-
-      const updatedPeriods = accountEntry.copyTradingPeriods.map((period) =>
-        normalizeAccountLookupKey(period.baseAccount) ===
-        oldLookupKeyForCopyPeriods
-          ? { ...period, baseAccount: newAccountName }
-          : period
-      );
-
-      if (updatedPeriods === accountEntry.copyTradingPeriods) {
-        continue;
-      }
-
-      const changed = updatedPeriods.some(
-        (period, index) =>
-          period.baseAccount !==
-          accountEntry.copyTradingPeriods?.[index]?.baseAccount
-      );
-      if (!changed) {
-        continue;
-      }
-
-      copyTradingPeriodRollbacks.push({
-        metadataKey,
-        previousPeriods: accountEntry.copyTradingPeriods,
-      });
-      accountEntry.copyTradingPeriods = updatedPeriods;
-    }
-
-    const copyTradeAdjustments = this.plugin.settings.copyTradeAdjustments;
-    type CopyTradeAdjustment = { pnlAdjustment: number; note?: string };
-    const copyTradeAdjustmentRollbacks: Array<{
-      baseTradeKey: string;
-      previousOldAdjustment: CopyTradeAdjustment;
-      previousNewAdjustment: CopyTradeAdjustment | undefined;
-    }> = [];
-    if (copyTradeAdjustments) {
-      for (const [baseTradeKey, accountAdjustments] of Object.entries(
-        copyTradeAdjustments
-      )) {
-        if (!(oldLookupKeyForCopyPeriods in accountAdjustments)) {
-          continue;
-        }
-
-        copyTradeAdjustmentRollbacks.push({
-          baseTradeKey,
-          previousOldAdjustment: accountAdjustments[oldLookupKeyForCopyPeriods],
-          previousNewAdjustment:
-            accountAdjustments[newLookupKeyForCopyAdjustments],
-        });
-        accountAdjustments[newLookupKeyForCopyAdjustments] =
-          accountAdjustments[oldLookupKeyForCopyPeriods];
-        delete accountAdjustments[oldLookupKeyForCopyPeriods];
-      }
-    }
-
-    const updatedAccountMappings: Array<{
-      accountId: string;
-      previous: string;
-    }> = [];
-    const accountMapping =
-      this.plugin.settings.backendIntegration?.accountMapping;
-    if (accountMapping) {
-      const oldLookupKey = normalizeAccountLookupKey(oldAccountName);
-      for (const [accountId, displayName] of Object.entries(accountMapping)) {
-        if (
-          normalizeAccountLookupKey(String(displayName)) !== oldLookupKey ||
-          displayName === newAccountName
-        ) {
-          continue;
-        }
-
-        updatedAccountMappings.push({
-          accountId,
-          previous: displayName,
-        });
-        accountMapping[accountId] = newAccountName;
-      }
-    }
-
-    const homeGoalRollbacks: Array<{
-      goalId: string;
-      previousAccountTargets: Record<string, number> | undefined;
-      previousAccountTargetAccounts: string[] | undefined;
-    }> = [];
-    const homeGoals = this.plugin.settings.home?.goals;
-    if (homeGoals) {
-      const oldLookupKey = normalizeAccountLookupKey(oldAccountName);
-      for (const [goalId, goalConfig] of Object.entries(homeGoals)) {
-        let changed = false;
-
-        const nextAccountTargets = goalConfig.accountTargets
-          ? { ...goalConfig.accountTargets }
-          : undefined;
-        if (nextAccountTargets) {
-          for (const [accountName, target] of Object.entries(
-            goalConfig.accountTargets ?? {}
-          )) {
-            if (normalizeAccountLookupKey(accountName) !== oldLookupKey) {
-              continue;
-            }
-
-            nextAccountTargets[newAccountName] = target;
-            delete nextAccountTargets[accountName];
-            changed = true;
-          }
-        }
-
-        const nextAccountTargetAccounts = goalConfig.accountTargetAccounts?.map(
-          (accountName) => {
-            if (normalizeAccountLookupKey(accountName) !== oldLookupKey) {
-              return accountName;
-            }
-
-            changed = true;
-            return newAccountName;
-          }
-        );
-
-        if (!changed) {
-          continue;
-        }
-
-        homeGoalRollbacks.push({
-          goalId,
-          previousAccountTargets: goalConfig.accountTargets,
-          previousAccountTargetAccounts: goalConfig.accountTargetAccounts,
-        });
-        goalConfig.accountTargets = nextAccountTargets;
-        goalConfig.accountTargetAccounts = nextAccountTargetAccounts;
-      }
-    }
+    const referenceChanges = repointAccountReferences(
+      this.plugin.settings,
+      oldAccountName,
+      newAccountName
+    );
 
     try {
       await this.plugin.saveSettings();
     } catch (error) {
+      restoreEntityShortcuts(this.plugin.settings, shortcutRemap);
       if (previousOldMetadata) {
         accountMetadata[oldMetadataKey] = previousOldMetadata;
       }
@@ -1932,58 +1932,12 @@ export class AccountPageService extends CustomDataService {
         }
       }
 
-      if (accountMapping) {
-        for (const { accountId, previous } of updatedAccountMappings) {
-          accountMapping[accountId] = previous;
-        }
-      }
-
-      if (homeGoals) {
-        for (const {
-          goalId,
-          previousAccountTargets,
-          previousAccountTargetAccounts,
-        } of homeGoalRollbacks) {
-          const goalConfig = homeGoals[goalId];
-          if (!goalConfig) {
-            continue;
-          }
-
-          goalConfig.accountTargets = previousAccountTargets;
-          goalConfig.accountTargetAccounts = previousAccountTargetAccounts;
-        }
-      }
-
-      for (const {
-        metadataKey,
-        previousPeriods,
-      } of copyTradingPeriodRollbacks) {
-        if (accountMetadata[metadataKey]) {
-          accountMetadata[metadataKey].copyTradingPeriods = previousPeriods;
-        }
-      }
-      if (copyTradeAdjustments) {
-        for (const {
-          baseTradeKey,
-          previousOldAdjustment,
-          previousNewAdjustment,
-        } of copyTradeAdjustmentRollbacks) {
-          const accountAdjustments = copyTradeAdjustments[baseTradeKey];
-          if (!accountAdjustments) {
-            continue;
-          }
-
-          accountAdjustments[oldLookupKeyForCopyPeriods] =
-            previousOldAdjustment;
-          if (previousNewAdjustment === undefined) {
-            delete accountAdjustments[newLookupKeyForCopyAdjustments];
-          } else {
-            accountAdjustments[newLookupKeyForCopyAdjustments] =
-              previousNewAdjustment;
-          }
-        }
-      }
+      revertAccountReferences(this.plugin.settings, referenceChanges);
       throw error;
+    }
+
+    if (shortcutRemap.changedSurfaces.length > 0) {
+      eventBus.publish('entity-shortcuts:changed', { surface: 'all' });
     }
 
     await this.refreshAllAccountData();
@@ -2070,6 +2024,7 @@ export class AccountPageService extends CustomDataService {
       notePath: '', 
       currency: metadata?.currency,
       copyTradingPeriods: metadata?.copyTradingPeriods,
+      propChallenge: metadata?.propChallenge,
     };
 
     this.applyLiveBalanceAdjustment(
@@ -2373,12 +2328,7 @@ export class AccountPageService extends CustomDataService {
           losingTradesR.length
         : undefined;
 
-    let profitFactor = 0;
-    if (totalLossAmount > 0) {
-      profitFactor = totalWinAmount / totalLossAmount;
-    } else if (totalWinAmount > 0) {
-      profitFactor = 999;
-    }
+    const profitFactor = calculateProfitFactor(totalWinAmount, totalLossAmount);
 
     return {
       totalTrades,
@@ -3171,54 +3121,60 @@ export class AccountPageService extends CustomDataService {
     tradeTypes?: TradeType[]
   ): Promise<AccountCatalogEntry[]> {
     try {
-      const groupingSnapshot = await this.getTradeGroupingSnapshot(tradeTypes);
-      const metadataEntries =
-        this.plugin?.settings.account?.accountMetadata || {};
-
-      const catalogByLookupKey = new Map<
-        string,
-        {
-          name: string;
-          metadata?: AccountMetadata;
-        }
-      >();
-
-      for (const accountName of groupingSnapshot.accountNames) {
-        catalogByLookupKey.set(normalizeAccountLookupKey(accountName), {
-          name: accountName,
-        });
-      }
-
-      for (const [metadataKey, metadata] of Object.entries(metadataEntries)) {
-        const metadataLookupKey = normalizeAccountLookupKey(metadataKey);
-        const existing = catalogByLookupKey.get(metadataLookupKey);
-        if (existing) {
-          existing.metadata = metadata;
-          existing.name = metadataKey;
-        } else {
-          catalogByLookupKey.set(metadataLookupKey, {
-            name: metadataKey,
-            metadata,
-          });
-        }
-      }
-
-      return Array.from(catalogByLookupKey.values())
-        .sort((a, b) => a.name.localeCompare(b.name))
-        .map(({ name, metadata }) => {
-          const accountType = metadata?.accountType;
-          return {
-            id: this.getAccountId(name),
-            name,
-            accountType,
-            archived: accountType?.toLowerCase() === 'archived',
-            currency: metadata?.currency,
-          };
-        });
+      return await this.getAccountCatalogOrThrow(tradeTypes);
     } catch (error) {
       console.error('Error getting account catalog:', error);
       return [];
     }
+  }
+
+  public async getAccountCatalogOrThrow(
+    tradeTypes?: TradeType[]
+  ): Promise<AccountCatalogEntry[]> {
+    const groupingSnapshot = await this.getTradeGroupingSnapshot(tradeTypes);
+    const metadataEntries =
+      this.plugin?.settings.account?.accountMetadata || {};
+
+    const catalogByLookupKey = new Map<
+      string,
+      {
+        name: string;
+        metadata?: AccountMetadata;
+      }
+    >();
+
+    for (const accountName of groupingSnapshot.accountNames) {
+      catalogByLookupKey.set(normalizeAccountLookupKey(accountName), {
+        name: accountName,
+      });
+    }
+
+    for (const [metadataKey, metadata] of Object.entries(metadataEntries)) {
+      const metadataLookupKey = normalizeAccountLookupKey(metadataKey);
+      const existing = catalogByLookupKey.get(metadataLookupKey);
+      if (existing) {
+        existing.metadata = metadata;
+        existing.name = metadataKey;
+      } else {
+        catalogByLookupKey.set(metadataLookupKey, {
+          name: metadataKey,
+          metadata,
+        });
+      }
+    }
+
+    return Array.from(catalogByLookupKey.values())
+      .sort((a, b) => a.name.localeCompare(b.name))
+      .map(({ name, metadata }) => {
+        const accountType = metadata?.accountType;
+        return {
+          id: this.getAccountId(name),
+          name,
+          accountType,
+          archived: accountType?.toLowerCase() === 'archived',
+          currency: metadata?.currency,
+        };
+      });
   }
 
   

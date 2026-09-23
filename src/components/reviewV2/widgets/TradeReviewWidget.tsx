@@ -30,6 +30,7 @@ import { ChevronDown, CornerDownRight } from '../../shared/icons/ObsidianIcon';
 import { StickyHeaderPortal, useStickyHeader } from '../../shared/StickyHeader';
 import { scrollToNextReviewItemAfterCollapse } from './shared/reviewScrollUtils';
 import { ReviewWidgetSkeleton } from './shared/ReviewWidgetSkeleton';
+import { openReviewWidgetFile } from '../reviewWidgetNavigation';
 import {
   getTradeReviewQuestionIdCandidates,
   getTradeReviewQuestionKnownLabels,
@@ -1606,7 +1607,7 @@ const TradeReviewCardBody: React.FC<{
         <button
           type="button"
           className="journalit-trade-review-secondary-action"
-          onClick={() => void plugin.openFile(trade.path!, false)}
+          onClick={() => void openReviewWidgetFile(plugin, trade.path!)}
         >
           {t('widget.trade-review.open-trade-note')}
         </button>

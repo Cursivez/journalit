@@ -649,11 +649,6 @@ export const TRADE_FORM_STYLES = `
     background: var(--background-modifier-hover) !important;
     border-color: var(--interactive-accent) !important;
   }
-  .trade-form-view-container .formSubmitHelperText {
-    font-size: 12px !important;
-    color: var(--text-muted) !important;
-    text-align: right !important;
-  }
   .trade-form-view-container .twoColumnLayout {
     display: grid !important;
     grid-template-columns: 1fr 1fr !important;

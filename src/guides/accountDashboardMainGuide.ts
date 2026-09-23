@@ -8,13 +8,9 @@ import {
   ACCOUNT_DASHBOARD_MAIN_GUIDE_ID,
   ACCOUNT_DASHBOARD_METRICS_TARGET_ID,
   ACCOUNT_DASHBOARD_SECTIONS_TARGET_ID,
-  ACCOUNT_DASHBOARD_SETTINGS_BUTTON_TARGET_ID,
-  ACCOUNT_DASHBOARD_SETTINGS_INCLUSION_TARGET_ID,
-  ACCOUNT_DASHBOARD_SETTINGS_OPENED_ACTION_ID,
-  ACCOUNT_DASHBOARD_SETTINGS_ORDER_TARGET_ID,
-  ACCOUNT_DASHBOARD_SETTINGS_TYPES_TARGET_ID,
-  ACCOUNT_DASHBOARD_TRADE_TYPE_FILTER_TARGET_ID,
+  ACCOUNT_DASHBOARD_MODE_SWITCH_TARGET_ID,
 } from './accountDashboardGuideIds';
+
 
 export function registerAccountDashboardMainGuide(
   guideRegistry: GuideRegistry
@@ -22,7 +18,7 @@ export function registerAccountDashboardMainGuide(
   guideRegistry.registerGuide({
     id: ACCOUNT_DASHBOARD_MAIN_GUIDE_ID,
     viewType: ACCOUNT_DASHBOARD_VIEW_TYPE,
-    version: 1,
+    version: 5,
     autoShow: true,
     priority: 110,
     initialStepId: 'intro',
@@ -49,19 +45,12 @@ export function registerAccountDashboardMainGuide(
         targetId: ACCOUNT_DASHBOARD_METRICS_TARGET_ID,
       },
       {
-        id: 'sections',
-        title: t('account-dashboard.guide.main.sections.title'),
-        description: t('account-dashboard.guide.main.sections.description'),
+        id: 'mode-switch',
+        title: t('account-dashboard.guide.main.mode-switch.title'),
+        description: t('account-dashboard.guide.main.mode-switch.description'),
         progression: 'manual',
-        targetId: ACCOUNT_DASHBOARD_SECTIONS_TARGET_ID,
-      },
-      {
-        id: 'trade-filter',
-        title: t('account-dashboard.guide.main.trade-filter.title'),
-        description: t('account-dashboard.guide.main.trade-filter.description'),
-        progression: 'manual',
-        targetId: ACCOUNT_DASHBOARD_TRADE_TYPE_FILTER_TARGET_ID,
-        placement: 'right',
+        targetId: ACCOUNT_DASHBOARD_MODE_SWITCH_TARGET_ID,
+        skipIfTargetMissing: true,
       },
       {
         id: 'create-account',
@@ -71,47 +60,6 @@ export function registerAccountDashboardMainGuide(
         ),
         progression: 'manual',
         targetId: ACCOUNT_DASHBOARD_CREATE_BUTTON_TARGET_ID,
-      },
-      {
-        id: 'settings',
-        title: t('account-dashboard.guide.main.settings.title'),
-        description: t('account-dashboard.guide.main.settings.description'),
-        progression: 'action-required',
-        targetId: ACCOUNT_DASHBOARD_SETTINGS_BUTTON_TARGET_ID,
-        requiredActionId: ACCOUNT_DASHBOARD_SETTINGS_OPENED_ACTION_ID,
-      },
-      {
-        id: 'settings-types',
-        title: t('account-dashboard.guide.main.settings-types.title'),
-        description: t(
-          'account-dashboard.guide.main.settings-types.description'
-        ),
-        progression: 'manual',
-        targetId: ACCOUNT_DASHBOARD_SETTINGS_TYPES_TARGET_ID,
-        placement: 'right',
-        skipIfTargetMissing: false,
-      },
-      {
-        id: 'settings-inclusion',
-        title: t('account-dashboard.guide.main.settings-inclusion.title'),
-        description: t(
-          'account-dashboard.guide.main.settings-inclusion.description'
-        ),
-        progression: 'manual',
-        targetId: ACCOUNT_DASHBOARD_SETTINGS_INCLUSION_TARGET_ID,
-        placement: 'right',
-        skipIfTargetMissing: false,
-      },
-      {
-        id: 'settings-order',
-        title: t('account-dashboard.guide.main.settings-order.title'),
-        description: t(
-          'account-dashboard.guide.main.settings-order.description'
-        ),
-        progression: 'manual',
-        targetId: ACCOUNT_DASHBOARD_SETTINGS_ORDER_TARGET_ID,
-        placement: 'right',
-        skipIfTargetMissing: false,
       },
       {
         id: 'open-account',

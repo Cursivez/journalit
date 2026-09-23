@@ -9,12 +9,7 @@ import React, {
   useState,
   memo,
 } from 'react';
-import {
-  List,
-  RowComponentProps,
-  ListImperativeAPI,
-  useDynamicRowHeight,
-} from 'react-window';
+import { List, RowComponentProps, ListImperativeAPI } from 'react-window';
 import { TimeNode, TradeLogMetrics } from '../../services/tradelog/types';
 import { LazyTradeLogNode } from './LazyTradeLogNode';
 import { ColumnDefinition } from './columnConfig';
@@ -26,6 +21,15 @@ const EMPTY_METRICS: TradeLogMetrics = {
   winRate: 0,
   tradeCount: 0,
 };
+
+
+
+
+
+
+
+const TRADE_LOG_ROW_HEIGHT = 48;
+const TRADE_GROUP_HEADER_ROW_HEIGHT = 32;
 
 
 interface VirtualRowProps {
@@ -121,7 +125,7 @@ interface RenderedTradeLogTreeProps {
   flattenedNodes: FlatNode[];
   expandedNodes: Set<string>;
   rowProps: VirtualRowProps;
-  rowHeight: ReturnType<typeof useDynamicRowHeight>;
+  rowHeight: (index: number, rowProps: VirtualRowProps) => number;
   containerHeight: number;
   listRef: React.RefObject<ListImperativeAPI | null>;
   scrollContainerRef: React.RefObject<HTMLDivElement | null>;
@@ -441,21 +445,13 @@ function TradeLogTreeComponent({
     onTreeReady,
   });
 
-  const rowHeightCacheKey = useMemo(
-    () =>
-      [
-        viewLevel ?? 'trades',
-        isExpandedMode ? 'expanded' : 'compact',
-        gridTemplate ?? '',
-        flattenedNodes.map(({ node }) => node.id).join('\u001f'),
-      ].join('|'),
-    [flattenedNodes, gridTemplate, isExpandedMode, viewLevel]
+  const getRowHeight = useCallback(
+    (index: number) =>
+      flattenedNodes[index]?.node.type === 'trade-group-header'
+        ? TRADE_GROUP_HEADER_ROW_HEIGHT
+        : TRADE_LOG_ROW_HEIGHT,
+    [flattenedNodes]
   );
-
-  const dynamicRowHeight = useDynamicRowHeight({
-    defaultRowHeight: 48,
-    key: rowHeightCacheKey,
-  });
 
   
   const shouldVirtualize = flattenedNodes.length > 50;
@@ -608,7 +604,7 @@ function TradeLogTreeComponent({
         flattenedNodes={flattenedNodes}
         expandedNodes={expandedNodes}
         rowProps={rowProps}
-        rowHeight={dynamicRowHeight}
+        rowHeight={getRowHeight}
         containerHeight={containerHeight}
         listRef={listRef}
         scrollContainerRef={scrollContainerRef}

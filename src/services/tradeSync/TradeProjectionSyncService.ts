@@ -16,12 +16,16 @@ import { TradovateClientDiagnosticsService } from './TradovateClientDiagnosticsS
 import { BrokerSyncJobPoller } from './BrokerSyncJobPoller';
 import { TradovateBrokerSyncProvider } from './TradovateBrokerSyncProvider';
 import { RithmicBrokerSyncProvider } from './RithmicBrokerSyncProvider';
+import { CTraderBrokerSyncProvider } from './CTraderBrokerSyncProvider';
+import type { BrokerSyncAccountBinding } from './BrokerSyncProvider';
 import type {
   BrokerClientOperationContext,
   BrokerConnectionSyncOutcome,
   BrokerSyncAllResult,
   TradeProjectionSyncResult,
 } from './types';
+import { buildProjectionSyncOperationResult } from '../tradeOperations/resultBuilders';
+import { DemoSyncGate } from '../../demo/DemoSyncGate';
 
 const AUTOMATIC_SYNC_INTERVAL_MS = 15 * 60 * 1000;
 
@@ -31,6 +35,7 @@ export class TradeProjectionSyncService {
   private readonly restoreRunner: TradeProjectionRestoreRunner;
   private readonly tradovate: BrokerSyncJobPoller;
   private readonly rithmic: BrokerSyncJobPoller;
+  private readonly ctrader: BrokerSyncJobPoller;
   private activeSync: Promise<TradeProjectionSyncResult> | null = null;
   private readonly timerIds = new Set<number>();
   private readonly sleepResolvers = new Map<number, () => void>();
@@ -40,6 +45,7 @@ export class TradeProjectionSyncService {
     this.diagnostics = new TradovateClientDiagnosticsService(plugin);
     const tradovateProvider = new TradovateBrokerSyncProvider();
     const rithmicProvider = new RithmicBrokerSyncProvider();
+    const ctraderProvider = new CTraderBrokerSyncProvider();
     const host = {
       isStopped: () => this.stopped,
       sleep: (delayMs: number) => this.sleep(delayMs),
@@ -56,19 +62,43 @@ export class TradeProjectionSyncService {
       this.diagnostics,
       host
     );
+    this.ctrader = new BrokerSyncJobPoller(
+      plugin,
+      ctraderProvider,
+      this.diagnostics,
+      host
+    );
     this.restoreRunner = new TradeProjectionRestoreRunner(
       plugin,
       this.projectionClient,
       this.diagnostics,
-      [tradovateProvider, rithmicProvider],
+      [tradovateProvider, rithmicProvider, ctraderProvider],
       () => this.stopped
     );
   }
 
   start(): void {
     const synchronize = () => {
-      if (this.stopped) return;
-      void this.syncProjections().catch(() => undefined);
+      if (this.stopped || this.activeSync) return;
+      const initiatingOwnerUserId = getTradeProjectionOwnerId(this.plugin);
+      if (!initiatingOwnerUserId) return;
+      void this.syncProjections()
+        .then((result) => {
+          if (
+            this.stopped ||
+            getTradeProjectionOwnerId(this.plugin) !== initiatingOwnerUserId
+          ) {
+            return;
+          }
+          this.plugin.ensureTradeOperationResultService().record(
+            buildProjectionSyncOperationResult({
+              result,
+              source: 'automatic-sync',
+              ownerUserId: initiatingOwnerUserId,
+            })
+          );
+        })
+        .catch(() => undefined);
     };
     this.plugin.registerInterval(
       window.setInterval(synchronize, AUTOMATIC_SYNC_INTERVAL_MS)
@@ -85,7 +115,9 @@ export class TradeProjectionSyncService {
   syncProjections(
     operation?: BrokerClientOperationContext
   ): Promise<TradeProjectionSyncResult> {
-    if (this.stopped) return Promise.resolve(this.emptyResult());
+    if (this.stopped || DemoSyncGate.isActive()) {
+      return Promise.resolve(this.emptyResult());
+    }
     if (operation?.scope === 'connection') {
       return Promise.reject(
         new Error('Canonical projection requires aggregate diagnostic scope')
@@ -96,6 +128,48 @@ export class TradeProjectionSyncService {
       this.activeSync = null;
     });
     return this.activeSync;
+  }
+
+  async quiesceForSampleContext(): Promise<void> {
+    while (this.activeSync) {
+      await Promise.allSettled([this.activeSync]);
+    }
+  }
+
+  
+  async syncRemappedAccountProjections(
+    accountBindings: BrokerSyncAccountBinding[],
+    operation?: BrokerClientOperationContext
+  ): Promise<TradeProjectionSyncResult> {
+    if (operation?.scope === 'connection') {
+      return Promise.reject(
+        new Error('Canonical projection requires aggregate diagnostic scope')
+      );
+    }
+    const initiatingUserId =
+      operation?.ownerUserId ?? getTradeProjectionOwnerId(this.plugin);
+    const ownershipChanged = createTradeProjectionOwnershipGuard(
+      this.plugin,
+      initiatingUserId
+    );
+    const assertOwner = () => {
+      if (this.stopped || ownershipChanged()) {
+        throw new Error('Trade Projection sync stopped');
+      }
+    };
+    assertOwner();
+    while (true) {
+      await this.waitForActiveSync(assertOwner);
+      assertOwner();
+      if (accountBindings.length === 0) return this.emptyResult();
+      if (this.activeSync) continue;
+      this.activeSync = this.restoreRunner
+        .runForRemappedAccounts(accountBindings, operation)
+        .finally(() => {
+          this.activeSync = null;
+        });
+      return this.activeSync;
+    }
   }
 
   syncConnection(
@@ -111,6 +185,14 @@ export class TradeProjectionSyncService {
     operation?: BrokerClientOperationContext
   ): Promise<TradeProjectionSyncResult> {
     return this.runConnectionSync(this.rithmic, connectionId, operation);
+  }
+
+  
+  syncCTraderConnection(
+    connectionId: string,
+    operation?: BrokerClientOperationContext
+  ): Promise<TradeProjectionSyncResult> {
+    return this.runConnectionSync(this.ctrader, connectionId, operation);
   }
 
   projectAfterJob(
@@ -154,6 +236,45 @@ export class TradeProjectionSyncService {
   
   syncRithmicAll(connectionIds: string[]): Promise<BrokerSyncAllResult> {
     return this.runSyncAll(this.rithmic, connectionIds);
+  }
+
+  projectAfterCTraderJob(
+    connectionId: string,
+    jobId: string,
+    operation?: BrokerClientOperationContext
+  ): Promise<TradeProjectionSyncResult> {
+    return this.runProjectionHandoff(
+      this.ctrader,
+      connectionId,
+      jobId,
+      operation
+    );
+  }
+
+  waitForCTraderCloudSync(
+    connectionId: string,
+    jobId: string,
+    operation?: BrokerClientOperationContext
+  ): Promise<'succeeded' | 'partial'> {
+    return this.ctrader.waitForCompletion(connectionId, jobId, operation);
+  }
+
+  async waitForCTraderCloudSyncTerminal(
+    connectionId: string,
+    jobId: string,
+    operation?: BrokerClientOperationContext
+  ): Promise<'succeeded' | 'partial' | 'failed' | 'cancelled'> {
+    const { status } = await this.ctrader.waitForTerminalStatus(
+      connectionId,
+      jobId,
+      operation
+    );
+    return status;
+  }
+
+  
+  syncCTraderAll(connectionIds: string[]): Promise<BrokerSyncAllResult> {
+    return this.runSyncAll(this.ctrader, connectionIds);
   }
 
   private async runConnectionSync(
@@ -215,10 +336,7 @@ export class TradeProjectionSyncService {
       currentOperation
     );
     assertHandoffOwner();
-    while (this.activeSync) {
-      await Promise.allSettled([this.activeSync]);
-      assertHandoffOwner();
-    }
+    await this.waitForActiveSync(assertHandoffOwner);
     assertHandoffOwner();
     const projectionOperation =
       await this.diagnostics.createProjectionOperation(
@@ -299,14 +417,18 @@ export class TradeProjectionSyncService {
         syncRunId
       );
     assertSyncOwner();
-    while (this.activeSync) {
-      await Promise.allSettled([this.activeSync]);
-      assertSyncOwner();
-    }
+    await this.waitForActiveSync(assertSyncOwner);
     assertSyncOwner();
     const projection = await this.syncProjections(projectionOperation);
     assertSyncOwner();
     return { outcomes, projection };
+  }
+
+  private async waitForActiveSync(assertOwner: () => void): Promise<void> {
+    while (this.activeSync) {
+      await Promise.allSettled([this.activeSync]);
+      assertOwner();
+    }
   }
 
   private sleep(delayMs: number): Promise<void> {

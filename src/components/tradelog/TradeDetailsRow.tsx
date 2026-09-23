@@ -1514,23 +1514,18 @@ const TradeDetailsContent = memo<{
                 ? accountName.substring(0, maxLength) + '...'
                 : accountName;
 
-              const cellContent = (
-                <span className="trade-account-text">{displayText}</span>
-              );
-
+              
+              
+              
               return (
                 <div key="account" className="trade-account-cell">
-                  {isTruncated ? (
-                    <Tooltip
-                      content={accountName}
-                      delay={0}
-                      preferredPosition="top"
-                    >
-                      {cellContent}
-                    </Tooltip>
-                  ) : (
-                    cellContent
-                  )}
+                  <Tooltip
+                    content={accountName}
+                    delay={0}
+                    preferredPosition="top"
+                  >
+                    <span className="trade-account-text">{displayText}</span>
+                  </Tooltip>
                 </div>
               );
             }
@@ -2734,7 +2729,10 @@ export const TradeDetailsRow = memo<TradeDetailsRowProps>(
       },
       [isMultiSelectMode, onClick, onToggleSelection, trade]
     );
-    const rowAriaLabel = useMemo(
+    
+    
+    
+    const rowTitle = useMemo(
       () =>
         `${trade.instrument || t('common.unknown')} - ${formatDateDisplay(safeParseDateValue(trade.entryTime), plugin?.settings.trade.dateFormat, ' ')}`,
       [plugin?.settings.trade.dateFormat, trade.entryTime, trade.instrument]
@@ -2767,7 +2765,6 @@ export const TradeDetailsRow = memo<TradeDetailsRowProps>(
             <div
               className="trade-details-row trades-view-row"
               role="group"
-              aria-label={rowAriaLabel}
               tabIndex={0}
               onClick={handleTradeCellActivate}
               onKeyDown={(event) => {
@@ -2800,7 +2797,6 @@ export const TradeDetailsRow = memo<TradeDetailsRowProps>(
             <div
               className="trade-details-row tree-view-row"
               role="group"
-              aria-label={rowAriaLabel}
               tabIndex={0}
               onClick={handleTradeCellActivate}
               onKeyDown={(event) => {
@@ -2844,7 +2840,7 @@ export const TradeDetailsRow = memo<TradeDetailsRowProps>(
           <FullscreenPortal
             isOpen={isFullscreenOpen}
             onClose={closeFullscreen}
-            title={rowAriaLabel}
+            title={rowTitle}
             portalId="trade-log-image-portal"
           >
             <FullscreenImageViewer

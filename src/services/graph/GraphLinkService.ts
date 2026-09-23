@@ -2,6 +2,7 @@ import { App, TFile, TFolder } from 'obsidian';
 import type JournalitPlugin from '../../main';
 import { getTradeIdentityNoteType } from '../../utils/tradeIdentity';
 import { eventBus } from '../events/EventBus';
+import { getReviewChangedPaths } from '../events/reviewChangedPaths';
 import type { Unsubscribe } from '../events/types';
 import { GeneratedGraphWriteCoordinator } from './GeneratedGraphWriteCoordinator';
 import { GraphFrontmatterReader } from './GraphFrontmatterReader';
@@ -26,7 +27,6 @@ import {
   type GraphLinkRebuildResult,
 } from './graphTypes';
 
-export const GRAPH_LINK_MIGRATION_VERSION = '2026-07-native-graph-links-v1';
 const GRAPH_AFFECTING_TRADE_SETTING_SOURCES = new Set([
   'week-start',
   'trading-day-cutoff',
@@ -48,6 +48,7 @@ export class GraphLinkService {
   private cachedIndex: GraphIndex | undefined;
   private initialized = false;
   private destroyed = false;
+  private contextSwitching = false;
 
   constructor(private readonly plugin: JournalitPlugin) {
     this.app = plugin.app;
@@ -73,7 +74,9 @@ export class GraphLinkService {
       }),
       eventBus.subscribe('review:changed', (payload) => {
         if (payload.type === 'migration') return;
-        if (payload.filePath) this.reconcilePathSoon(payload.filePath);
+        for (const filePath of getReviewChangedPaths(payload)) {
+          this.reconcilePathSoon(filePath);
+        }
         if (payload.action === 'created' || payload.action === 'deleted') {
           this.scheduleRebuild();
         }
@@ -170,36 +173,52 @@ export class GraphLinkService {
     this.generatedWrites.destroy();
     this.cachedIndex = undefined;
     this.pendingPaths.clear();
+    this.contextSwitching = false;
     this.initialized = false;
   }
 
-  public async runMigrationIfNeeded(): Promise<GraphLinkRebuildResult> {
-    if (
-      this.plugin.settings.trade.graphLinkMigrationVersion ===
-      GRAPH_LINK_MIGRATION_VERSION
-    ) {
-      return createEmptyResult();
+  public async quiesceForContextSwitch(): Promise<void> {
+    this.contextSwitching = true;
+    if (this.scheduledRebuild !== undefined) {
+      window.clearTimeout(this.scheduledRebuild);
+      this.scheduledRebuild = undefined;
     }
-
-    const result = await this.rebuildAll();
-    if (result.failed === 0 && result.conflicted === 0 && !result.cancelled) {
-      this.plugin.settings.trade.graphLinkMigrationVersion =
-        GRAPH_LINK_MIGRATION_VERSION;
-      await this.plugin.saveSettings();
+    if (this.scheduledPathReconciliation !== undefined) {
+      window.clearTimeout(this.scheduledPathReconciliation);
+      this.scheduledPathReconciliation = undefined;
     }
-    return result;
+    this.pendingPaths.clear();
+    await this.operationQueue;
+    this.cachedIndex = undefined;
+    this.generatedWrites.destroy();
   }
 
+  public resumeAfterContextSwitch(): void {
+    this.contextSwitching = false;
+    this.cachedIndex = undefined;
+    this.scheduleRebuild();
+  }
+
+  
   public rebuildAll(): Promise<GraphLinkRebuildResult> {
+    if (this.contextSwitching) return Promise.resolve(this.cancelledResult());
     return this.enqueue(() => this.rebuildAllNow());
   }
 
   public reconcilePath(path: string): Promise<GraphLinkRebuildResult> {
+    if (this.contextSwitching) return Promise.resolve(this.cancelledResult());
     return this.enqueue(() => this.reconcilePathNow(path));
   }
 
+  private cancelledResult(): GraphLinkRebuildResult {
+    const result = createEmptyResult();
+    result.cancelled = true;
+    return result;
+  }
+
   private reconcilePathSoon(path: string): void {
-    if (this.destroyed || !this.isJournalPath(path)) return;
+    if (this.destroyed || this.contextSwitching || !this.isJournalPath(path))
+      return;
     this.pendingPaths.add(path);
     if (this.scheduledPathReconciliation !== undefined) return;
     this.scheduledPathReconciliation = window.setTimeout(() => {
@@ -291,7 +310,7 @@ export class GraphLinkService {
   }
 
   private scheduleRebuild(): void {
-    if (this.destroyed) return;
+    if (this.destroyed || this.contextSwitching) return;
     this.cachedIndex = undefined;
     if (this.scheduledRebuild !== undefined) {
       window.clearTimeout(this.scheduledRebuild);

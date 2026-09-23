@@ -1,12 +1,7 @@
-import React, {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from 'react';
+import React, { useCallback, useMemo, useRef, useState } from 'react';
 import { t } from '../../lang/helpers';
 import type { ReviewStatusFilter as ReviewStatusFilterValue } from '../../services/tradelog/types';
+import { AnchoredMenu } from '../shared/menus/AnchoredMenu';
 
 interface ReviewStatusFilterProps {
   selectedReviewStatus: ReviewStatusFilterValue[];
@@ -34,26 +29,6 @@ export const ReviewStatusFilter: React.FC<ReviewStatusFilterProps> = React.memo(
   ({ selectedReviewStatus, onChange }) => {
     const [isOpen, setIsOpen] = useState(false);
     const dropdownRef = useRef<HTMLDivElement>(null);
-
-    useEffect(() => {
-      const handleClickOutside = (event: MouseEvent) => {
-        if (
-          dropdownRef.current &&
-          event.target instanceof Node &&
-          !dropdownRef.current.contains(event.target)
-        ) {
-          setIsOpen(false);
-        }
-      };
-
-      window.activeDocument.addEventListener('mousedown', handleClickOutside);
-      return () => {
-        window.activeDocument.removeEventListener(
-          'mousedown',
-          handleClickOutside
-        );
-      };
-    }, []);
 
     const summary = useMemo(() => {
       if (selectedReviewStatus.length !== 1) {
@@ -97,61 +72,64 @@ export const ReviewStatusFilter: React.FC<ReviewStatusFilterProps> = React.memo(
             <span className="dropdown-arrow">{isOpen ? '▲' : '▼'}</span>
           </button>
 
-          {isOpen && (
-            <div className="journalit-tradelog-status-options-dropdown">
-              <div
-                className="journalit-tradelog-status-option-item select-all"
-                onClick={() => handleReviewStatusChange('all')}
-                role="checkbox"
-                tabIndex={0}
-                aria-checked={selectedReviewStatus.length === 0}
-                onKeyDown={(event) =>
-                  handleKeyDown(event, () => handleReviewStatusChange('all'))
-                }
+          <AnchoredMenu
+            isOpen={isOpen}
+            triggerRef={dropdownRef}
+            onClose={() => setIsOpen(false)}
+            className="journalit-tradelog-status-options-dropdown"
+          >
+            <div
+              className="journalit-tradelog-status-option-item select-all"
+              onClick={() => handleReviewStatusChange('all')}
+              role="checkbox"
+              tabIndex={0}
+              aria-checked={selectedReviewStatus.length === 0}
+              onKeyDown={(event) =>
+                handleKeyDown(event, () => handleReviewStatusChange('all'))
+              }
+            >
+              <span
+                className={`journalit-tradelog-checkbox journalit-tradelog-status-checkbox${
+                  selectedReviewStatus.length === 0 ? ' checked' : ''
+                }`}
+                aria-hidden="true"
               >
-                <span
-                  className={`journalit-tradelog-checkbox journalit-tradelog-status-checkbox${
-                    selectedReviewStatus.length === 0 ? ' checked' : ''
-                  }`}
-                  aria-hidden="true"
-                >
-                  {selectedReviewStatus.length === 0 ? '✓' : ''}
-                </span>
-                <span>{t('common.select-all')}</span>
-              </div>
-
-              <div className="journalit-tradelog-status-divider"></div>
-
-              {REVIEW_STATUS_OPTIONS.map((option) => {
-                const checked = selectedReviewStatus.includes(option.value);
-                return (
-                  <div
-                    key={option.value}
-                    className="journalit-tradelog-status-option-item"
-                    onClick={() => handleReviewStatusChange(option.value)}
-                    role="checkbox"
-                    tabIndex={0}
-                    aria-checked={checked}
-                    onKeyDown={(event) =>
-                      handleKeyDown(event, () =>
-                        handleReviewStatusChange(option.value)
-                      )
-                    }
-                  >
-                    <span
-                      className={`journalit-tradelog-checkbox journalit-tradelog-status-checkbox${
-                        checked ? ' checked' : ''
-                      }`}
-                      aria-hidden="true"
-                    >
-                      {checked ? '✓' : ''}
-                    </span>
-                    <span>{t(option.labelKey)}</span>
-                  </div>
-                );
-              })}
+                {selectedReviewStatus.length === 0 ? '✓' : ''}
+              </span>
+              <span>{t('common.select-all')}</span>
             </div>
-          )}
+
+            <div className="journalit-tradelog-status-divider"></div>
+
+            {REVIEW_STATUS_OPTIONS.map((option) => {
+              const checked = selectedReviewStatus.includes(option.value);
+              return (
+                <div
+                  key={option.value}
+                  className="journalit-tradelog-status-option-item"
+                  onClick={() => handleReviewStatusChange(option.value)}
+                  role="checkbox"
+                  tabIndex={0}
+                  aria-checked={checked}
+                  onKeyDown={(event) =>
+                    handleKeyDown(event, () =>
+                      handleReviewStatusChange(option.value)
+                    )
+                  }
+                >
+                  <span
+                    className={`journalit-tradelog-checkbox journalit-tradelog-status-checkbox${
+                      checked ? ' checked' : ''
+                    }`}
+                    aria-hidden="true"
+                  >
+                    {checked ? '✓' : ''}
+                  </span>
+                  <span>{t(option.labelKey)}</span>
+                </div>
+              );
+            })}
+          </AnchoredMenu>
         </div>
       </div>
     );

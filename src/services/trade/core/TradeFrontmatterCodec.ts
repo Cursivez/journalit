@@ -6,6 +6,10 @@ import { shouldShowTradeDividends } from '../../../components/forms/trade/types'
 import { areSnapshotKeysClaimedByCustomFields } from '../../../utils/unrealizedPnl';
 import { TradeMutationInput } from './types';
 import { serializeImageAnnotationsForFrontmatter } from '../../../utils/imageAnnotations';
+import {
+  SAMPLE_ENTITY_ID_FRONTMATTER_KEY,
+  SAMPLE_INSTANCE_FRONTMATTER_KEY,
+} from '../../../demo/DemoOwnership';
 
 export const CANONICAL_EXECUTION_MIGRATION_VERSION =
   '2026-05-canonical-execution-v2';
@@ -138,6 +142,14 @@ export function buildTradeFrontmatter(
   if (typeof data.templateVersion === 'number') {
     frontmatterData.templateVersion = data.templateVersion;
   }
+  const sampleInstance = data[SAMPLE_INSTANCE_FRONTMATTER_KEY];
+  if (typeof sampleInstance === 'string' && sampleInstance.trim()) {
+    frontmatterData[SAMPLE_INSTANCE_FRONTMATTER_KEY] = sampleInstance.trim();
+  }
+  const sampleEntityId = data[SAMPLE_ENTITY_ID_FRONTMATTER_KEY];
+  if (typeof sampleEntityId === 'string' && sampleEntityId.trim()) {
+    frontmatterData[SAMPLE_ENTITY_ID_FRONTMATTER_KEY] = sampleEntityId.trim();
+  }
   if (data.canonicalTradeId) {
     frontmatterData.canonicalTradeId = data.canonicalTradeId;
   }
@@ -150,6 +162,9 @@ export function buildTradeFrontmatter(
   }
   if (data.canonicalAccountId) {
     frontmatterData.canonicalAccountId = data.canonicalAccountId;
+  }
+  if (data.canonicalAccountIdentity) {
+    frontmatterData.canonicalAccountIdentity = data.canonicalAccountIdentity;
   }
   if (data.canonicalBroker) {
     frontmatterData.canonicalBroker = data.canonicalBroker;
@@ -317,6 +332,7 @@ export function buildTradeFrontmatter(
         ...(target.closePercent !== undefined && {
           closePercent: target.closePercent,
         }),
+        ...(target.size !== undefined && { size: target.size }),
       }));
     } else {
       frontmatterData.takeProfits = undefined;
@@ -538,18 +554,6 @@ export function serializeTradeFrontmatter(
 
   lines.push('---');
   return lines.join('\n');
-}
-
-export function decodeTradeFrontmatter(
-  frontmatter: Record<string, unknown>
-): Record<string, unknown> {
-  return migrateTradeFrontmatter(frontmatter);
-}
-
-export function migrateTradeFrontmatter(
-  frontmatter: Record<string, unknown>
-): Record<string, unknown> {
-  return { ...frontmatter };
 }
 
 export function backfillCanonicalExecutionFrontmatter(

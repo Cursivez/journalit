@@ -4,6 +4,8 @@ import {
   FTPCredentials,
   FTPProvisionedCredentials,
 } from '../../settings/types';
+import type { TradeProjectionPersistedTradeSummary } from '../tradeSync/types';
+import type { SyncResponse } from './ApiClient';
 
 export type {
   SyncResponse,
@@ -12,6 +14,17 @@ export type {
   Trade,
   TradesResponse,
 } from './ApiClient';
+
+export const METATRADER_SYNC_NOT_ENTITLED_STATUS = 'not-entitled';
+export const METATRADER_SYNC_ENTITLEMENT_UNVERIFIED_STATUS =
+  'entitlement-unverified';
+
+export interface MetaTraderSyncResult {
+  ownerUserId: string;
+  response: SyncResponse;
+  importedTrades: TradeProjectionPersistedTradeSummary[];
+  failedTradeWriteCount: number;
+}
 
 export interface TradeSyncMapping {
   [tradeId: number]: string; 

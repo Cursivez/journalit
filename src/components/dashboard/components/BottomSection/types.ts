@@ -143,6 +143,14 @@ export const AVAILABLE_WIDGETS: WidgetDefinition[] = [
     maxSize: { w: 12, h: 7 },
   },
   {
+    id: 'mfeScatter',
+    name: t('widget.mfeScatter.name'),
+    description: t('widget.mfeScatter.description'),
+    category: 'analysis',
+    minSize: { w: 4, h: 5 },
+    defaultSize: { w: 6, h: 8 },
+  },
+  {
     id: 'rollingWinRate',
     name: 'Rolling Win/Loss Ratio',
     description:

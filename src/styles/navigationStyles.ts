@@ -96,6 +96,8 @@ export const NAVIGATION_STYLES = `
   .journalit-navigation-view-container .journalit-nav-item {
     display: flex;
     align-items: center;
+    width: calc(100% - 12px);
+    box-sizing: border-box;
     padding: 6px 12px;
     border-radius: 6px;
     font-size: 13px;
@@ -110,6 +112,77 @@ export const NAVIGATION_STYLES = `
 
   .journalit-navigation-view-container .journalit-nav-item:hover {
     background-color: var(--background-modifier-hover);
+  }
+
+  .journalit-navigation-view-container button.journalit-native-button--unstyled.journalit-sidebar-nav-button {
+    width: calc(100% - 12px);
+    margin: 1px 6px;
+    padding: 6px 12px;
+    border-radius: 6px;
+    background-color: transparent;
+  }
+
+  .journalit-navigation-view-container button.journalit-native-button--unstyled.journalit-sidebar-nav-button:hover {
+    background-color: var(--background-modifier-hover);
+  }
+
+  .journalit-navigation-view-container .journalit-nav-entity-item {
+    margin-left: 6px;
+    padding-left: 42px;
+    max-width: none;
+  }
+
+  .journalit-navigation-view-container .journalit-nav-entity-item:hover {
+    background-color: transparent;
+  }
+
+  .journalit-navigation-view-container .journalit-nav-entity-item::after {
+    content: '';
+    position: absolute;
+    inset: 0 0 0 30px;
+    border-radius: 6px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .journalit-navigation-view-container .journalit-nav-entity-item:hover::after {
+    background-color: var(--background-modifier-hover);
+  }
+
+  .journalit-navigation-view-container .journalit-nav-entity-item > * {
+    position: relative;
+    z-index: 1;
+  }
+
+  .journalit-navigation-view-container .journalit-nav-entity-children {
+    position: relative;
+  }
+
+  .journalit-navigation-view-container .journalit-nav-entity-children::before {
+    content: '';
+    position: absolute;
+    top: -1px;
+    bottom: 14px;
+    left: 26px;
+    border-left: 1px solid var(--background-modifier-border);
+    pointer-events: none;
+  }
+
+  .journalit-navigation-view-container .journalit-nav-entity-item::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 20px;
+    width: 10px;
+    border-top: 1px solid var(--background-modifier-border);
+    pointer-events: none;
+    z-index: 1;
+  }
+
+  .journalit-navigation-view-container .journalit-nav-entity-item[data-editing="true"] {
+    cursor: default;
+    max-width: none;
+    padding-right: 28px;
   }
 
   .journalit-navigation-view-container .journalit-nav-item[data-editing="true"] {
@@ -160,6 +233,8 @@ export const NAVIGATION_STYLES = `
     transform: translateY(-50%);
     width: 20px;
     height: 20px;
+    min-width: 20px;
+    min-height: 20px;
     background-color: var(--background-modifier-error);
     color: white;
     border: none;
@@ -169,7 +244,24 @@ export const NAVIGATION_STYLES = `
     justify-content: center;
     cursor: pointer;
     padding: 0;
+    margin: 0;
+    line-height: 0;
     z-index: 20;
+  }
+
+  .journalit-navigation-view-container .journalit-nav-item-remove .journalit-obsidian-icon {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 10px;
+    height: 10px;
+    transform: translate(-50%, -50%);
+  }
+
+  .journalit-navigation-view-container .journalit-nav-item-remove .journalit-obsidian-icon svg {
+    display: block;
+    width: 10px;
+    height: 10px;
   }
 
   .journalit-navigation-view-container .journalit-nav-item-remove:hover {
@@ -180,6 +272,28 @@ export const NAVIGATION_STYLES = `
     margin-top: 16px;
     border-top: 1px solid var(--background-modifier-border);
     padding-top: 8px;
+  }
+
+  .journalit-navigation-view-container .journalit-nav-add-shortcut {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    width: calc(100% - 24px);
+    margin: 12px 12px 0;
+    padding: 7px 10px;
+    border: 1px dashed var(--background-modifier-border);
+    border-radius: 6px;
+    background-color: transparent;
+    color: var(--text-muted);
+    font-size: 12px;
+    cursor: pointer;
+  }
+
+  .journalit-navigation-view-container .journalit-nav-add-shortcut:hover {
+    color: var(--text-normal);
+    border-color: var(--interactive-accent);
+    background-color: var(--background-modifier-hover);
   }
 
   .journalit-navigation-view-container .journalit-nav-restore-header {
@@ -237,12 +351,12 @@ export const NAVIGATION_STYLES = `
     background-color: var(--background-modifier-hover);
   }
 
-  .journalit-navigation-view-container .journalit-nav-search {
+  :is(.journalit-navigation-view-container, .journalit-entity-shortcut-picker) .journalit-nav-search {
     padding: 4px 8px 4px;
     flex-shrink: 0;
   }
 
-  .journalit-navigation-view-container .journalit-nav-search-input-wrapper {
+  :is(.journalit-navigation-view-container, .journalit-entity-shortcut-picker) .journalit-nav-search-input-wrapper {
     display: flex;
     align-items: center;
     gap: 6px;
@@ -253,12 +367,12 @@ export const NAVIGATION_STYLES = `
     transition: border-color 120ms ease, box-shadow 120ms ease;
   }
 
-  .journalit-navigation-view-container .journalit-nav-search:focus-within .journalit-nav-search-input-wrapper {
+  :is(.journalit-navigation-view-container, .journalit-entity-shortcut-picker) .journalit-nav-search:focus-within .journalit-nav-search-input-wrapper {
     border-color: var(--background-modifier-border-hover);
     box-shadow: 0 0 0 1px var(--background-modifier-border-hover);
   }
 
-  .journalit-navigation-view-container .journalit-nav-search-input {
+  :is(.journalit-navigation-view-container, .journalit-entity-shortcut-picker) .journalit-nav-search-input {
     flex: 1;
     border: none !important;
     background: transparent !important;
@@ -270,17 +384,17 @@ export const NAVIGATION_STYLES = `
     min-width: 0;
   }
 
-  .journalit-navigation-view-container .journalit-nav-search-input:focus {
+  :is(.journalit-navigation-view-container, .journalit-entity-shortcut-picker) .journalit-nav-search-input:focus {
     border: none !important;
     outline: none !important;
     box-shadow: none !important;
   }
 
-  .journalit-navigation-view-container .journalit-nav-search-input::placeholder {
+  :is(.journalit-navigation-view-container, .journalit-entity-shortcut-picker) .journalit-nav-search-input::placeholder {
     color: var(--text-faint);
   }
 
-  .journalit-navigation-view-container .journalit-nav-search-icon {
+  :is(.journalit-navigation-view-container, .journalit-entity-shortcut-picker) .journalit-nav-search-icon {
     width: 16px;
     height: 16px;
     color: var(--text-faint);
@@ -291,7 +405,7 @@ export const NAVIGATION_STYLES = `
     line-height: 0;
   }
 
-  .journalit-navigation-view-container .journalit-nav-search-clear {
+  :is(.journalit-navigation-view-container, .journalit-entity-shortcut-picker) .journalit-nav-search-clear {
     background: none;
     border: none;
     padding: 2px;
@@ -303,23 +417,20 @@ export const NAVIGATION_STYLES = `
     flex-shrink: 0;
   }
 
-  .journalit-navigation-view-container .journalit-nav-search-clear:hover {
+  :is(.journalit-navigation-view-container, .journalit-entity-shortcut-picker) .journalit-nav-search-clear:hover {
     color: var(--text-muted);
     background-color: var(--background-modifier-hover);
   }
 
-  .journalit-navigation-view-container .journalit-nav-search-results {
+  .journalit-navigation-view-container :is(.journalit-nav-search-results, .journalit-nav-content-scroll) {
     flex: 1;
     min-height: 0;
     overflow-y: auto;
     padding-bottom: 8px;
-  }
-
-  .journalit-navigation-view-container .journalit-nav-content-scroll {
-    flex: 1;
-    min-height: 0;
-    overflow-y: auto;
-    padding-bottom: 8px;
+    overscroll-behavior: contain;
+    scroll-behavior: auto;
+    will-change: scroll-position;
+    contain: layout;
   }
 
   .journalit-navigation-view-container .journalit-nav-search-section-header {

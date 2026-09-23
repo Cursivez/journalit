@@ -36,9 +36,7 @@ function parseKeyEventCurrency(value: string): string | undefined {
   return KEY_EVENT_CURRENCIES.find((currency) => currency === value);
 }
 
-export function keyEventImpactForColor(
-  color: string | undefined
-): NewsEventImpact {
+function keyEventImpactForColor(color: string | undefined): NewsEventImpact {
   return COLOR_IMPACTS[getKeyEventColor(color)];
 }
 

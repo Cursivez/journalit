@@ -10,14 +10,11 @@ import {
   CheckCircle2,
   Import,
   RefreshCw,
-  RotateCcw,
-  Save,
   Server,
 } from '../../../components/shared/icons/ObsidianIcon';
 import { Button } from '../../../components/ui';
 import { t } from '../../../lang/helpers';
 import { logger } from '../../../utils/logger';
-import { formatLocalizedDateTime } from '../../../utils/localizedDateTime';
 import type JournalitPlugin from '../../../main';
 import { ApiClient } from '../../../services/backend/ApiClient';
 import { BackendTradeImportService } from '../../../services/tradeImport/BackendTradeImportService';
@@ -35,21 +32,28 @@ import {
 } from '../../../services/tradeSync/TradeProjectionOwnership';
 import { loadAllProjectionPages } from '../../../services/tradeSync/TradeProjectionPagination';
 import { TradeImportWorkflowService } from '../../../services/tradeImport/TradeImportWorkflowService';
+import { buildProjectionSyncOperationResult } from '../../../services/tradeOperations/resultBuilders';
 import type {
   TradeProjectionAccountInventoryItem,
   TradeProjection,
 } from '../../../services/tradeSync/types';
+import {
+  isRateLimitActive,
+  isTradeSyncRateLimitError,
+  tradeSyncRateLimitMessage,
+} from '../../../services/tradeSync/TradeSyncRateLimit';
+import { useRateLimitCountdown } from './brokerSyncKit';
+import {
+  TradeProjectionInventory,
+  selectDefaultLocalAccount,
+  type ImportAccountOption,
+} from './TradeImportProjectionInventory';
 
 interface TradeImportSyncPanelProps {
   plugin: JournalitPlugin;
   projectionOnly?: boolean;
   brokerFilter?: string;
   canonicalAccountIds?: readonly string[];
-}
-
-interface ImportAccountOption {
-  name: string;
-  id: string;
 }
 
 type ConnectionStatus = 'connected' | 'disconnected' | 'unknown';
@@ -68,6 +72,8 @@ interface TradeImportSyncState {
   selectedLocalAccounts: AccountMappings;
   inventoryOwnership?: TradeProjectionInventoryOwnership;
   restoringAccountId?: string;
+  mappingRetryAtByAccountId: Record<string, number>;
+  restoreRetryAtByAccountId: Record<string, number>;
 }
 
 interface TradeProjectionInventoryOwnership {
@@ -130,36 +136,22 @@ export async function loadTradeProjectionInventoryForCurrentOwner(
       };
 }
 
+type TradeImportSyncUpdate =
+  | Partial<TradeImportSyncState>
+  | ((state: TradeImportSyncState) => Partial<TradeImportSyncState>);
+
 function reducer(
   state: TradeImportSyncState,
-  update: Partial<TradeImportSyncState>
+  update: TradeImportSyncUpdate
 ): TradeImportSyncState {
-  return { ...state, ...update };
+  const patch = typeof update === 'function' ? update(state) : update;
+  return { ...state, ...patch };
 }
 
 function connectionText(status: ConnectionStatus): string {
   if (status === 'connected') return t('backend.status.connected');
   if (status === 'disconnected') return t('backend.status.disconnected');
   return t('backend.status.checking');
-}
-
-export function selectDefaultLocalAccount(
-  account: TradeProjectionAccountInventoryItem,
-  localAccounts: ImportAccountOption[]
-): string {
-  const mappedId = account.mapping?.localAccountId;
-  if (mappedId) {
-    const mappedAccount = localAccounts.find((local) => local.id === mappedId);
-    if (mappedAccount) return mappedAccount.name;
-  }
-  const mappedName = account.mapping?.localAccountName;
-  if (mappedName && localAccounts.some((local) => local.name === mappedName)) {
-    return mappedName;
-  }
-  if (localAccounts.some((local) => local.name === account.displayName)) {
-    return account.displayName;
-  }
-  return '';
 }
 
 export async function persistTradeProjectionMappingForInventoryOwner(
@@ -305,217 +297,6 @@ const TradeImportSyncCards: React.FC<{
   </div>
 );
 
-const TradeImportAccountCard: React.FC<{
-  account: TradeProjectionAccountInventoryItem;
-  localAccounts: ImportAccountOption[];
-  selectedLocalAccount: string;
-  busy: boolean;
-  isRestoring: boolean;
-  onSelectLocalAccount: (accountName: string) => void;
-  onCreateLocalAccount: () => void;
-  onSaveMapping: () => void;
-  onRestore: () => void;
-}> = ({
-  account,
-  localAccounts,
-  selectedLocalAccount,
-  busy,
-  isRestoring,
-  onSelectLocalAccount,
-  onCreateLocalAccount,
-  onSaveMapping,
-  onRestore,
-}) => {
-  const persistedMappingUnchanged = Boolean(
-    account.mapping?.localAccountName === selectedLocalAccount
-  );
-  const matchingLocalAccountExists = localAccounts.some(
-    (localAccount) => localAccount.name === account.displayName
-  );
-  return (
-    <article className="journalit-trade-import-account-card">
-      <div className="journalit-trade-import-account-card__header">
-        <div>
-          <strong>{account.displayName}</strong>
-          <span>{account.broker}</span>
-        </div>
-        <span className="journalit-trade-import-account-card__count">
-          {t('trade-sync.import.account.restorable-count', {
-            count: String(account.restorableCount),
-          })}
-        </span>
-      </div>
-
-      <div className="journalit-trade-import-account-card__metrics">
-        <span>
-          {t('trade-sync.import.account.synced-count', {
-            count: String(account.syncedCount),
-          })}
-        </span>
-        <span>
-          {t('trade-sync.import.account.missing-count', {
-            count: String(account.missingCount + account.localDeletedCount),
-          })}
-        </span>
-        {(account.failedCount > 0 || account.conflictCount > 0) && (
-          <span>
-            {t('trade-sync.import.account.issue-count', {
-              count: String(account.failedCount + account.conflictCount),
-            })}
-          </span>
-        )}
-        {account.conflictCount > 0 && (
-          <p className="journalit-trade-import-account-card__conflict-help">
-            {t('trade-sync.import.account.conflict-repair')}
-          </p>
-        )}
-        {account.mapping?.lastSyncedAt && (
-          <span>
-            {t('trade-sync.tradovate.last-projection')}:{' '}
-            {formatLocalizedDateTime(account.mapping.lastSyncedAt)}
-          </span>
-        )}
-        {account.pendingCount + account.needsRewriteCount > 0 && (
-          <span>
-            {t('trade-sync.tradovate.pending-projections', {
-              count: String(account.pendingCount + account.needsRewriteCount),
-            })}
-          </span>
-        )}
-      </div>
-
-      <div className="journalit-trade-import-account-card__mapping">
-        <label>
-          <span>{t('trade-sync.import.account.local-account')}</span>
-          <select
-            value={selectedLocalAccount}
-            onChange={(event) => onSelectLocalAccount(event.target.value)}
-          >
-            <option value="">{t('account.link-modal.select-account')}</option>
-            {localAccounts.map((localAccount) => (
-              <option key={localAccount.name} value={localAccount.name}>
-                {localAccount.name}
-              </option>
-            ))}
-          </select>
-        </label>
-        <small>{t('trade-sync.import.account.mapping-hint')}</small>
-      </div>
-
-      <div className="journalit-trade-import-account-card__actions">
-        <Button
-          variant="secondary"
-          disabled={busy || matchingLocalAccountExists}
-          onClick={onCreateLocalAccount}
-          title={t('trade-sync.import.action.create-local-account-title')}
-        >
-          {t('trade-sync.import.action.create-local-account')}
-        </Button>
-        <Button
-          variant="secondary"
-          disabled={busy || !selectedLocalAccount || persistedMappingUnchanged}
-          onClick={onSaveMapping}
-          title={t('trade-sync.import.action.save-mapping-title')}
-        >
-          <Save size={14} />
-          {t('trade-sync.import.action.save-mapping')}
-        </Button>
-        <Button
-          variant="primary"
-          disabled={
-            busy || !selectedLocalAccount || account.restorableCount === 0
-          }
-          onClick={onRestore}
-          title={t('trade-sync.import.action.restore-account-title')}
-        >
-          <RotateCcw size={14} />
-          {isRestoring
-            ? t('trade-sync.import.action.restoring')
-            : t('trade-sync.import.action.restore-account')}
-        </Button>
-      </div>
-    </article>
-  );
-};
-
-interface TradeProjectionInventoryProps {
-  showPendingAcks: boolean;
-  pendingAckCount: number;
-  inventoryLoaded: boolean;
-  accounts: TradeProjectionAccountInventoryItem[];
-  localAccounts: ImportAccountOption[];
-  selectedLocalAccounts: AccountMappings;
-  busy: boolean;
-  restoringAccountId?: string;
-  onSelectLocalAccount: (accountId: string, localAccountName: string) => void;
-  onCreateLocalAccount: (account: TradeProjectionAccountInventoryItem) => void;
-  onSaveMapping: (
-    account: TradeProjectionAccountInventoryItem,
-    localAccountName: string
-  ) => void;
-  onRestore: (
-    account: TradeProjectionAccountInventoryItem,
-    localAccountName: string
-  ) => void;
-}
-
-const TradeProjectionInventory: React.FC<TradeProjectionInventoryProps> = ({
-  showPendingAcks,
-  pendingAckCount,
-  inventoryLoaded,
-  accounts,
-  localAccounts,
-  selectedLocalAccounts,
-  busy,
-  restoringAccountId,
-  onSelectLocalAccount,
-  onCreateLocalAccount,
-  onSaveMapping,
-  onRestore,
-}) => (
-  <>
-    {showPendingAcks && pendingAckCount > 0 && (
-      <div className="journalit-trade-import-sync-pending">
-        {t('trade-sync.import.pending-acks', {
-          count: String(pendingAckCount),
-        })}
-      </div>
-    )}
-
-    {inventoryLoaded && accounts.length === 0 && (
-      <div className="journalit-trade-import-sync-placeholder">
-        {t('trade-sync.import.empty-accounts')}
-      </div>
-    )}
-
-    {inventoryLoaded && accounts.length > 0 && (
-      <div className="journalit-trade-import-account-grid">
-        {accounts.map((account) => {
-          const selectedLocalAccount =
-            selectedLocalAccounts[account.accountId] ??
-            selectDefaultLocalAccount(account, localAccounts);
-          return (
-            <TradeImportAccountCard
-              key={account.accountId}
-              account={account}
-              localAccounts={localAccounts}
-              selectedLocalAccount={selectedLocalAccount}
-              busy={busy}
-              isRestoring={restoringAccountId === account.accountId}
-              onSelectLocalAccount={(localAccountName) =>
-                onSelectLocalAccount(account.accountId, localAccountName)
-              }
-              onCreateLocalAccount={() => onCreateLocalAccount(account)}
-              onSaveMapping={() => onSaveMapping(account, selectedLocalAccount)}
-              onRestore={() => onRestore(account, selectedLocalAccount)}
-            />
-          );
-        })}
-      </div>
-    )}
-  </>
-);
-
 export const TradeImportSyncPanel: React.FC<TradeImportSyncPanelProps> = ({
   plugin,
   projectionOnly = false,
@@ -531,6 +312,8 @@ export const TradeImportSyncPanel: React.FC<TradeImportSyncPanelProps> = ({
     accounts: [],
     localAccounts: initialAccounts,
     selectedLocalAccounts: {},
+    mappingRetryAtByAccountId: {},
+    restoreRetryAtByAccountId: {},
   });
 
   const backendService = useMemo(() => new BackendTradeImportService(), []);
@@ -557,7 +340,10 @@ export const TradeImportSyncPanel: React.FC<TradeImportSyncPanelProps> = ({
   const pendingAckCount =
     countPendingTradeProjectionAcksForCurrentOwner(plugin);
   const autoLoadVaultId = useRef<string | null>(null);
-
+  const now = useRateLimitCountdown(
+    state.mappingRetryAtByAccountId,
+    state.restoreRetryAtByAccountId
+  );
   const refreshConnection = useCallback(async () => {
     try {
       dispatchState({
@@ -702,23 +488,49 @@ export const TradeImportSyncPanel: React.FC<TradeImportSyncPanelProps> = ({
       account: TradeProjectionAccountInventoryItem,
       localAccountName: string
     ) => {
-      if (!state.vaultId || !localAccountName) return;
+      if (
+        !state.vaultId ||
+        !localAccountName ||
+        isRateLimitActive(state.mappingRetryAtByAccountId[account.accountId])
+      ) {
+        return;
+      }
       dispatchState({ busy: true });
       try {
         await persistMapping(account, localAccountName);
         await loadInventory();
       } catch (error) {
-        logger.error('Trade projection account mapping failed', error);
-        new Notice(t('trade-sync.import.notice.mapping-failed'));
+        if (isTradeSyncRateLimitError(error)) {
+          dispatchState((current) => ({
+            mappingRetryAtByAccountId: {
+              ...current.mappingRetryAtByAccountId,
+              [account.accountId]: error.retryAt,
+            },
+          }));
+          new Notice(tradeSyncRateLimitMessage(error.retryAt, error.action));
+        } else {
+          logger.error('Trade projection account mapping failed', error);
+          new Notice(t('trade-sync.import.notice.mapping-failed'));
+        }
       } finally {
         dispatchState({ busy: false });
       }
     },
-    [loadInventory, persistMapping, state.vaultId]
+    [
+      loadInventory,
+      persistMapping,
+      state.mappingRetryAtByAccountId,
+      state.vaultId,
+    ]
   );
 
   const createLocalAccount = useCallback(
     async (account: TradeProjectionAccountInventoryItem) => {
+      if (
+        isRateLimitActive(state.mappingRetryAtByAccountId[account.accountId])
+      ) {
+        return;
+      }
       const accountName = account.displayName;
       dispatchState({ busy: true });
       try {
@@ -734,8 +546,18 @@ export const TradeImportSyncPanel: React.FC<TradeImportSyncPanelProps> = ({
         await persistMapping(account, accountName);
         await loadInventory();
       } catch (error) {
-        logger.error('Trade projection local account creation failed', error);
-        new Notice(t('trade-sync.import.notice.create-account-failed'));
+        if (isTradeSyncRateLimitError(error)) {
+          dispatchState((current) => ({
+            mappingRetryAtByAccountId: {
+              ...current.mappingRetryAtByAccountId,
+              [account.accountId]: error.retryAt,
+            },
+          }));
+          new Notice(tradeSyncRateLimitMessage(error.retryAt, error.action));
+        } else {
+          logger.error('Trade projection local account creation failed', error);
+          new Notice(t('trade-sync.import.notice.create-account-failed'));
+        }
       } finally {
         dispatchState({ busy: false });
       }
@@ -745,6 +567,7 @@ export const TradeImportSyncPanel: React.FC<TradeImportSyncPanelProps> = ({
       refreshLocalAccounts,
       loadInventory,
       persistMapping,
+      state.mappingRetryAtByAccountId,
       state.selectedLocalAccounts,
     ]
   );
@@ -754,7 +577,13 @@ export const TradeImportSyncPanel: React.FC<TradeImportSyncPanelProps> = ({
       account: TradeProjectionAccountInventoryItem,
       localAccountName: string
     ) => {
-      if (!localAccountName) return;
+      if (
+        !localAccountName ||
+        isRateLimitActive(state.mappingRetryAtByAccountId[account.accountId]) ||
+        isRateLimitActive(state.restoreRetryAtByAccountId[account.accountId])
+      ) {
+        return;
+      }
       const initiatingOwnerUserId = getTradeProjectionOwnerId(plugin);
       const shouldStop = createTradeProjectionOwnershipGuard(
         plugin,
@@ -829,6 +658,19 @@ export const TradeImportSyncPanel: React.FC<TradeImportSyncPanelProps> = ({
           shouldStop,
         });
         if (shouldStop()) return;
+        plugin.ensureTradeOperationResultService().record(
+          buildProjectionSyncOperationResult({
+            result: {
+              accountCount: 1,
+              writtenCount: result.writtenCount,
+              failedCount: result.failedCount,
+              pendingCount: result.pendingCount,
+              importedTrades: result.importedTrades,
+            },
+            source: 'projection-restore',
+            ownerUserId: initiatingOwnerUserId,
+          })
+        );
         if (result.failedCount > 0) {
           new Notice(
             t('trade-import.restore.complete', {
@@ -853,8 +695,22 @@ export const TradeImportSyncPanel: React.FC<TradeImportSyncPanelProps> = ({
         await loadInventory();
       } catch (error) {
         if (shouldStop()) return;
-        logger.error('Trade projection restore failed', error);
-        new Notice(t('trade-sync.import.notice.restore-failed'));
+        if (isTradeSyncRateLimitError(error)) {
+          const field =
+            error.action === 'mapping'
+              ? 'mappingRetryAtByAccountId'
+              : 'restoreRetryAtByAccountId';
+          dispatchState((current) => ({
+            [field]: {
+              ...current[field],
+              [account.accountId]: error.retryAt,
+            },
+          }));
+          new Notice(tradeSyncRateLimitMessage(error.retryAt, error.action));
+        } else {
+          logger.error('Trade projection restore failed', error);
+          new Notice(t('trade-sync.import.notice.restore-failed'));
+        }
       } finally {
         dispatchState({ busy: false, restoringAccountId: undefined });
       }
@@ -864,6 +720,8 @@ export const TradeImportSyncPanel: React.FC<TradeImportSyncPanelProps> = ({
       persistMapping,
       plugin,
       projectionBackendService,
+      state.mappingRetryAtByAccountId,
+      state.restoreRetryAtByAccountId,
       state.vaultId,
       workflowService,
     ]
@@ -912,6 +770,9 @@ export const TradeImportSyncPanel: React.FC<TradeImportSyncPanelProps> = ({
         selectedLocalAccounts={state.selectedLocalAccounts}
         busy={state.busy}
         restoringAccountId={state.restoringAccountId}
+        mappingRetryAtByAccountId={state.mappingRetryAtByAccountId}
+        restoreRetryAtByAccountId={state.restoreRetryAtByAccountId}
+        now={now}
         onSelectLocalAccount={setSelectedLocalAccount}
         onCreateLocalAccount={(account) => void createLocalAccount(account)}
         onSaveMapping={(account, localAccountName) =>

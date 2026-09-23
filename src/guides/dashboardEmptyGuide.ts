@@ -12,7 +12,7 @@ export function registerDashboardEmptyGuide(
   guideRegistry.registerGuide({
     id: DASHBOARD_EMPTY_GUIDE_ID,
     viewType: HOME_VIEW_TYPE,
-    version: 3,
+    version: 4,
     autoShow: true,
     priority: 100,
     initialStepId: 'intro',
@@ -27,7 +27,7 @@ export function registerDashboardEmptyGuide(
       {
         id: 'empty-state',
         title: t('dashboard.guide.empty.state.title'),
-        description: t('dashboard.guide.empty.state.description'),
+        description: `${t('dashboard.guide.empty.state.description')} ${t('sample.empty.description')}`,
         progression: 'manual',
         targetId: DASHBOARD_EMPTY_STATE_TARGET_ID,
       },

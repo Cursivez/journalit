@@ -4,14 +4,24 @@ import { createRoot, Root } from 'react-dom/client';
 import { Zap, Lightbulb } from '../shared/icons/ObsidianIcon';
 import type JournalitPlugin from '../../main';
 import { t } from '../../lang/helpers';
-import { UPGRADE_URLS } from '../../constants';
+import { resolveUpgradeUrl } from '../../services/upgrade/upgradeOrigin';
+import type { UpgradeFeature } from '../../constants';
 import { openExternalUrl } from '../../utils/externalLinks';
 import { Button } from '../ui/Button';
 
-interface UpgradeModalProps {
+export interface UpgradeModalProps {
   app: App;
   plugin: JournalitPlugin;
+  
   featureName: string;
+  
+  feature?: UpgradeFeature;
+  
+  message?: string;
+  
+  benefits?: readonly string[];
+  
+  benefitsTitle?: string;
   onModalClose?: () => void;
 }
 
@@ -50,13 +60,22 @@ class UpgradeModal extends Modal {
   }
 }
 
+const DEFAULT_BENEFIT_KEYS = [
+  'upgrade.benefit.csv',
+  'upgrade.benefit.trade-sync',
+  'upgrade.benefit.multi-account',
+  'upgrade.benefit.economic-calendar',
+] as const;
+
 const UpgradeComponent: React.FC<
   UpgradeModalProps & { onClose: () => void }
-> = ({ featureName, onClose }) => {
+> = ({ featureName, feature, message, benefits, benefitsTitle, onClose }) => {
   const handleUpgrade = () => {
-    openExternalUrl(UPGRADE_URLS.genericUpgradeModal);
+    openExternalUrl(resolveUpgradeUrl(feature ?? 'genericUpgradeModal'));
     onClose();
   };
+
+  const benefitLines = benefits ?? DEFAULT_BENEFIT_KEYS.map((key) => t(key));
 
   return (
     <div className="upgrade-modal-content">
@@ -70,21 +89,18 @@ const UpgradeComponent: React.FC<
 
       
       <p className="upgrade-modal-message">
-        {t('upgrade.feature-message', { featureName })}
+        {message ?? t('upgrade.feature-message', { featureName })}
       </p>
 
       
       <div className="upgrade-modal-benefits">
         <h3 className="upgrade-modal-benefits-title">
-          {t('upgrade.benefits-title')}
+          {benefitsTitle ?? t('upgrade.benefits-title')}
         </h3>
         <ul className="upgrade-modal-benefits-list">
-          <li>{t('upgrade.benefit.csv')}</li>
-          <li>{t('upgrade.benefit.templates')}</li>
-          <li>{t('upgrade.benefit.trade-sync')}</li>
-          <li>{t('upgrade.benefit.multi-account')}</li>
-          <li>{t('upgrade.benefit.analytics')}</li>
-          <li>{t('upgrade.benefit.layouts')}</li>
+          {benefitLines.map((benefit) => (
+            <li key={benefit}>{benefit}</li>
+          ))}
         </ul>
       </div>
 
@@ -107,17 +123,7 @@ const UpgradeComponent: React.FC<
   );
 };
 
-export function openUpgradeModal(
-  app: App,
-  plugin: JournalitPlugin,
-  featureName: string,
-  onModalClose?: () => void
-): void {
-  const modal = new UpgradeModal({
-    app,
-    plugin,
-    featureName,
-    onModalClose,
-  });
+export function openUpgradeModal(options: UpgradeModalProps): void {
+  const modal = new UpgradeModal(options);
   modal.open();
 }

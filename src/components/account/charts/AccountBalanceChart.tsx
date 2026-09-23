@@ -3,28 +3,28 @@
 import React, { useState } from 'react';
 import { t } from '../../../lang/helpers';
 import { cssVars } from '../../../styles/inlineStylePolicy';
-import {
-  formatDateDisplay,
-  getUserDateFormat,
-  safeParseDateValue,
-} from '../../../utils/dateUtils';
+import { getUserDateFormat } from '../../../utils/dateUtils';
 import {
   CurrencyCode,
   parseCuratedCurrencyCode,
 } from '../../../utils/currencyConfig';
-import { getTradingDay } from '../../../utils/tradingDayUtils';
 import { usePlugin } from '../../../hooks/usePlugin';
-import { useDisplayFormatter } from '../../../hooks/useDisplayPolicy';
+import { projectCurrentPropChallengeRules } from '../../../services/propChallenge/PropChallengeRuleProjection';
 import {
-  generateNiceAxis,
-  calculateYAxisWidth,
-} from '../../../utils/chartUtils';
+  buildBalanceChartData,
+  calculateBalanceChartParams,
+  clampDrawdownSeriesToDomain,
+  resolveBalanceAxisPrecision,
+  startOfLocalDay,
+  type BalanceChartDataPoint,
+} from './accountBalanceChartModel';
+import { AccountBalanceOffScaleLevels } from './AccountBalanceOffScaleLevels';
+import { AccountBalanceChartDefs } from './AccountBalanceChartDefs';
+import { useDisplayFormatter } from '../../../hooks/useDisplayPolicy';
+import { calculateYAxisWidth } from '../../../utils/chartUtils';
 import {
   AccountData,
-  AccountTransaction,
-  ManualDrawdownSnapshot,
   TransactionType,
-  ProfitTargetType,
   DrawdownType,
 } from '../../../services/account/types';
 import { EmptyState } from '../../shared/EmptyState';
@@ -41,30 +41,9 @@ import {
 import { useCurrency } from '../../../contexts/CurrencyContext';
 import { ChartBase } from '../../charts/ChartBase';
 import { RechartsPortalTooltip } from '../../charts/RechartsPortalTooltip';
-import { hasLiveBalanceAdjustment } from '../../../services/account/liveBalanceAdjustment';
 
-const POSITIVE_BALANCE_COLOR = 'var(--chart-positive, #43a047)';
-const NEGATIVE_BALANCE_COLOR = 'var(--chart-negative, #e53935)';
 let accountBalanceChartIdCounter = 0;
 
-
-interface BalanceChartDataPoint {
-  date: string;
-  rawDate: Date;
-  balance: number;
-  drawdownLevel?: number;
-  transaction?: AccountTransaction;
-  isDeposit?: boolean;
-  isWithdrawal?: boolean;
-  isTrade?: boolean;
-  
-  isConsolidated?: boolean;
-  tradeCount?: number;
-  dailyPnL?: number;
-  hasEvents?: boolean; 
-  dayTransactions?: AccountTransaction[]; 
-  isInitialBalance?: boolean; 
-}
 
 
 interface AccountBalanceChartProps {
@@ -72,6 +51,8 @@ interface AccountBalanceChartProps {
   height?: number;
   
   currencyOverride?: string;
+  
+  selectedPhaseId?: string | null;
 }
 
 
@@ -317,490 +298,6 @@ CustomTooltip.displayName = 'AccountBalanceChartTooltip';
 
 
 
-const buildBalanceChartData = (
-  account: AccountData,
-  userDateFormat: string,
-  plugin: ReturnType<typeof usePlugin>,
-  getTradingDayKey: (date: Date) => string
-): BalanceChartDataPoint[] => {
-  
-  if (!account.transactions || account.transactions.length === 0) {
-    return [];
-  }
-
-  
-  const sortedTransactions = [...account.transactions].sort(
-    (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
-  );
-
-  
-  
-  let initialDrawdownLevel = account.initialBalance - account.drawdownAmount;
-  if (
-    account.drawdownType === DrawdownType.MANUAL &&
-    account.allDrawdownSnapshots &&
-    account.allDrawdownSnapshots.length > 0
-  ) {
-    
-    let applicableSnapshot: ManualDrawdownSnapshot | undefined;
-    let latestSnapshotTime = Number.NEGATIVE_INFINITY;
-
-    for (const snapshot of account.allDrawdownSnapshots) {
-      if (!snapshot?.date) continue;
-
-      const parsedDate = safeParseDateValue(snapshot.date);
-      if (
-        !parsedDate ||
-        isNaN(parsedDate.getTime()) ||
-        parsedDate > account.createdDate
-      ) {
-        continue;
-      }
-
-      const snapshotTime = parsedDate.getTime();
-      if (snapshotTime > latestSnapshotTime) {
-        latestSnapshotTime = snapshotTime;
-        applicableSnapshot = snapshot;
-      }
-    }
-
-    if (applicableSnapshot) {
-      initialDrawdownLevel = applicableSnapshot.drawdownLimit;
-    }
-  }
-
-  
-  const data: BalanceChartDataPoint[] = [];
-
-  
-  
-  if (account.createdDate) {
-    
-    const createdDate =
-      account.createdDate instanceof Date
-        ? account.createdDate
-        : new Date(account.createdDate);
-
-    
-    if (!isNaN(createdDate.getTime())) {
-      const creationDateString = createdDate.toISOString().split('T')[0];
-      const hasTransactionOnCreationDate = sortedTransactions.some(
-        (transaction) => {
-          
-          const transactionDate =
-            transaction.date instanceof Date
-              ? transaction.date
-              : new Date(transaction.date);
-          return (
-            transactionDate.toISOString().split('T')[0] === creationDateString
-          );
-        }
-      );
-
-      if (!hasTransactionOnCreationDate) {
-        data.push({
-          date: formatDateDisplay(createdDate, userDateFormat),
-          rawDate: createdDate,
-          balance: account.initialBalance,
-          
-          ...(account.drawdownType !== DrawdownType.NONE && {
-            drawdownLevel: initialDrawdownLevel,
-          }),
-        });
-      } else {
-        
-        
-        const hasInitialDeposit = sortedTransactions.some(
-          (t) =>
-            t.type === TransactionType.DEPOSIT &&
-            t.description === 'Initial deposit'
-        );
-
-        if (hasInitialDeposit) {
-          
-          const initialBalanceDate = new Date(createdDate);
-          initialBalanceDate.setHours(0, 0, 0, 0); 
-
-          data.push({
-            date: formatDateDisplay(initialBalanceDate, userDateFormat),
-            rawDate: initialBalanceDate,
-            balance: account.initialBalance,
-            isInitialBalance: true, 
-            
-            ...(account.drawdownType !== DrawdownType.NONE && {
-              drawdownLevel: initialDrawdownLevel,
-            }),
-          });
-        }
-      }
-    }
-  }
-
-  
-  const transactionsByDay = new Map<
-    string,
-    {
-      dayEnd: Date;
-      transactions: AccountTransaction[];
-      finalBalance: number;
-      tradeCount: number;
-      dailyPnL: number;
-      hasEvents: boolean;
-    }
-  >();
-
-  
-  
-  let peakBalance = account.initialBalance;
-  let currentDrawdownLevel = initialDrawdownLevel;
-
-  
-  
-  const nonCostTransactions = sortedTransactions.filter(
-    (t) => t.type !== TransactionType.COST
-  );
-  nonCostTransactions.forEach((transaction) => {
-    const transactionDate = new Date(transaction.date);
-    const tradingDay = getTradingDay(transactionDate, plugin);
-    
-    const tradingDayKey = getTradingDayKey(tradingDay);
-
-    
-    if (!transactionsByDay.has(tradingDayKey)) {
-      transactionsByDay.set(tradingDayKey, {
-        dayEnd: tradingDay,
-        transactions: [],
-        finalBalance: 0,
-        tradeCount: 0,
-        dailyPnL: 0,
-        hasEvents: false,
-      });
-    }
-
-    const dayRecord = transactionsByDay.get(tradingDayKey)!;
-
-    
-    dayRecord.transactions.push(transaction);
-
-    
-    dayRecord.finalBalance = transaction.balanceAfter;
-
-    
-    if (transaction.type === TransactionType.TRADE) {
-      dayRecord.tradeCount++;
-      dayRecord.dailyPnL += transaction.amount;
-    }
-
-    
-    if (
-      transaction.type === TransactionType.DEPOSIT ||
-      transaction.type === TransactionType.WITHDRAWAL
-    ) {
-      dayRecord.hasEvents = true;
-    }
-
-    
-    if (transactionDate > dayRecord.dayEnd) {
-      dayRecord.dayEnd = transactionDate;
-    }
-  });
-
-  
-  const tradingDays = Array.from(transactionsByDay.keys()).sort();
-
-  
-  tradingDays.forEach((dayKey) => {
-    const dayRecord = transactionsByDay.get(dayKey)!;
-    
-    
-    
-    const dayDate = new Date(dayRecord.dayEnd);
-
-    
-    let drawdownLevel = initialDrawdownLevel;
-
-    if (account.drawdownType === DrawdownType.EOD_TRAILING) {
-      
-      if (dayRecord.finalBalance > peakBalance) {
-        peakBalance = dayRecord.finalBalance;
-      }
-
-      
-      
-      
-      
-      
-      const newDrawdownLevel = Math.min(
-        account.initialBalance, 
-        Math.max(
-          peakBalance - account.drawdownAmount, 
-          currentDrawdownLevel 
-        )
-      );
-
-      
-      currentDrawdownLevel = newDrawdownLevel;
-      drawdownLevel = newDrawdownLevel;
-    } else if (
-      account.drawdownType === DrawdownType.MANUAL &&
-      account.allDrawdownSnapshots &&
-      account.allDrawdownSnapshots.length > 0
-    ) {
-      
-      const dayDate = dayRecord.dayEnd; 
-
-      let applicableSnapshot: ManualDrawdownSnapshot | undefined;
-      let latestSnapshotTime = Number.NEGATIVE_INFINITY;
-
-      for (const snapshot of account.allDrawdownSnapshots) {
-        if (!snapshot?.date) continue;
-
-        const parsedDate = safeParseDateValue(snapshot.date);
-        if (
-          !parsedDate ||
-          isNaN(parsedDate.getTime()) ||
-          parsedDate > dayDate
-        ) {
-          continue;
-        }
-
-        const snapshotTime = parsedDate.getTime();
-        if (snapshotTime > latestSnapshotTime) {
-          latestSnapshotTime = snapshotTime;
-          applicableSnapshot = snapshot;
-        }
-      }
-
-      if (applicableSnapshot) {
-        drawdownLevel = applicableSnapshot.drawdownLimit;
-      }
-    }
-
-    
-    const hasDeposits = dayRecord.transactions.some(
-      (t: AccountTransaction) =>
-        t.type === TransactionType.DEPOSIT &&
-        t.amount > 0 &&
-        t.description !== 'Initial deposit'
-    );
-    const hasWithdrawals = dayRecord.transactions.some(
-      (t: AccountTransaction) =>
-        t.type === TransactionType.WITHDRAWAL ||
-        (t.type === TransactionType.DEPOSIT && t.amount < 0)
-    );
-
-    
-    data.push({
-      date: formatDateDisplay(dayDate, userDateFormat),
-      rawDate: dayDate,
-      balance: dayRecord.finalBalance,
-      
-      ...(account.drawdownType !== DrawdownType.NONE && {
-        drawdownLevel: drawdownLevel,
-      }),
-      isConsolidated: true,
-      tradeCount: dayRecord.tradeCount,
-      dailyPnL: dayRecord.dailyPnL,
-      hasEvents: dayRecord.hasEvents,
-      isTrade: dayRecord.tradeCount > 0,
-      dayTransactions: dayRecord.transactions, 
-      
-      isDeposit: hasDeposits,
-      isWithdrawal: hasWithdrawals,
-    });
-  });
-
-  
-  
-  
-  
-
-  
-  
-  
-  const finalData = data
-    .sort((a, b) => a.rawDate.getTime() - b.rawDate.getTime())
-    .filter((point, index, sortedData) => {
-      if (!point.isInitialBalance) return true;
-
-      const nextPoint = sortedData[index + 1];
-      return !(
-        nextPoint &&
-        nextPoint.date === point.date &&
-        nextPoint.balance === point.balance
-      );
-    });
-
-  if (hasLiveBalanceAdjustment(account.liveBalanceAdjustment)) {
-    const lastPoint = finalData[finalData.length - 1];
-    const needsLiveBalancePoint =
-      !lastPoint || lastPoint.balance !== account.currentBalance;
-
-    if (needsLiveBalancePoint) {
-      const liveBalanceDate = new Date();
-      liveBalanceDate.setHours(23, 59, 59, 999);
-      finalData.push({
-        date: formatDateDisplay(liveBalanceDate, userDateFormat),
-        rawDate: liveBalanceDate,
-        balance: account.currentBalance,
-        drawdownLevel: lastPoint?.drawdownLevel,
-      });
-    }
-  }
-
-  return finalData.sort((a, b) => a.rawDate.getTime() - b.rawDate.getTime());
-};
-
-const calculateBalanceChartParams = (
-  displayChartData: Array<
-    BalanceChartDataPoint & {
-      displayBalance: number;
-      displayDrawdownLevel?: number;
-    }
-  >,
-  account: AccountData,
-  isBalanceMasked: boolean
-) => {
-  if (displayChartData.length === 0) {
-    return null;
-  }
-
-  if (isBalanceMasked) {
-    return {
-      domain: [0, 2] as [number, number],
-      ticks: [1],
-      profitTargetValue:
-        account.hasProfitTarget && account.profitTarget > 0 ? 1 : undefined,
-      showZeroLine: false,
-    };
-  }
-
-  
-  const balanceValues = displayChartData.map((point) => point.displayBalance);
-  const minBalanceValue = Math.min(...balanceValues);
-  const maxBalanceValue = Math.max(...balanceValues);
-  let minValue = minBalanceValue;
-  let maxValue = maxBalanceValue;
-
-  
-  if (account.hasProfitTarget && account.profitTarget > 0) {
-    const targetAmount =
-      account.profitTargetType === ProfitTargetType.PERCENTAGE
-        ? (account.initialBalance * account.profitTarget) / 100
-        : account.profitTarget;
-
-    
-    const totalTarget = account.initialBalance + targetAmount;
-    maxValue = Math.max(maxValue, totalTarget);
-  }
-  const meaningfulMaxValue = maxValue;
-
-  
-  
-  const drawdownLevels = displayChartData.flatMap((point) =>
-    point.displayDrawdownLevel === undefined ? [] : [point.displayDrawdownLevel]
-  );
-  const drawdownLevel =
-    drawdownLevels.length > 0 ? Math.min(...drawdownLevels) : undefined;
-
-  const dataMinValue = Math.min(minValue, drawdownLevel ?? minValue);
-
-  
-  const dataRange = maxValue - dataMinValue;
-
-  
-  maxValue = maxValue + dataRange * 0.05;
-
-  if (drawdownLevel !== undefined && drawdownLevel < minValue) {
-    minValue = drawdownLevel;
-  } else {
-    
-    minValue = minValue - dataRange * 0.1;
-  }
-
-  
-  
-  if (dataMinValue >= 0) {
-    minValue = Math.max(0, minValue);
-  }
-
-  
-  
-  
-  const balanceHeadroomRange = maxBalanceValue - minValue;
-  if (balanceHeadroomRange > 0) {
-    maxValue = Math.max(
-      maxValue,
-      maxBalanceValue + balanceHeadroomRange * 0.35
-    );
-  }
-
-  
-  if (minValue > 0 && minValue < maxValue * 0.05) {
-    minValue = 0;
-  }
-
-  
-  const profitTargetValue =
-    account.hasProfitTarget && account.profitTarget > 0
-      ? account.profitTargetType === ProfitTargetType.PERCENTAGE
-        ? account.initialBalance +
-          (account.initialBalance * account.profitTarget) / 100
-        : account.initialBalance + account.profitTarget
-      : undefined;
-
-  
-  
-  
-  let { domain, ticks } = generateNiceAxis(minValue, maxValue, 6, false, false);
-
-  while (ticks.length > 2 && ticks[ticks.length - 2] >= meaningfulMaxValue) {
-    ticks = ticks.slice(0, -1);
-    domain = [domain[0], ticks[ticks.length - 1]];
-  }
-
-  if (dataMinValue >= 0 && domain[0] < 0) {
-    domain = [0, domain[1]];
-    ticks = ticks.filter((tick) => tick >= 0);
-    if (!ticks.includes(0)) {
-      ticks = [0, ...ticks];
-    }
-  }
-
-  if (
-    drawdownLevel !== undefined &&
-    minBalanceValue >= drawdownLevel &&
-    domain[0] < drawdownLevel
-  ) {
-    domain = [drawdownLevel, domain[1]];
-    ticks = ticks.filter((tick) => tick >= drawdownLevel);
-    if (!ticks.includes(drawdownLevel)) {
-      ticks = [drawdownLevel, ...ticks];
-    }
-  }
-
-  const baselineFloor = isBalanceMasked ? undefined : account.initialBalance;
-  if (
-    baselineFloor !== undefined &&
-    minBalanceValue >= baselineFloor &&
-    !(drawdownLevel !== undefined && drawdownLevel < baselineFloor) &&
-    domain[0] < baselineFloor
-  ) {
-    domain = [baselineFloor, domain[1]];
-    ticks = ticks.filter((tick) => tick >= baselineFloor);
-    if (!ticks.includes(baselineFloor)) {
-      ticks = [baselineFloor, ...ticks];
-    }
-  }
-
-  return {
-    domain,
-    ticks,
-    profitTargetValue,
-    showZeroLine: domain[0] < 0 && domain[1] > 0,
-  };
-};
-
 interface BalanceDotContext {
   showDots: boolean;
   isPnlMasked: boolean;
@@ -931,107 +428,6 @@ const AccountBalanceChartEmpty: React.FC<{ height: number }> = ({ height }) => (
   </div>
 );
 
-const AccountBalanceChartDefs: React.FC<{
-  balanceGradientId: string;
-  balanceStrokeGradientId: string;
-  balanceAreaTransitionOffset: number;
-  balanceStrokeTransitionOffset: number;
-  isBalanceMasked: boolean;
-  isDrawdownMasked: boolean;
-}> = ({
-  balanceGradientId,
-  balanceStrokeGradientId,
-  balanceAreaTransitionOffset,
-  balanceStrokeTransitionOffset,
-  isBalanceMasked,
-  isDrawdownMasked,
-}) => {
-  const positiveColor = isBalanceMasked
-    ? 'var(--text-muted)'
-    : POSITIVE_BALANCE_COLOR;
-  const negativeColor = isBalanceMasked
-    ? 'var(--text-muted)'
-    : NEGATIVE_BALANCE_COLOR;
-
-  return (
-    <defs>
-      <linearGradient id={balanceGradientId} x1="0" y1="0" x2="0" y2="1">
-        {balanceAreaTransitionOffset <= 0.1 ? (
-          <>
-            <stop offset="0%" stopColor={negativeColor} stopOpacity={0.4} />
-            <stop offset="100%" stopColor={negativeColor} stopOpacity={0.1} />
-          </>
-        ) : balanceAreaTransitionOffset >= 99.9 ? (
-          <>
-            <stop offset="0%" stopColor={positiveColor} stopOpacity={0.4} />
-            <stop offset="100%" stopColor={positiveColor} stopOpacity={0.1} />
-          </>
-        ) : (
-          <>
-            <stop offset="0%" stopColor={positiveColor} stopOpacity={0.4} />
-            <stop
-              offset={`${balanceAreaTransitionOffset}%`}
-              stopColor={positiveColor}
-              stopOpacity={0.1}
-            />
-            <stop
-              offset={`${balanceAreaTransitionOffset}%`}
-              stopColor={negativeColor}
-              stopOpacity={0.1}
-            />
-            <stop offset="100%" stopColor={negativeColor} stopOpacity={0.4} />
-          </>
-        )}
-      </linearGradient>
-      <linearGradient id={balanceStrokeGradientId} x1="0" y1="0" x2="0" y2="1">
-        {balanceStrokeTransitionOffset <= 0.1 ? (
-          <>
-            <stop offset="0%" stopColor={negativeColor} />
-            <stop offset="100%" stopColor={negativeColor} />
-          </>
-        ) : balanceStrokeTransitionOffset >= 99.9 ? (
-          <>
-            <stop offset="0%" stopColor={positiveColor} />
-            <stop offset="100%" stopColor={positiveColor} />
-          </>
-        ) : (
-          <>
-            <stop offset="0%" stopColor={positiveColor} />
-            <stop
-              offset={`${Math.max(0.1, balanceStrokeTransitionOffset - 0.1)}%`}
-              stopColor={positiveColor}
-            />
-            <stop
-              offset={`${Math.min(99.9, balanceStrokeTransitionOffset + 0.1)}%`}
-              stopColor={negativeColor}
-            />
-            <stop offset="100%" stopColor={negativeColor} />
-          </>
-        )}
-      </linearGradient>
-      <filter id="balanceShadow" height="120%">
-        <feDropShadow dx="0" dy="1" stdDeviation="2" floodOpacity="0.1" />
-      </filter>
-      <linearGradient id="drawdownGradient" x1="0" y1="0" x2="0" y2="1">
-        <stop
-          offset="0%"
-          stopColor={
-            isDrawdownMasked ? 'var(--text-muted)' : 'var(--text-error)'
-          }
-          stopOpacity={0.2}
-        />
-        <stop
-          offset="100%"
-          stopColor={
-            isDrawdownMasked ? 'var(--text-muted)' : 'var(--text-error)'
-          }
-          stopOpacity={0.5}
-        />
-      </linearGradient>
-    </defs>
-  );
-};
-
 const calculateBalanceColorTransitionOffsets = (
   displayChartData: Array<{ displayBalance: number }>,
   baseline: number
@@ -1105,10 +501,133 @@ const AccountBalanceChartSeries: React.FC<AccountBalanceChartSeriesProps> = ({
   />
 );
 
+
+function useAccountBalanceChartModel(
+  account: AccountData,
+  currency: CurrencyCode,
+  isBalanceMasked: boolean,
+  
+  selectedPhaseId?: string | null
+) {
+  
+  
+  
+  
+  const propChallengeOverlay = React.useMemo(
+    () =>
+      selectedPhaseId === null
+        ? undefined
+        : projectCurrentPropChallengeRules(
+            account.propChallenge,
+            new Date(),
+            selectedPhaseId
+          ),
+    [account.propChallenge, selectedPhaseId]
+  );
+  const { formatValue } = useDisplayFormatter();
+  const userDateFormat = React.useMemo(() => getUserDateFormat(), []);
+  const plugin = usePlugin();
+
+  
+  const getTradingDayKey = React.useCallback((date: Date) => {
+    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+  }, []);
+
+  const chartData = React.useMemo(() => {
+    const series = buildBalanceChartData(
+      account,
+      userDateFormat,
+      plugin,
+      getTradingDayKey,
+      propChallengeOverlay
+    );
+    
+    
+    
+    if (!propChallengeOverlay) return series;
+    const { startMs, endMs } = propChallengeOverlay;
+    return series.filter((point) => {
+      const at = new Date(point.rawDate).getTime();
+      return (
+        (startMs === undefined || at >= startOfLocalDay(startMs)) &&
+        (endMs === undefined || at <= endMs)
+      );
+    });
+  }, [account, userDateFormat, plugin, getTradingDayKey, propChallengeOverlay]);
+
+  const displayChartData = React.useMemo(
+    () =>
+      isBalanceMasked
+        ? chartData.map((point) => ({
+            ...point,
+            displayBalance: 1,
+            displayDrawdownLevel:
+              point.drawdownLevel === undefined ? undefined : 1,
+          }))
+        : chartData.map((point) => ({
+            ...point,
+            displayBalance: point.balance,
+            displayDrawdownLevel: point.drawdownLevel,
+          })),
+    [chartData, isBalanceMasked]
+  );
+
+  const chartParams = React.useMemo(
+    () =>
+      calculateBalanceChartParams(
+        displayChartData,
+        account,
+        isBalanceMasked,
+        propChallengeOverlay
+      ),
+    [displayChartData, account, isBalanceMasked, propChallengeOverlay]
+  );
+
+  const renderedChartData = React.useMemo(
+    () =>
+      clampDrawdownSeriesToDomain(displayChartData, chartParams?.domain?.[0]),
+    [displayChartData, chartParams]
+  );
+
+  const balanceAxisPrecision = React.useMemo(
+    () => resolveBalanceAxisPrecision(chartParams?.ticks),
+    [chartParams]
+  );
+
+  const formatBalanceAxisTick = React.useCallback(
+    (value: number): string =>
+      formatValue({
+        kind: 'balance',
+        value,
+        currencyCode: currency,
+        precision: balanceAxisPrecision,
+      }),
+    [balanceAxisPrecision, currency, formatValue]
+  );
+
+  
+  const yAxisWidth = React.useMemo(() => {
+    if (!chartParams || !chartParams.ticks) return 50;
+    return calculateYAxisWidth(chartParams.ticks, formatBalanceAxisTick);
+  }, [chartParams, formatBalanceAxisTick]);
+
+  return {
+    propChallengeOverlay,
+    chartData,
+    displayChartData,
+    renderedChartData,
+    chartParams,
+    formatBalanceAxisTick,
+    yAxisWidth,
+    defaultRiskAmount: plugin?.settings?.trade?.defaultRiskAmount ?? 0,
+  };
+}
+
 export const AccountBalanceChart: React.FC<AccountBalanceChartProps> = ({
   account,
   height = 250,
   currencyOverride,
+  selectedPhaseId,
 }) => {
   const chartRef = React.useRef<HTMLDivElement>(null);
   const chartIdRef = React.useRef(
@@ -1130,13 +649,7 @@ export const AccountBalanceChart: React.FC<AccountBalanceChartProps> = ({
   const [dotsReadyForSignature, setDotsReadyForSignature] = useState('');
   const showDots = dotsReadyForSignature === transactionSignature;
 
-  
-  const userDateFormat = React.useMemo(() => getUserDateFormat(), []);
-  const plugin = usePlugin();
-
-  
-  const defaultRiskAmount = plugin?.settings?.trade?.defaultRiskAmount ?? 0;
-  const { formatValue, shouldMask } = useDisplayFormatter();
+  const { shouldMask } = useDisplayFormatter();
   const isBalanceMasked = shouldMask('balance');
   const isPnlMasked = shouldMask('pnl');
   const isMoneyMasked = shouldMask('money');
@@ -1148,69 +661,24 @@ export const AccountBalanceChart: React.FC<AccountBalanceChartProps> = ({
     ? 'var(--text-muted)'
     : 'var(--text-warning, gold)';
 
-  
-  const getTradingDayKey = React.useCallback((date: Date) => {
-    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
-  }, []);
-
-  const chartData = React.useMemo(
-    () =>
-      buildBalanceChartData(account, userDateFormat, plugin, getTradingDayKey),
-    [account, userDateFormat, plugin, getTradingDayKey]
+  const {
+    propChallengeOverlay,
+    chartData,
+    displayChartData,
+    renderedChartData,
+    chartParams,
+    formatBalanceAxisTick,
+    yAxisWidth,
+    defaultRiskAmount,
+  } = useAccountBalanceChartModel(
+    account,
+    currency,
+    isBalanceMasked,
+    selectedPhaseId
   );
-
-  const displayChartData = React.useMemo(
-    () =>
-      isBalanceMasked
-        ? chartData.map((point) => ({
-            ...point,
-            displayBalance: 1,
-            displayDrawdownLevel:
-              point.drawdownLevel === undefined ? undefined : 1,
-          }))
-        : chartData.map((point) => ({
-            ...point,
-            displayBalance: point.balance,
-            displayDrawdownLevel: point.drawdownLevel,
-          })),
-    [chartData, isBalanceMasked]
-  );
-
-  const chartParams = React.useMemo(
-    () =>
-      calculateBalanceChartParams(displayChartData, account, isBalanceMasked),
-    [displayChartData, account, isBalanceMasked]
-  );
-
-  const balanceAxisPrecision = React.useMemo(() => {
-    if (!chartParams?.ticks || chartParams.ticks.length < 2) return 0;
-
-    const tickSpacing = Math.min(
-      ...chartParams.ticks.slice(1).flatMap((tick, index) => {
-        const spacing = Math.abs(tick - chartParams.ticks[index]);
-        return spacing > 0 ? [spacing] : [];
-      })
-    );
-
-    return Number.isFinite(tickSpacing) && tickSpacing >= 1 ? 0 : undefined;
-  }, [chartParams]);
-
-  const formatBalanceAxisTick = React.useCallback(
-    (value: number): string =>
-      formatValue({
-        kind: 'balance',
-        value,
-        currencyCode: currency,
-        precision: balanceAxisPrecision,
-      }),
-    [balanceAxisPrecision, currency, formatValue]
-  );
-
-  
-  const yAxisWidth = React.useMemo(() => {
-    if (!chartParams || !chartParams.ticks) return 50;
-    return calculateYAxisWidth(chartParams.ticks, formatBalanceAxisTick);
-  }, [chartParams, formatBalanceAxisTick]);
+  const hasDrawdownSeries = propChallengeOverlay
+    ? propChallengeOverlay.drawdown !== undefined
+    : account.drawdownType !== DrawdownType.NONE;
 
   
   if (chartData.length === 0) {
@@ -1218,8 +686,22 @@ export const AccountBalanceChart: React.FC<AccountBalanceChartProps> = ({
   }
 
   
-  const { domain, ticks, profitTargetValue, showZeroLine } = chartParams!;
-  const balanceColorBaseline = isBalanceMasked ? 1 : account.initialBalance;
+  const {
+    domain,
+    ticks,
+    profitTargetValue,
+    profitTargetOffScaleBy,
+    drawdownFloorValue,
+    drawdownFloorOffScaleBy,
+    showZeroLine,
+  } = chartParams!;
+  
+  
+  
+  
+  const balanceBaseline =
+    propChallengeOverlay?.startingBalance ?? account.initialBalance;
+  const balanceColorBaseline = isBalanceMasked ? 1 : balanceBaseline;
   const balanceTransitionOffsets = calculateBalanceColorTransitionOffsets(
     displayChartData,
     balanceColorBaseline
@@ -1233,7 +715,7 @@ export const AccountBalanceChart: React.FC<AccountBalanceChartProps> = ({
       chartRef={chartRef}
     >
       <ComposedChart
-        data={displayChartData}
+        data={renderedChartData}
         margin={{ top: 4, right: 15, left: 10, bottom: 12 }}
       >
         <AccountBalanceChartDefs
@@ -1297,9 +779,9 @@ export const AccountBalanceChart: React.FC<AccountBalanceChartProps> = ({
         )}
 
         
-        {account.initialBalance !== 0 && (
+        {balanceBaseline !== 0 && (
           <ReferenceLine
-            y={account.initialBalance}
+            y={balanceBaseline}
             stroke="var(--text-muted)"
             strokeOpacity={0.7}
             strokeDasharray="3 3"
@@ -1308,7 +790,7 @@ export const AccountBalanceChart: React.FC<AccountBalanceChartProps> = ({
         )}
 
         
-        {profitTargetValue && (
+        {profitTargetValue && profitTargetOffScaleBy === undefined && (
           <ReferenceLine
             y={profitTargetValue}
             stroke={
@@ -1351,7 +833,7 @@ export const AccountBalanceChart: React.FC<AccountBalanceChartProps> = ({
         />
 
         
-        {account.drawdownType !== DrawdownType.NONE && (
+        {hasDrawdownSeries && (
           <Line
             type="stepAfter"
             dataKey="displayDrawdownLevel"
@@ -1367,7 +849,17 @@ export const AccountBalanceChart: React.FC<AccountBalanceChartProps> = ({
         )}
 
         
-        {account.drawdownType !== DrawdownType.NONE && (
+        <AccountBalanceOffScaleLevels
+          domain={domain}
+          drawdownFloorValue={drawdownFloorValue}
+          drawdownFloorOffScaleBy={drawdownFloorOffScaleBy}
+          profitTargetValue={profitTargetValue}
+          profitTargetOffScaleBy={profitTargetOffScaleBy}
+          formatValue={formatBalanceAxisTick}
+        />
+
+        
+        {hasDrawdownSeries && (
           <Area
             type="monotone"
             dataKey="displayDrawdownLevel"

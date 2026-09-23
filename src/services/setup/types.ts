@@ -57,6 +57,8 @@ export interface Setup {
   createdAt: string;
   updatedAt: string;
   order: number; 
+  journalitSampleInstance?: string;
+  journalitSampleEntityId?: string;
 }
 
 export interface SetupData {
@@ -78,6 +80,8 @@ export interface SetupData {
   ruleSetVersion?: number;
   linkedNotes?: string[];
   order?: number;
+  journalitSampleInstance?: string;
+  journalitSampleEntityId?: string;
 }
 
 export interface SetupRefResolution {

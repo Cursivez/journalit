@@ -13,3 +13,7 @@ export function isTradeProjectionGeneration(value: unknown): value is string {
     typeof value === 'string' && TRADE_PROJECTION_GENERATION_PATTERN.test(value)
   );
 }
+
+export function isRestoreTradeProjectionGeneration(value?: string): boolean {
+  return value?.startsWith('restore_') === true;
+}

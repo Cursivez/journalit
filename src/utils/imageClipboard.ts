@@ -1,4 +1,5 @@
 import { App, requestUrl } from 'obsidian';
+import { DemoSyncGate } from '../demo/DemoSyncGate';
 import { resolveVaultMediaFile } from './imageMediaUtils';
 
 function getMimeTypeFromPath(path: string): string | null {
@@ -263,6 +264,7 @@ export async function getClipboardReadyImageBlob({
     return normalizeClipboardImageBlob(dataUrlToBlob(imageUrl));
   }
 
+  DemoSyncGate.assertNetworkAllowed();
   const response = await requestUrl({ url: imageUrl });
   const responseMimeType = getResponseMimeType(response.headers);
   const mimeType = responseMimeType?.startsWith('image/')

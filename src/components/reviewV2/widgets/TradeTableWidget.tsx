@@ -48,6 +48,7 @@ import {
 } from './shared/accountDisplay';
 import { formatDateDisplay } from '../../../utils/dateUtils';
 import { getReviewTradeDate } from '../utils/reviewTradeDates';
+import { openReviewWidgetFile } from '../reviewWidgetNavigation';
 
 type ReviewTableTrade = Record<string, unknown> &
   Parameters<typeof calculateAssetAdjustedPriceMoveValue>[0] & {
@@ -418,7 +419,7 @@ export const TradeTableWidget: React.FC<TradeTableWidgetProps> = React.memo(
     
     const openNote = useCallback(
       (path: string) => {
-        void plugin.openFile(path, false);
+        void openReviewWidgetFile(plugin, path);
       },
       [plugin]
     );

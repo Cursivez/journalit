@@ -22,6 +22,8 @@ import {
   safeParseDateValue,
 } from '../../utils/dateUtils';
 import { eventBus } from '../events/EventBus';
+import { isSampleOwnedFrontmatter } from '../../demo/DemoOwnership';
+import { DemoSyncGate } from '../../demo/DemoSyncGate';
 import { FolderPathChangedPayload, Unsubscribe } from '../events/types';
 import { t } from '../../lang/helpers';
 import { getTradeIdentityNoteType } from '../../utils/tradeIdentity';
@@ -160,6 +162,7 @@ export class TradeSyncService {
 
   
   async loadSyncMapping(): Promise<void> {
+    if (DemoSyncGate.isActive()) return;
     const stored = this.settings.tradeSyncMapping;
     if (stored) {
       this.tradeSyncMapping = stored;
@@ -352,6 +355,7 @@ export class TradeSyncService {
 
   
   private async rebuildSyncMapping(oldPath?: string): Promise<void> {
+    if (DemoSyncGate.isActive()) return;
     const tradeFiles = this.plugin.app.vault
       .getMarkdownFiles()
       .filter((file) => {
@@ -481,6 +485,7 @@ export class TradeSyncService {
   private async onFolderPathChanged(
     payload: FolderPathChangedPayload
   ): Promise<void> {
+    if (DemoSyncGate.isActive()) return;
     const newPath = payload.value;
     
     const oldPath = this.folderPathService.journalFolderPath;
@@ -522,11 +527,6 @@ export class TradeSyncService {
       this.unsubscribeFolderPath();
       this.unsubscribeFolderPath = null;
     }
-  }
-
-  
-  getSyncMapping(): TradeSyncMapping {
-    return this.tradeSyncMapping;
   }
 
   
@@ -580,6 +580,10 @@ export class TradeSyncService {
     frontmatter: Record<string, unknown> | null | undefined,
     filePath: string
   ): boolean {
+    if (isSampleOwnedFrontmatter(frontmatter)) {
+      return false;
+    }
+
     if (
       this.isBooleanTrue(frontmatter?.isMissedTrade) ||
       this.isBooleanTrue(frontmatter?.isBacktestTrade) ||

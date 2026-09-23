@@ -1,11 +1,23 @@
 
 
-import React, { useCallback, useState } from 'react';
+import React, {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import { Notice } from 'obsidian';
 import type JournalitPlugin from '../../../main';
 import { t } from '../../../lang/helpers';
-import { UPGRADE_URLS } from '../../../constants';
+import { resolveUpgradeUrl } from '../../../services/upgrade/upgradeOrigin';
 import { openExternalUrl } from '../../../utils/externalLinks';
+import {
+  readTradeSyncProviderPreference,
+  writeTradeSyncProviderPreference,
+} from '../../../services/tradeSync/tradeSyncProviderPreference';
+import { ApiClient } from '../../../services/backend/ApiClient';
 import { SubscriptionTierService } from '../../../services/backend/SubscriptionTierService';
 import { DeviceFlowSignInModal } from '../../../components/auth/DeviceFlowSignInModal';
 import { Button } from '../../../components/ui/Button';
@@ -14,9 +26,13 @@ import { BackendIntegrationTab } from './BackendIntegrationTab';
 import { TradeImportSyncPanel } from './TradeImportSyncPanel';
 import { TradovateSyncPanel } from './TradovateSyncPanel';
 import { RithmicSyncPanel } from './RithmicSyncPanel';
+import { CTraderSyncPanel } from './CTraderSyncPanel';
+import { CTraderBrokerSyncClient } from '../../../services/tradeSync/CTraderBrokerSyncClient';
+import { getTradeProjectionOwnerId } from '../../../services/tradeSync/TradeProjectionOwnership';
 import { useBackendProEntitlement } from '../../../hooks/useBackendProEntitlement';
 import { LoadingSpinner } from '../../../components/shared/LoadingSpinner';
 import { Check } from '../../../components/shared/icons/ObsidianIcon';
+import { useAuthRefreshRecovery } from './brokerSyncKit';
 
 interface TradeSyncTabProps {
   plugin: JournalitPlugin;
@@ -25,7 +41,12 @@ interface TradeSyncTabProps {
   displayMode?: 'default' | 'upgrade-only';
 }
 
-type TradeSyncSource = 'metatrader' | 'tradovate' | 'rithmic' | 'tradeImport';
+type TradeSyncSource =
+  | 'metatrader'
+  | 'tradovate'
+  | 'rithmic'
+  | 'ctrader'
+  | 'tradeImport';
 
 interface TrialOfferProps {
   onRedeem: () => void;
@@ -119,6 +140,239 @@ interface TradeSyncEntitlements {
   metatrader: boolean;
   tradovate: boolean;
   rithmic: boolean;
+  ctrader: boolean;
+}
+
+
+function confirmedCTraderPresenceForOwner(
+  remembered: { ownerUserId: string; hasConnections: boolean } | null,
+  ownerUserId: string
+): boolean {
+  if (!remembered || remembered.ownerUserId !== ownerUserId) return false;
+  return remembered.hasConnections;
+}
+
+function useHasCTraderConnections(
+  plugin: JournalitPlugin,
+  active: boolean
+): {
+  hasConnections: boolean;
+  refreshConnections: () => Promise<boolean>;
+  waitForCurrentRefresh: () => Promise<boolean>;
+  applyCatalogPresence: (hasConnections: boolean) => void;
+} {
+  const [hasConnections, setHasConnections] = useState(false);
+  const client = useMemo(() => new CTraderBrokerSyncClient(), []);
+  const aliveRef = useRef(true);
+  const epochRef = useRef(0);
+  const activeRef = useRef(active);
+  const pluginRef = useRef(plugin);
+  const clientRef = useRef(client);
+  const runningRef = useRef<Promise<boolean> | null>(null);
+  const queuedRef = useRef(false);
+  const confirmedPresenceRef = useRef<{
+    ownerUserId: string;
+    hasConnections: boolean;
+  } | null>(null);
+  const lifecycleCoalesceRef = useRef(false);
+  const currentOwnerUserId = getTradeProjectionOwnerId(plugin);
+  useLayoutEffect(() => {
+    activeRef.current = active;
+    pluginRef.current = plugin;
+    clientRef.current = client;
+  }, [active, plugin, client]);
+
+  const refreshConnections = useCallback((): Promise<boolean> => {
+    if (!aliveRef.current) return Promise.resolve(false);
+    if (!activeRef.current) {
+      confirmedPresenceRef.current = null;
+      setHasConnections(false);
+      return Promise.resolve(false);
+    }
+    if (runningRef.current) {
+      queuedRef.current = true;
+      return runningRef.current.then(function waitForTail(result):
+        | Promise<boolean>
+        | boolean {
+        if (runningRef.current) return runningRef.current.then(waitForTail);
+        if (queuedRef.current && aliveRef.current && activeRef.current) {
+          return refreshConnections();
+        }
+        return result;
+      });
+    }
+
+    const run = (async () => {
+      let result = false;
+      try {
+        do {
+          queuedRef.current = false;
+          if (!aliveRef.current || !activeRef.current) {
+            result = false;
+            break;
+          }
+          const epoch = epochRef.current;
+          const requestOwnerUserId = getTradeProjectionOwnerId(
+            pluginRef.current
+          );
+          const authSessionVersion = ApiClient.getAuthSessionVersion();
+          if (
+            confirmedPresenceRef.current &&
+            confirmedPresenceRef.current.ownerUserId !== requestOwnerUserId
+          ) {
+            confirmedPresenceRef.current = null;
+            setHasConnections(false);
+          }
+          try {
+            const status = await clientRef.current.getCTraderConnections({
+              interactiveEntitlement: false,
+            });
+            if (
+              !aliveRef.current ||
+              !activeRef.current ||
+              epoch !== epochRef.current ||
+              getTradeProjectionOwnerId(pluginRef.current) !==
+                requestOwnerUserId ||
+              ApiClient.getAuthSessionVersion() !== authSessionVersion
+            ) {
+              result = false;
+              break;
+            }
+            result = status.connections.length > 0;
+            confirmedPresenceRef.current = {
+              ownerUserId: requestOwnerUserId,
+              hasConnections: result,
+            };
+            setHasConnections(result);
+          } catch {
+            if (
+              !aliveRef.current ||
+              !activeRef.current ||
+              epoch !== epochRef.current ||
+              getTradeProjectionOwnerId(pluginRef.current) !==
+                requestOwnerUserId ||
+              ApiClient.getAuthSessionVersion() !== authSessionVersion
+            ) {
+              result = false;
+              break;
+            }
+            result = confirmedCTraderPresenceForOwner(
+              confirmedPresenceRef.current,
+              requestOwnerUserId
+            );
+            setHasConnections(result);
+          }
+        } while (queuedRef.current && aliveRef.current && activeRef.current);
+        return result;
+      } finally {
+        runningRef.current = null;
+      }
+    })();
+    runningRef.current = run;
+    return run;
+  }, []);
+
+  const waitForCurrentRefresh = useCallback((): Promise<boolean> => {
+    if (!aliveRef.current || !activeRef.current) {
+      return Promise.resolve(false);
+    }
+    if (!runningRef.current) {
+      return Promise.resolve(
+        confirmedCTraderPresenceForOwner(
+          confirmedPresenceRef.current,
+          getTradeProjectionOwnerId(pluginRef.current)
+        )
+      );
+    }
+    return runningRef.current.then(function waitForTail():
+      | Promise<boolean>
+      | boolean {
+      if (!aliveRef.current || !activeRef.current) return false;
+      if (runningRef.current) return runningRef.current.then(waitForTail);
+      return confirmedCTraderPresenceForOwner(
+        confirmedPresenceRef.current,
+        getTradeProjectionOwnerId(pluginRef.current)
+      );
+    });
+  }, []);
+
+  const applyCatalogPresence = useCallback((nextHasConnections: boolean) => {
+    if (!aliveRef.current || !activeRef.current) return;
+    confirmedPresenceRef.current = {
+      ownerUserId: getTradeProjectionOwnerId(pluginRef.current),
+      hasConnections: nextHasConnections,
+    };
+    setHasConnections(nextHasConnections);
+  }, []);
+
+  useEffect(() => {
+    aliveRef.current = true;
+    return () => {
+      aliveRef.current = false;
+      epochRef.current += 1;
+      queuedRef.current = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!active) {
+      epochRef.current += 1;
+      queuedRef.current = false;
+      confirmedPresenceRef.current = null;
+      setHasConnections(false);
+      return;
+    }
+    if (
+      confirmedPresenceRef.current &&
+      confirmedPresenceRef.current.ownerUserId !== currentOwnerUserId
+    ) {
+      confirmedPresenceRef.current = null;
+      setHasConnections(false);
+    }
+    void refreshConnections();
+    return () => {
+      epochRef.current += 1;
+      queuedRef.current = false;
+    };
+  }, [active, currentOwnerUserId, refreshConnections]);
+
+  useAuthRefreshRecovery(plugin, refreshConnections);
+
+  useEffect(() => {
+    const onLifecycleSignal = () => {
+      if (lifecycleCoalesceRef.current) return;
+      lifecycleCoalesceRef.current = true;
+      queueMicrotask(() => {
+        lifecycleCoalesceRef.current = false;
+      });
+      void refreshConnections();
+    };
+    window.addEventListener(
+      'journalit:subscription-changed',
+      onLifecycleSignal
+    );
+    window.addEventListener(
+      'journalit:entitlements-refreshed',
+      onLifecycleSignal
+    );
+    return () => {
+      window.removeEventListener(
+        'journalit:subscription-changed',
+        onLifecycleSignal
+      );
+      window.removeEventListener(
+        'journalit:entitlements-refreshed',
+        onLifecycleSignal
+      );
+    };
+  }, [refreshConnections]);
+
+  return {
+    hasConnections,
+    refreshConnections,
+    waitForCurrentRefresh,
+    applyCatalogPresence,
+  };
 }
 
 interface EntitlementGateProps {
@@ -137,7 +391,7 @@ const EntitlementGate: React.FC<EntitlementGateProps> = ({
     <FeatureUnavailable onRefresh={onRefresh} />
   ) : (
     <TrialOffer
-      onRedeem={() => openExternalUrl(UPGRADE_URLS.metatraderSync)}
+      onRedeem={() => openExternalUrl(resolveUpgradeUrl('metatraderSync'))}
       onRefresh={onRefresh}
     />
   );
@@ -149,54 +403,82 @@ interface ProviderSectionProps {
   plugin: JournalitPlugin;
   mode: 'full' | 'sync' | 'accounts';
   entitlements: TradeSyncEntitlements;
+  canCreateCTraderConnections: boolean;
+  onCTraderCatalogLoaded: (hasConnections: boolean) => void;
   isPro: boolean;
   onRefresh: (source: TradeSyncSource) => Promise<void>;
 }
 
-type TradeSyncProvider = 'metatrader' | 'tradovate' | 'rithmic';
-
-const PROVIDER_STORAGE_KEY = 'journalit:trade-sync-provider';
+type TradeSyncProvider = 'metatrader' | 'tradovate' | 'rithmic' | 'ctrader';
 
 const ProviderSection: React.FC<ProviderSectionProps> = ({
   plugin,
   mode,
   entitlements,
+  canCreateCTraderConnections,
+  onCTraderCatalogLoaded,
   isPro,
   onRefresh,
 }) => {
-  const [provider, setProvider] = useState<TradeSyncProvider>(() => {
-    const storedProvider: unknown =
-      plugin.app.loadLocalStorage(PROVIDER_STORAGE_KEY);
-    if (storedProvider === 'tradovate') return 'tradovate';
-    if (storedProvider === 'rithmic') return 'rithmic';
-    return 'metatrader';
-  });
+  const [provider, setProvider] = useState<TradeSyncProvider>(() =>
+    readTradeSyncProviderPreference(plugin.app)
+  );
   const selectProvider = (next: TradeSyncProvider) => {
     setProvider(next);
-    plugin.app.saveLocalStorage(PROVIDER_STORAGE_KEY, next);
+    writeTradeSyncProviderPreference(plugin.app, next);
   };
   const enabled = entitlements[provider];
+  const providerScroller = useRef<HTMLDivElement>(null);
+
+  useLayoutEffect(() => {
+    const scroller = providerScroller.current;
+    if (!scroller) return;
+    const revealSelection = () => {
+      const selected = scroller.querySelector<HTMLButtonElement>('.is-active');
+      if (!selected) return;
+      const bounds = scroller.getBoundingClientRect();
+      const button = selected.getBoundingClientRect();
+      if (button.left < bounds.left) {
+        scroller.scrollLeft += button.left - bounds.left - 4;
+      } else if (button.right > bounds.right) {
+        scroller.scrollLeft += button.right - bounds.right + 4;
+      }
+    };
+    revealSelection();
+    window.addEventListener('resize', revealSelection);
+    return () => window.removeEventListener('resize', revealSelection);
+  }, [provider]);
 
   return (
     <section className="journalit-trade-sync-section journalit-trade-sync-providers">
-      <SegmentedControl
-        options={[
-          {
-            value: 'metatrader',
-            label: t('trade-sync.source.metatrader'),
-          },
-          {
-            value: 'tradovate',
-            label: t('trade-sync.source.tradovate'),
-          },
-          {
-            value: 'rithmic',
-            label: t('trade-sync.source.rithmic'),
-          },
-        ]}
-        value={provider}
-        onChange={selectProvider}
-      />
+      <div
+        className="journalit-trade-sync-provider-scroller"
+        ref={providerScroller}
+      >
+        <SegmentedControl
+          className="journalit-trade-sync-provider-switcher"
+          options={[
+            {
+              value: 'metatrader',
+              label: t('trade-sync.source.metatrader'),
+            },
+            {
+              value: 'tradovate',
+              label: t('trade-sync.source.tradovate'),
+            },
+            {
+              value: 'rithmic',
+              label: t('trade-sync.source.rithmic'),
+            },
+            {
+              value: 'ctrader',
+              label: t('trade-sync.source.ctrader'),
+            },
+          ]}
+          value={provider}
+          onChange={selectProvider}
+        />
+      </div>
       <EntitlementGate
         enabled={enabled}
         isPro={isPro}
@@ -207,8 +489,14 @@ const ProviderSection: React.FC<ProviderSectionProps> = ({
           <BackendIntegrationTab plugin={plugin} embedded contentMode={mode} />
         ) : provider === 'tradovate' ? (
           <TradovateSyncPanel plugin={plugin} />
-        ) : (
+        ) : provider === 'rithmic' ? (
           <RithmicSyncPanel plugin={plugin} />
+        ) : (
+          <CTraderSyncPanel
+            plugin={plugin}
+            canCreateConnections={canCreateCTraderConnections}
+            onCatalogLoaded={onCTraderCatalogLoaded}
+          />
         ))}
     </section>
   );
@@ -221,6 +509,8 @@ interface FocusedTradeSyncContentProps {
   mode: 'full' | 'sync' | 'accounts';
   source: TradeSyncSource;
   enabled: boolean;
+  canCreateCTraderConnections: boolean;
+  onCTraderCatalogLoaded: (hasConnections: boolean) => void;
   isPro: boolean;
   onRefresh: () => Promise<void>;
 }
@@ -230,6 +520,8 @@ const FocusedTradeSyncContent: React.FC<FocusedTradeSyncContentProps> = ({
   mode,
   source,
   enabled,
+  canCreateCTraderConnections,
+  onCTraderCatalogLoaded,
   isPro,
   onRefresh,
 }) => (
@@ -241,7 +533,9 @@ const FocusedTradeSyncContent: React.FC<FocusedTradeSyncContentProps> = ({
           ? t('trade-sync.source.tradovate.description')
           : source === 'rithmic'
             ? t('trade-sync.source.rithmic.description')
-            : t('trade-sync.source.trade-import.description')}
+            : source === 'ctrader'
+              ? t('trade-sync.source.ctrader.description')
+              : t('trade-sync.source.trade-import.description')}
     </p>
     <EntitlementGate enabled={enabled} isPro={isPro} onRefresh={onRefresh} />
     {enabled &&
@@ -251,6 +545,12 @@ const FocusedTradeSyncContent: React.FC<FocusedTradeSyncContentProps> = ({
         <TradovateSyncPanel plugin={plugin} />
       ) : source === 'rithmic' ? (
         <RithmicSyncPanel plugin={plugin} />
+      ) : source === 'ctrader' ? (
+        <CTraderSyncPanel
+          plugin={plugin}
+          canCreateConnections={canCreateCTraderConnections}
+          onCatalogLoaded={onCTraderCatalogLoaded}
+        />
       ) : (
         <TradeImportSyncPanel plugin={plugin} />
       ))}
@@ -291,6 +591,21 @@ export const TradeSyncTab: React.FC<TradeSyncTabProps> = ({
     'rithmic sync settings open',
     'rithmicSync'
   );
+  const {
+    isFeatureEnabled: canUseCTraderSync,
+    isChecking: isCheckingCTraderEntitlement,
+  } = useBackendProEntitlement(
+    plugin,
+    'ctrader sync settings open',
+    'ctraderSync'
+  );
+  const {
+    hasConnections: hasCTraderConnections,
+    refreshConnections,
+    waitForCurrentRefresh,
+    applyCatalogPresence,
+  } = useHasCTraderConnections(plugin, isAuthenticated);
+  const canUseCTraderPanel = canUseCTraderSync || hasCTraderConnections;
 
   const selectedSourceEnabled = source
     ? source === 'metatrader'
@@ -299,14 +614,18 @@ export const TradeSyncTab: React.FC<TradeSyncTabProps> = ({
         ? isPro
         : source === 'rithmic'
           ? canUseRithmicSync
-          : canUseTradeImportSync
+          : source === 'ctrader'
+            ? canUseCTraderPanel
+            : canUseTradeImportSync
     : true;
   const isCheckingSelectedEntitlement = source
     ? source === 'tradeImport'
       ? isCheckingTradeImportEntitlement
       : source === 'rithmic'
         ? isCheckingRithmicEntitlement
-        : isCheckingMetatraderEntitlement
+        : source === 'ctrader'
+          ? isCheckingCTraderEntitlement
+          : isCheckingMetatraderEntitlement
     : isCheckingMetatraderEntitlement;
 
   const handleSignIn = useCallback(() => {
@@ -329,7 +648,7 @@ export const TradeSyncTab: React.FC<TradeSyncTabProps> = ({
   }, [isAuthenticated, plugin]);
 
   const handleUpgrade = () => {
-    openExternalUrl(UPGRADE_URLS.metatraderSync);
+    openExternalUrl(resolveUpgradeUrl('metatraderSync'));
   };
 
   const handleRefresh = useCallback(
@@ -347,7 +666,10 @@ export const TradeSyncTab: React.FC<TradeSyncTabProps> = ({
       const result = await new SubscriptionTierService(plugin).refreshTier(
         'manual refresh'
       );
-      window.dispatchEvent(new CustomEvent('journalit:subscription-changed'));
+      const hasCTraderConnectionsNow =
+        result.status === 'unverified'
+          ? await refreshConnections()
+          : await waitForCurrentRefresh();
 
       const selectedSource = refreshSource ?? source;
       const selectedFeatureEnabled =
@@ -357,7 +679,10 @@ export const TradeSyncTab: React.FC<TradeSyncTabProps> = ({
             ? result.status === 'premium'
             : selectedSource === 'rithmic'
               ? result.entitlements?.features.rithmicSync.enabled === true
-              : result.entitlements?.features.tradeImport.enabled === true;
+              : selectedSource === 'ctrader'
+                ? result.entitlements?.features.ctraderSync?.enabled === true ||
+                  hasCTraderConnectionsNow
+                : result.entitlements?.features.tradeImport.enabled === true;
 
       if (!selectedFeatureEnabled) {
         new Notice(
@@ -367,7 +692,7 @@ export const TradeSyncTab: React.FC<TradeSyncTabProps> = ({
         );
       }
     },
-    [isAuthenticated, plugin, source]
+    [isAuthenticated, plugin, refreshConnections, source, waitForCurrentRefresh]
   );
 
   if (!isAuthenticated) {
@@ -421,6 +746,8 @@ export const TradeSyncTab: React.FC<TradeSyncTabProps> = ({
           mode={mode}
           source={source}
           enabled={selectedSourceEnabled}
+          canCreateCTraderConnections={canUseCTraderSync}
+          onCTraderCatalogLoaded={applyCatalogPresence}
           isPro={isPro}
           onRefresh={() => handleRefresh(source)}
         />
@@ -432,7 +759,10 @@ export const TradeSyncTab: React.FC<TradeSyncTabProps> = ({
             metatrader: canUseMetatraderSync,
             tradovate: isPro,
             rithmic: canUseRithmicSync,
+            ctrader: canUseCTraderPanel,
           }}
+          canCreateCTraderConnections={canUseCTraderSync}
+          onCTraderCatalogLoaded={applyCatalogPresence}
           isPro={isPro}
           onRefresh={handleRefresh}
         />

@@ -4,267 +4,202 @@ import React from 'react';
 import { useAccountPageData } from '../context/AccountPageDataContext';
 import { useCurrency } from '../../../contexts/CurrencyContext';
 import { parseCuratedCurrencyCode } from '../../../utils/currencyConfig';
-import { formatPnLWithCurrency } from '../../../utils/currencyAggregation';
 import { useDisplayFormatter } from '../../../hooks/useDisplayPolicy';
-import { ConversionSourceLines } from '../../shared/display/CurrencyConversionInfo';
 import { t } from '../../../lang/helpers';
-import { Tooltip } from '../../shared/Tooltip';
-import { useGuideTarget } from '../../../guides/GuideRuntimeLayer';
-import { ACCOUNT_PAGE_METRICS_SECTION_TARGET_ID } from '../../../guides/accountPageGuideIds';
+import { AccountStatCell, statTone, type MetricTile } from './AccountStatCell';
+import { AccountNetPnLStatCell } from './AccountNetPnLStatCell';
+import { calculateAccountCostSummary } from './accountSummaryMetrics';
 
 
-const getMetricClass = (value: number): string => {
-  if (value > 0) return 'positive';
-  if (value < 0) return 'negative';
-  return 'neutral';
-};
-
-export const AccountMetrics: React.FC = () => {
-  const registerMetricsSectionTarget = useGuideTarget(
-    ACCOUNT_PAGE_METRICS_SECTION_TARGET_ID
-  );
+export function useAccountMetricsTiles(
+  includePromotedMetrics: boolean
+): MetricTile[] {
   const { accountPageData, getMetrics } = useAccountPageData();
   const { currency: globalCurrency } = useCurrency();
+  const { formatValue, shouldMask } = useDisplayFormatter();
 
   const metrics = getMetrics();
-  const { formatValue, shouldMask } = useDisplayFormatter();
-  const isPnlMasked = shouldMask('pnl');
-  const isPercentageMasked = shouldMask('percentage');
-  const isMetricMasked = shouldMask('metric');
-  const isFeeMasked = shouldMask('fee');
 
   if (!metrics) {
-    return null;
+    return [];
   }
 
-  
+  const isPercentageMasked = shouldMask('percentage');
+  const isMetricMasked = shouldMask('metric');
+  const isPnlMasked = shouldMask('pnl');
+
   const effectiveCurrency = parseCuratedCurrencyCode(
     metrics.conversionBaseCurrency ||
       accountPageData?.account.currency ||
       globalCurrency
   );
+  const accountCosts = accountPageData
+    ? calculateAccountCostSummary(accountPageData.account)
+    : undefined;
 
-  return (
-    <div className="account-metrics" ref={registerMetricsSectionTarget}>
-      <div className="metrics-grid">
-        
-        <div className="metric-card">
-          <span className="metric-label">
-            {t('dashboard.metrics.numTrades')}
-          </span>
-          <span className="metric-value">{metrics.totalTrades}</span>
-        </div>
+  const tiles: MetricTile[] = [];
 
-        
-        <div className="metric-card">
-          <span className="metric-label">{t('dashboard.metrics.winRate')}</span>
-          <span
-            className={`metric-value ${isPercentageMasked ? '' : getMetricClass(metrics.winRate - 50)}`}
-          >
-            {formatValue({
-              kind: 'percentage',
-              value: metrics.winRate,
-              precision: 1,
-            })}
-          </span>
-        </div>
+  if (includePromotedMetrics) {
+    tiles.push(
+      <AccountStatCell
+        key="trades"
+        label={t('dashboard.metrics.numTrades')}
+        value={formatValue({
+          kind: 'count',
+          value: metrics.totalTrades,
+        })}
+      />,
+      <AccountStatCell
+        key="win-rate"
+        label={t('dashboard.metrics.winRate')}
+        value={formatValue({
+          kind: 'percentage',
+          value: metrics.winRate,
+          precision: 1,
+        })}
+        tone={statTone(metrics.winRate - 50, isPercentageMasked)}
+      />,
+      <AccountNetPnLStatCell key="net-pnl" />
+    );
+  }
 
-        
-        <div className="metric-card">
-          <span className="metric-label metric-label--with-icon">
-            {t('dashboard.metrics.netPnL')}
-            {metrics.isMultiCurrency &&
-              metrics.convertedTotalPnL !== undefined && (
-                <Tooltip
-                  content={
-                    <div className="account-metrics-conversion-tooltip">
-                      <div className="account-metrics-conversion-tooltip-title">
-                        {t('dashboard.conversion.converted-total')}
-                      </div>
-                      <div>
-                        {t('dashboard.conversion.base', {
-                          currency: metrics.conversionBaseCurrency || '',
-                        })}
-                      </div>
-                      <ConversionSourceLines
-                        brokerBaseCurrencyTradeCount={
-                          metrics.brokerBaseCurrencyTradeCount
-                        }
-                        manualFxRateTradeCount={metrics.manualFxRateTradeCount}
-                        conversionRateDate={metrics.conversionRateDate}
-                      />
-                      {metrics.partiallyConvertedCurrencies &&
-                        metrics.partiallyConvertedCurrencies.length > 0 && (
-                          <div className="account-metrics-conversion-warning">
-                            {t('dashboard.conversion.partial-warning', {
-                              currencies:
-                                metrics.partiallyConvertedCurrencies.join(', '),
-                            })}
-                          </div>
-                        )}
-                      {metrics.unconvertedCurrencies &&
-                        metrics.unconvertedCurrencies.length > 0 && (
-                          <div className="account-metrics-conversion-warning">
-                            {t('dashboard.conversion.excluded-warning', {
-                              converted: String(metrics.convertedTradeCount),
-                              total: String(metrics.originalTradeCount),
-                              excluded: String(
-                                metrics.originalTradeCount! -
-                                  metrics.convertedTradeCount!
-                              ),
-                              currencies:
-                                metrics.unconvertedCurrencies.join(', '),
-                            })}
-                          </div>
-                        )}
-                    </div>
-                  }
-                  delay={200}
-                  preferredPosition="bottom"
-                >
-                  <span className="metric-label-info-icon">ⓘ</span>
-                </Tooltip>
-              )}
-          </span>
-          <span
-            className={`metric-value ${isPnlMasked ? '' : getMetricClass(metrics.totalPnL)}`}
-          >
-            {isPnlMasked
-              ? formatValue({
-                  kind: 'pnl',
-                  value: metrics.totalPnL,
-                  currencyCode: effectiveCurrency,
-                })
-              : metrics.isMultiCurrency &&
-                  metrics.convertedTotalPnL !== undefined
-                ? 
-                  formatPnLWithCurrency(
-                    metrics.convertedTotalPnL,
-                    metrics.conversionBaseCurrency || 'USD',
-                    false
-                  )
-                : metrics.isMultiCurrency && metrics.pnlByCurrency
-                  ? 
-                    Object.entries(metrics.pnlByCurrency)
-                      .sort(([a], [b]) => a.localeCompare(b))
-                      .map(([curr, pnl], idx, arr) => (
-                        <React.Fragment key={curr}>
-                          {formatPnLWithCurrency(pnl, curr, false)}
-                          {idx < arr.length - 1 && <br />}
-                        </React.Fragment>
-                      ))
-                  : 
-                    formatPnLWithCurrency(
-                      metrics.totalPnL,
-                      effectiveCurrency,
-                      false
-                    )}
-          </span>
-        </div>
-
-        
-        <div className="metric-card">
-          <span className="metric-label">
-            {t('dashboard.metrics.profitFactor')}
-          </span>
-          <span
-            className={`metric-value ${isMetricMasked ? '' : getMetricClass(metrics.profitFactor - 1)}`}
-          >
-            {metrics.profitFactor === Infinity && !isMetricMasked
-              ? '∞'
-              : formatValue({
-                  kind: 'metric',
-                  value: metrics.profitFactor,
-                  precision: 2,
-                })}
-          </span>
-        </div>
-
-        
-        <div className="metric-card">
-          <span className="metric-label">{t('dashboard.metrics.avgWin')}</span>
-          <span className={`metric-value ${isPnlMasked ? '' : 'positive'}`}>
-            {formatValue({
-              kind: 'pnl',
-              value: metrics.avgWin,
-              currencyCode: effectiveCurrency,
-              rMultiple: metrics.avgWinRMultiple,
-            })}
-          </span>
-        </div>
-
-        
-        <div className="metric-card">
-          <span className="metric-label">{t('dashboard.metrics.avgLoss')}</span>
-          <span className={`metric-value ${isPnlMasked ? '' : 'negative'}`}>
-            {formatValue({
-              kind: 'pnl',
-              value: Math.abs(metrics.avgLoss),
-              currencyCode: effectiveCurrency,
-              rMultiple:
-                metrics.avgLossRMultiple !== undefined
-                  ? -Math.abs(metrics.avgLossRMultiple)
-                  : undefined,
-            })}
-          </span>
-        </div>
-
-        
-        <div className="metric-card">
-          <span className="metric-label">
-            {t('dashboard.metrics.numWinTrades')}
-          </span>
-          <span className={`metric-value ${isMetricMasked ? '' : 'positive'}`}>
-            {formatValue({
-              kind: 'metric',
-              value: metrics.winningTrades,
-              precision: 0,
-            })}
-          </span>
-        </div>
-
-        
-        <div className="metric-card">
-          <span className="metric-label">
-            {t('dashboard.metrics.numLossTrades')}
-          </span>
-          <span className={`metric-value ${isMetricMasked ? '' : 'negative'}`}>
-            {formatValue({
-              kind: 'metric',
-              value: metrics.losingTrades,
-              precision: 0,
-            })}
-          </span>
-        </div>
-
-        
-        <div className="metric-card">
-          <span className="metric-label">
-            {t('dashboard.metrics.totalCommission')}
-          </span>
-          <span className={`metric-value ${isFeeMasked ? '' : 'negative'}`}>
-            {formatValue({
-              kind: 'fee',
-              value: metrics.totalCommission,
-              currencyCode: effectiveCurrency,
-            })}
-          </span>
-        </div>
-
-        
-        <div className="metric-card">
-          <span className="metric-label">
-            {t('dashboard.metrics.totalFees')}
-          </span>
-          <span className={`metric-value ${isFeeMasked ? '' : 'negative'}`}>
-            {formatValue({
-              kind: 'fee',
-              value: metrics.totalFees,
-              currencyCode: effectiveCurrency,
-            })}
-          </span>
-        </div>
-      </div>
-    </div>
+  tiles.push(
+    <AccountStatCell
+      key="profit-factor"
+      label={t('dashboard.metrics.profitFactor')}
+      value={formatValue({
+        kind: 'metric',
+        value: metrics.profitFactor,
+        precision: 2,
+      })}
+      tone={statTone(metrics.profitFactor - 1, isMetricMasked)}
+    />,
+    <AccountStatCell
+      key="avg-win"
+      label={t('dashboard.metrics.avgWin')}
+      value={formatValue({
+        kind: 'pnl',
+        value: metrics.avgWin,
+        currencyCode: effectiveCurrency,
+        rMultiple: metrics.avgWinRMultiple,
+      })}
+      tone={isPnlMasked ? 'neutral' : 'positive'}
+    />,
+    <AccountStatCell
+      key="avg-loss"
+      label={t('dashboard.metrics.avgLoss')}
+      value={formatValue({
+        kind: 'pnl',
+        value: Math.abs(metrics.avgLoss),
+        currencyCode: effectiveCurrency,
+        rMultiple:
+          metrics.avgLossRMultiple !== undefined
+            ? -Math.abs(metrics.avgLossRMultiple)
+            : undefined,
+      })}
+      tone={isPnlMasked ? 'neutral' : 'negative'}
+    />,
+    <AccountStatCell
+      key="winning"
+      label={t('dashboard.metrics.numWinTrades')}
+      value={formatValue({
+        kind: 'metric',
+        value: metrics.winningTrades,
+        precision: 0,
+      })}
+      tone={isMetricMasked ? 'neutral' : 'positive'}
+    />,
+    <AccountStatCell
+      key="losing"
+      label={t('dashboard.metrics.numLossTrades')}
+      value={formatValue({
+        kind: 'metric',
+        value: metrics.losingTrades,
+        precision: 0,
+      })}
+      tone={isMetricMasked ? 'neutral' : 'negative'}
+    />,
+    <AccountStatCell
+      key="commission"
+      label={t('dashboard.metrics.totalCommission')}
+      value={formatValue({
+        kind: 'fee',
+        value: metrics.totalCommission,
+        currencyCode: effectiveCurrency,
+      })}
+      muted
+    />,
+    <AccountStatCell
+      key="fees"
+      label={t('dashboard.metrics.totalFees')}
+      value={formatValue({
+        kind: 'fee',
+        value: metrics.totalFees,
+        currencyCode: effectiveCurrency,
+      })}
+      muted
+    />
   );
-};
+
+  
+  
+  
+  if (accountCosts?.hasCosts) {
+    tiles.push(
+      <AccountStatCell
+        key="total-costs"
+        label={t(
+          accountCosts.monthlyCost > 0
+            ? 'account.metrics.total-account-costs'
+            : 'account.metrics.total-costs'
+        )}
+        value={formatValue({
+          kind: 'fee',
+          value: accountCosts.estimatedTotalCosts,
+          currencyCode: effectiveCurrency,
+        })}
+        muted
+      />
+    );
+    if (accountCosts.oneTimeCosts > 0) {
+      tiles.push(
+        <AccountStatCell
+          key="one-time-costs"
+          label={t('account.metrics.one-time-costs')}
+          value={formatValue({
+            kind: 'fee',
+            value: accountCosts.oneTimeCosts,
+            currencyCode: effectiveCurrency,
+          })}
+          muted
+        />
+      );
+    }
+    if (accountCosts.monthlyCost > 0) {
+      tiles.push(
+        <AccountStatCell
+          key="recurring-costs"
+          label={t('account.metrics.recurring-costs-to-date')}
+          value={formatValue({
+            kind: 'fee',
+            value: accountCosts.estimatedRecurringCosts,
+            currencyCode: effectiveCurrency,
+          })}
+          muted
+        />,
+        <AccountStatCell
+          key="monthly-cost"
+          label={t('account.metrics.monthly-cost')}
+          value={formatValue({
+            kind: 'fee',
+            value: accountCosts.monthlyCost,
+            currencyCode: effectiveCurrency,
+          })}
+          muted
+        />
+      );
+    }
+  }
+
+  return tiles;
+}

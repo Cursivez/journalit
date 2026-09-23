@@ -6,18 +6,8 @@ import type {
   MultiColumnMappings,
 } from './types';
 import { generateUUID } from '../../utils/uuid';
+import { encodeBase64Utf8 } from '../../utils/base64';
 import { normalizeTemplate } from './templateMappingUtils';
-
-
-function encodeBase64Utf8(str: string): string {
-  
-  const utf8Bytes = new TextEncoder().encode(str);
-  let binaryString = '';
-  for (let i = 0; i < utf8Bytes.length; i++) {
-    binaryString += String.fromCharCode(utf8Bytes[i]);
-  }
-  return btoa(binaryString);
-}
 
 
 function decodeBase64Utf8(base64: string): string {

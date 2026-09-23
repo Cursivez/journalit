@@ -22,12 +22,14 @@ interface HomeWidgetSelectorProps {
   hiddenQuickLinks: QuickLinkButton[];
   onAddWidget: (widgetId: string) => void | Promise<void>;
   onRestoreQuickLink: (quickLinkId: string) => void | Promise<void>;
+  onOpenEntityShortcuts: () => void;
   onClose: () => void;
 }
 
 type SelectableItem =
-  | { type: 'widget'; id: string; configurable: boolean; instanceCount: number }
-  | { type: 'quicklink'; id: string };
+  | { type: 'widget'; id: string }
+  | { type: 'quicklink'; id: string }
+  | { type: 'shortcut' };
 
 export const HomeWidgetSelector: React.FC<HomeWidgetSelectorProps> = React.memo(
   ({
@@ -35,6 +37,7 @@ export const HomeWidgetSelector: React.FC<HomeWidgetSelectorProps> = React.memo(
     hiddenQuickLinks,
     onAddWidget,
     onRestoreQuickLink,
+    onOpenEntityShortcuts,
     onClose,
   }) => {
     const [selectedIndex, setSelectedIndex] = useState(0);
@@ -42,6 +45,7 @@ export const HomeWidgetSelector: React.FC<HomeWidgetSelectorProps> = React.memo(
     const onCloseEvent = useEffectEvent(onClose);
     const onAddWidgetEvent = useEffectEvent(onAddWidget);
     const onRestoreQuickLinkEvent = useEffectEvent(onRestoreQuickLink);
+    const onOpenEntityShortcutsEvent = useEffectEvent(onOpenEntityShortcuts);
     const registerWidgetSelectorTarget = useGuideTarget(
       HOME_WIDGET_SELECTOR_TARGET_ID
     );
@@ -74,19 +78,17 @@ export const HomeWidgetSelector: React.FC<HomeWidgetSelectorProps> = React.memo(
         items.push({
           type: 'widget',
           id: widget.id,
-          configurable: widget.configurable || false,
-          instanceCount: widget.configurable
-            ? instanceCounts[widget.id] || 0
-            : 0,
         });
       });
+
+      items.push({ type: 'shortcut' });
 
       hiddenQuickLinks.forEach((ql) => {
         items.push({ type: 'quicklink', id: ql.id });
       });
 
       return items;
-    }, [availableWidgets, hiddenQuickLinks, instanceCounts]);
+    }, [availableWidgets, hiddenQuickLinks]);
 
     const currentSelectedIndex = Math.min(
       selectedIndex,
@@ -96,8 +98,6 @@ export const HomeWidgetSelector: React.FC<HomeWidgetSelectorProps> = React.memo(
     
     useEffect(() => {
       const handleKeyDown = (e: KeyboardEvent) => {
-        if (selectableItems.length === 0) return;
-
         switch (e.key) {
           case 'Escape':
             e.preventDefault();
@@ -118,12 +118,12 @@ export const HomeWidgetSelector: React.FC<HomeWidgetSelectorProps> = React.memo(
           case 'Enter': {
             e.preventDefault();
             const item = selectableItems[currentSelectedIndex];
-            if (item) {
-              if (item.type === 'widget') {
-                void onAddWidgetEvent(item.id);
-              } else {
-                void onRestoreQuickLinkEvent(item.id);
-              }
+            if (item.type === 'shortcut') {
+              onOpenEntityShortcutsEvent();
+            } else if (item.type === 'widget') {
+              void onAddWidgetEvent(item.id);
+            } else {
+              void onRestoreQuickLinkEvent(item.id);
             }
             break;
           }
@@ -153,10 +153,14 @@ export const HomeWidgetSelector: React.FC<HomeWidgetSelectorProps> = React.memo(
     const getItemIndex = useCallback(
       (type: 'widget' | 'quicklink', id: string): number => {
         return selectableItems.findIndex(
-          (item) => item.type === type && item.id === id
+          (item) =>
+            item.type !== 'shortcut' && item.type === type && item.id === id
         );
       },
       [selectableItems]
+    );
+    const shortcutIndex = selectableItems.findIndex(
+      (item) => item.type === 'shortcut'
     );
 
     return (
@@ -253,64 +257,66 @@ export const HomeWidgetSelector: React.FC<HomeWidgetSelectorProps> = React.memo(
               </>
             )}
 
-            
-            {hiddenQuickLinks.length > 0 && (
-              <>
+            <div className="journalit-shared-selector-section journalit-shared-selector-section--spaced">
+              {t('home.widget-selector.section.quick-links')}
+            </div>
+
+            <button
+              type="button"
+              data-selectable
+              onClick={onOpenEntityShortcuts}
+              onMouseEnter={() => setSelectedIndex(shortcutIndex)}
+              onFocus={() => setSelectedIndex(shortcutIndex)}
+              className={`journalit-native-button journalit-native-button--unstyled journalit-home-add-shortcut journalit-shared-selector-item${currentSelectedIndex === shortcutIndex ? ' journalit-shared-selector-item--selected' : ''}`}
+            >
+              <span className="journalit-shared-selector-icon">
+                <Plus size={16} />
+              </span>
+              <span className="journalit-shared-selector-body">
+                <span className="journalit-shared-selector-item-title">
+                  {t('home.widget-selector.add-shortcut')}
+                </span>
+              </span>
+            </button>
+
+            {hiddenQuickLinks.map((quickLink) => {
+              const IconComponent = resolveIcon(quickLink.icon);
+              const currentIndex = getItemIndex('quicklink', quickLink.id);
+              const isSelected = currentIndex === currentSelectedIndex;
+
+              const labelKey = `home.quick-links.${quickLink.id}`;
+              const label = hasTranslation(labelKey) ? t(labelKey) : labelKey;
+
+              return (
                 <div
-                  className={`journalit-shared-selector-section${availableWidgets.length > 0 ? ' journalit-shared-selector-section--spaced' : ''}`}
+                  role="button"
+                  tabIndex={0}
+                  key={quickLink.id}
+                  data-selectable
+                  onClick={() => void onRestoreQuickLink(quickLink.id)}
+                  onKeyDown={(event) => {
+                    if (event.key !== ' ') return;
+                    event.preventDefault();
+                    void onRestoreQuickLink(quickLink.id);
+                  }}
+                  onMouseEnter={() => setSelectedIndex(currentIndex)}
+                  onFocus={() => setSelectedIndex(currentIndex)}
+                  className={`journalit-shared-selector-item${isSelected ? ' journalit-shared-selector-item--selected' : ''}`}
                 >
-                  {t('home.widget-selector.section.quick-links')}
-                </div>
-
-                {hiddenQuickLinks.map((quickLink) => {
-                  const IconComponent = resolveIcon(quickLink.icon);
-                  const currentIndex = getItemIndex('quicklink', quickLink.id);
-                  const isSelected = currentIndex === currentSelectedIndex;
-
-                  const labelKey = `home.quick-links.${quickLink.id}`;
-                  const label = hasTranslation(labelKey)
-                    ? t(labelKey)
-                    : labelKey;
-
-                  return (
-                    <div
-                      role="button"
-                      tabIndex={0}
-                      key={quickLink.id}
-                      data-selectable
-                      onClick={() => void onRestoreQuickLink(quickLink.id)}
-                      onKeyDown={(event) => {
-                        if (event.key !== ' ') return;
-                        event.preventDefault();
-                        void onRestoreQuickLink(quickLink.id);
-                      }}
-                      onMouseEnter={() => setSelectedIndex(currentIndex)}
-                      onFocus={() => setSelectedIndex(currentIndex)}
-                      className={`journalit-shared-selector-item${isSelected ? ' journalit-shared-selector-item--selected' : ''}`}
-                    >
-                      <div className="journalit-shared-selector-icon">
-                        <IconComponent size={16} />
-                      </div>
-                      <div className="journalit-shared-selector-body">
-                        <div className="journalit-shared-selector-item-title">
-                          {label}
-                        </div>
-                      </div>
-                      <span className="journalit-shared-selector-widget-category">
-                        {t('home.widget-selector.restore')}
-                      </span>
+                  <div className="journalit-shared-selector-icon">
+                    <IconComponent size={16} />
+                  </div>
+                  <div className="journalit-shared-selector-body">
+                    <div className="journalit-shared-selector-item-title">
+                      {label}
                     </div>
-                  );
-                })}
-              </>
-            )}
-
-            
-            {availableWidgets.length === 0 && hiddenQuickLinks.length === 0 && (
-              <div className="journalit-shared-selector-empty">
-                {t('home.widget-selector.empty')}
-              </div>
-            )}
+                  </div>
+                  <span className="journalit-shared-selector-widget-category">
+                    {t('home.widget-selector.restore')}
+                  </span>
+                </div>
+              );
+            })}
           </div>
 
           

@@ -24,7 +24,10 @@ import {
   TradeFormValue,
   DEFAULT_TRADE_FORM_DATA,
 } from '../types';
-import { resolveFormExitExplicitness } from '../exitExplicitness';
+import {
+  isEmptyExitPlaceholder,
+  resolveFormExitExplicitness,
+} from '../exitExplicitness';
 import type { TradeFormLayoutSettings } from '../../../../settings/types';
 import {
   validateTradeForm,
@@ -113,10 +116,9 @@ const withResolvedSnapshotExitExplicitness = (
     ...data,
     exits: data.exits.map((exit) => ({
       ...exit,
-      hasExplicitPrice: resolveFormExitExplicitness(
-        exit,
-        data.useDirectPnLInput
-      ),
+      hasExplicitPrice: isEmptyExitPlaceholder(exit)
+        ? false
+        : resolveFormExitExplicitness(exit, data.useDirectPnLInput),
     })),
   };
 };
@@ -1806,6 +1808,7 @@ export const useTradeForm = ({
         (takeProfits || []).map((target) => ({
           price: target?.price ?? null,
           closePercent: target?.closePercent ?? null,
+          size: target?.size ?? null,
         }))
       );
     const takeProfitsChanged =

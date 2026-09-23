@@ -23,6 +23,12 @@ import {
 import { getTradingDay } from '../../utils/tradingDayUtils';
 import { DRCData } from '../drc/types';
 import {
+  addSampleOwnershipToMarkdown,
+  appendSampleReviewBody,
+  materializeSampleReviewFrontmatter,
+  type SampleReviewMaterialization,
+} from '../../demo/DemoOwnership';
+import {
   forceMetadataCacheRefresh,
   readFrontmatterFromDisk,
 } from '../../utils/dataRefresh';
@@ -494,7 +500,10 @@ export class WeeklyReviewService {
   }
 
   
-  public async createWeeklyReview(date: Date): Promise<string> {
+  public async createWeeklyReview(
+    date: Date,
+    options: { sampleMaterialization?: SampleReviewMaterialization } = {}
+  ): Promise<string> {
     try {
       const path = this.getWeeklyReviewPath(date);
 
@@ -506,22 +515,38 @@ export class WeeklyReviewService {
 
       
       await this.ensureDirectoryExists(path);
+      const claimedOwnership = options.sampleMaterialization
+        ? null
+        : this.plugin?.demoSessionService?.claimNewOwnership('review');
 
       
-      const content = await this.generateInitialWeeklyReviewContent(date);
+      const generatedContent = await this.generateInitialWeeklyReviewContent(
+        date,
+        options.sampleMaterialization
+      );
+      const content = claimedOwnership
+        ? addSampleOwnershipToMarkdown(generatedContent, claimedOwnership)
+        : generatedContent;
 
       
       const newFile = await this.app.vault.create(path, content);
+      if (claimedOwnership) {
+        await this.plugin?.demoSessionService?.adoptCreatedMarkdownFile(
+          path,
+          claimedOwnership
+        );
+      }
 
-      
-      await forceMetadataCacheRefresh(this.app, newFile);
-
-      
-      eventBus.publish('review:changed', {
-        type: 'weekly',
-        action: 'created',
-        filePath: path,
-      });
+      if (options.sampleMaterialization) {
+        options.sampleMaterialization.creationBatch.register(newFile, 'weekly');
+      } else {
+        await forceMetadataCacheRefresh(this.app, newFile);
+        eventBus.publish('review:changed', {
+          type: 'weekly',
+          action: 'created',
+          filePath: path,
+        });
+      }
 
       return path;
     } catch (error) {
@@ -541,7 +566,8 @@ export class WeeklyReviewService {
 
   
   private async generateInitialWeeklyReviewContent(
-    date: Date
+    date: Date,
+    sampleMaterialization?: SampleReviewMaterialization
   ): Promise<string> {
     const weekStartDay = getWeekStartDaySetting(this.plugin);
     const weekStart = getWeekStartDate(date, weekStartDay);
@@ -593,10 +619,19 @@ export class WeeklyReviewService {
     weeklyReviewData.templateVersion = template.version;
 
     
-    return transformService.generateNoteFromTemplate(
+    const authoredData = sampleMaterialization
+      ? materializeSampleReviewFrontmatter(
+          weeklyReviewData,
+          sampleMaterialization
+        )
+      : weeklyReviewData;
+    const content = transformService.generateNoteFromTemplate(
       template,
-      weeklyReviewData
+      authoredData
     );
+    return sampleMaterialization
+      ? appendSampleReviewBody(content, sampleMaterialization.appendBody)
+      : content;
   }
 
   

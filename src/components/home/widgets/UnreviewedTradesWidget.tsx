@@ -132,7 +132,7 @@ const UnreviewedTradesWidgetComponent: React.FC<
     return (
       <button
         type="button"
-        className="journalit-native-button journalit-native-button--unstyled journalit-home-unreviewed journalit-home-unreviewed--row journalit-home-unreviewed--clickable"
+        className="journalit-native-button journalit-native-button--unstyled journalit-home-unreviewed journalit-home-unreviewed--row journalit-home-unreviewed--complete journalit-home-unreviewed--clickable"
         onClick={() => void openTradeLog(false)}
         onKeyDown={(e) => {
           if (e.key !== 'Enter' && e.key !== ' ') {

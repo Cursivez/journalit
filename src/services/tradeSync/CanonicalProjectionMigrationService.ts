@@ -12,9 +12,15 @@ import {
   validateFieldKey,
 } from '../../types/customFields';
 import { getTradeIdentityNoteType } from '../../utils/tradeIdentity';
+import {
+  isSampleOwnedFrontmatter,
+  SAMPLE_ENTITY_ID_FRONTMATTER_KEY,
+  SAMPLE_INSTANCE_FRONTMATTER_KEY,
+} from '../../demo/DemoOwnership';
+import { DemoSyncGate } from '../../demo/DemoSyncGate';
 
 const CANONICAL_PROJECTION_SCHEMA_VERSION = 1;
-const CANONICAL_PROJECTION_MIGRATION_VERSION = 3;
+const CANONICAL_PROJECTION_MIGRATION_VERSION = 4;
 const PROJECTION_OWNED_CUSTOM_FIELD_MIGRATION_KEYS = new Set<string>(
   CANONICAL_PROJECTION_CUSTOM_FIELD_MIGRATION_KEYS
 );
@@ -163,8 +169,19 @@ function hasProjectionMarkerInYaml(yaml: string): boolean {
 function isCustomFieldTradeNote(
   frontmatter: Record<string, unknown>,
   filePath: string,
-  journalFolderPath: string
+  journalFolderPath: string,
+  migratingCustomFieldKeys: ReadonlySet<string>
 ): boolean {
+  const sampleOwnershipKeyIsMigrating = [
+    SAMPLE_INSTANCE_FRONTMATTER_KEY,
+    SAMPLE_ENTITY_ID_FRONTMATTER_KEY,
+  ].some(
+    (key) => migratingCustomFieldKeys.has(key) && hasOwnKey(frontmatter, key)
+  );
+  if (isSampleOwnedFrontmatter(frontmatter) && !sampleOwnershipKeyIsMigrating) {
+    return false;
+  }
+
   if (
     typeof frontmatter.type === 'string' &&
     frontmatter.type !== 'trade' &&
@@ -225,6 +242,7 @@ export class CanonicalProjectionMigrationService {
   constructor(private readonly plugin: JournalitPlugin) {}
 
   run(): Promise<void> {
+    if (DemoSyncGate.isActive()) return Promise.resolve();
     if (
       (this.plugin.settings.backendIntegration
         ?.canonicalProjectionMigrationVersion ?? 0) >=
@@ -242,14 +260,23 @@ export class CanonicalProjectionMigrationService {
   private async migrate(): Promise<void> {
     await this.plugin.tradeService.waitForTradeDataReady();
     const journalFolderPath =
-      this.plugin.settings.general?.journalFolderPath?.trim() || '!Journalit';
+      this.plugin.serviceManager.getFolderPathService().journalFolderPath;
     const documents: MigrationDocument[] = [];
     const occupiedFrontmatterKeys = new Set<string>();
     for (const file of this.plugin.app.vault.getMarkdownFiles()) {
       const frontmatter = await this.readFrontmatter(file);
       if (!frontmatter) continue;
       documents.push({ file, frontmatter });
-      if (isCustomFieldTradeNote(frontmatter, file.path, journalFolderPath)) {
+      if (
+        isCustomFieldTradeNote(
+          frontmatter,
+          file.path,
+          journalFolderPath,
+          
+          
+          MIGRATABLE_CUSTOM_FIELD_KEYS
+        )
+      ) {
         for (const key of Object.keys(frontmatter)) {
           occupiedFrontmatterKeys.add(key);
         }
@@ -295,7 +322,14 @@ export class CanonicalProjectionMigrationService {
     
     
     for (const { file, frontmatter } of documents) {
-      if (!isCustomFieldTradeNote(frontmatter, file.path, journalFolderPath)) {
+      if (
+        !isCustomFieldTradeNote(
+          frontmatter,
+          file.path,
+          journalFolderPath,
+          migratingCustomFieldKeys
+        )
+      ) {
         continue;
       }
       const fileCustomFieldMigrations = customFieldKeyMigrations.filter(

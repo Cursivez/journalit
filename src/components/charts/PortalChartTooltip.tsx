@@ -212,7 +212,9 @@ export function PortalChartTooltip({
   allowEmptyPayload = false,
 }: PortalChartTooltipProps): React.ReactPortal | null {
   const portalRoot = useTooltipPortalRoot(chartRef);
-  const tooltipRef = React.useRef<HTMLDivElement>(null);
+  const [tooltipNode, setTooltipNode] = React.useState<HTMLDivElement | null>(
+    null
+  );
   const [anchor, setAnchor] = React.useState<TooltipAnchor | null>(null);
   const [tooltipSize, setTooltipSize] = React.useState<TooltipSize>({
     width: 0,
@@ -319,7 +321,9 @@ export function PortalChartTooltip({
   }, [hasActivePayload, portalRoot]);
 
   React.useLayoutEffect(() => {
-    if (!isVisible) {
+    
+    
+    if (!tooltipNode) {
       setTooltipSize((previous) =>
         previous.width === 0 && previous.height === 0
           ? previous
@@ -328,10 +332,8 @@ export function PortalChartTooltip({
       return undefined;
     }
 
-    const node = tooltipRef.current;
-    if (!node) return undefined;
     const updateSize = () => {
-      const rect = node.getBoundingClientRect();
+      const rect = tooltipNode.getBoundingClientRect();
       const nextSize = { width: rect.width, height: rect.height };
       setTooltipSize((previous) =>
         sameSize(previous, nextSize) ? previous : nextSize
@@ -339,13 +341,14 @@ export function PortalChartTooltip({
     };
 
     updateSize();
-    const ResizeObserverCtor = node.ownerDocument.defaultView?.ResizeObserver;
+    const ResizeObserverCtor =
+      tooltipNode.ownerDocument.defaultView?.ResizeObserver;
     if (!ResizeObserverCtor) return undefined;
 
     const observer = new ResizeObserverCtor(updateSize);
-    observer.observe(node);
+    observer.observe(tooltipNode);
     return () => observer.disconnect();
-  }, [isVisible, children]);
+  }, [tooltipNode, children]);
 
   if (!isVisible || !portalRoot || !anchor) return null;
 
@@ -363,7 +366,7 @@ export function PortalChartTooltip({
 
   return createPortal(
     <div
-      ref={tooltipRef}
+      ref={setTooltipNode}
       className={
         isMeasured
           ? 'journalit-chart-tooltip-portal'

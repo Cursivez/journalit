@@ -22,6 +22,12 @@ import {
 } from '../../utils/dateUtils';
 import { getTradingDay } from '../../utils/tradingDayUtils';
 import { forceMetadataCacheRefresh } from '../../utils/dataRefresh';
+import {
+  addSampleOwnershipToMarkdown,
+  appendSampleReviewBody,
+  materializeSampleReviewFrontmatter,
+  type SampleReviewMaterialization,
+} from '../../demo/DemoOwnership';
 
 import { FolderPathService } from '../core/FolderPathService';
 import { ReviewTemplateService } from '../templates/ReviewTemplateService';
@@ -451,7 +457,10 @@ export class DRCService {
   }
 
   
-  public async createDRC(date: Date): Promise<string> {
+  public async createDRC(
+    date: Date,
+    options: { sampleMaterialization?: SampleReviewMaterialization } = {}
+  ): Promise<string> {
     try {
       const path = this.getDRCNotePath(date);
 
@@ -470,22 +479,38 @@ export class DRCService {
 
       
       await this.ensureDirectoryExists(path);
+      const claimedOwnership = options.sampleMaterialization
+        ? null
+        : this.plugin?.demoSessionService?.claimNewOwnership('review');
 
       
-      const content = await this.generateInitialDRCContent(date);
+      const generatedContent = await this.generateInitialDRCContent(
+        date,
+        options.sampleMaterialization
+      );
+      const content = claimedOwnership
+        ? addSampleOwnershipToMarkdown(generatedContent, claimedOwnership)
+        : generatedContent;
 
       
       const newFile = await this.app.vault.create(path, content);
+      if (claimedOwnership) {
+        await this.plugin?.demoSessionService?.adoptCreatedMarkdownFile(
+          path,
+          claimedOwnership
+        );
+      }
 
-      
-      await forceMetadataCacheRefresh(this.app, newFile);
-
-      
-      eventBus.publish('review:changed', {
-        type: 'drc',
-        action: 'created',
-        filePath: path,
-      });
+      if (options.sampleMaterialization) {
+        options.sampleMaterialization.creationBatch.register(newFile, 'drc');
+      } else {
+        await forceMetadataCacheRefresh(this.app, newFile);
+        eventBus.publish('review:changed', {
+          type: 'drc',
+          action: 'created',
+          filePath: path,
+        });
+      }
 
       return path;
     } catch (error) {
@@ -498,6 +523,16 @@ export class DRCService {
   public async getTodayDRC(): Promise<string> {
     const today = new Date();
     return this.createDRC(today);
+  }
+
+  
+  public async resolveDRCNotePath(date: Date): Promise<string> {
+    const path = this.getDRCNotePath(date);
+    if (await this.app.vault.adapter.exists(path)) {
+      return path;
+    }
+    const existingDRC = await this.findDRCByFrontmatterDate(date);
+    return existingDRC ? existingDRC.path : path;
   }
 
   
@@ -1025,7 +1060,10 @@ export class DRCService {
   }
 
   
-  private async generateInitialDRCContent(date: Date): Promise<string> {
+  private async generateInitialDRCContent(
+    date: Date,
+    sampleMaterialization?: SampleReviewMaterialization
+  ): Promise<string> {
     
     const drcData: Record<string, unknown> = {
       type: 'drc',
@@ -1067,7 +1105,16 @@ export class DRCService {
     drcData.templateVersion = template.version;
 
     
-    return transformService.generateNoteFromTemplate(template, drcData);
+    const authoredData = sampleMaterialization
+      ? materializeSampleReviewFrontmatter(drcData, sampleMaterialization)
+      : drcData;
+    const content = transformService.generateNoteFromTemplate(
+      template,
+      authoredData
+    );
+    return sampleMaterialization
+      ? appendSampleReviewBody(content, sampleMaterialization.appendBody)
+      : content;
   }
 
   

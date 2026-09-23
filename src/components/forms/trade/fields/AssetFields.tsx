@@ -25,6 +25,8 @@ import {
   calculateStopLossRiskAmount,
   canCalculateStopLossRiskAmount,
   resolveEffectiveRiskAmount,
+  resolveTakeProfitClosePercent,
+  resolveTakeProfitCloseSize,
 } from '../validation';
 import { formatPnL } from '../../../../utils/formatting';
 import { formatCost } from '../../../../utils/formatting';
@@ -33,6 +35,7 @@ import { OptionType } from '../../../../services/options';
 import { getPluginInstance } from '../../../../utils/pluginContext';
 import { areSnapshotKeysClaimedByCustomFields } from '../../../../utils/unrealizedPnl';
 import { useCurrency } from '../../../../contexts/CurrencyContext';
+import { useDisplayFormatter } from '../../../../hooks/useDisplayPolicy';
 import { getCurrencyOptions } from '../../../../utils/currencyConfig';
 import { debounce } from '../../../../utils/debounce';
 import { calculateAssetAdjustedPriceMoveValue } from '../../../../utils/priceMoveValue';
@@ -45,7 +48,11 @@ import {
   TradeFormInputMode,
   TradeFormLayoutItemId,
   TradeFormLayoutSettings,
+  TradeFormTakeProfitUnit,
+  resolveTradeFormLayoutSettings,
 } from '../../../../settings/types';
+import { resolvePropChallengePhaseAt } from '../../../../services/propChallenge/PropChallengeConfig';
+import { getPricePrecision, getSizePrecision } from '../utils';
 import {
   getEditAwareVisibleOrderedTradeFormLayoutItems,
   hasPopulatedTradeFormLayoutItem,
@@ -105,7 +112,6 @@ export function mergeActiveTradeFormAccountNames(
 }
 
 const ASSET_SPECIFIC_ERROR_FIELDS: Array<keyof TradeFormErrors> = [
-  'exchange',
   'expirationDate',
   'strikePrice',
   'optionType',
@@ -119,12 +125,30 @@ const ASSET_SPECIFIC_ERROR_FIELDS: Array<keyof TradeFormErrors> = [
   'pipValue',
   'forexPnlConversionRate',
   'tradingPair',
-  'cryptoExchange',
   'leverageRatio',
 ];
 
 const hasAssetSpecificValidationErrors = (errors: TradeFormErrors): boolean =>
   ASSET_SPECIFIC_ERROR_FIELDS.some((field) => Boolean(errors[field]));
+
+
+export function shouldShowDirectPnlToggle({
+  isLayoutVisible,
+  isEditMode,
+  data,
+  hasDirectPnlError,
+}: {
+  isLayoutVisible: boolean;
+  isEditMode: boolean;
+  data: Partial<TradeFormData>;
+  hasDirectPnlError: boolean;
+}): boolean {
+  return (
+    isLayoutVisible ||
+    (isEditMode && hasPopulatedTradeFormLayoutItem(data, 'directPnlToggle')) ||
+    hasDirectPnlError
+  );
+}
 
 const shouldShowTradingCostsSection = (
   layout: TradeFormLayoutSettings,
@@ -324,11 +348,13 @@ function AccountSelectField({
   errors,
   accountOptions,
   onChange,
+  onRequestCreateAccount,
 }: {
   data: Partial<TradeFormData>;
   errors: TradeFormErrors;
   accountOptions: string[];
   onChange: (field: keyof TradeFormData, value: TradeFormValue) => void;
+  onRequestCreateAccount: (name: string) => void;
 }) {
   return (
     <ComboBox
@@ -343,10 +369,35 @@ function AccountSelectField({
             ? [value]
             : [];
 
+        
+        
+        
+        
+        const previousNames = new Set(
+          Array.isArray(data.account) ? data.account : []
+        );
+        const knownAccountNames = new Set(accountOptions);
+        const typedAccountName = selectedNames.find(
+          (name) => !previousNames.has(name) && !knownAccountNames.has(name)
+        );
+
+        if (typedAccountName !== undefined) {
+          
+          
+          onChange(
+            'account',
+            selectedNames.filter((name) => name !== typedAccountName)
+          );
+          onRequestCreateAccount(typedAccountName);
+          return;
+        }
+
         onChange('account', selectedNames);
       }}
       error={errors.account}
-      allowCreate={false} 
+      
+      
+      allowCreate={true}
       isMulti={true}
       optionType={OptionType.ACCOUNT}
       required={!data.isMissedTrade && !data.isBacktestTrade}
@@ -354,6 +405,57 @@ function AccountSelectField({
     />
   );
 }
+
+function coerceFormDate(value: unknown): Date | undefined {
+  if (value instanceof Date && !Number.isNaN(value.getTime())) return value;
+  if (typeof value === 'string' && value.length > 0) {
+    const date = new Date(value);
+    if (!Number.isNaN(date.getTime())) return date;
+  }
+  return undefined;
+}
+
+
+function resolvePhaseAttributionTimestamp(data: Partial<TradeFormData>): Date {
+  const entryTime = coerceFormDate(data.entryTime);
+  const isOpen =
+    hasOpenTradeEvidence(data) &&
+    isTradeOpenWithContext({
+      tradeStatus: data.tradeStatus,
+      exitTime: data.exitTime,
+      exitPrice: data.exitPrice,
+      pnl: data._originalPnlWasNull ? null : data.pnl,
+      useDirectPnLInput: data.useDirectPnLInput,
+      exits: data.exits,
+      entries: data.entries,
+    });
+  if (isOpen) return entryTime ?? new Date();
+  return coerceFormDate(data.exitTime) ?? entryTime ?? new Date();
+}
+
+function PropChallengePhaseHint({ data }: { data: Partial<TradeFormData> }) {
+  const plugin = getPluginInstance();
+  const selected = Array.isArray(data.account) ? data.account : [];
+  const metadata = plugin?.settings.account?.accountMetadata;
+  if (!metadata || selected.length === 0) return null;
+  const challenged = selected.filter((name) => metadata[name]?.propChallenge);
+  if (challenged.length !== 1) return null;
+  const config = metadata[challenged[0]]?.propChallenge;
+  if (!config) return null;
+  const phase = resolvePropChallengePhaseAt(
+    config,
+    resolvePhaseAttributionTimestamp(data),
+    data
+  );
+  return (
+    <div className="journalit-prop-challenge-phase-hint">
+      {phase
+        ? t('form.field.prop-challenge-phase', { name: phase.name })
+        : t('form.field.prop-challenge-phase.none')}
+    </div>
+  );
+}
+
 
 function AccountEmptyState({
   onCreateAccount,
@@ -374,6 +476,9 @@ function AccountEmptyState({
         >
           {t('form.account-empty-state.create-account')}
         </Button>
+      </div>
+      <div className="trade-form-account-empty-state-description">
+        {t('form.account-empty-state.description')}
       </div>
     </div>
   );
@@ -468,18 +573,39 @@ interface TakeProfitsSectionProps {
   takeProfits: NonNullable<TradeFormData['takeProfits']>;
   errors: TradeFormErrors;
   pricePrecision: number;
+  sizePrecision: number;
+  takeProfitUnit: TradeFormTakeProfitUnit;
+  positionSize?: number;
   onChange: (field: keyof TradeFormData, value: TradeFormValue) => void;
 }
 
 const createTakeProfitClientId = (): string =>
   `take-profit-${Date.now()}-${Math.random().toString(36).slice(2)}`;
 
+
+const hasCloseAmount = (value: number | undefined): boolean =>
+  typeof value === 'number' && Number.isFinite(value);
+
 function TakeProfitsSection({
   takeProfits,
   errors,
   pricePrecision,
+  sizePrecision,
+  takeProfitUnit,
+  positionSize,
   onChange,
 }: TakeProfitsSectionProps) {
+  const useSizeUnit = takeProfitUnit === 'size';
+  const totalPositionSize =
+    typeof positionSize === 'number' &&
+    Number.isFinite(positionSize) &&
+    positionSize > 0
+      ? positionSize
+      : undefined;
+  const roundToSizePrecision = (value: number): number => {
+    const factor = 10 ** sizePrecision;
+    return Math.round(value * factor) / factor;
+  };
   const generatedClientIdsRef = useRef(new WeakMap<object, string>());
   const getTakeProfitKey = (
     target: NonNullable<TradeFormData['takeProfits']>[number]
@@ -500,37 +626,99 @@ function TakeProfitsSection({
 
   const updateTakeProfit = (
     index: number,
-    field: 'price' | 'closePercent',
+    field: 'price' | 'closePercent' | 'size',
     value: number | undefined
   ) => {
     onChange(
       'takeProfits',
-      takeProfits.map((target, targetIndex) =>
-        targetIndex === index
-          ? { ...target, clientId: getTakeProfitKey(target), [field]: value }
-          : target
-      )
+      takeProfits.map((target, targetIndex) => {
+        if (targetIndex !== index) return target;
+        const nextTarget = {
+          ...target,
+          clientId: getTakeProfitKey(target),
+          [field]: value,
+        };
+        
+        
+        if (field === 'closePercent') delete nextTarget.size;
+        if (field === 'size') delete nextTarget.closePercent;
+        return nextTarget;
+      })
     );
   };
 
+  const addTakeProfitBySize = () => {
+    const [singleTarget] = takeProfits;
+    
+    
+    
+    
+    if (
+      totalPositionSize !== undefined &&
+      takeProfits.length === 1 &&
+      !hasCloseAmount(singleTarget.closePercent) &&
+      (singleTarget.size === undefined ||
+        singleTarget.size === totalPositionSize)
+    ) {
+      const firstHalf = roundToSizePrecision(totalPositionSize / 2);
+      const secondHalf = roundToSizePrecision(totalPositionSize - firstHalf);
+      if (firstHalf > 0 && secondHalf > 0) {
+        onChange('takeProfits', [
+          { ...singleTarget, size: firstHalf },
+          { clientId: createTakeProfitClientId(), size: secondHalf },
+        ]);
+        return;
+      }
+    }
+
+    
+    
+    const allocatedSize = takeProfits.reduce(
+      (total, target) =>
+        total + resolveTakeProfitCloseSize(target, totalPositionSize),
+      0
+    );
+    const remainingSize =
+      totalPositionSize !== undefined
+        ? roundToSizePrecision(Math.max(0, totalPositionSize - allocatedSize))
+        : 0;
+    onChange('takeProfits', [
+      ...takeProfits,
+      {
+        clientId: createTakeProfitClientId(),
+        size: remainingSize > 0 ? remainingSize : undefined,
+      },
+    ]);
+  };
+
   const addTakeProfit = () => {
+    if (useSizeUnit) {
+      addTakeProfitBySize();
+      return;
+    }
+
+    const [singleTarget] = takeProfits;
     if (
       takeProfits.length === 1 &&
-      (takeProfits[0].closePercent === undefined ||
-        takeProfits[0].closePercent === 100)
+      !hasCloseAmount(singleTarget.size) &&
+      (singleTarget.closePercent === undefined ||
+        singleTarget.closePercent === 100)
     ) {
       onChange('takeProfits', [
-        { ...takeProfits[0], closePercent: 50 },
+        { ...singleTarget, closePercent: 50 },
         { clientId: createTakeProfitClientId(), closePercent: 50 },
       ]);
       return;
     }
 
+    
+    
     const allocatedPercent = takeProfits.reduce(
-      (total, target) => total + (target.closePercent || 0),
+      (total, target) =>
+        total + resolveTakeProfitClosePercent(target, totalPositionSize),
       0
     );
-    const remainingPercent = Math.max(0, 100 - allocatedPercent);
+    const remainingPercent = Math.max(0, Math.round(100 - allocatedPercent));
     onChange('takeProfits', [
       ...takeProfits,
       {
@@ -567,7 +755,11 @@ function TakeProfitsSection({
           <div className="take-profit-row take-profit-row-header">
             <span>{t('form.field.take-profit-short')}</span>
             <span>{t('form.field.target-price')}</span>
-            <span>{t('form.field.close-percent')}</span>
+            <span>
+              {useSizeUnit
+                ? t('form.field.close-size')
+                : t('form.field.close-percent')}
+            </span>
             <span aria-hidden="true" />
           </div>
           {takeProfits.map((target, index) => (
@@ -582,19 +774,32 @@ function TakeProfitsSection({
                 allowDecimal={true}
                 placeholder={t('form.placeholder.target-price')}
               />
-              <NumberInput
-                aria-label={`${t('form.field.close-percent')} ${index + 1}`}
-                value={target.closePercent}
-                onChange={(value) =>
-                  updateTakeProfit(index, 'closePercent', value)
-                }
-                error={errors.takeProfits?.[index]?.closePercent}
-                min={0}
-                max={100}
-                precision={0}
-                allowDecimal={false}
-                placeholder={t('form.placeholder.close-percent')}
-              />
+              {useSizeUnit ? (
+                <NumberInput
+                  aria-label={`${t('form.field.close-size')} ${index + 1}`}
+                  value={target.size}
+                  onChange={(value) => updateTakeProfit(index, 'size', value)}
+                  error={errors.takeProfits?.[index]?.size}
+                  min={0}
+                  precision={sizePrecision}
+                  allowDecimal={sizePrecision > 0}
+                  placeholder={t('form.placeholder.close-size')}
+                />
+              ) : (
+                <NumberInput
+                  aria-label={`${t('form.field.close-percent')} ${index + 1}`}
+                  value={target.closePercent}
+                  onChange={(value) =>
+                    updateTakeProfit(index, 'closePercent', value)
+                  }
+                  error={errors.takeProfits?.[index]?.closePercent}
+                  min={0}
+                  max={100}
+                  precision={0}
+                  allowDecimal={false}
+                  placeholder={t('form.placeholder.close-percent')}
+                />
+              )}
               <Button
                 type="button"
                 variant="plain"
@@ -631,6 +836,7 @@ function RiskManagementSection({
   showResultPreview = true,
   onChange,
 }: RiskManagementSectionProps) {
+  const { formatValue } = useDisplayFormatter();
   const plugin = getPluginInstance();
   const maeMfeInputMode = plugin?.settings.trade.maeMfeInputMode;
   const showPriceFields = maeMfeInputMode === 'price';
@@ -640,6 +846,9 @@ function RiskManagementSection({
     data.direction?.toUpperCase() === 'SELL';
   const takeProfits = data.takeProfits || [];
   const pricePrecision = data.assetType === 'forex' ? 5 : 2;
+  const takeProfitUnit = resolveTradeFormLayoutSettings(
+    plugin?.settings.trade.tradeFormLayout
+  ).takeProfitUnit;
   const showTakeProfits = !data.isMissedTrade && !data.isBacktestTrade;
   const effectiveRiskAmount = resolveEffectiveRiskAmount(
     data,
@@ -716,7 +925,10 @@ function RiskManagementSection({
             key={fieldId}
             takeProfits={takeProfits}
             errors={errors}
-            pricePrecision={pricePrecision}
+            pricePrecision={getPricePrecision(data.assetType)}
+            sizePrecision={getSizePrecision(data.assetType)}
+            takeProfitUnit={takeProfitUnit}
+            positionSize={data.positionSize}
             onChange={onChange}
           />
         ) : null;
@@ -741,17 +953,19 @@ function RiskManagementSection({
                 data.positionSize > 0 && (
                   <span className="calculated-risk-hint">
                     ={' '}
-                    {formatPnL(
-                      calculateAssetAdjustedPriceMoveValue(
+                    {formatValue({
+                      kind: 'money',
+                      value: calculateAssetAdjustedPriceMoveValue(
                         data,
                         isShort
                           ? data.entryPrice - data.maePrice
                           : data.maePrice - data.entryPrice,
                         data.positionSize
                       ),
-                      false,
-                      pnlCurrency
-                    )}
+                      currencyCode: pnlCurrency,
+                      notation: 'compact',
+                      showCents: true,
+                    })}
                   </span>
                 )}
             </div>
@@ -799,17 +1013,19 @@ function RiskManagementSection({
                 data.positionSize > 0 && (
                   <span className="calculated-risk-hint">
                     ={' '}
-                    {formatPnL(
-                      calculateAssetAdjustedPriceMoveValue(
+                    {formatValue({
+                      kind: 'money',
+                      value: calculateAssetAdjustedPriceMoveValue(
                         data,
                         isShort
                           ? data.entryPrice - data.mfePrice
                           : data.mfePrice - data.entryPrice,
                         data.positionSize
                       ),
-                      false,
-                      pnlCurrency
-                    )}
+                      currencyCode: pnlCurrency,
+                      notation: 'compact',
+                      showCents: true,
+                    })}
                   </span>
                 )}
             </div>
@@ -886,39 +1102,58 @@ function RiskManagementSection({
   );
 }
 
+
 function AssetSpecificFields({
   data,
   errors,
   onChange,
   showManualFxRate,
-}: EntryExitSectionProps & { showManualFxRate: boolean }) {
+  showExchange,
+  showStructuralFields,
+}: EntryExitSectionProps & {
+  showManualFxRate: boolean;
+  showExchange: boolean;
+  showStructuralFields: boolean;
+}) {
   if (!data.assetType) return null;
+
+  
+  
+  
+  
+  
+  const exchangeField =
+    data.assetType === 'stock' ? (
+      <StockFields data={data} errors={errors} onChange={onChange} />
+    ) : data.assetType === 'crypto' ? (
+      <CryptoFields data={data} errors={errors} onChange={onChange} />
+    ) : null;
+
+  const structuralField =
+    data.assetType === 'options' ? (
+      <OptionsFields data={data} errors={errors} onChange={onChange} />
+    ) : data.assetType === 'futures' ? (
+      <FuturesFields data={data} errors={errors} onChange={onChange} />
+    ) : data.assetType === 'forex' ? (
+      <ForexFields
+        data={data}
+        errors={errors}
+        onChange={onChange}
+        showManualFxRate={showManualFxRate}
+      />
+    ) : data.assetType === 'cfd' ? (
+      <CFDFields data={data} errors={errors} onChange={onChange} />
+    ) : null;
+
+  const exchangeFields = showExchange ? exchangeField : null;
+  const structuralFields = showStructuralFields ? structuralField : null;
+
+  if (!exchangeFields && !structuralFields) return null;
 
   return (
     <div className="asset-specific-fields">
-      {data.assetType === 'stock' && (
-        <StockFields data={data} errors={errors} onChange={onChange} />
-      )}
-      {data.assetType === 'options' && (
-        <OptionsFields data={data} errors={errors} onChange={onChange} />
-      )}
-      {data.assetType === 'futures' && (
-        <FuturesFields data={data} errors={errors} onChange={onChange} />
-      )}
-      {data.assetType === 'forex' && (
-        <ForexFields
-          data={data}
-          errors={errors}
-          onChange={onChange}
-          showManualFxRate={showManualFxRate}
-        />
-      )}
-      {data.assetType === 'crypto' && (
-        <CryptoFields data={data} errors={errors} onChange={onChange} />
-      )}
-      {data.assetType === 'cfd' && (
-        <CFDFields data={data} errors={errors} onChange={onChange} />
-      )}
+      {exchangeFields}
+      {structuralFields}
     </div>
   );
 }
@@ -1047,7 +1282,7 @@ export function shouldClearAutoDerivedCfdCurrencyOnAssetTypeChange({
   );
 }
 
-export function shouldClearInvalidInstrumentOnAssetTypeChange({
+function shouldClearInvalidInstrumentOnAssetTypeChange({
   isValid,
   previousAssetType,
   currentAssetType,
@@ -1737,24 +1972,30 @@ function useAssetFieldsModel({
     }
   };
 
-  const handleCreateAccount = useCallback(() => {
-    const plugin = getPluginInstance();
-    if (!plugin) {
-      console.error('Failed to open create account modal: plugin unavailable');
-      return;
-    }
-
-    openCreateAccountModal(
-      plugin.app,
-      plugin,
-      () => {
-        void loadAccountOptions();
-      },
-      {
-        navigateOnSave: false,
+  const handleCreateAccount = useCallback(
+    (initialName?: string) => {
+      const plugin = getPluginInstance();
+      if (!plugin) {
+        console.error(
+          'Failed to open create account modal: plugin unavailable'
+        );
+        return;
       }
-    );
-  }, [loadAccountOptions]);
+
+      openCreateAccountModal(
+        plugin.app,
+        plugin,
+        () => {
+          void loadAccountOptions();
+        },
+        {
+          navigateOnSave: false,
+          initialName,
+        }
+      );
+    },
+    [loadAccountOptions]
+  );
 
   return {
     pnlCurrency,
@@ -1782,6 +2023,7 @@ interface BasicLayoutVisibilityState {
   visibleCostGroups: TradeFormLayoutItemId[];
   showTradingCosts: boolean;
   showAssetSpecificFields: boolean;
+  showExchangeField: boolean;
 }
 
 function resolveBasicLayoutVisibility({
@@ -1842,6 +2084,9 @@ function resolveBasicLayoutVisibility({
       isTradeFormLayoutItemVisible(layout, 'assetSpecific') ||
       (isEditMode && hasPopulatedTradeFormLayoutItem(data, 'assetSpecific')) ||
       hasAssetSpecificValidationErrors(errors),
+    showExchangeField:
+      isTradeFormLayoutItemVisible(layout, 'exchange') ||
+      (isEditMode && hasPopulatedTradeFormLayoutItem(data, 'exchange')),
   };
 }
 
@@ -1893,6 +2138,7 @@ const AssetFieldsComponent: React.FC<AssetFieldsProps> = ({
     visibleCostGroups,
     showTradingCosts,
     showAssetSpecificFields,
+    showExchangeField,
   } = resolveBasicLayoutVisibility({ layout, data, errors, isEditMode });
   const errorVisibleBasicItems = new Set<TradeFormLayoutItemId>();
   if (
@@ -1927,6 +2173,12 @@ const AssetFieldsComponent: React.FC<AssetFieldsProps> = ({
       visibleBasicOptionalItemSet.add(itemId);
     }
   }
+  const showDirectPnlToggle = shouldShowDirectPnlToggle({
+    isLayoutVisible: isTradeFormLayoutItemVisible(layout, 'directPnlToggle'),
+    isEditMode,
+    data,
+    hasDirectPnlError: Boolean(errors.directPnL),
+  });
   const showIdealExits =
     isTradeFormLayoutItemVisible(layout, 'idealExits') ||
     (isEditMode && hasPopulatedTradeFormLayoutItem(data, 'idealExits'));
@@ -1969,16 +2221,6 @@ const AssetFieldsComponent: React.FC<AssetFieldsProps> = ({
 
   const renderOptionalLayoutItem = (itemId: TradeFormLayoutItemId) => {
     switch (itemId) {
-      case 'assetSpecific':
-        return showAssetSpecificFields ? (
-          <AssetSpecificFields
-            key={itemId}
-            data={data}
-            errors={errors}
-            onChange={onChange}
-            showManualFxRate={layout.showManualFxRate}
-          />
-        ) : null;
       case 'tradingCosts':
       case 'tradingCostRebate':
       case 'tradingCostSwap':
@@ -2043,8 +2285,10 @@ const AssetFieldsComponent: React.FC<AssetFieldsProps> = ({
             errors={errors}
             accountOptions={accountOptions}
             onChange={onChange}
+            onRequestCreateAccount={handleCreateAccount}
           />
         )}
+        <PropChallengePhaseHint data={data} />
         {isAccountCreationBlocked && (
           <AccountEmptyState onCreateAccount={handleCreateAccount} />
         )}
@@ -2110,12 +2354,14 @@ const AssetFieldsComponent: React.FC<AssetFieldsProps> = ({
       )}
 
       
-      {showAssetSpecificFields && (
+      {(showAssetSpecificFields || showExchangeField) && (
         <AssetSpecificFields
           data={data}
           errors={errors}
           onChange={onChange}
           showManualFxRate={layout.showManualFxRate}
+          showExchange={showExchangeField}
+          showStructuralFields={showAssetSpecificFields}
         />
       )}
 
@@ -2128,9 +2374,12 @@ const AssetFieldsComponent: React.FC<AssetFieldsProps> = ({
           errors={errors}
           onChange={onChange}
           inputMode={effectiveInputMode}
-          showIdealExits={showIdealExits}
-          showUnrealizedSnapshot={showUnrealizedSnapshot}
-          showDividends={showDividends}
+          visibility={{
+            idealExits: showIdealExits,
+            unrealizedSnapshot: showUnrealizedSnapshot,
+            dividends: showDividends,
+            directPnlToggle: showDirectPnlToggle,
+          }}
           pnlCurrency={pnlCurrency}
         />
       </div>

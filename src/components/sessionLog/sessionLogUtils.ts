@@ -14,6 +14,7 @@ import {
   parseTradeTimestampValue,
 } from '../../utils/dateUtils';
 import { generateUUID } from '../../utils/uuid';
+import { enqueueFileMutation } from '../../utils/fileMutationQueue';
 import type { ResolvedSessionModeWindow } from '../../types/sessionMode';
 import type {
   SessionLogAlertRule,
@@ -32,24 +33,10 @@ import { t } from '../../lang/helpers';
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   Boolean(value) && typeof value === 'object' && !Array.isArray(value);
 
-const sessionLogMutationQueues = new Map<string, Promise<void>>();
-
-async function enqueueSessionLogMutation(
+const enqueueSessionLogMutation = (
   filePath: string,
   task: () => Promise<void>
-): Promise<void> {
-  const previousTask =
-    sessionLogMutationQueues.get(filePath) ?? Promise.resolve();
-  const nextTask = previousTask.catch(() => undefined).then(task);
-  sessionLogMutationQueues.set(filePath, nextTask);
-  try {
-    await nextTask;
-  } finally {
-    if (sessionLogMutationQueues.get(filePath) === nextTask) {
-      sessionLogMutationQueues.delete(filePath);
-    }
-  }
-}
+): Promise<void> => enqueueFileMutation('session-log', filePath, task);
 
 function getEntryTimelineEvents(
   trade: TimelineTrade,
@@ -316,6 +303,34 @@ export function isTimelineEntryInSessionWindow(
     timestampMs >= sessionWindow.start.getTime() &&
     timestampMs < sessionWindow.end.getTime()
   );
+}
+
+
+export function findOwningSessionWindow(
+  entry: SessionLogTimelineEntry,
+  windows: readonly ResolvedSessionModeWindow[]
+): ResolvedSessionModeWindow | undefined {
+  return findOwningSessionWindowForTimestamp(entry.timestamp, windows);
+}
+
+export function findOwningSessionWindowForTimestamp(
+  timestamp: Date,
+  windows: readonly ResolvedSessionModeWindow[]
+): ResolvedSessionModeWindow | undefined {
+  const timestampMs = timestamp.getTime();
+  let owner: ResolvedSessionModeWindow | undefined;
+  for (const window of windows) {
+    if (
+      timestampMs < window.start.getTime() ||
+      timestampMs >= window.end.getTime()
+    ) {
+      continue;
+    }
+    if (!owner || (owner.kind !== 'unplanned' && window.kind === 'unplanned')) {
+      owner = window;
+    }
+  }
+  return owner;
 }
 
 export function filterTimelineEntriesBySessionWindow(

@@ -50,6 +50,7 @@ try {
 
 const grouped = new Map();
 const unsafeCounts = new Map();
+const suppressedUnsafeCounts = new Map();
 const summary = {
   errorCount: 0,
   warningCount: 0,
@@ -59,6 +60,14 @@ const summary = {
 
 for (const fileReport of report) {
   const relativePath = fileReport.filePath.replace(`${process.cwd()}/`, '');
+  for (const message of fileReport.suppressedMessages ?? []) {
+    if (message.ruleId === UNSAFE_ASSERTION_RULE) {
+      suppressedUnsafeCounts.set(
+        relativePath,
+        (suppressedUnsafeCounts.get(relativePath) ?? 0) + 1
+      );
+    }
+  }
   for (const message of fileReport.messages ?? []) {
     if (message.ruleId === UNSAFE_ASSERTION_RULE) {
       unsafeCounts.set(relativePath, (unsafeCounts.get(relativePath) ?? 0) + 1);
@@ -133,6 +142,13 @@ for (const [relativePath, accepted] of acceptedUnsafeTypeAssertionFindings) {
   if (!unsafeCounts.has(relativePath)) {
     unsafeViolations.push({ relativePath, count: 0, accepted });
   }
+}
+for (const [relativePath, suppressedCount] of suppressedUnsafeCounts) {
+  unsafeViolations.push({
+    relativePath,
+    suppressedCount,
+    reason: 'Unsafe type assertion findings must not be suppressed',
+  });
 }
 
 summary.acceptedUnsafeTypeAssertions = [

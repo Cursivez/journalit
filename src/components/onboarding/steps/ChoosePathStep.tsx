@@ -21,6 +21,12 @@ interface ChoosePathStepProps {
   options: OnboardingPathOption[];
   busy: boolean;
   onBack: () => void | Promise<void>;
+  
+  statusText?: string;
+  
+  className?: string;
+  
+  showGraphic?: boolean;
 }
 
 export const ChoosePathStep: React.FC<ChoosePathStepProps> = ({
@@ -30,8 +36,13 @@ export const ChoosePathStep: React.FC<ChoosePathStepProps> = ({
   options,
   busy,
   onBack,
+  statusText,
+  className,
+  showGraphic = true,
 }) => (
-  <div className="feature-selection-step choose-path-step">
+  <div
+    className={`feature-selection-step choose-path-step${className ? ` ${className}` : ''}${showGraphic ? '' : ' choose-path-step-no-graphic'}`}
+  >
     <div className="feature-content-wrapper">
       <div className="feature-left">
         <div className="explore-kicker">{kicker}</div>
@@ -68,6 +79,12 @@ export const ChoosePathStep: React.FC<ChoosePathStepProps> = ({
           ))}
         </div>
 
+        {statusText && (
+          <p className="onboarding-status-text" role="status">
+            {statusText}
+          </p>
+        )}
+
         <div className="step-actions">
           <Button variant="secondary" onClick={onBack} disabled={busy}>
             {t('button.back')}
@@ -75,11 +92,13 @@ export const ChoosePathStep: React.FC<ChoosePathStepProps> = ({
         </div>
       </div>
 
-      <div className="feature-right">
-        <div className="feature-graphic">
-          <SyncingTradesGraphic />
+      {showGraphic && (
+        <div className="feature-right">
+          <div className="feature-graphic">
+            <SyncingTradesGraphic />
+          </div>
         </div>
-      </div>
+      )}
     </div>
   </div>
 );

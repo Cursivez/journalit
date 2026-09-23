@@ -98,9 +98,14 @@ export const ArrowUpRightFromSquare: ObsidianIconComponent = createIcon(
   'lucide-arrow-up-right-from-square'
 );
 export const Download: ObsidianIconComponent = createIcon('download');
+export const DollarSign: ObsidianIconComponent = createIcon('dollar-sign');
+export const CircleDollarSign: ObsidianIconComponent =
+  createIcon('circle-dollar-sign');
+export const HandCoins: ObsidianIconComponent = createIcon('hand-coins');
 export const ArrowUpNarrowWide: ObsidianIconComponent = createIcon(
   'arrow-up-narrow-wide'
 );
+export const Archive: ObsidianIconComponent = createIcon('archive');
 export const Award: ObsidianIconComponent = createIcon('award');
 export const BadgeCheck: ObsidianIconComponent = createIcon('badge-check');
 export const Ban: ObsidianIconComponent = createIcon('ban');
@@ -120,6 +125,7 @@ export const CalendarSearch: ObsidianIconComponent =
   createIcon('calendar-search');
 export const Check: ObsidianIconComponent = createIcon('check');
 export const CheckCircle: ObsidianIconComponent = createIcon('check-circle');
+export const XCircle: ObsidianIconComponent = createIcon('x-circle');
 export const CheckCircle2: ObsidianIconComponent = createIcon('check-circle-2');
 export const CheckSquare: ObsidianIconComponent = createIcon('check-square');
 export const ChevronDown: ObsidianIconComponent = createIcon('chevron-down');
@@ -142,7 +148,6 @@ export const ClockAlert: ObsidianIconComponent =
   createIcon('lucide-clock-alert');
 export const ClockIcon: ObsidianIconComponent = createIcon('clock');
 export const Copy: ObsidianIconComponent = createIcon('copy');
-export const CreateGroup: ObsidianIconComponent = createIcon('create-group');
 export const Edit: ObsidianIconComponent = createIcon('edit');
 export const ExternalLink: ObsidianIconComponent = createIcon('external-link');
 export const Eye: ObsidianIconComponent = createIcon('eye');
@@ -156,6 +161,7 @@ export const FolderOpen: ObsidianIconComponent = createIcon('folder-open');
 export const FolderTree: ObsidianIconComponent = createIcon('folder-tree');
 export const Funnel: ObsidianIconComponent = createIcon('funnel');
 export const Ghost: ObsidianIconComponent = createIcon('ghost');
+export const GitMerge: ObsidianIconComponent = createIcon('git-merge');
 export const GlassWater: ObsidianIconComponent = createIcon('glass-water');
 export const Network: ObsidianIconComponent = createIcon('network');
 
@@ -174,8 +180,8 @@ export const MessagesSquare: ObsidianIconComponent =
 export const Minus: ObsidianIconComponent = createIcon('minus');
 export const MoreHorizontal: ObsidianIconComponent =
   createIcon('more-horizontal');
+export const MoreVertical: ObsidianIconComponent = createIcon('more-vertical');
 export const MoveLeft: ObsidianIconComponent = createIcon('lucide-move-left');
-export const Plug: ObsidianIconComponent = createIcon('plug');
 export const Pause: ObsidianIconComponent = createIcon('pause');
 export const PanelLeftOpen: ObsidianIconComponent =
   createIcon('panel-left-open');
@@ -190,9 +196,9 @@ export const Search: ObsidianIconComponent = createIcon('search');
 export const Send: ObsidianIconComponent = createIcon('send');
 export const ScanSearch: ObsidianIconComponent = createIcon('scan-search');
 export const Server: ObsidianIconComponent = createIcon('server');
+export const Settings: ObsidianIconComponent = createIcon('settings');
 export const Settings2: ObsidianIconComponent = createIcon('settings-2');
 export const Shield: ObsidianIconComponent = createIcon('shield');
-export const Share2: ObsidianIconComponent = createIcon('share-2');
 export const SlidersHorizontal: ObsidianIconComponent =
   createIcon('sliders-horizontal');
 export const Snowflake: ObsidianIconComponent = createIcon('snowflake');

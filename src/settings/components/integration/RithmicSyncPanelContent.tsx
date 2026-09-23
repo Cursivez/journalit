@@ -16,6 +16,7 @@ import type {
   RithmicConnections,
 } from '../../../services/tradeSync/types';
 import { isBrokerSyncJobInProgress } from '../../../services/tradeSync/types';
+import { isRateLimitActive } from '../../../services/tradeSync/TradeSyncRateLimit';
 import { openExternalUrl } from '../../../utils/externalLinks';
 import { formatLocalizedDateTime } from '../../../utils/localizedDateTime';
 import {
@@ -27,6 +28,8 @@ import {
   BrokerOverviewCard,
   BrokerStatusPlaceholder,
   BrokerUnsavedMappingHint,
+  rateLimitUiState,
+  useRateLimitCountdown,
   type BrokerConnectionTone,
   type BrokerStatusState,
   type LocalAccountOption,
@@ -103,6 +106,7 @@ export interface RithmicSyncPanelContentProps {
   accountMappings: Record<string, string>;
   
   mappingDirty: Record<string, true>;
+  mappingRetryAtByAccountId: Record<string, number>;
   busyConnections: Record<string, true>;
   refreshing: boolean;
   syncAllBusy: boolean;
@@ -122,6 +126,7 @@ interface RithmicAccountRowProps {
   localAccounts: LocalAccountOption[];
   localAccountId: string;
   mappingUnsaved: boolean;
+  mappingRateLimitMessage?: string;
   busy: boolean;
   canSync: boolean;
   updateMapping: RithmicSyncPanelContentProps['updateMapping'];
@@ -133,6 +138,7 @@ const RithmicAccountRow: React.FC<RithmicAccountRowProps> = ({
   localAccounts,
   localAccountId,
   mappingUnsaved,
+  mappingRateLimitMessage,
   busy,
   canSync,
   updateMapping,
@@ -164,6 +170,11 @@ const RithmicAccountRow: React.FC<RithmicAccountRowProps> = ({
         onChange={(value) => updateMapping(account.canonicalAccountId, value)}
       />
       {mappingUnsaved && <BrokerUnsavedMappingHint />}
+      {mappingRateLimitMessage && (
+        <span className="journalit-broker-account-action__hint">
+          {mappingRateLimitMessage}
+        </span>
+      )}
     </div>
   </BrokerAccountCard>
 );
@@ -176,6 +187,8 @@ interface RithmicConnectionCardProps {
   localAccounts: LocalAccountOption[];
   accountMappings: Record<string, string>;
   mappingDirty: Record<string, true>;
+  mappingRetryAtByAccountId: Record<string, number>;
+  now: number;
   busy: boolean;
   syncConnection: RithmicSyncPanelContentProps['syncConnection'];
   updateMapping: RithmicSyncPanelContentProps['updateMapping'];
@@ -187,6 +200,8 @@ const RithmicConnectionCard: React.FC<RithmicConnectionCardProps> = ({
   localAccounts,
   accountMappings,
   mappingDirty,
+  mappingRetryAtByAccountId,
+  now,
   busy,
   syncConnection,
   updateMapping,
@@ -198,6 +213,14 @@ const RithmicConnectionCard: React.FC<RithmicConnectionCardProps> = ({
     (latestJob?.status === 'failed' ||
       latestJob?.status === 'partial' ||
       latestJob === undefined)
+  );
+  const mappingRateLimited = connection.accounts.some(
+    (account) =>
+      mappingDirty[account.canonicalAccountId] &&
+      isRateLimitActive(
+        mappingRetryAtByAccountId[account.canonicalAccountId],
+        now
+      )
   );
 
   return (
@@ -246,19 +269,31 @@ const RithmicConnectionCard: React.FC<RithmicConnectionCardProps> = ({
       )}
       {connection.accounts.length > 0 && (
         <div className="journalit-rithmic-connection-accounts">
-          {connection.accounts.map((account) => (
-            <RithmicAccountRow
-              key={account.id}
-              connectionId={connection.id}
-              account={account}
-              localAccounts={localAccounts}
-              localAccountId={accountMappings[account.canonicalAccountId] ?? ''}
-              mappingUnsaved={Boolean(mappingDirty[account.canonicalAccountId])}
-              busy={busy}
-              canSync={state.canSync}
-              updateMapping={updateMapping}
-            />
-          ))}
+          {connection.accounts.map((account) => {
+            const mappingRateLimit = rateLimitUiState(
+              mappingRetryAtByAccountId[account.canonicalAccountId],
+              'mapping',
+              now
+            );
+            return (
+              <RithmicAccountRow
+                key={account.id}
+                connectionId={connection.id}
+                account={account}
+                localAccounts={localAccounts}
+                localAccountId={
+                  accountMappings[account.canonicalAccountId] ?? ''
+                }
+                mappingUnsaved={Boolean(
+                  mappingDirty[account.canonicalAccountId]
+                )}
+                mappingRateLimitMessage={mappingRateLimit.message}
+                busy={busy}
+                canSync={state.canSync}
+                updateMapping={updateMapping}
+              />
+            );
+          })}
         </div>
       )}
       <BrokerActionsRow>
@@ -274,7 +309,9 @@ const RithmicConnectionCard: React.FC<RithmicConnectionCardProps> = ({
         <Button
           variant="primary"
           size="small"
-          disabled={busy || !state.canSync || state.hasRunningJob}
+          disabled={
+            busy || mappingRateLimited || !state.canSync || state.hasRunningJob
+          }
           onClick={() => void syncConnection(connection.id)}
         >
           <Download size={14} />
@@ -296,6 +333,7 @@ export const RithmicSyncPanelContent: React.FC<
   localAccounts,
   accountMappings,
   mappingDirty,
+  mappingRetryAtByAccountId,
   busyConnections,
   refreshing,
   syncAllBusy,
@@ -311,6 +349,7 @@ export const RithmicSyncPanelContent: React.FC<
     statusState.kind === 'loaded' ? statusState.data.connections : [];
   const statusLoaded = statusState.kind === 'loaded';
   const statusUnavailable = statusState.kind === 'failed';
+  const now = useRateLimitCountdown(mappingRetryAtByAccountId);
   const openIntegrations = () => openExternalUrl(RITHMIC_INTEGRATIONS_URL);
 
   return (
@@ -393,6 +432,8 @@ export const RithmicSyncPanelContent: React.FC<
             localAccounts={localAccounts}
             accountMappings={accountMappings}
             mappingDirty={mappingDirty}
+            mappingRetryAtByAccountId={mappingRetryAtByAccountId}
+            now={now}
             busy={Boolean(busyConnections[connection.id] || syncAllBusy)}
             syncConnection={syncConnection}
             updateMapping={updateMapping}

@@ -8,13 +8,14 @@ import React, {
   useMemo,
   useRef,
 } from 'react';
-import type { WorkspaceLeaf } from 'obsidian';
+import { Notice, type WorkspaceLeaf } from 'obsidian';
 import {
   Check,
   Plus,
   Grid2x2Plus,
   ArrowUp,
   ArrowDown,
+  Settings,
 } from '../shared/icons/ObsidianIcon';
 import JournalitPlugin from '../../main';
 import {
@@ -62,6 +63,7 @@ import {
   HOME_MODE_TOGGLE_TARGET_ID,
   HOME_QUICK_LINKS_POSITION_BUTTON_TARGET_ID,
   HOME_QUICK_LINKS_TARGET_ID,
+  HOME_SETTINGS_BUTTON_TARGET_ID,
   HOME_WIDGET_SELECTOR_OPENED_ACTION_ID,
   HOME_WHATS_NEW_DASHBOARD_TOGGLE_GUIDE_ID,
 } from '../../guides/homeGuideIds';
@@ -77,14 +79,24 @@ import {
 import { areAccountSelectionsEqual } from '../shared/filters/remapSelectedAccounts';
 import type { TradeChangedPayload } from '../../services/events/types';
 import { t, hasTranslation } from '../../lang/helpers';
-import { cssVars } from '../../styles/inlineStylePolicy';
-import {
-  getHomeBackgroundResourcePath,
-  shouldShowHomeBackground,
-} from './homeBackgroundUtils';
+import { HomeBackgroundSurface } from './HomeBackgroundSurface';
 import { useLeafActive } from '../../hooks/useLeafActive';
 import { subscribeToHomeModeChanges } from './homeModeEvents';
 import { runQueuedTradeCountRefresh } from './homeTradeCountRefresh';
+import { HomeGreetingTitle } from './components/HomeGreetingTitle';
+import {
+  saveDisplayName,
+  subscribeToDisplayNameChanges,
+} from '../../settings/displayName';
+import {
+  updateGreetingDisplayName,
+  type HomeGreetingResult,
+} from './homeGreetingState';
+import {
+  hasOnboardingBeenShown,
+  markHomeVisited,
+  resolveIsFirstHomeVisit,
+} from '../../utils/homeVisitState';
 
 const asHomeAccountTradeSnapshots = (
   value: unknown
@@ -121,11 +133,6 @@ const questionOnlyGreetingKeys = [
   'home.greeting.how-did-today-go',
 ];
 
-interface GreetingResult {
-  jsx: React.ReactNode;
-  originalString: string;
-}
-
 const HOME_PERIODS: HomePeriod[] = ['month', 'quarter', 'year', 'lifetime'];
 
 
@@ -136,70 +143,11 @@ const getPeriodLabels = (): Record<HomePeriod, string> => ({
   lifetime: t('home.period.lifetime'),
 });
 
-
-function useHomeBackground(plugin: JournalitPlugin): {
-  resourcePath: string | null;
-  showInDashboard: boolean;
-} {
-  const [homeBackgroundPath, setHomeBackgroundPath] = useState(
-    plugin.settings.home?.backgroundImagePath || ''
-  );
-  const [showInDashboard, setShowInDashboard] = useState(
-    plugin.settings.home?.showBackgroundInDashboard ?? false
-  );
-  const [homeBackgroundRevision, setHomeBackgroundRevision] = useState(() =>
-    Date.now()
-  );
-  const refreshHomeBackground = useCallback(
-    (refreshImage: boolean) => {
-      setHomeBackgroundPath(plugin.settings.home?.backgroundImagePath || '');
-      setShowInDashboard(
-        plugin.settings.home?.showBackgroundInDashboard ?? false
-      );
-      if (refreshImage) setHomeBackgroundRevision(Date.now());
-    },
-    [plugin]
-  );
-
-  useEventBus(
-    'settings:changed',
-    useCallback(
-      (payload) => {
-        if (
-          payload.section === 'all' ||
-          (payload.section === 'home' &&
-            (payload.source === 'background-image' ||
-              payload.source === 'background-dashboard-visibility'))
-        ) {
-          refreshHomeBackground(
-            payload.section === 'all' || payload.source === 'background-image'
-          );
-        }
-      },
-      [refreshHomeBackground]
-    )
-  );
-
-  const resourcePath = useMemo(() => {
-    const resourcePath = getHomeBackgroundResourcePath(
-      plugin.app,
-      homeBackgroundPath
-    );
-    if (!resourcePath) return null;
-
-    const separator = resourcePath.includes('?') ? '&' : '?';
-    return `${resourcePath}${separator}journalit-home=${homeBackgroundRevision}`;
-  }, [homeBackgroundPath, homeBackgroundRevision, plugin]);
-
-  return { resourcePath, showInDashboard };
-}
-
 function useHomePageModel(plugin: JournalitPlugin, isActive: boolean) {
-  
-  const isFirstTimeUser = useCallback((): boolean => {
-    const ONBOARDING_SHOWN_KEY = `journalit-onboarding-ever-shown-${plugin.app.vault.getName()}`;
-    return !plugin.app.loadLocalStorage(ONBOARDING_SHOWN_KEY);
-  }, [plugin]);
+  const [isFirstHomeVisit, setIsFirstHomeVisit] = useState(() =>
+    resolveIsFirstHomeVisit(plugin.app)
+  );
+  const firstHomeActivationCompletedRef = useRef(false);
 
   const isQuestion = useCallback((greetingKey: string): boolean => {
     if (questionOnlyGreetingKeys.includes(greetingKey)) {
@@ -213,112 +161,113 @@ function useHomePageModel(plugin: JournalitPlugin, isActive: boolean) {
     return greetingText.trim().endsWith('?');
   }, []);
 
-  const getGreeting = useCallback((): GreetingResult => {
-    if (isFirstTimeUser()) {
-      const welcomeMessage = t('home.greeting.welcome');
-      return { jsx: welcomeMessage, originalString: welcomeMessage };
-    }
-
-    const displayName = plugin.settings.general?.displayName || '';
-    const now = new Date();
-    const hour = now.getHours();
-
-    const lateNightGreetingKeys = [
-      'home.greeting.nightowl',
-      'home.greeting.still-up',
-      'home.greeting.late-night',
-      'home.greeting.midnight-oil',
-    ];
-    const morningGreetingKeys = [
-      'home.greeting.good-morning',
-      'home.greeting.rise-and-shine',
-      'home.greeting.morning-trader',
-      'home.greeting.ready-conquer',
-      'home.greeting.fresh-start',
-    ];
-    const afternoonGreetingKeys = [
-      'home.greeting.good-afternoon',
-      'home.greeting.day-going-well',
-      'home.greeting.afternoon-checkin',
-      'home.greeting.midday-momentum',
-      'home.greeting.hows-it-going',
-    ];
-    const eveningGreetingKeys = [
-      'home.greeting.good-evening',
-      'home.greeting.winding-down',
-      'home.greeting.evening-review',
-      'home.greeting.how-did-today-go',
-      'home.greeting.time-to-reflect',
-    ];
-    const universalGreetingKeys = [
-      'home.greeting.welcome-back',
-      'home.greeting.hey-there',
-      'home.greeting.good-to-see-you',
-    ];
-
-    let timeBasedGreetingKeys: string[] = [];
-    if (hour >= 0 && hour < 5) {
-      timeBasedGreetingKeys = lateNightGreetingKeys;
-    } else if (hour >= 5 && hour < 11) {
-      timeBasedGreetingKeys = morningGreetingKeys;
-    } else if (hour >= 11 && hour < 17) {
-      timeBasedGreetingKeys = afternoonGreetingKeys;
-    } else {
-      timeBasedGreetingKeys = eveningGreetingKeys;
-    }
-
-    const allGreetingKeys = [
-      ...timeBasedGreetingKeys,
-      ...universalGreetingKeys,
-    ];
-    const randomIndex = Math.floor(Math.random() * allGreetingKeys.length);
-    const selectedGreetingKey = allGreetingKeys[randomIndex];
-    const selectedGreeting = hasTranslation(selectedGreetingKey)
-      ? t(selectedGreetingKey)
-      : selectedGreetingKey;
-
-    if (questionOnlyGreetingKeys.includes(selectedGreetingKey)) {
-      if (displayName) {
-        const jsx = (
-          <>
-            <span className="journalit-home-greeting-normal">
-              {t('home.greeting.hey')}{' '}
-            </span>
-            <span className="journalit-home-greeting-strong">
-              {displayName}
-            </span>
-            <span className="journalit-home-greeting-normal">
-              , {selectedGreeting}
-            </span>
-          </>
-        );
+  const getGreeting = useCallback(
+    (firstHomeVisit = isFirstHomeVisit): HomeGreetingResult => {
+      const displayName = plugin.settings.general?.displayName || '';
+      if (firstHomeVisit) {
+        
+        
+        const welcomeMessage = t('home.greeting.welcome');
         return {
-          jsx,
+          prefix: welcomeMessage,
+          suffix: '',
+          displayName: '',
+          originalString: welcomeMessage,
+        };
+      }
+
+      if (!displayName) {
+        const welcomeBack = t('home.greeting.welcome-back');
+        return {
+          prefix: `${welcomeBack}, `,
+          suffix: '',
+          displayName,
+          originalString: `${welcomeBack}, ${displayName}`,
+        };
+      }
+
+      const now = new Date();
+      const hour = now.getHours();
+
+      const lateNightGreetingKeys = [
+        'home.greeting.nightowl',
+        'home.greeting.still-up',
+        'home.greeting.late-night',
+        'home.greeting.midnight-oil',
+      ];
+      const morningGreetingKeys = [
+        'home.greeting.good-morning',
+        'home.greeting.rise-and-shine',
+        'home.greeting.morning-trader',
+        'home.greeting.ready-conquer',
+        'home.greeting.fresh-start',
+      ];
+      const afternoonGreetingKeys = [
+        'home.greeting.good-afternoon',
+        'home.greeting.day-going-well',
+        'home.greeting.afternoon-checkin',
+        'home.greeting.midday-momentum',
+        'home.greeting.hows-it-going',
+      ];
+      const eveningGreetingKeys = [
+        'home.greeting.good-evening',
+        'home.greeting.winding-down',
+        'home.greeting.evening-review',
+        'home.greeting.how-did-today-go',
+        'home.greeting.time-to-reflect',
+      ];
+      const universalGreetingKeys = [
+        'home.greeting.welcome-back',
+        'home.greeting.hey-there',
+        'home.greeting.good-to-see-you',
+      ];
+
+      let timeBasedGreetingKeys: string[] = [];
+      if (hour >= 0 && hour < 5) {
+        timeBasedGreetingKeys = lateNightGreetingKeys;
+      } else if (hour >= 5 && hour < 11) {
+        timeBasedGreetingKeys = morningGreetingKeys;
+      } else if (hour >= 11 && hour < 17) {
+        timeBasedGreetingKeys = afternoonGreetingKeys;
+      } else {
+        timeBasedGreetingKeys = eveningGreetingKeys;
+      }
+
+      const allGreetingKeys = [
+        ...timeBasedGreetingKeys,
+        ...universalGreetingKeys,
+      ];
+      const randomIndex = Math.floor(Math.random() * allGreetingKeys.length);
+      const selectedGreetingKey = allGreetingKeys[randomIndex];
+      const selectedGreeting = hasTranslation(selectedGreetingKey)
+        ? t(selectedGreetingKey)
+        : selectedGreetingKey;
+
+      if (questionOnlyGreetingKeys.includes(selectedGreetingKey)) {
+        return {
+          prefix: `${t('home.greeting.hey')} `,
+          suffix: `, ${selectedGreeting}`,
+          displayName,
           originalString: `${t('home.greeting.hey')} ${displayName}, ${selectedGreeting}`,
         };
-      } else {
-        return { jsx: selectedGreeting, originalString: selectedGreeting };
       }
-    }
 
-    if (displayName) {
-      const jsx = (
-        <>
-          <span className="journalit-home-greeting-normal">
-            {selectedGreeting},{' '}
-          </span>
-          <span className="journalit-home-greeting-strong">{displayName}</span>
-        </>
-      );
-      return { jsx, originalString: `${selectedGreeting}, ${displayName}` };
-    }
-
-    return { jsx: selectedGreeting, originalString: selectedGreeting };
-  }, [plugin, isFirstTimeUser]);
+      return {
+        prefix: `${selectedGreeting}, `,
+        suffix: '',
+        displayName,
+        originalString: `${selectedGreeting}, ${displayName}`,
+      };
+    },
+    [isFirstHomeVisit, plugin]
+  );
 
   const generateSubtitle = useCallback(
-    (greetingIsQuestion: boolean): string => {
-      if (isFirstTimeUser()) {
+    (
+      greetingIsQuestion: boolean,
+      firstHomeVisit = isFirstHomeVisit
+    ): string => {
+      if (firstHomeVisit) {
         return t('home.subtitle.first-time');
       }
 
@@ -342,7 +291,7 @@ function useHomePageModel(plugin: JournalitPlugin, isActive: boolean) {
       const subtitleKey = subtitleKeys[randomIndex];
       return hasTranslation(subtitleKey) ? t(subtitleKey) : subtitleKey;
     },
-    [isFirstTimeUser]
+    [isFirstHomeVisit]
   );
 
   const [isEditing, setIsEditing] = useState(false);
@@ -476,6 +425,8 @@ function useHomePageModel(plugin: JournalitPlugin, isActive: boolean) {
 
   
   const [showWidgetSelector, setShowWidgetSelector] = useState(false);
+  const [showEntityShortcutPicker, setShowEntityShortcutPicker] =
+    useState(false);
   const suppressGuideWidgetSelectorCloseRef = useRef(false);
 
   useEffect(() => {
@@ -485,6 +436,14 @@ function useHomePageModel(plugin: JournalitPlugin, isActive: boolean) {
 
     emitGuideAction(HOME_WIDGET_SELECTOR_OPENED_ACTION_ID);
   }, [emitGuideAction, showWidgetSelector]);
+
+  const handleOpenEntityShortcuts = useCallback(() => {
+    setShowWidgetSelector(false);
+    setShowEntityShortcutPicker(true);
+  }, []);
+  const handleCloseEntityShortcutPicker = useCallback(() => {
+    setShowEntityShortcutPicker(false);
+  }, []);
 
   useEffect(() => {
     if (currentGuideStepId === 'widget-picker') {
@@ -518,6 +477,7 @@ function useHomePageModel(plugin: JournalitPlugin, isActive: boolean) {
       ) {
         return;
       }
+      setShowEntityShortcutPicker(false);
       if (toStepId === 'intro' || toStepId === 'filters') {
         setIsEditing(false);
         setShowWidgetSelector(false);
@@ -539,6 +499,7 @@ function useHomePageModel(plugin: JournalitPlugin, isActive: boolean) {
       }
 
       if (
+        toStepId === 'add-shortcut' ||
         toStepId === 'quick-links-position' ||
         toStepId === 'quick-links' ||
         toStepId === 'add-widget' ||
@@ -585,7 +546,7 @@ function useHomePageModel(plugin: JournalitPlugin, isActive: boolean) {
     const greetingResult = getGreeting();
     const greetingIsQuestion = isQuestion(greetingResult.originalString);
     return {
-      greeting: greetingResult.jsx,
+      greeting: greetingResult,
       subtitle: generateSubtitle(greetingIsQuestion),
     };
   });
@@ -647,38 +608,78 @@ function useHomePageModel(plugin: JournalitPlugin, isActive: boolean) {
     }
   }, [plugin]);
 
-  const refreshGreetingState = useCallback(() => {
-    const greetingResult = getGreeting();
-    const greetingIsQuestion = isQuestion(greetingResult.originalString);
-    setGreetingState({
-      greeting: greetingResult.jsx,
-      subtitle: generateSubtitle(greetingIsQuestion),
-    });
-  }, [getGreeting, isQuestion, generateSubtitle]);
-  const refreshGreetingStateRef = useRef(refreshGreetingState);
+  const handleSaveDisplayName = useCallback(
+    async (displayName: string) => {
+      try {
+        await saveDisplayName(plugin, displayName);
+      } catch (error) {
+        console.error('Failed to save display name from Home:', error);
+        new Notice(t('settings.general.display-name-save-failed'), 5000);
+        throw error;
+      }
+    },
+    [plugin]
+  );
 
   useEffect(() => {
-    refreshGreetingStateRef.current = refreshGreetingState;
-  }, [refreshGreetingState]);
+    if (!isFirstHomeVisit) {
+      return;
+    }
+
+    if (isActive) {
+      if (
+        firstHomeActivationCompletedRef.current ||
+        !hasOnboardingBeenShown(plugin.app)
+      ) {
+        return;
+      }
+
+      markHomeVisited(plugin.app);
+      firstHomeActivationCompletedRef.current = true;
+      return;
+    }
+
+    if (!firstHomeActivationCompletedRef.current) {
+      return;
+    }
+
+    const greetingResult = getGreeting(false);
+    setGreetingState({
+      greeting: greetingResult,
+      subtitle: generateSubtitle(
+        isQuestion(greetingResult.originalString),
+        false
+      ),
+    });
+    setIsFirstHomeVisit(false);
+  }, [
+    generateSubtitle,
+    getGreeting,
+    isActive,
+    isFirstHomeVisit,
+    isQuestion,
+    plugin,
+  ]);
 
   
   useEffect(() => {
-    const refreshCurrentGreetingState = () => {
-      refreshGreetingStateRef.current();
-    };
+    if (isFirstHomeVisit) {
+      return;
+    }
 
-    window.addEventListener(
-      'journalit:display-name-changed',
-      refreshCurrentGreetingState
-    );
-
-    return () => {
-      window.removeEventListener(
-        'journalit:display-name-changed',
-        refreshCurrentGreetingState
-      );
-    };
-  }, []);
+    return subscribeToDisplayNameChanges(window, (displayName) => {
+      setGreetingState((current) => {
+        return {
+          ...current,
+          greeting: updateGreetingDisplayName(
+            current.greeting,
+            displayName,
+            t('home.greeting.welcome-back')
+          ),
+        };
+      });
+    });
+  }, [isFirstHomeVisit]);
 
   const handleToggleEdit = () => {
     const nextIsEditing = !isEditing;
@@ -686,6 +687,7 @@ function useHomePageModel(plugin: JournalitPlugin, isActive: boolean) {
 
     if (!nextIsEditing) {
       setShowWidgetSelector(false);
+      setShowEntityShortcutPicker(false);
     }
   };
 
@@ -1174,11 +1176,6 @@ function useHomePageModel(plugin: JournalitPlugin, isActive: boolean) {
     selectedAccounts,
   ]);
 
-  const hasVisibleQuickLinks = useMemo(
-    () => quickLinks.some((quickLink) => quickLink.visible),
-    [quickLinks]
-  );
-
   
   const hiddenQuickLinks = useMemo(() => {
     return quickLinks.filter((ql) => !ql.visible);
@@ -1453,6 +1450,7 @@ function useHomePageModel(plugin: JournalitPlugin, isActive: boolean) {
     () => ({
       dateRange: [null, null] as [Date | null, Date | null],
       accounts: effectiveSelectedAccounts,
+      accountPhases: [],
       tickers: [],
       setups: [],
       tradeTypes: [...selectedTradeTypes],
@@ -1470,13 +1468,17 @@ function useHomePageModel(plugin: JournalitPlugin, isActive: boolean) {
     () =>
       activeWidgets.includes('aum') ||
       activeWidgets.includes('drawdownMonitor') ||
-      activeWidgets.includes('profitTarget'),
+      activeWidgets.includes('profitTarget') ||
+      activeWidgets.includes('evalRoi') ||
+      activeWidgets.includes('challengeAlerts'),
     [activeWidgets]
   );
 
   return {
     memoizedGreeting,
     memoizedSubtitle,
+    isFirstHomeVisit,
+    handleSaveDisplayName,
     registerFiltersTarget,
     selectedPeriod,
     handlePeriodChange,
@@ -1490,6 +1492,9 @@ function useHomePageModel(plugin: JournalitPlugin, isActive: boolean) {
     isEditing,
     setShowWidgetSelector,
     registerAddWidgetButtonTarget,
+    showEntityShortcutPicker,
+    handleOpenEntityShortcuts,
+    handleCloseEntityShortcutPicker,
     handleToggleQuickLinksPosition,
     quickLinksPosition,
     registerQuickLinksPositionButtonTarget,
@@ -1497,7 +1502,6 @@ function useHomePageModel(plugin: JournalitPlugin, isActive: boolean) {
     registerEditButtonTarget,
     effectiveSelectedAccounts,
     lifetimeFilters,
-    hasVisibleQuickLinks,
     registerQuickLinksTarget,
     quickLinks,
     setQuickLinks,
@@ -1569,6 +1573,26 @@ const HomeModeToggle: React.FC<HomeModeToggleProps> = ({
   );
 };
 
+interface HomeSettingsButtonProps {
+  plugin: JournalitPlugin;
+  registerTarget?: (element: HTMLButtonElement | null) => void;
+}
+
+const HomeSettingsButton: React.FC<HomeSettingsButtonProps> = ({
+  plugin,
+  registerTarget,
+}) => (
+  <button
+    type="button"
+    onClick={() => plugin.openSettings()}
+    className="journalit-home-settings-button clickable-icon"
+    aria-label={t('home.aria.open-settings')}
+    ref={registerTarget}
+  >
+    <Settings size={16} aria-hidden="true" />
+  </button>
+);
+
 interface HomeOverviewPanelProps {
   model: HomePageModel;
   plugin: JournalitPlugin;
@@ -1592,9 +1616,18 @@ const HomeOverviewPanel: React.FC<HomeOverviewPanelProps> = ({
     >
       <div className="journalit-home-header">
         <div className="journalit-home-greeting">
-          <h1 className="journalit-home-greeting-title">
-            {model.memoizedGreeting}
-          </h1>
+          {model.isFirstHomeVisit ? (
+            <h1 className="journalit-home-greeting-title">
+              {model.memoizedGreeting.originalString}
+            </h1>
+          ) : (
+            <HomeGreetingTitle
+              prefix={model.memoizedGreeting.prefix}
+              suffix={model.memoizedGreeting.suffix}
+              displayName={model.memoizedGreeting.displayName}
+              onSaveDisplayName={model.handleSaveDisplayName}
+            />
+          )}
           <div className="journalit-home-subtitle-row">
             <p className="journalit-home-greeting-subtitle">
               {model.memoizedSubtitle}
@@ -1627,7 +1660,7 @@ const HomeOverviewPanel: React.FC<HomeOverviewPanelProps> = ({
                   type="button"
                   onClick={() => model.setShowWidgetSelector(true)}
                   className="journalit-home-add-widget-button clickable-icon"
-                  aria-label={t('home.aria.add-widget')}
+                  aria-label={t('home.button.add-widget')}
                   ref={model.registerAddWidgetButtonTarget}
                 >
                   <Plus size={14} />
@@ -1692,20 +1725,23 @@ const HomeOverviewPanel: React.FC<HomeOverviewPanelProps> = ({
             isActive={isActive}
           >
             <HomePeriodProvider period={model.selectedPeriod}>
-              {model.quickLinksPosition === 'aboveWidgets' &&
-                (model.isEditing || model.hasVisibleQuickLinks) && (
-                  <div
-                    className="journalit-home-section journalit-home-section--quick-links"
-                    ref={model.registerQuickLinksTarget}
-                  >
-                    <QuickLinksRow
-                      plugin={plugin}
-                      isEditing={model.isEditing}
-                      quickLinks={model.quickLinks}
-                      onQuickLinksChange={model.setQuickLinks}
-                    />
-                  </div>
-                )}
+              {model.quickLinksPosition === 'aboveWidgets' && (
+                <div
+                  className="journalit-home-section journalit-home-section--quick-links"
+                  ref={model.registerQuickLinksTarget}
+                >
+                  <QuickLinksRow
+                    plugin={plugin}
+                    isEditing={model.isEditing}
+                    quickLinks={model.quickLinks}
+                    onQuickLinksChange={model.setQuickLinks}
+                    shortcutPickerOpen={model.showEntityShortcutPicker}
+                    onShortcutPickerClose={
+                      model.handleCloseEntityShortcutPicker
+                    }
+                  />
+                </div>
+              )}
 
               <div
                 className="journalit-home-section"
@@ -1726,20 +1762,23 @@ const HomeOverviewPanel: React.FC<HomeOverviewPanelProps> = ({
                 </HomeAccountsDataProvider>
               </div>
 
-              {model.quickLinksPosition !== 'aboveWidgets' &&
-                (model.isEditing || model.hasVisibleQuickLinks) && (
-                  <div
-                    className="journalit-home-section journalit-home-section--quick-links"
-                    ref={model.registerQuickLinksTarget}
-                  >
-                    <QuickLinksRow
-                      plugin={plugin}
-                      isEditing={model.isEditing}
-                      quickLinks={model.quickLinks}
-                      onQuickLinksChange={model.setQuickLinks}
-                    />
-                  </div>
-                )}
+              {model.quickLinksPosition !== 'aboveWidgets' && (
+                <div
+                  className="journalit-home-section journalit-home-section--quick-links"
+                  ref={model.registerQuickLinksTarget}
+                >
+                  <QuickLinksRow
+                    plugin={plugin}
+                    isEditing={model.isEditing}
+                    quickLinks={model.quickLinks}
+                    onQuickLinksChange={model.setQuickLinks}
+                    shortcutPickerOpen={model.showEntityShortcutPicker}
+                    onShortcutPickerClose={
+                      model.handleCloseEntityShortcutPicker
+                    }
+                  />
+                </div>
+              )}
             </HomePeriodProvider>
           </DashboardDataProvider>
         </HomeAccountProvider>
@@ -1767,6 +1806,7 @@ const HomeOverviewSection: React.FC<HomeOverviewSectionProps> = ({
     guideService: plugin.viewGuideService,
     leaf,
     isActive,
+    isEditing: model.isEditing,
   });
 
   return (
@@ -1784,6 +1824,7 @@ const HomeOverviewSection: React.FC<HomeOverviewSectionProps> = ({
           hiddenQuickLinks={model.hiddenQuickLinks}
           onAddWidget={model.handleAddWidget}
           onRestoreQuickLink={model.handleRestoreQuickLink}
+          onOpenEntityShortcuts={model.handleOpenEntityShortcuts}
           onClose={() => model.setShowWidgetSelector(false)}
         />
       )}
@@ -1798,10 +1839,6 @@ const HomePageComponent: React.FC<HomePageProps> = ({
   getInitialMode,
   onModeChange,
 }) => {
-  const {
-    resourcePath: homeBackgroundResourcePath,
-    showInDashboard: showHomeBackgroundInDashboard,
-  } = useHomeBackground(plugin);
   
   
   
@@ -1842,15 +1879,6 @@ const HomePageComponent: React.FC<HomePageProps> = ({
     });
   }, [emitGuideAction, modeEventTarget]);
 
-  const showHomeBackground = shouldShowHomeBackground(
-    homeBackgroundResourcePath,
-    panelMode,
-    showHomeBackgroundInDashboard
-  );
-  const homePageClassName = showHomeBackground
-    ? 'journalit-home-page journalit-home-page--custom-background'
-    : 'journalit-home-page';
-
   const modeContextValue = useMemo(
     () => ({ mode, changeMode }),
     [mode, changeMode]
@@ -1859,28 +1887,44 @@ const HomePageComponent: React.FC<HomePageProps> = ({
   const registerModeToggleDashboardOptionTarget = useGuideTarget(
     HOME_MODE_TOGGLE_DASHBOARD_OPTION_TARGET_ID
   );
+  const registerSettingsButtonTarget = useGuideTarget(
+    HOME_SETTINGS_BUTTON_TARGET_ID
+  );
   const overviewToggle = useMemo(
     () => (
-      <HomeModeToggle
-        registerTarget={registerModeToggleTarget}
-        registerDashboardOptionTarget={registerModeToggleDashboardOptionTarget}
-      />
+      <>
+        <HomeSettingsButton
+          plugin={plugin}
+          registerTarget={registerSettingsButtonTarget}
+        />
+        <HomeModeToggle
+          registerTarget={registerModeToggleTarget}
+          registerDashboardOptionTarget={
+            registerModeToggleDashboardOptionTarget
+          }
+        />
+      </>
     ),
-    [registerModeToggleTarget, registerModeToggleDashboardOptionTarget]
+    [
+      plugin,
+      registerModeToggleTarget,
+      registerModeToggleDashboardOptionTarget,
+      registerSettingsButtonTarget,
+    ]
   );
-  const dashboardToggle = useMemo(() => <HomeModeToggle />, []);
+  const dashboardToggle = useMemo(
+    () => (
+      <>
+        <HomeSettingsButton plugin={plugin} />
+        <HomeModeToggle />
+      </>
+    ),
+    [plugin]
+  );
 
   return (
     <HomeModeContext.Provider value={modeContextValue}>
-      <div
-        className={homePageClassName}
-        data-mode={panelMode}
-        style={cssVars({
-          '--journalit-home-background-image': showHomeBackground
-            ? `url(${JSON.stringify(homeBackgroundResourcePath)})`
-            : null,
-        })}
-      >
+      <HomeBackgroundSurface plugin={plugin} mode={panelMode}>
         <div className="journalit-home-mode-panels">
           {overviewMounted && (
             <HomeOverviewSection
@@ -1903,7 +1947,7 @@ const HomePageComponent: React.FC<HomePageProps> = ({
             />
           </section>
         </div>
-      </div>
+      </HomeBackgroundSurface>
     </HomeModeContext.Provider>
   );
 };

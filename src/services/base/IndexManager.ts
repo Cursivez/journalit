@@ -10,6 +10,7 @@ import {
   getJournalitIndexesPath,
   isPathWithinDirectory,
 } from './pluginStoragePaths';
+import { CoalescedWriter } from './CoalescedWriter';
 
 function asRecord(value: unknown): Record<string, unknown> | undefined {
   return value && typeof value === 'object' && !Array.isArray(value)
@@ -83,6 +84,8 @@ export interface IndexEntry {
 
 
 export class IndexManager {
+  private static readonly SAVE_DELAY_MS = 2000;
+  private static readonly MAX_SAVE_DELAY_MS = 30_000;
   
   private indexes: Map<string, IndexEntry[]> = new Map();
   
@@ -102,8 +105,7 @@ export class IndexManager {
   ) => void;
   
   private app: App;
-  
-  private isDirty: boolean = false;
+  private persistenceWriter: CoalescedWriter;
   
   private persistIndexes: boolean = true;
   
@@ -138,6 +140,14 @@ export class IndexManager {
     this.app = app;
     this.dataExtractor = dataExtractor;
     this.persistIndexes = options.persistIndexes ?? true;
+    this.persistenceWriter = new CoalescedWriter({
+      delayMs: IndexManager.SAVE_DELAY_MS,
+      maxDelayMs: IndexManager.MAX_SAVE_DELAY_MS,
+      writeSnapshot: () => this.writeIndexSnapshot(),
+      onScheduledWriteError: (error) => {
+        console.error('Failed to save indexes:', error);
+      },
+    });
     this.boundHandleFileChange = (file: TAbstractFile, oldPath?: string) => {
       this.handleFileChange(file, oldPath);
     };
@@ -189,7 +199,7 @@ export class IndexManager {
     
     if (this.isInitialized && this.persistIndexes && !this.saveIntervalId) {
       this.saveIntervalId = this.plugin.registerInterval(
-        window.setInterval(() => void this.saveIndexes(), 5 * 60 * 1000)
+        window.setInterval(() => void this.flushIndexes(), 5 * 60 * 1000)
       );
     }
   }
@@ -227,7 +237,7 @@ export class IndexManager {
       
       if (this.persistIndexes && this.plugin) {
         this.saveIntervalId = this.plugin.registerInterval(
-          window.setInterval(() => void this.saveIndexes(), 5 * 60 * 1000)
+          window.setInterval(() => void this.flushIndexes(), 5 * 60 * 1000)
         );
       }
     } catch (error) {
@@ -497,7 +507,7 @@ export class IndexManager {
         }
 
         
-        this.isDirty = true;
+        this.markPersistenceDirty();
       } finally {
         
         this.buildingIndexes.delete(indexName);
@@ -517,6 +527,10 @@ export class IndexManager {
 
       this.readyIndexes.add(indexName);
       eventBus.publish('index:ready', { indexName });
+    }
+
+    if (this.persistIndexes && this.buildingIndexes.size === 0) {
+      this.persistenceWriter.scheduleIfDirty();
     }
   }
 
@@ -599,7 +613,7 @@ export class IndexManager {
         }
       }
 
-      this.isDirty = true;
+      this.markPersistenceDirty();
 
       if (this.pendingRebuildIndexes.has(indexName)) {
         this.pendingRebuildIndexes.delete(indexName);
@@ -621,9 +635,8 @@ export class IndexManager {
     } finally {
       this.buildingIndexes.delete(indexName);
 
-      
-      if (this.persistIndexes) {
-        void this.saveIndexes();
+      if (this.persistIndexes && this.buildingIndexes.size === 0) {
+        this.persistenceWriter.scheduleIfDirty();
       }
     }
   }
@@ -697,7 +710,7 @@ export class IndexManager {
       }
 
       this.indexes.set(indexName, index);
-      this.isDirty = true;
+      this.markPersistenceDirty();
     } catch (error) {
       console.error(
         `Error indexing file ${file.path} for index ${indexName}:`,
@@ -732,7 +745,7 @@ export class IndexManager {
       }
 
       index.pop();
-      this.isDirty = true;
+      this.markPersistenceDirty();
     }
 
     fileIndices.delete(indexName);
@@ -776,7 +789,7 @@ export class IndexManager {
 
         
         index.pop();
-        this.isDirty = true;
+        this.markPersistenceDirty();
       }
     }
 
@@ -845,7 +858,7 @@ export class IndexManager {
     if (retainedMappings.size > 0) {
       this.filePathMap.set(file.path, newMappings);
       this.processedFiles.add(file.path);
-      this.isDirty = true;
+      this.markPersistenceDirty();
     }
     if (oldMappings?.size === 0) {
       this.filePathMap.delete(oldPath);
@@ -916,11 +929,6 @@ export class IndexManager {
           
           this.removeFileFromIndexes(file.path);
         }
-
-        
-        if (this.isDirty && this.persistIndexes) {
-          window.setTimeout(() => void this.saveIndexes(), 2000);
-        }
       } catch (error) {
         console.error(`Error handling file change for ${file.path}:`, error);
       }
@@ -935,35 +943,41 @@ export class IndexManager {
   }
 
   
-  private async saveIndexes(): Promise<void> {
-    if (!this.isDirty || !this.persistIndexes) return;
+  private markPersistenceDirty(): void {
+    if (!this.persistIndexes) return;
+    this.persistenceWriter.markDirty({ defer: this.buildingIndexes.size > 0 });
+  }
 
-    try {
-      const indexDir = getJournalitIndexesPath(this.app);
-
-      
-      if (!(await this.app.vault.adapter.exists(indexDir))) {
-        await this.app.vault.adapter.mkdir(indexDir);
-      }
-
-      
-      for (const [indexName, entries] of this.indexes.entries()) {
-        const serialized = {
+  private async writeIndexSnapshot(): Promise<void> {
+    const indexDir = getJournalitIndexesPath(this.app);
+    const serializedIndexes = Array.from(this.indexes.entries()).map(
+      ([indexName, entries]) => ({
+        path: `${indexDir}/${indexName}.json`,
+        content: JSON.stringify({
           name: indexName,
           entries: entries.map((entry) => ({
             path: entry.file.path,
             values: entry.values,
           })),
-        };
+        }),
+      })
+    );
 
-        const indexPath = `${indexDir}/${indexName}.json`;
-        await this.app.vault.adapter.write(
-          indexPath,
-          JSON.stringify(serialized)
-        );
-      }
+    if (!(await this.app.vault.adapter.exists(indexDir))) {
+      await this.app.vault.adapter.mkdir(indexDir);
+    }
 
-      this.isDirty = false;
+    for (const index of serializedIndexes) {
+      await this.app.vault.adapter.write(index.path, index.content);
+    }
+  }
+
+  
+  public async flushIndexes(): Promise<void> {
+    if (!this.persistIndexes) return;
+
+    try {
+      await this.persistenceWriter.flush();
     } catch (error) {
       console.error('Failed to save indexes:', error);
     }
@@ -1047,7 +1061,7 @@ export class IndexManager {
   }
 
   
-  public unload(): void {
+  public async unload(): Promise<void> {
     
     this.saveIntervalId = null;
 
@@ -1059,9 +1073,10 @@ export class IndexManager {
     }
     this.eventUnsubscribers = [];
 
-    
-    if (this.persistIndexes && this.isDirty) {
-      void this.saveIndexes();
+    try {
+      await this.persistenceWriter.dispose();
+    } catch (error) {
+      console.error('Failed to save indexes:', error);
     }
 
     

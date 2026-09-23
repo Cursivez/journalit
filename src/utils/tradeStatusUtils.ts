@@ -877,16 +877,6 @@ export function getTotalEntrySize(
   return entriesSize > 0 ? entriesSize : normalized.positionSize;
 }
 
-
-export function getWeightedAverageExitPrice(
-  trade: Pick<TradeExecutionCompatibilityInput, 'exits' | 'exitPrice'>
-): number | null {
-  return normalizeTradeExecutionForCompatibility({
-    exits: trade.exits,
-    exitPrice: trade.exitPrice,
-  }).weightedExitPrice;
-}
-
 export function getResolvedWeightedAverageExitPrice(
   trade: Pick<
     TradeExecutionCompatibilityInput,

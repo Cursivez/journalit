@@ -1,6 +1,8 @@
 export const DASHBOARD_EMPTY_GUIDE_ID = 'dashboard.empty';
 export const DASHBOARD_MAIN_GUIDE_ID = 'dashboard.main';
 
+export const DASHBOARD_CUSTOMIZE_GUIDE_ID = 'dashboard.customize';
+
 export const DASHBOARD_EMPTY_STATE_TARGET_ID = 'dashboard.empty-state';
 export const DASHBOARD_FILTER_BUTTON_TARGET_ID = 'dashboard.filter-button';
 export const DASHBOARD_EDIT_LAYOUT_BUTTON_TARGET_ID =

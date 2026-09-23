@@ -24,6 +24,7 @@ import { SkeletonBox } from '../../shared/SkeletonBox';
 import { t, type TranslationKey } from '../../../lang/helpers';
 import { classifyPnLWithBreakEvenSettings } from '../../../utils/breakEvenRange';
 import { getBreakEvenBalanceForDisplayTrade } from './shared/breakEvenDisplayUtils';
+import { openReviewWidgetFile } from '../reviewWidgetNavigation';
 
 type ReviewBestWorstTrade = Record<string, unknown> & {
   pnl?: number | null;
@@ -422,7 +423,7 @@ export const BestWorstMonthsWidget: React.FC<BestWorstMonthsWidgetProps> =
           
           const file = plugin.app.vault.getAbstractFileByPath(monthlyPath);
           if (file) {
-            await plugin.openFile(monthlyPath, false);
+            await openReviewWidgetFile(plugin, monthlyPath);
           } else if (
             plugin.settings.monthly?.autoCreateMonthlyReviewOnNavigation
           ) {
@@ -434,7 +435,7 @@ export const BestWorstMonthsWidget: React.FC<BestWorstMonthsWidgetProps> =
             const newPath = plugin.monthlyReviewService?.getMonthlyReviewPath(
               monthData.monthStart
             );
-            if (newPath) await plugin.openFile(newPath, false);
+            if (newPath) await openReviewWidgetFile(plugin, newPath);
           }
         } catch (error) {
           console.error(

@@ -28,6 +28,7 @@ export type PerformanceBreakdownChartPoint =
   | PerformanceBreakdownDividerPoint;
 
 export interface PerformanceBreakdownBarShapeProps {
+  index?: number;
   x?: number;
   y?: number;
   width?: number;
@@ -215,6 +216,9 @@ const isPerformanceBreakdownDataPoint = (
     isFiniteNumber(value.displayValue)
   );
 };
+
+export const getPerformanceBreakdownLabel = (value: unknown): string | null =>
+  isPerformanceBreakdownDataPoint(value) ? value.label : null;
 
 export const isPerformanceBreakdownTooltipContent = (
   value: unknown

@@ -1,16 +1,12 @@
 
 
-import React, { memo, useLayoutEffect } from 'react';
+import React, { memo } from 'react';
 import { SkeletonBox } from '../shared/SkeletonBox';
 import { SkeletonText } from '../shared/SkeletonText';
 import { DashboardWidgetSkeleton } from '../dashboard/components/DashboardWidgets/DashboardWidgetSkeleton';
 import { t } from '../../lang/helpers';
 
 export const AccountPageSkeleton = memo(() => {
-  useLayoutEffect(() => {
-    return () => {};
-  }, []);
-
   return (
     <div
       className="account-page-skeleton"
@@ -24,7 +20,12 @@ export const AccountPageSkeleton = memo(() => {
       
       <div className="account-page-skeleton-header">
         <SkeletonText width="200px" height="24px" />
-        <SkeletonText width="120px" height="16px" />
+        <SkeletonText width="280px" height="14px" />
+      </div>
+
+      
+      <div className="account-page-skeleton-band">
+        <SkeletonBox width="100%" height="64px" borderRadius="8px" />
       </div>
 
       
@@ -43,21 +44,7 @@ export const AccountPageSkeleton = memo(() => {
       </div>
 
       
-      <div className="account-page-skeleton-risk">
-        <SkeletonText width="150px" height="18px" />
-        <div className="skeleton-risk-visualizations">
-          <SkeletonBox width="100%" height="120px" borderRadius="8px" />
-          <SkeletonBox width="100%" height="120px" borderRadius="8px" />
-        </div>
-      </div>
-
-      
       <div className="account-page-skeleton-transactions">
-        <DashboardWidgetSkeleton type="table" announceLoading={false} />
-      </div>
-
-      
-      <div className="account-page-skeleton-trades">
         <DashboardWidgetSkeleton type="table" announceLoading={false} />
       </div>
     </div>

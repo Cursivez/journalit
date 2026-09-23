@@ -1,10 +1,12 @@
 export const LAYOUT_BUILDER_MAIN_GUIDE_ID = 'layout-builder.main';
 
+export const LAYOUT_BUILDER_EDITOR_GUIDE_ID = 'layout-builder.editor';
+
 export const LAYOUT_BUILDER_SIDEBAR_TARGET_ID = 'layout-builder.sidebar';
 export const LAYOUT_BUILDER_DRC_BUILTIN_TEMPLATE_TARGET_ID =
   'layout-builder.drc-builtin-template';
-export const LAYOUT_BUILDER_DRC_DUPLICATE_BUTTON_TARGET_ID =
-  'layout-builder.drc-duplicate-button';
+export const LAYOUT_BUILDER_BUILTIN_DUPLICATE_BUTTON_TARGET_ID =
+  'layout-builder.builtin-duplicate-button';
 export const LAYOUT_BUILDER_PREVIEW_TARGET_ID = 'layout-builder.preview';
 export const LAYOUT_BUILDER_EDITOR_MODE_BUTTON_TARGET_ID =
   'layout-builder.editor-mode-button';
@@ -23,6 +25,15 @@ export const LAYOUT_BUILDER_SAVE_BUTTON_TARGET_ID =
 export const LAYOUT_BUILDER_DEFAULT_TEMPLATE_STAR_TARGET_ID =
   'layout-builder.default-template-star';
 
+
+export const LAYOUT_BUILDER_TEMPLATE_SELECTED_ACTION_ID =
+  'layout-builder.template-selected';
+
+export const LAYOUT_BUILDER_SELECTED_TEMPLATE_IS_BUILT_IN_CONTEXT_KEY =
+  'layout-builder.selectedTemplateIsBuiltIn';
+
+export const LAYOUT_BUILDER_SELECTED_TEMPLATE_IS_DEFAULT_CONTEXT_KEY =
+  'layout-builder.selectedTemplateIsDefault';
 export const LAYOUT_BUILDER_TEMPLATE_DUPLICATED_ACTION_ID =
   'layout-builder.template-duplicated';
 export const LAYOUT_BUILDER_EDITOR_MODE_OPENED_ACTION_ID =

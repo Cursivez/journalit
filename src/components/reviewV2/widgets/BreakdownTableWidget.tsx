@@ -33,6 +33,7 @@ import {
   getReviewTradeTradingDay,
   splitReviewTradeByRealizedPnlEvent,
 } from '../utils/reviewTradeDates';
+import { openReviewWidgetFile } from '../reviewWidgetNavigation';
 
 type BreakdownTrade = Trade & { _reviewBreakdownDate?: Date };
 
@@ -837,11 +838,11 @@ export const BreakdownTableWidget: React.FC<BreakdownTableWidgetProps> =
           if (file) {
             
             
-            await plugin.openFile(drcPath, false);
+            await openReviewWidgetFile(plugin, drcPath);
           } else if (plugin.settings.drc.autoCreateDRCOnNavigation) {
             
             await plugin.drcService.createDRC(rawDate);
-            await plugin.openFile(drcPath, false);
+            await openReviewWidgetFile(plugin, drcPath);
           }
         } catch (error) {
           console.error('[BreakdownTableWidget] Error opening DRC:', error);
@@ -863,13 +864,13 @@ export const BreakdownTableWidget: React.FC<BreakdownTableWidgetProps> =
           if (file) {
             
             
-            await plugin.openFile(weeklyPath, false);
+            await openReviewWidgetFile(plugin, weeklyPath);
           } else if (
             plugin.settings.weekly.autoCreateWeeklyReviewOnNavigation
           ) {
             
             await plugin.weeklyReviewService.createWeeklyReview(firstDate);
-            await plugin.openFile(weeklyPath, false);
+            await openReviewWidgetFile(plugin, weeklyPath);
           }
         } catch (error) {
           console.error(
@@ -890,12 +891,12 @@ export const BreakdownTableWidget: React.FC<BreakdownTableWidgetProps> =
         try {
           const file = plugin.app.vault.getAbstractFileByPath(monthlyPath);
           if (file) {
-            await plugin.openFile(monthlyPath, false);
+            await openReviewWidgetFile(plugin, monthlyPath);
           } else if (
             plugin.settings.monthly?.autoCreateMonthlyReviewOnNavigation
           ) {
             await plugin.monthlyReviewService.createMonthlyReview(monthStart);
-            await plugin.openFile(monthlyPath, false);
+            await openReviewWidgetFile(plugin, monthlyPath);
           }
         } catch (error) {
           console.error(
@@ -916,14 +917,14 @@ export const BreakdownTableWidget: React.FC<BreakdownTableWidgetProps> =
         try {
           const file = plugin.app.vault.getAbstractFileByPath(quarterlyPath);
           if (file) {
-            await plugin.openFile(quarterlyPath, false);
+            await openReviewWidgetFile(plugin, quarterlyPath);
           } else if (
             plugin.settings.quarterly?.autoCreateQuarterlyReviewOnNavigation
           ) {
             await plugin.quarterlyReviewService.createQuarterlyReview(
               quarterStart
             );
-            await plugin.openFile(quarterlyPath, false);
+            await openReviewWidgetFile(plugin, quarterlyPath);
           }
         } catch (error) {
           console.error(

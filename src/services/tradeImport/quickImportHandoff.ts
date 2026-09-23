@@ -16,6 +16,8 @@ interface QuickImportTradeImportHandoff {
   dateFormat?: string;
   sheetName?: string | null;
   headerRowIndex?: number | null;
+  templateId?: string;
+  templateName?: string;
   columnMappings: Record<string, string[]>;
   aiMappingEnabled: boolean;
   analyse: TradeImportAnalyseResponse | null;

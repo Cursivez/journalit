@@ -808,6 +808,11 @@ export interface TradesChartDataPoint {
   accounts?: string;
 }
 
+
+export function getTradeNotePath(chartPath: string): string {
+  return chartPath.replace(/#realized-\d+$/, '');
+}
+
 export const prepareTradesChartData = (
   trades: Trade[],
   defaultRiskAmount?: number,

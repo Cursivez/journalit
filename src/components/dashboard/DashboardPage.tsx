@@ -20,10 +20,12 @@ import {
 import {
   DASHBOARD_EDIT_MODE_DISABLED_ACTION_ID,
   DASHBOARD_EDIT_MODE_ENABLED_ACTION_ID,
+  DASHBOARD_CUSTOMIZE_GUIDE_ID,
   DASHBOARD_EMPTY_GUIDE_ID,
   DASHBOARD_MAIN_GUIDE_ID,
   DASHBOARD_WIDGET_SELECTOR_OPENED_ACTION_ID,
 } from '../../guides/dashboardGuideIds';
+import { resolveContextualGuideId } from '../../guides/contextualGuideResolution';
 
 interface DashboardGuideCoordinatorProps {
   leaf: WorkspaceLeaf;
@@ -42,6 +44,7 @@ const DashboardGuideCoordinator: React.FC<DashboardGuideCoordinatorProps> = ({
   const { dashboardData } = useDashboardData();
   const emitGuideAction = useGuideAction();
   const previousIsEditingRef = useRef(isEditing);
+  const isEditingRef = useRef(isEditing);
   const totalTradeCountRef = useRef<number | null>(null);
   
   
@@ -61,7 +64,26 @@ const DashboardGuideCoordinator: React.FC<DashboardGuideCoordinatorProps> = ({
         if (tradeCount === 0 && data.trades.length === 0) {
           resolvedGuideId = DASHBOARD_EMPTY_GUIDE_ID;
         } else if (tradeCount > 0 && data.trades.length > 0) {
-          resolvedGuideId = DASHBOARD_MAIN_GUIDE_ID;
+          const guideService = plugin.viewGuideService;
+          const activeSessionGuideId =
+            [DASHBOARD_MAIN_GUIDE_ID, DASHBOARD_CUSTOMIZE_GUIDE_ID]
+              .map((guideId) =>
+                guideService.getSessionForGuideAndLeaf(guideId, leaf)
+              )
+              .find((session) => session && session.status !== 'ended')
+              ?.guideId ?? null;
+          resolvedGuideId = resolveContextualGuideId({
+            baseGuideId: DASHBOARD_MAIN_GUIDE_ID,
+            contextualGuides: [
+              {
+                guideId: DASHBOARD_CUSTOMIZE_GUIDE_ID,
+                active: isEditingRef.current,
+              },
+            ],
+            activeSessionGuideId,
+            getPersistedState: (guideId) =>
+              guideService.getPersistedGuideState(guideId),
+          });
         }
       }
 
@@ -78,6 +100,7 @@ const DashboardGuideCoordinator: React.FC<DashboardGuideCoordinatorProps> = ({
       if (
         dashboardSession &&
         resolvedGuideId &&
+        resolvedGuideId !== DASHBOARD_CUSTOMIZE_GUIDE_ID &&
         dashboardSession.guideId !== resolvedGuideId
       ) {
         void plugin.viewGuideService.clearGuideState(dashboardSession.guideId);
@@ -132,12 +155,14 @@ const DashboardGuideCoordinator: React.FC<DashboardGuideCoordinatorProps> = ({
 
   useEffect(() => {
     if (!isActive) return;
+    isEditingRef.current = isEditing;
+    applyResolvedGuide(totalTradeCountRef.current, dashboardData);
     if (isEditing) emitGuideAction(DASHBOARD_EDIT_MODE_ENABLED_ACTION_ID);
     else if (previousIsEditingRef.current) {
       emitGuideAction(DASHBOARD_EDIT_MODE_DISABLED_ACTION_ID);
     }
     previousIsEditingRef.current = isEditing;
-  }, [emitGuideAction, isActive, isEditing]);
+  }, [applyResolvedGuide, dashboardData, emitGuideAction, isActive, isEditing]);
 
   useEffect(() => {
     if (isActive && showUnifiedSelector) {
@@ -289,7 +314,8 @@ export const DashboardPage = React.memo(function DashboardPage({
     }) => {
       if (
         guideId !== DASHBOARD_MAIN_GUIDE_ID &&
-        guideId !== DASHBOARD_EMPTY_GUIDE_ID
+        guideId !== DASHBOARD_EMPTY_GUIDE_ID &&
+        guideId !== DASHBOARD_CUSTOMIZE_GUIDE_ID
       ) {
         return;
       }
@@ -316,7 +342,8 @@ export const DashboardPage = React.memo(function DashboardPage({
       return;
     }
     if (
-      (currentGuideStepId === 'open-widget-selector' ||
+      (currentGuideStepId === 'save-layout' ||
+        currentGuideStepId === 'open-widget-selector' ||
         currentGuideStepId === 'metrics-section') &&
       showUnifiedSelector
     ) {

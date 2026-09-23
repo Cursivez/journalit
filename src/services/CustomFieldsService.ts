@@ -353,6 +353,19 @@ export class CustomFieldsService {
     return [...this.fields.fields].sort((a, b) => a.order - b.order);
   }
 
+  setNamespace(namespace: string): void {
+    if (namespace === this.namespace) return;
+    this.namespace = namespace;
+    this.fields = { ...DEFAULT_CUSTOM_FIELDS_DATA, fields: [] };
+    this.fieldOptions = {};
+    this.loadFields();
+    this.loadFieldOptions();
+    this.plugin.app.workspace.trigger(
+      'journalit-custom-fields-changed',
+      this.fields
+    );
+  }
+
   
   getField(fieldId: string): CustomFieldDefinition | undefined {
     return this.fields.fields.find((field) => field.id === fieldId);

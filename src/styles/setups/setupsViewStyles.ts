@@ -83,17 +83,13 @@ export const SETUPS_VIEW_STYLES = `
   color: var(--text-normal);
 }
 
+
 .journalit-setups-view__tabs {
   display: flex;
-  gap: 0;
-  flex-wrap: nowrap;
   justify-content: center;
   align-items: center;
-  padding: 3px;
-  border: 1px solid var(--background-modifier-border);
-  border-radius: var(--radius-m, 8px);
-  background: var(--background-secondary);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
+  min-width: 0;
+  max-width: 100%;
 }
 
 .journalit-setups-icon-button {
@@ -143,63 +139,6 @@ export const SETUPS_VIEW_STYLES = `
   background: var(--background-modifier-hover);
   border-color: transparent;
   opacity: 1;
-}
-
-.journalit-setups-view .journalit-setups-tab-button {
-  appearance: none;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  min-height: 32px;
-  padding: 0 12px;
-  border: 1px solid transparent;
-  border-radius: calc(var(--radius-m, 8px) - 3px);
-  background: transparent;
-  color: var(--text-muted);
-  cursor: pointer;
-  font-size: var(--font-ui-small);
-  line-height: 1;
-  opacity: 0.78;
-  box-shadow: none;
-  white-space: nowrap;
-  transition:
-    opacity 0.16s ease,
-    color 0.16s ease,
-    box-shadow 0.16s ease,
-    background-color 0.16s ease;
-}
-
-.journalit-setups-view .journalit-setups-tab-button + .journalit-setups-tab-button {
-  margin-left: 1px;
-}
-
-.journalit-setups-view .journalit-setups-tab-button:hover:not(:disabled),
-.journalit-setups-view .journalit-setups-tab-button:focus-visible:not(:disabled) {
-  opacity: 1;
-  color: var(--text-normal);
-  background: var(--background-modifier-hover);
-  border-color: transparent;
-}
-
-.journalit-setups-view .journalit-setups-tab-button:disabled {
-  cursor: not-allowed;
-  opacity: 0.38;
-}
-
-.journalit-setups-view .journalit-setups-tab-button--active,
-.journalit-setups-view .journalit-setups-tab-button--active:hover,
-.journalit-setups-view .journalit-setups-tab-button--active:focus-visible {
-  position: relative;
-  z-index: 1;
-  opacity: 1;
-  color: var(--text-normal);
-  background: var(--background-primary);
-  border-color: transparent;
-  border-radius: calc(var(--radius-m, 8px) - 3px);
-  box-shadow:
-    0 1px 2px rgba(0, 0, 0, 0.18),
-    inset 0 0 0 1px var(--interactive-accent);
 }
 
 .journalit-setups-create-button {
@@ -742,7 +681,7 @@ export const SETUPS_VIEW_STYLES = `
   border-radius: 8px;
   background:
     linear-gradient(180deg, color-mix(in srgb, var(--background-secondary) 72%, transparent), transparent),
-    color-mix(in srgb, var(--background-primary) 88%, black 12%);
+    var(--journalit-detail-card-surface);
   box-shadow: none;
   overflow: hidden;
   display: block;
@@ -753,7 +692,7 @@ export const SETUPS_VIEW_STYLES = `
   border-color: color-mix(in srgb, var(--background-modifier-border) 88%, transparent);
   background:
     linear-gradient(180deg, color-mix(in srgb, var(--background-secondary) 55%, transparent), transparent 42%),
-    var(--background-primary);
+    var(--journalit-detail-card-surface);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.72);
 }
 
@@ -945,7 +884,7 @@ button.journalit-toolbar-button.journalit-setups-performance-widget__setup-trigg
   border-radius: 5px;
   background:
     linear-gradient(180deg, color-mix(in srgb, var(--background-secondary) 72%, transparent), transparent),
-    color-mix(in srgb, var(--background-primary) 88%, black 12%);
+    var(--journalit-detail-card-surface);
   background-clip: padding-box;
 }
 
@@ -962,7 +901,7 @@ button.journalit-toolbar-button.journalit-setups-performance-widget__setup-trigg
   border-color: color-mix(in srgb, var(--background-modifier-border) 88%, var(--background-primary));
   background:
     linear-gradient(180deg, color-mix(in srgb, var(--background-secondary) 55%, transparent), transparent 42%),
-    var(--background-primary);
+    var(--journalit-detail-card-surface);
   background-clip: padding-box;
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.72);
 }
@@ -1842,15 +1781,6 @@ button.journalit-toolbar-button.journalit-setups-performance-widget__setup-trigg
   border-color: var(--background-modifier-border-hover);
   background: var(--background-modifier-hover);
   color: var(--text-normal);
-}
-
-.journalit-setups-detail-action-icon--primary {
-  color: var(--text-normal);
-}
-
-.journalit-setups-detail-action-icon--primary:disabled {
-  color: var(--text-muted);
-  opacity: 0.52;
 }
 
 .journalit-setups-detail-back-button {
@@ -4233,26 +4163,30 @@ button.journalit-toolbar-button.journalit-setups-detail-performance__chart-mode-
   border-radius: 0;
 }
 
-.journalit-setups-view button.journalit-setups-detail-back-button,
-.journalit-setups-view button.journalit-setups-detail-back-button:hover,
-.journalit-setups-view button.journalit-setups-detail-back-button:focus-visible {
-  background: rgba(var(--mono-rgb-100), 0.045) !important;
-  background-color: rgba(var(--mono-rgb-100), 0.045) !important;
-  background-image: none !important;
-  box-shadow: 0 1px 0 rgba(var(--mono-rgb-100), 0.04) inset !important;
-}
 
 .journalit-setups-view button.journalit-setups-detail-back-button {
-  border-color: var(--background-modifier-border) !important;
-  border-radius: 7px;
-  padding-inline: 10px;
+  border-color: transparent !important;
+  border-radius: 0;
+  padding-inline: 4px;
+  background: transparent !important;
+  background-color: transparent !important;
+  background-image: none !important;
+  box-shadow: none !important;
 }
 
 .journalit-setups-view button.journalit-setups-detail-back-button:hover,
 .journalit-setups-view button.journalit-setups-detail-back-button:focus-visible {
-  border-color: var(--background-modifier-border-hover) !important;
-  background: var(--background-modifier-hover) !important;
-  background-color: var(--background-modifier-hover) !important;
+  border-color: transparent !important;
+  background: transparent !important;
+  background-color: transparent !important;
+  box-shadow: none !important;
+  color: var(--text-normal) !important;
+  opacity: 1;
+}
+
+.journalit-setups-view button.journalit-setups-detail-back-button:focus-visible {
+  outline: 2px solid var(--interactive-accent);
+  outline-offset: 2px;
 }
 
 .journalit-setups-compare-edge-card {
@@ -5011,14 +4945,6 @@ button.journalit-toolbar-button.journalit-setups-detail-performance__chart-mode-
 .journalit-setups-execution-gap__chart {
   flex: 1 1 auto;
   min-height: 0;
-}
-
-.journalit-setups-execution-gap__plot .journalit-chart-container .recharts-bar-rectangle,
-.journalit-setups-execution-gap__plot .journalit-chart-container .recharts-bar-rectangle:hover,
-.journalit-setups-execution-gap__plot .journalit-chart-container .recharts-bar-rectangle.recharts-active {
-  filter: none;
-  transform: none;
-  transition: none;
 }
 
 .journalit-setups-execution-gap__bar-label text {

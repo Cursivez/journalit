@@ -11,6 +11,7 @@ import { DashboardData } from '../utils/dataUtils';
 import { TradeFormModal } from '../../forms/trade/TradeFormModal';
 import { usePlugin } from '../../../hooks/usePlugin';
 import { t } from '../../../lang/helpers';
+import { SampleJournalEntryButton } from '../../shared/SampleJournalControls';
 import { useGuideTarget } from '../../../guides/GuideRuntimeLayer';
 import {
   DASHBOARD_BOTTOM_SECTION_TARGET_ID,
@@ -91,7 +92,8 @@ export const DashboardContent: React.FC<DashboardContentProps> = React.memo(
       !isLoading &&
       dashboardData &&
       dashboardData.trades.length === 0 &&
-      (dashboardData.unrealizedTrades?.length ?? 0) === 0
+      (dashboardData.unrealizedTrades?.length ?? 0) === 0 &&
+      (dashboardData.excursionTrades?.length ?? 0) === 0
     ) {
       return (
         <DashboardEmptyStateGuideTarget>
@@ -106,6 +108,8 @@ export const DashboardContent: React.FC<DashboardContentProps> = React.memo(
             onActionButtonClick={handleOpenTradeImport}
             secondaryActionButtonText={t('dashboard.empty.manual-action')}
             onSecondaryActionButtonClick={handleOpenTradeForm}
+            additionalAction={<SampleJournalEntryButton />}
+            actionsLayout="stacked"
           />
         </DashboardEmptyStateGuideTarget>
       );

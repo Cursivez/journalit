@@ -27,7 +27,9 @@ export const DashboardMetrics: React.FC<DashboardMetricsProps> = ({
     [withdrawalAccounts]
   );
 
-  const hasBreakdown = withdrawalsByMonth.length > 0;
+  
+  
+  const hasBreakdown = withdrawalsByMonth.length > 0 && !shouldMask('money');
 
   const withdrawalContent = (
     <div className="metric-item">

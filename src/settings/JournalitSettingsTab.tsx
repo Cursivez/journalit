@@ -12,6 +12,7 @@ import type { SettingControl, SettingDefinitionItem } from 'obsidian';
 import React, { useEffect, useState } from 'react';
 import { createRoot, Root } from 'react-dom/client';
 import { eventBus } from '../services/events/EventBus';
+import { clearOnboardingUpgradeOrigin } from '../services/upgrade/upgradeOrigin';
 import { t } from '../lang/helpers';
 import JournalitPlugin from '../main';
 import { getBaseCurrencyOptions } from '../utils/currencyConfig';
@@ -21,6 +22,7 @@ import {
   type JournalitSettings,
   type SettingsTabId,
 } from './types';
+import { saveDisplayName } from './displayName';
 
 
 import {
@@ -37,6 +39,7 @@ import { AuthTab } from './components/accounts/AuthTab';
 import { openExternalUrl } from '../utils/externalLinks';
 import { JOURNALIT_SETTINGS_RESOURCES } from './settingsResources';
 import { mergeClassNames } from '../utils/classNames';
+import { HomeWidgetOpacityControl } from './components/general/HomeWidgetOpacityControl';
 
 interface NativeSettingDefinitionPage {
   type: 'page';
@@ -60,6 +63,7 @@ interface NativeSettingDefinitionRender {
   desc?: string;
   aliases?: string[];
   searchable?: boolean;
+  visible?: boolean | (() => boolean);
   render: (setting: NativeSettingRenderTarget) => (() => void) | void;
 }
 
@@ -238,6 +242,19 @@ export class JournalitSettingsTab extends PluginSettingTab {
   }
 
   async setControlValue(key: string, value: unknown): Promise<void> {
+    if (key === 'general.displayName') {
+      if (typeof value !== 'string') {
+        throw new TypeError('Display name must be a string');
+      }
+
+      try {
+        await saveDisplayName(this.plugin, value);
+      } finally {
+        this.refreshNativeSettingsDomState();
+      }
+      return;
+    }
+
     const didSet = applyNativeSettingsControlValue(
       this.plugin.settings,
       key,
@@ -278,15 +295,6 @@ export class JournalitSettingsTab extends PluginSettingTab {
         section: 'general',
         source: 'currency',
       });
-      return;
-    }
-
-    if (key === 'general.displayName') {
-      window.dispatchEvent(
-        new CustomEvent('journalit:display-name-changed', {
-          detail: { displayName: this.plugin.settings.general?.displayName },
-        })
-      );
       return;
     }
 
@@ -422,6 +430,7 @@ export class JournalitSettingsTab extends PluginSettingTab {
 
   
   hide(): void {
+    clearOnboardingUpgradeOrigin('metatraderSync');
     this.unmountReactSettings(this.containerEl);
     this.containerEl.empty();
   }
@@ -637,7 +646,7 @@ function getSettingsPageDefinitions(): SettingsPageDefinition[] {
     {
       tabId: SETTINGS_TAB_IDS.SYNC,
       label: t('settings.tab.sync'),
-      desc: 'Journalit account, subscription, MetaTrader sync, trade import, and economic calendar.',
+      desc: 'Journalit account, subscription, Trade Sync, Trade Import, and Economic Calendar.',
       createItems: createSyncNativeSettingItems,
       aliases: [
         'account',
@@ -648,6 +657,9 @@ function getSettingsPageDefinitions(): SettingsPageDefinition[] {
         'sign in',
         'sign out',
         'MetaTrader',
+        'Tradovate',
+        'Rithmic',
+        'cTrader',
         'FTP',
         'credentials',
         'account linking',
@@ -840,6 +852,37 @@ function createGeneralNativeSettingItems(
           'home.showBackgroundInDashboard',
           false
         ),
+        {
+          name: t('settings.general.home-widget-opacity'),
+          desc: t('settings.general.home-widget-opacity-desc'),
+          aliases: ['widget transparency', 'widget opacity'],
+          visible: () => Boolean(tab.plugin.settings.home?.backgroundImagePath),
+          render: (setting) => {
+            const root = createRoot(setting.controlEl);
+            root.render(
+              <HomeWidgetOpacityControl
+                plugin={tab.plugin}
+                ownerDocument={setting.controlEl.ownerDocument}
+              />
+            );
+            const unsubscribe = eventBus.subscribe(
+              'settings:changed',
+              (payload) => {
+                if (
+                  payload.section === 'all' ||
+                  (payload.section === 'home' &&
+                    payload.source === 'background-image')
+                ) {
+                  tab.refreshNativeSettingsDomState();
+                }
+              }
+            );
+            return () => {
+              unsubscribe();
+              root.unmount();
+            };
+          },
+        },
       ],
     },
     {
@@ -870,6 +913,12 @@ function createGeneralNativeSettingItems(
             return () => root.unmount();
           },
         },
+      ],
+    },
+    {
+      type: 'group',
+      heading: t('settings.general.tab-behavior'),
+      items: [
         dropdownSetting(
           t('navigation.setting.tab-behavior'),
           t('navigation.setting.tab-behavior.desc'),
@@ -879,6 +928,12 @@ function createGeneralNativeSettingItems(
             replaceActiveTab: t('navigation.setting.tab-behavior.replace'),
           },
           'replaceActiveTab'
+        ),
+        toggleSetting(
+          t('settings.general.review-links-new-tab'),
+          t('settings.general.review-links-new-tab-desc'),
+          'reviewV2.openNoteLinksInNewTab',
+          true
         ),
       ],
     },
@@ -1230,6 +1285,8 @@ function createSyncNativeSettingItems(
       [
         'MetaTrader',
         'Tradovate',
+        'Rithmic',
+        'cTrader',
         'broker sync',
         'FTP',
         'credentials',
@@ -1289,6 +1346,9 @@ function createReactSettingsPage(
       tab.renderReactSettings(containerEl, tabId, false, true);
     },
     hide: (containerEl) => {
+      if (tabId === SETTINGS_TAB_IDS.TRADE_SYNC) {
+        clearOnboardingUpgradeOrigin('metatraderSync');
+      }
       tab.unmountReactSettings(containerEl);
     },
   });

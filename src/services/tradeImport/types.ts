@@ -50,6 +50,12 @@ export interface TradeImportDiagnostic {
   field?: string;
   count?: number;
 }
+
+export const UNSUPPORTED_TRADOVATE_PERFORMANCE_REPORT_DIAGNOSTIC_CODE =
+  'unsupported-tradovate-performance-report';
+export const UNSUPPORTED_METATRADER_STATEMENT_DIAGNOSTIC_CODE =
+  'unsupported-metatrader-statement';
+export const MISSING_COLUMN_DIAGNOSTIC_CODE = 'missing-column';
 export interface TradeImportAnalyseRequest {
   schemaVersion: 'trade-import-analyse-request-v1';
   pluginVersion: string;
@@ -286,6 +292,7 @@ interface TradeImportCommittedTrade {
     | 'CLOSED'
     | 'CANCELLED';
   accountId?: string | null;
+  accountIdentity?: 'broker' | 'name';
   accountDisplayName?: string | null;
   broker?: string | null;
   importId: string;

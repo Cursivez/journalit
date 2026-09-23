@@ -1,37 +1,12 @@
 
 
-import { Notice, MarkdownView } from 'obsidian';
+import { Notice } from 'obsidian';
 import type JournalitPlugin from '../main';
 import { TradeFormModal } from '../components/forms/trade/TradeFormModal';
 import { PositionSizeCalculatorModal } from '../components/modals/PositionSizeCalculatorModal';
 import { openQuickTradeImportModal } from '../components/csv/QuickTradeImportModal';
-import { eventBus } from '../services/events/EventBus';
-import {
-  ensureTradeIdentityFrontmatter,
-  isTradeIdentityEligibleNote,
-} from '../utils/tradeIdentity';
 import { t } from '../lang/helpers';
-import type { ReviewTemplate, TradeTemplate } from '../types/reviewV2';
-
-function asRecord(value: unknown): Record<string, unknown> | undefined {
-  return value && typeof value === 'object' && !Array.isArray(value)
-    ? Object.fromEntries(Object.entries(value))
-    : undefined;
-}
-
-interface MutableTradeTemplateFrontmatter {
-  [key: string]: unknown;
-  templateId?: string;
-  templateVersion?: string | number;
-}
-
-function getStringValue(
-  record: Record<string, unknown> | undefined,
-  key: string
-): string | undefined {
-  const value = record?.[key];
-  return typeof value === 'string' ? value : undefined;
-}
+import { openLegacyChallengeOnboardingModal } from '../components/onboarding/legacyChallenge/LegacyChallengeOnboardingModal';
 
 
 export class CommandRegistry {
@@ -53,6 +28,7 @@ export class CommandRegistry {
     this.registerViewCommands();
     this.registerMaintenanceCommands();
     this.registerTemplateCommands();
+    this.registerSampleJournalCommands();
   }
 
   
@@ -85,6 +61,52 @@ export class CommandRegistry {
       name: t('command.quick-import-trades'),
       callback: () => {
         openQuickTradeImportModal(this.plugin);
+      },
+    });
+
+    this.plugin.addCommand({
+      id: 'sync-trades-now',
+      name: t('command.sync-trades-now'),
+      callback: async () => {
+        if (this.plugin.demoSessionService?.isActive()) {
+          new Notice(t('sample.notice.sync-blocked'));
+          return;
+        }
+        await this.plugin.ensureTradeSyncCoordinator().syncNow();
+      },
+    });
+  }
+
+  private registerSampleJournalCommands(): void {
+    this.plugin.addCommand({
+      id: 'open-sample-journal',
+      name: t('command.open-sample-journal'),
+      callback: async () => {
+        await this.plugin.demoSessionService?.startOrOpen();
+      },
+    });
+
+    this.plugin.addCommand({
+      id: 'exit-sample-journal',
+      name: t('command.exit-sample-journal'),
+      checkCallback: (checking) => {
+        const session = this.plugin.demoSessionService;
+        if (!session?.isActive()) return false;
+        if (!checking) void session.requestExit();
+        return true;
+      },
+    });
+
+    this.plugin.addCommand({
+      id: 'reset-sample-journal',
+      name: t('command.reset-sample-journal'),
+      checkCallback: (checking) => {
+        const session = this.plugin.demoSessionService;
+        if (!session?.hasRecoverableSession()) {
+          return false;
+        }
+        if (!checking) void session.requestReset();
+        return true;
       },
     });
   }
@@ -215,6 +237,15 @@ export class CommandRegistry {
 
     
     this.plugin.addCommand({
+      id: 'open-legacy-challenge-onboarding',
+      name: t('command.open-legacy-challenge-onboarding'),
+      callback: async () => {
+        await openLegacyChallengeOnboardingModal(this.plugin.app, this.plugin);
+      },
+    });
+
+    
+    this.plugin.addCommand({
       id: 'open-trade-log',
       name: t('command.open-trade-log'),
       callback: async () => {
@@ -237,6 +268,14 @@ export class CommandRegistry {
       name: t('command.open-home'),
       callback: async () => {
         await this.plugin.viewManager.openHomeView('overview');
+      },
+    });
+
+    this.plugin.addCommand({
+      id: 'open-settings',
+      name: t('command.open-settings'),
+      callback: () => {
+        this.plugin.openSettings();
       },
     });
 
@@ -289,46 +328,14 @@ export class CommandRegistry {
 
   
   private registerMaintenanceCommands(): void {
-    this.plugin.addCommand({
-      id: 'rebuild-graph-links',
-      name: t('command.rebuild-graph-links'),
-      callback: async () => {
-        try {
-          const result = await this.plugin.graphLinkService.rebuildAll();
-          if (result.conflicts.length > 0) {
-            console.warn(
-              '[Journalit] Some graph links need attention:',
-              result.conflicts
-            );
-          }
-          if (result.failed > 0 || result.cancelled) {
-            console.error(
-              '[Journalit] Some graph links could not be rebuilt:',
-              result.errors
-            );
-            new Notice(t('notice.graph-links.rebuild-failed'));
-            return;
-          }
-          new Notice(
-            t('notice.graph-links.rebuild-complete', {
-              updated: String(result.updated),
-              unchanged: String(result.unchanged),
-              conflicted: String(result.conflicted),
-            })
-          );
-        } catch (error) {
-          console.error('Failed to rebuild graph links:', error);
-          new Notice(t('notice.graph-links.rebuild-failed'));
-        }
-      },
-    });
-
     
     this.plugin.addCommand({
       id: 'replay-onboarding',
       name: t('command.replay-onboarding'),
       callback: async () => {
-        await this.plugin.viewManager.openOnboardingView();
+        
+        
+        await this.plugin.onboardingManager.showOnboardingModal();
       },
     });
 
@@ -467,186 +474,6 @@ export class CommandRegistry {
           console.error('Failed to open Layout Builder:', error);
           new Notice(
             t('notice.error.open-layout-builder', {
-              error: error instanceof Error ? error.message : String(error),
-            })
-          );
-        }
-      },
-    });
-
-    
-    this.plugin.addCommand({
-      id: 'switch-template',
-      name: t('command.switch-template'),
-      callback: async () => {
-        try {
-          
-          const activeView =
-            this.plugin.app.workspace.getActiveViewOfType(MarkdownView);
-          if (!activeView?.file) {
-            new Notice(t('notice.error.no-active-file'));
-            return;
-          }
-
-          
-          const cache = this.plugin.app.metadataCache.getFileCache(
-            activeView.file
-          );
-          const frontmatter = asRecord(cache?.frontmatter);
-          const noteType = getStringValue(frontmatter, 'type');
-          const currentTemplateId = getStringValue(frontmatter, 'templateId');
-
-          
-          const [
-            { ReviewTemplateService },
-            { TradeTemplateService },
-            { openTemplatePickerModal },
-          ] = await Promise.all([
-            import('../services/templates/ReviewTemplateService'),
-            import('../services/templates/TradeTemplateService'),
-            import('../components/modals/TemplatePickerModal'),
-          ]);
-
-          let templates: Array<ReviewTemplate | TradeTemplate> = [];
-          let title = t('template.switch-title');
-          let defaultTemplateId: string | undefined;
-
-          
-          if (noteType === 'drc') {
-            const service = new ReviewTemplateService(this.plugin);
-            templates = service.getTemplates('drc');
-            title = t('template.switch-review-title', {
-              type: t('template.review-type.drc'),
-            });
-            defaultTemplateId = this.plugin.settings.templates?.defaultDrc;
-          } else if (noteType === 'weekly-review') {
-            const service = new ReviewTemplateService(this.plugin);
-            templates = service.getTemplates('weekly');
-            title = t('template.switch-review-title', {
-              type: t('template.review-type.weekly'),
-            });
-            defaultTemplateId = this.plugin.settings.templates?.defaultWeekly;
-          } else if (noteType === 'monthly-review') {
-            const service = new ReviewTemplateService(this.plugin);
-            templates = service.getTemplates('monthly');
-            title = t('template.switch-review-title', {
-              type: t('template.review-type.monthly'),
-            });
-            defaultTemplateId = this.plugin.settings.templates?.defaultMonthly;
-          } else if (noteType === 'quarterly-review') {
-            const service = new ReviewTemplateService(this.plugin);
-            templates = service.getTemplates('quarterly');
-            title = t('template.switch-review-title', {
-              type: t('template.review-type.quarterly'),
-            });
-            defaultTemplateId =
-              this.plugin.settings.templates?.defaultQuarterly;
-          } else if (noteType === 'yearly-review') {
-            const service = new ReviewTemplateService(this.plugin);
-            templates = service.getTemplates('yearly');
-            title = t('template.switch-review-title', {
-              type: t('template.review-type.yearly'),
-            });
-            defaultTemplateId = this.plugin.settings.templates?.defaultYearly;
-          } else if (
-            noteType === 'trade' ||
-            noteType === 'backtest-trade' ||
-            noteType === 'missed-trade' ||
-            frontmatter?.isMissedTrade === true
-          ) {
-            const service = new TradeTemplateService(this.plugin);
-            templates = service.getTemplates();
-            title = t('template.switch-trade-title');
-            defaultTemplateId = this.plugin.settings.templates?.defaultTrade;
-          } else {
-            new Notice(t('notice.error.no-template-support'));
-            return;
-          }
-
-          if (templates.length === 0) {
-            new Notice(t('notice.error.no-templates'));
-            return;
-          }
-
-          
-          openTemplatePickerModal(
-            this.plugin.app,
-            templates,
-            currentTemplateId,
-            title,
-            async (template) => {
-              const filePath = activeView.file!.path;
-
-              
-              if (
-                noteType === 'drc' ||
-                noteType === 'weekly-review' ||
-                noteType === 'monthly-review' ||
-                noteType === 'quarterly-review' ||
-                noteType === 'yearly-review'
-              ) {
-                const { TemplateTransformationService } =
-                  await import('../services/templates/TemplateTransformationService');
-                const transformService = new TemplateTransformationService(
-                  this.plugin
-                );
-
-                
-                
-                if (template.type === 'trade') {
-                  console.warn(
-                    'Attempted to apply trade template to a review note:',
-                    template
-                  );
-                  return;
-                }
-
-                const success = await transformService.applyTemplate(
-                  filePath,
-                  template,
-                  true
-                );
-
-                if (success) {
-                  new Notice(
-                    t('notice.template-switched', { name: template.name })
-                  );
-                }
-              } else {
-                
-                await this.plugin.app.fileManager.processFrontMatter(
-                  activeView.file!,
-                  (frontmatter: MutableTradeTemplateFrontmatter) => {
-                    if (
-                      isTradeIdentityEligibleNote(
-                        frontmatter,
-                        activeView.file!.path
-                      )
-                    ) {
-                      ensureTradeIdentityFrontmatter(frontmatter);
-                    }
-                    frontmatter.templateId = template.id;
-                    frontmatter.templateVersion = template.version;
-                  }
-                );
-
-                
-                eventBus.publish('trade:changed', {
-                  action: 'updated',
-                  filePaths: [filePath],
-                });
-
-                new Notice(
-                  t('notice.template-switched', { name: template.name })
-                );
-              }
-            },
-            defaultTemplateId
-          );
-        } catch (error) {
-          console.error('Failed to switch template:', error);
-          new Notice(
-            t('notice.error.switch-template', {
               error: error instanceof Error ? error.message : String(error),
             })
           );

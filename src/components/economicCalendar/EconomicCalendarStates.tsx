@@ -8,7 +8,7 @@ import {
   CalendarRange,
 } from '../shared/icons/ObsidianIcon';
 import { t, type TranslationKey } from '../../lang/helpers';
-import { UPGRADE_URLS } from '../../constants';
+import { resolveUpgradeUrl } from '../../services/upgrade/upgradeOrigin';
 import { openExternalUrl } from '../../utils/externalLinks';
 
 
@@ -200,7 +200,7 @@ export const EconomicCalendarProGate: React.FC = () => (
     <button
       type="button"
       className="journalit-econ-gate__cta"
-      onClick={() => openExternalUrl(UPGRADE_URLS.economicCalendar)}
+      onClick={() => openExternalUrl(resolveUpgradeUrl('economicCalendar'))}
     >
       {t('premium.gate.cta.continue-pro')}
     </button>

@@ -3,6 +3,12 @@ interface FormExitExplicitnessInput {
   hasExplicitPrice?: boolean;
 }
 
+interface FormExitPlaceholderInput {
+  price?: number | null;
+  size?: number | null;
+  hasExplicitPrice?: boolean;
+}
+
 
 export const resolveFormExitExplicitness = (
   exit: FormExitExplicitnessInput,
@@ -27,3 +33,11 @@ export const resolveFormHasExplicitExitPrice = (
   exits.length > 0
     ? exits.some((exit) => exit.hasExplicitPrice === true)
     : storedValue;
+
+
+export const isEmptyExitPlaceholder = (
+  exit: FormExitPlaceholderInput
+): boolean =>
+  exit.hasExplicitPrice !== true &&
+  (exit.price === undefined || exit.price === null || exit.price === 0) &&
+  (exit.size === undefined || exit.size === null || exit.size === 0);

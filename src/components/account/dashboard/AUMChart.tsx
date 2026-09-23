@@ -245,7 +245,7 @@ const AUMChartDefs: React.FC<{
 
 export const AUMChart: React.FC<AUMChartProps> = ({
   data,
-  height = 300,
+  height = '100%',
   plugin: _plugin,
 }) => {
   const chartRef = React.useRef<HTMLDivElement>(null);
@@ -272,7 +272,10 @@ export const AUMChart: React.FC<AUMChartProps> = ({
     return (
       <div
         className="journalit-account-chart-empty"
-        style={cssVars({ '--account-chart-empty-height': `${height}px` })}
+        style={cssVars({
+          '--account-chart-empty-height':
+            typeof height === 'number' ? `${height}px` : height,
+        })}
       >
         <EmptyState
           message={t('account.aum-chart.empty')}
@@ -328,7 +331,7 @@ export const AUMChart: React.FC<AUMChartProps> = ({
       <ChartBase height={height} width="100%" chartRef={chartRef}>
         <ComposedChart
           data={chartData}
-          margin={{ top: 10, right: 10, left: 0, bottom: 25 }}
+          margin={{ top: 10, right: 10, left: 0, bottom: 0 }}
         >
           <AUMChartDefs
             chartId={chartId}

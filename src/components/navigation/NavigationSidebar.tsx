@@ -1,11 +1,13 @@
-import React, { useMemo, useCallback, useState, useEffect } from 'react';
-import { SlidersHorizontal } from '../shared/icons/ObsidianIcon';
+import React, { useMemo, useCallback, useRef, useState } from 'react';
+import { Notice } from 'obsidian';
+import { Plus, SlidersHorizontal, X } from '../shared/icons/ObsidianIcon';
 import { LOGO_DATA_URI } from '../../assets/logoData';
 import {
   DndContext,
-  DragEndEvent,
-  closestCenter,
-  Modifier,
+  getClientRect,
+  type DragEndEvent,
+  type DragStartEvent,
+  type Modifier,
 } from '@dnd-kit/core';
 import {
   SortableContext,
@@ -13,10 +15,11 @@ import {
 } from '@dnd-kit/sortable';
 import JournalitPlugin from '../../main';
 import {
-  SidebarNavItem,
   QuickLinkAction,
   QUICK_LINK_ACTIONS,
-  createDefaultNavigationSettings,
+  type EntityShortcut,
+  type EntityShortcutTarget,
+  type SidebarNavItem,
 } from '../../settings/types';
 import { QuickLinkActionResolver } from '../../utils/QuickLinkActionResolver';
 import { resolveIcon } from '../../utils/iconResolver';
@@ -24,8 +27,21 @@ import { hasTranslation, t, TranslationKey } from '../../lang/helpers';
 import { SidebarNavItemComponent } from './SidebarNavItem';
 import { SidebarSearch } from './SidebarSearch';
 import { resolveSidebarTabNavigation } from '../../navigation/sidebarTabBehavior';
+import { EntityShortcutPicker } from '../shared/navigation/EntityShortcutPicker';
+import { useEntityShortcuts } from '../../hooks/useEntityShortcuts';
+import { getDisplayedEntityShortcuts } from '../../hooks/entityShortcutDisplay';
+import { useTradeSyncNowState } from '../../hooks/useTradeSyncNowState';
+import { useSessionIndicatorPhase } from '../../hooks/useSessionIndicatorPhase';
+import type { SessionIndicatorPhase } from '../../services/sessionMode/SessionPhaseWatcher';
+import {
+  createNavigationCollisionDetection,
+  type NavigationDragBounds,
+  restrictNavigationDragTransform,
+  useNavigationItems,
+} from './useNavigationItems';
 
 type Section = 'overview' | 'reviews' | 'tools';
+type EntityShortcutKind = EntityShortcutTarget['kind'];
 const SECTIONS: Section[] = ['overview', 'reviews', 'tools'];
 
 const SECTION_LABEL_KEYS: Record<Section, TranslationKey> = {
@@ -33,11 +49,6 @@ const SECTION_LABEL_KEYS: Record<Section, TranslationKey> = {
   reviews: 'navigation.section.reviews',
   tools: 'navigation.section.tools',
 };
-
-const restrictToVerticalAxis: Modifier = ({ transform }) => ({
-  ...transform,
-  x: 0,
-});
 
 const VIEW_ACTION_MAP: Record<string, string> = {
   openHome: 'journalit-home-view',
@@ -53,6 +64,14 @@ const QUICK_LINK_ACTION_SET: ReadonlySet<string> = new Set(QUICK_LINK_ACTIONS);
 
 const isQuickLinkAction = (action: string): action is QuickLinkAction =>
   QUICK_LINK_ACTION_SET.has(action);
+
+const getEntityShortcutKind = (
+  action: QuickLinkAction
+): EntityShortcutKind | null => {
+  if (action === 'openAccountDashboard') return 'account';
+  if (action === 'openSetups') return 'setup';
+  return null;
+};
 const REVIEW_ACTIONS = new Set<QuickLinkAction>([
   'openTodaysDRC',
   'openWeeklyReview',
@@ -61,205 +80,297 @@ const REVIEW_ACTIONS = new Set<QuickLinkAction>([
   'openYearlyReview',
 ]);
 
-const LEGACY_SETUPS_NAVIGATION_ICON = 'notebook-tabs';
-
-export function mergeNavigationItemsWithDefaults(
-  currentItems: SidebarNavItem[]
-): {
-  items: SidebarNavItem[];
-  changed: boolean;
-} {
-  const defaultItems = createDefaultNavigationSettings().items;
-
-  const currentById = new Map(currentItems.map((item) => [item.id, item]));
-  const currentIndexById = new Map(
-    currentItems.map((item, index) => [item.id, index])
-  );
-  const merged = [...currentItems];
-  let changed = false;
-
-  for (const defaultItem of defaultItems) {
-    const existingItem = currentById.get(defaultItem.id);
-    if (existingItem) {
-      if (
-        (existingItem.id === 'nav-setups' ||
-          existingItem.action === 'openSetups') &&
-        existingItem.icon === LEGACY_SETUPS_NAVIGATION_ICON
-      ) {
-        const index = currentIndexById.get(existingItem.id);
-        if (index === undefined) continue;
-        merged[index] = { ...existingItem, icon: defaultItem.icon };
-        changed = true;
-      }
-      continue;
-    }
-
-    const maxSectionOrder = merged
-      .filter((item) => item.section === defaultItem.section)
-      .reduce((max, item) => Math.max(max, item.order), -1);
-
-    merged.push({
-      ...defaultItem,
-      order: maxSectionOrder + 1,
-      visible: true,
-    });
-    changed = true;
-  }
-
-  return { items: merged, changed };
-}
-
 interface NavigationSidebarProps {
   plugin: JournalitPlugin;
 }
 
+const SidebarEntityShortcutComponent: React.FC<{
+  shortcut: EntityShortcut;
+  target: EntityShortcutTarget;
+  label: string;
+  icon: string;
+  unavailable?: boolean;
+  isEditing: boolean;
+  onClick: (target: EntityShortcutTarget) => void | Promise<void>;
+  onRemove: (id: string) => void;
+}> = ({
+  shortcut,
+  target,
+  label,
+  icon,
+  unavailable = false,
+  isEditing,
+  onClick,
+  onRemove,
+}) => {
+  const IconComponent = resolveIcon(icon);
+  const activateShortcut = () => {
+    if (!isEditing && !unavailable) void onClick(target);
+  };
+
+  return (
+    <div
+      className="journalit-nav-item journalit-nav-entity-item"
+      data-editing={isEditing ? 'true' : 'false'}
+      role={!isEditing ? 'button' : undefined}
+      tabIndex={!isEditing ? 0 : undefined}
+      onClick={activateShortcut}
+      onKeyDown={(event) => {
+        if (isEditing || (event.key !== 'Enter' && event.key !== ' ')) return;
+        event.preventDefault();
+        activateShortcut();
+      }}
+    >
+      <span className="journalit-nav-item-icon">
+        <IconComponent size={16} aria-hidden="true" />
+      </span>
+      <span className="journalit-nav-item-label">
+        {label}
+        {unavailable ? ` (${t('navigation.shortcuts.unavailable')})` : ''}
+      </span>
+      {isEditing && (
+        <button
+          type="button"
+          className="journalit-nav-item-remove"
+          aria-label={t('navigation.shortcuts.remove')}
+          onClick={() => onRemove(shortcut.id)}
+        >
+          <X size={10} />
+        </button>
+      )}
+    </div>
+  );
+};
+
+const SidebarEntityShortcut = React.memo(SidebarEntityShortcutComponent);
+
+type DisplayedEntityShortcut = ReturnType<
+  typeof getDisplayedEntityShortcuts
+>[number];
+
+interface NavigationSectionsProps {
+  visibleBySection: Record<Section, SidebarNavItem[]>;
+  displayedEntityShortcuts: DisplayedEntityShortcut[];
+  isEditing: boolean;
+  tradeSyncRunning: boolean;
+  sessionPhase: SessionIndicatorPhase;
+  onRemoveItem: (itemId: string) => void;
+  onItemClick: (action: QuickLinkAction) => Promise<void>;
+  onRemoveEntityShortcut: (id: string) => void;
+  onEntityShortcutClick: (target: EntityShortcutTarget) => Promise<void>;
+}
+
+const NavigationSections: React.FC<NavigationSectionsProps> = ({
+  visibleBySection,
+  displayedEntityShortcuts,
+  isEditing,
+  tradeSyncRunning,
+  sessionPhase,
+  onRemoveItem,
+  onItemClick,
+  onRemoveEntityShortcut,
+  onEntityShortcutClick,
+}) =>
+  SECTIONS.map((section) => {
+    const items = visibleBySection[section];
+    if (items.length === 0 && !isEditing) return null;
+
+    const renderedItems = items.map((item) => {
+      const shortcutKind = getEntityShortcutKind(item.action);
+      const childShortcuts = shortcutKind
+        ? displayedEntityShortcuts.filter(
+            ({ target }) => target.kind === shortcutKind
+          )
+        : [];
+      const shortcutChildren =
+        childShortcuts.length > 0 ? (
+          <div className="journalit-nav-entity-children">
+            {childShortcuts.map(
+              ({ shortcut, target, label, icon, unavailable }) => (
+                <SidebarEntityShortcut
+                  key={shortcut.id}
+                  shortcut={shortcut}
+                  target={target}
+                  label={label}
+                  icon={icon}
+                  unavailable={unavailable}
+                  isEditing={isEditing}
+                  onRemove={onRemoveEntityShortcut}
+                  onClick={onEntityShortcutClick}
+                />
+              )
+            )}
+          </div>
+        ) : null;
+
+      return (
+        <SidebarNavItemComponent
+          key={item.id}
+          item={item}
+          isEditing={isEditing}
+          isBusy={item.action === 'syncTradesNow' && tradeSyncRunning}
+          sessionPhase={item.action === 'openSessionMode' ? sessionPhase : null}
+          onRemove={onRemoveItem}
+          onClick={onItemClick}
+        >
+          {shortcutChildren}
+        </SidebarNavItemComponent>
+      );
+    });
+
+    return (
+      <div key={section} className="journalit-nav-section">
+        <div className="journalit-nav-section-header">
+          {t(SECTION_LABEL_KEYS[section])}
+        </div>
+        {isEditing ? (
+          <SortableContext
+            items={items.map((item) => item.id)}
+            strategy={verticalListSortingStrategy}
+          >
+            {renderedItems}
+          </SortableContext>
+        ) : (
+          renderedItems
+        )}
+      </div>
+    );
+  });
+
 export const NavigationSidebar: React.FC<NavigationSidebarProps> = ({
   plugin,
 }) => {
+  const tradeSyncState = useTradeSyncNowState(plugin);
+  const sessionPhase = useSessionIndicatorPhase(plugin);
+  const sidebarRef = useRef<HTMLDivElement>(null);
+  const dragBoundsRef = useRef<NavigationDragBounds | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [isSearchActive, setIsSearchActive] = useState(false);
-  const [localNavItems, setLocalNavItems] = useState<SidebarNavItem[]>([]);
-
-  useEffect(() => {
-    const settingsItems = plugin.settings.navigation?.items;
-    if (settingsItems && settingsItems.length > 0) {
-      const { items, changed } =
-        mergeNavigationItemsWithDefaults(settingsItems);
-      setLocalNavItems(items);
-
-      if (changed) {
-        plugin.settings.navigation = {
-          ...plugin.settings.navigation!,
-          items,
-        };
-        void plugin.saveSettings();
-      }
-      return;
-    }
-
-    const defaultItems = createDefaultNavigationSettings().items;
-    setLocalNavItems(defaultItems);
-    if (!plugin.settings.navigation) {
-      plugin.settings.navigation = createDefaultNavigationSettings();
-    } else {
-      plugin.settings.navigation.items = defaultItems;
-    }
-    void plugin.saveSettings();
-  }, [plugin]);
+  const [showShortcutPicker, setShowShortcutPicker] = useState(false);
+  const {
+    items: navigationItems,
+    visibleBySection,
+    hiddenItems,
+    handleDragEnd,
+    hideItem,
+    restoreItem: handleRestoreItem,
+  } = useNavigationItems(plugin);
+  const {
+    shortcuts: entityShortcuts,
+    shortcutEntries,
+    catalogItems,
+    catalogLoading,
+    catalogError,
+    catalogErrors,
+    addShortcut,
+    removeShortcut: handleRemoveEntityShortcut,
+  } = useEntityShortcuts(plugin, 'navigation', showShortcutPicker);
+  const displayedEntityShortcuts = useMemo(
+    () =>
+      getDisplayedEntityShortcuts(shortcutEntries, {
+        editing: isEditing,
+        loading: catalogLoading,
+        errors: catalogErrors,
+      }),
+    [catalogErrors, catalogLoading, isEditing, shortcutEntries]
+  );
 
   const actionResolver = useMemo(
     () => new QuickLinkActionResolver(plugin),
     [plugin]
   );
 
-  const visibleBySection = useMemo(() => {
-    const result: Record<Section, SidebarNavItem[]> = {
-      overview: [],
-      reviews: [],
-      tools: [],
-    };
-    for (const item of localNavItems) {
-      if (item.visible && result[item.section]) {
-        result[item.section].push(item);
-      }
-    }
-    for (const section of SECTIONS) {
-      result[section].sort((a, b) => a.order - b.order);
-    }
-    return result;
-  }, [localNavItems]);
-
-  const hiddenItems = useMemo(
-    () => localNavItems.filter((item) => !item.visible),
-    [localNavItems]
-  );
-
-  const handleDragEnd = useCallback(
-    (event: DragEndEvent) => {
-      const { active, over } = event;
-      if (!over || active.id === over.id) return;
-
-      const activeId = active.id.toString();
-      const overId = over.id.toString();
-
-      const activeItem = localNavItems.find((i) => i.id === activeId);
-      const overItem = localNavItems.find((i) => i.id === overId);
-      if (!activeItem || !overItem) return;
-      if (activeItem.section !== overItem.section) return;
-
-      const section = activeItem.section;
-      const sectionItems = visibleBySection[section];
-      const oldIndex = sectionItems.findIndex((i) => i.id === activeId);
-      const newIndex = sectionItems.findIndex((i) => i.id === overId);
-      if (oldIndex === -1 || newIndex === -1) return;
-
-      const reordered = [...sectionItems];
-      const [moved] = reordered.splice(oldIndex, 1);
-      reordered.splice(newIndex, 0, moved);
-
-      const reorderedOrderById = new Map(
-        reordered.map((item, index) => [item.id, index])
-      );
-
-      const updatedItems = localNavItems.map((item) => {
-        const idx = reorderedOrderById.get(item.id);
-        if (idx !== undefined) {
-          return { ...item, order: idx };
-        }
-        return item;
+  const handleEntityShortcutClick = useCallback(
+    async (target: EntityShortcutTarget) => {
+      const { createNewLeaf, source } = resolveSidebarTabNavigation(plugin);
+      await actionResolver.executeEntityShortcut(target, {
+        createNewLeaf,
+        focusLeaf: false,
+        source,
       });
-
-      setLocalNavItems(updatedItems);
-      plugin.settings.navigation = {
-        ...plugin.settings.navigation!,
-        items: updatedItems,
-      };
-      void plugin.saveSettings();
     },
-    [localNavItems, visibleBySection, plugin]
+    [actionResolver, plugin]
   );
 
   const handleRemoveItem = useCallback(
     (itemId: string) => {
-      const updatedItems = localNavItems.map((item) =>
-        item.id === itemId ? { ...item, visible: false } : item
-      );
-
-      setLocalNavItems(updatedItems);
-      plugin.settings.navigation = {
-        ...plugin.settings.navigation!,
-        items: updatedItems,
-      };
-      void plugin.saveSettings();
+      const item = navigationItems.find((candidate) => candidate.id === itemId);
+      const shortcutKind = item ? getEntityShortcutKind(item.action) : null;
+      if (
+        shortcutKind &&
+        entityShortcuts.some(
+          (shortcut) => shortcut.target.kind === shortcutKind
+        )
+      ) {
+        new Notice(t('navigation.shortcuts.parent-required'));
+        return;
+      }
+      hideItem(itemId);
     },
-    [localNavItems, plugin]
+    [entityShortcuts, hideItem, navigationItems]
   );
 
-  const handleRestoreItem = useCallback(
-    (itemId: string) => {
-      const item = localNavItems.find((i) => i.id === itemId);
-      if (!item) return;
+  const detectNavigationCollision = useMemo(
+    () => createNavigationCollisionDetection(navigationItems),
+    [navigationItems]
+  );
 
-      const sectionItems = localNavItems.filter(
-        (i) => i.section === item.section && i.visible
-      );
-      const maxOrder =
-        sectionItems.length > 0
-          ? Math.max(...sectionItems.map((i) => i.order))
-          : -1;
+  const handleNavigationDragStart = useCallback((event: DragStartEvent) => {
+    const root = sidebarRef.current;
+    if (!root) return;
 
-      const updatedItems = localNavItems.map((i) =>
-        i.id === itemId ? { ...i, visible: true, order: maxOrder + 1 } : i
-      );
+    const activeId = event.active.id.toString();
+    const activeRow = Array.from(
+      root.querySelectorAll<HTMLElement>('[data-nav-item-id]')
+    ).find((row) => row.dataset.navItemId === activeId);
+    const section = activeRow?.closest('.journalit-nav-section');
+    if (!section) return;
 
-      setLocalNavItems(updatedItems);
-      plugin.settings.navigation = {
-        ...plugin.settings.navigation!,
-        items: updatedItems,
-      };
-      void plugin.saveSettings();
+    const groupRects = Array.from(
+      section.querySelectorAll<HTMLElement>('.journalit-nav-sortable-group')
+    ).map((group) => getClientRect(group, { ignoreTransform: true }));
+    if (groupRects.length === 0) return;
+
+    dragBoundsRef.current = {
+      top: Math.min(...groupRects.map((rect) => rect.top)),
+      bottom: Math.max(...groupRects.map((rect) => rect.bottom)),
+    };
+  }, []);
+
+  const handleNavigationDragEnd = useCallback(
+    (event: DragEndEvent) => {
+      dragBoundsRef.current = null;
+      handleDragEnd(event);
     },
-    [localNavItems, plugin]
+    [handleDragEnd]
+  );
+
+  const handleNavigationDragCancel = useCallback(() => {
+    dragBoundsRef.current = null;
+  }, []);
+
+  const restrictToNavigationSection = useCallback<Modifier>(
+    ({ activeNodeRect, transform }) => {
+      const bounds = dragBoundsRef.current;
+      if (!bounds || !activeNodeRect) return { ...transform, x: 0 };
+      return restrictNavigationDragTransform(transform, activeNodeRect, bounds);
+    },
+    []
+  );
+
+  const handleAddEntityShortcut = useCallback(
+    async (target: EntityShortcutTarget) => {
+      const parentAction =
+        target.kind === 'account' ? 'openAccountDashboard' : 'openSetups';
+      const parentItem = navigationItems.find(
+        (item) => item.action === parentAction
+      );
+      if (parentItem && !parentItem.visible) {
+        handleRestoreItem(parentItem.id);
+      }
+      await addShortcut(target);
+    },
+    [addShortcut, handleRestoreItem, navigationItems]
   );
 
   const handleItemClick = useCallback(
@@ -309,8 +420,22 @@ export const NavigationSidebar: React.FC<NavigationSidebarProps> = ({
     setIsEditing((prev) => !prev);
   }, []);
 
+  const navigationSections = (
+    <NavigationSections
+      visibleBySection={visibleBySection}
+      displayedEntityShortcuts={displayedEntityShortcuts}
+      isEditing={isEditing}
+      tradeSyncRunning={tradeSyncState.status === 'running'}
+      sessionPhase={sessionPhase}
+      onRemoveItem={handleRemoveItem}
+      onItemClick={handleItemClick}
+      onRemoveEntityShortcut={handleRemoveEntityShortcut}
+      onEntityShortcutClick={handleEntityShortcutClick}
+    />
+  );
+
   return (
-    <div className="journalit-nav-sidebar">
+    <div ref={sidebarRef} className="journalit-nav-sidebar">
       <div className="journalit-nav-header">
         <img
           className="journalit-nav-logo"
@@ -332,38 +457,30 @@ export const NavigationSidebar: React.FC<NavigationSidebarProps> = ({
 
       {!isSearchActive && (
         <div className="journalit-nav-content-scroll">
-          <DndContext
-            collisionDetection={closestCenter}
-            onDragEnd={handleDragEnd}
-            modifiers={[restrictToVerticalAxis]}
-          >
-            {SECTIONS.map((section) => {
-              const items = visibleBySection[section];
-              if (items.length === 0 && !isEditing) return null;
+          {isEditing ? (
+            <DndContext
+              collisionDetection={detectNavigationCollision}
+              onDragStart={handleNavigationDragStart}
+              onDragCancel={handleNavigationDragCancel}
+              onDragEnd={handleNavigationDragEnd}
+              modifiers={[restrictToNavigationSection]}
+            >
+              {navigationSections}
+            </DndContext>
+          ) : (
+            navigationSections
+          )}
 
-              return (
-                <div key={section} className="journalit-nav-section">
-                  <div className="journalit-nav-section-header">
-                    {t(SECTION_LABEL_KEYS[section])}
-                  </div>
-                  <SortableContext
-                    items={items.map((i) => i.id)}
-                    strategy={verticalListSortingStrategy}
-                  >
-                    {items.map((item) => (
-                      <SidebarNavItemComponent
-                        key={item.id}
-                        item={item}
-                        isEditing={isEditing}
-                        onRemove={handleRemoveItem}
-                        onClick={(action) => void handleItemClick(action)}
-                      />
-                    ))}
-                  </SortableContext>
-                </div>
-              );
-            })}
-          </DndContext>
+          {isEditing && (
+            <button
+              type="button"
+              className="journalit-nav-add-shortcut"
+              onClick={() => setShowShortcutPicker(true)}
+            >
+              <Plus size={14} aria-hidden="true" />
+              <span>{t('navigation.shortcuts.add')}</span>
+            </button>
+          )}
 
           {isEditing && hiddenItems.length > 0 && (
             <div className="journalit-nav-restore-section">
@@ -395,6 +512,16 @@ export const NavigationSidebar: React.FC<NavigationSidebarProps> = ({
             </div>
           )}
         </div>
+      )}
+      {showShortcutPicker && (
+        <EntityShortcutPicker
+          shortcuts={entityShortcuts}
+          items={catalogItems}
+          loading={catalogLoading}
+          error={catalogError}
+          onAdd={handleAddEntityShortcut}
+          onClose={() => setShowShortcutPicker(false)}
+        />
       )}
     </div>
   );

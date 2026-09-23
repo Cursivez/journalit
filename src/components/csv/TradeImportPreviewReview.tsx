@@ -8,12 +8,16 @@ import {
   isTradeImportCommitEligible,
   isTradeImportSkipped,
 } from '../../services/tradeImport/commitEligibility';
-import type {
-  ClassifiedPreviewTrade,
-  TradeImportDiagnostic,
-  TradeImportPreviewResponse,
+import {
+  type ClassifiedPreviewTrade,
+  type TradeImportDiagnostic,
+  type TradeImportPreviewResponse,
 } from '../../services/tradeImport/types';
 import { getTradeImportTimeZone } from '../../services/tradeImport/timeZone';
+import type { SubscriptionTierRefreshStatus } from '../../services/backend/SubscriptionTierService';
+import { resolveBrokerImportRecovery } from './brokerImportRecovery';
+import { formatTradeImportPreviewDateTime } from './tradeImportPreviewDate';
+import { TradeImportProGate } from './TradeImportProGate';
 
 interface GroupedTradeImportDiagnostic {
   affectedRowCount?: number;
@@ -147,14 +151,19 @@ interface TradeImportPreviewReviewProps {
   busy: boolean;
   canCommit: boolean;
   classified: ClassifiedPreviewTrade[];
-  freePreviewRequestsPerHour?: number;
-  maxStoredPreviewItems?: number;
+  dateFormat: string;
+  
+  entitlementStatus: SubscriptionTierRefreshStatus | null;
   importCompleted: boolean;
   isCheckingEntitlement: boolean;
+  isRefreshingStatus: boolean;
   onCancel: () => void;
+  onChooseAnotherFile: () => void;
   onConfirm: () => void;
+  onRefreshStatus: () => void;
   onUpgrade: () => void;
   preview: TradeImportPreviewResponse;
+  use24HourTime: boolean;
 }
 
 interface TradeImportPreviewOverview {
@@ -219,14 +228,18 @@ export const TradeImportPreviewReview: React.FC<
   busy,
   canCommit,
   classified,
-  freePreviewRequestsPerHour,
-  maxStoredPreviewItems,
+  dateFormat,
+  entitlementStatus,
   importCompleted,
   isCheckingEntitlement,
+  isRefreshingStatus,
   onCancel,
+  onChooseAnotherFile,
   onConfirm,
+  onRefreshStatus,
   onUpgrade,
   preview,
+  use24HourTime,
 }) => {
   const timeZone = getTradeImportTimeZone();
   const overview = React.useMemo(
@@ -235,12 +248,157 @@ export const TradeImportPreviewReview: React.FC<
   );
   const visibleClassified = classified.slice(0, MAX_RENDERED_PREVIEW_ROWS);
   const hasPreviewMessages = visibleClassified.some((item) => item.message);
+  const recovery = resolveBrokerImportRecovery(preview);
+
+  if (recovery) {
+    const remainingDiagnostics = preview.diagnostics.filter(
+      (diagnostic) => !recovery.diagnosticCodesToSuppress.has(diagnostic.code)
+    );
+    const RecoveryNotice = recovery.Notice;
+
+    return (
+      <>
+        <RecoveryNotice
+          className="journalit-trade-import-outcome journalit-trade-import-outcome--failed"
+          disabled={busy}
+          iconSize={20}
+        />
+
+        <TradeImportDiagnostics
+          diagnostics={remainingDiagnostics}
+          defaultOpen
+          className="journalit-trade-import-preview-diagnostics"
+        />
+
+        <div className="journalit-trade-import-actions">
+          <button
+            className="journalit-trade-import-confirm-button"
+            disabled={busy || importCompleted}
+            onClick={onChooseAnotherFile}
+          >
+            {t('csv.button.import-another')}
+          </button>
+        </div>
+      </>
+    );
+  }
+
   const confirmDisabled =
     busy ||
     isCheckingEntitlement ||
+    isRefreshingStatus ||
     importCompleted ||
     preview.outcome === 'failed' ||
     overview.importableCount < 1;
+
+  const tableNode = visibleClassified.length > 0 && (
+    <div className="csv-preview-table-wrapper">
+      <table className="csv-preview-table">
+        <thead>
+          <tr>
+            <th>{t('trade-import.table.status')}</th>
+            <th>{t('trade-import.table.symbol')}</th>
+            <th>{t('trade-import.table.direction')}</th>
+            <th>{t('trade-import.table.entry-time')}</th>
+            <th>{t('trade-import.table.quantity')}</th>
+            {hasPreviewMessages && <th>{t('trade-import.table.message')}</th>}
+          </tr>
+        </thead>
+        <tbody>
+          {visibleClassified.map((item) => (
+            <tr key={item.itemId}>
+              <td>{item.classification}</td>
+              <td>{item.preview.symbol}</td>
+              <td>{item.preview.direction}</td>
+              <td>
+                {formatTradeImportPreviewDateTime(
+                  item.preview.entryTime,
+                  dateFormat,
+                  use24HourTime
+                )}
+              </td>
+              <td>{item.preview.quantity}</td>
+              {hasPreviewMessages && <td>{item.message ?? ''}</td>}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+
+  const entitlementIsUnverified =
+    isCheckingEntitlement ||
+    entitlementStatus === null ||
+    entitlementStatus === 'unverified';
+
+  
+  
+  if (
+    !canCommit &&
+    !isCheckingEntitlement &&
+    entitlementStatus === 'free' &&
+    preview.outcome !== 'failed' &&
+    overview.importableCount > 0
+  ) {
+    return (
+      <>
+        <TradeImportProGate
+          busy={busy}
+          importableCount={overview.importableCount}
+          isCheckingEntitlement={isCheckingEntitlement}
+          isRefreshingStatus={isRefreshingStatus}
+          onRefreshStatus={onRefreshStatus}
+          onUpgrade={onUpgrade}
+        />
+
+        <div className="journalit-trade-import-preview-counts journalit-trade-import-preview-counts--inline">
+          <span>
+            {t('trade-import.preview.metric.ready')}{' '}
+            <strong>{String(overview.importableCount)}</strong>
+          </span>
+          <span>
+            {t('trade-import.preview.metric.duplicates')}{' '}
+            <strong>{String(overview.duplicateCount)}</strong>
+          </span>
+          <span>
+            {t('trade-import.preview.metric.attention')}{' '}
+            <strong>{String(overview.attentionCount)}</strong>
+          </span>
+        </div>
+
+        {preview.outcome === 'partially_completed' && (
+          <p className="journalit-trade-import-preview-partial">
+            <AlertTriangle size={15} />
+            <span>
+              {t('trade-import.preview.partial.message', {
+                count: String(overview.importableCount),
+                failed: String(preview.summary.failedRowCount),
+                incomplete: String(preview.summary.skippedIncompleteCount),
+              })}
+            </span>
+          </p>
+        )}
+
+        <TradeImportDiagnostics
+          diagnostics={preview.diagnostics}
+          defaultOpen={false}
+          className="journalit-trade-import-preview-diagnostics"
+        />
+
+        {tableNode}
+
+        <div className="journalit-trade-import-actions">
+          <button
+            className="journalit-trade-import-cancel-preview-button"
+            disabled={busy}
+            onClick={onCancel}
+          >
+            {t('trade-import.action.cancel-preview')}
+          </button>
+        </div>
+      </>
+    );
+  }
 
   return (
     <>
@@ -268,22 +426,22 @@ export const TradeImportPreviewReview: React.FC<
             </div>
           )}
           {preview.outcome === 'partially_completed' && (
-            <p>
-              {t('trade-import.preview.partial.message', {
-                count: String(overview.importableCount),
-                failed: String(preview.summary.failedRowCount),
-                incomplete: String(preview.summary.skippedIncompleteCount),
-              })}
-            </p>
+            <>
+              <p>
+                {t('trade-import.preview.partial.message', {
+                  count: String(overview.importableCount),
+                  failed: String(preview.summary.failedRowCount),
+                  incomplete: String(preview.summary.skippedIncompleteCount),
+                })}
+              </p>
+              <p>{t('trade-import.preview.partial.guidance')}</p>
+            </>
           )}
           {preview.outcome === 'failed' && (
-            <p>{t('trade-import.preview.failed.message')}</p>
-          )}
-          {preview.outcome === 'partially_completed' && (
-            <p>{t('trade-import.preview.partial.guidance')}</p>
-          )}
-          {preview.outcome === 'failed' && (
-            <p>{t('trade-import.preview.failed.guidance')}</p>
+            <>
+              <p>{t('trade-import.preview.failed.message')}</p>
+              <p>{t('trade-import.preview.failed.guidance')}</p>
+            </>
           )}
           {preview.outcome === 'completed' &&
             overview.importableCount === 0 && (
@@ -302,70 +460,12 @@ export const TradeImportPreviewReview: React.FC<
           <strong>{String(overview.attentionCount)}</strong>
         </div>
       )}
-
       <TradeImportDiagnostics
         diagnostics={preview.diagnostics}
         defaultOpen={preview.outcome !== 'completed'}
         className="journalit-trade-import-preview-diagnostics"
       />
-
-      {!canCommit && overview.importableCount > 0 && (
-        <div className="journalit-trade-import-preview-upgrade">
-          <strong>{t('trade-import.preview.upgrade.title')}</strong>
-          <span>
-            {tPlural(
-              'trade-import.preview.upgrade.description',
-              overview.importableCount
-            )}
-          </span>
-          {freePreviewRequestsPerHour != null &&
-            freePreviewRequestsPerHour > 0 && (
-              <small>
-                {t('trade-import.preview.upgrade.free-limit', {
-                  count: String(freePreviewRequestsPerHour),
-                })}
-              </small>
-            )}
-          {maxStoredPreviewItems != null && maxStoredPreviewItems > 0 && (
-            <small>
-              {t('trade-import.preview.upgrade.free-storage-limit', {
-                count: String(maxStoredPreviewItems),
-              })}
-            </small>
-          )}
-        </div>
-      )}
-
-      {visibleClassified.length > 0 && (
-        <div className="csv-preview-table-wrapper">
-          <table className="csv-preview-table">
-            <thead>
-              <tr>
-                <th>{t('trade-import.table.status')}</th>
-                <th>{t('trade-import.table.symbol')}</th>
-                <th>{t('trade-import.table.direction')}</th>
-                <th>{t('trade-import.table.entry-time')}</th>
-                <th>{t('trade-import.table.quantity')}</th>
-                {hasPreviewMessages && (
-                  <th>{t('trade-import.table.message')}</th>
-                )}
-              </tr>
-            </thead>
-            <tbody>
-              {visibleClassified.map((item) => (
-                <tr key={item.itemId}>
-                  <td>{item.classification}</td>
-                  <td>{item.preview.symbol}</td>
-                  <td>{item.preview.direction}</td>
-                  <td>{item.preview.entryTime}</td>
-                  <td>{item.preview.quantity}</td>
-                  {hasPreviewMessages && <td>{item.message ?? ''}</td>}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
+      {tableNode}
 
       <div className="journalit-trade-import-actions">
         <button
@@ -375,20 +475,30 @@ export const TradeImportPreviewReview: React.FC<
         >
           {t('trade-import.action.cancel-preview')}
         </button>
-        <button
-          className="journalit-trade-import-confirm-button"
-          disabled={confirmDisabled}
-          onClick={canCommit ? onConfirm : onUpgrade}
-        >
-          {canCommit
-            ? t('trade-import.action.confirm')
-            : overview.importableCount > 0
-              ? tPlural(
-                  'trade-import.action.activate-pro',
-                  overview.importableCount
-                )
-              : t('premium.gate.cta.continue-pro')}
-        </button>
+        {(canCommit || preview.outcome !== 'failed') && (
+          <button
+            className="journalit-trade-import-confirm-button"
+            disabled={confirmDisabled}
+            onClick={
+              canCommit
+                ? onConfirm
+                : entitlementIsUnverified
+                  ? onRefreshStatus
+                  : onUpgrade
+            }
+          >
+            {canCommit
+              ? t('trade-import.action.confirm')
+              : entitlementIsUnverified
+                ? t('premium.gate.cta.refresh')
+                : overview.importableCount > 0
+                  ? tPlural(
+                      'trade-import.action.activate-pro',
+                      overview.importableCount
+                    )
+                  : t('premium.gate.cta.continue-pro')}
+          </button>
+        )}
       </div>
     </>
   );

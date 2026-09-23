@@ -5,16 +5,23 @@ import { WorkspaceLeaf } from 'obsidian';
 import { useAccountPageData } from './context/AccountPageDataContext';
 import { EmptyState } from '../shared/EmptyState';
 import { AccountHeader } from './components/AccountHeader';
-import { AccountMetrics } from './components/AccountMetrics';
+import { AccountMetricsPanel } from './components/AccountMetricsPanel';
 import { AccountBalanceSection } from './components/AccountBalanceSection';
 import { AccountRiskMetricsSection } from './components/AccountRiskMetricsSection';
+import { PropChallengeSection } from './components/propChallenge/PropChallengeSection';
 import { DepositsWithdrawalsSection } from './components/DepositsWithdrawalsSection';
+import { usePropChallengeCockpitState } from './components/propChallenge/usePropChallengeCockpitState';
+import { resolveAccountPageTopState } from './components/propChallenge/propChallengeCockpitState';
 import { AccountPageSkeleton } from './AccountPageSkeleton';
 import { t } from '../../lang/helpers';
 import { usePlugin } from '../../hooks/usePlugin';
+import { useGuideContextValue } from '../../guides/GuideRuntimeLayer';
+import { LEGACY_CHALLENGE_ONBOARDING_GUIDE_CONTEXT_KEY } from '../../services/accountMerge/LegacyChallengeOnboarding';
 import {
   ACCOUNT_PAGE_EMPTY_GUIDE_ID,
+  ACCOUNT_PAGE_MAIN_GUIDE_LAYOUT_VERSION,
   ACCOUNT_PAGE_MAIN_GUIDE_ID,
+  ACCOUNT_PAGE_WHATS_NEW_COCKPIT_GUIDE_ID,
 } from '../../guides/accountPageGuideIds';
 
 
@@ -39,8 +46,22 @@ const AccountPageGuideCoordinator: React.FC<{
       return;
     }
 
-    const resolvedGuideId =
-      accountPageData.trades.length === 0
+    
+    
+    
+    const mainGuideState = guideService.getPersistedGuideState(
+      ACCOUNT_PAGE_MAIN_GUIDE_ID
+    );
+    const finishedMainGuide =
+      mainGuideState?.status === 'completed' ||
+      mainGuideState?.status === 'skipped';
+    const finishedBeforeLayoutRedesign =
+      finishedMainGuide &&
+      mainGuideState.guideVersion < ACCOUNT_PAGE_MAIN_GUIDE_LAYOUT_VERSION;
+
+    const resolvedGuideId = finishedBeforeLayoutRedesign
+      ? ACCOUNT_PAGE_WHATS_NEW_COCKPIT_GUIDE_ID
+      : accountPageData.trades.length === 0
         ? ACCOUNT_PAGE_EMPTY_GUIDE_ID
         : ACCOUNT_PAGE_MAIN_GUIDE_ID;
 
@@ -70,6 +91,17 @@ export const AccountPageContent: React.FC<{ leaf: WorkspaceLeaf }> = ({
 }) => {
   const { accountPageData, isLoading, error, accountName } =
     useAccountPageData();
+  const guidePlugin = usePlugin();
+  useGuideContextValue(
+    LEGACY_CHALLENGE_ONBOARDING_GUIDE_CONTEXT_KEY,
+    guidePlugin?.settings.account?.legacyChallengeOnboarding?.status ===
+      'pending'
+  );
+
+  
+  const cockpitState = usePropChallengeCockpitState();
+  const { showSummaryBand, showGenericRisk } =
+    resolveAccountPageTopState(cockpitState);
 
   
   if (isLoading && !accountPageData) {
@@ -113,16 +145,22 @@ export const AccountPageContent: React.FC<{ leaf: WorkspaceLeaf }> = ({
     <div className="account-page-content">
       <AccountPageGuideCoordinator leaf={leaf} />
       
-      <AccountHeader />
+      <AccountHeader cockpitState={cockpitState} />
 
       
       <AccountBalanceSection />
 
       
-      <AccountMetrics />
+      <AccountMetricsPanel
+        cockpitState={cockpitState}
+        showSummaryBand={showSummaryBand}
+      />
 
       
-      <AccountRiskMetricsSection />
+      {cockpitState && <PropChallengeSection state={cockpitState} />}
+
+      
+      {showGenericRisk && <AccountRiskMetricsSection />}
 
       
       <DepositsWithdrawalsSection />

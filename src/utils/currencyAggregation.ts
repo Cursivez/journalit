@@ -64,11 +64,6 @@ export function aggregatePnLByCurrency<TTrade extends TradeWithCurrency>(
 }
 
 
-export function getCurrencyDecimalPlaces(currency: string): number {
-  return getCurrencyConfig(currency).decimalPlaces;
-}
-
-
 export function formatPnLWithCurrency(
   amount: number,
   currency: string,
@@ -110,32 +105,6 @@ export function formatGroupedPnL(
   return grouped.currencies.map((currency) =>
     formatPnLWithCurrency(grouped.byCurrency[currency], currency, showPlusSign)
   );
-}
-
-
-export function hasMultipleCurrencies(trades: TradeWithCurrency[]): boolean {
-  const currencies = new Set<string>();
-
-  for (const trade of trades) {
-    currencies.add(trade.currency || DEFAULT_CURRENCY);
-    if (currencies.size > 1) return true;
-  }
-
-  return false;
-}
-
-
-export function getSingleCurrency(
-  trades: TradeWithCurrency[]
-): string | undefined {
-  const currencies = new Set<string>();
-
-  for (const trade of trades) {
-    currencies.add(trade.currency || DEFAULT_CURRENCY);
-    if (currencies.size > 1) return undefined;
-  }
-
-  return currencies.size === 1 ? Array.from(currencies)[0] : undefined;
 }
 
 

@@ -14,7 +14,6 @@ import {
   SETUPS_COMPARE_SELECTING_ACTION_ID,
   SETUPS_COMPARE_TAB_TARGET_ID,
   SETUPS_CREATE_BUTTON_TARGET_ID,
-  SETUPS_DETAIL_OPENED_ACTION_ID,
   SETUPS_OVERVIEW_OPENED_ACTION_ID,
   SETUPS_OVERVIEW_TAB_TARGET_ID,
   SETUPS_PAIRS_OPENED_ACTION_ID,
@@ -23,12 +22,7 @@ import {
   SETUPS_VIEW_TABS_TARGET_ID,
 } from '../../guides/setupsGuideIds';
 import { EmptyState } from '../shared/EmptyState';
-import {
-  CreateGroup,
-  FlaskConical,
-  Plus,
-  Share2,
-} from '../shared/icons/ObsidianIcon';
+import { Plus } from '../shared/icons/ObsidianIcon';
 import type {
   MetricKey,
   SetupOverviewChartMode,
@@ -41,6 +35,7 @@ import {
   sortSetupCardsByRecentActivity,
   toggleSelectedSetupId,
 } from './setupsViewModel';
+import { SegmentedControl } from '../shared/SegmentedControl';
 import { SetupCard } from './SetupCard';
 import { SetupPerformanceChartSection } from './SetupOverviewPerformanceSection';
 import {
@@ -88,6 +83,25 @@ function useSetupOverviewFilterActions({
     [exitInvalidCompareSelection, handleFiltersChange]
   );
   return { onDirectionsChange, onReset, onTagsChange };
+}
+
+function useSetupChartNavigation(
+  viewModels: SetupViewModel[],
+  onOpenSetup: (setupId: string, setupName: string, setupPath?: string) => void
+) {
+  return useCallback(
+    (setupId: string) => {
+      const viewModel = viewModels.find(({ setup }) => setup.id === setupId);
+      if (viewModel) {
+        onOpenSetup(
+          viewModel.setup.id,
+          viewModel.setup.name,
+          viewModel.setup.filePath
+        );
+      }
+    },
+    [onOpenSetup, viewModels]
+  );
 }
 
 export const SetupOverviewPage: React.FC<{
@@ -169,6 +183,10 @@ export const SetupOverviewPage: React.FC<{
   );
   const registerCardGridTarget = useGuideTarget(SETUPS_CARD_GRID_TARGET_ID);
   const registerTagFilterTarget = useGuideTarget(SETUPS_TAG_FILTER_TARGET_ID);
+  const handleSetupChartSelected = useSetupChartNavigation(
+    effectiveViewModels,
+    onOpenSetup
+  );
   const { metricKey, chartMode, pairMetricKey } = chartSettings;
   const chartSelectedSetupIds = chartSettings.selectedSetupIds;
   const guideForcesPairsView =
@@ -323,6 +341,7 @@ export const SetupOverviewPage: React.FC<{
         onMetricKeyChange={handleMetricKeyChange}
         onPairMetricKeyChange={handlePairMetricKeyChange}
         onSelectedSetupIdsChange={handleChartSelectedSetupIdsChange}
+        onSetupSelected={handleSetupChartSelected}
       />
 
       {viewModels.length === 0 ? (
@@ -375,7 +394,6 @@ export const SetupOverviewPage: React.FC<{
                 !effectiveVisibleSelectedSetupIdsSet.has(viewModel.setup.id)
               }
               onOpen={() => {
-                emitGuideAction(SETUPS_DETAIL_OPENED_ACTION_ID);
                 onOpenSetup(
                   viewModel.setup.id,
                   viewModel.setup.name,
@@ -444,73 +462,42 @@ const SetupOverviewHeader: React.FC<{
         {t('setups.view.title')}
       </h1>
     </div>
-    <nav
-      className="journalit-setups-view__tabs"
-      aria-label={t('setups.view.tabs.aria')}
-      ref={registerViewTabsTarget}
-    >
-      <button
-        className={[
-          'journalit-setups-tab-button',
-          !isCompareSelecting && chartMode === 'pairs'
-            ? 'journalit-setups-tab-button--active'
-            : '',
-        ]
-          .filter(Boolean)
-          .join(' ')}
-        aria-current={
-          !isCompareSelecting && chartMode === 'pairs' ? 'page' : undefined
+    <div className="journalit-setups-view__tabs" ref={registerViewTabsTarget}>
+      <SegmentedControl<SetupOverviewChartMode | 'compare'>
+        ariaLabel={t('setups.view.tabs.aria')}
+        className="journalit-setups-view__tab-control"
+        groupRole="radiogroup"
+        size="medium"
+        value={isCompareSelecting ? 'compare' : chartMode}
+        getOptionRef={(value) =>
+          value === 'pairs'
+            ? registerPairsTabTarget
+            : value === 'setups'
+              ? registerOverviewTabTarget
+              : registerCompareTabTarget
         }
-        aria-pressed={!isCompareSelecting && chartMode === 'pairs'}
-        disabled={!canCompare}
-        onClick={onPairs}
-        aria-label={t('setups.view.overview.mode.pairs')}
-        ref={registerPairsTabTarget}
-      >
-        <Share2 size={15} />
-        <span>{t('setups.view.overview.mode.pairs')}</span>
-      </button>
-      <button
-        className={[
-          'journalit-setups-tab-button',
-          !isCompareSelecting && chartMode === 'setups'
-            ? 'journalit-setups-tab-button--active'
-            : '',
-        ]
-          .filter(Boolean)
-          .join(' ')}
-        aria-current={
-          !isCompareSelecting && chartMode === 'setups' ? 'page' : undefined
-        }
-        aria-pressed={!isCompareSelecting && chartMode === 'setups'}
-        onClick={onOverview}
-        aria-label={t('setups.view.tab.overview')}
-        ref={registerOverviewTabTarget}
-      >
-        <FlaskConical size={15} />
-        <span>{t('setups.view.tab.overview')}</span>
-      </button>
-      <button
-        className={[
-          'journalit-setups-tab-button',
-          isCompareSelecting ? 'journalit-setups-tab-button--active' : '',
-        ]
-          .filter(Boolean)
-          .join(' ')}
-        aria-pressed={isCompareSelecting}
-        disabled={!canCompare}
-        onClick={onCompare}
-        aria-label={t('setups.view.action.compare-selected')}
-        ref={registerCompareTabTarget}
-      >
-        <CreateGroup size={15} />
-        <span>
-          {isCompareSelecting
-            ? `${t('setups.view.tab.compare')} (${selectedSetupCount}/2)`
-            : t('setups.view.tab.compare')}
-        </span>
-      </button>
-    </nav>
+        options={[
+          {
+            value: 'pairs',
+            label: t('setups.view.overview.mode.pairs'),
+            disabled: !canCompare,
+          },
+          { value: 'setups', label: t('setups.view.tab.overview') },
+          {
+            value: 'compare',
+            label: isCompareSelecting
+              ? `${t('setups.view.tab.compare')} (${selectedSetupCount}/2)`
+              : t('setups.view.tab.compare'),
+            disabled: !canCompare,
+          },
+        ]}
+        onChange={(next) => {
+          if (next === 'pairs') onPairs();
+          else if (next === 'setups') onOverview();
+          else onCompare();
+        }}
+      />
+    </div>
     <div className="journalit-setups-view__actions">
       <div
         className="journalit-setups-tag-filter-target"

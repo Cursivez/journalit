@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react';
 import type JournalitPlugin from '../../../main';
 import { applyTradeFilters } from '../../shared/filters/filterUtils';
+import { resolveAccountPhaseWindowsFromPlugin } from '../../shared/filters/accountPhaseScope';
 import { useReviewData } from '../hooks/useReviewData';
 import {
   TradeTableWidget,
@@ -50,6 +51,10 @@ export const BacktestTradesWidget: React.FC<BacktestTradesWidgetProps> =
         {
           resolveAccountIdDisplayName: (accountId) =>
             plugin.settings.backendIntegration?.accountMapping?.[accountId],
+          accountPhaseWindows: resolveAccountPhaseWindowsFromPlugin(
+            data.filters.accountPhases,
+            plugin
+          ),
         }
       );
     }, [data, plugin, preview, previewData]);

@@ -11,6 +11,7 @@ import {
 } from '../../services/tradelog/types';
 import { DateRangeFilter } from '../dashboard/components/FilterControls/DateRangeFilter';
 import { FilterButton } from '../shared/FilterButton';
+import { SegmentedControl } from '../shared/SegmentedControl';
 import { openFilterModal, UnifiedFilters } from '../shared/filters';
 import type {
   AvailableCustomFieldFilter,
@@ -152,6 +153,7 @@ interface TradeLogHeaderProps {
   onSettingsChange: () => void;
   isMultiSelectMode?: boolean;
   onToggleMultiSelectMode?: () => void;
+  tradeOnly?: boolean;
 }
 
 const ImageGalleryHeaderControls: React.FC<{
@@ -373,6 +375,7 @@ export const TradeLogHeader = memo<TradeLogHeaderProps>(
     onSettingsChange,
     isMultiSelectMode,
     onToggleMultiSelectMode,
+    tradeOnly = false,
   }) => {
     const [accounts, setAccounts] = useState<string[]>([]);
     const isMountedRef = useRef(true);
@@ -504,6 +507,9 @@ export const TradeLogHeader = memo<TradeLogHeaderProps>(
       )
         count++;
       if (filters.accounts && filters.accounts.length > 0) count++;
+      if (filters.accountPhases && filters.accountPhases.length > 0) {
+        count += filters.accountPhases.length;
+      }
       if (filters.tickers && filters.tickers.length > 0) count++;
       if (filters.setups && filters.setups.length > 0) count++;
       if (filters.tags && filters.tags.length > 0) count++;
@@ -579,6 +585,7 @@ export const TradeLogHeader = memo<TradeLogHeaderProps>(
         context: 'tradelog',
         currentFilters: {
           accounts: filters.accounts || [],
+          accountPhases: filters.accountPhases || [],
           tickers: filters.tickers || [],
           setups: filters.setups || [],
           tags: filters.tags || [],
@@ -605,6 +612,7 @@ export const TradeLogHeader = memo<TradeLogHeaderProps>(
             directions: newFilters.directions,
             sessionLogTags: newFilters.sessionLogTags || [],
             accounts: newFilters.accounts,
+            accountPhases: newFilters.accountPhases || [],
             tickers: newFilters.tickers,
             setups: newFilters.setups,
             tags: newFilters.tags,
@@ -779,29 +787,44 @@ export const TradeLogHeader = memo<TradeLogHeaderProps>(
         >
           <div
             className="trade-log-mode-selector"
-            aria-label={t('tradelog.mode.label')}
             ref={registerModeSelectorTarget}
           >
-            <button
-              type="button"
-              className={`journalit-trade-log-mode-selector__button trade-log-mode-selector__button${mode === 'trades' ? ' trade-log-mode-selector__button--active' : ''}`}
-              onClick={() => onModeChange('trades')}
-              aria-pressed={mode === 'trades'}
-            >
-              {t('tradelog.mode.trades')}
-            </button>
-            <button
-              type="button"
-              className={`journalit-trade-log-mode-selector__button trade-log-mode-selector__button${mode === 'imageGallery' ? ' trade-log-mode-selector__button--active' : ''}`}
-              ref={registerImageGalleryModeButtonTarget}
-              onClick={() => {
-                onModeChange('imageGallery');
-                emitGuideAction(TRADE_LOG_IMAGE_GALLERY_SELECTED_ACTION_ID);
+            <SegmentedControl
+              options={
+                tradeOnly
+                  ? [
+                      {
+                        value: 'trades' as const,
+                        label: t('tradelog.mode.trades'),
+                      },
+                    ]
+                  : [
+                      {
+                        value: 'trades' as const,
+                        label: t('tradelog.mode.trades'),
+                      },
+                      {
+                        value: 'imageGallery' as const,
+                        label: t('tradelog.mode.image-gallery'),
+                      },
+                    ]
+              }
+              value={mode}
+              onChange={(nextMode) => {
+                onModeChange(nextMode);
+                if (nextMode === 'imageGallery') {
+                  emitGuideAction(TRADE_LOG_IMAGE_GALLERY_SELECTED_ACTION_ID);
+                }
               }}
-              aria-pressed={mode === 'imageGallery'}
-            >
-              {t('tradelog.mode.image-gallery')}
-            </button>
+              size="small"
+              groupRole="radiogroup"
+              ariaLabel={t('tradelog.mode.label')}
+              getOptionRef={(value) =>
+                value === 'imageGallery'
+                  ? registerImageGalleryModeButtonTarget
+                  : undefined
+              }
+            />
           </div>
 
           <DateRangeFilter

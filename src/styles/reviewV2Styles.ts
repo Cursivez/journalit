@@ -1189,8 +1189,11 @@ ${TRADE_ACCOUNT_CELL_STYLES}
 
   .journalit-reviewv2-card-header {
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
     justify-content: space-between;
+    column-gap: 0.75rem;
+    row-gap: 0.25rem;
     margin-bottom: 0.75rem;
   }
 
@@ -1223,8 +1226,10 @@ ${TRADE_ACCOUNT_CELL_STYLES}
   }
 
   .journalit-reviewv2-card-subtitle {
+    margin-left: auto;
     font-size: 0.8em;
     color: var(--text-muted);
+    white-space: nowrap;
   }
 
   .journalit-reviewv2-tooltip-icon {
@@ -1340,6 +1345,13 @@ ${TRADE_ACCOUNT_CELL_STYLES}
     font-size: 1em;
   }
 
+  .journalit-reviewv2-item-actions {
+    display: inline-flex;
+    flex-shrink: 0;
+    align-items: center;
+    gap: 4px;
+  }
+
   .journalit-no-tooltip-button.journalit-reviewv2-settings-icon-button {
     display: inline-flex;
     align-items: center;
@@ -1390,6 +1402,8 @@ ${TRADE_ACCOUNT_CELL_STYLES}
 
   .journalit-reviewv2-add-input {
     flex: 1;
+    
+    min-width: 0;
     padding: 0.5rem;
     background: var(--background-secondary);
     border: 1px solid var(--background-modifier-border);
@@ -1399,7 +1413,9 @@ ${TRADE_ACCOUNT_CELL_STYLES}
   }
 
   .journalit-reviewv2-add-button {
+    flex-shrink: 0;
     padding: 0.5rem 1rem;
+    white-space: nowrap;
     border: 1px solid var(--background-modifier-border);
     border-radius: var(--radius-s);
     font-size: 0.9em;

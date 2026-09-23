@@ -3,9 +3,9 @@
 import { TradeService } from '../trade/TradeService';
 import {
   formatDateDisplay,
-  getQuarter,
   formatLocalDateString,
   getWeekNumberForDate,
+  getWeekStartDate,
   getWeekStartDaySetting,
   type WeekStartDaySetting,
 } from '../../utils/dateUtils';
@@ -13,6 +13,11 @@ import {
   getTradingDayString,
   createTradingDayFromString,
 } from '../../utils/tradingDayUtils';
+import {
+  getProjectedRealizedEventTrades,
+  getTradeRealizedPnlEvents,
+} from '../../utils/tradeAnalyticsDate';
+import type { AnalyticsDateBasis } from '../../settings/types';
 import {
   TimeNode,
   ViewLevel,
@@ -53,6 +58,7 @@ import {
 } from '../../utils/breakEvenRange';
 import type { PartialTradeFrontmatter } from '../../types/TradeFrontmatter';
 import type JournalitPlugin from '../../main';
+import { normalizePath } from 'obsidian';
 import { t } from '../../lang/helpers';
 import {
   type CustomFieldDefinition,
@@ -67,7 +73,14 @@ import {
   resolveBreakEvenAccountBalances,
 } from '../trade/core/BreakEvenAccountBalance';
 import { applyTradeFilters } from '../../components/shared/filters/filterUtils';
-import type { UnifiedFilters } from '../../components/shared/filters/types';
+import {
+  accountsRequiringCopiedRows,
+  resolveAccountPhaseWindowsFromPlugin,
+} from '../../components/shared/filters/accountPhaseScope';
+import type {
+  AccountPhaseScope,
+  UnifiedFilters,
+} from '../../components/shared/filters/types';
 import {
   getCopyTradingPeriodForEntryDate,
   isCopyTradingBaseEligible,
@@ -88,7 +101,7 @@ interface DateComponents {
   month: number;
   quarter: number;
   dayKey: string;
-  weekNum: number;
+  weekStartString: string;
   tradingDayString: string;
 }
 
@@ -159,6 +172,10 @@ type TradeLogData = PartialTradeFrontmatter &
     
     _dateComponents?: DateComponents;
     
+    _analyticsEventDate?: Date;
+    
+    _analyticsEventRowId?: string;
+    
     hasExplicitExitPrice?: boolean;
     
     isMissedTrade?: boolean;
@@ -189,6 +206,7 @@ interface HierarchicalQueryParams {
   viewLevel: ViewLevel;
   startDate?: Date;
   endDate?: Date;
+  analyticsDateBasis?: AnalyticsDateBasis;
   tradeTypes?: TradeType[];
   statuses?: TradeStatus[];
   reviewStatus?: ReviewStatusFilter[];
@@ -200,6 +218,8 @@ interface HierarchicalQueryParams {
   tags?: string[];
   mistakes?: string[];
   customFieldFilters?: CustomFieldFilterSelections;
+  operationFilePaths?: string[];
+  accountPhases?: AccountPhaseScope[];
 }
 
 function normalizeCustomFieldFilterValue(value: unknown): string | null {
@@ -450,7 +470,9 @@ export class TradeLogService {
   
   private async getTradesWithPaths(
     tradeTypes?: TradeType[],
-    accounts?: string[]
+    accounts?: string[],
+    operationFilePaths?: string[],
+    accountPhases?: AccountPhaseScope[]
   ): Promise<TradeLogData[]> {
     
 
@@ -460,11 +482,20 @@ export class TradeLogService {
     
     
     
+    const operationPathSet = operationFilePaths?.length
+      ? new Set(operationFilePaths.map(normalizePath))
+      : null;
     const relevantTrades = allTrades.flatMap((trade) => {
       const tradeRecord = asTradeLogRecord(trade);
-      return tradeRecord && (tradeRecord.path || tradeRecord.filePath)
-        ? [tradeRecord]
-        : [];
+      if (!tradeRecord) return [];
+      const filePath =
+        getStringValue(tradeRecord, 'path') ??
+        getStringValue(tradeRecord, 'filePath');
+      if (!filePath) return [];
+      if (operationPathSet && !operationPathSet.has(normalizePath(filePath))) {
+        return [];
+      }
+      return [tradeRecord];
     });
 
     const breakEvenThresholdMode =
@@ -473,6 +504,12 @@ export class TradeLogService {
       breakEvenThresholdMode === 'percentage_current_balance'
         ? await fetchBreakEvenAccountBalanceLookup(this.plugin)
         : null;
+    
+    
+    const copyMaterializationAccounts = accountsRequiringCopiedRows(
+      accounts,
+      accountPhases
+    );
 
     
     
@@ -512,15 +549,19 @@ export class TradeLogService {
         );
       }
 
-      const copiedRowsForFilters = this.createCopiedTradeLogRows(
-        normalizedTrade,
-        accounts || []
-      );
-      const allCopiedRowsForSummary = this.createCopiedTradeLogRows(
-        normalizedTrade,
-        [],
-        true
-      );
+      
+      
+      
+      
+      const copiedRowsForFilters = operationPathSet
+        ? []
+        : this.createCopiedTradeLogRows(
+            normalizedTrade,
+            copyMaterializationAccounts
+          );
+      const allCopiedRowsForSummary = operationPathSet
+        ? []
+        : this.createCopiedTradeLogRows(normalizedTrade, [], true);
       const tradeWithCopySummary = allCopiedRowsForSummary.length
         ? {
             ...normalizedTrade,
@@ -538,7 +579,7 @@ export class TradeLogService {
     });
 
     
-    if (this.shouldLoadMissedTrades(tradeTypes)) {
+    if (!operationPathSet && this.shouldLoadMissedTrades(tradeTypes)) {
       try {
         const missedTrades = await this.getMissedTradeFrontmatter();
         for (const { filePath, frontmatter } of missedTrades) {
@@ -810,6 +851,9 @@ export class TradeLogService {
         query.reviewStatus,
         query.directions,
         query.sessionLogTags,
+        query.analyticsDateBasis,
+        query.operationFilePaths,
+        query.accountPhases,
         retryCount + 1
       );
     }
@@ -835,11 +879,14 @@ export class TradeLogService {
     reviewStatus?: ReviewStatusFilter[],
     directions?: DirectionFilter[],
     sessionLogTags?: string[],
+    analyticsDateBasis?: AnalyticsDateBasis,
+    operationFilePaths?: string[],
+    accountPhases?: AccountPhaseScope[],
     retryCount: number = 0
   ): Promise<TimeNode[]> {
     
     const normalizeFilterArray = (arr?: string[]) =>
-      !arr || arr.length === 0 ? 'ALL' : [...arr].sort().join(',');
+      !arr || arr.length === 0 ? 'ALL' : JSON.stringify([...arr].sort());
     const normalizeCustomFieldFilters = (
       filters?: CustomFieldFilterSelections
     ): string => {
@@ -857,6 +904,7 @@ export class TradeLogService {
       viewLevel,
       startDate,
       endDate,
+      analyticsDateBasis,
       tradeTypes,
       statuses,
       reviewStatus,
@@ -868,13 +916,22 @@ export class TradeLogService {
       tags,
       mistakes,
       customFieldFilters,
+      operationFilePaths,
+      accountPhases,
     };
 
     const requestRevisionToken = this.tradeCommitRevisionToken;
     const includeCopyAccountsInAllAccounts =
       this.plugin.settings.trade.includeCopyAccountsInAllAccountsAnalytics ===
       true;
-    const cacheKey = `v${this.CACHE_VERSION}-r${requestRevisionToken}-copy${includeCopyAccountsInAllAccounts}-${viewLevel}-${startDate?.toISOString()}-${endDate?.toISOString()}-${normalizeFilterArray(tradeTypes)}-${normalizeFilterArray(statuses)}-${normalizeFilterArray(reviewStatus)}-${normalizeFilterArray(directions)}-${normalizeFilterArray(sessionLogTags)}-${normalizeFilterArray(accounts)}-${normalizeFilterArray(tickers)}-${normalizeFilterArray(setups)}-${normalizeFilterArray(tags)}-${normalizeFilterArray(mistakes)}-${normalizeCustomFieldFilters(customFieldFilters)}`;
+    const accountPhaseCacheKey =
+      !accountPhases || accountPhases.length === 0
+        ? 'ALL'
+        : [...accountPhases]
+            .map((scope) => `${scope.account}\0${scope.phaseId}`)
+            .sort()
+            .join(',');
+    const cacheKey = `v${this.CACHE_VERSION}-r${requestRevisionToken}-copy${includeCopyAccountsInAllAccounts}-${viewLevel}-${startDate?.toISOString()}-${endDate?.toISOString()}-${analyticsDateBasis ?? 'calendar-entry'}-${normalizeFilterArray(tradeTypes)}-${normalizeFilterArray(statuses)}-${normalizeFilterArray(reviewStatus)}-${normalizeFilterArray(directions)}-${normalizeFilterArray(sessionLogTags)}-${normalizeFilterArray(accounts)}-${normalizeFilterArray(tickers)}-${normalizeFilterArray(setups)}-${normalizeFilterArray(tags)}-${normalizeFilterArray(mistakes)}-${normalizeCustomFieldFilters(customFieldFilters)}-${normalizeFilterArray(operationFilePaths)}-${accountPhaseCacheKey}`;
     const now = Date.now();
 
     
@@ -894,22 +951,23 @@ export class TradeLogService {
     const isNewDataRequest = !this.cache.has(cacheKey.split('-')[0]); 
     if (isNewDataRequest) {
       this.cachedEnrichedTrades = null;
+      this.cachedEnrichedTradesCacheKey = null;
+      this.cachedEnrichedTradesOperationScopeKey = null;
     }
 
     
-    const allTrades = await this.getTradesWithPaths(tradeTypes, accounts);
+    const allTrades = await this.getTradesWithPaths(
+      tradeTypes,
+      accounts,
+      operationFilePaths,
+      accountPhases
+    );
 
     
-    let filteredTrades = allTrades;
-    if (startDate || endDate) {
-      filteredTrades = this.filterTradesByDateRange(
-        filteredTrades,
-        startDate,
-        endDate
-      );
-    }
-    filteredTrades = this.applySharedTradeFilters(filteredTrades, {
+    
+    let filteredTrades = this.applySharedTradeFilters(allTrades, {
       accounts: accounts || [],
+      accountPhases: accountPhases || [],
       tickers: tickers || [],
       setups: setups || [],
       tags: tags || [],
@@ -920,6 +978,14 @@ export class TradeLogService {
       directions: directions || [],
       customFieldFilters: customFieldFilters || {},
     });
+    if (startDate || endDate || analyticsDateBasis === 'exit') {
+      filteredTrades = this.filterTradesByDateRange(
+        filteredTrades,
+        startDate,
+        endDate,
+        analyticsDateBasis
+      );
+    }
 
     
     let enrichedTrades = this.preComputeDateComponents(filteredTrades);
@@ -1040,6 +1106,8 @@ export class TradeLogService {
     
     this.cachedEnrichedTrades = enrichedTrades;
     this.cachedEnrichedTradesCacheKey = cacheKey;
+    this.cachedEnrichedTradesOperationScopeKey =
+      this.getOperationScopeCacheKey(operationFilePaths);
 
     
     const rootNode: TimeNode = {
@@ -1072,34 +1140,80 @@ export class TradeLogService {
   
   private cachedEnrichedTrades: EnrichedTradeData[] | null = null;
   private cachedEnrichedTradesCacheKey: string | null = null;
+  private cachedEnrichedTradesOperationScopeKey: string | null = null;
+
+  private getOperationScopeCacheKey(operationFilePaths?: string[]): string {
+    if (!operationFilePaths?.length) return 'ALL';
+    return JSON.stringify(
+      Array.from(new Set(operationFilePaths.map(normalizePath))).sort()
+    );
+  }
+
+  private filterEnrichedTradesByOperationPaths(
+    trades: EnrichedTradeData[],
+    operationFilePaths?: string[]
+  ): EnrichedTradeData[] {
+    if (!operationFilePaths?.length) return trades;
+    const operationPathSet = new Set(operationFilePaths.map(normalizePath));
+    return trades.filter((trade) => {
+      const filePath =
+        typeof trade.path === 'string'
+          ? trade.path
+          : typeof trade.filePath === 'string'
+            ? trade.filePath
+            : null;
+      return filePath ? operationPathSet.has(normalizePath(filePath)) : false;
+    });
+  }
 
   
   async getNodeChildren(
     node: TimeNode,
-    retryCount: number = 0
+    options: { operationFilePaths?: string[]; retryCount?: number } = {}
   ): Promise<TimeNode[]> {
+    const retryCount = options.retryCount ?? 0;
     const requestRevisionToken = this.tradeCommitRevisionToken;
+    const requestedOperationScopeKey = this.getOperationScopeCacheKey(
+      options.operationFilePaths
+    );
 
     let enrichedTrades = this.cachedEnrichedTrades;
 
     
     
-    if (!enrichedTrades || enrichedTrades.length === 0) {
-      const trades = await this.getTradesWithPaths();
+    if (
+      !enrichedTrades ||
+      enrichedTrades.length === 0 ||
+      this.cachedEnrichedTradesOperationScopeKey !== requestedOperationScopeKey
+    ) {
+      const trades = await this.getTradesWithPaths(
+        undefined,
+        undefined,
+        options.operationFilePaths
+      );
 
       if (requestRevisionToken !== this.tradeCommitRevisionToken) {
         if (retryCount < 2) {
-          return this.getNodeChildren(node, retryCount + 1);
+          return this.getNodeChildren(node, {
+            ...options,
+            retryCount: retryCount + 1,
+          });
         }
       }
 
       enrichedTrades = this.preComputeDateComponents(trades);
       if (requestRevisionToken === this.tradeCommitRevisionToken) {
         this.cachedEnrichedTrades = enrichedTrades;
+        this.cachedEnrichedTradesCacheKey = null;
+        this.cachedEnrichedTradesOperationScopeKey = requestedOperationScopeKey;
       }
     }
 
-    const filteredTrades = this.filterTradesByNode(enrichedTrades, node);
+    const operationScopedTrades = this.filterEnrichedTradesByOperationPaths(
+      enrichedTrades,
+      options.operationFilePaths
+    );
+    const filteredTrades = this.filterTradesByNode(operationScopedTrades, node);
 
     let children: TimeNode[] = [];
 
@@ -1131,83 +1245,14 @@ export class TradeLogService {
 
     if (requestRevisionToken !== this.tradeCommitRevisionToken) {
       if (retryCount < 2) {
-        return this.getNodeChildren(node, retryCount + 1);
+        return this.getNodeChildren(node, {
+          ...options,
+          retryCount: retryCount + 1,
+        });
       }
     }
 
     return children;
-  }
-
-  
-  private async buildFullHierarchy(
-    trades: TradeLogData[]
-  ): Promise<TimeNode[]> {
-    const yearMap = new Map<number, TradeLogData[]>();
-
-    
-    trades.forEach((trade) => {
-      const date = new Date(trade.entryTime);
-      const year = date.getFullYear();
-      if (!yearMap.has(year)) {
-        yearMap.set(year, []);
-      }
-      yearMap.get(year)!.push(trade);
-    });
-
-    
-    const yearNodes: TimeNode[] = [];
-    const sortedYears = Array.from(yearMap.keys()).sort((a, b) => b - a);
-
-    for (const year of sortedYears) {
-      const yearTrades = yearMap.get(year)!;
-      const quarterNodes = this.buildQuartersForYear(yearTrades, year);
-
-      yearNodes.push({
-        type: 'year',
-        id: year.toString(),
-        label: year.toString(),
-        metrics: this.calculateMetrics(yearTrades),
-        children: quarterNodes,
-        expanded: year === new Date().getFullYear(), 
-        dataLoaded: true,
-      });
-    }
-
-    
-    this.markBestWorstPerformersRecursive(yearNodes);
-
-    return yearNodes;
-  }
-
-  
-  private async buildYearNodes(trades: TradeLogData[]): Promise<TimeNode[]> {
-    const yearMap = new Map<number, TradeLogData[]>();
-
-    trades.forEach((trade) => {
-      const date = new Date(trade.entryTime);
-      const year = date.getFullYear();
-      if (!yearMap.has(year)) {
-        yearMap.set(year, []);
-      }
-      yearMap.get(year)!.push(trade);
-    });
-
-    const yearNodes: TimeNode[] = [];
-    const sortedYears = Array.from(yearMap.keys()).sort((a, b) => b - a);
-
-    for (const year of sortedYears) {
-      const yearTrades = yearMap.get(year)!;
-      yearNodes.push({
-        type: 'year',
-        id: year.toString(),
-        label: year.toString(),
-        metrics: this.calculateMetrics(yearTrades),
-        expanded: false,
-        dataLoaded: false,
-      });
-    }
-
-    return yearNodes;
   }
 
   
@@ -1222,15 +1267,21 @@ export class TradeLogService {
         return []; 
       }
 
-      const date = new Date(trade.entryTime);
+      const date = new Date(trade._analyticsEventDate ?? trade.entryTime);
 
       
       if (isNaN(date.getTime())) {
         return []; 
       }
-      const year = date.getFullYear();
-      const month = date.getMonth();
+      const tradingDayString = this.getTradingDayStringMemoized(date);
+      const tradingDayDate = createTradingDayFromString(tradingDayString);
+      const year = tradingDayDate.getFullYear();
+      const month = tradingDayDate.getMonth();
       const quarter = Math.floor(month / 3) + 1;
+      const weekStart = getWeekStartDate(
+        tradingDayDate,
+        this.cachedWeekStartDay
+      );
 
       return [
         {
@@ -1240,9 +1291,9 @@ export class TradeLogService {
             year,
             month: month + 1, 
             quarter,
-            dayKey: formatLocalDateString(date), 
-            weekNum: this.getWeekNumber(date),
-            tradingDayString: this.getTradingDayStringMemoized(date),
+            dayKey: tradingDayString,
+            weekStartString: formatLocalDateString(weekStart),
+            tradingDayString,
           },
         },
       ];
@@ -1635,14 +1686,55 @@ export class TradeLogService {
   private filterTradesByDateRange(
     trades: TradeLogData[],
     startDate?: Date,
-    endDate?: Date
+    endDate?: Date,
+    analyticsDateBasis?: AnalyticsDateBasis
   ): TradeLogData[] {
+    if (analyticsDateBasis === 'exit') {
+      return trades.flatMap((trade) =>
+        getProjectedRealizedEventTrades(trade, this.plugin).flatMap(
+          ({ trade: projectedTrade, event, originalIndex }) => {
+            if (startDate && event.tradingDay < startDate) return [];
+            if (endDate && event.tradingDay > endDate) return [];
+
+            const rowIdentity =
+              trade.filePath ||
+              trade.path ||
+              `${trade.instrument || 'trade'}-${String(trade.entryTime)}`;
+
+            return [
+              {
+                ...projectedTrade,
+                _analyticsEventDate: event.tradingDay,
+                _analyticsEventRowId: `${rowIdentity}#realized-${originalIndex}`,
+              },
+            ];
+          }
+        )
+      );
+    }
+
     if (!startDate && !endDate) return trades;
 
     return trades.filter((trade) => {
+      if (analyticsDateBasis) {
+        return getTradeRealizedPnlEvents(
+          trade,
+          analyticsDateBasis,
+          this.plugin
+        ).some(({ tradingDay }) => {
+          if (startDate && tradingDay < startDate) return false;
+          if (endDate && tradingDay > endDate) return false;
+          return true;
+        });
+      }
+
       const tradeDate = new Date(trade.entryTime);
-      if (startDate && tradeDate < startDate) return false;
-      if (endDate && tradeDate > endDate) return false;
+      if (Number.isNaN(tradeDate.getTime())) return false;
+      const tradingDayDate = createTradingDayFromString(
+        this.getTradingDayStringMemoized(tradeDate)
+      );
+      if (startDate && tradingDayDate < startDate) return false;
+      if (endDate && tradingDayDate > endDate) return false;
       return true;
     });
   }
@@ -1662,6 +1754,10 @@ export class TradeLogService {
         getBreakEvenBalance: (trade) =>
           trade.breakEvenAccountCurrentBalanceTotal ??
           trade.breakEvenAccountCurrentBalance,
+        accountPhaseWindows: resolveAccountPhaseWindowsFromPlugin(
+          filters.accountPhases,
+          this.plugin
+        ),
       }
     );
   }
@@ -1754,6 +1850,19 @@ export class TradeLogService {
     const missedTradeAccountNames = await this.getMissedTradeAccountNames();
     missedTradeAccountNames.forEach(addAccount);
 
+    
+    
+    
+    
+    
+    
+    const accountMetadata = this.plugin.settings.account?.accountMetadata ?? {};
+    for (const [accountName, metadata] of Object.entries(accountMetadata)) {
+      if (metadata?.copyTradingPeriods?.length) {
+        addAccount(accountName);
+      }
+    }
+
     return Array.from(dedupedAccounts.values());
   }
 
@@ -1791,20 +1900,19 @@ export class TradeLogService {
       }
 
       case 'week': {
-        
-        
-        const parts = node.id.split('-W');
-        const weekNum = parts[1];
-        const weekNumber = parseInt(weekNum);
-        const yearMonth = parts[0]; 
-        const weekYearNum = parseInt(yearMonth.split('-')[0]); 
-        const weekMonthNum = parseInt(yearMonth.split('-')[1]); 
-        return trades.filter(
-          (t) =>
-            t._dateComponents.year === weekYearNum &&
-            t._dateComponents.weekNum === weekNumber &&
-            t._dateComponents.month === weekMonthNum
-        );
+        const weekStartString = node.anchorDate;
+        if (!weekStartString) return [];
+        return trades.filter((trade) => {
+          if (trade._dateComponents.weekStartString !== weekStartString) {
+            return false;
+          }
+          if (!node.parentPeriodId) return true;
+          const [parentYear, parentMonth] = node.parentPeriodId.split('-');
+          return (
+            trade._dateComponents.year === parseInt(parentYear) &&
+            trade._dateComponents.month === parseInt(parentMonth)
+          );
+        });
       }
 
       case 'day':
@@ -1815,164 +1923,6 @@ export class TradeLogService {
       default:
         return trades;
     }
-  }
-
-  
-  private async buildQuarterNodes(trades: TradeLogData[]): Promise<TimeNode[]> {
-    const quarterMap = new Map<string, TradeLogData[]>();
-
-    trades.forEach((trade) => {
-      const date = new Date(trade.entryTime);
-      const year = date.getFullYear();
-      const quarter = getQuarter(date);
-      const quarterId = `${year}-Q${quarter}`;
-
-      if (!quarterMap.has(quarterId)) {
-        quarterMap.set(quarterId, []);
-      }
-      quarterMap.get(quarterId)!.push(trade);
-    });
-
-    const quarterNodes: TimeNode[] = [];
-    const sortedQuarters = Array.from(quarterMap.keys()).sort((a, b) =>
-      b.localeCompare(a)
-    );
-
-    for (const quarterId of sortedQuarters) {
-      const quarterTrades = quarterMap.get(quarterId)!;
-      const [year, q] = quarterId.split('-Q');
-
-      quarterNodes.push({
-        type: 'quarter',
-        id: quarterId,
-        label: `Q${q} ${year}`,
-        metrics: this.calculateMetrics(quarterTrades),
-        expanded: false,
-        dataLoaded: false,
-      });
-    }
-
-    return quarterNodes;
-  }
-
-  
-  private async buildMonthNodes(trades: TradeLogData[]): Promise<TimeNode[]> {
-    const monthMap = new Map<string, TradeLogData[]>();
-
-    trades.forEach((trade) => {
-      const date = new Date(trade.entryTime);
-      const monthId = `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}`;
-
-      if (!monthMap.has(monthId)) {
-        monthMap.set(monthId, []);
-      }
-      monthMap.get(monthId)!.push(trade);
-    });
-
-    const monthNodes: TimeNode[] = [];
-    const sortedMonths = Array.from(monthMap.keys()).sort((a, b) =>
-      b.localeCompare(a)
-    );
-
-    for (const monthId of sortedMonths) {
-      const monthTrades = monthMap.get(monthId)!;
-      const [year, month] = monthId.split('-');
-
-      monthNodes.push({
-        type: 'month',
-        id: monthId,
-        label: `${this.getMonthAbbreviation(parseInt(month) - 1)} ${year}`,
-        metrics: this.calculateMetrics(monthTrades),
-        expanded: false,
-        dataLoaded: false,
-      });
-    }
-
-    return monthNodes;
-  }
-
-  
-  private async buildWeekNodes(trades: TradeLogData[]): Promise<TimeNode[]> {
-    const weekMap = new Map<string, TradeLogData[]>();
-
-    trades.forEach((trade) => {
-      const date = new Date(trade.entryTime);
-      const weekNum = this.getWeekNumber(date);
-      const year = date.getFullYear();
-      const month = (date.getMonth() + 1).toString().padStart(2, '0');
-      const weekId = `${year}-${month}-W${weekNum.toString().padStart(2, '0')}`;
-
-      if (!weekMap.has(weekId)) {
-        weekMap.set(weekId, []);
-      }
-      weekMap.get(weekId)!.push(trade);
-    });
-
-    const weekNodes: TimeNode[] = [];
-    const sortedWeeks = Array.from(weekMap.keys()).sort((a, b) =>
-      b.localeCompare(a)
-    );
-
-    for (const weekId of sortedWeeks) {
-      const weekTrades = weekMap.get(weekId)!;
-
-      
-      const yearMatch = weekId.match(/^(\d{4})/);
-      const weekMatch = weekId.match(/W(\d+)$/);
-      const year = yearMatch ? yearMatch[1] : '';
-      const weekNum = weekMatch ? weekMatch[1] : '';
-
-      weekNodes.push({
-        type: 'week',
-        id: weekId,
-        label: `${year} ${t('common.week')} ${weekNum}`,
-        metrics: this.calculateMetrics(weekTrades),
-        expanded: false,
-        dataLoaded: false,
-      });
-    }
-
-    return weekNodes;
-  }
-
-  
-  private async buildDayNodes(trades: TradeLogData[]): Promise<TimeNode[]> {
-    const dayMap = new Map<string, TradeLogData[]>();
-
-    trades.forEach((trade) => {
-      const date = new Date(trade.entryTime);
-      
-      const dayId = getTradingDayString(date, this.plugin);
-
-      if (!dayMap.has(dayId)) {
-        dayMap.set(dayId, []);
-      }
-      dayMap.get(dayId)!.push(trade);
-    });
-
-    const dayNodes: TimeNode[] = [];
-    const sortedDays = Array.from(dayMap.keys()).sort((a, b) =>
-      b.localeCompare(a)
-    );
-
-    for (const dayId of sortedDays) {
-      const dayTrades = dayMap.get(dayId)!;
-
-      dayNodes.push({
-        type: 'day',
-        id: dayId,
-        label: createTradingDayFromString(dayId).toLocaleDateString('en-US', {
-          month: 'short',
-          day: 'numeric',
-          year: 'numeric',
-        }),
-        metrics: this.calculateMetrics(dayTrades),
-        expanded: false,
-        dataLoaded: false,
-      });
-    }
-
-    return dayNodes;
   }
 
   private invalidateTradeDataCaches(): void {
@@ -1991,6 +1941,7 @@ export class TradeLogService {
     this.missedTradeAccountOptionsCache = null;
     this.cachedEnrichedTrades = null; 
     this.cachedEnrichedTradesCacheKey = null;
+    this.cachedEnrichedTradesOperationScopeKey = null;
     this.lastUpdateTime = 0;
     
     this.cacheTradingDaySettings();
@@ -2124,15 +2075,15 @@ export class TradeLogService {
   private async buildTradeNodes(trades: TradeLogData[]): Promise<TimeNode[]> {
     
     const sortedTrades = [...trades].sort((a, b) => {
-      const dateA = new Date(a.entryTime);
-      const dateB = new Date(b.entryTime);
+      const dateA = new Date(a._analyticsEventDate ?? a.entryTime);
+      const dateB = new Date(b._analyticsEventDate ?? b.entryTime);
       return dateB.getTime() - dateA.getTime();
     });
 
     
     if (sortedTrades.length < 100) {
       const tradeNodes: TimeNode[] = sortedTrades.map((trade) => {
-        const date = new Date(trade.entryTime);
+        const date = new Date(trade._analyticsEventDate ?? trade.entryTime);
         const formattedDate = formatDateDisplay(date);
         const tradeStatus = this.getTradeStatus(trade);
         const isOpenTrade =
@@ -2231,14 +2182,13 @@ export class TradeLogService {
 
   
   private buildQuartersForYear(
-    trades: TradeLogData[],
+    trades: EnrichedTradeData[],
     year: number
   ): TimeNode[] {
-    const quarterMap = new Map<number, TradeLogData[]>();
+    const quarterMap = new Map<number, EnrichedTradeData[]>();
 
     trades.forEach((trade) => {
-      const date = new Date(trade.entryTime);
-      const quarter = getQuarter(date);
+      const quarter = trade._dateComponents.quarter;
       if (!quarterMap.has(quarter)) {
         quarterMap.set(quarter, []);
       }
@@ -2265,17 +2215,16 @@ export class TradeLogService {
 
   
   private buildMonthsForQuarter(
-    trades: TradeLogData[],
+    trades: EnrichedTradeData[],
     quarterId: string
   ): TimeNode[] {
     const [year, quarter] = quarterId.split('-Q');
     const qNum = parseInt(quarter);
     const startMonth = (qNum - 1) * 3;
 
-    const monthMap = new Map<number, TradeLogData[]>();
+    const monthMap = new Map<number, EnrichedTradeData[]>();
     trades.forEach((trade) => {
-      const date = new Date(trade.entryTime);
-      const month = date.getMonth();
+      const month = trade._dateComponents.month - 1;
       if (!monthMap.has(month)) {
         monthMap.set(month, []);
       }
@@ -2302,32 +2251,37 @@ export class TradeLogService {
 
   
   private buildWeeksForMonth(
-    trades: TradeLogData[],
-    monthId: string
+    trades: EnrichedTradeData[],
+    parentPeriodId: string
   ): TimeNode[] {
-    const weekMap = new Map<number, TradeLogData[]>();
+    const weekMap = new Map<string, EnrichedTradeData[]>();
 
     trades.forEach((trade) => {
-      const date = new Date(trade.entryTime);
-      const weekNum = this.getWeekNumber(date);
-      if (!weekMap.has(weekNum)) {
-        weekMap.set(weekNum, []);
+      const weekStartString = trade._dateComponents.weekStartString;
+      if (!weekMap.has(weekStartString)) {
+        weekMap.set(weekStartString, []);
       }
-      weekMap.get(weekNum)!.push(trade);
+      weekMap.get(weekStartString)!.push(trade);
     });
 
     const weekNodes: TimeNode[] = [];
-    const sortedWeeks = Array.from(weekMap.keys()).sort((a, b) => b - a);
+    const sortedWeeks = Array.from(weekMap.keys()).sort((a, b) =>
+      b.localeCompare(a)
+    );
 
-    for (const weekNum of sortedWeeks) {
-      const weekTrades = weekMap.get(weekNum)!;
+    for (const weekStartString of sortedWeeks) {
+      const weekTrades = weekMap.get(weekStartString)!;
+      const weekStart = createTradingDayFromString(weekStartString);
+      const weekNum = this.getWeekNumber(weekStart);
       weekNodes.push({
         type: 'week',
-        id: `${monthId}-W${weekNum.toString().padStart(2, '0')}`,
+        id: `${parentPeriodId}/W:${weekStartString}`,
         label: `${t('common.week')} ${weekNum}`,
         metrics: this.calculateMetrics(weekTrades),
         expanded: false,
         dataLoaded: false,
+        anchorDate: weekStartString,
+        parentPeriodId,
       });
     }
 
@@ -2336,15 +2290,13 @@ export class TradeLogService {
 
   
   private buildDaysForWeek(
-    trades: TradeLogData[],
+    trades: EnrichedTradeData[],
     sessionLogTagIdsByDay: ReadonlyMap<string, ReadonlySet<string>>
   ): TimeNode[] {
-    const dayMap = new Map<string, TradeLogData[]>();
+    const dayMap = new Map<string, EnrichedTradeData[]>();
 
     trades.forEach((trade) => {
-      const date = new Date(trade.entryTime);
-      
-      const dayId = getTradingDayString(date, this.plugin);
+      const dayId = trade._dateComponents.tradingDayString;
 
       if (!dayMap.has(dayId)) {
         dayMap.set(dayId, []);
@@ -2411,6 +2363,7 @@ export class TradeLogService {
       return {
         type: 'trade' as const,
         id:
+          trade._analyticsEventRowId ||
           trade.copiedTradeRowId ||
           trade.filePath ||
           `trade-${instrument}-${trade._dateComponents.date.getTime()}`,
@@ -2454,6 +2407,7 @@ export class TradeLogService {
         return {
           type: 'trade' as const,
           id:
+            trade._analyticsEventRowId ||
             trade.copiedTradeRowId ||
             trade.filePath ||
             `trade-${instrument}-${trade._dateComponents.date.getTime()}`,
@@ -2608,7 +2562,7 @@ export class TradeLogService {
     const weekMap = new Map<string, EnrichedTradeData[]>();
 
     enrichedTrades.forEach((trade) => {
-      const weekId = `${trade._dateComponents.year}-${trade._dateComponents.month.toString().padStart(2, '0')}-W${trade._dateComponents.weekNum.toString().padStart(2, '0')}`;
+      const weekId = `W:${trade._dateComponents.weekStartString}`;
 
       if (!weekMap.has(weekId)) {
         weekMap.set(weekId, []);
@@ -2624,21 +2578,22 @@ export class TradeLogService {
     for (const weekId of sortedWeeks) {
       const weekTrades = weekMap.get(weekId)!;
 
-      
-      const parts = weekId.split('-W');
-      const yearMonth = parts[0]; 
-      const weekNum = parts[1] || ''; 
+      const weekStartString = weekId.replace(/^W:/, '');
+      const weekStart = createTradingDayFromString(weekStartString);
+      const weekEnd = new Date(weekStart);
+      weekEnd.setDate(weekEnd.getDate() + 6);
 
       weekNodes.push({
         type: 'week',
         id: weekId,
-        label: `${yearMonth} ${t('common.week')} ${weekNum}`,
+        label: `${formatDateDisplay(weekStart, this.plugin.settings.trade.dateFormat)} – ${formatDateDisplay(weekEnd, this.plugin.settings.trade.dateFormat)}`,
         metrics:
           weekTrades.length > 500
             ? this.calculateMetricsLightweight(weekTrades)
             : this.calculateMetrics(weekTrades),
         expanded: false,
         dataLoaded: false,
+        anchorDate: weekStartString,
       });
     }
 

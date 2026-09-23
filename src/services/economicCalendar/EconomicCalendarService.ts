@@ -1,6 +1,7 @@
 
 
 import type JournalitPlugin from '../../main';
+import { DemoSyncGate } from '../../demo/DemoSyncGate';
 import { ECONOMIC_CALENDAR_IMPACTS } from '../../settings/types';
 import { logger } from '../../utils/logger';
 import { ApiClient } from '../backend/ApiClient';
@@ -21,6 +22,7 @@ import { parseNewsEventImpact } from '../weekly/parseNewsEvents';
 import type { NewsEvent, NewsEventImpact } from '../weekly/types';
 import type { WeeklyReviewService } from '../weekly/WeeklyReviewService';
 import { eventBus } from '../events/EventBus';
+import { reviewChangeAffectsPath } from '../events/reviewChangedPaths';
 import type { Unsubscribe } from '../events/types';
 import type {
   EconomicCalendarEvent,
@@ -421,6 +423,7 @@ export class EconomicCalendarService {
   private autoImportInFlight: Promise<void> | null = null;
   private forcedAutoImportQueued = false;
   private activeImportWrites = 0;
+  private importWriteWaiters = new Set<() => void>();
   private unsubscribeReviewChanged: Unsubscribe | null = null;
 
   constructor(
@@ -509,7 +512,7 @@ export class EconomicCalendarService {
   ): Promise<EconomicCalendarImportResult> {
     const weekDate = options.weekDate ?? new Date();
     const filePath = this.weeklyReviewService.getWeeklyReviewPath(weekDate);
-    if (events.length === 0) {
+    if (events.length === 0 || DemoSyncGate.isActive()) {
       return {
         filePath,
         importedCount: 0,
@@ -618,6 +621,10 @@ export class EconomicCalendarService {
       return { filePath: writtenPath, importedCount, updatedCount };
     } finally {
       this.activeImportWrites--;
+      if (this.activeImportWrites === 0) {
+        for (const resolve of this.importWriteWaiters) resolve();
+        this.importWriteWaiters.clear();
+      }
     }
   }
 
@@ -673,8 +680,10 @@ export class EconomicCalendarService {
           payload.type !== 'weekly' ||
           payload.action !== 'created' ||
           this.activeImportWrites > 0 ||
-          payload.filePath !==
+          !reviewChangeAffectsPath(
+            payload,
             this.weeklyReviewService.getWeeklyReviewPath(new Date())
+          )
         ) {
           return;
         }
@@ -695,6 +704,19 @@ export class EconomicCalendarService {
   public cleanup(): void {
     this.unsubscribeReviewChanged?.();
     this.unsubscribeReviewChanged = null;
+  }
+
+  public async quiesceForSampleContext(): Promise<void> {
+    this.forcedAutoImportQueued = false;
+    const inFlight = this.autoImportInFlight;
+    if (inFlight) {
+      await inFlight;
+    }
+    if (this.activeImportWrites > 0) {
+      await new Promise<void>((resolve) => {
+        this.importWriteWaiters.add(resolve);
+      });
+    }
   }
 
   

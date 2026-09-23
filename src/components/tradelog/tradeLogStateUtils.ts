@@ -1,6 +1,16 @@
-import type { TimeNode, TradeLogFilters } from '../../services/tradelog/types';
+import {
+  SELECTABLE_STATUSES_COUNT,
+  SELECTABLE_TRADE_TYPES_COUNT,
+  type TimeNode,
+  type TradeLogFilters,
+} from '../../services/tradelog/types';
 
 export type TradeLogMode = 'trades' | 'imageGallery';
+
+export type TradeCountResolution =
+  | { status: 'loading' }
+  | { status: 'ready'; count: number }
+  | { status: 'failed' };
 
 export function areSessionLogTagsActive(
   mode: TradeLogMode,
@@ -27,6 +37,41 @@ export function getActiveTreeSessionLogTags(
   filters: TradeLogFilters
 ): string[] {
   return filters.viewLevel === 'days' ? filters.sessionLogTags : [];
+}
+
+export function hasActiveTradeLogResultFilters(
+  filters: TradeLogFilters
+): boolean {
+  return (
+    filters.dateRange.some((date) => date !== null) ||
+    (filters.tradeTypes.length > 0 &&
+      filters.tradeTypes.length < SELECTABLE_TRADE_TYPES_COUNT) ||
+    (filters.statuses.length > 0 &&
+      filters.statuses.length < SELECTABLE_STATUSES_COUNT) ||
+    filters.accounts.length > 0 ||
+    filters.directions.length > 0 ||
+    (areSessionLogTagsActive('trades', filters.viewLevel) &&
+      filters.sessionLogTags.length > 0) ||
+    filters.tickers.length > 0 ||
+    filters.setups.length > 0 ||
+    filters.tags.length > 0 ||
+    filters.mistakes.length > 0 ||
+    filters.reviewStatus.length > 0 ||
+    Object.values(filters.customFieldFilters).some(
+      (values) => values.length > 0
+    )
+  );
+}
+
+export function shouldShowTradeLogFilteredEmptyState(
+  tradeCountResolution: TradeCountResolution,
+  filters: TradeLogFilters,
+  operationScoped = false
+): boolean {
+  if (operationScoped || tradeCountResolution.status !== 'ready') return true;
+  if (tradeCountResolution.count === 0) return false;
+  if (!hasActiveTradeLogResultFilters(filters)) return false;
+  return true;
 }
 
 export function pruneUnknownSessionLogTags(

@@ -91,6 +91,9 @@ export class AccountPageView extends ReactView {
       const accountName = Reflect.get(state, 'accountName');
       if (typeof accountName === 'string') {
         this.setAccountName(accountName);
+        if (this.isRenderReady()) {
+          this.refreshView();
+        }
       }
     }
   }

@@ -91,6 +91,50 @@ export const CHART_STYLES = `
   left: 45px;
 }
 
+.journalit-chart-skeleton--scatter .journalit-chart-skeleton-axis {
+  top: 28px;
+}
+
+.journalit-chart-skeleton-scatter-legend {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 16px;
+  height: 16px;
+}
+
+.journalit-chart-skeleton-scatter-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.journalit-chart-skeleton-scatter {
+  position: absolute;
+  top: 28px;
+  bottom: 25px;
+  left: 40px;
+  right: 0;
+  border-left: 1px solid var(--background-modifier-border);
+  border-bottom: 1px solid var(--background-modifier-border);
+}
+
+.journalit-chart-skeleton-scatter::before {
+  content: '';
+  position: absolute;
+  top: 70%;
+  left: 0;
+  right: 0;
+  border-top: 1px dashed var(--background-modifier-border);
+}
+
+.journalit-chart-skeleton-scatter-point {
+  position: absolute;
+  left: var(--scatter-x);
+  top: var(--scatter-y);
+  transform: translate(-50%, -50%);
+}
+
 .journalit-chart-skeleton-wave {
   margin-left: 40px;
   height: 100%;
@@ -216,11 +260,29 @@ export const CHART_STYLES = `
   color: var(--text-normal);
 }
 
+.journalit-chart-widget__legend--top {
+  margin-top: 0;
+}
+
+.journalit-dashboard-mfe-scatter .journalit-chart-container .recharts-scatter-symbol [data-journalit-chart-mark="true"]:hover .recharts-symbols {
+  fill-opacity: 1;
+  stroke: var(--text-normal);
+  stroke-width: 1.25px;
+}
+
 .journalit-chart-widget__legend-swatch {
   width: 12px;
   height: 2px;
   border-radius: 1px;
   background-color: var(--legend-color);
+}
+
+.journalit-chart-widget__legend-swatch--dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  
+  transform: translateY(-0.125em);
 }
 
 
@@ -444,17 +506,7 @@ export const CHART_STYLES = `
 
 
 .journalit-chart-container .recharts-bar {
-  cursor: pointer;
   transition: opacity 0.3s ease;
-}
-
-.journalit-chart-container .recharts-bar-rectangle {
-  transition: filter 0.3s ease, transform 0.2s ease;
-}
-
-.journalit-chart-container .recharts-bar-rectangle:hover {
-  filter: brightness(1.1) drop-shadow(0 0 3px rgba(0, 0, 0, 0.2));
-  transform: translateY(-2px);
 }
 
 
@@ -474,11 +526,6 @@ export const CHART_STYLES = `
 
 .journalit-chart-container .recharts-bar-rectangle.recharts-active {
   filter: brightness(1.2) drop-shadow(0 0 6px rgba(0, 0, 0, 0.3));
-}
-
-
-.journalit-chart-container .recharts-layer.recharts-bar-graphical {
-  cursor: pointer;
 }
 
 

@@ -28,6 +28,7 @@ import { StickyHeaderPortal, useStickyHeader } from '../../shared/StickyHeader';
 import { InvalidContextMessage } from './InvalidContextMessage';
 import { scrollToNextReviewItemAfterCollapse } from './shared/reviewScrollUtils';
 import { ReviewWidgetSkeleton } from './shared/ReviewWidgetSkeleton';
+import { openReviewWidgetFile } from '../reviewWidgetNavigation';
 
 type WeeklyDRCDayScope =
   | 'all'
@@ -369,18 +370,10 @@ function WeeklyDRCAccordionHeader({
 const WeeklyDRCDay: React.FC<{
   day: WeeklyDRCDayContext;
   plugin: JournalitPlugin;
-  filePath: string;
   defaultExpanded: boolean;
   nextReviewItemKey?: string;
   preview?: boolean;
-}> = ({
-  day,
-  plugin,
-  filePath,
-  defaultExpanded,
-  nextReviewItemKey,
-  preview,
-}) => {
+}> = ({ day, plugin, defaultExpanded, nextReviewItemKey, preview }) => {
   const hasContent = day.sections.length > 0;
   const title = formatDayHeading(day.date);
   const [dayState, setDayState] = useState<{
@@ -428,7 +421,7 @@ const WeeklyDRCDay: React.FC<{
 
   const openDRCForDay = useCallback(async () => {
     if (day.sourcePath) {
-      await plugin.app.workspace.openLinkText(day.sourcePath, filePath);
+      await openReviewWidgetFile(plugin, day.sourcePath);
       return;
     }
 
@@ -438,15 +431,15 @@ const WeeklyDRCDay: React.FC<{
     const expectedPath = drcService.getDRCNotePath(day.date);
     const existingFile = plugin.app.vault.getAbstractFileByPath(expectedPath);
     if (existingFile instanceof TFile) {
-      await plugin.app.workspace.openLinkText(expectedPath, filePath);
+      await openReviewWidgetFile(plugin, expectedPath);
       return;
     }
 
     if (plugin.settings.drc.autoCreateDRCOnNavigation) {
       const createdPath = await drcService.createDRC(day.date);
-      await plugin.app.workspace.openLinkText(createdPath, filePath);
+      await openReviewWidgetFile(plugin, createdPath);
     }
-  }, [day.date, day.sourcePath, filePath, plugin]);
+  }, [day.date, day.sourcePath, plugin]);
 
   const openSourceDRC = async (event: React.MouseEvent<HTMLElement>) => {
     event.preventDefault();
@@ -834,7 +827,6 @@ export const WeeklyDRCContextWidget: React.FC<WeeklyDRCContextWidgetProps> =
               key={day.dateKey}
               day={day}
               plugin={plugin}
-              filePath={filePath}
               defaultExpanded={defaultExpanded}
               nextReviewItemKey={days[index + 1]?.dateKey}
               preview={preview}

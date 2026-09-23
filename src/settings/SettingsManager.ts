@@ -1,4 +1,5 @@
 import { logger } from '../utils/logger';
+import { normalizePersonalProfiles } from '../services/propChallenge/PersonalPropFirmProfiles';
 
 
 import { App, Notice, PluginManifest } from 'obsidian';
@@ -13,6 +14,7 @@ import {
   QUICK_LINK_ACTIONS,
   QuickLinkAction,
   SidebarNavItem,
+  type EntityShortcut,
 } from './types';
 import { isEconomicCalendarCurrency } from '../services/economicCalendar/economicCalendarScope';
 import {
@@ -36,17 +38,40 @@ import type {
 } from '../types/sessionMode';
 import { getDefaultOutcomeDescription } from '../components/sessionMode/tradeGateUtils';
 import { normalizeSessionModePhaseLayouts } from '../utils/sessionModeLayout';
+import {
+  normalizePropChallengeConfig,
+  normalizePropFirmIndexCache,
+  normalizePropFirmProfileCatalogCache,
+} from '../services/propChallenge/normalization';
+import { normalizeChallengeStageAccountTypes } from '../services/propChallenge/stageAccountTypes';
 import { normalizeGalleryFolders } from './settingsNormalization';
 import { normalizeHomeBackgroundImagePath } from '../components/home/homeBackgroundUtils';
+import { normalizeHomeWidgetOpacity } from './homeWidgetOpacity';
 import { migrateLegacyMetaTraderBrokerSettings } from '../services/tradeImport/brokerIds';
+import { migrateSettingsSchema } from './settingsSchema';
 import type { LocalCSVTemplate } from '../services/csv/types';
 import type {
   PerformanceBreakdownMetric,
   PerformanceBreakdownViewMode,
 } from './types';
+import {
+  composeSampleSettings,
+  createDefaultSampleSettings,
+  createSampleSettingsDocument,
+  extractJournalScopedSettings,
+  mergeRealGlobalSettings,
+  parseSampleSettingsDocument,
+  type JournalSettingsContext,
+  type SampleSettingsDocument,
+} from '../demo/DemoSettingsScope';
+import {
+  ensureDemoStateDirectory,
+  getDemoStateDirectoryPath,
+} from '../demo/DemoManifest';
 
 
 const BACKUP_FILENAME = 'data.backup.json';
+const SAMPLE_SETTINGS_FILENAME = 'settings.json';
 
 
 
@@ -339,6 +364,57 @@ function getNavigationItemsSetting(value: unknown): SidebarNavItem[] {
   }
 
   return items;
+}
+
+function getEntityShortcutsSetting(value: unknown): EntityShortcut[] {
+  if (!Array.isArray(value)) return [];
+
+  const shortcuts: EntityShortcut[] = [];
+  const seenIds = new Set<string>();
+  for (const item of value) {
+    if (
+      !isRecord(item) ||
+      typeof item.id !== 'string' ||
+      typeof item.order !== 'number' ||
+      !isRecord(item.target)
+    ) {
+      continue;
+    }
+
+    const id = item.id.trim();
+    if (!id || seenIds.has(id)) continue;
+
+    if (
+      item.target.kind === 'account' &&
+      typeof item.target.accountName === 'string'
+    ) {
+      const accountName = item.target.accountName.trim();
+      if (!accountName) continue;
+      seenIds.add(id);
+      shortcuts.push({
+        id,
+        target: { kind: 'account', accountName },
+        order: item.order,
+      });
+      continue;
+    }
+
+    if (
+      item.target.kind === 'setup' &&
+      typeof item.target.setupId === 'string'
+    ) {
+      const setupId = item.target.setupId.trim();
+      if (!setupId) continue;
+      seenIds.add(id);
+      shortcuts.push({
+        id,
+        target: { kind: 'setup', setupId },
+        order: item.order,
+      });
+    }
+  }
+
+  return shortcuts;
 }
 
 function getSessionModeWindows(value: unknown): SessionModeWindow[] | null {
@@ -798,6 +874,11 @@ export class SettingsManager {
   
   private lastKnownKeys: Set<string> = new Set();
 
+  private activeContext: JournalSettingsContext = 'real';
+  private realSettings: JournalitSettings | null = null;
+  private sampleDocument: SampleSettingsDocument | null = null;
+  private lastPersistedRealSettingsJson = '';
+
   constructor(plugin: PluginWithSettings) {
     this.plugin = plugin;
 
@@ -876,6 +957,8 @@ export class SettingsManager {
     
     this.lastKnownKeyCount = Object.keys(settings).length;
     this.lastKnownKeys = new Set(Object.keys(settings));
+    this.realSettings = settings;
+    this.lastPersistedRealSettingsJson = JSON.stringify(settings);
 
     
     if (recoveredFromBackup) {
@@ -888,11 +971,86 @@ export class SettingsManager {
     return settings;
   }
 
+  getActiveContext(): JournalSettingsContext {
+    return this.activeContext;
+  }
+
+  isSampleContextActive(): boolean {
+    return this.activeContext === 'sample';
+  }
+
+  getRealSettings(): JournalitSettings {
+    if (!this.realSettings) {
+      throw new Error('Real settings are not loaded');
+    }
+    return this.realSettings;
+  }
+
+  getSampleSettingsPath(): string {
+    return `${this.getSampleSettingsDirectoryPath()}/${SAMPLE_SETTINGS_FILENAME}`;
+  }
+
+  getSampleLocalMetaSection(key: string): unknown {
+    return this.sampleDocument?.localMeta[key];
+  }
+
+  async activateSampleContext(
+    seedSettings?: Partial<JournalitSettings>,
+    options: { preferPersisted?: boolean } = {}
+  ): Promise<JournalitSettings> {
+    const realSettings = this.getRealSettings();
+    const persisted = options.preferPersisted
+      ? await this.loadSampleSettingsDocument()
+      : seedSettings
+        ? createSampleSettingsDocument(seedSettings)
+        : await this.loadSampleSettingsDocument();
+    await this.flushPendingWrites();
+    this.sampleDocument =
+      persisted ??
+      createSampleSettingsDocument(
+        seedSettings ?? createDefaultSampleSettings()
+      );
+    this.activeContext = 'sample';
+
+    const composed = composeSampleSettings(
+      realSettings,
+      this.sampleDocument.settings
+    );
+    this.plugin.settings = composed;
+    this.lastKnownKeyCount = Object.keys(composed).length;
+    this.lastKnownKeys = new Set(Object.keys(composed));
+    await this.saveSampleSettingsDocument();
+    return composed;
+  }
+
+  async activateRealContext(): Promise<JournalitSettings> {
+    await this.flushPendingWrites();
+    const realSettings = this.getRealSettings();
+    this.activeContext = 'real';
+    this.plugin.settings = realSettings;
+    this.lastKnownKeyCount = Object.keys(realSettings).length;
+    this.lastKnownKeys = new Set(Object.keys(realSettings));
+    return realSettings;
+  }
+
+  private async flushPendingWrites(): Promise<void> {
+    await this.debouncedSave.flush();
+    await this.saveMutex.withLock(async () => undefined);
+  }
+
+  async removeSampleSettings(): Promise<void> {
+    const path = this.getSampleSettingsPath();
+    if (await this.plugin.app.vault.adapter.exists(path)) {
+      await this.plugin.app.vault.adapter.remove(path);
+    }
+    this.sampleDocument = null;
+  }
+
   private migrateLoadedSettings(
     settings: JournalitSettings,
     rawData: unknown
   ): boolean {
-    let migrated = false;
+    let migrated = migrateSettingsSchema(settings, rawData, { mode: 'load' });
 
     const rawRecord = isRecord(rawData) ? rawData : {};
     const rawSessionMode = isRecord(rawRecord.sessionMode)
@@ -990,6 +1148,11 @@ export class SettingsManager {
           );
         }
 
+        if (this.activeContext === 'sample') {
+          await this.saveSampleContextSettings(settings);
+          return;
+        }
+
         
         if (!settings.weekly) {
           settings.weekly = DEFAULT_SETTINGS.weekly;
@@ -1033,6 +1196,8 @@ export class SettingsManager {
 
         
         await this.plugin.saveData(settings);
+        this.realSettings = settings;
+        this.lastPersistedRealSettingsJson = JSON.stringify(settings);
 
         
         this.lastKnownKeyCount = Object.keys(settings).length;
@@ -1047,29 +1212,57 @@ export class SettingsManager {
   
   async updateLocalMetaSection(key: string, value: unknown): Promise<void> {
     return this.saveMutex.withLock(async () => {
-      const currentData: unknown = await this.plugin.loadData();
-      const current = isRecord(currentData) ? currentData : {};
-      const existingLocalMeta = isRecord(current.localMeta)
-        ? current.localMeta
-        : {};
-      const localMeta = {
-        ...existingLocalMeta,
-        [key]: value,
-      };
-
-      await this.plugin.saveData({
-        ...current,
-        localMeta,
-      });
-
-      if (this.plugin.settings && typeof this.plugin.settings === 'object') {
-        (
-          this.plugin.settings as typeof this.plugin.settings & {
-            localMeta?: Record<string, unknown>;
-          }
-        ).localMeta = localMeta;
+      if (this.activeContext === 'sample') {
+        const document =
+          this.sampleDocument ??
+          createSampleSettingsDocument(createDefaultSampleSettings());
+        document.localMeta[key] = value;
+        this.sampleDocument = document;
+        await this.saveSampleSettingsDocument();
+        return;
       }
+
+      await this.writeRealLocalMetaSection(key, value);
     });
+  }
+
+  
+  async updateRealLocalMetaSection(key: string, value: unknown): Promise<void> {
+    return this.saveMutex.withLock(() =>
+      this.writeRealLocalMetaSection(key, value)
+    );
+  }
+
+  private async writeRealLocalMetaSection(
+    key: string,
+    value: unknown
+  ): Promise<void> {
+    const currentData: unknown = await this.plugin.loadData();
+    const current = isRecord(currentData) ? currentData : {};
+    const existingLocalMeta = isRecord(current.localMeta)
+      ? current.localMeta
+      : {};
+    const localMeta = {
+      ...existingLocalMeta,
+      [key]: value,
+    };
+
+    await this.plugin.saveData({
+      ...current,
+      localMeta,
+    });
+
+    
+    
+    
+    const mirrors = new Set<object>();
+    if (this.realSettings) mirrors.add(this.realSettings);
+    if (this.plugin.settings && typeof this.plugin.settings === 'object') {
+      mirrors.add(this.plugin.settings);
+    }
+    for (const target of mirrors) {
+      (target as { localMeta?: Record<string, unknown> }).localMeta = localMeta;
+    }
   }
 
   
@@ -1246,6 +1439,79 @@ export class SettingsManager {
     return `${this.plugin.app.vault.configDir}/plugins/${this.plugin.manifest.id}/${BACKUP_FILENAME}`;
   }
 
+  private getSampleSettingsDirectoryPath(): string {
+    return getDemoStateDirectoryPath(this.plugin);
+  }
+
+  private async ensureSampleSettingsDirectory(): Promise<void> {
+    await ensureDemoStateDirectory(this.plugin);
+  }
+
+  private async loadSampleSettingsDocument(): Promise<SampleSettingsDocument | null> {
+    try {
+      const path = this.getSampleSettingsPath();
+      if (!(await this.plugin.app.vault.adapter.exists(path))) {
+        return null;
+      }
+      const content = await this.plugin.app.vault.adapter.read(path);
+      const parseJson: (text: string) => unknown = JSON.parse;
+      return parseSampleSettingsDocument(parseJson(content));
+    } catch (error) {
+      console.error(
+        'SettingsManager: Failed to load sample settings, using defaults:',
+        error
+      );
+      return null;
+    }
+  }
+
+  private async saveSampleSettingsDocument(): Promise<void> {
+    const document =
+      this.sampleDocument ??
+      createSampleSettingsDocument(createDefaultSampleSettings());
+    await this.ensureSampleSettingsDirectory();
+    await this.plugin.app.vault.adapter.write(
+      this.getSampleSettingsPath(),
+      JSON.stringify(document, null, 2)
+    );
+  }
+
+  private async saveSampleContextSettings(
+    activeSettings: JournalitSettings
+  ): Promise<void> {
+    const nextRealSettings = mergeRealGlobalSettings(
+      this.getRealSettings(),
+      activeSettings
+    );
+    this.realSettings = nextRealSettings;
+    this.sampleDocument = createSampleSettingsDocument(
+      extractJournalScopedSettings(activeSettings),
+      this.sampleDocument?.localMeta ?? {}
+    );
+
+    const realSettingsJson = JSON.stringify(nextRealSettings);
+    if (realSettingsJson !== this.lastPersistedRealSettingsJson) {
+      const realValidation = this.validateSettingsBeforeSave(nextRealSettings);
+      if (!realValidation.isValid) {
+        throw new Error(
+          `Real settings validation failed: ${realValidation.errors.join(', ')}`
+        );
+      }
+      await this.createBackup();
+      await this.plugin.saveData(nextRealSettings);
+      this.lastPersistedRealSettingsJson = realSettingsJson;
+    }
+
+    await this.saveSampleSettingsDocument();
+    const composed = composeSampleSettings(
+      nextRealSettings,
+      this.sampleDocument.settings
+    );
+    this.plugin.settings = composed;
+    this.lastKnownKeyCount = Object.keys(composed).length;
+    this.lastKnownKeys = new Set(Object.keys(composed));
+  }
+
   
   private async createBackup(): Promise<void> {
     try {
@@ -1299,6 +1565,33 @@ export class SettingsManager {
     if (!saved) return merged;
 
     
+    
+    
+    const existingInstall = Object.keys(saved).length > 0;
+
+    if (saved.personalPropFirmProfiles !== undefined) {
+      try {
+        merged.personalPropFirmProfiles = normalizePersonalProfiles(
+          saved.personalPropFirmProfiles
+        );
+      } catch (error) {
+        
+        
+        
+        
+        
+        
+        console.warn(
+          'SettingsManager: quarantining invalid personal prop-firm profile library',
+          error
+        );
+        merged.personalPropFirmProfilesQuarantine =
+          saved.personalPropFirmProfiles;
+        merged.personalPropFirmProfiles = [];
+      }
+    }
+
+    
     if (saved.trade) {
       merged.trade = {
         ...defaults.trade,
@@ -1312,7 +1605,8 @@ export class SettingsManager {
       }
 
       merged.trade.tradeFormLayout = resolveTradeFormLayoutSettings(
-        saved.trade.tradeFormLayout
+        saved.trade.tradeFormLayout,
+        { existingInstall }
       );
     }
 
@@ -1525,6 +1819,33 @@ export class SettingsManager {
 
     
     if (saved.account) {
+      const accountMetadata: NonNullable<
+        JournalitSettings['account']
+      >['accountMetadata'] = {};
+      if (isRecord(saved.account.accountMetadata)) {
+        for (const [accountName, rawMetadata] of Object.entries(
+          saved.account.accountMetadata
+        )) {
+          if (!isRecord(rawMetadata)) continue;
+          const metadata = { ...rawMetadata };
+          const propChallenge = normalizePropChallengeConfig(
+            rawMetadata.propChallenge
+          );
+          if (propChallenge) {
+            metadata.propChallenge = propChallenge;
+          } else {
+            delete metadata.propChallenge;
+            
+            
+            
+            
+            if (rawMetadata.propChallenge !== undefined) {
+              metadata.propChallengeQuarantine = rawMetadata.propChallenge;
+            }
+          }
+          accountMetadata[accountName] = metadata;
+        }
+      }
       merged.account = {
         ...defaults.account,
         ...saved.account,
@@ -1535,10 +1856,11 @@ export class SettingsManager {
         includeWithdrawalsFromExcluded:
           saved.account.includeWithdrawalsFromExcluded ||
           defaults.account?.includeWithdrawalsFromExcluded,
-        accountMetadata:
-          saved.account.accountMetadata ||
-          defaults.account?.accountMetadata ||
-          {},
+        accountMetadata,
+        challengeStageAccountTypes: normalizeChallengeStageAccountTypes(
+          saved.account.challengeStageAccountTypes ??
+            defaults.account?.challengeStageAccountTypes
+        ),
       };
     }
 
@@ -1548,14 +1870,22 @@ export class SettingsManager {
         ...defaults.backendIntegration,
         ...saved.backendIntegration,
       };
-    }
-
-    
-    if (saved.uiCustomization) {
-      merged.uiCustomization = {
-        ...defaults.uiCustomization,
-        ...saved.uiCustomization,
-      };
+      const catalogCache = normalizePropFirmProfileCatalogCache(
+        saved.backendIntegration.propFirmProfileCatalogCache
+      );
+      if (catalogCache) {
+        merged.backendIntegration.propFirmProfileCatalogCache = catalogCache;
+      } else {
+        delete merged.backendIntegration.propFirmProfileCatalogCache;
+      }
+      const firmIndexCache = normalizePropFirmIndexCache(
+        saved.backendIntegration.propFirmIndexCache
+      );
+      if (firmIndexCache) {
+        merged.backendIntegration.propFirmIndexCache = firmIndexCache;
+      } else {
+        delete merged.backendIntegration.propFirmIndexCache;
+      }
     }
 
     
@@ -1568,12 +1898,9 @@ export class SettingsManager {
 
     
     if (saved.reviewV2) {
-      const savedReviewV2 = { ...saved.reviewV2 } as Record<string, unknown>;
-      delete savedReviewV2.scalperDefaults;
-
       merged.reviewV2 = {
         ...defaults.reviewV2,
-        ...savedReviewV2,
+        ...saved.reviewV2,
         
         customWidgetTypes:
           saved.reviewV2.customWidgetTypes ||
@@ -1658,6 +1985,12 @@ export class SettingsManager {
       merged.home = {
         ...defaults.home,
         ...saved.home,
+        widgetOpacityLight: normalizeHomeWidgetOpacity(
+          saved.home.widgetOpacityLight
+        ),
+        widgetOpacityDark: normalizeHomeWidgetOpacity(
+          saved.home.widgetOpacityDark
+        ),
         backgroundImagePath: normalizeHomeBackgroundImagePath(
           saved.home.backgroundImagePath,
           defaults.home?.backgroundImagePath || undefined
@@ -1672,6 +2005,7 @@ export class SettingsManager {
         },
         recentItems: saved.home.recentItems || defaults.home?.recentItems || [],
         quickLinks: mergedQuickLinks,
+        entityShortcuts: getEntityShortcutsSetting(saved.home.entityShortcuts),
       };
     }
 
@@ -1700,6 +2034,9 @@ export class SettingsManager {
         tabBehavior:
           saved.navigation.tabBehavior ?? defaults.navigation!.tabBehavior,
         items: mergedNavigationItems,
+        entityShortcuts: getEntityShortcutsSetting(
+          saved.navigation.entityShortcuts
+        ),
       };
     }
 

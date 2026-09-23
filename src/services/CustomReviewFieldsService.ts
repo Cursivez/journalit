@@ -333,6 +333,17 @@ export class CustomReviewFieldsService {
     return [...this.fields.fields].sort((a, b) => a.order - b.order);
   }
 
+  reloadFromSettings(): void {
+    this.fields = { groups: [], fields: [] };
+    this.fieldOptions = {};
+    this.loadFields();
+    this.loadFieldOptions();
+    this.plugin.app.workspace.trigger(
+      'journalit-custom-review-fields-changed',
+      this.fields
+    );
+  }
+
   getGroups(): CustomReviewFieldGroup[] {
     return [...this.fields.groups].sort((a, b) => a.order - b.order);
   }

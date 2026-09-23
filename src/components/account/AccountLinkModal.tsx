@@ -10,7 +10,8 @@ import { OptionType } from '../../services/options';
 import { Button } from '../ui/Button';
 import { getApp } from '../../utils/obsidian';
 import { formatDateDisplay, getUserDateFormat } from '../../utils/dateUtils';
-import { hasTranslation, t } from '../../lang/helpers';
+import { t } from '../../lang/helpers';
+import { formatAccountTypeLabel } from '../../utils/accountTypeLabel';
 
 const EMPTY_EXISTING_ACCOUNTS: ExistingAccount[] = [];
 const EMPTY_AVAILABLE_ACCOUNT_TYPES: string[] = [];
@@ -91,11 +92,6 @@ function AccountInfoSummary({ accountInfo }: AccountInfoSummaryProps) {
   );
 }
 
-function getAccountTypeLabel(type: string): string {
-  const key = `account.type.${type.toLowerCase()}`;
-  return hasTranslation(key) ? t(key) : key;
-}
-
 interface AccountTypeSelectProps {
   availableAccountTypes: string[];
   selectedAccountType: string;
@@ -122,7 +118,7 @@ function AccountTypeSelect({
       >
         {availableAccountTypes.map((type) => (
           <option key={type} value={type}>
-            {getAccountTypeLabel(type)}
+            {formatAccountTypeLabel(type)}
           </option>
         ))}
       </select>

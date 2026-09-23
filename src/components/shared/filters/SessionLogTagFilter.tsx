@@ -1,14 +1,9 @@
-import React, {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from 'react';
+import React, { useCallback, useMemo, useRef, useState } from 'react';
 import { getSessionLogTags } from '../../sessionLog/sessionLogUtils';
 import { t } from '../../../lang/helpers';
 import type JournalitPlugin from '../../../main';
 import type { SessionLogTagDefinition } from '../../../types/sessionLog';
+import { AnchoredMenu } from '../menus/AnchoredMenu';
 
 interface SessionLogTagFilterProps {
   plugin: JournalitPlugin;
@@ -64,26 +59,6 @@ export const SessionLogTagFilter: React.FC<SessionLogTagFilterProps> =
       selectedConfiguredTags
     );
 
-    useEffect(() => {
-      const handleClickOutside = (event: MouseEvent) => {
-        const target = event.target;
-        if (
-          dropdownRef.current &&
-          (!(target instanceof Node) || !dropdownRef.current.contains(target))
-        ) {
-          setIsOpen(false);
-        }
-      };
-
-      window.activeDocument.addEventListener('mousedown', handleClickOutside);
-      return () => {
-        window.activeDocument.removeEventListener(
-          'mousedown',
-          handleClickOutside
-        );
-      };
-    }, []);
-
     const summary = useMemo(
       () => getSessionLogTagSummary(tags, selectedTags),
       [selectedTags, tags]
@@ -125,67 +100,70 @@ export const SessionLogTagFilter: React.FC<SessionLogTagFilterProps> =
             <span className="dropdown-arrow">{isOpen ? '▲' : '▼'}</span>
           </button>
 
-          {isOpen && (
-            <div className="journalit-dashboard-mistake-options-dropdown journalit-session-log-tag-options-dropdown">
-              {tags.length > 0 ? (
-                <>
-                  <div
-                    className="journalit-dashboard-mistake-option-item select-all"
-                    onClick={handleSelectAll}
-                    role="checkbox"
-                    aria-checked={isAllSelected}
-                    tabIndex={0}
-                    onKeyDown={(event) => {
-                      if (event.key === 'Enter' || event.key === ' ') {
-                        event.preventDefault();
-                        handleSelectAll();
-                      }
-                    }}
+          <AnchoredMenu
+            isOpen={isOpen}
+            triggerRef={dropdownRef}
+            onClose={() => setIsOpen(false)}
+            className="journalit-dashboard-mistake-options-dropdown journalit-session-log-tag-options-dropdown"
+          >
+            {tags.length > 0 ? (
+              <>
+                <div
+                  className="journalit-dashboard-mistake-option-item select-all"
+                  onClick={handleSelectAll}
+                  role="checkbox"
+                  aria-checked={isAllSelected}
+                  tabIndex={0}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter' || event.key === ' ') {
+                      event.preventDefault();
+                      handleSelectAll();
+                    }
+                  }}
+                >
+                  <span
+                    className={`journalit-dashboard-mistake-checkbox${isAllSelected ? ' checked' : ''}`}
+                    aria-hidden="true"
                   >
-                    <span
-                      className={`journalit-dashboard-mistake-checkbox${isAllSelected ? ' checked' : ''}`}
-                      aria-hidden="true"
-                    >
-                      {isAllSelected ? '✓' : ''}
-                    </span>
-                    <span>{t('filter.modal.session-tags.select-all')}</span>
-                  </div>
-                  <div className="journalit-dashboard-mistake-divider"></div>
-                  {tags.map((tag) => {
-                    const isSelected = selectedTagsSet.has(tag.id);
-                    return (
-                      <div
-                        key={tag.id}
-                        className="journalit-dashboard-mistake-option-item"
-                        onClick={() => handleTagChange(tag.id)}
-                        role="checkbox"
-                        aria-checked={isSelected}
-                        tabIndex={0}
-                        onKeyDown={(event) => {
-                          if (event.key === 'Enter' || event.key === ' ') {
-                            event.preventDefault();
-                            handleTagChange(tag.id);
-                          }
-                        }}
-                      >
-                        <span
-                          className={`journalit-dashboard-mistake-checkbox${isSelected ? ' checked' : ''}`}
-                          aria-hidden="true"
-                        >
-                          {isSelected ? '✓' : ''}
-                        </span>
-                        <span>{tag.label}</span>
-                      </div>
-                    );
-                  })}
-                </>
-              ) : (
-                <div className="journalit-dashboard-no-mistakes">
-                  {t('filter.modal.session-tags.none-found')}
+                    {isAllSelected ? '✓' : ''}
+                  </span>
+                  <span>{t('filter.modal.session-tags.select-all')}</span>
                 </div>
-              )}
-            </div>
-          )}
+                <div className="journalit-dashboard-mistake-divider"></div>
+                {tags.map((tag) => {
+                  const isSelected = selectedTagsSet.has(tag.id);
+                  return (
+                    <div
+                      key={tag.id}
+                      className="journalit-dashboard-mistake-option-item"
+                      onClick={() => handleTagChange(tag.id)}
+                      role="checkbox"
+                      aria-checked={isSelected}
+                      tabIndex={0}
+                      onKeyDown={(event) => {
+                        if (event.key === 'Enter' || event.key === ' ') {
+                          event.preventDefault();
+                          handleTagChange(tag.id);
+                        }
+                      }}
+                    >
+                      <span
+                        className={`journalit-dashboard-mistake-checkbox${isSelected ? ' checked' : ''}`}
+                        aria-hidden="true"
+                      >
+                        {isSelected ? '✓' : ''}
+                      </span>
+                      <span>{tag.label}</span>
+                    </div>
+                  );
+                })}
+              </>
+            ) : (
+              <div className="journalit-dashboard-no-mistakes">
+                {t('filter.modal.session-tags.none-found')}
+              </div>
+            )}
+          </AnchoredMenu>
         </div>
       </div>
     );

@@ -11,6 +11,7 @@ interface DashboardWidgetSkeletonProps {
     | 'area-chart'
     | 'line-chart'
     | 'bar-chart'
+    | 'scatter-chart'
     | 'table'
     | 'calendar';
   announceLoading?: boolean;
@@ -20,6 +21,12 @@ const DashboardWidgetSkeletonBody: React.FC<{
   type: DashboardWidgetSkeletonProps['type'];
 }> = ({ type }) => {
   switch (type) {
+    case 'scatter-chart':
+      return (
+        <div className="dashboard-widget-skeleton-chart">
+          <ChartSkeleton variant="scatter" />
+        </div>
+      );
     case 'chart':
     case 'area-chart':
     case 'line-chart':

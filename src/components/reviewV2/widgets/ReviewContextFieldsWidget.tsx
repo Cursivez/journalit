@@ -16,6 +16,7 @@ import { Button } from '../../ui/Button';
 import { t } from '../../../lang/helpers';
 import { parseLocalDateSafe } from '../../../utils/dateUtils';
 import { eventBus } from '../../../services/events/EventBus';
+import { getReviewChangedPaths } from '../../../services/events/reviewChangedPaths';
 import type {
   InheritedReviewContext,
   ReviewContextSource,
@@ -37,6 +38,7 @@ import {
 } from '../../../utils/reviewCustomFieldPersistence';
 import { InvalidContextMessage } from './InvalidContextMessage';
 import { groupReviewFieldsByConfiguredOrder } from './reviewContextFieldGrouping';
+import { openReviewWidgetFile } from '../reviewWidgetNavigation';
 
 interface ReviewContextFieldsWidgetProps {
   filePath: string;
@@ -342,13 +344,15 @@ export const ReviewContextFieldsWidget: React.FC<ReviewContextFieldsWidgetProps>
         'review:changed',
         (payload) => {
           if (payload.source === 'review-context-fields') return;
-          if (payload.filePath === filePath) {
+          const changedPaths = getReviewChangedPaths(payload);
+          if (changedPaths.includes(filePath)) {
             reloadCurrentFromEvent();
             return;
           }
           if (
-            payload.filePath &&
-            inheritedDependencyPathsRef.current.has(payload.filePath)
+            changedPaths.some((changedPath) =>
+              inheritedDependencyPathsRef.current.has(changedPath)
+            )
           ) {
             reloadInheritedFromEvent();
           }
@@ -537,7 +541,7 @@ export const ReviewContextFieldsWidget: React.FC<ReviewContextFieldsWidgetProps>
             }
           }
 
-          await plugin.app.workspace.openLinkText(source.path, filePath);
+          await openReviewWidgetFile(plugin, source.path);
           if (!dirtyRef.current) {
             loadValues();
           } else {
@@ -551,7 +555,7 @@ export const ReviewContextFieldsWidget: React.FC<ReviewContextFieldsWidgetProps>
           );
         }
       },
-      [filePath, loadInheritedContext, loadValues, plugin, preview]
+      [loadInheritedContext, loadValues, plugin, preview]
     );
 
     const inheritedFieldDefinitions = useMemo(

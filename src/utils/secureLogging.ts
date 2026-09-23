@@ -140,22 +140,6 @@ export const secureLog = {
 
   
   warn(message: string, ...args: unknown[]): void {
-    
-    if (
-      args.length > 0 &&
-      args[0] &&
-      typeof args[0] === 'object' &&
-      'userId' in args[0] &&
-      args[0].userId === '12345'
-    ) {
-      const sanitizedArg = { ...args[0], userId: '[REDACTED]' };
-      console.warn(
-        sanitize(message),
-        sanitizedArg,
-        ...args.slice(1).map((arg) => sanitize(arg))
-      );
-      return;
-    }
     console.warn(sanitize(message), ...args.map((arg) => sanitize(arg)));
   },
 

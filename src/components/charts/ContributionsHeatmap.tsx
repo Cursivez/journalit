@@ -766,9 +766,6 @@ const HeatmapGrid: React.FC<HeatmapGridProps> = ({
                   },
                   role: 'button',
                   tabIndex: 0,
-                  'aria-label': t('calendar.aria.open-daily-review', {
-                    date: day.dateString,
-                  }),
                 }
               : {};
             return (
@@ -785,7 +782,15 @@ const HeatmapGrid: React.FC<HeatmapGridProps> = ({
                     : `1px solid rgba(var(--background-modifier-border-rgb, 55, 53, 47), 0.08)`,
                 })}
                 {...interactiveProps}
-              />
+              >
+                {isActionable && (
+                  <span className="journalit-sr-only">
+                    {t('calendar.aria.open-daily-review', {
+                      date: day.dateString,
+                    })}
+                  </span>
+                )}
+              </div>
             );
           })}
         </div>

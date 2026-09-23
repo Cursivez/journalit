@@ -10,6 +10,7 @@ import {
   parseYaml,
 } from 'obsidian';
 import { t } from '../../lang/helpers';
+import { DemoSyncGate } from '../../demo/DemoSyncGate';
 import {
   BackendIntegrationSettings,
   AccountInfo,
@@ -27,13 +28,20 @@ import { FTPManagementService } from './FTPManagementService';
 import { BackendSecretStorage } from './BackendSecretStorage';
 import { FileWatcherService } from './FileWatcherService';
 import {
+  buildProjectionSyncOperationResult,
+  combineTradeProjectionSyncResults,
+} from '../tradeOperations/resultBuilders';
+import { getTradeProjectionOwnerId } from '../tradeSync/TradeProjectionOwnership';
+import {
   SyncResponse,
   SyncStatus,
   VaultRegistrationData,
   Trade,
   FTPCredentials,
   FTPProvisionedCredentials,
-  TradeSyncMapping,
+  METATRADER_SYNC_ENTITLEMENT_UNVERIFIED_STATUS,
+  METATRADER_SYNC_NOT_ENTITLED_STATUS,
+  type MetaTraderSyncResult,
 } from './types';
 import { debounceAsync } from '../../utils/debounce';
 import { forceMetadataCacheRefresh } from '../../utils/dataRefresh';
@@ -79,8 +87,18 @@ interface SyncSession {
   cancelled: boolean;
   completed: boolean;
   lockAcquired: boolean;
+  ownerUserId: string;
+  result: SyncResponse;
   resolve: (result: SyncResponse | null) => void;
   completion: Promise<SyncResponse | null>;
+  automatic: boolean;
+  showUserFeedback: boolean;
+  recordOperationResult: boolean;
+  operationResultRecordingAttempted: boolean;
+  operationResultAccepted: boolean;
+  importedTrades: MetaTraderSyncResult['importedTrades'];
+  failedTradeWriteCount: number;
+  onCompleted?: (result: MetaTraderSyncResult) => void;
 }
 
 const getErrorMessage = (error: unknown): string =>
@@ -142,7 +160,11 @@ export class BackendIntegrationService {
   }
 
   private canRunAutoSync(): boolean {
-    return this.settings.syncEnabled && this.hasAuthenticatedSyncAccess();
+    return (
+      !DemoSyncGate.isActive() &&
+      this.settings.syncEnabled &&
+      this.hasAuthenticatedSyncAccess()
+    );
   }
 
   private async expireAuthentication(): Promise<void> {
@@ -286,6 +308,21 @@ export class BackendIntegrationService {
     this.reconcileAutoSyncState();
   }
 
+  async resumeAfterSampleContext(): Promise<void> {
+    await this.tradeSyncService.loadSyncMapping();
+    this.reconcileAutoSyncState();
+  }
+
+  async quiesceForSampleContext(): Promise<void> {
+    this.stopAutoSync();
+    this.debouncedForceSync.cancel();
+    this.debouncedCheckForNewTrades.cancel();
+    const session = this.activeSyncSession ?? this.pendingSyncSession;
+    if (!session) return;
+    this.cancelSyncSession(session, false);
+    await Promise.allSettled([session.completion]);
+  }
+
   
   private getUserId(): string {
     try {
@@ -427,7 +464,12 @@ export class BackendIntegrationService {
     }
   }
 
-  private createSyncSession(): SyncSession {
+  private createSyncSession(
+    automatic: boolean,
+    showUserFeedback: boolean,
+    recordOperationResult: boolean,
+    onCompleted?: (result: MetaTraderSyncResult) => void
+  ): SyncSession {
     let resolve!: (result: SyncResponse | null) => void;
     const completion = new Promise<SyncResponse | null>((resolvePromise) => {
       resolve = resolvePromise;
@@ -436,9 +478,67 @@ export class BackendIntegrationService {
       cancelled: false,
       completed: false,
       lockAcquired: false,
+      ownerUserId: getTradeProjectionOwnerId(this.plugin),
+      result: {
+        status: 'success',
+        synced_trades: 0,
+        new_files: 0,
+        updated_files: 0,
+        errors: [],
+      },
       resolve,
       completion,
+      automatic,
+      showUserFeedback,
+      recordOperationResult,
+      operationResultRecordingAttempted: false,
+      operationResultAccepted: false,
+      importedTrades: [],
+      failedTradeWriteCount: 0,
+      onCompleted,
     };
+  }
+
+  private accumulateSyncBatchResult(
+    session: SyncSession,
+    batch: SyncResponse,
+    importedTrades: MetaTraderSyncResult['importedTrades'] = [],
+    failedTradeWriteCount = 0
+  ): SyncResponse {
+    session.result.status = batch.status;
+    session.result.synced_trades += batch.synced_trades;
+    session.result.new_files += batch.new_files;
+    session.result.updated_files += batch.updated_files;
+    session.result.errors.push(...batch.errors);
+    session.importedTrades.push(...importedTrades);
+    session.failedTradeWriteCount += failedTradeWriteCount;
+    return {
+      ...session.result,
+      errors: [...session.result.errors],
+    };
+  }
+
+  private finishFailedSyncSession(
+    session: SyncSession,
+    error: unknown
+  ): SyncResponse | null {
+    const hasAccumulatedBatch =
+      session.result.synced_trades > 0 ||
+      session.result.new_files > 0 ||
+      session.result.updated_files > 0 ||
+      session.result.errors.length > 0;
+    if (!hasAccumulatedBatch) {
+      return this.finishSyncSession(session, null);
+    }
+
+    const result = this.accumulateSyncBatchResult(session, {
+      status: 'partial',
+      synced_trades: 0,
+      new_files: 0,
+      updated_files: 0,
+      errors: [`Sync continuation failed: ${getErrorMessage(error)}`],
+    });
+    return this.finishSyncSession(session, result);
   }
 
   private finishSyncSession(
@@ -464,10 +564,63 @@ export class BackendIntegrationService {
     }
 
     if (!session.completed) {
+      this.recordSyncSessionOperationResult(session, result);
       session.completed = true;
+      if (result) {
+        session.onCompleted?.({
+          ownerUserId: session.ownerUserId,
+          response: result,
+          importedTrades: [...session.importedTrades],
+          failedTradeWriteCount: session.failedTradeWriteCount,
+        });
+      }
       session.resolve(result);
     }
     return result;
+  }
+
+  private recordSyncSessionOperationResult(
+    session: SyncSession,
+    result: SyncResponse | null
+  ): boolean {
+    if (session.operationResultRecordingAttempted) {
+      return session.operationResultAccepted;
+    }
+    session.operationResultRecordingAttempted = true;
+    if (
+      !result ||
+      !session.recordOperationResult ||
+      session.importedTrades.length === 0
+    ) {
+      return false;
+    }
+
+    const currentOwnerUserId = getTradeProjectionOwnerId(this.plugin);
+    if (!session.ownerUserId || currentOwnerUserId !== session.ownerUserId) {
+      return false;
+    }
+
+    session.operationResultAccepted = Boolean(
+      this.plugin.ensureTradeOperationResultService().record(
+        buildProjectionSyncOperationResult({
+          source: session.automatic ? 'automatic-sync' : 'manual-sync',
+          ownerUserId: session.ownerUserId,
+          result: combineTradeProjectionSyncResults([
+            {
+              accountCount: new Set(
+                session.importedTrades.map((trade) => trade.accountName)
+              ).size,
+              writtenCount: session.importedTrades.length,
+              failedCount: session.failedTradeWriteCount,
+              pendingCount: 0,
+              partial: result.status !== 'success' || result.errors.length > 0,
+              importedTrades: session.importedTrades,
+            },
+          ]),
+        })
+      )
+    );
+    return session.operationResultAccepted;
   }
 
   private finishCancelledSync(session: SyncSession): SyncResponse {
@@ -487,14 +640,40 @@ export class BackendIntegrationService {
     };
   }
 
+  private createUnavailableSyncResponse(
+    status:
+      | typeof METATRADER_SYNC_NOT_ENTITLED_STATUS
+      | typeof METATRADER_SYNC_ENTITLEMENT_UNVERIFIED_STATUS
+  ): SyncResponse {
+    return {
+      status,
+      synced_trades: 0,
+      new_files: 0,
+      updated_files: 0,
+      errors: [],
+    };
+  }
+
   
   async forceSync(
     isAutoContinue: boolean = false,
-    isAutomaticCheck: boolean = false
+    isAutomaticCheck: boolean = false,
+    options: {
+      showUserFeedback?: boolean;
+      recordOperationResult?: boolean;
+      onCompleted?: (result: MetaTraderSyncResult) => void;
+    } = {}
   ): Promise<SyncResponse | null> {
+    const showUserFeedback = options.showUserFeedback ?? true;
+    const recordOperationResult = options.recordOperationResult ?? true;
     const session = isAutoContinue
       ? this.activeSyncSession
-      : this.createSyncSession();
+      : this.createSyncSession(
+          isAutomaticCheck,
+          showUserFeedback,
+          recordOperationResult,
+          options.onCompleted
+        );
     if (!session) {
       if (!this.hasAuthenticatedSyncAccess()) {
         console.warn('Sync skipped: User not authenticated');
@@ -517,7 +696,7 @@ export class BackendIntegrationService {
     if (!this.hasAuthenticatedSyncAccess()) {
       console.warn('Sync skipped: User not authenticated');
 
-      if (!isAutoContinue) {
+      if (!isAutoContinue && showUserFeedback) {
         ErrorHandler.showError(
           new Error('Authentication required'),
           ErrorHandler.createContext('sync', undefined, 401)
@@ -540,13 +719,28 @@ export class BackendIntegrationService {
     ) {
       if (isAutomaticCheck) {
         this.stopAutoSync();
-      } else if (tierRefresh.status === 'unverified') {
-        new Notice(t('premium.gate.offline'));
-      } else {
-        new Notice(t('trade-sync.gate.pro.description'));
+      } else if (showUserFeedback) {
+        new Notice(
+          t(
+            tierRefresh.status === 'unverified'
+              ? 'premium.gate.offline'
+              : 'trade-sync.gate.pro.description'
+          )
+        );
       }
 
-      return this.finishSyncSession(session, null);
+      
+      
+      const terminalResult = this.accumulateSyncBatchResult(
+        session,
+        this.createUnavailableSyncResponse(
+          tierRefresh.status === 'unverified'
+            ? METATRADER_SYNC_ENTITLEMENT_UNVERIFIED_STATUS
+            : METATRADER_SYNC_NOT_ENTITLED_STATUS
+        )
+      );
+      const result = showUserFeedback ? null : terminalResult;
+      return this.finishSyncSession(session, result);
     }
 
     if (session.cancelled) {
@@ -557,7 +751,9 @@ export class BackendIntegrationService {
     if (!isAutoContinue) {
       
       if (!this.syncMutex.tryLock()) {
-        new Notice(t('backend.notice.sync-in-progress'));
+        if (showUserFeedback) {
+          new Notice(t('backend.notice.sync-in-progress'));
+        }
         return this.finishSyncSession(session, null);
       }
 
@@ -612,7 +808,9 @@ export class BackendIntegrationService {
         return this.finishCancelledSync(session);
       }
       if (!accountId) {
-        new Notice(t('backend.notice.account-info-failed'));
+        if (showUserFeedback) {
+          new Notice(t('backend.notice.account-info-failed'));
+        }
         return this.finishSyncSession(session, null);
       }
 
@@ -802,7 +1000,7 @@ export class BackendIntegrationService {
 
       if (hasMoreToSync) {
         const remainingCount = newTrades.length - MAX_TRADES_PER_SYNC;
-        if (this.settings.showSyncNotifications) {
+        if (showUserFeedback && this.settings.showSyncNotifications) {
           const progressPct = Math.round(
             (this.tradesProcessedSoFar / this.totalTradesToSync) * 100
           );
@@ -815,7 +1013,7 @@ export class BackendIntegrationService {
           );
         }
       } else if (newTrades.length === 0 && allTrades.length > 0) {
-        if (this.settings.showSyncNotifications) {
+        if (showUserFeedback && this.settings.showSyncNotifications) {
           new Notice(
             t('backend.notice.all-trades-synced', {
               count: String(allTrades.length),
@@ -983,7 +1181,7 @@ export class BackendIntegrationService {
                 return this.finishCancelledSync(session);
               }
 
-              if (this.settings.showSyncNotifications) {
+              if (showUserFeedback && this.settings.showSyncNotifications) {
                 new Notice(
                   t('backend.notice.account-created', {
                     name: finalDisplayName,
@@ -1006,6 +1204,8 @@ export class BackendIntegrationService {
       
       let newFiles = 0;
       let updatedFiles = 0;
+      let failedTradeWriteCount = 0;
+      const importedFiles: MetaTraderSyncResult['importedTrades'] = [];
 
       for (let i = 0; i < trades.length; i++) {
         if (session.cancelled) {
@@ -1021,21 +1221,43 @@ export class BackendIntegrationService {
           }
           const tradeTime = Date.now() - tradeStartTime;
 
-          if (result === 'created') {
+          if (result.status === 'created') {
             newFiles++;
-          } else if (result === 'updated') {
+          } else if (result.status === 'updated') {
             updatedFiles++;
-          } else if (result === 'skipped') {
+          } else if (result.status === 'skipped') {
             // intentional
+          }
+
+          if (result.status !== 'skipped') {
+            const entryTime = safeParseDateValue(trade.entry_time);
+            importedFiles.push({
+              filePath: result.filePath,
+              entryTime: entryTime?.toISOString() ?? trade.entry_time,
+              accountName: await this.resolveSyncedAccountDisplayName(
+                trade.mt_account_number,
+                trade.mt_account_display_name
+              ),
+              brokerLabel: 'MetaTrader',
+              change: result.status,
+              symbol: trade.symbol,
+              direction:
+                trade.direction.toUpperCase() === 'SELL' ? 'short' : 'long',
+              quantity: trade.volume,
+              entryPrice: trade.entry_price,
+              status:
+                trade.status.toUpperCase() === 'CLOSED' ? 'CLOSED' : 'OPEN',
+            });
           }
 
           
           if (tradeTime > 1000) {
             console.warn(
-              `Slow trade processing: ${trade.symbol} ${trade.id} took ${tradeTime}ms (result: ${result})`
+              `Slow trade processing: ${trade.symbol} ${trade.id} took ${tradeTime}ms (result: ${result.status})`
             );
           }
         } catch (error) {
+          failedTradeWriteCount++;
           errors.push(
             `Failed to create file for trade ${trade.id}: ${getErrorMessage(error)}`
           );
@@ -1111,13 +1333,18 @@ export class BackendIntegrationService {
       
       this.tradesProcessedSoFar += trades.length;
 
-      const syncResponse: SyncResponse = {
-        status: 'success',
-        synced_trades: trades.length,
-        new_files: newFiles,
-        updated_files: updatedFiles,
-        errors: errors,
-      };
+      const syncResponse = this.accumulateSyncBatchResult(
+        session,
+        {
+          status: 'success',
+          synced_trades: trades.length,
+          new_files: newFiles,
+          updated_files: updatedFiles,
+          errors,
+        },
+        importedFiles,
+        failedTradeWriteCount
+      );
 
       if (session.cancelled) {
         return this.finishCancelledSync(session);
@@ -1126,7 +1353,7 @@ export class BackendIntegrationService {
       
       if (hasMoreToSync && !session.cancelled) {
         
-        if (this.settings.showSyncNotifications) {
+        if (showUserFeedback && this.settings.showSyncNotifications) {
           const progressPct = Math.round(
             (this.tradesProcessedSoFar / this.totalTradesToSync) * 100
           );
@@ -1148,7 +1375,7 @@ export class BackendIntegrationService {
           
           if (!session.cancelled && timeoutId !== null) {
             logger.debug('Auto-continuing sync with next batch...');
-            this.forceSync(true).catch((error) => {
+            this.forceSync(true, false, { showUserFeedback }).catch((error) => {
               console.error('Auto-continue sync failed:', error);
               this.finishSyncSession(session, null);
             });
@@ -1159,7 +1386,11 @@ export class BackendIntegrationService {
       }
 
       
-      if (this.settings.showSyncNotifications) {
+      const operationResultAccepted = this.recordSyncSessionOperationResult(
+        session,
+        syncResponse
+      );
+      if (showUserFeedback && this.settings.showSyncNotifications) {
         if (trades.length > 0 || this.tradesProcessedSoFar > 0) {
           const totalProcessed =
             this.tradesProcessedSoFar > 0
@@ -1170,14 +1401,15 @@ export class BackendIntegrationService {
               tr.mt_account_number == null ? [] : [tr.mt_account_number]
             )
           ).size;
-          new Notice(
-            t('backend.notice.sync-complete', {
-              total: String(totalProcessed),
-              newFiles: String(newFiles),
-              updated: String(updatedFiles),
-              accounts: String(accountCount),
-            })
-          );
+          const message = t('backend.notice.sync-complete', {
+            total: String(totalProcessed),
+            newFiles: String(syncResponse.new_files),
+            updated: String(syncResponse.updated_files),
+            accounts: String(accountCount),
+          });
+          if (!operationResultAccepted) {
+            new Notice(message);
+          }
         } else {
           new Notice(t('backend.notice.sync-complete-no-trades'));
         }
@@ -1191,11 +1423,13 @@ export class BackendIntegrationService {
       }
 
       console.error('Force sync failed:', error);
-      new Notice(
-        t('backend.notice.sync-failed', { error: getErrorMessage(error) })
-      );
+      if (showUserFeedback) {
+        new Notice(
+          t('backend.notice.sync-failed', { error: getErrorMessage(error) })
+        );
+      }
 
-      return this.finishSyncSession(session, null);
+      return this.finishFailedSyncSession(session, error);
     }
   }
 
@@ -1998,7 +2232,9 @@ export class BackendIntegrationService {
   
   private async createTradeFile(
     trade: Trade
-  ): Promise<'created' | 'updated' | 'skipped'> {
+  ): Promise<
+    { status: 'created' | 'updated'; filePath: string } | { status: 'skipped' }
+  > {
     
     const existingPath = this.tradeSyncService.getValidatedFilePathForTrade(
       trade.id
@@ -2009,7 +2245,10 @@ export class BackendIntegrationService {
         this.plugin.app.vault.getAbstractFileByPath(existingPath);
       if (existingFile instanceof TFile) {
         await this.backfillSyncedTradeIdentity(existingFile, trade.id);
-        return await this.updateExistingTradeFile(existingFile, trade);
+        const status = await this.updateExistingTradeFile(existingFile, trade);
+        return status === 'updated'
+          ? { status, filePath: existingFile.path }
+          : { status };
       }
     }
 
@@ -2019,7 +2258,7 @@ export class BackendIntegrationService {
       console.error(
         `Invalid entry_time for trade ${trade.id}: ${trade.entry_time}`
       );
-      return 'skipped';
+      return { status: 'skipped' };
     }
 
     const dateStr = formatTradeDateForFilename(
@@ -2046,7 +2285,10 @@ export class BackendIntegrationService {
       }
       await this.backfillSyncedTradeIdentity(abstractFile, trade.id);
 
-      return await this.updateExistingTradeFile(abstractFile, trade);
+      const status = await this.updateExistingTradeFile(abstractFile, trade);
+      return status === 'updated'
+        ? { status, filePath: abstractFile.path }
+        : { status };
     }
 
     const tradeService = this.plugin.tradeService;
@@ -2073,7 +2315,7 @@ export class BackendIntegrationService {
       console.warn(`Failed to save mapping for trade ${trade.id}`);
     }
 
-    return 'created';
+    return { status: 'created', filePath };
   }
 
   
@@ -2387,21 +2629,6 @@ export class BackendIntegrationService {
   
   async createOrGetFTPUser(): Promise<FTPProvisionedCredentials | null> {
     return this.ftpManagementService.createOrGetFTPUser();
-  }
-
-  
-  getTradeSyncMapping(): TradeSyncMapping {
-    return this.tradeSyncService.getSyncMapping();
-  }
-
-  
-  setTradeSyncMapping(tradeId: number, filePath: string): void {
-    this.tradeSyncService.addMapping(tradeId, filePath);
-  }
-
-  
-  async saveSyncMapping(): Promise<boolean> {
-    return await this.tradeSyncService.saveSyncMapping();
   }
 
   private normalizeRelinkAccountScalar(value: unknown): string | undefined {
@@ -3031,16 +3258,41 @@ export class BackendIntegrationService {
   }
 
   
-  async forceSyncImmediate(): Promise<SyncResponse | null> {
+  async forceSyncImmediate(
+    options: {
+      showUserFeedback?: boolean;
+      recordOperationResult?: boolean;
+    } = {}
+  ): Promise<MetaTraderSyncResult | null> {
+    const showUserFeedback = options.showUserFeedback ?? true;
+    const recordOperationResult = options.recordOperationResult ?? true;
+    const ownerUserId = getTradeProjectionOwnerId(this.plugin);
     if (this.syncMutex.isLocked()) {
-      new Notice(t('backend.notice.sync-in-progress'));
+      if (showUserFeedback) {
+        new Notice(t('backend.notice.sync-in-progress'));
+      }
       return null;
     }
 
     if (!this.activeSyncSession && !this.pendingSyncSession) {
       this.debouncedForceSync.cancel();
     }
-    return await this.forceSync();
+    let completedResult: MetaTraderSyncResult | null = null;
+    const response = await this.forceSync(false, false, {
+      showUserFeedback,
+      recordOperationResult,
+      onCompleted: (result) => {
+        completedResult = result;
+      },
+    });
+    return response
+      ? (completedResult ?? {
+          ownerUserId,
+          response,
+          importedTrades: [],
+          failedTradeWriteCount: 0,
+        })
+      : null;
   }
 
   

@@ -515,10 +515,11 @@ function getPerformanceTooltip(
       });
     }
     case 'week': {
-      
-      const parts = node.id.split('-W');
-      const yearMonth = parts[0]; 
-      const [weekYear, weekMonth] = yearMonth.split('-');
+      const calendarId = node.parentPeriodId ?? node.anchorDate;
+      if (!calendarId) {
+        return t('tradelog.node.performance.period', { indicator });
+      }
+      const [weekYear, weekMonth] = calendarId.split('-');
       const monthNumber = parseInt(weekMonth, 10);
       const monthIndex = Number.isFinite(monthNumber)
         ? Math.max(monthNumber - 1, 0)

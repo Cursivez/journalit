@@ -2,6 +2,9 @@
 
 import { OPEN_FULLSCREEN_PORTAL_SELECTORS } from '../components/image/fullscreenPortalPresence';
 
+
+export const ESCAPE_DELEGATE_ATTRIBUTE = 'data-journalit-escape-delegate';
+
 const ESCAPE_DELEGATED_SURFACE_SELECTORS = [
   ...OPEN_FULLSCREEN_PORTAL_SELECTORS,
   '.journalit-shared-selector-overlay',
@@ -17,6 +20,7 @@ const ESCAPE_DELEGATED_SURFACE_SELECTORS = [
   '.modal-container',
   '.suggestion-container',
   '.menu',
+  `[${ESCAPE_DELEGATE_ATTRIBUTE}="true"]`,
 ];
 
 interface ReactViewEscapeSuppressionContext {

@@ -1,6 +1,7 @@
 
 
 import { requestUrl } from 'obsidian';
+import { DemoSyncGate } from '../../demo/DemoSyncGate';
 import type JournalitPlugin from '../../main';
 import { hasUnrealizedPriceSnapshot } from '../../utils/unrealizedPnl';
 import type { BreakEvenAccountBalanceSnapshot } from '../trade/core/BreakEvenAccountBalance';
@@ -130,6 +131,7 @@ export class ExchangeRateService {
   private async fetchRates(
     baseCurrency: string
   ): Promise<CachedExchangeRates | null> {
+    if (DemoSyncGate.isActive()) return null;
     
     if (!isFrankfurterSupported(baseCurrency)) {
       console.warn(

@@ -24,6 +24,7 @@ interface ButtonProps extends Omit<
   loading?: boolean;
   className?: string;
   children: React.ReactNode;
+  ref?: React.Ref<HTMLButtonElement>;
 }
 
 export const Button: React.FC<ButtonProps> = ({

@@ -20,6 +20,7 @@ import {
 } from '../../../lang/helpers';
 import { cssVars } from '../../../styles/inlineStylePolicy';
 import { mergeClassNames } from '../../../utils/classNames';
+import { openReviewWidgetFile } from '../reviewWidgetNavigation';
 
 
 const MAX_FRONTMATTER_RETRIES = 5;
@@ -1002,7 +1003,7 @@ export const KeyLevelsWidget: React.FC<KeyLevelsWidgetProps> = (props) => {
   const openSourceReview = async (path: string) => {
     const file = plugin.app.vault.getAbstractFileByPath(path);
     if (file instanceof TFile) {
-      await plugin.openFile(path, true);
+      await openReviewWidgetFile(plugin, path);
     }
   };
 

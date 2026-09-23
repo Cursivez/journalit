@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import type { Component } from 'obsidian';
 
 import type JournalitPlugin from '../../main';
@@ -7,11 +7,17 @@ import { useEventBusMultiple } from '../../hooks/useEventBus';
 import {
   useGuideAction,
   useGuideBackHandler,
+  useContextualGuideResolution,
   useGuideContextValue,
   useGuideCurrentStepId,
 } from '../../guides/GuideRuntimeLayer';
 import { SETUPS_SETUP_AVAILABLE_ACTION_ID } from '../../guides/setupsGuideIds';
-import { SETUPS_COUNT_CONTEXT_KEY } from '../../guides/setupsMainGuide';
+import {
+  SETUPS_COMPARE_GUIDE_ID,
+  SETUPS_COUNT_CONTEXT_KEY,
+  SETUPS_DETAIL_GUIDE_ID,
+  SETUPS_MAIN_GUIDE_ID,
+} from '../../guides/setupsGuideIds';
 import type { EventName } from '../../services/events';
 import type { Setup, SetupMetrics } from '../../services/setup/types';
 import { buildSetupAdvancedAnalytics } from '../../services/setup/setupAdvancedAnalytics';
@@ -95,7 +101,86 @@ export function buildSetupsViewOpportunityStats(
   );
 }
 
-export const SetupsViewContent: React.FC<SetupsViewContentProps> = ({
+
+const SetupsGuideResolution: React.FC<{ page: SetupsViewState['page'] }> = ({
+  page,
+}) => {
+  const contextualGuides = useMemo(
+    () => [
+      { guideId: SETUPS_DETAIL_GUIDE_ID, active: page === 'detail' },
+      { guideId: SETUPS_COMPARE_GUIDE_ID, active: page === 'compare' },
+    ],
+    [page]
+  );
+  useContextualGuideResolution({
+    baseGuideId: SETUPS_MAIN_GUIDE_ID,
+    contextualGuides,
+  });
+  return null;
+};
+
+function useSetupsGuideNavigation(
+  state: SetupsViewState,
+  viewModels: SetupsDataState['viewModels'],
+  onStateChange: (state: SetupsViewState) => void
+): void {
+  const guideBackHandler = useCallback(
+    ({ toStepId }: { toStepId: string }) => {
+      const deferStateChange = (nextState: SetupsViewState): void => {
+        window.setTimeout(() => onStateChange(nextState), 0);
+      };
+      const currentSetup =
+        state.setupId || state.setupPath
+          ? viewModels.find(
+              ({ setup }) =>
+                setup.id === state.setupId ||
+                (state.setupPath && setup.filePath === state.setupPath)
+            )?.setup
+          : undefined;
+      const targetDetailSetup = currentSetup ?? viewModels[0]?.setup;
+      const firstTwoSetupIds = viewModels
+        .slice(0, 2)
+        .map(({ setup }) => setup.id);
+
+      if (toStepId.startsWith('detail-') && targetDetailSetup) {
+        deferStateChange({
+          page: 'detail',
+          setupId: targetDetailSetup.id,
+          setupPath: targetDetailSetup.filePath,
+          setupName: targetDetailSetup.name,
+        });
+        return;
+      }
+
+      if (
+        (toStepId === 'compare-summary' ||
+          toStepId === 'compare-body' ||
+          toStepId === 'compare-details') &&
+        firstTwoSetupIds.length === 2
+      ) {
+        deferStateChange({
+          page: 'compare',
+          selectedSetupIds: firstTwoSetupIds,
+        });
+        return;
+      }
+
+      if (
+        toStepId === 'open-detail' ||
+        toStepId === 'compare-mode' ||
+        toStepId === 'compare-select' ||
+        toStepId.includes('overview')
+      ) {
+        deferStateChange({ page: 'overview' });
+      }
+    },
+    [onStateChange, state.setupId, state.setupPath, viewModels]
+  );
+
+  useGuideBackHandler(guideBackHandler);
+}
+
+const SetupsViewBody: React.FC<SetupsViewContentProps> = ({
   hoverParent,
   plugin,
   state,
@@ -187,60 +272,7 @@ export const SetupsViewContent: React.FC<SetupsViewContentProps> = ({
   );
 
   const currentError = loadError ?? error?.message ?? null;
-  const guideBackHandler = useCallback(
-    ({ toStepId }: { toStepId: string }) => {
-      const deferStateChange = (nextState: SetupsViewState): void => {
-        window.setTimeout(() => onStateChange(nextState), 0);
-      };
-      const currentSetup =
-        state.setupId || state.setupPath
-          ? viewModels.find(
-              ({ setup }) =>
-                setup.id === state.setupId ||
-                (state.setupPath && setup.filePath === state.setupPath)
-            )?.setup
-          : undefined;
-      const targetDetailSetup = currentSetup ?? viewModels[0]?.setup;
-      const firstTwoSetupIds = viewModels
-        .slice(0, 2)
-        .map(({ setup }) => setup.id);
-
-      if (toStepId.startsWith('detail-') && targetDetailSetup) {
-        deferStateChange({
-          page: 'detail',
-          setupId: targetDetailSetup.id,
-          setupPath: targetDetailSetup.filePath,
-          setupName: targetDetailSetup.name,
-        });
-        return;
-      }
-
-      if (
-        (toStepId === 'compare-summary' ||
-          toStepId === 'compare-body' ||
-          toStepId === 'compare-details') &&
-        firstTwoSetupIds.length === 2
-      ) {
-        deferStateChange({
-          page: 'compare',
-          selectedSetupIds: firstTwoSetupIds,
-        });
-        return;
-      }
-
-      if (
-        toStepId === 'open-detail' ||
-        toStepId === 'compare-mode' ||
-        toStepId === 'compare-select' ||
-        toStepId.includes('overview')
-      ) {
-        deferStateChange({ page: 'overview' });
-      }
-    },
-    [onStateChange, state.setupId, state.setupPath, viewModels]
-  );
-
-  useGuideBackHandler(guideBackHandler);
+  useSetupsGuideNavigation(state, viewModels, onStateChange);
   if (currentError) {
     return (
       <div className="journalit-setups-view">
@@ -273,42 +305,45 @@ export const SetupsViewContent: React.FC<SetupsViewContentProps> = ({
       tradeIndex.any.get(selectedSetup.setup.id) ?? [];
 
     return (
-      <SetupDetailPage
-        hoverParent={hoverParent}
-        plugin={plugin}
-        viewModel={selectedSetup}
-        linkedTrades={selectedLinkedTrades}
-        onBack={() => openSetupsOverview(plugin, onStateChange)}
-        onEditSetup={(setup) => {
-          openEditSetupModal(
-            plugin,
-            setup,
-            (updatedSetup) => {
-              setDataState((current) => ({
-                ...current,
-                hasLoadedData: false,
-                loadError: null,
-              }));
-              onStateChange({
-                page: 'detail',
-                setupId: updatedSetup.id,
-                setupPath: updatedSetup.filePath,
-                setupName: updatedSetup.name,
-              });
-              void loadData({ forceFresh: true });
-            },
-            () => {
-              setDataState((current) => ({
-                ...current,
-                hasLoadedData: false,
-                loadError: null,
-              }));
-              onStateChange({ page: 'overview' });
-              void loadData({ forceFresh: true });
-            }
-          );
-        }}
-      />
+      <>
+        <SetupsGuideResolution page="detail" />
+        <SetupDetailPage
+          hoverParent={hoverParent}
+          plugin={plugin}
+          viewModel={selectedSetup}
+          linkedTrades={selectedLinkedTrades}
+          onBack={() => openSetupsOverview(plugin, onStateChange)}
+          onEditSetup={(setup) => {
+            openEditSetupModal(
+              plugin,
+              setup,
+              (updatedSetup) => {
+                setDataState((current) => ({
+                  ...current,
+                  hasLoadedData: false,
+                  loadError: null,
+                }));
+                onStateChange({
+                  page: 'detail',
+                  setupId: updatedSetup.id,
+                  setupPath: updatedSetup.filePath,
+                  setupName: updatedSetup.name,
+                });
+                void loadData({ forceFresh: true });
+              },
+              () => {
+                setDataState((current) => ({
+                  ...current,
+                  hasLoadedData: false,
+                  loadError: null,
+                }));
+                onStateChange({ page: 'overview' });
+                void loadData({ forceFresh: true });
+              }
+            );
+          }}
+        />
+      </>
     );
   }
 
@@ -325,14 +360,23 @@ export const SetupsViewContent: React.FC<SetupsViewContentProps> = ({
   }
 
   if (state.page === 'compare') {
+    const selectedSetupIds = state.selectedSetupIds ?? [];
+    const hasValidComparison =
+      selectedSetupIds.length >= 2 &&
+      selectedSetupIds.every((setupId) =>
+        viewModels.some(({ setup }) => setup.id === setupId)
+      );
     return (
-      <SetupComparePage
-        displayRMultiples={plugin.settings.trade?.displayRMultiples ?? false}
-        viewModels={viewModels}
-        tradeIndex={tradeIndex}
-        selectedSetupIds={state.selectedSetupIds ?? []}
-        onBack={() => onStateChange({ page: 'overview' })}
-      />
+      <>
+        {hasValidComparison && <SetupsGuideResolution page="compare" />}
+        <SetupComparePage
+          displayRMultiples={plugin.settings.trade?.displayRMultiples ?? false}
+          viewModels={viewModels}
+          tradeIndex={tradeIndex}
+          selectedSetupIds={selectedSetupIds}
+          onBack={() => onStateChange({ page: 'overview' })}
+        />
+      </>
     );
   }
 
@@ -360,34 +404,42 @@ export const SetupsViewContent: React.FC<SetupsViewContentProps> = ({
   };
 
   return (
-    <SetupOverviewPage
-      plugin={plugin}
-      viewModels={viewModels}
-      tradeIndex={tradeIndex}
-      onOpenSetup={(setupId, setupName, setupPath) => {
-        onStateChange({
-          page: 'detail',
-          setupId,
-          setupPath,
-          setupName,
-        });
-      }}
-      selectedSetupIds={state.selectedSetupIds ?? []}
-      onSelectedSetupIdsChange={(selectedSetupIds) =>
-        onStateChange({
-          page: 'overview',
-          selectedSetupIds,
-        })
-      }
-      onCompareSelected={(setupIds) =>
-        onStateChange({
-          page: 'compare',
-          selectedSetupIds: setupIds,
-        })
-      }
-      onCreateSetup={handleCreateSetup}
-    />
+    <>
+      <SetupsGuideResolution page="overview" />
+      <SetupOverviewPage
+        plugin={plugin}
+        viewModels={viewModels}
+        tradeIndex={tradeIndex}
+        onOpenSetup={(setupId, setupName, setupPath) => {
+          onStateChange({
+            page: 'detail',
+            setupId,
+            setupPath,
+            setupName,
+          });
+        }}
+        selectedSetupIds={state.selectedSetupIds ?? []}
+        onSelectedSetupIdsChange={(selectedSetupIds) =>
+          onStateChange({
+            page: 'overview',
+            selectedSetupIds,
+          })
+        }
+        onCompareSelected={(setupIds) =>
+          onStateChange({
+            page: 'compare',
+            selectedSetupIds: setupIds,
+          })
+        }
+        onCreateSetup={handleCreateSetup}
+      />
+    </>
   );
 };
+
+
+export const SetupsViewContent: React.FC<SetupsViewContentProps> = (props) => (
+  <SetupsViewBody {...props} />
+);
 
 SetupsViewContent.displayName = 'SetupsViewContent';

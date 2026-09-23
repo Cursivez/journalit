@@ -1,6 +1,7 @@
 import React, {
   useCallback,
   useEffect,
+  useEffectEvent,
   useLayoutEffect,
   useMemo,
   useRef,
@@ -12,6 +13,7 @@ import { RenderFunction } from './types';
 import JournalitPlugin from '../main';
 import { t } from '../lang/helpers';
 import { getTradingDay, getTradingDayRange } from '../utils/tradingDayUtils';
+import { formatLocalDateString } from '../utils/dateUtils';
 import { TradeFormModal } from '../components/forms/trade/TradeFormModal';
 import {
   fetchDashboardData,
@@ -24,6 +26,23 @@ import { GoalsWidget } from '../components/reviewV2/widgets/GoalsWidget';
 import { ChecklistWidget } from '../components/reviewV2/widgets/ChecklistWidget';
 import { Button } from '../components/ui/Button';
 import { TradeGatePanel } from '../components/sessionMode/TradeGatePanel';
+import {
+  useGuideAction,
+  useGuideTarget,
+  useResolvedViewGuide,
+} from '../guides/GuideRuntimeLayer';
+import {
+  SESSION_MODE_CHECKLIST_TARGET_ID,
+  SESSION_MODE_CONFIGURE_BUTTON_TARGET_ID,
+  SESSION_MODE_EDIT_BUTTON_TARGET_ID,
+  SESSION_MODE_ENDED_ACTIONS_TARGET_ID,
+  SESSION_MODE_HEADER_TARGET_ID,
+  SESSION_MODE_GOALS_TARGET_ID,
+  SESSION_MODE_SESSION_LOG_TARGET_ID,
+  SESSION_MODE_SETTINGS_OPENED_ACTION_ID,
+  SESSION_MODE_TRADE_GATE_TARGET_ID,
+} from '../guides/sessionModeGuideIds';
+import { resolveSessionModeGuideId } from '../guides/sessionModeGuideResolution';
 import {
   getActiveTradeGateRunFromFile,
   getRunnableTradeGateWorkflows,
@@ -39,19 +58,30 @@ import {
   Edit,
   GlassWater,
   Import,
+  Play,
   PlusCircle,
+  Square,
+  Zap,
 } from '../components/shared/icons/ObsidianIcon';
+import { getRunningUnplannedSession } from '../components/sessionMode/unplannedSessionUtils';
+import {
+  useUnplannedSession,
+  useUnplannedSessionActions,
+} from '../components/sessionMode/useUnplannedSession';
 import {
   createManualTimelineEntries,
   createTradeTimelineEntries,
   filterAutomaticTradeTimelineEntries,
   filterTimelineEntriesBySessionWindow,
+  findOwningSessionWindow,
+  findOwningSessionWindowForTimestamp,
   getSessionLogEntriesFromFile,
   sortSessionTimeline,
 } from '../components/sessionLog/sessionLogUtils';
-import { resolveSessionModePhase } from '../utils/sessionModePhase';
+import { resolveSessionModePhaseForPlugin } from '../utils/sessionModePhaseInputs';
 import type {
   ResolvedSessionModeWindow,
+  ResolvedUnplannedSessionWindow,
   SessionModeLayoutModuleId,
   SessionModePhaseState,
 } from '../types/sessionMode';
@@ -60,9 +90,6 @@ import { SETTINGS_TAB_IDS } from '../settings/types';
 import { normalizeSessionModePhaseLayouts } from '../utils/sessionModeLayout';
 
 export const SESSION_MODE_VIEW_TYPE = 'journalit-session-mode-view';
-
-const getLocalDateKey = (date: Date): string =>
-  `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
 
 const createLocalDateFromKey = (dateKey: string): Date => {
   const [year, month, day] = dateKey.split('-').map(Number);
@@ -81,10 +108,10 @@ const getSessionBackingDate = (
       return phaseState.currentSession?.start ?? null;
     case 'break':
       if (phaseState.previousSession && phaseState.nextSession) {
-        const previousTradingDayKey = getLocalDateKey(
+        const previousTradingDayKey = formatLocalDateString(
           getTradingDay(phaseState.previousSession.start, plugin)
         );
-        const nextTradingDayKey = getLocalDateKey(
+        const nextTradingDayKey = formatLocalDateString(
           getTradingDay(phaseState.nextSession.start, plugin)
         );
         if (previousTradingDayKey !== nextTradingDayKey) {
@@ -146,7 +173,7 @@ const getTimelineTradingDays = (
   const tradingDays = new Map<string, Date>();
   const addTradingDay = (date: Date) => {
     const tradingDay = getTradingDay(date, plugin);
-    tradingDays.set(getLocalDateKey(tradingDay), tradingDay);
+    tradingDays.set(formatLocalDateString(tradingDay), tradingDay);
   };
 
   addTradingDay(fallbackTradingDay);
@@ -216,31 +243,39 @@ const SessionMode: React.FC<{
   const loadedBackingTradingDayKeyRef = useRef<string | null>(null);
   const [trades, setTrades] = useState<Trade[]>([]);
   const loadRequestIdRef = useRef(0);
-  const currentTradingDayKey = getLocalDateKey(getTradingDay(now, plugin));
+  const currentTradingDayKey = formatLocalDateString(
+    getTradingDay(now, plugin)
+  );
   const tradingDay = useMemo(
     () => createLocalDateFromKey(currentTradingDayKey),
     [currentTradingDayKey]
   );
+  const {
+    session: unplannedSession,
+    windows: unplannedWindows,
+    ready: unplannedSessionReady,
+  } = useUnplannedSession(plugin, tradingDay, now);
   const phaseState = useMemo(
+    
+    
     () =>
-      resolveSessionModePhase(now, plugin.settings.sessionMode, tradingDay, {
-        skipWeekends: plugin.settings.trade.skipWeekends ?? true,
-      }),
-    [
-      now,
-      plugin.settings.sessionMode,
-      plugin.settings.trade.skipWeekends,
-      tradingDay,
-    ]
+      resolveSessionModePhaseForPlugin(
+        plugin,
+        now,
+        tradingDay,
+        unplannedSession
+      ),
+    [plugin, now, tradingDay, unplannedSession]
   );
   const phaseStateRef = useRef(phaseState);
   useLayoutEffect(() => {
     phaseStateRef.current = phaseState;
   }, [phaseState]);
+
   const phaseLoadKey = useMemo(() => getPhaseLoadKey(phaseState), [phaseState]);
   const backingDate = getSessionBackingDate(phaseState, plugin);
   const backingTradingDayKey = backingDate
-    ? getLocalDateKey(getTradingDay(backingDate, plugin))
+    ? formatLocalDateString(getTradingDay(backingDate, plugin))
     : null;
   const backingTradingDay = useMemo(
     () =>
@@ -316,17 +351,29 @@ const SessionMode: React.FC<{
   }, []);
 
   useEffect(() => {
+    
+    
+    if (!unplannedSessionReady) return;
     void loadSession();
-  }, [loadSession, phaseLoadKey]);
+  }, [loadSession, phaseLoadKey, unplannedSessionReady]);
 
+  const onTradeChanged = useEffectEvent(() => {
+    void loadSession();
+  });
+  const onDrcChanged = useEffectEvent(() => {
+    
+    
+    setNow(new Date());
+    void loadSession();
+  });
   useEffect(() => {
     const unsubscribeTrade = eventBus.subscribe('trade:changed', () => {
-      void loadSession();
+      onTradeChanged();
     });
     const unsubscribeReview = eventBus.subscribe(
       'review:changed',
       (payload) => {
-        if (payload.type === 'drc') void loadSession();
+        if (payload.type === 'drc') onDrcChanged();
       }
     );
     const unsubscribeSettings = eventBus.subscribe('settings:changed', () => {
@@ -337,7 +384,7 @@ const SessionMode: React.FC<{
       unsubscribeReview();
       unsubscribeSettings();
     };
-  }, [loadSession]);
+  }, []);
 
   const timelineEntries = useMemo(() => {
     if (!filePath) return [];
@@ -367,9 +414,10 @@ const SessionMode: React.FC<{
   );
 
   const shouldRenderLoadedSession =
-    (filePath !== null &&
+    unplannedSessionReady &&
+    ((filePath !== null &&
       loadedBackingTradingDayKey === backingTradingDayKey) ||
-    phaseState.phase === 'unconfigured';
+      phaseState.phase === 'unconfigured');
   const resolvedFilePath = filePath ?? '';
 
   const timeline = (
@@ -411,20 +459,43 @@ const SessionMode: React.FC<{
   const drcButton = (
     <SessionModeHeaderDRCButton filePath={resolvedFilePath} plugin={plugin} />
   );
-
+  const runningUnplannedSession = getRunningUnplannedSession(phaseState);
+  const getCurrentPhaseState = useCallback(() => phaseStateRef.current, []);
+  const { startUnplanned, stopUnplanned } = useUnplannedSessionActions(
+    plugin,
+    getCurrentPhaseState
+  );
   return shouldRenderLoadedSession ? (
     <div className="journalit-session-mode">
       {phaseState.phase !== 'ended' && phaseState.phase !== 'unconfigured' && (
-        <div className="journalit-session-mode-header">
+        <SessionModeGuideHeader>
           <div className="journalit-session-mode-header__top">
             <div className="journalit-session-mode-header__title-group">
               <h3>{getSessionModeViewTitle(phaseState)}</h3>
               {phaseState.phase === 'live' && drcButton}
             </div>
             <div className="journalit-session-mode-header__actions">
+              {phaseState.phase === 'preparation' && (
+                <Button
+                  variant="secondary"
+                  size="small"
+                  onClick={startUnplanned}
+                >
+                  <Play size={14} aria-hidden="true" />
+                  {t('session-mode.unplanned.start')}
+                </Button>
+              )}
               {editButton}
             </div>
           </div>
+          {runningUnplannedSession && (
+            <UnplannedSessionStrip
+              session={runningUnplannedSession}
+              timeSinceStartMs={phaseState.timeSinceStartMs}
+              use24HourTime={plugin.settings.trade.use24HourTime ?? false}
+              onStop={() => stopUnplanned(runningUnplannedSession)}
+            />
+          )}
           {phaseState.phase === 'preparation' && (
             <SessionModeDRCLink
               plugin={plugin}
@@ -432,7 +503,7 @@ const SessionMode: React.FC<{
               tradingDay={backingTradingDay ?? tradingDay}
             />
           )}
-        </div>
+        </SessionModeGuideHeader>
       )}
       {phaseState.phase !== 'unconfigured' &&
         phaseState.phase !== 'live' &&
@@ -453,6 +524,8 @@ const SessionMode: React.FC<{
         tradeGate={tradeGate}
         timeline={timeline}
         editButton={editButton}
+        onStartUnplannedSession={startUnplanned}
+        unplannedWindows={unplannedWindows}
       />
     </div>
   ) : (
@@ -464,18 +537,50 @@ const openSessionModeSettings = (plugin: JournalitPlugin): void => {
   plugin.openSettingsToTab(SETTINGS_TAB_IDS.SESSION_MODE);
 };
 
+
+const SessionModeGuideSection: React.FC<{
+  targetId: string;
+  children: React.ReactNode;
+}> = ({ targetId, children }) => {
+  const registerTarget = useGuideTarget(targetId);
+  return (
+    <div className="journalit-session-mode-guide-section" ref={registerTarget}>
+      {children}
+    </div>
+  );
+};
+
+const SessionModeGuideHeader: React.FC<{ children: React.ReactNode }> = ({
+  children,
+}) => {
+  const registerTarget = useGuideTarget(SESSION_MODE_HEADER_TARGET_ID);
+  return (
+    <div className="journalit-session-mode-header" ref={registerTarget}>
+      {children}
+    </div>
+  );
+};
+
 const SessionModeSettingsButton: React.FC<{ plugin: JournalitPlugin }> = ({
   plugin,
-}) => (
-  <button
-    type="button"
-    className="journalit-session-mode-edit-button"
-    onClick={() => openSessionModeSettings(plugin)}
-  >
-    <Edit size={14} aria-hidden="true" />
-    <span>{t('button.edit')}</span>
-  </button>
-);
+}) => {
+  const registerTarget = useGuideTarget(SESSION_MODE_EDIT_BUTTON_TARGET_ID);
+  const emitGuideAction = useGuideAction();
+  return (
+    <button
+      ref={registerTarget}
+      type="button"
+      className="journalit-session-mode-edit-button"
+      onClick={() => {
+        emitGuideAction(SESSION_MODE_SETTINGS_OPENED_ACTION_ID);
+        openSessionModeSettings(plugin);
+      }}
+    >
+      <Edit size={14} aria-hidden="true" />
+      <span>{t('button.edit')}</span>
+    </button>
+  );
+};
 
 const SessionModeHeaderDRCButton: React.FC<{
   plugin: JournalitPlugin;
@@ -496,6 +601,62 @@ const SessionModeHeaderDRCButton: React.FC<{
     </button>
   );
 };
+
+const UnplannedSessionStrip: React.FC<{
+  session: ResolvedUnplannedSessionWindow;
+  timeSinceStartMs: number | undefined;
+  use24HourTime: boolean;
+  onStop: () => void;
+}> = ({ session, timeSinceStartMs, use24HourTime, onStop }) => (
+  <div className="journalit-session-mode-unplanned-strip" role="status">
+    <div className="journalit-session-mode-unplanned-strip__body">
+      <span className="journalit-session-mode-unplanned-strip__badge">
+        <Zap size={12} aria-hidden="true" />
+        {t('session-mode.unplanned.badge')}
+      </span>
+      <span className="journalit-session-mode-unplanned-strip__reason">
+        {session.reason}
+      </span>
+      <span className="journalit-session-mode-unplanned-strip__meta">
+        {t('session-mode.unplanned.status.live', {
+          time: formatSessionClockTime(session.start, use24HourTime),
+          elapsed: formatElapsed(timeSinceStartMs),
+        })}
+      </span>
+    </div>
+    <button
+      type="button"
+      className="journalit-session-mode-unplanned-strip__stop"
+      onClick={onStop}
+    >
+      <Square size={12} aria-hidden="true" />
+      <span>{t('session-mode.unplanned.stop')}</span>
+    </button>
+  </div>
+);
+
+const UnplannedSessionEndedSummary: React.FC<{
+  session: ResolvedUnplannedSessionWindow;
+  use24HourTime: boolean;
+}> = ({ session, use24HourTime }) => (
+  <div className="journalit-session-mode-ended-summary__unplanned">
+    <Zap size={14} aria-hidden="true" />
+    <div>
+      <div>
+        {t('session-mode.unplanned.ended.summary', {
+          start: formatSessionClockTime(session.start, use24HourTime),
+          end: formatSessionClockTime(session.end, use24HourTime),
+          duration: formatDuration(
+            session.end.getTime() - session.start.getTime()
+          ),
+        })}
+      </div>
+      <div className="journalit-session-mode-ended-summary__unplanned-reason">
+        {session.reason}
+      </div>
+    </div>
+  </div>
+);
 
 const SessionModeSkeleton: React.FC<{
   phaseState: SessionModePhaseState;
@@ -641,6 +802,21 @@ const formatDuration = (milliseconds: number | undefined): string => {
   });
 };
 
+const formatElapsed = (milliseconds: number | undefined): string => {
+  if (milliseconds === undefined) return '';
+  const totalMinutes = Math.max(0, Math.floor(milliseconds / 60_000));
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+  if (hours === 0)
+    return t('session-mode.duration.minutes', { minutes: String(minutes) });
+  if (minutes === 0)
+    return t('session-mode.duration.hours', { hours: String(hours) });
+  return t('session-mode.duration.hours-minutes', {
+    hours: String(hours),
+    minutes: String(minutes),
+  });
+};
+
 const getCountdownParts = (
   milliseconds: number | undefined
 ): {
@@ -697,7 +873,9 @@ const getSessionModeViewTitle = (phaseState: SessionModePhaseState): string => {
     case 'waiting':
       return t('view.session-mode');
     case 'live':
-      return t('session-mode.title.live');
+      return phaseState.currentSession?.kind === 'unplanned'
+        ? t('session-mode.unplanned.name')
+        : t('session-mode.title.live');
     case 'break':
       return t('session-mode.title.break');
     case 'ended':
@@ -889,24 +1067,30 @@ const SessionModePreparationResources: React.FC<{
 const SessionModePreparationGoals: React.FC<{
   plugin: JournalitPlugin;
   filePath: string;
-}> = ({ plugin, filePath }) => (
-  <section className="journalit-session-mode-section">
-    <div className="journalit-session-mode-prep-card">
-      <GoalsWidget filePath={filePath} plugin={plugin} />
-    </div>
-  </section>
-);
+}> = ({ plugin, filePath }) => {
+  const registerTarget = useGuideTarget(SESSION_MODE_GOALS_TARGET_ID);
+  return (
+    <section className="journalit-session-mode-section" ref={registerTarget}>
+      <div className="journalit-session-mode-prep-card">
+        <GoalsWidget filePath={filePath} plugin={plugin} />
+      </div>
+    </section>
+  );
+};
 
 const SessionModePreparationChecklist: React.FC<{
   plugin: JournalitPlugin;
   filePath: string;
-}> = ({ plugin, filePath }) => (
-  <section className="journalit-session-mode-section">
-    <div className="journalit-session-mode-prep-card">
-      <ChecklistWidget filePath={filePath} plugin={plugin} />
-    </div>
-  </section>
-);
+}> = ({ plugin, filePath }) => {
+  const registerTarget = useGuideTarget(SESSION_MODE_CHECKLIST_TARGET_ID);
+  return (
+    <section className="journalit-session-mode-section" ref={registerTarget}>
+      <div className="journalit-session-mode-prep-card">
+        <ChecklistWidget filePath={filePath} plugin={plugin} />
+      </div>
+    </section>
+  );
+};
 
 const SessionModeTimelineSection: React.FC<{
   plugin: JournalitPlugin;
@@ -950,6 +1134,8 @@ const SessionModePhaseContent: React.FC<{
   tradeGate: React.ReactNode;
   timeline: React.ReactNode;
   editButton: React.ReactNode;
+  onStartUnplannedSession: () => void;
+  unplannedWindows: ResolvedUnplannedSessionWindow[];
 }> = ({
   phaseState,
   plugin,
@@ -959,9 +1145,27 @@ const SessionModePhaseContent: React.FC<{
   tradeGate,
   timeline,
   editButton,
+  onStartUnplannedSession,
+  unplannedWindows,
 }) => {
+  
+  
+  const phaseLayouts = normalizeSessionModePhaseLayouts(
+    plugin.settings.sessionMode.phaseLayouts
+  );
+  useResolvedViewGuide(
+    resolveSessionModeGuideId(
+      phaseState.phase,
+      phaseLayouts.ended.includes('endedActions')
+    )
+  );
   if (phaseState.phase === 'unconfigured') {
-    return <SessionModeUnconfiguredState plugin={plugin} />;
+    return (
+      <SessionModeUnconfiguredState
+        plugin={plugin}
+        onStartUnplannedSession={onStartUnplannedSession}
+      />
+    );
   }
 
   if (phaseState.phase === 'waiting') {
@@ -970,6 +1174,7 @@ const SessionModePhaseContent: React.FC<{
         phaseState={phaseState}
         plugin={plugin}
         filePath={filePath}
+        onStartUnplannedSession={onStartUnplannedSession}
       />
     );
   }
@@ -980,14 +1185,13 @@ const SessionModePhaseContent: React.FC<{
         phaseState={phaseState}
         plugin={plugin}
         filePath={filePath}
+        onStartUnplannedSession={onStartUnplannedSession}
       />
     );
   }
 
   const phase = phaseState.phase;
-  const moduleIds = normalizeSessionModePhaseLayouts(
-    plugin.settings.sessionMode.phaseLayouts
-  )[phase];
+  const moduleIds = phaseLayouts[phase];
   const hasVisibleModule = moduleIds.some((moduleId) =>
     isSessionModeModuleVisible(
       moduleId,
@@ -1005,20 +1209,31 @@ const SessionModePhaseContent: React.FC<{
     );
   }
 
-  const renderedModules = moduleIds.map((moduleId) => (
-    <SessionModeLayoutModule
-      key={moduleId}
-      moduleId={moduleId}
-      phaseState={phaseState}
-      plugin={plugin}
-      filePath={filePath}
-      hoverParent={hoverParent}
-      timelineEntries={timelineEntries}
-      tradeGate={tradeGate}
-      timeline={timeline}
-      editButton={editButton}
-    />
-  ));
+  
+  
+  const renderedModules = moduleIds.map((moduleId) =>
+    isSessionModeModuleVisible(
+      moduleId,
+      plugin,
+      filePath,
+      phaseState.currentSession
+    ) ? (
+      <SessionModeLayoutModule
+        key={moduleId}
+        moduleId={moduleId}
+        phaseState={phaseState}
+        plugin={plugin}
+        filePath={filePath}
+        hoverParent={hoverParent}
+        timelineEntries={timelineEntries}
+        tradeGate={tradeGate}
+        timeline={timeline}
+        editButton={editButton}
+        onStartUnplannedSession={onStartUnplannedSession}
+        unplannedWindows={unplannedWindows}
+      />
+    ) : null
+  );
 
   return <>{renderedModules}</>;
 };
@@ -1064,6 +1279,8 @@ const SessionModeLayoutModule: React.FC<{
   tradeGate: React.ReactNode;
   timeline: React.ReactNode;
   editButton: React.ReactNode;
+  onStartUnplannedSession: () => void;
+  unplannedWindows: ResolvedUnplannedSessionWindow[];
 }> = ({
   moduleId,
   phaseState,
@@ -1074,6 +1291,8 @@ const SessionModeLayoutModule: React.FC<{
   tradeGate,
   timeline,
   editButton,
+  onStartUnplannedSession,
+  unplannedWindows,
 }) => {
   switch (moduleId) {
     case 'preparationResources':
@@ -1093,16 +1312,30 @@ const SessionModeLayoutModule: React.FC<{
         <SessionModePreparationChecklist plugin={plugin} filePath={filePath} />
       ) : null;
     case 'tradeGate':
-      return phaseState.phase === 'live' ? tradeGate : null;
+      return phaseState.phase === 'live' ? (
+        <SessionModeGuideSection targetId={SESSION_MODE_TRADE_GATE_TARGET_ID}>
+          {tradeGate}
+        </SessionModeGuideSection>
+      ) : null;
     case 'timeline':
-      return phaseState.phase === 'live' ? timeline : null;
+      return phaseState.phase === 'live' ? (
+        <SessionModeGuideSection targetId={SESSION_MODE_SESSION_LOG_TARGET_ID}>
+          {timeline}
+        </SessionModeGuideSection>
+      ) : null;
     case 'endedActions':
       return phaseState.phase === 'ended' ? (
-        <SessionModeEndedActions
-          plugin={plugin}
-          filePath={filePath}
-          editButton={editButton}
-        />
+        <SessionModeGuideSection
+          targetId={SESSION_MODE_ENDED_ACTIONS_TARGET_ID}
+        >
+          <SessionModeEndedActions
+            plugin={plugin}
+            filePath={filePath}
+            editButton={editButton}
+            previousSession={phaseState.previousSession}
+            onStartUnplannedSession={onStartUnplannedSession}
+          />
+        </SessionModeGuideSection>
       ) : null;
     case 'endedStats':
       return phaseState.phase === 'ended' ? (
@@ -1111,6 +1344,7 @@ const SessionModeLayoutModule: React.FC<{
           filePath={filePath}
           timelineEntries={timelineEntries}
           sessionWindow={phaseState.previousSession}
+          unplannedWindows={unplannedWindows}
         />
       ) : null;
   }
@@ -1120,7 +1354,8 @@ const SessionModeWaitingState: React.FC<{
   phaseState: SessionModePhaseState;
   plugin: JournalitPlugin;
   filePath: string;
-}> = ({ phaseState, plugin, filePath }) => {
+  onStartUnplannedSession: () => void;
+}> = ({ phaseState, plugin, filePath, onStartUnplannedSession }) => {
   const nextSession = phaseState.nextSession;
   const preparationOpensInMs = Math.max(
     0,
@@ -1153,14 +1388,24 @@ const SessionModeWaitingState: React.FC<{
           remaining: formatDuration(preparationOpensInMs),
         })}
       </div>
-      <button
-        type="button"
-        className="journalit-session-mode-waiting-state__action"
-        onClick={() => void openDRC()}
-      >
-        <Calendar size={16} aria-hidden="true" />
-        <span>{t('session-mode.waiting.open-drc')}</span>
-      </button>
+      <div className="journalit-session-mode-waiting-state__actions">
+        <button
+          type="button"
+          className="journalit-session-mode-waiting-state__action"
+          onClick={() => void openDRC()}
+        >
+          <Calendar size={16} aria-hidden="true" />
+          <span>{t('session-mode.waiting.open-drc')}</span>
+        </button>
+        <button
+          type="button"
+          className="journalit-session-mode-waiting-state__action"
+          onClick={onStartUnplannedSession}
+        >
+          <Play size={16} aria-hidden="true" />
+          <span>{t('session-mode.unplanned.start')}</span>
+        </button>
+      </div>
     </section>
   );
 };
@@ -1169,7 +1414,8 @@ const SessionModeBreakState: React.FC<{
   phaseState: SessionModePhaseState;
   plugin: JournalitPlugin;
   filePath: string;
-}> = ({ phaseState, plugin, filePath }) => {
+  onStartUnplannedSession: () => void;
+}> = ({ phaseState, plugin, filePath, onStartUnplannedSession }) => {
   const nextSession = phaseState.nextSession;
 
   const openDRC = async () => {
@@ -1205,14 +1451,24 @@ const SessionModeBreakState: React.FC<{
       <p className="journalit-session-mode-break-state__description">
         {t('session-mode.break.description')}
       </p>
-      <button
-        type="button"
-        className="journalit-session-mode-break-state__action"
-        onClick={() => void openDRC()}
-      >
-        <Calendar size={16} aria-hidden="true" />
-        <span>{t('session-mode.break.open-drc')}</span>
-      </button>
+      <div className="journalit-session-mode-break-state__actions">
+        <button
+          type="button"
+          className="journalit-session-mode-break-state__action"
+          onClick={() => void openDRC()}
+        >
+          <Calendar size={16} aria-hidden="true" />
+          <span>{t('session-mode.break.open-drc')}</span>
+        </button>
+        <button
+          type="button"
+          className="journalit-session-mode-break-state__action"
+          onClick={onStartUnplannedSession}
+        >
+          <Play size={16} aria-hidden="true" />
+          <span>{t('session-mode.unplanned.start')}</span>
+        </button>
+      </div>
     </section>
   );
 };
@@ -1221,7 +1477,15 @@ const SessionModeEndedActions: React.FC<{
   plugin: JournalitPlugin;
   filePath: string;
   editButton: React.ReactNode;
-}> = ({ plugin, filePath, editButton }) => {
+  previousSession: ResolvedSessionModeWindow | undefined;
+  onStartUnplannedSession: () => void;
+}> = ({
+  plugin,
+  filePath,
+  editButton,
+  previousSession,
+  onStartUnplannedSession,
+}) => {
   const openDRC = async () => {
     await openSessionModeFile(plugin, filePath);
   };
@@ -1253,6 +1517,13 @@ const SessionModeEndedActions: React.FC<{
       primary: false,
       onClick: () => void openDRC(),
     },
+    {
+      key: 'unplanned',
+      label: t('session-mode.unplanned.start'),
+      icon: Play,
+      primary: false,
+      onClick: onStartUnplannedSession,
+    },
   ];
 
   return (
@@ -1264,6 +1535,12 @@ const SessionModeEndedActions: React.FC<{
         </div>
         <p>{t('session-mode.ended.helper')}</p>
       </div>
+      {previousSession?.kind === 'unplanned' && (
+        <UnplannedSessionEndedSummary
+          session={previousSession}
+          use24HourTime={plugin.settings.trade.use24HourTime ?? false}
+        />
+      )}
       <div className="journalit-session-mode-ended-summary__actions">
         {actions.map((action) => {
           const Icon = action.icon;
@@ -1302,9 +1579,30 @@ const SessionModeEndedStats: React.FC<{
   filePath: string;
   timelineEntries: ReturnType<typeof sortSessionTimeline>;
   sessionWindow?: NonNullable<SessionModePhaseState['previousSession']>;
-}> = ({ plugin, filePath, timelineEntries, sessionWindow }) => {
+  unplannedWindows: ResolvedUnplannedSessionWindow[];
+}> = ({
+  plugin,
+  filePath,
+  timelineEntries,
+  sessionWindow,
+  unplannedWindows,
+}) => {
+  
+  
+  
+  const candidateWindows: ResolvedSessionModeWindow[] = sessionWindow
+    ? [sessionWindow, ...unplannedWindows]
+    : [];
+  const isOwnedBySessionWindow = (timestamp: Date): boolean =>
+    sessionWindow !== undefined &&
+    findOwningSessionWindowForTimestamp(timestamp, candidateWindows)?.id ===
+      sessionWindow.id;
   const scopedTimelineEntries = sessionWindow
-    ? filterTimelineEntriesBySessionWindow(timelineEntries, sessionWindow)
+    ? timelineEntries.filter(
+        (entry) =>
+          findOwningSessionWindow(entry, candidateWindows)?.id ===
+          sessionWindow.id
+      )
     : timelineEntries;
   const tradePaths = new Set<string>();
   for (const entry of scopedTimelineEntries) {
@@ -1322,11 +1620,7 @@ const SessionModeEndedStats: React.FC<{
       continue;
     }
     const completedAt = run.completedAt ? new Date(run.completedAt) : null;
-    if (
-      completedAt &&
-      completedAt.getTime() >= sessionWindow.start.getTime() &&
-      completedAt.getTime() < sessionWindow.end.getTime()
-    ) {
+    if (completedAt && isOwnedBySessionWindow(completedAt)) {
       tradeGateRunCount += 1;
     }
   }
@@ -1390,10 +1684,15 @@ const stepKeys: Parameters<typeof t>[0][] = [
 
 const getSteps = () => stepKeys.map((key) => t(key));
 
-const SessionModeUnconfiguredState: React.FC<{ plugin: JournalitPlugin }> = ({
-  plugin,
-}) => {
+const SessionModeUnconfiguredState: React.FC<{
+  plugin: JournalitPlugin;
+  onStartUnplannedSession: () => void;
+}> = ({ plugin, onStartUnplannedSession }) => {
   const steps = getSteps();
+  const registerConfigureTarget = useGuideTarget(
+    SESSION_MODE_CONFIGURE_BUTTON_TARGET_ID
+  );
+  const emitGuideAction = useGuideAction();
   return (
     <section className="journalit-session-mode-empty-state">
       <div className="journalit-session-mode-empty-state__title">
@@ -1414,14 +1713,29 @@ const SessionModeUnconfiguredState: React.FC<{ plugin: JournalitPlugin }> = ({
           </div>
         ))}
       </div>
-      <Button
-        variant="primary"
-        size="small"
-        className="journalit-session-mode-empty-state__button"
-        onClick={() => openSessionModeSettings(plugin)}
-      >
-        {t('session-mode.unconfigured.action')}
-      </Button>
+      <div className="journalit-session-mode-empty-state__actions">
+        <Button
+          ref={registerConfigureTarget}
+          variant="primary"
+          size="medium"
+          fullWidth
+          onClick={() => {
+            emitGuideAction(SESSION_MODE_SETTINGS_OPENED_ACTION_ID);
+            openSessionModeSettings(plugin);
+          }}
+        >
+          {t('session-mode.unconfigured.action')}
+        </Button>
+        <Button
+          variant="secondary"
+          size="medium"
+          fullWidth
+          onClick={onStartUnplannedSession}
+        >
+          <Play size={14} aria-hidden="true" />
+          {t('session-mode.unplanned.start')}
+        </Button>
+      </div>
     </section>
   );
 };

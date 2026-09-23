@@ -229,15 +229,13 @@ const CustomFieldsRendererComponent: React.FC<CustomFieldsRendererProps> = ({
   errors = EMPTY_CUSTOM_FIELD_ERRORS,
 }) => {
   const plugin = usePlugin();
-  const openCustomFieldsSettings = (
-    event: React.MouseEvent<HTMLButtonElement>
-  ) => {
+  const openCustomFieldsSettings = () => {
     plugin?.app.saveLocalStorage('journalit:open-custom-fields-settings', '1');
-    const modalEl = event.currentTarget.closest('.modal');
-    const closeButton = modalEl?.querySelector<HTMLButtonElement>(
-      '.modal-close-button'
-    );
-    closeButton?.click();
+    
+    
+    
+    
+    
     plugin?.openSettingsToTab('customization');
     window.dispatchEvent(new Event('journalit:open-custom-fields-settings'));
   };

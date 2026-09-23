@@ -1,7 +1,7 @@
 <div align="center">
 
 <img
-  src="https://github.com/user-attachments/assets/ab7232d4-1352-4658-a284-86029c0246f1"
+  src="https://raw.githubusercontent.com/Cursivez/journalit/main/assets/readme/journalit-logo.png"
   alt="Journalit"
   width="420"
   style="max-width: 100%; height: auto;"
@@ -30,7 +30,7 @@ Journal de trading local-first pour Obsidian.
 
 </div>
 
-![Home View](https://github.com/user-attachments/assets/8ef38dac-c932-4530-aa06-4a382e5ba827)
+![Home View](https://raw.githubusercontent.com/Cursivez/journalit/main/assets/readme/home-view.png)
 
 <a id="installation"></a>
 
@@ -52,14 +52,14 @@ Page communautaire: https://community.obsidian.md/plugins/journalit
 - **Tableau de bord de compte** : conçu pour les objectifs de profit et drawdowns des prop firms.
 - **Système de revue (V2)** : modèles quotidiens → annuels avec constructeur de mise en page.
 - **[Trade Import](https://journalit.co/csv-import)** : imports alimentés par le backend pour CSV, feuilles de calcul, HTML et relevés de courtiers.
-- **[Trade Sync](https://journalit.co/docs/trade-sync)** : synchronisation automatique des trades pour Tradovate et MT4.
+- **[Trade Sync](https://journalit.co/docs/trade-sync)** : synchronisation automatique des trades pour les courtiers pris en charge.
 
 ## Informations importantes
 
 - **Cœur local-first** : le journal principal fonctionne hors ligne et stocke vos notes et trades dans votre coffre Obsidian.
 - **Compte requis pour l’accès complet** : un compte Journalit est requis pour les fonctionnalités avec authentification et abonnement.
-- **Fonctionnalités payantes** : un abonnement Pro est requis pour l’accès complet aux fonctionnalités Pro comme la synchronisation MetaTrader et Trade Import.
-- **Utilisation réseau optionnelle** : le plugin utilise les services réseau de Journalit uniquement lorsque vous choisissez des fonctionnalités qui en dépendent. La connexion contacte Journalit pour la vérification d’e-mail, la validation du jeton et l’état de l’abonnement. Si vous utilisez ensuite MetaTrader sync ou Trade Import, le plugin se connecte aussi à l’API backend Journalit pour la coordination de synchronisation, la récupération des trades et l’import optionnel; MetaTrader sync utilise une infrastructure FTP gérée par Journalit. Journalit peut aussi demander des taux de change à un service tiers lorsque la conversion multidevise est nécessaire. Ces fonctionnalités sont optionnelles.
+- **Fonctionnalités payantes** : un abonnement Pro est requis pour l’accès complet aux fonctionnalités Pro comme Trade Sync et Trade Import.
+- **Utilisation du réseau** : Journalit vérifie par défaut les métadonnées publiques des versions GitHub pour les mises à jour, sans envoyer de données du coffre ni du compte. Les fonctionnalités utilisées après connexion peuvent faire appel aux services Journalit; la synchronisation MT4 utilise un FTP géré, et la conversion de devises peut utiliser un service de taux de change tiers. Consultez [PRIVACY.md](PRIVACY.md).
 - **Source disponible, licence propriétaire** : le plugin est un logiciel propriétaire dont le code source peut être consulté.
 - **Détails de confidentialité** : consultez [PRIVACY.md](PRIVACY.md) pour les informations sur le traitement et la conservation des données, ainsi que sur l’infrastructure.
 
@@ -69,39 +69,39 @@ Page communautaire: https://community.obsidian.md/plugins/journalit
 
 ### Tableau de bord de trading
 
-![Trading Dashboard](https://github.com/user-attachments/assets/ebb402c3-c8da-41dc-9317-73f6a50d0a93)
+![Trading Dashboard](https://raw.githubusercontent.com/Cursivez/journalit/main/assets/readme/trading-dashboard.png)
 
 ### Setups
 
-![Vue d’ensemble des setups](https://github.com/user-attachments/assets/09976a8b-8500-4629-b790-6cb834c84b24)
+![Vue d’ensemble des setups](https://raw.githubusercontent.com/Cursivez/journalit/main/assets/readme/setup-overview.png)
 
-![Paires de setups](https://github.com/user-attachments/assets/bb7b66fc-db1b-4e1c-a174-32bc6bea49c6)
+![Paires de setups](https://raw.githubusercontent.com/Cursivez/journalit/main/assets/readme/setup-pairs.png)
 
-![Comparaison des setups](https://github.com/user-attachments/assets/8eaf5509-cf27-4e73-8c8c-2a9cf0da6c43)
+![Comparaison des setups](https://raw.githubusercontent.com/Cursivez/journalit/main/assets/readme/setup-comparison.png)
 
 ### Constructeur de mise en page
 
-![Layout Builder](https://github.com/user-attachments/assets/48bcc59a-2b17-4478-98b3-dce8677cca47)
+![Layout Builder](https://raw.githubusercontent.com/Cursivez/journalit/main/assets/readme/layout-builder.png)
 
-![Layout Builder](https://github.com/user-attachments/assets/66744217-b3b1-46ec-bb65-ca2debcd72da)
+![Layout Builder](https://raw.githubusercontent.com/Cursivez/journalit/main/assets/readme/layout-builder-preview.png)
 
 ### Journal des trades et galerie
 
-![Trade Log](https://github.com/user-attachments/assets/09586646-50a2-4fd1-970f-83e926cab19a)
+![Trade Log](https://raw.githubusercontent.com/Cursivez/journalit/main/assets/readme/trade-log.png)
 
-![Galerie](https://github.com/user-attachments/assets/1bb496ab-a165-43c6-83f0-500565f2a1c3)
+![Galerie](https://raw.githubusercontent.com/Cursivez/journalit/main/assets/readme/gallery.png)
 
 ### Trade Import
 
-![Trade Import](https://github.com/user-attachments/assets/68121823-8b24-4024-b676-a4199c81f207)
+![Trade Import](https://raw.githubusercontent.com/Cursivez/journalit/main/assets/readme/trade-import.png)
 
 ### Tableau de bord de compte
 
-![Account Dashboard](https://github.com/user-attachments/assets/dbd1cd69-3f8b-4af8-883c-460dbfb8944b)
+![Account Dashboard](https://raw.githubusercontent.com/Cursivez/journalit/main/assets/readme/account-dashboard.png)
 
 ### Pages de compte
 
-![Account Pages](https://github.com/user-attachments/assets/8eeb0f2d-a8d8-412e-bf23-cb21e3a0401b)
+![Account Pages](https://raw.githubusercontent.com/Cursivez/journalit/main/assets/readme/account-pages.png)
 
 <a id="supported-brokers"></a>
 

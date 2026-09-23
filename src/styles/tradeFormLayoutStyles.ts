@@ -111,6 +111,20 @@ export const TRADE_FORM_LAYOUT_STYLES = `
     margin: 0;
   }
 
+  .journalit-trade-form-layout-editor__take-profit-unit {
+    display: flex;
+    flex-basis: 100%;
+    align-items: center;
+    gap: 6px;
+    margin-top: 2px;
+  }
+
+  .journalit-trade-form-layout-editor__take-profit-unit-label {
+    color: var(--text-muted);
+    font-size: 11px;
+    line-height: 1.2;
+  }
+
   .journalit-trade-form-layout-editor__mode-copy {
     display: flex;
     flex-direction: column;

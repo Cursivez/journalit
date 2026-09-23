@@ -1,5 +1,8 @@
 import { FilterState } from '../components/dashboard/DashboardView';
-import type { UnifiedFilters } from '../components/shared/filters/types';
+import type {
+  AccountPhaseScope,
+  UnifiedFilters,
+} from '../components/shared/filters/types';
 import type {
   TradeLogFilters,
   TradeStatus,
@@ -138,9 +141,47 @@ export const normalizeTradeLogTradeTypes = (
   return sanitized.length > 0 ? sanitized : [...DEFAULT_ALL_TRADE_TYPES];
 };
 
+const normalizeAccountPhaseScopes = (
+  accountPhases: unknown
+): AccountPhaseScope[] => {
+  if (!Array.isArray(accountPhases)) {
+    return [];
+  }
+
+  const normalized: AccountPhaseScope[] = [];
+  const seen = new Set<string>();
+
+  for (let i = 0; i < accountPhases.length; i++) {
+    const entry: unknown = accountPhases[i];
+    if (!entry || typeof entry !== 'object' || Array.isArray(entry)) {
+      continue;
+    }
+
+    const scopeLike = entry as { account?: unknown; phaseId?: unknown };
+    const account: unknown = scopeLike.account;
+    const phaseId: unknown = scopeLike.phaseId;
+    if (typeof account !== 'string' || typeof phaseId !== 'string') {
+      continue;
+    }
+    if (account.length === 0 || phaseId.length === 0) {
+      continue;
+    }
+
+    const dedupeKey = `${account}\0${phaseId}`;
+    if (seen.has(dedupeKey)) {
+      continue;
+    }
+    seen.add(dedupeKey);
+    normalized.push({ account, phaseId });
+  }
+
+  return normalized;
+};
+
 export const DEFAULT_DASHBOARD_FILTERS: FilterState = {
   dateRange: [null, null],
   accounts: [],
+  accountPhases: [],
   tickers: [],
   setups: [],
   tags: [],
@@ -161,6 +202,7 @@ export const DEFAULT_TRADELOG_FILTERS: TradeLogFilters = {
   statuses: [],
   reviewStatus: [],
   accounts: [],
+  accountPhases: [],
   directions: [],
   sessionLogTags: [],
   tickers: [],
@@ -174,6 +216,7 @@ export const DEFAULT_TRADELOG_FILTERS: TradeLogFilters = {
 
 export const DEFAULT_REVIEW_FILTERS: UnifiedFilters = {
   accounts: [],
+  accountPhases: [],
   tickers: [],
   setups: [],
   tags: [],
@@ -191,6 +234,9 @@ export const createDashboardFilters = (): FilterState => ({
   ...DEFAULT_DASHBOARD_FILTERS,
   dateRange: [...DEFAULT_DASHBOARD_FILTERS.dateRange],
   accounts: [...DEFAULT_DASHBOARD_FILTERS.accounts],
+  accountPhases: DEFAULT_DASHBOARD_FILTERS.accountPhases.map((scope) => ({
+    ...scope,
+  })),
   tickers: [...DEFAULT_DASHBOARD_FILTERS.tickers],
   setups: [...DEFAULT_DASHBOARD_FILTERS.setups],
   tags: [...DEFAULT_DASHBOARD_FILTERS.tags],
@@ -213,6 +259,9 @@ export const createTradeLogFilters = (): TradeLogFilters => ({
   statuses: [...DEFAULT_TRADELOG_FILTERS.statuses],
   reviewStatus: [...DEFAULT_TRADELOG_FILTERS.reviewStatus],
   accounts: [...DEFAULT_TRADELOG_FILTERS.accounts],
+  accountPhases: DEFAULT_TRADELOG_FILTERS.accountPhases.map((scope) => ({
+    ...scope,
+  })),
   directions: [...DEFAULT_TRADELOG_FILTERS.directions],
   sessionLogTags: [...DEFAULT_TRADELOG_FILTERS.sessionLogTags],
   tickers: [...DEFAULT_TRADELOG_FILTERS.tickers],
@@ -227,6 +276,9 @@ export const createTradeLogFilters = (): TradeLogFilters => ({
 export const createReviewFilters = (): UnifiedFilters => ({
   ...DEFAULT_REVIEW_FILTERS,
   accounts: [...DEFAULT_REVIEW_FILTERS.accounts],
+  accountPhases: DEFAULT_REVIEW_FILTERS.accountPhases.map((scope) => ({
+    ...scope,
+  })),
   tickers: [...DEFAULT_REVIEW_FILTERS.tickers],
   setups: [...DEFAULT_REVIEW_FILTERS.setups],
   tags: [...DEFAULT_REVIEW_FILTERS.tags],
@@ -252,6 +304,7 @@ export const normalizeDashboardFilters = (
     ...filters,
     dateRange: filters?.dateRange ?? defaults.dateRange,
     accounts: filters?.accounts ? [...filters.accounts] : defaults.accounts,
+    accountPhases: normalizeAccountPhaseScopes(filters?.accountPhases),
     tickers: filters?.tickers ? [...filters.tickers] : defaults.tickers,
     setups: filters?.setups ? [...filters.setups] : defaults.setups,
     tags: filters?.tags ? [...filters.tags] : defaults.tags,
@@ -278,10 +331,16 @@ export const normalizeTradeLogFilters = (
   filters?: Partial<TradeLogFilters> | null
 ): TradeLogFilters => {
   const defaults = createTradeLogFilters();
+  const analyticsDateBasis =
+    filters?.analyticsDateBasis === 'entry' ||
+    filters?.analyticsDateBasis === 'exit'
+      ? filters.analyticsDateBasis
+      : undefined;
 
   return {
     ...defaults,
     ...filters,
+    analyticsDateBasis,
     dateRange: filters?.dateRange ?? defaults.dateRange,
     tradeTypes: normalizeTradeLogTradeTypes(filters?.tradeTypes),
     statuses: normalizeStatuses(filters?.statuses),
@@ -289,6 +348,7 @@ export const normalizeTradeLogFilters = (
       ? [...filters.reviewStatus]
       : defaults.reviewStatus,
     accounts: filters?.accounts ? [...filters.accounts] : defaults.accounts,
+    accountPhases: normalizeAccountPhaseScopes(filters?.accountPhases),
     directions: filters?.directions
       ? [...filters.directions]
       : defaults.directions,
@@ -324,6 +384,7 @@ export const normalizeReviewFilters = (
     ...defaults,
     ...filters,
     accounts: filters?.accounts ? [...filters.accounts] : defaults.accounts,
+    accountPhases: normalizeAccountPhaseScopes(filters?.accountPhases),
     tickers: filters?.tickers ? [...filters.tickers] : defaults.tickers,
     setups: filters?.setups ? [...filters.setups] : defaults.setups,
     tags: filters?.tags ? [...filters.tags] : defaults.tags,

@@ -24,6 +24,12 @@ import {
 } from '../../utils/dateUtils';
 import { getTradingDay } from '../../utils/tradingDayUtils';
 import { forceMetadataCacheRefresh } from '../../utils/dataRefresh';
+import {
+  addSampleOwnershipToMarkdown,
+  appendSampleReviewBody,
+  materializeSampleReviewFrontmatter,
+  type SampleReviewMaterialization,
+} from '../../demo/DemoOwnership';
 
 import { calculateWinRateExcludingBreakeven } from '../../utils/breakEvenRange';
 import {
@@ -359,7 +365,10 @@ export class MonthlyReviewService extends CustomDataService {
   }
 
   
-  async createMonthlyReview(date: Date): Promise<TFile | null> {
+  async createMonthlyReview(
+    date: Date,
+    options: { sampleMaterialization?: SampleReviewMaterialization } = {}
+  ): Promise<TFile | null> {
     const filePath = this.getMonthlyReviewPath(date);
 
     
@@ -381,17 +390,36 @@ export class MonthlyReviewService extends CustomDataService {
     };
 
     
-    const content = this.generateInitialContent(frontmatter);
+    const generatedContent = this.generateInitialContent(
+      frontmatter,
+      options.sampleMaterialization
+    );
+    const claimedOwnership = options.sampleMaterialization
+      ? null
+      : this.plugin?.demoSessionService?.claimNewOwnership('review');
+    const content = claimedOwnership
+      ? addSampleOwnershipToMarkdown(generatedContent, claimedOwnership)
+      : generatedContent;
 
     
     try {
       const file = await this.app.vault.create(filePath, content);
-      await forceMetadataCacheRefresh(this.app, file);
-      eventBus.publish('review:changed', {
-        type: 'monthly',
-        action: 'created',
-        filePath: file.path,
-      });
+      if (claimedOwnership) {
+        await this.plugin?.demoSessionService?.adoptCreatedMarkdownFile(
+          filePath,
+          claimedOwnership
+        );
+      }
+      if (options.sampleMaterialization) {
+        options.sampleMaterialization.creationBatch.register(file, 'monthly');
+      } else {
+        await forceMetadataCacheRefresh(this.app, file);
+        eventBus.publish('review:changed', {
+          type: 'monthly',
+          action: 'created',
+          filePath: file.path,
+        });
+      }
       return file;
     } catch (error) {
       console.error('Error creating monthly review:', error);
@@ -488,7 +516,8 @@ export class MonthlyReviewService extends CustomDataService {
 
   
   private generateInitialContent(
-    frontmatter: MonthlyReviewFrontmatter
+    frontmatter: MonthlyReviewFrontmatter,
+    sampleMaterialization?: SampleReviewMaterialization
   ): string {
     
     const monthlyData: Record<string, unknown> = {
@@ -508,7 +537,16 @@ export class MonthlyReviewService extends CustomDataService {
     monthlyData.templateVersion = template.version;
 
     
-    return transformService.generateNoteFromTemplate(template, monthlyData);
+    const authoredData = sampleMaterialization
+      ? materializeSampleReviewFrontmatter(monthlyData, sampleMaterialization)
+      : monthlyData;
+    const content = transformService.generateNoteFromTemplate(
+      template,
+      authoredData
+    );
+    return sampleMaterialization
+      ? appendSampleReviewBody(content, sampleMaterialization.appendBody)
+      : content;
   }
 
   

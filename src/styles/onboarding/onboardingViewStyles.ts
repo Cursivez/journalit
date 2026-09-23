@@ -671,6 +671,81 @@ export const ONBOARDING_VIEW_STYLES = `
     margin-top: 0.9rem;
   }
 
+  .journalit-onboarding-view-container .journalit-onboarding-progress {
+    width: min(100%, 460px);
+    margin: 28px auto 0;
+    text-align: left;
+  }
+
+  .journalit-onboarding-view-container .journalit-onboarding-progress__track {
+    position: relative;
+    height: 8px;
+    overflow: hidden;
+    border-radius: 999px;
+    background: var(--background-modifier-border);
+  }
+
+  .journalit-onboarding-view-container .journalit-onboarding-progress__fill {
+    height: 100%;
+    width: calc(var(--journalit-progress, 0) * 100%);
+    border-radius: inherit;
+    background: var(--interactive-accent);
+    transition: width 180ms ease-out;
+  }
+
+  .journalit-onboarding-view-container
+    .journalit-onboarding-progress__track--indeterminate
+    .journalit-onboarding-progress__fill {
+    position: absolute;
+    width: 35%;
+    animation: journalit-onboarding-progress-slide 1.2s ease-in-out infinite;
+  }
+
+  @keyframes journalit-onboarding-progress-slide {
+    from {
+      left: -35%;
+    }
+    to {
+      left: 100%;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .journalit-onboarding-view-container .broker-request-panel {
+      animation: none;
+    }
+    .journalit-onboarding-view-container
+      .journalit-onboarding-progress__track--indeterminate
+      .journalit-onboarding-progress__fill {
+      animation: none;
+      left: 0;
+      width: 100%;
+      opacity: 0.6;
+    }
+  }
+
+  .journalit-onboarding-view-container .journalit-onboarding-progress__meta {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    margin-top: 10px;
+    color: var(--text-muted);
+    font-size: 13px;
+  }
+
+  .journalit-onboarding-view-container
+    .journalit-onboarding-progress__meta
+    strong {
+    color: var(--text-normal);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .journalit-onboarding-view-container .journalit-onboarding-progress__hint {
+    margin: 14px 0 0;
+    color: var(--text-faint);
+    font-size: 12px;
+  }
+
   .journalit-onboarding-view-container .manual-entry-step {
     min-height: 100%;
     padding: 2rem;
@@ -794,13 +869,8 @@ export const ONBOARDING_VIEW_STYLES = `
   }
 
   .journalit-onboarding-view-container .feature-card.explore-feature-tile {
-    cursor: pointer;
     align-items: flex-start;
     padding: 1rem;
-  }
-
-  .journalit-onboarding-view-container .feature-card.explore-feature-tile:hover {
-    transform: none;
   }
 
   .journalit-onboarding-view-container .explore-feature-icon {
@@ -1528,6 +1598,15 @@ export const ONBOARDING_VIEW_STYLES = `
       min-height: 180px;
     }
 
+    
+    .journalit-onboarding-view-container .welcome-step-container .skip-button {
+      position: static !important;
+      align-self: center;
+      margin: 0 0 1.5rem;
+      font-size: 0.75rem;
+      padding: 0.4rem 0.8rem;
+    }
+
     .journalit-onboarding-view-container .skip-button {
       bottom: 1rem;
       right: 1rem;
@@ -1713,6 +1792,12 @@ export const ONBOARDING_VIEW_STYLES = `
 
   
   @media (max-width: 480px) {
+    
+    .journalit-onboarding-view-container
+      .personalise-options.personalise-options-two-columns {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
     .journalit-onboarding-view-container .welcome-left h1,
     .journalit-onboarding-view-container .success-header h1,
     .journalit-onboarding-view-container .activation-left h2 {
@@ -2263,4 +2348,370 @@ export const ONBOARDING_VIEW_STYLES = `
   .journalit-onboarding-view-container .link-button:hover {
     color: var(--interactive-accent-hover);
   }
+
+  
+  
+  
+  .journalit-onboarding-view-container .onboarding-status-text {
+    margin: 0.75rem 0 0;
+    color: var(--text-muted);
+    font-size: 0.85rem;
+  }
+
+  .journalit-onboarding-view-container .orientation-cards {
+    list-style: none;
+    margin: 0.5rem 0 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+
+  .journalit-onboarding-view-container .orientation-card {
+    display: flex;
+    gap: 1rem;
+    align-items: flex-start;
+  }
+
+  .journalit-onboarding-view-container .orientation-card-number {
+    flex: 0 0 auto;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    margin-top: 0.1rem;
+    border-radius: 50%;
+    background: var(--interactive-accent);
+    color: var(--text-on-accent);
+    font-size: 0.9rem;
+    font-weight: 600;
+  }
+
+  .journalit-onboarding-view-container .orientation-card-body {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+    min-width: 0;
+  }
+
+  .journalit-onboarding-view-container .orientation-card-title {
+    font-size: 1.15rem;
+    font-weight: 600;
+    color: var(--text-normal);
+    line-height: 1.3;
+  }
+
+  .journalit-onboarding-view-container .orientation-card-text {
+    color: var(--text-muted);
+    font-size: 1rem;
+    line-height: 1.6;
+    max-width: 58ch;
+  }
+
+  .journalit-onboarding-view-container .orientation-card-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.75rem;
+    margin-top: 0.5rem;
+  }
+
+  .journalit-onboarding-view-container .orientation-card-hint {
+    color: var(--text-muted);
+    font-size: 0.9rem;
+  }
+
+  .journalit-onboarding-view-container .personalise-rows {
+    display: flex;
+    flex-direction: column;
+    gap: 1.1rem;
+    margin-top: 0.25rem;
+  }
+
+  .journalit-onboarding-view-container .personalise-row {
+    display: flex;
+    flex-direction: column;
+    gap: 0.45rem;
+  }
+
+  .journalit-onboarding-view-container .personalise-question {
+    font-size: 1.05rem;
+    font-weight: 600;
+    color: var(--text-normal);
+  }
+
+  .journalit-onboarding-view-container .personalise-options {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+    gap: 0.45rem;
+  }
+
+  .journalit-onboarding-view-container .personalise-options-two-columns {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .journalit-onboarding-view-container .journalit-onboarding-option {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 0.7rem;
+    height: auto;
+    padding: 0.6rem 0.85rem;
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 8px;
+    background: var(--background-secondary);
+    color: var(--text-normal);
+    font: inherit;
+    font-size: 0.95rem;
+    line-height: 1.3;
+    text-align: left;
+    white-space: normal;
+    box-shadow: none;
+    transition:
+      border-color 0.15s ease,
+      background-color 0.15s ease;
+  }
+
+  .journalit-onboarding-view-container .journalit-onboarding-option:hover {
+    border-color: var(--interactive-accent);
+  }
+
+  .journalit-onboarding-view-container .journalit-onboarding-option.is-selected {
+    border-color: var(--interactive-accent);
+    background: var(--background-primary);
+  }
+
+  .journalit-onboarding-view-container .journalit-onboarding-option:focus-visible {
+    outline: 2px solid var(--interactive-accent);
+    outline-offset: 2px;
+  }
+
+  .journalit-onboarding-view-container .journalit-onboarding-option-radio {
+    flex: 0 0 auto;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    border: 2px solid var(--background-modifier-border);
+    background: transparent;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  }
+
+  .journalit-onboarding-view-container .journalit-onboarding-option.is-selected .journalit-onboarding-option-radio {
+    border-color: var(--interactive-accent);
+    box-shadow: inset 0 0 0 3px var(--background-primary), inset 0 0 0 8px var(--interactive-accent);
+  }
+
+  .journalit-onboarding-view-container .broker-search {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    margin-bottom: 1rem;
+    padding: 0 0.85rem;
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 10px;
+    background: var(--background-secondary);
+    color: var(--text-muted);
+  }
+
+  .journalit-onboarding-view-container .broker-search input {
+    flex: 1;
+    min-width: 0;
+    height: 42px;
+    border: none;
+    background: transparent;
+    box-shadow: none;
+    color: var(--text-normal);
+    font-size: 0.95rem;
+  }
+
+  .journalit-onboarding-view-container .broker-search input:focus {
+    outline: none;
+    box-shadow: none;
+  }
+
+  .journalit-onboarding-view-container .broker-tiles {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(128px, 1fr));
+    gap: 0.6rem;
+  }
+
+  .journalit-onboarding-view-container .journalit-onboarding-broker-tile {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.6rem;
+    height: auto;
+    min-height: 118px;
+    padding: 0.9rem 0.6rem;
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 12px;
+    background: var(--background-secondary);
+    color: var(--text-normal);
+    font: inherit;
+    box-shadow: none;
+    transition:
+      border-color 0.15s ease,
+      transform 0.15s ease;
+  }
+
+  .journalit-onboarding-view-container .journalit-onboarding-broker-tile:hover {
+    border-color: var(--interactive-accent);
+    transform: translateY(-1px);
+  }
+
+  .journalit-onboarding-view-container .journalit-onboarding-broker-tile:focus-visible {
+    outline: 2px solid var(--interactive-accent);
+    outline-offset: 2px;
+  }
+
+  .journalit-onboarding-view-container .journalit-onboarding-broker-tile.is-unlisted {
+    border-style: dashed;
+    color: var(--text-muted);
+  }
+
+  .journalit-onboarding-view-container .broker-tile-mark {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 52px;
+    height: 52px;
+    border-radius: 12px;
+    background: var(--background-primary);
+    color: var(--text-normal);
+    font-size: 1rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    overflow: hidden;
+  }
+
+  
+  .journalit-onboarding-view-container .broker-tile-mark .broker-tile-logo {
+    display: block;
+    width: 36px;
+    height: 36px;
+    background: currentColor;
+    mask: var(--journalit-broker-mark) center / contain no-repeat;
+    -webkit-mask: var(--journalit-broker-mark) center / contain no-repeat;
+  }
+
+  
+  @keyframes journalit-broker-request-in {
+    from {
+      opacity: 0;
+      transform: translateY(-6px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+
+  .journalit-onboarding-view-container .journalit-onboarding-broker-tile.is-active {
+    border-color: var(--interactive-accent);
+    box-shadow: 0 0 0 1px var(--interactive-accent);
+  }
+
+  .journalit-onboarding-view-container .broker-request-panel {
+    animation: journalit-broker-request-in 220ms ease-out;
+    scroll-margin: 1.5rem;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem 1rem;
+    margin-top: 1rem;
+    padding: 0.9rem 1rem;
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 12px;
+    background: var(--background-secondary);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .journalit-onboarding-view-container .broker-request-panel {
+      animation: none;
+    }
+  }
+
+  .journalit-onboarding-view-container .broker-request-panel__text {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+    min-width: 0;
+    flex: 1 1 18rem;
+    color: var(--text-muted);
+    font-size: 0.9rem;
+  }
+
+  .journalit-onboarding-view-container .broker-request-panel__text strong {
+    color: var(--text-normal);
+  }
+
+  .journalit-onboarding-view-container .broker-request-panel__actions {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.5rem;
+    flex: 0 0 auto;
+    min-width: 15rem;
+  }
+
+  .journalit-onboarding-view-container .broker-request-panel__actions button {
+    justify-content: center;
+  }
+
+  
+  .journalit-onboarding-view-container .broker-tile-mark.has-logo {
+    background: var(--journalit-onboarding-broker-mark-background, #fff);
+    padding: 6px;
+  }
+
+  .journalit-onboarding-view-container .broker-tile-mark img {
+    width: 36px;
+    height: 36px;
+    object-fit: contain;
+  }
+
+  .journalit-onboarding-view-container .broker-tile-label {
+    font-size: 0.85rem;
+    line-height: 1.25;
+    text-align: center;
+    white-space: normal;
+  }
+
+  .journalit-onboarding-view-container .broker-tile-badge {
+    position: absolute;
+    top: 0.5rem;
+    right: 0.5rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: var(--interactive-accent);
+    color: var(--text-on-accent);
+  }
+
+  @media (max-width: 768px) {
+    .journalit-onboarding-view-container .orientation-card {
+      padding: 0.75rem 0.9rem;
+    }
+
+    .journalit-onboarding-view-container .broker-tiles {
+      grid-template-columns: repeat(auto-fill, minmax(104px, 1fr));
+    }
+
+    .journalit-onboarding-view-container .first-trade-actions .journalit-button {
+      width: 100%;
+    }
+  }
+
+  .journalit-onboarding-view-container .choose-path-step-no-graphic .feature-content-wrapper {
+    grid-template-columns: minmax(0, 880px);
+    justify-content: center;
+  }
+
 `;

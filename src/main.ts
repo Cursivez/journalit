@@ -36,9 +36,19 @@ import { OnboardingManager } from './onboarding/onboardingManager';
 
 
 import { AccountPageService } from './services/accountPage';
+import { AccountMergeService } from './services/accountMerge';
 import { BackendIntegrationService } from './services/backend';
 import { SubscriptionTierService } from './services/backend/SubscriptionTierService';
+import { ensureAuthReady } from './services/backend/TokenManager';
 import { TradeProjectionSyncService } from './services/tradeSync/TradeProjectionSyncService';
+import { TradeSyncCoordinator } from './services/tradeSync/TradeSyncCoordinator';
+import { SessionPhaseWatcher } from './services/sessionMode/SessionPhaseWatcher';
+import { TradeOperationResultService } from './services/tradeOperations/TradeOperationResultService';
+import {
+  readTradeOperationResultNotice,
+  TRADE_OPERATION_RESULT_NOTICE_EVENT,
+} from './services/tradeOperations/resultNotice';
+import { TradeOperationSyncToast } from './components/tradeOperations/TradeOperationSyncToast';
 import type { CanonicalProjectionMigrationService } from './services/tradeSync/CanonicalProjectionMigrationService';
 import { InstrumentSpecService } from './services/InstrumentSpecService';
 import { RecentItem } from './settings/types';
@@ -53,9 +63,11 @@ import { GraphLinkService } from './services/graph/GraphLinkService';
 
 import { ReviewDataCache } from './services/reviewV2/ReviewDataCache';
 import { EventBus } from './services/events';
+import { clearOnboardingUpgradeOrigin } from './services/upgrade/upgradeOrigin';
 import { GuideRegistry } from './guides/GuideRegistry';
 import { ViewGuideService } from './guides/ViewGuideService';
 import { mergeFreshTradeFormEditData } from './components/forms/trade/tradeFormEditData';
+import { DemoSessionService } from './demo/DemoSessionService';
 
 
 
@@ -124,6 +136,9 @@ export default class JournalitPlugin extends Plugin {
   accountPageService: AccountPageService;
 
   
+  accountMergeService: AccountMergeService;
+
+  
   backendIntegrationService: BackendIntegrationService | null = null;
 
   
@@ -164,6 +179,10 @@ export default class JournalitPlugin extends Plugin {
   navigationManager: NavigationManager;
   updateNotificationService: UpdateNotificationService | null = null;
   tradeProjectionSyncService: TradeProjectionSyncService | null = null;
+  tradeSyncCoordinator: TradeSyncCoordinator | null = null;
+  sessionPhaseWatcher: SessionPhaseWatcher | null = null;
+  tradeOperationResultService: TradeOperationResultService | null = null;
+  tradeOperationSyncToast: TradeOperationSyncToast | null = null;
   canonicalProjectionMigrationService: CanonicalProjectionMigrationService | null =
     null;
 
@@ -174,10 +193,29 @@ export default class JournalitPlugin extends Plugin {
   viewGuideService: ViewGuideService | null = null;
 
   
+  demoSessionService: DemoSessionService | null = null;
+
+  
   settingsTab: JournalitSettingsTab | null = null;
 
   
   static instance: JournalitPlugin | null = null;
+
+  waitForStartupTradeMigrations(): Promise<void> {
+    return this.pluginInitializer.waitForStartupTradeMigrations();
+  }
+
+  initializeRealContextBackgroundServices(
+    resumeFromSample = false
+  ): Promise<void> {
+    return this.pluginInitializer.initializeRealContextBackgroundServices(
+      resumeFromSample
+    );
+  }
+
+  waitForRealContextBackgroundServices(): Promise<void> {
+    return this.pluginInitializer.waitForRealContextBackgroundServices();
+  }
 
   
   async onload() {
@@ -197,25 +235,30 @@ export default class JournalitPlugin extends Plugin {
     
     this.pluginInitializer = new PluginInitializer(this);
     await this.pluginInitializer.initialize();
+    const tradeOperationSyncToast = new TradeOperationSyncToast(this);
+    this.tradeOperationSyncToast = tradeOperationSyncToast;
+
+    const handleTradeOperationResultNotice = (event: Event) => {
+      const detail = readTradeOperationResultNotice(event);
+      const result =
+        this.ensureTradeOperationResultService().getSnapshot().recentResult;
+      if (!detail || !result || result.id !== detail.operationId) return;
+      tradeOperationSyncToast.show(result);
+    };
+    window.addEventListener(
+      TRADE_OPERATION_RESULT_NOTICE_EVENT,
+      handleTradeOperationResultNotice
+    );
+    this.register(() =>
+      window.removeEventListener(
+        TRADE_OPERATION_RESULT_NOTICE_EVENT,
+        handleTradeOperationResultNotice
+      )
+    );
 
     
     this.register402ErrorHandler();
 
-    
-    
-    
-    void new SubscriptionTierService(this)
-      .refreshTier('startup')
-      .then(async (result) => {
-        if (result.status !== 'premium' && result.status !== 'free') return;
-        await this.canonicalProjectionMigrationService?.queuePendingConflictAcknowledgements();
-        if (result.status === 'premium') {
-          this.ensureTradeProjectionSyncService();
-        }
-      })
-      .catch((error) => {
-        console.warn('[Journalit] Startup tier refresh failed:', error);
-      });
     const startProjectionSyncForPremium = () => {
       void Promise.resolve()
         .then(() =>
@@ -245,9 +288,47 @@ export default class JournalitPlugin extends Plugin {
         startProjectionSyncForPremium
       )
     );
+    const resumeAutomaticAuth = (reason: 'online' | 'focus') => {
+      void ensureAuthReady(this, { resume: reason }).then((readiness) => {
+        if (readiness.status === 'unavailable') return;
+        startProjectionSyncForPremium();
+      });
+    };
+    this.registerDomEvent(window, 'online', () =>
+      resumeAutomaticAuth('online')
+    );
+    this.registerDomEvent(window, 'focus', () => resumeAutomaticAuth('focus'));
     
     
-    startProjectionSyncForPremium();
+    
+    void ensureAuthReady(this)
+      .then((readiness) => {
+        if (
+          readiness.status !== 'unavailable' &&
+          readiness.status !== 'rejected'
+        ) {
+          void new SubscriptionTierService(this)
+            .refreshTier('startup')
+            .then(async (result) => {
+              if (result.status !== 'premium' && result.status !== 'free')
+                return;
+              await this.canonicalProjectionMigrationService?.queuePendingConflictAcknowledgements();
+              if (result.status === 'premium') {
+                this.ensureTradeProjectionSyncService();
+              }
+            })
+            .catch((error) => {
+              console.warn('[Journalit] Startup tier refresh failed:', error);
+            });
+        }
+        
+        
+        startProjectionSyncForPremium();
+      })
+      .catch((error) => {
+        console.warn('[Journalit] Startup auth readiness failed:', error);
+        startProjectionSyncForPremium();
+      });
   }
 
   ensureTradeProjectionSyncService(): TradeProjectionSyncService {
@@ -256,6 +337,38 @@ export default class JournalitPlugin extends Plugin {
       this.tradeProjectionSyncService.start();
     }
     return this.tradeProjectionSyncService;
+  }
+
+  ensureTradeSyncCoordinator(): TradeSyncCoordinator {
+    if (!this.tradeSyncCoordinator) {
+      this.tradeSyncCoordinator = new TradeSyncCoordinator(this);
+    }
+    return this.tradeSyncCoordinator;
+  }
+
+  ensureTradeOperationResultService(): TradeOperationResultService {
+    if (!this.tradeOperationResultService) {
+      this.tradeOperationResultService = new TradeOperationResultService(this);
+    }
+    return this.tradeOperationResultService;
+  }
+
+  
+  ensureSessionPhaseWatcher(): SessionPhaseWatcher {
+    if (!this.sessionPhaseWatcher) {
+      
+      
+      
+      const watcher = new SessionPhaseWatcher(this);
+      this.sessionPhaseWatcher = watcher;
+      this.register(() => {
+        watcher.destroy();
+        if (this.sessionPhaseWatcher === watcher) {
+          this.sessionPhaseWatcher = null;
+        }
+      });
+    }
+    return this.sessionPhaseWatcher;
   }
 
   
@@ -274,7 +387,11 @@ export default class JournalitPlugin extends Plugin {
       
       import('./components/modals/UpgradeModal')
         .then(({ openUpgradeModal }) => {
-          openUpgradeModal(this.app, this, operation);
+          openUpgradeModal({
+            app: this.app,
+            plugin: this,
+            featureName: operation,
+          });
         })
         .catch((error) => {
           console.error('[Journalit] Failed to load UpgradeModal:', error);
@@ -288,6 +405,16 @@ export default class JournalitPlugin extends Plugin {
     this.register(() => {
       window.removeEventListener('journalit:premium-required', handler);
     });
+  }
+
+  
+  openSettings(): void {
+    if (requireApiVersion('1.13.0')) {
+      this.app.setting?.clearPageStack?.();
+    }
+
+    this.app.setting?.open();
+    this.app.setting?.openTabById(this.manifest.id);
   }
 
   
@@ -336,6 +463,7 @@ export default class JournalitPlugin extends Plugin {
 
   
   private async runUnloadCleanup(): Promise<void> {
+    clearOnboardingUpgradeOrigin();
     await this.cleanupManager.cleanup().catch((error: unknown) => {
       console.error('Error during plugin cleanup:', error);
       

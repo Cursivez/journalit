@@ -51,6 +51,8 @@ export interface DisplayValueOptions {
   signed?: boolean;
   precision?: number;
   notation?: 'standard' | 'compact';
+  
+  priceStyle?: 'decimal' | 'currency';
 }
 
 const PRIVACY_MASKED_KINDS: ReadonlySet<DisplayValueKind> = new Set([
@@ -68,6 +70,9 @@ const PRIVACY_MASKED_KINDS: ReadonlySet<DisplayValueKind> = new Set([
   'fee',
   'metric',
 ]);
+
+
+const DECIMAL_QUOTE_MAX_SIGNIFICANT_DIGITS = 15;
 
 export function createDisplayPolicy(
   settings: DisplayPolicySettingsInput
@@ -148,6 +153,14 @@ export function formatDisplayValue(
           )
         : formatCurrency(options.value, options.signed ?? false, currencyCode);
     case 'price':
+      if (options.priceStyle === 'decimal') {
+        return formatDecimalQuotePrice(
+          options.value,
+          policy.locale ?? getCurrencyConfig(currencyCode).locale,
+          options.signed ?? false
+        );
+      }
+
       return options.precision === undefined
         ? formatCurrency(options.value, options.signed ?? false, currencyCode)
         : formatCurrencyWithFixedPrecision(
@@ -283,4 +296,17 @@ function formatNumberValue(
     minimumFractionDigits: precision,
     maximumFractionDigits: precision,
   });
+}
+
+
+function formatDecimalQuotePrice(
+  value: number,
+  locale: string | undefined,
+  signed: boolean
+): string {
+  const formatted = value.toLocaleString(locale, {
+    maximumSignificantDigits: DECIMAL_QUOTE_MAX_SIGNIFICANT_DIGITS,
+  });
+
+  return signed && value > 0 ? `+${formatted}` : formatted;
 }

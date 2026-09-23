@@ -1,7 +1,7 @@
 <div align="center">
 
 <img
-  src="https://github.com/user-attachments/assets/ab7232d4-1352-4658-a284-86029c0246f1"
+  src="https://raw.githubusercontent.com/Cursivez/journalit/main/assets/readme/journalit-logo.png"
   alt="Journalit"
   width="420"
   style="max-width: 100%; height: auto;"
@@ -30,7 +30,7 @@
 
 </div>
 
-![Home View](https://github.com/user-attachments/assets/8ef38dac-c932-4530-aa06-4a382e5ba827)
+![Home View](https://raw.githubusercontent.com/Cursivez/journalit/main/assets/readme/home-view.png)
 
 <a id="installation"></a>
 
@@ -52,14 +52,14 @@
 - **账户仪表盘**：为 prop firm 盈利目标和回撤控制而构建。
 - **复盘系统 (V2)**：从每日到每年的模板，并带有布局构建器。
 - **[Trade Import](https://journalit.co/csv-import)**：由后端驱动，支持 CSV、电子表格、HTML 和经纪商报表导入。
-- **[Trade Sync](https://journalit.co/docs/trade-sync)**：自动同步 Tradovate 和 MT4 的交易。
+- **[Trade Sync](https://journalit.co/docs/trade-sync)**：自动同步受支持经纪商的交易。
 
 ## 重要说明
 
 - **本地优先核心**：核心日志可离线工作，并将你的笔记和交易保存在 Obsidian 仓库中。
 - **完整访问需要账户**：需要 Journalit 账户才能使用基于身份验证和订阅限制的功能。
-- **付费功能**：完整使用 MetaTrader 同步、Trade Import 等 Pro 功能需要 Pro 订阅。
-- **可选网络使用**：只有当你选择使用依赖网络的功能时，插件才会使用 Journalit 网络服务。登录会联系 Journalit 服务以进行邮箱验证、令牌验证和订阅状态检查。若随后使用 MetaTrader sync 或 Trade Import，插件还会连接 Journalit 后端 API，用于同步协调、交易获取和可选的 Trade Import；MetaTrader sync 使用 Journalit 管理的 FTP 基础设施上传报表。当需要多币种换算时，Journalit 也可能向第三方汇率服务请求汇率。这些依赖网络的功能均为可选。
+- **付费功能**：完整使用 Trade Sync、Trade Import 等 Pro 功能需要 Pro 订阅。
+- **网络使用**：Journalit 默认检查 GitHub 上的公开版本元数据以获取更新，不会发送 vault 或账户数据。登录后使用的功能可能会调用 Journalit 服务；MT4 同步使用托管 FTP，货币换算可能会使用第三方汇率服务。请参阅 [PRIVACY.md](PRIVACY.md)。
 - **源码可查看，专有许可证**：该插件是专有软件，但源码可供审查。
 - **隐私详情**：请参阅 [PRIVACY.md](PRIVACY.md)，了解数据处理、保留和基础设施的详细信息。
 
@@ -69,39 +69,39 @@
 
 ### 交易仪表盘
 
-![Trading Dashboard](https://github.com/user-attachments/assets/ebb402c3-c8da-41dc-9317-73f6a50d0a93)
+![Trading Dashboard](https://raw.githubusercontent.com/Cursivez/journalit/main/assets/readme/trading-dashboard.png)
 
 ### 交易策略（Setups）
 
-![策略概览](https://github.com/user-attachments/assets/09976a8b-8500-4629-b790-6cb834c84b24)
+![策略概览](https://raw.githubusercontent.com/Cursivez/journalit/main/assets/readme/setup-overview.png)
 
-![策略配对](https://github.com/user-attachments/assets/bb7b66fc-db1b-4e1c-a174-32bc6bea49c6)
+![策略配对](https://raw.githubusercontent.com/Cursivez/journalit/main/assets/readme/setup-pairs.png)
 
-![策略对比](https://github.com/user-attachments/assets/8eaf5509-cf27-4e73-8c8c-2a9cf0da6c43)
+![策略对比](https://raw.githubusercontent.com/Cursivez/journalit/main/assets/readme/setup-comparison.png)
 
 ### 布局构建器
 
-![Layout Builder](https://github.com/user-attachments/assets/48bcc59a-2b17-4478-98b3-dce8677cca47)
+![Layout Builder](https://raw.githubusercontent.com/Cursivez/journalit/main/assets/readme/layout-builder.png)
 
-![Layout Builder](https://github.com/user-attachments/assets/66744217-b3b1-46ec-bb65-ca2debcd72da)
+![Layout Builder](https://raw.githubusercontent.com/Cursivez/journalit/main/assets/readme/layout-builder-preview.png)
 
 ### 交易日志与图库
 
-![Trade Log](https://github.com/user-attachments/assets/09586646-50a2-4fd1-970f-83e926cab19a)
+![Trade Log](https://raw.githubusercontent.com/Cursivez/journalit/main/assets/readme/trade-log.png)
 
-![图库](https://github.com/user-attachments/assets/1bb496ab-a165-43c6-83f0-500565f2a1c3)
+![图库](https://raw.githubusercontent.com/Cursivez/journalit/main/assets/readme/gallery.png)
 
 ### Trade Import
 
-![Trade Import](https://github.com/user-attachments/assets/68121823-8b24-4024-b676-a4199c81f207)
+![Trade Import](https://raw.githubusercontent.com/Cursivez/journalit/main/assets/readme/trade-import.png)
 
 ### 账户仪表盘
 
-![Account Dashboard](https://github.com/user-attachments/assets/dbd1cd69-3f8b-4af8-883c-460dbfb8944b)
+![Account Dashboard](https://raw.githubusercontent.com/Cursivez/journalit/main/assets/readme/account-dashboard.png)
 
 ### 账户页面
 
-![Account Pages](https://github.com/user-attachments/assets/8eeb0f2d-a8d8-412e-bf23-cb21e3a0401b)
+![Account Pages](https://raw.githubusercontent.com/Cursivez/journalit/main/assets/readme/account-pages.png)
 
 <a id="supported-brokers"></a>
 

@@ -58,11 +58,20 @@ type GuideStepPlacement =
   | 'right'
   | 'right-top';
 
+
+export interface GuideStepAction {
+  label: string;
+  run: () => void;
+}
+
 export interface GuideStepDefinition {
   id: string;
   title: string;
   description: string;
   progression: GuideStepProgression;
+  action?: GuideStepAction;
+  
+  onDismiss?: () => void;
   targetId?: string;
   requiredActionId?: string;
   placement?: GuideStepPlacement;

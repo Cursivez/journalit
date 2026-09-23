@@ -1,7 +1,7 @@
 
 
 import JournalitPlugin from '../main';
-import { QuickLinkAction } from '../settings/types';
+import type { EntityShortcutTarget, QuickLinkAction } from '../settings/types';
 import { TradeFormModal } from '../components/forms/trade/TradeFormModal';
 import { PositionSizeCalculatorModal } from '../components/modals/PositionSizeCalculatorModal';
 import { openQuickTradeImportModal } from '../components/csv/QuickTradeImportModal';
@@ -16,6 +16,42 @@ interface QuickLinkActionOptions {
 
 export class QuickLinkActionResolver {
   constructor(private plugin: JournalitPlugin) {}
+
+  async executeEntityShortcut(
+    target: EntityShortcutTarget,
+    options: QuickLinkActionOptions = {}
+  ): Promise<void> {
+    const createNewLeaf = options.createNewLeaf ?? true;
+    const focusLeaf = options.focusLeaf ?? true;
+
+    switch (target.kind) {
+      case 'account':
+        await this.plugin.viewManager.openAccountPageView(target.accountName, {
+          newTab: createNewLeaf,
+          focusLeaf,
+        });
+        return;
+      case 'setup': {
+        const setupService = await this.plugin.serviceManager.getSetupService();
+        const setup = await setupService.getSetupById(target.setupId);
+        if (!setup) return;
+        await this.plugin.viewManager.openSetupsView(
+          {
+            page: 'detail',
+            setupId: setup.id,
+            setupName: setup.name,
+            setupPath: setup.filePath,
+          },
+          { newTab: createNewLeaf, focusLeaf }
+        );
+        return;
+      }
+      default: {
+        const exhaustiveTarget: never = target;
+        return exhaustiveTarget;
+      }
+    }
+  }
 
   
   async executeAction(
@@ -103,6 +139,10 @@ export class QuickLinkActionResolver {
         openQuickTradeImportModal(this.plugin);
         break;
 
+      case 'syncTradesNow':
+        await this.plugin.ensureTradeSyncCoordinator().syncNow();
+        break;
+
       case 'openLayoutBuilder':
         await this.plugin.viewManager.openTemplateBuilderView();
         break;
@@ -117,6 +157,10 @@ export class QuickLinkActionResolver {
 
       case 'openHome':
         await this.plugin.viewManager.openHomeView('overview');
+        break;
+
+      case 'openSettings':
+        this.plugin.openSettings();
         break;
 
       case 'openQuarterlyReview':

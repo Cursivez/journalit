@@ -336,17 +336,3 @@ export function calculateUnrealizedPnL(
     basis.remainingSize
   );
 }
-
-
-export function calculateTotalUnrealizedPnL(
-  trades: readonly UnrealizedPnLTradeInput[]
-): number {
-  let total = 0;
-  for (const trade of trades) {
-    const unrealized = calculateUnrealizedPnL(trade);
-    if (unrealized !== null) {
-      total += unrealized;
-    }
-  }
-  return total;
-}

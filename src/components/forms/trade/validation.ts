@@ -1,6 +1,7 @@
 
 
 import {
+  TakeProfitTarget,
   TradeFormData,
   TradeFormErrors,
   shouldShowTradeDividends,
@@ -17,7 +18,10 @@ import { formatCost } from '../../../utils/formatting';
 import { t } from '../../../lang/helpers';
 import { normalizeTradeExecution } from '../../../services/trade/core/TradeExecutionNormalization';
 import { isUnrealizedSnapshotExecutionValid } from '../../../utils/unrealizedPnl';
-import { resolveFormExitExplicitness } from './exitExplicitness';
+import {
+  isEmptyExitPlaceholder,
+  resolveFormExitExplicitness,
+} from './exitExplicitness';
 import { resolveForexQuoteCurrency } from '../../../utils/forexCurrency';
 
 
@@ -42,6 +46,52 @@ export {
   calculateStopLossRiskAmount,
   canCalculateStopLossRiskAmount,
   resolveEffectiveRiskAmount,
+};
+
+
+const TAKE_PROFIT_SIZE_TOLERANCE = 1e-9;
+
+
+export const resolveTakeProfitCloseSize = (
+  target: TakeProfitTarget,
+  positionSize: number | undefined
+): number => {
+  if (typeof target.size === 'number' && Number.isFinite(target.size)) {
+    return Math.max(target.size, 0);
+  }
+
+  if (
+    positionSize !== undefined &&
+    typeof target.closePercent === 'number' &&
+    Number.isFinite(target.closePercent)
+  ) {
+    return Math.max((target.closePercent / 100) * positionSize, 0);
+  }
+
+  return 0;
+};
+
+
+export const resolveTakeProfitClosePercent = (
+  target: TakeProfitTarget,
+  positionSize: number | undefined
+): number => {
+  if (
+    typeof target.closePercent === 'number' &&
+    Number.isFinite(target.closePercent)
+  ) {
+    return Math.max(target.closePercent, 0);
+  }
+
+  if (
+    positionSize !== undefined &&
+    typeof target.size === 'number' &&
+    Number.isFinite(target.size)
+  ) {
+    return Math.max((target.size / positionSize) * 100, 0);
+  }
+
+  return 0;
 };
 
 
@@ -167,11 +217,7 @@ export const validateTradeForm = (
       
       
       const meaningfulExits = data.exits.filter(
-        (exit) =>
-          (exit.price !== undefined &&
-            exit.price !== null &&
-            exit.price !== 0) ||
-          (exit.size !== undefined && exit.size !== null && exit.size !== 0)
+        (exit) => !isEmptyExitPlaceholder(exit)
       );
 
       
@@ -190,13 +236,7 @@ export const validateTradeForm = (
           
           
           
-          const isEmptyPlaceholder =
-            (exit.price === undefined ||
-              exit.price === null ||
-              exit.price === 0) &&
-            (exit.size === undefined || exit.size === null || exit.size === 0);
-
-          if (isEmptyPlaceholder && isOpenTrade) {
+          if (isEmptyExitPlaceholder(exit) && isOpenTrade) {
             exitsErrors[index] = {}; 
             return;
           }
@@ -653,10 +693,15 @@ export const validateTradeForm = (
 
   if (!isMissedTrade && !isBacktestTrade && data.takeProfits?.length) {
     const takeProfitErrors = data.takeProfits.map((target) => {
-      const targetErrors: { price?: string; closePercent?: string } = {};
+      const targetErrors: {
+        price?: string;
+        closePercent?: string;
+        size?: string;
+      } = {};
       const hasPrice = target.price !== undefined && target.price !== null;
       const hasClosePercent =
         target.closePercent !== undefined && target.closePercent !== null;
+      const hasSize = target.size !== undefined && target.size !== null;
 
       if (hasPrice) {
         if (typeof target.price !== 'number') {
@@ -666,7 +711,7 @@ export const validateTradeForm = (
             'trade.validation.take-profit-price-valid-number'
           );
         }
-      } else if (hasClosePercent) {
+      } else if (hasClosePercent || hasSize) {
         targetErrors.price = t('trade.validation.take-profit-price-required');
       }
 
@@ -686,6 +731,14 @@ export const validateTradeForm = (
         }
       }
 
+      if (hasSize) {
+        if (typeof target.size !== 'number' || !Number.isFinite(target.size)) {
+          targetErrors.size = t('trade.validation.take-profit-size-number');
+        } else if (target.size <= 0) {
+          targetErrors.size = t('trade.validation.take-profit-size-positive');
+        }
+      }
+
       return targetErrors;
     });
     const totalClosePercent = data.takeProfits.reduce(
@@ -701,9 +754,41 @@ export const validateTradeForm = (
       takeProfitErrors[0] = firstTargetErrors;
     }
 
+    const totalPositionSize =
+      typeof data.positionSize === 'number' &&
+      Number.isFinite(data.positionSize) &&
+      data.positionSize > 0
+        ? data.positionSize
+        : undefined;
+    const hasSizeTarget = data.takeProfits.some(
+      (target) =>
+        typeof target.size === 'number' && Number.isFinite(target.size)
+    );
+
+    
+    
+    
+    
+    if (hasSizeTarget && totalPositionSize !== undefined) {
+      const totalCloseSize = data.takeProfits.reduce(
+        (total, target) =>
+          total + resolveTakeProfitCloseSize(target, totalPositionSize),
+        0
+      );
+
+      if (totalCloseSize - totalPositionSize > TAKE_PROFIT_SIZE_TOLERANCE) {
+        const firstTargetErrors = takeProfitErrors[0] || {};
+        firstTargetErrors.size = t(
+          'trade.validation.take-profit-total-size-range'
+        );
+        takeProfitErrors[0] = firstTargetErrors;
+      }
+    }
+
     if (
       takeProfitErrors.some(
-        (targetErrors) => targetErrors.price || targetErrors.closePercent
+        (targetErrors) =>
+          targetErrors.price || targetErrors.closePercent || targetErrors.size
       )
     ) {
       errors.takeProfits = takeProfitErrors;

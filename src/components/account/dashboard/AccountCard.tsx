@@ -1,36 +1,34 @@
 
 
 import React, { useMemo } from 'react';
-import { Info, Network, Repeat2 } from '../../shared/icons/ObsidianIcon';
 import { t } from '../../../lang/helpers';
 import { cssVars } from '../../../styles/inlineStylePolicy';
 import {
-  calculateAccountAge,
   calculateDrawdownUsed,
   calculateProfitTargetProgress,
-  calculateTotalCosts,
-  calculateAccountWithdrawals,
   calculateAccountGrowthAmount,
   calculateAccountGrowthPercent,
-  getWithdrawalsByMonth,
   haveSameRelevantTransactions,
 } from './utils';
-import { WithdrawalBreakdownTooltip } from './WithdrawalBreakdownTooltip';
-import { Tooltip } from '../../shared/Tooltip';
+import {
+  AccountCardFooter,
+  AccountKeyMetrics,
+  calculateAccountCardDetailMetrics,
+} from './AccountCardDetails';
+import { AccountCopyBadges, useCopiedByAccounts } from './AccountCopyBadges';
 import { AccountCardProps } from './types';
 import { AccountData, DrawdownType } from '../../../services/account/types';
 import { useCurrency } from '../../../contexts/CurrencyContext';
 import { useDisplayFormatter } from '../../../hooks/useDisplayPolicy';
-import { getActiveCopyTradingPeriod } from '../../../utils/accountCopyTrading';
-import { normalizeAccountLookupKey } from '../../../services/trade/core/TradeAccountIdentity';
-import { usePlugin } from '../../../hooks/usePlugin';
 import { parseCuratedCurrencyCode } from '../../../utils/currencyConfig';
+import { PropChallengeAccountCard } from './PropChallengeAccountCard';
+import { applyPropChallengeRuleProjection } from '../../../services/propChallenge/PropChallengeRuleProjection';
 
 type FormatDisplayValue = ReturnType<typeof useDisplayFormatter>['formatValue'];
 type AccountCardMetrics = ReturnType<typeof calculateAccountCardMetrics>;
 
 function calculateAccountCardMetrics(account: AccountData) {
-  const accountAge = calculateAccountAge(account.createdDate);
+  const detailMetrics = calculateAccountCardDetailMetrics(account);
   const growthAmount = calculateAccountGrowthAmount(account);
   const growthPercent = calculateAccountGrowthPercent(account);
 
@@ -49,42 +47,14 @@ function calculateAccountCardMetrics(account: AccountData) {
     drawdownProgressClass = 'safe';
   }
 
-  const totalWithdrawals = calculateAccountWithdrawals(account);
-  const withdrawalsByMonth = getWithdrawalsByMonth([account]);
-
-  const hasDrawdownSet =
-    account.drawdownType !== DrawdownType.NONE &&
-    Boolean(
-      account.drawdownAmount > 0 ||
-      (account.drawdownType === DrawdownType.MANUAL &&
-        account.currentDrawdownSnapshot)
-    );
-  const hasProfitTargetSet =
-    account.hasProfitTarget && account.profitTarget > 0;
-  const drawdownStatus = hasDrawdownSet
-    ? drawdownUsed >= 100
-      ? 'BREACHED'
-      : 'IN_PROGRESS'
-    : null;
-  const profitTargetStatus = hasProfitTargetSet
-    ? profitTargetProgress >= 100
-      ? 'ACHIEVED'
-      : 'IN_PROGRESS'
-    : null;
-
   return {
-    accountAge,
+    ...detailMetrics,
     growthAmount,
     growthPercent,
     profitTargetProgress,
     profitTargetProgressClass,
     drawdownUsed,
     drawdownProgressClass,
-    totalWithdrawals,
-    totalCosts: calculateTotalCosts(account),
-    withdrawalsByMonth,
-    drawdownStatus,
-    profitTargetStatus,
   };
 }
 
@@ -95,6 +65,7 @@ function AccountCardHeader({
   growthClass,
   formatValue,
   copiedByAccounts,
+  onOpen,
 }: {
   account: AccountData;
   currency: string;
@@ -102,60 +73,29 @@ function AccountCardHeader({
   growthClass: string;
   formatValue: FormatDisplayValue;
   copiedByAccounts: Array<{ account: string; multiplier: number }>;
+  onOpen: () => void;
 }) {
-  const activeCopyPeriod = getActiveCopyTradingPeriod(account);
-  const isCopyAccount = activeCopyPeriod !== null;
-  const isBaseAccount = copiedByAccounts.length > 0;
-
   return (
     <div className="account-card-header">
       <div className="account-identity">
-        <div className="account-name">{account.name}</div>
-        <div className="account-card-badges">
-          <div className="account-type-badge">{account.accountType}</div>
-          {isBaseAccount && (
-            <Tooltip
-              content={
-                <div className="account-copy-badge-tooltip">
-                  <div className="account-copy-badge-tooltip-title">
-                    {t('account-dashboard.copy-badge.copied-by')}
-                  </div>
-                  {copiedByAccounts.map((copyAccount) => (
-                    <div
-                      key={copyAccount.account}
-                      className="account-copy-badge-tooltip-row"
-                    >
-                      <span>{copyAccount.account}</span>
-                      <span>{copyAccount.multiplier}x</span>
-                    </div>
-                  ))}
-                </div>
-              }
-              delay={0}
-              preferredPosition="top"
-            >
-              <div className="account-base-badge">
-                <Network size={12} aria-hidden="true" />
-                {t('account-dashboard.copy-badge.base')}
-              </div>
-            </Tooltip>
-          )}
-          {isCopyAccount && (
-            <Tooltip
-              content={t('account-dashboard.copy-badge.copies-tooltip', {
-                account: activeCopyPeriod.baseAccount,
-                multiplier: String(activeCopyPeriod.multiplier),
-              })}
-              delay={0}
-              preferredPosition="top"
-            >
-              <div className="account-copy-badge">
-                <Repeat2 size={12} aria-hidden="true" />
-                {t('account-dashboard.copy-badge.copy')}
-              </div>
-            </Tooltip>
-          )}
-        </div>
+        
+        <button
+          type="button"
+          className="account-name journalit-account-card-name"
+          onClick={(event) => {
+            event.stopPropagation();
+            onOpen();
+          }}
+        >
+          {account.name}
+        </button>
+        <AccountCopyBadges
+          account={account}
+          copiedByAccounts={copiedByAccounts}
+          leading={
+            <div className="account-type-badge">{account.accountType}</div>
+          }
+        />
       </div>
       <div className="account-balance">
         <div className="balance-amount">
@@ -187,115 +127,21 @@ function AccountCardHeader({
   );
 }
 
-function AccountKeyMetrics({
-  account,
-  currency,
-  metrics,
-  formatValue,
-}: {
+
+const RegularAccountCard: React.FC<{
   account: AccountData;
-  currency: string;
-  metrics: AccountCardMetrics;
-  formatValue: FormatDisplayValue;
-}) {
-  const withdrawalsValue = formatValue({
-    kind: 'money',
-    value: metrics.totalWithdrawals,
-    currencyCode: currency,
-    notation: 'compact',
-  });
-
-  return (
-    <div className="key-metrics">
-      <div className="metric-item">
-        <div className="metric-value">{account.metrics.totalTrades}</div>
-        <div className="metric-label">{t('account-card.metric.trades')}</div>
-      </div>
-      {metrics.withdrawalsByMonth.length > 0 ? (
-        <Tooltip
-          content={
-            <WithdrawalBreakdownTooltip
-              withdrawalsByMonth={metrics.withdrawalsByMonth}
-            />
-          }
-          delay={200}
-          preferredPosition="bottom"
-        >
-          <div className="metric-item">
-            <div className="metric-value">{withdrawalsValue}</div>
-            <div className="metric-label">
-              {t('account-card.metric.withdrawals')}
-              <Info size={8} className="withdrawal-info-icon" />
-            </div>
-          </div>
-        </Tooltip>
-      ) : (
-        <div className="metric-item">
-          <div className="metric-value">{withdrawalsValue}</div>
-          <div className="metric-label">
-            {t('account-card.metric.withdrawals')}
-          </div>
-        </div>
-      )}
-      <div className="metric-item">
-        <div className="metric-value">{metrics.accountAge}</div>
-        <div className="metric-label">{t('account-card.metric.age')}</div>
-      </div>
-    </div>
+  onClick: () => void;
+}> = ({ account: sourceAccount, onClick }) => {
+  
+  
+  
+  
+  const account = useMemo(
+    () => applyPropChallengeRuleProjection(sourceAccount),
+    [sourceAccount]
   );
-}
-
-function AccountCardFooter({
-  account,
-  currency,
-  metrics,
-  formatValue,
-}: {
-  account: AccountData;
-  currency: string;
-  metrics: AccountCardMetrics;
-  formatValue: FormatDisplayValue;
-}) {
-  return (
-    <div className="account-card-footer">
-      <div className="footer-metric">
-        <span className="footer-label">{t('account-card.footer.monthly')}</span>
-        <span className="footer-value">
-          {account.monthlyCost && account.monthlyCost > 0
-            ? `${formatValue({
-                kind: 'fee',
-                value: account.monthlyCost,
-                currencyCode: currency,
-              })}/month`
-            : 'N/A'}
-        </span>
-      </div>
-      <div className="footer-metric">
-        <span className="footer-label">
-          {t('account-card.footer.total-costs')}
-        </span>
-        <span className="footer-value">
-          {metrics.totalCosts > 0
-            ? formatValue({
-                kind: 'fee',
-                value: metrics.totalCosts,
-                currencyCode: currency,
-              })
-            : 'N/A'}
-        </span>
-      </div>
-    </div>
-  );
-}
-
-
-const AccountCardComponent: React.FC<AccountCardProps> = ({
-  account,
-  onClick,
-}) => {
   const { currency: globalCurrency } = useCurrency();
   const { formatValue, shouldMask } = useDisplayFormatter();
-  const plugin = usePlugin();
 
   
   const currency =
@@ -314,27 +160,7 @@ const AccountCardComponent: React.FC<AccountCardProps> = ({
     [account]
   );
 
-  const copiedByAccounts = useMemo(() => {
-    const accountMetadata = plugin?.settings.account?.accountMetadata ?? {};
-    const accountLookupKey = normalizeAccountLookupKey(account.name);
-
-    return Object.values(accountMetadata).reduce<
-      Array<{ account: string; multiplier: number }>
-    >((acc, metadata) => {
-      const activeCopyPeriod = getActiveCopyTradingPeriod(metadata);
-      if (
-        activeCopyPeriod &&
-        normalizeAccountLookupKey(activeCopyPeriod.baseAccount) ===
-          accountLookupKey
-      ) {
-        acc.push({
-          account: metadata.name,
-          multiplier: activeCopyPeriod.multiplier,
-        });
-      }
-      return acc;
-    }, []);
-  }, [account.name, plugin?.settings.account?.accountMetadata]);
+  const copiedByAccounts = useCopiedByAccounts(account.name);
 
   const growthClass = isPnlMasked
     ? ''
@@ -343,20 +169,9 @@ const AccountCardComponent: React.FC<AccountCardProps> = ({
       : 'negative';
 
   return (
-    <div
-      className="account-card"
-      onClick={onClick}
-      onKeyDown={(e) => {
-        if (e.key !== 'Enter' && e.key !== ' ') {
-          return;
-        }
-
-        e.preventDefault();
-        onClick();
-      }}
-      role="button"
-      tabIndex={0}
-    >
+    
+    
+    <div className="account-card" onClick={onClick}>
       <AccountCardHeader
         account={account}
         currency={currency}
@@ -364,6 +179,7 @@ const AccountCardComponent: React.FC<AccountCardProps> = ({
         growthClass={growthClass}
         formatValue={formatValue}
         copiedByAccounts={copiedByAccounts}
+        onOpen={onClick}
       />
 
       
@@ -382,21 +198,9 @@ const AccountCardComponent: React.FC<AccountCardProps> = ({
             className={`progress-item ${!(account.hasProfitTarget && account.profitTarget > 0) ? 'not-set' : ''}`}
           >
             <div className="progress-header">
-              <div className="progress-label-with-badge">
-                <span className="progress-label">
-                  {t('account-card.progress.profit-target')}
-                </span>
-                {calculatedMetrics.profitTargetStatus &&
-                  !isProfitTargetMasked && (
-                    <span
-                      className={`dashboard-status-badge ${calculatedMetrics.profitTargetStatus === 'ACHIEVED' ? 'achieved' : 'in-progress'}`}
-                    >
-                      {calculatedMetrics.profitTargetStatus === 'ACHIEVED'
-                        ? t('account-card.status.achieved')
-                        : t('account-card.status.in-progress')}
-                    </span>
-                  )}
-              </div>
+              <span className="progress-label">
+                {t('account.prop-challenge.rule.profit_target')}
+              </span>
               <div
                 className={`progress-value ${!(account.hasProfitTarget && account.profitTarget > 0) ? 'not-set' : ''}`}
               >
@@ -436,20 +240,9 @@ const AccountCardComponent: React.FC<AccountCardProps> = ({
             className={`progress-item ${!(account.drawdownType !== DrawdownType.NONE && account.drawdownAmount > 0) ? 'not-set' : ''}`}
           >
             <div className="progress-header">
-              <div className="progress-label-with-badge">
-                <span className="progress-label">
-                  {t('account-card.progress.drawdown-used')}
-                </span>
-                {calculatedMetrics.drawdownStatus && !isDrawdownMasked && (
-                  <span
-                    className={`dashboard-status-badge ${calculatedMetrics.drawdownStatus === 'BREACHED' ? 'breached' : 'in-progress'}`}
-                  >
-                    {calculatedMetrics.drawdownStatus === 'BREACHED'
-                      ? t('account-card.status.breached')
-                      : t('account-card.status.in-progress')}
-                  </span>
-                )}
-              </div>
+              <span className="progress-label">
+                {t('account.prop-challenge.rule.drawdown')}
+              </span>
               <div
                 className={`progress-value ${!(account.drawdownType !== DrawdownType.NONE && account.drawdownAmount > 0) ? 'not-set' : ''}`}
               >
@@ -497,6 +290,22 @@ const AccountCardComponent: React.FC<AccountCardProps> = ({
   );
 };
 
+const AccountCardComponent: React.FC<AccountCardProps> = ({
+  account,
+  propChallengeData,
+  tradingDayCutoffTime,
+  onClick,
+}) =>
+  propChallengeData ? (
+    <PropChallengeAccountCard
+      data={propChallengeData}
+      tradingDayCutoffTime={tradingDayCutoffTime}
+      onClick={onClick}
+    />
+  ) : (
+    <RegularAccountCard account={account} onClick={onClick} />
+  );
+
 
 
 const areEqual = (prevProps: AccountCardProps, nextProps: AccountCardProps) => {
@@ -525,6 +334,8 @@ const areEqual = (prevProps: AccountCardProps, nextProps: AccountCardProps) => {
       nextProps.account.transactions
     ) &&
     prevProps.account.monthlyCost === nextProps.account.monthlyCost &&
+    prevProps.propChallengeData === nextProps.propChallengeData &&
+    prevProps.tradingDayCutoffTime === nextProps.tradingDayCutoffTime &&
     prevProps.onClick === nextProps.onClick
   );
 };

@@ -9,6 +9,7 @@ import {
 } from '../backend/ApiClient';
 import { clearPersistedBackendAuthSession } from '../backend/BackendAuthFailure';
 import { ApiError } from '../../types/errors';
+import { DemoSyncGate } from '../../demo/DemoSyncGate';
 import { getPluginInstance } from '../../utils/pluginContext';
 import type {
   TradeImportAnalyseRequest,
@@ -32,6 +33,12 @@ const asRecord = (value: unknown): Record<string, unknown> | null =>
   value && typeof value === 'object' && !Array.isArray(value)
     ? Object.fromEntries(Object.entries(value))
     : null;
+
+const commitAccountIdentity = (value: unknown): 'broker' | 'name' => {
+  if (value === undefined || value === null) return 'name';
+  if (value === 'broker' || value === 'name') return value;
+  throw new Error('Invalid Trade Import commit trade response');
+};
 
 const stringArray = (value: unknown): string[] =>
   Array.isArray(value)
@@ -606,7 +613,13 @@ const commitItemResultsArray = (
   });
 };
 
-const previewItemsArray = (value: unknown): TradeImportPreviewItem[] => {
+const previewItemsArray = (
+  value: unknown,
+  outcome: TradeImportPreviewOutcome
+): TradeImportPreviewItem[] => {
+  if ((value === undefined || value === null) && outcome === 'failed') {
+    return [];
+  }
   if (!Array.isArray(value)) {
     throw new Error('Invalid Trade Import preview items response');
   }
@@ -826,7 +839,9 @@ const ensureTradeImportCapabilities = (
   };
 };
 
-const ensureAnalyseResponse = (value: unknown): TradeImportAnalyseResponse => {
+export const parseTradeImportAnalyseResponse = (
+  value: unknown
+): TradeImportAnalyseResponse => {
   const record = asRecord(value);
   if (
     !record ||
@@ -871,10 +886,18 @@ const ensureAnalyseResponse = (value: unknown): TradeImportAnalyseResponse => {
     brokerCandidates: unknownArray(record.brokerCandidates).flatMap((item) => {
       const candidate = asRecord(item);
       if (!candidate || typeof candidate.broker !== 'string') return [];
+      if (
+        typeof candidate.confidence !== 'number' ||
+        !Number.isFinite(candidate.confidence) ||
+        candidate.confidence < 0 ||
+        candidate.confidence > 1
+      ) {
+        throw new Error('Invalid Trade Import analyse response');
+      }
       return [
         {
           broker: candidate.broker,
-          confidence: numberValue(candidate.confidence),
+          confidence: candidate.confidence,
           reasons: stringArray(candidate.reasons),
         },
       ];
@@ -910,6 +933,7 @@ export const parseTradeImportPreviewResponse = (
     throw new Error('Invalid Trade Import preview response');
   }
   const summary = asRecord(record.summary);
+  const outcome = previewOutcome(record.outcome);
   return {
     importId: record.importId,
     correlationId:
@@ -920,7 +944,7 @@ export const parseTradeImportPreviewResponse = (
         ? record.previewExpiresAt
         : undefined,
     schemaVersion: 'trade-import-preview-v1',
-    outcome: previewOutcome(record.outcome),
+    outcome,
     broker: typeof record.broker === 'string' ? record.broker : '',
     adapterVersion:
       typeof record.adapterVersion === 'string' ? record.adapterVersion : '',
@@ -932,7 +956,7 @@ export const parseTradeImportPreviewResponse = (
       failedRowCount: numberValue(summary?.failedRowCount),
       skippedIncompleteCount: numberValue(summary?.skippedIncompleteCount),
     },
-    items: previewItemsArray(record.items),
+    items: previewItemsArray(record.items, outcome),
     diagnostics: diagnosticsArray(record.diagnostics),
   };
 };
@@ -990,6 +1014,7 @@ const ensureCommitResponse = (value: unknown): TradeImportCommitResponse => {
             typeof tradeRecord.accountId === 'string'
               ? tradeRecord.accountId
               : null,
+          accountIdentity: commitAccountIdentity(tradeRecord.accountIdentity),
           importId:
             typeof tradeRecord.importId === 'string'
               ? tradeRecord.importId
@@ -1069,8 +1094,11 @@ async function requestWithAuthRetry(
   response: RequestUrlResponse;
   requestAuthToken: string | null;
 }> {
-  const { result, requestAuthToken } = await sendWithAuthRetry((accessToken) =>
-    requestUrl(buildRequest(accessToken))
+  const { result, requestAuthToken } = await sendWithAuthRetry(
+    (accessToken) => {
+      DemoSyncGate.assertNetworkAllowed();
+      return requestUrl(buildRequest(accessToken));
+    }
   );
   return { response: result, requestAuthToken };
 }
@@ -1081,6 +1109,7 @@ function sendMultipart(
   request: unknown,
   requestAuthToken: string | null
 ): Promise<{ status: number; responseBody: unknown }> {
+  DemoSyncGate.assertNetworkAllowed();
   const form = new FormData();
   form.append('file', file);
   form.append(
@@ -1160,7 +1189,7 @@ export class BackendTradeImportService {
     request: TradeImportAnalyseRequest
   ): Promise<TradeImportAnalyseResponse> {
     return postMultipart('/api/v1/trade-import/analyse', file, request).then(
-      ensureAnalyseResponse
+      parseTradeImportAnalyseResponse
     );
   }
 

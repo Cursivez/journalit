@@ -177,6 +177,7 @@ export const SetupPerformanceChartSection: React.FC<{
   onMetricKeyChange: (metricKey: MetricKey) => void;
   onPairMetricKeyChange: (metricKey: SetupPairMetricKey) => void;
   onSelectedSetupIdsChange: (setupIds: string[] | undefined) => void;
+  onSetupSelected: (setupId: string) => void;
 }> = ({
   plugin,
   viewModels,
@@ -188,6 +189,7 @@ export const SetupPerformanceChartSection: React.FC<{
   onMetricKeyChange,
   onPairMetricKeyChange,
   onSelectedSetupIdsChange,
+  onSetupSelected,
 }) => {
   const { formatValue, shouldMask } = useDisplayFormatter();
   const registerChartTarget = useGuideTarget(SETUPS_CHART_TARGET_ID);
@@ -463,6 +465,7 @@ export const SetupPerformanceChartSection: React.FC<{
             pairMetric={pairMetric}
             pnlChartModel={pnlChartModel}
             onPairSelected={setSelectedPairKey}
+            onSetupSelected={onSetupSelected}
           />
         )
       ) : null}
@@ -672,6 +675,7 @@ const SetupOverviewChartBody: React.FC<{
   isMasked: boolean;
   formatValue: ReturnType<typeof useDisplayFormatter>['formatValue'];
   onPairSelected: (pairKey: string) => void;
+  onSetupSelected: (setupId: string) => void;
 }> = ({
   chartData,
   pairChartData,
@@ -684,6 +688,7 @@ const SetupOverviewChartBody: React.FC<{
   isMasked,
   formatValue,
   onPairSelected,
+  onSetupSelected,
 }) => (
   <div
     className={`journalit-chart-widget__body journalit-setups-performance-widget__body${mode === 'cumulative' ? ' journalit-setups-overview-pnl-widget__body' : ''}${mode === 'pairs' ? ' journalit-setups-pairs-widget__body' : ''}`}
@@ -722,6 +727,7 @@ const SetupOverviewChartBody: React.FC<{
           metricKey={metric.key}
           metricLabel={t(metric.labelKey)}
           isChartMasked={isMasked}
+          onPointClick={onSetupSelected}
         />
       )}
     </React.Suspense>

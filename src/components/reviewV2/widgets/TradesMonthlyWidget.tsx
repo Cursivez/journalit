@@ -23,6 +23,11 @@ import { getSingleExplicitCurrency } from '../../../utils/currencyAggregation';
 import { CurrencyConversionInfo } from '../../shared/display/CurrencyConversionInfo';
 import { getTradeAccountNames } from './shared/accountDisplay';
 import { formatAccountTooltipSummary } from './shared/accountTooltipSummary';
+import { parseLocalDateSafe } from '../../../utils/dateUtils';
+import {
+  getReviewWidgetPeriodAriaLabel,
+  openReviewWidgetPeriod,
+} from '../reviewWidgetNavigation';
 
 type ReviewPeriodTrade = Record<string, unknown> & {
   tradeId?: string;
@@ -303,6 +308,21 @@ export const TradesMonthlyWidget: React.FC<TradesMonthlyWidgetProps> = ({
           data={chartData}
           height={height}
           currencyOverride={getSingleExplicitCurrency(trades)}
+          navigation={
+            preview
+              ? undefined
+              : {
+                  getPointAriaLabel: (point) =>
+                    getReviewWidgetPeriodAriaLabel('monthly', point.date),
+                  onPointClick: (point) => {
+                    if (!point.originalDate) return;
+                    const date = parseLocalDateSafe(`${point.originalDate}-01`);
+                    if (date) {
+                      void openReviewWidgetPeriod(plugin, 'monthly', date);
+                    }
+                  },
+                }
+          }
         />
       </div>
     </div>

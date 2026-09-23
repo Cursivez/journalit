@@ -24,6 +24,7 @@ import { normalizeStringArray } from '../../../utils/dataUtils';
 import {
   getAllocatedRealizedPnlEvents,
   getAnalyticsDateBasis,
+  getProjectedRealizedEventTrades,
   getTradeAnalyticsDate,
   getTradeAnalyticsTradingDay,
 } from '../../../utils/tradeAnalyticsDate';
@@ -75,7 +76,12 @@ import {
   resolveBreakEvenAccountBalances,
 } from '../../../services/trade/core/BreakEvenAccountBalance';
 import { normalizeTradeExecutionForAnalytics } from '../../../services/trade/core/TradeExecutionAnalytics';
+import { calculateProfitFactor } from '../../../utils/profitFactor';
 import { applyTradeFilters } from '../../shared/filters/filterUtils';
+import {
+  accountsRequiringCopiedRows,
+  resolveAccountPhaseWindowsFromPlugin,
+} from '../../shared/filters/accountPhaseScope';
 import {
   getCopyTradingPeriodForEntryDate,
   isCopyTradingBaseEligible,
@@ -748,6 +754,8 @@ export interface Trade {
   account?: string[];
 
   accountId?: string; 
+  canonicalAccountId?: string;
+  canonicalAccountIdentity?: 'broker' | 'name';
   accountRefs?: TradeAccountRef[];
   accountLookupKeys?: string[];
   accountNamesNormalized?: string[];
@@ -773,6 +781,7 @@ export interface Trade {
   takeProfits?: Array<{
     price?: number;
     closePercent?: number;
+    size?: number;
   }>;
   riskAmount?: number; 
   rMultiple?: number; 
@@ -936,6 +945,8 @@ const TRADE_PROPERTY_KEYS = new Set<string>([
 
 export interface DashboardData {
   trades: Trade[];
+  
+  excursionTrades?: Trade[];
   
   unrealizedTrades?: Trade[];
   drawdownCapitalBasis?: DrawdownCapitalBasis;
@@ -1157,6 +1168,18 @@ const fetchTradeData = async (
                   Number.isFinite(frontmatter.accountId)
                 ? String(frontmatter.accountId)
                 : undefined,
+          canonicalAccountId:
+            getStringField(frontmatter, 'canonicalAccountId')?.trim() ||
+            undefined,
+          canonicalAccountIdentity: (() => {
+            const identity = getStringField(
+              frontmatter,
+              'canonicalAccountIdentity'
+            );
+            return identity === 'broker' || identity === 'name'
+              ? identity
+              : undefined;
+          })(),
           backendTradeId:
             frontmatter.backendTradeId !== undefined &&
             frontmatter.backendTradeId !== null
@@ -1205,6 +1228,9 @@ const fetchTradeData = async (
                     }),
                     ...(target.closePercent !== undefined && {
                       closePercent: Number(target.closePercent),
+                    }),
+                    ...(target.size !== undefined && {
+                      size: Number(target.size),
                     }),
                   },
                 ];
@@ -1355,13 +1381,19 @@ const fetchTradeData = async (
 
     const baseTrades = await Promise.all(tradeFiles.map(processTradeFile));
 
+    
+    
+    const copyMaterializationAccounts = accountsRequiringCopiedRows(
+      filters.accounts,
+      filters.accountPhases
+    );
     const trades = baseTrades.flatMap((trade) =>
       trade
         ? [
             trade,
             ...createCopiedDashboardTrades(
               trade,
-              filters.accounts,
+              copyMaterializationAccounts,
               plugin,
               accountBalanceLookup
             ),
@@ -1387,6 +1419,10 @@ const fetchTradeData = async (
       isTradeOpen: isTradeOpenInDashboard,
       breakEvenSettings,
       getBreakEvenBalance: (trade) => trade.breakEvenAccountCurrentBalance,
+      accountPhaseWindows: resolveAccountPhaseWindowsFromPlugin(
+        filters.accountPhases,
+        plugin
+      ),
     });
   } catch (error) {
     console.error('Error fetching trade data:', error);
@@ -1610,6 +1646,33 @@ type ExcursionMetrics = Pick<
   | 'winnerMfeEligibleTradeCount'
   | 'loserMfeEligibleTradeCount'
 >;
+
+
+const isWholeTradeInAnalyticsRange = (
+  trade: Trade,
+  analyticsDateBasis: AnalyticsDateBasis,
+  tradingDayPlugin: Parameters<typeof getTradeAnalyticsTradingDay>[2]
+): boolean => {
+  const fallbackAnalyticsDate = safeParseDateValue(
+    analyticsDateBasis === 'entry' ? trade.entryTime : trade.exitTime
+  );
+  const analyticsTradingDay =
+    getTradeAnalyticsTradingDay(trade, analyticsDateBasis, tradingDayPlugin) ??
+    (fallbackAnalyticsDate
+      ? getTradingDay(fallbackAnalyticsDate, tradingDayPlugin)
+      : null);
+  if (!analyticsTradingDay) return false;
+  const rangeStart = trade._analyticsRangeStart
+    ? safeParseDateValue(trade._analyticsRangeStart)
+    : undefined;
+  const rangeEnd = trade._analyticsRangeEnd
+    ? safeParseDateValue(trade._analyticsRangeEnd)
+    : undefined;
+  return (
+    (!rangeStart || analyticsTradingDay >= rangeStart) &&
+    (!rangeEnd || analyticsTradingDay <= rangeEnd)
+  );
+};
 
 const calculateExcursionMetrics = (
   sourceTrades: NormalizedMetricsTrade[],
@@ -1892,36 +1955,6 @@ export const calculateMetrics = (
   );
   const sharpeRatioInputTrades =
     options.sharpeRatioTrades ?? contributingTrades;
-  const isSharpeTradeInAnalyticsRange = (trade: Trade): boolean => {
-    const fallbackAnalyticsDate = safeParseDateValue(
-      analyticsDateBasis === 'entry' ? trade.entryTime : trade.exitTime
-    );
-    const analyticsTradingDay =
-      getTradeAnalyticsTradingDay(
-        trade,
-        analyticsDateBasis,
-        tradingDayPlugin
-      ) ??
-      (fallbackAnalyticsDate
-        ? getTradingDay(fallbackAnalyticsDate, tradingDayPlugin)
-        : null);
-
-    if (!analyticsTradingDay) {
-      return false;
-    }
-
-    const rangeStart = trade._analyticsRangeStart
-      ? safeParseDateValue(trade._analyticsRangeStart)
-      : undefined;
-    const rangeEnd = trade._analyticsRangeEnd
-      ? safeParseDateValue(trade._analyticsRangeEnd)
-      : undefined;
-
-    return (
-      (!rangeStart || analyticsTradingDay >= rangeStart) &&
-      (!rangeEnd || analyticsTradingDay <= rangeEnd)
-    );
-  };
   
   
   const sharpeRatioTrades: NormalizedMetricsTrade[] = [];
@@ -1929,7 +1962,7 @@ export const calculateMetrics = (
     if (
       !isPnlContributingTrade(trade) ||
       isTradeOpenInDashboard(trade) ||
-      !isSharpeTradeInAnalyticsRange(trade)
+      !isWholeTradeInAnalyticsRange(trade, analyticsDateBasis, tradingDayPlugin)
     ) {
       continue;
     }
@@ -2039,7 +2072,7 @@ export const calculateMetrics = (
     winningNetPnL.length,
     losingNetPnL.length
   );
-  const profitFactor = totalLoss === 0 ? totalProfit : totalProfit / totalLoss;
+  const profitFactor = calculateProfitFactor(totalProfit, totalLoss);
 
   
   const avgWin =
@@ -2522,48 +2555,20 @@ const projectExitDateTradesToRealizedEvents = (
   for (const trade of trades) {
     const excursionSourceKey = getDashboardExcursionSourceKey(trade);
     const excursionPnL = getEffectivePnL(trade);
-    const allEvents = getAllocatedRealizedPnlEvents(trade, 'exit', plugin);
-    const events: Array<{
-      projection: (typeof allEvents)[number];
-      originalIndex: number;
-    }> = [];
-    for (const projection of allEvents) {
-      const { event, originalIndex } = projection;
-      const rangeStart = trade._analyticsRangeStart;
-      const rangeEnd = trade._analyticsRangeEnd;
-      if (
+    const rangeStart = trade._analyticsRangeStart;
+    const rangeEnd = trade._analyticsRangeEnd;
+    const events = getProjectedRealizedEventTrades(trade, plugin).filter(
+      ({ event }) =>
         (!rangeStart || event.tradingDay >= rangeStart) &&
         (!rangeEnd || event.tradingDay <= rangeEnd)
-      ) {
-        events.push({ projection, originalIndex });
-      }
-    }
-    events.forEach(({ projection, originalIndex }) => {
-      const { event, brokerBaseCurrencyPnl } = projection;
+    );
+    events.forEach(({ trade: projectedTrade, event, originalIndex }) => {
       projectedTrades.push({
-        ...trade,
+        ...projectedTrade,
         path: `${trade.path || trade.instrument || 'trade'}#realized-${originalIndex}`,
-        tradeStatus: 'CLOSED',
-        pnl: event.pnl,
-        brokerBaseCurrencyPnl,
-        brokerBaseCurrency:
-          brokerBaseCurrencyPnl !== undefined
-            ? trade.brokerBaseCurrency
-            : undefined,
-        brokerBaseCurrencyPnlSource:
-          brokerBaseCurrencyPnl !== undefined
-            ? trade.brokerBaseCurrencyPnlSource
-            : undefined,
-        directPnL: undefined,
-        useDirectPnLInput: false,
-        rMultiple: undefined,
-        exitTime: event.date,
-        exits: undefined,
         _dashboardRealizedTradingDay: event.tradingDay,
         _dashboardExcursionSourceKey: excursionSourceKey,
         _dashboardExcursionPnL: excursionPnL,
-        _originalPnlWasNull:
-          trade._originalPnlWasNull === true && !event.pnlKnown,
       } as Trade);
     });
   }
@@ -2674,6 +2679,7 @@ export const fetchDashboardData = async (
 
     let tradesForDisplay = trades;
     let tradesForSharpe = trades;
+    let excursionTrades = trades;
     let tradesForUnrealized = trades;
     let tradesForMetrics = rawTradesForMetrics;
     let tickExcursionSupplementTrades: Trade[] = [];
@@ -2721,6 +2727,11 @@ export const fetchDashboardData = async (
       if (convertedDisplay) {
         tradesForDisplay = convertedDisplay.trades;
         tradesForSharpe = convertedDisplay.trades;
+        
+        excursionTrades = [
+          ...convertedDisplay.trades,
+          ...convertedDisplay.excludedTrades,
+        ];
         tradesForUnrealized = convertedDisplay.trades;
         
         
@@ -2938,6 +2949,9 @@ export const fetchDashboardData = async (
 
     return {
       trades: displayTrades,
+      excursionTrades: excursionTrades.filter((trade) =>
+        isWholeTradeInAnalyticsRange(trade, analyticsDateBasis, plugin)
+      ),
       unrealizedTrades,
       drawdownCapitalBasis,
       realizedEventTrades:

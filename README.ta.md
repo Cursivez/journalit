@@ -1,7 +1,7 @@
 <div align="center">
 
 <img
-  src="https://github.com/user-attachments/assets/ab7232d4-1352-4658-a284-86029c0246f1"
+  src="https://raw.githubusercontent.com/Cursivez/journalit/main/assets/readme/journalit-logo.png"
   alt="Journalit"
   width="420"
   style="max-width: 100%; height: auto;"
@@ -30,7 +30,7 @@ Obsidian-க்கான உள்ளூர்-முதல் டிரேட�
 
 </div>
 
-![முகப்பு பார்வை](https://github.com/user-attachments/assets/8ef38dac-c932-4530-aa06-4a382e5ba827)
+![முகப்பு பார்வை](https://raw.githubusercontent.com/Cursivez/journalit/main/assets/readme/home-view.png)
 
 ## நிறுவல்
 
@@ -50,14 +50,14 @@ Obsidian Community Plugins-இலிருந்து Journalit-ஐ நிற�
 - **கணக்கு டாஷ்போர்டு**: prop firm லாப இலக்குகள் மற்றும் drawdown-களுக்காக உருவாக்கப்பட்டது.
 - **மதிப்பாய்வு அமைப்பு (V2)**: தினசரி → ஆண்டு வார்ப்புருக்கள் மற்றும் தளவமைப்பு உருவாக்கி.
 - **[Trade Import](https://journalit.co/csv-import)**: CSV, விரிதாள், HTML மற்றும் broker அறிக்கைகளுக்கான backend இறக்கு.
-- **[Trade Sync](https://journalit.co/docs/trade-sync)**: Tradovate மற்றும் MT4-க்கான தானியங்கி டிரேட் ஒத்திசைவு.
+- **[Trade Sync](https://journalit.co/docs/trade-sync)**: ஆதரிக்கப்படும் தரகர்களுக்கான தானியங்கி டிரேட் ஒத்திசைவு.
 
 ## முக்கிய தகவல்கள்
 
 - **உள்ளூர் முதல் கோர்**: முக்கிய பதிவேடு ஆஃப்லைனில் வேலை செய்து, உங்கள் குறிப்புகளையும் டிரேட்களையும் Obsidian vault-க்குள் சேமிக்கும்.
 - **முழு அணுகலுக்கு கணக்கு தேவை**: அங்கீகாரம் மற்றும் சந்தா அடிப்படையிலான அம்சங்களுக்கு Journalit கணக்கு தேவை.
-- **கட்டண அம்சங்கள்**: MetaTrader ஒத்திசைவு மற்றும் Trade Import போன்ற Pro அம்சங்களுக்கு கட்டண Pro சந்தா தேவை.
-- **விருப்ப பிணைய பயன்பாடு**: நீங்கள் பிணைய அம்சங்களைத் தேர்ந்தெடுக்கும்போது மட்டுமே plugin Journalit பிணைய சேவைகளைப் பயன்படுத்தும். உள்நுழைவு, மின்னஞ்சல் சரிபார்ப்பு, டோக்கன் சரிபார்ப்பு மற்றும் சந்தா நிலைக்காக Journalit சேவைகளைத் தொடர்பு கொள்ளும். அதன் பிறகு MetaTrader ஒத்திசைவு அல்லது Trade Import போன்ற அங்கீகரிக்கப்பட்ட அம்சங்களைப் பயன்படுத்தினால், ஒத்திசைவு ஒருங்கிணைப்பு, டிரேட் பெறுதல் மற்றும் விருப்ப Trade Import-க்காக Journalit backend API-யுடன் இணைக்கும்; MetaTrader ஒத்திசைவு அறிக்கை பதிவேற்றத்திற்கு Journalit நிர்வகிக்கும் FTP கட்டமைப்பைப் பயன்படுத்தும். பல நாணய மாற்றம் தேவைப்படும்போது Journalit மூன்றாம் தரப்பு மாற்று விகித சேவையிலிருந்தும் விகிதங்களைக் கேட்கலாம். இந்த பிணைய அம்சங்கள் அனைத்தும் விருப்பமானவை.
+- **கட்டண அம்சங்கள்**: Trade Sync மற்றும் Trade Import போன்ற Pro அம்சங்களுக்கு கட்டண Pro சந்தா தேவை.
+- **பிணைய பயன்பாடு**: புதுப்பிப்புகளுக்காக Journalit இயல்பாக பொதுப் GitHub வெளியீட்டு மெட்டாடேட்டாவைச் சரிபார்க்கிறது; vault அல்லது account தரவு அனுப்பப்படாது. உள்நுழைந்த அம்சங்கள் Journalit சேவைகளைப் பயன்படுத்தலாம்; MT4 ஒத்திசைவு நிர்வகிக்கப்படும் FTP-ஐப் பயன்படுத்துகிறது, மேலும் நாணய மாற்றம் மூன்றாம் தரப்பு மாற்று விகித சேவையைப் பயன்படுத்தலாம். [PRIVACY.md](PRIVACY.md)-ஐப் பார்க்கவும்.
 - **மூலத்தைப் பார்க்கலாம், உரிமம் தனியுரிமை**: plugin என்பது பார்க்கக்கூடிய மூலத்துடன் கூடிய தனியுரிமை மென்பொருள்.
 - **தனியுரிமை விவரங்கள்**: தரவு கையாளல், தக்கவைப்பு மற்றும் கட்டமைப்பு விவரங்களுக்கு [PRIVACY.md](PRIVACY.md) பார்க்கவும்.
 
@@ -65,39 +65,39 @@ Obsidian Community Plugins-இலிருந்து Journalit-ஐ நிற�
 
 ### டிரேட் டாஷ்போர்டு
 
-![டிரேட் டாஷ்போர்டு](https://github.com/user-attachments/assets/ebb402c3-c8da-41dc-9317-73f6a50d0a93)
+![டிரேட் டாஷ்போர்டு](https://raw.githubusercontent.com/Cursivez/journalit/main/assets/readme/trading-dashboard.png)
 
 ### Setup
 
-![Setup மேலோட்டம்](https://github.com/user-attachments/assets/09976a8b-8500-4629-b790-6cb834c84b24)
+![Setup மேலோட்டம்](https://raw.githubusercontent.com/Cursivez/journalit/main/assets/readme/setup-overview.png)
 
-![Setup சோடிகள்](https://github.com/user-attachments/assets/bb7b66fc-db1b-4e1c-a174-32bc6bea49c6)
+![Setup சோடிகள்](https://raw.githubusercontent.com/Cursivez/journalit/main/assets/readme/setup-pairs.png)
 
-![Setup ஒப்பீடு](https://github.com/user-attachments/assets/8eaf5509-cf27-4e73-8c8c-2a9cf0da6c43)
+![Setup ஒப்பீடு](https://raw.githubusercontent.com/Cursivez/journalit/main/assets/readme/setup-comparison.png)
 
 ### தளவமைப்பு உருவாக்கி
 
-![தளவமைப்பு உருவாக்கி](https://github.com/user-attachments/assets/48bcc59a-2b17-4478-98b3-dce8677cca47)
+![தளவமைப்பு உருவாக்கி](https://raw.githubusercontent.com/Cursivez/journalit/main/assets/readme/layout-builder.png)
 
-![தளவமைப்பு உருவாக்கி](https://github.com/user-attachments/assets/66744217-b3b1-46ec-bb65-ca2debcd72da)
+![தளவமைப்பு உருவாக்கி](https://raw.githubusercontent.com/Cursivez/journalit/main/assets/readme/layout-builder-preview.png)
 
 ### டிரேட் பதிவு & காட்சியகம்
 
-![டிரேட் பதிவு](https://github.com/user-attachments/assets/09586646-50a2-4fd1-970f-83e926cab19a)
+![டிரேட் பதிவு](https://raw.githubusercontent.com/Cursivez/journalit/main/assets/readme/trade-log.png)
 
-![காட்சியகம்](https://github.com/user-attachments/assets/1bb496ab-a165-43c6-83f0-500565f2a1c3)
+![காட்சியகம்](https://raw.githubusercontent.com/Cursivez/journalit/main/assets/readme/gallery.png)
 
 ### Trade Import
 
-![Trade Import](https://github.com/user-attachments/assets/68121823-8b24-4024-b676-a4199c81f207)
+![Trade Import](https://raw.githubusercontent.com/Cursivez/journalit/main/assets/readme/trade-import.png)
 
 ### கணக்கு டாஷ்போர்டு
 
-![கணக்கு டாஷ்போர்டு](https://github.com/user-attachments/assets/dbd1cd69-3f8b-4af8-883c-460dbfb8944b)
+![கணக்கு டாஷ்போர்டு](https://raw.githubusercontent.com/Cursivez/journalit/main/assets/readme/account-dashboard.png)
 
 ### கணக்கு பக்கங்கள்
 
-![கணக்கு பக்கங்கள்](https://github.com/user-attachments/assets/8eeb0f2d-a8d8-412e-bf23-cb21e3a0401b)
+![கணக்கு பக்கங்கள்](https://raw.githubusercontent.com/Cursivez/journalit/main/assets/readme/account-pages.png)
 
 ## ஆதரிக்கப்படும் Broker-கள்
 

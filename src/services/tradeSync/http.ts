@@ -10,6 +10,7 @@ import {
 import { clearPersistedBackendAuthSession } from '../backend/BackendAuthFailure';
 import { getPluginInstance } from '../../utils/pluginContext';
 import { ApiError } from '../../types/errors';
+import { DemoSyncGate } from '../../demo/DemoSyncGate';
 
 export function authHeaders(token: string | null): Record<string, string> {
   return token ? { Authorization: `Bearer ${token}` } : {};
@@ -21,19 +22,30 @@ export function tradeSyncApiErrorCode(value: unknown): string | null {
   return typeof value.error === 'string' ? value.error : null;
 }
 
-type BrokerProviderUnavailableReason = 'disabled' | 'tier';
+export type BrokerProviderUnavailableReason = 'disabled' | 'tier';
 
 
 export function brokerProviderUnavailableReason(
   error: unknown,
-  options: { allowRithmicDisabled?: boolean } = {}
+  options: {
+    allowRithmicDisabled?: boolean;
+    allowCTraderDisabled?: boolean;
+  } = {}
 ): BrokerProviderUnavailableReason | null {
   if (!(error instanceof ApiError) || error.statusCode == null) return null;
   if (error.statusCode === 402 || error.statusCode === 403) return 'tier';
+  const errorCode = tradeSyncApiErrorCode(error.context?.responseBody);
   if (
     Boolean(options.allowRithmicDisabled) &&
     error.statusCode === 404 &&
-    tradeSyncApiErrorCode(error.context?.responseBody) === 'rithmic_disabled'
+    errorCode === 'rithmic_disabled'
+  ) {
+    return 'disabled';
+  }
+  if (
+    Boolean(options.allowCTraderDisabled) &&
+    error.statusCode === 404 &&
+    (errorCode === 'ctrader_disabled' || errorCode === 'ctrader_unavailable')
   ) {
     return 'disabled';
   }
@@ -46,6 +58,7 @@ export async function requestTradeSyncWithAuthRetry(
   response: RequestUrlResponse;
   requestAuthToken: string | null;
 }> {
+  DemoSyncGate.assertNetworkAllowed();
   let requestAuthToken = ApiClient.getAuthToken();
   let response = await requestUrl(buildRequest(requestAuthToken));
   if (response.status === 401 && requestAuthToken) {
@@ -53,6 +66,7 @@ export async function requestTradeSyncWithAuthRetry(
       await ApiClient.refreshAuthentication(requestAuthToken);
     if (refreshOutcome === 'refreshed') {
       requestAuthToken = ApiClient.getAuthToken();
+      DemoSyncGate.assertNetworkAllowed();
       response = await requestUrl(buildRequest(requestAuthToken));
     } else if (refreshOutcome === 'unavailable') {
       throw new AuthenticationRefreshUnavailableError();

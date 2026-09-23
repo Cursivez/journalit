@@ -2,6 +2,10 @@
 
 import { UnifiedFilters } from './types';
 import {
+  type ResolvedAccountPhaseWindow,
+  tradeMatchesAccountPhaseWindows,
+} from './accountPhaseScope';
+import {
   getEffectivePnL,
   isTradeOpenWithContext,
 } from '../../../utils/tradeStatusUtils';
@@ -23,6 +27,7 @@ import {
 } from '../../../services/trade/core/TradeAccountIdentity';
 import { getTradeDirectionDisplayKind } from '../../../services/trade/core/TradeDirection';
 import { createTickerMatcher } from '../../../utils/tickerMatching';
+import { getTradeBrokerIdentity } from '../../../services/propChallenge/tradeIdentity';
 import { hasUnknownCanonicalPnL } from '../../../services/trade/core/CanonicalProjectionFields';
 
 const ALL_SELECTABLE_TRADE_STATUSES = [
@@ -108,6 +113,7 @@ export function applyTradeFilters<T extends object>(
     isTradeOpen?: (trade: T) => boolean;
     breakEvenSettings?: BreakEvenRangeSettings;
     getBreakEvenBalance?: (trade: T) => number | undefined;
+    accountPhaseWindows?: readonly ResolvedAccountPhaseWindow[];
   } = {}
 ): T[] {
   if (!filters) return trades;
@@ -115,10 +121,17 @@ export function applyTradeFilters<T extends object>(
   let filtered = trades;
 
   
-  if (filters.accounts?.length > 0) {
-    const selectedLookupKeys = new Set(
-      filters.accounts.map((account) => normalizeAccountLookupKey(account))
-    );
+  const hasWholeAccountSelection = Boolean(filters.accounts?.length);
+  const hasAccountPhaseSelection = Boolean(filters.accountPhases?.length);
+  if (hasWholeAccountSelection || hasAccountPhaseSelection) {
+    const selectedLookupKeys = hasWholeAccountSelection
+      ? new Set(
+          filters.accounts.map((account) => normalizeAccountLookupKey(account))
+        )
+      : undefined;
+    const accountPhaseWindows = hasAccountPhaseSelection
+      ? (options.accountPhaseWindows ?? [])
+      : [];
 
     filtered = filtered.filter((trade) => {
       const identity = normalizeTradeAccountIdentity(
@@ -128,8 +141,36 @@ export function applyTradeFilters<T extends object>(
         }
       );
 
-      return identity.lookupKeys.some((lookupKey) =>
-        selectedLookupKeys.has(lookupKey)
+      if (
+        selectedLookupKeys &&
+        identity.lookupKeys.some((lookupKey) =>
+          selectedLookupKeys.has(lookupKey)
+        )
+      ) {
+        return true;
+      }
+
+      if (accountPhaseWindows.length === 0) {
+        return false;
+      }
+
+      return tradeMatchesAccountPhaseWindows(
+        trade,
+        new Set(identity.lookupKeys),
+        getTradeBrokerIdentity({
+          accountId: Reflect.get(trade, 'accountId'),
+          canonicalAccountId: Reflect.get(trade, 'canonicalAccountId'),
+          canonicalAccountIdentity: Reflect.get(
+            trade,
+            'canonicalAccountIdentity'
+          ),
+          
+          
+          
+          
+          isCopiedTrade: Reflect.get(trade, 'isCopiedTrade'),
+        }),
+        accountPhaseWindows
       );
     });
   }

@@ -22,6 +22,7 @@ import {
   buildCurrencyConversionMetadata,
   CurrencyConversionInfo,
 } from '../../../shared/display/CurrencyConversionInfo';
+import { openCanonicalReviewIfAllowed } from '../../../../utils/reviewNavigation';
 
 
 const DAILY_PERIODS = [10, 20, 30, 50] as const;
@@ -54,6 +55,8 @@ export const DailyPerformanceChart = React.memo<BaseWidgetProps>(
         {(data, userDateFormat) => {
           
           const defaultRiskAmount = plugin?.settings?.trade?.defaultRiskAmount;
+          const analyticsDateBasis =
+            plugin?.settings?.trade?.analyticsDateBasis ?? 'entry';
 
           
           const tradesByDate: {
@@ -65,8 +68,6 @@ export const DailyPerformanceChart = React.memo<BaseWidgetProps>(
           data.trades.forEach((trade) => {
             if (!isPnlContributingTrade(trade)) return;
             
-            const analyticsDateBasis =
-              plugin?.settings?.trade?.analyticsDateBasis ?? 'entry';
             const tradeDate = getTradeAnalyticsTradingDay(
               trade,
               analyticsDateBasis,
@@ -213,6 +214,32 @@ export const DailyPerformanceChart = React.memo<BaseWidgetProps>(
                 <SharedDailyPerformanceChart
                   data={chartData}
                   currencyOverride={currencyOverride}
+                  navigation={
+                    plugin
+                      ? {
+                          getPointAriaLabel: (point) =>
+                            t('calendar.aria.open-daily-review', {
+                              date: point.date,
+                            }),
+                          onPointClick: (point) => {
+                            if (!point.originalDate) return;
+                            const date = parseLocalDateSafe(point.originalDate);
+                            if (!date) return;
+                            void openCanonicalReviewIfAllowed({
+                              plugin,
+                              autoCreate:
+                                plugin.settings.drc.autoCreateDRCOnNavigation ??
+                                true,
+                              getService: () =>
+                                plugin.serviceManager.getDRCService(),
+                              getPath: (service) =>
+                                service.getDRCNotePath(date),
+                              open: (service) => service.openDRC(date),
+                            });
+                          },
+                        }
+                      : undefined
+                  }
                 />
               </div>
             </div>

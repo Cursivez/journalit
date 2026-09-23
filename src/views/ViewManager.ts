@@ -51,6 +51,19 @@ import { resolveNavigationTargetLeaf } from '../navigation/navigationTargetLeaf'
 
 const ACCOUNT_DASHBOARD_VIEW_TYPE = 'account-dashboard';
 
+const CONTEXT_BOUND_VIEW_TYPES = [
+  HOME_VIEW_TYPE,
+  DASHBOARD_VIEW_TYPE,
+  TRADE_LOG_VIEW_TYPE,
+  ACCOUNT_DASHBOARD_VIEW_TYPE,
+  ACCOUNT_PAGE_VIEW_TYPE,
+  CSV_IMPORT_VIEW_TYPE,
+  TEMPLATE_BUILDER_VIEW_TYPE,
+  SETUPS_VIEW_TYPE,
+  ECONOMIC_CALENDAR_VIEW_TYPE,
+  SESSION_MODE_VIEW_TYPE,
+] as const;
+
 interface HomeNavigationOptions {
   
   newTab?: boolean;
@@ -120,6 +133,11 @@ interface SetupsViewOpenOptions {
   focusLeaf?: boolean;
 }
 
+interface AccountPageViewOpenOptions {
+  newTab?: boolean;
+  focusLeaf?: boolean;
+}
+
 function isKeyboardScopeAwareView(
   view: WorkspaceLeaf['view']
 ): view is WorkspaceLeaf['view'] & KeyboardScopeAwareView {
@@ -169,6 +187,14 @@ export class ViewManager {
       ViewManager.instance = new ViewManager(plugin);
     }
     return ViewManager.instance;
+  }
+
+  public closeContextBoundViews(): void {
+    for (const viewType of CONTEXT_BOUND_VIEW_TYPES) {
+      for (const leaf of this.plugin.app.workspace.getLeavesOfType(viewType)) {
+        leaf.detach();
+      }
+    }
   }
 
   public registerSetupMarkdownOpenInterceptor(): void {
@@ -1202,7 +1228,12 @@ export class ViewManager {
   }
 
   
-  public async openAccountPageView(accountName: string): Promise<void> {
+  public async openAccountPageView(
+    accountName: string,
+    options: AccountPageViewOpenOptions = {}
+  ): Promise<void> {
+    const newTab = options.newTab ?? true;
+    const focusLeaf = options.focusLeaf ?? true;
     
     await this.registerAccountPageView();
 
@@ -1228,6 +1259,9 @@ export class ViewManager {
     if (matchingLeaf) {
       this.syncGuideContextForLeaf(matchingLeaf);
       await Promise.resolve(this.plugin.app.workspace.revealLeaf(matchingLeaf));
+      this.plugin.app.workspace.setActiveLeaf(matchingLeaf, {
+        focus: focusLeaf,
+      });
       this.syncGuideContextForLeaf(matchingLeaf);
       
       if (typeof this.plugin.trackRecentView === 'function') {
@@ -1241,7 +1275,7 @@ export class ViewManager {
     }
 
     
-    const leaf = this.plugin.app.workspace.getLeaf('tab');
+    const leaf = this.getNavigationTargetLeaf(newTab);
 
     if (leaf) {
       
@@ -1257,6 +1291,7 @@ export class ViewManager {
 
       
       await Promise.resolve(this.plugin.app.workspace.revealLeaf(leaf));
+      this.plugin.app.workspace.setActiveLeaf(leaf, { focus: focusLeaf });
       this.syncGuideContextForLeaf(leaf);
 
       
@@ -1295,15 +1330,6 @@ export class ViewManager {
               accountName: newAccountName,
             },
           });
-
-          const updatedView = leaf.view;
-          if (
-            updatedView instanceof AccountPageView &&
-            typeof updatedView.setAccountName === 'function'
-          ) {
-            updatedView.setAccountName(newAccountName);
-            updatedView.refreshView();
-          }
 
           this.syncGuideContextForLeaf(leaf);
           await Promise.resolve(this.plugin.app.workspace.revealLeaf(leaf));
@@ -1851,6 +1877,9 @@ export class ViewManager {
     if (existing.length > 0) {
       if (revealExisting) {
         void this.plugin.app.workspace.revealLeaf(existing[0]);
+        
+        
+        this.plugin.app.workspace.setActiveLeaf(existing[0], { focus: true });
       }
       return;
     }

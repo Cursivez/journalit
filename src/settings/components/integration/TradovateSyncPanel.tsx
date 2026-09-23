@@ -1,13 +1,13 @@
 import React from 'react';
 import type JournalitPlugin from '../../../main';
-import { TradovateSyncPanelContent } from './TradovateSyncPanelContent';
+import { OAuthBrokerSyncPanelContent } from './oauthBrokerSyncPanel';
 import { useTradovateSyncPanelModel } from './useTradovateSyncPanelModel';
 
 export const TradovateSyncPanel: React.FC<{ plugin: JournalitPlugin }> = ({
   plugin,
 }) => {
   const model = useTradovateSyncPanelModel(plugin);
-  return <TradovateSyncPanelContent {...model} />;
+  return <OAuthBrokerSyncPanelContent {...model} canCreateConnections={true} />;
 };
 
 TradovateSyncPanel.displayName = 'TradovateSyncPanel';

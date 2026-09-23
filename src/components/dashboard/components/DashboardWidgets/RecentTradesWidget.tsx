@@ -24,6 +24,7 @@ import { classifyPnLWithBreakEvenSettings } from '../../../../utils/breakEvenRan
 import { t } from '../../../../lang/helpers';
 import type JournalitPlugin from '../../../../main';
 import { getTradeDirectionDisplayLabel } from '../../../../utils/tradeDirectionDisplay';
+import { getTradeNotePath } from '../../../../utils/chartUtils';
 
 type RecentTradeRow = {
   trade: Trade;
@@ -73,7 +74,7 @@ export const RecentTradesWidget: React.FC<BaseWidgetProps> = ({ filters }) => {
   const openTradeNote = (tradePath: string) => {
     if (plugin) {
       
-      void plugin.openFile(tradePath.split('#')[0] ?? tradePath, true);
+      void plugin.openFile(getTradeNotePath(tradePath), true);
     }
   };
 
@@ -112,20 +113,34 @@ export const RecentTradesWidget: React.FC<BaseWidgetProps> = ({ filters }) => {
 
         return (
           <div className="journalit-dashboard-recent-trades">
-            <table className="journalit-dashboard-recent-trades-table">
-              <thead>
-                <tr>
-                  <th>{t('widget.recentTrades.date')}</th>
-                  <th>{t('widget.recentTrades.ticker')}</th>
-                  <th>{t('widget.recentTrades.direction')}</th>
-                  <th className="pnl-column">{t('widget.recentTrades.pnl')}</th>
+            
+            <table
+              role="table"
+              className="journalit-dashboard-recent-trades-table"
+            >
+              <thead role="rowgroup">
+                <tr role="row">
+                  <th role="columnheader" scope="col">
+                    {t('widget.recentTrades.date')}
+                  </th>
+                  <th role="columnheader" scope="col">
+                    {t('widget.recentTrades.ticker')}
+                  </th>
+                  <th role="columnheader" scope="col">
+                    {t('widget.recentTrades.direction')}
+                  </th>
+                  <th role="columnheader" scope="col" className="pnl-column">
+                    {t('widget.recentTrades.pnl')}
+                  </th>
                 </tr>
               </thead>
-              <tbody>
+              <tbody role="rowgroup">
                 {recentTrades.length === 0 ? (
-                  <tr>
+                  <tr role="row">
                     <td
+                      role="cell"
                       colSpan={4}
+                      aria-colspan={4}
                       className="journalit-dashboard-recent-trades-empty-cell"
                     >
                       <div className="journalit-dashboard-recent-trades-empty-wrapper">
@@ -193,6 +208,7 @@ export const RecentTradesWidget: React.FC<BaseWidgetProps> = ({ filters }) => {
 
                     return (
                       <tr
+                        role="row"
                         tabIndex={0}
                         onKeyDown={(event) => {
                           if (event.key === 'Enter' || event.key === ' ') {
@@ -204,13 +220,13 @@ export const RecentTradesWidget: React.FC<BaseWidgetProps> = ({ filters }) => {
                         onClick={() => openTradeNote(trade.path)}
                         className={`trade-row${tradeIsOpen && !isRealizedEvent ? ' open-trade' : ''}`}
                       >
-                        <td className="date-cell">
+                        <td role="cell" className="date-cell">
                           {formatDate(analyticsDate, plugin)}
                         </td>
-                        <td className="ticker-cell">
+                        <td role="cell" className="ticker-cell">
                           {trade.instrument || t('widget.recentTrades.unknown')}
                         </td>
-                        <td className="direction-cell">
+                        <td role="cell" className="direction-cell">
                           {getTradeDirectionDisplayLabel(
                             {
                               direction: trade.direction,
@@ -221,6 +237,7 @@ export const RecentTradesWidget: React.FC<BaseWidgetProps> = ({ filters }) => {
                           )}
                         </td>
                         <td
+                          role="cell"
                           className={`pnl-cell ${tradeIsOpen && !isRealizedEvent ? 'open' : isPositive ? 'positive' : isNegative ? 'negative' : ''}`}
                         >
                           {tradeIsOpen &&

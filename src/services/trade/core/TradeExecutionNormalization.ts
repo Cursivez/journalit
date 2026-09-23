@@ -298,7 +298,7 @@ function getExplicitExitPriceValue(exit: WeightedExitLeg): number | null {
   return !hasExplicitPriceFlagKnown(exit) && price === 0 ? price : null;
 }
 
-function hasSizedExplicitExitPrice(exit: WeightedExitLeg): boolean {
+export function hasSizedExplicitExitPrice(exit: WeightedExitLeg): boolean {
   const size = parseFiniteNumber(exit.size);
   return getExplicitExitPriceValue(exit) !== null && size !== null && size > 0;
 }

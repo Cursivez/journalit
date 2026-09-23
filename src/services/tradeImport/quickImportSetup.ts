@@ -4,6 +4,7 @@ import type { LocalCSVTemplate, ManualImportMode } from '../csv/types';
 import { canonicalTradeImportBrokerId } from './brokerIds';
 import type { BackendTradeImportService } from './BackendTradeImportService';
 import type { TradeImportCapabilities } from './types';
+import { missingRequiredFieldsForMappings } from './manualMappingValidation';
 
 type TradeImportQuickSetupSource =
   | 'favorite-template'
@@ -146,20 +147,26 @@ function templateSetup(
 ): TradeImportQuickSetup {
   const broker =
     validBroker(capabilities, template.broker_type) ?? safeBroker(capabilities);
+  const columnMappings = asMappings(template.column_mappings);
+  const mappedHeaders = Object.values(columnMappings).flat();
+  const manualMode = template.manual_mode ?? 'price_based';
+  const mappingComplete =
+    missingRequiredFieldsForMappings(manualMode, columnMappings, mappedHeaders)
+      .length === 0;
   return {
-    state: 'ready',
+    state: mappingComplete ? 'ready' : 'needs_setup',
     source: 'favorite-template',
     accountName,
     broker,
     brokerLabel: brokerLabel(capabilities, broker),
     assetType: template.asset_type,
-    manualMode: template.manual_mode ?? 'price_based',
+    manualMode,
     dateFormat: template.date_format ?? '',
     templateId: template.id,
     templateName: template.name,
     sheetName: null,
     headerRowIndex: template.header_row_index ?? null,
-    columnMappings: asMappings(template.column_mappings),
+    columnMappings,
     aiMappingEnabled: false,
   };
 }

@@ -281,6 +281,7 @@ export const FilterControls = React.memo<FilterControlsProps>(
         context: 'dashboard',
         currentFilters: {
           accounts: filters.accounts,
+          accountPhases: filters.accountPhases || [],
           tickers: filters.tickers || [],
           setups: filters.setups || [],
           tags: filters.tags || [],
@@ -297,6 +298,7 @@ export const FilterControls = React.memo<FilterControlsProps>(
           const mergedFilters = {
             ...filters,
             accounts: newFilters.accounts,
+            accountPhases: newFilters.accountPhases || [],
             tickers: newFilters.tickers,
             setups: newFilters.setups,
             tags: newFilters.tags,

@@ -29,6 +29,7 @@ import { useReviewTrades } from '../hooks/useReviewData';
 import { useEventBus } from '../../../hooks/useEventBus';
 import { SkeletonBox } from '../../shared/SkeletonBox';
 import { getBreakEvenBalanceForDisplayTrade } from './shared/breakEvenDisplayUtils';
+import { openReviewWidgetFile } from '../reviewWidgetNavigation';
 
 type ReviewBestWorstTrade = Record<string, unknown> & {
   pnl?: number | null;
@@ -420,7 +421,7 @@ export const BestWorstWeeksWidget: React.FC<BestWorstWeeksWidgetProps> =
           
           const file = plugin.app.vault.getAbstractFileByPath(weeklyPath);
           if (file) {
-            await plugin.openFile(weeklyPath, false);
+            await openReviewWidgetFile(plugin, weeklyPath);
           } else if (
             plugin.settings.weekly.autoCreateWeeklyReviewOnNavigation
           ) {
@@ -430,7 +431,7 @@ export const BestWorstWeeksWidget: React.FC<BestWorstWeeksWidgetProps> =
             const newPath = plugin.weeklyReviewService?.getWeeklyReviewPath(
               week.weekStart
             );
-            if (newPath) await plugin.openFile(newPath, false);
+            if (newPath) await openReviewWidgetFile(plugin, newPath);
           }
         } catch (error) {
           console.error(

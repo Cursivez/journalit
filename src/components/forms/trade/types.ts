@@ -86,7 +86,10 @@ export interface DividendTransaction {
 export interface TakeProfitTarget {
   clientId?: string;
   price?: number;
+  
   closePercent?: number;
+  
+  size?: number;
 }
 
 
@@ -140,7 +143,15 @@ export interface TradeFormData {
   
   accountId?: string;
   
+  canonicalAccountId?: string;
+  
+  canonicalAccountIdentity?: 'broker' | 'name';
+  
   filePath?: string;
+  
+  journalitSampleInstance?: string;
+  
+  journalitSampleEntityId?: string;
   
   canonicalTradeId?: string;
   
@@ -456,6 +467,7 @@ export interface TradeFormErrors {
   takeProfits?: Array<{
     price?: string;
     closePercent?: string;
+    size?: string;
   }>;
   riskAmount?: string;
   fxRate?: string;

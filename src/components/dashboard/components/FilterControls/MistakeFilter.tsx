@@ -12,6 +12,7 @@ import { OptionType } from '../../../../services/options/CustomOptionsService';
 import { usePlugin } from '../../../../hooks/usePlugin';
 import { useEventBus } from '../../../../hooks/useEventBus';
 import { MistakeFilterProps } from './types';
+import { AnchoredMenu } from '../../../shared/menus/AnchoredMenu';
 
 
 export const MistakeFilter: React.FC<MistakeFilterProps> = React.memo(
@@ -52,27 +53,6 @@ export const MistakeFilter: React.FC<MistakeFilterProps> = React.memo(
       () => ['__NO_MISTAKES__', ...combinedMistakes],
       [combinedMistakes]
     );
-
-    
-    useEffect(() => {
-      const handleClickOutside = (event: MouseEvent) => {
-        const target = event.target;
-        if (
-          dropdownRef.current &&
-          (!(target instanceof Node) || !dropdownRef.current.contains(target))
-        ) {
-          setIsOpen(false);
-        }
-      };
-
-      window.activeDocument.addEventListener('mousedown', handleClickOutside);
-      return () => {
-        window.activeDocument.removeEventListener(
-          'mousedown',
-          handleClickOutside
-        );
-      };
-    }, []);
 
     const handleMistakeChange = useCallback(
       (mistakeId: string) => {
@@ -153,90 +133,93 @@ export const MistakeFilter: React.FC<MistakeFilterProps> = React.memo(
             <span className="dropdown-arrow">{isOpen ? '▲' : '▼'}</span>
           </button>
 
-          {isOpen && (
-            <div className="journalit-dashboard-mistake-options-dropdown">
-              {hasMistakes || selectedMistakes.includes('__NO_MISTAKES__') ? (
-                <>
-                  <div
-                    className="journalit-dashboard-mistake-option-item select-all"
-                    onClick={handleSelectAllClick}
-                    role="checkbox"
-                    aria-checked={selectedMistakes.length === allOptions.length}
-                    tabIndex={0}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' || e.key === ' ') {
-                        e.preventDefault();
-                        handleSelectAllClick();
-                      }
-                    }}
+          <AnchoredMenu
+            isOpen={isOpen}
+            triggerRef={dropdownRef}
+            onClose={() => setIsOpen(false)}
+            className="journalit-dashboard-mistake-options-dropdown"
+          >
+            {hasMistakes || selectedMistakesSet.has('__NO_MISTAKES__') ? (
+              <>
+                <div
+                  className="journalit-dashboard-mistake-option-item select-all"
+                  onClick={handleSelectAllClick}
+                  role="checkbox"
+                  aria-checked={selectedMistakes.length === allOptions.length}
+                  tabIndex={0}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      handleSelectAllClick();
+                    }
+                  }}
+                >
+                  <span
+                    className={`journalit-dashboard-mistake-checkbox${selectedMistakes.length === allOptions.length ? ' checked' : ''}`}
+                    aria-hidden="true"
                   >
-                    <span
-                      className={`journalit-dashboard-mistake-checkbox${selectedMistakes.length === allOptions.length ? ' checked' : ''}`}
-                      aria-hidden="true"
-                    >
-                      {selectedMistakes.length === allOptions.length ? '✓' : ''}
-                    </span>
-                    <span>{t('dashboard.filter.mistakes.select-all')}</span>
-                  </div>
-                  <div className="journalit-dashboard-mistake-divider"></div>
-                  <div
-                    className="journalit-dashboard-mistake-option-item"
-                    onClick={getMistakeClickHandler('__NO_MISTAKES__')}
-                    role="checkbox"
-                    aria-checked={selectedMistakes.includes('__NO_MISTAKES__')}
-                    tabIndex={0}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' || e.key === ' ') {
-                        e.preventDefault();
-                        handleMistakeChange('__NO_MISTAKES__');
-                      }
-                    }}
-                  >
-                    <span
-                      className={`journalit-dashboard-mistake-checkbox${selectedMistakes.includes('__NO_MISTAKES__') ? ' checked' : ''}`}
-                      aria-hidden="true"
-                    >
-                      {selectedMistakes.includes('__NO_MISTAKES__') ? '✓' : ''}
-                    </span>
-                    <span>{t('dashboard.filter.mistakes.none')}</span>
-                  </div>
-                  {combinedMistakes.length > 0 && (
-                    <>
-                      <div className="journalit-dashboard-mistake-divider"></div>
-                      {combinedMistakes.map((mistake) => (
-                        <div
-                          key={mistake}
-                          className="journalit-dashboard-mistake-option-item"
-                          onClick={getMistakeClickHandler(mistake)}
-                          role="checkbox"
-                          aria-checked={selectedMistakesSet.has(mistake)}
-                          tabIndex={0}
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter' || e.key === ' ') {
-                              e.preventDefault();
-                              handleMistakeChange(mistake);
-                            }
-                          }}
-                        >
-                          <span
-                            className={`journalit-dashboard-mistake-checkbox${selectedMistakesSet.has(mistake) ? ' checked' : ''}`}
-                            aria-hidden="true"
-                          >
-                            {selectedMistakesSet.has(mistake) ? '✓' : ''}
-                          </span>
-                          <span>{mistake}</span>
-                        </div>
-                      ))}
-                    </>
-                  )}
-                </>
-              ) : (
-                <div className="journalit-dashboard-no-mistakes">
-                  {t('dashboard.filter.mistakes.none-found')}
+                    {selectedMistakes.length === allOptions.length ? '✓' : ''}
+                  </span>
+                  <span>{t('dashboard.filter.mistakes.select-all')}</span>
                 </div>
-              )}
-            </div>
-          )}
+                <div className="journalit-dashboard-mistake-divider"></div>
+                <div
+                  className="journalit-dashboard-mistake-option-item"
+                  onClick={getMistakeClickHandler('__NO_MISTAKES__')}
+                  role="checkbox"
+                  aria-checked={selectedMistakesSet.has('__NO_MISTAKES__')}
+                  tabIndex={0}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      handleMistakeChange('__NO_MISTAKES__');
+                    }
+                  }}
+                >
+                  <span
+                    className={`journalit-dashboard-mistake-checkbox${selectedMistakesSet.has('__NO_MISTAKES__') ? ' checked' : ''}`}
+                    aria-hidden="true"
+                  >
+                    {selectedMistakesSet.has('__NO_MISTAKES__') ? '✓' : ''}
+                  </span>
+                  <span>{t('dashboard.filter.mistakes.none')}</span>
+                </div>
+                {combinedMistakes.length > 0 && (
+                  <>
+                    <div className="journalit-dashboard-mistake-divider"></div>
+                    {combinedMistakes.map((mistake) => (
+                      <div
+                        key={mistake}
+                        className="journalit-dashboard-mistake-option-item"
+                        onClick={getMistakeClickHandler(mistake)}
+                        role="checkbox"
+                        aria-checked={selectedMistakesSet.has(mistake)}
+                        tabIndex={0}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault();
+                            handleMistakeChange(mistake);
+                          }
+                        }}
+                      >
+                        <span
+                          className={`journalit-dashboard-mistake-checkbox${selectedMistakesSet.has(mistake) ? ' checked' : ''}`}
+                          aria-hidden="true"
+                        >
+                          {selectedMistakesSet.has(mistake) ? '✓' : ''}
+                        </span>
+                        <span>{mistake}</span>
+                      </div>
+                    ))}
+                  </>
+                )}
+              </>
+            ) : (
+              <div className="journalit-dashboard-no-mistakes">
+                {t('dashboard.filter.mistakes.none-found')}
+              </div>
+            )}
+          </AnchoredMenu>
         </div>
       </div>
     );

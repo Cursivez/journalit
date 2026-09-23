@@ -153,6 +153,9 @@ function getTradeFormTabAvailability({
         !isTradeFormLayoutItemVisible(tradeFormLayout, itemId) &&
         hasPopulatedTradeFormLayoutItem(formData, itemId)
     );
+  
+  
+  
   const showAdvancedTab = isTradeFormLayoutItemVisible(
     tradeFormLayout,
     'customFields'

@@ -91,7 +91,17 @@ export interface RithmicConnections {
 }
 
 
-export type BrokerSyncProviderId = 'tradovate' | 'rithmic';
+export type CTraderConnectionAccount = TradovateConnectionAccount;
+export type CTraderConnection = TradovateConnection;
+export type CTraderAccountSelection = TradovateAccountSelection;
+
+export interface CTraderConnections {
+  schemaVersion: 'ctrader-connections-v2';
+  connections: CTraderConnection[];
+}
+
+
+export type BrokerSyncProviderId = 'tradovate' | 'rithmic' | 'ctrader';
 
 interface BrokerClientOperationBase {
   clientOperationId: string;
@@ -188,6 +198,7 @@ export interface TradeProjection {
   status: 'open' | 'partially_closed' | 'closed' | 'cancelled';
   accountName?: string | null;
   accountId?: string | null;
+  accountIdentity?: 'broker' | 'name';
   importId?: string;
   correlationId?: string;
   commitId?: string;
@@ -218,6 +229,9 @@ export interface TradeProjectionRequestOptions {
 
 export interface TradeProjectionPersistedTradeSummary {
   filePath: string;
+  accountName: string;
+  brokerLabel?: string;
+  change: 'created' | 'updated';
   symbol: string;
   direction: 'long' | 'short';
   quantity: number;
@@ -274,6 +288,33 @@ export interface TradeProjectionAccountVaultMappingRequest {
   mappingStatus: 'mapped';
   pluginVersion?: string;
   clientOperationId?: string;
+}
+
+export type TradeProjectionExistingNotesMode = 'update' | 'leave';
+
+export interface TradeProjectionAccountVaultRemapRequest {
+  vaultId: string;
+  localAccountId: string;
+  localAccountName: string;
+  existingNotes: TradeProjectionExistingNotesMode;
+  clientOperationId: string;
+  pluginVersion?: string;
+  deviceId?: string;
+}
+
+export interface TradeProjectionAccountVaultRemapMapping extends TradeProjectionAccountVaultMapping {
+  accountId: string;
+}
+
+export interface TradeProjectionAccountVaultRemapResponse {
+  schemaVersion: 'trade-projection-account-remap-v1';
+  mapping: TradeProjectionAccountVaultRemapMapping;
+  existingNotes: TradeProjectionExistingNotesMode;
+  clientOperationId: string;
+  scheduledCount: number;
+  preservedLocalDeletedCount: number;
+  preservedConflictCount: number;
+  generation?: string;
 }
 
 export interface TradeProjectionAckRequest {
@@ -366,6 +407,7 @@ export interface TradeProjectionCommittedTrade {
     | 'CLOSED'
     | 'CANCELLED';
   accountId?: string | null;
+  accountIdentity?: 'broker' | 'name';
   accountDisplayName?: string | null;
   broker?: string | null;
   importId?: string;
@@ -377,5 +419,7 @@ export interface TradeProjectionSyncResult {
   writtenCount: number;
   failedCount: number;
   pendingCount: number;
+  importedTrades?: TradeProjectionPersistedTradeSummary[];
+  ackFailedCount?: number;
   partial?: boolean;
 }

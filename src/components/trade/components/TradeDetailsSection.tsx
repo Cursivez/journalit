@@ -13,11 +13,13 @@ import { resolveTradeRiskAmount } from '../../../utils/riskCalculation';
 import { FileText } from '../../shared/icons/ObsidianIcon';
 import { calculateTotalCosts } from '../../forms/trade/validation';
 import { calculateEffectiveRMultiple } from '../../../utils/formatting';
+import { hasSizedExplicitExitPrice } from '../../../services/trade/core/TradeExecutionNormalization';
 
 interface ExecutionItem {
   time?: Date;
   price?: number;
   size?: number;
+  hasExplicitPrice?: boolean;
 }
 
 interface MetricCardProps {
@@ -92,7 +94,8 @@ const hasExecutionContent = (item: ExecutionItem) =>
 
 const getExecutionItems = (
   items: PartialTradeFrontmatter['entries'] | PartialTradeFrontmatter['exits']
-) => (Array.isArray(items) ? items.filter(hasExecutionContent) : []);
+): ExecutionItem[] =>
+  Array.isArray(items) ? items.filter(hasExecutionContent) : [];
 
 const getTakeProfitTargets = (
   targets: PartialTradeFrontmatter['takeProfits']
@@ -100,7 +103,9 @@ const getTakeProfitTargets = (
   Array.isArray(targets)
     ? targets.filter(
         (target) =>
-          hasFiniteNumber(target.price) || hasFiniteNumber(target.closePercent)
+          hasFiniteNumber(target.price) ||
+          hasFiniteNumber(target.closePercent) ||
+          hasFiniteNumber(target.size)
       )
     : [];
 
@@ -364,43 +369,14 @@ export const TradeDetailsSection: React.FC<TradeDetailsSectionProps> = ({
 
   const currencyConfig = getCurrencyConfig(currency);
 
-  const formatPriceNumber = (value: number | undefined | null): string => {
-    if (value === undefined || value === null || isNaN(value)) return 'N/A';
-
-    const absValue = Math.abs(value);
-
-    let minimumFractionDigits = currencyConfig.decimalPlaces;
-    let maximumFractionDigits = currencyConfig.decimalPlaces;
-
-    if (currencyConfig.decimalPlaces > 0) {
-      if (absValue === 0) {
-        minimumFractionDigits = 0;
-        maximumFractionDigits = 0;
-      } else if (absValue < 10) {
-        minimumFractionDigits = 4;
-        maximumFractionDigits = 5;
-      } else if (absValue < 100) {
-        minimumFractionDigits = 3;
-        maximumFractionDigits = 4;
-      } else if (absValue >= 100) {
-        if (absValue === Math.floor(absValue)) {
-          minimumFractionDigits = 0;
-          maximumFractionDigits = 0;
-        }
-      }
-    }
-
-    return value.toLocaleString(currencyConfig.locale, {
-      minimumFractionDigits,
-      maximumFractionDigits,
+  const formatDisplayPrice = (value: number | undefined | null): string =>
+    formatValue({
+      kind: 'price',
+      value,
+      currencyCode: currency,
+      priceStyle: 'decimal',
+      fallback: t('common.na'),
     });
-  };
-
-  const formatDisplayPrice = (value: number | undefined | null): string => {
-    return isPriceMasked
-      ? formatValue({ kind: 'price', value, currencyCode: currency })
-      : formatPriceNumber(value);
-  };
 
   const formatDisplayRisk = (value: number | undefined | null): string => {
     return formatValue({
@@ -416,7 +392,7 @@ export const TradeDetailsSection: React.FC<TradeDetailsSectionProps> = ({
     assetType?: string
   ): string => {
     if (value === undefined || value === null || !Number.isFinite(value)) {
-      return 'N/A';
+      return t('common.na');
     }
 
     const precision = getSizePrecision(assetType);
@@ -524,6 +500,43 @@ export const TradeDetailsSection: React.FC<TradeDetailsSectionProps> = ({
     hasFiniteNumber(size)
       ? `${formatExecutionDateTime(time)} · ${formatDisplayPositionSize(size)}`
       : formatExecutionDateTime(time);
+  const hasExplicitExitPrice = data.hasExplicitExitPrice === true;
+  const hasSizedExplicitExit = exitItems.some(hasSizedExplicitExitPrice);
+  const hasNoExitExecution =
+    exitItems.length === 0 && scalarExitDate === null && !hasExplicitExitPrice;
+  const displayExitPrice =
+    hasNoExitExecution ||
+    (data.exitPrice === 0 && !hasExplicitExitPrice && !hasSizedExplicitExit)
+      ? null
+      : data.exitPrice;
+  const exitSize = exitItems[0]?.size;
+  const exitTime = data.exitTime ?? exitItems[0]?.time;
+  const hasExitTime = parseExecutionDate(exitTime) !== null;
+  const exitSubtitle = (() => {
+    if (exitItems.length > 1) {
+      return t('trade.details.exits-summary', {
+        count: String(exitItems.length),
+      });
+    }
+
+    if (hasNoExitExecution) {
+      return undefined;
+    }
+
+    if (hasFiniteNumber(exitSize) && hasExitTime) {
+      return `${formatExecutionDateTime(exitTime)} · ${formatDisplayPositionSize(exitSize)}`;
+    }
+
+    if (hasFiniteNumber(exitSize)) {
+      return formatDisplayPositionSize(exitSize);
+    }
+
+    if (hasExitTime) {
+      return formatExecutionDateTime(exitTime);
+    }
+
+    return undefined;
+  })();
   const entryTooltipContent =
     isMetricAllowed('executionSummary') && entryItems.length > 1 ? (
       <ExecutionBreakdownGroup
@@ -586,17 +599,8 @@ export const TradeDetailsSection: React.FC<TradeDetailsSectionProps> = ({
             {isMetricAllowed('exit') && (
               <MetricCard
                 label={t('trade.details.exit')}
-                value={formatDisplayPrice(data.exitPrice)}
-                subtitle={
-                  exitItems.length > 1
-                    ? t('trade.details.exits-summary', {
-                        count: String(exitItems.length),
-                      })
-                    : buildExecutionSubtitle(
-                        data.exitTime,
-                        exitItems[0]?.size ?? data.positionSize
-                      )
-                }
+                value={formatDisplayPrice(displayExitPrice)}
+                subtitle={exitSubtitle}
                 valueClassName={isPriceMasked ? 'journalit-privacy-mask' : ''}
                 tooltipContent={exitTooltipContent}
               />
@@ -605,7 +609,7 @@ export const TradeDetailsSection: React.FC<TradeDetailsSectionProps> = ({
             {isMetricAllowed('duration') && (
               <MetricCard
                 label={t('trade.details.duration')}
-                value={metrics.duration}
+                value={metrics.duration || t('common.na')}
               />
             )}
 

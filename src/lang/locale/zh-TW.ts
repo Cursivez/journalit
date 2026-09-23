@@ -45,66 +45,10 @@ const zhTW: Partial<Lang> = {
   
   
   
-  'onboarding.explore.title': 'Explore',
-  'onboarding.explore.subtitle':
-    'Journalit turns your vault into a full trading journal with dashboards, trade log, account tracking, and customisable layouts.',
-  'onboarding.explore.subtitle2':
-    'Designed to adapt to your workflow, not force you into ours.',
-  'onboarding.explore.tagline': 'Your journal, your rules.',
-  'onboarding.explore.section.out-of-box.title': 'Core views & tools',
-  'onboarding.explore.core.dashboard.label': '儀表板',
-  'onboarding.explore.core.dashboard.description':
-    'Your performance at a glance — P&L, win rate, drawdowns, and more.',
-  'onboarding.explore.core.tradelog.label': 'Trade Log',
-  'onboarding.explore.core.tradelog.description':
-    'Browse trades by year/month/week/day and drill down instantly.',
-  'onboarding.explore.core.accounts.label': 'Account Tracking',
-  'onboarding.explore.core.accounts.description':
-    'Track multiple accounts and view account-specific performance pages.',
-  'onboarding.explore.core.layouts.label': 'Layout Builder',
-  'onboarding.explore.core.layouts.description':
-    'Customize dashboards and review layouts with widgets and templates.',
-  'onboarding.explore.imports.title': '匯入與同步',
-
-  'onboarding.explore.imports.csv.label': 'Trade Import',
-  'onboarding.explore.imports.csv.description':
-    '免費預覽支援的交易歷史檔案並對應欄位。匯入到你的庫需要 Pro。',
-  'onboarding.explore.imports.trade-sync.label': 'Trade Sync',
-  'onboarding.explore.imports.trade-sync.description':
-    'Automatic trade syncing from MetaTrader (MT4) or Tradovate. Requires Pro.',
-
-  'onboarding.explore.cta.manual': 'Open Docs',
 
   
   
   
-  'onboarding.path.kicker': '你的交易歷史',
-  'onboarding.path.title': '你是否已有要匯入 Journalit 的交易？',
-  'onboarding.path.subtitle': '選擇一個答案，我們會直接帶你進入合適的下一步。',
-  'onboarding.path.option.manual.label': '沒有，我要從頭開始',
-  'onboarding.path.option.manual.description':
-    '開啟「新增交易」表單並記錄第一筆交易。',
-  'onboarding.path.option.csv.label': '有，我已有交易歷史',
-  'onboarding.path.option.csv.description': '選擇自動同步券商或匯入檔案。',
-  'onboarding.path.method.kicker': '匯入你的歷史',
-  'onboarding.path.method.title': '你想如何匯入？',
-  'onboarding.path.method.subtitle': '選擇與你的券商和匯出檔案相符的方式。',
-  'onboarding.path.option.trade-sync.label': '連接 MT4 或 Tradovate',
-  'onboarding.path.option.trade-sync.description':
-    '設定 Trade Sync，自動接收新的交易。',
-  'onboarding.path.option.import.label': '匯入交易歷史檔案',
-  'onboarding.path.option.import.description':
-    '上傳 CSV、Excel 或支援的券商報告。',
-  'onboarding.path.option.import.badge': '免費預覽',
-  'onboarding.manual.title': 'Journalit 已準備就緒',
-  'onboarding.manual.subtitle': '設定下方建議的快捷鍵，以便更快記錄交易。',
-  'onboarding.manual.subtitle-mobile':
-    '每當你想記錄交易時，請開啟「新增交易」。',
-  'onboarding.manual.hotkey.title': '建議的快捷鍵',
-  'onboarding.manual.cta.change-hotkey': '設定快捷鍵',
-  'onboarding.manual.hit-hotkey':
-    '建議使用 {hotkey}。點擊「設定快捷鍵」進行設定。',
-  'onboarding.manual.add-first-trade': '新增我的第一筆交易',
   'onboarding.notice.trade-sync-open-failed':
     '無法開啟 Trade Sync。請再試一次。',
 
@@ -112,7 +56,6 @@ const zhTW: Partial<Lang> = {
 
   
   'command.open-layout-builder': '開啟版面配置建構器',
-  'command.switch-template': '切換範本',
 
   
   
@@ -178,6 +121,9 @@ const zhTW: Partial<Lang> = {
   'form.layout.item.trade-currency': '交易貨幣 / 匯率',
   'form.layout.item.trade-currency-desc':
     '以其他貨幣輸入交易，並可選擇手動指定匯率。',
+  'form.layout.item.exchange-desc': '股票與加密貨幣交易的交易所欄位。',
+  'form.layout.item.direct-pnl-toggle-desc':
+    '將單筆交易切換為直接輸入總損益，而非填寫出場價格。',
   'form.layout.manual-fx-rate': '覆寫匯率',
   'form.layout.result-r': 'R 結果',
   'form.layout.entry-time': '交易時間',
@@ -319,7 +265,9 @@ const zhTW: Partial<Lang> = {
   'form.trade-type.missed-reason-placeholder':
     '描述您為什麼錯過這個交易機會...',
 
-  'form.account-empty-state.title': '請先建立帳戶，再新增交易',
+  'form.account-empty-state.title': '設定你的第一個帳戶',
+  'form.account-empty-state.description':
+    '帳戶用於記錄餘額，讓 Journalit 能夠計算報酬、風險與回撤。建立帳戶只需要一個名稱。',
   'form.account-empty-state.create-account': '建立帳戶',
   'form.account-empty-state.submit-disabled': '請先建立帳戶，再儲存這筆交易。',
 
@@ -404,7 +352,6 @@ const zhTW: Partial<Lang> = {
   'notice.error.open-journalit':
     '無法開啟 Journalit。請嘗試重新載入 Obsidian。',
   'notice.error.open-drc': '無法開啟 DRC：{error}',
-  'notice.error.open-dashboard': 'Failed to open dashboard: {error}',
   'notice.error.open-trade-log': 'Failed to open Trade Log: {error}',
   'notice.error.open-csv-import': 'Failed to open Trade Import: {error}',
   'notice.error.open-weekly-review': '無法開啟週回顧：{error}',
@@ -686,17 +633,6 @@ const zhTW: Partial<Lang> = {
   
   'csv.results.errors-header': 'CLICK TO SEE ERRORS ({count})',
   'csv.results.history-ready': 'Your trading history is ready',
-  'csv.results.history-trades.one': '{count} trade recovered',
-  'csv.results.history-trades.few': '{count} trades recovered',
-  'csv.results.history-trades.many': '{count} trades recovered',
-  'csv.results.history-trades.other': '{count} trades recovered',
-  'csv.results.history-date-range': '{start} – {end}',
-  'csv.results.history-symbols.one': '{count} symbol',
-  'csv.results.history-symbols.few': '{count} symbols',
-  'csv.results.history-symbols.many': '{count} symbols',
-  'csv.results.history-symbols.other': '{count} symbols',
-  'csv.results.enrichment-note':
-    'Imported performance is ready to review. Add setups, confluences, and notes to recent trades when you want deeper pattern analysis.',
   'csv.results.discord-note':
     'Optional: If you need help, click Copy report and paste it in Discord.',
 
@@ -767,7 +703,6 @@ const zhTW: Partial<Lang> = {
   
   'settings.auth.feature.csv-import': 'Trade Import',
   'settings.auth.feature.ai-mapping': 'AI Trade Import 對應',
-  'settings.auth.feature.metatrader-sync': 'MetaTrader 同步',
   'settings.auth.feature.basic-tracking': '基礎交易追踨',
 
   'settings.auth.feature.priority-support': '優先支援',
@@ -781,6 +716,11 @@ const zhTW: Partial<Lang> = {
     'Checklist to help you add trading history and configure Journalit',
   'home.widget.getting-started.progress': '{completed}/{total} completed',
   'home.widget.getting-started.progress.loading': 'Checking progress...',
+  'home.widget.getting-started.item.account.title': '設定你的交易帳戶',
+  'home.widget.getting-started.item.account.description':
+    '交易會記錄到用於追蹤餘額的帳戶中。沒有帳戶就無法計算報酬與回撤。',
+  'home.widget.getting-started.item.account.time': '15s',
+  'home.widget.getting-started.item.account.cta': '設定帳戶',
   'home.widget.getting-started.item.create.title':
     'Bring in your trading history',
   'home.widget.getting-started.item.create.description':
@@ -810,7 +750,7 @@ const zhTW: Partial<Lang> = {
   'navigation.setting.open.button': '開啟側欄',
   'home.widget.getting-started.item.pro.title': 'Activate PRO',
   'home.widget.getting-started.item.pro.description':
-    'Enable Trade Import, MetaTrader sync, and AI mapping.',
+    '啟用 Trade Import、Trade Sync 和經濟日曆。',
   'home.widget.getting-started.item.pro.time': '1 min',
   'home.widget.getting-started.item.pro.cta': 'Activate',
 
@@ -1148,7 +1088,7 @@ const zhTW: Partial<Lang> = {
   'trade-import.label.template-actions': 'Template actions',
   'trade-import.template.none': 'No template',
   'trade-import.label.account': 'Account',
-  'trade-import.label.broker': 'Broker',
+  'trade-import.label.broker': '匯出來源 / 平台',
   'trade-import.label.asset-type': 'Asset type',
   'trade-import.asset.stock': 'Stock',
   'trade-import.asset.options': 'Options',
@@ -1189,19 +1129,6 @@ const zhTW: Partial<Lang> = {
   'trade-import.preview.metric.ready': '可匯入',
   'trade-import.preview.metric.duplicates': '可能重複',
   'trade-import.preview.metric.attention': '需要處理',
-  'trade-import.preview.upgrade.title': 'Your preview is ready',
-  'trade-import.preview.upgrade.description.one':
-    '{count} trade can be added to your vault when you activate PRO.',
-  'trade-import.preview.upgrade.description.few':
-    '{count} trades can be added to your vault when you activate PRO.',
-  'trade-import.preview.upgrade.description.many':
-    '{count} trades can be added to your vault when you activate PRO.',
-  'trade-import.preview.upgrade.description.other':
-    '{count} trades can be added to your vault when you activate PRO.',
-  'trade-import.preview.upgrade.free-limit':
-    '免費預覽每小時包含 {count} 次分析和 {count} 次預覽。',
-  'trade-import.preview.upgrade.free-storage-limit':
-    '免費預覽最多可同時儲存 {count} 筆交易。',
   'trade-import.table.status': 'Status',
   'trade-import.table.symbol': 'Symbol',
   'trade-import.table.direction': 'Direction',
@@ -1563,6 +1490,15 @@ const zhTW: Partial<Lang> = {
   'tradelog.guide.gallery-finish.title': '你已了解交易日誌的兩種模式',
   'tradelog.guide.gallery-finish.description':
     '需要表格和批次工具時使用交易模式。想跨整個日誌複盤圖片、GIF、影片、YouTube 連結、市場結構和圖表註解時使用圖庫。',
+  'account.prop-challenge.prefill.heading-link': 'Prefill from your firm',
+  'account.prop-challenge.prefill.heading-link-firms':
+    '{firms} +{count} more, rules prefilled with PRO',
+  'account.prop-challenge.prefill.heading-link-firms-all':
+    '{firms}, rules prefilled with PRO',
+  'account.prop-challenge.prefill.match':
+    'We have {firm}: {count} challenges with rules ready',
+  'account.prop-challenge.rules.empty':
+    '尚未新增規則。使用「新增規則」來設定此階段。',
   'trade.validation.fx-rate-number': '匯率必須是有效數字。',
   'trade.validation.fx-rate-positive': '匯率必須大於零。',
   'dashboard.conversion.using-manual-rate':
@@ -1732,6 +1668,349 @@ const zhTW: Partial<Lang> = {
   'settings.general.show-seconds': '在交易時間中顯示秒',
   'settings.general.show-seconds-desc': '輸入交易進場和出場時間時顯示秒。',
   'settings.general.show-seconds-aria': '在交易時間中顯示秒',
+  'account.prop-challenge.summary.status.payout_ready': 'Payout ready',
+  'account.prop-challenge.ribbon.passed': '{phase}已通過',
+  'account.prop-challenge.ribbon.failed': '{phase}未通過',
+  'account.prop-challenge.ribbon.action.advance': '進入{phase}',
+  'account.prop-challenge.ribbon.action.advance-short': '進入',
+  'account.prop-challenge.ribbon.action.mark-passed': '標記為通過',
+  'account.prop-challenge.ribbon.action.archive': '封存',
+  'account.prop-challenge.actions.stale':
+    '此挑戰已在其他地方更新。請檢查後再試一次。',
+  'account.prop-challenge.confirm.reopen':
+    '重新開啟 {account}？挑戰「{challenge}」將回到{phase}。',
+  'account.prop-challenge.confirm.fail':
+    '將 {account} 標記為失敗？挑戰「{challenge}」將在{phase}結束。',
+  'account.prop-challenge.confirm.archive-failed':
+    '封存 {account}？挑戰「{challenge}」已失敗。帳戶將移至已封存。',
+  'account.prop-challenge.confirm.archive-passed':
+    '封存 {account}？挑戰「{challenge}」已通過。帳戶將移至已封存。',
+  'account.prop-challenge.transition.route': '{account} · {from} → {to}',
+  'account.prop-challenge.transition.route-passed':
+    '{account} · {from} → 挑戰通過',
+  'account.prop-challenge.ribbon.action.record-payout': '記錄出金',
+  'account.prop-challenge.ribbon.action.record-payout-short': '出金',
+  'account.prop-challenge.payout.title': 'Payout readiness',
+  'account.prop-challenge.payout.eligible': 'Payout ready',
+  'account.prop-challenge.payout.available': 'Available now',
+  'account.prop-challenge.payout.cycle-profit': 'Cycle profit',
+  'account.prop-challenge.payout.history': 'Payouts',
+  'account.prop-challenge.payout.requirement.days': 'Trading days',
+  'account.prop-challenge.payout.requirement.qualifying-days':
+    'Qualifying days',
+  'account.prop-challenge.payout.requirement.cycle-profit': 'Cycle profit',
+  'account.prop-challenge.payout.requirement.consistency': 'Consistency',
+  'account.prop-challenge.payout.requirement.minimum': 'Minimum available',
+  'account.prop-challenge.payout.requirement.payouts': 'Payout allowance',
+  'account.prop-challenge.payout.requirement.request-window': 'Request window',
+  'account.prop-challenge.payout.timezone-invalid': '不是已知時區。',
+  'account.prop-challenge.payout.preview-amount': 'Preview payout amount',
+  'account.prop-challenge.payout.you-receive': 'Estimated trader share',
+  'account.prop-challenge.payout.balance-after': 'Balance after payout',
+  'account.prop-challenge.payout.drawdown-floor': 'Drawdown floor after',
+  'account.prop-challenge.payout.buffer-after': 'Room before breach',
+  'account.prop-challenge.payout.request-not-allowed':
+    'This amount is not currently eligible under the configured payout rules.',
+  'account.prop-challenge.payout.immediate-breach':
+    'This payout would leave the account at or below its drawdown floor.',
+  'account.prop-challenge.payout.account-concludes':
+    'This payout completes the configured simulated-funded payout cycle.',
+  'account.prop-challenge.payout.next-stage-after-payout':
+    'This payout advances the account to its next configured stage.',
+  'account.prop-challenge.payout.live-review-after-payout':
+    'This payout makes the account eligible for live-account review.',
+  'account.prop-challenge.payout.cycle-resets':
+    'Payout progress resets after an approved payout.',
+  'account.prop-challenge.payout.cycle-continues':
+    'Payout progress continues after an approved payout.',
+  'account.prop-challenge.payout.drawdown.unchanged':
+    'The current drawdown floor remains in place.',
+  'account.prop-challenge.payout.drawdown.lock_at_balance':
+    'The drawdown floor locks after payout.',
+  'account.prop-challenge.payout.drawdown.reset_from_starting_balance':
+    'The account and drawdown limits reset after payout.',
+  'account-page.guide.whats-new.cockpit.payout.title':
+    'Know when a funded payout is safe',
+  'account-page.guide.whats-new.cockpit.payout.description':
+    'Funded accounts with verified rules now show payout requirements, the amount available, and a preview of the balance and drawdown consequences before you request money.',
+  'account-page.guide.main.payout.title': 'Plan funded payouts',
+  'account-page.guide.main.payout.description':
+    'When the funded phase has verified payout rules, this panel tracks eligibility and previews the account impact of a requested amount.',
+  'account-page.guide.main.trade-log.description':
+    '開啟交易日誌並已選取此帳戶。在多階段挑戰中，按鈕會跟隨你正在檢視的階段；箭頭可選擇其他階段或整個帳戶。',
+  'account.prop-challenge.stage': 'Stage type',
+  'account.prop-challenge.stage.evaluation': 'Evaluation',
+  'account.prop-challenge.stage.sim-funded': 'Sim funded',
+  'account.prop-challenge.stage.live-funded': 'Live funded',
+  'account.prop-challenge.payout-rules.title': 'Payout rules',
+  'account.prop-challenge.payout-rules.add': 'Add payout rules',
+  'account.prop-challenge.payout-rules.remove': 'Remove payout rules',
+  'account.prop-challenge.payout-rules.cycle': 'Eligibility cycle',
+  'account.prop-challenge.payout-rules.request-window': 'Request timing',
+  'account.prop-challenge.payout-rules.request-window.anytime': 'Any day',
+  'account.prop-challenge.payout-rules.request-window.weekdays':
+    'Specific weekdays',
+  'account.prop-challenge.payout-rules.request-window.time-zone': 'Time zone',
+  'account.prop-challenge.payout-rules.request-window.allowed-days':
+    'Allowed request days',
+  'account.prop-challenge.payout-rules.cycle.none': 'No waiting cycle',
+  'account.prop-challenge.payout-rules.cycle.trading-days': 'Trading days',
+  'account.prop-challenge.payout-rules.cycle.qualifying-days':
+    'Qualifying days',
+  'account.prop-challenge.payout-rules.cycle.calendar-days': 'Calendar days',
+  'account.prop-challenge.payout-rules.days': 'Required days',
+  'account.prop-challenge.payout-rules.minimum-daily-profit':
+    'Minimum daily profit',
+  'account.prop-challenge.payout-rules.anchor': 'Cycle starts from',
+  'account.prop-challenge.payout-rules.anchor.phase-start': 'Stage start',
+  'account.prop-challenge.payout-rules.anchor.first-trade': 'First trade',
+  'account.prop-challenge.payout-rules.minimum-cycle-profit':
+    'Minimum cycle profit',
+  'account.prop-challenge.payout-rules.consistency-percent':
+    'Maximum best-day share (%)',
+  'account.prop-challenge.payout-rules.availability': 'Available profit',
+  'account.prop-challenge.payout-rules.availability.starting-balance':
+    'Above starting balance',
+  'account.prop-challenge.payout-rules.availability.balance-floor':
+    'Above balance floor',
+  'account.prop-challenge.payout-rules.balance-floor': 'Balance floor',
+  'account.prop-challenge.payout-rules.request-percent':
+    'Withdrawable share (%)',
+  'account.prop-challenge.payout-rules.minimum-request': 'Minimum request',
+  'account.prop-challenge.payout-rules.maximum': 'Maximum request',
+  'account.prop-challenge.payout-rules.maximum.none': 'No maximum',
+  'account.prop-challenge.payout-rules.maximum.fixed': 'Fixed maximum',
+  'account.prop-challenge.payout-rules.maximum.schedule':
+    'Maximum by payout number',
+  'account.prop-challenge.payout-rules.maximum-amount': 'Maximum amount',
+  'account.prop-challenge.payout-rules.schedule': 'Amounts by payout number',
+  'account.prop-challenge.payout-rules.profit-split': 'Trader profit share (%)',
+  'account.prop-challenge.payout-rules.maximum-payouts': 'Maximum payouts',
+  'account.prop-challenge.payout-rules.maximum-payout-outcome':
+    'After final payout',
+  'account.prop-challenge.payout-rules.maximum-payout-outcome.continue':
+    'Continue account',
+  'account.prop-challenge.payout-rules.maximum-payout-outcome.conclude':
+    'Conclude account',
+  'account.prop-challenge.payout-rules.maximum-payout-outcome.promote':
+    'Advance to next stage',
+  'account.prop-challenge.payout-rules.maximum-payout-outcome.live-review':
+    'Eligible for live review',
+  'account.prop-challenge.payout-rules.aftermath': 'After an approved payout',
+  'account.prop-challenge.payout-rules.aftermath.unchanged':
+    'Deduct payout; keep drawdown floor',
+  'account.prop-challenge.payout-rules.aftermath.lock':
+    'Deduct payout; lock drawdown floor',
+  'account.prop-challenge.payout-rules.aftermath.reset':
+    'Reset account and drawdown',
+  'account.prop-challenge.payout-rules.drawdown-floor':
+    'Drawdown floor after payout',
+  'account.prop-challenge.payout-rules.first-payout-exempt':
+    'First payout ignores minimum cycle profit',
+  'account.prop-challenge.payout-rules.reset-cycle':
+    'Reset eligibility cycle after payout',
+  'account.prop-challenge.payout-rules.group.eligibility': 'Eligibility',
+  'account.prop-challenge.payout-rules.group.availability': 'Available payout',
+  'account.prop-challenge.payout-rules.group.terms': 'Payout terms',
+  'account.prop-challenge.payout-rules.group.aftermath': 'After payout',
+  'account.prop-challenge.payout.requirement.elapsed-hours': 'Elapsed time',
+  'account.prop-challenge.payout-rules.minimum-elapsed-hours':
+    'Minimum elapsed hours',
+
+  'account.prop-challenge.ledger.help.open': '關於{rule}',
+  'account.prop-challenge.ledger.help.profit_target':
+    '把帳戶增加這個金額以通過該階段。只計算已平倉交易。',
+  'account.prop-challenge.ledger.help.profit_target.example':
+    '此帳戶需要 {target} 利潤：目前 {current}，還差 {remaining}。',
+  'account.prop-challenge.ledger.help.profit_target.example-done':
+    '已達目標：{current} / {target}。',
+  'account.prop-challenge.ledger.help.drawdown.static':
+    '餘額相對起始餘額最多可下跌的幅度。下限不會移動。',
+  'account.prop-challenge.ledger.help.drawdown.static.example':
+    '此帳戶下限為 {floor}；餘額必須保持在其上方。限額 {limit} 還剩 {buffer}。',
+  'account.prop-challenge.ledger.help.drawdown.eod_trailing':
+    '下限跟隨你最高的日終餘額，只會上升，直到鎖定在公司的鎖定水平。',
+  'account.prop-challenge.ledger.help.drawdown.eod_trailing.example':
+    '目前下限為 {floor}（最高收盤減去 {limit}），並隨更高收盤上移。還剩 {buffer}。',
+  'account.prop-challenge.ledger.help.drawdown.intraday_trailing':
+    '底線隨時跟隨你的最高餘額，包括未實現盈利。Journalit 只看到已平倉交易，因此此底線跟隨每次平倉後的最佳餘額；持倉期間達到的峰值不會計入。請以公司的數據為準。',
+  'account.prop-challenge.ledger.help.drawdown.intraday_trailing.example':
+    '目前下限為 {floor}（平倉後最佳餘額減去 {limit}）。還剩 {buffer}；公司即時數字可能更緊。',
+  'account.prop-challenge.ledger.help.daily_loss_limit':
+    '單個交易日最多可虧損的金額。觸及後會判定階段失敗，或暫停至下一交易時段，視公司而定。',
+  'account.prop-challenge.ledger.help.daily_loss_limit.example':
+    '今日：日虧損限額 {limit} 已用 {used}，還剩 {left}。',
+  'account.prop-challenge.ledger.help.daily_profit_cap':
+    '每日利潤只有一部分計入目標。超過上限的利潤會保留，但不計入。',
+  'account.prop-challenge.ledger.help.daily_profit_cap.example':
+    '一天利潤只計入 {cap}；超過上限已賺的 {excluded} 不計入。',
+  'account.prop-challenge.ledger.help.live_review_daily_profit':
+    '任意一個交易日達到或超過該利潤，帳戶即有資格接受實盤審核。',
+  'account.prop-challenge.ledger.help.live_review_daily_profit.example':
+    '有一天達到 {trigger} 或以上即合格；目前最佳日 {bestDay}。',
+  'account.prop-challenge.ledger.help.minimum_trading_days':
+    '至少有一筆已平倉交易的天數。無論多快達到目標，未滿該天數都不能通過階段。',
+  'account.prop-challenge.ledger.help.minimum_trading_days.example':
+    '已完成 {current} / {target} 個交易日，還差 {remaining}。',
+  'account.prop-challenge.ledger.help.minimum_profitable_days':
+    '收盤利潤達到或超過公司最低日利潤的交易日。打平或更小的盈利不計。',
+  'account.prop-challenge.ledger.help.minimum_profitable_days.example':
+    '已有 {current} / {target} 天收盤達到 {minimum} 或以上，還差 {remaining}。',
+  'account.prop-challenge.ledger.help.consistency':
+    '單日最佳利潤不得超過階段總利潤的該比例。應靠其他日子多賺來修復，而不是靠虧損。',
+  'account.prop-challenge.ledger.help.consistency.example':
+    '最佳日 {bestDay} 占總利潤 {total} 的 {share}；總利潤需達到 {goal} 才能落在 {maximum}。',
+  'account.prop-challenge.ledger.help.consistency.example-done':
+    '最佳日 {bestDay} 占總利潤的 {share}，在 {maximum} 限額內。',
+  'account.prop-challenge.ledger.help.consistency.example-none':
+    '尚無利潤，因此沒有可比較的最佳日。',
+  'account.prop-challenge.ledger.help.max_position_size':
+    '所有未平倉持倉合計最多可持有的合約數。有些公司隨利潤增加會提高限額。',
+  'account.prop-challenge.ledger.help.max_position_size.example':
+    '目前最多同時 {maximum} 口；迄今最大倉位 {current}。',
+  'account.prop-challenge.ledger.help.payout.cycle_days':
+    '當前出金週期內的交易日。批准出金後重新計數。',
+  'account.prop-challenge.ledger.help.payout.cycle_days.example':
+    '本週期交易日 {current} / {target}，還差 {remaining}。',
+  'account.prop-challenge.ledger.help.payout.qualifying_days':
+    '本週期內收盤利潤達到或超過公司最低日利潤的交易日。',
+  'account.prop-challenge.ledger.help.payout.qualifying_days.example':
+    '本週期達到 {minimum} 或以上的天數 {current} / {target}，還差 {remaining}。',
+  'account.prop-challenge.ledger.help.payout.cycle_profit':
+    '自週期開始以來的利潤必須達到該金額才能申請。',
+  'account.prop-challenge.ledger.help.payout.cycle_profit.example':
+    '本週期已賺 {current}，需要 {target}。',
+  'account.prop-challenge.ledger.help.payout.minimum_balance':
+    '申請時餘額必須達到或高於該水平。',
+  'account.prop-challenge.ledger.help.payout.minimum_balance.example':
+    '餘額 {current}；必須至少 {target}。',
+  'account.prop-challenge.ledger.help.payout.positive_cycle_profit':
+    '首次出金之後，每個新週期必須先獲利才能再次申請。',
+  'account.prop-challenge.ledger.help.payout.positive_cycle_profit.example':
+    '週期利潤為 {current}；必須大於零。',
+  'account.prop-challenge.ledger.help.payout.consistency':
+    '最佳日不得超過週期利潤的該比例。',
+  'account.prop-challenge.ledger.help.payout.consistency.example':
+    '最佳單日 {bestDay} 佔週期利潤 {total} 的 {share}；週期利潤需達到 {goal}，該比例才會落在 {maximum}。',
+  'account.prop-challenge.ledger.help.payout.consistency.example-done':
+    '最佳單日 {bestDay} 佔週期利潤的 {share}，在 {maximum} 限制以內。',
+  'account.prop-challenge.ledger.help.payout.consistency.example-none':
+    '週期尚無利潤，因此沒有可比較的最佳單日。',
+  'account.prop-challenge.ledger.help.payout.minimum_request':
+    '公司接受的最小出金。可用金額必須先達到該值。',
+  'account.prop-challenge.ledger.help.payout.minimum_request.example':
+    '可用 {current}；公司最低申請額為 {target}。',
+  'account.prop-challenge.ledger.help.payout.payout_count':
+    '本階段允許的出金次數。用完額度即完成該階段。',
+  'account.prop-challenge.ledger.help.payout.payout_count.example':
+    '本階段已用 {current} / {target} 次出金。',
+  'account.prop-challenge.ledger.help.payout.request_window':
+    '只在這些工作日、按公司時區接受申請。',
+  'account.prop-challenge.ledger.help.payout.request_window.example':
+    '今天是 {today}；申請開放日為 {days}（{timeZone}）。',
+  'account.prop-challenge.ledger.help.payout.elapsed_hours':
+    '自本週期第一筆交易起的時間必須達到該值才能申請。',
+  'account.prop-challenge.ledger.help.payout.elapsed_hours.example':
+    '自週期首筆交易起已過 {current} / {target} 小時。',
+  'account.prop-challenge.ledger.help.payout.lifetime_qualifying_days':
+    '整個有資階段的合格天數，不只是本週期。達到後解鎖出金。',
+  'account.prop-challenge.ledger.help.payout.lifetime_qualifying_days.example':
+    '整個階段合格日 {current} / {target}。',
+  
+  'account.merge.challenge.move-earlier': '將 {account} 前移',
+  'account.merge.challenge.move-later': '將 {account} 後移',
+  'account.merge.warning.use-profile-balance': '使用檔案餘額',
+  'account.merge.warning.edit-phases': '編輯階段',
+  'account.merge.title': '挑戰設定',
+  'account.merge.loading': '載入中...',
+  'account.merge.step.accounts': '帳戶',
+  'account.merge.step.phases': '階段',
+  'account.merge.step.review': '檢查',
+  'account.merge.accounts.title': '要合併的帳戶',
+  'account.merge.accounts.show-archived': '顯示已封存',
+  'account.merge.accounts.empty': '沒有符合條件的帳戶',
+  'account.merge.target.title': '目標帳戶',
+  'account.merge.target.keep': '保留',
+  'account.merge.target.new': '新名稱',
+  'account.merge.phase.name': '階段名稱',
+  'account.merge.phase.status': '狀態',
+  'account.merge.phase.started': '開始',
+  'account.merge.phase.completed': '結束',
+  'account.merge.phase.no-rules': '無',
+  'account.merge.review.notes': '已遷移交易',
+  'account.merge.review.identities': '經紀商帳戶',
+  'account.merge.warning.trade-outside-window': '交易不在其階段區間內',
+  'account.merge.warning.identity-shared': '識別碼被多個帳戶占用',
+  'account.merge.warning.copy-trading-dropped': '已捨棄跟單週期',
+  'account.merge.error.too-few-sources': '請至少選擇兩個帳戶。',
+  'account.merge.error.duplicate-source': '某個帳戶重複出現。',
+  'account.merge.error.target-exists': '該名稱屬於另一個帳戶。',
+  'account.merge.error.currency-mismatch': '帳戶使用了不同的貨幣。',
+  'account.merge.error.timeline-not-monotonic': '各階段開始時間必須遞增。',
+  'account.merge.error.invalid-override': '請檢查該階段的日期。',
+  'account.merge.error.source-missing': '某個帳戶沒有已儲存的設定。',
+  'account.merge.error.unknown': '合併失敗。',
+  'account.merge.action.merge': '合併',
+  'account.merge.action.undo': '復原',
+  'account.merge.action.delete': '刪除舊帳戶',
+  'account.merge.notice.converted': '已轉換為挑戰',
+  'account.merge.notice.title': '合併自 {accounts}',
+  'account.merge.notice.error': '操作失敗。',
+  'account.merge.undo.title': '復原合併',
+  'account.merge.undo.message': '還原舊帳戶及其交易。',
+  'account.merge.delete.title': '刪除舊帳戶',
+  'account.merge.delete.message': '刪除已封存的舊帳戶，此操作無法復原。',
+  'command.open-legacy-challenge-onboarding': '設定 Prop 挑戰',
+  'account.merge.step.challenge': '挑戰',
+  'account.merge.action.convert': '轉換',
+  'account.merge.challenge.accounts': '帳戶',
+  'account.merge.challenge.order-hint': '最早的階段在前',
+  'account.merge.challenge.single-hint': '此帳戶將單獨成為一個挑戰',
+  'account.merge.phase.identities-count': '{count} 個識別碼',
+  'account.merge.phase.pending': '待定',
+  'account.merge.review.phases': '個階段',
+  'account.merge.review.archived': '已封存',
+  'account.merge.review.open': '進行中',
+  'account.merge.sequence': '挑戰 {index} / {total}',
+  'account.merge.warning.balance-differs': '起始餘額與公司檔案不一致',
+  'account.merge.error.profile-phase-mismatch':
+    '帳戶數量多於公司檔案中的階段數',
+  'account.merge.error.profile-currency-mismatch': '檔案貨幣與這些帳戶不一致。',
+  'account.merge.error.source-changed': '有帳戶已變更。請重新檢查合併。',
+  'account.merge.error.multiple-active-phases':
+    '只能是最後一個帳戶仍處於進行中。',
+  'account.merge.error.copy-trading-overlap':
+    '跟單週期重疊。請先結束其中一個。',
+  'onboarding.legacy-challenge.legend':
+    '將曾是同一挑戰各階段的帳戶歸為一組。單獨的帳戶會成為一個獨立挑戰。',
+  'onboarding.legacy-challenge.assign.leave': '保持不變',
+  'onboarding.legacy-challenge.assign.own': '獨立挑戰',
+  'onboarding.legacy-challenge.assign.group': '挑戰 {letter}',
+  'onboarding.legacy-challenge.assign.new-group': '新增挑戰…',
+  'onboarding.legacy-challenge.action.continue': '繼續',
+  'onboarding.legacy-challenge.action.continue-count': '設定 {count} 個',
+  'guide.action-step.dismiss': '暫不',
+  'guide.legacy-challenge.title': '你的現有帳戶',
+  'guide.legacy-challenge.description':
+    '合併曾是同一挑戰各階段的帳戶，或將某個帳戶設為獨立挑戰。',
+  'guide.legacy-challenge.action': '設定我的帳戶',
+  'account-dashboard.challenges.empty.title': '尚無挑戰',
+  'account-dashboard.challenges.empty.message':
+    '將自營交易公司的挑戰視為一個包含階段、規則與出金的帳戶來追蹤。',
+  'account-dashboard.challenges.empty.create': '新增挑戰',
+  'account-dashboard.challenges.empty.setup': '設定現有帳戶',
+  'onboarding.legacy-challenge.title': 'Prop 挑戰',
+  'onboarding.legacy-challenge.action.skip': '略過',
+  'onboarding.legacy-challenge.accounts.show-archived': '顯示已封存',
+  'onboarding.legacy-challenge.accounts.empty': '沒有需要設定的帳戶',
+  'onboarding.legacy-challenge.loading': '載入中...',
+  'onboarding.legacy-challenge.suggested': '建議',
+  'onboarding.legacy-challenge.row.aria': '{account} 的操作',
+  'onboarding.legacy-challenge.status.combined': '已合併',
+  'onboarding.legacy-challenge.status.converted': '已轉換',
+  'onboarding.legacy-challenge.entry.name': 'Prop 挑戰',
+  'onboarding.legacy-challenge.entry.desc': '將現有帳戶合併或轉換為挑戰。',
+  'onboarding.legacy-challenge.entry.action': '設定',
 
   'view.home': '首頁',
   'common.lose': '虧',
@@ -1742,6 +2021,32 @@ const zhTW: Partial<Lang> = {
   'trade-import.preview.message.no-open-match':
     'No matching open trade found for close-only preview',
   'setups.view.detail.execution-gap.title': 'Execution Gap',
+  'session-log.session-group.unplanned': '計畫外 @ {time}',
+  'session-mode.unplanned.name': '計畫外交易時段',
+  'session-mode.unplanned.start': '開始計畫外交易時段',
+  'session-mode.unplanned.stop': '結束時段',
+  'session-mode.unplanned.badge': '計畫外',
+  'session-mode.unplanned.status.live': '{time} 開始 · 已進行 {elapsed}',
+  'session-mode.unplanned.ended.summary':
+    '計畫外交易時段 · {start}–{end} · {duration}',
+  'session-mode.unplanned.modal.title': '開始計畫外交易時段',
+  'session-mode.unplanned.modal.description':
+    '目前不在你計畫的交易時段內。此時段將在每日檢討中標記為計畫外。請寫下你現在交易的原因。',
+  'session-mode.unplanned.modal.reason-label': '原因',
+  'session-mode.unplanned.modal.reason-placeholder':
+    '例如：14:00 FOMC、錯過了上午時段',
+  'session-mode.unplanned.modal.reason-required': '開始前請填寫原因。',
+  'session-mode.unplanned.notice.started': '計畫外交易時段已開始。',
+  'session-mode.unplanned.notice.stopped': '計畫外交易時段已結束。',
+  'session-mode.unplanned.notice.blocked-live': '已有一個交易時段正在進行。',
+  'session-mode.unplanned.notice.none-running':
+    '目前沒有進行中的計畫外交易時段。',
+  'session-mode.unplanned.notice.failed':
+    '無法更新計畫外交易時段。請查看主控台了解詳情。',
+  'calendar.aria.open-daily-review': '開啟 {date} 的每日回顧',
+  'calendar.aria.open-weekly-review': '開啟 {date} 的每週回顧',
+  'calendar.aria.open-monthly-review': '開啟 {date} 的月度回顧',
+  'calendar.aria.open-quarterly-review': '開啟 {date} 的季度回顧',
 };
 
 export default zhTW;

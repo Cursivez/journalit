@@ -21,6 +21,7 @@ import { openFilterModal, UnifiedFilters } from '../../shared/filters';
 import type { AvailableCustomFieldFilter } from '../../shared/filters/types';
 import { HeaderPreviewData } from '../../../types/reviewV2';
 import { eventBus } from '../../../services/events/EventBus';
+import { reviewChangeAffectsPath } from '../../../services/events/reviewChangedPaths';
 import { useEventBus } from '../../../hooks/useEventBus';
 import type {
   AccountChangedPayload,
@@ -48,6 +49,7 @@ import { remapAccountFilterFromAccountChange } from '../../shared/filters/remapS
 import { persistViewFilter } from '../../shared/filters/viewFilterPersistence';
 import { mergeClassNames } from '../../../utils/classNames';
 import { sanitizeCustomFieldFilters } from '../../shared/filters/sanitizeCustomFieldFilters';
+import { openReviewLayoutSwitcher } from '../../../services/templates/openReviewLayoutSwitcher';
 
 const SHORT_WEEKDAY_FORMATTER = new Intl.DateTimeFormat(undefined, {
   weekday: 'short',
@@ -326,7 +328,7 @@ export const HeaderWidget: React.FC<HeaderWidgetProps> = React.memo(
     
     const handleDataChange = useCallback(
       (payload: ReviewChangedPayload) => {
-        if (payload.filePath === filePath) {
+        if (reviewChangeAffectsPath(payload, filePath)) {
           loadReviewedStatus();
         }
       },
@@ -1079,12 +1081,13 @@ export const HeaderWidget: React.FC<HeaderWidgetProps> = React.memo(
 
     const handleSwitchTemplate = useCallback(() => {
       if (preview) return;
-      plugin.app.commands?.executeCommandById('journalit:switch-template');
-    }, [plugin, preview]);
+      void openReviewLayoutSwitcher(plugin, filePath);
+    }, [filePath, plugin, preview]);
 
     const activeFilterCount = useMemo(() => {
       return (
         (filters.accounts?.length || 0) +
+        (filters.accountPhases?.length || 0) +
         (filters.tickers?.length || 0) +
         (filters.setups?.length || 0) +
         (filters.tags?.length || 0) +
@@ -1583,9 +1586,9 @@ export const HeaderWidget: React.FC<HeaderWidgetProps> = React.memo(
                 <button
                   type="button"
                   className="journalit-header-icon-button"
-                  onClick={() => void handleSwitchTemplate()}
+                  onClick={handleSwitchTemplate}
                   disabled={preview}
-                  aria-label={t('command.switch-template')}
+                  aria-label={t('template.switch-title')}
                 >
                   <Repeat2 size={16} aria-hidden="true" />
                 </button>

@@ -931,6 +931,8 @@ export interface TradeData {
   tradeRevision?: number;
   templateId?: string;
   templateVersion?: number;
+  journalitSampleInstance?: string;
+  journalitSampleEntityId?: string;
   tradeImportId?: string;
   tradeImportVersion?: number;
   tradeImportAccountId?: string;
@@ -940,6 +942,7 @@ export interface TradeData {
   canonicalTradeVersion?: number;
   canonicalProjectionGeneration?: string;
   canonicalAccountId?: string;
+  canonicalAccountIdentity?: 'broker' | 'name';
   canonicalBroker?: string;
   canonicalAccountDisplayName?: string;
   canonicalProjectionSchemaVersion?: number;
@@ -1675,6 +1678,15 @@ export class TradeService extends CustomDataService {
       if (contentWithOwnershipMarker !== updatedContent) {
         await replaceFileContent(this.app, file, contentWithOwnershipMarker);
         await forceMetadataCacheRefresh(this.app, file);
+      }
+      if (wasRelocated) {
+        await this.plugin?.demoSessionService?.recordMovedEntities([
+          { oldPath: originalFilePath, newPath: filePath },
+          ...relocatedManagedMedia.map(({ sourcePath, destinationPath }) => ({
+            oldPath: sourcePath,
+            newPath: destinationPath,
+          })),
+        ]);
       }
 
       
@@ -3104,6 +3116,11 @@ export class TradeService extends CustomDataService {
           if (file.path.endsWith('.md')) {
             const normalizedPath = normalizePath(file.path);
             const frontmatter = previousCache?.frontmatter;
+            if (
+              !this.isPathInMonitoredFolder(normalizedPath) &&
+              !this.hasProjectionDeletionIdentity(normalizedPath, frontmatter)
+            )
+              return;
             const wasTrade =
               frontmatter?.type === 'trade' ||
               frontmatter?.isMissedTrade === true ||
@@ -3128,6 +3145,11 @@ export class TradeService extends CustomDataService {
           if (file.path.endsWith('.md')) {
             const normalizedPath = normalizePath(file.path);
             if (
+              !this.isPathInMonitoredFolder(normalizedPath) &&
+              !this.hasProjectionDeletionIdentity(normalizedPath)
+            )
+              return;
+            if (
               !/\/trades\//.test(file.path) &&
               !this.tradeReadModel.getEntryForPath(normalizedPath)
             )
@@ -3147,6 +3169,26 @@ export class TradeService extends CustomDataService {
       (payload: OptionsChangedPayload) => {
         this.handleOptionsChanged(payload);
       }
+    );
+  }
+
+  private hasProjectionDeletionIdentity(
+    filePath: string,
+    frontmatter?: Record<string, unknown>
+  ): boolean {
+    if (
+      hasCanonicalProjectionIdentity(frontmatter) ||
+      typeof frontmatter?.tradeImportId === 'string'
+    ) {
+      return true;
+    }
+
+    const readModelEntry = this.tradeReadModel.getEntryForPath(filePath);
+    const indexedProjection = this.projectionIdentityByPath.get(filePath);
+    return Boolean(
+      readModelEntry?.canonicalTradeId ||
+      readModelEntry?.tradeImportId ||
+      indexedProjection?.canonicalTradeId
     );
   }
 
@@ -3630,16 +3672,34 @@ export class TradeService extends CustomDataService {
     data: TradeData,
     options?: TradeCreateOptions
   ): Promise<string> {
+    const ownership =
+      !data.journalitSampleInstance || !data.journalitSampleEntityId
+        ? this.plugin?.demoSessionService?.claimNewOwnership('trade')
+        : null;
+    const ownedData = ownership
+      ? {
+          ...data,
+          journalitSampleInstance: ownership.instanceId,
+          journalitSampleEntityId: ownership.entityId,
+        }
+      : data;
     const templateMetadata = this.plugin
       ? getDefaultTradeTemplateMetadata(this.plugin)
       : undefined;
-    const mergedData = { ...(templateMetadata ?? {}), ...data };
-    return this.tradeCommandService.createTrade(
-      data.canonicalTradeId
+    const mergedData = { ...(templateMetadata ?? {}), ...ownedData };
+    const filePath = await this.tradeCommandService.createTrade(
+      ownedData.canonicalTradeId
         ? mergedData
         : this.applyAutomaticCommission(mergedData),
       options
     );
+    if (ownership) {
+      await this.plugin?.demoSessionService?.recordCreatedEntity(
+        filePath,
+        ownership
+      );
+    }
+    return filePath;
   }
 
   public createTradeCommitEventBatch(): TradeCommitEventBatch {
@@ -3911,42 +3971,37 @@ export class TradeService extends CustomDataService {
           }
         }
 
-        
-        if (this.plugin?.settings.drc.autoCreateOnFirstTrade) {
+        const plugin = this.plugin;
+        if (plugin?.settings.reviews?.globalAutoCreate === true) {
+          const tradeDate = new Date(data.entryTime);
+
+          
           try {
             
-            const tradeDate = new Date(data.entryTime);
-
-            
-            if (this.plugin.drcService) {
+            if (plugin.drcService) {
               
-              const drcPath = this.plugin.drcService.getDRCNotePath(tradeDate);
+              const drcPath = plugin.drcService.getDRCNotePath(tradeDate);
 
               
               const drcExists = await this.app.vault.adapter.exists(drcPath);
 
               
               if (!drcExists) {
-                await this.plugin.drcService.createDRC(tradeDate);
+                await plugin.drcService.createDRC(tradeDate);
               }
             }
           } catch (error) {
             
             console.error('Failed to auto-create DRC for trade:', error);
           }
-        }
 
-        
-        if (this.plugin?.settings.weekly?.autoCreateOnFirstTrade) {
+          
           try {
             
-            const tradeDate = new Date(data.entryTime);
-
-            
-            if (this.plugin.weeklyReviewService) {
+            if (plugin.weeklyReviewService) {
               
               const weeklyReviewPath =
-                this.plugin.weeklyReviewService.getWeeklyReviewPath(tradeDate);
+                plugin.weeklyReviewService.getWeeklyReviewPath(tradeDate);
 
               
               const weeklyReviewExists =
@@ -3954,9 +4009,7 @@ export class TradeService extends CustomDataService {
 
               
               if (!weeklyReviewExists) {
-                await this.plugin.weeklyReviewService.createWeeklyReview(
-                  tradeDate
-                );
+                await plugin.weeklyReviewService.createWeeklyReview(tradeDate);
               }
             }
           } catch (error) {
@@ -3966,21 +4019,14 @@ export class TradeService extends CustomDataService {
               error
             );
           }
-        }
 
-        
-        if (this.plugin?.settings.monthly?.autoCreateOnFirstTrade) {
+          
           try {
             
-            const tradeDate = new Date(data.entryTime);
-
-            
-            if (this.plugin.monthlyReviewService) {
+            if (plugin.monthlyReviewService) {
               
               const monthlyReviewPath =
-                this.plugin.monthlyReviewService.getMonthlyReviewPath(
-                  tradeDate
-                );
+                plugin.monthlyReviewService.getMonthlyReviewPath(tradeDate);
 
               
               const monthlyReviewExists =
@@ -3988,7 +4034,7 @@ export class TradeService extends CustomDataService {
 
               
               if (!monthlyReviewExists) {
-                await this.plugin.monthlyReviewService.createMonthlyReview(
+                await plugin.monthlyReviewService.createMonthlyReview(
                   tradeDate
                 );
               }
@@ -4000,19 +4046,14 @@ export class TradeService extends CustomDataService {
               error
             );
           }
-        }
 
-        
-        if (this.plugin?.settings.quarterly?.autoCreateOnFirstTrade) {
+          
           try {
             
-            const tradeDate = new Date(data.entryTime);
-
-            
-            if (this.plugin.quarterlyReviewService) {
+            if (plugin.quarterlyReviewService) {
               
               const quarterlyReviewPath =
-                await this.plugin.quarterlyReviewService.getQuarterlyReviewPath(
+                await plugin.quarterlyReviewService.getQuarterlyReviewPath(
                   tradeDate
                 );
 
@@ -4022,7 +4063,7 @@ export class TradeService extends CustomDataService {
 
               
               if (!quarterlyReviewExists) {
-                await this.plugin.quarterlyReviewService.createQuarterlyReview(
+                await plugin.quarterlyReviewService.createQuarterlyReview(
                   tradeDate
                 );
               }
@@ -4034,17 +4075,12 @@ export class TradeService extends CustomDataService {
               error
             );
           }
-        }
 
-        
-        if (this.plugin?.settings.yearly?.autoCreateOnFirstTrade) {
+          
           try {
             
-            const tradeDate = new Date(data.entryTime);
-
-            
             const yearlyReviewService =
-              await this.plugin.serviceManager.getYearlyReviewService();
+              await plugin.serviceManager.getYearlyReviewService();
 
             
             const yearlyReviewPath =
@@ -4539,6 +4575,7 @@ export class TradeService extends CustomDataService {
         'canonicalTradeVersion',
         'canonicalProjectionGeneration',
         'canonicalAccountId',
+        'canonicalAccountIdentity',
         'canonicalBroker',
         'canonicalAccountDisplayName',
         'canonicalProjectionSchemaVersion',
@@ -4593,8 +4630,13 @@ export class TradeService extends CustomDataService {
             }
             const price = this.parseFiniteNumber(target.price);
             const closePercent = this.parseFiniteNumber(target.closePercent);
+            const size = this.parseFiniteNumber(target.size);
 
-            if (price === undefined && closePercent === undefined) {
+            if (
+              price === undefined &&
+              closePercent === undefined &&
+              size === undefined
+            ) {
               return [];
             }
 
@@ -4602,6 +4644,7 @@ export class TradeService extends CustomDataService {
               {
                 ...(price !== undefined && { price }),
                 ...(closePercent !== undefined && { closePercent }),
+                ...(size !== undefined && { size }),
               },
             ];
           })
@@ -4651,6 +4694,14 @@ export class TradeService extends CustomDataService {
             ? frontmatter.templateId
             : undefined,
         templateVersion: this.parseFiniteNumber(frontmatter.templateVersion),
+        journalitSampleInstance:
+          typeof frontmatter.journalitSampleInstance === 'string'
+            ? frontmatter.journalitSampleInstance
+            : undefined,
+        journalitSampleEntityId:
+          typeof frontmatter.journalitSampleEntityId === 'string'
+            ? frontmatter.journalitSampleEntityId
+            : undefined,
         canonicalTradeId: isCanonicalProjection
           ? frontmatter.canonicalTradeId.trim()
           : undefined,
@@ -4666,6 +4717,12 @@ export class TradeService extends CustomDataService {
           isCanonicalProjection &&
           typeof frontmatter.canonicalAccountId === 'string'
             ? frontmatter.canonicalAccountId
+            : undefined,
+        canonicalAccountIdentity:
+          isCanonicalProjection &&
+          (frontmatter.canonicalAccountIdentity === 'broker' ||
+            frontmatter.canonicalAccountIdentity === 'name')
+            ? frontmatter.canonicalAccountIdentity
             : undefined,
         canonicalBroker:
           isCanonicalProjection &&
@@ -5717,8 +5774,14 @@ export class TradeService extends CustomDataService {
     const allFiles = allMarkdownFiles || this.getTrackedMarkdownFiles();
 
     
+    
+    const journalFiles = allFiles.filter((file) =>
+      this.folderPathService.isJournalPath(file.path)
+    );
+
+    
     const existenceChecks = await Promise.all(
-      allFiles.map(async (file) => {
+      journalFiles.map(async (file) => {
         try {
           const exists = await this.app.vault.adapter.exists(file.path);
           return { file, exists };
@@ -5740,11 +5803,6 @@ export class TradeService extends CustomDataService {
 
     
     const tradeFiles = existingFiles.filter((file) => {
-      
-      if (!this.folderPathService.isJournalPath(file.path)) {
-        return false;
-      }
-
       
       const cachedFrontmatter =
         this.app.metadataCache.getFileCache(file)?.frontmatter;
@@ -6311,11 +6369,11 @@ export class TradeService extends CustomDataService {
     }
   }
 
-  public override cleanup(): void {
+  public override async cleanup(): Promise<void> {
     this.unsubscribeOptions?.();
     this.unsubscribeOptions = undefined;
     this.unsubscribeFolderPathChanged?.();
     this.unsubscribeFolderPathChanged = undefined;
-    super.cleanup();
+    await super.cleanup();
   }
 }

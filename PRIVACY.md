@@ -1,6 +1,6 @@
 # Privacy Policy - Journalit
 
-**Last Updated**: 2026-08-21
+**Last Updated**: 2026-09-11
 
 ## Overview
 
@@ -100,15 +100,15 @@ When you choose to authenticate:
 
 ---
 
-### MetaTrader 5 Sync (Optional)
+### MetaTrader 4 Sync (Optional Pro Feature)
 
-When you enable MT5 sync in **Settings → Integration → Backend Integration**, the plugin:
+When you enable MetaTrader 4 Trade Sync in **Settings → Journalit → Trade Sync**, the plugin:
 
 **What is Transmitted:**
 
 - **Only automatically synced trades** from your MetaTrader account
 - Trade data: symbol, entry/exit times, prices, position size, P&L, commission, swap, fees
-- Account information: MT5 account ID, display name
+- Account information: MT4 account ID and display name
 - Vault identifier: A SHA-256 hashed, non-reversible identifier for sync coordination
 
 **What is NOT Transmitted:**
@@ -126,7 +126,7 @@ When you enable MT5 sync in **Settings → Integration → Backend Integration**
 **Control:**
 
 - Requires explicit authentication via email verification
-- Enable/disable in **Settings → Integration → Backend Integration**
+- Enable or disable the account in **Settings → Journalit → Trade Sync**
 
 ---
 
@@ -160,6 +160,29 @@ The backend stores the connected Tradovate account configuration, normalized pro
 
 ---
 
+### cTrader Sync (Optional Pro Feature)
+
+cTrader authorization and connection lifecycle are handled on Journalit.co. Journalit requests read-only account access and cannot place, modify, or close cTrader orders. Access and refresh tokens are encrypted on the Journalit backend and are never returned to the website UI or plugin.
+
+When you configure or run cTrader Sync, the plugin transmits:
+
+- Selected backend account records and initial-history boundaries
+- A random vault identifier used for projection coordination
+- The plugin version and random client-installation/operation identifiers
+- Projection acknowledgements containing canonical trade IDs, versions, local file paths for written notes, and success/failure codes
+
+The backend stores connection-scoped account configuration and source provenance, normalized provider records, canonical synchronized trades, synchronization jobs, reconciliation state, projection state, and privacy-safe diagnostics required to operate and support the feature. Disconnecting removes the cTrader authorization but preserves existing cloud trades. Deleting cloud data removes provenance owned by that connection. Neither action deletes Obsidian notes.
+
+---
+
+### Rithmic Sync (Optional Pro Feature)
+
+Rithmic credentials are entered and managed on Journalit.co, not in the plugin. The selected Rithmic system, username, and password are sent over TLS to the Journalit backend, verified against Rithmic, and stored encrypted at rest. They are never returned to the browser or plugin and are deleted when you disconnect.
+
+The plugin receives provider-neutral connection, account, trade-projection, and synchronization status records. It sends the local Journalit account assignment, a random vault identifier, a persistent random client-installation identifier stored in Obsidian's device-local browser storage, the plugin version, a random per-operation identifier, and projection acknowledgements needed to write and track trade notes in the current vault. Your note text, screenshots, reviews, and other local journal content are not sent as part of Rithmic synchronization.
+
+---
+
 ### Exchange-rate conversion (Optional)
 
 When multi-currency conversion is needed, Journalit may request exchange rates from a third-party exchange-rate service:
@@ -187,6 +210,43 @@ When multi-currency conversion is needed, Journalit may request exchange rates f
 
 ---
 
+### Upgrade links and website attribution
+
+Journalit does not include client-side telemetry. Viewing a paywalled feature
+sends no analytics or usage event; if you are signed in, the plugin still checks
+your own subscription status so it knows what to show you, which is a functional
+request listed under **Network Endpoints** below. Upgrade buttons open
+`journalit.co` in your normal browser only when you click them, and the link
+carries fixed campaign parameters:
+
+**What is Transmitted:**
+
+- Constant campaign parameters identifying that the link came from the plugin, which feature's paywall you clicked, and whether that feature was opened by the onboarding import path
+- Nothing else; the plugin sends no request of its own for attribution, and the parameters travel only because your browser opened the link
+
+**What is NOT Transmitted:**
+
+- Any generated, random, or per-installation identifier
+- Your email, account ID, or authentication tokens
+- Vault contents, trades, or usage of any other part of the plugin
+
+**Purpose:**
+
+- Let us see, server-side, which paywalled features and which entry points lead people to upgrade, so we can improve them
+
+**Control:**
+
+- The only control is the click itself. Once an upgrade button is opened, the parameters have already been sent with that first request, so editing the address bar afterwards cannot withdraw them. Not clicking an upgrade button leaves nothing to record at all
+- The onboarding marker is held in memory only and is a fixed word rather than an identifier. It is discarded by the first upgrade click on the feature it was set for, by closing that feature's screen, and by restarting Obsidian or the plugin. An upgrade click on a different feature leaves it untouched, because that click is not the flow onboarding started
+
+Once the link opens, the `journalit.co` website records the upgrade attempt and
+signup origin on our servers, including the campaign parameters above, the page
+you landed on, and the referring site. This is server-side, is described in
+**Server-Side Data Storage** below, and is used for aggregate conversion
+reporting only.
+
+---
+
 ## Network Endpoints
 
 When backend integration is enabled, the plugin communicates with the following endpoints:
@@ -196,6 +256,7 @@ When backend integration is enabled, the plugin communicates with the following 
 - `/auth/login` - Request email verification code
 - `/auth/verify` - Verify code and receive token
 - `/auth/validate` - Validate existing token
+- `/api/v1/me/entitlements` - Read your own subscription tier and feature entitlements
 
 **Sync Operations:**
 
@@ -241,6 +302,12 @@ When you use sync features, the backend stores:
 - Canonical Tradovate synchronization records, normalized provider source entities, account selections, durable job history, reconciliation issues, and projection state
 - MT account IDs and display names
 - Processing history (which reports have been synced)
+
+### Upgrade and Signup Attribution
+
+- Upgrade attempts started from an upgrade link: the campaign parameters listed above, the feature paywall involved, whether the onboarding import path opened it, the requested billing period, and timestamps for each step of the upgrade page
+- Signup origin for accounts created from such a visit: landing page, referring site, and the same campaign parameters
+- Used for aggregate conversion reporting; never used for advertising and never sold
 
 ### Security Logs
 
@@ -297,7 +364,7 @@ Verification codes are sent via email service provider:
 ### No Advertising or Behavioral Analytics
 
 - No Google Analytics
-- No advertising or clickstream tracking
+- No advertising networks or cross-site clickstream tracking
 - Network-backed synchronization features may submit the narrow operational diagnostics disclosed above
 - No advertising networks
 - No data sold to third parties
@@ -331,13 +398,13 @@ Verification codes are sent via email service provider:
 
 ## What We Do NOT Collect
 
-- Browsing history or clickstream data
+- Browsing history, or clickstream data beyond the upgrade-link attribution described above
 - Hardware fingerprints or operating-system advertising identifiers
 - Location data
 - Trading account passwords or API keys
 - Contents of your Obsidian vault
 - Your manual trades or personal notes
-- General usage analytics or behavioral telemetry unrelated to the explicitly disclosed synchronization diagnostics
+- General usage analytics or behavioral telemetry from inside Obsidian, beyond the explicitly disclosed synchronization diagnostics and upgrade-link attribution
 
 ---
 

@@ -139,7 +139,7 @@ export function getImageGalleryEmptyStateKind(input: {
   return 'no-results';
 }
 
-export function getImageGalleryCardHoverDetailsClass(
+function getImageGalleryCardHoverDetailsClass(
   item: Pick<ImageGalleryItem, 'tags' | 'notes' | 'reviewed'>
 ): string {
   return item.tags.length > 0 || item.notes || item.reviewed !== undefined

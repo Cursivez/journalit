@@ -2,6 +2,10 @@
 
 import { setIcon } from 'obsidian';
 import { t } from '../../lang/helpers';
+import {
+  mountBottomLeftNotification,
+  removeBottomLeftNotification,
+} from './BottomLeftNotificationHost';
 
 export const UPDATE_TOAST_STYLES = `
 .journalit-update-toast {
@@ -11,10 +15,7 @@ export const UPDATE_TOAST_STYLES = `
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   padding: 0;
   font-family: var(--font-interface);
-  position: fixed;
-  bottom: 24px;
-  left: 24px;
-  z-index: 10000;
+  position: relative;
   max-width: 400px;
   opacity: 0;
   transform: translateX(-100%);
@@ -221,10 +222,7 @@ export const UPDATE_TOAST_STYLES = `
 
 @media (max-width: 768px) {
   .journalit-update-toast {
-    bottom: 80px;
-    left: 12px;
-    right: 12px;
-    max-width: calc(100vw - 24px);
+    max-width: none;
   }
 
   .journalit-update-toast--available {
@@ -269,13 +267,17 @@ export class CustomUpdateToast {
   }
 
   private createContainer(): void {
-    this.containerEl = window.activeDocument.body.createDiv();
-    this.containerEl.addClass('journalit-update-toast');
+    this.containerEl = mountBottomLeftNotification('journalit-update-toast');
   }
 
   async show(options: ToastOptions): Promise<void> {
     if (this.dismissed) {
       return;
+    }
+
+    if (this.containerEl && !this.containerEl.isConnected) {
+      removeBottomLeftNotification(this.containerEl);
+      this.containerEl = null;
     }
 
     
@@ -423,7 +425,10 @@ export class CustomUpdateToast {
 
     
     this.hideTimeoutId = window.setTimeout(() => {
-      this.containerEl?.remove();
+      if (this.containerEl) {
+        removeBottomLeftNotification(this.containerEl);
+        this.containerEl = null;
+      }
       this.hideTimeoutId = null;
     }, 300);
   }
@@ -438,7 +443,7 @@ export class CustomUpdateToast {
 
     
     if (this.containerEl) {
-      this.containerEl.remove();
+      removeBottomLeftNotification(this.containerEl);
       this.containerEl = null;
     }
   }
